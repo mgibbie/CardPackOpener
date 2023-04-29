@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Mike's Card Pack Opening Simulator</title>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<link rel="stylesheet" href="style.css">
+	<style>
+	/* CSS code for card images */
+	.card-image {
+		width: 150px;
+		height: 210px;
+		object-fit: contain;
+		transition: transform 0.2s;
+	}
+
+	.card-image:hover {
+		transform: scale(1.5);
+	}
+	</style>
+</head>
+<body>
+	<h1>Mike's Card Pack Opening Simulator</h1>
+	<button id="reveal-cards-button">Reveal 15 random Magic: The Gathering cards</button>
+	<div id="card-container"></div>
+
+	<!-- JavaScript code to fetch and display the cards -->
+	<script>
+	const API_ENDPOINT = 'https://api.scryfall.com/cards/random?is%3Afoil%20e%3Ac16';
+	const CARD_COUNT = 15;
+	const cardContainer = document.getElementById('card-container');
+	const revealCardsButton = document.getElementById('reveal-cards-button');
+	
+	revealCardsButton.addEventListener('click', async () => {
+		revealCardsButton.disabled = true;
+		cardContainer.innerHTML = '';
+		
+		for (let i = 0; i < CARD_COUNT; i++) {
+			const response = await fetch(API_ENDPOINT);
+			const { image_uris } = await response.json();
+			const cardImage = document.createElement('img');
+			cardImage.className = 'card-image';
+			cardImage.src = image_uris.normal;
+			cardContainer.appendChild(cardImage);
+		}
+
+		revealCardsButton.disabled = false;
+	});
+	</script>
+</body>
+<script src="app.js"> </script>
+</html>
