@@ -1,5 +1,5 @@
 
-const API_ENDPOINT = "https://api.scryfall.com/cards/random?q=game%3Amtg";
+const API_ENDPOINT = "https://api.scryfall.com/cards/random?";
 const CARD_COUNT = 15;
 
 
