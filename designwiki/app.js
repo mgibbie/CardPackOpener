@@ -140,6 +140,20 @@ function tmsView() {
   );
 }
 
+function unlearnedView() {
+  const q = norm(searchEl.value);
+  const list = Object.values(DB.moves)
+    .filter(m => !(m.learnedBy || []).length)
+    .filter(m => !q || norm(m.name).includes(q))
+    .sort(byName);
+  content.replaceChildren(
+    h('h1', null, 'Moves Not Learned by Any Mon ', h('span', { class: 'num' }, '(' + list.length + ')')),
+    h('p', { class: 'muted' }, 'Moves no Pokémon can currently learn by any method (level-up, TM, egg, or HM).'),
+    h('div', { class: 'grid' }, list.map(m =>
+      h('a', { class: 'card', href: '#/moves/' + m.id }, h('div', { class: 'nm' }, m.name))))
+  );
+}
+
 function regionView(rk) {
   const r = DB.regions[rk]; if (!r) return notFound();
   const maps = Object.values(r.maps).sort((a, b) => a.name.localeCompare(b.name));
@@ -192,13 +206,14 @@ function route() {
   if (section === 'abilities') return id ? abilityDetail(id) :
     listView('abilities', 'Abilities', Object.values(DB.abilities).map(a => ({ ...a, sub: (a.pokemon || []).length + ' Pokémon' })).sort(byName));
   if (section === 'tms') return tmsView();
+  if (section === 'unlearned') return unlearnedView();
   if (section === 'region') return regionView(id);
   notFound();
 }
 
 searchEl.addEventListener('input', () => {
   const s = (location.hash.slice(1) || '/').split('/').filter(Boolean);
-  if (['pokemon', 'moves', 'abilities', 'tms'].includes(s[0]) && !s[1]) route();
+  if (['pokemon', 'moves', 'abilities', 'tms', 'unlearned'].includes(s[0]) && !s[1]) route();
 });
 window.addEventListener('hashchange', route);
 
