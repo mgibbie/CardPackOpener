@@ -26,6 +26,9 @@ const typeChip = t => h('span', { class: 'chip t-' + t }, t);
 const pkLink = id => DB.pokemon[id] ? h('a', { href: '#/pokemon/' + id, class: 'species-link' }, DB.pokemon[id].name) : h('span', null, id || '?');
 const spriteImg = p => p && p.sprite ? h('img', { class: 'sprite', src: 'sprites/' + p.sprite, alt: p.name, onerror: e => e.target.remove() }) : null;
 const byName = (a, b) => String(a.name).localeCompare(String(b.name));
+// Dex order: national dex (positive nums) first, custom mons (negative ids) after.
+const dexKey = n => n == null ? 2e9 : (n > 0 ? n : 1e9 - n);
+const byDex = (a, b) => dexKey(a.num) - dexKey(b.num);
 const mvLink = id => DB.moves[id] ? h('a', { href: '#/moves/' + id }, DB.moves[id].name) : h('span', { class: 'muted' }, id);
 const abLink = nm => { const id = abilityByName[norm(nm)]; return id ? h('a', { href: '#/abilities/' + id }, nm) : h('span', null, nm); };
 
@@ -138,7 +141,7 @@ function route() {
   if (parts.length === 0) return home();
   const [section, id] = parts;
   if (section === 'pokemon') return id ? pokemonDetail(id) :
-    listView('pokemon', 'Pokémon', Object.values(DB.pokemon).sort((a, b) => (a.num ?? 1e9) - (b.num ?? 1e9)));
+    listView('pokemon', 'Pokémon', Object.values(DB.pokemon).sort(byDex));
   if (section === 'moves') return id ? moveDetail(id) :
     listView('moves', 'Moves', Object.values(DB.moves).sort(byName));
   if (section === 'abilities') return id ? abilityDetail(id) :
