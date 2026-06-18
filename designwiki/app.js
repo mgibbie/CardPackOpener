@@ -24,6 +24,8 @@ function h(tag, attrs, ...kids) {
 const typesArr = v => Array.isArray(v) ? v : (v && typeof v === 'object' ? Object.values(v) : []);
 const typeChip = t => h('span', { class: 'chip t-' + t }, t);
 const pkLink = id => DB.pokemon[id] ? h('a', { href: '#/pokemon/' + id, class: 'species-link' }, DB.pokemon[id].name) : h('span', null, id || '?');
+const spriteImg = p => p && p.sprite ? h('img', { class: 'sprite', src: 'sprites/' + p.sprite, alt: p.name, onerror: e => e.target.remove() }) : null;
+const byName = (a, b) => String(a.name).localeCompare(String(b.name));
 const mvLink = id => DB.moves[id] ? h('a', { href: '#/moves/' + id }, DB.moves[id].name) : h('span', { class: 'muted' }, id);
 const abLink = nm => { const id = abilityByName[norm(nm)]; return id ? h('a', { href: '#/abilities/' + id }, nm) : h('span', null, nm); };
 
@@ -46,6 +48,7 @@ function pokemonDetail(id) {
   const stats = ['hp', 'atk', 'def', 'spa', 'spd', 'spe'];
   content.replaceChildren(
     h('h1', null, h('span', { class: 'num' }, '#' + (p.num ?? '?') + ' '), p.name),
+    spriteImg(p),
     h('div', null, typesArr(p.types).map(typeChip)),
     h('div', { style: 'margin:8px 0' }, 'Abilities: ', typesArr(p.abilities).map((a, i) => [i ? ', ' : '', abLink(a)]).flat()),
     h('h2', null, 'Base Stats'),
@@ -64,11 +67,17 @@ function pokemonDetail(id) {
 
 function moveDetail(id) {
   const m = DB.moves[id]; if (!m) return notFound();
+  const learned = m.learnedBy || [];
   content.replaceChildren(
     h('h1', null, m.name),
     h('table', null, h('tbody', null,
       kv('Type', m.type), kv('Category', m.category), kv('Power', m.basePower ?? '—'),
-      kv('Accuracy', m.accuracy ?? '—'), kv('PP', m.pp ?? '—'), kv('Priority', m.priority ?? 0)))
+      kv('Accuracy', m.accuracy ?? '—'), kv('PP', m.pp ?? '—'), kv('Priority', m.priority ?? 0))),
+    h('h2', null, 'Learned by ', h('span', { class: 'num' }, '(' + learned.length + ')')),
+    learned.length ? h('table', null,
+      h('thead', null, h('tr', null, h('th', null, 'Pokémon'), h('th', null, 'How'))),
+      h('tbody', null, learned.map(e => h('tr', null, h('td', null, pkLink(e.pokemon)), h('td', null, e.how)))))
+      : h('p', { class: 'muted' }, 'Not learned by any Pokémon.')
   );
 }
 
@@ -131,9 +140,9 @@ function route() {
   if (section === 'pokemon') return id ? pokemonDetail(id) :
     listView('pokemon', 'Pokémon', Object.values(DB.pokemon).sort((a, b) => (a.num ?? 1e9) - (b.num ?? 1e9)));
   if (section === 'moves') return id ? moveDetail(id) :
-    listView('moves', 'Moves', Object.values(DB.moves));
+    listView('moves', 'Moves', Object.values(DB.moves).sort(byName));
   if (section === 'abilities') return id ? abilityDetail(id) :
-    listView('abilities', 'Abilities', Object.values(DB.abilities).map(a => ({ ...a, sub: (a.pokemon || []).length + ' Pokémon' })));
+    listView('abilities', 'Abilities', Object.values(DB.abilities).map(a => ({ ...a, sub: (a.pokemon || []).length + ' Pokémon' })).sort(byName));
   if (section === 'region') return regionView(id);
   notFound();
 }
