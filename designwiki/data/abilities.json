@@ -1,0 +1,5431 @@
+{
+ "waterbubble": {
+  "id": "waterbubble",
+  "name": "Water Bubble",
+  "description": "Powers up Water moves, halves Fire damage, prevents burn",
+  "pokemon": [
+   "dewpider",
+   "araquanid"
+  ]
+ },
+ "watercompaction": {
+  "id": "watercompaction",
+  "name": "Water Compaction",
+  "description": "Raises Defense when hit by Water moves",
+  "pokemon": [
+   "sandygast",
+   "palossand"
+  ]
+ },
+ "wellbakedbody": {
+  "id": "wellbakedbody",
+  "name": "Well-Baked Body",
+  "description": "Raises Defense when hit by Fire moves",
+  "pokemon": [
+   "dachsbun"
+  ]
+ },
+ "whitesmoke": {
+  "id": "whitesmoke",
+  "name": "White Smoke",
+  "description": "Prevents stat reductions",
+  "pokemon": [
+   "chuggalong",
+   "draggalong",
+   "chuggon",
+   "flarelm",
+   "torkoal",
+   "heatmor",
+   "sizzlipede",
+   "centiskorch"
+  ]
+ },
+ "wimpout": {
+  "id": "wimpout",
+  "name": "Wimp Out",
+  "description": "Switches out when HP drops below half",
+  "pokemon": [
+   "wimpod"
+  ]
+ },
+ "windpower": {
+  "id": "windpower",
+  "name": "Wind Power",
+  "description": "Charges up when hit by a wind move",
+  "pokemon": [
+   "wattrel",
+   "kilowattrel"
+  ]
+ },
+ "windrider": {
+  "id": "windrider",
+  "name": "Wind Rider",
+  "description": "Raises Attack when hit by wind moves and immune to them",
+  "pokemon": [
+   "shiftry",
+   "bramblin",
+   "brambleghast"
+  ]
+ },
+ "wonderguard": {
+  "id": "wonderguard",
+  "name": "Wonder Guard",
+  "description": "Only super-effective moves can hit",
+  "pokemon": [
+   "shedinja"
+  ]
+ },
+ "zenmode": {
+  "id": "zenmode",
+  "name": "Zen Mode",
+  "description": "Changes form when HP drops below half",
+  "pokemon": [
+   "darmanitan",
+   "darmanitan_galar_zen",
+   "darmanitan_zen"
+  ]
+ },
+ "zerotohero": {
+  "id": "zerotohero",
+  "name": "Zero to Hero",
+  "description": "Changes form when switching out",
+  "pokemon": [
+   "palafin",
+   "palafin_hero"
+  ]
+ },
+ "aerilate": {
+  "id": "aerilate",
+  "name": "Aerilate",
+  "description": "Converts Normal-type moves to Flying-type and boosts their power by 20%.",
+  "pokemon": []
+ },
+ "galvanize": {
+  "id": "galvanize",
+  "name": "Galvanize",
+  "description": "Converts Normal-type moves to Electric-type and boosts their power by 20%.",
+  "pokemon": [
+   "caribolt",
+   "electrelk",
+   "geodude_alola",
+   "graveler_alola",
+   "golem_alola"
+  ]
+ },
+ "surgesurfer": {
+  "id": "surgesurfer",
+  "name": "Surge Surfer",
+  "description": "Doubles Speed in Electric Terrain.",
+  "pokemon": [
+   "raichu_alola"
+  ]
+ },
+ "mimicry": {
+  "id": "mimicry",
+  "name": "Mimicry",
+  "description": "Changes the Pokémon's type to match the active terrain.",
+  "pokemon": [
+   "stunfisk_galar"
+  ]
+ },
+ "parentalbond": {
+  "id": "parentalbond",
+  "name": "Parental Bond",
+  "description": "Allows the Pokémon to strike twice. Second hit deals 25% damage.",
+  "pokemon": []
+ },
+ "primordialsea": {
+  "id": "primordialsea",
+  "name": "Primordial Sea",
+  "description": "Summons heavy rain on switch-in that suppresses Fire-type moves.",
+  "pokemon": []
+ },
+ "desolateland": {
+  "id": "desolateland",
+  "name": "Desolate Land",
+  "description": "Summons extremely harsh sunlight on switch-in that suppresses Water-type moves.",
+  "pokemon": []
+ },
+ "deltastream": {
+  "id": "deltastream",
+  "name": "Delta Stream",
+  "description": "Summons mysterious air current on switch-in that weakens moves against Flying-type Pokémon.",
+  "pokemon": []
+ },
+ "neuroforce": {
+  "id": "neuroforce",
+  "name": "Neuroforce",
+  "description": "Boosts the power of moves that are super effective by 25%.",
+  "pokemon": [
+   "necrozma_ultra"
+  ]
+ },
+ "tanglinghair": {
+  "id": "tanglinghair",
+  "name": "Tangling Hair",
+  "description": "Lowers the Speed of Pokémon that make contact with this Pokémon.",
+  "pokemon": [
+   "diglett_alola",
+   "dugtrio_alola"
+  ]
+ },
+ "powerofalchemy": {
+  "id": "powerofalchemy",
+  "name": "Power of Alchemy",
+  "description": "Copies the Ability of a defeated ally.",
+  "pokemon": [
+   "venomicon",
+   "grimer_alola",
+   "muk_alola"
+  ]
+ },
+ "gorillatactics": {
+  "id": "gorillatactics",
+  "name": "Gorilla Tactics",
+  "description": "Boosts the Pokémon's Attack by 50% but only allows the use of one move.",
+  "pokemon": [
+   "darmanitan_galar"
+  ]
+ },
+ "pastelveil": {
+  "id": "pastelveil",
+  "name": "Pastel Veil",
+  "description": "Protects the Pokémon and its ally from poison.",
+  "pokemon": [
+   "ponyta_galar",
+   "rapidash_galar"
+  ]
+ },
+ "quickdraw": {
+  "id": "quickdraw",
+  "name": "Quick Draw",
+  "description": "Enables the Pokémon to move first occasionally (30% chance).",
+  "pokemon": [
+   "slowbro_galar"
+  ]
+ },
+ "curiousmedicine": {
+  "id": "curiousmedicine",
+  "name": "Curious Medicine",
+  "description": "Resets ally's stat changes when this Pokémon enters battle.",
+  "pokemon": [
+   "slowking_galar"
+  ]
+ },
+ "asone": {
+  "id": "asone",
+  "name": "As One",
+  "description": "Combines the effects of the Abilities of Calyrex and its steed.",
+  "pokemon": [
+   "calyrex_ice",
+   "calyrex_shadow"
+  ]
+ },
+ "embodyaspect": {
+  "id": "embodyaspect",
+  "name": "Embody Aspect",
+  "description": "Boosts a stat based on the Teal Mask Ogerpon's held item.",
+  "pokemon": []
+ },
+ "mindseye": {
+  "id": "mindseye",
+  "name": "Mind's Eye",
+  "description": "Ignores evasion changes; Normal and Fighting-type moves can hit Ghost types.",
+  "pokemon": []
+ },
+ "terashell": {
+  "id": "terashell",
+  "name": "Tera Shell",
+  "description": "Reduces damage from all moves to 0.5x when at full HP.",
+  "pokemon": []
+ },
+ "teraformzero": {
+  "id": "teraformzero",
+  "name": "Teraform Zero",
+  "description": "When Terapagos transforms, it eliminates all effects of weather and terrain.",
+  "pokemon": []
+ },
+ "static": {
+  "id": "static",
+  "name": "Static",
+  "description": "May cause paralysis when hit by a contact move",
+  "pokemon": [
+   "electruxo",
+   "eletux",
+   "duohm",
+   "monohm",
+   "cyclohm",
+   "pikachu",
+   "raichu",
+   "voltorb",
+   "voltorb_hisui",
+   "electrode",
+   "electrode_hisui",
+   "electabuzz",
+   "zapdos",
+   "pichu",
+   "mareep",
+   "flaaffy",
+   "ampharos",
+   "elekid",
+   "electrike",
+   "manectric",
+   "emolga",
+   "stunfisk",
+   "toxel",
+   "arctozolt",
+   "pawmi",
+   "tadbulb",
+   "bellibolt"
+  ]
+ },
+ "waterabsorb": {
+  "id": "waterabsorb",
+  "name": "Water Absorb",
+  "description": "Restores HP when hit by Water-type moves",
+  "pokemon": [
+   "blubelrog",
+   "folerog",
+   "fortog",
+   "saharaja",
+   "saharascal",
+   "poliwag",
+   "poliwhirl",
+   "poliwrath",
+   "lapras",
+   "vaporeon",
+   "chinchou",
+   "lanturn",
+   "politoed",
+   "wooper",
+   "wooper_paldea",
+   "quagsire",
+   "mantine",
+   "cacnea",
+   "cacturne",
+   "mantyke",
+   "tympole",
+   "palpitoad",
+   "seismitoad",
+   "maractus",
+   "frillish",
+   "jellicent",
+   "volcanion",
+   "dewpider",
+   "araquanid",
+   "dracovish",
+   "arctovish",
+   "clodsire"
+  ]
+ },
+ "flashfire": {
+  "id": "flashfire",
+  "name": "Flash Fire",
+  "description": "Powers up Fire-type moves when hit by a Fire move",
+  "pokemon": [
+   "flager",
+   "pajay",
+   "palij",
+   "pahar",
+   "vulpix",
+   "ninetales",
+   "growlithe",
+   "growlithe_hisui",
+   "arcanine",
+   "arcanine_hisui",
+   "ponyta",
+   "rapidash",
+   "flareon",
+   "cyndaquil",
+   "quilava",
+   "typhlosion",
+   "typhlosion_hisui",
+   "houndour",
+   "houndoom",
+   "heatran",
+   "litwick",
+   "lampent",
+   "chandelure",
+   "heatmor",
+   "rolycoly",
+   "carkol",
+   "coalossal",
+   "sizzlipede",
+   "centiskorch",
+   "charcadet",
+   "armarouge",
+   "ceruledge"
+  ]
+ },
+ "levitate": {
+  "id": "levitate",
+  "name": "Levitate",
+  "description": "Immune to Ground-type moves",
+  "pokemon": [
+   "zephy",
+   "navighast",
+   "coatlith",
+   "s51_a",
+   "s51",
+   "astronite",
+   "cometeor",
+   "comite",
+   "equilibra",
+   "justyke",
+   "stratagem",
+   "tactite",
+   "rebble",
+   "gastly",
+   "haunter",
+   "koffing",
+   "weezing",
+   "weezing_galar",
+   "misdreavus",
+   "unown",
+   "vibrava",
+   "flygon",
+   "lunatone",
+   "solrock",
+   "baltoy",
+   "claydol",
+   "duskull",
+   "chimecho",
+   "latias",
+   "latios",
+   "mismagius",
+   "chingling",
+   "bronzor",
+   "bronzong",
+   "carnivine",
+   "rotom",
+   "rotom_fan",
+   "rotom_frost",
+   "rotom_heat",
+   "rotom_mow",
+   "rotom_wash",
+   "uxie",
+   "mesprit",
+   "azelf",
+   "giratina_origin",
+   "cresselia",
+   "tynamo",
+   "eelektrik",
+   "eelektross",
+   "cryogonal",
+   "hydreigon",
+   "vikavolt"
+  ]
+ },
+ "synchronize": {
+  "id": "synchronize",
+  "name": "Synchronize",
+  "description": "Transfers status conditions to the opponent",
+  "pokemon": [
+   "dramsama",
+   "masking",
+   "abra",
+   "kadabra",
+   "alakazam",
+   "mew",
+   "natu",
+   "xatu",
+   "espeon",
+   "umbreon",
+   "ralts",
+   "kirlia",
+   "gardevoir",
+   "munna",
+   "musharna",
+   "elgyem",
+   "beheeyem",
+   "indeedee",
+   "indeedee_f",
+   "rabsca"
+  ]
+ },
+ "innerfocus": {
+  "id": "innerfocus",
+  "name": "Inner Focus",
+  "description": "Immune to flinching",
+  "pokemon": [
+   "winotinger",
+   "jackdeary",
+   "daikatuna",
+   "saidine",
+   "frynai",
+   "zubat",
+   "golbat",
+   "abra",
+   "kadabra",
+   "alakazam",
+   "farfetchd",
+   "drowzee",
+   "hypno",
+   "hitmonchan",
+   "kangaskhan",
+   "dragonite",
+   "crobat",
+   "umbreon",
+   "girafarig",
+   "sneasel_hisui",
+   "sneasel",
+   "raikou",
+   "entei",
+   "suicune",
+   "snorunt",
+   "glalie",
+   "riolu",
+   "lucario",
+   "throh",
+   "sawk",
+   "darumaka",
+   "darumaka_galar",
+   "mienfoo",
+   "mienshao",
+   "pawniard",
+   "bisharp",
+   "mudbray",
+   "mudsdale",
+   "oranguru",
+   "indeedee",
+   "kubfu",
+   "annihilape"
+  ]
+ },
+ "steadfast": {
+  "id": "steadfast",
+  "name": "Steadfast",
+  "description": "Raises Speed when flinched",
+  "pokemon": [
+   "machop",
+   "machoke",
+   "machamp",
+   "farfetchd_galar",
+   "scyther",
+   "tyrogue",
+   "hitmontop",
+   "riolu",
+   "lucario",
+   "gallade",
+   "rockruff",
+   "lycanroc",
+   "dubwool",
+   "sirfetchd"
+  ]
+ },
+ "magicguard": {
+  "id": "magicguard",
+  "name": "Magic Guard",
+  "description": "Prevents damage from indirect sources",
+  "pokemon": [
+   "winotinger",
+   "jackdeary",
+   "protowatt",
+   "cupra",
+   "krilowatt",
+   "clefairy",
+   "clefable",
+   "abra",
+   "kadabra",
+   "alakazam",
+   "cleffa",
+   "sigilyph",
+   "solosis",
+   "duosion",
+   "reuniclus"
+  ]
+ },
+ "pressure": {
+  "id": "pressure",
+  "name": "Pressure",
+  "description": "Increases opponent's PP usage",
+  "pokemon": [
+   "mutios",
+   "aotius",
+   "krakanao",
+   "leviathao",
+   "baitatao",
+   "volkraken",
+   "aerodactyl",
+   "articuno",
+   "zapdos",
+   "moltres",
+   "mewtwo",
+   "raikou",
+   "entei",
+   "suicune",
+   "lugia",
+   "hooh",
+   "wailmer",
+   "wailord",
+   "dusclops",
+   "absol",
+   "deoxys",
+   "deoxys_attack",
+   "deoxys_defense",
+   "deoxys_speed",
+   "vespiquen",
+   "spiritomb",
+   "weavile",
+   "dusknoir",
+   "dialga",
+   "palkia",
+   "giratina",
+   "pawniard",
+   "bisharp",
+   "kyurem",
+   "corviknight",
+   "eternatus",
+   "sneasler",
+   "kingambit"
+  ]
+ },
+ "keeneye": {
+  "id": "keeneye",
+  "name": "Keen Eye",
+  "description": "Prevents accuracy from being lowered",
+  "pokemon": [
+   "owten",
+   "cawdet",
+   "cupra",
+   "pidgey",
+   "pidgeotto",
+   "pidgeot",
+   "spearow",
+   "fearow",
+   "farfetchd",
+   "hitmonchan",
+   "sentret",
+   "furret",
+   "hoothoot",
+   "noctowl",
+   "sneasel_hisui",
+   "sneasel",
+   "skarmory",
+   "wingull",
+   "pelipper",
+   "sableye",
+   "starly",
+   "glameow",
+   "stunky",
+   "skuntank",
+   "chatot",
+   "skorupi",
+   "drapion",
+   "patrat",
+   "watchog",
+   "ducklett",
+   "swanna",
+   "rufflet",
+   "braviary",
+   "braviary_hisui",
+   "espurr",
+   "meowstic",
+   "pikipek",
+   "trumbeak",
+   "toucannon",
+   "rockruff",
+   "lycanroc",
+   "lycanroc_midnight",
+   "rookidee",
+   "corvisquire",
+   "bombirdier"
+  ]
+ },
+ "sturdy": {
+  "id": "sturdy",
+  "name": "Sturdy",
+  "description": "Prevents being knocked out in one hit",
+  "pokemon": [
+   "dermafrost",
+   "snopach",
+   "gararewl",
+   "dearewl",
+   "barewl",
+   "geodude",
+   "geodude_alola",
+   "graveler",
+   "graveler_alola",
+   "golem",
+   "golem_alola",
+   "magnemite",
+   "magneton",
+   "onix",
+   "sudowoodo",
+   "pineco",
+   "forretress",
+   "steelix",
+   "shuckle",
+   "skarmory",
+   "donphan",
+   "nosepass",
+   "aron",
+   "lairon",
+   "aggron",
+   "relicanth",
+   "regirock",
+   "shieldon",
+   "bastiodon",
+   "bonsly",
+   "magnezone",
+   "probopass",
+   "roggenrola",
+   "boldore",
+   "gigalith",
+   "sawk",
+   "dwebble",
+   "crustle",
+   "tirtouga",
+   "carracosta",
+   "tyrunt",
+   "carbink",
+   "bergmite",
+   "avalugg",
+   "avalugg_hisui",
+   "togedemaru",
+   "cosmoem",
+   "nacli",
+   "naclstack",
+   "garganacl",
+   "archaludon"
+  ]
+ },
+ "rockhead": {
+  "id": "rockhead",
+  "name": "Rock Head",
+  "description": "Prevents recoil damage",
+  "pokemon": [
+   "theriamp",
+   "slothohm",
+   "gararewl",
+   "dearewl",
+   "barewl",
+   "pyroak",
+   "flarelm",
+   "growlithe_hisui",
+   "arcanine_hisui",
+   "geodude",
+   "graveler",
+   "golem",
+   "onix",
+   "cubone",
+   "marowak",
+   "marowak_alola",
+   "rhyhorn",
+   "rhydon",
+   "aerodactyl",
+   "sudowoodo",
+   "steelix",
+   "aron",
+   "lairon",
+   "aggron",
+   "relicanth",
+   "bagon",
+   "shelgon",
+   "bonsly",
+   "basculin_blue_striped",
+   "tyrantrum"
+  ]
+ },
+ "damp": {
+  "id": "damp",
+  "name": "Damp",
+  "description": "Prevents Self-Destruct and Explosion",
+  "pokemon": [
+   "duohm",
+   "monohm",
+   "cyclohm",
+   "paras",
+   "parasect",
+   "psyduck",
+   "golduck",
+   "poliwag",
+   "poliwhirl",
+   "poliwrath",
+   "horsea",
+   "seadra",
+   "politoed",
+   "wooper",
+   "quagsire",
+   "kingdra",
+   "mudkip",
+   "marshtomp",
+   "swampert",
+   "frillish",
+   "jellicent",
+   "tadbulb",
+   "bellibolt"
+  ]
+ },
+ "limber": {
+  "id": "limber",
+  "name": "Limber",
+  "description": "Immune to paralysis",
+  "pokemon": [
+   "nohface",
+   "kitsunoh",
+   "persian",
+   "hitmonlee",
+   "ditto",
+   "buneary",
+   "lopunny",
+   "glameow",
+   "purrloin",
+   "liepard",
+   "stunfisk",
+   "hawlucha",
+   "mareanie",
+   "toxapex",
+   "clobbopus",
+   "grapploct"
+  ]
+ },
+ "immunity": {
+  "id": "immunity",
+  "name": "Immunity",
+  "description": "Immune to poison",
+  "pokemon": [
+   "snorlax",
+   "gligar",
+   "zangoose"
+  ]
+ },
+ "insomnia": {
+  "id": "insomnia",
+  "name": "Insomnia",
+  "description": "Immune to sleep",
+  "pokemon": [
+   "raffiti",
+   "ratsy",
+   "eshouten",
+   "owten",
+   "drowzee",
+   "hypno",
+   "hoothoot",
+   "noctowl",
+   "spinarak",
+   "ariados",
+   "murkrow",
+   "delibird",
+   "shuppet",
+   "banette",
+   "honchkrow",
+   "pumpkaboo",
+   "gourgeist",
+   "tarountula",
+   "spidops",
+   "capsakid",
+   "scovillain"
+  ]
+ },
+ "vitalspirit": {
+  "id": "vitalspirit",
+  "name": "Vital Spirit",
+  "description": "Immune to sleep",
+  "pokemon": [
+   "frikitiki",
+   "tikiki",
+   "astrolotl",
+   "solotl",
+   "plasmanta",
+   "snugglow",
+   "scratchet",
+   "fidgit",
+   "mankey",
+   "primeape",
+   "mrmime_galar",
+   "electabuzz",
+   "magmar",
+   "delibird",
+   "tyrogue",
+   "elekid",
+   "magby",
+   "vigoroth",
+   "electivire",
+   "magmortar",
+   "lillipup",
+   "rockruff",
+   "lycanroc_midnight",
+   "annihilape"
+  ]
+ },
+ "earlybird": {
+  "id": "earlybird",
+  "name": "Early Bird",
+  "description": "Wakes up from sleep faster",
+  "pokemon": [
+   "doduo",
+   "dodrio",
+   "kangaskhan",
+   "ledyba",
+   "ledian",
+   "natu",
+   "xatu",
+   "sunkern",
+   "sunflora",
+   "girafarig",
+   "houndour",
+   "houndoom",
+   "seedot",
+   "nuzleaf",
+   "smoliv",
+   "dolliv"
+  ]
+ },
+ "flamebody": {
+  "id": "flamebody",
+  "name": "Flame Body",
+  "description": "May cause burn when hit by a contact move",
+  "pokemon": [
+   "archilles",
+   "raptorch",
+   "ponyta",
+   "rapidash",
+   "magmar",
+   "moltres",
+   "slugma",
+   "magcargo",
+   "magby",
+   "magmortar",
+   "heatran",
+   "litwick",
+   "lampent",
+   "chandelure",
+   "larvesta",
+   "volcarona",
+   "fletchinder",
+   "talonflame",
+   "carkol",
+   "coalossal",
+   "sizzlipede",
+   "centiskorch",
+   "charcadet"
+  ]
+ },
+ "poisonpoint": {
+  "id": "poisonpoint",
+  "name": "Poison Point",
+  "description": "May cause poison when hit by a contact move",
+  "pokemon": [
+   "luchabra",
+   "chupacho",
+   "nidoranf",
+   "nidorina",
+   "nidoqueen",
+   "nidoranm",
+   "nidorino",
+   "nidoking",
+   "seadra",
+   "wooper_paldea",
+   "qwilfish",
+   "qwilfish_hisui",
+   "roselia",
+   "budew",
+   "roserade",
+   "venipede",
+   "whirlipede",
+   "scolipede",
+   "skrelp",
+   "dragalge",
+   "overqwil",
+   "clodsire"
+  ]
+ },
+ "cutecharm": {
+  "id": "cutecharm",
+  "name": "Cute Charm",
+  "description": "May cause infatuation when hit by a contact move",
+  "pokemon": [
+   "kiricorn",
+   "minicorn",
+   "syrentide",
+   "selkid",
+   "clefairy",
+   "clefable",
+   "jigglypuff",
+   "wigglytuff",
+   "cleffa",
+   "igglybuff",
+   "skitty",
+   "delcatty",
+   "milotic",
+   "lopunny",
+   "minccino",
+   "cinccino",
+   "sylveon",
+   "stufful",
+   "enamorus"
+  ]
+ },
+ "pickup": {
+  "id": "pickup",
+  "name": "Pickup",
+  "description": "Picks up items after battle",
+  "pokemon": [
+   "raffiti",
+   "ratsy",
+   "tanscure",
+   "tancoon",
+   "feliger",
+   "felunge",
+   "feleng",
+   "meowth",
+   "meowth_alola",
+   "meowth_galar",
+   "aipom",
+   "teddiursa",
+   "phanpy",
+   "zigzagoon",
+   "zigzagoon_galar",
+   "linoone",
+   "linoone_galar",
+   "pachirisu",
+   "ambipom",
+   "munchlax",
+   "lillipup",
+   "bunnelby",
+   "diggersby",
+   "dedenne",
+   "pumpkaboo",
+   "gourgeist",
+   "pikipek",
+   "trumbeak",
+   "tandemaus",
+   "greavard"
+  ]
+ },
+ "thickfat": {
+  "id": "thickfat",
+  "name": "Thick Fat",
+  "description": "Reduces damage from Fire and Ice moves",
+  "pokemon": [
+   "fafninter",
+   "fafurr",
+   "rattata_alola",
+   "raticate_alola",
+   "seel",
+   "dewgong",
+   "snorlax",
+   "marill",
+   "azumarill",
+   "swinub",
+   "piloswine",
+   "miltank",
+   "makuhita",
+   "hariyama",
+   "azurill",
+   "spoink",
+   "grumpig",
+   "spheal",
+   "sealeo",
+   "walrein",
+   "purugly",
+   "munchlax",
+   "mamoswine",
+   "tepig",
+   "pignite",
+   "appletun",
+   "lechonk",
+   "oinkologne",
+   "oinkologne_f",
+   "cetoddle",
+   "cetitan"
+  ]
+ },
+ "clearbody": {
+  "id": "clearbody",
+  "name": "Clear Body",
+  "description": "Prevents stat reductions",
+  "pokemon": [
+   "majungold",
+   "jungore",
+   "tofurang",
+   "tonemy",
+   "tentacool",
+   "tentacruel",
+   "beldum",
+   "metang",
+   "metagross",
+   "regirock",
+   "regice",
+   "registeel",
+   "klink",
+   "klang",
+   "klinklang",
+   "carbink",
+   "diancie",
+   "dreepy",
+   "drakloak",
+   "dragapult",
+   "nacli",
+   "naclstack",
+   "garganacl"
+  ]
+ },
+ "naturalcure": {
+  "id": "naturalcure",
+  "name": "Natural Cure",
+  "description": "Heals status conditions when switched out",
+  "pokemon": [
+   "glavinug",
+   "glaslug",
+   "corsoreef",
+   "kerfluffle",
+   "pluffle",
+   "chansey",
+   "staryu",
+   "starmie",
+   "corsola",
+   "corsola_galar",
+   "blissey",
+   "celebi",
+   "roselia",
+   "swablu",
+   "altaria",
+   "budew",
+   "roserade",
+   "happiny",
+   "shaymin",
+   "phantump",
+   "trevenant",
+   "comfey",
+   "pawmi",
+   "pawmo",
+   "pawmot"
+  ]
+ },
+ "serenegrace": {
+  "id": "serenegrace",
+  "name": "Serene Grace",
+  "description": "Doubles the chance of move secondary effects",
+  "pokemon": [
+   "eshouten",
+   "dunseraph",
+   "saharaja",
+   "chansey",
+   "togepi",
+   "togetic",
+   "dunsparce",
+   "blissey",
+   "jirachi",
+   "happiny",
+   "togekiss",
+   "shaymin_sky",
+   "deerling",
+   "sawsbuck",
+   "meloetta",
+   "meloetta_pirouette",
+   "dudunsparce"
+  ]
+ },
+ "technician": {
+  "id": "technician",
+  "name": "Technician",
+  "description": "Powers up moves with 60 base power or less",
+  "pokemon": [
+   "alpico",
+   "frikitiki",
+   "tikiki",
+   "smokomodo",
+   "smoguana",
+   "smogecko",
+   "arghonaut",
+   "privatyke",
+   "stratagem",
+   "tactite",
+   "meowth",
+   "meowth_alola",
+   "persian",
+   "persian_alola",
+   "mrmime",
+   "scyther",
+   "scizor",
+   "smeargle",
+   "hitmontop",
+   "breloom",
+   "kricketune",
+   "roserade",
+   "ambipom",
+   "mimejr",
+   "minccino",
+   "cinccino",
+   "marshadow",
+   "toxtricity",
+   "clobbopus",
+   "grapploct",
+   "maushold",
+   "fezandipiti"
+  ]
+ },
+ "adaptability": {
+  "id": "adaptability",
+  "name": "Adaptability",
+  "description": "Increases STAB bonus from 1.5x to 2x",
+  "pokemon": [
+   "lavent",
+   "eevee",
+   "corphish",
+   "crawdaunt",
+   "feebas",
+   "porygonz",
+   "basculin",
+   "basculin_blue_striped",
+   "skrelp",
+   "dragalge",
+   "yungoos",
+   "gumshoos",
+   "basculegion",
+   "basculegion_f"
+  ]
+ },
+ "moldbreaker": {
+  "id": "moldbreaker",
+  "name": "Mold Breaker",
+  "description": "Ignores opponent's abilities that affect moves",
+  "pokemon": [
+   "oblivicorn",
+   "drilgann",
+   "modrille",
+   "herolune",
+   "lunapup",
+   "crucibelle",
+   "pinsir",
+   "cranidos",
+   "rampardos",
+   "drilbur",
+   "excadrill",
+   "throh",
+   "sawk",
+   "basculin",
+   "basculin_blue_striped",
+   "axew",
+   "fraxure",
+   "haxorus",
+   "druddigon",
+   "pancham",
+   "pangoro",
+   "hawlucha",
+   "basculegion",
+   "tinkatink",
+   "tinkatuff",
+   "tinkaton",
+   "veluza"
+  ]
+ },
+ "rivalry": {
+  "id": "rivalry",
+  "name": "Rivalry",
+  "description": "Deals more damage to same-gender opponents",
+  "pokemon": [
+   "anderind",
+   "barand",
+   "nidoranf",
+   "nidorina",
+   "nidoqueen",
+   "nidoranm",
+   "nidorino",
+   "nidoking",
+   "beautifly",
+   "shinx",
+   "luxio",
+   "luxray",
+   "pidove",
+   "tranquill",
+   "unfezant",
+   "axew",
+   "fraxure",
+   "haxorus",
+   "litleo",
+   "pyroar"
+  ]
+ },
+ "aftermath": {
+  "id": "aftermath",
+  "name": "Aftermath",
+  "description": "Damages the attacker when knocked out by a contact move",
+  "pokemon": [
+   "voltorb",
+   "voltorb_hisui",
+   "electrode",
+   "electrode_hisui",
+   "drifloon",
+   "drifblim",
+   "stunky",
+   "skuntank",
+   "trubbish",
+   "garbodor"
+  ]
+ },
+ "analytic": {
+  "id": "analytic",
+  "name": "Analytic",
+  "description": "Powers up moves when moving last",
+  "pokemon": [
+   "tracton",
+   "s51_a",
+   "s51",
+   "volkraken",
+   "magnemite",
+   "magneton",
+   "staryu",
+   "starmie",
+   "porygon",
+   "porygon2",
+   "magnezone",
+   "porygonz",
+   "patrat",
+   "watchog",
+   "elgyem",
+   "beheeyem"
+  ]
+ },
+ "angerpoint": {
+  "id": "angerpoint",
+  "name": "Anger Point",
+  "description": "Maximizes Attack when hit by a critical hit",
+  "pokemon": [
+   "mankey",
+   "primeape",
+   "tauros_paldea_blaze",
+   "tauros_paldea_combat",
+   "tauros_paldea_aqua",
+   "tauros",
+   "camerupt",
+   "sandile",
+   "krokorok",
+   "krookodile",
+   "crabrawler",
+   "crabominable"
+  ]
+ },
+ "anticipation": {
+  "id": "anticipation",
+  "name": "Anticipation",
+  "description": "Senses dangerous moves",
+  "pokemon": [
+   "volkritter",
+   "necturine",
+   "ponyta_galar",
+   "rapidash_galar",
+   "eevee",
+   "barboach",
+   "whiscash",
+   "wormadam",
+   "wormadam_sandy",
+   "wormadam_trash",
+   "croagunk",
+   "toxicroak",
+   "ferrothorn",
+   "hatenna",
+   "hattrem",
+   "hatterene",
+   "flittle"
+  ]
+ },
+ "arenatrap": {
+  "id": "arenatrap",
+  "name": "Arena Trap",
+  "description": "Prevents opponents from escaping",
+  "pokemon": [
+   "diglett",
+   "dugtrio",
+   "trapinch"
+  ]
+ },
+ "battlearmor": {
+  "id": "battlearmor",
+  "name": "Battle Armor",
+  "description": "Prevents critical hits",
+  "pokemon": [
+   "majungold",
+   "jungore",
+   "metalynx",
+   "orchynx",
+   "pyroak",
+   "flarelm",
+   "cubone",
+   "marowak",
+   "kabuto",
+   "kabutops",
+   "anorith",
+   "armaldo",
+   "skorupi",
+   "drapion",
+   "typenull",
+   "perrserker",
+   "falinks"
+  ]
+ },
+ "cloudnine": {
+  "id": "cloudnine",
+  "name": "Cloud Nine",
+  "description": "Negates weather effects",
+  "pokemon": [
+   "psyduck",
+   "golduck",
+   "lickitung",
+   "swablu",
+   "altaria",
+   "lickilicky",
+   "drampa"
+  ]
+ },
+ "competitive": {
+  "id": "competitive",
+  "name": "Competitive",
+  "description": "Raises Special Attack when stats are lowered",
+  "pokemon": [
+   "alpico",
+   "jigglypuff",
+   "wigglytuff",
+   "articuno_galar",
+   "igglybuff",
+   "milotic",
+   "piplup",
+   "prinplup",
+   "empoleon",
+   "gothita",
+   "gothorita",
+   "gothitelle",
+   "boltund",
+   "wattrel",
+   "kilowattrel"
+  ]
+ },
+ "cursedbody": {
+  "id": "cursedbody",
+  "name": "Cursed Body",
+  "description": "May disable a move when hit",
+  "pokemon": [
+   "chainite",
+   "linkite",
+   "voodoom",
+   "voodoll",
+   "gengar",
+   "marowak_alola",
+   "corsola_galar",
+   "shuppet",
+   "banette",
+   "froslass",
+   "frillish",
+   "jellicent",
+   "sinistea",
+   "polteageist",
+   "dreepy",
+   "drakloak",
+   "dragapult"
+  ]
+ },
+ "defiant": {
+  "id": "defiant",
+  "name": "Defiant",
+  "description": "Raises Attack when stats are lowered",
+  "pokemon": [
+   "beliaddon",
+   "fallengel",
+   "devimp",
+   "oblivicorn",
+   "kiricorn",
+   "minicorn",
+   "herolune",
+   "lunapup",
+   "mankey",
+   "primeape",
+   "farfetchd",
+   "zapdos_galar",
+   "purugly",
+   "pawniard",
+   "bisharp",
+   "braviary",
+   "tornadus",
+   "thundurus",
+   "passimian",
+   "obstagoon",
+   "falinks",
+   "annihilape",
+   "kingambit",
+   "ogerpon"
+  ]
+ },
+ "download": {
+  "id": "download",
+  "name": "Download",
+  "description": "Raises Attack or Special Attack based on opponent's defenses",
+  "pokemon": [
+   "porygon",
+   "porygon2",
+   "porygonz",
+   "genesect"
+  ]
+ },
+ "drought": {
+  "id": "drought",
+  "name": "Drought",
+  "description": "Sets sun when entering battle",
+  "pokemon": [
+   "jumbao",
+   "malaconda",
+   "vulpix",
+   "ninetales",
+   "torkoal",
+   "groudon"
+  ]
+ },
+ "dryskin": {
+  "id": "dryskin",
+  "name": "Dry Skin",
+  "description": "Restores HP in rain, takes damage in sun",
+  "pokemon": [
+   "mollux",
+   "paras",
+   "parasect",
+   "jynx",
+   "croagunk",
+   "toxicroak",
+   "helioptile",
+   "heliolisk"
+  ]
+ },
+ "effectspore": {
+  "id": "effectspore",
+  "name": "Effect Spore",
+  "description": "May cause status when hit by a contact move",
+  "pokemon": [
+   "vileplume",
+   "paras",
+   "parasect",
+   "shroomish",
+   "breloom",
+   "foongus",
+   "amoonguss",
+   "morelull",
+   "shiinotic",
+   "gossifleur",
+   "eldegoss"
+  ]
+ },
+ "filter": {
+  "id": "filter",
+  "name": "Filter",
+  "description": "Reduces damage from super-effective moves",
+  "pokemon": [
+   "mrmime",
+   "mimejr",
+   "revavroom"
+  ]
+ },
+ "forewarn": {
+  "id": "forewarn",
+  "name": "Forewarn",
+  "description": "Reveals opponent's most powerful move",
+  "pokemon": [
+   "titanice",
+   "necturna",
+   "drowzee",
+   "hypno",
+   "jynx",
+   "smoochum",
+   "munna",
+   "musharna"
+  ]
+ },
+ "friendguard": {
+  "id": "friendguard",
+  "name": "Friend Guard",
+  "description": "Reduces damage to allies",
+  "pokemon": [
+   "kerfluffle",
+   "pluffle",
+   "clefairy",
+   "jigglypuff",
+   "cleffa",
+   "igglybuff",
+   "happiny",
+   "scatterbug",
+   "spewpa",
+   "vivillon",
+   "maushold"
+  ]
+ },
+ "frisk": {
+  "id": "frisk",
+  "name": "Frisk",
+  "description": "Reveals opponent's held item",
+  "pokemon": [
+   "nohface",
+   "kitsunoh",
+   "fidgit",
+   "breezi",
+   "wigglytuff",
+   "exeggutor_alola",
+   "sentret",
+   "furret",
+   "yanma",
+   "stantler",
+   "shuppet",
+   "banette",
+   "duskull",
+   "dusclops",
+   "yanmega",
+   "dusknoir",
+   "gothita",
+   "gothorita",
+   "gothitelle",
+   "phantump",
+   "trevenant",
+   "pumpkaboo",
+   "gourgeist",
+   "noibat",
+   "noivern",
+   "orbeetle",
+   "impidimp",
+   "morgrem",
+   "grimmsnarl",
+   "wyrdeer",
+   "flittle",
+   "espathra",
+   "munkidori"
+  ]
+ },
+ "gluttony": {
+  "id": "gluttony",
+  "name": "Gluttony",
+  "description": "Uses Berries at 50% HP instead of 25%",
+  "pokemon": [
+   "raticate_alola",
+   "bellsprout",
+   "weepinbell",
+   "victreebel",
+   "slowpoke_galar",
+   "grimer_alola",
+   "muk_alola",
+   "snorlax",
+   "shuckle",
+   "zigzagoon",
+   "zigzagoon_galar",
+   "linoone",
+   "linoone_galar",
+   "gulpin",
+   "swalot",
+   "spoink",
+   "grumpig",
+   "munchlax",
+   "pansage",
+   "simisage",
+   "pansear",
+   "simisear",
+   "panpour",
+   "simipour",
+   "heatmor",
+   "skwovet",
+   "greedent",
+   "applin",
+   "flapple",
+   "appletun",
+   "lechonk",
+   "oinkologne",
+   "oinkologne_f",
+   "dipplin"
+  ]
+ },
+ "harvest": {
+  "id": "harvest",
+  "name": "Harvest",
+  "description": "May restore a Berry after use",
+  "pokemon": [
+   "cocancer",
+   "cararalm",
+   "cocaran",
+   "malaconda",
+   "brattler",
+   "exeggcute",
+   "exeggutor",
+   "exeggutor_alola",
+   "tropius",
+   "phantump",
+   "trevenant",
+   "smoliv",
+   "dolliv",
+   "arboliva"
+  ]
+ },
+ "healer": {
+  "id": "healer",
+  "name": "Healer",
+  "description": "May heal allies' status conditions",
+  "pokemon": [
+   "miasmedic",
+   "chansey",
+   "bellossom",
+   "blissey",
+   "audino",
+   "alomomola",
+   "spritzee",
+   "aromatisse",
+   "hatenna",
+   "hattrem",
+   "hatterene"
+  ]
+ },
+ "hydration": {
+  "id": "hydration",
+  "name": "Hydration",
+  "description": "Heals status conditions in rain",
+  "pokemon": [
+   "seel",
+   "dewgong",
+   "lapras",
+   "vaporeon",
+   "smoochum",
+   "wingull",
+   "barboach",
+   "whiscash",
+   "gorebyss",
+   "luvdisc",
+   "phione",
+   "manaphy",
+   "tympole",
+   "palpitoad",
+   "ducklett",
+   "swanna",
+   "alomomola",
+   "shelmet",
+   "accelgor",
+   "goomy",
+   "sliggoo",
+   "goodra"
+  ]
+ },
+ "hypercutter": {
+  "id": "hypercutter",
+  "name": "Hyper Cutter",
+  "description": "Prevents Attack from being lowered",
+  "pokemon": [
+   "miasmaw",
+   "miasmite",
+   "krabby",
+   "kingler",
+   "pinsir",
+   "gligar",
+   "mawile",
+   "trapinch",
+   "corphish",
+   "crawdaunt",
+   "gliscor",
+   "crabrawler",
+   "crabominable"
+  ]
+ },
+ "icebody": {
+  "id": "icebody",
+  "name": "Ice Body",
+  "description": "Restores HP in hail",
+  "pokemon": [
+   "frosulo",
+   "colarva",
+   "titanice",
+   "syclant",
+   "syclar",
+   "seel",
+   "dewgong",
+   "mrmime_galar",
+   "snorunt",
+   "glalie",
+   "spheal",
+   "sealeo",
+   "walrein",
+   "regice",
+   "glaceon",
+   "vanillite",
+   "vanillish",
+   "vanilluxe",
+   "bergmite",
+   "avalugg",
+   "avalugg_hisui",
+   "mrrime",
+   "arctovish",
+   "frigibax",
+   "arctibax",
+   "baxcalibur"
+  ]
+ },
+ "illuminate": {
+  "id": "illuminate",
+  "name": "Illuminate",
+  "description": "Increases encounter rate in wild battles",
+  "pokemon": [
+   "antarki",
+   "mollux",
+   "staryu",
+   "starmie",
+   "chinchou",
+   "lanturn",
+   "volbeat",
+   "watchog",
+   "morelull",
+   "shiinotic"
+  ]
+ },
+ "imposter": {
+  "id": "imposter",
+  "name": "Imposter",
+  "description": "Transforms into the opponent on switch-in",
+  "pokemon": [
+   "ditto"
+  ]
+ },
+ "infiltrator": {
+  "id": "infiltrator",
+  "name": "Infiltrator",
+  "description": "Ignores opponent's barriers and substitutes",
+  "pokemon": [
+   "trawpint",
+   "costraw",
+   "volkraken",
+   "volkritter",
+   "malaconda",
+   "brattler",
+   "zubat",
+   "golbat",
+   "crobat",
+   "hoppip",
+   "skiploom",
+   "jumpluff",
+   "ninjask",
+   "seviper",
+   "spiritomb",
+   "cottonee",
+   "whimsicott",
+   "litwick",
+   "lampent",
+   "chandelure",
+   "espurr",
+   "meowstic",
+   "inkay",
+   "malamar",
+   "noibat",
+   "noivern",
+   "dreepy",
+   "drakloak",
+   "dragapult",
+   "bramblin",
+   "brambleghast"
+  ]
+ },
+ "ironfist": {
+  "id": "ironfist",
+  "name": "Iron Fist",
+  "description": "Powers up punching moves",
+  "pokemon": [
+   "frikitiki",
+   "tikiki",
+   "hitmonchan",
+   "ledian",
+   "chimchar",
+   "monferno",
+   "infernape",
+   "timburr",
+   "gurdurr",
+   "conkeldurr",
+   "golett",
+   "golurk",
+   "pancham",
+   "pangoro",
+   "crabrawler",
+   "crabominable",
+   "melmetal",
+   "pawmi",
+   "pawmo",
+   "pawmot"
+  ]
+ },
+ "justified": {
+  "id": "justified",
+  "name": "Justified",
+  "description": "Raises Attack when hit by Dark moves",
+  "pokemon": [
+   "garlikid",
+   "equilibra",
+   "justyke",
+   "tomohawk",
+   "growlithe",
+   "arcanine",
+   "absol",
+   "lucario",
+   "gallade",
+   "cobalion",
+   "terrakion",
+   "virizion",
+   "keldeo"
+  ]
+ },
+ "leafguard": {
+  "id": "leafguard",
+  "name": "Leaf Guard",
+  "description": "Prevents status conditions in sunny weather",
+  "pokemon": [
+   "quetzoral",
+   "chicoatl",
+   "embirch",
+   "tangela",
+   "chikorita",
+   "bayleef",
+   "meganium",
+   "hoppip",
+   "skiploom",
+   "jumpluff",
+   "roselia",
+   "budew",
+   "tangrowth",
+   "leafeon",
+   "swadloon",
+   "petilil",
+   "lilligant",
+   "lilligant_hisui",
+   "fomantis",
+   "lurantis",
+   "bounsweet",
+   "steenee",
+   "tsareena",
+   "zarude"
+  ]
+ },
+ "liquidooze": {
+  "id": "liquidooze",
+  "name": "Liquid Ooze",
+  "description": "Damages opponents that use draining moves",
+  "pokemon": [
+   "haagross",
+   "hagoop",
+   "crucibelle",
+   "tentacool",
+   "tentacruel",
+   "gulpin",
+   "swalot"
+  ]
+ },
+ "magnetpull": {
+  "id": "magnetpull",
+  "name": "Magnet Pull",
+  "description": "Prevents Steel-type opponents from escaping",
+  "pokemon": [
+   "geodude_alola",
+   "graveler_alola",
+   "golem_alola",
+   "magnemite",
+   "magneton",
+   "nosepass",
+   "magnezone",
+   "probopass",
+   "meltan"
+  ]
+ },
+ "marvelscale": {
+  "id": "marvelscale",
+  "name": "Marvel Scale",
+  "description": "Raises Defense when affected by a status condition",
+  "pokemon": [
+   "dratini",
+   "dragonair",
+   "milotic"
+  ]
+ },
+ "moxie": {
+  "id": "moxie",
+  "name": "Moxie",
+  "description": "Raises Attack when knocking out a Pokemon",
+  "pokemon": [
+   "laissure",
+   "terrabbit",
+   "sheebit",
+   "harptera",
+   "pinsir",
+   "gyarados",
+   "heracross",
+   "mightyena",
+   "salamence",
+   "honchkrow",
+   "sandile",
+   "krokorok",
+   "krookodile",
+   "scraggy",
+   "scrafty",
+   "litleo",
+   "pyroar",
+   "quaxly",
+   "quaxwell",
+   "quaquaval"
+  ]
+ },
+ "multiscale": {
+  "id": "multiscale",
+  "name": "Multiscale",
+  "description": "Reduces damage when at full HP",
+  "pokemon": [
+   "cresceidon",
+   "dragonite",
+   "lugia"
+  ]
+ },
+ "neutralizinggas": {
+  "id": "neutralizinggas",
+  "name": "Neutralizing Gas",
+  "description": "Negates all abilities while in battle",
+  "pokemon": [
+   "miasmaw",
+   "miasmite",
+   "koffing",
+   "weezing",
+   "weezing_galar"
+  ]
+ },
+ "noguard": {
+  "id": "noguard",
+  "name": "No Guard",
+  "description": "All moves hit and can be hit",
+  "pokemon": [
+   "ramnarok",
+   "aurumoth",
+   "machop",
+   "machoke",
+   "machamp",
+   "karrablast",
+   "golett",
+   "golurk",
+   "honedge",
+   "doublade",
+   "lycanroc_midnight"
+  ]
+ },
+ "oblivious": {
+  "id": "oblivious",
+  "name": "Oblivious",
+  "description": "Immune to infatuation and Taunt",
+  "pokemon": [
+   "brainoar",
+   "brailip",
+   "dorsoil",
+   "slowpoke",
+   "slowbro",
+   "lickitung",
+   "jynx",
+   "slowking",
+   "swinub",
+   "piloswine",
+   "smoochum",
+   "illumise",
+   "wailmer",
+   "wailord",
+   "numel",
+   "barboach",
+   "whiscash",
+   "feebas",
+   "spheal",
+   "sealeo",
+   "walrein",
+   "lickilicky",
+   "mamoswine",
+   "salandit",
+   "salazzle",
+   "bounsweet",
+   "steenee",
+   "dondozo"
+  ]
+ },
+ "overcoat": {
+  "id": "overcoat",
+  "name": "Overcoat",
+  "description": "Immune to powder moves and weather damage",
+  "pokemon": [
+   "nimflora",
+   "cubblfly",
+   "cubbug",
+   "jumbao",
+   "mumbao",
+   "argalis",
+   "shellder",
+   "cloyster",
+   "pineco",
+   "forretress",
+   "shelgon",
+   "burmy",
+   "wormadam",
+   "wormadam_sandy",
+   "wormadam_trash",
+   "sewaddle",
+   "swadloon",
+   "leavanny",
+   "solosis",
+   "duosion",
+   "reuniclus",
+   "escavalier",
+   "shelmet",
+   "vullaby",
+   "mandibuzz",
+   "jangmoo",
+   "hakamoo",
+   "kommoo",
+   "varoom",
+   "revavroom"
+  ]
+ },
+ "owntempo": {
+  "id": "owntempo",
+  "name": "Own Tempo",
+  "description": "Immune to confusion",
+  "pokemon": [
+   "brainoar",
+   "brailip",
+   "hemogoblin",
+   "scattervein",
+   "ababo",
+   "breezi",
+   "slowpoke_galar",
+   "slowpoke",
+   "slowbro_galar",
+   "slowbro",
+   "lickitung",
+   "slowking_galar",
+   "slowking",
+   "smeargle",
+   "lotad",
+   "lombre",
+   "ludicolo",
+   "numel",
+   "spoink",
+   "grumpig",
+   "spinda",
+   "glameow",
+   "purugly",
+   "lickilicky",
+   "petilil",
+   "lilligant",
+   "espurr",
+   "bergmite",
+   "avalugg",
+   "rockruff",
+   "mudbray",
+   "mudsdale",
+   "indeedee_f",
+   "tandemaus",
+   "fidough",
+   "tadbulb",
+   "tinkatink",
+   "tinkatuff",
+   "tinkaton"
+  ]
+ },
+ "poisontouch": {
+  "id": "poisontouch",
+  "name": "Poison Touch",
+  "description": "May poison when using contact moves",
+  "pokemon": [
+   "luchabra",
+   "chupacho",
+   "miasmedic",
+   "vilucard",
+   "minyan",
+   "blubelrog",
+   "folerog",
+   "fortog",
+   "grimer",
+   "grimer_alola",
+   "muk",
+   "muk_alola",
+   "croagunk",
+   "toxicroak",
+   "seismitoad",
+   "skrelp",
+   "dragalge",
+   "sneasler",
+   "grafaiai"
+  ]
+ },
+ "quickfeet": {
+  "id": "quickfeet",
+  "name": "Quick Feet",
+  "description": "Increases Speed when affected by a status condition",
+  "pokemon": [
+   "oblivicorn",
+   "kiricorn",
+   "minicorn",
+   "raffiti",
+   "ratsy",
+   "jolteon",
+   "granbull",
+   "teddiursa",
+   "ursaring",
+   "poochyena",
+   "mightyena",
+   "zigzagoon",
+   "zigzagoon_galar",
+   "linoone",
+   "linoone_galar",
+   "shroomish"
+  ]
+ },
+ "rattled": {
+  "id": "rattled",
+  "name": "Rattled",
+  "description": "Raises Speed when hit by Bug, Dark, or Ghost moves",
+  "pokemon": [
+   "dunseraph",
+   "ababo",
+   "brattler",
+   "meowth_alola",
+   "persian_alola",
+   "magikarp",
+   "ledyba",
+   "sudowoodo",
+   "dunsparce",
+   "snubbull",
+   "granbull",
+   "poochyena",
+   "whismur",
+   "clamperl",
+   "bonsly",
+   "cubchoo",
+   "yamper",
+   "toxel",
+   "wiglett",
+   "wugtrio",
+   "dudunsparce",
+   "gimmighoul"
+  ]
+ },
+ "reckless": {
+  "id": "reckless",
+  "name": "Reckless",
+  "description": "Powers up recoil and jumping moves",
+  "pokemon": [
+   "baariette",
+   "baaschaf",
+   "baashaun",
+   "embirch",
+   "hitmonlee",
+   "rhyhorn",
+   "rhydon",
+   "starly",
+   "staravia",
+   "staraptor",
+   "rhyperior",
+   "emboar",
+   "basculin",
+   "mienfoo",
+   "mienshao",
+   "bouffalant",
+   "obstagoon"
+  ]
+ },
+ "regenerator": {
+  "id": "regenerator",
+  "name": "Regenerator",
+  "description": "Restores HP when switched out",
+  "pokemon": [
+   "luxelong",
+   "luxor",
+   "luxi",
+   "haagross",
+   "hagoop",
+   "corsoreef",
+   "astrolotl",
+   "solotl",
+   "crucibelle",
+   "slowpoke_galar",
+   "slowpoke",
+   "slowbro_galar",
+   "slowbro",
+   "tangela",
+   "slowking_galar",
+   "slowking",
+   "corsola",
+   "hooh",
+   "tangrowth",
+   "audino",
+   "solosis",
+   "duosion",
+   "reuniclus",
+   "foongus",
+   "amoonguss",
+   "alomomola",
+   "mienfoo",
+   "mienshao",
+   "tornadus_therian",
+   "mareanie",
+   "toxapex",
+   "gossifleur",
+   "eldegoss",
+   "klawf",
+   "cyclizar",
+   "hydrapple"
+  ]
+ },
+ "sandforce": {
+  "id": "sandforce",
+  "name": "Sand Force",
+  "description": "Powers up Rock, Ground, and Steel moves in sandstorm",
+  "pokemon": [
+   "terlard",
+   "grozard",
+   "diglett",
+   "diglett_alola",
+   "dugtrio",
+   "dugtrio_alola",
+   "nosepass",
+   "shellos",
+   "gastrodon",
+   "hippopotas",
+   "hippowdon",
+   "probopass",
+   "roggenrola",
+   "boldore",
+   "gigalith",
+   "drilbur",
+   "excadrill",
+   "landorus"
+  ]
+ },
+ "sandrush": {
+  "id": "sandrush",
+  "name": "Sand Rush",
+  "description": "Doubles Speed in sandstorm",
+  "pokemon": [
+   "drilgann",
+   "modrille",
+   "sandshrew",
+   "sandslash",
+   "herdier",
+   "stoutland",
+   "drilbur",
+   "excadrill",
+   "lycanroc",
+   "dracozolt",
+   "dracovish",
+   "houndstone"
+  ]
+ },
+ "sandveil": {
+  "id": "sandveil",
+  "name": "Sand Veil",
+  "description": "Raises evasion in sandstorm",
+  "pokemon": [
+   "escartress",
+   "sableau",
+   "cassnail",
+   "cocancer",
+   "cararalm",
+   "cocaran",
+   "terlard",
+   "grozard",
+   "sandshrew",
+   "sandslash",
+   "diglett",
+   "diglett_alola",
+   "dugtrio",
+   "dugtrio_alola",
+   "geodude",
+   "graveler",
+   "golem",
+   "gligar",
+   "phanpy",
+   "donphan",
+   "larvitar",
+   "cacnea",
+   "cacturne",
+   "gible",
+   "gabite",
+   "garchomp",
+   "gliscor",
+   "stunfisk",
+   "helioptile",
+   "heliolisk",
+   "sandygast",
+   "palossand",
+   "silicobra",
+   "sandaconda",
+   "wiglett",
+   "wugtrio",
+   "orthworm"
+  ]
+ },
+ "scrappy": {
+  "id": "scrappy",
+  "name": "Scrappy",
+  "description": "Can hit Ghost types with Normal and Fighting moves",
+  "pokemon": [
+   "skelerogue",
+   "swabone",
+   "scratchet",
+   "farfetchd_galar",
+   "kangaskhan",
+   "miltank",
+   "taillow",
+   "swellow",
+   "loudred",
+   "exploud",
+   "herdier",
+   "stoutland",
+   "pancham",
+   "pangoro",
+   "sirfetchd",
+   "flamigo"
+  ]
+ },
+ "sheerforce": {
+  "id": "sheerforce",
+  "name": "Sheer Force",
+  "description": "Removes secondary effects but increases move power",
+  "pokemon": [
+   "lanthan",
+   "daikatuna",
+   "saidine",
+   "frynai",
+   "nidoqueen",
+   "nidoking",
+   "krabby",
+   "kingler",
+   "tauros",
+   "totodile",
+   "croconaw",
+   "feraligatr",
+   "steelix",
+   "makuhita",
+   "hariyama",
+   "mawile",
+   "trapinch",
+   "bagon",
+   "cranidos",
+   "rampardos",
+   "timburr",
+   "gurdurr",
+   "conkeldurr",
+   "darmanitan",
+   "druddigon",
+   "rufflet",
+   "braviary",
+   "braviary_hisui",
+   "landorus",
+   "toucannon",
+   "cufant",
+   "copperajah",
+   "kleavor",
+   "cetoddle",
+   "cetitan"
+  ]
+ },
+ "shellarmor": {
+  "id": "shellarmor",
+  "name": "Shell Armor",
+  "description": "Prevents critical hits",
+  "pokemon": [
+   "escartress",
+   "sableau",
+   "cassnail",
+   "chuggon",
+   "shellder",
+   "cloyster",
+   "krabby",
+   "kingler",
+   "lapras",
+   "omanyte",
+   "omastar",
+   "torkoal",
+   "corphish",
+   "crawdaunt",
+   "clamperl",
+   "turtwig",
+   "grotle",
+   "torterra",
+   "oshawott",
+   "dewott",
+   "samurott",
+   "dwebble",
+   "crustle",
+   "escavalier",
+   "shelmet",
+   "sliggoo_hisui",
+   "goodra_hisui",
+   "turtonator",
+   "chewtle",
+   "drednaw",
+   "klawf"
+  ]
+ },
+ "skilllink": {
+  "id": "skilllink",
+  "name": "Skill Link",
+  "description": "Multi-strike moves always hit maximum times",
+  "pokemon": [
+   "shellder",
+   "cloyster",
+   "aipom",
+   "ambipom",
+   "minccino",
+   "cinccino",
+   "pikipek",
+   "trumbeak",
+   "toucannon"
+  ]
+ },
+ "sniper": {
+  "id": "sniper",
+  "name": "Sniper",
+  "description": "Increases critical hit damage",
+  "pokemon": [
+   "krilvolver",
+   "shrimputy",
+   "stratagem",
+   "tactite",
+   "rebble",
+   "beedrill",
+   "spearow",
+   "fearow",
+   "horsea",
+   "seadra",
+   "spinarak",
+   "ariados",
+   "remoraid",
+   "octillery",
+   "kingdra",
+   "skorupi",
+   "drapion",
+   "binacle",
+   "barbaracle",
+   "sobble",
+   "drizzile",
+   "inteleon"
+  ]
+ },
+ "snowcloak": {
+  "id": "snowcloak",
+  "name": "Snow Cloak",
+  "description": "Raises evasion in hail",
+  "pokemon": [
+   "pufluff",
+   "dermafrost",
+   "snopach",
+   "syclar",
+   "sandshrew_alola",
+   "sandslash_alola",
+   "vulpix_alola",
+   "ninetales_alola",
+   "articuno",
+   "swinub",
+   "piloswine",
+   "glaceon",
+   "mamoswine",
+   "froslass",
+   "vanillite",
+   "vanillish",
+   "cubchoo",
+   "beartic",
+   "cetoddle"
+  ]
+ },
+ "soundproof": {
+  "id": "soundproof",
+  "name": "Soundproof",
+  "description": "Immune to sound-based moves",
+  "pokemon": [
+   "paraboom",
+   "paraudio",
+   "voltorb",
+   "voltorb_hisui",
+   "electrode",
+   "electrode_hisui",
+   "mrmime",
+   "whismur",
+   "loudred",
+   "exploud",
+   "shieldon",
+   "bastiodon",
+   "mimejr",
+   "snover",
+   "abomasnow",
+   "bouffalant",
+   "jangmoo",
+   "hakamoo",
+   "kommoo"
+  ]
+ },
+ "stench": {
+  "id": "stench",
+  "name": "Stench",
+  "description": "May cause flinching when using contact moves",
+  "pokemon": [
+   "tofurang",
+   "tonemy",
+   "gloom",
+   "grimer",
+   "muk",
+   "koffing",
+   "weezing",
+   "stunky",
+   "skuntank",
+   "trubbish",
+   "garbodor"
+  ]
+ },
+ "stickyhold": {
+  "id": "stickyhold",
+  "name": "Sticky Hold",
+  "description": "Prevents item theft",
+  "pokemon": [
+   "shox",
+   "grimer",
+   "muk",
+   "gulpin",
+   "swalot",
+   "wormadam_sandy",
+   "shellos",
+   "gastrodon",
+   "trubbish",
+   "accelgor",
+   "dipplin",
+   "hydrapple"
+  ]
+ },
+ "swiftswim": {
+  "id": "swiftswim",
+  "name": "Swift Swim",
+  "description": "Doubles Speed in rain",
+  "pokemon": [
+   "syrentide",
+   "selkid",
+   "daikatuna",
+   "saidine",
+   "frynai",
+   "glavinug",
+   "glaslug",
+   "tubareel",
+   "tubjaw",
+   "floatoy",
+   "psyduck",
+   "golduck",
+   "poliwag",
+   "poliwhirl",
+   "poliwrath",
+   "horsea",
+   "goldeen",
+   "seaking",
+   "magikarp",
+   "omanyte",
+   "omastar",
+   "kabuto",
+   "kabutops",
+   "qwilfish",
+   "qwilfish_hisui",
+   "mantine",
+   "kingdra",
+   "lotad",
+   "lombre",
+   "ludicolo",
+   "surskit",
+   "anorith",
+   "armaldo",
+   "feebas",
+   "huntail",
+   "gorebyss",
+   "relicanth",
+   "luvdisc",
+   "buizel",
+   "floatzel",
+   "finneon",
+   "lumineon",
+   "mantyke",
+   "tympole",
+   "palpitoad",
+   "seismitoad",
+   "tirtouga",
+   "carracosta",
+   "beartic",
+   "chewtle",
+   "drednaw",
+   "arrokuda",
+   "barraskewda",
+   "basculegion",
+   "basculegion_f",
+   "overqwil"
+  ]
+ },
+ "tintedlens": {
+  "id": "tintedlens",
+  "name": "Tinted Lens",
+  "description": "Powers up not very effective moves",
+  "pokemon": [
+   "butterfree",
+   "venonat",
+   "venomoth",
+   "hoothoot",
+   "noctowl",
+   "illumise",
+   "mothim",
+   "yanmega",
+   "sigilyph",
+   "braviary_hisui",
+   "nymble",
+   "lokix"
+  ]
+ },
+ "unaware": {
+  "id": "unaware",
+  "name": "Unaware",
+  "description": "Ignores opponent's stat changes",
+  "pokemon": [
+   "arghonaut",
+   "privatyke",
+   "clefable",
+   "wooper",
+   "wooper_paldea",
+   "quagsire",
+   "bidoof",
+   "bibarel",
+   "woobat",
+   "swoobat",
+   "pyukumuku",
+   "cosmog",
+   "fuecoco",
+   "crocalor",
+   "skeledirge",
+   "dondozo",
+   "clodsire"
+  ]
+ },
+ "unburden": {
+  "id": "unburden",
+  "name": "Unburden",
+  "description": "Doubles Speed when item is used or lost",
+  "pokemon": [
+   "harptera",
+   "breezi",
+   "hitmonlee",
+   "treecko",
+   "grovyle",
+   "sceptile",
+   "drifloon",
+   "drifblim",
+   "purrloin",
+   "liepard",
+   "accelgor",
+   "swirlix",
+   "slurpuff",
+   "hawlucha",
+   "nickit",
+   "thievul",
+   "sneasler",
+   "shroodle",
+   "grafaiai"
+  ]
+ },
+ "waterveil": {
+  "id": "waterveil",
+  "name": "Water Veil",
+  "description": "Immune to burn",
+  "pokemon": [
+   "cresceidon",
+   "caimanoe",
+   "floatoy",
+   "goldeen",
+   "seaking",
+   "mantine",
+   "wailmer",
+   "wailord",
+   "huntail",
+   "buizel",
+   "floatzel",
+   "finneon",
+   "lumineon",
+   "mantyke",
+   "finizen",
+   "dondozo"
+  ]
+ },
+ "weakarmor": {
+  "id": "weakarmor",
+  "name": "Weak Armor",
+  "description": "Lowers Defense but raises Speed when hit by physical moves",
+  "pokemon": [
+   "empirilla",
+   "aurumoth",
+   "onix",
+   "omanyte",
+   "omastar",
+   "kabuto",
+   "kabutops",
+   "slugma",
+   "magcargo",
+   "corsola_galar",
+   "skarmory",
+   "roggenrola",
+   "boldore",
+   "dwebble",
+   "crustle",
+   "garbodor",
+   "vanillite",
+   "vanillish",
+   "vanilluxe",
+   "vullaby",
+   "mandibuzz",
+   "sinistea",
+   "polteageist",
+   "cursola",
+   "armarouge",
+   "ceruledge"
+  ]
+ },
+ "wonderskin": {
+  "id": "wonderskin",
+  "name": "Wonder Skin",
+  "description": "Makes status moves less accurate",
+  "pokemon": [
+   "astronite",
+   "cometeor",
+   "comite",
+   "venomoth",
+   "skitty",
+   "delcatty",
+   "sigilyph",
+   "bruxish"
+  ]
+ },
+ "airlock": {
+  "id": "airlock",
+  "name": "Air Lock",
+  "description": "Negates weather effects",
+  "pokemon": [
+   "revenankh",
+   "rayquaza"
+  ]
+ },
+ "angershell": {
+  "id": "angershell",
+  "name": "Anger Shell",
+  "description": "Raises Attack, Special Attack, and Speed when HP drops below half",
+  "pokemon": [
+   "klawf"
+  ]
+ },
+ "armortail": {
+  "id": "armortail",
+  "name": "Armor Tail",
+  "description": "Prevents priority moves from being used",
+  "pokemon": [
+   "chuggalong",
+   "draggalong",
+   "farigiraf"
+  ]
+ },
+ "aromaveil": {
+  "id": "aromaveil",
+  "name": "Aroma Veil",
+  "description": "Protects allies from status moves",
+  "pokemon": [
+   "kerfluffle",
+   "pluffle",
+   "spritzee",
+   "aromatisse",
+   "milcery",
+   "alcremie",
+   "lechonk",
+   "oinkologne_f",
+   "dachsbun"
+  ]
+ },
+ "aurabreak": {
+  "id": "aurabreak",
+  "name": "Aura Break",
+  "description": "Reverses the effects of aura abilities",
+  "pokemon": [
+   "zygarde",
+   "zygarde_10"
+  ]
+ },
+ "baddreams": {
+  "id": "baddreams",
+  "name": "Bad Dreams",
+  "description": "Damages sleeping opponents each turn",
+  "pokemon": [
+   "darkrai"
+  ]
+ },
+ "ballfetch": {
+  "id": "ballfetch",
+  "name": "Ball Fetch",
+  "description": "Retrieves a Poke Ball if the first throw fails",
+  "pokemon": [
+   "yamper"
+  ]
+ },
+ "battery": {
+  "id": "battery",
+  "name": "Battery",
+  "description": "Powers up allies' Special moves",
+  "pokemon": [
+   "charjabug"
+  ]
+ },
+ "battlebond": {
+  "id": "battlebond",
+  "name": "Battle Bond",
+  "description": "Transforms after knocking out a Pokemon",
+  "pokemon": [
+   "greninja"
+  ]
+ },
+ "beadsofruin": {
+  "id": "beadsofruin",
+  "name": "Beads of Ruin",
+  "description": "Lowers Special Defense of all Pokemon",
+  "pokemon": [
+   "chiyu"
+  ]
+ },
+ "beastboost": {
+  "id": "beastboost",
+  "name": "Beast Boost",
+  "description": "Raises highest stat when knocking out a Pokemon",
+  "pokemon": [
+   "nihilego",
+   "buzzwole",
+   "pheromosa",
+   "xurkitree",
+   "celesteela",
+   "kartana",
+   "guzzlord",
+   "poipole",
+   "naganadel",
+   "stakataka",
+   "blacephalon"
+  ]
+ },
+ "berserk": {
+  "id": "berserk",
+  "name": "Berserk",
+  "description": "Raises Special Attack when HP drops below half",
+  "pokemon": [
+   "moltres_galar",
+   "drampa"
+  ]
+ },
+ "bulletproof": {
+  "id": "bulletproof",
+  "name": "Bulletproof",
+  "description": "Immune to bullet and bomb moves",
+  "pokemon": [
+   "equilibra",
+   "justyke",
+   "chespin",
+   "quilladin",
+   "chesnaught",
+   "jangmoo",
+   "hakamoo",
+   "kommoo",
+   "wooloo",
+   "dubwool",
+   "applin",
+   "ursaluna"
+  ]
+ },
+ "cheekpouch": {
+  "id": "cheekpouch",
+  "name": "Cheek Pouch",
+  "description": "Restores HP when eating a Berry",
+  "pokemon": [
+   "bunnelby",
+   "diggersby",
+   "dedenne",
+   "skwovet",
+   "greedent",
+   "maushold"
+  ]
+ },
+ "chillingneigh": {
+  "id": "chillingneigh",
+  "name": "Chilling Neigh",
+  "description": "Raises Attack when knocking out a Pokemon",
+  "pokemon": [
+   "glastrier"
+  ]
+ },
+ "colorchange": {
+  "id": "colorchange",
+  "name": "Color Change",
+  "description": "Changes type to match the move used against it",
+  "pokemon": [
+   "chromera",
+   "kecleon"
+  ]
+ },
+ "comatose": {
+  "id": "comatose",
+  "name": "Comatose",
+  "description": "Always considered asleep but can still attack",
+  "pokemon": [
+   "pajantom",
+   "komala"
+  ]
+ },
+ "commander": {
+  "id": "commander",
+  "name": "Commander",
+  "description": "Takes over ally when it uses a move",
+  "pokemon": [
+   "tatsugiri"
+  ]
+ },
+ "contrary": {
+  "id": "contrary",
+  "name": "Contrary",
+  "description": "Reverses stat changes",
+  "pokemon": [
+   "chimaconda",
+   "chimical",
+   "pyroak",
+   "shuckle",
+   "spinda",
+   "snivy",
+   "servine",
+   "serperior",
+   "inkay",
+   "malamar",
+   "fomantis",
+   "lurantis",
+   "enamorus"
+  ]
+ },
+ "corrosion": {
+  "id": "corrosion",
+  "name": "Corrosion",
+  "description": "Can poison Steel and Poison types",
+  "pokemon": [
+   "salandit",
+   "salazzle",
+   "glimmet",
+   "glimmora"
+  ]
+ },
+ "costar": {
+  "id": "costar",
+  "name": "Costar",
+  "description": "Copies ally's stat changes",
+  "pokemon": [
+   "flamigo"
+  ]
+ },
+ "cottondown": {
+  "id": "cottondown",
+  "name": "Cotton Down",
+  "description": "Lowers Speed of all Pokemon when hit",
+  "pokemon": [
+   "gossifleur",
+   "eldegoss"
+  ]
+ },
+ "cudchew": {
+  "id": "cudchew",
+  "name": "Cud Chew",
+  "description": "Eats Berry again at end of next turn",
+  "pokemon": [
+   "shox",
+   "tauros_paldea_blaze",
+   "tauros_paldea_combat",
+   "tauros_paldea_aqua",
+   "farigiraf"
+  ]
+ },
+ "dancer": {
+  "id": "dancer",
+  "name": "Dancer",
+  "description": "Copies dance moves used by any Pokemon",
+  "pokemon": [
+   "oricorio",
+   "oricorio_pau",
+   "oricorio_pompom",
+   "oricorio_sensu"
+  ]
+ },
+ "darkaura": {
+  "id": "darkaura",
+  "name": "Dark Aura",
+  "description": "Powers up Dark-type moves",
+  "pokemon": [
+   "yveltal"
+  ]
+ },
+ "dauntlessshield": {
+  "id": "dauntlessshield",
+  "name": "Dauntless Shield",
+  "description": "Raises Defense on switch-in",
+  "pokemon": [
+   "zamazenta"
+  ]
+ },
+ "dazzling": {
+  "id": "dazzling",
+  "name": "Dazzling",
+  "description": "Prevents priority moves from being used",
+  "pokemon": [
+   "bruxish"
+  ]
+ },
+ "defeatist": {
+  "id": "defeatist",
+  "name": "Defeatist",
+  "description": "Halves Attack and Special Attack when HP drops below half",
+  "pokemon": [
+   "archen",
+   "archeops"
+  ]
+ },
+ "disguise": {
+  "id": "disguise",
+  "name": "Disguise",
+  "description": "Avoids damage from first hit",
+  "pokemon": [
+   "mimikyu"
+  ]
+ },
+ "dragonsmaw": {
+  "id": "dragonsmaw",
+  "name": "Dragon's Maw",
+  "description": "Powers up Dragon-type moves",
+  "pokemon": [
+   "regidrago"
+  ]
+ },
+ "drizzle": {
+  "id": "drizzle",
+  "name": "Drizzle",
+  "description": "Sets rain when entering battle",
+  "pokemon": [
+   "sponaree",
+   "sponee",
+   "politoed",
+   "pelipper",
+   "kyogre"
+  ]
+ },
+ "eartheater": {
+  "id": "eartheater",
+  "name": "Earth Eater",
+  "description": "Restores HP when hit by Ground-type moves",
+  "pokemon": [
+   "orthworm"
+  ]
+ },
+ "electricsurge": {
+  "id": "electricsurge",
+  "name": "Electric Surge",
+  "description": "Sets Electric Terrain when entering battle",
+  "pokemon": [
+   "tapukoko",
+   "pincurchin"
+  ]
+ },
+ "electromorphosis": {
+  "id": "electromorphosis",
+  "name": "Electromorphosis",
+  "description": "Charges up when hit by a move",
+  "pokemon": [
+   "shox",
+   "bellibolt"
+  ]
+ },
+ "emergencyexit": {
+  "id": "emergencyexit",
+  "name": "Emergency Exit",
+  "description": "Switches out when HP drops below half",
+  "pokemon": [
+   "golisopod"
+  ]
+ },
+ "fairyaura": {
+  "id": "fairyaura",
+  "name": "Fairy Aura",
+  "description": "Powers up Fairy-type moves",
+  "pokemon": [
+   "xerneas"
+  ]
+ },
+ "flareboost": {
+  "id": "flareboost",
+  "name": "Flare Boost",
+  "description": "Powers up Special moves when burned",
+  "pokemon": [
+   "drifloon",
+   "drifblim"
+  ]
+ },
+ "flowergift": {
+  "id": "flowergift",
+  "name": "Flower Gift",
+  "description": "Raises Attack and Special Defense in sunny weather",
+  "pokemon": [
+   "cherrim"
+  ]
+ },
+ "flowerveil": {
+  "id": "flowerveil",
+  "name": "Flower Veil",
+  "description": "Prevents stat reduction for Grass allies",
+  "pokemon": [
+   "flabebe",
+   "floette",
+   "florges",
+   "comfey"
+  ]
+ },
+ "fluffy": {
+  "id": "fluffy",
+  "name": "Fluffy",
+  "description": "Halves damage from contact moves, doubles Fire damage",
+  "pokemon": [
+   "stufful",
+   "bewear",
+   "wooloo",
+   "dubwool",
+   "greavard",
+   "houndstone"
+  ]
+ },
+ "forecast": {
+  "id": "forecast",
+  "name": "Forecast",
+  "description": "Changes form based on weather",
+  "pokemon": [
+   "castform",
+   "castform_rainy",
+   "castform_snowy",
+   "castform_sunny"
+  ]
+ },
+ "fullmetalbody": {
+  "id": "fullmetalbody",
+  "name": "Full Metal Body",
+  "description": "Prevents stat reductions",
+  "pokemon": [
+   "solgaleo"
+  ]
+ },
+ "furcoat": {
+  "id": "furcoat",
+  "name": "Fur Coat",
+  "description": "Doubles Defense",
+  "pokemon": [
+   "fafninter",
+   "fafurr",
+   "persian_alola",
+   "furfrou"
+  ]
+ },
+ "galewings": {
+  "id": "galewings",
+  "name": "Gale Wings",
+  "description": "Gives priority to Flying moves when at full HP",
+  "pokemon": [
+   "harptera",
+   "fletchling",
+   "fletchinder",
+   "talonflame"
+  ]
+ },
+ "goodasgold": {
+  "id": "goodasgold",
+  "name": "Good as Gold",
+  "description": "Immune to status moves",
+  "pokemon": [
+   "gholdengo"
+  ]
+ },
+ "gooey": {
+  "id": "gooey",
+  "name": "Gooey",
+  "description": "Lowers Speed of contact move users",
+  "pokemon": [
+   "haagross",
+   "hagoop",
+   "goomy",
+   "sliggoo_hisui",
+   "sliggoo",
+   "goodra",
+   "goodra_hisui",
+   "wiglett",
+   "wugtrio"
+  ]
+ },
+ "grasspelt": {
+  "id": "grasspelt",
+  "name": "Grass Pelt",
+  "description": "Raises Defense in Grassy Terrain",
+  "pokemon": [
+   "skiddo",
+   "gogoat"
+  ]
+ },
+ "grassysurge": {
+  "id": "grassysurge",
+  "name": "Grassy Surge",
+  "description": "Sets Grassy Terrain when entering battle",
+  "pokemon": [
+   "tapubulu",
+   "grookey",
+   "thwackey",
+   "rillaboom"
+  ]
+ },
+ "grimneigh": {
+  "id": "grimneigh",
+  "name": "Grim Neigh",
+  "description": "Raises Special Attack when knocking out a Pokemon",
+  "pokemon": [
+   "spectrier"
+  ]
+ },
+ "guarddog": {
+  "id": "guarddog",
+  "name": "Guard Dog",
+  "description": "Immune to Intimidate and raises Attack when affected",
+  "pokemon": [
+   "mabosstiff",
+   "okidogi"
+  ]
+ },
+ "mountaineer": {
+  "id": "mountaineer",
+  "name": "Mountaineer",
+  "description": "On switch-in, avoids all Rock-type attacks and Stealth Rock damage.",
+  "pokemon": [
+   "syclant"
+  ]
+ },
+ "rebound": {
+  "id": "rebound",
+  "name": "Rebound",
+  "description": "On switch-in, reflects status moves back at the attacker.",
+  "pokemon": [
+   "colossoil"
+  ]
+ },
+ "persistent": {
+  "id": "persistent",
+  "name": "Persistent",
+  "description": "Increases the duration of its rooms, screens and field effects by 2 turns.",
+  "pokemon": [
+   "fidgit"
+  ]
+ },
+ "energizate": {
+  "id": "energizate",
+  "name": "Energizate",
+  "description": "Normal-type moves become Electric-type and gain 1.3x power.",
+  "pokemon": [
+   "theriamp",
+   "slothohm"
+  ]
+ },
+ "inflatedchest": {
+  "id": "inflatedchest",
+  "name": "Inflated Chest",
+  "description": "Prevents the Pokémon's Defense from being lowered.",
+  "pokemon": [
+   "splendifowl",
+   "aveden",
+   "birbie",
+   "kinetmunk",
+   "chyinmunk"
+  ]
+ },
+ "disenchant": {
+  "id": "disenchant",
+  "name": "Disenchant",
+  "description": "Makes the Pokémon immune to Fairy-type moves.",
+  "pokemon": [
+   "beliaddon",
+   "fallengel",
+   "devimp"
+  ]
+ },
+ "elementalist": {
+  "id": "elementalist",
+  "name": "Elementalist",
+  "description": "Fire, Water and Electric moves are boosted as if they were STAB (1.5x).",
+  "pokemon": [
+   "seikamater"
+  ]
+ },
+ "acceleration": {
+  "id": "acceleration",
+  "name": "Acceleration",
+  "description": "Increases the power of priority moves by 1.5x.",
+  "pokemon": [
+   "stenowatt",
+   "inflagetah"
+  ]
+ },
+ "soundboost": {
+  "id": "soundboost",
+  "name": "Sound Boost",
+  "description": "Powers up sound-based moves by 1.3x.",
+  "pokemon": [
+   "paraboom",
+   "paraudio"
+  ]
+ },
+ "sharpcoral": {
+  "id": "sharpcoral",
+  "name": "Sharp Coral",
+  "description": "Doubles Attack and Sp. Atk, but halves Defense and Sp. Def.",
+  "pokemon": [
+   "corsoreef"
+  ]
+ },
+ "bloodlust": {
+  "id": "bloodlust",
+  "name": "Blood Lust",
+  "description": "Recovers 1/6 of the damage dealt when attacking.",
+  "pokemon": [
+   "vilucard",
+   "minyan"
+  ]
+ },
+ "infuriate": {
+  "id": "infuriate",
+  "name": "Infuriate",
+  "description": "Raises Attack by one stage when hit by a physical move.",
+  "pokemon": [
+   "baariette",
+   "baaschaf",
+   "baashaun",
+   "empirilla"
+  ]
+ },
+ "deepfreeze": {
+  "id": "deepfreeze",
+  "name": "Deep Freeze",
+  "description": "Contact with the Pokémon may freeze the attacker (30%).",
+  "pokemon": [
+   "frosthra"
+  ]
+ },
+ "petrify": {
+  "id": "petrify",
+  "name": "Petrify",
+  "description": "Lowers the opponent's Speed by one stage on entry.",
+  "pokemon": [
+   "chimaconda",
+   "chimical"
+  ]
+ },
+ "stormbringer": {
+  "id": "stormbringer",
+  "name": "Stormbringer",
+  "description": "Summons a storm (rain) when the Pokémon enters battle.",
+  "pokemon": [
+   "yatagaryu"
+  ]
+ },
+ "analyze": {
+  "id": "analyze",
+  "name": "Analyze",
+  "description": "Powers up moves by 1.3x if the Pokémon moves last.",
+  "pokemon": [
+   "splendifowl",
+   "aveden",
+   "birbie",
+   "kinetmunk",
+   "chyinmunk"
+  ]
+ },
+ "quickcharge": {
+  "id": "quickcharge",
+  "name": "Quick Charge",
+  "description": "Gives +4 priority to the first move after switching in.",
+  "pokemon": [
+   "jerbolta"
+  ]
+ },
+ "rebuild": {
+  "id": "rebuild",
+  "name": "Rebuild",
+  "description": "Restores 1/8 max HP at the end of the turn if it took no direct damage.",
+  "pokemon": [
+   "gargryph"
+  ]
+ },
+ "gulpmissile": {
+  "id": "gulpmissile",
+  "name": "Gulp Missile",
+  "description": "Spits prey when hit by a move",
+  "pokemon": [
+   "cramorant"
+  ]
+ },
+ "hadronengine": {
+  "id": "hadronengine",
+  "name": "Hadron Engine",
+  "description": "Sets Electric Terrain and raises Special Attack",
+  "pokemon": [
+   "miraidon"
+  ]
+ },
+ "heatproof": {
+  "id": "heatproof",
+  "name": "Heatproof",
+  "description": "Halves damage from Fire moves",
+  "pokemon": [
+   "naviathan",
+   "caimanoe",
+   "floatoy",
+   "bronzor",
+   "bronzong",
+   "rolycoly",
+   "poltchageist",
+   "sinistcha"
+  ]
+ },
+ "heavymetal": {
+  "id": "heavymetal",
+  "name": "Heavy Metal",
+  "description": "Doubles weight",
+  "pokemon": [
+   "aron",
+   "lairon",
+   "aggron",
+   "bronzor",
+   "bronzong",
+   "cufant",
+   "copperajah",
+   "duraludon"
+  ]
+ },
+ "honeygather": {
+  "id": "honeygather",
+  "name": "Honey Gather",
+  "description": "May gather Honey after battle",
+  "pokemon": [
+   "teddiursa",
+   "combee",
+   "cutiefly",
+   "ribombee"
+  ]
+ },
+ "hospitality": {
+  "id": "hospitality",
+  "name": "Hospitality",
+  "description": "Restores HP of ally when switching in",
+  "pokemon": [
+   "poltchageist",
+   "sinistcha"
+  ]
+ },
+ "hugepower": {
+  "id": "hugepower",
+  "name": "Huge Power",
+  "description": "Doubles Attack",
+  "pokemon": [
+   "marill",
+   "azumarill",
+   "azurill",
+   "bunnelby",
+   "diggersby"
+  ]
+ },
+ "hungerswitch": {
+  "id": "hungerswitch",
+  "name": "Hunger Switch",
+  "description": "Changes form each turn",
+  "pokemon": [
+   "morpeko",
+   "morpeko_hangry"
+  ]
+ },
+ "iceface": {
+  "id": "iceface",
+  "name": "Ice Face",
+  "description": "Avoids damage from physical moves once",
+  "pokemon": [
+   "eiscue",
+   "eiscue_noice"
+  ]
+ },
+ "icescales": {
+  "id": "icescales",
+  "name": "Ice Scales",
+  "description": "Halves damage from Special moves",
+  "pokemon": [
+   "snom",
+   "frosmoth"
+  ]
+ },
+ "illusion": {
+  "id": "illusion",
+  "name": "Illusion",
+  "description": "Takes the appearance of the last Pokemon in party",
+  "pokemon": [
+   "dramsama",
+   "masking",
+   "zorua",
+   "zorua_hisui",
+   "zoroark",
+   "zoroark_hisui"
+  ]
+ },
+ "innardsout": {
+  "id": "innardsout",
+  "name": "Innards Out",
+  "description": "Damages opponent equal to HP lost when knocked out",
+  "pokemon": [
+   "pyukumuku"
+  ]
+ },
+ "intrepidsword": {
+  "id": "intrepidsword",
+  "name": "Intrepid Sword",
+  "description": "Raises Attack on switch-in",
+  "pokemon": [
+   "zacian"
+  ]
+ },
+ "ironbarbs": {
+  "id": "ironbarbs",
+  "name": "Iron Barbs",
+  "description": "Damages contact move users",
+  "pokemon": [
+   "wormadam_trash",
+   "ferroseed",
+   "ferrothorn",
+   "togedemaru"
+  ]
+ },
+ "klutz": {
+  "id": "klutz",
+  "name": "Klutz",
+  "description": "Cannot use held items",
+  "pokemon": [
+   "buneary",
+   "lopunny",
+   "woobat",
+   "swoobat",
+   "audino",
+   "golett",
+   "golurk",
+   "stufful",
+   "bewear",
+   "toxel",
+   "fidough",
+   "capsakid"
+  ]
+ },
+ "libero": {
+  "id": "libero",
+  "name": "Libero",
+  "description": "Changes type to match the move used",
+  "pokemon": [
+   "scorbunny",
+   "raboot",
+   "cinderace"
+  ]
+ },
+ "lightmetal": {
+  "id": "lightmetal",
+  "name": "Light Metal",
+  "description": "Halves weight",
+  "pokemon": [
+   "naviathan",
+   "caimanoe",
+   "aurumoth",
+   "scizor",
+   "beldum",
+   "metang",
+   "metagross",
+   "registeel",
+   "duraludon"
+  ]
+ },
+ "compoundeyes": {
+  "id": "compoundeyes",
+  "name": "Compound Eyes",
+  "description": "Increases accuracy",
+  "pokemon": [
+   "unymph",
+   "miasmaw",
+   "miasmite",
+   "argalis",
+   "syclant",
+   "syclar",
+   "butterfree",
+   "venonat",
+   "yanma",
+   "dustox",
+   "nincada",
+   "joltik",
+   "galvantula",
+   "scatterbug",
+   "vivillon",
+   "blipbug",
+   "dottler",
+   "rellor"
+  ]
+ },
+ "liquidvoice": {
+  "id": "liquidvoice",
+  "name": "Liquid Voice",
+  "description": "Sound moves become Water-type",
+  "pokemon": [
+   "popplio",
+   "brionne",
+   "primarina"
+  ]
+ },
+ "longreach": {
+  "id": "longreach",
+  "name": "Long Reach",
+  "description": "Attacks without making contact",
+  "pokemon": [
+   "rowlet",
+   "dartrix",
+   "decidueye",
+   "decidueye_hisui"
+  ]
+ },
+ "magicbounce": {
+  "id": "magicbounce",
+  "name": "Magic Bounce",
+  "description": "Reflects status moves back at the user",
+  "pokemon": [
+   "natu",
+   "xatu",
+   "espeon",
+   "hatenna",
+   "hattrem",
+   "hatterene"
+  ]
+ },
+ "bigpecks": {
+  "id": "bigpecks",
+  "name": "Big Pecks",
+  "description": "Prevents Defense from being lowered",
+  "pokemon": [
+   "pajay",
+   "palij",
+   "pahar",
+   "cawmodore",
+   "cawdet",
+   "pidgey",
+   "pidgeotto",
+   "pidgeot",
+   "chatot",
+   "pidove",
+   "tranquill",
+   "unfezant",
+   "ducklett",
+   "swanna",
+   "vullaby",
+   "mandibuzz",
+   "fletchling",
+   "rookidee",
+   "corvisquire",
+   "bombirdier"
+  ]
+ },
+ "guts": {
+  "id": "guts",
+  "name": "Guts",
+  "description": "Increases Attack when affected by a status condition",
+  "pokemon": [
+   "herolune",
+   "lunapup",
+   "dorsoil",
+   "naviathan",
+   "colossoil",
+   "rattata",
+   "raticate",
+   "machop",
+   "machoke",
+   "machamp",
+   "flareon",
+   "heracross",
+   "ursaring",
+   "tyrogue",
+   "larvitar",
+   "taillow",
+   "swellow",
+   "makuhita",
+   "hariyama",
+   "shinx",
+   "luxio",
+   "luxray",
+   "timburr",
+   "gurdurr",
+   "conkeldurr",
+   "throh",
+   "obstagoon",
+   "ursaluna",
+   "squawkabilly"
+  ]
+ },
+ "hustle": {
+  "id": "hustle",
+  "name": "Hustle",
+  "description": "Increases Attack but lowers accuracy",
+  "pokemon": [
+   "luchabra",
+   "chupacho",
+   "rattata",
+   "rattata_alola",
+   "raticate",
+   "raticate_alola",
+   "nidoranf",
+   "nidorina",
+   "nidoranm",
+   "nidorino",
+   "togepi",
+   "togetic",
+   "corsola",
+   "remoraid",
+   "delibird",
+   "combee",
+   "togekiss",
+   "lilligant_hisui",
+   "darumaka",
+   "darumaka_galar",
+   "rufflet",
+   "durant",
+   "deino",
+   "zweilous",
+   "flapple",
+   "dracozolt",
+   "squawkabilly"
+  ]
+ },
+ "intimidate": {
+  "id": "intimidate",
+  "name": "Intimidate",
+  "description": "Lowers opponent's Attack on switch-in",
+  "pokemon": [
+   "actan",
+   "beliaddon",
+   "fallengel",
+   "devimp",
+   "laissure",
+   "terrabbit",
+   "sheebit",
+   "tubareel",
+   "tubjaw",
+   "feliger",
+   "felunge",
+   "feleng",
+   "hemogoblin",
+   "scattervein",
+   "cawmodore",
+   "tomohawk",
+   "ekans",
+   "arbok",
+   "growlithe",
+   "growlithe_hisui",
+   "arcanine",
+   "arcanine_hisui",
+   "tauros_paldea_blaze",
+   "tauros_paldea_combat",
+   "tauros_paldea_aqua",
+   "tauros",
+   "gyarados",
+   "snubbull",
+   "granbull",
+   "qwilfish",
+   "qwilfish_hisui",
+   "stantler",
+   "hitmontop",
+   "mightyena",
+   "masquerain",
+   "mawile",
+   "salamence",
+   "staravia",
+   "staraptor",
+   "shinx",
+   "luxio",
+   "luxray",
+   "herdier",
+   "stoutland",
+   "sandile",
+   "krokorok",
+   "krookodile",
+   "scraggy",
+   "scrafty",
+   "landorus_therian",
+   "litten",
+   "torracat",
+   "incineroar",
+   "wyrdeer",
+   "overqwil",
+   "squawkabilly",
+   "maschiff",
+   "mabosstiff"
+  ]
+ },
+ "minus": {
+  "id": "minus",
+  "name": "Minus",
+  "description": "Raises Special Attack when ally has Plus or Minus",
+  "pokemon": [
+   "neopunk",
+   "protowatt",
+   "krilowatt",
+   "electrike",
+   "manectric",
+   "minun",
+   "klink",
+   "klang",
+   "klinklang"
+  ]
+ },
+ "lightningrod": {
+  "id": "lightningrod",
+  "name": "Lightning Rod",
+  "description": "Draws in Electric-type moves and raises Special Attack",
+  "pokemon": [
+   "drilgann",
+   "modrille",
+   "harylect",
+   "tricwe",
+   "fawnifer",
+   "voodoom",
+   "voodoll",
+   "pikachu",
+   "raichu",
+   "cubone",
+   "marowak",
+   "marowak_alola",
+   "rhyhorn",
+   "rhydon",
+   "goldeen",
+   "seaking",
+   "pichu",
+   "electrike",
+   "manectric",
+   "plusle",
+   "rhyperior",
+   "blitzle",
+   "zebstrika",
+   "togedemaru",
+   "pincurchin"
+  ]
+ },
+ "mistysurge": {
+  "id": "mistysurge",
+  "name": "Misty Surge",
+  "description": "Sets Misty Terrain when entering battle",
+  "pokemon": [
+   "weezing_galar",
+   "tapufini"
+  ]
+ },
+ "moody": {
+  "id": "moody",
+  "name": "Moody",
+  "description": "Raises one stat and lowers another each turn",
+  "pokemon": [
+   "remoraid",
+   "octillery",
+   "smeargle",
+   "snorunt",
+   "glalie",
+   "bidoof",
+   "bibarel",
+   "scovillain"
+  ]
+ },
+ "motordrive": {
+  "id": "motordrive",
+  "name": "Motor Drive",
+  "description": "Raises Speed when hit by Electric moves",
+  "pokemon": [
+   "stenowatt",
+   "theriamp",
+   "slothohm",
+   "tracton",
+   "electivire",
+   "blitzle",
+   "zebstrika",
+   "emolga"
+  ]
+ },
+ "multitype": {
+  "id": "multitype",
+  "name": "Multitype",
+  "description": "Changes type to match held Plate",
+  "pokemon": [
+   "arceus"
+  ]
+ },
+ "mummy": {
+  "id": "mummy",
+  "name": "Mummy",
+  "description": "Changes opponent's ability to Mummy on contact",
+  "pokemon": [
+   "yamask",
+   "cofagrigus"
+  ]
+ },
+ "myceliummight": {
+  "id": "myceliummight",
+  "name": "Mycelium Might",
+  "description": "Status moves ignore ability-based immunities",
+  "pokemon": [
+   "toedscool",
+   "toedscruel"
+  ]
+ },
+ "normalize": {
+  "id": "normalize",
+  "name": "Normalize",
+  "description": "All moves become Normal-type",
+  "pokemon": [
+   "skitty",
+   "delcatty"
+  ]
+ },
+ "opportunist": {
+  "id": "opportunist",
+  "name": "Opportunist",
+  "description": "Copies opponent's stat boosts",
+  "pokemon": [
+   "espathra"
+  ]
+ },
+ "orichalcumpulse": {
+  "id": "orichalcumpulse",
+  "name": "Orichalcum Pulse",
+  "description": "Sets sun and raises Attack",
+  "pokemon": [
+   "koraidon"
+  ]
+ },
+ "perishbody": {
+  "id": "perishbody",
+  "name": "Perish Body",
+  "description": "Activates Perish Song when hit by a contact move",
+  "pokemon": [
+   "cursola"
+  ]
+ },
+ "pickpocket": {
+  "id": "pickpocket",
+  "name": "Pickpocket",
+  "description": "Steals held item when hit by a contact move",
+  "pokemon": [
+   "saharascal",
+   "sneasel_hisui",
+   "sneasel",
+   "seedot",
+   "nuzleaf",
+   "shiftry",
+   "weavile",
+   "binacle",
+   "barbaracle",
+   "impidimp",
+   "morgrem",
+   "grimmsnarl",
+   "shroodle",
+   "tinkatink",
+   "tinkatuff",
+   "tinkaton"
+  ]
+ },
+ "pixilate": {
+  "id": "pixilate",
+  "name": "Pixilate",
+  "description": "Normal moves become Fairy-type and gain power",
+  "pokemon": [
+   "hemogoblin",
+   "scattervein",
+   "ababo",
+   "sylveon"
+  ]
+ },
+ "plus": {
+  "id": "plus",
+  "name": "Plus",
+  "description": "Raises Special Attack when ally has Plus or Minus",
+  "pokemon": [
+   "praseopunk",
+   "mareep",
+   "flaaffy",
+   "ampharos",
+   "plusle",
+   "klink",
+   "klang",
+   "klinklang",
+   "dedenne",
+   "toxtricity"
+  ]
+ },
+ "solarpower": {
+  "id": "solarpower",
+  "name": "Solar Power",
+  "description": "Increases Special Attack in sunny weather, but loses HP each turn",
+  "pokemon": [
+   "gellin",
+   "nupin",
+   "mumbao",
+   "charmander",
+   "charmeleon",
+   "charizard",
+   "sunkern",
+   "sunflora",
+   "tropius",
+   "helioptile",
+   "heliolisk"
+  ]
+ },
+ "voltabsorb": {
+  "id": "voltabsorb",
+  "name": "Volt Absorb",
+  "description": "Restores HP when hit by Electric-type moves",
+  "pokemon": [
+   "voltasu",
+   "volchik",
+   "jerbolta",
+   "cawmodore",
+   "cawdet",
+   "voodoom",
+   "voodoll",
+   "jolteon",
+   "chinchou",
+   "lanturn",
+   "minun",
+   "pachirisu",
+   "thundurus_therian",
+   "zeraora",
+   "dracozolt",
+   "arctozolt",
+   "pawmo",
+   "pawmot",
+   "wattrel",
+   "kilowattrel"
+  ]
+ },
+ "shielddust": {
+  "id": "shielddust",
+  "name": "Shield Dust",
+  "description": "Prevents additional effects of moves",
+  "pokemon": [
+   "unymph",
+   "firoke",
+   "smore",
+   "duohm",
+   "monohm",
+   "cupra",
+   "cyclohm",
+   "caterpie",
+   "weedle",
+   "venomoth",
+   "wurmple",
+   "dustox",
+   "scatterbug",
+   "vivillon",
+   "cutiefly",
+   "ribombee",
+   "snom",
+   "frosmoth"
+  ]
+ },
+ "shedskin": {
+  "id": "shedskin",
+  "name": "Shed Skin",
+  "description": "May heal status conditions each turn",
+  "pokemon": [
+   "barand",
+   "trawpint",
+   "costraw",
+   "argalis",
+   "revenankh",
+   "metapod",
+   "kakuna",
+   "ekans",
+   "arbok",
+   "dratini",
+   "dragonair",
+   "pupitar",
+   "silcoon",
+   "cascoon",
+   "seviper",
+   "kricketot",
+   "burmy",
+   "scraggy",
+   "scrafty",
+   "karrablast",
+   "spewpa",
+   "silicobra",
+   "sandaconda",
+   "rellor",
+   "cyclizar"
+  ]
+ },
+ "blaze": {
+  "id": "blaze",
+  "name": "Blaze",
+  "description": "Powers up Fire-type moves when HP is below 1/3",
+  "pokemon": [
+   "archilles",
+   "raptorch",
+   "smokomodo",
+   "smoguana",
+   "smogecko",
+   "charmander",
+   "charmeleon",
+   "charizard",
+   "cyndaquil",
+   "quilava",
+   "typhlosion",
+   "typhlosion_hisui",
+   "torchic",
+   "combusken",
+   "blaziken",
+   "chimchar",
+   "monferno",
+   "infernape",
+   "tepig",
+   "pignite",
+   "emboar",
+   "pansear",
+   "simisear",
+   "fennekin",
+   "braixen",
+   "delphox",
+   "litten",
+   "torracat",
+   "incineroar",
+   "scorbunny",
+   "raboot",
+   "cinderace",
+   "fuecoco",
+   "crocalor",
+   "skeledirge"
+  ]
+ },
+ "unnerve": {
+  "id": "unnerve",
+  "name": "Unnerve",
+  "description": "Prevents opponents from using Berries",
+  "pokemon": [
+   "dorsoil",
+   "nohface",
+   "volkritter",
+   "colossoil",
+   "ekans",
+   "arbok",
+   "meowth",
+   "meowth_galar",
+   "persian",
+   "aerodactyl",
+   "mewtwo",
+   "ursaring",
+   "houndour",
+   "houndoom",
+   "tyranitar",
+   "masquerain",
+   "vespiquen",
+   "joltik",
+   "galvantula",
+   "axew",
+   "fraxure",
+   "haxorus",
+   "litleo",
+   "pyroar",
+   "bewear",
+   "rookidee",
+   "corvisquire",
+   "corviknight",
+   "calyrex",
+   "ursaluna"
+  ]
+ },
+ "runaway": {
+  "id": "runaway",
+  "name": "Run Away",
+  "description": "Can always escape from wild battles",
+  "pokemon": [
+   "caterpie",
+   "weedle",
+   "rattata",
+   "raticate",
+   "oddish",
+   "venonat",
+   "ponyta",
+   "ponyta_galar",
+   "rapidash",
+   "rapidash_galar",
+   "doduo",
+   "dodrio",
+   "eevee",
+   "sentret",
+   "furret",
+   "aipom",
+   "dunsparce",
+   "snubbull",
+   "poochyena",
+   "wurmple",
+   "nincada",
+   "kricketot",
+   "pachirisu",
+   "buneary",
+   "patrat",
+   "lillipup",
+   "nickit",
+   "thievul",
+   "wooloo",
+   "tandemaus",
+   "maschiff",
+   "dudunsparce"
+  ]
+ },
+ "chlorophyll": {
+  "id": "chlorophyll",
+  "name": "Chlorophyll",
+  "description": "Doubles Speed in sunny weather",
+  "pokemon": [
+   "coatlith",
+   "quetzoral",
+   "chicoatl",
+   "gellin",
+   "nupin",
+   "cocancer",
+   "cararalm",
+   "cocaran",
+   "embirch",
+   "bulbasaur",
+   "ivysaur",
+   "venusaur",
+   "oddish",
+   "gloom",
+   "vileplume",
+   "bellsprout",
+   "weepinbell",
+   "victreebel",
+   "exeggcute",
+   "exeggutor",
+   "tangela",
+   "bellossom",
+   "hoppip",
+   "skiploom",
+   "jumpluff",
+   "sunkern",
+   "sunflora",
+   "seedot",
+   "nuzleaf",
+   "shiftry",
+   "tropius",
+   "cherubi",
+   "tangrowth",
+   "leafeon",
+   "sewaddle",
+   "swadloon",
+   "leavanny",
+   "cottonee",
+   "whimsicott",
+   "petilil",
+   "lilligant",
+   "lilligant_hisui",
+   "maractus",
+   "deerling",
+   "sawsbuck",
+   "capsakid",
+   "scovillain"
+  ]
+ },
+ "raindish": {
+  "id": "raindish",
+  "name": "Rain Dish",
+  "description": "Restores HP in rain",
+  "pokemon": [
+   "squirtle",
+   "wartortle",
+   "blastoise",
+   "tentacool",
+   "tentacruel",
+   "lotad",
+   "lombre",
+   "ludicolo",
+   "wingull",
+   "pelipper",
+   "surskit",
+   "morelull",
+   "shiinotic"
+  ]
+ },
+ "overgrow": {
+  "id": "overgrow",
+  "name": "Overgrow",
+  "description": "Powers up Grass-type moves when HP is below 1/3",
+  "pokemon": [
+   "metalynx",
+   "orchynx",
+   "caribolt",
+   "electrelk",
+   "fawnifer",
+   "bulbasaur",
+   "ivysaur",
+   "venusaur",
+   "chikorita",
+   "bayleef",
+   "meganium",
+   "treecko",
+   "grovyle",
+   "sceptile",
+   "turtwig",
+   "grotle",
+   "torterra",
+   "snivy",
+   "servine",
+   "serperior",
+   "pansage",
+   "simisage",
+   "chespin",
+   "quilladin",
+   "chesnaught",
+   "rowlet",
+   "dartrix",
+   "decidueye",
+   "decidueye_hisui",
+   "grookey",
+   "thwackey",
+   "rillaboom",
+   "sprigatito",
+   "floragato",
+   "meowscarada"
+  ]
+ },
+ "trace": {
+  "id": "trace",
+  "name": "Trace",
+  "description": "Copies the opponent's ability on switch-in",
+  "pokemon": [
+   "duplicat",
+   "protowatt",
+   "jumbao",
+   "mumbao",
+   "krilowatt",
+   "kitsunoh",
+   "porygon",
+   "porygon2",
+   "ralts",
+   "kirlia",
+   "gardevoir"
+  ]
+ },
+ "lingeringaroma": {
+  "id": "lingeringaroma",
+  "name": "Lingering Aroma",
+  "description": "Changes opponent's ability to Lingering Aroma on contact",
+  "pokemon": [
+   "oinkologne"
+  ]
+ },
+ "_index": {
+  "id": "_index",
+  "name": "_index",
+  "description": "",
+  "pokemon": []
+ },
+ "magician": {
+  "id": "magician",
+  "name": "Magician",
+  "description": "Steals held item when using a move",
+  "pokemon": [
+   "astrolotl",
+   "solotl",
+   "fennekin",
+   "braixen",
+   "delphox",
+   "klefki",
+   "hoopa"
+  ]
+ },
+ "magmaarmor": {
+  "id": "magmaarmor",
+  "name": "Magma Armor",
+  "description": "Immune to freeze",
+  "pokemon": [
+   "lavent",
+   "slugma",
+   "magcargo",
+   "camerupt"
+  ]
+ },
+ "megalauncher": {
+  "id": "megalauncher",
+  "name": "Mega Launcher",
+  "description": "Powers up pulse and aura moves",
+  "pokemon": [
+   "s51_a",
+   "clauncher",
+   "clawitzer"
+  ]
+ },
+ "torrent": {
+  "id": "torrent",
+  "name": "Torrent",
+  "description": "Powers up Water-type moves when HP is below 1/3",
+  "pokemon": [
+   "electruxo",
+   "eletux",
+   "snaelstrom",
+   "coribalis",
+   "swirlpool",
+   "squirtle",
+   "wartortle",
+   "blastoise",
+   "totodile",
+   "croconaw",
+   "feraligatr",
+   "mudkip",
+   "marshtomp",
+   "swampert",
+   "piplup",
+   "prinplup",
+   "empoleon",
+   "oshawott",
+   "dewott",
+   "samurott",
+   "samurott_hisui",
+   "panpour",
+   "simipour",
+   "froakie",
+   "frogadier",
+   "greninja",
+   "popplio",
+   "brionne",
+   "primarina",
+   "sobble",
+   "drizzile",
+   "inteleon",
+   "quaxly",
+   "quaxwell",
+   "quaquaval"
+  ]
+ },
+ "merciless": {
+  "id": "merciless",
+  "name": "Merciless",
+  "description": "Always critical hits against poisoned targets",
+  "pokemon": [
+   "mareanie",
+   "toxapex"
+  ]
+ },
+ "mirrorarmor": {
+  "id": "mirrorarmor",
+  "name": "Mirror Armor",
+  "description": "Reflects stat-lowering effects back at the user",
+  "pokemon": [
+   "corviknight"
+  ]
+ },
+ "swarm": {
+  "id": "swarm",
+  "name": "Swarm",
+  "description": "Powers up Bug-type moves when HP is below 1/3",
+  "pokemon": [
+   "harylect",
+   "tricwe",
+   "sponaree",
+   "sponee",
+   "firoke",
+   "smore",
+   "nimflora",
+   "cubblfly",
+   "cubbug",
+   "beedrill",
+   "scyther",
+   "ledyba",
+   "ledian",
+   "spinarak",
+   "ariados",
+   "scizor",
+   "heracross",
+   "beautifly",
+   "volbeat",
+   "kricketune",
+   "mothim",
+   "sewaddle",
+   "leavanny",
+   "venipede",
+   "whirlipede",
+   "scolipede",
+   "karrablast",
+   "escavalier",
+   "joltik",
+   "galvantula",
+   "durant",
+   "larvesta",
+   "volcarona",
+   "grubbin",
+   "blipbug",
+   "dottler",
+   "orbeetle",
+   "kleavor",
+   "nymble",
+   "lokix"
+  ]
+ },
+ "tangledfeet": {
+  "id": "tangledfeet",
+  "name": "Tangled Feet",
+  "description": "Raises evasion when confused",
+  "pokemon": [
+   "pidgey",
+   "pidgeotto",
+   "pidgeot",
+   "doduo",
+   "dodrio",
+   "spinda",
+   "chatot",
+   "mrrime",
+   "flamigo"
+  ]
+ },
+ "poisonheal": {
+  "id": "poisonheal",
+  "name": "Poison Heal",
+  "description": "Restores HP when poisoned instead of taking damage",
+  "pokemon": [
+   "snaelstrom",
+   "coribalis",
+   "swirlpool",
+   "shroomish",
+   "breloom",
+   "gliscor"
+  ]
+ },
+ "poisonpuppeteer": {
+  "id": "poisonpuppeteer",
+  "name": "Poison Puppeteer",
+  "description": "Poisons opponents that make contact",
+  "pokemon": [
+   "pecharunt"
+  ]
+ },
+ "powerconstruct": {
+  "id": "powerconstruct",
+  "name": "Power Construct",
+  "description": "Changes form when HP drops below half",
+  "pokemon": [
+   "zygarde",
+   "zygarde_10",
+   "zygarde_complete"
+  ]
+ },
+ "powerspot": {
+  "id": "powerspot",
+  "name": "Power Spot",
+  "description": "Powers up allies' moves",
+  "pokemon": [
+   "stonjourner"
+  ]
+ },
+ "prankster": {
+  "id": "prankster",
+  "name": "Prankster",
+  "description": "Gives priority to status moves",
+  "pokemon": [
+   "antarki",
+   "duplicat",
+   "tanscure",
+   "tancoon",
+   "tomohawk",
+   "scratchet",
+   "murkrow",
+   "sableye",
+   "volbeat",
+   "illumise",
+   "riolu",
+   "purrloin",
+   "liepard",
+   "cottonee",
+   "whimsicott",
+   "tornadus",
+   "thundurus",
+   "meowstic",
+   "klefki",
+   "impidimp",
+   "morgrem",
+   "grimmsnarl",
+   "shroodle",
+   "grafaiai"
+  ]
+ },
+ "prismarmor": {
+  "id": "prismarmor",
+  "name": "Prism Armor",
+  "description": "Reduces damage from super-effective moves",
+  "pokemon": [
+   "necrozma",
+   "necrozma_dawn_wings",
+   "necrozma_dusk_mane"
+  ]
+ },
+ "propellertail": {
+  "id": "propellertail",
+  "name": "Propeller Tail",
+  "description": "Ignores abilities and moves that draw in moves",
+  "pokemon": [
+   "arrokuda",
+   "barraskewda"
+  ]
+ },
+ "protean": {
+  "id": "protean",
+  "name": "Protean",
+  "description": "Changes type to match the move used",
+  "pokemon": [
+   "kecleon",
+   "froakie",
+   "frogadier",
+   "greninja",
+   "sprigatito",
+   "floragato",
+   "meowscarada"
+  ]
+ },
+ "protosynthesis": {
+  "id": "protosynthesis",
+  "name": "Protosynthesis",
+  "description": "Boosts highest stat in harsh sunlight",
+  "pokemon": [
+   "greattusk",
+   "screamtail",
+   "brutebonnet",
+   "fluttermane",
+   "slitherwing",
+   "sandyshocks",
+   "roaringmoon",
+   "walkingwake",
+   "gougingfire",
+   "ragingbolt"
+  ]
+ },
+ "psychicsurge": {
+  "id": "psychicsurge",
+  "name": "Psychic Surge",
+  "description": "Sets Psychic Terrain when entering battle",
+  "pokemon": [
+   "tapulele",
+   "indeedee",
+   "indeedee_f"
+  ]
+ },
+ "punkrock": {
+  "id": "punkrock",
+  "name": "Punk Rock",
+  "description": "Powers up sound moves and reduces damage from them",
+  "pokemon": [
+   "toxtricity"
+  ]
+ },
+ "purepower": {
+  "id": "purepower",
+  "name": "Pure Power",
+  "description": "Doubles Attack",
+  "pokemon": [
+   "meditite",
+   "medicham"
+  ]
+ },
+ "purifyingsalt": {
+  "id": "purifyingsalt",
+  "name": "Purifying Salt",
+  "description": "Halves damage from Ghost moves and prevents status",
+  "pokemon": [
+   "nacli",
+   "naclstack",
+   "garganacl"
+  ]
+ },
+ "quarkdrive": {
+  "id": "quarkdrive",
+  "name": "Quark Drive",
+  "description": "Boosts highest stat on Electric Terrain",
+  "pokemon": [
+   "irontreads",
+   "ironbundle",
+   "ironhands",
+   "ironjugulis",
+   "ironmoth",
+   "ironthorns",
+   "ironvaliant",
+   "ironleaves",
+   "ironboulder",
+   "ironcrown"
+  ]
+ },
+ "queenlymajesty": {
+  "id": "queenlymajesty",
+  "name": "Queenly Majesty",
+  "description": "Prevents priority moves from being used",
+  "pokemon": [
+   "tsareena"
+  ]
+ },
+ "receiver": {
+  "id": "receiver",
+  "name": "Receiver",
+  "description": "Copies ally's ability when it faints",
+  "pokemon": [
+   "passimian"
+  ]
+ },
+ "refrigerate": {
+  "id": "refrigerate",
+  "name": "Refrigerate",
+  "description": "Normal moves become Ice-type and gain power",
+  "pokemon": [
+   "amaura",
+   "aurorus"
+  ]
+ },
+ "ripen": {
+  "id": "ripen",
+  "name": "Ripen",
+  "description": "Doubles Berry effects",
+  "pokemon": [
+   "applin",
+   "flapple",
+   "appletun"
+  ]
+ },
+ "rkssystem": {
+  "id": "rkssystem",
+  "name": "RKS System",
+  "description": "Changes type to match held Memory",
+  "pokemon": [
+   "silvally"
+  ]
+ },
+ "rockypayload": {
+  "id": "rockypayload",
+  "name": "Rocky Payload",
+  "description": "Powers up Rock-type moves",
+  "pokemon": [
+   "bombirdier"
+  ]
+ },
+ "roughskin": {
+  "id": "roughskin",
+  "name": "Rough Skin",
+  "description": "Damages contact move users",
+  "pokemon": [
+   "cresceidon",
+   "carvanha",
+   "sharpedo",
+   "gible",
+   "gabite",
+   "garchomp",
+   "druddigon"
+  ]
+ },
+ "sandspit": {
+  "id": "sandspit",
+  "name": "Sand Spit",
+  "description": "Sets sandstorm when hit by a move",
+  "pokemon": [
+   "saharaja",
+   "saharascal",
+   "silicobra",
+   "sandaconda"
+  ]
+ },
+ "sandstream": {
+  "id": "sandstream",
+  "name": "Sand Stream",
+  "description": "Sets sandstorm when entering battle",
+  "pokemon": [
+   "escartress",
+   "sableau",
+   "cassnail",
+   "tyranitar",
+   "hippopotas",
+   "hippowdon",
+   "gigalith"
+  ]
+ },
+ "sapsipper": {
+  "id": "sapsipper",
+  "name": "Sap Sipper",
+  "description": "Raises Attack when hit by Grass moves",
+  "pokemon": [
+   "quetzoral",
+   "chicoatl",
+   "marill",
+   "azumarill",
+   "girafarig",
+   "stantler",
+   "miltank",
+   "azurill",
+   "blitzle",
+   "zebstrika",
+   "deerling",
+   "sawsbuck",
+   "bouffalant",
+   "skiddo",
+   "gogoat",
+   "goomy",
+   "sliggoo_hisui",
+   "sliggoo",
+   "goodra",
+   "goodra_hisui",
+   "drampa",
+   "wyrdeer",
+   "farigiraf"
+  ]
+ },
+ "schooling": {
+  "id": "schooling",
+  "name": "Schooling",
+  "description": "Changes form when HP drops below half",
+  "pokemon": [
+   "wishiwashi",
+   "wishiwashi_school"
+  ]
+ },
+ "screencleaner": {
+  "id": "screencleaner",
+  "name": "Screen Cleaner",
+  "description": "Removes screens and barriers on switch-in",
+  "pokemon": [
+   "mrmime_galar",
+   "mrrime"
+  ]
+ },
+ "seedsower": {
+  "id": "seedsower",
+  "name": "Seed Sower",
+  "description": "Sets Grassy Terrain when hit by a move",
+  "pokemon": [
+   "arboliva"
+  ]
+ },
+ "shadowshield": {
+  "id": "shadowshield",
+  "name": "Shadow Shield",
+  "description": "Reduces damage when at full HP",
+  "pokemon": [
+   "lunala"
+  ]
+ },
+ "shadowtag": {
+  "id": "shadowtag",
+  "name": "Shadow Tag",
+  "description": "Prevents opponents from escaping",
+  "pokemon": [
+   "chainite",
+   "linkite",
+   "wobbuffet",
+   "wynaut",
+   "gothita",
+   "gothorita",
+   "gothitelle"
+  ]
+ },
+ "sharpness": {
+  "id": "sharpness",
+  "name": "Sharpness",
+  "description": "Powers up slicing moves",
+  "pokemon": [
+   "gallade",
+   "samurott_hisui",
+   "kleavor",
+   "veluza"
+  ]
+ },
+ "shieldsdown": {
+  "id": "shieldsdown",
+  "name": "Shields Down",
+  "description": "Changes form when HP drops below half",
+  "pokemon": [
+   "minior",
+   "minior_core"
+  ]
+ },
+ "simple": {
+  "id": "simple",
+  "name": "Simple",
+  "description": "Doubles stat changes",
+  "pokemon": [
+   "numel",
+   "bidoof",
+   "bibarel",
+   "woobat",
+   "swoobat"
+  ]
+ },
+ "slowstart": {
+  "id": "slowstart",
+  "name": "Slow Start",
+  "description": "Halves Attack and Speed for 5 turns",
+  "pokemon": [
+   "chuggalong",
+   "draggalong",
+   "chuggon",
+   "regigigas",
+   "varoom"
+  ]
+ },
+ "slushrush": {
+  "id": "slushrush",
+  "name": "Slush Rush",
+  "description": "Doubles Speed in hail",
+  "pokemon": [
+   "sandshrew_alola",
+   "sandslash_alola",
+   "cubchoo",
+   "beartic",
+   "arctozolt",
+   "arctovish",
+   "cetitan"
+  ]
+ },
+ "snowwarning": {
+  "id": "snowwarning",
+  "name": "Snow Warning",
+  "description": "Sets hail when entering battle",
+  "pokemon": [
+   "anderind",
+   "titanice",
+   "glavinug",
+   "glaslug",
+   "vulpix_alola",
+   "ninetales_alola",
+   "snover",
+   "abomasnow",
+   "vanilluxe",
+   "amaura",
+   "aurorus"
+  ]
+ },
+ "solidrock": {
+  "id": "solidrock",
+  "name": "Solid Rock",
+  "description": "Reduces damage from super-effective moves",
+  "pokemon": [
+   "dermafrost",
+   "snopach",
+   "rebble",
+   "camerupt",
+   "rhyperior",
+   "tirtouga",
+   "carracosta"
+  ]
+ },
+ "soulheart": {
+  "id": "soulheart",
+  "name": "Soul-Heart",
+  "description": "Raises Special Attack when a Pokemon faints",
+  "pokemon": [
+   "magearna"
+  ]
+ },
+ "speedboost": {
+  "id": "speedboost",
+  "name": "Speed Boost",
+  "description": "Raises Speed each turn",
+  "pokemon": [
+   "stenowatt",
+   "tracton",
+   "yanma",
+   "torchic",
+   "combusken",
+   "blaziken",
+   "ninjask",
+   "carvanha",
+   "sharpedo",
+   "yanmega",
+   "venipede",
+   "whirlipede",
+   "scolipede",
+   "flittle",
+   "espathra"
+  ]
+ },
+ "stakeout": {
+  "id": "stakeout",
+  "name": "Stakeout",
+  "description": "Deals double damage to switching Pokemon",
+  "pokemon": [
+   "yungoos",
+   "gumshoos",
+   "nickit",
+   "thievul",
+   "tarountula",
+   "spidops",
+   "maschiff",
+   "mabosstiff"
+  ]
+ },
+ "stall": {
+  "id": "stall",
+  "name": "Stall",
+  "description": "Always moves last",
+  "pokemon": [
+   "sableye"
+  ]
+ },
+ "stalwart": {
+  "id": "stalwart",
+  "name": "Stalwart",
+  "description": "Ignores abilities and moves that draw in moves",
+  "pokemon": [
+   "duraludon",
+   "archaludon"
+  ]
+ },
+ "stamina": {
+  "id": "stamina",
+  "name": "Stamina",
+  "description": "Raises Defense when hit by a move",
+  "pokemon": [
+   "venomicon",
+   "mudbray",
+   "mudsdale",
+   "archaludon"
+  ]
+ },
+ "stancechange": {
+  "id": "stancechange",
+  "name": "Stance Change",
+  "description": "Changes form based on move used",
+  "pokemon": [
+   "aegislash_blade",
+   "aegislash"
+  ]
+ },
+ "steamengine": {
+  "id": "steamengine",
+  "name": "Steam Engine",
+  "description": "Raises Speed when hit by Fire or Water moves",
+  "pokemon": [
+   "rolycoly",
+   "carkol",
+   "coalossal"
+  ]
+ },
+ "steelworker": {
+  "id": "steelworker",
+  "name": "Steelworker",
+  "description": "Powers up Steel-type moves",
+  "pokemon": [
+   "dhelmise"
+  ]
+ },
+ "steelyspirit": {
+  "id": "steelyspirit",
+  "name": "Steely Spirit",
+  "description": "Powers up allies' Steel-type moves",
+  "pokemon": [
+   "perrserker"
+  ]
+ },
+ "stormdrain": {
+  "id": "stormdrain",
+  "name": "Storm Drain",
+  "description": "Draws in Water moves and raises Special Attack",
+  "pokemon": [
+   "plasmanta",
+   "snugglow",
+   "lileep",
+   "cradily",
+   "shellos",
+   "gastrodon",
+   "finneon",
+   "lumineon",
+   "maractus",
+   "tatsugiri"
+  ]
+ },
+ "strongjaw": {
+  "id": "strongjaw",
+  "name": "Strong Jaw",
+  "description": "Powers up biting moves",
+  "pokemon": [
+   "tubareel",
+   "tubjaw",
+   "tyrunt",
+   "tyrantrum",
+   "avalugg_hisui",
+   "yungoos",
+   "gumshoos",
+   "bruxish",
+   "chewtle",
+   "drednaw",
+   "boltund",
+   "dracovish"
+  ]
+ },
+ "suctioncups": {
+  "id": "suctioncups",
+  "name": "Suction Cups",
+  "description": "Prevents being forced out",
+  "pokemon": [
+   "unymph",
+   "octillery",
+   "lileep",
+   "cradily",
+   "inkay",
+   "malamar"
+  ]
+ },
+ "superluck": {
+  "id": "superluck",
+  "name": "Super Luck",
+  "description": "Increases critical hit rate",
+  "pokemon": [
+   "luxelong",
+   "luxor",
+   "luxi",
+   "togepi",
+   "togetic",
+   "murkrow",
+   "absol",
+   "honchkrow",
+   "togekiss",
+   "pidove",
+   "tranquill",
+   "unfezant"
+  ]
+ },
+ "supersweetsyrup": {
+  "id": "supersweetsyrup",
+  "name": "Supersweet Syrup",
+  "description": "Lowers opponent's evasion on switch-in",
+  "pokemon": [
+   "dipplin",
+   "hydrapple"
+  ]
+ },
+ "supremeoverlord": {
+  "id": "supremeoverlord",
+  "name": "Supreme Overlord",
+  "description": "Powers up moves based on fainted allies",
+  "pokemon": [
+   "kingambit"
+  ]
+ },
+ "sweetveil": {
+  "id": "sweetveil",
+  "name": "Sweet Veil",
+  "description": "Prevents allies from falling asleep",
+  "pokemon": [
+   "swirlix",
+   "slurpuff",
+   "cutiefly",
+   "ribombee",
+   "bounsweet",
+   "steenee",
+   "tsareena",
+   "milcery",
+   "alcremie"
+  ]
+ },
+ "swordofruin": {
+  "id": "swordofruin",
+  "name": "Sword of Ruin",
+  "description": "Lowers Defense of all Pokemon",
+  "pokemon": [
+   "chienpao"
+  ]
+ },
+ "symbiosis": {
+  "id": "symbiosis",
+  "name": "Symbiosis",
+  "description": "Passes held item to ally when it uses its item",
+  "pokemon": [
+   "flabebe",
+   "floette",
+   "florges",
+   "oranguru"
+  ]
+ },
+ "tabletsofruin": {
+  "id": "tabletsofruin",
+  "name": "Tablets of Ruin",
+  "description": "Lowers Attack of all Pokemon",
+  "pokemon": [
+   "wochien"
+  ]
+ },
+ "telepathy": {
+  "id": "telepathy",
+  "name": "Telepathy",
+  "description": "Avoids damage from allies' moves",
+  "pokemon": [
+   "trawpint",
+   "costraw",
+   "plasmanta",
+   "snugglow",
+   "necturna",
+   "necturine",
+   "wobbuffet",
+   "ralts",
+   "kirlia",
+   "gardevoir",
+   "meditite",
+   "medicham",
+   "wynaut",
+   "dialga",
+   "palkia",
+   "giratina",
+   "munna",
+   "musharna",
+   "elgyem",
+   "beheeyem",
+   "noibat",
+   "noivern",
+   "oranguru",
+   "tapukoko",
+   "tapulele",
+   "tapubulu",
+   "tapufini",
+   "blipbug",
+   "dottler",
+   "orbeetle",
+   "rabsca"
+  ]
+ },
+ "terashift": {
+  "id": "terashift",
+  "name": "Tera Shift",
+  "description": "Changes type to match Tera Type when Terastallized",
+  "pokemon": [
+   "terapagos"
+  ]
+ },
+ "teravolt": {
+  "id": "teravolt",
+  "name": "Teravolt",
+  "description": "Ignores abilities that affect moves",
+  "pokemon": [
+   "zekrom",
+   "kyurem_black"
+  ]
+ },
+ "thermalexchange": {
+  "id": "thermalexchange",
+  "name": "Thermal Exchange",
+  "description": "Raises Attack when hit by Fire moves and prevents burn",
+  "pokemon": [
+   "frigibax",
+   "arctibax",
+   "baxcalibur"
+  ]
+ },
+ "toughclaws": {
+  "id": "toughclaws",
+  "name": "Tough Claws",
+  "description": "Powers up contact moves",
+  "pokemon": [
+   "barand",
+   "meowth_galar",
+   "binacle",
+   "barbaracle",
+   "lycanroc_dusk",
+   "perrserker"
+  ]
+ },
+ "toxicboost": {
+  "id": "toxicboost",
+  "name": "Toxic Boost",
+  "description": "Powers up Physical moves when poisoned",
+  "pokemon": [
+   "zangoose"
+  ]
+ },
+ "toxicchain": {
+  "id": "toxicchain",
+  "name": "Toxic Chain",
+  "description": "Poisons opponents that make contact",
+  "pokemon": [
+   "okidogi",
+   "munkidori",
+   "fezandipiti"
+  ]
+ },
+ "toxicdebris": {
+  "id": "toxicdebris",
+  "name": "Toxic Debris",
+  "description": "Sets Toxic Spikes when hit by a physical move",
+  "pokemon": [
+   "glimmet",
+   "glimmora"
+  ]
+ },
+ "transistor": {
+  "id": "transistor",
+  "name": "Transistor",
+  "description": "Powers up Electric-type moves",
+  "pokemon": [
+   "regieleki"
+  ]
+ },
+ "triage": {
+  "id": "triage",
+  "name": "Triage",
+  "description": "Gives priority to healing moves",
+  "pokemon": [
+   "revenankh",
+   "comfey"
+  ]
+ },
+ "truant": {
+  "id": "truant",
+  "name": "Truant",
+  "description": "Attacks only every other turn",
+  "pokemon": [
+   "slakoth",
+   "slaking",
+   "durant"
+  ]
+ },
+ "turboblaze": {
+  "id": "turboblaze",
+  "name": "Turboblaze",
+  "description": "Ignores abilities that affect moves",
+  "pokemon": [
+   "reshiram",
+   "kyurem_white"
+  ]
+ },
+ "unseenfist": {
+  "id": "unseenfist",
+  "name": "Unseen Fist",
+  "description": "Contact moves can hit through Protect",
+  "pokemon": [
+   "urshifu",
+   "urshifu_rapid_strike"
+  ]
+ },
+ "vesselofruin": {
+  "id": "vesselofruin",
+  "name": "Vessel of Ruin",
+  "description": "Lowers Special Attack of all Pokemon",
+  "pokemon": [
+   "tinglu"
+  ]
+ },
+ "victorystar": {
+  "id": "victorystar",
+  "name": "Victory Star",
+  "description": "Increases accuracy for self and allies",
+  "pokemon": [
+   "victini"
+  ]
+ },
+ "wanderingspirit": {
+  "id": "wanderingspirit",
+  "name": "Wandering Spirit",
+  "description": "Swaps abilities with opponent on contact",
+  "pokemon": [
+   "yamask_galar",
+   "runerigus"
+  ]
+ }
+}
