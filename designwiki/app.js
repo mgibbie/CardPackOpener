@@ -60,6 +60,10 @@ function kv(label, value) { return h('tr', null, h('th', null, label), h('td', n
 function pokemonDetail(id) {
   const p = DB.pokemon[id]; if (!p) return notFound();
   const stats = ['hp', 'atk', 'def', 'spa', 'spd', 'spe'];
+  const moveSection = (title, list) => (list && list.length) ? [
+    h('h2', null, title, ' ', h('span', { class: 'num' }, '(' + list.length + ')')),
+    h('div', null, list.map((m, i) => [i ? ', ' : '', mvLink(m)]).flat())
+  ] : [];
   content.replaceChildren(
     h('h1', null, h('span', { class: 'num' }, '#' + (p.num ?? '?') + ' '), p.name),
     spriteImg(p),
@@ -74,8 +78,9 @@ function pokemonDetail(id) {
     h('h2', null, 'Level-Up Moves'),
     h('table', null, h('thead', null, h('tr', null, h('th', null, 'Lv'), h('th', null, 'Move'))),
       h('tbody', null, (p.levelUpLearnset || []).map(e => h('tr', null, h('td', null, e[0]), h('td', null, mvLink(e[1])))))),
-    h('h2', null, 'Learnset'),
-    h('div', null, (p.learnset || []).map((m, i) => [i ? ', ' : '', mvLink(m)]).flat())
+    ...moveSection('Moves Learned by TM', p.tmMoves),
+    ...moveSection('Egg Moves', p.eggMoves),
+    ...moveSection('HM Moves', p.hmMoves)
   );
 }
 
