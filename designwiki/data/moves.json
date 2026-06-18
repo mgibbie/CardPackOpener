@@ -50528,177 +50528,177 @@
   "learnedBy": [
    {
     "pokemon": "cresceidon",
-    "how": "TM",
+    "how": "HM",
     "num": -72
    },
    {
     "pokemon": "duohm",
-    "how": "TM",
+    "how": "HM",
     "num": -63
    },
    {
     "pokemon": "monohm",
-    "how": "TM",
+    "how": "HM",
     "num": -62
    },
    {
     "pokemon": "snaelstrom",
-    "how": "TM",
+    "how": "HM",
     "num": -53
    },
    {
     "pokemon": "coribalis",
-    "how": "TM",
+    "how": "HM",
     "num": -52
    },
    {
     "pokemon": "swirlpool",
-    "how": "TM",
+    "how": "HM",
     "num": -51
    },
    {
     "pokemon": "naviathan",
-    "how": "TM",
+    "how": "HM",
     "num": -38
    },
    {
     "pokemon": "caimanoe",
-    "how": "TM",
+    "how": "HM",
     "num": -37
    },
    {
     "pokemon": "floatoy",
-    "how": "TM",
+    "how": "HM",
     "num": -36
    },
    {
     "pokemon": "volkraken",
-    "how": "TM",
+    "how": "HM",
     "num": -33
    },
    {
     "pokemon": "volkritter",
-    "how": "TM",
+    "how": "HM",
     "num": -32
    },
    {
     "pokemon": "krilowatt",
-    "how": "TM",
+    "how": "HM",
     "num": -17
    },
    {
     "pokemon": "cyclohm",
-    "how": "TM",
+    "how": "HM",
     "num": -15
    },
    {
     "pokemon": "arghonaut",
-    "how": "TM",
+    "how": "HM",
     "num": -13
    },
    {
     "pokemon": "privatyke",
-    "how": "TM",
+    "how": "HM",
     "num": -12
    },
    {
     "pokemon": "squirtle",
-    "how": "TM",
+    "how": "HM",
     "num": 7
    },
    {
     "pokemon": "wartortle",
-    "how": "TM",
+    "how": "HM",
     "num": 8
    },
    {
     "pokemon": "blastoise",
-    "how": "TM",
+    "how": "HM",
     "num": 9
    },
    {
     "pokemon": "psyduck",
-    "how": "TM",
+    "how": "HM",
     "num": 54
    },
    {
     "pokemon": "golduck",
-    "how": "TM",
+    "how": "HM",
     "num": 55
    },
    {
     "pokemon": "poliwag",
-    "how": "TM",
+    "how": "HM",
     "num": 60
    },
    {
     "pokemon": "poliwhirl",
-    "how": "TM",
+    "how": "HM",
     "num": 61
    },
    {
     "pokemon": "poliwrath",
-    "how": "TM",
+    "how": "HM",
     "num": 62
    },
    {
     "pokemon": "tentacool",
-    "how": "TM",
+    "how": "HM",
     "num": 72
    },
    {
     "pokemon": "tentacruel",
-    "how": "TM",
+    "how": "HM",
     "num": 73
    },
    {
     "pokemon": "slowpoke",
-    "how": "TM",
+    "how": "HM",
     "num": 79
    },
    {
     "pokemon": "slowpoke_galar",
-    "how": "TM",
+    "how": "HM",
     "num": 79
    },
    {
     "pokemon": "slowbro",
-    "how": "TM",
+    "how": "HM",
     "num": 80
    },
    {
     "pokemon": "slowbro_galar",
-    "how": "TM",
+    "how": "HM",
     "num": 80
    },
    {
     "pokemon": "seel",
-    "how": "TM",
+    "how": "HM",
     "num": 86
    },
    {
     "pokemon": "dewgong",
-    "how": "TM",
+    "how": "HM",
     "num": 87
    },
    {
     "pokemon": "shellder",
-    "how": "TM",
+    "how": "HM",
     "num": 90
    },
    {
     "pokemon": "cloyster",
-    "how": "TM",
+    "how": "HM",
     "num": 91
    },
    {
     "pokemon": "horsea",
-    "how": "TM",
+    "how": "HM",
     "num": 116
    },
    {
     "pokemon": "seadra",
-    "how": "TM",
+    "how": "HM",
     "num": 117
    },
    {
@@ -50713,12 +50713,12 @@
    },
    {
     "pokemon": "staryu",
-    "how": "TM",
+    "how": "HM",
     "num": 120
    },
    {
     "pokemon": "starmie",
-    "how": "TM",
+    "how": "HM",
     "num": 121
    },
    {
@@ -50728,662 +50728,662 @@
    },
    {
     "pokemon": "gyarados",
-    "how": "TM",
+    "how": "HM",
     "num": 130
    },
    {
     "pokemon": "lapras",
-    "how": "TM",
+    "how": "HM",
     "num": 131
    },
    {
     "pokemon": "vaporeon",
-    "how": "TM",
+    "how": "HM",
     "num": 134
    },
    {
     "pokemon": "omanyte",
-    "how": "TM",
+    "how": "HM",
     "num": 138
    },
    {
     "pokemon": "omastar",
-    "how": "TM",
+    "how": "HM",
     "num": 139
    },
    {
     "pokemon": "kabuto",
-    "how": "TM",
+    "how": "HM",
     "num": 140
    },
    {
     "pokemon": "kabutops",
-    "how": "TM",
+    "how": "HM",
     "num": 141
    },
    {
     "pokemon": "dratini",
-    "how": "TM",
+    "how": "HM",
     "num": 147
    },
    {
     "pokemon": "dragonair",
-    "how": "TM",
+    "how": "HM",
     "num": 148
    },
    {
     "pokemon": "dragonite",
-    "how": "TM",
+    "how": "HM",
     "num": 149
    },
    {
     "pokemon": "mew",
-    "how": "TM",
+    "how": "HM",
     "num": 151
    },
    {
     "pokemon": "totodile",
-    "how": "TM",
+    "how": "HM",
     "num": 158
    },
    {
     "pokemon": "croconaw",
-    "how": "TM",
+    "how": "HM",
     "num": 159
    },
    {
     "pokemon": "feraligatr",
-    "how": "TM",
+    "how": "HM",
     "num": 160
    },
    {
     "pokemon": "chinchou",
-    "how": "TM",
+    "how": "HM",
     "num": 170
    },
    {
     "pokemon": "lanturn",
-    "how": "TM",
+    "how": "HM",
     "num": 171
    },
    {
     "pokemon": "marill",
-    "how": "TM",
+    "how": "HM",
     "num": 183
    },
    {
     "pokemon": "azumarill",
-    "how": "TM",
+    "how": "HM",
     "num": 184
    },
    {
     "pokemon": "politoed",
-    "how": "TM",
+    "how": "HM",
     "num": 186
    },
    {
     "pokemon": "wooper",
-    "how": "TM",
+    "how": "HM",
     "num": 194
    },
    {
     "pokemon": "quagsire",
-    "how": "TM",
+    "how": "HM",
     "num": 195
    },
    {
     "pokemon": "slowking",
-    "how": "TM",
+    "how": "HM",
     "num": 199
    },
    {
     "pokemon": "slowking_galar",
-    "how": "TM",
+    "how": "HM",
     "num": 199
    },
    {
     "pokemon": "qwilfish",
-    "how": "TM",
+    "how": "HM",
     "num": 211
    },
    {
     "pokemon": "qwilfish_hisui",
-    "how": "TM",
+    "how": "HM",
     "num": 211
    },
    {
     "pokemon": "remoraid",
-    "how": "TM",
+    "how": "HM",
     "num": 223
    },
    {
     "pokemon": "octillery",
-    "how": "TM",
+    "how": "HM",
     "num": 224
    },
    {
     "pokemon": "mantine",
-    "how": "TM",
+    "how": "HM",
     "num": 226
    },
    {
     "pokemon": "kingdra",
-    "how": "TM",
+    "how": "HM",
     "num": 230
    },
    {
     "pokemon": "suicune",
-    "how": "TM",
+    "how": "HM",
     "num": 245
    },
    {
     "pokemon": "lugia",
-    "how": "TM",
+    "how": "HM",
     "num": 249
    },
    {
     "pokemon": "mudkip",
-    "how": "TM",
+    "how": "HM",
     "num": 258
    },
    {
     "pokemon": "marshtomp",
-    "how": "TM",
+    "how": "HM",
     "num": 259
    },
    {
     "pokemon": "swampert",
-    "how": "TM",
+    "how": "HM",
     "num": 260
    },
    {
     "pokemon": "lombre",
-    "how": "TM",
+    "how": "HM",
     "num": 271
    },
    {
     "pokemon": "ludicolo",
-    "how": "TM",
+    "how": "HM",
     "num": 272
    },
    {
     "pokemon": "wingull",
-    "how": "TM",
+    "how": "HM",
     "num": 278
    },
    {
     "pokemon": "pelipper",
-    "how": "TM",
+    "how": "HM",
     "num": 279
    },
    {
     "pokemon": "surskit",
-    "how": "TM",
+    "how": "HM",
     "num": 283
    },
    {
     "pokemon": "masquerain",
-    "how": "TM",
+    "how": "HM",
     "num": 284
    },
    {
     "pokemon": "azurill",
-    "how": "TM",
+    "how": "HM",
     "num": 298
    },
    {
     "pokemon": "carvanha",
-    "how": "TM",
+    "how": "HM",
     "num": 318
    },
    {
     "pokemon": "sharpedo",
-    "how": "TM",
+    "how": "HM",
     "num": 319
    },
    {
     "pokemon": "wailmer",
-    "how": "TM",
+    "how": "HM",
     "num": 320
    },
    {
     "pokemon": "wailord",
-    "how": "TM",
+    "how": "HM",
     "num": 321
    },
    {
     "pokemon": "barboach",
-    "how": "TM",
+    "how": "HM",
     "num": 339
    },
    {
     "pokemon": "whiscash",
-    "how": "TM",
+    "how": "HM",
     "num": 340
    },
    {
     "pokemon": "corphish",
-    "how": "TM",
+    "how": "HM",
     "num": 341
    },
    {
     "pokemon": "crawdaunt",
-    "how": "TM",
+    "how": "HM",
     "num": 342
    },
    {
     "pokemon": "feebas",
-    "how": "TM",
+    "how": "HM",
     "num": 349
    },
    {
     "pokemon": "milotic",
-    "how": "TM",
+    "how": "HM",
     "num": 350
    },
    {
     "pokemon": "spheal",
-    "how": "TM",
+    "how": "HM",
     "num": 363
    },
    {
     "pokemon": "sealeo",
-    "how": "TM",
+    "how": "HM",
     "num": 364
    },
    {
     "pokemon": "walrein",
-    "how": "TM",
+    "how": "HM",
     "num": 365
    },
    {
     "pokemon": "clamperl",
-    "how": "TM",
+    "how": "HM",
     "num": 366
    },
    {
     "pokemon": "huntail",
-    "how": "TM",
+    "how": "HM",
     "num": 367
    },
    {
     "pokemon": "gorebyss",
-    "how": "TM",
+    "how": "HM",
     "num": 368
    },
    {
     "pokemon": "relicanth",
-    "how": "TM",
+    "how": "HM",
     "num": 369
    },
    {
     "pokemon": "luvdisc",
-    "how": "TM",
+    "how": "HM",
     "num": 370
    },
    {
     "pokemon": "latias",
-    "how": "TM",
+    "how": "HM",
     "num": 380
    },
    {
     "pokemon": "latios",
-    "how": "TM",
+    "how": "HM",
     "num": 381
    },
    {
     "pokemon": "kyogre",
-    "how": "TM",
+    "how": "HM",
     "num": 382
    },
    {
     "pokemon": "rayquaza",
-    "how": "TM",
+    "how": "HM",
     "num": 384
    },
    {
     "pokemon": "piplup",
-    "how": "TM",
+    "how": "HM",
     "num": 393
    },
    {
     "pokemon": "prinplup",
-    "how": "TM",
+    "how": "HM",
     "num": 394
    },
    {
     "pokemon": "empoleon",
-    "how": "TM",
+    "how": "HM",
     "num": 395
    },
    {
     "pokemon": "bibarel",
-    "how": "TM",
+    "how": "HM",
     "num": 400
    },
    {
     "pokemon": "buizel",
-    "how": "TM",
+    "how": "HM",
     "num": 418
    },
    {
     "pokemon": "floatzel",
-    "how": "TM",
+    "how": "HM",
     "num": 419
    },
    {
     "pokemon": "shellos",
-    "how": "TM",
+    "how": "HM",
     "num": 422
    },
    {
     "pokemon": "gastrodon",
-    "how": "TM",
+    "how": "HM",
     "num": 423
    },
    {
     "pokemon": "finneon",
-    "how": "TM",
+    "how": "HM",
     "num": 456
    },
    {
     "pokemon": "lumineon",
-    "how": "TM",
+    "how": "HM",
     "num": 457
    },
    {
     "pokemon": "mantyke",
-    "how": "TM",
+    "how": "HM",
     "num": 458
    },
    {
     "pokemon": "palkia",
-    "how": "TM",
+    "how": "HM",
     "num": 484
    },
    {
     "pokemon": "phione",
-    "how": "TM",
+    "how": "HM",
     "num": 489
    },
    {
     "pokemon": "manaphy",
-    "how": "TM",
+    "how": "HM",
     "num": 490
    },
    {
     "pokemon": "arceus",
-    "how": "TM",
+    "how": "HM",
     "num": 493
    },
    {
     "pokemon": "oshawott",
-    "how": "TM",
+    "how": "HM",
     "num": 501
    },
    {
     "pokemon": "dewott",
-    "how": "TM",
+    "how": "HM",
     "num": 502
    },
    {
     "pokemon": "samurott",
-    "how": "TM",
+    "how": "HM",
     "num": 503
    },
    {
     "pokemon": "samurott_hisui",
-    "how": "TM",
+    "how": "HM",
     "num": 503
    },
    {
     "pokemon": "panpour",
-    "how": "TM",
+    "how": "HM",
     "num": 515
    },
    {
     "pokemon": "simipour",
-    "how": "TM",
+    "how": "HM",
     "num": 516
    },
    {
     "pokemon": "basculin",
-    "how": "TM",
+    "how": "HM",
     "num": 550
    },
    {
     "pokemon": "basculin_blue_striped",
-    "how": "TM",
+    "how": "HM",
     "num": 550
    },
    {
     "pokemon": "tirtouga",
-    "how": "TM",
+    "how": "HM",
     "num": 564
    },
    {
     "pokemon": "carracosta",
-    "how": "TM",
+    "how": "HM",
     "num": 565
    },
    {
     "pokemon": "frillish",
-    "how": "TM",
+    "how": "HM",
     "num": 592
    },
    {
     "pokemon": "jellicent",
-    "how": "TM",
+    "how": "HM",
     "num": 593
    },
    {
     "pokemon": "alomomola",
-    "how": "TM",
+    "how": "HM",
     "num": 594
    },
    {
     "pokemon": "froakie",
-    "how": "TM",
+    "how": "HM",
     "num": 656
    },
    {
     "pokemon": "frogadier",
-    "how": "TM",
+    "how": "HM",
     "num": 657
    },
    {
     "pokemon": "greninja",
-    "how": "TM",
+    "how": "HM",
     "num": 658
    },
    {
     "pokemon": "skrelp",
-    "how": "TM",
+    "how": "HM",
     "num": 690
    },
    {
     "pokemon": "dragalge",
-    "how": "TM",
+    "how": "HM",
     "num": 691
    },
    {
     "pokemon": "clauncher",
-    "how": "TM",
+    "how": "HM",
     "num": 692
    },
    {
     "pokemon": "clawitzer",
-    "how": "TM",
+    "how": "HM",
     "num": 693
    },
    {
     "pokemon": "popplio",
-    "how": "TM",
+    "how": "HM",
     "num": 728
    },
    {
     "pokemon": "brionne",
-    "how": "TM",
+    "how": "HM",
     "num": 729
    },
    {
     "pokemon": "primarina",
-    "how": "TM",
+    "how": "HM",
     "num": 730
    },
    {
     "pokemon": "wishiwashi",
-    "how": "TM",
+    "how": "HM",
     "num": 746
    },
    {
     "pokemon": "wishiwashi_school",
-    "how": "TM",
+    "how": "HM",
     "num": 746
    },
    {
     "pokemon": "dewpider",
-    "how": "TM",
+    "how": "HM",
     "num": 751
    },
    {
     "pokemon": "araquanid",
-    "how": "TM",
+    "how": "HM",
     "num": 752
    },
    {
     "pokemon": "wimpod",
-    "how": "TM",
+    "how": "HM",
     "num": 767
    },
    {
     "pokemon": "golisopod",
-    "how": "TM",
+    "how": "HM",
     "num": 768
    },
    {
     "pokemon": "bruxish",
-    "how": "TM",
+    "how": "HM",
     "num": 779
    },
    {
     "pokemon": "tapufini",
-    "how": "TM",
+    "how": "HM",
     "num": 788
    },
    {
     "pokemon": "sobble",
-    "how": "TM",
+    "how": "HM",
     "num": 816
    },
    {
     "pokemon": "drizzile",
-    "how": "TM",
+    "how": "HM",
     "num": 817
    },
    {
     "pokemon": "inteleon",
-    "how": "TM",
+    "how": "HM",
     "num": 818
    },
    {
     "pokemon": "chewtle",
-    "how": "TM",
+    "how": "HM",
     "num": 833
    },
    {
     "pokemon": "drednaw",
-    "how": "TM",
+    "how": "HM",
     "num": 834
    },
    {
     "pokemon": "arrokuda",
-    "how": "TM",
+    "how": "HM",
     "num": 846
    },
    {
     "pokemon": "barraskewda",
-    "how": "TM",
+    "how": "HM",
     "num": 847
    },
    {
     "pokemon": "clobbopus",
-    "how": "TM",
+    "how": "HM",
     "num": 852
    },
    {
     "pokemon": "grapploct",
-    "how": "TM",
+    "how": "HM",
     "num": 853
    },
    {
     "pokemon": "eiscue",
-    "how": "TM",
+    "how": "HM",
     "num": 875
    },
    {
     "pokemon": "eiscue_noice",
-    "how": "TM",
+    "how": "HM",
     "num": 875
    },
    {
     "pokemon": "dracovish",
-    "how": "TM",
+    "how": "HM",
     "num": 882
    },
    {
     "pokemon": "arctovish",
-    "how": "TM",
+    "how": "HM",
     "num": 883
    },
    {
     "pokemon": "basculegion",
-    "how": "TM",
+    "how": "HM",
     "num": 902
    },
    {
     "pokemon": "basculegion_f",
-    "how": "TM",
+    "how": "HM",
     "num": 902
    },
    {
     "pokemon": "overqwil",
-    "how": "TM",
+    "how": "HM",
     "num": 904
    },
    {
     "pokemon": "finizen",
-    "how": "TM",
+    "how": "HM",
     "num": 963
    },
    {
     "pokemon": "palafin",
-    "how": "TM",
+    "how": "HM",
     "num": 964
    },
    {
     "pokemon": "palafin_hero",
-    "how": "TM",
+    "how": "HM",
     "num": 964
    },
    {
     "pokemon": "veluza",
-    "how": "TM",
+    "how": "HM",
     "num": 976
    },
    {
     "pokemon": "dondozo",
-    "how": "TM",
+    "how": "HM",
     "num": 977
    },
    {
     "pokemon": "clodsire",
-    "how": "TM",
+    "how": "HM",
     "num": 980
    },
    {
     "pokemon": "walkingwake",
-    "how": "TM",
+    "how": "HM",
     "num": 1009
    }
   ]
@@ -206836,237 +206836,237 @@
   "learnedBy": [
    {
     "pokemon": "venomicon",
-    "how": "TM",
+    "how": "HM",
     "num": -66
    },
    {
     "pokemon": "pajantom",
-    "how": "TM",
+    "how": "HM",
     "num": -42
    },
    {
     "pokemon": "kerfluffle",
-    "how": "TM",
+    "how": "HM",
     "num": -41
    },
    {
     "pokemon": "cawmodore",
-    "how": "TM",
+    "how": "HM",
     "num": -31
    },
    {
     "pokemon": "cawdet",
-    "how": "TM",
+    "how": "HM",
     "num": -30
    },
    {
     "pokemon": "tomohawk",
-    "how": "TM",
+    "how": "HM",
     "num": -21
    },
    {
     "pokemon": "charizard",
-    "how": "TM",
+    "how": "HM",
     "num": 6
    },
    {
     "pokemon": "pidgey",
-    "how": "TM",
+    "how": "HM",
     "num": 16
    },
    {
     "pokemon": "pidgeotto",
-    "how": "TM",
+    "how": "HM",
     "num": 17
    },
    {
     "pokemon": "pidgeot",
-    "how": "TM",
+    "how": "HM",
     "num": 18
    },
    {
     "pokemon": "spearow",
-    "how": "TM",
+    "how": "HM",
     "num": 21
    },
    {
     "pokemon": "fearow",
-    "how": "TM",
+    "how": "HM",
     "num": 22
    },
    {
     "pokemon": "pikachu",
-    "how": "TM",
+    "how": "HM",
     "num": 25
    },
    {
     "pokemon": "zubat",
-    "how": "TM",
+    "how": "HM",
     "num": 41
    },
    {
     "pokemon": "golbat",
-    "how": "TM",
+    "how": "HM",
     "num": 42
    },
    {
     "pokemon": "farfetchd",
-    "how": "TM",
+    "how": "HM",
     "num": 83
    },
    {
     "pokemon": "farfetchd_galar",
-    "how": "TM",
+    "how": "HM",
     "num": 83
    },
    {
     "pokemon": "doduo",
-    "how": "TM",
+    "how": "HM",
     "num": 84
    },
    {
     "pokemon": "dodrio",
-    "how": "TM",
+    "how": "HM",
     "num": 85
    },
    {
     "pokemon": "aerodactyl",
-    "how": "TM",
+    "how": "HM",
     "num": 142
    },
    {
     "pokemon": "articuno",
-    "how": "TM",
+    "how": "HM",
     "num": 144
    },
    {
     "pokemon": "articuno_galar",
-    "how": "TM",
+    "how": "HM",
     "num": 144
    },
    {
     "pokemon": "zapdos",
-    "how": "TM",
+    "how": "HM",
     "num": 145
    },
    {
     "pokemon": "zapdos_galar",
-    "how": "TM",
+    "how": "HM",
     "num": 145
    },
    {
     "pokemon": "moltres",
-    "how": "TM",
+    "how": "HM",
     "num": 146
    },
    {
     "pokemon": "moltres_galar",
-    "how": "TM",
+    "how": "HM",
     "num": 146
    },
    {
     "pokemon": "dragonite",
-    "how": "TM",
+    "how": "HM",
     "num": 149
    },
    {
     "pokemon": "mew",
-    "how": "TM",
+    "how": "HM",
     "num": 151
    },
    {
     "pokemon": "hoothoot",
-    "how": "TM",
+    "how": "HM",
     "num": 163
    },
    {
     "pokemon": "noctowl",
-    "how": "TM",
+    "how": "HM",
     "num": 164
    },
    {
     "pokemon": "crobat",
-    "how": "TM",
+    "how": "HM",
     "num": 169
    },
    {
     "pokemon": "togetic",
-    "how": "TM",
+    "how": "HM",
     "num": 176
    },
    {
     "pokemon": "xatu",
-    "how": "TM",
+    "how": "HM",
     "num": 178
    },
    {
     "pokemon": "murkrow",
-    "how": "TM",
+    "how": "HM",
     "num": 198
    },
    {
     "pokemon": "delibird",
-    "how": "TM",
+    "how": "HM",
     "num": 225
    },
    {
     "pokemon": "skarmory",
-    "how": "TM",
+    "how": "HM",
     "num": 227
    },
    {
     "pokemon": "lugia",
-    "how": "TM",
+    "how": "HM",
     "num": 249
    },
    {
     "pokemon": "hooh",
-    "how": "TM",
+    "how": "HM",
     "num": 250
    },
    {
     "pokemon": "taillow",
-    "how": "TM",
+    "how": "HM",
     "num": 276
    },
    {
     "pokemon": "swellow",
-    "how": "TM",
+    "how": "HM",
     "num": 277
    },
    {
     "pokemon": "wingull",
-    "how": "TM",
+    "how": "HM",
     "num": 278
    },
    {
     "pokemon": "pelipper",
-    "how": "TM",
+    "how": "HM",
     "num": 279
    },
    {
     "pokemon": "vibrava",
-    "how": "TM",
+    "how": "HM",
     "num": 329
    },
    {
     "pokemon": "flygon",
-    "how": "TM",
+    "how": "HM",
     "num": 330
    },
    {
     "pokemon": "swablu",
-    "how": "TM",
+    "how": "HM",
     "num": 333
    },
    {
     "pokemon": "altaria",
-    "how": "TM",
+    "how": "HM",
     "num": 334
    },
    {
     "pokemon": "tropius",
-    "how": "TM",
+    "how": "HM",
     "num": 357
    },
    {
@@ -207076,12 +207076,12 @@
    },
    {
     "pokemon": "latias",
-    "how": "TM",
+    "how": "HM",
     "num": 380
    },
    {
     "pokemon": "latios",
-    "how": "TM",
+    "how": "HM",
     "num": 381
    },
    {
@@ -207091,202 +207091,202 @@
    },
    {
     "pokemon": "starly",
-    "how": "TM",
+    "how": "HM",
     "num": 396
    },
    {
     "pokemon": "staravia",
-    "how": "TM",
+    "how": "HM",
     "num": 397
    },
    {
     "pokemon": "staraptor",
-    "how": "TM",
+    "how": "HM",
     "num": 398
    },
    {
     "pokemon": "drifloon",
-    "how": "TM",
+    "how": "HM",
     "num": 425
    },
    {
     "pokemon": "drifblim",
-    "how": "TM",
+    "how": "HM",
     "num": 426
    },
    {
     "pokemon": "honchkrow",
-    "how": "TM",
+    "how": "HM",
     "num": 430
    },
    {
     "pokemon": "chatot",
-    "how": "TM",
+    "how": "HM",
     "num": 441
    },
    {
     "pokemon": "togekiss",
-    "how": "TM",
+    "how": "HM",
     "num": 468
    },
    {
     "pokemon": "giratina",
-    "how": "TM",
+    "how": "HM",
     "num": 487
    },
    {
     "pokemon": "giratina_origin",
-    "how": "TM",
+    "how": "HM",
     "num": 487
    },
    {
     "pokemon": "arceus",
-    "how": "TM",
+    "how": "HM",
     "num": 493
    },
    {
     "pokemon": "pidove",
-    "how": "TM",
+    "how": "HM",
     "num": 519
    },
    {
     "pokemon": "tranquill",
-    "how": "TM",
+    "how": "HM",
     "num": 520
    },
    {
     "pokemon": "unfezant",
-    "how": "TM",
+    "how": "HM",
     "num": 521
    },
    {
     "pokemon": "woobat",
-    "how": "TM",
+    "how": "HM",
     "num": 527
    },
    {
     "pokemon": "swoobat",
-    "how": "TM",
+    "how": "HM",
     "num": 528
    },
    {
     "pokemon": "sigilyph",
-    "how": "TM",
+    "how": "HM",
     "num": 561
    },
    {
     "pokemon": "archeops",
-    "how": "TM",
+    "how": "HM",
     "num": 567
    },
    {
     "pokemon": "ducklett",
-    "how": "TM",
+    "how": "HM",
     "num": 580
    },
    {
     "pokemon": "swanna",
-    "how": "TM",
+    "how": "HM",
     "num": 581
    },
    {
     "pokemon": "golurk",
-    "how": "TM",
+    "how": "HM",
     "num": 623
    },
    {
     "pokemon": "rufflet",
-    "how": "TM",
+    "how": "HM",
     "num": 627
    },
    {
     "pokemon": "braviary",
-    "how": "TM",
+    "how": "HM",
     "num": 628
    },
    {
     "pokemon": "braviary_hisui",
-    "how": "TM",
+    "how": "HM",
     "num": 628
    },
    {
     "pokemon": "vullaby",
-    "how": "TM",
+    "how": "HM",
     "num": 629
    },
    {
     "pokemon": "mandibuzz",
-    "how": "TM",
+    "how": "HM",
     "num": 630
    },
    {
     "pokemon": "hydreigon",
-    "how": "TM",
+    "how": "HM",
     "num": 635
    },
    {
     "pokemon": "volcarona",
-    "how": "TM",
+    "how": "HM",
     "num": 637
    },
    {
     "pokemon": "tornadus",
-    "how": "TM",
+    "how": "HM",
     "num": 641
    },
    {
     "pokemon": "tornadus_therian",
-    "how": "TM",
+    "how": "HM",
     "num": 641
    },
    {
     "pokemon": "thundurus",
-    "how": "TM",
+    "how": "HM",
     "num": 642
    },
    {
     "pokemon": "thundurus_therian",
-    "how": "TM",
+    "how": "HM",
     "num": 642
    },
    {
     "pokemon": "reshiram",
-    "how": "TM",
+    "how": "HM",
     "num": 643
    },
    {
     "pokemon": "zekrom",
-    "how": "TM",
+    "how": "HM",
     "num": 644
    },
    {
     "pokemon": "landorus",
-    "how": "TM",
+    "how": "HM",
     "num": 645
    },
    {
     "pokemon": "landorus_therian",
-    "how": "TM",
+    "how": "HM",
     "num": 645
    },
    {
     "pokemon": "kyurem",
-    "how": "TM",
+    "how": "HM",
     "num": 646
    },
    {
     "pokemon": "kyurem_black",
-    "how": "TM",
+    "how": "HM",
     "num": 646
    },
    {
     "pokemon": "kyurem_white",
-    "how": "TM",
+    "how": "HM",
     "num": 646
    },
    {
     "pokemon": "genesect",
-    "how": "TM",
+    "how": "HM",
     "num": 649
    },
    {
@@ -207306,37 +207306,37 @@
    },
    {
     "pokemon": "hawlucha",
-    "how": "TM",
+    "how": "HM",
     "num": 701
    },
    {
     "pokemon": "noibat",
-    "how": "TM",
+    "how": "HM",
     "num": 714
    },
    {
     "pokemon": "noivern",
-    "how": "TM",
+    "how": "HM",
     "num": 715
    },
    {
     "pokemon": "yveltal",
-    "how": "TM",
+    "how": "HM",
     "num": 717
    },
    {
     "pokemon": "pikipek",
-    "how": "TM",
+    "how": "HM",
     "num": 731
    },
    {
     "pokemon": "trumbeak",
-    "how": "TM",
+    "how": "HM",
     "num": 732
    },
    {
     "pokemon": "toucannon",
-    "how": "TM",
+    "how": "HM",
     "num": 733
    },
    {
@@ -207346,22 +207346,22 @@
    },
    {
     "pokemon": "oricorio",
-    "how": "TM",
+    "how": "HM",
     "num": 741
    },
    {
     "pokemon": "oricorio_pau",
-    "how": "TM",
+    "how": "HM",
     "num": 741
    },
    {
     "pokemon": "oricorio_pompom",
-    "how": "TM",
+    "how": "HM",
     "num": 741
    },
    {
     "pokemon": "oricorio_sensu",
-    "how": "TM",
+    "how": "HM",
     "num": 741
    },
    {
@@ -207371,37 +207371,37 @@
    },
    {
     "pokemon": "tapukoko",
-    "how": "TM",
+    "how": "HM",
     "num": 785
    },
    {
     "pokemon": "lunala",
-    "how": "TM",
+    "how": "HM",
     "num": 792
    },
    {
     "pokemon": "celesteela",
-    "how": "TM",
+    "how": "HM",
     "num": 797
    },
    {
     "pokemon": "naganadel",
-    "how": "TM",
+    "how": "HM",
     "num": 804
    },
    {
     "pokemon": "rookidee",
-    "how": "TM",
+    "how": "HM",
     "num": 821
    },
    {
     "pokemon": "corvisquire",
-    "how": "TM",
+    "how": "HM",
     "num": 822
    },
    {
     "pokemon": "corviknight",
-    "how": "TM",
+    "how": "HM",
     "num": 823
    },
    {
@@ -207411,22 +207411,22 @@
    },
    {
     "pokemon": "cramorant",
-    "how": "TM",
+    "how": "HM",
     "num": 845
    },
    {
     "pokemon": "dragapult",
-    "how": "TM",
+    "how": "HM",
     "num": 887
    },
    {
     "pokemon": "eternatus",
-    "how": "TM",
+    "how": "HM",
     "num": 890
    },
    {
     "pokemon": "enamorus",
-    "how": "TM",
+    "how": "HM",
     "num": 905
    },
    {
@@ -207436,27 +207436,27 @@
    },
    {
     "pokemon": "wattrel",
-    "how": "TM",
+    "how": "HM",
     "num": 940
    },
    {
     "pokemon": "kilowattrel",
-    "how": "TM",
+    "how": "HM",
     "num": 941
    },
    {
     "pokemon": "bombirdier",
-    "how": "TM",
+    "how": "HM",
     "num": 962
    },
    {
     "pokemon": "flamigo",
-    "how": "TM",
+    "how": "HM",
     "num": 973
    },
    {
     "pokemon": "ironjugulis",
-    "how": "TM",
+    "how": "HM",
     "num": 993
    },
    {
@@ -207466,7 +207466,7 @@
    },
    {
     "pokemon": "fezandipiti",
-    "how": "TM",
+    "how": "HM",
     "num": 1016
    }
   ]
@@ -217427,7 +217427,7 @@
    },
    {
     "pokemon": "chuggalong",
-    "how": "TM",
+    "how": "HM",
     "num": -75
    },
    {
@@ -217437,1172 +217437,1172 @@
    },
    {
     "pokemon": "duohm",
-    "how": "TM",
+    "how": "HM",
     "num": -63
    },
    {
     "pokemon": "monohm",
-    "how": "TM",
+    "how": "HM",
     "num": -62
    },
    {
     "pokemon": "snaelstrom",
-    "how": "TM",
+    "how": "HM",
     "num": -53
    },
    {
     "pokemon": "coribalis",
-    "how": "TM",
+    "how": "HM",
     "num": -52
    },
    {
     "pokemon": "swirlpool",
-    "how": "TM",
+    "how": "HM",
     "num": -51
    },
    {
     "pokemon": "pajantom",
-    "how": "TM",
+    "how": "HM",
     "num": -42
    },
    {
     "pokemon": "naviathan",
-    "how": "TM",
+    "how": "HM",
     "num": -38
    },
    {
     "pokemon": "caimanoe",
-    "how": "TM",
+    "how": "HM",
     "num": -37
    },
    {
     "pokemon": "floatoy",
-    "how": "TM",
+    "how": "HM",
     "num": -36
    },
    {
     "pokemon": "plasmanta",
-    "how": "TM",
+    "how": "HM",
     "num": -35
    },
    {
     "pokemon": "snugglow",
-    "how": "TM",
+    "how": "HM",
     "num": -34
    },
    {
     "pokemon": "volkraken",
-    "how": "TM",
+    "how": "HM",
     "num": -33
    },
    {
     "pokemon": "volkritter",
-    "how": "TM",
+    "how": "HM",
     "num": -32
    },
    {
     "pokemon": "cawmodore",
-    "how": "TM",
+    "how": "HM",
     "num": -31
    },
    {
     "pokemon": "cawdet",
-    "how": "TM",
+    "how": "HM",
     "num": -30
    },
    {
     "pokemon": "aurumoth",
-    "how": "TM",
+    "how": "HM",
     "num": -27
    },
    {
     "pokemon": "krilowatt",
-    "how": "TM",
+    "how": "HM",
     "num": -17
    },
    {
     "pokemon": "cyclohm",
-    "how": "TM",
+    "how": "HM",
     "num": -15
    },
    {
     "pokemon": "arghonaut",
-    "how": "TM",
+    "how": "HM",
     "num": -13
    },
    {
     "pokemon": "privatyke",
-    "how": "TM",
+    "how": "HM",
     "num": -12
    },
    {
     "pokemon": "squirtle",
-    "how": "TM",
+    "how": "HM",
     "num": 7
    },
    {
     "pokemon": "wartortle",
-    "how": "TM",
+    "how": "HM",
     "num": 8
    },
    {
     "pokemon": "blastoise",
-    "how": "TM",
+    "how": "HM",
     "num": 9
    },
    {
     "pokemon": "pikachu",
-    "how": "TM",
+    "how": "HM",
     "num": 25
    },
    {
     "pokemon": "raichu",
-    "how": "TM",
+    "how": "HM",
     "num": 26
    },
    {
     "pokemon": "raichu_alola",
-    "how": "TM",
+    "how": "HM",
     "num": 26
    },
    {
     "pokemon": "nidoqueen",
-    "how": "TM",
+    "how": "HM",
     "num": 31
    },
    {
     "pokemon": "nidoking",
-    "how": "TM",
+    "how": "HM",
     "num": 34
    },
    {
     "pokemon": "psyduck",
-    "how": "TM",
+    "how": "HM",
     "num": 54
    },
    {
     "pokemon": "golduck",
-    "how": "TM",
+    "how": "HM",
     "num": 55
    },
    {
     "pokemon": "poliwag",
-    "how": "TM",
+    "how": "HM",
     "num": 60
    },
    {
     "pokemon": "poliwhirl",
-    "how": "TM",
+    "how": "HM",
     "num": 61
    },
    {
     "pokemon": "poliwrath",
-    "how": "TM",
+    "how": "HM",
     "num": 62
    },
    {
     "pokemon": "tentacool",
-    "how": "TM",
+    "how": "HM",
     "num": 72
    },
    {
     "pokemon": "tentacruel",
-    "how": "TM",
+    "how": "HM",
     "num": 73
    },
    {
     "pokemon": "slowpoke",
-    "how": "TM",
+    "how": "HM",
     "num": 79
    },
    {
     "pokemon": "slowpoke_galar",
-    "how": "TM",
+    "how": "HM",
     "num": 79
    },
    {
     "pokemon": "slowbro",
-    "how": "TM",
+    "how": "HM",
     "num": 80
    },
    {
     "pokemon": "slowbro_galar",
-    "how": "TM",
+    "how": "HM",
     "num": 80
    },
    {
     "pokemon": "seel",
-    "how": "TM",
+    "how": "HM",
     "num": 86
    },
    {
     "pokemon": "dewgong",
-    "how": "TM",
+    "how": "HM",
     "num": 87
    },
    {
     "pokemon": "shellder",
-    "how": "TM",
+    "how": "HM",
     "num": 90
    },
    {
     "pokemon": "cloyster",
-    "how": "TM",
+    "how": "HM",
     "num": 91
    },
    {
     "pokemon": "krabby",
-    "how": "TM",
+    "how": "HM",
     "num": 98
    },
    {
     "pokemon": "kingler",
-    "how": "TM",
+    "how": "HM",
     "num": 99
    },
    {
     "pokemon": "lickitung",
-    "how": "TM",
+    "how": "HM",
     "num": 108
    },
    {
     "pokemon": "rhydon",
-    "how": "TM",
+    "how": "HM",
     "num": 112
    },
    {
     "pokemon": "kangaskhan",
-    "how": "TM",
+    "how": "HM",
     "num": 115
    },
    {
     "pokemon": "horsea",
-    "how": "TM",
+    "how": "HM",
     "num": 116
    },
    {
     "pokemon": "seadra",
-    "how": "TM",
+    "how": "HM",
     "num": 117
    },
    {
     "pokemon": "goldeen",
-    "how": "TM",
+    "how": "HM",
     "num": 118
    },
    {
     "pokemon": "seaking",
-    "how": "TM",
+    "how": "HM",
     "num": 119
    },
    {
     "pokemon": "staryu",
-    "how": "TM",
+    "how": "HM",
     "num": 120
    },
    {
     "pokemon": "starmie",
-    "how": "TM",
+    "how": "HM",
     "num": 121
    },
    {
     "pokemon": "tauros",
-    "how": "TM",
+    "how": "HM",
     "num": 128
    },
    {
     "pokemon": "tauros_paldea_aqua",
-    "how": "TM",
+    "how": "HM",
     "num": 128
    },
    {
     "pokemon": "tauros_paldea_blaze",
-    "how": "TM",
+    "how": "HM",
     "num": 128
    },
    {
     "pokemon": "tauros_paldea_combat",
-    "how": "TM",
+    "how": "HM",
     "num": 128
    },
    {
     "pokemon": "gyarados",
-    "how": "TM",
+    "how": "HM",
     "num": 130
    },
    {
     "pokemon": "lapras",
-    "how": "TM",
+    "how": "HM",
     "num": 131
    },
    {
     "pokemon": "vaporeon",
-    "how": "TM",
+    "how": "HM",
     "num": 134
    },
    {
     "pokemon": "omanyte",
-    "how": "TM",
+    "how": "HM",
     "num": 138
    },
    {
     "pokemon": "omastar",
-    "how": "TM",
+    "how": "HM",
     "num": 139
    },
    {
     "pokemon": "kabuto",
-    "how": "TM",
+    "how": "HM",
     "num": 140
    },
    {
     "pokemon": "kabutops",
-    "how": "TM",
+    "how": "HM",
     "num": 141
    },
    {
     "pokemon": "snorlax",
-    "how": "TM",
+    "how": "HM",
     "num": 143
    },
    {
     "pokemon": "dratini",
-    "how": "TM",
+    "how": "HM",
     "num": 147
    },
    {
     "pokemon": "dragonair",
-    "how": "TM",
+    "how": "HM",
     "num": 148
    },
    {
     "pokemon": "dragonite",
-    "how": "TM",
+    "how": "HM",
     "num": 149
    },
    {
     "pokemon": "mew",
-    "how": "TM",
+    "how": "HM",
     "num": 151
    },
    {
     "pokemon": "totodile",
-    "how": "TM",
+    "how": "HM",
     "num": 158
    },
    {
     "pokemon": "croconaw",
-    "how": "TM",
+    "how": "HM",
     "num": 159
    },
    {
     "pokemon": "feraligatr",
-    "how": "TM",
+    "how": "HM",
     "num": 160
    },
    {
     "pokemon": "sentret",
-    "how": "TM",
+    "how": "HM",
     "num": 161
    },
    {
     "pokemon": "furret",
-    "how": "TM",
+    "how": "HM",
     "num": 162
    },
    {
     "pokemon": "chinchou",
-    "how": "TM",
+    "how": "HM",
     "num": 170
    },
    {
     "pokemon": "lanturn",
-    "how": "TM",
+    "how": "HM",
     "num": 171
    },
    {
     "pokemon": "pichu",
-    "how": "TM",
+    "how": "HM",
     "num": 172
    },
    {
     "pokemon": "marill",
-    "how": "TM",
+    "how": "HM",
     "num": 183
    },
    {
     "pokemon": "azumarill",
-    "how": "TM",
+    "how": "HM",
     "num": 184
    },
    {
     "pokemon": "politoed",
-    "how": "TM",
+    "how": "HM",
     "num": 186
    },
    {
     "pokemon": "wooper",
-    "how": "TM",
+    "how": "HM",
     "num": 194
    },
    {
     "pokemon": "quagsire",
-    "how": "TM",
+    "how": "HM",
     "num": 195
    },
    {
     "pokemon": "slowking",
-    "how": "TM",
+    "how": "HM",
     "num": 199
    },
    {
     "pokemon": "slowking_galar",
-    "how": "TM",
+    "how": "HM",
     "num": 199
    },
    {
     "pokemon": "qwilfish",
-    "how": "TM",
+    "how": "HM",
     "num": 211
    },
    {
     "pokemon": "qwilfish_hisui",
-    "how": "TM",
+    "how": "HM",
     "num": 211
    },
    {
     "pokemon": "sneasel",
-    "how": "TM",
+    "how": "HM",
     "num": 215
    },
    {
     "pokemon": "sneasel_hisui",
-    "how": "TM",
+    "how": "HM",
     "num": 215
    },
    {
     "pokemon": "corsola",
-    "how": "TM",
+    "how": "HM",
     "num": 222
    },
    {
     "pokemon": "corsola_galar",
-    "how": "TM",
+    "how": "HM",
     "num": 222
    },
    {
     "pokemon": "remoraid",
-    "how": "TM",
+    "how": "HM",
     "num": 223
    },
    {
     "pokemon": "octillery",
-    "how": "TM",
+    "how": "HM",
     "num": 224
    },
    {
     "pokemon": "mantine",
-    "how": "TM",
+    "how": "HM",
     "num": 226
    },
    {
     "pokemon": "kingdra",
-    "how": "TM",
+    "how": "HM",
     "num": 230
    },
    {
     "pokemon": "miltank",
-    "how": "TM",
+    "how": "HM",
     "num": 241
    },
    {
     "pokemon": "suicune",
-    "how": "TM",
+    "how": "HM",
     "num": 245
    },
    {
     "pokemon": "tyranitar",
-    "how": "TM",
+    "how": "HM",
     "num": 248
    },
    {
     "pokemon": "lugia",
-    "how": "TM",
+    "how": "HM",
     "num": 249
    },
    {
     "pokemon": "mudkip",
-    "how": "TM",
+    "how": "HM",
     "num": 258
    },
    {
     "pokemon": "marshtomp",
-    "how": "TM",
+    "how": "HM",
     "num": 259
    },
    {
     "pokemon": "swampert",
-    "how": "TM",
+    "how": "HM",
     "num": 260
    },
    {
     "pokemon": "zigzagoon",
-    "how": "TM",
+    "how": "HM",
     "num": 263
    },
    {
     "pokemon": "zigzagoon_galar",
-    "how": "TM",
+    "how": "HM",
     "num": 263
    },
    {
     "pokemon": "linoone",
-    "how": "TM",
+    "how": "HM",
     "num": 264
    },
    {
     "pokemon": "linoone_galar",
-    "how": "TM",
+    "how": "HM",
     "num": 264
    },
    {
     "pokemon": "lotad",
-    "how": "TM",
+    "how": "HM",
     "num": 270
    },
    {
     "pokemon": "lombre",
-    "how": "TM",
+    "how": "HM",
     "num": 271
    },
    {
     "pokemon": "ludicolo",
-    "how": "TM",
+    "how": "HM",
     "num": 272
    },
    {
     "pokemon": "wingull",
-    "how": "TM",
+    "how": "HM",
     "num": 278
    },
    {
     "pokemon": "pelipper",
-    "how": "TM",
+    "how": "HM",
     "num": 279
    },
    {
     "pokemon": "surskit",
-    "how": "TM",
+    "how": "HM",
     "num": 283
    },
    {
     "pokemon": "masquerain",
-    "how": "TM",
+    "how": "HM",
     "num": 284
    },
    {
     "pokemon": "exploud",
-    "how": "TM",
+    "how": "HM",
     "num": 295
    },
    {
     "pokemon": "makuhita",
-    "how": "TM",
+    "how": "HM",
     "num": 296
    },
    {
     "pokemon": "hariyama",
-    "how": "TM",
+    "how": "HM",
     "num": 297
    },
    {
     "pokemon": "azurill",
-    "how": "TM",
+    "how": "HM",
     "num": 298
    },
    {
     "pokemon": "aggron",
-    "how": "TM",
+    "how": "HM",
     "num": 306
    },
    {
     "pokemon": "carvanha",
-    "how": "TM",
+    "how": "HM",
     "num": 318
    },
    {
     "pokemon": "sharpedo",
-    "how": "TM",
+    "how": "HM",
     "num": 319
    },
    {
     "pokemon": "wailmer",
-    "how": "TM",
+    "how": "HM",
     "num": 320
    },
    {
     "pokemon": "wailord",
-    "how": "TM",
+    "how": "HM",
     "num": 321
    },
    {
     "pokemon": "zangoose",
-    "how": "TM",
+    "how": "HM",
     "num": 335
    },
    {
     "pokemon": "barboach",
-    "how": "TM",
+    "how": "HM",
     "num": 339
    },
    {
     "pokemon": "whiscash",
-    "how": "TM",
+    "how": "HM",
     "num": 340
    },
    {
     "pokemon": "corphish",
-    "how": "TM",
+    "how": "HM",
     "num": 341
    },
    {
     "pokemon": "crawdaunt",
-    "how": "TM",
+    "how": "HM",
     "num": 342
    },
    {
     "pokemon": "feebas",
-    "how": "TM",
+    "how": "HM",
     "num": 349
    },
    {
     "pokemon": "milotic",
-    "how": "TM",
+    "how": "HM",
     "num": 350
    },
    {
     "pokemon": "spheal",
-    "how": "TM",
+    "how": "HM",
     "num": 363
    },
    {
     "pokemon": "sealeo",
-    "how": "TM",
+    "how": "HM",
     "num": 364
    },
    {
     "pokemon": "walrein",
-    "how": "TM",
+    "how": "HM",
     "num": 365
    },
    {
     "pokemon": "clamperl",
-    "how": "TM",
+    "how": "HM",
     "num": 366
    },
    {
     "pokemon": "huntail",
-    "how": "TM",
+    "how": "HM",
     "num": 367
    },
    {
     "pokemon": "gorebyss",
-    "how": "TM",
+    "how": "HM",
     "num": 368
    },
    {
     "pokemon": "relicanth",
-    "how": "TM",
+    "how": "HM",
     "num": 369
    },
    {
     "pokemon": "luvdisc",
-    "how": "TM",
+    "how": "HM",
     "num": 370
    },
    {
     "pokemon": "latias",
-    "how": "TM",
+    "how": "HM",
     "num": 380
    },
    {
     "pokemon": "latios",
-    "how": "TM",
+    "how": "HM",
     "num": 381
    },
    {
     "pokemon": "kyogre",
-    "how": "TM",
+    "how": "HM",
     "num": 382
    },
    {
     "pokemon": "rayquaza",
-    "how": "TM",
+    "how": "HM",
     "num": 384
    },
    {
     "pokemon": "piplup",
-    "how": "TM",
+    "how": "HM",
     "num": 393
    },
    {
     "pokemon": "prinplup",
-    "how": "TM",
+    "how": "HM",
     "num": 394
    },
    {
     "pokemon": "empoleon",
-    "how": "TM",
+    "how": "HM",
     "num": 395
    },
    {
     "pokemon": "bibarel",
-    "how": "TM",
+    "how": "HM",
     "num": 400
    },
    {
     "pokemon": "rampardos",
-    "how": "TM",
+    "how": "HM",
     "num": 409
    },
    {
     "pokemon": "buizel",
-    "how": "TM",
+    "how": "HM",
     "num": 418
    },
    {
     "pokemon": "floatzel",
-    "how": "TM",
+    "how": "HM",
     "num": 419
    },
    {
     "pokemon": "shellos",
-    "how": "TM",
+    "how": "HM",
     "num": 422
    },
    {
     "pokemon": "gastrodon",
-    "how": "TM",
+    "how": "HM",
     "num": 423
    },
    {
     "pokemon": "garchomp",
-    "how": "TM",
+    "how": "HM",
     "num": 445
    },
    {
     "pokemon": "munchlax",
-    "how": "TM",
+    "how": "HM",
     "num": 446
    },
    {
     "pokemon": "finneon",
-    "how": "TM",
+    "how": "HM",
     "num": 456
    },
    {
     "pokemon": "lumineon",
-    "how": "TM",
+    "how": "HM",
     "num": 457
    },
    {
     "pokemon": "mantyke",
-    "how": "TM",
+    "how": "HM",
     "num": 458
    },
    {
     "pokemon": "weavile",
-    "how": "TM",
+    "how": "HM",
     "num": 461
    },
    {
     "pokemon": "lickilicky",
-    "how": "TM",
+    "how": "HM",
     "num": 463
    },
    {
     "pokemon": "rhyperior",
-    "how": "TM",
+    "how": "HM",
     "num": 464
    },
    {
     "pokemon": "palkia",
-    "how": "TM",
+    "how": "HM",
     "num": 484
    },
    {
     "pokemon": "phione",
-    "how": "TM",
+    "how": "HM",
     "num": 489
    },
    {
     "pokemon": "manaphy",
-    "how": "TM",
+    "how": "HM",
     "num": 490
    },
    {
     "pokemon": "arceus",
-    "how": "TM",
+    "how": "HM",
     "num": 493
    },
    {
     "pokemon": "oshawott",
-    "how": "TM",
+    "how": "HM",
     "num": 501
    },
    {
     "pokemon": "dewott",
-    "how": "TM",
+    "how": "HM",
     "num": 502
    },
    {
     "pokemon": "samurott",
-    "how": "TM",
+    "how": "HM",
     "num": 503
    },
    {
     "pokemon": "samurott_hisui",
-    "how": "TM",
+    "how": "HM",
     "num": 503
    },
    {
     "pokemon": "herdier",
-    "how": "TM",
+    "how": "HM",
     "num": 507
    },
    {
     "pokemon": "stoutland",
-    "how": "TM",
+    "how": "HM",
     "num": 508
    },
    {
     "pokemon": "panpour",
-    "how": "TM",
+    "how": "HM",
     "num": 515
    },
    {
     "pokemon": "simipour",
-    "how": "TM",
+    "how": "HM",
     "num": 516
    },
    {
     "pokemon": "audino",
-    "how": "TM",
+    "how": "HM",
     "num": 531
    },
    {
     "pokemon": "tympole",
-    "how": "TM",
+    "how": "HM",
     "num": 535
    },
    {
     "pokemon": "palpitoad",
-    "how": "TM",
+    "how": "HM",
     "num": 536
    },
    {
     "pokemon": "seismitoad",
-    "how": "TM",
+    "how": "HM",
     "num": 537
    },
    {
     "pokemon": "basculin",
-    "how": "TM",
+    "how": "HM",
     "num": 550
    },
    {
     "pokemon": "basculin_blue_striped",
-    "how": "TM",
+    "how": "HM",
     "num": 550
    },
    {
     "pokemon": "tirtouga",
-    "how": "TM",
+    "how": "HM",
     "num": 564
    },
    {
     "pokemon": "carracosta",
-    "how": "TM",
+    "how": "HM",
     "num": 565
    },
    {
     "pokemon": "ducklett",
-    "how": "TM",
+    "how": "HM",
     "num": 580
    },
    {
     "pokemon": "swanna",
-    "how": "TM",
+    "how": "HM",
     "num": 581
    },
    {
     "pokemon": "frillish",
-    "how": "TM",
+    "how": "HM",
     "num": 592
    },
    {
     "pokemon": "jellicent",
-    "how": "TM",
+    "how": "HM",
     "num": 593
    },
    {
     "pokemon": "alomomola",
-    "how": "TM",
+    "how": "HM",
     "num": 594
    },
    {
     "pokemon": "axew",
-    "how": "TM",
+    "how": "HM",
     "num": 610
    },
    {
     "pokemon": "fraxure",
-    "how": "TM",
+    "how": "HM",
     "num": 611
    },
    {
     "pokemon": "haxorus",
-    "how": "TM",
+    "how": "HM",
     "num": 612
    },
    {
     "pokemon": "cubchoo",
-    "how": "TM",
+    "how": "HM",
     "num": 613
    },
    {
     "pokemon": "beartic",
-    "how": "TM",
+    "how": "HM",
     "num": 614
    },
    {
     "pokemon": "stunfisk",
-    "how": "TM",
+    "how": "HM",
     "num": 618
    },
    {
     "pokemon": "stunfisk_galar",
-    "how": "TM",
+    "how": "HM",
     "num": 618
    },
    {
     "pokemon": "druddigon",
-    "how": "TM",
+    "how": "HM",
     "num": 621
    },
    {
     "pokemon": "bouffalant",
-    "how": "TM",
+    "how": "HM",
     "num": 626
    },
    {
     "pokemon": "hydreigon",
-    "how": "TM",
+    "how": "HM",
     "num": 635
    },
    {
     "pokemon": "keldeo",
-    "how": "TM",
+    "how": "HM",
     "num": 647
    },
    {
     "pokemon": "froakie",
-    "how": "TM",
+    "how": "HM",
     "num": 656
    },
    {
     "pokemon": "frogadier",
-    "how": "TM",
+    "how": "HM",
     "num": 657
    },
    {
     "pokemon": "greninja",
-    "how": "TM",
+    "how": "HM",
     "num": 658
    },
    {
     "pokemon": "bunnelby",
-    "how": "TM",
+    "how": "HM",
     "num": 659
    },
    {
     "pokemon": "diggersby",
-    "how": "TM",
+    "how": "HM",
     "num": 660
    },
    {
     "pokemon": "skiddo",
-    "how": "TM",
+    "how": "HM",
     "num": 672
    },
    {
     "pokemon": "gogoat",
-    "how": "TM",
+    "how": "HM",
     "num": 673
    },
    {
     "pokemon": "pancham",
-    "how": "TM",
+    "how": "HM",
     "num": 674
    },
    {
     "pokemon": "pangoro",
-    "how": "TM",
+    "how": "HM",
     "num": 675
    },
    {
     "pokemon": "furfrou",
-    "how": "TM",
+    "how": "HM",
     "num": 676
    },
    {
     "pokemon": "swirlix",
-    "how": "TM",
+    "how": "HM",
     "num": 684
    },
    {
     "pokemon": "slurpuff",
-    "how": "TM",
+    "how": "HM",
     "num": 685
    },
    {
     "pokemon": "binacle",
-    "how": "TM",
+    "how": "HM",
     "num": 688
    },
    {
     "pokemon": "barbaracle",
-    "how": "TM",
+    "how": "HM",
     "num": 689
    },
    {
     "pokemon": "skrelp",
-    "how": "TM",
+    "how": "HM",
     "num": 690
    },
    {
     "pokemon": "dragalge",
-    "how": "TM",
+    "how": "HM",
     "num": 691
    },
    {
     "pokemon": "clauncher",
-    "how": "TM",
+    "how": "HM",
     "num": 692
    },
    {
     "pokemon": "clawitzer",
-    "how": "TM",
+    "how": "HM",
     "num": 693
    },
    {
     "pokemon": "helioptile",
-    "how": "TM",
+    "how": "HM",
     "num": 694
    },
    {
     "pokemon": "heliolisk",
-    "how": "TM",
+    "how": "HM",
     "num": 695
    },
    {
     "pokemon": "goodra",
-    "how": "TM",
+    "how": "HM",
     "num": 706
    },
    {
     "pokemon": "goodra_hisui",
-    "how": "TM",
+    "how": "HM",
     "num": 706
    },
    {
     "pokemon": "bergmite",
-    "how": "TM",
+    "how": "HM",
     "num": 712
    },
    {
     "pokemon": "avalugg",
-    "how": "TM",
+    "how": "HM",
     "num": 713
    },
    {
     "pokemon": "avalugg_hisui",
-    "how": "TM",
+    "how": "HM",
     "num": 713
    },
    {
     "pokemon": "popplio",
-    "how": "TM",
+    "how": "HM",
     "num": 728
    },
    {
     "pokemon": "brionne",
-    "how": "TM",
+    "how": "HM",
     "num": 729
    },
    {
     "pokemon": "primarina",
-    "how": "TM",
+    "how": "HM",
     "num": 730
    },
    {
     "pokemon": "wishiwashi",
-    "how": "TM",
+    "how": "HM",
     "num": 746
    },
    {
     "pokemon": "wishiwashi_school",
-    "how": "TM",
+    "how": "HM",
     "num": 746
    },
    {
     "pokemon": "mareanie",
-    "how": "TM",
+    "how": "HM",
     "num": 747
    },
    {
     "pokemon": "toxapex",
-    "how": "TM",
+    "how": "HM",
     "num": 748
    },
    {
     "pokemon": "dewpider",
-    "how": "TM",
+    "how": "HM",
     "num": 751
    },
    {
     "pokemon": "araquanid",
-    "how": "TM",
+    "how": "HM",
     "num": 752
    },
    {
     "pokemon": "wimpod",
-    "how": "TM",
+    "how": "HM",
     "num": 767
    },
    {
     "pokemon": "golisopod",
-    "how": "TM",
+    "how": "HM",
     "num": 768
    },
    {
     "pokemon": "silvally",
-    "how": "TM",
+    "how": "HM",
     "num": 773
    },
    {
     "pokemon": "bruxish",
-    "how": "TM",
+    "how": "HM",
     "num": 779
    },
    {
     "pokemon": "drampa",
-    "how": "TM",
+    "how": "HM",
     "num": 780
    },
    {
     "pokemon": "dhelmise",
-    "how": "TM",
+    "how": "HM",
     "num": 781
    },
    {
@@ -218612,62 +218612,62 @@
    },
    {
     "pokemon": "sobble",
-    "how": "TM",
+    "how": "HM",
     "num": 816
    },
    {
     "pokemon": "drizzile",
-    "how": "TM",
+    "how": "HM",
     "num": 817
    },
    {
     "pokemon": "inteleon",
-    "how": "TM",
+    "how": "HM",
     "num": 818
    },
    {
     "pokemon": "chewtle",
-    "how": "TM",
+    "how": "HM",
     "num": 833
    },
    {
     "pokemon": "drednaw",
-    "how": "TM",
+    "how": "HM",
     "num": 834
    },
    {
     "pokemon": "cramorant",
-    "how": "TM",
+    "how": "HM",
     "num": 845
    },
    {
     "pokemon": "arrokuda",
-    "how": "TM",
+    "how": "HM",
     "num": 846
    },
    {
     "pokemon": "barraskewda",
-    "how": "TM",
+    "how": "HM",
     "num": 847
    },
    {
     "pokemon": "grapploct",
-    "how": "TM",
+    "how": "HM",
     "num": 853
    },
    {
     "pokemon": "obstagoon",
-    "how": "TM",
+    "how": "HM",
     "num": 862
    },
    {
     "pokemon": "cursola",
-    "how": "TM",
+    "how": "HM",
     "num": 864
    },
    {
     "pokemon": "pincurchin",
-    "how": "TM",
+    "how": "HM",
     "num": 871
    },
    {
@@ -218682,112 +218682,112 @@
    },
    {
     "pokemon": "arctozolt",
-    "how": "TM",
+    "how": "HM",
     "num": 881
    },
    {
     "pokemon": "dracovish",
-    "how": "TM",
+    "how": "HM",
     "num": 882
    },
    {
     "pokemon": "arctovish",
-    "how": "TM",
+    "how": "HM",
     "num": 883
    },
    {
     "pokemon": "drakloak",
-    "how": "TM",
+    "how": "HM",
     "num": 886
    },
    {
     "pokemon": "dragapult",
-    "how": "TM",
+    "how": "HM",
     "num": 887
    },
    {
     "pokemon": "basculegion",
-    "how": "TM",
+    "how": "HM",
     "num": 902
    },
    {
     "pokemon": "basculegion_f",
-    "how": "TM",
+    "how": "HM",
     "num": 902
    },
    {
     "pokemon": "overqwil",
-    "how": "TM",
+    "how": "HM",
     "num": 904
    },
    {
     "pokemon": "quaxly",
-    "how": "TM",
+    "how": "HM",
     "num": 912
    },
    {
     "pokemon": "quaxwell",
-    "how": "TM",
+    "how": "HM",
     "num": 913
    },
    {
     "pokemon": "quaquaval",
-    "how": "TM",
+    "how": "HM",
     "num": 914
    },
    {
     "pokemon": "wiglett",
-    "how": "TM",
+    "how": "HM",
     "num": 960
    },
    {
     "pokemon": "wugtrio",
-    "how": "TM",
+    "how": "HM",
     "num": 961
    },
    {
     "pokemon": "finizen",
-    "how": "TM",
+    "how": "HM",
     "num": 963
    },
    {
     "pokemon": "palafin",
-    "how": "TM",
+    "how": "HM",
     "num": 964
    },
    {
     "pokemon": "palafin_hero",
-    "how": "TM",
+    "how": "HM",
     "num": 964
    },
    {
     "pokemon": "veluza",
-    "how": "TM",
+    "how": "HM",
     "num": 976
    },
    {
     "pokemon": "dondozo",
-    "how": "TM",
+    "how": "HM",
     "num": 977
    },
    {
     "pokemon": "tatsugiri",
-    "how": "TM",
+    "how": "HM",
     "num": 978
    },
    {
     "pokemon": "clodsire",
-    "how": "TM",
+    "how": "HM",
     "num": 980
    },
    {
     "pokemon": "walkingwake",
-    "how": "TM",
+    "how": "HM",
     "num": 1009
    },
    {
     "pokemon": "terapagos",
-    "how": "TM",
+    "how": "HM",
     "num": 1024
    }
   ]

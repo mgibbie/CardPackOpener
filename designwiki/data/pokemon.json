@@ -246,7 +246,6 @@
    "solarbeam",
    "sunnyday",
    "superfang",
-   "surf",
    "swift",
    "takedown",
    "terablast",
@@ -272,7 +271,8 @@
    "trick"
   ],
   "hmMoves": [
-   "cut"
+   "cut",
+   "surf"
   ]
  },
  "serperior": {
@@ -1160,14 +1160,12 @@
    "spite",
    "substitute",
    "superfang",
-   "surf",
    "swift",
    "takedown",
    "thief",
    "toxic",
    "uproar",
    "waterpulse",
-   "waterfall",
    "whirlpool",
    "zenheadbutt"
   ],
@@ -1175,7 +1173,9 @@
   "hmMoves": [
    "dive",
    "rocksmash",
-   "strength"
+   "strength",
+   "surf",
+   "waterfall"
   ]
  },
  "shaymin": {
@@ -2151,13 +2151,11 @@
    "snowscape",
    "spikes",
    "substitute",
-   "surf",
    "swift",
    "terablast",
    "toxic",
    "toxicspikes",
    "waterpulse",
-   "waterfall",
    "whirlpool"
   ],
   "eggMoves": [
@@ -2168,7 +2166,9 @@
    "takedown"
   ],
   "hmMoves": [
-   "dive"
+   "dive",
+   "surf",
+   "waterfall"
   ]
  },
  "shellos": {
@@ -2326,16 +2326,16 @@
    "stealthrock",
    "stoneedge",
    "substitute",
-   "surf",
    "takedown",
    "terablast",
    "toxic",
-   "waterfall",
    "whirlpool"
   ],
   "eggMoves": [],
   "hmMoves": [
-   "dive"
+   "dive",
+   "surf",
+   "waterfall"
   ]
  },
  "shelmet": {
@@ -4320,7 +4320,6 @@
    "expandingforce",
    "facade",
    "flashcannon",
-   "fly",
    "futuresight",
    "gigaimpact",
    "heatwave",
@@ -4349,7 +4348,8 @@
   ],
   "eggMoves": [],
   "hmMoves": [
-   "flash"
+   "flash",
+   "fly"
   ]
  },
  "silcoon": {
@@ -4763,7 +4763,6 @@
    "steelbeam",
    "substitute",
    "sunnyday",
-   "surf",
    "swift",
    "swordsdance",
    "tailwind",
@@ -4774,7 +4773,9 @@
    "zenheadbutt"
   ],
   "eggMoves": [],
-  "hmMoves": []
+  "hmMoves": [
+   "surf"
+  ]
  },
  "simipour": {
   "id": "simipour",
@@ -4889,21 +4890,21 @@
    "shadowclaw",
    "sleeptalk",
    "substitute",
-   "surf",
    "taunt",
    "thief",
    "throatchop",
    "toxic",
    "uproar",
    "waterpledge",
-   "waterpulse",
-   "waterfall"
+   "waterpulse"
   ],
   "eggMoves": [],
   "hmMoves": [
    "cut",
    "dive",
-   "rocksmash"
+   "rocksmash",
+   "surf",
+   "waterfall"
   ]
  },
  "simisage": {
@@ -5880,7 +5881,6 @@
    "endure",
    "facade",
    "flashcannon",
-   "fly",
    "gigaimpact",
    "hurricane",
    "hyperbeam",
@@ -5921,6 +5921,7 @@
   "hmMoves": [
    "cut",
    "flash",
+   "fly",
    "rocksmash"
   ]
  },
@@ -6070,7 +6071,6 @@
    "earthquake",
    "endure",
    "facade",
-   "fly",
    "gigadrain",
    "gigaimpact",
    "heatwave",
@@ -6100,6 +6100,7 @@
   ],
   "eggMoves": [],
   "hmMoves": [
+   "fly",
    "rocksmash",
    "strength"
   ]
@@ -8106,7 +8107,6 @@
    "endure",
    "facade",
    "flamethrower",
-   "fly",
    "gigadrain",
    "gigaimpact",
    "hyperbeam",
@@ -8134,7 +8134,9 @@
    "zenheadbutt"
   ],
   "eggMoves": [],
-  "hmMoves": []
+  "hmMoves": [
+   "fly"
+  ]
  },
  "volchik": {
   "id": "volchik",
@@ -8457,17 +8459,18 @@
    "sleeptalk",
    "substitute",
    "sunnyday",
-   "surf",
    "terablast",
    "thief",
    "toxic",
    "uturn",
    "waterpulse",
-   "waterfall",
    "willowisp"
   ],
   "eggMoves": [],
-  "hmMoves": []
+  "hmMoves": [
+   "surf",
+   "waterfall"
+  ]
  },
  "volkritter": {
   "id": "volkritter",
@@ -8649,17 +8652,18 @@
    "sleeptalk",
    "substitute",
    "sunnyday",
-   "surf",
    "terablast",
    "thief",
    "toxic",
    "uturn",
    "waterpulse",
-   "waterfall",
    "willowisp"
   ],
   "eggMoves": [],
-  "hmMoves": []
+  "hmMoves": [
+   "surf",
+   "waterfall"
+  ]
  },
  "voltasu": {
   "id": "voltasu",
@@ -9680,7 +9684,6 @@
    "facade",
    "faketears",
    "featherdance",
-   "fly",
    "foulplay",
    "heatwave",
    "lashout",
@@ -9709,6 +9712,7 @@
   "eggMoves": [],
   "hmMoves": [
    "cut",
+   "fly",
    "rocksmash"
   ]
  },
@@ -10179,9 +10183,7 @@
    "rocktomb",
    "scald",
    "substitute",
-   "surf",
    "toxic",
-   "waterfall",
    "weatherball",
    "zenheadbutt"
   ],
@@ -10198,7 +10200,9 @@
   "hmMoves": [
    "dive",
    "rocksmash",
-   "strength"
+   "strength",
+   "surf",
+   "waterfall"
   ]
  },
  "wailord": {
@@ -10355,9 +10359,7 @@
    "scald",
    "sleeptalk",
    "substitute",
-   "surf",
    "toxic",
-   "waterfall",
    "weatherball",
    "zenheadbutt"
   ],
@@ -10365,7 +10367,9 @@
   "hmMoves": [
    "dive",
    "rocksmash",
-   "strength"
+   "strength",
+   "surf",
+   "waterfall"
   ]
  },
  "walkingwake": {
@@ -10543,16 +10547,17 @@
    "sleeptalk",
    "snarl",
    "substitute",
-   "surf",
    "swift",
    "takedown",
    "terablast",
-   "waterfall",
    "weatherball",
    "whirlpool"
   ],
   "eggMoves": [],
-  "hmMoves": []
+  "hmMoves": [
+   "surf",
+   "waterfall"
+  ]
  },
  "walrein": {
   "id": "walrein",
@@ -10711,18 +10716,18 @@
    "stompingtantrum",
    "substitute",
    "superfang",
-   "surf",
    "swordsdance",
    "toxic",
    "waterpulse",
-   "waterfall",
    "whirlpool"
   ],
   "eggMoves": [],
   "hmMoves": [
    "dive",
    "rocksmash",
-   "strength"
+   "strength",
+   "surf",
+   "waterfall"
   ]
  },
  "wartortle": {
@@ -10896,13 +10901,11 @@
    "scald",
    "sleeptalk",
    "substitute",
-   "surf",
    "takedown",
    "terablast",
    "toxic",
    "waterpledge",
    "waterpulse",
-   "waterfall",
    "weatherball",
    "whirlpool",
    "zenheadbutt"
@@ -10911,7 +10914,9 @@
   "hmMoves": [
    "dive",
    "rocksmash",
-   "strength"
+   "strength",
+   "surf",
+   "waterfall"
   ]
  },
  "watchog": {
@@ -11250,7 +11255,6 @@
    "endure",
    "facade",
    "featherdance",
-   "fly",
    "hurricane",
    "protect",
    "rest",
@@ -11268,7 +11272,9 @@
    "wildcharge"
   ],
   "eggMoves": [],
-  "hmMoves": []
+  "hmMoves": [
+   "fly"
+  ]
  },
  "weavile": {
   "id": "weavile",
@@ -11516,7 +11522,6 @@
    "spite",
    "substitute",
    "sunnyday",
-   "surf",
    "swift",
    "swordsdance",
    "takedown",
@@ -11535,7 +11540,8 @@
   "hmMoves": [
    "cut",
    "rocksmash",
-   "strength"
+   "strength",
+   "surf"
   ]
  },
  "weedle": {
@@ -12620,14 +12626,12 @@
    "stoneedge",
    "substitute",
    "sunnyday",
-   "surf",
    "swift",
    "takedown",
    "terablast",
    "toxic",
    "uproar",
    "waterpulse",
-   "waterfall",
    "weatherball",
    "whirlpool",
    "zenheadbutt"
@@ -12636,7 +12640,9 @@
   "hmMoves": [
    "dive",
    "rocksmash",
-   "strength"
+   "strength",
+   "surf",
+   "waterfall"
   ]
  },
  "whismur": {
@@ -13143,14 +13149,15 @@
    "sleeptalk",
    "stompingtantrum",
    "substitute",
-   "surf",
    "swift",
    "takedown",
    "terablast",
    "whirlpool"
   ],
   "eggMoves": [],
-  "hmMoves": []
+  "hmMoves": [
+   "surf"
+  ]
  },
  "wimpod": {
   "id": "wimpod",
@@ -13225,14 +13232,15 @@
    "sleeptalk",
    "spikes",
    "substitute",
-   "surf",
    "swift",
    "taunt",
-   "toxic",
-   "waterfall"
+   "toxic"
   ],
   "eggMoves": [],
-  "hmMoves": []
+  "hmMoves": [
+   "surf",
+   "waterfall"
+  ]
  },
  "wingull": {
   "id": "wingull",
@@ -13357,7 +13365,6 @@
    "endure",
    "facade",
    "featherdance",
-   "fly",
    "helpinghand",
    "hurricane",
    "hydropump",
@@ -13374,7 +13381,6 @@
    "sleeptalk",
    "snowscape",
    "substitute",
-   "surf",
    "swift",
    "tailwind",
    "takedown",
@@ -13384,7 +13390,6 @@
    "uturn",
    "uproar",
    "waterpulse",
-   "waterfall",
    "whirlpool"
   ],
   "eggMoves": [
@@ -13392,7 +13397,11 @@
    "twister",
    "watersport"
   ],
-  "hmMoves": []
+  "hmMoves": [
+   "fly",
+   "surf",
+   "waterfall"
+  ]
  },
  "winotinger": {
   "id": "winotinger",
@@ -13650,15 +13659,16 @@
    "scaleshot",
    "sleeptalk",
    "substitute",
-   "surf",
    "toxic",
    "uturn",
    "waterpulse",
-   "waterfall",
    "whirlpool"
   ],
   "eggMoves": [],
-  "hmMoves": []
+  "hmMoves": [
+   "surf",
+   "waterfall"
+  ]
  },
  "wishiwashi_school": {
   "id": "wishiwashi_school",
@@ -13802,15 +13812,16 @@
    "scaleshot",
    "sleeptalk",
    "substitute",
-   "surf",
    "toxic",
    "uturn",
    "waterpulse",
-   "waterfall",
    "whirlpool"
   ],
   "eggMoves": [],
-  "hmMoves": []
+  "hmMoves": [
+   "surf",
+   "waterfall"
+  ]
  },
  "wobbuffet": {
   "id": "wobbuffet",
@@ -14213,7 +14224,6 @@
    "expandingforce",
    "facade",
    "faketears",
-   "fly",
    "gigadrain",
    "gyroball",
    "heatwave",
@@ -14247,7 +14257,8 @@
   ],
   "eggMoves": [],
   "hmMoves": [
-   "flash"
+   "flash",
+   "fly"
   ]
  },
  "wooloo": {
@@ -14528,13 +14539,11 @@
    "stompingtantrum",
    "stoneedge",
    "substitute",
-   "surf",
    "takedown",
    "terablast",
    "toxic",
    "trailblaze",
    "waterpulse",
-   "waterfall",
    "whirlpool"
   ],
   "eggMoves": [
@@ -14550,7 +14559,9 @@
   "hmMoves": [
    "dive",
    "flash",
-   "rocksmash"
+   "rocksmash",
+   "surf",
+   "waterfall"
   ]
  },
  "wooper_paldea": {
@@ -15345,14 +15356,15 @@
    "sleeptalk",
    "stompingtantrum",
    "substitute",
-   "surf",
    "swift",
    "takedown",
    "terablast",
    "whirlpool"
   ],
   "eggMoves": [],
-  "hmMoves": []
+  "hmMoves": [
+   "surf"
+  ]
  },
  "wurmple": {
   "id": "wurmple",
@@ -15800,7 +15812,6 @@
    "endure",
    "expandingforce",
    "facade",
-   "fly",
    "foulplay",
    "gigadrain",
    "gigaimpact",
@@ -15835,7 +15846,8 @@
   ],
   "eggMoves": [],
   "hmMoves": [
-   "flash"
+   "flash",
+   "fly"
   ]
  },
  "xerneas": {
@@ -17499,7 +17511,6 @@
    "dualwingbeat",
    "endure",
    "facade",
-   "fly",
    "gigaimpact",
    "heatwave",
    "hypervoice",
@@ -17522,7 +17533,8 @@
   ],
   "eggMoves": [],
   "hmMoves": [
-   "cut"
+   "cut",
+   "fly"
   ]
  },
  "zacian": {
@@ -18081,7 +18093,6 @@
    "solarbeam",
    "substitute",
    "sunnyday",
-   "surf",
    "swift",
    "takedown",
    "terablast",
@@ -18107,7 +18118,8 @@
   ],
   "hmMoves": [
    "rocksmash",
-   "strength"
+   "strength",
+   "surf"
   ]
  },
  "zapdos": {
@@ -18239,7 +18251,6 @@
    "electroball",
    "endure",
    "facade",
-   "fly",
    "gigaimpact",
    "heatwave",
    "helpinghand",
@@ -18271,6 +18282,7 @@
   "eggMoves": [],
   "hmMoves": [
    "flash",
+   "fly",
    "rocksmash"
   ]
  },
@@ -18402,7 +18414,6 @@
    "electroball",
    "endure",
    "facade",
-   "fly",
    "gigaimpact",
    "heatwave",
    "helpinghand",
@@ -18434,6 +18445,7 @@
   "eggMoves": [],
   "hmMoves": [
    "flash",
+   "fly",
    "rocksmash"
   ]
  },
@@ -19025,7 +19037,6 @@
    "facade",
    "flashcannon",
    "fling",
-   "fly",
    "focusblast",
    "focuspunch",
    "gigaimpact",
@@ -19066,6 +19077,7 @@
   "hmMoves": [
    "cut",
    "flash",
+   "fly",
    "rocksmash",
    "strength"
   ]
@@ -19512,7 +19524,6 @@
    "sleeptalk",
    "sunnyday",
    "superfang",
-   "surf",
    "swift",
    "takedown",
    "thief",
@@ -19532,7 +19543,8 @@
   ],
   "hmMoves": [
    "cut",
-   "rocksmash"
+   "rocksmash",
+   "surf"
   ]
  },
  "zigzagoon_galar": {
@@ -19685,7 +19697,6 @@
    "substitute",
    "sunnyday",
    "superfang",
-   "surf",
    "swift",
    "takedown",
    "thief",
@@ -19700,7 +19711,8 @@
   "eggMoves": [],
   "hmMoves": [
    "cut",
-   "rocksmash"
+   "rocksmash",
+   "surf"
   ]
  },
  "zoroark": {
@@ -20697,7 +20709,6 @@
    "dualwingbeat",
    "endure",
    "facade",
-   "fly",
    "gigadrain",
    "heatwave",
    "nastyplot",
@@ -20728,7 +20739,9 @@
    "quickattack",
    "whirlwind"
   ],
-  "hmMoves": []
+  "hmMoves": [
+   "fly"
+  ]
  },
  "zweilous": {
   "id": "zweilous",
@@ -22877,7 +22890,6 @@
    "stompingtantrum",
    "substitute",
    "sunnyday",
-   "surf",
    "terablast",
    "throatchop",
    "toxic",
@@ -22888,7 +22900,8 @@
   "eggMoves": [],
   "hmMoves": [
    "rocksmash",
-   "strength"
+   "strength",
+   "surf"
   ]
  },
  "golbat": {
@@ -23027,7 +23040,6 @@
    "dualwingbeat",
    "endure",
    "facade",
-   "fly",
    "gigadrain",
    "gigaimpact",
    "heatwave",
@@ -23054,7 +23066,9 @@
    "zenheadbutt"
   ],
   "eggMoves": [],
-  "hmMoves": []
+  "hmMoves": [
+   "fly"
+  ]
  },
  "goldeen": {
   "id": "goldeen",
@@ -23195,7 +23209,6 @@
    "scaleshot",
    "smartstrike",
    "substitute",
-   "surf",
    "swift",
    "swordsdance",
    "takedown",
@@ -23212,7 +23225,8 @@
    "sleeptalk"
   ],
   "hmMoves": [
-   "dive"
+   "dive",
+   "surf"
   ]
  },
  "golduck": {
@@ -23415,7 +23429,6 @@
    "skillswap",
    "sleeptalk",
    "substitute",
-   "surf",
    "swift",
    "takedown",
    "taunt",
@@ -23425,7 +23438,6 @@
    "trailblaze",
    "vacuumwave",
    "waterpulse",
-   "waterfall",
    "whirlpool",
    "zenheadbutt"
   ],
@@ -23434,7 +23446,9 @@
    "dive",
    "flash",
    "rocksmash",
-   "strength"
+   "strength",
+   "surf",
+   "waterfall"
   ]
  },
  "golem": {
@@ -24229,19 +24243,19 @@
    "snarl",
    "spikes",
    "substitute",
-   "surf",
    "swift",
    "taunt",
    "throatchop",
    "toxic",
    "venoshock",
    "waterpulse",
-   "waterfall",
    "xscissor"
   ],
   "eggMoves": [],
   "hmMoves": [
-   "dive"
+   "dive",
+   "surf",
+   "waterfall"
   ]
  },
  "golurk": {
@@ -24450,7 +24464,6 @@
    "firepunch",
    "flashcannon",
    "fling",
-   "fly",
    "focusblast",
    "gigaimpact",
    "grassknot",
@@ -24498,6 +24511,7 @@
   "eggMoves": [],
   "hmMoves": [
    "flash",
+   "fly",
    "rocksmash",
    "strength"
   ]
@@ -24711,7 +24725,6 @@
    "stompingtantrum",
    "substitute",
    "sunnyday",
-   "surf",
    "takedown",
    "terablast",
    "thunder",
@@ -24723,7 +24736,8 @@
   "eggMoves": [],
   "hmMoves": [
    "rocksmash",
-   "strength"
+   "strength",
+   "surf"
   ]
  },
  "goodra_hisui": {
@@ -24936,7 +24950,6 @@
    "stompingtantrum",
    "substitute",
    "sunnyday",
-   "surf",
    "takedown",
    "terablast",
    "thunder",
@@ -24948,7 +24961,8 @@
   "eggMoves": [],
   "hmMoves": [
    "rocksmash",
-   "strength"
+   "strength",
+   "surf"
   ]
  },
  "goomy": {
@@ -25199,14 +25213,14 @@
    "shadowball",
    "sleeptalk",
    "substitute",
-   "surf",
    "swift",
-   "toxic",
-   "waterfall"
+   "toxic"
   ],
   "eggMoves": [],
   "hmMoves": [
-   "dive"
+   "dive",
+   "surf",
+   "waterfall"
   ]
  },
  "gossifleur": {
@@ -26921,13 +26935,13 @@
    "sleeptalk",
    "stompingtantrum",
    "substitute",
-   "surf",
-   "waterfall",
    "whirlpool"
   ],
   "eggMoves": [],
   "hmMoves": [
-   "dive"
+   "dive",
+   "surf",
+   "waterfall"
   ]
  },
  "graveler": {
@@ -28048,7 +28062,6 @@
    "smackdown",
    "snowscape",
    "spite",
-   "surf",
    "swift",
    "swordsdance",
    "takedown",
@@ -28061,7 +28074,6 @@
    "uturn",
    "upperhand",
    "waterpledge",
-   "waterfall",
    "weatherball"
   ],
   "eggMoves": [],
@@ -28069,7 +28081,9 @@
    "cut",
    "dive",
    "rocksmash",
-   "strength"
+   "strength",
+   "surf",
+   "waterfall"
   ]
  },
  "grimer": {
@@ -31132,7 +31146,6 @@
    "stoneedge",
    "substitute",
    "sunnyday",
-   "surf",
    "takedown",
    "taunt",
    "temperflare",
@@ -31143,14 +31156,15 @@
    "toxic",
    "uproar",
    "waterpulse",
-   "waterfall",
    "whirlpool"
   ],
   "eggMoves": [],
   "hmMoves": [
    "dive",
    "rocksmash",
-   "strength"
+   "strength",
+   "surf",
+   "waterfall"
   ]
  },
  "haagross": {
@@ -31900,7 +31914,6 @@
    "stoneedge",
    "substitute",
    "sunnyday",
-   "surf",
    "swift",
    "takedown",
    "taunt",
@@ -31917,7 +31930,8 @@
   "eggMoves": [],
   "hmMoves": [
    "rocksmash",
-   "strength"
+   "strength",
+   "surf"
   ]
  },
  "harptera": {
@@ -33015,7 +33029,6 @@
    "facade",
    "falseswipe",
    "firepunch",
-   "fly",
    "focusblast",
    "focuspunch",
    "gigaimpact",
@@ -33055,6 +33068,7 @@
   "eggMoves": [],
   "hmMoves": [
    "cut",
+   "fly",
    "rocksmash",
    "strength"
   ]
@@ -33272,7 +33286,6 @@
    "stompingtantrum",
    "substitute",
    "sunnyday",
-   "surf",
    "swift",
    "takedown",
    "terablast",
@@ -33284,7 +33297,8 @@
   "hmMoves": [
    "cut",
    "rocksmash",
-   "strength"
+   "strength",
+   "surf"
   ]
  },
  "heatmor": {
@@ -33877,7 +33891,6 @@
    "solarbeam",
    "substitute",
    "sunnyday",
-   "surf",
    "swift",
    "thunderpunch",
    "toxic",
@@ -33888,7 +33901,8 @@
   "eggMoves": [],
   "hmMoves": [
    "cut",
-   "flash"
+   "flash",
+   "surf"
   ]
  },
  "helioptile": {
@@ -34041,7 +34055,6 @@
    "scaleshot",
    "sleeptalk",
    "substitute",
-   "surf",
    "swift",
    "toxic",
    "uturn",
@@ -34050,7 +34063,8 @@
   "eggMoves": [],
   "hmMoves": [
    "cut",
-   "flash"
+   "flash",
+   "surf"
   ]
  },
  "hemogoblin": {
@@ -34626,7 +34640,6 @@
    "snarl",
    "substitute",
    "sunnyday",
-   "surf",
    "thunderfang",
    "thunderwave",
    "thunderbolt",
@@ -34637,7 +34650,8 @@
   "eggMoves": [],
   "hmMoves": [
    "rocksmash",
-   "strength"
+   "strength",
+   "surf"
   ]
  },
  "herolune": {
@@ -35773,7 +35787,6 @@
    "endure",
    "facade",
    "featherdance",
-   "fly",
    "gigaimpact",
    "heatwave",
    "helpinghand",
@@ -35809,7 +35822,9 @@
    "uproar"
   ],
   "eggMoves": [],
-  "hmMoves": []
+  "hmMoves": [
+   "fly"
+  ]
  },
  "honedge": {
   "id": "honedge",
@@ -36113,7 +36128,6 @@
    "flamecharge",
    "flamethrower",
    "flareblitz",
-   "fly",
    "gigadrain",
    "gigaimpact",
    "heatwave",
@@ -36153,6 +36167,7 @@
   "eggMoves": [],
   "hmMoves": [
    "flash",
+   "fly",
    "rocksmash",
    "strength"
   ]
@@ -36529,7 +36544,6 @@
    "dualwingbeat",
    "endure",
    "facade",
-   "fly",
    "haze",
    "heatwave",
    "hurricane",
@@ -36568,7 +36582,8 @@
    "wingattack"
   ],
   "hmMoves": [
-   "flash"
+   "flash",
+   "fly"
   ]
  },
  "hoppip": {
@@ -36865,13 +36880,11 @@
    "scaleshot",
    "sleeptalk",
    "substitute",
-   "surf",
    "swift",
    "takedown",
    "terablast",
    "toxic",
    "waterpulse",
-   "waterfall",
    "weatherball",
    "whirlpool"
   ],
@@ -36885,7 +36898,9 @@
    "splash"
   ],
   "hmMoves": [
-   "dive"
+   "dive",
+   "surf",
+   "waterfall"
   ]
  },
  "houndoom": {
@@ -37556,14 +37571,14 @@
    "sleeptalk",
    "substitute",
    "superfang",
-   "surf",
    "swift",
-   "toxic",
-   "waterfall"
+   "toxic"
   ],
   "eggMoves": [],
   "hmMoves": [
-   "dive"
+   "dive",
+   "surf",
+   "waterfall"
   ]
  },
  "hydrapple": {
@@ -37973,7 +37988,6 @@
    "firespin",
    "flamethrower",
    "flashcannon",
-   "fly",
    "focusblast",
    "gigaimpact",
    "heatwave",
@@ -37997,7 +38011,6 @@
    "stoneedge",
    "substitute",
    "sunnyday",
-   "surf",
    "tailwind",
    "takedown",
    "taunt",
@@ -38013,8 +38026,10 @@
   ],
   "eggMoves": [],
   "hmMoves": [
+   "fly",
    "rocksmash",
-   "strength"
+   "strength",
+   "surf"
   ]
  },
  "alcremie": {
@@ -38370,16 +38385,16 @@
    "sleeptalk",
    "snowscape",
    "substitute",
-   "surf",
    "takedown",
    "terablast",
    "toxic",
-   "waterfall",
    "zenheadbutt"
   ],
   "eggMoves": [],
   "hmMoves": [
-   "dive"
+   "dive",
+   "surf",
+   "waterfall"
   ]
  },
  "alpico": {
@@ -38674,7 +38689,6 @@
    "fireblast",
    "firespin",
    "flamethrower",
-   "fly",
    "gigaimpact",
    "haze",
    "heatwave",
@@ -38708,6 +38722,7 @@
   ],
   "eggMoves": [],
   "hmMoves": [
+   "fly",
    "rocksmash"
   ]
  },
@@ -40586,17 +40601,17 @@
    "skittersmack",
    "sleeptalk",
    "substitute",
-   "surf",
    "terablast",
    "toxic",
    "trailblaze",
    "waterpulse",
-   "waterfall",
    "xscissor"
   ],
   "eggMoves": [],
   "hmMoves": [
-   "dive"
+   "dive",
+   "surf",
+   "waterfall"
   ]
  },
  "arbok": {
@@ -41568,7 +41583,6 @@
    "flamethrower",
    "flareblitz",
    "flashcannon",
-   "fly",
    "focusblast",
    "foulplay",
    "gigadrain",
@@ -41626,7 +41640,6 @@
    "substitute",
    "sunnyday",
    "supercellslam",
-   "surf",
    "swift",
    "swordsdance",
    "tailwind",
@@ -41641,7 +41654,6 @@
    "trick",
    "trickroom",
    "waterpulse",
-   "waterfall",
    "whirlpool",
    "wildcharge",
    "willowisp",
@@ -41653,8 +41665,11 @@
    "cut",
    "dive",
    "flash",
+   "fly",
    "rocksmash",
-   "strength"
+   "strength",
+   "surf",
+   "waterfall"
   ]
  },
  "archaludon": {
@@ -42204,7 +42219,6 @@
    "earthquake",
    "endure",
    "facade",
-   "fly",
    "focusblast",
    "gigaimpact",
    "heatwave",
@@ -42235,6 +42249,7 @@
   "eggMoves": [],
   "hmMoves": [
    "cut",
+   "fly",
    "rocksmash"
   ]
  },
@@ -42611,14 +42626,14 @@
    "sleeptalk",
    "stoneedge",
    "substitute",
-   "surf",
-   "waterfall",
    "whirlpool",
    "zenheadbutt"
   ],
   "eggMoves": [],
   "hmMoves": [
-   "dive"
+   "dive",
+   "surf",
+   "waterfall"
   ]
  },
  "arctozolt": {
@@ -42771,7 +42786,6 @@
    "stompingtantrum",
    "stoneedge",
    "substitute",
-   "surf",
    "taunt",
    "thunder",
    "thunderfang",
@@ -42781,7 +42795,9 @@
    "wildcharge"
   ],
   "eggMoves": [],
-  "hmMoves": []
+  "hmMoves": [
+   "surf"
+  ]
  },
  "argalis": {
   "id": "argalis",
@@ -43231,14 +43247,12 @@
    "spikes",
    "stoneedge",
    "substitute",
-   "surf",
    "takedown",
    "terablast",
    "throatchop",
    "thunderpunch",
    "toxic",
    "waterpulse",
-   "waterfall",
    "whirlpool"
   ],
   "eggMoves": [],
@@ -43246,7 +43260,9 @@
    "cut",
    "dive",
    "rocksmash",
-   "strength"
+   "strength",
+   "surf",
+   "waterfall"
   ]
  },
  "ariados": {
@@ -44275,17 +44291,18 @@
    "scaleshot",
    "sleeptalk",
    "substitute",
-   "surf",
    "swift",
    "takedown",
    "terablast",
    "throatchop",
    "waterpulse",
-   "waterfall",
    "whirlpool"
   ],
   "eggMoves": [],
-  "hmMoves": []
+  "hmMoves": [
+   "surf",
+   "waterfall"
+  ]
  },
  "articuno": {
   "id": "articuno",
@@ -44410,7 +44427,6 @@
    "endure",
    "facade",
    "featherdance",
-   "fly",
    "gigaimpact",
    "haze",
    "helpinghand",
@@ -44442,6 +44458,7 @@
   ],
   "eggMoves": [],
   "hmMoves": [
+   "fly",
    "rocksmash"
   ]
  },
@@ -44569,7 +44586,6 @@
    "endure",
    "facade",
    "featherdance",
-   "fly",
    "gigaimpact",
    "haze",
    "helpinghand",
@@ -44603,6 +44619,7 @@
   ],
   "eggMoves": [],
   "hmMoves": [
+   "fly",
    "rocksmash"
   ]
  },
@@ -45165,7 +45182,6 @@
    "stompingtantrum",
    "substitute",
    "sunnyday",
-   "surf",
    "throatchop",
    "thunder",
    "thunderpunch",
@@ -45178,7 +45194,8 @@
   ],
   "eggMoves": [],
   "hmMoves": [
-   "flash"
+   "flash",
+   "surf"
   ]
  },
  "aurorus": {
@@ -45612,7 +45629,6 @@
    "snowscape",
    "solarbeam",
    "substitute",
-   "surf",
    "terablast",
    "thunder",
    "thunderbolt",
@@ -45624,7 +45640,8 @@
   "eggMoves": [],
   "hmMoves": [
    "cut",
-   "flash"
+   "flash",
+   "surf"
   ]
  },
  "avalugg": {
@@ -45826,7 +45843,6 @@
    "stompingtantrum",
    "stoneedge",
    "substitute",
-   "surf",
    "terablast",
    "toxic",
    "waterpulse"
@@ -45835,7 +45851,8 @@
   "hmMoves": [
    "flash",
    "rocksmash",
-   "strength"
+   "strength",
+   "surf"
   ]
  },
  "avalugg_hisui": {
@@ -46040,7 +46057,6 @@
    "stompingtantrum",
    "stoneedge",
    "substitute",
-   "surf",
    "terablast",
    "toxic",
    "waterpulse"
@@ -46049,7 +46065,8 @@
   "hmMoves": [
    "flash",
    "rocksmash",
-   "strength"
+   "strength",
+   "surf"
   ]
  },
  "aveden": {
@@ -46366,7 +46383,6 @@
    "stompingtantrum",
    "substitute",
    "sunnyday",
-   "surf",
    "swift",
    "takedown",
    "terablast",
@@ -46378,7 +46394,8 @@
   "hmMoves": [
    "cut",
    "rocksmash",
-   "strength"
+   "strength",
+   "surf"
   ]
  },
  "azelf": {
@@ -46843,7 +46860,6 @@
    "sleeptalk",
    "snowscape",
    "substitute",
-   "surf",
    "swift",
    "takedown",
    "terablast",
@@ -46851,14 +46867,15 @@
    "trailblaze",
    "uproar",
    "waterpulse",
-   "waterfall",
    "whirlpool"
   ],
   "eggMoves": [],
   "hmMoves": [
    "dive",
    "rocksmash",
-   "strength"
+   "strength",
+   "surf",
+   "waterfall"
   ]
  },
  "azurill": {
@@ -46977,14 +46994,12 @@
    "scald",
    "sleeptalk",
    "substitute",
-   "surf",
    "swift",
    "takedown",
    "terablast",
    "toxic",
    "uproar",
    "waterpulse",
-   "waterfall",
    "whirlpool"
   ],
   "eggMoves": [
@@ -46993,7 +47008,10 @@
    "sing",
    "tickle"
   ],
-  "hmMoves": []
+  "hmMoves": [
+   "surf",
+   "waterfall"
+  ]
  },
  "baariette": {
   "id": "baariette",
@@ -48213,7 +48231,6 @@
    "smackdown",
    "stealthrock",
    "substitute",
-   "surf",
    "swordsdance",
    "taunt",
    "thief",
@@ -48228,7 +48245,8 @@
    "cut",
    "dive",
    "rocksmash",
-   "strength"
+   "strength",
+   "surf"
   ]
  },
  "barboach": {
@@ -48383,13 +48401,11 @@
    "stoneedge",
    "substitute",
    "sunnyday",
-   "surf",
    "swift",
    "takedown",
    "terablast",
    "toxic",
    "waterpulse",
-   "waterfall",
    "zenheadbutt"
   ],
   "eggMoves": [
@@ -48398,7 +48414,9 @@
    "whirlpool"
   ],
   "hmMoves": [
-   "dive"
+   "dive",
+   "surf",
+   "waterfall"
   ]
  },
  "barewl": {
@@ -48628,16 +48646,17 @@
    "scaryface",
    "sleeptalk",
    "substitute",
-   "surf",
    "swift",
    "takedown",
    "terablast",
    "waterpulse",
-   "waterfall",
    "whirlpool"
   ],
   "eggMoves": [],
-  "hmMoves": []
+  "hmMoves": [
+   "surf",
+   "waterfall"
+  ]
  },
  "basculegion": {
   "id": "basculegion",
@@ -48823,16 +48842,17 @@
    "snowscape",
    "spite",
    "substitute",
-   "surf",
    "swift",
    "terablast",
    "waterpulse",
-   "waterfall",
    "whirlpool",
    "zenheadbutt"
   ],
   "eggMoves": [],
-  "hmMoves": []
+  "hmMoves": [
+   "surf",
+   "waterfall"
+  ]
  },
  "basculegion_f": {
   "id": "basculegion_f",
@@ -49017,16 +49037,17 @@
    "snowscape",
    "spite",
    "substitute",
-   "surf",
    "swift",
    "terablast",
    "waterpulse",
-   "waterfall",
    "whirlpool",
    "zenheadbutt"
   ],
   "eggMoves": [],
-  "hmMoves": []
+  "hmMoves": [
+   "surf",
+   "waterfall"
+  ]
  },
  "basculin": {
   "id": "basculin",
@@ -49212,20 +49233,20 @@
    "sleeptalk",
    "snowscape",
    "substitute",
-   "surf",
    "swift",
    "taunt",
    "terablast",
    "toxic",
    "waterpulse",
-   "waterfall",
    "whirlpool",
    "zenheadbutt"
   ],
   "eggMoves": [],
   "hmMoves": [
    "cut",
-   "dive"
+   "dive",
+   "surf",
+   "waterfall"
   ]
  },
  "basculin_blue_striped": {
@@ -49412,20 +49433,20 @@
    "sleeptalk",
    "snowscape",
    "substitute",
-   "surf",
    "swift",
    "taunt",
    "terablast",
    "toxic",
    "waterpulse",
-   "waterfall",
    "whirlpool",
    "zenheadbutt"
   ],
   "eggMoves": [],
   "hmMoves": [
    "cut",
-   "dive"
+   "dive",
+   "surf",
+   "waterfall"
   ]
  },
  "bastiodon": {
@@ -50221,7 +50242,6 @@
    "snarl",
    "stoneedge",
    "substitute",
-   "surf",
    "swordsdance",
    "takedown",
    "taunt",
@@ -50238,7 +50258,8 @@
    "cut",
    "dive",
    "rocksmash",
-   "strength"
+   "strength",
+   "surf"
   ]
  },
  "beautifly": {
@@ -51525,7 +51546,6 @@
    "snowscape",
    "stoneedge",
    "substitute",
-   "surf",
    "terablast",
    "toxic",
    "waterpulse"
@@ -51534,7 +51554,8 @@
   "hmMoves": [
    "flash",
    "rocksmash",
-   "strength"
+   "strength",
+   "surf"
   ]
  },
  "bewear": {
@@ -51901,7 +51922,6 @@
    "stompingtantrum",
    "substitute",
    "sunnyday",
-   "surf",
    "swift",
    "taunt",
    "thief",
@@ -51910,7 +51930,6 @@
    "thunderbolt",
    "toxic",
    "waterpulse",
-   "waterfall",
    "whirlpool"
   ],
   "eggMoves": [],
@@ -51918,7 +51937,9 @@
    "cut",
    "dive",
    "rocksmash",
-   "strength"
+   "strength",
+   "surf",
+   "waterfall"
   ]
  },
  "bidoof": {
@@ -52264,7 +52285,6 @@
    "stealthrock",
    "stoneedge",
    "substitute",
-   "surf",
    "swordsdance",
    "taunt",
    "thief",
@@ -52277,7 +52297,8 @@
   "hmMoves": [
    "cut",
    "rocksmash",
-   "strength"
+   "strength",
+   "surf"
   ]
  },
  "birbie": {
@@ -53002,13 +53023,11 @@
    "sleeptalk",
    "smackdown",
    "substitute",
-   "surf",
    "takedown",
    "terablast",
    "toxic",
    "waterpledge",
    "waterpulse",
-   "waterfall",
    "weatherball",
    "whirlpool",
    "zenheadbutt"
@@ -53017,7 +53036,9 @@
   "hmMoves": [
    "dive",
    "rocksmash",
-   "strength"
+   "strength",
+   "surf",
+   "waterfall"
   ]
  },
  "blaziken": {
@@ -54491,7 +54512,6 @@
    "stompingtantrum",
    "substitute",
    "sunnyday",
-   "surf",
    "swordsdance",
    "thief",
    "thunder",
@@ -54506,7 +54526,8 @@
   "hmMoves": [
    "cut",
    "rocksmash",
-   "strength"
+   "strength",
+   "surf"
   ]
  },
  "lickitung": {
@@ -54678,7 +54699,6 @@
    "solarbeam",
    "stompingtantrum",
    "sunnyday",
-   "surf",
    "swordsdance",
    "takedown",
    "thief",
@@ -54702,7 +54722,8 @@
   "hmMoves": [
    "cut",
    "rocksmash",
-   "strength"
+   "strength",
+   "surf"
   ]
  },
  "liepard": {
@@ -55854,7 +55875,6 @@
    "substitute",
    "sunnyday",
    "superfang",
-   "surf",
    "swift",
    "takedown",
    "thief",
@@ -55871,7 +55891,8 @@
   "hmMoves": [
    "cut",
    "rocksmash",
-   "strength"
+   "strength",
+   "surf"
   ]
  },
  "linoone_galar": {
@@ -56046,7 +56067,6 @@
    "substitute",
    "sunnyday",
    "superfang",
-   "surf",
    "swift",
    "takedown",
    "thief",
@@ -56063,7 +56083,8 @@
   "hmMoves": [
    "cut",
    "rocksmash",
-   "strength"
+   "strength",
+   "surf"
   ]
  },
  "litleo": {
@@ -56951,7 +56972,6 @@
    "solarbeam",
    "substitute",
    "sunnyday",
-   "surf",
    "swordsdance",
    "takedown",
    "terablast",
@@ -56959,7 +56979,6 @@
    "toxic",
    "trailblaze",
    "waterpulse",
-   "waterfall",
    "weatherball",
    "whirlpool",
    "zenheadbutt"
@@ -56969,7 +56988,9 @@
    "dive",
    "flash",
    "rocksmash",
-   "strength"
+   "strength",
+   "surf",
+   "waterfall"
   ]
  },
  "lopunny": {
@@ -57350,7 +57371,6 @@
    "solarbeam",
    "substitute",
    "sunnyday",
-   "surf",
    "swordsdance",
    "takedown",
    "terablast",
@@ -57372,7 +57392,8 @@
    "watergun"
   ],
   "hmMoves": [
-   "flash"
+   "flash",
+   "surf"
   ]
  },
  "loudred": {
@@ -58120,7 +58141,6 @@
    "solarbeam",
    "substitute",
    "sunnyday",
-   "surf",
    "swift",
    "swordsdance",
    "takedown",
@@ -58131,7 +58151,6 @@
    "trailblaze",
    "uproar",
    "waterpulse",
-   "waterfall",
    "weatherball",
    "whirlpool",
    "zenheadbutt"
@@ -58141,7 +58160,9 @@
    "dive",
    "flash",
    "rocksmash",
-   "strength"
+   "strength",
+   "surf",
+   "waterfall"
   ]
  },
  "lugia": {
@@ -58312,7 +58333,6 @@
    "endure",
    "facade",
    "featherdance",
-   "fly",
    "gigadrain",
    "gigaimpact",
    "helpinghand",
@@ -58342,7 +58362,6 @@
    "sleeptalk",
    "substitute",
    "sunnyday",
-   "surf",
    "tailwind",
    "takedown",
    "terablast",
@@ -58352,7 +58371,6 @@
    "toxic",
    "trick",
    "waterpulse",
-   "waterfall",
    "weatherball",
    "whirlpool",
    "zenheadbutt"
@@ -58361,8 +58379,11 @@
   "hmMoves": [
    "dive",
    "flash",
+   "fly",
    "rocksmash",
-   "strength"
+   "strength",
+   "surf",
+   "waterfall"
   ]
  },
  "lumineon": {
@@ -58529,18 +58550,18 @@
    "scald",
    "sleeptalk",
    "substitute",
-   "surf",
    "swift",
    "takedown",
    "terablast",
    "thief",
-   "toxic",
-   "waterfall"
+   "toxic"
   ],
   "eggMoves": [],
   "hmMoves": [
    "dive",
-   "flash"
+   "flash",
+   "surf",
+   "waterfall"
   ]
  },
  "lunala": {
@@ -58716,7 +58737,6 @@
    "endure",
    "expandingforce",
    "facade",
-   "fly",
    "focusblast",
    "futuresight",
    "gigaimpact",
@@ -58754,7 +58774,9 @@
    "willowisp"
   ],
   "eggMoves": [],
-  "hmMoves": []
+  "hmMoves": [
+   "fly"
+  ]
  },
  "lunapup": {
   "id": "lunapup",
@@ -59355,12 +59377,10 @@
    "sleeptalk",
    "snowscape",
    "substitute",
-   "surf",
    "swift",
    "terablast",
    "toxic",
    "waterpulse",
-   "waterfall",
    "whirlpool"
   ],
   "eggMoves": [
@@ -59370,7 +59390,9 @@
    "watersport"
   ],
   "hmMoves": [
-   "dive"
+   "dive",
+   "surf",
+   "waterfall"
   ]
  },
  "luxelong": {
@@ -63366,7 +63388,6 @@
    "stoneedge",
    "substitute",
    "sunnyday",
-   "surf",
    "swift",
    "takedown",
    "taunt",
@@ -63390,7 +63411,8 @@
   ],
   "hmMoves": [
    "rocksmash",
-   "strength"
+   "strength",
+   "surf"
   ]
  },
  "malaconda": {
@@ -64269,19 +64291,19 @@
    "sleeptalk",
    "storedpower",
    "substitute",
-   "surf",
    "swift",
    "terablast",
    "toxic",
    "uturn",
    "uproar",
-   "waterfall",
    "weatherball",
    "zenheadbutt"
   ],
   "eggMoves": [],
   "hmMoves": [
-   "flash"
+   "flash",
+   "surf",
+   "waterfall"
   ]
  },
  "mandibuzz": {
@@ -64469,7 +64491,6 @@
    "facade",
    "faketears",
    "featherdance",
-   "fly",
    "foulplay",
    "gigaimpact",
    "heatwave",
@@ -64501,6 +64522,7 @@
   "eggMoves": [],
   "hmMoves": [
    "cut",
+   "fly",
    "rocksmash"
   ]
  },
@@ -65054,11 +65076,9 @@
    "seedbomb",
    "sleeptalk",
    "substitute",
-   "surf",
    "swift",
    "tailwind",
    "toxic",
-   "waterfall",
    "whirlpool"
   ],
   "eggMoves": [
@@ -65070,7 +65090,9 @@
    "twister"
   ],
   "hmMoves": [
-   "dive"
+   "dive",
+   "surf",
+   "waterfall"
   ]
  },
  "mantyke": {
@@ -65229,16 +65251,16 @@
    "scald",
    "sleeptalk",
    "substitute",
-   "surf",
    "swift",
    "tailwind",
    "toxic",
-   "waterfall",
    "whirlpool"
   ],
   "eggMoves": [],
   "hmMoves": [
-   "dive"
+   "dive",
+   "surf",
+   "waterfall"
   ]
  },
  "maractus": {
@@ -65580,12 +65602,13 @@
    "sludgewave",
    "spite",
    "substitute",
-   "surf",
    "terablast",
    "waterpulse"
   ],
   "eggMoves": [],
-  "hmMoves": []
+  "hmMoves": [
+   "surf"
+  ]
  },
  "mareep": {
   "id": "mareep",
@@ -65896,7 +65919,6 @@
    "scald",
    "sleeptalk",
    "snowscape",
-   "surf",
    "swift",
    "takedown",
    "terablast",
@@ -65904,7 +65926,6 @@
    "trailblaze",
    "uproar",
    "waterpulse",
-   "waterfall",
    "whirlpool"
   ],
   "eggMoves": [
@@ -65920,7 +65941,9 @@
   "hmMoves": [
    "dive",
    "rocksmash",
-   "strength"
+   "strength",
+   "surf",
+   "waterfall"
   ]
  },
  "marowak": {
@@ -66734,20 +66757,20 @@
    "sludgewave",
    "stealthrock",
    "substitute",
-   "surf",
    "terablast",
    "toxic",
    "uproar",
    "waterpledge",
    "waterpulse",
-   "waterfall",
    "whirlpool"
   ],
   "eggMoves": [],
   "hmMoves": [
    "dive",
    "rocksmash",
-   "strength"
+   "strength",
+   "surf",
+   "waterfall"
   ]
  },
  "meloetta": {
@@ -69488,7 +69511,6 @@
    "flashcannon",
    "fling",
    "flipturn",
-   "fly",
    "focusblast",
    "focuspunch",
    "foulplay",
@@ -69604,7 +69626,6 @@
    "sunnyday",
    "superfang",
    "supercellslam",
-   "surf",
    "swift",
    "swordsdance",
    "tailwind",
@@ -69633,7 +69654,6 @@
    "voltswitch",
    "waterpledge",
    "waterpulse",
-   "waterfall",
    "weatherball",
    "whirlpool",
    "wildcharge",
@@ -69646,8 +69666,11 @@
    "cut",
    "dive",
    "flash",
+   "fly",
    "rocksmash",
-   "strength"
+   "strength",
+   "surf",
+   "waterfall"
   ]
  },
  "mewtwo": {
@@ -71302,19 +71325,19 @@
    "skittersmack",
    "sleeptalk",
    "substitute",
-   "surf",
    "swift",
    "takedown",
    "terablast",
    "toxic",
    "tripleaxel",
-   "waterfall",
    "weatherball",
    "whirlpool"
   ],
   "eggMoves": [],
   "hmMoves": [
-   "dive"
+   "dive",
+   "surf",
+   "waterfall"
   ]
  },
  "miltank": {
@@ -71479,7 +71502,6 @@
    "stompingtantrum",
    "substitute",
    "sunnyday",
-   "surf",
    "thunder",
    "thunderpunch",
    "thunderwave",
@@ -71501,7 +71523,8 @@
   ],
   "hmMoves": [
    "rocksmash",
-   "strength"
+   "strength",
+   "surf"
   ]
  },
  "mimejr": {
@@ -73879,7 +73902,6 @@
    "fireblast",
    "flamecharge",
    "flareblitz",
-   "fly",
    "gigaimpact",
    "helpinghand",
    "hurricane",
@@ -73909,6 +73931,7 @@
   ],
   "eggMoves": [],
   "hmMoves": [
+   "fly",
    "rocksmash"
   ]
  },
@@ -74036,7 +74059,6 @@
    "fireblast",
    "flamecharge",
    "flareblitz",
-   "fly",
    "gigaimpact",
    "helpinghand",
    "hurricane",
@@ -74066,6 +74088,7 @@
   ],
   "eggMoves": [],
   "hmMoves": [
+   "fly",
    "rocksmash"
   ]
  },
@@ -74488,7 +74511,6 @@
    "snowscape",
    "substitute",
    "sunnyday",
-   "surf",
    "swift",
    "takedown",
    "terablast",
@@ -74498,13 +74520,14 @@
    "trickroom",
    "voltswitch",
    "waterpulse",
-   "waterfall",
    "weatherball",
    "wildcharge"
   ],
   "eggMoves": [],
   "hmMoves": [
-   "flash"
+   "flash",
+   "surf",
+   "waterfall"
   ]
  },
  "morelull": {
@@ -76406,12 +76429,10 @@
    "sleeptalk",
    "sludgewave",
    "substitute",
-   "surf",
    "terablast",
    "toxic",
    "waterpledge",
-   "waterpulse",
-   "waterfall"
+   "waterpulse"
   ],
   "eggMoves": [
    "curse",
@@ -76424,7 +76445,9 @@
   "hmMoves": [
    "dive",
    "rocksmash",
-   "strength"
+   "strength",
+   "surf",
+   "waterfall"
   ]
  },
  "mudsdale": {
@@ -77430,7 +77453,6 @@
    "stompingtantrum",
    "substitute",
    "sunnyday",
-   "surf",
    "takedown",
    "terablast",
    "thunder",
@@ -77446,7 +77468,8 @@
   "eggMoves": [],
   "hmMoves": [
    "rocksmash",
-   "strength"
+   "strength",
+   "surf"
   ]
  },
  "munkidori": {
@@ -77956,7 +77979,6 @@
    "dualwingbeat",
    "endure",
    "facade",
-   "fly",
    "foulplay",
    "gigaimpact",
    "heatwave",
@@ -78000,7 +78022,9 @@
    "whirlwind",
    "wingattack"
   ],
-  "hmMoves": []
+  "hmMoves": [
+   "fly"
+  ]
  },
  "musharna": {
   "id": "musharna",
@@ -78721,7 +78745,6 @@
    "facade",
    "fireblast",
    "flamethrower",
-   "fly",
    "gigaimpact",
    "gunkshot",
    "heatwave",
@@ -78751,7 +78774,9 @@
    "xscissor"
   ],
   "eggMoves": [],
-  "hmMoves": []
+  "hmMoves": [
+   "fly"
+  ]
  },
  "natu": {
   "id": "natu",
@@ -79144,20 +79169,20 @@
    "snowscape",
    "steelbeam",
    "substitute",
-   "surf",
    "taunt",
    "terablast",
    "thunderfang",
    "thunderpunch",
    "toxic",
-   "waterfall",
    "wildcharge"
   ],
   "eggMoves": [],
   "hmMoves": [
    "dive",
    "rocksmash",
-   "strength"
+   "strength",
+   "surf",
+   "waterfall"
   ]
  },
  "navighast": {
@@ -80974,7 +80999,6 @@
    "substitute",
    "sunnyday",
    "superfang",
-   "surf",
    "takedown",
    "taunt",
    "thief",
@@ -80993,7 +81017,8 @@
   "hmMoves": [
    "cut",
    "rocksmash",
-   "strength"
+   "strength",
+   "surf"
   ]
  },
  "nidoqueen": {
@@ -81188,7 +81213,6 @@
    "substitute",
    "sunnyday",
    "superfang",
-   "surf",
    "takedown",
    "taunt",
    "thief",
@@ -81207,7 +81231,8 @@
   "hmMoves": [
    "cut",
    "rocksmash",
-   "strength"
+   "strength",
+   "surf"
   ]
  },
  "nidoranf": {
@@ -82925,7 +82950,6 @@
    "endure",
    "facade",
    "featherdance",
-   "fly",
    "futuresight",
    "gigaimpact",
    "haze",
@@ -82962,7 +82986,8 @@
   ],
   "eggMoves": [],
   "hmMoves": [
-   "flash"
+   "flash",
+   "fly"
   ]
  },
  "nohface": {
@@ -83323,7 +83348,6 @@
    "dualwingbeat",
    "endure",
    "facade",
-   "fly",
    "heatwave",
    "hypervoice",
    "outrage",
@@ -83350,7 +83374,8 @@
   ],
   "eggMoves": [],
   "hmMoves": [
-   "cut"
+   "cut",
+   "fly"
   ]
  },
  "noivern": {
@@ -83547,7 +83572,6 @@
    "endure",
    "facade",
    "flamethrower",
-   "fly",
    "focusblast",
    "gigaimpact",
    "heatwave",
@@ -83579,7 +83603,8 @@
   ],
   "eggMoves": [],
   "hmMoves": [
-   "cut"
+   "cut",
+   "fly"
   ]
  },
  "nosepass": {
@@ -84689,7 +84714,6 @@
    "stompingtantrum",
    "substitute",
    "sunnyday",
-   "surf",
    "swift",
    "thief",
    "throatchop",
@@ -84702,7 +84726,9 @@
    "xscissor"
   ],
   "eggMoves": [],
-  "hmMoves": []
+  "hmMoves": [
+   "surf"
+  ]
  },
  "octillery": {
   "id": "octillery",
@@ -84850,18 +84876,18 @@
    "smackdown",
    "substitute",
    "sunnyday",
-   "surf",
    "swift",
    "thief",
    "thunderwave",
    "toxic",
    "waterpulse",
-   "waterfall",
    "whirlpool"
   ],
   "eggMoves": [],
   "hmMoves": [
-   "dive"
+   "dive",
+   "surf",
+   "waterfall"
   ]
  },
  "oddish": {
@@ -85670,7 +85696,6 @@
    "endure",
    "facade",
    "faketears",
-   "fly",
    "hurricane",
    "nastyplot",
    "protect",
@@ -85688,7 +85713,9 @@
    "uturn"
   ],
   "eggMoves": [],
-  "hmMoves": []
+  "hmMoves": [
+   "fly"
+  ]
  },
  "cosmoem": {
   "id": "cosmoem",
@@ -86752,7 +86779,6 @@
    "endure",
    "facade",
    "featherdance",
-   "fly",
    "gigaimpact",
    "hurricane",
    "hyperbeam",
@@ -86767,7 +86793,6 @@
    "scald",
    "sleeptalk",
    "substitute",
-   "surf",
    "tailwind",
    "takedown",
    "terablast",
@@ -86779,7 +86804,10 @@
    "whirlpool"
   ],
   "eggMoves": [],
-  "hmMoves": []
+  "hmMoves": [
+   "fly",
+   "surf"
+  ]
  },
  "cranidos": {
   "id": "cranidos",
@@ -87171,14 +87199,12 @@
    "snarl",
    "spite",
    "substitute",
-   "surf",
    "swift",
    "takedown",
    "terablast",
    "thief",
    "toxic",
    "waterpulse",
-   "waterfall",
    "whirlpool",
    "xscissor"
   ],
@@ -87187,7 +87213,9 @@
    "cut",
    "dive",
    "rocksmash",
-   "strength"
+   "strength",
+   "surf",
+   "waterfall"
   ]
  },
  "cresceidon": {
@@ -87368,13 +87396,14 @@
    "taunt",
    "terablast",
    "thunderwave",
-   "waterfall",
    "weatherball",
    "whirlpool",
    "zenheadbutt"
   ],
   "eggMoves": [],
-  "hmMoves": []
+  "hmMoves": [
+   "waterfall"
+  ]
  },
  "cresselia": {
   "id": "cresselia",
@@ -87937,7 +87966,6 @@
    "dualwingbeat",
    "endure",
    "facade",
-   "fly",
    "gigadrain",
    "gigaimpact",
    "heatwave",
@@ -87966,7 +87994,9 @@
    "zenheadbutt"
   ],
   "eggMoves": [],
-  "hmMoves": []
+  "hmMoves": [
+   "fly"
+  ]
  },
  "crocalor": {
   "id": "crocalor",
@@ -88297,7 +88327,6 @@
    "sleeptalk",
    "spite",
    "substitute",
-   "surf",
    "swordsdance",
    "takedown",
    "terablast",
@@ -88307,7 +88336,6 @@
    "uproar",
    "waterpledge",
    "waterpulse",
-   "waterfall",
    "whirlpool"
   ],
   "eggMoves": [],
@@ -88315,7 +88343,9 @@
    "cut",
    "dive",
    "rocksmash",
-   "strength"
+   "strength",
+   "surf",
+   "waterfall"
   ]
  },
  "crucibelle": {
@@ -89273,7 +89303,6 @@
    "sleeptalk",
    "snarl",
    "substitute",
-   "surf",
    "takedown",
    "taunt",
    "terablast",
@@ -89287,7 +89316,8 @@
   "hmMoves": [
    "cut",
    "rocksmash",
-   "strength"
+   "strength",
+   "surf"
   ]
  },
  "cubone": {
@@ -89988,13 +90018,14 @@
    "stoneedge",
    "substitute",
    "sunnyday",
-   "surf",
    "throatchop",
    "whirlpool",
    "willowisp"
   ],
   "eggMoves": [],
-  "hmMoves": []
+  "hmMoves": [
+   "surf"
+  ]
  },
  "cutiefly": {
   "id": "cutiefly",
@@ -90583,7 +90614,6 @@
    "substitute",
    "sunnyday",
    "supercellslam",
-   "surf",
    "swift",
    "takedown",
    "terablast",
@@ -90593,13 +90623,14 @@
    "trickroom",
    "voltswitch",
    "waterpulse",
-   "waterfall",
    "wildcharge"
   ],
   "eggMoves": [],
   "hmMoves": [
    "flash",
-   "strength"
+   "strength",
+   "surf",
+   "waterfall"
   ]
  },
  "cyndaquil": {
@@ -94054,7 +94085,6 @@
    "facade",
    "featherdance",
    "fling",
-   "fly",
    "focuspunch",
    "foulplay",
    "gigaimpact",
@@ -94096,7 +94126,9 @@
    "rapidspin",
    "splash"
   ],
-  "hmMoves": []
+  "hmMoves": [
+   "fly"
+  ]
  },
  "delphox": {
   "id": "delphox",
@@ -95726,21 +95758,21 @@
    "smartstrike",
    "snowscape",
    "substitute",
-   "surf",
    "terablast",
    "thief",
    "toxic",
    "tripleaxel",
    "uproar",
    "waterpulse",
-   "waterfall",
    "weatherball",
    "whirlpool"
   ],
   "eggMoves": [],
   "hmMoves": [
    "dive",
-   "strength"
+   "strength",
+   "surf",
+   "waterfall"
   ]
  },
  "dewott": {
@@ -95916,7 +95948,6 @@
    "sleeptalk",
    "snowscape",
    "substitute",
-   "surf",
    "swift",
    "takedown",
    "taunt",
@@ -95925,7 +95956,6 @@
    "toxic",
    "vacuumwave",
    "waterpledge",
-   "waterfall",
    "whirlpool",
    "xscissor"
   ],
@@ -95933,7 +95963,9 @@
   "hmMoves": [
    "cut",
    "dive",
-   "rocksmash"
+   "rocksmash",
+   "surf",
+   "waterfall"
   ]
  },
  "dewpider": {
@@ -96094,16 +96126,17 @@
    "skittersmack",
    "sleeptalk",
    "substitute",
-   "surf",
    "terablast",
    "toxic",
    "trailblaze",
    "waterpulse",
-   "waterfall",
    "xscissor"
   ],
   "eggMoves": [],
-  "hmMoves": []
+  "hmMoves": [
+   "surf",
+   "waterfall"
+  ]
  },
  "dhelmise": {
   "id": "dhelmise",
@@ -96292,13 +96325,14 @@
    "spite",
    "substitute",
    "sunnyday",
-   "surf",
    "swordsdance",
    "thief",
    "toxic"
   ],
   "eggMoves": [],
-  "hmMoves": []
+  "hmMoves": [
+   "surf"
+  ]
  },
  "dialga": {
   "id": "dialga",
@@ -96951,7 +96985,6 @@
    "stompingtantrum",
    "stoneedge",
    "substitute",
-   "surf",
    "thief",
    "thunderpunch",
    "toxic",
@@ -96963,7 +96996,8 @@
   "hmMoves": [
    "cut",
    "rocksmash",
-   "strength"
+   "strength",
+   "surf"
   ]
  },
  "diglett": {
@@ -97630,7 +97664,6 @@
    "endure",
    "facade",
    "featherdance",
-   "fly",
    "gigaimpact",
    "helpinghand",
    "hyperbeam",
@@ -97660,7 +97693,9 @@
    "trailblaze"
   ],
   "eggMoves": [],
-  "hmMoves": []
+  "hmMoves": [
+   "fly"
+  ]
  },
  "doduo": {
   "id": "doduo",
@@ -97782,7 +97817,6 @@
    "endure",
    "facade",
    "featherdance",
-   "fly",
    "helpinghand",
    "knockoff",
    "lowkick",
@@ -97811,7 +97845,9 @@
    "quickattack",
    "supersonic"
   ],
-  "hmMoves": []
+  "hmMoves": [
+   "fly"
+  ]
  },
  "dolliv": {
   "id": "dolliv",
@@ -98105,15 +98141,16 @@
    "scaryface",
    "stompingtantrum",
    "substitute",
-   "surf",
    "takedown",
    "terablast",
    "waterpulse",
-   "waterfall",
    "zenheadbutt"
   ],
   "eggMoves": [],
-  "hmMoves": []
+  "hmMoves": [
+   "surf",
+   "waterfall"
+  ]
  },
  "donphan": {
   "id": "donphan",
@@ -98891,14 +98928,14 @@
    "stompingtantrum",
    "stoneedge",
    "substitute",
-   "surf",
-   "waterfall",
    "whirlpool",
    "zenheadbutt"
   ],
   "eggMoves": [],
   "hmMoves": [
-   "dive"
+   "dive",
+   "surf",
+   "waterfall"
   ]
  },
  "dracozolt": {
@@ -99264,7 +99301,6 @@
    "snowscape",
    "spite",
    "substitute",
-   "surf",
    "takedown",
    "terablast",
    "thief",
@@ -99272,12 +99308,13 @@
    "thunderbolt",
    "toxicspikes",
    "venoshock",
-   "waterfall",
    "whirlpool"
   ],
   "eggMoves": [],
   "hmMoves": [
-   "dive"
+   "dive",
+   "surf",
+   "waterfall"
   ]
  },
  "dragapult": {
@@ -99460,7 +99497,6 @@
    "facade",
    "fireblast",
    "flamethrower",
-   "fly",
    "gigaimpact",
    "helpinghand",
    "hydropump",
@@ -99479,7 +99515,6 @@
    "solarbeam",
    "substitute",
    "sunnyday",
-   "surf",
    "swift",
    "terablast",
    "thief",
@@ -99490,7 +99525,9 @@
   ],
   "eggMoves": [],
   "hmMoves": [
-   "dive"
+   "dive",
+   "fly",
+   "surf"
   ]
  },
  "draggalong": {
@@ -99827,7 +99864,6 @@
    "sleeptalk",
    "substitute",
    "sunnyday",
-   "surf",
    "swift",
    "takedown",
    "terablast",
@@ -99835,12 +99871,14 @@
    "thunderbolt",
    "toxic",
    "waterpulse",
-   "waterfall",
    "weatherball",
    "whirlpool"
   ],
   "eggMoves": [],
-  "hmMoves": []
+  "hmMoves": [
+   "surf",
+   "waterfall"
+  ]
  },
  "dragonite": {
   "id": "dragonite",
@@ -100038,7 +100076,6 @@
    "firespin",
    "flamethrower",
    "fling",
-   "fly",
    "focusblast",
    "focuspunch",
    "gigaimpact",
@@ -100072,7 +100109,6 @@
    "stoneedge",
    "substitute",
    "sunnyday",
-   "surf",
    "swift",
    "tailwind",
    "takedown",
@@ -100082,7 +100118,6 @@
    "thunderbolt",
    "toxic",
    "waterpulse",
-   "waterfall",
    "weatherball",
    "whirlpool"
   ],
@@ -100090,8 +100125,11 @@
   "hmMoves": [
    "cut",
    "dive",
+   "fly",
    "rocksmash",
-   "strength"
+   "strength",
+   "surf",
+   "waterfall"
   ]
  },
  "drakloak": {
@@ -100269,7 +100307,6 @@
    "sleeptalk",
    "substitute",
    "sunnyday",
-   "surf",
    "swift",
    "terablast",
    "thief",
@@ -100280,7 +100317,8 @@
   ],
   "eggMoves": [],
   "hmMoves": [
-   "dive"
+   "dive",
+   "surf"
   ]
  },
  "drampa": {
@@ -100480,7 +100518,6 @@
    "stompingtantrum",
    "substitute",
    "sunnyday",
-   "surf",
    "swift",
    "tailwind",
    "thunder",
@@ -100491,7 +100528,9 @@
    "waterpulse"
   ],
   "eggMoves": [],
-  "hmMoves": []
+  "hmMoves": [
+   "surf"
+  ]
  },
  "dramsama": {
   "id": "dramsama",
@@ -100989,7 +101028,6 @@
    "sleeptalk",
    "substitute",
    "sunnyday",
-   "surf",
    "swift",
    "takedown",
    "terablast",
@@ -100997,7 +101035,6 @@
    "thunderbolt",
    "toxic",
    "waterpulse",
-   "waterfall",
    "whirlpool"
   ],
   "eggMoves": [
@@ -101008,7 +101045,10 @@
    "mist",
    "supersonic"
   ],
-  "hmMoves": []
+  "hmMoves": [
+   "surf",
+   "waterfall"
+  ]
  },
  "drednaw": {
   "id": "drednaw",
@@ -101198,18 +101238,18 @@
    "stoneedge",
    "substitute",
    "superfang",
-   "surf",
    "swordsdance",
    "takedown",
    "terablast",
    "throatchop",
    "waterpulse",
-   "waterfall",
    "whirlpool"
   ],
   "eggMoves": [],
   "hmMoves": [
-   "dive"
+   "dive",
+   "surf",
+   "waterfall"
   ]
  },
  "dreepy": {
@@ -101480,7 +101520,6 @@
    "endure",
    "facade",
    "fling",
-   "fly",
    "gigaimpact",
    "gyroball",
    "haze",
@@ -101520,7 +101559,8 @@
   "eggMoves": [],
   "hmMoves": [
    "cut",
-   "flash"
+   "flash",
+   "fly"
   ]
  },
  "drifloon": {
@@ -101695,7 +101735,6 @@
    "curse",
    "endure",
    "facade",
-   "fly",
    "gyroball",
    "haze",
    "helpinghand",
@@ -101734,7 +101773,8 @@
   "eggMoves": [],
   "hmMoves": [
    "cut",
-   "flash"
+   "flash",
+   "fly"
   ]
  },
  "drilbur": {
@@ -102150,18 +102190,18 @@
    "rest",
    "sleeptalk",
    "substitute",
-   "surf",
    "swift",
    "takedown",
    "terablast",
    "waterpledge",
-   "waterfall",
    "weatherball",
    "whirlpool"
   ],
   "eggMoves": [],
   "hmMoves": [
-   "dive"
+   "dive",
+   "surf",
+   "waterfall"
   ]
  },
  "drowzee": {
@@ -102575,7 +102615,6 @@
    "stompingtantrum",
    "substitute",
    "sunnyday",
-   "surf",
    "taunt",
    "thunderfang",
    "thunderpunch",
@@ -102585,7 +102624,8 @@
   "hmMoves": [
    "cut",
    "rocksmash",
-   "strength"
+   "strength",
+   "surf"
   ]
  },
  "dubwool": {
@@ -102853,7 +102893,6 @@
    "endeavor",
    "endure",
    "facade",
-   "fly",
    "helpinghand",
    "icebeam",
    "icywind",
@@ -102863,7 +102902,6 @@
    "scald",
    "sleeptalk",
    "substitute",
-   "surf",
    "swift",
    "terablast",
    "toxic",
@@ -102873,7 +102911,9 @@
   ],
   "eggMoves": [],
   "hmMoves": [
-   "dive"
+   "dive",
+   "fly",
+   "surf"
   ]
  },
  "dudunsparce": {
@@ -104090,7 +104130,6 @@
    "snowscape",
    "substitute",
    "sunnyday",
-   "surf",
    "swift",
    "takedown",
    "terablast",
@@ -104100,14 +104139,15 @@
    "trickroom",
    "voltswitch",
    "waterpulse",
-   "waterfall",
    "weatherball",
    "wildcharge"
   ],
   "eggMoves": [],
   "hmMoves": [
    "flash",
-   "strength"
+   "strength",
+   "surf",
+   "waterfall"
   ]
  },
  "duosion": {
@@ -106300,13 +106340,13 @@
    "takedown",
    "terablast",
    "waterpulse",
-   "waterfall",
    "whirlpool",
    "zenheadbutt"
   ],
   "eggMoves": [],
   "hmMoves": [
-   "dive"
+   "dive",
+   "waterfall"
   ]
  },
  "eiscue_noice": {
@@ -106460,13 +106500,13 @@
    "takedown",
    "terablast",
    "waterpulse",
-   "waterfall",
    "whirlpool",
    "zenheadbutt"
   ],
   "eggMoves": [],
   "hmMoves": [
-   "dive"
+   "dive",
+   "waterfall"
   ]
  },
  "ekans": {
@@ -109390,7 +109430,6 @@
    "stealthrock",
    "steelbeam",
    "substitute",
-   "surf",
    "swift",
    "takedown",
    "terablast",
@@ -109401,7 +109440,6 @@
    "vacuumwave",
    "waterpledge",
    "waterpulse",
-   "waterfall",
    "weatherball"
   ],
   "eggMoves": [],
@@ -109409,7 +109447,9 @@
    "cut",
    "dive",
    "rocksmash",
-   "strength"
+   "strength",
+   "surf",
+   "waterfall"
   ]
  },
  "enamorus": {
@@ -109565,7 +109605,6 @@
    "earthpower",
    "endure",
    "facade",
-   "fly",
    "focusblast",
    "gigaimpact",
    "grassknot",
@@ -109593,7 +109632,9 @@
    "zenheadbutt"
   ],
   "eggMoves": [],
-  "hmMoves": []
+  "hmMoves": [
+   "fly"
+  ]
  },
  "entei": {
   "id": "entei",
@@ -111048,7 +111089,6 @@
    "fireblast",
    "firespin",
    "flashcannon",
-   "fly",
    "gigaimpact",
    "gravity",
    "gunkshot",
@@ -111072,7 +111112,9 @@
    "toxicspikes"
   ],
   "eggMoves": [],
-  "hmMoves": []
+  "hmMoves": [
+   "fly"
+  ]
  },
  "excadrill": {
   "id": "excadrill",
@@ -111971,7 +112013,6 @@
    "stompingtantrum",
    "substitute",
    "sunnyday",
-   "surf",
    "taunt",
    "thunderfang",
    "thunderpunch",
@@ -111983,7 +112024,8 @@
   "eggMoves": [],
   "hmMoves": [
    "rocksmash",
-   "strength"
+   "strength",
+   "surf"
   ]
  },
  "fafninter": {
@@ -112649,7 +112691,6 @@
    "dualwingbeat",
    "endure",
    "facade",
-   "fly",
    "heatwave",
    "helpinghand",
    "mudslap",
@@ -112682,7 +112723,8 @@
    "steelwing"
   ],
   "hmMoves": [
-   "cut"
+   "cut",
+   "fly"
   ]
  },
  "farfetchd_galar": {
@@ -112810,7 +112852,6 @@
    "endure",
    "facade",
    "featherdance",
-   "fly",
    "heatwave",
    "helpinghand",
    "mudslap",
@@ -112834,7 +112875,8 @@
   ],
   "eggMoves": [],
   "hmMoves": [
-   "cut"
+   "cut",
+   "fly"
   ]
  },
  "farigiraf": {
@@ -113349,7 +113391,6 @@
    "endure",
    "facade",
    "falseswipe",
-   "fly",
    "gigaimpact",
    "heatwave",
    "hyperbeam",
@@ -113370,7 +113411,9 @@
    "uproar"
   ],
   "eggMoves": [],
-  "hmMoves": []
+  "hmMoves": [
+   "fly"
+  ]
  },
  "feebas": {
   "id": "feebas",
@@ -113463,12 +113506,10 @@
    "scaleshot",
    "sleeptalk",
    "substitute",
-   "surf",
    "swift",
    "terablast",
    "toxic",
    "waterpulse",
-   "waterfall",
    "whirlpool"
   ],
   "eggMoves": [
@@ -113480,7 +113521,9 @@
    "mudsport"
   ],
   "hmMoves": [
-   "dive"
+   "dive",
+   "surf",
+   "waterfall"
   ]
  },
  "feleng": {
@@ -114148,7 +114191,6 @@
    "spite",
    "stompingtantrum",
    "substitute",
-   "surf",
    "swordsdance",
    "takedown",
    "terablast",
@@ -114158,7 +114200,6 @@
    "uproar",
    "waterpledge",
    "waterpulse",
-   "waterfall",
    "whirlpool"
   ],
   "eggMoves": [],
@@ -114166,7 +114207,9 @@
    "cut",
    "dive",
    "rocksmash",
-   "strength"
+   "strength",
+   "surf",
+   "waterfall"
   ]
  },
  "ferroseed": {
@@ -114674,7 +114717,6 @@
    "dualwingbeat",
    "endure",
    "facade",
-   "fly",
    "gigaimpact",
    "gunkshot",
    "heatwave",
@@ -114710,7 +114752,9 @@
    "venoshock"
   ],
   "eggMoves": [],
-  "hmMoves": []
+  "hmMoves": [
+   "fly"
+  ]
  },
  "fidgit": {
   "id": "fidgit",
@@ -115269,16 +115313,17 @@
    "rest",
    "sleeptalk",
    "substitute",
-   "surf",
    "swift",
    "takedown",
    "terablast",
    "waterpulse",
-   "waterfall",
    "zenheadbutt"
   ],
   "eggMoves": [],
-  "hmMoves": []
+  "hmMoves": [
+   "surf",
+   "waterfall"
+  ]
  },
  "finneon": {
   "id": "finneon",
@@ -115436,18 +115481,18 @@
    "scald",
    "sleeptalk",
    "substitute",
-   "surf",
    "swift",
    "takedown",
    "terablast",
    "thief",
-   "toxic",
-   "waterfall"
+   "toxic"
   ],
   "eggMoves": [],
   "hmMoves": [
    "dive",
-   "flash"
+   "flash",
+   "surf",
+   "waterfall"
   ]
  },
  "firoke": {
@@ -116110,7 +116155,6 @@
    "facade",
    "featherdance",
    "fling",
-   "fly",
    "gigaimpact",
    "hurricane",
    "hyperbeam",
@@ -116135,7 +116179,9 @@
    "waterpulse"
   ],
   "eggMoves": [],
-  "hmMoves": []
+  "hmMoves": [
+   "fly"
+  ]
  },
  "flapple": {
   "id": "flapple",
@@ -117370,18 +117416,18 @@
    "sleeptalk",
    "snowscape",
    "substitute",
-   "surf",
    "taunt",
    "terablast",
    "thunderfang",
    "toxic",
-   "waterfall",
    "whirlpool"
   ],
   "eggMoves": [],
   "hmMoves": [
    "dive",
-   "rocksmash"
+   "rocksmash",
+   "surf",
+   "waterfall"
   ]
  },
  "floatzel": {
@@ -117592,20 +117638,20 @@
    "sleeptalk",
    "snarl",
    "substitute",
-   "surf",
    "takedown",
    "taunt",
    "terablast",
    "thief",
    "toxic",
-   "waterpulse",
-   "waterfall"
+   "waterpulse"
   ],
   "eggMoves": [],
   "hmMoves": [
    "dive",
    "rocksmash",
-   "strength"
+   "strength",
+   "surf",
+   "waterfall"
   ]
  },
  "floette": {
@@ -118475,7 +118521,6 @@
    "firepunch",
    "firespin",
    "flamethrower",
-   "fly",
    "gigadrain",
    "gigaimpact",
    "heatwave",
@@ -118510,6 +118555,7 @@
   ],
   "eggMoves": [],
   "hmMoves": [
+   "fly",
    "rocksmash",
    "strength"
   ]
@@ -119375,7 +119421,6 @@
    "stompingtantrum",
    "substitute",
    "sunnyday",
-   "surf",
    "swift",
    "takedown",
    "terablast",
@@ -119387,7 +119432,8 @@
   "hmMoves": [
    "cut",
    "rocksmash",
-   "strength"
+   "strength",
+   "surf"
   ]
  },
  "frigibax": {
@@ -119829,18 +119875,18 @@
    "sludgewave",
    "spite",
    "substitute",
-   "surf",
    "taunt",
    "toxic",
    "trick",
    "trickroom",
-   "waterfall",
    "willowisp"
   ],
   "eggMoves": [],
   "hmMoves": [
    "dive",
-   "flash"
+   "flash",
+   "surf",
+   "waterfall"
   ]
  },
  "froakie": {
@@ -120009,7 +120055,6 @@
    "snowscape",
    "spikes",
    "spite",
-   "surf",
    "swift",
    "takedown",
    "taunt",
@@ -120019,15 +120064,16 @@
    "toxicspikes",
    "trailblaze",
    "uturn",
-   "waterpledge",
-   "waterfall"
+   "waterpledge"
   ],
   "eggMoves": [],
   "hmMoves": [
    "cut",
    "dive",
    "rocksmash",
-   "strength"
+   "strength",
+   "surf",
+   "waterfall"
   ]
  },
  "frogadier": {
@@ -120205,7 +120251,6 @@
    "snowscape",
    "spikes",
    "spite",
-   "surf",
    "swift",
    "swordsdance",
    "takedown",
@@ -120216,15 +120261,16 @@
    "toxicspikes",
    "trailblaze",
    "uturn",
-   "waterpledge",
-   "waterfall"
+   "waterpledge"
   ],
   "eggMoves": [],
   "hmMoves": [
    "cut",
    "dive",
    "rocksmash",
-   "strength"
+   "strength",
+   "surf",
+   "waterfall"
   ]
  },
  "froslass": {
@@ -121295,7 +121341,6 @@
    "snarl",
    "substitute",
    "sunnyday",
-   "surf",
    "thunderwave",
    "toxic",
    "uturn",
@@ -121306,7 +121351,8 @@
   "eggMoves": [],
   "hmMoves": [
    "flash",
-   "rocksmash"
+   "rocksmash",
+   "surf"
   ]
  },
  "furret": {
@@ -121485,7 +121531,6 @@
    "substitute",
    "sunnyday",
    "superfang",
-   "surf",
    "swift",
    "takedown",
    "terablast",
@@ -121506,7 +121551,8 @@
   "hmMoves": [
    "cut",
    "rocksmash",
-   "strength"
+   "strength",
+   "surf"
   ]
  },
  "gabite": {
@@ -122736,7 +122782,6 @@
    "stoneedge",
    "substitute",
    "sunnyday",
-   "surf",
    "swift",
    "swordsdance",
    "terablast",
@@ -122748,7 +122793,8 @@
   "hmMoves": [
    "cut",
    "rocksmash",
-   "strength"
+   "strength",
+   "surf"
   ]
  },
  "gardevoir": {
@@ -123727,11 +123773,9 @@
    "stompingtantrum",
    "stoneedge",
    "substitute",
-   "surf",
    "takedown",
    "terablast",
    "toxic",
-   "waterfall",
    "weatherball",
    "whirlpool"
   ],
@@ -123740,7 +123784,9 @@
    "dive",
    "flash",
    "rocksmash",
-   "strength"
+   "strength",
+   "surf",
+   "waterfall"
   ]
  },
  "gellin": {
@@ -124022,7 +124068,6 @@
    "facade",
    "flamethrower",
    "flashcannon",
-   "fly",
    "gigadrain",
    "gigaimpact",
    "gravity",
@@ -124052,7 +124097,8 @@
   ],
   "eggMoves": [],
   "hmMoves": [
-   "flash"
+   "flash",
+   "fly"
   ]
  },
  "gengar": {
@@ -125563,7 +125609,6 @@
    "endure",
    "energyball",
    "facade",
-   "fly",
    "gigaimpact",
    "gravity",
    "hyperbeam",
@@ -125600,6 +125645,7 @@
   "eggMoves": [],
   "hmMoves": [
    "cut",
+   "fly",
    "rocksmash",
    "strength"
   ]
@@ -125781,7 +125827,6 @@
    "endure",
    "energyball",
    "facade",
-   "fly",
    "gigaimpact",
    "gravity",
    "hyperbeam",
@@ -125818,6 +125863,7 @@
   "eggMoves": [],
   "hmMoves": [
    "cut",
+   "fly",
    "rocksmash",
    "strength"
   ]
@@ -126643,7 +126689,6 @@
    "stoneedge",
    "substitute",
    "sunnyday",
-   "surf",
    "takedown",
    "terablast",
    "thief",
@@ -126661,7 +126706,8 @@
   "eggMoves": [],
   "hmMoves": [
    "rocksmash",
-   "strength"
+   "strength",
+   "surf"
   ]
  },
  "tauros_paldea_combat": {
@@ -126827,7 +126873,6 @@
    "stoneedge",
    "substitute",
    "sunnyday",
-   "surf",
    "terablast",
    "thief",
    "throatchop",
@@ -126844,7 +126889,8 @@
   "eggMoves": [],
   "hmMoves": [
    "rocksmash",
-   "strength"
+   "strength",
+   "surf"
   ]
  },
  "teddiursa": {
@@ -127187,7 +127233,6 @@
    "sludgebomb",
    "sludgewave",
    "substitute",
-   "surf",
    "swift",
    "swordsdance",
    "takedown",
@@ -127198,7 +127243,6 @@
    "toxicspikes",
    "venoshock",
    "waterpulse",
-   "waterfall",
    "whirlpool"
   ],
   "eggMoves": [
@@ -127211,7 +127255,9 @@
   ],
   "hmMoves": [
    "cut",
-   "dive"
+   "dive",
+   "surf",
+   "waterfall"
   ]
  },
  "tentacruel": {
@@ -127380,7 +127426,6 @@
    "sludgebomb",
    "sludgewave",
    "substitute",
-   "surf",
    "swift",
    "swordsdance",
    "takedown",
@@ -127391,14 +127436,15 @@
    "toxicspikes",
    "venoshock",
    "waterpulse",
-   "waterfall",
    "weatherball",
    "whirlpool"
   ],
   "eggMoves": [],
   "hmMoves": [
    "cut",
-   "dive"
+   "dive",
+   "surf",
+   "waterfall"
   ]
  },
  "tepig": {
@@ -127750,7 +127796,6 @@
    "substitute",
    "sunnyday",
    "supercellslam",
-   "surf",
    "takedown",
    "thunder",
    "thunderbolt",
@@ -127761,7 +127806,9 @@
    "zenheadbutt"
   ],
   "eggMoves": [],
-  "hmMoves": []
+  "hmMoves": [
+   "surf"
+  ]
  },
  "terlard": {
   "id": "terlard",
@@ -128778,7 +128825,6 @@
    "facade",
    "flashcannon",
    "fling",
-   "fly",
    "focusblast",
    "foulplay",
    "gigaimpact",
@@ -128814,6 +128860,7 @@
   ],
   "eggMoves": [],
   "hmMoves": [
+   "fly",
    "rocksmash",
    "strength"
   ]
@@ -129009,7 +129056,6 @@
    "facade",
    "flashcannon",
    "fling",
-   "fly",
    "focusblast",
    "foulplay",
    "gigaimpact",
@@ -129045,6 +129091,7 @@
   ],
   "eggMoves": [],
   "hmMoves": [
+   "fly",
    "rocksmash",
    "strength"
   ]
@@ -130362,10 +130409,8 @@
    "stealthrock",
    "stoneedge",
    "substitute",
-   "surf",
    "toxic",
    "waterpulse",
-   "waterfall",
    "whirlpool",
    "zenheadbutt"
   ],
@@ -130373,7 +130418,9 @@
   "hmMoves": [
    "dive",
    "rocksmash",
-   "strength"
+   "strength",
+   "surf",
+   "waterfall"
   ]
  },
  "titanice": {
@@ -131339,7 +131386,6 @@
    "fireblast",
    "flamethrower",
    "fling",
-   "fly",
    "focuspunch",
    "futuresight",
    "gigaimpact",
@@ -131380,6 +131426,7 @@
   "eggMoves": [],
   "hmMoves": [
    "flash",
+   "fly",
    "rocksmash"
   ]
  },
@@ -131733,7 +131780,6 @@
    "fireblast",
    "flamethrower",
    "fling",
-   "fly",
    "focuspunch",
    "futuresight",
    "gigaimpact",
@@ -131773,6 +131819,7 @@
   "eggMoves": [],
   "hmMoves": [
    "flash",
+   "fly",
    "rocksmash"
   ]
  },
@@ -132004,7 +132051,6 @@
    "facade",
    "falseswipe",
    "fling",
-   "fly",
    "focusblast",
    "gigaimpact",
    "grassknot",
@@ -132030,6 +132076,7 @@
   "eggMoves": [],
   "hmMoves": [
    "flash",
+   "fly",
    "strength"
   ]
  },
@@ -132634,7 +132681,6 @@
    "endure",
    "facade",
    "fling",
-   "fly",
    "focusblast",
    "foulplay",
    "gigaimpact",
@@ -132669,6 +132715,7 @@
   ],
   "eggMoves": [],
   "hmMoves": [
+   "fly",
    "rocksmash",
    "strength"
   ]
@@ -132844,7 +132891,6 @@
    "endure",
    "facade",
    "fling",
-   "fly",
    "focusblast",
    "foulplay",
    "gigaimpact",
@@ -132879,6 +132925,7 @@
   ],
   "eggMoves": [],
   "hmMoves": [
+   "fly",
    "rocksmash",
    "strength"
   ]
@@ -133441,7 +133488,6 @@
    "sleeptalk",
    "spite",
    "substitute",
-   "surf",
    "swordsdance",
    "takedown",
    "terablast",
@@ -133451,7 +133497,6 @@
    "uproar",
    "waterpledge",
    "waterpulse",
-   "waterfall",
    "whirlpool"
   ],
   "eggMoves": [
@@ -133465,7 +133510,9 @@
   ],
   "hmMoves": [
    "cut",
-   "dive"
+   "dive",
+   "surf",
+   "waterfall"
   ]
  },
  "toucannon": {
@@ -133625,7 +133672,6 @@
    "facade",
    "flamecharge",
    "flashcannon",
-   "fly",
    "gigaimpact",
    "gunkshot",
    "heatwave",
@@ -133656,7 +133702,9 @@
    "uproar"
   ],
   "eggMoves": [],
-  "hmMoves": []
+  "hmMoves": [
+   "fly"
+  ]
  },
  "toxapex": {
   "id": "toxapex",
@@ -133829,12 +133877,13 @@
    "smackdown",
    "spite",
    "substitute",
-   "surf",
    "terablast",
    "waterpulse"
   ],
   "eggMoves": [],
-  "hmMoves": []
+  "hmMoves": [
+   "surf"
+  ]
  },
  "toxel": {
   "id": "toxel",
@@ -134621,7 +134670,6 @@
    "agility",
    "dualwingbeat",
    "endure",
-   "fly",
    "heatwave",
    "protect",
    "raindance",
@@ -134635,7 +134683,9 @@
    "uproar"
   ],
   "eggMoves": [],
-  "hmMoves": []
+  "hmMoves": [
+   "fly"
+  ]
  },
  "trapinch": {
   "id": "trapinch",
@@ -135525,7 +135575,6 @@
    "endure",
    "energyball",
    "facade",
-   "fly",
    "gigadrain",
    "gigaimpact",
    "grassknot",
@@ -135567,6 +135616,7 @@
   "hmMoves": [
    "cut",
    "flash",
+   "fly",
    "rocksmash",
    "strength"
   ]
@@ -135870,7 +135920,6 @@
    "endure",
    "facade",
    "flamecharge",
-   "fly",
    "gunkshot",
    "heatwave",
    "helpinghand",
@@ -135892,7 +135941,9 @@
    "uproar"
   ],
   "eggMoves": [],
-  "hmMoves": []
+  "hmMoves": [
+   "fly"
+  ]
  },
  "tsareena": {
   "id": "tsareena",
@@ -136786,13 +136837,14 @@
    "sludgebomb",
    "sludgewave",
    "substitute",
-   "surf",
    "toxic",
    "waterpulse",
    "weatherball"
   ],
   "eggMoves": [],
-  "hmMoves": []
+  "hmMoves": [
+   "surf"
+  ]
  },
  "tynamo": {
   "id": "tynamo",
@@ -137633,7 +137685,6 @@
    "stoneedge",
    "substitute",
    "sunnyday",
-   "surf",
    "takedown",
    "taunt",
    "terablast",
@@ -137651,7 +137702,8 @@
   "hmMoves": [
    "cut",
    "rocksmash",
-   "strength"
+   "strength",
+   "surf"
   ]
  },
  "tyrantrum": {
@@ -138465,7 +138517,6 @@
    "bravebird",
    "dualwingbeat",
    "endure",
-   "fly",
    "gigaimpact",
    "heatwave",
    "hurricane",
@@ -138483,7 +138534,9 @@
    "uproar"
   ],
   "eggMoves": [],
-  "hmMoves": []
+  "hmMoves": [
+   "fly"
+  ]
  },
  "unown": {
   "id": "unown",
@@ -140277,14 +140330,12 @@
    "storedpower",
    "substitute",
    "sunnyday",
-   "surf",
    "swift",
    "takedown",
    "terablast",
    "toxic",
    "trailblaze",
    "waterpulse",
-   "waterfall",
    "weatherball",
    "whirlpool"
   ],
@@ -140292,7 +140343,9 @@
   "hmMoves": [
    "dive",
    "rocksmash",
-   "strength"
+   "strength",
+   "surf",
+   "waterfall"
   ]
  },
  "varoom": {
@@ -140610,14 +140663,15 @@
    "snowscape",
    "storedpower",
    "substitute",
-   "surf",
    "takedown",
    "terablast",
-   "waterfall",
    "zenheadbutt"
   ],
   "eggMoves": [],
-  "hmMoves": []
+  "hmMoves": [
+   "surf",
+   "waterfall"
+  ]
  },
  "venipede": {
   "id": "venipede",
@@ -140909,7 +140963,6 @@
    "dualwingbeat",
    "endure",
    "facade",
-   "fly",
    "foulplay",
    "gigaimpact",
    "gunkshot",
@@ -140944,7 +140997,9 @@
    "uturn"
   ],
   "eggMoves": [],
-  "hmMoves": []
+  "hmMoves": [
+   "fly"
+  ]
  },
  "venomoth": {
   "id": "venomoth",
@@ -142680,7 +142735,6 @@
    "endure",
    "facade",
    "featherdance",
-   "fly",
    "foulplay",
    "gigaimpact",
    "heatwave",
@@ -142711,7 +142765,9 @@
    "uturn"
   ],
   "eggMoves": [],
-  "hmMoves": []
+  "hmMoves": [
+   "fly"
+  ]
  },
  "bonsly": {
   "id": "bonsly",
@@ -143059,7 +143115,6 @@
    "stoneedge",
    "substitute",
    "sunnyday",
-   "surf",
    "taunt",
    "toxic",
    "uproar",
@@ -143070,7 +143125,8 @@
   "hmMoves": [
    "cut",
    "rocksmash",
-   "strength"
+   "strength",
+   "surf"
   ]
  },
  "bounsweet": {
@@ -144281,7 +144337,6 @@
    "endure",
    "facade",
    "featherdance",
-   "fly",
    "gigaimpact",
    "heatwave",
    "helpinghand",
@@ -144309,6 +144364,7 @@
   "eggMoves": [],
   "hmMoves": [
    "cut",
+   "fly",
    "rocksmash",
    "strength"
   ]
@@ -144480,7 +144536,6 @@
    "endure",
    "facade",
    "featherdance",
-   "fly",
    "gigaimpact",
    "heatwave",
    "helpinghand",
@@ -144509,6 +144564,7 @@
   "eggMoves": [],
   "hmMoves": [
    "cut",
+   "fly",
    "rocksmash",
    "strength"
   ]
@@ -145078,7 +145134,6 @@
    "scald",
    "sleeptalk",
    "substitute",
-   "surf",
    "swift",
    "terablast",
    "toxic",
@@ -145086,12 +145141,13 @@
    "uproar",
    "waterpledge",
    "waterpulse",
-   "waterfall",
    "whirlpool"
   ],
   "eggMoves": [],
   "hmMoves": [
-   "dive"
+   "dive",
+   "surf",
+   "waterfall"
   ]
  },
  "bronzong": {
@@ -145890,7 +145946,6 @@
    "sleeptalk",
    "substitute",
    "superfang",
-   "surf",
    "swordsdance",
    "takedown",
    "taunt",
@@ -145900,11 +145955,13 @@
    "uproar",
    "venoshock",
    "waterpulse",
-   "waterfall",
    "whirlpool"
   ],
   "eggMoves": [],
-  "hmMoves": []
+  "hmMoves": [
+   "surf",
+   "waterfall"
+  ]
  },
  "budew": {
   "id": "budew",
@@ -146217,20 +146274,20 @@
    "scald",
    "sleeptalk",
    "substitute",
-   "surf",
    "takedown",
    "taunt",
    "terablast",
    "thief",
    "toxic",
-   "waterpulse",
-   "waterfall"
+   "waterpulse"
   ],
   "eggMoves": [],
   "hmMoves": [
    "dive",
    "rocksmash",
-   "strength"
+   "strength",
+   "surf",
+   "waterfall"
   ]
  },
  "bulbasaur": {
@@ -146784,7 +146841,6 @@
    "spikes",
    "stoneedge",
    "substitute",
-   "surf",
    "thief",
    "toxic",
    "uturn",
@@ -146794,7 +146850,8 @@
   "hmMoves": [
    "cut",
    "rocksmash",
-   "strength"
+   "strength",
+   "surf"
   ]
  },
  "burmy": {
@@ -147854,20 +147911,20 @@
    "snowscape",
    "steelbeam",
    "substitute",
-   "surf",
    "taunt",
    "terablast",
    "thunderfang",
    "thunderpunch",
    "toxic",
-   "waterfall",
    "whirlpool"
   ],
   "eggMoves": [],
   "hmMoves": [
    "dive",
    "rocksmash",
-   "strength"
+   "strength",
+   "surf",
+   "waterfall"
   ]
  },
  "calyrex": {
@@ -149498,7 +149555,6 @@
    "facade",
    "faketears",
    "fling",
-   "fly",
    "focuspunch",
    "grassknot",
    "helpinghand",
@@ -149513,7 +149569,6 @@
    "reversal",
    "sleeptalk",
    "substitute",
-   "surf",
    "swift",
    "takedown",
    "terablast",
@@ -149529,8 +149584,10 @@
   "eggMoves": [],
   "hmMoves": [
    "flash",
+   "fly",
    "rocksmash",
-   "strength"
+   "strength",
+   "surf"
   ]
  },
  "carnivine": {
@@ -149877,10 +149934,8 @@
    "stealthrock",
    "stoneedge",
    "substitute",
-   "surf",
    "toxic",
    "waterpulse",
-   "waterfall",
    "whirlpool",
    "zenheadbutt"
   ],
@@ -149888,7 +149943,9 @@
   "hmMoves": [
    "dive",
    "rocksmash",
-   "strength"
+   "strength",
+   "surf",
+   "waterfall"
   ]
  },
  "carvanha": {
@@ -150023,14 +150080,12 @@
    "spite",
    "substitute",
    "superfang",
-   "surf",
    "swift",
    "taunt",
    "thief",
    "toxic",
    "uproar",
    "waterpulse",
-   "waterfall",
    "whirlpool",
    "zenheadbutt"
   ],
@@ -150040,7 +150095,9 @@
    "thrash"
   ],
   "hmMoves": [
-   "dive"
+   "dive",
+   "surf",
+   "waterfall"
   ]
  },
  "cascoon": {
@@ -150912,7 +150969,6 @@
    "endeavor",
    "endure",
    "facade",
-   "fly",
    "irondefense",
    "ironhead",
    "knockoff",
@@ -150926,7 +150982,6 @@
    "smackdown",
    "steelbeam",
    "substitute",
-   "surf",
    "takedown",
    "terablast",
    "toxic",
@@ -150935,8 +150990,10 @@
   ],
   "eggMoves": [],
   "hmMoves": [
+   "fly",
    "rocksmash",
-   "strength"
+   "strength",
+   "surf"
   ]
  },
  "cawmodore": {
@@ -151101,7 +151158,6 @@
    "endeavor",
    "endure",
    "facade",
-   "fly",
    "gigaimpact",
    "hardpress",
    "hyperbeam",
@@ -151117,7 +151173,6 @@
    "smackdown",
    "steelbeam",
    "substitute",
-   "surf",
    "takedown",
    "terablast",
    "throatchop",
@@ -151128,8 +151183,10 @@
   ],
   "eggMoves": [],
   "hmMoves": [
+   "fly",
    "rocksmash",
-   "strength"
+   "strength",
+   "surf"
   ]
  },
  "celebi": {
@@ -151484,7 +151541,6 @@
    "fireblast",
    "flamecharge",
    "flamethrower",
-   "fly",
    "gigaimpact",
    "grassknot",
    "gravity",
@@ -151505,7 +151561,9 @@
    "zenheadbutt"
   ],
   "eggMoves": [],
-  "hmMoves": []
+  "hmMoves": [
+   "fly"
+  ]
  },
  "centiskorch": {
   "id": "centiskorch",
@@ -153023,7 +153081,6 @@
    "flamecharge",
    "flareblitz",
    "fling",
-   "fly",
    "focusblast",
    "focuspunch",
    "gigaimpact",
@@ -153062,6 +153119,7 @@
   "eggMoves": [],
   "hmMoves": [
    "cut",
+   "fly",
    "rocksmash",
    "strength"
   ]
@@ -153741,7 +153799,6 @@
    "encore",
    "endure",
    "facade",
-   "fly",
    "heatwave",
    "mudslap",
    "nastyplot",
@@ -153759,7 +153816,9 @@
    "uturn"
   ],
   "eggMoves": [],
-  "hmMoves": []
+  "hmMoves": [
+   "fly"
+  ]
  },
  "cherrim": {
   "id": "cherrim",
@@ -154654,16 +154713,16 @@
    "sleeptalk",
    "stompingtantrum",
    "substitute",
-   "surf",
    "takedown",
    "terablast",
    "waterpulse",
-   "waterfall",
    "whirlpool"
   ],
   "eggMoves": [],
   "hmMoves": [
-   "dive"
+   "dive",
+   "surf",
+   "waterfall"
   ]
  },
  "chicoatl": {
@@ -155858,14 +155917,12 @@
    "scald",
    "sleeptalk",
    "substitute",
-   "surf",
    "terablast",
    "thunder",
    "thunderbolt",
    "toxic",
    "voltswitch",
    "waterpulse",
-   "waterfall",
    "whirlpool",
    "wildcharge"
   ],
@@ -155875,7 +155932,9 @@
   ],
   "hmMoves": [
    "dive",
-   "flash"
+   "flash",
+   "surf",
+   "waterfall"
   ]
  },
  "chingling": {
@@ -156626,7 +156685,6 @@
    "storedpower",
    "substitute",
    "sunnyday",
-   "surf",
    "takedown",
    "terablast",
    "toxic",
@@ -156635,7 +156693,9 @@
    "venoshock"
   ],
   "eggMoves": [],
-  "hmMoves": []
+  "hmMoves": [
+   "surf"
+  ]
  },
  "chuggon": {
   "id": "chuggon",
@@ -157459,10 +157519,8 @@
    "scald",
    "sleeptalk",
    "substitute",
-   "surf",
    "toxic",
-   "waterpulse",
-   "waterfall"
+   "waterpulse"
   ],
   "eggMoves": [
    "barrier",
@@ -157473,7 +157531,9 @@
    "supersonic"
   ],
   "hmMoves": [
-   "dive"
+   "dive",
+   "surf",
+   "waterfall"
   ]
  },
  "clauncher": {
@@ -157641,20 +157701,20 @@
    "sludgebomb",
    "sludgewave",
    "substitute",
-   "surf",
    "takedown",
    "terablast",
    "thief",
    "toxic",
    "uturn",
    "venoshock",
-   "waterfall",
    "weatherball"
   ],
   "eggMoves": [],
   "hmMoves": [
    "cut",
-   "dive"
+   "dive",
+   "surf",
+   "waterfall"
   ]
  },
  "clawitzer": {
@@ -157845,20 +157905,20 @@
    "sludgebomb",
    "sludgewave",
    "substitute",
-   "surf",
    "takedown",
    "terablast",
    "thief",
    "toxic",
    "uturn",
    "venoshock",
-   "waterfall",
    "weatherball"
   ],
   "eggMoves": [],
   "hmMoves": [
    "cut",
-   "dive"
+   "dive",
+   "surf",
+   "waterfall"
   ]
  },
  "claydol": {
@@ -158814,12 +158874,12 @@
    "protect",
    "rest",
    "sleeptalk",
-   "substitute",
-   "waterfall"
+   "substitute"
   ],
   "eggMoves": [],
   "hmMoves": [
-   "dive"
+   "dive",
+   "waterfall"
   ]
  },
  "clodsire": {
@@ -158996,17 +159056,18 @@
    "stompingtantrum",
    "stoneedge",
    "substitute",
-   "surf",
    "takedown",
    "terablast",
    "trailblaze",
    "venoshock",
    "waterpulse",
-   "waterfall",
    "zenheadbutt"
   ],
   "eggMoves": [],
-  "hmMoves": []
+  "hmMoves": [
+   "surf",
+   "waterfall"
+  ]
  },
  "cloyster": {
   "id": "cloyster",
@@ -159138,20 +159199,20 @@
    "smartstrike",
    "snowscape",
    "substitute",
-   "surf",
    "swift",
    "takedown",
    "terablast",
    "toxic",
    "toxicspikes",
    "waterpulse",
-   "waterfall",
    "weatherball",
    "whirlpool"
   ],
   "eggMoves": [],
   "hmMoves": [
-   "dive"
+   "dive",
+   "surf",
+   "waterfall"
   ]
  },
  "coalossal": {
@@ -161682,7 +161743,6 @@
    "snowscape",
    "stealthrock",
    "substitute",
-   "surf",
    "swift",
    "terablast",
    "trick",
@@ -161691,13 +161751,14 @@
    "venoshock",
    "waterpledge",
    "waterpulse",
-   "waterfall",
    "whirlpool",
    "xscissor"
   ],
   "eggMoves": [],
   "hmMoves": [
-   "dive"
+   "dive",
+   "surf",
+   "waterfall"
   ]
  },
  "corphish": {
@@ -161859,13 +161920,11 @@
    "sludgebomb",
    "spite",
    "substitute",
-   "surf",
    "takedown",
    "terablast",
    "thief",
    "toxic",
    "waterpulse",
-   "waterfall",
    "whirlpool",
    "xscissor"
   ],
@@ -161878,7 +161937,9 @@
   "hmMoves": [
    "cut",
    "rocksmash",
-   "strength"
+   "strength",
+   "surf",
+   "waterfall"
   ]
  },
  "corsola": {
@@ -162045,7 +162106,6 @@
    "stoneedge",
    "substitute",
    "sunnyday",
-   "surf",
    "throatchop",
    "toxic",
    "waterpulse",
@@ -162063,7 +162123,8 @@
   ],
   "hmMoves": [
    "rocksmash",
-   "strength"
+   "strength",
+   "surf"
   ]
  },
  "corsola_galar": {
@@ -162229,7 +162290,6 @@
    "stoneedge",
    "substitute",
    "sunnyday",
-   "surf",
    "throatchop",
    "toxic",
    "waterpulse",
@@ -162238,7 +162298,8 @@
   "eggMoves": [],
   "hmMoves": [
    "rocksmash",
-   "strength"
+   "strength",
+   "surf"
   ]
  },
  "corsoreef": {
@@ -162501,7 +162562,6 @@
    "facade",
    "faketears",
    "flashcannon",
-   "fly",
    "gigaimpact",
    "heavyslam",
    "hurricane",
@@ -162528,7 +162588,9 @@
    "uturn"
   ],
   "eggMoves": [],
-  "hmMoves": []
+  "hmMoves": [
+   "fly"
+  ]
  },
  "tauros_paldea_aqua": {
   "id": "tauros_paldea_aqua",
@@ -162695,7 +162757,6 @@
    "stoneedge",
    "substitute",
    "sunnyday",
-   "surf",
    "takedown",
    "terablast",
    "thief",
@@ -162713,7 +162774,8 @@
   "eggMoves": [],
   "hmMoves": [
    "rocksmash",
-   "strength"
+   "strength",
+   "surf"
   ]
  },
  "tauros": {
@@ -162881,7 +162943,6 @@
    "stoneedge",
    "substitute",
    "sunnyday",
-   "surf",
    "terablast",
    "thief",
    "throatchop",
@@ -162898,7 +162959,8 @@
   "eggMoves": [],
   "hmMoves": [
    "rocksmash",
-   "strength"
+   "strength",
+   "surf"
   ]
  },
  "tatsugiri": {
@@ -163027,13 +163089,14 @@
    "rest",
    "sleeptalk",
    "substitute",
-   "surf",
    "takedown",
    "terablast",
    "whirlpool"
   ],
   "eggMoves": [],
-  "hmMoves": []
+  "hmMoves": [
+   "surf"
+  ]
  },
  "tarountula": {
   "id": "tarountula",
@@ -163536,7 +163599,6 @@
    "electroweb",
    "endure",
    "facade",
-   "fly",
    "gigaimpact",
    "grassknot",
    "hyperbeam",
@@ -163565,7 +163627,9 @@
    "voltswitch"
   ],
   "eggMoves": [],
-  "hmMoves": []
+  "hmMoves": [
+   "fly"
+  ]
  },
  "tapufini": {
   "id": "tapufini",
@@ -163758,12 +163822,12 @@
    "substitute",
    "taunt",
    "toxic",
-   "trick",
-   "waterfall"
+   "trick"
   ],
   "eggMoves": [],
   "hmMoves": [
-   "dive"
+   "dive",
+   "waterfall"
   ]
  },
  "tapubulu": {
@@ -164998,7 +165062,6 @@
    "endure",
    "facade",
    "featherdance",
-   "fly",
    "heatwave",
    "hurricane",
    "mudslap",
@@ -165023,7 +165086,9 @@
    "skyattack",
    "supersonic"
   ],
-  "hmMoves": []
+  "hmMoves": [
+   "fly"
+  ]
  },
  "tadbulb": {
   "id": "tadbulb",
@@ -166236,7 +166301,6 @@
    "expandingforce",
    "facade",
    "faketears",
-   "fly",
    "gigadrain",
    "gigaimpact",
    "gyroball",
@@ -166273,7 +166337,8 @@
   ],
   "eggMoves": [],
   "hmMoves": [
-   "flash"
+   "flash",
+   "fly"
   ]
  },
  "swirlpool": {
@@ -166446,7 +166511,6 @@
    "snowscape",
    "stealthrock",
    "substitute",
-   "surf",
    "swift",
    "terablast",
    "trick",
@@ -166454,12 +166518,13 @@
    "venoshock",
    "waterpledge",
    "waterpulse",
-   "waterfall",
    "whirlpool"
   ],
   "eggMoves": [],
   "hmMoves": [
-   "dive"
+   "dive",
+   "surf",
+   "waterfall"
   ]
  },
  "swirlix": {
@@ -166611,14 +166676,14 @@
    "sleeptalk",
    "substitute",
    "sunnyday",
-   "surf",
    "thief",
    "thunderbolt",
    "toxic"
   ],
   "eggMoves": [],
   "hmMoves": [
-   "flash"
+   "flash",
+   "surf"
   ]
  },
  "swinub": {
@@ -166894,7 +166959,6 @@
    "doubleedge",
    "endure",
    "facade",
-   "fly",
    "gigaimpact",
    "heatwave",
    "hyperbeam",
@@ -166913,7 +166977,9 @@
    "uturn"
   ],
   "eggMoves": [],
-  "hmMoves": []
+  "hmMoves": [
+   "fly"
+  ]
  },
  "swanna": {
   "id": "swanna",
@@ -167060,7 +167126,6 @@
    "endure",
    "facade",
    "flipturn",
-   "fly",
    "gigaimpact",
    "helpinghand",
    "hydropump",
@@ -167074,7 +167139,6 @@
    "scald",
    "sleeptalk",
    "substitute",
-   "surf",
    "swift",
    "terablast",
    "toxic",
@@ -167085,7 +167149,9 @@
   ],
   "eggMoves": [],
   "hmMoves": [
-   "dive"
+   "dive",
+   "fly",
+   "surf"
   ]
  },
  "swampert": {
@@ -167297,13 +167363,11 @@
    "stompingtantrum",
    "stoneedge",
    "substitute",
-   "surf",
    "terablast",
    "toxic",
    "uproar",
    "waterpledge",
    "waterpulse",
-   "waterfall",
    "weatherball",
    "whirlpool"
   ],
@@ -167311,7 +167375,9 @@
   "hmMoves": [
    "dive",
    "rocksmash",
-   "strength"
+   "strength",
+   "surf",
+   "waterfall"
   ]
  },
  "swalot": {
@@ -167895,7 +167961,6 @@
    "facade",
    "falseswipe",
    "featherdance",
-   "fly",
    "heatwave",
    "helpinghand",
    "hurricane",
@@ -167926,7 +167991,9 @@
    "pursuit",
    "rage"
   ],
-  "hmMoves": []
+  "hmMoves": [
+   "fly"
+  ]
  },
  "surskit": {
   "id": "surskit",
@@ -168068,14 +168135,12 @@
    "strugglebug",
    "substitute",
    "sunnyday",
-   "surf",
    "swift",
    "takedown",
    "terablast",
    "thief",
    "toxic",
-   "waterpulse",
-   "waterfall"
+   "waterpulse"
   ],
   "eggMoves": [
    "foresight",
@@ -168085,7 +168150,9 @@
    "psybeam"
   ],
   "hmMoves": [
-   "flash"
+   "flash",
+   "surf",
+   "waterfall"
   ]
  },
  "sunkern": {
@@ -168535,7 +168602,6 @@
    "snowscape",
    "substitute",
    "sunnyday",
-   "surf",
    "swift",
    "tailwind",
    "takedown",
@@ -168543,7 +168609,6 @@
    "toxic",
    "trailblaze",
    "waterpulse",
-   "waterfall",
    "weatherball",
    "whirlpool"
   ],
@@ -168551,7 +168616,9 @@
   "hmMoves": [
    "cut",
    "dive",
-   "rocksmash"
+   "rocksmash",
+   "surf",
+   "waterfall"
   ]
  },
  "sudowoodo": {
@@ -169140,7 +169207,6 @@
    "stompingtantrum",
    "stoneedge",
    "substitute",
-   "surf",
    "thunder",
    "thunderwave",
    "toxic",
@@ -169149,7 +169215,8 @@
   ],
   "eggMoves": [],
   "hmMoves": [
-   "flash"
+   "flash",
+   "surf"
   ]
  },
  "stunfisk": {
@@ -169340,7 +169407,6 @@
    "stompingtantrum",
    "stoneedge",
    "substitute",
-   "surf",
    "thunder",
    "thunderwave",
    "toxic",
@@ -169349,7 +169415,8 @@
   ],
   "eggMoves": [],
   "hmMoves": [
-   "flash"
+   "flash",
+   "surf"
   ]
  },
  "stufful": {
@@ -169903,7 +169970,6 @@
    "stompingtantrum",
    "substitute",
    "sunnyday",
-   "surf",
    "thunder",
    "thunderwave",
    "thunderbolt",
@@ -169914,7 +169980,8 @@
   "eggMoves": [],
   "hmMoves": [
    "rocksmash",
-   "strength"
+   "strength",
+   "surf"
   ]
  },
  "stonjourner": {
@@ -170689,20 +170756,20 @@
    "scald",
    "sleeptalk",
    "substitute",
-   "surf",
    "takedown",
    "thunder",
    "thunderwave",
    "thunderbolt",
    "toxic",
    "waterpulse",
-   "waterfall",
    "whirlpool"
   ],
   "eggMoves": [],
   "hmMoves": [
    "dive",
-   "flash"
+   "flash",
+   "surf",
+   "waterfall"
   ]
  },
  "starmie": {
@@ -170840,7 +170907,6 @@
    "skillswap",
    "sleeptalk",
    "substitute",
-   "surf",
    "takedown",
    "thunder",
    "thunderwave",
@@ -170849,13 +170915,14 @@
    "trick",
    "trickroom",
    "waterpulse",
-   "waterfall",
    "whirlpool"
   ],
   "eggMoves": [],
   "hmMoves": [
    "dive",
-   "flash"
+   "flash",
+   "surf",
+   "waterfall"
   ]
  },
  "starly": {
@@ -170978,7 +171045,6 @@
    "endure",
    "facade",
    "featherdance",
-   "fly",
    "heatwave",
    "helpinghand",
    "hurricane",
@@ -170998,7 +171064,9 @@
    "uproar"
   ],
   "eggMoves": [],
-  "hmMoves": []
+  "hmMoves": [
+   "fly"
+  ]
  },
  "staravia": {
   "id": "staravia",
@@ -171120,7 +171188,6 @@
    "endure",
    "facade",
    "featherdance",
-   "fly",
    "heatwave",
    "helpinghand",
    "hurricane",
@@ -171140,7 +171207,9 @@
    "uproar"
   ],
   "eggMoves": [],
-  "hmMoves": []
+  "hmMoves": [
+   "fly"
+  ]
  },
  "staraptor": {
   "id": "staraptor",
@@ -171270,7 +171339,6 @@
    "endure",
    "facade",
    "featherdance",
-   "fly",
    "gigaimpact",
    "heatwave",
    "helpinghand",
@@ -171293,7 +171361,9 @@
    "uproar"
   ],
   "eggMoves": [],
-  "hmMoves": []
+  "hmMoves": [
+   "fly"
+  ]
  },
  "stantler": {
   "id": "stantler",
@@ -171836,13 +171906,11 @@
    "scald",
    "sleeptalk",
    "substitute",
-   "surf",
    "takedown",
    "terablast",
    "toxic",
    "waterpledge",
    "waterpulse",
-   "waterfall",
    "weatherball",
    "whirlpool",
    "zenheadbutt"
@@ -171860,7 +171928,9 @@
   "hmMoves": [
    "dive",
    "rocksmash",
-   "strength"
+   "strength",
+   "surf",
+   "waterfall"
   ]
  },
  "squawkabilly": {
@@ -173697,10 +173767,8 @@
    "sleeptalk",
    "substitute",
    "superfang",
-   "surf",
    "toxic",
    "waterpulse",
-   "waterfall",
    "whirlpool"
   ],
   "eggMoves": [
@@ -173716,7 +173784,9 @@
   "hmMoves": [
    "dive",
    "rocksmash",
-   "strength"
+   "strength",
+   "surf",
+   "waterfall"
   ]
  },
  "spewpa": {
@@ -174039,7 +174109,6 @@
    "endure",
    "facade",
    "featherdance",
-   "fly",
    "heatwave",
    "mudslap",
    "protect",
@@ -174064,7 +174133,9 @@
    "skyattack",
    "triattack"
   ],
-  "hmMoves": []
+  "hmMoves": [
+   "fly"
+  ]
  },
  "solrock": {
   "id": "solrock",
@@ -174984,18 +175055,18 @@
    "rest",
    "sleeptalk",
    "substitute",
-   "surf",
    "swift",
    "takedown",
    "terablast",
    "waterpledge",
-   "waterfall",
    "weatherball",
    "whirlpool"
   ],
   "eggMoves": [],
   "hmMoves": [
-   "dive"
+   "dive",
+   "surf",
+   "waterfall"
   ]
  },
  "snugglow": {
@@ -175165,7 +175236,6 @@
    "sleeptalk",
    "sludgebomb",
    "substitute",
-   "surf",
    "taunt",
    "terablast",
    "thunderbolt",
@@ -175177,7 +175247,8 @@
   ],
   "eggMoves": [],
   "hmMoves": [
-   "cut"
+   "cut",
+   "surf"
   ]
  },
  "snubbull": {
@@ -175924,7 +175995,6 @@
    "stompingtantrum",
    "sunnyday",
    "supercellslam",
-   "surf",
    "takedown",
    "terablast",
    "thunder",
@@ -175948,7 +176018,8 @@
   ],
   "hmMoves": [
    "rocksmash",
-   "strength"
+   "strength",
+   "surf"
   ]
  },
  "snopach": {
@@ -176678,7 +176749,6 @@
    "spite",
    "substitute",
    "sunnyday",
-   "surf",
    "swift",
    "swordsdance",
    "takedown",
@@ -176697,7 +176767,8 @@
   "hmMoves": [
    "cut",
    "rocksmash",
-   "strength"
+   "strength",
+   "surf"
   ]
  },
  "sneasel": {
@@ -176892,7 +176963,6 @@
    "snowscape",
    "substitute",
    "sunnyday",
-   "surf",
    "swift",
    "swordsdance",
    "takedown",
@@ -176919,7 +176989,8 @@
   "hmMoves": [
    "cut",
    "rocksmash",
-   "strength"
+   "strength",
+   "surf"
   ]
  },
  "snaelstrom": {
@@ -177139,7 +177210,6 @@
    "snowscape",
    "stealthrock",
    "substitute",
-   "surf",
    "swift",
    "terablast",
    "trick",
@@ -177148,12 +177218,13 @@
    "venoshock",
    "waterpledge",
    "waterpulse",
-   "waterfall",
    "xscissor"
   ],
   "eggMoves": [],
   "hmMoves": [
-   "dive"
+   "dive",
+   "surf",
+   "waterfall"
   ]
  },
  "smore": {
@@ -178433,7 +178504,6 @@
    "sleeptalk",
    "substitute",
    "sunnyday",
-   "surf",
    "thief",
    "thunder",
    "thunderbolt",
@@ -178441,7 +178511,8 @@
   ],
   "eggMoves": [],
   "hmMoves": [
-   "flash"
+   "flash",
+   "surf"
   ]
  },
  "slugma": {
@@ -178778,7 +178849,6 @@
    "storedpower",
    "substitute",
    "sunnyday",
-   "surf",
    "swift",
    "takedown",
    "terablast",
@@ -178787,7 +178857,6 @@
    "trick",
    "trickroom",
    "waterpulse",
-   "waterfall",
    "weatherball",
    "whirlpool",
    "zenheadbutt"
@@ -178796,7 +178865,9 @@
   "hmMoves": [
    "dive",
    "flash",
-   "strength"
+   "strength",
+   "surf",
+   "waterfall"
   ]
  },
  "slowpoke": {
@@ -178982,7 +179053,6 @@
    "storedpower",
    "substitute",
    "sunnyday",
-   "surf",
    "swift",
    "takedown",
    "terablast",
@@ -178991,7 +179061,6 @@
    "trick",
    "trickroom",
    "waterpulse",
-   "waterfall",
    "weatherball",
    "whirlpool",
    "zenheadbutt"
@@ -179008,7 +179077,9 @@
   "hmMoves": [
    "dive",
    "flash",
-   "strength"
+   "strength",
+   "surf",
+   "waterfall"
   ]
  },
  "slowking_galar": {
@@ -179231,7 +179302,6 @@
    "storedpower",
    "substitute",
    "sunnyday",
-   "surf",
    "swift",
    "takedown",
    "terablast",
@@ -179241,7 +179311,6 @@
    "trick",
    "trickroom",
    "waterpulse",
-   "waterfall",
    "weatherball",
    "whirlpool",
    "zenheadbutt"
@@ -179251,7 +179320,9 @@
    "dive",
    "flash",
    "rocksmash",
-   "strength"
+   "strength",
+   "surf",
+   "waterfall"
   ]
  },
  "slowking": {
@@ -179474,7 +179545,6 @@
    "storedpower",
    "substitute",
    "sunnyday",
-   "surf",
    "swift",
    "takedown",
    "terablast",
@@ -179484,7 +179554,6 @@
    "trick",
    "trickroom",
    "waterpulse",
-   "waterfall",
    "weatherball",
    "whirlpool",
    "zenheadbutt"
@@ -179494,7 +179563,9 @@
    "dive",
    "flash",
    "rocksmash",
-   "strength"
+   "strength",
+   "surf",
+   "waterfall"
   ]
  },
  "slowbro_galar": {
@@ -179717,7 +179788,6 @@
    "storedpower",
    "substitute",
    "sunnyday",
-   "surf",
    "swift",
    "takedown",
    "terablast",
@@ -179726,7 +179796,6 @@
    "trick",
    "trickroom",
    "waterpulse",
-   "waterfall",
    "weatherball",
    "whirlpool",
    "zenheadbutt"
@@ -179736,7 +179805,9 @@
    "dive",
    "flash",
    "rocksmash",
-   "strength"
+   "strength",
+   "surf",
+   "waterfall"
   ]
  },
  "slowbro": {
@@ -179959,7 +180030,6 @@
    "storedpower",
    "substitute",
    "sunnyday",
-   "surf",
    "swift",
    "takedown",
    "terablast",
@@ -179968,7 +180038,6 @@
    "trick",
    "trickroom",
    "waterpulse",
-   "waterfall",
    "weatherball",
    "whirlpool",
    "zenheadbutt"
@@ -179978,7 +180047,9 @@
    "dive",
    "flash",
    "rocksmash",
-   "strength"
+   "strength",
+   "surf",
+   "waterfall"
   ]
  },
  "slothohm": {
@@ -181553,19 +181624,19 @@
    "snowscape",
    "spite",
    "substitute",
-   "surf",
    "takedown",
    "terablast",
    "thief",
    "thunderbolt",
    "toxicspikes",
    "venoshock",
-   "waterfall",
    "whirlpool"
   ],
   "eggMoves": [],
   "hmMoves": [
-   "dive"
+   "dive",
+   "surf",
+   "waterfall"
   ]
  },
  "skorupi": {
@@ -182273,7 +182344,6 @@
    "stompingtantrum",
    "substitute",
    "sunnyday",
-   "surf",
    "terablast",
    "toxic",
    "trailblaze",
@@ -182283,7 +182353,8 @@
   "eggMoves": [],
   "hmMoves": [
    "rocksmash",
-   "strength"
+   "strength",
+   "surf"
   ]
  },
  "skelerogue": {
@@ -184217,7 +184288,6 @@
    "stoneedge",
    "substitute",
    "sunnyday",
-   "surf",
    "taunt",
    "thunder",
    "thunderpunch",
@@ -184232,7 +184302,8 @@
   "hmMoves": [
    "cut",
    "rocksmash",
-   "strength"
+   "strength",
+   "surf"
   ]
  },
  "aerodactyl": {
@@ -184371,7 +184442,6 @@
    "fireblast",
    "firefang",
    "flamethrower",
-   "fly",
    "gigaimpact",
    "heatwave",
    "hurricane",
@@ -184410,6 +184480,7 @@
    "whirlwind"
   ],
   "hmMoves": [
+   "fly",
    "rocksmash",
    "strength"
   ]
@@ -187906,7 +187977,6 @@
    "smackdown",
    "snowscape",
    "substitute",
-   "surf",
    "swift",
    "swordsdance",
    "takedown",
@@ -187914,13 +187984,14 @@
    "terablast",
    "vacuumwave",
    "waterpledge",
-   "waterfall",
    "weatherball",
    "whirlpool"
   ],
   "eggMoves": [],
   "hmMoves": [
-   "dive"
+   "dive",
+   "surf",
+   "waterfall"
   ]
  },
  "ironboulder": {
@@ -188793,7 +188864,6 @@
    "firefang",
    "flamethrower",
    "flashcannon",
-   "fly",
    "focusblast",
    "gigaimpact",
    "heatwave",
@@ -188820,7 +188890,9 @@
    "zenheadbutt"
   ],
   "eggMoves": [],
-  "hmMoves": []
+  "hmMoves": [
+   "fly"
+  ]
  },
  "ironleaves": {
   "id": "ironleaves",
@@ -190516,18 +190588,18 @@
    "sludgewave",
    "spite",
    "substitute",
-   "surf",
    "taunt",
    "toxic",
    "trick",
    "trickroom",
-   "waterfall",
    "willowisp"
   ],
   "eggMoves": [],
   "hmMoves": [
    "dive",
-   "flash"
+   "flash",
+   "surf",
+   "waterfall"
   ]
  },
  "jerbolta": {
@@ -192503,12 +192575,10 @@
    "stealthrock",
    "stoneedge",
    "substitute",
-   "surf",
    "takedown",
    "thief",
    "toxic",
    "waterpulse",
-   "waterfall",
    "whirlpool"
   ],
   "eggMoves": [
@@ -192521,7 +192591,9 @@
    "rapidspin"
   ],
   "hmMoves": [
-   "rocksmash"
+   "rocksmash",
+   "surf",
+   "waterfall"
   ]
  },
  "kabutops": {
@@ -192707,13 +192779,11 @@
    "stealthrock",
    "stoneedge",
    "substitute",
-   "surf",
    "swordsdance",
    "takedown",
    "thief",
    "toxic",
    "waterpulse",
-   "waterfall",
    "whirlpool",
    "xscissor"
   ],
@@ -192721,7 +192791,9 @@
   "hmMoves": [
    "cut",
    "dive",
-   "rocksmash"
+   "rocksmash",
+   "surf",
+   "waterfall"
   ]
  },
  "kadabra": {
@@ -193131,7 +193203,6 @@
    "solarbeam",
    "spite",
    "sunnyday",
-   "surf",
    "takedown",
    "thief",
    "thunder",
@@ -193155,7 +193226,8 @@
   "hmMoves": [
    "cut",
    "rocksmash",
-   "strength"
+   "strength",
+   "surf"
   ]
  },
  "karrablast": {
@@ -193847,7 +193919,6 @@
    "stoneedge",
    "substitute",
    "sunnyday",
-   "surf",
    "swift",
    "taunt",
    "terablast",
@@ -193862,7 +193933,8 @@
   "hmMoves": [
    "cut",
    "rocksmash",
-   "strength"
+   "strength",
+   "surf"
   ]
  },
  "kerfluffle": {
@@ -194064,7 +194136,6 @@
    "energyball",
    "facade",
    "flashcannon",
-   "fly",
    "focusblast",
    "gigadrain",
    "gigaimpact",
@@ -194098,6 +194169,7 @@
   ],
   "eggMoves": [],
   "hmMoves": [
+   "fly",
    "strength"
   ]
  },
@@ -194245,7 +194317,6 @@
    "endure",
    "facade",
    "featherdance",
-   "fly",
    "gigaimpact",
    "hyperbeam",
    "protect",
@@ -194266,7 +194337,9 @@
    "wildcharge"
   ],
   "eggMoves": [],
-  "hmMoves": []
+  "hmMoves": [
+   "fly"
+  ]
  },
  "kinetmunk": {
   "id": "kinetmunk",
@@ -194704,19 +194777,19 @@
    "sleeptalk",
    "snowscape",
    "substitute",
-   "surf",
    "swift",
    "takedown",
    "terablast",
    "toxic",
    "waterpulse",
-   "waterfall",
    "weatherball",
    "whirlpool"
   ],
   "eggMoves": [],
   "hmMoves": [
-   "dive"
+   "dive",
+   "surf",
+   "waterfall"
   ]
  },
  "kingler": {
@@ -194883,7 +194956,6 @@
    "sleeptalk",
    "stompingtantrum",
    "substitute",
-   "surf",
    "swordsdance",
    "takedown",
    "thief",
@@ -194897,7 +194969,8 @@
    "cut",
    "dive",
    "rocksmash",
-   "strength"
+   "strength",
+   "surf"
   ]
  },
  "kiricorn": {
@@ -197401,7 +197474,6 @@
    "scald",
    "sleeptalk",
    "substitute",
-   "surf",
    "takedown",
    "thief",
    "toxic",
@@ -197421,7 +197493,8 @@
    "cut",
    "dive",
    "rocksmash",
-   "strength"
+   "strength",
+   "surf"
   ]
  },
  "krakanao": {
@@ -197997,7 +198070,6 @@
    "sleeptalk",
    "snowscape",
    "substitute",
-   "surf",
    "swift",
    "terablast",
    "thunderpunch",
@@ -198005,14 +198077,15 @@
    "thunderbolt",
    "toxic",
    "voltswitch",
-   "waterpulse",
-   "waterfall"
+   "waterpulse"
   ],
   "eggMoves": [],
   "hmMoves": [
    "cut",
    "dive",
-   "flash"
+   "flash",
+   "surf",
+   "waterfall"
   ]
  },
  "krilvolver": {
@@ -198891,7 +198964,6 @@
    "scald",
    "sleeptalk",
    "substitute",
-   "surf",
    "swift",
    "takedown",
    "terablast",
@@ -198900,14 +198972,15 @@
    "thunderbolt",
    "toxic",
    "uproar",
-   "waterfall",
    "whirlpool"
   ],
   "eggMoves": [],
   "hmMoves": [
    "dive",
    "rocksmash",
-   "strength"
+   "strength",
+   "surf",
+   "waterfall"
   ]
  },
  "kyurem": {
@@ -199086,7 +199159,6 @@
    "facade",
    "flashcannon",
    "fling",
-   "fly",
    "focusblast",
    "gigaimpact",
    "helpinghand",
@@ -199121,6 +199193,7 @@
   "eggMoves": [],
   "hmMoves": [
    "cut",
+   "fly",
    "rocksmash",
    "strength"
   ]
@@ -199301,7 +199374,6 @@
    "facade",
    "flashcannon",
    "fling",
-   "fly",
    "focusblast",
    "gigaimpact",
    "helpinghand",
@@ -199336,6 +199408,7 @@
   "eggMoves": [],
   "hmMoves": [
    "cut",
+   "fly",
    "rocksmash",
    "strength"
   ]
@@ -199516,7 +199589,6 @@
    "facade",
    "flashcannon",
    "fling",
-   "fly",
    "focusblast",
    "gigaimpact",
    "helpinghand",
@@ -199551,6 +199623,7 @@
   "eggMoves": [],
   "hmMoves": [
    "cut",
+   "fly",
    "rocksmash",
    "strength"
   ]
@@ -200202,7 +200275,6 @@
    "endure",
    "facade",
    "fling",
-   "fly",
    "focusblast",
    "gigaimpact",
    "grassknot",
@@ -200233,6 +200305,7 @@
   ],
   "eggMoves": [],
   "hmMoves": [
+   "fly",
    "rocksmash",
    "strength"
   ]
@@ -200415,7 +200488,6 @@
    "endure",
    "facade",
    "fling",
-   "fly",
    "focusblast",
    "gigaimpact",
    "grassknot",
@@ -200446,6 +200518,7 @@
   ],
   "eggMoves": [],
   "hmMoves": [
+   "fly",
    "rocksmash",
    "strength"
   ]
@@ -200692,21 +200765,21 @@
    "scald",
    "sleeptalk",
    "substitute",
-   "surf",
    "terablast",
    "thunder",
    "thunderbolt",
    "toxic",
    "voltswitch",
    "waterpulse",
-   "waterfall",
    "whirlpool",
    "wildcharge"
   ],
   "eggMoves": [],
   "hmMoves": [
    "dive",
-   "flash"
+   "flash",
+   "surf",
+   "waterfall"
   ]
  },
  "lapras": {
@@ -200890,14 +200963,12 @@
    "smartstrike",
    "snowscape",
    "solarbeam",
-   "surf",
    "takedown",
    "terablast",
    "thunder",
    "thunderbolt",
    "toxic",
    "waterpulse",
-   "waterfall",
    "weatherball",
    "whirlpool",
    "zenheadbutt"
@@ -200915,7 +200986,9 @@
   "hmMoves": [
    "dive",
    "rocksmash",
-   "strength"
+   "strength",
+   "surf",
+   "waterfall"
   ]
  },
  "larvesta": {
@@ -201428,7 +201501,6 @@
    "endure",
    "energyball",
    "facade",
-   "fly",
    "futuresight",
    "gigaimpact",
    "grassknot",
@@ -201455,7 +201527,6 @@
    "storedpower",
    "substitute",
    "sunnyday",
-   "surf",
    "swift",
    "tailwind",
    "takedown",
@@ -201466,7 +201537,6 @@
    "toxic",
    "trick",
    "waterpulse",
-   "waterfall",
    "weatherball",
    "whirlpool",
    "zenheadbutt"
@@ -201475,7 +201545,10 @@
   "hmMoves": [
    "cut",
    "dive",
-   "flash"
+   "flash",
+   "fly",
+   "surf",
+   "waterfall"
   ]
  },
  "latios": {
@@ -201649,7 +201722,6 @@
    "energyball",
    "facade",
    "flipturn",
-   "fly",
    "futuresight",
    "gigaimpact",
    "grassknot",
@@ -201676,7 +201748,6 @@
    "storedpower",
    "substitute",
    "sunnyday",
-   "surf",
    "swift",
    "tailwind",
    "takedown",
@@ -201687,7 +201758,6 @@
    "toxic",
    "trick",
    "waterpulse",
-   "waterfall",
    "weatherball",
    "whirlpool",
    "zenheadbutt"
@@ -201696,7 +201766,10 @@
   "hmMoves": [
    "cut",
    "dive",
-   "flash"
+   "flash",
+   "fly",
+   "surf",
+   "waterfall"
   ]
  },
  "lavent": {
@@ -202262,7 +202335,6 @@
    "strugglebug",
    "substitute",
    "sunnyday",
-   "surf",
    "swift",
    "tailwind",
    "takedown",
@@ -202271,12 +202343,13 @@
    "toxic",
    "uturn",
    "waterpulse",
-   "waterfall",
    "weatherball"
   ],
   "eggMoves": [],
   "hmMoves": [
-   "flash"
+   "flash",
+   "surf",
+   "waterfall"
   ]
  },
  "maushold": {
@@ -202797,13 +202870,11 @@
    "smackdown",
    "stealthrock",
    "substitute",
-   "surf",
    "takedown",
    "thief",
    "toxic",
    "toxicspikes",
    "waterpulse",
-   "waterfall",
    "whirlpool"
   ],
   "eggMoves": [
@@ -202817,7 +202888,9 @@
   ],
   "hmMoves": [
    "dive",
-   "rocksmash"
+   "rocksmash",
+   "surf",
+   "waterfall"
   ]
  },
  "omastar": {
@@ -202984,19 +203057,19 @@
    "stealthrock",
    "stoneedge",
    "substitute",
-   "surf",
    "takedown",
    "thief",
    "toxic",
    "toxicspikes",
    "waterpulse",
-   "waterfall",
    "whirlpool"
   ],
   "eggMoves": [],
   "hmMoves": [
    "dive",
-   "rocksmash"
+   "rocksmash",
+   "surf",
+   "waterfall"
   ]
  },
  "onix": {
@@ -203788,7 +203861,6 @@
    "dualwingbeat",
    "endure",
    "facade",
-   "fly",
    "icywind",
    "protect",
    "psychup",
@@ -203810,7 +203882,9 @@
    "uturn"
   ],
   "eggMoves": [],
-  "hmMoves": []
+  "hmMoves": [
+   "fly"
+  ]
  },
  "oricorio_pau": {
   "id": "oricorio_pau",
@@ -203961,7 +204035,6 @@
    "dualwingbeat",
    "endure",
    "facade",
-   "fly",
    "icywind",
    "protect",
    "psychup",
@@ -203983,7 +204056,9 @@
    "uturn"
   ],
   "eggMoves": [],
-  "hmMoves": []
+  "hmMoves": [
+   "fly"
+  ]
  },
  "oricorio_pompom": {
   "id": "oricorio_pompom",
@@ -204134,7 +204209,6 @@
    "dualwingbeat",
    "endure",
    "facade",
-   "fly",
    "icywind",
    "protect",
    "psychup",
@@ -204156,7 +204230,9 @@
    "uturn"
   ],
   "eggMoves": [],
-  "hmMoves": []
+  "hmMoves": [
+   "fly"
+  ]
  },
  "oricorio_sensu": {
   "id": "oricorio_sensu",
@@ -204307,7 +204383,6 @@
    "dualwingbeat",
    "endure",
    "facade",
-   "fly",
    "icywind",
    "protect",
    "psychup",
@@ -204329,7 +204404,9 @@
    "uturn"
   ],
   "eggMoves": [],
-  "hmMoves": []
+  "hmMoves": [
+   "fly"
+  ]
  },
  "orthworm": {
   "id": "orthworm",
@@ -204656,7 +204733,6 @@
    "sleeptalk",
    "snowscape",
    "substitute",
-   "surf",
    "swift",
    "takedown",
    "taunt",
@@ -204664,7 +204740,6 @@
    "thief",
    "toxic",
    "waterpledge",
-   "waterfall",
    "whirlpool",
    "xscissor"
   ],
@@ -204672,7 +204747,9 @@
   "hmMoves": [
    "cut",
    "dive",
-   "rocksmash"
+   "rocksmash",
+   "surf",
+   "waterfall"
   ]
  },
  "overqwil": {
@@ -204871,7 +204948,6 @@
    "smartstrike",
    "spite",
    "substitute",
-   "surf",
    "swift",
    "swordsdance",
    "takedown",
@@ -204879,11 +204955,13 @@
    "terablast",
    "throatchop",
    "venoshock",
-   "waterpulse",
-   "waterfall"
+   "waterpulse"
   ],
   "eggMoves": [],
-  "hmMoves": []
+  "hmMoves": [
+   "surf",
+   "waterfall"
+  ]
  },
  "owten": {
   "id": "owten",
@@ -205493,7 +205571,6 @@
    "earthquake",
    "endure",
    "facade",
-   "fly",
    "gigaimpact",
    "gravity",
    "helpinghand",
@@ -205521,7 +205598,6 @@
    "spite",
    "stoneedge",
    "substitute",
-   "surf",
    "takedown",
    "taunt",
    "temperflare",
@@ -205534,7 +205610,10 @@
    "zenheadbutt"
   ],
   "eggMoves": [],
-  "hmMoves": []
+  "hmMoves": [
+   "fly",
+   "surf"
+  ]
  },
  "pajay": {
   "id": "pajay",
@@ -205842,19 +205921,20 @@
    "reversal",
    "sleeptalk",
    "substitute",
-   "surf",
    "swift",
    "takedown",
    "taunt",
    "terablast",
    "throatchop",
    "waterpulse",
-   "waterfall",
    "whirlpool",
    "zenheadbutt"
   ],
   "eggMoves": [],
-  "hmMoves": []
+  "hmMoves": [
+   "surf",
+   "waterfall"
+  ]
  },
  "palafin_hero": {
   "id": "palafin_hero",
@@ -206045,19 +206125,20 @@
    "reversal",
    "sleeptalk",
    "substitute",
-   "surf",
    "swift",
    "takedown",
    "taunt",
    "terablast",
    "throatchop",
    "waterpulse",
-   "waterfall",
    "whirlpool",
    "zenheadbutt"
   ],
   "eggMoves": [],
-  "hmMoves": []
+  "hmMoves": [
+   "surf",
+   "waterfall"
+  ]
  },
  "palij": {
   "id": "palij",
@@ -206379,7 +206460,6 @@
    "stoneedge",
    "substitute",
    "sunnyday",
-   "surf",
    "swift",
    "takedown",
    "terablast",
@@ -206389,7 +206469,6 @@
    "toxic",
    "trick",
    "trickroom",
-   "waterfall",
    "whirlpool"
   ],
   "eggMoves": [],
@@ -206397,7 +206476,9 @@
    "cut",
    "dive",
    "rocksmash",
-   "strength"
+   "strength",
+   "surf",
+   "waterfall"
   ]
  },
  "palossand": {
@@ -206717,14 +206798,14 @@
    "sludgewave",
    "stealthrock",
    "substitute",
-   "surf",
    "toxic",
    "waterpulse",
    "weatherball"
   ],
   "eggMoves": [],
   "hmMoves": [
-   "rocksmash"
+   "rocksmash",
+   "surf"
   ]
  },
  "pancham": {
@@ -206918,7 +206999,6 @@
    "stoneedge",
    "substitute",
    "sunnyday",
-   "surf",
    "swordsdance",
    "thunderpunch",
    "toxic",
@@ -206929,7 +207009,8 @@
   "hmMoves": [
    "cut",
    "rocksmash",
-   "strength"
+   "strength",
+   "surf"
   ]
  },
  "pangoro": {
@@ -207166,7 +207247,6 @@
    "stoneedge",
    "substitute",
    "sunnyday",
-   "surf",
    "swordsdance",
    "thief",
    "throatchop",
@@ -207180,7 +207260,8 @@
   "hmMoves": [
    "cut",
    "rocksmash",
-   "strength"
+   "strength",
+   "surf"
   ]
  },
  "panpour": {
@@ -207346,19 +207427,19 @@
    "shadowclaw",
    "sleeptalk",
    "substitute",
-   "surf",
    "thief",
    "toxic",
    "uproar",
    "waterpledge",
-   "waterpulse",
-   "waterfall"
+   "waterpulse"
   ],
   "eggMoves": [],
   "hmMoves": [
    "cut",
    "dive",
-   "rocksmash"
+   "rocksmash",
+   "surf",
+   "waterfall"
   ]
  },
  "pansage": {
@@ -209693,7 +209774,6 @@
    "facade",
    "featherdance",
    "fling",
-   "fly",
    "gigaimpact",
    "gunkshot",
    "helpinghand",
@@ -209712,7 +209792,6 @@
    "sleeptalk",
    "snowscape",
    "substitute",
-   "surf",
    "swift",
    "tailwind",
    "takedown",
@@ -209722,12 +209801,15 @@
    "uturn",
    "uproar",
    "waterpulse",
-   "waterfall",
    "weatherball",
    "whirlpool"
   ],
   "eggMoves": [],
-  "hmMoves": []
+  "hmMoves": [
+   "fly",
+   "surf",
+   "waterfall"
+  ]
  },
  "perrserker": {
   "id": "perrserker",
@@ -211216,18 +211298,19 @@
    "scald",
    "sleeptalk",
    "substitute",
-   "surf",
    "swift",
    "terablast",
    "toxic",
    "uturn",
    "uproar",
-   "waterfall",
    "weatherball",
    "zenheadbutt"
   ],
   "eggMoves": [],
-  "hmMoves": []
+  "hmMoves": [
+   "surf",
+   "waterfall"
+  ]
  },
  "pichu": {
   "id": "pichu",
@@ -211347,7 +211430,6 @@
    "rest",
    "sleeptalk",
    "substitute",
-   "surf",
    "swift",
    "takedown",
    "terablast",
@@ -211370,7 +211452,8 @@
    "wish"
   ],
   "hmMoves": [
-   "flash"
+   "flash",
+   "surf"
   ]
  },
  "pidgeot": {
@@ -211491,7 +211574,6 @@
    "doubleedge",
    "endure",
    "facade",
-   "fly",
    "gigaimpact",
    "heatwave",
    "hurricane",
@@ -211513,7 +211595,9 @@
    "uproar"
   ],
   "eggMoves": [],
-  "hmMoves": []
+  "hmMoves": [
+   "fly"
+  ]
  },
  "pidgeotto": {
   "id": "pidgeotto",
@@ -211627,7 +211711,6 @@
    "doubleedge",
    "endure",
    "facade",
-   "fly",
    "heatwave",
    "hurricane",
    "mudslap",
@@ -211647,7 +211730,9 @@
    "uproar"
   ],
   "eggMoves": [],
-  "hmMoves": []
+  "hmMoves": [
+   "fly"
+  ]
  },
  "pidgey": {
   "id": "pidgey",
@@ -211757,7 +211842,6 @@
    "doubleedge",
    "endure",
    "facade",
-   "fly",
    "heatwave",
    "hurricane",
    "mudslap",
@@ -211782,7 +211866,9 @@
    "pursuit",
    "steelwing"
   ],
-  "hmMoves": []
+  "hmMoves": [
+   "fly"
+  ]
  },
  "pidove": {
   "id": "pidove",
@@ -211906,7 +211992,6 @@
    "agility",
    "dualwingbeat",
    "endure",
-   "fly",
    "heatwave",
    "protect",
    "raindance",
@@ -211920,7 +212005,9 @@
    "uproar"
   ],
   "eggMoves": [],
-  "hmMoves": []
+  "hmMoves": [
+   "fly"
+  ]
  },
  "pignite": {
   "id": "pignite",
@@ -212279,7 +212366,6 @@
    "endure",
    "facade",
    "flamecharge",
-   "fly",
    "gunkshot",
    "heatwave",
    "helpinghand",
@@ -212300,7 +212386,9 @@
    "uproar"
   ],
   "eggMoves": [],
-  "hmMoves": []
+  "hmMoves": [
+   "fly"
+  ]
  },
  "piloswine": {
   "id": "piloswine",
@@ -212631,7 +212719,6 @@
    "spikes",
    "substitute",
    "supercellslam",
-   "surf",
    "swift",
    "takedown",
    "terablast",
@@ -212644,7 +212731,9 @@
    "wildcharge"
   ],
   "eggMoves": [],
-  "hmMoves": []
+  "hmMoves": [
+   "surf"
+  ]
  },
  "pineco": {
   "id": "pineco",
@@ -213163,20 +213252,20 @@
    "snowscape",
    "stealthrock",
    "substitute",
-   "surf",
    "swift",
    "terablast",
    "toxic",
    "tripleaxel",
    "waterpledge",
    "waterpulse",
-   "waterfall",
    "weatherball"
   ],
   "eggMoves": [],
   "hmMoves": [
    "cut",
-   "dive"
+   "dive",
+   "surf",
+   "waterfall"
   ]
  },
  "plasmanta": {
@@ -213378,7 +213467,6 @@
    "sludgebomb",
    "substitute",
    "supercellslam",
-   "surf",
    "taunt",
    "terablast",
    "thunderbolt",
@@ -213390,7 +213478,8 @@
   ],
   "eggMoves": [],
   "hmMoves": [
-   "cut"
+   "cut",
+   "surf"
   ]
  },
  "pluffle": {
@@ -214000,7 +214089,6 @@
    "scald",
    "sleeptalk",
    "substitute",
-   "surf",
    "swift",
    "takedown",
    "terablast",
@@ -214008,7 +214096,6 @@
    "toxic",
    "uproar",
    "waterpulse",
-   "waterfall",
    "weatherball",
    "whirlpool"
   ],
@@ -214016,7 +214103,9 @@
   "hmMoves": [
    "dive",
    "rocksmash",
-   "strength"
+   "strength",
+   "surf",
+   "waterfall"
   ]
  },
  "poliwag": {
@@ -214157,14 +214246,12 @@
    "scald",
    "sleeptalk",
    "substitute",
-   "surf",
    "swift",
    "takedown",
    "terablast",
    "thief",
    "toxic",
    "waterpulse",
-   "waterfall",
    "weatherball",
    "whirlpool"
   ],
@@ -214178,7 +214265,9 @@
    "watersport"
   ],
   "hmMoves": [
-   "dive"
+   "dive",
+   "surf",
+   "waterfall"
   ]
  },
  "poliwhirl": {
@@ -214338,14 +214427,12 @@
    "scald",
    "sleeptalk",
    "substitute",
-   "surf",
    "swift",
    "takedown",
    "terablast",
    "thief",
    "toxic",
    "waterpulse",
-   "waterfall",
    "weatherball",
    "whirlpool"
   ],
@@ -214353,7 +214440,9 @@
   "hmMoves": [
    "dive",
    "rocksmash",
-   "strength"
+   "strength",
+   "surf",
+   "waterfall"
   ]
  },
  "poliwrath": {
@@ -214535,7 +214624,6 @@
    "scaryface",
    "sleeptalk",
    "substitute",
-   "surf",
    "swift",
    "takedown",
    "taunt",
@@ -214546,7 +214634,6 @@
    "upperhand",
    "vacuumwave",
    "waterpulse",
-   "waterfall",
    "weatherball",
    "whirlpool"
   ],
@@ -214554,7 +214641,9 @@
   "hmMoves": [
    "dive",
    "rocksmash",
-   "strength"
+   "strength",
+   "surf",
+   "waterfall"
   ]
  },
  "poltchageist": {
@@ -215482,7 +215571,6 @@
    "scald",
    "sleeptalk",
    "substitute",
-   "surf",
    "swift",
    "terablast",
    "toxic",
@@ -215490,12 +215578,13 @@
    "uproar",
    "waterpledge",
    "waterpulse",
-   "waterfall",
    "whirlpool"
   ],
   "eggMoves": [],
   "hmMoves": [
-   "dive"
+   "dive",
+   "surf",
+   "waterfall"
   ]
  },
  "porygon": {
@@ -216365,7 +216454,6 @@
    "snowscape",
    "storedpower",
    "substitute",
-   "surf",
    "swift",
    "terablast",
    "toxic",
@@ -216373,13 +216461,14 @@
    "uproar",
    "waterpledge",
    "waterpulse",
-   "waterfall",
    "weatherball",
    "whirlpool"
   ],
   "eggMoves": [],
   "hmMoves": [
-   "dive"
+   "dive",
+   "surf",
+   "waterfall"
   ]
  },
  "primeape": {
@@ -216796,7 +216885,6 @@
    "snowscape",
    "stealthrock",
    "substitute",
-   "surf",
    "swift",
    "takedown",
    "terablast",
@@ -216804,7 +216892,6 @@
    "tripleaxel",
    "waterpledge",
    "waterpulse",
-   "waterfall",
    "weatherball"
   ],
   "eggMoves": [],
@@ -216812,7 +216899,9 @@
    "cut",
    "dive",
    "rocksmash",
-   "strength"
+   "strength",
+   "surf",
+   "waterfall"
   ]
  },
  "privatyke": {
@@ -217041,7 +217130,6 @@
    "snowscape",
    "spikes",
    "substitute",
-   "surf",
    "takedown",
    "terablast",
    "throatchop",
@@ -217049,7 +217137,6 @@
    "toxic",
    "vacuumwave",
    "waterpulse",
-   "waterfall",
    "whirlpool"
   ],
   "eggMoves": [],
@@ -217057,7 +217144,9 @@
    "cut",
    "dive",
    "rocksmash",
-   "strength"
+   "strength",
+   "surf",
+   "waterfall"
   ]
  },
  "probopass": {
@@ -217525,7 +217614,6 @@
    "skillswap",
    "sleeptalk",
    "substitute",
-   "surf",
    "swift",
    "takedown",
    "taunt",
@@ -217535,7 +217623,6 @@
    "trailblaze",
    "vacuumwave",
    "waterpulse",
-   "waterfall",
    "whirlpool",
    "zenheadbutt"
   ],
@@ -217553,7 +217640,9 @@
    "dive",
    "flash",
    "rocksmash",
-   "strength"
+   "strength",
+   "surf",
+   "waterfall"
   ]
  },
  "pufluff": {
@@ -219131,7 +219220,6 @@
    "stompingtantrum",
    "stoneedge",
    "substitute",
-   "surf",
    "takedown",
    "terablast",
    "thief",
@@ -219139,7 +219227,6 @@
    "toxicspikes",
    "trailblaze",
    "waterpulse",
-   "waterfall",
    "whirlpool"
   ],
   "eggMoves": [],
@@ -219147,7 +219234,9 @@
    "dive",
    "flash",
    "rocksmash",
-   "strength"
+   "strength",
+   "surf",
+   "waterfall"
   ]
  },
  "quaquaval": {
@@ -219355,7 +219444,6 @@
    "reversal",
    "sleeptalk",
    "substitute",
-   "surf",
    "swift",
    "swordsdance",
    "takedown",
@@ -219368,7 +219456,9 @@
    "whirlpool"
   ],
   "eggMoves": [],
-  "hmMoves": []
+  "hmMoves": [
+   "surf"
+  ]
  },
  "quaxly": {
   "id": "quaxly",
@@ -219499,7 +219589,6 @@
    "rest",
    "sleeptalk",
    "substitute",
-   "surf",
    "swift",
    "takedown",
    "terablast",
@@ -219507,7 +219596,9 @@
    "whirlpool"
   ],
   "eggMoves": [],
-  "hmMoves": []
+  "hmMoves": [
+   "surf"
+  ]
  },
  "quaxwell": {
   "id": "quaxwell",
@@ -219656,7 +219747,6 @@
    "rest",
    "sleeptalk",
    "substitute",
-   "surf",
    "swift",
    "takedown",
    "terablast",
@@ -219665,7 +219755,9 @@
    "whirlpool"
   ],
   "eggMoves": [],
-  "hmMoves": []
+  "hmMoves": [
+   "surf"
+  ]
  },
  "quetzoral": {
   "id": "quetzoral",
@@ -220319,7 +220411,6 @@
    "sludgewave",
    "spite",
    "substitute",
-   "surf",
    "swift",
    "swordsdance",
    "taunt",
@@ -220330,7 +220421,6 @@
    "toxicspikes",
    "venoshock",
    "waterpulse",
-   "waterfall",
    "whirlpool"
   ],
   "eggMoves": [
@@ -220341,7 +220431,9 @@
    "supersonic"
   ],
   "hmMoves": [
-   "dive"
+   "dive",
+   "surf",
+   "waterfall"
   ]
  },
  "qwilfish_hisui": {
@@ -220510,7 +220602,6 @@
    "sludgewave",
    "spite",
    "substitute",
-   "surf",
    "swift",
    "swordsdance",
    "taunt",
@@ -220521,12 +220612,13 @@
    "toxicspikes",
    "venoshock",
    "waterpulse",
-   "waterfall",
    "whirlpool"
   ],
   "eggMoves": [],
   "hmMoves": [
-   "dive"
+   "dive",
+   "surf",
+   "waterfall"
   ]
  },
  "raboot": {
@@ -221327,7 +221419,6 @@
    "reversal",
    "sleeptalk",
    "substitute",
-   "surf",
    "swift",
    "takedown",
    "terablast",
@@ -221346,7 +221437,8 @@
   "hmMoves": [
    "flash",
    "rocksmash",
-   "strength"
+   "strength",
+   "surf"
   ]
  },
  "raichu_alola": {
@@ -221497,7 +221589,6 @@
    "reversal",
    "sleeptalk",
    "substitute",
-   "surf",
    "swift",
    "takedown",
    "terablast",
@@ -221516,7 +221607,8 @@
   "hmMoves": [
    "flash",
    "rocksmash",
-   "strength"
+   "strength",
+   "surf"
   ]
  },
  "raikou": {
@@ -222326,7 +222418,6 @@
    "substitute",
    "sunnyday",
    "supercellslam",
-   "surf",
    "swordsdance",
    "terablast",
    "thief",
@@ -222341,7 +222432,8 @@
   "eggMoves": [],
   "hmMoves": [
    "cut",
-   "strength"
+   "strength",
+   "surf"
   ]
  },
  "rapidash": {
@@ -223662,7 +223754,6 @@
    "stoneedge",
    "substitute",
    "sunnyday",
-   "surf",
    "swift",
    "swordsdance",
    "tailwind",
@@ -223675,7 +223766,6 @@
    "uturn",
    "uproar",
    "waterpulse",
-   "waterfall",
    "whirlpool",
    "wildcharge"
   ],
@@ -223683,7 +223773,9 @@
   "hmMoves": [
    "dive",
    "rocksmash",
-   "strength"
+   "strength",
+   "surf",
+   "waterfall"
   ]
  },
  "rebble": {
@@ -225073,10 +225165,8 @@
    "stompingtantrum",
    "stoneedge",
    "substitute",
-   "surf",
    "toxic",
    "waterpulse",
-   "waterfall",
    "whirlpool",
    "zenheadbutt"
   ],
@@ -225090,7 +225180,9 @@
   ],
   "hmMoves": [
    "dive",
-   "rocksmash"
+   "rocksmash",
+   "surf",
+   "waterfall"
   ]
  },
  "rellor": {
@@ -225344,12 +225436,10 @@
    "smackdown",
    "substitute",
    "sunnyday",
-   "surf",
    "swift",
    "thief",
    "toxic",
    "waterpulse",
-   "waterfall",
    "whirlpool"
   ],
   "eggMoves": [
@@ -225361,7 +225451,9 @@
    "thunderwave"
   ],
   "hmMoves": [
-   "dive"
+   "dive",
+   "surf",
+   "waterfall"
   ]
  },
  "reshiram": {
@@ -225541,7 +225633,6 @@
    "flamecharge",
    "flareblitz",
    "fling",
-   "fly",
    "focusblast",
    "gigaimpact",
    "heatcrash",
@@ -225580,6 +225671,7 @@
   "eggMoves": [],
   "hmMoves": [
    "cut",
+   "fly",
    "rocksmash",
    "strength"
   ]
@@ -226478,7 +226570,6 @@
    "substitute",
    "sunnyday",
    "supercellslam",
-   "surf",
    "swordsdance",
    "terablast",
    "thief",
@@ -226494,7 +226585,8 @@
   "hmMoves": [
    "cut",
    "rocksmash",
-   "strength"
+   "strength",
+   "surf"
   ]
  },
  "rhyhorn": {
@@ -226951,7 +227043,6 @@
    "substitute",
    "sunnyday",
    "supercellslam",
-   "surf",
    "swordsdance",
    "temperflare",
    "terablast",
@@ -226968,7 +227059,8 @@
   "hmMoves": [
    "cut",
    "rocksmash",
-   "strength"
+   "strength",
+   "surf"
   ]
  },
  "ribombee": {
@@ -228365,7 +228457,6 @@
    "endure",
    "facade",
    "faketears",
-   "fly",
    "nastyplot",
    "protect",
    "rest",
@@ -228382,6 +228473,7 @@
   ],
   "eggMoves": [],
   "hmMoves": [
+   "fly",
    "rocksmash"
   ]
  },
@@ -230133,7 +230225,6 @@
    "endure",
    "facade",
    "featherdance",
-   "fly",
    "heatwave",
    "helpinghand",
    "hurricane",
@@ -230156,6 +230247,7 @@
   "eggMoves": [],
   "hmMoves": [
    "cut",
+   "fly",
    "rocksmash",
    "strength"
   ]
@@ -232274,7 +232366,6 @@
    "smartstrike",
    "snowscape",
    "substitute",
-   "surf",
    "swift",
    "takedown",
    "taunt",
@@ -232284,7 +232375,6 @@
    "upperhand",
    "vacuumwave",
    "waterpledge",
-   "waterfall",
    "whirlpool",
    "xscissor"
   ],
@@ -232293,7 +232383,9 @@
    "cut",
    "dive",
    "rocksmash",
-   "strength"
+   "strength",
+   "surf",
+   "waterfall"
   ]
  },
  "samurott_hisui": {
@@ -232500,7 +232592,6 @@
    "smartstrike",
    "snowscape",
    "substitute",
-   "surf",
    "swift",
    "takedown",
    "taunt",
@@ -232510,7 +232601,6 @@
    "upperhand",
    "vacuumwave",
    "waterpledge",
-   "waterfall",
    "whirlpool",
    "xscissor"
   ],
@@ -232519,7 +232609,9 @@
    "cut",
    "dive",
    "rocksmash",
-   "strength"
+   "strength",
+   "surf",
+   "waterfall"
   ]
  },
  "sandaconda": {
@@ -236852,19 +236944,19 @@
    "sleeptalk",
    "snowscape",
    "substitute",
-   "surf",
    "swift",
    "takedown",
    "terablast",
    "toxic",
    "waterpulse",
-   "waterfall",
    "weatherball",
    "whirlpool"
   ],
   "eggMoves": [],
   "hmMoves": [
-   "dive"
+   "dive",
+   "surf",
+   "waterfall"
   ]
  },
  "seaking": {
@@ -237015,7 +237107,6 @@
    "sleeptalk",
    "smartstrike",
    "substitute",
-   "surf",
    "swift",
    "swordsdance",
    "takedown",
@@ -237026,7 +237117,8 @@
   ],
   "eggMoves": [],
   "hmMoves": [
-   "dive"
+   "dive",
+   "surf"
   ]
  },
  "sealeo": {
@@ -237163,17 +237255,17 @@
    "sleeptalk",
    "substitute",
    "superfang",
-   "surf",
    "toxic",
    "waterpulse",
-   "waterfall",
    "whirlpool"
   ],
   "eggMoves": [],
   "hmMoves": [
    "dive",
    "rocksmash",
-   "strength"
+   "strength",
+   "surf",
+   "waterfall"
   ]
  },
  "seedot": {
@@ -237451,14 +237543,12 @@
    "smartstrike",
    "snowscape",
    "substitute",
-   "surf",
    "terablast",
    "thief",
    "toxic",
    "tripleaxel",
    "uproar",
    "waterpulse",
-   "waterfall",
    "weatherball",
    "whirlpool"
   ],
@@ -237474,7 +237564,9 @@
   ],
   "hmMoves": [
    "dive",
-   "strength"
+   "strength",
+   "surf",
+   "waterfall"
   ]
  },
  "seikamater": {
@@ -237752,7 +237844,6 @@
    "stealthrock",
    "stompingtantrum",
    "substitute",
-   "surf",
    "toxic",
    "venoshock",
    "waterpulse",
@@ -237762,7 +237853,8 @@
   "hmMoves": [
    "dive",
    "rocksmash",
-   "strength"
+   "strength",
+   "surf"
   ]
  }
 }

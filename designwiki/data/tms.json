@@ -382,8 +382,8 @@
   },
   {
    "tm": "TM077",
-   "move": "waterfall",
-   "name": "Waterfall"
+   "move": null,
+   "name": "???"
   },
   {
    "tm": "TM078",
@@ -482,8 +482,8 @@
   },
   {
    "tm": "TM097",
-   "move": "fly",
-   "name": "Fly"
+   "move": null,
+   "name": "???"
   },
   {
    "tm": "TM098",
@@ -612,8 +612,8 @@
   },
   {
    "tm": "TM123",
-   "move": "surf",
-   "name": "Surf"
+   "move": null,
+   "name": "???"
   },
   {
    "tm": "TM124",
