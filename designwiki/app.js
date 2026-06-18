@@ -29,6 +29,17 @@ const byName = (a, b) => String(a.name).localeCompare(String(b.name));
 // Dex order: national dex (positive nums) first, custom mons (negative ids) after.
 const dexKey = n => n == null ? 2e9 : (n > 0 ? n : 1e9 - n);
 const byDex = (a, b) => dexKey(a.num) - dexKey(b.num);
+// Encounters are stored as raw game slots; aggregate by species for display.
+function aggSlots(enc) {
+  if (enc.mons) return enc.mons; // legacy pre-aggregated data
+  const m = new Map();
+  for (const s of enc.slots || []) {
+    const a = m.get(s.species);
+    if (a) { a.minLevel = Math.min(a.minLevel, s.minLevel); a.maxLevel = Math.max(a.maxLevel, s.maxLevel); a.weight += s.weight; }
+    else m.set(s.species, { species: s.species, minLevel: s.minLevel, maxLevel: s.maxLevel, weight: s.weight });
+  }
+  return [...m.values()].sort((a, b) => b.weight - a.weight);
+}
 const mvLink = id => DB.moves[id] ? h('a', { href: '#/moves/' + id }, DB.moves[id].name) : h('span', { class: 'muted' }, id);
 const abLink = nm => { const id = abilityByName[norm(nm)]; return id ? h('a', { href: '#/abilities/' + id }, nm) : h('span', null, nm); };
 
@@ -103,7 +114,7 @@ function regionView(rk) {
       h('div', { class: 'muted' }, titleCase(enc.method) + (enc.rate ? ' · rate ' + enc.rate : '')),
       h('table', null,
         h('thead', null, h('tr', null, h('th', null, 'Species'), h('th', null, 'Levels'), h('th', null, 'Weight'))),
-        h('tbody', null, enc.mons.map(mon => h('tr', null,
+        h('tbody', null, aggSlots(enc).map(mon => h('tr', null,
           h('td', null, pkLink(mon.species)),
           h('td', null, mon.minLevel === mon.maxLevel ? String(mon.minLevel) : mon.minLevel + '–' + mon.maxLevel),
           h('td', null, String(mon.weight))))))));
