@@ -122,7 +122,7 @@ function tmsView() {
   const row = (label, t) => {
     const m = DB.moves[t.move] || {};
     return h('tr', null,
-      h('td', { class: 'num' }, label),
+      h('td', { class: 'num' }, t.move ? h('a', { href: '#/moves/' + t.move }, label) : label),
       h('td', null, t.move ? mvLink(t.move) : t.name),
       h('td', null, m.type ? typeChip(m.type) : '—'),
       h('td', null, m.category || '—'),
