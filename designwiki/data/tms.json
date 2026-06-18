@@ -1,0 +1,1183 @@
+{
+ "tms": [
+  {
+   "tm": "TM001",
+   "move": "takedown",
+   "name": "Take Down"
+  },
+  {
+   "tm": "TM002",
+   "move": "charm",
+   "name": "Charm"
+  },
+  {
+   "tm": "TM003",
+   "move": "faketears",
+   "name": "Fake Tears"
+  },
+  {
+   "tm": "TM004",
+   "move": "agility",
+   "name": "Agility"
+  },
+  {
+   "tm": "TM005",
+   "move": "mudslap",
+   "name": "Mud-Slap"
+  },
+  {
+   "tm": "TM006",
+   "move": "scaryface",
+   "name": "Scary Face"
+  },
+  {
+   "tm": "TM007",
+   "move": "protect",
+   "name": "Protect"
+  },
+  {
+   "tm": "TM008",
+   "move": "firefang",
+   "name": "Fire Fang"
+  },
+  {
+   "tm": "TM009",
+   "move": "thunderfang",
+   "name": "Thunder Fang"
+  },
+  {
+   "tm": "TM010",
+   "move": "icefang",
+   "name": "Ice Fang"
+  },
+  {
+   "tm": "TM011",
+   "move": "waterpulse",
+   "name": "Water Pulse"
+  },
+  {
+   "tm": "TM012",
+   "move": "lowkick",
+   "name": "Low Kick"
+  },
+  {
+   "tm": "TM013",
+   "move": "acidspray",
+   "name": "Acid Spray"
+  },
+  {
+   "tm": "TM014",
+   "move": "acrobatics",
+   "name": "Acrobatics"
+  },
+  {
+   "tm": "TM015",
+   "move": "strugglebug",
+   "name": "Struggle Bug"
+  },
+  {
+   "tm": "TM016",
+   "move": "psybeam",
+   "name": "Psybeam"
+  },
+  {
+   "tm": "TM017",
+   "move": "confuseray",
+   "name": "Confuse Ray"
+  },
+  {
+   "tm": "TM018",
+   "move": "thief",
+   "name": "Thief"
+  },
+  {
+   "tm": "TM019",
+   "move": "disarmingvoice",
+   "name": "Disarming Voice"
+  },
+  {
+   "tm": "TM020",
+   "move": "trailblaze",
+   "name": "Trailblaze"
+  },
+  {
+   "tm": "TM021",
+   "move": "pounce",
+   "name": "Pounce"
+  },
+  {
+   "tm": "TM022",
+   "move": "chillingwater",
+   "name": "Chilling Water"
+  },
+  {
+   "tm": "TM023",
+   "move": "chargebeam",
+   "name": "Charge Beam"
+  },
+  {
+   "tm": "TM024",
+   "move": "firespin",
+   "name": "Fire Spin"
+  },
+  {
+   "tm": "TM025",
+   "move": "facade",
+   "name": "Facade"
+  },
+  {
+   "tm": "TM026",
+   "move": "poisontail",
+   "name": "Poison Tail"
+  },
+  {
+   "tm": "TM027",
+   "move": "aerialace",
+   "name": "Aerial Ace"
+  },
+  {
+   "tm": "TM028",
+   "move": "bulldoze",
+   "name": "Bulldoze"
+  },
+  {
+   "tm": "TM029",
+   "move": "hex",
+   "name": "Hex"
+  },
+  {
+   "tm": "TM030",
+   "move": "snarl",
+   "name": "Snarl"
+  },
+  {
+   "tm": "TM031",
+   "move": "metalclaw",
+   "name": "Metal Claw"
+  },
+  {
+   "tm": "TM032",
+   "move": "swift",
+   "name": "Swift"
+  },
+  {
+   "tm": "TM033",
+   "move": "magicalleaf",
+   "name": "Magical Leaf"
+  },
+  {
+   "tm": "TM034",
+   "move": "icywind",
+   "name": "Icy Wind"
+  },
+  {
+   "tm": "TM035",
+   "move": "mudshot",
+   "name": "Mud Shot"
+  },
+  {
+   "tm": "TM036",
+   "move": "rocktomb",
+   "name": "Rock Tomb"
+  },
+  {
+   "tm": "TM037",
+   "move": "drainingkiss",
+   "name": "Draining Kiss"
+  },
+  {
+   "tm": "TM038",
+   "move": "flamecharge",
+   "name": "Flame Charge"
+  },
+  {
+   "tm": "TM039",
+   "move": "lowsweep",
+   "name": "Low Sweep"
+  },
+  {
+   "tm": "TM040",
+   "move": "aircutter",
+   "name": "Air Cutter"
+  },
+  {
+   "tm": "TM041",
+   "move": "storedpower",
+   "name": "Stored Power"
+  },
+  {
+   "tm": "TM042",
+   "move": "nightshade",
+   "name": "Night Shade"
+  },
+  {
+   "tm": "TM043",
+   "move": "fling",
+   "name": "Fling"
+  },
+  {
+   "tm": "TM044",
+   "move": "dragontail",
+   "name": "Dragon Tail"
+  },
+  {
+   "tm": "TM045",
+   "move": "venoshock",
+   "name": "Venoshock"
+  },
+  {
+   "tm": "TM046",
+   "move": "avalanche",
+   "name": "Avalanche"
+  },
+  {
+   "tm": "TM047",
+   "move": "endure",
+   "name": "Endure"
+  },
+  {
+   "tm": "TM048",
+   "move": "voltswitch",
+   "name": "Volt Switch"
+  },
+  {
+   "tm": "TM049",
+   "move": "sunnyday",
+   "name": "Sunny Day"
+  },
+  {
+   "tm": "TM050",
+   "move": "raindance",
+   "name": "Rain Dance"
+  },
+  {
+   "tm": "TM051",
+   "move": "sandstorm",
+   "name": "Sandstorm"
+  },
+  {
+   "tm": "TM052",
+   "move": "snowscape",
+   "name": "Snowscape"
+  },
+  {
+   "tm": "TM053",
+   "move": "smartstrike",
+   "name": "Smart Strike"
+  },
+  {
+   "tm": "TM054",
+   "move": "psyshock",
+   "name": "Psyshock"
+  },
+  {
+   "tm": "TM055",
+   "move": "dig",
+   "name": "Dig"
+  },
+  {
+   "tm": "TM056",
+   "move": "bulletseed",
+   "name": "Bullet Seed"
+  },
+  {
+   "tm": "TM057",
+   "move": "falseswipe",
+   "name": "False Swipe"
+  },
+  {
+   "tm": "TM058",
+   "move": "brickbreak",
+   "name": "Brick Break"
+  },
+  {
+   "tm": "TM059",
+   "move": "zenheadbutt",
+   "name": "Zen Headbutt"
+  },
+  {
+   "tm": "TM060",
+   "move": "uturn",
+   "name": "U-turn"
+  },
+  {
+   "tm": "TM061",
+   "move": "shadowclaw",
+   "name": "Shadow Claw"
+  },
+  {
+   "tm": "TM062",
+   "move": "foulplay",
+   "name": "Foul Play"
+  },
+  {
+   "tm": "TM063",
+   "move": "psychicfangs",
+   "name": "Psychic Fangs"
+  },
+  {
+   "tm": "TM064",
+   "move": "bulkup",
+   "name": "Bulk Up"
+  },
+  {
+   "tm": "TM065",
+   "move": "airslash",
+   "name": "Air Slash"
+  },
+  {
+   "tm": "TM066",
+   "move": "bodyslam",
+   "name": "Body Slam"
+  },
+  {
+   "tm": "TM067",
+   "move": "firepunch",
+   "name": "Fire Punch"
+  },
+  {
+   "tm": "TM068",
+   "move": "thunderpunch",
+   "name": "Thunder Punch"
+  },
+  {
+   "tm": "TM069",
+   "move": "icepunch",
+   "name": "Ice Punch"
+  },
+  {
+   "tm": "TM070",
+   "move": "sleeptalk",
+   "name": "Sleep Talk"
+  },
+  {
+   "tm": "TM071",
+   "move": "seedbomb",
+   "name": "Seed Bomb"
+  },
+  {
+   "tm": "TM072",
+   "move": "electroball",
+   "name": "Electro Ball"
+  },
+  {
+   "tm": "TM073",
+   "move": "drainpunch",
+   "name": "Drain Punch"
+  },
+  {
+   "tm": "TM074",
+   "move": "reflect",
+   "name": "Reflect"
+  },
+  {
+   "tm": "TM075",
+   "move": "lightscreen",
+   "name": "Light Screen"
+  },
+  {
+   "tm": "TM076",
+   "move": "rockblast",
+   "name": "Rock Blast"
+  },
+  {
+   "tm": "TM077",
+   "move": "waterfall",
+   "name": "Waterfall"
+  },
+  {
+   "tm": "TM078",
+   "move": "dragonclaw",
+   "name": "Dragon Claw"
+  },
+  {
+   "tm": "TM079",
+   "move": "dazzlinggleam",
+   "name": "Dazzling Gleam"
+  },
+  {
+   "tm": "TM080",
+   "move": "metronome",
+   "name": "Metronome"
+  },
+  {
+   "tm": "TM081",
+   "move": "grassknot",
+   "name": "Grass Knot"
+  },
+  {
+   "tm": "TM082",
+   "move": "thunderwave",
+   "name": "Thunder Wave"
+  },
+  {
+   "tm": "TM083",
+   "move": "poisonjab",
+   "name": "Poison Jab"
+  },
+  {
+   "tm": "TM084",
+   "move": "stompingtantrum",
+   "name": "Stomping Tantrum"
+  },
+  {
+   "tm": "TM085",
+   "move": "rest",
+   "name": "Rest"
+  },
+  {
+   "tm": "TM086",
+   "move": "rockslide",
+   "name": "Rock Slide"
+  },
+  {
+   "tm": "TM087",
+   "move": "taunt",
+   "name": "Taunt"
+  },
+  {
+   "tm": "TM088",
+   "move": "swordsdance",
+   "name": "Swords Dance"
+  },
+  {
+   "tm": "TM089",
+   "move": "bodypress",
+   "name": "Body Press"
+  },
+  {
+   "tm": "TM090",
+   "move": "spikes",
+   "name": "Spikes"
+  },
+  {
+   "tm": "TM091",
+   "move": "toxicspikes",
+   "name": "Toxic Spikes"
+  },
+  {
+   "tm": "TM092",
+   "move": "imprison",
+   "name": "Imprison"
+  },
+  {
+   "tm": "TM093",
+   "move": "flashcannon",
+   "name": "Flash Cannon"
+  },
+  {
+   "tm": "TM094",
+   "move": "darkpulse",
+   "name": "Dark Pulse"
+  },
+  {
+   "tm": "TM095",
+   "move": "leechlife",
+   "name": "Leech Life"
+  },
+  {
+   "tm": "TM096",
+   "move": "eerieimpulse",
+   "name": "Eerie Impulse"
+  },
+  {
+   "tm": "TM097",
+   "move": "fly",
+   "name": "Fly"
+  },
+  {
+   "tm": "TM098",
+   "move": "skillswap",
+   "name": "Skill Swap"
+  },
+  {
+   "tm": "TM099",
+   "move": "ironhead",
+   "name": "Iron Head"
+  },
+  {
+   "tm": "TM100",
+   "move": "dragondance",
+   "name": "Dragon Dance"
+  },
+  {
+   "tm": "TM101",
+   "move": "powergem",
+   "name": "Power Gem"
+  },
+  {
+   "tm": "TM102",
+   "move": "gunkshot",
+   "name": "Gunk Shot"
+  },
+  {
+   "tm": "TM103",
+   "move": "substitute",
+   "name": "Substitute"
+  },
+  {
+   "tm": "TM104",
+   "move": "irondefense",
+   "name": "Iron Defense"
+  },
+  {
+   "tm": "TM105",
+   "move": "xscissor",
+   "name": "X-Scissor"
+  },
+  {
+   "tm": "TM106",
+   "move": "drillrun",
+   "name": "Drill Run"
+  },
+  {
+   "tm": "TM107",
+   "move": "willowisp",
+   "name": "Will-O-Wisp"
+  },
+  {
+   "tm": "TM108",
+   "move": "crunch",
+   "name": "Crunch"
+  },
+  {
+   "tm": "TM109",
+   "move": "trick",
+   "name": "Trick"
+  },
+  {
+   "tm": "TM110",
+   "move": "liquidation",
+   "name": "Liquidation"
+  },
+  {
+   "tm": "TM111",
+   "move": "gigadrain",
+   "name": "Giga Drain"
+  },
+  {
+   "tm": "TM112",
+   "move": "aurasphere",
+   "name": "Aura Sphere"
+  },
+  {
+   "tm": "TM113",
+   "move": "tailwind",
+   "name": "Tailwind"
+  },
+  {
+   "tm": "TM114",
+   "move": "shadowball",
+   "name": "Shadow Ball"
+  },
+  {
+   "tm": "TM115",
+   "move": "dragonpulse",
+   "name": "Dragon Pulse"
+  },
+  {
+   "tm": "TM116",
+   "move": "stealthrock",
+   "name": "Stealth Rock"
+  },
+  {
+   "tm": "TM117",
+   "move": "hypervoice",
+   "name": "Hyper Voice"
+  },
+  {
+   "tm": "TM118",
+   "move": "heatwave",
+   "name": "Heat Wave"
+  },
+  {
+   "tm": "TM119",
+   "move": "energyball",
+   "name": "Energy Ball"
+  },
+  {
+   "tm": "TM120",
+   "move": "psychic",
+   "name": "Psychic"
+  },
+  {
+   "tm": "TM121",
+   "move": "heavyslam",
+   "name": "Heavy Slam"
+  },
+  {
+   "tm": "TM122",
+   "move": "encore",
+   "name": "Encore"
+  },
+  {
+   "tm": "TM123",
+   "move": "surf",
+   "name": "Surf"
+  },
+  {
+   "tm": "TM124",
+   "move": "icespinner",
+   "name": "Ice Spinner"
+  },
+  {
+   "tm": "TM125",
+   "move": "flamethrower",
+   "name": "Flamethrower"
+  },
+  {
+   "tm": "TM126",
+   "move": "thunderbolt",
+   "name": "Thunderbolt"
+  },
+  {
+   "tm": "TM127",
+   "move": "playrough",
+   "name": "Play Rough"
+  },
+  {
+   "tm": "TM128",
+   "move": "amnesia",
+   "name": "Amnesia"
+  },
+  {
+   "tm": "TM129",
+   "move": "calmmind",
+   "name": "Calm Mind"
+  },
+  {
+   "tm": "TM130",
+   "move": "helpinghand",
+   "name": "Helping Hand"
+  },
+  {
+   "tm": "TM131",
+   "move": "pollenpuff",
+   "name": "Pollen Puff"
+  },
+  {
+   "tm": "TM132",
+   "move": "batonpass",
+   "name": "Baton Pass"
+  },
+  {
+   "tm": "TM133",
+   "move": "earthpower",
+   "name": "Earth Power"
+  },
+  {
+   "tm": "TM134",
+   "move": "reversal",
+   "name": "Reversal"
+  },
+  {
+   "tm": "TM135",
+   "move": "icebeam",
+   "name": "Ice Beam"
+  },
+  {
+   "tm": "TM136",
+   "move": "electricterrain",
+   "name": "Electric Terrain"
+  },
+  {
+   "tm": "TM137",
+   "move": "grassyterrain",
+   "name": "Grassy Terrain"
+  },
+  {
+   "tm": "TM138",
+   "move": "psychicterrain",
+   "name": "Psychic Terrain"
+  },
+  {
+   "tm": "TM139",
+   "move": "mistyterrain",
+   "name": "Misty Terrain"
+  },
+  {
+   "tm": "TM140",
+   "move": "nastyplot",
+   "name": "Nasty Plot"
+  },
+  {
+   "tm": "TM141",
+   "move": "fireblast",
+   "name": "Fire Blast"
+  },
+  {
+   "tm": "TM142",
+   "move": "hydropump",
+   "name": "Hydro Pump"
+  },
+  {
+   "tm": "TM143",
+   "move": "blizzard",
+   "name": "Blizzard"
+  },
+  {
+   "tm": "TM144",
+   "move": "firepledge",
+   "name": "Fire Pledge"
+  },
+  {
+   "tm": "TM145",
+   "move": "waterpledge",
+   "name": "Water Pledge"
+  },
+  {
+   "tm": "TM146",
+   "move": "grasspledge",
+   "name": "Grass Pledge"
+  },
+  {
+   "tm": "TM147",
+   "move": "wildcharge",
+   "name": "Wild Charge"
+  },
+  {
+   "tm": "TM148",
+   "move": "sludgebomb",
+   "name": "Sludge Bomb"
+  },
+  {
+   "tm": "TM149",
+   "move": "earthquake",
+   "name": "Earthquake"
+  },
+  {
+   "tm": "TM150",
+   "move": "stoneedge",
+   "name": "Stone Edge"
+  },
+  {
+   "tm": "TM151",
+   "move": "phantomforce",
+   "name": "Phantom Force"
+  },
+  {
+   "tm": "TM152",
+   "move": "gigaimpact",
+   "name": "Giga Impact"
+  },
+  {
+   "tm": "TM153",
+   "move": "blastburn",
+   "name": "Blast Burn"
+  },
+  {
+   "tm": "TM154",
+   "move": "hydrocannon",
+   "name": "Hydro Cannon"
+  },
+  {
+   "tm": "TM155",
+   "move": "frenzyplant",
+   "name": "Frenzy Plant"
+  },
+  {
+   "tm": "TM156",
+   "move": "outrage",
+   "name": "Outrage"
+  },
+  {
+   "tm": "TM157",
+   "move": "overheat",
+   "name": "Overheat"
+  },
+  {
+   "tm": "TM158",
+   "move": "focusblast",
+   "name": "Focus Blast"
+  },
+  {
+   "tm": "TM159",
+   "move": "leafstorm",
+   "name": "Leaf Storm"
+  },
+  {
+   "tm": "TM160",
+   "move": "hurricane",
+   "name": "Hurricane"
+  },
+  {
+   "tm": "TM161",
+   "move": "trickroom",
+   "name": "Trick Room"
+  },
+  {
+   "tm": "TM162",
+   "move": "bugbuzz",
+   "name": "Bug Buzz"
+  },
+  {
+   "tm": "TM163",
+   "move": "hyperbeam",
+   "name": "Hyper Beam"
+  },
+  {
+   "tm": "TM164",
+   "move": "bravebird",
+   "name": "Brave Bird"
+  },
+  {
+   "tm": "TM165",
+   "move": "flareblitz",
+   "name": "Flare Blitz"
+  },
+  {
+   "tm": "TM166",
+   "move": "thunder",
+   "name": "Thunder"
+  },
+  {
+   "tm": "TM167",
+   "move": "closecombat",
+   "name": "Close Combat"
+  },
+  {
+   "tm": "TM168",
+   "move": "solarbeam",
+   "name": "Solar Beam"
+  },
+  {
+   "tm": "TM169",
+   "move": "dracometeor",
+   "name": "Draco Meteor"
+  },
+  {
+   "tm": "TM170",
+   "move": "steelbeam",
+   "name": "Steel Beam"
+  },
+  {
+   "tm": "TM171",
+   "move": "terablast",
+   "name": "Tera Blast"
+  },
+  {
+   "tm": "TM172",
+   "move": "roar",
+   "name": "Roar"
+  },
+  {
+   "tm": "TM173",
+   "move": "charge",
+   "name": "Charge"
+  },
+  {
+   "tm": "TM174",
+   "move": "haze",
+   "name": "Haze"
+  },
+  {
+   "tm": "TM175",
+   "move": "toxic",
+   "name": "Toxic"
+  },
+  {
+   "tm": "TM176",
+   "move": "sandtomb",
+   "name": "Sand Tomb"
+  },
+  {
+   "tm": "TM177",
+   "move": "spite",
+   "name": "Spite"
+  },
+  {
+   "tm": "TM178",
+   "move": "gravity",
+   "name": "Gravity"
+  },
+  {
+   "tm": "TM179",
+   "move": "smackdown",
+   "name": "Smack Down"
+  },
+  {
+   "tm": "TM180",
+   "move": "gyroball",
+   "name": "Gyro Ball"
+  },
+  {
+   "tm": "TM181",
+   "move": "knockoff",
+   "name": "Knock Off"
+  },
+  {
+   "tm": "TM182",
+   "move": "bugbite",
+   "name": "Bug Bite"
+  },
+  {
+   "tm": "TM183",
+   "move": "superfang",
+   "name": "Super Fang"
+  },
+  {
+   "tm": "TM184",
+   "move": "vacuumwave",
+   "name": "Vacuum Wave"
+  },
+  {
+   "tm": "TM185",
+   "move": "lunge",
+   "name": "Lunge"
+  },
+  {
+   "tm": "TM186",
+   "move": "highhorsepower",
+   "name": "High Horsepower"
+  },
+  {
+   "tm": "TM187",
+   "move": "iciclespear",
+   "name": "Icicle Spear"
+  },
+  {
+   "tm": "TM188",
+   "move": "scald",
+   "name": "Scald"
+  },
+  {
+   "tm": "TM189",
+   "move": "heatcrash",
+   "name": "Heat Crash"
+  },
+  {
+   "tm": "TM190",
+   "move": "solarblade",
+   "name": "Solar Blade"
+  },
+  {
+   "tm": "TM191",
+   "move": "uproar",
+   "name": "Uproar"
+  },
+  {
+   "tm": "TM192",
+   "move": "focuspunch",
+   "name": "Focus Punch"
+  },
+  {
+   "tm": "TM193",
+   "move": "weatherball",
+   "name": "Weather Ball"
+  },
+  {
+   "tm": "TM194",
+   "move": "grassyglide",
+   "name": "Grassy Glide"
+  },
+  {
+   "tm": "TM195",
+   "move": "burningjealousy",
+   "name": "Burning Jealousy"
+  },
+  {
+   "tm": "TM196",
+   "move": "flipturn",
+   "name": "Flip Turn"
+  },
+  {
+   "tm": "TM197",
+   "move": "dualwingbeat",
+   "name": "Dual Wingbeat"
+  },
+  {
+   "tm": "TM198",
+   "move": "poltergeist",
+   "name": "Poltergeist"
+  },
+  {
+   "tm": "TM199",
+   "move": "lashout",
+   "name": "Lash Out"
+  },
+  {
+   "tm": "TM200",
+   "move": "scaleshot",
+   "name": "Scale Shot"
+  },
+  {
+   "tm": "TM201",
+   "move": "mistyexplosion",
+   "name": "Misty Explosion"
+  },
+  {
+   "tm": "TM202",
+   "move": "painsplit",
+   "name": "Pain Split"
+  },
+  {
+   "tm": "TM203",
+   "move": "psychup",
+   "name": "Psych Up"
+  },
+  {
+   "tm": "TM204",
+   "move": "doubleedge",
+   "name": "Double-Edge"
+  },
+  {
+   "tm": "TM205",
+   "move": "endeavor",
+   "name": "Endeavor"
+  },
+  {
+   "tm": "TM206",
+   "move": "petalblizzard",
+   "name": "Petal Blizzard"
+  },
+  {
+   "tm": "TM207",
+   "move": "temperflare",
+   "name": "Temper Flare"
+  },
+  {
+   "tm": "TM208",
+   "move": "whirlpool",
+   "name": "Whirlpool"
+  },
+  {
+   "tm": "TM209",
+   "move": "muddywater",
+   "name": "Muddy Water"
+  },
+  {
+   "tm": "TM210",
+   "move": "supercellslam",
+   "name": "Supercell Slam"
+  },
+  {
+   "tm": "TM211",
+   "move": "electroweb",
+   "name": "Electroweb"
+  },
+  {
+   "tm": "TM212",
+   "move": "tripleaxel",
+   "name": "Triple Axel"
+  },
+  {
+   "tm": "TM213",
+   "move": "coaching",
+   "name": "Coaching"
+  },
+  {
+   "tm": "TM214",
+   "move": "sludgewave",
+   "name": "Sludge Wave"
+  },
+  {
+   "tm": "TM215",
+   "move": "scorchingsands",
+   "name": "Scorching Sands"
+  },
+  {
+   "tm": "TM216",
+   "move": "featherdance",
+   "name": "Feather Dance"
+  },
+  {
+   "tm": "TM217",
+   "move": "futuresight",
+   "name": "Future Sight"
+  },
+  {
+   "tm": "TM218",
+   "move": "expandingforce",
+   "name": "Expanding Force"
+  },
+  {
+   "tm": "TM219",
+   "move": "skittersmack",
+   "name": "Skitter Smack"
+  },
+  {
+   "tm": "TM220",
+   "move": "meteorbeam",
+   "name": "Meteor Beam"
+  },
+  {
+   "tm": "TM221",
+   "move": "throatchop",
+   "name": "Throat Chop"
+  },
+  {
+   "tm": "TM222",
+   "move": "breakingswipe",
+   "name": "Breaking Swipe"
+  },
+  {
+   "tm": "TM223",
+   "move": "metalsound",
+   "name": "Metal Sound"
+  },
+  {
+   "tm": "TM224",
+   "move": "curse",
+   "name": "Curse"
+  },
+  {
+   "tm": "TM225",
+   "move": "hardpress",
+   "name": "Hard Press"
+  },
+  {
+   "tm": "TM226",
+   "move": "dragoncheer",
+   "name": "Dragon Cheer"
+  },
+  {
+   "tm": "TM227",
+   "move": "alluringvoice",
+   "name": "Alluring Voice"
+  },
+  {
+   "tm": "TM228",
+   "move": "psychicnoise",
+   "name": "Psychic Noise"
+  },
+  {
+   "tm": "TM229",
+   "move": "upperhand",
+   "name": "Upper Hand"
+  }
+ ],
+ "hms": [
+  {
+   "move": "cut",
+   "name": "Cut"
+  },
+  {
+   "move": "fly",
+   "name": "Fly"
+  },
+  {
+   "move": "surf",
+   "name": "Surf"
+  },
+  {
+   "move": "strength",
+   "name": "Strength"
+  },
+  {
+   "move": "flash",
+   "name": "Flash"
+  },
+  {
+   "move": "rocksmash",
+   "name": "Rock Smash"
+  },
+  {
+   "move": "waterfall",
+   "name": "Waterfall"
+  },
+  {
+   "move": "dive",
+   "name": "Dive"
+  }
+ ]
+}

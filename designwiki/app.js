@@ -111,6 +111,35 @@ function abilityDetail(id) {
   );
 }
 
+function tmsView() {
+  const q = norm(searchEl.value);
+  const match = t => !q || norm(t.tm || '').includes(q) || norm(t.name).includes(q)
+    || (t.move && norm(t.move).includes(q));
+  const tms = (DB.tms.tms || []).filter(match);
+  const hms = (DB.tms.hms || []).filter(match);
+  const head = (first) => h('thead', null, h('tr', null,
+    [first, 'Move', 'Type', 'Cat.', 'Power', 'Acc.', 'Pokémon'].map(x => h('th', null, x))));
+  const row = (label, t) => {
+    const m = DB.moves[t.move] || {};
+    return h('tr', null,
+      h('td', { class: 'num' }, label),
+      h('td', null, t.move ? mvLink(t.move) : t.name),
+      h('td', null, m.type ? typeChip(m.type) : '—'),
+      h('td', null, m.category || '—'),
+      h('td', null, m.basePower ?? '—'),
+      h('td', null, m.accuracy ?? '—'),
+      h('td', { class: 'num' }, String((m.learnedBy || []).length)));
+  };
+  content.replaceChildren(
+    h('h1', null, 'TMs ', h('span', { class: 'num' }, '(' + tms.length + ')')),
+    h('p', { class: 'muted' }, 'Technical Machines (Scarlet & Violet numbering, TM001–TM229). Click a move for its full learn list.'),
+    h('table', null, head('TM'), h('tbody', null, tms.map(t => row(t.tm, t)))),
+    hms.length ? h('h2', null, 'HMs ', h('span', { class: 'num' }, '(' + hms.length + ')')) : null,
+    hms.length ? h('table', null, head('HM'),
+      h('tbody', null, hms.map((t, i) => row('HM' + String(i + 1).padStart(2, '0'), t)))) : null
+  );
+}
+
 function regionView(rk) {
   const r = DB.regions[rk]; if (!r) return notFound();
   const maps = Object.values(r.maps).sort((a, b) => a.name.localeCompare(b.name));
@@ -162,21 +191,22 @@ function route() {
     listView('moves', 'Moves', Object.values(DB.moves).sort(byName));
   if (section === 'abilities') return id ? abilityDetail(id) :
     listView('abilities', 'Abilities', Object.values(DB.abilities).map(a => ({ ...a, sub: (a.pokemon || []).length + ' Pokémon' })).sort(byName));
+  if (section === 'tms') return tmsView();
   if (section === 'region') return regionView(id);
   notFound();
 }
 
 searchEl.addEventListener('input', () => {
   const s = (location.hash.slice(1) || '/').split('/').filter(Boolean);
-  if (['pokemon', 'moves', 'abilities'].includes(s[0]) && !s[1]) route();
+  if (['pokemon', 'moves', 'abilities', 'tms'].includes(s[0]) && !s[1]) route();
 });
 window.addEventListener('hashchange', route);
 
 (async function init() {
   try {
-    const [pk, mv, ab, rg] = await Promise.all(['pokemon', 'moves', 'abilities', 'regions']
+    const [pk, mv, ab, rg, tm] = await Promise.all(['pokemon', 'moves', 'abilities', 'regions', 'tms']
       .map(n => fetch('data/' + n + '.json').then(r => r.json())));
-    DB.pokemon = pk; DB.moves = mv; DB.abilities = ab; DB.regions = rg;
+    DB.pokemon = pk; DB.moves = mv; DB.abilities = ab; DB.regions = rg; DB.tms = tm;
     for (const id in DB.pokemon) DB.pokemon[id].id = id;
     for (const id in DB.moves) DB.moves[id].id = id;
     for (const id in DB.abilities) { DB.abilities[id].id = id; abilityByName[norm(DB.abilities[id].name)] = id; abilityByName[norm(id)] = id; }
