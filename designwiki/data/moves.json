@@ -248,7 +248,7 @@
    },
    {
     "pokemon": "swirlpool",
-    "how": "TM",
+    "how": "Egg",
     "num": -51
    },
    {
@@ -263,7 +263,7 @@
    },
    {
     "pokemon": "floatoy",
-    "how": "TM",
+    "how": "Egg",
     "num": -36
    },
    {
@@ -2360,7 +2360,7 @@
    },
    {
     "pokemon": "monohm",
-    "how": "TM",
+    "how": "Egg",
     "num": -62
    },
    {
@@ -5490,12 +5490,12 @@
    },
    {
     "pokemon": "voodoll",
-    "how": "TM",
+    "how": "Egg",
     "num": -18
    },
    {
     "pokemon": "revenankh",
-    "how": "TM",
+    "how": "Egg",
     "num": -3
    },
    {
@@ -6455,6 +6455,11 @@
     "num": -185
    },
    {
+    "pokemon": "fawnifer",
+    "how": "Egg",
+    "num": -45
+   },
+   {
     "pokemon": "jumbao",
     "how": "Lv 31",
     "num": -44
@@ -6560,6 +6565,16 @@
   "pp": 20,
   "priority": 0,
   "learnedBy": [
+   {
+    "pokemon": "scratchet",
+    "how": "Egg",
+    "num": -20
+   },
+   {
+    "pokemon": "embirch",
+    "how": "Egg",
+    "num": -4
+   },
    {
     "pokemon": "tangela",
     "how": "Egg",
@@ -6763,6 +6778,16 @@
     "pokemon": "pluffle",
     "how": "Lv 42",
     "num": -40
+   },
+   {
+    "pokemon": "necturine",
+    "how": "Egg",
+    "num": -22
+   },
+   {
+    "pokemon": "voodoll",
+    "how": "Egg",
+    "num": -18
    },
    {
     "pokemon": "gastly",
@@ -7482,6 +7507,11 @@
     "num": -101
    },
    {
+    "pokemon": "brattler",
+    "how": "Egg",
+    "num": -28
+   },
+   {
     "pokemon": "voodoom",
     "how": "Lv 1",
     "num": -19
@@ -7738,6 +7768,21 @@
   "priority": 0,
   "learnedBy": [
    {
+    "pokemon": "chuggalong",
+    "how": "Egg",
+    "num": -75
+   },
+   {
+    "pokemon": "draggalong",
+    "how": "Egg",
+    "num": -74
+   },
+   {
+    "pokemon": "chuggon",
+    "how": "Egg",
+    "num": -73
+   },
+   {
     "pokemon": "chromera",
     "how": "Lv 1",
     "num": -60
@@ -7875,6 +7920,11 @@
     "num": -265
    },
    {
+    "pokemon": "shox",
+    "how": "Egg",
+    "num": -77
+   },
+   {
     "pokemon": "pachirisu",
     "how": "Lv 19",
     "num": 417
@@ -7981,6 +8031,11 @@
     "pokemon": "shrimputy",
     "how": "Lv 24",
     "num": -222
+   },
+   {
+    "pokemon": "privatyke",
+    "how": "Egg",
+    "num": -12
    },
    {
     "pokemon": "horsea",
@@ -10073,6 +10128,11 @@
     "num": -43
    },
    {
+    "pokemon": "brattler",
+    "how": "Egg",
+    "num": -28
+   },
+   {
     "pokemon": "pyroak",
     "how": "Lv 27",
     "num": -6
@@ -10409,6 +10469,11 @@
     "pokemon": "cupra",
     "how": "Lv 60",
     "num": -25
+   },
+   {
+    "pokemon": "syclar",
+    "how": "Egg",
+    "num": -1
    },
    {
     "pokemon": "volbeat",
@@ -30954,7 +31019,7 @@
    },
    {
     "pokemon": "dorsoil",
-    "how": "TM",
+    "how": "Egg",
     "num": -64
    },
    {
@@ -30994,7 +31059,7 @@
    },
    {
     "pokemon": "floatoy",
-    "how": "TM",
+    "how": "Egg",
     "num": -36
    },
    {
@@ -31004,7 +31069,7 @@
    },
    {
     "pokemon": "brattler",
-    "how": "TM",
+    "how": "Egg",
     "num": -28
    },
    {
@@ -34858,6 +34923,11 @@
     "num": -70
    },
    {
+    "pokemon": "volkritter",
+    "how": "Egg",
+    "num": -32
+   },
+   {
     "pokemon": "tangela",
     "how": "Lv 46",
     "num": 114
@@ -35115,6 +35185,11 @@
     "pokemon": "kitsunoh",
     "how": "Lv 24",
     "num": -14
+   },
+   {
+    "pokemon": "privatyke",
+    "how": "Egg",
+    "num": -12
    },
    {
     "pokemon": "nuzleaf",
@@ -35474,7 +35549,7 @@
    },
    {
     "pokemon": "snugglow",
-    "how": "TM",
+    "how": "Egg",
     "num": -34
    },
    {
@@ -42564,7 +42639,7 @@
    },
    {
     "pokemon": "mollux",
-    "how": "TM",
+    "how": "Egg",
     "num": -24
    },
    {
@@ -44853,6 +44928,11 @@
     "num": -62
    },
    {
+    "pokemon": "solotl",
+    "how": "Egg",
+    "num": -56
+   },
+   {
     "pokemon": "cyclohm",
     "how": "Lv 1",
     "num": -15
@@ -45366,7 +45446,7 @@
    },
    {
     "pokemon": "fawnifer",
-    "how": "TM",
+    "how": "Egg",
     "num": -45
    },
    {
@@ -48483,7 +48563,7 @@
    },
    {
     "pokemon": "voodoll",
-    "how": "TM",
+    "how": "Egg",
     "num": -18
    },
    {
@@ -48827,6 +48907,16 @@
     "pokemon": "minyan",
     "how": "Lv 45",
     "num": -155
+   },
+   {
+    "pokemon": "snugglow",
+    "how": "Egg",
+    "num": -34
+   },
+   {
+    "pokemon": "mollux",
+    "how": "Egg",
+    "num": -24
    },
    {
     "pokemon": "roserade",
@@ -52456,7 +52546,7 @@
    },
    {
     "pokemon": "saharascal",
-    "how": "TM",
+    "how": "Egg",
     "num": -67
    },
    {
@@ -52506,7 +52596,7 @@
    },
    {
     "pokemon": "snugglow",
-    "how": "TM",
+    "how": "Egg",
     "num": -34
    },
    {
@@ -52516,7 +52606,7 @@
    },
    {
     "pokemon": "volkritter",
-    "how": "TM",
+    "how": "Egg",
     "num": -32
    },
    {
@@ -54177,6 +54267,16 @@
     "num": -183
    },
    {
+    "pokemon": "cawdet",
+    "how": "Egg",
+    "num": -30
+   },
+   {
+    "pokemon": "embirch",
+    "how": "Egg",
+    "num": -4
+   },
+   {
     "pokemon": "psyduck",
     "how": "Lv 1",
     "num": 54
@@ -54511,7 +54611,7 @@
    },
    {
     "pokemon": "monohm",
-    "how": "TM",
+    "how": "Egg",
     "num": -62
    },
    {
@@ -55422,7 +55522,7 @@
    },
    {
     "pokemon": "pajantom",
-    "how": "TM",
+    "how": "Egg",
     "num": -42
    },
    {
@@ -55437,7 +55537,7 @@
    },
    {
     "pokemon": "floatoy",
-    "how": "TM",
+    "how": "Egg",
     "num": -36
    },
    {
@@ -56699,14 +56799,29 @@
     "num": -72
    },
    {
+    "pokemon": "dorsoil",
+    "how": "Egg",
+    "num": -64
+   },
+   {
     "pokemon": "chromera",
     "how": "Lv 50",
     "num": -60
    },
    {
+    "pokemon": "pluffle",
+    "how": "Egg",
+    "num": -40
+   },
+   {
     "pokemon": "naviathan",
     "how": "Lv 1",
     "num": -38
+   },
+   {
+    "pokemon": "snugglow",
+    "how": "Egg",
+    "num": -34
    },
    {
     "pokemon": "arghonaut",
@@ -58713,6 +58828,11 @@
     "num": -30
    },
    {
+    "pokemon": "cupra",
+    "how": "Egg",
+    "num": -25
+   },
+   {
     "pokemon": "charizard",
     "how": "Lv 36",
     "num": 6
@@ -58954,6 +59074,26 @@
     "num": -241
    },
    {
+    "pokemon": "cresceidon",
+    "how": "Egg",
+    "num": -72
+   },
+   {
+    "pokemon": "scattervein",
+    "how": "Egg",
+    "num": -70
+   },
+   {
+    "pokemon": "ababo",
+    "how": "Egg",
+    "num": -69
+   },
+   {
+    "pokemon": "nohface",
+    "how": "Egg",
+    "num": -61
+   },
+   {
     "pokemon": "jumbao",
     "how": "Lv 30",
     "num": -44
@@ -58962,6 +59102,11 @@
     "pokemon": "mumbao",
     "how": "Lv 30",
     "num": -43
+   },
+   {
+    "pokemon": "pluffle",
+    "how": "Egg",
+    "num": -40
    },
    {
     "pokemon": "aurumoth",
@@ -58977,6 +59122,11 @@
     "pokemon": "cupra",
     "how": "Lv 31",
     "num": -25
+   },
+   {
+    "pokemon": "breezi",
+    "how": "Egg",
+    "num": -7
    },
    {
     "pokemon": "eevee",
@@ -59341,6 +59491,11 @@
   "priority": 0,
   "learnedBy": [
    {
+    "pokemon": "breezi",
+    "how": "Egg",
+    "num": -7
+   },
+   {
     "pokemon": "uxie",
     "how": "Lv 1",
     "num": 480
@@ -59415,6 +59570,16 @@
     "pokemon": "cocancer",
     "how": "Lv 46",
     "num": -161
+   },
+   {
+    "pokemon": "mumbao",
+    "how": "Egg",
+    "num": -43
+   },
+   {
+    "pokemon": "crucibelle",
+    "how": "Egg",
+    "num": -39
    },
    {
     "pokemon": "pyroak",
@@ -59723,6 +59888,16 @@
   "pp": 10,
   "priority": 0,
   "learnedBy": [
+   {
+    "pokemon": "mumbao",
+    "how": "Egg",
+    "num": -43
+   },
+   {
+    "pokemon": "embirch",
+    "how": "Egg",
+    "num": -4
+   },
    {
     "pokemon": "budew",
     "how": "Lv 1",
@@ -61255,6 +61430,11 @@
     "num": -122
    },
    {
+    "pokemon": "swirlpool",
+    "how": "Egg",
+    "num": -51
+   },
+   {
     "pokemon": "crucibelle",
     "how": "Lv 40",
     "num": -39
@@ -61432,7 +61612,7 @@
    },
    {
     "pokemon": "smogecko",
-    "how": "TM",
+    "how": "Egg",
     "num": -48
    },
    {
@@ -63065,7 +63245,7 @@
    },
    {
     "pokemon": "cawdet",
-    "how": "TM",
+    "how": "Egg",
     "num": -30
    },
    {
@@ -67595,7 +67775,7 @@
    },
    {
     "pokemon": "cawdet",
-    "how": "TM",
+    "how": "Egg",
     "num": -30
    },
    {
@@ -69729,6 +69909,11 @@
     "num": -78
    },
    {
+    "pokemon": "saharascal",
+    "how": "Egg",
+    "num": -67
+   },
+   {
     "pokemon": "aurumoth",
     "how": "Lv 21",
     "num": -27
@@ -69757,6 +69942,11 @@
     "pokemon": "rebble",
     "how": "Lv 29",
     "num": -9
+   },
+   {
+    "pokemon": "revenankh",
+    "how": "Egg",
+    "num": -3
    },
    {
     "pokemon": "charmander",
@@ -70347,6 +70537,11 @@
     "num": -51
    },
    {
+    "pokemon": "volkritter",
+    "how": "Egg",
+    "num": -32
+   },
+   {
     "pokemon": "arghonaut",
     "how": "Lv 16",
     "num": -13
@@ -70593,6 +70788,11 @@
     "num": -32
    },
    {
+    "pokemon": "mollux",
+    "how": "Egg",
+    "num": -24
+   },
+   {
     "pokemon": "finneon",
     "how": "Lv 33",
     "num": 456
@@ -70733,6 +70933,16 @@
     "pokemon": "brailip",
     "how": "Lv 35",
     "num": -133
+   },
+   {
+    "pokemon": "dorsoil",
+    "how": "Egg",
+    "num": -64
+   },
+   {
+    "pokemon": "monohm",
+    "how": "Egg",
+    "num": -62
    },
    {
     "pokemon": "plasmanta",
@@ -70991,6 +71201,21 @@
     "pokemon": "chromera",
     "how": "Lv 60",
     "num": -60
+   },
+   {
+    "pokemon": "miasmite",
+    "how": "Egg",
+    "num": -58
+   },
+   {
+    "pokemon": "brattler",
+    "how": "Egg",
+    "num": -28
+   },
+   {
+    "pokemon": "embirch",
+    "how": "Egg",
+    "num": -4
    },
    {
     "pokemon": "vileplume",
@@ -71399,6 +71624,11 @@
     "pokemon": "empirilla",
     "how": "Lv 25",
     "num": -128
+   },
+   {
+    "pokemon": "volkritter",
+    "how": "Egg",
+    "num": -32
    },
    {
     "pokemon": "cranidos",
@@ -72486,7 +72716,7 @@
    },
    {
     "pokemon": "snugglow",
-    "how": "TM",
+    "how": "Egg",
     "num": -34
    },
    {
@@ -74083,7 +74313,7 @@
    },
    {
     "pokemon": "scratchet",
-    "how": "TM",
+    "how": "Egg",
     "num": -20
    },
    {
@@ -74093,7 +74323,7 @@
    },
    {
     "pokemon": "voodoll",
-    "how": "TM",
+    "how": "Egg",
     "num": -18
    },
    {
@@ -75194,6 +75424,16 @@
     "num": -146
    },
    {
+    "pokemon": "pluffle",
+    "how": "Egg",
+    "num": -40
+   },
+   {
+    "pokemon": "brattler",
+    "how": "Egg",
+    "num": -28
+   },
+   {
     "pokemon": "voodoom",
     "how": "Lv 55",
     "num": -19
@@ -75348,6 +75588,11 @@
     "pokemon": "cawmodore",
     "how": "Lv 56",
     "num": -31
+   },
+   {
+    "pokemon": "brattler",
+    "how": "Egg",
+    "num": -28
    },
    {
     "pokemon": "stunky",
@@ -76198,6 +76443,11 @@
     "pokemon": "miasmite",
     "how": "Lv 8",
     "num": -58
+   },
+   {
+    "pokemon": "floatoy",
+    "how": "Egg",
+    "num": -36
    },
    {
     "pokemon": "volkraken",
@@ -78990,6 +79240,26 @@
   "pp": 5,
   "priority": 0,
   "learnedBy": [
+   {
+    "pokemon": "dorsoil",
+    "how": "Egg",
+    "num": -64
+   },
+   {
+    "pokemon": "crucibelle",
+    "how": "Egg",
+    "num": -39
+   },
+   {
+    "pokemon": "breezi",
+    "how": "Egg",
+    "num": -7
+   },
+   {
+    "pokemon": "embirch",
+    "how": "Egg",
+    "num": -4
+   },
    {
     "pokemon": "geodude",
     "how": "Egg",
@@ -83624,6 +83894,11 @@
     "num": -153
    },
    {
+    "pokemon": "smogecko",
+    "how": "Egg",
+    "num": -48
+   },
+   {
     "pokemon": "cubone",
     "how": "Lv 41",
     "num": 104
@@ -87696,7 +87971,7 @@
    },
    {
     "pokemon": "syclar",
-    "how": "TM",
+    "how": "Egg",
     "num": -1
    },
    {
@@ -88297,7 +88572,7 @@
    },
    {
     "pokemon": "cupra",
-    "how": "TM",
+    "how": "Egg",
     "num": -25
    },
    {
@@ -88788,7 +89063,7 @@
    },
    {
     "pokemon": "privatyke",
-    "how": "TM",
+    "how": "Egg",
     "num": -12
    },
    {
@@ -91639,6 +91914,11 @@
     "num": -223
    },
    {
+    "pokemon": "smogecko",
+    "how": "Egg",
+    "num": -48
+   },
+   {
     "pokemon": "cawmodore",
     "how": "Lv 1",
     "num": -31
@@ -94386,6 +94666,11 @@
     "num": -51
    },
    {
+    "pokemon": "volkritter",
+    "how": "Egg",
+    "num": -32
+   },
+   {
     "pokemon": "wormadam",
     "how": "Lv 35",
     "num": 413
@@ -96355,7 +96640,7 @@
    },
    {
     "pokemon": "mollux",
-    "how": "TM",
+    "how": "Egg",
     "num": -24
    },
    {
@@ -98802,6 +99087,11 @@
     "num": -189
    },
    {
+    "pokemon": "dorsoil",
+    "how": "Egg",
+    "num": -64
+   },
+   {
     "pokemon": "arghonaut",
     "how": "Lv 30",
     "num": -13
@@ -99027,6 +99317,11 @@
   "priority": 0,
   "learnedBy": [
    {
+    "pokemon": "venomicon",
+    "how": "Egg",
+    "num": -66
+   },
+   {
     "pokemon": "smokomodo",
     "how": "Lv 20",
     "num": -50
@@ -99159,7 +99454,7 @@
    },
    {
     "pokemon": "cupra",
-    "how": "TM",
+    "how": "Egg",
     "num": -25
    },
    {
@@ -99189,7 +99484,7 @@
    },
    {
     "pokemon": "privatyke",
-    "how": "TM",
+    "how": "Egg",
     "num": -12
    },
    {
@@ -100621,7 +100916,7 @@
    },
    {
     "pokemon": "scratchet",
-    "how": "TM",
+    "how": "Egg",
     "num": -20
    },
    {
@@ -102323,6 +102618,11 @@
     "pokemon": "cupra",
     "how": "Lv 18",
     "num": -25
+   },
+   {
+    "pokemon": "mollux",
+    "how": "Egg",
+    "num": -24
    },
    {
     "pokemon": "lucario",
@@ -104517,7 +104817,7 @@
    },
    {
     "pokemon": "mollux",
-    "how": "TM",
+    "how": "Egg",
     "num": -24
    },
    {
@@ -107663,7 +107963,7 @@
    },
    {
     "pokemon": "nohface",
-    "how": "TM",
+    "how": "Egg",
     "num": -61
    },
    {
@@ -108684,6 +108984,11 @@
     "num": -114
    },
    {
+    "pokemon": "saharascal",
+    "how": "Egg",
+    "num": -67
+   },
+   {
     "pokemon": "dorsoil",
     "how": "Lv 15",
     "num": -64
@@ -108699,9 +109004,24 @@
     "num": -53
    },
    {
+    "pokemon": "fawnifer",
+    "how": "Egg",
+    "num": -45
+   },
+   {
     "pokemon": "malaconda",
     "how": "Lv 1",
     "num": -29
+   },
+   {
+    "pokemon": "mollux",
+    "how": "Egg",
+    "num": -24
+   },
+   {
+    "pokemon": "scratchet",
+    "how": "Egg",
+    "num": -20
    },
    {
     "pokemon": "colossoil",
@@ -109322,6 +109642,11 @@
   "priority": 0,
   "learnedBy": [
    {
+    "pokemon": "cawdet",
+    "how": "Egg",
+    "num": -30
+   },
+   {
     "pokemon": "scyther",
     "how": "Egg",
     "num": 123
@@ -109543,9 +109868,24 @@
     "num": -60
    },
    {
+    "pokemon": "miasmite",
+    "how": "Egg",
+    "num": -58
+   },
+   {
+    "pokemon": "swirlpool",
+    "how": "Egg",
+    "num": -51
+   },
+   {
     "pokemon": "mollux",
     "how": "Lv 52",
     "num": -24
+   },
+   {
+    "pokemon": "privatyke",
+    "how": "Egg",
+    "num": -12
    },
    {
     "pokemon": "kadabra",
@@ -109838,6 +110178,11 @@
   "pp": 10,
   "priority": 0,
   "learnedBy": [
+   {
+    "pokemon": "brattler",
+    "how": "Egg",
+    "num": -28
+   },
    {
     "pokemon": "mrmime",
     "how": "Lv 33",
@@ -111771,6 +112116,11 @@
   "priority": 0,
   "learnedBy": [
    {
+    "pokemon": "volkritter",
+    "how": "Egg",
+    "num": -32
+   },
+   {
     "pokemon": "toedscruel",
     "how": "Lv 1",
     "num": 949
@@ -111790,6 +112140,11 @@
     "pokemon": "corsoreef",
     "how": "Lv 16",
     "num": -162
+   },
+   {
+    "pokemon": "floatoy",
+    "how": "Egg",
+    "num": -36
    },
    {
     "pokemon": "squirtle",
@@ -118082,6 +118437,11 @@
     "num": -12
    },
    {
+    "pokemon": "embirch",
+    "how": "Egg",
+    "num": -4
+   },
+   {
     "pokemon": "mankey",
     "how": "Egg",
     "num": 56
@@ -119477,7 +119837,7 @@
    },
    {
     "pokemon": "monohm",
-    "how": "TM",
+    "how": "Egg",
     "num": -62
    },
    {
@@ -121618,6 +121978,16 @@
     "pokemon": "barewl",
     "how": "Lv 17",
     "num": -114
+   },
+   {
+    "pokemon": "crucibelle",
+    "how": "Egg",
+    "num": -39
+   },
+   {
+    "pokemon": "rebble",
+    "how": "Egg",
+    "num": -9
    },
    {
     "pokemon": "dwebble",
@@ -129148,6 +129518,11 @@
     "num": -114
    },
    {
+    "pokemon": "crucibelle",
+    "how": "Egg",
+    "num": -39
+   },
+   {
     "pokemon": "stratagem",
     "how": "Lv 1",
     "num": -11
@@ -129557,6 +129932,11 @@
     "pokemon": "tomohawk",
     "how": "Lv 26",
     "num": -21
+   },
+   {
+    "pokemon": "scratchet",
+    "how": "Egg",
+    "num": -20
    },
    {
     "pokemon": "vespiquen",
@@ -130058,6 +130438,11 @@
     "pokemon": "solotl",
     "how": "Lv 32",
     "num": -56
+   },
+   {
+    "pokemon": "cupra",
+    "how": "Egg",
+    "num": -25
    },
    {
     "pokemon": "fidgit",
@@ -132606,12 +132991,12 @@
    },
    {
     "pokemon": "smogecko",
-    "how": "TM",
+    "how": "Egg",
     "num": -48
    },
    {
     "pokemon": "pajantom",
-    "how": "TM",
+    "how": "Egg",
     "num": -42
    },
    {
@@ -132626,7 +133011,7 @@
    },
    {
     "pokemon": "breezi",
-    "how": "TM",
+    "how": "Egg",
     "num": -7
    },
    {
@@ -134749,7 +135134,7 @@
    },
    {
     "pokemon": "volkritter",
-    "how": "TM",
+    "how": "Egg",
     "num": -32
    },
    {
@@ -134769,7 +135154,7 @@
    },
    {
     "pokemon": "privatyke",
-    "how": "TM",
+    "how": "Egg",
     "num": -12
    },
    {
@@ -137260,6 +137645,11 @@
     "num": -70
    },
    {
+    "pokemon": "dorsoil",
+    "how": "Egg",
+    "num": -64
+   },
+   {
     "pokemon": "smokomodo",
     "how": "Lv 49",
     "num": -50
@@ -137283,6 +137673,16 @@
     "pokemon": "cawdet",
     "how": "Lv 16",
     "num": -30
+   },
+   {
+    "pokemon": "brattler",
+    "how": "Egg",
+    "num": -28
+   },
+   {
+    "pokemon": "voodoll",
+    "how": "Egg",
+    "num": -18
    },
    {
     "pokemon": "rattata",
@@ -139131,6 +139531,16 @@
     "num": -147
    },
    {
+    "pokemon": "scattervein",
+    "how": "Egg",
+    "num": -70
+   },
+   {
+    "pokemon": "ababo",
+    "how": "Egg",
+    "num": -69
+   },
+   {
     "pokemon": "mankey",
     "how": "Lv 26",
     "num": 56
@@ -139220,6 +139630,11 @@
     "pokemon": "caimanoe",
     "how": "Lv 62",
     "num": -37
+   },
+   {
+    "pokemon": "breezi",
+    "how": "Egg",
+    "num": -7
    },
    {
     "pokemon": "geodude",
@@ -142278,9 +142693,39 @@
     "num": -126
    },
    {
+    "pokemon": "protowatt",
+    "how": "Egg",
+    "num": -65
+   },
+   {
+    "pokemon": "cupra",
+    "how": "Egg",
+    "num": -25
+   },
+   {
+    "pokemon": "voodoll",
+    "how": "Egg",
+    "num": -18
+   },
+   {
     "pokemon": "krilowatt",
     "how": "Lv 33",
     "num": -17
+   },
+   {
+    "pokemon": "embirch",
+    "how": "Egg",
+    "num": -4
+   },
+   {
+    "pokemon": "revenankh",
+    "how": "Egg",
+    "num": -3
+   },
+   {
+    "pokemon": "syclar",
+    "how": "Egg",
+    "num": -1
    },
    {
     "pokemon": "rattata",
@@ -142921,6 +143366,11 @@
     "pokemon": "empirilla",
     "how": "Lv 41",
     "num": -128
+   },
+   {
+    "pokemon": "privatyke",
+    "how": "Egg",
+    "num": -12
    },
    {
     "pokemon": "psyduck",
@@ -144624,12 +145074,12 @@
    },
    {
     "pokemon": "nohface",
-    "how": "TM",
+    "how": "Egg",
     "num": -61
    },
    {
     "pokemon": "necturine",
-    "how": "TM",
+    "how": "Egg",
     "num": -22
    },
    {
@@ -150786,6 +151236,11 @@
     "num": -69
    },
    {
+    "pokemon": "crucibelle",
+    "how": "Egg",
+    "num": -39
+   },
+   {
     "pokemon": "stratagem",
     "how": "Lv 1",
     "num": -11
@@ -151177,6 +151632,26 @@
     "num": -108
    },
    {
+    "pokemon": "monohm",
+    "how": "Egg",
+    "num": -62
+   },
+   {
+    "pokemon": "nohface",
+    "how": "Egg",
+    "num": -61
+   },
+   {
+    "pokemon": "solotl",
+    "how": "Egg",
+    "num": -56
+   },
+   {
+    "pokemon": "smogecko",
+    "how": "Egg",
+    "num": -48
+   },
+   {
     "pokemon": "giratina",
     "how": "Lv 1",
     "num": 487
@@ -151283,6 +151758,21 @@
     "num": -212
    },
    {
+    "pokemon": "chuggalong",
+    "how": "Egg",
+    "num": -75
+   },
+   {
+    "pokemon": "draggalong",
+    "how": "Egg",
+    "num": -74
+   },
+   {
+    "pokemon": "chuggon",
+    "how": "Egg",
+    "num": -73
+   },
+   {
     "pokemon": "equilibra",
     "how": "Lv 52",
     "num": -55
@@ -151301,6 +151791,11 @@
     "pokemon": "volkritter",
     "how": "Lv 44",
     "num": -32
+   },
+   {
+    "pokemon": "revenankh",
+    "how": "Egg",
+    "num": -3
    },
    {
     "pokemon": "gastly",
@@ -154053,6 +154548,11 @@
     "num": -69
    },
    {
+    "pokemon": "cupra",
+    "how": "Egg",
+    "num": -25
+   },
+   {
     "pokemon": "stratagem",
     "how": "Lv 16",
     "num": -11
@@ -154066,6 +154566,11 @@
     "pokemon": "rebble",
     "how": "Lv 16",
     "num": -9
+   },
+   {
+    "pokemon": "breezi",
+    "how": "Egg",
+    "num": -7
    },
    {
     "pokemon": "nidoranf",
@@ -156171,12 +156676,12 @@
    },
    {
     "pokemon": "dorsoil",
-    "how": "TM",
+    "how": "Egg",
     "num": -64
    },
    {
     "pokemon": "fawnifer",
-    "how": "TM",
+    "how": "Egg",
     "num": -45
    },
    {
@@ -156206,7 +156711,7 @@
    },
    {
     "pokemon": "breezi",
-    "how": "TM",
+    "how": "Egg",
     "num": -7
    },
    {
@@ -156231,7 +156736,7 @@
    },
    {
     "pokemon": "syclar",
-    "how": "TM",
+    "how": "Egg",
     "num": -1
    },
    {
@@ -159658,6 +160163,11 @@
     "num": -215
    },
    {
+    "pokemon": "fawnifer",
+    "how": "Egg",
+    "num": -45
+   },
+   {
     "pokemon": "nidoranf",
     "how": "Lv 12",
     "num": 29
@@ -161038,6 +161548,11 @@
     "num": -15
    },
    {
+    "pokemon": "embirch",
+    "how": "Egg",
+    "num": -4
+   },
+   {
     "pokemon": "onix",
     "how": "Lv 30",
     "num": 95
@@ -162257,7 +162772,7 @@
    },
    {
     "pokemon": "floatoy",
-    "how": "TM",
+    "how": "Egg",
     "num": -36
    },
    {
@@ -163762,6 +164277,26 @@
     "num": -118
    },
    {
+    "pokemon": "chuggalong",
+    "how": "Egg",
+    "num": -75
+   },
+   {
+    "pokemon": "draggalong",
+    "how": "Egg",
+    "num": -74
+   },
+   {
+    "pokemon": "chuggon",
+    "how": "Egg",
+    "num": -73
+   },
+   {
+    "pokemon": "miasmite",
+    "how": "Egg",
+    "num": -58
+   },
+   {
     "pokemon": "astrolotl",
     "how": "Lv 56",
     "num": -57
@@ -163934,7 +164469,7 @@
    },
    {
     "pokemon": "miasmite",
-    "how": "TM",
+    "how": "Egg",
     "num": -58
    },
    {
@@ -165957,6 +166492,11 @@
     "num": -207
    },
    {
+    "pokemon": "pajantom",
+    "how": "Egg",
+    "num": -42
+   },
+   {
     "pokemon": "kerfluffle",
     "how": "Lv 39",
     "num": -41
@@ -166096,6 +166636,11 @@
     "pokemon": "floatoy",
     "how": "Lv 30",
     "num": -36
+   },
+   {
+    "pokemon": "cawdet",
+    "how": "Egg",
+    "num": -30
    },
    {
     "pokemon": "spearow",
@@ -167531,7 +168076,7 @@
    },
    {
     "pokemon": "syclar",
-    "how": "TM",
+    "how": "Egg",
     "num": -1
    },
    {
@@ -173479,7 +174024,7 @@
    },
    {
     "pokemon": "dorsoil",
-    "how": "TM",
+    "how": "Egg",
     "num": -64
    },
    {
@@ -174575,7 +175120,7 @@
    },
    {
     "pokemon": "shox",
-    "how": "TM",
+    "how": "Egg",
     "num": -77
    },
    {
@@ -174595,7 +175140,7 @@
    },
    {
     "pokemon": "smogecko",
-    "how": "TM",
+    "how": "Egg",
     "num": -48
    },
    {
@@ -174610,7 +175155,7 @@
    },
    {
     "pokemon": "fawnifer",
-    "how": "TM",
+    "how": "Egg",
     "num": -45
    },
    {
@@ -174620,7 +175165,7 @@
    },
    {
     "pokemon": "cawdet",
-    "how": "TM",
+    "how": "Egg",
     "num": -30
    },
    {
@@ -183687,6 +184232,31 @@
     "num": -154
    },
    {
+    "pokemon": "chuggalong",
+    "how": "Egg",
+    "num": -75
+   },
+   {
+    "pokemon": "draggalong",
+    "how": "Egg",
+    "num": -74
+   },
+   {
+    "pokemon": "chuggon",
+    "how": "Egg",
+    "num": -73
+   },
+   {
+    "pokemon": "protowatt",
+    "how": "Egg",
+    "num": -65
+   },
+   {
+    "pokemon": "breezi",
+    "how": "Egg",
+    "num": -7
+   },
+   {
     "pokemon": "buneary",
     "how": "Lv 40",
     "num": 427
@@ -184401,6 +184971,21 @@
     "num": -206
    },
    {
+    "pokemon": "scattervein",
+    "how": "Egg",
+    "num": -70
+   },
+   {
+    "pokemon": "ababo",
+    "how": "Egg",
+    "num": -69
+   },
+   {
+    "pokemon": "mumbao",
+    "how": "Egg",
+    "num": -43
+   },
+   {
     "pokemon": "crucibelle",
     "how": "Lv 68",
     "num": -39
@@ -184831,6 +185416,16 @@
     "pokemon": "raptorch",
     "how": "Lv 38",
     "num": -102
+   },
+   {
+    "pokemon": "scattervein",
+    "how": "Egg",
+    "num": -70
+   },
+   {
+    "pokemon": "ababo",
+    "how": "Egg",
+    "num": -69
    },
    {
     "pokemon": "arcanine",
@@ -191098,6 +191693,11 @@
     "num": -215
    },
    {
+    "pokemon": "dorsoil",
+    "how": "Egg",
+    "num": -64
+   },
+   {
     "pokemon": "nohface",
     "how": "Lv 8",
     "num": -61
@@ -192898,7 +193498,7 @@
    },
    {
     "pokemon": "nohface",
-    "how": "TM",
+    "how": "Egg",
     "num": -61
    },
    {
@@ -192913,7 +193513,7 @@
    },
    {
     "pokemon": "floatoy",
-    "how": "TM",
+    "how": "Egg",
     "num": -36
    },
    {
@@ -193301,6 +193901,21 @@
     "pokemon": "jackdeary",
     "how": "Lv 22",
     "num": -200
+   },
+   {
+    "pokemon": "floatoy",
+    "how": "Egg",
+    "num": -36
+   },
+   {
+    "pokemon": "brattler",
+    "how": "Egg",
+    "num": -28
+   },
+   {
+    "pokemon": "cupra",
+    "how": "Egg",
+    "num": -25
    },
    {
     "pokemon": "monferno",
@@ -193729,6 +194344,11 @@
   "pp": 25,
   "priority": 0,
   "learnedBy": [
+   {
+    "pokemon": "syclar",
+    "how": "Egg",
+    "num": -1
+   },
    {
     "pokemon": "kricketune",
     "how": "Lv 36",
@@ -195197,7 +195817,7 @@
    },
    {
     "pokemon": "dorsoil",
-    "how": "TM",
+    "how": "Egg",
     "num": -64
    },
    {
@@ -197076,7 +197696,7 @@
    },
    {
     "pokemon": "smogecko",
-    "how": "TM",
+    "how": "Egg",
     "num": -48
    },
    {
@@ -197091,7 +197711,7 @@
    },
    {
     "pokemon": "mollux",
-    "how": "TM",
+    "how": "Egg",
     "num": -24
    },
    {
@@ -197651,6 +198271,11 @@
     "num": -60
    },
    {
+    "pokemon": "miasmite",
+    "how": "Egg",
+    "num": -58
+   },
+   {
     "pokemon": "golisopod",
     "how": "Lv 0",
     "num": 768
@@ -197736,6 +198361,11 @@
     "pokemon": "saharascal",
     "how": "Lv 44",
     "num": -67
+   },
+   {
+    "pokemon": "dorsoil",
+    "how": "Egg",
+    "num": -64
    },
    {
     "pokemon": "smokomodo",
@@ -197867,6 +198497,16 @@
     "pokemon": "miasmedic",
     "how": "Lv 38",
     "num": -199
+   },
+   {
+    "pokemon": "dorsoil",
+    "how": "Egg",
+    "num": -64
+   },
+   {
+    "pokemon": "nohface",
+    "how": "Egg",
+    "num": -61
    },
    {
     "pokemon": "squirtle",
@@ -198542,7 +199182,7 @@
    },
    {
     "pokemon": "smogecko",
-    "how": "TM",
+    "how": "Egg",
     "num": -48
    },
    {
@@ -210665,6 +211305,11 @@
   "priority": 2,
   "learnedBy": [
    {
+    "pokemon": "protowatt",
+    "how": "Egg",
+    "num": -65
+   },
+   {
     "pokemon": "malaconda",
     "how": "Lv 1",
     "num": -29
@@ -212868,6 +213513,16 @@
     "num": -121
    },
    {
+    "pokemon": "nohface",
+    "how": "Egg",
+    "num": -61
+   },
+   {
+    "pokemon": "solotl",
+    "how": "Egg",
+    "num": -56
+   },
+   {
     "pokemon": "kerfluffle",
     "how": "Lv 1",
     "num": -41
@@ -212876,6 +213531,11 @@
     "pokemon": "pluffle",
     "how": "Lv 6",
     "num": -40
+   },
+   {
+    "pokemon": "scratchet",
+    "how": "Egg",
+    "num": -20
    },
    {
     "pokemon": "arghonaut",
@@ -216292,6 +216952,11 @@
     "num": -199
    },
    {
+    "pokemon": "brattler",
+    "how": "Egg",
+    "num": -28
+   },
+   {
     "pokemon": "pyroak",
     "how": "Lv 1",
     "num": -6
@@ -216742,6 +217407,16 @@
     "pokemon": "tonemy",
     "how": "Lv 37",
     "num": -119
+   },
+   {
+    "pokemon": "shox",
+    "how": "Egg",
+    "num": -77
+   },
+   {
+    "pokemon": "cresceidon",
+    "how": "Egg",
+    "num": -72
    },
    {
     "pokemon": "saharaja",
@@ -219173,6 +219848,16 @@
     "num": -225
    },
    {
+    "pokemon": "dorsoil",
+    "how": "Egg",
+    "num": -64
+   },
+   {
+    "pokemon": "mumbao",
+    "how": "Egg",
+    "num": -43
+   },
+   {
     "pokemon": "tomohawk",
     "how": "Lv 51",
     "num": -21
@@ -219191,6 +219876,11 @@
     "pokemon": "privatyke",
     "how": "Lv 44",
     "num": -12
+   },
+   {
+    "pokemon": "syclar",
+    "how": "Egg",
+    "num": -1
    },
    {
     "pokemon": "nidoqueen",
@@ -224339,6 +225029,16 @@
     "num": -204
    },
    {
+    "pokemon": "dorsoil",
+    "how": "Egg",
+    "num": -64
+   },
+   {
+    "pokemon": "nohface",
+    "how": "Egg",
+    "num": -61
+   },
+   {
     "pokemon": "malaconda",
     "how": "Lv 20",
     "num": -29
@@ -224347,6 +225047,16 @@
     "pokemon": "brattler",
     "how": "Lv 20",
     "num": -28
+   },
+   {
+    "pokemon": "voodoll",
+    "how": "Egg",
+    "num": -18
+   },
+   {
+    "pokemon": "revenankh",
+    "how": "Egg",
+    "num": -3
    },
    {
     "pokemon": "wormadam",
@@ -230681,6 +231391,11 @@
     "num": -112
    },
    {
+    "pokemon": "brattler",
+    "how": "Egg",
+    "num": -28
+   },
+   {
     "pokemon": "butterfree",
     "how": "Lv 14",
     "num": 12
@@ -231004,7 +231719,7 @@
    },
    {
     "pokemon": "syclar",
-    "how": "TM",
+    "how": "Egg",
     "num": -1
    },
    {
@@ -231464,9 +232179,29 @@
   "priority": 0,
   "learnedBy": [
    {
+    "pokemon": "chuggalong",
+    "how": "Egg",
+    "num": -75
+   },
+   {
+    "pokemon": "draggalong",
+    "how": "Egg",
+    "num": -74
+   },
+   {
+    "pokemon": "chuggon",
+    "how": "Egg",
+    "num": -73
+   },
+   {
     "pokemon": "saharaja",
     "how": "Lv 1",
     "num": -68
+   },
+   {
+    "pokemon": "monohm",
+    "how": "Egg",
+    "num": -62
    },
    {
     "pokemon": "astrolotl",
@@ -231477,6 +232212,11 @@
     "pokemon": "solotl",
     "how": "Lv 32",
     "num": -56
+   },
+   {
+    "pokemon": "mollux",
+    "how": "Egg",
+    "num": -24
    },
    {
     "pokemon": "chansey",
@@ -231593,6 +232333,11 @@
     "pokemon": "cupra",
     "how": "Lv 1",
     "num": -25
+   },
+   {
+    "pokemon": "syclar",
+    "how": "Egg",
+    "num": -1
    },
    {
     "pokemon": "caterpie",
@@ -237979,6 +238724,16 @@
     "num": -119
    },
    {
+    "pokemon": "shox",
+    "how": "Egg",
+    "num": -77
+   },
+   {
+    "pokemon": "cresceidon",
+    "how": "Egg",
+    "num": -72
+   },
+   {
     "pokemon": "saharaja",
     "how": "Lv 1",
     "num": -68
@@ -238134,6 +238889,11 @@
   "pp": 20,
   "priority": 0,
   "learnedBy": [
+   {
+    "pokemon": "swirlpool",
+    "how": "Egg",
+    "num": -51
+   },
    {
     "pokemon": "kricketune",
     "how": "Lv 44",
@@ -238818,7 +239578,7 @@
    },
    {
     "pokemon": "mollux",
-    "how": "TM",
+    "how": "Egg",
     "num": -24
    },
    {
@@ -238828,7 +239588,7 @@
    },
    {
     "pokemon": "scratchet",
-    "how": "TM",
+    "how": "Egg",
     "num": -20
    },
    {
@@ -240039,6 +240799,16 @@
   "priority": 3,
   "learnedBy": [
    {
+    "pokemon": "swirlpool",
+    "how": "Egg",
+    "num": -51
+   },
+   {
+    "pokemon": "fawnifer",
+    "how": "Egg",
+    "num": -45
+   },
+   {
     "pokemon": "aurumoth",
     "how": "Lv 1",
     "num": -27
@@ -240164,6 +240934,11 @@
     "pokemon": "floatoy",
     "how": "Lv 1",
     "num": -36
+   },
+   {
+    "pokemon": "snugglow",
+    "how": "Egg",
+    "num": -34
    },
    {
     "pokemon": "poliwag",
@@ -240325,6 +241100,16 @@
     "pokemon": "tonemy",
     "how": "Lv 37",
     "num": -119
+   },
+   {
+    "pokemon": "shox",
+    "how": "Egg",
+    "num": -77
+   },
+   {
+    "pokemon": "cresceidon",
+    "how": "Egg",
+    "num": -72
    },
    {
     "pokemon": "saharaja",
@@ -240489,7 +241274,7 @@
    },
    {
     "pokemon": "pajantom",
-    "how": "TM",
+    "how": "Egg",
     "num": -42
    },
    {
@@ -240499,7 +241284,7 @@
    },
    {
     "pokemon": "brattler",
-    "how": "TM",
+    "how": "Egg",
     "num": -28
    },
    {
@@ -240509,7 +241294,7 @@
    },
    {
     "pokemon": "necturine",
-    "how": "TM",
+    "how": "Egg",
     "num": -22
    },
    {
@@ -241632,6 +242417,11 @@
   "priority": 4,
   "learnedBy": [
    {
+    "pokemon": "swirlpool",
+    "how": "Egg",
+    "num": -51
+   },
+   {
     "pokemon": "malaconda",
     "how": "Lv 44",
     "num": -29
@@ -241719,7 +242509,7 @@
    },
    {
     "pokemon": "privatyke",
-    "how": "TM",
+    "how": "Egg",
     "num": -12
    },
    {
@@ -241729,7 +242519,7 @@
    },
    {
     "pokemon": "breezi",
-    "how": "TM",
+    "how": "Egg",
     "num": -7
    },
    {
@@ -241739,7 +242529,7 @@
    },
    {
     "pokemon": "syclar",
-    "how": "TM",
+    "how": "Egg",
     "num": -1
    },
    {
@@ -242311,6 +243101,11 @@
   "pp": 10,
   "priority": 0,
   "learnedBy": [
+   {
+    "pokemon": "protowatt",
+    "how": "Egg",
+    "num": -65
+   },
    {
     "pokemon": "stratagem",
     "how": "Lv 56",
@@ -247292,7 +248087,18 @@
   "type": "Normal",
   "pp": 10,
   "priority": 0,
-  "learnedBy": []
+  "learnedBy": [
+   {
+    "pokemon": "mumbao",
+    "how": "Egg",
+    "num": -43
+   },
+   {
+    "pokemon": "voodoll",
+    "how": "Egg",
+    "num": -18
+   }
+  ]
  },
  "smellingsalt": {
   "name": "Smelling Salts",
@@ -250646,7 +251452,7 @@
    },
    {
     "pokemon": "mollux",
-    "how": "TM",
+    "how": "Egg",
     "num": -24
    },
    {
@@ -259686,6 +260492,11 @@
     "num": -204
    },
    {
+    "pokemon": "necturine",
+    "how": "Egg",
+    "num": -22
+   },
+   {
     "pokemon": "smeargle",
     "how": "Lv 1",
     "num": 235
@@ -260111,6 +260922,16 @@
     "num": -45
    },
    {
+    "pokemon": "snugglow",
+    "how": "Egg",
+    "num": -34
+   },
+   {
+    "pokemon": "syclar",
+    "how": "Egg",
+    "num": -1
+   },
+   {
     "pokemon": "venonat",
     "how": "Egg",
     "num": 48
@@ -260236,6 +261057,11 @@
     "pokemon": "harylect",
     "how": "Lv 30",
     "num": -150
+   },
+   {
+    "pokemon": "snugglow",
+    "how": "Egg",
+    "num": -34
    },
    {
     "pokemon": "electivire",
@@ -260532,6 +261358,11 @@
     "num": -171
    },
    {
+    "pokemon": "protowatt",
+    "how": "Egg",
+    "num": -65
+   },
+   {
     "pokemon": "syclant",
     "how": "Lv 67",
     "num": -2
@@ -260784,6 +261615,11 @@
     "pokemon": "kitsunoh",
     "how": "Lv 16",
     "num": -14
+   },
+   {
+    "pokemon": "revenankh",
+    "how": "Egg",
+    "num": -3
    },
    {
     "pokemon": "spiritomb",
@@ -266658,9 +267494,24 @@
   "priority": 3,
   "learnedBy": [
    {
+    "pokemon": "pluffle",
+    "how": "Egg",
+    "num": -40
+   },
+   {
+    "pokemon": "cawdet",
+    "how": "Egg",
+    "num": -30
+   },
+   {
     "pokemon": "stratagem",
     "how": "Lv 1",
     "num": -11
+   },
+   {
+    "pokemon": "revenankh",
+    "how": "Egg",
+    "num": -3
    },
    {
     "pokemon": "riolu",
@@ -266957,6 +267808,11 @@
     "pokemon": "fawnifer",
     "how": "Lv 9",
     "num": -45
+   },
+   {
+    "pokemon": "cawdet",
+    "how": "Egg",
+    "num": -30
    },
    {
     "pokemon": "pidgey",
@@ -267720,6 +268576,11 @@
     "num": -54
    },
    {
+    "pokemon": "scratchet",
+    "how": "Egg",
+    "num": -20
+   },
+   {
     "pokemon": "honchkrow",
     "how": "Lv 1",
     "num": 430
@@ -267827,6 +268688,11 @@
     "num": -64
    },
    {
+    "pokemon": "cawdet",
+    "how": "Egg",
+    "num": -30
+   },
+   {
     "pokemon": "malaconda",
     "how": "Lv 10",
     "num": -29
@@ -267835,6 +268701,11 @@
     "pokemon": "brattler",
     "how": "Lv 8",
     "num": -28
+   },
+   {
+    "pokemon": "voodoll",
+    "how": "Egg",
+    "num": -18
    },
    {
     "pokemon": "colossoil",
@@ -269459,7 +270330,7 @@
    },
    {
     "pokemon": "cupra",
-    "how": "TM",
+    "how": "Egg",
     "num": -25
    },
    {
@@ -271274,6 +272145,16 @@
     "num": -143
    },
    {
+    "pokemon": "nohface",
+    "how": "Egg",
+    "num": -61
+   },
+   {
+    "pokemon": "swirlpool",
+    "how": "Egg",
+    "num": -51
+   },
+   {
     "pokemon": "cresselia",
     "how": "Lv 24",
     "num": 488
@@ -272265,7 +273146,7 @@
    },
    {
     "pokemon": "floatoy",
-    "how": "TM",
+    "how": "Egg",
     "num": -36
    },
    {
@@ -280995,6 +281876,11 @@
   "priority": 0,
   "learnedBy": [
    {
+    "pokemon": "fawnifer",
+    "how": "Egg",
+    "num": -45
+   },
+   {
     "pokemon": "chansey",
     "how": "Egg",
     "num": 113
@@ -281074,6 +281960,11 @@
     "pokemon": "tikiki",
     "how": "Lv 55",
     "num": -181
+   },
+   {
+    "pokemon": "fawnifer",
+    "how": "Egg",
+    "num": -45
    },
    {
     "pokemon": "malaconda",
@@ -281212,6 +282103,11 @@
     "num": -20
    },
    {
+    "pokemon": "privatyke",
+    "how": "Egg",
+    "num": -12
+   },
+   {
     "pokemon": "lucario",
     "how": "Lv 20",
     "num": 448
@@ -281252,6 +282148,11 @@
   "pp": 10,
   "priority": 0,
   "learnedBy": [
+   {
+    "pokemon": "voodoll",
+    "how": "Egg",
+    "num": -18
+   },
    {
     "pokemon": "sandile",
     "how": "Lv 1",
@@ -281483,7 +282384,7 @@
    },
    {
     "pokemon": "monohm",
-    "how": "TM",
+    "how": "Egg",
     "num": -62
    },
    {
@@ -281978,6 +282879,11 @@
     "num": -193
    },
    {
+    "pokemon": "monohm",
+    "how": "Egg",
+    "num": -62
+   },
+   {
     "pokemon": "jynx",
     "how": "Lv 1",
     "num": 124
@@ -282172,6 +283078,11 @@
     "pokemon": "cubblfly",
     "how": "Lv 47",
     "num": -112
+   },
+   {
+    "pokemon": "swirlpool",
+    "how": "Egg",
+    "num": -51
    },
    {
     "pokemon": "vivillon",
@@ -283427,7 +284338,7 @@
    },
    {
     "pokemon": "brattler",
-    "how": "TM",
+    "how": "Egg",
     "num": -28
    },
    {
@@ -283907,6 +284818,11 @@
   "pp": 35,
   "priority": 0,
   "learnedBy": [
+   {
+    "pokemon": "brattler",
+    "how": "Egg",
+    "num": -28
+   },
    {
     "pokemon": "bulbasaur",
     "how": "Lv 15",
@@ -285376,6 +286292,21 @@
     "num": -119
    },
    {
+    "pokemon": "miasmite",
+    "how": "Egg",
+    "num": -58
+   },
+   {
+    "pokemon": "smogecko",
+    "how": "Egg",
+    "num": -48
+   },
+   {
+    "pokemon": "pajantom",
+    "how": "Egg",
+    "num": -42
+   },
+   {
     "pokemon": "necturna",
     "how": "Lv 1",
     "num": -23
@@ -285669,7 +286600,7 @@
    },
    {
     "pokemon": "nohface",
-    "how": "TM",
+    "how": "Egg",
     "num": -61
    },
    {
@@ -285699,7 +286630,7 @@
    },
    {
     "pokemon": "kitsunoh",
-    "how": "TM",
+    "how": "Egg",
     "num": -14
    },
    {
@@ -286726,6 +287657,11 @@
   "priority": 0,
   "learnedBy": [
    {
+    "pokemon": "swirlpool",
+    "how": "Egg",
+    "num": -51
+   },
+   {
     "pokemon": "voodoom",
     "how": "Lv 1",
     "num": -19
@@ -286734,6 +287670,11 @@
     "pokemon": "voodoll",
     "how": "Lv 8",
     "num": -18
+   },
+   {
+    "pokemon": "syclar",
+    "how": "Egg",
+    "num": -1
    },
    {
     "pokemon": "beedrill",
@@ -287534,6 +288475,11 @@
     "pokemon": "equilibra",
     "how": "Lv 1",
     "num": -55
+   },
+   {
+    "pokemon": "voodoll",
+    "how": "Egg",
+    "num": -18
    },
    {
     "pokemon": "kitsunoh",
@@ -288554,12 +289500,12 @@
    },
    {
     "pokemon": "saharascal",
-    "how": "TM",
+    "how": "Egg",
     "num": -67
    },
    {
     "pokemon": "nohface",
-    "how": "TM",
+    "how": "Egg",
     "num": -61
    },
    {
@@ -291168,6 +292114,11 @@
     "num": -22
    },
    {
+    "pokemon": "revenankh",
+    "how": "Egg",
+    "num": -3
+   },
+   {
     "pokemon": "drifloon",
     "how": "Lv 20",
     "num": 425
@@ -291292,6 +292243,11 @@
     "pokemon": "barand",
     "how": "Lv 26",
     "num": -170
+   },
+   {
+    "pokemon": "smogecko",
+    "how": "Egg",
+    "num": -48
    },
    {
     "pokemon": "revenankh",
@@ -292827,6 +293783,11 @@
   "priority": 0,
   "learnedBy": [
    {
+    "pokemon": "scratchet",
+    "how": "Egg",
+    "num": -20
+   },
+   {
     "pokemon": "buneary",
     "how": "Lv 1",
     "num": 427
@@ -293899,7 +294860,7 @@
    },
    {
     "pokemon": "necturine",
-    "how": "TM",
+    "how": "Egg",
     "num": -22
    },
    {
@@ -294776,7 +295737,7 @@
    },
    {
     "pokemon": "necturine",
-    "how": "TM",
+    "how": "Egg",
     "num": -22
    },
    {
@@ -299505,6 +300466,11 @@
     "num": -121
    },
    {
+    "pokemon": "shox",
+    "how": "Egg",
+    "num": -77
+   },
+   {
     "pokemon": "malaconda",
     "how": "Lv 32",
     "num": -29
@@ -301744,6 +302710,11 @@
     "num": -181
    },
    {
+    "pokemon": "embirch",
+    "how": "Egg",
+    "num": -4
+   },
+   {
     "pokemon": "bulbasaur",
     "how": "Egg",
     "num": 1
@@ -302422,7 +303393,7 @@
    },
    {
     "pokemon": "mumbao",
-    "how": "TM",
+    "how": "Egg",
     "num": -43
    },
    {
@@ -302447,7 +303418,7 @@
    },
    {
     "pokemon": "embirch",
-    "how": "TM",
+    "how": "Egg",
     "num": -4
    },
    {
@@ -303124,7 +304095,7 @@
    },
    {
     "pokemon": "necturine",
-    "how": "TM",
+    "how": "Egg",
     "num": -22
    },
    {
@@ -308668,7 +309639,7 @@
    },
    {
     "pokemon": "floatoy",
-    "how": "TM",
+    "how": "Egg",
     "num": -36
    },
    {
@@ -308678,7 +309649,7 @@
    },
    {
     "pokemon": "snugglow",
-    "how": "TM",
+    "how": "Egg",
     "num": -34
    },
    {
@@ -308688,7 +309659,7 @@
    },
    {
     "pokemon": "brattler",
-    "how": "TM",
+    "how": "Egg",
     "num": -28
    },
    {
@@ -308698,7 +309669,7 @@
    },
    {
     "pokemon": "scratchet",
-    "how": "TM",
+    "how": "Egg",
     "num": -20
    },
    {
@@ -309351,6 +310322,11 @@
     "pokemon": "shox",
     "how": "Lv 20",
     "num": -77
+   },
+   {
+    "pokemon": "monohm",
+    "how": "Egg",
+    "num": -62
    },
    {
     "pokemon": "arghonaut",
@@ -313358,6 +314334,11 @@
   "priority": 0,
   "learnedBy": [
    {
+    "pokemon": "cresceidon",
+    "how": "Egg",
+    "num": -72
+   },
+   {
     "pokemon": "astrolotl",
     "how": "Lv 50",
     "num": -57
@@ -313378,6 +314359,11 @@
     "num": -54
    },
    {
+    "pokemon": "mumbao",
+    "how": "Egg",
+    "num": -43
+   },
+   {
     "pokemon": "aurumoth",
     "how": "Lv 54",
     "num": -27
@@ -313386,6 +314372,11 @@
     "pokemon": "tomohawk",
     "how": "Lv 46",
     "num": -21
+   },
+   {
+    "pokemon": "breezi",
+    "how": "Egg",
+    "num": -7
    },
    {
     "pokemon": "buneary",
@@ -313495,7 +314486,7 @@
    },
    {
     "pokemon": "saharascal",
-    "how": "TM",
+    "how": "Egg",
     "num": -67
    },
    {
@@ -315750,7 +316741,7 @@
    },
    {
     "pokemon": "monohm",
-    "how": "TM",
+    "how": "Egg",
     "num": -62
    },
    {
@@ -315805,7 +316796,7 @@
    },
    {
     "pokemon": "cupra",
-    "how": "TM",
+    "how": "Egg",
     "num": -25
    },
    {
@@ -323661,7 +324652,7 @@
    },
    {
     "pokemon": "pajantom",
-    "how": "TM",
+    "how": "Egg",
     "num": -42
    },
    {
@@ -323676,7 +324667,7 @@
    },
    {
     "pokemon": "floatoy",
-    "how": "TM",
+    "how": "Egg",
     "num": -36
    },
    {
@@ -323686,7 +324677,7 @@
    },
    {
     "pokemon": "brattler",
-    "how": "TM",
+    "how": "Egg",
     "num": -28
    },
    {
@@ -325957,7 +326948,7 @@
    },
    {
     "pokemon": "floatoy",
-    "how": "TM",
+    "how": "Egg",
     "num": -36
    },
    {
@@ -328164,7 +329155,7 @@
    },
    {
     "pokemon": "voodoll",
-    "how": "TM",
+    "how": "Egg",
     "num": -18
    },
    {
@@ -329338,6 +330329,21 @@
   "priority": 0,
   "learnedBy": [
    {
+    "pokemon": "swirlpool",
+    "how": "Egg",
+    "num": -51
+   },
+   {
+    "pokemon": "pajantom",
+    "how": "Egg",
+    "num": -42
+   },
+   {
+    "pokemon": "volkritter",
+    "how": "Egg",
+    "num": -32
+   },
+   {
     "pokemon": "dewpider",
     "how": "Lv 1",
     "num": 751
@@ -329407,6 +330413,11 @@
     "pokemon": "mumbao",
     "how": "Lv 10",
     "num": -43
+   },
+   {
+    "pokemon": "necturine",
+    "how": "Egg",
+    "num": -22
    },
    {
     "pokemon": "oddish",
@@ -332460,6 +333471,21 @@
     "num": -100
    },
    {
+    "pokemon": "nohface",
+    "how": "Egg",
+    "num": -61
+   },
+   {
+    "pokemon": "pajantom",
+    "how": "Egg",
+    "num": -42
+   },
+   {
+    "pokemon": "floatoy",
+    "how": "Egg",
+    "num": -36
+   },
+   {
     "pokemon": "onix",
     "how": "Lv 45",
     "num": 95
@@ -332826,7 +333852,7 @@
    },
    {
     "pokemon": "venomicon",
-    "how": "TM",
+    "how": "Egg",
     "num": -66
    },
    {
@@ -332861,7 +333887,7 @@
    },
    {
     "pokemon": "crucibelle",
-    "how": "TM",
+    "how": "Egg",
     "num": -39
    },
    {
@@ -332871,7 +333897,7 @@
    },
    {
     "pokemon": "cawdet",
-    "how": "TM",
+    "how": "Egg",
     "num": -30
    },
    {
@@ -332881,7 +333907,7 @@
    },
    {
     "pokemon": "brattler",
-    "how": "TM",
+    "how": "Egg",
     "num": -28
    },
    {
@@ -332891,7 +333917,7 @@
    },
    {
     "pokemon": "voodoll",
-    "how": "TM",
+    "how": "Egg",
     "num": -18
    },
    {
@@ -335566,6 +336592,21 @@
   "priority": 0,
   "learnedBy": [
    {
+    "pokemon": "chuggalong",
+    "how": "Egg",
+    "num": -75
+   },
+   {
+    "pokemon": "draggalong",
+    "how": "Egg",
+    "num": -74
+   },
+   {
+    "pokemon": "chuggon",
+    "how": "Egg",
+    "num": -73
+   },
+   {
     "pokemon": "pachirisu",
     "how": "Lv 45",
     "num": 417
@@ -336000,6 +337041,11 @@
     "num": -28
    },
    {
+    "pokemon": "necturine",
+    "how": "Egg",
+    "num": -22
+   },
+   {
     "pokemon": "grovyle",
     "how": "Lv 29",
     "num": 253
@@ -336147,7 +337193,7 @@
    },
    {
     "pokemon": "necturine",
-    "how": "TM",
+    "how": "Egg",
     "num": -22
    },
    {
@@ -339350,6 +340396,16 @@
     "pokemon": "chromera",
     "how": "Lv 40",
     "num": -60
+   },
+   {
+    "pokemon": "solotl",
+    "how": "Egg",
+    "num": -56
+   },
+   {
+    "pokemon": "swirlpool",
+    "how": "Egg",
+    "num": -51
    },
    {
     "pokemon": "jumbao",
@@ -344950,6 +346006,11 @@
     "num": -50
    },
    {
+    "pokemon": "voodoll",
+    "how": "Egg",
+    "num": -18
+   },
+   {
     "pokemon": "arghonaut",
     "how": "Lv 16",
     "num": -13
@@ -344958,6 +346019,11 @@
     "pokemon": "privatyke",
     "how": "Lv 16",
     "num": -12
+   },
+   {
+    "pokemon": "revenankh",
+    "how": "Egg",
+    "num": -3
    },
    {
     "pokemon": "hitmonchan",
@@ -345894,6 +346960,11 @@
   "priority": 0,
   "learnedBy": [
    {
+    "pokemon": "breezi",
+    "how": "Egg",
+    "num": -7
+   },
+   {
     "pokemon": "uxie",
     "how": "Lv 1",
     "num": 480
@@ -346434,6 +347505,11 @@
     "num": -155
    },
    {
+    "pokemon": "venomicon",
+    "how": "Egg",
+    "num": -66
+   },
+   {
     "pokemon": "revenankh",
     "how": "Lv 16",
     "num": -3
@@ -346714,6 +347790,16 @@
     "pokemon": "minicorn",
     "how": "Lv 1",
     "num": -238
+   },
+   {
+    "pokemon": "protowatt",
+    "how": "Egg",
+    "num": -65
+   },
+   {
+    "pokemon": "breezi",
+    "how": "Egg",
+    "num": -7
    },
    {
     "pokemon": "lucario",
@@ -347133,6 +348219,16 @@
     "num": -157
    },
    {
+    "pokemon": "miasmite",
+    "how": "Egg",
+    "num": -58
+   },
+   {
+    "pokemon": "cupra",
+    "how": "Egg",
+    "num": -25
+   },
+   {
     "pokemon": "colossoil",
     "how": "Lv 56",
     "num": -16
@@ -347366,6 +348462,11 @@
     "num": -212
    },
    {
+    "pokemon": "venomicon",
+    "how": "Egg",
+    "num": -66
+   },
+   {
     "pokemon": "nohface",
     "how": "Lv 44",
     "num": -61
@@ -347391,9 +348492,24 @@
     "num": -32
    },
    {
+    "pokemon": "scratchet",
+    "how": "Egg",
+    "num": -20
+   },
+   {
+    "pokemon": "voodoll",
+    "how": "Egg",
+    "num": -18
+   },
+   {
     "pokemon": "kitsunoh",
     "how": "Lv 48",
     "num": -14
+   },
+   {
+    "pokemon": "revenankh",
+    "how": "Egg",
+    "num": -3
    },
    {
     "pokemon": "grimer",
@@ -348346,7 +349462,7 @@
    },
    {
     "pokemon": "nohface",
-    "how": "TM",
+    "how": "Egg",
     "num": -61
    },
    {
@@ -348361,7 +349477,7 @@
    },
    {
     "pokemon": "cawdet",
-    "how": "TM",
+    "how": "Egg",
     "num": -30
    },
    {
@@ -349313,6 +350429,11 @@
     "num": -100
    },
    {
+    "pokemon": "nohface",
+    "how": "Egg",
+    "num": -61
+   },
+   {
     "pokemon": "clefairy",
     "how": "Lv 45",
     "num": 35
@@ -349375,7 +350496,7 @@
    },
    {
     "pokemon": "protowatt",
-    "how": "TM",
+    "how": "Egg",
     "num": -65
    },
    {
@@ -349445,7 +350566,7 @@
    },
    {
     "pokemon": "floatoy",
-    "how": "TM",
+    "how": "Egg",
     "num": -36
    },
    {
@@ -349465,7 +350586,7 @@
    },
    {
     "pokemon": "voodoll",
-    "how": "TM",
+    "how": "Egg",
     "num": -18
    },
    {
@@ -349485,7 +350606,7 @@
    },
    {
     "pokemon": "breezi",
-    "how": "TM",
+    "how": "Egg",
     "num": -7
    },
    {
@@ -350292,6 +351413,16 @@
   "priority": 0,
   "learnedBy": [
    {
+    "pokemon": "voodoll",
+    "how": "Egg",
+    "num": -18
+   },
+   {
+    "pokemon": "breezi",
+    "how": "Egg",
+    "num": -7
+   },
+   {
     "pokemon": "jigglypuff",
     "how": "Lv 39",
     "num": 39
@@ -350372,6 +351503,11 @@
     "pokemon": "garlikid",
     "how": "Lv 45",
     "num": -256
+   },
+   {
+    "pokemon": "protowatt",
+    "how": "Egg",
+    "num": -65
    },
    {
     "pokemon": "equilibra",
@@ -350534,6 +351670,11 @@
     "pokemon": "birbie",
     "how": "Lv 43",
     "num": -108
+   },
+   {
+    "pokemon": "protowatt",
+    "how": "Egg",
+    "num": -65
    },
    {
     "pokemon": "krilowatt",
@@ -350735,6 +351876,11 @@
     "pokemon": "pahar",
     "how": "Lv 39",
     "num": -139
+   },
+   {
+    "pokemon": "cawdet",
+    "how": "Egg",
+    "num": -30
    },
    {
     "pokemon": "pidgey",
@@ -351443,7 +352589,7 @@
    },
    {
     "pokemon": "mumbao",
-    "how": "TM",
+    "how": "Egg",
     "num": -43
    },
    {
