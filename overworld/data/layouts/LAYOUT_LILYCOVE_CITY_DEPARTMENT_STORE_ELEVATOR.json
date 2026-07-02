@@ -1,0 +1,65 @@
+{
+  "id": "LAYOUT_LILYCOVE_CITY_DEPARTMENT_STORE_ELEVATOR",
+  "name": "LilycoveCity_DepartmentStoreElevator_Layout",
+  "game": "emerald",
+  "width": 5,
+  "height": 6,
+  "border_width": 0,
+  "border_height": 0,
+  "primary_tileset": "gTileset_Building",
+  "secondary_tileset": "gTileset_BattleFrontier",
+  "map": [
+    [
+      1832,
+      1834,
+      1834,
+      1834,
+      1836
+    ],
+    [
+      1840,
+      1841,
+      1841,
+      1841,
+      1844
+    ],
+    [
+      1848,
+      1849,
+      1849,
+      1849,
+      1852
+    ],
+    [
+      12892,
+      12893,
+      12893,
+      12893,
+      12893
+    ],
+    [
+      12900,
+      12901,
+      12901,
+      12901,
+      12902
+    ],
+    [
+      12900,
+      12879,
+      12887,
+      12901,
+      12902
+    ]
+  ],
+  "border": [
+    [
+      1,
+      1
+    ],
+    [
+      1,
+      1
+    ]
+  ]
+}

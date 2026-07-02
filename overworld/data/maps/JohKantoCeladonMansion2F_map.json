@@ -1,0 +1,74 @@
+{
+  "id": "MAP_JOHKANTO_CELADON_MANSION_2F",
+  "name": "CeladonMansion2F",
+  "layout": "LAYOUT_JOHKANTO_CELADON_MANSION_2F",
+  "music": "MUSIC_CELADON_CITY",
+  "region_map_section": "MAPSEC_CELADON_MANSION_2F",
+  "requires_flash": false,
+  "weather": "WEATHER_SUNNY",
+  "map_type": "MAP_TYPE_INDOOR",
+  "allow_cycling": false,
+  "allow_escaping": false,
+  "allow_running": true,
+  "show_map_name": false,
+  "floor_number": 0,
+  "battle_scene": "MAP_BATTLE_SCENE_NORMAL",
+  "connections": [],
+  "object_events": [],
+  "warp_events": [
+    {
+      "x": 0,
+      "y": 0,
+      "elevation": 0,
+      "dest_map": "MAP_JOHKANTO_CELADON_MANSION_1F",
+      "dest_warp_id": "3"
+    },
+    {
+      "x": 1,
+      "y": 0,
+      "elevation": 0,
+      "dest_map": "MAP_JOHKANTO_CELADON_MANSION_3F",
+      "dest_warp_id": "1"
+    },
+    {
+      "x": 6,
+      "y": 0,
+      "elevation": 0,
+      "dest_map": "MAP_JOHKANTO_CELADON_MANSION_3F",
+      "dest_warp_id": "2"
+    },
+    {
+      "x": 7,
+      "y": 0,
+      "elevation": 0,
+      "dest_map": "MAP_JOHKANTO_CELADON_MANSION_1F",
+      "dest_warp_id": "4"
+    }
+  ],
+  "coord_events": [],
+  "bg_events": [
+    {
+      "type": "sign",
+      "x": 0,
+      "y": 3,
+      "elevation": 0,
+      "player_facing_dir": "BG_EVENT_PLAYER_FACING_ANY",
+      "script": "CeladonMansion2FComputer"
+    },
+    {
+      "type": "sign",
+      "x": 2,
+      "y": 3,
+      "elevation": 0,
+      "player_facing_dir": "BG_EVENT_PLAYER_FACING_ANY",
+      "script": "CeladonMansion2FBookshelf"
+    }
+  ],
+  "_crystal_tileset": "TILESET_MANSION",
+  "_crystal_width_blocks": 4,
+  "_crystal_height_blocks": 5,
+  "_crystal_border_block": 0,
+  "_firered_primary_tileset": "gTileset_General",
+  "_firered_secondary_tileset": "gTileset_PalletTown",
+  "_events_halved": true
+}

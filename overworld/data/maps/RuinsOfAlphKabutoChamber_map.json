@@ -1,0 +1,113 @@
+{
+  "id": "MAP_RUINS_OF_ALPH_KABUTO_CHAMBER",
+  "name": "RuinsOfAlphKabutoChamber",
+  "layout": "LAYOUT_RUINS_OF_ALPH_KABUTO_CHAMBER",
+  "music": "MUSIC_UNION_CAVE",
+  "region_map_section": "MAPSEC_RUINS_OF_ALPH_KABUTO_CHAMBER",
+  "requires_flash": false,
+  "weather": "WEATHER_INSIDE",
+  "map_type": "MAP_TYPE_UNDERGROUND",
+  "allow_cycling": false,
+  "allow_escaping": true,
+  "allow_running": true,
+  "show_map_name": false,
+  "floor_number": 0,
+  "battle_scene": "MAP_BATTLE_SCENE_NORMAL",
+  "connections": [],
+  "object_events": [
+    {
+      "local_id": "RuinsOfAlphKabutoChamber_SPRITE_RECEPTIONIST",
+      "type": "object",
+      "graphics_id": "OBJ_EVENT_GFX_RECEPTIONIST",
+      "x": 5,
+      "y": 5,
+      "elevation": 3,
+      "movement_type": "MOVEMENT_TYPE_WANDER_AROUND",
+      "movement_range_x": 0,
+      "movement_range_y": 0,
+      "trainer_type": "TRAINER_TYPE_NONE",
+      "trainer_sight_or_berry_tree_id": "0",
+      "script": "RuinsOfAlphKabutoChamberReceptionistScript",
+      "flag": "EVENT_RUINS_OF_ALPH_KABUTO_CHAMBER_RECEPTIONIST"
+    },
+    {
+      "local_id": "RuinsOfAlphKabutoChamber_SPRITE_SCIENTIST",
+      "type": "object",
+      "graphics_id": "OBJ_EVENT_GFX_SCIENTIST",
+      "x": 3,
+      "y": 1,
+      "elevation": 3,
+      "movement_type": "MOVEMENT_TYPE_WANDER_AROUND",
+      "movement_range_x": 0,
+      "movement_range_y": 0,
+      "trainer_type": "TRAINER_TYPE_NONE",
+      "trainer_sight_or_berry_tree_id": "0",
+      "script": "RuinsOfAlphKabutoChamberScientistScript",
+      "flag": "0"
+    }
+  ],
+  "warp_events": [
+    {
+      "x": 3,
+      "y": 9,
+      "elevation": 0,
+      "dest_map": "MAP_RUINS_OF_ALPH_OUTSIDE",
+      "dest_warp_id": "1"
+    },
+    {
+      "x": 4,
+      "y": 9,
+      "elevation": 0,
+      "dest_map": "MAP_RUINS_OF_ALPH_OUTSIDE",
+      "dest_warp_id": "1"
+    },
+    {
+      "x": 3,
+      "y": 3,
+      "elevation": 0,
+      "dest_map": "MAP_RUINS_OF_ALPH_INNER_CHAMBER",
+      "dest_warp_id": "3"
+    },
+    {
+      "x": 4,
+      "y": 3,
+      "elevation": 0,
+      "dest_map": "MAP_RUINS_OF_ALPH_INNER_CHAMBER",
+      "dest_warp_id": "4"
+    },
+    {
+      "x": 4,
+      "y": 0,
+      "elevation": 0,
+      "dest_map": "MAP_RUINS_OF_ALPH_KABUTO_ITEM_ROOM",
+      "dest_warp_id": "0"
+    }
+  ],
+  "coord_events": [],
+  "bg_events": [
+    {
+      "type": "sign",
+      "x": 2,
+      "y": 3,
+      "elevation": 0,
+      "player_facing_dir": "BG_EVENT_PLAYER_FACING_ANY",
+      "script": "RuinsOfAlphKabutoChamberAncientReplica"
+    },
+    {
+      "type": "sign",
+      "x": 5,
+      "y": 3,
+      "elevation": 0,
+      "player_facing_dir": "BG_EVENT_PLAYER_FACING_ANY",
+      "script": "RuinsOfAlphKabutoChamberAncientReplica"
+    }
+  ],
+  "_crystal_tileset": "TILESET_RUINS_OF_ALPH",
+  "_crystal_width_blocks": 4,
+  "_crystal_height_blocks": 5,
+  "_crystal_border_block": 0,
+  "_firered_primary_tileset": "gTileset_CrRuinsOfAlph",
+  "_firered_secondary_tileset": "gTileset_CrStub",
+  "_events_halved": true,
+  "_warp_ids_rebased": true
+}

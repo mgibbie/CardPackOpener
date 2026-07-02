@@ -1,0 +1,151 @@
+{
+  "id": "MAP_JOHKANTO_CELADON_GYM",
+  "name": "CeladonGym",
+  "layout": "LAYOUT_JOHKANTO_CELADON_GYM",
+  "music": "MUSIC_GYM",
+  "region_map_section": "MAPSEC_CELADON_GYM",
+  "requires_flash": false,
+  "weather": "WEATHER_SUNNY",
+  "map_type": "MAP_TYPE_INDOOR",
+  "allow_cycling": false,
+  "allow_escaping": false,
+  "allow_running": true,
+  "show_map_name": false,
+  "floor_number": 0,
+  "battle_scene": "MAP_BATTLE_SCENE_NORMAL",
+  "connections": [],
+  "object_events": [
+    {
+      "local_id": "CeladonGym_SPRITE_ERIKA",
+      "type": "object",
+      "graphics_id": "OBJ_EVENT_GFX_ERIKA",
+      "x": 5,
+      "y": 3,
+      "elevation": 3,
+      "movement_type": "MOVEMENT_TYPE_WANDER_AROUND",
+      "movement_range_x": 0,
+      "movement_range_y": 0,
+      "trainer_type": "TRAINER_TYPE_NORMAL",
+      "trainer_sight_or_berry_tree_id": "1",
+      "script": "CeladonGymErikaScript",
+      "flag": "0"
+    },
+    {
+      "local_id": "CeladonGym_SPRITE_LASS",
+      "type": "object",
+      "graphics_id": "OBJ_EVENT_GFX_LASS",
+      "x": 7,
+      "y": 8,
+      "elevation": 3,
+      "movement_type": "MOVEMENT_TYPE_WANDER_AROUND",
+      "movement_range_x": 0,
+      "movement_range_y": 0,
+      "trainer_type": "TRAINER_TYPE_NORMAL",
+      "trainer_sight_or_berry_tree_id": "2",
+      "script": "TrainerLassMichelle",
+      "flag": "0"
+    },
+    {
+      "local_id": "CeladonGym_SPRITE_LASS",
+      "type": "object",
+      "graphics_id": "OBJ_EVENT_GFX_LASS",
+      "x": 2,
+      "y": 8,
+      "elevation": 3,
+      "movement_type": "MOVEMENT_TYPE_WANDER_AROUND",
+      "movement_range_x": 0,
+      "movement_range_y": 0,
+      "trainer_type": "TRAINER_TYPE_NORMAL",
+      "trainer_sight_or_berry_tree_id": "2",
+      "script": "TrainerPicnickerTanya",
+      "flag": "0"
+    },
+    {
+      "local_id": "CeladonGym_SPRITE_BEAUTY",
+      "type": "object",
+      "graphics_id": "OBJ_EVENT_GFX_BEAUTY",
+      "x": 3,
+      "y": 5,
+      "elevation": 3,
+      "movement_type": "MOVEMENT_TYPE_WANDER_AROUND",
+      "movement_range_x": 0,
+      "movement_range_y": 0,
+      "trainer_type": "TRAINER_TYPE_NORMAL",
+      "trainer_sight_or_berry_tree_id": "2",
+      "script": "TrainerBeautyJulia",
+      "flag": "0"
+    },
+    {
+      "local_id": "CeladonGym_SPRITE_TWIN",
+      "type": "object",
+      "graphics_id": "OBJ_EVENT_GFX_TWIN",
+      "x": 4,
+      "y": 10,
+      "elevation": 3,
+      "movement_type": "MOVEMENT_TYPE_WANDER_AROUND",
+      "movement_range_x": 0,
+      "movement_range_y": 0,
+      "trainer_type": "TRAINER_TYPE_NORMAL",
+      "trainer_sight_or_berry_tree_id": "1",
+      "script": "TrainerTwinsJoAndZoe1",
+      "flag": "0"
+    },
+    {
+      "local_id": "CeladonGym_SPRITE_TWIN",
+      "type": "object",
+      "graphics_id": "OBJ_EVENT_GFX_TWIN",
+      "x": 5,
+      "y": 10,
+      "elevation": 3,
+      "movement_type": "MOVEMENT_TYPE_WANDER_AROUND",
+      "movement_range_x": 0,
+      "movement_range_y": 0,
+      "trainer_type": "TRAINER_TYPE_NORMAL",
+      "trainer_sight_or_berry_tree_id": "1",
+      "script": "TrainerTwinsJoAndZoe2",
+      "flag": "0"
+    }
+  ],
+  "warp_events": [
+    {
+      "x": 4,
+      "y": 17,
+      "elevation": 0,
+      "dest_map": "MAP_JOHKANTO_CELADON_CITY",
+      "dest_warp_id": "7"
+    },
+    {
+      "x": 5,
+      "y": 17,
+      "elevation": 0,
+      "dest_map": "MAP_JOHKANTO_CELADON_CITY",
+      "dest_warp_id": "7"
+    }
+  ],
+  "coord_events": [],
+  "bg_events": [
+    {
+      "type": "sign",
+      "x": 3,
+      "y": 15,
+      "elevation": 0,
+      "player_facing_dir": "BG_EVENT_PLAYER_FACING_ANY",
+      "script": "CeladonGymStatue"
+    },
+    {
+      "type": "sign",
+      "x": 6,
+      "y": 15,
+      "elevation": 0,
+      "player_facing_dir": "BG_EVENT_PLAYER_FACING_ANY",
+      "script": "CeladonGymStatue"
+    }
+  ],
+  "_crystal_tileset": "TILESET_TRAIN_STATION",
+  "_crystal_width_blocks": 5,
+  "_crystal_height_blocks": 9,
+  "_crystal_border_block": 0,
+  "_firered_primary_tileset": "gTileset_Building",
+  "_firered_secondary_tileset": "gTileset_GenericBuilding1",
+  "_events_halved": true
+}

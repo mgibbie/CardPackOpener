@@ -1,0 +1,72 @@
+{
+  "id": "LAYOUT_BATTLE_ELEVATOR",
+  "name": "BattleElevator_Layout",
+  "game": "emerald",
+  "width": 5,
+  "height": 7,
+  "border_width": 0,
+  "border_height": 0,
+  "primary_tileset": "gTileset_Building",
+  "secondary_tileset": "gTileset_BattleFrontier",
+  "map": [
+    [
+      808,
+      1834,
+      1834,
+      1834,
+      1836
+    ],
+    [
+      816,
+      1841,
+      1841,
+      1841,
+      1844
+    ],
+    [
+      824,
+      1849,
+      1849,
+      1849,
+      1852
+    ],
+    [
+      12892,
+      12893,
+      12893,
+      12893,
+      12893
+    ],
+    [
+      12900,
+      12901,
+      12901,
+      12901,
+      12901
+    ],
+    [
+      12900,
+      12901,
+      12901,
+      12901,
+      12901
+    ],
+    [
+      12900,
+      12879,
+      12887,
+      12901,
+      12901
+    ]
+  ],
+  "border": [
+    [
+      1,
+      1
+    ],
+    [
+      1,
+      1
+    ]
+  ]
+}

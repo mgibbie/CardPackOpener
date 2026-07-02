@@ -1,0 +1,72 @@
+{
+  "id": "LAYOUT_ROCKET_HIDEOUT_ELEVATOR",
+  "name": "RocketHideout_Elevator_Layout",
+  "width": 5,
+  "height": 7,
+  "border_width": 2,
+  "border_height": 2,
+  "primary_tileset": "gTileset_Building",
+  "secondary_tileset": "gTileset_SilphCo",
+  "map": [
+    [
+      1771,
+      1768,
+      1768,
+      1768,
+      1772
+    ],
+    [
+      1779,
+      1776,
+      1776,
+      1776,
+      1780
+    ],
+    [
+      1787,
+      1784,
+      1784,
+      1784,
+      1788
+    ],
+    [
+      13037,
+      13038,
+      13038,
+      13038,
+      13038
+    ],
+    [
+      13045,
+      13046,
+      13046,
+      13046,
+      13039
+    ],
+    [
+      13045,
+      13053,
+      13054,
+      13047,
+      13039
+    ],
+    [
+      1032,
+      1050,
+      1051,
+      1052,
+      1032
+    ]
+  ],
+  "border": [
+    [
+      8,
+      8
+    ],
+    [
+      8,
+      8
+    ]
+  ],
+  "game": "firered"
+}

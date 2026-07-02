@@ -1,0 +1,92 @@
+{
+  "id": "MAP_OLIVINE_HOUSE_BETA",
+  "name": "OlivineHouseBeta",
+  "layout": "LAYOUT_OLIVINE_HOUSE_BETA",
+  "music": "MUSIC_VIOLET_CITY",
+  "region_map_section": "MAPSEC_OLIVINE_HOUSE_BETA",
+  "requires_flash": false,
+  "weather": "WEATHER_SUNNY",
+  "map_type": "MAP_TYPE_INDOOR",
+  "allow_cycling": false,
+  "allow_escaping": false,
+  "allow_running": true,
+  "show_map_name": false,
+  "floor_number": 0,
+  "battle_scene": "MAP_BATTLE_SCENE_NORMAL",
+  "connections": [],
+  "object_events": [
+    {
+      "local_id": "OlivineHouseBeta_SPRITE_TEACHER",
+      "type": "object",
+      "graphics_id": "OBJ_EVENT_GFX_TEACHER",
+      "x": 2,
+      "y": 3,
+      "elevation": 3,
+      "movement_type": "MOVEMENT_TYPE_WANDER_AROUND",
+      "movement_range_x": 0,
+      "movement_range_y": 0,
+      "trainer_type": "TRAINER_TYPE_NONE",
+      "trainer_sight_or_berry_tree_id": "0",
+      "script": "OlivineHouseBetaTeacherScript",
+      "flag": "0"
+    },
+    {
+      "local_id": "OlivineHouseBeta_SPRITE_RHYDON",
+      "type": "object",
+      "graphics_id": "OBJ_EVENT_GFX_RHYDON",
+      "x": 6,
+      "y": 4,
+      "elevation": 3,
+      "movement_type": "MOVEMENT_TYPE_WANDER_AROUND",
+      "movement_range_x": 0,
+      "movement_range_y": 2,
+      "trainer_type": "TRAINER_TYPE_NONE",
+      "trainer_sight_or_berry_tree_id": "0",
+      "script": "OlivineHouseBetaRhydonScript",
+      "flag": "0"
+    }
+  ],
+  "warp_events": [
+    {
+      "x": 2,
+      "y": 7,
+      "elevation": 0,
+      "dest_map": "MAP_OLIVINE_CITY",
+      "dest_warp_id": "3"
+    },
+    {
+      "x": 3,
+      "y": 7,
+      "elevation": 0,
+      "dest_map": "MAP_OLIVINE_CITY",
+      "dest_warp_id": "3"
+    }
+  ],
+  "coord_events": [],
+  "bg_events": [
+    {
+      "type": "sign",
+      "x": 0,
+      "y": 1,
+      "elevation": 0,
+      "player_facing_dir": "BG_EVENT_PLAYER_FACING_ANY",
+      "script": "OlivineHouseBetaBookshelf1"
+    },
+    {
+      "type": "sign",
+      "x": 1,
+      "y": 1,
+      "elevation": 0,
+      "player_facing_dir": "BG_EVENT_PLAYER_FACING_ANY",
+      "script": "OlivineHouseBetaBookshelf2"
+    }
+  ],
+  "_crystal_tileset": "TILESET_HOUSE",
+  "_crystal_width_blocks": 4,
+  "_crystal_height_blocks": 4,
+  "_crystal_border_block": 0,
+  "_firered_primary_tileset": "gTileset_CrHouse",
+  "_firered_secondary_tileset": "gTileset_CrStub",
+  "_events_halved": true,
+  "_warp_ids_rebased": true
+}

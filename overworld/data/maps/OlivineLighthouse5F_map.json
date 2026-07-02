@@ -1,0 +1,155 @@
+{
+  "id": "MAP_OLIVINE_LIGHTHOUSE_5F",
+  "name": "OlivineLighthouse5F",
+  "layout": "LAYOUT_OLIVINE_LIGHTHOUSE_5F",
+  "music": "MUSIC_LIGHTHOUSE",
+  "region_map_section": "MAPSEC_OLIVINE_LIGHTHOUSE_5F",
+  "requires_flash": false,
+  "weather": "WEATHER_INSIDE",
+  "map_type": "MAP_TYPE_UNDERGROUND",
+  "allow_cycling": false,
+  "allow_escaping": true,
+  "allow_running": true,
+  "show_map_name": false,
+  "floor_number": 0,
+  "battle_scene": "MAP_BATTLE_SCENE_NORMAL",
+  "connections": [],
+  "object_events": [
+    {
+      "local_id": "OlivineLighthouse5F_SPRITE_SAILOR",
+      "type": "object",
+      "graphics_id": "OBJ_EVENT_GFX_SAILOR",
+      "x": 8,
+      "y": 11,
+      "elevation": 3,
+      "movement_type": "MOVEMENT_TYPE_WANDER_AROUND",
+      "movement_range_x": 0,
+      "movement_range_y": 0,
+      "trainer_type": "TRAINER_TYPE_NORMAL",
+      "trainer_sight_or_berry_tree_id": "3",
+      "script": "TrainerSailorErnest",
+      "flag": "0"
+    },
+    {
+      "local_id": "OlivineLighthouse5F_SPRITE_YOUNGSTER",
+      "type": "object",
+      "graphics_id": "OBJ_EVENT_GFX_YOUNGSTER",
+      "x": 8,
+      "y": 3,
+      "elevation": 3,
+      "movement_type": "MOVEMENT_TYPE_WANDER_AROUND",
+      "movement_range_x": 0,
+      "movement_range_y": 0,
+      "trainer_type": "TRAINER_TYPE_NORMAL",
+      "trainer_sight_or_berry_tree_id": "4",
+      "script": "TrainerBirdKeeperDenis",
+      "flag": "0"
+    },
+    {
+      "local_id": "OlivineLighthouse5F_SPRITE_POKE_BALL",
+      "type": "object",
+      "graphics_id": "OBJ_EVENT_GFX_POKE_BALL",
+      "x": 15,
+      "y": 12,
+      "elevation": 3,
+      "movement_type": "MOVEMENT_TYPE_WANDER_AROUND",
+      "movement_range_x": 0,
+      "movement_range_y": 0,
+      "trainer_type": "TRAINER_TYPE_NONE",
+      "trainer_sight_or_berry_tree_id": "0",
+      "script": "OlivineLighthouse5FRareCandy",
+      "flag": "EVENT_OLIVINE_LIGHTHOUSE_5F_RARE_CANDY"
+    },
+    {
+      "local_id": "OlivineLighthouse5F_SPRITE_POKE_BALL",
+      "type": "object",
+      "graphics_id": "OBJ_EVENT_GFX_POKE_BALL",
+      "x": 6,
+      "y": 15,
+      "elevation": 3,
+      "movement_type": "MOVEMENT_TYPE_WANDER_AROUND",
+      "movement_range_x": 0,
+      "movement_range_y": 0,
+      "trainer_type": "TRAINER_TYPE_NONE",
+      "trainer_sight_or_berry_tree_id": "0",
+      "script": "OlivineLighthouse5FSuperRepel",
+      "flag": "EVENT_OLIVINE_LIGHTHOUSE_5F_SUPER_REPEL"
+    },
+    {
+      "local_id": "OlivineLighthouse5F_SPRITE_POKE_BALL",
+      "type": "object",
+      "graphics_id": "OBJ_EVENT_GFX_POKE_BALL",
+      "x": 2,
+      "y": 13,
+      "elevation": 3,
+      "movement_type": "MOVEMENT_TYPE_WANDER_AROUND",
+      "movement_range_x": 0,
+      "movement_range_y": 0,
+      "trainer_type": "TRAINER_TYPE_NONE",
+      "trainer_sight_or_berry_tree_id": "0",
+      "script": "OlivineLighthouse5FTMSwagger",
+      "flag": "EVENT_OLIVINE_LIGHTHOUSE_5F_TM_SWAGGER"
+    }
+  ],
+  "warp_events": [
+    {
+      "x": 9,
+      "y": 15,
+      "elevation": 0,
+      "dest_map": "MAP_OLIVINE_LIGHTHOUSE_6F",
+      "dest_warp_id": "0"
+    },
+    {
+      "x": 3,
+      "y": 5,
+      "elevation": 0,
+      "dest_map": "MAP_OLIVINE_LIGHTHOUSE_4F",
+      "dest_warp_id": "1"
+    },
+    {
+      "x": 9,
+      "y": 7,
+      "elevation": 0,
+      "dest_map": "MAP_OLIVINE_LIGHTHOUSE_4F",
+      "dest_warp_id": "2"
+    },
+    {
+      "x": 16,
+      "y": 7,
+      "elevation": 0,
+      "dest_map": "MAP_OLIVINE_LIGHTHOUSE_4F",
+      "dest_warp_id": "8"
+    },
+    {
+      "x": 17,
+      "y": 7,
+      "elevation": 0,
+      "dest_map": "MAP_OLIVINE_LIGHTHOUSE_4F",
+      "dest_warp_id": "9"
+    },
+    {
+      "x": 16,
+      "y": 5,
+      "elevation": 0,
+      "dest_map": "MAP_OLIVINE_LIGHTHOUSE_6F",
+      "dest_warp_id": "1"
+    },
+    {
+      "x": 17,
+      "y": 5,
+      "elevation": 0,
+      "dest_map": "MAP_OLIVINE_LIGHTHOUSE_6F",
+      "dest_warp_id": "2"
+    }
+  ],
+  "coord_events": [],
+  "bg_events": [],
+  "_crystal_tileset": "TILESET_LIGHTHOUSE",
+  "_crystal_width_blocks": 10,
+  "_crystal_height_blocks": 9,
+  "_crystal_border_block": 0,
+  "_firered_primary_tileset": "gTileset_CrLighthouse",
+  "_firered_secondary_tileset": "gTileset_CrStub",
+  "_events_halved": true,
+  "_warp_ids_rebased": true
+}

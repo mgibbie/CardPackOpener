@@ -1,0 +1,53 @@
+{
+  "id": "MAP_TIN_TOWER_ROOF",
+  "name": "TinTowerRoof",
+  "layout": "LAYOUT_TIN_TOWER_ROOF",
+  "music": "MUSIC_TIN_TOWER",
+  "region_map_section": "MAPSEC_TIN_TOWER_ROOF",
+  "requires_flash": false,
+  "weather": "WEATHER_SUNNY",
+  "map_type": "MAP_TYPE_ROUTE",
+  "allow_cycling": true,
+  "allow_escaping": false,
+  "allow_running": true,
+  "show_map_name": true,
+  "floor_number": 0,
+  "battle_scene": "MAP_BATTLE_SCENE_NORMAL",
+  "connections": [],
+  "object_events": [
+    {
+      "local_id": "TinTowerRoof_SPRITE_HO_OH",
+      "type": "object",
+      "graphics_id": "OBJ_EVENT_GFX_HO_OH",
+      "x": 9,
+      "y": 5,
+      "elevation": 3,
+      "movement_type": "MOVEMENT_TYPE_WANDER_AROUND",
+      "movement_range_x": 0,
+      "movement_range_y": 0,
+      "trainer_type": "TRAINER_TYPE_NONE",
+      "trainer_sight_or_berry_tree_id": "0",
+      "script": "TinTowerHoOh",
+      "flag": "EVENT_TIN_TOWER_ROOF_HO_OH"
+    }
+  ],
+  "warp_events": [
+    {
+      "x": 9,
+      "y": 13,
+      "elevation": 0,
+      "dest_map": "MAP_TIN_TOWER_9F",
+      "dest_warp_id": "3"
+    }
+  ],
+  "coord_events": [],
+  "bg_events": [],
+  "_crystal_tileset": "TILESET_TOWER",
+  "_crystal_width_blocks": 10,
+  "_crystal_height_blocks": 9,
+  "_crystal_border_block": 0,
+  "_firered_primary_tileset": "gTileset_CrTower15",
+  "_firered_secondary_tileset": "gTileset_CrStub",
+  "_events_halved": true,
+  "_warp_ids_rebased": true
+}

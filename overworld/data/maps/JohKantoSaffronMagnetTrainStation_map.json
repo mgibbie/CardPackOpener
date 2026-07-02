@@ -1,0 +1,118 @@
+{
+  "id": "MAP_JOHKANTO_SAFFRON_MAGNET_TRAIN_STATION",
+  "name": "SaffronMagnetTrainStation",
+  "layout": "LAYOUT_JOHKANTO_SAFFRON_MAGNET_TRAIN_STATION",
+  "music": "MUSIC_VIRIDIAN_CITY",
+  "region_map_section": "MAPSEC_SAFFRON_MAGNET_TRAIN_STATION",
+  "requires_flash": false,
+  "weather": "WEATHER_SUNNY",
+  "map_type": "MAP_TYPE_INDOOR",
+  "allow_cycling": false,
+  "allow_escaping": false,
+  "allow_running": true,
+  "show_map_name": false,
+  "floor_number": 0,
+  "battle_scene": "MAP_BATTLE_SCENE_NORMAL",
+  "connections": [],
+  "object_events": [
+    {
+      "local_id": "SaffronMagnetTrainStation_SPRITE_OFFICER",
+      "type": "object",
+      "graphics_id": "OBJ_EVENT_GFX_OFFICER",
+      "x": 9,
+      "y": 9,
+      "elevation": 3,
+      "movement_type": "MOVEMENT_TYPE_WANDER_AROUND",
+      "movement_range_x": 0,
+      "movement_range_y": 0,
+      "trainer_type": "TRAINER_TYPE_NONE",
+      "trainer_sight_or_berry_tree_id": "0",
+      "script": "SaffronMagnetTrainStationOfficerScript",
+      "flag": "0"
+    },
+    {
+      "local_id": "SaffronMagnetTrainStation_SPRITE_GYM_GUIDE",
+      "type": "object",
+      "graphics_id": "OBJ_EVENT_GFX_GYM_GUIDE",
+      "x": 10,
+      "y": 14,
+      "elevation": 3,
+      "movement_type": "MOVEMENT_TYPE_WANDER_AROUND",
+      "movement_range_x": 1,
+      "movement_range_y": 1,
+      "trainer_type": "TRAINER_TYPE_NONE",
+      "trainer_sight_or_berry_tree_id": "0",
+      "script": "SaffronMagnetTrainStationGymGuideScript",
+      "flag": "0"
+    },
+    {
+      "local_id": "SaffronMagnetTrainStation_SPRITE_TEACHER",
+      "type": "object",
+      "graphics_id": "OBJ_EVENT_GFX_TEACHER",
+      "x": 6,
+      "y": 11,
+      "elevation": 3,
+      "movement_type": "MOVEMENT_TYPE_WANDER_AROUND",
+      "movement_range_x": 0,
+      "movement_range_y": 0,
+      "trainer_type": "TRAINER_TYPE_NONE",
+      "trainer_sight_or_berry_tree_id": "0",
+      "script": "SaffronMagnetTrainStationTeacherScript",
+      "flag": "EVENT_SAFFRON_TRAIN_STATION_POPULATION"
+    },
+    {
+      "local_id": "SaffronMagnetTrainStation_SPRITE_LASS",
+      "type": "object",
+      "graphics_id": "OBJ_EVENT_GFX_LASS",
+      "x": 6,
+      "y": 10,
+      "elevation": 3,
+      "movement_type": "MOVEMENT_TYPE_WANDER_AROUND",
+      "movement_range_x": 0,
+      "movement_range_y": 0,
+      "trainer_type": "TRAINER_TYPE_NONE",
+      "trainer_sight_or_berry_tree_id": "0",
+      "script": "SaffronMagnetTrainStationLassScript",
+      "flag": "EVENT_SAFFRON_TRAIN_STATION_POPULATION"
+    }
+  ],
+  "warp_events": [
+    {
+      "x": 8,
+      "y": 17,
+      "elevation": 0,
+      "dest_map": "MAP_JOHKANTO_SAFFRON_CITY",
+      "dest_warp_id": "5"
+    },
+    {
+      "x": 9,
+      "y": 17,
+      "elevation": 0,
+      "dest_map": "MAP_JOHKANTO_SAFFRON_CITY",
+      "dest_warp_id": "5"
+    },
+    {
+      "x": 6,
+      "y": 5,
+      "elevation": 0,
+      "dest_map": "MAP_GOLDENROD_MAGNET_TRAIN_STATION",
+      "dest_warp_id": "3"
+    },
+    {
+      "x": 11,
+      "y": 5,
+      "elevation": 0,
+      "dest_map": "MAP_GOLDENROD_MAGNET_TRAIN_STATION",
+      "dest_warp_id": "2"
+    }
+  ],
+  "coord_events": [],
+  "bg_events": [],
+  "_crystal_tileset": "TILESET_TRAIN_STATION",
+  "_crystal_width_blocks": 10,
+  "_crystal_height_blocks": 9,
+  "_crystal_border_block": 0,
+  "_firered_primary_tileset": "gTileset_Building",
+  "_firered_secondary_tileset": "gTileset_GenericBuilding1",
+  "_events_halved": true
+}

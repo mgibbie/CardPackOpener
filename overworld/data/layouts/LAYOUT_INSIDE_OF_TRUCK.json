@@ -1,0 +1,58 @@
+{
+  "id": "LAYOUT_INSIDE_OF_TRUCK",
+  "name": "InsideOfTruck_Layout",
+  "game": "emerald",
+  "width": 5,
+  "height": 5,
+  "border_width": 0,
+  "border_height": 0,
+  "primary_tileset": "gTileset_General",
+  "secondary_tileset": "gTileset_InsideOfTruck",
+  "map": [
+    [
+      1537,
+      1538,
+      1539,
+      1540,
+      1541
+    ],
+    [
+      1545,
+      12810,
+      12811,
+      12812,
+      520
+    ],
+    [
+      1553,
+      12818,
+      12819,
+      12820,
+      528
+    ],
+    [
+      1561,
+      1562,
+      1563,
+      12828,
+      536
+    ],
+    [
+      1569,
+      1570,
+      1571,
+      1572,
+      1568
+    ]
+  ],
+  "border": [
+    [
+      518,
+      518
+    ],
+    [
+      518,
+      518
+    ]
+  ]
+}

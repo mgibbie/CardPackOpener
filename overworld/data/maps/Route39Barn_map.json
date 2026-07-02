@@ -1,0 +1,90 @@
+{
+  "id": "MAP_ROUTE_39_BARN",
+  "name": "Route39Barn",
+  "layout": "LAYOUT_ROUTE_39_BARN",
+  "music": "MUSIC_ECRUTEAK_CITY",
+  "region_map_section": "MAPSEC_ROUTE_39_BARN",
+  "requires_flash": false,
+  "weather": "WEATHER_SUNNY",
+  "map_type": "MAP_TYPE_INDOOR",
+  "allow_cycling": false,
+  "allow_escaping": false,
+  "allow_running": true,
+  "show_map_name": false,
+  "floor_number": 0,
+  "battle_scene": "MAP_BATTLE_SCENE_NORMAL",
+  "connections": [],
+  "object_events": [
+    {
+      "local_id": "Route39Barn_SPRITE_TWIN",
+      "type": "object",
+      "graphics_id": "OBJ_EVENT_GFX_TWIN",
+      "x": 2,
+      "y": 3,
+      "elevation": 3,
+      "movement_type": "MOVEMENT_TYPE_WANDER_AROUND",
+      "movement_range_x": 0,
+      "movement_range_y": 0,
+      "trainer_type": "TRAINER_TYPE_NONE",
+      "trainer_sight_or_berry_tree_id": "0",
+      "script": "Route39BarnTwin1Script",
+      "flag": "0"
+    },
+    {
+      "local_id": "Route39Barn_SPRITE_TWIN",
+      "type": "object",
+      "graphics_id": "OBJ_EVENT_GFX_TWIN",
+      "x": 4,
+      "y": 3,
+      "elevation": 3,
+      "movement_type": "MOVEMENT_TYPE_WANDER_AROUND",
+      "movement_range_x": 0,
+      "movement_range_y": 0,
+      "trainer_type": "TRAINER_TYPE_NONE",
+      "trainer_sight_or_berry_tree_id": "0",
+      "script": "Route39BarnTwin2Script",
+      "flag": "0"
+    },
+    {
+      "local_id": "Route39Barn_SPRITE_TAUROS",
+      "type": "object",
+      "graphics_id": "OBJ_EVENT_GFX_TAUROS",
+      "x": 3,
+      "y": 3,
+      "elevation": 3,
+      "movement_type": "MOVEMENT_TYPE_WANDER_AROUND",
+      "movement_range_x": 0,
+      "movement_range_y": 0,
+      "trainer_type": "TRAINER_TYPE_NONE",
+      "trainer_sight_or_berry_tree_id": "0",
+      "script": "MoomooScript",
+      "flag": "0"
+    }
+  ],
+  "warp_events": [
+    {
+      "x": 3,
+      "y": 7,
+      "elevation": 0,
+      "dest_map": "MAP_ROUTE_39",
+      "dest_warp_id": "0"
+    },
+    {
+      "x": 4,
+      "y": 7,
+      "elevation": 0,
+      "dest_map": "MAP_ROUTE_39",
+      "dest_warp_id": "0"
+    }
+  ],
+  "coord_events": [],
+  "bg_events": [],
+  "_crystal_tileset": "TILESET_TRADITIONAL_HOUSE",
+  "_crystal_width_blocks": 4,
+  "_crystal_height_blocks": 4,
+  "_crystal_border_block": 0,
+  "_firered_primary_tileset": "gTileset_CrTraditionalHouse",
+  "_firered_secondary_tileset": "gTileset_CrStub",
+  "_events_halved": true,
+  "_warp_ids_rebased": true
+}

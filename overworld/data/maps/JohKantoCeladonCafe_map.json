@@ -1,0 +1,136 @@
+{
+  "id": "MAP_JOHKANTO_CELADON_CAFE",
+  "name": "CeladonCafe",
+  "layout": "LAYOUT_JOHKANTO_CELADON_CAFE",
+  "music": "MUSIC_CELADON_CITY",
+  "region_map_section": "MAPSEC_CELADON_CAFE",
+  "requires_flash": false,
+  "weather": "WEATHER_SUNNY",
+  "map_type": "MAP_TYPE_INDOOR",
+  "allow_cycling": false,
+  "allow_escaping": false,
+  "allow_running": true,
+  "show_map_name": false,
+  "floor_number": 0,
+  "battle_scene": "MAP_BATTLE_SCENE_NORMAL",
+  "connections": [],
+  "object_events": [
+    {
+      "local_id": "CeladonCafe_SPRITE_SUPER_NERD",
+      "type": "object",
+      "graphics_id": "OBJ_EVENT_GFX_SUPER_NERD",
+      "x": 9,
+      "y": 3,
+      "elevation": 3,
+      "movement_type": "MOVEMENT_TYPE_WANDER_AROUND",
+      "movement_range_x": 0,
+      "movement_range_y": 0,
+      "trainer_type": "TRAINER_TYPE_NONE",
+      "trainer_sight_or_berry_tree_id": "0",
+      "script": "CeladonCafeChef",
+      "flag": "0"
+    },
+    {
+      "local_id": "CeladonCafe_SPRITE_FISHER",
+      "type": "object",
+      "graphics_id": "OBJ_EVENT_GFX_FISHER",
+      "x": 4,
+      "y": 6,
+      "elevation": 3,
+      "movement_type": "MOVEMENT_TYPE_WANDER_AROUND",
+      "movement_range_x": 0,
+      "movement_range_y": 0,
+      "trainer_type": "TRAINER_TYPE_NONE",
+      "trainer_sight_or_berry_tree_id": "0",
+      "script": "CeladonCafeFisher1",
+      "flag": "0"
+    },
+    {
+      "local_id": "CeladonCafe_SPRITE_FISHER",
+      "type": "object",
+      "graphics_id": "OBJ_EVENT_GFX_FISHER",
+      "x": 1,
+      "y": 7,
+      "elevation": 3,
+      "movement_type": "MOVEMENT_TYPE_WANDER_AROUND",
+      "movement_range_x": 0,
+      "movement_range_y": 0,
+      "trainer_type": "TRAINER_TYPE_NONE",
+      "trainer_sight_or_berry_tree_id": "0",
+      "script": "CeladonCafeFisher2",
+      "flag": "0"
+    },
+    {
+      "local_id": "CeladonCafe_SPRITE_FISHER",
+      "type": "object",
+      "graphics_id": "OBJ_EVENT_GFX_FISHER",
+      "x": 1,
+      "y": 2,
+      "elevation": 3,
+      "movement_type": "MOVEMENT_TYPE_WANDER_AROUND",
+      "movement_range_x": 0,
+      "movement_range_y": 0,
+      "trainer_type": "TRAINER_TYPE_NONE",
+      "trainer_sight_or_berry_tree_id": "0",
+      "script": "CeladonCafeFisher3",
+      "flag": "0"
+    },
+    {
+      "local_id": "CeladonCafe_SPRITE_TEACHER",
+      "type": "object",
+      "graphics_id": "OBJ_EVENT_GFX_TEACHER",
+      "x": 4,
+      "y": 3,
+      "elevation": 3,
+      "movement_type": "MOVEMENT_TYPE_WANDER_AROUND",
+      "movement_range_x": 0,
+      "movement_range_y": 0,
+      "trainer_type": "TRAINER_TYPE_NONE",
+      "trainer_sight_or_berry_tree_id": "0",
+      "script": "CeladonCafeTeacher",
+      "flag": "0"
+    }
+  ],
+  "warp_events": [
+    {
+      "x": 6,
+      "y": 7,
+      "elevation": 0,
+      "dest_map": "MAP_JOHKANTO_CELADON_CITY",
+      "dest_warp_id": "8"
+    },
+    {
+      "x": 7,
+      "y": 7,
+      "elevation": 0,
+      "dest_map": "MAP_JOHKANTO_CELADON_CITY",
+      "dest_warp_id": "8"
+    }
+  ],
+  "coord_events": [],
+  "bg_events": [
+    {
+      "type": "sign",
+      "x": 5,
+      "y": 0,
+      "elevation": 0,
+      "player_facing_dir": "BG_EVENT_PLAYER_FACING_ANY",
+      "script": "EatathonContestPoster"
+    },
+    {
+      "type": "sign",
+      "x": 7,
+      "y": 1,
+      "elevation": 0,
+      "player_facing_dir": "BG_EVENT_PLAYER_FACING_ANY",
+      "script": "CeladonCafeTrashcan"
+    }
+  ],
+  "_crystal_tileset": "TILESET_GAME_CORNER",
+  "_crystal_width_blocks": 6,
+  "_crystal_height_blocks": 4,
+  "_crystal_border_block": 0,
+  "_firered_primary_tileset": "gTileset_Building",
+  "_firered_secondary_tileset": "gTileset_GenericBuilding1",
+  "_events_halved": true
+}

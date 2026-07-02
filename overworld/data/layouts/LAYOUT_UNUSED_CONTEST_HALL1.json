@@ -1,0 +1,26 @@
+{
+  "id": "LAYOUT_UNUSED_CONTEST_HALL1",
+  "name": "UnusedContestHall1_Layout",
+  "game": "emerald",
+  "width": 1,
+  "height": 1,
+  "border_width": 0,
+  "border_height": 0,
+  "primary_tileset": "gTileset_Building",
+  "secondary_tileset": "gTileset_Contest",
+  "map": [
+    [
+      1548
+    ]
+  ],
+  "border": [
+    [
+      513,
+      513
+    ],
+    [
+      513,
+      513
+    ]
+  ]
+}

@@ -1,0 +1,90 @@
+{
+  "id": "MAP_DARK_CAVE_BLACKTHORN_ENTRANCE",
+  "name": "DarkCaveBlackthornEntrance",
+  "layout": "LAYOUT_DARK_CAVE_BLACKTHORN_ENTRANCE",
+  "music": "MUSIC_DARK_CAVE",
+  "region_map_section": "MAPSEC_DARK_CAVE_BLACKTHORN_ENTRANCE",
+  "requires_flash": false,
+  "weather": "WEATHER_INSIDE",
+  "map_type": "MAP_TYPE_UNDERGROUND",
+  "allow_cycling": false,
+  "allow_escaping": true,
+  "allow_running": true,
+  "show_map_name": false,
+  "floor_number": 0,
+  "battle_scene": "MAP_BATTLE_SCENE_NORMAL",
+  "connections": [],
+  "object_events": [
+    {
+      "local_id": "DarkCaveBlackthornEntrance_SPRITE_PHARMACIST",
+      "type": "object",
+      "graphics_id": "OBJ_EVENT_GFX_PHARMACIST",
+      "x": 7,
+      "y": 3,
+      "elevation": 3,
+      "movement_type": "MOVEMENT_TYPE_WANDER_AROUND",
+      "movement_range_x": 0,
+      "movement_range_y": 0,
+      "trainer_type": "TRAINER_TYPE_NONE",
+      "trainer_sight_or_berry_tree_id": "0",
+      "script": "DarkCaveBlackthornEntrancePharmacistScript",
+      "flag": "0"
+    },
+    {
+      "local_id": "DarkCaveBlackthornEntrance_SPRITE_POKE_BALL",
+      "type": "object",
+      "graphics_id": "OBJ_EVENT_GFX_POKE_BALL",
+      "x": 21,
+      "y": 24,
+      "elevation": 3,
+      "movement_type": "MOVEMENT_TYPE_WANDER_AROUND",
+      "movement_range_x": 0,
+      "movement_range_y": 0,
+      "trainer_type": "TRAINER_TYPE_NONE",
+      "trainer_sight_or_berry_tree_id": "0",
+      "script": "DarkCaveBlackthornEntranceRevive",
+      "flag": "EVENT_DARK_CAVE_BLACKTHORN_ENTRANCE_REVIVE"
+    },
+    {
+      "local_id": "DarkCaveBlackthornEntrance_SPRITE_POKE_BALL",
+      "type": "object",
+      "graphics_id": "OBJ_EVENT_GFX_POKE_BALL",
+      "x": 7,
+      "y": 22,
+      "elevation": 3,
+      "movement_type": "MOVEMENT_TYPE_WANDER_AROUND",
+      "movement_range_x": 0,
+      "movement_range_y": 0,
+      "trainer_type": "TRAINER_TYPE_NONE",
+      "trainer_sight_or_berry_tree_id": "0",
+      "script": "DarkCaveBlackthornEntranceTMSnore",
+      "flag": "EVENT_DARK_CAVE_BLACKTHORN_ENTRANCE_TM_SNORE"
+    }
+  ],
+  "warp_events": [
+    {
+      "x": 23,
+      "y": 3,
+      "elevation": 0,
+      "dest_map": "MAP_ROUTE_45",
+      "dest_warp_id": "0"
+    },
+    {
+      "x": 3,
+      "y": 25,
+      "elevation": 0,
+      "dest_map": "MAP_DARK_CAVE_VIOLET_ENTRANCE",
+      "dest_warp_id": "1"
+    }
+  ],
+  "coord_events": [],
+  "bg_events": [],
+  "_crystal_tileset": "TILESET_DARK_CAVE",
+  "_crystal_width_blocks": 15,
+  "_crystal_height_blocks": 18,
+  "_crystal_border_block": 9,
+  "_firered_primary_tileset": "gTileset_CrDarkCave",
+  "_firered_secondary_tileset": "gTileset_CrStub",
+  "_events_halved": true,
+  "_warp_ids_rebased": true
+}

@@ -1,0 +1,231 @@
+{
+  "id": "MAP_ROUTE_39",
+  "name": "Route39",
+  "layout": "LAYOUT_ROUTE_39",
+  "music": "MUSIC_ROUTE_37",
+  "region_map_section": "MAPSEC_ROUTE_39",
+  "requires_flash": false,
+  "weather": "WEATHER_SUNNY",
+  "map_type": "MAP_TYPE_ROUTE",
+  "allow_cycling": true,
+  "allow_escaping": false,
+  "allow_running": true,
+  "show_map_name": true,
+  "floor_number": 0,
+  "battle_scene": "MAP_BATTLE_SCENE_NORMAL",
+  "connections": [
+    {
+      "map": "MAP_OLIVINE_CITY",
+      "offset": -10,
+      "direction": "down"
+    },
+    {
+      "map": "MAP_ROUTE_38",
+      "offset": 0,
+      "direction": "right"
+    }
+  ],
+  "object_events": [
+    {
+      "local_id": "Route39_SPRITE_SAILOR",
+      "type": "object",
+      "graphics_id": "OBJ_EVENT_GFX_SAILOR",
+      "x": 13,
+      "y": 29,
+      "elevation": 3,
+      "movement_type": "MOVEMENT_TYPE_WANDER_AROUND",
+      "movement_range_x": 0,
+      "movement_range_y": 0,
+      "trainer_type": "TRAINER_TYPE_NORMAL",
+      "trainer_sight_or_berry_tree_id": "5",
+      "script": "TrainerSailorEugene",
+      "flag": "0"
+    },
+    {
+      "local_id": "Route39_SPRITE_POKEFAN_M",
+      "type": "object",
+      "graphics_id": "OBJ_EVENT_GFX_POKEFAN_M",
+      "x": 10,
+      "y": 22,
+      "elevation": 3,
+      "movement_type": "MOVEMENT_TYPE_WANDER_AROUND",
+      "movement_range_x": 0,
+      "movement_range_y": 0,
+      "trainer_type": "TRAINER_TYPE_NORMAL",
+      "trainer_sight_or_berry_tree_id": "4",
+      "script": "TrainerPokefanmDerek",
+      "flag": "0"
+    },
+    {
+      "local_id": "Route39_SPRITE_POKEFAN_F",
+      "type": "object",
+      "graphics_id": "OBJ_EVENT_GFX_POKEFAN_F",
+      "x": 11,
+      "y": 19,
+      "elevation": 3,
+      "movement_type": "MOVEMENT_TYPE_WANDER_AROUND",
+      "movement_range_x": 0,
+      "movement_range_y": 0,
+      "trainer_type": "TRAINER_TYPE_NORMAL",
+      "trainer_sight_or_berry_tree_id": "4",
+      "script": "TrainerPokefanfRuth",
+      "flag": "0"
+    },
+    {
+      "local_id": "Route39_SPRITE_TAUROS",
+      "type": "object",
+      "graphics_id": "OBJ_EVENT_GFX_TAUROS",
+      "x": 3,
+      "y": 12,
+      "elevation": 3,
+      "movement_type": "MOVEMENT_TYPE_WANDER_AROUND",
+      "movement_range_x": 0,
+      "movement_range_y": 0,
+      "trainer_type": "TRAINER_TYPE_NONE",
+      "trainer_sight_or_berry_tree_id": "0",
+      "script": "Route39Miltank",
+      "flag": "0"
+    },
+    {
+      "local_id": "Route39_SPRITE_TAUROS",
+      "type": "object",
+      "graphics_id": "OBJ_EVENT_GFX_TAUROS",
+      "x": 6,
+      "y": 11,
+      "elevation": 3,
+      "movement_type": "MOVEMENT_TYPE_WANDER_AROUND",
+      "movement_range_x": 0,
+      "movement_range_y": 0,
+      "trainer_type": "TRAINER_TYPE_NONE",
+      "trainer_sight_or_berry_tree_id": "0",
+      "script": "Route39Miltank",
+      "flag": "0"
+    },
+    {
+      "local_id": "Route39_SPRITE_TAUROS",
+      "type": "object",
+      "graphics_id": "OBJ_EVENT_GFX_TAUROS",
+      "x": 4,
+      "y": 15,
+      "elevation": 3,
+      "movement_type": "MOVEMENT_TYPE_WANDER_AROUND",
+      "movement_range_x": 0,
+      "movement_range_y": 0,
+      "trainer_type": "TRAINER_TYPE_NONE",
+      "trainer_sight_or_berry_tree_id": "0",
+      "script": "Route39Miltank",
+      "flag": "0"
+    },
+    {
+      "local_id": "Route39_SPRITE_TAUROS",
+      "type": "object",
+      "graphics_id": "OBJ_EVENT_GFX_TAUROS",
+      "x": 8,
+      "y": 13,
+      "elevation": 3,
+      "movement_type": "MOVEMENT_TYPE_WANDER_AROUND",
+      "movement_range_x": 0,
+      "movement_range_y": 0,
+      "trainer_type": "TRAINER_TYPE_NONE",
+      "trainer_sight_or_berry_tree_id": "0",
+      "script": "Route39Miltank",
+      "flag": "0"
+    },
+    {
+      "local_id": "Route39_SPRITE_STANDING_YOUNGSTER",
+      "type": "object",
+      "graphics_id": "OBJ_EVENT_GFX_STANDING_YOUNGSTER",
+      "x": 13,
+      "y": 7,
+      "elevation": 3,
+      "movement_type": "MOVEMENT_TYPE_WANDER_AROUND",
+      "movement_range_x": 0,
+      "movement_range_y": 0,
+      "trainer_type": "TRAINER_TYPE_NORMAL",
+      "trainer_sight_or_berry_tree_id": "1",
+      "script": "TrainerPsychicNorman",
+      "flag": "0"
+    },
+    {
+      "local_id": "Route39_SPRITE_FRUIT_TREE",
+      "type": "object",
+      "graphics_id": "OBJ_EVENT_GFX_FRUIT_TREE",
+      "x": 9,
+      "y": 3,
+      "elevation": 3,
+      "movement_type": "MOVEMENT_TYPE_WANDER_AROUND",
+      "movement_range_x": 0,
+      "movement_range_y": 0,
+      "trainer_type": "TRAINER_TYPE_NONE",
+      "trainer_sight_or_berry_tree_id": "0",
+      "script": "Route39FruitTree",
+      "flag": "0"
+    },
+    {
+      "local_id": "Route39_SPRITE_POKEFAN_F",
+      "type": "object",
+      "graphics_id": "OBJ_EVENT_GFX_POKEFAN_F",
+      "x": 4,
+      "y": 22,
+      "elevation": 3,
+      "movement_type": "MOVEMENT_TYPE_WANDER_AROUND",
+      "movement_range_x": 0,
+      "movement_range_y": 0,
+      "trainer_type": "TRAINER_TYPE_NORMAL",
+      "trainer_sight_or_berry_tree_id": "1",
+      "script": "TrainerPokefanfJaime",
+      "flag": "0"
+    }
+  ],
+  "warp_events": [
+    {
+      "x": 1,
+      "y": 3,
+      "elevation": 0,
+      "dest_map": "MAP_ROUTE_39_BARN",
+      "dest_warp_id": "0"
+    },
+    {
+      "x": 5,
+      "y": 3,
+      "elevation": 0,
+      "dest_map": "MAP_ROUTE_39_FARMHOUSE",
+      "dest_warp_id": "0"
+    }
+  ],
+  "coord_events": [],
+  "bg_events": [
+    {
+      "type": "sign",
+      "x": 5,
+      "y": 31,
+      "elevation": 0,
+      "player_facing_dir": "BG_EVENT_PLAYER_FACING_ANY",
+      "script": "Route39TrainerTips"
+    },
+    {
+      "type": "sign",
+      "x": 9,
+      "y": 5,
+      "elevation": 0,
+      "player_facing_dir": "BG_EVENT_PLAYER_FACING_ANY",
+      "script": "MoomooFarmSign"
+    },
+    {
+      "type": "sign",
+      "x": 15,
+      "y": 7,
+      "elevation": 0,
+      "player_facing_dir": "BG_EVENT_PLAYER_FACING_ANY",
+      "script": "Route39Sign"
+    }
+  ],
+  "_crystal_tileset": "TILESET_JOHTO",
+  "_crystal_width_blocks": 10,
+  "_crystal_height_blocks": 18,
+  "_crystal_border_block": 5,
+  "_firered_primary_tileset": "gTileset_CrJohto1",
+  "_firered_secondary_tileset": "gTileset_CrStub",
+  "_events_halved": true,
+  "_warp_ids_rebased": true
+}

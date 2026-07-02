@@ -1,0 +1,44 @@
+{
+  "id": "MAP_MOUNT_MOON_GIFT_SHOP",
+  "name": "MountMoonGiftShop",
+  "layout": "LAYOUT_MOUNT_MOON_GIFT_SHOP",
+  "music": "MUSIC_VIRIDIAN_CITY",
+  "region_map_section": "MAPSEC_MOUNT_MOON_GIFT_SHOP",
+  "requires_flash": false,
+  "weather": "WEATHER_SUNNY",
+  "map_type": "MAP_TYPE_INDOOR",
+  "allow_cycling": false,
+  "allow_escaping": false,
+  "allow_running": true,
+  "show_map_name": false,
+  "floor_number": 0,
+  "battle_scene": "MAP_BATTLE_SCENE_NORMAL",
+  "connections": [],
+  "object_events": [],
+  "warp_events": [
+    {
+      "x": 3,
+      "y": 7,
+      "elevation": 0,
+      "dest_map": "MAP_MOUNT_MOON_SQUARE",
+      "dest_warp_id": "2"
+    },
+    {
+      "x": 4,
+      "y": 7,
+      "elevation": 0,
+      "dest_map": "MAP_MOUNT_MOON_SQUARE",
+      "dest_warp_id": "2"
+    }
+  ],
+  "coord_events": [],
+  "bg_events": [],
+  "_crystal_tileset": "TILESET_TRADITIONAL_HOUSE",
+  "_crystal_width_blocks": 4,
+  "_crystal_height_blocks": 4,
+  "_crystal_border_block": 0,
+  "_firered_primary_tileset": "gTileset_CrTraditionalHouse",
+  "_firered_secondary_tileset": "gTileset_CrStub",
+  "_events_halved": true,
+  "_warp_ids_rebased": true
+}

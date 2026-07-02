@@ -1,0 +1,44 @@
+{
+  "id": "MAP_SAFARI_ZONE_BETA",
+  "name": "SafariZoneBeta",
+  "layout": "LAYOUT_SAFARI_ZONE_BETA",
+  "music": "MUSIC_EVOLUTION",
+  "region_map_section": "MAPSEC_SAFARI_ZONE_BETA",
+  "requires_flash": false,
+  "weather": "WEATHER_INSIDE",
+  "map_type": "MAP_TYPE_UNDERGROUND",
+  "allow_cycling": false,
+  "allow_escaping": true,
+  "allow_running": true,
+  "show_map_name": false,
+  "floor_number": 0,
+  "battle_scene": "MAP_BATTLE_SCENE_NORMAL",
+  "connections": [],
+  "object_events": [],
+  "warp_events": [
+    {
+      "x": 9,
+      "y": 23,
+      "elevation": 0,
+      "dest_map": "MAP_SAFARI_ZONE_FUCHSIA_GATE_BETA",
+      "dest_warp_id": "0"
+    },
+    {
+      "x": 10,
+      "y": 23,
+      "elevation": 0,
+      "dest_map": "MAP_SAFARI_ZONE_FUCHSIA_GATE_BETA",
+      "dest_warp_id": "1"
+    }
+  ],
+  "coord_events": [],
+  "bg_events": [],
+  "_crystal_tileset": "TILESET_PARK",
+  "_crystal_width_blocks": 10,
+  "_crystal_height_blocks": 18,
+  "_crystal_border_block": 19,
+  "_firered_primary_tileset": "gTileset_CrPark",
+  "_firered_secondary_tileset": "gTileset_CrStub",
+  "_events_halved": true,
+  "_warp_ids_rebased": true
+}

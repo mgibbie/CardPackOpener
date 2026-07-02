@@ -1,0 +1,79 @@
+{
+  "id": "LAYOUT_BATTLE_FRONTIER_BATTLE_PIKE_ROOM_FINAL",
+  "name": "BattleFrontier_BattlePikeRoomFinal_Layout",
+  "game": "emerald",
+  "width": 5,
+  "height": 8,
+  "border_width": 0,
+  "border_height": 0,
+  "primary_tileset": "gTileset_Building",
+  "secondary_tileset": "gTileset_BattlePike",
+  "map": [
+    [
+      13989,
+      13990,
+      13991,
+      13984,
+      13985
+    ],
+    [
+      13997,
+      13998,
+      13999,
+      13992,
+      13993
+    ],
+    [
+      14005,
+      14006,
+      14007,
+      14000,
+      14001
+    ],
+    [
+      12853,
+      1726,
+      1727,
+      1720,
+      12853
+    ],
+    [
+      1597,
+      13120,
+      13121,
+      13122,
+      1597
+    ],
+    [
+      13017,
+      13128,
+      13129,
+      13130,
+      13018
+    ],
+    [
+      12852,
+      13136,
+      13137,
+      13138,
+      13021
+    ],
+    [
+      1596,
+      13144,
+      13145,
+      13146,
+      1785
+    ]
+  ],
+  "border": [
+    [
+      1,
+      1
+    ],
+    [
+      1,
+      1
+    ]
+  ]
+}

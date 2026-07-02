@@ -1,0 +1,104 @@
+{
+  "id": "MAP_SILVER_CAVE_ROOM_2",
+  "name": "SilverCaveRoom2",
+  "layout": "LAYOUT_SILVER_CAVE_ROOM_2",
+  "music": "MUSIC_LIGHTHOUSE",
+  "region_map_section": "MAPSEC_SILVER_CAVE_ROOM_2",
+  "requires_flash": false,
+  "weather": "WEATHER_INSIDE",
+  "map_type": "MAP_TYPE_UNDERGROUND",
+  "allow_cycling": false,
+  "allow_escaping": true,
+  "allow_running": true,
+  "show_map_name": false,
+  "floor_number": 0,
+  "battle_scene": "MAP_BATTLE_SCENE_NORMAL",
+  "connections": [],
+  "object_events": [
+    {
+      "local_id": "SilverCaveRoom2_SPRITE_POKE_BALL",
+      "type": "object",
+      "graphics_id": "OBJ_EVENT_GFX_POKE_BALL",
+      "x": 24,
+      "y": 10,
+      "elevation": 3,
+      "movement_type": "MOVEMENT_TYPE_WANDER_AROUND",
+      "movement_range_x": 0,
+      "movement_range_y": 0,
+      "trainer_type": "TRAINER_TYPE_NONE",
+      "trainer_sight_or_berry_tree_id": "0",
+      "script": "SilverCaveRoom2Calcium",
+      "flag": "EVENT_SILVER_CAVE_ROOM_2_CALCIUM"
+    },
+    {
+      "local_id": "SilverCaveRoom2_SPRITE_POKE_BALL",
+      "type": "object",
+      "graphics_id": "OBJ_EVENT_GFX_POKE_BALL",
+      "x": 22,
+      "y": 24,
+      "elevation": 3,
+      "movement_type": "MOVEMENT_TYPE_WANDER_AROUND",
+      "movement_range_x": 0,
+      "movement_range_y": 0,
+      "trainer_type": "TRAINER_TYPE_NONE",
+      "trainer_sight_or_berry_tree_id": "0",
+      "script": "SilverCaveRoom2UltraBall",
+      "flag": "EVENT_SILVER_CAVE_ROOM_2_ULTRA_BALL"
+    },
+    {
+      "local_id": "SilverCaveRoom2_SPRITE_POKE_BALL",
+      "type": "object",
+      "graphics_id": "OBJ_EVENT_GFX_POKE_BALL",
+      "x": 4,
+      "y": 20,
+      "elevation": 3,
+      "movement_type": "MOVEMENT_TYPE_WANDER_AROUND",
+      "movement_range_x": 0,
+      "movement_range_y": 0,
+      "trainer_type": "TRAINER_TYPE_NONE",
+      "trainer_sight_or_berry_tree_id": "0",
+      "script": "SilverCaveRoom2PPUp",
+      "flag": "EVENT_SILVER_CAVE_ROOM_2_PP_UP"
+    }
+  ],
+  "warp_events": [
+    {
+      "x": 17,
+      "y": 31,
+      "elevation": 0,
+      "dest_map": "MAP_SILVER_CAVE_ROOM_1",
+      "dest_warp_id": "1"
+    },
+    {
+      "x": 11,
+      "y": 5,
+      "elevation": 0,
+      "dest_map": "MAP_SILVER_CAVE_ROOM_3",
+      "dest_warp_id": "0"
+    },
+    {
+      "x": 13,
+      "y": 21,
+      "elevation": 0,
+      "dest_map": "MAP_SILVER_CAVE_ITEM_ROOMS",
+      "dest_warp_id": "0"
+    },
+    {
+      "x": 23,
+      "y": 3,
+      "elevation": 0,
+      "dest_map": "MAP_SILVER_CAVE_ITEM_ROOMS",
+      "dest_warp_id": "1"
+    }
+  ],
+  "coord_events": [],
+  "bg_events": [],
+  "_crystal_tileset": "TILESET_CAVE",
+  "_crystal_width_blocks": 15,
+  "_crystal_height_blocks": 18,
+  "_crystal_border_block": 9,
+  "_firered_primary_tileset": "gTileset_CrCave",
+  "_firered_secondary_tileset": "gTileset_CrStub",
+  "_events_halved": true,
+  "_warp_ids_rebased": true
+}

@@ -1,0 +1,58 @@
+{
+  "id": "MAP_SAFARI_ZONE_FUCHSIA_GATE_BETA",
+  "name": "SafariZoneFuchsiaGateBeta",
+  "layout": "LAYOUT_SAFARI_ZONE_FUCHSIA_GATE_BETA",
+  "music": "MUSIC_VIRIDIAN_CITY",
+  "region_map_section": "MAPSEC_SAFARI_ZONE_FUCHSIA_GATE_BETA",
+  "requires_flash": false,
+  "weather": "WEATHER_SUNNY",
+  "map_type": "MAP_TYPE_INDOOR",
+  "allow_cycling": false,
+  "allow_escaping": false,
+  "allow_running": true,
+  "show_map_name": false,
+  "floor_number": 0,
+  "battle_scene": "MAP_BATTLE_SCENE_NORMAL",
+  "connections": [],
+  "object_events": [],
+  "warp_events": [
+    {
+      "x": 4,
+      "y": 0,
+      "elevation": 0,
+      "dest_map": "MAP_SAFARI_ZONE_BETA",
+      "dest_warp_id": "0"
+    },
+    {
+      "x": 5,
+      "y": 0,
+      "elevation": 0,
+      "dest_map": "MAP_SAFARI_ZONE_BETA",
+      "dest_warp_id": "1"
+    },
+    {
+      "x": 4,
+      "y": 7,
+      "elevation": 0,
+      "dest_map": "MAP_JOHKANTO_FUCHSIA_CITY",
+      "dest_warp_id": "6"
+    },
+    {
+      "x": 5,
+      "y": 7,
+      "elevation": 0,
+      "dest_map": "MAP_JOHKANTO_FUCHSIA_CITY",
+      "dest_warp_id": "6"
+    }
+  ],
+  "coord_events": [],
+  "bg_events": [],
+  "_crystal_tileset": "TILESET_GATE",
+  "_crystal_width_blocks": 5,
+  "_crystal_height_blocks": 4,
+  "_crystal_border_block": 0,
+  "_firered_primary_tileset": "gTileset_CrGate",
+  "_firered_secondary_tileset": "gTileset_CrStub",
+  "_events_halved": true,
+  "_warp_ids_rebased": true
+}

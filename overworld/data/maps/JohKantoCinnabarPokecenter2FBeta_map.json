@@ -1,0 +1,36 @@
+{
+  "id": "MAP_JOHKANTO_CINNABAR_POKECENTER_2F_BETA",
+  "name": "CinnabarPokecenter2FBeta",
+  "layout": "LAYOUT_JOHKANTO_CINNABAR_POKECENTER_2F_BETA",
+  "music": "MUSIC_POKEMON_CENTER",
+  "region_map_section": "MAPSEC_CINNABAR_POKECENTER_2F_BETA",
+  "requires_flash": false,
+  "weather": "WEATHER_SUNNY",
+  "map_type": "MAP_TYPE_INDOOR",
+  "allow_cycling": false,
+  "allow_escaping": false,
+  "allow_running": true,
+  "show_map_name": false,
+  "floor_number": 0,
+  "battle_scene": "MAP_BATTLE_SCENE_NORMAL",
+  "connections": [],
+  "object_events": [],
+  "warp_events": [
+    {
+      "x": 0,
+      "y": 7,
+      "elevation": 0,
+      "dest_map": "MAP_JOHKANTO_CINNABAR_POKECENTER_1F",
+      "dest_warp_id": "2"
+    }
+  ],
+  "coord_events": [],
+  "bg_events": [],
+  "_crystal_tileset": "TILESET_POKECENTER",
+  "_crystal_width_blocks": 8,
+  "_crystal_height_blocks": 4,
+  "_crystal_border_block": 0,
+  "_firered_primary_tileset": "gTileset_Building",
+  "_firered_secondary_tileset": "gTileset_PokemonCenter",
+  "_events_halved": true
+}

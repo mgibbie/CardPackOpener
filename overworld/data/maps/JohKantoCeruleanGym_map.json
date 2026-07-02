@@ -1,0 +1,151 @@
+{
+  "id": "MAP_JOHKANTO_CERULEAN_GYM",
+  "name": "CeruleanGym",
+  "layout": "LAYOUT_JOHKANTO_CERULEAN_GYM",
+  "music": "MUSIC_GYM",
+  "region_map_section": "MAPSEC_CERULEAN_GYM",
+  "requires_flash": false,
+  "weather": "WEATHER_SUNNY",
+  "map_type": "MAP_TYPE_INDOOR",
+  "allow_cycling": false,
+  "allow_escaping": false,
+  "allow_running": true,
+  "show_map_name": false,
+  "floor_number": 0,
+  "battle_scene": "MAP_BATTLE_SCENE_NORMAL",
+  "connections": [],
+  "object_events": [
+    {
+      "local_id": "CeruleanGym_SPRITE_ROCKET",
+      "type": "object",
+      "graphics_id": "OBJ_EVENT_GFX_ROCKET",
+      "x": 4,
+      "y": 10,
+      "elevation": 3,
+      "movement_type": "MOVEMENT_TYPE_WANDER_AROUND",
+      "movement_range_x": 0,
+      "movement_range_y": 0,
+      "trainer_type": "TRAINER_TYPE_NONE",
+      "trainer_sight_or_berry_tree_id": "0",
+      "script": "ObjectEvent",
+      "flag": "EVENT_CERULEAN_GYM_ROCKET"
+    },
+    {
+      "local_id": "CeruleanGym_SPRITE_MISTY",
+      "type": "object",
+      "graphics_id": "OBJ_EVENT_GFX_MISTY",
+      "x": 5,
+      "y": 3,
+      "elevation": 3,
+      "movement_type": "MOVEMENT_TYPE_WANDER_AROUND",
+      "movement_range_x": 0,
+      "movement_range_y": 0,
+      "trainer_type": "TRAINER_TYPE_NORMAL",
+      "trainer_sight_or_berry_tree_id": "1",
+      "script": "CeruleanGymMistyScript",
+      "flag": "EVENT_TRAINERS_IN_CERULEAN_GYM"
+    },
+    {
+      "local_id": "CeruleanGym_SPRITE_SWIMMER_GIRL",
+      "type": "object",
+      "graphics_id": "OBJ_EVENT_GFX_SWIMMER_GIRL",
+      "x": 4,
+      "y": 6,
+      "elevation": 3,
+      "movement_type": "MOVEMENT_TYPE_WANDER_AROUND",
+      "movement_range_x": 0,
+      "movement_range_y": 0,
+      "trainer_type": "TRAINER_TYPE_NORMAL",
+      "trainer_sight_or_berry_tree_id": "3",
+      "script": "TrainerSwimmerfDiana",
+      "flag": "EVENT_TRAINERS_IN_CERULEAN_GYM"
+    },
+    {
+      "local_id": "CeruleanGym_SPRITE_SWIMMER_GIRL",
+      "type": "object",
+      "graphics_id": "OBJ_EVENT_GFX_SWIMMER_GIRL",
+      "x": 1,
+      "y": 9,
+      "elevation": 3,
+      "movement_type": "MOVEMENT_TYPE_WANDER_AROUND",
+      "movement_range_x": 0,
+      "movement_range_y": 0,
+      "trainer_type": "TRAINER_TYPE_NORMAL",
+      "trainer_sight_or_berry_tree_id": "1",
+      "script": "TrainerSwimmerfBriana",
+      "flag": "EVENT_TRAINERS_IN_CERULEAN_GYM"
+    },
+    {
+      "local_id": "CeruleanGym_SPRITE_SWIMMER_GUY",
+      "type": "object",
+      "graphics_id": "OBJ_EVENT_GFX_SWIMMER_GUY",
+      "x": 8,
+      "y": 9,
+      "elevation": 3,
+      "movement_type": "MOVEMENT_TYPE_WANDER_AROUND",
+      "movement_range_x": 0,
+      "movement_range_y": 0,
+      "trainer_type": "TRAINER_TYPE_NORMAL",
+      "trainer_sight_or_berry_tree_id": "3",
+      "script": "TrainerSwimmermParker",
+      "flag": "EVENT_TRAINERS_IN_CERULEAN_GYM"
+    },
+    {
+      "local_id": "CeruleanGym_SPRITE_GYM_GUIDE",
+      "type": "object",
+      "graphics_id": "OBJ_EVENT_GFX_GYM_GUIDE",
+      "x": 7,
+      "y": 13,
+      "elevation": 3,
+      "movement_type": "MOVEMENT_TYPE_WANDER_AROUND",
+      "movement_range_x": 0,
+      "movement_range_y": 0,
+      "trainer_type": "TRAINER_TYPE_NONE",
+      "trainer_sight_or_berry_tree_id": "0",
+      "script": "CeruleanGymGuideScript",
+      "flag": "EVENT_TRAINERS_IN_CERULEAN_GYM"
+    }
+  ],
+  "warp_events": [
+    {
+      "x": 4,
+      "y": 15,
+      "elevation": 0,
+      "dest_map": "MAP_JOHKANTO_CERULEAN_CITY",
+      "dest_warp_id": "4"
+    },
+    {
+      "x": 5,
+      "y": 15,
+      "elevation": 0,
+      "dest_map": "MAP_JOHKANTO_CERULEAN_CITY",
+      "dest_warp_id": "4"
+    }
+  ],
+  "coord_events": [],
+  "bg_events": [
+    {
+      "type": "sign",
+      "x": 2,
+      "y": 13,
+      "elevation": 0,
+      "player_facing_dir": "BG_EVENT_PLAYER_FACING_ANY",
+      "script": "CeruleanGymStatue1"
+    },
+    {
+      "type": "sign",
+      "x": 6,
+      "y": 13,
+      "elevation": 0,
+      "player_facing_dir": "BG_EVENT_PLAYER_FACING_ANY",
+      "script": "CeruleanGymStatue2"
+    }
+  ],
+  "_crystal_tileset": "TILESET_PORT",
+  "_crystal_width_blocks": 5,
+  "_crystal_height_blocks": 8,
+  "_crystal_border_block": 0,
+  "_firered_primary_tileset": "gTileset_Building",
+  "_firered_secondary_tileset": "gTileset_PokemonCenter",
+  "_events_halved": true
+}

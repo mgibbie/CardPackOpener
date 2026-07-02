@@ -1,0 +1,44 @@
+{
+  "id": "MAP_UNDERGROUND_PATH",
+  "name": "UndergroundPath",
+  "layout": "LAYOUT_UNDERGROUND_PATH",
+  "music": "MUSIC_MT_MOON",
+  "region_map_section": "MAPSEC_UNDERGROUND_PATH",
+  "requires_flash": false,
+  "weather": "WEATHER_SUNNY",
+  "map_type": "MAP_TYPE_INDOOR",
+  "allow_cycling": false,
+  "allow_escaping": false,
+  "allow_running": true,
+  "show_map_name": false,
+  "floor_number": 0,
+  "battle_scene": "MAP_BATTLE_SCENE_NORMAL",
+  "connections": [],
+  "object_events": [],
+  "warp_events": [
+    {
+      "x": 3,
+      "y": 2,
+      "elevation": 0,
+      "dest_map": "MAP_JOHKANTO_ROUTE_5_UNDERGROUND_PATH_ENTRANCE",
+      "dest_warp_id": "2"
+    },
+    {
+      "x": 3,
+      "y": 24,
+      "elevation": 0,
+      "dest_map": "MAP_JOHKANTO_ROUTE_6_UNDERGROUND_PATH_ENTRANCE",
+      "dest_warp_id": "2"
+    }
+  ],
+  "coord_events": [],
+  "bg_events": [],
+  "_crystal_tileset": "TILESET_UNDERGROUND",
+  "_crystal_width_blocks": 3,
+  "_crystal_height_blocks": 14,
+  "_crystal_border_block": 0,
+  "_firered_primary_tileset": "gTileset_CrUnderground",
+  "_firered_secondary_tileset": "gTileset_CrStub",
+  "_events_halved": true,
+  "_warp_ids_rebased": true
+}

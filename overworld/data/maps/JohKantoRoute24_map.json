@@ -1,0 +1,55 @@
+{
+  "id": "MAP_JOHKANTO_ROUTE_24",
+  "name": "Route24",
+  "layout": "LAYOUT_JOHKANTO_ROUTE_24",
+  "music": "MUSIC_ROUTE_3",
+  "region_map_section": "MAPSEC_ROUTE_24",
+  "requires_flash": false,
+  "weather": "WEATHER_SUNNY",
+  "map_type": "MAP_TYPE_ROUTE",
+  "allow_cycling": true,
+  "allow_escaping": false,
+  "allow_running": true,
+  "show_map_name": true,
+  "floor_number": 0,
+  "battle_scene": "MAP_BATTLE_SCENE_NORMAL",
+  "connections": [
+    {
+      "map": "MAP_JOHKANTO_ROUTE_25",
+      "offset": 0,
+      "direction": "up"
+    },
+    {
+      "map": "MAP_JOHKANTO_CERULEAN_CITY",
+      "offset": -12,
+      "direction": "down"
+    }
+  ],
+  "object_events": [
+    {
+      "local_id": "Route24_SPRITE_ROCKET",
+      "type": "object",
+      "graphics_id": "OBJ_EVENT_GFX_ROCKET",
+      "x": 8,
+      "y": 7,
+      "elevation": 3,
+      "movement_type": "MOVEMENT_TYPE_WANDER_AROUND",
+      "movement_range_x": 0,
+      "movement_range_y": 0,
+      "trainer_type": "TRAINER_TYPE_NORMAL",
+      "trainer_sight_or_berry_tree_id": "1",
+      "script": "Route24RocketScript",
+      "flag": "EVENT_ROUTE_24_ROCKET"
+    }
+  ],
+  "warp_events": [],
+  "coord_events": [],
+  "bg_events": [],
+  "_crystal_tileset": "TILESET_KANTO",
+  "_crystal_width_blocks": 10,
+  "_crystal_height_blocks": 9,
+  "_crystal_border_block": 44,
+  "_firered_primary_tileset": "gTileset_General",
+  "_firered_secondary_tileset": "gTileset_PalletTown",
+  "_events_halved": true
+}

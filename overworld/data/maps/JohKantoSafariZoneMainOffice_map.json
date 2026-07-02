@@ -1,0 +1,43 @@
+{
+  "id": "MAP_JOHKANTO_SAFARI_ZONE_MAIN_OFFICE",
+  "name": "SafariZoneMainOffice",
+  "layout": "LAYOUT_JOHKANTO_SAFARI_ZONE_MAIN_OFFICE",
+  "music": "MUSIC_CELADON_CITY",
+  "region_map_section": "MAPSEC_SAFARI_ZONE_MAIN_OFFICE",
+  "requires_flash": false,
+  "weather": "WEATHER_SUNNY",
+  "map_type": "MAP_TYPE_INDOOR",
+  "allow_cycling": false,
+  "allow_escaping": false,
+  "allow_running": true,
+  "show_map_name": false,
+  "floor_number": 0,
+  "battle_scene": "MAP_BATTLE_SCENE_NORMAL",
+  "connections": [],
+  "object_events": [],
+  "warp_events": [
+    {
+      "x": 2,
+      "y": 7,
+      "elevation": 0,
+      "dest_map": "MAP_JOHKANTO_FUCHSIA_CITY",
+      "dest_warp_id": "1"
+    },
+    {
+      "x": 3,
+      "y": 7,
+      "elevation": 0,
+      "dest_map": "MAP_JOHKANTO_FUCHSIA_CITY",
+      "dest_warp_id": "1"
+    }
+  ],
+  "coord_events": [],
+  "bg_events": [],
+  "_crystal_tileset": "TILESET_GAME_CORNER",
+  "_crystal_width_blocks": 4,
+  "_crystal_height_blocks": 4,
+  "_crystal_border_block": 0,
+  "_firered_primary_tileset": "gTileset_Building",
+  "_firered_secondary_tileset": "gTileset_GenericBuilding1",
+  "_events_halved": true
+}

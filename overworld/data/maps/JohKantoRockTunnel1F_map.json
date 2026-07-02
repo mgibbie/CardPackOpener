@@ -1,0 +1,103 @@
+{
+  "id": "MAP_JOHKANTO_ROCK_TUNNEL_1F",
+  "name": "RockTunnel1F",
+  "layout": "LAYOUT_JOHKANTO_ROCK_TUNNEL_1F",
+  "music": "MUSIC_MT_MOON",
+  "region_map_section": "MAPSEC_ROCK_TUNNEL_1F",
+  "requires_flash": false,
+  "weather": "WEATHER_INSIDE",
+  "map_type": "MAP_TYPE_UNDERGROUND",
+  "allow_cycling": false,
+  "allow_escaping": true,
+  "allow_running": true,
+  "show_map_name": false,
+  "floor_number": 0,
+  "battle_scene": "MAP_BATTLE_SCENE_NORMAL",
+  "connections": [],
+  "object_events": [
+    {
+      "local_id": "RockTunnel1F_SPRITE_POKE_BALL",
+      "type": "object",
+      "graphics_id": "OBJ_EVENT_GFX_POKE_BALL",
+      "x": 4,
+      "y": 18,
+      "elevation": 3,
+      "movement_type": "MOVEMENT_TYPE_WANDER_AROUND",
+      "movement_range_x": 0,
+      "movement_range_y": 0,
+      "trainer_type": "TRAINER_TYPE_NONE",
+      "trainer_sight_or_berry_tree_id": "0",
+      "script": "RockTunnel1FElixer",
+      "flag": "EVENT_ROCK_TUNNEL_1F_ELIXER"
+    },
+    {
+      "local_id": "RockTunnel1F_SPRITE_POKE_BALL",
+      "type": "object",
+      "graphics_id": "OBJ_EVENT_GFX_POKE_BALL",
+      "x": 10,
+      "y": 15,
+      "elevation": 3,
+      "movement_type": "MOVEMENT_TYPE_WANDER_AROUND",
+      "movement_range_x": 0,
+      "movement_range_y": 0,
+      "trainer_type": "TRAINER_TYPE_NONE",
+      "trainer_sight_or_berry_tree_id": "0",
+      "script": "RockTunnel1FTMSteelWing",
+      "flag": "EVENT_ROCK_TUNNEL_1F_TM_STEEL_WING"
+    }
+  ],
+  "warp_events": [
+    {
+      "x": 15,
+      "y": 3,
+      "elevation": 0,
+      "dest_map": "MAP_JOHKANTO_ROUTE_9",
+      "dest_warp_id": "0"
+    },
+    {
+      "x": 11,
+      "y": 25,
+      "elevation": 0,
+      "dest_map": "MAP_JOHKANTO_ROUTE_10_SOUTH",
+      "dest_warp_id": "0"
+    },
+    {
+      "x": 5,
+      "y": 3,
+      "elevation": 0,
+      "dest_map": "MAP_JOHKANTO_ROCK_TUNNEL_B1F",
+      "dest_warp_id": "2"
+    },
+    {
+      "x": 15,
+      "y": 9,
+      "elevation": 0,
+      "dest_map": "MAP_JOHKANTO_ROCK_TUNNEL_B1F",
+      "dest_warp_id": "1"
+    },
+    {
+      "x": 27,
+      "y": 3,
+      "elevation": 0,
+      "dest_map": "MAP_JOHKANTO_ROCK_TUNNEL_B1F",
+      "dest_warp_id": "3"
+    },
+    {
+      "x": 27,
+      "y": 13,
+      "elevation": 0,
+      "dest_map": "MAP_JOHKANTO_ROCK_TUNNEL_B1F",
+      "dest_warp_id": "0"
+    }
+  ],
+  "coord_events": [],
+  "bg_events": [],
+  "_crystal_tileset": "TILESET_DARK_CAVE",
+  "_crystal_width_blocks": 15,
+  "_crystal_height_blocks": 18,
+  "_crystal_border_block": 9,
+  "_firered_primary_tileset": "gTileset_CrDarkCave",
+  "_firered_secondary_tileset": "gTileset_CrStub",
+  "_events_halved": true,
+  "_warp_ids_rebased": true
+}

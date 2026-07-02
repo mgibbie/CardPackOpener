@@ -1,0 +1,51 @@
+{
+  "id": "MAP_RUINS_OF_ALPH_HO_OH_WORD_ROOM",
+  "name": "RuinsOfAlphHoOhWordRoom",
+  "layout": "LAYOUT_RUINS_OF_ALPH_HO_OH_WORD_ROOM",
+  "music": "MUSIC_UNION_CAVE",
+  "region_map_section": "MAPSEC_RUINS_OF_ALPH_HO_OH_WORD_ROOM",
+  "requires_flash": false,
+  "weather": "WEATHER_INSIDE",
+  "map_type": "MAP_TYPE_UNDERGROUND",
+  "allow_cycling": false,
+  "allow_escaping": true,
+  "allow_running": true,
+  "show_map_name": false,
+  "floor_number": 0,
+  "battle_scene": "MAP_BATTLE_SCENE_NORMAL",
+  "connections": [],
+  "object_events": [],
+  "warp_events": [
+    {
+      "x": 9,
+      "y": 9,
+      "elevation": 0,
+      "dest_map": "MAP_RUINS_OF_ALPH_HO_OH_ITEM_ROOM",
+      "dest_warp_id": "2"
+    },
+    {
+      "x": 10,
+      "y": 9,
+      "elevation": 0,
+      "dest_map": "MAP_RUINS_OF_ALPH_HO_OH_ITEM_ROOM",
+      "dest_warp_id": "3"
+    },
+    {
+      "x": 17,
+      "y": 21,
+      "elevation": 0,
+      "dest_map": "MAP_RUINS_OF_ALPH_INNER_CHAMBER",
+      "dest_warp_id": "1"
+    }
+  ],
+  "coord_events": [],
+  "bg_events": [],
+  "_crystal_tileset": "TILESET_HO_OH_WORD_ROOM",
+  "_crystal_width_blocks": 10,
+  "_crystal_height_blocks": 12,
+  "_crystal_border_block": 0,
+  "_firered_primary_tileset": "gTileset_CrHoOhWordRoom",
+  "_firered_secondary_tileset": "gTileset_CrStub",
+  "_events_halved": true,
+  "_warp_ids_rebased": true
+}

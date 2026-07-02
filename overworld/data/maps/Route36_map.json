@@ -1,0 +1,243 @@
+{
+  "id": "MAP_ROUTE_36",
+  "name": "Route36",
+  "layout": "LAYOUT_ROUTE_36",
+  "music": "MUSIC_ROUTE_36",
+  "region_map_section": "MAPSEC_ROUTE_36",
+  "requires_flash": false,
+  "weather": "WEATHER_SUNNY",
+  "map_type": "MAP_TYPE_ROUTE",
+  "allow_cycling": true,
+  "allow_escaping": false,
+  "allow_running": true,
+  "show_map_name": true,
+  "floor_number": 0,
+  "battle_scene": "MAP_BATTLE_SCENE_NORMAL",
+  "connections": [
+    {
+      "map": "MAP_ROUTE_37",
+      "offset": 20,
+      "direction": "up"
+    },
+    {
+      "map": "MAP_ROUTE_35",
+      "offset": 0,
+      "direction": "down"
+    },
+    {
+      "map": "MAP_VIOLET_CITY",
+      "offset": 0,
+      "direction": "right"
+    }
+  ],
+  "object_events": [
+    {
+      "local_id": "Route36_SPRITE_YOUNGSTER",
+      "type": "object",
+      "graphics_id": "OBJ_EVENT_GFX_YOUNGSTER",
+      "x": 20,
+      "y": 13,
+      "elevation": 3,
+      "movement_type": "MOVEMENT_TYPE_WANDER_AROUND",
+      "movement_range_x": 0,
+      "movement_range_y": 0,
+      "trainer_type": "TRAINER_TYPE_NORMAL",
+      "trainer_sight_or_berry_tree_id": "3",
+      "script": "TrainerPsychicMark",
+      "flag": "0"
+    },
+    {
+      "local_id": "Route36_SPRITE_YOUNGSTER",
+      "type": "object",
+      "graphics_id": "OBJ_EVENT_GFX_YOUNGSTER",
+      "x": 31,
+      "y": 14,
+      "elevation": 3,
+      "movement_type": "MOVEMENT_TYPE_WANDER_AROUND",
+      "movement_range_x": 0,
+      "movement_range_y": 0,
+      "trainer_type": "TRAINER_TYPE_NORMAL",
+      "trainer_sight_or_berry_tree_id": "5",
+      "script": "TrainerSchoolboyAlan1",
+      "flag": "0"
+    },
+    {
+      "local_id": "Route36_SPRITE_WEIRD_TREE",
+      "type": "object",
+      "graphics_id": "OBJ_EVENT_GFX_WEIRD_TREE",
+      "x": 35,
+      "y": 9,
+      "elevation": 3,
+      "movement_type": "MOVEMENT_TYPE_WANDER_AROUND",
+      "movement_range_x": 0,
+      "movement_range_y": 0,
+      "trainer_type": "TRAINER_TYPE_NONE",
+      "trainer_sight_or_berry_tree_id": "0",
+      "script": "SudowoodoScript",
+      "flag": "EVENT_ROUTE_36_SUDOWOODO"
+    },
+    {
+      "local_id": "Route36_SPRITE_LASS",
+      "type": "object",
+      "graphics_id": "OBJ_EVENT_GFX_LASS",
+      "x": 51,
+      "y": 8,
+      "elevation": 3,
+      "movement_type": "MOVEMENT_TYPE_WANDER_AROUND",
+      "movement_range_x": 2,
+      "movement_range_y": 0,
+      "trainer_type": "TRAINER_TYPE_NONE",
+      "trainer_sight_or_berry_tree_id": "0",
+      "script": "Route36LassScript",
+      "flag": "0"
+    },
+    {
+      "local_id": "Route36_SPRITE_FISHER",
+      "type": "object",
+      "graphics_id": "OBJ_EVENT_GFX_FISHER",
+      "x": 44,
+      "y": 9,
+      "elevation": 3,
+      "movement_type": "MOVEMENT_TYPE_WANDER_AROUND",
+      "movement_range_x": 0,
+      "movement_range_y": 0,
+      "trainer_type": "TRAINER_TYPE_NONE",
+      "trainer_sight_or_berry_tree_id": "0",
+      "script": "Route36RockSmashGuyScript",
+      "flag": "0"
+    },
+    {
+      "local_id": "Route36_SPRITE_FRUIT_TREE",
+      "type": "object",
+      "graphics_id": "OBJ_EVENT_GFX_FRUIT_TREE",
+      "x": 21,
+      "y": 4,
+      "elevation": 3,
+      "movement_type": "MOVEMENT_TYPE_WANDER_AROUND",
+      "movement_range_x": 0,
+      "movement_range_y": 0,
+      "trainer_type": "TRAINER_TYPE_NONE",
+      "trainer_sight_or_berry_tree_id": "0",
+      "script": "Route36FruitTree",
+      "flag": "0"
+    },
+    {
+      "local_id": "Route36_SPRITE_YOUNGSTER",
+      "type": "object",
+      "graphics_id": "OBJ_EVENT_GFX_YOUNGSTER",
+      "x": 46,
+      "y": 6,
+      "elevation": 3,
+      "movement_type": "MOVEMENT_TYPE_WANDER_AROUND",
+      "movement_range_x": 1,
+      "movement_range_y": 1,
+      "trainer_type": "TRAINER_TYPE_NONE",
+      "trainer_sight_or_berry_tree_id": "0",
+      "script": "ArthurScript",
+      "flag": "EVENT_ROUTE_36_ARTHUR_OF_THURSDAY"
+    },
+    {
+      "local_id": "Route36_SPRITE_LASS",
+      "type": "object",
+      "graphics_id": "OBJ_EVENT_GFX_LASS",
+      "x": 33,
+      "y": 12,
+      "elevation": 3,
+      "movement_type": "MOVEMENT_TYPE_WANDER_AROUND",
+      "movement_range_x": 0,
+      "movement_range_y": 0,
+      "trainer_type": "TRAINER_TYPE_NONE",
+      "trainer_sight_or_berry_tree_id": "0",
+      "script": "Route36FloriaScript",
+      "flag": "EVENT_FLORIA_AT_SUDOWOODO"
+    },
+    {
+      "local_id": "Route36_SPRITE_SUICUNE",
+      "type": "object",
+      "graphics_id": "OBJ_EVENT_GFX_SUICUNE",
+      "x": 21,
+      "y": 6,
+      "elevation": 3,
+      "movement_type": "MOVEMENT_TYPE_WANDER_AROUND",
+      "movement_range_x": 0,
+      "movement_range_y": 0,
+      "trainer_type": "TRAINER_TYPE_NONE",
+      "trainer_sight_or_berry_tree_id": "0",
+      "script": "ObjectEvent",
+      "flag": "EVENT_SAW_SUICUNE_ON_ROUTE_36"
+    }
+  ],
+  "warp_events": [
+    {
+      "x": 18,
+      "y": 8,
+      "elevation": 0,
+      "dest_map": "MAP_ROUTE_36_NATIONAL_PARK_GATE",
+      "dest_warp_id": "2"
+    },
+    {
+      "x": 18,
+      "y": 9,
+      "elevation": 0,
+      "dest_map": "MAP_ROUTE_36_NATIONAL_PARK_GATE",
+      "dest_warp_id": "3"
+    },
+    {
+      "x": 47,
+      "y": 13,
+      "elevation": 0,
+      "dest_map": "MAP_ROUTE_36_RUINS_OF_ALPH_GATE",
+      "dest_warp_id": "0"
+    },
+    {
+      "x": 48,
+      "y": 13,
+      "elevation": 0,
+      "dest_map": "MAP_ROUTE_36_RUINS_OF_ALPH_GATE",
+      "dest_warp_id": "1"
+    }
+  ],
+  "coord_events": [],
+  "bg_events": [
+    {
+      "type": "sign",
+      "x": 29,
+      "y": 1,
+      "elevation": 0,
+      "player_facing_dir": "BG_EVENT_PLAYER_FACING_ANY",
+      "script": "Route36TrainerTips2"
+    },
+    {
+      "type": "sign",
+      "x": 45,
+      "y": 11,
+      "elevation": 0,
+      "player_facing_dir": "BG_EVENT_PLAYER_FACING_ANY",
+      "script": "RuinsOfAlphNorthSign"
+    },
+    {
+      "type": "sign",
+      "x": 55,
+      "y": 7,
+      "elevation": 0,
+      "player_facing_dir": "BG_EVENT_PLAYER_FACING_ANY",
+      "script": "Route36Sign"
+    },
+    {
+      "type": "sign",
+      "x": 21,
+      "y": 7,
+      "elevation": 0,
+      "player_facing_dir": "BG_EVENT_PLAYER_FACING_ANY",
+      "script": "Route36TrainerTips1"
+    }
+  ],
+  "_crystal_tileset": "TILESET_JOHTO",
+  "_crystal_width_blocks": 30,
+  "_crystal_height_blocks": 9,
+  "_crystal_border_block": 5,
+  "_firered_primary_tileset": "gTileset_CrJohto10",
+  "_firered_secondary_tileset": "gTileset_CrStub",
+  "_events_halved": true,
+  "_warp_ids_rebased": true
+}

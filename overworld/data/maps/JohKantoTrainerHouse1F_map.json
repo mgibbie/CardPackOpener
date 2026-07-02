@@ -1,0 +1,151 @@
+{
+  "id": "MAP_JOHKANTO_TRAINER_HOUSE_1F",
+  "name": "TrainerHouse1F",
+  "layout": "LAYOUT_JOHKANTO_TRAINER_HOUSE_1F",
+  "music": "MUSIC_VIRIDIAN_CITY",
+  "region_map_section": "MAPSEC_TRAINER_HOUSE_1F",
+  "requires_flash": false,
+  "weather": "WEATHER_SUNNY",
+  "map_type": "MAP_TYPE_INDOOR",
+  "allow_cycling": false,
+  "allow_escaping": false,
+  "allow_running": true,
+  "show_map_name": false,
+  "floor_number": 0,
+  "battle_scene": "MAP_BATTLE_SCENE_NORMAL",
+  "connections": [],
+  "object_events": [
+    {
+      "local_id": "TrainerHouse1F_SPRITE_RECEPTIONIST",
+      "type": "object",
+      "graphics_id": "OBJ_EVENT_GFX_RECEPTIONIST",
+      "x": 0,
+      "y": 11,
+      "elevation": 3,
+      "movement_type": "MOVEMENT_TYPE_WANDER_AROUND",
+      "movement_range_x": 0,
+      "movement_range_y": 0,
+      "trainer_type": "TRAINER_TYPE_NONE",
+      "trainer_sight_or_berry_tree_id": "0",
+      "script": "TrainerHouse1FReceptionistScript",
+      "flag": "0"
+    },
+    {
+      "local_id": "TrainerHouse1F_SPRITE_COOLTRAINER_M",
+      "type": "object",
+      "graphics_id": "OBJ_EVENT_GFX_COOLTRAINER_M",
+      "x": 7,
+      "y": 11,
+      "elevation": 3,
+      "movement_type": "MOVEMENT_TYPE_WANDER_AROUND",
+      "movement_range_x": 0,
+      "movement_range_y": 0,
+      "trainer_type": "TRAINER_TYPE_NONE",
+      "trainer_sight_or_berry_tree_id": "0",
+      "script": "TrainerHouse1FCooltrainerMScript",
+      "flag": "0"
+    },
+    {
+      "local_id": "TrainerHouse1F_SPRITE_COOLTRAINER_F",
+      "type": "object",
+      "graphics_id": "OBJ_EVENT_GFX_COOLTRAINER_F",
+      "x": 6,
+      "y": 2,
+      "elevation": 3,
+      "movement_type": "MOVEMENT_TYPE_WANDER_AROUND",
+      "movement_range_x": 2,
+      "movement_range_y": 0,
+      "trainer_type": "TRAINER_TYPE_NONE",
+      "trainer_sight_or_berry_tree_id": "0",
+      "script": "TrainerHouse1FCooltrainerFScript",
+      "flag": "0"
+    },
+    {
+      "local_id": "TrainerHouse1F_SPRITE_YOUNGSTER",
+      "type": "object",
+      "graphics_id": "OBJ_EVENT_GFX_YOUNGSTER",
+      "x": 4,
+      "y": 8,
+      "elevation": 3,
+      "movement_type": "MOVEMENT_TYPE_WANDER_AROUND",
+      "movement_range_x": 2,
+      "movement_range_y": 0,
+      "trainer_type": "TRAINER_TYPE_NONE",
+      "trainer_sight_or_berry_tree_id": "0",
+      "script": "TrainerHouse1FYoungsterScript",
+      "flag": "0"
+    },
+    {
+      "local_id": "TrainerHouse1F_SPRITE_GENTLEMAN",
+      "type": "object",
+      "graphics_id": "OBJ_EVENT_GFX_GENTLEMAN",
+      "x": 2,
+      "y": 4,
+      "elevation": 3,
+      "movement_type": "MOVEMENT_TYPE_WANDER_AROUND",
+      "movement_range_x": 0,
+      "movement_range_y": 0,
+      "trainer_type": "TRAINER_TYPE_NONE",
+      "trainer_sight_or_berry_tree_id": "0",
+      "script": "TrainerHouse1FGentlemanScript",
+      "flag": "0"
+    }
+  ],
+  "warp_events": [
+    {
+      "x": 2,
+      "y": 13,
+      "elevation": 0,
+      "dest_map": "MAP_JOHKANTO_VIRIDIAN_CITY",
+      "dest_warp_id": "2"
+    },
+    {
+      "x": 3,
+      "y": 13,
+      "elevation": 0,
+      "dest_map": "MAP_JOHKANTO_VIRIDIAN_CITY",
+      "dest_warp_id": "2"
+    },
+    {
+      "x": 8,
+      "y": 2,
+      "elevation": 0,
+      "dest_map": "MAP_JOHKANTO_TRAINER_HOUSE_B1F",
+      "dest_warp_id": "0"
+    }
+  ],
+  "coord_events": [],
+  "bg_events": [
+    {
+      "type": "sign",
+      "x": 5,
+      "y": 0,
+      "elevation": 0,
+      "player_facing_dir": "BG_EVENT_PLAYER_FACING_ANY",
+      "script": "TrainerHouseSign1"
+    },
+    {
+      "type": "sign",
+      "x": 7,
+      "y": 0,
+      "elevation": 0,
+      "player_facing_dir": "BG_EVENT_PLAYER_FACING_ANY",
+      "script": "TrainerHouseSign2"
+    },
+    {
+      "type": "sign",
+      "x": 7,
+      "y": 10,
+      "elevation": 0,
+      "player_facing_dir": "BG_EVENT_PLAYER_FACING_ANY",
+      "script": "TrainerHouseIllegibleBook"
+    }
+  ],
+  "_crystal_tileset": "TILESET_HOUSE",
+  "_crystal_width_blocks": 5,
+  "_crystal_height_blocks": 7,
+  "_crystal_border_block": 0,
+  "_firered_primary_tileset": "gTileset_Building",
+  "_firered_secondary_tileset": "gTileset_GenericBuilding1",
+  "_events_halved": true
+}

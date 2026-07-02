@@ -1,0 +1,131 @@
+{
+  "id": "MAP_JOHKANTO_VICTORY_ROAD_GATE",
+  "name": "VictoryRoadGate",
+  "layout": "LAYOUT_JOHKANTO_VICTORY_ROAD_GATE",
+  "music": "MUSIC_INDIGO_PLATEAU",
+  "region_map_section": "MAPSEC_VICTORY_ROAD_GATE",
+  "requires_flash": false,
+  "weather": "WEATHER_SUNNY",
+  "map_type": "MAP_TYPE_INDOOR",
+  "allow_cycling": false,
+  "allow_escaping": false,
+  "allow_running": true,
+  "show_map_name": false,
+  "floor_number": 0,
+  "battle_scene": "MAP_BATTLE_SCENE_NORMAL",
+  "connections": [],
+  "object_events": [
+    {
+      "local_id": "VictoryRoadGate_SPRITE_OFFICER",
+      "type": "object",
+      "graphics_id": "OBJ_EVENT_GFX_OFFICER",
+      "x": 8,
+      "y": 11,
+      "elevation": 3,
+      "movement_type": "MOVEMENT_TYPE_WANDER_AROUND",
+      "movement_range_x": 0,
+      "movement_range_y": 0,
+      "trainer_type": "TRAINER_TYPE_NONE",
+      "trainer_sight_or_berry_tree_id": "0",
+      "script": "VictoryRoadGateOfficerScript",
+      "flag": "0"
+    },
+    {
+      "local_id": "VictoryRoadGate_SPRITE_BLACK_BELT",
+      "type": "object",
+      "graphics_id": "OBJ_EVENT_GFX_BLACK_BELT",
+      "x": 7,
+      "y": 5,
+      "elevation": 3,
+      "movement_type": "MOVEMENT_TYPE_WANDER_AROUND",
+      "movement_range_x": 0,
+      "movement_range_y": 0,
+      "trainer_type": "TRAINER_TYPE_NONE",
+      "trainer_sight_or_berry_tree_id": "0",
+      "script": "VictoryRoadGateLeftBlackBeltScript",
+      "flag": "EVENT_OPENED_MT_SILVER"
+    },
+    {
+      "local_id": "VictoryRoadGate_SPRITE_BLACK_BELT",
+      "type": "object",
+      "graphics_id": "OBJ_EVENT_GFX_BLACK_BELT",
+      "x": 12,
+      "y": 5,
+      "elevation": 3,
+      "movement_type": "MOVEMENT_TYPE_WANDER_AROUND",
+      "movement_range_x": 0,
+      "movement_range_y": 0,
+      "trainer_type": "TRAINER_TYPE_NONE",
+      "trainer_sight_or_berry_tree_id": "0",
+      "script": "VictoryRoadGateRightBlackBeltScript",
+      "flag": "EVENT_FOUGHT_SNORLAX"
+    }
+  ],
+  "warp_events": [
+    {
+      "x": 17,
+      "y": 7,
+      "elevation": 0,
+      "dest_map": "MAP_JOHKANTO_ROUTE_22",
+      "dest_warp_id": "0"
+    },
+    {
+      "x": 18,
+      "y": 7,
+      "elevation": 0,
+      "dest_map": "MAP_JOHKANTO_ROUTE_22",
+      "dest_warp_id": "0"
+    },
+    {
+      "x": 9,
+      "y": 17,
+      "elevation": 0,
+      "dest_map": "MAP_ROUTE_26",
+      "dest_warp_id": "0"
+    },
+    {
+      "x": 10,
+      "y": 17,
+      "elevation": 0,
+      "dest_map": "MAP_ROUTE_26",
+      "dest_warp_id": "0"
+    },
+    {
+      "x": 9,
+      "y": 0,
+      "elevation": 0,
+      "dest_map": "MAP_VICTORY_ROAD",
+      "dest_warp_id": "0"
+    },
+    {
+      "x": 10,
+      "y": 0,
+      "elevation": 0,
+      "dest_map": "MAP_VICTORY_ROAD",
+      "dest_warp_id": "0"
+    },
+    {
+      "x": 1,
+      "y": 7,
+      "elevation": 0,
+      "dest_map": "MAP_ROUTE_28",
+      "dest_warp_id": "1"
+    },
+    {
+      "x": 2,
+      "y": 7,
+      "elevation": 0,
+      "dest_map": "MAP_ROUTE_28",
+      "dest_warp_id": "1"
+    }
+  ],
+  "coord_events": [],
+  "bg_events": [],
+  "_crystal_tileset": "TILESET_GATE",
+  "_crystal_width_blocks": 10,
+  "_crystal_height_blocks": 9,
+  "_crystal_border_block": 0,
+  "_firered_primary_tileset": "gTileset_Building",
+  "_firered_secondary_tileset": "gTileset_GenericBuilding1",
+  "_events_halved": true
+}

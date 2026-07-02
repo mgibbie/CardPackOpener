@@ -1,0 +1,58 @@
+{
+  "id": "MAP_DRAGONS_DEN_1F",
+  "name": "DragonsDen1F",
+  "layout": "LAYOUT_DRAGONS_DEN_1F",
+  "music": "MUSIC_DRAGONS_DEN",
+  "region_map_section": "MAPSEC_DRAGONS_DEN_1F",
+  "requires_flash": false,
+  "weather": "WEATHER_INSIDE",
+  "map_type": "MAP_TYPE_UNDERGROUND",
+  "allow_cycling": false,
+  "allow_escaping": true,
+  "allow_running": true,
+  "show_map_name": false,
+  "floor_number": 0,
+  "battle_scene": "MAP_BATTLE_SCENE_NORMAL",
+  "connections": [],
+  "object_events": [],
+  "warp_events": [
+    {
+      "x": 3,
+      "y": 5,
+      "elevation": 0,
+      "dest_map": "MAP_BLACKTHORN_CITY",
+      "dest_warp_id": "7"
+    },
+    {
+      "x": 3,
+      "y": 3,
+      "elevation": 0,
+      "dest_map": "MAP_DRAGONS_DEN_1F",
+      "dest_warp_id": "3"
+    },
+    {
+      "x": 5,
+      "y": 15,
+      "elevation": 0,
+      "dest_map": "MAP_DRAGONS_DEN_B1F",
+      "dest_warp_id": "0"
+    },
+    {
+      "x": 5,
+      "y": 13,
+      "elevation": 0,
+      "dest_map": "MAP_DRAGONS_DEN_1F",
+      "dest_warp_id": "1"
+    }
+  ],
+  "coord_events": [],
+  "bg_events": [],
+  "_crystal_tileset": "TILESET_CAVE",
+  "_crystal_width_blocks": 5,
+  "_crystal_height_blocks": 9,
+  "_crystal_border_block": 9,
+  "_firered_primary_tileset": "gTileset_CrCave",
+  "_firered_secondary_tileset": "gTileset_CrStub",
+  "_events_halved": true,
+  "_warp_ids_rebased": true
+}

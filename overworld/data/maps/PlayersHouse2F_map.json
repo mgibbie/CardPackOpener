@@ -1,0 +1,115 @@
+{
+  "id": "MAP_PLAYERS_HOUSE_2F",
+  "name": "PlayersHouse2F",
+  "layout": "LAYOUT_PLAYERS_HOUSE_2F",
+  "music": "MUSIC_NEW_BARK_TOWN",
+  "region_map_section": "MAPSEC_PLAYERS_HOUSE_2F",
+  "requires_flash": false,
+  "weather": "WEATHER_SUNNY",
+  "map_type": "MAP_TYPE_INDOOR",
+  "allow_cycling": false,
+  "allow_escaping": false,
+  "allow_running": true,
+  "show_map_name": false,
+  "floor_number": 0,
+  "battle_scene": "MAP_BATTLE_SCENE_NORMAL",
+  "connections": [],
+  "object_events": [
+    {
+      "local_id": "PlayersHouse2F_SPRITE_CONSOLE",
+      "type": "object",
+      "graphics_id": "OBJ_EVENT_GFX_CONSOLE",
+      "x": 4,
+      "y": 2,
+      "elevation": 3,
+      "movement_type": "MOVEMENT_TYPE_WANDER_AROUND",
+      "movement_range_x": 0,
+      "movement_range_y": 0,
+      "trainer_type": "TRAINER_TYPE_NONE",
+      "trainer_sight_or_berry_tree_id": "0",
+      "script": "PlayersHouseGameConsoleScript",
+      "flag": "EVENT_PLAYERS_HOUSE_2F_CONSOLE"
+    },
+    {
+      "local_id": "PlayersHouse2F_SPRITE_DOLL_1",
+      "type": "object",
+      "graphics_id": "OBJ_EVENT_GFX_DOLL_1",
+      "x": 4,
+      "y": 4,
+      "elevation": 3,
+      "movement_type": "MOVEMENT_TYPE_WANDER_AROUND",
+      "movement_range_x": 0,
+      "movement_range_y": 0,
+      "trainer_type": "TRAINER_TYPE_NONE",
+      "trainer_sight_or_berry_tree_id": "0",
+      "script": "PlayersHouseDoll1Script",
+      "flag": "EVENT_PLAYERS_HOUSE_2F_DOLL_1"
+    },
+    {
+      "local_id": "PlayersHouse2F_SPRITE_DOLL_2",
+      "type": "object",
+      "graphics_id": "OBJ_EVENT_GFX_DOLL_2",
+      "x": 5,
+      "y": 4,
+      "elevation": 3,
+      "movement_type": "MOVEMENT_TYPE_WANDER_AROUND",
+      "movement_range_x": 0,
+      "movement_range_y": 0,
+      "trainer_type": "TRAINER_TYPE_NONE",
+      "trainer_sight_or_berry_tree_id": "0",
+      "script": "PlayersHouseDoll2Script",
+      "flag": "EVENT_PLAYERS_HOUSE_2F_DOLL_2"
+    },
+    {
+      "local_id": "PlayersHouse2F_SPRITE_BIG_DOLL",
+      "type": "object",
+      "graphics_id": "OBJ_EVENT_GFX_BIG_DOLL",
+      "x": 0,
+      "y": 1,
+      "elevation": 3,
+      "movement_type": "MOVEMENT_TYPE_WANDER_AROUND",
+      "movement_range_x": 0,
+      "movement_range_y": 0,
+      "trainer_type": "TRAINER_TYPE_NONE",
+      "trainer_sight_or_berry_tree_id": "0",
+      "script": "PlayersHouseBigDollScript",
+      "flag": "EVENT_PLAYERS_HOUSE_2F_BIG_DOLL"
+    }
+  ],
+  "warp_events": [
+    {
+      "x": 7,
+      "y": 0,
+      "elevation": 0,
+      "dest_map": "MAP_PLAYERS_HOUSE_1F",
+      "dest_warp_id": "2"
+    }
+  ],
+  "coord_events": [],
+  "bg_events": [
+    {
+      "type": "sign",
+      "x": 3,
+      "y": 1,
+      "elevation": 0,
+      "player_facing_dir": "BG_EVENT_PLAYER_FACING_ANY",
+      "script": "PlayersHouseRadioScript"
+    },
+    {
+      "type": "sign",
+      "x": 5,
+      "y": 1,
+      "elevation": 0,
+      "player_facing_dir": "BG_EVENT_PLAYER_FACING_ANY",
+      "script": "PlayersHouseBookshelfScript"
+    }
+  ],
+  "_crystal_tileset": "TILESET_PLAYERS_ROOM",
+  "_crystal_width_blocks": 4,
+  "_crystal_height_blocks": 3,
+  "_crystal_border_block": 0,
+  "_firered_primary_tileset": "gTileset_CrPlayersRoom",
+  "_firered_secondary_tileset": "gTileset_CrStub",
+  "_events_halved": true,
+  "_warp_ids_rebased": true
+}

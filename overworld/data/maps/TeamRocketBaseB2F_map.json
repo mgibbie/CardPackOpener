@@ -1,0 +1,437 @@
+{
+  "id": "MAP_TEAM_ROCKET_BASE_B2F",
+  "name": "TeamRocketBaseB2F",
+  "layout": "LAYOUT_TEAM_ROCKET_BASE_B2F",
+  "music": "MUSIC_ROCKET_HIDEOUT",
+  "region_map_section": "MAPSEC_TEAM_ROCKET_BASE_B2F",
+  "requires_flash": false,
+  "weather": "WEATHER_INSIDE",
+  "map_type": "MAP_TYPE_UNDERGROUND",
+  "allow_cycling": false,
+  "allow_escaping": true,
+  "allow_running": true,
+  "show_map_name": false,
+  "floor_number": 0,
+  "battle_scene": "MAP_BATTLE_SCENE_NORMAL",
+  "connections": [],
+  "object_events": [
+    {
+      "local_id": "TeamRocketBaseB2F_SPRITE_ROCKET",
+      "type": "object",
+      "graphics_id": "OBJ_EVENT_GFX_ROCKET",
+      "x": 20,
+      "y": 16,
+      "elevation": 3,
+      "movement_type": "MOVEMENT_TYPE_WANDER_AROUND",
+      "movement_range_x": 0,
+      "movement_range_y": 0,
+      "trainer_type": "TRAINER_TYPE_NONE",
+      "trainer_sight_or_berry_tree_id": "0",
+      "script": "ObjectEvent",
+      "flag": "EVENT_TEAM_ROCKET_BASE_B2F_GRUNT_WITH_EXECUTIVE"
+    },
+    {
+      "local_id": "TeamRocketBaseB2F_SPRITE_ROCKET_GIRL",
+      "type": "object",
+      "graphics_id": "OBJ_EVENT_GFX_ROCKET_GIRL",
+      "x": 20,
+      "y": 16,
+      "elevation": 3,
+      "movement_type": "MOVEMENT_TYPE_WANDER_AROUND",
+      "movement_range_x": 0,
+      "movement_range_y": 0,
+      "trainer_type": "TRAINER_TYPE_NONE",
+      "trainer_sight_or_berry_tree_id": "0",
+      "script": "ObjectEvent",
+      "flag": "EVENT_TEAM_ROCKET_BASE_B2F_EXECUTIVE"
+    },
+    {
+      "local_id": "TeamRocketBaseB2F_SPRITE_LANCE",
+      "type": "object",
+      "graphics_id": "OBJ_EVENT_GFX_LANCE",
+      "x": 5,
+      "y": 13,
+      "elevation": 3,
+      "movement_type": "MOVEMENT_TYPE_WANDER_AROUND",
+      "movement_range_x": 0,
+      "movement_range_y": 0,
+      "trainer_type": "TRAINER_TYPE_NONE",
+      "trainer_sight_or_berry_tree_id": "0",
+      "script": "ObjectEvent",
+      "flag": "EVENT_TEAM_ROCKET_BASE_B2F_LANCE"
+    },
+    {
+      "local_id": "TeamRocketBaseB2F_SPRITE_DRAGON",
+      "type": "object",
+      "graphics_id": "OBJ_EVENT_GFX_DRAGON",
+      "x": 9,
+      "y": 13,
+      "elevation": 3,
+      "movement_type": "MOVEMENT_TYPE_WANDER_AROUND",
+      "movement_range_x": 0,
+      "movement_range_y": 0,
+      "trainer_type": "TRAINER_TYPE_NONE",
+      "trainer_sight_or_berry_tree_id": "0",
+      "script": "ObjectEvent",
+      "flag": "EVENT_TEAM_ROCKET_BASE_B2F_DRAGONITE"
+    },
+    {
+      "local_id": "TeamRocketBaseB2F_SPRITE_VOLTORB",
+      "type": "object",
+      "graphics_id": "OBJ_EVENT_GFX_VOLTORB",
+      "x": 7,
+      "y": 5,
+      "elevation": 3,
+      "movement_type": "MOVEMENT_TYPE_WANDER_AROUND",
+      "movement_range_x": 0,
+      "movement_range_y": 0,
+      "trainer_type": "TRAINER_TYPE_NONE",
+      "trainer_sight_or_berry_tree_id": "0",
+      "script": "RocketElectrode1",
+      "flag": "EVENT_TEAM_ROCKET_BASE_B2F_ELECTRODE_1"
+    },
+    {
+      "local_id": "TeamRocketBaseB2F_SPRITE_VOLTORB",
+      "type": "object",
+      "graphics_id": "OBJ_EVENT_GFX_VOLTORB",
+      "x": 7,
+      "y": 7,
+      "elevation": 3,
+      "movement_type": "MOVEMENT_TYPE_WANDER_AROUND",
+      "movement_range_x": 0,
+      "movement_range_y": 0,
+      "trainer_type": "TRAINER_TYPE_NONE",
+      "trainer_sight_or_berry_tree_id": "0",
+      "script": "RocketElectrode2",
+      "flag": "EVENT_TEAM_ROCKET_BASE_B2F_ELECTRODE_2"
+    },
+    {
+      "local_id": "TeamRocketBaseB2F_SPRITE_VOLTORB",
+      "type": "object",
+      "graphics_id": "OBJ_EVENT_GFX_VOLTORB",
+      "x": 7,
+      "y": 9,
+      "elevation": 3,
+      "movement_type": "MOVEMENT_TYPE_WANDER_AROUND",
+      "movement_range_x": 0,
+      "movement_range_y": 0,
+      "trainer_type": "TRAINER_TYPE_NONE",
+      "trainer_sight_or_berry_tree_id": "0",
+      "script": "RocketElectrode3",
+      "flag": "EVENT_TEAM_ROCKET_BASE_B2F_ELECTRODE_3"
+    },
+    {
+      "local_id": "TeamRocketBaseB2F_SPRITE_VOLTORB",
+      "type": "object",
+      "graphics_id": "OBJ_EVENT_GFX_VOLTORB",
+      "x": 22,
+      "y": 5,
+      "elevation": 3,
+      "movement_type": "MOVEMENT_TYPE_WANDER_AROUND",
+      "movement_range_x": 0,
+      "movement_range_y": 0,
+      "trainer_type": "TRAINER_TYPE_NONE",
+      "trainer_sight_or_berry_tree_id": "0",
+      "script": "ObjectEvent",
+      "flag": "EVENT_TEAM_ROCKET_BASE_B2F_ELECTRODE_1"
+    },
+    {
+      "local_id": "TeamRocketBaseB2F_SPRITE_VOLTORB",
+      "type": "object",
+      "graphics_id": "OBJ_EVENT_GFX_VOLTORB",
+      "x": 22,
+      "y": 7,
+      "elevation": 3,
+      "movement_type": "MOVEMENT_TYPE_WANDER_AROUND",
+      "movement_range_x": 0,
+      "movement_range_y": 0,
+      "trainer_type": "TRAINER_TYPE_NONE",
+      "trainer_sight_or_berry_tree_id": "0",
+      "script": "ObjectEvent",
+      "flag": "EVENT_TEAM_ROCKET_BASE_B2F_ELECTRODE_2"
+    },
+    {
+      "local_id": "TeamRocketBaseB2F_SPRITE_VOLTORB",
+      "type": "object",
+      "graphics_id": "OBJ_EVENT_GFX_VOLTORB",
+      "x": 22,
+      "y": 9,
+      "elevation": 3,
+      "movement_type": "MOVEMENT_TYPE_WANDER_AROUND",
+      "movement_range_x": 0,
+      "movement_range_y": 0,
+      "trainer_type": "TRAINER_TYPE_NONE",
+      "trainer_sight_or_berry_tree_id": "0",
+      "script": "ObjectEvent",
+      "flag": "EVENT_TEAM_ROCKET_BASE_B2F_ELECTRODE_3"
+    },
+    {
+      "local_id": "TeamRocketBaseB2F_SPRITE_ROCKET",
+      "type": "object",
+      "graphics_id": "OBJ_EVENT_GFX_ROCKET",
+      "x": 25,
+      "y": 13,
+      "elevation": 3,
+      "movement_type": "MOVEMENT_TYPE_WANDER_AROUND",
+      "movement_range_x": 0,
+      "movement_range_y": 0,
+      "trainer_type": "TRAINER_TYPE_NORMAL",
+      "trainer_sight_or_berry_tree_id": "3",
+      "script": "TrainerGruntM17",
+      "flag": "EVENT_TEAM_ROCKET_BASE_POPULATION"
+    },
+    {
+      "local_id": "TeamRocketBaseB2F_SPRITE_ROCKET",
+      "type": "object",
+      "graphics_id": "OBJ_EVENT_GFX_ROCKET",
+      "x": 4,
+      "y": 1,
+      "elevation": 3,
+      "movement_type": "MOVEMENT_TYPE_WANDER_AROUND",
+      "movement_range_x": 0,
+      "movement_range_y": 0,
+      "trainer_type": "TRAINER_TYPE_NORMAL",
+      "trainer_sight_or_berry_tree_id": "1",
+      "script": "TrainerGruntM18",
+      "flag": "EVENT_TEAM_ROCKET_BASE_POPULATION"
+    },
+    {
+      "local_id": "TeamRocketBaseB2F_SPRITE_ROCKET",
+      "type": "object",
+      "graphics_id": "OBJ_EVENT_GFX_ROCKET",
+      "x": 21,
+      "y": 14,
+      "elevation": 3,
+      "movement_type": "MOVEMENT_TYPE_WANDER_AROUND",
+      "movement_range_x": 0,
+      "movement_range_y": 0,
+      "trainer_type": "TRAINER_TYPE_NORMAL",
+      "trainer_sight_or_berry_tree_id": "4",
+      "script": "TrainerGruntM19",
+      "flag": "EVENT_TEAM_ROCKET_BASE_POPULATION"
+    },
+    {
+      "local_id": "TeamRocketBaseB2F_SPRITE_POKE_BALL",
+      "type": "object",
+      "graphics_id": "OBJ_EVENT_GFX_POKE_BALL",
+      "x": 3,
+      "y": 10,
+      "elevation": 3,
+      "movement_type": "MOVEMENT_TYPE_WANDER_AROUND",
+      "movement_range_x": 0,
+      "movement_range_y": 0,
+      "trainer_type": "TRAINER_TYPE_NONE",
+      "trainer_sight_or_berry_tree_id": "0",
+      "script": "TeamRocketBaseB2FTMThief",
+      "flag": "EVENT_TEAM_ROCKET_BASE_B2F_TM_THIEF"
+    }
+  ],
+  "warp_events": [
+    {
+      "x": 3,
+      "y": 14,
+      "elevation": 0,
+      "dest_map": "MAP_TEAM_ROCKET_BASE_B1F",
+      "dest_warp_id": "1"
+    },
+    {
+      "x": 3,
+      "y": 2,
+      "elevation": 0,
+      "dest_map": "MAP_TEAM_ROCKET_BASE_B3F",
+      "dest_warp_id": "0"
+    },
+    {
+      "x": 27,
+      "y": 2,
+      "elevation": 0,
+      "dest_map": "MAP_TEAM_ROCKET_BASE_B3F",
+      "dest_warp_id": "1"
+    },
+    {
+      "x": 3,
+      "y": 6,
+      "elevation": 0,
+      "dest_map": "MAP_TEAM_ROCKET_BASE_B3F",
+      "dest_warp_id": "2"
+    },
+    {
+      "x": 27,
+      "y": 14,
+      "elevation": 0,
+      "dest_map": "MAP_TEAM_ROCKET_BASE_B3F",
+      "dest_warp_id": "3"
+    }
+  ],
+  "coord_events": [],
+  "bg_events": [
+    {
+      "type": "sign",
+      "x": 17,
+      "y": 9,
+      "elevation": 0,
+      "player_facing_dir": "BG_EVENT_PLAYER_FACING_ANY",
+      "script": "TeamRocketBaseB2FTransmitterScript"
+    },
+    {
+      "type": "sign",
+      "x": 16,
+      "y": 9,
+      "elevation": 0,
+      "player_facing_dir": "BG_EVENT_PLAYER_FACING_ANY",
+      "script": "TeamRocketBaseB2FTransmitterScript"
+    },
+    {
+      "type": "sign",
+      "x": 15,
+      "y": 9,
+      "elevation": 0,
+      "player_facing_dir": "BG_EVENT_PLAYER_FACING_ANY",
+      "script": "TeamRocketBaseB2FTransmitterScript"
+    },
+    {
+      "type": "sign",
+      "x": 14,
+      "y": 9,
+      "elevation": 0,
+      "player_facing_dir": "BG_EVENT_PLAYER_FACING_ANY",
+      "script": "TeamRocketBaseB2FTransmitterScript"
+    },
+    {
+      "type": "sign",
+      "x": 13,
+      "y": 9,
+      "elevation": 0,
+      "player_facing_dir": "BG_EVENT_PLAYER_FACING_ANY",
+      "script": "TeamRocketBaseB2FTransmitterScript"
+    },
+    {
+      "type": "sign",
+      "x": 12,
+      "y": 9,
+      "elevation": 0,
+      "player_facing_dir": "BG_EVENT_PLAYER_FACING_ANY",
+      "script": "TeamRocketBaseB2FTransmitterScript"
+    },
+    {
+      "type": "sign",
+      "x": 12,
+      "y": 8,
+      "elevation": 0,
+      "player_facing_dir": "BG_EVENT_PLAYER_FACING_ANY",
+      "script": "TeamRocketBaseB2FTransmitterScript"
+    },
+    {
+      "type": "sign",
+      "x": 12,
+      "y": 7,
+      "elevation": 0,
+      "player_facing_dir": "BG_EVENT_PLAYER_FACING_ANY",
+      "script": "TeamRocketBaseB2FTransmitterScript"
+    },
+    {
+      "type": "sign",
+      "x": 12,
+      "y": 6,
+      "elevation": 0,
+      "player_facing_dir": "BG_EVENT_PLAYER_FACING_ANY",
+      "script": "TeamRocketBaseB2FTransmitterScript"
+    },
+    {
+      "type": "sign",
+      "x": 12,
+      "y": 5,
+      "elevation": 0,
+      "player_facing_dir": "BG_EVENT_PLAYER_FACING_ANY",
+      "script": "TeamRocketBaseB2FTransmitterScript"
+    },
+    {
+      "type": "sign",
+      "x": 12,
+      "y": 4,
+      "elevation": 0,
+      "player_facing_dir": "BG_EVENT_PLAYER_FACING_ANY",
+      "script": "TeamRocketBaseB2FTransmitterScript"
+    },
+    {
+      "type": "sign",
+      "x": 13,
+      "y": 4,
+      "elevation": 0,
+      "player_facing_dir": "BG_EVENT_PLAYER_FACING_ANY",
+      "script": "TeamRocketBaseB2FTransmitterScript"
+    },
+    {
+      "type": "sign",
+      "x": 14,
+      "y": 4,
+      "elevation": 0,
+      "player_facing_dir": "BG_EVENT_PLAYER_FACING_ANY",
+      "script": "TeamRocketBaseB2FTransmitterScript"
+    },
+    {
+      "type": "sign",
+      "x": 15,
+      "y": 4,
+      "elevation": 0,
+      "player_facing_dir": "BG_EVENT_PLAYER_FACING_ANY",
+      "script": "TeamRocketBaseB2FTransmitterScript"
+    },
+    {
+      "type": "sign",
+      "x": 16,
+      "y": 4,
+      "elevation": 0,
+      "player_facing_dir": "BG_EVENT_PLAYER_FACING_ANY",
+      "script": "TeamRocketBaseB2FTransmitterScript"
+    },
+    {
+      "type": "sign",
+      "x": 17,
+      "y": 4,
+      "elevation": 0,
+      "player_facing_dir": "BG_EVENT_PLAYER_FACING_ANY",
+      "script": "TeamRocketBaseB2FTransmitterScript"
+    },
+    {
+      "type": "sign",
+      "x": 17,
+      "y": 5,
+      "elevation": 0,
+      "player_facing_dir": "BG_EVENT_PLAYER_FACING_ANY",
+      "script": "TeamRocketBaseB2FTransmitterScript"
+    },
+    {
+      "type": "sign",
+      "x": 17,
+      "y": 6,
+      "elevation": 0,
+      "player_facing_dir": "BG_EVENT_PLAYER_FACING_ANY",
+      "script": "TeamRocketBaseB2FTransmitterScript"
+    },
+    {
+      "type": "sign",
+      "x": 17,
+      "y": 7,
+      "elevation": 0,
+      "player_facing_dir": "BG_EVENT_PLAYER_FACING_ANY",
+      "script": "TeamRocketBaseB2FTransmitterScript"
+    },
+    {
+      "type": "sign",
+      "x": 17,
+      "y": 8,
+      "elevation": 0,
+      "player_facing_dir": "BG_EVENT_PLAYER_FACING_ANY",
+      "script": "TeamRocketBaseB2FTransmitterScript"
+    }
+  ],
+  "_crystal_tileset": "TILESET_FACILITY",
+  "_crystal_width_blocks": 15,
+  "_crystal_height_blocks": 9,
+  "_crystal_border_block": 0,
+  "_firered_primary_tileset": "gTileset_CrFacility",
+  "_firered_secondary_tileset": "gTileset_CrStub",
+  "_events_halved": true,
+  "_warp_ids_rebased": true
+}

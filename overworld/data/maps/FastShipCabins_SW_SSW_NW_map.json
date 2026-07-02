@@ -1,0 +1,151 @@
+{
+  "id": "MAP_FAST_SHIP_CABINS_SW_SSW_NW",
+  "name": "FastShipCabins_SW_SSW_NW",
+  "layout": "LAYOUT_FAST_SHIP_CABINS_SW_SSW_NW",
+  "music": "MUSIC_SS_AQUA",
+  "region_map_section": "MAPSEC_FAST_SHIP_CABINS_SW_SSW_NW",
+  "requires_flash": false,
+  "weather": "WEATHER_SUNNY",
+  "map_type": "MAP_TYPE_INDOOR",
+  "allow_cycling": false,
+  "allow_escaping": false,
+  "allow_running": true,
+  "show_map_name": false,
+  "floor_number": 0,
+  "battle_scene": "MAP_BATTLE_SCENE_NORMAL",
+  "connections": [],
+  "object_events": [
+    {
+      "local_id": "FastShipCabins_SW_SSW_NW_SPRITE_FISHER",
+      "type": "object",
+      "graphics_id": "OBJ_EVENT_GFX_FISHER",
+      "x": 1,
+      "y": 15,
+      "elevation": 3,
+      "movement_type": "MOVEMENT_TYPE_WANDER_AROUND",
+      "movement_range_x": 0,
+      "movement_range_y": 0,
+      "trainer_type": "TRAINER_TYPE_NORMAL",
+      "trainer_sight_or_berry_tree_id": "2",
+      "script": "TrainerFirebreatherLyle",
+      "flag": "EVENT_FAST_SHIP_PASSENGERS_FIRST_TRIP"
+    },
+    {
+      "local_id": "FastShipCabins_SW_SSW_NW_SPRITE_BUG_CATCHER",
+      "type": "object",
+      "graphics_id": "OBJ_EVENT_GFX_BUG_CATCHER",
+      "x": 6,
+      "y": 15,
+      "elevation": 3,
+      "movement_type": "MOVEMENT_TYPE_WANDER_AROUND",
+      "movement_range_x": 0,
+      "movement_range_y": 0,
+      "trainer_type": "TRAINER_TYPE_NORMAL",
+      "trainer_sight_or_berry_tree_id": "2",
+      "script": "TrainerBugCatcherKen",
+      "flag": "EVENT_FAST_SHIP_PASSENGERS_WESTBOUND"
+    },
+    {
+      "local_id": "FastShipCabins_SW_SSW_NW_SPRITE_BEAUTY",
+      "type": "object",
+      "graphics_id": "OBJ_EVENT_GFX_BEAUTY",
+      "x": 1,
+      "y": 26,
+      "elevation": 3,
+      "movement_type": "MOVEMENT_TYPE_WANDER_AROUND",
+      "movement_range_x": 0,
+      "movement_range_y": 0,
+      "trainer_type": "TRAINER_TYPE_NORMAL",
+      "trainer_sight_or_berry_tree_id": "3",
+      "script": "TrainerBeautyCassie",
+      "flag": "EVENT_FAST_SHIP_PASSENGERS_EASTBOUND"
+    },
+    {
+      "local_id": "FastShipCabins_SW_SSW_NW_SPRITE_ROCKER",
+      "type": "object",
+      "graphics_id": "OBJ_EVENT_GFX_ROCKER",
+      "x": 3,
+      "y": 28,
+      "elevation": 3,
+      "movement_type": "MOVEMENT_TYPE_WANDER_AROUND",
+      "movement_range_x": 0,
+      "movement_range_y": 0,
+      "trainer_type": "TRAINER_TYPE_NORMAL",
+      "trainer_sight_or_berry_tree_id": "2",
+      "script": "TrainerGuitaristClyde",
+      "flag": "EVENT_FAST_SHIP_PASSENGERS_WESTBOUND"
+    }
+  ],
+  "warp_events": [
+    {
+      "x": 2,
+      "y": 0,
+      "elevation": 0,
+      "dest_map": "MAP_FAST_SHIP_1F",
+      "dest_warp_id": "4"
+    },
+    {
+      "x": 2,
+      "y": 19,
+      "elevation": 0,
+      "dest_map": "MAP_FAST_SHIP_1F",
+      "dest_warp_id": "5"
+    },
+    {
+      "x": 3,
+      "y": 19,
+      "elevation": 0,
+      "dest_map": "MAP_FAST_SHIP_1F",
+      "dest_warp_id": "5"
+    },
+    {
+      "x": 2,
+      "y": 31,
+      "elevation": 0,
+      "dest_map": "MAP_FAST_SHIP_1F",
+      "dest_warp_id": "6"
+    },
+    {
+      "x": 3,
+      "y": 31,
+      "elevation": 0,
+      "dest_map": "MAP_FAST_SHIP_1F",
+      "dest_warp_id": "6"
+    }
+  ],
+  "coord_events": [],
+  "bg_events": [
+    {
+      "type": "sign",
+      "x": 7,
+      "y": 1,
+      "elevation": 0,
+      "player_facing_dir": "BG_EVENT_PLAYER_FACING_ANY",
+      "script": "FastShipBed"
+    },
+    {
+      "type": "sign",
+      "x": 7,
+      "y": 2,
+      "elevation": 0,
+      "player_facing_dir": "BG_EVENT_PLAYER_FACING_ANY",
+      "script": "FastShipBed"
+    },
+    {
+      "type": "sign",
+      "x": 7,
+      "y": 7,
+      "elevation": 0,
+      "player_facing_dir": "BG_EVENT_PLAYER_FACING_ANY",
+      "script": "FastShipCabinsNorthwestCabinTrashcan"
+    }
+  ],
+  "_crystal_tileset": "TILESET_LIGHTHOUSE",
+  "_crystal_width_blocks": 4,
+  "_crystal_height_blocks": 16,
+  "_crystal_border_block": 0,
+  "_firered_primary_tileset": "gTileset_CrLighthouse",
+  "_firered_secondary_tileset": "gTileset_CrStub",
+  "_events_halved": true,
+  "_warp_ids_rebased": true
+}

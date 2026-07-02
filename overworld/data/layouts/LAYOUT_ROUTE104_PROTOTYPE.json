@@ -1,0 +1,26 @@
+{
+  "id": "LAYOUT_ROUTE104_PROTOTYPE",
+  "name": "Route104_Prototype_Layout",
+  "game": "emerald",
+  "width": 1,
+  "height": 1,
+  "border_width": 0,
+  "border_height": 0,
+  "primary_tileset": "gTileset_General",
+  "secondary_tileset": "gTileset_Rustboro",
+  "map": [
+    [
+      513
+    ]
+  ],
+  "border": [
+    [
+      468,
+      469
+    ],
+    [
+      476,
+      477
+    ]
+  ]
+}

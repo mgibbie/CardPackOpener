@@ -1,0 +1,168 @@
+{
+  "id": "MAP_EARLS_POKEMON_ACADEMY",
+  "name": "EarlsPokemonAcademy",
+  "layout": "LAYOUT_EARLS_POKEMON_ACADEMY",
+  "music": "MUSIC_VIOLET_CITY",
+  "region_map_section": "MAPSEC_EARLS_POKEMON_ACADEMY",
+  "requires_flash": false,
+  "weather": "WEATHER_SUNNY",
+  "map_type": "MAP_TYPE_INDOOR",
+  "allow_cycling": false,
+  "allow_escaping": false,
+  "allow_running": true,
+  "show_map_name": false,
+  "floor_number": 0,
+  "battle_scene": "MAP_BATTLE_SCENE_NORMAL",
+  "connections": [],
+  "object_events": [
+    {
+      "local_id": "EarlsPokemonAcademy_SPRITE_FISHER",
+      "type": "object",
+      "graphics_id": "OBJ_EVENT_GFX_FISHER",
+      "x": 4,
+      "y": 2,
+      "elevation": 3,
+      "movement_type": "MOVEMENT_TYPE_WANDER_AROUND",
+      "movement_range_x": 0,
+      "movement_range_y": 0,
+      "trainer_type": "TRAINER_TYPE_NONE",
+      "trainer_sight_or_berry_tree_id": "0",
+      "script": "AcademyEarl",
+      "flag": "EVENT_EARLS_ACADEMY_EARL"
+    },
+    {
+      "local_id": "EarlsPokemonAcademy_SPRITE_YOUNGSTER",
+      "type": "object",
+      "graphics_id": "OBJ_EVENT_GFX_YOUNGSTER",
+      "x": 2,
+      "y": 5,
+      "elevation": 3,
+      "movement_type": "MOVEMENT_TYPE_WANDER_AROUND",
+      "movement_range_x": 0,
+      "movement_range_y": 0,
+      "trainer_type": "TRAINER_TYPE_NONE",
+      "trainer_sight_or_berry_tree_id": "0",
+      "script": "EarlsPokemonAcademyYoungster1Script",
+      "flag": "0"
+    },
+    {
+      "local_id": "EarlsPokemonAcademy_SPRITE_GAMEBOY_KID",
+      "type": "object",
+      "graphics_id": "OBJ_EVENT_GFX_GAMEBOY_KID",
+      "x": 3,
+      "y": 11,
+      "elevation": 3,
+      "movement_type": "MOVEMENT_TYPE_WANDER_AROUND",
+      "movement_range_x": 0,
+      "movement_range_y": 0,
+      "trainer_type": "TRAINER_TYPE_NONE",
+      "trainer_sight_or_berry_tree_id": "0",
+      "script": "EarlsPokemonAcademyGameboyKid1Script",
+      "flag": "0"
+    },
+    {
+      "local_id": "EarlsPokemonAcademy_SPRITE_GAMEBOY_KID",
+      "type": "object",
+      "graphics_id": "OBJ_EVENT_GFX_GAMEBOY_KID",
+      "x": 4,
+      "y": 11,
+      "elevation": 3,
+      "movement_type": "MOVEMENT_TYPE_WANDER_AROUND",
+      "movement_range_x": 0,
+      "movement_range_y": 0,
+      "trainer_type": "TRAINER_TYPE_NONE",
+      "trainer_sight_or_berry_tree_id": "0",
+      "script": "EarlsPokemonAcademyGameboyKid2Script",
+      "flag": "0"
+    },
+    {
+      "local_id": "EarlsPokemonAcademy_SPRITE_YOUNGSTER",
+      "type": "object",
+      "graphics_id": "OBJ_EVENT_GFX_YOUNGSTER",
+      "x": 4,
+      "y": 7,
+      "elevation": 3,
+      "movement_type": "MOVEMENT_TYPE_WANDER_AROUND",
+      "movement_range_x": 0,
+      "movement_range_y": 0,
+      "trainer_type": "TRAINER_TYPE_NONE",
+      "trainer_sight_or_berry_tree_id": "0",
+      "script": "EarlsPokemonAcademyYoungster2Script",
+      "flag": "0"
+    },
+    {
+      "local_id": "EarlsPokemonAcademy_SPRITE_POKEDEX",
+      "type": "object",
+      "graphics_id": "OBJ_EVENT_GFX_POKEDEX",
+      "x": 2,
+      "y": 4,
+      "elevation": 3,
+      "movement_type": "MOVEMENT_TYPE_WANDER_AROUND",
+      "movement_range_x": 0,
+      "movement_range_y": 0,
+      "trainer_type": "TRAINER_TYPE_NONE",
+      "trainer_sight_or_berry_tree_id": "0",
+      "script": "AcademyNotebook",
+      "flag": "0"
+    }
+  ],
+  "warp_events": [
+    {
+      "x": 3,
+      "y": 15,
+      "elevation": 0,
+      "dest_map": "MAP_VIOLET_CITY",
+      "dest_warp_id": "2"
+    },
+    {
+      "x": 4,
+      "y": 15,
+      "elevation": 0,
+      "dest_map": "MAP_VIOLET_CITY",
+      "dest_warp_id": "2"
+    }
+  ],
+  "coord_events": [],
+  "bg_events": [
+    {
+      "type": "sign",
+      "x": 0,
+      "y": 1,
+      "elevation": 0,
+      "player_facing_dir": "BG_EVENT_PLAYER_FACING_ANY",
+      "script": "AcademyBookshelf"
+    },
+    {
+      "type": "sign",
+      "x": 1,
+      "y": 1,
+      "elevation": 0,
+      "player_facing_dir": "BG_EVENT_PLAYER_FACING_ANY",
+      "script": "AcademyBookshelf"
+    },
+    {
+      "type": "sign",
+      "x": 3,
+      "y": 0,
+      "elevation": 0,
+      "player_facing_dir": "BG_EVENT_PLAYER_FACING_ANY",
+      "script": "AcademyBlackboard"
+    },
+    {
+      "type": "sign",
+      "x": 4,
+      "y": 0,
+      "elevation": 0,
+      "player_facing_dir": "BG_EVENT_PLAYER_FACING_ANY",
+      "script": "AcademyBlackboard"
+    }
+  ],
+  "_crystal_tileset": "TILESET_LAB",
+  "_crystal_width_blocks": 4,
+  "_crystal_height_blocks": 8,
+  "_crystal_border_block": 0,
+  "_firered_primary_tileset": "gTileset_CrLab",
+  "_firered_secondary_tileset": "gTileset_CrStub",
+  "_events_halved": true,
+  "_warp_ids_rebased": true
+}
