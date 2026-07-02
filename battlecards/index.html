@@ -1,34 +1,59 @@
 <!DOCTYPE html>
 <html>
 <head>
-	<title>Magepunk Battlecards — 3D Prototype</title>
+	<title>Magepunk Battlecards</title>
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<link rel="icon" href="data:,">
 	<style>
-		html, body { margin: 0; height: 100%; overflow: hidden; background: #0e0b16; font-family: 'Segoe UI', sans-serif; }
+		html, body { margin: 0; height: 100%; overflow: hidden; background: #0d0a14; font-family: 'Segoe UI', sans-serif; user-select: none; }
 		#scene { position: fixed; inset: 0; }
-		#hud {
-			position: fixed; top: 0; left: 0; right: 0; padding: 14px 20px;
-			display: flex; align-items: baseline; gap: 16px; pointer-events: none;
-			color: #e8e2f4; text-shadow: 0 2px 8px #000;
+		.hud { position: fixed; color: #e8e2f4; text-shadow: 0 2px 6px #000; pointer-events: none; }
+		#title { top: 12px; left: 18px; font-size: 17px; font-weight: 700; letter-spacing: 1px; }
+		#title a { color: #9d8fd4; font-weight: 400; font-size: 13px; text-decoration: none; margin-left: 12px; pointer-events: auto; }
+		#title a:hover { text-decoration: underline; }
+
+		.panel {
+			position: fixed; left: 18px; width: 190px; padding: 10px 14px;
+			background: rgba(30,22,48,0.9); border: 1px solid #4a3f6b; border-radius: 10px;
+			color: #e8e2f4; cursor: pointer; transition: box-shadow 0.15s, background 0.3s;
 		}
-		#hud h1 { margin: 0; font-size: 20px; letter-spacing: 1px; }
-		#hud .hint { font-size: 13px; opacity: 0.7; }
-		#cardinfo {
-			position: fixed; bottom: 18px; left: 50%; transform: translateX(-50%);
-			color: #e8e2f4; text-align: center; pointer-events: none; text-shadow: 0 2px 8px #000;
+		.panel:hover { box-shadow: 0 0 12px rgba(143,111,255,0.6); }
+		.panel.hit { background: rgba(140,40,40,0.95); }
+		.panel .life { font-size: 30px; font-weight: 800; color: #ff8a7a; }
+		.panel .sub { font-size: 12.5px; opacity: 0.85; line-height: 1.5; }
+		#foe-panel { top: 52px; }
+		#my-panel { bottom: 24px; }
+
+		#end-turn, #coin-btn {
+			position: fixed; right: 26px; padding: 12px 26px; font-size: 16px; font-weight: 700;
+			background: #6b4fd4; color: #fff; border: none; border-radius: 10px; cursor: pointer;
 		}
-		#cardinfo .name { font-size: 18px; font-weight: 600; }
-		#cardinfo .desc { font-size: 13px; opacity: 0.8; max-width: 420px; }
-		#nav {
-			position: fixed; bottom: 70px; left: 50%; transform: translateX(-50%);
-			display: flex; gap: 10px;
+		#end-turn { bottom: 46%; }
+		#end-turn:disabled { background: #3a3055; color: #9b93b3; cursor: default; }
+		#end-turn:not(:disabled):hover { background: #7d63e6; }
+		#coin-btn { bottom: calc(46% - 56px); background: #b8952e; }
+		#coin-btn:hover { background: #d4ad38; }
+
+		#log {
+			position: fixed; right: 18px; top: 52px; width: 250px; font-size: 12.5px; color: #b9b0d4;
+			text-shadow: 0 1px 4px #000; pointer-events: none; line-height: 1.55;
 		}
-		#nav button {
-			background: #2a2340; color: #e8e2f4; border: 1px solid #4a3f6b;
-			border-radius: 6px; padding: 8px 18px; font-size: 15px; cursor: pointer;
+		#hint {
+			position: fixed; bottom: 12px; left: 50%; transform: translateX(-50%);
+			color: #ffd25f; font-size: 14.5px; text-shadow: 0 2px 6px #000; pointer-events: none;
 		}
-		#nav button:hover { background: #3a3055; }
+		#banner {
+			position: fixed; top: 38%; left: 50%; transform: translate(-50%, -50%);
+			font-size: 54px; font-weight: 900; letter-spacing: 4px; color: #f4eede;
+			text-shadow: 0 0 24px rgba(143,111,255,0.9), 0 4px 12px #000;
+			opacity: 0; transition: opacity 0.35s; pointer-events: none;
+		}
+		#restart {
+			position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+			padding: 14px 34px; font-size: 19px; font-weight: 700;
+			background: #6b4fd4; color: #fff; border: none; border-radius: 12px; cursor: pointer;
+		}
 	</style>
 	<script type="importmap">
 	{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.165.0/build/three.module.js" } }
@@ -36,16 +61,24 @@
 </head>
 <body>
 	<div id="scene"></div>
-	<div id="hud">
-		<h1>MAGEPUNK BATTLECARDS</h1>
-		<span class="hint">drag to tilt &middot; click card to flip &middot; &larr;/&rarr; to browse</span>
+	<div id="title" class="hud">MAGEPUNK BATTLECARDS <a href="viewer.html">card gallery</a> <a href="../magepunk/">play the RPG</a></div>
+
+	<div id="foe-panel" class="panel">
+		<div class="life" id="foe-life">40</div>
+		<div class="sub">Enemy Hero<br>Mana <span id="foe-mana">1/1</span> · Hand <span id="foe-hand">4</span> · Deck <span id="foe-deck">56</span></div>
 	</div>
-	<div id="nav">
-		<button id="prev">&larr;</button>
-		<button id="flip">Flip</button>
-		<button id="next">&rarr;</button>
+	<div id="my-panel" class="panel">
+		<div class="life" id="my-life">40</div>
+		<div class="sub">Your Hero<br>Mana <span id="my-mana">1/1</span> · Deck <span id="my-deck">57</span></div>
 	</div>
-	<div id="cardinfo"><div class="name"></div><div class="desc"></div></div>
-	<script type="module" src="app.js"></script>
+
+	<button id="end-turn">End Turn</button>
+	<button id="coin-btn" style="display:none">Coin (+1 mana)</button>
+	<div id="log" class="hud"></div>
+	<div id="hint" class="hud"></div>
+	<div id="banner"></div>
+	<button id="restart" style="display:none">Play Again</button>
+
+	<script type="module" src="game.js"></script>
 </body>
 </html>

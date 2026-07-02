@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Magepunk Battlecards — Card Gallery</title>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<style>
+		html, body { margin: 0; height: 100%; overflow: hidden; background: #0e0b16; font-family: 'Segoe UI', sans-serif; }
+		#scene { position: fixed; inset: 0; }
+		#hud {
+			position: fixed; top: 0; left: 0; right: 0; padding: 14px 20px;
+			display: flex; align-items: baseline; gap: 16px; pointer-events: none;
+			color: #e8e2f4; text-shadow: 0 2px 8px #000;
+		}
+		#hud h1 { margin: 0; font-size: 20px; letter-spacing: 1px; }
+		#hud .hint { font-size: 13px; opacity: 0.7; }
+		#hud a { color: #9d8fd4; font-size: 13px; pointer-events: auto; }
+		#cardinfo {
+			position: fixed; bottom: 18px; left: 50%; transform: translateX(-50%);
+			color: #e8e2f4; text-align: center; pointer-events: none; text-shadow: 0 2px 8px #000;
+		}
+		#cardinfo .name { font-size: 18px; font-weight: 600; }
+		#cardinfo .desc { font-size: 13px; opacity: 0.8; max-width: 420px; }
+		#nav {
+			position: fixed; bottom: 70px; left: 50%; transform: translateX(-50%);
+			display: flex; gap: 10px;
+		}
+		#nav button {
+			background: #2a2340; color: #e8e2f4; border: 1px solid #4a3f6b;
+			border-radius: 6px; padding: 8px 18px; font-size: 15px; cursor: pointer;
+		}
+		#nav button:hover { background: #3a3055; }
+	</style>
+	<script type="importmap">
+	{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.165.0/build/three.module.js" } }
+	</script>
+</head>
+<body>
+	<div id="scene"></div>
+	<div id="hud">
+		<h1>MAGEPUNK BATTLECARDS</h1>
+		<span class="hint">drag to tilt &middot; click card to flip &middot; &larr;/&rarr; to browse</span>
+		<a href="index.html">&larr; back to the game</a>
+	</div>
+	<div id="nav">
+		<button id="prev">&larr;</button>
+		<button id="flip">Flip</button>
+		<button id="next">&rarr;</button>
+	</div>
+	<div id="cardinfo"><div class="name"></div><div class="desc"></div></div>
+	<script type="module" src="viewer.js"></script>
+</body>
+</html>
