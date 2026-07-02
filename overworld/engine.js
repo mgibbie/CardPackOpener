@@ -16,7 +16,7 @@ const DATA = 'data';
 
 // ---------- fetch/image caches ----------
 const jsonCache = new Map(), imgCache = new Map();
-async function getJSON(url) {
+export async function getJSON(url) {
 	if (!jsonCache.has(url)) {
 		jsonCache.set(url, fetch(url).then(r => {
 			if (!r.ok) throw new Error(`${r.status} ${url}`);
@@ -25,7 +25,7 @@ async function getJSON(url) {
 	}
 	return jsonCache.get(url);
 }
-function getImage(url) {
+export function getImage(url) {
 	if (!imgCache.has(url)) {
 		imgCache.set(url, new Promise((res, rej) => {
 			const img = new Image();
@@ -344,12 +344,13 @@ export class Player {
 		const hop = this.world.isLedge(nx, ny, dir) || this.world.isLedge(this.tx, this.ty, dir);
 		if (hop) {
 			const lx = this.tx + dx * 2, ly = this.ty + dy * 2;
-			if (this.world.isPassable(lx, ly)) {
+			if (this.world.isPassable(lx, ly) && !(this.blocked && this.blocked(lx, ly))) {
 				this.beginMove(lx, ly, META * 2, true);
 				return;
 			}
 		}
 		if (!this.world.isPassable(nx, ny)) return;
+		if (this.blocked && this.blocked(nx, ny)) return;
 		this.beginMove(nx, ny, META, false);
 	}
 

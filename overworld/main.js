@@ -1,5 +1,7 @@
 // main.js — game loop, input, camera, warps, connection crossing.
 import { World, Player, VIEW_W, VIEW_H, META } from './engine.js';
+import { NPCs } from './npcs.js';
+import { Encounters } from './encounters.js';
 
 const SCALE = 3;
 const screen = document.getElementById('screen');
@@ -16,6 +18,9 @@ ctx.imageSmoothingEnabled = false;
 const hud = document.getElementById('hud');
 const world = new World();
 const player = new Player(world);
+const npcs = new NPCs(world, player);
+const encounters = new Encounters();
+player.blocked = (tx, ty) => npcs.npcBlocks(tx, ty);
 let loading = true;
 
 // ---------- input ----------
@@ -38,6 +43,9 @@ addEventListener('keyup', e => {
 		if (i >= 0) heldKeys.splice(i, 1);
 	}
 });
+addEventListener('keydown', e => {
+	if (e.key === 'z' || e.key === 'Enter' || e.key === 'x') encounters.dismiss();
+});
 
 // ---------- map transitions ----------
 async function warpTo(mapId, destWarpId) {
@@ -52,6 +60,7 @@ async function warpTo(mapId, destWarpId) {
 	if (w) player.setTile(w.x, w.y);
 	else player.setTile(Math.floor(world.current.layout.width / 2), Math.floor(world.current.layout.height / 2));
 	world.lastWarpSource = source;
+	await npcs.loadForMap();
 	hud.textContent = world.current.map.name || file;
 	loading = false;
 }
@@ -62,6 +71,7 @@ async function backWarp() {
 	loading = true;
 	await world.load(src.name);
 	player.setTile(src.tx, src.ty);
+	await npcs.loadForMap();
 	hud.textContent = world.current.map.name || src.name;
 	loading = false;
 }
@@ -72,6 +82,7 @@ async function crossConnection(hit) {
 	const { conn, lx, ly } = hit;
 	await world.load(conn.name);
 	player.setTile(lx, ly);
+	await npcs.loadForMap();
 	hud.textContent = world.current.map.name || conn.name;
 	loading = false;
 }
@@ -90,8 +101,10 @@ player.onArrive = () => {
 	const outside = player.tx < 0 || player.tx >= lay.width || player.ty < 0 || player.ty >= lay.height;
 	if (outside) {
 		const hit = world.connectionAt(player.tx, player.ty);
-		if (hit) crossConnection(hit);
+		if (hit) { crossConnection(hit); return; }
 	}
+	// wild encounter?
+	encounters.check(world.current.map.id, world, player.tx, player.ty);
 };
 
 // ---------- camera ----------
@@ -110,13 +123,20 @@ function tick(now) {
 	last = now;
 	if (loading || !world.current) return;
 
-	player.update(dt, heldKeys[0] || null);
+	encounters.update(dt);
+	if (!encounters.blocking) {
+		player.update(dt, heldKeys[0] || null);
+		npcs.update(dt);
+	}
 
 	const [camX, camY] = cameraPos();
 	ctx.clearRect(0, 0, VIEW_W, VIEW_H);
 	world.drawLayer(ctx, 'bottom', camX, camY);
-	player.draw(ctx, camX, camY);
+	// sprites in y order so overlaps stack correctly
+	const sprites = [...npcs.list, player].sort((a, b) => a.py - b.py);
+	for (const s of sprites) s.draw(ctx, camX, camY);
 	world.drawLayer(ctx, 'top', camX, camY);
+	encounters.draw(ctx);
 
 	sctx.drawImage(frame, 0, 0, VIEW_W * SCALE, VIEW_H * SCALE);
 }
@@ -126,15 +146,18 @@ function tick(now) {
 	hud.textContent = 'Loading…';
 	await world.init();
 	await player.init();
+	await npcs.init();
+	await encounters.init();
 	const params = new URLSearchParams(location.search);
 	const startMap = params.get('map') || 'PalletTown';
 	await world.load(startMap);
 	const sx = params.has('x') ? +params.get('x') : Math.floor(world.current.layout.width / 2);
 	const sy = params.has('y') ? +params.get('y') : Math.floor(world.current.layout.height / 2);
 	player.setTile(sx, sy);
+	await npcs.loadForMap();
 	hud.textContent = world.current.map.name || startMap;
 	loading = false;
 	// headless test hook
-	window.__ow = { world, player, warpTo };
+	window.__ow = { world, player, warpTo, npcs, encounters };
 	requestAnimationFrame(tick);
 })();
