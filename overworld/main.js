@@ -2,6 +2,8 @@
 import { World, Player, VIEW_W, VIEW_H, META } from './engine.js';
 import { NPCs } from './npcs.js';
 import { Encounters } from './encounters.js';
+import { Battle } from './battle.js';
+import { loadParty, saveParty, healParty, leadMon } from './party.js';
 
 const SCALE = 3;
 const screen = document.getElementById('screen');
@@ -20,6 +22,8 @@ const world = new World();
 const player = new Player(world);
 const npcs = new NPCs(world, player);
 const encounters = new Encounters();
+const battle = new Battle();
+let party = null;
 player.blocked = (tx, ty) => npcs.npcBlocks(tx, ty);
 let loading = true;
 
@@ -44,7 +48,10 @@ addEventListener('keyup', e => {
 	}
 });
 addEventListener('keydown', e => {
-	if (e.key === 'z' || e.key === 'Enter' || e.key === 'x') encounters.dismiss();
+	if (battle.blocking) {
+		e.preventDefault();
+		battle.key(e.key);
+	}
 });
 
 // ---------- map transitions ----------
@@ -104,8 +111,24 @@ player.onArrive = () => {
 		if (hit) { crossConnection(hit); return; }
 	}
 	// wild encounter?
-	encounters.check(world.current.map.id, world, player.tx, player.ty);
+	if (!battle.blocking) {
+		const pick = encounters.roll(world.current.map.id, world, player.tx, player.ty);
+		if (pick) startWildBattle(pick);
+	}
 };
+
+function startWildBattle(pick) {
+	const mon = leadMon(party);
+	if (!mon) return;
+	battle.start(mon, pick.id, pick.level, result => {
+		if (result === 'defeat') {
+			healParty(party);
+			hud.textContent = (world.current.map.name || '') + ' — party healed';
+		} else {
+			saveParty(party);
+		}
+	});
+}
 
 // ---------- camera ----------
 function cameraPos() {
@@ -123,8 +146,8 @@ function tick(now) {
 	last = now;
 	if (loading || !world.current) return;
 
-	encounters.update(dt);
-	if (!encounters.blocking) {
+	battle.update(dt);
+	if (!battle.blocking) {
 		player.update(dt, heldKeys[0] || null);
 		npcs.update(dt);
 	}
@@ -136,7 +159,7 @@ function tick(now) {
 	const sprites = [...npcs.list, player].sort((a, b) => a.py - b.py);
 	for (const s of sprites) s.draw(ctx, camX, camY);
 	world.drawLayer(ctx, 'top', camX, camY);
-	encounters.draw(ctx);
+	battle.draw(ctx);
 
 	sctx.drawImage(frame, 0, 0, VIEW_W * SCALE, VIEW_H * SCALE);
 }
@@ -148,6 +171,8 @@ function tick(now) {
 	await player.init();
 	await npcs.init();
 	await encounters.init();
+	await battle.init();
+	party = loadParty(battle.data);
 	const params = new URLSearchParams(location.search);
 	const startMap = params.get('map') || 'PalletTown';
 	await world.load(startMap);
@@ -158,6 +183,6 @@ function tick(now) {
 	hud.textContent = world.current.map.name || startMap;
 	loading = false;
 	// headless test hook
-	window.__ow = { world, player, warpTo, npcs, encounters };
+	window.__ow = { world, player, warpTo, npcs, encounters, battle, get party() { return party; }, startWildBattle };
 	requestAnimationFrame(tick);
 })();
