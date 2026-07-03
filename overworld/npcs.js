@@ -1,7 +1,9 @@
 // npcs.js — overworld NPCs from map object_events: sprites, facing, wander AI,
 // collision. Sprite sheets share the player's frame layout (16x32 frames:
 // 0 down, 1 up, 2 left stills; 3-8 walk pairs; right = mirrored left).
+// Sight-range trainers are excluded here — trainers.js owns them.
 import { getJSON, getImage, META } from './engine.js';
+import { isTrainerEvent } from './trainers.js';
 
 const DIRS = { down: [0, 1], up: [0, -1], left: [-1, 0], right: [1, 0] };
 const NPC_SPEED = 60; // px/s — NPCs stroll
@@ -121,6 +123,7 @@ export class NPCs {
 		await Promise.all(evs.map(async ev => {
 			if (ev.type !== 'object') return;
 			if (ev.flag && ev.flag !== '0') return;        // hidden-by-flag (story NPCs)
+			if (isTrainerEvent(ev)) return;                // trainers.js renders these
 			const file = this.gfx[ev.graphics_id];
 			if (!file) return;                              // item balls, unmapped gfx
 			const img = await getImage(`data/people/${file}`).catch(() => null);

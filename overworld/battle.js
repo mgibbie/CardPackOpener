@@ -152,6 +152,44 @@ export class Battle {
 		this.pushMsg(`Go! ${playerMon.name}!`);
 	}
 
+	// trainer battle: foeParty of mons, no running, no catching
+	async startTrainer(party, foeParty, info, onEnd) {
+		const playerMon = party.find(m => m.curHP > 0);
+		if (!foeParty.length || !playerMon) { onEnd?.('escaped'); return; }
+		const loadSprite = async (file, back) => {
+			if (!file) return null;
+			const name = back ? file.replace(/\.(png|gif)$/, '-b.$1') : file;
+			return await getImage(`data/pokemon/${name}`).catch(() =>
+				getImage(`data/pokemon/${file}`).catch(() => null));
+		};
+		const backSprites = new Map(), foeSprites = new Map();
+		await Promise.all([
+			...party.map(async m => backSprites.set(m, await loadSprite(m.sprite, true))),
+			...foeParty.map(async m => foeSprites.set(m, await loadSprite(m.sprite, false))),
+		]);
+		const foe = foeParty[0];
+		this.active = {
+			party, me: playerMon, foe, backSprites, foeSprites,
+			foes: foeParty, foeIdx: 0, isTrainer: true, info,
+			foeImg: foeSprites.get(foe),
+			meImg: backSprites.get(playerMon),
+			meBoosts: { atk: 0, def: 0, spa: 0, spd: 0, spe: 0 },
+			foeBoosts: { atk: 0, def: 0, spa: 0, spd: 0, spe: 0 },
+			meShownHP: playerMon.curHP, foeShownHP: foe.curHP,
+			phase: 'flash', t: 0,
+			menuIdx: 0, moveIdx: 0,
+			queue: [],
+			msg: '', msgT: 0,
+			runAttempts: 0,
+			onEnd,
+			result: null,
+			caughtMon: null,
+		};
+		this.pushMsg(`You are challenged by ${info.displayName}!`);
+		this.pushMsg(`${info.displayName} sent out ${foe.name}!`);
+		this.pushMsg(`Go! ${playerMon.name}!`);
+	}
+
 	get blocking() { return this.active != null; }
 
 	pushMsg(text, fn) { this.active.queue.push({ text, fn }); }
@@ -228,7 +266,7 @@ export class Battle {
 	checkFaints() {
 		const a = this.active;
 		if (a.foe.curHP <= 0) {
-			this.pushMsg(`The wild ${a.foe.name} fainted!`);
+			this.pushMsg(a.isTrainer ? `${a.foe.name} fainted!` : `The wild ${a.foe.name} fainted!`);
 			this.grantExp();
 		} else if (a.me.curHP <= 0) {
 			this.pushMsg(`${a.me.name} fainted!`);
@@ -277,7 +315,25 @@ export class Battle {
 				}
 			}
 		}
-		this.pushMsg('', () => this.finish('victory'));
+		// trainer battles continue to the next foe mon; wild battles are over
+		this.pushMsg('', () => {
+			const a2 = this.active;
+			if (a2.isTrainer && a2.foeIdx + 1 < a2.foes.length) {
+				a2.foeIdx++;
+				const next = a2.foes[a2.foeIdx];
+				this.pushMsg(`${a2.info.displayName} sent out ${next.name}!`, () => {
+					a2.foe = next;
+					a2.foeImg = a2.foeSprites.get(next);
+					a2.foeBoosts = { atk: 0, def: 0, spa: 0, spd: 0, spe: 0 };
+					a2.foeShownHP = next.curHP;
+				});
+			} else if (a2.isTrainer) {
+				this.pushMsg(a2.info.defeatText);
+				this.pushMsg(`You got $${a2.info.money} for winning!`, () => this.finish('victory'));
+			} else {
+				this.finish('victory');
+			}
+		});
 	}
 
 	// Gen3-style catch: HP factor + flat species rate, 4 shake checks
@@ -342,8 +398,13 @@ export class Battle {
 			if (k === 'ArrowRight') a.menuIdx = (a.menuIdx + 1) % 3;
 			if (k === 'z' || k === 'Enter') {
 				if (a.menuIdx === 0) { a.phase = 'moves'; a.moveIdx = 0; }
-				else if (a.menuIdx === 1) this.startQueue(() => this.throwBall());
-				else this.startQueue(() => this.tryRun());
+				else if (a.menuIdx === 1) {
+					if (a.isTrainer) this.startQueue(() => this.pushMsg("You can't catch a trainer's Pokemon!"));
+					else this.startQueue(() => this.throwBall());
+				} else {
+					if (a.isTrainer) this.startQueue(() => this.pushMsg("There's no running from a trainer battle!"));
+					else this.startQueue(() => this.tryRun());
+				}
 			}
 		} else if (a.phase === 'moves') {
 			const n = a.me.moves.length;

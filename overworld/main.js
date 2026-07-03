@@ -3,6 +3,7 @@ import { World, Player, VIEW_W, VIEW_H, META } from './engine.js';
 import { NPCs } from './npcs.js';
 import { Encounters } from './encounters.js';
 import { Battle } from './battle.js';
+import { Trainers } from './trainers.js';
 import { loadParty, saveParty, healParty, leadMon, addCaught } from './party.js';
 
 const SCALE = 3;
@@ -23,8 +24,26 @@ const player = new Player(world);
 const npcs = new NPCs(world, player);
 const encounters = new Encounters();
 const battle = new Battle();
+const trainers = new Trainers(world, player);
 let party = null;
-player.blocked = (tx, ty) => npcs.npcBlocks(tx, ty);
+player.blocked = (tx, ty) => npcs.npcBlocks(tx, ty) || trainers.occupied(tx, ty);
+
+trainers.onEngage = t => {
+	const { party: foeParty, info } = trainers.buildBattle(t, battle.data);
+	battle.startTrainer(party, foeParty, info, result => {
+		if (result === 'victory') {
+			trainers.markDefeated(t);
+			try {
+				const money = (parseInt(localStorage.getItem('magepunk_money'), 10) || 0) + info.money;
+				localStorage.setItem('magepunk_money', String(money));
+			} catch (e) {}
+			saveParty(party);
+		} else if (result === 'defeat') {
+			healParty(party);
+			hud.textContent = (world.current.map.name || '') + ' — party healed';
+		}
+	});
+};
 let loading = true;
 
 // ---------- input ----------
@@ -85,6 +104,7 @@ async function warpTo(mapId, destWarpId) {
 	else player.setTile(Math.floor(world.current.layout.width / 2), Math.floor(world.current.layout.height / 2));
 	world.lastWarpSource = source;
 	await npcs.loadForMap();
+	await trainers.loadForMap();
 	hud.textContent = world.current.map.name || file;
 	loading = false;
 }
@@ -96,6 +116,7 @@ async function backWarp() {
 	await world.load(src.name);
 	player.setTile(src.tx, src.ty);
 	await npcs.loadForMap();
+	await trainers.loadForMap();
 	hud.textContent = world.current.map.name || src.name;
 	loading = false;
 }
@@ -107,6 +128,7 @@ async function crossConnection(hit) {
 	await world.load(conn.name);
 	player.setTile(lx, ly);
 	await npcs.loadForMap();
+	await trainers.loadForMap();
 	hud.textContent = world.current.map.name || conn.name;
 	loading = false;
 }
@@ -127,6 +149,8 @@ player.onArrive = () => {
 		const hit = world.connectionAt(player.tx, player.ty);
 		if (hit) { crossConnection(hit); return; }
 	}
+	// trainer sight lines take priority over grass
+	if (!battle.blocking && trainers.checkSight(player.tx, player.ty)) return;
 	// wild encounter?
 	if (!battle.blocking) {
 		const pick = encounters.roll(world.current.map.id, world, player.tx, player.ty);
@@ -167,7 +191,8 @@ function tick(now) {
 
 	battle.update(dt);
 	if (!battle.blocking) {
-		player.update(dt, heldKeys[0] || null);
+		trainers.update(dt);
+		if (!trainers.engaging) player.update(dt, heldKeys[0] || null);
 		npcs.update(dt);
 	}
 
@@ -175,7 +200,7 @@ function tick(now) {
 	ctx.clearRect(0, 0, VIEW_W, VIEW_H);
 	world.drawLayer(ctx, 'bottom', camX, camY);
 	// sprites in y order so overlaps stack correctly
-	const sprites = [...npcs.list, player].sort((a, b) => a.py - b.py);
+	const sprites = [...npcs.list, ...trainers.list, player].sort((a, b) => a.py - b.py);
 	for (const s of sprites) s.draw(ctx, camX, camY);
 	world.drawLayer(ctx, 'top', camX, camY);
 	battle.draw(ctx);
@@ -213,6 +238,7 @@ function drawPartyMenu() {
 	await npcs.init();
 	await encounters.init();
 	await battle.init();
+	await trainers.init();
 	party = loadParty(battle.data);
 	const params = new URLSearchParams(location.search);
 	const startMap = params.get('map') || 'PalletTown';
@@ -221,9 +247,10 @@ function drawPartyMenu() {
 	const sy = params.has('y') ? +params.get('y') : Math.floor(world.current.layout.height / 2);
 	player.setTile(sx, sy);
 	await npcs.loadForMap();
+	await trainers.loadForMap();
 	hud.textContent = world.current.map.name || startMap;
 	loading = false;
 	// headless test hook
-	window.__ow = { world, player, warpTo, npcs, encounters, battle, get party() { return party; }, startWildBattle };
+	window.__ow = { world, player, warpTo, npcs, encounters, battle, trainers, get party() { return party; }, startWildBattle };
 	requestAnimationFrame(tick);
 })();
