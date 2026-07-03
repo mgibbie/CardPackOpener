@@ -52,13 +52,9 @@ function calcStat(base, iv, ev, level, isHP) {
 	return Math.floor((2 * base + iv + Math.floor(ev / 4)) * level / 100) + 5;
 }
 
-export function buildMon(speciesId, level, data) {
-	const sp = data.species[speciesId];
-	if (!sp) return null;
-	const iv = () => Math.floor(Math.random() * 32);
-	const ivs = { hp: iv(), atk: iv(), def: iv(), spa: iv(), spd: iv(), spe: iv() };
+export function statsFor(sp, ivs, level) {
 	const b = sp.baseStats;
-	const stats = {
+	return {
 		hp: calcStat(b.hp || 50, ivs.hp, 0, level, true),
 		atk: calcStat(b.atk || 50, ivs.atk, 0, level, false),
 		def: calcStat(b.def || 50, ivs.def, 0, level, false),
@@ -66,6 +62,19 @@ export function buildMon(speciesId, level, data) {
 		spd: calcStat(b.spd || 50, ivs.spd, 0, level, false),
 		spe: calcStat(b.spe || 50, ivs.spe, 0, level, false),
 	};
+}
+
+export function makeMove(mid, data) {
+	const mv = data.moves[mid] || { name: mid, category: 'Physical', power: 40, acc: 100, type: 'Normal', pp: 20, priority: 0 };
+	return { id: mid, name: mv.name, pp: mv.pp, maxPp: mv.pp };
+}
+
+export function buildMon(speciesId, level, data) {
+	const sp = data.species[speciesId];
+	if (!sp) return null;
+	const iv = () => Math.floor(Math.random() * 32);
+	const ivs = { hp: iv(), atk: iv(), def: iv(), spa: iv(), spd: iv(), spe: iv() };
+	const stats = statsFor(sp, ivs, level);
 	// last 4 level-up moves at this level, deduped (latest first)
 	const learned = sp.learnset.filter(([lv]) => lv <= level);
 	const seen = new Set(), moveIds = [];
@@ -74,15 +83,20 @@ export function buildMon(speciesId, level, data) {
 		if (!seen.has(mid)) { seen.add(mid); moveIds.push(mid); }
 	}
 	if (!moveIds.length) moveIds.push('tackle');
-	const moves = moveIds.map(mid => {
-		const mv = data.moves[mid] || { name: mid, category: 'Physical', power: 40, acc: 100, type: 'Normal', pp: 20, priority: 0 };
-		return { id: mid, name: mv.name, pp: mv.pp, maxPp: mv.pp };
-	});
+	const moves = moveIds.map(mid => makeMove(mid, data));
 	return {
 		speciesId, name: sp.name.toUpperCase(), level,
-		types: sp.types, stats, maxHP: stats.hp, curHP: stats.hp,
+		types: sp.types, ivs, stats, maxHP: stats.hp, curHP: stats.hp,
+		exp: level ** 3, // medium-fast growth curve
 		moves, sprite: sp.sprite, num: sp.num,
 	};
+}
+
+// exp yield estimated from base stat total (we have no per-species yield data)
+export function expGain(foe, data) {
+	const b = data.species[foe.speciesId]?.baseStats || {};
+	const bst = ['hp', 'atk', 'def', 'spa', 'spd', 'spe'].reduce((s, k) => s + (b[k] || 50), 0);
+	return Math.max(1, Math.floor(Math.round(bst * 0.3) * foe.level / 7));
 }
 
 // ---------- battle scene ----------
@@ -102,9 +116,11 @@ export class Battle {
 		this.data = { species, moves };
 	}
 
-	// start a wild battle; onEnd(result) with 'victory'|'defeat'|'escaped'
-	async start(playerMon, wildId, wildLevel, onEnd) {
+	// start a wild battle vs the party; onEnd(result) with
+	// 'victory'|'defeat'|'escaped'|'caught'
+	async start(party, wildId, wildLevel, onEnd) {
 		const foe = buildMon(wildId, wildLevel, this.data);
+		const playerMon = party.find(m => m.curHP > 0);
 		if (!foe || !playerMon) { onEnd?.('escaped'); return; }
 		const loadSprite = async (file, back) => {
 			if (!file) return null;
@@ -112,12 +128,14 @@ export class Battle {
 			return await getImage(`data/pokemon/${name}`).catch(() =>
 				getImage(`data/pokemon/${file}`).catch(() => null));
 		};
-		const [foeImg, meImg] = await Promise.all([
+		const backSprites = new Map();
+		const [foeImg] = await Promise.all([
 			loadSprite(foe.sprite, false),
-			loadSprite(playerMon.sprite, true),
+			...party.map(async m => backSprites.set(m, await loadSprite(m.sprite, true))),
 		]);
 		this.active = {
-			me: playerMon, foe, foeImg, meImg,
+			party, me: playerMon, foe, foeImg, backSprites,
+			meImg: backSprites.get(playerMon),
 			meBoosts: { atk: 0, def: 0, spa: 0, spd: 0, spe: 0 },
 			foeBoosts: { atk: 0, def: 0, spa: 0, spd: 0, spe: 0 },
 			meShownHP: playerMon.curHP, foeShownHP: foe.curHP,
@@ -128,6 +146,7 @@ export class Battle {
 			runAttempts: 0,
 			onEnd,
 			result: null,
+			caughtMon: null,
 		};
 		this.pushMsg(`A wild ${foe.name} appeared!`);
 		this.pushMsg(`Go! ${playerMon.name}!`);
@@ -210,10 +229,79 @@ export class Battle {
 		const a = this.active;
 		if (a.foe.curHP <= 0) {
 			this.pushMsg(`The wild ${a.foe.name} fainted!`);
-			this.pushMsg('You won!', () => this.finish('victory'));
+			this.grantExp();
 		} else if (a.me.curHP <= 0) {
 			this.pushMsg(`${a.me.name} fainted!`);
-			this.pushMsg('You blacked out...', () => this.finish('defeat'));
+			const next = a.party.find(m => m.curHP > 0);
+			if (next) {
+				this.pushMsg(`Go! ${next.name}!`, () => {
+					a.me = next;
+					a.meImg = a.backSprites.get(next);
+					a.meBoosts = { atk: 0, def: 0, spa: 0, spd: 0, spe: 0 };
+					a.meShownHP = next.curHP;
+				});
+			} else {
+				this.pushMsg('You blacked out...', () => this.finish('defeat'));
+			}
+		}
+	}
+
+	// exp -> level ups -> stat recalc -> move learning (medium-fast curve)
+	grantExp() {
+		const a = this.active;
+		const mon = a.me;
+		const gain = expGain(a.foe, this.data);
+		mon.exp = (mon.exp ?? mon.level ** 3) + gain;
+		this.pushMsg(`${mon.name} gained ${gain} EXP!`);
+		const sp = this.data.species[mon.speciesId];
+		while (mon.level < 100 && mon.exp >= (mon.level + 1) ** 3) {
+			mon.level++;
+			const lvl = mon.level;
+			this.pushMsg(`${mon.name} grew to Lv${lvl}!`, () => {
+				const ivs = mon.ivs || { hp: 15, atk: 15, def: 15, spa: 15, spd: 15, spe: 15 };
+				const oldMax = mon.maxHP;
+				mon.stats = statsFor(sp, ivs, lvl);
+				mon.maxHP = mon.stats.hp;
+				mon.curHP = Math.min(mon.maxHP, mon.curHP + (mon.maxHP - oldMax));
+				a.meShownHP = mon.curHP;
+			});
+			for (const [lv, mid] of sp.learnset) {
+				if (lv !== lvl || mon.moves.some(m => m.id === mid)) continue;
+				if (mon.moves.length < 4) {
+					this.pushMsg(`${mon.name} learned ${this.data.moves[mid]?.name || mid}!`,
+						() => mon.moves.push(makeMove(mid, this.data)));
+				} else {
+					const old = mon.moves[0];
+					this.pushMsg(`${mon.name} forgot ${old.name} and learned ${this.data.moves[mid]?.name || mid}!`,
+						() => { mon.moves.shift(); mon.moves.push(makeMove(mid, this.data)); });
+				}
+			}
+		}
+		this.pushMsg('', () => this.finish('victory'));
+	}
+
+	// Gen3-style catch: HP factor + flat species rate, 4 shake checks
+	throwBall() {
+		const a = this.active;
+		this.pushMsg('You threw a POKe BALL!');
+		const rate = 190; // flat until per-species catch rates are sourced
+		const f = Math.max(1, Math.floor((3 * a.foe.maxHP - 2 * a.foe.curHP) * rate / (3 * a.foe.maxHP)));
+		const b = Math.floor(1048560 / Math.sqrt(Math.sqrt(16711680 / f)));
+		let shakes = 0;
+		while (shakes < 4 && Math.floor(Math.random() * 65536) < b) shakes++;
+		for (let i = 1; i <= Math.min(shakes, 3); i++) this.pushMsg('...' + '*'.repeat(i));
+		if (shakes >= 4) {
+			this.pushMsg(`Gotcha! ${a.foe.name} was caught!`, () => {
+				a.caughtMon = a.foe;
+				this.finish('caught');
+			});
+		} else {
+			this.pushMsg(`Oh no! The ${a.foe.name} broke free!`);
+			this.pushMsg('', () => {
+				const foeMoves = a.foe.moves.filter(m => m.pp > 0);
+				if (foeMoves.length) this.useMove(a.foe, a.foeBoosts, a.me, a.meBoosts, foeMoves[Math.floor(Math.random() * foeMoves.length)], true);
+			});
+			this.pushMsg('', () => this.checkFaints());
 		}
 	}
 
@@ -250,9 +338,11 @@ export class Battle {
 		// advance message
 		if (a.phase === 'msg' && (k === 'z' || k === 'Enter')) { a.msgT = 99; return; }
 		if (a.phase === 'menu') {
-			if (k === 'ArrowLeft' || k === 'ArrowRight') a.menuIdx = 1 - a.menuIdx;
+			if (k === 'ArrowLeft') a.menuIdx = (a.menuIdx + 2) % 3;
+			if (k === 'ArrowRight') a.menuIdx = (a.menuIdx + 1) % 3;
 			if (k === 'z' || k === 'Enter') {
 				if (a.menuIdx === 0) { a.phase = 'moves'; a.moveIdx = 0; }
+				else if (a.menuIdx === 1) this.startQueue(() => this.throwBall());
 				else this.startQueue(() => this.tryRun());
 			}
 		} else if (a.phase === 'moves') {
@@ -311,6 +401,7 @@ export class Battle {
 			a.doneT = (a.doneT || 0) + dt;
 			if (a.doneT > 0.8) {
 				const cb = a.onEnd, res = a.result;
+				this.lastCaught = a.caughtMon;
 				this.active = null;
 				cb?.(res);
 			}
@@ -391,8 +482,9 @@ export class Battle {
 			ctx.fillText(`PP ${sel.pp}/${sel.maxPp}  ${mv?.type || ''}`, 12, VIEW_H - 4 + 0);
 		} else if (a.phase === 'menu') {
 			ctx.fillText(a.msg, 10, VIEW_H - 26);
-			ctx.fillText(a.menuIdx === 0 ? '> FIGHT' : '  FIGHT', 140, VIEW_H - 26);
-			ctx.fillText(a.menuIdx === 1 ? '> RUN' : '  RUN', 190, VIEW_H - 26);
+			ctx.fillText(a.menuIdx === 0 ? '> FIGHT' : '  FIGHT', 130, VIEW_H - 30);
+			ctx.fillText(a.menuIdx === 1 ? '> BALL' : '  BALL', 186, VIEW_H - 30);
+			ctx.fillText(a.menuIdx === 2 ? '> RUN' : '  RUN', 130, VIEW_H - 16);
 		} else {
 			// wrap message to two lines
 			const words = a.msg.split(' ');

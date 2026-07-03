@@ -3,7 +3,7 @@ import { World, Player, VIEW_W, VIEW_H, META } from './engine.js';
 import { NPCs } from './npcs.js';
 import { Encounters } from './encounters.js';
 import { Battle } from './battle.js';
-import { loadParty, saveParty, healParty, leadMon } from './party.js';
+import { loadParty, saveParty, healParty, leadMon, addCaught } from './party.js';
 
 const SCALE = 3;
 const screen = document.getElementById('screen');
@@ -47,11 +47,28 @@ addEventListener('keyup', e => {
 		if (i >= 0) heldKeys.splice(i, 1);
 	}
 });
+const partyMenu = { open: false, idx: 0 };
 addEventListener('keydown', e => {
 	if (battle.blocking) {
 		e.preventDefault();
 		battle.key(e.key);
+		return;
 	}
+	if (partyMenu.open) {
+		e.preventDefault();
+		if (e.key === 'ArrowUp') partyMenu.idx = (partyMenu.idx + party.length - 1) % party.length;
+		if (e.key === 'ArrowDown') partyMenu.idx = (partyMenu.idx + 1) % party.length;
+		if ((e.key === 'z' || e.key === 'Enter') && partyMenu.idx > 0) {
+			// make selected mon the lead
+			const [m] = party.splice(partyMenu.idx, 1);
+			party.unshift(m);
+			partyMenu.idx = 0;
+			saveParty(party);
+		}
+		if (e.key === 'x' || e.key === 'p' || e.key === 'Escape') partyMenu.open = false;
+		return;
+	}
+	if (e.key === 'p' && !loading) { partyMenu.open = true; partyMenu.idx = 0; }
 });
 
 // ---------- map transitions ----------
@@ -118,12 +135,14 @@ player.onArrive = () => {
 };
 
 function startWildBattle(pick) {
-	const mon = leadMon(party);
-	if (!mon) return;
-	battle.start(mon, pick.id, pick.level, result => {
+	if (!leadMon(party)) return;
+	battle.start(party, pick.id, pick.level, result => {
 		if (result === 'defeat') {
 			healParty(party);
 			hud.textContent = (world.current.map.name || '') + ' — party healed';
+		} else if (result === 'caught' && battle.lastCaught) {
+			const where = addCaught(party, battle.lastCaught);
+			hud.textContent = `${battle.lastCaught.name} ${where === 'party' ? 'joined the party!' : 'was sent to the box'}`;
 		} else {
 			saveParty(party);
 		}
@@ -160,8 +179,30 @@ function tick(now) {
 	for (const s of sprites) s.draw(ctx, camX, camY);
 	world.drawLayer(ctx, 'top', camX, camY);
 	battle.draw(ctx);
+	if (partyMenu.open && !battle.blocking) drawPartyMenu();
 
 	sctx.drawImage(frame, 0, 0, VIEW_W * SCALE, VIEW_H * SCALE);
+}
+
+function drawPartyMenu() {
+	ctx.fillStyle = 'rgba(16,12,24,0.88)';
+	ctx.fillRect(0, 0, VIEW_W, VIEW_H);
+	ctx.fillStyle = '#f8f8e0';
+	ctx.font = '8px monospace';
+	ctx.fillText('PARTY   [Z] make lead  [P] close', 12, 14);
+	party.forEach((m, i) => {
+		const y = 30 + i * 20;
+		ctx.fillStyle = i === partyMenu.idx ? '#ffd25f' : '#f8f8e0';
+		ctx.fillText(`${i === partyMenu.idx ? '>' : ' '} ${m.name}`, 12, y);
+		ctx.fillText(`Lv${m.level}`, 120, y);
+		ctx.fillText(`${m.curHP}/${m.maxHP}`, 150, y);
+		// hp bar
+		const frac = Math.max(0, m.curHP / m.maxHP);
+		ctx.fillStyle = '#58585a';
+		ctx.fillRect(196, y - 6, 36, 5);
+		ctx.fillStyle = frac > 0.5 ? '#40c860' : frac > 0.2 ? '#f0c020' : '#e83020';
+		ctx.fillRect(197, y - 5, Math.round(34 * frac), 3);
+	});
 }
 
 // ---------- boot ----------
