@@ -28,19 +28,24 @@ export function spendGold(n) {
 	return true;
 }
 
-// collection: {cardId: count}; new players get 2x each common + 1x each uncommon
+// collection: {cardId: count}; new players get 2x each common + 1x each uncommon.
+// When new sets are added, existing collections are topped up with the new
+// starter commons/uncommons they don't own yet (never overwriting counts).
 export function getCollection(cards) {
+	let c = null;
 	try {
-		const c = JSON.parse(localStorage.getItem(COLLECTION_KEY));
-		if (c && typeof c === 'object') return c;
+		const parsed = JSON.parse(localStorage.getItem(COLLECTION_KEY));
+		if (parsed && typeof parsed === 'object') c = parsed;
 	} catch (e) {}
-	const starter = {};
+	if (!c) c = {};
+	let changed = false;
 	for (const def of cards) {
-		if (def.rarity === 'common' || !def.rarity) starter[def.id] = 2;
-		else if (def.rarity === 'uncommon') starter[def.id] = 1;
+		if (def.id in c) continue;
+		if (def.rarity === 'common' || !def.rarity) { c[def.id] = 2; changed = true; }
+		else if (def.rarity === 'uncommon') { c[def.id] = 1; changed = true; }
 	}
-	localStorage.setItem(COLLECTION_KEY, JSON.stringify(starter));
-	return starter;
+	if (changed) localStorage.setItem(COLLECTION_KEY, JSON.stringify(c));
+	return c;
 }
 export function addToCollection(ids) {
 	const c = JSON.parse(localStorage.getItem(COLLECTION_KEY) || '{}');

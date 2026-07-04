@@ -21,7 +21,9 @@
       "description": "First strike.",
       "attack": 2,
       "health": 2,
-      "keywords": ["first_strike"]
+      "keywords": [
+        "first_strike"
+      ]
     },
     {
       "id": "fireball",
@@ -31,7 +33,13 @@
       "cost": 3,
       "rarity": "common",
       "description": "Deal 3 damage to target creature or player.",
-      "effects": [{"type": "damage", "value": 3, "target": "any"}]
+      "effects": [
+        {
+          "type": "damage",
+          "value": 3,
+          "target": "any"
+        }
+      ]
     },
     {
       "id": "lightning_bolt",
@@ -41,7 +49,13 @@
       "cost": 1,
       "rarity": "common",
       "description": "Deal 3 damage to any target.",
-      "effects": [{"type": "damage", "value": 3, "target": "any"}]
+      "effects": [
+        {
+          "type": "damage",
+          "value": 3,
+          "target": "any"
+        }
+      ]
     },
     {
       "id": "recruit",
@@ -64,7 +78,9 @@
       "description": "Battlecry: Draw a card.",
       "attack": 2,
       "health": 2,
-      "keywords": ["battlecry"]
+      "keywords": [
+        "battlecry"
+      ]
     },
     {
       "id": "arcane_bolt",
@@ -74,7 +90,13 @@
       "cost": 2,
       "rarity": "common",
       "description": "Deal 3 damage to any target.",
-      "effects": [{"type": "damage", "value": 3, "target": "any"}]
+      "effects": [
+        {
+          "type": "damage",
+          "value": 3,
+          "target": "any"
+        }
+      ]
     },
     {
       "id": "healing_potion",
@@ -84,9 +106,14 @@
       "cost": 1,
       "rarity": "common",
       "description": "Restore 5 health to your hero.",
-      "effects": [{"type": "heal", "value": 5, "target": "self"}]
+      "effects": [
+        {
+          "type": "heal",
+          "value": 5,
+          "target": "self"
+        }
+      ]
     },
-
     {
       "id": "shield_bearer",
       "name": "Shield Bearer",
@@ -97,7 +124,9 @@
       "description": "Taunt",
       "attack": 1,
       "health": 4,
-      "keywords": ["taunt"]
+      "keywords": [
+        "taunt"
+      ]
     },
     {
       "id": "legion_commander",
@@ -110,7 +139,9 @@
       "attack": 3,
       "health": 4,
       "tribe": "Soldier",
-      "keywords": ["battlecry"]
+      "keywords": [
+        "battlecry"
+      ]
     },
     {
       "id": "golden_guardian",
@@ -122,7 +153,10 @@
       "description": "Taunt. Divine Shield.",
       "attack": 4,
       "health": 6,
-      "keywords": ["taunt", "divine_shield"]
+      "keywords": [
+        "taunt",
+        "divine_shield"
+      ]
     },
     {
       "id": "fortify",
@@ -153,7 +187,10 @@
       "attack": 2,
       "health": 2,
       "tribe": "Beast",
-      "keywords": ["deathtouch", "deathrattle"]
+      "keywords": [
+        "deathtouch",
+        "deathrattle"
+      ]
     },
     {
       "id": "acidspitter_nest",
@@ -167,7 +204,6 @@
       "health": 7,
       "tribe": "Construct"
     },
-
     {
       "id": "forest_sprite",
       "name": "Forest Sprite",
@@ -179,7 +215,9 @@
       "attack": 1,
       "health": 1,
       "tribe": "Spirit",
-      "keywords": ["deathrattle"]
+      "keywords": [
+        "deathrattle"
+      ]
     },
     {
       "id": "pack_wolf",
@@ -192,7 +230,9 @@
       "attack": 3,
       "health": 3,
       "tribe": "Beast",
-      "keywords": ["battlecry"]
+      "keywords": [
+        "battlecry"
+      ]
     },
     {
       "id": "ancient_treant",
@@ -205,7 +245,9 @@
       "attack": 5,
       "health": 8,
       "tribe": "Elemental",
-      "keywords": ["taunt"]
+      "keywords": [
+        "taunt"
+      ]
     },
     {
       "id": "wild_growth",
@@ -224,9 +266,14 @@
       "cost": 3,
       "rarity": "rare",
       "description": "Restore 8 health. Draw a card.",
-      "effects": [{"type": "heal", "value": 8, "target": "self"}]
+      "effects": [
+        {
+          "type": "heal",
+          "value": 8,
+          "target": "self"
+        }
+      ]
     },
-
     {
       "id": "shadow_stalker",
       "name": "Shadow Stalker",
@@ -237,7 +284,9 @@
       "description": "Stealth",
       "attack": 3,
       "health": 2,
-      "keywords": ["stealth"]
+      "keywords": [
+        "stealth"
+      ]
     },
     {
       "id": "contract_killer",
@@ -249,7 +298,9 @@
       "description": "Battlecry: Destroy a creature with 3 or less health.",
       "attack": 4,
       "health": 3,
-      "keywords": ["battlecry"]
+      "keywords": [
+        "battlecry"
+      ]
     },
     {
       "id": "guild_assassin",
@@ -261,7 +312,10 @@
       "description": "Stealth. Deathtouch.",
       "attack": 5,
       "health": 4,
-      "keywords": ["stealth", "deathtouch"]
+      "keywords": [
+        "stealth",
+        "deathtouch"
+      ]
     },
     {
       "id": "mark_target",
@@ -280,7 +334,13 @@
       "cost": 0,
       "rarity": "common",
       "description": "Deal 2 damage to an undamaged creature.",
-      "effects": [{"type": "damage", "value": 2, "target": "creature"}]
+      "effects": [
+        {
+          "type": "damage",
+          "value": 2,
+          "target": "creature"
+        }
+      ]
     },
     {
       "id": "westward_prosperity",
@@ -290,7 +350,9 @@
       "cost": 1,
       "rarity": "legendary",
       "description": "Quest: Quickdraw 9 cards. Reward: Deal 9 damage to all enemies.",
-      "keywords": ["quest"]
+      "keywords": [
+        "quest"
+      ]
     },
     {
       "id": "tumbleweed_tactician",
@@ -303,7 +365,9 @@
       "attack": 3,
       "health": 3,
       "tribe": "Lizardfolk Ranger",
-      "keywords": ["battlecry"]
+      "keywords": [
+        "battlecry"
+      ]
     },
     {
       "id": "the_lone_ranger",
@@ -312,11 +376,13 @@
       "cardClass": "bounty_hunter",
       "cost": 2,
       "rarity": "legendary",
-      "description": "Battlecry: Choose one — Destroy target creature with cost 4 or less; or Add a copy of target creature with cost 2 or less to your hand.",
+      "description": "Battlecry: Choose one \u2014 Destroy target creature with cost 4 or less; or Add a copy of target creature with cost 2 or less to your hand.",
       "attack": 2,
       "health": 2,
       "tribe": "Human Ranger",
-      "keywords": ["battlecry"]
+      "keywords": [
+        "battlecry"
+      ]
     },
     {
       "id": "silencer",
@@ -326,7 +392,9 @@
       "cost": 1,
       "rarity": "uncommon",
       "description": "Enchant Hero Weapon. Whenever you attack a creature, Silence it.",
-      "keywords": ["aura"]
+      "keywords": [
+        "aura"
+      ]
     },
     {
       "id": "running_gunner",
@@ -339,7 +407,10 @@
       "attack": 3,
       "health": 2,
       "tribe": "Human Ranger",
-      "keywords": ["rush", "deathrattle"]
+      "keywords": [
+        "rush",
+        "deathrattle"
+      ]
     },
     {
       "id": "regroup",
@@ -361,7 +432,9 @@
       "attack": 5,
       "health": 8,
       "tribe": "Human Ranger",
-      "keywords": ["taunt"]
+      "keywords": [
+        "taunt"
+      ]
     },
     {
       "id": "officer_octo",
@@ -374,7 +447,9 @@
       "attack": 2,
       "health": 2,
       "tribe": "Beast Ranger",
-      "keywords": ["battlecry"]
+      "keywords": [
+        "battlecry"
+      ]
     },
     {
       "id": "landlocked_privateer",
@@ -399,6 +474,1651 @@
       "attack": 4,
       "health": 5,
       "tribe": "Human Ranger"
+    },
+    {
+      "id": "circle_of_healing",
+      "name": "Circle of Healing",
+      "cardClass": "priest",
+      "cost": 0,
+      "rarity": "common",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "heal",
+          "value": 4,
+          "target": "all-creatures"
+        }
+      ],
+      "description": "Restore 4 health to every creature."
+    },
+    {
+      "id": "moonfire",
+      "name": "Moonfire",
+      "cardClass": "druid",
+      "cost": 0,
+      "rarity": "common",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 1,
+          "target": "any"
+        }
+      ],
+      "description": "Deal 1 damage to any target."
+    },
+    {
+      "id": "wisp",
+      "name": "Wisp",
+      "cardClass": "neutral",
+      "cost": 0,
+      "rarity": "common",
+      "type": "creature",
+      "attack": 1,
+      "health": 1,
+      "description": "A 1/1 creature."
+    },
+    {
+      "id": "arcane_shot",
+      "name": "Arcane Shot",
+      "cardClass": "hunter",
+      "cost": 1,
+      "rarity": "common",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 2,
+          "target": "any"
+        }
+      ],
+      "description": "Deal 2 damage to any target."
+    },
+    {
+      "id": "argent_squire",
+      "name": "Argent Squire",
+      "cardClass": "neutral",
+      "cost": 1,
+      "rarity": "common",
+      "type": "creature",
+      "attack": 1,
+      "health": 1,
+      "keywords": [
+        "divine_shield"
+      ],
+      "description": "Divine Shield."
+    },
+    {
+      "id": "blessing_of_might",
+      "name": "Blessing of Might",
+      "cardClass": "paladin",
+      "cost": 1,
+      "rarity": "common",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 3,
+          "health": 0,
+          "target": "creature"
+        }
+      ],
+      "description": "Give a creature +3 Attack."
+    },
+    {
+      "id": "elven_archer",
+      "name": "Elven Archer",
+      "cardClass": "neutral",
+      "cost": 1,
+      "rarity": "common",
+      "type": "creature",
+      "attack": 1,
+      "health": 1,
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "damage",
+          "value": 1,
+          "target": "any"
+        }
+      ],
+      "description": "Battlecry: Deal 1 damage to any target."
+    },
+    {
+      "id": "goldshire_footman",
+      "name": "Goldshire Footman",
+      "cardClass": "neutral",
+      "cost": 1,
+      "rarity": "common",
+      "type": "creature",
+      "attack": 1,
+      "health": 2,
+      "keywords": [
+        "taunt"
+      ],
+      "description": "Taunt."
+    },
+    {
+      "id": "holy_smite",
+      "name": "Holy Smite",
+      "cardClass": "priest",
+      "cost": 1,
+      "rarity": "common",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 2,
+          "target": "any"
+        }
+      ],
+      "description": "Deal 2 damage to any target."
+    },
+    {
+      "id": "leper_gnome",
+      "name": "Leper Gnome",
+      "cardClass": "neutral",
+      "cost": 1,
+      "rarity": "common",
+      "type": "creature",
+      "attack": 2,
+      "health": 1,
+      "keywords": [
+        "deathrattle"
+      ],
+      "deathrattle": [
+        {
+          "type": "damage",
+          "value": 2,
+          "target": "enemy-hero"
+        }
+      ],
+      "description": "Deathrattle: Deal 2 damage to the enemy hero."
+    },
+    {
+      "id": "mirror_image",
+      "name": "Mirror Image",
+      "cardClass": "mage",
+      "cost": 1,
+      "rarity": "common",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "summon",
+          "count": 2,
+          "attack": 0,
+          "health": 2,
+          "name": "minion",
+          "keywords": [
+            "taunt"
+          ]
+        }
+      ],
+      "description": "Summon two 0/2 minions with Taunt."
+    },
+    {
+      "id": "murloc_raider",
+      "name": "Murloc Raider",
+      "cardClass": "neutral",
+      "cost": 1,
+      "rarity": "common",
+      "type": "creature",
+      "attack": 2,
+      "health": 1,
+      "description": "A 2/1 creature."
+    },
+    {
+      "id": "shieldbearer",
+      "name": "Shieldbearer",
+      "cardClass": "neutral",
+      "cost": 1,
+      "rarity": "common",
+      "type": "creature",
+      "attack": 0,
+      "health": 4,
+      "keywords": [
+        "taunt"
+      ],
+      "description": "Taunt."
+    },
+    {
+      "id": "sinister_strike",
+      "name": "Sinister Strike",
+      "cardClass": "rogue",
+      "cost": 1,
+      "rarity": "common",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 3,
+          "target": "enemy-hero"
+        }
+      ],
+      "description": "Deal 3 damage to the enemy hero."
+    },
+    {
+      "id": "stonetusk_boar",
+      "name": "Stonetusk Boar",
+      "cardClass": "neutral",
+      "cost": 1,
+      "rarity": "common",
+      "type": "creature",
+      "attack": 1,
+      "health": 1,
+      "keywords": [
+        "charge"
+      ],
+      "description": "Charge."
+    },
+    {
+      "id": "voidwalker",
+      "name": "Voidwalker",
+      "cardClass": "warlock",
+      "cost": 1,
+      "rarity": "common",
+      "type": "creature",
+      "attack": 1,
+      "health": 3,
+      "keywords": [
+        "taunt"
+      ],
+      "description": "Taunt."
+    },
+    {
+      "id": "voodoo_doctor",
+      "name": "Voodoo Doctor",
+      "cardClass": "neutral",
+      "cost": 1,
+      "rarity": "common",
+      "type": "creature",
+      "attack": 2,
+      "health": 1,
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "heal",
+          "value": 2,
+          "target": "any"
+        }
+      ],
+      "description": "Battlecry: Restore 2 health to any target."
+    },
+    {
+      "id": "whirlwind",
+      "name": "Whirlwind",
+      "cardClass": "warrior",
+      "cost": 1,
+      "rarity": "common",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 1,
+          "target": "all-creatures"
+        }
+      ],
+      "description": "Deal 1 damage to every creature."
+    },
+    {
+      "id": "worgen_infiltrator",
+      "name": "Worgen Infiltrator",
+      "cardClass": "neutral",
+      "cost": 1,
+      "rarity": "common",
+      "type": "creature",
+      "attack": 2,
+      "health": 1,
+      "keywords": [
+        "stealth"
+      ],
+      "description": "Stealth."
+    },
+    {
+      "id": "young_dragonhawk",
+      "name": "Young Dragonhawk",
+      "cardClass": "neutral",
+      "cost": 1,
+      "rarity": "common",
+      "type": "creature",
+      "attack": 1,
+      "health": 1,
+      "keywords": [
+        "windfury"
+      ],
+      "description": "Windfury."
+    },
+    {
+      "id": "arcane_explosion",
+      "name": "Arcane Explosion",
+      "cardClass": "mage",
+      "cost": 2,
+      "rarity": "common",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 1,
+          "target": "enemy-creatures"
+        }
+      ],
+      "description": "Deal 1 damage to all enemy creatures."
+    },
+    {
+      "id": "bloodfen_raptor",
+      "name": "Bloodfen Raptor",
+      "cardClass": "neutral",
+      "cost": 2,
+      "rarity": "common",
+      "type": "creature",
+      "attack": 3,
+      "health": 2,
+      "description": "A 3/2 creature."
+    },
+    {
+      "id": "bluegill_warrior",
+      "name": "Bluegill Warrior",
+      "cardClass": "neutral",
+      "cost": 2,
+      "rarity": "common",
+      "type": "creature",
+      "attack": 2,
+      "health": 1,
+      "keywords": [
+        "charge"
+      ],
+      "description": "Charge."
+    },
+    {
+      "id": "frostwolf_grunt",
+      "name": "Frostwolf Grunt",
+      "cardClass": "neutral",
+      "cost": 2,
+      "rarity": "common",
+      "type": "creature",
+      "attack": 2,
+      "health": 2,
+      "keywords": [
+        "taunt"
+      ],
+      "description": "Taunt."
+    },
+    {
+      "id": "holy_light",
+      "name": "Holy Light",
+      "cardClass": "paladin",
+      "cost": 2,
+      "rarity": "common",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "heal",
+          "value": 6,
+          "target": "any"
+        }
+      ],
+      "description": "Restore 6 health to any target."
+    },
+    {
+      "id": "loot_hoarder",
+      "name": "Loot Hoarder",
+      "cardClass": "neutral",
+      "cost": 2,
+      "rarity": "common",
+      "type": "creature",
+      "attack": 2,
+      "health": 1,
+      "keywords": [
+        "deathrattle"
+      ],
+      "deathrattle": [
+        {
+          "type": "draw",
+          "value": 1
+        }
+      ],
+      "description": "Deathrattle: Draw 1 card."
+    },
+    {
+      "id": "mind_blast",
+      "name": "Mind Blast",
+      "cardClass": "priest",
+      "cost": 2,
+      "rarity": "common",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 5,
+          "target": "enemy-hero"
+        }
+      ],
+      "description": "Deal 5 damage to the enemy hero."
+    },
+    {
+      "id": "murloc_tidehunter",
+      "name": "Murloc Tidehunter",
+      "cardClass": "neutral",
+      "cost": 2,
+      "rarity": "common",
+      "type": "creature",
+      "attack": 2,
+      "health": 1,
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "summon",
+          "count": 1,
+          "attack": 1,
+          "health": 1,
+          "name": "Murloc Scout"
+        }
+      ],
+      "description": "Battlecry: Summon a 1/1 Murloc Scout."
+    },
+    {
+      "id": "novice_engineer",
+      "name": "Novice Engineer",
+      "cardClass": "neutral",
+      "cost": 2,
+      "rarity": "common",
+      "type": "creature",
+      "attack": 1,
+      "health": 1,
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "draw",
+          "value": 1
+        }
+      ],
+      "description": "Battlecry: Draw 1 card."
+    },
+    {
+      "id": "patient_assassin",
+      "name": "Patient Assassin",
+      "cardClass": "rogue",
+      "cost": 2,
+      "rarity": "epic",
+      "type": "creature",
+      "attack": 1,
+      "health": 1,
+      "keywords": [
+        "stealth",
+        "deathtouch"
+      ],
+      "description": "Stealth. Deathtouch."
+    },
+    {
+      "id": "river_crocolisk",
+      "name": "River Crocolisk",
+      "cardClass": "neutral",
+      "cost": 2,
+      "rarity": "common",
+      "type": "creature",
+      "attack": 2,
+      "health": 3,
+      "description": "A 2/3 creature."
+    },
+    {
+      "id": "shadow_word_pain",
+      "name": "Shadow Word: Pain",
+      "cardClass": "priest",
+      "cost": 2,
+      "rarity": "common",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "destroy",
+          "target": "creature",
+          "maxAttack": 3
+        }
+      ],
+      "description": "Destroy a creature with 3 or less Attack."
+    },
+    {
+      "id": "shiv",
+      "name": "Shiv",
+      "cardClass": "rogue",
+      "cost": 2,
+      "rarity": "common",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 1,
+          "target": "any"
+        },
+        {
+          "type": "draw",
+          "value": 1
+        }
+      ],
+      "description": "Deal 1 damage to any target. Draw 1 card."
+    },
+    {
+      "id": "arcane_intellect",
+      "name": "Arcane Intellect",
+      "cardClass": "mage",
+      "cost": 3,
+      "rarity": "common",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "draw",
+          "value": 2
+        }
+      ],
+      "description": "Draw 2 cards."
+    },
+    {
+      "id": "drain_life",
+      "name": "Drain Life",
+      "cardClass": "warlock",
+      "cost": 3,
+      "rarity": "common",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 2,
+          "target": "any"
+        },
+        {
+          "type": "heal",
+          "value": 2,
+          "target": "self"
+        }
+      ],
+      "description": "Deal 2 damage to any target. Restore 2 health to your hero."
+    },
+    {
+      "id": "earthen_ring_farseer",
+      "name": "Earthen Ring Farseer",
+      "cardClass": "neutral",
+      "cost": 3,
+      "rarity": "common",
+      "type": "creature",
+      "attack": 3,
+      "health": 3,
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "heal",
+          "value": 3,
+          "target": "any"
+        }
+      ],
+      "description": "Battlecry: Restore 3 health to any target."
+    },
+    {
+      "id": "emperor_cobra",
+      "name": "Emperor Cobra",
+      "cardClass": "neutral",
+      "cost": 3,
+      "rarity": "rare",
+      "type": "creature",
+      "attack": 2,
+      "health": 3,
+      "keywords": [
+        "deathtouch"
+      ],
+      "description": "Deathtouch."
+    },
+    {
+      "id": "fan_of_knives",
+      "name": "Fan of Knives",
+      "cardClass": "rogue",
+      "cost": 3,
+      "rarity": "common",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 1,
+          "target": "enemy-creatures"
+        },
+        {
+          "type": "draw",
+          "value": 1
+        }
+      ],
+      "description": "Deal 1 damage to all enemy creatures. Draw 1 card."
+    },
+    {
+      "id": "harvest_golem",
+      "name": "Harvest Golem",
+      "cardClass": "neutral",
+      "cost": 3,
+      "rarity": "common",
+      "type": "creature",
+      "attack": 2,
+      "health": 3,
+      "keywords": [
+        "deathrattle"
+      ],
+      "deathrattle": [
+        {
+          "type": "summon",
+          "count": 1,
+          "attack": 2,
+          "health": 1,
+          "name": "Damaged Golem"
+        }
+      ],
+      "description": "Deathrattle: Summon a 2/1 Damaged Golem."
+    },
+    {
+      "id": "healing_touch",
+      "name": "Healing Touch",
+      "cardClass": "druid",
+      "cost": 3,
+      "rarity": "common",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "heal",
+          "value": 8,
+          "target": "any"
+        }
+      ],
+      "description": "Restore 8 health to any target."
+    },
+    {
+      "id": "ironforge_rifleman",
+      "name": "Ironforge Rifleman",
+      "cardClass": "neutral",
+      "cost": 3,
+      "rarity": "common",
+      "type": "creature",
+      "attack": 2,
+      "health": 2,
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "damage",
+          "value": 1,
+          "target": "any"
+        }
+      ],
+      "description": "Battlecry: Deal 1 damage to any target."
+    },
+    {
+      "id": "ironfur_grizzly",
+      "name": "Ironfur Grizzly",
+      "cardClass": "neutral",
+      "cost": 3,
+      "rarity": "common",
+      "type": "creature",
+      "attack": 3,
+      "health": 3,
+      "keywords": [
+        "taunt"
+      ],
+      "description": "Taunt."
+    },
+    {
+      "id": "jungle_panther",
+      "name": "Jungle Panther",
+      "cardClass": "neutral",
+      "cost": 3,
+      "rarity": "common",
+      "type": "creature",
+      "attack": 4,
+      "health": 2,
+      "keywords": [
+        "stealth"
+      ],
+      "description": "Stealth."
+    },
+    {
+      "id": "magma_rager",
+      "name": "Magma Rager",
+      "cardClass": "neutral",
+      "cost": 3,
+      "rarity": "common",
+      "type": "creature",
+      "attack": 5,
+      "health": 1,
+      "description": "A 5/1 creature."
+    },
+    {
+      "id": "razorfen_hunter",
+      "name": "Razorfen Hunter",
+      "cardClass": "neutral",
+      "cost": 3,
+      "rarity": "common",
+      "type": "creature",
+      "attack": 2,
+      "health": 3,
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "summon",
+          "count": 1,
+          "attack": 1,
+          "health": 1,
+          "name": "Boar"
+        }
+      ],
+      "description": "Battlecry: Summon a 1/1 Boar."
+    },
+    {
+      "id": "scarlet_crusader",
+      "name": "Scarlet Crusader",
+      "cardClass": "neutral",
+      "cost": 3,
+      "rarity": "common",
+      "type": "creature",
+      "attack": 3,
+      "health": 1,
+      "keywords": [
+        "divine_shield"
+      ],
+      "description": "Divine Shield."
+    },
+    {
+      "id": "shadow_bolt",
+      "name": "Shadow Bolt",
+      "cardClass": "warlock",
+      "cost": 3,
+      "rarity": "common",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 4,
+          "target": "creature"
+        }
+      ],
+      "description": "Deal 4 damage to a creature."
+    },
+    {
+      "id": "shattered_sun_cleric",
+      "name": "Shattered Sun Cleric",
+      "cardClass": "neutral",
+      "cost": 3,
+      "rarity": "common",
+      "type": "creature",
+      "attack": 3,
+      "health": 2,
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 1,
+          "health": 1,
+          "target": "friendly-creature"
+        }
+      ],
+      "description": "Battlecry: Give a friendly creature +1/+1."
+    },
+    {
+      "id": "silverback_patriarch",
+      "name": "Silverback Patriarch",
+      "cardClass": "neutral",
+      "cost": 3,
+      "rarity": "common",
+      "type": "creature",
+      "attack": 1,
+      "health": 4,
+      "keywords": [
+        "taunt"
+      ],
+      "description": "Taunt."
+    },
+    {
+      "id": "thrallmar_farseer",
+      "name": "Thrallmar Farseer",
+      "cardClass": "neutral",
+      "cost": 3,
+      "rarity": "common",
+      "type": "creature",
+      "attack": 2,
+      "health": 3,
+      "keywords": [
+        "windfury"
+      ],
+      "description": "Windfury."
+    },
+    {
+      "id": "wolfrider",
+      "name": "Wolfrider",
+      "cardClass": "neutral",
+      "cost": 3,
+      "rarity": "common",
+      "type": "creature",
+      "attack": 3,
+      "health": 1,
+      "keywords": [
+        "charge"
+      ],
+      "description": "Charge."
+    },
+    {
+      "id": "chillwind_yeti",
+      "name": "Chillwind Yeti",
+      "cardClass": "neutral",
+      "cost": 4,
+      "rarity": "common",
+      "type": "creature",
+      "attack": 4,
+      "health": 5,
+      "description": "A 4/5 creature."
+    },
+    {
+      "id": "consecration",
+      "name": "Consecration",
+      "cardClass": "paladin",
+      "cost": 4,
+      "rarity": "common",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 2,
+          "target": "enemies"
+        }
+      ],
+      "description": "Deal 2 damage to the enemy hero and all enemy creatures."
+    },
+    {
+      "id": "dragonling_mechanic",
+      "name": "Dragonling Mechanic",
+      "cardClass": "neutral",
+      "cost": 4,
+      "rarity": "common",
+      "type": "creature",
+      "attack": 2,
+      "health": 4,
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "summon",
+          "count": 1,
+          "attack": 2,
+          "health": 1,
+          "name": "Mechanical Dragonling"
+        }
+      ],
+      "description": "Battlecry: Summon a 2/1 Mechanical Dragonling."
+    },
+    {
+      "id": "gnomish_inventor",
+      "name": "Gnomish Inventor",
+      "cardClass": "neutral",
+      "cost": 4,
+      "rarity": "common",
+      "type": "creature",
+      "attack": 2,
+      "health": 4,
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "draw",
+          "value": 1
+        }
+      ],
+      "description": "Battlecry: Draw 1 card."
+    },
+    {
+      "id": "hammer_of_wrath",
+      "name": "Hammer of Wrath",
+      "cardClass": "paladin",
+      "cost": 4,
+      "rarity": "common",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 3,
+          "target": "any"
+        },
+        {
+          "type": "draw",
+          "value": 1
+        }
+      ],
+      "description": "Deal 3 damage to any target. Draw 1 card."
+    },
+    {
+      "id": "hellfire",
+      "name": "Hellfire",
+      "cardClass": "warlock",
+      "cost": 4,
+      "rarity": "common",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 3,
+          "target": "everyone"
+        }
+      ],
+      "description": "Deal 3 damage to both heroes and every creature."
+    },
+    {
+      "id": "kor_kron_elite",
+      "name": "Kor'kron Elite",
+      "cardClass": "warrior",
+      "cost": 4,
+      "rarity": "common",
+      "type": "creature",
+      "attack": 4,
+      "health": 3,
+      "keywords": [
+        "charge"
+      ],
+      "description": "Charge."
+    },
+    {
+      "id": "leeroy_jenkins",
+      "name": "Leeroy Jenkins",
+      "cardClass": "neutral",
+      "cost": 4,
+      "rarity": "legendary",
+      "type": "creature",
+      "attack": 6,
+      "health": 2,
+      "keywords": [
+        "charge",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "summon",
+          "count": 2,
+          "attack": 1,
+          "health": 1,
+          "name": "Whelps for your opponent"
+        }
+      ],
+      "description": "Charge. Battlecry: Summon two 1/1 Whelps for your opponent."
+    },
+    {
+      "id": "mogu_shan_warden",
+      "name": "Mogu'shan Warden",
+      "cardClass": "neutral",
+      "cost": 4,
+      "rarity": "common",
+      "type": "creature",
+      "attack": 1,
+      "health": 7,
+      "keywords": [
+        "taunt"
+      ],
+      "description": "Taunt."
+    },
+    {
+      "id": "oasis_snapjaw",
+      "name": "Oasis Snapjaw",
+      "cardClass": "neutral",
+      "cost": 4,
+      "rarity": "common",
+      "type": "creature",
+      "attack": 2,
+      "health": 7,
+      "description": "A 2/7 creature."
+    },
+    {
+      "id": "sen_jin_shieldmasta",
+      "name": "Sen'jin Shieldmasta",
+      "cardClass": "neutral",
+      "cost": 4,
+      "rarity": "common",
+      "type": "creature",
+      "attack": 3,
+      "health": 5,
+      "keywords": [
+        "taunt"
+      ],
+      "description": "Taunt."
+    },
+    {
+      "id": "silvermoon_guardian",
+      "name": "Silvermoon Guardian",
+      "cardClass": "neutral",
+      "cost": 4,
+      "rarity": "common",
+      "type": "creature",
+      "attack": 3,
+      "health": 3,
+      "keywords": [
+        "divine_shield"
+      ],
+      "description": "Divine Shield."
+    },
+    {
+      "id": "stormwind_knight",
+      "name": "Stormwind Knight",
+      "cardClass": "neutral",
+      "cost": 4,
+      "rarity": "common",
+      "type": "creature",
+      "attack": 2,
+      "health": 5,
+      "keywords": [
+        "charge"
+      ],
+      "description": "Charge."
+    },
+    {
+      "id": "abomination",
+      "name": "Abomination",
+      "cardClass": "neutral",
+      "cost": 5,
+      "rarity": "rare",
+      "type": "creature",
+      "attack": 4,
+      "health": 4,
+      "keywords": [
+        "taunt",
+        "deathrattle"
+      ],
+      "deathrattle": [
+        {
+          "type": "damage",
+          "value": 2,
+          "target": "everyone"
+        }
+      ],
+      "description": "Taunt. Deathrattle: Deal 2 damage to both heroes and every creature."
+    },
+    {
+      "id": "assassinate",
+      "name": "Assassinate",
+      "cardClass": "rogue",
+      "cost": 5,
+      "rarity": "common",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "destroy",
+          "target": "enemy-creature"
+        }
+      ],
+      "description": "Destroy an enemy creature."
+    },
+    {
+      "id": "booty_bay_bodyguard",
+      "name": "Booty Bay Bodyguard",
+      "cardClass": "neutral",
+      "cost": 5,
+      "rarity": "common",
+      "type": "creature",
+      "attack": 5,
+      "health": 4,
+      "keywords": [
+        "taunt"
+      ],
+      "description": "Taunt."
+    },
+    {
+      "id": "darkscale_healer",
+      "name": "Darkscale Healer",
+      "cardClass": "neutral",
+      "cost": 5,
+      "rarity": "common",
+      "type": "creature",
+      "attack": 4,
+      "health": 5,
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "heal",
+          "value": 2,
+          "target": "friendly-all"
+        }
+      ],
+      "description": "Battlecry: Restore 2 health to your hero and creatures."
+    },
+    {
+      "id": "fen_creeper",
+      "name": "Fen Creeper",
+      "cardClass": "neutral",
+      "cost": 5,
+      "rarity": "common",
+      "type": "creature",
+      "attack": 3,
+      "health": 6,
+      "keywords": [
+        "taunt"
+      ],
+      "description": "Taunt."
+    },
+    {
+      "id": "holy_nova",
+      "name": "Holy Nova",
+      "cardClass": "priest",
+      "cost": 5,
+      "rarity": "common",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 2,
+          "target": "enemies"
+        },
+        {
+          "type": "heal",
+          "value": 2,
+          "target": "friendly-all"
+        }
+      ],
+      "description": "Deal 2 damage to the enemy hero and all enemy creatures. Restore 2 health to your hero and creatures."
+    },
+    {
+      "id": "nightblade",
+      "name": "Nightblade",
+      "cardClass": "neutral",
+      "cost": 5,
+      "rarity": "common",
+      "type": "creature",
+      "attack": 4,
+      "health": 4,
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "damage",
+          "value": 3,
+          "target": "enemy-hero"
+        }
+      ],
+      "description": "Battlecry: Deal 3 damage to the enemy hero."
+    },
+    {
+      "id": "silver_hand_knight",
+      "name": "Silver Hand Knight",
+      "cardClass": "neutral",
+      "cost": 5,
+      "rarity": "common",
+      "type": "creature",
+      "attack": 4,
+      "health": 4,
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "summon",
+          "count": 1,
+          "attack": 2,
+          "health": 2,
+          "name": "Squire"
+        }
+      ],
+      "description": "Battlecry: Summon a 2/2 Squire."
+    },
+    {
+      "id": "stormpike_commando",
+      "name": "Stormpike Commando",
+      "cardClass": "neutral",
+      "cost": 5,
+      "rarity": "common",
+      "type": "creature",
+      "attack": 4,
+      "health": 2,
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "damage",
+          "value": 2,
+          "target": "any"
+        }
+      ],
+      "description": "Battlecry: Deal 2 damage to any target."
+    },
+    {
+      "id": "stranglethorn_tiger",
+      "name": "Stranglethorn Tiger",
+      "cardClass": "neutral",
+      "cost": 5,
+      "rarity": "common",
+      "type": "creature",
+      "attack": 5,
+      "health": 5,
+      "keywords": [
+        "stealth"
+      ],
+      "description": "Stealth."
+    },
+    {
+      "id": "boulderfist_ogre",
+      "name": "Boulderfist Ogre",
+      "cardClass": "neutral",
+      "cost": 6,
+      "rarity": "common",
+      "type": "creature",
+      "attack": 6,
+      "health": 7,
+      "description": "A 6/7 creature."
+    },
+    {
+      "id": "cairne_bloodhoof",
+      "name": "Cairne Bloodhoof",
+      "cardClass": "neutral",
+      "cost": 6,
+      "rarity": "legendary",
+      "type": "creature",
+      "attack": 4,
+      "health": 5,
+      "keywords": [
+        "deathrattle"
+      ],
+      "deathrattle": [
+        {
+          "type": "summon",
+          "count": 1,
+          "attack": 4,
+          "health": 5,
+          "name": "Baine Bloodhoof"
+        }
+      ],
+      "description": "Deathrattle: Summon a 4/5 Baine Bloodhoof."
+    },
+    {
+      "id": "fire_elemental",
+      "name": "Fire Elemental",
+      "cardClass": "shaman",
+      "cost": 6,
+      "rarity": "common",
+      "type": "creature",
+      "attack": 6,
+      "health": 5,
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "damage",
+          "value": 3,
+          "target": "any"
+        }
+      ],
+      "description": "Battlecry: Deal 3 damage to any target."
+    },
+    {
+      "id": "force_of_nature",
+      "name": "Force of Nature",
+      "cardClass": "druid",
+      "cost": 6,
+      "rarity": "epic",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "summon",
+          "count": 3,
+          "attack": 2,
+          "health": 2,
+          "name": "Treants with Charge that die at the end of the turn"
+        }
+      ],
+      "description": "Summon three 2/2 Treants with Charge that die at the end of the turn."
+    },
+    {
+      "id": "holy_fire",
+      "name": "Holy Fire",
+      "cardClass": "priest",
+      "cost": 6,
+      "rarity": "rare",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 5,
+          "target": "any"
+        },
+        {
+          "type": "heal",
+          "value": 5,
+          "target": "self"
+        }
+      ],
+      "description": "Deal 5 damage to any target. Restore 5 health to your hero."
+    },
+    {
+      "id": "lord_of_the_arena",
+      "name": "Lord of the Arena",
+      "cardClass": "neutral",
+      "cost": 6,
+      "rarity": "common",
+      "type": "creature",
+      "attack": 6,
+      "health": 5,
+      "keywords": [
+        "taunt"
+      ],
+      "description": "Taunt."
+    },
+    {
+      "id": "priestess_of_elune",
+      "name": "Priestess of Elune",
+      "cardClass": "neutral",
+      "cost": 6,
+      "rarity": "common",
+      "type": "creature",
+      "attack": 5,
+      "health": 4,
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "heal",
+          "value": 4,
+          "target": "self"
+        }
+      ],
+      "description": "Battlecry: Restore 4 health to your hero."
+    },
+    {
+      "id": "reckless_rocketeer",
+      "name": "Reckless Rocketeer",
+      "cardClass": "neutral",
+      "cost": 6,
+      "rarity": "common",
+      "type": "creature",
+      "attack": 5,
+      "health": 2,
+      "keywords": [
+        "charge"
+      ],
+      "description": "Charge."
+    },
+    {
+      "id": "savannah_highmane",
+      "name": "Savannah Highmane",
+      "cardClass": "hunter",
+      "cost": 6,
+      "rarity": "rare",
+      "type": "creature",
+      "attack": 6,
+      "health": 5,
+      "keywords": [
+        "deathrattle"
+      ],
+      "deathrattle": [
+        {
+          "type": "summon",
+          "count": 2,
+          "attack": 2,
+          "health": 2,
+          "name": "Hyena"
+        }
+      ],
+      "description": "Deathrattle: Summon two 2/2 Hyenas."
+    },
+    {
+      "id": "siphon_soul",
+      "name": "Siphon Soul",
+      "cardClass": "warlock",
+      "cost": 6,
+      "rarity": "rare",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "destroy",
+          "target": "creature"
+        },
+        {
+          "type": "heal",
+          "value": 3,
+          "target": "self"
+        }
+      ],
+      "description": "Destroy a creature. Restore 3 health to your hero."
+    },
+    {
+      "id": "starfire",
+      "name": "Starfire",
+      "cardClass": "druid",
+      "cost": 6,
+      "rarity": "common",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 5,
+          "target": "any"
+        },
+        {
+          "type": "draw",
+          "value": 1
+        }
+      ],
+      "description": "Deal 5 damage to any target. Draw 1 card."
+    },
+    {
+      "id": "the_beast",
+      "name": "The Beast",
+      "cardClass": "neutral",
+      "cost": 6,
+      "rarity": "legendary",
+      "type": "creature",
+      "attack": 9,
+      "health": 7,
+      "keywords": [
+        "deathrattle"
+      ],
+      "deathrattle": [
+        {
+          "type": "summon",
+          "count": 1,
+          "attack": 3,
+          "health": 3,
+          "name": "Pip Quickwit for your opponent"
+        }
+      ],
+      "description": "Deathrattle: Summon a 3/3 Pip Quickwit for your opponent."
+    },
+    {
+      "id": "windfury_harpy",
+      "name": "Windfury Harpy",
+      "cardClass": "neutral",
+      "cost": 6,
+      "rarity": "common",
+      "type": "creature",
+      "attack": 4,
+      "health": 5,
+      "keywords": [
+        "windfury"
+      ],
+      "description": "Windfury."
+    },
+    {
+      "id": "core_hound",
+      "name": "Core Hound",
+      "cardClass": "neutral",
+      "cost": 7,
+      "rarity": "common",
+      "type": "creature",
+      "attack": 9,
+      "health": 5,
+      "description": "A 9/5 creature."
+    },
+    {
+      "id": "flamestrike",
+      "name": "Flamestrike",
+      "cardClass": "mage",
+      "cost": 7,
+      "rarity": "common",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 4,
+          "target": "enemy-creatures"
+        }
+      ],
+      "description": "Deal 4 damage to all enemy creatures."
+    },
+    {
+      "id": "guardian_of_kings",
+      "name": "Guardian of Kings",
+      "cardClass": "paladin",
+      "cost": 7,
+      "rarity": "common",
+      "type": "creature",
+      "attack": 5,
+      "health": 6,
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "heal",
+          "value": 6,
+          "target": "self"
+        }
+      ],
+      "description": "Battlecry: Restore 6 health to your hero."
+    },
+    {
+      "id": "ravenholdt_assassin",
+      "name": "Ravenholdt Assassin",
+      "cardClass": "neutral",
+      "cost": 7,
+      "rarity": "rare",
+      "type": "creature",
+      "attack": 7,
+      "health": 5,
+      "keywords": [
+        "stealth"
+      ],
+      "description": "Stealth."
+    },
+    {
+      "id": "sprint",
+      "name": "Sprint",
+      "cardClass": "rogue",
+      "cost": 7,
+      "rarity": "common",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "draw",
+          "value": 4
+        }
+      ],
+      "description": "Draw 4 cards."
+    },
+    {
+      "id": "war_golem",
+      "name": "War Golem",
+      "cardClass": "neutral",
+      "cost": 7,
+      "rarity": "common",
+      "type": "creature",
+      "attack": 7,
+      "health": 7,
+      "description": "A 7/7 creature."
+    },
+    {
+      "id": "al_akir_the_windlord",
+      "name": "Al'Akir the Windlord",
+      "cardClass": "shaman",
+      "cost": 8,
+      "rarity": "legendary",
+      "type": "creature",
+      "attack": 3,
+      "health": 5,
+      "keywords": [
+        "charge",
+        "divine_shield",
+        "taunt",
+        "windfury"
+      ],
+      "description": "Charge. Divine Shield. Taunt. Windfury."
+    },
+    {
+      "id": "ironbark_protector",
+      "name": "Ironbark Protector",
+      "cardClass": "druid",
+      "cost": 8,
+      "rarity": "common",
+      "type": "creature",
+      "attack": 8,
+      "health": 8,
+      "keywords": [
+        "taunt"
+      ],
+      "description": "Taunt."
+    },
+    {
+      "id": "lay_on_hands",
+      "name": "Lay on Hands",
+      "cardClass": "paladin",
+      "cost": 8,
+      "rarity": "epic",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "heal",
+          "value": 8,
+          "target": "any"
+        },
+        {
+          "type": "draw",
+          "value": 3
+        }
+      ],
+      "description": "Restore 8 health to any target. Draw 3 cards."
+    },
+    {
+      "id": "king_krush",
+      "name": "King Krush",
+      "cardClass": "hunter",
+      "cost": 9,
+      "rarity": "legendary",
+      "type": "creature",
+      "attack": 8,
+      "health": 8,
+      "keywords": [
+        "charge"
+      ],
+      "description": "Charge."
+    },
+    {
+      "id": "pyroblast",
+      "name": "Pyroblast",
+      "cardClass": "mage",
+      "cost": 10,
+      "rarity": "epic",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 10,
+          "target": "any"
+        }
+      ],
+      "description": "Deal 10 damage to any target."
     }
   ]
 }

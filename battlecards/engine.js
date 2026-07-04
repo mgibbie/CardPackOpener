@@ -21,6 +21,14 @@ export const STARTING_LIFE = 40;
 // still function as vanilla bodies if added manually.
 export const UNPLAYABLE = new Set(['silencer', 'westward_prosperity']);
 
+// legacy hand-scripted cards: their effects arrays are handled by the scripted
+// switch below, so the generic executor must not double-run them
+const LEGACY_SCRIPTED = new Set([
+	'wandering_merchant', 'legion_commander', 'pack_wolf', 'contract_killer',
+	'tumbleweed_tactician', 'natures_blessing', 'fortify', 'rallying_cry',
+	'wild_growth', 'mark_target', 'regroup',
+]);
+
 let nextUid = 1;
 
 // ---------- card instances ----------
@@ -38,6 +46,7 @@ function instantiate(def, controller) {
 		damage: 0,
 		keywords: [...(def.keywords || [])],
 		effects: def.effects || null,
+		deathrattle: def.deathrattle || null,
 		tribe: def.tribe || null,
 		controller,
 		sick: true,
@@ -155,29 +164,47 @@ function spendMana(p, amount) {
 }
 
 // ---------- targeting ----------
-// Returns null (no target needed) or { targets: 'any'|'creature'|'enemy-creature',
-// filter(card)?, required: bool }
+// effect target values that require the player to choose something
+const CHOSEN = {
+	damage: { any: 'any', creature: 'creature', 'enemy-creature': 'enemy-creature', 'undamaged-creature': 'creature' },
+	heal: { any: 'any' },
+	buff: { creature: 'creature', 'friendly-creature': 'friendly-creature' },
+	grant: { creature: 'creature', 'friendly-creature': 'friendly-creature' },
+	destroy: { creature: 'creature', 'enemy-creature': 'enemy-creature' },
+};
+
+// Returns null (no target needed) or { targets, filter(card)?, required, why }
 export function targetSpec(state, pi, card) {
+	// hand-scripted legacy cards keep their bespoke specs
 	if (card.type === 'creature') {
 		switch (card.id) {
 			case 'contract_killer':
 				return { targets: 'creature', filter: c => hp(c) <= 3, required: false, why: 'a creature with 3 or less Health' };
 			case 'tumbleweed_tactician':
 				return { targets: 'enemy-creature', required: false, why: 'an enemy creature' };
-			default: return null;
 		}
 	}
 	switch (card.id) {
-		case 'fireball': case 'lightning_bolt': case 'arcane_bolt':
-			return { targets: 'any', required: true, why: 'any target' };
 		case 'backstab':
 			return { targets: 'creature', filter: c => c.damage === 0, required: true, why: 'an undamaged creature' };
 		case 'fortify':
 			return { targets: 'creature', required: true, why: 'a creature' };
 		case 'mark_target':
 			return { targets: 'enemy-creature', required: true, why: 'an enemy creature' };
-		default: return null;
 	}
+	// generic: derive from the first effect that needs a chosen target
+	for (const e of card.effects || []) {
+		const kind = CHOSEN[e.type]?.[e.target];
+		if (!kind) continue;
+		let filter = null, why = {
+			any: 'any target', creature: 'a creature',
+			'enemy-creature': 'an enemy creature', 'friendly-creature': 'a friendly creature',
+		}[kind];
+		if (e.target === 'undamaged-creature') { filter = c => c.damage === 0; why = 'an undamaged creature'; }
+		if (e.maxAttack != null) { filter = c => c.attack <= e.maxAttack; why = `a creature with ${e.maxAttack} or less Attack`; }
+		return { targets: kind, filter, required: card.type !== 'creature', why };
+	}
+	return null;
 }
 
 export function legalTargets(state, pi, spec) {
@@ -192,6 +219,7 @@ export function legalTargets(state, pi, spec) {
 	if (spec.targets === 'any') { pushCreatures(pi); pushCreatures(opp); out.push({ type: 'hero', player: pi }, { type: 'hero', player: opp }); }
 	if (spec.targets === 'creature') { pushCreatures(pi); pushCreatures(opp); }
 	if (spec.targets === 'enemy-creature') { pushCreatures(opp); }
+	if (spec.targets === 'friendly-creature') { pushCreatures(pi); }
 	return out;
 }
 
@@ -281,6 +309,10 @@ function summon(state, pi, tokenDef) {
 // ---------- scripted card mechanics (text the Lua engine didn't implement) ----------
 function runBattlecry(state, pi, card, target) {
 	const p = state.players[pi];
+	// data-driven battlecries (imported sets); legacy ids stay hand-scripted below
+	if (card.effects && !LEGACY_SCRIPTED.has(card.id)) {
+		execEffects(state, pi, card.effects, target);
+	}
 	switch (card.id) {
 		case 'wandering_merchant': drawCards(state, pi, 1); break;
 		case 'legion_commander': {
@@ -315,6 +347,7 @@ function runBattlecry(state, pi, card, target) {
 }
 
 function runDeathrattle(state, pi, card) {
+	if (card.deathrattle) execEffects(state, pi, card.deathrattle, null);
 	switch (card.id) {
 		case 'forest_sprite': summon(state, pi, TOKENS.seedling); break;
 		case 'acidspitter': {
@@ -334,31 +367,92 @@ function runDeathrattle(state, pi, card) {
 	}
 }
 
-function runSpell(state, pi, card, target) {
+// generic effect executor shared by spells, battlecries, and deathrattles.
+// `target` is the player's chosen target (or null); AoE targets need no choice.
+function execEffects(state, pi, effects, target) {
 	const opp = 1 - pi;
-	// data-driven effects array first (fireball, bolts, potions, backstab, nature's blessing)
-	if (card.effects) {
-		for (const e of card.effects) {
-			if (e.type === 'damage') {
-				if (target?.type === 'creature') {
-					const t = findCreature(state, target.uid);
-					if (t) damageCreature(state, t, e.value, null);
-				} else if (target?.type === 'hero') {
-					damageHero(state, target.player, e.value);
-				} else {
-					damageHero(state, opp, e.value);
+	const chosenCreature = () => target?.type === 'creature' ? findCreature(state, target.uid) : null;
+	const healCreature = (c, v) => {
+		c.damage = Math.max(0, c.damage - v);
+		emit(state, { type: 'heal', targetType: 'creature', uid: c.uid, amount: v, hp: hp(c) });
+	};
+	const buffCreature = (c, atk, hpv) => {
+		c.attack += atk;
+		c.maxHealth += hpv;
+		emit(state, { type: 'buff', uid: c.uid, attack: c.attack, hp: hp(c) });
+	};
+	for (const e of effects || []) {
+		if (e.type === 'damage') {
+			const v = e.value;
+			switch (e.target) {
+				case 'enemy-hero': damageHero(state, opp, v); break;
+				case 'own-hero': damageHero(state, pi, v); break;
+				case 'enemy-creatures': for (const c of [...state.players[opp].board]) damageCreature(state, c, v, null); break;
+				case 'all-creatures': for (const s of [0, 1]) for (const c of [...state.players[s].board]) damageCreature(state, c, v, null); break;
+				case 'enemies':
+					for (const c of [...state.players[opp].board]) damageCreature(state, c, v, null);
+					damageHero(state, opp, v);
+					break;
+				case 'everyone':
+					for (const s of [0, 1]) {
+						for (const c of [...state.players[s].board]) damageCreature(state, c, v, null);
+						damageHero(state, s, v);
+					}
+					break;
+				default: { // chosen target
+					const t = chosenCreature();
+					if (t) damageCreature(state, t, v, null);
+					else if (target?.type === 'hero') damageHero(state, target.player, v);
+					else if (e.target === 'any') damageHero(state, opp, v); // fallback: face
 				}
-			} else if (e.type === 'heal') {
-				if (e.target === 'self') healHero(state, pi, e.value);
-				else if (target?.type === 'creature') {
-					const t = findCreature(state, target.uid);
-					if (t) { t.damage = Math.max(0, t.damage - e.value); emit(state, { type: 'heal', targetType: 'creature', uid: t.uid, amount: e.value, hp: hp(t) }); }
-				} else healHero(state, pi, e.value);
-			} else if (e.type === 'draw') {
-				drawCards(state, pi, e.value);
+			}
+		} else if (e.type === 'heal') {
+			const v = e.value;
+			if (e.target === 'self') healHero(state, pi, v);
+			else if (e.target === 'all-creatures') { for (const s of [0, 1]) for (const c of state.players[s].board) healCreature(c, v); }
+			else if (e.target === 'friendly-all') { healHero(state, pi, v); for (const c of state.players[pi].board) healCreature(c, v); }
+			else {
+				const t = chosenCreature();
+				if (t) healCreature(t, v);
+				else if (target?.type === 'hero') healHero(state, target.player, v);
+				else healHero(state, pi, v);
+			}
+		} else if (e.type === 'draw') {
+			drawCards(state, pi, e.value);
+		} else if (e.type === 'buff') {
+			if (e.target === 'friendly-creatures') for (const c of state.players[pi].board) buffCreature(c, e.attack, e.health);
+			else { const t = chosenCreature(); if (t) buffCreature(t, e.attack, e.health); }
+		} else if (e.type === 'grant') {
+			const grantTo = e.target === 'friendly-creatures' ? state.players[pi].board
+				: [chosenCreature()].filter(Boolean);
+			for (const c of grantTo) {
+				if (!c.keywords.includes(e.keyword)) c.keywords.push(e.keyword);
+				if (e.keyword === KW.DIVINE_SHIELD) c.shield = true;
+				if (e.keyword === KW.STEALTH) c.stealthed = true;
+			}
+		} else if (e.type === 'destroy') {
+			const t = chosenCreature();
+			if (t && (e.maxAttack == null || t.attack <= e.maxAttack)) {
+				t.damage = t.maxHealth;
+				t.shield = false;
+				emit(state, { type: 'destroy', uid: t.uid });
+			}
+		} else if (e.type === 'summon') {
+			for (let i = 0; i < (e.count || 1); i++) {
+				summon(state, pi, {
+					id: 'token_' + e.name.toLowerCase().replace(/[^a-z0-9]+/g, '_'),
+					name: e.name, type: 'creature', cost: 0, rarity: 'common',
+					description: `A ${e.attack}/${e.health} token.`,
+					attack: e.attack, health: e.health,
+					keywords: e.keywords || [],
+				});
 			}
 		}
 	}
+}
+
+function runSpell(state, pi, card, target) {
+	execEffects(state, pi, card.effects, target);
 	// scripted text
 	switch (card.id) {
 		case 'natures_blessing': drawCards(state, pi, 1); break;

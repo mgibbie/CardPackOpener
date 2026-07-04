@@ -46,10 +46,34 @@ function pickTarget(state, card) {
 			myCreatures.sort((a, b) => creatureOf(b).attack - creatureOf(a).attack);
 			return myCreatures[0];
 		}
-		default:
+		default: {
+			// generic effect-driven cards: aim helpful effects at ourselves,
+			// harmful ones at the biggest enemy
+			const first = card.effects?.find(e => CHOSEN_TYPES.has(e.type));
+			if (first?.type === 'buff' || first?.type === 'grant') {
+				if (!myCreatures.length) return null;
+				myCreatures.sort((a, b) => creatureOf(b).attack - creatureOf(a).attack);
+				return myCreatures[0];
+			}
+			if (first?.type === 'heal') {
+				const myHero = legal.find(t => t.type === 'hero' && t.player === PI);
+				return myHero || myCreatures[0] || null;
+			}
+			if (first?.type === 'destroy' || first?.type === 'damage') {
+				if (enemyCreatures.length) {
+					enemyCreatures.sort((a, b) => {
+						const ca = creatureOf(a), cb = creatureOf(b);
+						return (cb.attack * 2 + E.hp(cb)) - (ca.attack * 2 + E.hp(ca));
+					});
+					return enemyCreatures[0];
+				}
+				return enemyHero || legal[0];
+			}
 			return enemyCreatures[0] || legal[0];
+		}
 	}
 }
+const CHOSEN_TYPES = new Set(['damage', 'heal', 'buff', 'grant', 'destroy']);
 
 function playableCards(state) {
 	const p = state.players[PI];
