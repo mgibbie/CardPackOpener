@@ -299,6 +299,15 @@ function nextEvent() {
 			break;
 		}
 		case 'marked': floatText('☠', '#ffd25f', creaturePos(ev.uid)); delay = 220; break;
+		case 'freeze': floatText('❄', '#7fd8ff', creaturePos(ev.uid)); delay = 260; break;
+		case 'thaw': floatText('❄', '#4a6a7a', creaturePos(ev.uid)); delay = 140; break;
+		case 'silenced': {
+			floatText('✕', '#9b93b3', creaturePos(ev.uid));
+			const ent = entities.get(ev.uid);
+			if (ent) refreshFace(ent);
+			delay = 260;
+			break;
+		}
 		case 'destroy':
 		case 'death': {
 			const ent = entities.get(ev.uid);
@@ -482,7 +491,9 @@ function updateRings() {
 		} else {
 			ent.ring.visible = false;
 		}
-		ent.faceMat.emissive?.set(color && c.zone === 'hand' ? 0x1c4a1c : 0x000000);
+		// frozen creatures glow ice-blue
+		if (c.frozen && c.zone === 'board') ent.faceMat.emissive?.set(0x1a3d55);
+		else ent.faceMat.emissive?.set(color && c.zone === 'hand' ? 0x1c4a1c : 0x000000);
 	}
 }
 

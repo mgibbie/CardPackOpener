@@ -8,7 +8,7 @@ export const KW = {
 	FIRST_STRIKE: 'first_strike', WINDFURY: 'windfury', DEFENDER: 'defender',
 	BATTLECRY: 'battlecry', DEATHRATTLE: 'deathrattle', LIFESTEAL: 'lifesteal',
 	DIVINE_SHIELD: 'divine_shield', STEALTH: 'stealth', DEATHTOUCH: 'deathtouch',
-	POISONOUS: 'poisonous',
+	POISONOUS: 'poisonous', FREEZER: 'freezer',
 };
 
 export const MAX_BASE_MANA = 12;
@@ -171,6 +171,8 @@ const CHOSEN = {
 	buff: { creature: 'creature', 'friendly-creature': 'friendly-creature' },
 	grant: { creature: 'creature', 'friendly-creature': 'friendly-creature' },
 	destroy: { creature: 'creature', 'enemy-creature': 'enemy-creature' },
+	freeze: { any: 'any', creature: 'creature', 'enemy-creature': 'enemy-creature' },
+	silence: { creature: 'creature', 'enemy-creature': 'enemy-creature' },
 };
 
 // Returns null (no target needed) or { targets, filter(card)?, required, why }
@@ -264,6 +266,24 @@ function healHero(state, pi, amount) {
 
 function isDead(c) {
 	return c.poisoned || c.damage >= c.maxHealth;
+}
+
+function freezeCreature(state, c) {
+	if (isDead(c)) return;
+	c.frozen = state.turnNumber;
+	emit(state, { type: 'freeze', uid: c.uid });
+}
+
+// silence: strips keywords, granted states, and death effects (stat buffs stay)
+function silenceCreature(state, c) {
+	c.keywords = [];
+	c.deathrattle = null;
+	c.effects = null;
+	c.shield = false;
+	c.stealthed = false;
+	c.frozen = null;
+	c.marked = false;
+	emit(state, { type: 'silenced', uid: c.uid });
 }
 
 function sweepDeaths(state) {
@@ -437,6 +457,25 @@ function execEffects(state, pi, effects, target) {
 				t.shield = false;
 				emit(state, { type: 'destroy', uid: t.uid });
 			}
+		} else if (e.type === 'freeze') {
+			if (e.target === 'enemy-creatures') for (const c of state.players[opp].board) freezeCreature(state, c);
+			else { const t = chosenCreature(); if (t) freezeCreature(state, t); /* hero freeze: no-op (heroes can't attack) */ }
+		} else if (e.type === 'silence') {
+			const t = chosenCreature();
+			if (t) silenceCreature(state, t);
+		} else if (e.type === 'random-damage') {
+			// count independent hits of `value` at random members of the pool
+			for (let i = 0; i < (e.count || 1); i++) {
+				const pool = [];
+				const pushBoard = side => { for (const c of state.players[side].board) if (!isDead(c)) pool.push({ c }); };
+				if (e.pool === 'enemy-creatures') pushBoard(opp);
+				else if (e.pool === 'enemies') { pushBoard(opp); pool.push({ hero: opp }); }
+				else if (e.pool === 'characters') { pushBoard(0); pushBoard(1); pool.push({ hero: 0 }, { hero: 1 }); }
+				if (!pool.length) break;
+				const pick = pool[Math.floor(state.rng() * pool.length)];
+				if (pick.hero != null) damageHero(state, pick.hero, e.value);
+				else damageCreature(state, pick.c, e.value, null);
+			}
 		} else if (e.type === 'summon') {
 			for (let i = 0; i < (e.count || 1); i++) {
 				summon(state, pi, {
@@ -530,6 +569,7 @@ export function attackersFor(state, pi) {
 
 export function canAttackWith(state, pi, c) {
 	if (state.over || state.current !== pi || c.attack <= 0) return false;
+	if (c.frozen) return false;
 	if (has(c, KW.DEFENDER)) return false;
 	const maxAttacks = has(c, KW.WINDFURY) ? 2 : 1;
 	if (c.attacksUsed >= maxAttacks) return false;
@@ -570,6 +610,7 @@ export function attack(state, pi, attackerUid, target) {
 		const strike = (src, dst) => {
 			const dealt = damageCreature(state, dst, src.attack, src);
 			if (has(src, KW.LIFESTEAL) && dealt > 0) healHero(state, src.controller, dealt);
+			if (has(src, KW.FREEZER) && !isDead(dst)) freezeCreature(state, dst);
 		};
 		if (aFirst) {
 			strike(attacker, defender);
@@ -614,6 +655,14 @@ export function endTurn(state) {
 	p.mana.bonus = 0;
 	sweepDeaths(state);
 	if (state.over) return;
+
+	// thaw: this player's creatures frozen before this turn have now missed it
+	for (const c of p.board) {
+		if (c.frozen && c.frozen < state.turnNumber) {
+			c.frozen = null;
+			emit(state, { type: 'thaw', uid: c.uid });
+		}
+	}
 
 	// switch
 	state.current = 1 - state.current;

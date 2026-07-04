@@ -2119,6 +2119,322 @@
         }
       ],
       "description": "Deal 10 damage to any target."
+    },
+    {
+      "id": "silence",
+      "name": "Silence",
+      "cardClass": "priest",
+      "cost": 0,
+      "rarity": "common",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "silence",
+          "target": "creature"
+        }
+      ],
+      "description": "Silence a creature."
+    },
+    {
+      "id": "earth_shock",
+      "name": "Earth Shock",
+      "cardClass": "shaman",
+      "cost": 1,
+      "rarity": "common",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "silence",
+          "target": "creature"
+        },
+        {
+          "type": "damage",
+          "value": 1,
+          "target": "creature"
+        }
+      ],
+      "description": "Silence a creature, then deal 1 damage to it."
+    },
+    {
+      "id": "ironbeak_owl",
+      "name": "Ironbeak Owl",
+      "cardClass": "neutral",
+      "cost": 2,
+      "rarity": "common",
+      "type": "creature",
+      "attack": 2,
+      "health": 1,
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "silence",
+          "target": "creature"
+        }
+      ],
+      "description": "Battlecry: Silence a creature."
+    },
+    {
+      "id": "frost_nova",
+      "name": "Frost Nova",
+      "cardClass": "mage",
+      "cost": 3,
+      "rarity": "common",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "freeze",
+          "target": "enemy-creatures"
+        }
+      ],
+      "description": "Freeze all enemy creatures."
+    },
+    {
+      "id": "spellbreaker",
+      "name": "Spellbreaker",
+      "cardClass": "neutral",
+      "cost": 4,
+      "rarity": "common",
+      "type": "creature",
+      "attack": 4,
+      "health": 3,
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "silence",
+          "target": "creature"
+        }
+      ],
+      "description": "Battlecry: Silence a creature."
+    },
+    {
+      "id": "water_elemental",
+      "name": "Water Elemental",
+      "cardClass": "mage",
+      "cost": 4,
+      "rarity": "common",
+      "type": "creature",
+      "attack": 3,
+      "health": 6,
+      "keywords": [
+        "freezer"
+      ],
+      "description": "Freezes anything it damages."
+    },
+    {
+      "id": "frost_elemental",
+      "name": "Frost Elemental",
+      "cardClass": "neutral",
+      "cost": 6,
+      "rarity": "common",
+      "type": "creature",
+      "attack": 5,
+      "health": 5,
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "freeze",
+          "target": "any"
+        }
+      ],
+      "description": "Battlecry: Freeze a target."
+    },
+    {
+      "id": "arcane_missiles",
+      "name": "Arcane Missiles",
+      "cardClass": "mage",
+      "cost": 1,
+      "rarity": "common",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "random-damage",
+          "value": 1,
+          "pool": "enemies",
+          "count": 3
+        }
+      ],
+      "description": "Fire 3 bolts, each dealing 1 damage to a random enemy."
+    },
+    {
+      "id": "flame_imp",
+      "name": "Flame Imp",
+      "cardClass": "warlock",
+      "cost": 1,
+      "rarity": "common",
+      "type": "creature",
+      "attack": 3,
+      "health": 2,
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "damage",
+          "value": 3,
+          "target": "own-hero"
+        }
+      ],
+      "description": "Battlecry: Deal 3 damage to your own hero."
+    },
+    {
+      "id": "frost_shock",
+      "name": "Frost Shock",
+      "cardClass": "shaman",
+      "cost": 1,
+      "rarity": "common",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 1,
+          "target": "enemy-creature"
+        },
+        {
+          "type": "freeze",
+          "target": "enemy-creature"
+        }
+      ],
+      "description": "Deal 1 damage to an enemy and freeze it."
+    },
+    {
+      "id": "cleave",
+      "name": "Cleave",
+      "cardClass": "warrior",
+      "cost": 2,
+      "rarity": "common",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "random-damage",
+          "value": 2,
+          "pool": "enemy-creatures",
+          "count": 2
+        }
+      ],
+      "description": "Deal 2 damage to 2 random enemy creatures."
+    },
+    {
+      "id": "frostbolt",
+      "name": "Frostbolt",
+      "cardClass": "mage",
+      "cost": 2,
+      "rarity": "common",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 3,
+          "target": "any"
+        },
+        {
+          "type": "freeze",
+          "target": "any"
+        }
+      ],
+      "description": "Deal 3 damage to any target and freeze it."
+    },
+    {
+      "id": "mad_bomber",
+      "name": "Mad Bomber",
+      "cardClass": "neutral",
+      "cost": 2,
+      "rarity": "common",
+      "type": "creature",
+      "attack": 3,
+      "health": 2,
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "random-damage",
+          "value": 1,
+          "pool": "characters",
+          "count": 3
+        }
+      ],
+      "description": "Battlecry: Fire 3 bolts, each dealing 1 damage to a random character."
+    },
+    {
+      "id": "multi_shot",
+      "name": "Multi-Shot",
+      "cardClass": "hunter",
+      "cost": 4,
+      "rarity": "common",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "random-damage",
+          "value": 3,
+          "pool": "enemy-creatures",
+          "count": 2
+        }
+      ],
+      "description": "Deal 3 damage to 2 random enemy creatures."
+    },
+    {
+      "id": "pit_lord",
+      "name": "Pit Lord",
+      "cardClass": "warlock",
+      "cost": 4,
+      "rarity": "epic",
+      "type": "creature",
+      "attack": 5,
+      "health": 6,
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "damage",
+          "value": 5,
+          "target": "own-hero"
+        }
+      ],
+      "description": "Battlecry: Deal 5 damage to your own hero."
+    },
+    {
+      "id": "avenging_wrath",
+      "name": "Avenging Wrath",
+      "cardClass": "paladin",
+      "cost": 6,
+      "rarity": "epic",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "random-damage",
+          "value": 1,
+          "pool": "enemies",
+          "count": 8
+        }
+      ],
+      "description": "Fire 8 bolts, each dealing 1 damage to a random enemy."
+    },
+    {
+      "id": "blizzard",
+      "name": "Blizzard",
+      "cardClass": "mage",
+      "cost": 6,
+      "rarity": "rare",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 2,
+          "target": "enemy-creatures"
+        },
+        {
+          "type": "freeze",
+          "target": "enemy-creatures"
+        }
+      ],
+      "description": "Deal 2 damage to all enemy creatures and freeze them."
     }
   ]
 }
