@@ -5,6 +5,8 @@ import { Encounters } from './encounters.js';
 import { Battle } from './battle.js';
 import { Trainers } from './trainers.js';
 import { Dialog } from './dialog.js';
+import { Services } from './services.js';
+import * as Bag from './bag.js';
 import { getJSON } from './engine.js';
 import { loadParty, saveParty, healParty, leadMon, addCaught } from './party.js';
 
@@ -28,9 +30,10 @@ const encounters = new Encounters();
 const battle = new Battle();
 const trainers = new Trainers(world, player);
 const dialog = new Dialog();
+const services = new Services(world);
 let signTexts = {};
 let party = null;
-player.blocked = (tx, ty) => npcs.npcBlocks(tx, ty) || trainers.occupied(tx, ty);
+player.blocked = (tx, ty) => npcs.npcBlocks(tx, ty) || trainers.occupied(tx, ty) || services.blocks(tx, ty);
 
 trainers.onEngage = t => {
 	const { party: foeParty, info } = trainers.buildBattle(t, battle.data);
@@ -76,11 +79,18 @@ addEventListener('keyup', e => {
 		if (i >= 0) heldKeys.splice(i, 1);
 	}
 });
-// Z in front of something: talk-to trainers (incl. gym leaders), signs
+// Z in front of something: services, talk-to trainers (incl. gym leaders), signs
 function interact() {
 	if (player.moving || trainers.engaging) return;
 	const [dx, dy] = { down: [0, 1], up: [0, -1], left: [-1, 0], right: [1, 0] }[player.facing];
 	const fx = player.tx + dx, fy = player.ty + dy;
+	const svc = services.kindAt(fx, fy);
+	if (svc === 'nurse') {
+		dialog.open('Welcome to the POKEMON CENTER!\n\nWe restored your POKEMON\nto full health. See you again!', () => healParty(party));
+		return;
+	}
+	if (svc === 'pc') { pcMenu.open = true; pcMenu.side = 0; pcMenu.idx = 0; return; }
+	if (svc === 'shop') { shopMenu.open = true; shopMenu.idx = 0; return; }
 	const t = trainers.trainerAt(fx, fy);
 	if (t) {
 		if (trainers.isDefeated(t)) {
@@ -103,6 +113,89 @@ function interact() {
 }
 
 const partyMenu = { open: false, idx: 0 };
+const shopMenu = { open: false, idx: 0 };
+const bagMenu = { open: false, idx: 0, picking: false, pickIdx: 0 };
+const pcMenu = { open: false, side: 0, idx: 0 }; // side 0 = party (deposit), 1 = box (withdraw)
+
+function getBox() {
+	try { return JSON.parse(localStorage.getItem('magepunk_box_v1') || '[]'); } catch (e) { return []; }
+}
+function setBox(box) {
+	try { localStorage.setItem('magepunk_box_v1', JSON.stringify(box)); } catch (e) {}
+}
+
+function shopKey(k) {
+	if (k === 'ArrowUp') shopMenu.idx = (shopMenu.idx + Bag.SHOP_STOCK.length - 1) % Bag.SHOP_STOCK.length;
+	if (k === 'ArrowDown') shopMenu.idx = (shopMenu.idx + 1) % Bag.SHOP_STOCK.length;
+	if (k === 'z' || k === 'Enter') {
+		const id = Bag.SHOP_STOCK[shopMenu.idx];
+		shopMenu.flash = Bag.buy(id) ? `Bought ${Bag.ITEMS[id].name}!` : 'Not enough money!';
+	}
+	if (k === 'x' || k === 'Escape') shopMenu.open = false;
+}
+
+function bagKey(k) {
+	const items = Object.entries(Bag.getBag()).filter(([id, n]) => n > 0 && Bag.ITEMS[id]);
+	if (bagMenu.picking) {
+		if (k === 'ArrowUp') bagMenu.pickIdx = (bagMenu.pickIdx + party.length - 1) % party.length;
+		if (k === 'ArrowDown') bagMenu.pickIdx = (bagMenu.pickIdx + 1) % party.length;
+		if (k === 'x' || k === 'Escape') bagMenu.picking = false;
+		if (k === 'z' || k === 'Enter') {
+			const [id] = items[bagMenu.idx] || [];
+			const item = Bag.ITEMS[id];
+			const mon = party[bagMenu.pickIdx];
+			if (item && mon) {
+				if (item.kind === 'heal' && mon.curHP > 0 && mon.curHP < mon.maxHP) {
+					Bag.consume(id);
+					mon.curHP = Math.min(mon.maxHP, mon.curHP + item.amount);
+					saveParty(party);
+					bagMenu.picking = false;
+				} else if (item.kind === 'revive' && mon.curHP <= 0) {
+					Bag.consume(id);
+					mon.curHP = Math.floor(mon.maxHP / 2);
+					mon.status = null;
+					saveParty(party);
+					bagMenu.picking = false;
+				}
+			}
+		}
+		return;
+	}
+	if (k === 'ArrowUp' && items.length) bagMenu.idx = (bagMenu.idx + items.length - 1) % items.length;
+	if (k === 'ArrowDown' && items.length) bagMenu.idx = (bagMenu.idx + 1) % items.length;
+	if (k === 'x' || k === 'Escape' || k === 'b') bagMenu.open = false;
+	if ((k === 'z' || k === 'Enter') && items.length) {
+		const [id] = items[bagMenu.idx];
+		const kind = Bag.ITEMS[id]?.kind;
+		if (kind === 'heal' || kind === 'revive') { bagMenu.picking = true; bagMenu.pickIdx = 0; }
+	}
+}
+
+function pcKey(k) {
+	const box = getBox();
+	const list = pcMenu.side === 0 ? party : box;
+	if (k === 'ArrowLeft' || k === 'ArrowRight') { pcMenu.side ^= 1; pcMenu.idx = 0; }
+	if (k === 'ArrowUp' && list.length) pcMenu.idx = (pcMenu.idx + list.length - 1) % list.length;
+	if (k === 'ArrowDown' && list.length) pcMenu.idx = (pcMenu.idx + 1) % list.length;
+	if (k === 'x' || k === 'Escape') pcMenu.open = false;
+	if ((k === 'z' || k === 'Enter') && list.length) {
+		if (pcMenu.side === 0) {
+			if (party.length <= 1) return; // never deposit the last mon
+			const [m] = party.splice(pcMenu.idx, 1);
+			box.push(m);
+			setBox(box);
+			saveParty(party);
+		} else {
+			if (party.length >= 6) return;
+			const [m] = box.splice(pcMenu.idx, 1);
+			party.push(m);
+			setBox(box);
+			saveParty(party);
+		}
+		pcMenu.idx = 0;
+	}
+}
+
 addEventListener('keydown', e => {
 	if (dialog.blocking) {
 		e.preventDefault();
@@ -114,6 +207,9 @@ addEventListener('keydown', e => {
 		battle.key(e.key);
 		return;
 	}
+	if (shopMenu.open) { e.preventDefault(); shopKey(e.key); return; }
+	if (bagMenu.open) { e.preventDefault(); bagKey(e.key); return; }
+	if (pcMenu.open) { e.preventDefault(); pcKey(e.key); return; }
 	if (partyMenu.open) {
 		e.preventDefault();
 		if (e.key === 'ArrowUp') partyMenu.idx = (partyMenu.idx + party.length - 1) % party.length;
@@ -129,6 +225,7 @@ addEventListener('keydown', e => {
 		return;
 	}
 	if (e.key === 'p' && !loading) { partyMenu.open = true; partyMenu.idx = 0; return; }
+	if (e.key === 'b' && !loading) { bagMenu.open = true; bagMenu.idx = 0; bagMenu.picking = false; return; }
 	if ((e.key === 'z' || e.key === 'Enter') && !loading) interact();
 });
 
@@ -148,6 +245,7 @@ async function warpTo(mapId, destWarpId) {
 	await npcs.loadForMap();
 	await trainers.loadForMap();
 	npcs.list = npcs.list.filter(n => !trainers.list.some(t => t.ev === n.ev));
+	services.loadForMap();
 	hud.textContent = world.current.map.name || file;
 	loading = false;
 }
@@ -161,6 +259,7 @@ async function backWarp() {
 	await npcs.loadForMap();
 	await trainers.loadForMap();
 	npcs.list = npcs.list.filter(n => !trainers.list.some(t => t.ev === n.ev));
+	services.loadForMap();
 	hud.textContent = world.current.map.name || src.name;
 	loading = false;
 }
@@ -174,6 +273,7 @@ async function crossConnection(hit) {
 	await npcs.loadForMap();
 	await trainers.loadForMap();
 	npcs.list = npcs.list.filter(n => !trainers.list.some(t => t.ev === n.ev));
+	services.loadForMap();
 	hud.textContent = world.current.map.name || conn.name;
 	loading = false;
 }
@@ -244,13 +344,19 @@ function tick(now) {
 	const [camX, camY] = cameraPos();
 	ctx.clearRect(0, 0, VIEW_W, VIEW_H);
 	world.drawLayer(ctx, 'bottom', camX, camY);
+	services.draw(ctx, camX, camY);
 	// sprites in y order so overlaps stack correctly
 	const sprites = [...npcs.list, ...trainers.list, player].sort((a, b) => a.py - b.py);
 	for (const s of sprites) s.draw(ctx, camX, camY);
 	world.drawLayer(ctx, 'top', camX, camY);
 	battle.draw(ctx);
-	if (!battle.blocking) dialog.draw(ctx);
-	if (partyMenu.open && !battle.blocking) drawPartyMenu();
+	if (!battle.blocking) {
+		dialog.draw(ctx);
+		if (partyMenu.open) drawPartyMenu();
+		if (shopMenu.open) drawShopMenu();
+		if (bagMenu.open) drawBagMenu();
+		if (pcMenu.open) drawPcMenu();
+	}
 
 	sctx.drawImage(frame, 0, 0, VIEW_W * SCALE, VIEW_H * SCALE);
 }
@@ -276,6 +382,71 @@ function drawPartyMenu() {
 	});
 }
 
+function menuFrame(title) {
+	ctx.fillStyle = 'rgba(16,12,24,0.9)';
+	ctx.fillRect(0, 0, VIEW_W, VIEW_H);
+	ctx.fillStyle = '#f8f8e0';
+	ctx.font = '8px monospace';
+	ctx.fillText(title, 12, 14);
+}
+
+function drawShopMenu() {
+	menuFrame(`POKE MART   money $${Bag.getMoney()}   [Z] buy [X] close`);
+	Bag.SHOP_STOCK.forEach((id, i) => {
+		const it = Bag.ITEMS[id];
+		const y = 32 + i * 16;
+		ctx.fillStyle = i === shopMenu.idx ? '#ffd25f' : '#f8f8e0';
+		ctx.fillText(`${i === shopMenu.idx ? '>' : ' '} ${it.name}`, 12, y);
+		ctx.fillText(`$${it.price}`, 130, y);
+		ctx.fillText(`have ${Bag.count(id)}`, 175, y);
+	});
+	if (shopMenu.flash) {
+		ctx.fillStyle = '#9d8fd4';
+		ctx.fillText(shopMenu.flash, 12, VIEW_H - 10);
+	}
+}
+
+function drawBagMenu() {
+	menuFrame(`BAG   money $${Bag.getMoney()}   [Z] use [X] close`);
+	const items = Object.entries(Bag.getBag()).filter(([id, n]) => n > 0 && Bag.ITEMS[id]);
+	if (!items.length) ctx.fillText('(empty)', 12, 34);
+	items.forEach(([id, n], i) => {
+		const y = 32 + i * 14;
+		ctx.fillStyle = i === bagMenu.idx && !bagMenu.picking ? '#ffd25f' : '#f8f8e0';
+		ctx.fillText(`${i === bagMenu.idx ? '>' : ' '} ${Bag.ITEMS[id].name} x${n}`, 12, y);
+	});
+	if (bagMenu.picking) {
+		ctx.fillStyle = '#f8f8e0';
+		ctx.fillText('Use on:', 120, 24);
+		party.forEach((m, i) => {
+			const y = 36 + i * 14;
+			ctx.fillStyle = i === bagMenu.pickIdx ? '#ffd25f' : '#f8f8e0';
+			ctx.fillText(`${i === bagMenu.pickIdx ? '>' : ' '} ${m.name} ${m.curHP}/${m.maxHP}`, 120, y);
+		});
+	}
+}
+
+function drawPcMenu() {
+	menuFrame('POKEMON STORAGE   [</>] switch side  [Z] move  [X] close');
+	const box = getBox();
+	ctx.fillStyle = pcMenu.side === 0 ? '#ffd25f' : '#f8f8e0';
+	ctx.fillText('PARTY (deposit)', 12, 30);
+	ctx.fillStyle = pcMenu.side === 1 ? '#ffd25f' : '#f8f8e0';
+	ctx.fillText(`BOX (${box.length})`, 130, 30);
+	party.forEach((m, i) => {
+		const sel = pcMenu.side === 0 && pcMenu.idx === i;
+		ctx.fillStyle = sel ? '#ffd25f' : '#f8f8e0';
+		ctx.fillText(`${sel ? '>' : ' '} ${m.name} Lv${m.level}`, 12, 44 + i * 12);
+	});
+	const start = Math.max(0, Math.min(pcMenu.idx - 3, box.length - 8));
+	box.slice(start, start + 8).forEach((m, i) => {
+		const idx = start + i;
+		const sel = pcMenu.side === 1 && pcMenu.idx === idx;
+		ctx.fillStyle = sel ? '#ffd25f' : '#f8f8e0';
+		ctx.fillText(`${sel ? '>' : ' '} ${m.name} Lv${m.level}`, 130, 44 + i * 12);
+	});
+}
+
 // ---------- boot ----------
 (async () => {
 	hud.textContent = 'Loading…';
@@ -285,6 +456,7 @@ function drawPartyMenu() {
 	await encounters.init();
 	await battle.init();
 	await trainers.init();
+	await services.init();
 	signTexts = await getJSON('data/sign_texts.json').catch(() => ({}));
 	party = loadParty(battle.data);
 	const params = new URLSearchParams(location.search);
@@ -296,6 +468,7 @@ function drawPartyMenu() {
 	await npcs.loadForMap();
 	await trainers.loadForMap();
 	npcs.list = npcs.list.filter(n => !trainers.list.some(t => t.ev === n.ev));
+	services.loadForMap();
 	hud.textContent = world.current.map.name || startMap;
 	loading = false;
 	// headless test hook

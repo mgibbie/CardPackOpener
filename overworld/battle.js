@@ -3,6 +3,7 @@
 // Stat/moveset formulas ported from pokemonBuilder.lua (IVs random, EVs 0,
 // no natures; moveset = last 4 level-up moves at the mon's level).
 import { getJSON, getImage, VIEW_W, VIEW_H } from './engine.js';
+import * as Bag from './bag.js';
 
 // ---------- type chart (attacking type -> non-neutral matchups) ----------
 const CHART = {
@@ -572,18 +573,34 @@ export class Battle {
 		// advance message
 		if (a.phase === 'msg' && (k === 'z' || k === 'Enter')) { a.msgT = 99; return; }
 		if (a.phase === 'menu') {
-			if (k === 'ArrowLeft') a.menuIdx = (a.menuIdx + 2) % 3;
-			if (k === 'ArrowRight') a.menuIdx = (a.menuIdx + 1) % 3;
+			// 2x2: FIGHT(0) BAG(1) / PKMN(2) RUN(3)
+			if (k === 'ArrowLeft' || k === 'ArrowRight') a.menuIdx ^= 1;
+			if (k === 'ArrowUp' || k === 'ArrowDown') a.menuIdx ^= 2;
 			if (k === 'z' || k === 'Enter') {
 				if (a.menuIdx === 0) { a.phase = 'moves'; a.moveIdx = 0; }
-				else if (a.menuIdx === 1) {
-					if (a.isTrainer) this.startQueue(() => this.pushMsg("You can't catch a trainer's Pokemon!"));
-					else this.startQueue(() => this.throwBall());
+				else if (a.menuIdx === 1) { a.phase = 'bag'; a.bagIdx = 0; }
+				else if (a.menuIdx === 2) {
+					const options = a.party.filter(m => m !== a.me && m.curHP > 0);
+					if (options.length) { a.phase = 'switch'; a.switchIdx = 0; }
 				} else {
 					if (a.isTrainer) this.startQueue(() => this.pushMsg("There's no running from a trainer battle!"));
 					else this.startQueue(() => this.tryRun());
 				}
 			}
+		} else if (a.phase === 'bag') {
+			const items = this.bagItems();
+			if (!items.length) { a.phase = 'menu'; return; }
+			if (k === 'ArrowUp') a.bagIdx = (a.bagIdx + items.length - 1) % items.length;
+			if (k === 'ArrowDown') a.bagIdx = (a.bagIdx + 1) % items.length;
+			if (k === 'x') a.phase = 'menu';
+			if (k === 'z' || k === 'Enter') this.useItem(items[a.bagIdx].id);
+		} else if (a.phase === 'switch') {
+			const options = a.party.filter(m => m !== a.me && m.curHP > 0);
+			if (!options.length) { a.phase = 'menu'; return; }
+			if (k === 'ArrowUp') a.switchIdx = (a.switchIdx + options.length - 1) % options.length;
+			if (k === 'ArrowDown') a.switchIdx = (a.switchIdx + 1) % options.length;
+			if (k === 'x') a.phase = 'menu';
+			if (k === 'z' || k === 'Enter') this.switchTo(options[a.switchIdx]);
 		} else if (a.phase === 'moves') {
 			const n = a.me.moves.length;
 			if (k === 'ArrowUp' && a.moveIdx >= 2) a.moveIdx -= 2;
@@ -602,6 +619,80 @@ export class Battle {
 		const a = this.active;
 		fn();
 		a.phase = 'msg';
+	}
+
+	// usable battle items (balls only in wild battles)
+	bagItems() {
+		const a = this.active;
+		return Object.entries(Bag.getBag())
+			.filter(([id, n]) => n > 0 && Bag.ITEMS[id])
+			.filter(([id]) => !(a.isTrainer && Bag.ITEMS[id].kind === 'ball'))
+			.map(([id, n]) => ({ id, n, ...Bag.ITEMS[id] }));
+	}
+
+	// the foe gets its move after an item/switch (it costs the turn)
+	foeFreeMove() {
+		const a = this.active;
+		this.pushMsg('', () => {
+			if (a.foe.curHP <= 0 || a.me.curHP <= 0) return;
+			const fm = a.foe.moves.filter(m => m.pp > 0);
+			if (fm.length) this.useMove(a.foe, a.foeBoosts, a.me, a.meBoosts, fm[Math.floor(Math.random() * fm.length)], true);
+		});
+		this.pushMsg('', () => {
+			const a2 = this.active;
+			if (a2.foe.curHP > 0 && a2.me.curHP > 0) this.endOfTurn();
+		});
+		this.pushMsg('', () => this.checkFaints());
+	}
+
+	useItem(itemId) {
+		const a = this.active;
+		const item = Bag.ITEMS[itemId];
+		if (!item) return;
+		if (item.kind === 'ball') {
+			Bag.consume(itemId);
+			this.startQueue(() => this.throwBall());
+			return;
+		}
+		if (item.kind === 'heal') {
+			if (a.me.curHP >= a.me.maxHP) return; // nothing to heal, stay in bag
+			Bag.consume(itemId);
+			this.startQueue(() => {
+				this.pushMsg(`You used a ${item.name}!`, () => {
+					a.me.curHP = Math.min(a.me.maxHP, a.me.curHP + item.amount);
+				});
+				this.pushMsg(`${a.me.name}'s HP was restored.`);
+				this.foeFreeMove();
+			});
+			return;
+		}
+		if (item.kind === 'revive') {
+			const fainted = a.party.find(m => m.curHP <= 0);
+			if (!fainted) return;
+			Bag.consume(itemId);
+			this.startQueue(() => {
+				this.pushMsg(`You used a REVIVE!`, () => {
+					fainted.curHP = Math.floor(fainted.maxHP / 2);
+					fainted.status = null;
+				});
+				this.pushMsg(`${fainted.name} came back to its senses!`);
+				this.foeFreeMove();
+			});
+		}
+	}
+
+	switchTo(mon) {
+		const a = this.active;
+		this.startQueue(() => {
+			this.pushMsg(`Come back, ${a.me.name}!`);
+			this.pushMsg(`Go! ${mon.name}!`, () => {
+				a.me = mon;
+				a.meImg = a.backSprites.get(mon);
+				a.meBoosts = freshBoosts();
+				a.meShownHP = mon.curHP;
+			});
+			this.foeFreeMove();
+		});
 	}
 
 	// ---------- update/draw ----------
@@ -732,10 +823,26 @@ export class Battle {
 			const mv = this.data.moves[sel.id];
 			ctx.fillText(`PP ${sel.pp}/${sel.maxPp}  ${mv?.type || ''}`, 12, VIEW_H - 4 + 0);
 		} else if (a.phase === 'menu') {
-			ctx.fillText(a.msg, 10, VIEW_H - 26);
-			ctx.fillText(a.menuIdx === 0 ? '> FIGHT' : '  FIGHT', 130, VIEW_H - 30);
-			ctx.fillText(a.menuIdx === 1 ? '> BALL' : '  BALL', 186, VIEW_H - 30);
-			ctx.fillText(a.menuIdx === 2 ? '> RUN' : '  RUN', 130, VIEW_H - 16);
+			ctx.fillText(a.msg, 8, VIEW_H - 24);
+			const opts = ['FIGHT', 'BAG', 'PKMN', 'RUN'];
+			opts.forEach((o, i) => {
+				const x = 132 + (i % 2) * 54, y = VIEW_H - 30 + Math.floor(i / 2) * 14;
+				ctx.fillText((a.menuIdx === i ? '>' : ' ') + o, x, y);
+			});
+		} else if (a.phase === 'bag') {
+			const items = this.bagItems();
+			const start = Math.max(0, Math.min(a.bagIdx - 1, items.length - 3));
+			items.slice(start, start + 3).forEach((it, i) => {
+				const idx = start + i;
+				ctx.fillText(`${idx === a.bagIdx ? '>' : ' '} ${it.name} x${it.n}`, 12, VIEW_H - 30 + i * 12);
+			});
+			ctx.fillText('[X] back', 180, VIEW_H - 6);
+		} else if (a.phase === 'switch') {
+			const options = a.party.filter(m => m !== a.me && m.curHP > 0);
+			options.slice(0, 3).forEach((m, i) => {
+				ctx.fillText(`${i === a.switchIdx ? '>' : ' '} ${m.name} Lv${m.level} ${m.curHP}/${m.maxHP}`, 12, VIEW_H - 30 + i * 12);
+			});
+			ctx.fillText('[X] back', 180, VIEW_H - 6);
 		} else {
 			// wrap message to two lines
 			const words = a.msg.split(' ');
