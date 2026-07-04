@@ -62,17 +62,21 @@ export function hp(card) {
 }
 
 // ---------- game setup ----------
-export function createGame(cardsById, rng = Math.random) {
+export function createGame(cardsById, rng = Math.random, playerDeckIds = null) {
 	const playable = Object.values(cardsById).filter(d => !UNPLAYABLE.has(d.id));
-	const buildDeck = () => {
-		const ids = [];
-		for (const d of playable) { ids.push(d.id, d.id); } // 2 copies of each
+	const shuffle = ids => {
 		for (let i = ids.length - 1; i > 0; i--) {
 			const j = Math.floor(rng() * (i + 1));
 			[ids[i], ids[j]] = [ids[j], ids[i]];
 		}
-		return ids.slice(0, 60);
+		return ids;
 	};
+	const buildDeck = () => {
+		const ids = [];
+		for (const d of playable) { ids.push(d.id, d.id); } // 2 copies of each
+		return shuffle(ids).slice(0, 60);
+	};
+	const playerDeck = playerDeckIds?.length ? shuffle([...playerDeckIds]) : null;
 
 	const mkPlayer = () => ({
 		life: STARTING_LIFE,
@@ -86,10 +90,12 @@ export function createGame(cardsById, rng = Math.random) {
 		diedThisTurn: 0,
 	});
 
+	const p0 = mkPlayer();
+	if (playerDeck) p0.deck = playerDeck;
 	const state = {
 		cardsById,
 		rng,
-		players: [mkPlayer(), mkPlayer()],
+		players: [p0, mkPlayer()],
 		current: 0,     // 0 = human, 1 = AI; human goes first
 		turnNumber: 1,
 		over: false,

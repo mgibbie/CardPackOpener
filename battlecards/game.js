@@ -3,6 +3,7 @@
 import * as THREE from 'three';
 import * as E from './engine.js';
 import * as AI from './ai.js';
+import * as Col from './collection.js';
 import { CARD_W, CARD_H, CARD_D, makeFaceTexture, makeBackTexture } from './cardart.js';
 
 const HUMAN = 0, ENEMY = 1;
@@ -312,6 +313,9 @@ function nextEvent() {
 		case 'gameOver': {
 			const won = ev.winner === HUMAN;
 			banner(ev.winner == null ? 'Draw!' : won ? 'VICTORY!' : 'DEFEAT', 0);
+			const reward = ev.winner == null ? 50 : won ? 100 : 25;
+			Col.earnGold(reward);
+			log(`+${reward} gold (${Col.getGold()} total)`);
 			$('restart').style.display = '';
 			delay = 200;
 			break;
@@ -551,7 +555,12 @@ async function start() {
 	const data = await (await fetch('cards.json')).json();
 	const cardsById = {};
 	for (const d of data.cards) cardsById[d.id] = d;
-	state = E.createGame(cardsById);
+	// use the saved deck when it's complete and valid; otherwise the demo deck
+	const collection = Col.getCollection(data.cards);
+	const saved = Col.loadDeck();
+	const deckOk = saved.length === Col.DECK_SIZE && !Col.validateDeck(saved, cardsById, collection);
+	state = E.createGame(cardsById, Math.random, deckOk ? saved : null);
+	log(deckOk ? 'Using your custom deck.' : 'Using the demo deck — build one in the deck builder!');
 	pump();
 	updateHud();
 }

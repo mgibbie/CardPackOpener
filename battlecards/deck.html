@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Magepunk Battlecards — Deck Builder</title>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<link rel="icon" href="data:,">
+	<style>
+		html, body { margin: 0; height: 100%; background: #0e0b16; font-family: 'Segoe UI', sans-serif; color: #e8e2f4; user-select: none; }
+		#layout { display: grid; grid-template-columns: 1fr 320px 300px; height: 100vh; }
+		h1 { font-size: 17px; letter-spacing: 1px; margin: 14px 18px 6px; }
+		h1 a { color: #9d8fd4; font-weight: 400; font-size: 13px; text-decoration: none; margin-left: 12px; }
+		h1 a:hover { text-decoration: underline; }
+		h2 { font-size: 14px; margin: 12px 14px 8px; color: #c9b8ff; }
+
+		#collection { overflow-y: auto; padding-bottom: 20px; }
+		#grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; padding: 0 14px; }
+		.card-row {
+			background: #1c1430; border: 1px solid #3a3055; border-radius: 8px;
+			padding: 8px 10px; cursor: pointer; font-size: 12.5px; line-height: 1.45;
+		}
+		.card-row:hover { border-color: #8f6fff; }
+		.card-row.depleted { opacity: 0.38; cursor: default; }
+		.card-row .name { font-weight: 600; }
+		.card-row .meta { color: #9b93b3; font-size: 11.5px; }
+		.r-common { border-left: 4px solid #9aa0a6; }
+		.r-uncommon { border-left: 4px solid #4caf50; }
+		.r-rare { border-left: 4px solid #2196f3; }
+		.r-epic { border-left: 4px solid #9c27b0; }
+		.r-legendary { border-left: 4px solid #ff9800; }
+
+		#deck { background: #131022; border-left: 1px solid #2a2340; display: flex; flex-direction: column; }
+		#deck-list { overflow-y: auto; flex: 1; padding: 0 12px; }
+		.deck-row {
+			display: flex; justify-content: space-between; padding: 5px 10px; margin-bottom: 4px;
+			background: #1c1430; border-radius: 6px; cursor: pointer; font-size: 12.5px;
+		}
+		.deck-row:hover { background: #2a2145; }
+		#deck-footer { padding: 12px; border-top: 1px solid #2a2340; }
+		#deck-count { font-weight: 700; }
+		#save {
+			width: 100%; margin-top: 8px; padding: 10px; font-size: 15px; font-weight: 700;
+			background: #6b4fd4; color: #fff; border: none; border-radius: 8px; cursor: pointer;
+		}
+		#save:hover { background: #7d63e6; }
+		#status { font-size: 12px; margin-top: 8px; min-height: 30px; color: #ffd25f; }
+
+		#preview { border-left: 1px solid #2a2340; display: flex; flex-direction: column; align-items: center; }
+		#preview-canvas { width: 100%; height: 420px; }
+		#preview-hint { font-size: 12px; color: #9b93b3; padding: 0 16px; text-align: center; }
+	</style>
+	<script type="importmap">
+	{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.165.0/build/three.module.js" } }
+	</script>
+</head>
+<body>
+	<div id="layout">
+		<div id="collection">
+			<h1>DECK BUILDER <a href="index.html">play</a> <a href="packs.html">packs</a> <a href="viewer.html">gallery</a></h1>
+			<h2>COLLECTION — click to add</h2>
+			<div id="grid"></div>
+		</div>
+		<div id="deck">
+			<h2>DECK — click to remove</h2>
+			<div id="deck-list"></div>
+			<div id="deck-footer">
+				<div id="deck-count">0 / 30</div>
+				<button id="save">Save Deck</button>
+				<div id="status"></div>
+			</div>
+		</div>
+		<div id="preview">
+			<h2>PREVIEW</h2>
+			<div id="preview-canvas"></div>
+			<div id="preview-hint">hover a card to preview it in 3D</div>
+		</div>
+	</div>
+	<script type="module" src="deck.js"></script>
+</body>
+</html>

@@ -1,0 +1,111 @@
+// collection.js — card collection, gold, deck persistence, and pack rolls.
+const GOLD_KEY = 'magepunk_cardgold_v1';
+const COLLECTION_KEY = 'magepunk_cards_v1';
+const DECK_KEY = 'magepunk_deck_v1';
+
+export const PACK_PRICE = 100;
+export const PACK_SIZE = 5;
+export const DECK_SIZE = 30;
+export const MAX_COPIES = 2;
+export const MAX_LEGENDARY_COPIES = 1;
+const STARTING_GOLD = 300;
+
+export function getGold() {
+	const v = parseInt(localStorage.getItem(GOLD_KEY), 10);
+	if (isNaN(v)) {
+		localStorage.setItem(GOLD_KEY, String(STARTING_GOLD));
+		return STARTING_GOLD;
+	}
+	return v;
+}
+export function earnGold(n) {
+	localStorage.setItem(GOLD_KEY, String(getGold() + n));
+}
+export function spendGold(n) {
+	const g = getGold();
+	if (g < n) return false;
+	localStorage.setItem(GOLD_KEY, String(g - n));
+	return true;
+}
+
+// collection: {cardId: count}; new players get 2x each common + 1x each uncommon
+export function getCollection(cards) {
+	try {
+		const c = JSON.parse(localStorage.getItem(COLLECTION_KEY));
+		if (c && typeof c === 'object') return c;
+	} catch (e) {}
+	const starter = {};
+	for (const def of cards) {
+		if (def.rarity === 'common' || !def.rarity) starter[def.id] = 2;
+		else if (def.rarity === 'uncommon') starter[def.id] = 1;
+	}
+	localStorage.setItem(COLLECTION_KEY, JSON.stringify(starter));
+	return starter;
+}
+export function addToCollection(ids) {
+	const c = JSON.parse(localStorage.getItem(COLLECTION_KEY) || '{}');
+	for (const id of ids) c[id] = (c[id] || 0) + 1;
+	localStorage.setItem(COLLECTION_KEY, JSON.stringify(c));
+	return c;
+}
+
+// weighted rarity roll; the last card of each pack is guaranteed rare+
+const WEIGHTS = [['common', 60], ['uncommon', 25], ['rare', 10], ['epic', 4], ['legendary', 1]];
+const RARE_PLUS = [['rare', 75], ['epic', 20], ['legendary', 5]];
+
+function rollRarity(table) {
+	const total = table.reduce((s, [, w]) => s + w, 0);
+	let r = Math.random() * total;
+	for (const [rarity, w] of table) {
+		r -= w;
+		if (r <= 0) return rarity;
+	}
+	return table[0][0];
+}
+
+export function rollPack(cards) {
+	const byRarity = {};
+	for (const def of cards) {
+		const r = def.rarity || 'common';
+		(byRarity[r] = byRarity[r] || []).push(def);
+	}
+	const pull = table => {
+		let rarity = rollRarity(table);
+		while (!byRarity[rarity]?.length) {
+			// fall back down the ladder if the set has no cards at this rarity
+			const order = ['legendary', 'epic', 'rare', 'uncommon', 'common'];
+			rarity = order[Math.min(order.indexOf(rarity) + 1, order.length - 1)];
+		}
+		const pool = byRarity[rarity];
+		return pool[Math.floor(Math.random() * pool.length)];
+	};
+	const out = [];
+	for (let i = 0; i < PACK_SIZE - 1; i++) out.push(pull(WEIGHTS));
+	out.push(pull(RARE_PLUS));
+	return out;
+}
+
+// deck: array of card ids (may repeat up to copy limits)
+export function loadDeck() {
+	try {
+		const d = JSON.parse(localStorage.getItem(DECK_KEY));
+		if (Array.isArray(d)) return d;
+	} catch (e) {}
+	return [];
+}
+export function saveDeck(ids) {
+	localStorage.setItem(DECK_KEY, JSON.stringify(ids));
+}
+
+export function validateDeck(ids, cardsById, collection) {
+	if (ids.length !== DECK_SIZE) return `Deck needs ${DECK_SIZE} cards (has ${ids.length}).`;
+	const counts = {};
+	for (const id of ids) {
+		if (!cardsById[id]) return `Unknown card: ${id}`;
+		counts[id] = (counts[id] || 0) + 1;
+		const limit = cardsById[id].rarity === 'legendary' ? MAX_LEGENDARY_COPIES : MAX_COPIES;
+		if (counts[id] > limit) return `Too many copies of ${cardsById[id].name} (max ${limit}).`;
+		if (counts[id] > (collection[id] || 0)) return `You don't own ${counts[id]}x ${cardsById[id].name}.`;
+	}
+	return null; // valid
+}
