@@ -10,6 +10,8 @@ import * as Bag from './bag.js';
 import { getJSON } from './engine.js';
 import { loadParty, saveParty, healParty, leadMon, addCaught, createStarter } from './party.js';
 import { Evolution } from './evolution.js';
+import { Items } from './items.js';
+import { statsFor } from './battle.js';
 import { getImage } from './engine.js';
 
 const SCALE = 3;
@@ -34,6 +36,7 @@ const trainers = new Trainers(world, player);
 const dialog = new Dialog();
 const services = new Services(world);
 const evolution = new Evolution();
+const items = new Items(world);
 let signTexts = {};
 let party = null;
 
@@ -44,7 +47,7 @@ const STARTERS = [
 	{ region: 'HOENN', ids: ['treecko', 'torchic', 'mudkip'] },
 ];
 const starterMenu = { open: false, row: 0, col: 0, sprites: {} };
-player.blocked = (tx, ty) => npcs.npcBlocks(tx, ty) || trainers.occupied(tx, ty) || services.blocks(tx, ty);
+player.blocked = (tx, ty) => npcs.npcBlocks(tx, ty) || trainers.occupied(tx, ty) || services.blocks(tx, ty) || items.occupied(tx, ty);
 
 trainers.onEngage = t => {
 	const { party: foeParty, info } = trainers.buildBattle(t, battle.data);
@@ -97,6 +100,9 @@ function interact() {
 	if (player.moving || trainers.engaging) return;
 	const [dx, dy] = { down: [0, 1], up: [0, -1], left: [-1, 0], right: [1, 0] }[player.facing];
 	const fx = player.tx + dx, fy = player.ty + dy;
+	// item balls / berry trees / hidden items (facing tile, then standing tile)
+	const found = items.interactAt(fx, fy) || items.interactAt(player.tx, player.ty);
+	if (found) { dialog.open(found); return; }
 	const svc = services.kindAt(fx, fy);
 	if (svc === 'nurse') {
 		dialog.open('Welcome to the POKEMON CENTER!\n\nWe restored your POKEMON\nto full health. See you again!', () => healParty(party));
@@ -147,14 +153,29 @@ function shopKey(k) {
 	if (k === 'x' || k === 'Escape') shopMenu.open = false;
 }
 
+function useRareCandy(mon) {
+	if (mon.level >= 100 || mon.curHP <= 0) return false;
+	mon.level++;
+	mon.exp = Math.max(mon.exp ?? 0, mon.level ** 3);
+	const sp = battle.data.species[mon.speciesId];
+	const ivs = mon.ivs || { hp: 15, atk: 15, def: 15, spa: 15, spd: 15, spe: 15 };
+	const oldMax = mon.maxHP;
+	mon.stats = statsFor(sp, ivs, mon.level);
+	mon.maxHP = mon.stats.hp;
+	mon.curHP = Math.min(mon.maxHP, mon.curHP + (mon.maxHP - oldMax));
+	saveParty(party);
+	evolution.check(party, battle.data);
+	return true;
+}
+
 function bagKey(k) {
-	const items = Object.entries(Bag.getBag()).filter(([id, n]) => n > 0 && Bag.ITEMS[id]);
+	const entries = Object.entries(Bag.getBag()).filter(([, n]) => n > 0);
 	if (bagMenu.picking) {
 		if (k === 'ArrowUp') bagMenu.pickIdx = (bagMenu.pickIdx + party.length - 1) % party.length;
 		if (k === 'ArrowDown') bagMenu.pickIdx = (bagMenu.pickIdx + 1) % party.length;
 		if (k === 'x' || k === 'Escape') bagMenu.picking = false;
 		if (k === 'z' || k === 'Enter') {
-			const [id] = items[bagMenu.idx] || [];
+			const [id] = entries[bagMenu.idx] || [];
 			const item = Bag.ITEMS[id];
 			const mon = party[bagMenu.pickIdx];
 			if (item && mon) {
@@ -169,18 +190,21 @@ function bagKey(k) {
 					mon.status = null;
 					saveParty(party);
 					bagMenu.picking = false;
+				} else if (item.kind === 'candy' && useRareCandy(mon)) {
+					Bag.consume(id);
+					bagMenu.picking = false;
 				}
 			}
 		}
 		return;
 	}
-	if (k === 'ArrowUp' && items.length) bagMenu.idx = (bagMenu.idx + items.length - 1) % items.length;
-	if (k === 'ArrowDown' && items.length) bagMenu.idx = (bagMenu.idx + 1) % items.length;
+	if (k === 'ArrowUp' && entries.length) bagMenu.idx = (bagMenu.idx + entries.length - 1) % entries.length;
+	if (k === 'ArrowDown' && entries.length) bagMenu.idx = (bagMenu.idx + 1) % entries.length;
 	if (k === 'x' || k === 'Escape' || k === 'b') bagMenu.open = false;
-	if ((k === 'z' || k === 'Enter') && items.length) {
-		const [id] = items[bagMenu.idx];
+	if ((k === 'z' || k === 'Enter') && entries.length) {
+		const [id] = entries[bagMenu.idx];
 		const kind = Bag.ITEMS[id]?.kind;
-		if (kind === 'heal' || kind === 'revive') { bagMenu.picking = true; bagMenu.pickIdx = 0; }
+		if (kind === 'heal' || kind === 'revive' || kind === 'candy') { bagMenu.picking = true; bagMenu.pickIdx = 0; }
 	}
 }
 
@@ -274,6 +298,7 @@ async function warpTo(mapId, destWarpId) {
 	await trainers.loadForMap();
 	npcs.list = npcs.list.filter(n => !trainers.list.some(t => t.ev === n.ev));
 	services.loadForMap();
+	items.loadForMap();
 	hud.textContent = world.current.map.name || file;
 	loading = false;
 }
@@ -288,6 +313,7 @@ async function backWarp() {
 	await trainers.loadForMap();
 	npcs.list = npcs.list.filter(n => !trainers.list.some(t => t.ev === n.ev));
 	services.loadForMap();
+	items.loadForMap();
 	hud.textContent = world.current.map.name || src.name;
 	loading = false;
 }
@@ -302,6 +328,7 @@ async function crossConnection(hit) {
 	await trainers.loadForMap();
 	npcs.list = npcs.list.filter(n => !trainers.list.some(t => t.ev === n.ev));
 	services.loadForMap();
+	items.loadForMap();
 	hud.textContent = world.current.map.name || conn.name;
 	loading = false;
 }
@@ -375,6 +402,7 @@ function tick(now) {
 	ctx.clearRect(0, 0, VIEW_W, VIEW_H);
 	world.drawLayer(ctx, 'bottom', camX, camY);
 	services.draw(ctx, camX, camY);
+	items.draw(ctx, camX, camY);
 	// sprites in y order so overlaps stack correctly
 	const sprites = [...npcs.list, ...trainers.list, player].sort((a, b) => a.py - b.py);
 	for (const s of sprites) s.draw(ctx, camX, camY);
@@ -476,12 +504,14 @@ function drawShopMenu() {
 
 function drawBagMenu() {
 	menuFrame(`BAG   money $${Bag.getMoney()}   [Z] use [X] close`);
-	const items = Object.entries(Bag.getBag()).filter(([id, n]) => n > 0 && Bag.ITEMS[id]);
-	if (!items.length) ctx.fillText('(empty)', 12, 34);
-	items.forEach(([id, n], i) => {
+	const entries = Object.entries(Bag.getBag()).filter(([, n]) => n > 0);
+	if (!entries.length) ctx.fillText('(empty)', 12, 34);
+	const start = Math.max(0, Math.min(bagMenu.idx - 4, entries.length - 9));
+	entries.slice(start, start + 9).forEach(([id, n], i) => {
+		const idx = start + i;
 		const y = 32 + i * 14;
-		ctx.fillStyle = i === bagMenu.idx && !bagMenu.picking ? '#ffd25f' : '#f8f8e0';
-		ctx.fillText(`${i === bagMenu.idx ? '>' : ' '} ${Bag.ITEMS[id].name} x${n}`, 12, y);
+		ctx.fillStyle = idx === bagMenu.idx && !bagMenu.picking ? '#ffd25f' : '#f8f8e0';
+		ctx.fillText(`${idx === bagMenu.idx ? '>' : ' '} ${Bag.nameOf(id)} x${n}`, 12, y);
 	});
 	if (bagMenu.picking) {
 		ctx.fillStyle = '#f8f8e0';
@@ -525,6 +555,7 @@ function drawPcMenu() {
 	await battle.init();
 	await trainers.init();
 	await services.init();
+	await items.init();
 	signTexts = await getJSON('data/sign_texts.json').catch(() => ({}));
 	party = loadParty(battle.data);
 	if (!party) {
@@ -546,9 +577,10 @@ function drawPcMenu() {
 	await trainers.loadForMap();
 	npcs.list = npcs.list.filter(n => !trainers.list.some(t => t.ev === n.ev));
 	services.loadForMap();
+	items.loadForMap();
 	hud.textContent = world.current.map.name || startMap;
 	loading = false;
 	// headless test hook
-	window.__ow = { world, player, warpTo, npcs, encounters, battle, trainers, dialog, evolution, get party() { return party; }, startWildBattle, interact };
+	window.__ow = { world, player, warpTo, npcs, encounters, battle, trainers, dialog, evolution, items, get party() { return party; }, startWildBattle, interact };
 	requestAnimationFrame(tick);
 })();

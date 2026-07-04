@@ -9,7 +9,35 @@ export const ITEMS = {
 	superpotion: { name: 'SUPER POTION', price: 700,  kind: 'heal', amount: 50 },
 	hyperpotion: { name: 'HYPER POTION', price: 1200, kind: 'heal', amount: 200 },
 	revive:      { name: 'REVIVE',       price: 1500, kind: 'revive' },
+	rarecandy:   { name: 'RARE CANDY',   price: 0,    kind: 'candy' },
+	// common overworld pickups that map onto shop items
+	fullrestore: { name: 'FULL RESTORE', price: 0, kind: 'heal', amount: 999 },
+	maxpotion:   { name: 'MAX POTION',   price: 0, kind: 'heal', amount: 999 },
+	greatball:   { name: 'GREAT BALL',   price: 0, kind: 'ball' },
+	ultraball:   { name: 'ULTRA BALL',   price: 0, kind: 'ball' },
+	maxrevive:   { name: 'MAX REVIVE',   price: 0, kind: 'revive' },
 };
+
+// display names for arbitrary picked-up item ids (TMs, berries, key items...)
+const NAMES_KEY = 'magepunk_itemnames_v1';
+export function registerName(id, name) {
+	if (ITEMS[id]) return;
+	try {
+		const names = JSON.parse(localStorage.getItem(NAMES_KEY) || '{}');
+		if (!names[id]) {
+			names[id] = name;
+			localStorage.setItem(NAMES_KEY, JSON.stringify(names));
+		}
+	} catch (e) {}
+}
+export function nameOf(id) {
+	if (ITEMS[id]) return ITEMS[id].name;
+	try {
+		const names = JSON.parse(localStorage.getItem(NAMES_KEY) || '{}');
+		if (names[id]) return names[id];
+	} catch (e) {}
+	return id.toUpperCase();
+}
 export const SHOP_STOCK = ['pokeball', 'potion', 'superpotion', 'hyperpotion', 'revive'];
 
 export function getMoney() {
