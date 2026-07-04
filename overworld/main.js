@@ -8,7 +8,9 @@ import { Dialog } from './dialog.js';
 import { Services } from './services.js';
 import * as Bag from './bag.js';
 import { getJSON } from './engine.js';
-import { loadParty, saveParty, healParty, leadMon, addCaught } from './party.js';
+import { loadParty, saveParty, healParty, leadMon, addCaught, createStarter } from './party.js';
+import { Evolution } from './evolution.js';
+import { getImage } from './engine.js';
 
 const SCALE = 3;
 const screen = document.getElementById('screen');
@@ -31,8 +33,17 @@ const battle = new Battle();
 const trainers = new Trainers(world, player);
 const dialog = new Dialog();
 const services = new Services(world);
+const evolution = new Evolution();
 let signTexts = {};
 let party = null;
+
+// starter picker (fresh saves): 3 regions x 3 starters
+const STARTERS = [
+	{ region: 'KANTO', ids: ['bulbasaur', 'charmander', 'squirtle'] },
+	{ region: 'JOHTO', ids: ['chikorita', 'cyndaquil', 'totodile'] },
+	{ region: 'HOENN', ids: ['treecko', 'torchic', 'mudkip'] },
+];
+const starterMenu = { open: false, row: 0, col: 0, sprites: {} };
 player.blocked = (tx, ty) => npcs.npcBlocks(tx, ty) || trainers.occupied(tx, ty) || services.blocks(tx, ty);
 
 trainers.onEngage = t => {
@@ -51,12 +62,14 @@ function startTrainerBattle(t, foeParty, info) {
 				localStorage.setItem('magepunk_money', String(money));
 			} catch (e) {}
 			saveParty(party);
+			evolution.check(party, battle.data);
 		} else if (result === 'defeat') {
 			healParty(party);
 			hud.textContent = (world.current.map.name || '') + ' — party healed';
 		}
 	});
 }
+evolution.onDone = () => saveParty(party);
 let loading = true;
 
 // ---------- input ----------
@@ -196,12 +209,27 @@ function pcKey(k) {
 	}
 }
 
+function starterKey(k) {
+	if (k === 'ArrowUp') starterMenu.row = (starterMenu.row + 2) % 3;
+	if (k === 'ArrowDown') starterMenu.row = (starterMenu.row + 1) % 3;
+	if (k === 'ArrowLeft') starterMenu.col = (starterMenu.col + 2) % 3;
+	if (k === 'ArrowRight') starterMenu.col = (starterMenu.col + 1) % 3;
+	if (k === 'z' || k === 'Enter') {
+		const id = STARTERS[starterMenu.row].ids[starterMenu.col];
+		party = createStarter(id, battle.data);
+		starterMenu.open = false;
+		dialog.open(`You chose ${party[0].name}!\n\nTake good care of it.`);
+	}
+}
+
 addEventListener('keydown', e => {
+	if (starterMenu.open) { e.preventDefault(); starterKey(e.key); return; }
 	if (dialog.blocking) {
 		e.preventDefault();
 		dialog.key(e.key);
 		return;
 	}
+	if (evolution.blocking) { e.preventDefault(); evolution.key(e.key); return; }
 	if (battle.blocking) {
 		e.preventDefault();
 		battle.key(e.key);
@@ -304,7 +332,7 @@ player.onArrive = () => {
 };
 
 function startWildBattle(pick) {
-	if (!leadMon(party)) return;
+	if (!party || !leadMon(party)) return;
 	battle.start(party, pick.id, pick.level, result => {
 		if (result === 'defeat') {
 			healParty(party);
@@ -315,6 +343,7 @@ function startWildBattle(pick) {
 		} else {
 			saveParty(party);
 		}
+		if (result === 'victory') evolution.check(party, battle.data);
 	});
 }
 
@@ -335,7 +364,8 @@ function tick(now) {
 	if (loading || !world.current) return;
 
 	battle.update(dt);
-	if (!battle.blocking && !dialog.blocking) {
+	evolution.update(dt);
+	if (!battle.blocking && !dialog.blocking && !evolution.blocking && !starterMenu.open) {
 		trainers.update(dt);
 		if (!trainers.engaging) player.update(dt, heldKeys[0] || null);
 		npcs.update(dt);
@@ -351,11 +381,13 @@ function tick(now) {
 	world.drawLayer(ctx, 'top', camX, camY);
 	battle.draw(ctx);
 	if (!battle.blocking) {
-		dialog.draw(ctx);
+		evolution.draw(ctx);
+		if (!evolution.blocking) dialog.draw(ctx);
 		if (partyMenu.open) drawPartyMenu();
 		if (shopMenu.open) drawShopMenu();
 		if (bagMenu.open) drawBagMenu();
 		if (pcMenu.open) drawPcMenu();
+		if (starterMenu.open) drawStarterMenu();
 	}
 
 	sctx.drawImage(frame, 0, 0, VIEW_W * SCALE, VIEW_H * SCALE);
@@ -380,6 +412,42 @@ function drawPartyMenu() {
 		ctx.fillStyle = frac > 0.5 ? '#40c860' : frac > 0.2 ? '#f0c020' : '#e83020';
 		ctx.fillRect(197, y - 5, Math.round(34 * frac), 3);
 	});
+}
+
+function drawStarterMenu() {
+	ctx.fillStyle = '#101020';
+	ctx.fillRect(0, 0, VIEW_W, VIEW_H);
+	ctx.fillStyle = '#f8f8e0';
+	ctx.font = '8px monospace';
+	ctx.textAlign = 'center';
+	ctx.fillText('CHOOSE YOUR FIRST POKEMON!', VIEW_W / 2, 12);
+	ctx.textAlign = 'left';
+	const CELL = 32;
+	STARTERS.forEach((row, r) => {
+		const y = 22 + r * 45;
+		ctx.fillStyle = '#9d8fd4';
+		ctx.fillText(row.region, 6, y + 18);
+		row.ids.forEach((id, c) => {
+			const x = 66 + c * 56;
+			const sel = starterMenu.row === r && starterMenu.col === c;
+			if (sel) {
+				ctx.strokeStyle = '#ffd25f';
+				ctx.strokeRect(x - 2.5, y - 2.5, CELL + 5, CELL + 5);
+			}
+			const img = starterMenu.sprites[id];
+			if (img) {
+				ctx.imageSmoothingEnabled = false;
+				const scale = Math.min(CELL / img.width, CELL / img.height);
+				const dw = img.width * scale, dh = img.height * scale;
+				ctx.drawImage(img, x + (CELL - dw) / 2, y + (CELL - dh) / 2, dw, dh);
+			}
+			ctx.fillStyle = sel ? '#ffd25f' : '#f8f8e0';
+			const sp = battle.data.species[id];
+			ctx.fillText((sp?.name || id).slice(0, 10), x - 6, y + CELL + 9);
+		});
+	});
+	ctx.fillStyle = '#9d8fd4';
+	ctx.fillText('[Z] choose', VIEW_W - 52, 12);
 }
 
 function menuFrame(title) {
@@ -459,6 +527,15 @@ function drawPcMenu() {
 	await services.init();
 	signTexts = await getJSON('data/sign_texts.json').catch(() => ({}));
 	party = loadParty(battle.data);
+	if (!party) {
+		starterMenu.open = true;
+		for (const row of STARTERS) {
+			for (const id of row.ids) {
+				const sp = battle.data.species[id];
+				if (sp?.sprite) getImage(`data/pokemon/${sp.sprite}`).then(img => { starterMenu.sprites[id] = img; }).catch(() => {});
+			}
+		}
+	}
 	const params = new URLSearchParams(location.search);
 	const startMap = params.get('map') || 'PalletTown';
 	await world.load(startMap);
@@ -472,6 +549,6 @@ function drawPcMenu() {
 	hud.textContent = world.current.map.name || startMap;
 	loading = false;
 	// headless test hook
-	window.__ow = { world, player, warpTo, npcs, encounters, battle, trainers, dialog, get party() { return party; }, startWildBattle, interact };
+	window.__ow = { world, player, warpTo, npcs, encounters, battle, trainers, dialog, evolution, get party() { return party; }, startWildBattle, interact };
 	requestAnimationFrame(tick);
 })();

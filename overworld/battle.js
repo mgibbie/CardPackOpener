@@ -154,11 +154,15 @@ export function buildMon(speciesId, level, data) {
 	};
 }
 
-// exp yield estimated from base stat total (we have no per-species yield data)
+// real exp yield when known (dex.json), else base-stat-total estimate
 export function expGain(foe, data) {
-	const b = data.species[foe.speciesId]?.baseStats || {};
-	const bst = ['hp', 'atk', 'def', 'spa', 'spd', 'spe'].reduce((s, k) => s + (b[k] || 50), 0);
-	return Math.max(1, Math.floor(Math.round(bst * 0.3) * foe.level / 7));
+	let yieldBase = data.extra?.[foe.speciesId]?.exp;
+	if (!yieldBase) {
+		const b = data.species[foe.speciesId]?.baseStats || {};
+		const bst = ['hp', 'atk', 'def', 'spa', 'spd', 'spe'].reduce((s, k) => s + (b[k] || 50), 0);
+		yieldBase = Math.floor(bst / 4);
+	}
+	return Math.max(1, Math.floor(yieldBase * foe.level / 7));
 }
 
 // ---------- battle scene ----------
@@ -171,11 +175,12 @@ export class Battle {
 	}
 
 	async init() {
-		const [species, moves] = await Promise.all([
+		const [species, moves, extra] = await Promise.all([
 			getJSON('data/species_battle.json'),
 			getJSON('data/moves_battle.json'),
+			getJSON('data/species_extra.json').catch(() => ({})),
 		]);
-		this.data = { species, moves };
+		this.data = { species, moves, extra };
 	}
 
 	// start a wild battle vs the party; onEnd(result) with
@@ -517,7 +522,7 @@ export class Battle {
 	throwBall() {
 		const a = this.active;
 		this.pushMsg('You threw a POKe BALL!');
-		const rate = 190; // flat until per-species catch rates are sourced
+		const rate = this.data.extra?.[a.foe.speciesId]?.catch ?? 45; // real species catch rate
 		const statusBonus = a.foe.status === 'slp' || a.foe.status === 'frz' ? 2
 			: a.foe.status ? 1.5 : 1;
 		const f = Math.max(1, Math.floor((3 * a.foe.maxHP - 2 * a.foe.curHP) * rate * statusBonus / (3 * a.foe.maxHP)));

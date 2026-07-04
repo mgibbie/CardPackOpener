@@ -14,6 +14,7 @@ function migrate(mon) {
 	return mon;
 }
 
+// returns the saved party, or null on a fresh save (main shows the starter picker)
 export function loadParty(data) {
 	try {
 		const raw = localStorage.getItem(KEY);
@@ -21,9 +22,12 @@ export function loadParty(data) {
 			const party = JSON.parse(raw);
 			if (Array.isArray(party) && party.length && party[0].stats) return party.map(migrate);
 		}
-	} catch (e) { /* fall through to starter */ }
-	const starter = buildMon('charmander', 10, data);
-	const party = [starter];
+	} catch (e) { /* fresh save */ }
+	return null;
+}
+
+export function createStarter(speciesId, data) {
+	const party = [buildMon(speciesId, 5, data)];
 	saveParty(party);
 	return party;
 }
