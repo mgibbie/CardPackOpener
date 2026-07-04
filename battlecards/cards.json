@@ -2435,6 +2435,420 @@
         }
       ],
       "description": "Deal 2 damage to all enemy creatures and freeze them."
+    },
+    {
+      "id": "deadly_poison",
+      "name": "Deadly Poison",
+      "cardClass": "rogue",
+      "cost": 1,
+      "rarity": "common",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "buff-weapon",
+          "attack": 2,
+          "durability": 0
+        }
+      ],
+      "description": "Give your weapon +2 Attack."
+    },
+    {
+      "id": "eye_for_an_eye",
+      "name": "Eye for an Eye",
+      "cardClass": "paladin",
+      "cost": 1,
+      "rarity": "common",
+      "type": "secret",
+      "secret": {
+        "trigger": "hero-takes-damage",
+        "effects": [
+          {
+            "type": "reflect-damage"
+          }
+        ]
+      },
+      "description": "Secret: When your hero takes damage, deal that much damage to the enemy hero."
+    },
+    {
+      "id": "light_s_justice",
+      "name": "Light's Justice",
+      "cardClass": "paladin",
+      "cost": 1,
+      "rarity": "common",
+      "type": "weapon",
+      "attack": 1,
+      "durability": 4,
+      "description": "A 1/4 weapon."
+    },
+    {
+      "id": "noble_sacrifice",
+      "name": "Noble Sacrifice",
+      "cardClass": "paladin",
+      "cost": 1,
+      "rarity": "common",
+      "type": "secret",
+      "secret": {
+        "trigger": "enemy-attack",
+        "effects": [
+          {
+            "type": "summon-redirect",
+            "attack": 2,
+            "health": 1,
+            "name": "Defender"
+          }
+        ]
+      },
+      "description": "Secret: When an enemy attacks, summon a 2/1 Defender as the new target."
+    },
+    {
+      "id": "repentance",
+      "name": "Repentance",
+      "cardClass": "paladin",
+      "cost": 1,
+      "rarity": "common",
+      "type": "secret",
+      "secret": {
+        "trigger": "enemy-minion-played",
+        "effects": [
+          {
+            "type": "set-health",
+            "value": 1
+          }
+        ]
+      },
+      "description": "Secret: After your opponent plays a creature, set its Health to 1."
+    },
+    {
+      "id": "acidic_swamp_ooze",
+      "name": "Acidic Swamp Ooze",
+      "cardClass": "neutral",
+      "cost": 2,
+      "rarity": "common",
+      "type": "creature",
+      "attack": 3,
+      "health": 2,
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "destroy-weapon"
+        }
+      ],
+      "description": "Battlecry: Destroy your opponent's weapon."
+    },
+    {
+      "id": "bloodsail_raider",
+      "name": "Bloodsail Raider",
+      "cardClass": "neutral",
+      "cost": 2,
+      "rarity": "common",
+      "type": "creature",
+      "attack": 2,
+      "health": 3,
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "gain-weapon-attack"
+        }
+      ],
+      "description": "Battlecry: Gains the Attack of your weapon."
+    },
+    {
+      "id": "explosive_trap",
+      "name": "Explosive Trap",
+      "cardClass": "hunter",
+      "cost": 2,
+      "rarity": "common",
+      "type": "secret",
+      "secret": {
+        "trigger": "enemy-attack",
+        "condition": {
+          "targetHero": true
+        },
+        "effects": [
+          {
+            "type": "damage",
+            "value": 2,
+            "target": "enemies"
+          }
+        ]
+      },
+      "description": "Secret: When your hero is attacked, deal 2 damage to the enemy hero and all enemy creatures."
+    },
+    {
+      "id": "fiery_war_axe",
+      "name": "Fiery War Axe",
+      "cardClass": "warrior",
+      "cost": 2,
+      "rarity": "common",
+      "type": "weapon",
+      "attack": 3,
+      "durability": 2,
+      "description": "A 3/2 weapon."
+    },
+    {
+      "id": "freezing_trap",
+      "name": "Freezing Trap",
+      "cardClass": "hunter",
+      "cost": 2,
+      "rarity": "common",
+      "type": "secret",
+      "secret": {
+        "trigger": "enemy-attack",
+        "condition": {
+          "attackerCreature": true
+        },
+        "effects": [
+          {
+            "type": "bounce-attacker",
+            "costMod": 2
+          }
+        ]
+      },
+      "description": "Secret: When an enemy creature attacks, return it to its owner's hand and it costs 2 more."
+    },
+    {
+      "id": "misdirection",
+      "name": "Misdirection",
+      "cardClass": "hunter",
+      "cost": 2,
+      "rarity": "rare",
+      "type": "secret",
+      "secret": {
+        "trigger": "enemy-attack",
+        "condition": {
+          "targetHero": true
+        },
+        "effects": [
+          {
+            "type": "redirect-random"
+          }
+        ]
+      },
+      "description": "Secret: When an enemy attacks your hero, the attack is redirected at a random other character."
+    },
+    {
+      "id": "snake_trap",
+      "name": "Snake Trap",
+      "cardClass": "hunter",
+      "cost": 2,
+      "rarity": "epic",
+      "type": "secret",
+      "secret": {
+        "trigger": "enemy-attack",
+        "condition": {
+          "targetCreature": true
+        },
+        "effects": [
+          {
+            "type": "summon",
+            "count": 3,
+            "attack": 1,
+            "health": 1,
+            "name": "Snake"
+          }
+        ]
+      },
+      "description": "Secret: When one of your creatures is attacked, summon three 1/1 Snakes."
+    },
+    {
+      "id": "snipe",
+      "name": "Snipe",
+      "cardClass": "hunter",
+      "cost": 2,
+      "rarity": "common",
+      "type": "secret",
+      "secret": {
+        "trigger": "enemy-minion-played",
+        "effects": [
+          {
+            "type": "damage-minion",
+            "value": 4
+          }
+        ]
+      },
+      "description": "Secret: After your opponent plays a creature, deal 4 damage to it."
+    },
+    {
+      "id": "counterspell",
+      "name": "Counterspell",
+      "cardClass": "mage",
+      "cost": 3,
+      "rarity": "rare",
+      "type": "secret",
+      "secret": {
+        "trigger": "enemy-spell-cast",
+        "effects": [
+          {
+            "type": "counter"
+          }
+        ]
+      },
+      "description": "Secret: When your opponent casts a spell, counter it."
+    },
+    {
+      "id": "ice_barrier",
+      "name": "Ice Barrier",
+      "cardClass": "mage",
+      "cost": 3,
+      "rarity": "common",
+      "type": "secret",
+      "secret": {
+        "trigger": "enemy-attack",
+        "condition": {
+          "targetHero": true
+        },
+        "effects": [
+          {
+            "type": "armor",
+            "value": 8
+          }
+        ]
+      },
+      "description": "Secret: When your hero is attacked, gain 8 armor."
+    },
+    {
+      "id": "ice_block",
+      "name": "Ice Block",
+      "cardClass": "mage",
+      "cost": 3,
+      "rarity": "epic",
+      "type": "secret",
+      "secret": {
+        "trigger": "hero-takes-damage",
+        "condition": {
+          "fatal": true
+        },
+        "effects": [
+          {
+            "type": "prevent"
+          }
+        ]
+      },
+      "description": "Secret: When your hero would take fatal damage, prevent it."
+    },
+    {
+      "id": "mirror_entity",
+      "name": "Mirror Entity",
+      "cardClass": "mage",
+      "cost": 3,
+      "rarity": "common",
+      "type": "secret",
+      "secret": {
+        "trigger": "enemy-minion-played",
+        "effects": [
+          {
+            "type": "copy-minion"
+          }
+        ]
+      },
+      "description": "Secret: When your opponent plays a creature, summon a copy of it."
+    },
+    {
+      "id": "shield_block",
+      "name": "Shield Block",
+      "cardClass": "warrior",
+      "cost": 3,
+      "rarity": "common",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "armor",
+          "value": 5
+        },
+        {
+          "type": "draw",
+          "value": 1
+        }
+      ],
+      "description": "Gain 5 armor. Draw 1 card."
+    },
+    {
+      "id": "vaporize",
+      "name": "Vaporize",
+      "cardClass": "mage",
+      "cost": 3,
+      "rarity": "rare",
+      "type": "secret",
+      "secret": {
+        "trigger": "enemy-attack",
+        "condition": {
+          "targetHero": true,
+          "attackerCreature": true
+        },
+        "effects": [
+          {
+            "type": "destroy-attacker"
+          }
+        ]
+      },
+      "description": "Secret: When a creature attacks your hero, destroy it."
+    },
+    {
+      "id": "arcanite_reaper",
+      "name": "Arcanite Reaper",
+      "cardClass": "warrior",
+      "cost": 5,
+      "rarity": "common",
+      "type": "weapon",
+      "attack": 5,
+      "durability": 2,
+      "description": "A 5/2 weapon."
+    },
+    {
+      "id": "assassin_s_blade",
+      "name": "Assassin's Blade",
+      "cardClass": "rogue",
+      "cost": 5,
+      "rarity": "common",
+      "type": "weapon",
+      "attack": 3,
+      "durability": 4,
+      "description": "A 3/4 weapon."
+    },
+    {
+      "id": "captain_greenskin",
+      "name": "Captain Greenskin",
+      "cardClass": "neutral",
+      "cost": 5,
+      "rarity": "legendary",
+      "type": "creature",
+      "attack": 5,
+      "health": 4,
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "buff-weapon",
+          "attack": 1,
+          "durability": 1
+        }
+      ],
+      "description": "Battlecry: Give your weapon +1 Attack and +1 Durability."
+    },
+    {
+      "id": "harrison_jones",
+      "name": "Harrison Jones",
+      "cardClass": "neutral",
+      "cost": 5,
+      "rarity": "legendary",
+      "type": "creature",
+      "attack": 5,
+      "health": 4,
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "destroy-weapon",
+          "drawDurability": true
+        }
+      ],
+      "description": "Battlecry: Destroy your opponent's weapon and draw a card for each durability it had."
     }
   ]
 }

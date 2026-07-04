@@ -84,6 +84,10 @@ function playableCards(state) {
 		if (spec && spec.required && !pickTarget(state, c)) return false;
 		// hold healing until it matters
 		if ((c.id === 'healing_potion' || c.id === 'natures_blessing') && p.life > 25) return false;
+		// don't replace a weapon that still has swings left
+		if (c.type === 'weapon' && p.weapon && p.weapon.durability > 1) return false;
+		// weapon buffs are dead cards without a weapon
+		if (c.effects?.some(e => e.type === 'buff-weapon') && !p.weapon) return false;
 		return true;
 	});
 }
@@ -143,6 +147,30 @@ export function step(state) {
 		}
 		const target = best || heroT;
 		if (target && E.attack(state, PI, a.uid, target)) return true;
+	}
+
+	// 3. swing the weapon: lethal face, a good trade, or face
+	if (E.canHeroAttack(state, PI)) {
+		const w = p.weapon;
+		const targets = E.heroAttackTargets(state, PI);
+		const heroT = targets.find(t => t.type === 'hero');
+		const creatureTs = targets.filter(t => t.type === 'creature');
+		const creatureOf = t => state.players[0].board.find(c => c.uid === t.uid);
+		if (heroT && state.players[0].life <= w.attack) {
+			if (E.heroAttack(state, PI, heroT)) return true;
+		}
+		// good trade: kill a creature whose counterattack won't hurt too much
+		let best = null, bestScore = -1;
+		for (const t of creatureTs) {
+			const d = creatureOf(t);
+			if (!d || d.shield || w.attack < E.hp(d)) continue;
+			if (d.attack >= p.life - 5) continue; // never trade into near-death
+			if (d.attack > 4 && p.life < 20) continue;
+			const score = d.attack * 2 + E.hp(d) - d.attack; // value gained minus face cost
+			if (score > bestScore) { bestScore = score; best = t; }
+		}
+		const target = best || heroT;
+		if (target && E.heroAttack(state, PI, target)) return true;
 	}
 
 	return false; // nothing left to do

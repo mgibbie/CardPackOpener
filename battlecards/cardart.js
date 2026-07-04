@@ -18,6 +18,8 @@ export const TYPE_COLORS = {
 	land:        '#3b7a2e',
 	artifact:    '#6e6a5e',
 	enchantment: '#7a2e6a',
+	weapon:      '#7a5a2e',
+	secret:      '#2e6a4a',
 };
 
 function roundRect(ctx, x, y, w, h, r) {
@@ -114,6 +116,24 @@ export function makeFaceTexture(card, opts = {}) {
 		}
 	}
 	ctx.fillText(line, 48, y);
+
+	// attack / durability plates
+	if (card.type === 'weapon') {
+		const atk = opts.attack ?? card.attack ?? 0;
+		const dur = opts.durability ?? card.durability ?? 0;
+		ctx.font = 'bold 44px Georgia';
+		ctx.textAlign = 'center';
+		ctx.fillStyle = '#b3402e';
+		roundRect(ctx, 40, H - 110, 110, 66, 12);
+		ctx.fill();
+		ctx.fillStyle = '#8a7430';
+		roundRect(ctx, W - 150, H - 110, 110, 66, 12);
+		ctx.fill();
+		ctx.fillStyle = '#fff';
+		ctx.fillText(String(atk), 95, H - 75);
+		ctx.fillText(String(dur), W - 95, H - 75);
+		ctx.textAlign = 'left';
+	}
 
 	// attack / health plates
 	if (card.type === 'creature') {

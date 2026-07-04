@@ -78,7 +78,8 @@ const entities = new Map();
 function faceMaterialFor(card) {
 	const tex = makeFaceTexture(
 		{ ...card, health: card.maxHealth },
-		card.type === 'creature' ? { attack: card.attack, hp: E.hp(card), maxHealth: card.maxHealth } : {}
+		card.type === 'creature' ? { attack: card.attack, hp: E.hp(card), maxHealth: card.maxHealth }
+			: card.type === 'weapon' ? { attack: card.attack, durability: card.durability } : {}
 	);
 	return new THREE.MeshStandardMaterial({ map: tex, roughness: 0.35, metalness: 0.12 });
 }
@@ -201,8 +202,18 @@ function log(msg) {
 function updateHud() {
 	if (!state) return;
 	const me = state.players[HUMAN], foe = state.players[ENEMY];
-	$('my-life').textContent = me.life;
-	$('foe-life').textContent = foe.life;
+	$('my-life').textContent = me.life + (me.armor ? `+${me.armor}` : '');
+	$('foe-life').textContent = foe.life + (foe.armor ? `+${foe.armor}` : '');
+	const myGear = [];
+	if (me.weapon) myGear.push(`⚔ ${me.weapon.name} ${me.weapon.attack}/${me.weapon.durability}`);
+	if (me.secrets.length) myGear.push('❓ ' + me.secrets.map(s => s.name).join(', '));
+	$('my-gear').innerHTML = myGear.join('<br>');
+	const foeGear = [];
+	if (foe.weapon) foeGear.push(`⚔ ${foe.weapon.name} ${foe.weapon.attack}/${foe.weapon.durability}`);
+	if (foe.secrets.length) foeGear.push(`❓ ${foe.secrets.length} Secret${foe.secrets.length > 1 ? 's' : ''}`);
+	$('foe-gear').innerHTML = foeGear.join('<br>');
+	$('my-panel').classList.toggle('armed',
+		state.current === HUMAN && !state.over && !pending && E.canHeroAttack(state, HUMAN));
 	$('my-mana').textContent = `${E.availableMana(me)}/${me.mana.max}`;
 	$('foe-mana').textContent = `${E.availableMana(foe)}/${foe.mana.max}`;
 	$('my-deck').textContent = me.deck.length;
@@ -214,7 +225,8 @@ function updateHud() {
 	$('end-turn').textContent = myTurn ? 'End Turn' : 'Enemy Turn…';
 	$('hint').textContent = pending
 		? `Choose ${pending.spec.why} for ${pending.card.name} (right-click to cancel)`
-		: (selectedAttacker ? 'Choose an attack target (right-click to cancel)' : '');
+		: (selectedAttacker === 'HERO' ? 'Choose a target for your hero attack (right-click to cancel)'
+			: selectedAttacker ? 'Choose an attack target (right-click to cancel)' : '');
 }
 
 function banner(text, ms = 1400) {
@@ -316,6 +328,37 @@ function nextEvent() {
 			delay = 330;
 			break;
 		}
+		case 'heroAttack': {
+			log(`${ev.player === HUMAN ? 'Your' : 'Enemy'} hero attacks`);
+			const panel = $(ev.player === HUMAN ? 'my-panel' : 'foe-panel');
+			panel.classList.add('hit');
+			setTimeout(() => panel.classList.remove('hit'), 250);
+			delay = 420;
+			break;
+		}
+		case 'weaponEquip':
+			log(`${ev.player === HUMAN ? 'You' : 'Enemy'} equipped ${ev.card.name} (${ev.card.attack}/${ev.card.durability})`);
+			delay = 320;
+			break;
+		case 'weaponDurability': delay = 60; break;
+		case 'weaponBreak':
+			log(`${ev.player === HUMAN ? 'Your' : 'Enemy'} ${ev.name} ${ev.destroyed ? 'was destroyed' : 'broke'}`);
+			floatText('⚔', '#9b93b3', heroPos(ev.player));
+			delay = 300;
+			break;
+		case 'secretPlayed':
+			log(ev.player === HUMAN ? `You set a Secret: ${ev.card.name}` : 'Enemy set a Secret');
+			floatText('❓', '#c9b8ff', heroPos(ev.player));
+			delay = 350;
+			break;
+		case 'secretRevealed':
+			banner(`Secret: ${ev.card.name}!`, 1600);
+			log(`${ev.player === HUMAN ? 'Your' : 'Enemy'} Secret revealed: ${ev.card.name}`);
+			delay = 900;
+			break;
+		case 'countered': log(`${ev.name} was countered!`); delay = 400; break;
+		case 'armor': floatText(`+${ev.amount}`, '#c9c2da', heroPos(ev.player)); delay = 260; break;
+		case 'bounce': log(`${ev.name} was returned to hand`); delay = 300; break;
 		case 'coin': log('Enemy spent a coin (+1 mana)'); delay = 250; break;
 		case 'reshuffle': log(`${ev.player === HUMAN ? 'Your' : 'Enemy'} graveyard was shuffled back in`); break;
 		case 'discard': log(`${ev.player === HUMAN ? 'You' : 'Enemy'} discarded ${ev.card.name}`); break;
@@ -399,6 +442,14 @@ renderer.domElement.addEventListener('pointerdown', ev => {
 		clearModes();
 		return;
 	}
+	if (selectedAttacker === 'HERO') {
+		if (card && card.zone === 'board' && card.controller === ENEMY) {
+			const t = E.heroAttackTargets(state, HUMAN).find(t => t.type === 'creature' && t.uid === card.uid);
+			if (t) { E.heroAttack(state, HUMAN, t); clearModes(); pump(); return; }
+		}
+		clearModes();
+		return;
+	}
 	if (selectedAttacker) {
 		const attacker = cardOf(selectedAttacker);
 		if (card && card.zone === 'board' && card.controller === ENEMY && attacker) {
@@ -434,11 +485,26 @@ for (const [pi, id] of [[HUMAN, 'my-panel'], [ENEMY, 'foe-panel']]) {
 			if (t) { E.playCard(state, HUMAN, pending.card.uid, t); clearModes(); pump(); }
 			return;
 		}
+		if (selectedAttacker === 'HERO') {
+			if (pi === ENEMY) {
+				const t = E.heroAttackTargets(state, HUMAN).find(t => t.type === 'hero');
+				if (t) { E.heroAttack(state, HUMAN, t); clearModes(); pump(); }
+			} else {
+				clearModes();
+			}
+			return;
+		}
 		if (selectedAttacker && pi === ENEMY) {
 			const attacker = cardOf(selectedAttacker);
 			if (!attacker) { clearModes(); return; }
 			const t = E.attackTargets(state, HUMAN, attacker).find(t => t.type === 'hero');
 			if (t) { E.attack(state, HUMAN, selectedAttacker, t); clearModes(); pump(); }
+			return;
+		}
+		// clicking your own panel arms a hero attack when you hold a weapon
+		if (pi === HUMAN && !selectedAttacker && E.canHeroAttack(state, HUMAN)) {
+			selectedAttacker = 'HERO';
+			updateHud();
 		}
 	});
 }
@@ -467,7 +533,9 @@ function updateRings() {
 	if (!state) return;
 	const validCreatureTargets = new Set();
 	if (pending) for (const t of pending.targets) if (t.type === 'creature') validCreatureTargets.add(t.uid);
-	if (selectedAttacker) {
+	if (selectedAttacker === 'HERO') {
+		for (const t of E.heroAttackTargets(state, HUMAN)) if (t.type === 'creature') validCreatureTargets.add(t.uid);
+	} else if (selectedAttacker) {
 		const attacker = cardOf(selectedAttacker);
 		if (attacker) for (const t of E.attackTargets(state, HUMAN, attacker)) if (t.type === 'creature') validCreatureTargets.add(t.uid);
 	}
