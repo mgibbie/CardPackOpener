@@ -124,8 +124,8 @@ export class NPCs {
 			if (ev.type !== 'object') return;
 			if (ev.flag && ev.flag !== '0') return;        // hidden-by-flag (story NPCs)
 			if (isTrainerEvent(ev)) return;                // trainers.js renders these
-			const file = this.gfx[ev.graphics_id];
-			if (!file) return;                              // item balls, unmapped gfx
+			const file = this.gfx[ev.graphics_id]
+				|| (ev.graphics_id || '').replace('OBJ_EVENT_GFX_', '').toLowerCase() + '.png';
 			const img = await getImage(`data/people/${file}`).catch(() => null);
 			if (img) this.list.push(new NPC(ev, img));
 		}));

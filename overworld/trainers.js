@@ -15,10 +15,12 @@ const FACE_OF = {
 const DIRS = { down: [0, 1], up: [0, -1], left: [-1, 0], right: [1, 0] };
 const DEFEATED_KEY = 'magepunk_defeated_v1';
 
+// all battle-capable trainers, including talk-to ones (sight range 0 — gym
+// leaders etc.). npcs.js excludes these; trainers.js renders them.
 export function isTrainerEvent(ev) {
 	return ev.type === 'object'
 		&& (ev.trainer_type === 'TRAINER_TYPE_NORMAL' || ev.trainer_type === 'TRAINER_TYPE_SEE_ALL_DIRECTIONS')
-		&& parseInt(ev.trainer_sight_or_berry_tree_id, 10) > 0;
+		&& ev.script && ev.script !== '0x0';
 }
 
 class Trainer {
@@ -87,15 +89,23 @@ export class Trainers {
 		try { localStorage.setItem(DEFEATED_KEY, JSON.stringify([...this.defeated])); } catch (e) {}
 	}
 
+	// battleable = flagged trainer event OR any NPC whose script has a roster
+	// entry (gym leaders are TRAINER_TYPE_NONE but script-battled)
+	claims(ev) {
+		if (isTrainerEvent(ev)) return true;
+		return ev.type === 'object' && ev.script && this.data?.rosters?.[ev.script] != null;
+	}
+
 	async loadForMap() {
 		this.list = [];
 		this.engagement = null;
 		const evs = this.world.current.map.object_events || [];
 		await Promise.all(evs.map(async ev => {
-			if (!isTrainerEvent(ev)) return;
+			if (!this.claims(ev)) return;
 			if (ev.flag && ev.flag !== '0') return;
-			const file = this.gfx[ev.graphics_id];
-			if (!file) return;
+			// gfx map first, then guess from the id (OBJ_EVENT_GFX_BROCK -> brock.png)
+			const file = this.gfx[ev.graphics_id]
+				|| (ev.graphics_id || '').replace('OBJ_EVENT_GFX_', '').toLowerCase() + '.png';
 			const img = await getImage(`data/people/${file}`).catch(() => null);
 			if (img) this.list.push(new Trainer(ev, img));
 		}));
@@ -107,10 +117,22 @@ export class Trainers {
 
 	get engaging() { return this.engagement != null; }
 
+	trainerAt(tx, ty) {
+		return this.list.find(t => t.tx === tx && t.ty === ty) || null;
+	}
+
+	// talk-to engagement (Z in front of any trainer, incl. sight range 0)
+	talkTo(t, playerFacing) {
+		if (this.engagement) return;
+		t.facing = { up: 'down', down: 'up', left: 'right', right: 'left' }[playerFacing] || t.facing;
+		this.onEngage?.(t);
+	}
+
 	// called when the player finishes a step; true if a trainer spotted them
 	checkSight(ptx, pty) {
 		if (this.engagement) return true;
 		for (const t of this.list) {
+			if (t.range <= 0) continue; // talk-to trainers don't spot you
 			if (this.isDefeated(t)) continue;
 			const dirs = t.seeAll ? ['down', 'up', 'left', 'right'] : [t.facing];
 			for (const dir of dirs) {
@@ -187,6 +209,7 @@ export class Trainers {
 			party,
 			info: {
 				displayName,
+				introQuote: roster?.introQuote || null,
 				defeatText: roster?.defeatText || `${displayName} was defeated!`,
 				money: high * 8,
 			},

@@ -4,6 +4,8 @@ import { NPCs } from './npcs.js';
 import { Encounters } from './encounters.js';
 import { Battle } from './battle.js';
 import { Trainers } from './trainers.js';
+import { Dialog } from './dialog.js';
+import { getJSON } from './engine.js';
 import { loadParty, saveParty, healParty, leadMon, addCaught } from './party.js';
 
 const SCALE = 3;
@@ -25,11 +27,19 @@ const npcs = new NPCs(world, player);
 const encounters = new Encounters();
 const battle = new Battle();
 const trainers = new Trainers(world, player);
+const dialog = new Dialog();
+let signTexts = {};
 let party = null;
 player.blocked = (tx, ty) => npcs.npcBlocks(tx, ty) || trainers.occupied(tx, ty);
 
 trainers.onEngage = t => {
 	const { party: foeParty, info } = trainers.buildBattle(t, battle.data);
+	const begin = () => startTrainerBattle(t, foeParty, info);
+	if (info.introQuote) dialog.open(info.introQuote, begin);
+	else begin();
+};
+
+function startTrainerBattle(t, foeParty, info) {
 	battle.startTrainer(party, foeParty, info, result => {
 		if (result === 'victory') {
 			trainers.markDefeated(t);
@@ -43,7 +53,7 @@ trainers.onEngage = t => {
 			hud.textContent = (world.current.map.name || '') + ' — party healed';
 		}
 	});
-};
+}
 let loading = true;
 
 // ---------- input ----------
@@ -66,8 +76,39 @@ addEventListener('keyup', e => {
 		if (i >= 0) heldKeys.splice(i, 1);
 	}
 });
+// Z in front of something: talk-to trainers (incl. gym leaders), signs
+function interact() {
+	if (player.moving || trainers.engaging) return;
+	const [dx, dy] = { down: [0, 1], up: [0, -1], left: [-1, 0], right: [1, 0] }[player.facing];
+	const fx = player.tx + dx, fy = player.ty + dy;
+	const t = trainers.trainerAt(fx, fy);
+	if (t) {
+		if (trainers.isDefeated(t)) {
+			const { info } = trainers.buildBattle(t, battle.data);
+			dialog.open(info.defeatText);
+		} else {
+			trainers.talkTo(t, player.facing);
+		}
+		return;
+	}
+	for (const ev of world.current.map.bg_events || []) {
+		if (+ev.x === fx && +ev.y === fy && signTexts[ev.script]) {
+			dialog.open(signTexts[ev.script]);
+			return;
+		}
+	}
+	// face-to-face NPC: have them turn toward the player
+	const npc = npcs.list.find(n => n.tx === fx && n.ty === fy);
+	if (npc) npc.facing = { up: 'down', down: 'up', left: 'right', right: 'left' }[player.facing];
+}
+
 const partyMenu = { open: false, idx: 0 };
 addEventListener('keydown', e => {
+	if (dialog.blocking) {
+		e.preventDefault();
+		dialog.key(e.key);
+		return;
+	}
 	if (battle.blocking) {
 		e.preventDefault();
 		battle.key(e.key);
@@ -87,7 +128,8 @@ addEventListener('keydown', e => {
 		if (e.key === 'x' || e.key === 'p' || e.key === 'Escape') partyMenu.open = false;
 		return;
 	}
-	if (e.key === 'p' && !loading) { partyMenu.open = true; partyMenu.idx = 0; }
+	if (e.key === 'p' && !loading) { partyMenu.open = true; partyMenu.idx = 0; return; }
+	if ((e.key === 'z' || e.key === 'Enter') && !loading) interact();
 });
 
 // ---------- map transitions ----------
@@ -105,6 +147,7 @@ async function warpTo(mapId, destWarpId) {
 	world.lastWarpSource = source;
 	await npcs.loadForMap();
 	await trainers.loadForMap();
+	npcs.list = npcs.list.filter(n => !trainers.list.some(t => t.ev === n.ev));
 	hud.textContent = world.current.map.name || file;
 	loading = false;
 }
@@ -117,6 +160,7 @@ async function backWarp() {
 	player.setTile(src.tx, src.ty);
 	await npcs.loadForMap();
 	await trainers.loadForMap();
+	npcs.list = npcs.list.filter(n => !trainers.list.some(t => t.ev === n.ev));
 	hud.textContent = world.current.map.name || src.name;
 	loading = false;
 }
@@ -129,6 +173,7 @@ async function crossConnection(hit) {
 	player.setTile(lx, ly);
 	await npcs.loadForMap();
 	await trainers.loadForMap();
+	npcs.list = npcs.list.filter(n => !trainers.list.some(t => t.ev === n.ev));
 	hud.textContent = world.current.map.name || conn.name;
 	loading = false;
 }
@@ -190,7 +235,7 @@ function tick(now) {
 	if (loading || !world.current) return;
 
 	battle.update(dt);
-	if (!battle.blocking) {
+	if (!battle.blocking && !dialog.blocking) {
 		trainers.update(dt);
 		if (!trainers.engaging) player.update(dt, heldKeys[0] || null);
 		npcs.update(dt);
@@ -204,6 +249,7 @@ function tick(now) {
 	for (const s of sprites) s.draw(ctx, camX, camY);
 	world.drawLayer(ctx, 'top', camX, camY);
 	battle.draw(ctx);
+	if (!battle.blocking) dialog.draw(ctx);
 	if (partyMenu.open && !battle.blocking) drawPartyMenu();
 
 	sctx.drawImage(frame, 0, 0, VIEW_W * SCALE, VIEW_H * SCALE);
@@ -239,6 +285,7 @@ function drawPartyMenu() {
 	await encounters.init();
 	await battle.init();
 	await trainers.init();
+	signTexts = await getJSON('data/sign_texts.json').catch(() => ({}));
 	party = loadParty(battle.data);
 	const params = new URLSearchParams(location.search);
 	const startMap = params.get('map') || 'PalletTown';
@@ -248,9 +295,10 @@ function drawPartyMenu() {
 	player.setTile(sx, sy);
 	await npcs.loadForMap();
 	await trainers.loadForMap();
+	npcs.list = npcs.list.filter(n => !trainers.list.some(t => t.ev === n.ev));
 	hud.textContent = world.current.map.name || startMap;
 	loading = false;
 	// headless test hook
-	window.__ow = { world, player, warpTo, npcs, encounters, battle, trainers, get party() { return party; }, startWildBattle };
+	window.__ow = { world, player, warpTo, npcs, encounters, battle, trainers, dialog, get party() { return party; }, startWildBattle, interact };
 	requestAnimationFrame(tick);
 })();

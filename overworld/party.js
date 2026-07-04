@@ -51,6 +51,7 @@ export function saveParty(party) {
 export function healParty(party) {
 	for (const m of party) {
 		m.curHP = m.maxHP;
+		m.status = null;
 		for (const mv of m.moves) mv.pp = mv.maxPp;
 	}
 	saveParty(party);
