@@ -1266,7 +1266,8 @@ async function start() {
 	// use the saved deck when it's complete and valid; otherwise the demo deck
 	const collection = Col.getCollection(data.cards);
 	const saved = Col.loadDeck();
-	const deckOk = saved.length === Col.DECK_SIZE && !Col.validateDeck(saved, cardsById, collection);
+	const deckOk = saved.length === Col.DECK_SIZE
+		&& !Col.validateDeck(saved, cardsById, collection, picks[HUMAN]?.id);
 	state = E.createGame(cardsById, Math.random, deckOk ? saved : null, playerCount, picks);
 	state.classPicks = picks;
 	buildPanels();

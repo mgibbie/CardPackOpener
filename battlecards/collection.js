@@ -108,12 +108,20 @@ export function saveDeck(ids) {
 	localStorage.setItem(DECK_KEY, JSON.stringify(ids));
 }
 
-export function validateDeck(ids, cardsById, collection) {
+// does a card fit a class identity? (neutrals always; duals count for both)
+export function fitsClass(def, classId) {
+	if (!classId) return true;
+	const cc = def.cardClass || 'neutral';
+	return cc === 'neutral' || cc === classId || cc.split('__').includes(classId);
+}
+
+export function validateDeck(ids, cardsById, collection, classId) {
 	if (ids.length !== DECK_SIZE) return `Deck needs ${DECK_SIZE} cards (has ${ids.length}).`;
 	const counts = {};
 	for (const id of ids) {
 		if (!cardsById[id]) return `Unknown card: ${id}`;
 		if (!collectible(cardsById[id])) return `${cardsById[id].name} can't go in decks.`;
+		if (!fitsClass(cardsById[id], classId)) return `${cardsById[id].name} isn't playable by your class.`;
 		counts[id] = (counts[id] || 0) + 1;
 		const limit = cardsById[id].rarity === 'legendary' ? MAX_LEGENDARY_COPIES : MAX_COPIES;
 		if (counts[id] > limit) return `Too many copies of ${cardsById[id].name} (max ${limit}).`;

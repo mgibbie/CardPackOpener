@@ -75,6 +75,9 @@ function instantiate(def, controller) {
 		quest: def.quest || null,   // quest: { goal: { type, count }, reward }
 		ongoing: def.ongoing || null, // permanent trigger: { on, effects }
 		static: def.static || null,   // permanent passive (e.g. reduce-hero-damage)
+		aura: def.aura || null,       // { attack, health, tribe?, others? } for friendly creatures
+		auraAttack: 0,                // currently applied aura bonuses (recomputed)
+		auraHealth: 0,
 		loyalty: def.loyalty || 0,    // planeswalker loyalty counter
 		abilities: def.abilities || null, // planeswalker: [{ cost, text, effects }]
 		overload: def.overload || 0,  // mana locked next turn when played
@@ -479,11 +482,13 @@ function silenceCreature(state, c) {
 	c.effects = null;
 	c.ongoing = null;
 	c.static = null;
+	c.aura = null;
 	c.shield = false;
 	c.stealthed = false;
 	c.frozen = null;
 	c.marked = false;
 	emit(state, { type: 'silenced', uid: c.uid });
+	recomputeAuras(state);
 }
 
 function sweepDeaths(state) {
@@ -520,6 +525,7 @@ function sweepDeaths(state) {
 	}
 	// deathrattles can kill more
 	if (state.players.some(p => p.board.some(isDead))) sweepDeaths(state);
+	recomputeAuras(state);
 	checkGameOver(state);
 }
 
@@ -566,7 +572,36 @@ function summon(state, pi, tokenDef) {
 	emit(state, { type: 'summon', player: pi, card: c });
 	questTick(state, 'summon', pi);
 	fireOngoing(state, pi, 'summoned', { minion: c });
+	recomputeAuras(state);
 	return c;
+}
+
+// ---------- static auras ----------
+// "Your (other) <tribe> have +X/+Y" — bonuses are recomputed whenever the
+// board changes and applied as deltas so base stats and buffs are untouched.
+// Losing an aura clamps damage so it can never kill the creature.
+function recomputeAuras(state) {
+	for (const p of state.players) {
+		const sources = [...p.board, ...p.enchantments].filter(c => c.aura && !(c.zone === 'board' && isDead(c)));
+		for (const c of p.board) {
+			let aBonus = 0, hBonus = 0;
+			for (const src of sources) {
+				const a = src.aura;
+				if (a.others && src === c) continue;
+				if (a.tribe && !a.tribe.split('|').some(t => (c.tribe || '').includes(t))) continue;
+				aBonus += a.attack || 0;
+				hBonus += a.health || 0;
+			}
+			const dA = aBonus - c.auraAttack, dH = hBonus - c.auraHealth;
+			if (!dA && !dH) continue;
+			c.attack = Math.max(0, c.attack + dA);
+			c.maxHealth += dH;
+			c.auraAttack = aBonus;
+			c.auraHealth = hBonus;
+			if (dH < 0 && c.damage >= c.maxHealth) c.damage = Math.max(0, c.maxHealth - 1);
+			emit(state, { type: 'buff', uid: c.uid, attack: c.attack, hp: hp(c) });
+		}
+	}
 }
 
 // ---------- ongoing permanents (enchantments, artifacts, emblems, creatures) ----------
@@ -1599,6 +1634,7 @@ export function heroAttack(state, pi, target) {
 		}
 	}
 	if (w) degradeWeapon(state, pi);
+	fireOngoing(state, pi, 'hero-attacked', {}); // Battlefiend-style creatures
 	sweepDeaths(state);
 	return true;
 }

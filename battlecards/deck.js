@@ -79,11 +79,15 @@ function flash(msg) {
 	flash._t = setTimeout(() => { if (status.textContent === msg) status.textContent = ''; }, 2500);
 }
 
+function myClass() {
+	return localStorage.getItem('magepunk_class_v1') || '';
+}
+
 function render() {
-	// collection grid
+	// collection grid: owned cards that fit your class (neutral + class + duals)
 	grid.innerHTML = '';
 	const rarityOrder = { legendary: 0, epic: 1, rare: 2, uncommon: 3, common: 4 };
-	const owned = cards.filter(d => (collection[d.id] || 0) > 0)
+	const owned = cards.filter(d => (collection[d.id] || 0) > 0 && Col.fitsClass(d, myClass()))
 		.sort((a, b) => (rarityOrder[a.rarity ?? 'common'] - rarityOrder[b.rarity ?? 'common'])
 			|| (a.cost || 0) - (b.cost || 0) || a.name.localeCompare(b.name));
 	for (const def of owned) {
@@ -118,7 +122,7 @@ function render() {
 }
 
 document.getElementById('save').onclick = () => {
-	const err = Col.validateDeck(deck, cardsById, collection);
+	const err = Col.validateDeck(deck, cardsById, collection, myClass());
 	if (err) { flash(err); return; }
 	Col.saveDeck(deck);
 	flash('Deck saved! It will be used in your next match.');
@@ -128,11 +132,29 @@ document.getElementById('save').onclick = () => {
 deckCount.ondblclick = () => {
 	for (const def of cards) {
 		if (deck.length >= Col.DECK_SIZE) break;
+		if (!Col.fitsClass(def, myClass())) continue;
 		const can = Math.min(collection[def.id] || 0, limitOf(def.id)) - inDeck(def.id);
 		for (let i = 0; i < can && deck.length < Col.DECK_SIZE; i++) deck.push(def.id);
 	}
 	render();
 };
+
+// class picker: same choice the game uses; off-class cards leave the grid
+fetch('classes.json').then(r => r.json()).then(({ classes }) => {
+	const sel = document.getElementById('class-select');
+	sel.innerHTML = '<option value="">No class (all cards)</option>';
+	for (const c of classes) {
+		const opt = document.createElement('option');
+		opt.value = c.id;
+		opt.textContent = c.name;
+		sel.appendChild(opt);
+	}
+	sel.value = myClass();
+	sel.addEventListener('change', ev => {
+		localStorage.setItem('magepunk_class_v1', ev.target.value);
+		render();
+	});
+}).catch(() => {});
 
 // ---------- boot ----------
 fetch('cards.json').then(r => r.json()).then(data => {

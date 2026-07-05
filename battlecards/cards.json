@@ -12959,6 +12959,120 @@
           }
         ]
       }
+    },
+    {
+      "id": "timber_wolf",
+      "name": "Timber Wolf",
+      "cardClass": "hunter",
+      "cost": 1,
+      "rarity": "common",
+      "type": "creature",
+      "attack": 1,
+      "health": 1,
+      "aura": {
+        "attack": 1,
+        "health": 0,
+        "others": true,
+        "tribe": "Beast"
+      },
+      "description": "Your other Beasts have +1 Attack."
+    },
+    {
+      "id": "raid_leader",
+      "name": "Raid Leader",
+      "cardClass": "neutral",
+      "cost": 3,
+      "rarity": "common",
+      "type": "creature",
+      "attack": 2,
+      "health": 2,
+      "aura": {
+        "attack": 1,
+        "health": 0,
+        "others": true
+      },
+      "description": "Your other creatures have +1 Attack."
+    },
+    {
+      "id": "southsea_captain",
+      "name": "Southsea Captain",
+      "cardClass": "neutral",
+      "cost": 3,
+      "rarity": "epic",
+      "type": "creature",
+      "attack": 3,
+      "health": 3,
+      "aura": {
+        "attack": 1,
+        "health": 1,
+        "others": true,
+        "tribe": "Pirate"
+      },
+      "description": "Your other Pirates have +1/+1."
+    },
+    {
+      "id": "stormwind_champion",
+      "name": "Stormwind Champion",
+      "cardClass": "neutral",
+      "cost": 7,
+      "rarity": "common",
+      "type": "creature",
+      "attack": 6,
+      "health": 6,
+      "aura": {
+        "attack": 1,
+        "health": 1,
+        "others": true
+      },
+      "description": "Your other creatures have +1/+1."
+    },
+    {
+      "id": "battlefiend",
+      "name": "Battlefiend",
+      "cardClass": "demon_hunter",
+      "cost": 1,
+      "rarity": "common",
+      "set": "paper",
+      "description": "After your hero attacks, gain +1 Attack.",
+      "type": "creature",
+      "attack": 1,
+      "health": 2,
+      "tribe": "Mech Demon",
+      "ongoing": {
+        "on": "hero-attacked",
+        "effects": [
+          {
+            "type": "buff-self",
+            "attack": 1,
+            "health": 0
+          }
+        ]
+      }
+    },
+    {
+      "id": "battleworn_vanguard",
+      "name": "Battleworn Vanguard",
+      "cardClass": "demon_hunter",
+      "cost": 2,
+      "rarity": "common",
+      "set": "paper",
+      "description": "After your hero attacks, Create two 1/1 Demon creature tokens.",
+      "type": "creature",
+      "attack": 2,
+      "health": 2,
+      "tribe": "Void Elf Paladin",
+      "ongoing": {
+        "on": "hero-attacked",
+        "effects": [
+          {
+            "type": "summon",
+            "count": 2,
+            "attack": 1,
+            "health": 1,
+            "name": "Demon creature"
+          }
+        ]
+      }
     }
   ]
 }
