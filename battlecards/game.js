@@ -6,7 +6,24 @@ import * as AI from './ai.js';
 import * as Col from './collection.js';
 import { CARD_W, CARD_H, CARD_D, makeFaceTexture, makeBackTexture } from './cardart.js';
 
-const HUMAN = 0, ENEMY = 1;
+const HUMAN = 0;
+const TAU = Math.PI * 2;
+const UP = new THREE.Vector3(0, 1, 0);
+
+// player count comes from ?players=N (2-8); the in-game selector rewrites it
+let playerCount = Math.max(2, Math.min(E.MAX_PLAYERS,
+	parseInt(new URLSearchParams(location.search).get('players'), 10) || 2));
+
+const nameOf = pi => pi === HUMAN ? 'You' : `AI ${pi}`;
+// each player's board is a pizza slice: rotate their zone layout around the
+// table center; the human slice always faces the camera (angle 0 = bottom)
+const angleOf = pi => (pi / playerCount) * TAU;
+// radial push so 3+ slices don't overlap at the center
+const sliceOff = () => playerCount <= 2 ? 0 : (playerCount - 2) * 0.9;
+const toWorld = (x, y, z, pi) => new THREE.Vector3(x, y, z).applyAxisAngle(UP, angleOf(pi));
+const sliceQuat = (localEuler, pi) => new THREE.Quaternion()
+	.setFromAxisAngle(UP, angleOf(pi))
+	.multiply(new THREE.Quaternion().setFromEuler(localEuler));
 
 // ---------- scene ----------
 const container = document.getElementById('scene');
@@ -19,9 +36,16 @@ const scene = new THREE.Scene();
 scene.background = new THREE.Color('#0d0a14');
 scene.fog = new THREE.Fog('#0d0a14', 18, 34);
 
-const camera = new THREE.PerspectiveCamera(42, innerWidth / innerHeight, 0.1, 100);
-camera.position.set(0, 13.2, 12.2);
-camera.lookAt(0, 0, -0.8);
+const camera = new THREE.PerspectiveCamera(42, innerWidth / innerHeight, 0.1, 160);
+function frameCamera() {
+	const off = sliceOff();
+	camera.position.set(0, 13.2 + off * 1.6, 12.2 + off * 1.25);
+	camera.lookAt(0, 0, -0.8);
+	// keep the far slices out of the fog on big tables
+	scene.fog.near = 18 + off * 2.2;
+	scene.fog.far = 34 + off * 3.6;
+}
+frameCamera();
 
 scene.add(new THREE.AmbientLight(0xffffff, 0.75));
 const key = new THREE.DirectionalLight(0xfff2e0, 1.5);
@@ -31,29 +55,47 @@ const rim = new THREE.PointLight(0x8f6fff, 30, 40);
 rim.position.set(-7, 4, -3);
 scene.add(rim);
 
-// table
-{
+// round table cut into player slices; rebuilt whenever the player count changes
+let tableMesh = null;
+function buildTable() {
+	if (tableMesh) {
+		scene.remove(tableMesh);
+		tableMesh.material.map?.dispose();
+		tableMesh.geometry.dispose();
+	}
+	const S = 1024;
 	const tableCanvas = document.createElement('canvas');
-	tableCanvas.width = tableCanvas.height = 512;
+	tableCanvas.width = tableCanvas.height = S;
 	const tc = tableCanvas.getContext('2d');
-	const g = tc.createRadialGradient(256, 256, 60, 256, 256, 360);
+	const g = tc.createRadialGradient(S / 2, S / 2, S * 0.1, S / 2, S / 2, S * 0.5);
 	g.addColorStop(0, '#2a2038');
 	g.addColorStop(1, '#171021');
 	tc.fillStyle = g;
-	tc.fillRect(0, 0, 512, 512);
-	tc.strokeStyle = 'rgba(143,111,255,0.25)';
-	tc.lineWidth = 3;
-	tc.strokeRect(20, 20, 472, 472);
-	tc.beginPath(); tc.moveTo(20, 256); tc.lineTo(492, 256); tc.stroke();
+	tc.beginPath(); tc.arc(S / 2, S / 2, S / 2 - 4, 0, TAU); tc.fill();
+	tc.strokeStyle = 'rgba(143,111,255,0.3)';
+	tc.lineWidth = 5;
+	tc.beginPath(); tc.arc(S / 2, S / 2, S / 2 - 10, 0, TAU); tc.stroke();
+	// slice dividers, halfway between adjacent players
+	tc.strokeStyle = 'rgba(143,111,255,0.18)';
+	tc.lineWidth = 4;
+	for (let i = 0; i < playerCount; i++) {
+		// canvas +y is world +z; player 0 sits at the bottom (world +z)
+		const a = angleOf(i) + TAU / (playerCount * 2) + Math.PI / 2;
+		tc.beginPath();
+		tc.moveTo(S / 2, S / 2);
+		tc.lineTo(S / 2 + Math.cos(a) * (S / 2 - 10), S / 2 + Math.sin(a) * (S / 2 - 10));
+		tc.stroke();
+	}
 	const tex = new THREE.CanvasTexture(tableCanvas);
 	tex.colorSpace = THREE.SRGBColorSpace;
-	const table = new THREE.Mesh(
-		new THREE.PlaneGeometry(26, 15),
+	const radius = 9.5 + sliceOff() * 1.35;
+	tableMesh = new THREE.Mesh(
+		new THREE.CircleGeometry(radius, 64),
 		new THREE.MeshStandardMaterial({ map: tex, roughness: 0.9 })
 	);
-	table.rotation.x = -Math.PI / 2;
-	table.position.y = -0.06;
-	scene.add(table);
+	tableMesh.rotation.x = -Math.PI / 2;
+	tableMesh.position.y = -0.06;
+	scene.add(tableMesh);
 }
 
 const backTex = makeBackTexture();
@@ -92,7 +134,7 @@ function entityFor(card) {
 		mesh.userData.uid = card.uid;
 		mesh.position.set(card.controller === HUMAN ? 9 : -9, 0.3, card.controller === HUMAN ? 6.5 : -6.5);
 		scene.add(mesh);
-		ent = { card, mesh, faceMat, target: { pos: new THREE.Vector3(), rot: new THREE.Euler(), scale: 1 }, ring: makeRing('#57e389') };
+		ent = { card, mesh, faceMat, target: { pos: new THREE.Vector3(), quat: new THREE.Quaternion(), scale: 1 }, ring: makeRing('#57e389') };
 		entities.set(card.uid, ent);
 	}
 	ent.card = card;
@@ -120,36 +162,40 @@ const FLAT = new THREE.Euler(-Math.PI / 2, 0, 0); // face up on the table
 
 function layoutTargets() {
 	if (!state) return;
+	const off = sliceOff();
 	const seen = new Set();
-	for (const pi of [HUMAN, ENEMY]) {
+	for (let pi = 0; pi < state.players.length; pi++) {
 		const p = state.players[pi];
 		// hand
 		const n = p.hand.length;
 		p.hand.forEach((card, i) => {
 			const ent = entityFor(card);
 			seen.add(card.uid);
-			const spread = Math.min(1.55, 10.5 / Math.max(n, 1));
-			const x = (i - (n - 1) / 2) * spread;
 			if (pi === HUMAN) {
+				const spread = Math.min(1.55, 10.5 / Math.max(n, 1));
+				const x = (i - (n - 1) / 2) * spread;
 				const hovered = hoverUid === card.uid || (pending?.card.uid === card.uid);
-				ent.target.pos.set(x, 1.7 + (hovered ? 0.9 : 0) + i * 0.012, 6.9 - Math.abs(x) * 0.04 - (hovered ? 0.55 : 0));
-				ent.target.rot = new THREE.Euler(-0.5, 0, -(i - (n - 1) / 2) * 0.03);
+				ent.target.pos.set(x, 1.7 + (hovered ? 0.9 : 0) + i * 0.012, off + 6.9 - Math.abs(x) * 0.04 - (hovered ? 0.55 : 0));
+				ent.target.quat = sliceQuat(new THREE.Euler(-0.5, 0, -(i - (n - 1) / 2) * 0.03), HUMAN);
 				ent.target.scale = hovered ? 1.0 : 0.68;
 			} else {
-				ent.target.pos.set(-x, 1.1 + i * 0.012, -7.1);
-				ent.target.rot = new THREE.Euler(0.95 + Math.PI, 0, 0); // back to camera
+				const spread = Math.min(1.0, 6.5 / Math.max(n, 1));
+				const x = (i - (n - 1) / 2) * spread;
+				ent.target.pos = toWorld(x, 1.1 + i * 0.012, off + 7.1, pi);
+				ent.target.quat = sliceQuat(new THREE.Euler(0.95 + Math.PI, 0, 0), pi); // back to the table
 				ent.target.scale = 0.58;
 			}
 		});
-		// board
+		// creature row (unlimited: compress spacing inside the slice arc)
 		const bn = p.board.length;
+		const rowWidth = playerCount <= 2 ? 10.5 : TAU * (off + 2.0) / playerCount * 0.9;
 		p.board.forEach((card, i) => {
 			const ent = entityFor(card);
 			seen.add(card.uid);
-			const x = (i - (bn - 1) / 2) * 2.35;
-			const z = pi === HUMAN ? 2.0 : -2.0;
-			ent.target.pos.set(x, 0.06, z);
-			ent.target.rot = FLAT.clone();
+			const spread = Math.min(2.35, rowWidth / Math.max(bn, 1));
+			const x = (i - (bn - 1) / 2) * spread;
+			ent.target.pos = toWorld(x, 0.06 + i * 0.002, off + 2.0, pi);
+			ent.target.quat = sliceQuat(FLAT, pi);
 			ent.target.scale = 0.8;
 		});
 	}
@@ -186,7 +232,7 @@ function creaturePos(uid) {
 	return ent ? ent.mesh.position.clone() : new THREE.Vector3(0, 1, 0);
 }
 function heroPos(pi) {
-	return new THREE.Vector3(0, 1.4, pi === HUMAN ? 4.8 : -4.8);
+	return toWorld(0, 1.4, sliceOff() + 4.8, pi);
 }
 
 // ---------- HUD ----------
@@ -199,34 +245,80 @@ function log(msg) {
 	while (logEl.children.length > 7) logEl.removeChild(logEl.firstChild);
 }
 
+// one small projected panel per opponent, rebuilt on new game
+const foePanelEls = new Map(); // pi -> element
+function panelEl(pi) { return pi === HUMAN ? $('my-panel') : foePanelEls.get(pi); }
+
+function buildPanels() {
+	const cont = $('foe-panels');
+	cont.innerHTML = '';
+	foePanelEls.clear();
+	if (!state) return;
+	for (let pi = 1; pi < state.players.length; pi++) {
+		const el = document.createElement('div');
+		el.className = 'panel foe-sm';
+		el.innerHTML = `<div class="life"></div><div class="sub"><b>${nameOf(pi)}</b> · Mana <span class="mana"></span><br>Hand <span class="hand"></span> · Deck <span class="deck"></span></div><div class="gear"></div>`;
+		el.addEventListener('pointerdown', () => panelClick(pi));
+		cont.appendChild(el);
+		foePanelEls.set(pi, el);
+	}
+}
+
 function updateHud() {
 	if (!state) return;
-	const me = state.players[HUMAN], foe = state.players[ENEMY];
+	const me = state.players[HUMAN];
 	$('my-life').textContent = me.life + (me.armor ? `+${me.armor}` : '');
-	$('foe-life').textContent = foe.life + (foe.armor ? `+${foe.armor}` : '');
+	$('my-mana').textContent = `${E.availableMana(me)}/${me.mana.max}`;
+	$('my-deck').textContent = me.deck.length;
 	const myGear = [];
 	if (me.weapon) myGear.push(`⚔ ${me.weapon.name} ${me.weapon.attack}/${me.weapon.durability}`);
 	if (me.secrets.length) myGear.push('❓ ' + me.secrets.map(s => s.name).join(', '));
 	$('my-gear').innerHTML = myGear.join('<br>');
-	const foeGear = [];
-	if (foe.weapon) foeGear.push(`⚔ ${foe.weapon.name} ${foe.weapon.attack}/${foe.weapon.durability}`);
-	if (foe.secrets.length) foeGear.push(`❓ ${foe.secrets.length} Secret${foe.secrets.length > 1 ? 's' : ''}`);
-	$('foe-gear').innerHTML = foeGear.join('<br>');
 	$('my-panel').classList.toggle('armed',
 		state.current === HUMAN && !state.over && !pending && E.canHeroAttack(state, HUMAN));
-	$('my-mana').textContent = `${E.availableMana(me)}/${me.mana.max}`;
-	$('foe-mana').textContent = `${E.availableMana(foe)}/${foe.mana.max}`;
-	$('my-deck').textContent = me.deck.length;
-	$('foe-deck').textContent = foe.deck.length;
-	$('foe-hand').textContent = foe.hand.length;
+	$('my-panel').classList.toggle('dead', me.eliminated);
+	for (const [pi, el] of foePanelEls) {
+		const p = state.players[pi];
+		el.querySelector('.life').textContent = p.life + (p.armor ? `+${p.armor}` : '');
+		el.querySelector('.mana').textContent = `${E.availableMana(p)}/${p.mana.max}`;
+		el.querySelector('.hand').textContent = p.hand.length;
+		el.querySelector('.deck').textContent = p.deck.length;
+		const gear = [];
+		if (p.weapon) gear.push(`⚔ ${p.weapon.attack}/${p.weapon.durability}`);
+		if (p.secrets.length) gear.push(`❓ ${p.secrets.length}`);
+		el.querySelector('.gear').innerHTML = gear.join(' · ');
+		el.classList.toggle('dead', p.eliminated);
+		el.classList.toggle('turn', state.current === pi && !state.over);
+	}
 	$('coin-btn').style.display = (me.coins > 0 && state.current === HUMAN) ? '' : 'none';
 	const myTurn = state.current === HUMAN && !state.over;
 	$('end-turn').disabled = !myTurn;
-	$('end-turn').textContent = myTurn ? 'End Turn' : 'Enemy Turn…';
+	$('end-turn').textContent = myTurn ? 'End Turn' : `${nameOf(state.current)}'s Turn…`;
 	$('hint').textContent = pending
 		? `Choose ${pending.spec.why} for ${pending.card.name} (right-click to cancel)`
 		: (selectedAttacker === 'HERO' ? 'Choose a target for your hero attack (right-click to cancel)'
 			: selectedAttacker ? 'Choose an attack target (right-click to cancel)' : '');
+}
+
+// projected screen positions + hero-target highlighting, refreshed per frame
+function positionPanels() {
+	if (!state) return;
+	for (const [pi, el] of foePanelEls) {
+		const v = heroPos(pi).project(camera);
+		el.style.left = `${(v.x + 1) / 2 * innerWidth}px`;
+		el.style.top = `${(1 - v.y) / 2 * innerHeight}px`;
+	}
+	const heroTargets = new Set();
+	if (pending) {
+		for (const t of pending.targets) if (t.type === 'hero') heroTargets.add(t.player);
+	} else if (selectedAttacker === 'HERO') {
+		for (const t of E.heroAttackTargets(state, HUMAN)) if (t.type === 'hero') heroTargets.add(t.player);
+	} else if (selectedAttacker) {
+		const a = cardOf(selectedAttacker);
+		if (a) for (const t of E.attackTargets(state, HUMAN, a)) if (t.type === 'hero') heroTargets.add(t.player);
+	}
+	$('my-panel').classList.toggle('targetable', heroTargets.has(HUMAN));
+	for (const [pi, el] of foePanelEls) el.classList.toggle('targetable', heroTargets.has(pi));
 }
 
 function banner(text, ms = 1400) {
@@ -254,19 +346,19 @@ function nextEvent() {
 	let delay = 120;
 	switch (ev.type) {
 		case 'turnStart':
-			banner(ev.player === HUMAN ? 'Your Turn' : 'Enemy Turn');
-			log(`— Turn ${ev.turnNumber}: ${ev.player === HUMAN ? 'you' : 'enemy'} —`);
+			banner(ev.player === HUMAN ? 'Your Turn' : `${nameOf(ev.player)}'s Turn`);
+			log(`— Turn ${ev.turnNumber}: ${nameOf(ev.player)} —`);
 			delay = 500;
 			break;
 		case 'draw':
 			delay = ev.player === HUMAN ? 180 : 90;
 			break;
 		case 'play':
-			log(`${ev.player === HUMAN ? 'You' : 'Enemy'} played ${ev.card.name}`);
+			log(`${nameOf(ev.player)} played ${ev.card.name}`);
 			delay = 420;
 			break;
 		case 'summon':
-			log(`${ev.player === HUMAN ? 'You' : 'Enemy'} summoned ${ev.card.name}`);
+			log(`${nameOf(ev.player)} summoned ${ev.card.name}`);
 			delay = 260;
 			break;
 		case 'attack': {
@@ -285,9 +377,11 @@ function nextEvent() {
 				const ent = entities.get(ev.uid);
 				if (ent) refreshFace(ent);
 			} else {
-				const panel = $(ev.player === HUMAN ? 'my-panel' : 'foe-panel');
-				panel.classList.add('hit');
-				setTimeout(() => panel.classList.remove('hit'), 350);
+				const panel = panelEl(ev.player);
+				if (panel) {
+					panel.classList.add('hit');
+					setTimeout(() => panel.classList.remove('hit'), 350);
+				}
 			}
 			delay = 330;
 			break;
@@ -329,42 +423,49 @@ function nextEvent() {
 			break;
 		}
 		case 'heroAttack': {
-			log(`${ev.player === HUMAN ? 'Your' : 'Enemy'} hero attacks`);
-			const panel = $(ev.player === HUMAN ? 'my-panel' : 'foe-panel');
-			panel.classList.add('hit');
-			setTimeout(() => panel.classList.remove('hit'), 250);
+			log(ev.player === HUMAN ? 'Your hero attacks' : `${nameOf(ev.player)}'s hero attacks`);
+			const panel = panelEl(ev.player);
+			if (panel) {
+				panel.classList.add('hit');
+				setTimeout(() => panel.classList.remove('hit'), 250);
+			}
 			delay = 420;
 			break;
 		}
 		case 'weaponEquip':
-			log(`${ev.player === HUMAN ? 'You' : 'Enemy'} equipped ${ev.card.name} (${ev.card.attack}/${ev.card.durability})`);
+			log(`${nameOf(ev.player)} equipped ${ev.card.name} (${ev.card.attack}/${ev.card.durability})`);
 			delay = 320;
 			break;
 		case 'weaponDurability': delay = 60; break;
 		case 'weaponBreak':
-			log(`${ev.player === HUMAN ? 'Your' : 'Enemy'} ${ev.name} ${ev.destroyed ? 'was destroyed' : 'broke'}`);
+			log(`${ev.player === HUMAN ? 'Your' : `${nameOf(ev.player)}'s`} ${ev.name} ${ev.destroyed ? 'was destroyed' : 'broke'}`);
 			floatText('⚔', '#9b93b3', heroPos(ev.player));
 			delay = 300;
 			break;
 		case 'secretPlayed':
-			log(ev.player === HUMAN ? `You set a Secret: ${ev.card.name}` : 'Enemy set a Secret');
+			log(ev.player === HUMAN ? `You set a Secret: ${ev.card.name}` : `${nameOf(ev.player)} set a Secret`);
 			floatText('❓', '#c9b8ff', heroPos(ev.player));
 			delay = 350;
 			break;
 		case 'secretRevealed':
 			banner(`Secret: ${ev.card.name}!`, 1600);
-			log(`${ev.player === HUMAN ? 'Your' : 'Enemy'} Secret revealed: ${ev.card.name}`);
+			log(`${ev.player === HUMAN ? 'Your' : `${nameOf(ev.player)}'s`} Secret revealed: ${ev.card.name}`);
 			delay = 900;
 			break;
 		case 'countered': log(`${ev.name} was countered!`); delay = 400; break;
 		case 'armor': floatText(`+${ev.amount}`, '#c9c2da', heroPos(ev.player)); delay = 260; break;
 		case 'bounce': log(`${ev.name} was returned to hand`); delay = 300; break;
-		case 'coin': log('Enemy spent a coin (+1 mana)'); delay = 250; break;
-		case 'reshuffle': log(`${ev.player === HUMAN ? 'Your' : 'Enemy'} graveyard was shuffled back in`); break;
-		case 'discard': log(`${ev.player === HUMAN ? 'You' : 'Enemy'} discarded ${ev.card.name}`); break;
+		case 'coin': log(`${nameOf(ev.player)} spent a coin (+1 mana)`); delay = 250; break;
+		case 'reshuffle': log(`${ev.player === HUMAN ? 'Your' : `${nameOf(ev.player)}'s`} graveyard was shuffled back in`); break;
+		case 'discard': log(`${nameOf(ev.player)} discarded ${ev.card.name}`); break;
+		case 'eliminated':
+			banner(`${nameOf(ev.player)} ${ev.player === HUMAN ? 'are' : 'is'} eliminated!`, 1800);
+			log(`${nameOf(ev.player)} eliminated`);
+			delay = 900;
+			break;
 		case 'gameOver': {
 			const won = ev.winner === HUMAN;
-			banner(ev.winner == null ? 'Draw!' : won ? 'VICTORY!' : 'DEFEAT', 0);
+			banner(ev.winner == null ? 'Draw!' : won ? 'VICTORY!' : `DEFEAT — ${nameOf(ev.winner)} wins`, 0);
 			const reward = ev.winner == null ? 50 : won ? 100 : 25;
 			Col.earnGold(reward);
 			log(`+${reward} gold (${Col.getGold()} total)`);
@@ -377,14 +478,14 @@ function nextEvent() {
 	setTimeout(nextEvent, delay);
 }
 
-// ---------- AI driver ----------
+// ---------- AI driver (every non-human seat) ----------
 let aiTimer = null;
 function maybeRunAI() {
-	if (!state || state.over || state.current !== ENEMY || queue.length || queueBusy) return;
+	if (!state || state.over || state.current === HUMAN || queue.length || queueBusy) return;
 	clearTimeout(aiTimer);
 	aiTimer = setTimeout(() => {
-		if (!state || state.over || state.current !== ENEMY) return;
-		const acted = AI.step(state);
+		if (!state || state.over || state.current === HUMAN) return;
+		const acted = AI.step(state, state.current);
 		if (!acted) E.endTurn(state);
 		pump();
 	}, 650);
@@ -409,8 +510,8 @@ function pick(ev) {
 
 function cardOf(uid) {
 	if (!state || uid == null) return null;
-	for (const pi of [0, 1]) {
-		const c = state.players[pi].hand.find(c => c.uid === uid) || state.players[pi].board.find(c => c.uid === uid);
+	for (const p of state.players) {
+		const c = p.hand.find(c => c.uid === uid) || p.board.find(c => c.uid === uid);
 		if (c) return c;
 	}
 	return null;
@@ -443,7 +544,7 @@ renderer.domElement.addEventListener('pointerdown', ev => {
 		return;
 	}
 	if (selectedAttacker === 'HERO') {
-		if (card && card.zone === 'board' && card.controller === ENEMY) {
+		if (card && card.zone === 'board' && card.controller !== HUMAN) {
 			const t = E.heroAttackTargets(state, HUMAN).find(t => t.type === 'creature' && t.uid === card.uid);
 			if (t) { E.heroAttack(state, HUMAN, t); clearModes(); pump(); return; }
 		}
@@ -452,7 +553,7 @@ renderer.domElement.addEventListener('pointerdown', ev => {
 	}
 	if (selectedAttacker) {
 		const attacker = cardOf(selectedAttacker);
-		if (card && card.zone === 'board' && card.controller === ENEMY && attacker) {
+		if (card && card.zone === 'board' && card.controller !== HUMAN && attacker) {
 			const t = E.attackTargets(state, HUMAN, attacker).find(t => t.type === 'creature' && t.uid === card.uid);
 			if (t) { E.attack(state, HUMAN, selectedAttacker, t); clearModes(); pump(); return; }
 		}
@@ -477,37 +578,36 @@ renderer.domElement.addEventListener('pointerdown', ev => {
 });
 
 // hero panels as click targets (attacks + targeted spells at heroes)
-for (const [pi, id] of [[HUMAN, 'my-panel'], [ENEMY, 'foe-panel']]) {
-	$(id).addEventListener('pointerdown', () => {
-		if (!state || state.over || state.current !== HUMAN) return;
-		if (pending) {
-			const t = pending.targets.find(t => t.type === 'hero' && t.player === pi);
-			if (t) { E.playCard(state, HUMAN, pending.card.uid, t); clearModes(); pump(); }
-			return;
+function panelClick(pi) {
+	if (!state || state.over || state.current !== HUMAN) return;
+	if (pending) {
+		const t = pending.targets.find(t => t.type === 'hero' && t.player === pi);
+		if (t) { E.playCard(state, HUMAN, pending.card.uid, t); clearModes(); pump(); }
+		return;
+	}
+	if (selectedAttacker === 'HERO') {
+		if (pi !== HUMAN) {
+			const t = E.heroAttackTargets(state, HUMAN).find(t => t.type === 'hero' && t.player === pi);
+			if (t) { E.heroAttack(state, HUMAN, t); clearModes(); pump(); }
+		} else {
+			clearModes();
 		}
-		if (selectedAttacker === 'HERO') {
-			if (pi === ENEMY) {
-				const t = E.heroAttackTargets(state, HUMAN).find(t => t.type === 'hero');
-				if (t) { E.heroAttack(state, HUMAN, t); clearModes(); pump(); }
-			} else {
-				clearModes();
-			}
-			return;
-		}
-		if (selectedAttacker && pi === ENEMY) {
-			const attacker = cardOf(selectedAttacker);
-			if (!attacker) { clearModes(); return; }
-			const t = E.attackTargets(state, HUMAN, attacker).find(t => t.type === 'hero');
-			if (t) { E.attack(state, HUMAN, selectedAttacker, t); clearModes(); pump(); }
-			return;
-		}
-		// clicking your own panel arms a hero attack when you hold a weapon
-		if (pi === HUMAN && !selectedAttacker && E.canHeroAttack(state, HUMAN)) {
-			selectedAttacker = 'HERO';
-			updateHud();
-		}
-	});
+		return;
+	}
+	if (selectedAttacker && pi !== HUMAN) {
+		const attacker = cardOf(selectedAttacker);
+		if (!attacker) { clearModes(); return; }
+		const t = E.attackTargets(state, HUMAN, attacker).find(t => t.type === 'hero' && t.player === pi);
+		if (t) { E.attack(state, HUMAN, selectedAttacker, t); clearModes(); pump(); }
+		return;
+	}
+	// clicking your own panel arms a hero attack when you hold a weapon
+	if (pi === HUMAN && !selectedAttacker && E.canHeroAttack(state, HUMAN)) {
+		selectedAttacker = 'HERO';
+		updateHud();
+	}
 }
+$('my-panel').addEventListener('pointerdown', () => panelClick(HUMAN));
 
 $('end-turn').addEventListener('click', () => {
 	if (!state || state.over || state.current !== HUMAN) return;
@@ -520,6 +620,13 @@ $('coin-btn').addEventListener('click', () => {
 	if (E.useCoin(state, HUMAN)) pump();
 });
 $('restart').addEventListener('click', () => start());
+$('player-count').addEventListener('change', ev => {
+	playerCount = Math.max(2, Math.min(E.MAX_PLAYERS, parseInt(ev.target.value, 10) || 2));
+	const url = new URL(location.href);
+	url.searchParams.set('players', playerCount);
+	history.replaceState(null, '', url);
+	start();
+});
 
 addEventListener('keydown', ev => { if (ev.key === 'Escape') clearModes(); });
 addEventListener('resize', () => {
@@ -593,8 +700,7 @@ function animate() {
 			}
 		}
 		ent.mesh.position.lerp(ent.target.pos, 1 - Math.pow(0.001, dt));
-		const q = new THREE.Quaternion().setFromEuler(ent.target.rot);
-		ent.mesh.quaternion.slerp(q, 1 - Math.pow(0.001, dt));
+		ent.mesh.quaternion.slerp(ent.target.quat, 1 - Math.pow(0.001, dt));
 		const s = ent.mesh.scale.x + (ent.target.scale - ent.mesh.scale.x) * (1 - Math.pow(0.001, dt));
 		ent.mesh.scale.setScalar(s);
 	}
@@ -606,6 +712,7 @@ function animate() {
 		if (f.life <= 0) { scene.remove(f.sp); f.sp.material.map.dispose(); floaters.splice(i, 1); }
 	}
 	updateRings();
+	positionPanels();
 	renderer.render(scene, camera);
 }
 animate();
@@ -630,7 +737,10 @@ async function start() {
 	queueBusy = false;
 	clearModes();
 	$('restart').style.display = 'none';
+	$('player-count').value = String(playerCount);
 	logEl.innerHTML = '';
+	buildTable();
+	frameCamera();
 	const data = await (await fetch('cards.json')).json();
 	const cardsById = {};
 	for (const d of data.cards) cardsById[d.id] = d;
@@ -638,8 +748,10 @@ async function start() {
 	const collection = Col.getCollection(data.cards);
 	const saved = Col.loadDeck();
 	const deckOk = saved.length === Col.DECK_SIZE && !Col.validateDeck(saved, cardsById, collection);
-	state = E.createGame(cardsById, Math.random, deckOk ? saved : null);
+	state = E.createGame(cardsById, Math.random, deckOk ? saved : null, playerCount);
+	buildPanels();
 	log(deckOk ? 'Using your custom deck.' : 'Using the demo deck — build one in the deck builder!');
+	if (playerCount > 2) log(`Free-for-all: ${playerCount} players, last hero standing wins.`);
 	pump();
 	updateHud();
 }

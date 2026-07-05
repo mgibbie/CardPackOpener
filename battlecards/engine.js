@@ -13,9 +13,14 @@ export const KW = {
 
 export const MAX_BASE_MANA = 12;
 export const MAX_HAND = 15;
-export const MAX_BOARD = 7;
 export const MAX_SECRETS = 5;
+export const MAX_PLAYERS = 8;
 export const STARTING_LIFE = 40;
+// capped zone sizes on the player board (the creature row is unlimited)
+export const MAX_LANDS = 5;
+export const MAX_TRAPS = 3;
+export const MAX_QUESTS = 3;
+export const MAX_HERO_POWERS = 3;
 
 // Cards whose mechanics aren't implemented yet (quests, quickdraw, inspire,
 // weapon enchants) — excluded from generated decks; creatures among them would
@@ -73,8 +78,17 @@ export function hp(card) {
 	return card.maxHealth - card.damage;
 }
 
+// ---------- players ----------
+export function opponentsOf(state, pi) {
+	const out = [];
+	for (let i = 0; i < state.players.length; i++) {
+		if (i !== pi && !state.players[i].eliminated) out.push(i);
+	}
+	return out;
+}
+
 // ---------- game setup ----------
-export function createGame(cardsById, rng = Math.random, playerDeckIds = null) {
+export function createGame(cardsById, rng = Math.random, playerDeckIds = null, playerCount = 2) {
 	const playable = Object.values(cardsById).filter(d => !UNPLAYABLE.has(d.id));
 	const shuffle = ids => {
 		for (let i = ids.length - 1; i > 0; i--) {
@@ -95,7 +109,18 @@ export function createGame(cardsById, rng = Math.random, playerDeckIds = null) {
 		armor: 0,
 		deck: buildDeck(),
 		hand: [],
-		board: [],
+		board: [],          // the Creatures row (no size limit)
+		enchantments: [],   // unlimited rows (empty until those card types land)
+		artifacts: [],
+		planeswalkers: [],
+		lands: [],          // capped zones, see MAX_* above
+		traps: [],
+		quests: [],
+		heroPowers: [],
+		emblems: [],
+		companion: null,
+		command: [],
+		exile: [],
 		graveyard: [],
 		weapon: null,
 		secrets: [],
@@ -103,25 +128,28 @@ export function createGame(cardsById, rng = Math.random, playerDeckIds = null) {
 		mana: { cur: 1, max: 1, bonus: 0 },
 		coins: 0,
 		diedThisTurn: 0,
+		eliminated: false,
 	});
 
-	const p0 = mkPlayer();
-	if (playerDeck) p0.deck = playerDeck;
+	const n = Math.max(2, Math.min(MAX_PLAYERS, playerCount));
 	const state = {
 		cardsById,
 		rng,
-		players: [p0, mkPlayer()],
-		current: 0,     // 0 = human, 1 = AI; human goes first
+		players: Array.from({ length: n }, mkPlayer),
+		current: 0,     // 0 = human; human goes first
 		turnNumber: 1,
 		over: false,
 		winner: null,
 		events: [],
 	};
+	if (playerDeck) state.players[0].deck = playerDeck;
 
-	// starting hands: 1st player 3 cards, 2nd player 4 cards + 1 coin
+	// starting hands: 1st player 3 cards, everyone after 4 cards + 1 coin
 	drawCards(state, 0, 3);
-	drawCards(state, 1, 4);
-	state.players[1].coins = 1;
+	for (let i = 1; i < n; i++) {
+		drawCards(state, i, 4);
+		state.players[i].coins = 1;
+	}
 	emit(state, { type: 'turnStart', player: 0, turnNumber: 1 });
 	drawCards(state, 0, 1); // start-of-turn draw (BattleEngine.startPhase draws on turn 1 too)
 	return state;
@@ -202,11 +230,16 @@ export function targetSpec(state, pi, card) {
 	}
 	// generic: derive from the first effect that needs a chosen target
 	for (const e of card.effects || []) {
-		const kind = CHOSEN[e.type]?.[e.target];
+		let kind = CHOSEN[e.type]?.[e.target];
+		// "the enemy hero" is unambiguous in 1v1 but a choice with 3+ players
+		if (!kind && e.target === 'enemy-hero' && e.type === 'damage' && opponentsOf(state, pi).length > 1) {
+			kind = 'enemy-hero';
+		}
 		if (!kind) continue;
 		let filter = null, why = {
 			any: 'any target', creature: 'a creature',
 			'enemy-creature': 'an enemy creature', 'friendly-creature': 'a friendly creature',
+			'enemy-hero': 'an enemy hero',
 		}[kind];
 		if (e.target === 'undamaged-creature') { filter = c => c.damage === 0; why = 'an undamaged creature'; }
 		if (e.maxAttack != null) { filter = c => c.attack <= e.maxAttack; why = `a creature with ${e.maxAttack} or less Attack`; }
@@ -219,23 +252,29 @@ export function targetSpec(state, pi, card) {
 
 export function legalTargets(state, pi, spec) {
 	const out = [];
-	const opp = 1 - pi;
+	const opps = opponentsOf(state, pi);
 	const pushCreatures = (side) => {
 		for (const c of state.players[side].board) {
 			if (side !== pi && c.stealthed) continue; // stealth: untargetable by opponent
 			if (!spec.filter || spec.filter(c)) out.push({ type: 'creature', uid: c.uid, player: side });
 		}
 	};
-	if (spec.targets === 'any') { pushCreatures(pi); pushCreatures(opp); out.push({ type: 'hero', player: pi }, { type: 'hero', player: opp }); }
-	if (spec.targets === 'creature') { pushCreatures(pi); pushCreatures(opp); }
-	if (spec.targets === 'enemy-creature') { pushCreatures(opp); }
+	if (spec.targets === 'any') {
+		pushCreatures(pi);
+		for (const o of opps) pushCreatures(o);
+		out.push({ type: 'hero', player: pi });
+		for (const o of opps) out.push({ type: 'hero', player: o });
+	}
+	if (spec.targets === 'creature') { pushCreatures(pi); for (const o of opps) pushCreatures(o); }
+	if (spec.targets === 'enemy-creature') { for (const o of opps) pushCreatures(o); }
 	if (spec.targets === 'friendly-creature') { pushCreatures(pi); }
+	if (spec.targets === 'enemy-hero') { for (const o of opps) out.push({ type: 'hero', player: o }); }
 	return out;
 }
 
 function findCreature(state, uid) {
-	for (const pi of [0, 1]) {
-		const c = state.players[pi].board.find(c => c.uid === uid);
+	for (const p of state.players) {
+		const c = p.board.find(c => c.uid === uid);
 		if (c) return c;
 	}
 	return null;
@@ -255,12 +294,13 @@ function damageCreature(state, target, amount, source) {
 	return amount;
 }
 
-function damageHero(state, pi, amount) {
+// `src` is the player index responsible for the damage (for reflect secrets)
+function damageHero(state, pi, amount, src = null) {
 	if (amount <= 0) return 0;
 	const p = state.players[pi];
 	// fatal-damage secrets (Ice Block) fire before the damage lands
 	if (amount - Math.min(p.armor, amount) >= p.life) {
-		const ctx = { fatal: true, prevented: false };
+		const ctx = { fatal: true, prevented: false, src };
 		fireSecrets(state, pi, 'hero-takes-damage', ctx);
 		if (ctx.prevented) return 0;
 	}
@@ -269,7 +309,7 @@ function damageHero(state, pi, amount) {
 	const toLife = amount - absorbed;
 	p.life = Math.max(0, p.life - toLife);
 	emit(state, { type: 'damage', targetType: 'hero', player: pi, amount, life: p.life });
-	if (toLife > 0) fireSecrets(state, pi, 'hero-takes-damage', { fatal: false, amount: toLife });
+	if (toLife > 0) fireSecrets(state, pi, 'hero-takes-damage', { fatal: false, amount: toLife, src });
 	return toLife;
 }
 
@@ -307,7 +347,7 @@ function silenceCreature(state, c) {
 }
 
 function sweepDeaths(state) {
-	for (const pi of [0, 1]) {
+	for (let pi = 0; pi < state.players.length; pi++) {
 		const p = state.players[pi];
 		const dead = p.board.filter(isDead);
 		if (!dead.length) continue;
@@ -321,24 +361,37 @@ function sweepDeaths(state) {
 		}
 	}
 	// deathrattles can kill more
-	if ([0, 1].some(pi => state.players[pi].board.some(isDead))) sweepDeaths(state);
+	if (state.players.some(p => p.board.some(isDead))) sweepDeaths(state);
 	checkGameOver(state);
 }
 
+// fallen players are eliminated (their slice clears); last one standing wins
 function checkGameOver(state) {
 	if (state.over) return;
-	const [a, b] = state.players.map(p => p.life <= 0);
-	if (a || b) {
+	state.players.forEach((p, i) => {
+		if (p.eliminated || p.life > 0) return;
+		p.eliminated = true;
+		for (const c of p.board) emit(state, { type: 'death', uid: c.uid, player: i, name: c.name });
+		p.board = [];
+		p.secrets = [];
+		p.weapon = null;
+		p.hand = [];
+		emit(state, { type: 'eliminated', player: i });
+	});
+	const alive = [];
+	state.players.forEach((p, i) => { if (!p.eliminated) alive.push(i); });
+	if (alive.length <= 1) {
 		state.over = true;
-		state.winner = a && b ? null : (a ? 1 : 0);
+		state.winner = alive.length ? alive[0] : null;
 		emit(state, { type: 'gameOver', winner: state.winner });
 	}
 }
 
 // ---------- summoning ----------
+// the Creatures row has no size cap; only eliminated players can't summon
 function summon(state, pi, tokenDef) {
 	const p = state.players[pi];
-	if (p.board.length >= MAX_BOARD) return null;
+	if (p.eliminated) return null;
 	const c = instantiate(tokenDef, pi);
 	c.zone = 'board';
 	p.board.push(c);
@@ -379,9 +432,16 @@ function secretMatches(sec, ctx) {
 	return true;
 }
 
+// fire the matching secrets of every player except the actor
+function fireSecretsAll(state, actorPi, trigger, ctx) {
+	for (let i = 0; i < state.players.length; i++) {
+		if (i !== actorPi) fireSecrets(state, i, trigger, ctx);
+	}
+}
+
 function fireSecrets(state, pi, trigger, ctx) {
 	const p = state.players[pi];
-	if (state.over || state.current === pi || !p.secrets.length) return;
+	if (state.over || state.current === pi || p.eliminated || !p.secrets.length) return;
 	for (const card of [...p.secrets]) {
 		if (state.over) break;
 		const sec = card.secret;
@@ -403,7 +463,14 @@ function runSecretEffects(state, pi, effects, ctx) {
 			case 'counter': ctx.countered = true; break;
 			case 'prevent': ctx.prevented = true; break;
 			case 'armor': gainArmor(state, pi, e.value); break;
-			case 'reflect-damage': damageHero(state, 1 - pi, ctx.amount || 0); break;
+			case 'reflect-damage': {
+				// hit whoever dealt the damage; fall back to a random enemy
+				const opps = opponentsOf(state, pi);
+				const src = ctx.src != null && ctx.src !== pi && !state.players[ctx.src]?.eliminated ? ctx.src : null;
+				const t = src ?? (opps.length ? opps[Math.floor(state.rng() * opps.length)] : null);
+				if (t != null) damageHero(state, t, ctx.amount || 0, pi);
+				break;
+			}
 			case 'destroy-attacker': {
 				const m = triggering();
 				if (m) { m.damage = m.maxHealth; m.shield = false; emit(state, { type: 'destroy', uid: m.uid }); }
@@ -459,7 +526,8 @@ function runSecretEffects(state, pi, effects, ctx) {
 			}
 			case 'redirect-random': {
 				const pool = [];
-				for (const side of [0, 1]) {
+				for (let side = 0; side < state.players.length; side++) {
+					if (state.players[side].eliminated) continue;
 					for (const c of state.players[side].board) {
 						if (c === ctx.attacker || isDead(c)) continue;
 						if (ctx.target?.type === 'creature' && ctx.target.uid === c.uid) continue;
@@ -523,17 +591,20 @@ function runDeathrattle(state, pi, card) {
 	switch (card.id) {
 		case 'forest_sprite': summon(state, pi, TOKENS.seedling); break;
 		case 'acidspitter': {
-			const opp = 1 - pi;
+			const opps = opponentsOf(state, pi);
+			if (!opps.length) break;
+			const opp = opps[Math.floor(state.rng() * opps.length)];
 			const targets = [...state.players[opp].board.filter(c => !isDead(c)), 'hero'];
 			const pick = targets[Math.floor(state.rng() * targets.length)];
-			if (pick === 'hero') damageHero(state, opp, 1);
+			if (pick === 'hero') damageHero(state, opp, 1, pi);
 			else damageCreature(state, pick, 1, null);
 			break;
 		}
 		case 'running_gunner': {
-			const opp = 1 - pi;
-			for (const c of state.players[opp].board) damageCreature(state, c, 1, null);
-			damageHero(state, opp, 1);
+			for (const opp of opponentsOf(state, pi)) {
+				for (const c of state.players[opp].board) damageCreature(state, c, 1, null);
+				damageHero(state, opp, 1, pi);
+			}
 			break;
 		}
 	}
@@ -543,7 +614,13 @@ function runDeathrattle(state, pi, card) {
 // `target` is the player's chosen target (or null); AoE targets need no choice.
 // `source` is the card whose effect is running (used by gain-weapon-attack).
 function execEffects(state, pi, effects, target, source) {
-	const opp = 1 - pi;
+	const enemies = opponentsOf(state, pi);
+	const pickEnemy = () => enemies.length ? enemies[Math.floor(state.rng() * enemies.length)] : null;
+	// "the enemy hero": the chosen one, the only one, or (untargeted fallback) a random one
+	const enemyHero = () => {
+		if (target?.type === 'hero' && target.player !== pi) return target.player;
+		return enemies.length === 1 ? enemies[0] : pickEnemy();
+	};
 	const chosenCreature = () => target?.type === 'creature' ? findCreature(state, target.uid) : null;
 	const healCreature = (c, v) => {
 		c.damage = Math.max(0, c.damage - v);
@@ -558,31 +635,34 @@ function execEffects(state, pi, effects, target, source) {
 		if (e.type === 'damage') {
 			const v = e.value;
 			switch (e.target) {
-				case 'enemy-hero': damageHero(state, opp, v); break;
-				case 'own-hero': damageHero(state, pi, v); break;
-				case 'enemy-creatures': for (const c of [...state.players[opp].board]) damageCreature(state, c, v, null); break;
-				case 'all-creatures': for (const s of [0, 1]) for (const c of [...state.players[s].board]) damageCreature(state, c, v, null); break;
+				case 'enemy-hero': { const t = enemyHero(); if (t != null) damageHero(state, t, v, pi); break; }
+				case 'own-hero': damageHero(state, pi, v, pi); break;
+				case 'enemy-creatures': for (const o of enemies) for (const c of [...state.players[o].board]) damageCreature(state, c, v, null); break;
+				case 'all-creatures': for (const pl of state.players) for (const c of [...pl.board]) damageCreature(state, c, v, null); break;
 				case 'enemies':
-					for (const c of [...state.players[opp].board]) damageCreature(state, c, v, null);
-					damageHero(state, opp, v);
+					for (const o of enemies) {
+						for (const c of [...state.players[o].board]) damageCreature(state, c, v, null);
+						damageHero(state, o, v, pi);
+					}
 					break;
 				case 'everyone':
-					for (const s of [0, 1]) {
+					for (let s = 0; s < state.players.length; s++) {
+						if (state.players[s].eliminated) continue;
 						for (const c of [...state.players[s].board]) damageCreature(state, c, v, null);
-						damageHero(state, s, v);
+						damageHero(state, s, v, pi);
 					}
 					break;
 				default: { // chosen target
 					const t = chosenCreature();
 					if (t) damageCreature(state, t, v, null);
-					else if (target?.type === 'hero') damageHero(state, target.player, v);
-					else if (e.target === 'any') damageHero(state, opp, v); // fallback: face
+					else if (target?.type === 'hero') damageHero(state, target.player, v, pi);
+					else if (e.target === 'any') { const f = enemyHero(); if (f != null) damageHero(state, f, v, pi); } // fallback: face
 				}
 			}
 		} else if (e.type === 'heal') {
 			const v = e.value;
 			if (e.target === 'self') healHero(state, pi, v);
-			else if (e.target === 'all-creatures') { for (const s of [0, 1]) for (const c of state.players[s].board) healCreature(c, v); }
+			else if (e.target === 'all-creatures') { for (const pl of state.players) for (const c of pl.board) healCreature(c, v); }
 			else if (e.target === 'friendly-all') { healHero(state, pi, v); for (const c of state.players[pi].board) healCreature(c, v); }
 			else {
 				const t = chosenCreature();
@@ -611,7 +691,7 @@ function execEffects(state, pi, effects, target, source) {
 				emit(state, { type: 'destroy', uid: t.uid });
 			}
 		} else if (e.type === 'freeze') {
-			if (e.target === 'enemy-creatures') for (const c of state.players[opp].board) freezeCreature(state, c);
+			if (e.target === 'enemy-creatures') { for (const o of enemies) for (const c of state.players[o].board) freezeCreature(state, c); }
 			else { const t = chosenCreature(); if (t) freezeCreature(state, t); /* hero freeze: no-op (heroes can't attack) */ }
 		} else if (e.type === 'silence') {
 			const t = chosenCreature();
@@ -621,12 +701,18 @@ function execEffects(state, pi, effects, target, source) {
 			for (let i = 0; i < (e.count || 1); i++) {
 				const pool = [];
 				const pushBoard = side => { for (const c of state.players[side].board) if (!isDead(c)) pool.push({ c }); };
-				if (e.pool === 'enemy-creatures') pushBoard(opp);
-				else if (e.pool === 'enemies') { pushBoard(opp); pool.push({ hero: opp }); }
-				else if (e.pool === 'characters') { pushBoard(0); pushBoard(1); pool.push({ hero: 0 }, { hero: 1 }); }
+				if (e.pool === 'enemy-creatures') { for (const o of enemies) pushBoard(o); }
+				else if (e.pool === 'enemies') { for (const o of enemies) { pushBoard(o); pool.push({ hero: o }); } }
+				else if (e.pool === 'characters') {
+					for (let s = 0; s < state.players.length; s++) {
+						if (state.players[s].eliminated) continue;
+						pushBoard(s);
+						pool.push({ hero: s });
+					}
+				}
 				if (!pool.length) break;
 				const pick = pool[Math.floor(state.rng() * pool.length)];
-				if (pick.hero != null) damageHero(state, pick.hero, e.value);
+				if (pick.hero != null) damageHero(state, pick.hero, e.value, pi);
 				else damageCreature(state, pick.c, e.value, null);
 			}
 		} else if (e.type === 'summon') {
@@ -642,10 +728,14 @@ function execEffects(state, pi, effects, target, source) {
 		} else if (e.type === 'armor') {
 			gainArmor(state, pi, e.value);
 		} else if (e.type === 'destroy-weapon') {
-			const ow = state.players[opp].weapon;
-			if (ow) {
-				if (e.drawDurability) drawCards(state, pi, ow.durability);
-				breakWeapon(state, opp, true);
+			// hit the chosen enemy's weapon if they have one, else any armed enemy
+			const armed = enemies.filter(o => state.players[o].weapon);
+			const chosen = target?.type === 'hero' && target.player !== pi ? target.player : null;
+			const victim = (chosen != null && state.players[chosen].weapon) ? chosen
+				: armed.length ? armed[Math.floor(state.rng() * armed.length)] : null;
+			if (victim != null) {
+				if (e.drawDurability) drawCards(state, pi, state.players[victim].weapon.durability);
+				breakWeapon(state, victim, true);
 			}
 		} else if (e.type === 'buff-weapon') {
 			const w = state.players[pi].weapon;
@@ -698,7 +788,6 @@ function runSpell(state, pi, card, target) {
 export function canPlay(state, pi, card) {
 	if (state.over || state.current !== pi) return false;
 	if (availableMana(state.players[pi]) < card.cost) return false;
-	if (card.type === 'creature' && state.players[pi].board.length >= MAX_BOARD) return false;
 	if (card.type === 'secret') {
 		const p = state.players[pi];
 		if (p.secrets.length >= MAX_SECRETS) return false;
@@ -725,7 +814,7 @@ export function playCard(state, pi, cardUid, target) {
 		card.sick = true;
 		p.board.push(card);
 		runBattlecry(state, pi, card, target);
-		if (p.board.includes(card)) fireSecrets(state, 1 - pi, 'enemy-minion-played', { minion: card });
+		if (p.board.includes(card)) fireSecretsAll(state, pi, 'enemy-minion-played', { minion: card });
 	} else if (card.type === 'weapon') {
 		if (p.weapon) breakWeapon(state, pi, true); // replaced
 		card.zone = 'weapon';
@@ -738,7 +827,7 @@ export function playCard(state, pi, cardUid, target) {
 		emit(state, { type: 'secretPlayed', player: pi, card });
 	} else {
 		const ctx = { spell: card, countered: false };
-		fireSecrets(state, 1 - pi, 'enemy-spell-cast', ctx);
+		fireSecretsAll(state, pi, 'enemy-spell-cast', ctx);
 		if (ctx.countered) emit(state, { type: 'countered', player: pi, name: card.name });
 		else runSpell(state, pi, card, target);
 		toGraveyard(state, pi, card);
@@ -770,15 +859,19 @@ export function canAttackWith(state, pi, c) {
 	return true;
 }
 
-// legal attack targets, honoring taunt and stealth; rush = creatures only while sick
+// legal attack targets, honoring taunt and stealth; rush = creatures only while
+// sick. Free-for-all: any opponent is attackable; a player's taunts only
+// protect their own slice.
 export function attackTargets(state, pi, attacker) {
-	const opp = 1 - pi;
-	const board = state.players[opp].board.filter(c => !c.stealthed);
-	const taunts = board.filter(c => has(c, KW.TAUNT));
+	const out = [];
 	const rushOnly = attacker.sick && has(attacker, KW.RUSH) && !has(attacker, KW.CHARGE);
-	const creatures = (taunts.length ? taunts : board).map(c => ({ type: 'creature', uid: c.uid, player: opp }));
-	if (taunts.length || rushOnly) return creatures;
-	return [...creatures, { type: 'hero', player: opp }];
+	for (const opp of opponentsOf(state, pi)) {
+		const board = state.players[opp].board.filter(c => !c.stealthed);
+		const taunts = board.filter(c => has(c, KW.TAUNT));
+		out.push(...(taunts.length ? taunts : board).map(c => ({ type: 'creature', uid: c.uid, player: opp })));
+		if (!taunts.length && !rushOnly) out.push({ type: 'hero', player: opp });
+	}
+	return out;
 }
 
 export function attack(state, pi, attackerUid, target) {
@@ -793,7 +886,7 @@ export function attack(state, pi, attackerUid, target) {
 
 	// defender's secrets see the declared attack (may kill, bounce, or redirect)
 	const ctx = { attackerType: 'creature', attacker, attackerPlayer: pi, target, cancelled: false };
-	fireSecrets(state, 1 - pi, 'enemy-attack', ctx);
+	fireSecrets(state, target.player, 'enemy-attack', ctx);
 	if (ctx.cancelled || isDead(attacker) || !state.players[pi].board.includes(attacker)) {
 		sweepDeaths(state);
 		return true;
@@ -805,7 +898,7 @@ export function attack(state, pi, attackerUid, target) {
 	}
 
 	if (target.type === 'hero') {
-		const dealt = damageHero(state, target.player, attacker.attack);
+		const dealt = damageHero(state, target.player, attacker.attack, pi);
 		if (has(attacker, KW.LIFESTEAL) && dealt > 0) healHero(state, pi, dealt);
 	} else {
 		const defender = findCreature(state, target.uid);
@@ -831,7 +924,7 @@ export function attack(state, pi, attackerUid, target) {
 		// trample: excess damage (attack beyond the defender's remaining health) hits the hero
 		if (has(attacker, KW.TRAMPLE) && isDead(defender)) {
 			const excess = attacker.attack - defHpBefore;
-			if (excess > 0) damageHero(state, target.player, excess);
+			if (excess > 0) damageHero(state, target.player, excess, pi);
 		}
 	}
 	sweepDeaths(state);
@@ -849,12 +942,14 @@ export function canHeroAttack(state, pi) {
 
 // same taunt/stealth rules as creature attacks; heroes have no rush restriction
 export function heroAttackTargets(state, pi) {
-	const opp = 1 - pi;
-	const board = state.players[opp].board.filter(c => !c.stealthed);
-	const taunts = board.filter(c => has(c, KW.TAUNT));
-	const creatures = (taunts.length ? taunts : board).map(c => ({ type: 'creature', uid: c.uid, player: opp }));
-	if (taunts.length) return creatures;
-	return [...creatures, { type: 'hero', player: opp }];
+	const out = [];
+	for (const opp of opponentsOf(state, pi)) {
+		const board = state.players[opp].board.filter(c => !c.stealthed);
+		const taunts = board.filter(c => has(c, KW.TAUNT));
+		out.push(...(taunts.length ? taunts : board).map(c => ({ type: 'creature', uid: c.uid, player: opp })));
+		if (!taunts.length) out.push({ type: 'hero', player: opp });
+	}
+	return out;
 }
 
 export function heroAttack(state, pi, target) {
@@ -866,20 +961,20 @@ export function heroAttack(state, pi, target) {
 	emit(state, { type: 'heroAttack', player: pi, target });
 
 	const ctx = { attackerType: 'hero', attackerPlayer: pi, target, cancelled: false };
-	fireSecrets(state, 1 - pi, 'enemy-attack', ctx);
+	fireSecrets(state, target.player, 'enemy-attack', ctx);
 	if (ctx.cancelled || !p.weapon || state.over) { sweepDeaths(state); return true; }
 	target = ctx.target;
 
 	const w = p.weapon;
 	if (target.type === 'hero') {
-		damageHero(state, target.player, w.attack);
+		damageHero(state, target.player, w.attack, pi);
 	} else {
 		const defender = findCreature(state, target.uid);
 		if (defender && !isDead(defender)) {
 			const dealt = damageCreature(state, defender, w.attack, w);
 			if (has(w, KW.LIFESTEAL) && dealt > 0) healHero(state, pi, dealt);
 			// the defending creature strikes back at the hero
-			const counter = damageHero(state, pi, defender.attack);
+			const counter = damageHero(state, pi, defender.attack, defender.controller);
 			if (has(defender, KW.LIFESTEAL) && counter > 0) healHero(state, defender.controller, counter);
 		}
 	}
@@ -920,8 +1015,11 @@ export function endTurn(state) {
 		}
 	}
 
-	// switch
-	state.current = 1 - state.current;
+	// switch: next alive player clockwise
+	let next = state.current;
+	do { next = (next + 1) % state.players.length; }
+	while (state.players[next].eliminated && next !== state.current);
+	state.current = next;
 	state.turnNumber++;
 	const np = state.players[state.current];
 	np.diedThisTurn = 0;
