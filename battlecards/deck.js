@@ -91,6 +91,7 @@ function render() {
 		const used = inDeck(def.id);
 		const div = document.createElement('div');
 		div.className = `card-row r-${def.rarity || 'common'}` + (used >= Math.min(have, limitOf(def.id)) ? ' depleted' : '');
+		div.title = def.description || '';
 		div.innerHTML = `<div class="name">${def.name}</div>
 			<div class="meta">${def.cost ?? 0} mana · ${def.type}${def.attack != null ? ` · ${def.attack}/${def.health}` : ''}</div>
 			<div class="meta">own ${have} · in deck ${used}</div>`;

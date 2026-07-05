@@ -1,125 +1,118 @@
-// viewer.js — Battlecards 3D card gallery (browse / tilt / flip).
-import * as THREE from 'three';
-import { CARD_W, CARD_H, CARD_D, makeFaceTexture, makeBackTexture } from './cardart.js';
+// viewer.js — the collection browser: a paginated, filterable card book.
+// Card faces come from the shared procedural renderer; rules text appears in
+// a hover tooltip, and rules-cards carry a CSS-animated iridescent gem.
+import { drawCardFace, hasRules } from './cardart.js';
+import * as Col from './collection.js';
 
-// ---------- scene ----------
-const container = document.getElementById('scene');
-const renderer = new THREE.WebGLRenderer({ antialias: true });
-renderer.setPixelRatio(window.devicePixelRatio);
-renderer.setSize(innerWidth, innerHeight);
-container.appendChild(renderer.domElement);
+const PAGE_SIZE = 10;
+let cards = [], collection = {}, filtered = [], page = 0;
+const filters = { search: '', mana: null, type: '', rarity: '', ownedOnly: false };
 
-const scene = new THREE.Scene();
-scene.background = new THREE.Color('#0e0b16');
+const $ = id => document.getElementById(id);
+const grid = $('grid');
+const tip = $('tip');
 
-const camera = new THREE.PerspectiveCamera(40, innerWidth / innerHeight, 0.1, 100);
-camera.position.set(0, 0, 8);
-
-scene.add(new THREE.AmbientLight(0xffffff, 0.9));
-const key = new THREE.DirectionalLight(0xffffff, 1.6);
-key.position.set(3, 5, 6);
-scene.add(key);
-const rim = new THREE.PointLight(0x8f6fff, 12, 30);
-rim.position.set(-4, -2, 4);
-scene.add(rim);
-
-// subtle starfield backdrop
-{
-	const g = new THREE.BufferGeometry();
-	const pts = [];
-	for (let i = 0; i < 300; i++) {
-		pts.push((Math.random() - 0.5) * 40, (Math.random() - 0.5) * 24, -6 - Math.random() * 10);
-	}
-	g.setAttribute('position', new THREE.Float32BufferAttribute(pts, 3));
-	scene.add(new THREE.Points(g, new THREE.PointsMaterial({ color: 0x6f5fa8, size: 0.035 })));
-}
-
-// ---------- card mesh ----------
-const backTex = makeBackTexture();
-let cardMesh = null;
-
-function buildCard(card) {
-	if (cardMesh) {
-		scene.remove(cardMesh);
-		cardMesh.geometry.dispose();
-	}
-	const geo = new THREE.BoxGeometry(CARD_W, CARD_H, CARD_D);
-	const edge = new THREE.MeshStandardMaterial({ color: '#241b38', roughness: 0.8 });
-	const front = new THREE.MeshStandardMaterial({
-		map: makeFaceTexture(card), roughness: 0.35, metalness: 0.15,
+// mana crystal filter row: 0..6 and 7+
+const crystals = [];
+for (let i = 0; i <= 7; i++) {
+	const b = document.createElement('button');
+	b.className = 'crystal';
+	b.textContent = i === 7 ? '7+' : String(i);
+	b.addEventListener('click', () => {
+		filters.mana = filters.mana === i ? null : i;
+		crystals.forEach((c, j) => c.classList.toggle('on', filters.mana === j));
+		page = 0;
+		applyFilters();
 	});
-	const back = new THREE.MeshStandardMaterial({ map: backTex, roughness: 0.5 });
-	cardMesh = new THREE.Mesh(geo, [edge, edge, edge, edge, front, back]);
-	scene.add(cardMesh);
+	$('mana-row').appendChild(b);
+	crystals.push(b);
 }
 
-// ---------- interaction ----------
-let cards = [], idx = 0;
-let targetRotY = 0, flipped = false;
-let dragging = false, lastX = 0, lastY = 0;
-let tiltX = 0, tiltY = 0;
+$('search').addEventListener('input', ev => { filters.search = ev.target.value.toLowerCase(); page = 0; applyFilters(); });
+$('type-filter').addEventListener('change', ev => { filters.type = ev.target.value; page = 0; applyFilters(); });
+$('rarity-filter').addEventListener('change', ev => { filters.rarity = ev.target.value; page = 0; applyFilters(); });
+$('owned-only').addEventListener('change', ev => { filters.ownedOnly = ev.target.checked; page = 0; applyFilters(); });
+$('prev').addEventListener('click', () => flip(-1));
+$('next').addEventListener('click', () => flip(1));
+addEventListener('keydown', ev => {
+	if (ev.key === 'ArrowLeft') flip(-1);
+	if (ev.key === 'ArrowRight') flip(1);
+});
 
-function show(i) {
-	idx = (i + cards.length) % cards.length;
-	const card = cards[idx];
-	buildCard(card);
-	flipped = false;
-	targetRotY = 0;
-	cardMesh.rotation.y = -Math.PI; // spin-in entrance
-	document.querySelector('#cardinfo .name').textContent =
-		`${card.name}  (${idx + 1}/${cards.length})`;
-	document.querySelector('#cardinfo .desc').textContent = card.description || '';
+function flip(d) {
+	const pages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+	page = Math.max(0, Math.min(pages - 1, page + d));
+	renderPage();
 }
 
-renderer.domElement.addEventListener('pointerdown', e => {
-	dragging = true; lastX = e.clientX; lastY = e.clientY;
-});
-addEventListener('pointerup', e => {
-	dragging = false;
-	if (Math.abs(e.clientX - lastX) < 4 && Math.abs(e.clientY - lastY) < 4) {
-		flipped = !flipped;
-		targetRotY = flipped ? Math.PI : 0;
-	}
-});
-addEventListener('pointermove', e => {
-	if (!dragging) {
-		tiltY = (e.clientX / innerWidth - 0.5) * 0.55;
-		tiltX = (e.clientY / innerHeight - 0.5) * 0.45;
-	}
-});
-addEventListener('keydown', e => {
-	if (e.key === 'ArrowRight') show(idx + 1);
-	if (e.key === 'ArrowLeft') show(idx - 1);
-	if (e.key === ' ' || e.key === 'Enter') { flipped = !flipped; targetRotY = flipped ? Math.PI : 0; }
-});
-document.getElementById('next').onclick = () => show(idx + 1);
-document.getElementById('prev').onclick = () => show(idx - 1);
-document.getElementById('flip').onclick = () => { flipped = !flipped; targetRotY = flipped ? Math.PI : 0; };
-
-addEventListener('resize', () => {
-	camera.aspect = innerWidth / innerHeight;
-	camera.updateProjectionMatrix();
-	renderer.setSize(innerWidth, innerHeight);
-});
-
-// ---------- main loop ----------
-const clock = new THREE.Clock();
-function animate() {
-	requestAnimationFrame(animate);
-	const t = clock.getElapsedTime();
-	if (cardMesh) {
-		cardMesh.rotation.y += (targetRotY + tiltY - cardMesh.rotation.y) * 0.08;
-		cardMesh.rotation.x += (tiltX - cardMesh.rotation.x) * 0.08;
-		cardMesh.position.y = Math.sin(t * 1.2) * 0.06;
-	}
-	renderer.render(scene, camera);
+function applyFilters() {
+	filtered = cards.filter(c => {
+		if (filters.search && !(`${c.name} ${c.description || ''} ${c.type}`.toLowerCase().includes(filters.search))) return false;
+		if (filters.mana != null) {
+			const cost = c.cost ?? 0;
+			if (filters.mana === 7 ? cost < 7 : cost !== filters.mana) return false;
+		}
+		if (filters.type && c.type !== filters.type) return false;
+		if (filters.rarity && (c.rarity || 'common') !== filters.rarity) return false;
+		if (filters.ownedOnly && !(collection[c.id] > 0)) return false;
+		return true;
+	});
+	$('count').textContent = `${filtered.length} of ${cards.length} cards`;
+	renderPage();
 }
-animate();
 
-// ---------- boot ----------
+function tileFor(card) {
+	const tile = document.createElement('div');
+	const owned = collection[card.id] || 0;
+	tile.className = 'tile' + (owned ? '' : ' unowned');
+	const face = drawCardFace(card);
+	face.style.width = '100%';
+	tile.appendChild(face);
+	if (hasRules(card)) {
+		const gem = document.createElement('div');
+		gem.className = 'gemfx';
+		tile.appendChild(gem);
+	}
+	if (owned) {
+		const badge = document.createElement('div');
+		badge.className = 'owned';
+		badge.textContent = `x${owned}`;
+		tile.appendChild(badge);
+	}
+	tile.addEventListener('pointermove', ev => {
+		const typeLine = (card.tribe ? card.tribe + ' ' : '') + card.type.toUpperCase()
+			+ ' · ' + (card.rarity || 'common').toUpperCase();
+		tip.innerHTML = `<div class="tt-name">${card.name}</div><div class="tt-type">${typeLine}</div>`
+			+ `<div class="tt-desc">${card.description || ''}</div>`;
+		tip.style.display = 'block';
+		tip.style.left = `${Math.min(ev.clientX + 18, innerWidth - 290)}px`;
+		tip.style.top = `${Math.min(ev.clientY + 14, innerHeight - tip.offsetHeight - 12)}px`;
+	});
+	tile.addEventListener('pointerleave', () => { tip.style.display = 'none'; });
+	return tile;
+}
+
+function renderPage() {
+	grid.innerHTML = '';
+	tip.style.display = 'none';
+	const pages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+	page = Math.min(page, pages - 1);
+	for (const card of filtered.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE)) {
+		grid.appendChild(tileFor(card));
+	}
+	$('prev').disabled = page === 0;
+	$('next').disabled = page >= pages - 1;
+	$('pageinfo').textContent = filtered.length ? `Page ${page + 1} / ${pages}` : 'No cards match those filters.';
+}
+
 fetch('cards.json')
 	.then(r => r.json())
 	.then(data => {
-		cards = data.cards;
-		show(0);
+		const rarityOrder = { legendary: 0, epic: 1, rare: 2, uncommon: 3, common: 4, special: 5 };
+		cards = data.cards.slice().sort((a, b) =>
+			(a.cost ?? 0) - (b.cost ?? 0)
+			|| (rarityOrder[a.rarity || 'common'] - rarityOrder[b.rarity || 'common'])
+			|| a.name.localeCompare(b.name));
+		collection = Col.getCollection(data.cards);
+		applyFilters();
 	});

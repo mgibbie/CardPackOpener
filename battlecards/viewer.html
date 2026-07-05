@@ -1,53 +1,131 @@
 <!DOCTYPE html>
 <html>
 <head>
-	<title>Magepunk Battlecards — Card Gallery</title>
+	<title>Magepunk Battlecards — Collection</title>
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<link rel="icon" href="data:,">
 	<style>
-		html, body { margin: 0; height: 100%; overflow: hidden; background: #0e0b16; font-family: 'Segoe UI', sans-serif; }
-		#scene { position: fixed; inset: 0; }
-		#hud {
-			position: fixed; top: 0; left: 0; right: 0; padding: 14px 20px;
-			display: flex; align-items: baseline; gap: 16px; pointer-events: none;
-			color: #e8e2f4; text-shadow: 0 2px 8px #000;
+		html, body { margin: 0; height: 100%; background: #0d0a14; font-family: 'Segoe UI', sans-serif; user-select: none; color: #e8e2f4; overflow: hidden; }
+		body {
+			background: radial-gradient(ellipse at 50% -10%, #241a3e 0%, #0d0a14 60%);
+			display: flex; flex-direction: column;
 		}
-		#hud h1 { margin: 0; font-size: 20px; letter-spacing: 1px; }
-		#hud .hint { font-size: 13px; opacity: 0.7; }
-		#hud a { color: #9d8fd4; font-size: 13px; pointer-events: auto; }
-		#cardinfo {
-			position: fixed; bottom: 18px; left: 50%; transform: translateX(-50%);
-			color: #e8e2f4; text-align: center; pointer-events: none; text-shadow: 0 2px 8px #000;
+		#topbar { padding: 12px 20px 4px; display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+		#topbar h1 { font-size: 17px; letter-spacing: 1px; margin: 0; }
+		#topbar a { color: #9d8fd4; font-size: 13px; text-decoration: none; }
+		#topbar a:hover { text-decoration: underline; }
+		#count { color: #9d8fd4; font-size: 13px; margin-left: auto; }
+
+		#filters { padding: 6px 20px 10px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+		#search {
+			background: #1d1530; border: 1px solid #4a3f6b; border-radius: 8px;
+			color: #e8e2f4; padding: 7px 12px; width: 210px; font-size: 13.5px;
 		}
-		#cardinfo .name { font-size: 18px; font-weight: 600; }
-		#cardinfo .desc { font-size: 13px; opacity: 0.8; max-width: 420px; }
-		#nav {
-			position: fixed; bottom: 70px; left: 50%; transform: translateX(-50%);
-			display: flex; gap: 10px;
+		#mana-row { display: flex; gap: 4px; }
+		.crystal {
+			width: 34px; height: 34px; border-radius: 50%; border: 2px solid #2c3f77;
+			background: radial-gradient(circle at 35% 30%, #6f8fe6, #1c4fd6 55%, #0d2a78);
+			color: #fff; font-weight: 800; font-size: 14px; cursor: pointer;
+			display: flex; align-items: center; justify-content: center; opacity: 0.55;
 		}
-		#nav button {
-			background: #2a2340; color: #e8e2f4; border: 1px solid #4a3f6b;
-			border-radius: 6px; padding: 8px 18px; font-size: 15px; cursor: pointer;
+		.crystal:hover { opacity: 0.85; }
+		.crystal.on { opacity: 1; border-color: #ffd25f; box-shadow: 0 0 10px rgba(255,210,95,0.6); }
+		select {
+			background: #1d1530; color: #e8e2f4; border: 1px solid #4a3f6b;
+			border-radius: 8px; padding: 7px 8px; font-size: 13px;
 		}
-		#nav button:hover { background: #3a3055; }
+		label.chk { font-size: 13px; color: #b9b0d4; display: flex; align-items: center; gap: 5px; cursor: pointer; }
+
+		#book { flex: 1; display: flex; align-items: center; justify-content: center; gap: 14px; min-height: 0; padding: 0 8px 14px; }
+		.arrow {
+			width: 52px; height: 52px; border-radius: 50%; border: 2px solid #4a3f6b;
+			background: #241b38; color: #c9b8ff; font-size: 24px; cursor: pointer; flex: none;
+		}
+		.arrow:hover:not(:disabled) { background: #35284f; }
+		.arrow:disabled { opacity: 0.3; cursor: default; }
+
+		#grid {
+			flex: 1; max-width: 1180px; height: 100%;
+			display: grid; grid-template-columns: repeat(5, 1fr); grid-template-rows: 1fr 1fr;
+			gap: 10px 12px; padding: 10px 6px; align-items: center; justify-items: center;
+		}
+		.tile { position: relative; width: 100%; max-width: 208px; transition: transform 0.12s; cursor: pointer; }
+		.tile:hover { transform: scale(1.35); z-index: 5; }
+		.tile canvas { width: 100%; display: block; border-radius: 10px; }
+		.tile.unowned canvas { filter: grayscale(0.95) brightness(0.55); }
+		.tile .owned {
+			position: absolute; right: 4%; top: 3%;
+			background: #241b38; border: 1px solid #8f6fff; border-radius: 10px;
+			color: #ffd25f; font-size: 12px; font-weight: 800; padding: 2px 7px;
+		}
+		/* the live iridescent rules gem */
+		.tile .gemfx {
+			position: absolute; left: 50%; top: 78.2%;
+			width: 23.4%; aspect-ratio: 1; transform: translate(-50%, -50%);
+			border-radius: 50%; pointer-events: none; mix-blend-mode: screen; opacity: 0.85;
+			background: conic-gradient(#ff5f4f, #ffd25f, #57e389, #4fc3ff, #8f6fff, #ff5fd2, #ff5f4f);
+			animation: gemspin 14s linear infinite;
+		}
+		@keyframes gemspin { to { filter: hue-rotate(360deg); } }
+
+		#pageinfo { text-align: center; color: #9d8fd4; font-size: 13px; padding-bottom: 12px; }
+
+		#tip {
+			position: fixed; display: none; z-index: 20; width: 264px; pointer-events: none;
+			background: rgba(22,16,36,0.97); border: 1px solid #8f6fff; border-radius: 10px;
+			padding: 10px 12px; box-shadow: 0 6px 22px rgba(0,0,0,0.7);
+		}
+		#tip .tt-name { font-weight: 800; font-size: 15px; color: #f4eede; }
+		#tip .tt-type { font-size: 10.5px; letter-spacing: 1px; color: #9d8fd4; margin: 2px 0 6px; }
+		#tip .tt-desc { font-size: 13px; line-height: 1.45; }
 	</style>
 	<script type="importmap">
 	{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.165.0/build/three.module.js" } }
 	</script>
 </head>
 <body>
-	<div id="scene"></div>
-	<div id="hud">
-		<h1>MAGEPUNK BATTLECARDS</h1>
-		<span class="hint">drag to tilt &middot; click card to flip &middot; &larr;/&rarr; to browse</span>
-		<a href="index.html">&larr; back to the game</a>
+	<div id="topbar">
+		<h1>COLLECTION</h1>
+		<a href="index.html">play</a>
+		<a href="packs.html">packs</a>
+		<a href="deck.html">deck builder</a>
+		<span id="count"></span>
 	</div>
-	<div id="nav">
-		<button id="prev">&larr;</button>
-		<button id="flip">Flip</button>
-		<button id="next">&rarr;</button>
+	<div id="filters">
+		<input id="search" type="search" placeholder="Search cards…">
+		<div id="mana-row"></div>
+		<select id="type-filter">
+			<option value="">All types</option>
+			<option value="creature">Creatures</option>
+			<option value="sorcery">Spells</option>
+			<option value="weapon">Weapons</option>
+			<option value="secret">Secrets</option>
+			<option value="trap">Traps</option>
+			<option value="land">Lands</option>
+			<option value="heropower">Hero Powers</option>
+			<option value="quest">Quests</option>
+			<option value="planeswalker">Planeswalkers</option>
+			<option value="enchantment">Enchantments</option>
+			<option value="artifact">Artifacts</option>
+		</select>
+		<select id="rarity-filter">
+			<option value="">All rarities</option>
+			<option value="common">Common</option>
+			<option value="uncommon">Uncommon</option>
+			<option value="rare">Rare</option>
+			<option value="epic">Epic</option>
+			<option value="legendary">Legendary</option>
+		</select>
+		<label class="chk"><input id="owned-only" type="checkbox"> owned only</label>
 	</div>
-	<div id="cardinfo"><div class="name"></div><div class="desc"></div></div>
+	<div id="book">
+		<button class="arrow" id="prev">◀</button>
+		<div id="grid"></div>
+		<button class="arrow" id="next">▶</button>
+	</div>
+	<div id="pageinfo"></div>
+	<div id="tip"></div>
 	<script type="module" src="viewer.js"></script>
 </body>
 </html>

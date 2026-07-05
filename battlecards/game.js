@@ -4,7 +4,7 @@ import * as THREE from 'three';
 import * as E from './engine.js';
 import * as AI from './ai.js';
 import * as Col from './collection.js';
-import { CARD_W, CARD_H, CARD_D, makeFaceTexture, makeBackTexture } from './cardart.js';
+import { CARD_W, CARD_H, CARD_D, makeFaceTexture, makeBackTexture, hasRules, RULES_GEM } from './cardart.js';
 
 const HUMAN = 0;
 const TAU = Math.PI * 2;
@@ -103,6 +103,25 @@ const edgeMat = new THREE.MeshStandardMaterial({ color: '#241b38', roughness: 0.
 const backMat = new THREE.MeshStandardMaterial({ map: backTex, roughness: 0.5 });
 const cardGeo = new THREE.BoxGeometry(CARD_W, CARD_H, CARD_D);
 
+// iridescent rules-gem overlay: one shared additive material whose color
+// slowly cycles the full hue wheel; each rules-card carries a small glow disc
+const gemGlowTex = (() => {
+	const c = document.createElement('canvas');
+	c.width = c.height = 128;
+	const g = c.getContext('2d');
+	const grad = g.createRadialGradient(64, 64, 4, 64, 64, 62);
+	grad.addColorStop(0, 'rgba(255,255,255,0.7)');
+	grad.addColorStop(0.5, 'rgba(255,255,255,0.3)');
+	grad.addColorStop(1, 'rgba(255,255,255,0)');
+	g.fillStyle = grad;
+	g.fillRect(0, 0, 128, 128);
+	return new THREE.CanvasTexture(c);
+})();
+const gemMat = new THREE.MeshBasicMaterial({
+	map: gemGlowTex, transparent: true, opacity: 0.8, depthWrite: false, blending: THREE.AdditiveBlending,
+});
+const gemGeo = new THREE.CircleGeometry(RULES_GEM.r * CARD_W * 0.9, 24);
+
 // selection rings
 const ringGeo = new THREE.RingGeometry(1.08, 1.26, 32);
 function makeRing(color) {
@@ -135,6 +154,12 @@ function entityFor(card) {
 		const mesh = new THREE.Mesh(cardGeo, [edgeMat, edgeMat, edgeMat, edgeMat, faceMat, backMat]);
 		mesh.userData.uid = card.uid;
 		mesh.position.set(card.controller === HUMAN ? 9 : -9, 0.3, card.controller === HUMAN ? 6.5 : -6.5);
+		if (hasRules(card)) {
+			const gem = new THREE.Mesh(gemGeo, gemMat);
+			gem.position.set((RULES_GEM.x - 0.5) * CARD_W, (0.5 - RULES_GEM.y) * CARD_H, CARD_D / 2 + 0.004);
+			gem.raycast = () => {}; // the glow never blocks card picking
+			mesh.add(gem);
+		}
 		scene.add(mesh);
 		ent = { card, mesh, faceMat, target: { pos: new THREE.Vector3(), quat: new THREE.Quaternion(), scale: 1 }, ring: makeRing('#57e389') };
 		entities.set(card.uid, ent);
@@ -722,8 +747,28 @@ function cardOf(uid) {
 	return null;
 }
 
+// hover tooltip: rules text lives here now, not on the card face
+function updateTooltip(ev) {
+	const tip = $('tooltip');
+	const card = cardOf(hoverUid);
+	// never reveal hidden information: enemy hands and face-down traps stay secret
+	const hidden = card && card.controller !== HUMAN && (card.zone === 'hand' || card.zone === 'trap');
+	if (!card || hidden) { tip.style.display = 'none'; return; }
+	const typeLine = (card.tribe ? card.tribe + ' ' : '') + card.type.toUpperCase()
+		+ ' · ' + (card.rarity || 'common').toUpperCase();
+	let extra = '';
+	if (card.type === 'planeswalker') extra = `<div class="tt-sub">Loyalty ${card.loyalty}</div>`;
+	if (card.type === 'quest' && card.quest) extra = `<div class="tt-sub">Progress ${card.progress || 0} / ${card.quest.goal.count}</div>`;
+	tip.innerHTML = `<div class="tt-name">${card.name}</div><div class="tt-type">${typeLine}</div>`
+		+ `<div class="tt-desc">${card.description || ''}</div>` + extra;
+	tip.style.display = 'block';
+	tip.style.left = `${Math.min(ev.clientX + 18, innerWidth - 290)}px`;
+	tip.style.top = `${Math.min(ev.clientY + 14, innerHeight - tip.offsetHeight - 12)}px`;
+}
+
 addEventListener('pointermove', ev => {
 	hoverUid = pick(ev);
+	updateTooltip(ev);
 });
 
 function clearModes() {
@@ -990,6 +1035,8 @@ function animate() {
 		f.sp.material.opacity = Math.max(0, f.life);
 		if (f.life <= 0) { scene.remove(f.sp); f.sp.material.map.dispose(); floaters.splice(i, 1); }
 	}
+	// the rules gems slowly wander the hue wheel together (~25s per lap)
+	gemMat.color.setHSL((now * 0.00004) % 1, 0.85, 0.62);
 	updateRings();
 	positionPanels();
 	renderer.render(scene, camera);
