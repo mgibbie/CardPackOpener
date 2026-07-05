@@ -254,6 +254,22 @@ function layoutTargets() {
 			ent.target.quat = sliceQuat(FLAT, pi);
 			ent.target.scale = 0.42;
 		});
+		// unlimited permanent rows: enchantments left, artifacts right
+		const rowSpread = n2 => Math.min(1.1, 4.4 / Math.max(n2, 1));
+		p.enchantments.forEach((card, i) => {
+			const ent = entityFor(card);
+			seen.add(card.uid);
+			ent.target.pos = toWorld(-(3.55 + i * rowSpread(p.enchantments.length)), 0.05, off + 2.7, pi);
+			ent.target.quat = sliceQuat(FLAT, pi);
+			ent.target.scale = 0.42;
+		});
+		p.artifacts.forEach((card, i) => {
+			const ent = entityFor(card);
+			seen.add(card.uid);
+			ent.target.pos = toWorld(3.55 + i * rowSpread(p.artifacts.length), 0.05, off + 2.7, pi);
+			ent.target.quat = sliceQuat(FLAT, pi);
+			ent.target.scale = 0.42;
+		});
 		// creature row (unlimited: compress spacing inside the slice arc)
 		const bn = p.board.length;
 		const rowWidth = playerCount <= 2 ? 10.5 : TAU * (off + 2.0) / playerCount * 0.9;
@@ -545,6 +561,10 @@ function nextEvent() {
 			banner(`Quest complete: ${ev.card.name}!`, 1700);
 			log(`${ev.player === HUMAN ? 'Your' : `${nameOf(ev.player)}'s`} quest complete: ${ev.card.name}`);
 			delay = 950;
+			break;
+		case 'ongoingTriggered':
+			floatText('✦', '#c9b8ff', creaturePos(ev.card.uid));
+			delay = 240;
 			break;
 		case 'secretRevealed':
 			banner(`Secret: ${ev.card.name}!`, 1600);

@@ -55,6 +55,8 @@ function instantiate(def, controller) {
 		mana: def.mana || 0, // land: bonus mana granted each turn
 		power: def.power || null,   // hero power: { cost, effects }
 		quest: def.quest || null,   // quest: { goal: { type, count }, reward }
+		ongoing: def.ongoing || null, // permanent trigger: { on, effects }
+		static: def.static || null,   // permanent passive (e.g. reduce-hero-damage)
 		progress: 0,                // quest goal counter
 		usedThisTurn: false,        // hero power activation gate
 		damage: 0,
@@ -171,9 +173,11 @@ export function drawCards(state, pi, count) {
 	const p = state.players[pi];
 	for (let i = 0; i < count; i++) {
 		if (p.deck.length === 0 && p.graveyard.length > 0) {
-			// reshuffle graveyard ids into deck (per BattleEngine.startPhase)
-			p.deck = p.graveyard.map(c => c.id);
+			// reshuffle graveyard ids into deck (per BattleEngine.startPhase);
+			// summoned tokens have no card def and can't be redrawn
+			p.deck = p.graveyard.map(c => c.id).filter(id => state.cardsById[id]);
 			p.graveyard = [];
+			if (!p.deck.length) continue;
 			for (let k = p.deck.length - 1; k > 0; k--) {
 				const j = Math.floor(state.rng() * (k + 1));
 				[p.deck[k], p.deck[j]] = [p.deck[j], p.deck[k]];
@@ -305,6 +309,9 @@ function damageCreature(state, target, amount, source) {
 function damageHero(state, pi, amount, src = null) {
 	if (amount <= 0) return 0;
 	const p = state.players[pi];
+	// static hero-damage reduction (Lucky Horseshoe)
+	amount = Math.max(0, amount - staticValue(p, 'reduce-hero-damage'));
+	if (amount <= 0) return 0;
 	// fatal-damage secrets (Ice Block) fire before the damage lands
 	if (amount - Math.min(p.armor, amount) >= p.life) {
 		const ctx = { fatal: true, prevented: false, src };
@@ -386,6 +393,8 @@ function checkGameOver(state) {
 		p.lands = [];
 		p.heroPowers = [];
 		p.quests = [];
+		p.enchantments = [];
+		p.artifacts = [];
 		p.weapon = null;
 		p.hand = [];
 		emit(state, { type: 'eliminated', player: i });
@@ -410,6 +419,28 @@ function summon(state, pi, tokenDef) {
 	emit(state, { type: 'summon', player: pi, card: c });
 	questTick(state, 'summon', pi);
 	return c;
+}
+
+// ---------- ongoing permanents (enchantments + artifacts) ----------
+// persistent triggers: fire every time, card stays in play
+function fireOngoing(state, pi, when, ctx = {}) {
+	const p = state.players[pi];
+	if (state.over || p.eliminated) return;
+	for (const card of [...p.enchantments, ...p.artifacts]) {
+		if (state.over) break;
+		if (!card.ongoing || card.ongoing.on !== when) continue;
+		emit(state, { type: 'ongoingTriggered', player: pi, card });
+		runSecretEffects(state, pi, card.ongoing.effects, ctx);
+	}
+}
+
+// sum of a static passive across a player's permanent rows
+function staticValue(p, type) {
+	let v = 0;
+	for (const card of [...p.enchantments, ...p.artifacts]) {
+		if (card.static?.type === type) v += card.static.value || 1;
+	}
+	return v;
 }
 
 // ---------- quests ----------
@@ -534,6 +565,25 @@ function runSecretEffects(state, pi, effects, ctx) {
 			case 'set-attack': {
 				const m = triggering();
 				if (m) { m.attack = e.value; emit(state, { type: 'buff', uid: m.uid, attack: m.attack, hp: hp(m) }); }
+				break;
+			}
+			case 'buff-minion': {
+				const m = triggering();
+				if (m) {
+					m.attack += e.attack || 0;
+					m.maxHealth += e.health || 0;
+					emit(state, { type: 'buff', uid: m.uid, attack: m.attack, hp: hp(m) });
+				}
+				break;
+			}
+			case 'buff-random-friendly': {
+				const pool = state.players[pi].board.filter(c => !isDead(c));
+				if (pool.length) {
+					const m = pool[Math.floor(state.rng() * pool.length)];
+					m.attack += e.attack || 0;
+					m.maxHealth += e.health || 0;
+					emit(state, { type: 'buff', uid: m.uid, attack: m.attack, hp: hp(m) });
+				}
 				break;
 			}
 			case 'set-health': {
@@ -818,6 +868,7 @@ function execEffects(state, pi, effects, target, source) {
 			w.zone = 'weapon';
 			p.weapon = w;
 			emit(state, { type: 'weaponEquip', player: pi, card: w });
+			fireOngoing(state, pi, 'weapon-equipped');
 		}
 	}
 }
@@ -895,11 +946,13 @@ export function playCard(state, pi, cardUid, target) {
 		questTick(state, 'summon', pi);
 		runBattlecry(state, pi, card, target);
 		if (p.board.includes(card)) fireSecretsAll(state, pi, 'enemy-minion-played', { minion: card });
+		if (p.board.includes(card) && !isDead(card)) fireOngoing(state, pi, 'creature-played', { minion: card });
 	} else if (card.type === 'weapon') {
 		if (p.weapon) breakWeapon(state, pi, true); // replaced
 		card.zone = 'weapon';
 		p.weapon = card;
 		emit(state, { type: 'weaponEquip', player: pi, card });
+		fireOngoing(state, pi, 'weapon-equipped');
 		runBattlecry(state, pi, card, target);
 	} else if (card.type === 'secret') {
 		card.zone = 'secret';
@@ -924,12 +977,18 @@ export function playCard(state, pi, cardUid, target) {
 		card.zone = 'quest';
 		p.quests.push(card);
 		emit(state, { type: 'questStarted', player: pi, card });
+	} else if (card.type === 'enchantment' || card.type === 'artifact') {
+		card.zone = card.type;
+		(card.type === 'enchantment' ? p.enchantments : p.artifacts).push(card);
 	} else {
 		questTick(state, 'spell', pi);
 		const ctx = { spell: card, countered: false };
 		fireSecretsAll(state, pi, 'enemy-spell-cast', ctx);
 		if (ctx.countered) emit(state, { type: 'countered', player: pi, name: card.name });
-		else runSpell(state, pi, card, target);
+		else {
+			runSpell(state, pi, card, target);
+			fireOngoing(state, pi, 'spell-played');
+		}
 		toGraveyard(state, pi, card);
 	}
 	sweepDeaths(state);
@@ -1127,6 +1186,7 @@ export function endTurn(state) {
 			summon(state, pi, { ...state.cardsById['acidspitter'] });
 		}
 	}
+	fireOngoing(state, pi, 'turn-end');
 	// discard down to max
 	while (p.hand.length > MAX_HAND) {
 		const c = p.hand.pop();
@@ -1163,6 +1223,9 @@ export function endTurn(state) {
 	for (const hpw of np.heroPowers) hpw.usedThisTurn = false;
 	for (const c of np.board) { c.sick = false; c.attacksUsed = 0; }
 	emit(state, { type: 'turnStart', player: state.current, turnNumber: state.turnNumber });
+	fireOngoing(state, state.current, 'turn-start');
+	sweepDeaths(state);
+	if (state.over) return;
 	drawCards(state, state.current, 1);
 }
 

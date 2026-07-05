@@ -3264,6 +3264,190 @@
         ]
       },
       "description": "Quest: Attack 3 times with your hero. Reward: Equip a 4/3 Golden Revolver."
+    },
+    {
+      "id": "ranchers_brand",
+      "name": "Rancher's Brand",
+      "type": "enchantment",
+      "cardClass": "bounty_hunter",
+      "cost": 3,
+      "rarity": "uncommon",
+      "ongoing": {
+        "on": "creature-played",
+        "effects": [
+          {
+            "type": "buff-minion",
+            "attack": 1,
+            "health": 1
+          }
+        ]
+      },
+      "description": "Whenever you play a creature, give it +1/+1."
+    },
+    {
+      "id": "war_drums",
+      "name": "War Drums",
+      "type": "enchantment",
+      "cardClass": "bounty_hunter",
+      "cost": 3,
+      "rarity": "common",
+      "ongoing": {
+        "on": "turn-end",
+        "effects": [
+          {
+            "type": "buff-random-friendly",
+            "attack": 1,
+            "health": 1
+          }
+        ]
+      },
+      "description": "At the end of your turn, give a random friendly creature +1/+1."
+    },
+    {
+      "id": "campfire_songs",
+      "name": "Campfire Songs",
+      "type": "enchantment",
+      "cardClass": "bounty_hunter",
+      "cost": 2,
+      "rarity": "common",
+      "ongoing": {
+        "on": "turn-end",
+        "effects": [
+          {
+            "type": "heal",
+            "value": 2,
+            "target": "self"
+          }
+        ]
+      },
+      "description": "At the end of your turn, restore 2 health to your hero."
+    },
+    {
+      "id": "ghost_town_haunting",
+      "name": "Ghost Town Haunting",
+      "type": "enchantment",
+      "cardClass": "bounty_hunter",
+      "cost": 5,
+      "rarity": "rare",
+      "ongoing": {
+        "on": "turn-start",
+        "effects": [
+          {
+            "type": "damage",
+            "value": 1,
+            "target": "enemy-creatures"
+          }
+        ]
+      },
+      "description": "At the start of your turn, deal 1 damage to every enemy creature."
+    },
+    {
+      "id": "night_market",
+      "name": "Night Market",
+      "type": "enchantment",
+      "cardClass": "bounty_hunter",
+      "cost": 6,
+      "rarity": "rare",
+      "ongoing": {
+        "on": "turn-end",
+        "effects": [
+          {
+            "type": "draw",
+            "value": 1
+          }
+        ]
+      },
+      "description": "At the end of your turn, draw a card."
+    },
+    {
+      "id": "lucky_horseshoe",
+      "name": "Lucky Horseshoe",
+      "type": "artifact",
+      "cardClass": "bounty_hunter",
+      "cost": 2,
+      "rarity": "uncommon",
+      "static": {
+        "type": "reduce-hero-damage",
+        "value": 1
+      },
+      "description": "Your hero takes 1 less damage from everything."
+    },
+    {
+      "id": "sheriffs_badge",
+      "name": "Sheriff's Badge",
+      "type": "artifact",
+      "cardClass": "bounty_hunter",
+      "cost": 3,
+      "rarity": "rare",
+      "ongoing": {
+        "on": "weapon-equipped",
+        "effects": [
+          {
+            "type": "buff-weapon",
+            "attack": 1,
+            "durability": 0
+          }
+        ]
+      },
+      "description": "Whenever you equip a weapon, it gains +1 Attack."
+    },
+    {
+      "id": "mechanical_deputy",
+      "name": "Mechanical Deputy",
+      "type": "artifact",
+      "cardClass": "bounty_hunter",
+      "cost": 4,
+      "rarity": "rare",
+      "ongoing": {
+        "on": "turn-start",
+        "effects": [
+          {
+            "type": "random-damage",
+            "value": 1,
+            "pool": "enemies",
+            "count": 1
+          }
+        ]
+      },
+      "description": "At the start of your turn, deal 1 damage to a random enemy."
+    },
+    {
+      "id": "printing_press",
+      "name": "Printing Press",
+      "type": "artifact",
+      "cardClass": "bounty_hunter",
+      "cost": 5,
+      "rarity": "epic",
+      "ongoing": {
+        "on": "spell-played",
+        "effects": [
+          {
+            "type": "random-damage",
+            "value": 1,
+            "pool": "enemy-creatures",
+            "count": 1
+          }
+        ]
+      },
+      "description": "Whenever you cast a spell, deal 1 damage to a random enemy creature."
+    },
+    {
+      "id": "iron_safe",
+      "name": "Iron Safe",
+      "type": "artifact",
+      "cardClass": "bounty_hunter",
+      "cost": 3,
+      "rarity": "common",
+      "ongoing": {
+        "on": "turn-end",
+        "effects": [
+          {
+            "type": "armor",
+            "value": 2
+          }
+        ]
+      },
+      "description": "At the end of your turn, gain 2 armor."
     }
   ]
 }
