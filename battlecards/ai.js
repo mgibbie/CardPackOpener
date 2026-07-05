@@ -59,7 +59,7 @@ function pickTarget(state, pi, card) {
 				const myHero = legal.find(t => t.type === 'hero' && t.player === pi);
 				return myHero || myCreatures[0] || null;
 			}
-			if (first?.type === 'destroy' || first?.type === 'damage') {
+			if (first?.type === 'destroy' || first?.type === 'damage' || first?.type === 'exile') {
 				if (enemyCreatures.length) return byThreat(enemyCreatures)[0];
 				return weakestHero(state, enemyHeroes) || legal[0];
 			}
@@ -71,7 +71,7 @@ function pickTarget(state, pi, card) {
 		}
 	}
 }
-const CHOSEN_TYPES = new Set(['damage', 'heal', 'buff', 'grant', 'destroy']);
+const CHOSEN_TYPES = new Set(['damage', 'heal', 'buff', 'grant', 'destroy', 'exile']);
 
 function playableCards(state, pi) {
 	const p = state.players[pi];
@@ -103,6 +103,18 @@ export function step(state, pi = 1) {
 		const card = playable[0];
 		const target = pickTarget(state, pi, card);
 		if (E.playCard(state, pi, card.uid, target)) return true;
+	}
+
+	// 1a'. companion and commander come off their zones like extra hand cards
+	for (const c of [p.companion, ...p.command].filter(Boolean)) {
+		if (!E.canPlay(state, pi, c)) continue;
+		const spec = E.targetSpec(state, pi, c);
+		let target = null;
+		if (spec) {
+			target = pickTarget(state, pi, c);
+			if (spec.required && !target) continue;
+		}
+		if (E.playCard(state, pi, c.uid, target)) return true;
 	}
 
 	// 1b. coin if it unlocks the next play

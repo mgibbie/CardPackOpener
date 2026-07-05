@@ -99,7 +99,8 @@ export function opponentsOf(state, pi) {
 
 // ---------- game setup ----------
 export function createGame(cardsById, rng = Math.random, playerDeckIds = null, playerCount = 2) {
-	const playable = Object.values(cardsById).filter(d => !UNPLAYABLE.has(d.id));
+	// companions and commanders live in their own zones, never in decks
+	const playable = Object.values(cardsById).filter(d => !UNPLAYABLE.has(d.id) && !d.companion && !d.commander);
 	const shuffle = ids => {
 		for (let i = ids.length - 1; i > 0; i--) {
 			const j = Math.floor(rng() * (i + 1));
@@ -136,7 +137,7 @@ export function createGame(cardsById, rng = Math.random, playerDeckIds = null, p
 		secrets: [],
 		heroAttacksUsed: 0,
 		landsPlayedThisTurn: 0,
-		reshuffles: 0, // fatigue: each draw deals this much damage
+		fatigue: 0, // escalates each time a draw finds deck AND graveyard empty
 		mana: { cur: 1, max: 1, bonus: 0 },
 		coins: 0,
 		diedThisTurn: 0,
@@ -155,6 +156,22 @@ export function createGame(cardsById, rng = Math.random, playerDeckIds = null, p
 		events: [],
 	};
 	if (playerDeck) state.players[0].deck = playerDeck;
+
+	// deal each player a random companion and commander into their zones
+	const companions = Object.values(cardsById).filter(d => d.companion);
+	const commanders = Object.values(cardsById).filter(d => d.commander);
+	state.players.forEach((p, i) => {
+		if (companions.length) {
+			p.companion = instantiate(companions[Math.floor(rng() * companions.length)], i);
+			p.companion.zone = 'companion';
+		}
+		if (commanders.length) {
+			const c = instantiate(commanders[Math.floor(rng() * commanders.length)], i);
+			c.zone = 'command';
+			c.commander = true;
+			p.command = [c];
+		}
+	});
 
 	// starting hands: 1st player 3 cards, everyone after 4 cards + 1 coin
 	drawCards(state, 0, 3);
@@ -180,28 +197,27 @@ export function drawCards(state, pi, count) {
 			// summoned tokens have no card def and can't be redrawn
 			p.deck = p.graveyard.map(c => c.id).filter(id => state.cardsById[id]);
 			p.graveyard = [];
-			p.reshuffles++;
-			if (!p.deck.length) continue;
 			for (let k = p.deck.length - 1; k > 0; k--) {
 				const j = Math.floor(state.rng() * (k + 1));
 				[p.deck[k], p.deck[j]] = [p.deck[j], p.deck[k]];
 			}
-			emit(state, { type: 'reshuffle', player: pi, fatigue: p.reshuffles });
+			if (p.deck.length) emit(state, { type: 'reshuffle', player: pi });
 		}
 		const id = p.deck.pop();
-		if (!id) break;
+		if (!id) {
+			// nothing to reshuffle either: truly out of cards — fatigue
+			p.fatigue++;
+			emit(state, { type: 'fatigue', player: pi, amount: p.fatigue });
+			damageHero(state, pi, p.fatigue, pi);
+			checkGameOver(state);
+			if (p.eliminated || state.over) break;
+			continue;
+		}
 		if (p.hand.length >= MAX_HAND) { emit(state, { type: 'burn', player: pi, cardId: id }); continue; }
 		const card = instantiate(state.cardsById[id], pi);
 		card.zone = 'hand';
 		p.hand.push(card);
 		emit(state, { type: 'draw', player: pi, card });
-		// fatigue: a worn-out deck bites back on every draw
-		if (p.reshuffles > 0) {
-			emit(state, { type: 'fatigue', player: pi, amount: p.reshuffles });
-			damageHero(state, pi, p.reshuffles, pi);
-			checkGameOver(state);
-			if (p.eliminated) break;
-		}
 	}
 }
 
@@ -227,6 +243,7 @@ const CHOSEN = {
 	buff: { creature: 'creature', 'friendly-creature': 'friendly-creature' },
 	grant: { creature: 'creature', 'friendly-creature': 'friendly-creature' },
 	destroy: { creature: 'creature', 'enemy-creature': 'enemy-creature' },
+	exile: { creature: 'creature', 'enemy-creature': 'enemy-creature' },
 	freeze: { any: 'any', creature: 'creature', 'enemy-creature': 'enemy-creature' },
 	silence: { creature: 'creature', 'enemy-creature': 'enemy-creature' },
 };
@@ -382,7 +399,17 @@ function sweepDeaths(state) {
 			emit(state, { type: 'death', uid: c.uid, player: pi, name: c.name });
 			if (c.marked) drawCards(state, c.markedBy, 2);
 			runDeathrattle(state, pi, c);
-			toGraveyard(state, pi, c);
+			if (c.commander && !p.eliminated) {
+				// commanders retreat to the command zone; the tax goes up
+				const fresh = instantiate(state.cardsById[c.id], pi);
+				fresh.zone = 'command';
+				fresh.commander = true;
+				fresh.cost = c.cost + 2;
+				p.command.push(fresh);
+				emit(state, { type: 'commanderReturned', player: pi, card: fresh });
+			} else {
+				toGraveyard(state, pi, c);
+			}
 			questTick(state, 'death', pi);
 		}
 	}
@@ -407,6 +434,9 @@ function checkGameOver(state) {
 		p.enchantments = [];
 		p.artifacts = [];
 		p.planeswalkers = [];
+		p.emblems = [];
+		p.companion = null;
+		p.command = [];
 		p.weapon = null;
 		p.hand = [];
 		emit(state, { type: 'eliminated', player: i });
@@ -438,7 +468,7 @@ function summon(state, pi, tokenDef) {
 function fireOngoing(state, pi, when, ctx = {}) {
 	const p = state.players[pi];
 	if (state.over || p.eliminated) return;
-	for (const card of [...p.enchantments, ...p.artifacts]) {
+	for (const card of [...p.enchantments, ...p.artifacts, ...p.emblems]) {
 		if (state.over) break;
 		if (!card.ongoing || card.ongoing.on !== when) continue;
 		emit(state, { type: 'ongoingTriggered', player: pi, card });
@@ -449,7 +479,7 @@ function fireOngoing(state, pi, when, ctx = {}) {
 // sum of a static passive across a player's permanent rows
 function staticValue(p, type) {
 	let v = 0;
-	for (const card of [...p.enchantments, ...p.artifacts]) {
+	for (const card of [...p.enchantments, ...p.artifacts, ...p.emblems]) {
 		if (card.static?.type === type) v += card.static.value || 1;
 	}
 	return v;
@@ -807,6 +837,28 @@ function execEffects(state, pi, effects, target, source) {
 				t.shield = false;
 				emit(state, { type: 'destroy', uid: t.uid });
 			}
+		} else if (e.type === 'exile') {
+			// removed from the game: no death, no deathrattle, never reshuffled
+			const t = chosenCreature();
+			if (t) {
+				const owner = state.players[t.controller];
+				owner.board = owner.board.filter(c => c !== t);
+				t.zone = 'exile';
+				owner.exile.push(t);
+				emit(state, { type: 'exiled', uid: t.uid, player: t.controller, name: t.name });
+			}
+		} else if (e.type === 'emblem') {
+			const p = state.players[pi];
+			if (!p.eliminated) {
+				const em = instantiate({
+					id: 'emblem_' + e.name.toLowerCase().replace(/[^a-z0-9]+/g, '_'),
+					name: e.name, type: 'emblem', cost: 0, rarity: 'special',
+					description: e.description || '', ongoing: e.ongoing || null, static: e.static || null,
+				}, pi);
+				em.zone = 'emblem';
+				p.emblems.push(em);
+				emit(state, { type: 'emblemGained', player: pi, card: em });
+			}
 		} else if (e.type === 'freeze') {
 			if (e.target === 'enemy-creatures') { for (const o of enemies) for (const c of state.players[o].board) freezeCreature(state, c); }
 			else { const t = chosenCreature(); if (t) freezeCreature(state, t); /* hero freeze: no-op (heroes can't attack) */ }
@@ -942,12 +994,19 @@ export function canPlay(state, pi, card) {
 
 export function playCard(state, pi, cardUid, target) {
 	const p = state.players[pi];
+	// cards play from hand, the companion zone, or the command zone
+	let card = null, take = null;
 	const idx = p.hand.findIndex(c => c.uid === cardUid);
-	if (idx < 0) return false;
-	const card = p.hand[idx];
+	if (idx >= 0) { card = p.hand[idx]; take = () => p.hand.splice(idx, 1); }
+	else if (p.companion?.uid === cardUid) { card = p.companion; take = () => { p.companion = null; }; }
+	else {
+		const ci = p.command.findIndex(c => c.uid === cardUid);
+		if (ci >= 0) { card = p.command[ci]; take = () => p.command.splice(ci, 1); }
+	}
+	if (!card) return false;
 	if (!canPlay(state, pi, card)) return false;
 
-	p.hand.splice(idx, 1);
+	take();
 	spendMana(p, card.cost);
 	emit(state, { type: 'play', player: pi, card, mana: availableMana(p) });
 

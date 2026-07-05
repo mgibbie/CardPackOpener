@@ -24,6 +24,7 @@ export const TYPE_COLORS = {
 	heropower:   '#2e5a7a',
 	quest:       '#7a6a2e',
 	planeswalker:'#5a2e7a',
+	emblem:      '#8a7a3a',
 };
 
 function roundRect(ctx, x, y, w, h, r) {

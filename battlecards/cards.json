@@ -3478,9 +3478,31 @@
               "target": "any"
             }
           ]
+        },
+        {
+          "cost": -6,
+          "text": "Emblem \u2014 Iron Law: at the end of your turn, deal 2 damage to a random enemy.",
+          "effects": [
+            {
+              "type": "emblem",
+              "name": "Iron Law",
+              "description": "At the end of your turn, deal 2 damage to a random enemy.",
+              "ongoing": {
+                "on": "turn-end",
+                "effects": [
+                  {
+                    "type": "random-damage",
+                    "value": 2,
+                    "pool": "enemies",
+                    "count": 1
+                  }
+                ]
+              }
+            }
+          ]
         }
       ],
-      "description": "+1: Gain 3 armor. \u22123: Deal 4 damage to any target."
+      "description": "+1: Gain 3 armor. \u22123: Deal 4 damage to any target. \u22126: Emblem \u2014 at the end of your turn, deal 2 damage to a random enemy."
     },
     {
       "id": "sable_the_cardsharp",
@@ -3513,9 +3535,29 @@
               "name": "Card Soldier"
             }
           ]
+        },
+        {
+          "cost": -7,
+          "text": "Emblem \u2014 House Money: at the end of your turn, draw a card.",
+          "effects": [
+            {
+              "type": "emblem",
+              "name": "House Money",
+              "description": "At the end of your turn, draw a card.",
+              "ongoing": {
+                "on": "turn-end",
+                "effects": [
+                  {
+                    "type": "draw",
+                    "value": 1
+                  }
+                ]
+              }
+            }
+          ]
         }
       ],
-      "description": "+1: Draw a card. \u22124: Summon two 3/3 Card Soldiers."
+      "description": "+1: Draw a card. \u22124: Summon two 3/3 Card Soldiers. \u22127: Emblem \u2014 at the end of your turn, draw a card."
     },
     {
       "id": "old_man_cactus",
@@ -3560,6 +3602,127 @@
         }
       ],
       "description": "+2: Restore 4 health to your hero. \u22125: Deal 3 damage to all enemy creatures and summon a 5/5 Saguaro Guardian with Taunt."
+    },
+    {
+      "id": "dusty_the_coyote",
+      "name": "Dusty the Coyote",
+      "type": "creature",
+      "cardClass": "bounty_hunter",
+      "cost": 4,
+      "rarity": "uncommon",
+      "attack": 4,
+      "health": 4,
+      "tribe": "Beast",
+      "keywords": [
+        "rush"
+      ],
+      "companion": true,
+      "description": "Companion. Rush."
+    },
+    {
+      "id": "penny_the_prairie_dog",
+      "name": "Penny the Prairie Dog",
+      "type": "creature",
+      "cardClass": "bounty_hunter",
+      "cost": 2,
+      "rarity": "uncommon",
+      "attack": 2,
+      "health": 3,
+      "tribe": "Beast",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "draw",
+          "value": 1
+        }
+      ],
+      "companion": true,
+      "description": "Companion. Battlecry: Draw a card."
+    },
+    {
+      "id": "grizz_the_bear",
+      "name": "Grizz the Bear",
+      "type": "creature",
+      "cardClass": "bounty_hunter",
+      "cost": 6,
+      "rarity": "uncommon",
+      "attack": 6,
+      "health": 6,
+      "tribe": "Beast",
+      "keywords": [
+        "taunt"
+      ],
+      "companion": true,
+      "description": "Companion. Taunt."
+    },
+    {
+      "id": "sheriff_goldie",
+      "name": "Sheriff Goldie",
+      "type": "creature",
+      "cardClass": "bounty_hunter",
+      "cost": 5,
+      "rarity": "legendary",
+      "attack": 5,
+      "health": 5,
+      "keywords": [
+        "taunt"
+      ],
+      "commander": true,
+      "description": "Commander. Taunt. Returns to the command zone when she dies, costing 2 more."
+    },
+    {
+      "id": "deadeye_dan",
+      "name": "Deadeye Dan",
+      "type": "creature",
+      "cardClass": "bounty_hunter",
+      "cost": 5,
+      "rarity": "legendary",
+      "attack": 4,
+      "health": 4,
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "damage",
+          "value": 2,
+          "target": "any"
+        }
+      ],
+      "commander": true,
+      "description": "Commander. Battlecry: Deal 2 damage to any target. Returns to the command zone when he dies, costing 2 more."
+    },
+    {
+      "id": "la_llorona_del_rio",
+      "name": "La Llorona del Rio",
+      "type": "creature",
+      "cardClass": "bounty_hunter",
+      "cost": 6,
+      "rarity": "legendary",
+      "attack": 5,
+      "health": 6,
+      "keywords": [
+        "lifesteal"
+      ],
+      "commander": true,
+      "description": "Commander. Lifesteal. Returns to the command zone when she dies, costing 2 more."
+    },
+    {
+      "id": "banish_to_the_badlands",
+      "name": "Banish to the Badlands",
+      "type": "sorcery",
+      "cardClass": "bounty_hunter",
+      "cost": 5,
+      "rarity": "rare",
+      "effects": [
+        {
+          "type": "exile",
+          "target": "creature"
+        }
+      ],
+      "description": "Exile a creature. No deathrattle, no graveyard, no coming back."
     }
   ]
 }

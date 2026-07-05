@@ -265,6 +265,28 @@ function layoutTargets() {
 			ent.target.quat = sliceQuat(FLAT, pi);
 			ent.target.scale = 0.5;
 		});
+		// right-outer corner: companion, command zone, then emblem markers
+		if (p.companion) {
+			const ent = entityFor(p.companion);
+			seen.add(p.companion.uid);
+			ent.target.pos = toWorld(1.6, 0.05, off + 6.35, pi);
+			ent.target.quat = sliceQuat(FLAT, pi);
+			ent.target.scale = 0.42;
+		}
+		p.command.forEach((card, i) => {
+			const ent = entityFor(card);
+			seen.add(card.uid);
+			ent.target.pos = toWorld(2.8 + i * 1.2, 0.05, off + 6.35, pi);
+			ent.target.quat = sliceQuat(FLAT, pi);
+			ent.target.scale = 0.42;
+		});
+		p.emblems.forEach((card, i) => {
+			const ent = entityFor(card);
+			seen.add(card.uid);
+			ent.target.pos = toWorld(4.0 + i * 0.95, 0.05, off + 6.35, pi);
+			ent.target.quat = sliceQuat(FLAT, pi);
+			ent.target.scale = 0.34;
+		});
 		// unlimited permanent rows: enchantments left, artifacts right
 		const rowSpread = n2 => Math.min(1.1, 4.4 / Math.max(n2, 1));
 		p.enchantments.forEach((card, i) => {
@@ -368,6 +390,8 @@ function updateHud() {
 	const myGear = [];
 	if (me.weapon) myGear.push(`⚔ ${me.weapon.name} ${me.weapon.attack}/${me.weapon.durability}`);
 	if (me.secrets.length) myGear.push('❓ ' + me.secrets.map(s => s.name).join(', '));
+	if (me.exile.length) myGear.push(`⊘ ${me.exile.length} exiled`);
+	if (me.fatigue) myGear.push(`☠ fatigue ${me.fatigue}`);
 	$('my-gear').innerHTML = myGear.join('<br>');
 	$('my-panel').classList.toggle('armed',
 		state.current === HUMAN && !state.over && !pending && E.canHeroAttack(state, HUMAN));
@@ -382,6 +406,8 @@ function updateHud() {
 		if (p.weapon) gear.push(`⚔ ${p.weapon.attack}/${p.weapon.durability}`);
 		if (p.secrets.length) gear.push(`❓ ${p.secrets.length}`);
 		if (p.traps.length) gear.push(`⚠ ${p.traps.length}`);
+		if (p.exile.length) gear.push(`⊘ ${p.exile.length}`);
+		if (p.fatigue) gear.push(`☠ ${p.fatigue}`);
 		el.querySelector('.gear').innerHTML = gear.join(' · ');
 		el.classList.toggle('dead', p.eliminated);
 		el.classList.toggle('turn', state.current === pi && !state.over);
@@ -601,9 +627,25 @@ function nextEvent() {
 		}
 		case 'fatigue':
 			floatText(`-${ev.amount}`, '#b46cff', heroPos(ev.player));
-			log(`${nameOf(ev.player)} take${ev.player === HUMAN ? '' : 's'} ${ev.amount} fatigue`);
-			delay = 260;
+			log(`${nameOf(ev.player)} ${ev.player === HUMAN ? 'are' : 'is'} out of cards: ${ev.amount} fatigue`);
+			delay = 300;
 			break;
+		case 'commanderReturned':
+			log(`${ev.card.name} retreats to the command zone (now costs ${ev.card.cost})`);
+			delay = 420;
+			break;
+		case 'emblemGained':
+			banner(`Emblem: ${ev.card.name}!`, 1600);
+			log(`${nameOf(ev.player)} gained an emblem: ${ev.card.name}`);
+			delay = 800;
+			break;
+		case 'exiled': {
+			const ent = entities.get(ev.uid);
+			if (ent) { ent.dying = performance.now(); floatText('⊘', '#b46cff', ent.mesh.position); }
+			log(`${ev.name} was exiled`);
+			delay = 420;
+			break;
+		}
 		case 'secretRevealed':
 			banner(`Secret: ${ev.card.name}!`, 1600);
 			log(`${ev.player === HUMAN ? 'Your' : `${nameOf(ev.player)}'s`} Secret revealed: ${ev.card.name}`);
@@ -668,7 +710,9 @@ function pick(ev) {
 function cardOf(uid) {
 	if (!state || uid == null) return null;
 	for (const p of state.players) {
-		for (const zone of [p.hand, p.board, p.heroPowers, p.planeswalkers, p.traps, p.lands, p.quests, p.enchantments, p.artifacts]) {
+		const zones = [p.hand, p.board, p.heroPowers, p.planeswalkers, p.traps, p.lands, p.quests,
+			p.enchantments, p.artifacts, p.command, p.emblems, p.companion ? [p.companion] : []];
+		for (const zone of zones) {
 			const c = zone.find(c => c.uid === uid);
 			if (c) return c;
 		}
@@ -782,6 +826,17 @@ renderer.domElement.addEventListener('pointerdown', ev => {
 	} else if (card.zone === 'planeswalker' && card.controller === HUMAN) {
 		// click your planeswalker to pick an ability
 		if (E.canUseWalker(state, HUMAN, card)) openWalkerMenu(card, ev);
+	} else if ((card.zone === 'companion' || card.zone === 'command') && card.controller === HUMAN) {
+		// companion / commander play straight from their zones
+		if (!E.canPlay(state, HUMAN, card)) return;
+		const spec = E.targetSpec(state, HUMAN, card);
+		if (spec) {
+			const targets = E.legalTargets(state, HUMAN, spec);
+			if (targets.length) { pending = { card, spec, targets, mode: 'play' }; updateHud(); return; }
+			if (spec.required) return;
+		}
+		E.playCard(state, HUMAN, card.uid, null);
+		pump();
 	}
 });
 
@@ -874,11 +929,12 @@ function updateRings() {
 			else if (c.zone === 'hand' && c.controller === HUMAN && E.canPlay(state, HUMAN, c)) color = '#57e389';
 			else if (c.zone === 'heropower' && c.controller === HUMAN && E.canUseHeroPower(state, HUMAN, c)) color = '#57e389';
 			else if (c.zone === 'planeswalker' && c.controller === HUMAN && E.canUseWalker(state, HUMAN, c)) color = '#57e389';
+			else if ((c.zone === 'companion' || c.zone === 'command') && c.controller === HUMAN && E.canPlay(state, HUMAN, c)) color = '#57e389';
 		}
-		if (color && (c.zone === 'board' || c.zone === 'heropower' || c.zone === 'planeswalker')) {
+		if (color && (c.zone === 'board' || c.zone === 'heropower' || c.zone === 'planeswalker' || c.zone === 'companion' || c.zone === 'command')) {
 			ent.ring.visible = true;
 			ent.ring.material.color.set(color);
-			ent.ring.scale.setScalar(c.zone === 'heropower' ? 0.62 : c.zone === 'planeswalker' ? 0.72 : 1);
+			ent.ring.scale.setScalar(c.zone === 'board' ? 1 : c.zone === 'planeswalker' ? 0.72 : 0.62);
 			ent.ring.position.set(ent.mesh.position.x, 0.02, ent.mesh.position.z);
 		} else if (color && c.zone === 'hand') {
 			ent.ring.visible = false;
