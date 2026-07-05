@@ -53,6 +53,10 @@ function instantiate(def, controller) {
 		secret: def.secret || null,
 		trap: def.trap || null,
 		mana: def.mana || 0, // land: bonus mana granted each turn
+		power: def.power || null,   // hero power: { cost, effects }
+		quest: def.quest || null,   // quest: { goal: { type, count }, reward }
+		progress: 0,                // quest goal counter
+		usedThisTurn: false,        // hero power activation gate
 		damage: 0,
 		keywords: [...(def.keywords || [])],
 		effects: def.effects || null,
@@ -361,6 +365,7 @@ function sweepDeaths(state) {
 			if (c.marked) drawCards(state, c.markedBy, 2);
 			runDeathrattle(state, pi, c);
 			toGraveyard(state, pi, c);
+			questTick(state, 'death', pi);
 		}
 	}
 	// deathrattles can kill more
@@ -379,6 +384,8 @@ function checkGameOver(state) {
 		p.secrets = [];
 		p.traps = [];
 		p.lands = [];
+		p.heroPowers = [];
+		p.quests = [];
 		p.weapon = null;
 		p.hand = [];
 		emit(state, { type: 'eliminated', player: i });
@@ -401,7 +408,32 @@ function summon(state, pi, tokenDef) {
 	c.zone = 'board';
 	p.board.push(c);
 	emit(state, { type: 'summon', player: pi, card: c });
+	questTick(state, 'summon', pi);
 	return c;
+}
+
+// ---------- quests ----------
+// goal kinds counted for the acting player only, except 'death' which every
+// quest holder counts no matter whose creature fell
+const ANY_ACTOR_GOALS = new Set(['death']);
+
+function questTick(state, kind, actorPi, amount = 1) {
+	for (let pi = 0; pi < state.players.length; pi++) {
+		const p = state.players[pi];
+		if (p.eliminated || !p.quests.length) continue;
+		if (!ANY_ACTOR_GOALS.has(kind) && pi !== actorPi) continue;
+		for (const q of [...p.quests]) {
+			if (q.quest.goal.type !== kind) continue;
+			q.progress += amount;
+			emit(state, { type: 'questProgress', player: pi, card: q, progress: q.progress, goal: q.quest.goal.count });
+			if (q.progress >= q.quest.goal.count) {
+				p.quests = p.quests.filter(x => x !== q);
+				toGraveyard(state, pi, q);
+				emit(state, { type: 'questComplete', player: pi, card: q });
+				execEffects(state, pi, q.quest.reward, null, q);
+			}
+		}
+	}
 }
 
 // ---------- weapons ----------
@@ -773,6 +805,19 @@ function execEffects(state, pi, effects, target, source) {
 				source.attack += w.attack;
 				emit(state, { type: 'buff', uid: source.uid, attack: source.attack, hp: hp(source) });
 			}
+		} else if (e.type === 'equip') {
+			const p = state.players[pi];
+			if (p.eliminated) continue;
+			if (p.weapon) breakWeapon(state, pi, true);
+			const w = instantiate({
+				id: 'token_' + e.name.toLowerCase().replace(/[^a-z0-9]+/g, '_'),
+				name: e.name, type: 'weapon', cost: 0, rarity: 'common',
+				description: `A ${e.attack}/${e.durability} weapon.`,
+				attack: e.attack, durability: e.durability,
+			}, pi);
+			w.zone = 'weapon';
+			p.weapon = w;
+			emit(state, { type: 'weaponEquip', player: pi, card: w });
 		}
 	}
 }
@@ -821,6 +866,12 @@ export function canPlay(state, pi, card) {
 		const p = state.players[pi];
 		if (p.lands.length >= MAX_LANDS || p.landsPlayedThisTurn >= 1) return false;
 	}
+	if (card.type === 'heropower' && state.players[pi].heroPowers.length >= MAX_HERO_POWERS) return false;
+	if (card.type === 'quest') {
+		const p = state.players[pi];
+		if (p.quests.length >= MAX_QUESTS) return false;
+		if (p.quests.some(q => q.id === card.id)) return false; // no duplicate quests
+	}
 	const spec = targetSpec(state, pi, card);
 	if (spec && spec.required && legalTargets(state, pi, spec).length === 0) return false;
 	return true;
@@ -841,6 +892,7 @@ export function playCard(state, pi, cardUid, target) {
 		card.zone = 'board';
 		card.sick = true;
 		p.board.push(card);
+		questTick(state, 'summon', pi);
 		runBattlecry(state, pi, card, target);
 		if (p.board.includes(card)) fireSecretsAll(state, pi, 'enemy-minion-played', { minion: card });
 	} else if (card.type === 'weapon') {
@@ -863,7 +915,17 @@ export function playCard(state, pi, cardUid, target) {
 		p.landsPlayedThisTurn++;
 		emit(state, { type: 'landPlayed', player: pi, card });
 		runBattlecry(state, pi, card, target); // on-play land effects
+		questTick(state, 'land', pi);
+	} else if (card.type === 'heropower') {
+		card.zone = 'heropower';
+		p.heroPowers.push(card);
+		emit(state, { type: 'heroPowerInstalled', player: pi, card });
+	} else if (card.type === 'quest') {
+		card.zone = 'quest';
+		p.quests.push(card);
+		emit(state, { type: 'questStarted', player: pi, card });
 	} else {
+		questTick(state, 'spell', pi);
 		const ctx = { spell: card, countered: false };
 		fireSecretsAll(state, pi, 'enemy-spell-cast', ctx);
 		if (ctx.countered) emit(state, { type: 'countered', player: pi, name: card.name });
@@ -997,6 +1059,7 @@ export function heroAttack(state, pi, target) {
 	const p = state.players[pi];
 	p.heroAttacksUsed++;
 	emit(state, { type: 'heroAttack', player: pi, target });
+	questTick(state, 'hero-attack', pi);
 
 	const ctx = { attackerType: 'hero', attackerPlayer: pi, target, cancelled: false };
 	fireSecrets(state, target.player, 'enemy-attack', ctx);
@@ -1017,6 +1080,35 @@ export function heroAttack(state, pi, target) {
 		}
 	}
 	degradeWeapon(state, pi);
+	sweepDeaths(state);
+	return true;
+}
+
+// ---------- hero powers ----------
+// derive the activation's target choice from the power's effects
+export function heroPowerSpec(state, pi, card) {
+	if (!card.power) return null;
+	return targetSpec(state, pi, { id: card.id, type: 'sorcery', effects: card.power.effects });
+}
+
+export function canUseHeroPower(state, pi, card) {
+	if (state.over || state.current !== pi) return false;
+	const p = state.players[pi];
+	if (!p.heroPowers.includes(card) || card.usedThisTurn) return false;
+	if (availableMana(p) < card.power.cost) return false;
+	const spec = heroPowerSpec(state, pi, card);
+	if (spec && spec.required && legalTargets(state, pi, spec).length === 0) return false;
+	return true;
+}
+
+export function useHeroPower(state, pi, cardUid, target) {
+	const p = state.players[pi];
+	const card = p.heroPowers.find(c => c.uid === cardUid);
+	if (!card || !canUseHeroPower(state, pi, card)) return false;
+	spendMana(p, card.power.cost);
+	card.usedThisTurn = true;
+	emit(state, { type: 'heroPowerUsed', player: pi, card, mana: availableMana(p) });
+	execEffects(state, pi, card.power.effects, target, card);
 	sweepDeaths(state);
 	return true;
 }
@@ -1068,6 +1160,7 @@ export function endTurn(state) {
 	// lands pay out on top of the auto-ramp
 	const landMana = np.lands.reduce((s, l) => s + (l.mana || 1), 0);
 	if (landMana) np.mana.bonus += landMana;
+	for (const hpw of np.heroPowers) hpw.usedThisTurn = false;
 	for (const c of np.board) { c.sick = false; c.attacksUsed = 0; }
 	emit(state, { type: 'turnStart', player: state.current, turnNumber: state.turnNumber });
 	drawCards(state, state.current, 1);

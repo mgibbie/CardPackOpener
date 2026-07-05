@@ -121,7 +121,8 @@ function faceMaterialFor(card) {
 	const tex = makeFaceTexture(
 		{ ...card, health: card.maxHealth },
 		card.type === 'creature' ? { attack: card.attack, hp: E.hp(card), maxHealth: card.maxHealth }
-			: card.type === 'weapon' ? { attack: card.attack, durability: card.durability } : {}
+			: card.type === 'weapon' ? { attack: card.attack, durability: card.durability }
+			: card.type === 'quest' ? { progress: card.progress || 0, goal: card.quest?.goal?.count } : {}
 	);
 	return new THREE.MeshStandardMaterial({ map: tex, roughness: 0.35, metalness: 0.12 });
 }
@@ -236,6 +237,21 @@ function layoutTargets() {
 			seen.add(card.uid);
 			ent.target.pos = toWorld(TRAP_X + (i - 1) * TRAP_SPREAD, 0.05, off + TRAP_Z, pi);
 			ent.target.quat = sliceQuat(pi === HUMAN ? FLAT : FACEDOWN, pi);
+			ent.target.scale = 0.42;
+		});
+		// hero powers mirror the trap row on the left; quests sit outside them
+		p.heroPowers.forEach((card, i) => {
+			const ent = entityFor(card);
+			seen.add(card.uid);
+			ent.target.pos = toWorld(-(TRAP_X + (i - 1) * TRAP_SPREAD), 0.05, off + TRAP_Z, pi);
+			ent.target.quat = sliceQuat(FLAT, pi);
+			ent.target.scale = 0.42;
+		});
+		p.quests.forEach((card, i) => {
+			const ent = entityFor(card);
+			seen.add(card.uid);
+			ent.target.pos = toWorld(-(1.6 + i * 1.15), 0.05, off + 6.35, pi);
+			ent.target.quat = sliceQuat(FLAT, pi);
 			ent.target.scale = 0.42;
 		});
 		// creature row (unlimited: compress spacing inside the slice arc)
@@ -512,6 +528,24 @@ function nextEvent() {
 			delay = 900;
 			break;
 		case 'landPlayed': delay = 260; break; // the generic play event already logs it
+		case 'heroPowerInstalled': delay = 260; break; // ditto
+		case 'questStarted': delay = 260; break;      // ditto
+		case 'heroPowerUsed':
+			log(`${nameOf(ev.player)} used ${ev.card.name}`);
+			floatText('✦', '#ffd25f', creaturePos(ev.card.uid));
+			delay = 420;
+			break;
+		case 'questProgress': {
+			const ent = entities.get(ev.card.uid);
+			if (ent) { ent.card.progress = ev.progress; refreshFace(ent); }
+			delay = 140;
+			break;
+		}
+		case 'questComplete':
+			banner(`Quest complete: ${ev.card.name}!`, 1700);
+			log(`${ev.player === HUMAN ? 'Your' : `${nameOf(ev.player)}'s`} quest complete: ${ev.card.name}`);
+			delay = 950;
+			break;
 		case 'secretRevealed':
 			banner(`Secret: ${ev.card.name}!`, 1600);
 			log(`${ev.player === HUMAN ? 'Your' : `${nameOf(ev.player)}'s`} Secret revealed: ${ev.card.name}`);
@@ -603,7 +637,7 @@ renderer.domElement.addEventListener('pointerdown', ev => {
 	if (pending) {
 		if (card && card.zone === 'board') {
 			const t = pending.targets.find(t => t.type === 'creature' && t.uid === card.uid);
-			if (t) { E.playCard(state, HUMAN, pending.card.uid, t); clearModes(); pump(); return; }
+			if (t) { commitPending(t); return; }
 		}
 		clearModes();
 		return;
@@ -632,22 +666,41 @@ renderer.domElement.addEventListener('pointerdown', ev => {
 		const spec = E.targetSpec(state, HUMAN, card);
 		if (spec) {
 			const targets = E.legalTargets(state, HUMAN, spec);
-			if (targets.length) { pending = { card, spec, targets }; updateHud(); return; }
+			if (targets.length) { pending = { card, spec, targets, mode: 'play' }; updateHud(); return; }
 			if (spec.required) return;
 		}
 		E.playCard(state, HUMAN, card.uid, null);
 		pump();
 	} else if (card.zone === 'board' && card.controller === HUMAN) {
 		if (E.canAttackWith(state, HUMAN, card)) { selectedAttacker = card.uid; updateHud(); }
+	} else if (card.zone === 'heropower' && card.controller === HUMAN) {
+		// click an installed hero power to activate it
+		if (!E.canUseHeroPower(state, HUMAN, card)) return;
+		const spec = E.heroPowerSpec(state, HUMAN, card);
+		if (spec) {
+			const targets = E.legalTargets(state, HUMAN, spec);
+			if (targets.length) { pending = { card, spec, targets, mode: 'power' }; updateHud(); return; }
+			if (spec.required) return;
+		}
+		E.useHeroPower(state, HUMAN, card.uid, null);
+		pump();
 	}
 });
+
+// resolve a pending targeted action (spell/battlecry play or hero power)
+function commitPending(t) {
+	if (pending.mode === 'power') E.useHeroPower(state, HUMAN, pending.card.uid, t);
+	else E.playCard(state, HUMAN, pending.card.uid, t);
+	clearModes();
+	pump();
+}
 
 // hero panels as click targets (attacks + targeted spells at heroes)
 function panelClick(pi) {
 	if (!state || state.over || state.current !== HUMAN) return;
 	if (pending) {
 		const t = pending.targets.find(t => t.type === 'hero' && t.player === pi);
-		if (t) { E.playCard(state, HUMAN, pending.card.uid, t); clearModes(); pump(); }
+		if (t) commitPending(t);
 		return;
 	}
 	if (selectedAttacker === 'HERO') {
@@ -719,10 +772,12 @@ function updateRings() {
 		else if (!pending && !selectedAttacker && state.current === HUMAN && !state.over) {
 			if (c.zone === 'board' && c.controller === HUMAN && E.canAttackWith(state, HUMAN, c)) color = '#57e389';
 			else if (c.zone === 'hand' && c.controller === HUMAN && E.canPlay(state, HUMAN, c)) color = '#57e389';
+			else if (c.zone === 'heropower' && c.controller === HUMAN && E.canUseHeroPower(state, HUMAN, c)) color = '#57e389';
 		}
-		if (color && c.zone === 'board') {
+		if (color && (c.zone === 'board' || c.zone === 'heropower')) {
 			ent.ring.visible = true;
 			ent.ring.material.color.set(color);
+			ent.ring.scale.setScalar(c.zone === 'heropower' ? 0.62 : 1);
 			ent.ring.position.set(ent.mesh.position.x, 0.02, ent.mesh.position.z);
 		} else if (color && c.zone === 'hand') {
 			ent.ring.visible = false;

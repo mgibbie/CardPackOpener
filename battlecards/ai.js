@@ -111,6 +111,21 @@ export function step(state, pi = 1) {
 		if (unlocks && E.useCoin(state, pi)) return true;
 	}
 
+	// 1c. activate an installed hero power with leftover mana
+	for (const hpw of p.heroPowers) {
+		if (!E.canUseHeroPower(state, pi, hpw)) continue;
+		const fx = hpw.power.effects;
+		// don't waste pure healing at high life
+		if (fx.every(e => e.type === 'heal') && p.life > 30) continue;
+		const spec = E.heroPowerSpec(state, pi, hpw);
+		let target = null;
+		if (spec) {
+			target = pickTarget(state, pi, { id: hpw.id, type: 'sorcery', effects: fx });
+			if (spec.required && !target) continue;
+		}
+		if (E.useHeroPower(state, pi, hpw.uid, target)) return true;
+	}
+
 	// 2. attack with each ready creature
 	const attackers = E.attackersFor(state, pi);
 	for (const a of attackers) {

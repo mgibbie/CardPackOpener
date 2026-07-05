@@ -21,6 +21,8 @@ export const TYPE_COLORS = {
 	weapon:      '#7a5a2e',
 	secret:      '#2e6a4a',
 	trap:        '#8a4a2e',
+	heropower:   '#2e5a7a',
+	quest:       '#7a6a2e',
 };
 
 function roundRect(ctx, x, y, w, h, r) {
@@ -117,6 +119,18 @@ export function makeFaceTexture(card, opts = {}) {
 		}
 	}
 	ctx.fillText(line, 48, y);
+
+	// quest progress badge
+	if (opts.goal != null) {
+		ctx.font = 'bold 40px Georgia';
+		ctx.textAlign = 'center';
+		ctx.fillStyle = '#7a6a2e';
+		roundRect(ctx, W / 2 - 80, H - 106, 160, 60, 12);
+		ctx.fill();
+		ctx.fillStyle = '#fff';
+		ctx.fillText(`${opts.progress ?? 0} / ${opts.goal}`, W / 2, H - 68);
+		ctx.textAlign = 'left';
+	}
 
 	// attack / durability plates
 	if (card.type === 'weapon') {

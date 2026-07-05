@@ -3026,6 +3026,244 @@
         }
       ],
       "description": "Land: +1 mana at the start of each of your turns. When played, restore 5 health to your hero."
+    },
+    {
+      "id": "gunslingers_eye",
+      "name": "Gunslinger's Eye",
+      "type": "heropower",
+      "cardClass": "bounty_hunter",
+      "cost": 2,
+      "rarity": "uncommon",
+      "power": {
+        "cost": 2,
+        "effects": [
+          {
+            "type": "damage",
+            "value": 2,
+            "target": "any"
+          }
+        ]
+      },
+      "description": "Hero Power (2): Deal 2 damage to any target."
+    },
+    {
+      "id": "field_medic_tent",
+      "name": "Field Medic Tent",
+      "type": "heropower",
+      "cardClass": "bounty_hunter",
+      "cost": 2,
+      "rarity": "common",
+      "power": {
+        "cost": 2,
+        "effects": [
+          {
+            "type": "heal",
+            "value": 3,
+            "target": "any"
+          }
+        ]
+      },
+      "description": "Hero Power (2): Restore 3 health to any target."
+    },
+    {
+      "id": "recruiting_office",
+      "name": "Recruiting Office",
+      "type": "heropower",
+      "cardClass": "bounty_hunter",
+      "cost": 3,
+      "rarity": "uncommon",
+      "power": {
+        "cost": 2,
+        "effects": [
+          {
+            "type": "summon",
+            "count": 1,
+            "attack": 1,
+            "health": 1,
+            "name": "Deputy"
+          }
+        ]
+      },
+      "description": "Hero Power (2): Summon a 1/1 Deputy."
+    },
+    {
+      "id": "wanted_poster",
+      "name": "Wanted Poster",
+      "type": "heropower",
+      "cardClass": "bounty_hunter",
+      "cost": 2,
+      "rarity": "rare",
+      "power": {
+        "cost": 2,
+        "effects": [
+          {
+            "type": "draw",
+            "value": 1
+          },
+          {
+            "type": "damage",
+            "value": 2,
+            "target": "own-hero"
+          }
+        ]
+      },
+      "description": "Hero Power (2): Draw a card and take 2 damage."
+    },
+    {
+      "id": "armorers_forge",
+      "name": "Armorer's Forge",
+      "type": "heropower",
+      "cardClass": "bounty_hunter",
+      "cost": 2,
+      "rarity": "common",
+      "power": {
+        "cost": 2,
+        "effects": [
+          {
+            "type": "armor",
+            "value": 3
+          }
+        ]
+      },
+      "description": "Hero Power (2): Gain 3 armor."
+    },
+    {
+      "id": "gunsmith",
+      "name": "Gunsmith",
+      "type": "heropower",
+      "cardClass": "bounty_hunter",
+      "cost": 3,
+      "rarity": "rare",
+      "power": {
+        "cost": 2,
+        "effects": [
+          {
+            "type": "equip",
+            "name": "Pistol",
+            "attack": 1,
+            "durability": 2
+          }
+        ]
+      },
+      "description": "Hero Power (2): Equip a 1/2 Pistol."
+    },
+    {
+      "id": "great_cattle_drive",
+      "name": "The Great Cattle Drive",
+      "type": "quest",
+      "cardClass": "bounty_hunter",
+      "cost": 1,
+      "rarity": "epic",
+      "quest": {
+        "goal": {
+          "type": "summon",
+          "count": 6
+        },
+        "reward": [
+          {
+            "type": "summon",
+            "count": 1,
+            "attack": 6,
+            "health": 6,
+            "name": "Longhorn",
+            "keywords": [
+              "trample"
+            ]
+          }
+        ]
+      },
+      "description": "Quest: Summon 6 creatures. Reward: A 6/6 Longhorn with Trample."
+    },
+    {
+      "id": "dead_mans_hand",
+      "name": "Dead Man's Hand",
+      "type": "quest",
+      "cardClass": "bounty_hunter",
+      "cost": 1,
+      "rarity": "epic",
+      "quest": {
+        "goal": {
+          "type": "spell",
+          "count": 5
+        },
+        "reward": [
+          {
+            "type": "draw",
+            "value": 3
+          }
+        ]
+      },
+      "description": "Quest: Play 5 spells. Reward: Draw 3 cards."
+    },
+    {
+      "id": "blood_feud",
+      "name": "Blood Feud",
+      "type": "quest",
+      "cardClass": "bounty_hunter",
+      "cost": 1,
+      "rarity": "epic",
+      "quest": {
+        "goal": {
+          "type": "death",
+          "count": 8
+        },
+        "reward": [
+          {
+            "type": "damage",
+            "value": 2,
+            "target": "enemies"
+          }
+        ]
+      },
+      "description": "Quest: 8 creatures die. Reward: Deal 2 damage to every enemy hero and creature."
+    },
+    {
+      "id": "railroad_contract",
+      "name": "Railroad Contract",
+      "type": "quest",
+      "cardClass": "bounty_hunter",
+      "cost": 1,
+      "rarity": "epic",
+      "quest": {
+        "goal": {
+          "type": "land",
+          "count": 3
+        },
+        "reward": [
+          {
+            "type": "draw",
+            "value": 2
+          },
+          {
+            "type": "armor",
+            "value": 5
+          }
+        ]
+      },
+      "description": "Quest: Play 3 lands. Reward: Draw 2 cards and gain 5 armor."
+    },
+    {
+      "id": "bounty_board",
+      "name": "Bounty Board",
+      "type": "quest",
+      "cardClass": "bounty_hunter",
+      "cost": 1,
+      "rarity": "epic",
+      "quest": {
+        "goal": {
+          "type": "hero-attack",
+          "count": 3
+        },
+        "reward": [
+          {
+            "type": "equip",
+            "name": "Golden Revolver",
+            "attack": 4,
+            "durability": 3
+          }
+        ]
+      },
+      "description": "Quest: Attack 3 times with your hero. Reward: Equip a 4/3 Golden Revolver."
     }
   ]
 }
