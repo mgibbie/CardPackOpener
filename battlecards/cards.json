@@ -3723,6 +3723,779 @@
         }
       ],
       "description": "Exile a creature. No deathrattle, no graveyard, no coming back."
+    },
+    {
+      "id": "soulfire",
+      "name": "Soulfire",
+      "cardClass": "warlock",
+      "cost": 0,
+      "rarity": "common",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 4,
+          "target": "any"
+        },
+        {
+          "type": "discard-random",
+          "count": 1
+        }
+      ],
+      "description": "Deal 4 damage to any target. Discard 1 random card."
+    },
+    {
+      "id": "blood_imp",
+      "name": "Blood Imp",
+      "cardClass": "warlock",
+      "cost": 1,
+      "rarity": "common",
+      "type": "creature",
+      "attack": 0,
+      "health": 1,
+      "ongoing": {
+        "on": "turn-end",
+        "effects": [
+          {
+            "type": "buff-random-friendly",
+            "attack": 0,
+            "health": 1,
+            "excludeSelf": true
+          }
+        ]
+      },
+      "keywords": [
+        "stealth"
+      ],
+      "description": "Stealth. At the end of your turn, another random friendly creature gets +1 Health."
+    },
+    {
+      "id": "dust_devil",
+      "name": "Dust Devil",
+      "cardClass": "shaman",
+      "cost": 1,
+      "rarity": "common",
+      "overload": 2,
+      "type": "creature",
+      "attack": 3,
+      "health": 1,
+      "keywords": [
+        "windfury"
+      ],
+      "description": "Windfury. Overload: 2 mana locked next turn."
+    },
+    {
+      "id": "forked_lightning",
+      "name": "Forked Lightning",
+      "cardClass": "shaman",
+      "cost": 1,
+      "rarity": "common",
+      "overload": 2,
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "random-damage",
+          "value": 2,
+          "pool": "enemy-creatures",
+          "count": 2
+        }
+      ],
+      "description": "Deal 2 damage to 2 random enemy creatures. Overload: 2 mana locked next turn."
+    },
+    {
+      "id": "mana_wyrm",
+      "name": "Mana Wyrm",
+      "cardClass": "mage",
+      "cost": 1,
+      "rarity": "common",
+      "type": "creature",
+      "attack": 1,
+      "health": 3,
+      "ongoing": {
+        "on": "spell-played",
+        "effects": [
+          {
+            "type": "buff-self",
+            "attack": 1,
+            "health": 0
+          }
+        ]
+      },
+      "description": "Whenever you cast a spell, this gains +1 Attack."
+    },
+    {
+      "id": "young_priestess",
+      "name": "Young Priestess",
+      "cardClass": "neutral",
+      "cost": 1,
+      "rarity": "rare",
+      "type": "creature",
+      "attack": 2,
+      "health": 1,
+      "ongoing": {
+        "on": "turn-end",
+        "effects": [
+          {
+            "type": "buff-random-friendly",
+            "attack": 0,
+            "health": 1,
+            "excludeSelf": true
+          }
+        ]
+      },
+      "description": "At the end of your turn, another random friendly creature gets +1 Health."
+    },
+    {
+      "id": "ancient_watcher",
+      "name": "Ancient Watcher",
+      "cardClass": "neutral",
+      "cost": 2,
+      "rarity": "rare",
+      "type": "creature",
+      "attack": 4,
+      "health": 5,
+      "keywords": [
+        "defender"
+      ],
+      "description": "Can't attack."
+    },
+    {
+      "id": "armorsmith",
+      "name": "Armorsmith",
+      "cardClass": "warrior",
+      "cost": 2,
+      "rarity": "rare",
+      "type": "creature",
+      "attack": 1,
+      "health": 4,
+      "ongoing": {
+        "on": "friendly-creature-damaged",
+        "effects": [
+          {
+            "type": "armor",
+            "value": 1
+          }
+        ]
+      },
+      "description": "Whenever a friendly creature takes damage, gain 1 armor."
+    },
+    {
+      "id": "bloodmage_thalnos",
+      "name": "Bloodmage Thalnos",
+      "cardClass": "neutral",
+      "cost": 2,
+      "rarity": "legendary",
+      "static": {
+        "type": "spell-damage",
+        "value": 1
+      },
+      "type": "creature",
+      "attack": 1,
+      "health": 1,
+      "keywords": [
+        "deathrattle"
+      ],
+      "deathrattle": [
+        {
+          "type": "draw",
+          "value": 1
+        }
+      ],
+      "description": "Deathrattle: Draw 1 card. Spell Damage +1."
+    },
+    {
+      "id": "felstalker",
+      "name": "Felstalker",
+      "cardClass": "warlock",
+      "cost": 2,
+      "rarity": "common",
+      "type": "creature",
+      "attack": 4,
+      "health": 3,
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "discard-random",
+          "count": 1
+        }
+      ],
+      "description": "Battlecry: Discard 1 random card."
+    },
+    {
+      "id": "knife_juggler",
+      "name": "Knife Juggler",
+      "cardClass": "neutral",
+      "cost": 2,
+      "rarity": "rare",
+      "type": "creature",
+      "attack": 3,
+      "health": 2,
+      "ongoing": {
+        "on": "summoned",
+        "effects": [
+          {
+            "type": "random-damage",
+            "value": 1,
+            "pool": "enemies",
+            "count": 1
+          }
+        ]
+      },
+      "description": "After you summon a creature, deal 1 damage to a random enemy."
+    },
+    {
+      "id": "kobold_geomancer",
+      "name": "Kobold Geomancer",
+      "cardClass": "neutral",
+      "cost": 2,
+      "rarity": "common",
+      "static": {
+        "type": "spell-damage",
+        "value": 1
+      },
+      "type": "creature",
+      "attack": 2,
+      "health": 2,
+      "description": "A 2/2 creature. Spell Damage +1."
+    },
+    {
+      "id": "stormforged_axe",
+      "name": "Stormforged Axe",
+      "cardClass": "shaman",
+      "cost": 2,
+      "rarity": "common",
+      "overload": 1,
+      "type": "weapon",
+      "attack": 2,
+      "durability": 3,
+      "description": "A 2/3 weapon. Overload: 1 mana locked next turn."
+    },
+    {
+      "id": "wild_pyromancer",
+      "name": "Wild Pyromancer",
+      "cardClass": "neutral",
+      "cost": 2,
+      "rarity": "rare",
+      "type": "creature",
+      "attack": 3,
+      "health": 2,
+      "ongoing": {
+        "on": "spell-played",
+        "effects": [
+          {
+            "type": "damage",
+            "value": 1,
+            "target": "all-creatures"
+          }
+        ]
+      },
+      "description": "Whenever you cast a spell, deal 1 damage to every creature."
+    },
+    {
+      "id": "acolyte_of_pain",
+      "name": "Acolyte of Pain",
+      "cardClass": "neutral",
+      "cost": 3,
+      "rarity": "common",
+      "type": "creature",
+      "attack": 1,
+      "health": 3,
+      "ongoing": {
+        "on": "self-damaged",
+        "effects": [
+          {
+            "type": "draw",
+            "value": 1
+          }
+        ]
+      },
+      "description": "Whenever this creature takes damage, draw 1 card."
+    },
+    {
+      "id": "coldlight_oracle",
+      "name": "Coldlight Oracle",
+      "cardClass": "neutral",
+      "cost": 3,
+      "rarity": "rare",
+      "type": "creature",
+      "attack": 2,
+      "health": 2,
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "draw-all",
+          "value": 2
+        }
+      ],
+      "description": "Battlecry: Every player draws 2 cards."
+    },
+    {
+      "id": "dalaran_mage",
+      "name": "Dalaran Mage",
+      "cardClass": "neutral",
+      "cost": 3,
+      "rarity": "common",
+      "static": {
+        "type": "spell-damage",
+        "value": 1
+      },
+      "type": "creature",
+      "attack": 1,
+      "health": 4,
+      "description": "A 1/4 creature. Spell Damage +1."
+    },
+    {
+      "id": "demolisher",
+      "name": "Demolisher",
+      "cardClass": "neutral",
+      "cost": 3,
+      "rarity": "rare",
+      "type": "creature",
+      "attack": 1,
+      "health": 4,
+      "ongoing": {
+        "on": "turn-start",
+        "effects": [
+          {
+            "type": "random-damage",
+            "value": 2,
+            "pool": "enemies",
+            "count": 1
+          }
+        ]
+      },
+      "description": "At the start of your turn, deal 2 damage to a random enemy."
+    },
+    {
+      "id": "feral_spirit",
+      "name": "Feral Spirit",
+      "cardClass": "shaman",
+      "cost": 3,
+      "rarity": "rare",
+      "overload": 2,
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "summon",
+          "count": 2,
+          "attack": 2,
+          "health": 3,
+          "name": "Spirit Wolve",
+          "keywords": [
+            "taunt"
+          ]
+        }
+      ],
+      "description": "Summon two 2/3 Spirit Wolves with Taunt. Overload: 2 mana locked next turn."
+    },
+    {
+      "id": "flesheating_ghoul",
+      "name": "Flesheating Ghoul",
+      "cardClass": "neutral",
+      "cost": 3,
+      "rarity": "common",
+      "type": "creature",
+      "attack": 2,
+      "health": 3,
+      "ongoing": {
+        "on": "creature-died",
+        "effects": [
+          {
+            "type": "buff-self",
+            "attack": 1,
+            "health": 0
+          }
+        ]
+      },
+      "description": "Whenever a creature dies, this gains +1 Attack."
+    },
+    {
+      "id": "frothing_berserker",
+      "name": "Frothing Berserker",
+      "cardClass": "warrior",
+      "cost": 3,
+      "rarity": "rare",
+      "type": "creature",
+      "attack": 2,
+      "health": 4,
+      "ongoing": {
+        "on": "creature-damaged",
+        "effects": [
+          {
+            "type": "buff-self",
+            "attack": 1,
+            "health": 0
+          }
+        ]
+      },
+      "description": "Whenever a creature takes damage, this gains +1 Attack."
+    },
+    {
+      "id": "imp_master",
+      "name": "Imp Master",
+      "cardClass": "neutral",
+      "cost": 3,
+      "rarity": "rare",
+      "type": "creature",
+      "attack": 1,
+      "health": 5,
+      "ongoing": {
+        "on": "turn-end",
+        "effects": [
+          {
+            "type": "damage-self",
+            "value": 1
+          },
+          {
+            "type": "summon",
+            "count": 1,
+            "attack": 1,
+            "health": 1,
+            "name": "Imp"
+          }
+        ]
+      },
+      "description": "At the end of your turn, this takes 1 damage and summon a 1/1 Imp."
+    },
+    {
+      "id": "lava_burst",
+      "name": "Lava Burst",
+      "cardClass": "shaman",
+      "cost": 3,
+      "rarity": "rare",
+      "overload": 2,
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 5,
+          "target": "any"
+        }
+      ],
+      "description": "Deal 5 damage to any target. Overload: 2 mana locked next turn."
+    },
+    {
+      "id": "mana_tide_totem",
+      "name": "Mana Tide Totem",
+      "cardClass": "shaman",
+      "cost": 3,
+      "rarity": "rare",
+      "type": "creature",
+      "attack": 0,
+      "health": 3,
+      "ongoing": {
+        "on": "turn-end",
+        "effects": [
+          {
+            "type": "draw",
+            "value": 1
+          }
+        ]
+      },
+      "description": "At the end of your turn, draw 1 card."
+    },
+    {
+      "id": "questing_adventurer",
+      "name": "Questing Adventurer",
+      "cardClass": "neutral",
+      "cost": 3,
+      "rarity": "rare",
+      "type": "creature",
+      "attack": 2,
+      "health": 2,
+      "ongoing": {
+        "on": "card-played",
+        "effects": [
+          {
+            "type": "buff-self",
+            "attack": 1,
+            "health": 1
+          }
+        ]
+      },
+      "description": "Whenever you play a card, this gains +1/+1."
+    },
+    {
+      "id": "cult_master",
+      "name": "Cult Master",
+      "cardClass": "neutral",
+      "cost": 4,
+      "rarity": "common",
+      "type": "creature",
+      "attack": 4,
+      "health": 2,
+      "ongoing": {
+        "on": "friendly-creature-died",
+        "effects": [
+          {
+            "type": "draw",
+            "value": 1
+          }
+        ]
+      },
+      "description": "After a friendly creature dies, draw 1 card."
+    },
+    {
+      "id": "ogre_magi",
+      "name": "Ogre Magi",
+      "cardClass": "neutral",
+      "cost": 4,
+      "rarity": "common",
+      "static": {
+        "type": "spell-damage",
+        "value": 1
+      },
+      "type": "creature",
+      "attack": 4,
+      "health": 4,
+      "description": "A 4/4 creature. Spell Damage +1."
+    },
+    {
+      "id": "violet_teacher",
+      "name": "Violet Teacher",
+      "cardClass": "neutral",
+      "cost": 4,
+      "rarity": "rare",
+      "type": "creature",
+      "attack": 3,
+      "health": 5,
+      "ongoing": {
+        "on": "spell-played",
+        "effects": [
+          {
+            "type": "summon",
+            "count": 1,
+            "attack": 1,
+            "health": 1,
+            "name": "Violet Apprentice"
+          }
+        ]
+      },
+      "description": "Whenever you cast a spell, summon a 1/1 Violet Apprentice."
+    },
+    {
+      "id": "azure_drake",
+      "name": "Azure Drake",
+      "cardClass": "neutral",
+      "cost": 5,
+      "rarity": "rare",
+      "static": {
+        "type": "spell-damage",
+        "value": 1
+      },
+      "type": "creature",
+      "attack": 4,
+      "health": 4,
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "draw",
+          "value": 1
+        }
+      ],
+      "description": "Battlecry: Draw 1 card. Spell Damage +1."
+    },
+    {
+      "id": "doomguard",
+      "name": "Doomguard",
+      "cardClass": "warlock",
+      "cost": 5,
+      "rarity": "rare",
+      "type": "creature",
+      "attack": 5,
+      "health": 7,
+      "keywords": [
+        "charge",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "discard-random",
+          "count": 2
+        }
+      ],
+      "description": "Charge. Battlecry: Discard 2 random cards."
+    },
+    {
+      "id": "doomhammer",
+      "name": "Doomhammer",
+      "cardClass": "shaman",
+      "cost": 5,
+      "rarity": "epic",
+      "overload": 2,
+      "type": "weapon",
+      "attack": 2,
+      "durability": 8,
+      "keywords": [
+        "windfury"
+      ],
+      "description": "Windfury. Overload: 2 mana locked next turn."
+    },
+    {
+      "id": "earth_elemental",
+      "name": "Earth Elemental",
+      "cardClass": "shaman",
+      "cost": 5,
+      "rarity": "epic",
+      "overload": 3,
+      "type": "creature",
+      "attack": 7,
+      "health": 8,
+      "keywords": [
+        "taunt"
+      ],
+      "description": "Taunt. Overload: 3 mana locked next turn."
+    },
+    {
+      "id": "gadgetzan_auctioneer",
+      "name": "Gadgetzan Auctioneer",
+      "cardClass": "neutral",
+      "cost": 5,
+      "rarity": "rare",
+      "type": "creature",
+      "attack": 4,
+      "health": 4,
+      "ongoing": {
+        "on": "spell-played",
+        "effects": [
+          {
+            "type": "draw",
+            "value": 1
+          }
+        ]
+      },
+      "description": "Whenever you cast a spell, draw 1 card."
+    },
+    {
+      "id": "gurubashi_berserker",
+      "name": "Gurubashi Berserker",
+      "cardClass": "neutral",
+      "cost": 5,
+      "rarity": "common",
+      "type": "creature",
+      "attack": 2,
+      "health": 7,
+      "ongoing": {
+        "on": "self-damaged",
+        "effects": [
+          {
+            "type": "buff-self",
+            "attack": 3,
+            "health": 0
+          }
+        ]
+      },
+      "description": "Whenever this creature takes damage, this gains +3 Attack."
+    },
+    {
+      "id": "archmage",
+      "name": "Archmage",
+      "cardClass": "neutral",
+      "cost": 6,
+      "rarity": "common",
+      "static": {
+        "type": "spell-damage",
+        "value": 1
+      },
+      "type": "creature",
+      "attack": 4,
+      "health": 7,
+      "description": "A 4/7 creature. Spell Damage +1."
+    },
+    {
+      "id": "hogger",
+      "name": "Hogger",
+      "cardClass": "neutral",
+      "cost": 6,
+      "rarity": "legendary",
+      "type": "creature",
+      "attack": 4,
+      "health": 4,
+      "ongoing": {
+        "on": "turn-end",
+        "effects": [
+          {
+            "type": "summon",
+            "count": 1,
+            "attack": 2,
+            "health": 2,
+            "name": "Gnoll",
+            "keywords": [
+              "taunt"
+            ]
+          }
+        ]
+      },
+      "description": "At the end of your turn, summon a 2/2 Gnoll with Taunt."
+    },
+    {
+      "id": "illidan_stormrage",
+      "name": "Illidan Stormrage",
+      "cardClass": "neutral",
+      "cost": 6,
+      "rarity": "legendary",
+      "type": "creature",
+      "attack": 7,
+      "health": 5,
+      "ongoing": {
+        "on": "card-played",
+        "effects": [
+          {
+            "type": "summon",
+            "count": 1,
+            "attack": 2,
+            "health": 1,
+            "name": "Flame of Azzinoth"
+          }
+        ]
+      },
+      "description": "Whenever you play a card, summon a 2/1 Flame of Azzinoth."
+    },
+    {
+      "id": "ragnaros_the_firelord",
+      "name": "Ragnaros the Firelord",
+      "cardClass": "neutral",
+      "cost": 8,
+      "rarity": "legendary",
+      "type": "creature",
+      "attack": 8,
+      "health": 8,
+      "ongoing": {
+        "on": "turn-end",
+        "effects": [
+          {
+            "type": "random-damage",
+            "value": 8,
+            "pool": "enemies",
+            "count": 1
+          }
+        ]
+      },
+      "keywords": [
+        "defender"
+      ],
+      "description": "Can't attack. At the end of your turn, deal 8 damage to a random enemy."
+    },
+    {
+      "id": "malygos",
+      "name": "Malygos",
+      "cardClass": "neutral",
+      "cost": 9,
+      "rarity": "legendary",
+      "static": {
+        "type": "spell-damage",
+        "value": 5
+      },
+      "type": "creature",
+      "attack": 4,
+      "health": 12,
+      "description": "A 4/12 creature. Spell Damage +5."
     }
   ]
 }

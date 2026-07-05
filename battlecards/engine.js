@@ -59,6 +59,7 @@ function instantiate(def, controller) {
 		static: def.static || null,   // permanent passive (e.g. reduce-hero-damage)
 		loyalty: def.loyalty || 0,    // planeswalker loyalty counter
 		abilities: def.abilities || null, // planeswalker: [{ cost, text, effects }]
+		overload: def.overload || 0,  // mana locked next turn when played
 		progress: 0,                // quest goal counter
 		usedThisTurn: false,        // hero power activation gate
 		damage: 0,
@@ -138,6 +139,7 @@ export function createGame(cardsById, rng = Math.random, playerDeckIds = null, p
 		heroAttacksUsed: 0,
 		landsPlayedThisTurn: 0,
 		fatigue: 0, // escalates each time a draw finds deck AND graveyard empty
+		overloadPending: 0, // mana locked at the start of the next turn
 		mana: { cur: 1, max: 1, bonus: 0 },
 		coins: 0,
 		diedThisTurn: 0,
@@ -330,6 +332,12 @@ function damageCreature(state, target, amount, source) {
 	target.damage += amount;
 	if (source && (has(source, KW.DEATHTOUCH) || has(source, KW.POISONOUS))) target.poisoned = true;
 	emit(state, { type: 'damage', targetType: 'creature', uid: target.uid, amount, hp: hp(target) });
+	// whenever-a-minion-takes-damage triggers (fires even if the hit is lethal)
+	if (target.ongoing?.on === 'self-damaged') {
+		runSecretEffects(state, target.controller, target.ongoing.effects, { self: target, damaged: target });
+	}
+	for (let s2 = 0; s2 < state.players.length; s2++) fireOngoing(state, s2, 'creature-damaged', { damaged: target });
+	fireOngoing(state, target.controller, 'friendly-creature-damaged', { damaged: target });
 	return amount;
 }
 
@@ -381,6 +389,8 @@ function silenceCreature(state, c) {
 	c.keywords = [];
 	c.deathrattle = null;
 	c.effects = null;
+	c.ongoing = null;
+	c.static = null;
 	c.shield = false;
 	c.stealthed = false;
 	c.frozen = null;
@@ -411,6 +421,8 @@ function sweepDeaths(state) {
 				toGraveyard(state, pi, c);
 			}
 			questTick(state, 'death', pi);
+			for (let s2 = 0; s2 < state.players.length; s2++) fireOngoing(state, s2, 'creature-died', {});
+			fireOngoing(state, pi, 'friendly-creature-died', {});
 		}
 	}
 	// deathrattles can kill more
@@ -460,26 +472,32 @@ function summon(state, pi, tokenDef) {
 	p.board.push(c);
 	emit(state, { type: 'summon', player: pi, card: c });
 	questTick(state, 'summon', pi);
+	fireOngoing(state, pi, 'summoned', { minion: c });
 	return c;
 }
 
-// ---------- ongoing permanents (enchantments + artifacts) ----------
-// persistent triggers: fire every time, card stays in play
+// ---------- ongoing permanents (enchantments, artifacts, emblems, creatures) ----------
+// persistent triggers: fire every time, card stays in play. Board creatures
+// with an `ongoing` field participate too (whenever-/at- style minions);
+// each firing card sees itself as ctx.self so effects can target it.
 function fireOngoing(state, pi, when, ctx = {}) {
 	const p = state.players[pi];
 	if (state.over || p.eliminated) return;
-	for (const card of [...p.enchantments, ...p.artifacts, ...p.emblems]) {
+	const sources = [...p.enchantments, ...p.artifacts, ...p.emblems, ...p.board.filter(c => c.ongoing)];
+	for (const card of sources) {
 		if (state.over) break;
 		if (!card.ongoing || card.ongoing.on !== when) continue;
+		if (card === ctx.minion) continue; // a minion doesn't trigger on its own arrival
+		if (card.zone === 'board' && isDead(card)) continue;
 		emit(state, { type: 'ongoingTriggered', player: pi, card });
-		runSecretEffects(state, pi, card.ongoing.effects, ctx);
+		runSecretEffects(state, pi, card.ongoing.effects, { ...ctx, self: card });
 	}
 }
 
 // sum of a static passive across a player's permanent rows
 function staticValue(p, type) {
 	let v = 0;
-	for (const card of [...p.enchantments, ...p.artifacts, ...p.emblems]) {
+	for (const card of [...p.enchantments, ...p.artifacts, ...p.emblems, ...p.board]) {
 		if (card.static?.type === type) v += card.static.value || 1;
 	}
 	return v;
@@ -619,13 +637,27 @@ function runSecretEffects(state, pi, effects, ctx) {
 				break;
 			}
 			case 'buff-random-friendly': {
-				const pool = state.players[pi].board.filter(c => !isDead(c));
+				const pool = state.players[pi].board.filter(c => !isDead(c) && (!e.excludeSelf || c !== ctx.self));
 				if (pool.length) {
 					const m = pool[Math.floor(state.rng() * pool.length)];
 					m.attack += e.attack || 0;
 					m.maxHealth += e.health || 0;
 					emit(state, { type: 'buff', uid: m.uid, attack: m.attack, hp: hp(m) });
 				}
+				break;
+			}
+			case 'buff-self': {
+				const m = ctx.self;
+				if (m && !isDead(m)) {
+					m.attack += e.attack || 0;
+					m.maxHealth += e.health || 0;
+					emit(state, { type: 'buff', uid: m.uid, attack: m.attack, hp: hp(m) });
+				}
+				break;
+			}
+			case 'damage-self': {
+				const m = ctx.self;
+				if (m && !isDead(m)) damageCreature(state, m, e.value, null);
 				break;
 			}
 			case 'set-health': {
@@ -780,7 +812,11 @@ function execEffects(state, pi, effects, target, source) {
 	};
 	for (const e of effects || []) {
 		if (e.type === 'damage') {
-			const v = e.value;
+			// friendly Spell Damage boosts direct spell damage
+			let v = e.value;
+			if (source && (source.type === 'sorcery' || source.type === 'instant')) {
+				v += staticValue(state.players[pi], 'spell-damage');
+			}
 			switch (e.target) {
 				case 'enemy-hero': { const t = enemyHero(); if (t != null) damageHero(state, t, v, pi); break; }
 				case 'own-hero': damageHero(state, pi, v, pi); break;
@@ -810,6 +846,7 @@ function execEffects(state, pi, effects, target, source) {
 			const v = e.value;
 			if (e.target === 'self') healHero(state, pi, v);
 			else if (e.target === 'all-creatures') { for (const pl of state.players) for (const c of pl.board) healCreature(c, v); }
+			else if (e.target === 'friendly-creatures') { for (const c of state.players[pi].board) healCreature(c, v); }
 			else if (e.target === 'friendly-all') { healHero(state, pi, v); for (const c of state.players[pi].board) healCreature(c, v); }
 			else {
 				const t = chosenCreature();
@@ -896,6 +933,18 @@ function execEffects(state, pi, effects, target, source) {
 			}
 		} else if (e.type === 'armor') {
 			gainArmor(state, pi, e.value);
+		} else if (e.type === 'discard-random') {
+			const p = state.players[pi];
+			for (let i = 0; i < (e.count || 1) && p.hand.length; i++) {
+				const j = Math.floor(state.rng() * p.hand.length);
+				const [c] = p.hand.splice(j, 1);
+				toGraveyard(state, pi, c);
+				emit(state, { type: 'discard', player: pi, card: c });
+			}
+		} else if (e.type === 'draw-all') {
+			for (let s2 = 0; s2 < state.players.length; s2++) {
+				if (!state.players[s2].eliminated) drawCards(state, s2, e.value);
+			}
 		} else if (e.type === 'destroy-weapon') {
 			// hit the chosen enemy's weapon if they have one, else any armed enemy
 			const armed = enemies.filter(o => state.players[o].weapon);
@@ -1008,13 +1057,19 @@ export function playCard(state, pi, cardUid, target) {
 
 	take();
 	spendMana(p, card.cost);
+	if (card.overload) {
+		p.overloadPending += card.overload;
+		emit(state, { type: 'overload', player: pi, amount: card.overload });
+	}
 	emit(state, { type: 'play', player: pi, card, mana: availableMana(p) });
+	fireOngoing(state, pi, 'card-played', { played: card });
 
 	if (card.type === 'creature') {
 		card.zone = 'board';
 		card.sick = true;
 		p.board.push(card);
 		questTick(state, 'summon', pi);
+		fireOngoing(state, pi, 'summoned', { minion: card });
 		runBattlecry(state, pi, card, target);
 		if (p.board.includes(card)) fireSecretsAll(state, pi, 'enemy-minion-played', { minion: card });
 		if (p.board.includes(card) && !isDead(card)) fireOngoing(state, pi, 'creature-played', { minion: card });
@@ -1368,6 +1423,12 @@ export function endTurn(state) {
 	np.landsPlayedThisTurn = 0;
 	if (state.turnNumber > 1 && np.mana.max < MAX_BASE_MANA) np.mana.max++;
 	np.mana.cur = np.mana.max;
+	// overload: mana spent ahead of time stays locked this turn
+	if (np.overloadPending) {
+		np.mana.cur = Math.max(0, np.mana.cur - np.overloadPending);
+		emit(state, { type: 'overloaded', player: state.current, amount: np.overloadPending });
+		np.overloadPending = 0;
+	}
 	// lands pay out on top of the auto-ramp
 	const landMana = np.lands.reduce((s, l) => s + (l.mana || 1), 0);
 	if (landMana) np.mana.bonus += landMana;

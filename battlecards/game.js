@@ -652,6 +652,8 @@ function nextEvent() {
 			delay = 900;
 			break;
 		case 'countered': log(`${ev.name} was countered!`); delay = 400; break;
+		case 'overload': log(`${nameOf(ev.player)} overloaded: ${ev.amount} mana locked next turn`); delay = 250; break;
+		case 'overloaded': log(`${nameOf(ev.player)} ${ev.player === HUMAN ? 'have' : 'has'} ${ev.amount} mana locked (overload)`); delay = 300; break;
 		case 'armor': floatText(`+${ev.amount}`, '#c9c2da', heroPos(ev.player)); delay = 260; break;
 		case 'bounce': log(`${ev.name} was returned to hand`); delay = 300; break;
 		case 'coin': log(`${nameOf(ev.player)} spent a coin (+1 mana)`); delay = 250; break;
