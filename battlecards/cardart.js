@@ -23,6 +23,7 @@ export const TYPE_COLORS = {
 	trap:        '#8a4a2e',
 	heropower:   '#2e5a7a',
 	quest:       '#7a6a2e',
+	planeswalker:'#5a2e7a',
 };
 
 function roundRect(ctx, x, y, w, h, r) {
@@ -119,6 +120,22 @@ export function makeFaceTexture(card, opts = {}) {
 		}
 	}
 	ctx.fillText(line, 48, y);
+
+	// planeswalker loyalty shield
+	if (opts.loyalty != null) {
+		ctx.font = 'bold 46px Georgia';
+		ctx.textAlign = 'center';
+		ctx.fillStyle = '#5a2e7a';
+		roundRect(ctx, W - 150, H - 110, 110, 66, 12);
+		ctx.fill();
+		ctx.strokeStyle = '#c9b8ff';
+		ctx.lineWidth = 4;
+		roundRect(ctx, W - 150, H - 110, 110, 66, 12);
+		ctx.stroke();
+		ctx.fillStyle = '#fff';
+		ctx.fillText(String(opts.loyalty), W - 95, H - 75);
+		ctx.textAlign = 'left';
+	}
 
 	// quest progress badge
 	if (opts.goal != null) {

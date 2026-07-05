@@ -3448,6 +3448,118 @@
         ]
       },
       "description": "At the end of your turn, gain 2 armor."
+    },
+    {
+      "id": "marshal_ironstar",
+      "name": "Marshal Ironstar",
+      "type": "planeswalker",
+      "cardClass": "bounty_hunter",
+      "cost": 5,
+      "rarity": "epic",
+      "loyalty": 4,
+      "abilities": [
+        {
+          "cost": 1,
+          "text": "Gain 3 armor.",
+          "effects": [
+            {
+              "type": "armor",
+              "value": 3
+            }
+          ]
+        },
+        {
+          "cost": -3,
+          "text": "Deal 4 damage to any target.",
+          "effects": [
+            {
+              "type": "damage",
+              "value": 4,
+              "target": "any"
+            }
+          ]
+        }
+      ],
+      "description": "+1: Gain 3 armor. \u22123: Deal 4 damage to any target."
+    },
+    {
+      "id": "sable_the_cardsharp",
+      "name": "Sable the Cardsharp",
+      "type": "planeswalker",
+      "cardClass": "bounty_hunter",
+      "cost": 6,
+      "rarity": "epic",
+      "loyalty": 4,
+      "abilities": [
+        {
+          "cost": 1,
+          "text": "Draw a card.",
+          "effects": [
+            {
+              "type": "draw",
+              "value": 1
+            }
+          ]
+        },
+        {
+          "cost": -4,
+          "text": "Summon two 3/3 Card Soldiers.",
+          "effects": [
+            {
+              "type": "summon",
+              "count": 2,
+              "attack": 3,
+              "health": 3,
+              "name": "Card Soldier"
+            }
+          ]
+        }
+      ],
+      "description": "+1: Draw a card. \u22124: Summon two 3/3 Card Soldiers."
+    },
+    {
+      "id": "old_man_cactus",
+      "name": "Old Man Cactus",
+      "type": "planeswalker",
+      "cardClass": "bounty_hunter",
+      "cost": 7,
+      "rarity": "legendary",
+      "loyalty": 5,
+      "abilities": [
+        {
+          "cost": 2,
+          "text": "Restore 4 health to your hero.",
+          "effects": [
+            {
+              "type": "heal",
+              "value": 4,
+              "target": "self"
+            }
+          ]
+        },
+        {
+          "cost": -5,
+          "text": "Deal 3 damage to all enemy creatures and summon a 5/5 Saguaro Guardian with Taunt.",
+          "effects": [
+            {
+              "type": "damage",
+              "value": 3,
+              "target": "enemy-creatures"
+            },
+            {
+              "type": "summon",
+              "count": 1,
+              "attack": 5,
+              "health": 5,
+              "name": "Saguaro Guardian",
+              "keywords": [
+                "taunt"
+              ]
+            }
+          ]
+        }
+      ],
+      "description": "+2: Restore 4 health to your hero. \u22125: Deal 3 damage to all enemy creatures and summon a 5/5 Saguaro Guardian with Taunt."
     }
   ]
 }

@@ -57,6 +57,8 @@ function instantiate(def, controller) {
 		quest: def.quest || null,   // quest: { goal: { type, count }, reward }
 		ongoing: def.ongoing || null, // permanent trigger: { on, effects }
 		static: def.static || null,   // permanent passive (e.g. reduce-hero-damage)
+		loyalty: def.loyalty || 0,    // planeswalker loyalty counter
+		abilities: def.abilities || null, // planeswalker: [{ cost, text, effects }]
 		progress: 0,                // quest goal counter
 		usedThisTurn: false,        // hero power activation gate
 		damage: 0,
@@ -134,6 +136,7 @@ export function createGame(cardsById, rng = Math.random, playerDeckIds = null, p
 		secrets: [],
 		heroAttacksUsed: 0,
 		landsPlayedThisTurn: 0,
+		reshuffles: 0, // fatigue: each draw deals this much damage
 		mana: { cur: 1, max: 1, bonus: 0 },
 		coins: 0,
 		diedThisTurn: 0,
@@ -177,12 +180,13 @@ export function drawCards(state, pi, count) {
 			// summoned tokens have no card def and can't be redrawn
 			p.deck = p.graveyard.map(c => c.id).filter(id => state.cardsById[id]);
 			p.graveyard = [];
+			p.reshuffles++;
 			if (!p.deck.length) continue;
 			for (let k = p.deck.length - 1; k > 0; k--) {
 				const j = Math.floor(state.rng() * (k + 1));
 				[p.deck[k], p.deck[j]] = [p.deck[j], p.deck[k]];
 			}
-			emit(state, { type: 'reshuffle', player: pi });
+			emit(state, { type: 'reshuffle', player: pi, fatigue: p.reshuffles });
 		}
 		const id = p.deck.pop();
 		if (!id) break;
@@ -191,6 +195,13 @@ export function drawCards(state, pi, count) {
 		card.zone = 'hand';
 		p.hand.push(card);
 		emit(state, { type: 'draw', player: pi, card });
+		// fatigue: a worn-out deck bites back on every draw
+		if (p.reshuffles > 0) {
+			emit(state, { type: 'fatigue', player: pi, amount: p.reshuffles });
+			damageHero(state, pi, p.reshuffles, pi);
+			checkGameOver(state);
+			if (p.eliminated) break;
+		}
 	}
 }
 
@@ -395,6 +406,7 @@ function checkGameOver(state) {
 		p.quests = [];
 		p.enchantments = [];
 		p.artifacts = [];
+		p.planeswalkers = [];
 		p.weapon = null;
 		p.hand = [];
 		emit(state, { type: 'eliminated', player: i });
@@ -980,6 +992,10 @@ export function playCard(state, pi, cardUid, target) {
 	} else if (card.type === 'enchantment' || card.type === 'artifact') {
 		card.zone = card.type;
 		(card.type === 'enchantment' ? p.enchantments : p.artifacts).push(card);
+	} else if (card.type === 'planeswalker') {
+		card.zone = 'planeswalker';
+		p.planeswalkers.push(card);
+		emit(state, { type: 'walkerArrived', player: pi, card });
 	} else {
 		questTick(state, 'spell', pi);
 		const ctx = { spell: card, countered: false };
@@ -1028,7 +1044,10 @@ export function attackTargets(state, pi, attacker) {
 		const board = state.players[opp].board.filter(c => !c.stealthed);
 		const taunts = board.filter(c => has(c, KW.TAUNT));
 		out.push(...(taunts.length ? taunts : board).map(c => ({ type: 'creature', uid: c.uid, player: opp })));
-		if (!taunts.length && !rushOnly) out.push({ type: 'hero', player: opp });
+		if (!taunts.length) {
+			for (const w of state.players[opp].planeswalkers) out.push({ type: 'walker', uid: w.uid, player: opp });
+			if (!rushOnly) out.push({ type: 'hero', player: opp });
+		}
 	}
 	return out;
 }
@@ -1059,6 +1078,13 @@ export function attack(state, pi, attackerUid, target) {
 	if (target.type === 'hero') {
 		const dealt = damageHero(state, target.player, attacker.attack, pi);
 		if (has(attacker, KW.LIFESTEAL) && dealt > 0) healHero(state, pi, dealt);
+	} else if (target.type === 'walker') {
+		// planeswalkers soak the hit with loyalty and never strike back
+		const w = findWalker(state, target.uid);
+		if (w) {
+			damageWalker(state, w, attacker.attack);
+			if (has(attacker, KW.LIFESTEAL)) healHero(state, pi, attacker.attack);
+		}
 	} else {
 		const defender = findCreature(state, target.uid);
 		if (!defender) return false;
@@ -1106,7 +1132,10 @@ export function heroAttackTargets(state, pi) {
 		const board = state.players[opp].board.filter(c => !c.stealthed);
 		const taunts = board.filter(c => has(c, KW.TAUNT));
 		out.push(...(taunts.length ? taunts : board).map(c => ({ type: 'creature', uid: c.uid, player: opp })));
-		if (!taunts.length) out.push({ type: 'hero', player: opp });
+		if (!taunts.length) {
+			for (const w of state.players[opp].planeswalkers) out.push({ type: 'walker', uid: w.uid, player: opp });
+			out.push({ type: 'hero', player: opp });
+		}
 	}
 	return out;
 }
@@ -1128,6 +1157,9 @@ export function heroAttack(state, pi, target) {
 	const w = p.weapon;
 	if (target.type === 'hero') {
 		damageHero(state, target.player, w.attack, pi);
+	} else if (target.type === 'walker') {
+		const pw = findWalker(state, target.uid);
+		if (pw) damageWalker(state, pw, w.attack);
 	} else {
 		const defender = findCreature(state, target.uid);
 		if (defender && !isDead(defender)) {
@@ -1139,6 +1171,66 @@ export function heroAttack(state, pi, target) {
 		}
 	}
 	degradeWeapon(state, pi);
+	sweepDeaths(state);
+	return true;
+}
+
+// ---------- planeswalkers ----------
+function findWalker(state, uid) {
+	for (const p of state.players) {
+		const w = p.planeswalkers.find(c => c.uid === uid);
+		if (w) return w;
+	}
+	return null;
+}
+
+function damageWalker(state, walker, amount) {
+	if (amount <= 0) return;
+	walker.loyalty -= amount;
+	emit(state, { type: 'walkerDamage', uid: walker.uid, amount, loyalty: walker.loyalty });
+	if (walker.loyalty <= 0) destroyWalker(state, walker);
+}
+
+function destroyWalker(state, walker) {
+	const p = state.players[walker.controller];
+	p.planeswalkers = p.planeswalkers.filter(c => c !== walker);
+	toGraveyard(state, walker.controller, walker);
+	emit(state, { type: 'walkerDestroyed', uid: walker.uid, player: walker.controller, name: walker.name });
+}
+
+export function walkerSpec(state, pi, card, abilityIndex) {
+	const ability = card.abilities?.[abilityIndex];
+	if (!ability) return null;
+	return targetSpec(state, pi, { id: card.id, type: 'sorcery', effects: ability.effects });
+}
+
+// abilityIndex omitted: is ANY ability usable this turn?
+export function canUseWalker(state, pi, card, abilityIndex) {
+	if (state.over || state.current !== pi) return false;
+	const p = state.players[pi];
+	if (!p.planeswalkers.includes(card) || card.usedThisTurn) return false;
+	const check = i => {
+		const a = card.abilities?.[i];
+		if (!a) return false;
+		if (card.loyalty + a.cost < 0) return false; // can't overspend loyalty
+		const spec = walkerSpec(state, pi, card, i);
+		if (spec && spec.required && legalTargets(state, pi, spec).length === 0) return false;
+		return true;
+	};
+	if (abilityIndex == null) return card.abilities?.some((_, i) => check(i)) || false;
+	return check(abilityIndex);
+}
+
+export function useWalker(state, pi, cardUid, abilityIndex, target) {
+	const p = state.players[pi];
+	const card = p.planeswalkers.find(c => c.uid === cardUid);
+	if (!card || !canUseWalker(state, pi, card, abilityIndex)) return false;
+	const ability = card.abilities[abilityIndex];
+	card.loyalty += ability.cost;
+	card.usedThisTurn = true;
+	emit(state, { type: 'walkerAbility', player: pi, card, text: ability.text, loyalty: card.loyalty });
+	execEffects(state, pi, ability.effects, target, card);
+	if (card.loyalty <= 0) destroyWalker(state, card); // burned out all loyalty
 	sweepDeaths(state);
 	return true;
 }
@@ -1221,6 +1313,7 @@ export function endTurn(state) {
 	const landMana = np.lands.reduce((s, l) => s + (l.mana || 1), 0);
 	if (landMana) np.mana.bonus += landMana;
 	for (const hpw of np.heroPowers) hpw.usedThisTurn = false;
+	for (const pw of np.planeswalkers) pw.usedThisTurn = false;
 	for (const c of np.board) { c.sick = false; c.attacksUsed = 0; }
 	emit(state, { type: 'turnStart', player: state.current, turnNumber: state.turnNumber });
 	fireOngoing(state, state.current, 'turn-start');

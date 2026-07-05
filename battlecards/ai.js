@@ -126,6 +126,22 @@ export function step(state, pi = 1) {
 		if (E.useHeroPower(state, pi, hpw.uid, target)) return true;
 	}
 
+	// 1d. planeswalkers: cash in the minus ability when affordable, else tick up
+	for (const pw of p.planeswalkers) {
+		if (!E.canUseWalker(state, pi, pw)) continue;
+		const idxMinus = pw.abilities.findIndex(a => a.cost < 0);
+		const idxPlus = pw.abilities.findIndex(a => a.cost >= 0);
+		let idx = (idxMinus >= 0 && E.canUseWalker(state, pi, pw, idxMinus)) ? idxMinus : idxPlus;
+		if (idx < 0 || !E.canUseWalker(state, pi, pw, idx)) continue;
+		const spec = E.walkerSpec(state, pi, pw, idx);
+		let target = null;
+		if (spec) {
+			target = pickTarget(state, pi, { id: pw.id, type: 'sorcery', effects: pw.abilities[idx].effects });
+			if (spec.required && !target) continue;
+		}
+		if (E.useWalker(state, pi, pw.uid, idx, target)) return true;
+	}
+
 	// 2. attack with each ready creature
 	const attackers = E.attackersFor(state, pi);
 	for (const a of attackers) {
@@ -154,6 +170,12 @@ export function step(state, pi = 1) {
 		const mustTrade = !heroTs.length;
 		if (!best && mustTrade && creatureTs.length) {
 			best = [...creatureTs].sort((x, y) => E.hp(creatureOf(state, x)) - E.hp(creatureOf(state, y)))[0];
+		}
+		// enemy planeswalkers generate value every turn: put them down next
+		if (!best) {
+			const walkerTs = targets.filter(t => t.type === 'walker');
+			const loyaltyOf = t => state.players[t.player].planeswalkers.find(w => w.uid === t.uid)?.loyalty ?? 99;
+			best = walkerTs.sort((x, y) => loyaltyOf(x) - loyaltyOf(y))[0] || null;
 		}
 		const target = best || weakestHero(state, heroTs);
 		if (target && E.attack(state, pi, a.uid, target)) return true;

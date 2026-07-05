@@ -122,7 +122,8 @@ function faceMaterialFor(card) {
 		{ ...card, health: card.maxHealth },
 		card.type === 'creature' ? { attack: card.attack, hp: E.hp(card), maxHealth: card.maxHealth }
 			: card.type === 'weapon' ? { attack: card.attack, durability: card.durability }
-			: card.type === 'quest' ? { progress: card.progress || 0, goal: card.quest?.goal?.count } : {}
+			: card.type === 'quest' ? { progress: card.progress || 0, goal: card.quest?.goal?.count }
+			: card.type === 'planeswalker' ? { loyalty: card.loyalty } : {}
 	);
 	return new THREE.MeshStandardMaterial({ map: tex, roughness: 0.35, metalness: 0.12 });
 }
@@ -253,6 +254,16 @@ function layoutTargets() {
 			ent.target.pos = toWorld(-(1.6 + i * 1.15), 0.05, off + 6.35, pi);
 			ent.target.quat = sliceQuat(FLAT, pi);
 			ent.target.scale = 0.42;
+		});
+		// planeswalkers: center row between the land slots and the hero
+		const wn = p.planeswalkers.length;
+		p.planeswalkers.forEach((card, i) => {
+			const ent = entityFor(card);
+			seen.add(card.uid);
+			const x = (i - (wn - 1) / 2) * 1.45;
+			ent.target.pos = toWorld(x, 0.07, off + 5.55, pi);
+			ent.target.quat = sliceQuat(FLAT, pi);
+			ent.target.scale = 0.5;
 		});
 		// unlimited permanent rows: enchantments left, artifacts right
 		const rowSpread = n2 => Math.min(1.1, 4.4 / Math.max(n2, 1));
@@ -566,6 +577,33 @@ function nextEvent() {
 			floatText('✦', '#c9b8ff', creaturePos(ev.card.uid));
 			delay = 240;
 			break;
+		case 'walkerArrived': delay = 300; break; // the generic play event already logs it
+		case 'walkerAbility': {
+			log(`${nameOf(ev.player)}'s ${ev.card.name}: ${ev.text}`);
+			const ent = entities.get(ev.card.uid);
+			if (ent) { ent.card.loyalty = ev.loyalty; refreshFace(ent); floatText('✧', '#c9b8ff', ent.mesh.position); }
+			delay = 480;
+			break;
+		}
+		case 'walkerDamage': {
+			floatText(`-${ev.amount}`, '#ff5f4f', creaturePos(ev.uid));
+			const ent = entities.get(ev.uid);
+			if (ent) { ent.card.loyalty = ev.loyalty; refreshFace(ent); }
+			delay = 330;
+			break;
+		}
+		case 'walkerDestroyed': {
+			const ent = entities.get(ev.uid);
+			if (ent) ent.dying = performance.now();
+			log(`${ev.name} was destroyed`);
+			delay = 400;
+			break;
+		}
+		case 'fatigue':
+			floatText(`-${ev.amount}`, '#b46cff', heroPos(ev.player));
+			log(`${nameOf(ev.player)} take${ev.player === HUMAN ? '' : 's'} ${ev.amount} fatigue`);
+			delay = 260;
+			break;
 		case 'secretRevealed':
 			banner(`Secret: ${ev.card.name}!`, 1600);
 			log(`${ev.player === HUMAN ? 'Your' : `${nameOf(ev.player)}'s`} Secret revealed: ${ev.card.name}`);
@@ -630,8 +668,10 @@ function pick(ev) {
 function cardOf(uid) {
 	if (!state || uid == null) return null;
 	for (const p of state.players) {
-		const c = p.hand.find(c => c.uid === uid) || p.board.find(c => c.uid === uid);
-		if (c) return c;
+		for (const zone of [p.hand, p.board, p.heroPowers, p.planeswalkers, p.traps, p.lands, p.quests, p.enchantments, p.artifacts]) {
+			const c = zone.find(c => c.uid === uid);
+			if (c) return c;
+		}
 	}
 	return null;
 }
@@ -643,12 +683,45 @@ addEventListener('pointermove', ev => {
 function clearModes() {
 	pending = null;
 	selectedAttacker = null;
+	hideWalkerMenu();
 	updateHud();
+}
+
+// ---------- planeswalker ability menu ----------
+function hideWalkerMenu() {
+	$('walker-menu').style.display = 'none';
+}
+
+function openWalkerMenu(card, ev) {
+	const menu = $('walker-menu');
+	menu.innerHTML = `<div class="wm-title">${card.name} — loyalty ${card.loyalty}</div>`;
+	card.abilities.forEach((a, i) => {
+		const btn = document.createElement('button');
+		btn.innerHTML = `<span class="wm-cost">${a.cost >= 0 ? '+' : ''}${a.cost}</span>${a.text}`;
+		btn.disabled = !E.canUseWalker(state, HUMAN, card, i);
+		btn.addEventListener('pointerdown', e => {
+			e.stopPropagation();
+			hideWalkerMenu();
+			const spec = E.walkerSpec(state, HUMAN, card, i);
+			if (spec) {
+				const targets = E.legalTargets(state, HUMAN, spec);
+				if (targets.length) { pending = { card, spec, targets, mode: 'walker', ability: i }; updateHud(); return; }
+				if (spec.required) return;
+			}
+			E.useWalker(state, HUMAN, card.uid, i, null);
+			pump();
+		});
+		menu.appendChild(btn);
+	});
+	menu.style.display = 'block';
+	menu.style.left = `${Math.min(ev.clientX, innerWidth - 260)}px`;
+	menu.style.top = `${Math.min(ev.clientY, innerHeight - 140)}px`;
 }
 
 addEventListener('contextmenu', ev => { ev.preventDefault(); clearModes(); });
 
 renderer.domElement.addEventListener('pointerdown', ev => {
+	hideWalkerMenu();
 	if (ev.button !== 0 || !state || state.over || state.current !== HUMAN) return;
 	const uid = pick(ev);
 	const card = cardOf(uid);
@@ -663,8 +736,9 @@ renderer.domElement.addEventListener('pointerdown', ev => {
 		return;
 	}
 	if (selectedAttacker === 'HERO') {
-		if (card && card.zone === 'board' && card.controller !== HUMAN) {
-			const t = E.heroAttackTargets(state, HUMAN).find(t => t.type === 'creature' && t.uid === card.uid);
+		if (card && (card.zone === 'board' || card.zone === 'planeswalker') && card.controller !== HUMAN) {
+			const kind = card.zone === 'board' ? 'creature' : 'walker';
+			const t = E.heroAttackTargets(state, HUMAN).find(t => t.type === kind && t.uid === card.uid);
 			if (t) { E.heroAttack(state, HUMAN, t); clearModes(); pump(); return; }
 		}
 		clearModes();
@@ -672,8 +746,9 @@ renderer.domElement.addEventListener('pointerdown', ev => {
 	}
 	if (selectedAttacker) {
 		const attacker = cardOf(selectedAttacker);
-		if (card && card.zone === 'board' && card.controller !== HUMAN && attacker) {
-			const t = E.attackTargets(state, HUMAN, attacker).find(t => t.type === 'creature' && t.uid === card.uid);
+		if (card && (card.zone === 'board' || card.zone === 'planeswalker') && card.controller !== HUMAN && attacker) {
+			const kind = card.zone === 'board' ? 'creature' : 'walker';
+			const t = E.attackTargets(state, HUMAN, attacker).find(t => t.type === kind && t.uid === card.uid);
 			if (t) { E.attack(state, HUMAN, selectedAttacker, t); clearModes(); pump(); return; }
 		}
 		clearModes();
@@ -704,12 +779,16 @@ renderer.domElement.addEventListener('pointerdown', ev => {
 		}
 		E.useHeroPower(state, HUMAN, card.uid, null);
 		pump();
+	} else if (card.zone === 'planeswalker' && card.controller === HUMAN) {
+		// click your planeswalker to pick an ability
+		if (E.canUseWalker(state, HUMAN, card)) openWalkerMenu(card, ev);
 	}
 });
 
-// resolve a pending targeted action (spell/battlecry play or hero power)
+// resolve a pending targeted action (play, hero power, or walker ability)
 function commitPending(t) {
 	if (pending.mode === 'power') E.useHeroPower(state, HUMAN, pending.card.uid, t);
+	else if (pending.mode === 'walker') E.useWalker(state, HUMAN, pending.card.uid, pending.ability, t);
 	else E.playCard(state, HUMAN, pending.card.uid, t);
 	clearModes();
 	pump();
@@ -777,12 +856,13 @@ addEventListener('resize', () => {
 function updateRings() {
 	if (!state) return;
 	const validCreatureTargets = new Set();
-	if (pending) for (const t of pending.targets) if (t.type === 'creature') validCreatureTargets.add(t.uid);
+	const attackable = t => t.type === 'creature' || t.type === 'walker';
+	if (pending) for (const t of pending.targets) if (attackable(t)) validCreatureTargets.add(t.uid);
 	if (selectedAttacker === 'HERO') {
-		for (const t of E.heroAttackTargets(state, HUMAN)) if (t.type === 'creature') validCreatureTargets.add(t.uid);
+		for (const t of E.heroAttackTargets(state, HUMAN)) if (attackable(t)) validCreatureTargets.add(t.uid);
 	} else if (selectedAttacker) {
 		const attacker = cardOf(selectedAttacker);
-		if (attacker) for (const t of E.attackTargets(state, HUMAN, attacker)) if (t.type === 'creature') validCreatureTargets.add(t.uid);
+		if (attacker) for (const t of E.attackTargets(state, HUMAN, attacker)) if (attackable(t)) validCreatureTargets.add(t.uid);
 	}
 	for (const ent of entities.values()) {
 		const c = ent.card;
@@ -793,11 +873,12 @@ function updateRings() {
 			if (c.zone === 'board' && c.controller === HUMAN && E.canAttackWith(state, HUMAN, c)) color = '#57e389';
 			else if (c.zone === 'hand' && c.controller === HUMAN && E.canPlay(state, HUMAN, c)) color = '#57e389';
 			else if (c.zone === 'heropower' && c.controller === HUMAN && E.canUseHeroPower(state, HUMAN, c)) color = '#57e389';
+			else if (c.zone === 'planeswalker' && c.controller === HUMAN && E.canUseWalker(state, HUMAN, c)) color = '#57e389';
 		}
-		if (color && (c.zone === 'board' || c.zone === 'heropower')) {
+		if (color && (c.zone === 'board' || c.zone === 'heropower' || c.zone === 'planeswalker')) {
 			ent.ring.visible = true;
 			ent.ring.material.color.set(color);
-			ent.ring.scale.setScalar(c.zone === 'heropower' ? 0.62 : 1);
+			ent.ring.scale.setScalar(c.zone === 'heropower' ? 0.62 : c.zone === 'planeswalker' ? 0.72 : 1);
 			ent.ring.position.set(ent.mesh.position.x, 0.02, ent.mesh.position.z);
 		} else if (color && c.zone === 'hand') {
 			ent.ring.visible = false;
