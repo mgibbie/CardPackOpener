@@ -256,6 +256,32 @@ function openLandShop(ev) {
 	menu.style.top = `${Math.min(ev.clientY, innerHeight - 260)}px`;
 }
 
+// Choose One cards pick their branch before targeting
+function openChoiceMenu(card, ev) {
+	const menu = $('walker-menu');
+	menu.innerHTML = `<div class="wm-title">${card.name} — choose one:</div>`;
+	card.choices.forEach((ch, i) => {
+		const btn = document.createElement('button');
+		btn.textContent = ch.text;
+		btn.addEventListener('pointerdown', e => {
+			e.stopPropagation();
+			hideWalkerMenu();
+			const spec = E.targetSpec(state, HUMAN, card, i);
+			if (spec) {
+				const targets = E.legalTargets(state, HUMAN, spec);
+				if (targets.length) { pending = { card, spec, targets, mode: 'play', choice: i }; updateHud(); return; }
+				if (spec.required) return;
+			}
+			E.playCard(state, HUMAN, card.uid, null, i);
+			pump();
+		});
+		menu.appendChild(btn);
+	});
+	menu.style.display = 'block';
+	menu.style.left = `${Math.min(ev.clientX, innerWidth - 300)}px`;
+	menu.style.top = `${Math.min(ev.clientY, innerHeight - 200)}px`;
+}
+
 // clicking one of your untapped lands opens its tap abilities
 function openTapMenu(card, ev) {
 	const menu = $('walker-menu');
@@ -477,6 +503,8 @@ function updateHud() {
 	if (me.secrets.length) myGear.push('❓ ' + me.secrets.map(s => s.name).join(', '));
 	if (me.exile.length) myGear.push(`⊘ ${me.exile.length} exiled`);
 	if (me.fatigue) myGear.push(`☠ fatigue ${me.fatigue}`);
+	if (me.corpses) myGear.push(`⚰ ${me.corpses} corpses`);
+	if (me.heroTempAttack) myGear.push(`⚔ +${me.heroTempAttack} this turn`);
 	$('my-gear').innerHTML = myGear.join('<br>');
 	$('my-panel').classList.toggle('armed',
 		state.current === HUMAN && !state.over && !pending && E.canHeroAttack(state, HUMAN));
@@ -493,6 +521,7 @@ function updateHud() {
 		if (p.traps.length) gear.push(`⚠ ${p.traps.length}`);
 		if (p.exile.length) gear.push(`⊘ ${p.exile.length}`);
 		if (p.fatigue) gear.push(`☠ ${p.fatigue}`);
+		if (p.corpses) gear.push(`⚰ ${p.corpses}`);
 		el.querySelector('.gear').innerHTML = gear.join(' · ');
 		el.classList.toggle('dead', p.eliminated);
 		el.classList.toggle('turn', state.current === pi && !state.over);
@@ -685,6 +714,16 @@ function nextEvent() {
 			delay = 320;
 			break;
 		}
+		case 'corpses': delay = 120; break;
+		case 'heroBuffed':
+			log(`${nameOf(ev.player)} hero +${ev.amount} Attack this turn`);
+			floatText(`+${ev.amount}`, '#ffd25f', heroPos(ev.player));
+			delay = 280;
+			break;
+		case 'mill':
+			log(`${nameOf(ev.player)} milled ${ev.card.name}`);
+			delay = 220;
+			break;
 		case 'heroPowerInstalled': delay = 260; break; // ditto
 		case 'questStarted': delay = 260; break;      // ditto
 		case 'heroPowerUsed':
@@ -933,6 +972,7 @@ renderer.domElement.addEventListener('pointerdown', ev => {
 	}
 	if (card.zone === 'hand' && card.controller === HUMAN) {
 		if (!E.canPlay(state, HUMAN, card)) return;
+		if (card.choices) { openChoiceMenu(card, ev); return; }
 		const spec = E.targetSpec(state, HUMAN, card);
 		if (spec) {
 			const targets = E.legalTargets(state, HUMAN, spec);
@@ -979,7 +1019,7 @@ function commitPending(t) {
 	if (pending.mode === 'power') E.useHeroPower(state, HUMAN, pending.card.uid, t);
 	else if (pending.mode === 'walker') E.useWalker(state, HUMAN, pending.card.uid, pending.ability, t);
 	else if (pending.mode === 'tap') E.tapLand(state, HUMAN, pending.card.uid, pending.tapIndex, t);
-	else E.playCard(state, HUMAN, pending.card.uid, t);
+	else E.playCard(state, HUMAN, pending.card.uid, t, pending.choice);
 	clearModes();
 	pump();
 }

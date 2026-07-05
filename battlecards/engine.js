@@ -69,6 +69,8 @@ function instantiate(def, controller) {
 		colors: def.colors || [],   // W/U/B/R/G identity ([] = colorless/class card)
 		taps: def.taps || null,     // land tap abilities: [{ text, effects }]
 		tapped: false,
+		choices: def.choices || null, // Choose One branches: [{ text, effects }]
+		tempAttack: 0,               // "this turn" attack, expires at owner's turn end
 		power: def.power || null,   // hero power: { cost, effects }
 		quest: def.quest || null,   // quest: { goal: { type, count }, reward }
 		ongoing: def.ongoing || null, // permanent trigger: { on, effects }
@@ -159,6 +161,8 @@ export function createGame(cardsById, rng = Math.random, playerDeckIds = null, p
 		landsPlayedThisTurn: 0,
 		fatigue: 0, // escalates each time a draw finds deck AND graveyard empty
 		overloadPending: 0, // mana locked at the start of the next turn
+		corpses: 0,         // Death Knight resource
+		heroTempAttack: 0,  // "your hero has +N Attack this turn"
 		mana: { cur: 1, max: 1, bonus: 0 },
 		coins: 0,
 		diedThisTurn: 0,
@@ -269,8 +273,15 @@ const CHOSEN = {
 	silence: { creature: 'creature', 'enemy-creature': 'enemy-creature' },
 };
 
+// Choose One cards resolve to one branch's effects at play time
+export function effectsOf(card, choice) {
+	if (card.choices) return card.choices[choice ?? 0]?.effects || [];
+	return card.effects;
+}
+
 // Returns null (no target needed) or { targets, filter(card)?, required, why }
-export function targetSpec(state, pi, card) {
+// `choice` selects a Choose One branch before deriving the target.
+export function targetSpec(state, pi, card, choice) {
 	// hand-scripted legacy cards keep their bespoke specs
 	if (card.type === 'creature') {
 		switch (card.id) {
@@ -288,8 +299,10 @@ export function targetSpec(state, pi, card) {
 		case 'mark_target':
 			return { targets: 'enemy-creature', required: true, why: 'an enemy creature' };
 	}
+	// choose-one cards with no branch picked yet: the branch menu comes first
+	if (card.choices && choice == null) return null;
 	// generic: derive from the first effect that needs a chosen target
-	for (const e of card.effects || []) {
+	for (const e of effectsOf(card, choice) || []) {
 		let kind = CHOSEN[e.type]?.[e.target];
 		// "the enemy hero" is unambiguous in 1v1 but a choice with 3+ players
 		if (!kind && e.target === 'enemy-hero' && e.type === 'damage' && opponentsOf(state, pi).length > 1) {
@@ -527,6 +540,11 @@ function fireOngoing(state, pi, when, ctx = {}) {
 		if (!card.ongoing || card.ongoing.on !== when) continue;
 		if (card === ctx.minion) continue; // a minion doesn't trigger on its own arrival
 		if (card.zone === 'board' && isDead(card)) continue;
+		// Avenge-style triggers need N occurrences before they pop
+		if (card.ongoing.need) {
+			card.trigCount = (card.trigCount || 0) + 1;
+			if (card.trigCount < card.ongoing.need) continue;
+		}
 		emit(state, { type: 'ongoingTriggered', player: pi, card });
 		const fx = card.ongoing.effects;
 		if (card.ongoing.once) card.ongoing = null; // Spellburst-style one-shots
@@ -842,11 +860,11 @@ function runSecretEffects(state, pi, effects, ctx) {
 }
 
 // ---------- scripted card mechanics (text the Lua engine didn't implement) ----------
-function runBattlecry(state, pi, card, target) {
+function runBattlecry(state, pi, card, target, choice) {
 	const p = state.players[pi];
 	// data-driven battlecries (imported sets); legacy ids stay hand-scripted below
-	if (card.effects && !LEGACY_SCRIPTED.has(card.id)) {
-		execEffects(state, pi, card.effects, target, card);
+	if ((card.effects || card.choices) && !LEGACY_SCRIPTED.has(card.id)) {
+		execEffects(state, pi, effectsOf(card, choice), target, card);
 	}
 	switch (card.id) {
 		case 'wandering_merchant': drawCards(state, pi, 1); break;
@@ -1064,6 +1082,47 @@ function execEffects(state, pi, effects, target, source) {
 			for (let s2 = 0; s2 < state.players.length; s2++) {
 				if (!state.players[s2].eliminated) drawCards(state, s2, e.value);
 			}
+		} else if (e.type === 'temp-buff') {
+			// "+N Attack this turn" on a chosen creature
+			const t = chosenCreature();
+			if (t) {
+				t.attack += e.attack || 0;
+				t.tempAttack += e.attack || 0;
+				emit(state, { type: 'buff', uid: t.uid, attack: t.attack, hp: hp(t) });
+			}
+		} else if (e.type === 'temp-buff-self') {
+			if (source && source.zone === 'board' && !isDead(source)) {
+				source.attack += e.attack || 0;
+				source.tempAttack += e.attack || 0;
+				emit(state, { type: 'buff', uid: source.uid, attack: source.attack, hp: hp(source) });
+			}
+		} else if (e.type === 'hero-temp-attack') {
+			state.players[pi].heroTempAttack += e.value;
+			emit(state, { type: 'heroBuffed', player: pi, amount: e.value });
+		} else if (e.type === 'gain-corpses') {
+			state.players[pi].corpses += e.value;
+			emit(state, { type: 'corpses', player: pi, corpses: state.players[pi].corpses });
+		} else if (e.type === 'spend-corpses') {
+			const p = state.players[pi];
+			if (p.corpses >= e.value) {
+				p.corpses -= e.value;
+				emit(state, { type: 'corpses', player: pi, corpses: p.corpses });
+				execEffects(state, pi, e.effects, target, source);
+			}
+		} else if (e.type === 'mill') {
+			// top of the chosen enemy's deck goes to their graveyard
+			const t = enemyHero();
+			if (t != null) {
+				const op = state.players[t];
+				for (let i = 0; i < (e.value || 1); i++) {
+					const id = op.deck.pop();
+					if (!id) break;
+					const milled = instantiate(state.cardsById[id], t);
+					milled.zone = 'graveyard';
+					op.graveyard.push(milled);
+					emit(state, { type: 'mill', player: t, card: milled });
+				}
+			}
 		} else if (e.type === 'gain-mana') {
 			state.players[pi].mana.bonus += e.value;
 			emit(state, { type: 'manaGained', player: pi, amount: e.value, mana: availableMana(state.players[pi]) });
@@ -1146,8 +1205,8 @@ function execEffects(state, pi, effects, target, source) {
 	}
 }
 
-function runSpell(state, pi, card, target) {
-	execEffects(state, pi, card.effects, target, card);
+function runSpell(state, pi, card, target, choice) {
+	execEffects(state, pi, effectsOf(card, choice), target, card);
 	// scripted text
 	switch (card.id) {
 		case 'natures_blessing': drawCards(state, pi, 1); break;
@@ -1199,7 +1258,7 @@ export function canPlay(state, pi, card) {
 	return true;
 }
 
-export function playCard(state, pi, cardUid, target) {
+export function playCard(state, pi, cardUid, target, choice) {
 	const p = state.players[pi];
 	// cards play from hand, the companion zone, or the command zone
 	let card = null, take = null;
@@ -1228,7 +1287,7 @@ export function playCard(state, pi, cardUid, target) {
 		p.board.push(card);
 		questTick(state, 'summon', pi);
 		fireOngoing(state, pi, 'summoned', { minion: card });
-		runBattlecry(state, pi, card, target);
+		runBattlecry(state, pi, card, target, choice);
 		if (p.board.includes(card)) fireSecretsAll(state, pi, 'enemy-minion-played', { minion: card });
 		if (p.board.includes(card) && !isDead(card)) fireOngoing(state, pi, 'creature-played', { minion: card });
 	} else if (card.type === 'weapon') {
@@ -1275,7 +1334,7 @@ export function playCard(state, pi, cardUid, target) {
 		fireSecretsAll(state, pi, 'enemy-spell-cast', ctx);
 		if (ctx.countered) emit(state, { type: 'countered', player: pi, name: card.name });
 		else {
-			runSpell(state, pi, card, target);
+			runSpell(state, pi, card, target, choice);
 			fireOngoing(state, pi, 'spell-played');
 		}
 		toGraveyard(state, pi, card);
@@ -1400,11 +1459,15 @@ export function attack(state, pi, attackerUid, target) {
 }
 
 // ---------- hero (weapon) attacks ----------
+export function heroAttackValue(p) {
+	return (p.weapon ? p.weapon.attack : 0) + p.heroTempAttack;
+}
+
 export function canHeroAttack(state, pi) {
 	if (state.over || state.current !== pi) return false;
 	const p = state.players[pi];
-	if (!p.weapon || p.weapon.attack <= 0) return false;
-	const maxAttacks = p.weapon.keywords.includes(KW.WINDFURY) ? 2 : 1;
+	if (heroAttackValue(p) <= 0) return false; // temp attack lets weaponless heroes swing
+	const maxAttacks = p.weapon?.keywords.includes(KW.WINDFURY) ? 2 : 1;
 	return p.heroAttacksUsed < maxAttacks;
 }
 
@@ -1434,26 +1497,40 @@ export function heroAttack(state, pi, target) {
 
 	const ctx = { attackerType: 'hero', attackerPlayer: pi, target, cancelled: false };
 	fireSecrets(state, target.player, 'enemy-attack', ctx);
-	if (ctx.cancelled || !p.weapon || state.over) { sweepDeaths(state); return true; }
+	if (ctx.cancelled || heroAttackValue(p) <= 0 || state.over) { sweepDeaths(state); return true; }
 	target = ctx.target;
 
-	const w = p.weapon;
+	const w = p.weapon; // may be null when swinging on temp attack alone
+	const atk = heroAttackValue(p);
+	let hitCreature = false, killed = false;
 	if (target.type === 'hero') {
-		damageHero(state, target.player, w.attack, pi);
+		damageHero(state, target.player, atk, pi);
 	} else if (target.type === 'walker') {
 		const pw = findWalker(state, target.uid);
-		if (pw) damageWalker(state, pw, w.attack);
+		if (pw) damageWalker(state, pw, atk);
 	} else {
 		const defender = findCreature(state, target.uid);
 		if (defender && !isDead(defender)) {
-			const dealt = damageCreature(state, defender, w.attack, w);
-			if (has(w, KW.LIFESTEAL) && dealt > 0) healHero(state, pi, dealt);
+			hitCreature = true;
+			const dealt = damageCreature(state, defender, atk, w);
+			if (w && has(w, KW.LIFESTEAL) && dealt > 0) healHero(state, pi, dealt);
 			// the defending creature strikes back at the hero
 			const counter = damageHero(state, pi, defender.attack, defender.controller);
 			if (has(defender, KW.LIFESTEAL) && counter > 0) healHero(state, defender.controller, counter);
+			killed = isDead(defender);
 		}
 	}
-	degradeWeapon(state, pi);
+	// triggered hero weapons fire while still equipped
+	if (w && w.ongoing) {
+		const on = w.ongoing.on;
+		if (on === 'hero-attacks'
+			|| (on === 'hero-attacks-creature' && hitCreature)
+			|| (on === 'hero-kills-creature' && killed)) {
+			emit(state, { type: 'ongoingTriggered', player: pi, card: w });
+			runSecretEffects(state, pi, w.ongoing.effects, { self: w });
+		}
+	}
+	if (w) degradeWeapon(state, pi);
 	sweepDeaths(state);
 	return true;
 }
@@ -1563,6 +1640,15 @@ export function endTurn(state) {
 		}
 	}
 	fireOngoing(state, pi, 'turn-end');
+	// "this turn" bonuses expire
+	for (const c of p.board) {
+		if (c.tempAttack) {
+			c.attack = Math.max(0, c.attack - c.tempAttack);
+			c.tempAttack = 0;
+			emit(state, { type: 'buff', uid: c.uid, attack: c.attack, hp: hp(c) });
+		}
+	}
+	p.heroTempAttack = 0;
 	// discard down to max
 	while (p.hand.length > MAX_HAND) {
 		const c = p.hand.pop();

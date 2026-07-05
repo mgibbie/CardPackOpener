@@ -125,8 +125,20 @@ export function step(state, pi = 1) {
 	if (playable.length) {
 		playable.sort((a, b) => b.cost - a.cost);
 		const card = playable[0];
-		const target = pickTarget(state, pi, card);
-		if (E.playCard(state, pi, card.uid, target)) return true;
+		let choice = null, target = null;
+		if (card.choices) {
+			// take the first branch that's targetless or has a live target
+			for (let i = 0; i < card.choices.length; i++) {
+				const spec = E.targetSpec(state, pi, card, i);
+				if (!spec) { choice = i; break; }
+				const t2 = pickTarget(state, pi, { id: card.id, type: 'sorcery', effects: card.choices[i].effects });
+				if (t2) { choice = i; target = t2; break; }
+			}
+			if (choice == null) choice = 0;
+		} else {
+			target = pickTarget(state, pi, card);
+		}
+		if (E.playCard(state, pi, card.uid, target, choice)) return true;
 	}
 
 	// 1a'. companion and commander come off their zones like extra hand cards

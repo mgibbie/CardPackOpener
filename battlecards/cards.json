@@ -12604,6 +12604,361 @@
           }
         ]
       }
+    },
+    {
+      "id": "body_bagger",
+      "name": "Body Bagger",
+      "cardClass": "death_knight",
+      "cost": 1,
+      "rarity": "common",
+      "set": "paper",
+      "description": "Battlecry: Gain a Corpse.",
+      "type": "creature",
+      "attack": 1,
+      "health": 3,
+      "tribe": "Undead Gnoll",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "gain-corpses",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "bone_breaker",
+      "name": "Bone Breaker",
+      "cardClass": "death_knight",
+      "cost": 1,
+      "rarity": "common",
+      "set": "paper",
+      "description": "( Runes: (U) ) Equip Hero After your Hero attacks a creature, target player loses 2 Life.",
+      "type": "weapon",
+      "attack": 2,
+      "durability": 2,
+      "ongoing": {
+        "on": "hero-attacks-creature",
+        "effects": [
+          {
+            "type": "damage",
+            "value": 2,
+            "target": "enemy-hero"
+          }
+        ]
+      }
+    },
+    {
+      "id": "soulbreaker",
+      "name": "Soulbreaker",
+      "cardClass": "death_knight",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "description": "( Runes: (R) ) Equip Hero After your Hero attacks and kills a creature, gain 2 Corpses.",
+      "type": "weapon",
+      "attack": 3,
+      "durability": 2,
+      "ongoing": {
+        "on": "hero-kills-creature",
+        "effects": [
+          {
+            "type": "gain-corpses",
+            "value": 2
+          }
+        ]
+      }
+    },
+    {
+      "id": "chaos_strike",
+      "name": "Chaos Strike",
+      "cardClass": "demon_hunter",
+      "cost": 2,
+      "rarity": "common",
+      "set": "paper",
+      "description": "Give your hero +2 Attack this turn. Draw a card.",
+      "type": "sorcery",
+      "tribe": "Fel",
+      "effects": [
+        {
+          "type": "hero-temp-attack",
+          "value": 2
+        },
+        {
+          "type": "draw",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "flag_runner",
+      "name": "Flag Runner",
+      "cardClass": "demon_hunter",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "description": "Avenge 1: Gain +1 Attack.",
+      "type": "creature",
+      "attack": 1,
+      "health": 6,
+      "tribe": "Dwarf Scout",
+      "ongoing": {
+        "on": "friendly-creature-died",
+        "need": 1,
+        "once": true,
+        "effects": [
+          {
+            "type": "buff-self",
+            "attack": 1,
+            "health": 0
+          }
+        ]
+      }
+    },
+    {
+      "id": "inner_demon",
+      "name": "Inner Demon",
+      "cardClass": "demon_hunter",
+      "cost": 8,
+      "rarity": "common",
+      "set": "paper",
+      "description": "Give your hero +8 Attack this turn.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "hero-temp-attack",
+          "value": 8
+        }
+      ]
+    },
+    {
+      "id": "beetlemancy",
+      "name": "Beetlemancy",
+      "cardClass": "druid",
+      "cost": 5,
+      "rarity": "rare",
+      "set": "paper",
+      "description": "Choose one: \u2022 Gain 12 Armor. \u2022 Create two 3/3  Beast creature tokens with Taunt.",
+      "type": "sorcery",
+      "choices": [
+        {
+          "text": "Gain 12 Armor.",
+          "effects": [
+            {
+              "type": "armor",
+              "value": 12
+            }
+          ]
+        },
+        {
+          "text": "Create two 3/3  Beast creature tokens with Taunt.",
+          "effects": [
+            {
+              "type": "summon",
+              "count": 2,
+              "attack": 3,
+              "health": 3,
+              "name": "Beast creature",
+              "keywords": [
+                "taunt"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "bite",
+      "name": "Bite",
+      "cardClass": "druid",
+      "cost": 4,
+      "rarity": "common",
+      "set": "paper",
+      "description": "Give your hero +4 Attack this turn. Gain 4 Armor.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "hero-temp-attack",
+          "value": 4
+        },
+        {
+          "type": "armor",
+          "value": 4
+        }
+      ]
+    },
+    {
+      "id": "boomkin",
+      "name": "Boomkin",
+      "cardClass": "druid",
+      "cost": 5,
+      "rarity": "rare",
+      "set": "paper",
+      "description": "Spell Damage+1. Battlecry: Choose one. \u2022 Gain 8 Life. \u2022 Deal 4 damage to any target.",
+      "type": "creature",
+      "attack": 4,
+      "health": 5,
+      "tribe": "Beast",
+      "choices": [
+        {
+          "text": "Gain 8 Life.",
+          "effects": [
+            {
+              "type": "heal",
+              "value": 8,
+              "target": "self"
+            }
+          ]
+        },
+        {
+          "text": "Deal 4 damage to any target.",
+          "effects": [
+            {
+              "type": "damage",
+              "value": 4,
+              "target": "any"
+            }
+          ]
+        }
+      ],
+      "keywords": [
+        "battlecry"
+      ]
+    },
+    {
+      "id": "claw",
+      "name": "Claw",
+      "cardClass": "druid",
+      "cost": 1,
+      "rarity": "common",
+      "set": "paper",
+      "description": "Give your hero +2 Attack this turn. Gain 2 Armor.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "hero-temp-attack",
+          "value": 2
+        },
+        {
+          "type": "armor",
+          "value": 2
+        }
+      ]
+    },
+    {
+      "id": "feral_rage",
+      "name": "Feral Rage",
+      "cardClass": "druid",
+      "cost": 4,
+      "rarity": "common",
+      "set": "paper",
+      "description": "Choose one: \u2022 Give your Hero +4 Attack this turn. \u2022 Gain 8 Armor.",
+      "type": "sorcery",
+      "tribe": "Nature",
+      "choices": [
+        {
+          "text": "Give your Hero +4 Attack this turn.",
+          "effects": [
+            {
+              "type": "hero-temp-attack",
+              "value": 4
+            }
+          ]
+        },
+        {
+          "text": "Gain 8 Armor.",
+          "effects": [
+            {
+              "type": "armor",
+              "value": 8
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "abusive_sergeant",
+      "name": "Abusive Sergeant",
+      "cardClass": "neutral",
+      "cost": 1,
+      "rarity": "common",
+      "set": "paper",
+      "description": "Battlecry: Target creature gains +2 Attack this turn.",
+      "type": "creature",
+      "attack": 2,
+      "health": 1,
+      "tribe": "Human Soldier",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "temp-buff",
+          "attack": 2,
+          "target": "creature"
+        }
+      ]
+    },
+    {
+      "id": "windsoul_automaton",
+      "name": "Windsoul Automaton",
+      "cardClass": "neutral",
+      "cost": 5,
+      "rarity": "rare",
+      "set": "paper",
+      "description": "Windfury & Magnetic. Avenge 3: Gain +2/+2. This card can Magnetize to Totems as well as Mechs.",
+      "type": "creature",
+      "attack": 3,
+      "health": 3,
+      "tribe": "Totem Mech",
+      "ongoing": {
+        "on": "friendly-creature-died",
+        "need": 3,
+        "once": true,
+        "effects": [
+          {
+            "type": "buff-self",
+            "attack": 2,
+            "health": 2
+          }
+        ]
+      }
+    },
+    {
+      "id": "wraith_of_enochia",
+      "name": "Wraith of Enochia",
+      "cardClass": "neutral",
+      "cost": 5,
+      "rarity": "legendary",
+      "set": "paper",
+      "description": "Taunt, Lifesteal, Ward 2 & Trample. Avenge 2: Gain +1/+1. Deathrattle: Deal 2 damage to any target.",
+      "type": "creature",
+      "attack": 4,
+      "health": 4,
+      "tribe": "Angel Devil Noble",
+      "keywords": [
+        "deathrattle"
+      ],
+      "deathrattle": [
+        {
+          "type": "damage",
+          "value": 2,
+          "target": "any"
+        }
+      ],
+      "ongoing": {
+        "on": "friendly-creature-died",
+        "need": 2,
+        "once": true,
+        "effects": [
+          {
+            "type": "buff-self",
+            "attack": 1,
+            "health": 1
+          }
+        ]
+      }
     }
   ]
 }
