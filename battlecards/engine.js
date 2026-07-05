@@ -51,6 +51,8 @@ function instantiate(def, controller) {
 		maxHealth: def.health || 0,
 		durability: def.durability || 0,
 		secret: def.secret || null,
+		trap: def.trap || null,
+		mana: def.mana || 0, // land: bonus mana granted each turn
 		damage: 0,
 		keywords: [...(def.keywords || [])],
 		effects: def.effects || null,
@@ -125,6 +127,7 @@ export function createGame(cardsById, rng = Math.random, playerDeckIds = null, p
 		weapon: null,
 		secrets: [],
 		heroAttacksUsed: 0,
+		landsPlayedThisTurn: 0,
 		mana: { cur: 1, max: 1, bonus: 0 },
 		coins: 0,
 		diedThisTurn: 0,
@@ -374,6 +377,8 @@ function checkGameOver(state) {
 		for (const c of p.board) emit(state, { type: 'death', uid: c.uid, player: i, name: c.name });
 		p.board = [];
 		p.secrets = [];
+		p.traps = [];
+		p.lands = [];
 		p.weapon = null;
 		p.hand = [];
 		emit(state, { type: 'eliminated', player: i });
@@ -439,16 +444,24 @@ function fireSecretsAll(state, actorPi, trigger, ctx) {
 	}
 }
 
+// secrets and traps share the trigger system; traps sit face-down on the
+// table (public count, hidden identity) while secrets are fully hidden
 function fireSecrets(state, pi, trigger, ctx) {
 	const p = state.players[pi];
-	if (state.over || state.current === pi || p.eliminated || !p.secrets.length) return;
-	for (const card of [...p.secrets]) {
+	if (state.over || state.current === pi || p.eliminated) return;
+	for (const card of [...p.secrets, ...p.traps]) {
 		if (state.over) break;
-		const sec = card.secret;
+		const sec = card.secret || card.trap;
 		if (!sec || sec.trigger !== trigger || !secretMatches(sec, ctx)) continue;
-		p.secrets = p.secrets.filter(s => s !== card);
-		toGraveyard(state, pi, card);
-		emit(state, { type: 'secretRevealed', player: pi, card });
+		if (card.type === 'trap') {
+			p.traps = p.traps.filter(t => t !== card);
+			toGraveyard(state, pi, card);
+			emit(state, { type: 'trapSprung', player: pi, card });
+		} else {
+			p.secrets = p.secrets.filter(s => s !== card);
+			toGraveyard(state, pi, card);
+			emit(state, { type: 'secretRevealed', player: pi, card });
+		}
 		runSecretEffects(state, pi, sec.effects, ctx);
 	}
 }
@@ -479,6 +492,16 @@ function runSecretEffects(state, pi, effects, ctx) {
 			case 'damage-minion': {
 				const m = triggering();
 				if (m) damageCreature(state, m, e.value, null);
+				break;
+			}
+			case 'freeze-attacker': {
+				const m = triggering();
+				if (m) freezeCreature(state, m);
+				break;
+			}
+			case 'set-attack': {
+				const m = triggering();
+				if (m) { m.attack = e.value; emit(state, { type: 'buff', uid: m.uid, attack: m.attack, hp: hp(m) }); }
 				break;
 			}
 			case 'set-health': {
@@ -793,6 +816,11 @@ export function canPlay(state, pi, card) {
 		if (p.secrets.length >= MAX_SECRETS) return false;
 		if (p.secrets.some(s => s.id === card.id)) return false; // no duplicate secrets
 	}
+	if (card.type === 'trap' && state.players[pi].traps.length >= MAX_TRAPS) return false;
+	if (card.type === 'land') {
+		const p = state.players[pi];
+		if (p.lands.length >= MAX_LANDS || p.landsPlayedThisTurn >= 1) return false;
+	}
 	const spec = targetSpec(state, pi, card);
 	if (spec && spec.required && legalTargets(state, pi, spec).length === 0) return false;
 	return true;
@@ -825,6 +853,16 @@ export function playCard(state, pi, cardUid, target) {
 		card.zone = 'secret';
 		p.secrets.push(card);
 		emit(state, { type: 'secretPlayed', player: pi, card });
+	} else if (card.type === 'trap') {
+		card.zone = 'trap';
+		p.traps.push(card);
+		emit(state, { type: 'trapSet', player: pi, card });
+	} else if (card.type === 'land') {
+		card.zone = 'land';
+		p.lands.push(card);
+		p.landsPlayedThisTurn++;
+		emit(state, { type: 'landPlayed', player: pi, card });
+		runBattlecry(state, pi, card, target); // on-play land effects
 	} else {
 		const ctx = { spell: card, countered: false };
 		fireSecretsAll(state, pi, 'enemy-spell-cast', ctx);
@@ -1024,8 +1062,12 @@ export function endTurn(state) {
 	const np = state.players[state.current];
 	np.diedThisTurn = 0;
 	np.heroAttacksUsed = 0;
+	np.landsPlayedThisTurn = 0;
 	if (state.turnNumber > 1 && np.mana.max < MAX_BASE_MANA) np.mana.max++;
 	np.mana.cur = np.mana.max;
+	// lands pay out on top of the auto-ramp
+	const landMana = np.lands.reduce((s, l) => s + (l.mana || 1), 0);
+	if (landMana) np.mana.bonus += landMana;
 	for (const c of np.board) { c.sick = false; c.attacksUsed = 0; }
 	emit(state, { type: 'turnStart', player: state.current, turnNumber: state.turnNumber });
 	drawCards(state, state.current, 1);

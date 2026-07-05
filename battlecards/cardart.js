@@ -20,6 +20,7 @@ export const TYPE_COLORS = {
 	enchantment: '#7a2e6a',
 	weapon:      '#7a5a2e',
 	secret:      '#2e6a4a',
+	trap:        '#8a4a2e',
 };
 
 function roundRect(ctx, x, y, w, h, r) {

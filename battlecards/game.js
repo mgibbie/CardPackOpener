@@ -158,7 +158,44 @@ function removeEntity(uid) {
 }
 
 // ---------- layout ----------
-const FLAT = new THREE.Euler(-Math.PI / 2, 0, 0); // face up on the table
+const FLAT = new THREE.Euler(-Math.PI / 2, 0, 0);     // face up on the table
+const FACEDOWN = new THREE.Euler(Math.PI / 2, 0, 0);  // back up (set traps)
+const LAND_Z = 4.0, LAND_SPREAD = 1.15;               // slice-local land row
+const TRAP_Z = 4.9, TRAP_X = 2.55, TRAP_SPREAD = 1.2; // slice-local trap row
+
+// The land row is the only zone with furniture when empty: 5 slot outlines
+// per player. Every other zone simply shows nothing until a card is in it.
+let slotMarkers = [];
+const slotTex = (() => {
+	const c = document.createElement('canvas');
+	c.width = 128; c.height = 172;
+	const ctx = c.getContext('2d');
+	ctx.strokeStyle = 'rgba(120,180,110,0.5)';
+	ctx.lineWidth = 5;
+	ctx.setLineDash([14, 10]);
+	ctx.strokeRect(8, 8, 112, 156);
+	const tex = new THREE.CanvasTexture(c);
+	tex.colorSpace = THREE.SRGBColorSpace;
+	return tex;
+})();
+const slotMat = new THREE.MeshBasicMaterial({ map: slotTex, transparent: true, depthWrite: false });
+const slotGeo = new THREE.PlaneGeometry(1.12, 1.5);
+
+function buildSlotMarkers() {
+	for (const m of slotMarkers) scene.remove(m.mesh);
+	slotMarkers = [];
+	if (!state) return;
+	const off = sliceOff();
+	for (let pi = 0; pi < state.players.length; pi++) {
+		for (let i = 0; i < E.MAX_LANDS; i++) {
+			const mesh = new THREE.Mesh(slotGeo, slotMat);
+			mesh.position.copy(toWorld((i - 2) * LAND_SPREAD, 0.01, off + LAND_Z, pi));
+			mesh.quaternion.copy(sliceQuat(FLAT, pi));
+			scene.add(mesh);
+			slotMarkers.push({ mesh, pi });
+		}
+	}
+}
 
 function layoutTargets() {
 	if (!state) return;
@@ -185,6 +222,21 @@ function layoutTargets() {
 				ent.target.quat = sliceQuat(new THREE.Euler(0.95 + Math.PI, 0, 0), pi); // back to the table
 				ent.target.scale = 0.58;
 			}
+		});
+		// lands fill their slots; traps sit face-down (you see your own face-up)
+		p.lands.forEach((card, i) => {
+			const ent = entityFor(card);
+			seen.add(card.uid);
+			ent.target.pos = toWorld((i - 2) * LAND_SPREAD, 0.05, off + LAND_Z, pi);
+			ent.target.quat = sliceQuat(FLAT, pi);
+			ent.target.scale = 0.42;
+		});
+		p.traps.forEach((card, i) => {
+			const ent = entityFor(card);
+			seen.add(card.uid);
+			ent.target.pos = toWorld(TRAP_X + (i - 1) * TRAP_SPREAD, 0.05, off + TRAP_Z, pi);
+			ent.target.quat = sliceQuat(pi === HUMAN ? FLAT : FACEDOWN, pi);
+			ent.target.scale = 0.42;
 		});
 		// creature row (unlimited: compress spacing inside the slice arc)
 		const bn = p.board.length;
@@ -286,6 +338,7 @@ function updateHud() {
 		const gear = [];
 		if (p.weapon) gear.push(`⚔ ${p.weapon.attack}/${p.weapon.durability}`);
 		if (p.secrets.length) gear.push(`❓ ${p.secrets.length}`);
+		if (p.traps.length) gear.push(`⚠ ${p.traps.length}`);
 		el.querySelector('.gear').innerHTML = gear.join(' · ');
 		el.classList.toggle('dead', p.eliminated);
 		el.classList.toggle('turn', state.current === pi && !state.over);
@@ -319,6 +372,8 @@ function positionPanels() {
 	}
 	$('my-panel').classList.toggle('targetable', heroTargets.has(HUMAN));
 	for (const [pi, el] of foePanelEls) el.classList.toggle('targetable', heroTargets.has(pi));
+	// eliminated slices lose their land-slot furniture too
+	for (const m of slotMarkers) m.mesh.visible = !state.players[m.pi].eliminated;
 }
 
 function banner(text, ms = 1400) {
@@ -447,6 +502,16 @@ function nextEvent() {
 			floatText('❓', '#c9b8ff', heroPos(ev.player));
 			delay = 350;
 			break;
+		case 'trapSet':
+			log(ev.player === HUMAN ? `You set a Trap: ${ev.card.name}` : `${nameOf(ev.player)} set a Trap`);
+			delay = 350;
+			break;
+		case 'trapSprung':
+			banner(`Trap: ${ev.card.name}!`, 1600);
+			log(`${ev.player === HUMAN ? 'Your' : `${nameOf(ev.player)}'s`} Trap sprung: ${ev.card.name}`);
+			delay = 900;
+			break;
+		case 'landPlayed': delay = 260; break; // the generic play event already logs it
 		case 'secretRevealed':
 			banner(`Secret: ${ev.card.name}!`, 1600);
 			log(`${ev.player === HUMAN ? 'Your' : `${nameOf(ev.player)}'s`} Secret revealed: ${ev.card.name}`);
@@ -750,6 +815,7 @@ async function start() {
 	const deckOk = saved.length === Col.DECK_SIZE && !Col.validateDeck(saved, cardsById, collection);
 	state = E.createGame(cardsById, Math.random, deckOk ? saved : null, playerCount);
 	buildPanels();
+	buildSlotMarkers();
 	log(deckOk ? 'Using your custom deck.' : 'Using the demo deck — build one in the deck builder!');
 	if (playerCount > 2) log(`Free-for-all: ${playerCount} players, last hero standing wins.`);
 	pump();

@@ -2849,6 +2849,183 @@
         }
       ],
       "description": "Battlecry: Destroy your opponent's weapon and draw a card for each durability it had."
+    },
+    {
+      "id": "bear_trap",
+      "name": "Bear Trap",
+      "type": "trap",
+      "cardClass": "bounty_hunter",
+      "cost": 2,
+      "rarity": "common",
+      "trap": {
+        "trigger": "enemy-attack",
+        "condition": {
+          "targetHero": true,
+          "attackerCreature": true
+        },
+        "effects": [
+          {
+            "type": "damage-minion",
+            "value": 4
+          }
+        ]
+      },
+      "description": "Trap: When an enemy creature attacks your hero, deal 4 damage to it."
+    },
+    {
+      "id": "tripwire_snare",
+      "name": "Tripwire Snare",
+      "type": "trap",
+      "cardClass": "bounty_hunter",
+      "cost": 1,
+      "rarity": "common",
+      "trap": {
+        "trigger": "enemy-attack",
+        "condition": {
+          "attackerCreature": true
+        },
+        "effects": [
+          {
+            "type": "freeze-attacker"
+          }
+        ]
+      },
+      "description": "Trap: When an enemy creature attacks, freeze it."
+    },
+    {
+      "id": "dynamite_cache",
+      "name": "Dynamite Cache",
+      "type": "trap",
+      "cardClass": "bounty_hunter",
+      "cost": 3,
+      "rarity": "rare",
+      "trap": {
+        "trigger": "enemy-attack",
+        "condition": {
+          "targetHero": true
+        },
+        "effects": [
+          {
+            "type": "damage",
+            "value": 2,
+            "target": "enemies"
+          }
+        ]
+      },
+      "description": "Trap: When your hero is attacked, deal 2 damage to every enemy hero and creature."
+    },
+    {
+      "id": "rattlesnake_den",
+      "name": "Rattlesnake Den",
+      "type": "trap",
+      "cardClass": "bounty_hunter",
+      "cost": 2,
+      "rarity": "uncommon",
+      "trap": {
+        "trigger": "enemy-attack",
+        "condition": {
+          "targetCreature": true
+        },
+        "effects": [
+          {
+            "type": "summon",
+            "count": 2,
+            "attack": 1,
+            "health": 1,
+            "name": "Rattlesnake"
+          }
+        ]
+      },
+      "description": "Trap: When one of your creatures is attacked, summon two 1/1 Rattlesnakes."
+    },
+    {
+      "id": "quicksand_pit",
+      "name": "Quicksand Pit",
+      "type": "trap",
+      "cardClass": "bounty_hunter",
+      "cost": 3,
+      "rarity": "rare",
+      "trap": {
+        "trigger": "enemy-minion-played",
+        "effects": [
+          {
+            "type": "set-attack",
+            "value": 1
+          }
+        ]
+      },
+      "description": "Trap: After an opponent plays a creature, set its Attack to 1."
+    },
+    {
+      "id": "smoke_bomb",
+      "name": "Smoke Bomb",
+      "type": "trap",
+      "cardClass": "bounty_hunter",
+      "cost": 2,
+      "rarity": "uncommon",
+      "trap": {
+        "trigger": "hero-takes-damage",
+        "effects": [
+          {
+            "type": "armor",
+            "value": 5
+          }
+        ]
+      },
+      "description": "Trap: When your hero takes damage, gain 5 armor."
+    },
+    {
+      "id": "gold_vein",
+      "name": "Gold Vein",
+      "type": "land",
+      "cardClass": "bounty_hunter",
+      "cost": 0,
+      "rarity": "common",
+      "mana": 1,
+      "description": "Land: +1 mana at the start of each of your turns."
+    },
+    {
+      "id": "boomtown_claim",
+      "name": "Boomtown Claim",
+      "type": "land",
+      "cardClass": "bounty_hunter",
+      "cost": 0,
+      "rarity": "rare",
+      "mana": 2,
+      "description": "Land: +2 mana at the start of each of your turns."
+    },
+    {
+      "id": "crossroads_station",
+      "name": "Crossroads Station",
+      "type": "land",
+      "cardClass": "bounty_hunter",
+      "cost": 0,
+      "rarity": "uncommon",
+      "mana": 1,
+      "effects": [
+        {
+          "type": "draw",
+          "value": 1
+        }
+      ],
+      "description": "Land: +1 mana at the start of each of your turns. When played, draw a card."
+    },
+    {
+      "id": "hallowed_springs",
+      "name": "Hallowed Springs",
+      "type": "land",
+      "cardClass": "bounty_hunter",
+      "cost": 0,
+      "rarity": "uncommon",
+      "mana": 1,
+      "effects": [
+        {
+          "type": "heal",
+          "value": 5,
+          "target": "self"
+        }
+      ],
+      "description": "Land: +1 mana at the start of each of your turns. When played, restore 5 health to your hero."
     }
   ]
 }
