@@ -117,7 +117,9 @@ export function opponentsOf(state, pi) {
 }
 
 // ---------- game setup ----------
-export function createGame(cardsById, rng = Math.random, playerDeckIds = null, playerCount = 2) {
+// `classPicks` (optional): one class object per player from classes.json —
+// { id, name, power: { name, cost, effects|choices, text } | null, passive? }
+export function createGame(cardsById, rng = Math.random, playerDeckIds = null, playerCount = 2, classPicks = null) {
 	// never in decks: companions/commanders (own zones), lands (bought from the
 	// slot menu), and colored cards (conjured by lands during play)
 	const playable = Object.values(cardsById).filter(d =>
@@ -130,17 +132,28 @@ export function createGame(cardsById, rng = Math.random, playerDeckIds = null, p
 		}
 		return ids;
 	};
-	const buildDeck = () => {
+	// paper rules: your deck draws from your class pool (dual classes count)
+	// plus neutrals; with no class picked, the whole playable pool is fair game
+	const buildDeck = (classId) => {
+		let pool = playable;
+		if (classId) {
+			pool = playable.filter(d => {
+				const cc = d.cardClass || 'neutral';
+				return cc === 'neutral' || cc === classId || cc.split('__').includes(classId);
+			});
+			if (pool.length < 30) pool = playable;
+		}
 		const ids = [];
-		for (const d of playable) { ids.push(d.id, d.id); } // 2 copies of each
+		for (const d of pool) { ids.push(d.id, d.id); } // 2 copies of each
 		return shuffle(ids).slice(0, 60);
 	};
 	const playerDeck = playerDeckIds?.length ? shuffle([...playerDeckIds]) : null;
 
-	const mkPlayer = () => ({
+	const mkPlayer = (classId) => ({
 		life: STARTING_LIFE,
 		armor: 0,
-		deck: buildDeck(),
+		heroClass: classId || null,
+		deck: buildDeck(classId),
 		hand: [],
 		board: [],          // the Creatures row (no size limit)
 		enchantments: [],   // unlimited rows (empty until those card types land)
@@ -173,7 +186,7 @@ export function createGame(cardsById, rng = Math.random, playerDeckIds = null, p
 	const state = {
 		cardsById,
 		rng,
-		players: Array.from({ length: n }, mkPlayer),
+		players: Array.from({ length: n }, (_, i) => mkPlayer(classPicks?.[i]?.id)),
 		current: 0,     // 0 = human; human goes first
 		turnNumber: 1,
 		over: false,
@@ -181,6 +194,23 @@ export function createGame(cardsById, rng = Math.random, playerDeckIds = null, p
 		events: [],
 	};
 	if (playerDeck) state.players[0].deck = playerDeck;
+
+	// class starting hero powers occupy one of the three power slots
+	if (classPicks) {
+		state.players.forEach((p, i) => {
+			const pick = classPicks[i];
+			if (!pick?.power) return;
+			const card = instantiate({
+				id: pick.id + '_power', name: pick.power.name, type: 'heropower',
+				cost: 0, rarity: 'basic',
+				power: { cost: pick.power.cost, effects: pick.power.effects || null, choices: pick.power.choices || null },
+				description: `Hero Power (${pick.power.cost}): ${pick.power.text}`,
+				cardClass: pick.id,
+			}, i);
+			card.zone = 'heropower';
+			p.heroPowers.push(card);
+		});
+	}
 
 	// deal each player a random companion and commander into their zones
 	const companions = Object.values(cardsById).filter(d => d.companion);
@@ -264,8 +294,10 @@ function spendMana(p, amount) {
 // effect target values that require the player to choose something
 const CHOSEN = {
 	damage: { any: 'any', creature: 'creature', 'enemy-creature': 'enemy-creature', 'undamaged-creature': 'creature' },
-	heal: { any: 'any' },
+	heal: { any: 'any', creature: 'creature' },
 	buff: { creature: 'creature', 'friendly-creature': 'friendly-creature' },
+	'grant-ongoing': { 'friendly-creature': 'friendly-creature' },
+	'grant-static': { 'friendly-creature': 'friendly-creature' },
 	grant: { creature: 'creature', 'friendly-creature': 'friendly-creature' },
 	destroy: { creature: 'creature', 'enemy-creature': 'enemy-creature' },
 	exile: { creature: 'creature', 'enemy-creature': 'enemy-creature' },
@@ -316,6 +348,11 @@ export function targetSpec(state, pi, card, choice) {
 		}[kind];
 		if (e.target === 'undamaged-creature') { filter = c => c.damage === 0; why = 'an undamaged creature'; }
 		if (e.maxAttack != null) { filter = c => c.attack <= e.maxAttack; why = `a creature with ${e.maxAttack} or less Attack`; }
+		if (e.tribe) {
+			const tribes = e.tribe.split('|');
+			filter = c => tribes.some(t => (c.tribe || '').includes(t));
+			why = `a friendly ${e.tribe.replace(/\|/g, '/')}`;
+		}
 		// spells need their target; creature/weapon battlecries fizzle without one
 		const required = card.type !== 'creature' && card.type !== 'weapon';
 		return { targets: kind, filter, required, why };
@@ -458,6 +495,11 @@ function sweepDeaths(state) {
 		for (const c of dead) {
 			p.diedThisTurn++;
 			emit(state, { type: 'death', uid: c.uid, player: pi, name: c.name });
+			// Death Knight class passive: friendly deaths bank Corpses
+			if (p.heroClass === 'death_knight' && !p.eliminated) {
+				p.corpses++;
+				emit(state, { type: 'corpses', player: pi, corpses: p.corpses });
+			}
 			if (c.marked) drawCards(state, c.markedBy, 2);
 			runDeathrattle(state, pi, c);
 			if (c.commander && !p.eliminated) {
@@ -1066,8 +1108,34 @@ function execEffects(state, pi, effects, target, source) {
 					description: `A ${e.attack}/${e.health} token.`,
 					attack: e.attack, health: e.health,
 					keywords: e.keywords || [],
+					static: e.static || null,
 				});
 			}
+		} else if (e.type === 'random-effects') {
+			// d4-roll hero powers: run one random option
+			const opt = e.options[Math.floor(state.rng() * e.options.length)];
+			execEffects(state, pi, opt, target, source);
+		} else if (e.type === 'luck') {
+			// coin flip: heads runs the effects, tails fizzles
+			if (state.rng() < 0.5) execEffects(state, pi, e.effects, target, source);
+			else emit(state, { type: 'luckFail', player: pi });
+		} else if (e.type === 'add-card') {
+			const p = state.players[pi];
+			const def = state.cardsById[e.id];
+			if (def && p.hand.length < MAX_HAND) {
+				const card = instantiate(def, pi);
+				card.zone = 'hand';
+				p.hand.push(card);
+				emit(state, { type: 'conjure', player: pi, card, color: null });
+			} else if (!def) {
+				drawCards(state, pi, 1); // named card not in the pool yet
+			}
+		} else if (e.type === 'grant-ongoing') {
+			const t = chosenCreature();
+			if (t) t.ongoing = JSON.parse(JSON.stringify(e.ongoing));
+		} else if (e.type === 'grant-static') {
+			const t = chosenCreature();
+			if (t) t.static = { ...e.static };
 		} else if (e.type === 'armor') {
 			gainArmor(state, pi, e.value);
 		} else if (e.type === 'discard-random') {
@@ -1596,30 +1664,36 @@ export function useWalker(state, pi, cardUid, abilityIndex, target) {
 }
 
 // ---------- hero powers ----------
-// derive the activation's target choice from the power's effects
-export function heroPowerSpec(state, pi, card) {
-	if (!card.power) return null;
-	return targetSpec(state, pi, { id: card.id, type: 'sorcery', effects: card.power.effects });
+export function powerEffectsOf(card, choice) {
+	if (card.power?.choices) return card.power.choices[choice ?? 0]?.effects || [];
+	return card.power?.effects || [];
 }
 
-export function canUseHeroPower(state, pi, card) {
+// derive the activation's target choice from the power's effects
+export function heroPowerSpec(state, pi, card, choice) {
+	if (!card.power) return null;
+	if (card.power.choices && choice == null) return null; // branch menu comes first
+	return targetSpec(state, pi, { id: card.id, type: 'sorcery', effects: powerEffectsOf(card, choice) });
+}
+
+export function canUseHeroPower(state, pi, card, choice) {
 	if (state.over || state.current !== pi) return false;
 	const p = state.players[pi];
 	if (!p.heroPowers.includes(card) || card.usedThisTurn) return false;
 	if (availableMana(p) < card.power.cost) return false;
-	const spec = heroPowerSpec(state, pi, card);
+	const spec = heroPowerSpec(state, pi, card, choice);
 	if (spec && spec.required && legalTargets(state, pi, spec).length === 0) return false;
 	return true;
 }
 
-export function useHeroPower(state, pi, cardUid, target) {
+export function useHeroPower(state, pi, cardUid, target, choice) {
 	const p = state.players[pi];
 	const card = p.heroPowers.find(c => c.uid === cardUid);
-	if (!card || !canUseHeroPower(state, pi, card)) return false;
+	if (!card || !canUseHeroPower(state, pi, card, choice)) return false;
 	spendMana(p, card.power.cost);
 	card.usedThisTurn = true;
 	emit(state, { type: 'heroPowerUsed', player: pi, card, mana: availableMana(p) });
-	execEffects(state, pi, card.power.effects, target, card);
+	execEffects(state, pi, powerEffectsOf(card, choice), target, card);
 	fireOngoing(state, pi, 'hero-power-used', {}); // Inspire
 	sweepDeaths(state);
 	return true;

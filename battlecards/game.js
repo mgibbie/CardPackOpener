@@ -282,6 +282,33 @@ function openChoiceMenu(card, ev) {
 	menu.style.top = `${Math.min(ev.clientY, innerHeight - 200)}px`;
 }
 
+// choose-one hero powers pick a branch before targeting
+function openPowerChoiceMenu(card, ev) {
+	const menu = $('walker-menu');
+	menu.innerHTML = `<div class="wm-title">${card.name} — choose one:</div>`;
+	card.power.choices.forEach((ch, i) => {
+		const btn = document.createElement('button');
+		btn.textContent = ch.text;
+		btn.disabled = !E.canUseHeroPower(state, HUMAN, card, i);
+		btn.addEventListener('pointerdown', e => {
+			e.stopPropagation();
+			hideWalkerMenu();
+			const spec = E.heroPowerSpec(state, HUMAN, card, i);
+			if (spec) {
+				const targets = E.legalTargets(state, HUMAN, spec);
+				if (targets.length) { pending = { card, spec, targets, mode: 'power', choice: i }; updateHud(); return; }
+				if (spec.required) return;
+			}
+			E.useHeroPower(state, HUMAN, card.uid, null, i);
+			pump();
+		});
+		menu.appendChild(btn);
+	});
+	menu.style.display = 'block';
+	menu.style.left = `${Math.min(ev.clientX, innerWidth - 300)}px`;
+	menu.style.top = `${Math.min(ev.clientY, innerHeight - 200)}px`;
+}
+
 // clicking one of your untapped lands opens its tap abilities
 function openTapMenu(card, ev) {
 	const menu = $('walker-menu');
@@ -485,7 +512,8 @@ function buildPanels() {
 	for (let pi = 1; pi < state.players.length; pi++) {
 		const el = document.createElement('div');
 		el.className = 'panel foe-sm';
-		el.innerHTML = `<div class="life"></div><div class="sub"><b>${nameOf(pi)}</b> · Mana <span class="mana"></span><br>Hand <span class="hand"></span> · Deck <span class="deck"></span></div><div class="gear"></div>`;
+		const cls = state?.classPicks?.[pi]?.name;
+		el.innerHTML = `<div class="life"></div><div class="sub"><b>${nameOf(pi)}${cls ? ` (${cls})` : ''}</b> · Mana <span class="mana"></span><br>Hand <span class="hand"></span> · Deck <span class="deck"></span></div><div class="gear"></div>`;
 		el.addEventListener('pointerdown', () => panelClick(pi));
 		cont.appendChild(el);
 		foePanelEls.set(pi, el);
@@ -986,6 +1014,7 @@ renderer.domElement.addEventListener('pointerdown', ev => {
 	} else if (card.zone === 'heropower' && card.controller === HUMAN) {
 		// click an installed hero power to activate it
 		if (!E.canUseHeroPower(state, HUMAN, card)) return;
+		if (card.power.choices) { openPowerChoiceMenu(card, ev); return; }
 		const spec = E.heroPowerSpec(state, HUMAN, card);
 		if (spec) {
 			const targets = E.legalTargets(state, HUMAN, spec);
@@ -1016,7 +1045,7 @@ renderer.domElement.addEventListener('pointerdown', ev => {
 
 // resolve a pending targeted action (play, hero power, walker, or land tap)
 function commitPending(t) {
-	if (pending.mode === 'power') E.useHeroPower(state, HUMAN, pending.card.uid, t);
+	if (pending.mode === 'power') E.useHeroPower(state, HUMAN, pending.card.uid, t, pending.choice);
 	else if (pending.mode === 'walker') E.useWalker(state, HUMAN, pending.card.uid, pending.ability, t);
 	else if (pending.mode === 'tap') E.tapLand(state, HUMAN, pending.card.uid, pending.tapIndex, t);
 	else E.playCard(state, HUMAN, pending.card.uid, t, pending.choice);
@@ -1186,6 +1215,22 @@ window.__game = {
 	},
 };
 
+let classRegistry = [];
+
+function pickClasses() {
+	const savedId = localStorage.getItem('magepunk_class_v1');
+	const picks = [];
+	const playable = classRegistry.filter(c => c.power);
+	for (let i = 0; i < playerCount; i++) {
+		if (i === HUMAN) {
+			picks.push(classRegistry.find(c => c.id === savedId) || null);
+		} else {
+			picks.push(playable.length ? playable[Math.floor(Math.random() * playable.length)] : null);
+		}
+	}
+	return picks;
+}
+
 async function start() {
 	for (const uid of [...entities.keys()]) removeEntity(uid);
 	queue.length = 0;
@@ -1199,14 +1244,35 @@ async function start() {
 	const data = await (await fetch('cards.json')).json();
 	const cardsById = {};
 	for (const d of data.cards) cardsById[d.id] = d;
+	if (!classRegistry.length) {
+		try {
+			classRegistry = (await (await fetch('classes.json')).json()).classes;
+			const sel = $('class-select');
+			sel.innerHTML = '<option value="">No class</option>';
+			for (const c of classRegistry) {
+				const opt = document.createElement('option');
+				opt.value = c.id;
+				opt.textContent = c.name + (c.power ? '' : ' (no power yet)');
+				sel.appendChild(opt);
+			}
+			sel.value = localStorage.getItem('magepunk_class_v1') || '';
+			sel.addEventListener('change', ev => {
+				localStorage.setItem('magepunk_class_v1', ev.target.value);
+				start();
+			});
+		} catch (e) { classRegistry = []; }
+	}
+	const picks = pickClasses();
 	// use the saved deck when it's complete and valid; otherwise the demo deck
 	const collection = Col.getCollection(data.cards);
 	const saved = Col.loadDeck();
 	const deckOk = saved.length === Col.DECK_SIZE && !Col.validateDeck(saved, cardsById, collection);
-	state = E.createGame(cardsById, Math.random, deckOk ? saved : null, playerCount);
+	state = E.createGame(cardsById, Math.random, deckOk ? saved : null, playerCount, picks);
+	state.classPicks = picks;
 	buildPanels();
 	buildSlotMarkers();
 	log(deckOk ? 'Using your custom deck.' : 'Using the demo deck — build one in the deck builder!');
+	if (picks[HUMAN]) log(`You are a ${picks[HUMAN].name}.`);
 	if (playerCount > 2) log(`Free-for-all: ${playerCount} players, last hero standing wins.`);
 	pump();
 	updateHud();

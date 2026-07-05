@@ -162,16 +162,27 @@ export function step(state, pi = 1) {
 	// 1c. activate an installed hero power with leftover mana
 	for (const hpw of p.heroPowers) {
 		if (!E.canUseHeroPower(state, pi, hpw)) continue;
-		const fx = hpw.power.effects;
+		let choice = null;
+		let fx = hpw.power.effects;
+		if (hpw.power.choices) {
+			// take the first branch that's targetless or has a live target
+			for (let i = 0; i < hpw.power.choices.length; i++) {
+				const spec2 = E.heroPowerSpec(state, pi, hpw, i);
+				const bfx = hpw.power.choices[i].effects;
+				if (!spec2) { choice = i; fx = bfx; break; }
+				if (pickTarget(state, pi, { id: hpw.id, type: 'sorcery', effects: bfx })) { choice = i; fx = bfx; break; }
+			}
+			if (choice == null) continue;
+		}
 		// don't waste pure healing at high life
 		if (fx.every(e => e.type === 'heal') && p.life > 30) continue;
-		const spec = E.heroPowerSpec(state, pi, hpw);
+		const spec = E.heroPowerSpec(state, pi, hpw, choice);
 		let target = null;
 		if (spec) {
 			target = pickTarget(state, pi, { id: hpw.id, type: 'sorcery', effects: fx });
 			if (spec.required && !target) continue;
 		}
-		if (E.useHeroPower(state, pi, hpw.uid, target)) return true;
+		if (E.useHeroPower(state, pi, hpw.uid, target, choice)) return true;
 	}
 
 	// 1d. planeswalkers: cash in the minus ability when affordable, else tick up

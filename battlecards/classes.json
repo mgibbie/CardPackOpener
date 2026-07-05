@@ -1,0 +1,404 @@
+{
+  "classes": [
+    {
+      "id": "death_knight",
+      "name": "Death Knight",
+      "passive": "corpse-per-death",
+      "power": {
+        "name": "Ghoul Charge",
+        "cost": 2,
+        "effects": [
+          {
+            "type": "summon",
+            "count": 1,
+            "attack": 1,
+            "health": 1,
+            "name": "Frail Ghoul"
+          }
+        ],
+        "text": "Create a 1/1 Frail Ghoul."
+      }
+    },
+    {
+      "id": "demon_hunter",
+      "name": "Demon Hunter",
+      "power": {
+        "name": "Demon Claws",
+        "cost": 1,
+        "effects": [
+          {
+            "type": "hero-temp-attack",
+            "value": 1
+          }
+        ],
+        "text": "Your Hero gains +1 Attack this turn."
+      }
+    },
+    {
+      "id": "druid",
+      "name": "Druid",
+      "power": {
+        "name": "Shapeshift",
+        "cost": 2,
+        "effects": [
+          {
+            "type": "hero-temp-attack",
+            "value": 1
+          },
+          {
+            "type": "armor",
+            "value": 1
+          }
+        ],
+        "text": "Your Hero gains +1 Attack this turn and 1 Armor."
+      }
+    },
+    {
+      "id": "hunter",
+      "name": "Hunter",
+      "power": {
+        "name": "Steady Shot",
+        "cost": 2,
+        "effects": [
+          {
+            "type": "damage",
+            "value": 2,
+            "target": "enemy-hero"
+          }
+        ],
+        "text": "Deal 2 damage to an enemy hero."
+      }
+    },
+    {
+      "id": "mage",
+      "name": "Mage",
+      "power": {
+        "name": "Fireblast",
+        "cost": 2,
+        "effects": [
+          {
+            "type": "damage",
+            "value": 1,
+            "target": "any"
+          }
+        ],
+        "text": "Deal 1 damage to any target."
+      }
+    },
+    {
+      "id": "paladin",
+      "name": "Paladin",
+      "power": {
+        "name": "Reinforce",
+        "cost": 2,
+        "effects": [
+          {
+            "type": "summon",
+            "count": 1,
+            "attack": 1,
+            "health": 1,
+            "name": "Silver Hand Recruit"
+          }
+        ],
+        "text": "Create a 1/1 Silver Hand Recruit."
+      }
+    },
+    {
+      "id": "priest",
+      "name": "Priest",
+      "power": {
+        "name": "Lesser Heal",
+        "cost": 2,
+        "choices": [
+          {
+            "text": "Heal 2 damage from a creature.",
+            "effects": [
+              {
+                "type": "heal",
+                "value": 2,
+                "target": "creature"
+              }
+            ]
+          },
+          {
+            "text": "A player gains 2 Life.",
+            "effects": [
+              {
+                "type": "heal",
+                "value": 2,
+                "target": "any"
+              }
+            ]
+          }
+        ],
+        "text": "Choose one: heal a creature for 2, or a player gains 2 Life."
+      }
+    },
+    {
+      "id": "rogue",
+      "name": "Rogue",
+      "power": {
+        "name": "Dagger Mastery",
+        "cost": 2,
+        "effects": [
+          {
+            "type": "equip",
+            "name": "Wicked Knife",
+            "attack": 1,
+            "durability": 2
+          }
+        ],
+        "text": "Equip a 1/2 Wicked Knife."
+      }
+    },
+    {
+      "id": "shaman",
+      "name": "Shaman",
+      "power": {
+        "name": "Totemic Call",
+        "cost": 2,
+        "effects": [
+          {
+            "type": "random-effects",
+            "options": [
+              [
+                {
+                  "type": "summon",
+                  "count": 1,
+                  "attack": 1,
+                  "health": 1,
+                  "name": "Totem"
+                }
+              ],
+              [
+                {
+                  "type": "summon",
+                  "count": 1,
+                  "attack": 0,
+                  "health": 2,
+                  "name": "Totem",
+                  "keywords": [
+                    "taunt"
+                  ]
+                }
+              ],
+              [
+                {
+                  "type": "summon",
+                  "count": 1,
+                  "attack": 0,
+                  "health": 2,
+                  "name": "Totem",
+                  "static": {
+                    "type": "spell-damage",
+                    "value": 1
+                  }
+                }
+              ],
+              [
+                {
+                  "type": "summon",
+                  "count": 1,
+                  "attack": 0,
+                  "health": 2,
+                  "name": "Totem"
+                }
+              ]
+            ]
+          }
+        ],
+        "text": "Roll a d4: summon a random Totem.",
+        "note": "d4 result 4 (Medic 3 totem) summons plain until Medic exists"
+      }
+    },
+    {
+      "id": "warlock",
+      "name": "Warlock",
+      "power": {
+        "name": "Life Tap",
+        "cost": 2,
+        "effects": [
+          {
+            "type": "draw",
+            "value": 1
+          },
+          {
+            "type": "damage",
+            "value": 2,
+            "target": "own-hero"
+          }
+        ],
+        "text": "Draw a card and lose 2 Life."
+      }
+    },
+    {
+      "id": "warrior",
+      "name": "Warrior",
+      "power": {
+        "name": "Armor Up!",
+        "cost": 2,
+        "effects": [
+          {
+            "type": "armor",
+            "value": 2
+          }
+        ],
+        "text": "Gain 2 Armor."
+      }
+    },
+    {
+      "id": "bard",
+      "name": "Bard",
+      "power": {
+        "name": "Village Performance!",
+        "cost": 2,
+        "effects": [
+          {
+            "type": "random-effects",
+            "options": [
+              [
+                {
+                  "type": "add-card",
+                  "id": "wolfstorm_tavernsong"
+                }
+              ],
+              [
+                {
+                  "type": "add-card",
+                  "id": "dungeoneer_blues"
+                }
+              ],
+              [
+                {
+                  "type": "add-card",
+                  "id": "northshire_jig"
+                }
+              ],
+              [
+                {
+                  "type": "add-card",
+                  "id": "wandering_motet"
+                }
+              ]
+            ]
+          }
+        ],
+        "text": "Roll a d4: add a random Song to your hand."
+      }
+    },
+    {
+      "id": "ranger",
+      "name": "Ranger",
+      "power": {
+        "name": "Steward of Trees",
+        "cost": 3,
+        "choices": [
+          {
+            "text": "Deal 2 damage to a creature.",
+            "effects": [
+              {
+                "type": "damage",
+                "value": 2,
+                "target": "creature"
+              }
+            ]
+          },
+          {
+            "text": "A friendly Beast gains +2/+2.",
+            "effects": [
+              {
+                "type": "buff",
+                "attack": 2,
+                "health": 2,
+                "target": "friendly-creature",
+                "tribe": "Beast"
+              }
+            ]
+          },
+          {
+            "text": "Luck: draw 2 cards.",
+            "effects": [
+              {
+                "type": "luck",
+                "effects": [
+                  {
+                    "type": "draw",
+                    "value": 2
+                  }
+                ]
+              }
+            ]
+          }
+        ],
+        "text": "Choose one: 2 damage to a creature, +2/+2 to a friendly Beast, or Luck: draw 2."
+      }
+    },
+    {
+      "id": "sorcerer",
+      "name": "Sorcerer",
+      "power": {
+        "name": "Spellweaving",
+        "cost": 3,
+        "choices": [
+          {
+            "text": "A friendly Vampire, Dragon, or Demon gains Spellburst: draw a card.",
+            "effects": [
+              {
+                "type": "grant-ongoing",
+                "target": "friendly-creature",
+                "tribe": "Vampire|Dragon|Demon",
+                "ongoing": {
+                  "on": "spell-played",
+                  "once": true,
+                  "effects": [
+                    {
+                      "type": "draw",
+                      "value": 1
+                    }
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "text": "A friendly Elemental, Spirit, or Dragon gains Divine Shield.",
+            "effects": [
+              {
+                "type": "grant",
+                "keyword": "divine_shield",
+                "target": "friendly-creature",
+                "tribe": "Elemental|Spirit|Dragon"
+              }
+            ]
+          },
+          {
+            "text": "A friendly creature gains Spell Damage +1.",
+            "effects": [
+              {
+                "type": "grant-static",
+                "target": "friendly-creature",
+                "static": {
+                  "type": "spell-damage",
+                  "value": 1
+                }
+              }
+            ]
+          }
+        ],
+        "text": "Choose one of three weavings."
+      }
+    },
+    {
+      "id": "barbarian",
+      "name": "Barbarian",
+      "power": null,
+      "note": "Raging Roar needs until-end-of-turn keywords"
+    },
+    {
+      "id": "wizard",
+      "name": "Wizard",
+      "power": null,
+      "note": "Spellbook Studies needs cost modification"
+    }
+  ]
+}
