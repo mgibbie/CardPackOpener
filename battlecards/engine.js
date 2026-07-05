@@ -9,6 +9,7 @@ export const KW = {
 	BATTLECRY: 'battlecry', DEATHRATTLE: 'deathrattle', LIFESTEAL: 'lifesteal',
 	DIVINE_SHIELD: 'divine_shield', STEALTH: 'stealth', DEATHTOUCH: 'deathtouch',
 	POISONOUS: 'poisonous', FREEZER: 'freezer',
+	ELUSIVE: 'elusive', PIERCING: 'piercing',
 };
 
 export const MAX_BASE_MANA = 12;
@@ -315,6 +316,7 @@ export function legalTargets(state, pi, spec) {
 	const pushCreatures = (side) => {
 		for (const c of state.players[side].board) {
 			if (side !== pi && c.stealthed) continue; // stealth: untargetable by opponent
+			if (side !== pi && has(c, KW.ELUSIVE)) continue; // elusive: no enemy spells/powers
 			if (!spec.filter || spec.filter(c)) out.push({ type: 'creature', uid: c.uid, player: side });
 		}
 	};
@@ -350,22 +352,40 @@ function damageCreature(state, target, amount, source) {
 	target.damage += amount;
 	if (source && (has(source, KW.DEATHTOUCH) || has(source, KW.POISONOUS))) target.poisoned = true;
 	emit(state, { type: 'damage', targetType: 'creature', uid: target.uid, amount, hp: hp(target) });
-	// whenever-a-minion-takes-damage triggers (fires even if the hit is lethal)
+	// whenever-a-minion-takes-damage triggers (fires even if the hit is lethal);
+	// Frenzy variants fire once and only on surviving the hit
 	if (target.ongoing?.on === 'self-damaged') {
-		runSecretEffects(state, target.controller, target.ongoing.effects, { self: target, damaged: target });
+		const o = target.ongoing;
+		if (!o.survives || !isDead(target)) {
+			if (o.once) target.ongoing = null;
+			runSecretEffects(state, target.controller, o.effects, { self: target, damaged: target });
+		}
 	}
 	for (let s2 = 0; s2 < state.players.length; s2++) fireOngoing(state, s2, 'creature-damaged', { damaged: target });
 	fireOngoing(state, target.controller, 'friendly-creature-damaged', { damaged: target });
 	return amount;
 }
 
-// `src` is the player index responsible for the damage (for reflect secrets)
-function damageHero(state, pi, amount, src = null) {
+// `src` is the player index responsible for the damage (for reflect secrets);
+// `pierce` skips armor entirely (paper Piercing keyword)
+function damageHero(state, pi, amount, src = null, pierce = false) {
 	if (amount <= 0) return 0;
 	const p = state.players[pi];
 	// static hero-damage reduction (Lucky Horseshoe)
 	amount = Math.max(0, amount - staticValue(p, 'reduce-hero-damage'));
 	if (amount <= 0) return 0;
+	if (pierce) {
+		// bypass armor: fatal check + damage go straight to life
+		if (amount >= p.life) {
+			const ctx = { fatal: true, prevented: false, src };
+			fireSecrets(state, pi, 'hero-takes-damage', ctx);
+			if (ctx.prevented) return 0;
+		}
+		p.life = Math.max(0, p.life - amount);
+		emit(state, { type: 'damage', targetType: 'hero', player: pi, amount, life: p.life });
+		fireSecrets(state, pi, 'hero-takes-damage', { fatal: false, amount, src });
+		return amount;
+	}
 	// fatal-damage secrets (Ice Block) fire before the damage lands
 	if (amount - Math.min(p.armor, amount) >= p.life) {
 		const ctx = { fatal: true, prevented: false, src };
@@ -508,7 +528,9 @@ function fireOngoing(state, pi, when, ctx = {}) {
 		if (card === ctx.minion) continue; // a minion doesn't trigger on its own arrival
 		if (card.zone === 'board' && isDead(card)) continue;
 		emit(state, { type: 'ongoingTriggered', player: pi, card });
-		runSecretEffects(state, pi, card.ongoing.effects, { ...ctx, self: card });
+		const fx = card.ongoing.effects;
+		if (card.ongoing.once) card.ongoing = null; // Spellburst-style one-shots
+		runSecretEffects(state, pi, fx, { ...ctx, self: card });
 	}
 }
 
@@ -601,11 +623,12 @@ export function canTapLand(state, pi, card, tapIndex) {
 export function tapSpec(state, pi, card, tapIndex) {
 	const t = landTaps(card)[tapIndex];
 	if (!t) return null;
-	// boost abilities aim at a friendly creature; everything else is untargeted
+	// boost abilities aim at a friendly creature; other targeted effects use
+	// the standard derivation (e.g. Wastes' tap-for-damage)
 	if (t.effects.some(e => e.type === 'boost')) {
 		return { targets: 'friendly-creature', required: true, why: 'a friendly creature to boost' };
 	}
-	return null;
+	return targetSpec(state, pi, { id: card.id, type: 'sorcery', effects: t.effects });
 }
 
 export function tapLand(state, pi, cardUid, tapIndex, target) {
@@ -921,6 +944,9 @@ function execEffects(state, pi, effects, target, source) {
 						damageHero(state, o, v, pi);
 					}
 					break;
+				case 'enemy-heroes': // every opponent's face, creatures untouched
+					for (const o of enemies) damageHero(state, o, v, pi);
+					break;
 				case 'everyone':
 					for (let s = 0; s < state.players.length; s++) {
 						if (state.players[s].eliminated) continue;
@@ -1041,18 +1067,28 @@ function execEffects(state, pi, effects, target, source) {
 		} else if (e.type === 'gain-mana') {
 			state.players[pi].mana.bonus += e.value;
 			emit(state, { type: 'manaGained', player: pi, amount: e.value, mana: availableMana(state.players[pi]) });
-		} else if (e.type === 'conjure') {
-			// create a random card of the given color from outside the game
+		} else if (e.type === 'conjure' || e.type === 'conjure-named') {
+			// create a random card from outside the game: by color, or by a
+			// named theme pool (falling back to any colored card, then anything)
 			const p = state.players[pi];
-			const pool = Object.values(state.cardsById).filter(d =>
-				d.colors?.includes(e.color) && d.type !== 'land');
+			const defs = Object.values(state.cardsById).filter(d => d.type !== 'land');
+			let pool;
+			if (e.type === 'conjure') {
+				pool = defs.filter(d => d.colors?.includes(e.color));
+				if (!pool.length) pool = defs.filter(d => d.colors?.length);
+			} else {
+				const m = e.match.toLowerCase();
+				pool = defs.filter(d => d.name.toLowerCase().includes(m));
+				if (!pool.length) pool = defs.filter(d => d.colors?.length);
+			}
+			if (!pool.length) pool = defs;
 			for (let i = 0; i < (e.count || 1) && pool.length; i++) {
 				if (p.hand.length >= MAX_HAND) break;
 				const def = pool[Math.floor(state.rng() * pool.length)];
 				const card = instantiate(def, pi);
 				card.zone = 'hand';
 				p.hand.push(card);
-				emit(state, { type: 'conjure', player: pi, card, color: e.color });
+				emit(state, { type: 'conjure', player: pi, card, color: e.color || null });
 			}
 		} else if (e.type === 'boost') {
 			// color boost roll: random buff from the color's table onto a chosen friendly creature
@@ -1228,6 +1264,7 @@ export function playCard(state, pi, cardUid, target) {
 	} else if (card.type === 'enchantment' || card.type === 'artifact') {
 		card.zone = card.type;
 		(card.type === 'enchantment' ? p.enchantments : p.artifacts).push(card);
+		if (card.type === 'enchantment') fireOngoing(state, pi, 'enchantment-played', { played: card });
 	} else if (card.type === 'planeswalker') {
 		card.zone = 'planeswalker';
 		p.planeswalkers.push(card);
@@ -1278,7 +1315,8 @@ export function attackTargets(state, pi, attacker) {
 	const rushOnly = attacker.sick && has(attacker, KW.RUSH) && !has(attacker, KW.CHARGE);
 	for (const opp of opponentsOf(state, pi)) {
 		const board = state.players[opp].board.filter(c => !c.stealthed);
-		const taunts = board.filter(c => has(c, KW.TAUNT));
+		// piercing ignores taunt walls
+		const taunts = has(attacker, KW.PIERCING) ? [] : board.filter(c => has(c, KW.TAUNT));
 		out.push(...(taunts.length ? taunts : board).map(c => ({ type: 'creature', uid: c.uid, player: opp })));
 		if (!taunts.length) {
 			for (const w of state.players[opp].planeswalkers) out.push({ type: 'walker', uid: w.uid, player: opp });
@@ -1297,6 +1335,11 @@ export function attack(state, pi, attackerUid, target) {
 	attacker.attacksUsed++;
 	attacker.stealthed = false;
 	emit(state, { type: 'attack', attackerUid, target });
+	// Swing: when this creature attacks
+	if (attacker.ongoing?.on === 'self-attacks') {
+		runSecretEffects(state, pi, attacker.ongoing.effects, { self: attacker });
+		if (attacker.ongoing?.once) attacker.ongoing = null;
+	}
 
 	// defender's secrets see the declared attack (may kill, bounce, or redirect)
 	const ctx = { attackerType: 'creature', attacker, attackerPlayer: pi, target, cancelled: false };
@@ -1312,8 +1355,12 @@ export function attack(state, pi, attackerUid, target) {
 	}
 
 	if (target.type === 'hero') {
-		const dealt = damageHero(state, target.player, attacker.attack, pi);
+		const dealt = damageHero(state, target.player, attacker.attack, pi, has(attacker, KW.PIERCING));
 		if (has(attacker, KW.LIFESTEAL) && dealt > 0) healHero(state, pi, dealt);
+		// Connect: combat damage to a player
+		if (dealt > 0 && attacker.ongoing?.on === 'self-hit-player') {
+			runSecretEffects(state, pi, attacker.ongoing.effects, { self: attacker });
+		}
 	} else if (target.type === 'walker') {
 		// planeswalkers soak the hit with loyalty and never strike back
 		const w = findWalker(state, target.uid);
@@ -1496,6 +1543,7 @@ export function useHeroPower(state, pi, cardUid, target) {
 	card.usedThisTurn = true;
 	emit(state, { type: 'heroPowerUsed', player: pi, card, mana: availableMana(p) });
 	execEffects(state, pi, card.power.effects, target, card);
+	fireOngoing(state, pi, 'hero-power-used', {}); // Inspire
 	sweepDeaths(state);
 	return true;
 }

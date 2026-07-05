@@ -1,7 +1,7 @@
 // viewer.js — the collection browser: a paginated, filterable card book.
 // Card faces come from the shared procedural renderer; rules text appears in
 // a hover tooltip, and rules-cards carry a CSS-animated iridescent gem.
-import { drawCardFace, hasRules, CLASS_NAMES } from './cardart.js';
+import { drawCardFace, hasRules, classNameOf } from './cardart.js';
 import * as Col from './collection.js';
 
 const PAGE_SIZE = 10;
@@ -82,8 +82,7 @@ function tileFor(card) {
 		tile.appendChild(badge);
 	}
 	tile.addEventListener('pointermove', ev => {
-		const cls = CLASS_NAMES[card.cardClass || 'neutral'] || card.cardClass;
-		const typeLine = cls.toUpperCase() + ' · ' + (card.tribe ? card.tribe + ' ' : '') + card.type.toUpperCase()
+		const typeLine = classNameOf(card.cardClass).toUpperCase() + ' · ' + (card.tribe ? card.tribe + ' ' : '') + card.type.toUpperCase()
 			+ ' · ' + (card.rarity || 'common').toUpperCase();
 		tip.innerHTML = `<div class="tt-name">${card.name}</div><div class="tt-type">${typeLine}</div>`
 			+ `<div class="tt-desc">${card.description || ''}</div>`;
@@ -117,7 +116,7 @@ fetch('cards.json')
 		for (const cls of classes) {
 			const opt = document.createElement('option');
 			opt.value = cls;
-			opt.textContent = CLASS_NAMES[cls] || cls;
+			opt.textContent = classNameOf(cls);
 			$('class-filter').appendChild(opt);
 		}
 		const rarityOrder = { legendary: 0, epic: 1, rare: 2, uncommon: 3, common: 4, special: 5 };

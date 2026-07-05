@@ -31,7 +31,29 @@ export const CLASS_COLORS = {
 	warrior:       '#8a2626',
 	priest:        '#8f8ba0',
 	druid:         '#6b4a26',
+	// paper-set classes
+	magepunk:      '#6b56c2',
+	death_knight:  '#3e6a75',
+	demon_hunter:  '#295c46',
+	sorcerer:      '#7a2e5c',
+	wizard:        '#5a4ab5',
+	bard:          '#a05a8c',
+	barbarian:     '#b04a3a',
+	ranger:        '#3d8a6b',
 };
+
+// dual classes ('druid__priest') fall back to their first class's color
+export function classColorOf(cls) {
+	const c = cls || 'neutral';
+	return CLASS_COLORS[c] || CLASS_COLORS[c.split('__')[0]] || CLASS_COLORS.neutral;
+}
+export function classNameOf(cls) {
+	const c = cls || 'neutral';
+	if (CLASS_NAMES[c]) return CLASS_NAMES[c];
+	return c.split('__')
+		.map(p => p.split('_').map(w => w[0].toUpperCase() + w.slice(1)).join(' '))
+		.join('/');
+}
 export const CLASS_NAMES = {
 	neutral: 'Neutral', bounty_hunter: 'Bounty Hunter', centurion: 'Centurion',
 	naturalist: 'Naturalist', mage: 'Mage', shaman: 'Shaman', paladin: 'Paladin',
@@ -228,7 +250,7 @@ export function drawCardFace(card, opts = {}) {
 
 	const rarity = RARITY_COLORS[card.rarity] || RARITY_COLORS.common;
 	const typeCol = TYPE_COLORS[card.type] || '#444';
-	const classCol = CLASS_COLORS[card.cardClass || 'neutral'] || CLASS_COLORS.neutral;
+	const classCol = classColorOf(card.cardClass);
 
 	// frame body carries the CLASS color; banner and border carry the type
 	const body = ctx.createLinearGradient(0, 0, 0, H);
