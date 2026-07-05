@@ -44,6 +44,7 @@ function instantiate(def, controller) {
 		id: def.id,
 		name: def.name,
 		type: def.type,
+		cardClass: def.cardClass || 'neutral',
 		cost: def.cost || 0,
 		rarity: def.rarity,
 		description: def.description || '',

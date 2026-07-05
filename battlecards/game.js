@@ -4,7 +4,7 @@ import * as THREE from 'three';
 import * as E from './engine.js';
 import * as AI from './ai.js';
 import * as Col from './collection.js';
-import { CARD_W, CARD_H, CARD_D, makeFaceTexture, makeBackTexture, hasRules, RULES_GEM } from './cardart.js';
+import { CARD_W, CARD_H, CARD_D, makeFaceTexture, makeBackTexture, hasRules, RULES_GEM, CLASS_NAMES } from './cardart.js';
 
 const HUMAN = 0;
 const TAU = Math.PI * 2;
@@ -754,7 +754,8 @@ function updateTooltip(ev) {
 	// never reveal hidden information: enemy hands and face-down traps stay secret
 	const hidden = card && card.controller !== HUMAN && (card.zone === 'hand' || card.zone === 'trap');
 	if (!card || hidden) { tip.style.display = 'none'; return; }
-	const typeLine = (card.tribe ? card.tribe + ' ' : '') + card.type.toUpperCase()
+	const cls = CLASS_NAMES[card.cardClass || 'neutral'] || card.cardClass;
+	const typeLine = cls.toUpperCase() + ' · ' + (card.tribe ? card.tribe + ' ' : '') + card.type.toUpperCase()
 		+ ' · ' + (card.rarity || 'common').toUpperCase();
 	let extra = '';
 	if (card.type === 'planeswalker') extra = `<div class="tt-sub">Loyalty ${card.loyalty}</div>`;

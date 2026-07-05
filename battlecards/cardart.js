@@ -16,6 +16,28 @@ export const RARITY_COLORS = {
 	legendary:'#ff9800',
 	special:  '#e8d56f',
 };
+// class tints the card BODY; type still colors the banner and border
+export const CLASS_COLORS = {
+	neutral:       '#5c554b',
+	bounty_hunter: '#9a5426',
+	centurion:     '#256d76',
+	naturalist:    '#7a8a2e',
+	mage:          '#3172b5',
+	shaman:        '#243a8a',
+	paladin:       '#a3822a',
+	warlock:       '#5e2d8a',
+	hunter:        '#3f7a2b',
+	rogue:         '#43414f',
+	warrior:       '#8a2626',
+	priest:        '#8f8ba0',
+	druid:         '#6b4a26',
+};
+export const CLASS_NAMES = {
+	neutral: 'Neutral', bounty_hunter: 'Bounty Hunter', centurion: 'Centurion',
+	naturalist: 'Naturalist', mage: 'Mage', shaman: 'Shaman', paladin: 'Paladin',
+	warlock: 'Warlock', hunter: 'Hunter', rogue: 'Rogue', warrior: 'Warrior',
+	priest: 'Priest', druid: 'Druid',
+};
 export const TYPE_COLORS = {
 	creature:    '#7a3b2e',
 	sorcery:     '#5b3b8c',
@@ -206,12 +228,13 @@ export function drawCardFace(card, opts = {}) {
 
 	const rarity = RARITY_COLORS[card.rarity] || RARITY_COLORS.common;
 	const typeCol = TYPE_COLORS[card.type] || '#444';
+	const classCol = CLASS_COLORS[card.cardClass || 'neutral'] || CLASS_COLORS.neutral;
 
-	// frame body
+	// frame body carries the CLASS color; banner and border carry the type
 	const body = ctx.createLinearGradient(0, 0, 0, H);
-	body.addColorStop(0, shade(typeCol, 0.95));
-	body.addColorStop(0.5, shade(typeCol, 0.55));
-	body.addColorStop(1, shade(typeCol, 0.75));
+	body.addColorStop(0, shade(classCol, 1.0));
+	body.addColorStop(0.5, shade(classCol, 0.55));
+	body.addColorStop(1, shade(classCol, 0.78));
 	ctx.fillStyle = body;
 	roundRect(ctx, 6, 6, W - 12, H - 12, 30);
 	ctx.fill();
