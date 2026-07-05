@@ -31,6 +31,12 @@ export function spendGold(n) {
 // collection: {cardId: count}; new players get 2x each common + 1x each uncommon.
 // When new sets are added, existing collections are topped up with the new
 // starter commons/uncommons they don't own yet (never overwriting counts).
+// lands are bought in-game and colored cards are conjured by lands — neither
+// is collectible, packable, or deck-legal
+export function collectible(def) {
+	return def.type !== 'land' && !(def.colors && def.colors.length) && !def.companion && !def.commander;
+}
+
 export function getCollection(cards) {
 	let c = null;
 	try {
@@ -40,7 +46,7 @@ export function getCollection(cards) {
 	if (!c) c = {};
 	let changed = false;
 	for (const def of cards) {
-		if (def.id in c) continue;
+		if (def.id in c || !collectible(def)) continue;
 		if (def.rarity === 'common' || !def.rarity) { c[def.id] = 2; changed = true; }
 		else if (def.rarity === 'uncommon') { c[def.id] = 1; changed = true; }
 	}
@@ -70,7 +76,7 @@ function rollRarity(table) {
 
 export function rollPack(cards) {
 	const byRarity = {};
-	for (const def of cards) {
+	for (const def of cards.filter(collectible)) {
 		const r = def.rarity || 'common';
 		(byRarity[r] = byRarity[r] || []).push(def);
 	}
@@ -107,6 +113,7 @@ export function validateDeck(ids, cardsById, collection) {
 	const counts = {};
 	for (const id of ids) {
 		if (!cardsById[id]) return `Unknown card: ${id}`;
+		if (!collectible(cardsById[id])) return `${cardsById[id].name} can't go in decks.`;
 		counts[id] = (counts[id] || 0) + 1;
 		const limit = cardsById[id].rarity === 'legendary' ? MAX_LEGENDARY_COPIES : MAX_COPIES;
 		if (counts[id] > limit) return `Too many copies of ${cardsById[id].name} (max ${limit}).`;

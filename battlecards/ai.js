@@ -96,6 +96,30 @@ export function step(state, pi = 1) {
 	if (state.over || state.current !== pi || state.players[pi].eliminated) return false;
 	const p = state.players[pi];
 
+	// 0. work the lands: tap for mana first, conjure when hand runs dry,
+	// boost a random friendly otherwise
+	for (const l of p.lands) {
+		if (!E.canTapLand(state, pi, l)) continue;
+		const taps = E.landTaps(l);
+		let idx = taps.findIndex(t => t.effects.some(e => e.type === 'gain-mana'));
+		if (idx < 0 && p.hand.length < 4) idx = taps.findIndex(t => t.effects.some(e => e.type === 'conjure'));
+		if (idx < 0 && p.board.length) idx = taps.findIndex(t => t.effects.some(e => e.type === 'boost'));
+		if (idx < 0) continue;
+		const spec = E.tapSpec(state, pi, l, idx);
+		let target = null;
+		if (spec) {
+			const legal = E.legalTargets(state, pi, spec);
+			if (!legal.length) continue;
+			target = legal[Math.floor(Math.random() * legal.length)];
+		}
+		if (E.tapLand(state, pi, l.uid, idx, target)) return true;
+	}
+	// 0b. develop a land when flush enough that it doesn't cost the turn
+	if (E.canBuyLand(state, pi) && E.availableMana(p) >= E.LAND_COST + 3 && p.lands.length < 3) {
+		const pool = E.landPool(state);
+		if (pool.length && E.buyLand(state, pi, pool[Math.floor(Math.random() * pool.length)].id)) return true;
+	}
+
 	// 1. play the most expensive playable card
 	const playable = playableCards(state, pi);
 	if (playable.length) {

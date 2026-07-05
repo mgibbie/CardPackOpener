@@ -216,12 +216,71 @@ function buildSlotMarkers() {
 	for (let pi = 0; pi < state.players.length; pi++) {
 		for (let i = 0; i < E.MAX_LANDS; i++) {
 			const mesh = new THREE.Mesh(slotGeo, slotMat);
+			mesh.userData.landSlotPi = pi;
 			mesh.position.copy(toWorld((i - 2) * LAND_SPREAD, 0.01, off + LAND_Z, pi));
 			mesh.quaternion.copy(sliceQuat(FLAT, pi));
 			scene.add(mesh);
 			slotMarkers.push({ mesh, pi });
 		}
 	}
+}
+
+// clicking one of your empty land slots opens the land shop (3 mana a land)
+function pickLandSlot(ev) {
+	pointer.x = (ev.clientX / innerWidth) * 2 - 1;
+	pointer.y = -(ev.clientY / innerHeight) * 2 + 1;
+	raycaster.setFromCamera(pointer, camera);
+	const hits = raycaster.intersectObjects(slotMarkers.map(m => m.mesh));
+	return hits.length ? hits[0].object.userData.landSlotPi : null;
+}
+
+function openLandShop(ev) {
+	const menu = $('walker-menu');
+	menu.innerHTML = `<div class="wm-title">Develop a land — ${E.LAND_COST} mana (each opponent gets a coin)</div>`;
+	for (const def of E.landPool(state)) {
+		const btn = document.createElement('button');
+		const firstTap = (def.taps?.[0]?.text) || (def.mana ? `Gain ${def.mana} mana.` : '');
+		btn.innerHTML = `<span class="wm-cost">${E.LAND_COST}</span><b>${def.name}</b> — ${firstTap}`;
+		btn.title = def.description || '';
+		btn.disabled = !E.canBuyLand(state, HUMAN);
+		btn.addEventListener('pointerdown', e => {
+			e.stopPropagation();
+			hideWalkerMenu();
+			E.buyLand(state, HUMAN, def.id);
+			pump();
+		});
+		menu.appendChild(btn);
+	}
+	menu.style.display = 'block';
+	menu.style.left = `${Math.min(ev.clientX, innerWidth - 300)}px`;
+	menu.style.top = `${Math.min(ev.clientY, innerHeight - 260)}px`;
+}
+
+// clicking one of your untapped lands opens its tap abilities
+function openTapMenu(card, ev) {
+	const menu = $('walker-menu');
+	menu.innerHTML = `<div class="wm-title">${card.name} — tap for:</div>`;
+	E.landTaps(card).forEach((t, i) => {
+		const btn = document.createElement('button');
+		btn.innerHTML = `<span class="wm-cost">⟳</span>${t.text}`;
+		btn.disabled = !E.canTapLand(state, HUMAN, card, i);
+		btn.addEventListener('pointerdown', e => {
+			e.stopPropagation();
+			hideWalkerMenu();
+			const spec = E.tapSpec(state, HUMAN, card, i);
+			if (spec) {
+				const targets = E.legalTargets(state, HUMAN, spec);
+				if (targets.length) { pending = { card, spec, targets, mode: 'tap', tapIndex: i }; updateHud(); return; }
+				if (spec.required) return;
+			}
+			E.tapLand(state, HUMAN, card.uid, i, null);
+			pump();
+		});
+		menu.appendChild(btn);
+	});
+	menu.style.display = 'block';
+	menu.style.left = `${Math.min(ev.clientX, innerWidth - 300)}px`;
+	menu.style.top = `${Math.min(ev.clientY, innerHeight - 200)}px`;
 }
 
 function layoutTargets() {
@@ -255,7 +314,8 @@ function layoutTargets() {
 			const ent = entityFor(card);
 			seen.add(card.uid);
 			ent.target.pos = toWorld((i - 2) * LAND_SPREAD, 0.05, off + LAND_Z, pi);
-			ent.target.quat = sliceQuat(FLAT, pi);
+			// tapped lands turn sideways, MTG-style
+			ent.target.quat = sliceQuat(card.tapped ? new THREE.Euler(-Math.PI / 2, 0, -Math.PI / 2) : FLAT, pi);
 			ent.target.scale = 0.42;
 		});
 		p.traps.forEach((card, i) => {
@@ -605,7 +665,26 @@ function nextEvent() {
 			log(`${ev.player === HUMAN ? 'Your' : `${nameOf(ev.player)}'s`} Trap sprung: ${ev.card.name}`);
 			delay = 900;
 			break;
-		case 'landPlayed': delay = 260; break; // the generic play event already logs it
+		case 'landPlayed':
+			log(`${nameOf(ev.player)} developed ${ev.card.name}`);
+			delay = 320;
+			break;
+		case 'landTapped':
+			log(`${nameOf(ev.player)} tapped ${ev.card.name}: ${ev.text}`);
+			delay = 300;
+			break;
+		case 'manaGained': delay = 120; break;
+		case 'coinGiven': delay = 80; break;
+		case 'conjure':
+			log(ev.player === HUMAN ? `You conjured ${ev.card.name}` : `${nameOf(ev.player)} conjured a card`);
+			delay = 350;
+			break;
+		case 'boosted': {
+			const ent = entities.get(ev.uid);
+			if (ent) { refreshFace(ent); floatText('✸', '#ffd25f', ent.mesh.position); }
+			delay = 320;
+			break;
+		}
 		case 'heroPowerInstalled': delay = 260; break; // ditto
 		case 'questStarted': delay = 260; break;      // ditto
 		case 'heroPowerUsed':
@@ -847,7 +926,12 @@ renderer.domElement.addEventListener('pointerdown', ev => {
 		if (!card || card.controller !== HUMAN) return; // fall through to reselect own creature
 	}
 
-	if (!card) return;
+	if (!card) {
+		// nothing card-like was hit: maybe an empty land slot of yours
+		const slotPi = pickLandSlot(ev);
+		if (slotPi === HUMAN && state.players[HUMAN].lands.length < E.MAX_LANDS) openLandShop(ev);
+		return;
+	}
 	if (card.zone === 'hand' && card.controller === HUMAN) {
 		if (!E.canPlay(state, HUMAN, card)) return;
 		const spec = E.targetSpec(state, HUMAN, card);
@@ -885,13 +969,17 @@ renderer.domElement.addEventListener('pointerdown', ev => {
 		}
 		E.playCard(state, HUMAN, card.uid, null);
 		pump();
+	} else if (card.zone === 'land' && card.controller === HUMAN) {
+		// tap your land for one of its abilities
+		if (E.canTapLand(state, HUMAN, card)) openTapMenu(card, ev);
 	}
 });
 
-// resolve a pending targeted action (play, hero power, or walker ability)
+// resolve a pending targeted action (play, hero power, walker, or land tap)
 function commitPending(t) {
 	if (pending.mode === 'power') E.useHeroPower(state, HUMAN, pending.card.uid, t);
 	else if (pending.mode === 'walker') E.useWalker(state, HUMAN, pending.card.uid, pending.ability, t);
+	else if (pending.mode === 'tap') E.tapLand(state, HUMAN, pending.card.uid, pending.tapIndex, t);
 	else E.playCard(state, HUMAN, pending.card.uid, t);
 	clearModes();
 	pump();
@@ -978,8 +1066,9 @@ function updateRings() {
 			else if (c.zone === 'heropower' && c.controller === HUMAN && E.canUseHeroPower(state, HUMAN, c)) color = '#57e389';
 			else if (c.zone === 'planeswalker' && c.controller === HUMAN && E.canUseWalker(state, HUMAN, c)) color = '#57e389';
 			else if ((c.zone === 'companion' || c.zone === 'command') && c.controller === HUMAN && E.canPlay(state, HUMAN, c)) color = '#57e389';
+			else if (c.zone === 'land' && c.controller === HUMAN && E.canTapLand(state, HUMAN, c)) color = '#57e389';
 		}
-		if (color && (c.zone === 'board' || c.zone === 'heropower' || c.zone === 'planeswalker' || c.zone === 'companion' || c.zone === 'command')) {
+		if (color && (c.zone === 'board' || c.zone === 'heropower' || c.zone === 'planeswalker' || c.zone === 'companion' || c.zone === 'command' || c.zone === 'land')) {
 			ent.ring.visible = true;
 			ent.ring.material.color.set(color);
 			ent.ring.scale.setScalar(c.zone === 'board' ? 1 : c.zone === 'planeswalker' ? 0.72 : 0.62);

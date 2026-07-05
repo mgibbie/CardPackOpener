@@ -21,6 +21,17 @@ export const MAX_LANDS = 5;
 export const MAX_TRAPS = 3;
 export const MAX_QUESTS = 3;
 export const MAX_HERO_POWERS = 3;
+// paper rules: develop a land by paying 3 mana and giving each opponent a coin
+export const LAND_COST = 3;
+
+// per-color Boost roll tables (paper rules leave these open — provisional)
+export const BOOST_TABLES = {
+	W: [{ keyword: 'divine_shield' }, { attack: 0, health: 3 }, { attack: 1, health: 1 }],
+	U: [{ keyword: 'stealth' }, { attack: 1, health: 2 }, { attack: 0, health: 3 }],
+	B: [{ keyword: 'deathtouch' }, { attack: 2, health: 0 }, { attack: 1, health: 1 }],
+	R: [{ keyword: 'rush' }, { attack: 3, health: 0 }, { keyword: 'windfury' }],
+	G: [{ keyword: 'taunt' }, { attack: 2, health: 2 }, { keyword: 'trample' }],
+};
 
 // Cards whose mechanics aren't implemented yet (quests, quickdraw, inspire,
 // weapon enchants) — excluded from generated decks; creatures among them would
@@ -53,7 +64,10 @@ function instantiate(def, controller) {
 		durability: def.durability || 0,
 		secret: def.secret || null,
 		trap: def.trap || null,
-		mana: def.mana || 0, // land: bonus mana granted each turn
+		mana: def.mana || 0,        // legacy lands: synthesized into a tap ability
+		colors: def.colors || [],   // W/U/B/R/G identity ([] = colorless/class card)
+		taps: def.taps || null,     // land tap abilities: [{ text, effects }]
+		tapped: false,
 		power: def.power || null,   // hero power: { cost, effects }
 		quest: def.quest || null,   // quest: { goal: { type, count }, reward }
 		ongoing: def.ongoing || null, // permanent trigger: { on, effects }
@@ -101,8 +115,11 @@ export function opponentsOf(state, pi) {
 
 // ---------- game setup ----------
 export function createGame(cardsById, rng = Math.random, playerDeckIds = null, playerCount = 2) {
-	// companions and commanders live in their own zones, never in decks
-	const playable = Object.values(cardsById).filter(d => !UNPLAYABLE.has(d.id) && !d.companion && !d.commander);
+	// never in decks: companions/commanders (own zones), lands (bought from the
+	// slot menu), and colored cards (conjured by lands during play)
+	const playable = Object.values(cardsById).filter(d =>
+		!UNPLAYABLE.has(d.id) && !d.companion && !d.commander
+		&& d.type !== 'land' && !(d.colors && d.colors.length));
 	const shuffle = ids => {
 		for (let i = ids.length - 1; i > 0; i--) {
 			const j = Math.floor(rng() * (i + 1));
@@ -528,6 +545,81 @@ function questTick(state, kind, actorPi, amount = 1) {
 	}
 }
 
+// ---------- lands: bought from the slot menu, tapped for abilities ----------
+// every land def offers tap abilities; legacy bonus-mana lands synthesize one
+export function landTaps(card) {
+	if (card.taps?.length) return card.taps;
+	const out = [];
+	if (card.mana) out.push({ text: `Gain ${card.mana} mana.`, effects: [{ type: 'gain-mana', value: card.mana }] });
+	return out;
+}
+
+export function landPool(state) {
+	return Object.values(state.cardsById).filter(d => d.type === 'land');
+}
+
+export function canBuyLand(state, pi) {
+	if (state.over || state.current !== pi) return false;
+	const p = state.players[pi];
+	return p.lands.length < MAX_LANDS && availableMana(p) >= LAND_COST;
+}
+
+export function buyLand(state, pi, landId) {
+	if (!canBuyLand(state, pi)) return false;
+	const def = state.cardsById[landId];
+	if (!def || def.type !== 'land') return false;
+	const p = state.players[pi];
+	spendMana(p, LAND_COST);
+	// paper rules: developing a land gives each opponent a coin
+	for (const o of opponentsOf(state, pi)) {
+		state.players[o].coins++;
+		emit(state, { type: 'coinGiven', player: o });
+	}
+	const card = instantiate(def, pi);
+	card.zone = 'land';
+	p.lands.push(card);
+	emit(state, { type: 'landPlayed', player: pi, card, mana: availableMana(p) });
+	runBattlecry(state, pi, card, null); // on-play land effects still fire
+	questTick(state, 'land', pi);
+	sweepDeaths(state);
+	return true;
+}
+
+export function canTapLand(state, pi, card, tapIndex) {
+	if (state.over || state.current !== pi) return false;
+	const p = state.players[pi];
+	if (!p.lands.includes(card) || card.tapped) return false;
+	const taps = landTaps(card);
+	if (tapIndex == null) return taps.length > 0;
+	const t = taps[tapIndex];
+	if (!t) return false;
+	const spec = tapSpec(state, pi, card, tapIndex);
+	if (spec && spec.required && legalTargets(state, pi, spec).length === 0) return false;
+	return true;
+}
+
+export function tapSpec(state, pi, card, tapIndex) {
+	const t = landTaps(card)[tapIndex];
+	if (!t) return null;
+	// boost abilities aim at a friendly creature; everything else is untargeted
+	if (t.effects.some(e => e.type === 'boost')) {
+		return { targets: 'friendly-creature', required: true, why: 'a friendly creature to boost' };
+	}
+	return null;
+}
+
+export function tapLand(state, pi, cardUid, tapIndex, target) {
+	const p = state.players[pi];
+	const card = p.lands.find(c => c.uid === cardUid);
+	if (!card || !canTapLand(state, pi, card, tapIndex)) return false;
+	card.tapped = true;
+	const t = landTaps(card)[tapIndex];
+	emit(state, { type: 'landTapped', player: pi, card, text: t.text });
+	execEffects(state, pi, t.effects, target, card);
+	sweepDeaths(state);
+	return true;
+}
+
 // ---------- weapons ----------
 function breakWeapon(state, pi, destroyed) {
 	const p = state.players[pi];
@@ -946,6 +1038,37 @@ function execEffects(state, pi, effects, target, source) {
 			for (let s2 = 0; s2 < state.players.length; s2++) {
 				if (!state.players[s2].eliminated) drawCards(state, s2, e.value);
 			}
+		} else if (e.type === 'gain-mana') {
+			state.players[pi].mana.bonus += e.value;
+			emit(state, { type: 'manaGained', player: pi, amount: e.value, mana: availableMana(state.players[pi]) });
+		} else if (e.type === 'conjure') {
+			// create a random card of the given color from outside the game
+			const p = state.players[pi];
+			const pool = Object.values(state.cardsById).filter(d =>
+				d.colors?.includes(e.color) && d.type !== 'land');
+			for (let i = 0; i < (e.count || 1) && pool.length; i++) {
+				if (p.hand.length >= MAX_HAND) break;
+				const def = pool[Math.floor(state.rng() * pool.length)];
+				const card = instantiate(def, pi);
+				card.zone = 'hand';
+				p.hand.push(card);
+				emit(state, { type: 'conjure', player: pi, card, color: e.color });
+			}
+		} else if (e.type === 'boost') {
+			// color boost roll: random buff from the color's table onto a chosen friendly creature
+			const t = chosenCreature();
+			const table = BOOST_TABLES[e.color] || [];
+			if (t && table.length) {
+				const roll = table[Math.floor(state.rng() * table.length)];
+				if (roll.keyword) {
+					if (!t.keywords.includes(roll.keyword)) t.keywords.push(roll.keyword);
+					if (roll.keyword === KW.DIVINE_SHIELD) t.shield = true;
+					if (roll.keyword === KW.STEALTH) t.stealthed = true;
+				}
+				t.attack += roll.attack || 0;
+				t.maxHealth += roll.health || 0;
+				emit(state, { type: 'boosted', uid: t.uid, color: e.color, roll, attack: t.attack, hp: hp(t) });
+			}
 		} else if (e.type === 'destroy-weapon') {
 			// hit the chosen enemy's weapon if they have one, else any armed enemy
 			const armed = enemies.filter(o => state.players[o].weapon);
@@ -1027,10 +1150,8 @@ export function canPlay(state, pi, card) {
 		if (p.secrets.some(s => s.id === card.id)) return false; // no duplicate secrets
 	}
 	if (card.type === 'trap' && state.players[pi].traps.length >= MAX_TRAPS) return false;
-	if (card.type === 'land') {
-		const p = state.players[pi];
-		if (p.lands.length >= MAX_LANDS || p.landsPlayedThisTurn >= 1) return false;
-	}
+	// lands are never hand-played anymore: they come from the slot shop
+	if (card.type === 'land') return false;
 	if (card.type === 'heropower' && state.players[pi].heroPowers.length >= MAX_HERO_POWERS) return false;
 	if (card.type === 'quest') {
 		const p = state.players[pi];
@@ -1430,9 +1551,8 @@ export function endTurn(state) {
 		emit(state, { type: 'overloaded', player: state.current, amount: np.overloadPending });
 		np.overloadPending = 0;
 	}
-	// lands pay out on top of the auto-ramp
-	const landMana = np.lands.reduce((s, l) => s + (l.mana || 1), 0);
-	if (landMana) np.mana.bonus += landMana;
+	// lands untap at the start of each turn (they now TAP for their abilities)
+	for (const l of np.lands) l.tapped = false;
 	for (const hpw of np.heroPowers) hpw.usedThisTurn = false;
 	for (const pw of np.planeswalkers) pw.usedThisTurn = false;
 	for (const c of np.board) { c.sick = false; c.attacksUsed = 0; }
