@@ -1638,6 +1638,74 @@ function commitPending(t) {
 	pump();
 }
 
+// ---------- drag-to-target (Hearthstone style) ----------
+// press arms as before; releasing after a real drag commits the target under
+// the cursor, releasing in place keeps click-then-click working
+let lastDownX = 0, lastDownY = 0;
+addEventListener('pointerdown', ev => { lastDownX = ev.clientX; lastDownY = ev.clientY; }, true);
+
+function heroPanelAt(x, y) {
+	const el = document.elementFromPoint(x, y);
+	if (!el) return null;
+	if (el.closest('#my-panel')) return HUMAN;
+	for (const [pi, pel] of foePanelEls) if (pel.contains(el)) return pi;
+	return null;
+}
+
+function tryCommitTargetAt(ev) {
+	const uid = pick(ev);
+	const card = cardOf(uid);
+	const heroPi = heroPanelAt(ev.clientX, ev.clientY);
+	if (pending) {
+		if (card && card.zone === 'board') {
+			const t = pending.targets.find(t => t.type === 'creature' && t.uid === card.uid);
+			if (t) { commitPending(t); return true; }
+		}
+		if (heroPi != null) {
+			const t = pending.targets.find(t => t.type === 'hero' && t.player === heroPi);
+			if (t) { commitPending(t); return true; }
+		}
+		return false;
+	}
+	if (selectedAttacker === 'HERO') {
+		const targets = E.heroAttackTargets(state, HUMAN);
+		if (card && (card.zone === 'board' || card.zone === 'planeswalker') && card.controller !== HUMAN) {
+			const kind = card.zone === 'board' ? 'creature' : 'walker';
+			const t = targets.find(t => t.type === kind && t.uid === card.uid);
+			if (t) { E.heroAttack(state, HUMAN, t); clearModes(); pump(); return true; }
+		}
+		if (heroPi != null && heroPi !== HUMAN) {
+			const t = targets.find(t => t.type === 'hero' && t.player === heroPi);
+			if (t) { E.heroAttack(state, HUMAN, t); clearModes(); pump(); return true; }
+		}
+		return false;
+	}
+	if (selectedAttacker) {
+		const attacker = cardOf(selectedAttacker);
+		if (!attacker) return false;
+		const targets = E.attackTargets(state, HUMAN, attacker);
+		if (card && (card.zone === 'board' || card.zone === 'planeswalker') && card.controller !== HUMAN) {
+			const kind = card.zone === 'board' ? 'creature' : 'walker';
+			const t = targets.find(t => t.type === kind && t.uid === card.uid);
+			if (t) { E.attack(state, HUMAN, selectedAttacker, t); clearModes(); pump(); return true; }
+		}
+		if (heroPi != null && heroPi !== HUMAN) {
+			const t = targets.find(t => t.type === 'hero' && t.player === heroPi);
+			if (t) { E.attack(state, HUMAN, selectedAttacker, t); clearModes(); pump(); return true; }
+		}
+		return false;
+	}
+	return false;
+}
+
+addEventListener('pointerup', ev => {
+	if (ev.button !== 0 || !state || state.over || state.current !== HUMAN) return;
+	if (!pending && !selectedAttacker) return;
+	// a release right where the press happened is a click, not a drag
+	if (Math.hypot(ev.clientX - lastDownX, ev.clientY - lastDownY) < 14) return;
+	if (!tryCommitTargetAt(ev)) clearModes();
+});
+
 // hero panels as click targets (attacks + targeted spells at heroes)
 function panelClick(pi) {
 	if (!state || state.over || state.current !== HUMAN) return;
