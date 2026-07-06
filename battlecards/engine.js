@@ -141,6 +141,8 @@ function instantiate(def, controller) {
 		enrage: def.enrage || null,   // while damaged: { attack?, health?, keywords?, weaponAttack? }
 		combo: def.combo || null,     // effects used instead when a card was played earlier this turn
 		tradeable: !!def.tradeable,   // pay 1: shuffle back into the deck, draw a card
+		battlecryDouble: !!def.battlecryDouble, // Brann: friendly battlecries fire twice
+		rattleDouble: !!def.rattleDouble,       // Rivendare: friendly deathrattles fire twice
 		offTurnAttack: def.offTurnAttack || 0, // "+N Attack during your opponent's turn"
 		statRule: def.statRule || null,   // 'attack-equals-health' (Lightspawn)
 		selfScale: def.selfScale || null, // { attack, tribe }: +N per other <tribe> in play
@@ -707,6 +709,8 @@ function silenceCreature(state, c) {
 	c.honorableKill = null;
 	c.medic = 0;
 	c.offTurnAttack = 0;
+	c.battlecryDouble = false;
+	c.rattleDouble = false;
 	c.auraKeywords = [];
 	c.shield = false;
 	c.stealthed = false;
@@ -846,6 +850,7 @@ function recomputeAuras(state) {
 				}
 				if (a.position === 'ends' && idx !== 0 && idx !== p.board.length - 1) continue;
 				if (a.tribe && !a.tribe.split('|').some(t => (c.tribe || '').includes(t))) continue;
+				if (a.name && c.name !== a.name) continue; // Warhorse Trainer's Recruits
 				aBonus += a.attack || 0;
 				hBonus += a.health || 0;
 				for (const k of a.keywords || []) granted.add(k);
@@ -1377,8 +1382,9 @@ function runBattlecry(state, pi, card, target, choice) {
 	// data-driven battlecries (imported sets); legacy ids stay hand-scripted below
 	if ((card.effects || card.choices || card.combo) && !LEGACY_SCRIPTED.has(card.id)) {
 		execEffects(state, pi, liveEffectsOf(state, pi, card, choice), target, card);
-		// Battle Totem (dungeon treasure / Jin'zo passive): battlecries fire twice
-		if (p.battlecriesTwice) {
+		// Battle Totem (dungeon treasure / Jin'zo passive) or a live Brann
+		if (p.battlecriesTwice
+			|| p.board.some(c => c.battlecryDouble && !isDead(c) && c !== card)) {
 			execEffects(state, pi, liveEffectsOf(state, pi, card, choice), target, card);
 		}
 	}
@@ -1418,8 +1424,11 @@ function runBattlecry(state, pi, card, target, choice) {
 function runDeathrattle(state, pi, card) {
 	if (card.deathrattle) {
 		execEffects(state, pi, card.deathrattle, null, card);
-		// Totem of the Dead (dungeon treasure / Azun passive): rattles fire twice
-		if (state.players[pi].deathrattlesTwice) execEffects(state, pi, card.deathrattle, null, card);
+		// Totem of the Dead (dungeon treasure / Azun passive) or a live Rivendare
+		if (state.players[pi].deathrattlesTwice
+			|| state.players[pi].board.some(c => c.rattleDouble && !isDead(c))) {
+			execEffects(state, pi, card.deathrattle, null, card);
+		}
 	}
 	switch (card.id) {
 		case 'forest_sprite': summon(state, pi, TOKENS.seedling); break;
@@ -1568,6 +1577,8 @@ function execEffects(state, pi, effects, target, source) {
 			if (e.target === 'friendly-creatures') {
 				for (const c of state.players[pi].board) {
 					if (e.tribe && !(c.tribe || '').includes(e.tribe)) continue;
+					if (e.name && c.name !== e.name) continue; // Quartermaster's Recruits
+					if (e.requireKeyword && !c.keywords.includes(e.requireKeyword)) continue;
 					buffCreature(c, e.attack, e.health);
 				}
 			} else if (e.target === 'friendly-others') {
@@ -2623,8 +2634,24 @@ function execEffects(state, pi, effects, target, source) {
 				&& !d.companion && !d.commander && !d.token && !(d.colors && d.colors.length));
 			if (pool.length) {
 				const def = pool[Math.floor(state.rng() * pool.length)];
-				const c = summon(state, pi, def);
+				const owner = e.forEnemy && enemies.length
+					? enemies[Math.floor(state.rng() * enemies.length)] : pi;
+				const c = summon(state, owner, def);
 				if (c && e.disguise) disguiseCreature(state, c);
+			}
+		} else if (e.type === 'add-token') {
+			// Fire Fly: a fresh token creature lands in your hand
+			const p = state.players[pi];
+			if (p.hand.length < MAX_HAND) {
+				const card = instantiate({
+					id: 'token_' + e.name.toLowerCase().replace(/[^a-z0-9]+/g, '_'),
+					name: e.name, type: 'creature', cost: e.cost || 1, rarity: 'common',
+					description: `A ${e.attack}/${e.health} token.`,
+					attack: e.attack, health: e.health, tribe: e.tribe || null, token: true,
+				}, pi);
+				card.zone = 'hand';
+				p.hand.push(card);
+				emit(state, { type: 'conjure', player: pi, card, color: null });
 			}
 		} else if (e.type === 'plunder') {
 			// steal the top card(s) of an opponent's deck into your hand

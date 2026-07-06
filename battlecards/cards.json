@@ -32867,7 +32867,7 @@
           }
         ]
       },
-      "description": "Spellburst: Summon two 1/3 Mana Wyrms.",
+      "description": "Spellburst: summon two 1/3 Mana Wyrms.",
       "set": "hsx"
     },
     {
@@ -36630,6 +36630,1123 @@
         }
       ],
       "description": "Taunt. Battlecry: Summon a copy of this creature."
+    },
+    {
+      "id": "stand_against_darkness",
+      "name": "Stand Against Darkness",
+      "cardClass": "paladin",
+      "cost": 4,
+      "rarity": "common",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "summon",
+          "count": 5,
+          "attack": 1,
+          "health": 1,
+          "name": "Silver Hand Recruit"
+        }
+      ],
+      "description": "Summon five 1/1 Silver Hand Recruit."
+    },
+    {
+      "id": "baron_rivendare",
+      "name": "Baron Rivendare",
+      "cardClass": "neutral",
+      "cost": 4,
+      "rarity": "legendary",
+      "type": "creature",
+      "attack": 1,
+      "health": 7,
+      "rattleDouble": true,
+      "description": "Your creatures' Deathrattles trigger twice."
+    },
+    {
+      "id": "brann_bronzebeard",
+      "name": "Brann Bronzebeard",
+      "cardClass": "neutral",
+      "cost": 3,
+      "rarity": "legendary",
+      "type": "creature",
+      "attack": 2,
+      "health": 4,
+      "battlecryDouble": true,
+      "description": "Your Battlecries trigger twice."
+    },
+    {
+      "id": "fire_fly",
+      "name": "Fire Fly",
+      "cardClass": "neutral",
+      "cost": 1,
+      "rarity": "common",
+      "tribe": "Elemental",
+      "type": "creature",
+      "attack": 1,
+      "health": 2,
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "add-token",
+          "attack": 1,
+          "health": 2,
+          "name": "Elemental",
+          "tribe": "Elemental"
+        }
+      ],
+      "description": "Battlecry: Add a 1/2 Elemental token to your hand.",
+      "set": "hsx"
+    },
+    {
+      "id": "flame_geyser",
+      "name": "Flame Geyser",
+      "cardClass": "mage",
+      "cost": 1,
+      "rarity": "common",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 2,
+          "target": "any"
+        },
+        {
+          "type": "add-token",
+          "attack": 1,
+          "health": 2,
+          "name": "Elemental",
+          "tribe": "Elemental"
+        }
+      ],
+      "description": "Deal 2 damage to any target. Add a 1/2 Elemental token to your hand.",
+      "set": "hsx"
+    },
+    {
+      "id": "gravelsnout_knight",
+      "name": "Gravelsnout Knight",
+      "cardClass": "neutral",
+      "cost": 1,
+      "rarity": "rare",
+      "type": "creature",
+      "attack": 2,
+      "health": 3,
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "summon-random",
+          "cost": 1,
+          "forEnemy": true
+        }
+      ],
+      "description": "Battlecry: Summon a random 1-cost creature for your opponent.",
+      "set": "hsx"
+    },
+    {
+      "id": "lost_in_the_jungle",
+      "name": "Lost in the Jungle",
+      "cardClass": "paladin",
+      "cost": 1,
+      "rarity": "common",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "summon",
+          "count": 2,
+          "attack": 1,
+          "health": 1,
+          "name": "Silver Hand Recruit"
+        }
+      ],
+      "description": "Summon two 1/1 Silver Hand Recruit.",
+      "set": "hsx"
+    },
+    {
+      "id": "alexstrasza_s_champion",
+      "name": "Alexstrasza's Champion",
+      "cardClass": "warrior",
+      "cost": 2,
+      "rarity": "rare",
+      "type": "creature",
+      "attack": 2,
+      "health": 3,
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "conditional",
+          "target": "any",
+          "if": {
+            "holdingTribe": "Dragon"
+          },
+          "then": [
+            {
+              "type": "buff-self",
+              "attack": 1,
+              "health": 0
+            },
+            {
+              "type": "grant",
+              "keyword": "charge",
+              "target": "self"
+            }
+          ]
+        }
+      ],
+      "description": "Battlecry: If you're holding a Dragon: gain +1 Attack and Charge",
+      "set": "hsx"
+    },
+    {
+      "id": "bolster",
+      "name": "Bolster",
+      "cardClass": "warrior",
+      "cost": 2,
+      "rarity": "common",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 2,
+          "health": 2,
+          "target": "friendly-creatures",
+          "name": "Taunt minion"
+        }
+      ],
+      "description": "Give your Taunt minions +2/+2.",
+      "set": "hsx"
+    },
+    {
+      "id": "carving_chisel",
+      "name": "Carving Chisel",
+      "cardClass": "shaman",
+      "cost": 2,
+      "rarity": "common",
+      "type": "weapon",
+      "attack": 1,
+      "durability": 3,
+      "ongoing": {
+        "on": "hero-attacks",
+        "effects": [
+          {
+            "type": "summon-random",
+            "tribe": "Totem",
+            "maxCost": 1
+          }
+        ]
+      },
+      "description": "After your hero attacks, Summon a random cheap Totem.",
+      "set": "hsx"
+    },
+    {
+      "id": "convalescence",
+      "name": "Convalescence",
+      "cardClass": "paladin",
+      "cost": 2,
+      "rarity": "common",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "summon",
+          "count": 2,
+          "attack": 1,
+          "health": 1,
+          "name": "Silver Hand Recruit",
+          "keywords": [
+            "divine_shield"
+          ]
+        }
+      ],
+      "description": "Summon two 1/1 Silver Hand Recruit with Divine Shield.",
+      "set": "hsx"
+    },
+    {
+      "id": "corpse_cannon",
+      "name": "Corpse Cannon",
+      "cardClass": "death_knight",
+      "cost": 2,
+      "rarity": "common",
+      "type": "weapon",
+      "attack": 1,
+      "durability": 3,
+      "ongoing": {
+        "on": "hero-attacks",
+        "effects": [
+          {
+            "type": "summon",
+            "count": 1,
+            "attack": 1,
+            "health": 1,
+            "name": "Frail Ghoul"
+          }
+        ]
+      },
+      "description": "After your hero attacks, Summon a 1/1 Frail Ghoul.",
+      "set": "hsx"
+    },
+    {
+      "id": "remote_control",
+      "name": "Remote Control",
+      "cardClass": "hunter",
+      "cost": 2,
+      "rarity": "common",
+      "type": "weapon",
+      "attack": 1,
+      "durability": 3,
+      "ongoing": {
+        "on": "hero-attacks",
+        "effects": [
+          {
+            "type": "summon",
+            "count": 1,
+            "attack": 1,
+            "health": 1,
+            "name": "Hound"
+          }
+        ]
+      },
+      "description": "After your hero attacks, Summon a 1/1 Hound.",
+      "set": "hsx"
+    },
+    {
+      "id": "soldier_s_caravan",
+      "name": "Soldier's Caravan",
+      "cardClass": "paladin",
+      "cost": 2,
+      "rarity": "rare",
+      "type": "creature",
+      "attack": 1,
+      "health": 3,
+      "ongoing": {
+        "on": "turn-start",
+        "effects": [
+          {
+            "type": "summon",
+            "count": 2,
+            "attack": 1,
+            "health": 1,
+            "name": "Silver Hand Recruit"
+          }
+        ]
+      },
+      "description": "At the start of your turn, summon two 1/1 Silver Hand Recruits.",
+      "set": "hsx"
+    },
+    {
+      "id": "wyrmrest_agent",
+      "name": "Wyrmrest Agent",
+      "cardClass": "priest",
+      "cost": 2,
+      "rarity": "rare",
+      "type": "creature",
+      "attack": 1,
+      "health": 4,
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "conditional",
+          "target": "any",
+          "if": {
+            "holdingTribe": "Dragon"
+          },
+          "then": [
+            {
+              "type": "buff-self",
+              "attack": 1,
+              "health": 0
+            },
+            {
+              "type": "grant",
+              "keyword": "taunt",
+              "target": "self"
+            }
+          ]
+        }
+      ],
+      "description": "Battlecry: If you're holding a Dragon: gain +1 Attack and Taunt",
+      "set": "hsx"
+    },
+    {
+      "id": "ancharrr",
+      "name": "Ancharrr",
+      "cardClass": "warrior",
+      "cost": 3,
+      "rarity": "legendary",
+      "type": "weapon",
+      "attack": 2,
+      "durability": 2,
+      "ongoing": {
+        "on": "hero-attacks",
+        "effects": [
+          {
+            "type": "tutor",
+            "tribe": "Pirate",
+            "count": 1
+          }
+        ]
+      },
+      "description": "After your hero attacks, Draw 1 Pirate from your deck.",
+      "set": "hsx"
+    },
+    {
+      "id": "axe_of_the_forefathers",
+      "name": "Axe of the Forefathers",
+      "cardClass": "warrior",
+      "cost": 3,
+      "rarity": "common",
+      "type": "weapon",
+      "attack": 2,
+      "durability": 2,
+      "ongoing": {
+        "on": "hero-attacks",
+        "effects": [
+          {
+            "type": "damage",
+            "value": 1,
+            "target": "all-creatures"
+          }
+        ]
+      },
+      "description": "After your hero attacks, Deal 1 damage to every creature.",
+      "set": "hsx"
+    },
+    {
+      "id": "brass_knuckles",
+      "name": "Brass Knuckles",
+      "cardClass": "warrior",
+      "cost": 3,
+      "rarity": "epic",
+      "type": "weapon",
+      "attack": 2,
+      "durability": 3,
+      "ongoing": {
+        "on": "hero-attacks",
+        "effects": [
+          {
+            "type": "buff-hand",
+            "attack": 1,
+            "health": 1
+          }
+        ]
+      },
+      "description": "After your hero attacks, Give a random creature in your hand +1/+1.",
+      "set": "hsx"
+    },
+    {
+      "id": "efficient_octo_bot",
+      "name": "Efficient Octo-bot",
+      "cardClass": "rogue",
+      "cost": 3,
+      "rarity": "common",
+      "tribe": "Mech",
+      "type": "creature",
+      "attack": 1,
+      "health": 4,
+      "ongoing": {
+        "on": "self-damaged",
+        "once": true,
+        "survives": true,
+        "effects": [
+          {
+            "type": "discount-hand",
+            "value": 1
+          }
+        ]
+      },
+      "description": "Frenzy: cards in your hand cost (1) less.",
+      "set": "hsx"
+    },
+    {
+      "id": "infernal_stapler",
+      "name": "Infernal Stapler",
+      "cardClass": "demon_hunter",
+      "cost": 3,
+      "rarity": "common",
+      "type": "weapon",
+      "attack": 3,
+      "durability": 3,
+      "ongoing": {
+        "on": "hero-attacks",
+        "effects": [
+          {
+            "type": "damage",
+            "value": 3,
+            "target": "own-hero"
+          }
+        ]
+      },
+      "description": "After your hero attacks, Deal 3 damage to your own hero.",
+      "set": "hsx"
+    },
+    {
+      "id": "insect_claw",
+      "name": "Insect Claw",
+      "cardClass": "demon_hunter",
+      "cost": 3,
+      "rarity": "rare",
+      "type": "weapon",
+      "attack": 2,
+      "durability": 2,
+      "ongoing": {
+        "on": "hero-attacks",
+        "effects": [
+          {
+            "type": "summon",
+            "count": 1,
+            "attack": 2,
+            "health": 1,
+            "name": "Grub",
+            "keywords": [
+              "rush"
+            ]
+          }
+        ]
+      },
+      "description": "After your hero attacks, Summon a 2/1 Grub with Rush.",
+      "set": "hsx"
+    },
+    {
+      "id": "muster_for_battle",
+      "name": "Muster for Battle",
+      "cardClass": "paladin",
+      "cost": 3,
+      "rarity": "rare",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "summon",
+          "count": 3,
+          "attack": 1,
+          "health": 1,
+          "name": "Silver Hand Recruit"
+        },
+        {
+          "type": "equip",
+          "attack": 1,
+          "durability": 4,
+          "name": "Sidearm"
+        }
+      ],
+      "description": "Summon three 1/1 Silver Hand Recruit. Equip a 1/4 Sidearm.",
+      "set": "hsx"
+    },
+    {
+      "id": "rallying_blade",
+      "name": "Rallying Blade",
+      "cardClass": "paladin",
+      "cost": 3,
+      "rarity": "rare",
+      "type": "weapon",
+      "attack": 3,
+      "durability": 2,
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 1,
+          "health": 1,
+          "target": "friendly-creatures",
+          "requireKeyword": "divine_shield"
+        }
+      ],
+      "description": "Battlecry: Give +1/+1 to your creatures with Divine Shield.",
+      "set": "hsx"
+    },
+    {
+      "id": "self_sharpening_sword",
+      "name": "Self-Sharpening Sword",
+      "cardClass": "rogue",
+      "cost": 3,
+      "rarity": "rare",
+      "type": "weapon",
+      "attack": 1,
+      "durability": 4,
+      "ongoing": {
+        "on": "hero-attacks",
+        "effects": [
+          {
+            "type": "buff-self",
+            "attack": 1,
+            "health": 0
+          }
+        ]
+      },
+      "description": "After your hero attacks, this gains +1 Attack.",
+      "set": "hsx"
+    },
+    {
+      "id": "silver_hand_regent",
+      "name": "Silver Hand Regent",
+      "cardClass": "neutral",
+      "cost": 3,
+      "rarity": "common",
+      "type": "creature",
+      "attack": 3,
+      "health": 3,
+      "ongoing": {
+        "on": "hero-power-used",
+        "effects": [
+          {
+            "type": "summon",
+            "count": 1,
+            "attack": 1,
+            "health": 1,
+            "name": "Silver Hand Recruit"
+          }
+        ]
+      },
+      "description": "Inspire: Summon a 1/1 Silver Hand Recruit.",
+      "set": "hsx"
+    },
+    {
+      "id": "underlight_angling_rod",
+      "name": "Underlight Angling Rod",
+      "cardClass": "paladin",
+      "cost": 3,
+      "rarity": "epic",
+      "type": "weapon",
+      "attack": 3,
+      "durability": 2,
+      "ongoing": {
+        "on": "hero-attacks",
+        "effects": [
+          {
+            "type": "conjure-random",
+            "cardType": "creature",
+            "tribe": "Murloc"
+          }
+        ]
+      },
+      "description": "After your hero attacks, add a random Murloc to your hand.",
+      "set": "hsx"
+    },
+    {
+      "id": "warhorse_trainer",
+      "name": "Warhorse Trainer",
+      "cardClass": "paladin",
+      "cost": 3,
+      "rarity": "common",
+      "type": "creature",
+      "attack": 3,
+      "health": 4,
+      "aura": {
+        "attack": 2,
+        "health": 0,
+        "name": "Silver Hand Recruit",
+        "keywords": [
+          "taunt"
+        ]
+      },
+      "description": "Your Silver Hand Recruits have +2 Attack and Taunt.",
+      "set": "hsx"
+    },
+    {
+      "id": "whack_a_gnoll_hammer",
+      "name": "Whack-A-Gnoll Hammer",
+      "cardClass": "shaman",
+      "cost": 3,
+      "rarity": "rare",
+      "type": "weapon",
+      "attack": 3,
+      "durability": 2,
+      "ongoing": {
+        "on": "hero-attacks",
+        "effects": [
+          {
+            "type": "buff-random-friendly",
+            "attack": 1,
+            "health": 1
+          }
+        ]
+      },
+      "description": "After your hero attacks, Give a random friendly creature +1/+1.",
+      "set": "hsx"
+    },
+    {
+      "id": "craftsman_s_hammer",
+      "name": "Craftsman's Hammer",
+      "cardClass": "warrior",
+      "cost": 4,
+      "rarity": "common",
+      "type": "weapon",
+      "attack": 3,
+      "durability": 3,
+      "ongoing": {
+        "on": "hero-attacks",
+        "effects": [
+          {
+            "type": "armor",
+            "value": 4
+          }
+        ]
+      },
+      "description": "After your hero attacks, gain 4 armor.",
+      "set": "hsx"
+    },
+    {
+      "id": "crimson_hothead",
+      "name": "Crimson Hothead",
+      "cardClass": "neutral",
+      "cost": 4,
+      "rarity": "common",
+      "tribe": "Dragon",
+      "type": "creature",
+      "attack": 3,
+      "health": 6,
+      "ongoing": {
+        "on": "spell-played",
+        "once": true,
+        "effects": [
+          {
+            "type": "buff-self",
+            "attack": 1,
+            "health": 0
+          },
+          {
+            "type": "grant",
+            "keyword": "taunt",
+            "target": "self"
+          }
+        ]
+      },
+      "description": "Spellburst: gain +1 Attack and Taunt.",
+      "set": "hsx"
+    },
+    {
+      "id": "hungry_dragon",
+      "name": "Hungry Dragon",
+      "cardClass": "neutral",
+      "cost": 4,
+      "rarity": "common",
+      "tribe": "Dragon",
+      "type": "creature",
+      "attack": 5,
+      "health": 6,
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "summon-random",
+          "cost": 1,
+          "forEnemy": true
+        }
+      ],
+      "description": "Battlecry: Summon a random 1-cost creature for your opponent.",
+      "set": "hsx"
+    },
+    {
+      "id": "scaleworm",
+      "name": "Scaleworm",
+      "cardClass": "neutral",
+      "cost": 4,
+      "rarity": "rare",
+      "tribe": "Beast",
+      "type": "creature",
+      "attack": 4,
+      "health": 4,
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "conditional",
+          "target": "any",
+          "if": {
+            "holdingTribe": "Dragon"
+          },
+          "then": [
+            {
+              "type": "buff-self",
+              "attack": 1,
+              "health": 0
+            },
+            {
+              "type": "grant",
+              "keyword": "rush",
+              "target": "self"
+            }
+          ]
+        }
+      ],
+      "description": "Battlecry: If you're holding a Dragon: gain +1 Attack and Rush",
+      "set": "hsx"
+    },
+    {
+      "id": "strongshell_scavenger",
+      "name": "Strongshell Scavenger",
+      "cardClass": "druid",
+      "cost": 4,
+      "rarity": "rare",
+      "type": "creature",
+      "attack": 2,
+      "health": 3,
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 2,
+          "health": 2,
+          "target": "friendly-creatures",
+          "name": "Taunt minion"
+        }
+      ],
+      "description": "Battlecry: Give your Taunt minions +2/+2.",
+      "set": "hsx"
+    },
+    {
+      "id": "twilight_guardian",
+      "name": "Twilight Guardian",
+      "cardClass": "neutral",
+      "cost": 4,
+      "rarity": "epic",
+      "tribe": "Dragon",
+      "type": "creature",
+      "attack": 2,
+      "health": 6,
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "conditional",
+          "target": "any",
+          "if": {
+            "holdingTribe": "Dragon"
+          },
+          "then": [
+            {
+              "type": "buff-self",
+              "attack": 1,
+              "health": 0
+            },
+            {
+              "type": "grant",
+              "keyword": "taunt",
+              "target": "self"
+            }
+          ]
+        }
+      ],
+      "description": "Battlecry: If you're holding a Dragon: gain +1 Attack and Taunt",
+      "set": "hsx"
+    },
+    {
+      "id": "ursine_maul",
+      "name": "Ursine Maul",
+      "cardClass": "paladin",
+      "cost": 4,
+      "rarity": "rare",
+      "type": "weapon",
+      "attack": 4,
+      "durability": 2,
+      "ongoing": {
+        "on": "hero-attacks",
+        "effects": [
+          {
+            "type": "draw",
+            "value": 1
+          }
+        ]
+      },
+      "description": "After your hero attacks, Draw 1 card.",
+      "set": "hsx"
+    },
+    {
+      "id": "emperor_thaurissan",
+      "name": "Emperor Thaurissan",
+      "cardClass": "neutral",
+      "cost": 5,
+      "rarity": "legendary",
+      "type": "creature",
+      "attack": 4,
+      "health": 4,
+      "ongoing": {
+        "on": "turn-end",
+        "effects": [
+          {
+            "type": "discount-hand",
+            "value": 1
+          }
+        ]
+      },
+      "description": "At the end of your turn, cards in your hand cost (1) less.",
+      "set": "hsx"
+    },
+    {
+      "id": "piranha_launcher",
+      "name": "Piranha Launcher",
+      "cardClass": "hunter",
+      "cost": 5,
+      "rarity": "epic",
+      "type": "weapon",
+      "attack": 2,
+      "durability": 4,
+      "ongoing": {
+        "on": "hero-attacks",
+        "effects": [
+          {
+            "type": "summon",
+            "count": 1,
+            "attack": 1,
+            "health": 1,
+            "name": "Piranha"
+          }
+        ]
+      },
+      "description": "After your hero attacks, Summon a 1/1 Piranha.",
+      "set": "hsx"
+    },
+    {
+      "id": "quartermaster",
+      "name": "Quartermaster",
+      "cardClass": "paladin",
+      "cost": 5,
+      "rarity": "epic",
+      "type": "creature",
+      "attack": 2,
+      "health": 5,
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 2,
+          "health": 2,
+          "target": "friendly-creatures",
+          "name": "Silver Hand Recruit"
+        }
+      ],
+      "description": "Battlecry: Give your Silver Hand Recruits +2/+2.",
+      "set": "hsx"
+    },
+    {
+      "id": "recruiter",
+      "name": "Recruiter",
+      "cardClass": "neutral",
+      "cost": 5,
+      "rarity": "epic",
+      "type": "creature",
+      "attack": 5,
+      "health": 4,
+      "ongoing": {
+        "on": "hero-power-used",
+        "effects": [
+          {
+            "type": "add-token",
+            "attack": 2,
+            "health": 2,
+            "name": "Squire"
+          }
+        ]
+      },
+      "description": "Inspire: Add a 2/2 Squire token to your hand.",
+      "set": "hsx"
+    },
+    {
+      "id": "ringmaster_whatley",
+      "name": "Ringmaster Whatley",
+      "cardClass": "warrior",
+      "cost": 5,
+      "rarity": "legendary",
+      "type": "creature",
+      "attack": 3,
+      "health": 5,
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "tutor",
+          "tribe": "Mech",
+          "count": 1
+        },
+        {
+          "type": "tutor",
+          "tribe": "Dragon",
+          "count": 1
+        },
+        {
+          "type": "tutor",
+          "tribe": "Pirate",
+          "count": 1
+        }
+      ],
+      "description": "Battlecry: Draw a Mech, Dragon, and Pirate from your deck.",
+      "set": "hsx"
+    },
+    {
+      "id": "the_curator",
+      "name": "The Curator",
+      "cardClass": "neutral",
+      "cost": 5,
+      "rarity": "legendary",
+      "tribe": "Mech",
+      "type": "creature",
+      "attack": 4,
+      "health": 6,
+      "keywords": [
+        "taunt",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "tutor",
+          "tribe": "Beast",
+          "count": 1
+        },
+        {
+          "type": "tutor",
+          "tribe": "Dragon",
+          "count": 1
+        },
+        {
+          "type": "tutor",
+          "tribe": "Murloc",
+          "count": 1
+        }
+      ],
+      "description": "Taunt. Battlecry: Draw a Beast, Dragon, and Murloc from your deck.",
+      "set": "hsx"
+    },
+    {
+      "id": "hungry_ettin",
+      "name": "Hungry Ettin",
+      "cardClass": "neutral",
+      "cost": 6,
+      "rarity": "rare",
+      "type": "creature",
+      "attack": 4,
+      "health": 10,
+      "keywords": [
+        "taunt",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "summon-random",
+          "cost": 2,
+          "forEnemy": true
+        }
+      ],
+      "description": "Taunt. Battlecry: Summon a random 2-cost creature for your opponent.",
+      "set": "hsx"
+    },
+    {
+      "id": "vinecleaver",
+      "name": "Vinecleaver",
+      "cardClass": "paladin",
+      "cost": 6,
+      "rarity": "rare",
+      "type": "weapon",
+      "attack": 4,
+      "durability": 3,
+      "ongoing": {
+        "on": "hero-attacks",
+        "effects": [
+          {
+            "type": "summon",
+            "count": 2,
+            "attack": 1,
+            "health": 1,
+            "name": "Silver Hand Recruit"
+          }
+        ]
+      },
+      "description": "After your hero attacks, summon two 1/1 Silver Hand Recruits.",
+      "set": "hsx"
+    },
+    {
+      "id": "truth_seeker",
+      "name": "Truth Seeker",
+      "cardClass": "paladin",
+      "cost": 7,
+      "rarity": "common",
+      "type": "weapon",
+      "attack": 3,
+      "durability": 3,
+      "ongoing": {
+        "on": "hero-attacks",
+        "effects": [
+          {
+            "type": "buff",
+            "attack": 2,
+            "health": 2,
+            "target": "friendly-creatures",
+            "name": "Paladin minion"
+          }
+        ]
+      },
+      "description": "After your hero attacks, Give your Paladin minions +2/+2.",
+      "set": "hsx"
+    },
+    {
+      "id": "wyrmguard",
+      "name": "Wyrmguard",
+      "cardClass": "neutral",
+      "cost": 7,
+      "rarity": "common",
+      "type": "creature",
+      "attack": 3,
+      "health": 11,
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "conditional",
+          "target": "any",
+          "if": {
+            "holdingTribe": "Dragon"
+          },
+          "then": [
+            {
+              "type": "buff-self",
+              "attack": 1,
+              "health": 0
+            },
+            {
+              "type": "grant",
+              "keyword": "taunt",
+              "target": "self"
+            }
+          ]
+        }
+      ],
+      "description": "Battlecry: If you're holding a Dragon: gain +1 Attack and Taunt",
+      "set": "hsx"
+    },
+    {
+      "id": "silver_sword",
+      "name": "Silver Sword",
+      "cardClass": "paladin",
+      "cost": 8,
+      "rarity": "rare",
+      "type": "weapon",
+      "attack": 3,
+      "durability": 4,
+      "ongoing": {
+        "on": "hero-attacks",
+        "effects": [
+          {
+            "type": "buff",
+            "attack": 1,
+            "health": 1,
+            "target": "friendly-creatures"
+          }
+        ]
+      },
+      "description": "After your hero attacks, Give all your creatures +1/+1.",
+      "set": "hsx"
     }
   ]
 }

@@ -1900,27 +1900,36 @@ function dungeonVictory(run) {
 		clearRun();
 		return;
 	}
-	// bucket draft: 3 options x 3 cards, class + neutral pool, rarity-weighted
+	// authentic Kobolds buckets: 3 distinct themes, 3 random cards from each
 	const el = dungeonOverlay(`LEVEL ${run.level} CLEARED`, 'Choose a bucket — all three cards join your deck.');
-	const weights = { common: 4, uncommon: 3, rare: 2, epic: 1, legendary: 1 };
-	const pool = [];
-	for (const d of Object.values(state.cardsById)) {
-		if (d.token || d.companion || d.commander || d.type === 'land' || d.type === 'emblem'
-			|| d.type === 'heropower' || (d.colors && d.colors.length)) continue;
-		const cc = d.cardClass || 'neutral';
-		if (cc !== 'neutral' && cc !== run.classId) continue;
-		for (let i = 0; i < (weights[d.rarity] || 1); i++) pool.push(d);
+	const buckets = [...(Dungeon.BUCKETS[run.classId] || [])];
+	const offered = [];
+	while (offered.length < 3 && buckets.length) {
+		offered.push(buckets.splice(Math.floor(Math.random() * buckets.length), 1)[0]);
 	}
+	const cardsOf = bucket => {
+		// the Unique pack draws from the class's whole card pool
+		let ids = bucket.cards;
+		if (ids === 'class-all') {
+			ids = Object.values(state.cardsById).filter(d =>
+				d.cardClass === run.classId && !d.token && !d.companion && !d.commander
+				&& d.type !== 'land' && d.type !== 'heropower' && !(d.colors && d.colors.length))
+				.map(d => d.id);
+		}
+		const picks = [];
+		const pool = [...ids];
+		while (picks.length < 3 && pool.length) {
+			picks.push(pool.splice(Math.floor(Math.random() * pool.length), 1)[0]);
+		}
+		return picks.map(id => state.cardsById[id]);
+	};
 	const row = document.createElement('div');
 	row.style.cssText = 'display:flex;flex-wrap:wrap;justify-content:center;gap:14px;';
-	for (let b = 0; b < 3; b++) {
-		const picks = [];
-		while (picks.length < 3 && pool.length) {
-			const d = pool[Math.floor(Math.random() * pool.length)];
-			if (!picks.includes(d)) picks.push(d);
-		}
+	for (const bucket of offered) {
+		const picks = cardsOf(bucket);
 		const box = document.createElement('div');
-		box.style.cssText = 'background:#1c1830;border:1px solid #4a4066;border-radius:10px;padding:12px;';
+		box.style.cssText = 'background:#1c1830;border:1px solid #4a4066;border-radius:10px;padding:12px;max-width:330px;';
+		box.innerHTML = `<div style="font-weight:bold;margin-bottom:8px;letter-spacing:1px;">${bucket.name}</div>`;
 		for (const d of picks) box.appendChild(miniFace(d));
 		box.appendChild(document.createElement('br'));
 		box.appendChild(overlayButton('Take these', () => {
