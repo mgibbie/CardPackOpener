@@ -15191,6 +15191,285 @@
         }
       ],
       "description": "Take control of an enemy creature."
+    },
+    {
+      "id": "preparation",
+      "name": "Preparation",
+      "cardClass": "rogue",
+      "cost": 0,
+      "rarity": "epic",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "discount",
+          "cardType": "spell",
+          "amount": -3,
+          "thisTurn": true
+        }
+      ],
+      "description": "The next spell you cast this turn costs 3 less."
+    },
+    {
+      "id": "millhouse_manastorm",
+      "name": "Millhouse Manastorm",
+      "cardClass": "neutral",
+      "cost": 2,
+      "rarity": "legendary",
+      "type": "creature",
+      "attack": 4,
+      "health": 4,
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "free-enemy-spells"
+        }
+      ],
+      "description": "Battlecry: Enemy spells cost 0 next turn."
+    },
+    {
+      "id": "sorcerer_s_apprentice",
+      "name": "Sorcerer's Apprentice",
+      "cardClass": "mage",
+      "cost": 2,
+      "rarity": "common",
+      "type": "creature",
+      "attack": 3,
+      "health": 2,
+      "costMod": {
+        "cardType": "spell",
+        "amount": -1,
+        "scope": "own"
+      },
+      "description": "Your spells cost 1 less."
+    },
+    {
+      "id": "far_sight",
+      "name": "Far Sight",
+      "cardClass": "shaman",
+      "cost": 3,
+      "rarity": "epic",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "draw-discount",
+          "count": 1,
+          "amount": 3
+        }
+      ],
+      "description": "Draw a card. It costs 3 less."
+    },
+    {
+      "id": "hex",
+      "name": "Hex",
+      "cardClass": "shaman",
+      "cost": 3,
+      "rarity": "common",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "transform",
+          "target": "creature",
+          "attack": 0,
+          "health": 1,
+          "name": "Frog",
+          "keywords": [
+            "taunt"
+          ]
+        }
+      ],
+      "description": "Transform a creature into a 0/1 Frog with Taunt."
+    },
+    {
+      "id": "kirin_tor_mage",
+      "name": "Kirin Tor Mage",
+      "cardClass": "mage",
+      "cost": 3,
+      "rarity": "rare",
+      "type": "creature",
+      "attack": 4,
+      "health": 3,
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "discount",
+          "cardType": "secret",
+          "setZero": true,
+          "thisTurn": true
+        }
+      ],
+      "description": "Battlecry: The next Secret you play this turn costs 0."
+    },
+    {
+      "id": "tinkmaster_overspark",
+      "name": "Tinkmaster Overspark",
+      "cardClass": "neutral",
+      "cost": 3,
+      "rarity": "legendary",
+      "type": "creature",
+      "attack": 3,
+      "health": 3,
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "transform",
+          "random": true,
+          "others": true,
+          "options": [
+            {
+              "attack": 5,
+              "health": 5,
+              "name": "Devilsaur"
+            },
+            {
+              "attack": 1,
+              "health": 1,
+              "name": "Squirrel"
+            }
+          ]
+        }
+      ],
+      "description": "Battlecry: Transform another random creature into a 5/5 Devilsaur or a 1/1 Squirrel."
+    },
+    {
+      "id": "dread_corsair",
+      "name": "Dread Corsair",
+      "cardClass": "neutral",
+      "cost": 4,
+      "rarity": "common",
+      "tribe": "Pirate",
+      "type": "creature",
+      "attack": 3,
+      "health": 3,
+      "selfCost": {
+        "per": "weapon-attack",
+        "amount": -1
+      },
+      "keywords": [
+        "taunt"
+      ],
+      "description": "Taunt. Costs 1 less for each Attack on your weapon."
+    },
+    {
+      "id": "polymorph",
+      "name": "Polymorph",
+      "cardClass": "mage",
+      "cost": 4,
+      "rarity": "common",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "transform",
+          "target": "creature",
+          "attack": 1,
+          "health": 1,
+          "name": "Sheep"
+        }
+      ],
+      "description": "Transform a creature into a 1/1 Sheep."
+    },
+    {
+      "id": "summoning_portal",
+      "name": "Summoning Portal",
+      "cardClass": "warlock",
+      "cost": 4,
+      "rarity": "common",
+      "type": "creature",
+      "attack": 0,
+      "health": 4,
+      "costMod": {
+        "cardType": "creature",
+        "amount": -2,
+        "scope": "own",
+        "floor": 1
+      },
+      "description": "Your creatures cost 2 less, but not less than 1."
+    },
+    {
+      "id": "faceless_manipulator",
+      "name": "Faceless Manipulator",
+      "cardClass": "neutral",
+      "cost": 5,
+      "rarity": "epic",
+      "type": "creature",
+      "attack": 3,
+      "health": 3,
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "transform-copy",
+          "target": "creature"
+        }
+      ],
+      "description": "Battlecry: Become a copy of a chosen creature."
+    },
+    {
+      "id": "venture_co_mercenary",
+      "name": "Venture Co. Mercenary",
+      "cardClass": "neutral",
+      "cost": 5,
+      "rarity": "common",
+      "type": "creature",
+      "attack": 7,
+      "health": 6,
+      "costMod": {
+        "cardType": "creature",
+        "amount": 3,
+        "scope": "own"
+      },
+      "description": "Your creatures cost 3 more."
+    },
+    {
+      "id": "sea_giant",
+      "name": "Sea Giant",
+      "cardClass": "neutral",
+      "cost": 10,
+      "rarity": "epic",
+      "type": "creature",
+      "attack": 8,
+      "health": 8,
+      "selfCost": {
+        "per": "other-creatures",
+        "amount": -1
+      },
+      "description": "Costs 1 less for each other creature in play."
+    },
+    {
+      "id": "mountain_giant",
+      "name": "Mountain Giant",
+      "cardClass": "neutral",
+      "cost": 12,
+      "rarity": "epic",
+      "type": "creature",
+      "attack": 8,
+      "health": 8,
+      "selfCost": {
+        "per": "hand-others",
+        "amount": -1
+      },
+      "description": "Costs 1 less for each other card in your hand."
+    },
+    {
+      "id": "molten_giant",
+      "name": "Molten Giant",
+      "cardClass": "neutral",
+      "cost": 20,
+      "rarity": "epic",
+      "type": "creature",
+      "attack": 8,
+      "health": 8,
+      "selfCost": {
+        "per": "own-damage",
+        "amount": -1
+      },
+      "description": "Costs 1 less for each damage your hero has taken."
     }
   ]
 }

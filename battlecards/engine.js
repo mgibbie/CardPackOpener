@@ -133,6 +133,8 @@ function instantiate(def, controller) {
 		quest: def.quest || null,   // quest: { goal: { type, count }, reward }
 		ongoing: def.ongoing || null, // permanent trigger: { on, effects }
 		static: def.static || null,   // permanent passive (e.g. reduce-hero-damage)
+		costMod: def.costMod || null, // board cost aura: { cardType, amount, scope, floor?, firstEachTurn? }
+		selfCost: def.selfCost || null, // self-scaling printed cost: { per, amount }
 		aura: def.aura || null,       // { attack, health, tribe?, others?, adjacent?, position?, keywords? }
 		auraAttack: 0,                // currently applied aura bonuses (recomputed)
 		auraHealth: 0,
@@ -238,6 +240,10 @@ export function createGame(cardsById, rng = Math.random, playerDeckIds = null, p
 		overloadPending: 0, // mana locked at the start of the next turn
 		corpses: 0,         // Death Knight resource
 		heroTempAttack: 0,  // "your hero has +N Attack this turn"
+		costDiscounts: [],  // one-shot "next X costs (N) less" riders
+		creaturesPlayedThisTurn: 0, // Pint-Sized-style first-creature discounts
+		freeSpellsNextTurn: false,  // Millhouse: spells free on your next turn
+		freeSpellsThisTurn: false,
 		mana: { cur: 1, max: 1, bonus: 0 },
 		coins: 0,
 		diedThisTurn: 0,
@@ -376,6 +382,8 @@ const CHOSEN = {
 	'double-attack': { creature: 'creature', 'friendly-creature': 'friendly-creature' },
 	bounce: { creature: 'creature', 'enemy-creature': 'enemy-creature', 'friendly-creature': 'friendly-creature' },
 	'mind-control': { 'enemy-creature': 'enemy-creature' },
+	transform: { creature: 'creature', 'enemy-creature': 'enemy-creature' },
+	'transform-copy': { creature: 'creature' },
 };
 
 // Choose One cards resolve to one branch's effects at play time
@@ -556,6 +564,7 @@ function silenceCreature(state, c) {
 	c.ongoing = null;
 	c.static = null;
 	c.aura = null;
+	c.costMod = null;
 	c.auraKeywords = [];
 	c.shield = false;
 	c.stealthed = false;
@@ -1560,6 +1569,88 @@ function execEffects(state, pi, effects, target, source) {
 				c.deathrattle = (c.deathrattle || []).concat(JSON.parse(JSON.stringify(e.effects)));
 				if (!c.keywords.includes('deathrattle')) c.keywords.push('deathrattle');
 			}
+		} else if (e.type === 'transform') {
+			// replace a creature in place with a fresh token (no death, no deathrattle)
+			let t = null;
+			if (e.random) {
+				const pool = [];
+				for (const pl of state.players) for (const c of pl.board) {
+					if (!isDead(c) && !(e.others && c === source)) pool.push(c);
+				}
+				if (pool.length) t = pool[Math.floor(state.rng() * pool.length)];
+			} else t = chosenCreature();
+			if (t) {
+				const opt = e.options ? e.options[Math.floor(state.rng() * e.options.length)] : e;
+				const tok = instantiate({
+					id: 'token_' + opt.name.toLowerCase().replace(/[^a-z0-9]+/g, '_'),
+					name: opt.name, type: 'creature', cost: 0, rarity: 'common',
+					description: `A ${opt.attack}/${opt.health} ${opt.name}.`,
+					attack: opt.attack, health: opt.health,
+					keywords: opt.keywords || [],
+				}, t.controller);
+				tok.zone = 'board';
+				tok.sick = t.sick;
+				const board = state.players[t.controller].board;
+				board[board.indexOf(t)] = tok;
+				t.zone = 'gone';
+				emit(state, { type: 'transformed', uid: t.uid, player: t.controller, from: t.name, card: tok });
+				recomputeAuras(state);
+			}
+		} else if (e.type === 'transform-copy') {
+			// Faceless-style: the source becomes a copy of the chosen creature
+			const t = chosenCreature();
+			if (t && source && source.zone === 'board' && !isDead(source) && t !== source) {
+				const def = state.cardsById[t.id];
+				const clone = instantiate(def || {
+					id: t.id, name: t.name, type: 'creature', cost: t.cost,
+					rarity: t.rarity, description: t.description,
+				}, source.controller);
+				// live state minus aura contributions (auras re-apply on recompute)
+				clone.zone = 'board';
+				clone.name = t.name;
+				clone.attack = t.attack - t.auraAttack - t.tempAttack;
+				clone.maxHealth = t.maxHealth - (t.auraHealth || 0) - (t.tempHealth || 0);
+				clone.damage = t.damage;
+				clone.keywords = t.keywords.filter(k => !t.auraKeywords.includes(k));
+				clone.tribe = t.tribe;
+				clone.effects = t.effects;
+				clone.deathrattle = t.deathrattle ? JSON.parse(JSON.stringify(t.deathrattle)) : null;
+				clone.ongoing = t.ongoing ? JSON.parse(JSON.stringify(t.ongoing)) : null;
+				clone.static = t.static ? { ...t.static } : null;
+				clone.aura = t.aura ? JSON.parse(JSON.stringify(t.aura)) : null;
+				clone.costMod = t.costMod ? { ...t.costMod } : null;
+				clone.selfCost = t.selfCost ? { ...t.selfCost } : null;
+				clone.shield = t.shield;
+				clone.stealthed = t.stealthed;
+				clone.sick = source.sick;
+				const board = state.players[source.controller].board;
+				board[board.indexOf(source)] = clone;
+				source.zone = 'gone';
+				emit(state, { type: 'transformed', uid: source.uid, player: source.controller, from: source.name, card: clone });
+				recomputeAuras(state);
+			}
+		} else if (e.type === 'discount') {
+			// one-shot rider: "the next X you play (this turn) costs (N) less / (0)"
+			const p = state.players[pi];
+			p.costDiscounts = p.costDiscounts || [];
+			p.costDiscounts.push({
+				cardType: e.cardType || 'all', amount: e.amount || 0,
+				setZero: !!e.setZero, thisTurn: !!e.thisTurn, turn: state.turnNumber,
+			});
+		} else if (e.type === 'free-enemy-spells') {
+			for (const o of enemies) state.players[o].freeSpellsNextTurn = true;
+			emit(state, { type: 'freeSpells', player: pi });
+		} else if (e.type === 'draw-discount') {
+			// draw card(s) that arrive costing less
+			const p = state.players[pi];
+			for (let i = 0; i < (e.count || 1); i++) {
+				const before = p.hand.length;
+				drawCards(state, pi, 1);
+				if (p.hand.length > before) {
+					const card = p.hand.at(-1);
+					card.cost = Math.max(0, card.cost - e.amount);
+				}
+			}
 		} else if (e.type === 'hero-temp-attack') {
 			state.players[pi].heroTempAttack += e.value;
 			emit(state, { type: 'heroBuffed', player: pi, amount: e.value });
@@ -1744,10 +1835,61 @@ function runSpell(state, pi, card, target, choice) {
 	}
 }
 
+// ---------- cost modifiers ----------
+const isSpellType = card => card.type === 'sorcery' || card.type === 'instant' || card.type === 'secret' || card.type === 'trap';
+const costTypeMatches = (card, t) => t === 'all' || (t === 'spell' ? isSpellType(card) : card.type === t);
+
+// a live one-shot discount usable on this card right now, or -1
+function discountIndex(state, p, card) {
+	return (p.costDiscounts || []).findIndex(d =>
+		(!d.thisTurn || d.turn === state.turnNumber) && costTypeMatches(card, d.cardType));
+}
+
+// what the card actually costs after self-scaling printed costs (Giants),
+// board cost auras (Sorcerer's Apprentice / Mana Wraith), one-shot riders
+// (Preparation / Far Sight-style live on card.cost itself), and Millhouse
+export function effectiveCost(state, pi, card) {
+	const p = state.players[pi];
+	let c = card.cost;
+	if (card.selfCost) {
+		let n = 0;
+		if (card.selfCost.per === 'other-creatures') {
+			for (const pl of state.players) n += pl.board.filter(x => !isDead(x) && x !== card).length;
+		} else if (card.selfCost.per === 'hand-others') {
+			n = Math.max(0, p.hand.length - (p.hand.includes(card) ? 1 : 0));
+		} else if (card.selfCost.per === 'own-damage') {
+			n = Math.max(0, STARTING_LIFE - p.life);
+		} else if (card.selfCost.per === 'weapon-attack') {
+			n = p.weapon ? p.weapon.attack : 0;
+		}
+		c += card.selfCost.amount * n;
+	}
+	for (const pl of state.players) {
+		for (const src of pl.board) {
+			const m = src.costMod;
+			if (!m || isDead(src)) continue;
+			if (m.scope !== 'all' && pl !== p) continue;
+			if (!costTypeMatches(card, m.cardType)) continue;
+			if (m.firstEachTurn && p.creaturesPlayedThisTurn > 0) continue;
+			const before = c;
+			c += m.amount;
+			// "but not less than (1)": the reduction stops at the floor
+			if (m.floor != null) c = Math.max(Math.min(before, m.floor), c);
+		}
+	}
+	const di = discountIndex(state, p, card);
+	if (di >= 0) {
+		const d = p.costDiscounts[di];
+		c = d.setZero ? 0 : c + d.amount;
+	}
+	if (p.freeSpellsThisTurn && isSpellType(card)) c = 0;
+	return Math.max(0, c);
+}
+
 // ---------- public actions ----------
 export function canPlay(state, pi, card) {
 	if (state.over || state.current !== pi) return false;
-	if (availableMana(state.players[pi]) < card.cost) return false;
+	if (availableMana(state.players[pi]) < effectiveCost(state, pi, card)) return false;
 	if (card.type === 'secret') {
 		const p = state.players[pi];
 		if (p.secrets.length >= MAX_SECRETS) return false;
@@ -1782,7 +1924,10 @@ export function playCard(state, pi, cardUid, target, choice) {
 	if (!canPlay(state, pi, card)) return false;
 
 	take();
-	spendMana(p, card.cost);
+	spendMana(p, effectiveCost(state, pi, card));
+	// a matching one-shot discount is spent by this play
+	const usedDiscount = discountIndex(state, p, card);
+	if (usedDiscount >= 0) p.costDiscounts.splice(usedDiscount, 1);
 	if (card.overload) {
 		p.overloadPending += card.overload;
 		emit(state, { type: 'overload', player: pi, amount: card.overload });
@@ -1794,6 +1939,7 @@ export function playCard(state, pi, cardUid, target, choice) {
 		card.zone = 'board';
 		card.sick = true;
 		p.board.push(card);
+		p.creaturesPlayedThisTurn++;
 		questTick(state, 'summon', pi);
 		fireOngoing(state, pi, 'summoned', { minion: card });
 		runBattlecry(state, pi, card, target, choice);
@@ -2321,6 +2467,7 @@ export function endTurn(state) {
 		emit(state, { type: 'discard', player: pi, card: c });
 	}
 	p.mana.bonus = 0;
+	p.freeSpellsThisTurn = false;
 	sweepDeaths(state);
 	if (state.over) return;
 
@@ -2342,6 +2489,11 @@ export function endTurn(state) {
 	np.diedThisTurn = 0;
 	np.heroAttacksUsed = 0;
 	np.landsPlayedThisTurn = 0;
+	np.creaturesPlayedThisTurn = 0;
+	// stale this-turn cost riders lapse; Millhouse's gift comes due
+	np.costDiscounts = (np.costDiscounts || []).filter(d => !d.thisTurn);
+	np.freeSpellsThisTurn = !!np.freeSpellsNextTurn;
+	np.freeSpellsNextTurn = false;
 	if (state.turnNumber > 1 && np.mana.max < MAX_BASE_MANA) np.mana.max++;
 	np.mana.cur = np.mana.max;
 	// overload: mana spent ahead of time stays locked this turn

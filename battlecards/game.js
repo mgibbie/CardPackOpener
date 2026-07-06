@@ -964,6 +964,17 @@ function nextEvent() {
 			delay = 500;
 			break;
 		}
+		case 'transformed': {
+			const ent = entities.get(ev.uid);
+			if (ent) { ent.dying = performance.now(); floatText('✦', '#d78cff', ent.mesh.position); }
+			log(`${ev.from} was transformed into ${ev.card.name}`);
+			delay = 450;
+			break;
+		}
+		case 'freeSpells':
+			log(`${nameOf(ev.player)} made enemy spells free next turn`);
+			delay = 300;
+			break;
 		case 'secretRevealed':
 			banner(`Secret: ${ev.card.name}!`, 1600);
 			log(`${ev.player === HUMAN ? 'Your' : `${nameOf(ev.player)}'s`} Secret revealed: ${ev.card.name}`);
