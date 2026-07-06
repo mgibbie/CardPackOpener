@@ -642,8 +642,9 @@ function sweepDeaths(state) {
 		for (const c of dead) {
 			p.diedThisTurn++;
 			emit(state, { type: 'death', uid: c.uid, player: pi, name: c.name });
-			// Death Knight class passive: friendly deaths bank Corpses
-			if (p.heroClass === 'death_knight' && !p.eliminated) {
+			// every friendly death banks a Corpse for its owner (all classes;
+			// only Death Knights get a UI indicator — others track it hidden)
+			if (!p.eliminated) {
 				p.corpses++;
 				emit(state, { type: 'corpses', player: pi, corpses: p.corpses });
 			}
@@ -2253,6 +2254,42 @@ function execEffects(state, pi, effects, target, source) {
 				p.corpses -= e.value;
 				emit(state, { type: 'corpses', player: pi, corpses: p.corpses });
 				execEffects(state, pi, e.effects, target, source);
+			}
+		} else if (e.type === 'spend-corpses-up-to') {
+			// "Spend up to N Corpses / all of your Corpses, X for each spent"
+			const p = state.players[pi];
+			const n = Math.min(e.max ?? Infinity, p.corpses);
+			if (n > 0) {
+				p.corpses -= n;
+				emit(state, { type: 'corpses', player: pi, corpses: p.corpses });
+				for (let i = 0; i < n; i++) execEffects(state, pi, e.effects, target, source);
+			}
+		} else if (e.type === 'spend-corpses-while') {
+			// Corpse Explosion: pay 1 and repeat while any creature survives
+			const p = state.players[pi];
+			let guard = 100;
+			const anyAlive = () => state.players.some(pl => pl.board.some(c => !isDead(c)));
+			while (p.corpses >= (e.value || 1) && anyAlive() && guard-- > 0) {
+				p.corpses -= e.value || 1;
+				emit(state, { type: 'corpses', player: pi, corpses: p.corpses });
+				execEffects(state, pi, e.effects, target, source);
+				sweepDeaths(state);
+			}
+		} else if (e.type === 'freeze-random') {
+			// freeze a random unfrozen enemy creature
+			const pool = [];
+			for (const o of enemies) for (const c of state.players[o].board) {
+				if (!isDead(c) && !c.frozen) pool.push(c);
+			}
+			if (pool.length) freezeCreature(state, pool[Math.floor(state.rng() * pool.length)]);
+		} else if (e.type === 'grant-recent') {
+			// bless the most recently summoned friendly creatures (token riders)
+			const recent = state.players[pi].board.slice(-(e.count || 1));
+			for (const c of recent) {
+				if (isDead(c) || c.keywords.includes(e.keyword)) continue;
+				c.keywords.push(e.keyword);
+				if (e.keyword === KW.DIVINE_SHIELD) c.shield = true;
+				if (e.keyword === KW.STEALTH) c.stealthed = true;
 			}
 		} else if (e.type === 'scry' || e.type === 'gaze') {
 			// Scry = your own deck; Gaze = an opponent's (paper ruling).

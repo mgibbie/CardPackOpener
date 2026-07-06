@@ -1871,7 +1871,7 @@
           "count": 3,
           "attack": 2,
           "health": 2,
-          "name": "Treefolk creature"
+          "name": "Treefolk"
         }
       ]
     },
@@ -8828,6 +8828,7 @@
       "health": 3,
       "tribe": "Undead Knight",
       "keywords": [
+        "reborn",
         "battlecry",
         "deathrattle"
       ],
@@ -8916,7 +8917,7 @@
           "count": 1,
           "attack": 5,
           "health": 9,
-          "name": "Naga Demon Knight creature",
+          "name": "Naga Demon Knight",
           "keywords": [
             "taunt"
           ]
@@ -8938,7 +8939,7 @@
           "count": 3,
           "attack": 1,
           "health": 1,
-          "name": "Demon creature",
+          "name": "Demon",
           "keywords": [
             "rush"
           ]
@@ -9174,7 +9175,10 @@
       "type": "creature",
       "attack": 2,
       "health": 4,
-      "tribe": "Beast"
+      "tribe": "Beast",
+      "keywords": [
+        "cleave"
+      ]
     },
     {
       "id": "cloaked_huntress",
@@ -9321,7 +9325,7 @@
           "count": 1,
           "attack": 3,
           "health": 3,
-          "name": "Beast creature"
+          "name": "Beast"
         }
       ]
     },
@@ -9346,7 +9350,7 @@
           "count": 1,
           "attack": 1,
           "health": 1,
-          "name": "Beast creature"
+          "name": "Beast"
         }
       ]
     },
@@ -9548,7 +9552,11 @@
       "type": "creature",
       "attack": 3,
       "health": 2,
-      "tribe": "Undead Spirit"
+      "tribe": "Undead Spirit",
+      "keywords": [
+        "lifesteal",
+        "reborn"
+      ]
     },
     {
       "id": "annoy_o_module",
@@ -9642,7 +9650,10 @@
       "type": "creature",
       "attack": 1,
       "health": 7,
-      "tribe": "Wall"
+      "tribe": "Wall",
+      "keywords": [
+        "defender"
+      ]
     },
     {
       "id": "abzan_guide",
@@ -9961,7 +9972,13 @@
       "type": "creature",
       "attack": 1,
       "health": 1,
-      "tribe": "Murloc"
+      "tribe": "Murloc",
+      "aura": {
+        "attack": 1,
+        "health": 0,
+        "others": true,
+        "tribe": "Murloc"
+      }
     },
     {
       "id": "helmet_hermit",
@@ -9974,7 +9991,10 @@
       "type": "creature",
       "attack": 4,
       "health": 3,
-      "tribe": "Beast"
+      "tribe": "Beast",
+      "keywords": [
+        "defender"
+      ]
     },
     {
       "id": "intrepid_initiate",
@@ -10438,7 +10458,12 @@
       "type": "creature",
       "attack": 2,
       "health": 2,
-      "tribe": "Beast"
+      "tribe": "Beast",
+      "aura": {
+        "attack": 1,
+        "health": 0,
+        "adjacent": true
+      }
     },
     {
       "id": "dozing_marksman",
@@ -10620,6 +10645,9 @@
       "attack": 1,
       "health": 2,
       "tribe": "Beast",
+      "keywords": [
+        "deathtouch"
+      ],
       "ongoing": {
         "on": "spell-played",
         "once": true,
@@ -10966,7 +10994,17 @@
       "type": "creature",
       "attack": 0,
       "health": 2,
-      "tribe": "Elemental Totem Beast"
+      "tribe": "Elemental Totem Beast",
+      "ongoing": {
+        "on": "turn-end",
+        "effects": [
+          {
+            "type": "damage",
+            "value": 2,
+            "target": "enemy-heroes"
+          }
+        ]
+      }
     },
     {
       "id": "sharkfin_fan",
@@ -11291,7 +11329,9 @@
       "health": 3,
       "tribe": "Spirit",
       "keywords": [
-        "battlecry"
+        "battlecry",
+        "lifesteal",
+        "elusive"
       ],
       "effects": [
         {
@@ -11653,7 +11693,11 @@
       "type": "creature",
       "attack": 3,
       "health": 6,
-      "tribe": "Beast"
+      "tribe": "Beast",
+      "keywords": [
+        "taunt",
+        "reborn"
+      ]
     },
     {
       "id": "terror_evolsaur",
@@ -11734,7 +11778,17 @@
       "tribe": "Ogre Warlock",
       "keywords": [
         "deathtouch"
-      ]
+      ],
+      "ongoing": {
+        "on": "turn-end",
+        "effects": [
+          {
+            "type": "damage",
+            "value": 5,
+            "target": "enemy-heroes"
+          }
+        ]
+      }
     },
     {
       "id": "patient_zero",
@@ -11803,7 +11857,14 @@
       "attack": 3,
       "health": 3,
       "tribe": "Demon Wizard Noble",
+      "aura": {
+        "position": "ends",
+        "keywords": [
+          "taunt"
+        ]
+      },
       "keywords": [
+        "elusive",
         "deathrattle"
       ],
       "deathrattle": [
@@ -11990,7 +12051,7 @@
           "count": 1,
           "attack": 3,
           "health": 3,
-          "name": "Beast creature"
+          "name": "Beast"
         }
       ]
     },
@@ -12084,7 +12145,12 @@
       "type": "creature",
       "attack": 12,
       "health": 6,
-      "tribe": "Pandaren Ninja"
+      "tribe": "Pandaren Ninja",
+      "aura": {
+        "attack": 6,
+        "health": 0,
+        "tribe": "Hero Weapon"
+      }
     },
     {
       "id": "dimetrodon",
@@ -12222,7 +12288,7 @@
             "count": 1,
             "attack": 0,
             "health": 3,
-            "name": "Plant creature"
+            "name": "Plant"
           }
         ]
       }
@@ -12447,7 +12513,12 @@
       "type": "creature",
       "attack": 3,
       "health": 7,
-      "tribe": "Beast"
+      "tribe": "Beast",
+      "keywords": [
+        "taunt",
+        "reborn",
+        "elusive"
+      ]
     },
     {
       "id": "walking_mountain",
@@ -12565,7 +12636,7 @@
           "count": 1,
           "attack": 2,
           "health": 2,
-          "name": "Treefolk creature"
+          "name": "Treefolk"
         }
       ]
     },
@@ -12626,7 +12697,7 @@
           "count": 1,
           "attack": 4,
           "health": 4,
-          "name": "Dragon creature",
+          "name": "Dragon",
           "keywords": [
             "elusive"
           ]
@@ -12644,7 +12715,12 @@
       "type": "creature",
       "attack": 7,
       "health": 4,
-      "tribe": "Spirit Elemental Beast"
+      "tribe": "Spirit Elemental Beast",
+      "keywords": [
+        "rush",
+        "elusive",
+        "defender"
+      ]
     },
     {
       "id": "playbrick_beholder",
@@ -12823,7 +12899,7 @@
               "count": 2,
               "attack": 3,
               "health": 3,
-              "name": "Beast creature",
+              "name": "Beast",
               "keywords": [
                 "taunt"
               ]
@@ -13135,7 +13211,7 @@
             "count": 2,
             "attack": 1,
             "health": 1,
-            "name": "Demon creature"
+            "name": "Demon"
           }
         ]
       }
@@ -13832,9 +13908,12 @@
       "cardClass": "neutral",
       "cost": 2,
       "rarity": "epic",
+      "set": "paper",
+      "description": "At the start of your turn, destroy all creatures.",
       "type": "creature",
       "attack": 0,
       "health": 7,
+      "tribe": "Elf Wizard",
       "ongoing": {
         "on": "turn-start",
         "effects": [
@@ -13842,8 +13921,7 @@
             "type": "destroy-all"
           }
         ]
-      },
-      "description": "At the start of your turn, destroy every creature."
+      }
     },
     {
       "id": "equality",
@@ -18782,6 +18860,511 @@
           "value": 2
         }
       ]
+    },
+    {
+      "id": "bonedigger_geist",
+      "name": "Bonedigger Geist",
+      "cardClass": "death_knight",
+      "cost": 2,
+      "rarity": "rare",
+      "set": "paper",
+      "description": "( Runes: (G) ) Battlecry: Spend a Corpse to gain +1/+2.",
+      "type": "creature",
+      "attack": 2,
+      "health": 2,
+      "tribe": "Undead",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "spend-corpses",
+          "value": 1,
+          "effects": [
+            {
+              "type": "buff-self",
+              "attack": 1,
+              "health": 2
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "corpse_explosion",
+      "name": "Corpse Explosion",
+      "cardClass": "death_knight",
+      "cost": 5,
+      "rarity": "rare",
+      "set": "paper",
+      "description": "( Runes: (R) (R) ) Spend a Corpse to deal 1 damage to all creatures, if any survive repeat this.",
+      "type": "sorcery",
+      "tribe": "Shadow",
+      "effects": [
+        {
+          "type": "spend-corpses-while",
+          "value": 1,
+          "effects": [
+            {
+              "type": "damage",
+              "value": 1,
+              "target": "all-creatures"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "defrost",
+      "name": "Defrost",
+      "cardClass": "death_knight",
+      "cost": 2,
+      "rarity": "rare",
+      "set": "paper",
+      "description": "( Runes: (U) ) Draw a card. Spend 2 Corpses to draw another.",
+      "type": "instant",
+      "tribe": "Frost",
+      "effects": [
+        {
+          "type": "draw",
+          "value": 1
+        },
+        {
+          "type": "spend-corpses",
+          "value": 2,
+          "effects": [
+            {
+              "type": "draw",
+              "value": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "grave_strength",
+      "name": "Grave Strength",
+      "cardClass": "death_knight",
+      "cost": 4,
+      "rarity": "epic",
+      "set": "paper",
+      "description": "( Runes: (G)(G)(G) ) Creatures you control gain +1 Attack. Spend 5 Corpses to give them +3 Attack instead.",
+      "type": "sorcery",
+      "tribe": "Shadow",
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 1,
+          "health": 0,
+          "target": "friendly-creatures"
+        },
+        {
+          "type": "spend-corpses",
+          "value": 5,
+          "effects": [
+            {
+              "type": "buff",
+              "attack": 2,
+              "health": 0,
+              "target": "friendly-creatures"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "heart_strike",
+      "name": "Heart Strike",
+      "cardClass": "death_knight",
+      "cost": 1,
+      "rarity": "common",
+      "set": "paper",
+      "description": "( Runes: (R) ) Deal 3 damage to target creature, if that damage kills it, gain a Corpse.",
+      "type": "instant",
+      "effects": [
+        {
+          "type": "damage-then",
+          "value": 3,
+          "target": "creature",
+          "ifDies": [
+            {
+              "type": "gain-corpses",
+              "value": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "plague_strike",
+      "name": "Plague Strike",
+      "cardClass": "death_knight",
+      "cost": 1,
+      "rarity": "common",
+      "set": "paper",
+      "description": "( Runes: (G) ) Deal 3 damage to target creature, if that damage kills it, Create a 2/2 Undead creature token with Rush.",
+      "type": "instant",
+      "tribe": "Shadow",
+      "effects": [
+        {
+          "type": "damage-then",
+          "value": 3,
+          "target": "creature",
+          "ifDies": [
+            {
+              "type": "summon",
+              "count": 1,
+              "attack": 2,
+              "health": 2,
+              "name": "Undead",
+              "keywords": [
+                "rush"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "tomb_guardians",
+      "name": "Tomb Guardians",
+      "cardClass": "death_knight",
+      "cost": 4,
+      "rarity": "rare",
+      "set": "paper",
+      "description": "( Runes: (G)(G) ) Create two 2/2 Undead creature tokens, spend 4 Corpses to give them Reborn.",
+      "type": "sorcery",
+      "tribe": "Shadow",
+      "effects": [
+        {
+          "type": "summon",
+          "count": 2,
+          "attack": 2,
+          "health": 2,
+          "name": "Undead"
+        },
+        {
+          "type": "spend-corpses",
+          "value": 4,
+          "effects": [
+            {
+              "type": "grant-recent",
+              "count": 2,
+              "keyword": "reborn"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "vampiric_blood",
+      "name": "Vampiric Blood",
+      "cardClass": "death_knight",
+      "cost": 2,
+      "rarity": "rare",
+      "set": "paper",
+      "description": "( Runes: (R) (R) (R) ) Gain 5 Life, spend 3 Corpses to gain another 5 Life & draw a card.",
+      "type": "instant",
+      "effects": [
+        {
+          "type": "heal",
+          "value": 5,
+          "target": "self"
+        },
+        {
+          "type": "spend-corpses",
+          "value": 3,
+          "effects": [
+            {
+              "type": "heal",
+              "value": 5,
+              "target": "self"
+            },
+            {
+              "type": "draw",
+              "value": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "climactic_necrotic_explosion",
+      "name": "Climactic Necrotic Explosion",
+      "cardClass": "death_knight",
+      "cost": 10,
+      "rarity": "legendary",
+      "set": "paper",
+      "description": "( Runes: (R) (U) (G) ) Deal 7 damage to any target. Create four 4/4 Spirit creature tokens. Spend all of your Corpses and gain 1 Life for each Corpse spent this way.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 7,
+          "target": "any"
+        },
+        {
+          "type": "summon",
+          "count": 4,
+          "attack": 4,
+          "health": 4,
+          "name": "Spirit"
+        },
+        {
+          "type": "spend-corpses-up-to",
+          "effects": [
+            {
+              "type": "heal",
+              "value": 1,
+              "target": "self"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "lord_marrowgar",
+      "name": "Lord Marrowgar",
+      "cardClass": "death_knight",
+      "cost": 8,
+      "rarity": "legendary",
+      "set": "paper",
+      "description": "( Runes: (G) (G) (G) ) Battlecry: Spend all of your Corpses, Create a 1/1 Undead Golem creature token with Rush for each Corpse spent this way.",
+      "type": "creature",
+      "attack": 9,
+      "health": 7,
+      "tribe": "Undead King",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "spend-corpses-up-to",
+          "effects": [
+            {
+              "type": "summon",
+              "count": 1,
+              "attack": 1,
+              "health": 1,
+              "name": "Undead Golem",
+              "keywords": [
+                "rush"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "marrow_manipulator",
+      "name": "Marrow Manipulator",
+      "cardClass": "death_knight",
+      "cost": 6,
+      "rarity": "rare",
+      "set": "paper",
+      "description": "( Runes: (U) (U) (U) ) Battlecry: Spend up to 5 Corpses, deal 2 damage to any target for each Corpse spent this way.",
+      "type": "creature",
+      "attack": 5,
+      "health": 5,
+      "tribe": "Undead Gnome Mage",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "spend-corpses-up-to",
+          "max": 5,
+          "effects": [
+            {
+              "type": "damage",
+              "value": 2,
+              "target": "any"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "might_of_menethil",
+      "name": "Might of Menethil",
+      "cardClass": "death_knight",
+      "cost": 4,
+      "rarity": "epic",
+      "set": "paper",
+      "description": "( Runes: (U) (U) ) Equip Hero Battlecry: Spend up to 3 Corpses. Freeze that many creatures.",
+      "type": "weapon",
+      "attack": 4,
+      "durability": 2,
+      "effects": [
+        {
+          "type": "spend-corpses-up-to",
+          "max": 3,
+          "effects": [
+            {
+              "type": "freeze-random"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "battlefield_necromancer",
+      "name": "Battlefield Necromancer",
+      "cardClass": "death_knight",
+      "cost": 2,
+      "rarity": "common",
+      "set": "paper",
+      "description": "( Runes: (G)(G) ) At the end of your turn, spend a Corpse to Create a 1/3 \"Risen Footman\" Undead creature token with Taunt.",
+      "type": "creature",
+      "attack": 2,
+      "health": 2,
+      "tribe": "Human Wizard",
+      "ongoing": {
+        "on": "turn-end",
+        "effects": [
+          {
+            "type": "spend-corpses",
+            "value": 1,
+            "effects": [
+              {
+                "type": "summon",
+                "count": 1,
+                "attack": 1,
+                "health": 3,
+                "name": "Risen Footman",
+                "keywords": [
+                  "taunt"
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "dreadscale",
+      "name": "Dreadscale",
+      "cardClass": "hunter",
+      "cost": 3,
+      "rarity": "legendary",
+      "set": "paper",
+      "description": "At the end of your turn, deal 1 damage to each creature you don't control & each opponent loses 1 Life.",
+      "type": "creature",
+      "attack": 4,
+      "health": 2,
+      "tribe": "Beast",
+      "ongoing": {
+        "on": "turn-end",
+        "effects": [
+          {
+            "type": "damage",
+            "value": 1,
+            "target": "enemy-creatures"
+          },
+          {
+            "type": "damage",
+            "value": 1,
+            "target": "enemy-heroes"
+          }
+        ]
+      }
+    },
+    {
+      "id": "depth_charge",
+      "name": "Depth Charge",
+      "cardClass": "neutral",
+      "cost": 1,
+      "rarity": "common",
+      "set": "paper",
+      "description": "At the start of your turn, deal 5 damage to all creatures.",
+      "type": "creature",
+      "attack": 0,
+      "health": 5,
+      "tribe": "Construct",
+      "ongoing": {
+        "on": "turn-start",
+        "effects": [
+          {
+            "type": "damage",
+            "value": 5,
+            "target": "all-creatures"
+          }
+        ]
+      }
+    },
+    {
+      "id": "friendly_bartender",
+      "name": "Friendly Bartender",
+      "cardClass": "neutral",
+      "cost": 2,
+      "rarity": "common",
+      "set": "paper",
+      "description": "At the end of your turn, gain 1 Life.",
+      "type": "creature",
+      "attack": 2,
+      "health": 3,
+      "tribe": "Beast Citizen",
+      "ongoing": {
+        "on": "turn-end",
+        "effects": [
+          {
+            "type": "heal",
+            "value": 1,
+            "target": "self"
+          }
+        ]
+      }
+    },
+    {
+      "id": "nest_of_knighthood",
+      "name": "Nest of Knighthood",
+      "cardClass": "centurion",
+      "cost": 1,
+      "rarity": "common",
+      "set": "paper",
+      "description": "At the end of your turn, Create a 1/1 Beast Knight creature token.",
+      "type": "creature",
+      "attack": 0,
+      "health": 4,
+      "tribe": "Construct",
+      "ongoing": {
+        "on": "turn-end",
+        "effects": [
+          {
+            "type": "summon",
+            "count": 1,
+            "attack": 1,
+            "health": 1,
+            "name": "Beast Knight"
+          }
+        ]
+      }
+    },
+    {
+      "id": "needlerock_totem",
+      "name": "Needlerock Totem",
+      "cardClass": "shaman__warrior",
+      "cost": 2,
+      "rarity": "common",
+      "set": "paper",
+      "description": "At the end of your turn, gain 2 Armor & draw a card.",
+      "type": "creature",
+      "attack": 0,
+      "health": 2,
+      "tribe": "Totem",
+      "ongoing": {
+        "on": "turn-end",
+        "effects": [
+          {
+            "type": "armor",
+            "value": 2
+          },
+          {
+            "type": "draw",
+            "value": 1
+          }
+        ]
+      }
     }
   ]
 }

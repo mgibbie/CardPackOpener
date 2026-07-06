@@ -604,7 +604,8 @@ function updateHud() {
 	if (me.secrets.length) myGear.push('❓ ' + me.secrets.map(s => s.name).join(', '));
 	if (me.exile.length) myGear.push(`⊘ ${me.exile.length} exiled`);
 	if (me.fatigue) myGear.push(`☠ fatigue ${me.fatigue}`);
-	if (me.corpses) myGear.push(`⚰ ${me.corpses} corpses`);
+	// only Death Knights get a corpse indicator; others track corpses hidden
+	if (me.corpses && me.heroClass === 'death_knight') myGear.push(`⚰ ${me.corpses} corpses`);
 	if (me.heroTempAttack) myGear.push(`⚔ +${me.heroTempAttack} this turn`);
 	$('my-gear').innerHTML = myGear.join('<br>');
 	$('my-panel').classList.toggle('armed',
@@ -622,7 +623,7 @@ function updateHud() {
 		if (p.traps.length) gear.push(`⚠ ${p.traps.length}`);
 		if (p.exile.length) gear.push(`⊘ ${p.exile.length}`);
 		if (p.fatigue) gear.push(`☠ ${p.fatigue}`);
-		if (p.corpses) gear.push(`⚰ ${p.corpses}`);
+		if (p.corpses && p.heroClass === 'death_knight') gear.push(`⚰ ${p.corpses}`);
 		el.querySelector('.gear').innerHTML = gear.join(' · ');
 		el.classList.toggle('dead', p.eliminated);
 		el.classList.toggle('turn', state.current === pi && !state.over);
