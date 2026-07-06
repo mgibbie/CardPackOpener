@@ -976,6 +976,10 @@ function nextEvent() {
 			log(`${nameOf(ev.player)} made enemy spells free next turn`);
 			delay = 300;
 			break;
+		case 'honorableKill':
+			log(`${nameOf(ev.player)} scored an Honorable Kill!`);
+			delay = 350;
+			break;
 		case 'secretRevealed':
 			banner(`Secret: ${ev.card.name}!`, 1600);
 			log(`${ev.player === HUMAN ? 'Your' : `${nameOf(ev.player)}'s`} Secret revealed: ${ev.card.name}`);

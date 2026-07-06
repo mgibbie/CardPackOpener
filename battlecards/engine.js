@@ -13,6 +13,7 @@ export const KW = {
 	PACIFIST: 'pacifist',   // can't attack (Ragnaros, Ancient Watcher)
 	CLEAVE: 'cleave',       // combat damage splashes to the defender's neighbors
 	REBORN: 'reborn',       // first death returns it at 1 health
+	SANGUINE: 'sanguine',   // attacking or being attacked banks a Blood Token
 };
 // KW.DEFENDER now means the PAPER keyword: a coin-flip chance to redirect
 // attacks against your other permanents onto this creature.
@@ -63,7 +64,7 @@ export const BOOST_TABLES = {
 		PENDING('Deathrattle: Planeshift'),
 		{ label: '+3 Attack', attack: 3, health: 0 },
 		{ label: 'Cleave', keyword: 'cleave' },
-		PENDING('Sanguine'),
+		{ label: 'Sanguine', keyword: 'sanguine' },
 		PENDING('Impulsive (undefined)'),
 	],
 	G: [
@@ -140,6 +141,7 @@ function instantiate(def, controller) {
 		statRule: def.statRule || null,   // 'attack-equals-health' (Lightspawn)
 		selfScale: def.selfScale || null, // { attack, tribe }: +N per other <tribe> in play
 		condKeyword: def.condKeyword || null, // { keyword, while: 'weapon' } (Southsea Deckhand)
+		honorableKill: def.honorableKill || null, // effects on an EXACT lethal blow
 		aura: def.aura || null,       // { attack, health, tribe?, others?, adjacent?, position?, keywords? }
 		auraAttack: 0,                // currently applied aura bonuses (recomputed)
 		auraHealth: 0,
@@ -324,8 +326,9 @@ export function drawCards(state, pi, count) {
 	for (let i = 0; i < count; i++) {
 		if (p.deck.length === 0 && p.graveyard.length > 0) {
 			// reshuffle graveyard ids into deck (per BattleEngine.startPhase);
-			// summoned tokens have no card def and can't be redrawn
-			p.deck = p.graveyard.map(c => c.id).filter(id => state.cardsById[id]);
+			// summoned tokens have no card def and can't be redrawn; token
+			// CARDS (Bananas, Blood Tokens) cease to exist like MTG tokens
+			p.deck = p.graveyard.map(c => c.id).filter(id => state.cardsById[id] && !state.cardsById[id].token);
 			p.graveyard = [];
 			for (let k = p.deck.length - 1; k > 0; k--) {
 				const j = Math.floor(state.rng() * (k + 1));
@@ -515,6 +518,18 @@ function findCreature(state, uid) {
 	return null;
 }
 
+// Sanguine: a Blood Token lands in the controller's hand — a 1-mana token
+// spell that trades a discard for a draw
+function gainBloodToken(state, pi) {
+	const p = state.players[pi];
+	const def = state.cardsById['blood_token'];
+	if (!def || p.eliminated || p.hand.length >= MAX_HAND) return;
+	const card = instantiate(def, pi);
+	card.zone = 'hand';
+	p.hand.push(card);
+	emit(state, { type: 'conjure', player: pi, card, color: null });
+}
+
 // ---------- damage / healing ----------
 function damageCreature(state, target, amount, source) {
 	if (amount <= 0) return 0;
@@ -525,6 +540,7 @@ function damageCreature(state, target, amount, source) {
 		return 0;
 	}
 	target.damage += amount;
+	if (target.damage === target.maxHealth) state.exactKills = (state.exactKills || 0) + 1;
 	if (source && (has(source, KW.DEATHTOUCH) || has(source, KW.POISONOUS))) target.poisoned = true;
 	// Commanding Shout: friendly creatures can't drop below 1 health this turn
 	const owner = state.players[target.controller];
@@ -624,6 +640,7 @@ function silenceCreature(state, c) {
 	c.statRule = null;
 	c.selfScale = null;
 	c.condKeyword = null;
+	c.honorableKill = null;
 	c.auraKeywords = [];
 	c.shield = false;
 	c.stealthed = false;
@@ -1562,12 +1579,17 @@ function execEffects(state, pi, effects, target, source) {
 			}
 			for (let i = 0; i < n; i++) {
 				const opt = e.options ? e.options[Math.floor(state.rng() * e.options.length)] : e;
+				// randomKeywords: each token rolls its own bonus (Bucket of Soldiers)
+				const kws = [...(opt.keywords || [])];
+				if (e.randomKeywords?.length) {
+					kws.push(e.randomKeywords[Math.floor(state.rng() * e.randomKeywords.length)]);
+				}
 				summon(state, pi, {
 					id: 'token_' + opt.name.toLowerCase().replace(/[^a-z0-9]+/g, '_'),
 					name: opt.name, type: 'creature', cost: 0, rarity: 'common',
 					description: opt.description || `A ${opt.attack}/${opt.health} token.`,
 					attack: opt.attack, health: opt.health,
-					keywords: opt.keywords || [],
+					keywords: kws,
 					tribe: opt.tribe || null,
 					aura: opt.aura || null,
 					static: opt.static || e.static || null,
@@ -2624,7 +2646,13 @@ export function playCard(state, pi, cardUid, target, choice) {
 		fireSecretsAll(state, pi, 'enemy-spell-cast', ctx);
 		if (ctx.countered) emit(state, { type: 'countered', player: pi, name: card.name });
 		else {
+			state.exactKills = 0;
 			runSpell(state, pi, card, ctx.target, choice);
+			// Honorable Kill on spells: the spell's damage scored an exact lethal
+			if (card.honorableKill && state.exactKills > 0) {
+				emit(state, { type: 'honorableKill', player: pi });
+				execEffects(state, pi, card.honorableKill, ctx.target, card);
+			}
 			fireOngoing(state, pi, 'spell-played');
 			for (let s2 = 0; s2 < state.players.length; s2++) {
 				fireOngoing(state, s2, 'any-spell-played', { spell: card, caster: pi }); // Lorewalker Cho
@@ -2689,6 +2717,12 @@ export function attack(state, pi, attackerUid, target) {
 	attacker.attacksUsed++;
 	attacker.stealthed = false;
 	emit(state, { type: 'attack', attackerUid, target });
+	// Sanguine: attacking (or being attacked, below) banks a Blood Token
+	if (has(attacker, KW.SANGUINE)) gainBloodToken(state, pi);
+	if (target.type === 'creature') {
+		const d0 = findCreature(state, target.uid);
+		if (d0 && has(d0, KW.SANGUINE)) gainBloodToken(state, d0.controller);
+	}
 	// Swing: when this creature attacks
 	if (attacker.ongoing?.on === 'self-attacks') {
 		runSecretEffects(state, pi, attacker.ongoing.effects, { self: attacker });
@@ -2756,6 +2790,12 @@ export function attack(state, pi, attackerUid, target) {
 		if (has(attacker, KW.TRAMPLE) && isDead(defender)) {
 			const excess = attacker.attack - defHpBefore;
 			if (excess > 0) damageHero(state, target.player, excess, pi);
+		}
+		// Honorable Kill: this creature scored an EXACT lethal blow
+		if (attacker.honorableKill && isDead(defender) && defender.damage === defender.maxHealth
+			&& !isDead(attacker)) {
+			emit(state, { type: 'honorableKill', uid: attacker.uid, player: pi });
+			runSecretEffects(state, pi, attacker.honorableKill, { self: attacker });
 		}
 	}
 	sweepDeaths(state);
@@ -2825,6 +2865,7 @@ export function heroAttack(state, pi, target) {
 		const defender = findCreature(state, target.uid);
 		if (defender && !isDead(defender)) {
 			hitCreature = true;
+			if (has(defender, KW.SANGUINE)) gainBloodToken(state, defender.controller);
 			const dealt = damageCreature(state, defender, atk, w);
 			if (w && has(w, KW.LIFESTEAL) && dealt > 0) healHero(state, pi, dealt);
 			if (w && has(w, KW.FREEZER) && !isDead(defender)) freezeCreature(state, defender);
@@ -2843,6 +2884,11 @@ export function heroAttack(state, pi, target) {
 				if (has(defender, KW.LIFESTEAL) && counter > 0) healHero(state, defender.controller, counter);
 			}
 			killed = isDead(defender);
+			// Honorable Kill on weapons: an EXACT lethal swing
+			if (w && w.honorableKill && killed && defender.damage === defender.maxHealth) {
+				emit(state, { type: 'honorableKill', player: pi });
+				execEffects(state, pi, w.honorableKill, null, w);
+			}
 		}
 	}
 	// triggered hero weapons fire while still equipped

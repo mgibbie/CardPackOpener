@@ -11395,7 +11395,11 @@
       "type": "creature",
       "attack": 3,
       "health": 3,
-      "tribe": "Vampire Beast"
+      "tribe": "Vampire Beast",
+      "keywords": [
+        "sanguine",
+        "trample"
+      ]
     },
     {
       "id": "tracker_jacker",
@@ -18559,7 +18563,9 @@
       "health": 13,
       "tribe": "Undead Dragon",
       "keywords": [
-        "battlecry"
+        "battlecry",
+        "sanguine",
+        "taunt"
       ],
       "effects": [
         {
@@ -19365,6 +19371,259 @@
           }
         ]
       }
+    },
+    {
+      "id": "blood_token",
+      "name": "Blood Token",
+      "type": "sorcery",
+      "cost": 1,
+      "rarity": "common",
+      "token": true,
+      "effects": [
+        {
+          "type": "discard-random",
+          "count": 1
+        },
+        {
+          "type": "draw",
+          "value": 1
+        }
+      ],
+      "description": "Sacrifice: discard a card, then draw a card."
+    },
+    {
+      "id": "darkfallen_neophyte",
+      "name": "Darkfallen Neophyte",
+      "cardClass": "death_knight",
+      "cost": 3,
+      "rarity": "rare",
+      "set": "paper",
+      "description": "( Runes: (R) ) Battlecry: Spend 2 Corpses to give target creature +2 Attack & Sanguine.",
+      "type": "creature",
+      "attack": 2,
+      "health": 5,
+      "tribe": "Undead Sorcerer",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "spend-corpses",
+          "value": 2,
+          "effects": [
+            {
+              "type": "buff",
+              "attack": 2,
+              "health": 0,
+              "target": "creature"
+            },
+            {
+              "type": "grant",
+              "keyword": "sanguine",
+              "target": "creature"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "malignant_horror",
+      "name": "Malignant Horror",
+      "cardClass": "death_knight",
+      "cost": 4,
+      "rarity": "uncommon",
+      "set": "paper",
+      "description": "Reborn. At the end of your turn you may spend 4 Corpses to gain one of the following keywords: Lifesteal, Taunt, Trample, Sanguine, Divine Shield, or Windfury.",
+      "type": "creature",
+      "attack": 2,
+      "health": 4,
+      "tribe": "Undead Horror",
+      "keywords": [
+        "reborn"
+      ],
+      "ongoing": {
+        "on": "turn-end",
+        "effects": [
+          {
+            "type": "spend-corpses",
+            "value": 4,
+            "effects": [
+              {
+                "type": "random-effects",
+                "options": [
+                  [
+                    {
+                      "type": "grant",
+                      "keyword": "lifesteal",
+                      "target": "self"
+                    }
+                  ],
+                  [
+                    {
+                      "type": "grant",
+                      "keyword": "taunt",
+                      "target": "self"
+                    }
+                  ],
+                  [
+                    {
+                      "type": "grant",
+                      "keyword": "trample",
+                      "target": "self"
+                    }
+                  ],
+                  [
+                    {
+                      "type": "grant",
+                      "keyword": "sanguine",
+                      "target": "self"
+                    }
+                  ],
+                  [
+                    {
+                      "type": "grant",
+                      "keyword": "divine_shield",
+                      "target": "self"
+                    }
+                  ],
+                  [
+                    {
+                      "type": "grant",
+                      "keyword": "windfury",
+                      "target": "self"
+                    }
+                  ]
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "keen_reflex",
+      "name": "Keen Reflex",
+      "cardClass": "demon_hunter",
+      "cost": 2,
+      "rarity": "common",
+      "set": "paper",
+      "description": "Deal 1 damage to all creatures. Honorable Kill: Your hero gains +1 Attack this turn.",
+      "type": "sorcery",
+      "honorableKill": [
+        {
+          "type": "hero-temp-attack",
+          "value": 1
+        }
+      ],
+      "effects": [
+        {
+          "type": "damage",
+          "value": 1,
+          "target": "all-creatures"
+        }
+      ]
+    },
+    {
+      "id": "bloodseeker",
+      "name": "Bloodseeker",
+      "cardClass": "hunter",
+      "cost": 2,
+      "rarity": "common",
+      "set": "paper",
+      "description": "Equip Hero Honorable Kill: Gain +1/+1.",
+      "type": "weapon",
+      "attack": 2,
+      "durability": 2,
+      "honorableKill": [
+        {
+          "type": "buff-weapon",
+          "attack": 1,
+          "durability": 1
+        }
+      ]
+    },
+    {
+      "id": "bloodthirsty_ragefin",
+      "name": "Bloodthirsty Ragefin",
+      "cardClass": "barbarian",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "description": "Sanguine. Frenzy: Adapt.",
+      "type": "creature",
+      "attack": 4,
+      "health": 2,
+      "tribe": "Murloc Warrior",
+      "keywords": [
+        "sanguine"
+      ],
+      "ongoing": {
+        "on": "self-damaged",
+        "once": true,
+        "survives": true,
+        "effects": [
+          {
+            "type": "adapt"
+          }
+        ]
+      }
+    },
+    {
+      "id": "nostalgic_gnome",
+      "name": "Nostalgic Gnome",
+      "cardClass": "neutral",
+      "cost": 4,
+      "rarity": "rare",
+      "set": "paper",
+      "description": "Miniaturize & Rush. Honorable Kill: Draw a card.",
+      "type": "creature",
+      "attack": 4,
+      "health": 4,
+      "tribe": "Gnome Warrior",
+      "honorableKill": [
+        {
+          "type": "draw",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "bucket_of_soldiers",
+      "name": "Bucket of Soldiers",
+      "cardClass": "neutral",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "description": "Deathrattle: Create five 1/1 Soldier creature tokens with random bonus effects. The random bonus effects are Divine Shield, Taunt, Rush, Windfury, Stealth, Poisonous, Deathtouch, Trample, Lifesteal, Elusive, Sanguine & Reborn.",
+      "type": "creature",
+      "attack": 0,
+      "health": 2,
+      "tribe": "Construct",
+      "keywords": [
+        "deathrattle"
+      ],
+      "deathrattle": [
+        {
+          "type": "summon",
+          "count": 5,
+          "attack": 1,
+          "health": 1,
+          "name": "Soldier",
+          "randomKeywords": [
+            "divine_shield",
+            "taunt",
+            "rush",
+            "windfury",
+            "stealth",
+            "deathtouch",
+            "trample",
+            "lifesteal",
+            "elusive",
+            "sanguine",
+            "reborn"
+          ]
+        }
+      ]
     }
   ]
 }
