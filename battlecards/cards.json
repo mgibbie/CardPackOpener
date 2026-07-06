@@ -16310,6 +16310,55 @@
         }
       ],
       "description": "Draw a card and deal damage equal to its cost."
+    },
+    {
+      "id": "inner_rage",
+      "name": "Inner Rage",
+      "cardClass": "warrior",
+      "cost": 0,
+      "rarity": "common",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 1,
+          "target": "creature"
+        },
+        {
+          "type": "buff",
+          "attack": 2,
+          "health": 0,
+          "target": "creature"
+        }
+      ],
+      "description": "Deal 1 damage to a creature and give it +2 Attack."
+    },
+    {
+      "id": "cruel_taskmaster",
+      "name": "Cruel Taskmaster",
+      "cardClass": "warrior",
+      "cost": 2,
+      "rarity": "common",
+      "type": "creature",
+      "attack": 2,
+      "health": 2,
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "damage",
+          "value": 1,
+          "target": "creature"
+        },
+        {
+          "type": "buff",
+          "attack": 2,
+          "health": 0,
+          "target": "creature"
+        }
+      ],
+      "description": "Battlecry: Deal 1 damage to a creature and give it +2 Attack."
     }
   ]
 }
