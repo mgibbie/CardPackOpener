@@ -691,6 +691,7 @@ function pump() {
 	if (!state) return;
 	resolveAIScries();
 	resolveAIDiscards();
+	resolveAIPicks();
 	queue.push(...E.takeEvents(state));
 	if (!queueBusy) nextEvent();
 }
@@ -703,6 +704,42 @@ function resolveAIDiscards() {
 		const picks = [...p.hand].sort((a, b) => b.cost - a.cost).slice(0, pend.count).map(c => c.uid);
 		E.resolveDiscard(state, picks);
 	}
+}
+
+// AI Discover/Draft picks: take the biggest card
+function resolveAIPicks() {
+	while (state.pickQueue.length && state.pickQueue[0].player !== HUMAN) {
+		const pend = state.pickQueue[0];
+		const best = [...pend.ids].sort((a, b) => (state.cardsById[b]?.cost || 0) - (state.cardsById[a]?.cost || 0))[0];
+		E.resolvePick(state, best);
+	}
+}
+
+function openPickModal() {
+	const pend = state.pickQueue[0];
+	if (!pend || pend.player !== HUMAN) return;
+	const modal = $('scry-modal'); // reuse the scry chrome
+	modal.innerHTML = `<div class="wm-title">${pend.ids.length > 3 ? 'Draft' : 'Discover'} — take one</div><div class="scry-row"></div>`;
+	const row = modal.querySelector('.scry-row');
+	pend.ids.forEach(id => {
+		const def = state.cardsById[id];
+		const cell = document.createElement('div');
+		cell.className = 'scry-cell';
+		const face = drawCardFace(def);
+		face.style.width = pend.ids.length > 3 ? '105px' : '130px';
+		cell.appendChild(face);
+		const btn = document.createElement('button');
+		btn.textContent = 'Take';
+		btn.addEventListener('pointerdown', e => {
+			e.stopPropagation();
+			modal.style.display = 'none';
+			E.resolvePick(state, id);
+			pump();
+		});
+		cell.appendChild(btn);
+		row.appendChild(cell);
+	});
+	modal.style.display = 'block';
 }
 
 function openDiscardModal() {
@@ -950,6 +987,11 @@ function nextEvent() {
 			if (ev.player === HUMAN) openDiscardModal();
 			delay = 300;
 			break;
+		case 'pickStart':
+			log(`${nameOf(ev.player)} ${ev.count > 3 ? 'drafts' : 'discovers'} (${ev.count} options)`);
+			if (ev.player === HUMAN) openPickModal();
+			delay = 300;
+			break;
 		case 'heroPowerInstalled': delay = 260; break; // ditto
 		case 'questStarted': delay = 260; break;      // ditto
 		case 'heroPowerUsed':
@@ -1081,6 +1123,7 @@ function maybeRunAI() {
 	if (!state || state.over || state.current === HUMAN || queue.length || queueBusy) return;
 	if (state.scryQueue.length && state.scryQueue[0].chooser === HUMAN) return; // your call first
 	if (state.discardQueue.length && state.discardQueue[0].player === HUMAN) return; // loot pick first
+	if (state.pickQueue.length && state.pickQueue[0].player === HUMAN) return; // discover pick first
 	clearTimeout(aiTimer);
 	aiTimer = setTimeout(() => {
 		if (!state || state.over || state.current === HUMAN) return;

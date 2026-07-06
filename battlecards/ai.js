@@ -139,6 +139,14 @@ export function step(state, pi = 1) {
 		return true;
 	}
 
+	// -1c. resolve pending Discover/Draft picks: take the biggest card
+	if (state.pickQueue.length && state.pickQueue[0].player === pi) {
+		const pend = state.pickQueue[0];
+		const best = [...pend.ids].sort((a, b) => (state.cardsById[b]?.cost || 0) - (state.cardsById[a]?.cost || 0))[0];
+		E.resolvePick(state, best);
+		return true;
+	}
+
 	// -1b. unmask disguised creatures worth their cost
 	for (const c of p.board) {
 		if (c.disguised && E.canUnmask(state, pi, c)

@@ -2322,7 +2322,10 @@
       "type": "creature",
       "attack": 3,
       "health": 6,
-      "tribe": "Elemental"
+      "tribe": "Elemental",
+      "keywords": [
+        "freezer"
+      ]
     },
     {
       "id": "frost_elemental",
@@ -4015,6 +4018,10 @@
       "attack": 1,
       "health": 1,
       "tribe": "Undead Wizard",
+      "static": {
+        "type": "spell-damage",
+        "value": 1
+      },
       "keywords": [
         "deathrattle"
       ],
@@ -4079,7 +4086,11 @@
       "type": "creature",
       "attack": 2,
       "health": 2,
-      "tribe": "Kobold Wizard"
+      "tribe": "Kobold Wizard",
+      "static": {
+        "type": "spell-damage",
+        "value": 1
+      }
     },
     {
       "id": "stormforged_axe",
@@ -8973,7 +8984,13 @@
       "type": "creature",
       "attack": 2,
       "health": 3,
-      "tribe": "Demon"
+      "tribe": "Demon",
+      "costMod": {
+        "cardType": "spell",
+        "amount": -1,
+        "scope": "own",
+        "tribe": "Shadow"
+      }
     },
     {
       "id": "felrattler",
@@ -9456,7 +9473,11 @@
       "type": "creature",
       "attack": 4,
       "health": 3,
-      "tribe": "Elemental"
+      "tribe": "Elemental",
+      "static": {
+        "type": "spell-damage",
+        "value": 2
+      }
     },
     {
       "id": "doomed_apprentice",
@@ -9526,7 +9547,11 @@
       "type": "creature",
       "attack": 3,
       "health": 3,
-      "tribe": "Elf Mage"
+      "tribe": "Elf Mage",
+      "static": {
+        "type": "spell-damage",
+        "value": 3
+      }
     },
     {
       "id": "lab_partner",
@@ -9539,7 +9564,11 @@
       "type": "creature",
       "attack": 1,
       "health": 3,
-      "tribe": "Gnome Wizard"
+      "tribe": "Gnome Wizard",
+      "static": {
+        "type": "spell-damage",
+        "value": 1
+      }
     },
     {
       "id": "life_sentence",
@@ -9687,6 +9716,7 @@
       "attack": 4,
       "health": 4,
       "tribe": "Human Warrior",
+      "medic": 2,
       "keywords": [
         "lifesteal"
       ]
@@ -10750,7 +10780,13 @@
       "type": "creature",
       "attack": 2,
       "health": 3,
-      "tribe": "Mech"
+      "tribe": "Mech",
+      "costMod": {
+        "cardType": "creature",
+        "amount": -1,
+        "scope": "own",
+        "tribe": "Mech"
+      }
     },
     {
       "id": "micro_machine",
@@ -10946,7 +10982,11 @@
       "type": "creature",
       "attack": 2,
       "health": 3,
-      "tribe": "Naga Cleric"
+      "tribe": "Naga Cleric",
+      "static": {
+        "type": "spell-damage",
+        "value": 1
+      }
     },
     {
       "id": "redgill_razorjaw",
@@ -11172,6 +11212,12 @@
       "attack": 1,
       "health": 1,
       "tribe": "Dragon",
+      "costMod": {
+        "cardType": "creature",
+        "amount": -1,
+        "scope": "own",
+        "tribe": "Dragon"
+      },
       "keywords": [
         "charge"
       ]
@@ -11187,7 +11233,17 @@
       "type": "creature",
       "attack": 2,
       "health": 2,
-      "tribe": "Human Pirate Warrior"
+      "tribe": "Human Pirate Warrior",
+      "ongoing": {
+        "on": "turn-start",
+        "effects": [
+          {
+            "type": "discover",
+            "pick": 5,
+            "cardType": "weapon"
+          }
+        ]
+      }
     },
     {
       "id": "captain_eberhart",
@@ -11406,7 +11462,11 @@
       "type": "creature",
       "attack": 2,
       "health": 4,
-      "tribe": "Beast"
+      "tribe": "Beast",
+      "static": {
+        "type": "spell-damage",
+        "value": 1
+      }
     },
     {
       "id": "batty_barker",
@@ -11495,7 +11555,17 @@
       "type": "creature",
       "attack": 3,
       "health": 1,
-      "tribe": "Human Mage"
+      "tribe": "Human Mage",
+      "static": {
+        "type": "spell-damage",
+        "value": 2
+      },
+      "costMod": {
+        "cardType": "spell",
+        "amount": -1,
+        "scope": "own",
+        "tribe": "Frost"
+      }
     },
     {
       "id": "netherese_dragonmage",
@@ -11508,7 +11578,17 @@
       "type": "creature",
       "attack": 2,
       "health": 2,
-      "tribe": "Human Mage"
+      "tribe": "Human Mage",
+      "static": {
+        "type": "spell-damage",
+        "value": 2
+      },
+      "costMod": {
+        "cardType": "creature",
+        "amount": -1,
+        "scope": "own",
+        "tribe": "Dragon"
+      }
     },
     {
       "id": "anuran_nomad",
@@ -11945,7 +12025,14 @@
       "type": "creature",
       "attack": 3,
       "health": 10,
-      "tribe": "Faerie Noble"
+      "tribe": "Faerie Noble",
+      "static": {
+        "type": "spell-damage",
+        "value": 3
+      },
+      "keywords": [
+        "rush"
+      ]
     },
     {
       "id": "fossil_dreadmaw",
@@ -12062,7 +12149,11 @@
       "type": "creature",
       "attack": 8,
       "health": 5,
-      "tribe": "Elemental Beast"
+      "tribe": "Elemental Beast",
+      "static": {
+        "type": "spell-damage",
+        "value": 2
+      }
     },
     {
       "id": "nurturing_bristleback",
@@ -12130,6 +12221,16 @@
       "attack": 5,
       "health": 5,
       "tribe": "Human Wizard Knight",
+      "costMod": {
+        "cardType": "spell",
+        "amount": -1,
+        "scope": "own",
+        "tribe": "Arcane"
+      },
+      "static": {
+        "type": "spell-damage",
+        "value": 1
+      },
       "ongoing": {
         "on": "spell-played",
         "once": true,
@@ -12596,7 +12697,18 @@
       "type": "creature",
       "attack": 5,
       "health": 13,
-      "tribe": "Faerie Beast Dragon"
+      "tribe": "Faerie Beast Dragon",
+      "static": {
+        "type": "spell-damage",
+        "value": 1
+      },
+      "keywords": [
+        "divine_shield",
+        "trample",
+        "rush",
+        "lifesteal",
+        "taunt"
+      ]
     },
     {
       "id": "ashbringer",
@@ -12974,6 +13086,10 @@
       "attack": 4,
       "health": 5,
       "tribe": "Beast",
+      "static": {
+        "type": "spell-damage",
+        "value": 1
+      },
       "choices": [
         {
           "text": "Gain 8 Life.",
@@ -17759,6 +17875,10 @@
       "attack": 3,
       "health": 6,
       "tribe": "Undead Wizard",
+      "static": {
+        "type": "spell-damage",
+        "value": 2
+      },
       "keywords": [
         "battlecry"
       ],
@@ -18573,6 +18693,14 @@
       "attack": 6,
       "health": 6,
       "tribe": "Human Cleric",
+      "static": {
+        "type": "spell-damage",
+        "value": 2
+      },
+      "medic": 3,
+      "keywords": [
+        "chromatic"
+      ],
       "ongoing": {
         "on": "hero-power-used",
         "effects": [
@@ -19802,6 +19930,725 @@
             {
               "type": "draw",
               "value": 2
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "treasure_token",
+      "name": "Treasure Token",
+      "type": "sorcery",
+      "cost": 0,
+      "rarity": "common",
+      "token": true,
+      "effects": [
+        {
+          "type": "gain-mana",
+          "value": 1
+        }
+      ],
+      "description": "Sacrifice: gain 1 mana this turn."
+    },
+    {
+      "id": "food_token",
+      "name": "Food Token",
+      "type": "sorcery",
+      "cost": 2,
+      "rarity": "common",
+      "token": true,
+      "effects": [
+        {
+          "type": "heal",
+          "value": 3,
+          "target": "self"
+        }
+      ],
+      "description": "Sacrifice: restore 3 health to your hero."
+    },
+    {
+      "id": "kalecgos",
+      "name": "Kalecgos",
+      "cardClass": "mage",
+      "cost": 10,
+      "rarity": "legendary",
+      "set": "paper",
+      "description": "Battlecry: Discover a spell. Your first spell each turn costs 0.",
+      "type": "creature",
+      "attack": 4,
+      "health": 12,
+      "tribe": "Dragon",
+      "costMod": {
+        "cardType": "spell",
+        "amount": -99,
+        "scope": "own",
+        "firstEachTurn": true
+      },
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "discover",
+          "pick": 3,
+          "cardType": "spell"
+        }
+      ]
+    },
+    {
+      "id": "tundra_matriarch",
+      "name": "Tundra Matriarch",
+      "cardClass": "neutral",
+      "cost": 1,
+      "rarity": "common",
+      "set": "paper",
+      "description": "Battlecry: Discover a Beast. Freeze.",
+      "type": "creature",
+      "attack": 1,
+      "health": 1,
+      "tribe": "Spirit Beast",
+      "keywords": [
+        "battlecry",
+        "freezer"
+      ],
+      "effects": [
+        {
+          "type": "discover",
+          "pick": 3,
+          "tribe": "Beast"
+        }
+      ]
+    },
+    {
+      "id": "avalon_roc",
+      "name": "Avalon Roc",
+      "cardClass": "neutral",
+      "cost": 1,
+      "rarity": "common",
+      "set": "paper",
+      "description": "Battlecry: Discover a Nature spell from any class.",
+      "type": "creature",
+      "attack": 1,
+      "health": 1,
+      "tribe": "Spirit Beast",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "discover",
+          "pick": 3,
+          "cardType": "spell",
+          "tribe": "Nature"
+        }
+      ]
+    },
+    {
+      "id": "eoraptor",
+      "name": "Eoraptor",
+      "cardClass": "neutral",
+      "cost": 1,
+      "rarity": "common",
+      "set": "paper",
+      "description": "Inspire: Luck: Discover a Dinosaur.",
+      "type": "creature",
+      "attack": 1,
+      "health": 1,
+      "tribe": "Beast",
+      "ongoing": {
+        "on": "hero-power-used",
+        "effects": [
+          {
+            "type": "luck",
+            "effects": [
+              {
+                "type": "discover",
+                "pick": 3,
+                "tribe": "Dinosaur"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "alpine_tyrant",
+      "name": "Alpine Tyrant",
+      "cardClass": "neutral",
+      "cost": 2,
+      "rarity": "common",
+      "set": "paper",
+      "description": "Battlecry: Discover a Beast & give it Freeze.",
+      "type": "creature",
+      "attack": 1,
+      "health": 2,
+      "tribe": "Beast",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "discover",
+          "pick": 3,
+          "tribe": "Beast",
+          "grant": "freezer"
+        }
+      ]
+    },
+    {
+      "id": "first_little_pig",
+      "name": "First Little Pig",
+      "cardClass": "neutral",
+      "cost": 2,
+      "rarity": "uncommon",
+      "set": "paper",
+      "description": "Whenever you sacrifice a Food, draw a card.",
+      "type": "creature",
+      "attack": 2,
+      "health": 2,
+      "tribe": "Beast",
+      "ongoing": {
+        "on": "card-played",
+        "if": {
+          "cardId": "food_token"
+        },
+        "effects": [
+          {
+            "type": "draw",
+            "value": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "gemspark_spellweaver",
+      "name": "Gemspark Spellweaver",
+      "cardClass": "neutral",
+      "cost": 2,
+      "rarity": "common",
+      "set": "paper",
+      "description": "Deathrattle: Discover a Spell Damage creature.",
+      "type": "creature",
+      "attack": 2,
+      "health": 2,
+      "tribe": "Murloc Sorcerer",
+      "keywords": [
+        "deathrattle"
+      ],
+      "deathrattle": [
+        {
+          "type": "discover",
+          "pick": 3,
+          "cardType": "creature",
+          "hasStatic": "spell-damage"
+        }
+      ]
+    },
+    {
+      "id": "feywild_ursa",
+      "name": "Feywild Ursa",
+      "cardClass": "neutral",
+      "cost": 3,
+      "rarity": "rare",
+      "set": "paper",
+      "description": "Taunt. Spellburst: Discover a Beast.",
+      "type": "creature",
+      "attack": 2,
+      "health": 2,
+      "tribe": "Spirit Beast Warrior",
+      "keywords": [
+        "taunt"
+      ],
+      "ongoing": {
+        "on": "spell-played",
+        "once": true,
+        "effects": [
+          {
+            "type": "discover",
+            "pick": 3,
+            "tribe": "Beast"
+          }
+        ]
+      }
+    },
+    {
+      "id": "cedar_waxwing",
+      "name": "Cedar Waxwing",
+      "cardClass": "neutral",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "description": "Battlecry: Discover a Nature spell from another class.",
+      "type": "creature",
+      "attack": 3,
+      "health": 1,
+      "tribe": "Beast",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "discover",
+          "pick": 3,
+          "cardType": "spell",
+          "tribe": "Nature"
+        }
+      ]
+    },
+    {
+      "id": "frostfire_feline",
+      "name": "Frostfire Feline",
+      "cardClass": "neutral",
+      "cost": 4,
+      "rarity": "common",
+      "set": "paper",
+      "description": "Battlecry: Discover a Fire spell from another class. Your Frost spells cost 1 less.",
+      "type": "creature",
+      "attack": 3,
+      "health": 3,
+      "tribe": "Beast",
+      "costMod": {
+        "cardType": "spell",
+        "amount": -1,
+        "scope": "own",
+        "tribe": "Frost"
+      },
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "discover",
+          "pick": 3,
+          "cardType": "spell",
+          "tribe": "Fire"
+        }
+      ]
+    },
+    {
+      "id": "transcendant_fauna",
+      "name": "Transcendant Fauna",
+      "cardClass": "neutral",
+      "cost": 4,
+      "rarity": "common",
+      "set": "paper",
+      "description": "Battlecry: Discover a Spirit. Cascade & Lifesteal.",
+      "type": "creature",
+      "attack": 3,
+      "health": 3,
+      "tribe": "Spirit Beast",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "discover",
+          "pick": 3,
+          "tribe": "Spirit"
+        }
+      ]
+    },
+    {
+      "id": "cloudstorm_pyromancer",
+      "name": "Cloudstorm Pyromancer",
+      "cardClass": "neutral",
+      "cost": 4,
+      "rarity": "rare",
+      "set": "paper",
+      "description": "Battlecry: Draft a Fire spell from any class. Deathrattle: Discover a Nature spell from any class that costs 3 or less.",
+      "type": "creature",
+      "attack": 2,
+      "health": 2,
+      "tribe": "Mandran Sorcerer",
+      "keywords": [
+        "battlecry",
+        "deathrattle"
+      ],
+      "effects": [
+        {
+          "type": "discover",
+          "pick": 5,
+          "cardType": "spell",
+          "tribe": "Fire"
+        }
+      ],
+      "deathrattle": [
+        {
+          "type": "discover",
+          "pick": 3,
+          "cardType": "spell",
+          "tribe": "Nature",
+          "maxCost": 3
+        }
+      ]
+    },
+    {
+      "id": "pantlaza_sun_favored",
+      "name": "Pantlaza, Sun-Favored",
+      "cardClass": "neutral",
+      "cost": 5,
+      "rarity": "legendary",
+      "set": "paper",
+      "description": "Battlecry: Discover a Dinosaur. Cascade & Trample.",
+      "type": "creature",
+      "attack": 4,
+      "health": 4,
+      "tribe": "Dinosaur",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "discover",
+          "pick": 3,
+          "tribe": "Dinosaur"
+        }
+      ]
+    },
+    {
+      "id": "millicent_harbinger_of_victory",
+      "name": "Millicent, Harbinger of Victory",
+      "cardClass": "neutral",
+      "cost": 7,
+      "rarity": "legendary",
+      "set": "paper",
+      "description": "Firebreathing, Impulsive, Static, Hexproof & Taunt. Your Spirits cost 1 less. Deathrattle: Draft a Spirit.",
+      "type": "creature",
+      "attack": 4,
+      "health": 4,
+      "tribe": "Spirit Soldier",
+      "costMod": {
+        "cardType": "creature",
+        "amount": -1,
+        "scope": "own",
+        "tribe": "Spirit"
+      },
+      "keywords": [
+        "deathrattle"
+      ],
+      "deathrattle": [
+        {
+          "type": "discover",
+          "pick": 5,
+          "tribe": "Spirit"
+        }
+      ]
+    },
+    {
+      "id": "cavern_hoard_dragon",
+      "name": "Cavern-Hoard Dragon",
+      "cardClass": "neutral",
+      "cost": 9,
+      "rarity": "epic",
+      "set": "paper",
+      "description": "Charge, Trample & Windfury. Connect: Enrich.",
+      "type": "creature",
+      "attack": 6,
+      "health": 6,
+      "tribe": "Dragon",
+      "keywords": [
+        "charge",
+        "trample",
+        "windfury"
+      ],
+      "ongoing": {
+        "on": "self-hit-player",
+        "effects": [
+          {
+            "type": "enrich"
+          }
+        ]
+      }
+    },
+    {
+      "id": "leogun",
+      "name": "Leogun",
+      "cardClass": "neutral",
+      "cost": 12,
+      "rarity": "legendary",
+      "set": "paper",
+      "description": "Inspire: Discover a Shadow spell.",
+      "type": "creature",
+      "attack": 17,
+      "health": 15,
+      "tribe": "Beast",
+      "ongoing": {
+        "on": "hero-power-used",
+        "effects": [
+          {
+            "type": "discover",
+            "pick": 3,
+            "cardType": "spell",
+            "tribe": "Shadow"
+          }
+        ]
+      }
+    },
+    {
+      "id": "sorrow_stalker",
+      "name": "Sorrow Stalker",
+      "cardClass": "centurion",
+      "cost": 5,
+      "rarity": "epic",
+      "set": "paper",
+      "description": "Inspire: Discover a Beetle & give it Deathtouch.",
+      "type": "creature",
+      "attack": 5,
+      "health": 6,
+      "tribe": "Spirit Beast Warrior",
+      "ongoing": {
+        "on": "hero-power-used",
+        "effects": [
+          {
+            "type": "discover",
+            "pick": 3,
+            "tribe": "Beetle",
+            "grant": "deathtouch"
+          }
+        ]
+      }
+    },
+    {
+      "id": "vein_viper",
+      "name": "Vein Viper",
+      "cardClass": "neutral",
+      "cost": 1,
+      "rarity": "uncommon",
+      "set": "paper",
+      "description": "Rush. Swing: Enrich.",
+      "type": "creature",
+      "attack": 2,
+      "health": 3,
+      "tribe": "Beast",
+      "keywords": [
+        "rush"
+      ],
+      "ongoing": {
+        "on": "self-attacks",
+        "effects": [
+          {
+            "type": "enrich"
+          }
+        ]
+      }
+    },
+    {
+      "id": "cenarius_twilight_scion",
+      "name": "Cenarius, Twilight Scion",
+      "cardClass": "druid",
+      "cost": 12,
+      "rarity": "legendary",
+      "set": "paper",
+      "description": "Taunt, Rush, Ward 2, Lifesteal & Nature Spell Damage+1. Your Shadow spells & Dragons cost 1 less. Deathrattle: Scry 4 & Discover a Treefolk.",
+      "type": "creature",
+      "attack": 8,
+      "health": 5,
+      "tribe": "Centaur God",
+      "keywords": [
+        "deathrattle"
+      ],
+      "deathrattle": [
+        {
+          "type": "scry",
+          "value": 4
+        },
+        {
+          "type": "discover",
+          "pick": 3,
+          "tribe": "Treefolk"
+        }
+      ]
+    },
+    {
+      "id": "acolyte_of_distortion",
+      "name": "Acolyte of Distortion",
+      "cardClass": "neutral",
+      "cost": 3,
+      "rarity": "rare",
+      "set": "paper",
+      "description": "After this creature takes damage, draw a card. Deathrattle: Discover a Horror.",
+      "type": "creature",
+      "attack": 1,
+      "health": 3,
+      "tribe": "Alien Horror Cleric",
+      "keywords": [
+        "deathrattle"
+      ],
+      "deathrattle": [
+        {
+          "type": "discover",
+          "pick": 3,
+          "tribe": "Horror"
+        }
+      ],
+      "ongoing": {
+        "on": "self-damaged",
+        "effects": [
+          {
+            "type": "draw",
+            "value": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "gemspark_tunneler",
+      "name": "Gemspark Tunneler",
+      "cardClass": "neutral",
+      "cost": 1,
+      "rarity": "uncommon",
+      "set": "paper",
+      "description": "Static & Elusive. Deathrattle: Discover an Artifact.",
+      "type": "creature",
+      "attack": 2,
+      "health": 1,
+      "tribe": "Goblin Explorer",
+      "keywords": [
+        "deathrattle"
+      ],
+      "deathrattle": [
+        {
+          "type": "discover",
+          "pick": 3,
+          "tribe": "Artifact"
+        }
+      ]
+    },
+    {
+      "id": "whispering_vanisher",
+      "name": "Whispering Vanisher",
+      "cardClass": "ranger",
+      "cost": 2,
+      "rarity": "uncommon",
+      "set": "paper",
+      "description": "Battlecry: Disguise target creature. Deathrattle: Draft a Shadow spell.",
+      "type": "creature",
+      "attack": 2,
+      "health": 1,
+      "tribe": "Motharian Ninja",
+      "keywords": [
+        "battlecry",
+        "deathrattle"
+      ],
+      "effects": [
+        {
+          "type": "disguise",
+          "target": "creature"
+        }
+      ],
+      "deathrattle": [
+        {
+          "type": "discover",
+          "pick": 5,
+          "cardType": "spell",
+          "tribe": "Shadow"
+        }
+      ]
+    },
+    {
+      "id": "prophet_of_wanderwood",
+      "name": "Prophet of Wanderwood",
+      "cardClass": "druid__shaman",
+      "cost": 5,
+      "rarity": "legendary",
+      "set": "paper",
+      "description": "Battlecry: Discover a Nature spell. Bushido. Inspire: Scry 3. Deathrattle: Draw a Nature spell.",
+      "type": "creature",
+      "attack": 4,
+      "health": 5,
+      "tribe": "Pandaren Druid Shaman",
+      "keywords": [
+        "battlecry",
+        "deathrattle"
+      ],
+      "effects": [
+        {
+          "type": "discover",
+          "pick": 3,
+          "cardType": "spell",
+          "tribe": "Nature"
+        }
+      ],
+      "deathrattle": [
+        {
+          "type": "tutor",
+          "cardType": "spell",
+          "tribe": "Nature",
+          "count": 1
+        }
+      ],
+      "ongoing": {
+        "on": "hero-power-used",
+        "effects": [
+          {
+            "type": "scry",
+            "value": 3
+          }
+        ]
+      }
+    },
+    {
+      "id": "abzan_charm",
+      "name": "Abzan Charm",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "description": "Choose one - \u2022 Exile target creature with 3 or more Attack. \u2022 Draw 2 cards and take 2 damage. \u2022 Give a creature +2/+2. \u2022 Give a creature Taunt. \u2022 Give a creature Medic 2.",
+      "type": "instant",
+      "choices": [
+        {
+          "text": "Exile target creature with 3 or more Attack.",
+          "effects": [
+            {
+              "type": "exile",
+              "target": "creature",
+              "minAttack": 3
+            }
+          ]
+        },
+        {
+          "text": "Draw 2 cards and take 2 damage.",
+          "effects": [
+            {
+              "type": "draw",
+              "value": 2
+            },
+            {
+              "type": "damage",
+              "value": 2,
+              "target": "own-hero"
+            }
+          ]
+        },
+        {
+          "text": "Give a creature +2/+2.",
+          "effects": [
+            {
+              "type": "buff",
+              "attack": 2,
+              "health": 2,
+              "target": "creature"
+            }
+          ]
+        },
+        {
+          "text": "Give a creature Taunt.",
+          "effects": [
+            {
+              "type": "grant",
+              "keyword": "taunt",
+              "target": "creature"
+            }
+          ]
+        },
+        {
+          "text": "Give a creature Medic 2.",
+          "effects": [
+            {
+              "type": "grant-medic",
+              "value": 2,
+              "target": "creature"
             }
           ]
         }

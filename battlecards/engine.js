@@ -144,6 +144,7 @@ function instantiate(def, controller) {
 		selfScale: def.selfScale || null, // { attack, tribe }: +N per other <tribe> in play
 		condKeyword: def.condKeyword || null, // { keyword, while: 'weapon' } (Southsea Deckhand)
 		honorableKill: def.honorableKill || null, // effects on an EXACT lethal blow
+		medic: def.medic || 0,        // heals adjacent creatures N at end of turn
 		aura: def.aura || null,       // { attack, health, tribe?, others?, adjacent?, position?, keywords? }
 		auraAttack: 0,                // currently applied aura bonuses (recomputed)
 		auraHealth: 0,
@@ -252,6 +253,7 @@ export function createGame(cardsById, rng = Math.random, playerDeckIds = null, p
 		costDiscounts: [],  // one-shot "next X costs (N) less" riders
 		creaturesPlayedThisTurn: 0, // Pint-Sized-style first-creature discounts
 		cardsPlayedThisTurn: 0,     // Combo activation (counts cards already resolved)
+		spellsPlayedThisTurn: 0,    // Kalecgos-style first-spell discounts
 		freeSpellsNextTurn: false,  // Millhouse: spells free on your next turn
 		freeSpellsThisTurn: false,
 		mana: { cur: 1, max: 1, bonus: 0 },
@@ -272,6 +274,7 @@ export function createGame(cardsById, rng = Math.random, playerDeckIds = null, p
 		events: [],
 		scryQueue: [],  // pending scry/gaze decisions: { chooser, deckOwner, ids }
 		discardQueue: [], // pending Loot discards: { player, count }
+		pickQueue: [],  // pending Discover/Draft picks: { player, ids, grant }
 	};
 	if (playerDeck) state.players[0].deck = playerDeck;
 
@@ -521,17 +524,17 @@ function findCreature(state, uid) {
 	return null;
 }
 
-// Sanguine: a Blood Token lands in the controller's hand — a 1-mana token
-// spell that trades a discard for a draw
-function gainBloodToken(state, pi) {
+// token cards land in the controller's hand (Blood/Treasure/Food Tokens)
+function gainTokenCard(state, pi, id) {
 	const p = state.players[pi];
-	const def = state.cardsById['blood_token'];
+	const def = state.cardsById[id];
 	if (!def || p.eliminated || p.hand.length >= MAX_HAND) return;
 	const card = instantiate(def, pi);
 	card.zone = 'hand';
 	p.hand.push(card);
 	emit(state, { type: 'conjure', player: pi, card, color: null });
 }
+const gainBloodToken = (state, pi) => gainTokenCard(state, pi, 'blood_token');
 
 // ---------- damage / healing ----------
 function damageCreature(state, target, amount, source) {
@@ -644,6 +647,7 @@ function silenceCreature(state, c) {
 	c.selfScale = null;
 	c.condKeyword = null;
 	c.honorableKill = null;
+	c.medic = 0;
 	c.auraKeywords = [];
 	c.shield = false;
 	c.stealthed = false;
@@ -847,6 +851,7 @@ function ongoingCondOk(state, pi, cond, ctx) {
 	if (cond.controlSecret && !state.players[pi].secrets.length) return false;
 	if (cond.creature && !ctx.healedCreature) return false; // "whenever a MINION is healed"
 	if (cond.nontoken && (!subj || (subj.id || '').startsWith('token_'))) return false;
+	if (cond.cardId && !(subj && subj.id === cond.cardId)) return false; // Food sacrifices
 	return true;
 }
 
@@ -1527,7 +1532,7 @@ function execEffects(state, pi, effects, target, source) {
 		} else if (e.type === 'exile') {
 			// removed from the game: no death, no deathrattle, never reshuffled
 			const t = chosenCreature();
-			if (t) {
+			if (t && (e.minAttack == null || t.attack >= e.minAttack)) {
 				const owner = state.players[t.controller];
 				owner.board = owner.board.filter(c => c !== t);
 				t.zone = 'exile';
@@ -2167,6 +2172,33 @@ function execEffects(state, pi, effects, target, source) {
 				drawCards(state, pi, 1);
 				if (p.hand.length === before) break; // nothing left to draw
 			}
+		} else if (e.type === 'enrich') {
+			gainTokenCard(state, pi, 'treasure_token');
+		} else if (e.type === 'cook') {
+			gainTokenCard(state, pi, 'food_token');
+		} else if (e.type === 'grant-medic') {
+			const t = chosenCreature();
+			if (t) t.medic = (t.medic || 0) + e.value;
+		} else if (e.type === 'discover') {
+			// Discover: pick 1 of 3 random matches; Draft: pick 1 of 5
+			const pool = Object.values(state.cardsById).filter(d => {
+				if (d.type === 'land' || d.token || d.companion || d.commander) return false;
+				if (d.colors && d.colors.length) return false;
+				if (e.cardType === 'spell' ? !isSpellType(d) : (e.cardType && d.type !== e.cardType)) return false;
+				if (e.tribe && !(d.tribe || '').includes(e.tribe)) return false;
+				if (e.cost != null && (d.cost || 0) !== e.cost) return false;
+				if (e.maxCost != null && (d.cost || 0) > e.maxCost) return false;
+				if (e.hasStatic && d.static?.type !== e.hasStatic) return false;
+				return true;
+			});
+			const ids = [];
+			for (let i = 0; i < (e.pick || 3) && pool.length; i++) {
+				ids.push(pool.splice(Math.floor(state.rng() * pool.length), 1)[0].id);
+			}
+			if (ids.length && !state.players[pi].eliminated) {
+				state.pickQueue.push({ player: pi, ids, grant: e.grant || null });
+				emit(state, { type: 'pickStart', player: pi, count: ids.length });
+			}
 		} else if (e.type === 'loot') {
 			// Loot: draw a card, then discard a card of your choice
 			// (the discard resolves asynchronously via resolveDiscard)
@@ -2551,7 +2583,8 @@ export function effectiveCost(state, pi, card) {
 			if (m.scope !== 'all' && pl !== p) continue;
 			if (!costTypeMatches(card, m.cardType)) continue;
 			if (m.tribe && !(card.tribe || '').includes(m.tribe)) continue;
-			if (m.firstEachTurn && p.creaturesPlayedThisTurn > 0) continue;
+			if (m.firstEachTurn && (m.cardType === 'spell'
+				? p.spellsPlayedThisTurn : p.creaturesPlayedThisTurn) > 0) continue;
 			const before = c;
 			c += m.amount;
 			// "but not less than (1)": the reduction stops at the floor
@@ -2669,6 +2702,7 @@ export function playCard(state, pi, cardUid, target, choice) {
 		emit(state, { type: 'walkerArrived', player: pi, card });
 	} else {
 		questTick(state, 'spell', pi);
+		p.spellsPlayedThisTurn++;
 		// Spellbender may retarget mid-cast by mutating ctx.target
 		const ctx = { spell: card, countered: false, target };
 		fireSecretsAll(state, pi, 'enemy-spell-cast', ctx);
@@ -3065,6 +3099,23 @@ export function resolveScry(state, picks) {
 	return true;
 }
 
+// resolve the oldest pending Discover/Draft with the chosen card id
+export function resolvePick(state, id) {
+	const pend = state.pickQueue.shift();
+	if (!pend) return false;
+	const chosen = pend.ids.includes(id) ? id : pend.ids[0];
+	const p = state.players[pend.player];
+	const def = state.cardsById[chosen];
+	if (def && !p.eliminated && p.hand.length < MAX_HAND) {
+		const card = instantiate(def, pend.player);
+		card.zone = 'hand';
+		if (pend.grant && !card.keywords.includes(pend.grant)) card.keywords.push(pend.grant);
+		p.hand.push(card);
+		emit(state, { type: 'conjure', player: pend.player, card, color: null });
+	}
+	return true;
+}
+
 // resolve the oldest pending Loot discard with the chosen hand card uids
 export function resolveDiscard(state, uids) {
 	const pend = state.discardQueue.shift();
@@ -3205,6 +3256,18 @@ export function endTurn(state) {
 	fireOngoing(state, pi, 'turn-end');
 	// Gruul-style triggers tick at the end of EVERY player's turn
 	for (let s2 = 0; s2 < state.players.length; s2++) fireOngoing(state, s2, 'every-turn-end', {});
+	// Medic N: patch up the board neighbors at end of turn
+	for (const c of p.board) {
+		if (!c.medic || isDead(c)) continue;
+		const idx = p.board.indexOf(c);
+		for (const nb of [p.board[idx - 1], p.board[idx + 1]]) {
+			if (!nb || isDead(nb) || nb.damage <= 0) continue;
+			const healed = Math.min(c.medic, nb.damage);
+			nb.damage -= healed;
+			emit(state, { type: 'heal', targetType: 'creature', uid: nb.uid, amount: healed, hp: hp(nb) });
+		}
+	}
+	recomputeAuras(state); // medic heals may retract enrage/Lightspawn states
 	// "this turn" bonuses expire
 	for (const c of p.board) {
 		if (c.tempAttack || c.tempHealth) {
@@ -3287,6 +3350,7 @@ export function endTurn(state) {
 	np.landsPlayedThisTurn = 0;
 	np.creaturesPlayedThisTurn = 0;
 	np.cardsPlayedThisTurn = 0;
+	np.spellsPlayedThisTurn = 0;
 	// stale this-turn cost riders lapse; Millhouse's gift comes due
 	np.costDiscounts = (np.costDiscounts || []).filter(d => !d.thisTurn);
 	np.freeSpellsThisTurn = !!np.freeSpellsNextTurn;
