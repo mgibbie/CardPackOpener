@@ -724,6 +724,7 @@ function sweepDeaths(state) {
 		p.board = p.board.filter(c => !isDead(c));
 		for (const c of dead) {
 			p.diedThisTurn++;
+			state.diedThisTurn = (state.diedThisTurn || 0) + 1;
 			emit(state, { type: 'death', uid: c.uid, player: pi, name: c.name });
 			// every friendly death banks a Corpse for its owner (all classes;
 			// only Death Knights get a UI indicator — others track it hidden)
@@ -1265,6 +1266,16 @@ function runSecretEffects(state, pi, effects, ctx) {
 					const m = pool[Math.floor(state.rng() * pool.length)];
 					m.attack += e.attack || 0;
 					m.maxHealth += e.health || 0;
+					emit(state, { type: 'buff', uid: m.uid, attack: m.attack, hp: hp(m) });
+				}
+				break;
+			}
+			case 'grant-self': {
+				// One-eyed Cheat: the firing permanent gains a keyword
+				const m = ctx.self;
+				if (m && !isDead(m) && !m.keywords.includes(e.keyword)) {
+					m.keywords.push(e.keyword);
+					if (e.keyword === KW.STEALTH) m.stealthed = true;
 					emit(state, { type: 'buff', uid: m.uid, attack: m.attack, hp: hp(m) });
 				}
 				break;
@@ -2250,8 +2261,8 @@ function execEffects(state, pi, effects, target, source) {
 					...JSON.parse(JSON.stringify(c.deathrattle))];
 			}
 		} else if (e.type === 'conjure-random') {
-			// random collectible card matching filters, added to your hand;
-			// cardClass 'enemy' draws from an opponent's class pool
+			// random collectible card(s) matching filters, added to your hand;
+			// cardClass 'enemy' = an opponent's class pool, 'other' = any class but yours
 			const p = state.players[pi];
 			let pool = Object.values(state.cardsById).filter(d =>
 				d.type !== 'land' && !d.token && !d.companion && !d.commander
@@ -2262,8 +2273,12 @@ function execEffects(state, pi, effects, target, source) {
 				const victim = enemyHero();
 				const cls = victim != null && state.players[victim].heroClass;
 				pool = cls ? pool.filter(d => d.cardClass === cls) : [];
+			} else if (e.cardClass === 'other') {
+				pool = pool.filter(d => d.cardClass && d.cardClass !== 'neutral'
+					&& d.cardClass !== p.heroClass);
 			}
-			if (pool.length && p.hand.length < MAX_HAND) {
+			for (let i = 0; i < (e.count || 1); i++) {
+				if (!pool.length || p.hand.length >= MAX_HAND) break;
 				const card = instantiate(pool[Math.floor(state.rng() * pool.length)], pi);
 				card.zone = 'hand';
 				p.hand.push(card);
@@ -2736,6 +2751,8 @@ export function effectiveCost(state, pi, card) {
 			n = Math.max(0, STARTING_LIFE - p.life);
 		} else if (card.selfCost.per === 'weapon-attack') {
 			n = p.weapon ? p.weapon.attack : 0;
+		} else if (card.selfCost.per === 'deaths-this-turn') {
+			n = state.diedThisTurn || 0;
 		}
 		c += card.selfCost.amount * n;
 	}
@@ -2881,6 +2898,7 @@ export function playCard(state, pi, cardUid, target, choice) {
 			fireOngoing(state, pi, 'spell-played');
 			for (let s2 = 0; s2 < state.players.length; s2++) {
 				fireOngoing(state, s2, 'any-spell-played', { spell: card, caster: pi }); // Lorewalker Cho
+				if (s2 !== pi) fireOngoing(state, s2, 'enemy-spell-played', { spell: card, caster: pi }); // Burgly Bully
 			}
 		}
 		toGraveyard(state, pi, card);
@@ -2952,6 +2970,10 @@ export function attack(state, pi, attackerUid, target) {
 	if (attacker.ongoing?.on === 'self-attacks') {
 		runSecretEffects(state, pi, attacker.ongoing.effects, { self: attacker });
 		if (attacker.ongoing?.once) attacker.ongoing = null;
+	}
+	// Cutpurse: when this creature attacks a hero
+	if (attacker.ongoing?.on === 'self-attacks-hero' && target.type === 'hero') {
+		runSecretEffects(state, pi, attacker.ongoing.effects, { self: attacker });
 	}
 
 	// defender's secrets see the declared attack (may kill, bounce, or redirect)
@@ -3515,6 +3537,7 @@ export function endTurn(state) {
 	state.turnNumber++;
 	const np = state.players[state.current];
 	np.diedThisTurn = 0;
+	state.diedThisTurn = 0; // global "died this turn" (Volcanic Drake discounts)
 	np.heroAttacksUsed = 0;
 	np.landsPlayedThisTurn = 0;
 	np.creaturesPlayedThisTurn = 0;

@@ -35288,6 +35288,420 @@
       ],
       "description": "Rush. Battlecry: Choose a friendly creature and gain a copy of its Deathrattle.",
       "set": "hsx"
+    },
+    {
+      "id": "pilfer",
+      "name": "Pilfer",
+      "cardClass": "rogue",
+      "cost": 1,
+      "rarity": "common",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "conjure-random",
+          "cardClass": "other"
+        }
+      ],
+      "description": "Add a random card from another class to your hand.",
+      "set": "hsx"
+    },
+    {
+      "id": "swashburglar",
+      "name": "Swashburglar",
+      "cardClass": "rogue",
+      "cost": 1,
+      "rarity": "common",
+      "tribe": "Pirate",
+      "type": "creature",
+      "attack": 1,
+      "health": 2,
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "conjure-random",
+          "cardClass": "other"
+        }
+      ],
+      "description": "Battlecry: Add a random card from another class to your hand.",
+      "set": "hsx"
+    },
+    {
+      "id": "cutpurse",
+      "name": "Cutpurse",
+      "cardClass": "rogue",
+      "cost": 2,
+      "rarity": "rare",
+      "type": "creature",
+      "attack": 2,
+      "health": 2,
+      "ongoing": {
+        "on": "self-attacks-hero",
+        "effects": [
+          {
+            "type": "gain-coin",
+            "value": 1
+          }
+        ]
+      },
+      "description": "Whenever this creature attacks a hero, bank a Coin.",
+      "set": "hsx"
+    },
+    {
+      "id": "one_eyed_cheat",
+      "name": "One-eyed Cheat",
+      "cardClass": "rogue",
+      "cost": 2,
+      "rarity": "rare",
+      "tribe": "Pirate",
+      "type": "creature",
+      "attack": 4,
+      "health": 1,
+      "ongoing": {
+        "on": "summoned",
+        "effects": [
+          {
+            "type": "grant-self",
+            "keyword": "stealth"
+          }
+        ],
+        "if": {
+          "tribe": "Pirate"
+        }
+      },
+      "description": "Whenever you summon a Pirate, gain Stealth.",
+      "set": "hsx"
+    },
+    {
+      "id": "stonesplinter_trogg",
+      "name": "Stonesplinter Trogg",
+      "cardClass": "neutral",
+      "cost": 2,
+      "rarity": "common",
+      "type": "creature",
+      "attack": 2,
+      "health": 3,
+      "ongoing": {
+        "on": "enemy-spell-played",
+        "effects": [
+          {
+            "type": "buff-self",
+            "attack": 1,
+            "health": 0
+          }
+        ]
+      },
+      "description": "Whenever an opponent casts a spell, this gains +1 Attack.",
+      "set": "hsx"
+    },
+    {
+      "id": "burgle",
+      "name": "Burgle",
+      "cardClass": "rogue",
+      "cost": 3,
+      "rarity": "rare",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "conjure-random",
+          "cardClass": "enemy",
+          "count": 3
+        }
+      ],
+      "description": "Add 3 random cards from an opponent's class to your hand.",
+      "set": "hsx"
+    },
+    {
+      "id": "marshland_thresher",
+      "name": "Marshland Thresher",
+      "cardClass": "neutral",
+      "cost": 3,
+      "rarity": "common",
+      "tribe": "Beast",
+      "type": "creature",
+      "attack": 3,
+      "health": 3,
+      "ongoing": {
+        "on": "spell-played",
+        "effects": [
+          {
+            "type": "grant-self",
+            "keyword": "divine_shield"
+          }
+        ]
+      },
+      "description": "Whenever you cast a spell, gain Divine Shield.",
+      "set": "hsx"
+    },
+    {
+      "id": "sunwell_initiate",
+      "name": "Sunwell Initiate",
+      "cardClass": "neutral",
+      "cost": 3,
+      "rarity": "common",
+      "type": "creature",
+      "attack": 3,
+      "health": 4,
+      "ongoing": {
+        "on": "self-damaged",
+        "once": true,
+        "survives": true,
+        "effects": [
+          {
+            "type": "grant-self",
+            "keyword": "divine_shield"
+          }
+        ]
+      },
+      "description": "Frenzy: gain Divine Shield.",
+      "set": "hsx"
+    },
+    {
+      "id": "burly_rockjaw_trogg",
+      "name": "Burly Rockjaw Trogg",
+      "cardClass": "neutral",
+      "cost": 4,
+      "rarity": "common",
+      "type": "creature",
+      "attack": 3,
+      "health": 5,
+      "ongoing": {
+        "on": "enemy-spell-played",
+        "effects": [
+          {
+            "type": "buff-self",
+            "attack": 2,
+            "health": 0
+          }
+        ]
+      },
+      "description": "Whenever an opponent casts a spell, this gains +2 Attack.",
+      "set": "hsx"
+    },
+    {
+      "id": "crossroads_watch_post",
+      "name": "Crossroads Watch Post",
+      "cardClass": "neutral",
+      "cost": 4,
+      "rarity": "epic",
+      "type": "creature",
+      "attack": 4,
+      "health": 6,
+      "ongoing": {
+        "on": "enemy-spell-played",
+        "effects": [
+          {
+            "type": "buff",
+            "attack": 1,
+            "health": 1,
+            "target": "friendly-creatures"
+          }
+        ]
+      },
+      "keywords": [
+        "pacifist"
+      ],
+      "description": "Can't attack. Whenever an opponent casts a spell, give all your creatures +1/+1.",
+      "set": "hsx"
+    },
+    {
+      "id": "burgly_bully",
+      "name": "Burgly Bully",
+      "cardClass": "neutral",
+      "cost": 5,
+      "rarity": "epic",
+      "type": "creature",
+      "attack": 4,
+      "health": 6,
+      "ongoing": {
+        "on": "enemy-spell-played",
+        "effects": [
+          {
+            "type": "gain-coin",
+            "value": 1
+          }
+        ]
+      },
+      "description": "Whenever an opponent casts a spell, bank a Coin.",
+      "set": "hsx"
+    },
+    {
+      "id": "cobalt_guardian",
+      "name": "Cobalt Guardian",
+      "cardClass": "paladin",
+      "cost": 5,
+      "rarity": "rare",
+      "tribe": "Mech",
+      "type": "creature",
+      "attack": 6,
+      "health": 3,
+      "ongoing": {
+        "on": "summoned",
+        "effects": [
+          {
+            "type": "grant-self",
+            "keyword": "divine_shield"
+          }
+        ],
+        "if": {
+          "tribe": "Mech"
+        }
+      },
+      "description": "Whenever you summon a Mech, gain Divine Shield.",
+      "set": "hsx"
+    },
+    {
+      "id": "dragon_s_breath",
+      "name": "Dragon's Breath",
+      "cardClass": "mage",
+      "cost": 5,
+      "rarity": "common",
+      "type": "sorcery",
+      "selfCost": {
+        "per": "deaths-this-turn",
+        "amount": -1
+      },
+      "effects": [
+        {
+          "type": "damage",
+          "value": 4,
+          "target": "any"
+        }
+      ],
+      "description": "Deal 4 damage to any target. Costs 1 less for each creature that died this turn.",
+      "set": "hsx"
+    },
+    {
+      "id": "frantic_hippogryph",
+      "name": "Frantic Hippogryph",
+      "cardClass": "neutral",
+      "cost": 5,
+      "rarity": "common",
+      "tribe": "Beast",
+      "type": "creature",
+      "attack": 3,
+      "health": 7,
+      "honorableKill": [
+        {
+          "type": "grant-self",
+          "keyword": "windfury"
+        }
+      ],
+      "keywords": [
+        "rush"
+      ],
+      "description": "Rush. Honorable Kill: gain Windfury.",
+      "set": "hsx"
+    },
+    {
+      "id": "ogremancer",
+      "name": "Ogremancer",
+      "cardClass": "neutral",
+      "cost": 5,
+      "rarity": "common",
+      "type": "creature",
+      "attack": 3,
+      "health": 7,
+      "ongoing": {
+        "on": "enemy-spell-played",
+        "effects": [
+          {
+            "type": "summon",
+            "count": 1,
+            "attack": 2,
+            "health": 2,
+            "name": "Skeleton",
+            "keywords": [
+              "taunt"
+            ]
+          }
+        ]
+      },
+      "description": "Whenever an opponent casts a spell, summon a 2/2 Skeleton with Taunt.",
+      "set": "hsx"
+    },
+    {
+      "id": "solemn_vigil",
+      "name": "Solemn Vigil",
+      "cardClass": "paladin",
+      "cost": 5,
+      "rarity": "common",
+      "type": "sorcery",
+      "selfCost": {
+        "per": "deaths-this-turn",
+        "amount": -1
+      },
+      "effects": [
+        {
+          "type": "draw",
+          "value": 2
+        }
+      ],
+      "description": "Draw 2 cards. Costs 1 less for each creature that died this turn.",
+      "set": "hsx"
+    },
+    {
+      "id": "volcanic_drake",
+      "name": "Volcanic Drake",
+      "cardClass": "neutral",
+      "cost": 6,
+      "rarity": "common",
+      "tribe": "Dragon",
+      "type": "creature",
+      "attack": 6,
+      "health": 4,
+      "selfCost": {
+        "per": "deaths-this-turn",
+        "amount": -1
+      },
+      "description": "Costs 1 less for each creature that died this turn.",
+      "set": "hsx"
+    },
+    {
+      "id": "remnant_of_rage",
+      "name": "Remnant of Rage",
+      "cardClass": "neutral",
+      "cost": 7,
+      "rarity": "common",
+      "tribe": "Demon",
+      "type": "creature",
+      "attack": 5,
+      "health": 4,
+      "selfCost": {
+        "per": "deaths-this-turn",
+        "amount": -1
+      },
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "draw",
+          "value": 2
+        }
+      ],
+      "description": "Costs 1 less for each creature that died this turn. Battlecry: Draw 2 cards.",
+      "set": "hsx"
+    },
+    {
+      "id": "volcanic_lumberer",
+      "name": "Volcanic Lumberer",
+      "cardClass": "druid",
+      "cost": 9,
+      "rarity": "rare",
+      "type": "creature",
+      "attack": 7,
+      "health": 8,
+      "selfCost": {
+        "per": "deaths-this-turn",
+        "amount": -1
+      },
+      "keywords": [
+        "taunt"
+      ],
+      "description": "Taunt. Costs 1 less for each creature that died this turn.",
+      "set": "hsx"
     }
   ]
 }

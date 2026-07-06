@@ -4,6 +4,7 @@ import * as THREE from 'three';
 import * as E from './engine.js';
 import * as AI from './ai.js';
 import * as Col from './collection.js';
+import * as Dungeon from './dungeon.js';
 import { CARD_W, CARD_H, CARD_D, makeFaceTexture, makeBackTexture, hasRules, RULES_GEM, classNameOf, drawCardFace, makeTokenTexture, TOKEN_W, TOKEN_H, TOKEN_GEM, drawHeroPortrait, drawPowerOrb, artListeners } from './cardart.js';
 
 const HUMAN = 0;
@@ -14,7 +15,14 @@ const UP = new THREE.Vector3(0, 1, 0);
 let playerCount = Math.max(2, Math.min(E.MAX_PLAYERS,
 	parseInt(new URLSearchParams(location.search).get('players'), 10) || 2));
 
-const nameOf = pi => pi === HUMAN ? 'You' : `AI ${pi}`;
+// ?boss=<id> starts a dungeon-run encounter: 1v1 vs a scripted boss, the
+// human on that class's 10-card starting deck
+const dungeonBossId = (id => Dungeon.BOSSES[id] ? id : null)(
+	new URLSearchParams(location.search).get('boss'));
+if (dungeonBossId) playerCount = 2;
+
+const nameOf = pi => pi === HUMAN ? 'You'
+	: (dungeonBossId && pi === 1 ? Dungeon.BOSSES[dungeonBossId].name : `AI ${pi}`);
 // each player's board is a pizza slice: rotate their zone layout around the
 // table center; the human slice always faces the camera (angle 0 = bottom)
 const angleOf = pi => (pi / playerCount) * TAU;
@@ -1709,20 +1717,50 @@ async function start() {
 			});
 		} catch (e) { classRegistry = []; }
 	}
-	const picks = pickClasses();
-	// use the saved deck when it's complete and valid; otherwise the demo deck
-	const collection = Col.getCollection(data.cards);
-	const saved = Col.loadDeck();
-	const deckOk = saved.length === Col.DECK_SIZE
-		&& !Col.validateDeck(saved, cardsById, collection, picks[HUMAN]?.id);
-	state = E.createGame(cardsById, Math.random, deckOk ? saved : null, playerCount, picks);
-	state.classPicks = picks;
+	if (dungeonBossId) {
+		startDungeon(cardsById);
+	} else {
+		const picks = pickClasses();
+		// use the saved deck when it's complete and valid; otherwise the demo deck
+		const collection = Col.getCollection(data.cards);
+		const saved = Col.loadDeck();
+		const deckOk = saved.length === Col.DECK_SIZE
+			&& !Col.validateDeck(saved, cardsById, collection, picks[HUMAN]?.id);
+		state = E.createGame(cardsById, Math.random, deckOk ? saved : null, playerCount, picks);
+		state.classPicks = picks;
+		log(deckOk ? 'Using your custom deck.' : 'Using the demo deck — build one in the deck builder!');
+		if (picks[HUMAN]) log(`You are a ${picks[HUMAN].name}.`);
+		if (playerCount > 2) log(`Free-for-all: ${playerCount} players, last hero standing wins.`);
+	}
 	buildPanels();
 	buildSlotMarkers();
-	log(deckOk ? 'Using your custom deck.' : 'Using the demo deck — build one in the deck builder!');
-	if (picks[HUMAN]) log(`You are a ${picks[HUMAN].name}.`);
-	if (playerCount > 2) log(`Free-for-all: ${playerCount} players, last hero standing wins.`);
 	pump();
 	updateHud();
+}
+
+function startDungeon(cardsById) {
+	const boss = Dungeon.BOSSES[dungeonBossId];
+	// human class: ?class= if it has a starter deck, else the saved class, else mage
+	const url = new URLSearchParams(location.search);
+	const wanted = url.get('class');
+	const clsId = Dungeon.STARTER_DECKS[wanted] ? wanted
+		: (Dungeon.STARTER_DECKS[localStorage.getItem('magepunk_class_v1')]
+			? localStorage.getItem('magepunk_class_v1') : 'mage');
+	const clsPick = classRegistry.find(c => c.id === clsId)
+		|| { id: clsId, name: clsId, power: null };
+	const bossPick = { id: dungeonBossId, name: boss.name, power: boss.power };
+	const picks = [clsPick, bossPick];
+	state = E.createGame(cardsById, Math.random, [...Dungeon.STARTER_DECKS[clsId]], 2, picks);
+	state.classPicks = picks;
+	// boss surgery: fixed 10-card deck, 10 health, no western corner zones
+	const bp = state.players[1];
+	bp.life = boss.health;
+	bp.deck = [...boss.deck].sort(() => Math.random() - 0.5);
+	bp.hand = [];
+	E.drawCards(state, 1, 4);
+	for (const p of state.players) { p.companion = null; p.command = []; }
+	log(`Dungeon Run — ${boss.name} (${boss.health} HP): "${boss.flavor}"`);
+	log(`Boss power — ${boss.power.name} (${boss.power.cost}): ${boss.power.text}`);
+	log(`You are a ${clsPick.name} with the ${clsPick.name} starting deck (10 cards).`);
 }
 start();
