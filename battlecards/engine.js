@@ -75,9 +75,10 @@ function instantiate(def, controller) {
 		quest: def.quest || null,   // quest: { goal: { type, count }, reward }
 		ongoing: def.ongoing || null, // permanent trigger: { on, effects }
 		static: def.static || null,   // permanent passive (e.g. reduce-hero-damage)
-		aura: def.aura || null,       // { attack, health, tribe?, others? } for friendly creatures
+		aura: def.aura || null,       // { attack, health, tribe?, others?, adjacent?, position?, keywords? }
 		auraAttack: 0,                // currently applied aura bonuses (recomputed)
 		auraHealth: 0,
+		auraKeywords: [],             // keywords this creature holds via auras
 		loyalty: def.loyalty || 0,    // planeswalker loyalty counter
 		abilities: def.abilities || null, // planeswalker: [{ cost, text, effects }]
 		overload: def.overload || 0,  // mana locked next turn when played
@@ -483,6 +484,7 @@ function silenceCreature(state, c) {
 	c.ongoing = null;
 	c.static = null;
 	c.aura = null;
+	c.auraKeywords = [];
 	c.shield = false;
 	c.stealthed = false;
 	c.frozen = null;
@@ -582,25 +584,47 @@ function summon(state, pi, tokenDef) {
 // Losing an aura clamps damage so it can never kill the creature.
 function recomputeAuras(state) {
 	for (const p of state.players) {
-		const sources = [...p.board, ...p.enchantments].filter(c => c.aura && !(c.zone === 'board' && isDead(c)));
-		for (const c of p.board) {
+		const sources = [...p.board, ...p.enchantments, ...p.emblems, ...p.artifacts]
+			.filter(c => c.aura && !(c.zone === 'board' && isDead(c)));
+		p.board.forEach((c, idx) => {
 			let aBonus = 0, hBonus = 0;
+			const granted = new Set();
 			for (const src of sources) {
 				const a = src.aura;
 				if (a.others && src === c) continue;
+				if (a.adjacent) {
+					const si = p.board.indexOf(src);
+					if (si < 0 || Math.abs(si - idx) !== 1) continue;
+				}
+				if (a.position === 'ends' && idx !== 0 && idx !== p.board.length - 1) continue;
 				if (a.tribe && !a.tribe.split('|').some(t => (c.tribe || '').includes(t))) continue;
 				aBonus += a.attack || 0;
 				hBonus += a.health || 0;
+				for (const k of a.keywords || []) granted.add(k);
 			}
 			const dA = aBonus - c.auraAttack, dH = hBonus - c.auraHealth;
-			if (!dA && !dH) continue;
-			c.attack = Math.max(0, c.attack + dA);
-			c.maxHealth += dH;
-			c.auraAttack = aBonus;
-			c.auraHealth = hBonus;
-			if (dH < 0 && c.damage >= c.maxHealth) c.damage = Math.max(0, c.maxHealth - 1);
-			emit(state, { type: 'buff', uid: c.uid, attack: c.attack, hp: hp(c) });
-		}
+			if (dA || dH) {
+				c.attack = Math.max(0, c.attack + dA);
+				c.maxHealth += dH;
+				c.auraAttack = aBonus;
+				c.auraHealth = hBonus;
+				if (dH < 0 && c.damage >= c.maxHealth) c.damage = Math.max(0, c.maxHealth - 1);
+				emit(state, { type: 'buff', uid: c.uid, attack: c.attack, hp: hp(c) });
+			}
+			// keyword grants: retract tracked grants that lapsed, add new ones
+			// (never touching keywords the creature owns natively)
+			for (const k of [...c.auraKeywords]) {
+				if (!granted.has(k)) {
+					c.auraKeywords = c.auraKeywords.filter(x => x !== k);
+					c.keywords = c.keywords.filter(x => x !== k);
+				}
+			}
+			for (const k of granted) {
+				if (c.keywords.includes(k)) continue;
+				c.keywords.push(k);
+				c.auraKeywords.push(k);
+			}
+		});
 	}
 }
 
@@ -1104,7 +1128,8 @@ function execEffects(state, pi, effects, target, source) {
 				const em = instantiate({
 					id: 'emblem_' + e.name.toLowerCase().replace(/[^a-z0-9]+/g, '_'),
 					name: e.name, type: 'emblem', cost: 0, rarity: 'special',
-					description: e.description || '', ongoing: e.ongoing || null, static: e.static || null,
+					description: e.description || '', ongoing: e.ongoing || null,
+					static: e.static || null, aura: e.aura || null,
 				}, pi);
 				em.zone = 'emblem';
 				p.emblems.push(em);

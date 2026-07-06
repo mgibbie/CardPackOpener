@@ -13073,6 +13073,88 @@
           }
         ]
       }
+    },
+    {
+      "id": "goru_the_mightree",
+      "name": "Goru the Mightree",
+      "cardClass": "druid",
+      "cost": 7,
+      "rarity": "legendary",
+      "set": "paper",
+      "description": "Taunt. Battlecry: You gain an emblem that says \u201cYour Treefolk have +1/+1\u201d.",
+      "type": "creature",
+      "attack": 5,
+      "health": 10,
+      "tribe": "Treefolk King",
+      "keywords": [
+        "taunt",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "emblem",
+          "name": "Emblem",
+          "description": "Your Treefolk have +1/+1",
+          "aura": {
+            "attack": 1,
+            "health": 1,
+            "tribe": "Treefolk"
+          }
+        }
+      ]
+    },
+    {
+      "id": "stormcrusher_woodsman",
+      "name": "Stormcrusher Woodsman",
+      "cardClass": "ranger",
+      "cost": 3,
+      "rarity": "uncommon",
+      "set": "paper",
+      "description": "Elementals you control have +2/+2 & Rush. Beasts you control have Spell Damage+1.",
+      "type": "creature",
+      "attack": 1,
+      "health": 3,
+      "tribe": "Human Ranger",
+      "aura": {
+        "attack": 2,
+        "health": 2,
+        "tribe": "Elemental",
+        "keywords": [
+          "rush"
+        ]
+      }
+    },
+    {
+      "id": "dire_wolf_alpha",
+      "name": "Dire Wolf Alpha",
+      "cardClass": "neutral",
+      "cost": 2,
+      "rarity": "common",
+      "type": "creature",
+      "attack": 2,
+      "health": 2,
+      "aura": {
+        "attack": 1,
+        "health": 0,
+        "adjacent": true
+      },
+      "description": "Adjacent creatures have +1 Attack."
+    },
+    {
+      "id": "flametongue_totem",
+      "name": "Flametongue Totem",
+      "cardClass": "shaman",
+      "cost": 2,
+      "rarity": "common",
+      "type": "creature",
+      "attack": 0,
+      "health": 3,
+      "aura": {
+        "attack": 2,
+        "health": 0,
+        "adjacent": true
+      },
+      "description": "Adjacent creatures have +2 Attack."
     }
   ]
 }
