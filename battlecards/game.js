@@ -4,7 +4,7 @@ import * as THREE from 'three';
 import * as E from './engine.js';
 import * as AI from './ai.js';
 import * as Col from './collection.js';
-import { CARD_W, CARD_H, CARD_D, makeFaceTexture, makeBackTexture, hasRules, RULES_GEM, classNameOf } from './cardart.js';
+import { CARD_W, CARD_H, CARD_D, makeFaceTexture, makeBackTexture, hasRules, RULES_GEM, classNameOf, drawCardFace } from './cardart.js';
 
 const HUMAN = 0;
 const TAU = Math.PI * 2;
@@ -137,8 +137,12 @@ function makeRing(color) {
 const entities = new Map();
 
 function faceMaterialFor(card) {
+	// disguised creatures render anonymously: neutral art seed, no identity
+	const shown = card.disguised
+		? { ...card, id: 'disguised', name: 'Disguised', description: '', cardClass: 'neutral' }
+		: card;
 	const tex = makeFaceTexture(
-		{ ...card, health: card.maxHealth },
+		{ ...shown, health: card.maxHealth },
 		card.type === 'creature' ? { attack: card.attack, hp: E.hp(card), maxHealth: card.maxHealth }
 			: card.type === 'weapon' ? { attack: card.attack, durability: card.durability }
 			: card.type === 'quest' ? { progress: card.progress || 0, goal: card.quest?.goal?.count }
@@ -307,6 +311,75 @@ function openPowerChoiceMenu(card, ev) {
 	menu.style.display = 'block';
 	menu.style.left = `${Math.min(ev.clientX, innerWidth - 300)}px`;
 	menu.style.top = `${Math.min(ev.clientY, innerHeight - 200)}px`;
+}
+
+// a disguised creature can attack as the 2/2 or unmask for its cost
+function openUnmaskMenu(card, ev) {
+	const menu = $('walker-menu');
+	menu.innerHTML = `<div class="wm-title">Disguised: ${card.disguised.name}</div>`;
+	const un = document.createElement('button');
+	un.innerHTML = `<span class="wm-cost">${card.cost}</span>Unmask (${card.disguised.attack}/${card.disguised.maxHealth})`;
+	un.addEventListener('pointerdown', e => {
+		e.stopPropagation();
+		hideWalkerMenu();
+		E.unmask(state, HUMAN, card.uid);
+		pump();
+	});
+	menu.appendChild(un);
+	if (E.canAttackWith(state, HUMAN, card)) {
+		const atk = document.createElement('button');
+		atk.textContent = 'Attack as the 2/2';
+		atk.addEventListener('pointerdown', e => {
+			e.stopPropagation();
+			hideWalkerMenu();
+			selectedAttacker = card.uid;
+			updateHud();
+		});
+		menu.appendChild(atk);
+	}
+	menu.style.display = 'block';
+	menu.style.left = `${Math.min(ev.clientX, innerWidth - 300)}px`;
+	menu.style.top = `${Math.min(ev.clientY, innerHeight - 160)}px`;
+}
+
+// scry / gaze: the modal shows the peeked cards; each goes top or bottom
+function openScryModal() {
+	const pend = state.scryQueue[0];
+	if (!pend || pend.chooser !== HUMAN) return;
+	const modal = $('scry-modal');
+	const who = pend.deckOwner === HUMAN ? 'your deck' : `${nameOf(pend.deckOwner)}'s deck`;
+	modal.innerHTML = `<div class="wm-title">${pend.deckOwner === HUMAN ? 'Scry' : 'Gaze'} — top of ${who} (first card is drawn first)</div><div class="scry-row"></div>`;
+	const row = modal.querySelector('.scry-row');
+	const picks = pend.ids.map(id => ({ id, bottom: false }));
+	pend.ids.forEach((id, i) => {
+		const def = state.cardsById[id];
+		const cell = document.createElement('div');
+		cell.className = 'scry-cell';
+		const face = drawCardFace(def);
+		face.style.width = '130px';
+		cell.appendChild(face);
+		const btn = document.createElement('button');
+		btn.textContent = 'Top';
+		btn.addEventListener('pointerdown', e => {
+			e.stopPropagation();
+			picks[i].bottom = !picks[i].bottom;
+			btn.textContent = picks[i].bottom ? 'Bottom' : 'Top';
+			btn.classList.toggle('bottom', picks[i].bottom);
+		});
+		cell.appendChild(btn);
+		row.appendChild(cell);
+	});
+	const done = document.createElement('button');
+	done.className = 'scry-done';
+	done.textContent = 'Done';
+	done.addEventListener('pointerdown', e => {
+		e.stopPropagation();
+		modal.style.display = 'none';
+		E.resolveScry(state, picks);
+		pump();
+	});
+	modal.appendChild(done);
+	modal.style.display = 'block';
 }
 
 // clicking one of your untapped lands opens its tap abilities
@@ -756,6 +829,29 @@ function nextEvent() {
 			log(`${nameOf(ev.player)} shuffled ${ev.count} Quickdrawn card${ev.count > 1 ? 's' : ''} back`);
 			delay = 280;
 			break;
+		case 'disguised': {
+			const ent = entities.get(ev.uid);
+			if (ent) { refreshFace(ent); floatText('🎭', '#c9b8ff', ent.mesh.position); }
+			log(`${nameOf(ev.player)} disguised a creature`);
+			delay = 350;
+			break;
+		}
+		case 'unmasked': {
+			const ent = entities.get(ev.uid);
+			if (ent) { refreshFace(ent); floatText('✨', '#ffd25f', ent.mesh.position); }
+			log(`${nameOf(ev.player)} unmasked ${ev.name}!`);
+			delay = 450;
+			break;
+		}
+		case 'scryStart':
+			log(`${nameOf(ev.chooser)} ${ev.chooser === ev.deckOwner ? 'scries' : `gazes at ${nameOf(ev.deckOwner)}'s deck`} (${ev.count})`);
+			if (ev.chooser === HUMAN) openScryModal();
+			delay = 400;
+			break;
+		case 'scryDone':
+			if (ev.bottomed) log(`${nameOf(ev.chooser)} sent ${ev.bottomed} card${ev.bottomed > 1 ? 's' : ''} to the bottom`);
+			delay = 250;
+			break;
 		case 'heroPowerInstalled': delay = 260; break; // ditto
 		case 'questStarted': delay = 260; break;      // ditto
 		case 'heroPowerUsed':
@@ -858,6 +954,7 @@ function nextEvent() {
 let aiTimer = null;
 function maybeRunAI() {
 	if (!state || state.over || state.current === HUMAN || queue.length || queueBusy) return;
+	if (state.scryQueue.length && state.scryQueue[0].chooser === HUMAN) return; // your call first
 	clearTimeout(aiTimer);
 	aiTimer = setTimeout(() => {
 		if (!state || state.over || state.current === HUMAN) return;
@@ -904,6 +1001,18 @@ function updateTooltip(ev) {
 	// never reveal hidden information: enemy hands and face-down traps stay secret
 	const hidden = card && card.controller !== HUMAN && (card.zone === 'hand' || card.zone === 'trap');
 	if (!card || hidden) { tip.style.display = 'none'; return; }
+	// disguised creatures reveal nothing to opponents, everything to their owner
+	if (card.disguised) {
+		const mine = card.controller === HUMAN;
+		tip.innerHTML = `<div class="tt-name">Disguised Creature</div><div class="tt-type">FACE-DOWN · 2/2</div>`
+			+ (mine ? `<div class="tt-desc">Actually: <b>${card.disguised.name}</b> (${card.disguised.attack}/${card.disguised.maxHealth})</div>`
+				+ `<div class="tt-sub">Click to unmask for ${card.cost} mana</div>`
+				: `<div class="tt-desc">Nobody knows what lurks beneath.</div>`);
+		tip.style.display = 'block';
+		tip.style.left = `${Math.min(ev.clientX + 18, innerWidth - 290)}px`;
+		tip.style.top = `${Math.min(ev.clientY + 14, innerHeight - tip.offsetHeight - 12)}px`;
+		return;
+	}
 	const typeLine = classNameOf(card.cardClass).toUpperCase() + ' · ' + (card.tribe ? card.tribe + ' ' : '') + card.type.toUpperCase()
 		+ ' · ' + (card.rarity || 'common').toUpperCase();
 	let extra = '';
@@ -1015,6 +1124,7 @@ renderer.domElement.addEventListener('pointerdown', ev => {
 		E.playCard(state, HUMAN, card.uid, null);
 		pump();
 	} else if (card.zone === 'board' && card.controller === HUMAN) {
+		if (card.disguised && E.canUnmask(state, HUMAN, card)) { openUnmaskMenu(card, ev); return; }
 		if (E.canAttackWith(state, HUMAN, card)) { selectedAttacker = card.uid; updateHud(); }
 	} else if (card.zone === 'heropower' && card.controller === HUMAN) {
 		// click an installed hero power to activate it

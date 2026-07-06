@@ -96,6 +96,27 @@ export function step(state, pi = 1) {
 	if (state.over || state.current !== pi || state.players[pi].eliminated) return false;
 	const p = state.players[pi];
 
+	// -1. resolve any pending scry/gaze this seat owes a decision on:
+	// keep own affordable cards, bury the enemy's best
+	if (state.scryQueue.length && state.scryQueue[0].chooser === pi) {
+		const pend = state.scryQueue[0];
+		const picks = pend.ids.map(id => {
+			const cost = state.cardsById[id]?.cost || 0;
+			const bottom = pend.deckOwner === pi ? cost > p.mana.max + 2 : cost >= 4;
+			return { id, bottom };
+		});
+		E.resolveScry(state, picks);
+		return true;
+	}
+
+	// -1b. unmask disguised creatures worth their cost
+	for (const c of p.board) {
+		if (c.disguised && E.canUnmask(state, pi, c)
+			&& c.disguised.attack + c.disguised.maxHealth > 5) {
+			if (E.unmask(state, pi, c.uid)) return true;
+		}
+	}
+
 	// 0. work the lands: tap for mana first, conjure when hand runs dry,
 	// boost a random friendly otherwise
 	for (const l of p.lands) {

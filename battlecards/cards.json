@@ -13177,6 +13177,222 @@
           }
         ]
       }
+    },
+    {
+      "id": "alpine_alpha",
+      "name": "Alpine Alpha",
+      "cardClass": "neutral",
+      "cost": 1,
+      "rarity": "common",
+      "set": "paper",
+      "description": "Deathrattle: Scry 1.",
+      "type": "creature",
+      "attack": 2,
+      "health": 2,
+      "tribe": "Beast",
+      "keywords": [
+        "deathrattle"
+      ],
+      "deathrattle": [
+        {
+          "type": "scry",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "abberant_saboteur",
+      "name": "Abberant Saboteur",
+      "cardClass": "neutral",
+      "cost": 1,
+      "rarity": "common",
+      "set": "paper",
+      "description": "Battlecry: Gaze 2.",
+      "type": "creature",
+      "attack": 1,
+      "health": 3,
+      "tribe": "Horror Beast",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "gaze",
+          "value": 2
+        }
+      ]
+    },
+    {
+      "id": "aftermath_analyst",
+      "name": "Aftermath Analyst",
+      "cardClass": "neutral",
+      "cost": 2,
+      "rarity": "uncommon",
+      "set": "paper",
+      "description": "Battlecry: Mill 3. Deathrattle: Summon a random creature with Mana Value 2 or less & Disguise it.",
+      "type": "creature",
+      "attack": 1,
+      "health": 3,
+      "tribe": "Elf Detective",
+      "keywords": [
+        "battlecry",
+        "deathrattle"
+      ],
+      "effects": [
+        {
+          "type": "mill",
+          "value": 3
+        }
+      ],
+      "deathrattle": [
+        {
+          "type": "summon-random",
+          "maxCost": 2,
+          "disguise": true
+        }
+      ]
+    },
+    {
+      "id": "coral_commando",
+      "name": "Coral Commando",
+      "cardClass": "neutral",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "description": "Constellation: Gaze 2.",
+      "type": "creature",
+      "attack": 3,
+      "health": 2,
+      "tribe": "Merfolk Warrior",
+      "ongoing": {
+        "on": "enchantment-played",
+        "effects": [
+          {
+            "type": "gaze",
+            "value": 2
+          }
+        ]
+      }
+    },
+    {
+      "id": "green_eyes_baby_dragon",
+      "name": "Green Eyes Baby Dragon",
+      "cardClass": "neutral",
+      "cost": 3,
+      "rarity": "legendary",
+      "set": "paper",
+      "description": "Battlecry: Gaze 3 & Quickdraw 3.",
+      "type": "creature",
+      "attack": 3,
+      "health": 2,
+      "tribe": "Dragon",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "gaze",
+          "value": 3
+        },
+        {
+          "type": "quickdraw",
+          "value": 3
+        }
+      ]
+    },
+    {
+      "id": "dinotomaton",
+      "name": "Dinotomaton",
+      "cardClass": "neutral",
+      "cost": 4,
+      "rarity": "uncommon",
+      "set": "paper",
+      "description": "Firebreathing & Magnetic. Connect: Scry 3.",
+      "type": "creature",
+      "attack": 4,
+      "health": 3,
+      "tribe": "Mech Beast Gnome Shaman",
+      "ongoing": {
+        "on": "self-hit-player",
+        "effects": [
+          {
+            "type": "scry",
+            "value": 3
+          }
+        ]
+      }
+    },
+    {
+      "id": "gogogo_goram",
+      "name": "Gogogo Goram",
+      "cardClass": "neutral",
+      "cost": 4,
+      "rarity": "legendary",
+      "set": "paper",
+      "description": "Trample & Magnetic. Swing: Scry 1 & Gaze 1.",
+      "type": "creature",
+      "attack": 2,
+      "health": 3,
+      "tribe": "Mech Bard Paladin",
+      "ongoing": {
+        "on": "self-attacks",
+        "effects": [
+          {
+            "type": "scry",
+            "value": 1
+          },
+          {
+            "type": "gaze",
+            "value": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "unfathomable_being",
+      "name": "Unfathomable Being",
+      "cardClass": "neutral",
+      "cost": 5,
+      "rarity": "epic",
+      "set": "paper",
+      "description": "Battlecry: Gaze 3. Deathtouch & Divine Shield.",
+      "type": "creature",
+      "attack": 5,
+      "health": 5,
+      "tribe": "Devil Angel",
+      "keywords": [
+        "battlecry",
+        "deathtouch",
+        "divine_shield"
+      ],
+      "effects": [
+        {
+          "type": "gaze",
+          "value": 3
+        }
+      ]
+    },
+    {
+      "id": "clandestine_meddler",
+      "name": "Clandestine Meddler",
+      "cardClass": "neutral",
+      "cost": 3,
+      "rarity": "uncommon",
+      "set": "paper",
+      "description": "Battlecry: Disguise target creature.",
+      "type": "creature",
+      "attack": 3,
+      "health": 2,
+      "tribe": "Vampire Rogue",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "disguise",
+          "target": "creature"
+        }
+      ]
     }
   ]
 }

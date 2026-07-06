@@ -196,6 +196,7 @@ export function createGame(cardsById, rng = Math.random, playerDeckIds = null, p
 		over: false,
 		winner: null,
 		events: [],
+		scryQueue: [],  // pending scry/gaze decisions: { chooser, deckOwner, ids }
 	};
 	if (playerDeck) state.players[0].deck = playerDeck;
 
@@ -305,6 +306,7 @@ const CHOSEN = {
 	grant: { creature: 'creature', 'friendly-creature': 'friendly-creature' },
 	destroy: { creature: 'creature', 'enemy-creature': 'enemy-creature' },
 	exile: { creature: 'creature', 'enemy-creature': 'enemy-creature' },
+	disguise: { creature: 'creature', 'friendly-creature': 'friendly-creature' },
 	freeze: { any: 'any', creature: 'creature', 'enemy-creature': 'enemy-creature' },
 	silence: { creature: 'creature', 'enemy-creature': 'enemy-creature' },
 };
@@ -1237,6 +1239,36 @@ function execEffects(state, pi, effects, target, source) {
 				emit(state, { type: 'corpses', player: pi, corpses: p.corpses });
 				execEffects(state, pi, e.effects, target, source);
 			}
+		} else if (e.type === 'scry' || e.type === 'gaze') {
+			// Scry = your own deck; Gaze = an opponent's (paper ruling).
+			// The chooser's decision resolves asynchronously via resolveScry.
+			const deckOwner = e.type === 'scry' ? pi : enemyHero();
+			if (deckOwner != null) {
+				const od = state.players[deckOwner].deck;
+				const ids = [];
+				for (let i = 0; i < e.value && od.length; i++) ids.push(od.pop());
+				if (ids.length) {
+					state.scryQueue.push({ chooser: pi, deckOwner, ids });
+					emit(state, { type: 'scryStart', chooser: pi, deckOwner, count: ids.length });
+				}
+			}
+		} else if (e.type === 'disguise') {
+			const t = chosenCreature() || (() => {
+				// triggered disguises without a chosen target hide a random friendly
+				const pool = state.players[pi].board.filter(c => !isDead(c) && !c.disguised);
+				return pool.length ? pool[Math.floor(state.rng() * pool.length)] : null;
+			})();
+			if (t) disguiseCreature(state, t);
+		} else if (e.type === 'summon-random') {
+			// e.g. "Summon a random creature with Mana Value 2 or less"
+			const pool = Object.values(state.cardsById).filter(d =>
+				d.type === 'creature' && (e.maxCost == null || (d.cost || 0) <= e.maxCost)
+				&& !d.companion && !d.commander && !(d.colors && d.colors.length));
+			if (pool.length) {
+				const def = pool[Math.floor(state.rng() * pool.length)];
+				const c = summon(state, pi, def);
+				if (c && e.disguise) disguiseCreature(state, c);
+			}
 		} else if (e.type === 'quickdraw') {
 			// Quickdrawn cards return to the deck at end of turn if unplayed
 			const p = state.players[pi];
@@ -1727,6 +1759,88 @@ export function useWalker(state, pi, cardUid, abilityIndex, target) {
 	emit(state, { type: 'walkerAbility', player: pi, card, text: ability.text, loyalty: card.loyalty });
 	execEffects(state, pi, ability.effects, target, card);
 	if (card.loyalty <= 0) destroyWalker(state, card); // burned out all loyalty
+	sweepDeaths(state);
+	return true;
+}
+
+// ---------- scry / gaze resolution ----------
+// picks: [{ id, bottom }] matching the pending entry's ids. Tops go back so
+// the first listed is drawn first; bottoms go under the deck.
+export function resolveScry(state, picks) {
+	const pending = state.scryQueue.shift();
+	if (!pending) return false;
+	const deck = state.players[pending.deckOwner].deck;
+	const byId = [...pending.ids];
+	const tops = [], bottoms = [];
+	for (const p of picks || []) {
+		const i = byId.indexOf(p.id);
+		if (i < 0) continue;
+		byId.splice(i, 1);
+		(p.bottom ? bottoms : tops).push(p.id);
+	}
+	tops.push(...byId); // anything unmentioned stays on top
+	for (const id of bottoms) deck.unshift(id);
+	for (const id of [...tops].reverse()) deck.push(id); // first pick drawn first
+	emit(state, { type: 'scryDone', chooser: pending.chooser, deckOwner: pending.deckOwner, bottomed: bottoms.length });
+	return true;
+}
+
+// ---------- disguise (face-down 2/2, MTG-style) ----------
+function disguiseCreature(state, c) {
+	if (c.disguised || isDead(c)) return;
+	// save the identity WITHOUT live aura contributions (they re-apply on both
+	// the face-down 2/2 and the unmasked original via recompute)
+	c.disguised = {
+		name: c.name, attack: c.attack - c.auraAttack, maxHealth: c.maxHealth - c.auraHealth,
+		tribe: c.tribe, keywords: c.keywords.filter(k => !c.auraKeywords.includes(k)),
+		effects: c.effects, deathrattle: c.deathrattle,
+		ongoing: c.ongoing, static: c.static, aura: c.aura,
+	};
+	c.name = 'Disguised Creature';
+	c.attack = 2;
+	c.maxHealth = 2;
+	c.auraAttack = 0;
+	c.auraHealth = 0;
+	c.damage = Math.min(c.damage, 1); // hiding can't be instantly lethal
+	c.tribe = null;
+	c.keywords = [];
+	c.auraKeywords = [];
+	c.effects = null;
+	c.deathrattle = null;
+	c.ongoing = null;
+	c.static = null;
+	c.aura = null;
+	emit(state, { type: 'disguised', uid: c.uid, player: c.controller });
+	recomputeAuras(state);
+}
+
+export function canUnmask(state, pi, c) {
+	if (state.over || state.current !== pi) return false;
+	if (!state.players[pi].board.includes(c) || !c.disguised) return false;
+	return availableMana(state.players[pi]) >= c.cost;
+}
+
+export function unmask(state, pi, cardUid) {
+	const p = state.players[pi];
+	const c = p.board.find(x => x.uid === cardUid);
+	if (!c || !canUnmask(state, pi, c)) return false;
+	spendMana(p, c.cost);
+	const d = c.disguised;
+	c.disguised = null;
+	c.name = d.name;
+	c.attack = d.attack;
+	c.maxHealth = d.maxHealth;
+	c.tribe = d.tribe;
+	c.keywords = d.keywords;
+	c.effects = d.effects;
+	c.deathrattle = d.deathrattle;
+	c.ongoing = d.ongoing;
+	c.static = d.static;
+	c.aura = d.aura;
+	c.auraAttack = 0;
+	c.auraHealth = 0;
+	emit(state, { type: 'unmasked', uid: c.uid, player: pi, name: c.name });
+	recomputeAuras(state);
 	sweepDeaths(state);
 	return true;
 }
