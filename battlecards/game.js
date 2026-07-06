@@ -840,6 +840,10 @@ function nextEvent() {
 			log(`${nameOf(ev.player)} milled ${ev.card.name}`);
 			delay = 220;
 			break;
+		case 'plunder':
+			log(`${nameOf(ev.player)} plundered ${ev.card.name} from ${nameOf(ev.victim)}'s deck`);
+			delay = 320;
+			break;
 		case 'quickdrawReturn':
 			log(`${nameOf(ev.player)} shuffled ${ev.count} Quickdrawn card${ev.count > 1 ? 's' : ''} back`);
 			delay = 280;

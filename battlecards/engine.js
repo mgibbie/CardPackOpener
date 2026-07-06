@@ -1276,6 +1276,20 @@ function execEffects(state, pi, effects, target, source) {
 				const c = summon(state, pi, def);
 				if (c && e.disguise) disguiseCreature(state, c);
 			}
+		} else if (e.type === 'plunder') {
+			// steal the top card(s) of an opponent's deck into your hand
+			const victim = enemyHero();
+			if (victim != null) {
+				const p = state.players[pi], vd = state.players[victim].deck;
+				for (let i = 0; i < (e.value || 1) && vd.length; i++) {
+					if (p.hand.length >= MAX_HAND) break;
+					const id = vd.pop();
+					const card = instantiate(state.cardsById[id], pi);
+					card.zone = 'hand';
+					p.hand.push(card);
+					emit(state, { type: 'plunder', player: pi, victim, card });
+				}
+			}
 		} else if (e.type === 'quickdraw') {
 			// Quickdrawn cards return to the deck at end of turn if unplayed
 			const p = state.players[pi];

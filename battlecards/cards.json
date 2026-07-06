@@ -13440,6 +13440,57 @@
           }
         ]
       }
+    },
+    {
+      "id": "ghostblade_privateer",
+      "name": "Ghostblade Privateer",
+      "cardClass": "neutral",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "description": "Rush. Deathrattle: Gaze 3 & Plunder.",
+      "type": "creature",
+      "attack": 3,
+      "health": 1,
+      "tribe": "Spirit Pirate Soldier",
+      "keywords": [
+        "rush",
+        "deathrattle"
+      ],
+      "deathrattle": [
+        {
+          "type": "gaze",
+          "value": 3
+        },
+        {
+          "type": "plunder",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "subterfuge_swindler",
+      "name": "Subterfuge Swindler",
+      "cardClass": "rogue__wizard",
+      "cost": 4,
+      "rarity": "uncommon",
+      "set": "paper",
+      "description": "Rush & Stealth. Deathrattle: Plunder. At the end of your turn, each player draws a spell.",
+      "type": "creature",
+      "attack": 5,
+      "health": 2,
+      "tribe": "Tanuki Rogue",
+      "keywords": [
+        "rush",
+        "stealth",
+        "deathrattle"
+      ],
+      "deathrattle": [
+        {
+          "type": "plunder",
+          "value": 1
+        }
+      ]
     }
   ]
 }
