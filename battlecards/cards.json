@@ -15470,6 +15470,236 @@
         "amount": -1
       },
       "description": "Costs 1 less for each damage your hero has taken."
+    },
+    {
+      "id": "angry_chicken",
+      "name": "Angry Chicken",
+      "cardClass": "neutral",
+      "cost": 1,
+      "rarity": "rare",
+      "tribe": "Beast",
+      "type": "creature",
+      "attack": 1,
+      "health": 1,
+      "enrage": {
+        "attack": 5
+      },
+      "description": "While damaged: +5 Attack."
+    },
+    {
+      "id": "cold_blood",
+      "name": "Cold Blood",
+      "cardClass": "rogue",
+      "cost": 1,
+      "rarity": "common",
+      "type": "sorcery",
+      "combo": [
+        {
+          "type": "buff",
+          "attack": 4,
+          "health": 0,
+          "target": "creature"
+        }
+      ],
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 2,
+          "health": 0,
+          "target": "creature"
+        }
+      ],
+      "description": "Give a creature +2 Attack. Combo: Give a creature +4 Attack."
+    },
+    {
+      "id": "defias_ringleader",
+      "name": "Defias Ringleader",
+      "cardClass": "rogue",
+      "cost": 2,
+      "rarity": "common",
+      "type": "creature",
+      "attack": 3,
+      "health": 2,
+      "combo": [
+        {
+          "type": "summon",
+          "count": 1,
+          "attack": 2,
+          "health": 1,
+          "name": "Defias Bandit"
+        }
+      ],
+      "description": "Combo: Summon a 2/1 Defias Bandit."
+    },
+    {
+      "id": "eviscerate",
+      "name": "Eviscerate",
+      "cardClass": "rogue",
+      "cost": 2,
+      "rarity": "common",
+      "type": "sorcery",
+      "combo": [
+        {
+          "type": "damage",
+          "value": 4,
+          "target": "any"
+        }
+      ],
+      "effects": [
+        {
+          "type": "damage",
+          "value": 2,
+          "target": "any"
+        }
+      ],
+      "description": "Deal 2 damage to any target. Combo: Deal 4 damage to any target."
+    },
+    {
+      "id": "edwin_vancleef",
+      "name": "Edwin VanCleef",
+      "cardClass": "rogue",
+      "cost": 3,
+      "rarity": "legendary",
+      "type": "creature",
+      "attack": 2,
+      "health": 2,
+      "combo": [
+        {
+          "type": "buff-self",
+          "attack": 2,
+          "health": 2,
+          "per": "cards-played"
+        }
+      ],
+      "description": "Combo: Gain +2/+2 for each other card you played this turn."
+    },
+    {
+      "id": "perdition_s_blade",
+      "name": "Perdition's Blade",
+      "cardClass": "rogue",
+      "cost": 3,
+      "rarity": "rare",
+      "type": "weapon",
+      "attack": 2,
+      "durability": 2,
+      "combo": [
+        {
+          "type": "damage",
+          "value": 2,
+          "target": "any"
+        }
+      ],
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "damage",
+          "value": 1,
+          "target": "any"
+        }
+      ],
+      "description": "Battlecry: Deal 1 damage to any target. Combo: Deal 2 damage to any target."
+    },
+    {
+      "id": "raging_worgen",
+      "name": "Raging Worgen",
+      "cardClass": "neutral",
+      "cost": 3,
+      "rarity": "common",
+      "type": "creature",
+      "attack": 3,
+      "health": 3,
+      "enrage": {
+        "attack": 1,
+        "keywords": [
+          "windfury"
+        ]
+      },
+      "description": "While damaged: Windfury and +1 Attack."
+    },
+    {
+      "id": "si_7_agent",
+      "name": "SI:7 Agent",
+      "cardClass": "rogue",
+      "cost": 3,
+      "rarity": "rare",
+      "type": "creature",
+      "attack": 3,
+      "health": 3,
+      "combo": [
+        {
+          "type": "damage",
+          "value": 2,
+          "target": "any"
+        }
+      ],
+      "description": "Combo: Deal 2 damage to any target."
+    },
+    {
+      "id": "tauren_warrior",
+      "name": "Tauren Warrior",
+      "cardClass": "neutral",
+      "cost": 3,
+      "rarity": "common",
+      "type": "creature",
+      "attack": 2,
+      "health": 3,
+      "enrage": {
+        "attack": 3
+      },
+      "keywords": [
+        "taunt"
+      ],
+      "description": "Taunt. While damaged: +3 Attack."
+    },
+    {
+      "id": "spiteful_smith",
+      "name": "Spiteful Smith",
+      "cardClass": "neutral",
+      "cost": 5,
+      "rarity": "common",
+      "type": "creature",
+      "attack": 4,
+      "health": 6,
+      "enrage": {
+        "weaponAttack": 2
+      },
+      "description": "While damaged: Your weapon has +2 Attack."
+    },
+    {
+      "id": "kidnapper",
+      "name": "Kidnapper",
+      "cardClass": "rogue",
+      "cost": 6,
+      "rarity": "epic",
+      "type": "creature",
+      "attack": 5,
+      "health": 3,
+      "combo": [
+        {
+          "type": "bounce",
+          "target": "creature"
+        }
+      ],
+      "description": "Combo: Return a creature to its owner's hand."
+    },
+    {
+      "id": "grommash_hellscream",
+      "name": "Grommash Hellscream",
+      "cardClass": "warrior",
+      "cost": 8,
+      "rarity": "legendary",
+      "type": "creature",
+      "attack": 4,
+      "health": 9,
+      "enrage": {
+        "attack": 6
+      },
+      "keywords": [
+        "charge"
+      ],
+      "description": "Charge. While damaged: +6 Attack."
     }
   ]
 }

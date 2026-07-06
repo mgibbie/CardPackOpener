@@ -135,6 +135,8 @@ function instantiate(def, controller) {
 		static: def.static || null,   // permanent passive (e.g. reduce-hero-damage)
 		costMod: def.costMod || null, // board cost aura: { cardType, amount, scope, floor?, firstEachTurn? }
 		selfCost: def.selfCost || null, // self-scaling printed cost: { per, amount }
+		enrage: def.enrage || null,   // while damaged: { attack?, health?, keywords?, weaponAttack? }
+		combo: def.combo || null,     // effects used instead when a card was played earlier this turn
 		aura: def.aura || null,       // { attack, health, tribe?, others?, adjacent?, position?, keywords? }
 		auraAttack: 0,                // currently applied aura bonuses (recomputed)
 		auraHealth: 0,
@@ -242,6 +244,7 @@ export function createGame(cardsById, rng = Math.random, playerDeckIds = null, p
 		heroTempAttack: 0,  // "your hero has +N Attack this turn"
 		costDiscounts: [],  // one-shot "next X costs (N) less" riders
 		creaturesPlayedThisTurn: 0, // Pint-Sized-style first-creature discounts
+		cardsPlayedThisTurn: 0,     // Combo activation (counts cards already resolved)
 		freeSpellsNextTurn: false,  // Millhouse: spells free on your next turn
 		freeSpellsThisTurn: false,
 		mana: { cur: 1, max: 1, bonus: 0 },
@@ -392,6 +395,16 @@ export function effectsOf(card, choice) {
 	return card.effects;
 }
 
+// Combo cards act on their combo line instead when another card was already
+// played this turn (cardsPlayedThisTurn counts only fully-resolved cards)
+export function comboActive(state, pi) {
+	return state.players[pi].cardsPlayedThisTurn >= 1;
+}
+export function liveEffectsOf(state, pi, card, choice) {
+	if (card.combo && comboActive(state, pi)) return card.combo;
+	return effectsOf(card, choice);
+}
+
 // Returns null (no target needed) or { targets, filter(card)?, required, why }
 // `choice` selects a Choose One branch before deriving the target.
 export function targetSpec(state, pi, card, choice) {
@@ -415,7 +428,8 @@ export function targetSpec(state, pi, card, choice) {
 	// choose-one cards with no branch picked yet: the branch menu comes first
 	if (card.choices && choice == null) return null;
 	// generic: derive from the first effect that needs a chosen target
-	for (const e of effectsOf(card, choice) || []) {
+	// (combo-aware: an active combo line replaces the base effects)
+	for (const e of liveEffectsOf(state, pi, card, choice) || []) {
 		let kind = CHOSEN[e.type]?.[e.target];
 		// "the enemy hero" is unambiguous in 1v1 but a choice with 3+ players
 		if (!kind && e.target === 'enemy-hero' && e.type === 'damage' && opponentsOf(state, pi).length > 1) {
@@ -486,6 +500,7 @@ function damageCreature(state, target, amount, source) {
 	target.damage += amount;
 	if (source && (has(source, KW.DEATHTOUCH) || has(source, KW.POISONOUS))) target.poisoned = true;
 	emit(state, { type: 'damage', targetType: 'creature', uid: target.uid, amount, hp: hp(target) });
+	if (target.enrage) recomputeAuras(state); // enrage flips on while damaged
 	// whenever-a-minion-takes-damage triggers (fires even if the hit is lethal);
 	// Frenzy variants fire once and only on surviving the hit
 	if (target.ongoing?.on === 'self-damaged') {
@@ -565,6 +580,8 @@ function silenceCreature(state, c) {
 	c.static = null;
 	c.aura = null;
 	c.costMod = null;
+	c.enrage = null;
+	c.combo = null;
 	c.auraKeywords = [];
 	c.shield = false;
 	c.stealthed = false;
@@ -697,6 +714,12 @@ function recomputeAuras(state) {
 				aBonus += a.attack || 0;
 				hBonus += a.health || 0;
 				for (const k of a.keywords || []) granted.add(k);
+			}
+			// Enrage: a self-aura that only applies while the creature is damaged
+			if (c.enrage && c.damage > 0 && !isDead(c)) {
+				aBonus += c.enrage.attack || 0;
+				hBonus += c.enrage.health || 0;
+				for (const k of c.enrage.keywords || []) granted.add(k);
 			}
 			const dA = aBonus - c.auraAttack, dH = hBonus - c.auraHealth;
 			if (dA || dH) {
@@ -1064,8 +1087,8 @@ function runSecretEffects(state, pi, effects, ctx) {
 function runBattlecry(state, pi, card, target, choice) {
 	const p = state.players[pi];
 	// data-driven battlecries (imported sets); legacy ids stay hand-scripted below
-	if ((card.effects || card.choices) && !LEGACY_SCRIPTED.has(card.id)) {
-		execEffects(state, pi, effectsOf(card, choice), target, card);
+	if ((card.effects || card.choices || card.combo) && !LEGACY_SCRIPTED.has(card.id)) {
+		execEffects(state, pi, liveEffectsOf(state, pi, card, choice), target, card);
 	}
 	switch (card.id) {
 		case 'wandering_merchant': drawCards(state, pi, 1); break;
@@ -1413,6 +1436,7 @@ function execEffects(state, pi, effects, target, source) {
 				let n = 1;
 				if (e.per === 'other-friendly') n = state.players[pi].board.filter(c => c !== source && !isDead(c)).length;
 				else if (e.per === 'hand-cards') n = state.players[pi].hand.length;
+				else if (e.per === 'cards-played') n = state.players[pi].cardsPlayedThisTurn;
 				if (n > 0) buffCreature(source, (e.attack || 0) * n, (e.health || 0) * n);
 			}
 		} else if (e.type === 'damage-self') {
@@ -1620,6 +1644,8 @@ function execEffects(state, pi, effects, target, source) {
 				clone.aura = t.aura ? JSON.parse(JSON.stringify(t.aura)) : null;
 				clone.costMod = t.costMod ? { ...t.costMod } : null;
 				clone.selfCost = t.selfCost ? { ...t.selfCost } : null;
+				clone.enrage = t.enrage ? JSON.parse(JSON.stringify(t.enrage)) : null;
+				clone.combo = t.combo ? JSON.parse(JSON.stringify(t.combo)) : null;
 				clone.shield = t.shield;
 				clone.stealthed = t.stealthed;
 				clone.sick = source.sick;
@@ -1803,10 +1829,12 @@ function execEffects(state, pi, effects, target, source) {
 			fireOngoing(state, pi, 'weapon-equipped');
 		}
 	}
+	// heals/set-health may have cleared damage: enrage bonuses retract here
+	recomputeAuras(state);
 }
 
 function runSpell(state, pi, card, target, choice) {
-	execEffects(state, pi, effectsOf(card, choice), target, card);
+	execEffects(state, pi, liveEffectsOf(state, pi, card, choice), target, card);
 	// scripted text
 	switch (card.id) {
 		case 'natures_blessing': drawCards(state, pi, 1); break;
@@ -1994,6 +2022,8 @@ export function playCard(state, pi, cardUid, target, choice) {
 		}
 		toGraveyard(state, pi, card);
 	}
+	// counted AFTER resolution so Combo sees only cards played EARLIER this turn
+	p.cardsPlayedThisTurn++;
 	sweepDeaths(state);
 	return true;
 }
@@ -2124,7 +2154,15 @@ export function attack(state, pi, attackerUid, target) {
 
 // ---------- hero (weapon) attacks ----------
 export function heroAttackValue(p) {
-	return (p.weapon ? p.weapon.attack : 0) + p.heroTempAttack;
+	let w = 0;
+	if (p.weapon) {
+		w = p.weapon.attack;
+		// Spiteful Smith-style enrage: damaged creatures sharpen the weapon
+		for (const c of p.board) {
+			if (c.enrage?.weaponAttack && c.damage > 0 && !isDead(c)) w += c.enrage.weaponAttack;
+		}
+	}
+	return w + p.heroTempAttack;
 }
 
 export function canHeroAttack(state, pi) {
@@ -2490,6 +2528,7 @@ export function endTurn(state) {
 	np.heroAttacksUsed = 0;
 	np.landsPlayedThisTurn = 0;
 	np.creaturesPlayedThisTurn = 0;
+	np.cardsPlayedThisTurn = 0;
 	// stale this-turn cost riders lapse; Millhouse's gift comes due
 	np.costDiscounts = (np.costDiscounts || []).filter(d => !d.thisTurn);
 	np.freeSpellsThisTurn = !!np.freeSpellsNextTurn;

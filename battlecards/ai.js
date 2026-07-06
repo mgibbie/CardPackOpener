@@ -49,8 +49,9 @@ function pickTarget(state, pi, card) {
 		}
 		default: {
 			// generic effect-driven cards: aim helpful effects at ourselves,
-			// harmful ones at the biggest enemy
-			const first = card.effects?.find(e => CHOSEN_TYPES.has(e.type));
+			// harmful ones at the biggest enemy (combo line replaces base effects)
+			const fxList = (card.combo && state.players[pi].cardsPlayedThisTurn >= 1) ? card.combo : card.effects;
+			const first = fxList?.find(e => CHOSEN_TYPES.has(e.type));
 			if (FRIENDLY_TYPES.has(first?.type)) {
 				if (first.type === 'heal-full') {
 					// most-damaged friendly creature, or nothing
