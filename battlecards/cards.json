@@ -35702,6 +35702,934 @@
       ],
       "description": "Taunt. Costs 1 less for each creature that died this turn.",
       "set": "hsx"
+    },
+    {
+      "id": "desperate_prayer",
+      "name": "Desperate Prayer",
+      "cardClass": "priest",
+      "cost": 0,
+      "rarity": "common",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "heal",
+          "value": 5,
+          "target": "all-heroes"
+        }
+      ],
+      "description": "Restore 5 health to each hero.",
+      "set": "hsx"
+    },
+    {
+      "id": "call_of_the_void",
+      "name": "Call of the Void",
+      "cardClass": "warlock",
+      "cost": 1,
+      "rarity": "common",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "conjure-random",
+          "cardType": "creature",
+          "tribe": "Demon"
+        }
+      ],
+      "description": "Add a random Demon to your hand.",
+      "set": "hsx"
+    },
+    {
+      "id": "concoctor",
+      "name": "Concoctor",
+      "cardClass": "rogue",
+      "cost": 1,
+      "rarity": "common",
+      "type": "creature",
+      "attack": 1,
+      "health": 2,
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "conjure-random",
+          "cardType": "creature",
+          "tribe": "Concoction"
+        }
+      ],
+      "description": "Battlecry: Add a random Concoction to your hand.",
+      "set": "hsx"
+    },
+    {
+      "id": "jeweled_macaw",
+      "name": "Jeweled Macaw",
+      "cardClass": "hunter",
+      "cost": 1,
+      "rarity": "common",
+      "tribe": "Beast",
+      "type": "creature",
+      "attack": 1,
+      "health": 2,
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "conjure-random",
+          "cardType": "creature",
+          "tribe": "Beast"
+        }
+      ],
+      "description": "Battlecry: Add a random Beast to your hand.",
+      "set": "hsx"
+    },
+    {
+      "id": "mistress_of_mixtures",
+      "name": "Mistress of Mixtures",
+      "cardClass": "neutral",
+      "cost": 1,
+      "rarity": "common",
+      "type": "creature",
+      "attack": 2,
+      "health": 2,
+      "keywords": [
+        "deathrattle"
+      ],
+      "deathrattle": [
+        {
+          "type": "heal",
+          "value": 4,
+          "target": "all-heroes"
+        }
+      ],
+      "description": "Deathrattle: Restore 4 health to each hero.",
+      "set": "hsx"
+    },
+    {
+      "id": "sky_raider",
+      "name": "Sky Raider",
+      "cardClass": "warrior",
+      "cost": 1,
+      "rarity": "common",
+      "tribe": "Pirate",
+      "type": "creature",
+      "attack": 1,
+      "health": 2,
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "conjure-random",
+          "cardType": "creature",
+          "tribe": "Pirate"
+        }
+      ],
+      "description": "Battlecry: Add a random Pirate to your hand.",
+      "set": "hsx"
+    },
+    {
+      "id": "swamp_dragon_egg",
+      "name": "Swamp Dragon Egg",
+      "cardClass": "neutral",
+      "cost": 1,
+      "rarity": "common",
+      "type": "creature",
+      "attack": 0,
+      "health": 3,
+      "keywords": [
+        "deathrattle"
+      ],
+      "deathrattle": [
+        {
+          "type": "conjure-random",
+          "cardType": "creature",
+          "tribe": "Dragon"
+        }
+      ],
+      "description": "Deathrattle: Add a random Dragon to your hand.",
+      "set": "hsx"
+    },
+    {
+      "id": "grandmummy",
+      "name": "Grandmummy",
+      "cardClass": "priest",
+      "cost": 2,
+      "rarity": "rare",
+      "type": "creature",
+      "attack": 1,
+      "health": 2,
+      "keywords": [
+        "reborn",
+        "deathrattle"
+      ],
+      "deathrattle": [
+        {
+          "type": "buff-random-friendly",
+          "attack": 1,
+          "health": 1
+        }
+      ],
+      "description": "Reborn. Deathrattle: Give a random friendly creature +1/+1.",
+      "set": "hsx"
+    },
+    {
+      "id": "kobold_hermit",
+      "name": "Kobold Hermit",
+      "cardClass": "shaman",
+      "cost": 2,
+      "rarity": "common",
+      "type": "creature",
+      "attack": 1,
+      "health": 1,
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "summon-random",
+          "tribe": "Totem",
+          "maxCost": 1
+        }
+      ],
+      "description": "Battlecry: Summon a random cheap Totem.",
+      "set": "hsx"
+    },
+    {
+      "id": "menacing_nimbus",
+      "name": "Menacing Nimbus",
+      "cardClass": "shaman",
+      "cost": 2,
+      "rarity": "common",
+      "tribe": "Elemental",
+      "type": "creature",
+      "attack": 2,
+      "health": 3,
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "conjure-random",
+          "cardType": "creature",
+          "tribe": "Elemental"
+        }
+      ],
+      "description": "Battlecry: Add a random Elemental to your hand.",
+      "set": "hsx"
+    },
+    {
+      "id": "sleep_with_the_fishes",
+      "name": "Sleep with the Fishes",
+      "cardClass": "warrior",
+      "cost": 2,
+      "rarity": "epic",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 3,
+          "target": "damaged-creatures"
+        }
+      ],
+      "description": "Deal 3 damage to every damaged creature.",
+      "set": "hsx"
+    },
+    {
+      "id": "call_in_the_finishers",
+      "name": "Call in the Finishers",
+      "cardClass": "shaman",
+      "cost": 3,
+      "rarity": "common",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "summon",
+          "count": 4,
+          "attack": 1,
+          "health": 1,
+          "name": "Murloc"
+        }
+      ],
+      "description": "Summon four 1/1 Murlocs.",
+      "set": "hsx"
+    },
+    {
+      "id": "chopshop_copter",
+      "name": "Chopshop Copter",
+      "cardClass": "hunter",
+      "cost": 3,
+      "rarity": "rare",
+      "tribe": "Mech",
+      "type": "creature",
+      "attack": 2,
+      "health": 4,
+      "ongoing": {
+        "on": "friendly-creature-died",
+        "effects": [
+          {
+            "type": "conjure-random",
+            "cardType": "creature",
+            "tribe": "Mech"
+          }
+        ],
+        "if": {
+          "tribe": "Mech"
+        }
+      },
+      "description": "Whenever a friendly Mech dies, add a random Mech to your hand.",
+      "set": "hsx"
+    },
+    {
+      "id": "doubling_imp",
+      "name": "Doubling Imp",
+      "cardClass": "warlock",
+      "cost": 3,
+      "rarity": "common",
+      "tribe": "Demon",
+      "type": "creature",
+      "attack": 2,
+      "health": 2,
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "summon-self-copy",
+          "count": 1
+        }
+      ],
+      "description": "Battlecry: Summon a copy of this creature.",
+      "set": "hsx"
+    },
+    {
+      "id": "fiendish_circle",
+      "name": "Fiendish Circle",
+      "cardClass": "warlock",
+      "cost": 3,
+      "rarity": "common",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "summon",
+          "count": 4,
+          "attack": 1,
+          "health": 1,
+          "name": "Imp"
+        }
+      ],
+      "description": "Summon four 1/1 Imps.",
+      "set": "hsx"
+    },
+    {
+      "id": "skyscreamer_eggs",
+      "name": "Skyscreamer Eggs",
+      "cardClass": "druid",
+      "cost": 3,
+      "rarity": "common",
+      "type": "creature",
+      "attack": 0,
+      "health": 2,
+      "keywords": [
+        "deathrattle"
+      ],
+      "deathrattle": [
+        {
+          "type": "summon",
+          "count": 4,
+          "attack": 2,
+          "health": 1,
+          "name": "Hatchling"
+        }
+      ],
+      "description": "Deathrattle: Summon four 2/1 Hatchlings.",
+      "set": "hsx"
+    },
+    {
+      "id": "tortollan_shellraiser",
+      "name": "Tortollan Shellraiser",
+      "cardClass": "priest",
+      "cost": 3,
+      "rarity": "common",
+      "type": "creature",
+      "attack": 2,
+      "health": 5,
+      "keywords": [
+        "taunt",
+        "deathrattle"
+      ],
+      "deathrattle": [
+        {
+          "type": "buff-random-friendly",
+          "attack": 1,
+          "health": 1
+        }
+      ],
+      "description": "Taunt. Deathrattle: Give a random friendly creature +1/+1.",
+      "set": "hsx"
+    },
+    {
+      "id": "vile_apothecary",
+      "name": "Vile Apothecary",
+      "cardClass": "rogue",
+      "cost": 3,
+      "rarity": "epic",
+      "type": "creature",
+      "attack": 2,
+      "health": 4,
+      "ongoing": {
+        "on": "turn-end",
+        "effects": [
+          {
+            "type": "conjure-random",
+            "cardType": "creature",
+            "tribe": "Concoction"
+          }
+        ]
+      },
+      "description": "At the end of your turn, add a random Concoction to your hand.",
+      "set": "hsx"
+    },
+    {
+      "id": "kabal_chemist",
+      "name": "Kabal Chemist",
+      "cardClass": "neutral",
+      "cost": 4,
+      "rarity": "common",
+      "type": "creature",
+      "attack": 3,
+      "health": 3,
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "conjure-random",
+          "cardType": "creature",
+          "tribe": "Potion"
+        }
+      ],
+      "description": "Battlecry: Add a random Potion to your hand.",
+      "set": "hsx"
+    },
+    {
+      "id": "nerubian_swarmguard",
+      "name": "Nerubian Swarmguard",
+      "cardClass": "death_knight",
+      "cost": 4,
+      "rarity": "common",
+      "type": "creature",
+      "attack": 1,
+      "health": 3,
+      "keywords": [
+        "taunt",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "summon-self-copy",
+          "count": 2
+        }
+      ],
+      "description": "Taunt. Battlecry: Summon 2 copies of this creature.",
+      "set": "hsx"
+    },
+    {
+      "id": "refreshment_vendor",
+      "name": "Refreshment Vendor",
+      "cardClass": "neutral",
+      "cost": 4,
+      "rarity": "common",
+      "type": "creature",
+      "attack": 3,
+      "health": 5,
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "heal",
+          "value": 4,
+          "target": "all-heroes"
+        }
+      ],
+      "description": "Battlecry: Restore 4 health to each hero.",
+      "set": "hsx"
+    },
+    {
+      "id": "rodent_nest",
+      "name": "Rodent Nest",
+      "cardClass": "hunter",
+      "cost": 4,
+      "rarity": "common",
+      "type": "creature",
+      "attack": 2,
+      "health": 2,
+      "keywords": [
+        "deathrattle"
+      ],
+      "deathrattle": [
+        {
+          "type": "summon",
+          "count": 5,
+          "attack": 1,
+          "health": 1,
+          "name": "Rat"
+        }
+      ],
+      "description": "Deathrattle: Summon five 1/1 Rats.",
+      "set": "hsx"
+    },
+    {
+      "id": "sin_dorei_scentfinder",
+      "name": "Sin'dorei Scentfinder",
+      "cardClass": "hunter",
+      "cost": 4,
+      "rarity": "common",
+      "type": "creature",
+      "attack": 1,
+      "health": 6,
+      "ongoing": {
+        "on": "self-damaged",
+        "once": true,
+        "survives": true,
+        "effects": [
+          {
+            "type": "summon",
+            "count": 4,
+            "attack": 1,
+            "health": 1,
+            "name": "Hyena",
+            "keywords": [
+              "rush"
+            ]
+          }
+        ]
+      },
+      "description": "Frenzy: Summon four 1/1 Hyenas with Rush.",
+      "set": "hsx"
+    },
+    {
+      "id": "ticking_abomination",
+      "name": "Ticking Abomination",
+      "cardClass": "neutral",
+      "cost": 4,
+      "rarity": "rare",
+      "type": "creature",
+      "attack": 5,
+      "health": 6,
+      "keywords": [
+        "deathrattle"
+      ],
+      "deathrattle": [
+        {
+          "type": "damage",
+          "value": 5,
+          "target": "own-creatures"
+        }
+      ],
+      "description": "Deathrattle: Deal 5 damage to your own creatures.",
+      "set": "hsx"
+    },
+    {
+      "id": "voidcaller",
+      "name": "Voidcaller",
+      "cardClass": "warlock",
+      "cost": 4,
+      "rarity": "common",
+      "tribe": "Demon",
+      "type": "creature",
+      "attack": 3,
+      "health": 4,
+      "keywords": [
+        "deathrattle"
+      ],
+      "deathrattle": [
+        {
+          "type": "summon-from-hand",
+          "tribe": "Demon"
+        }
+      ],
+      "description": "Deathrattle: A random Demon jumps from your hand to the battlefield.",
+      "set": "hsx"
+    },
+    {
+      "id": "anubisath_sentinel",
+      "name": "Anubisath Sentinel",
+      "cardClass": "neutral",
+      "cost": 5,
+      "rarity": "common",
+      "type": "creature",
+      "attack": 4,
+      "health": 4,
+      "keywords": [
+        "deathrattle"
+      ],
+      "deathrattle": [
+        {
+          "type": "buff-random-friendly",
+          "attack": 3,
+          "health": 3
+        }
+      ],
+      "description": "Deathrattle: Give a random friendly creature +3/+3.",
+      "set": "hsx"
+    },
+    {
+      "id": "doppelgangster",
+      "name": "Doppelgangster",
+      "cardClass": "neutral",
+      "cost": 5,
+      "rarity": "rare",
+      "type": "creature",
+      "attack": 2,
+      "health": 2,
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "summon-self-copy",
+          "count": 2
+        }
+      ],
+      "description": "Battlecry: Summon 2 copies of this creature.",
+      "set": "hsx"
+    },
+    {
+      "id": "bone_drake",
+      "name": "Bone Drake",
+      "cardClass": "neutral",
+      "cost": 6,
+      "rarity": "rare",
+      "tribe": "Dragon",
+      "type": "creature",
+      "attack": 6,
+      "health": 5,
+      "keywords": [
+        "deathrattle"
+      ],
+      "deathrattle": [
+        {
+          "type": "conjure-random",
+          "cardType": "creature",
+          "tribe": "Dragon"
+        }
+      ],
+      "description": "Deathrattle: Add a random Dragon to your hand.",
+      "set": "hsx"
+    },
+    {
+      "id": "eccentric_scribe",
+      "name": "Eccentric Scribe",
+      "cardClass": "neutral",
+      "cost": 6,
+      "rarity": "common",
+      "type": "creature",
+      "attack": 6,
+      "health": 4,
+      "keywords": [
+        "deathrattle"
+      ],
+      "deathrattle": [
+        {
+          "type": "summon",
+          "count": 4,
+          "attack": 1,
+          "health": 1,
+          "name": "Vengeful Scroll"
+        }
+      ],
+      "description": "Deathrattle: Summon four 1/1 Vengeful Scrolls.",
+      "set": "hsx"
+    },
+    {
+      "id": "kabal_trafficker",
+      "name": "Kabal Trafficker",
+      "cardClass": "warlock",
+      "cost": 6,
+      "rarity": "epic",
+      "type": "creature",
+      "attack": 6,
+      "health": 6,
+      "ongoing": {
+        "on": "turn-end",
+        "effects": [
+          {
+            "type": "conjure-random",
+            "cardType": "creature",
+            "tribe": "Demon"
+          }
+        ]
+      },
+      "description": "At the end of your turn, add a random Demon to your hand.",
+      "set": "hsx"
+    },
+    {
+      "id": "power_spike",
+      "name": "Power Spike",
+      "cardClass": "paladin",
+      "cost": 6,
+      "rarity": "common",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 4,
+          "target": "any"
+        },
+        {
+          "type": "buff-random-friendly",
+          "attack": 4,
+          "health": 4
+        }
+      ],
+      "description": "Deal 4 damage to any target. Give a random friendly creature +4/+4.",
+      "set": "hsx"
+    },
+    {
+      "id": "swarm_of_locusts",
+      "name": "Swarm of Locusts",
+      "cardClass": "hunter",
+      "cost": 6,
+      "rarity": "rare",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "summon",
+          "count": 7,
+          "attack": 1,
+          "health": 1,
+          "name": "Locust",
+          "keywords": [
+            "rush"
+          ]
+        }
+      ],
+      "description": "Summon seven 1/1 Locusts with Rush.",
+      "set": "hsx"
+    },
+    {
+      "id": "boommaster_flark",
+      "name": "Boommaster Flark",
+      "cardClass": "hunter",
+      "cost": 7,
+      "rarity": "legendary",
+      "type": "creature",
+      "attack": 5,
+      "health": 5,
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "summon",
+          "count": 4,
+          "attack": 0,
+          "health": 2,
+          "name": "Goblin Bomb"
+        }
+      ],
+      "description": "Battlecry: Summon four 0/2 Goblin Bombs.",
+      "set": "hsx"
+    },
+    {
+      "id": "drum_circle",
+      "name": "Drum Circle",
+      "cardClass": "druid",
+      "cost": 7,
+      "rarity": "rare",
+      "type": "sorcery",
+      "choices": [
+        {
+          "text": "Summon five 2/2 Treants",
+          "effects": [
+            {
+              "type": "summon",
+              "count": 5,
+              "attack": 2,
+              "health": 2,
+              "name": "Treant"
+            }
+          ]
+        },
+        {
+          "text": "Give all your creatures +2/+4 and Taunt",
+          "effects": [
+            {
+              "type": "buff",
+              "attack": 2,
+              "health": 4,
+              "target": "friendly-creatures"
+            },
+            {
+              "type": "grant",
+              "keyword": "taunt",
+              "target": "friendly-creatures"
+            }
+          ]
+        }
+      ],
+      "description": "Choose one: Summon five 2/2 Treants; or Give all your creatures +2/+4 and Taunt.",
+      "set": "hsx"
+    },
+    {
+      "id": "umbral_owl",
+      "name": "Umbral Owl",
+      "cardClass": "druid",
+      "cost": 7,
+      "rarity": "rare",
+      "tribe": "Beast",
+      "type": "creature",
+      "attack": 4,
+      "health": 4,
+      "selfCost": {
+        "per": "spells-this-game",
+        "amount": -1
+      },
+      "keywords": [
+        "rush"
+      ],
+      "description": "Rush. Costs 1 less for each spell you've cast this game.",
+      "set": "hsx"
+    },
+    {
+      "id": "wisps_of_the_old_gods",
+      "name": "Wisps of the Old Gods",
+      "cardClass": "druid",
+      "cost": 7,
+      "rarity": "epic",
+      "type": "sorcery",
+      "choices": [
+        {
+          "text": "Summon seven 1/1 Wisps",
+          "effects": [
+            {
+              "type": "summon",
+              "count": 7,
+              "attack": 1,
+              "health": 1,
+              "name": "Wisp"
+            }
+          ]
+        },
+        {
+          "text": "Give all your creatures +2/+2",
+          "effects": [
+            {
+              "type": "buff",
+              "attack": 2,
+              "health": 2,
+              "target": "friendly-creatures"
+            }
+          ]
+        }
+      ],
+      "description": "Choose one: Summon seven 1/1 Wisps; or Give all your creatures +2/+2.",
+      "set": "hsx"
+    },
+    {
+      "id": "tomb_warden",
+      "name": "Tomb Warden",
+      "cardClass": "warrior",
+      "cost": 8,
+      "rarity": "rare",
+      "tribe": "Mech",
+      "type": "creature",
+      "attack": 3,
+      "health": 6,
+      "keywords": [
+        "taunt",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "summon-self-copy",
+          "count": 1
+        }
+      ],
+      "description": "Taunt. Battlecry: Summon a copy of this creature.",
+      "set": "hsx"
+    },
+    {
+      "id": "violet_wurm",
+      "name": "Violet Wurm",
+      "cardClass": "neutral",
+      "cost": 8,
+      "rarity": "common",
+      "tribe": "Beast",
+      "type": "creature",
+      "attack": 7,
+      "health": 7,
+      "keywords": [
+        "deathrattle"
+      ],
+      "deathrattle": [
+        {
+          "type": "summon",
+          "count": 7,
+          "attack": 1,
+          "health": 1,
+          "name": "Grub"
+        }
+      ],
+      "description": "Deathrattle: Summon seven 1/1 Grubs.",
+      "set": "hsx"
+    },
+    {
+      "id": "arcane_giant",
+      "name": "Arcane Giant",
+      "cardClass": "neutral",
+      "cost": 12,
+      "rarity": "epic",
+      "type": "creature",
+      "attack": 8,
+      "health": 8,
+      "selfCost": {
+        "per": "spells-this-game",
+        "amount": -1
+      },
+      "description": "Costs 1 less for each spell you've cast this game.",
+      "set": "hsx"
+    },
+    {
+      "id": "grave_horror",
+      "name": "Grave Horror",
+      "cardClass": "priest",
+      "cost": 12,
+      "rarity": "rare",
+      "type": "creature",
+      "attack": 7,
+      "health": 8,
+      "selfCost": {
+        "per": "spells-this-game",
+        "amount": -1
+      },
+      "keywords": [
+        "taunt"
+      ],
+      "description": "Taunt. Costs 1 less for each spell you've cast this game.",
+      "set": "hsx"
+    },
+    {
+      "id": "saronite_chain_gang",
+      "name": "Saronite Chain Gang",
+      "cardClass": "neutral",
+      "cost": 4,
+      "rarity": "rare",
+      "type": "creature",
+      "attack": 2,
+      "health": 3,
+      "keywords": [
+        "taunt",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "summon-self-copy",
+          "count": 1
+        }
+      ],
+      "description": "Taunt. Battlecry: Summon a copy of this creature."
     }
   ]
 }

@@ -15,11 +15,17 @@ const UP = new THREE.Vector3(0, 1, 0);
 let playerCount = Math.max(2, Math.min(E.MAX_PLAYERS,
 	parseInt(new URLSearchParams(location.search).get('players'), 10) || 2));
 
-// ?boss=<id> starts a dungeon-run encounter: 1v1 vs a scripted boss, the
-// human on that class's 10-card starting deck
-const dungeonBossId = (id => Dungeon.BOSSES[id] ? id : null)(
+// ?boss=<id> = a one-off encounter vs that boss; ?dungeon=1 = the full run
+// (8 levels, bucket drafts + treasures between fights, state in localStorage)
+const RUN_KEY = 'magepunk_dungeon_v1';
+const dungeonRunMode = new URLSearchParams(location.search).has('dungeon');
+let dungeonBossId = (id => Dungeon.BOSSES[id] ? id : null)(
 	new URLSearchParams(location.search).get('boss'));
-if (dungeonBossId) playerCount = 2;
+if (dungeonBossId || dungeonRunMode) playerCount = 2;
+
+const loadRun = () => { try { return JSON.parse(localStorage.getItem(RUN_KEY)); } catch (e) { return null; } };
+const saveRun = run => localStorage.setItem(RUN_KEY, JSON.stringify(run));
+const clearRun = () => localStorage.removeItem(RUN_KEY);
 
 const nameOf = pi => pi === HUMAN ? 'You'
 	: (dungeonBossId && pi === 1 ? Dungeon.BOSSES[dungeonBossId].name : `AI ${pi}`);
@@ -1290,7 +1296,12 @@ function nextEvent() {
 			const reward = ev.winner == null ? 50 : won ? 100 : 25;
 			Col.earnGold(reward);
 			log(`+${reward} gold (${Col.getGold()} total)`);
-			$('restart').style.display = '';
+			if (dungeonRunMode) {
+				const run = loadRun();
+				if (run?.active) setTimeout(() => won ? dungeonVictory(run) : dungeonDefeat(run), 1200);
+			} else {
+				$('restart').style.display = '';
+			}
 			delay = 200;
 			break;
 		}
@@ -1717,8 +1728,25 @@ async function start() {
 			});
 		} catch (e) { classRegistry = []; }
 	}
-	if (dungeonBossId) {
-		startDungeon(cardsById);
+	if (dungeonRunMode) {
+		let run = loadRun();
+		if (!run || !run.active) {
+			const clsId = await pickClassOverlay();
+			run = {
+				active: true, classId: clsId, level: 1,
+				deck: [...Dungeon.STARTER_DECKS[clsId]],
+				passives: [], bossId: Dungeon.randomBoss(1),
+			};
+			saveRun(run);
+		}
+		bootEncounter(cardsById, run.bossId, run.classId, run.deck, run.passives, run.level);
+	} else if (dungeonBossId) {
+		// one-off encounter: ?class= if it has a starter deck, else saved, else mage
+		const wanted = new URLSearchParams(location.search).get('class');
+		const clsId = Dungeon.STARTER_DECKS[wanted] ? wanted
+			: (Dungeon.STARTER_DECKS[localStorage.getItem('magepunk_class_v1')]
+				? localStorage.getItem('magepunk_class_v1') : 'mage');
+		bootEncounter(cardsById, dungeonBossId, clsId, Dungeon.STARTER_DECKS[clsId], [], null);
 	} else {
 		const picks = pickClasses();
 		// use the saved deck when it's complete and valid; otherwise the demo deck
@@ -1738,29 +1766,209 @@ async function start() {
 	updateHud();
 }
 
-function startDungeon(cardsById) {
-	const boss = Dungeon.BOSSES[dungeonBossId];
-	// human class: ?class= if it has a starter deck, else the saved class, else mage
-	const url = new URLSearchParams(location.search);
-	const wanted = url.get('class');
-	const clsId = Dungeon.STARTER_DECKS[wanted] ? wanted
-		: (Dungeon.STARTER_DECKS[localStorage.getItem('magepunk_class_v1')]
-			? localStorage.getItem('magepunk_class_v1') : 'mage');
+function bootEncounter(cardsById, bossId, clsId, deckIds, passives, level) {
+	dungeonBossId = bossId;
+	const boss = Dungeon.BOSSES[bossId];
 	const clsPick = classRegistry.find(c => c.id === clsId)
 		|| { id: clsId, name: clsId, power: null };
-	const bossPick = { id: dungeonBossId, name: boss.name, power: boss.power };
+	const bossPick = { id: bossId, name: boss.name, power: boss.power || null };
 	const picks = [clsPick, bossPick];
-	state = E.createGame(cardsById, Math.random, [...Dungeon.STARTER_DECKS[clsId]], 2, picks);
+	state = E.createGame(cardsById, Math.random, [...deckIds], 2, picks);
 	state.classPicks = picks;
-	// boss surgery: fixed 10-card deck, 10 health, no western corner zones
+	// boss surgery: its recorded deck, its health, no western corner zones
 	const bp = state.players[1];
 	bp.life = boss.health;
 	bp.deck = [...boss.deck].sort(() => Math.random() - 0.5);
 	bp.hand = [];
 	E.drawCards(state, 1, 4);
+	if (boss.passive === 'battlecries-twice' || boss.passive === 'both-twice') bp.battlecriesTwice = true;
+	if (boss.passive === 'deathrattles-twice' || boss.passive === 'both-twice') bp.deathrattlesTwice = true;
 	for (const p of state.players) { p.companion = null; p.command = []; }
-	log(`Dungeon Run — ${boss.name} (${boss.health} HP): "${boss.flavor}"`);
-	log(`Boss power — ${boss.power.name} (${boss.power.cost}): ${boss.power.text}`);
-	log(`You are a ${clsPick.name} with the ${clsPick.name} starting deck (10 cards).`);
+	applyTreasures(passives || []);
+	log(`${level ? `Dungeon level ${level}` : 'Dungeon Run'} — ${boss.name} (${boss.health} HP): "${boss.flavor}"`);
+	if (boss.power) log(`Boss power — ${boss.power.name} (${boss.power.cost}): ${boss.power.text}`);
+	if (boss.passive) log(`Boss passive — ${boss.passive.replace(/-/g, ' ')}.`);
+	log(`You are a ${clsPick.name} with a ${deckIds.length}-card dungeon deck.`);
+	for (const t of passives || []) log(`Treasure — ${Dungeon.TREASURES[t].name}: ${Dungeon.TREASURES[t].text}`);
+}
+
+// run passives, applied at the start of every fight
+function applyTreasures(ids) {
+	const p = state.players[HUMAN];
+	let n = 0;
+	const emblem = (id, fields) => p.emblems.push({
+		uid: 'treasure_' + (n++), id, name: Dungeon.TREASURES[id].name,
+		type: 'emblem', zone: 'emblem', controller: HUMAN, keywords: [],
+		description: Dungeon.TREASURES[id].text, ...fields,
+	});
+	for (const t of ids) {
+		switch (t) {
+			case 'potion_of_vitality': p.life *= 2; break;
+			case 'crystal_gem': p.mana.cur += 1; p.mana.max += 1; break;
+			case 'small_backpacks': E.drawCards(state, HUMAN, 2); break;
+			case 'captured_flag': emblem(t, { aura: { attack: 1, health: 1 } }); break;
+			case 'khadgars_scrying_orb': emblem(t, { costMod: { cardType: 'spell', amount: -1, scope: 'own' } }); break;
+			case 'grommashs_armguards': emblem(t, { costMod: { cardType: 'weapon', amount: -99, floor: 1, scope: 'own' } }); break;
+			case 'scepter_of_summoning': emblem(t, { costMod: { cardType: 'creature', amount: -99, floor: 5, minCost: 5, scope: 'own' } }); break;
+			case 'robe_of_the_magi': emblem(t, { static: { type: 'spell-damage', value: 3 } }); break;
+			case 'glyph_of_warding': emblem(t, { costMod: { cardType: 'creature', amount: 1, scope: 'enemies' } }); break;
+			case 'cloak_of_invisibility': emblem(t, { aura: { keywords: ['stealth'] } }); break;
+			case 'mysterious_tome': {
+				const secrets = Object.values(state.cardsById).filter(d => d.secret && !d.token);
+				for (let i = 0; i < 3 && secrets.length; i++) {
+					const d = secrets.splice(Math.floor(Math.random() * secrets.length), 1)[0];
+					E.installSecret(state, HUMAN, d.id);
+				}
+				break;
+			}
+			case 'totem_of_the_dead': p.deathrattlesTwice = true; break;
+			case 'battle_totem': p.battlecriesTwice = true; break;
+			case 'justicars_ring': {
+				const power = classPowerOf(HUMAN);
+				if (power) power.power.cost = Math.min(power.power.cost, 1);
+				break;
+			}
+		}
+	}
+}
+
+// ---------- dungeon run overlays ----------
+function dungeonOverlay(title, sub) {
+	let el = $('dungeon-overlay');
+	if (!el) {
+		el = document.createElement('div');
+		el.id = 'dungeon-overlay';
+		el.style.cssText = 'position:fixed;inset:0;z-index:60;background:rgba(8,6,14,0.92);'
+			+ 'display:flex;flex-direction:column;align-items:center;justify-content:center;'
+			+ 'font-family:inherit;color:#e8e0d0;text-align:center;padding:20px;overflow:auto;';
+		document.body.appendChild(el);
+	}
+	el.innerHTML = `<h1 style="margin:0 0 6px;font-size:30px;letter-spacing:2px;">${title}</h1>`
+		+ (sub ? `<div style="opacity:0.8;margin-bottom:18px;">${sub}</div>` : '');
+	el.style.display = 'flex';
+	return el;
+}
+function hideDungeonOverlay() {
+	const el = $('dungeon-overlay');
+	if (el) el.style.display = 'none';
+}
+function overlayButton(label, onClick) {
+	const b = document.createElement('button');
+	b.textContent = label;
+	b.style.cssText = 'margin:8px;padding:10px 22px;font-size:15px;cursor:pointer;'
+		+ 'background:#2a2440;color:#e8e0d0;border:1px solid #6a5f8a;border-radius:8px;';
+	b.addEventListener('click', onClick);
+	return b;
+}
+function miniFace(def) {
+	const c = drawCardFace(def, {});
+	c.style.cssText = 'width:96px;height:134px;border-radius:6px;';
+	// real art lazy-loads after the first paint — redraw once it has arrived
+	const redraw = () => {
+		const f = drawCardFace(def, {});
+		const ctx = c.getContext('2d');
+		ctx.clearRect(0, 0, c.width, c.height);
+		ctx.drawImage(f, 0, 0);
+	};
+	setTimeout(redraw, 700);
+	setTimeout(redraw, 2200);
+	return c;
+}
+
+function pickClassOverlay() {
+	return new Promise(resolve => {
+		const el = dungeonOverlay('DUNGEON RUN', 'Eight bosses stand between you and the treasure. Choose your class.');
+		const row = document.createElement('div');
+		row.style.cssText = 'display:flex;flex-wrap:wrap;justify-content:center;max-width:720px;';
+		for (const clsId of Object.keys(Dungeon.STARTER_DECKS)) {
+			const cls = classRegistry.find(c => c.id === clsId);
+			row.appendChild(overlayButton(cls ? cls.name : clsId, () => {
+				hideDungeonOverlay();
+				resolve(clsId);
+			}));
+		}
+		el.appendChild(row);
+	});
+}
+
+function dungeonVictory(run) {
+	const nextLevel = run.level + 1;
+	if (run.level >= 8) {
+		const el = dungeonOverlay('RUN COMPLETE!', `${Dungeon.BOSSES[run.bossId].name} falls — the treasure hoard is yours. Cleared as ${run.classId} with ${run.deck.length} cards.`);
+		Col.earnGold(500);
+		el.appendChild(overlayButton('New Run (+500 gold banked)', () => { clearRun(); location.reload(); }));
+		clearRun();
+		return;
+	}
+	// bucket draft: 3 options x 3 cards, class + neutral pool, rarity-weighted
+	const el = dungeonOverlay(`LEVEL ${run.level} CLEARED`, 'Choose a bucket — all three cards join your deck.');
+	const weights = { common: 4, uncommon: 3, rare: 2, epic: 1, legendary: 1 };
+	const pool = [];
+	for (const d of Object.values(state.cardsById)) {
+		if (d.token || d.companion || d.commander || d.type === 'land' || d.type === 'emblem'
+			|| d.type === 'heropower' || (d.colors && d.colors.length)) continue;
+		const cc = d.cardClass || 'neutral';
+		if (cc !== 'neutral' && cc !== run.classId) continue;
+		for (let i = 0; i < (weights[d.rarity] || 1); i++) pool.push(d);
+	}
+	const row = document.createElement('div');
+	row.style.cssText = 'display:flex;flex-wrap:wrap;justify-content:center;gap:14px;';
+	for (let b = 0; b < 3; b++) {
+		const picks = [];
+		while (picks.length < 3 && pool.length) {
+			const d = pool[Math.floor(Math.random() * pool.length)];
+			if (!picks.includes(d)) picks.push(d);
+		}
+		const box = document.createElement('div');
+		box.style.cssText = 'background:#1c1830;border:1px solid #4a4066;border-radius:10px;padding:12px;';
+		for (const d of picks) box.appendChild(miniFace(d));
+		box.appendChild(document.createElement('br'));
+		box.appendChild(overlayButton('Take these', () => {
+			run.deck.push(...picks.map(d => d.id));
+			afterBucket(run, nextLevel);
+		}));
+		row.appendChild(box);
+	}
+	el.appendChild(row);
+}
+
+function afterBucket(run, nextLevel) {
+	// a treasure after every odd level, HS-style
+	if (run.level % 2 === 1) {
+		const el = dungeonOverlay('TREASURE!', 'Choose a boon for the rest of the run.');
+		const options = Object.keys(Dungeon.TREASURES).filter(t => !run.passives.includes(t));
+		const row = document.createElement('div');
+		row.style.cssText = 'display:flex;flex-wrap:wrap;justify-content:center;gap:14px;';
+		for (let i = 0; i < 3 && options.length; i++) {
+			const t = options.splice(Math.floor(Math.random() * options.length), 1)[0];
+			const box = document.createElement('div');
+			box.style.cssText = 'background:#1c1830;border:1px solid #8a6f3a;border-radius:10px;padding:16px;max-width:190px;';
+			box.innerHTML = `<div style="font-weight:bold;margin-bottom:6px;">${Dungeon.TREASURES[t].name}</div>`
+				+ `<div style="font-size:13px;opacity:0.85;margin-bottom:8px;">${Dungeon.TREASURES[t].text}</div>`;
+			box.appendChild(overlayButton('Take it', () => {
+				run.passives.push(t);
+				advanceRun(run, nextLevel);
+			}));
+			row.appendChild(box);
+		}
+		el.appendChild(row);
+	} else {
+		advanceRun(run, nextLevel);
+	}
+}
+
+function advanceRun(run, nextLevel) {
+	run.level = nextLevel;
+	run.bossId = Dungeon.randomBoss(nextLevel);
+	saveRun(run);
+	const boss = Dungeon.BOSSES[run.bossId];
+	const el = dungeonOverlay(`LEVEL ${nextLevel}`, `Next: ${boss.name} (${boss.health} HP) — "${boss.flavor}"`);
+	el.appendChild(overlayButton('Fight!', () => location.reload()));
+}
+
+function dungeonDefeat(run) {
+	const el = dungeonOverlay('RUN OVER', `${Dungeon.BOSSES[run.bossId].name} ends your run at level ${run.level}.`);
+	clearRun();
+	el.appendChild(overlayButton('New Run', () => location.reload()));
 }
 start();

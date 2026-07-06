@@ -894,6 +894,8 @@ function recomputeAuras(state) {
 				if (c.keywords.includes(k)) continue;
 				c.keywords.push(k);
 				c.auraKeywords.push(k);
+				// Cloak of Invisibility: aura-granted stealth also hides the body
+				if (k === KW.STEALTH) c.stealthed = true;
 			}
 			// Lightspawn: attack tracks current health after everything else
 			if (c.statRule === 'attack-equals-health' && c.attack !== hp(c)) {
@@ -1375,6 +1377,10 @@ function runBattlecry(state, pi, card, target, choice) {
 	// data-driven battlecries (imported sets); legacy ids stay hand-scripted below
 	if ((card.effects || card.choices || card.combo) && !LEGACY_SCRIPTED.has(card.id)) {
 		execEffects(state, pi, liveEffectsOf(state, pi, card, choice), target, card);
+		// Battle Totem (dungeon treasure / Jin'zo passive): battlecries fire twice
+		if (p.battlecriesTwice) {
+			execEffects(state, pi, liveEffectsOf(state, pi, card, choice), target, card);
+		}
 	}
 	switch (card.id) {
 		case 'wandering_merchant': drawCards(state, pi, 1); break;
@@ -1410,7 +1416,11 @@ function runBattlecry(state, pi, card, target, choice) {
 }
 
 function runDeathrattle(state, pi, card) {
-	if (card.deathrattle) execEffects(state, pi, card.deathrattle, null, card);
+	if (card.deathrattle) {
+		execEffects(state, pi, card.deathrattle, null, card);
+		// Totem of the Dead (dungeon treasure / Azun passive): rattles fire twice
+		if (state.players[pi].deathrattlesTwice) execEffects(state, pi, card.deathrattle, null, card);
+	}
 	switch (card.id) {
 		case 'forest_sprite': summon(state, pi, TOKENS.seedling); break;
 		case 'acidspitter': {
@@ -1520,6 +1530,14 @@ function execEffects(state, pi, effects, target, source) {
 						for (const c of [...pl.board]) if (c !== source) damageCreature(state, c, v, null);
 					}
 					break;
+				case 'damaged-creatures': // Sleep with the Fishes
+					for (const pl of state.players) {
+						for (const c of [...pl.board]) if (c.damage > 0) damageCreature(state, c, v, null);
+					}
+					break;
+				case 'own-creatures': // Ticking Abomination
+					for (const c of [...state.players[pi].board]) damageCreature(state, c, v, null);
+					break;
 				default: { // chosen target
 					const t = chosenCreature();
 					if (t) damageCreature(state, t, v, null);
@@ -1534,6 +1552,7 @@ function execEffects(state, pi, effects, target, source) {
 			const mendHero = who => harm ? damageHero(state, who, v, pi) : healHero(state, who, v);
 			const mend = c => harm ? damageCreature(state, c, v, null) : healCreature(c, v);
 			if (e.target === 'self') mendHero(pi);
+			else if (e.target === 'all-heroes') { for (let s = 0; s < state.players.length; s++) if (!state.players[s].eliminated) mendHero(s); }
 			else if (e.target === 'all-creatures') { for (const pl of state.players) for (const c of [...pl.board]) mend(c); }
 			else if (e.target === 'friendly-creatures') { for (const c of [...state.players[pi].board]) mend(c); }
 			else if (e.target === 'friendly-all') { mendHero(pi); for (const c of [...state.players[pi].board]) mend(c); }
@@ -1693,6 +1712,25 @@ function execEffects(state, pi, effects, target, source) {
 					static: opt.static || e.static || null,
 				});
 			}
+		} else if (e.type === 'summon-self-copy') {
+			// Saronite Chain Gang / Doppelgangster: fresh copies of the played minion
+			const def = source && state.cardsById[source.id];
+			if (def) for (let i = 0; i < (e.count || 1); i++) summon(state, pi, def);
+		} else if (e.type === 'summon-from-hand') {
+			// Voidcaller: a random qualifying creature jumps from hand to board
+			const p = state.players[pi];
+			const pool = p.hand.filter(c => c.type === 'creature'
+				&& (!e.tribe || (c.tribe || '').includes(e.tribe)));
+			if (pool.length) {
+				const c = pool[Math.floor(state.rng() * pool.length)];
+				p.hand = p.hand.filter(x => x !== c);
+				c.zone = 'board';
+				c.sick = true;
+				p.board.push(c);
+				emit(state, { type: 'summon', player: pi, card: c });
+				fireOngoing(state, pi, 'summoned', { minion: c });
+				recomputeAuras(state);
+			}
 		} else if (e.type === 'summon-deck-copy') {
 			// Barnes: summon a copy of a random creature in YOUR deck
 			// (original stays); attack/health override forces token stats
@@ -1734,6 +1772,17 @@ function execEffects(state, pi, effects, target, source) {
 			if (t) t.static = { ...e.static };
 		} else if (e.type === 'armor') {
 			gainArmor(state, pi, e.value);
+		} else if (e.type === 'install-secret') {
+			installSecret(state, pi, e.id);
+		} else if (e.type === 'discount-hand') {
+			// Hunter's Call: cards in hand permanently cost (N) less
+			for (const c of state.players[pi].hand) c.cost = Math.max(0, c.cost - (e.value || 1));
+		} else if (e.type === 'mill') {
+			// Devour: burn the top N cards of an opponent's deck
+			const victim = enemyHero();
+			if (victim != null) {
+				for (let i = 0; i < (e.value || 1); i++) state.players[victim].deck.pop();
+			}
 		} else if (e.type === 'discard-random') {
 			const p = state.players[pi];
 			for (let i = 0; i < (e.count || 1) && p.hand.length; i++) {
@@ -2269,6 +2318,7 @@ function execEffects(state, pi, effects, target, source) {
 				&& !(d.colors && d.colors.length));
 			if (e.cardType === 'creature') pool = pool.filter(d => d.type === 'creature');
 			if (e.minAttack != null) pool = pool.filter(d => (d.attack || 0) >= e.minAttack);
+			if (e.tribe) pool = pool.filter(d => (d.tribe || '').includes(e.tribe));
 			if (e.cardClass === 'enemy') {
 				const victim = enemyHero();
 				const cls = victim != null && state.players[victim].heroClass;
@@ -2753,6 +2803,8 @@ export function effectiveCost(state, pi, card) {
 			n = p.weapon ? p.weapon.attack : 0;
 		} else if (card.selfCost.per === 'deaths-this-turn') {
 			n = state.diedThisTurn || 0;
+		} else if (card.selfCost.per === 'spells-this-game') {
+			n = p.spellsPlayedTotal || 0;
 		}
 		c += card.selfCost.amount * n;
 	}
@@ -2760,9 +2812,10 @@ export function effectiveCost(state, pi, card) {
 		for (const src of [...pl.board, ...pl.enchantments, ...pl.artifacts, ...pl.emblems]) {
 			const m = src.costMod;
 			if (!m || (src.zone === 'board' && isDead(src))) continue;
-			if (m.scope !== 'all' && pl !== p) continue;
+			if (m.scope === 'enemies' ? pl === p : (m.scope !== 'all' && pl !== p)) continue;
 			if (!costTypeMatches(card, m.cardType)) continue;
 			if (m.tribe && !(card.tribe || '').includes(m.tribe)) continue;
+			if (m.minCost != null && card.cost < m.minCost) continue;
 			if (m.firstEachTurn && (m.cardType === 'spell'
 				? p.spellsPlayedThisTurn : p.creaturesPlayedThisTurn) > 0) continue;
 			const before = c;
@@ -2883,6 +2936,7 @@ export function playCard(state, pi, cardUid, target, choice) {
 	} else {
 		questTick(state, 'spell', pi);
 		p.spellsPlayedThisTurn++;
+		p.spellsPlayedTotal = (p.spellsPlayedTotal || 0) + 1; // Arcane Giant
 		// Spellbender may retarget mid-cast by mutating ctx.target
 		const ctx = { spell: card, countered: false, target };
 		fireSecretsAll(state, pi, 'enemy-spell-cast', ctx);
@@ -3415,6 +3469,18 @@ export function useHeroPower(state, pi, cardUid, target, choice) {
 	execEffects(state, pi, powerEffectsOf(card, choice), target, card);
 	fireOngoing(state, pi, 'hero-power-used', {}); // Inspire
 	sweepDeaths(state);
+	return true;
+}
+
+// Dampen Magic / Mysterious Tome: put a named Secret straight into play
+export function installSecret(state, pi, id) {
+	const p = state.players[pi];
+	const def = state.cardsById[id];
+	if (!def?.secret || p.secrets.length >= MAX_SECRETS || p.secrets.some(c => c.id === id)) return false;
+	const c = instantiate(def, pi);
+	c.zone = 'secret';
+	p.secrets.push(c);
+	emit(state, { type: 'secretPlayed', player: pi, card: c });
 	return true;
 }
 
