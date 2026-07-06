@@ -1288,13 +1288,21 @@ function runSecretEffects(state, pi, effects, ctx) {
 				break;
 			}
 			case 'copy-minion': {
-				const m = triggering();
+				// of:'target' copies the attacked creature (Pack Tactics);
+				// attack/health override forces token stats
+				const m = e.of === 'target' && ctx.target?.type === 'creature'
+					? findCreature(state, ctx.target.uid) : triggering();
 				if (m) {
 					const def = state.cardsById[m.id] || {
 						id: m.id, name: m.name, type: 'creature', cost: m.cost, rarity: m.rarity,
 						description: m.description, attack: m.attack, health: m.maxHealth, keywords: [...m.keywords],
 					};
-					summon(state, pi, def);
+					const c = summon(state, pi, def);
+					if (c && e.attack != null) {
+						c.attack = e.attack + c.auraAttack;
+						c.maxHealth = e.health + c.auraHealth;
+						c.damage = 0;
+					}
 				}
 				break;
 			}
@@ -1646,12 +1654,15 @@ function execEffects(state, pi, effects, target, source) {
 			}
 		} else if (e.type === 'summon') {
 			// perEnemy: one token per enemy creature ("Unleash the Hounds");
-			// options: pick a random companion (Animal Companion)
+			// options: pick a random companion (Animal Companion);
+			// forEnemy: tokens go to a random opponent (Leeroy's Whelps)
 			let n = e.count || 1;
 			if (e.perEnemy) {
 				n = 0;
 				for (const o of enemies) n += state.players[o].board.filter(c => !isDead(c)).length;
 			}
+			const owner = e.forEnemy && enemies.length
+				? enemies[Math.floor(state.rng() * enemies.length)] : pi;
 			for (let i = 0; i < n; i++) {
 				const opt = e.options ? e.options[Math.floor(state.rng() * e.options.length)] : e;
 				// randomKeywords: each token rolls its own bonus (Bucket of Soldiers)
@@ -1659,7 +1670,7 @@ function execEffects(state, pi, effects, target, source) {
 				if (e.randomKeywords?.length) {
 					kws.push(e.randomKeywords[Math.floor(state.rng() * e.randomKeywords.length)]);
 				}
-				summon(state, pi, {
+				summon(state, owner, {
 					id: 'token_' + opt.name.toLowerCase().replace(/[^a-z0-9]+/g, '_'),
 					name: opt.name, type: 'creature', cost: 0, rarity: 'common',
 					description: opt.description || `A ${opt.attack}/${opt.health} token.`,
@@ -1669,6 +1680,20 @@ function execEffects(state, pi, effects, target, source) {
 					aura: opt.aura || null,
 					static: opt.static || e.static || null,
 				});
+			}
+		} else if (e.type === 'summon-deck-copy') {
+			// Barnes: summon a copy of a random creature in YOUR deck
+			// (original stays); attack/health override forces token stats
+			const p = state.players[pi];
+			const ids = p.deck.filter(id => state.cardsById[id]?.type === 'creature');
+			if (ids.length) {
+				const def = state.cardsById[ids[Math.floor(state.rng() * ids.length)]];
+				const c = summon(state, pi, def);
+				if (c && e.attack != null) {
+					c.attack = e.attack + c.auraAttack;
+					c.maxHealth = e.health + c.auraHealth;
+					c.damage = 0;
+				}
 			}
 		} else if (e.type === 'random-effects') {
 			// d4-roll hero powers: run one random option
