@@ -261,19 +261,19 @@ export function step(state, pi = 1) {
 		if (target && E.attack(state, pi, a.uid, target)) return true;
 	}
 
-	// 3. swing the weapon: lethal face, a good trade, or face
+	// 3. swing the hero: lethal face, a good trade, or face (weapon or temp attack)
 	if (E.canHeroAttack(state, pi)) {
-		const w = p.weapon;
+		const av = E.heroAttackValue(p);
 		const targets = E.heroAttackTargets(state, pi);
 		const heroTs = targets.filter(t => t.type === 'hero');
 		const creatureTs = targets.filter(t => t.type === 'creature');
-		const lethal = heroTs.find(t => state.players[t.player].life <= w.attack);
+		const lethal = heroTs.find(t => state.players[t.player].life <= av);
 		if (lethal && E.heroAttack(state, pi, lethal)) return true;
 		// good trade: kill a creature whose counterattack won't hurt too much
 		let best = null, bestScore = -1;
 		for (const t of creatureTs) {
 			const d = creatureOf(state, t);
-			if (!d || d.shield || w.attack < E.hp(d)) continue;
+			if (!d || d.shield || av < E.hp(d)) continue;
 			if (d.attack >= p.life - 5) continue; // never trade into near-death
 			if (d.attack > 4 && p.life < 20) continue;
 			const score = threatScore(d) - d.attack; // value gained minus face cost

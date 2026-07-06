@@ -10,7 +10,12 @@ export const KW = {
 	DIVINE_SHIELD: 'divine_shield', STEALTH: 'stealth', DEATHTOUCH: 'deathtouch',
 	POISONOUS: 'poisonous', FREEZER: 'freezer',
 	ELUSIVE: 'elusive', PIERCING: 'piercing',
+	PACIFIST: 'pacifist',   // can't attack (Ragnaros, Ancient Watcher)
+	CLEAVE: 'cleave',       // combat damage splashes to the defender's neighbors
+	REBORN: 'reborn',       // first death returns it at 1 health
 };
+// KW.DEFENDER now means the PAPER keyword: a coin-flip chance to redirect
+// attacks against your other permanents onto this creature.
 
 export const MAX_BASE_MANA = 12;
 export const MAX_HAND = 15;
@@ -25,14 +30,66 @@ export const MAX_HERO_POWERS = 3;
 // paper rules: develop a land by paying 3 mana and giving each opponent a coin
 export const LAND_COST = 3;
 
-// per-color Boost roll tables (paper rules leave these open — provisional)
+// per-color Boost d6 tables, straight from the design chart (2026-07-05).
+// Entries whose systems don't exist yet fall back to +1/+1 with a note.
+const PENDING = label => ({ label: `${label} (pending) → +1/+1`, attack: 1, health: 1 });
 export const BOOST_TABLES = {
-	W: [{ keyword: 'divine_shield' }, { attack: 0, health: 3 }, { attack: 1, health: 1 }],
-	U: [{ keyword: 'stealth' }, { attack: 1, health: 2 }, { attack: 0, health: 3 }],
-	B: [{ keyword: 'deathtouch' }, { attack: 2, health: 0 }, { attack: 1, health: 1 }],
-	R: [{ keyword: 'rush' }, { attack: 3, health: 0 }, { keyword: 'windfury' }],
-	G: [{ keyword: 'taunt' }, { attack: 2, health: 2 }, { keyword: 'trample' }],
+	W: [
+		{ label: '+1/+1', attack: 1, health: 1 },
+		{ label: 'Defender', keyword: 'defender' },
+		{ label: 'Inspire: Bolster 1', ongoing: { on: 'hero-power-used', effects: [{ type: 'bolster', value: 1 }] } },
+		{ label: 'Taunt', keyword: 'taunt' },
+		{ label: 'Swift', keyword: 'first_strike' },
+		{ label: 'Lifesteal', keyword: 'lifesteal' },
+	],
+	U: [
+		{ label: 'Swing: Scry 1', ongoing: { on: 'self-attacks', effects: [{ type: 'scry', value: 1 }] } },
+		{ label: '+3 Health', attack: 0, health: 3 },
+		{ label: 'Spell Damage +1', static: { type: 'spell-damage', value: 1 } },
+		{ label: 'Prowess', ongoing: { on: 'spell-played', effects: [{ type: 'temp-buff-self', attack: 1, health: 1 }] } },
+		PENDING('Connect: Excavate'),
+		{ label: 'Hexproof', keyword: 'elusive' },
+	],
+	B: [
+		{ label: 'Venomous', keyword: 'deathtouch' },
+		PENDING('Ward: 2 Life'),
+		PENDING('Swing: Advance'),
+		{ label: 'Avenge 1: Gain 1 Life', ongoing: { on: 'friendly-creature-died', need: 1, once: true, effects: [{ type: 'heal', value: 1, target: 'self' }] } },
+		{ label: 'Reborn', keyword: 'reborn' },
+		{ label: 'Deathtouch', keyword: 'deathtouch' },
+	],
+	R: [
+		PENDING('Inspire: Dredge'),
+		PENDING('Deathrattle: Planeshift'),
+		{ label: '+3 Attack', attack: 3, health: 0 },
+		{ label: 'Cleave', keyword: 'cleave' },
+		PENDING('Sanguine'),
+		PENDING('Impulsive (undefined)'),
+	],
+	G: [
+		{ label: 'Connect: Adapt', ongoing: { on: 'self-hit-player', effects: [{ type: 'adapt' }] } },
+		{ label: '+2/+2', attack: 2, health: 2 },
+		{ label: 'Frenzy: Bolster 1', ongoing: { on: 'self-damaged', once: true, survives: true, effects: [{ type: 'bolster', value: 1 }] } },
+		{ label: 'Inspire: Gain +1/+1', ongoing: { on: 'hero-power-used', effects: [{ type: 'buff-self', attack: 1, health: 1 }] } },
+		{ label: 'Windfury', keyword: 'windfury' },
+		{ label: 'Trample', keyword: 'trample' },
+	],
 };
+
+// Adapt d10 (paper glossary; Poisonous approximated as deathtouch, stealth
+// permanent rather than one-turn)
+export const ADAPT_TABLE = [
+	{ label: 'Divine Shield', keyword: 'divine_shield' },
+	{ label: '+3 Attack', attack: 3, health: 0 },
+	{ label: 'Deathrattle: two 1/1 Plants', deathrattle: [{ type: 'summon', count: 2, attack: 1, health: 1, name: 'Plant' }] },
+	{ label: 'Windfury', keyword: 'windfury' },
+	{ label: 'Elusive', keyword: 'elusive' },
+	{ label: 'Taunt', keyword: 'taunt' },
+	{ label: '+1/+1', attack: 1, health: 1 },
+	{ label: '+3 Health', attack: 0, health: 3 },
+	{ label: 'Stealth', keyword: 'stealth' },
+	{ label: 'Poisonous', keyword: 'deathtouch' },
+];
 
 // Cards whose mechanics aren't implemented yet (quests, quickdraw, inspire,
 // weapon enchants) — excluded from generated decks; creatures among them would
@@ -71,6 +128,7 @@ function instantiate(def, controller) {
 		tapped: false,
 		choices: def.choices || null, // Choose One branches: [{ text, effects }]
 		tempAttack: 0,               // "this turn" attack, expires at owner's turn end
+		tempHealth: 0,               // "this turn" health (Prowess)
 		power: def.power || null,   // hero power: { cost, effects }
 		quest: def.quest || null,   // quest: { goal: { type, count }, reward }
 		ongoing: def.ongoing || null, // permanent trigger: { on, effects }
@@ -508,6 +566,21 @@ function sweepDeaths(state) {
 			if (p.heroClass === 'death_knight' && !p.eliminated) {
 				p.corpses++;
 				emit(state, { type: 'corpses', player: pi, corpses: p.corpses });
+			}
+			// reborn: the first death returns it at 1 health, reborn spent
+			if (has(c, KW.REBORN) && !p.eliminated) {
+				c.keywords = c.keywords.filter(k => k !== KW.REBORN);
+				c.damage = c.maxHealth - 1;
+				c.poisoned = false;
+				c.frozen = null;
+				c.sick = true;
+				c.attacksUsed = 0;
+				c.auraAttack = 0;
+				c.auraHealth = 0;
+				c.auraKeywords = [];
+				p.board.push(c);
+				emit(state, { type: 'reborn', uid: c.uid, player: pi, name: c.name });
+				continue; // no graveyard, no deathrattle
 			}
 			if (c.marked) drawCards(state, c.markedBy, 2);
 			runDeathrattle(state, pi, c);
@@ -959,7 +1032,9 @@ function runSecretEffects(state, pi, effects, ctx) {
 				break;
 			}
 			default:
-				execEffects(state, pi, [e], null);
+				// pass the firing permanent through as `source` so self-scoped
+				// effects (temp-buff-self, gain-weapon-attack) still work
+				execEffects(state, pi, [e], null, ctx.self || null);
 		}
 	}
 }
@@ -1231,8 +1306,23 @@ function execEffects(state, pi, effects, target, source) {
 			if (source && source.zone === 'board' && !isDead(source)) {
 				source.attack += e.attack || 0;
 				source.tempAttack += e.attack || 0;
+				source.maxHealth += e.health || 0;
+				source.tempHealth = (source.tempHealth || 0) + (e.health || 0);
 				emit(state, { type: 'buff', uid: source.uid, attack: source.attack, hp: hp(source) });
 			}
+		} else if (e.type === 'bolster') {
+			// +N/+N to your creature with the least health (MTG-style default)
+			const pool = state.players[pi].board.filter(c => !isDead(c));
+			if (pool.length) {
+				const t = pool.reduce((a, b) => hp(b) < hp(a) ? b : a);
+				t.attack += e.value;
+				t.maxHealth += e.value;
+				emit(state, { type: 'buff', uid: t.uid, attack: t.attack, hp: hp(t) });
+			}
+		} else if (e.type === 'adapt') {
+			// paper glossary d10 (implementable subset; 10 entries kept)
+			const t = chosenCreature() || (source && source.zone === 'board' && !isDead(source) ? source : null);
+			if (t) applyAdapt(state, t);
 		} else if (e.type === 'hero-temp-attack') {
 			state.players[pi].heroTempAttack += e.value;
 			emit(state, { type: 'heroBuffed', player: pi, amount: e.value });
@@ -1338,19 +1428,13 @@ function execEffects(state, pi, effects, target, source) {
 				emit(state, { type: 'conjure', player: pi, card, color: e.color || null });
 			}
 		} else if (e.type === 'boost') {
-			// color boost roll: random buff from the color's table onto a chosen friendly creature
+			// color boost: roll the color's d6 table onto a chosen friendly creature
 			const t = chosenCreature();
 			const table = BOOST_TABLES[e.color] || [];
 			if (t && table.length) {
-				const roll = table[Math.floor(state.rng() * table.length)];
-				if (roll.keyword) {
-					if (!t.keywords.includes(roll.keyword)) t.keywords.push(roll.keyword);
-					if (roll.keyword === KW.DIVINE_SHIELD) t.shield = true;
-					if (roll.keyword === KW.STEALTH) t.stealthed = true;
-				}
-				t.attack += roll.attack || 0;
-				t.maxHealth += roll.health || 0;
-				emit(state, { type: 'boosted', uid: t.uid, color: e.color, roll, attack: t.attack, hp: hp(t) });
+				const roll = Math.floor(state.rng() * table.length);
+				applyRollEntry(state, t, table[roll]);
+				emit(state, { type: 'boosted', uid: t.uid, color: e.color, roll: roll + 1, label: table[roll].label, attack: t.attack, hp: hp(t) });
 			}
 		} else if (e.type === 'destroy-weapon') {
 			// hit the chosen enemy's weapon if they have one, else any armed enemy
@@ -1547,7 +1631,7 @@ export function attackersFor(state, pi) {
 export function canAttackWith(state, pi, c) {
 	if (state.over || state.current !== pi || c.attack <= 0) return false;
 	if (c.frozen) return false;
-	if (has(c, KW.DEFENDER)) return false;
+	if (has(c, KW.PACIFIST)) return false;
 	const maxAttacks = has(c, KW.WINDFURY) ? 2 : 1;
 	if (c.attacksUsed >= maxAttacks) return false;
 	if (c.sick && !has(c, KW.CHARGE) && !has(c, KW.RUSH)) return false;
@@ -1595,6 +1679,7 @@ export function attack(state, pi, attackerUid, target) {
 		sweepDeaths(state);
 		return true;
 	}
+	tryDefenderRedirect(state, ctx);
 	target = ctx.target;
 	if (target.type === 'creature') {
 		const redirected = findCreature(state, target.uid);
@@ -1635,6 +1720,14 @@ export function attack(state, pi, attackerUid, target) {
 		} else {
 			strike(attacker, defender);
 			strike(defender, attacker);
+		}
+		// cleave: the hit splashes onto the defender's board neighbors
+		if (has(attacker, KW.CLEAVE)) {
+			const db = state.players[target.player].board;
+			const di = db.indexOf(defender);
+			for (const n of [db[di - 1], db[di + 1]]) {
+				if (n && !isDead(n)) damageCreature(state, n, attacker.attack, attacker);
+			}
 		}
 		// trample: excess damage (attack beyond the defender's remaining health) hits the hero
 		if (has(attacker, KW.TRAMPLE) && isDead(defender)) {
@@ -1686,6 +1779,7 @@ export function heroAttack(state, pi, target) {
 	const ctx = { attackerType: 'hero', attackerPlayer: pi, target, cancelled: false };
 	fireSecrets(state, target.player, 'enemy-attack', ctx);
 	if (ctx.cancelled || heroAttackValue(p) <= 0 || state.over) { sweepDeaths(state); return true; }
+	tryDefenderRedirect(state, ctx);
 	target = ctx.target;
 
 	const w = p.weapon; // may be null when swinging on temp attack alone
@@ -1782,6 +1876,47 @@ export function useWalker(state, pi, cardUid, abilityIndex, target) {
 	if (card.loyalty <= 0) destroyWalker(state, card); // burned out all loyalty
 	sweepDeaths(state);
 	return true;
+}
+
+// apply one Boost/Adapt table entry to a creature
+function applyRollEntry(state, t, entry) {
+	if (entry.keyword && !t.keywords.includes(entry.keyword)) {
+		t.keywords.push(entry.keyword);
+		if (entry.keyword === KW.DIVINE_SHIELD) t.shield = true;
+		if (entry.keyword === KW.STEALTH) t.stealthed = true;
+	}
+	t.attack += entry.attack || 0;
+	t.maxHealth += entry.health || 0;
+	if (entry.static && !t.static) t.static = { ...entry.static };
+	if (entry.ongoing && !t.ongoing) t.ongoing = JSON.parse(JSON.stringify(entry.ongoing));
+	if (entry.deathrattle) t.deathrattle = [...(t.deathrattle || []), ...entry.deathrattle];
+}
+
+function applyAdapt(state, t) {
+	const roll = Math.floor(state.rng() * ADAPT_TABLE.length);
+	applyRollEntry(state, t, ADAPT_TABLE[roll]);
+	emit(state, { type: 'boosted', uid: t.uid, color: 'adapt', roll: roll + 1, label: ADAPT_TABLE[roll].label, attack: t.attack, hp: hp(t) });
+}
+
+// ---------- paper Defender: coin-flip attack redirection ----------
+// When an attack targets a defending player's permanent or hero, each of
+// their OTHER creatures with Defender gets one 50% flip to become the new
+// target (auto-attempted; first success wins).
+function tryDefenderRedirect(state, ctx) {
+	const target = ctx.target;
+	if (!target || target.player == null) return;
+	const defside = state.players[target.player];
+	if (!defside || defside.eliminated) return;
+	for (const d of defside.board) {
+		if (!has(d, KW.DEFENDER) || isDead(d)) continue;
+		if (target.type === 'creature' && target.uid === d.uid) continue; // already the target
+		if (state.rng() < 0.5) {
+			ctx.target = { type: 'creature', uid: d.uid, player: target.player };
+			emit(state, { type: 'defenderRedirect', uid: d.uid, player: target.player });
+			return;
+		}
+		emit(state, { type: 'defenderMiss', uid: d.uid, player: target.player });
+	}
 }
 
 // ---------- scry / gaze resolution ----------
@@ -1919,9 +2054,14 @@ export function endTurn(state) {
 	fireOngoing(state, pi, 'turn-end');
 	// "this turn" bonuses expire
 	for (const c of p.board) {
-		if (c.tempAttack) {
+		if (c.tempAttack || c.tempHealth) {
 			c.attack = Math.max(0, c.attack - c.tempAttack);
 			c.tempAttack = 0;
+			if (c.tempHealth) {
+				c.maxHealth -= c.tempHealth;
+				c.tempHealth = 0;
+				if (c.damage >= c.maxHealth) c.damage = Math.max(0, c.maxHealth - 1);
+			}
 			emit(state, { type: 'buff', uid: c.uid, attack: c.attack, hp: hp(c) });
 		}
 	}

@@ -3911,7 +3911,7 @@
       "attack": 4,
       "health": 5,
       "keywords": [
-        "defender"
+        "pacifist"
       ],
       "description": "Can't attack."
     },
@@ -4532,7 +4532,7 @@
         ]
       },
       "keywords": [
-        "defender"
+        "pacifist"
       ],
       "description": "Can't attack. At the end of your turn, deal 8 damage to a random enemy."
     },

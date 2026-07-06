@@ -827,7 +827,23 @@ function nextEvent() {
 		case 'boosted': {
 			const ent = entities.get(ev.uid);
 			if (ent) { refreshFace(ent); floatText('✸', '#ffd25f', ent.mesh.position); }
-			delay = 320;
+			log(`${ev.color === 'adapt' ? 'Adapt' : `Boost (${ev.color})`} rolled ${ev.roll}: ${ev.label}`);
+			delay = 380;
+			break;
+		}
+		case 'defenderRedirect': {
+			const ent = entities.get(ev.uid);
+			if (ent) floatText('🛡', '#57e389', ent.mesh.position);
+			log('A Defender intercepted the attack!');
+			delay = 400;
+			break;
+		}
+		case 'defenderMiss': delay = 150; break;
+		case 'reborn': {
+			const ent = entities.get(ev.uid);
+			if (ent) { refreshFace(ent); floatText('☥', '#ffd25f', ent.mesh.position); }
+			log(`${ev.name} was reborn at 1 health`);
+			delay = 420;
 			break;
 		}
 		case 'corpses': delay = 120; break;
