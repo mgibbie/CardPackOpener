@@ -330,5 +330,13 @@ export function step(state, pi = 1) {
 		if (target && E.heroAttack(state, pi, target)) return true;
 	}
 
+	// trade away tradeable cards we can't afford to play this turn
+	for (const c of p.hand) {
+		if (c.tradeable && E.canTrade(state, pi, c)
+			&& E.effectiveCost(state, pi, c) > E.availableMana(p)) {
+			if (E.tradeCard(state, pi, c.uid)) return true;
+		}
+	}
+
 	return false; // nothing left to do
 }

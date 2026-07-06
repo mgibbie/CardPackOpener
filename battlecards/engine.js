@@ -140,6 +140,8 @@ function instantiate(def, controller) {
 		selfCost: def.selfCost || null, // self-scaling printed cost: { per, amount }
 		enrage: def.enrage || null,   // while damaged: { attack?, health?, keywords?, weaponAttack? }
 		combo: def.combo || null,     // effects used instead when a card was played earlier this turn
+		tradeable: !!def.tradeable,   // pay 1: shuffle back into the deck, draw a card
+		offTurnAttack: def.offTurnAttack || 0, // "+N Attack during your opponent's turn"
 		statRule: def.statRule || null,   // 'attack-equals-health' (Lightspawn)
 		selfScale: def.selfScale || null, // { attack, tribe }: +N per other <tribe> in play
 		condKeyword: def.condKeyword || null, // { keyword, while: 'weapon' } (Southsea Deckhand)
@@ -538,6 +540,31 @@ function gainTokenCard(state, pi, id) {
 }
 const gainBloodToken = (state, pi) => gainTokenCard(state, pi, 'blood_token');
 
+// Tradeable: instead of playing the card, pay 1 mana to shuffle it back
+// into your deck and draw a card (user ruling)
+export function canTrade(state, pi, card) {
+	if (state.over || state.current !== pi) return false;
+	const p = state.players[pi];
+	return !!card.tradeable && p.hand.includes(card) && availableMana(p) >= 1;
+}
+
+export function tradeCard(state, pi, uid) {
+	const p = state.players[pi];
+	const card = p.hand.find(c => c.uid === uid);
+	if (!card || !canTrade(state, pi, card)) return false;
+	spendMana(p, 1);
+	p.hand = p.hand.filter(c => c !== card);
+	p.deck.push(card.id);
+	for (let k = p.deck.length - 1; k > 0; k--) {
+		const j = Math.floor(state.rng() * (k + 1));
+		[p.deck[k], p.deck[j]] = [p.deck[j], p.deck[k]];
+	}
+	emit(state, { type: 'traded', player: pi, card });
+	fireOngoing(state, pi, 'traded', {});
+	drawCards(state, pi, 1);
+	return true;
+}
+
 export function canSacrifice(state, pi, card) {
 	if (state.over || state.current !== pi) return false;
 	const p = state.players[pi];
@@ -678,6 +705,7 @@ function silenceCreature(state, c) {
 	c.condKeyword = null;
 	c.honorableKill = null;
 	c.medic = 0;
+	c.offTurnAttack = 0;
 	c.auraKeywords = [];
 	c.shield = false;
 	c.stealthed = false;
@@ -825,6 +853,10 @@ function recomputeAuras(state) {
 				aBonus += c.enrage.attack || 0;
 				hBonus += c.enrage.health || 0;
 				for (const k of c.enrage.keywords || []) granted.add(k);
+			}
+			// "+N Attack during your opponent's turn"
+			if (c.offTurnAttack && state.current !== c.controller) {
+				aBonus += c.offTurnAttack;
 			}
 			// Old Murk-Eye: +N Attack per other <tribe> anywhere in play
 			if (c.selfScale) {
@@ -1463,6 +1495,11 @@ function execEffects(state, pi, effects, target, source) {
 						damageHero(state, s, v, pi);
 					}
 					break;
+				case 'other-creatures': // every creature except the source
+					for (const pl of state.players) {
+						for (const c of [...pl.board]) if (c !== source) damageCreature(state, c, v, null);
+					}
+					break;
 				default: { // chosen target
 					const t = chosenCreature();
 					if (t) damageCreature(state, t, v, null);
@@ -1893,6 +1930,7 @@ function execEffects(state, pi, effects, target, source) {
 			else if (e.if.targetFriendlyTribe) ok = !!(t && t.controller === pi && (t.tribe || '').includes(e.if.targetFriendlyTribe));
 			else if (e.if.heroAttacked) ok = p.heroAttacksUsed > 0;
 			else if (e.if.controlMinAttack != null) ok = p.board.some(c => !isDead(c) && c !== source && c.attack >= e.if.controlMinAttack);
+			else if (e.if.holdingTribe) ok = p.hand.some(c => (c.tribe || '').includes(e.if.holdingTribe));
 			execEffects(state, pi, ok ? e.then : (e.else || []), target, source);
 		} else if (e.type === 'damage-then') {
 			// deal damage, then branch on whether the creature survived
@@ -2202,6 +2240,16 @@ function execEffects(state, pi, effects, target, source) {
 				drawCards(state, pi, 1);
 				if (p.hand.length === before) break; // nothing left to draw
 			}
+		} else if (e.type === 'buff-hand') {
+			// hand-buffs: pump creatures still waiting in your hand
+			const p = state.players[pi];
+			const pool = p.hand.filter(c => c.type === 'creature');
+			const targets = e.all ? pool
+				: pool.length ? [pool[Math.floor(state.rng() * pool.length)]] : [];
+			for (const c of targets) {
+				c.attack += e.attack || 0;
+				c.maxHealth += e.health || 0;
+			}
 		} else if (e.type === 'enrich') {
 			gainTokenCard(state, pi, 'treasure_token');
 		} else if (e.type === 'cook') {
@@ -2219,6 +2267,7 @@ function execEffects(state, pi, effects, target, source) {
 				if (e.cost != null && (d.cost || 0) !== e.cost) return false;
 				if (e.maxCost != null && (d.cost || 0) > e.maxCost) return false;
 				if (e.hasStatic && d.static?.type !== e.hasStatic) return false;
+				if (e.requireKeyword && !(d.keywords || []).includes(e.requireKeyword)) return false;
 				return true;
 			});
 			const ids = [];
@@ -2226,7 +2275,7 @@ function execEffects(state, pi, effects, target, source) {
 				ids.push(pool.splice(Math.floor(state.rng() * pool.length), 1)[0].id);
 			}
 			if (ids.length && !state.players[pi].eliminated) {
-				state.pickQueue.push({ player: pi, ids, grant: e.grant || null });
+				state.pickQueue.push({ player: pi, ids, grant: e.grant || null, buff: e.buff || null });
 				emit(state, { type: 'pickStart', player: pi, count: ids.length });
 			}
 		} else if (e.type === 'loot') {
@@ -2319,6 +2368,8 @@ function execEffects(state, pi, effects, target, source) {
 				clone.statRule = t.statRule;
 				clone.selfScale = t.selfScale ? { ...t.selfScale } : null;
 				clone.condKeyword = t.condKeyword ? { ...t.condKeyword } : null;
+				clone.offTurnAttack = t.offTurnAttack;
+				clone.medic = t.medic;
 				clone.shield = t.shield;
 				clone.stealthed = t.stealthed;
 				clone.sick = source.sick;
@@ -2333,7 +2384,7 @@ function execEffects(state, pi, effects, target, source) {
 			const p = state.players[pi];
 			p.costDiscounts = p.costDiscounts || [];
 			p.costDiscounts.push({
-				cardType: e.cardType || 'all', amount: e.amount || 0,
+				cardType: e.cardType || 'all', amount: e.amount || 0, tribe: e.tribe || null,
 				setZero: !!e.setZero, thisTurn: !!e.thisTurn, turn: state.turnNumber,
 			});
 		} else if (e.type === 'free-enemy-spells') {
@@ -2420,9 +2471,11 @@ function execEffects(state, pi, effects, target, source) {
 			})();
 			if (t) disguiseCreature(state, t);
 		} else if (e.type === 'summon-random') {
-			// e.g. "Summon a random creature with Mana Value 2 or less" / "a random Demon"
+			// "Summon a random creature with Mana Value 2 or less" / "a random
+			// Demon" / "a random 4-Cost minion" (exact cost)
 			const pool = Object.values(state.cardsById).filter(d =>
 				d.type === 'creature' && (e.maxCost == null || (d.cost || 0) <= e.maxCost)
+				&& (e.cost == null || (d.cost || 0) === e.cost)
 				&& (e.tribe == null || (d.tribe || '').includes(e.tribe))
 				&& !d.companion && !d.commander && !d.token && !(d.colors && d.colors.length));
 			if (pool.length) {
@@ -2584,7 +2637,9 @@ const costTypeMatches = (card, t) => t === 'all' || (t === 'spell' ? isSpellType
 // a live one-shot discount usable on this card right now, or -1
 function discountIndex(state, p, card) {
 	return (p.costDiscounts || []).findIndex(d =>
-		(!d.thisTurn || d.turn === state.turnNumber) && costTypeMatches(card, d.cardType));
+		(!d.thisTurn || d.turn === state.turnNumber)
+		&& costTypeMatches(card, d.cardType)
+		&& (!d.tribe || (card.tribe || '').includes(d.tribe)));
 }
 
 // what the card actually costs after self-scaling printed costs (Giants),
@@ -3140,6 +3195,10 @@ export function resolvePick(state, id) {
 		const card = instantiate(def, pend.player);
 		card.zone = 'hand';
 		if (pend.grant && !card.keywords.includes(pend.grant)) card.keywords.push(pend.grant);
+		if (pend.buff) { // "Discover a Taunt minion. Give it +1/+1."
+			card.attack += pend.buff.attack || 0;
+			card.maxHealth += pend.buff.health || 0;
+		}
 		p.hand.push(card);
 		emit(state, { type: 'conjure', player: pend.player, card, color: null });
 	}

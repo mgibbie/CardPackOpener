@@ -9717,6 +9717,7 @@
       "health": 4,
       "tribe": "Human Warrior",
       "medic": 2,
+      "tradeable": true,
       "keywords": [
         "lifesteal"
       ]
@@ -12167,6 +12168,7 @@
       "attack": 5,
       "health": 5,
       "tribe": "Beast",
+      "tradeable": true,
       "keywords": [
         "battlecry"
       ],
@@ -13700,6 +13702,7 @@
       "attack": 4,
       "health": 6,
       "tribe": "Spirit Horror",
+      "tradeable": true,
       "ongoing": {
         "on": "creature-died",
         "every": 1,
@@ -21539,7 +21542,10 @@
           "count": 2,
           "attack": 1,
           "health": 1,
-          "name": "Snakes with Stealth"
+          "name": "Snake",
+          "keywords": [
+            "stealth"
+          ]
         }
       ],
       "description": "Summon two 1/1 Snakes with Stealth.",
@@ -21644,7 +21650,10 @@
           "count": 1,
           "attack": 1,
           "health": 1,
-          "name": "Hyena with Rush"
+          "name": "Hyena",
+          "keywords": [
+            "rush"
+          ]
         }
       ],
       "description": "Deal 1 damage to any target. Summon a 1/1 Hyena with Rush.",
@@ -21758,7 +21767,10 @@
           "count": 1,
           "attack": 1,
           "health": 1,
-          "name": "Locust with Rush"
+          "name": "Locust",
+          "keywords": [
+            "rush"
+          ]
         }
       ],
       "description": "Battlecry: Summon a 1/1 Locust with Rush.",
@@ -23597,7 +23609,10 @@
           "count": 1,
           "attack": 2,
           "health": 1,
-          "name": "Hog with Rush"
+          "name": "Hog",
+          "keywords": [
+            "rush"
+          ]
         }
       ],
       "description": "Battlecry: Summon a 2/1 Hog with Rush.",
@@ -24433,7 +24448,10 @@
           "count": 1,
           "attack": 3,
           "health": 3,
-          "name": "Elemental with Rush"
+          "name": "Elemental",
+          "keywords": [
+            "rush"
+          ]
         }
       ],
       "description": "Your hero has +3 Attack this turn. Summon a 3/3 Elemental with Rush. Overload: 1 mana locked next turn.",
@@ -24741,7 +24759,10 @@
           "count": 1,
           "attack": 2,
           "health": 2,
-          "name": "Wolf with Stealth"
+          "name": "Wolf",
+          "keywords": [
+            "stealth"
+          ]
         }
       ],
       "description": "Stealth. Deathrattle: Summon a 2/2 Wolf with Stealth.",
@@ -25027,7 +25048,10 @@
               "count": 2,
               "attack": 3,
               "health": 2,
-              "name": "Wolves with Rush"
+              "name": "Wolve",
+              "keywords": [
+                "rush"
+              ]
             }
           ]
         }
@@ -25175,7 +25199,10 @@
           "count": 3,
           "attack": 1,
           "health": 1,
-          "name": "Ducklings with Rush"
+          "name": "Duckling",
+          "keywords": [
+            "rush"
+          ]
         }
       ],
       "description": "Battlecry: Summon three 1/1 Ducklings with Rush.",
@@ -25518,7 +25545,10 @@
           "count": 1,
           "attack": 7,
           "health": 7,
-          "name": "Tank with Divine Shield"
+          "name": "Tank",
+          "keywords": [
+            "divine_shield"
+          ]
         }
       ],
       "description": "Divine Shield. Deathrattle: Summon a 7/7 Tank with Divine Shield.",
@@ -26289,7 +26319,10 @@
               "count": 2,
               "attack": 4,
               "health": 3,
-              "name": "Falcons with Windfury"
+              "name": "Falcon",
+              "keywords": [
+                "windfury"
+              ]
             }
           ]
         }
@@ -26918,7 +26951,10 @@
           "count": 1,
           "attack": 7,
           "health": 5,
-          "name": "Shadow with Stealth"
+          "name": "Shadow",
+          "keywords": [
+            "stealth"
+          ]
         }
       ],
       "description": "Deathrattle: Summon a 7/5 Shadow with Stealth.",
@@ -27203,7 +27239,10 @@
             "count": 1,
             "attack": 6,
             "health": 6,
-            "name": "Elemental Dragon with Divine Shield"
+            "name": "Elemental Dragon",
+            "keywords": [
+              "divine_shield"
+            ]
           }
         ]
       },
@@ -27597,7 +27636,10 @@
           "count": 1,
           "attack": 8,
           "health": 8,
-          "name": "Gravewing with Rush"
+          "name": "Gravewing",
+          "keywords": [
+            "rush"
+          ]
         }
       ],
       "description": "Rush. Deathrattle: Summon an 8/8 Gravewing with Rush.",
@@ -27627,6 +27669,3073 @@
       "attack": 14,
       "health": 28,
       "description": "A 14/28 creature.",
+      "set": "hsx"
+    },
+    {
+      "id": "fire_sale",
+      "name": "Fire Sale",
+      "cardClass": "mage",
+      "cost": 4,
+      "rarity": "common",
+      "set": "paper",
+      "description": "Deal 3 damage to each creature. Tradeable.",
+      "type": "instant",
+      "tribe": "Fire",
+      "tradeable": true,
+      "effects": [
+        {
+          "type": "damage",
+          "value": 3,
+          "target": "all-creatures"
+        }
+      ]
+    },
+    {
+      "id": "injured_tol_vir",
+      "name": "Injured Tol'vir",
+      "cardClass": "neutral",
+      "cost": 2,
+      "rarity": "common",
+      "set": "paper",
+      "description": "Battlecry: Deal 3 damage to this creature.",
+      "type": "creature",
+      "attack": 2,
+      "health": 6,
+      "tribe": "Beast Soldier",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "damage-self",
+          "value": 3
+        }
+      ]
+    },
+    {
+      "id": "living_stone",
+      "name": "Living Stone",
+      "cardClass": "neutral",
+      "cost": 2,
+      "rarity": "rare",
+      "set": "paper",
+      "description": "Deathrattle: Summon a random 2-Cost creature.",
+      "type": "creature",
+      "attack": 2,
+      "health": 4,
+      "tribe": "Elemental",
+      "keywords": [
+        "deathrattle"
+      ],
+      "deathrattle": [
+        {
+          "type": "summon-random",
+          "cost": 2
+        }
+      ]
+    },
+    {
+      "id": "freezing_potion",
+      "name": "Freezing Potion",
+      "cardClass": "mage",
+      "cost": 0,
+      "rarity": "common",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "freeze",
+          "target": "enemy-creature"
+        }
+      ],
+      "description": "Freeze an enemy creature.",
+      "set": "hsx"
+    },
+    {
+      "id": "deadscale_knight",
+      "name": "Deadscale Knight",
+      "cardClass": "neutral",
+      "cost": 1,
+      "rarity": "common",
+      "tribe": "Murloc",
+      "type": "creature",
+      "attack": 1,
+      "health": 1,
+      "keywords": [
+        "lifesteal"
+      ],
+      "description": "Lifesteal.",
+      "set": "hsx"
+    },
+    {
+      "id": "faithful_lumi",
+      "name": "Faithful Lumi",
+      "cardClass": "neutral",
+      "cost": 1,
+      "rarity": "common",
+      "tribe": "Mech",
+      "type": "creature",
+      "attack": 1,
+      "health": 1,
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 1,
+          "health": 1,
+          "target": "friendly-creature",
+          "tribe": "Mech"
+        }
+      ],
+      "description": "Battlecry: Give a friendly Mech +1/+1.",
+      "set": "hsx"
+    },
+    {
+      "id": "frequency_oscillator",
+      "name": "Frequency Oscillator",
+      "cardClass": "neutral",
+      "cost": 1,
+      "rarity": "common",
+      "tribe": "Mech",
+      "type": "creature",
+      "attack": 2,
+      "health": 1,
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "discount",
+          "cardType": "creature",
+          "tribe": "Mech",
+          "amount": -1
+        }
+      ],
+      "description": "Battlecry: The next Mech you play costs 1 less.",
+      "set": "hsx"
+    },
+    {
+      "id": "gnome_private",
+      "name": "Gnome Private",
+      "cardClass": "neutral",
+      "cost": 1,
+      "rarity": "common",
+      "type": "creature",
+      "attack": 1,
+      "health": 3,
+      "honorableKill": [
+        {
+          "type": "buff-self",
+          "attack": 2,
+          "health": 0
+        }
+      ],
+      "description": "Honorable Kill: this gains +2 Attack.",
+      "set": "hsx"
+    },
+    {
+      "id": "jolly_roger",
+      "name": "Jolly Roger",
+      "cardClass": "rogue",
+      "cost": 1,
+      "rarity": "common",
+      "tribe": "Pirate",
+      "type": "creature",
+      "attack": 1,
+      "health": 3,
+      "ongoing": {
+        "on": "hero-attacked",
+        "effects": [
+          {
+            "type": "summon",
+            "count": 1,
+            "attack": 1,
+            "health": 1,
+            "name": "Undead Pirate"
+          }
+        ]
+      },
+      "description": "After your hero attacks, summon a 1/1 Undead Pirate.",
+      "set": "hsx"
+    },
+    {
+      "id": "kindling_elemental",
+      "name": "Kindling Elemental",
+      "cardClass": "neutral",
+      "cost": 1,
+      "rarity": "common",
+      "tribe": "Elemental",
+      "type": "creature",
+      "attack": 1,
+      "health": 2,
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "discount",
+          "cardType": "creature",
+          "tribe": "Elemental",
+          "amount": -1
+        }
+      ],
+      "description": "Battlecry: The next Elemental you play costs 1 less.",
+      "set": "hsx"
+    },
+    {
+      "id": "murmy",
+      "name": "Murmy",
+      "cardClass": "neutral",
+      "cost": 1,
+      "rarity": "common",
+      "tribe": "Murloc",
+      "type": "creature",
+      "attack": 1,
+      "health": 1,
+      "keywords": [
+        "reborn"
+      ],
+      "description": "Reborn.",
+      "set": "hsx"
+    },
+    {
+      "id": "raven_idol",
+      "name": "Raven Idol",
+      "cardClass": "druid",
+      "cost": 1,
+      "rarity": "common",
+      "type": "sorcery",
+      "choices": [
+        {
+          "text": "Discover a creature",
+          "effects": [
+            {
+              "type": "discover",
+              "pick": 3,
+              "cardType": "creature"
+            }
+          ]
+        },
+        {
+          "text": "Discover a spell",
+          "effects": [
+            {
+              "type": "discover",
+              "pick": 3,
+              "cardType": "spell"
+            }
+          ]
+        }
+      ],
+      "description": "Choose one: Discover a creature; or Discover a spell.",
+      "set": "hsx"
+    },
+    {
+      "id": "renew",
+      "name": "Renew",
+      "cardClass": "priest",
+      "cost": 1,
+      "rarity": "common",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "heal",
+          "value": 3,
+          "target": "any"
+        },
+        {
+          "type": "discover",
+          "pick": 3,
+          "cardType": "spell"
+        }
+      ],
+      "description": "Restore 3 health to any target. Discover a spell.",
+      "set": "hsx"
+    },
+    {
+      "id": "scarab_keychain",
+      "name": "Scarab Keychain",
+      "cardClass": "neutral",
+      "cost": 1,
+      "rarity": "common",
+      "tribe": "Beast",
+      "type": "creature",
+      "attack": 1,
+      "health": 1,
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "discover",
+          "pick": 3,
+          "cost": 2
+        }
+      ],
+      "description": "Battlecry: Discover a 2-cost card (pick one of three).",
+      "set": "hsx"
+    },
+    {
+      "id": "shard_of_the_naaru",
+      "name": "Shard of the Naaru",
+      "cardClass": "priest",
+      "cost": 1,
+      "rarity": "common",
+      "tradeable": true,
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "silence",
+          "target": "enemy-creatures"
+        }
+      ],
+      "description": "Silence all enemy creatures. Tradeable: pay 1 to shuffle this into your deck and draw a card.",
+      "set": "hsx"
+    },
+    {
+      "id": "smuggler_s_run",
+      "name": "Smuggler's Run",
+      "cardClass": "paladin",
+      "cost": 1,
+      "rarity": "common",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "buff-hand",
+          "all": true,
+          "attack": 1,
+          "health": 1
+        }
+      ],
+      "description": "Give the creatures in your hand +1/+1.",
+      "set": "hsx"
+    },
+    {
+      "id": "spirit_bomb",
+      "name": "Spirit Bomb",
+      "cardClass": "warlock",
+      "cost": 1,
+      "rarity": "common",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 4,
+          "target": "creature"
+        },
+        {
+          "type": "damage",
+          "value": 4,
+          "target": "own-hero"
+        }
+      ],
+      "description": "Deal 4 damage to a creature and to your own hero.",
+      "set": "hsx"
+    },
+    {
+      "id": "wand_thief",
+      "name": "Wand Thief",
+      "cardClass": "neutral",
+      "cost": 1,
+      "rarity": "common",
+      "type": "creature",
+      "attack": 1,
+      "health": 2,
+      "combo": [
+        {
+          "type": "discover",
+          "pick": 3,
+          "cardType": "spell",
+          "tribe": "Mage"
+        }
+      ],
+      "description": "Combo: Discover a Mage spell.",
+      "set": "hsx"
+    },
+    {
+      "id": "warbot",
+      "name": "Warbot",
+      "cardClass": "warrior",
+      "cost": 1,
+      "rarity": "common",
+      "tribe": "Mech",
+      "type": "creature",
+      "attack": 1,
+      "health": 3,
+      "enrage": {
+        "attack": 1
+      },
+      "description": "While damaged: +1 Attack.",
+      "set": "hsx"
+    },
+    {
+      "id": "anima_extractor",
+      "name": "Anima Extractor",
+      "cardClass": "warrior",
+      "cost": 2,
+      "rarity": "common",
+      "type": "creature",
+      "attack": 1,
+      "health": 4,
+      "ongoing": {
+        "on": "friendly-creature-damaged",
+        "effects": [
+          {
+            "type": "buff-hand",
+            "attack": 1,
+            "health": 1
+          }
+        ]
+      },
+      "description": "Whenever a friendly creature takes damage, give a random creature in your hand +1/+1.",
+      "set": "hsx"
+    },
+    {
+      "id": "aqua_archivist",
+      "name": "Aqua Archivist",
+      "cardClass": "mage",
+      "cost": 2,
+      "rarity": "common",
+      "tribe": "Elemental",
+      "type": "creature",
+      "attack": 2,
+      "health": 2,
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "discount",
+          "cardType": "creature",
+          "tribe": "Elemental",
+          "amount": -2
+        }
+      ],
+      "description": "Battlecry: The next Elemental you play costs 2 less.",
+      "set": "hsx"
+    },
+    {
+      "id": "bloodsail_recruiter",
+      "name": "Bloodsail Recruiter",
+      "cardClass": "neutral",
+      "cost": 2,
+      "rarity": "common",
+      "tribe": "Pirate",
+      "type": "creature",
+      "attack": 4,
+      "health": 1,
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "discover",
+          "pick": 3,
+          "tribe": "Pirate"
+        }
+      ],
+      "description": "Battlecry: Discover a Pirate.",
+      "set": "hsx"
+    },
+    {
+      "id": "brood_keeper",
+      "name": "Brood Keeper",
+      "cardClass": "warrior",
+      "cost": 2,
+      "rarity": "common",
+      "type": "creature",
+      "attack": 2,
+      "health": 3,
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "conditional",
+          "target": "any",
+          "if": {
+            "holdingTribe": "Dragon"
+          },
+          "then": [
+            {
+              "type": "equip",
+              "attack": 2,
+              "durability": 2,
+              "name": "Sword"
+            }
+          ]
+        }
+      ],
+      "description": "Battlecry: If you're holding a Dragon: Equip a 2/2 Sword.",
+      "set": "hsx"
+    },
+    {
+      "id": "brrrloc",
+      "name": "Brrrloc",
+      "cardClass": "shaman",
+      "cost": 2,
+      "rarity": "common",
+      "tribe": "Murloc",
+      "type": "creature",
+      "attack": 2,
+      "health": 2,
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "freeze",
+          "target": "enemy-creature"
+        }
+      ],
+      "description": "Battlecry: Freeze an enemy creature.",
+      "set": "hsx"
+    },
+    {
+      "id": "costumed_entertainer",
+      "name": "Costumed Entertainer",
+      "cardClass": "neutral",
+      "cost": 2,
+      "rarity": "common",
+      "type": "creature",
+      "attack": 1,
+      "health": 2,
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "buff-hand",
+          "attack": 2,
+          "health": 2
+        }
+      ],
+      "description": "Battlecry: Give a random creature in your hand +2/+2.",
+      "set": "hsx"
+    },
+    {
+      "id": "dark_peddler",
+      "name": "Dark Peddler",
+      "cardClass": "warlock",
+      "cost": 2,
+      "rarity": "common",
+      "type": "creature",
+      "attack": 2,
+      "health": 3,
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "discover",
+          "pick": 3,
+          "cost": 1
+        }
+      ],
+      "description": "Battlecry: Discover a 1-cost card (pick one of three).",
+      "set": "hsx"
+    },
+    {
+      "id": "death_s_advance",
+      "name": "Death's Advance",
+      "cardClass": "death_knight",
+      "cost": 2,
+      "rarity": "common",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "freeze",
+          "target": "any"
+        },
+        {
+          "type": "discover",
+          "pick": 3,
+          "cardType": "spell"
+        }
+      ],
+      "description": "Freeze a target. Discover a spell.",
+      "set": "hsx"
+    },
+    {
+      "id": "demonfuse",
+      "name": "Demonfuse",
+      "cardClass": "warlock",
+      "cost": 2,
+      "rarity": "common",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 3,
+          "health": 3,
+          "target": "friendly-creature",
+          "tribe": "Demon"
+        }
+      ],
+      "description": "Give a friendly Demon +3/+3.",
+      "set": "hsx"
+    },
+    {
+      "id": "frightened_flunky",
+      "name": "Frightened Flunky",
+      "cardClass": "warrior",
+      "cost": 2,
+      "rarity": "common",
+      "type": "creature",
+      "attack": 2,
+      "health": 3,
+      "keywords": [
+        "taunt",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "discover",
+          "pick": 3,
+          "cardType": "creature",
+          "requireKeyword": "taunt"
+        }
+      ],
+      "description": "Taunt. Battlecry: Discover a Taunt creature.",
+      "set": "hsx"
+    },
+    {
+      "id": "grimestreet_outfitter",
+      "name": "Grimestreet Outfitter",
+      "cardClass": "paladin",
+      "cost": 2,
+      "rarity": "common",
+      "type": "creature",
+      "attack": 2,
+      "health": 2,
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "buff-hand",
+          "all": true,
+          "attack": 1,
+          "health": 1
+        }
+      ],
+      "description": "Battlecry: Give the creatures in your hand +1/+1.",
+      "set": "hsx"
+    },
+    {
+      "id": "jam_session",
+      "name": "Jam Session",
+      "cardClass": "warrior",
+      "cost": 2,
+      "rarity": "common",
+      "overload": 1,
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 3,
+          "health": 3,
+          "target": "friendly-creature"
+        },
+        {
+          "type": "damage",
+          "value": 1,
+          "target": "other-creatures"
+        }
+      ],
+      "description": "Give a friendly creature +3/+3. Deal 1 damage to every other creature. Overload: 1 mana locked next turn.",
+      "set": "hsx"
+    },
+    {
+      "id": "jeweled_scarab",
+      "name": "Jeweled Scarab",
+      "cardClass": "neutral",
+      "cost": 2,
+      "rarity": "common",
+      "tribe": "Beast",
+      "type": "creature",
+      "attack": 1,
+      "health": 1,
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "discover",
+          "pick": 3,
+          "cost": 3
+        }
+      ],
+      "description": "Battlecry: Discover a 3-cost card (pick one of three).",
+      "set": "hsx"
+    },
+    {
+      "id": "lotus_bookie",
+      "name": "Lotus Bookie",
+      "cardClass": "rogue",
+      "cost": 2,
+      "rarity": "common",
+      "type": "creature",
+      "attack": 2,
+      "health": 2,
+      "keywords": [
+        "deathrattle"
+      ],
+      "deathrattle": [
+        {
+          "type": "gain-coin",
+          "value": 1
+        }
+      ],
+      "description": "Deathrattle: Bank a Coin.",
+      "set": "hsx"
+    },
+    {
+      "id": "maze_guide",
+      "name": "Maze Guide",
+      "cardClass": "neutral",
+      "cost": 2,
+      "rarity": "common",
+      "type": "creature",
+      "attack": 1,
+      "health": 1,
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "summon-random",
+          "cost": 2
+        }
+      ],
+      "description": "Battlecry: Summon a random 2-cost creature.",
+      "set": "hsx"
+    },
+    {
+      "id": "netherspite_historian",
+      "name": "Netherspite Historian",
+      "cardClass": "neutral",
+      "cost": 2,
+      "rarity": "common",
+      "type": "creature",
+      "attack": 2,
+      "health": 3,
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "conditional",
+          "target": "any",
+          "if": {
+            "holdingTribe": "Dragon"
+          },
+          "then": [
+            {
+              "type": "discover",
+              "pick": 3,
+              "tribe": "Dragon"
+            }
+          ]
+        }
+      ],
+      "description": "Battlecry: If you're holding a Dragon: Discover a Dragon.",
+      "set": "hsx"
+    },
+    {
+      "id": "netherwalker",
+      "name": "Netherwalker",
+      "cardClass": "demon_hunter",
+      "cost": 2,
+      "rarity": "common",
+      "type": "creature",
+      "attack": 2,
+      "health": 2,
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "discover",
+          "pick": 3,
+          "tribe": "Demon"
+        }
+      ],
+      "description": "Battlecry: Discover a Demon.",
+      "set": "hsx"
+    },
+    {
+      "id": "oh_manager",
+      "name": "Oh, Manager!",
+      "cardClass": "rogue",
+      "cost": 2,
+      "rarity": "common",
+      "type": "sorcery",
+      "combo": [
+        {
+          "type": "gain-coin",
+          "value": 1
+        }
+      ],
+      "effects": [
+        {
+          "type": "damage",
+          "value": 2,
+          "target": "any"
+        }
+      ],
+      "description": "Deal 2 damage to any target. Combo: Bank a Coin.",
+      "set": "hsx"
+    },
+    {
+      "id": "ritual_of_life",
+      "name": "Ritual of Life",
+      "cardClass": "priest",
+      "cost": 2,
+      "rarity": "common",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "discover",
+          "pick": 3,
+          "cost": 3,
+          "cardType": "creature"
+        },
+        {
+          "type": "summon",
+          "count": 1,
+          "attack": 2,
+          "health": 3,
+          "name": "copy of it"
+        }
+      ],
+      "description": "Discover a 3-cost minion (pick one of three). Summon a 2/3 copy of it.",
+      "set": "hsx"
+    },
+    {
+      "id": "rockpool_hunter",
+      "name": "Rockpool Hunter",
+      "cardClass": "neutral",
+      "cost": 2,
+      "rarity": "common",
+      "tribe": "Murloc",
+      "type": "creature",
+      "attack": 2,
+      "health": 3,
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 1,
+          "health": 1,
+          "target": "friendly-creature",
+          "tribe": "Murloc"
+        }
+      ],
+      "description": "Battlecry: Give a friendly Murloc +1/+1.",
+      "set": "hsx"
+    },
+    {
+      "id": "runed_orb",
+      "name": "Runed Orb",
+      "cardClass": "mage",
+      "cost": 2,
+      "rarity": "common",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 2,
+          "target": "any"
+        },
+        {
+          "type": "discover",
+          "pick": 3,
+          "cardType": "spell"
+        }
+      ],
+      "description": "Deal 2 damage to any target. Discover a spell.",
+      "set": "hsx"
+    },
+    {
+      "id": "shotbot",
+      "name": "Shotbot",
+      "cardClass": "paladin",
+      "cost": 2,
+      "rarity": "common",
+      "tribe": "Mech",
+      "type": "creature",
+      "attack": 2,
+      "health": 2,
+      "keywords": [
+        "reborn"
+      ],
+      "description": "Reborn.",
+      "set": "hsx"
+    },
+    {
+      "id": "stage_hand",
+      "name": "Stage Hand",
+      "cardClass": "warrior",
+      "cost": 2,
+      "rarity": "common",
+      "tribe": "Mech",
+      "type": "creature",
+      "attack": 3,
+      "health": 2,
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "buff-hand",
+          "attack": 1,
+          "health": 1
+        }
+      ],
+      "description": "Battlecry: Give a random creature in your hand +1/+1.",
+      "set": "hsx"
+    },
+    {
+      "id": "stereo_totem",
+      "name": "Stereo Totem",
+      "cardClass": "neutral",
+      "cost": 2,
+      "rarity": "common",
+      "tribe": "Totem",
+      "type": "creature",
+      "attack": 0,
+      "health": 3,
+      "ongoing": {
+        "on": "turn-end",
+        "effects": [
+          {
+            "type": "buff-hand",
+            "attack": 2,
+            "health": 2
+          }
+        ]
+      },
+      "description": "At the end of your turn, give a random creature in your hand +2/+2.",
+      "set": "hsx"
+    },
+    {
+      "id": "stormpike_quartermaster",
+      "name": "Stormpike Quartermaster",
+      "cardClass": "neutral",
+      "cost": 2,
+      "rarity": "common",
+      "type": "creature",
+      "attack": 2,
+      "health": 2,
+      "ongoing": {
+        "on": "spell-played",
+        "effects": [
+          {
+            "type": "buff-hand",
+            "attack": 1,
+            "health": 1
+          }
+        ]
+      },
+      "description": "Whenever you cast a spell, give a random creature in your hand +1/+1.",
+      "set": "hsx"
+    },
+    {
+      "id": "tuskarr_totemic",
+      "name": "Tuskarr Totemic",
+      "cardClass": "shaman",
+      "cost": 2,
+      "rarity": "common",
+      "type": "creature",
+      "attack": 3,
+      "health": 2,
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "summon-random",
+          "tribe": "Totem",
+          "maxCost": 1
+        }
+      ],
+      "description": "Battlecry: Summon a random cheap Totem.",
+      "set": "hsx"
+    },
+    {
+      "id": "vicious_scalehide",
+      "name": "Vicious Scalehide",
+      "cardClass": "neutral",
+      "cost": 2,
+      "rarity": "common",
+      "tribe": "Beast",
+      "type": "creature",
+      "attack": 1,
+      "health": 3,
+      "keywords": [
+        "lifesteal",
+        "rush"
+      ],
+      "description": "Lifesteal. Rush.",
+      "set": "hsx"
+    },
+    {
+      "id": "vilefiend",
+      "name": "Vilefiend",
+      "cardClass": "neutral",
+      "cost": 2,
+      "rarity": "common",
+      "tribe": "Demon",
+      "type": "creature",
+      "attack": 2,
+      "health": 2,
+      "keywords": [
+        "lifesteal"
+      ],
+      "description": "Lifesteal.",
+      "set": "hsx"
+    },
+    {
+      "id": "acolyte_of_agony",
+      "name": "Acolyte of Agony",
+      "cardClass": "priest",
+      "cost": 3,
+      "rarity": "common",
+      "type": "creature",
+      "attack": 3,
+      "health": 3,
+      "keywords": [
+        "lifesteal"
+      ],
+      "description": "Lifesteal.",
+      "set": "hsx"
+    },
+    {
+      "id": "amber_whelp",
+      "name": "Amber Whelp",
+      "cardClass": "neutral",
+      "cost": 3,
+      "rarity": "common",
+      "tribe": "Dragon",
+      "type": "creature",
+      "attack": 3,
+      "health": 3,
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "conditional",
+          "target": "any",
+          "if": {
+            "holdingTribe": "Dragon"
+          },
+          "then": [
+            {
+              "type": "damage",
+              "value": 3,
+              "target": "any"
+            }
+          ]
+        }
+      ],
+      "description": "Battlecry: If you're holding a Dragon: Deal 3 damage to any target.",
+      "set": "hsx"
+    },
+    {
+      "id": "candletaker",
+      "name": "Candletaker",
+      "cardClass": "neutral",
+      "cost": 3,
+      "rarity": "common",
+      "type": "creature",
+      "attack": 3,
+      "health": 2,
+      "keywords": [
+        "reborn"
+      ],
+      "description": "Reborn.",
+      "set": "hsx"
+    },
+    {
+      "id": "direwolf_commander",
+      "name": "Direwolf Commander",
+      "cardClass": "neutral",
+      "cost": 3,
+      "rarity": "common",
+      "type": "creature",
+      "attack": 2,
+      "health": 5,
+      "honorableKill": [
+        {
+          "type": "summon",
+          "count": 1,
+          "attack": 2,
+          "health": 2,
+          "name": "Wolf",
+          "keywords": [
+            "stealth"
+          ]
+        }
+      ],
+      "description": "Honorable Kill: Summon a 2/2 Wolf with Stealth.",
+      "set": "hsx"
+    },
+    {
+      "id": "frozen_shadoweaver",
+      "name": "Frozen Shadoweaver",
+      "cardClass": "neutral",
+      "cost": 3,
+      "rarity": "common",
+      "type": "creature",
+      "attack": 4,
+      "health": 3,
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "freeze",
+          "target": "enemy-creature"
+        }
+      ],
+      "description": "Battlecry: Freeze an enemy creature.",
+      "set": "hsx"
+    },
+    {
+      "id": "gilded_gargoyle",
+      "name": "Gilded Gargoyle",
+      "cardClass": "priest",
+      "cost": 3,
+      "rarity": "common",
+      "type": "creature",
+      "attack": 2,
+      "health": 2,
+      "keywords": [
+        "deathrattle"
+      ],
+      "deathrattle": [
+        {
+          "type": "gain-coin",
+          "value": 1
+        }
+      ],
+      "description": "Deathrattle: Bank a Coin.",
+      "set": "hsx"
+    },
+    {
+      "id": "golden_scarab",
+      "name": "Golden Scarab",
+      "cardClass": "neutral",
+      "cost": 3,
+      "rarity": "common",
+      "tribe": "Beast",
+      "type": "creature",
+      "attack": 2,
+      "health": 2,
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "discover",
+          "pick": 3,
+          "cost": 4
+        }
+      ],
+      "description": "Battlecry: Discover a 4-cost card (pick one of three).",
+      "set": "hsx"
+    },
+    {
+      "id": "grimestreet_smuggler",
+      "name": "Grimestreet Smuggler",
+      "cardClass": "neutral",
+      "cost": 3,
+      "rarity": "common",
+      "type": "creature",
+      "attack": 2,
+      "health": 4,
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "buff-hand",
+          "attack": 1,
+          "health": 1
+        }
+      ],
+      "description": "Battlecry: Give a random creature in your hand +1/+1.",
+      "set": "hsx"
+    },
+    {
+      "id": "grimy_gadgeteer",
+      "name": "Grimy Gadgeteer",
+      "cardClass": "warrior",
+      "cost": 3,
+      "rarity": "common",
+      "type": "creature",
+      "attack": 4,
+      "health": 3,
+      "ongoing": {
+        "on": "turn-end",
+        "effects": [
+          {
+            "type": "buff-hand",
+            "attack": 2,
+            "health": 2
+          }
+        ]
+      },
+      "description": "At the end of your turn, give a random creature in your hand +2/+2.",
+      "set": "hsx"
+    },
+    {
+      "id": "heavy_plate",
+      "name": "Heavy Plate",
+      "cardClass": "warrior",
+      "cost": 3,
+      "rarity": "common",
+      "tradeable": true,
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "armor",
+          "value": 8
+        }
+      ],
+      "description": "Gain 8 armor. Tradeable: pay 1 to shuffle this into your deck and draw a card.",
+      "set": "hsx"
+    },
+    {
+      "id": "hookfist_3000",
+      "name": "Hookfist-3000",
+      "cardClass": "warrior",
+      "cost": 3,
+      "rarity": "common",
+      "tribe": "Pirate",
+      "type": "creature",
+      "attack": 4,
+      "health": 3,
+      "ongoing": {
+        "on": "hero-attacked",
+        "effects": [
+          {
+            "type": "armor",
+            "value": 4
+          },
+          {
+            "type": "draw",
+            "value": 1
+          }
+        ]
+      },
+      "description": "After your hero attacks, gain 4 armor and draw 1 card.",
+      "set": "hsx"
+    },
+    {
+      "id": "impatient_shopkeep",
+      "name": "Impatient Shopkeep",
+      "cardClass": "neutral",
+      "cost": 3,
+      "rarity": "common",
+      "tradeable": true,
+      "type": "creature",
+      "attack": 3,
+      "health": 3,
+      "keywords": [
+        "rush"
+      ],
+      "description": "Rush. Tradeable: pay 1 to shuffle this into your deck and draw a card.",
+      "set": "hsx"
+    },
+    {
+      "id": "messmaker",
+      "name": "Messmaker",
+      "cardClass": "neutral",
+      "cost": 3,
+      "rarity": "common",
+      "type": "creature",
+      "attack": 1,
+      "health": 3,
+      "keywords": [
+        "lifesteal",
+        "taunt",
+        "deathrattle"
+      ],
+      "deathrattle": [
+        {
+          "type": "damage",
+          "value": 1,
+          "target": "enemies"
+        }
+      ],
+      "description": "Lifesteal. Taunt. Deathrattle: Deal 1 damage to the enemy hero and all enemy creatures.",
+      "set": "hsx"
+    },
+    {
+      "id": "mounted_raptor",
+      "name": "Mounted Raptor",
+      "cardClass": "druid",
+      "cost": 3,
+      "rarity": "common",
+      "tribe": "Beast",
+      "type": "creature",
+      "attack": 3,
+      "health": 2,
+      "keywords": [
+        "deathrattle"
+      ],
+      "deathrattle": [
+        {
+          "type": "summon-random",
+          "cost": 1
+        }
+      ],
+      "description": "Deathrattle: Summon a random 1-cost creature.",
+      "set": "hsx"
+    },
+    {
+      "id": "nightbane_templar",
+      "name": "Nightbane Templar",
+      "cardClass": "paladin",
+      "cost": 3,
+      "rarity": "common",
+      "type": "creature",
+      "attack": 2,
+      "health": 3,
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "conditional",
+          "target": "any",
+          "if": {
+            "holdingTribe": "Dragon"
+          },
+          "then": [
+            {
+              "type": "summon",
+              "count": 2,
+              "attack": 1,
+              "health": 1,
+              "name": "Whelp"
+            }
+          ]
+        }
+      ],
+      "description": "Battlecry: If you're holding a Dragon: Summon two 1/1 Whelps.",
+      "set": "hsx"
+    },
+    {
+      "id": "orgrimmar_aspirant",
+      "name": "Orgrimmar Aspirant",
+      "cardClass": "warrior",
+      "cost": 3,
+      "rarity": "common",
+      "type": "creature",
+      "attack": 3,
+      "health": 3,
+      "ongoing": {
+        "on": "hero-power-used",
+        "effects": [
+          {
+            "type": "buff-weapon",
+            "attack": 1,
+            "durability": 0
+          }
+        ]
+      },
+      "description": "Inspire: Give your weapon +1 Attack.",
+      "set": "hsx"
+    },
+    {
+      "id": "pufferfist",
+      "name": "Pufferfist",
+      "cardClass": "neutral",
+      "cost": 3,
+      "rarity": "common",
+      "tribe": "Pirate",
+      "type": "creature",
+      "attack": 3,
+      "health": 4,
+      "ongoing": {
+        "on": "hero-attacked",
+        "effects": [
+          {
+            "type": "damage",
+            "value": 1,
+            "target": "enemies"
+          }
+        ]
+      },
+      "description": "After your hero attacks, deal 1 damage to the enemy hero and all enemy creatures.",
+      "set": "hsx"
+    },
+    {
+      "id": "ravaging_ghoul",
+      "name": "Ravaging Ghoul",
+      "cardClass": "warrior",
+      "cost": 3,
+      "rarity": "common",
+      "type": "creature",
+      "attack": 3,
+      "health": 3,
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "damage",
+          "value": 1,
+          "target": "other-creatures"
+        }
+      ],
+      "description": "Battlecry: Deal 1 damage to every other creature.",
+      "set": "hsx"
+    },
+    {
+      "id": "rustrot_viper",
+      "name": "Rustrot Viper",
+      "cardClass": "neutral",
+      "cost": 3,
+      "rarity": "common",
+      "tribe": "Beast",
+      "tradeable": true,
+      "type": "creature",
+      "attack": 3,
+      "health": 4,
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "destroy-weapon"
+        }
+      ],
+      "description": "Battlecry: Destroy your opponent's weapon. Tradeable: pay 1 to shuffle this into your deck and draw a card.",
+      "set": "hsx"
+    },
+    {
+      "id": "scalerider",
+      "name": "Scalerider",
+      "cardClass": "neutral",
+      "cost": 3,
+      "rarity": "common",
+      "type": "creature",
+      "attack": 3,
+      "health": 3,
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "conditional",
+          "target": "any",
+          "if": {
+            "holdingTribe": "Dragon"
+          },
+          "then": [
+            {
+              "type": "damage",
+              "value": 2,
+              "target": "any"
+            }
+          ]
+        }
+      ],
+      "description": "Battlecry: If you're holding a Dragon: Deal 2 damage to any target.",
+      "set": "hsx"
+    },
+    {
+      "id": "serpentshrine_portal",
+      "name": "Serpentshrine Portal",
+      "cardClass": "shaman",
+      "cost": 3,
+      "rarity": "common",
+      "overload": 1,
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 3,
+          "target": "any"
+        },
+        {
+          "type": "summon-random",
+          "cost": 3
+        }
+      ],
+      "description": "Deal 3 damage to any target. Summon a random 3-cost creature. Overload: 1 mana locked next turn.",
+      "set": "hsx"
+    },
+    {
+      "id": "shaky_zipgunner",
+      "name": "Shaky Zipgunner",
+      "cardClass": "hunter",
+      "cost": 3,
+      "rarity": "common",
+      "type": "creature",
+      "attack": 4,
+      "health": 3,
+      "keywords": [
+        "deathrattle"
+      ],
+      "deathrattle": [
+        {
+          "type": "buff-hand",
+          "attack": 2,
+          "health": 2
+        }
+      ],
+      "description": "Deathrattle: Give a random creature in your hand +2/+2.",
+      "set": "hsx"
+    },
+    {
+      "id": "silvermoon_portal",
+      "name": "Silvermoon Portal",
+      "cardClass": "paladin",
+      "cost": 3,
+      "rarity": "common",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 2,
+          "health": 2,
+          "target": "creature"
+        },
+        {
+          "type": "summon-random",
+          "cost": 2
+        }
+      ],
+      "description": "Give a creature +2/+2. Summon a random 2-cost creature.",
+      "set": "hsx"
+    },
+    {
+      "id": "whelp_of_the_bronze",
+      "name": "Whelp of the Bronze",
+      "cardClass": "neutral",
+      "cost": 3,
+      "rarity": "common",
+      "tribe": "Dragon",
+      "type": "creature",
+      "attack": 4,
+      "health": 1,
+      "keywords": [
+        "lifesteal",
+        "divine_shield"
+      ],
+      "description": "Lifesteal. Divine Shield.",
+      "set": "hsx"
+    },
+    {
+      "id": "whelp_of_the_infinite",
+      "name": "Whelp of the Infinite",
+      "cardClass": "neutral",
+      "cost": 3,
+      "rarity": "common",
+      "tribe": "Dragon",
+      "type": "creature",
+      "attack": 1,
+      "health": 4,
+      "keywords": [
+        "deathtouch",
+        "reborn"
+      ],
+      "description": "Deathtouch. Reborn.",
+      "set": "hsx"
+    },
+    {
+      "id": "wicked_witchdoctor",
+      "name": "Wicked Witchdoctor",
+      "cardClass": "shaman",
+      "cost": 3,
+      "rarity": "common",
+      "type": "creature",
+      "attack": 3,
+      "health": 4,
+      "ongoing": {
+        "on": "spell-played",
+        "effects": [
+          {
+            "type": "summon-random",
+            "tribe": "Totem",
+            "maxCost": 1
+          }
+        ]
+      },
+      "description": "Whenever you cast a spell, summon a random cheap Totem.",
+      "set": "hsx"
+    },
+    {
+      "id": "aberrant_berserker",
+      "name": "Aberrant Berserker",
+      "cardClass": "neutral",
+      "cost": 4,
+      "rarity": "common",
+      "type": "creature",
+      "attack": 3,
+      "health": 5,
+      "enrage": {
+        "attack": 2
+      },
+      "description": "While damaged: +2 Attack.",
+      "set": "hsx"
+    },
+    {
+      "id": "arena_fanatic",
+      "name": "Arena Fanatic",
+      "cardClass": "neutral",
+      "cost": 4,
+      "rarity": "common",
+      "type": "creature",
+      "attack": 2,
+      "health": 3,
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "buff-hand",
+          "all": true,
+          "attack": 1,
+          "health": 1
+        }
+      ],
+      "description": "Battlecry: Give the creatures in your hand +1/+1.",
+      "set": "hsx"
+    },
+    {
+      "id": "azure_explorer",
+      "name": "Azure Explorer",
+      "cardClass": "mage",
+      "cost": 4,
+      "rarity": "common",
+      "tribe": "Dragon",
+      "static": {
+        "type": "spell-damage",
+        "value": 2
+      },
+      "type": "creature",
+      "attack": 2,
+      "health": 3,
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "discover",
+          "pick": 3,
+          "tribe": "Dragon"
+        }
+      ],
+      "description": "Battlecry: Discover a Dragon. Spell Damage +2.",
+      "set": "hsx"
+    },
+    {
+      "id": "bone_wraith",
+      "name": "Bone Wraith",
+      "cardClass": "neutral",
+      "cost": 4,
+      "rarity": "common",
+      "type": "creature",
+      "attack": 2,
+      "health": 5,
+      "keywords": [
+        "taunt",
+        "reborn"
+      ],
+      "description": "Taunt. Reborn.",
+      "set": "hsx"
+    },
+    {
+      "id": "canal_slogger",
+      "name": "Canal Slogger",
+      "cardClass": "shaman",
+      "cost": 4,
+      "rarity": "common",
+      "tribe": "Elemental",
+      "overload": 1,
+      "type": "creature",
+      "attack": 6,
+      "health": 4,
+      "keywords": [
+        "rush",
+        "lifesteal"
+      ],
+      "description": "Rush. Lifesteal. Overload: 1 mana locked next turn.",
+      "set": "hsx"
+    },
+    {
+      "id": "chillblade_champion",
+      "name": "Chillblade Champion",
+      "cardClass": "paladin",
+      "cost": 4,
+      "rarity": "common",
+      "type": "creature",
+      "attack": 3,
+      "health": 2,
+      "keywords": [
+        "charge",
+        "lifesteal"
+      ],
+      "description": "Charge. Lifesteal.",
+      "set": "hsx"
+    },
+    {
+      "id": "cool_ghoul",
+      "name": "Cool Ghoul",
+      "cardClass": "death_knight",
+      "cost": 4,
+      "rarity": "common",
+      "type": "creature",
+      "attack": 3,
+      "health": 1,
+      "keywords": [
+        "divine_shield",
+        "reborn"
+      ],
+      "description": "Divine Shield. Reborn.",
+      "set": "hsx"
+    },
+    {
+      "id": "felsoul_inquisitor",
+      "name": "Felsoul Inquisitor",
+      "cardClass": "neutral",
+      "cost": 4,
+      "rarity": "common",
+      "tribe": "Demon",
+      "type": "creature",
+      "attack": 1,
+      "health": 6,
+      "keywords": [
+        "lifesteal",
+        "taunt"
+      ],
+      "description": "Lifesteal. Taunt.",
+      "set": "hsx"
+    },
+    {
+      "id": "guild_trader",
+      "name": "Guild Trader",
+      "cardClass": "neutral",
+      "cost": 4,
+      "rarity": "common",
+      "static": {
+        "type": "spell-damage",
+        "value": 2
+      },
+      "tradeable": true,
+      "type": "creature",
+      "attack": 3,
+      "health": 4,
+      "description": "A 3/4 creature. Spell Damage +2. Tradeable: pay 1 to shuffle this into your deck and draw a card.",
+      "set": "hsx"
+    },
+    {
+      "id": "injured_marauder",
+      "name": "Injured Marauder",
+      "cardClass": "neutral",
+      "cost": 4,
+      "rarity": "common",
+      "type": "creature",
+      "attack": 5,
+      "health": 10,
+      "keywords": [
+        "taunt",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "damage-self",
+          "value": 6
+        }
+      ],
+      "description": "Taunt. Battlecry: Deals 6 damage to itself.",
+      "set": "hsx"
+    },
+    {
+      "id": "ironforge_portal",
+      "name": "Ironforge Portal",
+      "cardClass": "warrior",
+      "cost": 4,
+      "rarity": "common",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "armor",
+          "value": 4
+        },
+        {
+          "type": "summon-random",
+          "cost": 4
+        }
+      ],
+      "description": "Gain 4 armor. Summon a random 4-cost creature.",
+      "set": "hsx"
+    },
+    {
+      "id": "marked_shot",
+      "name": "Marked Shot",
+      "cardClass": "hunter",
+      "cost": 4,
+      "rarity": "common",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 4,
+          "target": "creature"
+        },
+        {
+          "type": "discover",
+          "pick": 3,
+          "cardType": "spell"
+        }
+      ],
+      "description": "Deal 4 damage to a creature. Discover a spell.",
+      "set": "hsx"
+    },
+    {
+      "id": "piloted_shredder",
+      "name": "Piloted Shredder",
+      "cardClass": "neutral",
+      "cost": 4,
+      "rarity": "common",
+      "tribe": "Mech",
+      "type": "creature",
+      "attack": 4,
+      "health": 3,
+      "keywords": [
+        "deathrattle"
+      ],
+      "deathrattle": [
+        {
+          "type": "summon-random",
+          "cost": 2
+        }
+      ],
+      "description": "Deathrattle: Summon a random 2-cost creature.",
+      "set": "hsx"
+    },
+    {
+      "id": "restless_mummy",
+      "name": "Restless Mummy",
+      "cardClass": "warrior",
+      "cost": 4,
+      "rarity": "common",
+      "type": "creature",
+      "attack": 3,
+      "health": 2,
+      "keywords": [
+        "rush",
+        "reborn"
+      ],
+      "description": "Rush. Reborn.",
+      "set": "hsx"
+    },
+    {
+      "id": "royal_librarian",
+      "name": "Royal Librarian",
+      "cardClass": "neutral",
+      "cost": 4,
+      "rarity": "common",
+      "tradeable": true,
+      "type": "creature",
+      "attack": 4,
+      "health": 4,
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "silence",
+          "target": "creature"
+        }
+      ],
+      "description": "Battlecry: Silence a creature. Tradeable: pay 1 to shuffle this into your deck and draw a card.",
+      "set": "hsx"
+    },
+    {
+      "id": "spinetail_drake",
+      "name": "Spinetail Drake",
+      "cardClass": "druid",
+      "cost": 4,
+      "rarity": "common",
+      "tribe": "Dragon",
+      "type": "creature",
+      "attack": 5,
+      "health": 4,
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "conditional",
+          "target": "enemy-creature",
+          "if": {
+            "holdingTribe": "Dragon"
+          },
+          "then": [
+            {
+              "type": "damage",
+              "value": 5,
+              "target": "enemy-creature"
+            }
+          ]
+        }
+      ],
+      "description": "Battlecry: If you're holding a Dragon: Deal 5 damage to an enemy creature.",
+      "set": "hsx"
+    },
+    {
+      "id": "street_sweeper",
+      "name": "Street Sweeper",
+      "cardClass": "neutral",
+      "cost": 4,
+      "rarity": "common",
+      "type": "creature",
+      "attack": 2,
+      "health": 2,
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "damage",
+          "value": 2,
+          "target": "other-creatures"
+        }
+      ],
+      "description": "Battlecry: Deal 2 damage to every other creature.",
+      "set": "hsx"
+    },
+    {
+      "id": "stubborn_suspect",
+      "name": "Stubborn Suspect",
+      "cardClass": "neutral",
+      "cost": 4,
+      "rarity": "common",
+      "type": "creature",
+      "attack": 3,
+      "health": 3,
+      "keywords": [
+        "deathrattle"
+      ],
+      "deathrattle": [
+        {
+          "type": "summon-random",
+          "cost": 3
+        }
+      ],
+      "description": "Deathrattle: Summon a random 3-cost creature.",
+      "set": "hsx"
+    },
+    {
+      "id": "tomb_pillager",
+      "name": "Tomb Pillager",
+      "cardClass": "rogue",
+      "cost": 4,
+      "rarity": "common",
+      "type": "creature",
+      "attack": 6,
+      "health": 4,
+      "keywords": [
+        "deathrattle"
+      ],
+      "deathrattle": [
+        {
+          "type": "gain-coin",
+          "value": 1
+        }
+      ],
+      "description": "Deathrattle: Bank a Coin.",
+      "set": "hsx"
+    },
+    {
+      "id": "tomb_spider",
+      "name": "Tomb Spider",
+      "cardClass": "neutral",
+      "cost": 4,
+      "rarity": "common",
+      "tribe": "Beast",
+      "type": "creature",
+      "attack": 3,
+      "health": 3,
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "discover",
+          "pick": 3,
+          "tribe": "Beast"
+        }
+      ],
+      "description": "Battlecry: Discover a Beast.",
+      "set": "hsx"
+    },
+    {
+      "id": "tournament_medic",
+      "name": "Tournament Medic",
+      "cardClass": "neutral",
+      "cost": 4,
+      "rarity": "common",
+      "type": "creature",
+      "attack": 1,
+      "health": 8,
+      "ongoing": {
+        "on": "hero-power-used",
+        "effects": [
+          {
+            "type": "heal",
+            "value": 2,
+            "target": "self"
+          }
+        ]
+      },
+      "description": "Inspire: Restore 2 health to your hero.",
+      "set": "hsx"
+    },
+    {
+      "id": "vex_crow",
+      "name": "Vex Crow",
+      "cardClass": "mage",
+      "cost": 4,
+      "rarity": "common",
+      "tribe": "Beast",
+      "type": "creature",
+      "attack": 3,
+      "health": 3,
+      "ongoing": {
+        "on": "spell-played",
+        "effects": [
+          {
+            "type": "summon-random",
+            "cost": 2
+          }
+        ]
+      },
+      "description": "Whenever you cast a spell, summon a random 2-cost creature.",
+      "set": "hsx"
+    },
+    {
+      "id": "wretched_tutor",
+      "name": "Wretched Tutor",
+      "cardClass": "neutral",
+      "cost": 4,
+      "rarity": "common",
+      "type": "creature",
+      "attack": 2,
+      "health": 5,
+      "ongoing": {
+        "on": "spell-played",
+        "once": true,
+        "effects": [
+          {
+            "type": "damage",
+            "value": 2,
+            "target": "other-creatures"
+          }
+        ]
+      },
+      "description": "Spellburst: Deal 2 damage to every other creature.",
+      "set": "hsx"
+    },
+    {
+      "id": "blackwing_corruptor",
+      "name": "Blackwing Corruptor",
+      "cardClass": "neutral",
+      "cost": 5,
+      "rarity": "common",
+      "type": "creature",
+      "attack": 5,
+      "health": 4,
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "conditional",
+          "target": "any",
+          "if": {
+            "holdingTribe": "Dragon"
+          },
+          "then": [
+            {
+              "type": "damage",
+              "value": 5,
+              "target": "any"
+            }
+          ]
+        }
+      ],
+      "description": "Battlecry: If you're holding a Dragon: Deal 5 damage to any target.",
+      "set": "hsx"
+    },
+    {
+      "id": "bloodworm",
+      "name": "Bloodworm",
+      "cardClass": "neutral",
+      "cost": 5,
+      "rarity": "common",
+      "tribe": "Beast",
+      "type": "creature",
+      "attack": 4,
+      "health": 4,
+      "keywords": [
+        "lifesteal"
+      ],
+      "description": "Lifesteal.",
+      "set": "hsx"
+    },
+    {
+      "id": "clockwork_knight",
+      "name": "Clockwork Knight",
+      "cardClass": "neutral",
+      "cost": 5,
+      "rarity": "common",
+      "tribe": "Mech",
+      "type": "creature",
+      "attack": 5,
+      "health": 5,
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 1,
+          "health": 1,
+          "target": "friendly-creature",
+          "tribe": "Mech"
+        }
+      ],
+      "description": "Battlecry: Give a friendly Mech +1/+1.",
+      "set": "hsx"
+    },
+    {
+      "id": "dragonmaw_scorcher",
+      "name": "Dragonmaw Scorcher",
+      "cardClass": "neutral",
+      "cost": 5,
+      "rarity": "common",
+      "tribe": "Dragon",
+      "type": "creature",
+      "attack": 3,
+      "health": 6,
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "damage",
+          "value": 1,
+          "target": "other-creatures"
+        }
+      ],
+      "description": "Battlecry: Deal 1 damage to every other creature.",
+      "set": "hsx"
+    },
+    {
+      "id": "ethereal_conjurer",
+      "name": "Ethereal Conjurer",
+      "cardClass": "mage",
+      "cost": 5,
+      "rarity": "common",
+      "type": "creature",
+      "attack": 6,
+      "health": 4,
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "discover",
+          "pick": 3,
+          "cardType": "spell"
+        }
+      ],
+      "description": "Battlecry: Discover a spell.",
+      "set": "hsx"
+    },
+    {
+      "id": "knight_captain",
+      "name": "Knight-Captain",
+      "cardClass": "neutral",
+      "cost": 5,
+      "rarity": "common",
+      "type": "creature",
+      "attack": 3,
+      "health": 3,
+      "honorableKill": [
+        {
+          "type": "buff-self",
+          "attack": 3,
+          "health": 3
+        }
+      ],
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "damage",
+          "value": 3,
+          "target": "any"
+        }
+      ],
+      "description": "Battlecry: Deal 3 damage to any target. Honorable Kill: this gains +3/+3.",
+      "set": "hsx"
+    },
+    {
+      "id": "kvaldir_raider",
+      "name": "Kvaldir Raider",
+      "cardClass": "neutral",
+      "cost": 5,
+      "rarity": "common",
+      "type": "creature",
+      "attack": 4,
+      "health": 4,
+      "ongoing": {
+        "on": "hero-power-used",
+        "effects": [
+          {
+            "type": "buff-self",
+            "attack": 2,
+            "health": 2
+          }
+        ]
+      },
+      "description": "Inspire: this gains +2/+2.",
+      "set": "hsx"
+    },
+    {
+      "id": "lake_thresher",
+      "name": "Lake Thresher",
+      "cardClass": "neutral",
+      "cost": 5,
+      "rarity": "common",
+      "tribe": "Beast",
+      "type": "creature",
+      "attack": 4,
+      "health": 6,
+      "keywords": [
+        "cleave"
+      ],
+      "description": "Cleave: combat damage splashes the defender's neighbors.",
+      "set": "hsx"
+    },
+    {
+      "id": "onyxian_warder",
+      "name": "Onyxian Warder",
+      "cardClass": "neutral",
+      "cost": 5,
+      "rarity": "common",
+      "tribe": "Dragon",
+      "type": "creature",
+      "attack": 3,
+      "health": 6,
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "conditional",
+          "target": "any",
+          "if": {
+            "holdingTribe": "Dragon"
+          },
+          "then": [
+            {
+              "type": "summon",
+              "count": 2,
+              "attack": 2,
+              "health": 1,
+              "name": "Whelp",
+              "keywords": [
+                "rush"
+              ]
+            }
+          ]
+        }
+      ],
+      "description": "Battlecry: If you're holding a Dragon: Summon two 2/1 Whelps with Rush.",
+      "set": "hsx"
+    },
+    {
+      "id": "rusty_recycler",
+      "name": "Rusty Recycler",
+      "cardClass": "neutral",
+      "cost": 5,
+      "rarity": "common",
+      "tribe": "Mech",
+      "type": "creature",
+      "attack": 2,
+      "health": 6,
+      "keywords": [
+        "taunt",
+        "lifesteal"
+      ],
+      "description": "Taunt. Lifesteal.",
+      "set": "hsx"
+    },
+    {
+      "id": "steward_of_scrolls",
+      "name": "Steward of Scrolls",
+      "cardClass": "neutral",
+      "cost": 5,
+      "rarity": "common",
+      "tribe": "Elemental",
+      "static": {
+        "type": "spell-damage",
+        "value": 1
+      },
+      "type": "creature",
+      "attack": 4,
+      "health": 4,
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "discover",
+          "pick": 3,
+          "cardType": "spell"
+        }
+      ],
+      "description": "Battlecry: Discover a spell. Spell Damage +1.",
+      "set": "hsx"
+    },
+    {
+      "id": "wasteland_assassin",
+      "name": "Wasteland Assassin",
+      "cardClass": "neutral",
+      "cost": 5,
+      "rarity": "common",
+      "type": "creature",
+      "attack": 4,
+      "health": 2,
+      "keywords": [
+        "stealth",
+        "reborn"
+      ],
+      "description": "Stealth. Reborn.",
+      "set": "hsx"
+    },
+    {
+      "id": "armored_goon",
+      "name": "Armored Goon",
+      "cardClass": "warrior",
+      "cost": 6,
+      "rarity": "common",
+      "type": "creature",
+      "attack": 6,
+      "health": 7,
+      "ongoing": {
+        "on": "hero-attacked",
+        "effects": [
+          {
+            "type": "armor",
+            "value": 5
+          }
+        ]
+      },
+      "description": "After your hero attacks, gain 5 armor.",
+      "set": "hsx"
+    },
+    {
+      "id": "best_in_shell",
+      "name": "Best in Shell",
+      "cardClass": "druid",
+      "cost": 6,
+      "rarity": "common",
+      "tradeable": true,
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "summon",
+          "count": 2,
+          "attack": 2,
+          "health": 7,
+          "name": "Turtle",
+          "keywords": [
+            "taunt"
+          ]
+        }
+      ],
+      "description": "Summon two 2/7 Turtles with Taunt. Tradeable: pay 1 to shuffle this into your deck and draw a card.",
+      "set": "hsx"
+    },
+    {
+      "id": "damaged_stegotron",
+      "name": "Damaged Stegotron",
+      "cardClass": "neutral",
+      "cost": 6,
+      "rarity": "common",
+      "tribe": "Mech",
+      "type": "creature",
+      "attack": 5,
+      "health": 12,
+      "keywords": [
+        "taunt",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "damage-self",
+          "value": 6
+        }
+      ],
+      "description": "Taunt. Battlecry: Deals 6 damage to itself.",
+      "set": "hsx"
+    },
+    {
+      "id": "emerald_explorer",
+      "name": "Emerald Explorer",
+      "cardClass": "druid",
+      "cost": 6,
+      "rarity": "common",
+      "tribe": "Dragon",
+      "type": "creature",
+      "attack": 4,
+      "health": 8,
+      "keywords": [
+        "taunt",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "discover",
+          "pick": 3,
+          "tribe": "Dragon"
+        }
+      ],
+      "description": "Taunt. Battlecry: Discover a Dragon.",
+      "set": "hsx"
+    },
+    {
+      "id": "evergreen_stag",
+      "name": "Evergreen Stag",
+      "cardClass": "druid",
+      "cost": 6,
+      "rarity": "common",
+      "tribe": "Beast",
+      "type": "creature",
+      "attack": 6,
+      "health": 7,
+      "keywords": [
+        "elusive",
+        "lifesteal",
+        "taunt"
+      ],
+      "description": "Elusive. Lifesteal. Taunt.",
+      "set": "hsx"
+    },
+    {
+      "id": "faceless_summoner",
+      "name": "Faceless Summoner",
+      "cardClass": "mage",
+      "cost": 6,
+      "rarity": "common",
+      "type": "creature",
+      "attack": 5,
+      "health": 5,
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "summon-random",
+          "cost": 3
+        }
+      ],
+      "description": "Battlecry: Summon a random 3-cost creature.",
+      "set": "hsx"
+    },
+    {
+      "id": "judicious_junior",
+      "name": "Judicious Junior",
+      "cardClass": "paladin",
+      "cost": 6,
+      "rarity": "common",
+      "type": "creature",
+      "attack": 4,
+      "health": 9,
+      "keywords": [
+        "lifesteal"
+      ],
+      "description": "Lifesteal.",
+      "set": "hsx"
+    },
+    {
+      "id": "legionnaire",
+      "name": "Legionnaire",
+      "cardClass": "neutral",
+      "cost": 6,
+      "rarity": "common",
+      "type": "creature",
+      "attack": 9,
+      "health": 3,
+      "keywords": [
+        "deathrattle"
+      ],
+      "deathrattle": [
+        {
+          "type": "buff-hand",
+          "all": true,
+          "attack": 2,
+          "health": 2
+        }
+      ],
+      "description": "Deathrattle: Give the creatures in your hand +2/+2.",
+      "set": "hsx"
+    },
+    {
+      "id": "shield_of_askara",
+      "name": "Shield of Askara",
+      "cardClass": "priest",
+      "cost": 6,
+      "rarity": "common",
+      "type": "creature",
+      "attack": 4,
+      "health": 8,
+      "keywords": [
+        "taunt",
+        "divine_shield",
+        "lifesteal"
+      ],
+      "description": "Taunt. Divine Shield. Lifesteal.",
+      "set": "hsx"
+    },
+    {
+      "id": "travel_security",
+      "name": "Travel Security",
+      "cardClass": "death_knight",
+      "cost": 6,
+      "rarity": "common",
+      "type": "creature",
+      "attack": 2,
+      "health": 2,
+      "keywords": [
+        "taunt",
+        "deathrattle"
+      ],
+      "deathrattle": [
+        {
+          "type": "summon-random",
+          "cost": 8
+        }
+      ],
+      "description": "Taunt. Deathrattle: Summon a random 8-cost creature.",
+      "set": "hsx"
+    },
+    {
+      "id": "beached_whale",
+      "name": "Beached Whale",
+      "cardClass": "neutral",
+      "cost": 7,
+      "rarity": "common",
+      "tribe": "Beast",
+      "type": "creature",
+      "attack": 4,
+      "health": 20,
+      "keywords": [
+        "taunt",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "damage-self",
+          "value": 10
+        }
+      ],
+      "description": "Taunt. Battlecry: Deals 10 damage to itself.",
+      "set": "hsx"
+    },
+    {
+      "id": "dethrone",
+      "name": "Dethrone",
+      "cardClass": "rogue",
+      "cost": 7,
+      "rarity": "common",
+      "type": "sorcery",
+      "combo": [
+        {
+          "type": "summon-random",
+          "cost": 8
+        }
+      ],
+      "effects": [
+        {
+          "type": "destroy",
+          "target": "creature"
+        }
+      ],
+      "description": "Destroy a creature. Combo: Summon a random 8-cost creature.",
+      "set": "hsx"
+    },
+    {
+      "id": "enslaved_fel_lord",
+      "name": "Enslaved Fel Lord",
+      "cardClass": "warlock",
+      "cost": 7,
+      "rarity": "common",
+      "tribe": "Demon",
+      "type": "creature",
+      "attack": 4,
+      "health": 10,
+      "keywords": [
+        "taunt",
+        "cleave"
+      ],
+      "description": "Taunt. Cleave: combat damage splashes the defender's neighbors.",
+      "set": "hsx"
+    },
+    {
+      "id": "firelands_portal",
+      "name": "Firelands Portal",
+      "cardClass": "mage",
+      "cost": 7,
+      "rarity": "common",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 6,
+          "target": "any"
+        },
+        {
+          "type": "summon-random",
+          "cost": 6
+        }
+      ],
+      "description": "Deal 6 damage to any target. Summon a random 6-cost creature.",
+      "set": "hsx"
+    },
+    {
+      "id": "plagued_protodrake",
+      "name": "Plagued Protodrake",
+      "cardClass": "neutral",
+      "cost": 8,
+      "rarity": "common",
+      "tribe": "Dragon",
+      "type": "creature",
+      "attack": 8,
+      "health": 8,
+      "keywords": [
+        "deathrattle"
+      ],
+      "deathrattle": [
+        {
+          "type": "summon-random",
+          "cost": 7
+        }
+      ],
+      "description": "Deathrattle: Summon a random 7-cost creature.",
+      "set": "hsx"
+    },
+    {
+      "id": "troll_centurion",
+      "name": "Troll Centurion",
+      "cardClass": "neutral",
+      "cost": 8,
+      "rarity": "common",
+      "type": "creature",
+      "attack": 8,
+      "health": 8,
+      "honorableKill": [
+        {
+          "type": "damage",
+          "value": 8,
+          "target": "enemy-hero"
+        }
+      ],
+      "keywords": [
+        "rush"
+      ],
+      "description": "Rush. Honorable Kill: Deal 8 damage to the enemy hero.",
+      "set": "hsx"
+    },
+    {
+      "id": "walking_fountain",
+      "name": "Walking Fountain",
+      "cardClass": "shaman",
+      "cost": 8,
+      "rarity": "common",
+      "tribe": "Elemental",
+      "type": "creature",
+      "attack": 4,
+      "health": 8,
+      "keywords": [
+        "lifesteal",
+        "rush",
+        "windfury"
+      ],
+      "description": "Lifesteal. Rush. Windfury.",
+      "set": "hsx"
+    },
+    {
+      "id": "anubisath_warbringer",
+      "name": "Anubisath Warbringer",
+      "cardClass": "neutral",
+      "cost": 9,
+      "rarity": "common",
+      "type": "creature",
+      "attack": 9,
+      "health": 6,
+      "keywords": [
+        "deathrattle"
+      ],
+      "deathrattle": [
+        {
+          "type": "buff-hand",
+          "all": true,
+          "attack": 3,
+          "health": 3
+        }
+      ],
+      "description": "Deathrattle: Give the creatures in your hand +3/+3.",
+      "set": "hsx"
+    },
+    {
+      "id": "scorching_observer",
+      "name": "Scorching Observer",
+      "cardClass": "neutral",
+      "cost": 9,
+      "rarity": "common",
+      "tribe": "Demon",
+      "type": "creature",
+      "attack": 7,
+      "health": 9,
+      "keywords": [
+        "rush",
+        "lifesteal"
+      ],
+      "description": "Rush. Lifesteal.",
+      "set": "hsx"
+    },
+    {
+      "id": "sunset_volley",
+      "name": "Sunset Volley",
+      "cardClass": "mage",
+      "cost": 9,
+      "rarity": "common",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "random-damage",
+          "value": 1,
+          "pool": "enemies",
+          "count": 10
+        },
+        {
+          "type": "summon-random",
+          "cost": 10
+        }
+      ],
+      "description": "Fire 10 bolts, each dealing 1 damage to a random enemy. Summon a random 10-cost creature.",
+      "set": "hsx"
+    },
+    {
+      "id": "tar_slime",
+      "name": "Tar Slime",
+      "cardClass": "neutral",
+      "cost": 1,
+      "rarity": "common",
+      "tribe": "Elemental",
+      "type": "creature",
+      "attack": 0,
+      "health": 3,
+      "offTurnAttack": 2,
+      "keywords": [
+        "taunt"
+      ],
+      "description": "Taunt. Has +2 Attack during opponents' turns.",
+      "set": "hsx"
+    },
+    {
+      "id": "temple_berserker",
+      "name": "Temple Berserker",
+      "cardClass": "neutral",
+      "cost": 2,
+      "rarity": "common",
+      "type": "creature",
+      "attack": 1,
+      "health": 2,
+      "enrage": {
+        "attack": 2
+      },
+      "keywords": [
+        "reborn"
+      ],
+      "description": "Reborn. While damaged: +2 Attack.",
+      "set": "hsx"
+    },
+    {
+      "id": "thornveil_tentacle",
+      "name": "Thornveil Tentacle",
+      "cardClass": "warlock",
+      "cost": 2,
+      "rarity": "common",
+      "type": "creature",
+      "attack": 2,
+      "health": 2,
+      "keywords": [
+        "lifesteal",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "random-damage",
+          "value": 2,
+          "pool": "enemy-creatures",
+          "count": 1
+        }
+      ],
+      "description": "Lifesteal. Battlecry: Deal 2 damage to 1 random enemy creature.",
+      "set": "hsx"
+    },
+    {
+      "id": "bronze_explorer",
+      "name": "Bronze Explorer",
+      "cardClass": "paladin",
+      "cost": 3,
+      "rarity": "common",
+      "tribe": "Dragon",
+      "type": "creature",
+      "attack": 3,
+      "health": 3,
+      "keywords": [
+        "lifesteal",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "discover",
+          "pick": 3,
+          "tribe": "Dragon"
+        }
+      ],
+      "description": "Lifesteal. Battlecry: Discover a Dragon.",
+      "set": "hsx"
+    },
+    {
+      "id": "primordial_explorer",
+      "name": "Primordial Explorer",
+      "cardClass": "hunter",
+      "cost": 3,
+      "rarity": "common",
+      "tribe": "Dragon",
+      "type": "creature",
+      "attack": 2,
+      "health": 3,
+      "keywords": [
+        "deathtouch",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "discover",
+          "pick": 3,
+          "tribe": "Dragon"
+        }
+      ],
+      "description": "Deathtouch. Battlecry: Discover a Dragon.",
+      "set": "hsx"
+    },
+    {
+      "id": "reluctant_wrangler",
+      "name": "Reluctant Wrangler",
+      "cardClass": "death_knight",
+      "cost": 3,
+      "rarity": "common",
+      "type": "creature",
+      "attack": 1,
+      "health": 1,
+      "keywords": [
+        "reborn",
+        "deathrattle"
+      ],
+      "deathrattle": [
+        {
+          "type": "summon",
+          "count": 1,
+          "attack": 2,
+          "health": 2,
+          "name": "Undead Beast",
+          "keywords": [
+            "taunt"
+          ]
+        }
+      ],
+      "description": "Reborn. Deathrattle: Summon a 2/2 Undead Beast with Taunt.",
+      "set": "hsx"
+    },
+    {
+      "id": "tar_creeper",
+      "name": "Tar Creeper",
+      "cardClass": "neutral",
+      "cost": 3,
+      "rarity": "common",
+      "tribe": "Elemental",
+      "type": "creature",
+      "attack": 1,
+      "health": 5,
+      "offTurnAttack": 2,
+      "keywords": [
+        "taunt"
+      ],
+      "description": "Taunt. Has +2 Attack during opponents' turns.",
+      "set": "hsx"
+    },
+    {
+      "id": "undercover_cultist",
+      "name": "Undercover Cultist",
+      "cardClass": "neutral",
+      "cost": 3,
+      "rarity": "common",
+      "type": "creature",
+      "attack": 2,
+      "health": 3,
+      "enrage": {
+        "attack": 3
+      },
+      "keywords": [
+        "taunt",
+        "reborn"
+      ],
+      "description": "Taunt. Reborn. While damaged: +3 Attack.",
+      "set": "hsx"
+    },
+    {
+      "id": "venomous_scorpid",
+      "name": "Venomous Scorpid",
+      "cardClass": "neutral",
+      "cost": 3,
+      "rarity": "common",
+      "tribe": "Beast",
+      "type": "creature",
+      "attack": 1,
+      "health": 3,
+      "keywords": [
+        "deathtouch",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "discover",
+          "pick": 3,
+          "cardType": "spell"
+        }
+      ],
+      "description": "Deathtouch. Battlecry: Discover a spell.",
+      "set": "hsx"
+    },
+    {
+      "id": "bloodhoof_brave",
+      "name": "Bloodhoof Brave",
+      "cardClass": "warrior",
+      "cost": 4,
+      "rarity": "common",
+      "type": "creature",
+      "attack": 2,
+      "health": 6,
+      "enrage": {
+        "attack": 3
+      },
+      "keywords": [
+        "taunt"
+      ],
+      "description": "Taunt. While damaged: +3 Attack.",
+      "set": "hsx"
+    },
+    {
+      "id": "harkener_of_dread",
+      "name": "Harkener of Dread",
+      "cardClass": "shaman",
+      "cost": 5,
+      "rarity": "common",
+      "type": "creature",
+      "attack": 2,
+      "health": 2,
+      "keywords": [
+        "taunt",
+        "reborn",
+        "deathrattle"
+      ],
+      "deathrattle": [
+        {
+          "type": "summon",
+          "count": 1,
+          "attack": 4,
+          "health": 4,
+          "name": "Undead",
+          "keywords": [
+            "taunt"
+          ]
+        }
+      ],
+      "description": "Taunt. Reborn. Deathrattle: Summon a 4/4 Undead with Taunt.",
+      "set": "hsx"
+    },
+    {
+      "id": "tar_lurker",
+      "name": "Tar Lurker",
+      "cardClass": "warlock",
+      "cost": 5,
+      "rarity": "common",
+      "tribe": "Elemental",
+      "type": "creature",
+      "attack": 1,
+      "health": 7,
+      "offTurnAttack": 3,
+      "keywords": [
+        "taunt"
+      ],
+      "description": "Taunt. Has +3 Attack during opponents' turns.",
+      "set": "hsx"
+    },
+    {
+      "id": "tar_lord",
+      "name": "Tar Lord",
+      "cardClass": "warrior",
+      "cost": 6,
+      "rarity": "common",
+      "tribe": "Elemental",
+      "type": "creature",
+      "attack": 1,
+      "health": 11,
+      "offTurnAttack": 4,
+      "keywords": [
+        "taunt"
+      ],
+      "description": "Taunt. Has +4 Attack during opponents' turns.",
+      "set": "hsx"
+    },
+    {
+      "id": "tar_tyrant",
+      "name": "Tar Tyrant",
+      "cardClass": "neutral",
+      "cost": 8,
+      "rarity": "common",
+      "tribe": "Elemental",
+      "type": "creature",
+      "attack": 1,
+      "health": 12,
+      "offTurnAttack": 6,
+      "keywords": [
+        "taunt",
+        "lifesteal"
+      ],
+      "description": "Taunt. Lifesteal. Has +6 Attack during opponents' turns.",
       "set": "hsx"
     }
   ]

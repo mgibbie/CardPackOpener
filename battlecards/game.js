@@ -340,6 +340,47 @@ function openChoiceMenu(card, ev) {
 	menu.style.top = `${Math.min(ev.clientY, innerHeight - 200)}px`;
 }
 
+// Tradeable cards offer Play or Trade (pay 1: shuffle back, draw a card)
+function openTradeMenu(card, ev) {
+	const menu = $('walker-menu');
+	menu.innerHTML = `<div class="wm-title">${card.name}</div>`;
+	const play = document.createElement('button');
+	play.innerHTML = `<span class="wm-cost">${E.effectiveCost(state, HUMAN, card)}</span>Play`;
+	play.disabled = !E.canPlay(state, HUMAN, card);
+	play.addEventListener('pointerdown', e => {
+		e.stopPropagation();
+		hideWalkerMenu();
+		playFromHand(card, ev);
+	});
+	menu.appendChild(play);
+	const trade = document.createElement('button');
+	trade.innerHTML = `<span class="wm-cost">1</span>Trade — shuffle into your deck, draw a card`;
+	trade.disabled = !E.canTrade(state, HUMAN, card);
+	trade.addEventListener('pointerdown', e => {
+		e.stopPropagation();
+		hideWalkerMenu();
+		E.tradeCard(state, HUMAN, card.uid);
+		pump();
+	});
+	menu.appendChild(trade);
+	menu.style.display = 'block';
+	menu.style.left = `${Math.min(ev.clientX, innerWidth - 300)}px`;
+	menu.style.top = `${Math.min(ev.clientY, innerHeight - 200)}px`;
+}
+
+function playFromHand(card, ev) {
+	if (!E.canPlay(state, HUMAN, card)) return;
+	if (card.choices) { openChoiceMenu(card, ev); return; }
+	const spec = E.targetSpec(state, HUMAN, card);
+	if (spec) {
+		const targets = E.legalTargets(state, HUMAN, spec);
+		if (targets.length) { pending = { card, spec, targets, mode: 'play' }; updateHud(); return; }
+		if (spec.required) return;
+	}
+	E.playCard(state, HUMAN, card.uid, null);
+	pump();
+}
+
 // choose-one hero powers pick a branch before targeting
 function openPowerChoiceMenu(card, ev) {
 	const menu = $('walker-menu');
@@ -1107,6 +1148,10 @@ function nextEvent() {
 			if (ev.player === HUMAN) openDiscardModal();
 			delay = 300;
 			break;
+		case 'traded':
+			log(`${nameOf(ev.player)} traded ${ev.player === HUMAN ? ev.card.name : 'a card'} back into their deck`);
+			delay = 300;
+			break;
 		case 'pickStart':
 			log(`${nameOf(ev.player)} ${ev.count > 3 ? 'drafts' : 'discovers'} (${ev.count} options)`);
 			if (ev.player === HUMAN) openPickModal();
@@ -1411,16 +1456,8 @@ renderer.domElement.addEventListener('pointerdown', ev => {
 		return;
 	}
 	if (card.zone === 'hand' && card.controller === HUMAN) {
-		if (!E.canPlay(state, HUMAN, card)) return;
-		if (card.choices) { openChoiceMenu(card, ev); return; }
-		const spec = E.targetSpec(state, HUMAN, card);
-		if (spec) {
-			const targets = E.legalTargets(state, HUMAN, spec);
-			if (targets.length) { pending = { card, spec, targets, mode: 'play' }; updateHud(); return; }
-			if (spec.required) return;
-		}
-		E.playCard(state, HUMAN, card.uid, null);
-		pump();
+		if (card.tradeable && E.canTrade(state, HUMAN, card)) { openTradeMenu(card, ev); return; }
+		playFromHand(card, ev);
 	} else if (card.zone === 'board' && card.controller === HUMAN) {
 		if (card.disguised && E.canUnmask(state, HUMAN, card)) { openUnmaskMenu(card, ev); return; }
 		if (E.canAttackWith(state, HUMAN, card)) { selectedAttacker = card.uid; updateHud(); }
