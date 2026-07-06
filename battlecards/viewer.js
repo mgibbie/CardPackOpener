@@ -1,7 +1,14 @@
 // viewer.js — the collection browser: a paginated, filterable card book.
 // Card faces come from the shared procedural renderer; rules text appears in
 // a hover tooltip, and rules-cards carry a CSS-animated iridescent gem.
-import { drawCardFace, hasRules, classNameOf } from './cardart.js';
+import { drawCardFace, hasRules, classNameOf, artListeners } from './cardart.js';
+
+// repaint the visible page as real art crops stream in
+let artRepaint = null;
+artListeners.add(() => {
+	clearTimeout(artRepaint);
+	artRepaint = setTimeout(() => renderPage(), 120);
+});
 import * as Col from './collection.js';
 
 const PAGE_SIZE = 10;

@@ -111,8 +111,40 @@ function hashId(id) {
 	return h >>> 0;
 }
 
+// ---------- real card art (crops from the user's paper scans) ----------
+// art/index.json lists ids with a real crop; everything else stays
+// procedural. Images load lazily; listeners fire so live faces refresh.
+let artIndex = null;
+const artImgs = new Map(); // id -> HTMLImageElement
+export const artListeners = new Set(); // fn(id) called when an image arrives
+
+fetch('art/index.json')
+	.then(r => (r.ok ? r.json() : []))
+	.then(ids => { artIndex = new Set(ids); })
+	.catch(() => { artIndex = new Set(); });
+
+function artFor(id) {
+	if (!artIndex || !artIndex.has(id)) return null;
+	let img = artImgs.get(id);
+	if (!img) {
+		img = new Image();
+		img.onload = () => { for (const fn of artListeners) fn(id); };
+		img.src = 'art/' + id + '.jpg';
+		artImgs.set(id, img);
+	}
+	return img.complete && img.naturalWidth ? img : null;
+}
+
 // deterministic per-card generative art, painted inside the art window clip
 function paintArt(ctx, card, x, y, w, h) {
+	// real art wins when it's ready: cover-fit the crop into the window
+	const img = artFor(card.id);
+	if (img) {
+		const scale = Math.max(w / img.naturalWidth, h / img.naturalHeight);
+		const dw = img.naturalWidth * scale, dh = img.naturalHeight * scale;
+		ctx.drawImage(img, x + (w - dw) / 2, y + (h - dh) / 2, dw, dh);
+		return;
+	}
 	const seed = hashId(card.id || card.name || '?');
 	// mulberry32: deterministic per card, always in [0, 1)
 	const rand = (() => {

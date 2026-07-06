@@ -4,7 +4,7 @@ import * as THREE from 'three';
 import * as E from './engine.js';
 import * as AI from './ai.js';
 import * as Col from './collection.js';
-import { CARD_W, CARD_H, CARD_D, makeFaceTexture, makeBackTexture, hasRules, RULES_GEM, classNameOf, drawCardFace, makeTokenTexture, TOKEN_W, TOKEN_H, TOKEN_GEM, drawHeroPortrait, drawPowerOrb } from './cardart.js';
+import { CARD_W, CARD_H, CARD_D, makeFaceTexture, makeBackTexture, hasRules, RULES_GEM, classNameOf, drawCardFace, makeTokenTexture, TOKEN_W, TOKEN_H, TOKEN_GEM, drawHeroPortrait, drawPowerOrb, artListeners } from './cardart.js';
 
 const HUMAN = 0;
 const TAU = Math.PI * 2;
@@ -225,6 +225,13 @@ function refreshFace(ent) {
 	ent.faceMat.map = nm.map;
 	ent.faceMat.needsUpdate = true;
 }
+
+// when a real art crop finishes loading, live faces using it repaint
+artListeners.add(id => {
+	for (const ent of entities.values()) {
+		if (ent.card.id === id && !ent.card.disguised) refreshFace(ent);
+	}
+});
 
 function removeEntity(uid) {
 	const ent = entities.get(uid);
