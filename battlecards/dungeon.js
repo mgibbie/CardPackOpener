@@ -12,6 +12,9 @@ export const STARTER_DECKS = {
 	shaman: ["air_elemental", "lightning_bolt", "flametongue_totem", "murloc_tidehunter", "stormforged_axe", "lightning_storm", "unbound_elemental", "defender_of_argus", "hex", "fire_elemental"],
 	warlock: ["corruption", "mortal_coil", "voidwalker", "knife_juggler", "sunfury_protector", "drain_life", "imp_master", "dark_iron_dwarf", "hellfire", "doomguard"],
 	warrior: ["warbot", "amani_berserker", "cruel_taskmaster", "heroic_strike", "bash", "fiery_war_axe", "hired_gun", "raging_worgen", "dread_corsair", "brawl"],
+	death_knight: ["body_bagger", "icy_touch", "heart_strike", "harbinger_of_winter", "bonedigger_geist", "dreadhound_handler", "chillfallen_baron", "reluctant_wrangler", "cool_ghoul", "remorseless_winter"],
+	demon_hunter: ["battlefiend", "shadowhoof_slayer", "chaos_strike", "umberwing", "netherwalker", "immolation_aura", "aldrachi_warblades", "satyr_overseer", "vile_call", "ashtongue_battlelord"],
+	bounty_hunter: ["backstab", "mark_target", "tripwire_snare", "shadow_stalker", "bear_trap", "the_lone_ranger", "ranchers_brand", "running_gunner", "contract_killer", "tumbleweed_tactician"],
 };
 
 export const BOSSES = {
@@ -268,6 +271,34 @@ export const BUCKETS = {
 		{ name: "Smash!", cards: ["cleave", "execute", "heroic_strike", "slam", "bash", "mortal_strike"] },
 		{ name: "Taunt", cards: ["cornered_sentry", "fierce_monkey", "stonehill_defender", "bloodhoof_brave", "sludge_belcher", "hungry_ettin", "obsidian_destroyer", "the_curator", "primordial_drake", "sleepy_dragon"] },
 		{ name: "Weapons", cards: ["upgrade", "fiery_war_axe", "orgrimmar_aspirant", "arcanite_reaper", "gorehowl"] },
+	],
+	death_knight: [
+		{ name: "Corpse Harvest", cards: ["body_bagger", "bonedigger_geist", "defrost", "darkfallen_neophyte", "vampiric_blood", "corpse_explosion", "marrow_manipulator", "lord_marrowgar"] },
+		{ name: "Frost", cards: ["icy_touch", "horn_of_winter", "sindragosa_s_wing", "death_s_advance", "glacial_advance", "remorseless_winter", "frostwyrm_s_fury", "deathchiller"] },
+		{ name: "Blood", cards: ["heart_strike", "obliterate", "vampiric_blood", "quartzite_crusher", "corrupted_ashbringer", "gnome_muncher", "alexandros_mograine", "death_metal_knight"] },
+		{ name: "Unholy Legion", cards: ["battlefield_necromancer", "graveyard_shift", "tomb_guardians", "grave_strength", "tower_of_ghouls", "possessifier", "nerubian_swarmguard", "sanguine_infestation"] },
+		{ name: "Deathrattle", cards: ["dreadhound_handler", "harbinger_of_winter", "chillfallen_baron", "reluctant_wrangler", "thassarian", "travel_security", "cage_head", "deathbringer_saurfang"] },
+		{ name: "Reborn", cards: ["cool_ghoul", "reluctant_wrangler", "malignant_horror", "thassarian", "acolyte_of_death", "meat_grinder"] },
+		{ name: "Runeforged", cards: ["bone_breaker", "corpse_cannon", "soulbreaker", "might_of_menethil", "quartzite_crusher", "corrupted_ashbringer"] },
+		{ name: "Endgame", cards: ["alexandros_mograine", "frostwyrm_s_fury", "cage_head", "lord_marrowgar", "climactic_necrotic_explosion", "travel_security", "overseer_frigidara"] },
+	],
+	demon_hunter: [
+		{ name: "Fel Fury", cards: ["battlefiend", "shadowhoof_slayer", "chaos_strike", "battleworn_vanguard", "relentless_pursuit", "felsaber", "inner_demon", "bladed_lady"] },
+		{ name: "Warblades", cards: ["umberwing", "aldrachi_warblades", "infernal_stapler", "insect_claw", "magnifying_glaive", "flamereaper"] },
+		{ name: "Demon Swarm", cards: ["coordinated_strike", "vile_call", "command_the_illidari", "satyr_overseer", "netherwalker", "renowned_performer"] },
+		{ name: "Big Demons", cards: ["kryxis_the_voracious", "bladed_lady", "irebound_brute", "priestess_of_fury", "coilfang_warlord", "raging_felscreamer"] },
+		{ name: "Chaos", cards: ["immolation_aura", "keen_reflex", "chaos_nova", "cycle_of_hatred", "wrathscale_naga", "shambling_chow", "felrattler"] },
+		{ name: "Deathrattle", cards: ["shambling_chow", "disciple_of_argus", "felrattler", "renowned_performer", "kryxis_the_voracious", "coilfang_warlord"] },
+		{ name: "Evasion", cards: ["blur", "eye_of_shadow", "abyssal_depths", "ashtongue_battlelord", "kayn_sunfury", "flag_runner"] },
+	],
+	bounty_hunter: [
+		{ name: "Traps", cards: ["tripwire_snare", "bear_trap", "rattlesnake_den", "smoke_bomb", "dynamite_cache", "quicksand_pit"] },
+		{ name: "Contracts", cards: ["blood_feud", "bounty_board", "dead_mans_hand", "railroad_contract", "great_cattle_drive", "westward_prosperity"] },
+		{ name: "Posse", cards: ["landlocked_privateer", "shadow_stalker", "the_lone_ranger", "frontier_fugitive", "running_gunner", "officer_octo", "guild_assassin", "harried_herdsman", "paid_off_patrolman"] },
+		{ name: "Hero Powers", cards: ["gunslingers_eye", "field_medic_tent", "recruiting_office", "wanted_poster", "armorers_forge", "gunsmith"] },
+		{ name: "Contraptions", cards: ["lucky_horseshoe", "iron_safe", "sheriffs_badge", "mechanical_deputy", "printing_press", "night_market", "war_drums", "campfire_songs", "ghost_town_haunting", "silencer"] },
+		{ name: "Legends", cards: ["marshal_ironstar", "sable_the_cardsharp", "old_man_cactus", "contract_killer", "tumbleweed_tactician", "banish_to_the_badlands"] },
+		{ name: "Tricks", cards: ["backstab", "mark_target", "regroup", "banish_to_the_badlands", "ranchers_brand", "westward_prosperity"] },
 	],
 };
 

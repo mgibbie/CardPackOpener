@@ -1728,6 +1728,13 @@ async function start() {
 			});
 		} catch (e) { classRegistry = []; }
 	}
+	// bare visit = the landing menu; any mode param (battle/players/boss/
+	// dungeon) boots straight in, so tests and deep links skip it
+	if (!location.search && !menuChosen) {
+		const mode = await mainMenu();
+		if (mode === 'dungeon') { location.href = '?dungeon=1'; return; }
+		menuChosen = true;
+	}
 	if (dungeonRunMode) {
 		let run = loadRun();
 		if (!run || !run.active) {
@@ -1873,6 +1880,32 @@ function miniFace(def) {
 	setTimeout(redraw, 700);
 	setTimeout(redraw, 2200);
 	return c;
+}
+
+// landing menu: shown on a bare visit (no mode in the URL)
+let menuChosen = false;
+function mainMenu() {
+	return new Promise(resolve => {
+		const el = dungeonOverlay('MAGEPUNK BATTLECARDS', 'Choose your game.');
+		const col = document.createElement('div');
+		col.style.cssText = 'display:flex;flex-direction:column;align-items:center;gap:10px;margin-top:10px;';
+		const big = (label, sub, fn) => {
+			const b = document.createElement('button');
+			b.innerHTML = `<div style="font-size:22px;letter-spacing:2px;">${label}</div>`
+				+ `<div style="font-size:12px;opacity:0.75;margin-top:4px;">${sub}</div>`;
+			b.style.cssText = 'width:340px;padding:18px 26px;cursor:pointer;border-radius:12px;'
+				+ 'background:#2a2440;color:#e8e0d0;border:1px solid #6a5f8a;';
+			b.addEventListener('mouseenter', () => { b.style.background = '#3a3258'; });
+			b.addEventListener('mouseleave', () => { b.style.background = '#2a2440'; });
+			b.addEventListener('click', fn);
+			return b;
+		};
+		col.appendChild(big('TEST BATTLE', 'the battle table — 2 to 8 players, your deck or the demo deck',
+			() => { hideDungeonOverlay(); resolve('battle'); }));
+		col.appendChild(big('DUNGEON RUN', 'eight bosses, card buckets, and treasures — pick a class and descend',
+			() => resolve('dungeon')));
+		el.appendChild(col);
+	});
 }
 
 function pickClassOverlay() {
