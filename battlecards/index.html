@@ -3,10 +3,11 @@
 <head>
 	<title>Magepunk Battlecards</title>
 	<meta charset="UTF-8">
-	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 	<link rel="icon" href="data:,">
 	<style>
-		html, body { margin: 0; height: 100%; overflow: hidden; background: #0d0a14; font-family: 'Segoe UI', sans-serif; user-select: none; }
+		html, body { margin: 0; height: 100%; overflow: hidden; background: #0d0a14; font-family: 'Segoe UI', sans-serif; user-select: none; -webkit-user-select: none; touch-action: none; }
+		body { height: 100dvh; }
 		#scene { position: fixed; inset: 0; }
 		.hud { position: fixed; color: #e8e2f4; text-shadow: 0 2px 6px #000; pointer-events: none; }
 		#title { top: 12px; left: 18px; font-size: 17px; font-weight: 700; letter-spacing: 1px; }
@@ -125,6 +126,22 @@
 			position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
 			padding: 14px 34px; font-size: 19px; font-weight: 700;
 			background: #6b4fd4; color: #fff; border: none; border-radius: 12px; cursor: pointer;
+		}
+
+		/* phones + small screens: compact chrome, finger-sized controls */
+		@media (max-width: 760px) {
+			#title { font-size: 13px; left: 10px; top: 8px; }
+			#title a { font-size: 11px; margin-left: 7px; }
+			#class-select, #player-count { font-size: 11px; margin-left: 6px !important; }
+			.panel { left: 8px; width: 148px; padding: 7px 10px; }
+			.panel .life { font-size: 24px; }
+			.panel .sub, .panel .gear { font-size: 11px; }
+			#my-panel { bottom: 10px; }
+			#end-turn, #coin-btn { right: 10px; padding: 14px 18px; font-size: 15px; }
+			#log { display: none; }
+			#hint { font-size: 12.5px; bottom: 6px; width: 94%; text-align: center; }
+			#banner { font-size: 34px; }
+			#tooltip { width: 216px; }
 		}
 	</style>
 	<script type="importmap">

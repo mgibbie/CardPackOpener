@@ -53,11 +53,14 @@ scene.fog = new THREE.Fog('#0d0a14', 18, 34);
 const camera = new THREE.PerspectiveCamera(42, innerWidth / innerHeight, 0.1, 160);
 function frameCamera() {
 	const off = sliceOff();
-	camera.position.set(0, 13.2 + off * 1.6, 12.2 + off * 1.25);
+	// narrow (portrait/phone) screens crop the table sideways: pull back so
+	// the full width still fits in the horizontal field of view
+	const fit = Math.max(1, Math.sqrt(1.45 / Math.max(0.3, camera.aspect)));
+	camera.position.set(0, (13.2 + off * 1.6) * fit, (12.2 + off * 1.25) * fit);
 	camera.lookAt(0, 0, -0.8);
 	// keep the far slices out of the fog on big tables
-	scene.fog.near = 18 + off * 2.2;
-	scene.fog.far = 34 + off * 3.6;
+	scene.fog.near = (18 + off * 2.2) * fit;
+	scene.fog.far = (34 + off * 3.6) * fit;
 }
 frameCamera();
 
@@ -1509,7 +1512,7 @@ addEventListener('pointermove', ev => {
 	mouseX = ev.clientX;
 	mouseY = ev.clientY;
 	hoverUid = pick(ev);
-	updateTooltip(ev);
+	if (!TOUCH) updateTooltip(ev); // phones use long-press instead of hover
 });
 
 function clearModes() {
@@ -1557,6 +1560,10 @@ renderer.domElement.addEventListener('pointerdown', ev => {
 	if (ev.button !== 0 || !state || state.over || state.current !== HUMAN) return;
 	const uid = pick(ev);
 	const card = cardOf(uid);
+	if (TOUCH) {
+		$('tooltip').style.display = 'none';
+		startLongPress(uid, ev.clientX, ev.clientY);
+	}
 
 	// targeting mode: expect a creature click (hero clicks handled on the panels)
 	if (pending) {
@@ -1594,6 +1601,7 @@ renderer.domElement.addEventListener('pointerdown', ev => {
 		return;
 	}
 	if (card.zone === 'hand' && card.controller === HUMAN) {
+		if (TOUCH) { touchHandCard = card; return; } // play on release, not press
 		if (card.tradeable && E.canTrade(state, HUMAN, card)) { openTradeMenu(card, ev); return; }
 		playFromHand(card, ev);
 	} else if (card.zone === 'board' && card.controller === HUMAN) {
@@ -1642,7 +1650,28 @@ function commitPending(t) {
 // press arms as before; releasing after a real drag commits the target under
 // the cursor, releasing in place keeps click-then-click working
 let lastDownX = 0, lastDownY = 0;
-addEventListener('pointerdown', ev => { lastDownX = ev.clientX; lastDownY = ev.clientY; }, true);
+addEventListener('pointerdown', ev => {
+	lastDownX = mouseX = ev.clientX;
+	lastDownY = mouseY = ev.clientY;
+}, true);
+
+// ---------- touch input ----------
+// no hover on phones: long-press inspects a card instead, and hand plays
+// wait for the release so browsing your hand can't cast anything
+const TOUCH = matchMedia('(pointer: coarse)').matches;
+let longPressT = null, longPressFired = false, touchHandCard = null;
+
+function startLongPress(uid, x, y) {
+	clearTimeout(longPressT);
+	longPressFired = false;
+	if (!uid) return;
+	longPressT = setTimeout(() => {
+		if (Math.hypot(mouseX - x, mouseY - y) > 12) return;
+		longPressFired = true;
+		hoverUid = uid;
+		updateTooltip({ clientX: x, clientY: y });
+	}, 480);
+}
 
 function heroPanelAt(x, y) {
 	const el = document.elementFromPoint(x, y);
@@ -1699,10 +1728,22 @@ function tryCommitTargetAt(ev) {
 }
 
 addEventListener('pointerup', ev => {
+	clearTimeout(longPressT);
 	if (ev.button !== 0 || !state || state.over || state.current !== HUMAN) return;
+	// deferred touch hand-play: a short tap casts, a long-press only inspected
+	if (TOUCH && touchHandCard) {
+		const c = touchHandCard;
+		touchHandCard = null;
+		if (!longPressFired && Math.hypot(ev.clientX - lastDownX, ev.clientY - lastDownY) < 14) {
+			if (c.tradeable && E.canTrade(state, HUMAN, c)) openTradeMenu(c, ev);
+			else playFromHand(c, ev);
+		}
+		return;
+	}
 	if (!pending && !selectedAttacker) return;
 	// a release right where the press happened is a click, not a drag
 	if (Math.hypot(ev.clientX - lastDownX, ev.clientY - lastDownY) < 14) return;
+	if (longPressFired) return; // inspecting an armed creature shouldn't cancel it
 	if (!tryCommitTargetAt(ev)) clearModes();
 });
 
@@ -1762,6 +1803,7 @@ addEventListener('resize', () => {
 	camera.aspect = innerWidth / innerHeight;
 	camera.updateProjectionMatrix();
 	renderer.setSize(innerWidth, innerHeight);
+	frameCamera();
 });
 
 // ---------- ring highlighting (computed per frame) ----------
