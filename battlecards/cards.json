@@ -15700,6 +15700,616 @@
         "charge"
       ],
       "description": "Charge. While damaged: +6 Attack."
+    },
+    {
+      "id": "sacrificial_pact",
+      "name": "Sacrificial Pact",
+      "cardClass": "warlock",
+      "cost": 0,
+      "rarity": "common",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "destroy",
+          "target": "creature",
+          "tribe": "Demon"
+        },
+        {
+          "type": "heal",
+          "value": 5,
+          "target": "self"
+        }
+      ],
+      "description": "Destroy a Demon. Restore 5 health to your hero."
+    },
+    {
+      "id": "execute",
+      "name": "Execute",
+      "cardClass": "warrior",
+      "cost": 1,
+      "rarity": "common",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "destroy",
+          "target": "enemy-creature",
+          "requireDamaged": true
+        }
+      ],
+      "description": "Destroy a damaged enemy creature."
+    },
+    {
+      "id": "hungry_crab",
+      "name": "Hungry Crab",
+      "cardClass": "neutral",
+      "cost": 1,
+      "rarity": "epic",
+      "tribe": "Beast",
+      "type": "creature",
+      "attack": 1,
+      "health": 2,
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "destroy",
+          "target": "creature",
+          "tribe": "Murloc",
+          "then": [
+            {
+              "type": "buff-self",
+              "attack": 2,
+              "health": 2
+            }
+          ]
+        }
+      ],
+      "description": "Battlecry: Destroy a Murloc and gain +2/+2."
+    },
+    {
+      "id": "ice_lance",
+      "name": "Ice Lance",
+      "cardClass": "mage",
+      "cost": 1,
+      "rarity": "common",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "conditional",
+          "target": "any",
+          "if": {
+            "targetFrozen": true
+          },
+          "then": [
+            {
+              "type": "damage",
+              "value": 4,
+              "target": "any"
+            }
+          ],
+          "else": [
+            {
+              "type": "freeze",
+              "target": "any"
+            }
+          ]
+        }
+      ],
+      "description": "Freeze a target. If it was already frozen, deal 4 damage instead."
+    },
+    {
+      "id": "lightwarden",
+      "name": "Lightwarden",
+      "cardClass": "neutral",
+      "cost": 1,
+      "rarity": "rare",
+      "type": "creature",
+      "attack": 1,
+      "health": 2,
+      "ongoing": {
+        "on": "healed",
+        "effects": [
+          {
+            "type": "buff-self",
+            "attack": 2,
+            "health": 0
+          }
+        ]
+      },
+      "description": "Whenever a character is healed, this gains +2 Attack."
+    },
+    {
+      "id": "mortal_coil",
+      "name": "Mortal Coil",
+      "cardClass": "warlock",
+      "cost": 1,
+      "rarity": "common",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "damage-then",
+          "value": 1,
+          "target": "creature",
+          "ifDies": [
+            {
+              "type": "draw",
+              "value": 1
+            }
+          ]
+        }
+      ],
+      "description": "Deal 1 damage to a creature. If it dies, draw a card."
+    },
+    {
+      "id": "murloc_tidecaller",
+      "name": "Murloc Tidecaller",
+      "cardClass": "neutral",
+      "cost": 1,
+      "rarity": "rare",
+      "tribe": "Murloc",
+      "type": "creature",
+      "attack": 1,
+      "health": 2,
+      "ongoing": {
+        "on": "summoned",
+        "effects": [
+          {
+            "type": "buff-self",
+            "attack": 1,
+            "health": 0
+          }
+        ],
+        "if": {
+          "tribe": "Murloc"
+        }
+      },
+      "description": "Whenever you summon a Murloc, this gains +1 Attack."
+    },
+    {
+      "id": "northshire_cleric",
+      "name": "Northshire Cleric",
+      "cardClass": "priest",
+      "cost": 1,
+      "rarity": "common",
+      "type": "creature",
+      "attack": 1,
+      "health": 3,
+      "ongoing": {
+        "on": "healed",
+        "effects": [
+          {
+            "type": "draw",
+            "value": 1
+          }
+        ],
+        "if": {
+          "creature": true
+        }
+      },
+      "description": "Whenever a creature is healed, draw 1 card."
+    },
+    {
+      "id": "savagery",
+      "name": "Savagery",
+      "cardClass": "druid",
+      "cost": 1,
+      "rarity": "rare",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "damage",
+          "valuePer": "hero-attack",
+          "target": "creature"
+        }
+      ],
+      "description": "Deal damage equal to your hero's Attack to a creature."
+    },
+    {
+      "id": "secretkeeper",
+      "name": "Secretkeeper",
+      "cardClass": "neutral",
+      "cost": 1,
+      "rarity": "rare",
+      "type": "creature",
+      "attack": 1,
+      "health": 2,
+      "ongoing": {
+        "on": "card-played",
+        "effects": [
+          {
+            "type": "buff-self",
+            "attack": 1,
+            "health": 1
+          }
+        ],
+        "if": {
+          "cardType": "secret"
+        }
+      },
+      "description": "Whenever you play a Secret, this gains +1/+1."
+    },
+    {
+      "id": "shield_slam",
+      "name": "Shield Slam",
+      "cardClass": "warrior",
+      "cost": 1,
+      "rarity": "epic",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 1,
+          "valuePer": "armor",
+          "target": "creature"
+        }
+      ],
+      "description": "Deal 1 damage to a creature for each Armor you have."
+    },
+    {
+      "id": "ancestral_spirit",
+      "name": "Ancestral Spirit",
+      "cardClass": "shaman",
+      "cost": 2,
+      "rarity": "rare",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "grant-deathrattle",
+          "target": "creature",
+          "effects": [
+            {
+              "type": "resummon-source"
+            }
+          ]
+        }
+      ],
+      "description": "Choose a creature. When it dies, it returns to the battlefield."
+    },
+    {
+      "id": "battle_rage",
+      "name": "Battle Rage",
+      "cardClass": "warrior",
+      "cost": 2,
+      "rarity": "common",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "draw",
+          "value": 1,
+          "valuePer": "damaged-friendly"
+        }
+      ],
+      "description": "Draw a card for each damaged friendly character."
+    },
+    {
+      "id": "demonfire",
+      "name": "Demonfire",
+      "cardClass": "warlock",
+      "cost": 2,
+      "rarity": "common",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "conditional",
+          "target": "creature",
+          "if": {
+            "targetFriendlyTribe": "Demon"
+          },
+          "then": [
+            {
+              "type": "buff",
+              "attack": 2,
+              "health": 2,
+              "target": "creature"
+            }
+          ],
+          "else": [
+            {
+              "type": "damage",
+              "value": 2,
+              "target": "creature"
+            }
+          ]
+        }
+      ],
+      "description": "Deal 2 damage to a creature. If it's your Demon, give it +2/+2 instead."
+    },
+    {
+      "id": "rampage",
+      "name": "Rampage",
+      "cardClass": "warrior",
+      "cost": 2,
+      "rarity": "common",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 3,
+          "health": 3,
+          "target": "creature",
+          "requireDamaged": true
+        }
+      ],
+      "description": "Give a damaged creature +3/+3."
+    },
+    {
+      "id": "scavenging_hyena",
+      "name": "Scavenging Hyena",
+      "cardClass": "hunter",
+      "cost": 2,
+      "rarity": "common",
+      "tribe": "Beast",
+      "type": "creature",
+      "attack": 2,
+      "health": 2,
+      "ongoing": {
+        "on": "friendly-creature-died",
+        "effects": [
+          {
+            "type": "buff-self",
+            "attack": 2,
+            "health": 1
+          }
+        ],
+        "if": {
+          "tribe": "Beast"
+        }
+      },
+      "description": "Whenever a friendly Beast dies, this gains +2/+1."
+    },
+    {
+      "id": "slam",
+      "name": "Slam",
+      "cardClass": "warrior",
+      "cost": 2,
+      "rarity": "common",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "damage-then",
+          "value": 2,
+          "target": "creature",
+          "ifSurvives": [
+            {
+              "type": "draw",
+              "value": 1
+            }
+          ]
+        }
+      ],
+      "description": "Deal 2 damage to a creature. If it survives, draw a card."
+    },
+    {
+      "id": "starving_buzzard",
+      "name": "Starving Buzzard",
+      "cardClass": "hunter",
+      "cost": 2,
+      "rarity": "common",
+      "tribe": "Beast",
+      "type": "creature",
+      "attack": 2,
+      "health": 1,
+      "ongoing": {
+        "on": "summoned",
+        "effects": [
+          {
+            "type": "draw",
+            "value": 1
+          }
+        ],
+        "if": {
+          "tribe": "Beast"
+        }
+      },
+      "description": "Whenever you summon a Beast, draw 1 card."
+    },
+    {
+      "id": "blood_knight",
+      "name": "Blood Knight",
+      "cardClass": "neutral",
+      "cost": 3,
+      "rarity": "epic",
+      "type": "creature",
+      "attack": 3,
+      "health": 3,
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "consume-shields",
+          "attack": 3,
+          "health": 3
+        }
+      ],
+      "description": "Battlecry: Every creature loses Divine Shield; gain +3/+3 for each."
+    },
+    {
+      "id": "divine_favor",
+      "name": "Divine Favor",
+      "cardClass": "paladin",
+      "cost": 3,
+      "rarity": "rare",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "draw-to-match"
+        }
+      ],
+      "description": "Draw cards until your hand matches your opponent's."
+    },
+    {
+      "id": "kill_command",
+      "name": "Kill Command",
+      "cardClass": "hunter",
+      "cost": 3,
+      "rarity": "common",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "conditional",
+          "target": "any",
+          "if": {
+            "controlTribe": "Beast"
+          },
+          "then": [
+            {
+              "type": "damage",
+              "value": 5,
+              "target": "any"
+            }
+          ],
+          "else": [
+            {
+              "type": "damage",
+              "value": 3,
+              "target": "any"
+            }
+          ]
+        }
+      ],
+      "description": "Deal 3 damage. If you control a Beast, deal 5 instead."
+    },
+    {
+      "id": "unbound_elemental",
+      "name": "Unbound Elemental",
+      "cardClass": "shaman",
+      "cost": 3,
+      "rarity": "common",
+      "type": "creature",
+      "attack": 2,
+      "health": 4,
+      "ongoing": {
+        "on": "card-played",
+        "effects": [
+          {
+            "type": "buff-self",
+            "attack": 1,
+            "health": 1
+          }
+        ],
+        "if": {
+          "overload": true
+        }
+      },
+      "description": "Whenever you play a card with Overload, this gains +1/+1."
+    },
+    {
+      "id": "warsong_commander",
+      "name": "Warsong Commander",
+      "cardClass": "warrior",
+      "cost": 3,
+      "rarity": "common",
+      "type": "creature",
+      "attack": 2,
+      "health": 3,
+      "ongoing": {
+        "on": "summoned",
+        "effects": [
+          {
+            "type": "grant-minion",
+            "keyword": "charge"
+          }
+        ],
+        "if": {
+          "maxAttack": 3
+        }
+      },
+      "description": "Whenever you summon a creature with 3 or less Attack, give it Charge."
+    },
+    {
+      "id": "ethereal_arcanist",
+      "name": "Ethereal Arcanist",
+      "cardClass": "mage",
+      "cost": 4,
+      "rarity": "rare",
+      "type": "creature",
+      "attack": 3,
+      "health": 3,
+      "ongoing": {
+        "on": "turn-end",
+        "effects": [
+          {
+            "type": "buff-self",
+            "attack": 2,
+            "health": 2
+          }
+        ],
+        "if": {
+          "controlSecret": true
+        }
+      },
+      "description": "If you control a Secret at the end of your turn, this gains +2/+2."
+    },
+    {
+      "id": "mortal_strike",
+      "name": "Mortal Strike",
+      "cardClass": "warrior",
+      "cost": 4,
+      "rarity": "rare",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "conditional",
+          "target": "any",
+          "if": {
+            "maxHealthSelf": 12
+          },
+          "then": [
+            {
+              "type": "damage",
+              "value": 6,
+              "target": "any"
+            }
+          ],
+          "else": [
+            {
+              "type": "damage",
+              "value": 4,
+              "target": "any"
+            }
+          ]
+        }
+      ],
+      "description": "Deal 4 damage. If you have 12 or less health, deal 6 instead."
+    },
+    {
+      "id": "bane_of_doom",
+      "name": "Bane of Doom",
+      "cardClass": "warlock",
+      "cost": 5,
+      "rarity": "epic",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "damage-then",
+          "value": 3,
+          "target": "any",
+          "ifDies": [
+            {
+              "type": "summon-random",
+              "tribe": "Demon"
+            }
+          ]
+        }
+      ],
+      "description": "Deal 3 damage. If the creature dies, summon a random Demon."
+    },
+    {
+      "id": "holy_wrath",
+      "name": "Holy Wrath",
+      "cardClass": "paladin",
+      "cost": 5,
+      "rarity": "rare",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "draw-damage",
+          "target": "any"
+        }
+      ],
+      "description": "Draw a card and deal damage equal to its cost."
     }
   ]
 }

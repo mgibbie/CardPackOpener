@@ -73,7 +73,9 @@ function pickTarget(state, pi, card) {
 			}
 			if (HOSTILE_TYPES.has(first?.type)) {
 				if (enemyCreatures.length) return byThreat(enemyCreatures)[0];
-				if (first.type === 'damage' || first.type === 'destroy') return weakestHero(state, enemyHeroes) || legal[0];
+				if (['damage', 'destroy', 'damage-then', 'draw-damage', 'conditional'].includes(first.type)) {
+					return weakestHero(state, enemyHeroes) || legal[0];
+				}
 				return null; // debuffs/steals are wasted without an enemy creature
 			}
 			// pure hero choices (e.g. "the enemy hero" with 3+ players)
@@ -85,7 +87,7 @@ function pickTarget(state, pi, card) {
 	}
 }
 const FRIENDLY_TYPES = new Set(['buff', 'grant', 'temp-buff', 'heal-full', 'attack-equals-health', 'double-health', 'double-attack', 'grant-ongoing']);
-const HOSTILE_TYPES = new Set(['damage', 'destroy', 'exile', 'set-health', 'set-attack', 'bounce', 'mind-control', 'transform', 'transform-copy']);
+const HOSTILE_TYPES = new Set(['damage', 'destroy', 'exile', 'set-health', 'set-attack', 'bounce', 'mind-control', 'transform', 'transform-copy', 'damage-then', 'conditional', 'draw-damage']);
 const CHOSEN_TYPES = new Set([...FRIENDLY_TYPES, ...HOSTILE_TYPES, 'heal']);
 
 function playableCards(state, pi) {

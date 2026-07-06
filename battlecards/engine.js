@@ -387,6 +387,10 @@ const CHOSEN = {
 	'mind-control': { 'enemy-creature': 'enemy-creature' },
 	transform: { creature: 'creature', 'enemy-creature': 'enemy-creature' },
 	'transform-copy': { creature: 'creature' },
+	conditional: { any: 'any', creature: 'creature' },
+	'damage-then': { any: 'any', creature: 'creature' },
+	'draw-damage': { any: 'any' },
+	'grant-deathrattle': { creature: 'creature' },
 };
 
 // Choose One cards resolve to one branch's effects at play time
@@ -445,6 +449,7 @@ export function targetSpec(state, pi, card, choice) {
 		if (e.maxAttack != null) { filter = c => c.attack <= e.maxAttack; why = `a creature with ${e.maxAttack} or less Attack`; }
 		if (e.minAttack != null) { filter = c => c.attack >= e.minAttack; why = `a creature with ${e.minAttack} or more Attack`; }
 		if (e.requireKeyword != null) { filter = c => c.keywords.includes(e.requireKeyword); why = `a creature with ${e.requireKeyword.replace(/_/g, ' ')}`; }
+		if (e.requireDamaged) { filter = c => c.damage > 0; why = 'a damaged creature'; }
 		if (e.tribe) {
 			const tribes = e.tribe.split('|');
 			filter = c => tribes.some(t => (c.tribe || '').includes(t));
@@ -557,8 +562,13 @@ function gainArmor(state, pi, amount) {
 
 function healHero(state, pi, amount) {
 	const p = state.players[pi];
+	const before = p.life;
 	p.life = Math.min(STARTING_LIFE, p.life + amount);
 	emit(state, { type: 'heal', targetType: 'hero', player: pi, amount, life: p.life });
+	// Lightwarden-style triggers fire only when healing actually landed
+	if (p.life > before) {
+		for (let s2 = 0; s2 < state.players.length; s2++) fireOngoing(state, s2, 'healed', { healedHero: pi });
+	}
 }
 
 function isDead(c) {
@@ -634,8 +644,8 @@ function sweepDeaths(state) {
 				toGraveyard(state, pi, c);
 			}
 			questTick(state, 'death', pi);
-			for (let s2 = 0; s2 < state.players.length; s2++) fireOngoing(state, s2, 'creature-died', {});
-			fireOngoing(state, pi, 'friendly-creature-died', {});
+			for (let s2 = 0; s2 < state.players.length; s2++) fireOngoing(state, s2, 'creature-died', { dead: c });
+			fireOngoing(state, pi, 'friendly-creature-died', { dead: c });
 		}
 	}
 	// deathrattles can kill more
@@ -747,6 +757,19 @@ function recomputeAuras(state) {
 	}
 }
 
+// condition on an ongoing trigger, judged against the event's subject card
+// (the summoned/played/dead/damaged creature) or the owner's own state
+function ongoingCondOk(state, pi, cond, ctx) {
+	const subj = ctx.minion || ctx.played || ctx.dead || ctx.damaged || null;
+	if (cond.maxAttack != null && !(subj && subj.attack <= cond.maxAttack)) return false;
+	if (cond.tribe && !(subj && (subj.tribe || '').includes(cond.tribe))) return false;
+	if (cond.overload && !(subj && subj.overload > 0)) return false;
+	if (cond.cardType && !(subj && subj.type === cond.cardType)) return false;
+	if (cond.controlSecret && !state.players[pi].secrets.length) return false;
+	if (cond.creature && !ctx.healedCreature) return false; // "whenever a MINION is healed"
+	return true;
+}
+
 // ---------- ongoing permanents (enchantments, artifacts, emblems, creatures) ----------
 // persistent triggers: fire every time, card stays in play. Board creatures
 // with an `ongoing` field participate too (whenever-/at- style minions);
@@ -760,6 +783,8 @@ function fireOngoing(state, pi, when, ctx = {}) {
 		if (!card.ongoing || card.ongoing.on !== when) continue;
 		if (card === ctx.minion) continue; // a minion doesn't trigger on its own arrival
 		if (card.zone === 'board' && isDead(card)) continue;
+		// conditional triggers ("Whenever you summon a Beast...") gate before counters
+		if (card.ongoing.if && !ongoingCondOk(state, pi, card.ongoing.if, ctx)) continue;
 		// Avenge-style triggers need N occurrences before they pop (once);
 		// Morbid-style `every` triggers fire on every Nth occurrence, repeating
 		if (card.ongoing.need || card.ongoing.every) {
@@ -992,6 +1017,16 @@ function runSecretEffects(state, pi, effects, ctx) {
 				}
 				break;
 			}
+			case 'grant-minion': {
+				// bless the triggering minion (Warsong Commander's Charge)
+				const m = triggering();
+				if (m && !m.keywords.includes(e.keyword)) {
+					m.keywords.push(e.keyword);
+					if (e.keyword === KW.DIVINE_SHIELD) m.shield = true;
+					if (e.keyword === KW.STEALTH) m.stealthed = true;
+				}
+				break;
+			}
 			case 'buff-random-friendly': {
 				const pool = state.players[pi].board.filter(c => !isDead(c) && (!e.excludeSelf || c !== ctx.self));
 				if (pool.length) {
@@ -1124,7 +1159,7 @@ function runBattlecry(state, pi, card, target, choice) {
 }
 
 function runDeathrattle(state, pi, card) {
-	if (card.deathrattle) execEffects(state, pi, card.deathrattle, null);
+	if (card.deathrattle) execEffects(state, pi, card.deathrattle, null, card);
 	switch (card.id) {
 		case 'forest_sprite': summon(state, pi, TOKENS.seedling); break;
 		case 'acidspitter': {
@@ -1160,18 +1195,35 @@ function execEffects(state, pi, effects, target, source) {
 	};
 	const chosenCreature = () => target?.type === 'creature' ? findCreature(state, target.uid) : null;
 	const healCreature = (c, v) => {
+		const healed = c.damage > 0 && v > 0;
 		c.damage = Math.max(0, c.damage - v);
 		emit(state, { type: 'heal', targetType: 'creature', uid: c.uid, amount: v, hp: hp(c) });
+		if (healed) {
+			for (let s2 = 0; s2 < state.players.length; s2++) fireOngoing(state, s2, 'healed', { healedCreature: c });
+		}
 	};
 	const buffCreature = (c, atk, hpv) => {
 		c.attack += atk;
 		c.maxHealth += hpv;
 		emit(state, { type: 'buff', uid: c.uid, attack: c.attack, hp: hp(c) });
 	};
+	// Shield Slam-style scaling: the effect's value multiplies by a live count
+	const scaled = e => {
+		if (!e.valuePer) return e.value;
+		const p = state.players[pi];
+		if (e.valuePer === 'armor') return (e.value || 1) * p.armor;
+		if (e.valuePer === 'hero-attack') return heroAttackValue(p);
+		if (e.valuePer === 'damaged-friendly') {
+			let n = p.board.filter(c => !isDead(c) && c.damage > 0).length;
+			if (p.life < STARTING_LIFE) n++;
+			return (e.value || 1) * n;
+		}
+		return e.value;
+	};
 	for (const e of effects || []) {
 		if (e.type === 'damage') {
 			// friendly Spell Damage boosts direct spell damage
-			let v = e.value;
+			let v = scaled(e);
 			if (source && (source.type === 'sorcery' || source.type === 'instant')) {
 				v += staticValue(state.players[pi], 'spell-damage');
 			}
@@ -1223,7 +1275,7 @@ function execEffects(state, pi, effects, target, source) {
 				else healHero(state, pi, v);
 			}
 		} else if (e.type === 'draw') {
-			drawCards(state, pi, e.value);
+			drawCards(state, pi, scaled(e));
 		} else if (e.type === 'buff') {
 			if (e.target === 'friendly-creatures') {
 				for (const c of state.players[pi].board) {
@@ -1239,7 +1291,10 @@ function execEffects(state, pi, effects, target, source) {
 					if (e.tribe && !(c.tribe || '').includes(e.tribe)) continue;
 					buffCreature(c, e.attack, e.health);
 				}
-			} else { const t = chosenCreature(); if (t) buffCreature(t, e.attack, e.health); }
+			} else {
+				const t = chosenCreature();
+				if (t && !(e.requireDamaged && t.damage === 0)) buffCreature(t, e.attack, e.health);
+			}
 		} else if (e.type === 'grant') {
 			const grantTo = e.target === 'friendly-creatures' ? state.players[pi].board
 				: e.target === 'self' ? (source && source.zone === 'board' && !isDead(source) ? [source] : [])
@@ -1258,10 +1313,14 @@ function execEffects(state, pi, effects, target, source) {
 			const t = chosenCreature();
 			if (t && (e.maxAttack == null || t.attack <= e.maxAttack)
 				&& (e.minAttack == null || t.attack >= e.minAttack)
-				&& (e.requireKeyword == null || t.keywords.includes(e.requireKeyword))) {
+				&& (e.requireKeyword == null || t.keywords.includes(e.requireKeyword))
+				&& (e.tribe == null || (t.tribe || '').includes(e.tribe))
+				&& !(e.requireDamaged && t.damage === 0)) {
 				t.damage = t.maxHealth;
 				t.shield = false;
 				emit(state, { type: 'destroy', uid: t.uid });
+				// riders that only apply when something was actually destroyed
+				if (e.then) execEffects(state, pi, e.then, target, source);
 			}
 		} else if (e.type === 'destroy-random') {
 			const pool = [];
@@ -1588,10 +1647,79 @@ function execEffects(state, pi, effects, target, source) {
 				emit(state, { type: 'conjure', player: pi, card, color: null });
 			}
 		} else if (e.type === 'grant-deathrattle') {
-			for (const c of state.players[pi].board) {
-				if (isDead(c)) continue;
+			const targets = e.target === 'creature' ? [chosenCreature()].filter(Boolean)
+				: state.players[pi].board.filter(c => !isDead(c));
+			for (const c of targets) {
 				c.deathrattle = (c.deathrattle || []).concat(JSON.parse(JSON.stringify(e.effects)));
 				if (!c.keywords.includes('deathrattle')) c.keywords.push('deathrattle');
+			}
+		} else if (e.type === 'conditional') {
+			// "If you control a Beast / have 12 or less Health / it's Frozen, ... instead"
+			const t = chosenCreature();
+			const p = state.players[pi];
+			let ok = true;
+			if (e.if.controlTribe) ok = p.board.some(c => !isDead(c) && (c.tribe || '').includes(e.if.controlTribe));
+			else if (e.if.maxHealthSelf != null) ok = p.life <= e.if.maxHealthSelf;
+			else if (e.if.targetFrozen) ok = !!(t && t.frozen);
+			else if (e.if.targetFriendlyTribe) ok = !!(t && t.controller === pi && (t.tribe || '').includes(e.if.targetFriendlyTribe));
+			execEffects(state, pi, ok ? e.then : (e.else || []), target, source);
+		} else if (e.type === 'damage-then') {
+			// deal damage, then branch on whether the creature survived
+			let v = e.value;
+			if (source && (source.type === 'sorcery' || source.type === 'instant')) {
+				v += staticValue(state.players[pi], 'spell-damage');
+			}
+			const t = chosenCreature();
+			if (t) {
+				damageCreature(state, t, v, null);
+				const branch = isDead(t) ? e.ifDies : e.ifSurvives;
+				if (branch) execEffects(state, pi, branch, target, source);
+			} else if (target?.type === 'hero') {
+				damageHero(state, target.player, v, pi);
+				if (e.ifSurvives) execEffects(state, pi, e.ifSurvives, target, source); // heroes survive
+			}
+		} else if (e.type === 'draw-to-match') {
+			// Divine Favor: draw until your hand matches an opponent's
+			const victim = enemyHero();
+			if (victim != null) {
+				const diff = state.players[victim].hand.length - state.players[pi].hand.length;
+				if (diff > 0) drawCards(state, pi, diff);
+			}
+		} else if (e.type === 'draw-damage') {
+			// Holy Wrath: draw a card, deal its cost as damage
+			const p = state.players[pi];
+			const before = p.hand.length;
+			drawCards(state, pi, 1);
+			const drawn = p.hand.length > before ? p.hand.at(-1) : null;
+			const v = drawn ? (drawn.cost || 0) : 0;
+			if (v > 0) {
+				const t = chosenCreature();
+				if (t) damageCreature(state, t, v, null);
+				else if (target?.type === 'hero') damageHero(state, target.player, v, pi);
+				else { const f = enemyHero(); if (f != null) damageHero(state, f, v, pi); }
+			}
+		} else if (e.type === 'consume-shields') {
+			// Blood Knight: pop every Divine Shield in play, grow per shield
+			let n = 0;
+			for (const pl of state.players) for (const c of pl.board) {
+				if (isDead(c) || !c.shield) continue;
+				c.shield = false;
+				c.keywords = c.keywords.filter(k => k !== KW.DIVINE_SHIELD);
+				emit(state, { type: 'shieldPop', uid: c.uid });
+				n++;
+			}
+			if (n > 0 && source && source.zone === 'board' && !isDead(source)) {
+				buffCreature(source, (e.attack || 0) * n, (e.health || 0) * n);
+			}
+		} else if (e.type === 'resummon-source') {
+			// Ancestral Spirit's granted deathrattle: the fallen returns
+			if (source) {
+				const def = state.cardsById[source.id];
+				summon(state, pi, def || {
+					id: source.id, name: source.name, type: 'creature', cost: 0,
+					rarity: source.rarity || 'common', description: source.description || '',
+					attack: source.attack, health: source.maxHealth,
+				});
 			}
 		} else if (e.type === 'transform') {
 			// replace a creature in place with a fresh token (no death, no deathrattle)
@@ -1711,9 +1839,10 @@ function execEffects(state, pi, effects, target, source) {
 			})();
 			if (t) disguiseCreature(state, t);
 		} else if (e.type === 'summon-random') {
-			// e.g. "Summon a random creature with Mana Value 2 or less"
+			// e.g. "Summon a random creature with Mana Value 2 or less" / "a random Demon"
 			const pool = Object.values(state.cardsById).filter(d =>
 				d.type === 'creature' && (e.maxCost == null || (d.cost || 0) <= e.maxCost)
+				&& (e.tribe == null || (d.tribe || '').includes(e.tribe))
 				&& !d.companion && !d.commander && !(d.colors && d.colors.length));
 			if (pool.length) {
 				const def = pool[Math.floor(state.rng() * pool.length)];
