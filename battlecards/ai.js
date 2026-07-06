@@ -51,17 +51,29 @@ function pickTarget(state, pi, card) {
 			// generic effect-driven cards: aim helpful effects at ourselves,
 			// harmful ones at the biggest enemy
 			const first = card.effects?.find(e => CHOSEN_TYPES.has(e.type));
-			if (first?.type === 'buff' || first?.type === 'grant') {
+			if (FRIENDLY_TYPES.has(first?.type)) {
+				if (first.type === 'heal-full') {
+					// most-damaged friendly creature, or nothing
+					const hurt = myCreatures.filter(t => creatureOf(state, t).damage > 0);
+					if (!hurt.length) return null;
+					return [...hurt].sort((a, b) => creatureOf(state, b).damage - creatureOf(state, a).damage)[0];
+				}
 				if (!myCreatures.length) return null;
+				if (first.type === 'attack-equals-health' || first.type === 'double-attack') {
+					// biggest health-over-attack gap pays off most
+					return [...myCreatures].sort((a, b) =>
+						(E.hp(creatureOf(state, b)) - creatureOf(state, b).attack) - (E.hp(creatureOf(state, a)) - creatureOf(state, a).attack))[0];
+				}
 				return [...myCreatures].sort((a, b) => creatureOf(state, b).attack - creatureOf(state, a).attack)[0];
 			}
 			if (first?.type === 'heal') {
 				const myHero = legal.find(t => t.type === 'hero' && t.player === pi);
 				return myHero || myCreatures[0] || null;
 			}
-			if (first?.type === 'destroy' || first?.type === 'damage' || first?.type === 'exile') {
+			if (HOSTILE_TYPES.has(first?.type)) {
 				if (enemyCreatures.length) return byThreat(enemyCreatures)[0];
-				return weakestHero(state, enemyHeroes) || legal[0];
+				if (first.type === 'damage' || first.type === 'destroy') return weakestHero(state, enemyHeroes) || legal[0];
+				return null; // debuffs/steals are wasted without an enemy creature
 			}
 			// pure hero choices (e.g. "the enemy hero" with 3+ players)
 			if (enemyHeroes.length && !enemyCreatures.length && !myCreatures.length) {
@@ -71,7 +83,9 @@ function pickTarget(state, pi, card) {
 		}
 	}
 }
-const CHOSEN_TYPES = new Set(['damage', 'heal', 'buff', 'grant', 'destroy', 'exile']);
+const FRIENDLY_TYPES = new Set(['buff', 'grant', 'temp-buff', 'heal-full', 'attack-equals-health', 'double-health', 'double-attack', 'grant-ongoing']);
+const HOSTILE_TYPES = new Set(['damage', 'destroy', 'exile', 'set-health', 'set-attack', 'bounce', 'mind-control']);
+const CHOSEN_TYPES = new Set([...FRIENDLY_TYPES, ...HOSTILE_TYPES, 'heal']);
 
 function playableCards(state, pi) {
 	const p = state.players[pi];

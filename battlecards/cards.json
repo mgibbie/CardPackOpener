@@ -745,7 +745,8 @@
       "keywords": [
         "taunt"
       ],
-      "description": "Taunt."
+      "description": "Taunt.",
+      "tribe": "Demon"
     },
     {
       "id": "voodoo_doctor",
@@ -963,7 +964,8 @@
           "name": "Murloc Scout"
         }
       ],
-      "description": "Battlecry: Summon a 1/1 Murloc Scout."
+      "description": "Battlecry: Summon a 1/1 Murloc Scout.",
+      "tribe": "Murloc"
     },
     {
       "id": "novice_engineer",
@@ -1122,7 +1124,8 @@
       "keywords": [
         "deathtouch"
       ],
-      "description": "Deathtouch."
+      "description": "Deathtouch.",
+      "tribe": "Beast"
     },
     {
       "id": "fan_of_knives",
@@ -1165,7 +1168,8 @@
           "name": "Damaged Golem"
         }
       ],
-      "description": "Deathrattle: Summon a 2/1 Damaged Golem."
+      "description": "Deathrattle: Summon a 2/1 Damaged Golem.",
+      "tribe": "Mech"
     },
     {
       "id": "healing_touch",
@@ -1216,7 +1220,8 @@
       "keywords": [
         "taunt"
       ],
-      "description": "Taunt."
+      "description": "Taunt.",
+      "tribe": "Beast"
     },
     {
       "id": "jungle_panther",
@@ -1230,7 +1235,8 @@
       "keywords": [
         "stealth"
       ],
-      "description": "Stealth."
+      "description": "Stealth.",
+      "tribe": "Beast"
     },
     {
       "id": "magma_rager",
@@ -1330,7 +1336,8 @@
       "keywords": [
         "taunt"
       ],
-      "description": "Taunt."
+      "description": "Taunt.",
+      "tribe": "Beast"
     },
     {
       "id": "thrallmar_farseer",
@@ -1527,7 +1534,8 @@
       "type": "creature",
       "attack": 2,
       "health": 7,
-      "description": "A 2/7 creature."
+      "description": "A 2/7 creature.",
+      "tribe": "Beast"
     },
     {
       "id": "sen_jin_shieldmasta",
@@ -1755,7 +1763,8 @@
       "keywords": [
         "stealth"
       ],
-      "description": "Stealth."
+      "description": "Stealth.",
+      "tribe": "Beast"
     },
     {
       "id": "boulderfist_ogre",
@@ -1923,7 +1932,8 @@
           "name": "Hyena"
         }
       ],
-      "description": "Deathrattle: Summon two 2/2 Hyenas."
+      "description": "Deathrattle: Summon two 2/2 Hyenas.",
+      "tribe": "Beast"
     },
     {
       "id": "siphon_soul",
@@ -1986,7 +1996,8 @@
           "name": "Pip Quickwit for your opponent"
         }
       ],
-      "description": "Deathrattle: Summon a 3/3 Pip Quickwit for your opponent."
+      "description": "Deathrattle: Summon a 3/3 Pip Quickwit for your opponent.",
+      "tribe": "Beast"
     },
     {
       "id": "windfury_harpy",
@@ -2011,7 +2022,8 @@
       "type": "creature",
       "attack": 9,
       "health": 5,
-      "description": "A 9/5 creature."
+      "description": "A 9/5 creature.",
+      "tribe": "Beast"
     },
     {
       "id": "flamestrike",
@@ -2155,7 +2167,8 @@
       "keywords": [
         "charge"
       ],
-      "description": "Charge."
+      "description": "Charge.",
+      "tribe": "Beast"
     },
     {
       "id": "pyroblast",
@@ -2226,7 +2239,8 @@
           "target": "creature"
         }
       ],
-      "description": "Battlecry: Silence a creature."
+      "description": "Battlecry: Silence a creature.",
+      "tribe": "Beast"
     },
     {
       "id": "frost_nova",
@@ -2332,7 +2346,8 @@
           "target": "own-hero"
         }
       ],
-      "description": "Battlecry: Deal 3 damage to your own hero."
+      "description": "Battlecry: Deal 3 damage to your own hero.",
+      "tribe": "Demon"
     },
     {
       "id": "frost_shock",
@@ -2449,7 +2464,8 @@
           "target": "own-hero"
         }
       ],
-      "description": "Battlecry: Deal 5 damage to your own hero."
+      "description": "Battlecry: Deal 5 damage to your own hero.",
+      "tribe": "Demon"
     },
     {
       "id": "avenging_wrath",
@@ -2882,7 +2898,8 @@
           "durability": 1
         }
       ],
-      "description": "Battlecry: Give your weapon +1 Attack and +1 Durability."
+      "description": "Battlecry: Give your weapon +1 Attack and +1 Durability.",
+      "tribe": "Pirate"
     },
     {
       "id": "harrison_jones",
@@ -3821,7 +3838,8 @@
       "keywords": [
         "stealth"
       ],
-      "description": "Stealth. At the end of your turn, another random friendly creature gets +1 Health."
+      "description": "Stealth. At the end of your turn, another random friendly creature gets +1 Health.",
+      "tribe": "Demon"
     },
     {
       "id": "dust_devil",
@@ -3975,7 +3993,8 @@
           "count": 1
         }
       ],
-      "description": "Battlecry: Discard 1 random card."
+      "description": "Battlecry: Discard 1 random card.",
+      "tribe": "Demon"
     },
     {
       "id": "knife_juggler",
@@ -4085,7 +4104,8 @@
           "value": 2
         }
       ],
-      "description": "Battlecry: Every player draws 2 cards."
+      "description": "Battlecry: Every player draws 2 cards.",
+      "tribe": "Murloc"
     },
     {
       "id": "dalaran_mage",
@@ -4122,7 +4142,8 @@
           }
         ]
       },
-      "description": "At the start of your turn, deal 2 damage to a random enemy."
+      "description": "At the start of your turn, deal 2 damage to a random enemy.",
+      "tribe": "Mech"
     },
     {
       "id": "feral_spirit",
@@ -4250,7 +4271,8 @@
           }
         ]
       },
-      "description": "At the end of your turn, draw 1 card."
+      "description": "At the end of your turn, draw 1 card.",
+      "tribe": "Totem"
     },
     {
       "id": "questing_adventurer",
@@ -4353,7 +4375,8 @@
           "value": 1
         }
       ],
-      "description": "Battlecry: Draw 1 card. Spell Damage +1."
+      "description": "Battlecry: Draw 1 card. Spell Damage +1.",
+      "tribe": "Dragon"
     },
     {
       "id": "doomguard",
@@ -4374,7 +4397,8 @@
           "count": 2
         }
       ],
-      "description": "Charge. Battlecry: Discard 2 random cards."
+      "description": "Charge. Battlecry: Discard 2 random cards.",
+      "tribe": "Demon"
     },
     {
       "id": "doomhammer",
@@ -4509,7 +4533,8 @@
           }
         ]
       },
-      "description": "Whenever you play a card, summon a 2/1 Flame of Azzinoth."
+      "description": "Whenever you play a card, summon a 2/1 Flame of Azzinoth.",
+      "tribe": "Demon"
     },
     {
       "id": "ragnaros_the_firelord",
@@ -4549,7 +4574,8 @@
       "type": "creature",
       "attack": 4,
       "health": 12,
-      "description": "A 4/12 creature. Spell Damage +5."
+      "description": "A 4/12 creature. Spell Damage +5.",
+      "tribe": "Dragon"
     },
     {
       "id": "plains",
@@ -12975,7 +13001,8 @@
         "others": true,
         "tribe": "Beast"
       },
-      "description": "Your other Beasts have +1 Attack."
+      "description": "Your other Beasts have +1 Attack.",
+      "tribe": "Beast"
     },
     {
       "id": "raid_leader",
@@ -13008,7 +13035,8 @@
         "others": true,
         "tribe": "Pirate"
       },
-      "description": "Your other Pirates have +1/+1."
+      "description": "Your other Pirates have +1/+1.",
+      "tribe": "Pirate"
     },
     {
       "id": "stormwind_champion",
@@ -13138,7 +13166,8 @@
         "health": 0,
         "adjacent": true
       },
-      "description": "Adjacent creatures have +1 Attack."
+      "description": "Adjacent creatures have +1 Attack.",
+      "tribe": "Beast"
     },
     {
       "id": "flametongue_totem",
@@ -13154,7 +13183,8 @@
         "health": 0,
         "adjacent": true
       },
-      "description": "Adjacent creatures have +2 Attack."
+      "description": "Adjacent creatures have +2 Attack.",
+      "tribe": "Totem"
     },
     {
       "id": "verdant_smilodon",
@@ -13491,6 +13521,1676 @@
           "value": 1
         }
       ]
+    },
+    {
+      "id": "ancestral_healing",
+      "name": "Ancestral Healing",
+      "cardClass": "shaman",
+      "cost": 0,
+      "rarity": "common",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "heal-full",
+          "target": "creature"
+        },
+        {
+          "type": "grant",
+          "keyword": "taunt",
+          "target": "creature"
+        }
+      ],
+      "description": "Restore a creature to full health and give it Taunt."
+    },
+    {
+      "id": "hunter_s_mark",
+      "name": "Hunter's Mark",
+      "cardClass": "hunter",
+      "cost": 0,
+      "rarity": "common",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "set-health",
+          "value": 1,
+          "target": "creature"
+        }
+      ],
+      "description": "Set a creature's Health to 1."
+    },
+    {
+      "id": "innervate",
+      "name": "Innervate",
+      "cardClass": "druid",
+      "cost": 0,
+      "rarity": "common",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "gain-mana",
+          "value": 2
+        }
+      ],
+      "description": "Gain 2 mana this turn."
+    },
+    {
+      "id": "shadowstep",
+      "name": "Shadowstep",
+      "cardClass": "rogue",
+      "cost": 0,
+      "rarity": "common",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "bounce",
+          "target": "friendly-creature",
+          "costMod": -2
+        }
+      ],
+      "description": "Return a friendly creature to your hand; it costs 2 less."
+    },
+    {
+      "id": "totemic_might",
+      "name": "Totemic Might",
+      "cardClass": "shaman",
+      "cost": 0,
+      "rarity": "common",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 0,
+          "health": 2,
+          "target": "friendly-creatures",
+          "tribe": "Totem"
+        }
+      ],
+      "description": "Give your Totems +2 Health."
+    },
+    {
+      "id": "blessing_of_wisdom",
+      "name": "Blessing of Wisdom",
+      "cardClass": "paladin",
+      "cost": 1,
+      "rarity": "common",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "grant-ongoing",
+          "target": "friendly-creature",
+          "ongoing": {
+            "on": "self-attacks",
+            "effects": [
+              {
+                "type": "draw",
+                "value": 1
+              }
+            ]
+          }
+        }
+      ],
+      "description": "Choose a friendly creature. Whenever it attacks, you draw a card."
+    },
+    {
+      "id": "hand_of_protection",
+      "name": "Hand of Protection",
+      "cardClass": "paladin",
+      "cost": 1,
+      "rarity": "common",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "grant",
+          "keyword": "divine_shield",
+          "target": "creature"
+        }
+      ],
+      "description": "Give a creature Divine Shield."
+    },
+    {
+      "id": "humility",
+      "name": "Humility",
+      "cardClass": "paladin",
+      "cost": 1,
+      "rarity": "common",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "set-attack",
+          "value": 1,
+          "target": "creature"
+        }
+      ],
+      "description": "Set a creature's Attack to 1."
+    },
+    {
+      "id": "inner_fire",
+      "name": "Inner Fire",
+      "cardClass": "priest",
+      "cost": 1,
+      "rarity": "common",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "attack-equals-health",
+          "target": "creature"
+        }
+      ],
+      "description": "Set a creature's Attack equal to its Health."
+    },
+    {
+      "id": "mind_vision",
+      "name": "Mind Vision",
+      "cardClass": "priest",
+      "cost": 1,
+      "rarity": "common",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "copy-enemy",
+          "from": "hand",
+          "count": 1
+        }
+      ],
+      "description": "Copy a random card from an opponent's hand."
+    },
+    {
+      "id": "naturalize",
+      "name": "Naturalize",
+      "cardClass": "druid",
+      "cost": 1,
+      "rarity": "common",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "destroy",
+          "target": "creature"
+        },
+        {
+          "type": "draw-enemy",
+          "value": 2
+        }
+      ],
+      "description": "Destroy a creature. Your opponent draws 2 cards."
+    },
+    {
+      "id": "power_word_shield",
+      "name": "Power Word: Shield",
+      "cardClass": "priest",
+      "cost": 1,
+      "rarity": "common",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 0,
+          "health": 2,
+          "target": "creature"
+        },
+        {
+          "type": "draw",
+          "value": 1
+        }
+      ],
+      "description": "Give a creature +2 Health. Draw 1 card."
+    },
+    {
+      "id": "rockbiter_weapon",
+      "name": "Rockbiter Weapon",
+      "cardClass": "shaman",
+      "cost": 1,
+      "rarity": "common",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "temp-buff",
+          "attack": 3,
+          "target": "friendly-any"
+        }
+      ],
+      "description": "Give a friendly character +3 Attack until end of turn."
+    },
+    {
+      "id": "captain_s_parrot",
+      "name": "Captain's Parrot",
+      "cardClass": "neutral",
+      "cost": 2,
+      "rarity": "epic",
+      "tribe": "Beast",
+      "type": "creature",
+      "attack": 1,
+      "health": 1,
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "tutor",
+          "tribe": "Pirate",
+          "count": 1
+        }
+      ],
+      "description": "Battlecry: Draw 1 Pirate from your deck."
+    },
+    {
+      "id": "divine_spirit",
+      "name": "Divine Spirit",
+      "cardClass": "priest",
+      "cost": 2,
+      "rarity": "common",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "double-health",
+          "target": "creature"
+        }
+      ],
+      "description": "Double a creature's Health."
+    },
+    {
+      "id": "doomsayer",
+      "name": "Doomsayer",
+      "cardClass": "neutral",
+      "cost": 2,
+      "rarity": "epic",
+      "type": "creature",
+      "attack": 0,
+      "health": 7,
+      "ongoing": {
+        "on": "turn-start",
+        "effects": [
+          {
+            "type": "destroy-all"
+          }
+        ]
+      },
+      "description": "At the start of your turn, destroy every creature."
+    },
+    {
+      "id": "equality",
+      "name": "Equality",
+      "cardClass": "paladin",
+      "cost": 2,
+      "rarity": "rare",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "set-health",
+          "value": 1,
+          "target": "all-creatures"
+        }
+      ],
+      "description": "Set every creature's Health to 1."
+    },
+    {
+      "id": "faerie_dragon",
+      "name": "Faerie Dragon",
+      "cardClass": "neutral",
+      "cost": 2,
+      "rarity": "common",
+      "tribe": "Dragon",
+      "type": "creature",
+      "attack": 3,
+      "health": 2,
+      "keywords": [
+        "elusive"
+      ],
+      "description": "Elusive."
+    },
+    {
+      "id": "heroic_strike",
+      "name": "Heroic Strike",
+      "cardClass": "warrior",
+      "cost": 2,
+      "rarity": "common",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "hero-temp-attack",
+          "value": 4
+        }
+      ],
+      "description": "Your hero has +4 Attack this turn."
+    },
+    {
+      "id": "mana_addict",
+      "name": "Mana Addict",
+      "cardClass": "neutral",
+      "cost": 2,
+      "rarity": "rare",
+      "type": "creature",
+      "attack": 1,
+      "health": 3,
+      "ongoing": {
+        "on": "spell-played",
+        "effects": [
+          {
+            "type": "temp-buff-self",
+            "attack": 2,
+            "health": 0
+          }
+        ]
+      },
+      "description": "Whenever you cast a spell, this gains +2 Attack until end of turn."
+    },
+    {
+      "id": "mark_of_the_wild",
+      "name": "Mark of the Wild",
+      "cardClass": "druid",
+      "cost": 2,
+      "rarity": "common",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "grant",
+          "keyword": "taunt",
+          "target": "creature"
+        },
+        {
+          "type": "buff",
+          "attack": 2,
+          "health": 2,
+          "target": "creature"
+        }
+      ],
+      "description": "Give a creature Taunt and +2/+2."
+    },
+    {
+      "id": "power_of_the_wild",
+      "name": "Power of the Wild",
+      "cardClass": "druid",
+      "cost": 2,
+      "rarity": "common",
+      "type": "sorcery",
+      "choices": [
+        {
+          "text": "Give all your creatures +1/+1",
+          "effects": [
+            {
+              "type": "buff",
+              "attack": 1,
+              "health": 1,
+              "target": "friendly-creatures"
+            }
+          ]
+        },
+        {
+          "text": "Summon a 3/2 Panther",
+          "effects": [
+            {
+              "type": "summon",
+              "count": 1,
+              "attack": 3,
+              "health": 2,
+              "name": "Panther"
+            }
+          ]
+        }
+      ],
+      "description": "Choose one: Give all your creatures +1/+1; or Summon a 3/2 Panther."
+    },
+    {
+      "id": "sap",
+      "name": "Sap",
+      "cardClass": "rogue",
+      "cost": 2,
+      "rarity": "common",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "bounce",
+          "target": "enemy-creature"
+        }
+      ],
+      "description": "Return an enemy creature to its owner's hand."
+    },
+    {
+      "id": "sunfury_protector",
+      "name": "Sunfury Protector",
+      "cardClass": "neutral",
+      "cost": 2,
+      "rarity": "rare",
+      "type": "creature",
+      "attack": 2,
+      "health": 3,
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "adjacent-buff",
+          "attack": 0,
+          "health": 0,
+          "keyword": "taunt"
+        }
+      ],
+      "description": "Battlecry: Give adjacent creatures Taunt."
+    },
+    {
+      "id": "windfury",
+      "name": "Windfury",
+      "cardClass": "shaman",
+      "cost": 2,
+      "rarity": "common",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "grant",
+          "keyword": "windfury",
+          "target": "creature"
+        }
+      ],
+      "description": "Give a creature Windfury."
+    },
+    {
+      "id": "wrath",
+      "name": "Wrath",
+      "cardClass": "druid",
+      "cost": 2,
+      "rarity": "common",
+      "type": "sorcery",
+      "choices": [
+        {
+          "text": "Deal 3 damage to a creature",
+          "effects": [
+            {
+              "type": "damage",
+              "value": 3,
+              "target": "creature"
+            }
+          ]
+        },
+        {
+          "text": "Deal 1 damage to a creature and draw a card",
+          "effects": [
+            {
+              "type": "damage",
+              "value": 1,
+              "target": "creature"
+            },
+            {
+              "type": "draw",
+              "value": 1
+            }
+          ]
+        }
+      ],
+      "description": "Choose one: Deal 3 damage to a creature; or Deal 1 damage to a creature and draw a card."
+    },
+    {
+      "id": "youthful_brewmaster",
+      "name": "Youthful Brewmaster",
+      "cardClass": "neutral",
+      "cost": 2,
+      "rarity": "common",
+      "type": "creature",
+      "attack": 3,
+      "health": 2,
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "bounce",
+          "target": "friendly-creature"
+        }
+      ],
+      "description": "Battlecry: Return a friendly creature to your hand."
+    },
+    {
+      "id": "aldor_peacekeeper",
+      "name": "Aldor Peacekeeper",
+      "cardClass": "paladin",
+      "cost": 3,
+      "rarity": "rare",
+      "type": "creature",
+      "attack": 3,
+      "health": 3,
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "set-attack",
+          "value": 1,
+          "target": "enemy-creature"
+        }
+      ],
+      "description": "Battlecry: Set an enemy creature's Attack to 1."
+    },
+    {
+      "id": "big_game_hunter",
+      "name": "Big Game Hunter",
+      "cardClass": "neutral",
+      "cost": 3,
+      "rarity": "epic",
+      "type": "creature",
+      "attack": 4,
+      "health": 2,
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "destroy",
+          "target": "creature",
+          "minAttack": 7
+        }
+      ],
+      "description": "Battlecry: Destroy a creature with 7 or more Attack."
+    },
+    {
+      "id": "charge",
+      "name": "Charge",
+      "cardClass": "warrior",
+      "cost": 3,
+      "rarity": "common",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 2,
+          "health": 0,
+          "target": "friendly-creature"
+        },
+        {
+          "type": "grant",
+          "keyword": "charge",
+          "target": "friendly-creature"
+        }
+      ],
+      "description": "Give a friendly creature +2 Attack and Charge."
+    },
+    {
+      "id": "coldlight_seer",
+      "name": "Coldlight Seer",
+      "cardClass": "neutral",
+      "cost": 3,
+      "rarity": "rare",
+      "tribe": "Murloc",
+      "type": "creature",
+      "attack": 2,
+      "health": 3,
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 0,
+          "health": 2,
+          "target": "all-others",
+          "tribe": "Murloc"
+        }
+      ],
+      "description": "Battlecry: Give all other Murlocs +2 Health."
+    },
+    {
+      "id": "deadly_shot",
+      "name": "Deadly Shot",
+      "cardClass": "hunter",
+      "cost": 3,
+      "rarity": "common",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "destroy-random"
+        }
+      ],
+      "description": "Destroy a random enemy creature."
+    },
+    {
+      "id": "injured_blademaster",
+      "name": "Injured Blademaster",
+      "cardClass": "neutral",
+      "cost": 3,
+      "rarity": "rare",
+      "type": "creature",
+      "attack": 4,
+      "health": 7,
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "damage-self",
+          "value": 4
+        }
+      ],
+      "description": "Battlecry: Deals 4 damage to itself."
+    },
+    {
+      "id": "mark_of_nature",
+      "name": "Mark of Nature",
+      "cardClass": "druid",
+      "cost": 3,
+      "rarity": "common",
+      "type": "sorcery",
+      "choices": [
+        {
+          "text": "Give a creature +4 Attack",
+          "effects": [
+            {
+              "type": "buff",
+              "attack": 4,
+              "health": 0,
+              "target": "creature"
+            }
+          ]
+        },
+        {
+          "text": "Give a creature +4 Health and Taunt",
+          "effects": [
+            {
+              "type": "buff",
+              "attack": 0,
+              "health": 4,
+              "target": "creature"
+            },
+            {
+              "type": "grant",
+              "keyword": "taunt",
+              "target": "creature"
+            }
+          ]
+        }
+      ],
+      "description": "Choose one: Give a creature +4 Attack; or Give a creature +4 Health and Taunt."
+    },
+    {
+      "id": "mind_control_tech",
+      "name": "Mind Control Tech",
+      "cardClass": "neutral",
+      "cost": 3,
+      "rarity": "rare",
+      "type": "creature",
+      "attack": 3,
+      "health": 3,
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "mind-control-random",
+          "requireBoard": 4
+        }
+      ],
+      "description": "Battlecry: If an opponent has 4 or more creatures, take control of one at random."
+    },
+    {
+      "id": "savage_roar",
+      "name": "Savage Roar",
+      "cardClass": "druid",
+      "cost": 3,
+      "rarity": "common",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "hero-temp-attack",
+          "value": 2
+        },
+        {
+          "type": "temp-buff",
+          "attack": 2,
+          "target": "friendly-creatures"
+        }
+      ],
+      "description": "Give your hero and creatures +2 Attack until end of turn."
+    },
+    {
+      "id": "sense_demons",
+      "name": "Sense Demons",
+      "cardClass": "warlock",
+      "cost": 3,
+      "rarity": "common",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "tutor",
+          "tribe": "Demon",
+          "count": 2
+        }
+      ],
+      "description": "Draw 2 Demons from your deck."
+    },
+    {
+      "id": "shadow_word_death",
+      "name": "Shadow Word: Death",
+      "cardClass": "priest",
+      "cost": 3,
+      "rarity": "common",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "destroy",
+          "target": "creature",
+          "minAttack": 5
+        }
+      ],
+      "description": "Destroy a creature with 5 or more Attack."
+    },
+    {
+      "id": "thoughtsteal",
+      "name": "Thoughtsteal",
+      "cardClass": "priest",
+      "cost": 3,
+      "rarity": "common",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "copy-enemy",
+          "from": "deck",
+          "count": 2
+        }
+      ],
+      "description": "Copy 2 random cards from an opponent's deck."
+    },
+    {
+      "id": "unleash_the_hounds",
+      "name": "Unleash the Hounds",
+      "cardClass": "hunter",
+      "cost": 3,
+      "rarity": "common",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "summon",
+          "perEnemy": true,
+          "attack": 1,
+          "health": 1,
+          "name": "Hound",
+          "keywords": [
+            "charge"
+          ]
+        }
+      ],
+      "description": "For each enemy creature, summon a 1/1 Hound with Charge."
+    },
+    {
+      "id": "ancient_brewmaster",
+      "name": "Ancient Brewmaster",
+      "cardClass": "neutral",
+      "cost": 4,
+      "rarity": "common",
+      "type": "creature",
+      "attack": 5,
+      "health": 4,
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "bounce",
+          "target": "friendly-creature"
+        }
+      ],
+      "description": "Battlecry: Return a friendly creature to your hand."
+    },
+    {
+      "id": "arathi_weaponsmith",
+      "name": "Arathi Weaponsmith",
+      "cardClass": "warrior",
+      "cost": 4,
+      "rarity": "common",
+      "type": "creature",
+      "attack": 3,
+      "health": 3,
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "equip",
+          "attack": 2,
+          "durability": 2,
+          "name": "Sidearm"
+        }
+      ],
+      "description": "Battlecry: Equip a 2/2 Sidearm."
+    },
+    {
+      "id": "dark_iron_dwarf",
+      "name": "Dark Iron Dwarf",
+      "cardClass": "neutral",
+      "cost": 4,
+      "rarity": "common",
+      "type": "creature",
+      "attack": 4,
+      "health": 4,
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "temp-buff",
+          "attack": 2,
+          "target": "creature"
+        }
+      ],
+      "description": "Battlecry: Give a creature +2 Attack until end of turn."
+    },
+    {
+      "id": "defender_of_argus",
+      "name": "Defender of Argus",
+      "cardClass": "neutral",
+      "cost": 4,
+      "rarity": "rare",
+      "type": "creature",
+      "attack": 2,
+      "health": 3,
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "adjacent-buff",
+          "attack": 1,
+          "health": 1,
+          "keyword": "taunt"
+        }
+      ],
+      "description": "Battlecry: Give adjacent creatures +1/+1 and Taunt."
+    },
+    {
+      "id": "keeper_of_the_grove",
+      "name": "Keeper of the Grove",
+      "cardClass": "druid",
+      "cost": 4,
+      "rarity": "rare",
+      "type": "creature",
+      "attack": 2,
+      "health": 4,
+      "choices": [
+        {
+          "text": "Deal 2 damage to any target",
+          "effects": [
+            {
+              "type": "damage",
+              "value": 2,
+              "target": "any"
+            }
+          ]
+        },
+        {
+          "text": "Silence a creature",
+          "effects": [
+            {
+              "type": "silence",
+              "target": "creature"
+            }
+          ]
+        }
+      ],
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Choose one: Deal 2 damage to any target; or Silence a creature."
+    },
+    {
+      "id": "mass_dispel",
+      "name": "Mass Dispel",
+      "cardClass": "priest",
+      "cost": 4,
+      "rarity": "rare",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "silence",
+          "target": "enemy-creatures"
+        },
+        {
+          "type": "draw",
+          "value": 1
+        }
+      ],
+      "description": "Silence all enemy creatures. Draw 1 card."
+    },
+    {
+      "id": "master_of_disguise",
+      "name": "Master of Disguise",
+      "cardClass": "rogue",
+      "cost": 4,
+      "rarity": "rare",
+      "type": "creature",
+      "attack": 4,
+      "health": 4,
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "grant",
+          "keyword": "stealth",
+          "target": "friendly-creature"
+        }
+      ],
+      "description": "Battlecry: Give a friendly creature Stealth."
+    },
+    {
+      "id": "mindgames",
+      "name": "Mindgames",
+      "cardClass": "priest",
+      "cost": 4,
+      "rarity": "epic",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "copy-enemy",
+          "from": "deck",
+          "count": 1,
+          "filter": "creature",
+          "summon": true
+        }
+      ],
+      "description": "Summon a copy of a random creature from an opponent's deck."
+    },
+    {
+      "id": "soul_of_the_forest",
+      "name": "Soul of the Forest",
+      "cardClass": "druid",
+      "cost": 4,
+      "rarity": "common",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "grant-deathrattle",
+          "effects": [
+            {
+              "type": "summon",
+              "count": 1,
+              "attack": 2,
+              "health": 2,
+              "name": "Treant"
+            }
+          ]
+        }
+      ],
+      "description": "Give your creatures \"Deathrattle: Summon a 2/2 Treant.\""
+    },
+    {
+      "id": "truesilver_champion",
+      "name": "Truesilver Champion",
+      "cardClass": "paladin",
+      "cost": 4,
+      "rarity": "common",
+      "type": "weapon",
+      "attack": 4,
+      "durability": 2,
+      "ongoing": {
+        "on": "hero-attacks",
+        "effects": [
+          {
+            "type": "heal",
+            "value": 2,
+            "target": "self"
+          }
+        ]
+      },
+      "description": "Whenever your hero attacks, restore 2 health to your hero."
+    },
+    {
+      "id": "twilight_drake",
+      "name": "Twilight Drake",
+      "cardClass": "neutral",
+      "cost": 4,
+      "rarity": "rare",
+      "tribe": "Dragon",
+      "type": "creature",
+      "attack": 4,
+      "health": 1,
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "buff-self",
+          "attack": 0,
+          "health": 1,
+          "per": "hand-cards"
+        }
+      ],
+      "description": "Battlecry: Gains +1 Health for each card in your hand."
+    },
+    {
+      "id": "windspeaker",
+      "name": "Windspeaker",
+      "cardClass": "shaman",
+      "cost": 4,
+      "rarity": "common",
+      "type": "creature",
+      "attack": 3,
+      "health": 3,
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "grant",
+          "keyword": "windfury",
+          "target": "friendly-creature"
+        }
+      ],
+      "description": "Battlecry: Give a friendly creature Windfury."
+    },
+    {
+      "id": "blessed_champion",
+      "name": "Blessed Champion",
+      "cardClass": "paladin",
+      "cost": 5,
+      "rarity": "rare",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "double-attack",
+          "target": "creature"
+        }
+      ],
+      "description": "Double a creature's Attack."
+    },
+    {
+      "id": "bloodlust",
+      "name": "Bloodlust",
+      "cardClass": "shaman",
+      "cost": 5,
+      "rarity": "common",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "temp-buff",
+          "attack": 3,
+          "target": "friendly-creatures"
+        }
+      ],
+      "description": "Give your creatures +3 Attack until end of turn."
+    },
+    {
+      "id": "brawl",
+      "name": "Brawl",
+      "cardClass": "warrior",
+      "cost": 5,
+      "rarity": "epic",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "destroy-all",
+          "spareRandom": true
+        }
+      ],
+      "description": "Destroy every creature except one random survivor."
+    },
+    {
+      "id": "druid_of_the_claw",
+      "name": "Druid of the Claw",
+      "cardClass": "druid",
+      "cost": 5,
+      "rarity": "common",
+      "type": "creature",
+      "attack": 4,
+      "health": 4,
+      "choices": [
+        {
+          "text": "Charge",
+          "effects": [
+            {
+              "type": "grant",
+              "keyword": "charge",
+              "target": "self"
+            }
+          ]
+        },
+        {
+          "text": "+2 Health and Taunt",
+          "effects": [
+            {
+              "type": "buff-self",
+              "attack": 0,
+              "health": 2
+            },
+            {
+              "type": "grant",
+              "keyword": "taunt",
+              "target": "self"
+            }
+          ]
+        }
+      ],
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Choose one: Charge; or +2 Health and Taunt."
+    },
+    {
+      "id": "frostwolf_warlord",
+      "name": "Frostwolf Warlord",
+      "cardClass": "neutral",
+      "cost": 5,
+      "rarity": "common",
+      "type": "creature",
+      "attack": 4,
+      "health": 4,
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "buff-self",
+          "attack": 1,
+          "health": 1,
+          "per": "other-friendly"
+        }
+      ],
+      "description": "Battlecry: Gains +1/+1 for each other friendly creature."
+    },
+    {
+      "id": "nourish",
+      "name": "Nourish",
+      "cardClass": "druid",
+      "cost": 5,
+      "rarity": "rare",
+      "type": "sorcery",
+      "choices": [
+        {
+          "text": "Gain 2 mana this turn",
+          "effects": [
+            {
+              "type": "gain-mana",
+              "value": 2
+            }
+          ]
+        },
+        {
+          "text": "Draw 3 cards",
+          "effects": [
+            {
+              "type": "draw",
+              "value": 3
+            }
+          ]
+        }
+      ],
+      "description": "Choose one: Gain 2 mana this turn; or Draw 3 cards."
+    },
+    {
+      "id": "stampeding_kodo",
+      "name": "Stampeding Kodo",
+      "cardClass": "neutral",
+      "cost": 5,
+      "rarity": "rare",
+      "tribe": "Beast",
+      "type": "creature",
+      "attack": 3,
+      "health": 5,
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "destroy-random",
+          "maxAttack": 2
+        }
+      ],
+      "description": "Battlecry: Destroy a random enemy creature with 2 or less Attack."
+    },
+    {
+      "id": "starfall",
+      "name": "Starfall",
+      "cardClass": "druid",
+      "cost": 5,
+      "rarity": "rare",
+      "type": "sorcery",
+      "choices": [
+        {
+          "text": "Deal 5 damage to a creature",
+          "effects": [
+            {
+              "type": "damage",
+              "value": 5,
+              "target": "creature"
+            }
+          ]
+        },
+        {
+          "text": "Deal 2 damage to all enemy creatures",
+          "effects": [
+            {
+              "type": "damage",
+              "value": 2,
+              "target": "enemy-creatures"
+            }
+          ]
+        }
+      ],
+      "description": "Choose one: Deal 5 damage to a creature; or Deal 2 damage to all enemy creatures."
+    },
+    {
+      "id": "tundra_rhino",
+      "name": "Tundra Rhino",
+      "cardClass": "hunter",
+      "cost": 5,
+      "rarity": "common",
+      "tribe": "Beast",
+      "type": "creature",
+      "attack": 2,
+      "health": 5,
+      "aura": {
+        "attack": 0,
+        "health": 0,
+        "keywords": [
+          "charge"
+        ],
+        "tribe": "Beast"
+      },
+      "description": "Your Beasts have Charge."
+    },
+    {
+      "id": "argent_commander",
+      "name": "Argent Commander",
+      "cardClass": "neutral",
+      "cost": 6,
+      "rarity": "rare",
+      "type": "creature",
+      "attack": 4,
+      "health": 2,
+      "keywords": [
+        "charge",
+        "divine_shield"
+      ],
+      "description": "Charge. Divine Shield."
+    },
+    {
+      "id": "cabal_shadow_priest",
+      "name": "Cabal Shadow Priest",
+      "cardClass": "priest",
+      "cost": 6,
+      "rarity": "epic",
+      "type": "creature",
+      "attack": 4,
+      "health": 5,
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "mind-control",
+          "target": "enemy-creature",
+          "maxAttack": 2
+        }
+      ],
+      "description": "Battlecry: Take control of an enemy creature with 2 or less Attack."
+    },
+    {
+      "id": "dread_infernal",
+      "name": "Dread Infernal",
+      "cardClass": "warlock",
+      "cost": 6,
+      "rarity": "common",
+      "tribe": "Demon",
+      "type": "creature",
+      "attack": 6,
+      "health": 6,
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "damage",
+          "value": 1,
+          "target": "other-characters"
+        }
+      ],
+      "description": "Battlecry: Deal 1 damage to every other character."
+    },
+    {
+      "id": "sunwalker",
+      "name": "Sunwalker",
+      "cardClass": "neutral",
+      "cost": 6,
+      "rarity": "rare",
+      "type": "creature",
+      "attack": 4,
+      "health": 5,
+      "keywords": [
+        "taunt",
+        "divine_shield"
+      ],
+      "description": "Taunt. Divine Shield."
+    },
+    {
+      "id": "sylvanas_windrunner",
+      "name": "Sylvanas Windrunner",
+      "cardClass": "neutral",
+      "cost": 6,
+      "rarity": "legendary",
+      "type": "creature",
+      "attack": 5,
+      "health": 5,
+      "keywords": [
+        "deathrattle"
+      ],
+      "deathrattle": [
+        {
+          "type": "mind-control-random"
+        }
+      ],
+      "description": "Deathrattle: Take control of a random enemy creature."
+    },
+    {
+      "id": "temple_enforcer",
+      "name": "Temple Enforcer",
+      "cardClass": "priest",
+      "cost": 6,
+      "rarity": "common",
+      "type": "creature",
+      "attack": 6,
+      "health": 6,
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 0,
+          "health": 3,
+          "target": "friendly-creature"
+        }
+      ],
+      "description": "Battlecry: Give a friendly creature +3 Health."
+    },
+    {
+      "id": "the_black_knight",
+      "name": "The Black Knight",
+      "cardClass": "neutral",
+      "cost": 6,
+      "rarity": "legendary",
+      "type": "creature",
+      "attack": 4,
+      "health": 5,
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "destroy",
+          "target": "enemy-creature",
+          "requireKeyword": "taunt"
+        }
+      ],
+      "description": "Battlecry: Destroy an enemy creature with Taunt."
+    },
+    {
+      "id": "vanish",
+      "name": "Vanish",
+      "cardClass": "rogue",
+      "cost": 6,
+      "rarity": "common",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "bounce",
+          "target": "all-creatures"
+        }
+      ],
+      "description": "Return every creature to its owner's hand."
+    },
+    {
+      "id": "ancient_of_lore",
+      "name": "Ancient of Lore",
+      "cardClass": "druid",
+      "cost": 7,
+      "rarity": "epic",
+      "type": "creature",
+      "attack": 5,
+      "health": 5,
+      "choices": [
+        {
+          "text": "Draw 2 cards",
+          "effects": [
+            {
+              "type": "draw",
+              "value": 2
+            }
+          ]
+        },
+        {
+          "text": "Restore 5 health to any target",
+          "effects": [
+            {
+              "type": "heal",
+              "value": 5,
+              "target": "any"
+            }
+          ]
+        }
+      ],
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Choose one: Draw 2 cards; or Restore 5 health to any target."
+    },
+    {
+      "id": "ancient_of_war",
+      "name": "Ancient of War",
+      "cardClass": "druid",
+      "cost": 7,
+      "rarity": "epic",
+      "type": "creature",
+      "attack": 5,
+      "health": 5,
+      "choices": [
+        {
+          "text": "+5 Attack",
+          "effects": [
+            {
+              "type": "buff-self",
+              "attack": 5,
+              "health": 0
+            }
+          ]
+        },
+        {
+          "text": "+5 Health and Taunt",
+          "effects": [
+            {
+              "type": "buff-self",
+              "attack": 0,
+              "health": 5
+            },
+            {
+              "type": "grant",
+              "keyword": "taunt",
+              "target": "self"
+            }
+          ]
+        }
+      ],
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Choose one: +5 Attack; or +5 Health and Taunt."
+    },
+    {
+      "id": "archmage_antonidas",
+      "name": "Archmage Antonidas",
+      "cardClass": "mage",
+      "cost": 7,
+      "rarity": "legendary",
+      "type": "creature",
+      "attack": 5,
+      "health": 7,
+      "ongoing": {
+        "on": "spell-played",
+        "effects": [
+          {
+            "type": "add-card",
+            "id": "fireball"
+          }
+        ]
+      },
+      "description": "Whenever you cast a spell, add a Fireball to your hand."
+    },
+    {
+      "id": "baron_geddon",
+      "name": "Baron Geddon",
+      "cardClass": "neutral",
+      "cost": 7,
+      "rarity": "legendary",
+      "type": "creature",
+      "attack": 7,
+      "health": 5,
+      "ongoing": {
+        "on": "turn-end",
+        "effects": [
+          {
+            "type": "damage",
+            "value": 2,
+            "target": "other-characters"
+          }
+        ]
+      },
+      "description": "At the end of your turn, deal 2 damage to every other character."
+    },
+    {
+      "id": "tirion_fordring",
+      "name": "Tirion Fordring",
+      "cardClass": "paladin",
+      "cost": 8,
+      "rarity": "legendary",
+      "type": "creature",
+      "attack": 6,
+      "health": 6,
+      "keywords": [
+        "divine_shield",
+        "taunt",
+        "deathrattle"
+      ],
+      "deathrattle": [
+        {
+          "type": "equip",
+          "attack": 5,
+          "durability": 3,
+          "name": "Ashbringer"
+        }
+      ],
+      "description": "Divine Shield. Taunt. Deathrattle: Equip a 5/3 Ashbringer."
+    },
+    {
+      "id": "twisting_nether",
+      "name": "Twisting Nether",
+      "cardClass": "warlock",
+      "cost": 8,
+      "rarity": "epic",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "destroy-all"
+        }
+      ],
+      "description": "Destroy every creature."
+    },
+    {
+      "id": "cenarius",
+      "name": "Cenarius",
+      "cardClass": "druid",
+      "cost": 9,
+      "rarity": "legendary",
+      "type": "creature",
+      "attack": 5,
+      "health": 8,
+      "choices": [
+        {
+          "text": "Give your other creatures +2/+2",
+          "effects": [
+            {
+              "type": "buff",
+              "attack": 2,
+              "health": 2,
+              "target": "friendly-others"
+            }
+          ]
+        },
+        {
+          "text": "Summon two 2/2 Treants with Taunt",
+          "effects": [
+            {
+              "type": "summon",
+              "count": 2,
+              "attack": 2,
+              "health": 2,
+              "name": "Treant",
+              "keywords": [
+                "taunt"
+              ]
+            }
+          ]
+        }
+      ],
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Choose one: Give your other creatures +2/+2; or Summon two 2/2 Treants with Taunt."
+    },
+    {
+      "id": "onyxia",
+      "name": "Onyxia",
+      "cardClass": "neutral",
+      "cost": 9,
+      "rarity": "legendary",
+      "tribe": "Dragon",
+      "type": "creature",
+      "attack": 8,
+      "health": 8,
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "summon",
+          "count": 6,
+          "attack": 1,
+          "health": 1,
+          "name": "Whelp"
+        }
+      ],
+      "description": "Battlecry: Summon six 1/1 Whelps."
+    },
+    {
+      "id": "deathwing",
+      "name": "Deathwing",
+      "cardClass": "neutral",
+      "cost": 10,
+      "rarity": "legendary",
+      "tribe": "Dragon",
+      "type": "creature",
+      "attack": 12,
+      "health": 12,
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "destroy-all",
+          "others": true
+        },
+        {
+          "type": "discard-all"
+        }
+      ],
+      "description": "Battlecry: Destroy all other creatures and discard your hand."
+    },
+    {
+      "id": "mind_control",
+      "name": "Mind Control",
+      "cardClass": "priest",
+      "cost": 10,
+      "rarity": "common",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "mind-control",
+          "target": "enemy-creature"
+        }
+      ],
+      "description": "Take control of an enemy creature."
     }
   ]
 }

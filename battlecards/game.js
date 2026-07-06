@@ -952,6 +952,18 @@ function nextEvent() {
 			delay = 420;
 			break;
 		}
+		case 'bounce': {
+			const ent = entities.get(ev.uid);
+			if (ent) { ent.dying = performance.now(); floatText('↩', '#6cc4ff', ent.mesh.position); }
+			log(`${ev.name} was returned to ${nameOf(ev.player)}'s hand`);
+			delay = 380;
+			break;
+		}
+		case 'mindControl': {
+			log(`${nameOf(ev.player)} took control of ${ev.name}`);
+			delay = 500;
+			break;
+		}
 		case 'secretRevealed':
 			banner(`Secret: ${ev.card.name}!`, 1600);
 			log(`${ev.player === HUMAN ? 'Your' : `${nameOf(ev.player)}'s`} Secret revealed: ${ev.card.name}`);
