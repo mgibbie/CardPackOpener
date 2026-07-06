@@ -147,6 +147,15 @@ export function step(state, pi = 1) {
 		return true;
 	}
 
+	// -1d. cash in field tokens when it's clearly worth it
+	for (const t of [...p.artifacts]) {
+		if (!t.sac || !E.canSacrifice(state, pi, t)) continue;
+		const worth = t.id === 'treasure_token'
+			|| (t.id === 'food_token' && p.life <= 30)
+			|| (t.id === 'blood_token' && p.hand.length >= 2);
+		if (worth && E.sacrificeToken(state, pi, t.uid)) return true;
+	}
+
 	// -1b. unmask disguised creatures worth their cost
 	for (const c of p.board) {
 		if (c.disguised && E.canUnmask(state, pi, c)

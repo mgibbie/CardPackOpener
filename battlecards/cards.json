@@ -19537,21 +19537,21 @@
     {
       "id": "blood_token",
       "name": "Blood Token",
-      "type": "sorcery",
-      "cost": 1,
+      "type": "artifact",
+      "cost": 0,
       "rarity": "common",
       "token": true,
-      "effects": [
-        {
-          "type": "discard-random",
-          "count": 1
-        },
-        {
-          "type": "draw",
-          "value": 1
-        }
-      ],
-      "description": "Sacrifice: discard a card, then draw a card."
+      "sac": {
+        "cost": 1,
+        "discard": 1,
+        "effects": [
+          {
+            "type": "draw",
+            "value": 1
+          }
+        ]
+      },
+      "description": "Sacrifice \u2014 pay 1 and discard a card: draw a card."
     },
     {
       "id": "darkfallen_neophyte",
@@ -19938,33 +19938,39 @@
     {
       "id": "treasure_token",
       "name": "Treasure Token",
-      "type": "sorcery",
+      "type": "artifact",
       "cost": 0,
       "rarity": "common",
       "token": true,
-      "effects": [
-        {
-          "type": "gain-mana",
-          "value": 1
-        }
-      ],
-      "description": "Sacrifice: gain 1 mana this turn."
+      "sac": {
+        "cost": 0,
+        "effects": [
+          {
+            "type": "gain-mana",
+            "value": 1
+          }
+        ]
+      },
+      "description": "Sacrifice: gain 1 mana."
     },
     {
       "id": "food_token",
       "name": "Food Token",
-      "type": "sorcery",
-      "cost": 2,
+      "type": "artifact",
+      "cost": 0,
       "rarity": "common",
       "token": true,
-      "effects": [
-        {
-          "type": "heal",
-          "value": 3,
-          "target": "self"
-        }
-      ],
-      "description": "Sacrifice: restore 3 health to your hero."
+      "sac": {
+        "cost": 2,
+        "effects": [
+          {
+            "type": "heal",
+            "value": 3,
+            "target": "self"
+          }
+        ]
+      },
+      "description": "Sacrifice \u2014 pay 2: restore 3 health to your hero."
     },
     {
       "id": "kalecgos",
@@ -20108,7 +20114,7 @@
       "health": 2,
       "tribe": "Beast",
       "ongoing": {
-        "on": "card-played",
+        "on": "token-sacrificed",
         "if": {
           "cardId": "food_token"
         },

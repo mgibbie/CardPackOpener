@@ -992,6 +992,14 @@ function nextEvent() {
 			if (ev.player === HUMAN) openPickModal();
 			delay = 300;
 			break;
+		case 'tokenGained':
+			log(`${nameOf(ev.player)} gained a ${ev.card.name}`);
+			delay = 250;
+			break;
+		case 'tokenSacrificed':
+			log(`${nameOf(ev.player)} sacrificed a ${ev.card.name}`);
+			delay = 300;
+			break;
 		case 'heroPowerInstalled': delay = 260; break; // ditto
 		case 'questStarted': delay = 260; break;      // ditto
 		case 'heroPowerUsed':
@@ -1307,6 +1315,12 @@ renderer.domElement.addEventListener('pointerdown', ev => {
 		}
 		E.useHeroPower(state, HUMAN, card.uid, null);
 		pump();
+	} else if (card.zone === 'artifact' && card.controller === HUMAN && card.sac) {
+		// click a field token (Blood/Treasure/Food) to sacrifice it
+		if (E.canSacrifice(state, HUMAN, card)) {
+			E.sacrificeToken(state, HUMAN, card.uid);
+			pump();
+		}
 	} else if (card.zone === 'planeswalker' && card.controller === HUMAN) {
 		// click your planeswalker to pick an ability
 		if (E.canUseWalker(state, HUMAN, card)) openWalkerMenu(card, ev);

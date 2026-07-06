@@ -145,6 +145,7 @@ function instantiate(def, controller) {
 		condKeyword: def.condKeyword || null, // { keyword, while: 'weapon' } (Southsea Deckhand)
 		honorableKill: def.honorableKill || null, // effects on an EXACT lethal blow
 		medic: def.medic || 0,        // heals adjacent creatures N at end of turn
+		sac: def.sac || null,         // field-token activation: { cost, discard?, effects }
 		aura: def.aura || null,       // { attack, health, tribe?, others?, adjacent?, position?, keywords? }
 		auraAttack: 0,                // currently applied aura bonuses (recomputed)
 		auraHealth: 0,
@@ -524,17 +525,46 @@ function findCreature(state, uid) {
 	return null;
 }
 
-// token cards land in the controller's hand (Blood/Treasure/Food Tokens)
+// token permanents (Blood/Treasure/Food) materialize in the artifact row;
+// they carry a `sac` activation and are clicked/AI-cashed from the field
 function gainTokenCard(state, pi, id) {
 	const p = state.players[pi];
 	const def = state.cardsById[id];
-	if (!def || p.eliminated || p.hand.length >= MAX_HAND) return;
+	if (!def || p.eliminated) return;
 	const card = instantiate(def, pi);
-	card.zone = 'hand';
-	p.hand.push(card);
-	emit(state, { type: 'conjure', player: pi, card, color: null });
+	card.zone = 'artifact';
+	p.artifacts.push(card);
+	emit(state, { type: 'tokenGained', player: pi, card });
 }
 const gainBloodToken = (state, pi) => gainTokenCard(state, pi, 'blood_token');
+
+export function canSacrifice(state, pi, card) {
+	if (state.over || state.current !== pi) return false;
+	const p = state.players[pi];
+	if (!card.sac || !p.artifacts.includes(card)) return false;
+	if (availableMana(p) < (card.sac.cost || 0)) return false;
+	if (card.sac.discard && p.hand.length < card.sac.discard) return false;
+	return true;
+}
+
+export function sacrificeToken(state, pi, uid) {
+	const p = state.players[pi];
+	const card = p.artifacts.find(c => c.uid === uid);
+	if (!card || !canSacrifice(state, pi, card)) return false;
+	spendMana(p, card.sac.cost || 0);
+	p.artifacts = p.artifacts.filter(c => c !== card);
+	emit(state, { type: 'tokenSacrificed', player: pi, card });
+	fireOngoing(state, pi, 'token-sacrificed', { played: card }); // "whenever you sacrifice a Food"
+	if (card.sac.discard) {
+		// the discard is the player's choice; rewards resolve after it
+		state.discardQueue.push({ player: pi, count: Math.min(card.sac.discard, p.hand.length), then: card.sac.effects });
+		emit(state, { type: 'lootStart', player: pi, count: card.sac.discard });
+	} else {
+		execEffects(state, pi, card.sac.effects, null, card);
+	}
+	sweepDeaths(state);
+	return true;
+}
 
 // ---------- damage / healing ----------
 function damageCreature(state, target, amount, source) {
@@ -3128,6 +3158,8 @@ export function resolveDiscard(state, uids) {
 		toGraveyard(state, pend.player, c);
 		emit(state, { type: 'discard', player: pend.player, card: c });
 	}
+	// discard-then rewards (Blood Token's draw comes after the discard)
+	if (pend.then) execEffects(state, pend.player, pend.then, null, null);
 	return true;
 }
 
