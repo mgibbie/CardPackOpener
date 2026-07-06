@@ -137,7 +137,7 @@ function makeRing(color) {
 const entities = new Map();
 
 // board creatures shed their card frame and become HS-style minion ovals
-const TOKEN_SCALE = 1.35;
+const TOKEN_SCALE = 1.1;
 const tokenGeo = new THREE.PlaneGeometry(CARD_W * TOKEN_SCALE, CARD_W * TOKEN_SCALE * (TOKEN_H / TOKEN_W));
 function formFor(card) {
 	return card.zone === 'board' && card.type === 'creature' ? 'token' : 'card';
@@ -573,7 +573,8 @@ function layoutTargets() {
 			const x = (i - (bn - 1) / 2) * spread;
 			ent.target.pos = toWorld(x, 0.06 + i * 0.002, off + 2.0, pi);
 			ent.target.quat = sliceQuat(FLAT, HUMAN);
-			ent.target.scale = 0.8;
+			// tokens shrink to their spacing so neighbors never overlap
+			ent.target.scale = Math.min(0.8, (spread * 0.97) / (CARD_W * TOKEN_SCALE));
 		});
 	}
 	// anything not in hand/board and not mid-death: drop it
