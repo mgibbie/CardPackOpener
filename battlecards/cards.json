@@ -35137,6 +35137,157 @@
       },
       "description": "Secret: When one of your creatures is attacked, summon a 3/3 copy of it.",
       "set": "hsx"
+    },
+    {
+      "id": "witchwood_imp",
+      "name": "Witchwood Imp",
+      "cardClass": "warlock",
+      "cost": 1,
+      "rarity": "common",
+      "tribe": "Demon",
+      "type": "creature",
+      "attack": 1,
+      "health": 1,
+      "keywords": [
+        "stealth",
+        "deathrattle"
+      ],
+      "deathrattle": [
+        {
+          "type": "buff-random-friendly",
+          "health": 2
+        }
+      ],
+      "description": "Stealth. Deathrattle: Give a random friendly creature +2 Health.",
+      "set": "hsx"
+    },
+    {
+      "id": "tortollan_forager",
+      "name": "Tortollan Forager",
+      "cardClass": "druid",
+      "cost": 2,
+      "rarity": "common",
+      "type": "creature",
+      "attack": 2,
+      "health": 2,
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "conjure-random",
+          "cardType": "creature",
+          "minAttack": 5
+        }
+      ],
+      "description": "Battlecry: Add a random creature with 5 or more Attack to your hand.",
+      "set": "hsx"
+    },
+    {
+      "id": "undercity_huckster",
+      "name": "Undercity Huckster",
+      "cardClass": "rogue",
+      "cost": 2,
+      "rarity": "rare",
+      "type": "creature",
+      "attack": 2,
+      "health": 3,
+      "keywords": [
+        "deathrattle"
+      ],
+      "deathrattle": [
+        {
+          "type": "conjure-random",
+          "cardClass": "enemy"
+        }
+      ],
+      "description": "Deathrattle: Add a random card from an opponent's class to your hand.",
+      "set": "hsx"
+    },
+    {
+      "id": "dark_cultist",
+      "name": "Dark Cultist",
+      "cardClass": "priest",
+      "cost": 3,
+      "rarity": "common",
+      "type": "creature",
+      "attack": 3,
+      "health": 4,
+      "keywords": [
+        "deathrattle"
+      ],
+      "deathrattle": [
+        {
+          "type": "buff-random-friendly",
+          "health": 3
+        }
+      ],
+      "description": "Deathrattle: Give a random friendly creature +3 Health.",
+      "set": "hsx"
+    },
+    {
+      "id": "mulch",
+      "name": "Mulch",
+      "cardClass": "druid",
+      "cost": 3,
+      "rarity": "epic",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "destroy",
+          "target": "creature"
+        },
+        {
+          "type": "give-enemy-random",
+          "cardType": "creature"
+        }
+      ],
+      "description": "Destroy a creature. Add a random creature to an opponent's hand.",
+      "set": "hsx"
+    },
+    {
+      "id": "unearthed_raptor",
+      "name": "Unearthed Raptor",
+      "cardClass": "rogue",
+      "cost": 3,
+      "rarity": "rare",
+      "type": "creature",
+      "attack": 3,
+      "health": 4,
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "copy-deathrattle",
+          "target": "friendly-creature"
+        }
+      ],
+      "description": "Battlecry: Choose a friendly creature and gain a copy of its Deathrattle.",
+      "set": "hsx"
+    },
+    {
+      "id": "mok_nathal_lion",
+      "name": "Mok'Nathal Lion",
+      "cardClass": "hunter",
+      "cost": 4,
+      "rarity": "rare",
+      "tribe": "Beast",
+      "type": "creature",
+      "attack": 5,
+      "health": 2,
+      "keywords": [
+        "rush",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "copy-deathrattle",
+          "target": "friendly-creature"
+        }
+      ],
+      "description": "Rush. Battlecry: Choose a friendly creature and gain a copy of its Deathrattle.",
+      "set": "hsx"
     }
   ]
 }

@@ -91,7 +91,7 @@ function pickTarget(state, pi, card) {
 		}
 	}
 }
-const FRIENDLY_TYPES = new Set(['buff', 'grant', 'temp-buff', 'heal-full', 'attack-equals-health', 'double-health', 'double-attack', 'grant-ongoing', 'temp-immune', 'shadowflame', 'grant-deathrattle']);
+const FRIENDLY_TYPES = new Set(['buff', 'grant', 'temp-buff', 'heal-full', 'attack-equals-health', 'double-health', 'double-attack', 'grant-ongoing', 'temp-immune', 'shadowflame', 'grant-deathrattle', 'copy-deathrattle']);
 const HOSTILE_TYPES = new Set(['damage', 'destroy', 'exile', 'set-health', 'set-attack', 'bounce', 'mind-control', 'transform', 'transform-copy', 'damage-then', 'conditional', 'draw-damage', 'swap-stats', 'swipe', 'damage-adjacent', 'betrayal', 'corrupt', 'mind-control-temp']);
 const CHOSEN_TYPES = new Set([...FRIENDLY_TYPES, ...HOSTILE_TYPES, 'heal', 'set-hero-health']);
 

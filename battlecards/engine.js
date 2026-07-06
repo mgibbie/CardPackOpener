@@ -406,6 +406,7 @@ const CHOSEN = {
 	'damage-then': { any: 'any', creature: 'creature' },
 	'draw-damage': { any: 'any' },
 	'grant-deathrattle': { creature: 'creature' },
+	'copy-deathrattle': { 'friendly-creature': 'friendly-creature' },
 	'temp-immune': { creature: 'creature' },
 	'swap-stats': { creature: 'creature' },
 	shadowflame: { 'friendly-creature': 'friendly-creature' },
@@ -2241,6 +2242,58 @@ function execEffects(state, pi, effects, target, source) {
 			}
 		} else if (e.type === 'hero-immune') {
 			state.players[pi].heroImmuneTurn = state.turnNumber;
+		} else if (e.type === 'copy-deathrattle') {
+			// Unearthed Raptor: gain a copy of a chosen friendly minion's Deathrattle
+			const c = chosenCreature();
+			if (c && c.deathrattle && source) {
+				source.deathrattle = [...(source.deathrattle || []),
+					...JSON.parse(JSON.stringify(c.deathrattle))];
+			}
+		} else if (e.type === 'conjure-random') {
+			// random collectible card matching filters, added to your hand;
+			// cardClass 'enemy' draws from an opponent's class pool
+			const p = state.players[pi];
+			let pool = Object.values(state.cardsById).filter(d =>
+				d.type !== 'land' && !d.token && !d.companion && !d.commander
+				&& !(d.colors && d.colors.length));
+			if (e.cardType === 'creature') pool = pool.filter(d => d.type === 'creature');
+			if (e.minAttack != null) pool = pool.filter(d => (d.attack || 0) >= e.minAttack);
+			if (e.cardClass === 'enemy') {
+				const victim = enemyHero();
+				const cls = victim != null && state.players[victim].heroClass;
+				pool = cls ? pool.filter(d => d.cardClass === cls) : [];
+			}
+			if (pool.length && p.hand.length < MAX_HAND) {
+				const card = instantiate(pool[Math.floor(state.rng() * pool.length)], pi);
+				card.zone = 'hand';
+				p.hand.push(card);
+				emit(state, { type: 'conjure', player: pi, card, color: null });
+			}
+		} else if (e.type === 'give-enemy-random') {
+			// Mulch: a random creature lands in an opponent's hand
+			const victim = enemyHero();
+			if (victim != null) {
+				let pool = Object.values(state.cardsById).filter(d =>
+					d.type !== 'land' && !d.token && !d.companion && !d.commander
+					&& !(d.colors && d.colors.length));
+				if (e.cardType === 'creature') pool = pool.filter(d => d.type === 'creature');
+				const vp = state.players[victim];
+				if (pool.length && vp.hand.length < MAX_HAND) {
+					const card = instantiate(pool[Math.floor(state.rng() * pool.length)], victim);
+					card.zone = 'hand';
+					vp.hand.push(card);
+					emit(state, { type: 'conjure', player: victim, card, color: null });
+				}
+			}
+		} else if (e.type === 'buff-random-friendly') {
+			// deathrattle path (Dark Cultist) — the secret executor has its own copy
+			const pool = state.players[pi].board.filter(c => !isDead(c) && c !== source);
+			if (pool.length) {
+				const m = pool[Math.floor(state.rng() * pool.length)];
+				m.attack += e.attack || 0;
+				m.maxHealth += e.health || 0;
+				emit(state, { type: 'buff', uid: m.uid, attack: m.attack, hp: hp(m) });
+			}
 		} else if (e.type === 'conjure-cost') {
 			// Discover-a-cost approximation: a random card of that cost
 			const p = state.players[pi];
