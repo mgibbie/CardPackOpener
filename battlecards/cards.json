@@ -13155,6 +13155,28 @@
         "adjacent": true
       },
       "description": "Adjacent creatures have +2 Attack."
+    },
+    {
+      "id": "verdant_smilodon",
+      "name": "Verdant Smilodon",
+      "cardClass": "naturalist",
+      "cost": 4,
+      "rarity": "common",
+      "set": "paper",
+      "description": "Connect: Quickdraw 2.",
+      "type": "creature",
+      "attack": 3,
+      "health": 5,
+      "tribe": "Beast",
+      "ongoing": {
+        "on": "self-hit-player",
+        "effects": [
+          {
+            "type": "quickdraw",
+            "value": 2
+          }
+        ]
+      }
     }
   ]
 }

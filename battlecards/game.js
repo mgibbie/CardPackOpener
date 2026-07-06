@@ -752,6 +752,10 @@ function nextEvent() {
 			log(`${nameOf(ev.player)} milled ${ev.card.name}`);
 			delay = 220;
 			break;
+		case 'quickdrawReturn':
+			log(`${nameOf(ev.player)} shuffled ${ev.count} Quickdrawn card${ev.count > 1 ? 's' : ''} back`);
+			delay = 280;
+			break;
 		case 'heroPowerInstalled': delay = 260; break; // ditto
 		case 'questStarted': delay = 260; break;      // ditto
 		case 'heroPowerUsed':
@@ -905,6 +909,7 @@ function updateTooltip(ev) {
 	let extra = '';
 	if (card.type === 'planeswalker') extra = `<div class="tt-sub">Loyalty ${card.loyalty}</div>`;
 	if (card.type === 'quest' && card.quest) extra = `<div class="tt-sub">Progress ${card.progress || 0} / ${card.quest.goal.count}</div>`;
+	if (card.quickdrawn) extra += `<div class="tt-sub">Quickdrawn — returns to your deck at end of turn</div>`;
 	tip.innerHTML = `<div class="tt-name">${card.name}</div><div class="tt-type">${typeLine}</div>`
 		+ `<div class="tt-desc">${card.description || ''}</div>` + extra;
 	tip.style.display = 'block';

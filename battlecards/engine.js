@@ -1237,6 +1237,13 @@ function execEffects(state, pi, effects, target, source) {
 				emit(state, { type: 'corpses', player: pi, corpses: p.corpses });
 				execEffects(state, pi, e.effects, target, source);
 			}
+		} else if (e.type === 'quickdraw') {
+			// Quickdrawn cards return to the deck at end of turn if unplayed
+			const p = state.players[pi];
+			const before = p.hand.length;
+			drawCards(state, pi, e.value);
+			for (let i = before; i < p.hand.length; i++) p.hand[i].quickdrawn = true;
+			questTick(state, 'quickdraw', pi, Math.max(0, p.hand.length - before));
 		} else if (e.type === 'mill') {
 			// top of the chosen enemy's deck goes to their graveyard
 			const t = enemyHero();
@@ -1784,6 +1791,17 @@ export function endTurn(state) {
 		}
 	}
 	p.heroTempAttack = 0;
+	// unplayed Quickdrawn cards slip back into the deck
+	const qd = p.hand.filter(c => c.quickdrawn);
+	if (qd.length) {
+		p.hand = p.hand.filter(c => !c.quickdrawn);
+		for (const c of qd) p.deck.push(c.id);
+		for (let k = p.deck.length - 1; k > 0; k--) {
+			const j = Math.floor(state.rng() * (k + 1));
+			[p.deck[k], p.deck[j]] = [p.deck[j], p.deck[k]];
+		}
+		emit(state, { type: 'quickdrawReturn', player: pi, count: qd.length });
+	}
 	// discard down to max
 	while (p.hand.length > MAX_HAND) {
 		const c = p.hand.pop();
