@@ -451,6 +451,123 @@ export function makeFaceTexture(card, opts = {}) {
 	return tex;
 }
 
+// ---------- board tokens: HS-style minion ovals ----------
+// once a creature is in play it stops looking like a card: oval art,
+// heavy rim, and BIG stat gems that read from across the table
+export const TOKEN_W = 512, TOKEN_H = 640;
+export const TOKEN_GEM = { x: 0.5, y: 560 / TOKEN_H, r: 42 / TOKEN_W };
+
+// opts: { attack, hp, maxHealth, baseAttack, baseHealth, taunt, shield, stealthed }
+export function drawBoardToken(card, opts = {}) {
+	const c = document.createElement('canvas');
+	c.width = TOKEN_W; c.height = TOKEN_H;
+	const ctx = c.getContext('2d');
+	const cx = TOKEN_W / 2, cy = 288, rx = 200, ry = 258;
+
+	// taunt: a heavy stone shield ring around the whole token
+	if (opts.taunt) {
+		ctx.strokeStyle = '#565d68';
+		ctx.lineWidth = 34;
+		ctx.beginPath(); ctx.ellipse(cx, cy, rx + 24, ry + 24, 0, 0, Math.PI * 2); ctx.stroke();
+		ctx.strokeStyle = '#8b93a1';
+		ctx.lineWidth = 12;
+		ctx.beginPath(); ctx.ellipse(cx, cy, rx + 36, ry + 36, 0, 0, Math.PI * 2); ctx.stroke();
+	}
+	// divine shield: golden halo
+	if (opts.shield) {
+		ctx.strokeStyle = 'rgba(255,214,90,0.85)';
+		ctx.lineWidth = 22;
+		ctx.beginPath(); ctx.ellipse(cx, cy, rx + 18, ry + 18, 0, 0, Math.PI * 2); ctx.stroke();
+	}
+
+	// oval art window
+	ctx.save();
+	ctx.beginPath(); ctx.ellipse(cx, cy, rx, ry, 0, 0, Math.PI * 2); ctx.clip();
+	paintArt(ctx, card, cx - rx, cy - ry, rx * 2, ry * 2);
+	if (opts.stealthed) {
+		ctx.fillStyle = 'rgba(16,16,30,0.55)';
+		ctx.fillRect(cx - rx, cy - ry, rx * 2, ry * 2);
+	}
+	ctx.restore();
+
+	// metallic rim (class-tinted)
+	ctx.strokeStyle = shade(classColorOf(card.cardClass), 0.5);
+	ctx.lineWidth = 16;
+	ctx.beginPath(); ctx.ellipse(cx, cy, rx + 2, ry + 2, 0, 0, Math.PI * 2); ctx.stroke();
+	ctx.strokeStyle = 'rgba(255,255,255,0.28)';
+	ctx.lineWidth = 4;
+	ctx.beginPath(); ctx.ellipse(cx, cy, rx - 7, ry - 7, 0, 0, Math.PI * 2); ctx.stroke();
+
+	// BIG stat gems: white normal, green when buffed, red health when hurt
+	const baseA = opts.baseAttack ?? opts.attack;
+	const baseH = opts.baseHealth ?? opts.maxHealth;
+	const atkColor = opts.attack > baseA ? '#7cfc7c' : '#fff';
+	const hpColor = opts.hp < opts.maxHealth ? '#ff6257' : (opts.maxHealth > baseH ? '#7cfc7c' : '#fff');
+	statPlate(ctx, 88, 538, 84, '#e2a52e', String(opts.attack ?? 0), atkColor);
+	statPlate(ctx, TOKEN_W - 88, 538, 84, '#c23b2e', String(opts.hp ?? 0), hpColor);
+	return c;
+}
+
+export function makeTokenTexture(card, opts) {
+	const tex = new THREE.CanvasTexture(drawBoardToken(card, opts));
+	tex.colorSpace = THREE.SRGBColorSpace;
+	tex.anisotropy = 4;
+	return tex;
+}
+
+// ---------- hero portraits + power orbs (DOM panels) ----------
+export function drawHeroPortrait(classId, size = 128) {
+	const c = document.createElement('canvas');
+	c.width = size; c.height = size;
+	const ctx = c.getContext('2d');
+	const r = size / 2 - 5;
+	ctx.save();
+	ctx.beginPath(); ctx.arc(size / 2, size / 2, r, 0, Math.PI * 2); ctx.clip();
+	paintArt(ctx, { id: 'hero_' + (classId || 'neutral'), type: 'creature' }, 0, 0, size, size);
+	// grounding vignette
+	const v = ctx.createRadialGradient(size / 2, size / 2, r * 0.55, size / 2, size / 2, r);
+	v.addColorStop(0, 'rgba(0,0,0,0)');
+	v.addColorStop(1, 'rgba(0,0,0,0.45)');
+	ctx.fillStyle = v;
+	ctx.fillRect(0, 0, size, size);
+	ctx.restore();
+	ctx.strokeStyle = 'rgba(0,0,0,0.8)';
+	ctx.lineWidth = 7;
+	ctx.beginPath(); ctx.arc(size / 2, size / 2, r, 0, Math.PI * 2); ctx.stroke();
+	ctx.strokeStyle = classColorOf(classId);
+	ctx.lineWidth = 4;
+	ctx.beginPath(); ctx.arc(size / 2, size / 2, r, 0, Math.PI * 2); ctx.stroke();
+	return c;
+}
+
+export function drawPowerOrb(cost, size = 96) {
+	const c = document.createElement('canvas');
+	c.width = size; c.height = size;
+	const ctx = c.getContext('2d');
+	const r = size / 2 - 5;
+	const g = ctx.createRadialGradient(size * 0.38, size * 0.34, r * 0.15, size / 2, size / 2, r);
+	g.addColorStop(0, '#8fd0ff');
+	g.addColorStop(0.55, '#2c6fd4');
+	g.addColorStop(1, '#123058');
+	ctx.fillStyle = g;
+	ctx.beginPath(); ctx.arc(size / 2, size / 2, r, 0, Math.PI * 2); ctx.fill();
+	ctx.strokeStyle = '#b8952e';
+	ctx.lineWidth = 5;
+	ctx.beginPath(); ctx.arc(size / 2, size / 2, r, 0, Math.PI * 2); ctx.stroke();
+	ctx.strokeStyle = 'rgba(255,255,255,0.35)';
+	ctx.lineWidth = 2;
+	ctx.beginPath(); ctx.arc(size / 2, size / 2, r - 4, 0, Math.PI * 2); ctx.stroke();
+	ctx.font = `bold ${Math.round(size * 0.42)}px Georgia`;
+	ctx.textAlign = 'center';
+	ctx.textBaseline = 'middle';
+	ctx.lineWidth = 5;
+	ctx.strokeStyle = '#000';
+	ctx.strokeText(String(cost), size / 2, size / 2 + 1);
+	ctx.fillStyle = '#fff';
+	ctx.fillText(String(cost), size / 2, size / 2 + 1);
+	return c;
+}
+
 export function makeBackTexture() {
 	const W = 512, H = 716;
 	const c = document.createElement('canvas');

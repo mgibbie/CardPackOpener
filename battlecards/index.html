@@ -25,6 +25,12 @@
 		.panel.turn { border-color: #ffd25f; }
 		.panel.dead { opacity: 0.35; filter: grayscale(1); }
 		.panel .gear { color: #ffd25f; font-size: 12.5px; line-height: 1.5; }
+		/* hero portrait + class power orb */
+		.panel .hero-id { float: right; display: flex; align-items: center; gap: 6px; margin: 2px 0 4px 8px; }
+		.panel .portrait { display: block; border-radius: 50%; }
+		.panel .power-orb { display: block; border-radius: 50%; cursor: pointer; transition: filter 0.15s, box-shadow 0.15s; }
+		.panel .power-orb.usable { box-shadow: 0 0 10px rgba(87,227,137,0.9); }
+		.panel .power-orb.spent { filter: grayscale(1) brightness(0.6); cursor: default; }
 
 		/* small projected panels, one per opponent, centered on their slice */
 		.panel.foe-sm {
@@ -143,7 +149,7 @@
 	<div id="foe-panels"></div>
 	<div id="my-panel" class="panel">
 		<div class="life" id="my-life">40</div>
-		<div class="sub">Your Hero<br>Mana <span id="my-mana">1/1</span> · Deck <span id="my-deck">57</span></div>
+		<div class="sub"><span id="my-title">Your Hero</span><br>Mana <span id="my-mana">1/1</span> · Deck <span id="my-deck">57</span></div>
 		<div class="gear" id="my-gear"></div>
 	</div>
 

@@ -4,7 +4,7 @@ import * as THREE from 'three';
 import * as E from './engine.js';
 import * as AI from './ai.js';
 import * as Col from './collection.js';
-import { CARD_W, CARD_H, CARD_D, makeFaceTexture, makeBackTexture, hasRules, RULES_GEM, classNameOf, drawCardFace } from './cardart.js';
+import { CARD_W, CARD_H, CARD_D, makeFaceTexture, makeBackTexture, hasRules, RULES_GEM, classNameOf, drawCardFace, makeTokenTexture, TOKEN_W, TOKEN_H, TOKEN_GEM, drawHeroPortrait, drawPowerOrb } from './cardart.js';
 
 const HUMAN = 0;
 const TAU = Math.PI * 2;
@@ -133,14 +133,33 @@ function makeRing(color) {
 }
 
 // ---------- entities ----------
-// uid -> { card, mesh, faceMat, ring, target {pos,rot,scale}, lungeUntil, dying }
+// uid -> { card, mesh, faceMat, form, ring, target {pos,rot,scale}, lungeUntil, dying }
 const entities = new Map();
+
+// board creatures shed their card frame and become HS-style minion ovals
+const TOKEN_SCALE = 1.35;
+const tokenGeo = new THREE.PlaneGeometry(CARD_W * TOKEN_SCALE, CARD_W * TOKEN_SCALE * (TOKEN_H / TOKEN_W));
+function formFor(card) {
+	return card.zone === 'board' && card.type === 'creature' ? 'token' : 'card';
+}
 
 function faceMaterialFor(card) {
 	// disguised creatures render anonymously: neutral art seed, no identity
 	const shown = card.disguised
 		? { ...card, id: 'disguised', name: 'Disguised', description: '', cardClass: 'neutral' }
 		: card;
+	if (formFor(card) === 'token') {
+		const def = state?.cardsById?.[card.id];
+		const tex = makeTokenTexture(shown, {
+			attack: card.attack, hp: E.hp(card), maxHealth: card.maxHealth,
+			baseAttack: card.disguised ? card.attack : def?.attack,
+			baseHealth: card.disguised ? card.maxHealth : def?.health,
+			taunt: card.keywords.includes('taunt'),
+			shield: !!card.shield,
+			stealthed: !!card.stealthed,
+		});
+		return new THREE.MeshStandardMaterial({ map: tex, roughness: 0.4, metalness: 0.1, transparent: true, alphaTest: 0.05, side: THREE.DoubleSide });
+	}
 	const tex = makeFaceTexture(
 		{ ...shown, health: card.maxHealth },
 		card.type === 'creature' ? { attack: card.attack, hp: E.hp(card), maxHealth: card.maxHealth }
@@ -151,21 +170,49 @@ function faceMaterialFor(card) {
 	return new THREE.MeshStandardMaterial({ map: tex, roughness: 0.35, metalness: 0.12 });
 }
 
+function buildBody(card, form, faceMat) {
+	const mesh = form === 'token'
+		? new THREE.Mesh(tokenGeo, faceMat)
+		: new THREE.Mesh(cardGeo, [edgeMat, edgeMat, edgeMat, edgeMat, faceMat, backMat]);
+	mesh.userData.uid = card.uid;
+	if (hasRules(card)) {
+		const gem = new THREE.Mesh(gemGeo, gemMat);
+		if (form === 'token') {
+			const tw = CARD_W * TOKEN_SCALE, th = tw * (TOKEN_H / TOKEN_W);
+			gem.position.set((TOKEN_GEM.x - 0.5) * tw, (0.5 - TOKEN_GEM.y) * th, 0.006);
+			gem.scale.setScalar((TOKEN_GEM.r / RULES_GEM.r) * (tw / CARD_W));
+		} else {
+			gem.position.set((RULES_GEM.x - 0.5) * CARD_W, (0.5 - RULES_GEM.y) * CARD_H, CARD_D / 2 + 0.004);
+		}
+		gem.raycast = () => {}; // the glow never blocks card picking
+		mesh.add(gem);
+	}
+	return mesh;
+}
+
 function entityFor(card) {
 	let ent = entities.get(card.uid);
+	const form = formFor(card);
+	if (ent && ent.form !== form) {
+		// hand card became a board minion (or vice versa): swap the body
+		const faceMat = faceMaterialFor(card);
+		const mesh = buildBody(card, form, faceMat);
+		mesh.position.copy(ent.mesh.position);
+		mesh.quaternion.copy(ent.mesh.quaternion);
+		mesh.scale.copy(ent.mesh.scale);
+		scene.remove(ent.mesh);
+		ent.faceMat.map?.dispose();
+		scene.add(mesh);
+		ent.mesh = mesh;
+		ent.faceMat = faceMat;
+		ent.form = form;
+	}
 	if (!ent) {
 		const faceMat = faceMaterialFor(card);
-		const mesh = new THREE.Mesh(cardGeo, [edgeMat, edgeMat, edgeMat, edgeMat, faceMat, backMat]);
-		mesh.userData.uid = card.uid;
+		const mesh = buildBody(card, form, faceMat);
 		mesh.position.set(card.controller === HUMAN ? 9 : -9, 0.3, card.controller === HUMAN ? 6.5 : -6.5);
-		if (hasRules(card)) {
-			const gem = new THREE.Mesh(gemGeo, gemMat);
-			gem.position.set((RULES_GEM.x - 0.5) * CARD_W, (0.5 - RULES_GEM.y) * CARD_H, CARD_D / 2 + 0.004);
-			gem.raycast = () => {}; // the glow never blocks card picking
-			mesh.add(gem);
-		}
 		scene.add(mesh);
-		ent = { card, mesh, faceMat, target: { pos: new THREE.Vector3(), quat: new THREE.Quaternion(), scale: 1 }, ring: makeRing('#57e389') };
+		ent = { card, mesh, faceMat, form, target: { pos: new THREE.Vector3(), quat: new THREE.Quaternion(), scale: 1 }, ring: makeRing('#57e389') };
 		entities.set(card.uid, ent);
 	}
 	ent.card = card;
@@ -451,8 +498,9 @@ function layoutTargets() {
 			ent.target.quat = sliceQuat(pi === HUMAN ? FLAT : FACEDOWN, pi);
 			ent.target.scale = 0.42;
 		});
-		// hero powers mirror the trap row on the left; quests sit outside them
-		p.heroPowers.forEach((card, i) => {
+		// hero powers mirror the trap row on the left; quests sit outside them.
+		// The CLASS power lives in the hero panel as an orb, not on the table.
+		p.heroPowers.filter(c => c.id !== (p.heroClass || '') + '_power').forEach((card, i) => {
 			const ent = entityFor(card);
 			seen.add(card.uid);
 			ent.target.pos = toWorld(-(TRAP_X + (i - 1) * TRAP_SPREAD), 0.05, off + TRAP_Z, pi);
@@ -514,7 +562,8 @@ function layoutTargets() {
 			ent.target.quat = sliceQuat(FLAT, pi);
 			ent.target.scale = 0.42;
 		});
-		// creature row (unlimited: compress spacing inside the slice arc)
+		// creature row (unlimited: compress spacing inside the slice arc).
+		// Tokens always face the HUMAN so enemy stats read right-side-up.
 		const bn = p.board.length;
 		const rowWidth = playerCount <= 2 ? 10.5 : TAU * (off + 2.0) / playerCount * 0.9;
 		p.board.forEach((card, i) => {
@@ -523,7 +572,7 @@ function layoutTargets() {
 			const spread = Math.min(2.35, rowWidth / Math.max(bn, 1));
 			const x = (i - (bn - 1) / 2) * spread;
 			ent.target.pos = toWorld(x, 0.06 + i * 0.002, off + 2.0, pi);
-			ent.target.quat = sliceQuat(FLAT, pi);
+			ent.target.quat = sliceQuat(FLAT, HUMAN);
 			ent.target.scale = 0.8;
 		});
 	}
@@ -577,6 +626,54 @@ function log(msg) {
 const foePanelEls = new Map(); // pi -> element
 function panelEl(pi) { return pi === HUMAN ? $('my-panel') : foePanelEls.get(pi); }
 
+// clicking a power orb activates that player's CLASS hero power
+function classPowerOf(pi) {
+	const p = state.players[pi];
+	return p.heroPowers.find(c => c.id === (p.heroClass || '') + '_power') || null;
+}
+
+function activateHeroPower(card, ev) {
+	if (!E.canUseHeroPower(state, HUMAN, card)) return;
+	if (card.power.choices) { openPowerChoiceMenu(card, ev); return; }
+	const spec = E.heroPowerSpec(state, HUMAN, card);
+	if (spec) {
+		const targets = E.legalTargets(state, HUMAN, spec);
+		if (targets.length) { pending = { card, spec, targets, mode: 'power' }; updateHud(); return; }
+		if (spec.required) return;
+	}
+	E.useHeroPower(state, HUMAN, card.uid, null);
+	pump();
+}
+
+// hero portrait + class power orb, sized per panel
+function portraitBlock(pi, big) {
+	const wrap = document.createElement('div');
+	wrap.className = 'hero-id';
+	const p = state.players[pi];
+	const portrait = drawHeroPortrait(p.heroClass, big ? 128 : 84);
+	portrait.className = 'portrait';
+	portrait.style.width = portrait.style.height = big ? '64px' : '42px';
+	portrait.title = `${nameOf(pi)} — ${classNameOf(p.heroClass) || 'Classless'}`;
+	wrap.appendChild(portrait);
+	const power = classPowerOf(pi);
+	if (power) {
+		const orb = drawPowerOrb(power.power.cost, big ? 96 : 64);
+		orb.className = 'power-orb';
+		orb.dataset.uid = power.uid;
+		orb.style.width = orb.style.height = big ? '48px' : '32px';
+		orb.title = `${power.name}: ${power.description}`;
+		if (pi === HUMAN) {
+			orb.addEventListener('pointerdown', ev => {
+				ev.stopPropagation();
+				const card = classPowerOf(HUMAN);
+				if (card) activateHeroPower(card, ev);
+			});
+		}
+		wrap.appendChild(orb);
+	}
+	return wrap;
+}
+
 function buildPanels() {
 	const cont = $('foe-panels');
 	cont.innerHTML = '';
@@ -587,10 +684,17 @@ function buildPanels() {
 		el.className = 'panel foe-sm';
 		const cls = state?.classPicks?.[pi]?.name;
 		el.innerHTML = `<div class="life"></div><div class="sub"><b>${nameOf(pi)}${cls ? ` (${cls})` : ''}</b> · Mana <span class="mana"></span><br>Hand <span class="hand"></span> · Deck <span class="deck"></span></div><div class="gear"></div>`;
+		el.prepend(portraitBlock(pi, false));
 		el.addEventListener('pointerdown', () => panelClick(pi));
 		cont.appendChild(el);
 		foePanelEls.set(pi, el);
 	}
+	// my panel: swap in a fresh portrait + orb for this game's class
+	const mine = $('my-panel');
+	mine.querySelector('.hero-id')?.remove();
+	mine.prepend(portraitBlock(HUMAN, true));
+	const myCls = classNameOf(state.players[HUMAN].heroClass);
+	$('my-title').textContent = myCls ? `You — ${myCls}` : 'Your Hero';
 }
 
 function updateHud() {
@@ -611,6 +715,14 @@ function updateHud() {
 	$('my-panel').classList.toggle('armed',
 		state.current === HUMAN && !state.over && !pending && E.canHeroAttack(state, HUMAN));
 	$('my-panel').classList.toggle('dead', me.eliminated);
+	// class power orb: glow when usable, grey out when spent/unaffordable
+	const myOrb = $('my-panel').querySelector('.power-orb');
+	if (myOrb) {
+		const power = classPowerOf(HUMAN);
+		const usable = power && state.current === HUMAN && !state.over && E.canUseHeroPower(state, HUMAN, power);
+		myOrb.classList.toggle('usable', !!usable);
+		myOrb.classList.toggle('spent', !usable);
+	}
 	for (const [pi, el] of foePanelEls) {
 		const p = state.players[pi];
 		el.querySelector('.life').textContent = p.life + (p.armor ? `+${p.armor}` : '');
@@ -1004,7 +1116,8 @@ function nextEvent() {
 		case 'questStarted': delay = 260; break;      // ditto
 		case 'heroPowerUsed':
 			log(`${nameOf(ev.player)} used ${ev.card.name}`);
-			floatText('✦', '#ffd25f', creaturePos(ev.card.uid));
+			// class powers live in the panel, not on the table
+			floatText('✦', '#ffd25f', entities.has(ev.card.uid) ? creaturePos(ev.card.uid) : heroPos(ev.player));
 			delay = 420;
 			break;
 		case 'questProgress': {
@@ -1305,16 +1418,7 @@ renderer.domElement.addEventListener('pointerdown', ev => {
 		if (E.canAttackWith(state, HUMAN, card)) { selectedAttacker = card.uid; updateHud(); }
 	} else if (card.zone === 'heropower' && card.controller === HUMAN) {
 		// click an installed hero power to activate it
-		if (!E.canUseHeroPower(state, HUMAN, card)) return;
-		if (card.power.choices) { openPowerChoiceMenu(card, ev); return; }
-		const spec = E.heroPowerSpec(state, HUMAN, card);
-		if (spec) {
-			const targets = E.legalTargets(state, HUMAN, spec);
-			if (targets.length) { pending = { card, spec, targets, mode: 'power' }; updateHud(); return; }
-			if (spec.required) return;
-		}
-		E.useHeroPower(state, HUMAN, card.uid, null);
-		pump();
+		activateHeroPower(card, ev);
 	} else if (card.zone === 'artifact' && card.controller === HUMAN && card.sac) {
 		// click a field token (Blood/Treasure/Food) to sacrifice it
 		if (E.canSacrifice(state, HUMAN, card)) {
