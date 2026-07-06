@@ -34,7 +34,7 @@ export function spendGold(n) {
 // lands are bought in-game and colored cards are conjured by lands — neither
 // is collectible, packable, or deck-legal
 export function collectible(def) {
-	return def.type !== 'land' && !(def.colors && def.colors.length) && !def.companion && !def.commander;
+	return def.type !== 'land' && !(def.colors && def.colors.length) && !def.companion && !def.commander && !def.token;
 }
 
 export function getCollection(cards) {

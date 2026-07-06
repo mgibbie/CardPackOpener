@@ -52,6 +52,11 @@ function pickTarget(state, pi, card) {
 			// harmful ones at the biggest enemy (combo line replaces base effects)
 			const fxList = (card.combo && state.players[pi].cardsPlayedThisTurn >= 1) ? card.combo : card.effects;
 			const first = fxList?.find(e => CHOSEN_TYPES.has(e.type));
+			if (first?.type === 'set-hero-health') {
+				// only worth it against a healthier enemy hero
+				const t = enemyHeroes.find(t2 => state.players[t2.player].life > first.value);
+				return t || null;
+			}
 			if (FRIENDLY_TYPES.has(first?.type)) {
 				if (first.type === 'heal-full') {
 					// most-damaged friendly creature, or nothing
@@ -86,9 +91,9 @@ function pickTarget(state, pi, card) {
 		}
 	}
 }
-const FRIENDLY_TYPES = new Set(['buff', 'grant', 'temp-buff', 'heal-full', 'attack-equals-health', 'double-health', 'double-attack', 'grant-ongoing']);
-const HOSTILE_TYPES = new Set(['damage', 'destroy', 'exile', 'set-health', 'set-attack', 'bounce', 'mind-control', 'transform', 'transform-copy', 'damage-then', 'conditional', 'draw-damage']);
-const CHOSEN_TYPES = new Set([...FRIENDLY_TYPES, ...HOSTILE_TYPES, 'heal']);
+const FRIENDLY_TYPES = new Set(['buff', 'grant', 'temp-buff', 'heal-full', 'attack-equals-health', 'double-health', 'double-attack', 'grant-ongoing', 'temp-immune', 'shadowflame', 'grant-deathrattle']);
+const HOSTILE_TYPES = new Set(['damage', 'destroy', 'exile', 'set-health', 'set-attack', 'bounce', 'mind-control', 'transform', 'transform-copy', 'damage-then', 'conditional', 'draw-damage', 'swap-stats', 'swipe', 'damage-adjacent', 'betrayal', 'corrupt', 'mind-control-temp']);
+const CHOSEN_TYPES = new Set([...FRIENDLY_TYPES, ...HOSTILE_TYPES, 'heal', 'set-hero-health']);
 
 function playableCards(state, pi) {
 	const p = state.players[pi];

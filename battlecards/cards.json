@@ -10086,7 +10086,11 @@
       "type": "creature",
       "attack": 2,
       "health": 1,
-      "tribe": "Human Pirate"
+      "tribe": "Human Pirate",
+      "condKeyword": {
+        "keyword": "charge",
+        "while": "weapon"
+      }
     },
     {
       "id": "stockades_guard",
@@ -16359,6 +16363,862 @@
         }
       ],
       "description": "Battlecry: Deal 1 damage to a creature and give it +2 Attack."
+    },
+    {
+      "id": "bestial_wrath",
+      "name": "Bestial Wrath",
+      "cardClass": "hunter",
+      "cost": 1,
+      "rarity": "epic",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "temp-buff",
+          "attack": 2,
+          "target": "creature",
+          "tribe": "Beast"
+        },
+        {
+          "type": "temp-immune",
+          "target": "creature"
+        }
+      ],
+      "description": "Give a Beast +2 Attack and Immune until end of turn."
+    },
+    {
+      "id": "bloodsail_corsair",
+      "name": "Bloodsail Corsair",
+      "cardClass": "neutral",
+      "cost": 1,
+      "rarity": "rare",
+      "tribe": "Pirate",
+      "type": "creature",
+      "attack": 1,
+      "health": 2,
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "degrade-enemy-weapon",
+          "value": 1
+        }
+      ],
+      "description": "Battlecry: Remove 1 Durability from an opponent's weapon."
+    },
+    {
+      "id": "conceal",
+      "name": "Conceal",
+      "cardClass": "rogue",
+      "cost": 1,
+      "rarity": "common",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "temp-stealth-all"
+        }
+      ],
+      "description": "Give your creatures Stealth until your next turn."
+    },
+    {
+      "id": "corruption",
+      "name": "Corruption",
+      "cardClass": "warlock",
+      "cost": 1,
+      "rarity": "common",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "corrupt",
+          "target": "enemy-creature"
+        }
+      ],
+      "description": "Mark an enemy creature. It is destroyed at the start of your next turn."
+    },
+    {
+      "id": "flare",
+      "name": "Flare",
+      "cardClass": "hunter",
+      "cost": 1,
+      "rarity": "rare",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "unstealth-all"
+        },
+        {
+          "type": "destroy-enemy-secrets"
+        },
+        {
+          "type": "draw",
+          "value": 1
+        }
+      ],
+      "description": "Every creature loses Stealth. Destroy all enemy Secrets. Draw 1 card."
+    },
+    {
+      "id": "power_overwhelming",
+      "name": "Power Overwhelming",
+      "cardClass": "warlock",
+      "cost": 1,
+      "rarity": "common",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 4,
+          "health": 4,
+          "target": "friendly-creature"
+        },
+        {
+          "type": "doom",
+          "target": "friendly-creature"
+        }
+      ],
+      "description": "Give a friendly creature +4/+4. It dies at the end of the turn."
+    },
+    {
+      "id": "redemption",
+      "name": "Redemption",
+      "cardClass": "paladin",
+      "cost": 1,
+      "rarity": "common",
+      "type": "secret",
+      "secret": {
+        "trigger": "friendly-minion-died",
+        "effects": [
+          {
+            "type": "revive-minion",
+            "health": 1
+          }
+        ]
+      },
+      "description": "Secret: When a friendly creature dies, return it to life with 1 health."
+    },
+    {
+      "id": "upgrade",
+      "name": "Upgrade!",
+      "cardClass": "warrior",
+      "cost": 1,
+      "rarity": "rare",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "upgrade-weapon",
+          "attack": 1,
+          "durability": 1,
+          "elseEquip": {
+            "attack": 1,
+            "durability": 3,
+            "name": "Sidearm"
+          }
+        }
+      ],
+      "description": "Give your weapon +1/+1, or equip a 1/3 Sidearm."
+    },
+    {
+      "id": "betrayal",
+      "name": "Betrayal",
+      "cardClass": "rogue",
+      "cost": 2,
+      "rarity": "common",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "betrayal",
+          "target": "enemy-creature"
+        }
+      ],
+      "description": "An enemy creature deals its Attack to the creatures beside it."
+    },
+    {
+      "id": "blade_flurry",
+      "name": "Blade Flurry",
+      "cardClass": "rogue",
+      "cost": 2,
+      "rarity": "rare",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "blade-flurry"
+        }
+      ],
+      "description": "Destroy your weapon; its Attack hits every enemy."
+    },
+    {
+      "id": "commanding_shout",
+      "name": "Commanding Shout",
+      "cardClass": "warrior",
+      "cost": 2,
+      "rarity": "rare",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "commanding-shout"
+        },
+        {
+          "type": "draw",
+          "value": 1
+        }
+      ],
+      "description": "Your creatures can't drop below 1 health this turn. Draw 1 card."
+    },
+    {
+      "id": "crazed_alchemist",
+      "name": "Crazed Alchemist",
+      "cardClass": "neutral",
+      "cost": 2,
+      "rarity": "rare",
+      "type": "creature",
+      "attack": 2,
+      "health": 2,
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "swap-stats",
+          "target": "creature"
+        }
+      ],
+      "description": "Battlecry: Swap a creature's Attack and Health."
+    },
+    {
+      "id": "lightwell",
+      "name": "Lightwell",
+      "cardClass": "priest",
+      "cost": 2,
+      "rarity": "rare",
+      "type": "creature",
+      "attack": 0,
+      "health": 5,
+      "ongoing": {
+        "on": "turn-start",
+        "effects": [
+          {
+            "type": "heal-random-friendly",
+            "value": 3
+          }
+        ]
+      },
+      "description": "At the start of your turn, restore 3 health to a random damaged friendly character."
+    },
+    {
+      "id": "lorewalker_cho",
+      "name": "Lorewalker Cho",
+      "cardClass": "neutral",
+      "cost": 2,
+      "rarity": "legendary",
+      "type": "creature",
+      "attack": 0,
+      "health": 4,
+      "ongoing": {
+        "on": "any-spell-played",
+        "effects": [
+          {
+            "type": "cho-copy"
+          }
+        ]
+      },
+      "description": "Whenever anyone casts a spell, the other player gets a copy."
+    },
+    {
+      "id": "master_swordsmith",
+      "name": "Master Swordsmith",
+      "cardClass": "neutral",
+      "cost": 2,
+      "rarity": "rare",
+      "type": "creature",
+      "attack": 1,
+      "health": 3,
+      "ongoing": {
+        "on": "turn-end",
+        "effects": [
+          {
+            "type": "buff-random-friendly",
+            "attack": 1,
+            "health": 0,
+            "excludeSelf": true
+          }
+        ]
+      },
+      "description": "At the end of your turn, another random friendly creature gets +1 Attack."
+    },
+    {
+      "id": "nat_pagle",
+      "name": "Nat Pagle",
+      "cardClass": "neutral",
+      "cost": 2,
+      "rarity": "legendary",
+      "type": "creature",
+      "attack": 0,
+      "health": 4,
+      "ongoing": {
+        "on": "turn-start",
+        "effects": [
+          {
+            "type": "luck",
+            "effects": [
+              {
+                "type": "draw",
+                "value": 1
+              }
+            ]
+          }
+        ]
+      },
+      "description": "At the start of your turn, flip a coin: heads draws an extra card."
+    },
+    {
+      "id": "alarm_o_bot",
+      "name": "Alarm-o-Bot",
+      "cardClass": "neutral",
+      "cost": 3,
+      "rarity": "rare",
+      "tribe": "Mech",
+      "type": "creature",
+      "attack": 0,
+      "health": 3,
+      "ongoing": {
+        "on": "turn-start",
+        "effects": [
+          {
+            "type": "swap-with-hand"
+          }
+        ]
+      },
+      "description": "At the start of your turn, swap this creature with a random one in your hand."
+    },
+    {
+      "id": "animal_companion",
+      "name": "Animal Companion",
+      "cardClass": "hunter",
+      "cost": 3,
+      "rarity": "common",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "summon",
+          "count": 1,
+          "options": [
+            {
+              "name": "Huffer",
+              "attack": 4,
+              "health": 2,
+              "keywords": [
+                "charge"
+              ],
+              "tribe": "Beast",
+              "description": "Charge."
+            },
+            {
+              "name": "Misha",
+              "attack": 4,
+              "health": 4,
+              "keywords": [
+                "taunt"
+              ],
+              "tribe": "Beast",
+              "description": "Taunt."
+            },
+            {
+              "name": "Leokk",
+              "attack": 2,
+              "health": 4,
+              "tribe": "Beast",
+              "aura": {
+                "attack": 1,
+                "health": 0,
+                "others": true
+              },
+              "description": "Your other creatures have +1 Attack."
+            }
+          ]
+        }
+      ],
+      "description": "Summon a random Beast Companion."
+    },
+    {
+      "id": "arcane_golem",
+      "name": "Arcane Golem",
+      "cardClass": "neutral",
+      "cost": 3,
+      "rarity": "rare",
+      "type": "creature",
+      "attack": 4,
+      "health": 2,
+      "keywords": [
+        "charge",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "gain-max-mana",
+          "value": 1,
+          "target": "enemy"
+        }
+      ],
+      "description": "Charge. Battlecry: Give your opponent a mana crystal."
+    },
+    {
+      "id": "eaglehorn_bow",
+      "name": "Eaglehorn Bow",
+      "cardClass": "hunter",
+      "cost": 3,
+      "rarity": "rare",
+      "type": "weapon",
+      "attack": 3,
+      "durability": 2,
+      "ongoing": {
+        "on": "secret-revealed",
+        "effects": [
+          {
+            "type": "buff-weapon",
+            "attack": 0,
+            "durability": 1
+          }
+        ]
+      },
+      "description": "Whenever a Secret is revealed, this gains +1 Durability."
+    },
+    {
+      "id": "felguard",
+      "name": "Felguard",
+      "cardClass": "warlock",
+      "cost": 3,
+      "rarity": "rare",
+      "tribe": "Demon",
+      "type": "creature",
+      "attack": 3,
+      "health": 5,
+      "keywords": [
+        "taunt",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "lose-max-mana",
+          "value": 1
+        }
+      ],
+      "description": "Taunt. Battlecry: Destroy one of your mana crystals."
+    },
+    {
+      "id": "king_mukla",
+      "name": "King Mukla",
+      "cardClass": "neutral",
+      "cost": 3,
+      "rarity": "legendary",
+      "tribe": "Beast",
+      "type": "creature",
+      "attack": 5,
+      "health": 5,
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "give-enemy-card",
+          "id": "banana",
+          "count": 2
+        }
+      ],
+      "description": "Battlecry: Give your opponent 2 Bananas."
+    },
+    {
+      "id": "lightning_storm",
+      "name": "Lightning Storm",
+      "cardClass": "shaman",
+      "cost": 3,
+      "rarity": "rare",
+      "overload": 2,
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 2,
+          "range": [
+            2,
+            3
+          ],
+          "target": "enemy-creatures"
+        }
+      ],
+      "description": "Deal 2-3 damage to every enemy creature. Overload: 2 mana locked next turn."
+    },
+    {
+      "id": "murloc_warleader",
+      "name": "Murloc Warleader",
+      "cardClass": "neutral",
+      "cost": 3,
+      "rarity": "epic",
+      "tribe": "Murloc",
+      "type": "creature",
+      "attack": 3,
+      "health": 3,
+      "aura": {
+        "attack": 2,
+        "health": 1,
+        "tribe": "Murloc",
+        "others": true,
+        "global": true
+      },
+      "description": "ALL other Murlocs have +2/+1."
+    },
+    {
+      "id": "spellbender",
+      "name": "Spellbender",
+      "cardClass": "mage",
+      "cost": 3,
+      "rarity": "epic",
+      "type": "secret",
+      "secret": {
+        "trigger": "enemy-spell-cast",
+        "condition": {
+          "targetCreature": true
+        },
+        "effects": [
+          {
+            "type": "spellbender-redirect",
+            "attack": 1,
+            "health": 3
+          }
+        ]
+      },
+      "description": "Secret: When an enemy spell targets a creature, a 1/3 decoy becomes the target."
+    },
+    {
+      "id": "sword_of_justice",
+      "name": "Sword of Justice",
+      "cardClass": "paladin",
+      "cost": 3,
+      "rarity": "epic",
+      "type": "weapon",
+      "attack": 1,
+      "durability": 5,
+      "ongoing": {
+        "on": "summoned",
+        "effects": [
+          {
+            "type": "buff-minion",
+            "attack": 1,
+            "health": 1
+          },
+          {
+            "type": "lose-durability",
+            "value": 1
+          }
+        ]
+      },
+      "description": "After you summon a creature, give it +1/+1 and this loses 1 Durability."
+    },
+    {
+      "id": "void_terror",
+      "name": "Void Terror",
+      "cardClass": "warlock",
+      "cost": 3,
+      "rarity": "rare",
+      "tribe": "Demon",
+      "type": "creature",
+      "attack": 3,
+      "health": 3,
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "devour-adjacent"
+        }
+      ],
+      "description": "Battlecry: Devour both neighbors, gaining their Attack and Health."
+    },
+    {
+      "id": "ancient_mage",
+      "name": "Ancient Mage",
+      "cardClass": "neutral",
+      "cost": 4,
+      "rarity": "rare",
+      "type": "creature",
+      "attack": 2,
+      "health": 5,
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "adjacent-buff",
+          "attack": 0,
+          "health": 0,
+          "static": {
+            "type": "spell-damage",
+            "value": 1
+          }
+        }
+      ],
+      "description": "Battlecry: Give adjacent creatures Spell Damage +1."
+    },
+    {
+      "id": "auchenai_soulpriest",
+      "name": "Auchenai Soulpriest",
+      "cardClass": "priest",
+      "cost": 4,
+      "rarity": "rare",
+      "type": "creature",
+      "attack": 3,
+      "health": 5,
+      "static": {
+        "type": "heal-becomes-damage",
+        "value": 1
+      },
+      "description": "Your healing deals damage instead."
+    },
+    {
+      "id": "cone_of_cold",
+      "name": "Cone of Cold",
+      "cardClass": "mage",
+      "cost": 4,
+      "rarity": "common",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "damage-adjacent",
+          "value": 1,
+          "splash": 1,
+          "freeze": true,
+          "target": "creature"
+        }
+      ],
+      "description": "Freeze a creature and its neighbors, dealing 1 damage to each."
+    },
+    {
+      "id": "houndmaster",
+      "name": "Houndmaster",
+      "cardClass": "hunter",
+      "cost": 4,
+      "rarity": "common",
+      "type": "creature",
+      "attack": 4,
+      "health": 3,
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 2,
+          "health": 2,
+          "target": "friendly-creature",
+          "tribe": "Beast"
+        },
+        {
+          "type": "grant",
+          "keyword": "taunt",
+          "target": "friendly-creature",
+          "tribe": "Beast"
+        }
+      ],
+      "description": "Battlecry: Give a friendly Beast +2/+2 and Taunt."
+    },
+    {
+      "id": "lightspawn",
+      "name": "Lightspawn",
+      "cardClass": "priest",
+      "cost": 4,
+      "rarity": "common",
+      "type": "creature",
+      "attack": 0,
+      "health": 5,
+      "statRule": "attack-equals-health",
+      "description": "Attack is always equal to its Health."
+    },
+    {
+      "id": "old_murk_eye",
+      "name": "Old Murk-Eye",
+      "cardClass": "neutral",
+      "cost": 4,
+      "rarity": "legendary",
+      "tribe": "Murloc",
+      "type": "creature",
+      "attack": 2,
+      "health": 4,
+      "selfScale": {
+        "attack": 1,
+        "tribe": "Murloc"
+      },
+      "keywords": [
+        "charge"
+      ],
+      "description": "Charge. Has +1 Attack for each other Murloc in play."
+    },
+    {
+      "id": "shadow_madness",
+      "name": "Shadow Madness",
+      "cardClass": "priest",
+      "cost": 4,
+      "rarity": "rare",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "mind-control-temp",
+          "maxAttack": 3,
+          "target": "enemy-creature"
+        }
+      ],
+      "description": "Take control of an enemy creature with 3 or less Attack until end of turn."
+    },
+    {
+      "id": "shadowflame",
+      "name": "Shadowflame",
+      "cardClass": "warlock",
+      "cost": 4,
+      "rarity": "rare",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "shadowflame",
+          "target": "friendly-creature"
+        }
+      ],
+      "description": "Destroy a friendly creature; its Attack hits every enemy creature."
+    },
+    {
+      "id": "swipe",
+      "name": "Swipe",
+      "cardClass": "druid",
+      "cost": 4,
+      "rarity": "common",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "swipe",
+          "value": 4,
+          "splash": 1,
+          "target": "enemy-any"
+        }
+      ],
+      "description": "Deal 4 damage to an enemy and 1 to all other enemies."
+    },
+    {
+      "id": "explosive_shot",
+      "name": "Explosive Shot",
+      "cardClass": "hunter",
+      "cost": 5,
+      "rarity": "rare",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "damage-adjacent",
+          "value": 5,
+          "splash": 2,
+          "target": "creature"
+        }
+      ],
+      "description": "Deal 5 damage to a creature and 2 to its neighbors."
+    },
+    {
+      "id": "gladiator_s_longbow",
+      "name": "Gladiator's Longbow",
+      "cardClass": "hunter",
+      "cost": 7,
+      "rarity": "epic",
+      "type": "weapon",
+      "attack": 5,
+      "durability": 2,
+      "static": {
+        "type": "immune-attacking",
+        "value": 1
+      },
+      "description": "Your hero takes no counterattack damage while attacking."
+    },
+    {
+      "id": "gorehowl",
+      "name": "Gorehowl",
+      "cardClass": "warrior",
+      "cost": 7,
+      "rarity": "epic",
+      "type": "weapon",
+      "attack": 7,
+      "durability": 1,
+      "static": {
+        "type": "attack-costs-attack",
+        "value": 1
+      },
+      "description": "Attacking a creature costs 1 Attack instead of 1 Durability."
+    },
+    {
+      "id": "prophet_velen",
+      "name": "Prophet Velen",
+      "cardClass": "priest",
+      "cost": 7,
+      "rarity": "legendary",
+      "type": "creature",
+      "attack": 7,
+      "health": 7,
+      "static": {
+        "type": "double-spell",
+        "value": 1
+      },
+      "description": "Your spells and hero powers deal double damage and healing."
+    },
+    {
+      "id": "gruul",
+      "name": "Gruul",
+      "cardClass": "neutral",
+      "cost": 8,
+      "rarity": "legendary",
+      "type": "creature",
+      "attack": 7,
+      "health": 7,
+      "ongoing": {
+        "on": "every-turn-end",
+        "effects": [
+          {
+            "type": "buff-self",
+            "attack": 1,
+            "health": 1
+          }
+        ]
+      },
+      "description": "At the end of every turn, this gains +1/+1."
+    },
+    {
+      "id": "alexstrasza",
+      "name": "Alexstrasza",
+      "cardClass": "neutral",
+      "cost": 9,
+      "rarity": "legendary",
+      "tribe": "Dragon",
+      "type": "creature",
+      "attack": 8,
+      "health": 8,
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "set-hero-health",
+          "value": 15,
+          "target": "any-hero"
+        }
+      ],
+      "description": "Battlecry: Set a hero's remaining health to 15."
+    },
+    {
+      "id": "banana",
+      "name": "Banana",
+      "type": "sorcery",
+      "cost": 1,
+      "rarity": "common",
+      "token": true,
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 1,
+          "health": 1,
+          "target": "creature"
+        }
+      ],
+      "description": "Give a creature +1/+1."
     }
   ]
 }
