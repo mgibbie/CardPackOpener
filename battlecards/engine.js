@@ -553,6 +553,7 @@ function damageCreature(state, target, amount, source) {
 function damageHero(state, pi, amount, src = null, pierce = false) {
 	if (amount <= 0) return 0;
 	const p = state.players[pi];
+	if (p.heroImmuneTurn === state.turnNumber) return 0; // "can't take damage this turn"
 	// static hero-damage reduction (Lucky Horseshoe)
 	amount = Math.max(0, amount - staticValue(p, 'reduce-hero-damage'));
 	if (amount <= 0) return 0;
@@ -824,6 +825,7 @@ function ongoingCondOk(state, pi, cond, ctx) {
 	if (cond.cardType && !(subj && subj.type === cond.cardType)) return false;
 	if (cond.controlSecret && !state.players[pi].secrets.length) return false;
 	if (cond.creature && !ctx.healedCreature) return false; // "whenever a MINION is healed"
+	if (cond.nontoken && (!subj || (subj.id || '').startsWith('token_'))) return false;
 	return true;
 }
 
@@ -974,6 +976,7 @@ function breakWeapon(state, pi, destroyed) {
 	p.weapon = null;
 	toGraveyard(state, pi, w);
 	emit(state, { type: 'weaponBreak', player: pi, name: w.name, destroyed: !!destroyed });
+	if (w.deathrattle) execEffects(state, pi, w.deathrattle, null, w); // Quick Pick
 	recomputeAuras(state); // Southsea Deckhand loses conditional Charge
 }
 
@@ -1020,6 +1023,8 @@ function fireSecrets(state, pi, trigger, ctx) {
 			p.traps = p.traps.filter(t => t !== card);
 			toGraveyard(state, pi, card);
 			emit(state, { type: 'trapSprung', player: pi, card });
+			// paper Eaglehorn counts traps too
+			for (let s2 = 0; s2 < state.players.length; s2++) fireOngoing(state, s2, 'secret-revealed', {});
 		} else {
 			p.secrets = p.secrets.filter(s => s !== card);
 			toGraveyard(state, pi, card);
@@ -1643,8 +1648,12 @@ function execEffects(state, pi, effects, target, source) {
 			}
 		} else if (e.type === 'adapt') {
 			// paper glossary d10 (implementable subset; 10 entries kept)
-			const t = chosenCreature() || (source && source.zone === 'board' && !isDead(source) ? source : null);
-			if (t) applyAdapt(state, t);
+			if (e.target === 'friendly-creatures') {
+				for (const c of [...state.players[pi].board]) if (!isDead(c)) applyAdapt(state, c);
+			} else {
+				const t = chosenCreature() || (source && source.zone === 'board' && !isDead(source) ? source : null);
+				if (t) applyAdapt(state, t);
+			}
 		} else if (e.type === 'buff-self') {
 			// battlecry/choice self-pump; `per` scales by a count
 			if (source && source.zone === 'board' && !isDead(source)) {
@@ -1792,7 +1801,9 @@ function execEffects(state, pi, effects, target, source) {
 					const def = state.cardsById[p.deck[j]];
 					if (!def) continue;
 					if (e.tribe && !(def.tribe || '').includes(e.tribe)) continue;
-					if (e.cardType && def.type !== e.cardType) continue;
+					if (e.cardType === 'spell' ? !isSpellType(def)
+						: (e.cardType && def.type !== e.cardType)) continue;
+					if (e.maxCost != null && (def.cost || 0) > e.maxCost) continue;
 					idxs.push(j);
 				}
 				if (!idxs.length) break;
@@ -1819,6 +1830,8 @@ function execEffects(state, pi, effects, target, source) {
 			else if (e.if.maxHealthSelf != null) ok = p.life <= e.if.maxHealthSelf;
 			else if (e.if.targetFrozen) ok = !!(t && t.frozen);
 			else if (e.if.targetFriendlyTribe) ok = !!(t && t.controller === pi && (t.tribe || '').includes(e.if.targetFriendlyTribe));
+			else if (e.if.heroAttacked) ok = p.heroAttacksUsed > 0;
+			else if (e.if.controlMinAttack != null) ok = p.board.some(c => !isDead(c) && c !== source && c.attack >= e.if.controlMinAttack);
 			execEffects(state, pi, ok ? e.then : (e.else || []), target, source);
 		} else if (e.type === 'damage-then') {
 			// deal damage, then branch on whether the creature survived
@@ -1935,8 +1948,9 @@ function execEffects(state, pi, effects, target, source) {
 				execEffects(state, pi, [{ type: 'equip', ...e.elseEquip }], target, source);
 			}
 		} else if (e.type === 'gain-max-mana') {
-			const who = e.target === 'enemy' ? enemyHero() : pi;
-			if (who != null) {
+			const targets = e.target === 'all' ? state.players.map((_, i) => i).filter(i => !state.players[i].eliminated)
+				: e.target === 'enemy' ? [enemyHero()].filter(x => x != null) : [pi];
+			for (const who of targets) {
 				const wp = state.players[who];
 				wp.mana.max = Math.min(MAX_BASE_MANA, wp.mana.max + (e.value || 1));
 				emit(state, { type: 'manaGained', player: who, amount: 0, mana: availableMana(wp) });
@@ -2060,6 +2074,72 @@ function execEffects(state, pi, effects, target, source) {
 				state.players[pi].board.push(t);
 				emit(state, { type: 'mindControl', uid: t.uid, player: pi, name: t.name });
 				recomputeAuras(state);
+			}
+		} else if (e.type === 'return-self-to-hand') {
+			// "Deathrattle: Return this to your hand" — a fresh copy comes back
+			const p = state.players[pi];
+			const def = source && state.cardsById[source.id];
+			if (def && !p.eliminated && p.hand.length < MAX_HAND) {
+				const card = instantiate(def, pi);
+				card.zone = 'hand';
+				p.hand.push(card);
+				emit(state, { type: 'conjure', player: pi, card, color: null });
+			}
+		} else if (e.type === 'shuffle-hand') {
+			// shuffle your hand into your deck (tokens evaporate)
+			const p = state.players[pi];
+			for (const c of p.hand) if (state.cardsById[c.id]) p.deck.push(c.id);
+			p.hand = [];
+			for (let k = p.deck.length - 1; k > 0; k--) {
+				const j = Math.floor(state.rng() * (k + 1));
+				[p.deck[k], p.deck[j]] = [p.deck[j], p.deck[k]];
+			}
+		} else if (e.type === 'destroy-strongest') {
+			// destroy the highest-Attack enemy creature
+			let best = null;
+			for (const o of enemies) for (const c of state.players[o].board) {
+				if (!isDead(c) && (!best || c.attack > best.attack)) best = c;
+			}
+			if (best) {
+				best.damage = best.maxHealth;
+				best.shield = false;
+				emit(state, { type: 'destroy', uid: best.uid });
+			}
+		} else if (e.type === 'sacrifice-each-enemy') {
+			// every opponent loses a random creature
+			for (const o of enemies) {
+				const pool = state.players[o].board.filter(c => !isDead(c));
+				if (!pool.length) continue;
+				const t = pool[Math.floor(state.rng() * pool.length)];
+				t.damage = t.maxHealth;
+				t.shield = false;
+				emit(state, { type: 'destroy', uid: t.uid });
+			}
+		} else if (e.type === 'hero-immune') {
+			state.players[pi].heroImmuneTurn = state.turnNumber;
+		} else if (e.type === 'conjure-cost') {
+			// Discover-a-cost approximation: a random card of that cost
+			const p = state.players[pi];
+			const pool = Object.values(state.cardsById).filter(d =>
+				(d.cost || 0) === e.cost && d.type !== 'land' && !d.token
+				&& !d.companion && !d.commander && !(d.colors && d.colors.length));
+			if (pool.length && p.hand.length < MAX_HAND) {
+				const card = instantiate(pool[Math.floor(state.rng() * pool.length)], pi);
+				card.zone = 'hand';
+				p.hand.push(card);
+				emit(state, { type: 'conjure', player: pi, card, color: null });
+			}
+		} else if (e.type === 'gain-coin') {
+			state.players[pi].coins += e.value || 1;
+			emit(state, { type: 'coinGained', player: pi, coins: state.players[pi].coins });
+		} else if (e.type === 'draw-to') {
+			// draw until you hold N cards
+			const p = state.players[pi];
+			let guard = 20;
+			while (p.hand.length < e.value && guard-- > 0) {
+				const before = p.hand.length;
+				drawCards(state, pi, 1);
+				if (p.hand.length === before) break; // nothing left to draw
 			}
 		} else if (e.type === 'give-enemy-card') {
 			// King Mukla's Bananas land in an opponent's hand
@@ -2378,11 +2458,12 @@ export function effectiveCost(state, pi, card) {
 		c += card.selfCost.amount * n;
 	}
 	for (const pl of state.players) {
-		for (const src of pl.board) {
+		for (const src of [...pl.board, ...pl.enchantments, ...pl.artifacts, ...pl.emblems]) {
 			const m = src.costMod;
-			if (!m || isDead(src)) continue;
+			if (!m || (src.zone === 'board' && isDead(src))) continue;
 			if (m.scope !== 'all' && pl !== p) continue;
 			if (!costTypeMatches(card, m.cardType)) continue;
+			if (m.tribe && !(card.tribe || '').includes(m.tribe)) continue;
 			if (m.firstEachTurn && p.creaturesPlayedThisTurn > 0) continue;
 			const before = c;
 			c += m.amount;
@@ -2492,6 +2573,8 @@ export function playCard(state, pi, cardUid, target, choice) {
 	} else if (card.type === 'enchantment' || card.type === 'artifact') {
 		card.zone = card.type;
 		(card.type === 'enchantment' ? p.enchantments : p.artifacts).push(card);
+		recomputeAuras(state);
+		if (card.effects) execEffects(state, pi, card.effects, target, card); // permanent battlecries
 		if (card.type === 'enchantment') fireOngoing(state, pi, 'enchantment-played', { played: card });
 	} else if (card.type === 'planeswalker') {
 		card.zone = 'planeswalker';
@@ -2707,6 +2790,15 @@ export function heroAttack(state, pi, target) {
 			hitCreature = true;
 			const dealt = damageCreature(state, defender, atk, w);
 			if (w && has(w, KW.LIFESTEAL) && dealt > 0) healHero(state, pi, dealt);
+			if (w && has(w, KW.FREEZER) && !isDead(defender)) freezeCreature(state, defender);
+			// cleaving weapons splash the defender's board neighbors
+			if (w && has(w, KW.CLEAVE)) {
+				const db = state.players[target.player].board;
+				const di = db.indexOf(defender);
+				for (const n of [db[di - 1], db[di + 1]]) {
+					if (n && !isDead(n)) damageCreature(state, n, atk, w);
+				}
+			}
 			// the defending creature strikes back at the hero
 			// (Gladiator's Longbow: the hero is immune while attacking)
 			if (!(w && w.static?.type === 'immune-attacking')) {

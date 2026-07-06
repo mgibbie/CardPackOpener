@@ -753,21 +753,38 @@
       "name": "Voodoo Doctor",
       "cardClass": "neutral",
       "cost": 1,
-      "rarity": "common",
+      "rarity": "rare",
+      "set": "paper",
+      "description": "Battlecry: Choose one. - Restore 2 Health to a creature. - Gain 2 Life.",
       "type": "creature",
       "attack": 2,
       "health": 1,
-      "keywords": [
-        "battlecry"
-      ],
-      "effects": [
+      "tribe": "Undead Totem Wizard",
+      "choices": [
         {
-          "type": "heal",
-          "value": 2,
-          "target": "any"
+          "text": "Restore 2 Health to a creature.",
+          "effects": [
+            {
+              "type": "heal",
+              "value": 2,
+              "target": "creature"
+            }
+          ]
+        },
+        {
+          "text": "Gain 2 Life.",
+          "effects": [
+            {
+              "type": "heal",
+              "value": 2,
+              "target": "self"
+            }
+          ]
         }
       ],
-      "description": "Battlecry: Restore 2 health to any target."
+      "keywords": [
+        "battlecry"
+      ]
     },
     {
       "id": "whirlwind",
@@ -1177,15 +1194,32 @@
       "cardClass": "druid",
       "cost": 3,
       "rarity": "common",
-      "type": "sorcery",
-      "effects": [
+      "set": "paper",
+      "description": "Choose One: \u2022 Restore 8 Health to a creature. \u2022 Gain 8 Life.",
+      "type": "instant",
+      "tribe": "Nature",
+      "choices": [
         {
-          "type": "heal",
-          "value": 8,
-          "target": "any"
+          "text": "Restore 8 Health to a creature.",
+          "effects": [
+            {
+              "type": "heal",
+              "value": 8,
+              "target": "creature"
+            }
+          ]
+        },
+        {
+          "text": "Gain 8 Life.",
+          "effects": [
+            {
+              "type": "heal",
+              "value": 8,
+              "target": "self"
+            }
+          ]
         }
-      ],
-      "description": "Restore 8 health to any target."
+      ]
     },
     {
       "id": "ironforge_rifleman",
@@ -13760,10 +13794,12 @@
       "cardClass": "neutral",
       "cost": 2,
       "rarity": "epic",
-      "tribe": "Beast",
+      "set": "paper",
+      "description": "Battlecry: Draw a Pirate.",
       "type": "creature",
       "attack": 1,
       "health": 1,
+      "tribe": "Beast",
       "keywords": [
         "battlecry"
       ],
@@ -13773,8 +13809,7 @@
           "tribe": "Pirate",
           "count": 1
         }
-      ],
-      "description": "Battlecry: Draw 1 Pirate from your deck."
+      ]
     },
     {
       "id": "divine_spirit",
@@ -14135,13 +14170,14 @@
       "cardClass": "hunter",
       "cost": 3,
       "rarity": "common",
+      "set": "paper",
+      "description": "Each opponent sacrifices a creature.",
       "type": "sorcery",
       "effects": [
         {
-          "type": "destroy-random"
+          "type": "sacrifice-each-enemy"
         }
-      ],
-      "description": "Destroy a random enemy creature."
+      ]
     },
     {
       "id": "injured_blademaster",
@@ -15748,10 +15784,12 @@
       "cardClass": "neutral",
       "cost": 1,
       "rarity": "epic",
-      "tribe": "Beast",
+      "set": "paper",
+      "description": "Battlecry: Destroy a Murloc and gain +2/+2.",
       "type": "creature",
       "attack": 1,
       "health": 2,
+      "tribe": "Beast",
       "keywords": [
         "battlecry"
       ],
@@ -15759,17 +15797,14 @@
         {
           "type": "destroy",
           "target": "creature",
-          "tribe": "Murloc",
-          "then": [
-            {
-              "type": "buff-self",
-              "attack": 2,
-              "health": 2
-            }
-          ]
+          "tribe": "Murloc"
+        },
+        {
+          "type": "buff-self",
+          "attack": 2,
+          "health": 2
         }
-      ],
-      "description": "Battlecry: Destroy a Murloc and gain +2/+2."
+      ]
     },
     {
       "id": "ice_lance",
@@ -15915,9 +15950,12 @@
       "cardClass": "neutral",
       "cost": 1,
       "rarity": "rare",
+      "set": "paper",
+      "description": "Whenever a Secret is played, gain +1/+1.",
       "type": "creature",
       "attack": 1,
       "health": 2,
+      "tribe": "Elf Wizard",
       "ongoing": {
         "on": "card-played",
         "effects": [
@@ -15930,8 +15968,7 @@
         "if": {
           "cardType": "secret"
         }
-      },
-      "description": "Whenever you play a Secret, this gains +1/+1."
+      }
     },
     {
       "id": "shield_slam",
@@ -16370,11 +16407,15 @@
       "cardClass": "hunter",
       "cost": 1,
       "rarity": "epic",
-      "type": "sorcery",
+      "set": "paper",
+      "description": "Target Beast gains +2/+2 & Immune this turn.",
+      "type": "instant",
+      "tribe": "Nature",
       "effects": [
         {
-          "type": "temp-buff",
+          "type": "buff",
           "attack": 2,
+          "health": 2,
           "target": "creature",
           "tribe": "Beast"
         },
@@ -16382,8 +16423,7 @@
           "type": "temp-immune",
           "target": "creature"
         }
-      ],
-      "description": "Give a Beast +2 Attack and Immune until end of turn."
+      ]
     },
     {
       "id": "bloodsail_corsair",
@@ -17219,6 +17259,1529 @@
         }
       ],
       "description": "Give a creature +1/+1."
+    },
+    {
+      "id": "acolyte_of_death",
+      "name": "Acolyte of Death",
+      "cardClass": "death_knight",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "description": "( Runes: (U) ) After a friendly Undead dies, draw a card.",
+      "type": "creature",
+      "attack": 3,
+      "health": 4,
+      "tribe": "Human Cultist",
+      "ongoing": {
+        "on": "friendly-creature-died",
+        "effects": [
+          {
+            "type": "draw",
+            "value": 1
+          }
+        ],
+        "if": {
+          "tribe": "Undead"
+        }
+      }
+    },
+    {
+      "id": "alexandros_mograine",
+      "name": "Alexandros Mograine",
+      "cardClass": "death_knight",
+      "cost": 7,
+      "rarity": "legendary",
+      "set": "paper",
+      "description": "( Runes: (R) (R) (R) ) Battlecry: You gain an emblem that says \"At the end of your turn, each opponent loses 3 Life\".",
+      "type": "creature",
+      "attack": 7,
+      "health": 7,
+      "tribe": "Undead Knight",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "emblem",
+          "name": "Emblem",
+          "description": "At the end of your turn, each opponent loses 3 Life",
+          "ongoing": {
+            "on": "turn-end",
+            "effects": [
+              {
+                "type": "damage",
+                "value": 3,
+                "target": "enemy-heroes"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "anti_magic_shell",
+      "name": "Anti-Magic Shell",
+      "cardClass": "death_knight",
+      "cost": 3,
+      "rarity": "rare",
+      "set": "paper",
+      "description": "( Runes: (G) ) Each creature you control gains +1/+1 & Elusive.",
+      "type": "instant",
+      "tribe": "Shadow",
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 1,
+          "health": 1,
+          "target": "friendly-creatures"
+        },
+        {
+          "type": "grant",
+          "keyword": "elusive",
+          "target": "friendly-creatures"
+        }
+      ]
+    },
+    {
+      "id": "asphyxiate",
+      "name": "Asphyxiate",
+      "cardClass": "death_knight",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "description": "( Runes: (R) (R) ) Destroy the highest Attack creature you don't control.",
+      "type": "instant",
+      "tribe": "Shadow",
+      "effects": [
+        {
+          "type": "destroy-strongest"
+        }
+      ]
+    },
+    {
+      "id": "corrupted_ashbringer",
+      "name": "Corrupted Ashbringer",
+      "cardClass": "death_knight",
+      "cost": 6,
+      "rarity": "common",
+      "set": "paper",
+      "description": "( Runes: (R) (R) ) Equip Hero Lifesteal.",
+      "type": "weapon",
+      "attack": 5,
+      "durability": 2,
+      "keywords": [
+        "lifesteal"
+      ]
+    },
+    {
+      "id": "deathbringer_saurfang",
+      "name": "Deathbringer Saurfang",
+      "cardClass": "death_knight",
+      "cost": 4,
+      "rarity": "legendary",
+      "set": "paper",
+      "description": "( Runes: (R) (R) ) Taunt, Elite, Sadist, Sanguine. Deathrattle: Return this to your hand.",
+      "type": "creature",
+      "attack": 3,
+      "health": 5,
+      "tribe": "Undead Orc Warrior",
+      "keywords": [
+        "deathrattle"
+      ],
+      "deathrattle": [
+        {
+          "type": "return-self-to-hand"
+        }
+      ]
+    },
+    {
+      "id": "deathchiller",
+      "name": "Deathchiller",
+      "cardClass": "death_knight",
+      "cost": 2,
+      "rarity": "rare",
+      "set": "paper",
+      "description": "( Runes: (U) (U) ) Whenever you cast a spell, deal 2 damage to any target.",
+      "type": "creature",
+      "attack": 2,
+      "health": 3,
+      "tribe": "Elemental",
+      "ongoing": {
+        "on": "spell-played",
+        "effects": [
+          {
+            "type": "damage",
+            "value": 2,
+            "target": "any"
+          }
+        ]
+      }
+    },
+    {
+      "id": "frostwyrm_s_fury",
+      "name": "Frostwyrm's Fury",
+      "cardClass": "death_knight",
+      "cost": 7,
+      "rarity": "epic",
+      "set": "paper",
+      "description": "( Runes: (U)(U)(U) ) Deal 5 damage to any target. Freeze all creatures you don't control. Create a 5/5 Undead Dragon creature token.",
+      "type": "sorcery",
+      "tribe": "Frost",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 5,
+          "target": "any"
+        },
+        {
+          "type": "freeze",
+          "target": "enemy-creatures"
+        },
+        {
+          "type": "summon",
+          "count": 1,
+          "attack": 5,
+          "health": 5,
+          "name": "Undead Dragon"
+        }
+      ]
+    },
+    {
+      "id": "glacial_advance",
+      "name": "Glacial Advance",
+      "cardClass": "death_knight",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "description": "Deal 4 damage to any target. Your next spell this turn costs 1 less. ( Runes: (U) )",
+      "type": "sorcery",
+      "tribe": "Frost",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 4,
+          "target": "any"
+        },
+        {
+          "type": "discount",
+          "cardType": "spell",
+          "amount": -1,
+          "thisTurn": true
+        }
+      ]
+    },
+    {
+      "id": "graveyard_shift",
+      "name": "Graveyard Shift",
+      "cardClass": "death_knight",
+      "cost": 3,
+      "rarity": "rare",
+      "set": "paper",
+      "description": "( Runes: (G) ) Create 2 1/1 Undead token creatures with Reborn.",
+      "type": "instant",
+      "tribe": "Shadow",
+      "effects": [
+        {
+          "type": "summon",
+          "count": 2,
+          "attack": 1,
+          "health": 1,
+          "name": "Undead",
+          "keywords": [
+            "reborn"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "harbinger_of_winter",
+      "name": "Harbinger of Winter",
+      "cardClass": "death_knight",
+      "cost": 2,
+      "rarity": "common",
+      "set": "paper",
+      "description": "( Runes: (U) (U) ) Deathrattle: Draw a Frost Spell.",
+      "type": "creature",
+      "attack": 2,
+      "health": 2,
+      "tribe": "Undead Warrior",
+      "keywords": [
+        "deathrattle"
+      ],
+      "deathrattle": [
+        {
+          "type": "tutor",
+          "cardType": "spell",
+          "tribe": "Frost",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "id": "horn_of_winter",
+      "name": "Horn of Winter",
+      "cardClass": "death_knight",
+      "cost": 1,
+      "rarity": "common",
+      "set": "paper",
+      "description": "( Runes: (U) (U) ) Refresh 2 Mana Crystals.",
+      "type": "instant",
+      "tribe": "Frost",
+      "effects": [
+        {
+          "type": "gain-mana",
+          "value": 2
+        }
+      ]
+    },
+    {
+      "id": "icy_touch",
+      "name": "Icy Touch",
+      "cardClass": "death_knight",
+      "cost": 1,
+      "rarity": "common",
+      "set": "paper",
+      "description": "Deal 2 damage to any target, Freeze it.",
+      "type": "instant",
+      "tribe": "Frost",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 2,
+          "target": "any"
+        },
+        {
+          "type": "freeze",
+          "target": "any"
+        }
+      ]
+    },
+    {
+      "id": "noxious_cadaver",
+      "name": "Noxious Cadaver",
+      "cardClass": "death_knight",
+      "cost": 1,
+      "rarity": "rare",
+      "set": "paper",
+      "description": "( Runes: (R) ) Battlecry: Deal 2 damage to any target & lose 3 Life.",
+      "type": "creature",
+      "attack": 1,
+      "health": 2,
+      "tribe": "Undead Soldier",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "damage",
+          "value": 2,
+          "target": "any"
+        },
+        {
+          "type": "damage",
+          "value": 3,
+          "target": "own-hero"
+        }
+      ]
+    },
+    {
+      "id": "obliterate",
+      "name": "Obliterate",
+      "cardClass": "death_knight",
+      "cost": 2,
+      "rarity": "epic",
+      "set": "paper",
+      "description": "( Runes: (R) ) Destroy target creature & lose 3 Life.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "destroy",
+          "target": "creature"
+        },
+        {
+          "type": "damage",
+          "value": 3,
+          "target": "own-hero"
+        }
+      ]
+    },
+    {
+      "id": "meat_grinder",
+      "name": "Meat Grinder",
+      "cardClass": "death_knight",
+      "cost": 3,
+      "rarity": "epic",
+      "set": "paper",
+      "description": "( Runes: (G) ) Battlecry: Mill 4 Cards & gain 4 Corpses.",
+      "type": "creature",
+      "attack": 3,
+      "health": 4,
+      "tribe": "Mech",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "mill",
+          "value": 4
+        },
+        {
+          "type": "gain-corpses",
+          "value": 4
+        }
+      ]
+    },
+    {
+      "id": "overseer_frigidara",
+      "name": "Overseer Frigidara",
+      "cardClass": "death_knight",
+      "cost": 6,
+      "rarity": "legendary",
+      "set": "paper",
+      "description": "( Runes: (U) (U) ) Battlecry: Draw 2 spells. Spell Damage +2.",
+      "type": "creature",
+      "attack": 3,
+      "health": 6,
+      "tribe": "Undead Wizard",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "tutor",
+          "cardType": "spell",
+          "count": 2
+        }
+      ]
+    },
+    {
+      "id": "abyssal_depths",
+      "name": "Abyssal Depths",
+      "cardClass": "demon_hunter",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "description": "Draw three creatures that cost 3 or less.",
+      "type": "instant",
+      "tribe": "Shadow",
+      "effects": [
+        {
+          "type": "tutor",
+          "cardType": "creature",
+          "maxCost": 3,
+          "count": 3
+        }
+      ]
+    },
+    {
+      "id": "aldrachi_warblades",
+      "name": "Aldrachi Warblades",
+      "cardClass": "demon_hunter",
+      "cost": 3,
+      "rarity": "uncommon",
+      "set": "paper",
+      "description": "Equip Hero Lifesteal.",
+      "type": "weapon",
+      "attack": 2,
+      "durability": 2,
+      "keywords": [
+        "lifesteal"
+      ]
+    },
+    {
+      "id": "blur",
+      "name": "Blur",
+      "cardClass": "demon_hunter",
+      "cost": 0,
+      "rarity": "common",
+      "set": "paper",
+      "description": "Your hero can't take damage this turn.",
+      "type": "instant",
+      "tribe": "Arcane",
+      "effects": [
+        {
+          "type": "hero-immune"
+        }
+      ]
+    },
+    {
+      "id": "command_the_illidari",
+      "name": "Command the Illidari",
+      "cardClass": "demon_hunter",
+      "cost": 5,
+      "rarity": "uncommon",
+      "set": "paper",
+      "description": "Create six 1/1 Demon creature tokens with Rush.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "summon",
+          "count": 6,
+          "attack": 1,
+          "health": 1,
+          "name": "Demon",
+          "keywords": [
+            "rush"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "relentless_pursuit",
+      "name": "Relentless Pursuit",
+      "cardClass": "demon_hunter",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "description": "Give your hero +4 Attack & Immune this turn.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "hero-temp-attack",
+          "value": 4
+        },
+        {
+          "type": "hero-immune"
+        }
+      ]
+    },
+    {
+      "id": "flamereaper",
+      "name": "Flamereaper",
+      "cardClass": "demon_hunter",
+      "cost": 7,
+      "rarity": "epic",
+      "set": "paper",
+      "description": "Equip Hero Cleave.",
+      "type": "weapon",
+      "attack": 5,
+      "durability": 3,
+      "keywords": [
+        "cleave"
+      ]
+    },
+    {
+      "id": "immolation_aura",
+      "name": "Immolation Aura",
+      "cardClass": "demon_hunter",
+      "cost": 2,
+      "rarity": "common",
+      "set": "paper",
+      "description": "Deal 1 damage to all creatures twice.",
+      "type": "instant",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 1,
+          "target": "all-creatures"
+        },
+        {
+          "type": "damage",
+          "value": 1,
+          "target": "all-creatures"
+        }
+      ]
+    },
+    {
+      "id": "kryxis_the_voracious",
+      "name": "Kryxis the Voracious",
+      "cardClass": "demon_hunter",
+      "cost": 4,
+      "rarity": "legendary",
+      "set": "paper",
+      "description": "Battlecry: Discard your hand. Deathrattle: Draw 3 cards.",
+      "type": "creature",
+      "attack": 7,
+      "health": 7,
+      "tribe": "Demon Horror",
+      "keywords": [
+        "battlecry",
+        "deathrattle"
+      ],
+      "effects": [
+        {
+          "type": "discard-all"
+        }
+      ],
+      "deathrattle": [
+        {
+          "type": "draw",
+          "value": 3
+        }
+      ]
+    },
+    {
+      "id": "magnifying_glaive",
+      "name": "Magnifying Glaive",
+      "cardClass": "demon_hunter",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "description": "Equip Hero After your hero attacks, draw until you have 3 cards.",
+      "type": "weapon",
+      "attack": 3,
+      "durability": 2,
+      "ongoing": {
+        "on": "hero-attacks",
+        "effects": [
+          {
+            "type": "draw-to",
+            "value": 3
+          }
+        ]
+      }
+    },
+    {
+      "id": "bewitched_guardian",
+      "name": "Bewitched Guardian",
+      "cardClass": "druid",
+      "cost": 5,
+      "rarity": "rare",
+      "set": "paper",
+      "description": "Taunt. Battlecry: Gain +1 Health for each card in your hand.",
+      "type": "creature",
+      "attack": 4,
+      "health": 3,
+      "tribe": "Elf Paladin",
+      "keywords": [
+        "taunt",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "buff-self",
+          "attack": 0,
+          "health": 1,
+          "per": "hand-cards"
+        }
+      ]
+    },
+    {
+      "id": "biology_project",
+      "name": "Biology Project",
+      "cardClass": "druid",
+      "cost": 1,
+      "rarity": "common",
+      "set": "paper",
+      "description": "Each player gains 2 Mana Crystals.",
+      "type": "instant",
+      "tribe": "Nature",
+      "effects": [
+        {
+          "type": "gain-max-mana",
+          "value": 2,
+          "target": "all"
+        }
+      ]
+    },
+    {
+      "id": "composting",
+      "name": "Composting",
+      "cardClass": "druid",
+      "cost": 2,
+      "rarity": "epic",
+      "set": "paper",
+      "description": "Creatures you control gain \"Deathrattle:Draw a card\".",
+      "type": "instant",
+      "tribe": "Nature",
+      "effects": [
+        {
+          "type": "grant-deathrattle",
+          "effects": [
+            {
+              "type": "draw",
+              "value": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "dendrologist",
+      "name": "Dendrologist",
+      "cardClass": "druid",
+      "cost": 2,
+      "rarity": "rare",
+      "set": "paper",
+      "description": "Battlecry: If you control a Treefolk, Draw a Spell.",
+      "type": "creature",
+      "attack": 2,
+      "health": 3,
+      "tribe": "Goblin Mage",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "controlTribe": "Treefolk"
+          },
+          "then": [
+            {
+              "type": "tutor",
+              "cardType": "spell",
+              "count": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "evolving_spores",
+      "name": "Evolving Spores",
+      "cardClass": "druid",
+      "cost": 4,
+      "rarity": "rare",
+      "set": "paper",
+      "description": "Adapt each creature you control.",
+      "type": "sorcery",
+      "tribe": "Nature",
+      "effects": [
+        {
+          "type": "adapt",
+          "target": "friendly-creatures"
+        }
+      ]
+    },
+    {
+      "id": "flipper_friends",
+      "name": "Flipper Friends",
+      "cardClass": "druid",
+      "cost": 5,
+      "rarity": "common",
+      "set": "paper",
+      "description": "Choose one: \u2022 Create a 6/6 Orca Beast creature token with Taunt. \u2022 Create six 1/1 Otter Beast creature tokens with Rush.",
+      "type": "sorcery",
+      "tribe": "Nature",
+      "choices": [
+        {
+          "text": "Create a 6/6 Orca Beast creature token with Taunt.",
+          "effects": [
+            {
+              "type": "summon",
+              "count": 1,
+              "attack": 6,
+              "health": 6,
+              "name": "Orca Beast",
+              "keywords": [
+                "taunt"
+              ]
+            }
+          ]
+        },
+        {
+          "text": "Create six 1/1 Otter Beast creature tokens with Rush.",
+          "effects": [
+            {
+              "type": "summon",
+              "count": 6,
+              "attack": 1,
+              "health": 1,
+              "name": "Otter Beast",
+              "keywords": [
+                "rush"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "gift_of_the_wild",
+      "name": "Gift of the Wild",
+      "cardClass": "druid",
+      "cost": 8,
+      "rarity": "common",
+      "set": "paper",
+      "description": "Creatures you control gain +2/+2 & Taunt.",
+      "type": "sorcery",
+      "tribe": "Nature",
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 2,
+          "health": 2,
+          "target": "friendly-creatures"
+        },
+        {
+          "type": "grant",
+          "keyword": "taunt",
+          "target": "friendly-creatures"
+        }
+      ]
+    },
+    {
+      "id": "gnash",
+      "name": "Gnash",
+      "cardClass": "druid",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "description": "Your Hero gains +3 Attack this turn. Gain 3 Armor.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "hero-temp-attack",
+          "value": 3
+        },
+        {
+          "type": "armor",
+          "value": 3
+        }
+      ]
+    },
+    {
+      "id": "greedy_sprite",
+      "name": "Greedy Sprite",
+      "cardClass": "druid",
+      "cost": 3,
+      "rarity": "rare",
+      "set": "paper",
+      "description": "Deathrattle: Gain an empty Mana Crystal.",
+      "type": "creature",
+      "attack": 3,
+      "health": 1,
+      "tribe": "Spirit Faerie",
+      "keywords": [
+        "deathrattle"
+      ],
+      "deathrattle": [
+        {
+          "type": "gain-max-mana",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "hidden_oasis",
+      "name": "Hidden Oasis",
+      "cardClass": "druid",
+      "cost": 6,
+      "rarity": "rare",
+      "set": "paper",
+      "description": "Choose One: \u2022 Create a 6/6 Treefolk creature token with Taunt. \u2022 Gain 12 Life. \u2022 Restore 12 Health to a creature.",
+      "type": "sorcery",
+      "tribe": "Nature",
+      "choices": [
+        {
+          "text": "Create a 6/6 Treefolk creature token with Taunt.",
+          "effects": [
+            {
+              "type": "summon",
+              "count": 1,
+              "attack": 6,
+              "health": 6,
+              "name": "Treefolk",
+              "keywords": [
+                "taunt"
+              ]
+            }
+          ]
+        },
+        {
+          "text": "Gain 12 Life.",
+          "effects": [
+            {
+              "type": "heal",
+              "value": 12,
+              "target": "self"
+            }
+          ]
+        },
+        {
+          "text": "Restore 12 Health to a creature.",
+          "effects": [
+            {
+              "type": "heal",
+              "value": 12,
+              "target": "creature"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "bola_shot",
+      "name": "Bola Shot",
+      "cardClass": "hunter",
+      "cost": 2,
+      "rarity": "common",
+      "set": "paper",
+      "description": "Deal 1 damage to target creature & 2 damage to each adjacent creature.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "damage-adjacent",
+          "value": 1,
+          "splash": 2,
+          "target": "creature"
+        }
+      ]
+    },
+    {
+      "id": "candleshot",
+      "name": "Candleshot",
+      "cardClass": "hunter",
+      "cost": 1,
+      "rarity": "common",
+      "set": "paper",
+      "description": "Equip Hero Immune while attacking.",
+      "type": "weapon",
+      "attack": 1,
+      "durability": 3,
+      "static": {
+        "type": "immune-attacking",
+        "value": 1
+      }
+    },
+    {
+      "id": "desert_spear",
+      "name": "Desert Spear",
+      "cardClass": "hunter",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "description": "Equip Hero Swing: Create a 1/1 Beast creature token with Rush.",
+      "type": "weapon",
+      "attack": 1,
+      "durability": 4,
+      "ongoing": {
+        "on": "hero-attacks",
+        "effects": [
+          {
+            "type": "summon",
+            "count": 1,
+            "attack": 1,
+            "health": 1,
+            "name": "Beast",
+            "keywords": [
+              "rush"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "aluneth",
+      "name": "Aluneth",
+      "cardClass": "mage",
+      "cost": 6,
+      "rarity": "legendary",
+      "set": "paper",
+      "description": "Equip Hero At the end of your turn, draw 3 cards.",
+      "type": "weapon",
+      "attack": 0,
+      "durability": 3,
+      "ongoing": {
+        "on": "turn-end",
+        "effects": [
+          {
+            "type": "draw",
+            "value": 3
+          }
+        ]
+      }
+    },
+    {
+      "id": "cloud_prince",
+      "name": "Cloud Prince",
+      "cardClass": "mage",
+      "cost": 5,
+      "rarity": "common",
+      "set": "paper",
+      "description": "Battlecry: If you control a Secret, deal 6 damage to any target.",
+      "type": "creature",
+      "attack": 4,
+      "health": 4,
+      "tribe": "Elemental",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "controlTribe": "Secret"
+          },
+          "then": [
+            {
+              "type": "damage",
+              "value": 6,
+              "target": "any"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "channeling_blind_eternities",
+      "name": "Channeling Blind Eternities",
+      "cardClass": "sorcerer",
+      "cost": 3,
+      "rarity": "uncommon",
+      "set": "paper",
+      "description": "Deal 4 damage to any target. Draw a card. Lose 3 Life.",
+      "type": "sorcery",
+      "tribe": "Arcane",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 4,
+          "target": "any"
+        },
+        {
+          "type": "draw",
+          "value": 1
+        },
+        {
+          "type": "damage",
+          "value": 3,
+          "target": "own-hero"
+        }
+      ]
+    },
+    {
+      "id": "crystalizer",
+      "name": "Crystalizer",
+      "cardClass": "neutral",
+      "cost": 1,
+      "rarity": "epic",
+      "set": "paper",
+      "description": "Battlecry: You lose 5 Life and gain 5 Armor.",
+      "type": "creature",
+      "attack": 1,
+      "health": 3,
+      "tribe": "Human Wizard",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "damage",
+          "value": 5,
+          "target": "own-hero"
+        },
+        {
+          "type": "armor",
+          "value": 5
+        }
+      ]
+    },
+    {
+      "id": "golakka_crawler",
+      "name": "Golakka Crawler",
+      "cardClass": "neutral",
+      "cost": 2,
+      "rarity": "rare",
+      "set": "paper",
+      "description": "Battlecry: Destroy a Pirate & gain +1/+1.",
+      "type": "creature",
+      "attack": 2,
+      "health": 3,
+      "tribe": "Beast",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "destroy",
+          "target": "creature",
+          "tribe": "Pirate"
+        },
+        {
+          "type": "buff-self",
+          "attack": 1,
+          "health": 1
+        }
+      ]
+    },
+    {
+      "id": "hecklefang_hyena",
+      "name": "Hecklefang Hyena",
+      "cardClass": "neutral",
+      "cost": 2,
+      "rarity": "rare",
+      "set": "paper",
+      "description": "Battlecry: Lose 3 Life.",
+      "type": "creature",
+      "attack": 2,
+      "health": 4,
+      "tribe": "Beast",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "damage",
+          "value": 3,
+          "target": "own-hero"
+        }
+      ]
+    },
+    {
+      "id": "licensed_adventurer",
+      "name": "Licensed Adventurer",
+      "cardClass": "neutral",
+      "cost": 2,
+      "rarity": "common",
+      "set": "paper",
+      "description": "Battlecry: If you control a Quest, add a Coin to your hand.",
+      "type": "creature",
+      "attack": 3,
+      "health": 2,
+      "tribe": "Orc Explorer",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "controlTribe": "Quest"
+          },
+          "then": [
+            {
+              "type": "gain-coin",
+              "value": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "questing_explorer",
+      "name": "Questing Explorer",
+      "cardClass": "neutral",
+      "cost": 2,
+      "rarity": "rare",
+      "set": "paper",
+      "description": "Battlecry: If you control a Quest, draw a card.",
+      "type": "creature",
+      "attack": 2,
+      "health": 3,
+      "tribe": "Human Explorer",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "controlTribe": "Quest"
+          },
+          "then": [
+            {
+              "type": "draw",
+              "value": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "twilight_tactician",
+      "name": "Twilight Tactician",
+      "cardClass": "neutral",
+      "cost": 2,
+      "rarity": "common",
+      "set": "paper",
+      "description": "Battlecry: Deal 1 damage to any target. Spellburst: Draw a Shadow spell.",
+      "type": "creature",
+      "attack": 2,
+      "health": 2,
+      "tribe": "Tanuki Soldier",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "damage",
+          "value": 1,
+          "target": "any"
+        }
+      ],
+      "ongoing": {
+        "on": "spell-played",
+        "once": true,
+        "effects": [
+          {
+            "type": "tutor",
+            "cardType": "spell",
+            "tribe": "Shadow",
+            "count": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "red_eyes_baby_dragon",
+      "name": "Red Eyes Baby Dragon",
+      "cardClass": "neutral",
+      "cost": 3,
+      "rarity": "legendary",
+      "set": "paper",
+      "description": "Battlecry & Deathrattle: Draw a Dragon. Firebreathing & Rush.",
+      "type": "creature",
+      "attack": 2,
+      "health": 2,
+      "tribe": "Dragon",
+      "keywords": [
+        "battlecry",
+        "deathrattle"
+      ],
+      "effects": [
+        {
+          "type": "tutor",
+          "tribe": "Dragon",
+          "count": 1
+        }
+      ],
+      "deathrattle": [
+        {
+          "type": "tutor",
+          "tribe": "Dragon",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "id": "curious_lightsworn_dominion",
+      "name": "Curious, Lightsworn Dominion",
+      "cardClass": "neutral",
+      "cost": 7,
+      "rarity": "legendary",
+      "set": "paper",
+      "description": "Chromatic, Spell Damage+2 & Medic 3. Inspire: Draw a Spell.",
+      "type": "creature",
+      "attack": 6,
+      "health": 6,
+      "tribe": "Human Cleric",
+      "ongoing": {
+        "on": "hero-power-used",
+        "effects": [
+          {
+            "type": "tutor",
+            "cardType": "spell",
+            "count": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "gogmazios_the_eviscerator",
+      "name": "Gogmazios, the Eviscerator",
+      "cardClass": "neutral",
+      "cost": 10,
+      "rarity": "legendary",
+      "set": "paper",
+      "description": "Battlecry: Each opponent sacrifices a creature. Sanguine & Taunt. Frenzy: Deal 6 damage to any target.",
+      "type": "creature",
+      "attack": 13,
+      "health": 13,
+      "tribe": "Undead Dragon",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "sacrifice-each-enemy"
+        }
+      ],
+      "ongoing": {
+        "on": "self-damaged",
+        "once": true,
+        "survives": true,
+        "effects": [
+          {
+            "type": "damage",
+            "value": 6,
+            "target": "any"
+          }
+        ]
+      }
+    },
+    {
+      "id": "frontier_fugitive",
+      "name": "Frontier Fugitive",
+      "cardClass": "bounty_hunter",
+      "cost": 3,
+      "rarity": "rare",
+      "set": "paper",
+      "description": "Rush & Elusive. Swing: Draw a spell.",
+      "type": "creature",
+      "attack": 4,
+      "health": 2,
+      "tribe": "Pirate Rogue",
+      "keywords": [
+        "rush",
+        "elusive"
+      ],
+      "ongoing": {
+        "on": "self-attacks",
+        "effects": [
+          {
+            "type": "tutor",
+            "cardType": "spell",
+            "count": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "holometa_vengeful_hivequeen",
+      "name": "Holometa, Vengeful Hivequeen",
+      "cardClass": "centurion",
+      "cost": 9,
+      "rarity": "legendary",
+      "set": "paper",
+      "description": "Battlecry: Create eight 1/1 Beast Knight creature tokens with Taunt. At the end of your turn, Adapt each Beast Knight creature token you control. Repeat this X times where X is the number of \"Nest\" cards in your graveyard.",
+      "type": "creature",
+      "attack": 8,
+      "health": 10,
+      "tribe": "Faerie Beast Noble",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "summon",
+          "count": 8,
+          "attack": 1,
+          "health": 1,
+          "name": "Beast Knight",
+          "keywords": [
+            "taunt"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "azerite_fragment",
+      "name": "Azerite Fragment",
+      "cardClass": "neutral",
+      "cost": 1,
+      "rarity": "uncommon",
+      "set": "paper",
+      "description": "Discover a 2-Cost card & draw a card.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "conjure-cost",
+          "cost": 2
+        },
+        {
+          "type": "draw",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "pioneer_s_pickaxe",
+      "name": "Pioneer's Pickaxe",
+      "cardClass": "neutral",
+      "cost": 1,
+      "rarity": "uncommon",
+      "set": "paper",
+      "description": "Equip Hero Swing: Add a coin to your hand.",
+      "type": "weapon",
+      "attack": 2,
+      "durability": 3,
+      "ongoing": {
+        "on": "hero-attacks",
+        "effects": [
+          {
+            "type": "gain-coin",
+            "value": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "rusty_hook",
+      "name": "Rusty Hook",
+      "cardClass": "warrior",
+      "cost": 1,
+      "rarity": "common",
+      "set": "paper",
+      "description": "Equip Hero Piercing.",
+      "type": "weapon",
+      "attack": 1,
+      "durability": 3,
+      "keywords": [
+        "piercing"
+      ]
+    },
+    {
+      "id": "triumphant_troubadour",
+      "name": "Triumphant Troubadour",
+      "cardClass": "barbarian__bard",
+      "cost": 6,
+      "rarity": "rare",
+      "set": "paper",
+      "description": "Lifesteal. Frenzy: Draw a spell.",
+      "type": "creature",
+      "attack": 6,
+      "health": 6,
+      "tribe": "Barbarian Bard Angel",
+      "keywords": [
+        "lifesteal"
+      ],
+      "ongoing": {
+        "on": "self-damaged",
+        "once": true,
+        "survives": true,
+        "effects": [
+          {
+            "type": "tutor",
+            "cardType": "spell",
+            "count": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "quokka_s_last_stand",
+      "name": "Quokka's Last Stand",
+      "cardClass": "ranger",
+      "cost": 4,
+      "rarity": "epic",
+      "set": "paper",
+      "description": "Your Beasts cost 2 less & have Rush & Swift.",
+      "type": "enchantment",
+      "costMod": {
+        "cardType": "creature",
+        "amount": -2,
+        "scope": "own",
+        "tribe": "Beast"
+      },
+      "aura": {
+        "attack": 0,
+        "health": 0,
+        "keywords": [
+          "rush",
+          "first_strike"
+        ],
+        "tribe": "Beast"
+      }
+    },
+    {
+      "id": "quartzite_crusher",
+      "name": "Quartzite Crusher",
+      "cardClass": "death_knight",
+      "cost": 4,
+      "rarity": "common",
+      "set": "paper",
+      "description": "( Runes: (R)(U) ) Equip Hero Lifesteal & Freeze.",
+      "type": "weapon",
+      "attack": 3,
+      "durability": 3,
+      "keywords": [
+        "lifesteal",
+        "freezer"
+      ]
+    },
+    {
+      "id": "elementium_geode",
+      "name": "Elementium Geode",
+      "cardClass": "warlock",
+      "cost": 2,
+      "rarity": "rare",
+      "set": "paper",
+      "description": "Battlecry & Deathrattle: Draw a card & lose 2 Life.",
+      "type": "creature",
+      "attack": 2,
+      "health": 1,
+      "tribe": "Elemental",
+      "keywords": [
+        "battlecry",
+        "deathrattle"
+      ],
+      "effects": [
+        {
+          "type": "draw",
+          "value": 1
+        },
+        {
+          "type": "damage",
+          "value": 2,
+          "target": "own-hero"
+        }
+      ],
+      "deathrattle": [
+        {
+          "type": "draw",
+          "value": 1
+        },
+        {
+          "type": "damage",
+          "value": 2,
+          "target": "own-hero"
+        }
+      ]
+    },
+    {
+      "id": "abzan_ascendancy",
+      "name": "Abzan Ascendancy",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "description": "Battlecry: Target creature gains +1/+1. Whenever a nontoken creature you control dies, create a 1/1 Spirit token with Windfury.",
+      "type": "enchantment",
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 1,
+          "health": 1,
+          "target": "creature"
+        }
+      ],
+      "ongoing": {
+        "on": "friendly-creature-died",
+        "if": {
+          "nontoken": true
+        },
+        "effects": [
+          {
+            "type": "summon",
+            "count": 1,
+            "attack": 1,
+            "health": 1,
+            "name": "Spirit",
+            "keywords": [
+              "windfury"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "quick_pick",
+      "name": "Quick Pick",
+      "cardClass": "demon_hunter__rogue",
+      "cost": 2,
+      "rarity": "common",
+      "set": "paper",
+      "description": "Equip Hero Swing: Draw a card. Deathrattle: Quickdraw 2.",
+      "type": "weapon",
+      "attack": 1,
+      "durability": 2,
+      "ongoing": {
+        "on": "hero-attacks",
+        "effects": [
+          {
+            "type": "draw",
+            "value": 1
+          }
+        ]
+      },
+      "deathrattle": [
+        {
+          "type": "quickdraw",
+          "value": 2
+        }
+      ]
     }
   ]
 }
