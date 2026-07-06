@@ -844,6 +844,123 @@ function banner(text, ms = 1400) {
 	if (ms) banner._t = setTimeout(() => { b.style.opacity = 0; }, ms);
 }
 
+// ---------- Hearthstone-style targeting arrow ----------
+// a fullscreen 2D overlay: while an attacker or a targeted card is armed, a
+// chevron arrow curves from the source to the cursor, redrawn every frame
+const arrowCanvas = document.createElement('canvas');
+arrowCanvas.style.cssText = 'position:fixed;inset:0;pointer-events:none;z-index:45;';
+document.body.appendChild(arrowCanvas);
+let mouseX = innerWidth / 2, mouseY = innerHeight / 2;
+let arrowDrawn = false;
+
+function targetSourcePos() {
+	if (selectedAttacker === 'HERO') return heroPos(HUMAN);
+	if (selectedAttacker) return creaturePos(selectedAttacker);
+	if (pending) {
+		// hand cards / table cards have entities; the class power lives in the panel
+		if (entities.has(pending.card.uid)) return creaturePos(pending.card.uid);
+		return heroPos(HUMAN);
+	}
+	return null;
+}
+
+function drawTargetArrow() {
+	const src = targetSourcePos();
+	const ctx = arrowCanvas.getContext('2d');
+	if (!src) {
+		if (arrowDrawn) { ctx.clearRect(0, 0, arrowCanvas.width, arrowCanvas.height); arrowDrawn = false; }
+		return;
+	}
+	if (arrowCanvas.width !== innerWidth || arrowCanvas.height !== innerHeight) {
+		arrowCanvas.width = innerWidth;
+		arrowCanvas.height = innerHeight;
+	}
+	ctx.clearRect(0, 0, arrowCanvas.width, arrowCanvas.height);
+	arrowDrawn = true;
+	const v = src.project(camera);
+	const sx = (v.x + 1) / 2 * innerWidth, sy = (1 - v.y) / 2 * innerHeight;
+	const dist = Math.hypot(mouseX - sx, mouseY - sy);
+	if (dist < 30) return;
+	// quadratic bezier arced toward the top of the screen
+	const mx = (sx + mouseX) / 2, my = (sy + mouseY) / 2 - Math.min(160, dist * 0.35);
+	const P = t => ({
+		x: (1 - t) * (1 - t) * sx + 2 * (1 - t) * t * mx + t * t * mouseX,
+		y: (1 - t) * (1 - t) * sy + 2 * (1 - t) * t * my + t * t * mouseY,
+	});
+	// resample to arc length so the chevrons stay evenly spaced
+	const pts = [];
+	let prev = P(0), acc = 0;
+	pts.push({ x: prev.x, y: prev.y, d: 0 });
+	for (let i = 1; i <= 60; i++) {
+		const p = P(i / 60);
+		acc += Math.hypot(p.x - prev.x, p.y - prev.y);
+		pts.push({ x: p.x, y: p.y, d: acc });
+		prev = p;
+	}
+	const total = acc;
+	const at = d => {
+		for (let i = 1; i < pts.length; i++) {
+			if (pts[i].d >= d) {
+				const a = pts[i - 1], b = pts[i];
+				const t = (d - a.d) / Math.max(1e-6, b.d - a.d);
+				return { x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t,
+					ang: Math.atan2(b.y - a.y, b.x - a.x) };
+			}
+		}
+		const a = pts[pts.length - 2], b = pts[pts.length - 1];
+		return { x: b.x, y: b.y, ang: Math.atan2(b.y - a.y, b.x - a.x) };
+	};
+	ctx.shadowColor = 'rgba(255,60,40,0.55)';
+	ctx.shadowBlur = 12;
+	// marching chevron chain (the pulse makes them crawl toward the target)
+	const headLen = 30, step = 34;
+	const pulse = (performance.now() / 900) % 1;
+	for (let d = 22 + pulse * step; d < total - headLen - 14; d += step) {
+		const p = at(d);
+		ctx.save();
+		ctx.translate(p.x, p.y);
+		ctx.rotate(p.ang);
+		ctx.beginPath();
+		ctx.moveTo(-9, -11);
+		ctx.lineTo(5, 0);
+		ctx.lineTo(-9, 11);
+		ctx.lineTo(-3, 0);
+		ctx.closePath();
+		ctx.fillStyle = '#d83a2e';
+		ctx.fill();
+		ctx.strokeStyle = 'rgba(60,0,0,0.9)';
+		ctx.lineWidth = 2;
+		ctx.stroke();
+		ctx.restore();
+	}
+	// arrowhead pinned to the cursor
+	const h = at(total - 1);
+	ctx.save();
+	ctx.translate(h.x, h.y);
+	ctx.rotate(h.ang);
+	ctx.beginPath();
+	ctx.moveTo(10, 0);
+	ctx.lineTo(-headLen, -19);
+	ctx.lineTo(-headLen * 0.55, 0);
+	ctx.lineTo(-headLen, 19);
+	ctx.closePath();
+	ctx.fillStyle = '#e8483a';
+	ctx.fill();
+	ctx.strokeStyle = 'rgba(60,0,0,0.95)';
+	ctx.lineWidth = 2.5;
+	ctx.stroke();
+	ctx.restore();
+	// socket over the source
+	ctx.beginPath();
+	ctx.arc(sx, sy, 9, 0, Math.PI * 2);
+	ctx.fillStyle = 'rgba(216,58,46,0.85)';
+	ctx.fill();
+	ctx.strokeStyle = 'rgba(60,0,0,0.9)';
+	ctx.lineWidth = 2;
+	ctx.stroke();
+	ctx.shadowBlur = 0;
+}
+
 // ---------- event animation queue ----------
 const queue = [];
 let queueBusy = false;
@@ -1389,6 +1506,8 @@ function updateTooltip(ev) {
 }
 
 addEventListener('pointermove', ev => {
+	mouseX = ev.clientX;
+	mouseY = ev.clientY;
 	hoverUid = pick(ev);
 	updateTooltip(ev);
 });
@@ -1663,6 +1782,7 @@ function animate() {
 	gemMat.color.setHSL((now * 0.00004) % 1, 0.85, 0.62);
 	updateRings();
 	positionPanels();
+	drawTargetArrow();
 	renderer.render(scene, camera);
 }
 animate();
@@ -1679,6 +1799,9 @@ window.__game = {
 		const v = ent.mesh.position.clone().project(camera);
 		return { x: (v.x + 1) / 2 * innerWidth, y: (1 - v.y) / 2 * innerHeight };
 	},
+	// test hooks for the targeting arrow
+	armAttack(uid) { selectedAttacker = uid; updateHud(); },
+	get targeting() { return { pending: !!pending, attacker: selectedAttacker, drawn: arrowDrawn }; },
 };
 
 let classRegistry = [];
