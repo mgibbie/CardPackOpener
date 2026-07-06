@@ -13393,6 +13393,53 @@
           "target": "creature"
         }
       ]
+    },
+    {
+      "id": "shoreline_spectre",
+      "name": "Shoreline Spectre",
+      "cardClass": "neutral",
+      "cost": 7,
+      "rarity": "common",
+      "set": "paper",
+      "description": "Morbid 1: Draw a card. Tradeable.",
+      "type": "creature",
+      "attack": 4,
+      "health": 6,
+      "tribe": "Spirit Horror",
+      "ongoing": {
+        "on": "creature-died",
+        "every": 1,
+        "effects": [
+          {
+            "type": "draw",
+            "value": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "vampiric_vandal",
+      "name": "Vampiric Vandal",
+      "cardClass": "barbarian",
+      "cost": 5,
+      "rarity": "common",
+      "set": "paper",
+      "description": "Sanguine & Chromatic. Morbid 3: Target creature gains Lifesteal.",
+      "type": "creature",
+      "attack": 4,
+      "health": 5,
+      "tribe": "Vampire Rogue",
+      "ongoing": {
+        "on": "creature-died",
+        "every": 3,
+        "effects": [
+          {
+            "type": "grant",
+            "keyword": "lifesteal",
+            "target": "creature"
+          }
+        ]
+      }
     }
   ]
 }

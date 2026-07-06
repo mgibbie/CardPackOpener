@@ -643,10 +643,12 @@ function fireOngoing(state, pi, when, ctx = {}) {
 		if (!card.ongoing || card.ongoing.on !== when) continue;
 		if (card === ctx.minion) continue; // a minion doesn't trigger on its own arrival
 		if (card.zone === 'board' && isDead(card)) continue;
-		// Avenge-style triggers need N occurrences before they pop
-		if (card.ongoing.need) {
+		// Avenge-style triggers need N occurrences before they pop (once);
+		// Morbid-style `every` triggers fire on every Nth occurrence, repeating
+		if (card.ongoing.need || card.ongoing.every) {
 			card.trigCount = (card.trigCount || 0) + 1;
-			if (card.trigCount < card.ongoing.need) continue;
+			if (card.trigCount < (card.ongoing.need || card.ongoing.every)) continue;
+			if (card.ongoing.every) card.trigCount = 0;
 		}
 		emit(state, { type: 'ongoingTriggered', player: pi, card });
 		const fx = card.ongoing.effects;
@@ -1102,6 +1104,11 @@ function execEffects(state, pi, effects, target, source) {
 		} else if (e.type === 'grant') {
 			const grantTo = e.target === 'friendly-creatures' ? state.players[pi].board
 				: [chosenCreature()].filter(Boolean);
+			if (!grantTo.length && e.target !== 'friendly-creatures') {
+				// triggered grants without a chosen target bless a random friendly
+				const pool = state.players[pi].board.filter(c => !isDead(c));
+				if (pool.length) grantTo.push(pool[Math.floor(state.rng() * pool.length)]);
+			}
 			for (const c of grantTo) {
 				if (!c.keywords.includes(e.keyword)) c.keywords.push(e.keyword);
 				if (e.keyword === KW.DIVINE_SHIELD) c.shield = true;

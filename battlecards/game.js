@@ -672,8 +672,23 @@ function banner(text, ms = 1400) {
 const queue = [];
 let queueBusy = false;
 
+// AI-owned scry/gaze decisions resolve immediately (Morbid can queue them
+// off-turn); only human decisions wait for the modal
+function resolveAIScries() {
+	while (state.scryQueue.length && state.scryQueue[0].chooser !== HUMAN) {
+		const pend = state.scryQueue[0];
+		const picks = pend.ids.map(id => {
+			const cost = state.cardsById[id]?.cost || 0;
+			const own = pend.deckOwner === pend.chooser;
+			return { id, bottom: own ? cost > state.players[pend.chooser].mana.max + 2 : cost >= 4 };
+		});
+		E.resolveScry(state, picks);
+	}
+}
+
 function pump() {
 	if (!state) return;
+	resolveAIScries();
 	queue.push(...E.takeEvents(state));
 	if (!queueBusy) nextEvent();
 }
