@@ -14,6 +14,8 @@ export const KW = {
 	CLEAVE: 'cleave',       // combat damage splashes to the defender's neighbors
 	REBORN: 'reborn',       // first death returns it at 1 health
 	SANGUINE: 'sanguine',   // attacking or being attacked banks a Blood Token
+	IMPULSIVE: 'impulsive', // must attack: swings on its own before the turn ends
+	CHROMATIC: 'chromatic', // color boosts roll twice and keep both
 };
 // KW.DEFENDER now means the PAPER keyword: a coin-flip chance to redirect
 // attacks against your other permanents onto this creature.
@@ -65,7 +67,7 @@ export const BOOST_TABLES = {
 		{ label: '+3 Attack', attack: 3, health: 0 },
 		{ label: 'Cleave', keyword: 'cleave' },
 		{ label: 'Sanguine', keyword: 'sanguine' },
-		PENDING('Impulsive (undefined)'),
+		{ label: 'Impulsive', keyword: 'impulsive' },
 	],
 	G: [
 		{ label: 'Connect: Adapt', ongoing: { on: 'self-hit-player', effects: [{ type: 'adapt' }] } },
@@ -269,6 +271,7 @@ export function createGame(cardsById, rng = Math.random, playerDeckIds = null, p
 		winner: null,
 		events: [],
 		scryQueue: [],  // pending scry/gaze decisions: { chooser, deckOwner, ids }
+		discardQueue: [], // pending Loot discards: { player, count }
 	};
 	if (playerDeck) state.players[0].deck = playerDeck;
 
@@ -2164,6 +2167,27 @@ function execEffects(state, pi, effects, target, source) {
 				drawCards(state, pi, 1);
 				if (p.hand.length === before) break; // nothing left to draw
 			}
+		} else if (e.type === 'loot') {
+			// Loot: draw a card, then discard a card of your choice
+			// (the discard resolves asynchronously via resolveDiscard)
+			const p = state.players[pi];
+			for (let i = 0; i < (e.value || 1); i++) drawCards(state, pi, 1);
+			if (p.hand.length && !p.eliminated) {
+				const count = Math.min(e.value || 1, p.hand.length);
+				state.discardQueue.push({ player: pi, count });
+				emit(state, { type: 'lootStart', player: pi, count });
+			}
+		} else if (e.type === 'enemy-discard') {
+			// each opponent discards at random
+			for (const o of enemies) {
+				const op = state.players[o];
+				for (let i = 0; i < (e.count || 1) && op.hand.length; i++) {
+					const j = Math.floor(state.rng() * op.hand.length);
+					const [c] = op.hand.splice(j, 1);
+					toGraveyard(state, o, c);
+					emit(state, { type: 'discard', player: o, card: c });
+				}
+			}
 		} else if (e.type === 'give-enemy-card') {
 			// King Mukla's Bananas land in an opponent's hand
 			const victim = enemyHero();
@@ -2406,13 +2430,17 @@ function execEffects(state, pi, effects, target, source) {
 				emit(state, { type: 'conjure', player: pi, card, color: e.color || null });
 			}
 		} else if (e.type === 'boost') {
-			// color boost: roll the color's d6 table onto a chosen friendly creature
+			// color boost: roll the color's d6 table onto a chosen friendly
+			// creature; Chromatic creatures roll twice and keep both
 			const t = chosenCreature();
 			const table = BOOST_TABLES[e.color] || [];
 			if (t && table.length) {
-				const roll = Math.floor(state.rng() * table.length);
-				applyRollEntry(state, t, table[roll]);
-				emit(state, { type: 'boosted', uid: t.uid, color: e.color, roll: roll + 1, label: table[roll].label, attack: t.attack, hp: hp(t) });
+				const rolls = has(t, KW.CHROMATIC) ? 2 : 1;
+				for (let i = 0; i < rolls && !isDead(t); i++) {
+					const roll = Math.floor(state.rng() * table.length);
+					applyRollEntry(state, t, table[roll]);
+					emit(state, { type: 'boosted', uid: t.uid, color: e.color, roll: roll + 1, label: table[roll].label, attack: t.attack, hp: hp(t) });
+				}
 			}
 		} else if (e.type === 'destroy-weapon') {
 			// hit the chosen enemy's weapon if they have one, else any armed enemy
@@ -3037,6 +3065,21 @@ export function resolveScry(state, picks) {
 	return true;
 }
 
+// resolve the oldest pending Loot discard with the chosen hand card uids
+export function resolveDiscard(state, uids) {
+	const pend = state.discardQueue.shift();
+	if (!pend) return false;
+	const p = state.players[pend.player];
+	for (const uid of (uids || []).slice(0, pend.count)) {
+		const idx = p.hand.findIndex(c => c.uid === uid);
+		if (idx < 0) continue;
+		const [c] = p.hand.splice(idx, 1);
+		toGraveyard(state, pend.player, c);
+		emit(state, { type: 'discard', player: pend.player, card: c });
+	}
+	return true;
+}
+
 // ---------- disguise (face-down 2/2, MTG-style) ----------
 function disguiseCreature(state, c) {
 	if (c.disguised || isDead(c)) return;
@@ -3138,6 +3181,18 @@ export function endTurn(state) {
 	if (state.over) return;
 	const pi = state.current;
 	const p = state.players[pi];
+
+	// Impulsive creatures refuse to end the turn without swinging
+	for (const c of [...p.board]) {
+		if (!has(c, KW.IMPULSIVE)) continue;
+		let guard = 4;
+		while (guard-- > 0 && !state.over && p.board.includes(c) && !isDead(c) && canAttackWith(state, pi, c)) {
+			const targets = attackTargets(state, pi, c);
+			if (!targets.length) break;
+			if (!attack(state, pi, c.uid, targets[Math.floor(state.rng() * targets.length)])) break;
+		}
+	}
+	if (state.over) return;
 
 	// end-of-turn triggers
 	for (const c of [...p.board]) {

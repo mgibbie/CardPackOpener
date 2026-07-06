@@ -690,8 +690,65 @@ function resolveAIScries() {
 function pump() {
 	if (!state) return;
 	resolveAIScries();
+	resolveAIDiscards();
 	queue.push(...E.takeEvents(state));
 	if (!queueBusy) nextEvent();
+}
+
+// AI loot discards: dump the most expensive card
+function resolveAIDiscards() {
+	while (state.discardQueue.length && state.discardQueue[0].player !== HUMAN) {
+		const pend = state.discardQueue[0];
+		const p = state.players[pend.player];
+		const picks = [...p.hand].sort((a, b) => b.cost - a.cost).slice(0, pend.count).map(c => c.uid);
+		E.resolveDiscard(state, picks);
+	}
+}
+
+function openDiscardModal() {
+	const pend = state.discardQueue[0];
+	if (!pend || pend.player !== HUMAN) return;
+	const me = state.players[HUMAN];
+	const need = Math.min(pend.count, me.hand.length);
+	const modal = $('scry-modal'); // reuse the scry chrome
+	modal.innerHTML = `<div class="wm-title">Loot — choose ${need} card${need > 1 ? 's' : ''} to discard</div><div class="scry-row"></div>`;
+	const row = modal.querySelector('.scry-row');
+	const chosen = new Set();
+	const done = document.createElement('button');
+	const sync = () => {
+		done.disabled = chosen.size !== need;
+		done.textContent = `Discard (${chosen.size}/${need})`;
+	};
+	me.hand.forEach(card => {
+		const cell = document.createElement('div');
+		cell.className = 'scry-cell';
+		const face = drawCardFace(card);
+		face.style.width = '110px';
+		cell.appendChild(face);
+		const btn = document.createElement('button');
+		btn.textContent = 'Keep';
+		btn.addEventListener('pointerdown', e => {
+			e.stopPropagation();
+			if (chosen.has(card.uid)) chosen.delete(card.uid);
+			else if (chosen.size < need) chosen.add(card.uid);
+			btn.textContent = chosen.has(card.uid) ? 'Discard' : 'Keep';
+			btn.classList.toggle('bottom', chosen.has(card.uid));
+			sync();
+		});
+		cell.appendChild(btn);
+		row.appendChild(cell);
+	});
+	done.className = 'scry-done';
+	done.addEventListener('pointerdown', e => {
+		e.stopPropagation();
+		if (chosen.size !== need) return;
+		modal.style.display = 'none';
+		E.resolveDiscard(state, [...chosen]);
+		pump();
+	});
+	modal.appendChild(done);
+	sync();
+	modal.style.display = 'block';
 }
 
 function nextEvent() {
@@ -888,6 +945,11 @@ function nextEvent() {
 			if (ev.bottomed) log(`${nameOf(ev.chooser)} sent ${ev.bottomed} card${ev.bottomed > 1 ? 's' : ''} to the bottom`);
 			delay = 250;
 			break;
+		case 'lootStart':
+			log(`${nameOf(ev.player)} loots (${ev.count})`);
+			if (ev.player === HUMAN) openDiscardModal();
+			delay = 300;
+			break;
 		case 'heroPowerInstalled': delay = 260; break; // ditto
 		case 'questStarted': delay = 260; break;      // ditto
 		case 'heroPowerUsed':
@@ -1018,6 +1080,7 @@ let aiTimer = null;
 function maybeRunAI() {
 	if (!state || state.over || state.current === HUMAN || queue.length || queueBusy) return;
 	if (state.scryQueue.length && state.scryQueue[0].chooser === HUMAN) return; // your call first
+	if (state.discardQueue.length && state.discardQueue[0].player === HUMAN) return; // loot pick first
 	clearTimeout(aiTimer);
 	aiTimer = setTimeout(() => {
 		if (!state || state.over || state.current === HUMAN) return;

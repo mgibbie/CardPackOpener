@@ -131,6 +131,14 @@ export function step(state, pi = 1) {
 		return true;
 	}
 
+	// -1a. resolve pending Loot discards: dump the most expensive card
+	if (state.discardQueue.length && state.discardQueue[0].player === pi) {
+		const pend = state.discardQueue[0];
+		const picks = [...p.hand].sort((a, b) => b.cost - a.cost).slice(0, pend.count).map(c => c.uid);
+		E.resolveDiscard(state, picks);
+		return true;
+	}
+
 	// -1b. unmask disguised creatures worth their cost
 	for (const c of p.board) {
 		if (c.disguised && E.canUnmask(state, pi, c)

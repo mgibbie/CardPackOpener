@@ -3959,13 +3959,29 @@
       "cardClass": "neutral",
       "cost": 2,
       "rarity": "rare",
+      "set": "paper",
+      "description": "Can't Attack. Defender. Inspire: Luck: Draw a card.",
       "type": "creature",
       "attack": 4,
       "health": 5,
+      "tribe": "Undead Totem",
       "keywords": [
-        "pacifist"
+        "defender"
       ],
-      "description": "Can't attack."
+      "ongoing": {
+        "on": "hero-power-used",
+        "effects": [
+          {
+            "type": "luck",
+            "effects": [
+              {
+                "type": "draw",
+                "value": 1
+              }
+            ]
+          }
+        ]
+      }
     },
     {
       "id": "armorsmith",
@@ -9624,7 +9640,11 @@
       "type": "creature",
       "attack": 1,
       "health": 4,
-      "tribe": "Beast Horror"
+      "tribe": "Beast Horror",
+      "keywords": [
+        "taunt",
+        "chromatic"
+      ]
     },
     {
       "id": "abzan_falconer",
@@ -11301,7 +11321,11 @@
       "type": "creature",
       "attack": 2,
       "health": 2,
-      "tribe": "Beast"
+      "tribe": "Beast",
+      "keywords": [
+        "chromatic",
+        "divine_shield"
+      ]
     },
     {
       "id": "quietblade_shinobi",
@@ -11684,7 +11708,13 @@
       "type": "creature",
       "attack": 5,
       "health": 5,
-      "tribe": "Aarakocra Ranger"
+      "tribe": "Aarakocra Ranger",
+      "keywords": [
+        "rush",
+        "divine_shield",
+        "windfury",
+        "impulsive"
+      ]
     },
     {
       "id": "megazowler",
@@ -13577,6 +13607,10 @@
       "attack": 4,
       "health": 5,
       "tribe": "Vampire Rogue",
+      "keywords": [
+        "sanguine",
+        "chromatic"
+      ],
       "ongoing": {
         "on": "creature-died",
         "every": 3,
@@ -19621,6 +19655,154 @@
             "elusive",
             "sanguine",
             "reborn"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "verdant_behemoth",
+      "name": "Verdant Behemoth",
+      "cardClass": "ranger",
+      "cost": 3,
+      "rarity": "uncommon",
+      "set": "paper",
+      "description": "Taunt & Chromatic. Alliance: Luck: Draw a card.",
+      "type": "creature",
+      "attack": 2,
+      "health": 4,
+      "tribe": "Beast",
+      "keywords": [
+        "taunt",
+        "chromatic"
+      ],
+      "ongoing": {
+        "on": "creature-played",
+        "effects": [
+          {
+            "type": "luck",
+            "effects": [
+              {
+                "type": "draw",
+                "value": 1
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "abzan_infantry",
+      "name": "Abzan Infantry",
+      "cardClass": "magepunk",
+      "cost": 5,
+      "rarity": "common",
+      "set": "paper",
+      "description": "Taunt Deathrattle: Luck: Return this card to your hand.",
+      "type": "creature",
+      "attack": 4,
+      "health": 4,
+      "tribe": "Human Soldier",
+      "keywords": [
+        "taunt",
+        "deathrattle"
+      ],
+      "deathrattle": [
+        {
+          "type": "luck",
+          "effects": [
+            {
+              "type": "return-self-to-hand"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "sanguine_templar",
+      "name": "Sanguine Templar",
+      "cardClass": "neutral",
+      "cost": 5,
+      "rarity": "rare",
+      "set": "paper",
+      "description": "Sanguine, Windfury & Lifesteal. Deathrattle: Loot twice.",
+      "type": "creature",
+      "attack": 3,
+      "health": 3,
+      "tribe": "Vampire Demon Knight",
+      "keywords": [
+        "sanguine",
+        "windfury",
+        "lifesteal",
+        "deathrattle"
+      ],
+      "deathrattle": [
+        {
+          "type": "loot",
+          "value": 2
+        }
+      ]
+    },
+    {
+      "id": "aclazotz_deepest_betrayal",
+      "name": "Aclazotz, Deepest Betrayal",
+      "cardClass": "neutral",
+      "cost": 5,
+      "rarity": "legendary",
+      "set": "paper",
+      "description": "Windfury, Sanguine, Lifesteal & Reborn. Swing: Each opponent discards a card. Deathrattle: Loot.",
+      "type": "creature",
+      "attack": 4,
+      "health": 4,
+      "tribe": "Beast God",
+      "keywords": [
+        "windfury",
+        "sanguine",
+        "lifesteal",
+        "reborn",
+        "deathrattle"
+      ],
+      "deathrattle": [
+        {
+          "type": "loot",
+          "value": 1
+        }
+      ],
+      "ongoing": {
+        "on": "self-attacks",
+        "effects": [
+          {
+            "type": "enemy-discard",
+            "count": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "windsoul_guardian_drone",
+      "name": "Windsoul Guardian Drone",
+      "cardClass": "neutral",
+      "cost": 6,
+      "rarity": "epic",
+      "set": "paper",
+      "description": "Taunt, Divine Shield & Windfury. Deathrattle: Luck: Draw 2 cards.",
+      "type": "creature",
+      "attack": 6,
+      "health": 6,
+      "tribe": "Totem Mech",
+      "keywords": [
+        "taunt",
+        "divine_shield",
+        "windfury",
+        "deathrattle"
+      ],
+      "deathrattle": [
+        {
+          "type": "luck",
+          "effects": [
+            {
+              "type": "draw",
+              "value": 2
+            }
           ]
         }
       ]
