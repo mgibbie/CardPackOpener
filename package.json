@@ -1,0 +1,12 @@
+{
+  "name": "cardpackopener",
+  "private": true,
+  "type": "module",
+  "description": "Static site + Netlify Functions backend for /magepunktest accounts",
+  "dependencies": {
+    "@netlify/blobs": "^8.1.0"
+  },
+  "devDependencies": {
+    "esbuild": "^0.28.1"
+  }
+}

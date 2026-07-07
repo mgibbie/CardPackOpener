@@ -2,6 +2,15 @@
 import * as THREE from 'three';
 import { CARD_W, CARD_H, CARD_D, makeFaceTexture, makeBackTexture } from './cardart.js';
 import * as Col from './collection.js';
+import * as MPX from './mpmode.js';
+import { STARTER_DECKS } from './dungeon.js';
+
+// test-realm mode: this page edits the 10-card dungeon STARTER decks,
+// one per class, stored on the account (server-validated)
+const MP_ON = MPX.mpMode();
+const SIZE = MP_ON ? 10 : Col.DECK_SIZE;
+let mpState = null;
+let mpClass = 'druid';
 
 let cards = [], cardsById = {};
 let collection = {};
@@ -62,7 +71,7 @@ const inDeck = id => deck.filter(d => d === id).length;
 const limitOf = id => cardsById[id]?.rarity === 'legendary' ? Col.MAX_LEGENDARY_COPIES : Col.MAX_COPIES;
 
 function addCard(id) {
-	if (deck.length >= Col.DECK_SIZE) { flash('Deck is full.'); return; }
+	if (deck.length >= SIZE) { flash('Deck is full.'); return; }
 	if (inDeck(id) >= limitOf(id)) { flash(`Max ${limitOf(id)} cop${limitOf(id) > 1 ? 'ies' : 'y'} of that card.`); return; }
 	if (inDeck(id) >= (collection[id] || 0)) { flash("You don't own more copies."); return; }
 	deck.push(id);
@@ -80,6 +89,7 @@ function flash(msg) {
 }
 
 function myClass() {
+	if (MP_ON) return mpClass;
 	return localStorage.getItem('magepunk_class_v1') || '';
 }
 
@@ -117,11 +127,19 @@ function render() {
 		row.onmouseenter = () => showPreview(def);
 		deckList.appendChild(row);
 	}
-	deckCount.textContent = `${deck.length} / ${Col.DECK_SIZE}`;
-	deckCount.style.color = deck.length === Col.DECK_SIZE ? '#57e389' : '#e8e2f4';
+	deckCount.textContent = `${deck.length} / ${SIZE}`;
+	deckCount.style.color = deck.length === SIZE ? '#57e389' : '#e8e2f4';
 }
 
-document.getElementById('save').onclick = () => {
+document.getElementById('save').onclick = async () => {
+	if (MP_ON) {
+		if (deck.length !== SIZE) { flash(`Starter decks are exactly ${SIZE} cards (has ${deck.length}).`); return; }
+		const data = await MPX.call('save-deck', { classId: mpClass, deck });
+		if (data.error) { flash(data.error); return; }
+		mpState = data.state;
+		flash(`${mpClass} starter deck saved — your next dungeon run uses it.`);
+		return;
+	}
 	const err = Col.validateDeck(deck, cardsById, collection, myClass());
 	if (err) { flash(err); return; }
 	Col.saveDeck(deck);
@@ -131,19 +149,21 @@ document.getElementById('save').onclick = () => {
 // auto-fill helper: double-click the count to fill remaining slots with owned cards
 deckCount.ondblclick = () => {
 	for (const def of cards) {
-		if (deck.length >= Col.DECK_SIZE) break;
+		if (deck.length >= SIZE) break;
 		if (!Col.fitsClass(def, myClass())) continue;
 		const can = Math.min(collection[def.id] || 0, limitOf(def.id)) - inDeck(def.id);
-		for (let i = 0; i < can && deck.length < Col.DECK_SIZE; i++) deck.push(def.id);
+		for (let i = 0; i < can && deck.length < SIZE; i++) deck.push(def.id);
 	}
 	render();
 };
 
-// class picker: same choice the game uses; off-class cards leave the grid
+// class picker: same choice the game uses; off-class cards leave the grid.
+// In the test realm it switches which STARTER deck you're editing instead.
 fetch('classes.json').then(r => r.json()).then(({ classes }) => {
 	const sel = document.getElementById('class-select');
-	sel.innerHTML = '<option value="">No class (all cards)</option>';
-	for (const c of classes) {
+	sel.innerHTML = MP_ON ? '' : '<option value="">No class (all cards)</option>';
+	const list = MP_ON ? classes.filter(c => STARTER_DECKS[c.id]) : classes;
+	for (const c of list) {
 		const opt = document.createElement('option');
 		opt.value = c.id;
 		opt.textContent = c.name;
@@ -151,18 +171,30 @@ fetch('classes.json').then(r => r.json()).then(({ classes }) => {
 	}
 	sel.value = myClass();
 	sel.addEventListener('change', ev => {
-		localStorage.setItem('magepunk_class_v1', ev.target.value);
+		if (MP_ON) {
+			mpClass = ev.target.value;
+			deck = [...(mpState?.decks?.[mpClass] || STARTER_DECKS[mpClass])].filter(id => cardsById[id]);
+		} else {
+			localStorage.setItem('magepunk_class_v1', ev.target.value);
+		}
 		render();
 	});
 }).catch(() => {});
 
 // ---------- boot ----------
-fetch('cards.json').then(r => r.json()).then(data => {
+fetch('cards.json').then(r => r.json()).then(async data => {
 	cards = data.cards;
 	for (const d of cards) cardsById[d.id] = d;
-	collection = Col.getCollection(cards);
-	// load saved deck, dropping anything no longer valid
-	deck = Col.loadDeck().filter(id => cardsById[id]);
+	if (MP_ON) {
+		mpState = await MPX.freshState();
+		collection = mpState?.collection || {};
+		deck = [...(mpState?.decks?.[mpClass] || STARTER_DECKS[mpClass])].filter(id => cardsById[id]);
+		document.getElementById('class-select').value = mpClass;
+	} else {
+		collection = Col.getCollection(cards);
+		// load saved deck, dropping anything no longer valid
+		deck = Col.loadDeck().filter(id => cardsById[id]);
+	}
 	sizePreview();
 	addEventListener('resize', sizePreview);
 	render();

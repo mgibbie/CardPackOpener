@@ -10,6 +10,10 @@ artListeners.add(() => {
 	artRepaint = setTimeout(() => renderPage(), 120);
 });
 import * as Col from './collection.js';
+import * as MPX from './mpmode.js';
+
+// test-realm mode: the gallery is your account's collection, nothing more
+const MP_ON = MPX.mpMode();
 
 const MOBILE = matchMedia('(max-width: 760px)');
 const TOUCH = matchMedia('(pointer: coarse)').matches;
@@ -156,7 +160,13 @@ function renderPage() {
 
 fetch('cards.json')
 	.then(r => r.json())
-	.then(data => {
+	.then(async data => {
+		let mpOwned = null;
+		if (MP_ON) {
+			const s = await MPX.freshState();
+			mpOwned = s?.collection || {};
+			data.cards = data.cards.filter(d => mpOwned[d.id] > 0);
+		}
 		// class filter options, in play-set order with Neutral last
 		const classes = [...new Set(data.cards.map(c => c.cardClass || 'neutral'))]
 			.sort((a, b) => (a === 'neutral') - (b === 'neutral') || a.localeCompare(b));
@@ -171,6 +181,6 @@ fetch('cards.json')
 			(a.cost ?? 0) - (b.cost ?? 0)
 			|| (rarityOrder[a.rarity || 'common'] - rarityOrder[b.rarity || 'common'])
 			|| a.name.localeCompare(b.name));
-		collection = Col.getCollection(data.cards);
+		collection = mpOwned || Col.getCollection(data.cards);
 		applyFilters();
 	});

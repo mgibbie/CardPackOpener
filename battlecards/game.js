@@ -5,6 +5,11 @@ import * as E from './engine.js';
 import * as AI from './ai.js';
 import * as Col from './collection.js';
 import * as Dungeon from './dungeon.js';
+import * as MPX from './mpmode.js';
+
+// test-realm mode (?mp=1 + account token): dungeon runs use the account's
+// edited starter decks, and finishing a run — win or lose — earns a pack
+const MP_ON = MPX.mpMode();
 import { CARD_W, CARD_H, CARD_D, makeFaceTexture, makeBackTexture, hasRules, RULES_GEM, classNameOf, drawCardFace, makeTokenTexture, TOKEN_W, TOKEN_H, TOKEN_GEM, drawHeroPortrait, drawPowerOrb, artListeners } from './cardart.js';
 
 const HUMAN = 0;
@@ -2116,11 +2121,16 @@ async function start() {
 	}
 	if (dungeonRunMode) {
 		let run = loadRun();
+		// a saved run offers resume-or-abandon; it never locks the class choice
+		if (run && run.active && !(await resumeRunOverlay(run))) {
+			clearRun();
+			run = null;
+		}
 		if (!run || !run.active) {
 			const clsId = await pickClassOverlay();
 			run = {
 				active: true, classId: clsId, level: 1,
-				deck: [...Dungeon.STARTER_DECKS[clsId]],
+				deck: [...(await dungeonStarterDeck(clsId))],
 				passives: [], bossId: Dungeon.randomBoss(1),
 			};
 			saveRun(run);
@@ -2287,6 +2297,39 @@ function mainMenu() {
 	});
 }
 
+// returning mid-run: resolve true to resume the saved run, false to abandon
+function resumeRunOverlay(run) {
+	return new Promise(resolve => {
+		const cls = classRegistry.find(c => c.id === run.classId);
+		const el = dungeonOverlay('RUN IN PROGRESS',
+			`You have a level ${run.level} run going as ${cls ? cls.name : run.classId} (${run.deck.length} cards).`);
+		el.appendChild(overlayButton(`Continue level ${run.level}`, () => { hideDungeonOverlay(); resolve(true); }));
+		el.appendChild(overlayButton('Abandon — new run, new class', () => { hideDungeonOverlay(); resolve(false); }));
+	});
+}
+
+// the run's starting deck: the account's edited starter deck in MP mode,
+// the stock one otherwise
+async function dungeonStarterDeck(clsId) {
+	if (MP_ON) {
+		const s = await MPX.freshState();
+		const mine = s?.decks?.[clsId];
+		if (Array.isArray(mine) && mine.length) return mine;
+	}
+	return Dungeon.STARTER_DECKS[clsId];
+}
+
+// a finished run pays out one pack, win or lose
+async function mpRunReward(el, result) {
+	if (!MP_ON) return;
+	const data = await MPX.call('run-reward', { result });
+	const note = document.createElement('div');
+	note.style.cssText = 'margin:10px 0;font-size:15px;color:#ffd27a;';
+	note.textContent = data.error ? data.error
+		: `🎁 +1 pack earned (${data.state.packs} waiting) — open it from the Test Realm menu.`;
+	el.appendChild(note);
+}
+
 function pickClassOverlay() {
 	return new Promise(resolve => {
 		const el = dungeonOverlay('DUNGEON RUN', 'Eight bosses stand between you and the treasure. Choose your class.');
@@ -2308,6 +2351,7 @@ function dungeonVictory(run) {
 	if (run.level >= 8) {
 		const el = dungeonOverlay('RUN COMPLETE!', `${Dungeon.BOSSES[run.bossId].name} falls — the treasure hoard is yours. Cleared as ${run.classId} with ${run.deck.length} cards.`);
 		Col.earnGold(500);
+		mpRunReward(el, 'win');
 		el.appendChild(overlayButton('New Run (+500 gold banked)', () => { clearRun(); location.reload(); }));
 		clearRun();
 		return;
@@ -2390,6 +2434,7 @@ function advanceRun(run, nextLevel) {
 function dungeonDefeat(run) {
 	const el = dungeonOverlay('RUN OVER', `${Dungeon.BOSSES[run.bossId].name} ends your run at level ${run.level}.`);
 	clearRun();
+	mpRunReward(el, 'loss');
 	el.appendChild(overlayButton('New Run', () => location.reload()));
 }
 start();

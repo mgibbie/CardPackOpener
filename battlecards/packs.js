@@ -3,6 +3,12 @@
 import * as THREE from 'three';
 import { CARD_W, CARD_H, CARD_D, makeFaceTexture, makeBackTexture, RARITY_COLORS } from './cardart.js';
 import * as Col from './collection.js';
+import * as MPX from './mpmode.js';
+
+// test-realm mode: packs are earned from dungeon runs and rolled server-side
+const MP_ON = MPX.mpMode();
+let mpPacks = 0;
+let mpPulls = null; // ids the server rolled for the pack being torn open
 
 const container = document.getElementById('scene');
 const renderer = new THREE.WebGLRenderer({ antialias: true });
@@ -124,11 +130,14 @@ const hud = {
 };
 
 function updateHud() {
-	hud.gold.textContent = `${Col.getGold()} gold`;
+	hud.gold.textContent = MP_ON ? `${mpPacks} pack${mpPacks === 1 ? '' : 's'}` : `${Col.getGold()} gold`;
 	if (phase === 'idle') {
-		hud.hint.textContent = Col.getGold() >= Col.PACK_PRICE
-			? `[Z / click] open a pack — ${Col.PACK_PRICE} gold`
-			: `Not enough gold — win matches to earn more!`;
+		hud.hint.textContent = MP_ON
+			? (mpPacks > 0 ? `[Z / click] open a pack — ${mpPacks} waiting`
+				: 'No packs — finish a dungeon run (win or lose) to earn one!')
+			: Col.getGold() >= Col.PACK_PRICE
+				? `[Z / click] open a pack — ${Col.PACK_PRICE} gold`
+				: `Not enough gold — win matches to earn more!`;
 	} else if (phase === 'revealing') {
 		const left = cardMeshes.filter(c => !c.flipped).length;
 		hud.hint.textContent = left ? `Click cards to reveal (${left} left)` : '';
@@ -137,9 +146,15 @@ function updateHud() {
 	} else hud.hint.textContent = '';
 }
 
-function startOpen() {
+async function startOpen() {
 	if (phase !== 'idle' && phase !== 'done') return;
-	if (!Col.spendGold(Col.PACK_PRICE)) { updateHud(); return; }
+	if (MP_ON) {
+		// the server rolls the cards and spends the pack before anything tears
+		const data = await MPX.call('open-pack');
+		if (data.error) { hud.hint.textContent = data.error; return; }
+		mpPulls = data.cards;
+		mpPacks = data.state.packs;
+	} else if (!Col.spendGold(Col.PACK_PRICE)) { updateHud(); return; }
 	for (const c of cardMeshes) { scene.remove(c.mesh); c.mesh.material[4].map?.dispose(); }
 	cardMeshes = [];
 	if (!pack) spawnPack();
@@ -149,8 +164,8 @@ function startOpen() {
 }
 
 function revealCards() {
-	const pulls = Col.rollPack(cards);
-	Col.addToCollection(pulls.map(d => d.id));
+	const pulls = MP_ON ? mpPulls.map(id => cardsById[id]).filter(Boolean) : Col.rollPack(cards);
+	if (!MP_ON) Col.addToCollection(pulls.map(d => d.id));
 	pulls.forEach((def, i) => {
 		const face = new THREE.MeshStandardMaterial({ map: makeFaceTexture(def), roughness: 0.35, metalness: 0.15 });
 		const back = new THREE.MeshStandardMaterial({ map: backTex, roughness: 0.5 });
@@ -264,10 +279,15 @@ function animate() {
 animate();
 
 // ---------- boot ----------
-fetch('cards.json').then(r => r.json()).then(data => {
+fetch('cards.json').then(r => r.json()).then(async data => {
 	cards = data.cards;
 	for (const d of cards) cardsById[d.id] = d;
-	Col.getCollection(cards); // seed starter collection on first visit
+	if (MP_ON) {
+		const s = await MPX.freshState();
+		mpPacks = s ? s.packs : 0;
+	} else {
+		Col.getCollection(cards); // seed starter collection on first visit
+	}
 	spawnPack();
 	updateHud();
 	window.__packs = { startOpen, flip, get phase() { return phase; }, get cardMeshes() { return cardMeshes; }, Col };
