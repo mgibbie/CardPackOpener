@@ -4,17 +4,18 @@ const BAG_KEY = 'magepunk_bag_v1';
 const STARTING_MONEY = 3000;
 
 export const ITEMS = {
-	pokeball:    { name: 'POKe BALL',    price: 200,  kind: 'ball' },
+	pokeball:    { name: 'POKe BALL',    price: 200,  kind: 'ball', mult: 1 },
+	greatball:   { name: 'GREAT BALL',   price: 600,  kind: 'ball', mult: 1.5 },
+	ultraball:   { name: 'ULTRA BALL',   price: 1200, kind: 'ball', mult: 2 },
 	potion:      { name: 'POTION',       price: 300,  kind: 'heal', amount: 20 },
 	superpotion: { name: 'SUPER POTION', price: 700,  kind: 'heal', amount: 50 },
 	hyperpotion: { name: 'HYPER POTION', price: 1200, kind: 'heal', amount: 200 },
+	ether:       { name: 'ETHER',        price: 1200, kind: 'ether', amount: 10 },
 	revive:      { name: 'REVIVE',       price: 1500, kind: 'revive' },
 	rarecandy:   { name: 'RARE CANDY',   price: 0,    kind: 'candy' },
 	// common overworld pickups that map onto shop items
 	fullrestore: { name: 'FULL RESTORE', price: 0, kind: 'heal', amount: 999 },
 	maxpotion:   { name: 'MAX POTION',   price: 0, kind: 'heal', amount: 999 },
-	greatball:   { name: 'GREAT BALL',   price: 0, kind: 'ball' },
-	ultraball:   { name: 'ULTRA BALL',   price: 0, kind: 'ball' },
 	maxrevive:   { name: 'MAX REVIVE',   price: 0, kind: 'revive' },
 };
 
@@ -38,7 +39,7 @@ export function nameOf(id) {
 	} catch (e) {}
 	return id.toUpperCase();
 }
-export const SHOP_STOCK = ['pokeball', 'potion', 'superpotion', 'hyperpotion', 'revive'];
+export const SHOP_STOCK = ['pokeball', 'greatball', 'ultraball', 'potion', 'superpotion', 'hyperpotion', 'ether', 'revive'];
 
 export function getMoney() {
 	const v = parseInt(localStorage.getItem(MONEY_KEY), 10);

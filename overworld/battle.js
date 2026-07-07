@@ -63,8 +63,18 @@ const MOVE_FX = {
 	thunderwave: { status: 'par' }, stunspore: { status: 'par' }, glare: { status: 'par' },
 	sleeppowder: { status: 'slp' }, spore: { status: 'slp' }, hypnosis: { status: 'slp' },
 	sing: { status: 'slp' }, lovelykiss: { status: 'slp' }, grasswhistle: { status: 'slp' },
-	poisonpowder: { status: 'psn' }, poisongas: { status: 'psn' }, toxic: { status: 'psn' },
+	poisonpowder: { status: 'psn' }, poisongas: { status: 'psn' },
+	toxic: { status: 'psn', bad: true },
 	willowisp: { status: 'brn' },
+	// confusion, seeding, and side screens
+	confuseray: { confuse: true }, supersonic: { confuse: true }, sweetkiss: { confuse: true },
+	teeterdance: { confuse: true }, swagger: { confuse: true },
+	confusion: { sec: { confuse: true, ch: 10 } }, psybeam: { sec: { confuse: true, ch: 10 } },
+	dizzypunch: { sec: { confuse: true, ch: 20 } }, waterpulse: { sec: { confuse: true, ch: 20 } },
+	dynamicpunch: { sec: { confuse: true, ch: 100 } }, signalbeam: { sec: { confuse: true, ch: 10 } },
+	hurricane: { sec: { confuse: true, ch: 30 } },
+	leechseed: { seed: true },
+	reflect: { screen: 'reflect' }, lightscreen: { screen: 'light' },
 	// secondary status/flinch chances on damaging moves
 	ember: { sec: { status: 'brn', ch: 10 } }, flamethrower: { sec: { status: 'brn', ch: 10 } },
 	fireblast: { sec: { status: 'brn', ch: 30 } }, firepunch: { sec: { status: 'brn', ch: 10 } },
@@ -216,6 +226,7 @@ export class Battle {
 			meBoosts: freshBoosts(),
 			foeBoosts: freshBoosts(),
 			meShownHP: playerMon.curHP, foeShownHP: foe.curHP,
+			meScreens: { reflect: 0, light: 0 }, foeScreens: { reflect: 0, light: 0 },
 			phase: 'flash', t: 0,
 			menuIdx: 0, moveIdx: 0,
 			queue: [],           // pending messages/actions
@@ -225,6 +236,7 @@ export class Battle {
 			result: null,
 			caughtMon: null,
 		};
+		for (const m of party) this.clearVolatiles(m);
 		this.pushMsg(`A wild ${foe.name} appeared!`, () => cry(foe.speciesId));
 		this.pushMsg(`Go! ${playerMon.name}!`, () => { sfx('ball_open'); cry(playerMon.speciesId); });
 	}
@@ -253,6 +265,7 @@ export class Battle {
 			meBoosts: freshBoosts(),
 			foeBoosts: freshBoosts(),
 			meShownHP: playerMon.curHP, foeShownHP: foe.curHP,
+			meScreens: { reflect: 0, light: 0 }, foeScreens: { reflect: 0, light: 0 },
 			phase: 'flash', t: 0,
 			menuIdx: 0, moveIdx: 0,
 			queue: [],
@@ -262,6 +275,7 @@ export class Battle {
 			result: null,
 			caughtMon: null,
 		};
+		for (const m of party) this.clearVolatiles(m);
 		this.pushMsg(`You are challenged by ${info.displayName}!`);
 		this.pushMsg(`${info.displayName} sent out ${foe.name}!`, () => cry(foe.speciesId));
 		this.pushMsg(`Go! ${playerMon.name}!`, () => { sfx('ball_open'); cry(playerMon.speciesId); });
@@ -286,7 +300,7 @@ export class Battle {
 		return Math.max(1, v);
 	}
 
-	applyStatus(target, st) {
+	applyStatus(target, st, bad) {
 		if (target.status) { this.pushMsg('But it failed!'); return false; }
 		if ((STATUS_IMMUNE[st] || []).some(t => target.types.includes(t))) {
 			this.pushMsg(`It doesn't affect ${target.name}...`);
@@ -294,16 +308,53 @@ export class Battle {
 		}
 		target.status = st;
 		if (st === 'slp') target.sleepTurns = 1 + Math.floor(Math.random() * 3);
-		this.pushMsg(`${target.name} ${STATUS_APPLIED_MSG[st]}`);
+		if (bad) { target.badPsn = true; target.toxicN = 1; }
+		this.pushMsg(`${target.name} ${bad ? 'was badly poisoned!' : STATUS_APPLIED_MSG[st]}`);
 		return true;
 	}
 
-	// returns false if the user cannot act this turn (sleep/freeze/para/flinch)
-	beforeMove(user) {
+	applyConfusion(target) {
+		if (target.confuseTurns > 0) { this.pushMsg('But it failed!'); return; }
+		target.confuseTurns = 2 + Math.floor(Math.random() * 4);
+		this.pushMsg(`${target.name} became confused!`);
+	}
+
+	// battle-only conditions never leak into the save
+	clearVolatiles(mon) {
+		delete mon.confuseTurns;
+		delete mon.seeded;
+		delete mon.badPsn;
+		delete mon.toxicN;
+		mon.flinched = false;
+	}
+
+	// returns false if the user cannot act this turn (sleep/freeze/para/flinch/confusion)
+	beforeMove(user, userBoosts, isFoe) {
 		if (user.flinched) {
 			user.flinched = false;
 			this.pushMsg(`${user.name} flinched and couldn't move!`);
 			return false;
+		}
+		if (user.confuseTurns > 0) {
+			user.confuseTurns--;
+			if (user.confuseTurns <= 0) {
+				this.pushMsg(`${user.name} snapped out of its confusion!`);
+			} else {
+				this.pushMsg(`${user.name} is confused!`);
+				if (Math.random() < 0.5) {
+					// 40-power typeless self-hit off its own attack and defense
+					const A = this.statOf(user, userBoosts || freshBoosts(), 'atk');
+					const D = this.statOf(user, userBoosts || freshBoosts(), 'def');
+					let dmg = Math.floor(Math.floor(Math.floor(2 * user.level / 5 + 2) * 40 * A / D) / 50) + 2;
+					dmg = Math.max(1, Math.floor(dmg * (0.85 + Math.random() * 0.15)));
+					this.pushMsg('It hurt itself in its confusion!', () => {
+						sfx('hit_normal');
+						user.curHP = Math.max(0, user.curHP - dmg);
+						this.float(isFoe ? 'foe' : 'me', `-${dmg}`, '#ff7a6b');
+					});
+					return false;
+				}
+			}
 		}
 		if (user.status === 'slp') {
 			if (--user.sleepTurns <= 0) {
@@ -334,7 +385,7 @@ export class Battle {
 		const a = this.active;
 		const mv = this.data.moves[move.id] || {};
 		const fx = MOVE_FX[move.id] || {};
-		if (!this.beforeMove(user)) return;
+		if (!this.beforeMove(user, userBoosts, isFoe)) return;
 		move.pp = Math.max(0, move.pp - 1);
 		this.pushMsg(`${user.name} used ${move.name}!`);
 
@@ -358,7 +409,24 @@ export class Battle {
 				}
 				return;
 			}
-			if (fx.status) { this.applyStatus(target, fx.status); return; }
+			if (fx.status) { this.applyStatus(target, fx.status, fx.bad); return; }
+			if (fx.confuse) { this.applyConfusion(target); return; }
+			if (fx.seed) {
+				if (target.types.includes('Grass')) { this.pushMsg(`It doesn't affect ${target.name}...`); return; }
+				if (target.seeded) { this.pushMsg('But it failed!'); return; }
+				target.seeded = true;
+				this.pushMsg(`${target.name} was seeded!`);
+				return;
+			}
+			if (fx.screen) {
+				const side = isFoe ? a.foeScreens : a.meScreens;
+				if (side[fx.screen] > 0) { this.pushMsg('But it failed!'); return; }
+				side[fx.screen] = 5;
+				this.pushMsg(fx.screen === 'reflect'
+					? `${user.name} is protected by Reflect!`
+					: `${user.name} is protected by Light Screen!`);
+				return;
+			}
 			const eff = STAT_MOVES[move.id];
 			if (eff) {
 				const boosts = eff.foe ? targetBoosts : userBoosts;
@@ -384,12 +452,15 @@ export class Battle {
 		if (eff === 0) { this.pushMsg(`It doesn't affect ${target.name}...`); return; }
 		const stab = user.types.includes(mv.type) ? 1.5 : 1;
 		const nHits = fx.hits ? fx.hits[0] + Math.floor(Math.random() * (fx.hits[1] - fx.hits[0] + 1)) : 1;
+		// Reflect / Light Screen on the defender's side halves the matching category
+		const defScreens = isFoe ? a.meScreens : a.foeScreens;
+		const screened = defScreens?.[phys ? 'reflect' : 'light'] > 0 ? 0.5 : 1;
 		let total = 0, crits = 0;
 		for (let h = 0; h < nHits; h++) {
 			const crit = Math.random() < 1 / 16;
 			if (crit) crits++;
 			let dmg = Math.floor(Math.floor(Math.floor(2 * L / 5 + 2) * Pw * A / D) / 50) + 2;
-			dmg = Math.max(1, Math.floor(dmg * (crit ? 2 : 1) * stab * eff * (0.85 + Math.random() * 0.15)));
+			dmg = Math.max(1, Math.floor(dmg * (crit ? 2 : 1) * stab * eff * screened * (0.85 + Math.random() * 0.15)));
 			total += dmg;
 		}
 		total = Math.min(total, target.curHP);
@@ -423,7 +494,12 @@ export class Battle {
 			this.pushMsg('', () => {
 				if (target.curHP <= 0) return;
 				if (fx.sec.flinch) target.flinched = true; // only matters if it hasn't moved yet
-				else if (!target.status && !(STATUS_IMMUNE[fx.sec.status] || []).some(t => target.types.includes(t))) {
+				else if (fx.sec.confuse) {
+					if (!(target.confuseTurns > 0)) {
+						target.confuseTurns = 2 + Math.floor(Math.random() * 4);
+						this.pushMsg(`${target.name} became confused!`);
+					}
+				} else if (!target.status && !(STATUS_IMMUNE[fx.sec.status] || []).some(t => target.types.includes(t))) {
 					target.status = fx.sec.status;
 					if (fx.sec.status === 'slp') target.sleepTurns = 1 + Math.floor(Math.random() * 3);
 					this.pushMsg(`${target.name} ${STATUS_APPLIED_MSG[fx.sec.status]}`);
@@ -432,15 +508,42 @@ export class Battle {
 		}
 	}
 
-	// burn/poison chip at end of turn
+	// burn/poison chip, Toxic ramping, Leech Seed sap, screens wearing off
 	endOfTurn() {
 		const a = this.active;
 		for (const mon of [a.me, a.foe]) {
 			if (mon.curHP <= 0) continue;
+			const side = mon === a.me ? 'me' : 'foe';
 			if (mon.status === 'brn' || mon.status === 'psn') {
-				const chip = Math.max(1, Math.floor(mon.maxHP / 8));
+				const chip = mon.badPsn
+					? Math.max(1, Math.floor(mon.maxHP / 16) * Math.min(15, mon.toxicN || 1))
+					: Math.max(1, Math.floor(mon.maxHP / 8));
+				if (mon.badPsn) mon.toxicN = (mon.toxicN || 1) + 1;
 				this.pushMsg(`${mon.name} is hurt by its ${mon.status === 'brn' ? 'burn' : 'poison'}!`,
-					() => { mon.curHP = Math.max(0, mon.curHP - chip); });
+					() => {
+						mon.curHP = Math.max(0, mon.curHP - chip);
+						this.float(side, `-${chip}`, '#c98fe8');
+					});
+			}
+			if (mon.seeded) {
+				const other = mon === a.me ? a.foe : a.me;
+				const sap = Math.max(1, Math.floor(mon.maxHP / 8));
+				this.pushMsg(`${mon.name}'s health is sapped by Leech Seed!`, () => {
+					mon.curHP = Math.max(0, mon.curHP - sap);
+					this.float(side, `-${sap}`, '#8ad86b');
+					if (other.curHP > 0) {
+						other.curHP = Math.min(other.maxHP, other.curHP + sap);
+						this.float(side === 'me' ? 'foe' : 'me', `+${sap}`, '#6be08a');
+					}
+				});
+			}
+		}
+		// screens tick down per side
+		for (const [side, screens, who] of [['me', a.meScreens, a.me], ['foe', a.foeScreens, a.foe]]) {
+			for (const key of ['reflect', 'light']) {
+				if (screens[key] > 0 && --screens[key] === 0) {
+					this.pushMsg(`${who.name}'s ${key === 'reflect' ? 'Reflect' : 'Light Screen'} wore off!`);
+				}
 			}
 		}
 		// flinch never carries between turns
@@ -498,7 +601,7 @@ export class Battle {
 			this.pushAnim('faint', 'foe', 0.7, () => { a.foeHidden = true; });
 			this.grantExp();
 		} else if (a.me.curHP <= 0) {
-			this.pushMsg(`${a.me.name} fainted!`, () => cry(a.me.speciesId));
+			this.pushMsg(`${a.me.name} fainted!`, () => { cry(a.me.speciesId); this.clearVolatiles(a.me); });
 			this.pushAnim('faint', 'me', 0.7, () => { a.meHidden = true; });
 			const next = a.party.find(m => m.curHP > 0);
 			if (next) {
@@ -542,9 +645,13 @@ export class Battle {
 					this.pushMsg(`${mon.name} learned ${this.data.moves[mid]?.name || mid}!`,
 						() => mon.moves.push(makeMove(mid, this.data)));
 				} else {
-					const old = mon.moves[0];
-					this.pushMsg(`${mon.name} forgot ${old.name} and learned ${this.data.moves[mid]?.name || mid}!`,
-						() => { mon.moves.shift(); mon.moves.push(makeMove(mid, this.data)); });
+					// full moveset: the player picks what (if anything) to forget
+					const name = this.data.moves[mid]?.name || mid;
+					this.pushMsg(`${mon.name} wants to learn ${name}!`, () => {
+						a.learn = { mid, name, mon };
+						a.learnIdx = 0;
+						a.phase = 'learn';
+					});
 				}
 			}
 		}
@@ -572,12 +679,12 @@ export class Battle {
 		});
 	}
 
-	// Gen3-style catch: HP factor + flat species rate, 4 shake checks
-	throwBall() {
+	// Gen3-style catch: HP factor + species rate x ball multiplier, 4 shakes
+	throwBall(ballName = 'POKe BALL', ballMult = 1) {
 		const a = this.active;
-		this.pushMsg('You threw a POKe BALL!');
+		this.pushMsg(`You threw a ${ballName}!`);
 		this.pushAnim('ballthrow', 'foe', 0.55, () => { sfx('ball_open'); a.foeHidden = true; a.ballShown = true; });
-		const rate = this.data.extra?.[a.foe.speciesId]?.catch ?? 45; // real species catch rate
+		const rate = (this.data.extra?.[a.foe.speciesId]?.catch ?? 45) * ballMult;
 		const statusBonus = a.foe.status === 'slp' || a.foe.status === 'frz' ? 2
 			: a.foe.status ? 1.5 : 1;
 		const f = Math.max(1, Math.floor((3 * a.foe.maxHP - 2 * a.foe.curHP) * rate * statusBonus / (3 * a.foe.maxHP)));
@@ -622,6 +729,7 @@ export class Battle {
 
 	finish(result) {
 		const a = this.active;
+		for (const m of a.party) this.clearVolatiles(m);
 		a.result = result;
 		a.phase = 'done';
 	}
@@ -680,6 +788,10 @@ export class Battle {
 				const mv = a.me.moves[a.moveIdx];
 				if (mv.pp > 0) this.startQueue(() => this.resolveTurn(mv));
 			}
+			} else if (a.phase === 'learn') {
+			if (k === 'ArrowLeft' || k === 'ArrowUp') a.learnIdx = (a.learnIdx + 4) % 5;
+			if (k === 'ArrowRight' || k === 'ArrowDown') a.learnIdx = (a.learnIdx + 1) % 5;
+			if (k === 'z' || k === 'Enter') this.resolveLearn(a.learnIdx === 4 ? -1 : a.learnIdx);
 		}
 	}
 
@@ -687,6 +799,22 @@ export class Battle {
 		const a = this.active;
 		fn();
 		a.phase = 'msg';
+	}
+
+	// choice: 0-3 = replace that move, -1 = give up on the new one
+	resolveLearn(choice) {
+		const a = this.active;
+		const { mid, name, mon } = a.learn;
+		if (choice >= 0) {
+			const old = mon.moves[choice];
+			mon.moves[choice] = makeMove(mid, this.data);
+			a.queue.unshift({ text: `${mon.name} forgot ${old.name} and learned ${name}!` });
+		} else {
+			a.queue.unshift({ text: `${mon.name} gave up on learning ${name}.` });
+		}
+		a.learn = null;
+		a.phase = 'msg';
+		a.msgT = 99;
 	}
 
 	// usable battle items (balls only in wild battles)
@@ -718,7 +846,19 @@ export class Battle {
 		if (!item) return;
 		if (item.kind === 'ball') {
 			Bag.consume(itemId);
-			this.startQueue(() => this.throwBall());
+			this.startQueue(() => this.throwBall(item.name, item.mult || 1));
+			return;
+		}
+		if (item.kind === 'ether') {
+			if (a.me.moves.every(m => m.pp >= m.maxPp)) return; // nothing to restore
+			Bag.consume(itemId);
+			this.startQueue(() => {
+				this.pushMsg(`You used an ${item.name}!`, () => {
+					for (const m of a.me.moves) m.pp = Math.min(m.maxPp, m.pp + item.amount);
+				});
+				this.pushMsg(`${a.me.name}'s moves regained PP.`);
+				this.foeFreeMove();
+			});
 			return;
 		}
 		if (item.kind === 'heal') {
@@ -751,7 +891,7 @@ export class Battle {
 	switchTo(mon) {
 		const a = this.active;
 		this.startQueue(() => {
-			this.pushMsg(`Come back, ${a.me.name}!`);
+			this.pushMsg(`Come back, ${a.me.name}!`, () => this.clearVolatiles(a.me));
 			this.pushAnim('recall', 'me', 0.3, () => { a.meHidden = true; });
 			this.pushMsg(`Go! ${mon.name}!`, () => {
 				sfx('ball_open'); cry(mon.speciesId);
@@ -1050,6 +1190,23 @@ export class Battle {
 				btn({ x: W * 0.58 + 32 * u, y: barY + 61 * u, w: 40 * u, h: 44 * u, label: '▼', center: true }, 'scroll:1');
 			}
 			btn({ x: W - 8 * u - 94 * u, y: barY + 9 * u, w: 86 * u, h: 96 * u, label: 'BACK', center: true }, 'back');
+		} else if (a.phase === 'learn') {
+			ctx.fillStyle = UI.C.text;
+			ctx.font = `${Math.round(15 * u)}px m6x11plus, monospace`;
+			ctx.fillText(`Which move should be forgotten for ${a.learn.name}?`, 20 * u, barY + 20 * u);
+			const backW = 96 * u;
+			const bw = (W - 16 * u - backW - 44 * u) / 2, bh = 37 * u;
+			a.learn.mon.moves.forEach((mv, i) => {
+				const info = this.data.moves[mv.id] || {};
+				btn({
+					x: 20 * u + (i % 2) * (bw + 8 * u),
+					y: barY + 28 * u + Math.floor(i / 2) * (bh + 7 * u),
+					w: bw, h: bh, label: mv.name.toUpperCase().slice(0, 16),
+					type: info.type, kbSel: a.learnIdx === i,
+				}, 'learn:' + i);
+			});
+			btn({ x: W - 8 * u - backW - 8 * u, y: barY + 28 * u, w: backW, h: 2 * bh + 7 * u,
+				label: 'GIVE UP', center: true, kbSel: a.learnIdx === 4 }, 'learn:skip');
 		} else {
 			// message phase (and 'done' fadeout)
 			ctx.fillStyle = UI.C.text;
@@ -1095,6 +1252,7 @@ export class Battle {
 		if (kind === 'move') { a.moveIdx = +arg; this.key('z'); return; }
 		if (kind === 'bag') { a.bagIdx = +arg; this.key('z'); return; }
 		if (kind === 'switch') { a.switchIdx = +arg; this.key('z'); return; }
+		if (kind === 'learn') { this.resolveLearn(arg === 'skip' ? -1 : +arg); return; }
 		if (kind === 'scroll') this.key(+arg > 0 ? 'ArrowDown' : 'ArrowUp');
 	}
 }

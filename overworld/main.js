@@ -205,6 +205,11 @@ function bagKey(k) {
 				} else if (item.kind === 'candy' && useRareCandy(mon)) {
 					Bag.consume(id);
 					bagMenu.picking = false;
+				} else if (item.kind === 'ether' && mon.curHP > 0 && mon.moves.some(m => m.pp < m.maxPp)) {
+					Bag.consume(id);
+					for (const mv of mon.moves) mv.pp = Math.min(mv.maxPp, mv.pp + item.amount);
+					saveParty(party);
+					bagMenu.picking = false;
 				}
 			}
 		}
@@ -216,7 +221,7 @@ function bagKey(k) {
 	if ((k === 'z' || k === 'Enter') && entries.length) {
 		const [id] = entries[bagMenu.idx];
 		const kind = Bag.ITEMS[id]?.kind;
-		if (kind === 'heal' || kind === 'revive' || kind === 'candy') { bagMenu.picking = true; bagMenu.pickIdx = 0; }
+		if (kind === 'heal' || kind === 'revive' || kind === 'candy' || kind === 'ether') { bagMenu.picking = true; bagMenu.pickIdx = 0; }
 	}
 }
 
