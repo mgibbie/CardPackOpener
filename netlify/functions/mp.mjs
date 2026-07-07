@@ -13,6 +13,7 @@ import { getStore } from '@netlify/blobs';
 import { scrypt as scryptCb, randomBytes, createHmac, timingSafeEqual } from 'node:crypto';
 import fs from 'node:fs';
 import { STARTER_DECKS } from '../../battlecards/dungeon.js';
+import { createMatch, submitAction, replaceFainted, sideOf } from '../../battlecards/pvpbattle.js';
 import POOL from './pool-rarity.json';
 
 const SECRET = process.env.MP_SECRET || 'magepunk-dev-secret-set-MP_SECRET';
@@ -274,6 +275,92 @@ export default async function handler(req) {
 		const p = await store.get('presence:' + who);
 		const online = p && Date.now() - p.lastSeen < ONLINE_MS;
 		return json({ presence: online ? p : null });
+	}
+
+	// ---------- live battles (server-authoritative PvP) ----------
+	const CHALLENGE_MS = 60_000, MATCH_MS = 30 * 60_000;
+
+	// send a challenge to a friend (carries your party/deck snapshot)
+	if (action === 'challenge') {
+		const to = String(body.to || '');
+		if (!user.friends.includes(to)) return json({ error: 'not your friend' }, 403);
+		const list = ((await store.get('challenge:' + to)) || []).filter(c => Date.now() - c.ts < CHALLENGE_MS && c.from !== username);
+		list.push({ from: username, type: String(body.battleType || 'pokemon'), party: body.party || null, ts: Date.now() });
+		await store.setJSON('challenge:' + to, list);
+		return json({ ok: true });
+	}
+
+	// my incoming challenges (fresh only)
+	if (action === 'challenges') {
+		const list = ((await store.get('challenge:' + username)) || []).filter(c => Date.now() - c.ts < CHALLENGE_MS);
+		return json({ challenges: list.map(c => ({ from: c.from, type: c.type })) });
+	}
+
+	if (action === 'decline-challenge') {
+		const from = String(body.from || '');
+		const list = ((await store.get('challenge:' + username)) || []).filter(c => c.from !== from);
+		await store.setJSON('challenge:' + username, list);
+		return json({ ok: true });
+	}
+
+	// accept: build the match, tell the challenger where to find it
+	if (action === 'accept-challenge') {
+		const from = String(body.from || '');
+		const list = (await store.get('challenge:' + username)) || [];
+		const ch = list.find(c => c.from === from && Date.now() - c.ts < CHALLENGE_MS);
+		if (!ch) return json({ error: 'that challenge expired' }, 404);
+		await store.setJSON('challenge:' + username, list.filter(c => c.from !== from));
+		const matchId = randCode() + randCode();
+		let match;
+		if (ch.type === 'pokemon') {
+			match = createMatch(matchId, from, ch.party || [], username, body.party || []);
+		} else {
+			return json({ error: 'only pokemon battles are live so far' }, 400);
+		}
+		match.lastActive = Date.now();
+		await store.setJSON('match:' + matchId, match);
+		await store.setJSON('ready:' + from, { matchId, ts: Date.now() });
+		return json({ matchId, match });
+	}
+
+	// challenger polls for the match created when their challenge is accepted
+	if (action === 'my-match') {
+		const ready = await store.get('ready:' + username);
+		if (ready && Date.now() - ready.ts < CHALLENGE_MS) {
+			await store.setJSON('ready:' + username, null);
+			return json({ matchId: ready.matchId });
+		}
+		return json({ matchId: null });
+	}
+
+	// poll a match (participants play; friends may spectate)
+	if (action === 'match') {
+		const m = await store.get('match:' + String(body.id || ''));
+		if (!m) return json({ error: 'no such match' }, 404);
+		const side = sideOf(m, username);
+		if (side < 0) {
+			// spectators must be a friend of a participant
+			const ok = m.sides.some(sd => user.friends.includes(sd.name));
+			if (!ok) return json({ error: 'not allowed to watch' }, 403);
+		}
+		return json({ match: m, side });
+	}
+
+	// submit an action; the server resolves the turn when both are in
+	if (action === 'match-action') {
+		const id = String(body.id || '');
+		const m = await store.get('match:' + id);
+		if (!m) return json({ error: 'no such match' }, 404);
+		const side = sideOf(m, username);
+		if (side < 0) return json({ error: 'you are not in this match' }, 403);
+		if (m.over) return json({ match: m, side });
+		const act = body.act || {};
+		if (act.kind === 'replace') replaceFainted(m, side, +act.partyIdx);
+		else if (act.kind === 'forfeit') { m.over = true; m.winner = 1 - side; m.events = [`${username} forfeited. ${m.sides[1 - side].name} wins!`]; m.seq++; }
+		else submitAction(m, side, act);
+		m.lastActive = Date.now();
+		await store.setJSON('match:' + id, m);
+		return json({ match: m, side });
 	}
 
 	if (action === 'open-pack') {

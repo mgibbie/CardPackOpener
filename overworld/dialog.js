@@ -43,7 +43,7 @@ export class Dialog {
 			if (this.idx >= this.pages.length) {
 				const cb = this.onClose;
 				this.pages = null;
-				cb?.();
+				cb?.(k); // pass the closing key so prompts can tell Z (yes) from X (no)
 			}
 		}
 	}

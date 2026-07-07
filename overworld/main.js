@@ -15,6 +15,7 @@ import { statsFor } from './battle.js';
 import { getImage } from './engine.js';
 import * as BUI from './battleui.js';
 import * as MP from '../battlecards/mpmode.js';
+import { Pvp } from './pvp.js';
 
 // Test Realm mode: ?mp=1 with a login token. The account backend owns the
 // cards; friends, presence, and world-visiting all run through it.
@@ -48,6 +49,7 @@ const dialog = new Dialog();
 const services = new Services(world);
 const evolution = new Evolution();
 const items = new Items(world);
+const pvp = new Pvp();
 let signTexts = {};
 let party = null;
 
@@ -262,16 +264,26 @@ async function promptAddFriend() {
 	dialog.open(`Added ${data.added} as a friend!`);
 }
 function friendAction(f) {
-	if (friendsChallenge.mode) {
-		friendsMenu.open = false;
-		friendsChallenge.mode = null;
-		dialog.open(`Live ${friendsChallenge.mode || 'card'} battles vs ${f.username} are coming soon!\n\nFor now you can visit their world.`);
+	if (friendsChallenge.mode === 'card') {
+		friendsMenu.open = false; friendsChallenge.mode = null;
+		if (!f.online) { dialog.open(`${f.username} is offline right now.`); return; }
+		dialog.open(`Live CARD battles vs ${f.username} are coming soon!\n\nPOKeMON battles are live — challenge them from the FRIENDS menu.`);
 		return;
 	}
 	if (!f.online) { dialog.open(`${f.username} is offline right now.`); return; }
-	// visit their world: load their current map at their position
 	friendsMenu.open = false;
-	visitWorld(f);
+	// battling friend → offer to spectate; otherwise a challenge/visit choice
+	if ((f.status || '').startsWith('battling:')) {
+		const matchId = f.status.slice('battling:'.length);
+		dialog.open(`${f.username} is in a battle!\n\nPress Z to SPECTATE, X to cancel.`, (declined) => {
+			if (declined !== 'x') enterMatch(matchId, true);
+		});
+		return;
+	}
+	dialog.open(`${f.username}:  Z=Battle challenge  X=Visit world`, (declined) => {
+		if (declined === 'x') visitWorld(f);
+		else sendChallenge(f);
+	});
 }
 const ferryMenu = { open: false, idx: 0 };
 const FERRY_DESTS = [
@@ -426,6 +438,7 @@ function pressKey(k) {
 	if (dialog.blocking) { dialog.key(k); return; }
 	if (evolution.blocking) { evolution.key(k); return; }
 	if (battle.blocking) { battle.key(k); return; }
+	if (pvp.blocking) { pvp.key(k); return; }
 	if (startMenu.open) { startKey(k); return; }
 	if (cardsMenu.open) { cardsKey(k); return; }
 	if (friendsMenu.open) { friendsKey(k); return; }
@@ -453,7 +466,7 @@ function pressKey(k) {
 }
 // any menu that consumes direction presses instead of walking
 const menuBlocking = () => starterMenu.open || dialog.blocking || evolution.blocking
-	|| battle.blocking || shopMenu.open || bagMenu.open || pcMenu.open || partyMenu.open || ferryMenu.open
+	|| battle.blocking || pvp.blocking || shopMenu.open || bagMenu.open || pcMenu.open || partyMenu.open || ferryMenu.open
 	|| startMenu.open || cardsMenu.open || friendsMenu.open;
 
 addEventListener('keydown', e => {
@@ -496,6 +509,7 @@ function screenPos(e) {
 		(e.clientY - r.top) * (screen.height / r.height)];
 }
 screen.addEventListener('pointermove', e => {
+	if (pvp.blocking) { pvp.hover(...screenPos(e)); return; }
 	if (battle.blocking) { battle.hover(...screenPos(e)); return; }
 	if (anyMenuOpen()) {
 		const [x, y] = screenPos(e);
@@ -505,6 +519,7 @@ screen.addEventListener('pointermove', e => {
 });
 screen.addEventListener('pointerdown', e => {
 	e.preventDefault();
+	if (pvp.blocking) { pvp.tap(...screenPos(e)); return; }
 	if (battle.blocking) { battle.tap(...screenPos(e)); return; }
 	if (dialog.blocking || evolution.blocking) { pressKey('z'); return; }
 	if (anyMenuOpen()) {
@@ -648,8 +663,9 @@ function tick(now) {
 	if (loading || !world.current) return;
 
 	battle.update(dt);
+	pvp.update(dt);
 	evolution.update(dt);
-	if (!battle.blocking && !dialog.blocking && !evolution.blocking && !starterMenu.open) {
+	if (!battle.blocking && !pvp.blocking && !dialog.blocking && !evolution.blocking && !starterMenu.open) {
 		trainers.update(dt);
 		player.run = runHeld;
 		if (!trainers.engaging) player.update(dt, heldKeys[0] || null);
@@ -673,6 +689,8 @@ function tick(now) {
 	const SW = screen.width, SH = screen.height;
 	if (battle.blocking) {
 		battle.draw(sctx, SW, SH);
+	} else if (pvp.blocking) {
+		pvp.draw(sctx, SW, SH);
 	} else {
 		if (partyMenu.open) drawPartyMenu(SW, SH);
 		else if (shopMenu.open) drawShopMenu(SW, SH);
@@ -978,6 +996,81 @@ function menuTap(id) {
 }
 const anyMenuOpen = () => partyMenu.open || shopMenu.open || bagMenu.open || pcMenu.open || starterMenu.open || ferryMenu.open || startMenu.open || cardsMenu.open || friendsMenu.open;
 
+// ---------- live PvP battles ----------
+// build a self-contained party snapshot the PvP engine can resolve without
+// any of our client-only data (move power/type/category baked in)
+function pvpParty() {
+	if (!party || !battle.data) return [];
+	return party.filter(m => m.curHP > 0).slice(0, 6).map(m => ({
+		speciesId: m.speciesId, name: m.name, level: m.level, types: m.types, sprite: m.sprite,
+		stats: { ...m.stats }, maxHP: m.maxHP, curHP: m.curHP, status: m.status || null,
+		moves: m.moves.map(mv => {
+			const info = battle.data.moves[mv.id] || {};
+			return { id: mv.id, name: mv.name, pp: mv.pp, maxPp: mv.maxPp,
+				type: info.type || 'Normal', power: info.power || 0,
+				category: info.category || 'Status', acc: info.acc ?? 100, priority: info.priority || 0 };
+		}),
+	}));
+}
+let pendingChallengeTo = null; // username we challenged, polling for accept
+async function sendChallenge(f) {
+	const snap = pvpParty();
+	if (!snap.length) { dialog.open('Your POKeMON need to be healthy to battle!'); return; }
+	await MP.call('challenge', { to: f.username, battleType: 'pokemon', party: snap });
+	pendingChallengeTo = f.username;
+	dialog.open(`Challenge sent to ${f.username}!\n\nWaiting for them to accept…`);
+}
+async function pollChallenges() {
+	if (!MP_ON || pvp.blocking) return;
+	// did a friend accept our challenge?
+	if (pendingChallengeTo) {
+		try {
+			const mm = await MP.call('my-match');
+			if (mm.matchId) { pendingChallengeTo = null; enterMatch(mm.matchId, false); return; }
+		} catch (e) {}
+	}
+	// any incoming challenges?
+	if (incomingChallenge || anyMenuOpen() || dialog.blocking || battle.blocking) return;
+	try {
+		const data = await MP.call('challenges');
+		const ch = (data.challenges || [])[0];
+		if (ch) { incomingChallenge = ch; showIncoming(ch); }
+	} catch (e) {}
+}
+let incomingChallenge = null;
+function showIncoming(ch) {
+	dialog.open(`${ch.from} challenges you to a POKeMON battle!\n\nPress Z to ACCEPT, X to decline.`, async (declined) => {
+		const c = incomingChallenge; incomingChallenge = null;
+		if (!c) return;
+		if (declined === 'x') { await MP.call('decline-challenge', { from: c.from }); return; }
+		const snap = pvpParty();
+		if (!snap.length) { dialog.open('Your POKeMON need to be healthy to battle!'); return; }
+		const data = await MP.call('accept-challenge', { from: c.from, party: snap });
+		if (data.error) { dialog.open(data.error); return; }
+		enterMatch(data.matchId, false, data.match, sideOfMe(data.match));
+	});
+}
+function sideOfMe(match) {
+	return match.sides.findIndex(sd => sd.name === (mpAccount?.username));
+}
+async function enterMatch(matchId, spectator, matchObj, side) {
+	let match = matchObj;
+	if (!match) {
+		const data = await MP.call('match', { id: matchId });
+		if (data.error) { dialog.open(data.error); return; }
+		match = data.match; side = data.side;
+	}
+	if (side == null) side = sideOfMe(match);
+	await pvp.start(matchId, match, side, spectator, () => {
+		heartbeat();
+		if (party) { // sync my mons' HP back from the finished match
+			const mySd = match.sides[side] || match.sides[0];
+		}
+	});
+	// tell friends I'm battling (so they can spectate)
+	if (MP_ON) MP.call('heartbeat', { map: world.current.name, x: player.tx, y: player.ty, facing: player.facing, status: 'battling:' + matchId, region: world.current.map.name || '' });
+}
+
 // ---------- multiplayer presence & visiting ----------
 let friendSprite = null; // green_normal.png, loaded lazily for friend ghosts
 getImage('data/sprites/green_normal.png').then(img => { friendSprite = img; }).catch(() => {});
@@ -1120,9 +1213,11 @@ function drawFriendGhost(ctx, camX, camY) {
 		heartbeat();
 		setInterval(heartbeat, 3000);
 		setInterval(pollVisit, 1500);
+		setInterval(pollChallenges, 2000);
 	}
 	window.__ow = { world, player, warpTo, moveToMap, npcs, encounters, battle, trainers, dialog, evolution, items, get party() { return party; }, get menuUi() { return menuUi; }, menuTap, pumpPlayer, freezeLoop, startWildBattle, interact,
 		get startMenu() { return startMenu; }, get cardsMenu() { return cardsMenu; }, get friendsMenu() { return friendsMenu; },
-		get friends() { return friends; }, get visiting() { return visiting; }, refreshFriends, visitWorld, leaveVisit, heartbeat, MP_ON };
+		get friends() { return friends; }, get visiting() { return visiting; }, refreshFriends, visitWorld, leaveVisit, heartbeat, MP_ON,
+		get pvp() { return pvp; }, pvpParty, sendChallenge, enterMatch, pollChallenges, get pending() { return pendingChallengeTo; } };
 	requestAnimationFrame(tick);
 })();
