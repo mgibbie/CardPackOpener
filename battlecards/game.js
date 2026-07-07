@@ -2367,10 +2367,25 @@ function startDuelHost(cardsById) {
 		try {
 			const d = await MPX.call('card-drain', { id: duel.id });
 			for (const it of (d.intents || [])) { applyGuestIntent(it); }
+			if (d.oppGone && state && !state.over) endDuelByAbandon(cm.guest); // guest left
 		} catch (e) {}
 	};
 	setInterval(drainTick, 700);
 	startDuelPublish();
+}
+
+// the host ends the duel when the guest is gone: freeze the engine, tell
+// spectators, and show the result
+function endDuelByAbandon(whoLeft) {
+	if (!state || state.over) return;
+	state.over = true;
+	state.winner = HUMAN;
+	publishDuel();
+	if (!$('duel-over')) {
+		const el = dungeonOverlay('YOU WIN!', `${whoLeft} left the duel.`);
+		el.id = 'duel-over';
+		el.appendChild(overlayButton('Back to your world', () => { location.href = '/overworld/?mp=1'; }));
+	}
 }
 
 // apply a relayed guest action to the authoritative engine (guest = player 1)
@@ -2434,7 +2449,10 @@ function startDuelGuest(cardsById) {
 		}
 		if (data.over && !$('duel-over')) {
 			const won = data.winner === HUMAN;
-			const el = dungeonOverlay(won ? 'YOU WIN!' : 'DEFEAT', won ? `You beat ${cm.host}!` : `${cm.host} wins the duel.`);
+			const msg = data.abandoned
+				? (won ? `${cm.host} left the duel.` : 'You left the duel.')
+				: (won ? `You beat ${cm.host}!` : `${cm.host} wins the duel.`);
+			const el = dungeonOverlay(won ? 'YOU WIN!' : 'DEFEAT', msg);
 			el.id = 'duel-over';
 			el.appendChild(overlayButton('Back to your world', () => { location.href = '/overworld/?mp=1'; }));
 		}

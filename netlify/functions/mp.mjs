@@ -279,6 +279,10 @@ export default async function handler(req) {
 
 	// ---------- card-game spectation (state broadcast) ----------
 	const CARDSTATE_MS = 20_000; // a snapshot older than 20s is treated as done
+	// a participant who hasn't polled/published in this long is treated as gone;
+	// their opponent wins by abandonment. Polling itself is the liveness signal.
+	// (overridable so tests don't have to wait the full window)
+	const ABANDON_MS = +process.env.MP_ABANDON_MS || 18_000;
 
 	// the player in a dungeon run / card battle publishes a board snapshot here
 	// every ~1.2s; it doubles as a presence ping so friends see them "in a run"
@@ -397,6 +401,7 @@ export default async function handler(req) {
 		const cm = await store.get('cardmatch:' + id);
 		if (!cm) return json({ error: 'no such match' }, 404);
 		if (cm.host !== username) return json({ error: 'only the host publishes' }, 403);
+		await store.setJSON('alive:' + id + ':host', Date.now()); // publishing proves the host is here
 		if (body.over) { cm.over = true; cm.winner = body.winner ?? null; await store.setJSON('cardmatch:' + id, cm); }
 		const payload = { snapshot: body.snapshot || null, mode: 'pvp', label: String(body.label || 'Card Duel'), seq: +body.seq || 0, ts: Date.now() };
 		await store.setJSON('cardmatchstate:' + id, payload);
@@ -413,9 +418,20 @@ export default async function handler(req) {
 		const id = String(body.id || '');
 		const cm = await store.get('cardmatch:' + id);
 		if (!cm) return json({ error: 'no such match' }, 404);
+		const now = Date.now();
+		// the guest polling proves they're here; if the host stopped publishing,
+		// the guest wins by abandonment
+		if (cm.guest === username && !cm.over) {
+			await store.setJSON('alive:' + id + ':guest', now);
+			const hostAlive = await store.get('alive:' + id + ':host');
+			if (hostAlive && now - hostAlive > ABANDON_MS) {
+				cm.over = true; cm.winner = 1; cm.abandoned = true; // guest = player 1
+				await store.setJSON('cardmatch:' + id, cm);
+			}
+		}
 		const cs = await store.get('cardmatchstate:' + id);
-		if (!cs || Date.now() - cs.ts > CARDSTATE_MS) return json({ snapshot: null, over: cm.over, winner: cm.winner });
-		return json({ ...cs, over: cm.over, winner: cm.winner });
+		if (!cs || now - cs.ts > CARDSTATE_MS) return json({ snapshot: null, over: cm.over, winner: cm.winner, abandoned: !!cm.abandoned });
+		return json({ ...cs, over: cm.over, winner: cm.winner, abandoned: !!cm.abandoned });
 	}
 
 	// guest queues an action intent; the host drains and applies them
@@ -436,20 +452,47 @@ export default async function handler(req) {
 		const cm = await store.get('cardmatch:' + id);
 		if (!cm) return json({ error: 'no such match' }, 404);
 		if (cm.host !== username) return json({ error: 'only the host drains' }, 403);
+		const now = Date.now();
+		await store.setJSON('alive:' + id + ':host', now); // draining also proves the host is here
+		let oppGone = false;
+		// if the guest stopped polling, the host wins by abandonment
+		if (!cm.over) {
+			const guestAlive = await store.get('alive:' + id + ':guest');
+			if (guestAlive && now - guestAlive > ABANDON_MS) {
+				cm.over = true; cm.winner = 0; cm.abandoned = true; // host = player 0
+				await store.setJSON('cardmatch:' + id, cm);
+				oppGone = true;
+			}
+		}
 		const list = (await store.get('cardintent:' + id)) || [];
 		if (list.length) await store.setJSON('cardintent:' + id, []);
-		return json({ intents: list.map(x => x.intent) });
+		return json({ intents: list.map(x => x.intent), oppGone, over: !!cm.over });
 	}
 
 	// poll a match (participants play; friends may spectate)
 	if (action === 'match') {
-		const m = await store.get('match:' + String(body.id || ''));
+		const id = String(body.id || '');
+		const m = await store.get('match:' + id);
 		if (!m) return json({ error: 'no such match' }, 404);
 		const side = sideOf(m, username);
 		if (side < 0) {
 			// spectators must be a friend of a participant
 			const ok = m.sides.some(sd => user.friends.includes(sd.name));
 			if (!ok) return json({ error: 'not allowed to watch' }, 403);
+			return json({ match: m, side });
+		}
+		// participant liveness: polling proves you're here; if the opponent went
+		// silent, you win by abandonment
+		if (!m.over) {
+			const now = Date.now();
+			await store.setJSON('alive:' + id + ':' + side, now);
+			const opp = await store.get('alive:' + id + ':' + (1 - side));
+			if (opp && now - opp > ABANDON_MS) {
+				m.over = true; m.winner = side;
+				m.events = [`${m.sides[1 - side].name} left the battle. ${m.sides[side].name} wins!`];
+				m.seq++; m.lastActive = now;
+				await store.setJSON('match:' + id, m);
+			}
 		}
 		return json({ match: m, side });
 	}

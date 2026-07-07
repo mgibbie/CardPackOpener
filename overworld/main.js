@@ -1108,12 +1108,9 @@ async function enterMatch(matchId, spectator, matchObj, side) {
 		match = data.match; side = data.side;
 	}
 	if (side == null) side = sideOfMe(match);
-	await pvp.start(matchId, match, side, spectator, () => {
-		heartbeat();
-		if (party) { // sync my mons' HP back from the finished match
-			const mySd = match.sides[side] || match.sides[0];
-		}
-	});
+	// live PvP is non-persistent (link-battle style): the battle runs on a party
+	// snapshot, so damage/fainting never carries back to your overworld team.
+	await pvp.start(matchId, match, side, spectator, () => { heartbeat(); });
 	// tell friends I'm battling (so they can spectate)
 	if (MP_ON) MP.call('heartbeat', { map: world.current.name, x: player.tx, y: player.ty, facing: player.facing, status: 'battling:' + matchId, region: world.current.map.name || '' });
 }
