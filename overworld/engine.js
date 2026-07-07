@@ -368,7 +368,8 @@ export class Player {
 	update(dt, held) {
 		this.animT += dt;
 		if (this.moving) {
-			this.moveT += (SPEED * dt) / this.moveDist;
+			// hold B / Shift to run at nearly double speed
+			this.moveT += (SPEED * (this.run ? 1.85 : 1) * dt) / this.moveDist;
 			if (this.moveT >= 1) {
 				this.px = this.moveTo[0]; this.py = this.moveTo[1];
 				this.moving = false; this.jumping = false;

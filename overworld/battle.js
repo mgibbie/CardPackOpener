@@ -5,6 +5,9 @@
 import { getJSON, getImage, VIEW_W, VIEW_H } from './engine.js';
 import * as Bag from './bag.js';
 import * as UI from './battleui.js';
+import { cry, sfx } from './sound.js';
+
+const STRUGGLE = () => ({ id: 'struggle', name: 'Struggle', pp: 1, maxPp: 1 });
 
 // ---------- type chart (attacking type -> non-neutral matchups) ----------
 const CHART = {
@@ -222,8 +225,8 @@ export class Battle {
 			result: null,
 			caughtMon: null,
 		};
-		this.pushMsg(`A wild ${foe.name} appeared!`);
-		this.pushMsg(`Go! ${playerMon.name}!`);
+		this.pushMsg(`A wild ${foe.name} appeared!`, () => cry(foe.speciesId));
+		this.pushMsg(`Go! ${playerMon.name}!`, () => { sfx('ball_open'); cry(playerMon.speciesId); });
 	}
 
 	// trainer battle: foeParty of mons, no running, no catching
@@ -260,8 +263,8 @@ export class Battle {
 			caughtMon: null,
 		};
 		this.pushMsg(`You are challenged by ${info.displayName}!`);
-		this.pushMsg(`${info.displayName} sent out ${foe.name}!`);
-		this.pushMsg(`Go! ${playerMon.name}!`);
+		this.pushMsg(`${info.displayName} sent out ${foe.name}!`, () => cry(foe.speciesId));
+		this.pushMsg(`Go! ${playerMon.name}!`, () => { sfx('ball_open'); cry(playerMon.speciesId); });
 	}
 
 	get blocking() { return this.active != null; }
@@ -386,7 +389,10 @@ export class Battle {
 		total = Math.min(total, target.curHP);
 		this.pushAnim('lunge', isFoe ? 'foe' : 'me', 0.3);
 		this.pushAnim('hit', isFoe ? 'me' : 'foe', 0.4);
-		this.pushMsg('', () => { target.curHP = Math.max(0, target.curHP - total); });
+		this.pushMsg('', () => {
+			sfx(eff > 1 ? 'hit_super' : eff < 1 ? 'hit_weak' : 'hit_normal');
+			target.curHP = Math.max(0, target.curHP - total);
+		});
 		if (nHits > 1) this.pushMsg(`Hit ${nHits} time(s)!`);
 		if (crits) this.pushMsg('A critical hit!');
 		if (eff > 1) this.pushMsg("It's super effective!");
@@ -432,10 +438,28 @@ export class Battle {
 		a.foe.flinched = false;
 	}
 
+	// wild mons act at random; trainers prefer the strongest expected hit
+	// (power x STAB x type effectiveness), with a dash of unpredictability
+	chooseFoeMove() {
+		const a = this.active;
+		const usable = a.foe.moves.filter(m => m.pp > 0);
+		if (!usable.length) return STRUGGLE();
+		if (!a.isTrainer || Math.random() < 0.15) return usable[Math.floor(Math.random() * usable.length)];
+		let best = null, bestScore = 0;
+		for (const m of usable) {
+			const mv = this.data.moves[m.id] || {};
+			if (!mv.power) continue;
+			const score = mv.power
+				* (a.foe.types.includes(mv.type) ? 1.5 : 1)
+				* effectiveness(mv.type, a.me.types);
+			if (score > bestScore) { bestScore = score; best = m; }
+		}
+		return best || usable[Math.floor(Math.random() * usable.length)];
+	}
+
 	resolveTurn(myMove) {
 		const a = this.active;
-		const foeMoves = a.foe.moves.filter(m => m.pp > 0);
-		const foeMove = foeMoves.length ? foeMoves[Math.floor(Math.random() * foeMoves.length)] : { id: 'struggle', name: 'Struggle', pp: 1 };
+		const foeMove = this.chooseFoeMove();
 		const myPrio = this.data.moves[myMove.id]?.priority || 0;
 		const foePrio = this.data.moves[foeMove.id]?.priority || 0;
 		const mySpe = this.statOf(a.me, a.meBoosts, 'spe');
@@ -459,15 +483,17 @@ export class Battle {
 	checkFaints() {
 		const a = this.active;
 		if (a.foe.curHP <= 0) {
-			this.pushMsg(a.isTrainer ? `${a.foe.name} fainted!` : `The wild ${a.foe.name} fainted!`);
+			this.pushMsg(a.isTrainer ? `${a.foe.name} fainted!` : `The wild ${a.foe.name} fainted!`,
+				() => cry(a.foe.speciesId));
 			this.pushAnim('faint', 'foe', 0.7, () => { a.foeHidden = true; });
 			this.grantExp();
 		} else if (a.me.curHP <= 0) {
-			this.pushMsg(`${a.me.name} fainted!`);
+			this.pushMsg(`${a.me.name} fainted!`, () => cry(a.me.speciesId));
 			this.pushAnim('faint', 'me', 0.7, () => { a.meHidden = true; });
 			const next = a.party.find(m => m.curHP > 0);
 			if (next) {
 				this.pushMsg(`Go! ${next.name}!`, () => {
+					sfx('ball_open'); cry(next.speciesId);
 					a.me = next;
 					a.meImg = a.backSprites.get(next);
 					a.meBoosts = freshBoosts();
@@ -519,6 +545,7 @@ export class Battle {
 				a2.foeIdx++;
 				const next = a2.foes[a2.foeIdx];
 				this.pushMsg(`${a2.info.displayName} sent out ${next.name}!`, () => {
+					cry(next.speciesId);
 					a2.foe = next;
 					a2.foeImg = a2.foeSprites.get(next);
 					a2.foeBoosts = freshBoosts();
@@ -539,7 +566,7 @@ export class Battle {
 	throwBall() {
 		const a = this.active;
 		this.pushMsg('You threw a POKe BALL!');
-		this.pushAnim('ballthrow', 'foe', 0.55, () => { a.foeHidden = true; a.ballShown = true; });
+		this.pushAnim('ballthrow', 'foe', 0.55, () => { sfx('ball_open'); a.foeHidden = true; a.ballShown = true; });
 		const rate = this.data.extra?.[a.foe.speciesId]?.catch ?? 45; // real species catch rate
 		const statusBonus = a.foe.status === 'slp' || a.foe.status === 'frz' ? 2
 			: a.foe.status ? 1.5 : 1;
@@ -547,19 +574,18 @@ export class Battle {
 		const b = Math.floor(1048560 / Math.sqrt(Math.sqrt(16711680 / f)));
 		let shakes = 0;
 		while (shakes < 4 && Math.floor(Math.random() * 65536) < b) shakes++;
-		for (let i = 1; i <= Math.min(shakes, 3); i++) this.pushAnim('ballshake', 'foe', 0.7);
+		for (let i = 1; i <= Math.min(shakes, 3); i++) this.pushAnim('ballshake', 'foe', 0.7, () => sfx('ball_drop'));
 		if (shakes >= 4) {
-			this.pushAnim('ballcatch', 'foe', 0.5);
+			this.pushAnim('ballcatch', 'foe', 0.5, () => sfx('ball_drop'));
 			this.pushMsg(`Gotcha! ${a.foe.name} was caught!`, () => {
 				a.caughtMon = a.foe;
 				this.finish('caught');
 			});
 		} else {
-			this.pushAnim('ballbreak', 'foe', 0.35, () => { a.foeHidden = false; a.ballShown = false; });
+			this.pushAnim('ballbreak', 'foe', 0.35, () => { sfx('ball_open'); a.foeHidden = false; a.ballShown = false; });
 			this.pushMsg(`Oh no! The ${a.foe.name} broke free!`);
 			this.pushMsg('', () => {
-				const foeMoves = a.foe.moves.filter(m => m.pp > 0);
-				if (foeMoves.length) this.useMove(a.foe, a.foeBoosts, a.me, a.meBoosts, foeMoves[Math.floor(Math.random() * foeMoves.length)], true);
+				this.useMove(a.foe, a.foeBoosts, a.me, a.meBoosts, this.chooseFoeMove(), true);
 			});
 			this.pushMsg('', () => this.checkFaints());
 		}
@@ -578,8 +604,7 @@ export class Battle {
 		else {
 			this.pushMsg("Can't escape!");
 			this.pushMsg('', () => {
-				const foeMoves = a.foe.moves.filter(m => m.pp > 0);
-				if (foeMoves.length) this.useMove(a.foe, a.foeBoosts, a.me, a.meBoosts, foeMoves[Math.floor(Math.random() * foeMoves.length)], true);
+				this.useMove(a.foe, a.foeBoosts, a.me, a.meBoosts, this.chooseFoeMove(), true);
 			});
 			this.pushMsg('', () => this.checkFaints());
 		}
@@ -602,7 +627,15 @@ export class Battle {
 			if (k === 'ArrowLeft' || k === 'ArrowRight') a.menuIdx ^= 1;
 			if (k === 'ArrowUp' || k === 'ArrowDown') a.menuIdx ^= 2;
 			if (k === 'z' || k === 'Enter') {
-				if (a.menuIdx === 0) { a.phase = 'moves'; a.moveIdx = 0; }
+				if (a.menuIdx === 0) {
+					// out of PP everywhere: Struggle instead of a dead menu
+					if (a.me.moves.every(m => m.pp <= 0)) {
+						this.startQueue(() => {
+							this.pushMsg(`${a.me.name} has no moves left!`);
+							this.resolveTurn(STRUGGLE());
+						});
+					} else { a.phase = 'moves'; a.moveIdx = 0; }
+				}
 				else if (a.menuIdx === 1) { a.phase = 'bag'; a.bagIdx = 0; }
 				else if (a.menuIdx === 2) {
 					const options = a.party.filter(m => m !== a.me && m.curHP > 0);
@@ -660,8 +693,7 @@ export class Battle {
 		const a = this.active;
 		this.pushMsg('', () => {
 			if (a.foe.curHP <= 0 || a.me.curHP <= 0) return;
-			const fm = a.foe.moves.filter(m => m.pp > 0);
-			if (fm.length) this.useMove(a.foe, a.foeBoosts, a.me, a.meBoosts, fm[Math.floor(Math.random() * fm.length)], true);
+			this.useMove(a.foe, a.foeBoosts, a.me, a.meBoosts, this.chooseFoeMove(), true);
 		});
 		this.pushMsg('', () => {
 			const a2 = this.active;
@@ -712,6 +744,7 @@ export class Battle {
 			this.pushMsg(`Come back, ${a.me.name}!`);
 			this.pushAnim('recall', 'me', 0.3, () => { a.meHidden = true; });
 			this.pushMsg(`Go! ${mon.name}!`, () => {
+				sfx('ball_open'); cry(mon.speciesId);
 				a.me = mon;
 				a.meImg = a.backSprites.get(mon);
 				a.meBoosts = freshBoosts();

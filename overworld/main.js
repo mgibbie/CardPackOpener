@@ -81,7 +81,9 @@ const KEYMAP = {
 	w: 'up', s: 'down', a: 'left', d: 'right',
 };
 const heldKeys = [];
+let runHeld = false; // Shift on keyboard, holding B on touch
 addEventListener('keydown', e => {
+	if (e.key === 'Shift') runHeld = true;
 	const dir = KEYMAP[e.key];
 	if (dir) {
 		e.preventDefault();
@@ -89,12 +91,21 @@ addEventListener('keydown', e => {
 	}
 });
 addEventListener('keyup', e => {
+	if (e.key === 'Shift') runHeld = false;
 	const dir = KEYMAP[e.key];
 	if (dir) {
 		const i = heldKeys.indexOf(dir);
 		if (i >= 0) heldKeys.splice(i, 1);
 	}
 });
+
+// where you are, so a return visit resumes there (URL params still win)
+const POS_KEY = 'magepunk_pos_v1';
+function savePos() {
+	try {
+		localStorage.setItem(POS_KEY, JSON.stringify({ map: world.current.name, x: player.tx, y: player.ty }));
+	} catch (e) {}
+}
 // Z in front of something: services, talk-to trainers (incl. gym leaders), signs
 function interact() {
 	if (player.moving || trainers.engaging) return;
@@ -304,6 +315,10 @@ for (const [id, dir] of Object.entries(DPAD)) {
 for (const [id, key] of [['t-a', 'z'], ['t-b', 'x'], ['t-party', 'p'], ['t-bag', 'b']]) {
 	document.getElementById(id).addEventListener('pointerdown', e => { e.preventDefault(); pressKey(key); });
 }
+// holding B doubles as the run button while roaming
+const tb = document.getElementById('t-b');
+tb.addEventListener('pointerdown', () => { runHeld = true; });
+for (const ev of ['pointerup', 'pointercancel', 'pointerleave']) tb.addEventListener(ev, () => { runHeld = false; });
 
 // tap/click on the game screen: battle buttons, or advancing dialogs
 function screenPos(e) {
@@ -339,6 +354,7 @@ async function warpTo(mapId, destWarpId) {
 	services.loadForMap();
 	items.loadForMap();
 	hud.textContent = world.current.map.name || file;
+	savePos();
 	loading = false;
 }
 
@@ -354,6 +370,7 @@ async function backWarp() {
 	services.loadForMap();
 	items.loadForMap();
 	hud.textContent = world.current.map.name || src.name;
+	savePos();
 	loading = false;
 }
 
@@ -369,12 +386,14 @@ async function crossConnection(hit) {
 	services.loadForMap();
 	items.loadForMap();
 	hud.textContent = world.current.map.name || conn.name;
+	savePos();
 	loading = false;
 }
 
 player.onArrive = () => {
 	// warp tile?
 	const w = world.warpAt(player.tx, player.ty);
+	if (!w) savePos();
 	if (w) {
 		const dest = parseInt(w.dest_warp_id, 10);
 		if (dest === -1) backWarp();
@@ -433,6 +452,7 @@ function tick(now) {
 	evolution.update(dt);
 	if (!battle.blocking && !dialog.blocking && !evolution.blocking && !starterMenu.open) {
 		trainers.update(dt);
+		player.run = runHeld;
 		if (!trainers.engaging) player.update(dt, heldKeys[0] || null);
 		npcs.update(dt);
 	}
@@ -608,10 +628,17 @@ function drawPcMenu() {
 		}
 	}
 	const params = new URLSearchParams(location.search);
-	const startMap = params.get('map') || 'PalletTown';
-	await world.load(startMap);
-	const sx = params.has('x') ? +params.get('x') : Math.floor(world.current.layout.width / 2);
-	const sy = params.has('y') ? +params.get('y') : Math.floor(world.current.layout.height / 2);
+	// resume from the saved position unless the URL pins a map
+	let saved = null;
+	if (!params.has('map')) {
+		try { saved = JSON.parse(localStorage.getItem(POS_KEY)); } catch (e) {}
+	}
+	const startMap = params.get('map') || saved?.map || 'PalletTown';
+	try { await world.load(startMap); } catch (e) { saved = null; await world.load('PalletTown'); }
+	const sx = params.has('x') ? +params.get('x')
+		: saved?.x ?? Math.floor(world.current.layout.width / 2);
+	const sy = params.has('y') ? +params.get('y')
+		: saved?.y ?? Math.floor(world.current.layout.height / 2);
 	player.setTile(sx, sy);
 	await npcs.loadForMap();
 	await trainers.loadForMap();
