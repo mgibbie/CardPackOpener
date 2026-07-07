@@ -37983,6 +37983,1535 @@
         }
       ],
       "description": "Battlecry: Search your deck for a creature with 2 or less Attack."
+    },
+    {
+      "id": "precinct_captain",
+      "name": "Precinct Captain",
+      "colors": [
+        "W"
+      ],
+      "cardClass": "neutral",
+      "cost": 2,
+      "rarity": "common",
+      "set": "wubrg",
+      "type": "creature",
+      "attack": 2,
+      "health": 2,
+      "tribe": "Human Soldier",
+      "keywords": [
+        "first_strike"
+      ],
+      "ongoing": {
+        "on": "self-attacks-hero",
+        "effects": [
+          {
+            "type": "summon",
+            "count": 1,
+            "attack": 1,
+            "health": 1,
+            "name": "Soldier"
+          }
+        ]
+      },
+      "description": "First Strike. Whenever this creature deals combat damage to a player, create a 1/1 white Soldier creature token."
+    },
+    {
+      "id": "soul_warden",
+      "name": "Soul Warden",
+      "colors": [
+        "W"
+      ],
+      "cardClass": "neutral",
+      "cost": 1,
+      "rarity": "common",
+      "set": "wubrg",
+      "type": "creature",
+      "attack": 1,
+      "health": 1,
+      "tribe": "Human Cleric",
+      "ongoing": {
+        "on": "summoned",
+        "effects": [
+          {
+            "type": "heal",
+            "value": 1,
+            "target": "self"
+          }
+        ]
+      },
+      "description": "Whenever another creature enters, you gain 1 life."
+    },
+    {
+      "id": "soul_s_attendant",
+      "name": "Soul's Attendant",
+      "colors": [
+        "W"
+      ],
+      "cardClass": "neutral",
+      "cost": 1,
+      "rarity": "common",
+      "set": "wubrg",
+      "type": "creature",
+      "attack": 1,
+      "health": 1,
+      "tribe": "Human Cleric",
+      "ongoing": {
+        "on": "summoned",
+        "effects": [
+          {
+            "type": "heal",
+            "value": 1,
+            "target": "self"
+          }
+        ]
+      },
+      "description": "Whenever another creature enters, you may gain 1 life."
+    },
+    {
+      "id": "elite_vanguard",
+      "name": "Elite Vanguard",
+      "colors": [
+        "W"
+      ],
+      "cardClass": "neutral",
+      "cost": 1,
+      "rarity": "common",
+      "set": "wubrg",
+      "type": "creature",
+      "attack": 2,
+      "health": 1,
+      "tribe": "Human Soldier",
+      "description": "A 2/1 creature."
+    },
+    {
+      "id": "knight_of_meadowgrain",
+      "name": "Knight of Meadowgrain",
+      "colors": [
+        "W"
+      ],
+      "cardClass": "neutral",
+      "cost": 2,
+      "rarity": "common",
+      "set": "wubrg",
+      "type": "creature",
+      "attack": 2,
+      "health": 2,
+      "tribe": "Kithkin Knight",
+      "keywords": [
+        "first_strike",
+        "lifesteal"
+      ],
+      "description": "First Strike. Lifesteal."
+    },
+    {
+      "id": "wall_of_omens",
+      "name": "Wall of Omens",
+      "colors": [
+        "W"
+      ],
+      "cardClass": "neutral",
+      "cost": 2,
+      "rarity": "common",
+      "set": "wubrg",
+      "type": "creature",
+      "attack": 0,
+      "health": 4,
+      "tribe": "Wall",
+      "keywords": [
+        "pacifist",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "draw",
+          "value": 1
+        }
+      ],
+      "description": "Pacifist. Battlecry: draw a card.."
+    },
+    {
+      "id": "wrath_of_god",
+      "name": "Wrath of God",
+      "colors": [
+        "W"
+      ],
+      "cardClass": "neutral",
+      "cost": 4,
+      "rarity": "common",
+      "set": "wubrg",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "destroy-all"
+        }
+      ],
+      "description": "Destroy all creatures. They can't be regenerated."
+    },
+    {
+      "id": "day_of_judgment",
+      "name": "Day of Judgment",
+      "colors": [
+        "W"
+      ],
+      "cardClass": "neutral",
+      "cost": 4,
+      "rarity": "common",
+      "set": "wubrg",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "destroy-all"
+        }
+      ],
+      "description": "Destroy all creatures."
+    },
+    {
+      "id": "raise_the_alarm",
+      "name": "Raise the Alarm",
+      "colors": [
+        "W"
+      ],
+      "cardClass": "neutral",
+      "cost": 2,
+      "rarity": "common",
+      "set": "wubrg",
+      "type": "instant",
+      "effects": [
+        {
+          "type": "summon",
+          "count": 2,
+          "attack": 1,
+          "health": 1,
+          "name": "Soldier"
+        }
+      ],
+      "description": "Create two 1/1 white Soldier creature tokens."
+    },
+    {
+      "id": "honor_of_the_pure",
+      "name": "Honor of the Pure",
+      "colors": [
+        "W"
+      ],
+      "cardClass": "neutral",
+      "cost": 2,
+      "rarity": "common",
+      "set": "wubrg",
+      "type": "enchantment",
+      "aura": {
+        "attack": 1,
+        "health": 1
+      },
+      "description": "White creatures you control get +1/+1."
+    },
+    {
+      "id": "glorious_anthem",
+      "name": "Glorious Anthem",
+      "colors": [
+        "W"
+      ],
+      "cardClass": "neutral",
+      "cost": 3,
+      "rarity": "common",
+      "set": "wubrg",
+      "type": "enchantment",
+      "aura": {
+        "attack": 1,
+        "health": 1
+      },
+      "description": "Creatures you control get +1/+1."
+    },
+    {
+      "id": "smite_the_monstrous",
+      "name": "Smite the Monstrous",
+      "colors": [
+        "W"
+      ],
+      "cardClass": "neutral",
+      "cost": 4,
+      "rarity": "common",
+      "set": "wubrg",
+      "type": "instant",
+      "effects": [
+        {
+          "type": "destroy",
+          "target": "creature",
+          "minAttack": 4
+        }
+      ],
+      "description": "Destroy target creature with power 4 or greater."
+    },
+    {
+      "id": "man_o_war",
+      "name": "Man-o'-War",
+      "colors": [
+        "U"
+      ],
+      "cardClass": "neutral",
+      "cost": 3,
+      "rarity": "common",
+      "set": "wubrg",
+      "type": "creature",
+      "attack": 2,
+      "health": 2,
+      "tribe": "Jellyfish",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "bounce",
+          "target": "creature"
+        }
+      ],
+      "description": "Battlecry: return target creature to its owner's hand.."
+    },
+    {
+      "id": "aether_adept",
+      "name": "Aether Adept",
+      "colors": [
+        "U"
+      ],
+      "cardClass": "neutral",
+      "cost": 3,
+      "rarity": "common",
+      "set": "wubrg",
+      "type": "creature",
+      "attack": 2,
+      "health": 2,
+      "tribe": "Human Wizard",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "bounce",
+          "target": "creature"
+        }
+      ],
+      "description": "Battlecry: return target creature to its owner's hand.."
+    },
+    {
+      "id": "waterfront_bouncer",
+      "name": "Waterfront Bouncer",
+      "colors": [
+        "U"
+      ],
+      "cardClass": "neutral",
+      "cost": 2,
+      "rarity": "common",
+      "set": "wubrg",
+      "type": "creature",
+      "attack": 1,
+      "health": 1,
+      "tribe": "Merfolk Spellshaper",
+      "activated": [
+        {
+          "cost": 1,
+          "tap": true,
+          "discardRandom": true,
+          "effects": [
+            {
+              "type": "bounce",
+              "target": "creature"
+            }
+          ],
+          "text": "Return target creature to its owner's hand."
+        }
+      ],
+      "description": "Tap: Return target creature to its owner's hand."
+    },
+    {
+      "id": "neurok_commando",
+      "name": "Neurok Commando",
+      "colors": [
+        "U"
+      ],
+      "cardClass": "neutral",
+      "cost": 3,
+      "rarity": "common",
+      "set": "wubrg",
+      "type": "creature",
+      "attack": 2,
+      "health": 1,
+      "tribe": "Human Rogue",
+      "keywords": [
+        "elusive"
+      ],
+      "ongoing": {
+        "on": "self-attacks-hero",
+        "effects": [
+          {
+            "type": "draw",
+            "value": 1
+          }
+        ]
+      },
+      "description": "Elusive. Whenever this creature deals combat damage to a player, you may draw a card."
+    },
+    {
+      "id": "sage_s_row_savant",
+      "name": "Sage's Row Savant",
+      "colors": [
+        "U"
+      ],
+      "cardClass": "neutral",
+      "cost": 2,
+      "rarity": "common",
+      "set": "wubrg",
+      "type": "creature",
+      "attack": 2,
+      "health": 1,
+      "tribe": "Vedalken Wizard",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "scry",
+          "value": 2
+        }
+      ],
+      "description": "Battlecry: scry 2.."
+    },
+    {
+      "id": "sigiled_starfish",
+      "name": "Sigiled Starfish",
+      "colors": [
+        "U"
+      ],
+      "cardClass": "neutral",
+      "cost": 2,
+      "rarity": "common",
+      "set": "wubrg",
+      "type": "creature",
+      "attack": 0,
+      "health": 3,
+      "tribe": "Starfish",
+      "activated": [
+        {
+          "cost": 0,
+          "tap": true,
+          "effects": [
+            {
+              "type": "scry",
+              "value": 1
+            }
+          ],
+          "text": "Scry 1."
+        }
+      ],
+      "description": "Tap: Scry 1."
+    },
+    {
+      "id": "serum_visions",
+      "name": "Serum Visions",
+      "colors": [
+        "U"
+      ],
+      "cardClass": "neutral",
+      "cost": 1,
+      "rarity": "common",
+      "set": "wubrg",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "draw",
+          "value": 1
+        },
+        {
+          "type": "scry",
+          "value": 2
+        }
+      ],
+      "description": "Draw a card. Scry 2."
+    },
+    {
+      "id": "opt",
+      "name": "Opt",
+      "colors": [
+        "U"
+      ],
+      "cardClass": "neutral",
+      "cost": 1,
+      "rarity": "common",
+      "set": "wubrg",
+      "type": "instant",
+      "effects": [
+        {
+          "type": "scry",
+          "value": 1
+        },
+        {
+          "type": "draw",
+          "value": 1
+        }
+      ],
+      "description": "Scry 1. Draw a card."
+    },
+    {
+      "id": "jace_s_ingenuity",
+      "name": "Jace's Ingenuity",
+      "colors": [
+        "U"
+      ],
+      "cardClass": "neutral",
+      "cost": 5,
+      "rarity": "common",
+      "set": "wubrg",
+      "type": "instant",
+      "effects": [
+        {
+          "type": "draw",
+          "value": 3
+        }
+      ],
+      "description": "Draw three cards."
+    },
+    {
+      "id": "unsummon",
+      "name": "Unsummon",
+      "colors": [
+        "U"
+      ],
+      "cardClass": "neutral",
+      "cost": 1,
+      "rarity": "common",
+      "set": "wubrg",
+      "type": "instant",
+      "effects": [
+        {
+          "type": "bounce",
+          "target": "creature"
+        }
+      ],
+      "description": "Return target creature to its owner's hand."
+    },
+    {
+      "id": "diregraf_ghoul",
+      "name": "Diregraf Ghoul",
+      "colors": [
+        "B"
+      ],
+      "cardClass": "neutral",
+      "cost": 1,
+      "rarity": "common",
+      "set": "wubrg",
+      "type": "creature",
+      "attack": 2,
+      "health": 2,
+      "tribe": "Zombie",
+      "description": "A 2/2 creature."
+    },
+    {
+      "id": "nantuko_shade",
+      "name": "Nantuko Shade",
+      "colors": [
+        "B"
+      ],
+      "cardClass": "neutral",
+      "cost": 2,
+      "rarity": "common",
+      "set": "wubrg",
+      "type": "creature",
+      "attack": 2,
+      "health": 1,
+      "tribe": "Insect Shade",
+      "activated": [
+        {
+          "cost": 1,
+          "effects": [
+            {
+              "type": "temp-buff-self",
+              "attack": 1,
+              "health": 1
+            }
+          ],
+          "text": "This creature gets +1/+1 until end of turn."
+        }
+      ],
+      "description": "1: This creature gets +1/+1 until end of turn."
+    },
+    {
+      "id": "dusk_legion_zealot",
+      "name": "Dusk Legion Zealot",
+      "colors": [
+        "B"
+      ],
+      "cardClass": "neutral",
+      "cost": 2,
+      "rarity": "common",
+      "set": "wubrg",
+      "type": "creature",
+      "attack": 1,
+      "health": 1,
+      "tribe": "Vampire Soldier",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "draw",
+          "value": 1
+        },
+        {
+          "type": "damage",
+          "value": 1,
+          "target": "own-hero"
+        }
+      ],
+      "description": "Battlecry: you draw a card and you lose 1 life.."
+    },
+    {
+      "id": "gifted_aetherborn",
+      "name": "Gifted Aetherborn",
+      "colors": [
+        "B"
+      ],
+      "cardClass": "neutral",
+      "cost": 2,
+      "rarity": "common",
+      "set": "wubrg",
+      "type": "creature",
+      "attack": 2,
+      "health": 3,
+      "tribe": "Aetherborn Vampire",
+      "keywords": [
+        "deathtouch",
+        "lifesteal"
+      ],
+      "description": "Deathtouch. Lifesteal."
+    },
+    {
+      "id": "child_of_night",
+      "name": "Child of Night",
+      "colors": [
+        "B"
+      ],
+      "cardClass": "neutral",
+      "cost": 2,
+      "rarity": "common",
+      "set": "wubrg",
+      "type": "creature",
+      "attack": 2,
+      "health": 1,
+      "tribe": "Vampire",
+      "keywords": [
+        "lifesteal"
+      ],
+      "description": "Lifesteal."
+    },
+    {
+      "id": "walking_corpse",
+      "name": "Walking Corpse",
+      "colors": [
+        "B"
+      ],
+      "cardClass": "neutral",
+      "cost": 2,
+      "rarity": "common",
+      "set": "wubrg",
+      "type": "creature",
+      "attack": 2,
+      "health": 2,
+      "tribe": "Zombie",
+      "description": "A 2/2 creature."
+    },
+    {
+      "id": "shambling_ghoul",
+      "name": "Shambling Ghoul",
+      "colors": [
+        "B"
+      ],
+      "cardClass": "neutral",
+      "cost": 2,
+      "rarity": "common",
+      "set": "wubrg",
+      "type": "creature",
+      "attack": 2,
+      "health": 3,
+      "tribe": "Zombie",
+      "description": "A 2/3 creature."
+    },
+    {
+      "id": "black_cat",
+      "name": "Black Cat",
+      "colors": [
+        "B"
+      ],
+      "cardClass": "neutral",
+      "cost": 2,
+      "rarity": "common",
+      "set": "wubrg",
+      "type": "creature",
+      "attack": 1,
+      "health": 1,
+      "tribe": "Zombie Cat",
+      "keywords": [
+        "deathrattle"
+      ],
+      "deathrattle": [
+        {
+          "type": "enemy-discard",
+          "value": 1
+        }
+      ],
+      "description": "Deathrattle: target opponent discards a card at random.."
+    },
+    {
+      "id": "ostracize",
+      "name": "Ostracize",
+      "colors": [
+        "B"
+      ],
+      "cardClass": "neutral",
+      "cost": 1,
+      "rarity": "common",
+      "set": "wubrg",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "enemy-discard",
+          "value": 1
+        }
+      ],
+      "description": "Target opponent reveals their hand. You choose a creature card from it. That player discards that card."
+    },
+    {
+      "id": "duress",
+      "name": "Duress",
+      "colors": [
+        "B"
+      ],
+      "cardClass": "neutral",
+      "cost": 1,
+      "rarity": "common",
+      "set": "wubrg",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "enemy-discard",
+          "value": 1
+        }
+      ],
+      "description": "Target opponent reveals their hand. You choose a noncreature, nonland card from it. That player discards that card."
+    },
+    {
+      "id": "hymn_to_tourach",
+      "name": "Hymn to Tourach",
+      "colors": [
+        "B"
+      ],
+      "cardClass": "neutral",
+      "cost": 2,
+      "rarity": "common",
+      "set": "wubrg",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "enemy-discard",
+          "value": 2
+        }
+      ],
+      "description": "Target player discards two cards at random."
+    },
+    {
+      "id": "grasp_of_darkness",
+      "name": "Grasp of Darkness",
+      "colors": [
+        "B"
+      ],
+      "cardClass": "neutral",
+      "cost": 2,
+      "rarity": "common",
+      "set": "wubrg",
+      "type": "instant",
+      "effects": [
+        {
+          "type": "temp-buff",
+          "attack": -4,
+          "health": -4,
+          "target": "creature"
+        }
+      ],
+      "description": "Target creature gets -4/-4 until end of turn."
+    },
+    {
+      "id": "dismember",
+      "name": "Dismember",
+      "colors": [
+        "B"
+      ],
+      "cardClass": "neutral",
+      "cost": 3,
+      "rarity": "common",
+      "set": "wubrg",
+      "type": "instant",
+      "effects": [
+        {
+          "type": "temp-buff",
+          "attack": -5,
+          "health": -5,
+          "target": "creature"
+        }
+      ],
+      "description": "Target creature gets -5/-5 until end of turn."
+    },
+    {
+      "id": "murder",
+      "name": "Murder",
+      "colors": [
+        "B"
+      ],
+      "cardClass": "neutral",
+      "cost": 3,
+      "rarity": "common",
+      "set": "wubrg",
+      "type": "instant",
+      "effects": [
+        {
+          "type": "destroy",
+          "target": "creature"
+        }
+      ],
+      "description": "Destroy target creature."
+    },
+    {
+      "id": "despise",
+      "name": "Despise",
+      "colors": [
+        "B"
+      ],
+      "cardClass": "neutral",
+      "cost": 1,
+      "rarity": "common",
+      "set": "wubrg",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "enemy-discard",
+          "value": 1
+        }
+      ],
+      "description": "Target opponent reveals their hand. You choose a creature or planeswalker card from it. That player discards that card."
+    },
+    {
+      "id": "distress",
+      "name": "Distress",
+      "colors": [
+        "B"
+      ],
+      "cardClass": "neutral",
+      "cost": 2,
+      "rarity": "common",
+      "set": "wubrg",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "enemy-discard",
+          "value": 1
+        }
+      ],
+      "description": "Target player reveals their hand. You choose a nonland card from it. That player discards that card."
+    },
+    {
+      "id": "mind_rot",
+      "name": "Mind Rot",
+      "colors": [
+        "B"
+      ],
+      "cardClass": "neutral",
+      "cost": 3,
+      "rarity": "common",
+      "set": "wubrg",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "enemy-discard",
+          "value": 2
+        }
+      ],
+      "description": "Target player discards two cards."
+    },
+    {
+      "id": "diabolic_edict",
+      "name": "Diabolic Edict",
+      "colors": [
+        "B"
+      ],
+      "cardClass": "neutral",
+      "cost": 2,
+      "rarity": "common",
+      "set": "wubrg",
+      "type": "instant",
+      "effects": [
+        {
+          "type": "sacrifice-each-enemy"
+        }
+      ],
+      "description": "Target player sacrifices a creature of their choice."
+    },
+    {
+      "id": "goblin_matron",
+      "name": "Goblin Matron",
+      "colors": [
+        "R"
+      ],
+      "cardClass": "neutral",
+      "cost": 3,
+      "rarity": "common",
+      "set": "wubrg",
+      "type": "creature",
+      "attack": 1,
+      "health": 1,
+      "tribe": "Goblin",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "search",
+          "to": "hand",
+          "cardType": "creature",
+          "tribe": "Goblin"
+        }
+      ],
+      "description": "Battlecry: search your library for a Goblin card, reveal that card, put it into your hand, then shuffle.."
+    },
+    {
+      "id": "goblin_instigator",
+      "name": "Goblin Instigator",
+      "colors": [
+        "R"
+      ],
+      "cardClass": "neutral",
+      "cost": 2,
+      "rarity": "common",
+      "set": "wubrg",
+      "type": "creature",
+      "attack": 1,
+      "health": 1,
+      "tribe": "Goblin Rogue",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "summon",
+          "count": 1,
+          "attack": 1,
+          "health": 1,
+          "name": "Goblin"
+        }
+      ],
+      "description": "Battlecry: create a 1/1 red Goblin creature token.."
+    },
+    {
+      "id": "monastery_swiftspear",
+      "name": "Monastery Swiftspear",
+      "colors": [
+        "R"
+      ],
+      "cardClass": "neutral",
+      "cost": 1,
+      "rarity": "common",
+      "set": "wubrg",
+      "type": "creature",
+      "attack": 1,
+      "health": 2,
+      "tribe": "Human Monk",
+      "keywords": [
+        "charge"
+      ],
+      "ongoing": {
+        "on": "spell-played",
+        "effects": [
+          {
+            "type": "temp-buff-self",
+            "attack": 1,
+            "health": 1
+          }
+        ]
+      },
+      "description": "Charge. Prowess: +1/+1 this turn whenever you cast a spell."
+    },
+    {
+      "id": "kiln_fiend",
+      "name": "Kiln Fiend",
+      "colors": [
+        "R"
+      ],
+      "cardClass": "neutral",
+      "cost": 2,
+      "rarity": "common",
+      "set": "wubrg",
+      "type": "creature",
+      "attack": 1,
+      "health": 2,
+      "tribe": "Elemental Beast",
+      "ongoing": {
+        "on": "spell-played",
+        "effects": [
+          {
+            "type": "temp-buff-self",
+            "attack": 3,
+            "health": 0
+          }
+        ]
+      },
+      "description": "Whenever you cast an instant or sorcery spell, this creature gets +3/+0 until end of turn."
+    },
+    {
+      "id": "flametongue_kavu",
+      "name": "Flametongue Kavu",
+      "colors": [
+        "R"
+      ],
+      "cardClass": "neutral",
+      "cost": 4,
+      "rarity": "common",
+      "set": "wubrg",
+      "type": "creature",
+      "attack": 4,
+      "health": 2,
+      "tribe": "Kavu",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "damage",
+          "value": 4,
+          "target": "creature"
+        }
+      ],
+      "description": "Battlecry: it deals 4 damage to target creature.."
+    },
+    {
+      "id": "raging_goblin",
+      "name": "Raging Goblin",
+      "colors": [
+        "R"
+      ],
+      "cardClass": "neutral",
+      "cost": 1,
+      "rarity": "common",
+      "set": "wubrg",
+      "type": "creature",
+      "attack": 1,
+      "health": 1,
+      "tribe": "Goblin Berserker",
+      "keywords": [
+        "charge"
+      ],
+      "description": "Charge."
+    },
+    {
+      "id": "lava_spike",
+      "name": "Lava Spike",
+      "colors": [
+        "R"
+      ],
+      "cardClass": "neutral",
+      "cost": 1,
+      "rarity": "common",
+      "set": "wubrg",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 3,
+          "target": "enemy-hero"
+        }
+      ],
+      "description": "this creature deals 3 damage to target player or planeswalker."
+    },
+    {
+      "id": "searing_spear",
+      "name": "Searing Spear",
+      "colors": [
+        "R"
+      ],
+      "cardClass": "neutral",
+      "cost": 2,
+      "rarity": "common",
+      "set": "wubrg",
+      "type": "instant",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 3,
+          "target": "any"
+        }
+      ],
+      "description": "this creature deals 3 damage to any target."
+    },
+    {
+      "id": "lightning_strike",
+      "name": "Lightning Strike",
+      "colors": [
+        "R"
+      ],
+      "cardClass": "neutral",
+      "cost": 2,
+      "rarity": "common",
+      "set": "wubrg",
+      "type": "instant",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 3,
+          "target": "any"
+        }
+      ],
+      "description": "this creature deals 3 damage to any target."
+    },
+    {
+      "id": "flame_slash",
+      "name": "Flame Slash",
+      "colors": [
+        "R"
+      ],
+      "cardClass": "neutral",
+      "cost": 1,
+      "rarity": "common",
+      "set": "wubrg",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 4,
+          "target": "creature"
+        }
+      ],
+      "description": "this creature deals 4 damage to target creature."
+    },
+    {
+      "id": "volcanic_hammer",
+      "name": "Volcanic Hammer",
+      "colors": [
+        "R"
+      ],
+      "cardClass": "neutral",
+      "cost": 2,
+      "rarity": "common",
+      "set": "wubrg",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 3,
+          "target": "any"
+        }
+      ],
+      "description": "this creature deals 3 damage to any target."
+    },
+    {
+      "id": "flame_javelin",
+      "name": "Flame Javelin",
+      "colors": [
+        "R"
+      ],
+      "cardClass": "neutral",
+      "cost": 6,
+      "rarity": "common",
+      "set": "wubrg",
+      "type": "instant",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 4,
+          "target": "any"
+        }
+      ],
+      "description": "this creature deals 4 damage to any target."
+    },
+    {
+      "id": "magma_jet",
+      "name": "Magma Jet",
+      "colors": [
+        "R"
+      ],
+      "cardClass": "neutral",
+      "cost": 2,
+      "rarity": "common",
+      "set": "wubrg",
+      "type": "instant",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 2,
+          "target": "any"
+        },
+        {
+          "type": "scry",
+          "value": 2
+        }
+      ],
+      "description": "this creature deals 2 damage to any target. Scry 2."
+    },
+    {
+      "id": "pyroclasm",
+      "name": "Pyroclasm",
+      "colors": [
+        "R"
+      ],
+      "cardClass": "neutral",
+      "cost": 2,
+      "rarity": "common",
+      "set": "wubrg",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 2,
+          "target": "all-creatures"
+        }
+      ],
+      "description": "this creature deals 2 damage to each creature."
+    },
+    {
+      "id": "llanowar_elves",
+      "name": "Llanowar Elves",
+      "colors": [
+        "G"
+      ],
+      "cardClass": "neutral",
+      "cost": 1,
+      "rarity": "common",
+      "set": "wubrg",
+      "type": "creature",
+      "attack": 1,
+      "health": 1,
+      "tribe": "Elf Druid",
+      "activated": [
+        {
+          "cost": 0,
+          "tap": true,
+          "effects": [
+            {
+              "type": "gain-mana",
+              "value": 1
+            }
+          ],
+          "text": "Add {G}."
+        }
+      ],
+      "description": "Tap: Add {G}."
+    },
+    {
+      "id": "elvish_mystic",
+      "name": "Elvish Mystic",
+      "colors": [
+        "G"
+      ],
+      "cardClass": "neutral",
+      "cost": 1,
+      "rarity": "common",
+      "set": "wubrg",
+      "type": "creature",
+      "attack": 1,
+      "health": 1,
+      "tribe": "Elf Druid",
+      "activated": [
+        {
+          "cost": 0,
+          "tap": true,
+          "effects": [
+            {
+              "type": "gain-mana",
+              "value": 1
+            }
+          ],
+          "text": "Add {G}."
+        }
+      ],
+      "description": "Tap: Add {G}."
+    },
+    {
+      "id": "fyndhorn_elves",
+      "name": "Fyndhorn Elves",
+      "colors": [
+        "G"
+      ],
+      "cardClass": "neutral",
+      "cost": 1,
+      "rarity": "common",
+      "set": "wubrg",
+      "type": "creature",
+      "attack": 1,
+      "health": 1,
+      "tribe": "Elf Druid",
+      "activated": [
+        {
+          "cost": 0,
+          "tap": true,
+          "effects": [
+            {
+              "type": "gain-mana",
+              "value": 1
+            }
+          ],
+          "text": "Add {G}."
+        }
+      ],
+      "description": "Tap: Add {G}."
+    },
+    {
+      "id": "leatherback_baloth",
+      "name": "Leatherback Baloth",
+      "colors": [
+        "G"
+      ],
+      "cardClass": "neutral",
+      "cost": 3,
+      "rarity": "common",
+      "set": "wubrg",
+      "type": "creature",
+      "attack": 4,
+      "health": 5,
+      "tribe": "Beast",
+      "description": "A 4/5 creature."
+    },
+    {
+      "id": "kalonian_tusker",
+      "name": "Kalonian Tusker",
+      "colors": [
+        "G"
+      ],
+      "cardClass": "neutral",
+      "cost": 2,
+      "rarity": "common",
+      "set": "wubrg",
+      "type": "creature",
+      "attack": 3,
+      "health": 3,
+      "tribe": "Beast",
+      "description": "A 3/3 creature."
+    },
+    {
+      "id": "garruk_s_companion",
+      "name": "Garruk's Companion",
+      "colors": [
+        "G"
+      ],
+      "cardClass": "neutral",
+      "cost": 2,
+      "rarity": "common",
+      "set": "wubrg",
+      "type": "creature",
+      "attack": 3,
+      "health": 2,
+      "tribe": "Beast",
+      "keywords": [
+        "trample"
+      ],
+      "description": "Trample."
+    },
+    {
+      "id": "nessian_courser",
+      "name": "Nessian Courser",
+      "colors": [
+        "G"
+      ],
+      "cardClass": "neutral",
+      "cost": 3,
+      "rarity": "common",
+      "set": "wubrg",
+      "type": "creature",
+      "attack": 3,
+      "health": 3,
+      "tribe": "Centaur Warrior",
+      "description": "A 3/3 creature."
+    },
+    {
+      "id": "elvish_visionary",
+      "name": "Elvish Visionary",
+      "colors": [
+        "G"
+      ],
+      "cardClass": "neutral",
+      "cost": 2,
+      "rarity": "common",
+      "set": "wubrg",
+      "type": "creature",
+      "attack": 1,
+      "health": 1,
+      "tribe": "Elf Shaman",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "draw",
+          "value": 1
+        }
+      ],
+      "description": "Battlecry: draw a card.."
+    },
+    {
+      "id": "elvish_warrior",
+      "name": "Elvish Warrior",
+      "colors": [
+        "G"
+      ],
+      "cardClass": "neutral",
+      "cost": 2,
+      "rarity": "common",
+      "set": "wubrg",
+      "type": "creature",
+      "attack": 2,
+      "health": 3,
+      "tribe": "Elf Warrior",
+      "description": "A 2/3 creature."
+    },
+    {
+      "id": "harmonize",
+      "name": "Harmonize",
+      "colors": [
+        "G"
+      ],
+      "cardClass": "neutral",
+      "cost": 4,
+      "rarity": "common",
+      "set": "wubrg",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "draw",
+          "value": 3
+        }
+      ],
+      "description": "Draw three cards."
+    },
+    {
+      "id": "collective_unconscious",
+      "name": "Collective Unconscious",
+      "colors": [
+        "G"
+      ],
+      "cardClass": "neutral",
+      "cost": 6,
+      "rarity": "common",
+      "set": "wubrg",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "draw",
+          "value": 1,
+          "valuePer": "friendly-creatures"
+        }
+      ],
+      "description": "Draw a card for each creature you control."
+    },
+    {
+      "id": "giant_growth",
+      "name": "Giant Growth",
+      "colors": [
+        "G"
+      ],
+      "cardClass": "neutral",
+      "cost": 1,
+      "rarity": "common",
+      "set": "wubrg",
+      "type": "instant",
+      "effects": [
+        {
+          "type": "temp-buff",
+          "attack": 3,
+          "health": 3,
+          "target": "creature"
+        }
+      ],
+      "description": "Target creature gets +3/+3 until end of turn."
+    },
+    {
+      "id": "mutagenic_growth",
+      "name": "Mutagenic Growth",
+      "colors": [
+        "G"
+      ],
+      "cardClass": "neutral",
+      "cost": 1,
+      "rarity": "common",
+      "set": "wubrg",
+      "type": "instant",
+      "effects": [
+        {
+          "type": "temp-buff",
+          "attack": 2,
+          "health": 2,
+          "target": "creature"
+        }
+      ],
+      "description": "Target creature gets +2/+2 until end of turn."
+    },
+    {
+      "id": "damnation",
+      "name": "Damnation",
+      "colors": [
+        "B"
+      ],
+      "cardClass": "neutral",
+      "cost": 4,
+      "rarity": "common",
+      "set": "wubrg",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "destroy-all"
+        }
+      ],
+      "description": "Destroy all creatures. They can't be regenerated."
+    },
+    {
+      "id": "night_s_whisper",
+      "name": "Night's Whisper",
+      "colors": [
+        "B"
+      ],
+      "cardClass": "neutral",
+      "cost": 2,
+      "rarity": "common",
+      "set": "wubrg",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "draw",
+          "value": 2
+        },
+        {
+          "type": "damage",
+          "value": 2,
+          "target": "own-hero"
+        }
+      ],
+      "description": "You draw two cards and lose 2 life."
+    },
+    {
+      "id": "chrome_cat",
+      "name": "Chrome Cat",
+      "colors": [
+        "C"
+      ],
+      "cardClass": "neutral",
+      "cost": 3,
+      "rarity": "common",
+      "set": "wubrg",
+      "type": "creature",
+      "attack": 3,
+      "health": 2,
+      "tribe": "Cat",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "scry",
+          "value": 1
+        }
+      ],
+      "description": "Battlecry: scry 1.."
     }
   ]
 }

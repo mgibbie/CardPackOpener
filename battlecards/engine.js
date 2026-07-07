@@ -484,6 +484,7 @@ export function targetSpec(state, pi, card, choice) {
 		}[kind];
 		if (e.target === 'undamaged-creature') { filter = c => c.damage === 0; why = 'an undamaged creature'; }
 		if (e.maxAttack != null) { filter = c => c.attack <= e.maxAttack; why = `a creature with ${e.maxAttack} or less Attack`; }
+		if (e.maxCost != null) { filter = c => (c.cost || 0) <= e.maxCost; why = `a creature that costs ${e.maxCost} or less`; }
 		if (e.minAttack != null) { filter = c => c.attack >= e.minAttack; why = `a creature with ${e.minAttack} or more Attack`; }
 		if (e.requireKeyword != null) { filter = c => c.keywords.includes(e.requireKeyword); why = `a creature with ${e.requireKeyword.replace(/_/g, ' ')}`; }
 		if (e.requireDamaged) { filter = c => c.damage > 0; why = 'a damaged creature'; }
@@ -1680,6 +1681,7 @@ function execEffects(state, pi, effects, target, source) {
 		} else if (e.type === 'destroy') {
 			const t = chosenCreature();
 			if (t && (e.maxAttack == null || t.attack <= e.maxAttack)
+				&& (e.maxCost == null || (t.cost || 0) <= e.maxCost)
 				&& (e.minAttack == null || t.attack >= e.minAttack)
 				&& (e.requireKeyword == null || t.keywords.includes(e.requireKeyword))
 				&& (e.tribe == null || (t.tribe || '').includes(e.tribe))
