@@ -73,6 +73,7 @@ export const TYPE_COLORS = {
 	heropower:   '#2e5a7a',
 	quest:       '#7a6a2e',
 	planeswalker:'#5a2e7a',
+	location:    '#2e7a5e',
 	emblem:      '#8a7a3a',
 };
 
@@ -470,6 +471,10 @@ export function drawCardFace(card, opts = {}) {
 		const dur = opts.durability ?? card.durability ?? 0;
 		statPlate(ctx, 62, H - 62, 50, '#b3902e', String(atk));
 		statPlate(ctx, W - 62, H - 62, 50, '#5e6a72', String(dur));
+	} else if (card.type === 'location') {
+		// remaining taps, weapon-style but in the location green
+		const dur = opts.durability ?? card.durability ?? 0;
+		statPlate(ctx, W - 62, H - 62, 50, '#2e7a5e', String(dur));
 	} else if (card.type === 'planeswalker') {
 		statPlate(ctx, W - 62, H - 62, 50, '#5a2e7a', String(opts.loyalty ?? card.loyalty ?? 0));
 	}

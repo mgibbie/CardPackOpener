@@ -181,6 +181,7 @@ function faceMaterialFor(card) {
 		{ ...shown, health: card.maxHealth },
 		card.type === 'creature' ? { attack: card.attack, hp: E.hp(card), maxHealth: card.maxHealth }
 			: card.type === 'weapon' ? { attack: card.attack, durability: card.durability }
+			: card.type === 'location' ? { durability: card.durability }
 			: card.type === 'quest' ? { progress: card.progress || 0, goal: card.quest?.goal?.count }
 			: card.type === 'planeswalker' ? { loyalty: card.loyalty } : {}
 	);
@@ -652,7 +653,9 @@ function layoutTargets() {
 			const spread = Math.min(2.35, rowWidth / Math.max(bn, 1));
 			const x = (i - (bn - 1) / 2) * spread;
 			ent.target.pos = toWorld(x, 0.06 + i * 0.002, off + 2.0, pi);
-			ent.target.quat = sliceQuat(FLAT, HUMAN);
+			// tapped locations turn sideways like tapped lands
+			ent.target.quat = sliceQuat(card.type === 'location' && card.tapped
+				? new THREE.Euler(-Math.PI / 2, 0, -Math.PI / 2) : FLAT, HUMAN);
 			// tokens shrink to their spacing so neighbors never overlap
 			ent.target.scale = Math.min(0.8, (spread * 0.97) / (CARD_W * TOKEN_SCALE));
 		});
@@ -1196,6 +1199,12 @@ function nextEvent() {
 			delay = 320;
 			break;
 		case 'weaponDurability': delay = 60; break;
+		case 'locationDurability': {
+			const ent = entities.get(ev.uid);
+			if (ent) refreshFace(ent);
+			delay = 120;
+			break;
+		}
 		case 'weaponBreak':
 			log(`${ev.player === HUMAN ? 'Your' : `${nameOf(ev.player)}'s`} ${ev.name} ${ev.destroyed ? 'was destroyed' : 'broke'}`);
 			floatText('⚔', '#9b93b3', heroPos(ev.player));
@@ -1222,6 +1231,10 @@ function nextEvent() {
 		case 'landTapped':
 			log(`${nameOf(ev.player)} tapped ${ev.card.name}: ${ev.text}`);
 			delay = 300;
+			break;
+		case 'locationPlayed':
+			log(`${nameOf(ev.player)} opened ${ev.card.name}`);
+			delay = 350;
 			break;
 		case 'manaGained': delay = 120; break;
 		case 'coinGiven': delay = 80; break;
@@ -1660,7 +1673,7 @@ renderer.domElement.addEventListener('pointerdown', ev => {
 		return;
 	}
 	if (card.zone === 'hand' && card.controller === HUMAN) {
-		if (card.type === 'creature' && E.canPlay(state, HUMAN, card)) {
+		if ((card.type === 'creature' || card.type === 'location') && E.canPlay(state, HUMAN, card)) {
 			placing = { card }; // slot picked on release: tap = right end, drag = gap
 			return;
 		}

@@ -182,6 +182,21 @@ export function step(state, pi = 1) {
 		}
 		if (E.tapLand(state, pi, l.uid, idx, target)) return true;
 	}
+	// 0a. work board locations the same way: fire their ability every turn
+	// they're untapped (durability is use-it-or-lose-it value)
+	for (const l of p.board.filter(c => c.type === 'location')) {
+		if (!E.canTapLand(state, pi, l)) continue;
+		const taps = E.landTaps(l);
+		if (!taps.length) continue;
+		const spec = E.tapSpec(state, pi, l, 0);
+		let target = null;
+		if (spec) {
+			const legal = E.legalTargets(state, pi, spec);
+			if (!legal.length) continue;
+			target = legal[Math.floor(Math.random() * legal.length)];
+		}
+		if (E.tapLand(state, pi, l.uid, 0, target)) return true;
+	}
 	// 0b. develop a land when flush enough that it doesn't cost the turn
 	if (E.canBuyLand(state, pi) && E.availableMana(p) >= E.LAND_COST + 3 && p.lands.length < 3) {
 		const pool = E.availableLands(state, pi);

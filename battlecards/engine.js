@@ -404,7 +404,10 @@ const CHOSEN = {
 	'grant-ongoing': { 'friendly-creature': 'friendly-creature' },
 	'grant-static': { 'friendly-creature': 'friendly-creature' },
 	grant: { creature: 'creature', 'friendly-creature': 'friendly-creature' },
-	destroy: { creature: 'creature', 'enemy-creature': 'enemy-creature' },
+	destroy: { creature: 'creature', 'enemy-creature': 'enemy-creature', 'friendly-creature': 'friendly-creature' },
+	'copy-to-hand': { creature: 'creature', 'enemy-creature': 'enemy-creature' },
+	'copy-summon': { creature: 'creature', 'friendly-creature': 'friendly-creature' },
+	'summon-with-stats': { 'friendly-creature': 'friendly-creature' },
 	exile: { creature: 'creature', 'enemy-creature': 'enemy-creature' },
 	disguise: { creature: 'creature', 'friendly-creature': 'friendly-creature' },
 	freeze: { any: 'any', creature: 'creature', 'enemy-creature': 'enemy-creature' },
@@ -759,8 +762,10 @@ function sweepDeaths(state) {
 		p.board = p.board.filter(c => !isDead(c));
 		for (const c of dead) {
 			if (c.type === 'location') {
-				// a spent location just crumbles — no corpse, no death counters
+				// a spent location just crumbles — no corpse, no death counters,
+				// but its Deathrattle (Ultralisk Cavern) still fires
 				emit(state, { type: 'death', uid: c.uid, player: pi, name: c.name });
+				runDeathrattle(state, pi, c);
 				toGraveyard(state, pi, c);
 				continue;
 			}
@@ -1149,7 +1154,7 @@ export function tapLand(state, pi, cardUid, tapIndex, target) {
 	// locations wear out: durability counts their remaining taps
 	if (card.type === 'location') {
 		card.durability -= 1;
-		emit(state, { type: 'weaponDurability', player: pi, attack: 0, durability: card.durability });
+		emit(state, { type: 'locationDurability', player: pi, uid: card.uid, durability: card.durability });
 		if (card.durability <= 0) {
 			card.poisoned = true; // routes through the normal death sweep
 		}
@@ -1761,7 +1766,17 @@ function execEffects(state, pi, effects, target, source) {
 				}
 			} else {
 				const t = chosenCreature();
-				if (t && !(e.requireDamaged && t.damage === 0)) buffCreature(t, e.attack, e.health);
+				if (t && !(e.requireDamaged && t.damage === 0)) {
+					// Vile Library: "+1/+1. Repeat for each Imp you control."
+					let times = 1;
+					if (e.repeatPerFriendly) {
+						times += state.players[pi].board.filter(c => !isDead(c)
+							&& c.type !== 'location'
+							&& ((c.tribe || '').includes(e.repeatPerFriendly)
+								|| c.name.includes(e.repeatPerFriendly))).length;
+					}
+					for (let i = 0; i < times; i++) buffCreature(t, e.attack, e.health);
+				}
 			}
 		} else if (e.type === 'grant') {
 			const grantTo = e.target === 'friendly-creatures' ? state.players[pi].board
@@ -1774,6 +1789,8 @@ function execEffects(state, pi, effects, target, source) {
 				if (pool.length) grantTo.push(pool[Math.floor(state.rng() * pool.length)]);
 			}
 			for (const c of grantTo) {
+				// Castle Kennels: some grants only take on a matching tribe
+				if (e.ifTribe && !(c.tribe || '').includes(e.ifTribe)) continue;
 				if (!c.keywords.includes(e.keyword)) c.keywords.push(e.keyword);
 				if (e.keyword === KW.DIVINE_SHIELD) c.shield = true;
 				if (e.keyword === KW.STEALTH) c.stealthed = true;
@@ -1846,8 +1863,14 @@ function execEffects(state, pi, effects, target, source) {
 			if (e.target === 'enemy-creatures') { for (const o of enemies) for (const c of state.players[o].board) silenceCreature(state, c); }
 			else { const t = chosenCreature(); if (t) silenceCreature(state, t); }
 		} else if (e.type === 'random-damage') {
-			// count independent hits of `value` at random members of the pool
-			for (let i = 0; i < (e.count || 1); i++) {
+			// count independent hits of `value` at random members of the pool;
+			// Jungle Gym: extra hits for each friendly of a tribe
+			let hits = e.count || 1;
+			if (e.perFriendlyTribe) {
+				hits += state.players[pi].board.filter(c => !isDead(c)
+					&& (c.tribe || '').includes(e.perFriendlyTribe)).length;
+			}
+			for (let i = 0; i < hits; i++) {
 				const pool = [];
 				const pushBoard = side => { for (const c of state.players[side].board) if (!isDead(c)) pool.push({ c }); };
 				if (e.pool === 'enemy-creatures') { for (const o of enemies) pushBoard(o); }
@@ -1891,6 +1914,7 @@ function execEffects(state, pi, effects, target, source) {
 					tribe: opt.tribe || null,
 					aura: opt.aura || null,
 					static: opt.static || e.static || null,
+					deathrattle: opt.deathrattle || null, // Underbelly Network's Rat
 				});
 			}
 		} else if (e.type === 'summon-self-copy') {
@@ -2544,6 +2568,53 @@ function execEffects(state, pi, effects, target, source) {
 				source.deathrattle = [...(source.deathrattle || []),
 					...JSON.parse(JSON.stringify(c.deathrattle))];
 			}
+		} else if (e.type === 'copy-to-hand') {
+			// Puppet Theatre: a copy of the chosen creature lands in your hand,
+			// optionally with overridden stats/cost (1/1 copy that costs 1)
+			const t = chosenCreature();
+			const p = state.players[pi];
+			if (t && p.hand.length < MAX_HAND && !p.eliminated) {
+				const def = state.cardsById[t.id];
+				const copy = def ? instantiate(def, pi) : instantiate({
+					id: t.id, name: t.name, type: 'creature', cost: t.cost, rarity: t.rarity,
+					description: t.description, attack: t.attack, health: t.maxHealth,
+					keywords: [...t.keywords], tribe: t.tribe,
+				}, pi);
+				copy.zone = 'hand';
+				if (e.setAttack != null) copy.attack = e.setAttack;
+				if (e.setHealth != null) copy.maxHealth = e.setHealth;
+				if (e.setCost != null) copy.cost = e.setCost;
+				p.hand.push(copy);
+				emit(state, { type: 'conjure', player: pi, card: copy, color: null });
+			}
+		} else if (e.type === 'copy-summon') {
+			// Crimson Expanse: summon a copy of the chosen creature at its
+			// CURRENT stats, optionally entering Dormant
+			const t = chosenCreature();
+			if (t) {
+				const copy = summon(state, pi, {
+					id: t.id, name: t.name, type: 'creature', cost: t.cost, rarity: t.rarity,
+					description: t.description, attack: t.attack, health: hp(t),
+					keywords: t.keywords.filter(k => !t.auraKeywords.includes(k)),
+					tribe: t.tribe, deathrattle: t.deathrattle,
+				});
+				if (copy && e.dormant) {
+					copy.dormantLeft = e.dormant;
+					emit(state, { type: 'dormant', player: pi, uid: copy.uid, turns: e.dormant });
+				}
+			}
+		} else if (e.type === 'summon-with-stats') {
+			// Forge of Wills: a named token wearing the chosen creature's stats
+			const t = chosenCreature();
+			if (t) {
+				summon(state, pi, {
+					id: 'token_' + (e.name || 'construct').toLowerCase().replace(/[^a-z0-9]+/g, '_'),
+					name: e.name || 'Construct', type: 'creature', cost: 0, rarity: 'common',
+					description: `A ${t.attack}/${hp(t)} ${e.name || 'token'}.`,
+					attack: t.attack, health: hp(t),
+					keywords: [...(e.keywords || [])], tribe: e.tribe || null,
+				});
+			}
 		} else if (e.type === 'conjure-random') {
 			// random collectible card(s) matching filters, added to your hand;
 			// cardClass 'enemy' = an opponent's class pool, 'other' = any class but yours
@@ -2646,6 +2717,7 @@ function execEffects(state, pi, effects, target, source) {
 				if (e.tribe && !(d.tribe || '').includes(e.tribe)) return false;
 				if (e.cost != null && (d.cost || 0) !== e.cost) return false;
 				if (e.maxCost != null && (d.cost || 0) > e.maxCost) return false;
+				if (e.minCost != null && (d.cost || 0) < e.minCost) return false;
 				if (e.hasStatic && d.static?.type !== e.hasStatic) return false;
 				if (e.requireKeyword && !(d.keywords || []).includes(e.requireKeyword)) return false;
 				return true;
@@ -2852,13 +2924,15 @@ function execEffects(state, pi, effects, target, source) {
 			if (t) disguiseCreature(state, t);
 		} else if (e.type === 'summon-random') {
 			// "Summon a random creature with Mana Value 2 or less" / "a random
-			// Demon" / "a random 4-Cost minion" (exact cost)
+			// Demon" / "a random 4-Cost minion" (exact cost) / Past Conflux's
+			// "a random Dragon that costs 5 or more"
 			const pool = Object.values(state.cardsById).filter(d =>
 				d.type === 'creature' && (e.maxCost == null || (d.cost || 0) <= e.maxCost)
+				&& (e.minCost == null || (d.cost || 0) >= e.minCost)
 				&& (e.cost == null || (d.cost || 0) === e.cost)
 				&& (e.tribe == null || (d.tribe || '').includes(e.tribe))
 				&& !d.companion && !d.commander && !d.token && !(d.colors && d.colors.length));
-			if (pool.length) {
+			for (let i = 0; i < (e.count || 1) && pool.length; i++) {
 				const def = pool[Math.floor(state.rng() * pool.length)];
 				const owner = e.forEnemy && enemies.length
 					? enemies[Math.floor(state.rng() * enemies.length)] : pi;

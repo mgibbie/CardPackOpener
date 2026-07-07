@@ -40768,6 +40768,674 @@
       ],
       "description": "Rush. Lifesteal. Divine Shield. Miniaturize: playing this adds a 1/1 Mini copy costing 1 to your hand.",
       "set": "hsx"
+    },
+    {
+      "id": "castle_kennels",
+      "name": "Castle Kennels",
+      "cardClass": "hunter",
+      "cost": 2,
+      "rarity": "rare",
+      "type": "location",
+      "durability": 3,
+      "set": "hsloc",
+      "taps": [
+        {
+          "text": "Give a friendly creature +2 Attack. If it's a Beast, give it Rush.",
+          "effects": [
+            {
+              "type": "buff",
+              "attack": 2,
+              "health": 0,
+              "target": "friendly-creature"
+            },
+            {
+              "type": "grant",
+              "keyword": "rush",
+              "ifTribe": "Beast"
+            }
+          ]
+        }
+      ],
+      "description": "Give a friendly creature +2 Attack. If it's a Beast, give it Rush."
+    },
+    {
+      "id": "cathedral_of_atonement",
+      "name": "Cathedral of Atonement",
+      "cardClass": "priest",
+      "cost": 3,
+      "rarity": "rare",
+      "type": "location",
+      "durability": 3,
+      "set": "hsloc",
+      "taps": [
+        {
+          "text": "Give a creature +2/+1 and draw a card.",
+          "effects": [
+            {
+              "type": "buff",
+              "attack": 2,
+              "health": 1,
+              "target": "creature"
+            },
+            {
+              "type": "draw",
+              "value": 1
+            }
+          ]
+        }
+      ],
+      "description": "Give a creature +2/+1 and draw a card."
+    },
+    {
+      "id": "chamber_of_aspects",
+      "name": "Chamber of Aspects",
+      "cardClass": "paladin",
+      "cost": 2,
+      "rarity": "common",
+      "type": "location",
+      "durability": 2,
+      "set": "hsloc",
+      "taps": [
+        {
+          "text": "Give a random creature in your hand +2/+2.",
+          "effects": [
+            {
+              "type": "buff-hand",
+              "attack": 2,
+              "health": 2
+            }
+          ]
+        }
+      ],
+      "description": "Give a random creature in your hand +2/+2."
+    },
+    {
+      "id": "construct_quarter",
+      "name": "Construct Quarter",
+      "cardClass": "death_knight",
+      "cost": 3,
+      "rarity": "rare",
+      "type": "location",
+      "durability": 3,
+      "set": "hsloc",
+      "taps": [
+        {
+          "text": "Destroy a friendly creature to summon a 4/5 Undead with Rush.",
+          "effects": [
+            {
+              "type": "destroy",
+              "target": "friendly-creature",
+              "then": [
+                {
+                  "type": "summon",
+                  "count": 1,
+                  "attack": 4,
+                  "health": 5,
+                  "name": "Risen Golem",
+                  "tribe": "Undead",
+                  "keywords": [
+                    "rush"
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "description": "Destroy a friendly creature to summon a 4/5 Undead with Rush."
+    },
+    {
+      "id": "crimson_expanse",
+      "name": "Crimson Expanse",
+      "cardClass": "warrior",
+      "cost": 4,
+      "rarity": "common",
+      "type": "location",
+      "durability": 2,
+      "set": "hsloc",
+      "taps": [
+        {
+          "text": "Choose a damaged creature. Summon a copy that sleeps Dormant for one turn.",
+          "effects": [
+            {
+              "type": "copy-summon",
+              "target": "creature",
+              "requireDamaged": true,
+              "dormant": 1
+            }
+          ]
+        }
+      ],
+      "description": "Choose a damaged creature. Summon a copy that sleeps Dormant for one turn."
+    },
+    {
+      "id": "dance_floor",
+      "name": "Dance Floor",
+      "cardClass": "paladin",
+      "cost": 2,
+      "rarity": "common",
+      "type": "location",
+      "durability": 2,
+      "set": "hsloc",
+      "taps": [
+        {
+          "text": "Give your creatures Rush.",
+          "effects": [
+            {
+              "type": "grant",
+              "keyword": "rush",
+              "target": "friendly-creatures"
+            }
+          ]
+        }
+      ],
+      "description": "Give your creatures Rush."
+    },
+    {
+      "id": "dangerous_cliffside",
+      "name": "Dangerous Cliffside",
+      "cardClass": "demon_hunter",
+      "cost": 4,
+      "rarity": "rare",
+      "type": "location",
+      "durability": 3,
+      "set": "hsloc",
+      "taps": [
+        {
+          "text": "Summon two 1/1 Pirates with Charge.",
+          "effects": [
+            {
+              "type": "summon",
+              "count": 2,
+              "attack": 1,
+              "health": 1,
+              "name": "Pirate",
+              "keywords": [
+                "charge"
+              ]
+            }
+          ]
+        }
+      ],
+      "description": "Summon two 1/1 Pirates with Charge."
+    },
+    {
+      "id": "erupting_volcano",
+      "name": "Erupting Volcano",
+      "cardClass": "warrior",
+      "cost": 3,
+      "rarity": "rare",
+      "type": "location",
+      "durability": 3,
+      "set": "hsloc",
+      "taps": [
+        {
+          "text": "Deal 3 damage randomly split among all enemies.",
+          "effects": [
+            {
+              "type": "random-damage",
+              "value": 1,
+              "count": 3,
+              "pool": "enemies"
+            }
+          ]
+        }
+      ],
+      "description": "Deal 3 damage randomly split among all enemies."
+    },
+    {
+      "id": "fan_club",
+      "name": "Fan Club",
+      "cardClass": "priest",
+      "cost": 1,
+      "rarity": "common",
+      "type": "location",
+      "durability": 2,
+      "set": "hsloc",
+      "taps": [
+        {
+          "text": "Restore 3 health to your hero and creatures.",
+          "effects": [
+            {
+              "type": "heal",
+              "value": 3,
+              "target": "friendly-all"
+            }
+          ]
+        }
+      ],
+      "description": "Restore 3 health to your hero and creatures."
+    },
+    {
+      "id": "forge_of_wills",
+      "name": "Forge of Wills",
+      "cardClass": "warlock",
+      "cost": 3,
+      "rarity": "rare",
+      "type": "location",
+      "durability": 2,
+      "set": "hsloc",
+      "taps": [
+        {
+          "text": "Choose a friendly creature. Summon a Giant with its stats and Rush.",
+          "effects": [
+            {
+              "type": "summon-with-stats",
+              "target": "friendly-creature",
+              "name": "Giant",
+              "keywords": [
+                "rush"
+              ]
+            }
+          ]
+        }
+      ],
+      "description": "Choose a friendly creature. Summon a Giant with its stats and Rush."
+    },
+    {
+      "id": "great_hall",
+      "name": "Great Hall",
+      "cardClass": "paladin",
+      "cost": 2,
+      "rarity": "rare",
+      "type": "location",
+      "durability": 3,
+      "set": "hsloc",
+      "taps": [
+        {
+          "text": "Set a creature's Attack and Health to 3.",
+          "effects": [
+            {
+              "type": "set-attack",
+              "value": 3,
+              "target": "creature"
+            },
+            {
+              "type": "set-health",
+              "value": 3,
+              "target": "creature"
+            }
+          ]
+        }
+      ],
+      "description": "Set a creature's Attack and Health to 3."
+    },
+    {
+      "id": "hiking_trail",
+      "name": "Hiking Trail",
+      "cardClass": "druid",
+      "cost": 3,
+      "rarity": "rare",
+      "type": "location",
+      "durability": 3,
+      "set": "hsloc",
+      "taps": [
+        {
+          "text": "Discover a Taunt creature.",
+          "effects": [
+            {
+              "type": "discover",
+              "pick": 3,
+              "cardType": "creature",
+              "requireKeyword": "taunt"
+            }
+          ]
+        }
+      ],
+      "description": "Discover a Taunt creature."
+    },
+    {
+      "id": "horizon_s_edge",
+      "name": "Horizon's Edge",
+      "cardClass": "death_knight",
+      "cost": 4,
+      "rarity": "rare",
+      "type": "location",
+      "durability": 5,
+      "set": "hsloc",
+      "taps": [
+        {
+          "text": "Fire 3 bolts, each dealing 1 damage to a random enemy.",
+          "effects": [
+            {
+              "type": "random-damage",
+              "value": 1,
+              "pool": "enemies",
+              "count": 3
+            }
+          ]
+        }
+      ],
+      "description": "Fire 3 bolts, each dealing 1 damage to a random enemy."
+    },
+    {
+      "id": "jungle_gym",
+      "name": "Jungle Gym",
+      "cardClass": "hunter",
+      "cost": 2,
+      "rarity": "rare",
+      "type": "location",
+      "durability": 3,
+      "set": "hsloc",
+      "taps": [
+        {
+          "text": "Deal 1 damage to a random enemy. Repeat for each friendly Beast.",
+          "effects": [
+            {
+              "type": "random-damage",
+              "value": 1,
+              "count": 1,
+              "pool": "enemies",
+              "perFriendlyTribe": "Beast"
+            }
+          ]
+        }
+      ],
+      "description": "Deal 1 damage to a random enemy. Repeat for each friendly Beast."
+    },
+    {
+      "id": "knickknack_shack",
+      "name": "Knickknack Shack",
+      "cardClass": "rogue",
+      "cost": 3,
+      "rarity": "rare",
+      "type": "location",
+      "durability": 4,
+      "set": "hsloc",
+      "taps": [
+        {
+          "text": "Draw 1 card.",
+          "effects": [
+            {
+              "type": "draw",
+              "value": 1
+            }
+          ]
+        }
+      ],
+      "description": "Draw 1 card."
+    },
+    {
+      "id": "nightcloak_sanctum",
+      "name": "Nightcloak Sanctum",
+      "cardClass": "mage",
+      "cost": 3,
+      "rarity": "rare",
+      "type": "location",
+      "durability": 3,
+      "set": "hsloc",
+      "taps": [
+        {
+          "text": "Freeze a creature. Summon a 2/2 Volatile Skeleton.",
+          "effects": [
+            {
+              "type": "freeze",
+              "target": "creature"
+            },
+            {
+              "type": "summon",
+              "count": 1,
+              "attack": 2,
+              "health": 2,
+              "name": "Volatile Skeleton"
+            }
+          ]
+        }
+      ],
+      "description": "Freeze a creature. Summon a 2/2 Volatile Skeleton."
+    },
+    {
+      "id": "past_conflux",
+      "name": "Past Conflux",
+      "cardClass": "priest",
+      "cost": 7,
+      "rarity": "epic",
+      "type": "location",
+      "durability": 3,
+      "set": "hsloc",
+      "taps": [
+        {
+          "text": "Summon a random Dragon that costs 5 or more.",
+          "effects": [
+            {
+              "type": "summon-random",
+              "tribe": "Dragon",
+              "minCost": 5
+            }
+          ]
+        }
+      ],
+      "description": "Summon a random Dragon that costs 5 or more."
+    },
+    {
+      "id": "puppet_theatre",
+      "name": "Puppet Theatre",
+      "cardClass": "priest",
+      "cost": 4,
+      "rarity": "common",
+      "type": "location",
+      "durability": 2,
+      "set": "hsloc",
+      "taps": [
+        {
+          "text": "Choose an enemy creature. Get a 1/1 copy of it that costs 1.",
+          "effects": [
+            {
+              "type": "copy-to-hand",
+              "target": "enemy-creature",
+              "setAttack": 1,
+              "setHealth": 1,
+              "setCost": 1
+            }
+          ]
+        }
+      ],
+      "description": "Choose an enemy creature. Get a 1/1 copy of it that costs 1."
+    },
+    {
+      "id": "sanguine_depths",
+      "name": "Sanguine Depths",
+      "cardClass": "warrior",
+      "cost": 1,
+      "rarity": "rare",
+      "type": "location",
+      "durability": 3,
+      "set": "hsloc",
+      "taps": [
+        {
+          "text": "Deal 1 damage to a creature and give it +2 Attack.",
+          "effects": [
+            {
+              "type": "damage",
+              "value": 1,
+              "target": "creature"
+            },
+            {
+              "type": "buff",
+              "attack": 2,
+              "health": 0,
+              "target": "creature"
+            }
+          ]
+        }
+      ],
+      "description": "Deal 1 damage to a creature and give it +2 Attack."
+    },
+    {
+      "id": "the_eternal_hold",
+      "name": "The Eternal Hold",
+      "cardClass": "demon_hunter",
+      "cost": 6,
+      "rarity": "legendary",
+      "type": "location",
+      "durability": 3,
+      "set": "hsloc",
+      "taps": [
+        {
+          "text": "Discover a Demon that costs 5 or more.",
+          "effects": [
+            {
+              "type": "discover",
+              "pick": 3,
+              "cardType": "creature",
+              "tribe": "Demon",
+              "minCost": 5
+            }
+          ]
+        }
+      ],
+      "description": "Discover a Demon that costs 5 or more."
+    },
+    {
+      "id": "tide_pools",
+      "name": "Tide Pools",
+      "cardClass": "mage",
+      "cost": 3,
+      "rarity": "common",
+      "type": "location",
+      "durability": 3,
+      "set": "hsloc",
+      "taps": [
+        {
+          "text": "Discover a spell that costs 3 or less.",
+          "effects": [
+            {
+              "type": "discover",
+              "pick": 3,
+              "cardType": "spell",
+              "maxCost": 3
+            }
+          ]
+        }
+      ],
+      "description": "Discover a spell that costs 3 or less."
+    },
+    {
+      "id": "tranquil_clearing",
+      "name": "Tranquil Clearing",
+      "cardClass": "druid",
+      "cost": 2,
+      "rarity": "epic",
+      "type": "location",
+      "durability": 2,
+      "set": "hsloc",
+      "taps": [
+        {
+          "text": "Give a creature +2 Health and Taunt, then Freeze it.",
+          "effects": [
+            {
+              "type": "buff",
+              "attack": 0,
+              "health": 2,
+              "target": "creature"
+            },
+            {
+              "type": "grant",
+              "keyword": "taunt"
+            },
+            {
+              "type": "freeze",
+              "target": "creature"
+            }
+          ]
+        }
+      ],
+      "description": "Give a creature +2 Health and Taunt, then Freeze it."
+    },
+    {
+      "id": "ultralisk_cavern",
+      "name": "Ultralisk Cavern",
+      "cardClass": "warlock",
+      "cost": 3,
+      "rarity": "common",
+      "type": "location",
+      "durability": 3,
+      "set": "hsloc",
+      "deathrattle": [
+        {
+          "type": "summon",
+          "count": 1,
+          "attack": 8,
+          "health": 8,
+          "name": "Ultralisk",
+          "keywords": [
+            "rush"
+          ]
+        }
+      ],
+      "taps": [
+        {
+          "text": "Deal 1 damage to the enemy hero and all enemy creatures.",
+          "effects": [
+            {
+              "type": "damage",
+              "value": 1,
+              "target": "enemies"
+            }
+          ]
+        }
+      ],
+      "description": "Deal 1 damage to the enemy hero and all enemy creatures. Deathrattle: Summon an 8/8 Ultralisk with Rush."
+    },
+    {
+      "id": "underbelly_network",
+      "name": "Underbelly Network",
+      "cardClass": "hunter",
+      "cost": 2,
+      "rarity": "common",
+      "type": "location",
+      "durability": 2,
+      "set": "hsloc",
+      "taps": [
+        {
+          "text": "Summon a 2/1 Rat with \"Deathrattle: Draw a card.\"",
+          "effects": [
+            {
+              "type": "summon",
+              "count": 1,
+              "attack": 2,
+              "health": 1,
+              "name": "Underbelly Rat",
+              "tribe": "Beast",
+              "keywords": [
+                "deathrattle"
+              ],
+              "deathrattle": [
+                {
+                  "type": "draw",
+                  "value": 1
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "description": "Summon a 2/1 Rat with \"Deathrattle: Draw a card.\""
+    },
+    {
+      "id": "vile_library",
+      "name": "Vile Library",
+      "cardClass": "warlock",
+      "cost": 2,
+      "rarity": "rare",
+      "type": "location",
+      "durability": 2,
+      "set": "hsloc",
+      "taps": [
+        {
+          "text": "Give a friendly creature +1/+1. Repeat for each Imp you control.",
+          "effects": [
+            {
+              "type": "buff",
+              "attack": 1,
+              "health": 1,
+              "target": "friendly-creature",
+              "repeatPerFriendly": "Imp"
+            }
+          ]
+        }
+      ],
+      "description": "Give a friendly creature +1/+1. Repeat for each Imp you control."
     }
   ]
 }

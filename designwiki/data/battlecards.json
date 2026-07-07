@@ -85,7 +85,7 @@
    "key": "paper",
    "title": "Paper Cards Awaiting Mechanics",
    "blurb": "Scanned paper cards whose rules text doesn't convert yet \u2014 they need either an importer pattern or a design decision.",
-   "count": 581,
+   "count": 579,
    "items": [
     {
      "name": "Abstract Angler"
@@ -439,9 +439,6 @@
      "name": "Conjured Arrow"
     },
     {
-     "name": "Construct Quarter"
-    },
-    {
      "name": "Consume Magic"
     },
     {
@@ -464,9 +461,6 @@
     },
     {
      "name": "Crime Novelist"
-    },
-    {
-     "name": "Crimson Expanse"
     },
     {
      "name": "Crooked Cook"
@@ -3016,7 +3010,7 @@
    "key": "dex_pools",
    "title": "Advanced-Land Theme Pools (Planned Card Dex)",
    "blurb": "God / guild / praetor pool cards named in the dex but not designed \u2014 these feed each advanced land's 'Discover a themed card' tap.",
-   "count": 2117,
+   "count": 2112,
    "items": [
     {
      "name": "Abzan Advantage",
@@ -4297,10 +4291,6 @@
     {
      "name": "Daretti's Workshop",
      "note": "Daretti pool"
-    },
-    {
-     "name": "Construct Quarter",
-     "note": "Death Knight pool"
     },
     {
      "name": "Dead Air",
@@ -8079,10 +8069,6 @@
      "note": "Paladin pool"
     },
     {
-     "name": "Dance Floor",
-     "note": "Paladin pool"
-    },
-    {
      "name": "Dark Conviction",
      "note": "Paladin pool"
     },
@@ -8116,10 +8102,6 @@
     },
     {
      "name": "Goody Two-Shields",
-     "note": "Paladin pool"
-    },
-    {
-     "name": "Great Hall",
      "note": "Paladin pool"
     },
     {
@@ -8299,10 +8281,6 @@
      "note": "Priest pool"
     },
     {
-     "name": "Cathedral of Atonement",
-     "note": "Priest pool"
-    },
-    {
      "name": "Crimson Clergy",
      "note": "Priest pool"
     },
@@ -8328,10 +8306,6 @@
     },
     {
      "name": "Excavated Evil",
-     "note": "Priest pool"
-    },
-    {
-     "name": "Fan Club",
      "note": "Priest pool"
     },
     {
@@ -11639,8 +11613,8 @@
      "note": "Red dex slot \u2014 the X-damage burn spell awaits its Magepunk name"
     },
     {
-     "name": "Locations (content)",
-     "note": "the Location card type now works (double-tap, durability, creature-row) but no location cards exist yet"
+     "name": "Locations (more content)",
+     "note": "25 HS locations are in (set hsloc); 24 more are blocked on HS systems (Corpses, Relics, Choose One, Past/Advance, next-card modifiers) \u2014 design Magepunk-original locations instead?"
     },
     {
      "name": "Wastes in the land shop",
@@ -11659,10 +11633,10 @@
  ],
  "totals": {
   "keywords": 18,
-  "paper": 581,
+  "paper": 579,
   "wubrg_redesign": 76,
   "wubrg_hard": 215,
-  "dex_pools": 2117,
+  "dex_pools": 2112,
   "empty_classes": 33,
   "open_items": 5
  }
