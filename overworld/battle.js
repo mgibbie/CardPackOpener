@@ -271,7 +271,12 @@ export class Battle {
 
 	pushMsg(text, fn) { this.active.queue.push({ text, fn }); }
 	// queued sprite animation: the message queue pauses while it plays
-	pushAnim(kind, side, dur, done) { this.active.queue.push({ anim: { kind, side, dur, done } }); }
+	pushAnim(kind, side, dur, done, extra) { this.active.queue.push({ anim: { kind, side, dur, done, ...extra } }); }
+
+	// floating combat text over a combatant ("-12", "+8"), positioned at draw time
+	float(side, text, color) {
+		(this.active.floaters ||= []).push({ side, text, color, t: 0 });
+	}
 
 	// ---------- turn resolution ----------
 	statOf(mon, boosts, key) {
@@ -344,6 +349,7 @@ export class Battle {
 				const amt = Math.floor(user.maxHP * fx.heal);
 				this.pushMsg(`${user.name} regained health!`, () => {
 					user.curHP = Math.min(user.maxHP, user.curHP + amt);
+					this.float(isFoe ? 'foe' : 'me', `+${amt}`, '#6be08a');
 				});
 				if (fx.selfStatus === 'slp') {
 					user.status = 'slp';
@@ -387,11 +393,13 @@ export class Battle {
 			total += dmg;
 		}
 		total = Math.min(total, target.curHP);
+		const targetSide = isFoe ? 'me' : 'foe';
 		this.pushAnim('lunge', isFoe ? 'foe' : 'me', 0.3);
-		this.pushAnim('hit', isFoe ? 'me' : 'foe', 0.4);
+		this.pushAnim('hit', targetSide, 0.4, null, { color: UI.TYPE_COLORS[mv.type] || '#e8e8e8' });
 		this.pushMsg('', () => {
 			sfx(eff > 1 ? 'hit_super' : eff < 1 ? 'hit_weak' : 'hit_normal');
 			target.curHP = Math.max(0, target.curHP - total);
+			this.float(targetSide, `-${total}`, crits ? '#ffd23f' : '#ff7a6b');
 		});
 		if (nHits > 1) this.pushMsg(`Hit ${nHits} time(s)!`);
 		if (crits) this.pushMsg('A critical hit!');
@@ -401,12 +409,14 @@ export class Battle {
 			const healed = Math.max(1, Math.floor(total * fx.drain));
 			this.pushMsg(`${target.name} had its energy drained!`, () => {
 				user.curHP = Math.min(user.maxHP, user.curHP + healed);
+				this.float(isFoe ? 'foe' : 'me', `+${healed}`, '#6be08a');
 			});
 		}
 		if (fx.recoil) {
 			const rec = Math.max(1, Math.floor(total * fx.recoil));
 			this.pushMsg(`${user.name} is damaged by recoil!`, () => {
 				user.curHP = Math.max(0, user.curHP - rec);
+				this.float(isFoe ? 'foe' : 'me', `-${rec}`, '#ff7a6b');
 			});
 		}
 		if (fx.sec && Math.random() * 100 < fx.sec.ch) {
@@ -774,6 +784,16 @@ export class Battle {
 			if (a.t > 0.6) { a.phase = 'msg'; }
 			return;
 		}
+		// combat text + type-colored hit particles (positions resolve at draw)
+		for (const f of a.floaters || []) f.t += dt;
+		a.floaters = (a.floaters || []).filter(f => f.t < 1.1);
+		for (const p of a.particles || []) {
+			p.t += dt;
+			p.dx += p.vx * dt; p.dy += p.vy * dt;
+			p.vy += 260 * dt; // gravity, in u-units/s²
+		}
+		a.particles = (a.particles || []).filter(p => p.t < 0.6);
+
 		// a playing sprite animation pauses the message queue
 		if (a.fx) {
 			a.fx.t += dt;
@@ -791,7 +811,24 @@ export class Battle {
 			if ((a.msgT > 1.1 || a.msgT >= 99) && settled) {
 				const next = a.queue.shift();
 				if (next) {
-					if (next.anim) { a.fx = { ...next.anim, t: 0 }; a.msgT = 1.2; return; }
+					if (next.anim) {
+						a.fx = { ...next.anim, t: 0 };
+						// a hit bursts type-colored sparks off the target
+						if (a.fx.kind === 'hit' && a.fx.color) {
+							a.particles ||= [];
+							for (let i = 0; i < 16; i++) {
+								const ang = Math.random() * Math.PI * 2, sp = 90 + Math.random() * 160;
+								a.particles.push({
+									side: a.fx.side, color: a.fx.color, t: 0,
+									dx: 0, dy: -60 - Math.random() * 40,
+									vx: Math.cos(ang) * sp, vy: Math.sin(ang) * sp - 60,
+									r: 2.5 + Math.random() * 2.5,
+								});
+							}
+						}
+						a.msgT = 1.2;
+						return;
+					}
 					next.fn?.();
 					if (next.text) { a.msg = next.text; a.msgT = 0; }
 					else a.msgT = 1.2; // silent action; move on quickly
@@ -919,6 +956,31 @@ export class Battle {
 
 		this.drawSide(ctx, a, 'foe', W, H, u);
 		this.drawSide(ctx, a, 'me', W, H, u);
+
+		// hit sparks + floating combat text ride each combatant's pose
+		for (const p of a.particles || []) {
+			const pose = this.spritePose(a, p.side, W, H, u);
+			ctx.globalAlpha = Math.max(0, 1 - p.t / 0.6);
+			ctx.fillStyle = p.color;
+			ctx.beginPath();
+			ctx.arc(pose.x + p.dx * u, pose.y + p.dy * u, p.r * u, 0, Math.PI * 2);
+			ctx.fill();
+		}
+		ctx.globalAlpha = 1;
+		for (const f of a.floaters || []) {
+			const pose = this.spritePose(a, f.side, W, H, u);
+			const y = pose.y - 130 * u - f.t * 50 * u;
+			ctx.globalAlpha = Math.max(0, 1 - f.t);
+			ctx.font = `${Math.round(26 * u)}px m6x11plus, monospace`;
+			ctx.textAlign = 'center';
+			ctx.lineWidth = 4 * u;
+			ctx.strokeStyle = '#14100f';
+			ctx.strokeText(f.text, pose.x, y);
+			ctx.fillStyle = f.color || '#fff';
+			ctx.fillText(f.text, pose.x, y);
+			ctx.textAlign = 'left';
+		}
+		ctx.globalAlpha = 1;
 
 		// info panels
 		UI.monPanel(ctx, a.foe, 14 * u, 14 * u, 272 * u, u,

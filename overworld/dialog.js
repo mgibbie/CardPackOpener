@@ -62,4 +62,20 @@ export class Dialog {
 		page.forEach((l, i) => ctx.fillText(l, 12, VIEW_H - 28 + i * 12));
 		if (this.idx < this.pages.length - 1) ctx.fillText('▼', VIEW_W - 18, VIEW_H - 10);
 	}
+
+	// full-resolution text box: same GBA cream styling, crisp pixel font
+	drawHi(ctx, W, H) {
+		if (!this.pages) return;
+		const u = H / 480;
+		const bh = 108 * u, y = H - bh - 10 * u;
+		ctx.fillStyle = '#f8f8e0';
+		ctx.beginPath(); ctx.roundRect(12 * u, y, W - 24 * u, bh, 10 * u); ctx.fill();
+		ctx.strokeStyle = '#28283a';
+		ctx.lineWidth = 4 * u;
+		ctx.beginPath(); ctx.roundRect(15 * u, y + 3 * u, W - 30 * u, bh - 6 * u, 8 * u); ctx.stroke();
+		ctx.fillStyle = '#28283a';
+		ctx.font = `${Math.round(21 * u)}px m6x11plus, monospace`;
+		this.pages[this.idx].forEach((l, i) => ctx.fillText(l, 34 * u, y + 42 * u + i * 30 * u));
+		if (this.idx < this.pages.length - 1) ctx.fillText('▼', W - 52 * u, y + bh - 16 * u);
+	}
 }

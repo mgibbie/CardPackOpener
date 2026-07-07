@@ -13,6 +13,7 @@ import { Evolution } from './evolution.js';
 import { Items } from './items.js';
 import { statsFor } from './battle.js';
 import { getImage } from './engine.js';
+import * as BUI from './battleui.js';
 
 const SCALE = 3;
 const screen = document.getElementById('screen');
@@ -327,12 +328,23 @@ function screenPos(e) {
 		(e.clientY - r.top) * (screen.height / r.height)];
 }
 screen.addEventListener('pointermove', e => {
-	if (battle.blocking) battle.hover(...screenPos(e));
+	if (battle.blocking) { battle.hover(...screenPos(e)); return; }
+	if (anyMenuOpen()) {
+		const [x, y] = screenPos(e);
+		menuHover = null;
+		for (const b of menuUi) if (x >= b.x && x <= b.x + b.w && y >= b.y && y <= b.y + b.h) menuHover = b.id;
+	}
 });
 screen.addEventListener('pointerdown', e => {
 	e.preventDefault();
 	if (battle.blocking) { battle.tap(...screenPos(e)); return; }
-	if (dialog.blocking || evolution.blocking) pressKey('z');
+	if (dialog.blocking || evolution.blocking) { pressKey('z'); return; }
+	if (anyMenuOpen()) {
+		const [x, y] = screenPos(e);
+		for (const b of menuUi) {
+			if (x >= b.x && x <= b.x + b.w && y >= b.y && y <= b.y + b.h) { menuTap(b.id); return; }
+		}
+	}
 });
 
 // ---------- map transitions ----------
@@ -466,144 +478,227 @@ function tick(now) {
 	const sprites = [...npcs.list, ...trainers.list, player].sort((a, b) => a.py - b.py);
 	for (const s of sprites) s.draw(ctx, camX, camY);
 	world.drawLayer(ctx, 'top', camX, camY);
-	if (!battle.blocking) {
-		evolution.draw(ctx);
-		if (!evolution.blocking) dialog.draw(ctx);
-		if (partyMenu.open) drawPartyMenu();
-		if (shopMenu.open) drawShopMenu();
-		if (bagMenu.open) drawBagMenu();
-		if (pcMenu.open) drawPcMenu();
-		if (starterMenu.open) drawStarterMenu();
-	}
+	if (!battle.blocking) evolution.draw(ctx);
 
 	sctx.drawImage(frame, 0, 0, VIEW_W * SCALE, VIEW_H * SCALE);
-	// the battle scene renders at full canvas resolution for crisp text
-	if (battle.blocking) battle.draw(sctx, screen.width, screen.height);
+	// battle, menus, and dialogs all render at full canvas resolution
+	const SW = screen.width, SH = screen.height;
+	if (battle.blocking) {
+		battle.draw(sctx, SW, SH);
+	} else {
+		if (partyMenu.open) drawPartyMenu(SW, SH);
+		else if (shopMenu.open) drawShopMenu(SW, SH);
+		else if (bagMenu.open) drawBagMenu(SW, SH);
+		else if (pcMenu.open) drawPcMenu(SW, SH);
+		else if (starterMenu.open) drawStarterMenu(SW, SH);
+		if (!evolution.blocking) dialog.drawHi(sctx, SW, SH);
+	}
 }
 
-function drawPartyMenu() {
-	ctx.fillStyle = 'rgba(16,12,24,0.88)';
-	ctx.fillRect(0, 0, VIEW_W, VIEW_H);
-	ctx.fillStyle = '#f8f8e0';
-	ctx.font = '8px monospace';
-	ctx.fillText('PARTY   [Z] make lead  [P] close', 12, 14);
+// ---------- full-resolution menus (battleui components + pixel font) ----------
+let menuUi = [];   // tappable rects rebuilt each draw: {id, x, y, w, h}
+let menuHover = null;
+const iconCache = new Map();
+function iconOf(mon) {
+	if (!mon.sprite) return null;
+	if (!iconCache.has(mon.sprite)) {
+		iconCache.set(mon.sprite, null);
+		getImage(`data/pokemon/${mon.sprite}`).then(img => iconCache.set(mon.sprite, img)).catch(() => {});
+	}
+	return iconCache.get(mon.sprite);
+}
+
+function menuChrome(W, H, u, title, sub, closable = true) {
+	menuUi = [];
+	sctx.fillStyle = 'rgba(10,8,18,0.82)';
+	sctx.fillRect(0, 0, W, H);
+	sctx.fillStyle = BUI.C.text;
+	sctx.font = `${Math.round(24 * u)}px m6x11plus, monospace`;
+	sctx.fillText(title, 24 * u, 40 * u);
+	if (sub) {
+		sctx.fillStyle = BUI.C.dim;
+		sctx.font = `${Math.round(13 * u)}px m6x11plus, monospace`;
+		sctx.fillText(sub, 24 * u, 60 * u);
+	}
+	if (!closable) return;
+	const close = { id: 'close', x: W - 106 * u, y: 16 * u, w: 90 * u, h: 36 * u, label: 'CLOSE', center: true };
+	menuUi.push(close);
+	BUI.button(sctx, close, menuHover === 'close', u);
+}
+
+// a tappable mon row: sprite icon, name, level, status, HP bar + numbers
+function monRow(id, x, y, w, h, mon, selected, u, note) {
+	const b = { id, x, y, w, h };
+	menuUi.push(b);
+	sctx.fillStyle = selected || menuHover === id ? BUI.C.btnHover : BUI.C.btn;
+	BUI.rr(sctx, x, y, w, h, 8 * u); sctx.fill();
+	sctx.strokeStyle = selected ? BUI.C.accent : BUI.C.panelBorder;
+	sctx.lineWidth = selected ? 3 : 2;
+	BUI.rr(sctx, x + 1, y + 1, w - 2, h - 2, 8 * u); sctx.stroke();
+	const img = iconOf(mon);
+	if (img) {
+		sctx.imageSmoothingEnabled = false;
+		const s = (h - 8 * u) / img.height;
+		sctx.drawImage(img, x + 8 * u, y + 4 * u, img.width * s, img.height * s);
+	}
+	sctx.fillStyle = mon.curHP > 0 ? BUI.C.text : BUI.C.faint;
+	sctx.font = `${Math.round(17 * u)}px m6x11plus, monospace`;
+	sctx.fillText(mon.name, x + h + 6 * u, y + 22 * u);
+	sctx.fillStyle = BUI.C.dim;
+	sctx.font = `${Math.round(13 * u)}px m6x11plus, monospace`;
+	sctx.fillText(`Lv${mon.level}`, x + h + 6 * u, y + h - 10 * u);
+	if (mon.status) {
+		BUI.badge(sctx, x + h + 52 * u, y + h - 24 * u, 34 * u, 16 * u,
+			BUI.STATUS_BADGE[mon.status] || '#999', mon.status.toUpperCase(),
+			`${Math.round(11 * u)}px m6x11plus, monospace`);
+	}
+	const barW = w * 0.34;
+	const frac = Math.max(0, mon.curHP / mon.maxHP);
+	BUI.bar(sctx, x + w - barW - 84 * u, y + h / 2 - 5 * u, barW, 10 * u, frac, BUI.hpColor(frac), 4 * u);
+	sctx.fillStyle = BUI.C.text;
+	sctx.textAlign = 'right';
+	sctx.fillText(`${mon.curHP}/${mon.maxHP}`, x + w - 12 * u, y + h / 2 + 5 * u);
+	sctx.textAlign = 'left';
+	if (note) {
+		sctx.fillStyle = BUI.C.accent;
+		sctx.textAlign = 'right';
+		sctx.font = `${Math.round(11 * u)}px m6x11plus, monospace`;
+		sctx.fillText(note, x + w - 12 * u, y + 16 * u);
+		sctx.textAlign = 'left';
+	}
+}
+
+function drawPartyMenu(W, H) {
+	const u = H / 480;
+	menuChrome(W, H, u, 'PARTY', 'Tap a POKEMON to make it your lead.');
 	party.forEach((m, i) => {
-		const y = 30 + i * 20;
-		ctx.fillStyle = i === partyMenu.idx ? '#ffd25f' : '#f8f8e0';
-		ctx.fillText(`${i === partyMenu.idx ? '>' : ' '} ${m.name}`, 12, y);
-		ctx.fillText(`Lv${m.level}`, 120, y);
-		ctx.fillText(`${m.curHP}/${m.maxHP}`, 150, y);
-		// hp bar
-		const frac = Math.max(0, m.curHP / m.maxHP);
-		ctx.fillStyle = '#58585a';
-		ctx.fillRect(196, y - 6, 36, 5);
-		ctx.fillStyle = frac > 0.5 ? '#40c860' : frac > 0.2 ? '#f0c020' : '#e83020';
-		ctx.fillRect(197, y - 5, Math.round(34 * frac), 3);
+		monRow('party:' + i, 24 * u, (76 + i * 62) * u, W - 48 * u, 56 * u, m,
+			partyMenu.idx === i, u, i === 0 ? 'LEAD' : '');
 	});
 }
 
-function drawStarterMenu() {
-	ctx.fillStyle = '#101020';
-	ctx.fillRect(0, 0, VIEW_W, VIEW_H);
-	ctx.fillStyle = '#f8f8e0';
-	ctx.font = '8px monospace';
-	ctx.textAlign = 'center';
-	ctx.fillText('CHOOSE YOUR FIRST POKEMON!', VIEW_W / 2, 12);
-	ctx.textAlign = 'left';
-	const CELL = 32;
+function drawStarterMenu(W, H) {
+	const u = H / 480;
+	menuChrome(W, H, u, 'CHOOSE YOUR FIRST POKEMON', 'Tap one to begin your journey.', false);
+	const cw = 150 * u, ch = 118 * u;
 	STARTERS.forEach((row, r) => {
-		const y = 22 + r * 45;
-		ctx.fillStyle = '#9d8fd4';
-		ctx.fillText(row.region, 6, y + 18);
+		const y = (78 + r * 130) * u;
+		sctx.fillStyle = BUI.C.dim;
+		sctx.font = `${Math.round(15 * u)}px m6x11plus, monospace`;
+		sctx.save();
+		sctx.translate(38 * u, y + ch / 2);
+		sctx.rotate(-Math.PI / 2);
+		sctx.textAlign = 'center';
+		sctx.fillText(row.region, 0, 0);
+		sctx.restore();
 		row.ids.forEach((id, c) => {
-			const x = 66 + c * 56;
+			const x = (70 + c * 165) * u;
 			const sel = starterMenu.row === r && starterMenu.col === c;
-			if (sel) {
-				ctx.strokeStyle = '#ffd25f';
-				ctx.strokeRect(x - 2.5, y - 2.5, CELL + 5, CELL + 5);
-			}
+			const bid = `starter:${r}:${c}`;
+			menuUi.push({ id: bid, x, y, w: cw, h: ch });
+			const sp = battle.data.species[id];
+			const tc = BUI.TYPE_COLORS[sp?.types?.[0]] || '#888';
+			sctx.fillStyle = sel || menuHover === bid ? BUI.C.btnHover : BUI.C.btn;
+			BUI.rr(sctx, x, y, cw, ch, 10 * u); sctx.fill();
+			sctx.strokeStyle = sel || menuHover === bid ? tc : BUI.C.panelBorder;
+			sctx.lineWidth = sel ? 4 : 2;
+			BUI.rr(sctx, x + 1, y + 1, cw - 2, ch - 2, 10 * u); sctx.stroke();
 			const img = starterMenu.sprites[id];
 			if (img) {
-				ctx.imageSmoothingEnabled = false;
-				const scale = Math.min(CELL / img.width, CELL / img.height);
-				const dw = img.width * scale, dh = img.height * scale;
-				ctx.drawImage(img, x + (CELL - dw) / 2, y + (CELL - dh) / 2, dw, dh);
+				sctx.imageSmoothingEnabled = false;
+				const s = Math.min((cw - 30 * u) / img.width, (ch - 44 * u) / img.height);
+				sctx.drawImage(img, x + (cw - img.width * s) / 2, y + 6 * u, img.width * s, img.height * s);
 			}
-			ctx.fillStyle = sel ? '#ffd25f' : '#f8f8e0';
-			const sp = battle.data.species[id];
-			ctx.fillText((sp?.name || id).slice(0, 10), x - 6, y + CELL + 9);
+			sctx.fillStyle = sel ? tc : BUI.C.text;
+			sctx.font = `${Math.round(14 * u)}px m6x11plus, monospace`;
+			sctx.textAlign = 'center';
+			sctx.fillText((sp?.name || id).toUpperCase(), x + cw / 2, y + ch - 10 * u);
+			sctx.textAlign = 'left';
 		});
 	});
-	ctx.fillStyle = '#9d8fd4';
-	ctx.fillText('[Z] choose', VIEW_W - 52, 12);
 }
 
-function menuFrame(title) {
-	ctx.fillStyle = 'rgba(16,12,24,0.9)';
-	ctx.fillRect(0, 0, VIEW_W, VIEW_H);
-	ctx.fillStyle = '#f8f8e0';
-	ctx.font = '8px monospace';
-	ctx.fillText(title, 12, 14);
-}
-
-function drawShopMenu() {
-	menuFrame(`POKE MART   money $${Bag.getMoney()}   [Z] buy [X] close`);
+function drawShopMenu(W, H) {
+	const u = H / 480;
+	menuChrome(W, H, u, 'POKE MART', `Money: $${Bag.getMoney()} — tap to buy`);
 	Bag.SHOP_STOCK.forEach((id, i) => {
 		const it = Bag.ITEMS[id];
-		const y = 32 + i * 16;
-		ctx.fillStyle = i === shopMenu.idx ? '#ffd25f' : '#f8f8e0';
-		ctx.fillText(`${i === shopMenu.idx ? '>' : ' '} ${it.name}`, 12, y);
-		ctx.fillText(`$${it.price}`, 130, y);
-		ctx.fillText(`have ${Bag.count(id)}`, 175, y);
+		const bid = 'buy:' + i;
+		const b = { id: bid, x: 24 * u, y: (76 + i * 54) * u, w: W - 48 * u, h: 48 * u,
+			label: it.name, sub: `have ${Bag.count(id)}`, right: `$${it.price}`, kbSel: shopMenu.idx === i };
+		menuUi.push(b);
+		BUI.button(sctx, b, menuHover === bid || shopMenu.idx === i, u);
 	});
 	if (shopMenu.flash) {
-		ctx.fillStyle = '#9d8fd4';
-		ctx.fillText(shopMenu.flash, 12, VIEW_H - 10);
+		sctx.fillStyle = BUI.C.accent;
+		sctx.font = `${Math.round(15 * u)}px m6x11plus, monospace`;
+		sctx.fillText(shopMenu.flash, 24 * u, H - 20 * u);
 	}
 }
 
-function drawBagMenu() {
-	menuFrame(`BAG   money $${Bag.getMoney()}   [Z] use [X] close`);
+function drawBagMenu(W, H) {
+	const u = H / 480;
+	menuChrome(W, H, u, 'BAG', `Money: $${Bag.getMoney()} — tap an item, then who to use it on`);
 	const entries = Object.entries(Bag.getBag()).filter(([, n]) => n > 0);
-	if (!entries.length) ctx.fillText('(empty)', 12, 34);
-	const start = Math.max(0, Math.min(bagMenu.idx - 4, entries.length - 9));
-	entries.slice(start, start + 9).forEach(([id, n], i) => {
+	if (!entries.length) {
+		sctx.fillStyle = BUI.C.dim;
+		sctx.font = `${Math.round(16 * u)}px m6x11plus, monospace`;
+		sctx.fillText('The bag is empty.', 24 * u, 100 * u);
+	}
+	const colW = bagMenu.picking ? W * 0.44 : W - 48 * u;
+	const start = Math.max(0, Math.min(bagMenu.idx - 3, entries.length - 7));
+	entries.slice(start, start + 7).forEach(([id, n], i) => {
 		const idx = start + i;
-		const y = 32 + i * 14;
-		ctx.fillStyle = idx === bagMenu.idx && !bagMenu.picking ? '#ffd25f' : '#f8f8e0';
-		ctx.fillText(`${idx === bagMenu.idx ? '>' : ' '} ${Bag.nameOf(id)} x${n}`, 12, y);
+		const bid = 'item:' + idx;
+		const b = { id: bid, x: 24 * u, y: (76 + i * 52) * u, w: colW, h: 46 * u,
+			label: Bag.nameOf(id), right: `x${n}` };
+		menuUi.push(b);
+		BUI.button(sctx, b, menuHover === bid || (bagMenu.idx === idx && !bagMenu.picking), u);
 	});
 	if (bagMenu.picking) {
-		ctx.fillStyle = '#f8f8e0';
-		ctx.fillText('Use on:', 120, 24);
+		sctx.fillStyle = BUI.C.text;
+		sctx.font = `${Math.round(15 * u)}px m6x11plus, monospace`;
+		sctx.fillText('Use on:', W * 0.5, 70 * u);
 		party.forEach((m, i) => {
-			const y = 36 + i * 14;
-			ctx.fillStyle = i === bagMenu.pickIdx ? '#ffd25f' : '#f8f8e0';
-			ctx.fillText(`${i === bagMenu.pickIdx ? '>' : ' '} ${m.name} ${m.curHP}/${m.maxHP}`, 120, y);
+			monRow('use:' + i, W * 0.5, (76 + i * 54) * u, W * 0.47, 48 * u, m, bagMenu.pickIdx === i, u);
 		});
 	}
 }
 
-function drawPcMenu() {
-	menuFrame('POKEMON STORAGE   [</>] switch side  [Z] move  [X] close');
+function drawPcMenu(W, H) {
+	const u = H / 480;
 	const box = getBox();
-	ctx.fillStyle = pcMenu.side === 0 ? '#ffd25f' : '#f8f8e0';
-	ctx.fillText('PARTY (deposit)', 12, 30);
-	ctx.fillStyle = pcMenu.side === 1 ? '#ffd25f' : '#f8f8e0';
-	ctx.fillText(`BOX (${box.length})`, 130, 30);
+	menuChrome(W, H, u, 'POKEMON STORAGE', 'Tap to move between PARTY and BOX.');
+	sctx.font = `${Math.round(15 * u)}px m6x11plus, monospace`;
+	sctx.fillStyle = pcMenu.side === 0 ? BUI.C.accent : BUI.C.dim;
+	sctx.fillText('PARTY', 24 * u, 78 * u);
+	sctx.fillStyle = pcMenu.side === 1 ? BUI.C.accent : BUI.C.dim;
+	sctx.fillText(`BOX (${box.length})`, W * 0.52, 78 * u);
 	party.forEach((m, i) => {
-		const sel = pcMenu.side === 0 && pcMenu.idx === i;
-		ctx.fillStyle = sel ? '#ffd25f' : '#f8f8e0';
-		ctx.fillText(`${sel ? '>' : ' '} ${m.name} Lv${m.level}`, 12, 44 + i * 12);
+		monRow('pcp:' + i, 24 * u, (88 + i * 54) * u, W * 0.44, 48 * u, m,
+			pcMenu.side === 0 && pcMenu.idx === i, u);
 	});
-	const start = Math.max(0, Math.min(pcMenu.idx - 3, box.length - 8));
-	box.slice(start, start + 8).forEach((m, i) => {
+	const start = Math.max(0, Math.min((pcMenu.side === 1 ? pcMenu.idx : 0) - 3, box.length - 7));
+	box.slice(start, start + 7).forEach((m, i) => {
 		const idx = start + i;
-		const sel = pcMenu.side === 1 && pcMenu.idx === idx;
-		ctx.fillStyle = sel ? '#ffd25f' : '#f8f8e0';
-		ctx.fillText(`${sel ? '>' : ' '} ${m.name} Lv${m.level}`, 130, 44 + i * 12);
+		monRow('pcb:' + idx, W * 0.52, (88 + i * 54) * u, W * 0.44, 48 * u, m,
+			pcMenu.side === 1 && pcMenu.idx === idx, u);
 	});
 }
+
+// taps route into the same state + key logic the keyboard uses
+function menuTap(id) {
+	const [kind, a, b2] = id.split(':');
+	if (kind === 'close') { pressKey('Escape'); pressKey('x'); return; }
+	if (kind === 'party') { partyMenu.idx = +a; if (+a > 0) pressKey('z'); return; }
+	if (kind === 'starter') { starterMenu.row = +a; starterMenu.col = +b2; pressKey('z'); return; }
+	if (kind === 'buy') { shopMenu.idx = +a; pressKey('z'); return; }
+	if (kind === 'item') { bagMenu.idx = +a; bagMenu.picking = false; pressKey('z'); return; }
+	if (kind === 'use') { bagMenu.pickIdx = +a; pressKey('z'); return; }
+	if (kind === 'pcp') { pcMenu.side = 0; pcMenu.idx = +a; pressKey('z'); return; }
+	if (kind === 'pcb') { pcMenu.side = 1; pcMenu.idx = +a; pressKey('z'); return; }
+}
+const anyMenuOpen = () => partyMenu.open || shopMenu.open || bagMenu.open || pcMenu.open || starterMenu.open;
 
 // ---------- boot ----------
 (async () => {
@@ -648,6 +743,6 @@ function drawPcMenu() {
 	hud.textContent = world.current.map.name || startMap;
 	loading = false;
 	// headless test hook
-	window.__ow = { world, player, warpTo, npcs, encounters, battle, trainers, dialog, evolution, items, get party() { return party; }, startWildBattle, interact };
+	window.__ow = { world, player, warpTo, npcs, encounters, battle, trainers, dialog, evolution, items, get party() { return party; }, get menuUi() { return menuUi; }, menuTap, startWildBattle, interact };
 	requestAnimationFrame(tick);
 })();
