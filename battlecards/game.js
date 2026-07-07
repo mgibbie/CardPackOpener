@@ -2209,6 +2209,8 @@ function snapshotState() {
 		winner: state.winner,
 		classPicks: state.classPicks || null,
 		playerCount: state.players.length,
+		// pending decisions so a watcher can see the Discover/scry options being weighed
+		scryQueue: state.scryQueue || [], discardQueue: state.discardQueue || [], pickQueue: state.pickQueue || [],
 	};
 }
 
@@ -2253,10 +2255,11 @@ function startSpectate(cardsById) {
 		if (data.seq === spectateSeq) return; // nothing new
 		spectateSeq = data.seq;
 		const snap = data.snapshot;
-		// re-attach the local card DB + a live rng; queues are irrelevant to a watcher
+		// re-attach the local card DB + a live rng; carry the pending decisions so
+		// the watcher can see the Discover/scry options while they're being weighed
 		state = {
-			...snap, cardsById, rng: Math.random,
-			events: [], scryQueue: [], discardQueue: [], pickQueue: [],
+			...snap, cardsById, rng: Math.random, events: [],
+			scryQueue: snap.scryQueue || [], discardQueue: snap.discardQueue || [], pickQueue: snap.pickQueue || [],
 		};
 		if (snap.playerCount !== spectatePanelsFor) {
 			playerCount = snap.playerCount;
@@ -2267,9 +2270,45 @@ function startSpectate(cardsById) {
 		}
 		banner(`${spectateName}${data.label ? ' — ' + data.label : ''}`);
 		updateHud();
+		renderSpectatorChoice();
 	};
 	tick();
 	setInterval(tick, 1000);
+}
+
+// read-only overlay: show a pending Discover/scry/loot decision so the watcher
+// sees the options before the player commits. No buttons — a spectator can't act.
+let specChoiceSig = null;
+function renderSpectatorChoice() {
+	if (!spectateMode || !state) return;
+	const pq = state.pickQueue?.[0], sq = state.scryQueue?.[0], dq = state.discardQueue?.[0];
+	let sig = null, ids = null, whoIdx = null, kind = '';
+	if (pq) { sig = 'pick:' + pq.player + ':' + pq.ids.join(','); ids = pq.ids; whoIdx = pq.player; kind = pq.title || (pq.ids.length > 3 ? 'Draft' : 'Discover'); }
+	else if (sq) { sig = 'scry:' + sq.chooser + ':' + sq.ids.join(','); ids = sq.ids; whoIdx = sq.chooser; kind = sq.deckOwner === sq.chooser ? 'Scry' : 'Gaze'; }
+	else if (dq) { sig = 'discard:' + dq.player + ':' + dq.count; whoIdx = dq.player; kind = 'Loot'; }
+	if (sig === specChoiceSig) return; // unchanged
+	specChoiceSig = sig;
+	const modal = $('scry-modal');
+	if (!modal) return;
+	if (!sig) { modal.style.display = 'none'; return; }
+	const who = whoIdx === HUMAN ? spectateName : (state.classPicks?.[whoIdx]?.name || 'Opponent');
+	if (ids) {
+		modal.innerHTML = `<div class="wm-title">${who} is choosing — ${kind} (watching)</div><div class="scry-row"></div>`;
+		const row = modal.querySelector('.scry-row');
+		ids.forEach(id => {
+			const def = state.cardsById[id];
+			if (!def) return;
+			const cell = document.createElement('div');
+			cell.className = 'scry-cell';
+			const face = drawCardFace(def);
+			face.style.width = ids.length > 3 ? '105px' : '130px';
+			cell.appendChild(face);
+			row.appendChild(cell);
+		});
+	} else {
+		modal.innerHTML = `<div class="wm-title">${who} is discarding ${dq.count} card${dq.count > 1 ? 's' : ''}… (watching)</div>`;
+	}
+	modal.style.display = 'block';
 }
 
 // ---------- live card duel (host-authoritative relay) ----------
