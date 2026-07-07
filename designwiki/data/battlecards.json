@@ -5,12 +5,8 @@
    "key": "keywords",
    "title": "Keywords Needing Definitions",
    "blurb": "Mechanics referenced on cards that have no ruling yet. Each needs a designer definition before its cards can work.",
-   "count": 20,
+   "count": 18,
    "items": [
-    {
-     "name": "Ward",
-     "note": "paper keyword (B boost table: 'Ward: 2 Life')"
-    },
     {
      "name": "Excavate",
      "note": "paper keyword (W boost table 'Connect: Excavate')"
@@ -30,10 +26,6 @@
     {
      "name": "Bash",
      "note": "paper keyword"
-    },
-    {
-     "name": "Miniaturize",
-     "note": "paper keyword (e.g. Nostalgic Gnome)"
     },
     {
      "name": "Regenerate",
@@ -93,7 +85,7 @@
    "key": "paper",
    "title": "Paper Cards Awaiting Mechanics",
    "blurb": "Scanned paper cards whose rules text doesn't convert yet \u2014 they need either an importer pattern or a design decision.",
-   "count": 586,
+   "count": 581,
    "items": [
     {
      "name": "Abstract Angler"
@@ -423,9 +415,6 @@
      "name": "Cirdan the Shipwright"
     },
     {
-     "name": "Citystalker Connoisseur"
-    },
-    {
      "name": "Clavile\u00f1o, First of the Blessed"
     },
     {
@@ -661,9 +650,6 @@
     },
     {
      "name": "Emerald Proto-Whelp"
-    },
-    {
-     "name": "Emerald Reaver"
     },
     {
      "name": "Emirikol"
@@ -991,9 +977,6 @@
     },
     {
      "name": "Huatli, Poet of Unity"
-    },
-    {
-     "name": "Hulking Overfiend"
     },
     {
      "name": "Hungry Turtle"
@@ -1464,9 +1447,6 @@
      "name": "Sauron, Lord of the Rings"
     },
     {
-     "name": "Scavenger Drake"
-    },
-    {
      "name": "Second Excavation"
     },
     {
@@ -1849,9 +1829,6 @@
     },
     {
      "name": "Zock, Galactic Wanderer"
-    },
-    {
-     "name": "Zombie Chow"
     }
    ]
   },
@@ -2171,7 +2148,7 @@
    "key": "wubrg_hard",
    "title": "WUBRG \u2014 Needs Engine Work or Redesign",
    "blurb": "Planned colored cards whose MTG text doesn't map onto current mechanics (per-card reason attached).",
-   "count": 212,
+   "count": 215,
    "items": [
     {
      "name": "Knight of the White Orchid",
@@ -2762,6 +2739,18 @@
      "note": "Red 4 \u2014 unmatched-text"
     },
     {
+     "name": "Llanowar Elves",
+     "note": "Green 1 \u2014 activated-ability"
+    },
+    {
+     "name": "Elvish Mystic",
+     "note": "Green 1 \u2014 activated-ability"
+    },
+    {
+     "name": "Fyndhorn Elves",
+     "note": "Green 1 \u2014 activated-ability"
+    },
+    {
      "name": "Arbor Elf",
      "note": "Green 1 \u2014 activated-ability"
     },
@@ -3027,7 +3016,7 @@
    "key": "dex_pools",
    "title": "Advanced-Land Theme Pools (Planned Card Dex)",
    "blurb": "God / guild / praetor pool cards named in the dex but not designed \u2014 these feed each advanced land's 'Discover a themed card' tap.",
-   "count": 2126,
+   "count": 2117,
    "items": [
     {
      "name": "Abzan Advantage",
@@ -4487,10 +4476,6 @@
     },
     {
      "name": "Halveria Darkraven",
-     "note": "Demon Hunter pool"
-    },
-    {
-     "name": "Hulking Overfiend",
      "note": "Demon Hunter pool"
     },
     {
@@ -8086,10 +8071,6 @@
      "note": "Paladin pool"
     },
     {
-     "name": "City Tax",
-     "note": "Paladin pool"
-    },
-    {
      "name": "Class Action Lawyer",
      "note": "Paladin pool"
     },
@@ -8131,10 +8112,6 @@
     },
     {
      "name": "Galloping Savior",
-     "note": "Paladin pool"
-    },
-    {
-     "name": "Glow-Tron",
      "note": "Paladin pool"
     },
     {
@@ -9102,10 +9079,6 @@
      "note": "Rogue pool"
     },
     {
-     "name": "Bladed Cultist",
-     "note": "Rogue pool"
-    },
-    {
      "name": "Buccaneer",
      "note": "Rogue pool"
     },
@@ -9114,15 +9087,7 @@
      "note": "Rogue pool"
     },
     {
-     "name": "Cheap Shot",
-     "note": "Rogue pool"
-    },
-    {
      "name": "Cogmaster's Wrench",
-     "note": "Rogue pool"
-    },
-    {
-     "name": "Coldtooth Yeti",
      "note": "Rogue pool"
     },
     {
@@ -9131,10 +9096,6 @@
     },
     {
      "name": "Cutlass Courier",
-     "note": "Rogue pool"
-    },
-    {
-     "name": "Dark Iron Skulker",
      "note": "Rogue pool"
     },
     {
@@ -9155,10 +9116,6 @@
     },
     {
      "name": "Headcrack",
-     "note": "Rogue pool"
-    },
-    {
-     "name": "Hooked Scimitar",
      "note": "Rogue pool"
     },
     {
@@ -10862,10 +10819,6 @@
      "note": "Warrior pool"
     },
     {
-     "name": "Beryllium Nullifier",
-     "note": "Warrior pool"
-    },
-    {
      "name": "Blazing Power",
      "note": "Warrior pool"
     },
@@ -11705,11 +11658,11 @@
   }
  ],
  "totals": {
-  "keywords": 20,
-  "paper": 586,
+  "keywords": 18,
+  "paper": 581,
   "wubrg_redesign": 76,
-  "wubrg_hard": 212,
-  "dex_pools": 2126,
+  "wubrg_hard": 215,
+  "dex_pools": 2117,
   "empty_classes": 33,
   "open_items": 5
  }
