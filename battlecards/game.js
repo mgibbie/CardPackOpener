@@ -2312,9 +2312,13 @@ function showMiniTip(def, x, y) {
 		: def.type === 'weapon' ? ` · ${def.attack}/${def.durability}`
 		: def.type === 'location' ? ` · ${def.durability} uses` : '';
 	const typeLabel = def.type === 'heropower' ? 'Hero Power' : def.type;
+	// hero-power descriptions often repeat "Hero Power (N):" — the header
+	// already shows the cost and label, so strip that redundant prefix
+	let desc = def.description || '<i>No rules text.</i>';
+	if (def.type === 'heropower') desc = desc.replace(/^Hero Power\s*\(\d+\)\s*:\s*/i, '');
 	miniTip.innerHTML = `<div style="font-weight:bold;color:#cbb8ff;margin-bottom:3px;">${def.name}</div>`
 		+ `<div style="opacity:0.7;font-size:11px;margin-bottom:6px;">${def.cost ?? 0} mana · ${typeLabel}${stats}</div>`
-		+ `<div>${def.description || '<i>No rules text.</i>'}</div>`;
+		+ `<div>${desc}</div>`;
 	miniTip.style.display = 'block';
 	miniTip.style.left = Math.max(6, Math.min(x + 14, innerWidth - 262)) + 'px';
 	miniTip.style.top = Math.max(6, Math.min(y + 12, innerHeight - miniTip.offsetHeight - 10)) + 'px';
