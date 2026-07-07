@@ -4,6 +4,7 @@
 // no natures; moveset = last 4 level-up moves at the mon's level).
 import { getJSON, getImage, VIEW_W, VIEW_H } from './engine.js';
 import * as Bag from './bag.js';
+import * as UI from './battleui.js';
 
 // ---------- type chart (attacking type -> non-neutral matchups) ----------
 const CHART = {
@@ -181,6 +182,12 @@ export class Battle {
 			getJSON('data/species_extra.json').catch(() => ({})),
 		]);
 		this.data = { species, moves, extra };
+		// the Love2D build's pixel font, so battle text matches the desktop game
+		try {
+			const f = new FontFace('m6x11plus', 'url(data/fonts/m6x11plus.ttf)');
+			await f.load();
+			document.fonts.add(f);
+		} catch (e) { /* system monospace fallback */ }
 	}
 
 	// start a wild battle vs the party; onEnd(result) with
@@ -260,6 +267,8 @@ export class Battle {
 	get blocking() { return this.active != null; }
 
 	pushMsg(text, fn) { this.active.queue.push({ text, fn }); }
+	// queued sprite animation: the message queue pauses while it plays
+	pushAnim(kind, side, dur, done) { this.active.queue.push({ anim: { kind, side, dur, done } }); }
 
 	// ---------- turn resolution ----------
 	statOf(mon, boosts, key) {
@@ -375,6 +384,8 @@ export class Battle {
 			total += dmg;
 		}
 		total = Math.min(total, target.curHP);
+		this.pushAnim('lunge', isFoe ? 'foe' : 'me', 0.3);
+		this.pushAnim('hit', isFoe ? 'me' : 'foe', 0.4);
 		this.pushMsg('', () => { target.curHP = Math.max(0, target.curHP - total); });
 		if (nHits > 1) this.pushMsg(`Hit ${nHits} time(s)!`);
 		if (crits) this.pushMsg('A critical hit!');
@@ -449,9 +460,11 @@ export class Battle {
 		const a = this.active;
 		if (a.foe.curHP <= 0) {
 			this.pushMsg(a.isTrainer ? `${a.foe.name} fainted!` : `The wild ${a.foe.name} fainted!`);
+			this.pushAnim('faint', 'foe', 0.7, () => { a.foeHidden = true; });
 			this.grantExp();
 		} else if (a.me.curHP <= 0) {
 			this.pushMsg(`${a.me.name} fainted!`);
+			this.pushAnim('faint', 'me', 0.7, () => { a.meHidden = true; });
 			const next = a.party.find(m => m.curHP > 0);
 			if (next) {
 				this.pushMsg(`Go! ${next.name}!`, () => {
@@ -459,7 +472,9 @@ export class Battle {
 					a.meImg = a.backSprites.get(next);
 					a.meBoosts = freshBoosts();
 					a.meShownHP = next.curHP;
+					a.meHidden = false;
 				});
+				this.pushAnim('enter', 'me', 0.4);
 			} else {
 				this.pushMsg('You blacked out...', () => this.finish('defeat'));
 			}
@@ -508,7 +523,9 @@ export class Battle {
 					a2.foeImg = a2.foeSprites.get(next);
 					a2.foeBoosts = freshBoosts();
 					a2.foeShownHP = next.curHP;
+					a2.foeHidden = false;
 				});
+				this.pushAnim('enter', 'foe', 0.4);
 			} else if (a2.isTrainer) {
 				this.pushMsg(a2.info.defeatText);
 				this.pushMsg(`You got $${a2.info.money} for winning!`, () => this.finish('victory'));
@@ -522,6 +539,7 @@ export class Battle {
 	throwBall() {
 		const a = this.active;
 		this.pushMsg('You threw a POKe BALL!');
+		this.pushAnim('ballthrow', 'foe', 0.55, () => { a.foeHidden = true; a.ballShown = true; });
 		const rate = this.data.extra?.[a.foe.speciesId]?.catch ?? 45; // real species catch rate
 		const statusBonus = a.foe.status === 'slp' || a.foe.status === 'frz' ? 2
 			: a.foe.status ? 1.5 : 1;
@@ -529,13 +547,15 @@ export class Battle {
 		const b = Math.floor(1048560 / Math.sqrt(Math.sqrt(16711680 / f)));
 		let shakes = 0;
 		while (shakes < 4 && Math.floor(Math.random() * 65536) < b) shakes++;
-		for (let i = 1; i <= Math.min(shakes, 3); i++) this.pushMsg('...' + '*'.repeat(i));
+		for (let i = 1; i <= Math.min(shakes, 3); i++) this.pushAnim('ballshake', 'foe', 0.7);
 		if (shakes >= 4) {
+			this.pushAnim('ballcatch', 'foe', 0.5);
 			this.pushMsg(`Gotcha! ${a.foe.name} was caught!`, () => {
 				a.caughtMon = a.foe;
 				this.finish('caught');
 			});
 		} else {
+			this.pushAnim('ballbreak', 'foe', 0.35, () => { a.foeHidden = false; a.ballShown = false; });
 			this.pushMsg(`Oh no! The ${a.foe.name} broke free!`);
 			this.pushMsg('', () => {
 				const foeMoves = a.foe.moves.filter(m => m.pp > 0);
@@ -690,12 +710,15 @@ export class Battle {
 		const a = this.active;
 		this.startQueue(() => {
 			this.pushMsg(`Come back, ${a.me.name}!`);
+			this.pushAnim('recall', 'me', 0.3, () => { a.meHidden = true; });
 			this.pushMsg(`Go! ${mon.name}!`, () => {
 				a.me = mon;
 				a.meImg = a.backSprites.get(mon);
 				a.meBoosts = freshBoosts();
 				a.meShownHP = mon.curHP;
+				a.meHidden = false;
 			});
+			this.pushAnim('enter', 'me', 0.4);
 			this.foeFreeMove();
 		});
 	}
@@ -705,6 +728,9 @@ export class Battle {
 		const a = this.active;
 		if (!a) return;
 		a.t += dt;
+		a.introT = (a.introT || 0);
+		if (a.phase !== 'flash') a.introT += dt;
+		if (a.shakeT > 0) a.shakeT -= dt;
 		// HP bar easing
 		a.foeShownHP += (a.foe.curHP - a.foeShownHP) * Math.min(1, dt * 6);
 		a.meShownHP += (a.me.curHP - a.meShownHP) * Math.min(1, dt * 6);
@@ -712,7 +738,17 @@ export class Battle {
 		if (Math.abs(a.meShownHP - a.me.curHP) < 0.5) a.meShownHP = a.me.curHP;
 
 		if (a.phase === 'flash') {
-			if (a.t > 0.7) { a.phase = 'msg'; }
+			if (a.t > 0.6) { a.phase = 'msg'; }
+			return;
+		}
+		// a playing sprite animation pauses the message queue
+		if (a.fx) {
+			a.fx.t += dt;
+			if (a.fx.kind === 'hit' && a.fx.t < 0.15) a.shakeT = 0.15;
+			if (a.fx.t >= a.fx.dur) {
+				a.fx.done?.();
+				a.fx = null;
+			}
 			return;
 		}
 		if (a.phase === 'msg') {
@@ -722,6 +758,7 @@ export class Battle {
 			if ((a.msgT > 1.1 || a.msgT >= 99) && settled) {
 				const next = a.queue.shift();
 				if (next) {
+					if (next.anim) { a.fx = { ...next.anim, t: 0 }; a.msgT = 1.2; return; }
 					next.fn?.();
 					if (next.text) { a.msg = next.text; a.msgT = 0; }
 					else a.msgT = 1.2; // silent action; move on quickly
@@ -743,121 +780,226 @@ export class Battle {
 		}
 	}
 
-	drawHPBar(ctx, x, y, w, shown, max) {
-		const frac = Math.max(0, shown / max);
-		ctx.fillStyle = '#58585a';
-		ctx.fillRect(x - 1, y - 1, w + 2, 5);
-		ctx.fillStyle = frac > 0.5 ? '#40c860' : frac > 0.2 ? '#f0c020' : '#e83020';
-		ctx.fillRect(x, y, Math.round(w * frac), 3);
+	// medium-fast exp progress within the current level
+	expFrac(mon) {
+		const cur = mon.level ** 3, next = (mon.level + 1) ** 3;
+		return Math.max(0, Math.min(1, ((mon.exp ?? cur) - cur) / (next - cur)));
 	}
 
-	draw(ctx) {
+	// ---------- full-resolution scene (Love2D-style presentation) ----------
+	// sprite base positions + fx offsets; side: 'me' | 'foe'
+	spritePose(a, side, W, H, u) {
+		const bar = 124 * u;
+		const base = side === 'foe'
+			? { x: W * 0.70, y: H * 0.42, scale: 3.4 * u }
+			: { x: W * 0.235, y: H - bar - 16 * u, scale: 4.2 * u };
+		let dx = 0, dy = 0, alpha = 1, blink = false, wob = 0;
+		// entry slide on battle start
+		const k = Math.min(1, (a.introT || 0) / 0.6);
+		dx += (side === 'foe' ? 1 : -1) * (1 - k) * W * 0.4;
+		// idle bob
+		dy += Math.sin(a.t * 2.1 + (side === 'foe' ? 1.7 : 0)) * 2.5 * u;
+		const fx = a.fx;
+		if (fx && fx.side === side) {
+			const p = Math.min(1, fx.t / fx.dur);
+			if (fx.kind === 'lunge') dx += Math.sin(Math.PI * p) * (side === 'foe' ? -1 : 1) * 34 * u;
+			if (fx.kind === 'hit') blink = Math.floor(fx.t / 0.07) % 2 === 0;
+			if (fx.kind === 'faint') { dy += p * 90 * u; alpha = 1 - p; }
+			if (fx.kind === 'recall') { alpha = 1 - p; dy += p * 20 * u; }
+			if (fx.kind === 'enter') { dx += (side === 'foe' ? 1 : -1) * (1 - p) * W * 0.3; alpha = p; }
+			if (fx.kind === 'ballshake') wob = Math.sin(fx.t * Math.PI * 4) * 0.35;
+		}
+		return { ...base, dx, dy, alpha, blink, wob };
+	}
+
+	drawSide(ctx, a, side, W, H, u) {
+		const mon = side === 'foe' ? a.foe : a.me;
+		const img = side === 'foe' ? a.foeImg : a.meImg;
+		const hidden = side === 'foe' ? a.foeHidden : a.meHidden;
+		const pose = this.spritePose(a, side, W, H, u);
+		// platform with a type glow (Love2D drawPokemonSprite)
+		const tc = UI.TYPE_COLORS[mon.types[0]] || '#888';
+		ctx.save();
+		ctx.globalAlpha = 0.28;
+		ctx.fillStyle = tc;
+		ctx.beginPath(); ctx.ellipse(pose.x, pose.y, 118 * u, 30 * u, 0, 0, Math.PI * 2); ctx.fill();
+		ctx.globalAlpha = 0.5;
+		ctx.fillStyle = 'rgba(40,70,50,0.8)';
+		ctx.beginPath(); ctx.ellipse(pose.x, pose.y, 104 * u, 24 * u, 0, 0, Math.PI * 2); ctx.fill();
+		ctx.restore();
+		// the ball, mid-catch
+		const fx = a.fx;
+		if (side === 'foe' && fx?.side === 'foe' && fx.kind === 'ballthrow') {
+			const p = Math.min(1, fx.t / fx.dur);
+			const sx = W * 0.3, sy = H * 0.65, ex = pose.x, ey = pose.y - 20 * u;
+			const bx = sx + (ex - sx) * p, by = sy + (ey - sy) * p - Math.sin(Math.PI * p) * 120 * u;
+			UI.drawBall(ctx, bx, by, 13 * u, p * 6);
+		} else if (side === 'foe' && a.ballShown) {
+			UI.drawBall(ctx, pose.x, pose.y - 12 * u, 13 * u, pose.wob);
+			if (fx?.kind === 'ballcatch' && fx.side === 'foe') {
+				const p = Math.min(1, fx.t / fx.dur);
+				ctx.strokeStyle = `rgba(255,220,120,${1 - p})`;
+				ctx.lineWidth = 3 * u;
+				for (let i = 0; i < 5; i++) {
+					const ang = i / 5 * Math.PI * 2 + p * 2;
+					const r = (18 + p * 26) * u;
+					ctx.beginPath();
+					ctx.arc(pose.x + Math.cos(ang) * r, pose.y - 12 * u + Math.sin(ang) * r, 2.4 * u, 0, Math.PI * 2);
+					ctx.stroke();
+				}
+			}
+			if (fx?.kind === 'ballbreak' && fx.side === 'foe') {
+				const p = Math.min(1, fx.t / fx.dur);
+				ctx.fillStyle = `rgba(255,255,255,${0.8 * (1 - p)})`;
+				ctx.beginPath(); ctx.arc(pose.x, pose.y - 12 * u, (10 + p * 60) * u, 0, Math.PI * 2); ctx.fill();
+			}
+		}
+		if (!img || hidden || pose.blink) return;
+		ctx.save();
+		ctx.globalAlpha = pose.alpha;
+		ctx.imageSmoothingEnabled = false;
+		const w = img.width * pose.scale, h = img.height * pose.scale;
+		ctx.drawImage(img, pose.x + pose.dx - w / 2, pose.y + pose.dy - h + 10 * u, w, h);
+		ctx.restore();
+	}
+
+	draw(ctx, W, H) {
 		const a = this.active;
 		if (!a) return;
+		const u = H / 480;
+		this.ui = [];
 		if (a.phase === 'flash') {
-			const k = Math.floor(a.t / 0.12);
-			if (k % 2 === 0) { ctx.fillStyle = 'rgba(255,255,255,0.85)'; ctx.fillRect(0, 0, VIEW_W, VIEW_H); }
+			const k = Math.floor(a.t / 0.1);
+			ctx.fillStyle = k % 2 === 0 ? 'rgba(255,255,255,0.9)' : 'rgba(10,8,18,0.9)';
+			ctx.fillRect(0, 0, W, H);
 			return;
 		}
+		ctx.save();
+		if (a.shakeT > 0) ctx.translate((Math.random() - 0.5) * 8 * u, (Math.random() - 0.5) * 8 * u);
 		// backdrop
-		const g = ctx.createLinearGradient(0, 0, 0, VIEW_H);
-		g.addColorStop(0, '#a8d8f0');
-		g.addColorStop(1, '#e8f0d8');
+		const g = ctx.createLinearGradient(0, 0, 0, H);
+		g.addColorStop(0, '#7db8e0');
+		g.addColorStop(0.55, '#b8d8b8');
+		g.addColorStop(1, '#5f8f5f');
 		ctx.fillStyle = g;
-		ctx.fillRect(0, 0, VIEW_W, VIEW_H - 44);
-		// ground ellipses
-		ctx.fillStyle = 'rgba(120,160,90,0.55)';
-		ctx.beginPath(); ctx.ellipse(178, 72, 46, 12, 0, 0, Math.PI * 2); ctx.fill();
-		ctx.beginPath(); ctx.ellipse(56, 112, 48, 13, 0, 0, Math.PI * 2); ctx.fill();
+		ctx.fillRect(0, 0, W, H);
 
-		ctx.imageSmoothingEnabled = false;
-		if (a.foeImg) {
-			const s = Math.min(56, a.foeImg.width);
-			ctx.drawImage(a.foeImg, 178 - s / 2, 72 - s + 6, s, s * (a.foeImg.height / a.foeImg.width));
-		}
-		if (a.meImg) {
-			const s = Math.min(60, a.meImg.width);
-			ctx.drawImage(a.meImg, 56 - s / 2, 112 - s + 8, s, s * (a.meImg.height / a.meImg.width));
-		}
+		this.drawSide(ctx, a, 'foe', W, H, u);
+		this.drawSide(ctx, a, 'me', W, H, u);
 
-		ctx.font = '8px monospace';
-		// foe info box (top-left)
-		ctx.fillStyle = P.box; ctx.strokeStyle = P.border;
-		ctx.fillRect(6, 8, 96, 26); ctx.strokeRect(6.5, 8.5, 95, 25);
-		ctx.fillStyle = P.text;
-		ctx.fillText(a.foe.name, 10, 17);
-		ctx.fillText(`Lv${a.foe.level}`, 78, 17);
-		this.drawHPBar(ctx, 26, 25, 66, a.foeShownHP, a.foe.maxHP);
-		ctx.fillText('HP', 10, 29);
-		if (a.foe.status) { ctx.fillStyle = '#b3402e'; ctx.fillText(STATUS_NAMES[a.foe.status], 76, 31); ctx.fillStyle = P.text; }
-		// trainer party dots
-		if (a.isTrainer) {
-			a.foes.forEach((m, i) => {
-				ctx.beginPath();
-				ctx.arc(12 + i * 9, 38, 3, 0, Math.PI * 2);
-				ctx.fillStyle = m.curHP > 0 ? '#e04040' : '#777';
-				ctx.fill();
+		// info panels
+		UI.monPanel(ctx, a.foe, 14 * u, 14 * u, 272 * u, u,
+			{ shownHP: a.foeShownHP, boosts: a.foeBoosts });
+		if (a.isTrainer) UI.teamDots(ctx, a.foes, a.foe, 30 * u, 106 * u, u);
+		const meY = H - 124 * u - 112 * u;
+		UI.monPanel(ctx, a.me, W - 14 * u - 300 * u, meY, 300 * u, u,
+			{ shownHP: a.meShownHP, boosts: a.meBoosts, showXP: true, showNumbers: true, expFrac: this.expFrac(a.me) });
+		// party dots sit in a row just above the panel's right edge
+		UI.teamDots(ctx, a.party, a.me,
+			W - 14 * u - 10 * u - (a.party.length - 1) * 18 * u - 6 * u, meY - 12 * u, u);
+
+		// bottom bar
+		const barY = H - 118 * u;
+		UI.panel(ctx, 8 * u, barY, W - 16 * u, 110 * u, 10 * u);
+		const hov = a.hover;
+		const btn = (b, id) => { b.id = id; this.ui.push(b); UI.button(ctx, b, hov === id || b.kbSel, u); };
+
+		if (a.phase === 'menu') {
+			ctx.fillStyle = UI.C.text;
+			ctx.font = `${Math.round(17 * u)}px m6x11plus, monospace`;
+			UI.wrap(ctx, a.msg, W - 300 * u).slice(0, 3).forEach((l, i) =>
+				ctx.fillText(l, 24 * u, barY + 32 * u + i * 22 * u));
+			const labels = ['FIGHT', 'BAG', 'PKMN', 'RUN'];
+			labels.forEach((lab, i) => {
+				const bw = 120 * u, bh = 44 * u;
+				const x = W - 24 * u - (2 - i % 2) * (bw + 8 * u) + 8 * u;
+				const y = barY + 10 * u + Math.floor(i / 2) * (bh + 8 * u);
+				btn({ x, y, w: bw, h: bh, label: lab, big: true, center: true, kbSel: a.menuIdx === i }, 'menu:' + i);
 			});
-			ctx.fillStyle = P.text;
-		}
-		// my info box (mid-right, above the message panel)
-		ctx.fillStyle = P.box;
-		ctx.fillRect(136, 78, 100, 34); ctx.strokeRect(136.5, 78.5, 99, 33);
-		ctx.fillStyle = P.text;
-		ctx.fillText(a.me.name, 140, 87);
-		ctx.fillText(`Lv${a.me.level}`, 212, 87);
-		this.drawHPBar(ctx, 156, 94, 70, a.meShownHP, a.me.maxHP);
-		ctx.fillText('HP', 140, 98);
-		ctx.fillText(`${Math.round(a.meShownHP)}/${a.me.maxHP}`, 168, 107);
-		if (a.me.status) { ctx.fillStyle = '#b3402e'; ctx.fillText(STATUS_NAMES[a.me.status], 140, 107); ctx.fillStyle = P.text; }
-
-		// message panel
-		ctx.fillStyle = P.panel;
-		ctx.fillRect(0, VIEW_H - 44, VIEW_W, 44);
-		ctx.strokeStyle = '#8fa8d0';
-		ctx.strokeRect(2.5, VIEW_H - 41.5, VIEW_W - 5, 39);
-		ctx.fillStyle = P.panelText;
-
-		if (a.phase === 'moves') {
+		} else if (a.phase === 'moves') {
+			const backW = 86 * u;
+			const bw = (W - 16 * u - backW - 40 * u) / 2, bh = 44 * u;
 			a.me.moves.forEach((mv, i) => {
-				const x = 12 + (i % 2) * 112, y = VIEW_H - 28 + Math.floor(i / 2) * 14;
-				if (i === a.moveIdx) ctx.fillText('>', x - 8, y);
-				ctx.fillText(mv.name.toUpperCase().slice(0, 12), x, y);
+				const info = this.data.moves[mv.id] || {};
+				const x = 20 * u + (i % 2) * (bw + 8 * u);
+				const y = barY + 9 * u + Math.floor(i / 2) * (bh + 8 * u);
+				btn({
+					x, y, w: bw, h: bh, label: mv.name.toUpperCase().slice(0, 16),
+					sub: `PP ${mv.pp}/${mv.maxPp}`, subColor: mv.pp === 0 ? UI.C.hpRed : UI.C.dim,
+					right: info.power ? `Pwr ${info.power}` : (info.category || ''),
+					type: info.type, disabled: mv.pp <= 0, kbSel: a.moveIdx === i,
+				}, 'move:' + i);
 			});
-			const sel = a.me.moves[a.moveIdx];
-			const mv = this.data.moves[sel.id];
-			ctx.fillText(`PP ${sel.pp}/${sel.maxPp}  ${mv?.type || ''}`, 12, VIEW_H - 4 + 0);
-		} else if (a.phase === 'menu') {
-			ctx.fillText(a.msg, 8, VIEW_H - 24);
-			const opts = ['FIGHT', 'BAG', 'PKMN', 'RUN'];
-			opts.forEach((o, i) => {
-				const x = 132 + (i % 2) * 54, y = VIEW_H - 30 + Math.floor(i / 2) * 14;
-				ctx.fillText((a.menuIdx === i ? '>' : ' ') + o, x, y);
+			btn({ x: W - 8 * u - backW - 8 * u, y: barY + 9 * u, w: backW, h: 96 * u, label: 'BACK', center: true }, 'back');
+		} else if (a.phase === 'bag' || a.phase === 'switch') {
+			const isBag = a.phase === 'bag';
+			const rows = isBag ? this.bagItems()
+				: a.party.filter(m => m !== a.me && m.curHP > 0);
+			const idx = isBag ? a.bagIdx : a.switchIdx;
+			const start = Math.max(0, Math.min(idx - 1, rows.length - 3));
+			rows.slice(start, start + 3).forEach((r, i) => {
+				const ri = start + i;
+				const label = isBag ? `${r.name}  x${r.n}` : `${r.name}  Lv${r.level}`;
+				btn({
+					x: 20 * u, y: barY + 9 * u + i * 32 * u, w: W * 0.58, h: 28 * u, label,
+					right: isBag ? '' : `${r.curHP}/${r.maxHP} HP`, kbSel: ri === idx,
+				}, (isBag ? 'bag:' : 'switch:') + ri);
 			});
-		} else if (a.phase === 'bag') {
-			const items = this.bagItems();
-			const start = Math.max(0, Math.min(a.bagIdx - 1, items.length - 3));
-			items.slice(start, start + 3).forEach((it, i) => {
-				const idx = start + i;
-				ctx.fillText(`${idx === a.bagIdx ? '>' : ' '} ${it.name} x${it.n}`, 12, VIEW_H - 30 + i * 12);
-			});
-			ctx.fillText('[X] back', 180, VIEW_H - 6);
-		} else if (a.phase === 'switch') {
-			const options = a.party.filter(m => m !== a.me && m.curHP > 0);
-			options.slice(0, 3).forEach((m, i) => {
-				ctx.fillText(`${i === a.switchIdx ? '>' : ' '} ${m.name} Lv${m.level} ${m.curHP}/${m.maxHP}`, 12, VIEW_H - 30 + i * 12);
-			});
-			ctx.fillText('[X] back', 180, VIEW_H - 6);
-		} else {
-			// wrap message to two lines
-			const words = a.msg.split(' ');
-			let line = '', lines = [];
-			for (const w of words) {
-				if ((line + w).length > 36) { lines.push(line); line = w + ' '; }
-				else line += w + ' ';
+			if (!rows.length) {
+				ctx.fillStyle = UI.C.dim;
+				ctx.font = `${Math.round(15 * u)}px m6x11plus, monospace`;
+				ctx.fillText(isBag ? 'The bag is empty.' : 'No one else can fight!', 24 * u, barY + 34 * u);
 			}
-			lines.push(line);
-			lines.slice(0, 2).forEach((l, i) => ctx.fillText(l.trim(), 10, VIEW_H - 28 + i * 12));
+			if (rows.length > 3) {
+				btn({ x: W * 0.58 + 32 * u, y: barY + 9 * u, w: 40 * u, h: 44 * u, label: '▲', center: true }, 'scroll:-1');
+				btn({ x: W * 0.58 + 32 * u, y: barY + 61 * u, w: 40 * u, h: 44 * u, label: '▼', center: true }, 'scroll:1');
+			}
+			btn({ x: W - 8 * u - 94 * u, y: barY + 9 * u, w: 86 * u, h: 96 * u, label: 'BACK', center: true }, 'back');
+		} else {
+			// message phase (and 'done' fadeout)
+			ctx.fillStyle = UI.C.text;
+			ctx.font = `${Math.round(18 * u)}px m6x11plus, monospace`;
+			UI.wrap(ctx, a.msg, W - 70 * u).slice(0, 3).forEach((l, i) =>
+				ctx.fillText(l, 24 * u, barY + 34 * u + i * 24 * u));
+			if (a.phase === 'msg' && Math.floor(a.t * 2) % 2 === 0) {
+				ctx.fillStyle = UI.C.accent;
+				ctx.font = `${Math.round(16 * u)}px m6x11plus, monospace`;
+				ctx.fillText('▼', W - 34 * u, barY + 96 * u);
+			}
+			this.ui.push({ id: 'advance', x: 0, y: 0, w: W, h: H });
 		}
+		if (a.phase === 'done') {
+			ctx.fillStyle = `rgba(8,6,14,${Math.min(0.85, (a.doneT || 0) * 1.4)})`;
+			ctx.fillRect(0, 0, W, H);
+		}
+		ctx.restore();
+	}
+
+	// ---------- pointer input (tap/click + hover) ----------
+	hover(x, y) {
+		const a = this.active;
+		if (!a) return;
+		a.hover = null;
+		for (const b of this.ui || []) {
+			if (b.id !== 'advance' && x >= b.x && x <= b.x + b.w && y >= b.y && y <= b.y + b.h) a.hover = b.id;
+		}
+	}
+
+	tap(x, y) {
+		const a = this.active;
+		if (!a) return;
+		let hit = null;
+		for (const b of this.ui || []) {
+			if (x >= b.x && x <= b.x + b.w && y >= b.y && y <= b.y + b.h) hit = b;
+		}
+		if (!hit) return;
+		const [kind, arg] = hit.id.split(':');
+		if (kind === 'advance') { if (a.phase === 'msg') a.msgT = 99; return; }
+		if (kind === 'back') { this.key('x'); return; }
+		if (kind === 'menu') { a.menuIdx = +arg; this.key('z'); return; }
+		if (kind === 'move') { a.moveIdx = +arg; this.key('z'); return; }
+		if (kind === 'bag') { a.bagIdx = +arg; this.key('z'); return; }
+		if (kind === 'switch') { a.switchIdx = +arg; this.key('z'); return; }
+		if (kind === 'scroll') this.key(+arg > 0 ? 'ArrowDown' : 'ArrowUp');
 	}
 }

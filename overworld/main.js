@@ -246,39 +246,78 @@ function starterKey(k) {
 	}
 }
 
-addEventListener('keydown', e => {
-	if (starterMenu.open) { e.preventDefault(); starterKey(e.key); return; }
-	if (dialog.blocking) {
-		e.preventDefault();
-		dialog.key(e.key);
-		return;
-	}
-	if (evolution.blocking) { e.preventDefault(); evolution.key(e.key); return; }
-	if (battle.blocking) {
-		e.preventDefault();
-		battle.key(e.key);
-		return;
-	}
-	if (shopMenu.open) { e.preventDefault(); shopKey(e.key); return; }
-	if (bagMenu.open) { e.preventDefault(); bagKey(e.key); return; }
-	if (pcMenu.open) { e.preventDefault(); pcKey(e.key); return; }
+// one entry point for keyboard AND the virtual touch buttons
+function pressKey(k) {
+	if (starterMenu.open) { starterKey(k); return; }
+	if (dialog.blocking) { dialog.key(k); return; }
+	if (evolution.blocking) { evolution.key(k); return; }
+	if (battle.blocking) { battle.key(k); return; }
+	if (shopMenu.open) { shopKey(k); return; }
+	if (bagMenu.open) { bagKey(k); return; }
+	if (pcMenu.open) { pcKey(k); return; }
 	if (partyMenu.open) {
-		e.preventDefault();
-		if (e.key === 'ArrowUp') partyMenu.idx = (partyMenu.idx + party.length - 1) % party.length;
-		if (e.key === 'ArrowDown') partyMenu.idx = (partyMenu.idx + 1) % party.length;
-		if ((e.key === 'z' || e.key === 'Enter') && partyMenu.idx > 0) {
+		if (k === 'ArrowUp') partyMenu.idx = (partyMenu.idx + party.length - 1) % party.length;
+		if (k === 'ArrowDown') partyMenu.idx = (partyMenu.idx + 1) % party.length;
+		if ((k === 'z' || k === 'Enter') && partyMenu.idx > 0) {
 			// make selected mon the lead
 			const [m] = party.splice(partyMenu.idx, 1);
 			party.unshift(m);
 			partyMenu.idx = 0;
 			saveParty(party);
 		}
-		if (e.key === 'x' || e.key === 'p' || e.key === 'Escape') partyMenu.open = false;
+		if (k === 'x' || k === 'p' || k === 'Escape') partyMenu.open = false;
 		return;
 	}
-	if (e.key === 'p' && !loading) { partyMenu.open = true; partyMenu.idx = 0; return; }
-	if (e.key === 'b' && !loading) { bagMenu.open = true; bagMenu.idx = 0; bagMenu.picking = false; return; }
-	if ((e.key === 'z' || e.key === 'Enter') && !loading) interact();
+	if (k === 'p' && !loading) { partyMenu.open = true; partyMenu.idx = 0; return; }
+	if (k === 'b' && !loading) { bagMenu.open = true; bagMenu.idx = 0; bagMenu.picking = false; return; }
+	if ((k === 'z' || k === 'Enter') && !loading) interact();
+}
+// any menu that consumes direction presses instead of walking
+const menuBlocking = () => starterMenu.open || dialog.blocking || evolution.blocking
+	|| battle.blocking || shopMenu.open || bagMenu.open || pcMenu.open || partyMenu.open;
+
+addEventListener('keydown', e => {
+	if (menuBlocking() || ['z', 'x', 'Enter', 'p', 'b', 'Escape'].includes(e.key) || KEYMAP[e.key]) {
+		if (e.key !== 'F5' && e.key !== 'F12') e.preventDefault();
+	}
+	pressKey(e.key);
+});
+
+// ---------- touch controls ----------
+// d-pad + A/B + PARTY/BAG buttons drive the same code paths as the keyboard
+if (matchMedia('(pointer: coarse)').matches) document.body.classList.add('touch');
+const DPAD = { 't-up': 'up', 't-down': 'down', 't-left': 'left', 't-right': 'right' };
+const ARROW = { up: 'ArrowUp', down: 'ArrowDown', left: 'ArrowLeft', right: 'ArrowRight' };
+for (const [id, dir] of Object.entries(DPAD)) {
+	const el = document.getElementById(id);
+	el.addEventListener('pointerdown', e => {
+		e.preventDefault();
+		try { el.setPointerCapture(e.pointerId); } catch (err) { /* synthetic pointer */ }
+		if (menuBlocking()) { pressKey(ARROW[dir]); return; }
+		if (!heldKeys.includes(dir)) heldKeys.unshift(dir);
+	});
+	const release = () => { const i = heldKeys.indexOf(dir); if (i >= 0) heldKeys.splice(i, 1); };
+	el.addEventListener('pointerup', release);
+	el.addEventListener('pointercancel', release);
+	el.addEventListener('lostpointercapture', release);
+}
+for (const [id, key] of [['t-a', 'z'], ['t-b', 'x'], ['t-party', 'p'], ['t-bag', 'b']]) {
+	document.getElementById(id).addEventListener('pointerdown', e => { e.preventDefault(); pressKey(key); });
+}
+
+// tap/click on the game screen: battle buttons, or advancing dialogs
+function screenPos(e) {
+	const r = screen.getBoundingClientRect();
+	return [(e.clientX - r.left) * (screen.width / r.width),
+		(e.clientY - r.top) * (screen.height / r.height)];
+}
+screen.addEventListener('pointermove', e => {
+	if (battle.blocking) battle.hover(...screenPos(e));
+});
+screen.addEventListener('pointerdown', e => {
+	e.preventDefault();
+	if (battle.blocking) { battle.tap(...screenPos(e)); return; }
+	if (dialog.blocking || evolution.blocking) pressKey('z');
 });
 
 // ---------- map transitions ----------
@@ -407,7 +446,6 @@ function tick(now) {
 	const sprites = [...npcs.list, ...trainers.list, player].sort((a, b) => a.py - b.py);
 	for (const s of sprites) s.draw(ctx, camX, camY);
 	world.drawLayer(ctx, 'top', camX, camY);
-	battle.draw(ctx);
 	if (!battle.blocking) {
 		evolution.draw(ctx);
 		if (!evolution.blocking) dialog.draw(ctx);
@@ -419,6 +457,8 @@ function tick(now) {
 	}
 
 	sctx.drawImage(frame, 0, 0, VIEW_W * SCALE, VIEW_H * SCALE);
+	// the battle scene renders at full canvas resolution for crisp text
+	if (battle.blocking) battle.draw(sctx, screen.width, screen.height);
 }
 
 function drawPartyMenu() {
