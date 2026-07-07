@@ -192,19 +192,35 @@ function battlecardsView() {
   if (!db) return content.replaceChildren(h('h1', null, 'Battlecards data not loaded'));
   const q = norm(searchEl.value);
   const total = db.sections.reduce((a, s) => a + s.count, 0);
+  const CAP = 500; // giant sections render a page at a time so mobile survives
   const blocks = db.sections.map(s => {
     const items = q ? s.items.filter(it => norm(it.name).includes(q) || norm(it.note || '').includes(q)) : s.items;
-    return h('details', { class: 'route', open: q ? true : null },
+    const det = h('details', { class: 'route', open: q && items.length ? true : null },
       h('summary', null, h('strong', null, s.title + ' '), h('span', { class: 'num' }, '(' + items.length + ')')),
-      h('p', { class: 'muted' }, s.blurb),
-      h('div', { class: 'grid' }, items.map(it =>
+      h('p', { class: 'muted' }, s.blurb));
+    let shown = 0;
+    const grid = h('div', { class: 'grid' });
+    const more = h('button', { class: 'muted', style: 'margin:8px 0;cursor:pointer' });
+    const renderMore = () => {
+      const next = items.slice(shown, shown + CAP);
+      shown += next.length;
+      grid.append(...next.map(it =>
         h('div', { class: 'card' },
           h('div', { class: 'nm' }, it.name),
-          it.note ? h('div', { class: 'muted', style: 'font-size:12px' }, it.note) : null))));
+          it.note ? h('div', { class: 'muted', style: 'font-size:12px' }, it.note) : null)));
+      if (shown >= items.length) more.remove();
+      else more.textContent = 'Show ' + Math.min(CAP, items.length - shown) + ' more (' + (items.length - shown) + ' hidden)';
+    };
+    // a section's grid only builds once it's opened
+    const build = () => { if (!shown && items.length) { det.append(grid, more); renderMore(); } };
+    more.addEventListener('click', e => { e.preventDefault(); renderMore(); });
+    det.addEventListener('toggle', () => { if (det.open) build(); });
+    if (det.open) build();
+    return det;
   });
   content.replaceChildren(
     h('h1', null, 'Battlecards — Design Work ', h('span', { class: 'num' }, '(' + total + ' items)')),
-    h('p', { class: 'muted' }, 'Everything named but not yet designed or functional: undefined keywords, pending paper cards, WUBRG cards awaiting redesigns or engine work, the advanced-land theme pools, and classes without card lists. Search filters every section.'),
+    h('p', { class: 'muted' }, 'Everything named but not yet designed or functional: undefined keywords, pending paper cards, WUBRG cards awaiting redesigns or engine work, the advanced-land theme pools, classes without card lists — plus every unimplemented Hearthstone card across Constructed, solo adventures, Duels, Battlegrounds, and Mercenaries. Search filters every section.'),
     ...blocks);
 }
 
