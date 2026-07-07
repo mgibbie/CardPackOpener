@@ -148,6 +148,7 @@ function instantiate(def, controller) {
 		activatedTap: false,          // used a {T} ability this turn (can't attack)
 		xSpell: !!def.xSpell,         // spends all remaining mana; X = the excess
 		attachments: [],              // names of auras enchanting this creature
+		tapStone: false,              // double-tap: stone off next turn, untap after
 		offTurnAttack: def.offTurnAttack || 0, // "+N Attack during your opponent's turn"
 		statRule: def.statRule || null,   // 'attack-equals-health' (Lightspawn)
 		selfScale: def.selfScale || null, // { attack, tribe }: +N per other <tribe> in play
@@ -505,6 +506,7 @@ export function legalTargets(state, pi, spec) {
 	const opps = opponentsOf(state, pi);
 	const pushCreatures = (side) => {
 		for (const c of state.players[side].board) {
+			if (c.type === 'location') continue; // locations aren't creatures
 			if (side !== pi && c.stealthed) continue; // stealth: untargetable by opponent
 			if (side !== pi && has(c, KW.ELUSIVE)) continue; // elusive: no enemy spells/powers
 			if (!spec.filter || spec.filter(c)) out.push({ type: 'creature', uid: c.uid, player: side });
@@ -607,6 +609,7 @@ export function sacrificeToken(state, pi, uid) {
 
 // ---------- damage / healing ----------
 function damageCreature(state, target, amount, source) {
+	if (target.type === 'location') return 0; // locations only wear out by tapping
 	if (amount <= 0) return 0;
 	if (target.immuneTurn === state.turnNumber) return 0; // Bestial Wrath's Immune
 	if (target.shield) {
@@ -692,6 +695,7 @@ function healHero(state, pi, amount) {
 }
 
 function isDead(c) {
+	if (c.type === 'location') return c.poisoned || c.durability <= 0;
 	return c.poisoned || c.damage >= c.maxHealth;
 }
 
@@ -737,6 +741,12 @@ function sweepDeaths(state) {
 		if (!dead.length) continue;
 		p.board = p.board.filter(c => !isDead(c));
 		for (const c of dead) {
+			if (c.type === 'location') {
+				// a spent location just crumbles — no corpse, no death counters
+				emit(state, { type: 'death', uid: c.uid, player: pi, name: c.name });
+				toGraveyard(state, pi, c);
+				continue;
+			}
 			p.diedThisTurn++;
 			state.diedThisTurn = (state.diedThisTurn || 0) + 1;
 			emit(state, { type: 'death', uid: c.uid, player: pi, name: c.name });
@@ -849,6 +859,7 @@ function recomputeAuras(state) {
 		const sources = [...p.board, ...p.enchantments, ...p.emblems, ...p.artifacts]
 			.filter(c => c.aura && !c.aura.global && !(c.zone === 'board' && isDead(c)));
 		p.board.forEach((c, idx) => {
+			if (c.type === 'location') return; // auras don't touch locations
 			let aBonus = 0, hBonus = 0;
 			const granted = new Set();
 			for (const src of [...sources, ...globalSources]) {
@@ -1012,6 +1023,40 @@ export function landPool(state) {
 	return Object.values(state.cardsById).filter(d => d.type === 'land');
 }
 
+// the five basics establish your color identity; advanced lands unlock once
+// every color they need is already among your basics (Wastes comes later)
+const BASIC_LANDS = ['plains', 'island', 'swamp', 'mountain', 'forest'];
+
+export function colorIdentity(state, pi) {
+	const id = new Set();
+	for (const l of state.players[pi].lands) {
+		if (BASIC_LANDS.includes(l.id)) for (const c of l.colors || []) id.add(c);
+	}
+	return id;
+}
+
+export function availableLands(state, pi) {
+	const identity = colorIdentity(state, pi);
+	return landPool(state).filter(d => {
+		if (BASIC_LANDS.includes(d.id)) return true;
+		if (!d.colors || !d.colors.length) return false; // wastes/colorless: later
+		return d.colors.every(c => identity.has(c));
+	});
+}
+
+// every land can be sacrificed to draw a card
+export function sacrificeLand(state, pi, cardUid) {
+	if (state.over || state.current !== pi) return false;
+	const p = state.players[pi];
+	const card = p.lands.find(c => c.uid === cardUid);
+	if (!card) return false;
+	p.lands = p.lands.filter(c => c !== card);
+	toGraveyard(state, pi, card);
+	emit(state, { type: 'landSacrificed', player: pi, card });
+	drawCards(state, pi, 1);
+	return true;
+}
+
 export function canBuyLand(state, pi) {
 	if (state.over || state.current !== pi) return false;
 	const p = state.players[pi];
@@ -1042,7 +1087,9 @@ export function buyLand(state, pi, landId) {
 export function canTapLand(state, pi, card, tapIndex) {
 	if (state.over || state.current !== pi) return false;
 	const p = state.players[pi];
-	if (!p.lands.includes(card) || card.tapped) return false;
+	const inPlay = p.lands.includes(card)
+		|| (card.type === 'location' && p.board.includes(card) && !isDead(card));
+	if (!inPlay || card.tapped) return false;
 	const taps = landTaps(card);
 	if (tapIndex == null) return taps.length > 0;
 	const t = taps[tapIndex];
@@ -1065,12 +1112,24 @@ export function tapSpec(state, pi, card, tapIndex) {
 
 export function tapLand(state, pi, cardUid, tapIndex, target) {
 	const p = state.players[pi];
-	const card = p.lands.find(c => c.uid === cardUid);
+	const card = p.lands.find(c => c.uid === cardUid)
+		|| p.board.find(c => c.uid === cardUid && c.type === 'location');
 	if (!card || !canTapLand(state, pi, card, tapIndex)) return false;
+	// lands and locations DOUBLE-tap: the tap stone comes off next turn but the
+	// card stays tapped, and only the turn after that does it actually untap
 	card.tapped = true;
+	card.tapStone = true;
 	const t = landTaps(card)[tapIndex];
 	emit(state, { type: 'landTapped', player: pi, card, text: t.text });
 	execEffects(state, pi, t.effects, target, card);
+	// locations wear out: durability counts their remaining taps
+	if (card.type === 'location') {
+		card.durability -= 1;
+		emit(state, { type: 'weaponDurability', player: pi, attack: 0, durability: card.durability });
+		if (card.durability <= 0) {
+			card.poisoned = true; // routes through the normal death sweep
+		}
+	}
 	sweepDeaths(state);
 	return true;
 }
@@ -3050,6 +3109,14 @@ export function playCard(state, pi, cardUid, target, choice, position) {
 		runBattlecry(state, pi, card, target, choice);
 		if (p.board.includes(card)) fireSecretsAll(state, pi, 'enemy-minion-played', { minion: card });
 		if (p.board.includes(card) && !isDead(card)) fireOngoing(state, pi, 'creature-played', { minion: card });
+	} else if (card.type === 'location') {
+		// locations sit in the creature row (adjacency counts them as neighbors)
+		// but tap like lands and wear out after `durability` uses
+		card.zone = 'board';
+		if (position == null || position >= p.board.length) p.board.push(card);
+		else p.board.splice(Math.max(0, position), 0, card);
+		emit(state, { type: 'locationPlayed', player: pi, card });
+		runBattlecry(state, pi, card, target, choice);
 	} else if (card.type === 'weapon') {
 		if (p.weapon) breakWeapon(state, pi, true); // replaced
 		card.zone = 'weapon';
@@ -3152,7 +3219,7 @@ export function attackTargets(state, pi, attacker) {
 	const out = [];
 	const rushOnly = attacker.sick && has(attacker, KW.RUSH) && !has(attacker, KW.CHARGE);
 	for (const opp of opponentsOf(state, pi)) {
-		const board = state.players[opp].board.filter(c => !c.stealthed);
+		const board = state.players[opp].board.filter(c => !c.stealthed && c.type !== 'location');
 		// piercing ignores taunt walls
 		const taunts = has(attacker, KW.PIERCING) ? [] : board.filter(c => has(c, KW.TAUNT));
 		out.push(...(taunts.length ? taunts : board).map(c => ({ type: 'creature', uid: c.uid, player: opp })));
@@ -3287,7 +3354,7 @@ export function canHeroAttack(state, pi) {
 export function heroAttackTargets(state, pi) {
 	const out = [];
 	for (const opp of opponentsOf(state, pi)) {
-		const board = state.players[opp].board.filter(c => !c.stealthed);
+		const board = state.players[opp].board.filter(c => !c.stealthed && c.type !== 'location');
 		const taunts = board.filter(c => has(c, KW.TAUNT));
 		out.push(...(taunts.length ? taunts : board).map(c => ({ type: 'creature', uid: c.uid, player: opp })));
 		if (!taunts.length) {
@@ -3835,7 +3902,12 @@ export function endTurn(state) {
 		}
 	}
 	// lands untap at the start of each turn (they now TAP for their abilities)
-	for (const l of np.lands) l.tapped = false;
+	// double-tap untap cycle: first turn the stone comes off (still tapped),
+	// the next turn the land/location actually untaps
+	for (const l of [...np.lands, ...np.board.filter(c => c.type === 'location')]) {
+		if (l.tapStone) l.tapStone = false;
+		else l.tapped = false;
+	}
 	for (const hpw of np.heroPowers) hpw.usedThisTurn = false;
 	for (const pw of np.planeswalkers) pw.usedThisTurn = false;
 	for (const c of np.board) { c.sick = false; c.attacksUsed = 0; c.activatedTap = false; }

@@ -11,7 +11,10 @@ artListeners.add(() => {
 });
 import * as Col from './collection.js';
 
-const PAGE_SIZE = 10;
+const MOBILE = matchMedia('(max-width: 760px)');
+const TOUCH = matchMedia('(pointer: coarse)').matches;
+let PAGE_SIZE = MOBILE.matches ? 6 : 10;
+MOBILE.addEventListener('change', () => { PAGE_SIZE = MOBILE.matches ? 6 : 10; page = 0; renderPage(); });
 let cards = [], collection = {}, filtered = [], page = 0;
 const filters = { search: '', mana: null, type: '', rarity: '', cls: '', ownedOnly: false };
 
@@ -88,18 +91,55 @@ function tileFor(card) {
 		badge.textContent = `x${owned}`;
 		tile.appendChild(badge);
 	}
-	tile.addEventListener('pointermove', ev => {
-		const typeLine = classNameOf(card.cardClass).toUpperCase() + ' · ' + (card.tribe ? card.tribe + ' ' : '') + card.type.toUpperCase()
-			+ ' · ' + (card.rarity || 'common').toUpperCase();
-		tip.innerHTML = `<div class="tt-name">${card.name}</div><div class="tt-type">${typeLine}</div>`
-			+ `<div class="tt-desc">${card.description || ''}</div>`;
-		tip.style.display = 'block';
-		tip.style.left = `${Math.min(ev.clientX + 18, innerWidth - 290)}px`;
-		tip.style.top = `${Math.min(ev.clientY + 14, innerHeight - tip.offsetHeight - 12)}px`;
-	});
-	tile.addEventListener('pointerleave', () => { tip.style.display = 'none'; });
+	if (!TOUCH) {
+		tile.addEventListener('pointermove', ev => {
+			tip.innerHTML = `<div class="tt-name">${card.name}</div><div class="tt-type">${typeLineOf(card)}</div>`
+				+ `<div class="tt-desc">${card.description || ''}</div>`;
+			tip.style.display = 'block';
+			tip.style.left = `${Math.min(ev.clientX + 18, innerWidth - 290)}px`;
+			tip.style.top = `${Math.min(ev.clientY + 14, innerHeight - tip.offsetHeight - 12)}px`;
+		});
+		tile.addEventListener('pointerleave', () => { tip.style.display = 'none'; });
+	}
+	tile.addEventListener('click', () => openZoom(card));
 	return tile;
 }
+
+function typeLineOf(card) {
+	return classNameOf(card.cardClass).toUpperCase() + ' · ' + (card.tribe ? card.tribe + ' ' : '')
+		+ card.type.toUpperCase() + ' · ' + (card.rarity || 'common').toUpperCase();
+}
+
+// tap/click a card for a big look with its full info
+function openZoom(card) {
+	tip.style.display = 'none';
+	const holder = $('zoom-card');
+	holder.innerHTML = '';
+	holder.appendChild(drawCardFace(card));
+	const stats = [];
+	stats.push(`Cost ${card.cost ?? 0}`);
+	if (card.type === 'creature') stats.push(`${card.attack}/${card.health}`);
+	if (card.type === 'weapon') stats.push(`${card.attack} attack · ${card.durability} durability`);
+	if (card.type === 'location') stats.push(`${card.durability} uses`);
+	if (card.type === 'planeswalker') stats.push(`${card.loyalty} loyalty`);
+	const owned = collection[card.id] || 0;
+	$('zoom-info').innerHTML = `<div class="z-name">${card.name}</div>`
+		+ `<div class="z-type">${typeLineOf(card)}</div>`
+		+ `<div class="z-stats">${stats.join(' · ')}</div>`
+		+ `<div class="z-desc">${card.description || '<i>No rules text.</i>'}</div>`
+		+ `<div class="z-owned">${owned ? `You own x${owned}` : 'Not in your collection yet'}</div>`;
+	$('zoom').classList.add('open');
+	// once the real art streams in, repaint the big face too
+	setTimeout(() => {
+		if ($('zoom').classList.contains('open') && holder.firstChild) {
+			holder.innerHTML = '';
+			holder.appendChild(drawCardFace(card));
+		}
+	}, 900);
+}
+$('zoom-close').addEventListener('click', () => $('zoom').classList.remove('open'));
+$('zoom').addEventListener('click', ev => { if (ev.target.id === 'zoom') $('zoom').classList.remove('open'); });
+addEventListener('keydown', ev => { if (ev.key === 'Escape') $('zoom').classList.remove('open'); });
 
 function renderPage() {
 	grid.innerHTML = '';

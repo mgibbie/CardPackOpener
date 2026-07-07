@@ -184,7 +184,7 @@ export function step(state, pi = 1) {
 	}
 	// 0b. develop a land when flush enough that it doesn't cost the turn
 	if (E.canBuyLand(state, pi) && E.availableMana(p) >= E.LAND_COST + 3 && p.lands.length < 3) {
-		const pool = E.landPool(state);
+		const pool = E.availableLands(state, pi);
 		if (pool.length && E.buyLand(state, pi, pool[Math.floor(Math.random() * pool.length)].id)) return true;
 	}
 

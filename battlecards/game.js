@@ -312,7 +312,10 @@ function pickLandSlot(ev) {
 function openLandShop(ev) {
 	const menu = $('walker-menu');
 	menu.innerHTML = `<div class="wm-title">Develop a land — ${E.LAND_COST} mana (each opponent gets a coin)</div>`;
-	for (const def of E.landPool(state)) {
+	menu.style.maxHeight = '70vh';
+	menu.style.overflowY = 'auto';
+	// basics always; advanced lands unlock as your basics build a color identity
+	for (const def of E.availableLands(state, HUMAN)) {
 		const btn = document.createElement('button');
 		const firstTap = (def.taps?.[0]?.text) || (def.mana ? `Gain ${def.mana} mana.` : '');
 		btn.innerHTML = `<span class="wm-cost">${E.LAND_COST}</span><b>${def.name}</b> — ${firstTap}`;
@@ -516,6 +519,18 @@ function openTapMenu(card, ev) {
 		});
 		menu.appendChild(btn);
 	});
+	if (card.zone === 'land') {
+		// every land can be cashed in for a card
+		const sac = document.createElement('button');
+		sac.innerHTML = `<span class="wm-cost">💀</span>Sacrifice: draw a card`;
+		sac.addEventListener('pointerdown', e => {
+			e.stopPropagation();
+			hideWalkerMenu();
+			E.sacrificeLand(state, HUMAN, card.uid);
+			pump();
+		});
+		menu.appendChild(sac);
+	}
 	menu.style.display = 'block';
 	menu.style.left = `${Math.min(ev.clientX, innerWidth - 300)}px`;
 	menu.style.top = `${Math.min(ev.clientY, innerHeight - 200)}px`;
@@ -1653,6 +1668,7 @@ renderer.domElement.addEventListener('pointerdown', ev => {
 		if (card.tradeable && E.canTrade(state, HUMAN, card)) { openTradeMenu(card, ev); return; }
 		playFromHand(card, ev);
 	} else if (card.zone === 'board' && card.controller === HUMAN) {
+		if (card.type === 'location') { if (E.canTapLand(state, HUMAN, card)) openTapMenu(card, ev); return; }
 		if (card.disguised && E.canUnmask(state, HUMAN, card)) { openUnmaskMenu(card, ev); return; }
 		if (card.activated?.length) { openAbilityMenu(card, ev); return; }
 		if (E.canAttackWith(state, HUMAN, card)) { selectedAttacker = card.uid; updateHud(); }

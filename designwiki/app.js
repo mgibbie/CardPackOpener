@@ -183,6 +183,31 @@ function regionView(rk) {
     ...blocks);
 }
 
+
+// Battlecards design-work backlog: every card name held without a working
+// design, plus undefined keywords. Data from designwiki/data/battlecards.json
+// (regenerate with Magepunk66/tools/gen_battlecards_design.py).
+function battlecardsView() {
+  const db = DB.battlecards;
+  if (!db) return content.replaceChildren(h('h1', null, 'Battlecards data not loaded'));
+  const q = norm(searchEl.value);
+  const total = db.sections.reduce((a, s) => a + s.count, 0);
+  const blocks = db.sections.map(s => {
+    const items = q ? s.items.filter(it => norm(it.name).includes(q) || norm(it.note || '').includes(q)) : s.items;
+    return h('details', { class: 'route', open: q ? true : null },
+      h('summary', null, h('strong', null, s.title + ' '), h('span', { class: 'num' }, '(' + items.length + ')')),
+      h('p', { class: 'muted' }, s.blurb),
+      h('div', { class: 'grid' }, items.map(it =>
+        h('div', { class: 'card' },
+          h('div', { class: 'nm' }, it.name),
+          it.note ? h('div', { class: 'muted', style: 'font-size:12px' }, it.note) : null))));
+  });
+  content.replaceChildren(
+    h('h1', null, 'Battlecards — Design Work ', h('span', { class: 'num' }, '(' + total + ' items)')),
+    h('p', { class: 'muted' }, 'Everything named but not yet designed or functional: undefined keywords, pending paper cards, WUBRG cards awaiting redesigns or engine work, the advanced-land theme pools, and classes without card lists. Search filters every section.'),
+    ...blocks);
+}
+
 function notFound() { content.replaceChildren(h('h1', null, 'Not found')); }
 function home() {
   content.replaceChildren(h('h1', null, 'Magepunk66 Design Wiki'),
@@ -208,20 +233,21 @@ function route() {
   if (section === 'tms') return tmsView();
   if (section === 'unlearned') return unlearnedView();
   if (section === 'region') return regionView(id);
+  if (section === 'battlecards') return battlecardsView();
   notFound();
 }
 
 searchEl.addEventListener('input', () => {
   const s = (location.hash.slice(1) || '/').split('/').filter(Boolean);
-  if (['pokemon', 'moves', 'abilities', 'tms', 'unlearned'].includes(s[0]) && !s[1]) route();
+  if (['pokemon', 'moves', 'abilities', 'tms', 'unlearned', 'battlecards'].includes(s[0]) && !s[1]) route();
 });
 window.addEventListener('hashchange', route);
 
 (async function init() {
   try {
-    const [pk, mv, ab, rg, tm] = await Promise.all(['pokemon', 'moves', 'abilities', 'regions', 'tms']
+    const [pk, mv, ab, rg, tm, bc] = await Promise.all(['pokemon', 'moves', 'abilities', 'regions', 'tms', 'battlecards']
       .map(n => fetch('data/' + n + '.json').then(r => r.json())));
-    DB.pokemon = pk; DB.moves = mv; DB.abilities = ab; DB.regions = rg; DB.tms = tm;
+    DB.pokemon = pk; DB.moves = mv; DB.abilities = ab; DB.regions = rg; DB.tms = tm; DB.battlecards = bc;
     for (const id in DB.pokemon) DB.pokemon[id].id = id;
     for (const id in DB.moves) DB.moves[id].id = id;
     for (const id in DB.abilities) { DB.abilities[id].id = id; abilityByName[norm(DB.abilities[id].name)] = id; abilityByName[norm(id)] = id; }
