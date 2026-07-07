@@ -830,6 +830,8 @@ function updateHud() {
 		el.classList.toggle('turn', state.current === pi && !state.over);
 	}
 	$('coin-btn').style.display = (me.coins > 0 && state.current === HUMAN) ? '' : 'none';
+	// dungeon runs can be conceded mid-fight — a conceded run never pays a pack
+	$('concede').style.display = dungeonRunMode && !state.over ? '' : 'none';
 	const myTurn = state.current === HUMAN && !state.over;
 	$('end-turn').disabled = !myTurn;
 	$('end-turn').textContent = myTurn ? 'End Turn' : `${nameOf(state.current)}'s Turn…`;
@@ -1940,6 +1942,22 @@ $('coin-btn').addEventListener('click', () => {
 	if (E.useCoin(state, HUMAN)) pump();
 });
 $('restart').addEventListener('click', () => start());
+
+// conceding forfeits the run outright: no defeat payout, no pack
+$('concede').addEventListener('click', () => {
+	if (!dungeonRunMode || !state || state.over) return;
+	const run = loadRun();
+	const el = dungeonOverlay('CONCEDE?', 'Walking away ends the run. A conceded run never pays a pack.');
+	el.appendChild(overlayButton('Concede the run', () => {
+		clearRun();
+		state.over = true; // freezes play without firing the defeat payout path
+		const done = dungeonOverlay('RUN CONCEDED',
+			`You walked away at level ${run?.level ?? 1}. No pack this time.`);
+		done.appendChild(overlayButton('New Run', () => location.reload()));
+		updateHud();
+	}));
+	el.appendChild(overlayButton('Keep fighting', () => hideDungeonOverlay()));
+});
 $('player-count').addEventListener('change', ev => {
 	playerCount = Math.max(2, Math.min(E.MAX_PLAYERS, parseInt(ev.target.value, 10) || 2));
 	const url = new URL(location.href);

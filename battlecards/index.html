@@ -127,6 +127,13 @@
 			padding: 14px 34px; font-size: 19px; font-weight: 700;
 			background: #6b4fd4; color: #fff; border: none; border-radius: 12px; cursor: pointer;
 		}
+		#concede {
+			position: fixed; right: 12px; top: 44px; z-index: 40;
+			padding: 5px 12px; font-size: 12px; letter-spacing: 1px;
+			background: #3a2f57; color: #cbb8e8; border: 1px solid #5a4a80;
+			border-radius: 8px; cursor: pointer; opacity: 0.8;
+		}
+		#concede:hover { opacity: 1; }
 
 		/* phones + small screens: compact chrome, finger-sized controls */
 		@media (max-width: 760px) {
@@ -179,6 +186,7 @@
 	<div id="walker-menu"></div>
 	<div id="scry-modal"></div>
 	<button id="restart" style="display:none">Play Again</button>
+	<button id="concede" style="display:none">🏳 Concede run</button>
 
 	<script type="module" src="game.js"></script>
 </body>

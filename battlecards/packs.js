@@ -96,6 +96,28 @@ function spawnPack() {
 	scene.add(pack);
 }
 
+// test-realm inventory: unopened packs pile up beside the opener so a
+// player can see (and save) what they've banked from dungeon runs
+let stackMeshes = [];
+function updateStack() {
+	for (const m of stackMeshes) scene.remove(m);
+	stackMeshes = [];
+	if (!MP_ON) return;
+	const extra = Math.min(Math.max(mpPacks - 1, 0), 8);
+	for (let i = 0; i < extra; i++) {
+		const m = new THREE.Mesh(
+			new THREE.BoxGeometry(3.1, 4.4, 0.25),
+			[packSideMat, packSideMat, packSideMat, packSideMat, packMat, packMat]
+		);
+		m.position.set(-5.4 - i * 0.22, -0.5 + i * 0.02, -1.2 - i * 0.3);
+		m.rotation.set(0, 0.4, (i % 2 ? 1 : -1) * 0.05);
+		scene.add(m);
+		stackMeshes.push(m);
+	}
+	// with nothing banked, the hovering pack hides instead of teasing a 409
+	if (pack && (phase === 'idle' || phase === 'done')) pack.visible = mpPacks > 0;
+}
+
 // ---------- cards ----------
 const backTex = makeBackTexture();
 const edgeMat = new THREE.MeshStandardMaterial({ color: '#241b38', roughness: 0.8 });
@@ -130,6 +152,7 @@ const hud = {
 };
 
 function updateHud() {
+	updateStack();
 	hud.gold.textContent = MP_ON ? `${mpPacks} pack${mpPacks === 1 ? '' : 's'}` : `${Col.getGold()} gold`;
 	if (phase === 'idle') {
 		hud.hint.textContent = MP_ON
