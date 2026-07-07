@@ -269,6 +269,15 @@ export class World {
 	isLedge(tx, ty, dir) { return this.behaviorAt(tx, ty) === MB_JUMP[dir]; }
 	isTallGrass(tx, ty) { return this.behaviorAt(tx, ty) === MB_TALL_GRASS; }
 
+	// surfable water: the 0x10-0x1B "sea/pond/river" behavior band. These
+	// tiles block walking (you need a Water-type to Surf) but are open once
+	// you're riding the waves.
+	isSurfable(tx, ty) {
+		if (this.gridAt(tx, ty) === 0) return false;
+		const b = this.behaviorAt(tx, ty);
+		return b >= 0x10 && b <= 0x1B;
+	}
+
 	// draw one layer ('bottom'|'top') of world around camera
 	drawLayer(ctx, layer, camX, camY) {
 		const lay = this.current.layout;
@@ -349,7 +358,11 @@ export class Player {
 				return;
 			}
 		}
-		if (!this.world.isPassable(nx, ny)) return;
+		// while surfing, water is open sea; stepping ashore ends the ride
+		const open = this.surfing
+			? (this.world.isSurfable(nx, ny) || this.world.isPassable(nx, ny))
+			: this.world.isPassable(nx, ny) && !this.world.isSurfable(nx, ny);
+		if (!open) return;
 		if (this.blocked && this.blocked(nx, ny)) return;
 		this.beginMove(nx, ny, META, false);
 	}
@@ -373,6 +386,7 @@ export class Player {
 			if (this.moveT >= 1) {
 				this.px = this.moveTo[0]; this.py = this.moveTo[1];
 				this.moving = false; this.jumping = false;
+				if (this.surfing && !this.world.isSurfable(this.tx, this.ty)) this.surfing = false;
 				this.onArrive?.();
 				// keep walking if a key is held
 				if (held) this.tryMove(held);
@@ -387,6 +401,18 @@ export class Player {
 
 	draw(ctx, camX, camY) {
 		if (!this.img) return;
+		// a simple surf mount under the sprite while riding the waves
+		if (this.surfing) {
+			const bob = Math.sin(this.animT * 4) * 1.2;
+			ctx.fillStyle = 'rgba(40,90,160,0.85)';
+			ctx.beginPath();
+			ctx.ellipse(this.px - camX + 8, this.py - camY + 13 + bob, 9, 5, 0, 0, Math.PI * 2);
+			ctx.fill();
+			ctx.fillStyle = 'rgba(220,240,255,0.5)';
+			ctx.beginPath();
+			ctx.ellipse(this.px - camX + 8, this.py - camY + 15 + bob, 11, 3, 0, 0, Math.PI * 2);
+			ctx.fill();
+		}
 		let frame;
 		if (this.moving) {
 			const seq = WALKS[this.facing];

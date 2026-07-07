@@ -48,6 +48,7 @@ const STARTERS = [
 	{ region: 'HOENN', ids: ['treecko', 'torchic', 'mudkip'] },
 ];
 const starterMenu = { open: false, row: 0, col: 0, sprites: {} };
+const urlPinnedMap = new URLSearchParams(location.search).has('map');
 player.blocked = (tx, ty) => npcs.npcBlocks(tx, ty) || trainers.occupied(tx, ty) || services.blocks(tx, ty) || items.occupied(tx, ty);
 
 trainers.onEngage = t => {
@@ -122,6 +123,20 @@ function interact() {
 	}
 	if (svc === 'pc') { pcMenu.open = true; pcMenu.side = 0; pcMenu.idx = 0; return; }
 	if (svc === 'shop') { shopMenu.open = true; shopMenu.idx = 0; return; }
+	if (svc === 'ferry') { ferryMenu.open = true; ferryMenu.idx = 0; return; }
+	// Surf: face water with a healthy Water-type and it paddles you out
+	if (!player.surfing && world.isSurfable(fx, fy)) {
+		const surfer = party.find(m => m.curHP > 0 && m.types?.includes('Water'));
+		if (surfer) {
+			dialog.open(`${surfer.name} paddles out onto the water!`, () => {
+				player.surfing = true;
+				player.beginMove(fx, fy, META, true);
+			});
+		} else {
+			dialog.open('The water is a deep blue...\n\nA WATER-type could carry you across.');
+		}
+		return;
+	}
 	const t = trainers.trainerAt(fx, fy);
 	if (t) {
 		if (trainers.isDefeated(t)) {
@@ -144,6 +159,23 @@ function interact() {
 }
 
 const partyMenu = { open: false, idx: 0 };
+const ferryMenu = { open: false, idx: 0 };
+const FERRY_DESTS = [
+	{ label: 'Vermilion Harbor (Kanto)', file: 'SSAnne_Exterior' },
+	{ label: 'Olivine Port (Johto)', file: 'OlivinePort' },
+	{ label: 'Slateport Harbor (Hoenn)', file: 'SlateportCity_Harbor' },
+];
+function ferryKey(k) {
+	const dests = FERRY_DESTS.filter(d => d.file !== world.current.name);
+	if (k === 'ArrowUp') ferryMenu.idx = (ferryMenu.idx + dests.length - 1) % dests.length;
+	if (k === 'ArrowDown') ferryMenu.idx = (ferryMenu.idx + 1) % dests.length;
+	if (k === 'x' || k === 'Escape') ferryMenu.open = false;
+	if (k === 'z' || k === 'Enter') {
+		const dest = dests[ferryMenu.idx];
+		ferryMenu.open = false;
+		moveToMap(dest.file).then(() => dialog.open(`The ferry sets sail...\n\nWelcome to ${dest.label}!`));
+	}
+}
 const shopMenu = { open: false, idx: 0 };
 const bagMenu = { open: false, idx: 0, picking: false, pickIdx: 0 };
 const pcMenu = { open: false, side: 0, idx: 0 }; // side 0 = party (deposit), 1 = box (withdraw)
@@ -263,10 +295,14 @@ function starterKey(k) {
 	if (k === 'ArrowLeft') starterMenu.col = (starterMenu.col + 2) % 3;
 	if (k === 'ArrowRight') starterMenu.col = (starterMenu.col + 1) % 3;
 	if (k === 'z' || k === 'Enter') {
-		const id = STARTERS[starterMenu.row].ids[starterMenu.col];
+		const row = STARTERS[starterMenu.row];
+		const id = row.ids[starterMenu.col];
 		party = createStarter(id, battle.data);
 		starterMenu.open = false;
-		dialog.open(`You chose ${party[0].name}!\n\nTake good care of it.`);
+		// the row you picked from is the region you begin in
+		const home = { KANTO: 'PalletTown', JOHTO: 'NewBarkTown', HOENN: 'LittlerootTown' }[row.region];
+		const go = !urlPinnedMap && home && world.current.name !== home ? moveToMap(home) : Promise.resolve();
+		go.then(() => dialog.open(`You chose ${party[0].name}!\n\nYour journey begins in ${row.region}.`));
 	}
 }
 
@@ -276,6 +312,7 @@ function pressKey(k) {
 	if (dialog.blocking) { dialog.key(k); return; }
 	if (evolution.blocking) { evolution.key(k); return; }
 	if (battle.blocking) { battle.key(k); return; }
+	if (ferryMenu.open) { ferryKey(k); return; }
 	if (shopMenu.open) { shopKey(k); return; }
 	if (bagMenu.open) { bagKey(k); return; }
 	if (pcMenu.open) { pcKey(k); return; }
@@ -298,7 +335,7 @@ function pressKey(k) {
 }
 // any menu that consumes direction presses instead of walking
 const menuBlocking = () => starterMenu.open || dialog.blocking || evolution.blocking
-	|| battle.blocking || shopMenu.open || bagMenu.open || pcMenu.open || partyMenu.open;
+	|| battle.blocking || shopMenu.open || bagMenu.open || pcMenu.open || partyMenu.open || ferryMenu.open;
 
 addEventListener('keydown', e => {
 	if (menuBlocking() || ['z', 'x', 'Enter', 'p', 'b', 'Escape'].includes(e.key) || KEYMAP[e.key]) {
@@ -360,6 +397,42 @@ screen.addEventListener('pointerdown', e => {
 });
 
 // ---------- map transitions ----------
+async function refreshMapContent(label) {
+	await npcs.loadForMap();
+	await trainers.loadForMap();
+	npcs.list = npcs.list.filter(n => !trainers.list.some(t => t.ev === n.ev));
+	services.loadForMap();
+	items.loadForMap();
+	hud.textContent = world.current.map.name || label;
+	savePos();
+	loading = false;
+}
+
+// nearest walkable tile to a preferred spot (spiral search)
+function findLanding(px, py) {
+	for (let r = 0; r < 14; r++) {
+		for (let dy = -r; dy <= r; dy++) {
+			for (let dx = -r; dx <= r; dx++) {
+				if (Math.max(Math.abs(dx), Math.abs(dy)) !== r) continue;
+				const x = px + dx, y = py + dy;
+				if (world.isPassable(x, y) && !world.isSurfable(x, y)) return [x, y];
+			}
+		}
+	}
+	return [px, py];
+}
+
+// direct travel (region select, ferries): land near the map's center
+async function moveToMap(file, px, py) {
+	loading = true;
+	await world.load(file);
+	const cx = px ?? Math.floor(world.current.layout.width / 2);
+	const cy = py ?? Math.floor(world.current.layout.height / 2);
+	player.setTile(...findLanding(cx, cy));
+	player.surfing = false;
+	await refreshMapContent(file);
+}
+
 async function warpTo(mapId, destWarpId) {
 	const file = world.fileFor(mapId);
 	if (!file) { console.warn('unknown warp dest', mapId); return; }
@@ -372,14 +445,7 @@ async function warpTo(mapId, destWarpId) {
 	if (w) player.setTile(w.x, w.y);
 	else player.setTile(Math.floor(world.current.layout.width / 2), Math.floor(world.current.layout.height / 2));
 	world.lastWarpSource = source;
-	await npcs.loadForMap();
-	await trainers.loadForMap();
-	npcs.list = npcs.list.filter(n => !trainers.list.some(t => t.ev === n.ev));
-	services.loadForMap();
-	items.loadForMap();
-	hud.textContent = world.current.map.name || file;
-	savePos();
-	loading = false;
+	await refreshMapContent(file);
 }
 
 async function backWarp() {
@@ -388,14 +454,7 @@ async function backWarp() {
 	loading = true;
 	await world.load(src.name);
 	player.setTile(src.tx, src.ty);
-	await npcs.loadForMap();
-	await trainers.loadForMap();
-	npcs.list = npcs.list.filter(n => !trainers.list.some(t => t.ev === n.ev));
-	services.loadForMap();
-	items.loadForMap();
-	hud.textContent = world.current.map.name || src.name;
-	savePos();
-	loading = false;
+	await refreshMapContent(src.name);
 }
 
 // re-anchor when the player has walked into a connected map
@@ -404,14 +463,7 @@ async function crossConnection(hit) {
 	const { conn, lx, ly } = hit;
 	await world.load(conn.name);
 	player.setTile(lx, ly);
-	await npcs.loadForMap();
-	await trainers.loadForMap();
-	npcs.list = npcs.list.filter(n => !trainers.list.some(t => t.ev === n.ev));
-	services.loadForMap();
-	items.loadForMap();
-	hud.textContent = world.current.map.name || conn.name;
-	savePos();
-	loading = false;
+	await refreshMapContent(conn.name);
 }
 
 player.onArrive = () => {
@@ -435,7 +487,7 @@ player.onArrive = () => {
 	if (!battle.blocking && trainers.checkSight(player.tx, player.ty)) return;
 	// wild encounter?
 	if (!battle.blocking) {
-		const pick = encounters.roll(world.current.map.id, world, player.tx, player.ty);
+		const pick = encounters.roll(world.current.map.id, world, player.tx, player.ty, player.surfing);
 		if (pick) startWildBattle(pick);
 	}
 };
@@ -507,6 +559,7 @@ function tick(now) {
 		else if (bagMenu.open) drawBagMenu(SW, SH);
 		else if (pcMenu.open) drawPcMenu(SW, SH);
 		else if (starterMenu.open) drawStarterMenu(SW, SH);
+		else if (ferryMenu.open) drawFerryMenu(SW, SH);
 		if (!evolution.blocking) dialog.drawHi(sctx, SW, SH);
 	}
 }
@@ -717,6 +770,19 @@ function drawPcMenu(W, H) {
 	});
 }
 
+function drawFerryMenu(W, H) {
+	const u = H / 480;
+	menuChrome(W, H, u, 'FERRY', 'All aboard! Where to, sailor?');
+	const dests = FERRY_DESTS.filter(d => d.file !== world.current.name);
+	dests.forEach((d, i) => {
+		const bid = 'sail:' + i;
+		const b = { id: bid, x: 24 * u, y: (90 + i * 64) * u, w: W - 48 * u, h: 56 * u,
+			label: d.label, big: true, center: true, kbSel: ferryMenu.idx === i };
+		menuUi.push(b);
+		BUI.button(sctx, b, menuHover === bid || ferryMenu.idx === i, u);
+	});
+}
+
 // taps route into the same state + key logic the keyboard uses
 function menuTap(id) {
 	const [kind, a, b2] = id.split(':');
@@ -734,12 +800,13 @@ function menuTap(id) {
 	if (kind === 'starter') { starterMenu.row = +a; starterMenu.col = +b2; pressKey('z'); return; }
 	if (kind === 'buy') { shopMenu.idx = +a; pressKey('z'); return; }
 	if (kind === 'shopscroll') { pressKey(+a > 0 ? 'ArrowDown' : 'ArrowUp'); return; }
+	if (kind === 'sail') { ferryMenu.idx = +a; pressKey('z'); return; }
 	if (kind === 'item') { bagMenu.idx = +a; bagMenu.picking = false; pressKey('z'); return; }
 	if (kind === 'use') { bagMenu.pickIdx = +a; pressKey('z'); return; }
 	if (kind === 'pcp') { pcMenu.side = 0; pcMenu.idx = +a; pressKey('z'); return; }
 	if (kind === 'pcb') { pcMenu.side = 1; pcMenu.idx = +a; pressKey('z'); return; }
 }
-const anyMenuOpen = () => partyMenu.open || shopMenu.open || bagMenu.open || pcMenu.open || starterMenu.open;
+const anyMenuOpen = () => partyMenu.open || shopMenu.open || bagMenu.open || pcMenu.open || starterMenu.open || ferryMenu.open;
 
 // ---------- boot ----------
 (async () => {
@@ -776,6 +843,8 @@ const anyMenuOpen = () => partyMenu.open || shopMenu.open || bagMenu.open || pcM
 	const sy = params.has('y') ? +params.get('y')
 		: saved?.y ?? Math.floor(world.current.layout.height / 2);
 	player.setTile(sx, sy);
+	// resuming a save that stood on water means we were surfing
+	if (world.isSurfable(sx, sy)) player.surfing = true;
 	await npcs.loadForMap();
 	await trainers.loadForMap();
 	npcs.list = npcs.list.filter(n => !trainers.list.some(t => t.ev === n.ev));
@@ -784,6 +853,24 @@ const anyMenuOpen = () => partyMenu.open || shopMenu.open || bagMenu.open || pcM
 	hud.textContent = world.current.map.name || startMap;
 	loading = false;
 	// headless test hook
-	window.__ow = { world, player, warpTo, npcs, encounters, battle, trainers, dialog, evolution, items, get party() { return party; }, get menuUi() { return menuUi; }, menuTap, startWildBattle, interact };
+	// test hook: drive the player straight, bypassing the game loop's input
+	function freezeLoop(on) { loading = !!on; }
+	function pumpPlayer(dir, run, ms) {
+		return new Promise(res => {
+			player.run = !!run;
+			const t0 = performance.now();
+			let last = t0;
+			const startAxis = dir === 'up' || dir === 'down' ? player.ty : player.tx;
+			const step = () => {
+				const now = performance.now();
+				player.update((now - last) / 1000, dir);
+				last = now;
+				if (now - t0 < ms) requestAnimationFrame(step);
+				else { player.run = false; res(Math.abs((dir === 'up' || dir === 'down' ? player.ty : player.tx) - startAxis)); }
+			};
+			step();
+		});
+	}
+	window.__ow = { world, player, warpTo, moveToMap, npcs, encounters, battle, trainers, dialog, evolution, items, get party() { return party; }, get menuUi() { return menuUi; }, menuTap, pumpPlayer, freezeLoop, startWildBattle, interact };
 	requestAnimationFrame(tick);
 })();

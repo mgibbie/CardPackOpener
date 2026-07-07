@@ -87,8 +87,19 @@ function specFor(mapId) {
 			solid: [[1, 3], [1, 4]],
 		};
 	}
+	// harbor maps: talking to the sailor (or the dockside) offers the ferry
+	if (FERRY_PORTS[mapId]) {
+		return { sprites: [], zones: [{ kind: 'ferry', tiles: 'any' }], solid: [] };
+	}
 	return null;
 }
+
+// region-hopping ferry: dock map -> the other two destinations
+export const FERRY_PORTS = {
+	'MAP_SSANNE_EXTERIOR': 'Vermilion Harbor (Kanto)',
+	'MAP_OLIVINE_PORT': 'Olivine Port (Johto)',
+	'MAP_SLATEPORT_CITY_HARBOR': 'Slateport Harbor (Hoenn)',
+};
 
 export class Services {
 	constructor(world) {
@@ -106,10 +117,11 @@ export class Services {
 		this.spec = specFor(this.world.current.map.id);
 	}
 
-	// 'nurse' | 'pc' | 'shop' | null at a tile
+	// 'nurse' | 'pc' | 'shop' | 'ferry' | null at a tile
 	kindAt(tx, ty) {
 		if (!this.spec) return null;
 		for (const z of this.spec.zones) {
+			if (z.tiles === 'any') return z.kind;
 			if (z.tiles.some(([x, y]) => x === tx && y === ty)) return z.kind;
 		}
 		return null;

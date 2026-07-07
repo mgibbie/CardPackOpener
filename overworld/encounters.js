@@ -17,17 +17,19 @@ export class Encounters {
 	}
 
 	// roll for an encounter; returns { id, level } or null
-	roll(mapId, world, tx, ty) {
-		if (!world.isTallGrass(tx, ty)) return null;
-		const grp = this.data[mapId]?.land;
+	roll(mapId, world, tx, ty, surfing) {
+		const kind = surfing && world.isSurfable(tx, ty) ? 'water'
+			: world.isTallGrass(tx, ty) ? 'land' : null;
+		if (!kind) return null;
+		const grp = this.data[mapId]?.[kind];
 		if (!grp) return null;
 		if (Math.random() * 100 > grp.rate) return null;
-		return this.pick(mapId);
+		return this.pick(mapId, kind);
 	}
 
 	// a straight table pick (no gate): used for double-battle partners
-	pick(mapId) {
-		const grp = this.data[mapId]?.land;
+	pick(mapId, kind = 'land') {
+		const grp = this.data[mapId]?.[kind];
 		if (!grp) return null;
 		const total = grp.slots.reduce((s, x) => s + x.w, 0);
 		let r = Math.random() * total, slot = grp.slots[0];
