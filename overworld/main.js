@@ -96,7 +96,10 @@ const KEYMAP = {
 };
 const heldKeys = [];
 let runHeld = false; // Shift on keyboard, holding B on touch
+// while typing in the chat box, keys belong to the input, not the game
+const typingInChat = () => document.activeElement && document.activeElement.tagName === 'INPUT';
 addEventListener('keydown', e => {
+	if (typingInChat()) return;
 	if (e.key === 'Shift') runHeld = true;
 	const dir = KEYMAP[e.key];
 	if (dir) {
@@ -479,6 +482,7 @@ const menuBlocking = () => starterMenu.open || dialog.blocking || evolution.bloc
 	|| startMenu.open || cardsMenu.open || friendsMenu.open;
 
 addEventListener('keydown', e => {
+	if (typingInChat()) return;
 	if (menuBlocking() || ['z', 'x', 'Enter', 'p', 'b', 'Escape'].includes(e.key) || KEYMAP[e.key]) {
 		if (e.key !== 'F5' && e.key !== 'F12') e.preventDefault();
 	}

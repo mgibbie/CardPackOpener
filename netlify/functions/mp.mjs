@@ -291,6 +291,7 @@ export default async function handler(req) {
 			snapshot: body.snapshot || null,
 			mode: String(body.mode || 'battle'),
 			label: String(body.label || ''),
+			room: 'u:' + username, // spectators join the runner's chat room
 			seq: +body.seq || 0,
 			ts: Date.now(),
 		});
@@ -310,6 +311,49 @@ export default async function handler(req) {
 		const cs = await store.get('cardstate:' + who);
 		if (!cs || Date.now() - cs.ts > CARDSTATE_MS) return json({ snapshot: null });
 		return json(cs);
+	}
+
+	// ---------- in-battle chat + emotes ----------
+	// Rooms: 'm:<matchId>' (card or pokemon match, participants + friend-spectators)
+	// or 'u:<username>' (a solo run being spectated: the runner + their friends).
+	const EMOTES = new Set(['greetings', 'well_played', 'thanks', 'wow', 'oops', 'threaten', 'laugh', 'gg', 'wow2', 'oops2']);
+	const CHAT_CAP = 40;
+	// can this user read/post in the room?
+	const canChat = async (room) => {
+		if (typeof room !== 'string') return false;
+		if (room.startsWith('u:')) {
+			const who = room.slice(2);
+			return who === username || user.friends.includes(who);
+		}
+		if (room.startsWith('m:')) {
+			const id = room.slice(2);
+			const cm = await store.get('cardmatch:' + id);
+			if (cm) return cm.host === username || cm.guest === username
+				|| user.friends.includes(cm.host) || user.friends.includes(cm.guest);
+			const m = await store.get('match:' + id);
+			if (m) return sideOf(m, username) >= 0 || m.sides.some(sd => user.friends.includes(sd.name));
+		}
+		return false;
+	};
+
+	if (action === 'chat-post') {
+		const room = String(body.room || '');
+		if (!(await canChat(room))) return json({ error: 'not in this room' }, 403);
+		const emote = body.emote && EMOTES.has(String(body.emote)) ? String(body.emote) : null;
+		const text = emote ? '' : String(body.text || '').slice(0, 140).replace(/[\u0000-\u001f]/g, ' ').trim();
+		if (!emote && !text) return json({ error: 'empty message' }, 400);
+		const list = (await store.get('chat:' + room)) || [];
+		list.push({ from: username, text, emote, ts: Date.now() });
+		await store.setJSON('chat:' + room, list.slice(-CHAT_CAP));
+		return json({ ok: true });
+	}
+
+	if (action === 'chat-get') {
+		const room = String(body.room || '');
+		if (!(await canChat(room))) return json({ error: 'not in this room' }, 403);
+		const list = (await store.get('chat:' + room)) || [];
+		const since = +body.since || 0;
+		return json({ messages: since ? list.filter(m => m.ts > since) : list.slice(-12), now: Date.now() });
 	}
 
 	// ---------- live battles (server-authoritative PvP) ----------
@@ -442,7 +486,7 @@ export default async function handler(req) {
 		if (cm.host !== username) return json({ error: 'only the host publishes' }, 403);
 		await store.setJSON('alive:' + id + ':host', Date.now()); // publishing proves the host is here
 		if (body.over) { cm.over = true; cm.winner = body.winner ?? null; await store.setJSON('cardmatch:' + id, cm); }
-		const payload = { snapshot: body.snapshot || null, mode: 'pvp', label: String(body.label || 'Card Duel'), seq: +body.seq || 0, ts: Date.now() };
+		const payload = { snapshot: body.snapshot || null, mode: 'pvp', label: String(body.label || 'Card Duel'), room: 'm:' + id, seq: +body.seq || 0, ts: Date.now() };
 		await store.setJSON('cardmatchstate:' + id, payload);
 		await store.setJSON('cardstate:' + username, payload); // spectators
 		await store.setJSON('presence:' + username, {

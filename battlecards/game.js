@@ -6,6 +6,7 @@ import * as AI from './ai.js';
 import * as Col from './collection.js';
 import * as Dungeon from './dungeon.js';
 import * as MPX from './mpmode.js';
+import * as Chat from './chat.js';
 
 // test-realm mode (?mp=1 + account token): dungeon runs use the account's
 // edited starter decks, and finishing a run — win or lose — earns a pack
@@ -2216,6 +2217,8 @@ function snapshotState() {
 
 let publishSeq = 0;
 function startPublishLoop() {
+	const uname = MPX.cachedState()?.username;
+	if (uname && !Chat.active()) Chat.mount({ room: 'u:' + uname, canPost: true }); // hear spectators
 	const mode = dungeonRunMode ? 'dungeon' : 'battle';
 	const label = () => dungeonBossId
 		? `${Dungeon.BOSSES[dungeonBossId].name}${loadRun()?.level ? ' · Lv ' + loadRun().level : ''}`
@@ -2268,6 +2271,7 @@ function startSpectate(cardsById) {
 			buildSlotMarkers();
 			spectatePanelsFor = snap.playerCount;
 		}
+		if (!Chat.active()) Chat.mount({ room: data.room || ('u:' + spectateName), canPost: true });
 		banner(`${spectateName}${data.label ? ' — ' + data.label : ''}`);
 		updateHud();
 		renderSpectatorChoice();
@@ -2382,6 +2386,7 @@ async function startDuelHost(cardsById) {
 	buildSlotMarkers();
 	pump();
 	updateHud();
+	Chat.mount({ room: 'm:' + duel.id, canPost: true });
 	log(resumed ? `Rejoined your duel vs ${cm.guest}.` : `Live duel: you vs ${cm.guest}.`);
 	// drain the guest's queued intents and apply them, then republish
 	const drainTick = async () => {
@@ -2448,6 +2453,7 @@ function startDuelGuest(cardsById) {
 	const cm = duel.config;
 	banner(`Duel vs ${cm.host}`);
 	log(`Live duel: you vs ${cm.host}. Waiting for the board…`);
+	Chat.mount({ room: 'm:' + duel.id, canPost: true });
 	let panelsFor = 0;
 	const tick = async () => {
 		let data;

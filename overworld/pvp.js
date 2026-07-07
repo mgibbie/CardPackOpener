@@ -5,6 +5,7 @@
 import { getImage } from './engine.js';
 import * as UI from './battleui.js';
 import * as MP from '../battlecards/mpmode.js';
+import * as Chat from '../battlecards/chat.js';
 
 export class Pvp {
 	constructor() { this.active = null; this.sprites = new Map(); }
@@ -23,6 +24,7 @@ export class Pvp {
 		};
 		if (a.phase === 'menu') a.msg = `What will ${this.mine().name} do?`;
 		await this.loadSprites(match);
+		Chat.mount({ room: 'm:' + matchId, canPost: true }); // players + spectators
 		this.pollLoop();
 	}
 
@@ -95,6 +97,7 @@ export class Pvp {
 		const cb = a.onEnd, over = a.match.over, winner = a.match.winner, mine = a.mySide;
 		a.polling = false;
 		this.active = null;
+		Chat.unmount();
 		cb?.(over ? (winner === mine ? 'win' : 'loss') : 'left');
 	}
 
