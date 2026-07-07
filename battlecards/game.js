@@ -1848,7 +1848,15 @@ addEventListener('pointerup', ev => {
 				if (c.tradeable && E.canTrade(state, HUMAN, c)) openTradeMenu(c, ev);
 				else playFromHand(c, ev);
 			} else if (ev.clientY < innerHeight * 0.85) {
-				playFromHand(c, ev, placementIndexAt(ev.clientX));
+				// Magnetic: dropping the card onto a friendly Mech merges them
+				const over = cardOf(pick(ev));
+				if (c.magnetic && over && over.zone === 'board' && over.controller === HUMAN
+					&& (over.tribe || '').includes('Mech')) {
+					E.playCard(state, HUMAN, c.uid, { type: 'creature', uid: over.uid, player: HUMAN });
+					pump();
+				} else {
+					playFromHand(c, ev, placementIndexAt(ev.clientX));
+				}
 			}
 		}
 		return;

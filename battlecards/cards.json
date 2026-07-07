@@ -13235,7 +13235,13 @@
       "attack": 4,
       "health": 4,
       "tribe": "Angel Devil Noble",
+      "ward": {
+        "mana": 2
+      },
       "keywords": [
+        "taunt",
+        "lifesteal",
+        "trample",
         "deathrattle"
       ],
       "deathrattle": [
@@ -20459,7 +20465,17 @@
       "attack": 8,
       "health": 5,
       "tribe": "Centaur God",
+      "ward": {
+        "mana": 2
+      },
+      "static": {
+        "type": "spell-damage",
+        "value": 1
+      },
       "keywords": [
+        "taunt",
+        "rush",
+        "lifesteal",
         "deathrattle"
       ],
       "deathrattle": [
@@ -40126,6 +40142,697 @@
       },
       "description": "Your creatures cost 1.",
       "set": "hsx"
+    },
+    {
+      "id": "glow_tron",
+      "name": "Glow-Tron",
+      "cardClass": "paladin",
+      "cost": 1,
+      "rarity": "common",
+      "tribe": "Mech",
+      "magnetic": true,
+      "type": "creature",
+      "attack": 1,
+      "health": 3,
+      "description": "A 1/3 creature. Magnetic: may merge its stats and text onto a friendly Mech.",
+      "set": "hsx"
+    },
+    {
+      "id": "imprisoned_gan_arg",
+      "name": "Imprisoned Gan'arg",
+      "cardClass": "warrior",
+      "cost": 1,
+      "rarity": "common",
+      "tribe": "Demon",
+      "type": "creature",
+      "attack": 2,
+      "health": 2,
+      "dormant": 2,
+      "awaken": [
+        {
+          "type": "equip",
+          "attack": 3,
+          "durability": 2,
+          "name": "Axe"
+        }
+      ],
+      "description": "Dormant for 2 turns. When it awakens: Equip a 3/2 Axe.",
+      "set": "hsx"
+    },
+    {
+      "id": "imprisoned_homunculus",
+      "name": "Imprisoned Homunculus",
+      "cardClass": "priest",
+      "cost": 1,
+      "rarity": "common",
+      "tribe": "Demon",
+      "type": "creature",
+      "attack": 2,
+      "health": 5,
+      "dormant": 2,
+      "keywords": [
+        "taunt"
+      ],
+      "description": "Dormant for 2 turns. Taunt.",
+      "set": "hsx"
+    },
+    {
+      "id": "imprisoned_sungill",
+      "name": "Imprisoned Sungill",
+      "cardClass": "paladin",
+      "cost": 1,
+      "rarity": "rare",
+      "tribe": "Murloc",
+      "type": "creature",
+      "attack": 2,
+      "health": 1,
+      "dormant": 2,
+      "awaken": [
+        {
+          "type": "summon",
+          "count": 2,
+          "attack": 1,
+          "health": 1,
+          "name": "Murloc"
+        }
+      ],
+      "description": "Dormant for 2 turns. When it awakens: Summon two 1/1 Murlocs.",
+      "set": "hsx"
+    },
+    {
+      "id": "pelican_diver",
+      "name": "Pelican Diver",
+      "cardClass": "neutral",
+      "cost": 1,
+      "rarity": "common",
+      "tribe": "Beast",
+      "type": "creature",
+      "attack": 4,
+      "health": 1,
+      "dormant": 1,
+      "keywords": [
+        "rush"
+      ],
+      "description": "Dormant for 1 turns. Rush.",
+      "set": "hsx"
+    },
+    {
+      "id": "cheap_shot",
+      "name": "Cheap Shot",
+      "cardClass": "rogue",
+      "cost": 2,
+      "rarity": "common",
+      "echo": true,
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 2,
+          "target": "creature"
+        }
+      ],
+      "description": "Deal 2 damage to a creature. Echo: replays all turn while you have the mana.",
+      "set": "hsx"
+    },
+    {
+      "id": "chill_o_matic",
+      "name": "Chill-o-matic",
+      "cardClass": "mage",
+      "cost": 2,
+      "rarity": "common",
+      "tribe": "Mech",
+      "magnetic": true,
+      "type": "creature",
+      "attack": 2,
+      "health": 3,
+      "keywords": [
+        "freezer"
+      ],
+      "description": "Freezes anything it damages. Magnetic: may merge its stats and text onto a friendly Mech.",
+      "set": "hsx"
+    },
+    {
+      "id": "ghost_light_angler",
+      "name": "Ghost Light Angler",
+      "cardClass": "shaman",
+      "cost": 2,
+      "rarity": "common",
+      "tribe": "Murloc",
+      "echo": true,
+      "type": "creature",
+      "attack": 2,
+      "health": 2,
+      "description": "A 2/2 creature. Echo: replays all turn while you have the mana.",
+      "set": "hsx"
+    },
+    {
+      "id": "hunting_mastiff",
+      "name": "Hunting Mastiff",
+      "cardClass": "hunter",
+      "cost": 2,
+      "rarity": "common",
+      "tribe": "Beast",
+      "echo": true,
+      "type": "creature",
+      "attack": 2,
+      "health": 1,
+      "keywords": [
+        "rush"
+      ],
+      "description": "Rush. Echo: replays all turn while you have the mana.",
+      "set": "hsx"
+    },
+    {
+      "id": "imprisoned_phoenix",
+      "name": "Imprisoned Phoenix",
+      "cardClass": "neutral",
+      "cost": 2,
+      "rarity": "common",
+      "tribe": "Elemental",
+      "static": {
+        "type": "spell-damage",
+        "value": 2
+      },
+      "type": "creature",
+      "attack": 2,
+      "health": 3,
+      "dormant": 2,
+      "description": "Dormant for 2 turns. Spell Damage +2.",
+      "set": "hsx"
+    },
+    {
+      "id": "imprisoned_scrap_imp",
+      "name": "Imprisoned Scrap Imp",
+      "cardClass": "warlock",
+      "cost": 2,
+      "rarity": "rare",
+      "tribe": "Demon",
+      "type": "creature",
+      "attack": 3,
+      "health": 3,
+      "dormant": 2,
+      "awaken": [
+        {
+          "type": "buff-hand",
+          "all": true,
+          "attack": 2,
+          "health": 2
+        }
+      ],
+      "description": "Dormant for 2 turns. When it awakens: Give the creatures in your hand +2/+2.",
+      "set": "hsx"
+    },
+    {
+      "id": "imprisoned_vilefiend",
+      "name": "Imprisoned Vilefiend",
+      "cardClass": "neutral",
+      "cost": 2,
+      "rarity": "common",
+      "tribe": "Demon",
+      "type": "creature",
+      "attack": 3,
+      "health": 5,
+      "dormant": 2,
+      "keywords": [
+        "rush"
+      ],
+      "description": "Dormant for 2 turns. Rush.",
+      "set": "hsx"
+    },
+    {
+      "id": "sound_the_bells",
+      "name": "Sound the Bells!",
+      "cardClass": "paladin",
+      "cost": 2,
+      "rarity": "common",
+      "echo": true,
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 1,
+          "health": 2,
+          "target": "creature"
+        }
+      ],
+      "description": "Give a creature +1/+2. Echo: replays all turn while you have the mana.",
+      "set": "hsx"
+    },
+    {
+      "id": "squashling",
+      "name": "Squashling",
+      "cardClass": "priest",
+      "cost": 2,
+      "rarity": "common",
+      "echo": true,
+      "type": "creature",
+      "attack": 2,
+      "health": 1,
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "heal",
+          "value": 2,
+          "target": "any"
+        }
+      ],
+      "description": "Battlecry: Restore 2 health to any target. Echo: replays all turn while you have the mana.",
+      "set": "hsx"
+    },
+    {
+      "id": "venomizer",
+      "name": "Venomizer",
+      "cardClass": "hunter",
+      "cost": 2,
+      "rarity": "common",
+      "tribe": "Mech",
+      "magnetic": true,
+      "type": "creature",
+      "attack": 2,
+      "health": 2,
+      "keywords": [
+        "deathtouch"
+      ],
+      "description": "Deathtouch. Magnetic: may merge its stats and text onto a friendly Mech.",
+      "set": "hsx"
+    },
+    {
+      "id": "warpath",
+      "name": "Warpath",
+      "cardClass": "warrior",
+      "cost": 2,
+      "rarity": "common",
+      "echo": true,
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 1,
+          "target": "all-creatures"
+        }
+      ],
+      "description": "Deal 1 damage to every creature. Echo: replays all turn while you have the mana.",
+      "set": "hsx"
+    },
+    {
+      "id": "bronze_gatekeeper",
+      "name": "Bronze Gatekeeper",
+      "cardClass": "neutral",
+      "cost": 3,
+      "rarity": "common",
+      "tribe": "Mech",
+      "magnetic": true,
+      "type": "creature",
+      "attack": 2,
+      "health": 5,
+      "keywords": [
+        "taunt"
+      ],
+      "description": "Taunt. Magnetic: may merge its stats and text onto a friendly Mech.",
+      "set": "hsx"
+    },
+    {
+      "id": "cyborg_patriarch",
+      "name": "Cyborg Patriarch",
+      "cardClass": "neutral",
+      "cost": 3,
+      "rarity": "common",
+      "tribe": "Beast",
+      "type": "creature",
+      "attack": 3,
+      "health": 12,
+      "dormant": 3,
+      "keywords": [
+        "taunt"
+      ],
+      "description": "Dormant for 3 turns. Taunt.",
+      "set": "hsx"
+    },
+    {
+      "id": "imprisoned_observer",
+      "name": "Imprisoned Observer",
+      "cardClass": "mage",
+      "cost": 3,
+      "rarity": "rare",
+      "tribe": "Demon",
+      "type": "creature",
+      "attack": 4,
+      "health": 5,
+      "dormant": 2,
+      "awaken": [
+        {
+          "type": "damage",
+          "value": 2,
+          "target": "enemy-creatures"
+        }
+      ],
+      "description": "Dormant for 2 turns. When it awakens: Deal 2 damage to all enemy creatures.",
+      "set": "hsx"
+    },
+    {
+      "id": "phantom_militia",
+      "name": "Phantom Militia",
+      "cardClass": "neutral",
+      "cost": 3,
+      "rarity": "rare",
+      "echo": true,
+      "type": "creature",
+      "attack": 2,
+      "health": 4,
+      "keywords": [
+        "taunt"
+      ],
+      "description": "Taunt. Echo: replays all turn while you have the mana.",
+      "set": "hsx"
+    },
+    {
+      "id": "sn1p_sn4p",
+      "name": "SN1P-SN4P",
+      "cardClass": "neutral",
+      "cost": 3,
+      "rarity": "legendary",
+      "tribe": "Mech",
+      "magnetic": true,
+      "echo": true,
+      "type": "creature",
+      "attack": 2,
+      "health": 3,
+      "keywords": [
+        "deathrattle"
+      ],
+      "deathrattle": [
+        {
+          "type": "summon",
+          "count": 2,
+          "attack": 1,
+          "health": 1,
+          "name": "Microbot"
+        }
+      ],
+      "description": "Deathrattle: Summon two 1/1 Microbots. Magnetic: may merge its stats and text onto a friendly Mech. Echo: replays all turn while you have the mana.",
+      "set": "hsx"
+    },
+    {
+      "id": "slimescale_diver",
+      "name": "Slimescale Diver",
+      "cardClass": "neutral",
+      "cost": 3,
+      "rarity": "common",
+      "tribe": "Murloc",
+      "type": "creature",
+      "attack": 2,
+      "health": 4,
+      "dormant": 1,
+      "keywords": [
+        "rush",
+        "deathtouch"
+      ],
+      "description": "Dormant for 1 turns. Rush. Deathtouch.",
+      "set": "hsx"
+    },
+    {
+      "id": "spider_bomb",
+      "name": "Spider Bomb",
+      "cardClass": "hunter",
+      "cost": 3,
+      "rarity": "rare",
+      "tribe": "Mech",
+      "magnetic": true,
+      "type": "creature",
+      "attack": 2,
+      "health": 2,
+      "keywords": [
+        "deathrattle"
+      ],
+      "deathrattle": [
+        {
+          "type": "destroy-random"
+        }
+      ],
+      "description": "Deathrattle: Destroy a random enemy creature. Magnetic: may merge its stats and text onto a friendly Mech.",
+      "set": "hsx"
+    },
+    {
+      "id": "walnut_sprite",
+      "name": "Walnut Sprite",
+      "cardClass": "neutral",
+      "cost": 3,
+      "rarity": "common",
+      "echo": true,
+      "type": "creature",
+      "attack": 3,
+      "health": 3,
+      "description": "A 3/3 creature. Echo: replays all turn while you have the mana.",
+      "set": "hsx"
+    },
+    {
+      "id": "replicating_menace",
+      "name": "Replicating Menace",
+      "cardClass": "neutral",
+      "cost": 4,
+      "rarity": "rare",
+      "tribe": "Mech",
+      "magnetic": true,
+      "type": "creature",
+      "attack": 3,
+      "health": 2,
+      "keywords": [
+        "deathrattle"
+      ],
+      "deathrattle": [
+        {
+          "type": "summon",
+          "count": 3,
+          "attack": 1,
+          "health": 1,
+          "name": "Microbot"
+        }
+      ],
+      "description": "Deathrattle: Summon three 1/1 Microbots. Magnetic: may merge its stats and text onto a friendly Mech.",
+      "set": "hsx"
+    },
+    {
+      "id": "imprisoned_antaen",
+      "name": "Imprisoned Antaen",
+      "cardClass": "demon_hunter",
+      "cost": 5,
+      "rarity": "rare",
+      "tribe": "Demon",
+      "type": "creature",
+      "attack": 10,
+      "health": 6,
+      "dormant": 2,
+      "awaken": [
+        {
+          "type": "random-damage",
+          "value": 1,
+          "pool": "enemies",
+          "count": 10
+        }
+      ],
+      "description": "Dormant for 2 turns. When it awakens: Fire 10 bolts, each dealing 1 damage to a random enemy.",
+      "set": "hsx"
+    },
+    {
+      "id": "wargear",
+      "name": "Wargear",
+      "cardClass": "neutral",
+      "cost": 5,
+      "rarity": "common",
+      "tribe": "Mech",
+      "magnetic": true,
+      "type": "creature",
+      "attack": 6,
+      "health": 5,
+      "description": "A 6/5 creature. Magnetic: may merge its stats and text onto a friendly Mech.",
+      "set": "hsx"
+    },
+    {
+      "id": "zilliax",
+      "name": "Zilliax",
+      "cardClass": "neutral",
+      "cost": 5,
+      "rarity": "legendary",
+      "tribe": "Mech",
+      "magnetic": true,
+      "type": "creature",
+      "attack": 3,
+      "health": 2,
+      "keywords": [
+        "divine_shield",
+        "taunt",
+        "lifesteal",
+        "rush"
+      ],
+      "description": "Divine Shield. Taunt. Lifesteal. Rush. Magnetic: may merge its stats and text onto a friendly Mech.",
+      "set": "hsx"
+    },
+    {
+      "id": "missile_launcher",
+      "name": "Missile Launcher",
+      "cardClass": "neutral",
+      "cost": 6,
+      "rarity": "rare",
+      "tribe": "Mech",
+      "magnetic": true,
+      "type": "creature",
+      "attack": 4,
+      "health": 4,
+      "ongoing": {
+        "on": "turn-end",
+        "effects": [
+          {
+            "type": "damage",
+            "value": 1,
+            "target": "other-characters"
+          }
+        ]
+      },
+      "description": "At the end of your turn, deal 1 damage to every other character. Magnetic: may merge its stats and text onto a friendly Mech.",
+      "set": "hsx"
+    },
+    {
+      "id": "beryllium_nullifier",
+      "name": "Beryllium Nullifier",
+      "cardClass": "warrior",
+      "cost": 7,
+      "rarity": "epic",
+      "tribe": "Mech",
+      "magnetic": true,
+      "type": "creature",
+      "attack": 4,
+      "health": 8,
+      "keywords": [
+        "elusive"
+      ],
+      "description": "Elusive. Magnetic: may merge its stats and text onto a friendly Mech.",
+      "set": "hsx"
+    },
+    {
+      "id": "containment_unit",
+      "name": "Containment Unit",
+      "cardClass": "neutral",
+      "cost": 7,
+      "rarity": "common",
+      "tribe": "Mech",
+      "magnetic": true,
+      "type": "creature",
+      "attack": 6,
+      "health": 6,
+      "keywords": [
+        "deathrattle"
+      ],
+      "deathrattle": [
+        {
+          "type": "summon-random",
+          "cost": 8
+        }
+      ],
+      "description": "Deathrattle: Summon a random 8-cost creature. Magnetic: may merge its stats and text onto a friendly Mech.",
+      "set": "hsx"
+    },
+    {
+      "id": "raid_the_docks",
+      "name": "Raid the Docks",
+      "cardClass": "warrior",
+      "cost": 1,
+      "rarity": "legendary",
+      "type": "quest",
+      "quest": {
+        "goal": {
+          "type": "summon",
+          "count": 3,
+          "tribe": "Pirate"
+        },
+        "reward": [
+          {
+            "type": "search",
+            "cardType": "weapon",
+            "to": "hand"
+          }
+        ]
+      },
+      "description": "Quest: Play 3 Pirates. Reward: Draw a weapon.",
+      "set": "hsx"
+    },
+    {
+      "id": "rise_to_the_occasion",
+      "name": "Rise to the Occasion",
+      "cardClass": "paladin",
+      "cost": 1,
+      "rarity": "legendary",
+      "type": "quest",
+      "quest": {
+        "goal": {
+          "type": "play",
+          "count": 3,
+          "cost": 1
+        },
+        "reward": [
+          {
+            "type": "equip",
+            "attack": 1,
+            "durability": 4,
+            "name": "Light'S Justice"
+          }
+        ]
+      },
+      "description": "Quest: Play 3 different 1-Cost cards. Reward: Equip a 1/4 Light's Justice.",
+      "set": "hsx"
+    },
+    {
+      "id": "scavenger_drake",
+      "name": "Scavenger Drake",
+      "cardClass": "neutral",
+      "cost": 4,
+      "rarity": "uncommon",
+      "set": "paper",
+      "description": "Windfury & Lifesteal. Ward: Discard a card. Avenge 1: Gain +1/+1.",
+      "type": "creature",
+      "attack": 1,
+      "health": 1,
+      "tribe": "Dragon",
+      "ward": {
+        "discard": 1
+      },
+      "keywords": [
+        "windfury",
+        "lifesteal"
+      ],
+      "ongoing": {
+        "on": "friendly-creature-died",
+        "need": 1,
+        "once": true,
+        "effects": [
+          {
+            "type": "buff-self",
+            "attack": 1,
+            "health": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "citystalker_connoisseur",
+      "name": "Citystalker Connoisseur",
+      "cardClass": "neutral",
+      "cost": 5,
+      "rarity": "rare",
+      "set": "paper",
+      "description": "Deathtouch & Sanguine. Ward: Discard a card.",
+      "type": "creature",
+      "attack": 3,
+      "health": 3,
+      "tribe": "Vampire Rogue",
+      "ward": {
+        "discard": 1
+      },
+      "keywords": [
+        "deathtouch",
+        "sanguine"
+      ]
     }
   ]
 }

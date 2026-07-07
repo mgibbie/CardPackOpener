@@ -55,7 +55,7 @@ export const BOOST_TABLES = {
 	],
 	B: [
 		{ label: 'Venomous', keyword: 'deathtouch' },
-		PENDING('Ward: 2 Life'),
+		{ label: 'Ward: 2 Life', ward: { life: 2 } },
 		PENDING('Swing: Advance'),
 		{ label: 'Avenge 1: Gain 1 Life', ongoing: { on: 'friendly-creature-died', need: 1, once: true, effects: [{ type: 'heal', value: 1, target: 'self' }] } },
 		{ label: 'Reborn', keyword: 'reborn' },
@@ -146,6 +146,12 @@ function instantiate(def, controller) {
 		counters: 0,                  // +1/+1 counters banked on this creature
 		condAttack: def.condAttack || null, // "+N Attack while you have a weapon"
 		attackAgainOnKill: !!def.attackAgainOnKill, // Rush hunters: kills refund the attack
+		ward: def.ward ? { ...def.ward } : null, // cost to target: {mana?, life?, discard?}
+		magnetic: !!def.magnetic,     // may merge onto a friendly Mech instead of playing
+		echo: !!def.echo,             // leaves a ghost copy in hand until end of turn
+		echoGhost: false,
+		dormantLeft: def.dormant || 0, // turns asleep: untouchable until it wakes
+		awaken: def.awaken || null,    // effects fired when dormancy ends
 		activated: def.activated || null, // creature abilities: [{cost, tap, sacrifice, effects, text}]
 		activatedTap: false,          // used a {T} ability this turn (can't attack)
 		xSpell: !!def.xSpell,         // spends all remaining mana; X = the excess
@@ -370,6 +376,7 @@ export function drawCards(state, pi, count) {
 		card.zone = 'hand';
 		p.hand.push(card);
 		emit(state, { type: 'draw', player: pi, card });
+		questTick(state, 'draw', pi, 1, card);
 	}
 }
 
@@ -509,6 +516,7 @@ export function legalTargets(state, pi, spec) {
 	const pushCreatures = (side) => {
 		for (const c of state.players[side].board) {
 			if (c.type === 'location') continue; // locations aren't creatures
+			if (c.dormantLeft > 0) continue;     // dormant: untouchable
 			if (side !== pi && c.stealthed) continue; // stealth: untargetable by opponent
 			if (side !== pi && has(c, KW.ELUSIVE)) continue; // elusive: no enemy spells/powers
 			if (!spec.filter || spec.filter(c)) out.push({ type: 'creature', uid: c.uid, player: side });
@@ -612,6 +620,7 @@ export function sacrificeToken(state, pi, uid) {
 // ---------- damage / healing ----------
 function damageCreature(state, target, amount, source) {
 	if (target.type === 'location') return 0; // locations only wear out by tapping
+	if (target.dormantLeft > 0) return 0;     // dormant: immune while asleep
 	if (amount <= 0) return 0;
 	if (target.immuneTurn === state.turnNumber) return 0; // Bestial Wrath's Immune
 	if (target.shield) {
@@ -663,6 +672,7 @@ function damageHero(state, pi, amount, src = null, pierce = false) {
 		p.life = Math.max(0, p.life - amount);
 		emit(state, { type: 'damage', targetType: 'hero', player: pi, amount, life: p.life });
 		fireSecrets(state, pi, 'hero-takes-damage', { fatal: false, amount, src });
+		questTick(state, 'damage-taken', pi, amount);
 		return amount;
 	}
 	// fatal-damage secrets (Ice Block) fire before the damage lands
@@ -677,6 +687,7 @@ function damageHero(state, pi, amount, src = null, pierce = false) {
 	p.life = Math.max(0, p.life - toLife);
 	emit(state, { type: 'damage', targetType: 'hero', player: pi, amount, life: p.life });
 	if (toLife > 0) fireSecrets(state, pi, 'hero-takes-damage', { fatal: false, amount: toLife, src });
+	if (toLife > 0) questTick(state, 'damage-taken', pi, toLife);
 	return toLife;
 }
 
@@ -723,6 +734,7 @@ function silenceCreature(state, c) {
 	c.condKeyword = null;
 	c.condAttack = null;
 	c.attackAgainOnKill = false;
+	c.ward = null;
 	c.honorableKill = null;
 	c.medic = 0;
 	c.offTurnAttack = 0;
@@ -841,7 +853,7 @@ function summon(state, pi, tokenDef) {
 	c.zone = 'board';
 	p.board.push(c);
 	emit(state, { type: 'summon', player: pi, card: c });
-	questTick(state, 'summon', pi);
+	questTick(state, 'summon', pi, 1, c);
 	fireOngoing(state, pi, 'summoned', { minion: c });
 	recomputeAuras(state);
 	return c;
@@ -864,6 +876,7 @@ function recomputeAuras(state) {
 			.filter(c => c.aura && !c.aura.global && !(c.zone === 'board' && isDead(c)));
 		p.board.forEach((c, idx) => {
 			if (c.type === 'location') return; // auras don't touch locations
+			if (c.dormantLeft > 0) return;     // nor dormant sleepers
 			let aBonus = 0, hBonus = 0;
 			const granted = new Set();
 			for (const src of [...sources, ...globalSources]) {
@@ -999,13 +1012,15 @@ function staticValue(p, type) {
 // quest holder counts no matter whose creature fell
 const ANY_ACTOR_GOALS = new Set(['death']);
 
-function questTick(state, kind, actorPi, amount = 1) {
+function questTick(state, kind, actorPi, amount = 1, ctxCard = null) {
 	for (let pi = 0; pi < state.players.length; pi++) {
 		const p = state.players[pi];
 		if (p.eliminated || !p.quests.length) continue;
 		if (!ANY_ACTOR_GOALS.has(kind) && pi !== actorPi) continue;
 		for (const q of [...p.quests]) {
 			if (q.quest.goal.type !== kind) continue;
+			if (q.quest.goal.tribe && !(ctxCard?.tribe || '').includes(q.quest.goal.tribe)) continue;
+			if (q.quest.goal.cost != null && ctxCard?.cost !== q.quest.goal.cost) continue;
 			q.progress += amount;
 			emit(state, { type: 'questProgress', player: pi, card: q, progress: q.progress, goal: q.quest.goal.count });
 			if (q.progress >= q.quest.goal.count) {
@@ -1172,6 +1187,9 @@ export function activateAbility(state, pi, cardUid, i, target) {
 	const card = p.board.find(c => c.uid === cardUid);
 	if (!card || !canActivate(state, pi, card, i)) return false;
 	const a = card.activated[i];
+	const ward = wardOf(state, pi, target);
+	if (ward?.mana && availableMana(p) < (a.cost || 0) + ward.mana) return false;
+	if (ward) payWard(state, pi, target);
 	spendMana(p, a.cost || 0);
 	if (a.tap) card.activatedTap = true;
 	if (a.payLife) { p.life -= a.payLife; emit(state, { type: 'damage', targetType: 'hero', player: pi, amount: a.payLife, life: p.life }); }
@@ -3102,8 +3120,12 @@ export function playCard(state, pi, cardUid, target, choice, position) {
 	}
 	if (!card) return false;
 	if (!canPlay(state, pi, card)) return false;
+	// Ward: targeting an enemy warded creature costs extra — unaffordable = illegal
+	const ward = wardOf(state, pi, target);
+	if (ward?.mana && availableMana(p) < effectiveCost(state, pi, card) + ward.mana) return false;
 
 	take();
+	if (ward) payWard(state, pi, target);
 	if (card.xSpell) {
 		// X-spells drink every remaining point; X = what's left after the base cost
 		card.xValue = Math.max(0, availableMana(p) - effectiveCost(state, pi, card));
@@ -3121,18 +3143,45 @@ export function playCard(state, pi, cardUid, target, choice, position) {
 	emit(state, { type: 'play', player: pi, card, mana: availableMana(p) });
 	fireOngoing(state, pi, 'card-played', { played: card });
 
-	if (card.type === 'creature') {
+	if (card.type === 'creature' && card.magnetic && target?.type === 'creature'
+		&& (() => { const t = findCreature(state, target.uid);
+			return t && t.controller === pi && !isDead(t) && (t.tribe || '').includes('Mech'); })()) {
+		// Magnetic: merge onto the chosen friendly Mech instead of entering play
+		const t = findCreature(state, target.uid);
+		t.attack += card.attack;
+		t.maxHealth += card.maxHealth;
+		for (const k of card.keywords) {
+			if (k === 'battlecry' || t.keywords.includes(k)) continue;
+			t.keywords.push(k);
+			if (k === KW.DIVINE_SHIELD) t.shield = true;
+			if (k === KW.STEALTH) t.stealthed = true;
+		}
+		if (card.deathrattle) {
+			t.deathrattle = [...(t.deathrattle || []), ...card.deathrattle];
+			if (!t.keywords.includes('deathrattle')) t.keywords.push('deathrattle');
+		}
+		if (card.ongoing && !t.ongoing) t.ongoing = JSON.parse(JSON.stringify(card.ongoing));
+		p.creaturesPlayedThisTurn++;
+		emit(state, { type: 'magnetized', player: pi, uid: t.uid, name: card.name,
+			attack: t.attack, hp: hp(t) });
+		recomputeAuras(state);
+	} else if (card.type === 'creature') {
 		card.zone = 'board';
 		card.sick = true;
 		// position = insertion index (adjacency matters); default = right end
 		if (position == null || position >= p.board.length) p.board.push(card);
 		else p.board.splice(Math.max(0, position), 0, card);
 		p.creaturesPlayedThisTurn++;
-		questTick(state, 'summon', pi);
-		fireOngoing(state, pi, 'summoned', { minion: card });
-		runBattlecry(state, pi, card, target, choice);
-		if (p.board.includes(card)) fireSecretsAll(state, pi, 'enemy-minion-played', { minion: card });
-		if (p.board.includes(card) && !isDead(card)) fireOngoing(state, pi, 'creature-played', { minion: card });
+		questTick(state, 'summon', pi, 1, card);
+		if (card.dormantLeft > 0) {
+			// Dormant creatures sleep through everything until they wake
+			emit(state, { type: 'dormant', player: pi, uid: card.uid, turns: card.dormantLeft });
+		} else {
+			fireOngoing(state, pi, 'summoned', { minion: card });
+			runBattlecry(state, pi, card, target, choice);
+			if (p.board.includes(card)) fireSecretsAll(state, pi, 'enemy-minion-played', { minion: card });
+			if (p.board.includes(card) && !isDead(card)) fireOngoing(state, pi, 'creature-played', { minion: card });
+		}
 	} else if (card.type === 'location') {
 		// locations sit in the creature row (adjacency counts them as neighbors)
 		// but tap like lands and wear out after `durability` uses
@@ -3206,6 +3255,18 @@ export function playCard(state, pi, cardUid, target, choice, position) {
 		}
 		toGraveyard(state, pi, card);
 	}
+	// Echo: a ghost copy slips into hand, playable until the turn ends
+	if (card.echo && !p.eliminated && p.hand.length < MAX_HAND && !state.over) {
+		const def = state.cardsById[card.id];
+		if (def) {
+			const ghost = instantiate(def, pi);
+			ghost.zone = 'hand';
+			ghost.echoGhost = true;
+			p.hand.push(ghost);
+			emit(state, { type: 'conjure', player: pi, card: ghost, color: null });
+		}
+	}
+	questTick(state, 'play', pi, 1, card); // "Play N cards" quests
 	// counted AFTER resolution so Combo sees only cards played EARLIER this turn
 	p.cardsPlayedThisTurn++;
 	sweepDeaths(state);
@@ -3228,6 +3289,7 @@ export function attackersFor(state, pi) {
 export function canAttackWith(state, pi, c) {
 	if (state.over || state.current !== pi || c.attack <= 0) return false;
 	if (c.frozen) return false;
+	if (c.dormantLeft > 0) return false; // still asleep
 	if (c.activatedTap) return false; // used a {T} ability this turn
 	if (has(c, KW.PACIFIST)) return false;
 	const maxAttacks = has(c, KW.WINDFURY) ? 2 : 1;
@@ -3243,7 +3305,7 @@ export function attackTargets(state, pi, attacker) {
 	const out = [];
 	const rushOnly = attacker.sick && has(attacker, KW.RUSH) && !has(attacker, KW.CHARGE);
 	for (const opp of opponentsOf(state, pi)) {
-		const board = state.players[opp].board.filter(c => !c.stealthed && c.type !== 'location');
+		const board = state.players[opp].board.filter(c => !c.stealthed && c.type !== 'location' && c.dormantLeft <= 0);
 		// piercing ignores taunt walls
 		const taunts = has(attacker, KW.PIERCING) ? [] : board.filter(c => has(c, KW.TAUNT));
 		out.push(...(taunts.length ? taunts : board).map(c => ({ type: 'creature', uid: c.uid, player: opp })));
@@ -3382,7 +3444,7 @@ export function canHeroAttack(state, pi) {
 export function heroAttackTargets(state, pi) {
 	const out = [];
 	for (const opp of opponentsOf(state, pi)) {
-		const board = state.players[opp].board.filter(c => !c.stealthed && c.type !== 'location');
+		const board = state.players[opp].board.filter(c => !c.stealthed && c.type !== 'location' && c.dormantLeft <= 0);
 		const taunts = board.filter(c => has(c, KW.TAUNT));
 		out.push(...(taunts.length ? taunts : board).map(c => ({ type: 'creature', uid: c.uid, player: opp })));
 		if (!taunts.length) {
@@ -3541,6 +3603,7 @@ function applyRollEntry(state, t, entry) {
 	if (entry.static && !t.static) t.static = { ...entry.static };
 	if (entry.ongoing && !t.ongoing) t.ongoing = JSON.parse(JSON.stringify(entry.ongoing));
 	if (entry.deathrattle) t.deathrattle = [...(t.deathrattle || []), ...entry.deathrattle];
+	if (entry.ward && !t.ward) t.ward = { ...entry.ward };
 }
 
 function applyAdapt(state, t) {
@@ -3753,6 +3816,9 @@ export function useHeroPower(state, pi, cardUid, target, choice) {
 	const p = state.players[pi];
 	const card = p.heroPowers.find(c => c.uid === cardUid);
 	if (!card || !canUseHeroPower(state, pi, card, choice)) return false;
+	const ward = wardOf(state, pi, target);
+	if (ward?.mana && availableMana(p) < card.power.cost + ward.mana) return false;
+	if (ward) payWard(state, pi, target);
 	spendMana(p, card.power.cost);
 	card.usedThisTurn = true;
 	emit(state, { type: 'heroPowerUsed', player: pi, card, mana: availableMana(p) });
@@ -3760,6 +3826,31 @@ export function useHeroPower(state, pi, cardUid, target, choice) {
 	fireOngoing(state, pi, 'hero-power-used', {}); // Inspire
 	sweepDeaths(state);
 	return true;
+}
+
+// ---------- Ward: an extra cost the enemy pays to target this creature ----------
+function wardOf(state, pi, target) {
+	if (!target || target.type !== 'creature') return null;
+	const c = findCreature(state, target.uid);
+	return (c && c.ward && c.controller !== pi && c.dormantLeft <= 0) ? c.ward : null;
+}
+
+function payWard(state, pi, target) {
+	const w = wardOf(state, pi, target);
+	if (!w) return;
+	const p = state.players[pi];
+	if (w.mana) spendMana(p, w.mana);
+	if (w.life) {
+		p.life -= w.life;
+		emit(state, { type: 'damage', targetType: 'hero', player: pi, amount: w.life, life: p.life });
+	}
+	if (w.discard && p.hand.length) {
+		const c = p.hand[Math.floor(state.rng() * p.hand.length)];
+		p.hand = p.hand.filter(x => x !== c);
+		toGraveyard(state, pi, c);
+		emit(state, { type: 'discard', player: pi, card: c });
+	}
+	emit(state, { type: 'wardPaid', player: pi, uid: target.uid });
 }
 
 // Dampen Magic / Mysterious Tome: put a named Secret straight into play
@@ -3866,6 +3957,11 @@ export function endTurn(state) {
 		}
 		emit(state, { type: 'quickdrawReturn', player: pi, count: qd.length });
 	}
+	// Echo ghosts evaporate when their turn ends
+	for (const c of p.hand.filter(c => c.echoGhost)) {
+		emit(state, { type: 'echoFade', player: pi, name: c.name });
+	}
+	p.hand = p.hand.filter(c => !c.echoGhost);
 	// discard down to max
 	while (p.hand.length > MAX_HAND) {
 		const c = p.hand.pop();
@@ -3938,7 +4034,22 @@ export function endTurn(state) {
 	}
 	for (const hpw of np.heroPowers) hpw.usedThisTurn = false;
 	for (const pw of np.planeswalkers) pw.usedThisTurn = false;
-	for (const c of np.board) { c.sick = false; c.attacksUsed = 0; c.activatedTap = false; }
+	for (const c of np.board) {
+		if (c.dormantLeft > 0) {
+			// sleepers tick down at their owner's turn start; waking leaves them
+			// drowsy (summoning-sick) for the turn
+			c.dormantLeft--;
+			if (c.dormantLeft === 0) {
+				c.sick = true;
+				emit(state, { type: 'awaken', player: state.current, uid: c.uid, name: c.name });
+				if (c.awaken) execEffects(state, state.current, c.awaken, null, c);
+			}
+			continue;
+		}
+		c.sick = false;
+		c.attacksUsed = 0;
+		c.activatedTap = false;
+	}
 	emit(state, { type: 'turnStart', player: state.current, turnNumber: state.turnNumber });
 	fireOngoing(state, state.current, 'turn-start');
 	sweepDeaths(state);
