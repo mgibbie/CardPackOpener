@@ -680,7 +680,7 @@ function tick(now) {
 	// sprites in y order so overlaps stack correctly
 	const sprites = [...npcs.list, ...trainers.list, player].sort((a, b) => a.py - b.py);
 	for (const s of sprites) s.draw(ctx, camX, camY);
-	drawFriendGhost(ctx, camX, camY);
+	drawFriendGhosts(ctx, camX, camY);
 	world.drawLayer(ctx, 'top', camX, camY);
 	if (!battle.blocking) evolution.draw(ctx);
 
@@ -1074,15 +1074,18 @@ async function enterMatch(matchId, spectator, matchObj, side) {
 // ---------- multiplayer presence & visiting ----------
 let friendSprite = null; // green_normal.png, loaded lazily for friend ghosts
 getImage('data/sprites/green_normal.png').then(img => { friendSprite = img; }).catch(() => {});
+// every friend currently standing on my map, rendered as a live ghost
+const ghosts = new Map(); // username -> { tx, ty, facing, px, py }
 
-// tell the server where we are, every couple seconds while roaming
+// broadcast my position; fast when co-located so neighbours see me move
 async function heartbeat() {
-	if (!MP_ON || loading || battle.blocking) return;
+	if (!MP_ON || loading) return;
 	try {
 		await MP.call('heartbeat', {
 			map: world.current.name, x: player.tx, y: player.ty,
 			facing: player.facing,
-			status: visiting ? `visiting ${visiting.username}` : (battle.blocking ? 'battling' : 'roaming'),
+			status: pvp.blocking ? 'battling:' + (pvp.active?.matchId || '')
+				: visiting ? 'visiting:' + visiting.username : 'roaming',
 			region: world.current.map.name || '',
 		});
 	} catch (e) {}
@@ -1094,53 +1097,71 @@ async function visitWorld(f) {
 	const p = data.presence;
 	if (!p || !p.map) { dialog.open(`${f.username} isn't roaming right now.`); return; }
 	const file = world.fileFor(p.map) || p.map;
-	visiting = { username: f.username, ghost: { tx: p.x, ty: p.y, facing: p.facing || 'down', px: p.x * META, py: p.y * META } };
+	visiting = { username: f.username };
 	await moveToMap(file, p.x, p.y);
+	heartbeat();
 	dialog.open(`You warped into ${f.username}'s world!\n\nPress START and pick EXIT to return home.`);
-}
-
-// pull the friend's live position while visiting; also refresh the list
-async function pollVisit() {
-	if (!MP_ON || !visiting) return;
-	try {
-		const data = await MP.call('presence', { username: visiting.username });
-		const p = data.presence;
-		if (!p) { dialog.open(`${visiting.username} went offline. Returning home...`); await leaveVisit(); return; }
-		visiting.ghost.tx = p.x; visiting.ghost.ty = p.y; visiting.ghost.facing = p.facing || 'down';
-		// if they crossed to a new map, follow them there
-		const theirFile = world.fileFor(p.map) || p.map;
-		if (theirFile !== world.current.name) { await moveToMap(theirFile, p.x, p.y); }
-	} catch (e) {}
 }
 async function leaveVisit() {
 	visiting = null;
+	ghosts.clear();
 	let home = null;
 	try { home = JSON.parse(localStorage.getItem(POS_KEY)); } catch (e) {}
 	await moveToMap(home?.map ? (world.fileFor(home.map) || home.map) : 'PalletTown', home?.x, home?.y);
 }
 
-// draw the friend's ghost sprite (smoothly eased toward their reported tile)
-function drawFriendGhost(ctx, camX, camY) {
-	if (!visiting || !friendSprite) return;
-	const g = visiting.ghost;
-	const tx = g.tx * META, ty = g.ty * META;
-	g.px += (tx - g.px) * 0.2;
-	g.py += (ty - g.py) * 0.2;
-	const mirror = g.facing === 'right';
-	const frameX = { down: 0, up: 1, left: 2, right: 2 }[g.facing] * 16;
-	ctx.save();
-	const x = g.px - camX, y = g.py - 16 - camY;
-	if (mirror) { ctx.translate(x + 16, y); ctx.scale(-1, 1); }
-	else ctx.translate(x, y);
-	ctx.globalAlpha = 0.92;
-	ctx.drawImage(friendSprite, frameX, 0, 16, 32, 0, 0, 16, 32);
-	ctx.restore();
-	// a little name tag
-	ctx.fillStyle = '#fff';
-	ctx.font = '6px monospace';
-	ctx.textAlign = 'center';
-	ctx.fillText(visiting.username.slice(0, 8), g.px - camX + 8, g.py - 18 - camY);
-	ctx.textAlign = 'left';
+// one poll of every friend's presence: update ghosts for those on my map,
+// follow a visited friend across maps, drop friends who left
+async function pollPresence() {
+	if (!MP_ON || pvp.blocking) return;
+	try {
+		const data = await MP.call('friends');
+		if (data.friends) friends = data.friends;
+		const here = new Set();
+		for (const f of friends) {
+			if (visiting && f.username === visiting.username) {
+				if (!f.online) { dialog.open(`${visiting.username} went offline. Returning home…`); await leaveVisit(); return; }
+				const theirFile = world.fileFor(f.map) || f.map;
+				if (f.map && theirFile !== world.current.name && !loading) { await moveToMap(theirFile, f.x, f.y); }
+			}
+			if (f.online && f.map === world.current.name) {
+				here.add(f.username);
+				const g = ghosts.get(f.username) || { px: f.x * META, py: f.y * META };
+				g.tx = f.x; g.ty = f.y; g.facing = f.facing || 'down';
+				ghosts.set(f.username, g);
+			}
+		}
+		for (const u of [...ghosts.keys()]) if (!here.has(u)) ghosts.delete(u);
+	} catch (e) {}
+}
+
+// true when someone is (or could be) sharing my screen — drives fast polling
+function coLocated() {
+	return ghosts.size > 0 || !!visiting
+		|| friends.some(f => f.online && (f.map === world.current.name || (f.status || '').startsWith('visiting:')));
+}
+
+// draw every friend ghost on my map (eased toward their reported tile)
+function drawFriendGhosts(ctx, camX, camY) {
+	if (!friendSprite || !ghosts.size) return;
+	for (const [name, g] of ghosts) {
+		g.px += (g.tx * META - g.px) * 0.25;
+		g.py += (g.ty * META - g.py) * 0.25;
+		const mirror = g.facing === 'right';
+		const frameX = { down: 0, up: 1, left: 2, right: 2 }[g.facing] * 16;
+		ctx.save();
+		const x = g.px - camX, y = g.py - 16 - camY;
+		if (mirror) { ctx.translate(x + 16, y); ctx.scale(-1, 1); }
+		else ctx.translate(x, y);
+		ctx.globalAlpha = 0.92;
+		ctx.drawImage(friendSprite, frameX, 0, 16, 32, 0, 0, 16, 32);
+		ctx.restore();
+		ctx.fillStyle = '#fff';
+		ctx.font = '6px monospace';
+		ctx.textAlign = 'center';
+		ctx.fillText(name.slice(0, 8), g.px - camX + 8, g.py - 18 - camY);
+		ctx.textAlign = 'left';
+	}
 }
 
 // ---------- boot ----------
@@ -1210,14 +1231,17 @@ function drawFriendGhost(ctx, camX, camY) {
 	if (MP_ON) {
 		mpAccount = MP.cachedState() || await MP.freshState();
 		hud.textContent = `${world.current.map.name || startMap}  ·  ${mpAccount?.username || ''} (${mpAccount?.friendCode || '……'})`;
-		heartbeat();
-		setInterval(heartbeat, 3000);
-		setInterval(pollVisit, 1500);
+		// adaptive presence: ~450ms when someone shares the map (minimal
+		// latency for side-by-side screens), ~1.8s when roaming alone
+		const beatLoop = () => heartbeat().finally(() => setTimeout(beatLoop, coLocated() ? 450 : 1800));
+		const presLoop = () => pollPresence().finally(() => setTimeout(presLoop, coLocated() ? 400 : 1400));
+		beatLoop();
+		presLoop();
 		setInterval(pollChallenges, 2000);
 	}
 	window.__ow = { world, player, warpTo, moveToMap, npcs, encounters, battle, trainers, dialog, evolution, items, get party() { return party; }, get menuUi() { return menuUi; }, menuTap, pumpPlayer, freezeLoop, startWildBattle, interact,
 		get startMenu() { return startMenu; }, get cardsMenu() { return cardsMenu; }, get friendsMenu() { return friendsMenu; },
-		get friends() { return friends; }, get visiting() { return visiting; }, refreshFriends, visitWorld, leaveVisit, heartbeat, MP_ON,
+		get friends() { return friends; }, get visiting() { return visiting; }, refreshFriends, visitWorld, leaveVisit, heartbeat, pollPresence, get ghosts() { return ghosts; }, MP_ON,
 		get pvp() { return pvp; }, pvpParty, sendChallenge, enterMatch, pollChallenges, get pending() { return pendingChallengeTo; } };
 	requestAnimationFrame(tick);
 })();
