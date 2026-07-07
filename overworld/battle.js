@@ -50,7 +50,7 @@ const STAT_MOVES = {
 	featherdance: { stat: 'atk', d: -2, foe: true }, captivate: { stat: 'spa', d: -2, foe: true },
 	eerieimpulse: { stat: 'spa', d: -2, foe: true }, confide: { stat: 'spa', d: -1, foe: true },
 	babydolleyes: { stat: 'atk', d: -1, foe: true }, playnice: { stat: 'atk', d: -1, foe: true },
-	sweetscent: { stat: 'eva', d: -1, foe: true },
+	sweetscent: { stat: 'eva', d: -1, foe: true }, tarshot: { stat: 'spe', d: -1, foe: true },
 	tickle: { stats: { atk: -1, def: -1 }, foe: true },
 	tearfullook: { stats: { atk: -1, spa: -1 }, foe: true },
 	sandattack: { stat: 'acc', d: -1, foe: true }, smokescreen: { stat: 'acc', d: -1, foe: true },
@@ -97,7 +97,7 @@ const MOVE_FX = {
 	dynamicpunch: { sec: { confuse: true, ch: 100 } }, signalbeam: { sec: { confuse: true, ch: 10 } },
 	hurricane: { sec: { confuse: true, ch: 30 } },
 	leechseed: { seed: true },
-	reflect: { screen: 'reflect' }, lightscreen: { screen: 'light' },
+	reflect: { screen: 'reflect' }, lightscreen: { screen: 'light' }, auroraveil: { screen: 'both' },
 	// secondary status/flinch chances on damaging moves
 	ember: { sec: { status: 'brn', ch: 10 } }, flamethrower: { sec: { status: 'brn', ch: 10 } },
 	fireblast: { sec: { status: 'brn', ch: 30 } }, firepunch: { sec: { status: 'brn', ch: 10 } },
@@ -845,6 +845,13 @@ export class Battle {
 			}
 			if (fx.screen) {
 				const side = isFoe ? a.foeScreens : a.meScreens;
+				if (fx.screen === 'both') {
+					if (side.reflect > 0 && side.light > 0) { this.pushMsg('But it failed!'); return; }
+					side.reflect = Math.max(side.reflect || 0, 5);
+					side.light = Math.max(side.light || 0, 5);
+					this.pushMsg(`${user.name} is protected by Aurora Veil!`);
+					return;
+				}
 				if (side[fx.screen] > 0) { this.pushMsg('But it failed!'); return; }
 				side[fx.screen] = 5;
 				this.pushMsg(fx.screen === 'reflect'
