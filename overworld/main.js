@@ -280,6 +280,15 @@ function friendAction(f) {
 		});
 		return;
 	}
+	// friend is in a card game → offer to watch it (navigates to Battlecards)
+	if ((f.status || '').startsWith('card:')) {
+		const mode = f.status.slice('card:'.length);
+		const what = mode === 'dungeon' ? 'dungeon run' : 'card battle';
+		dialog.open(`${f.username} is in a ${what}!  Z=Watch  X=Cancel`, (declined) => {
+			if (declined !== 'x') location.href = '/battlecards/?spectate=' + encodeURIComponent(f.username) + '&mp=1';
+		});
+		return;
+	}
 	dialog.open(`${f.username}:  Z=Battle challenge  X=Visit world`, (declined) => {
 		if (declined === 'x') visitWorld(f);
 		else sendChallenge(f);

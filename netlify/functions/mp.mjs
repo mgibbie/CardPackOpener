@@ -277,6 +277,37 @@ export default async function handler(req) {
 		return json({ presence: online ? p : null });
 	}
 
+	// ---------- card-game spectation (state broadcast) ----------
+	const CARDSTATE_MS = 20_000; // a snapshot older than 20s is treated as done
+
+	// the player in a dungeon run / card battle publishes a board snapshot here
+	// every ~1.2s; it doubles as a presence ping so friends see them "in a run"
+	if (action === 'publish-cardstate') {
+		await store.setJSON('cardstate:' + username, {
+			snapshot: body.snapshot || null,
+			mode: String(body.mode || 'battle'),
+			label: String(body.label || ''),
+			seq: +body.seq || 0,
+			ts: Date.now(),
+		});
+		await store.setJSON('presence:' + username, {
+			name: username, map: '', x: 0, y: 0, facing: 'down',
+			status: 'card:' + String(body.mode || 'battle'),
+			region: String(body.label || ''),
+			lastSeen: Date.now(),
+		});
+		return json({ ok: true });
+	}
+
+	// a friend reads the latest snapshot to render read-only
+	if (action === 'cardstate') {
+		const who = String(body.username || '');
+		if (!user.friends.includes(who)) return json({ error: 'not your friend' }, 403);
+		const cs = await store.get('cardstate:' + who);
+		if (!cs || Date.now() - cs.ts > CARDSTATE_MS) return json({ snapshot: null });
+		return json(cs);
+	}
+
 	// ---------- live battles (server-authoritative PvP) ----------
 	const CHALLENGE_MS = 60_000, MATCH_MS = 30 * 60_000;
 

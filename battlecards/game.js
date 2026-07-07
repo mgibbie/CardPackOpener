@@ -28,6 +28,11 @@ let dungeonBossId = (id => Dungeon.BOSSES[id] ? id : null)(
 	new URLSearchParams(location.search).get('boss'));
 if (dungeonBossId || dungeonRunMode) playerCount = 2;
 
+// ?spectate=<friend> (MP only): render a friend's live dungeon-run/battle board
+// read-only from the snapshots they publish — no input, no AI.
+const spectateName = MP_ON ? new URLSearchParams(location.search).get('spectate') : null;
+const spectateMode = !!spectateName;
+
 const loadRun = () => { try { return JSON.parse(localStorage.getItem(RUN_KEY)); } catch (e) { return null; } };
 const saveRun = run => localStorage.setItem(RUN_KEY, JSON.stringify(run));
 const clearRun = () => localStorage.removeItem(RUN_KEY);
@@ -797,8 +802,49 @@ function buildPanels() {
 	$('my-title').textContent = myCls ? `You — ${myCls}` : 'Your Hero';
 }
 
+// read-only HUD for a watcher: fill both sides' stats, mark whose turn it is,
+// and never light up controls or "your turn" affordances
+function updateHudSpectate() {
+	const label = pi => pi === HUMAN ? spectateName
+		: (state.classPicks?.[pi]?.name || `Opponent ${pi}`);
+	const gearOf = p => {
+		const g = [];
+		if (p.weapon) g.push(`⚔ ${p.weapon.name || ''} ${p.weapon.attack}/${p.weapon.durability}`);
+		if (p.secrets?.length) g.push(`❓ ${p.secrets.length}`);
+		if (p.traps?.length) g.push(`⚠ ${p.traps.length}`);
+		if (p.fatigue) g.push(`☠ ${p.fatigue}`);
+		if (p.corpses && p.heroClass === 'death_knight') g.push(`⚰ ${p.corpses}`);
+		return g;
+	};
+	const me = state.players[HUMAN];
+	$('my-life').textContent = me.life + (me.armor ? `+${me.armor}` : '');
+	$('my-mana').textContent = `${E.availableMana(me)}/${me.mana.max}`;
+	$('my-deck').textContent = me.deck.length;
+	$('my-gear').innerHTML = gearOf(me).join('<br>');
+	$('my-panel').classList.toggle('turn', state.current === HUMAN && !state.over);
+	$('my-panel').classList.toggle('dead', me.eliminated);
+	$('my-title').textContent = label(HUMAN);
+	for (const [pi, el] of foePanelEls) {
+		const p = state.players[pi];
+		el.querySelector('.life').textContent = p.life + (p.armor ? `+${p.armor}` : '');
+		el.querySelector('.mana').textContent = `${E.availableMana(p)}/${p.mana.max}`;
+		el.querySelector('.hand').textContent = p.hand.length;
+		el.querySelector('.deck').textContent = p.deck.length;
+		el.querySelector('.gear').innerHTML = gearOf(p).join(' · ');
+		el.classList.toggle('dead', p.eliminated);
+		el.classList.toggle('turn', state.current === pi && !state.over);
+	}
+	$('end-turn').style.display = 'none';
+	$('concede').style.display = 'none';
+	$('coin-btn').style.display = 'none';
+	$('hint').textContent = state.over
+		? `${label(state.winner)} wins!`
+		: `${label(state.current)} is playing…`;
+}
+
 function updateHud() {
 	if (!state) return;
+	if (spectateMode) { updateHudSpectate(); return; }
 	const me = state.players[HUMAN];
 	$('my-life').textContent = me.life + (me.armor ? `+${me.armor}` : '');
 	$('my-mana').textContent = `${E.availableMana(me)}/${me.mana.max}`;
@@ -1647,6 +1693,7 @@ addEventListener('contextmenu', ev => { ev.preventDefault(); clearModes(); });
 
 renderer.domElement.addEventListener('pointerdown', ev => {
 	hideWalkerMenu();
+	if (spectateMode) return;
 	if (ev.button !== 0 || !state || state.over || state.current !== HUMAN) return;
 	const uid = pick(ev);
 	const card = cardOf(uid);
@@ -1867,6 +1914,7 @@ function tryCommitTargetAt(ev) {
 
 addEventListener('pointerup', ev => {
 	clearTimeout(longPressT);
+	if (spectateMode) return;
 	// creature placement: tap appends right, a drag onto the board picks the gap
 	if (placing) {
 		const c = placing.card;
@@ -1912,7 +1960,7 @@ addEventListener('pointerup', ev => {
 
 // hero panels as click targets (attacks + targeted spells at heroes)
 function panelClick(pi) {
-	if (!state || state.over || state.current !== HUMAN) return;
+	if (spectateMode || !state || state.over || state.current !== HUMAN) return;
 	if (pending) {
 		const t = pending.targets.find(t => t.type === 'hero' && t.player === pi);
 		if (t) commitPending(t);
@@ -2110,6 +2158,83 @@ function pickClasses() {
 	return picks;
 }
 
+// ---------- multiplayer spectation ----------
+// A player in a run/battle broadcasts a lean board snapshot (no card DB, no rng)
+// every ~1.2s; friends poll it and render read-only. cardsById is re-attached
+// locally on the watcher side since every client already has the full card DB.
+function snapshotState() {
+	if (!state) return null;
+	return {
+		players: state.players,
+		current: state.current,
+		turnNumber: state.turnNumber,
+		over: state.over,
+		winner: state.winner,
+		classPicks: state.classPicks || null,
+		playerCount: state.players.length,
+	};
+}
+
+let publishSeq = 0;
+function startPublishLoop() {
+	const mode = dungeonRunMode ? 'dungeon' : 'battle';
+	const label = () => dungeonBossId
+		? `${Dungeon.BOSSES[dungeonBossId].name}${loadRun()?.level ? ' · Lv ' + loadRun().level : ''}`
+		: 'Card Battle';
+	const tick = async () => {
+		try {
+			await MPX.call('publish-cardstate', {
+				snapshot: snapshotState(), mode, label: label(), seq: ++publishSeq,
+			});
+		} catch (e) {}
+	};
+	tick();
+	setInterval(tick, 1200);
+}
+
+let spectateSeq = -1, spectatePanelsFor = 0;
+function startSpectate(cardsById) {
+	banner(`Spectating ${spectateName}`);
+	$('end-turn').style.display = 'none';
+	$('concede').style.display = 'none';
+	$('coin-btn').style.display = 'none';
+	$('player-count').style.display = 'none';
+	$('class-select').style.display = 'none';
+	log(`Watching ${spectateName}'s game…`);
+	const tick = async () => {
+		let data;
+		try { data = await MPX.call('cardstate', { username: spectateName }); }
+		catch (e) { return; }
+		if (!data || !data.snapshot) {
+			if (spectateSeq >= 0 && !$('over-note')) {
+				const el = dungeonOverlay('GAME OVER', `${spectateName}'s game has ended.`);
+				el.id = 'over-note';
+				el.appendChild(overlayButton('Back to your world', () => { location.href = '/overworld/?mp=1'; }));
+			}
+			return;
+		}
+		if (data.seq === spectateSeq) return; // nothing new
+		spectateSeq = data.seq;
+		const snap = data.snapshot;
+		// re-attach the local card DB + a live rng; queues are irrelevant to a watcher
+		state = {
+			...snap, cardsById, rng: Math.random,
+			events: [], scryQueue: [], discardQueue: [], pickQueue: [],
+		};
+		if (snap.playerCount !== spectatePanelsFor) {
+			playerCount = snap.playerCount;
+			frameCamera();
+			buildPanels();
+			buildSlotMarkers();
+			spectatePanelsFor = snap.playerCount;
+		}
+		banner(`${spectateName}${data.label ? ' — ' + data.label : ''}`);
+		updateHud();
+	};
+	tick();
+	setInterval(tick, 1000);
+}
+
 async function start() {
 	for (const uid of [...entities.keys()]) removeEntity(uid);
 	queue.length = 0;
@@ -2123,6 +2248,7 @@ async function start() {
 	const data = await (await fetch('cards.json')).json();
 	const cardsById = {};
 	for (const d of data.cards) cardsById[d.id] = d;
+	if (spectateMode) { startSpectate(cardsById); return; }
 	if (!classRegistry.length) {
 		try {
 			classRegistry = (await (await fetch('classes.json')).json()).classes;
@@ -2189,7 +2315,10 @@ async function start() {
 	buildSlotMarkers();
 	pump();
 	updateHud();
+	// once in MP mode, broadcast the board so friends can spectate the run/battle
+	if (MP_ON && !spectateMode && !publishStarted) { publishStarted = true; startPublishLoop(); }
 }
+let publishStarted = false;
 
 function bootEncounter(cardsById, bossId, clsId, deckIds, passives, level) {
 	dungeonBossId = bossId;
