@@ -75,12 +75,12 @@ export function monPanel(ctx, mon, x, y, w, u, opts = {}) {
 		ctx.font = `${Math.round(15 * u)}px m6x11plus, monospace`;
 		ctx.fillText(mon.gender === 'M' ? '♂' : '♀', x + pad + nw + 5 * u, y + pad + 13 * u);
 	}
-	// ability under the level, dim (matches the Love2D panel)
+	// ability + held item under the level, dim (matches the Love2D panel)
 	if (opts.abilityName) {
 		ctx.fillStyle = C.faint;
 		ctx.font = `${Math.round(10 * u)}px m6x11plus, monospace`;
 		ctx.textAlign = 'right';
-		ctx.fillText(opts.abilityName, x + w - pad, y + pad + 46 * u);
+		ctx.fillText(opts.abilityName + (opts.itemName ? ' · ' + opts.itemName : ''), x + w - pad, y + pad + 46 * u);
 		ctx.textAlign = 'left';
 	}
 	ctx.fillStyle = C.dim;

@@ -210,6 +210,13 @@ function bagKey(k) {
 					for (const mv of mon.moves) mv.pp = Math.min(mv.maxPp, mv.pp + item.amount);
 					saveParty(party);
 					bagMenu.picking = false;
+				} else if (item.kind === 'held') {
+					// give the item; anything already held returns to the bag
+					Bag.consume(id);
+					if (mon.heldItem) Bag.addItem(mon.heldItem);
+					mon.heldItem = id;
+					saveParty(party);
+					bagMenu.picking = false;
 				}
 			}
 		}
@@ -221,7 +228,7 @@ function bagKey(k) {
 	if ((k === 'z' || k === 'Enter') && entries.length) {
 		const [id] = entries[bagMenu.idx];
 		const kind = Bag.ITEMS[id]?.kind;
-		if (kind === 'heal' || kind === 'revive' || kind === 'candy' || kind === 'ether') { bagMenu.picking = true; bagMenu.pickIdx = 0; }
+		if (['heal', 'revive', 'candy', 'ether', 'held'].includes(kind)) { bagMenu.picking = true; bagMenu.pickIdx = 0; }
 	}
 }
 
@@ -575,10 +582,17 @@ function monRow(id, x, y, w, h, mon, selected, u, note) {
 
 function drawPartyMenu(W, H) {
 	const u = H / 480;
-	menuChrome(W, H, u, 'PARTY', 'Tap a POKEMON to make it your lead.');
+	menuChrome(W, H, u, 'PARTY', 'Tap a POKEMON to make it your lead. TAKE returns its held item.');
 	party.forEach((m, i) => {
-		monRow('party:' + i, 24 * u, (76 + i * 62) * u, W - 48 * u, 56 * u, m,
-			partyMenu.idx === i, u, i === 0 ? 'LEAD' : '');
+		const note = (i === 0 ? 'LEAD ' : '') + (m.heldItem ? Bag.ITEMS[m.heldItem]?.name || m.heldItem : '');
+		monRow('party:' + i, 24 * u, (76 + i * 62) * u, W - 48 * u - (m.heldItem ? 74 * u : 0), 56 * u, m,
+			partyMenu.idx === i, u, note.trim());
+		if (m.heldItem) {
+			const b = { id: 'take:' + i, x: W - 24 * u - 68 * u, y: (76 + i * 62) * u, w: 68 * u, h: 56 * u,
+				label: 'TAKE', center: true };
+			menuUi.push(b);
+			BUI.button(sctx, b, menuHover === b.id, u);
+		}
 	});
 }
 
@@ -626,14 +640,22 @@ function drawStarterMenu(W, H) {
 function drawShopMenu(W, H) {
 	const u = H / 480;
 	menuChrome(W, H, u, 'POKE MART', `Money: $${Bag.getMoney()} — tap to buy`);
-	Bag.SHOP_STOCK.forEach((id, i) => {
+	// windowed list: 7 rows around the selection, with scroll buttons
+	const start = Math.max(0, Math.min(shopMenu.idx - 3, Bag.SHOP_STOCK.length - 7));
+	Bag.SHOP_STOCK.slice(start, start + 7).forEach((id, i) => {
+		const idx = start + i;
 		const it = Bag.ITEMS[id];
-		const bid = 'buy:' + i;
-		const b = { id: bid, x: 24 * u, y: (76 + i * 54) * u, w: W - 48 * u, h: 48 * u,
-			label: it.name, sub: `have ${Bag.count(id)}`, right: `$${it.price}`, kbSel: shopMenu.idx === i };
+		const bid = 'buy:' + idx;
+		const b = { id: bid, x: 24 * u, y: (76 + i * 52) * u, w: W - 118 * u, h: 46 * u,
+			label: it.name, sub: `have ${Bag.count(id)}`, right: `$${it.price}`, kbSel: shopMenu.idx === idx };
 		menuUi.push(b);
-		BUI.button(sctx, b, menuHover === bid || shopMenu.idx === i, u);
+		BUI.button(sctx, b, menuHover === bid || shopMenu.idx === idx, u);
 	});
+	for (const [id, label, y] of [['shopscroll:-1', '▲', 76], ['shopscroll:1', '▼', 300]]) {
+		const b = { id, x: W - 86 * u, y: y * u, w: 62 * u, h: 140 * u, label, center: true };
+		menuUi.push(b);
+		BUI.button(sctx, b, menuHover === id, u);
+	}
 	if (shopMenu.flash) {
 		sctx.fillStyle = BUI.C.accent;
 		sctx.font = `${Math.round(15 * u)}px m6x11plus, monospace`;
@@ -696,8 +718,18 @@ function menuTap(id) {
 	const [kind, a, b2] = id.split(':');
 	if (kind === 'close') { pressKey('Escape'); pressKey('x'); return; }
 	if (kind === 'party') { partyMenu.idx = +a; if (+a > 0) pressKey('z'); return; }
+	if (kind === 'take') {
+		const mon = party[+a];
+		if (mon?.heldItem) {
+			Bag.addItem(mon.heldItem);
+			mon.heldItem = null;
+			saveParty(party);
+		}
+		return;
+	}
 	if (kind === 'starter') { starterMenu.row = +a; starterMenu.col = +b2; pressKey('z'); return; }
 	if (kind === 'buy') { shopMenu.idx = +a; pressKey('z'); return; }
+	if (kind === 'shopscroll') { pressKey(+a > 0 ? 'ArrowDown' : 'ArrowUp'); return; }
 	if (kind === 'item') { bagMenu.idx = +a; bagMenu.picking = false; pressKey('z'); return; }
 	if (kind === 'use') { bagMenu.pickIdx = +a; pressKey('z'); return; }
 	if (kind === 'pcp') { pcMenu.side = 0; pcMenu.idx = +a; pressKey('z'); return; }

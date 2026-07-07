@@ -13,6 +13,51 @@ export const ITEMS = {
 	ether:       { name: 'ETHER',        price: 1200, kind: 'ether', amount: 10 },
 	revive:      { name: 'REVIVE',       price: 1500, kind: 'revive' },
 	rarecandy:   { name: 'RARE CANDY',   price: 0,    kind: 'candy' },
+	// held items: give one to a party member from the bag
+	oranberry:   { name: 'ORAN BERRY',   price: 100,  kind: 'held', held: { berryHeal: 10 } },
+	sitrusberry: { name: 'SITRUS BERRY', price: 400,  kind: 'held', held: { berryHealFrac: 0.25 } },
+	lumberry:    { name: 'LUM BERRY',    price: 500,  kind: 'held', held: { cure: 'any' } },
+	chestoberry: { name: 'CHESTO BERRY', price: 150,  kind: 'held', held: { cure: 'slp' } },
+	pechaberry:  { name: 'PECHA BERRY',  price: 150,  kind: 'held', held: { cure: 'psn' } },
+	cheriberry:  { name: 'CHERI BERRY',  price: 150,  kind: 'held', held: { cure: 'par' } },
+	rawstberry:  { name: 'RAWST BERRY',  price: 150,  kind: 'held', held: { cure: 'brn' } },
+	aspearberry: { name: 'ASPEAR BERRY', price: 150,  kind: 'held', held: { cure: 'frz' } },
+	persimberry: { name: 'PERSIM BERRY', price: 150,  kind: 'held', held: { cure: 'confusion' } },
+	leftovers:   { name: 'LEFTOVERS',    price: 3000, kind: 'held', held: { endHealFrac: 1 / 16 } },
+	blacksludge: { name: 'BLACK SLUDGE', price: 1500, kind: 'held', held: { sludge: true } },
+	choiceband:  { name: 'CHOICE BAND',  price: 4800, kind: 'held', held: { choice: 'atk' } },
+	choicespecs: { name: 'CHOICE SPECS', price: 4800, kind: 'held', held: { choice: 'spa' } },
+	choicescarf: { name: 'CHOICE SCARF', price: 4800, kind: 'held', held: { choice: 'spe' } },
+	lifeorb:     { name: 'LIFE ORB',     price: 4900, kind: 'held', held: { lifeOrb: true } },
+	expertbelt:  { name: 'EXPERT BELT',  price: 3000, kind: 'held', held: { expertBelt: true } },
+	muscleband:  { name: 'MUSCLE BAND',  price: 1500, kind: 'held', held: { catBoost: 'Physical' } },
+	wiseglasses: { name: 'WISE GLASSES', price: 1500, kind: 'held', held: { catBoost: 'Special' } },
+	focussash:   { name: 'FOCUS SASH',   price: 2000, kind: 'held', held: { sash: true } },
+	quickclaw:   { name: 'QUICK CLAW',   price: 2000, kind: 'held', held: { quickClaw: true } },
+	kingsrock:   { name: "KING'S ROCK",  price: 2000, kind: 'held', held: { flinch10: true } },
+	rockyhelmet: { name: 'ROCKY HELMET', price: 2500, kind: 'held', held: { helmet: true } },
+	shellbell:   { name: 'SHELL BELL',   price: 2000, kind: 'held', held: { shellBell: true } },
+	brightpowder:{ name: 'BRIGHTPOWDER', price: 2500, kind: 'held', held: { evade: 0.9 } },
+	widelens:    { name: 'WIDE LENS',    price: 1500, kind: 'held', held: { accBoost: 1.1 } },
+	scopelens:   { name: 'SCOPE LENS',   price: 2000, kind: 'held', held: { critBoost: true } },
+	lightclay:   { name: 'LIGHT CLAY',   price: 1500, kind: 'held', held: { screens8: true } },
+	charcoal:    { name: 'CHARCOAL',     price: 1000, kind: 'held', held: { typeBoost: 'Fire' } },
+	mysticwater: { name: 'MYSTIC WATER', price: 1000, kind: 'held', held: { typeBoost: 'Water' } },
+	magnet:      { name: 'MAGNET',       price: 1000, kind: 'held', held: { typeBoost: 'Electric' } },
+	miracleseed: { name: 'MIRACLE SEED', price: 1000, kind: 'held', held: { typeBoost: 'Grass' } },
+	nevermeltice:{ name: 'NEVERMELTICE', price: 1000, kind: 'held', held: { typeBoost: 'Ice' } },
+	blackbelt:   { name: 'BLACK BELT',   price: 1000, kind: 'held', held: { typeBoost: 'Fighting' } },
+	poisonbarb:  { name: 'POISON BARB',  price: 1000, kind: 'held', held: { typeBoost: 'Poison' } },
+	softsand:    { name: 'SOFT SAND',    price: 1000, kind: 'held', held: { typeBoost: 'Ground' } },
+	sharpbeak:   { name: 'SHARP BEAK',   price: 1000, kind: 'held', held: { typeBoost: 'Flying' } },
+	twistedspoon:{ name: 'TWISTEDSPOON', price: 1000, kind: 'held', held: { typeBoost: 'Psychic' } },
+	silverpowder:{ name: 'SILVERPOWDER', price: 1000, kind: 'held', held: { typeBoost: 'Bug' } },
+	hardstone:   { name: 'HARD STONE',   price: 1000, kind: 'held', held: { typeBoost: 'Rock' } },
+	spelltag:    { name: 'SPELL TAG',    price: 1000, kind: 'held', held: { typeBoost: 'Ghost' } },
+	dragonfang:  { name: 'DRAGON FANG',  price: 1000, kind: 'held', held: { typeBoost: 'Dragon' } },
+	blackglasses:{ name: 'BLACKGLASSES', price: 1000, kind: 'held', held: { typeBoost: 'Dark' } },
+	metalcoat:   { name: 'METAL COAT',   price: 1000, kind: 'held', held: { typeBoost: 'Steel' } },
+	silkscarf:   { name: 'SILK SCARF',   price: 1000, kind: 'held', held: { typeBoost: 'Normal' } },
 	// common overworld pickups that map onto shop items
 	fullrestore: { name: 'FULL RESTORE', price: 0, kind: 'heal', amount: 999 },
 	maxpotion:   { name: 'MAX POTION',   price: 0, kind: 'heal', amount: 999 },
@@ -39,7 +84,13 @@ export function nameOf(id) {
 	} catch (e) {}
 	return id.toUpperCase();
 }
-export const SHOP_STOCK = ['pokeball', 'greatball', 'ultraball', 'potion', 'superpotion', 'hyperpotion', 'ether', 'revive'];
+export const SHOP_STOCK = ['pokeball', 'greatball', 'ultraball', 'potion', 'superpotion',
+	'hyperpotion', 'ether', 'revive', 'oranberry', 'sitrusberry', 'lumberry', 'leftovers',
+	'choiceband', 'choicespecs', 'choicescarf', 'lifeorb', 'focussash', 'quickclaw',
+	'kingsrock', 'rockyhelmet', 'shellbell', 'scopelens', 'charcoal', 'mysticwater', 'magnet', 'miracleseed'];
+// held items a wild mon might be carrying (15% roll)
+export const WILD_HELD = ['oranberry', 'sitrusberry', 'lumberry', 'chestoberry', 'pechaberry',
+	'cheriberry', 'persimberry', 'leftovers', 'quickclaw', 'kingsrock'];
 
 export function getMoney() {
 	const v = parseInt(localStorage.getItem(MONEY_KEY), 10);
