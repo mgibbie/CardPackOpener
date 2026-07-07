@@ -750,13 +750,24 @@ function portraitBlock(pi, big) {
 		orb.className = 'power-orb';
 		orb.dataset.uid = power.uid;
 		orb.style.width = orb.style.height = big ? '48px' : '32px';
-		orb.title = `${power.name}: ${power.description}`;
+		// hover (PC) / long-press (mobile) reveals what the power does
+		attachTip(orb, { name: power.name, type: 'heropower', cost: power.power.cost, description: power.description });
 		if (pi === HUMAN) {
-			orb.addEventListener('pointerdown', ev => {
-				ev.stopPropagation();
-				const card = classPowerOf(HUMAN);
-				if (card) activateHeroPower(card, ev);
-			});
+			if (TOUCH) {
+				// a quick tap activates; a hold shows the tooltip instead
+				orb.addEventListener('pointerup', ev => {
+					ev.stopPropagation();
+					if (orb._tipFired) return;
+					const card = classPowerOf(HUMAN);
+					if (card) activateHeroPower(card, ev);
+				});
+			} else {
+				orb.addEventListener('pointerdown', ev => {
+					ev.stopPropagation();
+					const card = classPowerOf(HUMAN);
+					if (card) activateHeroPower(card, ev);
+				});
+			}
 		}
 		wrap.appendChild(orb);
 	}
@@ -2189,9 +2200,14 @@ function bootEncounter(cardsById, bossId, clsId, deckIds, passives, level) {
 	const picks = [clsPick, bossPick];
 	state = E.createGame(cardsById, Math.random, [...deckIds], 2, picks);
 	state.classPicks = picks;
-	// boss surgery: its recorded deck, its health, no western corner zones
+	// boss surgery: its recorded deck, no western corner zones. In a dungeon
+	// run both heroes share a scaling life total (15 at level 1, +5 each level);
+	// a one-off ?boss= fight keeps the boss's designed health.
 	const bp = state.players[1];
-	bp.life = boss.health;
+	const runHP = level ? 15 + (level - 1) * 5 : null;
+	bp.life = runHP ?? boss.health;
+	bp.maxLife = bp.life;
+	if (runHP != null) { state.players[HUMAN].life = runHP; state.players[HUMAN].maxLife = runHP; }
 	bp.deck = [...boss.deck].sort(() => Math.random() - 0.5);
 	bp.hand = [];
 	E.drawCards(state, 1, 4);
@@ -2199,7 +2215,7 @@ function bootEncounter(cardsById, bossId, clsId, deckIds, passives, level) {
 	if (boss.passive === 'deathrattles-twice' || boss.passive === 'both-twice') bp.deathrattlesTwice = true;
 	for (const p of state.players) { p.companion = null; p.command = []; }
 	applyTreasures(passives || []);
-	log(`${level ? `Dungeon level ${level}` : 'Dungeon Run'} — ${boss.name} (${boss.health} HP): "${boss.flavor}"`);
+	log(`${level ? `Dungeon level ${level}` : 'Dungeon Run'} — ${boss.name} (${bp.life} HP): "${boss.flavor}"`);
 	if (boss.power) log(`Boss power — ${boss.power.name} (${boss.power.cost}): ${boss.power.text}`);
 	if (boss.passive) log(`Boss passive — ${boss.passive.replace(/-/g, ' ')}.`);
 	log(`You are a ${clsPick.name} with a ${deckIds.length}-card dungeon deck.`);
@@ -2217,7 +2233,7 @@ function applyTreasures(ids) {
 	});
 	for (const t of ids) {
 		switch (t) {
-			case 'potion_of_vitality': p.life *= 2; break;
+			case 'potion_of_vitality': p.life *= 2; p.maxLife = p.life; break;
 			case 'crystal_gem': p.mana.cur += 1; p.mana.max += 1; break;
 			case 'small_backpacks': E.drawCards(state, HUMAN, 2); break;
 			case 'captured_flag': emblem(t, { aura: { attack: 1, health: 1 } }); break;
@@ -2295,8 +2311,9 @@ function showMiniTip(def, x, y) {
 	const stats = def.type === 'creature' ? ` · ${def.attack}/${def.health}`
 		: def.type === 'weapon' ? ` · ${def.attack}/${def.durability}`
 		: def.type === 'location' ? ` · ${def.durability} uses` : '';
+	const typeLabel = def.type === 'heropower' ? 'Hero Power' : def.type;
 	miniTip.innerHTML = `<div style="font-weight:bold;color:#cbb8ff;margin-bottom:3px;">${def.name}</div>`
-		+ `<div style="opacity:0.7;font-size:11px;margin-bottom:6px;">${def.cost ?? 0} mana · ${def.type}${stats}</div>`
+		+ `<div style="opacity:0.7;font-size:11px;margin-bottom:6px;">${def.cost ?? 0} mana · ${typeLabel}${stats}</div>`
 		+ `<div>${def.description || '<i>No rules text.</i>'}</div>`;
 	miniTip.style.display = 'block';
 	miniTip.style.left = Math.max(6, Math.min(x + 14, innerWidth - 262)) + 'px';
@@ -2304,12 +2321,33 @@ function showMiniTip(def, x, y) {
 }
 function hideMiniTip() { if (miniTip) miniTip.style.display = 'none'; }
 
+// hover (PC) or long-press (mobile) on any DOM element to reveal a card's
+// rules; `el._tipFired` records that a long-press showed the tip, so a
+// tappable element can suppress its click when the gesture was a hold
+function attachTip(el, def) {
+	if (TOUCH) {
+		let t = null;
+		el.addEventListener('pointerdown', ev => {
+			clearTimeout(t);
+			el._tipFired = false;
+			const x = ev.clientX, y = ev.clientY;
+			t = setTimeout(() => { el._tipFired = true; showMiniTip(def, x, y); }, 350);
+		});
+		const cancel = () => clearTimeout(t);
+		el.addEventListener('pointerup', cancel);
+		el.addEventListener('pointercancel', cancel);
+		el.addEventListener('pointerleave', cancel);
+	} else {
+		el.addEventListener('pointerenter', ev => showMiniTip(def, ev.clientX, ev.clientY));
+		el.addEventListener('pointermove', ev => showMiniTip(def, ev.clientX, ev.clientY));
+		el.addEventListener('pointerleave', hideMiniTip);
+	}
+}
+
 function miniFace(def) {
 	const c = drawCardFace(def, {});
 	c.style.cssText = 'width:96px;height:134px;border-radius:6px;';
-	c.addEventListener('pointerenter', ev => showMiniTip(def, ev.clientX, ev.clientY));
-	c.addEventListener('pointermove', ev => showMiniTip(def, ev.clientX, ev.clientY));
-	c.addEventListener('pointerleave', hideMiniTip);
+	attachTip(c, def);
 	// real art lazy-loads after the first paint — redraw once it has arrived
 	const redraw = () => {
 		const f = drawCardFace(def, {});

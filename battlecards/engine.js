@@ -703,7 +703,9 @@ function gainArmor(state, pi, amount) {
 function healHero(state, pi, amount) {
 	const p = state.players[pi];
 	const before = p.life;
-	p.life = Math.min(STARTING_LIFE, p.life + amount);
+	// heroes never heal above their starting total (a dungeon run sets a
+	// lower maxLife per level so 15-HP heroes can't top up to 30)
+	p.life = Math.min(p.maxLife ?? STARTING_LIFE, p.life + amount);
 	emit(state, { type: 'heal', targetType: 'hero', player: pi, amount, life: p.life });
 	// Lightwarden-style triggers fire only when healing actually landed
 	if (p.life > before) {
