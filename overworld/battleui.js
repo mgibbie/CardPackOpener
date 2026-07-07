@@ -68,6 +68,21 @@ export function monPanel(ctx, mon, x, y, w, u, opts = {}) {
 	ctx.fillStyle = C.text;
 	ctx.font = `${Math.round(17 * u)}px m6x11plus, monospace`;
 	ctx.fillText(mon.name, x + pad, y + pad + 13 * u);
+	// gender mark right after the name, GBA-colored
+	if (mon.gender) {
+		const nw = ctx.measureText(mon.name).width;
+		ctx.fillStyle = mon.gender === 'M' ? '#5f8fe8' : '#e87a9a';
+		ctx.font = `${Math.round(15 * u)}px m6x11plus, monospace`;
+		ctx.fillText(mon.gender === 'M' ? '♂' : '♀', x + pad + nw + 5 * u, y + pad + 13 * u);
+	}
+	// ability under the level, dim (matches the Love2D panel)
+	if (opts.abilityName) {
+		ctx.fillStyle = C.faint;
+		ctx.font = `${Math.round(10 * u)}px m6x11plus, monospace`;
+		ctx.textAlign = 'right';
+		ctx.fillText(opts.abilityName, x + w - pad, y + pad + 46 * u);
+		ctx.textAlign = 'left';
+	}
 	ctx.fillStyle = C.dim;
 	ctx.font = `${Math.round(13 * u)}px m6x11plus, monospace`;
 	ctx.textAlign = 'right';

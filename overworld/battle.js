@@ -8,6 +8,9 @@ import * as UI from './battleui.js';
 import { cry, sfx } from './sound.js';
 
 const STRUGGLE = () => ({ id: 'struggle', name: 'Struggle', pp: 1, maxPp: 1 });
+const SOUND_MOVES = new Set(['growl', 'roar', 'sing', 'supersonic', 'screech', 'snore',
+	'uproar', 'hypervoice', 'grasswhistle', 'metalsound', 'healbell', 'perishsong',
+	'bugbuzz', 'chatter', 'round', 'echoedvoice', 'boomburst', 'disarmingvoice']);
 
 // ---------- type chart (attacking type -> non-neutral matchups) ----------
 const CHART = {
@@ -88,7 +91,7 @@ const MOVE_FX = {
 	willowisp: { status: 'brn' },
 	// confusion, seeding, and side screens
 	confuseray: { confuse: true }, supersonic: { confuse: true }, sweetkiss: { confuse: true },
-	teeterdance: { confuse: true },
+	teeterdance: { confuse: true }, attract: { attract: true },
 	confusion: { sec: { confuse: true, ch: 10 } }, psybeam: { sec: { confuse: true, ch: 10 } },
 	dizzypunch: { sec: { confuse: true, ch: 20 } }, waterpulse: { sec: { confuse: true, ch: 20 } },
 	dynamicpunch: { sec: { confuse: true, ch: 100 } }, signalbeam: { sec: { confuse: true, ch: 10 } },
@@ -172,6 +175,90 @@ const MOVE_FX = {
 	aquaring: { regen: true }, ingrain: { regen: true },
 	bellydrum: { bellydrum: true }, painsplit: { painsplit: true },
 	swagger: { confuse: true, foeBoost: { atk: 2 } }, flatter: { confuse: true, foeBoost: { spa: 1 } },
+	// weather + terrain + field effects
+	raindance: { weather: 'rain' }, sunnyday: { weather: 'sun' }, sandstorm: { weather: 'sand' },
+	hail: { weather: 'hail' }, snowscape: { weather: 'hail' }, thunderstorm: { weather: 'rain' },
+	electricterrain: { terrain: 'electric' }, grassyterrain: { terrain: 'grassy' },
+	mistyterrain: { terrain: 'misty' }, psychicterrain: { terrain: 'psychic' }, stickyterrain: { terrain: 'grassy' },
+	trickroom: { field: 'trickRoom' }, gravity: { field: 'gravity' },
+	tailwind: { side: 'tailwind', turns: 4 }, safeguard: { side: 'safeguard', turns: 5 },
+	mist: { side: 'mist', turns: 5 }, luckychant: { side: 'luckychant', turns: 5 },
+	mudsport: { field: 'mudSport' }, watersport: { field: 'waterSport' },
+	// protect variants + endure
+	kingsshield: { protect: true }, obstruct: { protect: true }, silktrap: { protect: true },
+	spikyshield: { protect: true }, banefulbunker: { protect: true }, burningbulwark: { protect: true },
+	matblock: { protect: true }, craftyshield: { protect: true }, quickguard: { protect: true },
+	wideguard: { protect: true }, endure: { endure: true },
+	// entry hazards
+	spikes: { hazard: 'spikes' }, toxicspikes: { hazard: 'toxicspikes' },
+	stealthrock: { hazard: 'stealthrock' }, stickyweb: { hazard: 'stickyweb' },
+	defog: { clearHazards: 'both', foeBoost2: { eva: -1 } }, tidyup: { clearHazards: 'both', selfBoost: { atk: 1, spe: 1 } },
+	courtchange: { swapHazards: true },
+	// switching tricks + sacrifices
+	batonpass: { batonPass: true }, shedtail: { batonPass: true },
+	partingshot: { partingShot: true }, teleport: { fleeSelf: true },
+	memento: { memento: true }, healingwish: { healingWish: true }, lunardance: { healingWish: true },
+	revivalblessing: { revive: true },
+	// restriction
+	disable: { restrict: 'disable' }, encore: { restrict: 'encore' }, taunt: { restrict: 'taunt' },
+	torment: { restrict: 'torment' },
+	meanlook: { noSwitch: true }, block: { noSwitch: true }, spiderweb: { noSwitch: true },
+	octolock: { noSwitch: true }, fairylock: { noSwitch: true },
+	magnetrise: { magnetRise: true }, telekinesis: { telekinesis: true },
+	// call another move
+	metronome: { call: 'metronome' }, copycat: { call: 'copycat' }, mirrormove: { call: 'mirror' },
+	assist: { call: 'assist' }, sleeptalk: { call: 'sleeptalk' }, naturepower: { call: 'nature' },
+	mimic: { mimic: true }, sketch: { mimic: true },
+	// boosts with costs / special boosts
+	clangoroussoul: { boostCost: { stats: { atk: 1, def: 1, spa: 1, spd: 1, spe: 1 }, frac: 1 / 3 } },
+	filletaway: { boostCost: { stats: { atk: 2, spa: 2, spe: 2 }, frac: 0.5 } },
+	noretreat: { selfBoost: { atk: 1, def: 1, spa: 1, spd: 1, spe: 1 } },
+	geomancy: { chargeText: 'is absorbing power!', selfBoost: { spa: 2, spd: 2, spe: 2 }, statusCharge: true },
+	takeheart: { selfBoost: { spa: 1, spd: 1 }, cureSelfToo: true },
+	stuffcheeks: { selfBoost: { def: 2 } }, acupressure: { acupressure: true },
+	nobleroar: { foeBoost2: { atk: -1, spa: -1 } },
+	venomdrench: { foeBoost2: { atk: -1, spa: -1, spe: -1 }, needsPoisoned: true },
+	spicyextract: { foeBoost2: { atk: 2, def: -2 } },
+	focusenergy: { focusEnergy: true }, laserfocus: { laserFocus: true },
+	lockon: { lockOn: true }, mindreader: { lockOn: true },
+	foresight: { foresight: true }, odorsleuth: { foresight: true }, miracleeye: { foresight: true },
+	// healing extras
+	lifedew: { heal: 0.5 }, healorder: { heal: 0.5 }, junglehealing: { heal: 0.25, cureSelfToo: true },
+	lunarblessing: { heal: 0.25, cureSelfToo: true },
+	floralhealing: { healTarget: 0.5 }, healpulse: { healTarget: 0.5 },
+	wish: { wish: true }, strengthsap: { strengthSap: true },
+	purify: { purify: true }, psychoshift: { psychoShift: true },
+	nightmare: { nightmare: true }, perishsong: { perishSong: true }, destinybond: { destinyBond: true },
+	spite: { spite: true },
+	// stat swapping / copying
+	psychup: { psychUp: true }, heartswap: { swapBoosts: 'all' },
+	guardswap: { swapBoosts: 'guard' }, powerswap: { swapBoosts: 'power' },
+	speedswap: { statSwap: ['spe'] }, guardsplit: { statAvg: ['def', 'spd'] },
+	powersplit: { statAvg: ['atk', 'spa'] }, powertrick: { ownSwap: ['atk', 'def'] },
+	topsyturvy: { invertBoosts: true },
+	// self / target transformation
+	transform: { transform: true }, substitute: { substitute: true },
+	conversion: { typeSelf: 'firstmove' }, conversion2: { typeSelf: 'random' },
+	camouflage: { typeSelf: 'Normal' }, reflecttype: { typeSelf: 'copy' },
+	soak: { typeTarget: ['Water'] }, magicpowder: { typeTarget: ['Psychic'] },
+	trickortreat: { addType: 'Ghost' }, forestscurse: { addType: 'Grass' },
+	stockpile: { stockpile: true }, spitup: { spitUp: true }, swallow: { swallow: true },
+	charge: { chargeUp: true }, splash: { splashMsg: true },
+	// no held items / no allies in this game: these correctly fail
+	afteryou: { noop: true }, allyswitch: { noop: true }, aromaticmist: { noop: true },
+	bestow: { noop: true }, embargo: { noop: true }, followme: { noop: true },
+	helpinghand: { noop: true }, instruct: { noop: true }, mefirst: { noop: true },
+	quash: { noop: true }, ragepowder: { noop: true }, recycle: { noop: true },
+	snatch: { noop: true }, spotlight: { noop: true }, switcheroo: { noop: true },
+	trick: { noop: true }, magiccoat: { noop: true }, powder: { noop: true },
+	teatime: { noop: true }, rototiller: { noop: true }, flowershield: { noop: true },
+	decorate: { noop: true }, gearup: { noop: true }, magneticflux: { noop: true },
+	healblock: { noop: true }, imprison: { noop: true }, grudge: { noop: true },
+	electrify: { noop: true }, iondeluge: { noop: true }, magicroom: { noop: true },
+	wonderroom: { noop: true }, doodle: { abilityCopy: true }, roleplay: { abilityCopy: true },
+	skillswap: { abilitySwap: true }, entrainment: { abilityGive: true },
+	gastroacid: { abilitySuppress: true }, worryseed: { abilitySet: 'insomnia' },
+	simplebeam: { abilitySet: 'simple' },
 };
 
 const STATUS_NAMES = { brn: 'BRN', psn: 'PSN', par: 'PAR', slp: 'SLP', frz: 'FRZ' };
@@ -224,7 +311,9 @@ export function buildMon(speciesId, level, data) {
 	const moves = moveIds.map(mid => makeMove(mid, data));
 	return {
 		speciesId, name: sp.name.toUpperCase(), level,
-		types: sp.types, ivs, stats, maxHP: stats.hp, curHP: stats.hp,
+		gender: Math.random() < 0.5 ? 'M' : 'F',
+		ability: (() => { const opts = data.abilities?.[speciesId]; return opts?.length ? opts[Math.floor(Math.random() * opts.length)] : null; })(),
+		types: [...sp.types], ivs, stats, maxHP: stats.hp, curHP: stats.hp,
 		exp: level ** 3, // medium-fast growth curve
 		moves, sprite: sp.sprite, num: sp.num,
 	};
@@ -251,12 +340,13 @@ export class Battle {
 	}
 
 	async init() {
-		const [species, moves, extra] = await Promise.all([
+		const [species, moves, extra, abilities] = await Promise.all([
 			getJSON('data/species_battle.json'),
 			getJSON('data/moves_battle.json'),
 			getJSON('data/species_extra.json').catch(() => ({})),
+			getJSON('data/species_abilities.json').catch(() => ({})),
 		]);
-		this.data = { species, moves, extra };
+		this.data = { species, moves, extra, abilities };
 		// the Love2D build's pixel font, so battle text matches the desktop game
 		try {
 			const f = new FontFace('m6x11plus', 'url(data/fonts/m6x11plus.ttf)');
@@ -289,6 +379,11 @@ export class Battle {
 			foeBoosts: freshBoosts(),
 			meShownHP: playerMon.curHP, foeShownHP: foe.curHP,
 			meScreens: { reflect: 0, light: 0 }, foeScreens: { reflect: 0, light: 0 },
+			meSide: {}, foeSide: {},               // tailwind/safeguard/mist/luckychant turns
+			meHazards: {}, foeHazards: {},         // spikes/toxicspikes/stealthrock/stickyweb
+			weather: null, terrain: null,          // {kind, turns}
+			fieldFx: {},                           // trickRoom/gravity/mudSport/waterSport turns
+			lastMove: {},                          // last move id per side
 			phase: 'flash', t: 0,
 			menuIdx: 0, moveIdx: 0,
 			queue: [],           // pending messages/actions
@@ -300,7 +395,9 @@ export class Battle {
 		};
 		for (const m of party) this.clearVolatiles(m);
 		this.pushMsg(`A wild ${foe.name} appeared!`, () => cry(foe.speciesId));
+		this.pushMsg('', () => this.switchInAbility(this.active.foe, 'foe'));
 		this.pushMsg(`Go! ${playerMon.name}!`, () => { sfx('ball_open'); cry(playerMon.speciesId); });
+		this.pushMsg('', () => this.switchInAbility(this.active.me, 'me'));
 	}
 
 	// trainer battle: foeParty of mons, no running, no catching
@@ -328,6 +425,11 @@ export class Battle {
 			foeBoosts: freshBoosts(),
 			meShownHP: playerMon.curHP, foeShownHP: foe.curHP,
 			meScreens: { reflect: 0, light: 0 }, foeScreens: { reflect: 0, light: 0 },
+			meSide: {}, foeSide: {},               // tailwind/safeguard/mist/luckychant turns
+			meHazards: {}, foeHazards: {},         // spikes/toxicspikes/stealthrock/stickyweb
+			weather: null, terrain: null,          // {kind, turns}
+			fieldFx: {},                           // trickRoom/gravity/mudSport/waterSport turns
+			lastMove: {},                          // last move id per side
 			phase: 'flash', t: 0,
 			menuIdx: 0, moveIdx: 0,
 			queue: [],
@@ -340,7 +442,9 @@ export class Battle {
 		for (const m of party) this.clearVolatiles(m);
 		this.pushMsg(`You are challenged by ${info.displayName}!`);
 		this.pushMsg(`${info.displayName} sent out ${foe.name}!`, () => cry(foe.speciesId));
+		this.pushMsg('', () => this.switchInAbility(this.active.foe, 'foe'));
 		this.pushMsg(`Go! ${playerMon.name}!`, () => { sfx('ball_open'); cry(playerMon.speciesId); });
+		this.pushMsg('', () => this.switchInAbility(this.active.me, 'me'));
 	}
 
 	get blocking() { return this.active != null; }
@@ -354,35 +458,108 @@ export class Battle {
 		(this.active.floaters ||= []).push({ side, text, color, t: 0 });
 	}
 
+	// ---------- abilities ----------
+	abilityOf(mon) { return mon.abilitySuppressed ? null : (mon.ability || null); }
+	abilityName(id) { return this.data.abilities?._names?.[id] || (id || '').toUpperCase(); }
+	// weather is nulled while a Cloud Nine / Air Lock mon is on the field
+	weatherKind() {
+		const a = this.active;
+		if (!a?.weather) return null;
+		for (const m of [a.me, a.foe]) {
+			const ab = this.abilityOf(m);
+			if (m.curHP > 0 && (ab === 'cloudnine' || ab === 'airlock')) return null;
+		}
+		return a.weather.kind;
+	}
+	// Clear Body & friends refuse foe-inflicted stat drops
+	canLowerStat(target, stat) {
+		const ab = this.abilityOf(target);
+		if (ab === 'clearbody' || ab === 'whitesmoke') return false;
+		if (ab === 'keeneye' && stat === 'acc') return false;
+		if (ab === 'hypercutter' && stat === 'atk') return false;
+		return true;
+	}
+	// announce + apply an ability's switch-in effect
+	switchInAbility(mon, side) {
+		const a = this.active;
+		const ab = this.abilityOf(mon);
+		if (!ab || mon.curHP <= 0) return;
+		const other = side === 'me' ? a.foe : a.me;
+		const otherBoosts = side === 'me' ? a.foeBoosts : a.meBoosts;
+		if (ab === 'intimidate' && other.curHP > 0) {
+			if (other.subHP > 0 || !this.canLowerStat(other, 'atk')) {
+				this.pushMsg(`${mon.name}'s Intimidate failed to cow ${other.name}!`);
+			} else {
+				otherBoosts.atk = Math.max(-6, (otherBoosts.atk || 0) - 1);
+				this.pushMsg(`${mon.name}'s Intimidate cut ${other.name}'s Attack!`);
+			}
+		}
+		const weatherAb = { drizzle: 'rain', drought: 'sun', sandstream: 'sand', snowwarning: 'hail' }[ab];
+		if (weatherAb && a.weather?.kind !== weatherAb) {
+			a.weather = { kind: weatherAb, turns: 8 };
+			this.pushMsg(`${mon.name}'s ${this.abilityName(ab)} kicked up the weather!`);
+		}
+		if (ab === 'download' && other.curHP > 0) {
+			const boosts = side === 'me' ? a.meBoosts : a.foeBoosts;
+			const key = other.stats.def < other.stats.spd ? 'atk' : 'spa';
+			boosts[key] = Math.min(6, (boosts[key] || 0) + 1);
+			this.pushMsg(`${mon.name}'s Download raised its ${key === 'atk' ? 'Attack' : 'Sp. Atk'}!`);
+		}
+		if (ab === 'trace' && other.ability) {
+			mon.ability = other.ability;
+			this.pushMsg(`${mon.name} traced ${other.name}'s ${this.abilityName(other.ability)}!`);
+		}
+	}
+
 	// ---------- turn resolution ----------
 	statOf(mon, boosts, key) {
 		let v = Math.floor(mon.stats[key] * stageMult(boosts[key]));
-		if (key === 'atk' && mon.status === 'brn') v = Math.floor(v / 2);
+		const ab = this.abilityOf(mon);
+		if (key === 'atk' && mon.status === 'brn' && ab !== 'guts') v = Math.floor(v / 2);
+		if (key === 'atk' && mon.status && ab === 'guts') v = Math.floor(v * 1.5);
 		if (key === 'spe' && mon.status === 'par') v = Math.floor(v / 4);
+		if (key === 'spe') {
+			const wk = this.weatherKind?.();
+			if (ab === 'swiftswim' && wk === 'rain') v *= 2;
+			if (ab === 'chlorophyll' && wk === 'sun') v *= 2;
+			if (ab === 'speedboost' && false) v = v; // speed boost is end-of-turn stages
+		}
 		return Math.max(1, v);
 	}
 
-	applyStatus(target, st, bad) {
+	applyStatus(target, st, bad, source) {
 		if (target.status) { this.pushMsg('But it failed!'); return false; }
 		if ((STATUS_IMMUNE[st] || []).some(t => target.types.includes(t))) {
 			this.pushMsg(`It doesn't affect ${target.name}...`);
+			return false;
+		}
+		const IMMUNE_AB = { psn: ['immunity'], par: ['limber'], brn: ['waterveil'], frz: ['magmaarmor'], slp: ['insomnia', 'vitalspirit'] };
+		const tAb2 = this.abilityOf(target);
+		if ((IMMUNE_AB[st] || []).includes(tAb2)) {
+			this.pushMsg(`${target.name}'s ${this.abilityName(tAb2)} prevents that!`);
 			return false;
 		}
 		target.status = st;
 		if (st === 'slp') target.sleepTurns = 1 + Math.floor(Math.random() * 3);
 		if (bad) { target.badPsn = true; target.toxicN = 1; }
 		this.pushMsg(`${target.name} ${bad ? 'was badly poisoned!' : STATUS_APPLIED_MSG[st]}`);
+		if (source && this.abilityOf(target) === 'synchronize' && ['brn', 'psn', 'par'].includes(st)) {
+			this.pushMsg(`${target.name}'s Synchronize passed it back!`, () => {});
+			this.applyStatus(source, st, bad, null);
+		}
 		return true;
 	}
 
 	applyConfusion(target) {
+		if (this.abilityOf(target) === 'owntempo') { this.pushMsg(`${target.name}'s Own Tempo prevents confusion!`); return; }
 		if (target.confuseTurns > 0) { this.pushMsg('But it failed!'); return; }
 		target.confuseTurns = 2 + Math.floor(Math.random() * 4);
 		this.pushMsg(`${target.name} became confused!`);
 	}
 
 	// battle-only conditions never leak into the save
-	clearVolatiles(mon) {
+	clearVolatiles(mon, curing) {
+		if (curing && this.abilityOf(mon) === 'naturalcure' && mon.status) mon.status = null;
 		delete mon.confuseTurns;
 		delete mon.seeded;
 		delete mon.badPsn;
@@ -395,11 +572,43 @@ export class Battle {
 		delete mon.aquaRing;
 		delete mon.protectN;
 		delete mon.protectedTurn;
+		delete mon.subHP;
+		delete mon.attracted;
+		delete mon.focusEnergy;
+		delete mon.laserFocus;
+		delete mon.lockOn;
+		delete mon.foresight;
+		delete mon.nightmared;
+		delete mon.perishN;
+		delete mon.destinyBond;
+		delete mon.disabledMove;
+		delete mon.disableTurns;
+		delete mon.encoreMove;
+		delete mon.encoreTurns;
+		delete mon.tauntTurns;
+		delete mon.tormented;
+		delete mon.noSwitch;
+		delete mon.magnetRise;
+		delete mon.telekinesis;
+		delete mon.stockN;
+		delete mon.chargedUp;
+		delete mon.enduring;
+		delete mon.abilitySuppressed;
+		delete mon.flashFired;
+		delete mon.loafed;
+		if (mon.mimicSlot) {
+			mon.moves[mon.mimicSlot.idx] = mon.mimicSlot.orig;
+			delete mon.mimicSlot;
+		}
+		if (mon.transformedMoves) {
+			mon.moves = mon.transformedMoves;
+			delete mon.transformedMoves;
+		}
 		mon.flinched = false;
 	}
 
 	// returns false if the user cannot act this turn (sleep/freeze/para/flinch/confusion)
-	beforeMove(user, userBoosts, isFoe) {
+	beforeMove(user, userBoosts, isFoe, move) {
 		if (user.flinched) {
 			user.flinched = false;
 			this.pushMsg(`${user.name} flinched and couldn't move!`);
@@ -409,6 +618,14 @@ export class Battle {
 			user.rechargeTurn = false;
 			this.pushMsg(`${user.name} must recharge!`);
 			return false;
+		}
+		if (this.abilityOf(user) === 'truant') {
+			if (user.loafed) {
+				user.loafed = false;
+				this.pushMsg(`${user.name} is loafing around!`);
+				return false;
+			}
+			user.loafed = true;
 		}
 		if (user.confuseTurns > 0) {
 			user.confuseTurns--;
@@ -437,8 +654,14 @@ export class Battle {
 				this.pushMsg(`${user.name} woke up!`);
 			} else {
 				this.pushMsg(`${user.name} is fast asleep.`);
+				// Sleep Talk (and Snore) still work while sleeping
+				if (move?.id === 'sleeptalk' || move?.id === 'snore') return true;
 				return false;
 			}
+		}
+		if (user.attracted && Math.random() < 0.5) {
+			this.pushMsg(`${user.name} is immobilized by love!`);
+			return false;
 		}
 		if (user.status === 'frz') {
 			if (Math.random() < 0.2) {
@@ -460,19 +683,30 @@ export class Battle {
 		const a = this.active;
 		const mv = this.data.moves[move.id] || {};
 		const fx = MOVE_FX[move.id] || {};
-		if (!this.beforeMove(user, userBoosts, isFoe)) return;
+		if (!this.beforeMove(user, userBoosts, isFoe, move)) return;
 		move.pp = Math.max(0, move.pp - 1);
 		// two-turn moves spend their first turn charging (PP refunded: one use, one PP)
-		if (fx.chargeText && !user.chargeMove) {
+		if (fx.chargeText && !user.chargeMove && !(move.id === 'solarbeam' && a.weather?.kind === 'sun')) {
 			user.chargeMove = move.id;
 			move.pp = Math.min(move.maxPp, move.pp + 1);
 			this.pushMsg(`${user.name} ${fx.chargeText}`);
 			return;
 		}
 		if (user.chargeMove === move.id) user.chargeMove = null;
+		// Geomancy charges then boosts (a status move with a charge turn)
+		if (fx.statusCharge) {
+			const boosts = userBoosts;
+			for (const [st, d] of Object.entries(fx.selfBoost)) {
+				boosts[st] = Math.max(-6, Math.min(6, (boosts[st] || 0) + d));
+			}
+			this.pushMsg(`${user.name}'s stats rose sharply!`);
+			return;
+		}
 		// protect's streak resets whenever anything else is used
 		if (!fx.protect) user.protectN = 0;
 		this.pushMsg(`${user.name} used ${move.name}!`);
+		a.lastMoveId = move.id;
+		a.lastMove[isFoe ? 'foe' : 'me'] = move.id;
 
 		// Protect/Detect blocks anything aimed at the protected side
 		const aimsAtFoe = mv.category !== 'Status'
@@ -481,9 +715,31 @@ export class Battle {
 			this.pushMsg(`${target.name} protected itself!`);
 			return;
 		}
+		// a substitute soaks status tricks aimed through it
+		if (aimsAtFoe && mv.category === 'Status' && target.subHP > 0) {
+			this.pushMsg('But it failed!');
+			return;
+		}
+		// Safeguard blocks statuses, Mist blocks stat drops, from the foe's side
+		const targetSide2 = isFoe ? a.meSide : a.foeSide;
+		if ((fx.status || fx.confuse || fx.yawn) && targetSide2?.safeguard > 0) {
+			this.pushMsg(`${target.name} is protected by Safeguard!`);
+			return;
+		}
+		if (STAT_MOVES[move.id]?.foe && targetSide2?.mist > 0) {
+			this.pushMsg(`${target.name} is protected by the mist!`);
+			return;
+		}
 
-		const hitChance = (mv.acc ?? 100) * stageMult((userBoosts.acc || 0) - (targetBoosts.eva || 0));
-		if ((mv.acc ?? 100) !== true && aimsAtFoe && Math.random() * 100 > hitChance) {
+		let hitChance = (mv.acc ?? 100) * stageMult((userBoosts.acc || 0) - (targetBoosts.eva || 0));
+		if (a.fieldFx.gravity > 0) hitChance *= 5 / 3;
+		const uAbAcc = this.abilityOf(user);
+		if (uAbAcc === 'compoundeyes') hitChance *= 1.3;
+		if (uAbAcc === 'hustle' && mv.category === 'Physical') hitChance *= 0.8;
+		if (this.abilityOf(target) === 'sandveil' && this.weatherKind() === 'sand') hitChance *= 0.8;
+		const sureHit = user.lockOn || target.telekinesis > 0;
+		if (user.lockOn) user.lockOn = false;
+		if (!sureHit && (mv.acc ?? 100) !== true && aimsAtFoe && Math.random() * 100 > hitChance) {
 			this.pushMsg(`${user.name}'s attack missed!`);
 			return;
 		}
@@ -502,7 +758,7 @@ export class Battle {
 				}
 				return;
 			}
-			if (fx.status) { this.applyStatus(target, fx.status, fx.bad); return; }
+			if (fx.status) { this.applyStatus(target, fx.status, fx.bad, user); return; }
 			if (fx.confuse) {
 				// Swagger/Flatter pump the target's stat before confusing it
 				if (fx.foeBoost) {
@@ -596,11 +852,29 @@ export class Battle {
 					: `${user.name} is protected by Light Screen!`);
 				return;
 			}
+			if (fx.attract) {
+				if (this.abilityOf(target) === 'oblivious') { this.pushMsg(`${target.name}'s Oblivious blocks it!`); return; }
+				if (!user.gender || !target.gender || user.gender === target.gender || target.attracted) {
+					this.pushMsg('But it failed!');
+					return;
+				}
+				target.attracted = true;
+				this.pushMsg(`${target.name} fell in love!`);
+				return;
+			}
+			if (this.statusFx(fx, user, userBoosts, target, targetBoosts, move, isFoe)) return;
 			const eff = STAT_MOVES[move.id];
 			if (eff) {
 				const boosts = eff.foe ? targetBoosts : userBoosts;
 				const who = eff.foe ? target : user;
-				const changes = eff.stats || { [eff.stat]: eff.d };
+				let changes = eff.stats || { [eff.stat]: eff.d };
+				if (eff.foe) {
+					changes = Object.fromEntries(Object.entries(changes).filter(([st, d]) => d >= 0 || this.canLowerStat(target, st)));
+					if (!Object.keys(changes).length) {
+						this.pushMsg(`${target.name}'s ability protects its stats!`);
+						return;
+					}
+				}
 				const words = { atk: 'Attack', def: 'Defense', spa: 'Sp. Atk', spd: 'Sp. Def', spe: 'Speed', acc: 'accuracy', eva: 'evasiveness' };
 				let any = false;
 				for (const [st, d] of Object.entries(changes)) {
@@ -618,18 +892,74 @@ export class Battle {
 			return;
 		}
 		// damage
+		const uAb = this.abilityOf(user), tAb = this.abilityOf(target);
 		const phys = mv.category === 'Physical';
-		const A = this.statOf(user, userBoosts, phys ? 'atk' : 'spa');
-		const D = this.statOf(target, targetBoosts, phys ? 'def' : 'spd');
+		let A = this.statOf(user, userBoosts, phys ? 'atk' : 'spa');
+		let D = this.statOf(target, targetBoosts, phys ? 'def' : 'spd');
+		if (phys && (uAb === 'hugepower' || uAb === 'purepower')) A *= 2;
+		if (phys && uAb === 'hustle') A = Math.floor(A * 1.5);
+		if (phys && tAb === 'marvelscale' && target.status) D = Math.floor(D * 1.5);
 		const L = user.level, Pw = mv.power || 0;
 		if (Pw <= 0 && !fx.fixed && !fx.ohko) { this.pushMsg('But nothing happened!'); return; }
-		const eff = effectiveness(mv.type, target.types);
+		// absorbing / immune abilities take the hit instead
+		if (tAb === 'levitate' && mv.type === 'Ground') { this.pushMsg(`${target.name} floats with Levitate!`); return; }
+		if ((tAb === 'waterabsorb' || tAb === 'dryskin') && mv.type === 'Water') {
+			this.pushMsg(`${target.name}'s ${this.abilityName(tAb)} soaked it up!`, () => {
+				target.curHP = Math.min(target.maxHP, target.curHP + Math.floor(target.maxHP / 4));
+			});
+			return;
+		}
+		if (tAb === 'voltabsorb' && mv.type === 'Electric') {
+			this.pushMsg(`${target.name}'s Volt Absorb soaked it up!`, () => {
+				target.curHP = Math.min(target.maxHP, target.curHP + Math.floor(target.maxHP / 4));
+			});
+			return;
+		}
+		if (tAb === 'flashfire' && mv.type === 'Fire') {
+			target.flashFired = true;
+			this.pushMsg(`${target.name}'s Flash Fire drank the flames!`);
+			return;
+		}
+		if (tAb === 'soundproof' && SOUND_MOVES.has(move.id)) {
+			this.pushMsg(`${target.name}'s Soundproof blocks it!`);
+			return;
+		}
+		if (fx.selfKO && (uAb === 'damp' || tAb === 'damp')) { this.pushMsg('The Damp ability prevents explosions!'); return; }
+		if (fx.ohko && tAb === 'sturdy') { this.pushMsg(`${target.name}'s Sturdy blocks one-hit KOs!`); return; }
+		let eff = effectiveness(mv.type, target.types);
+		if (eff === 0 && target.foresight) eff = 1;
 		if (eff === 0) { this.pushMsg(`It doesn't affect ${target.name}...`); return; }
+		if (tAb === 'wonderguard' && eff <= 1) { this.pushMsg(`${target.name}'s Wonder Guard blocks it!`); return; }
 		const stab = user.types.includes(mv.type) ? 1.5 : 1;
 		const nHits = fx.hits ? fx.hits[0] + Math.floor(Math.random() * (fx.hits[1] - fx.hits[0] + 1)) : 1;
 		// Reflect / Light Screen on the defender's side halves the matching category
 		const defScreens = isFoe ? a.meScreens : a.foeScreens;
 		const screened = defScreens?.[phys ? 'reflect' : 'light'] > 0 ? 0.5 : 1;
+		// weather, terrain, and sport effects scale the elements
+		let envMult = 1;
+		const wk = a.weather?.kind;
+		if (wk === 'rain') envMult *= mv.type === 'Water' ? 1.5 : mv.type === 'Fire' ? 0.5 : 1;
+		if (wk === 'sun') envMult *= mv.type === 'Fire' ? 1.5 : mv.type === 'Water' ? 0.5 : 1;
+		const tk = a.terrain?.kind;
+		if (tk === 'electric' && mv.type === 'Electric') envMult *= 1.3;
+		if (tk === 'grassy' && mv.type === 'Grass') envMult *= 1.3;
+		if (tk === 'psychic' && mv.type === 'Psychic') envMult *= 1.3;
+		if (tk === 'misty' && mv.type === 'Dragon') envMult *= 0.5;
+		if (a.fieldFx.mudSport > 0 && mv.type === 'Electric') envMult *= 0.5;
+		if (a.fieldFx.waterSport > 0 && mv.type === 'Fire') envMult *= 0.5;
+		if (user.chargedUp && mv.type === 'Electric') { envMult *= 2; user.chargedUp = false; }
+		// ability multipliers on the element and power
+		const pinch = { overgrow: 'Grass', blaze: 'Fire', torrent: 'Water', swarm: 'Bug' };
+		if (pinch[uAb] === mv.type && user.curHP <= Math.floor(user.maxHP / 3)) envMult *= 1.5;
+		if (uAb === 'technician' && Pw <= 60) envMult *= 1.5;
+		if (user.flashFired && mv.type === 'Fire') envMult *= 1.5;
+		if (tAb === 'thickfat' && (mv.type === 'Fire' || mv.type === 'Ice')) envMult *= 0.5;
+		if (tAb === 'dryskin' && mv.type === 'Fire') envMult *= 1.25;
+		// crit odds: Focus Energy 1/4, Laser Focus certain, Lucky Chant none
+		const critBlocked = (isFoe ? a.meSide : a.foeSide)?.luckychant > 0
+			|| tAb === 'battlearmor' || tAb === 'shellarmor';
+		const critChance = critBlocked ? 0 : user.laserFocus ? 1 : user.focusEnergy ? 0.25 : 1 / 16;
+		user.laserFocus = false;
 		let total = 0, crits = 0;
 		if (fx.ohko) {
 			// one-hit KO: never works upward in level
@@ -645,10 +975,10 @@ export class Battle {
 			if (total <= 0) { this.pushMsg('But it failed!'); return; }
 		} else {
 			for (let h = 0; h < nHits; h++) {
-				const crit = Math.random() < 1 / 16;
+				const crit = Math.random() < critChance;
 				if (crit) crits++;
 				let dmg = Math.floor(Math.floor(Math.floor(2 * L / 5 + 2) * Pw * A / D) / 50) + 2;
-				dmg = Math.max(1, Math.floor(dmg * (crit ? 2 : 1) * stab * eff * screened * (0.85 + Math.random() * 0.15)));
+				dmg = Math.max(1, Math.floor(dmg * (crit ? 2 : 1) * stab * eff * screened * envMult * (0.85 + Math.random() * 0.15)));
 				total += dmg;
 			}
 		}
@@ -658,8 +988,26 @@ export class Battle {
 		this.pushAnim('hit', targetSide, 0.4, null, { color: UI.TYPE_COLORS[mv.type] || '#e8e8e8' });
 		this.pushMsg('', () => {
 			sfx(eff > 1 ? 'hit_super' : eff < 1 ? 'hit_weak' : 'hit_normal');
-			target.curHP = Math.max(0, target.curHP - total);
-			this.float(targetSide, `-${total}`, crits ? '#ffd23f' : '#ff7a6b');
+			if (target.subHP > 0) {
+				target.subHP -= total;
+				if (target.subHP <= 0) {
+					target.subHP = 0;
+					this.pushMsg(`${target.name}'s substitute faded!`);
+				} else {
+					this.pushMsg('The substitute took the hit!');
+				}
+				return;
+			}
+			let dealt = total;
+			if (target.enduring && dealt >= target.curHP) {
+				dealt = target.curHP - 1;
+				this.pushMsg(`${target.name} endured the hit!`);
+			}
+			target.curHP = Math.max(0, target.curHP - dealt);
+			this.float(targetSide, `-${dealt}`, crits ? '#ffd23f' : '#ff7a6b');
+			if (target.curHP <= 0 && target.destinyBond) {
+				this.pushMsg(`${target.name} took ${user.name} down with it!`, () => { user.curHP = 0; });
+			}
 		});
 		if (nHits > 1) this.pushMsg(`Hit ${nHits} time(s)!`);
 		if (crits) this.pushMsg('A critical hit!');
@@ -672,11 +1020,40 @@ export class Battle {
 				this.float(isFoe ? 'foe' : 'me', `+${healed}`, '#6be08a');
 			});
 		}
-		if (fx.recoil) {
+		if (fx.recoil && uAb !== 'rockhead') {
 			const rec = Math.max(1, Math.floor(total * fx.recoil));
 			this.pushMsg(`${user.name} is damaged by recoil!`, () => {
 				user.curHP = Math.max(0, user.curHP - rec);
 				this.float(isFoe ? 'foe' : 'me', `-${rec}`, '#ff7a6b');
+			});
+		}
+		if (phys) {
+			this.pushMsg('', () => {
+				if (target.curHP <= 0 || user.curHP <= 0) return;
+				const dAb = this.abilityOf(target);
+				const roll = Math.random();
+				if (dAb === 'static' && roll < 0.3 && !user.status) {
+					user.status = 'par';
+					this.pushMsg(`${user.name} was paralyzed by Static!`);
+				} else if (dAb === 'poisonpoint' && roll < 0.3 && !user.status) {
+					user.status = 'psn';
+					this.pushMsg(`${user.name} was poisoned by Poison Point!`);
+				} else if (dAb === 'flamebody' && roll < 0.3 && !user.status) {
+					user.status = 'brn';
+					this.pushMsg(`${user.name} was burned by Flame Body!`);
+				} else if (dAb === 'effectspore' && roll < 0.3 && !user.status) {
+					user.status = ['psn', 'par', 'slp'][Math.floor(Math.random() * 3)];
+					if (user.status === 'slp') user.sleepTurns = 2;
+					this.pushMsg(`${user.name} was afflicted by Effect Spore!`);
+				} else if (dAb === 'roughskin') {
+					const chip = Math.max(1, Math.floor(user.maxHP / 16));
+					user.curHP = Math.max(0, user.curHP - chip);
+					this.pushMsg(`${user.name} was hurt by Rough Skin!`);
+				} else if (dAb === 'cutecharm' && roll < 0.3 && user.gender && target.gender
+					&& user.gender !== target.gender && !user.attracted) {
+					user.attracted = true;
+					this.pushMsg(`${user.name} fell in love with Cute Charm!`);
+				}
 			});
 		}
 		if (fx.trap) {
@@ -708,11 +1085,13 @@ export class Battle {
 				}
 			});
 		}
-		if (fx.sec && Math.random() * 100 < fx.sec.ch) {
+		const secCh = (fx.sec?.ch || 0) * (uAb === 'serenegrace' ? 2 : 1);
+		if (fx.sec && tAb !== 'shielddust' && Math.random() * 100 < secCh) {
 			this.pushMsg('', () => {
 				if (target.curHP <= 0) return;
-				if (fx.sec.flinch) target.flinched = true; // only matters if it hasn't moved yet
+				if (fx.sec.flinch) { if (this.abilityOf(target) !== 'innerfocus') target.flinched = true; }
 				else if (fx.sec.stat) {
+					if (!this.canLowerStat(target, fx.sec.stat)) return;
 					const before = targetBoosts[fx.sec.stat] ?? 0;
 					targetBoosts[fx.sec.stat] = Math.max(-6, Math.min(6, before + fx.sec.d));
 					if (targetBoosts[fx.sec.stat] !== before) {
@@ -800,9 +1179,118 @@ export class Battle {
 				}
 			}
 		}
+		// weather: chip + countdown
+		if (a.weather) {
+			const wk2 = this.weatherKind();
+			for (const mon of [a.me, a.foe]) {
+				if (mon.curHP <= 0) continue;
+				const side = mon === a.me ? 'me' : 'foe';
+				const immuneSand = ['Rock', 'Ground', 'Steel'].some(t => mon.types.includes(t));
+				if ((wk2 === 'sand' && !immuneSand) || (wk2 === 'hail' && !mon.types.includes('Ice'))) {
+					const chip = Math.max(1, Math.floor(mon.maxHP / 16));
+					this.pushMsg(`${mon.name} is buffeted by the ${wk2 === 'sand' ? 'sandstorm' : 'hail'}!`, () => {
+						mon.curHP = Math.max(0, mon.curHP - chip);
+						this.float(side, `-${chip}`, '#d8cf9a');
+					});
+				}
+			}
+			if (--a.weather.turns <= 0) {
+				this.pushMsg('The weather returned to normal.');
+				a.weather = null;
+			}
+		}
+		// grassy terrain heals; terrains fade
+		if (a.terrain) {
+			if (a.terrain.kind === 'grassy') {
+				for (const mon of [a.me, a.foe]) {
+					if (mon.curHP > 0 && mon.curHP < mon.maxHP) {
+						const heal = Math.max(1, Math.floor(mon.maxHP / 16));
+						this.pushMsg('', () => {
+							mon.curHP = Math.min(mon.maxHP, mon.curHP + heal);
+							this.float(mon === a.me ? 'me' : 'foe', `+${heal}`, '#6be08a');
+						});
+					}
+				}
+			}
+			if (--a.terrain.turns <= 0) a.terrain = null;
+		}
+		for (const key of Object.keys(a.fieldFx)) {
+			if (a.fieldFx[key] > 0 && --a.fieldFx[key] === 0) this.pushMsg('The field effect wore off!');
+		}
+		// per-side effects: wish lands, timers fade
+		for (const [sname, s, active] of [['me', a.meSide, a.me], ['foe', a.foeSide, a.foe]]) {
+			if (s.wishT > 0 && --s.wishT === 0 && active.curHP > 0) {
+				this.pushMsg(`${active.name}'s wish came true!`, () => {
+					active.curHP = Math.min(active.maxHP, active.curHP + s.wishAmt);
+					this.float(sname, `+${s.wishAmt}`, '#6be08a');
+				});
+			}
+			for (const key of ['tailwind', 'safeguard', 'mist', 'luckychant']) {
+				if (s[key] > 0) s[key]--;
+			}
+		}
+		// per-mon countdowns
+		for (const mon of [a.me, a.foe]) {
+			const side = mon === a.me ? 'me' : 'foe';
+			if (mon.curHP <= 0) continue;
+			if (mon.nightmared && mon.status === 'slp') {
+				const chip = Math.max(1, Math.floor(mon.maxHP / 4));
+				this.pushMsg(`${mon.name} is locked in a nightmare!`, () => {
+					mon.curHP = Math.max(0, mon.curHP - chip);
+					this.float(side, `-${chip}`, '#c98fe8');
+				});
+			} else if (mon.nightmared) delete mon.nightmared;
+			if (mon.perishN > 0) {
+				mon.perishN--;
+				this.pushMsg(`${mon.name}'s perish count fell to ${mon.perishN}!`, () => {
+					if (mon.perishN <= 0) mon.curHP = 0;
+				});
+			}
+			if (mon.disableTurns > 0 && --mon.disableTurns === 0) delete mon.disabledMove;
+			if (mon.encoreTurns > 0 && --mon.encoreTurns === 0) delete mon.encoreMove;
+			if (mon.tauntTurns > 0) mon.tauntTurns--;
+			if (mon.magnetRise > 0) mon.magnetRise--;
+			if (mon.telekinesis > 0) mon.telekinesis--;
+			mon.enduring = false;
+			const ab = this.abilityOf(mon);
+			const boosts = mon === a.me ? a.meBoosts : a.foeBoosts;
+			if (ab === 'speedboost') {
+				boosts.spe = Math.min(6, (boosts.spe || 0) + 1);
+				this.pushMsg(`${mon.name}'s Speed Boost raised its Speed!`);
+			}
+			if (ab === 'raindish' && this.weatherKind() === 'rain' && mon.curHP < mon.maxHP) {
+				this.pushMsg(`${mon.name}'s Rain Dish restored a little HP!`, () => {
+					mon.curHP = Math.min(mon.maxHP, mon.curHP + Math.max(1, Math.floor(mon.maxHP / 16)));
+				});
+			}
+			if (ab === 'icebody' && this.weatherKind() === 'hail' && mon.curHP < mon.maxHP) {
+				this.pushMsg(`${mon.name}'s Ice Body restored a little HP!`, () => {
+					mon.curHP = Math.min(mon.maxHP, mon.curHP + Math.max(1, Math.floor(mon.maxHP / 16)));
+				});
+			}
+			if (ab === 'shedskin' && mon.status && Math.random() < 0.3) {
+				this.pushMsg(`${mon.name}'s Shed Skin cured its status!`, () => {
+					mon.status = null; delete mon.badPsn; delete mon.toxicN;
+				});
+			}
+			if (ab === 'hydration' && mon.status && this.weatherKind() === 'rain') {
+				this.pushMsg(`${mon.name}'s Hydration cured its status!`, () => { mon.status = null; });
+			}
+		}
+		this.pushMsg('', () => this.checkFaints());
 		// flinch never carries between turns
 		a.me.flinched = false;
 		a.foe.flinched = false;
+	}
+
+	// Disable/Encore/Taunt/Torment restrictions, shared by the menu and the AI
+	moveUsable(mon, m, side) {
+		if (m.pp <= 0) return false;
+		if (mon.disabledMove === m.id) return false;
+		if (mon.encoreMove && m.id !== mon.encoreMove) return false;
+		if (mon.tauntTurns > 0 && (this.data.moves[m.id]?.category === 'Status')) return false;
+		if (mon.tormented && this.active?.lastMove[side] === m.id) return false;
+		return true;
 	}
 
 	// wild mons act at random; trainers prefer the strongest expected hit
@@ -812,7 +1300,7 @@ export class Battle {
 		if (a.foe.chargeMove) {
 			return a.foe.moves.find(m => m.id === a.foe.chargeMove) || STRUGGLE();
 		}
-		const usable = a.foe.moves.filter(m => m.pp > 0);
+		const usable = a.foe.moves.filter(m => this.moveUsable(a.foe, m, 'foe'));
 		if (!usable.length) return STRUGGLE();
 		if (!a.isTrainer || Math.random() < 0.15) return usable[Math.floor(Math.random() * usable.length)];
 		let best = null, bestScore = 0;
@@ -832,8 +1320,9 @@ export class Battle {
 		const foeMove = this.chooseFoeMove();
 		const myPrio = this.data.moves[myMove.id]?.priority || 0;
 		const foePrio = this.data.moves[foeMove.id]?.priority || 0;
-		const mySpe = this.statOf(a.me, a.meBoosts, 'spe');
-		const foeSpe = this.statOf(a.foe, a.foeBoosts, 'spe');
+		let mySpe = this.statOf(a.me, a.meBoosts, 'spe') * (a.meSide?.tailwind > 0 ? 2 : 1);
+		let foeSpe = this.statOf(a.foe, a.foeBoosts, 'spe') * (a.foeSide?.tailwind > 0 ? 2 : 1);
+		if (a.fieldFx.trickRoom > 0) { const t = mySpe; mySpe = -mySpe; foeSpe = -foeSpe; }
 		const meFirst = myPrio !== foePrio ? myPrio > foePrio : (mySpe === foeSpe ? Math.random() < 0.5 : mySpe > foeSpe);
 
 		const actions = meFirst
@@ -860,7 +1349,7 @@ export class Battle {
 			this.grantExp();
 		}
 		if (meDown) {
-			this.pushMsg(`${a.me.name} fainted!`, () => { cry(a.me.speciesId); this.clearVolatiles(a.me); });
+			this.pushMsg(`${a.me.name} fainted!`, () => { cry(a.me.speciesId); this.clearVolatiles(a.me, true); });
 			this.pushAnim('faint', 'me', 0.7, () => { a.meHidden = true; });
 			const next = a.party.find(m => m.curHP > 0);
 			if (next) {
@@ -871,8 +1360,14 @@ export class Battle {
 					a.meBoosts = freshBoosts();
 					a.meShownHP = next.curHP;
 					a.meHidden = false;
+					if (a.healingWish) {
+						a.healingWish = false;
+						next.curHP = next.maxHP;
+						next.status = null;
+					}
 				});
 				this.pushAnim('enter', 'me', 0.4);
+				this.pushMsg('', () => { this.applyHazards(a.me, 'me'); this.switchInAbility(a.me, 'me'); });
 			} else {
 				this.pushMsg('You blacked out...', () => this.finish('defeat'));
 			}
@@ -929,6 +1424,7 @@ export class Battle {
 					a2.foeHidden = false;
 				});
 				this.pushAnim('enter', 'foe', 0.4);
+				this.pushMsg('', () => { this.applyHazards(a2.foe, 'foe'); this.switchInAbility(a2.foe, 'foe'); });
 			} else if (a2.isTrainer) {
 				this.pushMsg(a2.info.defeatText);
 				this.pushMsg(`You got $${a2.info.money} for winning!`, () => this.finish('victory'));
@@ -971,7 +1467,7 @@ export class Battle {
 		const a = this.active;
 		a.runAttempts++;
 		const mySpe = a.me.stats.spe, foeSpe = a.foe.stats.spe;
-		let ok = mySpe >= foeSpe;
+		let ok = mySpe >= foeSpe || this.abilityOf(a.me) === 'runaway';
 		if (!ok) {
 			const f = (Math.floor(mySpe * 128 / foeSpe) + 30 * a.runAttempts) % 256;
 			ok = Math.floor(Math.random() * 256) < f;
@@ -988,7 +1484,7 @@ export class Battle {
 
 	finish(result) {
 		const a = this.active;
-		for (const m of a.party) this.clearVolatiles(m);
+		for (const m of a.party) this.clearVolatiles(m, true);
 		a.result = result;
 		a.phase = 'done';
 	}
@@ -1045,7 +1541,7 @@ export class Battle {
 			if (k === 'x') a.phase = 'menu';
 			if (k === 'z' || k === 'Enter') {
 				const mv = a.me.moves[a.moveIdx];
-				if (mv.pp > 0) this.startQueue(() => this.resolveTurn(mv));
+				if (this.moveUsable(a.me, mv, 'me')) this.startQueue(() => this.resolveTurn(mv));
 			}
 			} else if (a.phase === 'learn') {
 			if (k === 'ArrowLeft' || k === 'ArrowUp') a.learnIdx = (a.learnIdx + 4) % 5;
@@ -1058,6 +1554,468 @@ export class Battle {
 		const a = this.active;
 		fn();
 		a.phase = 'msg';
+	}
+
+	// ---------- extended status-move systems ----------
+	// handles every classified MOVE_FX kind; returns true when the move is done
+	statusFx(fx, user, userBoosts, target, targetBoosts, move, isFoe) {
+		const a = this.active;
+		const mySide = isFoe ? 'foe' : 'me';
+		const sideOf = s => s === 'me' ? a.meSide : a.foeSide;
+		const hazardsOf = s => s === 'me' ? a.meHazards : a.foeHazards;
+		const boostWords = { atk: 'Attack', def: 'Defense', spa: 'Sp. Atk', spd: 'Sp. Def', spe: 'Speed', acc: 'accuracy', eva: 'evasiveness' };
+		const applyBoosts = (boosts, who, stats) => {
+			for (const [st, d] of Object.entries(stats)) {
+				const before = boosts[st] ?? 0;
+				boosts[st] = Math.max(-6, Math.min(6, before + d));
+				if (boosts[st] !== before) {
+					this.pushMsg(`${who.name}'s ${boostWords[st]} ${d > 1 ? 'rose sharply' : d > 0 ? 'rose' : d < -1 ? 'fell harshly' : 'fell'}!`);
+				}
+			}
+		};
+
+		if (fx.noop) { this.pushMsg('But it failed!'); return true; }
+		if (fx.splashMsg) { this.pushMsg('But nothing happened!'); return true; }
+		if (fx.weather) {
+			const names = { rain: 'It started to rain!', sun: 'The sunlight turned harsh!', sand: 'A sandstorm brewed!', hail: 'It started to hail!' };
+			if (a.weather?.kind === fx.weather) { this.pushMsg('But it failed!'); return true; }
+			a.weather = { kind: fx.weather, turns: 5 };
+			this.pushMsg(names[fx.weather]);
+			return true;
+		}
+		if (fx.terrain) {
+			if (a.terrain?.kind === fx.terrain) { this.pushMsg('But it failed!'); return true; }
+			a.terrain = { kind: fx.terrain, turns: 5 };
+			this.pushMsg(`The battlefield became ${fx.terrain}!`);
+			return true;
+		}
+		if (fx.field) {
+			if (a.fieldFx[fx.field] > 0) { a.fieldFx[fx.field] = 0; this.pushMsg('The effect wore off!'); return true; }
+			a.fieldFx[fx.field] = 5;
+			this.pushMsg({ trickRoom: `${user.name} twisted the dimensions!`, gravity: 'Gravity intensified!',
+				mudSport: 'Electric moves were weakened!', waterSport: 'Fire moves were weakened!' }[fx.field]);
+			return true;
+		}
+		if (fx.side) {
+			const s = sideOf(mySide);
+			if (s[fx.side] > 0) { this.pushMsg('But it failed!'); return true; }
+			s[fx.side] = fx.turns;
+			this.pushMsg({ tailwind: `A tailwind blew from behind ${user.name}!`, safeguard: `${user.name}'s side became cloaked in a veil!`,
+				mist: `${user.name}'s side became shrouded in mist!`, luckychant: `A chant shielded ${user.name}'s side from critical hits!` }[fx.side]);
+			return true;
+		}
+		if (fx.endure) {
+			user.protectN = (user.protectN || 0) + 1;
+			if (Math.random() < 1 / Math.pow(2, user.protectN - 1)) {
+				user.enduring = true;
+				this.pushMsg(`${user.name} braced itself!`);
+			} else { user.protectN = 0; this.pushMsg('But it failed!'); }
+			return true;
+		}
+		if (fx.hazard) {
+			const h = hazardsOf(isFoe ? 'me' : 'foe');
+			const max = { spikes: 3, toxicspikes: 2, stealthrock: 1, stickyweb: 1 }[fx.hazard];
+			if ((h[fx.hazard] || 0) >= max) { this.pushMsg('But it failed!'); return true; }
+			h[fx.hazard] = (h[fx.hazard] || 0) + 1;
+			this.pushMsg('Hazards were scattered around the opposing side!');
+			return true;
+		}
+		if (fx.clearHazards) {
+			a.meHazards = {}; a.foeHazards = {};
+			if (fx.foeBoost2) applyBoosts(targetBoosts, target, fx.foeBoost2);
+			if (fx.selfBoost) applyBoosts(userBoosts, user, fx.selfBoost);
+			this.pushMsg('The field was cleared!');
+			return true;
+		}
+		if (fx.swapHazards) {
+			[a.meHazards, a.foeHazards] = [a.foeHazards, a.meHazards];
+			this.pushMsg('The battlefield sides were swapped!');
+			return true;
+		}
+		if (fx.batonPass) {
+			if (isFoe) { this.pushMsg('But it failed!'); return true; }
+			const next = a.party.find(m => m !== user && m.curHP > 0);
+			if (!next) { this.pushMsg('But it failed!'); return true; }
+			this.pushMsg(`${user.name} passed the baton!`, () => {
+				const keep = { boosts: { ...userBoosts }, subHP: user.subHP, focusEnergy: user.focusEnergy, perishN: user.perishN };
+				this.clearVolatiles(user);
+				a.me = next;
+				a.meImg = a.backSprites.get(next);
+				Object.assign(a.meBoosts, keep.boosts);
+				if (keep.subHP) next.subHP = keep.subHP;
+				if (keep.focusEnergy) next.focusEnergy = true;
+				if (keep.perishN) next.perishN = keep.perishN;
+				a.meShownHP = next.curHP;
+				a.meHidden = false;
+			});
+			this.pushAnim('enter', 'me', 0.4);
+			this.pushMsg('', () => { cry(a.me.speciesId); this.applyHazards(a.me, 'me'); });
+			return true;
+		}
+		if (fx.partingShot) {
+			applyBoosts(targetBoosts, target, { atk: -1, spa: -1 });
+			if (!isFoe) {
+				const next = a.party.find(m => m !== user && m.curHP > 0);
+				if (next) {
+					this.pushMsg(`${user.name} switched out!`, () => {
+						this.clearVolatiles(user);
+						a.me = next;
+						a.meImg = a.backSprites.get(next);
+						Object.assign(a.meBoosts, freshBoosts());
+						a.meShownHP = next.curHP;
+						a.meHidden = false;
+					});
+					this.pushAnim('enter', 'me', 0.4);
+					this.pushMsg('', () => { cry(a.me.speciesId); this.applyHazards(a.me, 'me'); });
+				}
+			}
+			return true;
+		}
+		if (fx.fleeSelf) {
+			if (a.isTrainer) { this.pushMsg('But it failed!'); return true; }
+			this.pushMsg(`${user.name} fled the battle!`, () => this.finish('escaped'));
+			return true;
+		}
+		if (fx.memento) {
+			applyBoosts(targetBoosts, target, { atk: -2, spa: -2 });
+			this.pushMsg(`${user.name} gave everything it had!`, () => { user.curHP = 0; });
+			this.pushMsg('', () => this.checkFaints());
+			return true;
+		}
+		if (fx.healingWish) {
+			if (isFoe || !a.party.find(m => m !== user && m.curHP > 0)) { this.pushMsg('But it failed!'); return true; }
+			this.pushMsg(`${user.name} made a healing wish!`, () => { user.curHP = 0; a.healingWish = true; });
+			this.pushMsg('', () => this.checkFaints());
+			return true;
+		}
+		if (fx.revive) {
+			const fainted = isFoe ? null : a.party.find(m => m.curHP <= 0);
+			if (!fainted) { this.pushMsg('But it failed!'); return true; }
+			this.pushMsg(`${fainted.name} was revived!`, () => {
+				fainted.curHP = Math.floor(fainted.maxHP / 2);
+				fainted.status = null;
+			});
+			return true;
+		}
+		if (fx.restrict) {
+			const lastId = a.lastMove[isFoe ? 'me' : 'foe'];
+			if (fx.restrict === 'disable') {
+				if (!lastId || target.disabledMove) { this.pushMsg('But it failed!'); return true; }
+				target.disabledMove = lastId; target.disableTurns = 4;
+				this.pushMsg(`${target.name}'s move was disabled!`);
+			} else if (fx.restrict === 'encore') {
+				if (!lastId || target.encoreMove) { this.pushMsg('But it failed!'); return true; }
+				target.encoreMove = lastId; target.encoreTurns = 3;
+				this.pushMsg(`${target.name} received an encore!`);
+			} else if (fx.restrict === 'taunt') {
+				if (target.tauntTurns > 0) { this.pushMsg('But it failed!'); return true; }
+				target.tauntTurns = 3;
+				this.pushMsg(`${target.name} fell for the taunt!`);
+			} else {
+				if (target.tormented) { this.pushMsg('But it failed!'); return true; }
+				target.tormented = true;
+				this.pushMsg(`${target.name} was subjected to torment!`);
+			}
+			return true;
+		}
+		if (fx.noSwitch) {
+			target.noSwitch = true;
+			this.pushMsg(`${target.name} can no longer escape!`);
+			return true;
+		}
+		if (fx.magnetRise) { user.magnetRise = 5; this.pushMsg(`${user.name} levitated with electromagnetism!`); return true; }
+		if (fx.telekinesis) { target.telekinesis = 3; this.pushMsg(`${target.name} was hurled into the air!`); return true; }
+		if (fx.call) {
+			let id = null;
+			if (fx.call === 'metronome') {
+				const pool = Object.keys(this.data.moves).filter(k => k !== 'metronome' && k !== 'struggle');
+				id = pool[Math.floor(Math.random() * pool.length)];
+			} else if (fx.call === 'copycat') id = a.lastMoveId;
+			else if (fx.call === 'mirror') id = a.lastMove[isFoe ? 'me' : 'foe'];
+			else if (fx.call === 'assist') {
+				const pool = (isFoe ? [] : a.party.filter(m => m !== user)).flatMap(m => m.moves.map(mv2 => mv2.id));
+				id = pool.length ? pool[Math.floor(Math.random() * pool.length)] : null;
+			} else if (fx.call === 'sleeptalk') {
+				const pool = user.moves.filter(m2 => m2.id !== 'sleeptalk');
+				id = pool.length ? pool[Math.floor(Math.random() * pool.length)].id : null;
+			} else if (fx.call === 'nature') id = this.data.moves.triattack ? 'triattack' : 'swift';
+			if (!id || MOVE_FX[id]?.call) { this.pushMsg('But it failed!'); return true; }
+			const called = makeMove(id, this.data);
+			this.pushMsg('', () => this.useMove(user, userBoosts, target, targetBoosts, called, isFoe));
+			return true;
+		}
+		if (fx.mimic) {
+			const lastId = a.lastMove[isFoe ? 'me' : 'foe'];
+			if (!lastId || user.moves.some(m2 => m2.id === lastId)) { this.pushMsg('But it failed!'); return true; }
+			const idx = user.moves.indexOf(move);
+			if (idx < 0) { this.pushMsg('But it failed!'); return true; }
+			if (!user.mimicSlot) user.mimicSlot = { idx, orig: move };
+			user.moves[idx] = makeMove(lastId, this.data);
+			this.pushMsg(`${user.name} mimicked the move!`);
+			return true;
+		}
+		if (fx.boostCost) {
+			const cost = Math.floor(user.maxHP * fx.boostCost.frac);
+			if (user.curHP <= cost) { this.pushMsg('But it failed!'); return true; }
+			this.pushMsg(`${user.name} paid with its vitality!`, () => {
+				user.curHP -= cost;
+				this.float(mySide, `-${cost}`, '#ff7a6b');
+			});
+			applyBoosts(userBoosts, user, fx.boostCost.stats);
+			return true;
+		}
+		if (fx.selfBoost || fx.foeBoost2 || fx.cureSelfToo) {
+			if (fx.needsPoisoned && target.status !== 'psn') { this.pushMsg('But it failed!'); return true; }
+			if (fx.selfBoost) applyBoosts(userBoosts, user, fx.selfBoost);
+			if (fx.foeBoost2) applyBoosts(targetBoosts, target, fx.foeBoost2);
+			if (fx.cureSelfToo && user.status) {
+				this.pushMsg(`${user.name} shook off its status!`, () => { user.status = null; delete user.badPsn; delete user.toxicN; });
+			}
+			if (fx.heal) {
+				const amt = Math.floor(user.maxHP * fx.heal);
+				this.pushMsg(`${user.name} regained health!`, () => {
+					user.curHP = Math.min(user.maxHP, user.curHP + amt);
+					this.float(mySide, `+${amt}`, '#6be08a');
+				});
+			}
+			return true;
+		}
+		if (fx.acupressure) {
+			const stats = ['atk', 'def', 'spa', 'spd', 'spe'];
+			applyBoosts(userBoosts, user, { [stats[Math.floor(Math.random() * stats.length)]]: 2 });
+			return true;
+		}
+		if (fx.focusEnergy) { user.focusEnergy = true; this.pushMsg(`${user.name} is getting pumped!`); return true; }
+		if (fx.laserFocus) { user.laserFocus = true; this.pushMsg(`${user.name} concentrated intensely!`); return true; }
+		if (fx.lockOn) { user.lockOn = true; this.pushMsg(`${user.name} took aim at ${target.name}!`); return true; }
+		if (fx.foresight) { target.foresight = true; this.pushMsg(`${user.name} identified ${target.name}!`); return true; }
+		if (fx.healTarget) {
+			const amt = Math.floor(target.maxHP * fx.healTarget);
+			this.pushMsg(`${target.name}'s HP was restored.`, () => {
+				target.curHP = Math.min(target.maxHP, target.curHP + amt);
+				this.float(isFoe ? 'me' : 'foe', `+${amt}`, '#6be08a');
+			});
+			return true;
+		}
+		if (fx.wish) {
+			const s = sideOf(mySide);
+			if (s.wishT > 0) { this.pushMsg('But it failed!'); return true; }
+			s.wishT = 2; s.wishAmt = Math.floor(user.maxHP / 2);
+			this.pushMsg(`${user.name} made a wish!`);
+			return true;
+		}
+		if (fx.strengthSap) {
+			const amt = this.statOf(target, targetBoosts, 'atk');
+			applyBoosts(targetBoosts, target, { atk: -1 });
+			this.pushMsg(`${user.name} drained ${target.name}'s strength!`, () => {
+				user.curHP = Math.min(user.maxHP, user.curHP + amt);
+				this.float(mySide, `+${amt}`, '#6be08a');
+			});
+			return true;
+		}
+		if (fx.purify) {
+			if (!target.status) { this.pushMsg('But it failed!'); return true; }
+			this.pushMsg(`${target.name} was purified!`, () => {
+				target.status = null; delete target.badPsn;
+				user.curHP = Math.min(user.maxHP, user.curHP + Math.floor(user.maxHP / 2));
+			});
+			return true;
+		}
+		if (fx.psychoShift) {
+			if (!user.status || target.status) { this.pushMsg('But it failed!'); return true; }
+			this.pushMsg(`${user.name} shifted its status onto ${target.name}!`, () => {
+				target.status = user.status;
+				user.status = null;
+			});
+			return true;
+		}
+		if (fx.nightmare) {
+			if (target.status !== 'slp' || target.nightmared) { this.pushMsg('But it failed!'); return true; }
+			target.nightmared = true;
+			this.pushMsg(`${target.name} began having a nightmare!`);
+			return true;
+		}
+		if (fx.perishSong) {
+			for (const m of [user, target]) if (!m.perishN) m.perishN = 3;
+			this.pushMsg('All battlers will faint in three turns!');
+			return true;
+		}
+		if (fx.destinyBond) { user.destinyBond = true; this.pushMsg(`${user.name} is trying to take its foe down with it!`); return true; }
+		if (fx.spite) {
+			const lastId = a.lastMove[isFoe ? 'me' : 'foe'];
+			const mv2 = lastId && target.moves.find(m2 => m2.id === lastId);
+			if (!mv2 || mv2.pp <= 0) { this.pushMsg('But it failed!'); return true; }
+			mv2.pp = Math.max(0, mv2.pp - 4);
+			this.pushMsg(`${target.name}'s move lost PP!`);
+			return true;
+		}
+		if (fx.psychUp) {
+			Object.assign(userBoosts, { ...targetBoosts });
+			this.pushMsg(`${user.name} copied ${target.name}'s stat changes!`);
+			return true;
+		}
+		if (fx.swapBoosts) {
+			const keys = fx.swapBoosts === 'all' ? Object.keys(userBoosts)
+				: fx.swapBoosts === 'guard' ? ['def', 'spd'] : ['atk', 'spa'];
+			for (const k of keys) {
+				const t = userBoosts[k] || 0;
+				userBoosts[k] = targetBoosts[k] || 0;
+				targetBoosts[k] = t;
+			}
+			this.pushMsg('Stat changes were swapped!');
+			return true;
+		}
+		if (fx.statSwap) {
+			for (const k of fx.statSwap) {
+				const t = user.stats[k];
+				user.stats[k] = target.stats[k];
+				target.stats[k] = t;
+			}
+			this.pushMsg('Stats were swapped!');
+			return true;
+		}
+		if (fx.statAvg) {
+			for (const k of fx.statAvg) {
+				const avg = Math.floor((user.stats[k] + target.stats[k]) / 2);
+				user.stats[k] = avg; target.stats[k] = avg;
+			}
+			this.pushMsg('The battlers shared their strengths!');
+			return true;
+		}
+		if (fx.ownSwap) {
+			const [k1, k2] = fx.ownSwap;
+			const t = user.stats[k1];
+			user.stats[k1] = user.stats[k2];
+			user.stats[k2] = t;
+			this.pushMsg(`${user.name} swapped its stats!`);
+			return true;
+		}
+		if (fx.invertBoosts) {
+			for (const k of Object.keys(targetBoosts)) targetBoosts[k] = -(targetBoosts[k] || 0);
+			this.pushMsg(`${target.name}'s stat changes were turned upside down!`);
+			return true;
+		}
+		if (fx.transform) {
+			user.stats = { ...target.stats, hp: user.stats.hp };
+			user.types = [...target.types];
+			user.transformedMoves = user.transformedMoves || user.moves;
+			user.moves = target.moves.map(m2 => ({ id: m2.id, name: m2.name, pp: 5, maxPp: 5 }));
+			this.pushMsg(`${user.name} transformed into ${target.name}!`);
+			return true;
+		}
+		if (fx.substitute) {
+			const cost = Math.floor(user.maxHP / 4);
+			if (user.subHP > 0 || user.curHP <= cost) { this.pushMsg('But it failed!'); return true; }
+			this.pushMsg(`${user.name} put up a substitute!`, () => {
+				user.curHP -= cost;
+				user.subHP = cost;
+				this.float(mySide, `-${cost}`, '#ff7a6b');
+			});
+			return true;
+		}
+		if (fx.typeSelf) {
+			user.types = fx.typeSelf === 'firstmove' ? [this.data.moves[user.moves[0]?.id]?.type || 'Normal']
+				: fx.typeSelf === 'copy' ? [...target.types]
+				: fx.typeSelf === 'random' ? [Object.keys(CHART)[Math.floor(Math.random() * 18)]]
+				: [fx.typeSelf];
+			this.pushMsg(`${user.name} became ${user.types.join('/')} type!`);
+			return true;
+		}
+		if (fx.typeTarget) { target.types = [...fx.typeTarget]; this.pushMsg(`${target.name} became ${fx.typeTarget[0]} type!`); return true; }
+		if (fx.addType) {
+			if (!target.types.includes(fx.addType)) target.types = [...target.types, fx.addType];
+			this.pushMsg(`${fx.addType} was added to ${target.name}!`);
+			return true;
+		}
+		if (fx.stockpile) {
+			if ((user.stockN || 0) >= 3) { this.pushMsg('But it failed!'); return true; }
+			user.stockN = (user.stockN || 0) + 1;
+			applyBoosts(userBoosts, user, { def: 1, spd: 1 });
+			this.pushMsg(`${user.name} stockpiled ${user.stockN}!`);
+			return true;
+		}
+		if (fx.spitUp || fx.swallow) {
+			if (!user.stockN) { this.pushMsg('But it failed!'); return true; }
+			if (fx.spitUp) {
+				const dmg = Math.min(target.curHP, 30 * user.stockN + Math.floor(user.level * user.stockN / 2));
+				this.pushMsg(`${user.name} spat up its power!`, () => {
+					sfx('hit_normal');
+					target.curHP = Math.max(0, target.curHP - dmg);
+					this.float(isFoe ? 'me' : 'foe', `-${dmg}`, '#ff7a6b');
+				});
+			} else {
+				const amt = Math.floor(user.maxHP * [0.25, 0.5, 1][user.stockN - 1]);
+				this.pushMsg(`${user.name} swallowed its power!`, () => {
+					user.curHP = Math.min(user.maxHP, user.curHP + amt);
+					this.float(mySide, `+${amt}`, '#6be08a');
+				});
+			}
+			user.stockN = 0;
+			return true;
+		}
+		if (fx.chargeUp) {
+			user.chargedUp = true;
+			applyBoosts(userBoosts, user, { spd: 1 });
+			this.pushMsg(`${user.name} began charging power!`);
+			return true;
+		}
+		if (fx.abilityCopy) {
+			if (!target.ability) { this.pushMsg('But it failed!'); return true; }
+			user.ability = target.ability;
+			this.pushMsg(`${user.name} copied ${target.name}'s ability!`);
+			return true;
+		}
+		if (fx.abilitySwap) {
+			const t = user.ability;
+			user.ability = target.ability;
+			target.ability = t;
+			this.pushMsg('The battlers swapped abilities!');
+			return true;
+		}
+		if (fx.abilityGive) { target.ability = user.ability; this.pushMsg(`${target.name}'s ability changed!`); return true; }
+		if (fx.abilitySuppress) { target.abilitySuppressed = true; this.pushMsg(`${target.name}'s ability was suppressed!`); return true; }
+		if (fx.abilitySet) { target.ability = fx.abilitySet; this.pushMsg(`${target.name}'s ability changed!`); return true; }
+		return false;
+	}
+
+	// entry hazards greet whoever switches in on that side
+	applyHazards(mon, side) {
+		const a = this.active;
+		const h = side === 'me' ? a.meHazards : a.foeHazards;
+		if (!h || mon.curHP <= 0) return;
+		const grounded = !mon.types.includes('Flying');
+		if (h.stealthrock) {
+			const eff = effectiveness('Rock', mon.types);
+			const dmg = Math.max(1, Math.floor(mon.maxHP * eff / 8));
+			this.pushMsg(`Pointed stones dug into ${mon.name}!`, () => {
+				mon.curHP = Math.max(0, mon.curHP - dmg);
+				this.float(side, `-${dmg}`, '#e8b16b');
+			});
+		}
+		if (h.spikes && grounded) {
+			const frac = [1 / 8, 1 / 6, 1 / 4][Math.min(2, h.spikes - 1)];
+			const dmg = Math.max(1, Math.floor(mon.maxHP * frac));
+			this.pushMsg(`${mon.name} was hurt by spikes!`, () => {
+				mon.curHP = Math.max(0, mon.curHP - dmg);
+				this.float(side, `-${dmg}`, '#e8b16b');
+			});
+		}
+		if (h.toxicspikes && grounded) {
+			if (mon.types.includes('Poison')) {
+				h.toxicspikes = 0;
+				this.pushMsg(`${mon.name} absorbed the toxic spikes!`);
+			} else if (!mon.status && !mon.types.includes('Steel')) {
+				mon.status = 'psn';
+				if (h.toxicspikes >= 2) { mon.badPsn = true; mon.toxicN = 1; }
+				this.pushMsg(`${mon.name} was poisoned by toxic spikes!`);
+			}
+		}
+		if (h.stickyweb && grounded) {
+			const boosts = side === 'me' ? a.meBoosts : a.foeBoosts;
+			boosts.spe = Math.max(-6, (boosts.spe || 0) - 1);
+			this.pushMsg(`${mon.name} was caught in a sticky web!`);
+		}
+		this.pushMsg('', () => this.checkFaints());
 	}
 
 	// choice: 0-3 = replace that move, -1 = give up on the new one
@@ -1150,7 +2108,7 @@ export class Battle {
 	switchTo(mon) {
 		const a = this.active;
 		this.startQueue(() => {
-			this.pushMsg(`Come back, ${a.me.name}!`, () => this.clearVolatiles(a.me));
+			this.pushMsg(`Come back, ${a.me.name}!`, () => this.clearVolatiles(a.me, true));
 			this.pushAnim('recall', 'me', 0.3, () => { a.meHidden = true; });
 			this.pushMsg(`Go! ${mon.name}!`, () => {
 				sfx('ball_open'); cry(mon.speciesId);
@@ -1159,8 +2117,14 @@ export class Battle {
 				a.meBoosts = freshBoosts();
 				a.meShownHP = mon.curHP;
 				a.meHidden = false;
+				if (a.healingWish) {
+					a.healingWish = false;
+					mon.curHP = mon.maxHP;
+					mon.status = null;
+				}
 			});
 			this.pushAnim('enter', 'me', 0.4);
+			this.pushMsg('', () => { this.applyHazards(a.me, 'me'); this.switchInAbility(a.me, 'me'); });
 			this.foeFreeMove();
 		});
 	}
@@ -1358,6 +2322,17 @@ export class Battle {
 		ctx.fillStyle = g;
 		ctx.fillRect(0, 0, W, H);
 
+		if (a.weather) {
+			const tint = { rain: 'rgba(70,110,200,0.18)', sun: 'rgba(255,190,80,0.16)',
+				sand: 'rgba(200,170,90,0.2)', hail: 'rgba(180,220,255,0.18)' }[a.weather.kind];
+			ctx.fillStyle = tint;
+			ctx.fillRect(0, 0, W, H);
+			ctx.fillStyle = UI.C.dim;
+			ctx.font = `${Math.round(13 * u)}px m6x11plus, monospace`;
+			ctx.textAlign = 'center';
+			ctx.fillText({ rain: '☔ RAIN', sun: '☀ HARSH SUNLIGHT', sand: '≋ SANDSTORM', hail: '❄ HAIL' }[a.weather.kind], W / 2, 22 * u);
+			ctx.textAlign = 'left';
+		}
 		this.drawSide(ctx, a, 'foe', W, H, u);
 		this.drawSide(ctx, a, 'me', W, H, u);
 
@@ -1388,11 +2363,12 @@ export class Battle {
 
 		// info panels
 		UI.monPanel(ctx, a.foe, 14 * u, 14 * u, 272 * u, u,
-			{ shownHP: a.foeShownHP, boosts: a.foeBoosts });
+			{ shownHP: a.foeShownHP, boosts: a.foeBoosts, abilityName: this.abilityName(a.foe.ability) });
 		if (a.isTrainer) UI.teamDots(ctx, a.foes, a.foe, 30 * u, 106 * u, u);
 		const meY = H - 124 * u - 112 * u;
 		UI.monPanel(ctx, a.me, W - 14 * u - 300 * u, meY, 300 * u, u,
-			{ shownHP: a.meShownHP, boosts: a.meBoosts, showXP: true, showNumbers: true, expFrac: this.expFrac(a.me) });
+			{ shownHP: a.meShownHP, boosts: a.meBoosts, showXP: true, showNumbers: true,
+				expFrac: this.expFrac(a.me), abilityName: this.abilityName(a.me.ability) });
 		// party dots sit in a row just above the panel's right edge
 		UI.teamDots(ctx, a.party, a.me,
 			W - 14 * u - 10 * u - (a.party.length - 1) * 18 * u - 6 * u, meY - 12 * u, u);
@@ -1426,7 +2402,7 @@ export class Battle {
 					x, y, w: bw, h: bh, label: mv.name.toUpperCase().slice(0, 16),
 					sub: `PP ${mv.pp}/${mv.maxPp}`, subColor: mv.pp === 0 ? UI.C.hpRed : UI.C.dim,
 					right: info.power ? `Pwr ${info.power}` : (info.category || ''),
-					type: info.type, disabled: mv.pp <= 0, kbSel: a.moveIdx === i,
+					type: info.type, disabled: !this.moveUsable(a.me, mv, 'me'), kbSel: a.moveIdx === i,
 				}, 'move:' + i);
 			});
 			btn({ x: W - 8 * u - backW - 8 * u, y: barY + 9 * u, w: backW, h: 96 * u, label: 'BACK', center: true }, 'back');

@@ -4,13 +4,18 @@ import { buildMon } from './battle.js';
 const KEY = 'magepunk_party_v1';
 const BOX_KEY = 'magepunk_box_v1';
 
-function migrate(mon) {
-	// older saves predate ivs/exp
+function migrate(mon, data) {
+	// older saves predate ivs/exp/gender/ability
 	if (!mon.ivs) {
 		const iv = () => Math.floor(Math.random() * 32);
 		mon.ivs = { hp: iv(), atk: iv(), def: iv(), spa: iv(), spd: iv(), spe: iv() };
 	}
 	if (mon.exp == null) mon.exp = mon.level ** 3;
+	if (!mon.gender) mon.gender = Math.random() < 0.5 ? 'M' : 'F';
+	if (!mon.ability) {
+		const opts = data?.abilities?.[mon.speciesId];
+		if (opts?.length) mon.ability = opts[Math.floor(Math.random() * opts.length)];
+	}
 	return mon;
 }
 
@@ -20,7 +25,7 @@ export function loadParty(data) {
 		const raw = localStorage.getItem(KEY);
 		if (raw) {
 			const party = JSON.parse(raw);
-			if (Array.isArray(party) && party.length && party[0].stats) return party.map(migrate);
+			if (Array.isArray(party) && party.length && party[0].stats) return party.map(m => migrate(m, data));
 		}
 	} catch (e) { /* fresh save */ }
 	return null;
