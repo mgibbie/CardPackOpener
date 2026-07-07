@@ -36,20 +36,40 @@ function effectiveness(moveType, defTypes) {
 	return m;
 }
 
-// simple stat-stage effects for common status moves (rest print no-effect)
+// stat-stage moves: single {stat,d} or multi {stats:{...}}; foe = aims at target
 const STAT_MOVES = {
+	// foe debuffs
 	growl: { stat: 'atk', d: -1, foe: true }, tailwhip: { stat: 'def', d: -1, foe: true },
 	leer: { stat: 'def', d: -1, foe: true }, stringshot: { stat: 'spe', d: -1, foe: true },
 	scaryface: { stat: 'spe', d: -2, foe: true }, charm: { stat: 'atk', d: -2, foe: true },
-	growth: { stat: 'spa', d: 1, foe: false }, harden: { stat: 'def', d: 1, foe: false },
-	defensecurl: { stat: 'def', d: 1, foe: false }, withdraw: { stat: 'def', d: 1, foe: false },
-	howl: { stat: 'atk', d: 1, foe: false }, sharpen: { stat: 'atk', d: 1, foe: false },
-	meditate: { stat: 'atk', d: 1, foe: false }, agility: { stat: 'spe', d: 2, foe: false },
-	swordsdance: { stat: 'atk', d: 2, foe: false }, irondefense: { stat: 'def', d: 2, foe: false },
-	tailglow: { stat: 'spa', d: 2, foe: false }, nastyplot: { stat: 'spa', d: 2, foe: false },
+	cottonspore: { stat: 'spe', d: -2, foe: true }, screech: { stat: 'def', d: -2, foe: true },
+	metalsound: { stat: 'spd', d: -2, foe: true }, faketears: { stat: 'spd', d: -2, foe: true },
+	featherdance: { stat: 'atk', d: -2, foe: true }, captivate: { stat: 'spa', d: -2, foe: true },
+	eerieimpulse: { stat: 'spa', d: -2, foe: true }, confide: { stat: 'spa', d: -1, foe: true },
+	babydolleyes: { stat: 'atk', d: -1, foe: true }, playnice: { stat: 'atk', d: -1, foe: true },
+	sweetscent: { stat: 'eva', d: -1, foe: true },
+	tickle: { stats: { atk: -1, def: -1 }, foe: true },
+	tearfullook: { stats: { atk: -1, spa: -1 }, foe: true },
 	sandattack: { stat: 'acc', d: -1, foe: true }, smokescreen: { stat: 'acc', d: -1, foe: true },
 	flash: { stat: 'acc', d: -1, foe: true }, kinesis: { stat: 'acc', d: -1, foe: true },
-	doubleteam: { stat: 'eva', d: 1, foe: false }, minimize: { stat: 'eva', d: 1, foe: false },
+	// self boosts
+	growth: { stat: 'spa', d: 1 }, harden: { stat: 'def', d: 1 },
+	defensecurl: { stat: 'def', d: 1 }, withdraw: { stat: 'def', d: 1 },
+	howl: { stat: 'atk', d: 1 }, sharpen: { stat: 'atk', d: 1 }, meditate: { stat: 'atk', d: 1 },
+	agility: { stat: 'spe', d: 2 }, rockpolish: { stat: 'spe', d: 2 }, autotomize: { stat: 'spe', d: 2 },
+	swordsdance: { stat: 'atk', d: 2 }, irondefense: { stat: 'def', d: 2 },
+	barrier: { stat: 'def', d: 2 }, acidarmor: { stat: 'def', d: 2 },
+	cottonguard: { stat: 'def', d: 3 }, amnesia: { stat: 'spd', d: 2 },
+	tailglow: { stat: 'spa', d: 2 }, nastyplot: { stat: 'spa', d: 2 },
+	doubleteam: { stat: 'eva', d: 1 }, minimize: { stat: 'eva', d: 1 },
+	honeclaws: { stats: { atk: 1, acc: 1 } }, workup: { stats: { atk: 1, spa: 1 } },
+	bulkup: { stats: { atk: 1, def: 1 } }, calmmind: { stats: { spa: 1, spd: 1 } },
+	dragondance: { stats: { atk: 1, spe: 1 } }, shiftgear: { stats: { atk: 1, spe: 2 } },
+	cosmicpower: { stats: { def: 1, spd: 1 } }, defendorder: { stats: { def: 1, spd: 1 } },
+	coil: { stats: { atk: 1, def: 1, acc: 1 } },
+	quiverdance: { stats: { spa: 1, spd: 1, spe: 1 } },
+	curse: { stats: { atk: 1, def: 1, spe: -1 } }, // non-Ghost Curse
+	shellsmash: { stats: { atk: 2, spa: 2, spe: 2, def: -1, spd: -1 } },
 };
 
 const freshBoosts = () => ({ atk: 0, def: 0, spa: 0, spd: 0, spe: 0, acc: 0, eva: 0 });
@@ -62,13 +82,13 @@ const MOVE_FX = {
 	// pure status infliction
 	thunderwave: { status: 'par' }, stunspore: { status: 'par' }, glare: { status: 'par' },
 	sleeppowder: { status: 'slp' }, spore: { status: 'slp' }, hypnosis: { status: 'slp' },
-	sing: { status: 'slp' }, lovelykiss: { status: 'slp' }, grasswhistle: { status: 'slp' },
+	sing: { status: 'slp' }, lovelykiss: { status: 'slp' }, grasswhistle: { status: 'slp' }, darkvoid: { status: 'slp' },
 	poisonpowder: { status: 'psn' }, poisongas: { status: 'psn' },
 	toxic: { status: 'psn', bad: true },
 	willowisp: { status: 'brn' },
 	// confusion, seeding, and side screens
 	confuseray: { confuse: true }, supersonic: { confuse: true }, sweetkiss: { confuse: true },
-	teeterdance: { confuse: true }, swagger: { confuse: true },
+	teeterdance: { confuse: true },
 	confusion: { sec: { confuse: true, ch: 10 } }, psybeam: { sec: { confuse: true, ch: 10 } },
 	dizzypunch: { sec: { confuse: true, ch: 20 } }, waterpulse: { sec: { confuse: true, ch: 20 } },
 	dynamicpunch: { sec: { confuse: true, ch: 100 } }, signalbeam: { sec: { confuse: true, ch: 10 } },
@@ -110,6 +130,48 @@ const MOVE_FX = {
 	cometpunch: { hits: [2, 5] }, bulletseed: { hits: [2, 5] }, rockblast: { hits: [2, 5] },
 	iciclespear: { hits: [2, 5] }, doublekick: { hits: [2, 2] }, bonemerang: { hits: [2, 2] },
 	dualchop: { hits: [2, 2] }, doublehit: { hits: [2, 2] },
+	// secondary stat drops on damaging moves
+	acid: { sec: { stat: 'spd', d: -1, ch: 10 } }, psychic: { sec: { stat: 'spd', d: -1, ch: 10 } },
+	shadowball: { sec: { stat: 'spd', d: -1, ch: 20 } }, crunch: { sec: { stat: 'def', d: -1, ch: 20 } },
+	aurorabeam: { sec: { stat: 'atk', d: -1, ch: 10 } }, bubblebeam: { sec: { stat: 'spe', d: -1, ch: 10 } },
+	bubble: { sec: { stat: 'spe', d: -1, ch: 10 } }, constrict: { sec: { stat: 'spe', d: -1, ch: 10 } },
+	icywind: { sec: { stat: 'spe', d: -1, ch: 100 } }, mudslap: { sec: { stat: 'acc', d: -1, ch: 100 } },
+	mudshot: { sec: { stat: 'spe', d: -1, ch: 100 } }, muddywater: { sec: { stat: 'acc', d: -1, ch: 30 } },
+	rocktomb: { sec: { stat: 'spe', d: -1, ch: 100 } }, lowsweep: { sec: { stat: 'spe', d: -1, ch: 100 } },
+	bulldoze: { sec: { stat: 'spe', d: -1, ch: 100 } }, snarl: { sec: { stat: 'spa', d: -1, ch: 100 } },
+	moonblast: { sec: { stat: 'spa', d: -1, ch: 30 } }, energyball: { sec: { stat: 'spd', d: -1, ch: 10 } },
+	focusblast: { sec: { stat: 'spd', d: -1, ch: 10 } }, flashcannon: { sec: { stat: 'spd', d: -1, ch: 10 } },
+	earthpower: { sec: { stat: 'spd', d: -1, ch: 10 } }, irontail: { sec: { stat: 'def', d: -1, ch: 30 } },
+	poisonfang: { sec: { status: 'psn', bad: true, ch: 50 } },
+	// self stat costs after the hit lands
+	overheat: { selfDrop: { spa: -2 } }, dracometeor: { selfDrop: { spa: -2 } },
+	leafstorm: { selfDrop: { spa: -2 } }, psychoboost: { selfDrop: { spa: -2 } },
+	closecombat: { selfDrop: { def: -1, spd: -1 } }, superpower: { selfDrop: { atk: -1, def: -1 } },
+	hammerarm: { selfDrop: { spe: -1 } },
+	// fixed damage + OHKO
+	seismictoss: { fixed: 'level' }, nightshade: { fixed: 'level' },
+	dragonrage: { fixed: 40 }, sonicboom: { fixed: 20 }, psywave: { fixed: 'psywave' },
+	superfang: { fixed: 'half' }, endeavor: { fixed: 'endeavor' },
+	fissure: { ohko: true }, guillotine: { ohko: true }, horndrill: { ohko: true }, sheercold: { ohko: true },
+	// two-turn charge / recharge / self-KO
+	fly: { chargeText: 'flew up high!' }, dig: { chargeText: 'burrowed underground!' },
+	dive: { chargeText: 'hid underwater!' }, bounce: { chargeText: 'sprang up!' },
+	solarbeam: { chargeText: 'absorbed light!' }, skyattack: { chargeText: 'became cloaked in a harsh light!' },
+	razorwind: { chargeText: 'whipped up a whirlwind!' }, skullbash: { chargeText: 'lowered its head!' },
+	hyperbeam: { recharge: true }, gigaimpact: { recharge: true }, blastburn: { recharge: true },
+	hydrocannon: { recharge: true }, frenzyplant: { recharge: true },
+	selfdestruct: { selfKO: true }, explosion: { selfKO: true },
+	// partial trapping
+	wrap: { trap: 'Wrap' }, bind: { trap: 'Bind' }, firespin: { trap: 'Fire Spin' },
+	whirlpool: { trap: 'Whirlpool' }, clamp: { trap: 'Clamp' }, sandtomb: { trap: 'Sand Tomb' },
+	// utility status moves
+	protect: { protect: true }, detect: { protect: true },
+	yawn: { yawn: true }, haze: { haze: true },
+	roar: { blow: true }, whirlwind: { blow: true },
+	healbell: { cureParty: true }, aromatherapy: { cureParty: true }, refresh: { cureSelf: true },
+	aquaring: { regen: true }, ingrain: { regen: true },
+	bellydrum: { bellydrum: true }, painsplit: { painsplit: true },
+	swagger: { confuse: true, foeBoost: { atk: 2 } }, flatter: { confuse: true, foeBoost: { spa: 1 } },
 };
 
 const STATUS_NAMES = { brn: 'BRN', psn: 'PSN', par: 'PAR', slp: 'SLP', frz: 'FRZ' };
@@ -325,6 +387,14 @@ export class Battle {
 		delete mon.seeded;
 		delete mon.badPsn;
 		delete mon.toxicN;
+		delete mon.chargeMove;
+		delete mon.rechargeTurn;
+		delete mon.trapTurns;
+		delete mon.trapName;
+		delete mon.drowsy;
+		delete mon.aquaRing;
+		delete mon.protectN;
+		delete mon.protectedTurn;
 		mon.flinched = false;
 	}
 
@@ -333,6 +403,11 @@ export class Battle {
 		if (user.flinched) {
 			user.flinched = false;
 			this.pushMsg(`${user.name} flinched and couldn't move!`);
+			return false;
+		}
+		if (user.rechargeTurn) {
+			user.rechargeTurn = false;
+			this.pushMsg(`${user.name} must recharge!`);
 			return false;
 		}
 		if (user.confuseTurns > 0) {
@@ -387,10 +462,28 @@ export class Battle {
 		const fx = MOVE_FX[move.id] || {};
 		if (!this.beforeMove(user, userBoosts, isFoe)) return;
 		move.pp = Math.max(0, move.pp - 1);
+		// two-turn moves spend their first turn charging (PP refunded: one use, one PP)
+		if (fx.chargeText && !user.chargeMove) {
+			user.chargeMove = move.id;
+			move.pp = Math.min(move.maxPp, move.pp + 1);
+			this.pushMsg(`${user.name} ${fx.chargeText}`);
+			return;
+		}
+		if (user.chargeMove === move.id) user.chargeMove = null;
+		// protect's streak resets whenever anything else is used
+		if (!fx.protect) user.protectN = 0;
 		this.pushMsg(`${user.name} used ${move.name}!`);
 
+		// Protect/Detect blocks anything aimed at the protected side
+		const aimsAtFoe = mv.category !== 'Status'
+			|| !!(fx.status || fx.confuse || fx.seed || fx.yawn || fx.blow || STAT_MOVES[move.id]?.foe);
+		if (aimsAtFoe && target.protectedTurn) {
+			this.pushMsg(`${target.name} protected itself!`);
+			return;
+		}
+
 		const hitChance = (mv.acc ?? 100) * stageMult((userBoosts.acc || 0) - (targetBoosts.eva || 0));
-		if ((mv.acc ?? 100) !== true && Math.random() * 100 > hitChance) {
+		if ((mv.acc ?? 100) !== true && aimsAtFoe && Math.random() * 100 > hitChance) {
 			this.pushMsg(`${user.name}'s attack missed!`);
 			return;
 		}
@@ -410,7 +503,83 @@ export class Battle {
 				return;
 			}
 			if (fx.status) { this.applyStatus(target, fx.status, fx.bad); return; }
-			if (fx.confuse) { this.applyConfusion(target); return; }
+			if (fx.confuse) {
+				// Swagger/Flatter pump the target's stat before confusing it
+				if (fx.foeBoost) {
+					for (const [st, d] of Object.entries(fx.foeBoost)) {
+						targetBoosts[st] = Math.max(-6, Math.min(6, (targetBoosts[st] || 0) + d));
+					}
+					this.pushMsg(`${target.name}'s ${Object.keys(fx.foeBoost)[0] === 'atk' ? 'Attack' : 'Sp. Atk'} rose sharply!`);
+				}
+				this.applyConfusion(target);
+				return;
+			}
+			if (fx.protect) {
+				user.protectN = (user.protectN || 0) + 1;
+				if (Math.random() < 1 / Math.pow(2, user.protectN - 1)) {
+					user.protectedTurn = true;
+					this.pushMsg(`${user.name} protected itself!`);
+				} else {
+					user.protectN = 0;
+					this.pushMsg('But it failed!');
+				}
+				return;
+			}
+			if (fx.yawn) {
+				if (target.status || target.drowsy) { this.pushMsg('But it failed!'); return; }
+				target.drowsy = 2;
+				this.pushMsg(`${target.name} grew drowsy!`);
+				return;
+			}
+			if (fx.haze) {
+				Object.assign(userBoosts, freshBoosts());
+				Object.assign(targetBoosts, freshBoosts());
+				this.pushMsg('All stat changes were eliminated!');
+				return;
+			}
+			if (fx.blow) {
+				if (a.isTrainer) { this.pushMsg('But it failed!'); return; }
+				this.pushMsg(`${isFoe ? a.me.name : a.foe.name} was blown away!`, () => this.finish('escaped'));
+				return;
+			}
+			if (fx.cureParty) {
+				const mons = isFoe ? [a.foe] : a.party;
+				this.pushMsg('A bell chimed — status problems were healed!', () => {
+					for (const m of mons) { m.status = null; m.sleepTurns = 0; delete m.badPsn; delete m.toxicN; }
+				});
+				return;
+			}
+			if (fx.cureSelf) {
+				if (!user.status) { this.pushMsg('But it failed!'); return; }
+				this.pushMsg(`${user.name} shook off its status problem!`, () => {
+					user.status = null; delete user.badPsn; delete user.toxicN;
+				});
+				return;
+			}
+			if (fx.regen) {
+				if (user.aquaRing) { this.pushMsg('But it failed!'); return; }
+				user.aquaRing = true;
+				this.pushMsg(`${user.name} surrounded itself with restoring energy!`);
+				return;
+			}
+			if (fx.bellydrum) {
+				const cost = Math.floor(user.maxHP / 2);
+				if (user.curHP <= cost) { this.pushMsg('But it failed!'); return; }
+				this.pushMsg(`${user.name} cut its own HP and maximized its Attack!`, () => {
+					user.curHP -= cost;
+					this.float(isFoe ? 'foe' : 'me', `-${cost}`, '#ff7a6b');
+					userBoosts.atk = 6;
+				});
+				return;
+			}
+			if (fx.painsplit) {
+				this.pushMsg('The battlers shared their pain!', () => {
+					const avg = Math.max(1, Math.floor((user.curHP + target.curHP) / 2));
+					user.curHP = Math.min(user.maxHP, avg);
+					target.curHP = Math.min(target.maxHP, avg);
+				});
+				return;
+			}
 			if (fx.seed) {
 				if (target.types.includes('Grass')) { this.pushMsg(`It doesn't affect ${target.name}...`); return; }
 				if (target.seeded) { this.pushMsg('But it failed!'); return; }
@@ -431,12 +600,18 @@ export class Battle {
 			if (eff) {
 				const boosts = eff.foe ? targetBoosts : userBoosts;
 				const who = eff.foe ? target : user;
-				const before = boosts[eff.stat] ?? 0;
-				boosts[eff.stat] = Math.max(-6, Math.min(6, before + eff.d));
-				if (boosts[eff.stat] === before) { this.pushMsg('But it failed!'); return; }
-				const dirWord = eff.d > 0 ? (eff.d > 1 ? 'rose sharply' : 'rose') : (eff.d < -1 ? 'fell harshly' : 'fell');
-				const statWord = { atk: 'Attack', def: 'Defense', spa: 'Sp. Atk', spd: 'Sp. Def', spe: 'Speed', acc: 'accuracy', eva: 'evasiveness' }[eff.stat];
-				this.pushMsg(`${who.name}'s ${statWord} ${dirWord}!`);
+				const changes = eff.stats || { [eff.stat]: eff.d };
+				const words = { atk: 'Attack', def: 'Defense', spa: 'Sp. Atk', spd: 'Sp. Def', spe: 'Speed', acc: 'accuracy', eva: 'evasiveness' };
+				let any = false;
+				for (const [st, d] of Object.entries(changes)) {
+					const before = boosts[st] ?? 0;
+					boosts[st] = Math.max(-6, Math.min(6, before + d));
+					if (boosts[st] === before) continue;
+					any = true;
+					const dirWord = d > 0 ? (d > 1 ? 'rose sharply' : 'rose') : (d < -1 ? 'fell harshly' : 'fell');
+					this.pushMsg(`${who.name}'s ${words[st]} ${dirWord}!`);
+				}
+				if (!any) this.pushMsg('But it failed!');
 			} else {
 				this.pushMsg('But nothing happened!');
 			}
@@ -447,7 +622,7 @@ export class Battle {
 		const A = this.statOf(user, userBoosts, phys ? 'atk' : 'spa');
 		const D = this.statOf(target, targetBoosts, phys ? 'def' : 'spd');
 		const L = user.level, Pw = mv.power || 0;
-		if (Pw <= 0) { this.pushMsg('But nothing happened!'); return; }
+		if (Pw <= 0 && !fx.fixed && !fx.ohko) { this.pushMsg('But nothing happened!'); return; }
 		const eff = effectiveness(mv.type, target.types);
 		if (eff === 0) { this.pushMsg(`It doesn't affect ${target.name}...`); return; }
 		const stab = user.types.includes(mv.type) ? 1.5 : 1;
@@ -456,12 +631,26 @@ export class Battle {
 		const defScreens = isFoe ? a.meScreens : a.foeScreens;
 		const screened = defScreens?.[phys ? 'reflect' : 'light'] > 0 ? 0.5 : 1;
 		let total = 0, crits = 0;
-		for (let h = 0; h < nHits; h++) {
-			const crit = Math.random() < 1 / 16;
-			if (crit) crits++;
-			let dmg = Math.floor(Math.floor(Math.floor(2 * L / 5 + 2) * Pw * A / D) / 50) + 2;
-			dmg = Math.max(1, Math.floor(dmg * (crit ? 2 : 1) * stab * eff * screened * (0.85 + Math.random() * 0.15)));
-			total += dmg;
+		if (fx.ohko) {
+			// one-hit KO: never works upward in level
+			if (target.level > user.level) { this.pushMsg(`It doesn't affect ${target.name}...`); return; }
+			total = target.curHP;
+			this.pushMsg("It's a one-hit KO!");
+		} else if (fx.fixed) {
+			total = fx.fixed === 'level' ? user.level
+				: fx.fixed === 'half' ? Math.max(1, Math.floor(target.curHP / 2))
+				: fx.fixed === 'psywave' ? Math.max(1, Math.floor(user.level * (0.5 + Math.random())))
+				: fx.fixed === 'endeavor' ? Math.max(0, target.curHP - user.curHP)
+				: fx.fixed;
+			if (total <= 0) { this.pushMsg('But it failed!'); return; }
+		} else {
+			for (let h = 0; h < nHits; h++) {
+				const crit = Math.random() < 1 / 16;
+				if (crit) crits++;
+				let dmg = Math.floor(Math.floor(Math.floor(2 * L / 5 + 2) * Pw * A / D) / 50) + 2;
+				dmg = Math.max(1, Math.floor(dmg * (crit ? 2 : 1) * stab * eff * screened * (0.85 + Math.random() * 0.15)));
+				total += dmg;
+			}
 		}
 		total = Math.min(total, target.curHP);
 		const targetSide = isFoe ? 'me' : 'foe';
@@ -490,11 +679,47 @@ export class Battle {
 				this.float(isFoe ? 'foe' : 'me', `-${rec}`, '#ff7a6b');
 			});
 		}
+		if (fx.trap) {
+			this.pushMsg('', () => {
+				if (target.curHP > 0 && !target.trapTurns) {
+					target.trapTurns = 2 + Math.floor(Math.random() * 4);
+					target.trapName = fx.trap;
+					this.pushMsg(`${target.name} was trapped by ${fx.trap}!`);
+				}
+			});
+		}
+		if (fx.selfKO) {
+			this.pushMsg('', () => {
+				user.curHP = 0;
+				this.float(isFoe ? 'foe' : 'me', 'KO', '#ff7a6b');
+			});
+		}
+		if (fx.recharge) this.pushMsg('', () => { user.rechargeTurn = true; });
+		if (fx.selfDrop) {
+			this.pushMsg('', () => {
+				if (user.curHP <= 0) return;
+				const words = { atk: 'Attack', def: 'Defense', spa: 'Sp. Atk', spd: 'Sp. Def', spe: 'Speed' };
+				for (const [st, d] of Object.entries(fx.selfDrop)) {
+					const before = userBoosts[st] ?? 0;
+					userBoosts[st] = Math.max(-6, Math.min(6, before + d));
+					if (userBoosts[st] !== before) {
+						this.pushMsg(`${user.name}'s ${words[st]} ${d < -1 ? 'fell harshly' : 'fell'}!`);
+					}
+				}
+			});
+		}
 		if (fx.sec && Math.random() * 100 < fx.sec.ch) {
 			this.pushMsg('', () => {
 				if (target.curHP <= 0) return;
 				if (fx.sec.flinch) target.flinched = true; // only matters if it hasn't moved yet
-				else if (fx.sec.confuse) {
+				else if (fx.sec.stat) {
+					const before = targetBoosts[fx.sec.stat] ?? 0;
+					targetBoosts[fx.sec.stat] = Math.max(-6, Math.min(6, before + fx.sec.d));
+					if (targetBoosts[fx.sec.stat] !== before) {
+						const words = { atk: 'Attack', def: 'Defense', spa: 'Sp. Atk', spd: 'Sp. Def', spe: 'Speed', acc: 'accuracy' };
+						this.pushMsg(`${target.name}'s ${words[fx.sec.stat]} fell!`);
+					}
+				} else if (fx.sec.confuse) {
 					if (!(target.confuseTurns > 0)) {
 						target.confuseTurns = 2 + Math.floor(Math.random() * 4);
 						this.pushMsg(`${target.name} became confused!`);
@@ -502,7 +727,8 @@ export class Battle {
 				} else if (!target.status && !(STATUS_IMMUNE[fx.sec.status] || []).some(t => target.types.includes(t))) {
 					target.status = fx.sec.status;
 					if (fx.sec.status === 'slp') target.sleepTurns = 1 + Math.floor(Math.random() * 3);
-					this.pushMsg(`${target.name} ${STATUS_APPLIED_MSG[fx.sec.status]}`);
+					if (fx.sec.bad) { target.badPsn = true; target.toxicN = 1; }
+					this.pushMsg(`${target.name} ${fx.sec.bad ? 'was badly poisoned!' : STATUS_APPLIED_MSG[fx.sec.status]}`);
 				}
 			});
 		}
@@ -538,6 +764,34 @@ export class Battle {
 				});
 			}
 		}
+		for (const mon of [a.me, a.foe]) {
+			if (mon.curHP <= 0) continue;
+			const side = mon === a.me ? 'me' : 'foe';
+			if (mon.trapTurns > 0) {
+				const chip = Math.max(1, Math.floor(mon.maxHP / 16));
+				this.pushMsg(`${mon.name} is hurt by ${mon.trapName}!`, () => {
+					mon.curHP = Math.max(0, mon.curHP - chip);
+					this.float(side, `-${chip}`, '#e8b16b');
+				});
+				if (--mon.trapTurns <= 0) this.pushMsg(`${mon.name} was freed from ${mon.trapName}!`);
+			}
+			if (mon.drowsy && --mon.drowsy <= 0) {
+				delete mon.drowsy;
+				if (!mon.status) {
+					mon.status = 'slp';
+					mon.sleepTurns = 1 + Math.floor(Math.random() * 3);
+					this.pushMsg(`${mon.name} fell asleep!`);
+				}
+			}
+			if (mon.aquaRing && mon.curHP < mon.maxHP) {
+				const heal = Math.max(1, Math.floor(mon.maxHP / 16));
+				this.pushMsg(`A veil of water restored ${mon.name}'s HP!`, () => {
+					mon.curHP = Math.min(mon.maxHP, mon.curHP + heal);
+					this.float(side, `+${heal}`, '#6be08a');
+				});
+			}
+			mon.protectedTurn = false;
+		}
 		// screens tick down per side
 		for (const [side, screens, who] of [['me', a.meScreens, a.me], ['foe', a.foeScreens, a.foe]]) {
 			for (const key of ['reflect', 'light']) {
@@ -555,6 +809,9 @@ export class Battle {
 	// (power x STAB x type effectiveness), with a dash of unpredictability
 	chooseFoeMove() {
 		const a = this.active;
+		if (a.foe.chargeMove) {
+			return a.foe.moves.find(m => m.id === a.foe.chargeMove) || STRUGGLE();
+		}
 		const usable = a.foe.moves.filter(m => m.pp > 0);
 		if (!usable.length) return STRUGGLE();
 		if (!a.isTrainer || Math.random() < 0.15) return usable[Math.floor(Math.random() * usable.length)];
@@ -595,12 +852,14 @@ export class Battle {
 
 	checkFaints() {
 		const a = this.active;
+		const meDown = a.me.curHP <= 0;
 		if (a.foe.curHP <= 0) {
 			this.pushMsg(a.isTrainer ? `${a.foe.name} fainted!` : `The wild ${a.foe.name} fainted!`,
 				() => cry(a.foe.speciesId));
 			this.pushAnim('faint', 'foe', 0.7, () => { a.foeHidden = true; });
 			this.grantExp();
-		} else if (a.me.curHP <= 0) {
+		}
+		if (meDown) {
 			this.pushMsg(`${a.me.name} fainted!`, () => { cry(a.me.speciesId); this.clearVolatiles(a.me); });
 			this.pushAnim('faint', 'me', 0.7, () => { a.meHidden = true; });
 			const next = a.party.find(m => m.curHP > 0);
@@ -973,8 +1232,13 @@ export class Battle {
 					if (next.text) { a.msg = next.text; a.msgT = 0; }
 					else a.msgT = 1.2; // silent action; move on quickly
 				} else if (a.phase !== 'done') {
-					a.phase = 'menu';
-					a.msg = `What will ${a.me.name} do?`;
+					if (a.me.chargeMove && a.me.curHP > 0) {
+						const mv = a.me.moves.find(m => m.id === a.me.chargeMove) || STRUGGLE();
+						this.startQueue(() => this.resolveTurn(mv));
+					} else {
+						a.phase = 'menu';
+						a.msg = `What will ${a.me.name} do?`;
+					}
 				}
 			}
 			return;
