@@ -22,11 +22,16 @@ export class Encounters {
 		const grp = this.data[mapId]?.land;
 		if (!grp) return null;
 		if (Math.random() * 100 > grp.rate) return null;
+		return this.pick(mapId);
+	}
 
+	// a straight table pick (no gate): used for double-battle partners
+	pick(mapId) {
+		const grp = this.data[mapId]?.land;
+		if (!grp) return null;
 		const total = grp.slots.reduce((s, x) => s + x.w, 0);
 		let r = Math.random() * total, slot = grp.slots[0];
 		for (const s of grp.slots) { r -= s.w; if (r <= 0) { slot = s; break; } }
-
 		const level = slot.min + Math.floor(Math.random() * (slot.max - slot.min + 1));
 		return { id: slot.id, level };
 	}

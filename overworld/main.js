@@ -440,8 +440,12 @@ player.onArrive = () => {
 	}
 };
 
-function startWildBattle(pick) {
+function startWildBattle(pick, forceDouble) {
 	if (!party || !leadMon(party)) return;
+	// a slice of grass encounters are horde-style double battles
+	const second = (forceDouble || Math.random() < 0.1)
+		&& party.filter(m => m.curHP > 0).length >= 2
+		? encounters.pick(world.current.map.id) : null;
 	battle.start(party, pick.id, pick.level, result => {
 		if (result === 'defeat') {
 			healParty(party);
@@ -453,7 +457,7 @@ function startWildBattle(pick) {
 			saveParty(party);
 		}
 		if (result === 'victory') evolution.check(party, battle.data);
-	});
+	}, second);
 }
 
 // ---------- camera ----------

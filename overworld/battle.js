@@ -41,6 +41,11 @@ const AB_ONHIT = {
 	cursedbody: { disable: true, anyHit: true, ch: 0.3 },
 	ironbarbs: { chip: 8 }, roughskin: { chip: 8 },
 };
+// moves that strike every opposing mon in a double battle
+const SPREAD_MOVES = new Set(['earthquake', 'rockslide', 'surf', 'blizzard', 'heatwave',
+	'muddywater', 'dazzlinggleam', 'hypervoice', 'boomburst', 'discharge', 'lavaplume',
+	'sludgewave', 'eruption', 'waterspout', 'icywind', 'snarl', 'swift', 'razorleaf',
+	'twister', 'acid', 'bubble', 'powdersnow', 'airslash']);
 const SOUND_MOVES = new Set(['growl', 'roar', 'sing', 'supersonic', 'screech', 'snore',
 	'uproar', 'hypervoice', 'grasswhistle', 'metalsound', 'healbell', 'perishsong',
 	'bugbuzz', 'chatter', 'round', 'echoedvoice', 'boomburst', 'disarmingvoice']);
@@ -391,8 +396,9 @@ export class Battle {
 	}
 
 	// start a wild battle vs the party; onEnd(result) with
-	// 'victory'|'defeat'|'escaped'|'caught'
-	async start(party, wildId, wildLevel, onEnd) {
+	// 'victory'|'defeat'|'escaped'|'caught'; second = {id, level} makes it
+	// a wild DOUBLE battle when the party has two healthy mons
+	async start(party, wildId, wildLevel, onEnd, second) {
 		const foe = buildMon(wildId, wildLevel, this.data);
 		if (foe && Math.random() < 0.15) {
 			foe.heldItem = Bag.WILD_HELD[Math.floor(Math.random() * Bag.WILD_HELD.length)];
@@ -410,7 +416,21 @@ export class Battle {
 			loadSprite(foe.sprite, false),
 			...party.map(async m => backSprites.set(m, await loadSprite(m.sprite, true))),
 		]);
+		let foeAlly = null, meAlly = null;
+		if (second && party.filter(m => m.curHP > 0).length >= 2) {
+			foeAlly = buildMon(second.id, second.level, this.data);
+			meAlly = party.filter(m => m.curHP > 0)[1];
+		}
+		const [foeAllyImg, meAllyImg] = await Promise.all([
+			foeAlly ? loadSprite(foeAlly.sprite, false) : null,
+			meAlly ? loadSprite(meAlly.sprite, true) : null,
+		]);
 		this.active = {
+			double: !!foeAlly,
+			meAlly, foeAlly, meAllyImg, foeAllyImg,
+			meAllyBoosts: freshBoosts(), foeAllyBoosts: freshBoosts(),
+			meAllyShownHP: meAlly?.curHP ?? 0, foeAllyShownHP: foeAlly?.curHP ?? 0,
+			plans: [], actionFor: 0,
 			party, me: playerMon, foe, foeImg, backSprites,
 			meImg: backSprites.get(playerMon),
 			meBoosts: freshBoosts(),
@@ -432,10 +452,17 @@ export class Battle {
 			caughtMon: null,
 		};
 		for (const m of party) this.clearVolatiles(m);
-		this.pushMsg(`A wild ${foe.name} appeared!`, () => cry(foe.speciesId));
-		this.pushMsg('', () => this.switchInAbility(this.active.foe, 'foe'));
-		this.pushMsg(`Go! ${playerMon.name}!`, () => { sfx('ball_open'); cry(playerMon.speciesId); });
-		this.pushMsg('', () => this.switchInAbility(this.active.me, 'me'));
+		if (foeAlly) {
+			this.pushMsg(`Wild ${foe.name} and ${foeAlly.name} appeared!`, () => cry(foe.speciesId));
+			this.pushMsg('', () => this.switchInAbility(this.active.foe, 'foe'));
+			this.pushMsg(`Go! ${playerMon.name} and ${meAlly.name}!`, () => { sfx('ball_open'); cry(playerMon.speciesId); });
+			this.pushMsg('', () => this.switchInAbility(this.active.me, 'me'));
+		} else {
+			this.pushMsg(`A wild ${foe.name} appeared!`, () => cry(foe.speciesId));
+			this.pushMsg('', () => this.switchInAbility(this.active.foe, 'foe'));
+			this.pushMsg(`Go! ${playerMon.name}!`, () => { sfx('ball_open'); cry(playerMon.speciesId); });
+			this.pushMsg('', () => this.switchInAbility(this.active.me, 'me'));
+		}
 	}
 
 	// trainer battle: foeParty of mons, no running, no catching
@@ -454,7 +481,17 @@ export class Battle {
 			...foeParty.map(async m => foeSprites.set(m, await loadSprite(m.sprite, false))),
 		]);
 		const foe = foeParty[0];
+		const isDouble = foeParty.length >= 2 && /TWINS|COUPLE| & |SR\. AND JR/i.test(info.displayName || '');
+		const meAlly = isDouble ? party.filter(m => m.curHP > 0)[1] || null : null;
+		const foeAlly = isDouble ? foeParty[1] : null;
 		this.active = {
+			double: !!(isDouble && meAlly),
+			meAlly: isDouble && meAlly ? meAlly : null,
+			foeAlly: isDouble && meAlly ? foeAlly : null,
+			meAllyImg: null, foeAllyImg: null,
+			meAllyBoosts: freshBoosts(), foeAllyBoosts: freshBoosts(),
+			meAllyShownHP: meAlly?.curHP ?? 0, foeAllyShownHP: foeAlly?.curHP ?? 0,
+			plans: [], actionFor: 0,
 			party, me: playerMon, foe, backSprites, foeSprites,
 			foes: foeParty, foeIdx: 0, isTrainer: true, info,
 			foeImg: foeSprites.get(foe),
@@ -478,8 +515,13 @@ export class Battle {
 			caughtMon: null,
 		};
 		for (const m of party) this.clearVolatiles(m);
+		if (this.active.double) {
+			this.active.meAllyImg = backSprites.get(this.active.meAlly);
+			this.active.foeAllyImg = foeSprites.get(this.active.foeAlly);
+			this.active.foeIdx = 1; // both lead foes are out
+		}
 		this.pushMsg(`You are challenged by ${info.displayName}!`);
-		this.pushMsg(`${info.displayName} sent out ${foe.name}!`, () => cry(foe.speciesId));
+		this.pushMsg(`${info.displayName} sent out ${foe.name}${this.active.double ? ' and ' + this.active.foeAlly.name : ''}!`, () => cry(foe.speciesId));
 		this.pushMsg('', () => this.switchInAbility(this.active.foe, 'foe'));
 		this.pushMsg(`Go! ${playerMon.name}!`, () => { sfx('ball_open'); cry(playerMon.speciesId); });
 		this.pushMsg('', () => this.switchInAbility(this.active.me, 'me'));
@@ -494,6 +536,28 @@ export class Battle {
 	// floating combat text over a combatant ("-12", "+8"), positioned at draw time
 	float(side, text, color) {
 		(this.active.floaters ||= []).push({ side, text, color, t: 0 });
+	}
+
+	// ---------- actors (doubles-aware helpers) ----------
+	actorMons() {
+		const a = this.active;
+		const out = [a.me, a.foe];
+		if (a.double) {
+			if (a.meAlly) out.splice(1, 0, a.meAlly);
+			if (a.foeAlly) out.push(a.foeAlly);
+		}
+		return out.filter(m => m && m.curHP > 0);
+	}
+	sideOfMon(mon) {
+		const a = this.active;
+		return (mon === a.me || mon === a.meAlly) ? 'me' : 'foe';
+	}
+	boostsOf(mon) {
+		const a = this.active;
+		if (mon === a.me) return a.meBoosts;
+		if (mon === a.meAlly) return a.meAllyBoosts;
+		if (mon === a.foeAlly) return a.foeAllyBoosts;
+		return a.foeBoosts;
 	}
 
 	// ---------- held items ----------
@@ -725,6 +789,7 @@ export class Battle {
 		delete mon.disguiseBroken;
 		delete mon.unburdened;
 		delete mon.choiceLock;
+		delete mon.faintCounted;
 		if (mon.mimicSlot) {
 			mon.moves[mon.mimicSlot.idx] = mon.mimicSlot.orig;
 			delete mon.mimicSlot;
@@ -1426,9 +1491,9 @@ export class Battle {
 	// burn/poison chip, Toxic ramping, Leech Seed sap, screens wearing off
 	endOfTurn() {
 		const a = this.active;
-		for (const mon of [a.me, a.foe]) {
+		for (const mon of this.actorMons()) {
 			if (mon.curHP <= 0) continue;
-			const side = mon === a.me ? 'me' : 'foe';
+			const side = this.sideOfMon(mon);
 			if (mon.status === 'psn' && this.abilityOf(mon) === 'poisonheal') {
 				if (mon.curHP < mon.maxHP) {
 					this.pushMsg(`${mon.name}'s Poison Heal restored HP!`, () => {
@@ -1447,7 +1512,7 @@ export class Battle {
 					});
 			}
 			if (mon.seeded && this.abilityOf(mon) !== 'magicguard') {
-				const other = mon === a.me ? a.foe : a.me;
+				const other = this.sideOfMon(mon) === 'me' ? a.foe : a.me;
 				const sap = Math.max(1, Math.floor(mon.maxHP / 8));
 				this.pushMsg(`${mon.name}'s health is sapped by Leech Seed!`, () => {
 					mon.curHP = Math.max(0, mon.curHP - sap);
@@ -1498,7 +1563,7 @@ export class Battle {
 		// weather: chip + countdown
 		if (a.weather) {
 			const wk2 = this.weatherKind();
-			for (const mon of [a.me, a.foe]) {
+			for (const mon of this.actorMons()) {
 				if (mon.curHP <= 0) continue;
 				const side = mon === a.me ? 'me' : 'foe';
 				const ab3 = this.abilityOf(mon);
@@ -1521,7 +1586,7 @@ export class Battle {
 		// grassy terrain heals; terrains fade
 		if (a.terrain) {
 			if (a.terrain.kind === 'grassy') {
-				for (const mon of [a.me, a.foe]) {
+				for (const mon of this.actorMons()) {
 					if (mon.curHP > 0 && mon.curHP < mon.maxHP) {
 						const heal = Math.max(1, Math.floor(mon.maxHP / 16));
 						this.pushMsg('', () => {
@@ -1549,8 +1614,8 @@ export class Battle {
 			}
 		}
 		// per-mon countdowns
-		for (const mon of [a.me, a.foe]) {
-			const side = mon === a.me ? 'me' : 'foe';
+		for (const mon of this.actorMons()) {
+			const side = this.sideOfMon(mon);
 			if (mon.curHP <= 0) continue;
 			if (mon.nightmared && mon.status === 'slp') {
 				const chip = Math.max(1, Math.floor(mon.maxHP / 4));
@@ -1572,7 +1637,7 @@ export class Battle {
 			if (mon.telekinesis > 0) mon.telekinesis--;
 			mon.enduring = false;
 			const ab = this.abilityOf(mon);
-			const boosts = mon === a.me ? a.meBoosts : a.foeBoosts;
+			const boosts = this.boostsOf(mon);
 			if (ab === 'speedboost') {
 				boosts.spe = Math.min(6, (boosts.spe || 0) + 1);
 				this.pushMsg(`${mon.name}'s Speed Boost raised its Speed!`);
@@ -1596,7 +1661,7 @@ export class Battle {
 				this.pushMsg(`${mon.name}'s Hydration cured its status!`, () => { mon.status = null; });
 			}
 			if (ab === 'baddreams') {
-				const other = mon === a.me ? a.foe : a.me;
+				const other = this.sideOfMon(mon) === 'me' ? a.foe : a.me;
 				if (other.curHP > 0 && other.status === 'slp') {
 					this.pushMsg(`${other.name} is tormented by Bad Dreams!`, () => {
 						other.curHP = Math.max(0, other.curHP - Math.max(1, Math.floor(other.maxHP / 8)));
@@ -1763,10 +1828,10 @@ export class Battle {
 	}
 
 	// exp -> level ups -> stat recalc -> move learning (medium-fast curve)
-	grantExp() {
+	grantExp(fallen) {
 		const a = this.active;
-		const mon = a.me;
-		const gain = expGain(a.foe, this.data);
+		const mon = a.me.curHP > 0 ? a.me : (a.meAlly?.curHP > 0 ? a.meAlly : a.me);
+		const gain = expGain(fallen || a.foe, this.data);
 		mon.exp = (mon.exp ?? mon.level ** 3) + gain;
 		this.pushMsg(`${mon.name} gained ${gain} EXP!`);
 		const sp = this.data.species[mon.speciesId];
@@ -1889,15 +1954,19 @@ export class Battle {
 			if (k === 'ArrowUp' || k === 'ArrowDown') a.menuIdx ^= 2;
 			if (k === 'z' || k === 'Enter') {
 				if (a.menuIdx === 0) {
+					const who = a.double ? this.chooser() : a.me;
 					// out of PP everywhere: Struggle instead of a dead menu
-					if (a.me.moves.every(m => m.pp <= 0)) {
-						this.startQueue(() => {
-							this.pushMsg(`${a.me.name} has no moves left!`);
-							this.resolveTurn(STRUGGLE());
-						});
+					if (who.moves.every(m => m.pp <= 0)) {
+						if (a.double) this.planMove(STRUGGLE());
+						else {
+							this.startQueue(() => {
+								this.pushMsg(`${a.me.name} has no moves left!`);
+								this.resolveTurn(STRUGGLE());
+							});
+						}
 					} else { a.phase = 'moves'; a.moveIdx = 0; }
 				}
-				else if (a.menuIdx === 1) { a.phase = 'bag'; a.bagIdx = 0; }
+				else if (a.menuIdx === 1) { if (!a.double || a.actionFor === 0) { a.phase = 'bag'; a.bagIdx = 0; } }
 				else if (a.menuIdx === 2) {
 					const options = a.party.filter(m => m !== a.me && m.curHP > 0);
 					if (options.length) { a.phase = 'switch'; a.switchIdx = 0; }
@@ -1921,15 +1990,30 @@ export class Battle {
 			if (k === 'x') a.phase = 'menu';
 			if (k === 'z' || k === 'Enter') this.switchTo(options[a.switchIdx]);
 		} else if (a.phase === 'moves') {
-			const n = a.me.moves.length;
+			const who = a.double ? this.chooser() : a.me;
+			const n = who.moves.length;
 			if (k === 'ArrowUp' && a.moveIdx >= 2) a.moveIdx -= 2;
 			if (k === 'ArrowDown' && a.moveIdx + 2 < n) a.moveIdx += 2;
 			if (k === 'ArrowLeft' && a.moveIdx % 2 === 1) a.moveIdx--;
 			if (k === 'ArrowRight' && a.moveIdx % 2 === 0 && a.moveIdx + 1 < n) a.moveIdx++;
 			if (k === 'x') a.phase = 'menu';
 			if (k === 'z' || k === 'Enter') {
-				const mv = a.me.moves[a.moveIdx];
-				if (this.moveUsable(a.me, mv, 'me')) this.startQueue(() => this.resolveTurn(mv));
+				const mv = who.moves[a.moveIdx];
+				if (this.moveUsable(who, mv, 'me')) {
+					if (a.double) this.planMove(mv);
+					else this.startQueue(() => this.resolveTurn(mv));
+				}
+			}
+		} else if (a.phase === 'target') {
+			const foes = this.livingFoes();
+			if (k === 'ArrowLeft' || k === 'ArrowRight' || k === 'ArrowUp' || k === 'ArrowDown') {
+				a.targetIdx = (a.targetIdx + 1) % foes.length;
+			}
+			if (k === 'x') { a.phase = 'moves'; a.pendingPlan = null; }
+			if (k === 'z' || k === 'Enter') {
+				const plan = a.pendingPlan;
+				a.pendingPlan = null;
+				this.pushPlan({ ...plan, target: foes[a.targetIdx] || foes[0] });
 			}
 			} else if (a.phase === 'learn') {
 			if (k === 'ArrowLeft' || k === 'ArrowUp') a.learnIdx = (a.learnIdx + 4) % 5;
@@ -2435,6 +2519,155 @@ export class Battle {
 		this.pushMsg('', () => this.checkFaints());
 	}
 
+	// ---------- doubles turn flow ----------
+	chooser() {
+		const a = this.active;
+		return a.actionFor === 1 ? a.meAlly : a.me;
+	}
+	chooserBoosts() {
+		const a = this.active;
+		return a.actionFor === 1 ? a.meAllyBoosts : a.meBoosts;
+	}
+	livingFoes() {
+		const a = this.active;
+		return [a.foe, a.foeAlly].filter(m => m && m.curHP > 0);
+	}
+	livingMine() {
+		const a = this.active;
+		return [a.me, a.meAlly].filter(m => m && m.curHP > 0);
+	}
+	// a move was picked for the current chooser; queue it (asking for a
+	// target first when both foes stand)
+	planMove(mv) {
+		const a = this.active;
+		const foes = this.livingFoes();
+		const info = this.data.moves[mv.id] || {};
+		const needsTarget = info.category !== 'Status' && foes.length > 1 && !SPREAD_MOVES.has(mv.id);
+		if (needsTarget) {
+			a.pendingPlan = { user: this.chooser(), boosts: this.chooserBoosts(), move: mv };
+			a.phase = 'target';
+			a.targetIdx = 0;
+			return;
+		}
+		this.pushPlan({ user: this.chooser(), boosts: this.chooserBoosts(), move: mv, target: foes[0] });
+	}
+	pushPlan(plan) {
+		const a = this.active;
+		a.plans.push(plan);
+		if (a.actionFor === 0 && a.meAlly && a.meAlly.curHP > 0) {
+			a.actionFor = 1;
+			a.phase = 'menu';
+			a.menuIdx = 0;
+			a.msg = `What will ${a.meAlly.name} do?`;
+		} else {
+			this.startQueue(() => this.resolveDoubleTurn());
+		}
+	}
+	resolveDoubleTurn() {
+		const a = this.active;
+		const acts = [...a.plans];
+		a.plans = [];
+		a.actionFor = 0;
+		// each foe picks its strongest move at a random player mon
+		for (const foeMon of this.livingFoes()) {
+			const saveFoe = a.foe;
+			const usable = foeMon.moves.filter(m => this.moveUsable(foeMon, m, 'foe'));
+			const mv = usable.length ? usable[Math.floor(Math.random() * usable.length)] : STRUGGLE();
+			const mine = this.livingMine();
+			acts.push({
+				user: foeMon, boosts: this.boostsOf(foeMon), move: mv,
+				target: mine[Math.floor(Math.random() * mine.length)] || a.me,
+			});
+		}
+		// speed order with priority
+		acts.sort((p, q) => {
+			const pp = this.data.moves[p.move.id]?.priority || 0;
+			const qp = this.data.moves[q.move.id]?.priority || 0;
+			if (pp !== qp) return qp - pp;
+			return this.statOf(q.user, this.boostsOf(q.user), 'spe') - this.statOf(p.user, this.boostsOf(p.user), 'spe');
+		});
+		for (const act of acts) {
+			this.pushMsg('', () => {
+				if (act.user.curHP <= 0) return;
+				const isFoe = this.sideOfMon(act.user) === 'foe';
+				// retarget if the intended victim already dropped
+				let tgt = act.target;
+				if (!tgt || tgt.curHP <= 0) {
+					const pool = isFoe ? this.livingMine() : this.livingFoes();
+					tgt = pool[0];
+				}
+				if (!tgt) return;
+				const spread = SPREAD_MOVES.has(act.move.id);
+				const victims = spread ? (isFoe ? this.livingMine() : this.livingFoes()) : [tgt];
+				for (const v of victims) {
+					this.useMove(act.user, this.boostsOf(act.user), v, this.boostsOf(v), act.move, isFoe);
+				}
+			});
+			this.pushMsg('', () => this.checkFaintsD());
+		}
+		this.pushMsg('', () => {
+			if (this.livingFoes().length && this.livingMine().length) this.endOfTurn();
+		});
+		this.pushMsg('', () => this.checkFaintsD());
+	}
+	checkFaintsD() {
+		const a = this.active;
+		if (!a || !a.double) { this.checkFaints(); return; }
+		for (const slot of ['foe', 'foeAlly']) {
+			const mon = a[slot];
+			if (mon && mon.curHP <= 0 && !mon.faintCounted) {
+				mon.faintCounted = true;
+				this.pushMsg(`${mon.name} fainted!`, () => cry(mon.speciesId));
+				this.grantExp(mon);
+				// a trainer's bench refills the slot; the wild just thins out
+				this.pushMsg('', () => {
+					if (a.isTrainer) {
+						const next = a.foes.find(m => m.curHP > 0 && m !== a.foe && m !== a.foeAlly);
+						if (next) {
+							a[slot] = next;
+							a[slot === 'foe' ? 'foeImg' : 'foeAllyImg'] = a.foeSprites.get(next);
+							const b = slot === 'foe' ? a.foeBoosts : a.foeAllyBoosts;
+							Object.assign(b, freshBoosts());
+							a[slot === 'foe' ? 'foeShownHP' : 'foeAllyShownHP'] = next.curHP;
+							this.pushMsg(`${a.info.displayName} sent out ${next.name}!`, () => cry(next.speciesId));
+						} else if (slot === 'foeAlly') a.foeAlly = null;
+					} else if (slot === 'foeAlly') a.foeAlly = null;
+				});
+			}
+		}
+		for (const slot of ['me', 'meAlly']) {
+			const mon = a[slot];
+			if (mon && mon.curHP <= 0 && !mon.faintCounted) {
+				mon.faintCounted = true;
+				this.pushMsg(`${mon.name} fainted!`, () => { cry(mon.speciesId); this.clearVolatiles(mon, true); });
+				this.pushMsg('', () => {
+					const next = a.party.find(m => m.curHP > 0 && m !== a.me && m !== a.meAlly);
+					if (next) {
+						a[slot] = next;
+						a[slot === 'me' ? 'meImg' : 'meAllyImg'] = a.backSprites.get(next);
+						const b = slot === 'me' ? a.meBoosts : a.meAllyBoosts;
+						Object.assign(b, freshBoosts());
+						a[slot === 'me' ? 'meShownHP' : 'meAllyShownHP'] = next.curHP;
+						this.pushMsg(`Go! ${next.name}!`, () => { sfx('ball_open'); cry(next.speciesId); });
+					} else if (slot === 'meAlly') a.meAlly = null;
+				});
+			}
+		}
+		this.pushMsg('', () => {
+			if (!this.livingFoes().length) {
+				const more = a.isTrainer && a.foes.some(m => m.curHP > 0);
+				if (!more) {
+					if (a.isTrainer) {
+						this.pushMsg(a.info.defeatText);
+						this.pushMsg(`You got $${a.info.money} for winning!`, () => this.finish('victory'));
+					} else this.finish('victory');
+				}
+			} else if (!this.livingMine().length) {
+				this.pushMsg('You blacked out...', () => this.finish('defeat'));
+			}
+		});
+	}
+
 	// choice: 0-3 = replace that move, -1 = give up on the new one
 	resolveLearn(choice) {
 		const a = this.active;
@@ -2559,6 +2792,8 @@ export class Battle {
 		a.meShownHP += (a.me.curHP - a.meShownHP) * Math.min(1, dt * 6);
 		if (Math.abs(a.foeShownHP - a.foe.curHP) < 0.5) a.foeShownHP = a.foe.curHP;
 		if (Math.abs(a.meShownHP - a.me.curHP) < 0.5) a.meShownHP = a.me.curHP;
+		if (a.foeAlly) a.foeAllyShownHP += (a.foeAlly.curHP - (a.foeAllyShownHP || 0)) * Math.min(1, dt * 6);
+		if (a.meAlly) a.meAllyShownHP += (a.meAlly.curHP - (a.meAllyShownHP || 0)) * Math.min(1, dt * 6);
 
 		if (a.phase === 'flash') {
 			if (a.t > 0.6) { a.phase = 'msg'; }
@@ -2612,8 +2847,13 @@ export class Battle {
 					next.fn?.();
 					if (next.text) { a.msg = next.text; a.msgT = 0; }
 					else a.msgT = 1.2; // silent action; move on quickly
-				} else if (a.phase !== 'done') {
-					if (a.me.chargeMove && a.me.curHP > 0) {
+			} else if (a.phase !== 'done') {
+					if (a.double) {
+						a.actionFor = 0;
+						a.phase = 'menu';
+						a.menuIdx = 0;
+						a.msg = `What will ${a.me.name} do?`;
+					} else if (a.me.chargeMove && a.me.curHP > 0) {
 						const mv = a.me.moves.find(m => m.id === a.me.chargeMove) || STRUGGLE();
 						this.startQueue(() => this.resolveTurn(mv));
 					} else {
@@ -2643,11 +2883,13 @@ export class Battle {
 
 	// ---------- full-resolution scene (Love2D-style presentation) ----------
 	// sprite base positions + fx offsets; side: 'me' | 'foe'
-	spritePose(a, side, W, H, u) {
+	spritePose(a, side, W, H, u, slot = 0) {
 		const bar = 124 * u;
+		const off = a.double ? (slot === 0 ? -0.08 : 0.1) * W : 0;
+		const shrink = a.double ? 0.8 : 1;
 		const base = side === 'foe'
-			? { x: W * 0.70, y: H * 0.42, scale: 3.4 * u }
-			: { x: W * 0.235, y: H - bar - 16 * u, scale: 4.2 * u };
+			? { x: W * 0.70 + off, y: H * 0.42, scale: 3.4 * u * shrink }
+			: { x: W * 0.235 + off, y: H - bar - 16 * u, scale: 4.2 * u * shrink };
 		let dx = 0, dy = 0, alpha = 1, blink = false, wob = 0;
 		// entry slide on battle start
 		const k = Math.min(1, (a.introT || 0) / 0.6);
@@ -2667,11 +2909,14 @@ export class Battle {
 		return { ...base, dx, dy, alpha, blink, wob };
 	}
 
-	drawSide(ctx, a, side, W, H, u) {
-		const mon = side === 'foe' ? a.foe : a.me;
-		const img = side === 'foe' ? a.foeImg : a.meImg;
-		const hidden = side === 'foe' ? a.foeHidden : a.meHidden;
-		const pose = this.spritePose(a, side, W, H, u);
+	drawSide(ctx, a, side, W, H, u, slot = 0) {
+		const mon = slot === 1 ? (side === 'foe' ? a.foeAlly : a.meAlly)
+			: (side === 'foe' ? a.foe : a.me);
+		const img = slot === 1 ? (side === 'foe' ? a.foeAllyImg : a.meAllyImg)
+			: (side === 'foe' ? a.foeImg : a.meImg);
+		const hidden = slot === 1 ? false : (side === 'foe' ? a.foeHidden : a.meHidden);
+		if (!mon || mon.curHP <= 0) return;
+		const pose = this.spritePose(a, side, W, H, u, slot);
 		// platform with a type glow (Love2D drawPokemonSprite)
 		const tc = UI.TYPE_COLORS[mon.types[0]] || '#888';
 		ctx.save();
@@ -2752,6 +2997,10 @@ export class Battle {
 		}
 		this.drawSide(ctx, a, 'foe', W, H, u);
 		this.drawSide(ctx, a, 'me', W, H, u);
+		if (a.double) {
+			this.drawSide(ctx, a, 'foe', W, H, u, 1);
+			this.drawSide(ctx, a, 'me', W, H, u, 1);
+		}
 
 		// hit sparks + floating combat text ride each combatant's pose
 		for (const p of a.particles || []) {
@@ -2778,7 +3027,17 @@ export class Battle {
 		}
 		ctx.globalAlpha = 1;
 
-		// info panels
+		// info panels (allies get compact ones)
+		if (a.double && a.foeAlly && a.foeAlly.curHP > 0) {
+			a.foeAllyShownHP = a.foeAllyShownHP ?? a.foeAlly.curHP;
+			UI.monPanel(ctx, a.foeAlly, 14 * u, 102 * u, 230 * u, u,
+				{ shownHP: a.foeAllyShownHP, boosts: a.foeAllyBoosts });
+		}
+		if (a.double && a.meAlly && a.meAlly.curHP > 0) {
+			const myY = H - 124 * u - 112 * u;
+			UI.monPanel(ctx, a.meAlly, W - 14 * u - 300 * u - 246 * u, myY, 230 * u, u,
+				{ shownHP: a.meAllyShownHP ?? a.meAlly.curHP, boosts: a.meAllyBoosts, showNumbers: true });
+		}
 		UI.monPanel(ctx, a.foe, 14 * u, 14 * u, 272 * u, u,
 			{ shownHP: a.foeShownHP, boosts: a.foeBoosts, abilityName: this.abilityName(a.foe.ability),
 				itemName: a.foe.heldItem ? this.itemName(a.foe) : null });
@@ -2813,7 +3072,7 @@ export class Battle {
 		} else if (a.phase === 'moves') {
 			const backW = 86 * u;
 			const bw = (W - 16 * u - backW - 40 * u) / 2, bh = 44 * u;
-			a.me.moves.forEach((mv, i) => {
+			(a.double ? this.chooser() : a.me).moves.forEach((mv, i) => {
 				const info = this.data.moves[mv.id] || {};
 				const x = 20 * u + (i % 2) * (bw + 8 * u);
 				const y = barY + 9 * u + Math.floor(i / 2) * (bh + 8 * u);
@@ -2821,10 +3080,21 @@ export class Battle {
 					x, y, w: bw, h: bh, label: mv.name.toUpperCase().slice(0, 16),
 					sub: `PP ${mv.pp}/${mv.maxPp}`, subColor: mv.pp === 0 ? UI.C.hpRed : UI.C.dim,
 					right: info.power ? `Pwr ${info.power}` : (info.category || ''),
-					type: info.type, disabled: !this.moveUsable(a.me, mv, 'me'), kbSel: a.moveIdx === i,
+					type: info.type, disabled: !this.moveUsable(a.double ? this.chooser() : a.me, mv, 'me'), kbSel: a.moveIdx === i,
 				}, 'move:' + i);
 			});
 			btn({ x: W - 8 * u - backW - 8 * u, y: barY + 9 * u, w: backW, h: 96 * u, label: 'BACK', center: true }, 'back');
+		} else if (a.phase === 'target') {
+			ctx.fillStyle = UI.C.text;
+			ctx.font = `${Math.round(16 * u)}px m6x11plus, monospace`;
+			ctx.fillText('Attack which foe?', 24 * u, barY + 30 * u);
+			this.livingFoes().forEach((f, i) => {
+				btn({
+					x: 24 * u + i * 250 * u, y: barY + 44 * u, w: 236 * u, h: 52 * u,
+					label: `${f.name}  ${f.curHP}/${f.maxHP}`, center: true, kbSel: a.targetIdx === i,
+				}, 'target:' + i);
+			});
+			btn({ x: W - 8 * u - 94 * u, y: barY + 9 * u, w: 86 * u, h: 96 * u, label: 'BACK', center: true }, 'back');
 		} else if (a.phase === 'bag' || a.phase === 'switch') {
 			const isBag = a.phase === 'bag';
 			const rows = isBag ? this.bagItems()
@@ -2909,6 +3179,7 @@ export class Battle {
 		if (kind === 'back') { this.key('x'); return; }
 		if (kind === 'menu') { a.menuIdx = +arg; this.key('z'); return; }
 		if (kind === 'move') { a.moveIdx = +arg; this.key('z'); return; }
+		if (kind === 'target') { a.targetIdx = +arg; this.key('z'); return; }
 		if (kind === 'bag') { a.bagIdx = +arg; this.key('z'); return; }
 		if (kind === 'switch') { a.switchIdx = +arg; this.key('z'); return; }
 		if (kind === 'learn') { this.resolveLearn(arg === 'skip' ? -1 : +arg); return; }
