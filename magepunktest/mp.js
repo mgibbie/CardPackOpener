@@ -22,10 +22,10 @@ async function showMenu() {
 	const s = (await MP.freshState()) || MP.cachedState();
 	if (!s) return showAuth();
 	$('who').textContent = s.username;
-	$('npacks').textContent = s.packs;
+	$('code').innerHTML = s.friendCode ? `Friend code: <b>${s.friendCode}</b>` : '';
 	const owned = Object.values(s.collection).reduce((a, b) => a + b, 0);
 	$('stats').textContent =
-		`${owned} cards collected · ${s.stats.runs} runs (${s.stats.wins} wins) · ${s.stats.packsOpened} packs opened`;
+		`${owned} cards collected · ${s.stats.runs} runs (${s.stats.wins} wins) · ${s.stats.packsOpened} packs opened · ${s.packs} pack${s.packs === 1 ? '' : 's'} unopened`;
 }
 
 $('flip').addEventListener('click', () => { registering = !registering; $('err').textContent = ''; render(); });
@@ -40,9 +40,6 @@ $('p').addEventListener('keydown', e => { if (e.key === 'Enter') $('go').click()
 
 $('logout').addEventListener('click', () => { MP.logout(); showAuth(); });
 
-$('m-dungeon').addEventListener('click', () => location.href = '/battlecards/?dungeon=1&mp=1');
-$('m-packs').addEventListener('click', () => location.href = '/battlecards/packs.html?mp=1');
-$('m-deck').addEventListener('click', () => location.href = '/battlecards/deck.html?mp=1');
-$('m-gallery').addEventListener('click', () => location.href = '/battlecards/viewer.html?mp=1');
+$('m-world').addEventListener('click', () => location.href = '/overworld/?mp=1');
 
 if (MP.hasToken()) showMenu(); else showAuth();

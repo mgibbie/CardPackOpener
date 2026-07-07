@@ -14,6 +14,16 @@ import { Items } from './items.js';
 import { statsFor } from './battle.js';
 import { getImage } from './engine.js';
 import * as BUI from './battleui.js';
+import * as MP from '../battlecards/mpmode.js';
+
+// Test Realm mode: ?mp=1 with a login token. The account backend owns the
+// cards; friends, presence, and world-visiting all run through it.
+const MP_ON = MP.wantsMp() && MP.hasToken();
+if (MP.wantsMp() && !MP.hasToken()) location.href = '/magepunktest/';
+let mpAccount = null;   // { username, friendCode, ... } once loaded
+let friends = [];       // last friends-poll result
+let visiting = null;    // when set: { username, sprite } — roaming a friend's world
+let friendGhost = null; // a friend's live sprite while we visit their map
 
 const SCALE = 3;
 const screen = document.getElementById('screen');
@@ -159,6 +169,110 @@ function interact() {
 }
 
 const partyMenu = { open: false, idx: 0 };
+const startMenu = { open: false, idx: 0 };
+const cardsMenu = { open: false, idx: 0 };
+const friendsMenu = { open: false, idx: 0 };
+
+// the FireRed-style START menu (items depend on Test Realm mode)
+function startItems() {
+	const items = ['POKeDEX', 'POKeMON', 'CARDS'];
+	if (MP_ON) items.push('FRIENDS');
+	items.push('BAG', 'SAVE', 'OPTION', 'EXIT');
+	return items;
+}
+const cardsItems = () => MP_ON
+	? ['GALLERY', 'DECK BUILDER', 'PACKS', 'DUNGEON RUN', 'CHALLENGE FRIEND', 'BACK']
+	: ['GALLERY', 'DECK BUILDER', 'PACKS', 'DUNGEON RUN', 'BACK'];
+const CARD_URLS = {
+	'GALLERY': 'viewer.html', 'DECK BUILDER': 'deck.html',
+	'PACKS': 'packs.html', 'DUNGEON RUN': '?dungeon=1',
+};
+function openCardPage(label) {
+	const q = MP_ON ? (label === 'DUNGEON RUN' ? '&mp=1' : '?mp=1') : '';
+	const path = CARD_URLS[label];
+	location.href = '/battlecards/' + (path.startsWith('?') ? path + (MP_ON ? '&mp=1' : '') : path + (MP_ON ? '?mp=1' : ''));
+}
+
+function startKey(k) {
+	const items = startItems();
+	if (k === 'ArrowUp') startMenu.idx = (startMenu.idx + items.length - 1) % items.length;
+	if (k === 'ArrowDown') startMenu.idx = (startMenu.idx + 1) % items.length;
+	if (k === 'x' || k === 'Escape' || k === 'Enter') { startMenu.open = false; return; }
+	if (k === 'z') {
+		const it = items[startMenu.idx];
+		startMenu.open = false;
+		if (it === 'POKeMON') { partyMenu.open = true; partyMenu.idx = 0; }
+		else if (it === 'BAG') { bagMenu.open = true; bagMenu.idx = 0; bagMenu.picking = false; }
+		else if (it === 'CARDS') { cardsMenu.open = true; cardsMenu.idx = 0; }
+		else if (it === 'FRIENDS') { openFriends(); }
+		else if (it === 'POKeDEX') { const seen = party ? party.length : 0; dialog.open(`POKeDEX\n\nYou have caught ${seen} POKeMON so far.`); }
+		else if (it === 'SAVE') { saveParty(party); savePos(); dialog.open('Your journey has been saved.'); }
+		else if (it === 'OPTION') { dialog.open('OPTIONS\n\nControls: arrows/WASD move, Z confirm,\nX cancel, Enter/START menu.'); }
+		else if (it === 'EXIT' && visiting) { leaveVisit(); }
+		// EXIT just closes
+	}
+}
+
+function cardsKey(k) {
+	const items = cardsItems();
+	if (k === 'ArrowUp') cardsMenu.idx = (cardsMenu.idx + items.length - 1) % items.length;
+	if (k === 'ArrowDown') cardsMenu.idx = (cardsMenu.idx + 1) % items.length;
+	if (k === 'x' || k === 'Escape') { cardsMenu.open = false; return; }
+	if (k === 'z') {
+		const it = items[cardsMenu.idx];
+		if (it === 'BACK') { cardsMenu.open = false; startMenu.open = true; return; }
+		if (it === 'CHALLENGE FRIEND') { cardsMenu.open = false; openFriends('card'); return; }
+		saveParty(party); savePos();
+		openCardPage(it);
+	}
+}
+
+// ---- friends ----
+const friendsChallenge = { mode: null }; // null | 'card' | 'pokemon'
+async function openFriends(challengeType) {
+	friendsChallenge.mode = challengeType || null;
+	friendsMenu.open = true;
+	friendsMenu.idx = 0;
+	await refreshFriends();
+}
+async function refreshFriends() {
+	if (!MP_ON) return;
+	const data = await MP.call('friends');
+	if (data.friends) { friends = data.friends; if (mpAccount) mpAccount.friendCode = data.friendCode; }
+}
+function friendsKey(k) {
+	// rows: [Add friend] then each friend
+	const rows = friendsMenu.mode = 1 + friends.length;
+	if (k === 'ArrowUp') friendsMenu.idx = (friendsMenu.idx + rows - 1) % rows;
+	if (k === 'ArrowDown') friendsMenu.idx = (friendsMenu.idx + 1) % rows;
+	if (k === 'x' || k === 'Escape') { friendsMenu.open = false; return; }
+	if (k === 'z') {
+		if (friendsMenu.idx === 0) { promptAddFriend(); return; }
+		const f = friends[friendsMenu.idx - 1];
+		if (!f) return;
+		friendAction(f);
+	}
+}
+async function promptAddFriend() {
+	const code = (prompt('Enter your friend\'s 6-letter code:') || '').toUpperCase().trim();
+	if (!/^[A-Z]{6}$/.test(code)) { if (code) dialog.open('That is not a valid 6-letter friend code.'); return; }
+	const data = await MP.call('add-friend', { code });
+	if (data.error) { dialog.open(data.error); return; }
+	await refreshFriends();
+	dialog.open(`Added ${data.added} as a friend!`);
+}
+function friendAction(f) {
+	if (friendsChallenge.mode) {
+		friendsMenu.open = false;
+		friendsChallenge.mode = null;
+		dialog.open(`Live ${friendsChallenge.mode || 'card'} battles vs ${f.username} are coming soon!\n\nFor now you can visit their world.`);
+		return;
+	}
+	if (!f.online) { dialog.open(`${f.username} is offline right now.`); return; }
+	// visit their world: load their current map at their position
+	friendsMenu.open = false;
+	visitWorld(f);
+}
 const ferryMenu = { open: false, idx: 0 };
 const FERRY_DESTS = [
 	{ label: 'Vermilion Harbor (Kanto)', file: 'SSAnne_Exterior' },
@@ -312,6 +426,9 @@ function pressKey(k) {
 	if (dialog.blocking) { dialog.key(k); return; }
 	if (evolution.blocking) { evolution.key(k); return; }
 	if (battle.blocking) { battle.key(k); return; }
+	if (startMenu.open) { startKey(k); return; }
+	if (cardsMenu.open) { cardsKey(k); return; }
+	if (friendsMenu.open) { friendsKey(k); return; }
 	if (ferryMenu.open) { ferryKey(k); return; }
 	if (shopMenu.open) { shopKey(k); return; }
 	if (bagMenu.open) { bagKey(k); return; }
@@ -329,13 +446,15 @@ function pressKey(k) {
 		if (k === 'x' || k === 'p' || k === 'Escape') partyMenu.open = false;
 		return;
 	}
+	if ((k === 'Enter' || k === 'm') && !loading) { startMenu.open = true; startMenu.idx = 0; return; }
 	if (k === 'p' && !loading) { partyMenu.open = true; partyMenu.idx = 0; return; }
 	if (k === 'b' && !loading) { bagMenu.open = true; bagMenu.idx = 0; bagMenu.picking = false; return; }
-	if ((k === 'z' || k === 'Enter') && !loading) interact();
+	if (k === 'z' && !loading) interact();
 }
 // any menu that consumes direction presses instead of walking
 const menuBlocking = () => starterMenu.open || dialog.blocking || evolution.blocking
-	|| battle.blocking || shopMenu.open || bagMenu.open || pcMenu.open || partyMenu.open || ferryMenu.open;
+	|| battle.blocking || shopMenu.open || bagMenu.open || pcMenu.open || partyMenu.open || ferryMenu.open
+	|| startMenu.open || cardsMenu.open || friendsMenu.open;
 
 addEventListener('keydown', e => {
 	if (menuBlocking() || ['z', 'x', 'Enter', 'p', 'b', 'Escape'].includes(e.key) || KEYMAP[e.key]) {
@@ -362,7 +481,7 @@ for (const [id, dir] of Object.entries(DPAD)) {
 	el.addEventListener('pointercancel', release);
 	el.addEventListener('lostpointercapture', release);
 }
-for (const [id, key] of [['t-a', 'z'], ['t-b', 'x'], ['t-party', 'p'], ['t-bag', 'b']]) {
+for (const [id, key] of [['t-a', 'z'], ['t-b', 'x'], ['t-start', 'Enter'], ['t-party', 'p'], ['t-bag', 'b']]) {
 	document.getElementById(id).addEventListener('pointerdown', e => { e.preventDefault(); pressKey(key); });
 }
 // holding B doubles as the run button while roaming
@@ -545,6 +664,7 @@ function tick(now) {
 	// sprites in y order so overlaps stack correctly
 	const sprites = [...npcs.list, ...trainers.list, player].sort((a, b) => a.py - b.py);
 	for (const s of sprites) s.draw(ctx, camX, camY);
+	drawFriendGhost(ctx, camX, camY);
 	world.drawLayer(ctx, 'top', camX, camY);
 	if (!battle.blocking) evolution.draw(ctx);
 
@@ -560,6 +680,9 @@ function tick(now) {
 		else if (pcMenu.open) drawPcMenu(SW, SH);
 		else if (starterMenu.open) drawStarterMenu(SW, SH);
 		else if (ferryMenu.open) drawFerryMenu(SW, SH);
+		else if (startMenu.open) drawStartMenu(SW, SH);
+		else if (cardsMenu.open) drawCardsMenu(SW, SH);
+		else if (friendsMenu.open) drawFriendsMenu(SW, SH);
 		if (!evolution.blocking) dialog.drawHi(sctx, SW, SH);
 	}
 }
@@ -783,6 +906,50 @@ function drawFerryMenu(W, H) {
 	});
 }
 
+// a compact vertical list menu (Start / Cards); returns tappable rows
+function drawVertical(W, H, u, title, sub, items, idx, idPrefix) {
+	menuChrome(W, H, u, title, sub, title !== 'MENU');
+	const bw = Math.min(W - 48 * u, 360 * u);
+	items.forEach((lab, i) => {
+		const bid = idPrefix + ':' + i;
+		const b = { id: bid, x: W - bw - 24 * u, y: (80 + i * 46) * u, w: bw, h: 40 * u,
+			label: lab, center: true, kbSel: idx === i };
+		menuUi.push(b);
+		BUI.button(sctx, b, menuHover === bid || idx === i, u);
+	});
+}
+function drawStartMenu(W, H) {
+	drawVertical(W, H, H / 480, 'MENU', 'Press START/Enter to close.', startItems(), startMenu.idx, 'start');
+}
+function drawCardsMenu(W, H) {
+	drawVertical(W, H, H / 480, 'CARDS', 'Your collection, decks, packs, and battles.', cardsItems(), cardsMenu.idx, 'cards');
+}
+function drawFriendsMenu(W, H) {
+	const u = H / 480;
+	const sub = friendsChallenge.mode ? 'Choose a friend to challenge.'
+		: `Your code: ${mpAccount?.friendCode || '……'} — add friends and visit their world.`;
+	menuChrome(W, H, u, 'FRIENDS', sub);
+	// row 0: add friend
+	const rows = [{ id: 'friend:0', label: '+ ADD FRIEND BY CODE', sub: '' }];
+	friends.forEach((f, i) => rows.push({
+		id: 'friend:' + (i + 1),
+		label: f.username + (f.online ? '  ●' : '  ○'),
+		sub: f.online ? (friendsChallenge.mode ? 'tap to challenge' : `in ${f.map || 'their world'} — tap to visit`) : 'offline',
+		online: f.online,
+	}));
+	rows.forEach((r, i) => {
+		const b = { id: r.id, x: 24 * u, y: (78 + i * 52) * u, w: W - 48 * u, h: 46 * u,
+			label: r.label, sub: r.sub, kbSel: friendsMenu.idx === i };
+		menuUi.push(b);
+		BUI.button(sctx, b, menuHover === r.id || friendsMenu.idx === i, u);
+	});
+	if (!friends.length) {
+		sctx.fillStyle = BUI.C.dim;
+		sctx.font = `${Math.round(13 * u)}px m6x11plus, monospace`;
+		sctx.fillText('No friends yet — share your code!', 24 * u, (78 + 60) * u);
+	}
+}
+
 // taps route into the same state + key logic the keyboard uses
 function menuTap(id) {
 	const [kind, a, b2] = id.split(':');
@@ -805,8 +972,83 @@ function menuTap(id) {
 	if (kind === 'use') { bagMenu.pickIdx = +a; pressKey('z'); return; }
 	if (kind === 'pcp') { pcMenu.side = 0; pcMenu.idx = +a; pressKey('z'); return; }
 	if (kind === 'pcb') { pcMenu.side = 1; pcMenu.idx = +a; pressKey('z'); return; }
+	if (kind === 'start') { startMenu.idx = +a; pressKey('z'); return; }
+	if (kind === 'cards') { cardsMenu.idx = +a; pressKey('z'); return; }
+	if (kind === 'friend') { friendsMenu.idx = +a; pressKey('z'); return; }
 }
-const anyMenuOpen = () => partyMenu.open || shopMenu.open || bagMenu.open || pcMenu.open || starterMenu.open || ferryMenu.open;
+const anyMenuOpen = () => partyMenu.open || shopMenu.open || bagMenu.open || pcMenu.open || starterMenu.open || ferryMenu.open || startMenu.open || cardsMenu.open || friendsMenu.open;
+
+// ---------- multiplayer presence & visiting ----------
+let friendSprite = null; // green_normal.png, loaded lazily for friend ghosts
+getImage('data/sprites/green_normal.png').then(img => { friendSprite = img; }).catch(() => {});
+
+// tell the server where we are, every couple seconds while roaming
+async function heartbeat() {
+	if (!MP_ON || loading || battle.blocking) return;
+	try {
+		await MP.call('heartbeat', {
+			map: world.current.name, x: player.tx, y: player.ty,
+			facing: player.facing,
+			status: visiting ? `visiting ${visiting.username}` : (battle.blocking ? 'battling' : 'roaming'),
+			region: world.current.map.name || '',
+		});
+	} catch (e) {}
+}
+
+// load a friend's current map at their position and follow them live
+async function visitWorld(f) {
+	const data = await MP.call('presence', { username: f.username });
+	const p = data.presence;
+	if (!p || !p.map) { dialog.open(`${f.username} isn't roaming right now.`); return; }
+	const file = world.fileFor(p.map) || p.map;
+	visiting = { username: f.username, ghost: { tx: p.x, ty: p.y, facing: p.facing || 'down', px: p.x * META, py: p.y * META } };
+	await moveToMap(file, p.x, p.y);
+	dialog.open(`You warped into ${f.username}'s world!\n\nPress START and pick EXIT to return home.`);
+}
+
+// pull the friend's live position while visiting; also refresh the list
+async function pollVisit() {
+	if (!MP_ON || !visiting) return;
+	try {
+		const data = await MP.call('presence', { username: visiting.username });
+		const p = data.presence;
+		if (!p) { dialog.open(`${visiting.username} went offline. Returning home...`); await leaveVisit(); return; }
+		visiting.ghost.tx = p.x; visiting.ghost.ty = p.y; visiting.ghost.facing = p.facing || 'down';
+		// if they crossed to a new map, follow them there
+		const theirFile = world.fileFor(p.map) || p.map;
+		if (theirFile !== world.current.name) { await moveToMap(theirFile, p.x, p.y); }
+	} catch (e) {}
+}
+async function leaveVisit() {
+	visiting = null;
+	let home = null;
+	try { home = JSON.parse(localStorage.getItem(POS_KEY)); } catch (e) {}
+	await moveToMap(home?.map ? (world.fileFor(home.map) || home.map) : 'PalletTown', home?.x, home?.y);
+}
+
+// draw the friend's ghost sprite (smoothly eased toward their reported tile)
+function drawFriendGhost(ctx, camX, camY) {
+	if (!visiting || !friendSprite) return;
+	const g = visiting.ghost;
+	const tx = g.tx * META, ty = g.ty * META;
+	g.px += (tx - g.px) * 0.2;
+	g.py += (ty - g.py) * 0.2;
+	const mirror = g.facing === 'right';
+	const frameX = { down: 0, up: 1, left: 2, right: 2 }[g.facing] * 16;
+	ctx.save();
+	const x = g.px - camX, y = g.py - 16 - camY;
+	if (mirror) { ctx.translate(x + 16, y); ctx.scale(-1, 1); }
+	else ctx.translate(x, y);
+	ctx.globalAlpha = 0.92;
+	ctx.drawImage(friendSprite, frameX, 0, 16, 32, 0, 0, 16, 32);
+	ctx.restore();
+	// a little name tag
+	ctx.fillStyle = '#fff';
+	ctx.font = '6px monospace';
+	ctx.textAlign = 'center';
+	ctx.fillText(visiting.username.slice(0, 8), g.px - camX + 8, g.py - 18 - camY);
+	ctx.textAlign = 'left';
+}
 
 // ---------- boot ----------
 (async () => {
@@ -871,6 +1113,16 @@ const anyMenuOpen = () => partyMenu.open || shopMenu.open || bagMenu.open || pcM
 			step();
 		});
 	}
-	window.__ow = { world, player, warpTo, moveToMap, npcs, encounters, battle, trainers, dialog, evolution, items, get party() { return party; }, get menuUi() { return menuUi; }, menuTap, pumpPlayer, freezeLoop, startWildBattle, interact };
+	// Test Realm: load the account, greet the player, begin presence
+	if (MP_ON) {
+		mpAccount = MP.cachedState() || await MP.freshState();
+		hud.textContent = `${world.current.map.name || startMap}  ·  ${mpAccount?.username || ''} (${mpAccount?.friendCode || '……'})`;
+		heartbeat();
+		setInterval(heartbeat, 3000);
+		setInterval(pollVisit, 1500);
+	}
+	window.__ow = { world, player, warpTo, moveToMap, npcs, encounters, battle, trainers, dialog, evolution, items, get party() { return party; }, get menuUi() { return menuUi; }, menuTap, pumpPlayer, freezeLoop, startWildBattle, interact,
+		get startMenu() { return startMenu; }, get cardsMenu() { return cardsMenu; }, get friendsMenu() { return friendsMenu; },
+		get friends() { return friends; }, get visiting() { return visiting; }, refreshFriends, visitWorld, leaveVisit, heartbeat, MP_ON };
 	requestAnimationFrame(tick);
 })();

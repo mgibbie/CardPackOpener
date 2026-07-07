@@ -123,7 +123,32 @@ const publicState = (u, username) => ({
 	decks: u.decks,
 	packs: u.packs,
 	stats: u.stats,
+	friendCode: u.friendCode || null,
+	friends: u.friends || [],
 });
+
+// ---------- friends ----------
+const ONLINE_MS = 90_000; // a heartbeat within 90s counts as online
+const randCode = () => Array.from({ length: 6 },
+	() => 'ABCDEFGHJKLMNPQRSTUVWXYZ'[Math.floor(Math.random() * 24)]).join(''); // no I/O
+
+// every account gets a unique 6-letter friend code + a friends list; backfill
+// older accounts that predate the feature
+async function ensureFriendFields(store, username, user) {
+	if (user.friendCode && Array.isArray(user.friends)) return false;
+	if (!Array.isArray(user.friends)) user.friends = [];
+	if (!user.friendCode) {
+		let code;
+		for (let i = 0; i < 12; i++) {
+			code = randCode();
+			if (!(await store.get('code:' + code))) break;
+		}
+		user.friendCode = code;
+		await store.setJSON('code:' + code, username);
+	}
+	await store.setJSON(username, user);
+	return true;
+}
 
 const json = (body, status = 200) => new Response(JSON.stringify(body), {
 	status, headers: { 'content-type': 'application/json' },
@@ -145,13 +170,21 @@ export default async function handler(req) {
 		if (await store.get(username)) return json({ error: 'that name is taken' }, 409);
 		const salt = randomBytes(16).toString('hex');
 		const hash = (await scrypt(password, salt)).toString('hex');
+		let code;
+		for (let i = 0; i < 12; i++) {
+			code = randCode();
+			if (!(await store.get('code:' + code))) break;
+		}
 		const user = {
 			salt, hash, created: Date.now(),
 			collection: startingCollection(),
 			decks: Object.fromEntries(Object.entries(STARTER_DECKS).map(([k, v]) => [k, [...v]])),
 			packs: 1, // a welcome pack to try the opener
 			stats: { runs: 0, wins: 0, packsOpened: 0, lastReward: 0 },
+			friendCode: code,
+			friends: [],
 		};
+		await store.setJSON('code:' + code, username);
 		await store.setJSON(username, user);
 		return json({ token: makeToken(username), state: publicState(user, username) });
 	}
@@ -171,8 +204,77 @@ export default async function handler(req) {
 	if (!username) return json({ error: 'not logged in' }, 401);
 	const user = await store.get(username);
 	if (!user) return json({ error: 'account gone' }, 401);
+	await ensureFriendFields(store, username, user); // backfill code/friends
 
 	if (action === 'state') return json({ state: publicState(user, username) });
+
+	// ---------- friends & presence ----------
+	if (action === 'add-friend') {
+		const code = String(body.code || '').toUpperCase().trim();
+		if (!/^[A-Z]{6}$/.test(code)) return json({ error: 'friend codes are 6 capital letters' }, 400);
+		if (code === user.friendCode) return json({ error: "that's your own code" }, 400);
+		const other = await store.get('code:' + code);
+		if (!other || other === username) return json({ error: 'no player has that code' }, 404);
+		if (!user.friends.includes(other)) user.friends.push(other);
+		const ou = await store.get(other);
+		if (ou) {
+			if (!Array.isArray(ou.friends)) ou.friends = [];
+			if (!ou.friends.includes(username)) { ou.friends.push(username); await store.setJSON(other, ou); }
+		}
+		await store.setJSON(username, user);
+		return json({ added: other, state: publicState(user, username) });
+	}
+
+	if (action === 'remove-friend') {
+		const who = String(body.username || '');
+		user.friends = user.friends.filter(f => f !== who);
+		const ou = await store.get(who);
+		if (ou?.friends) { ou.friends = ou.friends.filter(f => f !== username); await store.setJSON(who, ou); }
+		await store.setJSON(username, user);
+		return json({ state: publicState(user, username) });
+	}
+
+	// lightweight presence ping while roaming; written to its own blob so the
+	// account blob isn't rewritten every second
+	if (action === 'heartbeat') {
+		await store.setJSON('presence:' + username, {
+			name: username,
+			map: String(body.map || ''), x: +body.x || 0, y: +body.y || 0,
+			facing: String(body.facing || 'down'),
+			status: String(body.status || 'roaming'),
+			region: String(body.region || ''),
+			lastSeen: Date.now(),
+		});
+		return json({ ok: true });
+	}
+
+	// friends list with live presence (online + where they are)
+	if (action === 'friends') {
+		const list = [];
+		for (const f of user.friends) {
+			const fu = await store.get(f);
+			const p = await store.get('presence:' + f);
+			const online = p && Date.now() - p.lastSeen < ONLINE_MS;
+			list.push({
+				username: f, friendCode: fu?.friendCode || '',
+				online: !!online,
+				map: online ? p.map : null, x: online ? p.x : 0, y: online ? p.y : 0,
+				facing: online ? p.facing : 'down',
+				status: online ? p.status : 'offline',
+				region: online ? p.region : '',
+			});
+		}
+		return json({ friends: list, friendCode: user.friendCode });
+	}
+
+	// a single friend's live presence (for visiting / spectating)
+	if (action === 'presence') {
+		const who = String(body.username || '');
+		if (!user.friends.includes(who)) return json({ error: 'not your friend' }, 403);
+		const p = await store.get('presence:' + who);
+		const online = p && Date.now() - p.lastSeen < ONLINE_MS;
+		return json({ presence: online ? p : null });
+	}
 
 	if (action === 'open-pack') {
 		if (user.packs <= 0) return json({ error: 'no unopened packs — finish a dungeon run to earn one' }, 409);

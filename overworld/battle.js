@@ -875,7 +875,7 @@ export class Battle {
 
 	useMove(user, userBoosts, target, targetBoosts, move, isFoe) {
 		const a = this.active;
-		const mv = this.data.moves[move.id] || {};
+		let mv = this.data.moves[move.id] || {}; // -ate abilities reassign the type
 		const fx = MOVE_FX[move.id] || {};
 		if (!this.beforeMove(user, userBoosts, isFoe, move)) return;
 		move.pp = Math.max(0, move.pp - 1);
