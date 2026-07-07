@@ -10180,7 +10180,11 @@
       "type": "creature",
       "attack": 1,
       "health": 1,
-      "tribe": "Dwarf Pirate"
+      "tribe": "Dwarf Pirate",
+      "condAttack": {
+        "attack": 2,
+        "while": "weapon"
+      }
     },
     {
       "id": "southsea_deckhand",
@@ -36414,9 +36418,12 @@
       "cardClass": "hunter",
       "cost": 7,
       "rarity": "legendary",
+      "set": "paper",
+      "description": "Battlecry: Summon four 0/2 Goblin Bombs",
       "type": "creature",
       "attack": 5,
       "health": 5,
+      "tribe": "Goblin Wizard",
       "keywords": [
         "battlecry"
       ],
@@ -36428,9 +36435,7 @@
           "health": 2,
           "name": "Goblin Bomb"
         }
-      ],
-      "description": "Battlecry: Summon four 0/2 Goblin Bombs.",
-      "set": "hsx"
+      ]
     },
     {
       "id": "drum_circle",
@@ -39512,6 +39517,615 @@
         }
       ],
       "description": "Battlecry: scry 1.."
+    },
+    {
+      "id": "bladed_cultist",
+      "name": "Bladed Cultist",
+      "cardClass": "rogue",
+      "cost": 1,
+      "rarity": "common",
+      "type": "creature",
+      "attack": 1,
+      "health": 2,
+      "combo": [
+        {
+          "type": "buff-self",
+          "attack": 1,
+          "health": 1
+        }
+      ],
+      "description": "Combo: Gain +1/+1.",
+      "set": "hsx"
+    },
+    {
+      "id": "emerald_reaver",
+      "name": "Emerald Reaver",
+      "cardClass": "neutral",
+      "cost": 1,
+      "rarity": "common",
+      "tribe": "Beast",
+      "type": "creature",
+      "attack": 2,
+      "health": 1,
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "damage",
+          "value": 1,
+          "target": "all-heroes"
+        }
+      ],
+      "description": "Battlecry: Deal 1 damage to each hero.",
+      "set": "hsx"
+    },
+    {
+      "id": "i_know_a_guy",
+      "name": "I Know a Guy",
+      "cardClass": "warrior",
+      "cost": 1,
+      "rarity": "common",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "discover",
+          "pick": 3,
+          "cardType": "creature",
+          "requireKeyword": "taunt",
+          "buff": {
+            "attack": 1,
+            "health": 2
+          }
+        }
+      ],
+      "description": "Discover a Taunt creature; it arrives with +1/+2.",
+      "set": "hsx"
+    },
+    {
+      "id": "shadowbomber",
+      "name": "Shadowbomber",
+      "cardClass": "priest",
+      "cost": 1,
+      "rarity": "epic",
+      "type": "creature",
+      "attack": 3,
+      "health": 1,
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "damage",
+          "value": 3,
+          "target": "all-heroes"
+        }
+      ],
+      "description": "Battlecry: Deal 3 damage to each hero.",
+      "set": "hsx"
+    },
+    {
+      "id": "shooting_star",
+      "name": "Shooting Star",
+      "cardClass": "mage",
+      "cost": 1,
+      "rarity": "common",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "damage-adjacent",
+          "value": 1,
+          "splash": 1,
+          "target": "creature"
+        }
+      ],
+      "description": "Deal 1 damage to a creature and its neighbors.",
+      "set": "hsx"
+    },
+    {
+      "id": "zombie_chow",
+      "name": "Zombie Chow",
+      "cardClass": "neutral",
+      "cost": 1,
+      "rarity": "common",
+      "type": "creature",
+      "attack": 2,
+      "health": 3,
+      "keywords": [
+        "deathrattle"
+      ],
+      "deathrattle": [
+        {
+          "type": "heal",
+          "value": 5,
+          "target": "enemy-hero"
+        }
+      ],
+      "description": "Deathrattle: Restore 5 health to the enemy hero.",
+      "set": "hsx"
+    },
+    {
+      "id": "city_tax",
+      "name": "City Tax",
+      "cardClass": "paladin",
+      "cost": 2,
+      "rarity": "common",
+      "tradeable": true,
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 1,
+          "target": "enemy-creatures"
+        },
+        {
+          "type": "heal",
+          "value": 1,
+          "target": "self"
+        }
+      ],
+      "description": "Lifesteal. Deal 1 damage to all enemy creatures. Tradeable: pay 1 to shuffle this into your deck and draw a card.",
+      "set": "hsx"
+    },
+    {
+      "id": "quick_shot",
+      "name": "Quick Shot",
+      "cardClass": "hunter",
+      "cost": 2,
+      "rarity": "common",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 3,
+          "target": "any"
+        },
+        {
+          "type": "conditional",
+          "if": {
+            "handEmpty": true
+          },
+          "then": [
+            {
+              "type": "draw",
+              "value": 1
+            }
+          ]
+        }
+      ],
+      "description": "Deal 3 damage. If your hand is empty, draw a card.",
+      "set": "hsx"
+    },
+    {
+      "id": "venomstrike_trap",
+      "name": "Venomstrike Trap",
+      "cardClass": "hunter",
+      "cost": 2,
+      "rarity": "rare",
+      "type": "secret",
+      "secret": {
+        "trigger": "enemy-attack",
+        "condition": {
+          "targetCreature": true
+        },
+        "effects": [
+          {
+            "type": "summon",
+            "count": 1,
+            "attack": 2,
+            "health": 3,
+            "name": "Poisonous Cobra"
+          }
+        ]
+      },
+      "description": "Secret: When one of your creatures is attacked, summon a 2/3 Poisonous Cobras.",
+      "set": "hsx"
+    },
+    {
+      "id": "coldtooth_yeti",
+      "name": "Coldtooth Yeti",
+      "cardClass": "rogue",
+      "cost": 3,
+      "rarity": "common",
+      "type": "creature",
+      "attack": 1,
+      "health": 5,
+      "combo": [
+        {
+          "type": "buff-self",
+          "attack": 3,
+          "health": 0
+        }
+      ],
+      "description": "Combo: Gain +3 Attack.",
+      "set": "hsx"
+    },
+    {
+      "id": "hooked_scimitar",
+      "name": "Hooked Scimitar",
+      "cardClass": "rogue",
+      "cost": 3,
+      "rarity": "common",
+      "type": "weapon",
+      "attack": 2,
+      "durability": 2,
+      "combo": [
+        {
+          "type": "buff-self",
+          "attack": 2,
+          "health": 0
+        }
+      ],
+      "description": "Combo: Gain +2 Attack.",
+      "set": "hsx"
+    },
+    {
+      "id": "menagerie_mug",
+      "name": "Menagerie Mug",
+      "cardClass": "neutral",
+      "cost": 3,
+      "rarity": "common",
+      "type": "creature",
+      "attack": 3,
+      "health": 3,
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "buff-random-friendly",
+          "count": 3,
+          "attack": 1,
+          "health": 1
+        }
+      ],
+      "description": "Battlecry: Give 3 random friendly creatures +1/+1.",
+      "set": "hsx"
+    },
+    {
+      "id": "oasis_ally",
+      "name": "Oasis Ally",
+      "cardClass": "mage",
+      "cost": 3,
+      "rarity": "common",
+      "type": "secret",
+      "secret": {
+        "trigger": "enemy-attack",
+        "condition": {
+          "targetCreature": true
+        },
+        "effects": [
+          {
+            "type": "summon",
+            "count": 1,
+            "attack": 3,
+            "health": 6,
+            "name": "Water Elemental"
+          }
+        ]
+      },
+      "description": "Secret: When one of your creatures is attacked, summon a 3/6 Water Elementals.",
+      "set": "hsx"
+    },
+    {
+      "id": "powershot",
+      "name": "Powershot",
+      "cardClass": "hunter",
+      "cost": 3,
+      "rarity": "rare",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "damage-adjacent",
+          "value": 2,
+          "splash": 2,
+          "target": "creature"
+        }
+      ],
+      "description": "Deal 2 damage to a creature and its neighbors.",
+      "set": "hsx"
+    },
+    {
+      "id": "dark_iron_skulker",
+      "name": "Dark Iron Skulker",
+      "cardClass": "rogue",
+      "cost": 4,
+      "rarity": "rare",
+      "type": "creature",
+      "attack": 4,
+      "health": 3,
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "damage",
+          "value": 2,
+          "target": "undamaged-enemy-creatures"
+        }
+      ],
+      "description": "Battlecry: Deal 2 damage to every undamaged enemy creature.",
+      "set": "hsx"
+    },
+    {
+      "id": "eager_underling",
+      "name": "Eager Underling",
+      "cardClass": "warlock",
+      "cost": 4,
+      "rarity": "rare",
+      "type": "creature",
+      "attack": 2,
+      "health": 2,
+      "keywords": [
+        "deathrattle"
+      ],
+      "deathrattle": [
+        {
+          "type": "buff-random-friendly",
+          "count": 2,
+          "attack": 2,
+          "health": 2
+        }
+      ],
+      "description": "Deathrattle: Give two random friendly creatures +2/+2.",
+      "set": "hsx"
+    },
+    {
+      "id": "hench_clan_shadequill",
+      "name": "Hench-Clan Shadequill",
+      "cardClass": "priest",
+      "cost": 4,
+      "rarity": "common",
+      "type": "creature",
+      "attack": 4,
+      "health": 7,
+      "keywords": [
+        "deathrattle"
+      ],
+      "deathrattle": [
+        {
+          "type": "heal",
+          "value": 5,
+          "target": "enemy-hero"
+        }
+      ],
+      "description": "Deathrattle: Restore 5 health to the enemy hero.",
+      "set": "hsx"
+    },
+    {
+      "id": "knife_vendor",
+      "name": "Knife Vendor",
+      "cardClass": "neutral",
+      "cost": 4,
+      "rarity": "common",
+      "type": "creature",
+      "attack": 3,
+      "health": 4,
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "damage",
+          "value": 4,
+          "target": "all-heroes"
+        }
+      ],
+      "description": "Battlecry: Deal 4 damage to each hero.",
+      "set": "hsx"
+    },
+    {
+      "id": "barrens_blacksmith",
+      "name": "Barrens Blacksmith",
+      "cardClass": "neutral",
+      "cost": 5,
+      "rarity": "epic",
+      "type": "creature",
+      "attack": 3,
+      "health": 5,
+      "ongoing": {
+        "on": "self-damaged",
+        "once": true,
+        "survives": true,
+        "effects": [
+          {
+            "type": "buff",
+            "attack": 2,
+            "health": 2,
+            "target": "friendly-others"
+          }
+        ]
+      },
+      "description": "Frenzy: give your other creatures +2/+2.",
+      "set": "hsx"
+    },
+    {
+      "id": "corrupted_healbot",
+      "name": "Corrupted Healbot",
+      "cardClass": "neutral",
+      "cost": 5,
+      "rarity": "rare",
+      "tribe": "Mech",
+      "type": "creature",
+      "attack": 6,
+      "health": 6,
+      "keywords": [
+        "deathrattle"
+      ],
+      "deathrattle": [
+        {
+          "type": "heal",
+          "value": 8,
+          "target": "enemy-hero"
+        }
+      ],
+      "description": "Deathrattle: Restore 8 health to the enemy hero.",
+      "set": "hsx"
+    },
+    {
+      "id": "menagerie_jug",
+      "name": "Menagerie Jug",
+      "cardClass": "neutral",
+      "cost": 5,
+      "rarity": "common",
+      "type": "creature",
+      "attack": 3,
+      "health": 3,
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "buff-random-friendly",
+          "count": 3,
+          "attack": 2,
+          "health": 2
+        }
+      ],
+      "description": "Battlecry: Give 3 random friendly creatures +2/+2.",
+      "set": "hsx"
+    },
+    {
+      "id": "mukla_s_champion",
+      "name": "Mukla's Champion",
+      "cardClass": "neutral",
+      "cost": 5,
+      "rarity": "common",
+      "tribe": "Beast",
+      "type": "creature",
+      "attack": 5,
+      "health": 3,
+      "ongoing": {
+        "on": "hero-power-used",
+        "effects": [
+          {
+            "type": "buff",
+            "attack": 1,
+            "health": 1,
+            "target": "friendly-others"
+          }
+        ]
+      },
+      "description": "Inspire: give your other creatures +1/+1.",
+      "set": "hsx"
+    },
+    {
+      "id": "shado_pan_rider",
+      "name": "Shado-Pan Rider",
+      "cardClass": "rogue",
+      "cost": 5,
+      "rarity": "common",
+      "type": "creature",
+      "attack": 3,
+      "health": 7,
+      "combo": [
+        {
+          "type": "buff-self",
+          "attack": 4,
+          "health": 0
+        }
+      ],
+      "description": "Combo: Gain +4 Attack.",
+      "set": "hsx"
+    },
+    {
+      "id": "voodoo_hexxer",
+      "name": "Voodoo Hexxer",
+      "cardClass": "shaman",
+      "cost": 5,
+      "rarity": "rare",
+      "type": "creature",
+      "attack": 2,
+      "health": 7,
+      "keywords": [
+        "taunt",
+        "freezer"
+      ],
+      "description": "Taunt. Freezes anything it damages.",
+      "set": "hsx"
+    },
+    {
+      "id": "warsong_grunt",
+      "name": "Warsong Grunt",
+      "cardClass": "neutral",
+      "cost": 5,
+      "rarity": "common",
+      "type": "creature",
+      "attack": 3,
+      "health": 6,
+      "attackAgainOnKill": true,
+      "keywords": [
+        "rush"
+      ],
+      "description": "Rush. After it attacks and kills a creature, it may attack again.",
+      "set": "hsx"
+    },
+    {
+      "id": "icehoof_protector",
+      "name": "Icehoof Protector",
+      "cardClass": "neutral",
+      "cost": 6,
+      "rarity": "common",
+      "type": "creature",
+      "attack": 2,
+      "health": 10,
+      "keywords": [
+        "taunt",
+        "freezer"
+      ],
+      "description": "Taunt. Freezes anything it damages.",
+      "set": "hsx"
+    },
+    {
+      "id": "batterhead",
+      "name": "Batterhead",
+      "cardClass": "neutral",
+      "cost": 8,
+      "rarity": "epic",
+      "type": "creature",
+      "attack": 3,
+      "health": 12,
+      "attackAgainOnKill": true,
+      "keywords": [
+        "rush"
+      ],
+      "description": "Rush. After it attacks and kills a creature, it may attack again.",
+      "set": "hsx"
+    },
+    {
+      "id": "hulking_overfiend",
+      "name": "Hulking Overfiend",
+      "cardClass": "demon_hunter",
+      "cost": 8,
+      "rarity": "rare",
+      "tribe": "Demon",
+      "type": "creature",
+      "attack": 5,
+      "health": 10,
+      "attackAgainOnKill": true,
+      "keywords": [
+        "rush"
+      ],
+      "description": "Rush. After it attacks and kills a creature, it may attack again.",
+      "set": "hsx"
+    },
+    {
+      "id": "aviana",
+      "name": "Aviana",
+      "cardClass": "druid",
+      "cost": 9,
+      "rarity": "legendary",
+      "type": "creature",
+      "attack": 5,
+      "health": 5,
+      "costMod": {
+        "cardType": "creature",
+        "amount": -99,
+        "floor": 1,
+        "scope": "own"
+      },
+      "description": "Your creatures cost 1.",
+      "set": "hsx"
     }
   ]
 }

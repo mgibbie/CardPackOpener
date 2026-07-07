@@ -144,6 +144,8 @@ function instantiate(def, controller) {
 		battlecryDouble: !!def.battlecryDouble, // Brann: friendly battlecries fire twice
 		rattleDouble: !!def.rattleDouble,       // Rivendare: friendly deathrattles fire twice
 		counters: 0,                  // +1/+1 counters banked on this creature
+		condAttack: def.condAttack || null, // "+N Attack while you have a weapon"
+		attackAgainOnKill: !!def.attackAgainOnKill, // Rush hunters: kills refund the attack
 		activated: def.activated || null, // creature abilities: [{cost, tap, sacrifice, effects, text}]
 		activatedTap: false,          // used a {T} ability this turn (can't attack)
 		xSpell: !!def.xSpell,         // spends all remaining mana; X = the excess
@@ -719,6 +721,8 @@ function silenceCreature(state, c) {
 	c.statRule = null;
 	c.selfScale = null;
 	c.condKeyword = null;
+	c.condAttack = null;
+	c.attackAgainOnKill = false;
 	c.honorableKill = null;
 	c.medic = 0;
 	c.offTurnAttack = 0;
@@ -898,6 +902,10 @@ function recomputeAuras(state) {
 			// Southsea Deckhand: keyword held only while a condition stands
 			if (c.condKeyword && (c.condKeyword.while !== 'weapon' || p.weapon)) {
 				granted.add(c.condKeyword.keyword);
+			}
+			// "+N Attack while you have a weapon equipped"
+			if (c.condAttack && (c.condAttack.while !== 'weapon' || p.weapon)) {
+				aBonus += c.condAttack.attack || 0;
 			}
 			const dA = aBonus - c.auraAttack, dH = hBonus - c.auraHealth;
 			if (dA || dH) {
@@ -1648,6 +1656,18 @@ function execEffects(state, pi, effects, target, source) {
 				case 'enemy-heroes': // every opponent's face, creatures untouched
 					for (const o of enemies) damageHero(state, o, v, pi);
 					break;
+				case 'all-heroes': // each hero including your own
+					for (let s2 = 0; s2 < state.players.length; s2++) {
+						if (!state.players[s2].eliminated) damageHero(state, s2, v, pi);
+					}
+					break;
+				case 'undamaged-enemy-creatures': // Dark Iron Skulker
+					for (const o of enemies) {
+						for (const c of [...state.players[o].board]) {
+							if (c.damage === 0) damageCreature(state, c, v, null);
+						}
+					}
+					break;
 				case 'everyone':
 					for (let s = 0; s < state.players.length; s++) {
 						if (state.players[s].eliminated) continue;
@@ -1689,6 +1709,7 @@ function execEffects(state, pi, effects, target, source) {
 			const mendHero = who => harm ? damageHero(state, who, v, pi) : healHero(state, who, v);
 			const mend = c => harm ? damageCreature(state, c, v, null) : healCreature(c, v);
 			if (e.target === 'self') mendHero(pi);
+			else if (e.target === 'enemy-hero') { const t = enemyHero(); if (t != null) mendHero(t); }
 			else if (e.target === 'all-heroes') { for (let s = 0; s < state.players.length; s++) if (!state.players[s].eliminated) mendHero(s); }
 			else if (e.target === 'all-creatures') { for (const pl of state.players) for (const c of [...pl.board]) mend(c); }
 			else if (e.target === 'friendly-creatures') { for (const c of [...state.players[pi].board]) mend(c); }
@@ -2157,6 +2178,7 @@ function execEffects(state, pi, effects, target, source) {
 			else if (e.if.heroAttacked) ok = p.heroAttacksUsed > 0;
 			else if (e.if.controlMinAttack != null) ok = p.board.some(c => !isDead(c) && c !== source && c.attack >= e.if.controlMinAttack);
 			else if (e.if.holdingTribe) ok = p.hand.some(c => (c.tribe || '').includes(e.if.holdingTribe));
+			else if (e.if.handEmpty) ok = p.hand.length === 0;
 			execEffects(state, pi, ok ? e.then : (e.else || []), target, source);
 		} else if (e.type === 'damage-then') {
 			// deal damage, then branch on whether the creature survived
@@ -2544,10 +2566,12 @@ function execEffects(state, pi, effects, target, source) {
 				}
 			}
 		} else if (e.type === 'buff-random-friendly') {
-			// deathrattle path (Dark Cultist) — the secret executor has its own copy
-			const pool = state.players[pi].board.filter(c => !isDead(c) && c !== source);
-			if (pool.length) {
-				const m = pool[Math.floor(state.rng() * pool.length)];
+			// deathrattle path (Dark Cultist) — the secret executor has its own copy;
+			// count picks that many DISTINCT friendlies
+			const pool = state.players[pi].board.filter(c =>
+				!isDead(c) && c !== source && c.type !== 'location');
+			for (let i = 0; i < (e.count || 1) && pool.length; i++) {
+				const m = pool.splice(Math.floor(state.rng() * pool.length), 1)[0];
 				m.attack += e.attack || 0;
 				m.maxHealth += e.health || 0;
 				emit(state, { type: 'buff', uid: m.uid, attack: m.attack, hp: hp(m) });
@@ -3323,6 +3347,10 @@ export function attack(state, pi, attackerUid, target) {
 			&& !isDead(attacker)) {
 			emit(state, { type: 'honorableKill', uid: attacker.uid, player: pi });
 			runSecretEffects(state, pi, attacker.honorableKill, { self: attacker });
+		}
+		// "After this attacks and kills a minion, it may attack again."
+		if (attacker.attackAgainOnKill && isDead(defender) && !isDead(attacker)) {
+			attacker.attacksUsed = Math.max(0, attacker.attacksUsed - 1);
 		}
 	}
 	sweepDeaths(state);
