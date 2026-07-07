@@ -1035,6 +1035,22 @@ async function cardParty() {
 }
 const goCardDuel = id => { location.href = '/battlecards/?cardpvp=' + encodeURIComponent(id) + '&mp=1'; };
 
+// on boot, offer to rejoin a battle left in progress (e.g. after a refresh).
+// Declining forfeits so the opponent isn't left waiting out the abandon timer.
+async function checkRejoin() {
+	if (!MP_ON) return;
+	let data;
+	try { data = await MP.call('my-current-match'); } catch (e) { return; }
+	if (!data || !data.match) return;
+	const { id, type } = data.match;
+	const what = type === 'card' ? 'card duel' : 'POKeMON battle';
+	dialog.open(`You left a ${what} in progress.  Z=Rejoin  X=Forfeit`, (declined) => {
+		if (declined === 'x') { MP.call('leave-match', { id, type }).catch(() => {}); return; }
+		if (type === 'card') goCardDuel(id);
+		else enterMatch(id, false);
+	});
+}
+
 let pendingChallengeTo = null; // username we challenged, polling for accept
 async function sendChallenge(f) {
 	const snap = pvpParty();
@@ -1282,6 +1298,7 @@ function drawFriendGhosts(ctx, camX, camY) {
 		beatLoop();
 		presLoop();
 		setInterval(pollChallenges, 2000);
+		checkRejoin();
 	}
 	window.__ow = { world, player, warpTo, moveToMap, npcs, encounters, battle, trainers, dialog, evolution, items, get party() { return party; }, get menuUi() { return menuUi; }, menuTap, pumpPlayer, freezeLoop, startWildBattle, interact,
 		get startMenu() { return startMenu; }, get cardsMenu() { return cardsMenu; }, get friendsMenu() { return friendsMenu; },

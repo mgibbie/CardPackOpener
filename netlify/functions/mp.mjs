@@ -359,6 +359,9 @@ export default async function handler(req) {
 			};
 			await store.setJSON('cardmatch:' + matchId, cm);
 			await store.setJSON('ready:' + from, { matchId, type: 'card', ts: Date.now() });
+			// remember each player's active match so a refresh can rejoin it
+			await store.setJSON('curmatch:' + from, { id: matchId, type: 'card', ts: Date.now() });
+			await store.setJSON('curmatch:' + username, { id: matchId, type: 'card', ts: Date.now() });
 			return json({ matchId, cardmatch: cm });
 		}
 		let match;
@@ -370,7 +373,43 @@ export default async function handler(req) {
 		match.lastActive = Date.now();
 		await store.setJSON('match:' + matchId, match);
 		await store.setJSON('ready:' + from, { matchId, ts: Date.now() });
+		await store.setJSON('curmatch:' + from, { id: matchId, type: 'pokemon', ts: Date.now() });
+		await store.setJSON('curmatch:' + username, { id: matchId, type: 'pokemon', ts: Date.now() });
 		return json({ matchId, match });
+	}
+
+	// on boot, a client asks whether it has a battle to rejoin. Lazily clears a
+	// pointer to a match that's finished or gone.
+	if (action === 'my-current-match') {
+		const cur = await store.get('curmatch:' + username);
+		if (!cur) return json({ match: null });
+		const blob = cur.type === 'card'
+			? await store.get('cardmatch:' + cur.id)
+			: await store.get('match:' + cur.id);
+		if (!blob || blob.over) { await store.setJSON('curmatch:' + username, null); return json({ match: null }); }
+		return json({ match: { id: cur.id, type: cur.type } });
+	}
+
+	// leave/forfeit the current match (declining a rejoin): hand the opponent the win
+	if (action === 'leave-match') {
+		const id = String(body.id || ''), type = String(body.type || '');
+		if (type === 'card') {
+			const cm = await store.get('cardmatch:' + id);
+			if (cm && !cm.over && (cm.host === username || cm.guest === username)) {
+				cm.over = true; cm.winner = cm.host === username ? 1 : 0; cm.abandoned = true;
+				await store.setJSON('cardmatch:' + id, cm);
+			}
+		} else {
+			const m = await store.get('match:' + id);
+			const side = m ? sideOf(m, username) : -1;
+			if (m && !m.over && side >= 0) {
+				m.over = true; m.winner = 1 - side;
+				m.events = [`${username} left. ${m.sides[1 - side].name} wins!`]; m.seq++;
+				await store.setJSON('match:' + id, m);
+			}
+		}
+		await store.setJSON('curmatch:' + username, null);
+		return json({ ok: true });
 	}
 
 	// challenger polls for the match created when their challenge is accepted

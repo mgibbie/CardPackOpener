@@ -2341,26 +2341,48 @@ async function startDuel(cardsById) {
 }
 
 // the host owns the engine: player 0 = host, player 1 = guest
-function startDuelHost(cardsById) {
+async function startDuelHost(cardsById) {
 	HUMAN = 0;
 	const cm = duel.config;
-	const picks = [classPickFor(cm.hostClass), classPickFor(cm.guestClass)];
-	state = E.createGame(cardsById, Math.random, cm.hostDeck ? [...cm.hostDeck] : null, 2, picks);
-	state.classPicks = picks;
-	// give the guest their own deck + a fresh opening hand and the coin
-	const g = state.players[1];
-	if (cm.guestDeck?.length) {
-		g.deck = shuffleIds([...cm.guestDeck]);
-		g.hand = [];
-		E.drawCards(state, 1, 4);
-		g.coins = 1;
+	// a reconnecting host rehydrates the engine from its last published board
+	// rather than dealing a fresh game (the snapshot is the complete state)
+	let resumed = false;
+	try {
+		const prev = await MPX.call('card-poll', { id: duel.id });
+		if (prev && prev.over) {
+			const el = dungeonOverlay('DUEL ENDED', 'This duel already finished.');
+			el.appendChild(overlayButton('Back to your world', () => { location.href = '/overworld/?mp=1'; }));
+			return;
+		}
+		if (prev && prev.snapshot) {
+			const snap = prev.snapshot;
+			state = {
+				...snap, cardsById, rng: Math.random, events: [],
+				scryQueue: snap.scryQueue || [], discardQueue: snap.discardQueue || [], pickQueue: snap.pickQueue || [],
+			};
+			duelPubSeq = prev.seq || 0; // continue the sequence so the guest sees fresh
+			resumed = true;
+		}
+	} catch (e) {}
+	if (!resumed) {
+		const picks = [classPickFor(cm.hostClass), classPickFor(cm.guestClass)];
+		state = E.createGame(cardsById, Math.random, cm.hostDeck ? [...cm.hostDeck] : null, 2, picks);
+		state.classPicks = picks;
+		// give the guest their own deck + a fresh opening hand and the coin
+		const g = state.players[1];
+		if (cm.guestDeck?.length) {
+			g.deck = shuffleIds([...cm.guestDeck]);
+			g.hand = [];
+			E.drawCards(state, 1, 4);
+			g.coins = 1;
+		}
 	}
 	frameCamera();
 	buildPanels();
 	buildSlotMarkers();
 	pump();
 	updateHud();
-	log(`Live duel: you vs ${cm.guest}.`);
+	log(resumed ? `Rejoined your duel vs ${cm.guest}.` : `Live duel: you vs ${cm.guest}.`);
 	// drain the guest's queued intents and apply them, then republish
 	const drainTick = async () => {
 		if (state?.over) return;
