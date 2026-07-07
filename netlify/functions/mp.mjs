@@ -37,7 +37,8 @@ function userStore() {
 			setJSON: async (k, v) => { const d = read(); d[k] = v; fs.writeFileSync(path, JSON.stringify(d)); },
 		};
 	}
-	const store = getStore('mp-users');
+	// strong consistency: a login right after register must see the account
+	const store = getStore({ name: 'mp-users', consistency: 'strong' });
 	return {
 		get: (k) => store.get(k, { type: 'json' }),
 		setJSON: (k, v) => store.setJSON(k, v),
