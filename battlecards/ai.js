@@ -91,8 +91,8 @@ function pickTarget(state, pi, card) {
 		}
 	}
 }
-const FRIENDLY_TYPES = new Set(['buff', 'grant', 'temp-buff', 'heal-full', 'attack-equals-health', 'double-health', 'double-attack', 'grant-ongoing', 'temp-immune', 'shadowflame', 'grant-deathrattle', 'copy-deathrattle']);
-const HOSTILE_TYPES = new Set(['damage', 'destroy', 'exile', 'set-health', 'set-attack', 'bounce', 'mind-control', 'transform', 'transform-copy', 'damage-then', 'conditional', 'draw-damage', 'swap-stats', 'swipe', 'damage-adjacent', 'betrayal', 'corrupt', 'mind-control-temp']);
+const FRIENDLY_TYPES = new Set(['buff', 'grant', 'temp-buff', 'heal-full', 'attack-equals-health', 'double-health', 'double-attack', 'grant-ongoing', 'temp-immune', 'shadowflame', 'grant-deathrattle', 'copy-deathrattle', 'attach', 'add-counters']);
+const HOSTILE_TYPES = new Set(['damage', 'destroy', 'exile', 'set-health', 'set-attack', 'bounce', 'mind-control', 'transform', 'transform-copy', 'damage-then', 'conditional', 'draw-damage', 'swap-stats', 'swipe', 'damage-adjacent', 'betrayal', 'corrupt', 'mind-control-temp', 'attach-curse']);
 const CHOSEN_TYPES = new Set([...FRIENDLY_TYPES, ...HOSTILE_TYPES, 'heal', 'set-hero-health']);
 
 function playableCards(state, pi) {
@@ -328,6 +328,19 @@ export function step(state, pi = 1) {
 		}
 		const target = best || weakestHero(state, heroTs);
 		if (target && E.heroAttack(state, pi, target)) return true;
+	}
+
+	// activate creature abilities with leftover mana (untargeted, non-sacrifice)
+	for (const c of p.board) {
+		if (!c.activated) continue;
+		for (let i = 0; i < c.activated.length; i++) {
+			const a = c.activated[i];
+			if (a.sacrifice || a.tap && E.canAttackWith(state, pi, c)) continue; // don't waste attacks
+			if (!E.canActivate(state, pi, c, i)) continue;
+			const spec = E.abilitySpec(state, pi, c, i);
+			if (spec) continue; // targeted abilities are the human's toys for now
+			if (E.activateAbility(state, pi, c.uid, i, null)) return true;
+		}
 	}
 
 	// trade away tradeable cards we can't afford to play this turn

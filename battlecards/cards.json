@@ -37747,6 +37747,242 @@
       },
       "description": "After your hero attacks, Give all your creatures +1/+1.",
       "set": "hsx"
+    },
+    {
+      "id": "merfolk_looter",
+      "name": "Merfolk Looter",
+      "colors": [
+        "U"
+      ],
+      "cardClass": "neutral",
+      "cost": 2,
+      "rarity": "common",
+      "tribe": "Merfolk",
+      "type": "creature",
+      "attack": 1,
+      "health": 1,
+      "activated": [
+        {
+          "cost": 0,
+          "tap": true,
+          "effects": [
+            {
+              "type": "loot",
+              "value": 1
+            }
+          ],
+          "text": "Draw a card, then discard a card."
+        }
+      ],
+      "description": "Tap: Draw a card, then discard a card."
+    },
+    {
+      "id": "ember_hauler",
+      "name": "Ember Hauler",
+      "colors": [
+        "R"
+      ],
+      "cardClass": "neutral",
+      "cost": 2,
+      "rarity": "common",
+      "tribe": "Goblin",
+      "type": "creature",
+      "attack": 2,
+      "health": 2,
+      "activated": [
+        {
+          "cost": 1,
+          "sacrifice": true,
+          "effects": [
+            {
+              "type": "damage",
+              "value": 2,
+              "target": "any"
+            }
+          ],
+          "text": "Sacrifice: deal 2 damage to any target."
+        }
+      ],
+      "description": "1, Sacrifice: Deal 2 damage to any target."
+    },
+    {
+      "id": "pacifism",
+      "name": "Pacifism",
+      "colors": [
+        "W"
+      ],
+      "cardClass": "neutral",
+      "cost": 2,
+      "rarity": "common",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "attach-curse",
+          "keywords": [
+            "pacifist"
+          ],
+          "target": "enemy-creature"
+        }
+      ],
+      "description": "Enchant an enemy creature: it can't attack."
+    },
+    {
+      "id": "arrest",
+      "name": "Arrest",
+      "colors": [
+        "W"
+      ],
+      "cardClass": "neutral",
+      "cost": 3,
+      "rarity": "common",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "attach-curse",
+          "keywords": [
+            "pacifist"
+          ],
+          "target": "enemy-creature"
+        }
+      ],
+      "description": "Enchant an enemy creature: it can't attack or use abilities."
+    },
+    {
+      "id": "champion_of_the_parish",
+      "name": "Champion of the Parish",
+      "colors": [
+        "W"
+      ],
+      "cardClass": "neutral",
+      "cost": 1,
+      "rarity": "rare",
+      "tribe": "Human Soldier",
+      "type": "creature",
+      "attack": 1,
+      "health": 1,
+      "ongoing": {
+        "on": "summoned",
+        "if": {
+          "tribe": "Human"
+        },
+        "effects": [
+          {
+            "type": "counter-self",
+            "value": 1
+          }
+        ]
+      },
+      "description": "Whenever you summon a Human, gain a +1/+1 counter."
+    },
+    {
+      "id": "secure_the_wastes",
+      "name": "Secure the Wastes",
+      "colors": [
+        "W"
+      ],
+      "cardClass": "neutral",
+      "cost": 1,
+      "rarity": "rare",
+      "type": "sorcery",
+      "xSpell": true,
+      "effects": [
+        {
+          "type": "summon",
+          "count": "X",
+          "attack": 1,
+          "health": 1,
+          "name": "Warrior"
+        }
+      ],
+      "description": "Spend all your mana: summon a 1/1 Warrior for each point beyond the first."
+    },
+    {
+      "id": "unearth",
+      "name": "Unearth",
+      "colors": [
+        "B"
+      ],
+      "cardClass": "neutral",
+      "cost": 1,
+      "rarity": "common",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "gy-return",
+          "to": "board",
+          "cardType": "creature",
+          "maxCost": 3
+        }
+      ],
+      "description": "Return a creature that costs 3 or less from your graveyard to the battlefield."
+    },
+    {
+      "id": "eternal_witness",
+      "name": "Eternal Witness",
+      "colors": [
+        "G"
+      ],
+      "cardClass": "neutral",
+      "cost": 3,
+      "rarity": "rare",
+      "tribe": "Human Shaman",
+      "type": "creature",
+      "attack": 2,
+      "health": 1,
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "gy-return",
+          "to": "hand"
+        }
+      ],
+      "description": "Battlecry: Return a card from your graveyard to your hand."
+    },
+    {
+      "id": "demonic_tutor",
+      "name": "Demonic Tutor",
+      "colors": [
+        "B"
+      ],
+      "cardClass": "neutral",
+      "cost": 2,
+      "rarity": "epic",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "search",
+          "to": "hand"
+        }
+      ],
+      "description": "Search your deck for any card and put it into your hand."
+    },
+    {
+      "id": "imperial_recruiter",
+      "name": "Imperial Recruiter",
+      "colors": [
+        "R"
+      ],
+      "cardClass": "neutral",
+      "cost": 3,
+      "rarity": "epic",
+      "tribe": "Human",
+      "type": "creature",
+      "attack": 1,
+      "health": 1,
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "search",
+          "cardType": "creature",
+          "maxAttack": 2,
+          "to": "hand"
+        }
+      ],
+      "description": "Battlecry: Search your deck for a creature with 2 or less Attack."
     }
   ]
 }

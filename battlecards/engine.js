@@ -143,6 +143,11 @@ function instantiate(def, controller) {
 		tradeable: !!def.tradeable,   // pay 1: shuffle back into the deck, draw a card
 		battlecryDouble: !!def.battlecryDouble, // Brann: friendly battlecries fire twice
 		rattleDouble: !!def.rattleDouble,       // Rivendare: friendly deathrattles fire twice
+		counters: 0,                  // +1/+1 counters banked on this creature
+		activated: def.activated || null, // creature abilities: [{cost, tap, sacrifice, effects, text}]
+		activatedTap: false,          // used a {T} ability this turn (can't attack)
+		xSpell: !!def.xSpell,         // spends all remaining mana; X = the excess
+		attachments: [],              // names of auras enchanting this creature
 		offTurnAttack: def.offTurnAttack || 0, // "+N Attack during your opponent's turn"
 		statRule: def.statRule || null,   // 'attack-equals-health' (Lightspawn)
 		selfScale: def.selfScale || null, // { attack, tribe }: +N per other <tribe> in play
@@ -409,6 +414,9 @@ const CHOSEN = {
 	'draw-damage': { any: 'any' },
 	'grant-deathrattle': { creature: 'creature' },
 	'copy-deathrattle': { 'friendly-creature': 'friendly-creature' },
+	attach: { creature: 'creature', 'friendly-creature': 'friendly-creature' },
+	'attach-curse': { creature: 'creature', 'enemy-creature': 'enemy-creature' },
+	'add-counters': { creature: 'creature', 'friendly-creature': 'friendly-creature' },
 	'temp-immune': { creature: 'creature' },
 	'swap-stats': { creature: 'creature' },
 	shadowflame: { 'friendly-creature': 'friendly-creature' },
@@ -711,6 +719,7 @@ function silenceCreature(state, c) {
 	c.offTurnAttack = 0;
 	c.battlecryDouble = false;
 	c.rattleDouble = false;
+	c.activated = null;
 	c.auraKeywords = [];
 	c.shield = false;
 	c.stealthed = false;
@@ -1065,6 +1074,52 @@ export function tapLand(state, pi, cardUid, tapIndex, target) {
 	return true;
 }
 
+// ---------- activated creature abilities ----------
+// def.activated = [{cost, tap?, sacrifice?, discardRandom?, payLife?, effects, text}]
+// tap abilities need an untapped, awake creature and spend its attack for the
+// turn; sacrifice abilities kill the creature as part of the cost.
+export function canActivate(state, pi, card, i) {
+	if (state.over || state.current !== pi) return false;
+	const p = state.players[pi];
+	if (!p.board.includes(card) || isDead(card) || !card.activated) return false;
+	const a = card.activated[i];
+	if (!a) return false;
+	if ((a.cost || 0) > availableMana(p)) return false;
+	if (a.tap && (card.sick || card.activatedTap || card.attacksUsed > 0 || card.frozen)) return false;
+	if (a.discardRandom && p.hand.length === 0) return false;
+	if (a.payLife && p.life <= a.payLife) return false;
+	const spec = abilitySpec(state, pi, card, i);
+	if (spec && spec.required && legalTargets(state, pi, spec).length === 0) return false;
+	return true;
+}
+
+export function abilitySpec(state, pi, card, i) {
+	const a = card.activated?.[i];
+	if (!a) return null;
+	return targetSpec(state, pi, { id: card.id, type: 'sorcery', effects: a.effects });
+}
+
+export function activateAbility(state, pi, cardUid, i, target) {
+	const p = state.players[pi];
+	const card = p.board.find(c => c.uid === cardUid);
+	if (!card || !canActivate(state, pi, card, i)) return false;
+	const a = card.activated[i];
+	spendMana(p, a.cost || 0);
+	if (a.tap) card.activatedTap = true;
+	if (a.payLife) { p.life -= a.payLife; emit(state, { type: 'damage', targetType: 'hero', player: pi, amount: a.payLife, life: p.life }); }
+	if (a.discardRandom && p.hand.length) {
+		const c = p.hand[Math.floor(state.rng() * p.hand.length)];
+		p.hand = p.hand.filter(x => x !== c);
+		toGraveyard(state, pi, c);
+		emit(state, { type: 'discard', player: pi, card: c });
+	}
+	emit(state, { type: 'abilityUsed', player: pi, card, text: a.text });
+	if (a.sacrifice) { card.damage = card.maxHealth + 99; card.poisoned = true; }
+	execEffects(state, pi, a.effects, target, card);
+	sweepDeaths(state);
+	return true;
+}
+
 // ---------- weapons ----------
 function breakWeapon(state, pi, destroyed) {
 	const p = state.players[pi];
@@ -1277,6 +1332,18 @@ function runSecretEffects(state, pi, effects, ctx) {
 				}
 				break;
 			}
+			case 'counter-self': {
+				// Champion of the Parish: bank a +1/+1 counter on the firing creature
+				const m = ctx.self;
+				if (m && !isDead(m)) {
+					const n = e.value || 1;
+					m.counters += n;
+					m.attack += n;
+					m.maxHealth += n;
+					emit(state, { type: 'buff', uid: m.uid, attack: m.attack, hp: hp(m) });
+				}
+				break;
+			}
 			case 'grant-self': {
 				// One-eyed Cheat: the firing permanent gains a keyword
 				const m = ctx.self;
@@ -1479,6 +1546,7 @@ function execEffects(state, pi, effects, target, source) {
 	};
 	// Shield Slam-style scaling: the effect's value multiplies by a live count
 	const scaled = e => {
+		if (e.value === 'X') return source?.xValue || 0; // X-spells: excess mana
 		if (!e.valuePer) return e.value;
 		const p = state.players[pi];
 		if (e.valuePer === 'armor') return (e.value || 1) * p.armor;
@@ -1698,7 +1766,7 @@ function execEffects(state, pi, effects, target, source) {
 			// perEnemy: one token per enemy creature ("Unleash the Hounds");
 			// options: pick a random companion (Animal Companion);
 			// forEnemy: tokens go to a random opponent (Leeroy's Whelps)
-			let n = e.count || 1;
+			let n = e.count === 'X' ? (source?.xValue || 0) : (e.count || 1);
 			if (e.perEnemy) {
 				n = 0;
 				for (const o of enemies) n += state.players[o].board.filter(c => !isDead(c)).length;
@@ -2313,6 +2381,59 @@ function execEffects(state, pi, effects, target, source) {
 			}
 		} else if (e.type === 'hero-immune') {
 			state.players[pi].heroImmuneTurn = state.turnNumber;
+		} else if (e.type === 'attach' || e.type === 'attach-curse') {
+			// enchant-creature aura: permanent stats/keywords riding the target
+			// ('attach' = boon for AI targeting, 'attach-curse' = Pacifism-style)
+			const t = chosenCreature();
+			if (t) {
+				if (e.attack || e.health) buffCreature(t, e.attack || 0, e.health || 0);
+				for (const k of e.keywords || []) {
+					if (!t.keywords.includes(k)) t.keywords.push(k);
+					if (k === KW.DIVINE_SHIELD) t.shield = true;
+					if (k === KW.STEALTH) t.stealthed = true;
+				}
+				if (source) t.attachments.push(source.name);
+				emit(state, { type: 'buff', uid: t.uid, attack: t.attack, hp: hp(t) });
+			}
+		} else if (e.type === 'add-counters') {
+			// +1/+1 counters (a permanent buff that other cards can count)
+			const t = e.target === 'self' ? source : chosenCreature();
+			if (t && t.zone === 'board' && !isDead(t)) {
+				const n = e.value === 'X' ? (source?.xValue || 0) : (e.value || 1);
+				t.counters += n;
+				buffCreature(t, n, n);
+				emit(state, { type: 'buff', uid: t.uid, attack: t.attack, hp: hp(t) });
+			}
+		} else if (e.type === 'gy-return') {
+			// graveyard recursion: pick a fallen card back to hand or battlefield
+			const p = state.players[pi];
+			const pool = p.graveyard.filter(c => {
+				const d = state.cardsById[c.id];
+				return d && !d.token && (!e.cardType || d.type === e.cardType)
+					&& (e.maxCost == null || (d.cost || 0) <= e.maxCost)
+					&& (!e.tribe || (d.tribe || '').includes(e.tribe));
+			});
+			const ids = [...new Set(pool.map(c => c.id))];
+			if (ids.length) {
+				state.pickQueue.push({ player: pi, ids: ids.slice(0, 8), mode: 'gy',
+					to: e.to || 'hand', title: 'Return from the graveyard' });
+				emit(state, { type: 'pickStart', player: pi });
+			}
+		} else if (e.type === 'search') {
+			// library search: pick a matching card out of your deck (then shuffle)
+			const p = state.players[pi];
+			const ids = [...new Set(p.deck.filter(id => {
+				const d = state.cardsById[id];
+				return d && (!e.cardType || d.type === e.cardType)
+					&& (e.maxCost == null || (d.cost || 0) <= e.maxCost)
+					&& (e.maxAttack == null || (d.attack || 0) <= e.maxAttack)
+					&& (!e.tribe || (d.tribe || '').includes(e.tribe));
+			}))];
+			if (ids.length) {
+				state.pickQueue.push({ player: pi, ids: ids.slice(0, 8), mode: 'search',
+					to: e.to || 'hand', title: 'Search your deck' });
+				emit(state, { type: 'pickStart', player: pi });
+			}
 		} else if (e.type === 'copy-deathrattle') {
 			// Unearthed Raptor: gain a copy of a chosen friendly minion's Deathrattle
 			const c = chosenCreature();
@@ -2898,7 +3019,13 @@ export function playCard(state, pi, cardUid, target, choice, position) {
 	if (!canPlay(state, pi, card)) return false;
 
 	take();
-	spendMana(p, effectiveCost(state, pi, card));
+	if (card.xSpell) {
+		// X-spells drink every remaining point; X = what's left after the base cost
+		card.xValue = Math.max(0, availableMana(p) - effectiveCost(state, pi, card));
+		spendMana(p, availableMana(p));
+	} else {
+		spendMana(p, effectiveCost(state, pi, card));
+	}
 	// a matching one-shot discount is spent by this play
 	const usedDiscount = discountIndex(state, p, card);
 	if (usedDiscount >= 0) p.costDiscounts.splice(usedDiscount, 1);
@@ -3008,6 +3135,7 @@ export function attackersFor(state, pi) {
 export function canAttackWith(state, pi, c) {
 	if (state.over || state.current !== pi || c.attack <= 0) return false;
 	if (c.frozen) return false;
+	if (c.activatedTap) return false; // used a {T} ability this turn
 	if (has(c, KW.PACIFIST)) return false;
 	const maxAttacks = has(c, KW.WINDFURY) ? 2 : 1;
 	if (c.attacksUsed >= maxAttacks) return false;
@@ -3374,6 +3502,42 @@ export function resolvePick(state, id) {
 	const chosen = pend.ids.includes(id) ? id : pend.ids[0];
 	const p = state.players[pend.player];
 	const def = state.cardsById[chosen];
+	if (pend.mode === 'gy') {
+		// pull the fallen card back (fresh copy — buffs don't survive the grave)
+		const gi = p.graveyard.findIndex(c => c.id === chosen);
+		if (gi >= 0 && def && !p.eliminated) {
+			p.graveyard.splice(gi, 1);
+			if (pend.to === 'board') {
+				summon(state, pend.player, def);
+			} else if (p.hand.length < MAX_HAND) {
+				const card = instantiate(def, pend.player);
+				card.zone = 'hand';
+				p.hand.push(card);
+				emit(state, { type: 'conjure', player: pend.player, card, color: null });
+			}
+		}
+		return true;
+	}
+	if (pend.mode === 'search') {
+		const di = p.deck.indexOf(chosen);
+		if (di >= 0 && def && !p.eliminated) {
+			p.deck.splice(di, 1);
+			if (pend.to === 'board') {
+				summon(state, pend.player, def);
+			} else if (p.hand.length < MAX_HAND) {
+				const card = instantiate(def, pend.player);
+				card.zone = 'hand';
+				p.hand.push(card);
+				emit(state, { type: 'conjure', player: pend.player, card, color: null });
+			}
+			// searching reshuffles the library
+			for (let i = p.deck.length - 1; i > 0; i--) {
+				const j = Math.floor(state.rng() * (i + 1));
+				[p.deck[i], p.deck[j]] = [p.deck[j], p.deck[i]];
+			}
+		}
+		return true;
+	}
 	if (def && !p.eliminated && p.hand.length < MAX_HAND) {
 		const card = instantiate(def, pend.player);
 		card.zone = 'hand';
@@ -3672,7 +3836,7 @@ export function endTurn(state) {
 	for (const l of np.lands) l.tapped = false;
 	for (const hpw of np.heroPowers) hpw.usedThisTurn = false;
 	for (const pw of np.planeswalkers) pw.usedThisTurn = false;
-	for (const c of np.board) { c.sick = false; c.attacksUsed = 0; }
+	for (const c of np.board) { c.sick = false; c.attacksUsed = 0; c.activatedTap = false; }
 	emit(state, { type: 'turnStart', player: state.current, turnNumber: state.turnNumber });
 	fireOngoing(state, state.current, 'turn-start');
 	sweepDeaths(state);

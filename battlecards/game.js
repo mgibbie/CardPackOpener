@@ -1014,7 +1014,7 @@ function openPickModal() {
 	const pend = state.pickQueue[0];
 	if (!pend || pend.player !== HUMAN) return;
 	const modal = $('scry-modal'); // reuse the scry chrome
-	modal.innerHTML = `<div class="wm-title">${pend.ids.length > 3 ? 'Draft' : 'Discover'} — take one</div><div class="scry-row"></div>`;
+	modal.innerHTML = `<div class="wm-title">${pend.title || (pend.ids.length > 3 ? 'Draft' : 'Discover')} — take one</div><div class="scry-row"></div>`;
 	const row = modal.querySelector('.scry-row');
 	pend.ids.forEach(id => {
 		const def = state.cardsById[id];
@@ -1286,6 +1286,10 @@ function nextEvent() {
 			log(`${nameOf(ev.player)} traded ${ev.player === HUMAN ? ev.card.name : 'a card'} back into their deck`);
 			delay = 300;
 			break;
+		case 'abilityUsed':
+			log(`${nameOf(ev.player)}'s ${ev.card.name}: ${ev.text}`);
+			delay = 320;
+			break;
 		case 'pickStart':
 			log(`${nameOf(ev.player)} ${ev.count > 3 ? 'drafts' : 'discovers'} (${ev.count} options)`);
 			if (ev.player === HUMAN) openPickModal();
@@ -1529,6 +1533,44 @@ function hideWalkerMenu() {
 	$('walker-menu').style.display = 'none';
 }
 
+// activated creature abilities: pick Attack or one of the card's abilities
+function openAbilityMenu(card, ev) {
+	const menu = $('walker-menu');
+	menu.innerHTML = `<div class="wm-title">${card.name}</div>`;
+	if (E.canAttackWith(state, HUMAN, card)) {
+		const atk = document.createElement('button');
+		atk.innerHTML = `<span class="wm-cost">⚔</span>Attack`;
+		atk.addEventListener('pointerdown', e => {
+			e.stopPropagation();
+			hideWalkerMenu();
+			selectedAttacker = card.uid;
+			updateHud();
+		});
+		menu.appendChild(atk);
+	}
+	card.activated.forEach((a, i) => {
+		const btn = document.createElement('button');
+		btn.innerHTML = `<span class="wm-cost">${a.cost || 0}${a.tap ? ' ⟳' : ''}${a.sacrifice ? ' 💀' : ''}</span>${a.text}`;
+		btn.disabled = !E.canActivate(state, HUMAN, card, i);
+		btn.addEventListener('pointerdown', e => {
+			e.stopPropagation();
+			hideWalkerMenu();
+			const spec = E.abilitySpec(state, HUMAN, card, i);
+			if (spec) {
+				const targets = E.legalTargets(state, HUMAN, spec);
+				if (targets.length) { pending = { card, spec, targets, mode: 'activate', ability: i }; updateHud(); return; }
+				if (spec.required) return;
+			}
+			E.activateAbility(state, HUMAN, card.uid, i, null);
+			pump();
+		});
+		menu.appendChild(btn);
+	});
+	menu.style.display = 'block';
+	menu.style.left = `${Math.min(ev.clientX, innerWidth - 260)}px`;
+	menu.style.top = `${Math.min(ev.clientY, innerHeight - 220)}px`;
+}
+
 function openWalkerMenu(card, ev) {
 	const menu = $('walker-menu');
 	menu.innerHTML = `<div class="wm-title">${card.name} — loyalty ${card.loyalty}</div>`;
@@ -1612,6 +1654,7 @@ renderer.domElement.addEventListener('pointerdown', ev => {
 		playFromHand(card, ev);
 	} else if (card.zone === 'board' && card.controller === HUMAN) {
 		if (card.disguised && E.canUnmask(state, HUMAN, card)) { openUnmaskMenu(card, ev); return; }
+		if (card.activated?.length) { openAbilityMenu(card, ev); return; }
 		if (E.canAttackWith(state, HUMAN, card)) { selectedAttacker = card.uid; updateHud(); }
 	} else if (card.zone === 'heropower' && card.controller === HUMAN) {
 		// click an installed hero power to activate it
@@ -1645,6 +1688,7 @@ renderer.domElement.addEventListener('pointerdown', ev => {
 // resolve a pending targeted action (play, hero power, walker, or land tap)
 function commitPending(t) {
 	if (pending.mode === 'power') E.useHeroPower(state, HUMAN, pending.card.uid, t, pending.choice);
+	else if (pending.mode === 'activate') E.activateAbility(state, HUMAN, pending.card.uid, pending.ability, t);
 	else if (pending.mode === 'walker') E.useWalker(state, HUMAN, pending.card.uid, pending.ability, t);
 	else if (pending.mode === 'tap') E.tapLand(state, HUMAN, pending.card.uid, pending.tapIndex, t);
 	else E.playCard(state, HUMAN, pending.card.uid, t, pending.choice, pending.position);
