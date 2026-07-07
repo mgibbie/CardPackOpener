@@ -332,7 +332,7 @@ function openLandShop(ev) {
 }
 
 // Choose One cards pick their branch before targeting
-function openChoiceMenu(card, ev) {
+function openChoiceMenu(card, ev, position) {
 	const menu = $('walker-menu');
 	menu.innerHTML = `<div class="wm-title">${card.name} — choose one:</div>`;
 	card.choices.forEach((ch, i) => {
@@ -344,10 +344,10 @@ function openChoiceMenu(card, ev) {
 			const spec = E.targetSpec(state, HUMAN, card, i);
 			if (spec) {
 				const targets = E.legalTargets(state, HUMAN, spec);
-				if (targets.length) { pending = { card, spec, targets, mode: 'play', choice: i }; updateHud(); return; }
+				if (targets.length) { pending = { card, spec, targets, mode: 'play', choice: i, position }; updateHud(); return; }
 				if (spec.required) return;
 			}
-			E.playCard(state, HUMAN, card.uid, null, i);
+			E.playCard(state, HUMAN, card.uid, null, i, position);
 			pump();
 		});
 		menu.appendChild(btn);
@@ -385,16 +385,16 @@ function openTradeMenu(card, ev) {
 	menu.style.top = `${Math.min(ev.clientY, innerHeight - 200)}px`;
 }
 
-function playFromHand(card, ev) {
+function playFromHand(card, ev, position) {
 	if (!E.canPlay(state, HUMAN, card)) return;
-	if (card.choices) { openChoiceMenu(card, ev); return; }
+	if (card.choices) { openChoiceMenu(card, ev, position); return; }
 	const spec = E.targetSpec(state, HUMAN, card);
 	if (spec) {
 		const targets = E.legalTargets(state, HUMAN, spec);
-		if (targets.length) { pending = { card, spec, targets, mode: 'play' }; updateHud(); return; }
+		if (targets.length) { pending = { card, spec, targets, mode: 'play', position }; updateHud(); return; }
 		if (spec.required) return;
 	}
-	E.playCard(state, HUMAN, card.uid, null);
+	E.playCard(state, HUMAN, card.uid, null, undefined, position);
 	pump();
 }
 
@@ -1518,6 +1518,8 @@ addEventListener('pointermove', ev => {
 function clearModes() {
 	pending = null;
 	selectedAttacker = null;
+	placing = null;
+	placeMarker.visible = false;
 	hideWalkerMenu();
 	updateHud();
 }
@@ -1601,6 +1603,10 @@ renderer.domElement.addEventListener('pointerdown', ev => {
 		return;
 	}
 	if (card.zone === 'hand' && card.controller === HUMAN) {
+		if (card.type === 'creature' && E.canPlay(state, HUMAN, card)) {
+			placing = { card }; // slot picked on release: tap = right end, drag = gap
+			return;
+		}
 		if (TOUCH) { touchHandCard = card; return; } // play on release, not press
 		if (card.tradeable && E.canTrade(state, HUMAN, card)) { openTradeMenu(card, ev); return; }
 		playFromHand(card, ev);
@@ -1641,7 +1647,7 @@ function commitPending(t) {
 	if (pending.mode === 'power') E.useHeroPower(state, HUMAN, pending.card.uid, t, pending.choice);
 	else if (pending.mode === 'walker') E.useWalker(state, HUMAN, pending.card.uid, pending.ability, t);
 	else if (pending.mode === 'tap') E.tapLand(state, HUMAN, pending.card.uid, pending.tapIndex, t);
-	else E.playCard(state, HUMAN, pending.card.uid, t, pending.choice);
+	else E.playCard(state, HUMAN, pending.card.uid, t, pending.choice, pending.position);
 	clearModes();
 	pump();
 }
@@ -1660,6 +1666,47 @@ addEventListener('pointerdown', ev => {
 // wait for the release so browsing your hand can't cast anything
 const TOUCH = matchMedia('(pointer: coarse)').matches;
 let longPressT = null, longPressFired = false, touchHandCard = null;
+
+// ---------- creature placement (drag out of hand to pick a board gap) ----------
+let placing = null; // { card } — pressed creature; slot chosen on release
+const placeMarker = new THREE.Mesh(
+	new THREE.BoxGeometry(0.14, 0.04, 1.9),
+	new THREE.MeshBasicMaterial({ color: 0x57e389, transparent: true, opacity: 0.9 }));
+placeMarker.visible = false;
+scene.add(placeMarker);
+
+function boardScreenXs() {
+	return state.players[HUMAN].board
+		.filter(c => entities.has(c.uid))
+		.map(c => {
+			const m = entities.get(c.uid).mesh;
+			const v = m.position.clone().project(camera);
+			return { x: (v.x + 1) / 2 * innerWidth, wx: m.position.x, wz: m.position.z };
+		})
+		.sort((a, b) => a.x - b.x);
+}
+
+function placementIndexAt(x) {
+	return boardScreenXs().filter(e => e.x < x).length;
+}
+
+function updatePlaceMarker() {
+	const active = placing && state && state.players[HUMAN].board.length
+		&& Math.hypot(mouseX - lastDownX, mouseY - lastDownY) > 14
+		&& mouseY < innerHeight * 0.85;
+	placeMarker.visible = !!active;
+	if (!active) return;
+	const xs = boardScreenXs();
+	if (!xs.length) { placeMarker.visible = false; return; }
+	const i = xs.filter(e => e.x < mouseX).length;
+	const gap = xs.length > 1 ? (xs[xs.length - 1].wx - xs[0].wx) / (xs.length - 1) : 1.4;
+	let wx;
+	if (i === 0) wx = xs[0].wx - Math.max(0.7, gap / 2);
+	else if (i >= xs.length) wx = xs[xs.length - 1].wx + Math.max(0.7, gap / 2);
+	else wx = (xs[i - 1].wx + xs[i].wx) / 2;
+	placeMarker.position.set(wx, 0.1, xs[0].wz);
+	placeMarker.material.opacity = 0.65 + 0.3 * Math.sin(performance.now() / 160);
+}
 
 function startLongPress(uid, x, y) {
 	clearTimeout(longPressT);
@@ -1729,6 +1776,23 @@ function tryCommitTargetAt(ev) {
 
 addEventListener('pointerup', ev => {
 	clearTimeout(longPressT);
+	// creature placement: tap appends right, a drag onto the board picks the gap
+	if (placing) {
+		const c = placing.card;
+		placing = null;
+		touchHandCard = null;
+		placeMarker.visible = false;
+		if (ev.button === 0 && state && !state.over && state.current === HUMAN && !longPressFired) {
+			const dist = Math.hypot(ev.clientX - lastDownX, ev.clientY - lastDownY);
+			if (dist < 14) {
+				if (c.tradeable && E.canTrade(state, HUMAN, c)) openTradeMenu(c, ev);
+				else playFromHand(c, ev);
+			} else if (ev.clientY < innerHeight * 0.85) {
+				playFromHand(c, ev, placementIndexAt(ev.clientX));
+			}
+		}
+		return;
+	}
 	if (ev.button !== 0 || !state || state.over || state.current !== HUMAN) return;
 	// deferred touch hand-play: a short tap casts, a long-press only inspected
 	if (TOUCH && touchHandCard) {
@@ -1893,6 +1957,7 @@ function animate() {
 	updateRings();
 	positionPanels();
 	drawTargetArrow();
+	updatePlaceMarker();
 	renderer.render(scene, camera);
 }
 animate();

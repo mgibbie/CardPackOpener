@@ -2883,7 +2883,7 @@ export function canPlay(state, pi, card) {
 	return true;
 }
 
-export function playCard(state, pi, cardUid, target, choice) {
+export function playCard(state, pi, cardUid, target, choice, position) {
 	const p = state.players[pi];
 	// cards play from hand, the companion zone, or the command zone
 	let card = null, take = null;
@@ -2912,7 +2912,9 @@ export function playCard(state, pi, cardUid, target, choice) {
 	if (card.type === 'creature') {
 		card.zone = 'board';
 		card.sick = true;
-		p.board.push(card);
+		// position = insertion index (adjacency matters); default = right end
+		if (position == null || position >= p.board.length) p.board.push(card);
+		else p.board.splice(Math.max(0, position), 0, card);
 		p.creaturesPlayedThisTurn++;
 		questTick(state, 'summon', pi);
 		fireOngoing(state, pi, 'summoned', { minion: card });
