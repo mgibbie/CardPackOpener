@@ -506,7 +506,7 @@ function openScryModal() {
 	done.addEventListener('pointerdown', e => {
 		e.stopPropagation();
 		modal.style.display = 'none';
-		if (isGuest()) { sendCardIntent({ k: 'scry', picks }); return; }
+		if (isGuest()) { guestApply(() => E.resolveScry(state, picks), { k: 'scry', picks }); return; }
 		E.resolveScry(state, picks);
 		pump();
 		if (duel.on) publishDuel();
@@ -1120,7 +1120,7 @@ function openPickModal() {
 		btn.addEventListener('pointerdown', e => {
 			e.stopPropagation();
 			modal.style.display = 'none';
-			if (isGuest()) { sendCardIntent({ k: 'pick', id }); return; }
+			if (isGuest()) { guestApply(() => E.resolvePick(state, id), { k: 'pick', id }); return; }
 			E.resolvePick(state, id);
 			pump();
 			if (duel.on) publishDuel();
@@ -1169,7 +1169,7 @@ function openDiscardModal() {
 		e.stopPropagation();
 		if (chosen.size !== need) return;
 		modal.style.display = 'none';
-		if (isGuest()) { sendCardIntent({ k: 'discard', picks: [...chosen] }); return; }
+		if (isGuest()) { const picks = [...chosen]; guestApply(() => E.resolveDiscard(state, picks), { k: 'discard', picks }); return; }
 		E.resolveDiscard(state, [...chosen]);
 		pump();
 		if (duel.on) publishDuel();
@@ -1805,12 +1805,14 @@ renderer.domElement.addEventListener('pointerdown', ev => {
 function commitPending(t) {
 	if (isGuest()) {
 		const p = pending;
-		if (p.mode === 'power') sendCardIntent({ k: 'power', uid: p.card.uid, target: t || null, choice: p.choice });
-		else if (p.mode === 'activate') sendCardIntent({ k: 'activate', uid: p.card.uid, ability: p.ability, target: t || null });
-		else if (p.mode === 'walker') sendCardIntent({ k: 'walker', uid: p.card.uid, ability: p.ability, target: t || null });
-		else if (p.mode === 'tap') sendCardIntent({ k: 'tap', uid: p.card.uid, tapIndex: p.tapIndex, target: t || null });
-		else sendCardIntent({ k: 'play', uid: p.card.uid, target: t || null, choice: p.choice, position: p.position });
+		let localFn, intent;
+		if (p.mode === 'power') { localFn = () => E.useHeroPower(state, HUMAN, p.card.uid, t, p.choice); intent = { k: 'power', uid: p.card.uid, target: t || null, choice: p.choice }; }
+		else if (p.mode === 'activate') { localFn = () => E.activateAbility(state, HUMAN, p.card.uid, p.ability, t); intent = { k: 'activate', uid: p.card.uid, ability: p.ability, target: t || null }; }
+		else if (p.mode === 'walker') { localFn = () => E.useWalker(state, HUMAN, p.card.uid, p.ability, t); intent = { k: 'walker', uid: p.card.uid, ability: p.ability, target: t || null }; }
+		else if (p.mode === 'tap') { localFn = () => E.tapLand(state, HUMAN, p.card.uid, p.tapIndex, t); intent = { k: 'tap', uid: p.card.uid, tapIndex: p.tapIndex, target: t || null }; }
+		else { localFn = () => E.playCard(state, HUMAN, p.card.uid, t, p.choice, p.position); intent = { k: 'play', uid: p.card.uid, target: t || null, choice: p.choice, position: p.position }; }
 		clearModes();
+		guestApply(localFn, intent);
 		return;
 	}
 	if (pending.mode === 'power') E.useHeroPower(state, HUMAN, pending.card.uid, t, pending.choice);
@@ -2397,7 +2399,12 @@ async function startDuelHost(cardsById) {
 			if (d.oppGone && state && !state.over) endDuelByAbandon(cm.guest); // guest left
 		} catch (e) {}
 	};
-	setInterval(drainTick, 700);
+	// adaptive: drain fast while it's the guest's turn (intents incoming), relax on yours
+	const drainLoop = () => drainTick().finally(() => {
+		if (state?.over) return;
+		setTimeout(drainLoop, state && state.current === 1 ? 300 : 850);
+	});
+	drainLoop();
 	startDuelPublish();
 }
 
@@ -2459,9 +2466,11 @@ function startDuelGuest(cardsById) {
 		let data;
 		try { data = await MPX.call('card-poll', { id: duel.id }); } catch (e) { return; }
 		if (!data) return;
-		if (data.snapshot && data.seq !== duel.seq) {
+		// while an optimistic action is in flight, don't ingest the host's stale
+		// echo (it would revert our local move for a blink before catching up)
+		if (data.snapshot && data.seq !== duel.seq && (!duel.hold || performance.now() > duel.hold)) {
 			duel.seq = data.seq;
-			duel.busy = false; // the board advanced: unlock input
+			duel.hold = 0;
 			const snap = data.snapshot;
 			state = {
 				...snap, cardsById, rng: Math.random, events: [],
@@ -2485,8 +2494,13 @@ function startDuelGuest(cardsById) {
 			el.appendChild(overlayButton('Back to your world', () => { location.href = '/overworld/?mp=1'; }));
 		}
 	};
-	tick();
-	setInterval(tick, 700);
+	// adaptive: poll fast while the host is acting (updates streaming in),
+	// relax while it's your turn to decide
+	const loop = () => tick().finally(() => {
+		if ($('duel-over')) return;
+		setTimeout(loop, state && state.current !== HUMAN ? 300 : 850);
+	});
+	loop();
 }
 
 // the guest surfaces its own pending decision (scry / loot discard / discover)
@@ -2505,13 +2519,6 @@ function openDuelModals() {
 	const modal = $('scry-modal');
 	if (!sig) { if (modal) modal.style.display = 'none'; return; }
 	open();
-}
-
-// serialize + queue a guest action; lock input until the next snapshot lands
-function sendCardIntent(intent) {
-	duel.busy = true;
-	updateHud();
-	MPX.call('card-act', { id: duel.id, intent }).catch(() => {});
 }
 
 let duelPubSeq = 0, duelPubStarted = false;
@@ -2540,46 +2547,55 @@ function startDuelPublish() {
 	setInterval(() => { if (state) publishDuel(); }, 1000);
 }
 
-// action wrappers: on the guest they relay an intent (no local mutation); on the
+// action wrappers. On the guest they apply the action OPTIMISTICALLY to the
+// local board for instant feedback, relay the intent, and briefly pause snapshot
+// ingestion so the host's authoritative echo doesn't revert it mid-flight. On the
 // host/solo client they run the engine directly and pump.
 const isGuest = () => duel.on && duel.role === 'guest';
+// apply locally (no event animations — the guest never animates), relay, and hold
+function guestApply(localFn, intent) {
+	try { localFn(); E.takeEvents(state); } catch (e) { log('(move rejected)'); return; }
+	duel.hold = performance.now() + 1300; // don't ingest a stale echo before the host catches up
+	updateHud();
+	MPX.call('card-act', { id: duel.id, intent }).catch(() => {});
+}
 function actPlay(uid, target, choice, position) {
-	if (isGuest()) return sendCardIntent({ k: 'play', uid, target: target || null, choice, position });
+	if (isGuest()) return guestApply(() => E.playCard(state, HUMAN, uid, target, choice, position), { k: 'play', uid, target: target || null, choice, position });
 	E.playCard(state, HUMAN, uid, target, choice, position); pump();
 	if (duel.on) publishDuel();
 }
 function actPower(uid, target, choice) {
-	if (isGuest()) return sendCardIntent({ k: 'power', uid, target: target || null, choice });
+	if (isGuest()) return guestApply(() => E.useHeroPower(state, HUMAN, uid, target, choice), { k: 'power', uid, target: target || null, choice });
 	E.useHeroPower(state, HUMAN, uid, target, choice); pump();
 	if (duel.on) publishDuel();
 }
 function actAttack(attacker, target) {
-	if (isGuest()) return sendCardIntent({ k: 'attack', attacker, target });
+	if (isGuest()) return guestApply(() => { E.attack(state, HUMAN, attacker, target); clearModes(); }, { k: 'attack', attacker, target });
 	E.attack(state, HUMAN, attacker, target); clearModes(); pump();
 	if (duel.on) publishDuel();
 }
 function actLand(defId) {
-	if (isGuest()) return sendCardIntent({ k: 'land', defId });
+	if (isGuest()) return guestApply(() => E.buyLand(state, HUMAN, defId), { k: 'land', defId });
 	E.buyLand(state, HUMAN, defId); pump();
 	if (duel.on) publishDuel();
 }
 function actTrade(uid) {
-	if (isGuest()) return sendCardIntent({ k: 'trade', uid });
+	if (isGuest()) return guestApply(() => E.tradeCard(state, HUMAN, uid), { k: 'trade', uid });
 	E.tradeCard(state, HUMAN, uid); pump();
 	if (duel.on) publishDuel();
 }
 function actUnmask(uid) {
-	if (isGuest()) return sendCardIntent({ k: 'unmask', uid });
+	if (isGuest()) return guestApply(() => E.unmask(state, HUMAN, uid), { k: 'unmask', uid });
 	E.unmask(state, HUMAN, uid); pump();
 	if (duel.on) publishDuel();
 }
 function actEndTurn() {
-	if (isGuest()) return sendCardIntent({ k: 'endTurn' });
+	if (isGuest()) return guestApply(() => E.endTurn(state), { k: 'endTurn' });
 	E.endTurn(state); pump();
 	if (duel.on) publishDuel();
 }
 function actCoin() {
-	if (isGuest()) { sendCardIntent({ k: 'coin' }); return true; }
+	if (isGuest()) { guestApply(() => E.useCoin(state, HUMAN), { k: 'coin' }); return true; }
 	const ok = E.useCoin(state, HUMAN); if (ok) { pump(); if (duel.on) publishDuel(); } return ok;
 }
 

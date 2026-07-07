@@ -49,7 +49,11 @@ export class Pvp {
 	// ---------- networking ----------
 	async pollLoop() {
 		while (this.active && this.active.polling) {
-			await new Promise(r => setTimeout(r, 1100));
+			// adaptive: poll fast while waiting on the opponent / spectating,
+			// relax while you're the one deciding in a menu
+			const a = this.active;
+			const fast = a.spectator || a.phase === 'wait' || a.phase === 'anim';
+			await new Promise(r => setTimeout(r, fast ? 400 : 1100));
 			if (!this.active || !this.active.polling) break;
 			try {
 				const data = await MP.call('match', { id: this.active.matchId });
