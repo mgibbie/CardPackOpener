@@ -335,7 +335,7 @@ export function step(state, pi = 1) {
 		if (!c.activated) continue;
 		for (let i = 0; i < c.activated.length; i++) {
 			const a = c.activated[i];
-			if (a.sacrifice || a.tap && E.canAttackWith(state, pi, c)) continue; // don't waste attacks
+			if (a.sacrifice) continue; // the AI doesn't eat its own board
 			if (!E.canActivate(state, pi, c, i)) continue;
 			const spec = E.abilitySpec(state, pi, c, i);
 			if (spec) continue; // targeted abilities are the human's toys for now

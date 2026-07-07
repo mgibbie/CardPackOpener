@@ -12842,7 +12842,9 @@
       "attack": 3,
       "health": 7,
       "tribe": "Dragon Construct",
+      "miniaturize": true,
       "keywords": [
+        "taunt",
         "deathrattle"
       ],
       "deathrattle": [
@@ -19757,11 +19759,15 @@
       "attack": 4,
       "health": 4,
       "tribe": "Gnome Warrior",
+      "miniaturize": true,
       "honorableKill": [
         {
           "type": "draw",
           "value": 1
         }
+      ],
+      "keywords": [
+        "rush"
       ]
     },
     {
@@ -37785,7 +37791,6 @@
       "activated": [
         {
           "cost": 0,
-          "tap": true,
           "effects": [
             {
               "type": "loot",
@@ -37795,7 +37800,7 @@
           "text": "Draw a card, then discard a card."
         }
       ],
-      "description": "Tap: Draw a card, then discard a card."
+      "description": "Once per turn: Draw a card, then discard a card."
     },
     {
       "id": "ember_hauler",
@@ -38329,7 +38334,6 @@
       "activated": [
         {
           "cost": 1,
-          "tap": true,
           "discardRandom": true,
           "effects": [
             {
@@ -38340,7 +38344,7 @@
           "text": "Return target creature to its owner's hand."
         }
       ],
-      "description": "Tap: Return target creature to its owner's hand."
+      "description": "1: Return target creature to its owner's hand."
     },
     {
       "id": "neurok_commando",
@@ -38412,7 +38416,6 @@
       "activated": [
         {
           "cost": 0,
-          "tap": true,
           "effects": [
             {
               "type": "scry",
@@ -38422,7 +38425,7 @@
           "text": "Scry 1."
         }
       ],
-      "description": "Tap: Scry 1."
+      "description": "0: Scry 1."
     },
     {
       "id": "serum_visions",
@@ -39190,93 +39193,6 @@
         }
       ],
       "description": "this creature deals 2 damage to each creature."
-    },
-    {
-      "id": "llanowar_elves",
-      "name": "Llanowar Elves",
-      "colors": [
-        "G"
-      ],
-      "cardClass": "neutral",
-      "cost": 1,
-      "rarity": "common",
-      "set": "wubrg",
-      "type": "creature",
-      "attack": 1,
-      "health": 1,
-      "tribe": "Elf Druid",
-      "activated": [
-        {
-          "cost": 0,
-          "tap": true,
-          "effects": [
-            {
-              "type": "gain-mana",
-              "value": 1
-            }
-          ],
-          "text": "Add {G}."
-        }
-      ],
-      "description": "Tap: Add {G}."
-    },
-    {
-      "id": "elvish_mystic",
-      "name": "Elvish Mystic",
-      "colors": [
-        "G"
-      ],
-      "cardClass": "neutral",
-      "cost": 1,
-      "rarity": "common",
-      "set": "wubrg",
-      "type": "creature",
-      "attack": 1,
-      "health": 1,
-      "tribe": "Elf Druid",
-      "activated": [
-        {
-          "cost": 0,
-          "tap": true,
-          "effects": [
-            {
-              "type": "gain-mana",
-              "value": 1
-            }
-          ],
-          "text": "Add {G}."
-        }
-      ],
-      "description": "Tap: Add {G}."
-    },
-    {
-      "id": "fyndhorn_elves",
-      "name": "Fyndhorn Elves",
-      "colors": [
-        "G"
-      ],
-      "cardClass": "neutral",
-      "cost": 1,
-      "rarity": "common",
-      "set": "wubrg",
-      "type": "creature",
-      "attack": 1,
-      "health": 1,
-      "tribe": "Elf Druid",
-      "activated": [
-        {
-          "cost": 0,
-          "tap": true,
-          "effects": [
-            {
-              "type": "gain-mana",
-              "value": 1
-            }
-          ],
-          "text": "Add {G}."
-        }
-      ],
-      "description": "Tap: Add {G}."
     },
     {
       "id": "leatherback_baloth",
@@ -40833,6 +40749,25 @@
         "deathtouch",
         "sanguine"
       ]
+    },
+    {
+      "id": "tigress_plushy",
+      "name": "Tigress Plushy",
+      "cardClass": "paladin",
+      "cost": 3,
+      "rarity": "common",
+      "tribe": "Beast",
+      "miniaturize": true,
+      "type": "creature",
+      "attack": 3,
+      "health": 2,
+      "keywords": [
+        "rush",
+        "lifesteal",
+        "divine_shield"
+      ],
+      "description": "Rush. Lifesteal. Divine Shield. Miniaturize: playing this adds a 1/1 Mini copy costing 1 to your hand.",
+      "set": "hsx"
     }
   ]
 }

@@ -149,11 +149,12 @@ function instantiate(def, controller) {
 		ward: def.ward ? { ...def.ward } : null, // cost to target: {mana?, life?, discard?}
 		magnetic: !!def.magnetic,     // may merge onto a friendly Mech instead of playing
 		echo: !!def.echo,             // leaves a ghost copy in hand until end of turn
+		miniaturize: !!def.miniaturize, // playing it hands you a 1/1 Mini copy for 1
 		echoGhost: false,
 		dormantLeft: def.dormant || 0, // turns asleep: untouchable until it wakes
 		awaken: def.awaken || null,    // effects fired when dormancy ends
-		activated: def.activated || null, // creature abilities: [{cost, tap, sacrifice, effects, text}]
-		activatedTap: false,          // used a {T} ability this turn (can't attack)
+		activated: def.activated || null, // creature abilities: [{cost, sacrifice, effects, text}]
+		abilityUsedThisTurn: false,   // creatures never tap: abilities are once/turn
 		xSpell: !!def.xSpell,         // spends all remaining mana; X = the excess
 		attachments: [],              // names of auras enchanting this creature
 		tapStone: false,              // double-tap: stone off next turn, untap after
@@ -1158,17 +1159,18 @@ export function tapLand(state, pi, cardUid, tapIndex, target) {
 }
 
 // ---------- activated creature abilities ----------
-// def.activated = [{cost, tap?, sacrifice?, discardRandom?, payLife?, effects, text}]
-// tap abilities need an untapped, awake creature and spend its attack for the
-// turn; sacrifice abilities kill the creature as part of the cost.
+// def.activated = [{cost, sacrifice?, discardRandom?, payLife?, effects, text}]
+// creatures never tap (user ruling): abilities are once per turn instead,
+// independent of attacking; sacrifice abilities kill the creature as the cost.
 export function canActivate(state, pi, card, i) {
 	if (state.over || state.current !== pi) return false;
 	const p = state.players[pi];
 	if (!p.board.includes(card) || isDead(card) || !card.activated) return false;
+	if (card.abilityUsedThisTurn) return false;
+	if (card.frozen || card.dormantLeft > 0) return false;
 	const a = card.activated[i];
 	if (!a) return false;
 	if ((a.cost || 0) > availableMana(p)) return false;
-	if (a.tap && (card.sick || card.activatedTap || card.attacksUsed > 0 || card.frozen)) return false;
 	if (a.discardRandom && p.hand.length === 0) return false;
 	if (a.payLife && p.life <= a.payLife) return false;
 	const spec = abilitySpec(state, pi, card, i);
@@ -1191,7 +1193,7 @@ export function activateAbility(state, pi, cardUid, i, target) {
 	if (ward?.mana && availableMana(p) < (a.cost || 0) + ward.mana) return false;
 	if (ward) payWard(state, pi, target);
 	spendMana(p, a.cost || 0);
-	if (a.tap) card.activatedTap = true;
+	card.abilityUsedThisTurn = true;
 	if (a.payLife) { p.life -= a.payLife; emit(state, { type: 'damage', targetType: 'hero', player: pi, amount: a.payLife, life: p.life }); }
 	if (a.discardRandom && p.hand.length) {
 		const c = p.hand[Math.floor(state.rng() * p.hand.length)];
@@ -3266,6 +3268,21 @@ export function playCard(state, pi, cardUid, target, choice, position) {
 			emit(state, { type: 'conjure', player: pi, card: ghost, color: null });
 		}
 	}
+	// Miniaturize (user ruling): a 1/1 copy costing 1, with the Mini keyword
+	if (card.miniaturize && !p.eliminated && p.hand.length < MAX_HAND && !state.over) {
+		const def = state.cardsById[card.id];
+		if (def) {
+			const mini = instantiate(def, pi);
+			mini.zone = 'hand';
+			mini.attack = 1;
+			mini.maxHealth = 1;
+			mini.cost = 1;
+			mini.miniaturize = false; // minis don't spawn more minis
+			if (!mini.keywords.includes('mini')) mini.keywords.push('mini');
+			p.hand.push(mini);
+			emit(state, { type: 'conjure', player: pi, card: mini, color: null });
+		}
+	}
 	questTick(state, 'play', pi, 1, card); // "Play N cards" quests
 	// counted AFTER resolution so Combo sees only cards played EARLIER this turn
 	p.cardsPlayedThisTurn++;
@@ -3290,7 +3307,6 @@ export function canAttackWith(state, pi, c) {
 	if (state.over || state.current !== pi || c.attack <= 0) return false;
 	if (c.frozen) return false;
 	if (c.dormantLeft > 0) return false; // still asleep
-	if (c.activatedTap) return false; // used a {T} ability this turn
 	if (has(c, KW.PACIFIST)) return false;
 	const maxAttacks = has(c, KW.WINDFURY) ? 2 : 1;
 	if (c.attacksUsed >= maxAttacks) return false;
@@ -4048,7 +4064,7 @@ export function endTurn(state) {
 		}
 		c.sick = false;
 		c.attacksUsed = 0;
-		c.activatedTap = false;
+		c.abilityUsedThisTurn = false;
 	}
 	emit(state, { type: 'turnStart', player: state.current, turnNumber: state.turnNumber });
 	fireOngoing(state, state.current, 'turn-start');

@@ -1565,7 +1565,7 @@ function openAbilityMenu(card, ev) {
 	}
 	card.activated.forEach((a, i) => {
 		const btn = document.createElement('button');
-		btn.innerHTML = `<span class="wm-cost">${a.cost || 0}${a.tap ? ' ⟳' : ''}${a.sacrifice ? ' 💀' : ''}</span>${a.text}`;
+		btn.innerHTML = `<span class="wm-cost">${a.cost || 0}${a.sacrifice ? ' 💀' : ''}</span>${a.text}`;
 		btn.disabled = !E.canActivate(state, HUMAN, card, i);
 		btn.addEventListener('pointerdown', e => {
 			e.stopPropagation();
