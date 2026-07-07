@@ -39,7 +39,7 @@ const spectateMode = !!spectateName;
 // runs the real engine as player 0; the guest is player 1, renders the host's
 // published board, and relays action intents the host applies.
 const cardPvpId = MP_ON ? new URLSearchParams(location.search).get('cardpvp') : null;
-const duel = { on: !!cardPvpId, id: cardPvpId, role: null, seq: -1, busy: false, config: null };
+const duel = { on: !!cardPvpId, id: cardPvpId, role: null, seq: -1, busy: false, config: null, modalSig: null };
 
 const loadRun = () => { try { return JSON.parse(localStorage.getItem(RUN_KEY)); } catch (e) { return null; } };
 const saveRun = run => localStorage.setItem(RUN_KEY, JSON.stringify(run));
@@ -505,8 +505,10 @@ function openScryModal() {
 	done.addEventListener('pointerdown', e => {
 		e.stopPropagation();
 		modal.style.display = 'none';
+		if (isGuest()) { sendCardIntent({ k: 'scry', picks }); return; }
 		E.resolveScry(state, picks);
 		pump();
+		if (duel.on) publishDuel();
 	});
 	modal.appendChild(done);
 	modal.style.display = 'block';
@@ -1057,6 +1059,7 @@ let queueBusy = false;
 // AI-owned scry/gaze decisions resolve immediately (Morbid can queue them
 // off-turn); only human decisions wait for the modal
 function resolveAIScries() {
+	if (duel.on) return; // the opponent is a real player: wait for their relayed pick
 	while (state.scryQueue.length && state.scryQueue[0].chooser !== HUMAN) {
 		const pend = state.scryQueue[0];
 		const picks = pend.ids.map(id => {
@@ -1079,6 +1082,7 @@ function pump() {
 
 // AI loot discards: dump the most expensive card
 function resolveAIDiscards() {
+	if (duel.on) return; // guest resolves their own loot discards
 	while (state.discardQueue.length && state.discardQueue[0].player !== HUMAN) {
 		const pend = state.discardQueue[0];
 		const p = state.players[pend.player];
@@ -1089,6 +1093,7 @@ function resolveAIDiscards() {
 
 // AI Discover/Draft picks: take the biggest card
 function resolveAIPicks() {
+	if (duel.on) return; // guest resolves their own Discover/Draft picks
 	while (state.pickQueue.length && state.pickQueue[0].player !== HUMAN) {
 		const pend = state.pickQueue[0];
 		const best = [...pend.ids].sort((a, b) => (state.cardsById[b]?.cost || 0) - (state.cardsById[a]?.cost || 0))[0];
@@ -1114,8 +1119,10 @@ function openPickModal() {
 		btn.addEventListener('pointerdown', e => {
 			e.stopPropagation();
 			modal.style.display = 'none';
+			if (isGuest()) { sendCardIntent({ k: 'pick', id }); return; }
 			E.resolvePick(state, id);
 			pump();
+			if (duel.on) publishDuel();
 		});
 		cell.appendChild(btn);
 		row.appendChild(cell);
@@ -1161,8 +1168,10 @@ function openDiscardModal() {
 		e.stopPropagation();
 		if (chosen.size !== need) return;
 		modal.style.display = 'none';
+		if (isGuest()) { sendCardIntent({ k: 'discard', picks: [...chosen] }); return; }
 		E.resolveDiscard(state, [...chosen]);
 		pump();
+		if (duel.on) publishDuel();
 	});
 	modal.appendChild(done);
 	sync();
@@ -2327,8 +2336,12 @@ function startDuelHost(cardsById) {
 
 // apply a relayed guest action to the authoritative engine (guest = player 1)
 function applyGuestIntent(it) {
-	if (!state || state.over || state.current !== 1) return; // only on the guest's turn
+	if (!state || state.over) return;
 	const P = 1;
+	// scry/loot/discover resolutions can land on either player's turn; they only
+	// apply when the guest's decision is at the front of the matching queue.
+	const isResolve = it.k === 'scry' || it.k === 'discard' || it.k === 'pick';
+	if (!isResolve && state.current !== 1) return; // plays only on the guest's turn
 	try {
 		switch (it.k) {
 			case 'play': E.playCard(state, P, it.uid, it.target || null, it.choice, it.position); break;
@@ -2342,6 +2355,9 @@ function applyGuestIntent(it) {
 			case 'unmask': E.unmask(state, P, it.uid); break;
 			case 'coin': E.useCoin(state, P); break;
 			case 'endTurn': E.endTurn(state); break;
+			case 'scry': if (state.scryQueue[0]?.chooser === P) E.resolveScry(state, it.picks || []); else return; break;
+			case 'discard': if (state.discardQueue[0]?.player === P) E.resolveDiscard(state, it.picks || []); else return; break;
+			case 'pick': if (state.pickQueue[0]?.player === P) E.resolvePick(state, it.id); else return; break;
 			default: return;
 		}
 	} catch (e) { log('(guest action ignored)'); return; }
@@ -2364,13 +2380,18 @@ function startDuelGuest(cardsById) {
 		if (data.snapshot && data.seq !== duel.seq) {
 			duel.seq = data.seq;
 			duel.busy = false; // the board advanced: unlock input
-			state = { ...data.snapshot, cardsById, rng: Math.random, events: [], scryQueue: [], discardQueue: [], pickQueue: [] };
+			const snap = data.snapshot;
+			state = {
+				...snap, cardsById, rng: Math.random, events: [],
+				scryQueue: snap.scryQueue || [], discardQueue: snap.discardQueue || [], pickQueue: snap.pickQueue || [],
+			};
 			if (state.players.length !== panelsFor) {
 				playerCount = state.players.length;
 				frameCamera(); buildPanels(); buildSlotMarkers();
 				panelsFor = state.players.length;
 			}
 			updateHud();
+			openDuelModals(); // surface any scry/loot/discover the guest must resolve
 		}
 		if (data.over && !$('duel-over')) {
 			const won = data.winner === HUMAN;
@@ -2381,6 +2402,24 @@ function startDuelGuest(cardsById) {
 	};
 	tick();
 	setInterval(tick, 700);
+}
+
+// the guest surfaces its own pending decision (scry / loot discard / discover)
+// only when that decision is at the FRONT of the queue — resolving out of order
+// would apply to the host's entry instead. A signature avoids reopening the same
+// prompt on every poll.
+function openDuelModals() {
+	if (!isGuest() || !state) return;
+	const sq = state.scryQueue[0], dq = state.discardQueue[0], pq = state.pickQueue[0];
+	let sig = null, open = null;
+	if (sq && sq.chooser === HUMAN) { sig = 'scry:' + sq.ids.join(','); open = openScryModal; }
+	else if (dq && dq.player === HUMAN) { sig = 'discard:' + dq.count + ':' + state.players[HUMAN].hand.map(c => c.uid).join(','); open = openDiscardModal; }
+	else if (pq && pq.player === HUMAN) { sig = 'pick:' + pq.ids.join(','); open = openPickModal; }
+	if (sig === duel.modalSig) return; // already showing (or already submitted) this one
+	duel.modalSig = sig;
+	const modal = $('scry-modal');
+	if (!sig) { if (modal) modal.style.display = 'none'; return; }
+	open();
 }
 
 // serialize + queue a guest action; lock input until the next snapshot lands
@@ -2397,6 +2436,8 @@ function snapshotForDuel() {
 		players: state.players, current: state.current, turnNumber: state.turnNumber,
 		over: state.over, winner: state.winner, classPicks: state.classPicks || null,
 		playerCount: state.players.length,
+		// carry pending decisions so the guest can resolve their own scry/loot/discover
+		scryQueue: state.scryQueue || [], discardQueue: state.discardQueue || [], pickQueue: state.pickQueue || [],
 	};
 }
 function publishDuel() {
