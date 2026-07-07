@@ -2265,6 +2265,7 @@ function dungeonOverlay(title, sub) {
 function hideDungeonOverlay() {
 	const el = $('dungeon-overlay');
 	if (el) el.style.display = 'none';
+	hideMiniTip();
 }
 function overlayButton(label, onClick) {
 	const b = document.createElement('button');
@@ -2274,9 +2275,41 @@ function overlayButton(label, onClick) {
 	b.addEventListener('click', onClick);
 	return b;
 }
+// overlay card tooltip: the mini faces are too small to read, so hovering
+// (or tapping, on touch) shows the card's full rules text
+let miniTip = null;
+function showMiniTip(def, x, y) {
+	if (!miniTip) {
+		miniTip = document.createElement('div');
+		miniTip.id = 'mini-tip';
+		miniTip.style.cssText = 'position:fixed;z-index:70;max-width:250px;display:none;'
+			+ 'background:rgba(16,12,28,0.96);border:1px solid #6a5a9a;border-radius:8px;'
+			+ 'padding:10px 12px;color:#e8e2f4;font-size:13px;line-height:1.4;text-align:left;'
+			+ 'pointer-events:none;box-shadow:0 8px 24px rgba(0,0,0,0.7);';
+		document.body.appendChild(miniTip);
+		// tapping anything that isn't a card face dismisses it (touch has no hover-out)
+		addEventListener('pointerdown', ev => {
+			if (!(ev.target instanceof HTMLCanvasElement)) hideMiniTip();
+		}, true);
+	}
+	const stats = def.type === 'creature' ? ` · ${def.attack}/${def.health}`
+		: def.type === 'weapon' ? ` · ${def.attack}/${def.durability}`
+		: def.type === 'location' ? ` · ${def.durability} uses` : '';
+	miniTip.innerHTML = `<div style="font-weight:bold;color:#cbb8ff;margin-bottom:3px;">${def.name}</div>`
+		+ `<div style="opacity:0.7;font-size:11px;margin-bottom:6px;">${def.cost ?? 0} mana · ${def.type}${stats}</div>`
+		+ `<div>${def.description || '<i>No rules text.</i>'}</div>`;
+	miniTip.style.display = 'block';
+	miniTip.style.left = Math.max(6, Math.min(x + 14, innerWidth - 262)) + 'px';
+	miniTip.style.top = Math.max(6, Math.min(y + 12, innerHeight - miniTip.offsetHeight - 10)) + 'px';
+}
+function hideMiniTip() { if (miniTip) miniTip.style.display = 'none'; }
+
 function miniFace(def) {
 	const c = drawCardFace(def, {});
 	c.style.cssText = 'width:96px;height:134px;border-radius:6px;';
+	c.addEventListener('pointerenter', ev => showMiniTip(def, ev.clientX, ev.clientY));
+	c.addEventListener('pointermove', ev => showMiniTip(def, ev.clientX, ev.clientY));
+	c.addEventListener('pointerleave', hideMiniTip);
 	// real art lazy-loads after the first paint — redraw once it has arrived
 	const redraw = () => {
 		const f = drawCardFace(def, {});
