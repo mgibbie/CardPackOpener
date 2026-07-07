@@ -12,7 +12,9 @@ import * as MPX from './mpmode.js';
 const MP_ON = MPX.mpMode();
 import { CARD_W, CARD_H, CARD_D, makeFaceTexture, makeBackTexture, hasRules, RULES_GEM, classNameOf, drawCardFace, makeTokenTexture, TOKEN_W, TOKEN_H, TOKEN_GEM, drawHeroPortrait, drawPowerOrb, artListeners } from './cardart.js';
 
-const HUMAN = 0;
+// the player index this client controls. Solo/host = 0; a live-duel guest = 1.
+// The board reorients so HUMAN always sits at the bottom facing the camera.
+let HUMAN = 0;
 const TAU = Math.PI * 2;
 const UP = new THREE.Vector3(0, 1, 0);
 
@@ -33,15 +35,23 @@ if (dungeonBossId || dungeonRunMode) playerCount = 2;
 const spectateName = MP_ON ? new URLSearchParams(location.search).get('spectate') : null;
 const spectateMode = !!spectateName;
 
+// ?cardpvp=<matchId> (MP only): a live host-authoritative card duel. The host
+// runs the real engine as player 0; the guest is player 1, renders the host's
+// published board, and relays action intents the host applies.
+const cardPvpId = MP_ON ? new URLSearchParams(location.search).get('cardpvp') : null;
+const duel = { on: !!cardPvpId, id: cardPvpId, role: null, seq: -1, busy: false, config: null };
+
 const loadRun = () => { try { return JSON.parse(localStorage.getItem(RUN_KEY)); } catch (e) { return null; } };
 const saveRun = run => localStorage.setItem(RUN_KEY, JSON.stringify(run));
 const clearRun = () => localStorage.removeItem(RUN_KEY);
 
 const nameOf = pi => pi === HUMAN ? 'You'
+	: duel.on ? (pi === 0 ? (duel.config?.host || 'Host') : (duel.config?.guest || 'Guest'))
 	: (dungeonBossId && pi === 1 ? Dungeon.BOSSES[dungeonBossId].name : `AI ${pi}`);
 // each player's board is a pizza slice: rotate their zone layout around the
-// table center; the human slice always faces the camera (angle 0 = bottom)
-const angleOf = pi => (pi / playerCount) * TAU;
+// table center; the local (HUMAN) slice always faces the camera (angle 0 =
+// bottom). Angles are relative to HUMAN so a duel guest sees themselves up front.
+const angleOf = pi => (((pi - HUMAN + playerCount) % playerCount) / playerCount) * TAU;
 // radial push so 3+ slices don't overlap at the center
 const sliceOff = () => playerCount <= 2 ? 0 : (playerCount - 2) * 0.9;
 const toWorld = (x, y, z, pi) => new THREE.Vector3(x, y, z).applyAxisAngle(UP, angleOf(pi));
@@ -335,8 +345,7 @@ function openLandShop(ev) {
 		btn.addEventListener('pointerdown', e => {
 			e.stopPropagation();
 			hideWalkerMenu();
-			E.buyLand(state, HUMAN, def.id);
-			pump();
+			actLand(def.id);
 		});
 		menu.appendChild(btn);
 	}
@@ -361,8 +370,7 @@ function openChoiceMenu(card, ev, position) {
 				if (targets.length) { pending = { card, spec, targets, mode: 'play', choice: i, position }; updateHud(); return; }
 				if (spec.required) return;
 			}
-			E.playCard(state, HUMAN, card.uid, null, i, position);
-			pump();
+			actPlay(card.uid, null, i, position);
 		});
 		menu.appendChild(btn);
 	});
@@ -390,8 +398,7 @@ function openTradeMenu(card, ev) {
 	trade.addEventListener('pointerdown', e => {
 		e.stopPropagation();
 		hideWalkerMenu();
-		E.tradeCard(state, HUMAN, card.uid);
-		pump();
+		actTrade(card.uid);
 	});
 	menu.appendChild(trade);
 	menu.style.display = 'block';
@@ -408,8 +415,7 @@ function playFromHand(card, ev, position) {
 		if (targets.length) { pending = { card, spec, targets, mode: 'play', position }; updateHud(); return; }
 		if (spec.required) return;
 	}
-	E.playCard(state, HUMAN, card.uid, null, undefined, position);
-	pump();
+	actPlay(card.uid, null, undefined, position);
 }
 
 // choose-one hero powers pick a branch before targeting
@@ -429,8 +435,7 @@ function openPowerChoiceMenu(card, ev) {
 				if (targets.length) { pending = { card, spec, targets, mode: 'power', choice: i }; updateHud(); return; }
 				if (spec.required) return;
 			}
-			E.useHeroPower(state, HUMAN, card.uid, null, i);
-			pump();
+			actPower(card.uid, null, i);
 		});
 		menu.appendChild(btn);
 	});
@@ -448,8 +453,7 @@ function openUnmaskMenu(card, ev) {
 	un.addEventListener('pointerdown', e => {
 		e.stopPropagation();
 		hideWalkerMenu();
-		E.unmask(state, HUMAN, card.uid);
-		pump();
+		actUnmask(card.uid);
 	});
 	menu.appendChild(un);
 	if (E.canAttackWith(state, HUMAN, card)) {
@@ -735,8 +739,7 @@ function activateHeroPower(card, ev) {
 		if (targets.length) { pending = { card, spec, targets, mode: 'power' }; updateHud(); return; }
 		if (spec.required) return;
 	}
-	E.useHeroPower(state, HUMAN, card.uid, null);
-	pump();
+	actPower(card.uid, null);
 }
 
 // hero portrait + class power orb, sized per panel
@@ -784,7 +787,8 @@ function buildPanels() {
 	cont.innerHTML = '';
 	foePanelEls.clear();
 	if (!state) return;
-	for (let pi = 1; pi < state.players.length; pi++) {
+	for (let pi = 0; pi < state.players.length; pi++) {
+		if (pi === HUMAN) continue; // HUMAN uses the fixed bottom panel
 		const el = document.createElement('div');
 		el.className = 'panel foe-sm';
 		const cls = state?.classPicks?.[pi]?.name;
@@ -1512,7 +1516,13 @@ function nextEvent() {
 			const reward = ev.winner == null ? 50 : won ? 100 : 25;
 			Col.earnGold(reward);
 			log(`+${reward} gold (${Col.getGold()} total)`);
-			if (dungeonRunMode) {
+			if (duel.on) {
+				publishDuel(); // push the final board (over + winner) to the guest/spectators
+				const el = dungeonOverlay(won ? 'YOU WIN!' : ev.winner == null ? 'DRAW' : 'DEFEAT',
+					won ? 'You win the duel!' : ev.winner == null ? "It's a draw." : `${nameOf(ev.winner)} wins the duel.`);
+				el.id = 'duel-over';
+				el.appendChild(overlayButton('Back to your world', () => { location.href = '/overworld/?mp=1'; }));
+			} else if (dungeonRunMode) {
 				const run = loadRun();
 				if (run?.active) setTimeout(() => won ? dungeonVictory(run) : dungeonDefeat(run), 1200);
 			} else {
@@ -1530,6 +1540,9 @@ function nextEvent() {
 let aiTimer = null;
 function maybeRunAI() {
 	if (!state || state.over || state.current === HUMAN || queue.length || queueBusy) return;
+	// in a live duel the opponent is a real player, not the AI: the guest never
+	// runs the engine, and the host waits for the guest's relayed intents
+	if (duel.on) return;
 	if (state.scryQueue.length && state.scryQueue[0].chooser === HUMAN) return; // your call first
 	if (state.discardQueue.length && state.discardQueue[0].player === HUMAN) return; // loot pick first
 	if (state.pickQueue.length && state.pickQueue[0].player === HUMAN) return; // discover pick first
@@ -1693,7 +1706,7 @@ addEventListener('contextmenu', ev => { ev.preventDefault(); clearModes(); });
 
 renderer.domElement.addEventListener('pointerdown', ev => {
 	hideWalkerMenu();
-	if (spectateMode) return;
+	if (spectateMode || duel.busy) return;
 	if (ev.button !== 0 || !state || state.over || state.current !== HUMAN) return;
 	const uid = pick(ev);
 	const card = cardOf(uid);
@@ -1725,7 +1738,7 @@ renderer.domElement.addEventListener('pointerdown', ev => {
 		if (card && (card.zone === 'board' || card.zone === 'planeswalker') && card.controller !== HUMAN && attacker) {
 			const kind = card.zone === 'board' ? 'creature' : 'walker';
 			const t = E.attackTargets(state, HUMAN, attacker).find(t => t.type === kind && t.uid === card.uid);
-			if (t) { E.attack(state, HUMAN, selectedAttacker, t); clearModes(); pump(); return; }
+			if (t) { actAttack(selectedAttacker, t); return; }
 		}
 		clearModes();
 		if (!card || card.controller !== HUMAN) return; // fall through to reselect own creature
@@ -1771,8 +1784,7 @@ renderer.domElement.addEventListener('pointerdown', ev => {
 			if (targets.length) { pending = { card, spec, targets, mode: 'play' }; updateHud(); return; }
 			if (spec.required) return;
 		}
-		E.playCard(state, HUMAN, card.uid, null);
-		pump();
+		actPlay(card.uid, null);
 	} else if (card.zone === 'land' && card.controller === HUMAN) {
 		// tap your land for one of its abilities
 		if (E.canTapLand(state, HUMAN, card)) openTapMenu(card, ev);
@@ -1781,6 +1793,16 @@ renderer.domElement.addEventListener('pointerdown', ev => {
 
 // resolve a pending targeted action (play, hero power, walker, or land tap)
 function commitPending(t) {
+	if (isGuest()) {
+		const p = pending;
+		if (p.mode === 'power') sendCardIntent({ k: 'power', uid: p.card.uid, target: t || null, choice: p.choice });
+		else if (p.mode === 'activate') sendCardIntent({ k: 'activate', uid: p.card.uid, ability: p.ability, target: t || null });
+		else if (p.mode === 'walker') sendCardIntent({ k: 'walker', uid: p.card.uid, ability: p.ability, target: t || null });
+		else if (p.mode === 'tap') sendCardIntent({ k: 'tap', uid: p.card.uid, tapIndex: p.tapIndex, target: t || null });
+		else sendCardIntent({ k: 'play', uid: p.card.uid, target: t || null, choice: p.choice, position: p.position });
+		clearModes();
+		return;
+	}
 	if (pending.mode === 'power') E.useHeroPower(state, HUMAN, pending.card.uid, t, pending.choice);
 	else if (pending.mode === 'activate') E.activateAbility(state, HUMAN, pending.card.uid, pending.ability, t);
 	else if (pending.mode === 'walker') E.useWalker(state, HUMAN, pending.card.uid, pending.ability, t);
@@ -1788,6 +1810,7 @@ function commitPending(t) {
 	else E.playCard(state, HUMAN, pending.card.uid, t, pending.choice, pending.position);
 	clearModes();
 	pump();
+	if (duel.on) publishDuel();
 }
 
 // ---------- drag-to-target (Hearthstone style) ----------
@@ -1901,11 +1924,11 @@ function tryCommitTargetAt(ev) {
 		if (card && (card.zone === 'board' || card.zone === 'planeswalker') && card.controller !== HUMAN) {
 			const kind = card.zone === 'board' ? 'creature' : 'walker';
 			const t = targets.find(t => t.type === kind && t.uid === card.uid);
-			if (t) { E.attack(state, HUMAN, selectedAttacker, t); clearModes(); pump(); return true; }
+			if (t) { actAttack(selectedAttacker, t); return true; }
 		}
 		if (heroPi != null && heroPi !== HUMAN) {
 			const t = targets.find(t => t.type === 'hero' && t.player === heroPi);
-			if (t) { E.attack(state, HUMAN, selectedAttacker, t); clearModes(); pump(); return true; }
+			if (t) { actAttack(selectedAttacker, t); return true; }
 		}
 		return false;
 	}
@@ -1914,7 +1937,7 @@ function tryCommitTargetAt(ev) {
 
 addEventListener('pointerup', ev => {
 	clearTimeout(longPressT);
-	if (spectateMode) return;
+	if (spectateMode || duel.busy) return;
 	// creature placement: tap appends right, a drag onto the board picks the gap
 	if (placing) {
 		const c = placing.card;
@@ -1931,8 +1954,7 @@ addEventListener('pointerup', ev => {
 				const over = cardOf(pick(ev));
 				if (c.magnetic && over && over.zone === 'board' && over.controller === HUMAN
 					&& (over.tribe || '').includes('Mech')) {
-					E.playCard(state, HUMAN, c.uid, { type: 'creature', uid: over.uid, player: HUMAN });
-					pump();
+					actPlay(c.uid, { type: 'creature', uid: over.uid, player: HUMAN });
 				} else {
 					playFromHand(c, ev, placementIndexAt(ev.clientX));
 				}
@@ -1960,7 +1982,7 @@ addEventListener('pointerup', ev => {
 
 // hero panels as click targets (attacks + targeted spells at heroes)
 function panelClick(pi) {
-	if (spectateMode || !state || state.over || state.current !== HUMAN) return;
+	if (spectateMode || duel.busy || !state || state.over || state.current !== HUMAN) return;
 	if (pending) {
 		const t = pending.targets.find(t => t.type === 'hero' && t.player === pi);
 		if (t) commitPending(t);
@@ -1979,7 +2001,7 @@ function panelClick(pi) {
 		const attacker = cardOf(selectedAttacker);
 		if (!attacker) { clearModes(); return; }
 		const t = E.attackTargets(state, HUMAN, attacker).find(t => t.type === 'hero' && t.player === pi);
-		if (t) { E.attack(state, HUMAN, selectedAttacker, t); clearModes(); pump(); }
+		if (t) { actAttack(selectedAttacker, t); }
 		return;
 	}
 	// clicking your own panel arms a hero attack when you hold a weapon
@@ -1991,14 +2013,13 @@ function panelClick(pi) {
 $('my-panel').addEventListener('pointerdown', () => panelClick(HUMAN));
 
 $('end-turn').addEventListener('click', () => {
-	if (!state || state.over || state.current !== HUMAN) return;
+	if (!state || state.over || state.current !== HUMAN || duel.busy) return;
 	clearModes();
-	E.endTurn(state);
-	pump();
+	actEndTurn();
 });
 $('coin-btn').addEventListener('click', () => {
-	if (!state) return;
-	if (E.useCoin(state, HUMAN)) pump();
+	if (!state || duel.busy) return;
+	actCoin();
 });
 $('restart').addEventListener('click', () => start());
 
@@ -2140,6 +2161,13 @@ window.__game = {
 	// test hooks for the targeting arrow
 	armAttack(uid) { selectedAttacker = uid; updateHud(); },
 	get targeting() { return { pending: !!pending, attacker: selectedAttacker, drawn: arrowDrawn }; },
+	// live-duel test hooks
+	duel,
+	get HUMAN() { return HUMAN; },
+	actPlay: (...a) => actPlay(...a),
+	actEndTurn: () => actEndTurn(),
+	actAttack: (...a) => actAttack(...a),
+	publishDuel: () => publishDuel(),
 };
 
 let classRegistry = [];
@@ -2235,6 +2263,200 @@ function startSpectate(cardsById) {
 	setInterval(tick, 1000);
 }
 
+// ---------- live card duel (host-authoritative relay) ----------
+function shuffleIds(ids) {
+	for (let i = ids.length - 1; i > 0; i--) {
+		const j = Math.floor(Math.random() * (i + 1));
+		[ids[i], ids[j]] = [ids[j], ids[i]];
+	}
+	return ids;
+}
+function classPickFor(clsId) {
+	return classRegistry.find(c => c.id === clsId) || (clsId ? { id: clsId, name: clsId, power: null } : null);
+}
+
+async function startDuel(cardsById) {
+	const data = await MPX.call('card-match', { id: duel.id });
+	if (data.error || !data.cardmatch) {
+		banner('Duel not found');
+		dungeonOverlay('DUEL ERROR', data.error || 'This card duel is no longer available.')
+			.appendChild(overlayButton('Back to your world', () => { location.href = '/overworld/?mp=1'; }));
+		return;
+	}
+	duel.config = data.cardmatch;
+	duel.role = data.role; // 'host' | 'guest'
+	$('player-count').style.display = 'none';
+	$('class-select').style.display = 'none';
+	$('concede').style.display = 'none';
+	if (duel.role === 'host') startDuelHost(cardsById);
+	else startDuelGuest(cardsById);
+}
+
+// the host owns the engine: player 0 = host, player 1 = guest
+function startDuelHost(cardsById) {
+	HUMAN = 0;
+	const cm = duel.config;
+	const picks = [classPickFor(cm.hostClass), classPickFor(cm.guestClass)];
+	state = E.createGame(cardsById, Math.random, cm.hostDeck ? [...cm.hostDeck] : null, 2, picks);
+	state.classPicks = picks;
+	// give the guest their own deck + a fresh opening hand and the coin
+	const g = state.players[1];
+	if (cm.guestDeck?.length) {
+		g.deck = shuffleIds([...cm.guestDeck]);
+		g.hand = [];
+		E.drawCards(state, 1, 4);
+		g.coins = 1;
+	}
+	frameCamera();
+	buildPanels();
+	buildSlotMarkers();
+	pump();
+	updateHud();
+	log(`Live duel: you vs ${cm.guest}.`);
+	// drain the guest's queued intents and apply them, then republish
+	const drainTick = async () => {
+		if (state?.over) return;
+		try {
+			const d = await MPX.call('card-drain', { id: duel.id });
+			for (const it of (d.intents || [])) { applyGuestIntent(it); }
+		} catch (e) {}
+	};
+	setInterval(drainTick, 700);
+	startDuelPublish();
+}
+
+// apply a relayed guest action to the authoritative engine (guest = player 1)
+function applyGuestIntent(it) {
+	if (!state || state.over || state.current !== 1) return; // only on the guest's turn
+	const P = 1;
+	try {
+		switch (it.k) {
+			case 'play': E.playCard(state, P, it.uid, it.target || null, it.choice, it.position); break;
+			case 'power': E.useHeroPower(state, P, it.uid, it.target || null, it.choice); break;
+			case 'activate': E.activateAbility(state, P, it.uid, it.ability, it.target || null); break;
+			case 'walker': E.useWalker(state, P, it.uid, it.ability, it.target || null); break;
+			case 'tap': E.tapLand(state, P, it.uid, it.tapIndex, it.target || null); break;
+			case 'attack': E.attack(state, P, it.attacker, it.target); break;
+			case 'land': E.buyLand(state, P, it.defId); break;
+			case 'trade': E.tradeCard(state, P, it.uid); break;
+			case 'unmask': E.unmask(state, P, it.uid); break;
+			case 'coin': E.useCoin(state, P); break;
+			case 'endTurn': E.endTurn(state); break;
+			default: return;
+		}
+	} catch (e) { log('(guest action ignored)'); return; }
+	pump();
+	publishDuel();
+}
+
+// the guest renders the host's published board and relays intents; it never
+// mutates its own copy — the next authoritative snapshot is the truth
+function startDuelGuest(cardsById) {
+	HUMAN = 1;
+	const cm = duel.config;
+	banner(`Duel vs ${cm.host}`);
+	log(`Live duel: you vs ${cm.host}. Waiting for the board…`);
+	let panelsFor = 0;
+	const tick = async () => {
+		let data;
+		try { data = await MPX.call('card-poll', { id: duel.id }); } catch (e) { return; }
+		if (!data) return;
+		if (data.snapshot && data.seq !== duel.seq) {
+			duel.seq = data.seq;
+			duel.busy = false; // the board advanced: unlock input
+			state = { ...data.snapshot, cardsById, rng: Math.random, events: [], scryQueue: [], discardQueue: [], pickQueue: [] };
+			if (state.players.length !== panelsFor) {
+				playerCount = state.players.length;
+				frameCamera(); buildPanels(); buildSlotMarkers();
+				panelsFor = state.players.length;
+			}
+			updateHud();
+		}
+		if (data.over && !$('duel-over')) {
+			const won = data.winner === HUMAN;
+			const el = dungeonOverlay(won ? 'YOU WIN!' : 'DEFEAT', won ? `You beat ${cm.host}!` : `${cm.host} wins the duel.`);
+			el.id = 'duel-over';
+			el.appendChild(overlayButton('Back to your world', () => { location.href = '/overworld/?mp=1'; }));
+		}
+	};
+	tick();
+	setInterval(tick, 700);
+}
+
+// serialize + queue a guest action; lock input until the next snapshot lands
+function sendCardIntent(intent) {
+	duel.busy = true;
+	updateHud();
+	MPX.call('card-act', { id: duel.id, intent }).catch(() => {});
+}
+
+let duelPubSeq = 0, duelPubStarted = false;
+function snapshotForDuel() {
+	if (!state) return null;
+	return {
+		players: state.players, current: state.current, turnNumber: state.turnNumber,
+		over: state.over, winner: state.winner, classPicks: state.classPicks || null,
+		playerCount: state.players.length,
+	};
+}
+function publishDuel() {
+	const cm = duel.config;
+	MPX.call('card-publish', {
+		id: duel.id, snapshot: snapshotForDuel(), seq: ++duelPubSeq,
+		label: `${cm.host} vs ${cm.guest}`,
+		over: !!state?.over, winner: state?.winner ?? null,
+	}).catch(() => {});
+}
+function startDuelPublish() {
+	if (duelPubStarted) return;
+	duelPubStarted = true;
+	publishDuel();
+	setInterval(() => { if (state) publishDuel(); }, 1000);
+}
+
+// action wrappers: on the guest they relay an intent (no local mutation); on the
+// host/solo client they run the engine directly and pump.
+const isGuest = () => duel.on && duel.role === 'guest';
+function actPlay(uid, target, choice, position) {
+	if (isGuest()) return sendCardIntent({ k: 'play', uid, target: target || null, choice, position });
+	E.playCard(state, HUMAN, uid, target, choice, position); pump();
+	if (duel.on) publishDuel();
+}
+function actPower(uid, target, choice) {
+	if (isGuest()) return sendCardIntent({ k: 'power', uid, target: target || null, choice });
+	E.useHeroPower(state, HUMAN, uid, target, choice); pump();
+	if (duel.on) publishDuel();
+}
+function actAttack(attacker, target) {
+	if (isGuest()) return sendCardIntent({ k: 'attack', attacker, target });
+	E.attack(state, HUMAN, attacker, target); clearModes(); pump();
+	if (duel.on) publishDuel();
+}
+function actLand(defId) {
+	if (isGuest()) return sendCardIntent({ k: 'land', defId });
+	E.buyLand(state, HUMAN, defId); pump();
+	if (duel.on) publishDuel();
+}
+function actTrade(uid) {
+	if (isGuest()) return sendCardIntent({ k: 'trade', uid });
+	E.tradeCard(state, HUMAN, uid); pump();
+	if (duel.on) publishDuel();
+}
+function actUnmask(uid) {
+	if (isGuest()) return sendCardIntent({ k: 'unmask', uid });
+	E.unmask(state, HUMAN, uid); pump();
+	if (duel.on) publishDuel();
+}
+function actEndTurn() {
+	if (isGuest()) return sendCardIntent({ k: 'endTurn' });
+	E.endTurn(state); pump();
+	if (duel.on) publishDuel();
+}
+function actCoin() {
+	if (isGuest()) { sendCardIntent({ k: 'coin' }); return true; }
+	const ok = E.useCoin(state, HUMAN); if (ok) { pump(); if (duel.on) publishDuel(); } return ok;
+}
+
 async function start() {
 	for (const uid of [...entities.keys()]) removeEntity(uid);
 	queue.length = 0;
@@ -2267,6 +2489,7 @@ async function start() {
 			});
 		} catch (e) { classRegistry = []; }
 	}
+	if (duel.on) { await startDuel(cardsById); return; }
 	// bare visit = the landing menu; any mode param (battle/players/boss/
 	// dungeon) boots straight in, so tests and deep links skip it
 	if (!location.search && !menuChosen) {

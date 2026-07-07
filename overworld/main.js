@@ -267,7 +267,7 @@ function friendAction(f) {
 	if (friendsChallenge.mode === 'card') {
 		friendsMenu.open = false; friendsChallenge.mode = null;
 		if (!f.online) { dialog.open(`${f.username} is offline right now.`); return; }
-		dialog.open(`Live CARD battles vs ${f.username} are coming soon!\n\nPOKeMON battles are live — challenge them from the FRIENDS menu.`);
+		sendCardChallenge(f);
 		return;
 	}
 	if (!f.online) { dialog.open(`${f.username} is offline right now.`); return; }
@@ -1021,6 +1021,20 @@ function pvpParty() {
 		}),
 	}));
 }
+// my card deck + class for a live card duel (from the account's saved decks)
+async function cardParty() {
+	let st;
+	try { st = await MP.freshState(); } catch (e) { st = MP.cachedState(); }
+	if (!st || !st.decks) return null;
+	const saved = localStorage.getItem('magepunk_class_v1') || '';
+	const clsId = st.decks[saved] ? saved
+		: (st.decks.mage ? 'mage' : Object.keys(st.decks).find(k => (st.decks[k] || []).length >= 10));
+	const deck = clsId && st.decks[clsId];
+	if (!deck || deck.length < 10) return null;
+	return { deck, classId: clsId };
+}
+const goCardDuel = id => { location.href = '/battlecards/?cardpvp=' + encodeURIComponent(id) + '&mp=1'; };
+
 let pendingChallengeTo = null; // username we challenged, polling for accept
 async function sendChallenge(f) {
 	const snap = pvpParty();
@@ -1029,13 +1043,24 @@ async function sendChallenge(f) {
 	pendingChallengeTo = f.username;
 	dialog.open(`Challenge sent to ${f.username}!\n\nWaiting for them to accept…`);
 }
+async function sendCardChallenge(f) {
+	const party = await cardParty();
+	if (!party) { dialog.open('You need a full class deck to card-battle.\n\nBuild one in CARDS → DECK BUILDER first.'); return; }
+	await MP.call('challenge', { to: f.username, battleType: 'card', party });
+	pendingChallengeTo = f.username;
+	dialog.open(`Card battle challenge sent to ${f.username}!\n\nWaiting for them to accept…`);
+}
 async function pollChallenges() {
 	if (!MP_ON || pvp.blocking) return;
 	// did a friend accept our challenge?
 	if (pendingChallengeTo) {
 		try {
 			const mm = await MP.call('my-match');
-			if (mm.matchId) { pendingChallengeTo = null; enterMatch(mm.matchId, false); return; }
+			if (mm.matchId) {
+				pendingChallengeTo = null;
+				if (mm.type === 'card') { goCardDuel(mm.matchId); return; }
+				enterMatch(mm.matchId, false); return;
+			}
 		} catch (e) {}
 	}
 	// any incoming challenges?
@@ -1048,6 +1073,19 @@ async function pollChallenges() {
 }
 let incomingChallenge = null;
 function showIncoming(ch) {
+	if (ch.type === 'card') {
+		dialog.open(`${ch.from} challenges you to a CARD battle!  Z=Accept  X=Decline`, async (declined) => {
+			const c = incomingChallenge; incomingChallenge = null;
+			if (!c) return;
+			if (declined === 'x') { await MP.call('decline-challenge', { from: c.from }); return; }
+			const party = await cardParty();
+			if (!party) { dialog.open('You need a full class deck to card-battle.\n\nBuild one in CARDS → DECK BUILDER first.'); return; }
+			const data = await MP.call('accept-challenge', { from: c.from, battleType: 'card', party });
+			if (data.error) { dialog.open(data.error); return; }
+			goCardDuel(data.matchId);
+		});
+		return;
+	}
 	dialog.open(`${ch.from} challenges you to a POKeMON battle!\n\nPress Z to ACCEPT, X to decline.`, async (declined) => {
 		const c = incomingChallenge; incomingChallenge = null;
 		if (!c) return;

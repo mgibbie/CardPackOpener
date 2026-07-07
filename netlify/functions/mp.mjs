@@ -342,11 +342,26 @@ export default async function handler(req) {
 		if (!ch) return json({ error: 'that challenge expired' }, 404);
 		await store.setJSON('challenge:' + username, list.filter(c => c.from !== from));
 		const matchId = randCode() + randCode();
+		if (ch.type === 'card') {
+			// host-authoritative card duel: the challenger (host) runs the real
+			// engine as player 0, the accepter (guest) is player 1 and relays
+			// intents. This blob is just the config both sides boot from.
+			const cm = {
+				id: matchId, type: 'card',
+				host: from, guest: username,
+				hostDeck: (ch.party?.deck) || null, hostClass: (ch.party?.classId) || null,
+				guestDeck: (body.party?.deck) || null, guestClass: (body.party?.classId) || null,
+				over: false, winner: null, createdAt: Date.now(), lastActive: Date.now(),
+			};
+			await store.setJSON('cardmatch:' + matchId, cm);
+			await store.setJSON('ready:' + from, { matchId, type: 'card', ts: Date.now() });
+			return json({ matchId, cardmatch: cm });
+		}
 		let match;
 		if (ch.type === 'pokemon') {
 			match = createMatch(matchId, from, ch.party || [], username, body.party || []);
 		} else {
-			return json({ error: 'only pokemon battles are live so far' }, 400);
+			return json({ error: 'only pokemon and card battles are live' }, 400);
 		}
 		match.lastActive = Date.now();
 		await store.setJSON('match:' + matchId, match);
@@ -359,9 +374,71 @@ export default async function handler(req) {
 		const ready = await store.get('ready:' + username);
 		if (ready && Date.now() - ready.ts < CHALLENGE_MS) {
 			await store.setJSON('ready:' + username, null);
-			return json({ matchId: ready.matchId });
+			return json({ matchId: ready.matchId, type: ready.type || 'pokemon' });
 		}
 		return json({ matchId: null });
+	}
+
+	// ---------- live card duel relay (host-authoritative) ----------
+	// config both sides boot from; participants + their friends (spectators) read
+	if (action === 'card-match') {
+		const cm = await store.get('cardmatch:' + String(body.id || ''));
+		if (!cm) return json({ error: 'no such match' }, 404);
+		const isPlayer = cm.host === username || cm.guest === username;
+		if (!isPlayer && !(user.friends.includes(cm.host) || user.friends.includes(cm.guest)))
+			return json({ error: 'not allowed to watch' }, 403);
+		return json({ cardmatch: cm, role: cm.host === username ? 'host' : cm.guest === username ? 'guest' : 'spectator' });
+	}
+
+	// host publishes the authoritative board; also mirrored to cardstate:<host>
+	// so the existing spectation channel can watch a live duel too
+	if (action === 'card-publish') {
+		const id = String(body.id || '');
+		const cm = await store.get('cardmatch:' + id);
+		if (!cm) return json({ error: 'no such match' }, 404);
+		if (cm.host !== username) return json({ error: 'only the host publishes' }, 403);
+		if (body.over) { cm.over = true; cm.winner = body.winner ?? null; await store.setJSON('cardmatch:' + id, cm); }
+		const payload = { snapshot: body.snapshot || null, mode: 'pvp', label: String(body.label || 'Card Duel'), seq: +body.seq || 0, ts: Date.now() };
+		await store.setJSON('cardmatchstate:' + id, payload);
+		await store.setJSON('cardstate:' + username, payload); // spectators
+		await store.setJSON('presence:' + username, {
+			name: username, map: '', x: 0, y: 0, facing: 'down',
+			status: 'card:pvp', region: String(body.label || 'Card Duel'), lastSeen: Date.now(),
+		});
+		return json({ ok: true });
+	}
+
+	// guest/spectator reads the current board
+	if (action === 'card-poll') {
+		const id = String(body.id || '');
+		const cm = await store.get('cardmatch:' + id);
+		if (!cm) return json({ error: 'no such match' }, 404);
+		const cs = await store.get('cardmatchstate:' + id);
+		if (!cs || Date.now() - cs.ts > CARDSTATE_MS) return json({ snapshot: null, over: cm.over, winner: cm.winner });
+		return json({ ...cs, over: cm.over, winner: cm.winner });
+	}
+
+	// guest queues an action intent; the host drains and applies them
+	if (action === 'card-act') {
+		const id = String(body.id || '');
+		const cm = await store.get('cardmatch:' + id);
+		if (!cm) return json({ error: 'no such match' }, 404);
+		if (cm.guest !== username) return json({ error: 'only the guest relays intents' }, 403);
+		const list = (await store.get('cardintent:' + id)) || [];
+		list.push({ intent: body.intent || {}, ts: Date.now() });
+		await store.setJSON('cardintent:' + id, list);
+		return json({ ok: true });
+	}
+
+	// host drains the guest's queued intents (returns + clears them)
+	if (action === 'card-drain') {
+		const id = String(body.id || '');
+		const cm = await store.get('cardmatch:' + id);
+		if (!cm) return json({ error: 'no such match' }, 404);
+		if (cm.host !== username) return json({ error: 'only the host drains' }, 403);
+		const list = (await store.get('cardintent:' + id)) || [];
+		if (list.length) await store.setJSON('cardintent:' + id, []);
+		return json({ intents: list.map(x => x.intent) });
 	}
 
 	// poll a match (participants play; friends may spectate)
