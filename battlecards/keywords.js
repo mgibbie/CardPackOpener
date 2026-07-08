@@ -35,6 +35,7 @@ const K = [
 	{ p: ['Cook'], t: 'Make a Food token — sacrifice it and pay 2 to restore 3 Health to your hero.' },
 	{ p: ['Morbid'], t: 'Morbid N — its effect triggers each time N creatures have died.' },
 	{ p: ['Overload'], t: 'Locks that much of your mana next turn.' },
+	{ p: ['Manathirst'], t: 'Manathirst N — a bonus effect that activates once your mana crystals this turn reach N (whether or not you have spent them).' },
 	{ p: ['Combo'], t: 'A bonus effect if you already played a card this turn.' },
 	{ p: ['Spell Damage'], t: 'Your spells deal extra damage.' },
 	{ p: ['Magnetic'], t: 'Play it left of a friendly Mech to fuse their stats and text.' },

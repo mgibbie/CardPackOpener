@@ -2307,6 +2307,7 @@ function execEffects(state, pi, effects, target, source) {
 			else if (e.if.holdingTribe) ok = p.hand.some(c => (c.tribe || '').includes(e.if.holdingTribe));
 			else if (e.if.handEmpty) ok = p.hand.length === 0;
 			else if (e.if.excavatedTwice) ok = (p.excavateCount || 0) >= 2;
+			else if (e.if.manathirst != null) ok = (p.mana.max || 0) >= e.if.manathirst; // mana crystals this turn, regardless of spend
 			execEffects(state, pi, ok ? e.then : (e.else || []), target, source);
 		} else if (e.type === 'damage-then') {
 			// deal damage, then branch on whether the creature survived

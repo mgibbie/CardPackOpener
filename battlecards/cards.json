@@ -43109,6 +43109,65 @@
           }
         ]
       }
+    },
+    {
+      "id": "consume_magic",
+      "name": "Consume Magic",
+      "cardClass": "demon_hunter",
+      "cost": 1,
+      "rarity": "common",
+      "set": "paper",
+      "description": "Silence target creature. Manathirst(4): Draw a card.",
+      "type": "instant",
+      "tribe": "Shadow",
+      "effects": [
+        {
+          "type": "silence",
+          "target": "creature"
+        },
+        {
+          "type": "conditional",
+          "if": {
+            "manathirst": 4
+          },
+          "then": [
+            {
+              "type": "draw",
+              "value": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "conjured_arrow",
+      "name": "Conjured Arrow",
+      "cardClass": "hunter",
+      "cost": 2,
+      "rarity": "rare",
+      "set": "paper",
+      "description": "Deal 2 damage to any target. (Manathirst 6: Draw 2 cards.)",
+      "type": "instant",
+      "tribe": "Arcane",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 2,
+          "target": "any"
+        },
+        {
+          "type": "conditional",
+          "if": {
+            "manathirst": 6
+          },
+          "then": [
+            {
+              "type": "draw",
+              "value": 2
+            }
+          ]
+        }
+      ]
     }
   ]
 }
