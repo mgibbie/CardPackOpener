@@ -79,6 +79,23 @@ function startingCollection() {
 	return col;
 }
 
+// backfill any starter deck for a class added after the account was created
+// (plus the cards it needs), so a new class shows up for existing players too
+async function ensureStarterDecks(store, username, user) {
+	if (!user.decks) user.decks = {};
+	let changed = false;
+	for (const [cls, deck] of Object.entries(STARTER_DECKS)) {
+		if (Array.isArray(user.decks[cls])) continue;
+		user.decks[cls] = [...deck];
+		const counts = {};
+		for (const id of deck) counts[id] = (counts[id] || 0) + 1;
+		for (const [id, n] of Object.entries(counts)) user.collection[id] = Math.max(user.collection[id] || 0, n);
+		changed = true;
+	}
+	if (changed) await store.setJSON(username, user);
+	return changed;
+}
+
 const WEIGHTS = [['common', 60], ['uncommon', 25], ['rare', 10], ['epic', 4], ['legendary', 1]];
 const RARE_PLUS = [['rare', 75], ['epic', 20], ['legendary', 5]];
 
@@ -206,6 +223,7 @@ export default async function handler(req) {
 	const user = await store.get(username);
 	if (!user) return json({ error: 'account gone' }, 401);
 	await ensureFriendFields(store, username, user); // backfill code/friends
+	await ensureStarterDecks(store, username, user); // backfill new-class starter decks (e.g. Centurion)
 
 	if (action === 'state') return json({ state: publicState(user, username) });
 
