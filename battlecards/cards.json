@@ -42439,7 +42439,7 @@
       "keywords": [
         "battlecry"
       ],
-      "description": "Battlecry: Add a random Nature spell to your hand & summon three random 5-Cost creatures.",
+      "description": "Battlecry: Add a random Nature spell to your hand & Discover three 5-Cost creatures & summon them.",
       "effects": [
         {
           "type": "conjure-random",
@@ -42448,9 +42448,11 @@
           "tribe": "Nature"
         },
         {
-          "type": "summon-random",
+          "type": "discover",
+          "cardType": "creature",
           "cost": 5,
-          "count": 3
+          "count": 3,
+          "to": "board"
         }
       ]
     },
@@ -42535,12 +42537,14 @@
       "keywords": [
         "battlecry"
       ],
-      "description": "Battlecry: Summon two random 8-Cost creatures.",
+      "description": "Battlecry: Discover two 8-Cost creatures & summon them.",
       "effects": [
         {
-          "type": "summon-random",
+          "type": "discover",
+          "cardType": "creature",
           "cost": 8,
-          "count": 2
+          "count": 2,
+          "to": "board"
         }
       ]
     },

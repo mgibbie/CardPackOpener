@@ -2868,7 +2868,7 @@ function execEffects(state, pi, effects, target, source) {
 			if (t) t.medic = (t.medic || 0) + e.value;
 		} else if (e.type === 'discover') {
 			// Discover: pick 1 of 3 random matches; Draft: pick 1 of 5
-			const pool = Object.values(state.cardsById).filter(d => {
+			const discoverPool = () => Object.values(state.cardsById).filter(d => {
 				if (d.type === 'land' || d.token || d.companion || d.commander) return false;
 				if (d.colors && d.colors.length) return false;
 				if (e.cardType === 'spell' ? !isSpellType(d) : (e.cardType && d.type !== e.cardType)) return false;
@@ -2880,12 +2880,16 @@ function execEffects(state, pi, effects, target, source) {
 				if (e.requireKeyword && !(d.keywords || []).includes(e.requireKeyword)) return false;
 				return true;
 			});
-			const ids = [];
-			for (let i = 0; i < (e.pick || 3) && pool.length; i++) {
-				ids.push(pool.splice(Math.floor(state.rng() * pool.length), 1)[0].id);
-			}
-			if (ids.length && !state.players[pi].eliminated) {
-				state.pickQueue.push({ player: pi, ids, grant: e.grant || null, buff: e.buff || null });
+			// `count` queues that many separate Discovers; `to:'board'` summons the pick
+			for (let n = 0; n < (e.count || 1); n++) {
+				if (state.players[pi].eliminated) break;
+				const pool = discoverPool();
+				const ids = [];
+				for (let i = 0; i < (e.pick || 3) && pool.length; i++) {
+					ids.push(pool.splice(Math.floor(state.rng() * pool.length), 1)[0].id);
+				}
+				if (!ids.length) break;
+				state.pickQueue.push({ player: pi, ids, grant: e.grant || null, buff: e.buff || null, to: e.to || null });
 				emit(state, { type: 'pickStart', player: pi, count: ids.length });
 			}
 		} else if (e.type === 'loot') {
@@ -3993,6 +3997,10 @@ export function resolvePick(state, id) {
 				[p.deck[i], p.deck[j]] = [p.deck[j], p.deck[i]];
 			}
 		}
+		return true;
+	}
+	if (def && !p.eliminated && pend.to === 'board') {
+		summon(state, pend.player, def);
 		return true;
 	}
 	if (def && !p.eliminated && p.hand.length < MAX_HAND) {
