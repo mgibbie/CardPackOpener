@@ -4622,7 +4622,7 @@
       "keywords": [
         "pacifist"
       ],
-      "description": "Can't attack. At the end of your turn, deal 8 damage to a random enemy."
+      "description": "Pacifist. At the end of your turn, deal 8 damage to a random enemy."
     },
     {
       "id": "malygos",
@@ -11410,7 +11410,7 @@
       "cost": 3,
       "rarity": "rare",
       "set": "paper",
-      "description": "Battlecry: Target creature gains Lifesteal. Lifesteal & Hexproof.",
+      "description": "Battlecry: Target creature gains Lifesteal. Lifesteal & Elusive.",
       "type": "creature",
       "attack": 3,
       "health": 3,
@@ -11973,7 +11973,7 @@
       "cost": 5,
       "rarity": "legendary",
       "set": "paper",
-      "description": "Hexproof & Castellan. Your opponents have Spell Damage(-1). Deathrattle: Draw a card.",
+      "description": "Elusive & Castellan. Your opponents have Spell Damage(-1). Deathrattle: Draw a card.",
       "type": "creature",
       "attack": 3,
       "health": 3,
@@ -31739,7 +31739,7 @@
       "keywords": [
         "pacifist"
       ],
-      "description": "Can't attack.",
+      "description": "Pacifist.",
       "set": "hsx"
     },
     {
@@ -34132,7 +34132,7 @@
       "keywords": [
         "pacifist"
       ],
-      "description": "Can't attack. Whenever this creature takes damage, deal 3 damage to a random enemy.",
+      "description": "Pacifist. Whenever this creature takes damage, deal 3 damage to a random enemy.",
       "set": "hsx"
     },
     {
@@ -35528,7 +35528,7 @@
       "keywords": [
         "pacifist"
       ],
-      "description": "Can't attack. Whenever an opponent casts a spell, give all your creatures +1/+1.",
+      "description": "Pacifist. Whenever an opponent casts a spell, give all your creatures +1/+1.",
       "set": "hsx"
     },
     {
@@ -38364,7 +38364,7 @@
         "elusive"
       ],
       "ongoing": {
-        "on": "self-attacks-hero",
+        "on": "self-hit-player",
         "effects": [
           {
             "type": "draw",
@@ -38372,7 +38372,7 @@
           }
         ]
       },
-      "description": "Elusive. Whenever this creature deals combat damage to a player, you may draw a card."
+      "description": "Elusive. Connect: Draw a card."
     },
     {
       "id": "sage_s_row_savant",
