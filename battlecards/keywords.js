@@ -24,6 +24,8 @@ const K = [
 	{ p: ['Impulsive'], t: 'Must attack — it swings on its own before your turn ends.', tag: 'impulsive' },
 	{ p: ['Chromatic'], t: 'Its colour boosts roll twice and keep both results.', tag: 'chromatic' },
 	{ p: ['Firebreathing'], t: 'Spend 1 mana any number of times: +1 Attack until end of turn.', tag: 'firebreathing' },
+	{ p: ['Static'], t: '50% chance to Paralyze any creature that survives combat with it.', tag: 'static' },
+	{ p: ['Paralyzed', 'Paralyze'], t: "A Paralyzed creature's attacks fail 50% of the time (coin flip)." },
 	{ p: ['Freeze', 'Frozen', 'Freezer'], t: 'A Frozen character skips its next attack.', tag: 'freezer' },
 	// text-only keywords: no engine tag, but worth explaining where they appear
 	{ p: ['Discover'], t: 'Choose one of three cards to add to your hand.' },

@@ -17,7 +17,15 @@ export const KW = {
 	IMPULSIVE: 'impulsive', // must attack: swings on its own before the turn ends
 	CHROMATIC: 'chromatic', // color boosts roll twice and keep both
 	FIREBREATHING: 'firebreathing', // pay 1 mana any number of times: +1 Attack this turn
+	STATIC: 'static', // 50% chance to Paralyze any creature that survives combat with it
 };
+
+// a Paralyzed creature's attacks fail 50% of the time (coin flip after targeting)
+function maybeParalyze(state, c) {
+	if (!c || c.paralyzed || isDead(c) || state.rng() >= 0.5) return;
+	c.paralyzed = true;
+	emit(state, { type: 'paralyzed', uid: c.uid, name: c.name });
+}
 
 // Firebreathing grants a repeatable activated ability (spend 1 mana → +1 Attack
 // until end of turn). Injected onto any creature that carries the keyword.
@@ -194,6 +202,7 @@ function instantiate(def, controller) {
 		stealthed: (def.keywords || []).includes(KW.STEALTH),
 		shield: (def.keywords || []).includes(KW.DIVINE_SHIELD),
 		marked: false, // mark_target
+		paralyzed: false, // attacks fail 50% of the time (from a Static creature)
 	};
 	// Firebreathing creatures gain the repeatable "pay 1: +1 Attack" ability
 	if (card.keywords.includes(KW.FIREBREATHING)) {
@@ -3447,6 +3456,12 @@ export function attack(state, pi, attackerUid, target) {
 	attacker.attacksUsed++;
 	attacker.stealthed = false;
 	emit(state, { type: 'attack', attackerUid, target });
+	// Paralyzed: the target is chosen, but the swing fails on a coin flip
+	if (attacker.paralyzed && state.rng() < 0.5) {
+		emit(state, { type: 'attackFizzled', attackerUid, name: attacker.name });
+		sweepDeaths(state);
+		return true;
+	}
 	// Sanguine: attacking (or being attacked, below) banks a Blood Token
 	if (has(attacker, KW.SANGUINE)) gainBloodToken(state, pi);
 	if (target.type === 'creature') {
@@ -3512,6 +3527,9 @@ export function attack(state, pi, attackerUid, target) {
 			strike(attacker, defender);
 			strike(defender, attacker);
 		}
+		// Static: 50% chance to Paralyze whichever combatant survives against it
+		if (has(attacker, KW.STATIC)) maybeParalyze(state, defender);
+		if (has(defender, KW.STATIC)) maybeParalyze(state, attacker);
 		// cleave: the hit splashes onto the defender's board neighbors
 		if (has(attacker, KW.CLEAVE)) {
 			const db = state.players[target.player].board;

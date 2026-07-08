@@ -1223,6 +1223,8 @@ function nextEvent() {
 		}
 		case 'marked': floatText('☠', '#ffd25f', creaturePos(ev.uid)); delay = 220; break;
 		case 'freeze': floatText('❄', '#7fd8ff', creaturePos(ev.uid)); delay = 260; break;
+		case 'paralyzed': floatText('⚡', '#c9a0ff', creaturePos(ev.uid)); log(`${ev.name} is Paralyzed!`); delay = 300; break;
+		case 'attackFizzled': floatText('MISS', '#c9a0ff', creaturePos(ev.attackerUid)); log(`${ev.name}'s attack fizzled (Paralyzed)!`); delay = 320; break;
 		case 'thaw': floatText('❄', '#4a6a7a', creaturePos(ev.uid)); delay = 140; break;
 		case 'silenced': {
 			floatText('✕', '#9b93b3', creaturePos(ev.uid));
@@ -1597,6 +1599,8 @@ function updateTooltip(ev) {
 	if (card.type === 'planeswalker') extra = `<div class="tt-sub">Loyalty ${card.loyalty}</div>`;
 	if (card.type === 'quest' && card.quest) extra = `<div class="tt-sub">Progress ${card.progress || 0} / ${card.quest.goal.count}</div>`;
 	if (card.quickdrawn) extra += `<div class="tt-sub">Quickdrawn — returns to your deck at end of turn</div>`;
+	if (card.paralyzed) extra += `<div class="tt-sub">⚡ Paralyzed — its attacks fail 50% of the time</div>`;
+	if (card.frozen) extra += `<div class="tt-sub">❄ Frozen — can't attack next turn</div>`;
 	tip.innerHTML = `<div class="tt-name">${card.name}</div><div class="tt-type">${typeLine}</div>`
 		+ `<div class="tt-desc">${richHtml(card.description || '')}</div>` + extra + keywordLinesHtml(card);
 	tip.style.display = 'block';
@@ -2080,8 +2084,9 @@ function updateRings() {
 		} else {
 			ent.ring.visible = false;
 		}
-		// frozen creatures glow ice-blue
+		// frozen creatures glow ice-blue; paralyzed ones flicker violet
 		if (c.frozen && c.zone === 'board') ent.faceMat.emissive?.set(0x1a3d55);
+		else if (c.paralyzed && c.zone === 'board') ent.faceMat.emissive?.set(0x35225a);
 		else ent.faceMat.emissive?.set(color && c.zone === 'hand' ? 0x1c4a1c : 0x000000);
 	}
 }

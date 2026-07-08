@@ -9703,7 +9703,8 @@
       "health": 7,
       "tribe": "Wall",
       "keywords": [
-        "defender"
+        "defender",
+        "static"
       ]
     },
     {
@@ -20376,7 +20377,8 @@
         "firebreathing",
         "impulsive",
         "taunt",
-        "elusive"
+        "elusive",
+        "static"
       ],
       "deathrattle": [
         {
@@ -20566,7 +20568,8 @@
       "health": 1,
       "tribe": "Goblin Explorer",
       "keywords": [
-        "deathrattle"
+        "deathrattle",
+        "static"
       ],
       "deathrattle": [
         {
