@@ -2,7 +2,7 @@
 // Card faces come from the shared procedural renderer; rules text appears in
 // a hover tooltip, and rules-cards carry a CSS-animated iridescent gem.
 import { drawCardFace, classNameOf, artListeners } from './cardart.js';
-import { keywordsFor } from './keywords.js';
+import { keywordsFor, richHtml } from './keywords.js';
 
 // small keyword-explanation lines shown beneath a card's rules text
 function keywordLinesHtml(card) {
@@ -94,7 +94,7 @@ function tileFor(card) {
 	if (!TOUCH) {
 		tile.addEventListener('pointermove', ev => {
 			tip.innerHTML = `<div class="tt-name">${card.name}</div><div class="tt-type">${typeLineOf(card)}</div>`
-				+ `<div class="tt-desc">${card.description || ''}</div>` + keywordLinesHtml(card);
+				+ `<div class="tt-desc">${richHtml(card.description || '')}</div>` + keywordLinesHtml(card);
 			tip.style.display = 'block';
 			tip.style.left = `${Math.min(ev.clientX + 18, innerWidth - 290)}px`;
 			tip.style.top = `${Math.min(ev.clientY + 14, innerHeight - tip.offsetHeight - 12)}px`;
@@ -127,7 +127,7 @@ function openZoom(card) {
 	$('zoom-info').innerHTML = `<div class="z-name">${card.name}</div>`
 		+ `<div class="z-type">${typeLineOf(card)}</div>`
 		+ `<div class="z-stats">${stats.join(' · ')}</div>`
-		+ `<div class="z-desc">${card.description || '<i>No rules text.</i>'}</div>`
+		+ `<div class="z-desc">${card.description ? richHtml(card.description) : '<i>No rules text.</i>'}</div>`
 		+ keywordLinesHtml(card)
 		+ `<div class="z-owned">${owned ? `You own x${owned}` : 'Not in your collection yet'}</div>`;
 	$('zoom').classList.add('open');

@@ -68,6 +68,60 @@ export function segmentKeywords(text) {
 	return segs.length ? segs : [{ text, bold: false }];
 }
 
+// ---------- inline mana / tap symbols ----------
+// rules text stores them as plain tokens: '⟳' (tap) and '(W)/(U)/(B)/(R)/(G)/(N)'
+// (coloured mana / generic). We render them as little coloured pips.
+export const SYM = {
+	tap: { label: '⟳', bg: '#4a4a52', fg: '#f5f5f7', ring: '#26262c' },
+	W: { label: 'W', bg: '#f6f0cf', fg: '#3a3416', ring: '#c7bf8c' },
+	U: { label: 'U', bg: '#2f80d6', fg: '#eef6ff', ring: '#175a9c' },
+	B: { label: 'B', bg: '#453c50', fg: '#e9e2f2', ring: '#1f1a26' },
+	R: { label: 'R', bg: '#d8462f', fg: '#fff0ec', ring: '#9c2a1a' },
+	G: { label: 'G', bg: '#41ab61', fg: '#eefff2', ring: '#237c42' },
+	C: { label: 'C', bg: '#bbb4a6', fg: '#2a271f', ring: '#8a857a' },
+};
+const SYM_RE = /⟳|\((W|U|B|R|G|C|\d+)\)/g;
+
+// ordered word / symbol tokens; words carry the keyword bold flag, symbols carry
+// a SYM key + label. Drives both the canvas card face and the HTML tooltips.
+export function richTokens(text) {
+	const out = [];
+	const pushWords = (t, bold) => { for (const w of t.split(/\s+/)) if (w) out.push({ kind: 'word', text: w, bold }); };
+	for (const seg of segmentKeywords(text || '')) {
+		let last = 0, m;
+		SYM_RE.lastIndex = 0;
+		while ((m = SYM_RE.exec(seg.text))) {
+			if (m.index > last) pushWords(seg.text.slice(last, m.index), seg.bold);
+			if (m[0] === '⟳') out.push({ kind: 'sym', key: 'tap', label: SYM.tap.label });
+			else if (SYM[m[1]]) out.push({ kind: 'sym', key: m[1], label: m[1] });
+			else out.push({ kind: 'sym', key: 'N', label: m[1] }); // generic number
+			last = m.index + m[0].length;
+		}
+		if (last < seg.text.length) pushWords(seg.text.slice(last), seg.bold);
+	}
+	return out;
+}
+
+const _esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+export function pipHtml(tok) {
+	const s = SYM[tok.key === 'N' ? 'C' : tok.key] || SYM.C;
+	return `<span style="display:inline-block;min-width:14px;height:16px;line-height:16px;padding:0 3px;margin:0 1px;border-radius:8px;background:${s.bg};color:${s.fg};border:1px solid ${s.ring};font:700 10px 'Segoe UI Symbol','Segoe UI',sans-serif;text-align:center;vertical-align:-3px;">${_esc(tok.label)}</span>`;
+}
+const PUNCT = /^[,.;:!?)%]/;
+// rules text as HTML with keyword <b> and inline symbol pips
+export function richHtml(text) {
+	let html = '';
+	const toks = richTokens(text);
+	for (let i = 0; i < toks.length; i++) {
+		const tk = toks[i];
+		const punct = tk.kind === 'word' && PUNCT.test(tk.text);
+		if (i > 0 && !punct) html += ' ';
+		if (tk.kind === 'sym') html += pipHtml(tk);
+		else html += tk.bold ? `<b>${_esc(tk.text)}</b>` : _esc(tk.text);
+	}
+	return html;
+}
+
 // keyword explanations for a card: its engine tags first, then any phrase found
 // in its rules text — deduped, in reading order
 export function keywordsFor(card) {

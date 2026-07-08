@@ -7,7 +7,7 @@ import * as Col from './collection.js';
 import * as Dungeon from './dungeon.js';
 import * as MPX from './mpmode.js';
 import * as Chat from './chat.js';
-import { keywordsFor } from './keywords.js';
+import { keywordsFor, richHtml } from './keywords.js';
 
 // small "what does this keyword do" lines shown beneath a card's rules text
 function keywordLinesHtml(card) {
@@ -1598,7 +1598,7 @@ function updateTooltip(ev) {
 	if (card.type === 'quest' && card.quest) extra = `<div class="tt-sub">Progress ${card.progress || 0} / ${card.quest.goal.count}</div>`;
 	if (card.quickdrawn) extra += `<div class="tt-sub">Quickdrawn — returns to your deck at end of turn</div>`;
 	tip.innerHTML = `<div class="tt-name">${card.name}</div><div class="tt-type">${typeLine}</div>`
-		+ `<div class="tt-desc">${card.description || ''}</div>` + extra + keywordLinesHtml(card);
+		+ `<div class="tt-desc">${richHtml(card.description || '')}</div>` + extra + keywordLinesHtml(card);
 	tip.style.display = 'block';
 	tip.style.left = `${Math.min(ev.clientX + 18, innerWidth - 290)}px`;
 	tip.style.top = `${Math.min(ev.clientY + 14, innerHeight - tip.offsetHeight - 12)}px`;
@@ -2783,8 +2783,9 @@ function showMiniTip(def, x, y) {
 	const typeLabel = def.type === 'heropower' ? 'Hero Power' : def.type;
 	// hero-power descriptions often repeat "Hero Power (N):" — the header
 	// already shows the cost and label, so strip that redundant prefix
-	let desc = def.description || '<i>No rules text.</i>';
-	if (def.type === 'heropower') desc = desc.replace(/^Hero Power\s*\(\d+\)\s*:\s*/i, '');
+	let desc = def.description
+		? richHtml(def.type === 'heropower' ? def.description.replace(/^Hero Power\s*\(\d+\)\s*:\s*/i, '') : def.description)
+		: '<i>No rules text.</i>';
 	const kwLines = keywordsFor(def).map(k =>
 		`<div style="margin-top:5px;padding-top:5px;border-top:1px solid rgba(255,255,255,0.12);font-size:11.5px;line-height:1.3;"><b style="color:#9fd0ff;">${k.label}</b> <span style="opacity:0.85;">${k.text}</span></div>`).join('');
 	miniTip.innerHTML = `<div style="font-weight:bold;color:#cbb8ff;margin-bottom:3px;">${def.name}</div>`

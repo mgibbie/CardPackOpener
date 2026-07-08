@@ -4,7 +4,7 @@ import * as THREE from 'three';
 import { CARD_W, CARD_H, CARD_D, makeFaceTexture, makeBackTexture, RARITY_COLORS } from './cardart.js';
 import * as Col from './collection.js';
 import * as MPX from './mpmode.js';
-import { keywordsFor } from './keywords.js';
+import { keywordsFor, richHtml } from './keywords.js';
 
 // test-realm mode: packs are earned from dungeon runs and rolled server-side
 const MP_ON = MPX.mpMode();
@@ -323,7 +323,7 @@ function tipHtml(def) {
 	return `<div style="font-weight:700;font-size:15px">${esc(def.name)} <span style="color:#ffd25f">(${def.cost ?? 0})</span></div>`
 		+ `<div style="color:#c9b8ff;font-size:12px;text-transform:capitalize">${esc(def.rarity || 'common')}${cls}${stat}</div>`
 		+ kw
-		+ (def.description ? `<div style="margin-top:5px">${esc(def.description)}</div>` : '')
+		+ (def.description ? `<div style="margin-top:5px">${richHtml(def.description)}</div>` : '')
 		+ kwLines;
 }
 function hoveredCard(e) {

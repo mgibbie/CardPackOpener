@@ -5,7 +5,7 @@
 // printed in a tan text box (keywords bold); the gallery shows an owned-copies
 // badge in the top-left corner.
 import * as THREE from 'three';
-import { segmentKeywords } from './keywords.js';
+import { richTokens, SYM } from './keywords.js';
 
 export const CARD_W = 2.5, CARD_H = 3.5, CARD_D = 0.02;
 
@@ -275,37 +275,55 @@ function statPlate(ctx, cx, cy, r, color, text, textColor = '#fff') {
 	ctx.textBaseline = 'alphabetic';
 }
 
-// wrap segmented rules text (keyword runs bold) as black text inside a box,
-// shrinking the font until it fits and centring it vertically
+// wrap rules text (keyword runs bold, inline mana/tap pips) as black text inside
+// a box, shrinking the font until it fits and centring it vertically
 const _meas = document.createElement('canvas').getContext('2d');
-function drawRulesText(ctx, segs, x, y, w, h) {
-	const words = [];
-	for (const s of segs) for (const wd of s.text.split(/\s+/)) if (wd) words.push({ t: wd, bold: s.bold });
+function drawPip(ctx, tok, cx, cy, size) {
+	const s = SYM[tok.key === 'N' ? 'C' : tok.key] || SYM.C;
+	const r = size * 0.56;
+	ctx.beginPath();
+	ctx.arc(cx, cy, r, 0, Math.PI * 2);
+	ctx.fillStyle = s.bg;
+	ctx.fill();
+	ctx.lineWidth = Math.max(1.5, size * 0.08);
+	ctx.strokeStyle = s.ring;
+	ctx.stroke();
+	ctx.fillStyle = s.fg;
+	ctx.font = `bold ${Math.round(size * 0.78)}px 'Segoe UI Symbol', 'Segoe UI', Georgia, sans-serif`;
+	ctx.textAlign = 'center';
+	ctx.textBaseline = 'middle';
+	ctx.fillText(tok.label, cx, cy + size * 0.04);
+	ctx.textAlign = 'left';
+	ctx.textBaseline = 'top';
+}
+function drawRulesText(ctx, tokens, x, y, w, h) {
 	const F = (size, b) => `${b ? 'bold ' : ''}${size}px Georgia`;
+	const noSpace = t => /^[,.;:!?)%]/.test(t);
 	ctx.textAlign = 'left';
 	ctx.textBaseline = 'top';
 	ctx.fillStyle = '#141018';
 	for (let size = 23; size >= 11; size--) {
-		const lineH = Math.round(size * 1.22), spaceW = size * 0.3;
-		const noSpace = t => /^[,.;:!?)%]/.test(t); // no space before trailing punctuation
+		const lineH = Math.round(size * 1.22), spaceW = size * 0.3, pipW = size * 1.24;
+		const widthOf = tk => { if (tk.kind === 'sym') return pipW; _meas.font = F(size, tk.bold); return _meas.measureText(tk.text).width; };
 		const lines = [[]]; let lineW = 0;
-		for (const wd of words) {
-			_meas.font = F(size, wd.bold);
-			const ww = _meas.measureText(wd.t).width;
+		for (const tk of tokens) {
+			const iw = widthOf(tk);
 			const cur = lines[lines.length - 1];
-			const need = (cur.length && !noSpace(wd.t) ? spaceW : 0) + ww;
-			if (lineW + need > w && cur.length) { lines.push([{ t: wd.t, bold: wd.bold }]); lineW = ww; }
-			else { cur.push({ t: wd.t, bold: wd.bold }); lineW += need; }
+			const punct = tk.kind === 'word' && noSpace(tk.text);
+			const need = (cur.length && !punct ? spaceW : 0) + iw;
+			if (lineW + need > w && cur.length) { lines.push([tk]); lineW = iw; }
+			else { cur.push(tk); lineW += need; }
 		}
 		if (lines.length * lineH > h) continue;
 		let ly = y + Math.max(0, (h - lines.length * lineH) / 2);
 		for (const line of lines) {
 			let lx = x;
 			for (let i = 0; i < line.length; i++) {
-				ctx.font = F(size, line[i].bold);
-				if (i && !noSpace(line[i].t)) lx += spaceW;
-				ctx.fillText(line[i].t, lx, ly);
-				lx += ctx.measureText(line[i].t).width;
+				const tk = line[i];
+				const punct = tk.kind === 'word' && noSpace(tk.text);
+				if (i && !punct) lx += spaceW;
+				if (tk.kind === 'sym') { drawPip(ctx, tk, lx + size * 0.56, ly + size * 0.5, size); lx += pipW; }
+				else { ctx.font = F(size, tk.bold); ctx.fillStyle = '#141018'; ctx.fillText(tk.text, lx, ly); lx += ctx.measureText(tk.text).width; }
 			}
 			ly += lineH;
 		}
@@ -415,7 +433,7 @@ export function drawCardFace(card, opts = {}) {
 	roundRect(ctx, rbX, rbY, rbW, rbH, 16);
 	ctx.stroke();
 	if (hasRules(card)) {
-		drawRulesText(ctx, segmentKeywords((card.description || '').trim()), rbX + 16, rbY + 12, rbW - 32, rbH - 22);
+		drawRulesText(ctx, richTokens((card.description || '').trim()), rbX + 16, rbY + 12, rbW - 32, rbH - 22);
 	}
 
 	// mana cost gem — TOP RIGHT now (drawn late so it sits over the frame)
