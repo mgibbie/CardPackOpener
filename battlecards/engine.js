@@ -2158,6 +2158,19 @@ function execEffects(state, pi, effects, target, source) {
 			}
 		} else if (e.type === 'damage-self') {
 			if (source && source.zone === 'board' && !isDead(source)) damageCreature(state, source, e.value, null);
+		} else if (e.type === 'pay-or-sacrifice') {
+			// "sacrifice this unless you pay N": pay from leftover mana if able, else destroy the source
+			const pp = state.players[pi];
+			if (source && source.zone === 'board' && !isDead(source)) {
+				if (availableMana(pp) >= (e.value || 0)) {
+					spendMana(pp, e.value || 0);
+					emit(state, { type: 'paidUpkeep', player: pi, amount: e.value || 0, uid: source.uid });
+				} else {
+					source.damage = source.maxHealth;
+					source.shield = false;
+					emit(state, { type: 'destroy', uid: source.uid });
+				}
+			}
 		} else if (e.type === 'heal-full') {
 			const t = chosenCreature();
 			if (t && t.damage > 0) healCreature(t, t.damage);
@@ -2330,6 +2343,7 @@ function execEffects(state, pi, effects, target, source) {
 			else if (e.if.excavatedTwice) ok = (p.excavateCount || 0) >= 2;
 			else if (e.if.manathirst != null) ok = (p.mana.max || 0) >= e.if.manathirst; // mana crystals this turn, regardless of spend
 			else if (e.if.finale) ok = availableMana(p) === 0; // you spent all your mana playing this card
+			else if (e.if.noFriendlyDeaths) ok = (p.diedThisTurn || 0) === 0;
 			execEffects(state, pi, ok ? e.then : (e.else || []), target, source);
 		} else if (e.type === 'damage-then') {
 			// deal damage, then branch on whether the creature survived

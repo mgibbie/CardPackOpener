@@ -43626,6 +43626,49 @@
           ]
         }
       ]
+    },
+    {
+      "id": "morkrut_behemoth",
+      "name": "Morkrut Behemoth",
+      "cardClass": "neutral",
+      "cost": 5,
+      "rarity": "common",
+      "set": "paper",
+      "description": "Avenge 1: Gain Divine Shield. At the end of your turn, if no creatures you control died this turn, sacrifice this creature unless you pay 3.",
+      "type": "creature",
+      "attack": 7,
+      "health": 6,
+      "tribe": "Undead Giant",
+      "ongoings": [
+        {
+          "on": "friendly-creature-died",
+          "every": 1,
+          "effects": [
+            {
+              "type": "grant",
+              "keyword": "divine_shield",
+              "target": "self"
+            }
+          ]
+        }
+      ],
+      "ongoing": {
+        "on": "turn-end",
+        "effects": [
+          {
+            "type": "conditional",
+            "if": {
+              "noFriendlyDeaths": true
+            },
+            "then": [
+              {
+                "type": "pay-or-sacrifice",
+                "value": 3
+              }
+            ]
+          }
+        ]
+      }
     }
   ]
 }
