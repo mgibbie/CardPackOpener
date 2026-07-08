@@ -43168,6 +43168,44 @@
           ]
         }
       ]
+    },
+    {
+      "id": "hardcore_cultist",
+      "name": "Hardcore Cultist",
+      "cardClass": "death_knight",
+      "cost": 2,
+      "rarity": "common",
+      "set": "paper",
+      "description": "( Runes: (U) ) Battlecry: Deal 2 damage to any target. Finale: Deal 2 damage to all enemies instead.",
+      "type": "creature",
+      "attack": 2,
+      "health": 1,
+      "tribe": "Undead Cultist",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "finale": true
+          },
+          "then": [
+            {
+              "type": "damage",
+              "value": 2,
+              "target": "enemies"
+            }
+          ],
+          "else": [
+            {
+              "type": "damage",
+              "value": 2,
+              "target": "any"
+            }
+          ]
+        }
+      ]
     }
   ]
 }

@@ -37,6 +37,7 @@ const K = [
 	{ p: ['Overload'], t: 'Locks that much of your mana next turn.' },
 	{ p: ['Manathirst'], t: 'Manathirst N — a bonus effect that activates once your mana crystals this turn reach N (whether or not you have spent them).' },
 	{ p: ['Combo'], t: 'A bonus effect if you already played a card this turn.' },
+	{ p: ['Finale'], t: 'A bonus effect that happens if you spent all your remaining mana to play this card.' },
 	{ p: ['Spell Damage'], t: 'Your spells deal extra damage.' },
 	{ p: ['Magnetic'], t: 'Play it left of a friendly Mech to fuse their stats and text.' },
 	{ p: ['Inspire'], t: 'Triggers after you use your Hero Power.' },
