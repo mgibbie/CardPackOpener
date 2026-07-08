@@ -38028,7 +38028,7 @@
         "first_strike"
       ],
       "ongoing": {
-        "on": "self-attacks-hero",
+        "on": "self-hit-player",
         "effects": [
           {
             "type": "summon",
@@ -38039,7 +38039,7 @@
           }
         ]
       },
-      "description": "First Strike. Whenever this creature deals combat damage to a player, create a 1/1 white Soldier creature token."
+      "description": "First Strike. Connect: Create a 1/1 white Soldier creature token."
     },
     {
       "id": "soul_warden",
