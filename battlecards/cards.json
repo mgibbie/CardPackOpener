@@ -3965,13 +3965,13 @@
       "cost": 2,
       "rarity": "rare",
       "set": "paper",
-      "description": "Can't Attack. Defender. Inspire: Luck: Draw a card.",
+      "description": "Pacifist. Inspire: Luck: Draw a card.",
       "type": "creature",
       "attack": 4,
       "health": 5,
       "tribe": "Undead Totem",
       "keywords": [
-        "defender"
+        "pacifist"
       ],
       "ongoing": {
         "on": "hero-power-used",
@@ -11401,7 +11401,10 @@
       "type": "creature",
       "attack": 2,
       "health": 3,
-      "tribe": "Pandaren Ninja"
+      "tribe": "Pandaren Ninja",
+      "keywords": [
+        "firebreathing"
+      ]
     },
     {
       "id": "ethereal_escort",
@@ -11651,11 +11654,16 @@
       "cost": 4,
       "rarity": "rare",
       "set": "paper",
-      "description": "Lifesteal, Hexproof & Tradeable.",
+      "description": "Lifesteal, Elusive & Tradeable.",
       "type": "creature",
       "attack": 3,
       "health": 2,
-      "tribe": "Faerie Demon Beast"
+      "tribe": "Faerie Demon Beast",
+      "keywords": [
+        "lifesteal",
+        "elusive"
+      ],
+      "tradeable": true
     },
     {
       "id": "mistweaver_champion",
@@ -12262,7 +12270,10 @@
       "type": "creature",
       "attack": 9,
       "health": 9,
-      "tribe": "Dragon Hydra"
+      "tribe": "Dragon Hydra",
+      "keywords": [
+        "firebreathing"
+      ]
     },
     {
       "id": "darksteel_hydra",
@@ -12357,7 +12368,10 @@
       "type": "creature",
       "attack": 12,
       "health": 12,
-      "tribe": "Dragon"
+      "tribe": "Dragon",
+      "keywords": [
+        "firebreathing"
+      ]
     },
     {
       "id": "sindragosa_s_wing",
@@ -12741,7 +12755,10 @@
       "type": "creature",
       "attack": 1,
       "health": 3,
-      "tribe": "Mandran Sorcerer Rogue"
+      "tribe": "Mandran Sorcerer Rogue",
+      "keywords": [
+        "firebreathing"
+      ]
     },
     {
       "id": "prosthetic_hand",
@@ -13630,7 +13647,10 @@
             "value": 3
           }
         ]
-      }
+      },
+      "keywords": [
+        "firebreathing"
+      ]
     },
     {
       "id": "gogogo_goram",
@@ -18681,7 +18701,8 @@
       "tribe": "Dragon",
       "keywords": [
         "battlecry",
-        "deathrattle"
+        "deathrattle",
+        "firebreathing"
       ],
       "effects": [
         {
@@ -20339,7 +20360,7 @@
       "cost": 7,
       "rarity": "legendary",
       "set": "paper",
-      "description": "Firebreathing, Impulsive, Static, Hexproof & Taunt. Your Spirits cost 1 less. Deathrattle: Draft a Spirit.",
+      "description": "Firebreathing, Impulsive, Static, Elusive & Taunt. Your Spirits cost 1 less. Deathrattle: Draft a Spirit.",
       "type": "creature",
       "attack": 4,
       "health": 4,
@@ -20351,7 +20372,11 @@
         "tribe": "Spirit"
       },
       "keywords": [
-        "deathrattle"
+        "deathrattle",
+        "firebreathing",
+        "impulsive",
+        "taunt",
+        "elusive"
       ],
       "deathrattle": [
         {

@@ -16,6 +16,15 @@ export const KW = {
 	SANGUINE: 'sanguine',   // attacking or being attacked banks a Blood Token
 	IMPULSIVE: 'impulsive', // must attack: swings on its own before the turn ends
 	CHROMATIC: 'chromatic', // color boosts roll twice and keep both
+	FIREBREATHING: 'firebreathing', // pay 1 mana any number of times: +1 Attack this turn
+};
+
+// Firebreathing grants a repeatable activated ability (spend 1 mana → +1 Attack
+// until end of turn). Injected onto any creature that carries the keyword.
+const FIREBREATHING_ABILITY = {
+	cost: 1, repeatable: true,
+	effects: [{ type: 'temp-buff-self', attack: 1 }],
+	text: '+1 Attack this turn (repeatable)',
 };
 // KW.DEFENDER now means the PAPER keyword: a coin-flip chance to redirect
 // attacks against your other permanents onto this creature.
@@ -111,7 +120,7 @@ let nextUid = 1;
 
 // ---------- card instances ----------
 function instantiate(def, controller) {
-	return {
+	const card = {
 		uid: nextUid++,
 		id: def.id,
 		name: def.name,
@@ -186,6 +195,11 @@ function instantiate(def, controller) {
 		shield: (def.keywords || []).includes(KW.DIVINE_SHIELD),
 		marked: false, // mark_target
 	};
+	// Firebreathing creatures gain the repeatable "pay 1: +1 Attack" ability
+	if (card.keywords.includes(KW.FIREBREATHING)) {
+		card.activated = [...(card.activated || []), { ...FIREBREATHING_ABILITY }];
+	}
+	return card;
 }
 
 const TOKENS = {
@@ -1185,10 +1199,10 @@ export function canActivate(state, pi, card, i) {
 	if (state.over || state.current !== pi) return false;
 	const p = state.players[pi];
 	if (!p.board.includes(card) || isDead(card) || !card.activated) return false;
-	if (card.abilityUsedThisTurn) return false;
 	if (card.frozen || card.dormantLeft > 0) return false;
 	const a = card.activated[i];
 	if (!a) return false;
+	if (card.abilityUsedThisTurn && !a.repeatable) return false; // repeatable abilities (Firebreathing) ignore the once/turn gate
 	if ((a.cost || 0) > availableMana(p)) return false;
 	if (a.discardRandom && p.hand.length === 0) return false;
 	if (a.payLife && p.life <= a.payLife) return false;
@@ -1212,7 +1226,7 @@ export function activateAbility(state, pi, cardUid, i, target) {
 	if (ward?.mana && availableMana(p) < (a.cost || 0) + ward.mana) return false;
 	if (ward) payWard(state, pi, target);
 	spendMana(p, a.cost || 0);
-	card.abilityUsedThisTurn = true;
+	if (!a.repeatable) card.abilityUsedThisTurn = true;
 	if (a.payLife) { p.life -= a.payLife; emit(state, { type: 'damage', targetType: 'hero', player: pi, amount: a.payLife, life: p.life }); }
 	if (a.discardRandom && p.hand.length) {
 		const c = p.hand[Math.floor(state.rng() * p.hand.length)];

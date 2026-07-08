@@ -23,6 +23,7 @@ const K = [
 	{ p: ['Sanguine'], t: 'Banks a Blood Token whenever it attacks or is attacked.', tag: 'sanguine' },
 	{ p: ['Impulsive'], t: 'Must attack — it swings on its own before your turn ends.', tag: 'impulsive' },
 	{ p: ['Chromatic'], t: 'Its colour boosts roll twice and keep both results.', tag: 'chromatic' },
+	{ p: ['Firebreathing'], t: 'Spend 1 mana any number of times: +1 Attack until end of turn.', tag: 'firebreathing' },
 	{ p: ['Freeze', 'Frozen', 'Freezer'], t: 'A Frozen character skips its next attack.', tag: 'freezer' },
 	// text-only keywords: no engine tag, but worth explaining where they appear
 	{ p: ['Discover'], t: 'Choose one of three cards to add to your hand.' },
