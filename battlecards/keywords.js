@@ -46,6 +46,7 @@ const K = [
 	{ p: ['Magnetic'], t: 'Play it left of a friendly Mech to fuse their stats and text.' },
 	{ p: ['Inspire'], t: 'Triggers after you use your Hero Power.' },
 	{ p: ['Secret'], t: "Stays hidden until its trigger fires on the opponent's turn." },
+	{ p: ['Counter target spell', 'Counter'], t: 'When an opponent casts a spell, you may play this in response from your hand to counter it — it goes on the stack and is stopped before it resolves.' },
 	{ p: ['Tradeable'], t: 'Drag it onto your deck to pay 1 and draw a card.' },
 	{ p: ['Connect'], t: 'Triggers when this deals combat damage to the enemy hero.' },
 	{ p: ['Swing'], t: 'Triggers when this attacks.' },

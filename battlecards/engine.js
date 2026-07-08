@@ -181,6 +181,7 @@ function instantiate(def, controller) {
 		condKeyword: def.condKeyword || null, // { keyword, while: 'weapon' } (Southsea Deckhand)
 		honorableKill: def.honorableKill || null, // effects on an EXACT lethal blow
 		emerge: def.emerge || null,   // fires from hand when drawn/discovered (not opening hand)
+		counterSpell: !!def.counterSpell, // instant that counters a spell on the stack
 		ongoings: def.ongoings ? JSON.parse(JSON.stringify(def.ongoings)) : null, // combined triggers
 		medic: def.medic || 0,        // heals adjacent creatures N at end of turn
 		sac: def.sac || null,         // field-token activation: { cost, discard?, effects }
@@ -325,6 +326,8 @@ export function createGame(cardsById, rng = Math.random, playerDeckIds = null, p
 		discardQueue: [], // pending Loot discards: { player, count }
 		pickQueue: [],  // pending Discover/Draft picks: { player, ids, grant }
 		dredgeQueue: [], // pending Dredge decisions: { player, ids } (bottom-of-deck)
+		stack: [],       // spells awaiting resolution while opponents may Counter
+		respondQueue: [], // pending Counter windows: { player, stackUid }
 		plane: null,    // the active MTG plane (shared arena state; null until first Planeshift)
 	};
 	if (playerDeck) state.players[0].deck = playerDeck;
@@ -3608,27 +3611,17 @@ export function playCard(state, pi, cardUid, target, choice, position) {
 		questTick(state, 'spell', pi);
 		p.spellsPlayedThisTurn++;
 		p.spellsPlayedTotal = (p.spellsPlayedTotal || 0) + 1; // Arcane Giant
-		// Spellbender may retarget mid-cast by mutating ctx.target
-		const ctx = { spell: card, countered: false, target };
-		fireSecretsAll(state, pi, 'enemy-spell-cast', ctx);
-		if (ctx.countered) emit(state, { type: 'countered', player: pi, name: card.name });
-		else {
-			state.exactKills = 0;
-			runSpell(state, pi, card, ctx.target, choice);
-			// Honorable Kill on spells: the spell's damage scored an exact lethal
-			if (card.honorableKill && state.exactKills > 0) {
-				emit(state, { type: 'honorableKill', player: pi });
-				execEffects(state, pi, card.honorableKill, ctx.target, card);
-			}
-			// carry the spell so school-filtered triggers ("after you cast a
-			// Frost spell") can match via the ongoing `if: { tribe: 'Frost' }` cond
-			fireOngoing(state, pi, 'spell-played', { played: card });
-			for (let s2 = 0; s2 < state.players.length; s2++) {
-				fireOngoing(state, s2, 'any-spell-played', { spell: card, caster: pi }); // Lorewalker Cho
-				if (s2 !== pi) fireOngoing(state, s2, 'enemy-spell-played', { spell: card, caster: pi }); // Burgly Bully
-			}
+		// The Stack: if an opponent holds a Counter they can afford, the spell waits
+		// on the stack for their response; otherwise it resolves at once (common path).
+		const entry = { uid: nextUid++, card, caster: pi, target, choice };
+		const responders = counterResponders(state, pi);
+		if (responders.length) {
+			state.stack.push(entry);
+			emit(state, { type: 'stackPush', player: pi, uid: entry.uid, card });
+			for (const r of responders) state.respondQueue.push({ player: r, stackUid: entry.uid });
+		} else {
+			resolveStackedSpell(state, entry);
 		}
-		toGraveyard(state, pi, card);
 	}
 	// Echo: a ghost copy slips into hand, playable until the turn ends
 	if (card.echo && !p.eliminated && p.hand.length < MAX_HAND && !state.over) {
@@ -3660,6 +3653,89 @@ export function playCard(state, pi, cardUid, target, choice, position) {
 	// counted AFTER resolution so Combo sees only cards played EARLIER this turn
 	p.cardsPlayedThisTurn++;
 	sweepDeaths(state);
+	return true;
+}
+
+// resolve a spell that was on the stack (or cast directly): secrets, effects, triggers
+function resolveStackedSpell(state, entry) {
+	const { card, caster: pi, target, choice } = entry;
+	const ctx = { spell: card, countered: false, target };
+	fireSecretsAll(state, pi, 'enemy-spell-cast', ctx); // Counterspell/Spellbender secrets
+	if (ctx.countered) emit(state, { type: 'countered', player: pi, name: card.name });
+	else {
+		state.exactKills = 0;
+		runSpell(state, pi, card, ctx.target, choice);
+		if (card.honorableKill && state.exactKills > 0) {
+			emit(state, { type: 'honorableKill', player: pi });
+			execEffects(state, pi, card.honorableKill, ctx.target, card);
+		}
+		fireOngoing(state, pi, 'spell-played', { played: card });
+		for (let s2 = 0; s2 < state.players.length; s2++) {
+			fireOngoing(state, s2, 'any-spell-played', { spell: card, caster: pi });
+			if (s2 !== pi) fireOngoing(state, s2, 'enemy-spell-played', { spell: card, caster: pi });
+		}
+	}
+	toGraveyard(state, pi, card);
+	sweepDeaths(state);
+	checkGameOver(state);
+}
+
+// opponents who hold an affordable Counter and so get a window to respond
+function counterResponders(state, casterPi) {
+	const out = [];
+	for (const o of opponentsOf(state, casterPi)) {
+		const p = state.players[o];
+		if (p.eliminated) continue;
+		if (p.hand.some(c => c.counterSpell && availableMana(p) >= effectiveCost(state, o, c))) out.push(o);
+	}
+	return out;
+}
+
+// the Counters in a responder's hand they could play against the pending spell
+export function counterOptions(state, pi) {
+	if (!state.respondQueue.some(x => x.player === pi)) return [];
+	const p = state.players[pi];
+	return p.hand.filter(c => c.counterSpell && availableMana(p) >= effectiveCost(state, pi, c));
+}
+
+export function pendingSpellFor(state, pi) {
+	const q = state.respondQueue.find(x => x.player === pi);
+	return q ? state.stack.find(e => e.uid === q.stackUid) : null;
+}
+
+// a responder resolves their window: counterUid null = pass; otherwise Counter it
+export function resolveResponse(state, pi, counterUid) {
+	const qi = state.respondQueue.findIndex(x => x.player === pi);
+	if (qi < 0) return false;
+	const q = state.respondQueue[qi];
+	state.respondQueue.splice(qi, 1);
+	const entry = state.stack.find(e => e.uid === q.stackUid);
+	if (counterUid != null && entry && !entry.countered) {
+		const p = state.players[pi];
+		const cIdx = p.hand.findIndex(c => c.uid === counterUid && c.counterSpell);
+		if (cIdx >= 0 && availableMana(p) >= effectiveCost(state, pi, p.hand[cIdx])) {
+			const counter = p.hand[cIdx];
+			p.hand.splice(cIdx, 1);
+			spendMana(p, effectiveCost(state, pi, counter));
+			emit(state, { type: 'play', player: pi, card: counter, mana: availableMana(p) });
+			entry.countered = true;
+			emit(state, { type: 'countered', player: entry.caster, name: entry.card.name });
+			toGraveyard(state, entry.caster, entry.card);
+			state.stack = state.stack.filter(e => e !== entry);
+			state.respondQueue = state.respondQueue.filter(x => x.stackUid !== q.stackUid);
+			if (counter.effects) execEffects(state, pi, counter.effects, null, counter); // riders (e.g. draw)
+			fireOngoing(state, pi, 'spell-played', { played: counter });
+			for (let s2 = 0; s2 < state.players.length; s2++) fireOngoing(state, s2, 'any-spell-played', { spell: counter, caster: pi });
+			toGraveyard(state, pi, counter);
+			sweepDeaths(state); checkGameOver(state);
+			return true;
+		}
+	}
+	// passed: once no responders remain for this spell and it wasn't countered, resolve it
+	if (entry && !entry.countered && !state.respondQueue.some(x => x.stackUid === entry.uid)) {
+		state.stack = state.stack.filter(e => e !== entry);
+		resolveStackedSpell(state, entry);
+	}
 	return true;
 }
 

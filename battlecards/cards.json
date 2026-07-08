@@ -2789,16 +2789,11 @@
       "cardClass": "mage",
       "cost": 3,
       "rarity": "rare",
-      "type": "secret",
-      "secret": {
-        "trigger": "enemy-spell-cast",
-        "effects": [
-          {
-            "type": "counter"
-          }
-        ]
-      },
-      "description": "Secret: When your opponent casts a spell, counter it."
+      "set": "paper",
+      "type": "instant",
+      "tribe": "Arcane",
+      "counterSpell": true,
+      "description": "Counter target spell."
     },
     {
       "id": "ice_barrier",
