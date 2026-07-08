@@ -22432,7 +22432,7 @@
     {
       "id": "press_the_advantage",
       "name": "Press the Advantage",
-      "cardClass": "neutral",
+      "cardClass": "druid__demon_hunter",
       "cost": 2,
       "rarity": "common",
       "type": "sorcery",
@@ -24082,7 +24082,7 @@
     {
       "id": "shade_of_the_end_time",
       "name": "Shade of the End Time",
-      "cardClass": "neutral",
+      "cardClass": "rogue__shaman",
       "cost": 3,
       "rarity": "common",
       "static": {
@@ -27964,7 +27964,7 @@
     {
       "id": "wand_thief",
       "name": "Wand Thief",
-      "cardClass": "neutral",
+      "cardClass": "mage__rogue",
       "cost": 1,
       "rarity": "common",
       "type": "creature",
@@ -28254,7 +28254,7 @@
     {
       "id": "jam_session",
       "name": "Jam Session",
-      "cardClass": "warrior",
+      "cardClass": "shaman__warrior",
       "cost": 2,
       "rarity": "common",
       "overload": 1,
@@ -28755,7 +28755,7 @@
     {
       "id": "grimestreet_smuggler",
       "name": "Grimestreet Smuggler",
-      "cardClass": "neutral",
+      "cardClass": "hunter__paladin__warrior",
       "cost": 3,
       "rarity": "common",
       "type": "creature",
@@ -29294,7 +29294,7 @@
     {
       "id": "cool_ghoul",
       "name": "Cool Ghoul",
-      "cardClass": "death_knight",
+      "cardClass": "death_knight__paladin",
       "cost": 4,
       "rarity": "common",
       "type": "creature",
@@ -30895,7 +30895,7 @@
     {
       "id": "zergling",
       "name": "Zergling",
-      "cardClass": "neutral",
+      "cardClass": "death_knight__hunter__warlock__demon_hunter",
       "cost": 1,
       "rarity": "rare",
       "type": "creature",
@@ -33315,7 +33315,7 @@
     {
       "id": "don_han_cho",
       "name": "Don Han'Cho",
-      "cardClass": "neutral",
+      "cardClass": "hunter__paladin__warrior",
       "cost": 5,
       "rarity": "legendary",
       "type": "creature",
@@ -35751,7 +35751,7 @@
     {
       "id": "remnant_of_rage",
       "name": "Remnant of Rage",
-      "cardClass": "neutral",
+      "cardClass": "death_knight__demon_hunter",
       "cost": 7,
       "rarity": "common",
       "tribe": "Demon",
@@ -36183,7 +36183,7 @@
     {
       "id": "kabal_chemist",
       "name": "Kabal Chemist",
-      "cardClass": "neutral",
+      "cardClass": "mage__priest__warlock",
       "cost": 4,
       "rarity": "common",
       "type": "creature",
@@ -40287,7 +40287,7 @@
     {
       "id": "imprisoned_phoenix",
       "name": "Imprisoned Phoenix",
-      "cardClass": "neutral",
+      "cardClass": "mage__shaman",
       "cost": 2,
       "rarity": "common",
       "tribe": "Elemental",
@@ -45750,7 +45750,7 @@
     {
       "id": "time_twisted_seer",
       "name": "Time-Twisted Seer",
-      "cardClass": "neutral",
+      "cardClass": "mage__warrior",
       "cost": 1,
       "rarity": "common",
       "set": "hs",
@@ -45763,7 +45763,7 @@
     {
       "id": "voodoo_totem",
       "name": "Voodoo Totem",
-      "cardClass": "neutral",
+      "cardClass": "priest__shaman",
       "cost": 2,
       "rarity": "common",
       "set": "hs",
@@ -46490,7 +46490,7 @@
     {
       "id": "hollow_hound",
       "name": "Hollow Hound",
-      "cardClass": "hunter",
+      "cardClass": "death_knight__hunter",
       "cost": 6,
       "rarity": "common",
       "set": "hs",
@@ -46515,7 +46515,7 @@
     {
       "id": "abyssal_bassist",
       "name": "Abyssal Bassist",
-      "cardClass": "demonhunter",
+      "cardClass": "warrior__demon_hunter",
       "cost": 7,
       "rarity": "common",
       "set": "hs",
@@ -46528,7 +46528,7 @@
     {
       "id": "blood_treant",
       "name": "Blood Treant",
-      "cardClass": "druid",
+      "cardClass": "druid__warlock",
       "cost": 5,
       "rarity": "common",
       "set": "hs",
@@ -47075,7 +47075,7 @@
     {
       "id": "hive_queen",
       "name": "Hive Queen",
-      "cardClass": "neutral",
+      "cardClass": "death_knight__hunter__warlock__demon_hunter",
       "cost": 3,
       "rarity": "common",
       "set": "hs",
@@ -47111,7 +47111,7 @@
     {
       "id": "lift_off",
       "name": "Lift Off",
-      "cardClass": "neutral",
+      "cardClass": "paladin__shaman__warrior",
       "cost": 3,
       "rarity": "common",
       "set": "hs",
@@ -47148,7 +47148,7 @@
     {
       "id": "chrono_boost",
       "name": "Chrono Boost",
-      "cardClass": "neutral",
+      "cardClass": "druid__mage__priest__rogue",
       "cost": 4,
       "rarity": "common",
       "set": "hs",
@@ -47175,7 +47175,7 @@
     {
       "id": "devout_pupil",
       "name": "Devout Pupil",
-      "cardClass": "paladin",
+      "cardClass": "paladin__priest",
       "cost": 6,
       "rarity": "epic",
       "set": "hs",
@@ -47187,7 +47187,7 @@
     {
       "id": "flesh_giant",
       "name": "Flesh Giant",
-      "cardClass": "priest",
+      "cardClass": "priest__warlock",
       "cost": 10,
       "rarity": "epic",
       "set": "hs",
@@ -47270,7 +47270,7 @@
     {
       "id": "trick_totem",
       "name": "Trick Totem",
-      "cardClass": "neutral",
+      "cardClass": "mage__shaman",
       "cost": 2,
       "rarity": "rare",
       "set": "hs",
@@ -47283,7 +47283,7 @@
     {
       "id": "ace_hunter_kreen",
       "name": "Ace Hunter Kreen",
-      "cardClass": "demonhunter",
+      "cardClass": "hunter__demon_hunter",
       "cost": 3,
       "rarity": "legendary",
       "set": "hs",
@@ -49412,7 +49412,7 @@
     {
       "id": "gift_of_luminance",
       "name": "Gift of Luminance",
-      "cardClass": "paladin",
+      "cardClass": "paladin__priest",
       "cost": 3,
       "rarity": "rare",
       "set": "hs",
