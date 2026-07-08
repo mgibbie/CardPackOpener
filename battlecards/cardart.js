@@ -131,7 +131,7 @@ if (typeof document !== 'undefined' && typeof FontFace !== 'undefined') {
 	ff.load().then(f => { document.fonts.add(f); manaReady = true; for (const fn of artListeners) fn('*'); }).catch(() => {});
 }
 
-fetch('art/index.json')
+const artIndexReady = fetch('art/index.json')
 	.then(r => (r.ok ? r.json() : []))
 	.then(ids => { artIndex = new Set(ids); })
 	.catch(() => { artIndex = new Set(); });
@@ -146,6 +146,21 @@ function artFor(id) {
 		artImgs.set(id, img);
 	}
 	return img.complete && img.naturalWidth ? img : null;
+}
+
+// wait until the real art for these cards is fully loaded, so a consumer can
+// draw the card complete (with its art) instead of flashing the procedural
+// fallback first. Resolves immediately for cards that have no crop.
+export async function preloadArt(ids) {
+	await artIndexReady;
+	await Promise.all([...new Set(ids)].map(id => new Promise(res => {
+		if (!artIndex.has(id)) return res();
+		let img = artImgs.get(id);
+		if (!img) { img = new Image(); img.src = 'art/' + id + '.jpg'; artImgs.set(id, img); }
+		if (img.complete) return res();
+		img.addEventListener('load', () => { for (const fn of artListeners) fn(id); res(); }, { once: true });
+		img.addEventListener('error', () => res(), { once: true });
+	})));
 }
 
 // an original gold coin, drawn for The Coin

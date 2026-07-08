@@ -1,7 +1,7 @@
 // viewer.js — the collection browser: a paginated, filterable card book.
 // Card faces come from the shared procedural renderer; rules text appears in
 // a hover tooltip, and rules-cards carry a CSS-animated iridescent gem.
-import { drawCardFace, classNameOf, artListeners } from './cardart.js';
+import { drawCardFace, classNameOf, artListeners, preloadArt } from './cardart.js';
 import { keywordsFor, richHtml } from './keywords.js';
 
 // small keyword-explanation lines shown beneath a card's rules text
@@ -150,17 +150,22 @@ $('zoom-close').addEventListener('click', () => $('zoom').classList.remove('open
 $('zoom').addEventListener('click', ev => { if (ev.target.id === 'zoom') $('zoom').classList.remove('open'); });
 addEventListener('keydown', ev => { if (ev.key === 'Escape') $('zoom').classList.remove('open'); });
 
-function renderPage() {
-	grid.innerHTML = '';
+let renderToken = 0;
+async function renderPage() {
 	tip.style.display = 'none';
 	const pages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
 	page = Math.min(page, pages - 1);
-	for (const card of filtered.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE)) {
-		grid.appendChild(tileFor(card));
-	}
+	const pageCards = filtered.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
 	$('prev').disabled = page === 0;
 	$('next').disabled = page >= pages - 1;
 	$('pageinfo').textContent = filtered.length ? `Page ${page + 1} / ${pages}` : 'No cards match those filters.';
+	// load this page's art BEFORE drawing so cards appear complete (no artless
+	// flash); keep the current page on screen until the new art is ready
+	const token = ++renderToken;
+	await preloadArt(pageCards.map(c => c.id));
+	if (token !== renderToken) return; // superseded by a newer render
+	grid.innerHTML = '';
+	for (const card of pageCards) grid.appendChild(tileFor(card));
 }
 
 fetch('cards.json')

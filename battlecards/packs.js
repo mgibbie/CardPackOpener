@@ -1,7 +1,7 @@
 // packs.js — 3D pack opening: a booster hovers, tears open in a burst of
 // light, and five cards fly out to be flipped one by one.
 import * as THREE from 'three';
-import { CARD_W, CARD_H, CARD_D, makeFaceTexture, makeBackTexture, RARITY_COLORS, artListeners } from './cardart.js';
+import { CARD_W, CARD_H, CARD_D, makeFaceTexture, makeBackTexture, RARITY_COLORS, artListeners, preloadArt } from './cardart.js';
 import * as Col from './collection.js';
 import * as MPX from './mpmode.js';
 import { keywordsFor, richHtml } from './keywords.js';
@@ -204,6 +204,7 @@ async function startOpen() {
 		if (data.error) { hud.hint.textContent = data.error; return; }
 		mpPulls = data.cards;
 		mpPacks = data.state.packs;
+		preloadArt(mpPulls); // load the art during the tear so the reveal shows it
 	} else if (!Col.spendGold(Col.PACK_PRICE)) { updateHud(); return; }
 	for (const c of cardMeshes) { scene.remove(c.mesh); c.mesh.material[4].map?.dispose(); }
 	cardMeshes = [];
