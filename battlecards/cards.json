@@ -43558,6 +43558,30 @@
           "health": 2
         }
       ]
+    },
+    {
+      "id": "flame_leviathan",
+      "name": "Flame Leviathan",
+      "cardClass": "mage",
+      "cost": 7,
+      "rarity": "legendary",
+      "set": "paper",
+      "description": "Rush. Emerge: Deal 2 damage to all Non-Mech creatures.",
+      "type": "creature",
+      "attack": 7,
+      "health": 7,
+      "tribe": "Mech",
+      "emerge": [
+        {
+          "type": "damage",
+          "value": 2,
+          "target": "all-creatures",
+          "exceptTribe": "Mech"
+        }
+      ],
+      "keywords": [
+        "rush"
+      ]
     }
   ]
 }

@@ -1773,8 +1773,8 @@ function execEffects(state, pi, effects, target, source) {
 			switch (e.target) {
 				case 'enemy-hero': { const t = enemyHero(); if (t != null) damageHero(state, t, v, pi); break; }
 				case 'own-hero': damageHero(state, pi, v, pi); break;
-				case 'enemy-creatures': for (const o of enemies) for (const c of [...state.players[o].board]) damageCreature(state, c, rollv(), null); break;
-				case 'all-creatures': for (const pl of state.players) for (const c of [...pl.board]) damageCreature(state, c, v, null); break;
+				case 'enemy-creatures': for (const o of enemies) for (const c of [...state.players[o].board]) { if (e.exceptTribe && (c.tribe || '').includes(e.exceptTribe)) continue; damageCreature(state, c, rollv(), null); } break;
+				case 'all-creatures': for (const pl of state.players) for (const c of [...pl.board]) { if (e.exceptTribe && (c.tribe || '').includes(e.exceptTribe)) continue; damageCreature(state, c, v, null); } break;
 				case 'enemies':
 					for (const o of enemies) {
 						for (const c of [...state.players[o].board]) damageCreature(state, c, v, null);
