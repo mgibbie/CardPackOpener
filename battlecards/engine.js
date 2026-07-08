@@ -326,8 +326,10 @@ export function createGame(cardsById, rng = Math.random, playerDeckIds = null, p
 		discardQueue: [], // pending Loot discards: { player, count }
 		pickQueue: [],  // pending Discover/Draft picks: { player, ids, grant }
 		dredgeQueue: [], // pending Dredge decisions: { player, ids } (bottom-of-deck)
-		stack: [],       // spells awaiting resolution while opponents may Counter
-		respondQueue: [], // pending Counter windows: { player, stackUid }
+		stack: [],       // spells awaiting resolution (LIFO)
+		priority: null,  // player who currently holds priority to respond (or null)
+		passers: [],     // players who have passed priority since the last stack change
+		priorityNext: 0, // where the next priority scan begins
 		plane: null,    // the active MTG plane (shared arena state; null until first Planeshift)
 	};
 	if (playerDeck) state.players[0].deck = playerDeck;
@@ -3611,17 +3613,9 @@ export function playCard(state, pi, cardUid, target, choice, position) {
 		questTick(state, 'spell', pi);
 		p.spellsPlayedThisTurn++;
 		p.spellsPlayedTotal = (p.spellsPlayedTotal || 0) + 1; // Arcane Giant
-		// The Stack: if an opponent holds a Counter they can afford, the spell waits
-		// on the stack for their response; otherwise it resolves at once (common path).
-		const entry = { uid: nextUid++, card, caster: pi, target, choice };
-		const responders = counterResponders(state, pi);
-		if (responders.length) {
-			state.stack.push(entry);
-			emit(state, { type: 'stackPush', player: pi, uid: entry.uid, card });
-			for (const r of responders) state.respondQueue.push({ player: r, stackUid: entry.uid });
-		} else {
-			resolveStackedSpell(state, entry);
-		}
+		// The Stack: opponents get priority to respond (an instant/Counter) before this
+		// resolves. If none can respond it resolves at once (the common path).
+		stackSpell(state, pi, card, target, choice);
 	}
 	// Echo: a ghost copy slips into hand, playable until the turn ends
 	if (card.echo && !p.eliminated && p.hand.length < MAX_HAND && !state.over) {
@@ -3656,7 +3650,7 @@ export function playCard(state, pi, cardUid, target, choice, position) {
 	return true;
 }
 
-// resolve a spell that was on the stack (or cast directly): secrets, effects, triggers
+// resolve a spell (non-counter) that was on the stack: secrets, effects, triggers
 function resolveStackedSpell(state, entry) {
 	const { card, caster: pi, target, choice } = entry;
 	const ctx = { spell: card, countered: false, target };
@@ -3676,66 +3670,133 @@ function resolveStackedSpell(state, entry) {
 		}
 	}
 	toGraveyard(state, pi, card);
+}
+
+function nextActiveAfter(state, pi) {
+	const n = state.players.length;
+	for (let k = 1; k <= n; k++) { const j = (pi + k) % n; if (!state.players[j].eliminated) return j; }
+	return pi;
+}
+
+// can pi cast this card in response (instant speed)?
+function canCastInResponse(state, pi, card) {
+	if (card.type !== 'instant') return false;
+	const p = state.players[pi];
+	if (availableMana(p) < effectiveCost(state, pi, card)) return false;
+	if (card.counterSpell) return state.stack.some(e => !e.countered);
+	const spec = targetSpec(state, pi, card);
+	if (spec && spec.required && legalTargets(state, pi, spec).length === 0) return false;
+	return true;
+}
+
+// pi may respond to the current top of the stack (someone else's spell)
+function canRespond(state, pi) {
+	const top = state.stack[state.stack.length - 1];
+	if (!top || top.caster === pi || state.players[pi].eliminated) return false;
+	return state.players[pi].hand.some(c => canCastInResponse(state, pi, c));
+}
+
+// the instants pi could play right now in response (all of them, for the human)
+export function responseOptions(state, pi) {
+	if (state.priority !== pi) return [];
+	return state.players[pi].hand.filter(c => canCastInResponse(state, pi, c));
+}
+
+// just the Counters pi could play (the AI only responds with these)
+export function counterOptions(state, pi) {
+	return responseOptions(state, pi).filter(c => c.counterSpell);
+}
+
+// the spell pi is being asked to respond to (top of stack)
+export function pendingSpellFor(state, pi) {
+	return state.priority === pi ? state.stack[state.stack.length - 1] || null : null;
+}
+
+// advance priority: skip players who can't respond, resolve the top when all pass
+function offerPriority(state) {
+	while (state.stack.length) {
+		const n = state.players.length;
+		let decider = null, pi = state.priorityNext, checked = 0;
+		while (checked < n) {
+			if (!state.players[pi].eliminated && !state.passers.includes(pi)) {
+				if (canRespond(state, pi)) { decider = pi; break; }
+				state.passers.push(pi);
+			}
+			pi = (pi + 1) % n; checked++;
+		}
+		if (decider != null) { state.priority = decider; return; }
+		resolveTop(state);
+		state.passers = [];
+		state.priorityNext = state.current;
+	}
+	state.priority = null;
+	state.passers = [];
+}
+
+// resolve the top of the stack (LIFO). A Counter removes the entry it targets.
+function resolveTop(state) {
+	const entry = state.stack.pop();
+	if (!entry) return;
+	if (entry.counters != null) {
+		const tgt = state.stack.find(e => e.uid === entry.counters);
+		if (tgt && !tgt.countered) {
+			tgt.countered = true;
+			state.stack = state.stack.filter(e => e !== tgt);
+			emit(state, { type: 'countered', player: tgt.caster, name: tgt.card.name });
+			toGraveyard(state, tgt.caster, tgt.card);
+		}
+		if (entry.card.effects) execEffects(state, entry.caster, entry.card.effects, entry.target, entry.card); // riders
+		fireOngoing(state, entry.caster, 'spell-played', { played: entry.card });
+		for (let s2 = 0; s2 < state.players.length; s2++) fireOngoing(state, s2, 'any-spell-played', { spell: entry.card, caster: entry.caster });
+		toGraveyard(state, entry.caster, entry.card);
+	} else {
+		resolveStackedSpell(state, entry);
+	}
 	sweepDeaths(state);
 	checkGameOver(state);
 }
 
-// opponents who hold an affordable Counter and so get a window to respond
-function counterResponders(state, casterPi) {
-	const out = [];
-	for (const o of opponentsOf(state, casterPi)) {
-		const p = state.players[o];
-		if (p.eliminated) continue;
-		if (p.hand.some(c => c.counterSpell && availableMana(p) >= effectiveCost(state, o, c))) out.push(o);
-	}
-	return out;
-}
-
-// the Counters in a responder's hand they could play against the pending spell
-export function counterOptions(state, pi) {
-	if (!state.respondQueue.some(x => x.player === pi)) return [];
-	const p = state.players[pi];
-	return p.hand.filter(c => c.counterSpell && availableMana(p) >= effectiveCost(state, pi, c));
-}
-
-export function pendingSpellFor(state, pi) {
-	const q = state.respondQueue.find(x => x.player === pi);
-	return q ? state.stack.find(e => e.uid === q.stackUid) : null;
-}
-
-// a responder resolves their window: counterUid null = pass; otherwise Counter it
-export function resolveResponse(state, pi, counterUid) {
-	const qi = state.respondQueue.findIndex(x => x.player === pi);
-	if (qi < 0) return false;
-	const q = state.respondQueue[qi];
-	state.respondQueue.splice(qi, 1);
-	const entry = state.stack.find(e => e.uid === q.stackUid);
-	if (counterUid != null && entry && !entry.countered) {
-		const p = state.players[pi];
-		const cIdx = p.hand.findIndex(c => c.uid === counterUid && c.counterSpell);
-		if (cIdx >= 0 && availableMana(p) >= effectiveCost(state, pi, p.hand[cIdx])) {
-			const counter = p.hand[cIdx];
-			p.hand.splice(cIdx, 1);
-			spendMana(p, effectiveCost(state, pi, counter));
-			emit(state, { type: 'play', player: pi, card: counter, mana: availableMana(p) });
-			entry.countered = true;
-			emit(state, { type: 'countered', player: entry.caster, name: entry.card.name });
-			toGraveyard(state, entry.caster, entry.card);
-			state.stack = state.stack.filter(e => e !== entry);
-			state.respondQueue = state.respondQueue.filter(x => x.stackUid !== q.stackUid);
-			if (counter.effects) execEffects(state, pi, counter.effects, null, counter); // riders (e.g. draw)
-			fireOngoing(state, pi, 'spell-played', { played: counter });
-			for (let s2 = 0; s2 < state.players.length; s2++) fireOngoing(state, s2, 'any-spell-played', { spell: counter, caster: pi });
-			toGraveyard(state, pi, counter);
-			sweepDeaths(state); checkGameOver(state);
-			return true;
-		}
-	}
-	// passed: once no responders remain for this spell and it wasn't countered, resolve it
-	if (entry && !entry.countered && !state.respondQueue.some(x => x.stackUid === entry.uid)) {
-		state.stack = state.stack.filter(e => e !== entry);
+// put a spell on the stack; if any opponent can respond, open priority, else resolve now
+function stackSpell(state, pi, card, target, choice) {
+	const entry = { uid: nextUid++, card, caster: pi, target, choice, countered: false };
+	state.stack.push(entry);
+	if (!opponentsOf(state, pi).some(o => canRespond(state, o))) {
+		state.stack.pop();
 		resolveStackedSpell(state, entry);
+		sweepDeaths(state); checkGameOver(state);
+		return;
 	}
+	emit(state, { type: 'stackPush', player: pi, uid: entry.uid, card });
+	state.passers = [];
+	state.priorityNext = nextActiveAfter(state, pi);
+	offerPriority(state);
+}
+
+// a player with priority resolves it: cardUid null = pass; else cast that instant
+export function resolveResponse(state, pi, cardUid, target, choice) {
+	if (state.priority !== pi) return false;
+	if (cardUid == null) {
+		state.passers.push(pi);
+		state.priorityNext = nextActiveAfter(state, pi);
+		state.priority = null;
+		offerPriority(state);
+		return true;
+	}
+	const p = state.players[pi];
+	const idx = p.hand.findIndex(c => c.uid === cardUid);
+	if (idx < 0 || !canCastInResponse(state, pi, p.hand[idx])) return false;
+	const card = p.hand[idx];
+	p.hand.splice(idx, 1);
+	spendMana(p, effectiveCost(state, pi, card));
+	emit(state, { type: 'play', player: pi, card, mana: availableMana(p) });
+	const entry = { uid: nextUid++, card, caster: pi, target, choice, countered: false };
+	if (card.counterSpell) { const top = state.stack[state.stack.length - 1]; if (top) entry.counters = top.uid; }
+	state.stack.push(entry);
+	emit(state, { type: 'stackPush', player: pi, uid: entry.uid, card });
+	state.passers = [];
+	state.priorityNext = nextActiveAfter(state, pi);
+	state.priority = null;
+	offerPriority(state);
 	return true;
 }
 
