@@ -3794,6 +3794,7 @@ function resolveEntry(state, entry) {
 		return;
 	}
 	if (entry.kind === 'spell') { resolveStackedSpell(state, entry); return; }
+	if (entry.kind === 'attack') { resolveCombat(state, pi, entry.attackerUid, entry.target); return; }
 	if (entry.kind === 'heropower') {
 		execEffects(state, pi, entry.effects, entry.target, entry.card);
 		fireOngoing(state, pi, 'hero-power-used', {}); // Inspire
@@ -3943,6 +3944,17 @@ export function attack(state, pi, attackerUid, target) {
 		if (!redirected || isDead(redirected)) { sweepDeaths(state); return true; }
 	}
 
+	stackAction(state, pi, { kind: 'attack', attackerUid: attacker.uid, target });
+	return true;
+}
+
+// combat damage, resolved off the stack so instants can respond to an attack.
+// The attacker or target may have died in the window, so re-validate first.
+function resolveCombat(state, pi, attackerUid, target) {
+	const attacker = state.players[pi] && state.players[pi].board.find(c => c.uid === attackerUid);
+	if (!attacker || isDead(attacker)) { sweepDeaths(state); return; }
+	if (target.type === 'creature') { const d = findCreature(state, target.uid); if (!d || isDead(d)) { sweepDeaths(state); return; } }
+	else if (target.type === 'walker') { if (!findWalker(state, target.uid)) { sweepDeaths(state); return; } }
 	if (target.type === 'hero') {
 		const dealt = damageHero(state, target.player, attacker.attack, pi, has(attacker, KW.PIERCING));
 		if (has(attacker, KW.LIFESTEAL) && dealt > 0) healHero(state, pi, dealt);
@@ -4006,7 +4018,6 @@ export function attack(state, pi, attackerUid, target) {
 		}
 	}
 	sweepDeaths(state);
-	return true;
 }
 
 // ---------- hero (weapon) attacks ----------
