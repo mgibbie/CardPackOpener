@@ -399,12 +399,13 @@ export class Battle {
 	// 'victory'|'defeat'|'escaped'|'caught'; second = {id, level} makes it
 	// a wild DOUBLE battle when the party has two healthy mons
 	async start(party, wildId, wildLevel, onEnd, second) {
+		this._starting = true; // block overworld movement immediately (before sprites load)
 		const foe = buildMon(wildId, wildLevel, this.data);
 		if (foe && Math.random() < 0.15) {
 			foe.heldItem = Bag.WILD_HELD[Math.floor(Math.random() * Bag.WILD_HELD.length)];
 		}
 		const playerMon = party.find(m => m.curHP > 0);
-		if (!foe || !playerMon) { onEnd?.('escaped'); return; }
+		if (!foe || !playerMon) { this._starting = false; onEnd?.('escaped'); return; }
 		const loadSprite = async (file, back) => {
 			if (!file) return null;
 			const name = back ? file.replace(/\.(png|gif)$/, '-b.$1') : file;
@@ -453,6 +454,7 @@ export class Battle {
 			result: null,
 			caughtMon: null,
 		};
+		this._starting = false; // active now drives `blocking`
 		for (const m of party) this.clearVolatiles(m);
 		if (foeAlly) {
 			this.pushMsg(`Wild ${foe.name} and ${foeAlly.name} appeared!`, () => cry(foe.speciesId));
@@ -469,8 +471,9 @@ export class Battle {
 
 	// trainer battle: foeParty of mons, no running, no catching
 	async startTrainer(party, foeParty, info, onEnd) {
+		this._starting = true; // block overworld movement immediately (before sprites load)
 		const playerMon = party.find(m => m.curHP > 0);
-		if (!foeParty.length || !playerMon) { onEnd?.('escaped'); return; }
+		if (!foeParty.length || !playerMon) { this._starting = false; onEnd?.('escaped'); return; }
 		const loadSprite = async (file, back) => {
 			if (!file) return null;
 			const name = back ? file.replace(/\.(png|gif)$/, '-b.$1') : file;
@@ -518,6 +521,7 @@ export class Battle {
 			result: null,
 			caughtMon: null,
 		};
+		this._starting = false; // active now drives `blocking`
 		for (const m of party) this.clearVolatiles(m);
 		if (this.active.double) {
 			this.active.meAllyImg = backSprites.get(this.active.meAlly);
@@ -531,7 +535,7 @@ export class Battle {
 		this.pushMsg('', () => this.switchInAbility(this.active.me, 'me'));
 	}
 
-	get blocking() { return this.active != null; }
+	get blocking() { return this.active != null || !!this._starting; }
 
 	pushMsg(text, fn) { this.active.queue.push({ text, fn }); }
 	// queued sprite animation: the message queue pauses while it plays
