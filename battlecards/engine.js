@@ -3358,6 +3358,28 @@ function discountIndex(state, p, card) {
 // what the card actually costs after self-scaling printed costs (Giants),
 // board cost auras (Sorcerer's Apprentice / Mana Wraith), one-shot riders
 // (Preparation / Far Sight-style live on card.cost itself), and Millhouse
+// the active arena plane's continuous static rule (or null)
+function activePlaneRule(state) {
+	const pd = state.plane ? state.cardsById[state.plane] : null;
+	return pd && pd.staticRule ? pd.staticRule : null;
+}
+
+// Primordia: when you play a creature you may sacrifice an artifact for +2/+2.
+// Auto-resolves by spending a spare token artifact (never a hand-made one).
+function applyPlaneOnCreaturePlayed(state, pi, card) {
+	const r = activePlaneRule(state);
+	if (!r || r.kind !== 'sac-artifact-buff' || !card || card.zone !== 'board' || isDead(card)) return;
+	const p = state.players[pi];
+	const tok = p.artifacts.find(a => a.token && a.sac);
+	if (!tok) return;
+	p.artifacts = p.artifacts.filter(a => a !== tok);
+	toGraveyard(state, pi, tok);
+	emit(state, { type: 'tokenSacrificed', player: pi, card: tok });
+	card.attack += r.attack || 0;
+	card.maxHealth += r.health || 0;
+	emit(state, { type: 'buff', uid: card.uid, attack: card.attack, hp: hp(card) });
+}
+
 export function effectiveCost(state, pi, card) {
 	const p = state.players[pi];
 	let c = card.cost;
@@ -3399,6 +3421,12 @@ export function effectiveCost(state, pi, card) {
 		const d = p.costDiscounts[di];
 		c = d.setZero ? 0 : c + d.amount;
 	}
+	// arena plane cost rule: Zendikar (enchant -1), Alkabah (4-cost spells -> 0)
+	const planeR = activePlaneRule(state);
+	if (planeR && planeR.kind === 'cost' && costTypeMatches(card, planeR.cardType)
+		&& (planeR.cost == null || card.cost === planeR.cost)) {
+		c = planeR.setZero ? 0 : c + (planeR.amount || 0);
+	}
 	if (p.freeSpellsThisTurn && isSpellType(card)) c = 0;
 	return Math.max(0, c);
 }
@@ -3407,6 +3435,7 @@ export function effectiveCost(state, pi, card) {
 export function canPlay(state, pi, card) {
 	if (state.over || state.current !== pi) return false;
 	if (availableMana(state.players[pi]) < effectiveCost(state, pi, card)) return false;
+	{ const pb = state.players[pi].parityBlock; if (pb && ((card.cost % 2 === 1 ? 'odd' : 'even') === pb)) return false; }
 	if (card.type === 'secret') {
 		const p = state.players[pi];
 		if (p.secrets.length >= MAX_SECRETS) return false;
@@ -3500,6 +3529,7 @@ export function playCard(state, pi, cardUid, target, choice, position) {
 			runBattlecry(state, pi, card, target, choice);
 			if (p.board.includes(card)) fireSecretsAll(state, pi, 'enemy-minion-played', { minion: card });
 			if (p.board.includes(card) && !isDead(card)) fireOngoing(state, pi, 'creature-played', { minion: card });
+			applyPlaneOnCreaturePlayed(state, pi, card);
 		}
 	} else if (card.type === 'location') {
 		// locations sit in the creature row (adjacency counts them as neighbors)
@@ -4361,6 +4391,8 @@ export function endTurn(state) {
 	np.cardsPlayedThisTurn = 0;
 	np.drawsThisTurn = 0; // reset before the mandatory draw so it counts as the first
 	np.spellsPlayedThisTurn = 0;
+	np.parityBlock = null; // Alara: a start-of-turn coin flip may block odd/even-cost plays
+	{ const r = activePlaneRule(state); if (r && r.kind === 'coin-parity') { np.parityBlock = state.rng() < 0.5 ? 'odd' : 'even'; emit(state, { type: 'coinParity', player: state.current, block: np.parityBlock }); } }
 	// stale this-turn cost riders lapse; Millhouse's gift comes due
 	np.costDiscounts = (np.costDiscounts || []).filter(d => !d.thisTurn);
 	np.freeSpellsThisTurn = !!np.freeSpellsNextTurn;
@@ -4394,9 +4426,11 @@ export function endTurn(state) {
 	// lands untap at the start of each turn (they now TAP for their abilities)
 	// double-tap untap cycle: first turn the stone comes off (still tapped),
 	// the next turn the land/location actually untaps
-	for (const l of [...np.lands, ...np.board.filter(c => c.type === 'location')]) {
-		if (l.tapStone) l.tapStone = false;
-		else l.tapped = false;
+	if (!(activePlaneRule(state) && activePlaneRule(state).kind === 'no-untap')) { // Belenon: things don't untap
+		for (const l of [...np.lands, ...np.board.filter(c => c.type === 'location')]) {
+			if (l.tapStone) l.tapStone = false;
+			else l.tapped = false;
+		}
 	}
 	for (const hpw of np.heroPowers) hpw.usedThisTurn = false;
 	for (const pw of np.planeswalkers) pw.usedThisTurn = false;

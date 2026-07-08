@@ -43678,7 +43678,7 @@
       "rarity": "legendary",
       "set": "paper",
       "token": true,
-      "description": "Arrival: Each player gains 5 Life. Departure: Deal 3 damage to all creatures.",
+      "description": "Arrival: Each player gains 5 Life. Instants & Sorceries that cost 4 cost 0 instead. Departure: Deal 3 damage to all creatures.",
       "arrival": [
         {
           "type": "heal",
@@ -43692,7 +43692,13 @@
           "value": 3,
           "target": "all-creatures"
         }
-      ]
+      ],
+      "staticRule": {
+        "kind": "cost",
+        "cardType": "spell",
+        "cost": 4,
+        "setZero": true
+      }
     },
     {
       "id": "bloomburrow",
@@ -43729,7 +43735,7 @@
       "rarity": "legendary",
       "set": "paper",
       "token": true,
-      "description": "Arrival: Each player draws a card. Departure: Each player gains 2 Life.",
+      "description": "Arrival: Each player draws a card. When you play a creature you may sacrifice an artifact to give it +2/+2. Departure: Each player gains 2 Life.",
       "arrival": [
         {
           "type": "draw",
@@ -43743,7 +43749,12 @@
           "value": 2,
           "target": "all-heroes"
         }
-      ]
+      ],
+      "staticRule": {
+        "kind": "sac-artifact-buff",
+        "attack": 2,
+        "health": 2
+      }
     },
     {
       "id": "alara",
@@ -43753,7 +43764,7 @@
       "rarity": "legendary",
       "set": "paper",
       "token": true,
-      "description": "Arrival: Each player draws 2 cards. Departure: Each player draws 2 cards.",
+      "description": "Arrival: Each player draws 2 cards. At the start of your turn, flip a coin: heads you can't play odd-cost cards this turn, tails you can't play even-cost cards. Departure: Each player draws 2 cards.",
       "arrival": [
         {
           "type": "draw",
@@ -43767,7 +43778,10 @@
           "value": 2,
           "target": "all"
         }
-      ]
+      ],
+      "staticRule": {
+        "kind": "coin-parity"
+      }
     },
     {
       "id": "belenon",
@@ -43777,7 +43791,7 @@
       "rarity": "legendary",
       "set": "paper",
       "token": true,
-      "description": "Arrival: Scry 2. Departure: Each player draws a card.",
+      "description": "Arrival: Scry 2. Lands & Locations do not untap at the start of each turn. Departure: Each player draws a card.",
       "arrival": [
         {
           "type": "scry",
@@ -43790,7 +43804,10 @@
           "value": 1,
           "target": "all"
         }
-      ]
+      ],
+      "staticRule": {
+        "kind": "no-untap"
+      }
     },
     {
       "id": "zendikar",
@@ -43800,7 +43817,7 @@
       "rarity": "legendary",
       "set": "paper",
       "token": true,
-      "description": "Arrival: Each player draws a card.",
+      "description": "Arrival: Each player draws a card. Enchantment spells cost 1 less.",
       "arrival": [
         {
           "type": "draw",
@@ -43808,7 +43825,12 @@
           "target": "all"
         }
       ],
-      "departure": []
+      "departure": [],
+      "staticRule": {
+        "kind": "cost",
+        "cardType": "enchantment",
+        "amount": -1
+      }
     },
     {
       "id": "interstellar_stowaway",
