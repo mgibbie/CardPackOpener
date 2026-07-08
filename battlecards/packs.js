@@ -123,6 +123,32 @@ const backTex = makeBackTexture();
 const edgeMat = new THREE.MeshStandardMaterial({ color: '#241b38', roughness: 0.8 });
 const cardGeo = new THREE.BoxGeometry(CARD_W, CARD_H, CARD_D);
 let cardMeshes = []; // { mesh, def, flipped, target, spin }
+const REVEAL_Z = 1.5;
+
+// fit all five cards across the visible width for the current aspect ratio so
+// the corner cards never spill off-screen (portrait/mobile shrinks them to fit)
+function fitLayout() {
+	const dist = camera.position.z - REVEAL_Z;
+	const halfH = dist * Math.tan((camera.fov * Math.PI / 180) / 2);
+	const halfW = halfH * camera.aspect;
+	const N = Col.PACK_SIZE, margin = 0.45, cardHalf = CARD_W / 2;
+	let scale = 1;
+	// widest spacing whose outermost card edge still fits, capped so wide screens
+	// don't fling them apart
+	let spread = Math.min(2.9, (halfW - margin - cardHalf) * 2 / (N - 1));
+	const gap = CARD_W * 1.04; // below this the cards would overlap — shrink instead
+	if (spread < gap) scale = Math.max(0.4, spread / gap);
+	return { spread: Math.max(spread, 0.55), scale };
+}
+function layoutCards() {
+	if (!cardMeshes.length) return;
+	const { spread, scale } = fitLayout();
+	const N = Col.PACK_SIZE;
+	cardMeshes.forEach((c, i) => {
+		c.target.x = (i - (N - 1) / 2) * spread;
+		c.mesh.scale.setScalar(scale);
+	});
+}
 
 // burst particles
 const bursts = [];
@@ -163,9 +189,9 @@ function updateHud() {
 				: `Not enough gold — win matches to earn more!`;
 	} else if (phase === 'revealing') {
 		const left = cardMeshes.filter(c => !c.flipped).length;
-		hud.hint.textContent = left ? `Click cards to reveal (${left} left)` : '';
+		hud.hint.textContent = left ? `Click cards to reveal (${left} left)` : 'Hover a card to see what it does';
 	} else if (phase === 'done') {
-		hud.hint.textContent = '[Z / click] open another pack';
+		hud.hint.textContent = '[Z / click] open another pack  ·  hover a card for details';
 	} else hud.hint.textContent = '';
 }
 
@@ -199,10 +225,11 @@ function revealCards() {
 		scene.add(mesh);
 		cardMeshes.push({
 			mesh, def, flipped: false,
-			target: new THREE.Vector3((i - (Col.PACK_SIZE - 1) / 2) * 2.9, -0.2, 1.5),
+			target: new THREE.Vector3(0, -0.2, REVEAL_Z),
 			spin: Math.PI,
 		});
 	});
+	layoutCards(); // spread them to fit the current screen
 	phase = 'revealing';
 	updateHud();
 }
@@ -249,7 +276,54 @@ addEventListener('resize', () => {
 	camera.aspect = innerWidth / innerHeight;
 	camera.updateProjectionMatrix();
 	renderer.setSize(innerWidth, innerHeight);
+	layoutCards(); // keep the cards on-screen after a resize / rotate
 });
+
+// ---------- hover tooltip: what does this card do? ----------
+const esc = s => { const d = document.createElement('div'); d.textContent = s == null ? '' : String(s); return d.innerHTML; };
+const tip = document.createElement('div');
+tip.id = 'card-tip';
+Object.assign(tip.style, {
+	position: 'fixed', zIndex: '10001', pointerEvents: 'none', display: 'none', maxWidth: '290px',
+	background: 'rgba(18,14,30,0.97)', border: '1px solid #8f6fff', borderRadius: '10px',
+	padding: '10px 12px', color: '#e8e2f4', font: '13px "Segoe UI", sans-serif',
+	boxShadow: '0 4px 18px rgba(0,0,0,0.6)', lineHeight: '1.35',
+});
+document.body.appendChild(tip);
+function tipHtml(def) {
+	const stat = def.type === 'creature' ? ` · ${def.attack}/${def.health}`
+		: def.type === 'weapon' ? ` · ${def.attack}/${def.durability}`
+		: def.type ? ` · ${def.type}` : '';
+	const kw = def.keywords?.length ? `<div style="color:#9fd0ff;font-size:12px">${esc(def.keywords.join(', '))}</div>` : '';
+	const cls = def.cardClass && def.cardClass !== 'neutral' ? ` ${esc(def.cardClass)}` : '';
+	return `<div style="font-weight:700;font-size:15px">${esc(def.name)} <span style="color:#ffd25f">(${def.cost ?? 0})</span></div>`
+		+ `<div style="color:#c9b8ff;font-size:12px;text-transform:capitalize">${esc(def.rarity || 'common')}${cls}${stat}</div>`
+		+ kw
+		+ (def.description ? `<div style="margin-top:5px">${esc(def.description)}</div>` : '');
+}
+function hoveredCard(e) {
+	pointer.x = (e.clientX / innerWidth) * 2 - 1;
+	pointer.y = -(e.clientY / innerHeight) * 2 + 1;
+	raycaster.setFromCamera(pointer, camera);
+	const hits = raycaster.intersectObjects(cardMeshes.map(c => c.mesh));
+	return hits.length ? cardMeshes[hits[0].object.userData.idx] : null;
+}
+renderer.domElement.addEventListener('pointermove', e => {
+	const c = hoveredCard(e);
+	if (c && c.flipped) {
+		tip.innerHTML = tipHtml(c.def);
+		tip.style.display = 'block';
+		const x = Math.min(e.clientX + 16, innerWidth - tip.offsetWidth - 8);
+		const y = Math.min(e.clientY + 16, innerHeight - tip.offsetHeight - 8);
+		tip.style.left = Math.max(8, x) + 'px';
+		tip.style.top = Math.max(8, y) + 'px';
+		renderer.domElement.style.cursor = 'help';
+	} else {
+		tip.style.display = 'none';
+		renderer.domElement.style.cursor = '';
+	}
+});
+renderer.domElement.addEventListener('pointerleave', () => { tip.style.display = 'none'; });
 
 // ---------- loop ----------
 const clock = new THREE.Clock();
@@ -313,5 +387,5 @@ fetch('cards.json').then(r => r.json()).then(async data => {
 	}
 	spawnPack();
 	updateHud();
-	window.__packs = { startOpen, flip, get phase() { return phase; }, get cardMeshes() { return cardMeshes; }, Col };
+	window.__packs = { startOpen, flip, camera, get phase() { return phase; }, get cardMeshes() { return cardMeshes; }, Col };
 });

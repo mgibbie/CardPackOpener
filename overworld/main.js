@@ -100,6 +100,9 @@ let runHeld = false; // Shift on keyboard, holding B on touch
 const typingInChat = () => document.activeElement && document.activeElement.tagName === 'INPUT';
 addEventListener('keydown', e => {
 	if (typingInChat()) return;
+	// while a menu/dialog/battle is open, arrows navigate options — don't also
+	// queue overworld movement (that made the player walk while browsing menus)
+	if (menuBlocking()) { if (KEYMAP[e.key]) e.preventDefault(); return; }
 	if (e.key === 'Shift') runHeld = true;
 	const dir = KEYMAP[e.key];
 	if (dir) {
@@ -681,7 +684,9 @@ function tick(now) {
 	if (!battle.blocking && !pvp.blocking && !dialog.blocking && !evolution.blocking && !starterMenu.open) {
 		trainers.update(dt);
 		player.run = runHeld;
-		if (!trainers.engaging) player.update(dt, heldKeys[0] || null);
+		// any open menu freezes the player even if a key was held as it opened
+		const moveDir = menuBlocking() ? null : (heldKeys[0] || null);
+		if (!trainers.engaging) player.update(dt, moveDir);
 		npcs.update(dt);
 	}
 
