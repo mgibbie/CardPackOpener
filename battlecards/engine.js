@@ -1400,6 +1400,17 @@ function runSecretEffects(state, pi, effects, ctx) {
 	for (const e of effects || []) {
 		switch (e.type) {
 			case 'counter': ctx.countered = true; break;
+			case 'copy-spell': {
+				// Mana Bind: add a copy of the countered spell to your hand at cost 0
+				const sp = ctx.spell, pp = state.players[pi];
+				if (sp && state.cardsById[sp.id] && pp.hand.length < MAX_HAND) {
+					const cp = instantiate(state.cardsById[sp.id], pi);
+					cp.zone = 'hand'; cp.cost = 0;
+					pp.hand.push(cp);
+					emit(state, { type: 'conjure', player: pi, card: cp, color: null });
+				}
+				break;
+			}
 			case 'prevent': ctx.prevented = true; break;
 			case 'armor': gainArmor(state, pi, e.value); break;
 			case 'reflect-damage': {
@@ -2912,6 +2923,9 @@ function execEffects(state, pi, effects, target, source) {
 		} else if (e.type === 'investigate') {
 			// Investigate: make a Clue token (Sacrifice, pay 2: draw a card)
 			gainTokenCard(state, pi, 'clue_token');
+		} else if (e.type === 'end-turn') {
+			// Time Stop: end the current turn immediately
+			endTurn(state);
 		} else if (e.type === 'spark') {
 			// target 'all' = every player sparks (always beneficial, so auto-taken)
 			const seats = e.target === 'all' ? state.players.map((_, s2) => s2) : [pi];

@@ -44023,6 +44023,64 @@
           "target": "all"
         }
       ]
+    },
+    {
+      "id": "castblock",
+      "name": "Castblock",
+      "cardClass": "mage",
+      "cost": 3,
+      "rarity": "rare",
+      "set": "paper",
+      "type": "secret",
+      "tribe": "Arcane",
+      "secret": {
+        "trigger": "enemy-spell-cast",
+        "effects": [
+          {
+            "type": "counter"
+          }
+        ]
+      },
+      "description": "Secret: When an opponent casts a spell, Counter it."
+    },
+    {
+      "id": "mana_bind",
+      "name": "Mana Bind",
+      "cardClass": "mage",
+      "cost": 3,
+      "rarity": "rare",
+      "set": "paper",
+      "type": "secret",
+      "tribe": "Arcane",
+      "secret": {
+        "trigger": "enemy-spell-cast",
+        "effects": [
+          {
+            "type": "counter"
+          },
+          {
+            "type": "copy-spell"
+          }
+        ]
+      },
+      "description": "Secret: When an opponent casts a spell, Counter it and add a copy to your hand that costs (0)."
+    },
+    {
+      "id": "time_stop",
+      "name": "Time Stop",
+      "cardClass": "mage",
+      "cost": 5,
+      "rarity": "epic",
+      "set": "paper",
+      "type": "instant",
+      "tribe": "Arcane",
+      "counterSpell": true,
+      "effects": [
+        {
+          "type": "end-turn"
+        }
+      ],
+      "description": "Counter target spell, then end the turn."
     }
   ]
 }
