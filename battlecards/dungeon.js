@@ -15,6 +15,7 @@ export const STARTER_DECKS = {
 	death_knight: ["body_bagger", "icy_touch", "heart_strike", "harbinger_of_winter", "bonedigger_geist", "dreadhound_handler", "chillfallen_baron", "reluctant_wrangler", "cool_ghoul", "remorseless_winter"],
 	demon_hunter: ["battlefiend", "shadowhoof_slayer", "chaos_strike", "umberwing", "netherwalker", "immolation_aura", "aldrachi_warblades", "satyr_overseer", "vile_call", "ashtongue_battlelord"],
 	bounty_hunter: ["backstab", "mark_target", "tripwire_snare", "shadow_stalker", "bear_trap", "the_lone_ranger", "ranchers_brand", "running_gunner", "contract_killer", "tumbleweed_tactician"],
+	centurion: ["scurrying_scout", "shield_bearer", "fortify", "acidspitter", "phalanx_beetle", "rallying_cry", "legion_commander", "sen_jin_shieldmasta", "golden_guardian", "sludge_belcher"],
 };
 
 export const BOSSES = {
@@ -299,6 +300,13 @@ export const BUCKETS = {
 		{ name: "Contraptions", cards: ["lucky_horseshoe", "iron_safe", "sheriffs_badge", "mechanical_deputy", "printing_press", "night_market", "war_drums", "campfire_songs", "ghost_town_haunting", "silencer"] },
 		{ name: "Legends", cards: ["marshal_ironstar", "sable_the_cardsharp", "old_man_cactus", "contract_killer", "tumbleweed_tactician", "banish_to_the_badlands"] },
 		{ name: "Tricks", cards: ["backstab", "mark_target", "regroup", "banish_to_the_badlands", "ranchers_brand", "westward_prosperity"] },
+	],
+	centurion: [
+		{ name: "Legion", cards: ["legion_commander", "rallying_cry", "fortify", "phalanx_beetle", "shield_bearer", "sen_jin_shieldmasta"] },
+		{ name: "Beetle Swarm", cards: ["scurrying_scout", "scout_s_nest", "nest_of_knighthood", "acidspitter", "acidspitter_nest", "sorrow_stalker", "curious_outsider", "holometa_vengeful_hivequeen"] },
+		{ name: "Bulwark", cards: ["shield_bearer", "fortify", "golden_guardian", "phalanx_beetle", "stonehill_defender", "sludge_belcher", "primordial_drake", "sleepy_dragon"] },
+		{ name: "Artillery", cards: ["ballista_beetle_barrage", "acidspitter", "acidspitter_nest", "primordial_drake"] },
+		{ name: "Legends", cards: ["holometa_vengeful_hivequeen", "curious_outsider", "golden_guardian"] },
 	],
 };
 
