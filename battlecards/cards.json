@@ -41803,6 +41803,191 @@
           }
         ]
       }
+    },
+    {
+      "id": "bone_glaive",
+      "name": "Bone Glaive",
+      "cardClass": "demon_hunter",
+      "cost": 5,
+      "rarity": "uncommon",
+      "set": "paper",
+      "description": "Equip Hero Battlecry: Dredge.",
+      "type": "weapon",
+      "attack": 5,
+      "durability": 2,
+      "effects": [
+        {
+          "type": "dredge",
+          "value": 3
+        }
+      ]
+    },
+    {
+      "id": "nosework",
+      "name": "Nosework",
+      "cardClass": "ranger",
+      "cost": 3,
+      "rarity": "uncommon",
+      "set": "paper",
+      "description": "Draw a Beast, then Scry 5.",
+      "type": "sorcery",
+      "tribe": "Nature",
+      "effects": [
+        {
+          "type": "tutor",
+          "tribe": "Beast",
+          "count": 1
+        },
+        {
+          "type": "scry",
+          "value": 5
+        }
+      ]
+    },
+    {
+      "id": "skeletal_daredevil",
+      "name": "Skeletal Daredevil",
+      "cardClass": "neutral",
+      "cost": 0,
+      "rarity": "common",
+      "set": "paper",
+      "description": "Deathrattle: Dredge.",
+      "type": "creature",
+      "attack": 1,
+      "health": 1,
+      "tribe": "Undead Explorer",
+      "keywords": [
+        "deathrattle"
+      ],
+      "deathrattle": [
+        {
+          "type": "dredge",
+          "value": 3
+        }
+      ]
+    },
+    {
+      "id": "diving_rig",
+      "name": "Diving Rig",
+      "cardClass": "neutral",
+      "cost": 3,
+      "rarity": "rare",
+      "set": "paper",
+      "description": "Magnetic. Swing: Dredge. This card can Magnetize to Pirates as well as Mechs.",
+      "type": "creature",
+      "attack": 2,
+      "health": 4,
+      "tribe": "Mech Pirate",
+      "ongoing": {
+        "on": "self-attacks",
+        "effects": [
+          {
+            "type": "dredge",
+            "value": 3
+          }
+        ]
+      }
+    },
+    {
+      "id": "blackwing_full_armor_master",
+      "name": "Blackwing Full Armor Master",
+      "cardClass": "neutral",
+      "cost": 10,
+      "rarity": "legendary",
+      "set": "paper",
+      "description": "Battlecry & Deathrattle: Gain 6 Armor. Inspire: Gain 3 Armor & Dredge. Charge, Reborn, Lifesteal & Windfury.",
+      "type": "creature",
+      "attack": 3,
+      "health": 3,
+      "tribe": "Mech Beast Knight",
+      "keywords": [
+        "battlecry",
+        "deathrattle",
+        "charge",
+        "reborn",
+        "lifesteal",
+        "windfury"
+      ],
+      "effects": [
+        {
+          "type": "armor",
+          "value": 6
+        }
+      ],
+      "deathrattle": [
+        {
+          "type": "armor",
+          "value": 6
+        }
+      ],
+      "ongoing": {
+        "on": "hero-power-used",
+        "effects": [
+          {
+            "type": "armor",
+            "value": 3
+          },
+          {
+            "type": "dredge",
+            "value": 3
+          }
+        ]
+      }
+    },
+    {
+      "id": "mighty_dino_king_rex",
+      "name": "Mighty Dino King Rex",
+      "cardClass": "neutral",
+      "cost": 12,
+      "rarity": "legendary",
+      "set": "paper",
+      "description": "Charge & Windfury. Deathrattle: Dredge & Discover a Dinosaur.",
+      "type": "creature",
+      "attack": 8,
+      "health": 8,
+      "tribe": "Beast Dragon",
+      "keywords": [
+        "charge",
+        "windfury",
+        "deathrattle"
+      ],
+      "deathrattle": [
+        {
+          "type": "dredge",
+          "value": 3
+        },
+        {
+          "type": "discover",
+          "pick": 3,
+          "tribe": "Dinosaur"
+        }
+      ]
+    },
+    {
+      "id": "card_grader",
+      "name": "Card Grader",
+      "cardClass": "neutral",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "description": "Battlecry: Dredge, then draw a card.",
+      "type": "creature",
+      "attack": 2,
+      "health": 4,
+      "tribe": "Naga Citizen",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "dredge",
+          "value": 3
+        },
+        {
+          "type": "draw",
+          "value": 1
+        }
+      ]
     }
   ]
 }

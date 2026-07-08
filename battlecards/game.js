@@ -1054,6 +1054,7 @@ function pump() {
 	resolveAIScries();
 	resolveAIDiscards();
 	resolveAIPicks();
+	resolveAIDredges();
 	queue.push(...E.takeEvents(state));
 	if (!queueBusy) nextEvent();
 }
@@ -1077,6 +1078,45 @@ function resolveAIPicks() {
 		const best = [...pend.ids].sort((a, b) => (state.cardsById[b]?.cost || 0) - (state.cardsById[a]?.cost || 0))[0];
 		E.resolvePick(state, best);
 	}
+}
+
+// AI Dredge: put the biggest card from the bottom three onto the deck
+function resolveAIDredges() {
+	if (duel.on) return; // guest resolves their own dredge
+	while (state.dredgeQueue.length && state.dredgeQueue[0].player !== HUMAN) {
+		const pend = state.dredgeQueue[0];
+		const best = [...pend.ids].sort((a, b) => (state.cardsById[b]?.cost || 0) - (state.cardsById[a]?.cost || 0))[0];
+		E.resolveDredge(state, best);
+	}
+}
+
+function openDredgeModal() {
+	const pend = state.dredgeQueue[0];
+	if (!pend || pend.player !== HUMAN) return;
+	const modal = $('scry-modal'); // reuse the scry chrome
+	modal.innerHTML = `<div class="wm-title">Dredge — put one on top of your deck</div><div class="scry-row"></div>`;
+	const row = modal.querySelector('.scry-row');
+	pend.ids.forEach(id => {
+		const def = state.cardsById[id];
+		const cell = document.createElement('div');
+		cell.className = 'scry-cell';
+		const face = drawCardFace(def);
+		face.style.width = '130px';
+		cell.appendChild(face);
+		const btn = document.createElement('button');
+		btn.textContent = 'To top';
+		btn.addEventListener('pointerdown', e => {
+			e.stopPropagation();
+			modal.style.display = 'none';
+			if (isGuest()) { guestApply(() => E.resolveDredge(state, id), { k: 'dredge', id }); return; }
+			E.resolveDredge(state, id);
+			pump();
+			if (duel.on) publishDuel();
+		});
+		cell.appendChild(btn);
+		row.appendChild(cell);
+	});
+	modal.style.display = 'block';
 }
 
 function openPickModal() {
@@ -1380,6 +1420,15 @@ function nextEvent() {
 			if (ev.player === HUMAN) openPickModal();
 			delay = 300;
 			break;
+		case 'dredgeStart':
+			log(`${nameOf(ev.player)} dredges (${ev.count})`);
+			if (ev.player === HUMAN) openDredgeModal();
+			delay = 300;
+			break;
+		case 'dredgeDone':
+			if (ev.player === HUMAN) log(`You put ${state.cardsById[ev.id]?.name || 'a card'} on top of your deck`);
+			delay = 250;
+			break;
 		case 'tokenGained':
 			log(`${nameOf(ev.player)} gained a ${ev.card.name}`);
 			delay = 250;
@@ -1535,6 +1584,7 @@ function maybeRunAI() {
 	if (state.scryQueue.length && state.scryQueue[0].chooser === HUMAN) return; // your call first
 	if (state.discardQueue.length && state.discardQueue[0].player === HUMAN) return; // loot pick first
 	if (state.pickQueue.length && state.pickQueue[0].player === HUMAN) return; // discover pick first
+	if (state.dredgeQueue.length && state.dredgeQueue[0].player === HUMAN) return; // dredge pick first
 	clearTimeout(aiTimer);
 	aiTimer = setTimeout(() => {
 		if (!state || state.over || state.current === HUMAN) return;
@@ -2193,7 +2243,7 @@ function snapshotState() {
 		classPicks: state.classPicks || null,
 		playerCount: state.players.length,
 		// pending decisions so a watcher can see the Discover/scry options being weighed
-		scryQueue: state.scryQueue || [], discardQueue: state.discardQueue || [], pickQueue: state.pickQueue || [],
+		scryQueue: state.scryQueue || [], discardQueue: state.discardQueue || [], pickQueue: state.pickQueue || [], dredgeQueue: state.dredgeQueue || [],
 	};
 }
 
@@ -2244,7 +2294,7 @@ function startSpectate(cardsById) {
 		// the watcher can see the Discover/scry options while they're being weighed
 		state = {
 			...snap, cardsById, rng: Math.random, events: [],
-			scryQueue: snap.scryQueue || [], discardQueue: snap.discardQueue || [], pickQueue: snap.pickQueue || [],
+			scryQueue: snap.scryQueue || [], discardQueue: snap.discardQueue || [], pickQueue: snap.pickQueue || [], dredgeQueue: snap.dredgeQueue || [],
 		};
 		if (snap.playerCount !== spectatePanelsFor) {
 			playerCount = snap.playerCount;
@@ -2267,10 +2317,11 @@ function startSpectate(cardsById) {
 let specChoiceSig = null;
 function renderSpectatorChoice() {
 	if (!spectateMode || !state) return;
-	const pq = state.pickQueue?.[0], sq = state.scryQueue?.[0], dq = state.discardQueue?.[0];
+	const pq = state.pickQueue?.[0], sq = state.scryQueue?.[0], dq = state.discardQueue?.[0], dr = state.dredgeQueue?.[0];
 	let sig = null, ids = null, whoIdx = null, kind = '';
 	if (pq) { sig = 'pick:' + pq.player + ':' + pq.ids.join(','); ids = pq.ids; whoIdx = pq.player; kind = pq.title || (pq.ids.length > 3 ? 'Draft' : 'Discover'); }
 	else if (sq) { sig = 'scry:' + sq.chooser + ':' + sq.ids.join(','); ids = sq.ids; whoIdx = sq.chooser; kind = sq.deckOwner === sq.chooser ? 'Scry' : 'Gaze'; }
+	else if (dr) { sig = 'dredge:' + dr.player + ':' + dr.ids.join(','); ids = dr.ids; whoIdx = dr.player; kind = 'Dredge'; }
 	else if (dq) { sig = 'discard:' + dq.player + ':' + dq.count; whoIdx = dq.player; kind = 'Loot'; }
 	if (sig === specChoiceSig) return; // unchanged
 	specChoiceSig = sig;
@@ -2344,7 +2395,7 @@ async function startDuelHost(cardsById) {
 			const snap = prev.snapshot;
 			state = {
 				...snap, cardsById, rng: Math.random, events: [],
-				scryQueue: snap.scryQueue || [], discardQueue: snap.discardQueue || [], pickQueue: snap.pickQueue || [],
+				scryQueue: snap.scryQueue || [], discardQueue: snap.discardQueue || [], pickQueue: snap.pickQueue || [], dredgeQueue: snap.dredgeQueue || [],
 			};
 			duelPubSeq = prev.seq || 0; // continue the sequence so the guest sees fresh
 			resumed = true;
@@ -2426,6 +2477,7 @@ function applyGuestIntent(it) {
 			case 'scry': if (state.scryQueue[0]?.chooser === P) E.resolveScry(state, it.picks || []); else return; break;
 			case 'discard': if (state.discardQueue[0]?.player === P) E.resolveDiscard(state, it.picks || []); else return; break;
 			case 'pick': if (state.pickQueue[0]?.player === P) E.resolvePick(state, it.id); else return; break;
+			case 'dredge': if (state.dredgeQueue[0]?.player === P) E.resolveDredge(state, it.id); else return; break;
 			default: return;
 		}
 	} catch (e) { log('(guest action ignored)'); return; }
@@ -2454,7 +2506,7 @@ function startDuelGuest(cardsById) {
 			const snap = data.snapshot;
 			state = {
 				...snap, cardsById, rng: Math.random, events: [],
-				scryQueue: snap.scryQueue || [], discardQueue: snap.discardQueue || [], pickQueue: snap.pickQueue || [],
+				scryQueue: snap.scryQueue || [], discardQueue: snap.discardQueue || [], pickQueue: snap.pickQueue || [], dredgeQueue: snap.dredgeQueue || [],
 			};
 			if (state.players.length !== panelsFor) {
 				playerCount = state.players.length;
@@ -2489,11 +2541,12 @@ function startDuelGuest(cardsById) {
 // prompt on every poll.
 function openDuelModals() {
 	if (!isGuest() || !state) return;
-	const sq = state.scryQueue[0], dq = state.discardQueue[0], pq = state.pickQueue[0];
+	const sq = state.scryQueue[0], dq = state.discardQueue[0], pq = state.pickQueue[0], dr = state.dredgeQueue[0];
 	let sig = null, open = null;
 	if (sq && sq.chooser === HUMAN) { sig = 'scry:' + sq.ids.join(','); open = openScryModal; }
 	else if (dq && dq.player === HUMAN) { sig = 'discard:' + dq.count + ':' + state.players[HUMAN].hand.map(c => c.uid).join(','); open = openDiscardModal; }
 	else if (pq && pq.player === HUMAN) { sig = 'pick:' + pq.ids.join(','); open = openPickModal; }
+	else if (dr && dr.player === HUMAN) { sig = 'dredge:' + dr.ids.join(','); open = openDredgeModal; }
 	if (sig === duel.modalSig) return; // already showing (or already submitted) this one
 	duel.modalSig = sig;
 	const modal = $('scry-modal');
@@ -2509,7 +2562,7 @@ function snapshotForDuel() {
 		over: state.over, winner: state.winner, classPicks: state.classPicks || null,
 		playerCount: state.players.length,
 		// carry pending decisions so the guest can resolve their own scry/loot/discover
-		scryQueue: state.scryQueue || [], discardQueue: state.discardQueue || [], pickQueue: state.pickQueue || [],
+		scryQueue: state.scryQueue || [], discardQueue: state.discardQueue || [], pickQueue: state.pickQueue || [], dredgeQueue: state.dredgeQueue || [],
 	};
 }
 function publishDuel() {

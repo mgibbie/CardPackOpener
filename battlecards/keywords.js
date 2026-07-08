@@ -29,6 +29,7 @@ const K = [
 	{ p: ['Freeze', 'Frozen', 'Freezer'], t: 'A Frozen character skips its next attack.', tag: 'freezer' },
 	// text-only keywords: no engine tag, but worth explaining where they appear
 	{ p: ['Discover'], t: 'Choose one of three cards to add to your hand.' },
+	{ p: ['Dredge'], t: 'Look at the bottom 3 cards of your deck and put one on top (you don\'t draw it).' },
 	{ p: ['Morbid'], t: 'Morbid N — its effect triggers each time N creatures have died.' },
 	{ p: ['Overload'], t: 'Locks that much of your mana next turn.' },
 	{ p: ['Combo'], t: 'A bonus effect if you already played a card this turn.' },

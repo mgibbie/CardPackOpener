@@ -318,6 +318,7 @@ export function createGame(cardsById, rng = Math.random, playerDeckIds = null, p
 		scryQueue: [],  // pending scry/gaze decisions: { chooser, deckOwner, ids }
 		discardQueue: [], // pending Loot discards: { player, count }
 		pickQueue: [],  // pending Discover/Draft picks: { player, ids, grant }
+		dredgeQueue: [], // pending Dredge decisions: { player, ids } (bottom-of-deck)
 	};
 	if (playerDeck) state.players[0].deck = playerDeck;
 
@@ -2955,6 +2956,18 @@ function execEffects(state, pi, effects, target, source) {
 					emit(state, { type: 'scryStart', chooser: pi, deckOwner, count: ids.length });
 				}
 			}
+		} else if (e.type === 'dredge') {
+			// Dredge: look at the bottom N (default 3) of your deck and put one
+			// on top — you don't draw it. The choice resolves via resolveDredge.
+			const p = state.players[pi];
+			if (!p.eliminated) {
+				// bottom of the deck is the front of the array (draws pop the end)
+				const ids = p.deck.splice(0, Math.min(e.value || 3, p.deck.length));
+				if (ids.length) {
+					state.dredgeQueue.push({ player: pi, ids });
+					emit(state, { type: 'dredgeStart', player: pi, count: ids.length });
+				}
+			}
 		} else if (e.type === 'disguise') {
 			const t = chosenCreature() || (() => {
 				// triggered disguises without a chosen target hide a random friendly
@@ -3791,6 +3804,21 @@ export function resolveScry(state, picks) {
 	for (const id of bottoms) deck.unshift(id);
 	for (const id of [...tops].reverse()) deck.push(id); // first pick drawn first
 	emit(state, { type: 'scryDone', chooser: pending.chooser, deckOwner: pending.deckOwner, bottomed: bottoms.length });
+	return true;
+}
+
+// resolve a pending Dredge: chosen card goes on top (drawn next), the rest
+// return to the bottom in their original order. Nothing is drawn.
+export function resolveDredge(state, id) {
+	const pend = state.dredgeQueue.shift();
+	if (!pend) return false;
+	const deck = state.players[pend.player].deck;
+	const chosen = pend.ids.includes(id) ? id : pend.ids[0];
+	const rest = pend.ids.filter(x => x !== chosen);
+	// rest[] were the bottom cards in bottom-up order; keep that order at the bottom
+	for (const x of [...rest].reverse()) deck.unshift(x);
+	deck.push(chosen); // top of deck = end of array
+	emit(state, { type: 'dredgeDone', player: pend.player, id: chosen });
 	return true;
 }
 

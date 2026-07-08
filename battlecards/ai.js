@@ -147,6 +147,14 @@ export function step(state, pi = 1) {
 		return true;
 	}
 
+	// -1c'. resolve pending Dredge: put the biggest bottom card on top to draw next
+	if (state.dredgeQueue.length && state.dredgeQueue[0].player === pi) {
+		const pend = state.dredgeQueue[0];
+		const best = [...pend.ids].sort((a, b) => (state.cardsById[b]?.cost || 0) - (state.cardsById[a]?.cost || 0))[0];
+		E.resolveDredge(state, best);
+		return true;
+	}
+
 	// -1d. cash in field tokens when it's clearly worth it
 	for (const t of [...p.artifacts]) {
 		if (!t.sac || !E.canSacrifice(state, pi, t)) continue;
