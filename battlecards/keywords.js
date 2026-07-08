@@ -38,6 +38,7 @@ const K = [
 	{ p: ['Secret'], t: "Stays hidden until its trigger fires on the opponent's turn." },
 	{ p: ['Tradeable'], t: 'Drag it onto your deck to pay 1 and draw a card.' },
 	{ p: ['Connect'], t: 'Triggers when this deals combat damage to the enemy hero.' },
+	{ p: ['Swing'], t: 'Triggers when this attacks.' },
 	{ p: ['Honorable Kill'], t: 'Bonus if it kills a creature with an exact-lethal blow.' },
 	{ p: ['Adapt'], t: 'Choose one of three upgrades for the creature.' },
 	{ p: ['Quest'], t: 'Complete its goal for a powerful reward.', tag: 'quest' },
