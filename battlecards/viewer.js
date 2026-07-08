@@ -26,7 +26,12 @@ const TOUCH = matchMedia('(pointer: coarse)').matches;
 let PAGE_SIZE = MOBILE.matches ? 6 : 10;
 MOBILE.addEventListener('change', () => { PAGE_SIZE = MOBILE.matches ? 6 : 10; page = 0; renderPage(); });
 let cards = [], collection = {}, filtered = [], page = 0;
-const filters = { search: '', mana: null, type: '', rarity: '', cls: '', ownedOnly: false };
+const filters = { search: '', mana: null, type: '', rarity: '', cls: '', ownedOnly: false, showUncollectible: false };
+
+// cards you can't collect: lands (bought from slots), tokens, hero powers,
+// companions/commanders — hidden by default so the gallery is your card pool
+const isUncollectible = c => c.token || c.companion || c.commander
+	|| c.type === 'land' || c.type === 'heropower';
 
 const $ = id => document.getElementById(id);
 const grid = $('grid');
@@ -53,6 +58,7 @@ $('class-filter').addEventListener('change', ev => { filters.cls = ev.target.val
 $('type-filter').addEventListener('change', ev => { filters.type = ev.target.value; page = 0; applyFilters(); });
 $('rarity-filter').addEventListener('change', ev => { filters.rarity = ev.target.value; page = 0; applyFilters(); });
 $('owned-only').addEventListener('change', ev => { filters.ownedOnly = ev.target.checked; page = 0; applyFilters(); });
+$('show-uncollectible').addEventListener('change', ev => { filters.showUncollectible = ev.target.checked; page = 0; applyFilters(); });
 $('prev').addEventListener('click', () => flip(-1));
 $('next').addEventListener('click', () => flip(1));
 addEventListener('keydown', ev => {
@@ -77,6 +83,7 @@ function applyFilters() {
 		if (filters.type && c.type !== filters.type) return false;
 		if (filters.rarity && (c.rarity || 'common') !== filters.rarity) return false;
 		if (filters.ownedOnly && !(collection[c.id] > 0)) return false;
+		if (!filters.showUncollectible && isUncollectible(c)) return false;
 		return true;
 	});
 	$('count').textContent = `${filtered.length} of ${cards.length} cards`;

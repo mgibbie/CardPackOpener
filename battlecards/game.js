@@ -1292,7 +1292,7 @@ function nextEvent() {
 			delay = 350;
 			break;
 		case 'manaGained': delay = 120; break;
-		case 'coinGiven': delay = 80; break;
+		case 'coinGiven': log(`${nameOf(ev.player)} got The Coin`); delay = 120; break;
 		case 'conjure':
 			log(ev.player === HUMAN ? `You conjured ${ev.card.name}` : `${nameOf(ev.player)} conjured a card`);
 			delay = 350;
@@ -1489,7 +1489,7 @@ function nextEvent() {
 		case 'overloaded': log(`${nameOf(ev.player)} ${ev.player === HUMAN ? 'have' : 'has'} ${ev.amount} mana locked (overload)`); delay = 300; break;
 		case 'armor': floatText(`+${ev.amount}`, '#c9c2da', heroPos(ev.player)); delay = 260; break;
 		case 'bounce': log(`${ev.name} was returned to hand`); delay = 300; break;
-		case 'coin': log(`${nameOf(ev.player)} spent a coin (+1 mana)`); delay = 250; break;
+		case 'coin': log(`${nameOf(ev.player)} played The Coin (+1 mana)`); delay = 250; break;
 		case 'reshuffle': log(`${ev.player === HUMAN ? 'Your' : `${nameOf(ev.player)}'s`} graveyard was shuffled back in`); break;
 		case 'discard': log(`${nameOf(ev.player)} discarded ${ev.card.name}`); break;
 		case 'eliminated':

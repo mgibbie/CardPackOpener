@@ -331,11 +331,11 @@ export function createGame(cardsById, rng = Math.random, playerDeckIds = null, p
 		}
 	});
 
-	// starting hands: 1st player 3 cards, everyone after 4 cards + 1 coin
+	// starting hands: 1st player 3 cards, everyone after 4 cards + The Coin
 	drawCards(state, 0, 3);
 	for (let i = 1; i < n; i++) {
 		drawCards(state, i, 4);
-		state.players[i].coins = 1;
+		addCoin(state, i);
 	}
 	emit(state, { type: 'turnStart', player: 0, turnNumber: 1 });
 	drawCards(state, 0, 1); // start-of-turn draw (BattleEngine.startPhase draws on turn 1 too)
@@ -567,6 +567,21 @@ function gainTokenCard(state, pi, id) {
 	emit(state, { type: 'tokenGained', player: pi, card });
 }
 const gainBloodToken = (state, pi) => gainTokenCard(state, pi, 'blood_token');
+
+// The Coin: an opponent developing a land (or a "gain a coin" effect) puts a
+// coin CARD into your hand instead of a hidden counter — play it any time for
+// +1 mana this turn, Hearthstone-style. Overflows are burned like any draw.
+function addCoin(state, pi) {
+	const p = state.players[pi];
+	if (p.eliminated) return;
+	const def = state.cardsById['coin'];
+	if (!def) { p.coins = (p.coins || 0) + 1; return; } // fallback if the card is missing
+	if (p.hand.length >= MAX_HAND) { emit(state, { type: 'burn', player: pi, cardId: 'coin' }); return; }
+	const card = instantiate(def, pi);
+	card.zone = 'hand';
+	p.hand.push(card);
+	emit(state, { type: 'coinGiven', player: pi, card });
+}
 
 // Tradeable: instead of playing the card, pay 1 mana to shuffle it back
 // into your deck and draw a card (user ruling)
@@ -1100,11 +1115,8 @@ export function buyLand(state, pi, landId) {
 	if (!def || def.type !== 'land') return false;
 	const p = state.players[pi];
 	spendMana(p, LAND_COST);
-	// paper rules: developing a land gives each opponent a coin
-	for (const o of opponentsOf(state, pi)) {
-		state.players[o].coins++;
-		emit(state, { type: 'coinGiven', player: o });
-	}
+	// paper rules: developing a land puts The Coin into each opponent's hand
+	for (const o of opponentsOf(state, pi)) addCoin(state, o);
 	const card = instantiate(def, pi);
 	card.zone = 'land';
 	p.lands.push(card);
@@ -2682,8 +2694,11 @@ function execEffects(state, pi, effects, target, source) {
 				emit(state, { type: 'conjure', player: pi, card, color: null });
 			}
 		} else if (e.type === 'gain-coin') {
-			state.players[pi].coins += e.value || 1;
-			emit(state, { type: 'coinGained', player: pi, coins: state.players[pi].coins });
+			for (let n = 0; n < (e.value || 1); n++) addCoin(state, pi);
+		} else if (e.type === 'temp-mana') {
+			const pp = state.players[pi];
+			pp.mana.bonus += e.value || 1;
+			emit(state, { type: 'coin', player: pi, mana: availableMana(pp) });
 		} else if (e.type === 'draw-to') {
 			// draw until you hold N cards
 			const p = state.players[pi];
