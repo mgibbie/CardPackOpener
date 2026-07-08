@@ -43242,6 +43242,322 @@
           }
         ]
       }
+    },
+    {
+      "id": "second_little_pig",
+      "name": "Second Little Pig",
+      "cardClass": "neutral",
+      "cost": 2,
+      "rarity": "uncommon",
+      "set": "paper",
+      "description": "Connect & Spellburst: Cook.",
+      "type": "creature",
+      "attack": 2,
+      "health": 2,
+      "tribe": "Faerie Beast",
+      "ongoings": [
+        {
+          "on": "self-hit-player",
+          "effects": [
+            {
+              "type": "cook"
+            }
+          ]
+        },
+        {
+          "on": "spell-played",
+          "once": true,
+          "effects": [
+            {
+              "type": "cook"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "playful_predator",
+      "name": "Playful Predator",
+      "cardClass": "neutral",
+      "cost": 4,
+      "rarity": "rare",
+      "set": "paper",
+      "description": "Emerge, Battlecry, Alliance, Spellburst & Frenzy: Deal 1 damage to target creature.",
+      "type": "creature",
+      "attack": 4,
+      "health": 4,
+      "tribe": "Beast",
+      "emerge": [
+        {
+          "type": "damage",
+          "value": 1,
+          "target": "creature"
+        }
+      ],
+      "ongoings": [
+        {
+          "on": "creature-played",
+          "effects": [
+            {
+              "type": "damage",
+              "value": 1,
+              "target": "creature"
+            }
+          ]
+        },
+        {
+          "on": "spell-played",
+          "once": true,
+          "effects": [
+            {
+              "type": "damage",
+              "value": 1,
+              "target": "creature"
+            }
+          ]
+        },
+        {
+          "on": "self-damaged",
+          "once": true,
+          "survives": true,
+          "effects": [
+            {
+              "type": "damage",
+              "value": 1,
+              "target": "creature"
+            }
+          ]
+        }
+      ],
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "damage",
+          "value": 1,
+          "target": "creature"
+        }
+      ]
+    },
+    {
+      "id": "sandstorm_sniper",
+      "name": "Sandstorm Sniper",
+      "cardClass": "neutral",
+      "cost": 4,
+      "rarity": "epic",
+      "set": "paper",
+      "description": "Battlecry & Alliance: Deal 2 damage to any target.",
+      "type": "creature",
+      "attack": 3,
+      "health": 3,
+      "tribe": "Human Ranger",
+      "ongoings": [
+        {
+          "on": "creature-played",
+          "effects": [
+            {
+              "type": "damage",
+              "value": 2,
+              "target": "any"
+            }
+          ]
+        }
+      ],
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "damage",
+          "value": 2,
+          "target": "any"
+        }
+      ]
+    },
+    {
+      "id": "panda_catfish",
+      "name": "Panda Catfish",
+      "cardClass": "neutral",
+      "cost": 4,
+      "rarity": "epic",
+      "set": "paper",
+      "description": "Battlecry, Inspire & Finale: Adapt.",
+      "type": "creature",
+      "attack": 2,
+      "health": 3,
+      "tribe": "Beast",
+      "ongoings": [
+        {
+          "on": "hero-power-used",
+          "effects": [
+            {
+              "type": "adapt"
+            }
+          ]
+        }
+      ],
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "adapt"
+        },
+        {
+          "type": "conditional",
+          "if": {
+            "finale": true
+          },
+          "then": [
+            {
+              "type": "adapt"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "cheerful_chomper",
+      "name": "Cheerful Chomper",
+      "cardClass": "neutral",
+      "cost": 6,
+      "rarity": "uncommon",
+      "set": "paper",
+      "description": "Emerge & Frenzy: Deal 4 damage to any target.",
+      "type": "creature",
+      "attack": 6,
+      "health": 6,
+      "tribe": "Beast",
+      "emerge": [
+        {
+          "type": "damage",
+          "value": 4,
+          "target": "any"
+        }
+      ],
+      "ongoings": [
+        {
+          "on": "self-damaged",
+          "once": true,
+          "survives": true,
+          "effects": [
+            {
+              "type": "damage",
+              "value": 4,
+              "target": "any"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "lulu_queen_of_the_summer_feast",
+      "name": "Lulu, Queen of the Summer Feast",
+      "cardClass": "neutral",
+      "cost": 7,
+      "rarity": "legendary",
+      "set": "paper",
+      "description": "Inspire & Alliance: Cook. Activated abilities of Foods you control cost 1 less to activate. Whenever you sacrifice a Food, draw a card.",
+      "type": "creature",
+      "attack": 6,
+      "health": 6,
+      "tribe": "Human Noble",
+      "ongoings": [
+        {
+          "on": "hero-power-used",
+          "effects": [
+            {
+              "type": "cook"
+            }
+          ]
+        },
+        {
+          "on": "creature-played",
+          "effects": [
+            {
+              "type": "cook"
+            }
+          ]
+        }
+      ],
+      "ongoing": {
+        "on": "token-sacrificed",
+        "if": {
+          "cardId": "food_token"
+        },
+        "effects": [
+          {
+            "type": "draw",
+            "value": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "solarion",
+      "name": "Solarion",
+      "cardClass": "neutral",
+      "cost": 7,
+      "rarity": "uncommon",
+      "set": "paper",
+      "description": "Battlecry, Inspire, Spellburst, Frenzy & Honorable Kill: Gain +2/+2. At the end of your turn, Refresh this creature\u2019s Frenzy & Spellburst effects.",
+      "type": "creature",
+      "attack": 1,
+      "health": 1,
+      "tribe": "Mech Horror",
+      "ongoings": [
+        {
+          "on": "hero-power-used",
+          "effects": [
+            {
+              "type": "buff-self",
+              "attack": 2,
+              "health": 2
+            }
+          ]
+        },
+        {
+          "on": "spell-played",
+          "once": true,
+          "effects": [
+            {
+              "type": "buff-self",
+              "attack": 2,
+              "health": 2
+            }
+          ]
+        },
+        {
+          "on": "self-damaged",
+          "once": true,
+          "survives": true,
+          "effects": [
+            {
+              "type": "buff-self",
+              "attack": 2,
+              "health": 2
+            }
+          ]
+        }
+      ],
+      "honorableKill": [
+        {
+          "type": "buff-self",
+          "attack": 2,
+          "health": 2
+        }
+      ],
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "buff-self",
+          "attack": 2,
+          "health": 2
+        }
+      ]
     }
   ]
 }

@@ -181,6 +181,7 @@ function instantiate(def, controller) {
 		condKeyword: def.condKeyword || null, // { keyword, while: 'weapon' } (Southsea Deckhand)
 		honorableKill: def.honorableKill || null, // effects on an EXACT lethal blow
 		emerge: def.emerge || null,   // fires from hand when drawn/discovered (not opening hand)
+		ongoings: def.ongoings ? JSON.parse(JSON.stringify(def.ongoings)) : null, // combined triggers
 		medic: def.medic || 0,        // heals adjacent creatures N at end of turn
 		sac: def.sac || null,         // field-token activation: { cost, discard?, effects }
 		aura: def.aura || null,       // { attack, health, tribe?, others?, adjacent?, position?, keywords? }
@@ -1079,26 +1080,33 @@ function ongoingCondOk(state, pi, cond, ctx) {
 function fireOngoing(state, pi, when, ctx = {}) {
 	const p = state.players[pi];
 	if (state.over || p.eliminated) return;
-	const sources = [...p.enchantments, ...p.artifacts, ...p.emblems, ...p.board.filter(c => c.ongoing),
-		...(p.weapon?.ongoing ? [p.weapon] : [])]; // Eaglehorn/Sword of Justice
+	const hasTrig = c => c && (c.ongoing || (c.ongoings && c.ongoings.length));
+	const sources = [...p.enchantments, ...p.artifacts, ...p.emblems, ...p.board.filter(hasTrig),
+		...(hasTrig(p.weapon) ? [p.weapon] : [])]; // Eaglehorn/Sword of Justice
 	for (const card of sources) {
 		if (state.over) break;
-		if (!card.ongoing || card.ongoing.on !== when) continue;
-		if (card === ctx.minion) continue; // a minion doesn't trigger on its own arrival
+		if (card === ctx.minion) continue; // a card doesn't trigger on its own arrival
 		if (card.zone === 'board' && isDead(card)) continue;
-		// conditional triggers ("Whenever you summon a Beast...") gate before counters
-		if (card.ongoing.if && !ongoingCondOk(state, pi, card.ongoing.if, ctx)) continue;
-		// Avenge-style triggers need N occurrences before they pop (once);
-		// Morbid-style `every` triggers fire on every Nth occurrence, repeating
-		if (card.ongoing.need || card.ongoing.every) {
-			card.trigCount = (card.trigCount || 0) + 1;
-			if (card.trigCount < (card.ongoing.need || card.ongoing.every)) continue;
-			if (card.ongoing.every) card.trigCount = 0;
+		// a card may carry one `ongoing` plus any number of combined `ongoings`
+		const trigs = [];
+		if (card.ongoing) trigs.push(card.ongoing);
+		if (card.ongoings) for (const t of card.ongoings) trigs.push(t);
+		for (const trig of trigs) {
+			if (!trig || trig.spent || trig.on !== when) continue;
+			// conditional triggers ("Whenever you summon a Beast...") gate before counters
+			if (trig.if && !ongoingCondOk(state, pi, trig.if, ctx)) continue;
+			// Avenge-style triggers need N occurrences (once); Morbid-style `every`
+			// triggers fire on every Nth occurrence, repeating
+			if (trig.need || trig.every) {
+				trig.trigCount = (trig.trigCount || 0) + 1;
+				if (trig.trigCount < (trig.need || trig.every)) continue;
+				if (trig.every) trig.trigCount = 0;
+			}
+			emit(state, { type: 'ongoingTriggered', player: pi, card });
+			const fx = trig.effects;
+			if (trig.once) { if (trig === card.ongoing) card.ongoing = null; else trig.spent = true; } // one-shots
+			runSecretEffects(state, pi, fx, { ...ctx, self: card });
 		}
-		emit(state, { type: 'ongoingTriggered', player: pi, card });
-		const fx = card.ongoing.effects;
-		if (card.ongoing.once) card.ongoing = null; // Spellburst-style one-shots
-		runSecretEffects(state, pi, fx, { ...ctx, self: card });
 	}
 }
 
