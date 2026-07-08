@@ -254,15 +254,36 @@ function flip(i) {
 // ---------- input ----------
 const raycaster = new THREE.Raycaster();
 const pointer = new THREE.Vector2();
-renderer.domElement.addEventListener('pointerdown', e => {
+renderer.domElement.style.touchAction = 'none';
+
+// a plain tap: flip the next card, or open a pack on the idle/done screen
+function tapAction(e) {
 	if (phase === 'idle' || phase === 'done') { startOpen(); return; }
 	if (phase !== 'revealing') return;
-	pointer.x = (e.clientX / innerWidth) * 2 - 1;
-	pointer.y = -(e.clientY / innerHeight) * 2 + 1;
-	raycaster.setFromCamera(pointer, camera);
-	const hits = raycaster.intersectObjects(cardMeshes.map(c => c.mesh));
-	if (hits.length) flip(hits[0].object.userData.idx);
+	const c = hoveredCard(e);
+	if (c) flip(c.mesh.userData.idx);
+}
+
+// touch has no hover, so press-and-hold a revealed card to inspect it
+let lpTimer = null, lpFired = false, lpStart = null;
+renderer.domElement.addEventListener('pointerdown', e => {
+	if (e.pointerType !== 'touch') { tapAction(e); return; } // mouse acts on press
+	lpFired = false;
+	lpStart = { x: e.clientX, y: e.clientY };
+	const c = hoveredCard(e);
+	lpTimer = setTimeout(() => {
+		lpFired = true;
+		if (c && c.flipped) { showTip(c.def, lpStart.x, lpStart.y); if (navigator.vibrate) navigator.vibrate(12); }
+	}, 420);
 });
+renderer.domElement.addEventListener('pointerup', e => {
+	if (e.pointerType !== 'touch') return;
+	clearTimeout(lpTimer); lpTimer = null;
+	if (lpFired) { hideTip(); lpStart = null; return; } // an inspect, not a tap
+	lpStart = null;
+	tapAction(e); // short tap flips / opens
+});
+renderer.domElement.addEventListener('pointercancel', () => { clearTimeout(lpTimer); lpTimer = null; lpFired = false; lpStart = null; hideTip(); });
 addEventListener('keydown', e => {
 	if (e.key === 'z' || e.key === 'Enter') {
 		if (phase === 'idle' || phase === 'done') startOpen();
@@ -308,22 +329,28 @@ function hoveredCard(e) {
 	const hits = raycaster.intersectObjects(cardMeshes.map(c => c.mesh));
 	return hits.length ? cardMeshes[hits[0].object.userData.idx] : null;
 }
+function showTip(def, cx, cy) {
+	tip.innerHTML = tipHtml(def);
+	tip.style.display = 'block';
+	const x = Math.min(cx + 16, innerWidth - tip.offsetWidth - 8);
+	const y = Math.min(cy + 16, innerHeight - tip.offsetHeight - 8);
+	tip.style.left = Math.max(8, x) + 'px';
+	tip.style.top = Math.max(8, y) + 'px';
+}
+function hideTip() { tip.style.display = 'none'; renderer.domElement.style.cursor = ''; }
+// mouse hover → tooltip; a touch drag just cancels a pending long-press
 renderer.domElement.addEventListener('pointermove', e => {
-	const c = hoveredCard(e);
-	if (c && c.flipped) {
-		tip.innerHTML = tipHtml(c.def);
-		tip.style.display = 'block';
-		const x = Math.min(e.clientX + 16, innerWidth - tip.offsetWidth - 8);
-		const y = Math.min(e.clientY + 16, innerHeight - tip.offsetHeight - 8);
-		tip.style.left = Math.max(8, x) + 'px';
-		tip.style.top = Math.max(8, y) + 'px';
-		renderer.domElement.style.cursor = 'help';
-	} else {
-		tip.style.display = 'none';
-		renderer.domElement.style.cursor = '';
+	if (e.pointerType === 'touch') {
+		if (lpTimer && lpStart && Math.hypot(e.clientX - lpStart.x, e.clientY - lpStart.y) > 14) {
+			clearTimeout(lpTimer); lpTimer = null;
+		}
+		return;
 	}
+	const c = hoveredCard(e);
+	if (c && c.flipped) { showTip(c.def, e.clientX, e.clientY); renderer.domElement.style.cursor = 'help'; }
+	else hideTip();
 });
-renderer.domElement.addEventListener('pointerleave', () => { tip.style.display = 'none'; });
+renderer.domElement.addEventListener('pointerleave', hideTip);
 
 // ---------- loop ----------
 const clock = new THREE.Clock();
