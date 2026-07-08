@@ -13003,18 +13003,19 @@
       "attack": 1,
       "health": 6,
       "tribe": "Dwarf Scout",
-      "ongoing": {
-        "on": "friendly-creature-died",
-        "need": 1,
-        "once": true,
-        "effects": [
-          {
-            "type": "buff-self",
-            "attack": 1,
-            "health": 0
-          }
-        ]
-      }
+      "ongoings": [
+        {
+          "on": "friendly-creature-died",
+          "every": 1,
+          "effects": [
+            {
+              "type": "buff-self",
+              "attack": 1,
+              "health": 0
+            }
+          ]
+        }
+      ]
     },
     {
       "id": "inner_demon",
@@ -13216,18 +13217,19 @@
       "attack": 3,
       "health": 3,
       "tribe": "Totem Mech",
-      "ongoing": {
-        "on": "friendly-creature-died",
-        "need": 3,
-        "once": true,
-        "effects": [
-          {
-            "type": "buff-self",
-            "attack": 2,
-            "health": 2
-          }
-        ]
-      }
+      "ongoings": [
+        {
+          "on": "friendly-creature-died",
+          "every": 3,
+          "effects": [
+            {
+              "type": "buff-self",
+              "attack": 2,
+              "health": 2
+            }
+          ]
+        }
+      ]
     },
     {
       "id": "wraith_of_enochia",
@@ -13244,6 +13246,19 @@
       "ward": {
         "mana": 2
       },
+      "ongoings": [
+        {
+          "on": "friendly-creature-died",
+          "every": 2,
+          "effects": [
+            {
+              "type": "buff-self",
+              "attack": 1,
+              "health": 1
+            }
+          ]
+        }
+      ],
       "keywords": [
         "taunt",
         "lifesteal",
@@ -13256,19 +13271,7 @@
           "value": 2,
           "target": "any"
         }
-      ],
-      "ongoing": {
-        "on": "friendly-creature-died",
-        "need": 2,
-        "once": true,
-        "effects": [
-          {
-            "type": "buff-self",
-            "attack": 1,
-            "health": 1
-          }
-        ]
-      }
+      ]
     },
     {
       "id": "timber_wolf",
@@ -13720,17 +13723,19 @@
       "attack": 4,
       "health": 6,
       "tribe": "Spirit Horror",
-      "tradeable": true,
-      "ongoing": {
-        "on": "creature-died",
-        "every": 1,
-        "effects": [
-          {
-            "type": "draw",
-            "value": 1
-          }
-        ]
-      }
+      "ongoings": [
+        {
+          "on": "creature-died",
+          "every": 1,
+          "effects": [
+            {
+              "type": "draw",
+              "value": 1
+            }
+          ]
+        }
+      ],
+      "tradeable": true
     },
     {
       "id": "vampiric_vandal",
@@ -13744,21 +13749,23 @@
       "attack": 4,
       "health": 5,
       "tribe": "Vampire Rogue",
+      "ongoings": [
+        {
+          "on": "creature-died",
+          "every": 3,
+          "effects": [
+            {
+              "type": "grant",
+              "keyword": "lifesteal",
+              "target": "creature"
+            }
+          ]
+        }
+      ],
       "keywords": [
         "sanguine",
         "chromatic"
-      ],
-      "ongoing": {
-        "on": "creature-died",
-        "every": 3,
-        "effects": [
-          {
-            "type": "grant",
-            "keyword": "lifesteal",
-            "target": "creature"
-          }
-        ]
-      }
+      ]
     },
     {
       "id": "ghostblade_privateer",
@@ -40777,22 +40784,23 @@
       "ward": {
         "discard": 1
       },
+      "ongoings": [
+        {
+          "on": "friendly-creature-died",
+          "every": 1,
+          "effects": [
+            {
+              "type": "buff-self",
+              "attack": 1,
+              "health": 1
+            }
+          ]
+        }
+      ],
       "keywords": [
         "windfury",
         "lifesteal"
-      ],
-      "ongoing": {
-        "on": "friendly-creature-died",
-        "need": 1,
-        "once": true,
-        "effects": [
-          {
-            "type": "buff-self",
-            "attack": 1,
-            "health": 1
-          }
-        ]
-      }
+      ]
     },
     {
       "id": "citystalker_connoisseur",
@@ -43581,6 +43589,42 @@
       ],
       "keywords": [
         "rush"
+      ]
+    },
+    {
+      "id": "ancalagon_the_voracious",
+      "name": "Ancalagon, the Voracious",
+      "cardClass": "neutral",
+      "cost": 10,
+      "rarity": "legendary",
+      "set": "paper",
+      "description": "Avenge 1: Gain +1/+1. Morbid 1: Gaze 2.",
+      "type": "creature",
+      "attack": 10,
+      "health": 10,
+      "tribe": "Demon Dragon",
+      "ongoings": [
+        {
+          "on": "friendly-creature-died",
+          "every": 1,
+          "effects": [
+            {
+              "type": "buff-self",
+              "attack": 1,
+              "health": 1
+            }
+          ]
+        },
+        {
+          "on": "creature-died",
+          "every": 1,
+          "effects": [
+            {
+              "type": "gaze",
+              "value": 2
+            }
+          ]
+        }
       ]
     }
   ]

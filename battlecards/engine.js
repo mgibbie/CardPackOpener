@@ -74,7 +74,7 @@ export const BOOST_TABLES = {
 		{ label: 'Venomous', keyword: 'deathtouch' },
 		{ label: 'Ward: 2 Life', ward: { life: 2 } },
 		PENDING('Swing: Advance'),
-		{ label: 'Avenge 1: Gain 1 Life', ongoing: { on: 'friendly-creature-died', need: 1, once: true, effects: [{ type: 'heal', value: 1, target: 'self' }] } },
+		{ label: 'Avenge 1: Gain 1 Life', ongoing: { on: 'friendly-creature-died', every: 1, effects: [{ type: 'heal', value: 1, target: 'self' }] } },
 		{ label: 'Reborn', keyword: 'reborn' },
 		{ label: 'Deathtouch', keyword: 'deathtouch' },
 	],
