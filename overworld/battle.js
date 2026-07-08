@@ -436,6 +436,7 @@ export class Battle {
 			meBoosts: freshBoosts(),
 			foeBoosts: freshBoosts(),
 			meShownHP: playerMon.curHP, foeShownHP: foe.curHP,
+			meShownExp: playerMon.exp ?? playerMon.level ** 3,
 			meScreens: { reflect: 0, light: 0 }, foeScreens: { reflect: 0, light: 0 },
 			meSide: {}, foeSide: {},               // tailwind/safeguard/mist/luckychant turns
 			meHazards: {}, foeHazards: {},         // spikes/toxicspikes/stealthrock/stickyweb
@@ -499,6 +500,7 @@ export class Battle {
 			meBoosts: freshBoosts(),
 			foeBoosts: freshBoosts(),
 			meShownHP: playerMon.curHP, foeShownHP: foe.curHP,
+			meShownExp: playerMon.exp ?? playerMon.level ** 3,
 			meScreens: { reflect: 0, light: 0 }, foeScreens: { reflect: 0, light: 0 },
 			meSide: {}, foeSide: {},               // tailwind/safeguard/mist/luckychant turns
 			meHazards: {}, foeHazards: {},         // spikes/toxicspikes/stealthrock/stickyweb
@@ -551,6 +553,12 @@ export class Battle {
 	sideOfMon(mon) {
 		const a = this.active;
 		return (mon === a.me || mon === a.meAlly) ? 'me' : 'foe';
+	}
+	// which slot (0 = lead, 1 = ally) a mon occupies — so double-battle animations
+	// only move the mon that's actually acting
+	slotOfMon(mon) {
+		const a = this.active;
+		return (mon === a.meAlly || mon === a.foeAlly) ? 1 : 0;
 	}
 	boostsOf(mon) {
 		const a = this.active;
@@ -1256,8 +1264,8 @@ export class Battle {
 		}
 		total = Math.min(total, target.curHP);
 		const targetSide = isFoe ? 'me' : 'foe';
-		this.pushAnim('lunge', isFoe ? 'foe' : 'me', 0.3);
-		this.pushAnim('hit', targetSide, 0.4, null, { color: UI.TYPE_COLORS[mv.type] || '#e8e8e8' });
+		this.pushAnim('lunge', isFoe ? 'foe' : 'me', 0.3, null, { slot: this.slotOfMon(user) });
+		this.pushAnim('hit', targetSide, 0.4, null, { color: UI.TYPE_COLORS[mv.type] || '#e8e8e8', slot: this.slotOfMon(target) });
 		this.pushMsg('', () => {
 			sfx(eff > 1 ? 'hit_super' : eff < 1 ? 'hit_weak' : 'hit_normal');
 			if (this.abilityOf(target) === 'disguise' && !target.disguiseBroken) {
@@ -2794,6 +2802,14 @@ export class Battle {
 		if (Math.abs(a.meShownHP - a.me.curHP) < 0.5) a.meShownHP = a.me.curHP;
 		if (a.foeAlly) a.foeAllyShownHP += (a.foeAlly.curHP - (a.foeAllyShownHP || 0)) * Math.min(1, dt * 6);
 		if (a.meAlly) a.meAllyShownHP += (a.meAlly.curHP - (a.meAllyShownHP || 0)) * Math.min(1, dt * 6);
+		// EXP bar easing: the shown value crawls up to the real exp so you see it
+		// fill (and wrap across level-ups) instead of jumping instantly
+		const realExp = a.me.exp ?? a.me.level ** 3;
+		if (a._expMon !== a.me) { a._expMon = a.me; a.meShownExp = realExp; } // switched mon: snap
+		else if (a.meShownExp == null || a.meShownExp > realExp) a.meShownExp = realExp;
+		else if (a.meShownExp < realExp) {
+			a.meShownExp = Math.min(realExp, a.meShownExp + (realExp - a.meShownExp) * Math.min(1, dt * 2.2) + 4 * dt);
+		}
 
 		if (a.phase === 'flash') {
 			if (a.t > 0.6) { a.phase = 'msg'; }
@@ -2880,6 +2896,15 @@ export class Battle {
 		const cur = mon.level ** 3, next = (mon.level + 1) ** 3;
 		return Math.max(0, Math.min(1, ((mon.exp ?? cur) - cur) / (next - cur)));
 	}
+	// progress for an animated exp value: derive the level it belongs to so the
+	// bar fills to full, then wraps to empty and keeps going across level-ups
+	expFracFor(mon, exp) {
+		let lvl = mon.level;
+		while (lvl > 1 && exp < lvl ** 3) lvl--;
+		while (lvl < 100 && exp >= (lvl + 1) ** 3) lvl++;
+		const cur = lvl ** 3, next = (lvl + 1) ** 3;
+		return Math.max(0, Math.min(1, (exp - cur) / (next - cur)));
+	}
 
 	// ---------- full-resolution scene (Love2D-style presentation) ----------
 	// sprite base positions + fx offsets; side: 'me' | 'foe'
@@ -2897,7 +2922,8 @@ export class Battle {
 		// idle bob
 		dy += Math.sin(a.t * 2.1 + (side === 'foe' ? 1.7 : 0)) * 2.5 * u;
 		const fx = a.fx;
-		if (fx && fx.side === side) {
+		// in doubles, an fx tagged with a slot only moves that mon (fx.slot == null = whole side)
+		if (fx && fx.side === side && (fx.slot == null || fx.slot === slot)) {
 			const p = Math.min(1, fx.t / fx.dur);
 			if (fx.kind === 'lunge') dx += Math.sin(Math.PI * p) * (side === 'foe' ? -1 : 1) * 34 * u;
 			if (fx.kind === 'hit') blink = Math.floor(fx.t / 0.07) % 2 === 0;
@@ -3045,7 +3071,7 @@ export class Battle {
 		const meY = H - 124 * u - 112 * u;
 		UI.monPanel(ctx, a.me, W - 14 * u - 300 * u, meY, 300 * u, u,
 			{ shownHP: a.meShownHP, boosts: a.meBoosts, showXP: true, showNumbers: true,
-				expFrac: this.expFrac(a.me), abilityName: this.abilityName(a.me.ability),
+				expFrac: this.expFracFor(a.me, a.meShownExp ?? (a.me.exp ?? a.me.level ** 3)), abilityName: this.abilityName(a.me.ability),
 				itemName: a.me.heldItem ? this.itemName(a.me) : null });
 		// party dots sit in a row just above the panel's right edge
 		UI.teamDots(ctx, a.party, a.me,
