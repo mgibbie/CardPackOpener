@@ -4,6 +4,7 @@ import * as THREE from 'three';
 import { CARD_W, CARD_H, CARD_D, makeFaceTexture, makeBackTexture, RARITY_COLORS } from './cardart.js';
 import * as Col from './collection.js';
 import * as MPX from './mpmode.js';
+import { keywordsFor } from './keywords.js';
 
 // test-realm mode: packs are earned from dungeon runs and rolled server-side
 const MP_ON = MPX.mpMode();
@@ -317,10 +318,13 @@ function tipHtml(def) {
 		: def.type ? ` · ${def.type}` : '';
 	const kw = def.keywords?.length ? `<div style="color:#9fd0ff;font-size:12px">${esc(def.keywords.join(', '))}</div>` : '';
 	const cls = def.cardClass && def.cardClass !== 'neutral' ? ` ${esc(def.cardClass)}` : '';
+	const kwLines = keywordsFor(def).map(k =>
+		`<div style="margin-top:5px;padding-top:5px;border-top:1px solid rgba(255,255,255,0.12);font-size:11.5px;line-height:1.3"><b style="color:#9fd0ff">${esc(k.label)}</b> <span style="opacity:0.85">${esc(k.text)}</span></div>`).join('');
 	return `<div style="font-weight:700;font-size:15px">${esc(def.name)} <span style="color:#ffd25f">(${def.cost ?? 0})</span></div>`
 		+ `<div style="color:#c9b8ff;font-size:12px;text-transform:capitalize">${esc(def.rarity || 'common')}${cls}${stat}</div>`
 		+ kw
-		+ (def.description ? `<div style="margin-top:5px">${esc(def.description)}</div>` : '');
+		+ (def.description ? `<div style="margin-top:5px">${esc(def.description)}</div>` : '')
+		+ kwLines;
 }
 function hoveredCard(e) {
 	pointer.x = (e.clientX / innerWidth) * 2 - 1;

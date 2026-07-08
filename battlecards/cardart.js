@@ -1,10 +1,11 @@
 // cardart.js — canvas-generated card faces shared by the game board, packs,
 // deck builder, and gallery. Everything here is drawn procedurally: the frame
-// layout follows collectible-card conventions (mana gem, name banner, art
-// window, rarity gem, stat plates) but every pixel is ours. Rules text never
-// appears on the face — cards with rules carry an iridescent gem instead, and
-// the text lives in hover tooltips.
+// layout follows collectible-card conventions (mana gem top-right, name banner,
+// art window, rarity gem, stat plates) but every pixel is ours. Rules text is
+// printed in a tan text box (keywords bold); the gallery shows an owned-copies
+// badge in the top-left corner.
 import * as THREE from 'three';
+import { segmentKeywords } from './keywords.js';
 
 export const CARD_W = 2.5, CARD_H = 3.5, CARD_D = 0.02;
 
@@ -274,7 +275,46 @@ function statPlate(ctx, cx, cy, r, color, text, textColor = '#fff') {
 	ctx.textBaseline = 'alphabetic';
 }
 
-// opts: { attack, hp, maxHealth, durability, progress, goal, loyalty }
+// wrap segmented rules text (keyword runs bold) as black text inside a box,
+// shrinking the font until it fits and centring it vertically
+const _meas = document.createElement('canvas').getContext('2d');
+function drawRulesText(ctx, segs, x, y, w, h) {
+	const words = [];
+	for (const s of segs) for (const wd of s.text.split(/\s+/)) if (wd) words.push({ t: wd, bold: s.bold });
+	const F = (size, b) => `${b ? 'bold ' : ''}${size}px Georgia`;
+	ctx.textAlign = 'left';
+	ctx.textBaseline = 'top';
+	ctx.fillStyle = '#141018';
+	for (let size = 23; size >= 11; size--) {
+		const lineH = Math.round(size * 1.22), spaceW = size * 0.3;
+		const noSpace = t => /^[,.;:!?)%]/.test(t); // no space before trailing punctuation
+		const lines = [[]]; let lineW = 0;
+		for (const wd of words) {
+			_meas.font = F(size, wd.bold);
+			const ww = _meas.measureText(wd.t).width;
+			const cur = lines[lines.length - 1];
+			const need = (cur.length && !noSpace(wd.t) ? spaceW : 0) + ww;
+			if (lineW + need > w && cur.length) { lines.push([{ t: wd.t, bold: wd.bold }]); lineW = ww; }
+			else { cur.push({ t: wd.t, bold: wd.bold }); lineW += need; }
+		}
+		if (lines.length * lineH > h) continue;
+		let ly = y + Math.max(0, (h - lines.length * lineH) / 2);
+		for (const line of lines) {
+			let lx = x;
+			for (let i = 0; i < line.length; i++) {
+				ctx.font = F(size, line[i].bold);
+				if (i && !noSpace(line[i].t)) lx += spaceW;
+				ctx.fillText(line[i].t, lx, ly);
+				lx += ctx.measureText(line[i].t).width;
+			}
+			ly += lineH;
+		}
+		break;
+	}
+	ctx.textBaseline = 'alphabetic';
+}
+
+// opts: { attack, hp, maxHealth, durability, progress, goal, loyalty, count }
 export function drawCardFace(card, opts = {}) {
 	const W = 512, H = 716;
 	const c = document.createElement('canvas');
@@ -365,58 +405,28 @@ export function drawCardFace(card, opts = {}) {
 	ctx.lineWidth = 3;
 	ctx.stroke();
 
-	// body panel with the rules gem (or an empty etched socket for vanilla)
-	roundRect(ctx, 60, 498, W - 120, 132, 18);
-	ctx.fillStyle = 'rgba(10,7,16,0.32)';
+	// rules text box: black text on light tan, keywords bold (no more gem)
+	const rbX = 60, rbY = 498, rbW = W - 120, rbH = 132;
+	roundRect(ctx, rbX, rbY, rbW, rbH, 16);
+	ctx.fillStyle = '#efe6cf';
 	ctx.fill();
-	const gx = RULES_GEM.x * W, gy = RULES_GEM.y * H, gr = RULES_GEM.r * W;
-	if (hasRules(card)) {
-		// iridescent gem base (the live color-shift is layered on top in-scene)
-		ctx.save();
-		ctx.beginPath();
-		ctx.arc(gx, gy, gr, 0, Math.PI * 2);
-		ctx.clip();
-		let irid;
-		if (ctx.createConicGradient) {
-			irid = ctx.createConicGradient(0, gx, gy);
-			['#ff5f4f', '#ffd25f', '#57e389', '#4fc3ff', '#8f6fff', '#ff5fd2', '#ff5f4f']
-				.forEach((col, i, a) => irid.addColorStop(i / (a.length - 1), col));
-		} else {
-			irid = ctx.createRadialGradient(gx, gy, 2, gx, gy, gr);
-			irid.addColorStop(0, '#fff');
-			irid.addColorStop(1, '#8f6fff');
-		}
-		ctx.fillStyle = irid;
-		ctx.fillRect(gx - gr, gy - gr, gr * 2, gr * 2);
-		const sheen = ctx.createRadialGradient(gx - gr * 0.4, gy - gr * 0.45, 2, gx, gy, gr * 1.1);
-		sheen.addColorStop(0, 'rgba(255,255,255,0.95)');
-		sheen.addColorStop(0.35, 'rgba(255,255,255,0.12)');
-		sheen.addColorStop(1, 'rgba(0,0,0,0.45)');
-		ctx.fillStyle = sheen;
-		ctx.fillRect(gx - gr, gy - gr, gr * 2, gr * 2);
-		ctx.restore();
-	} else {
-		ctx.strokeStyle = 'rgba(255,255,255,0.12)';
-		ctx.lineWidth = 3;
-		ctx.beginPath();
-		ctx.arc(gx, gy, gr * 0.55, 0, Math.PI * 2);
-		ctx.stroke();
-	}
-	// gem socket ring
-	ctx.strokeStyle = metal;
-	ctx.lineWidth = 6;
-	ctx.beginPath();
-	ctx.arc(gx, gy, gr + 3, 0, Math.PI * 2);
+	ctx.strokeStyle = shade(typeCol, 0.5);
+	ctx.lineWidth = 4;
+	roundRect(ctx, rbX, rbY, rbW, rbH, 16);
 	ctx.stroke();
+	if (hasRules(card)) {
+		drawRulesText(ctx, segmentKeywords((card.description || '').trim()), rbX + 16, rbY + 12, rbW - 32, rbH - 22);
+	}
 
-	// mana cost gem (drawn late so it sits over the frame)
-	const mg = ctx.createRadialGradient(52, 50, 6, 64, 64, 54);
+	// mana cost gem — TOP RIGHT now (drawn late so it sits over the frame)
+	const mgx = W - 64, mgy = 64;
+	const mg = ctx.createRadialGradient(mgx - 12, mgy - 14, 6, mgx, mgy, 54);
 	mg.addColorStop(0, '#9db9ff');
 	mg.addColorStop(0.5, '#1c4fd6');
 	mg.addColorStop(1, '#0d2a78');
 	ctx.fillStyle = mg;
 	ctx.beginPath();
-	ctx.arc(64, 64, 50, 0, Math.PI * 2);
+	ctx.arc(mgx, mgy, 50, 0, Math.PI * 2);
 	ctx.fill();
 	ctx.strokeStyle = 'rgba(0,0,0,0.75)';
 	ctx.lineWidth = 5;
@@ -426,11 +436,30 @@ export function drawCardFace(card, opts = {}) {
 	ctx.textBaseline = 'middle';
 	ctx.lineWidth = 7;
 	ctx.strokeStyle = '#000';
-	ctx.strokeText(String(card.cost ?? ''), 64, 68);
+	ctx.strokeText(String(card.cost ?? ''), mgx, mgy + 4);
 	ctx.fillStyle = '#fff';
-	ctx.fillText(String(card.cost ?? ''), 64, 68);
+	ctx.fillText(String(card.cost ?? ''), mgx, mgy + 4);
 	ctx.textAlign = 'left';
 	ctx.textBaseline = 'alphabetic';
+
+	// owned-copies badge — TOP LEFT (gallery passes opts.count)
+	if (opts.count != null) {
+		const bx = 64, by = 64;
+		ctx.fillStyle = 'rgba(16,12,26,0.92)';
+		roundRect(ctx, bx - 46, by - 28, 92, 56, 14);
+		ctx.fill();
+		ctx.strokeStyle = opts.count > 0 ? '#ffd25f' : '#5a5470';
+		ctx.lineWidth = 4;
+		roundRect(ctx, bx - 46, by - 28, 92, 56, 14);
+		ctx.stroke();
+		ctx.font = 'bold 40px Georgia';
+		ctx.textAlign = 'center';
+		ctx.textBaseline = 'middle';
+		ctx.fillStyle = opts.count > 0 ? '#ffe9a8' : '#8a84a0';
+		ctx.fillText('×' + opts.count, bx, by + 3);
+		ctx.textAlign = 'left';
+		ctx.textBaseline = 'alphabetic';
+	}
 
 	// tribe / quest progress plate at the very bottom center
 	if (opts.goal != null) {

@@ -1,7 +1,13 @@
 // viewer.js — the collection browser: a paginated, filterable card book.
 // Card faces come from the shared procedural renderer; rules text appears in
 // a hover tooltip, and rules-cards carry a CSS-animated iridescent gem.
-import { drawCardFace, hasRules, classNameOf, artListeners } from './cardart.js';
+import { drawCardFace, classNameOf, artListeners } from './cardart.js';
+import { keywordsFor } from './keywords.js';
+
+// small keyword-explanation lines shown beneath a card's rules text
+function keywordLinesHtml(card) {
+	return keywordsFor(card).map(k => `<div class="tt-kw"><b>${k.label}</b> — ${k.text}</div>`).join('');
+}
 
 // repaint the visible page as real art crops stream in
 let artRepaint = null;
@@ -81,24 +87,14 @@ function tileFor(card) {
 	const tile = document.createElement('div');
 	const owned = collection[card.id] || 0;
 	tile.className = 'tile' + (owned ? '' : ' unowned');
-	const face = drawCardFace(card);
+	// the owned-copies count is drawn top-left on the card face itself
+	const face = drawCardFace(card, { count: owned });
 	face.style.width = '100%';
 	tile.appendChild(face);
-	if (hasRules(card)) {
-		const gem = document.createElement('div');
-		gem.className = 'gemfx';
-		tile.appendChild(gem);
-	}
-	if (owned) {
-		const badge = document.createElement('div');
-		badge.className = 'owned';
-		badge.textContent = `x${owned}`;
-		tile.appendChild(badge);
-	}
 	if (!TOUCH) {
 		tile.addEventListener('pointermove', ev => {
 			tip.innerHTML = `<div class="tt-name">${card.name}</div><div class="tt-type">${typeLineOf(card)}</div>`
-				+ `<div class="tt-desc">${card.description || ''}</div>`;
+				+ `<div class="tt-desc">${card.description || ''}</div>` + keywordLinesHtml(card);
 			tip.style.display = 'block';
 			tip.style.left = `${Math.min(ev.clientX + 18, innerWidth - 290)}px`;
 			tip.style.top = `${Math.min(ev.clientY + 14, innerHeight - tip.offsetHeight - 12)}px`;
@@ -119,7 +115,8 @@ function openZoom(card) {
 	tip.style.display = 'none';
 	const holder = $('zoom-card');
 	holder.innerHTML = '';
-	holder.appendChild(drawCardFace(card));
+	const owned0 = collection[card.id] || 0;
+	holder.appendChild(drawCardFace(card, { count: owned0 }));
 	const stats = [];
 	stats.push(`Cost ${card.cost ?? 0}`);
 	if (card.type === 'creature') stats.push(`${card.attack}/${card.health}`);
@@ -131,6 +128,7 @@ function openZoom(card) {
 		+ `<div class="z-type">${typeLineOf(card)}</div>`
 		+ `<div class="z-stats">${stats.join(' · ')}</div>`
 		+ `<div class="z-desc">${card.description || '<i>No rules text.</i>'}</div>`
+		+ keywordLinesHtml(card)
 		+ `<div class="z-owned">${owned ? `You own x${owned}` : 'Not in your collection yet'}</div>`;
 	$('zoom').classList.add('open');
 	// once the real art streams in, repaint the big face too

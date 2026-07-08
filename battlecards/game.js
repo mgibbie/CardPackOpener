@@ -7,11 +7,18 @@ import * as Col from './collection.js';
 import * as Dungeon from './dungeon.js';
 import * as MPX from './mpmode.js';
 import * as Chat from './chat.js';
+import { keywordsFor } from './keywords.js';
+
+// small "what does this keyword do" lines shown beneath a card's rules text
+function keywordLinesHtml(card) {
+	return keywordsFor(card).map(k =>
+		`<div class="tt-kw"><b>${k.label}</b> — ${k.text}</div>`).join('');
+}
 
 // test-realm mode (?mp=1 + account token): dungeon runs use the account's
 // edited starter decks, and finishing a run — win or lose — earns a pack
 const MP_ON = MPX.mpMode();
-import { CARD_W, CARD_H, CARD_D, makeFaceTexture, makeBackTexture, hasRules, RULES_GEM, classNameOf, drawCardFace, makeTokenTexture, TOKEN_W, TOKEN_H, TOKEN_GEM, drawHeroPortrait, drawPowerOrb, artListeners } from './cardart.js';
+import { CARD_W, CARD_H, CARD_D, makeFaceTexture, makeBackTexture, classNameOf, drawCardFace, makeTokenTexture, TOKEN_W, TOKEN_H, drawHeroPortrait, drawPowerOrb, artListeners } from './cardart.js';
 
 // the player index this client controls. Solo/host = 0; a live-duel guest = 1.
 // The board reorients so HUMAN always sits at the bottom facing the camera.
@@ -141,24 +148,6 @@ const edgeMat = new THREE.MeshStandardMaterial({ color: '#241b38', roughness: 0.
 const backMat = new THREE.MeshStandardMaterial({ map: backTex, roughness: 0.5 });
 const cardGeo = new THREE.BoxGeometry(CARD_W, CARD_H, CARD_D);
 
-// iridescent rules-gem overlay: one shared additive material whose color
-// slowly cycles the full hue wheel; each rules-card carries a small glow disc
-const gemGlowTex = (() => {
-	const c = document.createElement('canvas');
-	c.width = c.height = 128;
-	const g = c.getContext('2d');
-	const grad = g.createRadialGradient(64, 64, 4, 64, 64, 62);
-	grad.addColorStop(0, 'rgba(255,255,255,0.7)');
-	grad.addColorStop(0.5, 'rgba(255,255,255,0.3)');
-	grad.addColorStop(1, 'rgba(255,255,255,0)');
-	g.fillStyle = grad;
-	g.fillRect(0, 0, 128, 128);
-	return new THREE.CanvasTexture(c);
-})();
-const gemMat = new THREE.MeshBasicMaterial({
-	map: gemGlowTex, transparent: true, opacity: 0.8, depthWrite: false, blending: THREE.AdditiveBlending,
-});
-const gemGeo = new THREE.CircleGeometry(RULES_GEM.r * CARD_W * 0.9, 24);
 
 // selection rings
 const ringGeo = new THREE.RingGeometry(1.08, 1.26, 32);
@@ -214,18 +203,6 @@ function buildBody(card, form, faceMat) {
 		? new THREE.Mesh(tokenGeo, faceMat)
 		: new THREE.Mesh(cardGeo, [edgeMat, edgeMat, edgeMat, edgeMat, faceMat, backMat]);
 	mesh.userData.uid = card.uid;
-	if (hasRules(card)) {
-		const gem = new THREE.Mesh(gemGeo, gemMat);
-		if (form === 'token') {
-			const tw = CARD_W * TOKEN_SCALE, th = tw * (TOKEN_H / TOKEN_W);
-			gem.position.set((TOKEN_GEM.x - 0.5) * tw, (0.5 - TOKEN_GEM.y) * th, 0.006);
-			gem.scale.setScalar((TOKEN_GEM.r / RULES_GEM.r) * (tw / CARD_W));
-		} else {
-			gem.position.set((RULES_GEM.x - 0.5) * CARD_W, (0.5 - RULES_GEM.y) * CARD_H, CARD_D / 2 + 0.004);
-		}
-		gem.raycast = () => {}; // the glow never blocks card picking
-		mesh.add(gem);
-	}
 	return mesh;
 }
 
@@ -1621,7 +1598,7 @@ function updateTooltip(ev) {
 	if (card.type === 'quest' && card.quest) extra = `<div class="tt-sub">Progress ${card.progress || 0} / ${card.quest.goal.count}</div>`;
 	if (card.quickdrawn) extra += `<div class="tt-sub">Quickdrawn — returns to your deck at end of turn</div>`;
 	tip.innerHTML = `<div class="tt-name">${card.name}</div><div class="tt-type">${typeLine}</div>`
-		+ `<div class="tt-desc">${card.description || ''}</div>` + extra;
+		+ `<div class="tt-desc">${card.description || ''}</div>` + extra + keywordLinesHtml(card);
 	tip.style.display = 'block';
 	tip.style.left = `${Math.min(ev.clientX + 18, innerWidth - 290)}px`;
 	tip.style.top = `${Math.min(ev.clientY + 14, innerHeight - tip.offsetHeight - 12)}px`;
@@ -2148,8 +2125,6 @@ function animate() {
 		f.sp.material.opacity = Math.max(0, f.life);
 		if (f.life <= 0) { scene.remove(f.sp); f.sp.material.map.dispose(); floaters.splice(i, 1); }
 	}
-	// the rules gems slowly wander the hue wheel together (~25s per lap)
-	gemMat.color.setHSL((now * 0.00004) % 1, 0.85, 0.62);
 	updateRings();
 	positionPanels();
 	drawTargetArrow();
@@ -2810,9 +2785,11 @@ function showMiniTip(def, x, y) {
 	// already shows the cost and label, so strip that redundant prefix
 	let desc = def.description || '<i>No rules text.</i>';
 	if (def.type === 'heropower') desc = desc.replace(/^Hero Power\s*\(\d+\)\s*:\s*/i, '');
+	const kwLines = keywordsFor(def).map(k =>
+		`<div style="margin-top:5px;padding-top:5px;border-top:1px solid rgba(255,255,255,0.12);font-size:11.5px;line-height:1.3;"><b style="color:#9fd0ff;">${k.label}</b> <span style="opacity:0.85;">${k.text}</span></div>`).join('');
 	miniTip.innerHTML = `<div style="font-weight:bold;color:#cbb8ff;margin-bottom:3px;">${def.name}</div>`
 		+ `<div style="opacity:0.7;font-size:11px;margin-bottom:6px;">${def.cost ?? 0} mana · ${typeLabel}${stats}</div>`
-		+ `<div>${desc}</div>`;
+		+ `<div>${desc}</div>` + kwLines;
 	miniTip.style.display = 'block';
 	miniTip.style.left = Math.max(6, Math.min(x + 14, innerWidth - 262)) + 'px';
 	miniTip.style.top = Math.max(6, Math.min(y + 12, innerHeight - miniTip.offsetHeight - 10)) + 'px';
