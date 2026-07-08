@@ -2908,8 +2908,9 @@ function execEffects(state, pi, effects, target, source) {
 			// Investigate: make a Clue token (Sacrifice, pay 2: draw a card)
 			gainTokenCard(state, pi, 'clue_token');
 		} else if (e.type === 'spark') {
-			state.players[pi].sparked = true;
-			emit(state, { type: 'sparked', player: pi });
+			// target 'all' = every player sparks (always beneficial, so auto-taken)
+			const seats = e.target === 'all' ? state.players.map((_, s2) => s2) : [pi];
+			for (const s2 of seats) { state.players[s2].sparked = true; emit(state, { type: 'sparked', player: s2 }); }
 		} else if (e.type === 'sacrifice-each') {
 			for (let s2 = 0; s2 < state.players.length; s2++) {
 				const pool = state.players[s2].board.filter(c => !isDead(c));

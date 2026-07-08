@@ -43990,6 +43990,44 @@
           "type": "shuffle-self-into-deck"
         }
       ]
+    },
+    {
+      "id": "celestial_dreamer",
+      "name": "Celestial Dreamer",
+      "cardClass": "druid",
+      "cost": 3,
+      "rarity": "rare",
+      "set": "paper",
+      "description": "Battlecry: If you control a creature with 5 or more Attack, gain +2/+2. Deathrattle: Each player may Spark.",
+      "type": "creature",
+      "attack": 3,
+      "health": 3,
+      "tribe": "Elf Druid",
+      "keywords": [
+        "battlecry",
+        "deathrattle"
+      ],
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "controlMinAttack": 5
+          },
+          "then": [
+            {
+              "type": "buff-self",
+              "attack": 2,
+              "health": 2
+            }
+          ]
+        }
+      ],
+      "deathrattle": [
+        {
+          "type": "spark",
+          "target": "all"
+        }
+      ]
     }
   ]
 }
