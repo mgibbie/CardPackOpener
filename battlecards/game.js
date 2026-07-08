@@ -1079,43 +1079,109 @@ function resolveAIResponds() {
 	if (duel.on) return; // a real opponent relays their own response
 	while (state.priority != null && state.priority !== HUMAN && !state.players[state.priority].eliminated) {
 		const pi = state.priority;
-		const pend = E.pendingSpellFor(state, pi);
-		const counters = E.counterOptions(state, pi);
-		const doCounter = counters.length && pend && (pend.card.cost || 0) >= 3;
-		E.resolveResponse(state, pi, doCounter ? counters[0].uid : null, null, null);
+		E.resolveResponse(state, pi, aiChooseResponse(state, pi));
 	}
 }
 
-function openRespondModal() {
+// value-driven instant-speed decision: counter the spells worth countering, spend a
+// removal/burn instant on a real threat, otherwise hold priority (pass)
+function aiChooseResponse(state, pi) {
+	const p = state.players[pi];
+	const top = E.pendingSpellFor(state, pi);
+	// 1) counter a spell that is expensive, or aimed at us (removal / burn)
+	const counters = E.counterOptions(state, pi);
+	if (counters.length && top && top.kind === 'spell') {
+		const cost = top.card.cost || 0;
+		const t = top.target;
+		const aimedAtUs = t && (t.player === pi);
+		if (cost >= 3 || (aimedAtUs && cost >= 1)) return { kind: 'spell', uid: counters[0].uid };
+	}
+	// 2) fire an instant that would kill a worthwhile enemy creature right now
+	const spells = E.responseOptions(state, pi).filter(c => !c.counterSpell);
+	for (const c of spells) {
+		const dmg = (c.effects || []).filter(e => e.type === 'damage' && e.target === 'creature').reduce((a, e) => a + (e.value || 0), 0);
+		if (dmg <= 0) continue;
+		let best = null;
+		for (const o of state.players) if (o !== p) for (const cr of o.board) {
+			if (cr.type !== 'creature') continue;
+			const hp = cr.maxHealth - (cr.damage || 0);
+			if (hp <= dmg && cr.attack + cr.maxHealth >= 5 && (!best || cr.attack + cr.maxHealth > best.attack + best.maxHealth)) best = cr;
+		}
+		if (best) return { kind: 'spell', uid: c.uid, target: { type: 'creature', uid: best.uid } };
+	}
+	return null; // nothing worth doing — hold
+}
+
+let autoPass = true;
+let respondTimer = null;
+let respondSig = null;
+
+function clearRespondTimer() { if (respondTimer) { clearInterval(respondTimer); respondTimer = null; } }
+
+function doRespondPass() {
+	clearRespondTimer();
+	respondSig = null;
+	$('scry-modal').style.display = 'none';
 	if (state.priority !== HUMAN) return;
+	if (isGuest()) { guestApply(() => E.resolveResponse(state, HUMAN, null), { k: 'respond', action: null }); return; }
+	E.resolveResponse(state, HUMAN, null); pump(); if (duel.on) publishDuel();
+}
+
+function submitRespond(action) {
+	clearRespondTimer();
+	respondSig = null;
+	$('scry-modal').style.display = 'none';
+	if (isGuest()) { guestApply(() => E.resolveResponse(state, HUMAN, action), { k: 'respond', action }); return; }
+	E.resolveResponse(state, HUMAN, action); pump(); if (duel.on) publishDuel();
+}
+
+// the instant-speed responses the human could take right now
+function respondOptions() {
+	const me = state.players[HUMAN];
+	const out = [];
+	for (const c of E.responseOptions(state, HUMAN)) out.push({ kind: 'spell', card: c, label: `${c.counterSpell ? 'Counter' : 'Cast'} ${c.name} (${E.effectiveCost(state, HUMAN, c)})` });
+	for (const c of me.board) if (c.activated) c.activated.forEach((a, i) => { if (E.canActivate(state, HUMAN, c, i)) out.push({ kind: 'ability', card: c, index: i, label: `${c.name}: ${a.text || 'ability'}` }); });
+	for (const l of [...me.lands, ...me.board.filter(x => x.type === 'location')]) E.landTaps(l).forEach((t, i) => { if (t.effects.some(e => e.type !== 'gain-mana') && E.canTapLand(state, HUMAN, l, i)) out.push({ kind: 'landtap', card: l, index: i, label: `${l.name}: ${t.text}` }); });
+	return out;
+}
+
+function openRespondModal() {
+	if (!state || state.priority !== HUMAN) return;
+	const opts = respondOptions();
+	if (autoPass || !opts.length) { doRespondPass(); return; }
+	const top = state.stack[state.stack.length - 1];
+	const sig = top ? top.uid + ':' + opts.length : null;
+	if (sig === respondSig) return; // already showing this window
+	respondSig = sig;
 	const pend = E.pendingSpellFor(state, HUMAN);
-	const opts = E.responseOptions(state, HUMAN);
-	if (!pend) return;
 	const modal = $('scry-modal');
-	modal.innerHTML = `<div class="wm-title">${nameOf(pend.caster)} casts ${pend.card.name} — counter it?</div><div class="scry-row"></div>`;
+	let secs = 4;
+	const titleText = () => `${pend ? nameOf(pend.caster) + ' acts — respond?' : 'Respond?'} (${secs}s)`;
+	modal.innerHTML = `<div class="wm-title" id="respond-title">${titleText()}</div><div class="scry-row" style="flex-wrap:wrap"></div>`;
 	const row = modal.querySelector('.scry-row');
-	opts.forEach(c => {
-		const cell = document.createElement('div'); cell.className = 'scry-cell';
-		const face = drawCardFace(c); face.style.width = '110px'; cell.appendChild(face);
-		const btn = document.createElement('button'); btn.textContent = `${c.counterSpell ? 'Counter' : 'Cast'} (${E.effectiveCost(state, HUMAN, c)})`;
-		btn.addEventListener('pointerdown', e => { e.stopPropagation();
-			const spec = c.counterSpell ? null : E.targetSpec(state, HUMAN, c);
-			modal.style.display = 'none';
-			if (spec) {
-				const targets = E.legalTargets(state, HUMAN, spec);
-				if (targets.length) { pending = { card: c, spec, targets, mode: 'respond' }; updateHud(); return; }
-				if (spec.required) { openRespondModal(); return; }
-			}
-			if (isGuest()) { guestApply(() => E.resolveResponse(state, HUMAN, c.uid, null, null), { k: 'respond', uid: c.uid, target: null }); return; }
-			E.resolveResponse(state, HUMAN, c.uid, null, null); pump(); if (duel.on) publishDuel(); });
-		cell.appendChild(btn); row.appendChild(cell);
+	const act = (o) => {
+		const spec = o.kind === 'spell'
+			? (o.card.counterSpell ? null : E.targetSpec(state, HUMAN, o.card))
+			: o.kind === 'ability' ? E.abilitySpec(state, HUMAN, o.card, o.index)
+			: E.tapSpec(state, HUMAN, o.card, o.index);
+		if (spec) {
+			const targets = E.legalTargets(state, HUMAN, spec);
+			if (targets.length) { clearRespondTimer(); respondSig = null; modal.style.display = 'none'; pending = { card: o.card, spec, targets, mode: 'respond', action: { kind: o.kind, uid: o.card.uid, index: o.index } }; updateHud(); return; }
+			if (spec.required) return;
+		}
+		submitRespond({ kind: o.kind, uid: o.card.uid, index: o.index, target: null });
+	};
+	opts.forEach(o => {
+		const btn = document.createElement('button'); btn.className = 'scry-done'; btn.style.margin = '4px'; btn.textContent = o.label;
+		btn.addEventListener('pointerdown', e => { e.stopPropagation(); act(o); });
+		row.appendChild(btn);
 	});
-	const pass = document.createElement('button'); pass.className = 'scry-done'; pass.textContent = 'Pass';
-	pass.addEventListener('pointerdown', e => { e.stopPropagation(); modal.style.display = 'none';
-		if (isGuest()) { guestApply(() => E.resolveResponse(state, HUMAN, null, null, null), { k: 'respond', uid: null, target: null }); return; }
-		E.resolveResponse(state, HUMAN, null, null, null); pump(); if (duel.on) publishDuel(); });
-	modal.appendChild(pass);
+	const pass = document.createElement('button'); pass.className = 'scry-done'; pass.style.margin = '4px'; pass.style.background = '#555'; pass.textContent = 'Pass';
+	pass.addEventListener('pointerdown', e => { e.stopPropagation(); doRespondPass(); });
+	row.appendChild(pass);
 	modal.style.display = 'block';
+	clearRespondTimer();
+	respondTimer = setInterval(() => { secs--; const t = document.getElementById('respond-title'); if (t) t.textContent = titleText(); if (secs <= 0) doRespondPass(); }, 1000);
 }
 
 // AI Discover/Draft picks: take the biggest card
@@ -1246,7 +1312,7 @@ function openDiscardModal() {
 
 function nextEvent() {
 	const ev = queue.shift();
-	if (!ev) { queueBusy = false; updateHud(); maybeRunAI(); return; }
+	if (!ev) { queueBusy = false; updateHud(); if (state && state.priority === HUMAN) openRespondModal(); maybeRunAI(); return; }
 	queueBusy = true;
 	let delay = 120;
 	switch (ev.type) {
@@ -1919,7 +1985,7 @@ function commitPending(t) {
 		else if (p.mode === 'activate') { localFn = () => E.activateAbility(state, HUMAN, p.card.uid, p.ability, t); intent = { k: 'activate', uid: p.card.uid, ability: p.ability, target: t || null }; }
 		else if (p.mode === 'walker') { localFn = () => E.useWalker(state, HUMAN, p.card.uid, p.ability, t); intent = { k: 'walker', uid: p.card.uid, ability: p.ability, target: t || null }; }
 		else if (p.mode === 'tap') { localFn = () => E.tapLand(state, HUMAN, p.card.uid, p.tapIndex, t); intent = { k: 'tap', uid: p.card.uid, tapIndex: p.tapIndex, target: t || null }; }
-		else if (p.mode === 'respond') { localFn = () => E.resolveResponse(state, HUMAN, p.card.uid, t, p.choice); intent = { k: 'respond', uid: p.card.uid, target: t || null, choice: p.choice }; }
+		else if (p.mode === 'respond') { const a = { ...p.action, target: t || null }; localFn = () => E.resolveResponse(state, HUMAN, a); intent = { k: 'respond', action: a }; }
 		else { localFn = () => E.playCard(state, HUMAN, p.card.uid, t, p.choice, p.position); intent = { k: 'play', uid: p.card.uid, target: t || null, choice: p.choice, position: p.position }; }
 		clearModes();
 		guestApply(localFn, intent);
@@ -1929,7 +1995,7 @@ function commitPending(t) {
 	else if (pending.mode === 'activate') E.activateAbility(state, HUMAN, pending.card.uid, pending.ability, t);
 	else if (pending.mode === 'walker') E.useWalker(state, HUMAN, pending.card.uid, pending.ability, t);
 	else if (pending.mode === 'tap') E.tapLand(state, HUMAN, pending.card.uid, pending.tapIndex, t);
-	else if (pending.mode === 'respond') E.resolveResponse(state, HUMAN, pending.card.uid, t, pending.choice);
+	else if (pending.mode === 'respond') { E.resolveResponse(state, HUMAN, { ...pending.action, target: t || null }); }
 	else E.playCard(state, HUMAN, pending.card.uid, t, pending.choice, pending.position);
 	clearModes();
 	pump();
@@ -2144,6 +2210,9 @@ $('coin-btn').addEventListener('click', () => {
 	if (!state || duel.busy) return;
 	actCoin();
 });
+function updateAutopassBtn() { const b = $('autopass-btn'); if (!b) return; b.textContent = 'Auto-pass: ' + (autoPass ? 'ON' : 'OFF'); b.classList.toggle('holding', !autoPass); }
+$('autopass-btn').addEventListener('click', () => { autoPass = !autoPass; updateAutopassBtn(); if (!autoPass && state && state.priority === HUMAN) openRespondModal(); });
+updateAutopassBtn();
 $('planeswalk-btn').addEventListener('click', () => {
 	if (!state || duel.busy) return;
 	actPlaneswalk();
@@ -2563,7 +2632,7 @@ function applyGuestIntent(it) {
 			case 'discard': if (state.discardQueue[0]?.player === P) E.resolveDiscard(state, it.picks || []); else return; break;
 			case 'pick': if (state.pickQueue[0]?.player === P) E.resolvePick(state, it.id); else return; break;
 			case 'dredge': if (state.dredgeQueue[0]?.player === P) E.resolveDredge(state, it.id); else return; break;
-			case 'respond': if (state.priority === P) E.resolveResponse(state, P, it.uid, it.target || null, it.choice); else return; break;
+			case 'respond': if (state.priority === P) E.resolveResponse(state, P, it.action ?? null); else return; break;
 			default: return;
 		}
 	} catch (e) { log('(guest action ignored)'); return; }

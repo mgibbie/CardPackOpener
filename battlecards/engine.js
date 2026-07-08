@@ -1225,7 +1225,7 @@ export function buyLand(state, pi, landId) {
 }
 
 export function canTapLand(state, pi, card, tapIndex) {
-	if (state.over || state.current !== pi) return false;
+	if (state.over || !hasPriority(state, pi)) return false;
 	const p = state.players[pi];
 	const inPlay = p.lands.includes(card)
 		|| (card.type === 'location' && p.board.includes(card) && !isDead(card));
@@ -1261,7 +1261,6 @@ export function tapLand(state, pi, cardUid, tapIndex, target) {
 	card.tapStone = true;
 	const t = landTaps(card)[tapIndex];
 	emit(state, { type: 'landTapped', player: pi, card, text: t.text });
-	execEffects(state, pi, t.effects, target, card);
 	// locations wear out: durability counts their remaining taps
 	if (card.type === 'location') {
 		card.durability -= 1;
@@ -1270,7 +1269,7 @@ export function tapLand(state, pi, cardUid, tapIndex, target) {
 			card.poisoned = true; // routes through the normal death sweep
 		}
 	}
-	sweepDeaths(state);
+	stackAction(state, pi, { kind: 'landtap', card, effects: t.effects, target });
 	return true;
 }
 
@@ -1279,12 +1278,13 @@ export function tapLand(state, pi, cardUid, tapIndex, target) {
 // creatures never tap (user ruling): abilities are once per turn instead,
 // independent of attacking; sacrifice abilities kill the creature as the cost.
 export function canActivate(state, pi, card, i) {
-	if (state.over || state.current !== pi) return false;
+	if (state.over) return false;
 	const p = state.players[pi];
 	if (!p.board.includes(card) || isDead(card) || !card.activated) return false;
 	if (card.frozen || card.dormantLeft > 0) return false;
 	const a = card.activated[i];
 	if (!a) return false;
+	if (a.sorcerySpeed ? !(state.current === pi && state.priority == null && state.stack.length === 0) : !hasPriority(state, pi)) return false;
 	if (card.abilityUsedThisTurn && !a.repeatable) return false; // repeatable abilities (Firebreathing) ignore the once/turn gate
 	if ((a.cost || 0) > availableMana(p)) return false;
 	if (a.discardRandom && p.hand.length === 0) return false;
@@ -1319,8 +1319,7 @@ export function activateAbility(state, pi, cardUid, i, target) {
 	}
 	emit(state, { type: 'abilityUsed', player: pi, card, text: a.text });
 	if (a.sacrifice) { card.damage = card.maxHealth + 99; card.poisoned = true; }
-	execEffects(state, pi, a.effects, target, card);
-	sweepDeaths(state);
+	stackAction(state, pi, { kind: 'ability', card, effects: a.effects, target });
 	return true;
 }
 
@@ -3476,7 +3475,9 @@ export function effectiveCost(state, pi, card) {
 
 // ---------- public actions ----------
 export function canPlay(state, pi, card) {
-	if (state.over || state.current !== pi) return false;
+	if (state.over) return false;
+	if (card.type === 'instant') { if (!hasPriority(state, pi)) return false; }
+	else if (!(state.current === pi && state.priority == null && state.stack.length === 0)) return false;
 	if (availableMana(state.players[pi]) < effectiveCost(state, pi, card)) return false;
 	{ const pb = state.players[pi].parityBlock; if (pb && ((card.cost % 2 === 1 ? 'odd' : 'even') === pb)) return false; }
 	if (card.type === 'secret') {
@@ -3692,36 +3693,64 @@ function nextActiveAfter(state, pi) {
 	return pi;
 }
 
-// can pi cast this card in response (instant speed)?
+// you may act at instant speed if you currently hold priority, or it's your turn
+// with nothing waiting on the stack
+export function hasPriority(state, pi) {
+	if (state.over) return false;
+	if (state.priority != null) return state.priority === pi;
+	return state.current === pi;
+}
+
+// can pi cast this instant in response (mana + a legal target / a spell to Counter)
 function canCastInResponse(state, pi, card) {
 	if (card.type !== 'instant') return false;
 	const p = state.players[pi];
 	if (availableMana(p) < effectiveCost(state, pi, card)) return false;
-	if (card.counterSpell) return state.stack.some(e => !e.countered);
+	if (card.counterSpell) return state.stack.some(e => !e.countered && e.kind === 'spell');
 	const spec = targetSpec(state, pi, card);
 	if (spec && spec.required && legalTargets(state, pi, spec).length === 0) return false;
 	return true;
 }
 
-// pi may respond to the current top of the stack (someone else's spell)
+// does pi hold any instant-speed action they could take right now (ignores the
+// priority gate — used to decide whether a window is worth opening)
+function hasInstantResponse(state, pi) {
+	const p = state.players[pi];
+	if (p.hand.some(c => canCastInResponse(state, pi, c))) return true;
+	for (const c of p.board) { // creature activated abilities are instant speed by default
+		if (!c.activated || isDead(c) || c.frozen || c.dormantLeft > 0) continue;
+		for (let i = 0; i < c.activated.length; i++) {
+			const a = c.activated[i];
+			if (a.sorcerySpeed || (c.abilityUsedThisTurn && !a.repeatable)) continue;
+			if ((a.cost || 0) <= availableMana(p)) return true;
+		}
+	}
+	for (const l of [...p.lands, ...p.board.filter(x => x.type === 'location')]) { // land abilities beyond plain mana
+		if (l.tapped) continue;
+		if (landTaps(l).some(t => t.effects.some(e => e.type !== 'gain-mana'))) return true;
+	}
+	return false;
+}
+
+// pi may respond to the current top of the stack (someone else's action)
 function canRespond(state, pi) {
 	const top = state.stack[state.stack.length - 1];
 	if (!top || top.caster === pi || state.players[pi].eliminated) return false;
-	return state.players[pi].hand.some(c => canCastInResponse(state, pi, c));
+	return hasInstantResponse(state, pi);
 }
 
-// the instants pi could play right now in response (all of them, for the human)
+// the instants in pi's hand they could play right now in response
 export function responseOptions(state, pi) {
 	if (state.priority !== pi) return [];
 	return state.players[pi].hand.filter(c => canCastInResponse(state, pi, c));
 }
 
-// just the Counters pi could play (the AI only responds with these)
+// just the Counters pi could play (the AI responds with these)
 export function counterOptions(state, pi) {
 	return responseOptions(state, pi).filter(c => c.counterSpell);
 }
 
-// the spell pi is being asked to respond to (top of stack)
+// the action pi is being asked to respond to (top of stack)
 export function pendingSpellFor(state, pi) {
 	return state.priority === pi ? state.stack[state.stack.length - 1] || null : null;
 }
@@ -3747,10 +3776,9 @@ function offerPriority(state) {
 	state.passers = [];
 }
 
-// resolve the top of the stack (LIFO). A Counter removes the entry it targets.
-function resolveTop(state) {
-	const entry = state.stack.pop();
-	if (!entry) return;
+// resolve one entry (dispatch by kind). A Counter removes the entry it targets.
+function resolveEntry(state, entry) {
+	const pi = entry.caster;
 	if (entry.counters != null) {
 		const tgt = state.stack.find(e => e.uid === entry.counters);
 		if (tgt && !tgt.countered) {
@@ -3759,59 +3787,71 @@ function resolveTop(state) {
 			emit(state, { type: 'countered', player: tgt.caster, name: tgt.card.name });
 			toGraveyard(state, tgt.caster, tgt.card);
 		}
-		if (entry.card.effects) execEffects(state, entry.caster, entry.card.effects, entry.target, entry.card); // riders
-		fireOngoing(state, entry.caster, 'spell-played', { played: entry.card });
-		for (let s2 = 0; s2 < state.players.length; s2++) fireOngoing(state, s2, 'any-spell-played', { spell: entry.card, caster: entry.caster });
-		toGraveyard(state, entry.caster, entry.card);
-	} else {
-		resolveStackedSpell(state, entry);
+		if (entry.card.effects) execEffects(state, pi, entry.card.effects, entry.target, entry.card);
+		fireOngoing(state, pi, 'spell-played', { played: entry.card });
+		for (let s2 = 0; s2 < state.players.length; s2++) fireOngoing(state, s2, 'any-spell-played', { spell: entry.card, caster: pi });
+		toGraveyard(state, pi, entry.card);
+		return;
 	}
+	if (entry.kind === 'spell') { resolveStackedSpell(state, entry); return; }
+	if (entry.kind === 'heropower') {
+		execEffects(state, pi, entry.effects, entry.target, entry.card);
+		fireOngoing(state, pi, 'hero-power-used', {}); // Inspire
+		return;
+	}
+	// ability / landtap: their costs + side effects already happened at declare time
+	execEffects(state, pi, entry.effects, entry.target, entry.card);
+}
+
+function resolveTop(state) {
+	const entry = state.stack.pop();
+	if (!entry) return;
+	resolveEntry(state, entry);
 	sweepDeaths(state);
 	checkGameOver(state);
 }
 
-// put a spell on the stack; if any opponent can respond, open priority, else resolve now
-function stackSpell(state, pi, card, target, choice) {
-	const entry = { uid: nextUid++, card, caster: pi, target, choice, countered: false };
-	state.stack.push(entry);
-	if (!opponentsOf(state, pi).some(o => canRespond(state, o))) {
-		state.stack.pop();
-		resolveStackedSpell(state, entry);
-		sweepDeaths(state); checkGameOver(state);
-		return;
+// put an action on the stack; open priority if an opponent can respond, else resolve.
+// entry: { kind, card, effects?, target?, choice? }. `caster` and `uid` are set here.
+function stackAction(state, caster, entry) {
+	entry.uid = nextUid++;
+	entry.caster = caster;
+	entry.countered = false;
+	if (entry.kind === 'spell' && entry.card.counterSpell) {
+		const top = state.stack[state.stack.length - 1];
+		if (top) entry.counters = top.uid;
 	}
-	emit(state, { type: 'stackPush', player: pi, uid: entry.uid, card });
+	state.stack.push(entry);
+	// only announce a stack pause when someone can actually respond
+	if (opponentsOf(state, caster).some(o => canRespond(state, o))) {
+		emit(state, { type: 'stackPush', player: caster, uid: entry.uid, kind: entry.kind, card: entry.card || null });
+	}
 	state.passers = [];
-	state.priorityNext = nextActiveAfter(state, pi);
-	offerPriority(state);
+	state.priorityNext = nextActiveAfter(state, caster);
+	offerPriority(state); // opens a window, or resolves the top(s) when no one responds
 }
 
-// a player with priority resolves it: cardUid null = pass; else cast that instant
-export function resolveResponse(state, pi, cardUid, target, choice) {
+// backwards-compatible helper for the spell path
+function stackSpell(state, pi, card, target, choice) {
+	stackAction(state, pi, { kind: 'spell', card, target, choice });
+}
+
+// a player with priority resolves it. action null = pass; otherwise an instant-speed
+// action: { kind:'spell'|'ability'|'landtap', uid, index?, target?, choice? }
+export function resolveResponse(state, pi, action, target, choice) {
 	if (state.priority !== pi) return false;
-	if (cardUid == null) {
+	// legacy 2-arg form: resolveResponse(pi, cardUid) cast an instant spell
+	if (action == null) {
 		state.passers.push(pi);
 		state.priorityNext = nextActiveAfter(state, pi);
 		state.priority = null;
 		offerPriority(state);
 		return true;
 	}
-	const p = state.players[pi];
-	const idx = p.hand.findIndex(c => c.uid === cardUid);
-	if (idx < 0 || !canCastInResponse(state, pi, p.hand[idx])) return false;
-	const card = p.hand[idx];
-	p.hand.splice(idx, 1);
-	spendMana(p, effectiveCost(state, pi, card));
-	emit(state, { type: 'play', player: pi, card, mana: availableMana(p) });
-	const entry = { uid: nextUid++, card, caster: pi, target, choice, countered: false };
-	if (card.counterSpell) { const top = state.stack[state.stack.length - 1]; if (top) entry.counters = top.uid; }
-	state.stack.push(entry);
-	emit(state, { type: 'stackPush', player: pi, uid: entry.uid, card });
-	state.passers = [];
-	state.priorityNext = nextActiveAfter(state, pi);
-	state.priority = null;
-	offerPriority(state);
-	return true;
+	if (typeof action !== 'object') action = { kind: 'spell', uid: action, target, choice };
+	if (action.kind === 'ability') return activateAbility(state, pi, action.uid, action.index, action.target);
+	if (action.kind === 'landtap') return tapLand(state, pi, action.uid, action.index, action.target);
+	return playCard(state, pi, action.uid, action.target, action.choice); // spell
 }
 
 export function useCoin(state, pi) {
@@ -3828,7 +3868,7 @@ export function attackersFor(state, pi) {
 }
 
 export function canAttackWith(state, pi, c) {
-	if (state.over || state.current !== pi || c.attack <= 0) return false;
+	if (state.over || state.current !== pi || state.priority != null || state.stack.length || c.attack <= 0) return false;
 	if (c.frozen) return false;
 	if (c.dormantLeft > 0) return false; // still asleep
 	if (has(c, KW.PACIFIST)) return false;
@@ -4112,7 +4152,7 @@ export function walkerSpec(state, pi, card, abilityIndex) {
 
 // abilityIndex omitted: is ANY ability usable this turn?
 export function canUseWalker(state, pi, card, abilityIndex) {
-	if (state.over || state.current !== pi) return false;
+	if (state.over || state.current !== pi || state.priority != null || state.stack.length) return false;
 	const p = state.players[pi];
 	if (!p.planeswalkers.includes(card) || card.usedThisTurn) return false;
 	const check = i => {
@@ -4373,7 +4413,7 @@ export function heroPowerSpec(state, pi, card, choice) {
 }
 
 export function canUseHeroPower(state, pi, card, choice) {
-	if (state.over || state.current !== pi) return false;
+	if (state.over || !(state.current === pi && state.priority == null && state.stack.length === 0)) return false;
 	const p = state.players[pi];
 	if (!p.heroPowers.includes(card) || card.usedThisTurn) return false;
 	if (availableMana(p) < card.power.cost) return false;
@@ -4392,9 +4432,7 @@ export function useHeroPower(state, pi, cardUid, target, choice) {
 	spendMana(p, card.power.cost);
 	card.usedThisTurn = true;
 	emit(state, { type: 'heroPowerUsed', player: pi, card, mana: availableMana(p) });
-	execEffects(state, pi, powerEffectsOf(card, choice), target, card);
-	fireOngoing(state, pi, 'hero-power-used', {}); // Inspire
-	sweepDeaths(state);
+	stackAction(state, pi, { kind: 'heropower', card, effects: powerEffectsOf(card, choice), target });
 	return true;
 }
 
