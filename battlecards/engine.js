@@ -2746,6 +2746,9 @@ function execEffects(state, pi, effects, target, source) {
 			gainTokenCard(state, pi, 'treasure_token');
 		} else if (e.type === 'cook') {
 			gainTokenCard(state, pi, 'food_token');
+		} else if (e.type === 'investigate') {
+			// Investigate: make a Clue token (Sacrifice, pay 2: draw a card)
+			gainTokenCard(state, pi, 'clue_token');
 		} else if (e.type === 'grant-medic') {
 			const t = chosenCreature();
 			if (t) t.medic = (t.medic || 0) + e.value;

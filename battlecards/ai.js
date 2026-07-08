@@ -160,7 +160,8 @@ export function step(state, pi = 1) {
 		if (!t.sac || !E.canSacrifice(state, pi, t)) continue;
 		const worth = t.id === 'treasure_token'
 			|| (t.id === 'food_token' && p.life <= 30)
-			|| (t.id === 'blood_token' && p.hand.length >= 2);
+			|| (t.id === 'blood_token' && p.hand.length >= 2)
+			|| (t.id === 'clue_token' && p.hand.length <= 7);
 		if (worth && E.sacrificeToken(state, pi, t.uid)) return true;
 	}
 

@@ -20014,6 +20014,24 @@
       "description": "Sacrifice \u2014 pay 2: restore 3 health to your hero."
     },
     {
+      "id": "clue_token",
+      "name": "Clue Token",
+      "type": "artifact",
+      "cost": 0,
+      "rarity": "common",
+      "token": true,
+      "sac": {
+        "cost": 2,
+        "effects": [
+          {
+            "type": "draw",
+            "value": 1
+          }
+        ]
+      },
+      "description": "Sacrifice \u2014 pay 2: draw a card."
+    },
+    {
       "id": "kalecgos",
       "name": "Kalecgos",
       "cardClass": "mage",
@@ -41988,6 +42006,58 @@
           "value": 1
         }
       ]
+    },
+    {
+      "id": "warped_warren_puzzlemaster",
+      "name": "Warped Warren Puzzlemaster",
+      "cardClass": "warlock",
+      "cost": 5,
+      "rarity": "rare",
+      "set": "paper",
+      "description": "Battlecry & Deathrattle: Investigate & lose 2 Life. Inspire: Discover a spell & lose 2 Life:",
+      "type": "creature",
+      "attack": 4,
+      "health": 6,
+      "tribe": "Aurilen Sorcerer",
+      "keywords": [
+        "battlecry",
+        "deathrattle"
+      ],
+      "effects": [
+        {
+          "type": "investigate"
+        },
+        {
+          "type": "damage",
+          "value": 2,
+          "target": "own-hero"
+        }
+      ],
+      "deathrattle": [
+        {
+          "type": "investigate"
+        },
+        {
+          "type": "damage",
+          "value": 2,
+          "target": "own-hero"
+        }
+      ],
+      "ongoing": {
+        "on": "hero-power-used",
+        "effects": [
+          {
+            "type": "discover",
+            "pick": 3,
+            "cardType": "spell"
+          },
+          {
+            "type": "damage",
+            "value": 2,
+            "target": "own-hero"
+          }
+        ]
+      }
     }
   ]
 }
