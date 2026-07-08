@@ -18846,8 +18846,10 @@
       "cost": 1,
       "rarity": "uncommon",
       "set": "paper",
-      "description": "Discover a 2-Cost card & draw a card.",
+      "token": true,
       "type": "sorcery",
+      "tribe": "Fel",
+      "description": "Discover a 2-Cost card & draw a card.",
       "effects": [
         {
           "type": "conjure-cost",
@@ -42082,6 +42084,1024 @@
             "type": "grant",
             "keyword": "divine_shield",
             "target": "creature"
+          }
+        ]
+      }
+    },
+    {
+      "id": "fools_azerite",
+      "name": "Fool's Azerite",
+      "cardClass": "neutral",
+      "cost": 1,
+      "rarity": "common",
+      "set": "paper",
+      "token": true,
+      "type": "sorcery",
+      "tribe": "Fel",
+      "description": "Discover a 2-Cost card. It costs (0).",
+      "effects": [
+        {
+          "type": "conjure-cost",
+          "cost": 2,
+          "setCost": 0
+        }
+      ]
+    },
+    {
+      "id": "azerite_chunk",
+      "name": "Azerite Chunk",
+      "cardClass": "neutral",
+      "cost": 2,
+      "rarity": "rare",
+      "set": "paper",
+      "token": true,
+      "type": "sorcery",
+      "tribe": "Fel",
+      "description": "Discover a 3-Cost card. It costs (0).",
+      "effects": [
+        {
+          "type": "conjure-cost",
+          "cost": 3,
+          "setCost": 0
+        }
+      ]
+    },
+    {
+      "id": "azerite_gem",
+      "name": "Azerite Gem",
+      "cardClass": "neutral",
+      "cost": 3,
+      "rarity": "epic",
+      "set": "paper",
+      "token": true,
+      "type": "sorcery",
+      "tribe": "Fel",
+      "description": "Discover a 5-Cost card. It costs (0).",
+      "effects": [
+        {
+          "type": "conjure-cost",
+          "cost": 5,
+          "setCost": 0
+        }
+      ]
+    },
+    {
+      "id": "the_azerite_beetle",
+      "name": "The Azerite Beetle",
+      "cardClass": "centurion",
+      "cost": 4,
+      "rarity": "legendary",
+      "set": "paper",
+      "token": true,
+      "type": "creature",
+      "attack": 5,
+      "health": 5,
+      "tribe": "Elemental",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Create three 6/6 Beast creature tokens with Taunt & Rush.",
+      "effects": [
+        {
+          "type": "summon",
+          "count": 3,
+          "attack": 6,
+          "health": 6,
+          "name": "Beast",
+          "keywords": [
+            "taunt",
+            "rush"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "the_azerite_dolphin",
+      "name": "The Azerite Dolphin",
+      "cardClass": "bard",
+      "cost": 4,
+      "rarity": "legendary",
+      "set": "paper",
+      "token": true,
+      "type": "creature",
+      "attack": 5,
+      "health": 5,
+      "tribe": "Elemental",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Add 4 random Song spells to your hand. They cost (0) this turn.",
+      "effects": [
+        {
+          "type": "conjure-random",
+          "cardType": "spell",
+          "count": 4,
+          "tribe": "Song",
+          "setCost": 0
+        }
+      ]
+    },
+    {
+      "id": "the_azerite_dragon",
+      "name": "The Azerite Dragon",
+      "cardClass": "paladin",
+      "cost": 4,
+      "rarity": "legendary",
+      "set": "paper",
+      "token": true,
+      "type": "creature",
+      "attack": 5,
+      "health": 5,
+      "tribe": "Elemental",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Each creature in your hand & battlefield gains +3/+3.",
+      "effects": [
+        {
+          "type": "buff-hand",
+          "attack": 3,
+          "health": 3,
+          "all": true
+        },
+        {
+          "type": "buff",
+          "target": "friendly-creatures",
+          "attack": 3,
+          "health": 3
+        }
+      ]
+    },
+    {
+      "id": "the_azerite_goat",
+      "name": "The Azerite Goat",
+      "cardClass": "centurion",
+      "cost": 4,
+      "rarity": "legendary",
+      "set": "paper",
+      "token": true,
+      "type": "creature",
+      "attack": 5,
+      "health": 5,
+      "tribe": "Elemental",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: If you've excavated twice, add three copies of a random Holy spell to your hand.",
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "excavatedTwice": true
+          },
+          "then": [
+            {
+              "type": "conjure-random",
+              "cardType": "spell",
+              "count": 3,
+              "tribe": "Holy"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "the_azerite_hawk",
+      "name": "The Azerite Hawk",
+      "cardClass": "mage",
+      "cost": 4,
+      "rarity": "legendary",
+      "set": "paper",
+      "token": true,
+      "type": "creature",
+      "attack": 5,
+      "health": 5,
+      "tribe": "Elemental",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Add a random Titan to your hand. It costs (1).",
+      "effects": [
+        {
+          "type": "conjure-random",
+          "cardType": "creature",
+          "count": 1,
+          "tribe": "Titan",
+          "setCost": 1
+        }
+      ]
+    },
+    {
+      "id": "the_azerite_horse",
+      "name": "The Azerite Horse",
+      "cardClass": "bounty_hunter",
+      "cost": 4,
+      "rarity": "legendary",
+      "set": "paper",
+      "token": true,
+      "type": "creature",
+      "attack": 5,
+      "health": 5,
+      "tribe": "Elemental",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Add a random Beast & Fire spell to your hand & deal 5 damage to any target.",
+      "effects": [
+        {
+          "type": "conjure-random",
+          "cardType": "creature",
+          "count": 1,
+          "tribe": "Beast"
+        },
+        {
+          "type": "conjure-random",
+          "cardType": "spell",
+          "count": 1,
+          "tribe": "Fire"
+        },
+        {
+          "type": "damage",
+          "value": 5,
+          "target": "any"
+        }
+      ]
+    },
+    {
+      "id": "the_azerite_hydra",
+      "name": "The Azerite Hydra",
+      "cardClass": "sorcerer",
+      "cost": 4,
+      "rarity": "legendary",
+      "set": "paper",
+      "token": true,
+      "type": "creature",
+      "attack": 5,
+      "health": 5,
+      "tribe": "Elemental",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Add a random Elemental, Vampire & Dragon to your hand & Scry 5.",
+      "effects": [
+        {
+          "type": "conjure-random",
+          "cardType": "creature",
+          "count": 1,
+          "tribe": "Elemental"
+        },
+        {
+          "type": "conjure-random",
+          "cardType": "creature",
+          "count": 1,
+          "tribe": "Vampire"
+        },
+        {
+          "type": "conjure-random",
+          "cardType": "creature",
+          "count": 1,
+          "tribe": "Dragon"
+        },
+        {
+          "type": "scry",
+          "value": 5
+        }
+      ]
+    },
+    {
+      "id": "the_azerite_lynx",
+      "name": "The Azerite Lynx",
+      "cardClass": "hunter",
+      "cost": 4,
+      "rarity": "legendary",
+      "set": "paper",
+      "token": true,
+      "type": "creature",
+      "attack": 5,
+      "health": 5,
+      "tribe": "Elemental",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Add 3 random Mechs to your hand & Freeze all creatures you don't control.",
+      "effects": [
+        {
+          "type": "conjure-random",
+          "cardType": "creature",
+          "count": 3,
+          "tribe": "Mech"
+        },
+        {
+          "type": "freeze",
+          "target": "enemy-creatures"
+        }
+      ]
+    },
+    {
+      "id": "the_azerite_mammoth",
+      "name": "The Azerite Mammoth",
+      "cardClass": "barbarian",
+      "cost": 4,
+      "rarity": "legendary",
+      "set": "paper",
+      "token": true,
+      "type": "creature",
+      "attack": 5,
+      "health": 5,
+      "tribe": "Elemental",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Add 5 random Frost spells to your hand & Freeze all creatures you don't control.",
+      "effects": [
+        {
+          "type": "conjure-random",
+          "cardType": "spell",
+          "count": 5,
+          "tribe": "Frost"
+        },
+        {
+          "type": "freeze",
+          "target": "enemy-creatures"
+        }
+      ]
+    },
+    {
+      "id": "the_azerite_monkey",
+      "name": "The Azerite Monkey",
+      "cardClass": "druid",
+      "cost": 4,
+      "rarity": "legendary",
+      "set": "paper",
+      "token": true,
+      "type": "creature",
+      "attack": 5,
+      "health": 5,
+      "tribe": "Elemental",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Add a random Nature spell to your hand & summon three random 5-Cost creatures.",
+      "effects": [
+        {
+          "type": "conjure-random",
+          "cardType": "spell",
+          "count": 1,
+          "tribe": "Nature"
+        },
+        {
+          "type": "summon-random",
+          "cost": 5,
+          "count": 3
+        }
+      ]
+    },
+    {
+      "id": "the_azerite_murloc",
+      "name": "The Azerite Murloc",
+      "cardClass": "shaman",
+      "cost": 4,
+      "rarity": "legendary",
+      "set": "paper",
+      "token": true,
+      "type": "creature",
+      "attack": 5,
+      "health": 5,
+      "tribe": "Elemental",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Creatures you control gain +3/+3.",
+      "effects": [
+        {
+          "type": "buff",
+          "target": "friendly-creatures",
+          "attack": 3,
+          "health": 3
+        }
+      ]
+    },
+    {
+      "id": "the_azerite_otter",
+      "name": "The Azerite Otter",
+      "cardClass": "wizard",
+      "cost": 4,
+      "rarity": "legendary",
+      "set": "paper",
+      "token": true,
+      "type": "creature",
+      "attack": 5,
+      "health": 5,
+      "tribe": "Elemental",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Add a random Frost spell, Fire spell, Dragon & Elemental to your hand.",
+      "effects": [
+        {
+          "type": "conjure-random",
+          "cardType": "spell",
+          "count": 1,
+          "tribe": "Frost"
+        },
+        {
+          "type": "conjure-random",
+          "cardType": "spell",
+          "count": 1,
+          "tribe": "Fire"
+        },
+        {
+          "type": "conjure-random",
+          "cardType": "creature",
+          "count": 1,
+          "tribe": "Dragon"
+        },
+        {
+          "type": "conjure-random",
+          "cardType": "creature",
+          "count": 1,
+          "tribe": "Elemental"
+        }
+      ]
+    },
+    {
+      "id": "the_azerite_ox",
+      "name": "The Azerite Ox",
+      "cardClass": "warrior",
+      "cost": 4,
+      "rarity": "legendary",
+      "set": "paper",
+      "token": true,
+      "type": "creature",
+      "attack": 5,
+      "health": 5,
+      "tribe": "Elemental",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Summon two random 8-Cost creatures.",
+      "effects": [
+        {
+          "type": "summon-random",
+          "cost": 8,
+          "count": 2
+        }
+      ]
+    },
+    {
+      "id": "the_azerite_pig",
+      "name": "The Azerite Pig",
+      "cardClass": "demon_hunter",
+      "cost": 4,
+      "rarity": "legendary",
+      "set": "paper",
+      "token": true,
+      "type": "creature",
+      "attack": 5,
+      "health": 5,
+      "tribe": "Elemental",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Add 4 random Fel spells to your hand & give your Hero +6 Attack this turn.",
+      "effects": [
+        {
+          "type": "conjure-random",
+          "cardType": "spell",
+          "count": 4,
+          "tribe": "Fel"
+        },
+        {
+          "type": "hero-temp-attack",
+          "value": 6
+        }
+      ]
+    },
+    {
+      "id": "the_azerite_rabbit",
+      "name": "The Azerite Rabbit",
+      "cardClass": "ranger",
+      "cost": 4,
+      "rarity": "legendary",
+      "set": "paper",
+      "token": true,
+      "type": "creature",
+      "attack": 5,
+      "health": 5,
+      "tribe": "Elemental",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Add 3 random Nature spells to your hand & Adapt each creature you control twice.",
+      "effects": [
+        {
+          "type": "conjure-random",
+          "cardType": "spell",
+          "count": 3,
+          "tribe": "Nature"
+        },
+        {
+          "type": "adapt",
+          "target": "friendly-creatures"
+        },
+        {
+          "type": "adapt",
+          "target": "friendly-creatures"
+        }
+      ]
+    },
+    {
+      "id": "the_azerite_rat",
+      "name": "The Azerite Rat",
+      "cardClass": "death_knight",
+      "cost": 4,
+      "rarity": "legendary",
+      "set": "paper",
+      "token": true,
+      "type": "creature",
+      "attack": 5,
+      "health": 5,
+      "tribe": "Elemental",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Return the highest-Cost creature from your graveyard to the battlefield.",
+      "effects": [
+        {
+          "type": "gy-return",
+          "cardType": "creature",
+          "to": "board"
+        }
+      ]
+    },
+    {
+      "id": "the_azerite_rooster",
+      "name": "The Azerite Rooster",
+      "cardClass": "priest",
+      "cost": 4,
+      "rarity": "legendary",
+      "set": "paper",
+      "token": true,
+      "type": "creature",
+      "attack": 5,
+      "health": 5,
+      "tribe": "Elemental",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Add a random Elemental, Holy spell & creature to your hand & restore all your creatures to full Health.",
+      "effects": [
+        {
+          "type": "conjure-random",
+          "cardType": "creature",
+          "count": 1,
+          "tribe": "Elemental"
+        },
+        {
+          "type": "conjure-random",
+          "cardType": "spell",
+          "count": 1,
+          "tribe": "Holy"
+        },
+        {
+          "type": "conjure-random",
+          "cardType": "creature",
+          "count": 1
+        },
+        {
+          "type": "heal",
+          "value": 99,
+          "target": "friendly-creatures"
+        }
+      ]
+    },
+    {
+      "id": "the_azerite_scorpion",
+      "name": "The Azerite Scorpion",
+      "cardClass": "rogue",
+      "cost": 4,
+      "rarity": "legendary",
+      "set": "paper",
+      "token": true,
+      "type": "creature",
+      "attack": 5,
+      "health": 5,
+      "tribe": "Elemental",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Add 6 random spells to your hand.",
+      "effects": [
+        {
+          "type": "conjure-random",
+          "cardType": "spell",
+          "count": 6
+        }
+      ]
+    },
+    {
+      "id": "the_azerite_snake",
+      "name": "The Azerite Snake",
+      "cardClass": "warlock",
+      "cost": 4,
+      "rarity": "legendary",
+      "set": "paper",
+      "token": true,
+      "type": "creature",
+      "attack": 5,
+      "health": 5,
+      "tribe": "Elemental",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Target player loses 10 Life & you gain 10 Life.",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 10,
+          "target": "enemy-hero"
+        },
+        {
+          "type": "heal",
+          "value": 10,
+          "target": "self"
+        }
+      ]
+    },
+    {
+      "id": "the_azerite_tiger",
+      "name": "The Azerite Tiger",
+      "cardClass": "naturalist",
+      "cost": 4,
+      "rarity": "legendary",
+      "set": "paper",
+      "token": true,
+      "type": "creature",
+      "attack": 5,
+      "health": 5,
+      "tribe": "Elemental",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Add a random Beast, Nature spell & Mech to your hand & gain 8 Life.",
+      "effects": [
+        {
+          "type": "conjure-random",
+          "cardType": "creature",
+          "count": 1,
+          "tribe": "Beast"
+        },
+        {
+          "type": "conjure-random",
+          "cardType": "spell",
+          "count": 1,
+          "tribe": "Nature"
+        },
+        {
+          "type": "conjure-random",
+          "cardType": "creature",
+          "count": 1,
+          "tribe": "Mech"
+        },
+        {
+          "type": "heal",
+          "value": 8,
+          "target": "self"
+        }
+      ]
+    },
+    {
+      "id": "the_azerite_wolf",
+      "name": "The Azerite Wolf",
+      "cardClass": "naturalist",
+      "cost": 4,
+      "rarity": "legendary",
+      "set": "paper",
+      "token": true,
+      "type": "creature",
+      "attack": 5,
+      "health": 5,
+      "tribe": "Elemental",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: If you've excavated twice, add a random Elemental, Nature spell & creature to your hand.",
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "excavatedTwice": true
+          },
+          "then": [
+            {
+              "type": "conjure-random",
+              "cardType": "creature",
+              "count": 1,
+              "tribe": "Elemental"
+            },
+            {
+              "type": "conjure-random",
+              "cardType": "spell",
+              "count": 1,
+              "tribe": "Nature"
+            },
+            {
+              "type": "conjure-random",
+              "cardType": "creature",
+              "count": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "jewel_mine_overseer",
+      "name": "Jewel Mine Overseer",
+      "cardClass": "neutral",
+      "cost": 3,
+      "rarity": "rare",
+      "set": "paper",
+      "description": "Battlecry: Scry 5. Deathrattle: Excavate.",
+      "type": "creature",
+      "attack": 3,
+      "health": 3,
+      "tribe": "Human Noble",
+      "keywords": [
+        "battlecry",
+        "deathrattle"
+      ],
+      "effects": [
+        {
+          "type": "scry",
+          "value": 5
+        }
+      ],
+      "deathrattle": [
+        {
+          "type": "excavate"
+        }
+      ]
+    },
+    {
+      "id": "feral_forager",
+      "name": "Feral Forager",
+      "cardClass": "neutral",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "description": "Battlecry: Excavate.",
+      "type": "creature",
+      "attack": 2,
+      "health": 2,
+      "tribe": "Beast",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "excavate"
+        }
+      ]
+    },
+    {
+      "id": "mineralist",
+      "name": "Mineralist",
+      "cardClass": "neutral",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "description": "Constellation: Excavate.",
+      "type": "creature",
+      "attack": 3,
+      "health": 3,
+      "tribe": "Elemental",
+      "ongoing": {
+        "on": "enchantment-played",
+        "effects": [
+          {
+            "type": "excavate"
+          }
+        ]
+      }
+    },
+    {
+      "id": "gale_lizard",
+      "name": "Gale Lizard",
+      "cardClass": "neutral",
+      "cost": 5,
+      "rarity": "common",
+      "set": "paper",
+      "description": "Battlecry: Quickdraw 3. Windfury. Deathrattle: Luck: Excavate.",
+      "type": "creature",
+      "attack": 2,
+      "health": 6,
+      "tribe": "Beast",
+      "keywords": [
+        "battlecry",
+        "windfury",
+        "deathrattle"
+      ],
+      "effects": [
+        {
+          "type": "quickdraw",
+          "value": 3
+        }
+      ],
+      "deathrattle": [
+        {
+          "type": "luck",
+          "effects": [
+            {
+              "type": "excavate"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "azerite_drake",
+      "name": "Azerite Drake",
+      "cardClass": "neutral",
+      "cost": 6,
+      "rarity": "epic",
+      "set": "paper",
+      "description": "Battlecry: Excavate & draw a card. Spell Damage+1.",
+      "type": "creature",
+      "attack": 4,
+      "health": 4,
+      "tribe": "Dragon",
+      "static": {
+        "type": "spell-damage",
+        "value": 1
+      },
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "excavate"
+        },
+        {
+          "type": "draw",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "red_eyes_black_dragon",
+      "name": "Red Eyes Black Dragon",
+      "cardClass": "neutral",
+      "cost": 7,
+      "rarity": "legendary",
+      "set": "paper",
+      "description": "Impulsive, Firebreathing, Bushido & Taunt. Deathrattle: Excavate & Plunder.",
+      "type": "creature",
+      "attack": 9,
+      "health": 6,
+      "tribe": "Dragon",
+      "keywords": [
+        "deathrattle"
+      ],
+      "deathrattle": [
+        {
+          "type": "excavate"
+        },
+        {
+          "type": "plunder",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "badlands_behemoth",
+      "name": "Badlands Behemoth",
+      "cardClass": "bounty_hunter",
+      "cost": 9,
+      "rarity": "epic",
+      "set": "paper",
+      "description": "Battlecry: Quickdraw 3. Rush, Trample, Divine Shield & Taunt. Deathrattle: Excavate.",
+      "type": "creature",
+      "attack": 4,
+      "health": 16,
+      "tribe": "Elemental",
+      "keywords": [
+        "battlecry",
+        "rush",
+        "trample",
+        "divine_shield",
+        "taunt",
+        "deathrattle"
+      ],
+      "effects": [
+        {
+          "type": "quickdraw",
+          "value": 3
+        }
+      ],
+      "deathrattle": [
+        {
+          "type": "excavate"
+        }
+      ]
+    },
+    {
+      "id": "reska_the_relic_wrangler",
+      "name": "Reska, the Relic Wrangler",
+      "cardClass": "death_knight",
+      "cost": 20,
+      "rarity": "legendary",
+      "set": "paper",
+      "description": "Rush & Trample. Costs 1 less for each creature in your graveyard. Deathrattle: Excavate twice & Loot twice. ( Runes: (R) (G) )",
+      "type": "creature",
+      "attack": 8,
+      "health": 3,
+      "tribe": "Undead Ranger",
+      "keywords": [
+        "rush",
+        "trample",
+        "deathrattle"
+      ],
+      "deathrattle": [
+        {
+          "type": "excavate"
+        },
+        {
+          "type": "excavate"
+        },
+        {
+          "type": "loot",
+          "value": 2
+        }
+      ]
+    },
+    {
+      "id": "dalaran_kaleidosaur",
+      "name": "Dalaran Kaleidosaur",
+      "cardClass": "mage",
+      "cost": 5,
+      "rarity": "common",
+      "set": "paper",
+      "description": "Battlecry: Excavate & Discover a Dinosaur. Spell Damage+1.",
+      "type": "creature",
+      "attack": 3,
+      "health": 6,
+      "tribe": "Beast",
+      "static": {
+        "type": "spell-damage",
+        "value": 1
+      },
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "excavate"
+        },
+        {
+          "type": "discover",
+          "pick": 3,
+          "tribe": "Dinosaur"
+        }
+      ]
+    },
+    {
+      "id": "digging_straight_down",
+      "name": "Digging Straight Down",
+      "cardClass": "shaman",
+      "cost": 4,
+      "rarity": "common",
+      "set": "paper",
+      "description": "Deal 8 damage to target creature & Excavate.",
+      "type": "sorcery",
+      "tribe": "Nature",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 8,
+          "target": "creature"
+        },
+        {
+          "type": "excavate"
+        }
+      ]
+    },
+    {
+      "id": "anzrag_the_quake_mole",
+      "name": "Anzrag, the Quake-Mole",
+      "cardClass": "neutral",
+      "cost": 4,
+      "rarity": "legendary",
+      "set": "paper",
+      "description": "If this creature has not attacked this turn, your other creatures have Windfury. Swing: Excavate.",
+      "type": "creature",
+      "attack": 8,
+      "health": 4,
+      "tribe": "Beast God",
+      "ongoing": {
+        "on": "self-attacks",
+        "effects": [
+          {
+            "type": "excavate"
           }
         ]
       }

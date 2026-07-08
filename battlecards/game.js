@@ -1402,6 +1402,12 @@ function nextEvent() {
 			if (ev.bottomed) log(`${nameOf(ev.chooser)} sent ${ev.bottomed} card${ev.bottomed > 1 ? 's' : ''} to the bottom`);
 			delay = 250;
 			break;
+		case 'excavated': {
+			const exTiers = ['Common', 'Uncommon', 'Rare', 'Epic', 'Legendary'];
+			log(`${nameOf(ev.player)} excavated a ${exTiers[ev.tier] || ''} treasure`);
+			delay = 300;
+			break;
+		}
 		case 'lootStart':
 			log(`${nameOf(ev.player)} loots (${ev.count})`);
 			if (ev.player === HUMAN) openDiscardModal();

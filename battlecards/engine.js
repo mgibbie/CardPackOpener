@@ -292,6 +292,7 @@ export function createGame(cardsById, rng = Math.random, playerDeckIds = null, p
 		fatigue: 0, // escalates each time a draw finds deck AND graveyard empty
 		overloadPending: 0, // mana locked at the start of the next turn
 		corpses: 0,         // Death Knight resource
+		excavateCount: 0,   // Excavate: total digs this game (drives the looping tier)
 		heroTempAttack: 0,  // "your hero has +N Attack this turn"
 		costDiscounts: [],  // one-shot "next X costs (N) less" riders
 		creaturesPlayedThisTurn: 0, // Pint-Sized-style first-creature discounts
@@ -604,6 +605,35 @@ function gainTokenCard(state, pi, id) {
 	emit(state, { type: 'tokenGained', player: pi, card });
 }
 const gainBloodToken = (state, pi) => gainTokenCard(state, pi, 'blood_token');
+// add a specific card (by id) to a player's hand — used by Excavate treasures
+function addCardToHand(state, pi, id) {
+	const p = state.players[pi];
+	const def = state.cardsById[id];
+	if (!def || p.eliminated) return null;
+	if (p.hand.length >= MAX_HAND) { emit(state, { type: 'burn', player: pi, cardId: id }); return null; }
+	const card = instantiate(def, pi);
+	card.zone = 'hand';
+	p.hand.push(card);
+	emit(state, { type: 'conjure', player: pi, card, color: null });
+	return card;
+}
+
+// Excavate: dig up a treasure, then the next dig is one tier higher; after the
+// Legendary tier it loops back to Common. Tiers 1-4 are fixed; the Legendary
+// tier hands you one of your class's Azerite treasures.
+const EXCAVATE_TIERS = ['fools_azerite', 'azerite_fragment', 'azerite_chunk', 'azerite_gem'];
+const EXCAVATE_LEGENDARIES = {
+	barbarian: ['the_azerite_mammoth'], bard: ['the_azerite_dolphin'], bounty_hunter: ['the_azerite_horse'],
+	centurion: ['the_azerite_beetle', 'the_azerite_goat'], death_knight: ['the_azerite_rat'],
+	demon_hunter: ['the_azerite_pig'], druid: ['the_azerite_monkey'], hunter: ['the_azerite_lynx'],
+	mage: ['the_azerite_hawk'], naturalist: ['the_azerite_tiger', 'the_azerite_wolf'],
+	paladin: ['the_azerite_dragon', 'the_azerite_goat'], priest: ['the_azerite_rooster'],
+	ranger: ['the_azerite_rabbit'], rogue: ['the_azerite_scorpion'],
+	shaman: ['the_azerite_murloc', 'the_azerite_wolf'], sorcerer: ['the_azerite_hydra'],
+	warlock: ['the_azerite_snake'], warrior: ['the_azerite_ox'], wizard: ['the_azerite_otter'],
+};
+const ALL_AZERITE_LEGENDARIES = [...new Set(Object.values(EXCAVATE_LEGENDARIES).flat())];
+
 
 // The Coin: an opponent developing a land (or a "gain a coin" effect) puts a
 // coin CARD into your hand instead of a hidden counter — play it any time for
@@ -2274,6 +2304,7 @@ function execEffects(state, pi, effects, target, source) {
 			else if (e.if.controlMinAttack != null) ok = p.board.some(c => !isDead(c) && c !== source && c.attack >= e.if.controlMinAttack);
 			else if (e.if.holdingTribe) ok = p.hand.some(c => (c.tribe || '').includes(e.if.holdingTribe));
 			else if (e.if.handEmpty) ok = p.hand.length === 0;
+			else if (e.if.excavatedTwice) ok = (p.excavateCount || 0) >= 2;
 			execEffects(state, pi, ok ? e.then : (e.else || []), target, source);
 		} else if (e.type === 'damage-then') {
 			// deal damage, then branch on whether the creature survived
@@ -2674,6 +2705,7 @@ function execEffects(state, pi, effects, target, source) {
 				d.type !== 'land' && !d.token && !d.companion && !d.commander
 				&& !(d.colors && d.colors.length));
 			if (e.cardType === 'creature') pool = pool.filter(d => d.type === 'creature');
+			else if (e.cardType === 'spell') pool = pool.filter(d => isSpellType(d));
 			if (e.minAttack != null) pool = pool.filter(d => (d.attack || 0) >= e.minAttack);
 			if (e.tribe) pool = pool.filter(d => (d.tribe || '').includes(e.tribe));
 			if (e.cardClass === 'enemy') {
@@ -2688,6 +2720,7 @@ function execEffects(state, pi, effects, target, source) {
 				if (!pool.length || p.hand.length >= MAX_HAND) break;
 				const card = instantiate(pool[Math.floor(state.rng() * pool.length)], pi);
 				card.zone = 'hand';
+				if (e.setCost != null) card.cost = e.setCost;
 				p.hand.push(card);
 				emit(state, { type: 'conjure', player: pi, card, color: null });
 			}
@@ -2727,6 +2760,7 @@ function execEffects(state, pi, effects, target, source) {
 			if (pool.length && p.hand.length < MAX_HAND) {
 				const card = instantiate(pool[Math.floor(state.rng() * pool.length)], pi);
 				card.zone = 'hand';
+				if (e.setCost != null) card.cost = e.setCost;
 				p.hand.push(card);
 				emit(state, { type: 'conjure', player: pi, card, color: null });
 			}
@@ -2762,6 +2796,20 @@ function execEffects(state, pi, effects, target, source) {
 		} else if (e.type === 'investigate') {
 			// Investigate: make a Clue token (Sacrifice, pay 2: draw a card)
 			gainTokenCard(state, pi, 'clue_token');
+		} else if (e.type === 'excavate') {
+			const pl = state.players[pi];
+			if (!pl.eliminated) {
+				const tier = (pl.excavateCount || 0) % 5; // 0-3 fixed, 4 = class legendary
+				let id;
+				if (tier < 4) id = EXCAVATE_TIERS[tier];
+				else {
+					const pool = EXCAVATE_LEGENDARIES[pl.heroClass] || ALL_AZERITE_LEGENDARIES;
+					id = pool[Math.floor(state.rng() * pool.length)];
+				}
+				pl.excavateCount = (pl.excavateCount || 0) + 1;
+				emit(state, { type: 'excavated', player: pi, tier, id });
+				addCardToHand(state, pi, id);
+			}
 		} else if (e.type === 'grant-medic') {
 			const t = chosenCreature();
 			if (t) t.medic = (t.medic || 0) + e.value;
