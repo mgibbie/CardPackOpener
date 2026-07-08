@@ -400,6 +400,7 @@ export function drawCards(state, pi, count) {
 		}
 		if (p.hand.length >= MAX_HAND) { emit(state, { type: 'burn', player: pi, cardId: id }); continue; }
 		const card = instantiate(state.cardsById[id], pi);
+		if (card.type === 'creature' && p.drawBuff) { card.attack += p.drawBuff.attack || 0; card.maxHealth += p.drawBuff.health || 0; }
 		card.zone = 'hand';
 		p.hand.push(card);
 		emit(state, { type: 'draw', player: pi, card });
@@ -1904,7 +1905,8 @@ function execEffects(state, pi, effects, target, source) {
 		} else if (e.type === 'destroy-all') {
 			// board wipe; `others` spares the source, `spareRandom` spares one survivor
 			const all = [];
-			for (const pl of state.players) for (const c of pl.board) if (!isDead(c)) all.push(c);
+			const wipeBoards = e.side === 'enemy' ? enemies.map(o => state.players[o]) : state.players;
+			for (const pl of wipeBoards) for (const c of pl.board) if (!isDead(c)) all.push(c);
 			let spare = null;
 			if (e.others && source) spare = source;
 			if (e.spareRandom && all.length) spare = all[Math.floor(state.rng() * all.length)];
@@ -2613,6 +2615,53 @@ function execEffects(state, pi, effects, target, source) {
 				buffCreature(t, n, n);
 				emit(state, { type: 'buff', uid: t.uid, attack: t.attack, hp: hp(t) });
 			}
+		} else if (e.type === 'reanimate') {
+			// summon the highest-Cost creature from your graveyard, with riders
+			const p = state.players[pi];
+			const cands = p.graveyard.filter(c => { const d = state.cardsById[c.id]; return d && d.type === 'creature' && !d.token; });
+			if (cands.length) {
+				let best = cands[0];
+				for (const c of cands) if ((state.cardsById[c.id].cost || 0) > (state.cardsById[best.id].cost || 0)) best = c;
+				p.graveyard = p.graveyard.filter(c => c !== best);
+				const c = summon(state, pi, state.cardsById[best.id]);
+				if (c) {
+					if (e.attack || e.health) buffCreature(c, e.attack || 0, e.health || 0);
+					for (const kw of e.keywords || []) { if (!c.keywords.includes(kw)) c.keywords.push(kw); if (kw === KW.DIVINE_SHIELD) c.shield = true; }
+				}
+			}
+		} else if (e.type === 'buff-zones') {
+			// buff creatures in hand + on the battlefield now, and creatures still in
+			// the deck as they are drawn (deck cards have no live identity until drawn)
+			const p = state.players[pi];
+			for (const c of p.board) if (c.type === 'creature' && !isDead(c)) buffCreature(c, e.attack || 0, e.health || 0);
+			for (const c of p.hand) if (c.type === 'creature') { c.attack += e.attack || 0; c.maxHealth += e.health || 0; }
+			p.drawBuff = p.drawBuff || { attack: 0, health: 0 };
+			p.drawBuff.attack += e.attack || 0; p.drawBuff.health += e.health || 0;
+		} else if (e.type === 'transform-cost') {
+			// transform every creature you own (hand, deck, battlefield) into a random
+			// creature that naturally costs `delta` more
+			const p = state.players[pi];
+			const delta = e.delta || 3;
+			const rc = cost => { const pool = Object.values(state.cardsById).filter(d => d.type === 'creature'
+				&& (d.cost || 0) === cost && !d.token && !d.companion && !d.commander && !(d.colors && d.colors.length));
+				return pool.length ? pool[Math.floor(state.rng() * pool.length)] : null; };
+			for (const c of [...p.board]) {
+				if (c.type !== 'creature' || isDead(c)) continue;
+				const def = rc((state.cardsById[c.id]?.cost || 0) + delta); if (!def) continue;
+				const tok = instantiate(def, pi); tok.zone = 'board'; tok.sick = c.sick;
+				p.board[p.board.indexOf(c)] = tok; c.zone = 'gone';
+				emit(state, { type: 'transformed', uid: c.uid, player: pi, from: c.name, card: tok });
+			}
+			for (let i = 0; i < p.hand.length; i++) {
+				const c = p.hand[i]; if (c.type !== 'creature') continue;
+				const def = rc((state.cardsById[c.id]?.cost || 0) + delta); if (!def) continue;
+				const tok = instantiate(def, pi); tok.zone = 'hand'; p.hand[i] = tok;
+			}
+			for (let i = 0; i < p.deck.length; i++) {
+				const d = state.cardsById[p.deck[i]]; if (!d || d.type !== 'creature') continue;
+				const def = rc((d.cost || 0) + delta); if (def) p.deck[i] = def.id;
+			}
+			recomputeAuras(state);
 		} else if (e.type === 'gy-return') {
 			// graveyard recursion: pick a fallen card back to hand or battlefield
 			const p = state.players[pi];
@@ -2706,6 +2755,7 @@ function execEffects(state, pi, effects, target, source) {
 				&& !(d.colors && d.colors.length));
 			if (e.cardType === 'creature') pool = pool.filter(d => d.type === 'creature');
 			else if (e.cardType === 'spell') pool = pool.filter(d => isSpellType(d));
+			else if (e.cardType === 'weapon') pool = pool.filter(d => d.type === 'weapon');
 			if (e.minAttack != null) pool = pool.filter(d => (d.attack || 0) >= e.minAttack);
 			if (e.tribe) pool = pool.filter(d => (d.tribe || '').includes(e.tribe));
 			if (e.cardClass === 'enemy') {
@@ -2716,9 +2766,12 @@ function execEffects(state, pi, effects, target, source) {
 				pool = pool.filter(d => d.cardClass && d.cardClass !== 'neutral'
 					&& d.cardClass !== p.heroClass);
 			}
-			for (let i = 0; i < (e.count || 1); i++) {
-				if (!pool.length || p.hand.length >= MAX_HAND) break;
-				const card = instantiate(pool[Math.floor(state.rng() * pool.length)], pi);
+			// `copies`: pick ONE match and add that same card N times; else N distinct rolls
+			const rolls = e.copies ? Array(e.copies).fill(pool.length ? pool[Math.floor(state.rng() * pool.length)] : null)
+				: Array.from({ length: e.count || 1 }, () => pool.length ? pool[Math.floor(state.rng() * pool.length)] : null);
+			for (const def of rolls) {
+				if (!def || p.hand.length >= MAX_HAND) break;
+				const card = instantiate(def, pi);
 				card.zone = 'hand';
 				if (e.setCost != null) card.cost = e.setCost;
 				p.hand.push(card);

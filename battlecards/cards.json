@@ -42216,17 +42216,10 @@
       "keywords": [
         "battlecry"
       ],
-      "description": "Battlecry: Each creature in your hand & battlefield gains +3/+3.",
+      "description": "Battlecry: Each creature in your hand, deck & battlefield gains +3/+3.",
       "effects": [
         {
-          "type": "buff-hand",
-          "attack": 3,
-          "health": 3,
-          "all": true
-        },
-        {
-          "type": "buff",
-          "target": "friendly-creatures",
+          "type": "buff-zones",
           "attack": 3,
           "health": 3
         }
@@ -42258,8 +42251,8 @@
             {
               "type": "conjure-random",
               "cardType": "spell",
-              "count": 3,
-              "tribe": "Holy"
+              "tribe": "Holy",
+              "copies": 3
             }
           ]
         }
@@ -42306,7 +42299,7 @@
       "keywords": [
         "battlecry"
       ],
-      "description": "Battlecry: Add a random Beast & Fire spell to your hand & deal 5 damage to any target.",
+      "description": "Battlecry: Add a random Beast, Fire spell & Hero Weapon to your hand & deal 5 damage to any target.",
       "effects": [
         {
           "type": "conjure-random",
@@ -42319,6 +42312,11 @@
           "cardType": "spell",
           "count": 1,
           "tribe": "Fire"
+        },
+        {
+          "type": "conjure-random",
+          "cardType": "weapon",
+          "count": 1
         },
         {
           "type": "damage",
@@ -42383,7 +42381,7 @@
       "keywords": [
         "battlecry"
       ],
-      "description": "Battlecry: Add 3 random Mechs to your hand & Freeze all creatures you don't control.",
+      "description": "Battlecry: Add 3 random Mechs to your hand & destroy all creatures you don't control.",
       "effects": [
         {
           "type": "conjure-random",
@@ -42392,8 +42390,8 @@
           "tribe": "Mech"
         },
         {
-          "type": "freeze",
-          "target": "enemy-creatures"
+          "type": "destroy-all",
+          "side": "enemy"
         }
       ]
     },
@@ -42471,13 +42469,11 @@
       "keywords": [
         "battlecry"
       ],
-      "description": "Battlecry: Creatures you control gain +3/+3.",
+      "description": "Battlecry: Transform each creature in your hand, deck & battlefield into a random creature that costs (3) more.",
       "effects": [
         {
-          "type": "buff",
-          "target": "friendly-creatures",
-          "attack": 3,
-          "health": 3
+          "type": "transform-cost",
+          "delta": 3
         }
       ]
     },
@@ -42625,12 +42621,16 @@
       "keywords": [
         "battlecry"
       ],
-      "description": "Battlecry: Return the highest-Cost creature from your graveyard to the battlefield.",
+      "description": "Battlecry: Summon the highest-Cost creature from your graveyard; it gains +2/+2, Lifesteal & Reborn.",
       "effects": [
         {
-          "type": "gy-return",
-          "cardType": "creature",
-          "to": "board"
+          "type": "reanimate",
+          "attack": 2,
+          "health": 2,
+          "keywords": [
+            "lifesteal",
+            "reborn"
+          ]
         }
       ]
     },
