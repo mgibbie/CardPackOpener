@@ -43206,6 +43206,42 @@
           ]
         }
       ]
+    },
+    {
+      "id": "the_forgotten_one",
+      "name": "The Forgotten One",
+      "cardClass": "neutral",
+      "cost": 9,
+      "rarity": "epic",
+      "set": "paper",
+      "description": "Hexproof. Emerge: Destroy all creatures. Inspire: Luck: Discover a God.",
+      "type": "creature",
+      "attack": 6,
+      "health": 6,
+      "tribe": "Undead God",
+      "emerge": [
+        {
+          "type": "destroy-all"
+        }
+      ],
+      "keywords": [
+        "elusive"
+      ],
+      "ongoing": {
+        "on": "hero-power-used",
+        "effects": [
+          {
+            "type": "luck",
+            "effects": [
+              {
+                "type": "discover",
+                "pick": 3,
+                "tribe": "God"
+              }
+            ]
+          }
+        ]
+      }
     }
   ]
 }

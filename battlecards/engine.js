@@ -180,6 +180,7 @@ function instantiate(def, controller) {
 		selfScale: def.selfScale || null, // { attack, tribe }: +N per other <tribe> in play
 		condKeyword: def.condKeyword || null, // { keyword, while: 'weapon' } (Southsea Deckhand)
 		honorableKill: def.honorableKill || null, // effects on an EXACT lethal blow
+		emerge: def.emerge || null,   // fires from hand when drawn/discovered (not opening hand)
 		medic: def.medic || 0,        // heals adjacent creatures N at end of turn
 		sac: def.sac || null,         // field-token activation: { cost, discard?, effects }
 		aura: def.aura || null,       // { attack, health, tribe?, others?, adjacent?, position?, keywords? }
@@ -363,6 +364,7 @@ export function createGame(cardsById, rng = Math.random, playerDeckIds = null, p
 		drawCards(state, i, 4);
 		addCoin(state, i);
 	}
+	state.dealt = true; // opening hands are dealt; Emerge fires on draws/adds from here
 	emit(state, { type: 'turnStart', player: 0, turnNumber: 1 });
 	drawCards(state, 0, 1); // start-of-turn draw (BattleEngine.startPhase draws on turn 1 too)
 	return state;
@@ -408,6 +410,7 @@ export function drawCards(state, pi, count) {
 		// Ponder: fires on every card drawn after your first draw of the turn
 		p.drawsThisTurn = (p.drawsThisTurn || 0) + 1;
 		if (p.drawsThisTurn > 1) firePonder(state, pi, { drawn: card });
+		fireEmerge(state, pi, card);
 	}
 }
 
@@ -418,6 +421,15 @@ function firePonder(state, pi, ctx = {}) {
 	state.ponderLock = true;
 	try { fireOngoing(state, pi, 'ponder', ctx); }
 	finally { state.ponderLock = false; }
+}
+
+// Emerge: a card's effect that fires the moment it is drawn or added to a hand
+// (from hand, not the board). The lock guards against an Emerge that draws more.
+function fireEmerge(state, pi, card) {
+	if (!state.dealt || state.emergeLock || !(card && card.emerge && card.emerge.length)) return;
+	state.emergeLock = true;
+	try { execEffects(state, pi, card.emerge, null, card); }
+	finally { state.emergeLock = false; }
 }
 
 function toGraveyard(state, pi, card) {
@@ -616,6 +628,7 @@ function addCardToHand(state, pi, id) {
 	card.zone = 'hand';
 	p.hand.push(card);
 	emit(state, { type: 'conjure', player: pi, card, color: null });
+	fireEmerge(state, pi, card);
 	return card;
 }
 
@@ -2778,6 +2791,7 @@ function execEffects(state, pi, effects, target, source) {
 				if (e.setCost != null) card.cost = e.setCost;
 				p.hand.push(card);
 				emit(state, { type: 'conjure', player: pi, card, color: null });
+				fireEmerge(state, pi, card);
 			}
 		} else if (e.type === 'give-enemy-random') {
 			// Mulch: a random creature lands in an opponent's hand
@@ -2818,6 +2832,7 @@ function execEffects(state, pi, effects, target, source) {
 				if (e.setCost != null) card.cost = e.setCost;
 				p.hand.push(card);
 				emit(state, { type: 'conjure', player: pi, card, color: null });
+				fireEmerge(state, pi, card);
 			}
 		} else if (e.type === 'gain-coin') {
 			for (let n = 0; n < (e.value || 1); n++) addCoin(state, pi);
@@ -3191,6 +3206,7 @@ function execEffects(state, pi, effects, target, source) {
 				card.zone = 'hand';
 				p.hand.push(card);
 				emit(state, { type: 'conjure', player: pi, card, color: e.color || null });
+				fireEmerge(state, pi, card);
 			}
 		} else if (e.type === 'boost') {
 			// color boost: roll the color's d6 table onto a chosen friendly
@@ -4015,6 +4031,7 @@ export function resolvePick(state, id) {
 		}
 		p.hand.push(card);
 		emit(state, { type: 'conjure', player: pend.player, card, color: null });
+		fireEmerge(state, pend.player, card);
 	}
 	return true;
 }
