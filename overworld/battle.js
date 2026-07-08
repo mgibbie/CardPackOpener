@@ -430,6 +430,7 @@ export class Battle {
 			meAlly, foeAlly, meAllyImg, foeAllyImg,
 			meAllyBoosts: freshBoosts(), foeAllyBoosts: freshBoosts(),
 			meAllyShownHP: meAlly?.curHP ?? 0, foeAllyShownHP: foeAlly?.curHP ?? 0,
+			meAllyShownExp: meAlly ? (meAlly.exp ?? meAlly.level ** 3) : 0,
 			plans: [], actionFor: 0,
 			party, me: playerMon, foe, foeImg, backSprites,
 			meImg: backSprites.get(playerMon),
@@ -492,6 +493,7 @@ export class Battle {
 			meAllyImg: null, foeAllyImg: null,
 			meAllyBoosts: freshBoosts(), foeAllyBoosts: freshBoosts(),
 			meAllyShownHP: meAlly?.curHP ?? 0, foeAllyShownHP: foeAlly?.curHP ?? 0,
+			meAllyShownExp: meAlly ? (meAlly.exp ?? meAlly.level ** 3) : 0,
 			plans: [], actionFor: 0,
 			party, me: playerMon, foe, backSprites, foeSprites,
 			foes: foeParty, foeIdx: 0, isTrainer: true, info,
@@ -1835,41 +1837,15 @@ export class Battle {
 		}
 	}
 
-	// exp -> level ups -> stat recalc -> move learning (medium-fast curve)
+	// exp -> level ups -> stat recalc -> move learning (medium-fast curve).
+	// In a double battle every active mon on your side shares the yield.
 	grantExp(fallen) {
 		const a = this.active;
-		const mon = a.me.curHP > 0 ? a.me : (a.meAlly?.curHP > 0 ? a.meAlly : a.me);
 		const gain = expGain(fallen || a.foe, this.data);
-		mon.exp = (mon.exp ?? mon.level ** 3) + gain;
-		this.pushMsg(`${mon.name} gained ${gain} EXP!`);
-		const sp = this.data.species[mon.speciesId];
-		while (mon.level < 100 && mon.exp >= (mon.level + 1) ** 3) {
-			mon.level++;
-			const lvl = mon.level;
-			this.pushMsg(`${mon.name} grew to Lv${lvl}!`, () => {
-				const ivs = mon.ivs || { hp: 15, atk: 15, def: 15, spa: 15, spd: 15, spe: 15 };
-				const oldMax = mon.maxHP;
-				mon.stats = statsFor(sp, ivs, lvl);
-				mon.maxHP = mon.stats.hp;
-				mon.curHP = Math.min(mon.maxHP, mon.curHP + (mon.maxHP - oldMax));
-				a.meShownHP = mon.curHP;
-			});
-			for (const [lv, mid] of sp.learnset) {
-				if (lv !== lvl || mon.moves.some(m => m.id === mid)) continue;
-				if (mon.moves.length < 4) {
-					this.pushMsg(`${mon.name} learned ${this.data.moves[mid]?.name || mid}!`,
-						() => mon.moves.push(makeMove(mid, this.data)));
-				} else {
-					// full moveset: the player picks what (if anything) to forget
-					const name = this.data.moves[mid]?.name || mid;
-					this.pushMsg(`${mon.name} wants to learn ${name}!`, () => {
-						a.learn = { mid, name, mon };
-						a.learnIdx = 0;
-						a.phase = 'learn';
-					});
-				}
-			}
-		}
+		const winners = a.double
+			? [a.me, a.meAlly].filter(m => m && m.curHP > 0)
+			: [a.me.curHP > 0 ? a.me : (a.meAlly?.curHP > 0 ? a.meAlly : a.me)].filter(Boolean);
+		for (const mon of winners) this.awardExp(mon, gain);
 		// trainer battles continue to the next foe mon; wild battles are over
 		this.pushMsg('', () => {
 			const a2 = this.active;
@@ -1893,6 +1869,41 @@ export class Battle {
 				this.finish('victory');
 			}
 		});
+	}
+
+	// give one mon its exp, handle level-ups (stat recalc + move learning)
+	awardExp(mon, gain) {
+		const a = this.active;
+		mon.exp = (mon.exp ?? mon.level ** 3) + gain;
+		this.pushMsg(`${mon.name} gained ${gain} EXP!`);
+		const sp = this.data.species[mon.speciesId];
+		while (mon.level < 100 && mon.exp >= (mon.level + 1) ** 3) {
+			mon.level++;
+			const lvl = mon.level;
+			this.pushMsg(`${mon.name} grew to Lv${lvl}!`, () => {
+				const ivs = mon.ivs || { hp: 15, atk: 15, def: 15, spa: 15, spd: 15, spe: 15 };
+				const oldMax = mon.maxHP;
+				mon.stats = statsFor(sp, ivs, lvl);
+				mon.maxHP = mon.stats.hp;
+				mon.curHP = Math.min(mon.maxHP, mon.curHP + (mon.maxHP - oldMax));
+				if (mon === a.me) a.meShownHP = mon.curHP;
+				else if (mon === a.meAlly) a.meAllyShownHP = mon.curHP;
+			});
+			for (const [lv, mid] of sp.learnset) {
+				if (lv !== lvl || mon.moves.some(m => m.id === mid)) continue;
+				if (mon.moves.length < 4) {
+					this.pushMsg(`${mon.name} learned ${this.data.moves[mid]?.name || mid}!`,
+						() => mon.moves.push(makeMove(mid, this.data)));
+				} else {
+					const name = this.data.moves[mid]?.name || mid;
+					this.pushMsg(`${mon.name} wants to learn ${name}!`, () => {
+						a.learn = { mid, name, mon };
+						a.learnIdx = 0;
+						a.phase = 'learn';
+					});
+				}
+			}
+		}
 	}
 
 	// Gen3-style catch: HP factor + species rate x ball multiplier, 4 shakes
@@ -2803,13 +2814,16 @@ export class Battle {
 		if (a.foeAlly) a.foeAllyShownHP += (a.foeAlly.curHP - (a.foeAllyShownHP || 0)) * Math.min(1, dt * 6);
 		if (a.meAlly) a.meAllyShownHP += (a.meAlly.curHP - (a.meAllyShownHP || 0)) * Math.min(1, dt * 6);
 		// EXP bar easing: the shown value crawls up to the real exp so you see it
-		// fill (and wrap across level-ups) instead of jumping instantly
-		const realExp = a.me.exp ?? a.me.level ** 3;
-		if (a._expMon !== a.me) { a._expMon = a.me; a.meShownExp = realExp; } // switched mon: snap
-		else if (a.meShownExp == null || a.meShownExp > realExp) a.meShownExp = realExp;
-		else if (a.meShownExp < realExp) {
-			a.meShownExp = Math.min(realExp, a.meShownExp + (realExp - a.meShownExp) * Math.min(1, dt * 2.2) + 4 * dt);
-		}
+		// fill (and wrap across level-ups) instead of jumping; snaps on a mon swap
+		const easeExp = (mon, key, tag) => {
+			if (!mon) return;
+			const real = mon.exp ?? mon.level ** 3;
+			if (a[tag] !== mon) { a[tag] = mon; a[key] = real; }
+			else if (a[key] == null || a[key] > real) a[key] = real;
+			else if (a[key] < real) a[key] = Math.min(real, a[key] + (real - a[key]) * Math.min(1, dt * 2.2) + 4 * dt);
+		};
+		easeExp(a.me, 'meShownExp', '_expMon');
+		if (a.double) easeExp(a.meAlly, 'meAllyShownExp', '_expAlly');
 
 		if (a.phase === 'flash') {
 			if (a.t > 0.6) { a.phase = 'msg'; }
@@ -3062,7 +3076,8 @@ export class Battle {
 		if (a.double && a.meAlly && a.meAlly.curHP > 0) {
 			const myY = H - 124 * u - 112 * u;
 			UI.monPanel(ctx, a.meAlly, W - 14 * u - 300 * u - 246 * u, myY, 230 * u, u,
-				{ shownHP: a.meAllyShownHP ?? a.meAlly.curHP, boosts: a.meAllyBoosts, showNumbers: true });
+				{ shownHP: a.meAllyShownHP ?? a.meAlly.curHP, boosts: a.meAllyBoosts, showNumbers: true,
+					showXP: true, expFrac: this.expFracFor(a.meAlly, a.meAllyShownExp ?? (a.meAlly.exp ?? a.meAlly.level ** 3)) });
 		}
 		UI.monPanel(ctx, a.foe, 14 * u, 14 * u, 272 * u, u,
 			{ shownHP: a.foeShownHP, boosts: a.foeBoosts, abilityName: this.abilityName(a.foe.ability),
