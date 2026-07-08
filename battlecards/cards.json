@@ -378,7 +378,7 @@
       "cardClass": "bounty_hunter",
       "cost": 2,
       "rarity": "legendary",
-      "description": "Battlecry: Choose one \u2014 Destroy target creature with cost 4 or less; or Add a copy of target creature with cost 2 or less to your hand.",
+      "description": "Battlecry: Choose one — Destroy target creature with cost 4 or less; or Add a copy of target creature with cost 2 or less to your hand.",
       "attack": 2,
       "health": 2,
       "tribe": "Human Ranger",
@@ -1195,7 +1195,7 @@
       "cost": 3,
       "rarity": "common",
       "set": "paper",
-      "description": "Choose One: \u2022 Restore 8 Health to a creature. \u2022 Gain 8 Life.",
+      "description": "Choose One: • Restore 8 Health to a creature. • Gain 8 Life.",
       "type": "instant",
       "tribe": "Nature",
       "choices": [
@@ -3092,7 +3092,7 @@
       "cost": 0,
       "rarity": "common",
       "mana": 1,
-      "description": "Land: +1 mana at the start of each of your turns."
+      "description": "Land: +1 mana at the start of each of your turns.\nSacrifice this land: Draw a card."
     },
     {
       "id": "boomtown_claim",
@@ -3102,7 +3102,7 @@
       "cost": 0,
       "rarity": "rare",
       "mana": 2,
-      "description": "Land: +2 mana at the start of each of your turns."
+      "description": "Land: +2 mana at the start of each of your turns.\nSacrifice this land: Draw a card."
     },
     {
       "id": "crossroads_station",
@@ -3118,7 +3118,7 @@
           "value": 1
         }
       ],
-      "description": "Land: +1 mana at the start of each of your turns. When played, draw a card."
+      "description": "Land: +1 mana at the start of each of your turns. When played, draw a card.\nSacrifice this land: Draw a card."
     },
     {
       "id": "hallowed_springs",
@@ -3135,7 +3135,7 @@
           "target": "self"
         }
       ],
-      "description": "Land: +1 mana at the start of each of your turns. When played, restore 5 health to your hero."
+      "description": "Land: +1 mana at the start of each of your turns. When played, restore 5 health to your hero.\nSacrifice this land: Draw a card."
     },
     {
       "id": "gunslingers_eye",
@@ -3591,7 +3591,7 @@
         },
         {
           "cost": -6,
-          "text": "Emblem \u2014 Iron Law: at the end of your turn, deal 2 damage to a random enemy.",
+          "text": "Emblem — Iron Law: at the end of your turn, deal 2 damage to a random enemy.",
           "effects": [
             {
               "type": "emblem",
@@ -3612,7 +3612,7 @@
           ]
         }
       ],
-      "description": "+1: Gain 3 armor. \u22123: Deal 4 damage to any target. \u22126: Emblem \u2014 at the end of your turn, deal 2 damage to a random enemy."
+      "description": "+1: Gain 3 armor. −3: Deal 4 damage to any target. −6: Emblem — at the end of your turn, deal 2 damage to a random enemy."
     },
     {
       "id": "sable_the_cardsharp",
@@ -3648,7 +3648,7 @@
         },
         {
           "cost": -7,
-          "text": "Emblem \u2014 House Money: at the end of your turn, draw a card.",
+          "text": "Emblem — House Money: at the end of your turn, draw a card.",
           "effects": [
             {
               "type": "emblem",
@@ -3667,7 +3667,7 @@
           ]
         }
       ],
-      "description": "+1: Draw a card. \u22124: Summon two 3/3 Card Soldiers. \u22127: Emblem \u2014 at the end of your turn, draw a card."
+      "description": "+1: Draw a card. −4: Summon two 3/3 Card Soldiers. −7: Emblem — at the end of your turn, draw a card."
     },
     {
       "id": "old_man_cactus",
@@ -3711,7 +3711,7 @@
           ]
         }
       ],
-      "description": "+2: Restore 4 health to your hero. \u22125: Deal 3 damage to all enemy creatures and summon a 5/5 Saguaro Guardian with Taunt."
+      "description": "+2: Restore 4 health to your hero. −5: Deal 3 damage to all enemy creatures and summon a 5/5 Saguaro Guardian with Taunt."
     },
     {
       "id": "dusty_the_coyote",
@@ -4647,7 +4647,7 @@
       "cost": 0,
       "rarity": "common",
       "set": "paper",
-      "description": "\u27f3 \u27f3: Gain 1. \u27f3 \u27f3: Target creature gains (W) Boost. \u27f3 \u27f3: Draw a White Card.",
+      "description": "⟳ ⟳: Gain 1.\n⟳ ⟳: Target creature gains (W) Boost.\n⟳ ⟳: Draw a White Card.\nSacrifice this land: Draw a card.",
       "type": "land",
       "taps": [
         {
@@ -4690,7 +4690,7 @@
       "cost": 0,
       "rarity": "common",
       "set": "paper",
-      "description": "\u27f3 \u27f3: Gain 1. \u27f3 \u27f3: Target creature gains (U) Boost. \u27f3 \u27f3: Draw a Blue Card.",
+      "description": "⟳ ⟳: Gain 1.\n⟳ ⟳: Target creature gains (U) Boost.\n⟳ ⟳: Draw a Blue Card.\nSacrifice this land: Draw a card.",
       "colors": [
         "U"
       ],
@@ -4733,7 +4733,7 @@
       "cost": 0,
       "rarity": "common",
       "set": "paper",
-      "description": "\u27f3 \u27f3: Gain 1. \u27f3 \u27f3: Target creature gains (B) Boost. \u27f3 \u27f3: Draw a Black Card.",
+      "description": "⟳ ⟳: Gain 1.\n⟳ ⟳: Target creature gains (B) Boost.\n⟳ ⟳: Draw a Black Card.\nSacrifice this land: Draw a card.",
       "colors": [
         "B"
       ],
@@ -4776,7 +4776,7 @@
       "cost": 0,
       "rarity": "common",
       "set": "paper",
-      "description": "\u27f3 \u27f3: Gain 1. \u27f3 \u27f3: Target creature gains (R) Boost. \u27f3 \u27f3: Draw a Red Card.",
+      "description": "⟳ ⟳: Gain 1.\n⟳ ⟳: Target creature gains (R) Boost.\n⟳ ⟳: Draw a Red Card.\nSacrifice this land: Draw a card.",
       "colors": [
         "R"
       ],
@@ -4819,7 +4819,7 @@
       "cost": 0,
       "rarity": "common",
       "set": "paper",
-      "description": "\u27f3 \u27f3: Gain 1. \u27f3 \u27f3: Target creature gains (G) Boost. \u27f3 \u27f3: Draw a Green Card.",
+      "description": "⟳ ⟳: Gain 1.\n⟳ ⟳: Target creature gains (G) Boost.\n⟳ ⟳: Draw a Green Card.\nSacrifice this land: Draw a card.",
       "colors": [
         "G"
       ],
@@ -4862,7 +4862,7 @@
       "cost": 0,
       "rarity": "common",
       "set": "paper",
-      "description": "\u27f3 \u27f3: Gain 1. \u27f3 \u27f3: Deal 1 damage to any target. \u27f3 \u27f3: Draw a Colorless Card.",
+      "description": "⟳ ⟳: Gain 1.\n⟳ ⟳: Deal 1 damage to any target.\n⟳ ⟳: Draw a Colorless Card.\nSacrifice this land: Draw a card.",
       "type": "land",
       "taps": [
         {
@@ -4904,7 +4904,7 @@
       "cost": 0,
       "rarity": "common",
       "set": "paper",
-      "description": "\u27f3 \u27f3: Gain 2. \u27f3 \u27f3: Target creature gains (W) Boost. \u27f3 \u27f3: Discover a Heliod Card.",
+      "description": "⟳ ⟳: Gain 2.\n⟳ ⟳: Target creature gains (W) Boost.\n⟳ ⟳: Discover a Heliod Card.\nSacrifice this land: Draw a card.",
       "type": "land",
       "taps": [
         {
@@ -4947,7 +4947,7 @@
       "cost": 0,
       "rarity": "common",
       "set": "paper",
-      "description": "\u27f3 \u27f3: Gain 2. \u27f3 \u27f3: Target creature gains (W) Boost. \u27f3 \u27f3: Discover an Oketra Card.",
+      "description": "⟳ ⟳: Gain 2.\n⟳ ⟳: Target creature gains (W) Boost.\n⟳ ⟳: Discover an Oketra Card.\nSacrifice this land: Draw a card.",
       "type": "land",
       "taps": [
         {
@@ -4990,7 +4990,7 @@
       "cost": 0,
       "rarity": "common",
       "set": "paper",
-      "description": "\u27f3 \u27f3: Gain 2. \u27f3 \u27f3: Target creature gains (U) Boost. \u27f3 \u27f3: Discover a Thassa Card.",
+      "description": "⟳ ⟳: Gain 2.\n⟳ ⟳: Target creature gains (U) Boost.\n⟳ ⟳: Discover a Thassa Card.\nSacrifice this land: Draw a card.",
       "type": "land",
       "taps": [
         {
@@ -5033,7 +5033,7 @@
       "cost": 0,
       "rarity": "common",
       "set": "paper",
-      "description": "\u27f3 \u27f3: Gain 2. \u27f3 \u27f3: Target creature gains (U) Boost. \u27f3 \u27f3: Discover a Kefnet Card.",
+      "description": "⟳ ⟳: Gain 2.\n⟳ ⟳: Target creature gains (U) Boost.\n⟳ ⟳: Discover a Kefnet Card.\nSacrifice this land: Draw a card.",
       "type": "land",
       "taps": [
         {
@@ -5076,7 +5076,7 @@
       "cost": 0,
       "rarity": "common",
       "set": "paper",
-      "description": "\u27f3 \u27f3: Gain 2. \u27f3 \u27f3: Target creature gains (B) Boost. \u27f3 \u27f3: Discover an Erebos Card.",
+      "description": "⟳ ⟳: Gain 2.\n⟳ ⟳: Target creature gains (B) Boost.\n⟳ ⟳: Discover an Erebos Card.\nSacrifice this land: Draw a card.",
       "type": "land",
       "taps": [
         {
@@ -5119,7 +5119,7 @@
       "cost": 0,
       "rarity": "common",
       "set": "paper",
-      "description": "\u27f3 \u27f3: Gain 2. \u27f3 \u27f3: Target creature gains (B) Boost. \u27f3 \u27f3: Discover a Bontu Card.",
+      "description": "⟳ ⟳: Gain 2.\n⟳ ⟳: Target creature gains (B) Boost.\n⟳ ⟳: Discover a Bontu Card.\nSacrifice this land: Draw a card.",
       "type": "land",
       "taps": [
         {
@@ -5162,7 +5162,7 @@
       "cost": 0,
       "rarity": "common",
       "set": "paper",
-      "description": "\u27f3 \u27f3: Gain 2. \u27f3 \u27f3: Target creature gains (R) Boost. \u27f3 \u27f3: Discover a Hazoret Card.",
+      "description": "⟳ ⟳: Gain 2.\n⟳ ⟳: Target creature gains (R) Boost.\n⟳ ⟳: Discover a Hazoret Card.\nSacrifice this land: Draw a card.",
       "type": "land",
       "taps": [
         {
@@ -5205,7 +5205,7 @@
       "cost": 0,
       "rarity": "common",
       "set": "paper",
-      "description": "\u27f3 \u27f3: Gain 2. \u27f3 \u27f3: Target creature gains (R) Boost. \u27f3 \u27f3: Discover a Purphoros Card.",
+      "description": "⟳ ⟳: Gain 2.\n⟳ ⟳: Target creature gains (R) Boost.\n⟳ ⟳: Discover a Purphoros Card.\nSacrifice this land: Draw a card.",
       "type": "land",
       "taps": [
         {
@@ -5248,7 +5248,7 @@
       "cost": 0,
       "rarity": "common",
       "set": "paper",
-      "description": "\u27f3 \u27f3: Gain 2. \u27f3 \u27f3: Target creature gains (G) Boost. \u27f3 \u27f3: Discover a Nylea Card.",
+      "description": "⟳ ⟳: Gain 2.\n⟳ ⟳: Target creature gains (G) Boost.\n⟳ ⟳: Discover a Nylea Card.\nSacrifice this land: Draw a card.",
       "type": "land",
       "taps": [
         {
@@ -5291,7 +5291,7 @@
       "cost": 0,
       "rarity": "common",
       "set": "paper",
-      "description": "\u27f3 \u27f3: Gain 2. \u27f3 \u27f3: Target creature gains (G) Boost. \u27f3 \u27f3: Discover a Rhonas Card.",
+      "description": "⟳ ⟳: Gain 2.\n⟳ ⟳: Target creature gains (G) Boost.\n⟳ ⟳: Discover a Rhonas Card.\nSacrifice this land: Draw a card.",
       "type": "land",
       "taps": [
         {
@@ -5334,7 +5334,7 @@
       "cost": 0,
       "rarity": "common",
       "set": "paper",
-      "description": "\u27f3 \u27f3: Gain 2. \u27f3 \u27f3: Target creature gains (W) or (U) Boost. \u27f3 \u27f3: Discover an Azorius Card.",
+      "description": "⟳ ⟳: Gain 2.\n⟳ ⟳: Target creature gains (W) or (U) Boost.\n⟳ ⟳: Discover an Azorius Card.\nSacrifice this land: Draw a card.",
       "type": "land",
       "taps": [
         {
@@ -5387,7 +5387,7 @@
       "cost": 0,
       "rarity": "common",
       "set": "paper",
-      "description": "\u27f3 \u27f3: Gain 2. \u27f3 \u27f3: Target creature gains (W) or (U) Boost. \u27f3 \u27f3: Discover an Istfell Card.",
+      "description": "⟳ ⟳: Gain 2.\n⟳ ⟳: Target creature gains (W) or (U) Boost.\n⟳ ⟳: Discover an Istfell Card.\nSacrifice this land: Draw a card.",
       "type": "land",
       "taps": [
         {
@@ -5440,7 +5440,7 @@
       "cost": 0,
       "rarity": "common",
       "set": "paper",
-      "description": "\u27f3 \u27f3: Gain 2. \u27f3 \u27f3: Target creature gains (W) or (U) Boost. \u27f3 \u27f3: Discover an Ojutai Card.",
+      "description": "⟳ ⟳: Gain 2.\n⟳ ⟳: Target creature gains (W) or (U) Boost.\n⟳ ⟳: Discover an Ojutai Card.\nSacrifice this land: Draw a card.",
       "type": "land",
       "taps": [
         {
@@ -5493,7 +5493,7 @@
       "cost": 0,
       "rarity": "common",
       "set": "paper",
-      "description": "\u27f3 \u27f3: Gain 2. \u27f3 \u27f3: Target creature gains (W) or (U) Boost. \u27f3 \u27f3: Discover an Ephara Card.",
+      "description": "⟳ ⟳: Gain 2.\n⟳ ⟳: Target creature gains (W) or (U) Boost.\n⟳ ⟳: Discover an Ephara Card.\nSacrifice this land: Draw a card.",
       "type": "land",
       "taps": [
         {
@@ -5546,7 +5546,7 @@
       "cost": 0,
       "rarity": "common",
       "set": "paper",
-      "description": "\u27f3 \u27f3: Gain 2. \u27f3 \u27f3: Target creature gains (W) or (B) Boost. \u27f3 \u27f3: Discover an Athreos Card.",
+      "description": "⟳ ⟳: Gain 2.\n⟳ ⟳: Target creature gains (W) or (B) Boost.\n⟳ ⟳: Discover an Athreos Card.\nSacrifice this land: Draw a card.",
       "type": "land",
       "taps": [
         {
@@ -5599,7 +5599,7 @@
       "cost": 0,
       "rarity": "common",
       "set": "paper",
-      "description": "\u27f3 \u27f3: Gain 2. \u27f3 \u27f3: Target creature gains (W) or (B) Boost. \u27f3 \u27f3: Discover an Orzhov Card.",
+      "description": "⟳ ⟳: Gain 2.\n⟳ ⟳: Target creature gains (W) or (B) Boost.\n⟳ ⟳: Discover an Orzhov Card.\nSacrifice this land: Draw a card.",
       "type": "land",
       "taps": [
         {
@@ -5652,7 +5652,7 @@
       "cost": 0,
       "rarity": "common",
       "set": "paper",
-      "description": "\u27f3 \u27f3: Gain 2. \u27f3 \u27f3: Target creature gains (W) or (B) Boost. \u27f3 \u27f3: Discover a Silverquill Card.",
+      "description": "⟳ ⟳: Gain 2.\n⟳ ⟳: Target creature gains (W) or (B) Boost.\n⟳ ⟳: Discover a Silverquill Card.\nSacrifice this land: Draw a card.",
       "type": "land",
       "taps": [
         {
@@ -5705,7 +5705,7 @@
       "cost": 0,
       "rarity": "common",
       "set": "paper",
-      "description": "\u27f3 \u27f3: Gain 2. \u27f3 \u27f3: Target creature gains (W) or (B) Boost. \u27f3 \u27f3: Discover a Starnheim Card.",
+      "description": "⟳ ⟳: Gain 2.\n⟳ ⟳: Target creature gains (W) or (B) Boost.\n⟳ ⟳: Discover a Starnheim Card.\nSacrifice this land: Draw a card.",
       "type": "land",
       "taps": [
         {
@@ -5758,7 +5758,7 @@
       "cost": 0,
       "rarity": "common",
       "set": "paper",
-      "description": "\u27f3 \u27f3: Gain 2. \u27f3 \u27f3: Target creature gains (W) or (R) Boost. \u27f3 \u27f3: Discover a Boros Card.",
+      "description": "⟳ ⟳: Gain 2.\n⟳ ⟳: Target creature gains (W) or (R) Boost.\n⟳ ⟳: Discover a Boros Card.\nSacrifice this land: Draw a card.",
       "type": "land",
       "taps": [
         {
@@ -5811,7 +5811,7 @@
       "cost": 0,
       "rarity": "common",
       "set": "paper",
-      "description": "\u27f3 \u27f3: Gain 2. \u27f3 \u27f3: Target creature gains (W) or (R) Boost. \u27f3 \u27f3: Discover an Axgard Card.",
+      "description": "⟳ ⟳: Gain 2.\n⟳ ⟳: Target creature gains (W) or (R) Boost.\n⟳ ⟳: Discover an Axgard Card.\nSacrifice this land: Draw a card.",
       "type": "land",
       "taps": [
         {
@@ -5864,7 +5864,7 @@
       "cost": 0,
       "rarity": "common",
       "set": "paper",
-      "description": "\u27f3 \u27f3: Gain 2. \u27f3 \u27f3: Target creature gains (W) or (R) Boost. \u27f3 \u27f3: Discover a Lorehold Card.",
+      "description": "⟳ ⟳: Gain 2.\n⟳ ⟳: Target creature gains (W) or (R) Boost.\n⟳ ⟳: Discover a Lorehold Card.\nSacrifice this land: Draw a card.",
       "type": "land",
       "taps": [
         {
@@ -5917,7 +5917,7 @@
       "cost": 0,
       "rarity": "common",
       "set": "paper",
-      "description": "\u27f3 \u27f3: Gain 2. \u27f3 \u27f3: Target creature gains (W) or (R) Boost. \u27f3 \u27f3: Discover an Iroas Card.",
+      "description": "⟳ ⟳: Gain 2.\n⟳ ⟳: Target creature gains (W) or (R) Boost.\n⟳ ⟳: Discover an Iroas Card.\nSacrifice this land: Draw a card.",
       "type": "land",
       "taps": [
         {
@@ -5970,7 +5970,7 @@
       "cost": 0,
       "rarity": "common",
       "set": "paper",
-      "description": "\u27f3 \u27f3: Gain 2. \u27f3 \u27f3: Target creature gains (W) or (G) Boost. \u27f3 \u27f3: Discover a Selesnya Card.",
+      "description": "⟳ ⟳: Gain 2.\n⟳ ⟳: Target creature gains (W) or (G) Boost.\n⟳ ⟳: Discover a Selesnya Card.\nSacrifice this land: Draw a card.",
       "type": "land",
       "taps": [
         {
@@ -6023,7 +6023,7 @@
       "cost": 0,
       "rarity": "common",
       "set": "paper",
-      "description": "\u27f3 \u27f3: Gain 2. \u27f3 \u27f3: Target creature gains (W) or (G) Boost. \u27f3 \u27f3: Discover a Dromoka Card.",
+      "description": "⟳ ⟳: Gain 2.\n⟳ ⟳: Target creature gains (W) or (G) Boost.\n⟳ ⟳: Discover a Dromoka Card.\nSacrifice this land: Draw a card.",
       "type": "land",
       "taps": [
         {
@@ -6076,7 +6076,7 @@
       "cost": 0,
       "rarity": "common",
       "set": "paper",
-      "description": "\u27f3 \u27f3: Gain 2. \u27f3 \u27f3: Target creature gains (W) or (G) Boost. \u27f3 \u27f3: Discover a Bretagard Card.",
+      "description": "⟳ ⟳: Gain 2.\n⟳ ⟳: Target creature gains (W) or (G) Boost.\n⟳ ⟳: Discover a Bretagard Card.\nSacrifice this land: Draw a card.",
       "type": "land",
       "taps": [
         {
@@ -6129,7 +6129,7 @@
       "cost": 0,
       "rarity": "common",
       "set": "paper",
-      "description": "\u27f3 \u27f3: Gain 2. \u27f3 \u27f3: Target creature gains (W) or (G) Boost. \u27f3 \u27f3: Discover a Karametra Card.",
+      "description": "⟳ ⟳: Gain 2.\n⟳ ⟳: Target creature gains (W) or (G) Boost.\n⟳ ⟳: Discover a Karametra Card.\nSacrifice this land: Draw a card.",
       "type": "land",
       "taps": [
         {
@@ -6182,7 +6182,7 @@
       "cost": 0,
       "rarity": "common",
       "set": "paper",
-      "description": "\u27f3 \u27f3: Gain 2. \u27f3 \u27f3: Target creature gains (U) or (B) Boost. \u27f3 \u27f3: Discover a Dimir Card.",
+      "description": "⟳ ⟳: Gain 2.\n⟳ ⟳: Target creature gains (U) or (B) Boost.\n⟳ ⟳: Discover a Dimir Card.\nSacrifice this land: Draw a card.",
       "type": "land",
       "taps": [
         {
@@ -6235,7 +6235,7 @@
       "cost": 0,
       "rarity": "common",
       "set": "paper",
-      "description": "\u27f3 \u27f3: Gain 2. \u27f3 \u27f3: Target creature gains (U) or (B) Boost. \u27f3 \u27f3: Discover a Silumgar Card.",
+      "description": "⟳ ⟳: Gain 2.\n⟳ ⟳: Target creature gains (U) or (B) Boost.\n⟳ ⟳: Discover a Silumgar Card.\nSacrifice this land: Draw a card.",
       "type": "land",
       "taps": [
         {
@@ -6288,7 +6288,7 @@
       "cost": 0,
       "rarity": "common",
       "set": "paper",
-      "description": "\u27f3 \u27f3: Gain 2. \u27f3 \u27f3: Target creature gains (U) or (B) Boost. \u27f3 \u27f3: Discover a Karfell Card.",
+      "description": "⟳ ⟳: Gain 2.\n⟳ ⟳: Target creature gains (U) or (B) Boost.\n⟳ ⟳: Discover a Karfell Card.\nSacrifice this land: Draw a card.",
       "type": "land",
       "taps": [
         {
@@ -6341,7 +6341,7 @@
       "cost": 0,
       "rarity": "common",
       "set": "paper",
-      "description": "\u27f3 \u27f3: Gain 2. \u27f3 \u27f3: Target creature gains (U) or (B) Boost. \u27f3 \u27f3: Discover a Phenax Card.",
+      "description": "⟳ ⟳: Gain 2.\n⟳ ⟳: Target creature gains (U) or (B) Boost.\n⟳ ⟳: Discover a Phenax Card.\nSacrifice this land: Draw a card.",
       "type": "land",
       "taps": [
         {
@@ -6394,7 +6394,7 @@
       "cost": 0,
       "rarity": "common",
       "set": "paper",
-      "description": "\u27f3 \u27f3: Gain 2. \u27f3 \u27f3: Target creature gains (U) or (R) Boost. \u27f3 \u27f3: Discover an Izzet Card.",
+      "description": "⟳ ⟳: Gain 2.\n⟳ ⟳: Target creature gains (U) or (R) Boost.\n⟳ ⟳: Discover an Izzet Card.\nSacrifice this land: Draw a card.",
       "type": "land",
       "taps": [
         {
@@ -6447,7 +6447,7 @@
       "cost": 0,
       "rarity": "common",
       "set": "paper",
-      "description": "\u27f3 \u27f3: Gain 2. \u27f3 \u27f3: Target creature gains (U) or (R) Boost. \u27f3 \u27f3: Discover a Prismari Card.",
+      "description": "⟳ ⟳: Gain 2.\n⟳ ⟳: Target creature gains (U) or (R) Boost.\n⟳ ⟳: Discover a Prismari Card.\nSacrifice this land: Draw a card.",
       "type": "land",
       "taps": [
         {
@@ -6500,7 +6500,7 @@
       "cost": 0,
       "rarity": "common",
       "set": "paper",
-      "description": "\u27f3 \u27f3: Gain 2. \u27f3 \u27f3: Target creature gains (U) or (R) Boost. \u27f3 \u27f3: Discover a Surtland Card.",
+      "description": "⟳ ⟳: Gain 2.\n⟳ ⟳: Target creature gains (U) or (R) Boost.\n⟳ ⟳: Discover a Surtland Card.\nSacrifice this land: Draw a card.",
       "type": "land",
       "taps": [
         {
@@ -6553,7 +6553,7 @@
       "cost": 0,
       "rarity": "common",
       "set": "paper",
-      "description": "\u27f3 \u27f3: Gain 2. \u27f3 \u27f3: Target creature gains (U) or (R) Boost. \u27f3 \u27f3: Discover a Keranos Card.",
+      "description": "⟳ ⟳: Gain 2.\n⟳ ⟳: Target creature gains (U) or (R) Boost.\n⟳ ⟳: Discover a Keranos Card.\nSacrifice this land: Draw a card.",
       "type": "land",
       "taps": [
         {
@@ -6606,7 +6606,7 @@
       "cost": 0,
       "rarity": "common",
       "set": "paper",
-      "description": "\u27f3 \u27f3: Gain 2. \u27f3 \u27f3: Target creature gains (U) or (G) Boost. \u27f3 \u27f3: Discover a Littjara Card.",
+      "description": "⟳ ⟳: Gain 2.\n⟳ ⟳: Target creature gains (U) or (G) Boost.\n⟳ ⟳: Discover a Littjara Card.\nSacrifice this land: Draw a card.",
       "type": "land",
       "taps": [
         {
@@ -6659,7 +6659,7 @@
       "cost": 0,
       "rarity": "common",
       "set": "paper",
-      "description": "\u27f3 \u27f3: Gain 2. \u27f3 \u27f3: Target creature gains (U) or (G) Boost. \u27f3 \u27f3: Discover a Simic Card.",
+      "description": "⟳ ⟳: Gain 2.\n⟳ ⟳: Target creature gains (U) or (G) Boost.\n⟳ ⟳: Discover a Simic Card.\nSacrifice this land: Draw a card.",
       "type": "land",
       "taps": [
         {
@@ -6712,7 +6712,7 @@
       "cost": 0,
       "rarity": "common",
       "set": "paper",
-      "description": "\u27f3 \u27f3: Gain 2. \u27f3 \u27f3: Target creature gains (U) or (G) Boost. \u27f3 \u27f3: Discover a Quandrix Card.",
+      "description": "⟳ ⟳: Gain 2.\n⟳ ⟳: Target creature gains (U) or (G) Boost.\n⟳ ⟳: Discover a Quandrix Card.\nSacrifice this land: Draw a card.",
       "type": "land",
       "taps": [
         {
@@ -6765,7 +6765,7 @@
       "cost": 0,
       "rarity": "common",
       "set": "paper",
-      "description": "\u27f3 \u27f3: Gain 2. \u27f3 \u27f3: Target creature gains (U) or (G) Boost. \u27f3 \u27f3: Discover a Kruphix Card.",
+      "description": "⟳ ⟳: Gain 2.\n⟳ ⟳: Target creature gains (U) or (G) Boost.\n⟳ ⟳: Discover a Kruphix Card.\nSacrifice this land: Draw a card.",
       "type": "land",
       "taps": [
         {
@@ -6818,7 +6818,7 @@
       "cost": 0,
       "rarity": "common",
       "set": "paper",
-      "description": "\u27f3 \u27f3: Gain 2. \u27f3 \u27f3: Target creature gains (B) or (R) Boost. \u27f3 \u27f3: Discover a Rakdos Card.",
+      "description": "⟳ ⟳: Gain 2.\n⟳ ⟳: Target creature gains (B) or (R) Boost.\n⟳ ⟳: Discover a Rakdos Card.\nSacrifice this land: Draw a card.",
       "type": "land",
       "taps": [
         {
@@ -6871,7 +6871,7 @@
       "cost": 0,
       "rarity": "common",
       "set": "paper",
-      "description": "\u27f3 \u27f3: Gain 2. \u27f3 \u27f3: Target creature gains (B) or (R) Boost. \u27f3 \u27f3: Discover an Immersturm Card.",
+      "description": "⟳ ⟳: Gain 2.\n⟳ ⟳: Target creature gains (B) or (R) Boost.\n⟳ ⟳: Discover an Immersturm Card.\nSacrifice this land: Draw a card.",
       "type": "land",
       "taps": [
         {
@@ -6924,7 +6924,7 @@
       "cost": 0,
       "rarity": "common",
       "set": "paper",
-      "description": "\u27f3 \u27f3: Gain 2. \u27f3 \u27f3: Target creature gains (B) or (R) Boost. \u27f3 \u27f3: Discover a Kolaghan Card.",
+      "description": "⟳ ⟳: Gain 2.\n⟳ ⟳: Target creature gains (B) or (R) Boost.\n⟳ ⟳: Discover a Kolaghan Card.\nSacrifice this land: Draw a card.",
       "type": "land",
       "taps": [
         {
@@ -6977,7 +6977,7 @@
       "cost": 0,
       "rarity": "common",
       "set": "paper",
-      "description": "\u27f3 \u27f3: Gain 2. \u27f3 \u27f3: Target creature gains (B) or (R) Boost. \u27f3 \u27f3: Discover a Mogis Card.",
+      "description": "⟳ ⟳: Gain 2.\n⟳ ⟳: Target creature gains (B) or (R) Boost.\n⟳ ⟳: Discover a Mogis Card.\nSacrifice this land: Draw a card.",
       "type": "land",
       "taps": [
         {
@@ -7030,7 +7030,7 @@
       "cost": 0,
       "rarity": "common",
       "set": "paper",
-      "description": "\u27f3 \u27f3: Gain 2. \u27f3 \u27f3: Target creature gains (B) or (G) Boost. \u27f3 \u27f3: Discover a Witherbloom Card.",
+      "description": "⟳ ⟳: Gain 2.\n⟳ ⟳: Target creature gains (B) or (G) Boost.\n⟳ ⟳: Discover a Witherbloom Card.\nSacrifice this land: Draw a card.",
       "type": "land",
       "taps": [
         {
@@ -7083,7 +7083,7 @@
       "cost": 0,
       "rarity": "common",
       "set": "paper",
-      "description": "\u27f3 \u27f3: Gain 2. \u27f3 \u27f3: Target creature gains (B) or (G) Boost. \u27f3 \u27f3: Discover a Pharika Card.",
+      "description": "⟳ ⟳: Gain 2.\n⟳ ⟳: Target creature gains (B) or (G) Boost.\n⟳ ⟳: Discover a Pharika Card.\nSacrifice this land: Draw a card.",
       "type": "land",
       "taps": [
         {
@@ -7136,7 +7136,7 @@
       "cost": 0,
       "rarity": "common",
       "set": "paper",
-      "description": "\u27f3 \u27f3: Gain 2. \u27f3 \u27f3: Target creature gains (B) or (G) Boost. \u27f3 \u27f3: Discover a Skemfar Card.",
+      "description": "⟳ ⟳: Gain 2.\n⟳ ⟳: Target creature gains (B) or (G) Boost.\n⟳ ⟳: Discover a Skemfar Card.\nSacrifice this land: Draw a card.",
       "type": "land",
       "taps": [
         {
@@ -7189,7 +7189,7 @@
       "cost": 0,
       "rarity": "common",
       "set": "paper",
-      "description": "\u27f3 \u27f3: Gain 2. \u27f3 \u27f3: Target creature gains (B) or (G) Boost. \u27f3 \u27f3: Discover a Golgari Card.",
+      "description": "⟳ ⟳: Gain 2.\n⟳ ⟳: Target creature gains (B) or (G) Boost.\n⟳ ⟳: Discover a Golgari Card.\nSacrifice this land: Draw a card.",
       "type": "land",
       "taps": [
         {
@@ -7242,7 +7242,7 @@
       "cost": 0,
       "rarity": "common",
       "set": "paper",
-      "description": "\u27f3 \u27f3: Gain 2. \u27f3 \u27f3: Target creature gains (R) or (G) Boost. \u27f3 \u27f3: Discover a Gruul Card.",
+      "description": "⟳ ⟳: Gain 2.\n⟳ ⟳: Target creature gains (R) or (G) Boost.\n⟳ ⟳: Discover a Gruul Card.\nSacrifice this land: Draw a card.",
       "type": "land",
       "taps": [
         {
@@ -7295,7 +7295,7 @@
       "cost": 0,
       "rarity": "common",
       "set": "paper",
-      "description": "\u27f3 \u27f3: Gain 2. \u27f3 \u27f3: Target creature gains (R) or (G) Boost. \u27f3 \u27f3: Discover an Atarka Card.",
+      "description": "⟳ ⟳: Gain 2.\n⟳ ⟳: Target creature gains (R) or (G) Boost.\n⟳ ⟳: Discover an Atarka Card.\nSacrifice this land: Draw a card.",
       "type": "land",
       "taps": [
         {
@@ -7348,7 +7348,7 @@
       "cost": 0,
       "rarity": "common",
       "set": "paper",
-      "description": "\u27f3 \u27f3: Gain 2. \u27f3 \u27f3: Target creature gains (R) or (G) Boost. \u27f3 \u27f3: Discover a Gnottvold Card.",
+      "description": "⟳ ⟳: Gain 2.\n⟳ ⟳: Target creature gains (R) or (G) Boost.\n⟳ ⟳: Discover a Gnottvold Card.\nSacrifice this land: Draw a card.",
       "type": "land",
       "taps": [
         {
@@ -7401,7 +7401,7 @@
       "cost": 0,
       "rarity": "common",
       "set": "paper",
-      "description": "\u27f3 \u27f3: Gain 2. \u27f3 \u27f3: Target creature gains (R) or (G) Boost. \u27f3 \u27f3: Discover a Klothys Card.",
+      "description": "⟳ ⟳: Gain 2.\n⟳ ⟳: Target creature gains (R) or (G) Boost.\n⟳ ⟳: Discover a Klothys Card.\nSacrifice this land: Draw a card.",
       "type": "land",
       "taps": [
         {
@@ -7454,7 +7454,7 @@
       "cost": 0,
       "rarity": "common",
       "set": "paper",
-      "description": "\u27f3 \u27f3: Gain 2. \u27f3 \u27f3: Target creature gains (R) or (G) Boost. \u27f3 \u27f3: Discover a Xenagos Card.",
+      "description": "⟳ ⟳: Gain 2.\n⟳ ⟳: Target creature gains (R) or (G) Boost.\n⟳ ⟳: Discover a Xenagos Card.\nSacrifice this land: Draw a card.",
       "type": "land",
       "taps": [
         {
@@ -7507,7 +7507,7 @@
       "cost": 0,
       "rarity": "common",
       "set": "paper",
-      "description": "\u27f3 \u27f3: Gain 3. \u27f3 \u27f3: Target creature gains (W), (U), or (G) Boost. \u27f3 \u27f3: Discover a Bant Card.",
+      "description": "⟳ ⟳: Gain 3.\n⟳ ⟳: Target creature gains (W), (U), or (G) Boost.\n⟳ ⟳: Discover a Bant Card.\nSacrifice this land: Draw a card.",
       "type": "land",
       "taps": [
         {
@@ -7570,7 +7570,7 @@
       "cost": 0,
       "rarity": "common",
       "set": "paper",
-      "description": "\u27f3 \u27f3: Gain 3. \u27f3 \u27f3: Target creature gains (W), (U), or (G) Boost. \u27f3 \u27f3: Discover a Brokers Card.",
+      "description": "⟳ ⟳: Gain 3.\n⟳ ⟳: Target creature gains (W), (U), or (G) Boost.\n⟳ ⟳: Discover a Brokers Card.\nSacrifice this land: Draw a card.",
       "type": "land",
       "taps": [
         {
@@ -7633,7 +7633,7 @@
       "cost": 0,
       "rarity": "common",
       "set": "paper",
-      "description": "\u27f3 \u27f3: Gain 3. \u27f3 \u27f3: Target creature gains (W), (U), or (B) Boost. \u27f3 \u27f3: Discover an Esper Card.",
+      "description": "⟳ ⟳: Gain 3.\n⟳ ⟳: Target creature gains (W), (U), or (B) Boost.\n⟳ ⟳: Discover an Esper Card.\nSacrifice this land: Draw a card.",
       "type": "land",
       "taps": [
         {
@@ -7696,7 +7696,7 @@
       "cost": 0,
       "rarity": "common",
       "set": "paper",
-      "description": "\u27f3 \u27f3: Gain 3. \u27f3 \u27f3: Target creature gains (W), (U), or (B) Boost. \u27f3 \u27f3: Discover an Obscura Card.",
+      "description": "⟳ ⟳: Gain 3.\n⟳ ⟳: Target creature gains (W), (U), or (B) Boost.\n⟳ ⟳: Discover an Obscura Card.\nSacrifice this land: Draw a card.",
       "type": "land",
       "taps": [
         {
@@ -7759,7 +7759,7 @@
       "cost": 0,
       "rarity": "common",
       "set": "paper",
-      "description": "\u27f3 \u27f3: Gain 3. \u27f3 \u27f3: Target creature gains (W), (U), or (R) Boost. \u27f3 \u27f3: Discover a Jeskai Card.",
+      "description": "⟳ ⟳: Gain 3.\n⟳ ⟳: Target creature gains (W), (U), or (R) Boost.\n⟳ ⟳: Discover a Jeskai Card.\nSacrifice this land: Draw a card.",
       "type": "land",
       "taps": [
         {
@@ -7822,7 +7822,7 @@
       "cost": 0,
       "rarity": "common",
       "set": "paper",
-      "description": "\u27f3 \u27f3: Gain 3. \u27f3 \u27f3: Target creature gains (W), (U), or (R) Boost. \u27f3 \u27f3: Discover a Raugrin Card.",
+      "description": "⟳ ⟳: Gain 3.\n⟳ ⟳: Target creature gains (W), (U), or (R) Boost.\n⟳ ⟳: Discover a Raugrin Card.\nSacrifice this land: Draw a card.",
       "type": "land",
       "taps": [
         {
@@ -7885,7 +7885,7 @@
       "cost": 0,
       "rarity": "common",
       "set": "paper",
-      "description": "\u27f3 \u27f3: Gain 3. \u27f3 \u27f3: Target creature gains (W), (B), or (R) Boost. \u27f3 \u27f3: Discover a Mardu Card.",
+      "description": "⟳ ⟳: Gain 3.\n⟳ ⟳: Target creature gains (W), (B), or (R) Boost.\n⟳ ⟳: Discover a Mardu Card.\nSacrifice this land: Draw a card.",
       "type": "land",
       "taps": [
         {
@@ -7948,7 +7948,7 @@
       "cost": 0,
       "rarity": "common",
       "set": "paper",
-      "description": "\u27f3 \u27f3: Gain 3. \u27f3 \u27f3: Target creature gains (W), (B), or (R) Boost. \u27f3 \u27f3: Discover a Savai Card.",
+      "description": "⟳ ⟳: Gain 3.\n⟳ ⟳: Target creature gains (W), (B), or (R) Boost.\n⟳ ⟳: Discover a Savai Card.\nSacrifice this land: Draw a card.",
       "type": "land",
       "taps": [
         {
@@ -8011,7 +8011,7 @@
       "cost": 0,
       "rarity": "common",
       "set": "paper",
-      "description": "\u27f3 \u27f3: Gain 3. \u27f3 \u27f3: Target creature gains (W), (B), or (G) Boost. \u27f3 \u27f3: Discover an Abzan Card.",
+      "description": "⟳ ⟳: Gain 3.\n⟳ ⟳: Target creature gains (W), (B), or (G) Boost.\n⟳ ⟳: Discover an Abzan Card.\nSacrifice this land: Draw a card.",
       "type": "land",
       "taps": [
         {
@@ -8074,7 +8074,7 @@
       "cost": 0,
       "rarity": "common",
       "set": "paper",
-      "description": "\u27f3 \u27f3: Gain 3. \u27f3 \u27f3: Target creature gains (W), (B), or (G) Boost. \u27f3 \u27f3: Discover an Indatha Card.",
+      "description": "⟳ ⟳: Gain 3.\n⟳ ⟳: Target creature gains (W), (B), or (G) Boost.\n⟳ ⟳: Discover an Indatha Card.\nSacrifice this land: Draw a card.",
       "type": "land",
       "taps": [
         {
@@ -8137,7 +8137,7 @@
       "cost": 0,
       "rarity": "common",
       "set": "paper",
-      "description": "\u27f3 \u27f3: Gain 3. \u27f3 \u27f3: Target creature gains (W), (R), or (G) Boost. \u27f3 \u27f3: Discover a Naya Card.",
+      "description": "⟳ ⟳: Gain 3.\n⟳ ⟳: Target creature gains (W), (R), or (G) Boost.\n⟳ ⟳: Discover a Naya Card.\nSacrifice this land: Draw a card.",
       "type": "land",
       "taps": [
         {
@@ -8200,7 +8200,7 @@
       "cost": 0,
       "rarity": "common",
       "set": "paper",
-      "description": "\u27f3 \u27f3: Gain 3. \u27f3 \u27f3: Target creature gains (W), (R), or (G) Boost. \u27f3 \u27f3: Discover a Cabaretti Card.",
+      "description": "⟳ ⟳: Gain 3.\n⟳ ⟳: Target creature gains (W), (R), or (G) Boost.\n⟳ ⟳: Discover a Cabaretti Card.\nSacrifice this land: Draw a card.",
       "type": "land",
       "taps": [
         {
@@ -8263,7 +8263,7 @@
       "cost": 0,
       "rarity": "common",
       "set": "paper",
-      "description": "\u27f3 \u27f3: Gain 3. \u27f3 \u27f3: Target creature gains (U), (B), or (R) Boost. \u27f3 \u27f3: Discover a Grixis Card.",
+      "description": "⟳ ⟳: Gain 3.\n⟳ ⟳: Target creature gains (U), (B), or (R) Boost.\n⟳ ⟳: Discover a Grixis Card.\nSacrifice this land: Draw a card.",
       "type": "land",
       "taps": [
         {
@@ -8326,7 +8326,7 @@
       "cost": 0,
       "rarity": "common",
       "set": "paper",
-      "description": "\u27f3 \u27f3: Gain 3. \u27f3 \u27f3: Target creature gains (U), (B), or (R) Boost. \u27f3 \u27f3: Discover a Maestros Card.",
+      "description": "⟳ ⟳: Gain 3.\n⟳ ⟳: Target creature gains (U), (B), or (R) Boost.\n⟳ ⟳: Discover a Maestros Card.\nSacrifice this land: Draw a card.",
       "type": "land",
       "taps": [
         {
@@ -8389,7 +8389,7 @@
       "cost": 0,
       "rarity": "common",
       "set": "paper",
-      "description": "\u27f3 \u27f3: Gain 3. \u27f3 \u27f3: Target creature gains (U), (B), or (G) Boost. \u27f3 \u27f3: Discover a Zagoth Card.",
+      "description": "⟳ ⟳: Gain 3.\n⟳ ⟳: Target creature gains (U), (B), or (G) Boost.\n⟳ ⟳: Discover a Zagoth Card.\nSacrifice this land: Draw a card.",
       "type": "land",
       "taps": [
         {
@@ -8452,7 +8452,7 @@
       "cost": 0,
       "rarity": "common",
       "set": "paper",
-      "description": "\u27f3 \u27f3: Gain 3. \u27f3 \u27f3: Target creature gains (U), (B), or (G) Boost. \u27f3 \u27f3: Discover a Sultai Card.",
+      "description": "⟳ ⟳: Gain 3.\n⟳ ⟳: Target creature gains (U), (B), or (G) Boost.\n⟳ ⟳: Discover a Sultai Card.\nSacrifice this land: Draw a card.",
       "type": "land",
       "taps": [
         {
@@ -8515,7 +8515,7 @@
       "cost": 0,
       "rarity": "common",
       "set": "paper",
-      "description": "\u27f3 \u27f3: Gain 3. \u27f3 \u27f3: Target creature gains (U), (R), or (G) Boost. \u27f3 \u27f3: Discover a Temur Card.",
+      "description": "⟳ ⟳: Gain 3.\n⟳ ⟳: Target creature gains (U), (R), or (G) Boost.\n⟳ ⟳: Discover a Temur Card.\nSacrifice this land: Draw a card.",
       "type": "land",
       "taps": [
         {
@@ -8578,7 +8578,7 @@
       "cost": 0,
       "rarity": "common",
       "set": "paper",
-      "description": "\u27f3 \u27f3: Gain 3. \u27f3 \u27f3: Target creature gains (U), (R), or (G) Boost. \u27f3 \u27f3: Discover a Ketria Card.",
+      "description": "⟳ ⟳: Gain 3.\n⟳ ⟳: Target creature gains (U), (R), or (G) Boost.\n⟳ ⟳: Discover a Ketria Card.\nSacrifice this land: Draw a card.",
       "type": "land",
       "taps": [
         {
@@ -8641,7 +8641,7 @@
       "cost": 0,
       "rarity": "common",
       "set": "paper",
-      "description": "\u27f3 \u27f3: Gain 3. \u27f3 \u27f3: Target creature gains (B), (R), or (G) Boost. \u27f3 \u27f3: Discover a Riveteers Card.",
+      "description": "⟳ ⟳: Gain 3.\n⟳ ⟳: Target creature gains (B), (R), or (G) Boost.\n⟳ ⟳: Discover a Riveteers Card.\nSacrifice this land: Draw a card.",
       "type": "land",
       "taps": [
         {
@@ -8704,7 +8704,7 @@
       "cost": 0,
       "rarity": "common",
       "set": "paper",
-      "description": "\u27f3 \u27f3: Gain 3. \u27f3 \u27f3: Target creature gains (B), (R), or (G) Boost. \u27f3 \u27f3: Discover a Jund Card.",
+      "description": "⟳ ⟳: Gain 3.\n⟳ ⟳: Target creature gains (B), (R), or (G) Boost.\n⟳ ⟳: Discover a Jund Card.\nSacrifice this land: Draw a card.",
       "type": "land",
       "taps": [
         {
@@ -11936,7 +11936,7 @@
     },
     {
       "id": "princess_asamis_tu",
-      "name": "Princess Asamis\u016btu",
+      "name": "Princess Asamisūtu",
       "cardClass": "neutral",
       "cost": 5,
       "rarity": "legendary",
@@ -13035,7 +13035,7 @@
       "cost": 5,
       "rarity": "rare",
       "set": "paper",
-      "description": "Choose one: \u2022 Gain 12 Armor. \u2022 Create two 3/3  Beast creature tokens with Taunt.",
+      "description": "Choose one: • Gain 12 Armor. • Create two 3/3  Beast creature tokens with Taunt.",
       "type": "sorcery",
       "choices": [
         {
@@ -13091,7 +13091,7 @@
       "cost": 5,
       "rarity": "rare",
       "set": "paper",
-      "description": "Spell Damage+1. Battlecry: Choose one. \u2022 Gain 8 Life. \u2022 Deal 4 damage to any target.",
+      "description": "Spell Damage+1. Battlecry: Choose one. • Gain 8 Life. • Deal 4 damage to any target.",
       "type": "creature",
       "attack": 4,
       "health": 5,
@@ -13153,7 +13153,7 @@
       "cost": 4,
       "rarity": "common",
       "set": "paper",
-      "description": "Choose one: \u2022 Give your Hero +4 Attack this turn. \u2022 Gain 8 Armor.",
+      "description": "Choose one: • Give your Hero +4 Attack this turn. • Gain 8 Armor.",
       "type": "sorcery",
       "tribe": "Nature",
       "choices": [
@@ -13389,7 +13389,7 @@
       "cost": 7,
       "rarity": "legendary",
       "set": "paper",
-      "description": "Taunt. Battlecry: You gain an emblem that says \u201cYour Treefolk have +1/+1\u201d.",
+      "description": "Taunt. Battlecry: You gain an emblem that says “Your Treefolk have +1/+1”.",
       "type": "creature",
       "attack": 5,
       "health": 10,
@@ -18204,7 +18204,7 @@
       "cost": 5,
       "rarity": "common",
       "set": "paper",
-      "description": "Choose one: \u2022 Create a 6/6 Orca Beast creature token with Taunt. \u2022 Create six 1/1 Otter Beast creature tokens with Rush.",
+      "description": "Choose one: • Create a 6/6 Orca Beast creature token with Taunt. • Create six 1/1 Otter Beast creature tokens with Rush.",
       "type": "sorcery",
       "tribe": "Nature",
       "choices": [
@@ -18313,7 +18313,7 @@
       "cost": 6,
       "rarity": "rare",
       "set": "paper",
-      "description": "Choose One: \u2022 Create a 6/6 Treefolk creature token with Taunt. \u2022 Gain 12 Life. \u2022 Restore 12 Health to a creature.",
+      "description": "Choose One: • Create a 6/6 Treefolk creature token with Taunt. • Gain 12 Life. • Restore 12 Health to a creature.",
       "type": "sorcery",
       "tribe": "Nature",
       "choices": [
@@ -19568,7 +19568,7 @@
           }
         ]
       },
-      "description": "Sacrifice \u2014 pay 1 and discard a card: draw a card."
+      "description": "Sacrifice — pay 1 and discard a card: draw a card."
     },
     {
       "id": "darkfallen_neophyte",
@@ -19991,7 +19991,7 @@
           }
         ]
       },
-      "description": "Sacrifice \u2014 pay 2: restore 3 health to your hero."
+      "description": "Sacrifice — pay 2: restore 3 health to your hero."
     },
     {
       "id": "kalecgos",
@@ -20631,7 +20631,7 @@
       "cost": 3,
       "rarity": "common",
       "set": "paper",
-      "description": "Choose one - \u2022 Exile target creature with 3 or more Attack. \u2022 Draw 2 cards and take 2 damage. \u2022 Give a creature +2/+2. \u2022 Give a creature Taunt. \u2022 Give a creature Medic 2.",
+      "description": "Choose one - • Exile target creature with 3 or more Attack. • Draw 2 cards and take 2 damage. • Give a creature +2/+2. • Give a creature Taunt. • Give a creature Medic 2.",
       "type": "instant",
       "choices": [
         {

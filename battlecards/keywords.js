@@ -86,7 +86,13 @@ const SYM_RE = /⟳|\((W|U|B|R|G|C|\d+)\)/g;
 // a SYM key + label. Drives both the canvas card face and the HTML tooltips.
 export function richTokens(text) {
 	const out = [];
-	const pushWords = (t, bold) => { for (const w of t.split(/\s+/)) if (w) out.push({ kind: 'word', text: w, bold }); };
+	// split on spaces AND hard newlines (a newline becomes a line break)
+	const pushWords = (t, bold) => {
+		t.split('\n').forEach((ln, i) => {
+			if (i > 0) out.push({ kind: 'br' });
+			for (const w of ln.split(/\s+/)) if (w) out.push({ kind: 'word', text: w, bold });
+		});
+	};
 	for (const seg of segmentKeywords(text || '')) {
 		let last = 0, m;
 		SYM_RE.lastIndex = 0;
@@ -125,8 +131,9 @@ export function richHtml(text) {
 	const toks = richTokens(text);
 	for (let i = 0; i < toks.length; i++) {
 		const tk = toks[i];
+		if (tk.kind === 'br') { html += '<br>'; continue; }
 		const punct = tk.kind === 'word' && PUNCT.test(tk.text);
-		if (i > 0 && !punct) html += ' ';
+		if (i > 0 && !punct && toks[i - 1].kind !== 'br') html += ' ';
 		if (tk.kind === 'sym') html += pipHtml(tk);
 		else html += tk.bold ? `<b>${_esc(tk.text)}</b>` : _esc(tk.text);
 	}

@@ -327,6 +327,7 @@ function drawRulesText(ctx, tokens, x, y, w, h) {
 		const widthOf = tk => { if (tk.kind === 'sym') return pipW; _meas.font = F(size, tk.bold); return _meas.measureText(tk.text).width; };
 		const lines = [[]]; let lineW = 0;
 		for (const tk of tokens) {
+			if (tk.kind === 'br') { lines.push([]); lineW = 0; continue; } // hard line break
 			const iw = widthOf(tk);
 			const cur = lines[lines.length - 1];
 			const punct = tk.kind === 'word' && noSpace(tk.text);
