@@ -871,6 +871,9 @@ function updateHud() {
 		el.classList.toggle('turn', state.current === pi && !state.over);
 	}
 	$('coin-btn').style.display = (me.coins > 0 && state.current === HUMAN) ? '' : 'none';
+	const pwOk = E.canPlaneswalk(state, HUMAN);
+	$('planeswalk-btn').style.display = pwOk ? '' : 'none';
+	if (pwOk) { const rc = E.planarRollCost(state, HUMAN); $('planeswalk-btn').textContent = rc > 0 ? `Planeswalk (${rc})` : 'Planeswalk'; }
 	// dungeon runs can be conceded mid-fight — a conceded run never pays a pack
 	$('concede').style.display = dungeonRunMode && !state.over ? '' : 'none';
 	const myTurn = state.current === HUMAN && !state.over;
@@ -1411,6 +1414,20 @@ function nextEvent() {
 		case 'planeshifted':
 			log(`${nameOf(ev.player)} planeshifted the arena to ${ev.name}`);
 			delay = 500;
+			break;
+		case 'planarRoll': {
+			const face = ev.roll === 6 ? 'Planeswalker — new plane!' : ev.roll === 5 ? 'Chaos!' : 'nothing';
+			log(`${nameOf(ev.player)} rolls the planar die: ${ev.roll} (${face})`);
+			delay = 550;
+			break;
+		}
+		case 'sparked':
+			log(`${nameOf(ev.player)} Sparked — the planar die is unlocked`);
+			delay = 300;
+			break;
+		case 'coinParity':
+			log(`${nameOf(ev.player)} can't play ${ev.block}-cost cards this turn`);
+			delay = 300;
 			break;
 		case 'lootStart':
 			log(`${nameOf(ev.player)} loots (${ev.count})`);
@@ -2074,6 +2091,10 @@ $('coin-btn').addEventListener('click', () => {
 	if (!state || duel.busy) return;
 	actCoin();
 });
+$('planeswalk-btn').addEventListener('click', () => {
+	if (!state || duel.busy) return;
+	actPlaneswalk();
+});
 $('restart').addEventListener('click', () => start());
 
 // conceding forfeits the run outright: no defeat payout, no pack
@@ -2475,6 +2496,7 @@ function applyGuestIntent(it) {
 		switch (it.k) {
 			case 'play': E.playCard(state, P, it.uid, it.target || null, it.choice, it.position); break;
 			case 'power': E.useHeroPower(state, P, it.uid, it.target || null, it.choice); break;
+			case 'planeswalk': E.planeswalk(state, P); break;
 			case 'activate': E.activateAbility(state, P, it.uid, it.ability, it.target || null); break;
 			case 'walker': E.useWalker(state, P, it.uid, it.ability, it.target || null); break;
 			case 'tap': E.tapLand(state, P, it.uid, it.tapIndex, it.target || null); break;
@@ -2640,6 +2662,11 @@ function actEndTurn() {
 function actCoin() {
 	if (isGuest()) { guestApply(() => E.useCoin(state, HUMAN), { k: 'coin' }); return true; }
 	const ok = E.useCoin(state, HUMAN); if (ok) { pump(); if (duel.on) publishDuel(); } return ok;
+}
+
+function actPlaneswalk() {
+	if (isGuest()) { guestApply(() => E.planeswalk(state, HUMAN), { k: 'planeswalk' }); return true; }
+	const ok = E.planeswalk(state, HUMAN); if (ok) { pump(); if (duel.on) publishDuel(); } return ok;
 }
 
 async function start() {

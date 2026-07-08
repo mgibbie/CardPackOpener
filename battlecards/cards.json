@@ -43678,12 +43678,19 @@
       "rarity": "legendary",
       "set": "paper",
       "token": true,
-      "description": "Arrival: Each player gains 5 Life. Instants & Sorceries that cost 4 cost 0 instead. Departure: Deal 3 damage to all creatures.",
+      "description": "Arrival: Each player gains 5 Life. Instants & Sorceries that cost 4 cost 0 instead. Chaos: Each player draws a card. Departure: Deal 3 damage to all creatures.",
       "arrival": [
         {
           "type": "heal",
           "value": 5,
           "target": "all-heroes"
+        }
+      ],
+      "chaos": [
+        {
+          "type": "draw",
+          "value": 1,
+          "target": "all"
         }
       ],
       "departure": [
@@ -43708,7 +43715,7 @@
       "rarity": "legendary",
       "set": "paper",
       "token": true,
-      "description": "Arrival: Each Non-Human creature gains +3/+3. Humans can't attack. Departure: Deal 2 damage to all creatures.",
+      "description": "Arrival: Each Non-Human creature gains +3/+3. Humans can't attack. Chaos: Destroy all Humans. Departure: Deal 2 damage to all creatures.",
       "arrival": [
         {
           "type": "buff",
@@ -43716,6 +43723,12 @@
           "attack": 3,
           "health": 3,
           "exceptTribe": "Human"
+        }
+      ],
+      "chaos": [
+        {
+          "type": "destroy-all",
+          "tribe": "Human"
         }
       ],
       "departure": [
@@ -43735,11 +43748,18 @@
       "rarity": "legendary",
       "set": "paper",
       "token": true,
-      "description": "Arrival: Each player draws a card. When you play a creature you may sacrifice an artifact to give it +2/+2. Departure: Each player gains 2 Life.",
+      "description": "Arrival: Each player draws a card. When you play a creature you may sacrifice an artifact to give it +2/+2. Chaos: Each player draws 2 cards. Departure: Each player gains 2 Life.",
       "arrival": [
         {
           "type": "draw",
           "value": 1,
+          "target": "all"
+        }
+      ],
+      "chaos": [
+        {
+          "type": "draw",
+          "value": 2,
           "target": "all"
         }
       ],
@@ -43764,12 +43784,17 @@
       "rarity": "legendary",
       "set": "paper",
       "token": true,
-      "description": "Arrival: Each player draws 2 cards. At the start of your turn, flip a coin: heads you can't play odd-cost cards this turn, tails you can't play even-cost cards. Departure: Each player draws 2 cards.",
+      "description": "Arrival: Each player draws 2 cards. At the start of your turn, flip a coin: heads you can't play odd-cost cards this turn, tails you can't play even-cost cards. Chaos: Each player sacrifices a creature. Departure: Each player draws 2 cards.",
       "arrival": [
         {
           "type": "draw",
           "value": 2,
           "target": "all"
+        }
+      ],
+      "chaos": [
+        {
+          "type": "sacrifice-each"
         }
       ],
       "departure": [
@@ -43791,11 +43816,18 @@
       "rarity": "legendary",
       "set": "paper",
       "token": true,
-      "description": "Arrival: Scry 2. Lands & Locations do not untap at the start of each turn. Departure: Each player draws a card.",
+      "description": "Arrival: Scry 2. Lands & Locations do not untap at the start of each turn. Chaos: Each player mills a card. Departure: Each player draws a card.",
       "arrival": [
         {
           "type": "scry",
           "value": 2
+        }
+      ],
+      "chaos": [
+        {
+          "type": "mill",
+          "value": 1,
+          "target": "all"
         }
       ],
       "departure": [
@@ -43817,12 +43849,17 @@
       "rarity": "legendary",
       "set": "paper",
       "token": true,
-      "description": "Arrival: Each player draws a card. Enchantment spells cost 1 less.",
+      "description": "Arrival: Each player draws a card. Enchantment spells cost 1 less. Chaos: Each player sacrifices a creature.",
       "arrival": [
         {
           "type": "draw",
           "value": 1,
           "target": "all"
+        }
+      ],
+      "chaos": [
+        {
+          "type": "sacrifice-each"
         }
       ],
       "departure": [],
@@ -43924,6 +43961,33 @@
       "deathrattle": [
         {
           "type": "planeshift"
+        }
+      ]
+    },
+    {
+      "id": "astral_tiger",
+      "name": "Astral Tiger",
+      "cardClass": "druid",
+      "cost": 4,
+      "rarity": "epic",
+      "set": "paper",
+      "description": "Battlecry: Spark. Deathrattle: Shuffle this card back into your deck.",
+      "type": "creature",
+      "attack": 3,
+      "health": 5,
+      "tribe": "Spirit Beast",
+      "keywords": [
+        "battlecry",
+        "deathrattle"
+      ],
+      "effects": [
+        {
+          "type": "spark"
+        }
+      ],
+      "deathrattle": [
+        {
+          "type": "shuffle-self-into-deck"
         }
       ]
     }

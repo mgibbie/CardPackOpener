@@ -282,6 +282,8 @@ export function createGame(cardsById, rng = Math.random, playerDeckIds = null, p
 		traps: [],
 		quests: [],
 		heroPowers: [],
+		sparked: false,          // Spark unlocks the planar die (Planeswalk)
+		planarRollsThisTurn: 0,  // planar die: 1st roll free, each further roll +1 mana
 		emblems: [],
 		companion: null,
 		command: [],
@@ -1940,6 +1942,7 @@ function execEffects(state, pi, effects, target, source) {
 			if (e.spareRandom && all.length) spare = all[Math.floor(state.rng() * all.length)];
 			for (const c of all) {
 				if (c === spare) continue;
+				if (e.tribe && !(c.tribe || '').includes(e.tribe)) continue;
 				c.damage = c.maxHealth;
 				c.shield = false;
 				emit(state, { type: 'destroy', uid: c.uid });
@@ -2094,11 +2097,9 @@ function execEffects(state, pi, effects, target, source) {
 			// Hunter's Call: cards in hand permanently cost (N) less
 			for (const c of state.players[pi].hand) c.cost = Math.max(0, c.cost - (e.value || 1));
 		} else if (e.type === 'mill') {
-			// Devour: burn the top N cards of an opponent's deck
-			const victim = enemyHero();
-			if (victim != null) {
-				for (let i = 0; i < (e.value || 1); i++) state.players[victim].deck.pop();
-			}
+			// Devour: burn the top N cards of an opponent's deck (target 'all' = everyone)
+			if (e.target === 'all') { for (let s2 = 0; s2 < state.players.length; s2++) for (let i = 0; i < (e.value || 1); i++) state.players[s2].deck.pop(); }
+			else { const victim = enemyHero(); if (victim != null) { for (let i = 0; i < (e.value || 1); i++) state.players[victim].deck.pop(); } }
 		} else if (e.type === 'discard-random') {
 			const p = state.players[pi];
 			for (let i = 0; i < (e.count || 1) && p.hand.length; i++) {
@@ -2604,6 +2605,17 @@ function execEffects(state, pi, effects, target, source) {
 				p.hand.push(card);
 				emit(state, { type: 'conjure', player: pi, card, color: null });
 			}
+		} else if (e.type === 'shuffle-self-into-deck') {
+			// "Shuffle this card back into your deck" — Astral Tiger recursion
+			const p = state.players[pi];
+			if (source && state.cardsById[source.id] && !p.eliminated) {
+				p.deck.push(source.id);
+				for (let i = p.deck.length - 1; i > 0; i--) {
+					const j = Math.floor(state.rng() * (i + 1));
+					[p.deck[i], p.deck[j]] = [p.deck[j], p.deck[i]];
+				}
+				emit(state, { type: 'shuffledIntoDeck', player: pi, cardId: source.id });
+			}
 		} else if (e.type === 'shuffle-hand') {
 			// shuffle your hand into your deck (tokens evaporate)
 			const p = state.players[pi];
@@ -2895,6 +2907,17 @@ function execEffects(state, pi, effects, target, source) {
 		} else if (e.type === 'investigate') {
 			// Investigate: make a Clue token (Sacrifice, pay 2: draw a card)
 			gainTokenCard(state, pi, 'clue_token');
+		} else if (e.type === 'spark') {
+			state.players[pi].sparked = true;
+			emit(state, { type: 'sparked', player: pi });
+		} else if (e.type === 'sacrifice-each') {
+			for (let s2 = 0; s2 < state.players.length; s2++) {
+				const pool = state.players[s2].board.filter(c => !isDead(c));
+				if (!pool.length) continue;
+				const t = pool[Math.floor(state.rng() * pool.length)];
+				t.damage = t.maxHealth; t.shield = false;
+				emit(state, { type: 'destroy', uid: t.uid });
+			}
 		} else if (e.type === 'planeshift') {
 			// shift the arena to a random different plane: old plane departs, new arrives
 			const pool = Object.values(state.cardsById).filter(d => d.type === 'plane' && d.id !== state.plane);
@@ -4223,6 +4246,34 @@ export function useHeroPower(state, pi, cardUid, target, choice) {
 	return true;
 }
 
+// ---------- Planeswalk: roll the planar die (a bonus 'hero power') ----------
+// Allowed only if you control a planeswalker or have used Spark. First roll each
+// turn is free; each further roll costs 1 more generic mana. Never counts toward
+// the 3 hero-power limit. d6: 5 = Chaos (current plane's ability), 6 = Planeshift.
+export function canPlaneswalk(state, pi) {
+	if (state.over || state.current !== pi) return false;
+	const p = state.players[pi];
+	if (!(p.sparked || p.planeswalkers.length > 0)) return false;
+	return availableMana(p) >= (p.planarRollsThisTurn || 0);
+}
+
+export function planarRollCost(state, pi) { return state.players[pi].planarRollsThisTurn || 0; }
+
+export function planeswalk(state, pi) {
+	if (!canPlaneswalk(state, pi)) return false;
+	const p = state.players[pi];
+	const cost = p.planarRollsThisTurn || 0;
+	spendMana(p, cost);
+	p.planarRollsThisTurn = cost + 1;
+	const roll = 1 + Math.floor(state.rng() * 6);
+	emit(state, { type: 'planarRoll', player: pi, roll, cost });
+	if (roll === 5) { const pd = state.plane ? state.cardsById[state.plane] : null; if (pd && pd.chaos) execEffects(state, pi, pd.chaos, null, null); }
+	else if (roll === 6) { execEffects(state, pi, [{ type: 'planeshift' }], null, null); }
+	sweepDeaths(state);
+	checkGameOver(state);
+	return true;
+}
+
 // ---------- Ward: an extra cost the enemy pays to target this creature ----------
 function wardOf(state, pi, target) {
 	if (!target || target.type !== 'creature') return null;
@@ -4392,6 +4443,7 @@ export function endTurn(state) {
 	np.drawsThisTurn = 0; // reset before the mandatory draw so it counts as the first
 	np.spellsPlayedThisTurn = 0;
 	np.parityBlock = null; // Alara: a start-of-turn coin flip may block odd/even-cost plays
+	np.planarRollsThisTurn = 0;
 	{ const r = activePlaneRule(state); if (r && r.kind === 'coin-parity') { np.parityBlock = state.rng() < 0.5 ? 'odd' : 'even'; emit(state, { type: 'coinParity', player: state.current, block: np.parityBlock }); } }
 	// stale this-turn cost riders lapse; Millhouse's gift comes due
 	np.costDiscounts = (np.costDiscounts || []).filter(d => !d.thisTurn);

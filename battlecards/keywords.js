@@ -33,6 +33,8 @@ const K = [
 	{ p: ['Investigate'], t: 'Make a Clue token — sacrifice it and pay 2 to draw a card.' },
 	{ p: ['Excavate'], t: 'Dig up a treasure to your hand; each Excavate is one tier higher (Common → Legendary), then loops.' },
 	{ p: ['Planeshift'], t: 'Shift the arena to a random plane (the old one departs, the new one arrives). The plane is shared — nobody controls it.' },
+	{ p: ['Spark'], t: 'Unlocks Planeswalk — you may now roll the planar die on your turn.' },
+	{ p: ['Planeswalk'], t: 'Roll the planar die (needs a planeswalker or Spark). First roll each turn is free, then +1 mana each. 6 = Planeshift, 5 = Chaos, 1-4 nothing.' },
 	{ p: ['Cook'], t: 'Make a Food token — sacrifice it and pay 2 to restore 3 Health to your hero.' },
 	{ p: ['Morbid'], t: 'Morbid N — its effect triggers each time N creatures have died.' },
 	{ p: ['Overload'], t: 'Locks that much of your mana next turn.' },
