@@ -148,6 +148,68 @@ function artFor(id) {
 	return img.complete && img.naturalWidth ? img : null;
 }
 
+// an original gold coin, drawn for The Coin
+function paintCoin(ctx, x, y, w, h) {
+	const cx = x + w / 2, cy = y + h / 2, r = Math.min(w, h) * 0.34;
+	// warm vault backdrop
+	const bg = ctx.createRadialGradient(cx, cy, r * 0.3, cx, cy, Math.max(w, h) * 0.7);
+	bg.addColorStop(0, '#3a2f14');
+	bg.addColorStop(1, '#160f06');
+	ctx.fillStyle = bg;
+	ctx.fillRect(x, y, w, h);
+	// scattered sparkle
+	for (let i = 0; i < 14; i++) {
+		const a = i * 2.399, rr = r * (1.2 + (i % 5) * 0.28);
+		ctx.fillStyle = `rgba(255,225,150,${0.18 + (i % 3) * 0.12})`;
+		ctx.beginPath();
+		ctx.arc(cx + Math.cos(a) * rr, cy + Math.sin(a) * rr * 0.7, 2 + (i % 3), 0, Math.PI * 2);
+		ctx.fill();
+	}
+	// coin body
+	const gold = ctx.createRadialGradient(cx - r * 0.35, cy - r * 0.4, r * 0.15, cx, cy, r);
+	gold.addColorStop(0, '#fff4c2');
+	gold.addColorStop(0.45, '#f2c94c');
+	gold.addColorStop(0.85, '#c8962a');
+	gold.addColorStop(1, '#8a5f18');
+	ctx.fillStyle = gold;
+	ctx.beginPath();
+	ctx.arc(cx, cy, r, 0, Math.PI * 2);
+	ctx.fill();
+	// rim
+	ctx.lineWidth = r * 0.12;
+	ctx.strokeStyle = '#a9781f';
+	ctx.stroke();
+	ctx.lineWidth = r * 0.04;
+	ctx.strokeStyle = 'rgba(255,240,190,0.7)';
+	ctx.beginPath();
+	ctx.arc(cx, cy, r * 0.82, 0, Math.PI * 2);
+	ctx.stroke();
+	// embossed mana crystal in the centre
+	ctx.save();
+	ctx.translate(cx, cy);
+	const gem = ctx.createLinearGradient(0, -r * 0.5, 0, r * 0.5);
+	gem.addColorStop(0, '#bfe0ff');
+	gem.addColorStop(0.5, '#3f8fe0');
+	gem.addColorStop(1, '#14508f');
+	ctx.fillStyle = gem;
+	ctx.beginPath();
+	ctx.moveTo(0, -r * 0.52);
+	ctx.lineTo(r * 0.34, -r * 0.1);
+	ctx.lineTo(0, r * 0.52);
+	ctx.lineTo(-r * 0.34, -r * 0.1);
+	ctx.closePath();
+	ctx.fill();
+	ctx.strokeStyle = 'rgba(10,30,60,0.6)';
+	ctx.lineWidth = r * 0.05;
+	ctx.stroke();
+	ctx.restore();
+	// top-left glint
+	ctx.fillStyle = 'rgba(255,255,255,0.5)';
+	ctx.beginPath();
+	ctx.ellipse(cx - r * 0.4, cy - r * 0.45, r * 0.22, r * 0.12, -0.7, 0, Math.PI * 2);
+	ctx.fill();
+}
+
 // deterministic per-card generative art, painted inside the art window clip
 function paintArt(ctx, card, x, y, w, h) {
 	// real art wins when it's ready: cover-fit the crop into the window
@@ -158,6 +220,8 @@ function paintArt(ctx, card, x, y, w, h) {
 		ctx.drawImage(img, x + (w - dw) / 2, y + (h - dh) / 2, dw, dh);
 		return;
 	}
+	// The Coin: an original procedurally-drawn gold coin (no external art)
+	if (card.id === 'coin') { paintCoin(ctx, x, y, w, h); return; }
 	const seed = hashId(card.id || card.name || '?');
 	// mulberry32: deterministic per card, always in [0, 1)
 	const rand = (() => {
