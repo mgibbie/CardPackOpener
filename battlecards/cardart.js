@@ -5,7 +5,7 @@
 // printed in a tan text box (keywords bold); the gallery shows an owned-copies
 // badge in the top-left corner.
 import * as THREE from 'three';
-import { richTokens, SYM } from './keywords.js';
+import { richTokens } from './keywords.js';
 
 export const CARD_W = 2.5, CARD_H = 3.5, CARD_D = 0.02;
 
@@ -118,7 +118,18 @@ function hashId(id) {
 // procedural. Images load lazily; listeners fire so live faces refresh.
 let artIndex = null;
 const artImgs = new Map(); // id -> HTMLImageElement
-export const artListeners = new Set(); // fn(id) called when an image arrives
+export const artListeners = new Set(); // fn(id) called when an image (or the mana font) arrives
+
+// the Mana font (Andrew Gioia, OFL) so card faces can draw real MTG symbols.
+// Its glyph codepoints + the authentic 'cost' circle colours; we load the font
+// then repaint every face (artListeners('*')) so the pips upgrade in place.
+const MANA_CP = { tap: 0xe61a, W: 0xe600, U: 0xe601, B: 0xe602, R: 0xe603, G: 0xe604, C: 0xe904 };
+const MANA_BG = { tap: '#cececa', W: '#f0f2c0', U: '#b5cde3', B: '#aca29a', R: '#db8664', G: '#93b483', C: '#ccc5b9', N: '#ccc5b9' };
+let manaReady = false;
+if (typeof document !== 'undefined' && typeof FontFace !== 'undefined') {
+	const ff = new FontFace('Mana', 'url(https://cdn.jsdelivr.net/npm/mana-font@1.18.0/fonts/mana.woff2) format("woff2")');
+	ff.load().then(f => { document.fonts.add(f); manaReady = true; for (const fn of artListeners) fn('*'); }).catch(() => {});
+}
 
 fetch('art/index.json')
 	.then(r => (r.ok ? r.json() : []))
@@ -279,20 +290,29 @@ function statPlate(ctx, cx, cy, r, color, text, textColor = '#fff') {
 // a box, shrinking the font until it fits and centring it vertically
 const _meas = document.createElement('canvas').getContext('2d');
 function drawPip(ctx, tok, cx, cy, size) {
-	const s = SYM[tok.key === 'N' ? 'C' : tok.key] || SYM.C;
-	const r = size * 0.56;
+	const key = tok.key;
+	const r = size * 0.58;
+	// the coloured cost circle
 	ctx.beginPath();
 	ctx.arc(cx, cy, r, 0, Math.PI * 2);
-	ctx.fillStyle = s.bg;
+	ctx.fillStyle = MANA_BG[key === 'N' ? 'N' : key] || MANA_BG.N;
 	ctx.fill();
-	ctx.lineWidth = Math.max(1.5, size * 0.08);
-	ctx.strokeStyle = s.ring;
+	ctx.lineWidth = Math.max(1, size * 0.06);
+	ctx.strokeStyle = 'rgba(0,0,0,0.4)';
 	ctx.stroke();
-	ctx.fillStyle = s.fg;
-	ctx.font = `bold ${Math.round(size * 0.78)}px 'Segoe UI Symbol', 'Segoe UI', Georgia, sans-serif`;
 	ctx.textAlign = 'center';
 	ctx.textBaseline = 'middle';
-	ctx.fillText(tok.label, cx, cy + size * 0.04);
+	ctx.fillStyle = '#241f18';
+	const cp = key === 'N' ? 0xe605 + Math.min(9, Math.max(0, parseInt(tok.label, 10) || 0)) : MANA_CP[key];
+	if (manaReady && cp) {
+		// the real MTG symbol glyph from the Mana font
+		ctx.font = `${Math.round(size * 0.98)}px "Mana"`;
+		ctx.fillText(String.fromCharCode(cp), cx, cy + size * 0.02);
+	} else {
+		// fallback until the font finishes loading: a letter / number / tap mark
+		ctx.font = `bold ${Math.round(size * 0.72)}px 'Segoe UI Symbol', Georgia, sans-serif`;
+		ctx.fillText(key === 'tap' ? '⟳' : tok.label, cx, cy + size * 0.03);
+	}
 	ctx.textAlign = 'left';
 	ctx.textBaseline = 'top';
 }

@@ -102,10 +102,21 @@ export function richTokens(text) {
 	return out;
 }
 
+// authentic MTG symbols come from the open-source Mana font (Andrew Gioia, OFL).
+// Loading its stylesheet gives us both the .ms icon classes (tooltips) and the
+// @font-face the canvas card faces draw with.
+export const MANA_CSS = 'https://cdn.jsdelivr.net/npm/mana-font@1.18.0/css/mana.min.css';
+if (typeof document !== 'undefined' && !document.getElementById('mana-font-css')) {
+	const l = document.createElement('link');
+	l.id = 'mana-font-css'; l.rel = 'stylesheet'; l.href = MANA_CSS;
+	document.head.appendChild(l);
+}
+const MS_CLASS = { tap: 'ms-tap', W: 'ms-w', U: 'ms-u', B: 'ms-b', R: 'ms-r', G: 'ms-g', C: 'ms-c' };
 const _esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+// a real mana / tap symbol pip via the Mana font's icon classes
 export function pipHtml(tok) {
-	const s = SYM[tok.key === 'N' ? 'C' : tok.key] || SYM.C;
-	return `<span style="display:inline-block;min-width:14px;height:16px;line-height:16px;padding:0 3px;margin:0 1px;border-radius:8px;background:${s.bg};color:${s.fg};border:1px solid ${s.ring};font:700 10px 'Segoe UI Symbol','Segoe UI',sans-serif;text-align:center;vertical-align:-3px;">${_esc(tok.label)}</span>`;
+	const cls = tok.key === 'N' ? 'ms-' + tok.label : (MS_CLASS[tok.key] || 'ms-c');
+	return `<i class="ms ${cls} ms-cost" style="font-size:15px;vertical-align:-2px;margin:0 1px;"></i>`;
 }
 const PUNCT = /^[,.;:!?)%]/;
 // rules text as HTML with keyword <b> and inline symbol pips

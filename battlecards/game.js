@@ -245,7 +245,7 @@ function refreshFace(ent) {
 // when a real art crop finishes loading, live faces using it repaint
 artListeners.add(id => {
 	for (const ent of entities.values()) {
-		if (ent.card.id === id && !ent.card.disguised) refreshFace(ent);
+		if ((id === '*' || ent.card.id === id) && !ent.card.disguised) refreshFace(ent);
 	}
 });
 

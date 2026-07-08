@@ -1,7 +1,7 @@
 // packs.js — 3D pack opening: a booster hovers, tears open in a burst of
 // light, and five cards fly out to be flipped one by one.
 import * as THREE from 'three';
-import { CARD_W, CARD_H, CARD_D, makeFaceTexture, makeBackTexture, RARITY_COLORS } from './cardart.js';
+import { CARD_W, CARD_H, CARD_D, makeFaceTexture, makeBackTexture, RARITY_COLORS, artListeners } from './cardart.js';
 import * as Col from './collection.js';
 import * as MPX from './mpmode.js';
 import { keywordsFor, richHtml } from './keywords.js';
@@ -251,6 +251,18 @@ function flip(i) {
 	if (cardMeshes.every(x => x.flipped)) phase = 'done';
 	updateHud();
 }
+
+// repaint revealed cards when the mana font (or real art) arrives so the pips
+// upgrade from the letter fallback to the real symbols
+artListeners.add(() => {
+	for (const c of cardMeshes) {
+		if (!c.flipped) continue;
+		const nm = makeFaceTexture(c.def);
+		c.mesh.material[4].map?.dispose();
+		c.mesh.material[4].map = nm;
+		c.mesh.material[4].needsUpdate = true;
+	}
+});
 
 // ---------- input ----------
 const raycaster = new THREE.Raycaster();
