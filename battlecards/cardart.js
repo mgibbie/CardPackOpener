@@ -602,7 +602,11 @@ export function drawCardFace(card, opts = {}) {
 		ctx.font = 'italic 25px Georgia';
 		ctx.textAlign = 'center';
 		ctx.fillStyle = '#d9d2ea';
-		ctx.fillText(card.tribe, W / 2, H - 49);
+		// a spell's tribe is its school — label it as such ("Frost Spell")
+		const isSpell = card.type === 'sorcery' || card.type === 'instant' || card.type === 'secret' || card.type === 'trap';
+		const SCHOOLS = ['Arcane', 'Fel', 'Fire', 'Frost', 'Holy', 'Nature', 'Shadow', 'Song'];
+		const plateLabel = isSpell && SCHOOLS.includes(card.tribe) ? `${card.tribe} Spell` : card.tribe;
+		ctx.fillText(plateLabel, W / 2, H - 49);
 		ctx.textAlign = 'left';
 	}
 

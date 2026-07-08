@@ -296,6 +296,7 @@ export function createGame(cardsById, rng = Math.random, playerDeckIds = null, p
 		costDiscounts: [],  // one-shot "next X costs (N) less" riders
 		creaturesPlayedThisTurn: 0, // Pint-Sized-style first-creature discounts
 		cardsPlayedThisTurn: 0,     // Combo activation (counts cards already resolved)
+		drawsThisTurn: 0,           // Ponder: fires on every draw after the first this turn
 		spellsPlayedThisTurn: 0,    // Kalecgos-style first-spell discounts
 		freeSpellsNextTurn: false,  // Millhouse: spells free on your next turn
 		freeSpellsThisTurn: false,
@@ -402,7 +403,19 @@ export function drawCards(state, pi, count) {
 		p.hand.push(card);
 		emit(state, { type: 'draw', player: pi, card });
 		questTick(state, 'draw', pi, 1, card);
+		// Ponder: fires on every card drawn after your first draw of the turn
+		p.drawsThisTurn = (p.drawsThisTurn || 0) + 1;
+		if (p.drawsThisTurn > 1) firePonder(state, pi, { drawn: card });
 	}
+}
+
+// Ponder triggers on extra draws / scry / dredge / gaze. A re-entrancy lock
+// stops a Ponder effect that itself draws or scries from re-triggering Ponder.
+function firePonder(state, pi, ctx = {}) {
+	if (state.ponderLock) return;
+	state.ponderLock = true;
+	try { fireOngoing(state, pi, 'ponder', ctx); }
+	finally { state.ponderLock = false; }
 }
 
 function toGraveyard(state, pi, card) {
@@ -2957,6 +2970,7 @@ function execEffects(state, pi, effects, target, source) {
 				if (ids.length) {
 					state.scryQueue.push({ chooser: pi, deckOwner, ids });
 					emit(state, { type: 'scryStart', chooser: pi, deckOwner, count: ids.length });
+					firePonder(state, pi, { scry: true });
 				}
 			}
 		} else if (e.type === 'dredge') {
@@ -2969,6 +2983,7 @@ function execEffects(state, pi, effects, target, source) {
 				if (ids.length) {
 					state.dredgeQueue.push({ player: pi, ids });
 					emit(state, { type: 'dredgeStart', player: pi, count: ids.length });
+					firePonder(state, pi, { dredge: true });
 				}
 			}
 		} else if (e.type === 'disguise') {
@@ -3154,6 +3169,15 @@ function runSpell(state, pi, card, target, choice) {
 		}
 		case 'regroup': drawCards(state, pi, state.players[pi].diedThisTurn); break;
 	}
+}
+
+// ---------- spell schools ----------
+// every spell belongs to a school; it is stored in the card's `tribe` field
+// (e.g. a "Sorcery — Frost" imports with tribe 'Frost'). Triggers that care
+// about a school ("after you cast a Frost spell") match via the tribe condition.
+export const SPELL_SCHOOLS = ['Arcane', 'Fel', 'Fire', 'Frost', 'Holy', 'Nature', 'Shadow', 'Song'];
+export function schoolOf(card) {
+	return isSpellType(card) && SPELL_SCHOOLS.includes(card.tribe) ? card.tribe : null;
 }
 
 // ---------- cost modifiers ----------
@@ -3379,7 +3403,9 @@ export function playCard(state, pi, cardUid, target, choice, position) {
 				emit(state, { type: 'honorableKill', player: pi });
 				execEffects(state, pi, card.honorableKill, ctx.target, card);
 			}
-			fireOngoing(state, pi, 'spell-played');
+			// carry the spell so school-filtered triggers ("after you cast a
+			// Frost spell") can match via the ongoing `if: { tribe: 'Frost' }` cond
+			fireOngoing(state, pi, 'spell-played', { played: card });
 			for (let s2 = 0; s2 < state.players.length; s2++) {
 				fireOngoing(state, s2, 'any-spell-played', { spell: card, caster: pi }); // Lorewalker Cho
 				if (s2 !== pi) fireOngoing(state, s2, 'enemy-spell-played', { spell: card, caster: pi }); // Burgly Bully
@@ -4164,6 +4190,7 @@ export function endTurn(state) {
 	np.landsPlayedThisTurn = 0;
 	np.creaturesPlayedThisTurn = 0;
 	np.cardsPlayedThisTurn = 0;
+	np.drawsThisTurn = 0; // reset before the mandatory draw so it counts as the first
 	np.spellsPlayedThisTurn = 0;
 	// stale this-turn cost riders lapse; Millhouse's gift comes due
 	np.costDiscounts = (np.costDiscounts || []).filter(d => !d.thisTurn);

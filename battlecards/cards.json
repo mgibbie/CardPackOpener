@@ -42058,6 +42058,33 @@
           }
         ]
       }
+    },
+    {
+      "id": "esila_morbid_heirophant",
+      "name": "Esila, Morbid Heirophant",
+      "cardClass": "neutral",
+      "cost": 5,
+      "rarity": "legendary",
+      "set": "paper",
+      "description": "Impulsive & Windfury. Ponder: Target creature gains Divine Shield.",
+      "type": "creature",
+      "attack": 3,
+      "health": 3,
+      "tribe": "Spirit Priest",
+      "keywords": [
+        "impulsive",
+        "windfury"
+      ],
+      "ongoing": {
+        "on": "ponder",
+        "effects": [
+          {
+            "type": "grant",
+            "keyword": "divine_shield",
+            "target": "creature"
+          }
+        ]
+      }
     }
   ]
 }

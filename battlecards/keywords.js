@@ -42,6 +42,7 @@ const K = [
 	{ p: ['Tradeable'], t: 'Drag it onto your deck to pay 1 and draw a card.' },
 	{ p: ['Connect'], t: 'Triggers when this deals combat damage to the enemy hero.' },
 	{ p: ['Swing'], t: 'Triggers when this attacks.' },
+	{ p: ['Ponder'], t: 'Triggers whenever you draw an extra card (past your first draw of the turn), Scry, Dredge or Gaze.' },
 	{ p: ['Honorable Kill'], t: 'Bonus if it kills a creature with an exact-lethal blow.' },
 	{ p: ['Adapt'], t: 'Choose one of three upgrades for the creature.' },
 	{ p: ['Quest'], t: 'Complete its goal for a powerful reward.', tag: 'quest' },
