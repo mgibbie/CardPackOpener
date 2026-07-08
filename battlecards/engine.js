@@ -182,6 +182,8 @@ function instantiate(def, controller) {
 		honorableKill: def.honorableKill || null, // effects on an EXACT lethal blow
 		emerge: def.emerge || null,   // fires from hand when drawn/discovered (not opening hand)
 		counterSpell: !!def.counterSpell, // instant that counters a spell on the stack
+		adventure: def.adventure ? JSON.parse(JSON.stringify(def.adventure)) : null, // {name,cost,type,effects}
+		adventureSpent: false,        // the Adventure half has been cast; only the creature remains
 		ongoings: def.ongoings ? JSON.parse(JSON.stringify(def.ongoings)) : null, // combined triggers
 		medic: def.medic || 0,        // heals adjacent creatures N at end of turn
 		sac: def.sac || null,         // field-token activation: { cost, discard?, effects }
@@ -3795,6 +3797,17 @@ function resolveEntry(state, entry) {
 	}
 	if (entry.kind === 'spell') { resolveStackedSpell(state, entry); return; }
 	if (entry.kind === 'attack') { resolveCombat(state, pi, entry.attackerUid, entry.target); return; }
+	if (entry.kind === 'adventure') {
+		execEffects(state, pi, entry.effects, entry.target, entry.card);
+		const p = state.players[pi]; // the card returns to hand; only the creature half remains
+		if (!p.eliminated && p.hand.length < MAX_HAND) {
+			entry.card.adventureSpent = true;
+			entry.card.zone = 'hand';
+			p.hand.push(entry.card);
+			emit(state, { type: 'conjure', player: pi, card: entry.card, color: null });
+		}
+		return;
+	}
 	if (entry.kind === 'heropower') {
 		execEffects(state, pi, entry.effects, entry.target, entry.card);
 		fireOngoing(state, pi, 'hero-power-used', {}); // Inspire
@@ -3853,6 +3866,37 @@ export function resolveResponse(state, pi, action, target, choice) {
 	if (action.kind === 'ability') return activateAbility(state, pi, action.uid, action.index, action.target);
 	if (action.kind === 'landtap') return tapLand(state, pi, action.uid, action.index, action.target);
 	return playCard(state, pi, action.uid, action.target, action.choice); // spell
+}
+
+// ---------- Adventures: a creature card with a spell "adventure" half ----------
+export function adventureSpec(state, pi, card) {
+	if (!card.adventure) return null;
+	return targetSpec(state, pi, { id: card.id, type: card.adventure.type || 'sorcery', effects: card.adventure.effects });
+}
+
+export function canPlayAdventure(state, pi, card) {
+	if (state.over || !card || !card.adventure || card.adventureSpent) return false;
+	const p = state.players[pi];
+	if (!p.hand.includes(card)) return false;
+	if (availableMana(p) < (card.adventure.cost || 0)) return false;
+	// an Instant adventure is instant speed; a Sorcery adventure is sorcery speed
+	if (card.adventure.type === 'instant') { if (!hasPriority(state, pi)) return false; }
+	else if (!(state.current === pi && state.priority == null && state.stack.length === 0)) return false;
+	const spec = adventureSpec(state, pi, card);
+	if (spec && spec.required && legalTargets(state, pi, spec).length === 0) return false;
+	return true;
+}
+
+export function playAdventure(state, pi, cardUid, target, choice) {
+	const p = state.players[pi];
+	const idx = p.hand.findIndex(c => c.uid === cardUid);
+	if (idx < 0 || !canPlayAdventure(state, pi, p.hand[idx])) return false;
+	const card = p.hand[idx];
+	p.hand.splice(idx, 1);
+	spendMana(p, card.adventure.cost || 0);
+	emit(state, { type: 'adventureCast', player: pi, card, name: card.adventure.name });
+	stackAction(state, pi, { kind: 'adventure', card, effects: card.adventure.effects, target, choice });
+	return true;
 }
 
 export function useCoin(state, pi) {

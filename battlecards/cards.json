@@ -11092,7 +11092,7 @@
             "count": 1,
             "attack": 1,
             "health": 1,
-            "name": "Pirate minion token"
+            "name": "Pirate creature token"
           }
         ]
       }
@@ -36520,7 +36520,7 @@
           "count": 4,
           "attack": 0,
           "health": 2,
-          "name": "Goblin Bomb"
+          "name": "Goblin Bombs"
         }
       ]
     },
@@ -48777,6 +48777,956 @@
       "attack": 6,
       "health": 3,
       "tribe": "Beast"
+    },
+    {
+      "id": "incanter_s_flow",
+      "name": "Incanter's Flow",
+      "cardClass": "mage",
+      "cost": 4,
+      "rarity": "common",
+      "set": "paper",
+      "description": "Your Instants & Sorceries cost 1 less.",
+      "type": "enchantment",
+      "costMod": {
+        "cardType": "spell",
+        "amount": -1,
+        "scope": "own"
+      }
+    },
+    {
+      "id": "mosswood_otterfrog",
+      "name": "Mosswood Otterfrog",
+      "cardClass": "neutral",
+      "cost": 2,
+      "rarity": "common",
+      "set": "paper",
+      "description": "Your Adventure spells cost 1 less.",
+      "type": "creature",
+      "attack": 1,
+      "health": 2,
+      "tribe": "Beast",
+      "costMod": {
+        "cardType": "spell",
+        "amount": -1,
+        "scope": "own",
+        "tribe": "Adventure"
+      }
+    },
+    {
+      "id": "frolicking_familiar",
+      "name": "Frolicking Familiar",
+      "cardClass": "neutral",
+      "cost": 3,
+      "rarity": "rare",
+      "set": "paper",
+      "description": "Blow Off Steam (1) Instant \u2014 Adventure Deal 1 damage to any target. Prowess & Windfury.",
+      "type": "creature",
+      "attack": 2,
+      "health": 2,
+      "adventure": {
+        "name": "Blow Off Steam",
+        "cost": 1,
+        "type": "instant",
+        "effects": [
+          {
+            "type": "damage",
+            "value": 1,
+            "target": "any"
+          }
+        ]
+      },
+      "tribe": "Beast Wizard",
+      "keywords": [
+        "windfury"
+      ],
+      "ongoing": {
+        "on": "spell-played",
+        "effects": [
+          {
+            "type": "temp-buff-self",
+            "attack": 1,
+            "health": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "eldraine_sprite",
+      "name": "Eldraine Sprite",
+      "cardClass": "neutral",
+      "cost": 4,
+      "rarity": "uncommon",
+      "set": "paper",
+      "description": "Adventure & Nature spells cost 1 less.",
+      "type": "creature",
+      "attack": 4,
+      "health": 2,
+      "tribe": "Faerie Druid"
+    },
+    {
+      "id": "mothwood_direcat",
+      "name": "Mothwood Direcat",
+      "cardClass": "neutral",
+      "cost": 4,
+      "rarity": "rare",
+      "set": "paper",
+      "description": "Hexproof & Rush. Emerald Mossrune 1 \u2014 Instant \u2014 Adventure Discover a Faerie.",
+      "type": "creature",
+      "attack": 4,
+      "health": 4,
+      "adventure": {
+        "name": "Emerald Mossrune",
+        "cost": 1,
+        "type": "instant",
+        "effects": [
+          {
+            "type": "discover",
+            "pick": 3,
+            "tribe": "Faerie"
+          }
+        ]
+      },
+      "tribe": "Faerie Beast",
+      "keywords": [
+        "elusive",
+        "rush"
+      ]
+    },
+    {
+      "id": "steady_tortoise",
+      "name": "Steady Tortoise",
+      "cardClass": "neutral",
+      "cost": 5,
+      "rarity": "uncommon",
+      "set": "paper",
+      "description": "Harried Dash 1 Sorcery \u2014 Adventure Create a 1/1 Beast creature token with Rush. Ward: Discard a card. Swing: Gain +1/+1.",
+      "type": "creature",
+      "attack": 3,
+      "health": 3,
+      "adventure": {
+        "name": "Harried Dash",
+        "cost": 1,
+        "type": "sorcery",
+        "effects": [
+          {
+            "type": "summon",
+            "count": 1,
+            "attack": 1,
+            "health": 1,
+            "name": "Beast",
+            "keywords": [
+              "rush"
+            ]
+          }
+        ]
+      },
+      "tribe": "Beast",
+      "ward": {
+        "discard": 1
+      },
+      "ongoing": {
+        "on": "self-attacks",
+        "effects": [
+          {
+            "type": "buff-self",
+            "attack": 1,
+            "health": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "loch_larent",
+      "name": "Loch Larent",
+      "cardClass": "neutral",
+      "cost": 7,
+      "rarity": "epic",
+      "set": "paper",
+      "description": "4 Durability. \u27f3\u27f3 & Remove a Durability: Freeze target creature & each opponent discards a card.",
+      "type": "location",
+      "durability": 4,
+      "taps": [
+        {
+          "text": "Freeze target creature & each opponent discards a card.",
+          "effects": [
+            {
+              "type": "freeze",
+              "target": "creature"
+            },
+            {
+              "type": "enemy-discard",
+              "count": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "murloc_knight",
+      "name": "Murloc Knight",
+      "cardClass": "paladin",
+      "cost": 4,
+      "rarity": "common",
+      "set": "hs",
+      "description": "Inspire: Summon a random Murloc.",
+      "type": "creature",
+      "attack": 3,
+      "health": 4,
+      "tribe": "Murloc",
+      "ongoing": {
+        "on": "hero-power-used",
+        "effects": [
+          {
+            "type": "summon-random",
+            "tribe": "Murloc"
+          }
+        ]
+      }
+    },
+    {
+      "id": "kargal_battlescar",
+      "name": "Kargal Battlescar",
+      "cardClass": "neutral",
+      "cost": 7,
+      "rarity": "legendary",
+      "set": "hs",
+      "description": "Battlecry: Summon a 5/5 Lookout for each Watch Post you've summoned this game.",
+      "type": "creature",
+      "attack": 5,
+      "health": 5,
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "summon",
+          "count": 1,
+          "attack": 5,
+          "health": 5,
+          "name": "Lookout for each Watch Post you've summoned this game"
+        }
+      ]
+    },
+    {
+      "id": "zerek_s_cloning_gallery",
+      "name": "Zerek's Cloning Gallery",
+      "cardClass": "priest",
+      "cost": 9,
+      "rarity": "legendary",
+      "set": "hs",
+      "description": "Summon a 1/1 copy of each creature in your deck.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "summon",
+          "count": 1,
+          "attack": 1,
+          "health": 1,
+          "name": "copy of each creature in your deck"
+        }
+      ]
+    },
+    {
+      "id": "glowfly_swarm",
+      "name": "Glowfly Swarm",
+      "cardClass": "druid",
+      "cost": 5,
+      "rarity": "epic",
+      "set": "hs",
+      "description": "Summon a 2/2 Glowfly for each spell in your hand.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "summon",
+          "count": 1,
+          "attack": 2,
+          "health": 2,
+          "name": "Glowfly for each spell in your hand"
+        }
+      ]
+    },
+    {
+      "id": "nagrand_slam",
+      "name": "Nagrand Slam",
+      "cardClass": "hunter",
+      "cost": 10,
+      "rarity": "epic",
+      "set": "hs",
+      "description": "Summon four 3/5 Clefthoofs that attack random enemies.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "summon",
+          "count": 4,
+          "attack": 3,
+          "health": 5,
+          "name": "Clefthoofs that attack random enemies"
+        }
+      ]
+    },
+    {
+      "id": "al_ar",
+      "name": "Al'ar",
+      "cardClass": "neutral",
+      "cost": 5,
+      "rarity": "legendary",
+      "set": "hs",
+      "description": "Deathrattle: Summon a 0/3 Ashes of Al'ar that resurrects this creature on your next turn.",
+      "type": "creature",
+      "attack": 7,
+      "health": 3,
+      "tribe": "Elemental",
+      "keywords": [
+        "deathrattle"
+      ],
+      "deathrattle": [
+        {
+          "type": "summon",
+          "count": 1,
+          "attack": 0,
+          "health": 3,
+          "name": "Ashes of Al'ar that resurrects this creature on your next turn"
+        }
+      ]
+    },
+    {
+      "id": "barrens_stablehand",
+      "name": "Barrens Stablehand",
+      "cardClass": "neutral",
+      "cost": 7,
+      "rarity": "epic",
+      "set": "hs",
+      "description": "Battlecry: Summon a random Beast.",
+      "type": "creature",
+      "attack": 5,
+      "health": 5,
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "summon-random",
+          "tribe": "Beast"
+        }
+      ]
+    },
+    {
+      "id": "deathborne",
+      "name": "Deathborne",
+      "cardClass": "mage",
+      "cost": 6,
+      "rarity": "rare",
+      "set": "hs",
+      "description": "Deal 2 damage to all creatures. Summon a 2/2 Volatile Skeleton for each killed.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 2,
+          "target": "all-creatures"
+        },
+        {
+          "type": "summon",
+          "count": 1,
+          "attack": 2,
+          "health": 2,
+          "name": "Volatile Skeleton for each killed"
+        }
+      ]
+    },
+    {
+      "id": "blastmaster_boom",
+      "name": "Blastmaster Boom",
+      "cardClass": "warrior",
+      "cost": 7,
+      "rarity": "legendary",
+      "set": "hs",
+      "description": "Battlecry: Summon two 1/1 Boom Bots for each Bomb in your opponent's deck.",
+      "type": "creature",
+      "attack": 7,
+      "health": 7,
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "summon",
+          "count": 2,
+          "attack": 1,
+          "health": 1,
+          "name": "Boom Bots for each Bomb in your opponent's deck"
+        }
+      ]
+    },
+    {
+      "id": "flight_master",
+      "name": "Flight Master",
+      "cardClass": "neutral",
+      "cost": 3,
+      "rarity": "common",
+      "set": "hs",
+      "description": "Battlecry: Summon a 2/2 Gryphon for each player.",
+      "type": "creature",
+      "attack": 3,
+      "health": 4,
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "summon",
+          "count": 1,
+          "attack": 2,
+          "health": 2,
+          "name": "Gryphon for each player"
+        }
+      ]
+    },
+    {
+      "id": "ritual_of_life",
+      "name": "Ritual of Life",
+      "cardClass": "priest",
+      "cost": 2,
+      "rarity": "common",
+      "set": "hs",
+      "description": "Discover a 3-Cost creature. Summon a 2/3 copy of it.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "discover",
+          "pick": 3,
+          "cost": 3,
+          "cardType": "creature"
+        },
+        {
+          "type": "summon",
+          "count": 1,
+          "attack": 2,
+          "health": 3,
+          "name": "copy of it"
+        }
+      ]
+    },
+    {
+      "id": "idol_of_y_shaarj",
+      "name": "Idol of Y'Shaarj",
+      "cardClass": "priest",
+      "cost": 8,
+      "rarity": "epic",
+      "set": "hs",
+      "description": "Summon a 10/10 copy of a creature in your deck.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "summon",
+          "count": 1,
+          "attack": 10,
+          "health": 10,
+          "name": "copy of a creature in your deck"
+        }
+      ]
+    },
+    {
+      "id": "derailed_coaster",
+      "name": "Derailed Coaster",
+      "cardClass": "neutral",
+      "cost": 5,
+      "rarity": "rare",
+      "set": "hs",
+      "description": "Battlecry: Summon a 1/1 Rider with Rush for each creature in your hand.",
+      "type": "creature",
+      "attack": 3,
+      "health": 2,
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "summon",
+          "count": 1,
+          "attack": 1,
+          "health": 1,
+          "name": "Rider with Rush for each creature in your hand"
+        }
+      ]
+    },
+    {
+      "id": "shepherd_s_crook",
+      "name": "Shepherd's Crook",
+      "cardClass": "hunter",
+      "cost": 3,
+      "rarity": "rare",
+      "set": "hs",
+      "description": "After your hero attacks, summon a 3/3 Sheep that's Dormant for 2 turns.",
+      "type": "weapon",
+      "attack": 3,
+      "durability": 0,
+      "ongoing": {
+        "on": "hero-attacks",
+        "effects": [
+          {
+            "type": "summon",
+            "count": 1,
+            "attack": 3,
+            "health": 3,
+            "name": "Sheep that's Dormant for 2 turns"
+          }
+        ]
+      }
+    },
+    {
+      "id": "extraterrestrial_egg",
+      "name": "Extraterrestrial Egg",
+      "cardClass": "hunter",
+      "cost": 2,
+      "rarity": "common",
+      "set": "hs",
+      "description": "Deathrattle: Summon a 3/5 Beast that attacks the lowest Health enemy.",
+      "type": "creature",
+      "attack": 0,
+      "health": 2,
+      "keywords": [
+        "deathrattle"
+      ],
+      "deathrattle": [
+        {
+          "type": "summon",
+          "count": 1,
+          "attack": 3,
+          "health": 5,
+          "name": "Beast that attacks the lowest Health enemy"
+        }
+      ]
+    },
+    {
+      "id": "wispering_woods",
+      "name": "Wispering Woods",
+      "cardClass": "druid",
+      "cost": 4,
+      "rarity": "epic",
+      "set": "hs",
+      "description": "Summon a 1/1 Wisp for each card in your hand.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "summon",
+          "count": 1,
+          "attack": 1,
+          "health": 1,
+          "name": "Wisp for each card in your hand"
+        }
+      ]
+    },
+    {
+      "id": "kobold_illusionist",
+      "name": "Kobold Illusionist",
+      "cardClass": "rogue",
+      "cost": 5,
+      "rarity": "rare",
+      "set": "hs",
+      "description": "Deathrattle: Summon a 1/1 copy of a creature from your hand.",
+      "type": "creature",
+      "attack": 3,
+      "health": 3,
+      "keywords": [
+        "deathrattle"
+      ],
+      "deathrattle": [
+        {
+          "type": "summon",
+          "count": 1,
+          "attack": 1,
+          "health": 1,
+          "name": "copy of a creature from your hand"
+        }
+      ]
+    },
+    {
+      "id": "herald_volazj",
+      "name": "Herald Volazj",
+      "cardClass": "priest",
+      "cost": 6,
+      "rarity": "legendary",
+      "set": "hs",
+      "description": "Battlecry: Summon a 1/1 copy of each of your other creatures.",
+      "type": "creature",
+      "attack": 5,
+      "health": 5,
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "summon",
+          "count": 1,
+          "attack": 1,
+          "health": 1,
+          "name": "copy of each of your other"
+        }
+      ]
+    },
+    {
+      "id": "impfestation",
+      "name": "Impfestation",
+      "cardClass": "warlock",
+      "cost": 6,
+      "rarity": "rare",
+      "set": "hs",
+      "description": "Summon a 3/3 Dread Imp to attack each enemy creature.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "summon",
+          "count": 1,
+          "attack": 3,
+          "health": 3,
+          "name": "Dread Imp to attack each enemy"
+        }
+      ]
+    },
+    {
+      "id": "carrier",
+      "name": "Carrier",
+      "cardClass": "druid",
+      "cost": 12,
+      "rarity": "common",
+      "set": "hs",
+      "description": "At the end of your turn, summon four 4/1 Interceptors that attack random enemies.",
+      "type": "creature",
+      "attack": 2,
+      "health": 14,
+      "tribe": "Mechanical",
+      "ongoing": {
+        "on": "turn-end",
+        "effects": [
+          {
+            "type": "summon",
+            "count": 4,
+            "attack": 4,
+            "health": 1,
+            "name": "Interceptors that attack random enemies"
+          }
+        ]
+      }
+    },
+    {
+      "id": "gift_of_luminance",
+      "name": "Gift of Luminance",
+      "cardClass": "paladin",
+      "cost": 3,
+      "rarity": "rare",
+      "set": "hs",
+      "description": "Give a creature Divine Shield, then summon a 1/1 copy of it.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "grant",
+          "keyword": "divine_shield",
+          "target": "creature"
+        },
+        {
+          "type": "summon",
+          "count": 1,
+          "attack": 1,
+          "health": 1,
+          "name": "copy of it"
+        }
+      ]
+    },
+    {
+      "id": "troublemaker",
+      "name": "Troublemaker",
+      "cardClass": "warrior",
+      "cost": 8,
+      "rarity": "rare",
+      "set": "hs",
+      "description": "At the end of your turn, summon two 3/3 Ruffians that attack random enemies.",
+      "type": "creature",
+      "attack": 6,
+      "health": 8,
+      "ongoing": {
+        "on": "turn-end",
+        "effects": [
+          {
+            "type": "summon",
+            "count": 2,
+            "attack": 3,
+            "health": 3,
+            "name": "Ruffians that attack random enemies"
+          }
+        ]
+      }
+    },
+    {
+      "id": "temporal_traveler",
+      "name": "Temporal Traveler",
+      "cardClass": "neutral",
+      "cost": 3,
+      "rarity": "common",
+      "set": "hs",
+      "description": "Deathrattle: Summon a 4/1 Shadow that attacks a random enemy creature.",
+      "type": "creature",
+      "attack": 4,
+      "health": 1,
+      "keywords": [
+        "deathrattle"
+      ],
+      "deathrattle": [
+        {
+          "type": "summon",
+          "count": 1,
+          "attack": 4,
+          "health": 1,
+          "name": "Shadow that attacks a random enemy"
+        }
+      ]
+    },
+    {
+      "id": "dark_iron_harbinger",
+      "name": "Dark Iron Harbinger",
+      "cardClass": "neutral",
+      "cost": 4,
+      "rarity": "epic",
+      "set": "hs",
+      "description": "Deathrattle: Summon a 0/7 Doomsayer that destroys ALL creatures at the start of your turn.",
+      "type": "creature",
+      "attack": 7,
+      "health": 4,
+      "keywords": [
+        "deathrattle"
+      ],
+      "deathrattle": [
+        {
+          "type": "summon",
+          "count": 1,
+          "attack": 0,
+          "health": 7,
+          "name": "Doomsayer that destroys ALL creatures at the start of your turn"
+        }
+      ]
+    },
+    {
+      "id": "pterrordax_egg",
+      "name": "Pterrordax Egg",
+      "cardClass": "neutral",
+      "cost": 3,
+      "rarity": "common",
+      "set": "hs",
+      "description": "Deathrattle: Summon a 3/3 Pterrordax that steals 1 Health from all other creatures.",
+      "type": "creature",
+      "attack": 0,
+      "health": 3,
+      "keywords": [
+        "deathrattle"
+      ],
+      "deathrattle": [
+        {
+          "type": "summon",
+          "count": 1,
+          "attack": 3,
+          "health": 3,
+          "name": "Pterrordax that steals 1 Health from all other"
+        }
+      ]
+    },
+    {
+      "id": "watercannon",
+      "name": "Watercannon",
+      "cardClass": "rogue",
+      "cost": 4,
+      "rarity": "epic",
+      "set": "hs",
+      "description": "After your hero attacks, summon a 1/1 Pirate that attacks a random enemy.",
+      "type": "weapon",
+      "attack": 3,
+      "durability": 0,
+      "ongoing": {
+        "on": "hero-attacks",
+        "effects": [
+          {
+            "type": "summon",
+            "count": 1,
+            "attack": 1,
+            "health": 1,
+            "name": "Pirate that attacks a random enemy"
+          }
+        ]
+      }
+    },
+    {
+      "id": "coral_keeper",
+      "name": "Coral Keeper",
+      "cardClass": "shaman",
+      "cost": 5,
+      "rarity": "rare",
+      "set": "hs",
+      "description": "Battlecry: Summon a 3/3 Elemental for each spell school you've cast this game.",
+      "type": "creature",
+      "attack": 3,
+      "health": 4,
+      "tribe": "Naga",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "summon",
+          "count": 1,
+          "attack": 3,
+          "health": 3,
+          "name": "Elemental for each spell school you've cast this game"
+        }
+      ]
+    },
+    {
+      "id": "ghouls_night",
+      "name": "Ghouls' Night",
+      "cardClass": "deathknight",
+      "cost": 4,
+      "rarity": "common",
+      "set": "hs",
+      "description": "Summon five 1/1 Ghouls that attack random enemies.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "summon",
+          "count": 5,
+          "attack": 1,
+          "health": 1,
+          "name": "Ghouls that attack random enemies"
+        }
+      ]
+    },
+    {
+      "id": "devouring_ectoplasm",
+      "name": "Devouring Ectoplasm",
+      "cardClass": "neutral",
+      "cost": 3,
+      "rarity": "common",
+      "set": "hs",
+      "description": "Deathrattle: Summon a 2/2 Adventurer with a random bonus effect.",
+      "type": "creature",
+      "attack": 3,
+      "health": 2,
+      "keywords": [
+        "deathrattle"
+      ],
+      "deathrattle": [
+        {
+          "type": "summon",
+          "count": 1,
+          "attack": 2,
+          "health": 2,
+          "name": "Adventurer with a random bonus effect"
+        }
+      ]
+    },
+    {
+      "id": "party_up",
+      "name": "Party Up!",
+      "cardClass": "paladin",
+      "cost": 7,
+      "rarity": "rare",
+      "set": "hs",
+      "description": "Summon five 2/2 Adventurers with random bonus effects.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "summon",
+          "count": 5,
+          "attack": 2,
+          "health": 2,
+          "name": "Adventurers with random bonus effects"
+        }
+      ]
+    },
+    {
+      "id": "crop_rotation",
+      "name": "Crop Rotation",
+      "cardClass": "deathknight",
+      "cost": 3,
+      "rarity": "rare",
+      "set": "hs",
+      "description": "Summon four 1/1 Undead with Rush that die at the end of turn.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "summon",
+          "count": 4,
+          "attack": 1,
+          "health": 1,
+          "name": "Undead with Rush that die at the end of turn"
+        }
+      ]
+    },
+    {
+      "id": "posse_possession",
+      "name": "Posse Possession",
+      "cardClass": "priest",
+      "cost": 4,
+      "rarity": "epic",
+      "set": "hs",
+      "description": "Summon a 4/4 copy of a random creature in your opponent's hand.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "summon",
+          "count": 1,
+          "attack": 4,
+          "health": 4,
+          "name": "copy of a random creature in your opponent's hand"
+        }
+      ]
+    },
+    {
+      "id": "cactus_construct",
+      "name": "Cactus Construct",
+      "cardClass": "druid",
+      "cost": 1,
+      "rarity": "rare",
+      "set": "hs",
+      "description": "Discover a 2-Cost creature. Summon a 1/2 copy of it.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "discover",
+          "pick": 3,
+          "cost": 2,
+          "cardType": "creature"
+        },
+        {
+          "type": "summon",
+          "count": 1,
+          "attack": 1,
+          "health": 2,
+          "name": "copy of it"
+        }
+      ]
+    },
+    {
+      "id": "hailbringer",
+      "name": "Hailbringer",
+      "cardClass": "neutral",
+      "cost": 5,
+      "rarity": "common",
+      "set": "hs",
+      "description": "Battlecry: Summon two 1/1 Ice Shards that Freeze.",
+      "type": "creature",
+      "attack": 3,
+      "health": 4,
+      "tribe": "Elemental",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "summon",
+          "count": 2,
+          "attack": 1,
+          "health": 1,
+          "name": "Ice Shards that Freeze"
+        }
+      ]
     }
   ]
 }

@@ -1878,6 +1878,48 @@ function openAbilityMenu(card, ev) {
 	menu.style.top = `${Math.min(ev.clientY, innerHeight - 220)}px`;
 }
 
+// Adventure creature: pick the creature half or the spell ("adventure") half.
+function openAdventureMenu(card, ev) {
+	const menu = $('walker-menu');
+	const adv = card.adventure;
+	menu.innerHTML = `<div class="wm-title">${card.name}</div>`;
+	// summon the creature
+	const cbtn = document.createElement('button');
+	cbtn.innerHTML = `<span class="wm-cost">${card.cost}</span>Summon ${card.name} (${card.attack}/${card.health})`;
+	cbtn.disabled = !E.canPlay(state, HUMAN, card);
+	cbtn.addEventListener('pointerdown', e => {
+		e.stopPropagation();
+		hideWalkerMenu();
+		const spec = E.targetSpec(state, HUMAN, card);
+		if (spec) {
+			const targets = E.legalTargets(state, HUMAN, spec);
+			if (targets.length) { pending = { card, spec, targets, mode: 'play' }; updateHud(); return; }
+			if (spec.required) return;
+		}
+		actPlay(card.uid, null);
+	});
+	menu.appendChild(cbtn);
+	// cast the adventure spell (creature returns to hand afterward)
+	const abtn = document.createElement('button');
+	abtn.innerHTML = `<span class="wm-cost">${adv.cost}</span>Cast &ldquo;${adv.name}&rdquo;`;
+	abtn.disabled = !E.canPlayAdventure(state, HUMAN, card);
+	abtn.addEventListener('pointerdown', e => {
+		e.stopPropagation();
+		hideWalkerMenu();
+		const spec = E.adventureSpec(state, HUMAN, card);
+		if (spec) {
+			const targets = E.legalTargets(state, HUMAN, spec);
+			if (targets.length) { pending = { card, spec, targets, mode: 'adventure' }; updateHud(); return; }
+			if (spec.required) return;
+		}
+		actAdventure(card.uid, null);
+	});
+	menu.appendChild(abtn);
+	menu.style.display = 'block';
+	menu.style.left = `${Math.min(ev.clientX, innerWidth - 260)}px`;
+	menu.style.top = `${Math.min(ev.clientY, innerHeight - 160)}px`;
+}
+
 function openWalkerMenu(card, ev) {
 	const menu = $('walker-menu');
 	menu.innerHTML = `<div class="wm-title">${card.name} — loyalty ${card.loyalty}</div>`;
@@ -1953,6 +1995,11 @@ renderer.domElement.addEventListener('pointerdown', ev => {
 		return;
 	}
 	if (card.zone === 'hand' && card.controller === HUMAN) {
+		// Adventure creatures: choose to summon the creature or cast the spell half
+		if (card.adventure && !card.adventureSpent
+			&& (E.canPlay(state, HUMAN, card) || E.canPlayAdventure(state, HUMAN, card))) {
+			openAdventureMenu(card, ev); return;
+		}
 		if ((card.type === 'creature' || card.type === 'location') && E.canPlay(state, HUMAN, card)) {
 			placing = { card }; // slot picked on release: tap = right end, drag = gap
 			return;
@@ -2003,6 +2050,7 @@ function commitPending(t) {
 		else if (p.mode === 'walker') { localFn = () => E.useWalker(state, HUMAN, p.card.uid, p.ability, t); intent = { k: 'walker', uid: p.card.uid, ability: p.ability, target: t || null }; }
 		else if (p.mode === 'tap') { localFn = () => E.tapLand(state, HUMAN, p.card.uid, p.tapIndex, t); intent = { k: 'tap', uid: p.card.uid, tapIndex: p.tapIndex, target: t || null }; }
 		else if (p.mode === 'respond') { const a = { ...p.action, target: t || null }; localFn = () => E.resolveResponse(state, HUMAN, a); intent = { k: 'respond', action: a }; }
+		else if (p.mode === 'adventure') { localFn = () => E.playAdventure(state, HUMAN, p.card.uid, t, p.choice); intent = { k: 'adventure', uid: p.card.uid, target: t || null, choice: p.choice }; }
 		else { localFn = () => E.playCard(state, HUMAN, p.card.uid, t, p.choice, p.position); intent = { k: 'play', uid: p.card.uid, target: t || null, choice: p.choice, position: p.position }; }
 		clearModes();
 		guestApply(localFn, intent);
@@ -2013,6 +2061,7 @@ function commitPending(t) {
 	else if (pending.mode === 'walker') E.useWalker(state, HUMAN, pending.card.uid, pending.ability, t);
 	else if (pending.mode === 'tap') E.tapLand(state, HUMAN, pending.card.uid, pending.tapIndex, t);
 	else if (pending.mode === 'respond') { E.resolveResponse(state, HUMAN, { ...pending.action, target: t || null }); }
+	else if (pending.mode === 'adventure') E.playAdventure(state, HUMAN, pending.card.uid, t, pending.choice);
 	else E.playCard(state, HUMAN, pending.card.uid, t, pending.choice, pending.position);
 	clearModes();
 	pump();
@@ -2634,6 +2683,7 @@ function applyGuestIntent(it) {
 	try {
 		switch (it.k) {
 			case 'play': E.playCard(state, P, it.uid, it.target || null, it.choice, it.position); break;
+				case 'adventure': E.playAdventure(state, P, it.uid, it.target || null, it.choice); break;
 			case 'power': E.useHeroPower(state, P, it.uid, it.target || null, it.choice); break;
 			case 'planeswalk': E.planeswalk(state, P); break;
 			case 'activate': E.activateAbility(state, P, it.uid, it.ability, it.target || null); break;
@@ -2769,6 +2819,11 @@ function guestApply(localFn, intent) {
 function actPlay(uid, target, choice, position) {
 	if (isGuest()) return guestApply(() => E.playCard(state, HUMAN, uid, target, choice, position), { k: 'play', uid, target: target || null, choice, position });
 	E.playCard(state, HUMAN, uid, target, choice, position); pump();
+	if (duel.on) publishDuel();
+}
+function actAdventure(uid, target, choice) {
+	if (isGuest()) return guestApply(() => E.playAdventure(state, HUMAN, uid, target, choice), { k: 'adventure', uid, target: target || null, choice });
+	E.playAdventure(state, HUMAN, uid, target, choice); pump();
 	if (duel.on) publishDuel();
 }
 function actPower(uid, target, choice) {
