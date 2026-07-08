@@ -32,6 +32,7 @@ const K = [
 	{ p: ['Dredge'], t: 'Look at the bottom 3 cards of your deck and put one on top (you don\'t draw it).' },
 	{ p: ['Investigate'], t: 'Make a Clue token — sacrifice it and pay 2 to draw a card.' },
 	{ p: ['Excavate'], t: 'Dig up a treasure to your hand; each Excavate is one tier higher (Common → Legendary), then loops.' },
+	{ p: ['Planeshift'], t: 'Shift the arena to a random plane (the old one departs, the new one arrives). The plane is shared — nobody controls it.' },
 	{ p: ['Cook'], t: 'Make a Food token — sacrifice it and pay 2 to restore 3 Health to your hero.' },
 	{ p: ['Morbid'], t: 'Morbid N — its effect triggers each time N creatures have died.' },
 	{ p: ['Overload'], t: 'Locks that much of your mana next turn.' },

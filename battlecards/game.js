@@ -1408,6 +1408,10 @@ function nextEvent() {
 			delay = 300;
 			break;
 		}
+		case 'planeshifted':
+			log(`${nameOf(ev.player)} planeshifted the arena to ${ev.name}`);
+			delay = 500;
+			break;
 		case 'lootStart':
 			log(`${nameOf(ev.player)} loots (${ev.count})`);
 			if (ev.player === HUMAN) openDiscardModal();

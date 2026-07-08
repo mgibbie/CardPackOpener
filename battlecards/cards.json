@@ -43669,6 +43669,241 @@
           }
         ]
       }
+    },
+    {
+      "id": "alkabah",
+      "name": "Alkabah",
+      "type": "plane",
+      "cost": 0,
+      "rarity": "legendary",
+      "set": "paper",
+      "token": true,
+      "description": "Arrival: Each player gains 5 Life. Departure: Deal 3 damage to all creatures.",
+      "arrival": [
+        {
+          "type": "heal",
+          "value": 5,
+          "target": "all-heroes"
+        }
+      ],
+      "departure": [
+        {
+          "type": "damage",
+          "value": 3,
+          "target": "all-creatures"
+        }
+      ]
+    },
+    {
+      "id": "bloomburrow",
+      "name": "Bloomburrow",
+      "type": "plane",
+      "cost": 0,
+      "rarity": "legendary",
+      "set": "paper",
+      "token": true,
+      "description": "Arrival: Each Non-Human creature gains +3/+3. Humans can't attack. Departure: Deal 2 damage to all creatures.",
+      "arrival": [
+        {
+          "type": "buff",
+          "target": "all-creatures",
+          "attack": 3,
+          "health": 3,
+          "exceptTribe": "Human"
+        }
+      ],
+      "departure": [
+        {
+          "type": "damage",
+          "value": 2,
+          "target": "all-creatures"
+        }
+      ],
+      "noAttackTribe": "Human"
+    },
+    {
+      "id": "primordia",
+      "name": "Primordia",
+      "type": "plane",
+      "cost": 0,
+      "rarity": "legendary",
+      "set": "paper",
+      "token": true,
+      "description": "Arrival: Each player draws a card. Departure: Each player gains 2 Life.",
+      "arrival": [
+        {
+          "type": "draw",
+          "value": 1,
+          "target": "all"
+        }
+      ],
+      "departure": [
+        {
+          "type": "heal",
+          "value": 2,
+          "target": "all-heroes"
+        }
+      ]
+    },
+    {
+      "id": "alara",
+      "name": "Alara",
+      "type": "plane",
+      "cost": 0,
+      "rarity": "legendary",
+      "set": "paper",
+      "token": true,
+      "description": "Arrival: Each player draws 2 cards. Departure: Each player draws 2 cards.",
+      "arrival": [
+        {
+          "type": "draw",
+          "value": 2,
+          "target": "all"
+        }
+      ],
+      "departure": [
+        {
+          "type": "draw",
+          "value": 2,
+          "target": "all"
+        }
+      ]
+    },
+    {
+      "id": "belenon",
+      "name": "Belenon",
+      "type": "plane",
+      "cost": 0,
+      "rarity": "legendary",
+      "set": "paper",
+      "token": true,
+      "description": "Arrival: Scry 2. Departure: Each player draws a card.",
+      "arrival": [
+        {
+          "type": "scry",
+          "value": 2
+        }
+      ],
+      "departure": [
+        {
+          "type": "draw",
+          "value": 1,
+          "target": "all"
+        }
+      ]
+    },
+    {
+      "id": "zendikar",
+      "name": "Zendikar",
+      "type": "plane",
+      "cost": 0,
+      "rarity": "legendary",
+      "set": "paper",
+      "token": true,
+      "description": "Arrival: Each player draws a card.",
+      "arrival": [
+        {
+          "type": "draw",
+          "value": 1,
+          "target": "all"
+        }
+      ],
+      "departure": []
+    },
+    {
+      "id": "interstellar_stowaway",
+      "name": "Interstellar Stowaway",
+      "cardClass": "neutral",
+      "cost": 5,
+      "rarity": "epic",
+      "set": "paper",
+      "description": "Battlecry: Planeshift. Inspire: Luck: Plunder.",
+      "type": "creature",
+      "attack": 2,
+      "health": 2,
+      "tribe": "Alien Rogue",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "planeshift"
+        }
+      ],
+      "ongoing": {
+        "on": "hero-power-used",
+        "effects": [
+          {
+            "type": "luck",
+            "effects": [
+              {
+                "type": "plunder",
+                "value": 1
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "mica_wanderknight",
+      "name": "Mica, Wanderknight",
+      "cardClass": "bard__ranger",
+      "cost": 3,
+      "rarity": "legendary",
+      "set": "paper",
+      "description": "Constellation & Inspire: Planeshift. Spell Damage+1 & Reborn.",
+      "type": "creature",
+      "attack": 2,
+      "health": 2,
+      "tribe": "Tabaxi Explorer Knight",
+      "ongoings": [
+        {
+          "on": "enchantment-played",
+          "effects": [
+            {
+              "type": "planeshift"
+            }
+          ]
+        },
+        {
+          "on": "hero-power-used",
+          "effects": [
+            {
+              "type": "planeshift"
+            }
+          ]
+        }
+      ],
+      "static": {
+        "type": "spell-damage",
+        "value": 1
+      },
+      "keywords": [
+        "reborn"
+      ]
+    },
+    {
+      "id": "omenpath_drake",
+      "name": "Omenpath Drake",
+      "cardClass": "neutral",
+      "cost": 5,
+      "rarity": "uncommon",
+      "set": "paper",
+      "description": "Miniaturize. Deathrattle: Planeshift.",
+      "type": "creature",
+      "attack": 6,
+      "health": 5,
+      "tribe": "Elemental Dragon",
+      "miniaturize": true,
+      "keywords": [
+        "deathrattle"
+      ],
+      "deathrattle": [
+        {
+          "type": "planeshift"
+        }
+      ]
     }
   ]
 }

@@ -323,6 +323,7 @@ export function createGame(cardsById, rng = Math.random, playerDeckIds = null, p
 		discardQueue: [], // pending Loot discards: { player, count }
 		pickQueue: [],  // pending Discover/Draft picks: { player, ids, grant }
 		dredgeQueue: [], // pending Dredge decisions: { player, ids } (bottom-of-deck)
+		plane: null,    // the active MTG plane (shared arena state; null until first Planeshift)
 	};
 	if (playerDeck) state.players[0].deck = playerDeck;
 
@@ -1849,13 +1850,19 @@ function execEffects(state, pi, effects, target, source) {
 				else mendHero(pi);
 			}
 		} else if (e.type === 'draw') {
-			drawCards(state, pi, scaled(e));
+			if (e.target === 'all') { for (let s2 = 0; s2 < state.players.length; s2++) if (!state.players[s2].eliminated) drawCards(state, s2, scaled(e)); }
+			else drawCards(state, pi, scaled(e));
 		} else if (e.type === 'buff') {
 			if (e.target === 'friendly-creatures') {
 				for (const c of state.players[pi].board) {
 					if (e.tribe && !(c.tribe || '').includes(e.tribe)) continue;
 					if (e.name && c.name !== e.name) continue; // Quartermaster's Recruits
 					if (e.requireKeyword && !c.keywords.includes(e.requireKeyword)) continue;
+					buffCreature(c, e.attack, e.health);
+				}
+			} else if (e.target === 'all-creatures') {
+				for (const pl of state.players) for (const c of pl.board) {
+					if (e.exceptTribe && (c.tribe || '').includes(e.exceptTribe)) continue;
 					buffCreature(c, e.attack, e.health);
 				}
 			} else if (e.target === 'friendly-others') {
@@ -2888,6 +2895,17 @@ function execEffects(state, pi, effects, target, source) {
 		} else if (e.type === 'investigate') {
 			// Investigate: make a Clue token (Sacrifice, pay 2: draw a card)
 			gainTokenCard(state, pi, 'clue_token');
+		} else if (e.type === 'planeshift') {
+			// shift the arena to a random different plane: old plane departs, new arrives
+			const pool = Object.values(state.cardsById).filter(d => d.type === 'plane' && d.id !== state.plane);
+			if (pool.length) {
+				const old = state.plane, oldDef = old ? state.cardsById[old] : null;
+				if (oldDef && oldDef.departure) execEffects(state, pi, oldDef.departure, null, null);
+				const next = pool[Math.floor(state.rng() * pool.length)];
+				state.plane = next.id;
+				emit(state, { type: 'planeshifted', player: pi, from: old, to: next.id, name: next.name });
+				if (next.arrival) execEffects(state, pi, next.arrival, null, null);
+			}
 		} else if (e.type === 'excavate') {
 			const pl = state.players[pi];
 			if (!pl.eliminated) {
@@ -3609,6 +3627,7 @@ export function canAttackWith(state, pi, c) {
 	if (c.frozen) return false;
 	if (c.dormantLeft > 0) return false; // still asleep
 	if (has(c, KW.PACIFIST)) return false;
+	if (state.plane) { const pl = state.cardsById[state.plane]; if (pl && pl.noAttackTribe && (c.tribe || '').includes(pl.noAttackTribe)) return false; }
 	const maxAttacks = has(c, KW.WINDFURY) ? 2 : 1;
 	if (c.attacksUsed >= maxAttacks) return false;
 	if (c.sick && !has(c, KW.CHARGE) && !has(c, KW.RUSH)) return false;
