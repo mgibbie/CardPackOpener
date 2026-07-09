@@ -135,9 +135,24 @@ function deckError(classId, deck, collection) {
 	return null;
 }
 
+// Test phase: every account effectively owns a full playset (2 of each card, 1 per
+// Legendary), computed from the pool rather than stored — so the gallery shows the
+// whole collection and every deck validates, for existing and new accounts alike.
+// End it by setting MP_TEST_PHASE=0 in the Netlify env; accounts then revert to
+// their real, stored collections (this override never writes to a user's blob).
+const TEST_PHASE = (process.env.MP_TEST_PHASE ?? '1') !== '0';
+const FULL_COLLECTION = (() => {
+	const col = {};
+	for (const [id, [rarity]] of Object.entries(POOL)) {
+		col[id] = rarity === 'legendary' ? MAX_LEGENDARY_COPIES : MAX_COPIES;
+	}
+	return col;
+})();
+const effectiveCollection = (u) => TEST_PHASE ? FULL_COLLECTION : u.collection;
+
 const publicState = (u, username) => ({
 	username,
-	collection: u.collection,
+	collection: effectiveCollection(u),
 	decks: u.decks,
 	packs: u.packs,
 	stats: u.stats,
@@ -655,7 +670,7 @@ export default async function handler(req) {
 	if (action === 'save-deck') {
 		const classId = String(body.classId || '');
 		const deck = body.deck;
-		const err = deckError(classId, deck, user.collection);
+		const err = deckError(classId, deck, effectiveCollection(user));
 		if (err) return json({ error: err }, 400);
 		user.decks[classId] = deck.map(String);
 		await store.setJSON(username, user);
