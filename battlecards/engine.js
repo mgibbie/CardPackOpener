@@ -2259,7 +2259,9 @@ function execEffects(state, pi, effects, target, source) {
 			// return creature(s) to the owner's hand as fresh copies
 			const list = e.target === 'all-creatures'
 				? state.players.flatMap(pl => pl.board.filter(c => !isDead(c)))
-				: [chosenCreature()].filter(Boolean);
+				: e.target === 'enemy-creatures'
+					? enemies.flatMap(o => state.players[o].board.filter(c => !isDead(c)))
+					: [chosenCreature()].filter(Boolean);
 			for (const t of list) {
 				const owner = state.players[t.controller];
 				owner.board = owner.board.filter(c => c !== t);

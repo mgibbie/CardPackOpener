@@ -50469,6 +50469,52 @@
           "match": "Overload"
         }
       ]
+    },
+    {
+      "id": "twilight_mistress",
+      "name": "Twilight Mistress",
+      "cardClass": "rogue",
+      "cost": 9,
+      "rarity": "epic",
+      "set": "hs",
+      "description": "Battlecry: Return all enemy creatures to their owner's hand.",
+      "type": "creature",
+      "attack": 4,
+      "health": 12,
+      "tribe": "Dragon",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "bounce",
+          "target": "enemy-creatures"
+        }
+      ]
+    },
+    {
+      "id": "winterspring_whelp",
+      "name": "Winterspring Whelp",
+      "cardClass": "mage",
+      "cost": 1,
+      "rarity": "common",
+      "set": "hs",
+      "description": "Battlecry: Discover a 1-Cost spell from any class.",
+      "type": "creature",
+      "attack": 1,
+      "health": 2,
+      "tribe": "Dragon",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "discover",
+          "pick": 3,
+          "cardType": "spell",
+          "cost": 1
+        }
+      ]
     }
   ]
 }
