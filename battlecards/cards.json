@@ -51634,6 +51634,584 @@
           "type": "excavate"
         }
       ]
+    },
+    {
+      "id": "spirit_guide",
+      "name": "Spirit Guide",
+      "cardClass": "priest",
+      "cost": 5,
+      "rarity": "common",
+      "set": "hs",
+      "description": "Taunt Deathrattle: Draw a Holy spell and a Shadow spell.",
+      "type": "creature",
+      "attack": 5,
+      "health": 5,
+      "tribe": "Undead",
+      "keywords": [
+        "taunt",
+        "deathrattle"
+      ],
+      "deathrattle": [
+        {
+          "type": "tutor",
+          "cardType": "spell",
+          "tribe": "Holy spell and a Shadow",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "id": "tuskpiercer",
+      "name": "Tuskpiercer",
+      "cardClass": "demon_hunter",
+      "cost": 1,
+      "rarity": "rare",
+      "set": "hs",
+      "description": "Deathrattle: Draw a Deathrattle creature.",
+      "type": "weapon",
+      "attack": 1,
+      "durability": 0,
+      "deathrattle": [
+        {
+          "type": "tutor",
+          "cardType": "creature",
+          "count": 1,
+          "requireKeyword": "deathrattle"
+        }
+      ]
+    },
+    {
+      "id": "spectral_sight",
+      "name": "Spectral Sight",
+      "cardClass": "demon_hunter",
+      "cost": 2,
+      "rarity": "common",
+      "set": "hs",
+      "description": "Draw a card. Outcast: Draw another.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "draw",
+          "value": 1
+        }
+      ],
+      "outcast": {
+        "effects": [
+          {
+            "type": "draw",
+            "value": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "ruststeed_raider",
+      "name": "Ruststeed Raider",
+      "cardClass": "neutral",
+      "cost": 5,
+      "rarity": "common",
+      "set": "hs",
+      "description": "Taunt, Rush Battlecry: Gain +4 Attack this turn.",
+      "type": "creature",
+      "attack": 1,
+      "health": 8,
+      "keywords": [
+        "taunt",
+        "rush",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "temp-buff-self",
+          "attack": 4
+        }
+      ]
+    },
+    {
+      "id": "illidari_felblade",
+      "name": "Illidari Felblade",
+      "cardClass": "demon_hunter",
+      "cost": 4,
+      "rarity": "rare",
+      "set": "hs",
+      "description": "Rush Outcast: Gain Immune this turn.",
+      "type": "creature",
+      "attack": 5,
+      "health": 3,
+      "keywords": [
+        "rush"
+      ],
+      "outcast": {
+        "effects": [
+          {
+            "type": "hero-immune"
+          }
+        ]
+      }
+    },
+    {
+      "id": "jade_chieftain",
+      "name": "Jade Chieftain",
+      "cardClass": "shaman",
+      "cost": 6,
+      "rarity": "common",
+      "set": "hs",
+      "description": "Battlecry: Summon a Jade Golem. Give it Taunt.",
+      "type": "creature",
+      "attack": 5,
+      "health": 5,
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "summon-jade",
+          "grant": "taunt"
+        }
+      ]
+    },
+    {
+      "id": "jade_behemoth",
+      "name": "Jade Behemoth",
+      "cardClass": "druid",
+      "cost": 5,
+      "rarity": "common",
+      "set": "hs",
+      "description": "Taunt Battlecry: Summon a Jade Golem.",
+      "type": "creature",
+      "attack": 3,
+      "health": 6,
+      "keywords": [
+        "taunt",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "summon-jade"
+        }
+      ]
+    },
+    {
+      "id": "jade_swarmer",
+      "name": "Jade Swarmer",
+      "cardClass": "rogue",
+      "cost": 1,
+      "rarity": "common",
+      "set": "hs",
+      "description": "Stealth Deathrattle: Summon a Jade Golem.",
+      "type": "creature",
+      "attack": 1,
+      "health": 1,
+      "keywords": [
+        "stealth",
+        "deathrattle"
+      ],
+      "deathrattle": [
+        {
+          "type": "summon-jade"
+        }
+      ]
+    },
+    {
+      "id": "jade_lightning",
+      "name": "Jade Lightning",
+      "cardClass": "shaman",
+      "cost": 3,
+      "rarity": "common",
+      "set": "hs",
+      "description": "Deal 3 damage. Summon a Jade Golem.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 3,
+          "target": "any"
+        },
+        {
+          "type": "summon-jade"
+        }
+      ]
+    },
+    {
+      "id": "jade_blossom",
+      "name": "Jade Blossom",
+      "cardClass": "druid",
+      "cost": 3,
+      "rarity": "common",
+      "set": "hs",
+      "description": "Summon a Jade Golem. Gain an empty Mana Crystal.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "summon-jade"
+        },
+        {
+          "type": "gain-max-mana",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "jade_spirit",
+      "name": "Jade Spirit",
+      "cardClass": "druid__rogue__shaman",
+      "cost": 4,
+      "rarity": "common",
+      "set": "hs",
+      "description": "Battlecry: Summon a Jade Golem.",
+      "type": "creature",
+      "attack": 3,
+      "health": 3,
+      "tribe": "Elemental",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "summon-jade"
+        }
+      ]
+    },
+    {
+      "id": "aya_blackpaw",
+      "name": "Aya Blackpaw",
+      "cardClass": "druid__rogue__shaman",
+      "cost": 6,
+      "rarity": "legendary",
+      "set": "hs",
+      "description": "Battlecry and Deathrattle: Summon a Jade Golem.",
+      "type": "creature",
+      "attack": 6,
+      "health": 3,
+      "keywords": [
+        "battlecry",
+        "deathrattle"
+      ],
+      "effects": [
+        {
+          "type": "summon-jade"
+        }
+      ],
+      "deathrattle": [
+        {
+          "type": "summon-jade"
+        }
+      ]
+    },
+    {
+      "id": "witch_s_apprentice",
+      "name": "Witch's Apprentice",
+      "cardClass": "shaman",
+      "cost": 0,
+      "rarity": "common",
+      "set": "hs",
+      "description": "Taunt Battlecry: Add a random Shaman spell to your hand.",
+      "type": "creature",
+      "attack": 0,
+      "health": 1,
+      "tribe": "Beast",
+      "keywords": [
+        "taunt",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "conjure-named",
+          "count": 1,
+          "cardClass": "shaman",
+          "cardType": "spell"
+        }
+      ]
+    },
+    {
+      "id": "masked_reveler",
+      "name": "Masked Reveler",
+      "cardClass": "neutral",
+      "cost": 6,
+      "rarity": "common",
+      "set": "hs",
+      "description": "Rush Deathrattle: Summon a 2/2 copy of another creature in your deck.",
+      "type": "creature",
+      "attack": 4,
+      "health": 4,
+      "keywords": [
+        "rush",
+        "deathrattle"
+      ],
+      "deathrattle": [
+        {
+          "type": "summon",
+          "count": 1,
+          "attack": 2,
+          "health": 2,
+          "name": "copy of another creature in your deck"
+        }
+      ]
+    },
+    {
+      "id": "militia_commander",
+      "name": "Militia Commander",
+      "cardClass": "warrior",
+      "cost": 4,
+      "rarity": "rare",
+      "set": "hs",
+      "description": "Rush Battlecry: Gain +3 Attack this turn.",
+      "type": "creature",
+      "attack": 2,
+      "health": 5,
+      "keywords": [
+        "rush",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "temp-buff-self",
+          "attack": 3
+        }
+      ]
+    },
+    {
+      "id": "vicious_voidscale",
+      "name": "Vicious Voidscale",
+      "cardClass": "demon_hunter",
+      "cost": 3,
+      "rarity": "rare",
+      "set": "hs",
+      "description": "Taunt Deathrattle: Get a Void Soul.",
+      "type": "creature",
+      "attack": 3,
+      "health": 4,
+      "tribe": "Naga",
+      "keywords": [
+        "taunt",
+        "deathrattle"
+      ],
+      "deathrattle": [
+        {
+          "type": "conjure-named",
+          "match": "Void Soul",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "id": "building_block_golem",
+      "name": "Building-Block Golem",
+      "cardClass": "neutral",
+      "cost": 5,
+      "rarity": "rare",
+      "set": "hs",
+      "description": "Rush Deathrattle: Summon three random 1-Cost creatures.",
+      "type": "creature",
+      "attack": 6,
+      "health": 3,
+      "keywords": [
+        "rush",
+        "deathrattle"
+      ],
+      "deathrattle": [
+        {
+          "type": "summon-random",
+          "cost": 1,
+          "count": 3
+        }
+      ]
+    },
+    {
+      "id": "infiltrator_lilian",
+      "name": "Infiltrator Lilian",
+      "cardClass": "rogue",
+      "cost": 4,
+      "rarity": "legendary",
+      "set": "hs",
+      "description": "Stealth Deathrattle: Summon a 4/2 Forsaken Lilian that attacks a random enemy.",
+      "type": "creature",
+      "attack": 4,
+      "health": 2,
+      "keywords": [
+        "stealth",
+        "deathrattle"
+      ],
+      "deathrattle": [
+        {
+          "type": "summon",
+          "count": 1,
+          "attack": 4,
+          "health": 2,
+          "name": "Forsaken Lilian that attacks a random enemy"
+        }
+      ]
+    },
+    {
+      "id": "time_machine",
+      "name": "Time Machine",
+      "cardClass": "neutral",
+      "cost": 6,
+      "rarity": "common",
+      "set": "hs",
+      "description": "Taunt Deathrattle: Get a random Rewind card.",
+      "type": "creature",
+      "attack": 6,
+      "health": 6,
+      "tribe": "Mechanical",
+      "keywords": [
+        "taunt",
+        "deathrattle"
+      ],
+      "deathrattle": [
+        {
+          "type": "conjure-named",
+          "count": 1,
+          "match": "Rewind"
+        }
+      ]
+    },
+    {
+      "id": "testing_dummy",
+      "name": "Testing Dummy",
+      "cardClass": "warrior",
+      "cost": 6,
+      "rarity": "common",
+      "set": "hs",
+      "description": "Taunt Deathrattle: Deal 8 damage randomly split among all enemy creatures.",
+      "type": "creature",
+      "attack": 4,
+      "health": 8,
+      "tribe": "Mechanical",
+      "keywords": [
+        "taunt",
+        "deathrattle"
+      ],
+      "deathrattle": [
+        {
+          "type": "random-damage",
+          "value": 1,
+          "count": 8,
+          "pool": "enemy-creatures"
+        }
+      ]
+    },
+    {
+      "id": "fable_stablehand",
+      "name": "Fable Stablehand",
+      "cardClass": "hunter",
+      "cost": 3,
+      "rarity": "common",
+      "set": "hs",
+      "description": "Rush Battlecry: If you control a creature with 4 or more Attack, gain +2/+2.",
+      "type": "creature",
+      "attack": 3,
+      "health": 3,
+      "keywords": [
+        "rush",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "controlMinAttack": 4
+          },
+          "then": [
+            {
+              "type": "buff-self",
+              "attack": 2,
+              "health": 2
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "ornery_direhorn",
+      "name": "Ornery Direhorn",
+      "cardClass": "warrior",
+      "cost": 6,
+      "rarity": "common",
+      "set": "hs",
+      "description": "Taunt Battlecry: Adapt.",
+      "type": "creature",
+      "attack": 6,
+      "health": 6,
+      "tribe": "Beast",
+      "keywords": [
+        "taunt",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "adapt"
+        }
+      ]
+    },
+    {
+      "id": "burrow_buster",
+      "name": "Burrow Buster",
+      "cardClass": "neutral",
+      "cost": 5,
+      "rarity": "rare",
+      "set": "hs",
+      "description": "Rush Battlecry: Excavate a treasure.",
+      "type": "creature",
+      "attack": 6,
+      "health": 5,
+      "tribe": "Mechanical",
+      "keywords": [
+        "rush",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "excavate"
+        }
+      ]
+    },
+    {
+      "id": "hi_ho_silverwing",
+      "name": "Hi Ho Silverwing",
+      "cardClass": "paladin",
+      "cost": 2,
+      "rarity": "rare",
+      "set": "hs",
+      "description": "Divine Shield Deathrattle: Draw a Holy spell.",
+      "type": "creature",
+      "attack": 2,
+      "health": 1,
+      "tribe": "Dragon",
+      "keywords": [
+        "divine_shield",
+        "deathrattle"
+      ],
+      "deathrattle": [
+        {
+          "type": "tutor",
+          "cardType": "spell",
+          "tribe": "Holy",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "id": "mo_arg_drillfist",
+      "name": "Mo'arg Drillfist",
+      "cardClass": "warlock",
+      "cost": 4,
+      "rarity": "rare",
+      "set": "hs",
+      "description": "Taunt Deathrattle: Excavate a treasure.",
+      "type": "creature",
+      "attack": 4,
+      "health": 5,
+      "tribe": "Mechanical",
+      "keywords": [
+        "taunt",
+        "deathrattle"
+      ],
+      "deathrattle": [
+        {
+          "type": "excavate"
+        }
+      ]
     }
   ]
 }

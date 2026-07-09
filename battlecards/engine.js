@@ -300,6 +300,7 @@ export function createGame(cardsById, rng = Math.random, playerDeckIds = null, p
 		overloadPending: 0, // mana locked at the start of the next turn
 		corpses: 0,         // Death Knight resource
 		excavateCount: 0,   // Excavate: total digs this game (drives the looping tier)
+		jadeCount: 0,       // Jade Golem size counter (per-player; each golem +1/+1, cap 30)
 		heroTempAttack: 0,  // "your hero has +N Attack this turn"
 		costDiscounts: [],  // one-shot "next X costs (N) less" riders
 		creaturesPlayedThisTurn: 0, // Pint-Sized-style first-creature discounts
@@ -1671,6 +1672,8 @@ function runBattlecry(state, pi, card, target, choice) {
 			execEffects(state, pi, liveEffectsOf(state, pi, card, choice), target, card);
 		}
 	}
+	// Outcast: an extra battlecry when played from the edge of hand
+	if (card.outcast && card._outcast) execEffects(state, pi, card.outcast.effects, target, card);
 	switch (card.id) {
 		case 'wandering_merchant': drawCards(state, pi, 1); break;
 		case 'legion_commander': {
@@ -2060,6 +2063,18 @@ function execEffects(state, pi, effects, target, source) {
 					deathrattle: opt.deathrattle || null, // Underbelly Network's Rat
 				});
 			}
+		} else if (e.type === 'summon-jade') {
+			// Jade Golem: per-player counter, each golem +1/+1 over the last (cap 30/30).
+			// The counter advances even if the board is full and the summon fails.
+			const p = state.players[pi];
+			const n = Math.min(30, (p.jadeCount || 0) + 1);
+			p.jadeCount = n;
+			const c = summon(state, pi, {
+				id: 'token_jade_golem', name: 'Jade Golem', type: 'creature',
+				cost: Math.min(10, n), rarity: 'common', token: true,
+				description: `A ${n}/${n} Jade Golem.`, attack: n, health: n,
+			});
+			if (c && e.grant && !c.keywords.includes(e.grant)) c.keywords.push(e.grant);
 		} else if (e.type === 'summon-self-copy') {
 			// Saronite Chain Gang / Doppelgangster: fresh copies of the played minion
 			const def = source && state.cardsById[source.id];
@@ -3383,6 +3398,8 @@ function execEffects(state, pi, effects, target, source) {
 
 function runSpell(state, pi, card, target, choice) {
 	execEffects(state, pi, liveEffectsOf(state, pi, card, choice), target, card);
+	// Outcast: extra spell effects when cast from the edge of hand
+	if (card.outcast && card._outcast) execEffects(state, pi, card.outcast.effects, target, card);
 	// scripted text
 	switch (card.id) {
 		case 'natures_blessing': drawCards(state, pi, 1); break;
@@ -3539,7 +3556,9 @@ export function playCard(state, pi, cardUid, target, choice, position) {
 	// cards play from hand, the companion zone, or the command zone
 	let card = null, take = null;
 	const idx = p.hand.findIndex(c => c.uid === cardUid);
-	if (idx >= 0) { card = p.hand[idx]; take = () => p.hand.splice(idx, 1); }
+	// Outcast: a bonus if this was the left- or right-most card in hand when played
+	const outcastActive = idx >= 0 && (idx === 0 || idx === p.hand.length - 1);
+	if (idx >= 0) { card = p.hand[idx]; take = () => p.hand.splice(idx, 1); card._outcast = outcastActive; }
 	else if (p.companion?.uid === cardUid) { card = p.companion; take = () => { p.companion = null; }; }
 	else {
 		const ci = p.command.findIndex(c => c.uid === cardUid);
