@@ -460,7 +460,7 @@ function spendMana(p, amount) {
 // ---------- targeting ----------
 // effect target values that require the player to choose something
 const CHOSEN = {
-	damage: { any: 'any', creature: 'creature', 'enemy-creature': 'enemy-creature', 'undamaged-creature': 'creature' },
+	damage: { any: 'any', creature: 'creature', 'enemy-creature': 'enemy-creature', 'undamaged-creature': 'creature', 'enemy-any': 'enemy-any' },
 	heal: { any: 'any', creature: 'creature' },
 	buff: { creature: 'creature', 'friendly-creature': 'friendly-creature' },
 	'grant-ongoing': { 'friendly-creature': 'friendly-creature' },
@@ -1779,6 +1779,11 @@ function execEffects(state, pi, effects, target, source) {
 		? staticValue(state.players[pi], 'double-spell') : 0;
 	const boost = v0 => v0 * (2 ** velen);
 	for (const e of effects || []) {
+		// Lifesteal spells: heal your hero for the damage actually dealt. Measured
+		// as the total hurt delta so shields absorbing damage heal nothing.
+		const totalHurt = () => state.players.reduce((s, pl) =>
+			s + pl.board.reduce((b, c) => b + c.damage, 0) - pl.life - pl.armor, 0);
+		const lsBefore = (e.type === 'damage' || e.type === 'random-damage') && e.lifesteal ? totalHurt() : null;
 		if (e.type === 'damage') {
 			// friendly Spell Damage boosts direct spell damage
 			let v = scaled(e);
@@ -1850,6 +1855,7 @@ function execEffects(state, pi, effects, target, source) {
 					else if (e.target === 'any') { const f = enemyHero(); if (f != null) damageHero(state, f, v, pi); } // fallback: face
 				}
 			}
+			if (lsBefore != null) healHero(state, pi, Math.max(0, totalHurt() - lsBefore));
 		} else if (e.type === 'heal') {
 			const v = boost(e.value);
 			// Auchenai Soulpriest: your healing deals damage instead
@@ -1939,11 +1945,12 @@ function execEffects(state, pi, effects, target, source) {
 				if (e.then) execEffects(state, pi, e.then, target, source);
 			}
 		} else if (e.type === 'destroy-random') {
-			const pool = [];
-			for (const o of enemies) for (const c of state.players[o].board) {
-				if (!isDead(c) && (e.maxAttack == null || c.attack <= e.maxAttack)) pool.push(c);
-			}
-			if (pool.length) {
+			for (let n = 0; n < (e.count || 1); n++) {
+				const pool = [];
+				for (const o of enemies) for (const c of state.players[o].board) {
+					if (!isDead(c) && (e.maxAttack == null || c.attack <= e.maxAttack)) pool.push(c);
+				}
+				if (!pool.length) break;
 				const t = pool[Math.floor(state.rng() * pool.length)];
 				t.damage = t.maxHealth;
 				t.shield = false;
@@ -2008,6 +2015,7 @@ function execEffects(state, pi, effects, target, source) {
 				const pool = [];
 				const pushBoard = side => { for (const c of state.players[side].board) if (!isDead(c)) pool.push({ c }); };
 				if (e.pool === 'enemy-creatures') { for (const o of enemies) pushBoard(o); }
+				else if (e.pool === 'all-creatures') { for (let s = 0; s < state.players.length; s++) pushBoard(s); }
 				else if (e.pool === 'enemies') { for (const o of enemies) { pushBoard(o); pool.push({ hero: o }); } }
 				else if (e.pool === 'characters') {
 					for (let s = 0; s < state.players.length; s++) {
@@ -2021,6 +2029,7 @@ function execEffects(state, pi, effects, target, source) {
 				if (pick.hero != null) damageHero(state, pick.hero, e.value, pi);
 				else damageCreature(state, pick.c, e.value, null);
 			}
+			if (lsBefore != null) healHero(state, pi, Math.max(0, totalHurt() - lsBefore));
 		} else if (e.type === 'summon') {
 			// perEnemy: one token per enemy creature ("Unleash the Hounds");
 			// options: pick a random companion (Animal Companion);
@@ -2340,6 +2349,7 @@ function execEffects(state, pi, effects, target, source) {
 					if (e.cardType === 'spell' ? !isSpellType(def)
 						: (e.cardType && def.type !== e.cardType)) continue;
 					if (e.maxCost != null && (def.cost || 0) > e.maxCost) continue;
+					if (e.requireKeyword && !(def.keywords || []).includes(e.requireKeyword)) continue;
 					idxs.push(j);
 				}
 				if (!idxs.length) break;
@@ -2758,13 +2768,22 @@ function execEffects(state, pi, effects, target, source) {
 		} else if (e.type === 'search') {
 			// library search: pick a matching card out of your deck (then shuffle)
 			const p = state.players[pi];
-			const ids = [...new Set(p.deck.filter(id => {
+			let ids = [...new Set(p.deck.filter(id => {
 				const d = state.cardsById[id];
-				return d && (!e.cardType || d.type === e.cardType)
+				return d && (e.cardType === 'spell' ? (d.type === 'sorcery' || d.type === 'instant')
+					: !e.cardType || d.type === e.cardType)
 					&& (e.maxCost == null || (d.cost || 0) <= e.maxCost)
 					&& (e.maxAttack == null || (d.attack || 0) <= e.maxAttack)
 					&& (!e.tribe || (d.tribe || '').includes(e.tribe));
 			}))];
+			// pick: Discover-from-deck flavor — offer N randomly-sampled matches
+			if (e.pick) {
+				for (let k = ids.length - 1; k > 0; k--) {
+					const j = Math.floor(state.rng() * (k + 1));
+					[ids[k], ids[j]] = [ids[j], ids[k]];
+				}
+				ids = ids.slice(0, e.pick);
+			}
 			if (ids.length) {
 				state.pickQueue.push({ player: pi, ids: ids.slice(0, 8), mode: 'search',
 					to: e.to || 'hand', title: 'Search your deck' });
@@ -3220,6 +3239,8 @@ function execEffects(state, pi, effects, target, source) {
 					? enemies[Math.floor(state.rng() * enemies.length)] : pi;
 				const c = summon(state, owner, def);
 				if (c && e.disguise) disguiseCreature(state, c);
+				// "...and give it Taunt": grant a keyword to the summoned creature
+				if (c && e.grant && !c.keywords.includes(e.grant)) c.keywords.push(e.grant);
 			}
 		} else if (e.type === 'add-token') {
 			// Fire Fly: a fresh token creature lands in your hand
@@ -3290,6 +3311,7 @@ function execEffects(state, pi, effects, target, source) {
 				else if (e.cardType) pool = pool.filter(d => d.type === e.cardType);
 				if (e.cardClass) pool = pool.filter(d =>
 					(d.cardClass || 'neutral').split('__').includes(e.cardClass));
+				if (e.tribe) pool = pool.filter(d => (d.tribe || '').includes(e.tribe));
 				pool = pool.filter(d => !d.token);
 				if (!pool.length) pool = defs.filter(d => d.colors?.length);
 			}

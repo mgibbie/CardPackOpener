@@ -11133,8 +11133,8 @@
         {
           "type": "random-damage",
           "value": 2,
-          "pool": "enemies",
-          "count": 1
+          "count": 1,
+          "pool": "enemies"
         }
       ]
     },
@@ -27644,7 +27644,8 @@
       "deathrattle": [
         {
           "type": "summon-random",
-          "cost": 2
+          "cost": 2,
+          "count": 1
         }
       ]
     },
@@ -33168,8 +33169,11 @@
       "cardClass": "shaman",
       "cost": 5,
       "rarity": "rare",
-      "overload": 1,
+      "set": "paper",
+      "description": "Create two 5/4 Elemental creature tokens with Rush. Overload(1).",
       "type": "sorcery",
+      "tribe": "Nature",
+      "overload": 1,
       "effects": [
         {
           "type": "summon",
@@ -33181,9 +33185,7 @@
             "rush"
           ]
         }
-      ],
-      "description": "Summon two 5/4 Elementals with Rush. Overload: 1 mana locked next turn.",
-      "set": "hsx"
+      ]
     },
     {
       "id": "convincing_infiltrator",
@@ -50513,6 +50515,1123 @@
           "pick": 3,
           "cardType": "spell",
           "cost": 1
+        }
+      ]
+    },
+    {
+      "id": "offsite_controller",
+      "name": "Offsite Controller",
+      "cardClass": "neutral",
+      "cost": 3,
+      "rarity": "uncommon",
+      "set": "paper",
+      "description": "Deathrattle: Draw a Lifesteal creature.",
+      "type": "creature",
+      "attack": 1,
+      "health": 6,
+      "tribe": "Ropteran Advisor",
+      "keywords": [
+        "deathrattle"
+      ],
+      "deathrattle": [
+        {
+          "type": "tutor",
+          "cardType": "creature",
+          "count": 1,
+          "requireKeyword": "lifesteal"
+        }
+      ]
+    },
+    {
+      "id": "plucky_paintfin",
+      "name": "Plucky Paintfin",
+      "cardClass": "neutral",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "description": "Battlecry: Draw a Rush creature. Deathtouch.",
+      "type": "creature",
+      "attack": 2,
+      "health": 3,
+      "tribe": "Murloc",
+      "keywords": [
+        "battlecry",
+        "deathtouch"
+      ],
+      "effects": [
+        {
+          "type": "tutor",
+          "cardType": "creature",
+          "count": 1,
+          "requireKeyword": "rush"
+        }
+      ]
+    },
+    {
+      "id": "ball_of_spiders",
+      "name": "Ball of Spiders",
+      "cardClass": "hunter",
+      "cost": 3,
+      "rarity": "rare",
+      "set": "hs",
+      "description": "Summon three 1/1 Webspinners with \"Deathrattle: Get a random Beast.\"",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "summon",
+          "count": 3,
+          "attack": 1,
+          "health": 1,
+          "name": "Webspinner",
+          "deathrattle": [
+            {
+              "type": "conjure-named",
+              "cardType": "creature",
+              "tribe": "Beast",
+              "count": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "devouring_plague",
+      "name": "Devouring Plague",
+      "cardClass": "priest",
+      "cost": 3,
+      "rarity": "common",
+      "set": "hs",
+      "description": "Lifesteal. Deal 4 damage randomly split among all enemy creatures.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "random-damage",
+          "value": 1,
+          "count": 4,
+          "pool": "enemy-creatures",
+          "lifesteal": true
+        }
+      ]
+    },
+    {
+      "id": "northwatch_commander",
+      "name": "Northwatch Commander",
+      "cardClass": "paladin",
+      "cost": 3,
+      "rarity": "rare",
+      "set": "hs",
+      "description": "Battlecry: If you control a Secret, draw a creature.",
+      "type": "creature",
+      "attack": 3,
+      "health": 4,
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "controlTribe": "Secret"
+          },
+          "then": [
+            {
+              "type": "tutor",
+              "cardType": "creature",
+              "count": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "grimoire_of_sacrifice",
+      "name": "Grimoire of Sacrifice",
+      "cardClass": "warlock",
+      "cost": 1,
+      "rarity": "common",
+      "set": "hs",
+      "description": "Destroy a friendly creature. Deal 2 damage to all enemy creatures.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "destroy",
+          "target": "friendly-creature"
+        },
+        {
+          "type": "damage",
+          "value": 2,
+          "target": "enemy-creatures"
+        }
+      ]
+    },
+    {
+      "id": "power_word_replicate",
+      "name": "Power Word: Replicate",
+      "cardClass": "priest",
+      "cost": 5,
+      "rarity": "epic",
+      "set": "hs",
+      "description": "Choose a friendly creature. Summon a 5/5 copy of it.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "summon",
+          "count": 1,
+          "attack": 5,
+          "health": 5,
+          "name": "copy of it"
+        }
+      ]
+    },
+    {
+      "id": "soul_cleave",
+      "name": "Soul Cleave",
+      "cardClass": "demon_hunter_free",
+      "cost": 3,
+      "rarity": "common",
+      "set": "hs",
+      "description": "Lifesteal Deal 2 damage to two random enemy creatures.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "random-damage",
+          "value": 2,
+          "pool": "enemy-creatures",
+          "count": 2,
+          "lifesteal": true
+        }
+      ]
+    },
+    {
+      "id": "drakeadon_mongrel",
+      "name": "Drakeadon Mongrel",
+      "cardClass": "neutral",
+      "cost": 7,
+      "rarity": "common",
+      "set": "hs",
+      "description": "Deathrattle: Summon two random 4-Cost creatures.",
+      "type": "creature",
+      "attack": 8,
+      "health": 6,
+      "tribe": "Dragon",
+      "keywords": [
+        "deathrattle"
+      ],
+      "deathrattle": [
+        {
+          "type": "summon-random",
+          "cost": 4,
+          "count": 2
+        }
+      ]
+    },
+    {
+      "id": "minefield",
+      "name": "Minefield",
+      "cardClass": "warrior",
+      "cost": 2,
+      "rarity": "common",
+      "set": "hs",
+      "description": "Deal 5 damage randomly split among all creatures.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "random-damage",
+          "value": 1,
+          "count": 5,
+          "pool": "all-creatures"
+        }
+      ]
+    },
+    {
+      "id": "tracking",
+      "name": "Tracking",
+      "cardClass": "hunter",
+      "cost": 1,
+      "rarity": "rare",
+      "set": "hs",
+      "description": "Discover a card from your deck.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "search",
+          "pick": 3
+        }
+      ]
+    },
+    {
+      "id": "webspinner",
+      "name": "Webspinner",
+      "cardClass": "hunter",
+      "cost": 1,
+      "rarity": "common",
+      "set": "hs",
+      "description": "Deathrattle: Get a random Beast.",
+      "type": "creature",
+      "attack": 1,
+      "health": 1,
+      "tribe": "Beast",
+      "keywords": [
+        "deathrattle"
+      ],
+      "deathrattle": [
+        {
+          "type": "conjure-named",
+          "cardType": "creature",
+          "tribe": "Beast",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "id": "drain_soul",
+      "name": "Drain Soul",
+      "cardClass": "warlock",
+      "cost": 2,
+      "rarity": "common",
+      "set": "hs",
+      "description": "Lifesteal Deal 3 damage to a creature.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 3,
+          "target": "creature",
+          "lifesteal": true
+        }
+      ]
+    },
+    {
+      "id": "spirit_lash",
+      "name": "Spirit Lash",
+      "cardClass": "priest",
+      "cost": 2,
+      "rarity": "common",
+      "set": "hs",
+      "description": "Lifesteal Deal 1 damage to all creatures.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 1,
+          "target": "all-creatures",
+          "lifesteal": true
+        }
+      ]
+    },
+    {
+      "id": "sanguine_reveler",
+      "name": "Sanguine Reveler",
+      "cardClass": "warlock",
+      "cost": 1,
+      "rarity": "common",
+      "set": "hs",
+      "description": "Battlecry: Destroy a friendly creature and gain +2/+2.",
+      "type": "creature",
+      "attack": 1,
+      "health": 1,
+      "tribe": "Undead",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "destroy",
+          "target": "friendly-creature"
+        },
+        {
+          "type": "buff-self",
+          "attack": 2,
+          "health": 2
+        }
+      ]
+    },
+    {
+      "id": "void_shard",
+      "name": "Void Shard",
+      "cardClass": "priest",
+      "cost": 4,
+      "rarity": "common",
+      "set": "hs",
+      "description": "Lifesteal Deal 4 damage.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 4,
+          "target": "any",
+          "lifesteal": true
+        }
+      ]
+    },
+    {
+      "id": "tidal_surge",
+      "name": "Tidal Surge",
+      "cardClass": "shaman",
+      "cost": 3,
+      "rarity": "common",
+      "set": "hs",
+      "description": "Lifesteal Deal 5 damage to a creature.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 5,
+          "target": "creature",
+          "lifesteal": true
+        }
+      ]
+    },
+    {
+      "id": "thrive_in_the_shadows",
+      "name": "Thrive in the Shadows",
+      "cardClass": "priest",
+      "cost": 2,
+      "rarity": "rare",
+      "set": "hs",
+      "description": "Discover a spell from your deck.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "search",
+          "pick": 3,
+          "cardType": "spell"
+        }
+      ]
+    },
+    {
+      "id": "shroomscavate",
+      "name": "Shroomscavate",
+      "cardClass": "paladin__shaman",
+      "cost": 2,
+      "rarity": "common",
+      "set": "hs",
+      "description": "Give a creature Divine Shield. Excavate a treasure.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "grant",
+          "keyword": "divine_shield",
+          "target": "creature"
+        },
+        {
+          "type": "excavate"
+        }
+      ]
+    },
+    {
+      "id": "cagematch_custodian",
+      "name": "Cagematch Custodian",
+      "cardClass": "shaman",
+      "cost": 2,
+      "rarity": "common",
+      "set": "hs",
+      "description": "Battlecry: Draw a weapon.",
+      "type": "creature",
+      "attack": 2,
+      "health": 2,
+      "tribe": "Elemental",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "tutor",
+          "cardType": "weapon",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "id": "ward_of_earth",
+      "name": "Ward of Earth",
+      "cardClass": "druid",
+      "cost": 5,
+      "rarity": "common",
+      "set": "hs",
+      "description": "Gain 5 Armor. Summon a random 5-Cost creature and give it Taunt.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "armor",
+          "value": 5
+        },
+        {
+          "type": "summon-random",
+          "cost": 5,
+          "count": 1,
+          "grant": "taunt"
+        }
+      ]
+    },
+    {
+      "id": "gnawing_greenfin",
+      "name": "Gnawing Greenfin",
+      "cardClass": "neutral",
+      "cost": 1,
+      "rarity": "common",
+      "set": "hs",
+      "description": "Battlecry: Get a random Murloc.",
+      "type": "creature",
+      "attack": 1,
+      "health": 1,
+      "tribe": "Murloc",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "conjure-named",
+          "cardType": "creature",
+          "tribe": "Murloc",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "id": "instrument_tech",
+      "name": "Instrument Tech",
+      "cardClass": "neutral",
+      "cost": 2,
+      "rarity": "common",
+      "set": "hs",
+      "description": "Battlecry: Draw a weapon.",
+      "type": "creature",
+      "attack": 1,
+      "health": 2,
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "tutor",
+          "cardType": "weapon",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "id": "searing_reflection",
+      "name": "Searing Reflection",
+      "cardClass": "paladin",
+      "cost": 7,
+      "rarity": "common",
+      "set": "hs",
+      "description": "Draw a creature. Summon an 8/8 copy of it with Divine Shield.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "tutor",
+          "cardType": "creature",
+          "count": 1
+        },
+        {
+          "type": "summon",
+          "count": 1,
+          "attack": 8,
+          "health": 8,
+          "name": "copy of it with Divine Shield"
+        }
+      ]
+    },
+    {
+      "id": "first_contact",
+      "name": "First Contact",
+      "cardClass": "shaman",
+      "cost": 1,
+      "rarity": "common",
+      "set": "hs",
+      "description": "Summon two random 1-Cost creatures. Overload: (1)",
+      "type": "sorcery",
+      "overload": 1,
+      "effects": [
+        {
+          "type": "summon-random",
+          "cost": 1,
+          "count": 2
+        }
+      ]
+    },
+    {
+      "id": "distress_signal",
+      "name": "Distress Signal",
+      "cardClass": "druid",
+      "cost": 4,
+      "rarity": "common",
+      "set": "hs",
+      "description": "Summon two random 2-Cost creatures. Refresh 2 Mana Crystals.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "summon-random",
+          "cost": 2,
+          "count": 2
+        },
+        {
+          "type": "gain-mana",
+          "value": 2
+        }
+      ]
+    },
+    {
+      "id": "infiltrate",
+      "name": "Infiltrate",
+      "cardClass": "demon_hunter",
+      "cost": 3,
+      "rarity": "common",
+      "set": "hs",
+      "description": "Choose a creature. Deal 3 damage to all other creatures.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 3,
+          "target": "other-creatures"
+        }
+      ]
+    },
+    {
+      "id": "emergency_surgery",
+      "name": "Emergency Surgery",
+      "cardClass": "death_knight",
+      "cost": 5,
+      "rarity": "common",
+      "set": "hs",
+      "description": "Choose an enemy creature. Summon three 3/1 Undead with Lifesteal that attack it.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "summon",
+          "count": 3,
+          "attack": 3,
+          "health": 1,
+          "name": "Undead with Lifesteal that attack it"
+        }
+      ]
+    },
+    {
+      "id": "rime_sculptor",
+      "name": "Rime Sculptor",
+      "cardClass": "death_knight",
+      "cost": 5,
+      "rarity": "rare",
+      "set": "hs",
+      "description": "Battlecry: Summon two 2/1 Rime Elementals with \"Deathrattle: Deal 2 damage to a random enemy.\"",
+      "type": "creature",
+      "attack": 4,
+      "health": 3,
+      "tribe": "Undead",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "summon",
+          "count": 2,
+          "attack": 2,
+          "health": 1,
+          "name": "Rime Elemental",
+          "deathrattle": [
+            {
+              "type": "random-damage",
+              "value": 2,
+              "count": 1,
+              "pool": "enemies"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "dark_pact",
+      "name": "Dark Pact",
+      "cardClass": "warlock",
+      "cost": 1,
+      "rarity": "common",
+      "set": "hs",
+      "description": "Destroy a friendly creature. Restore 8 Health to your hero.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "destroy",
+          "target": "friendly-creature"
+        },
+        {
+          "type": "heal",
+          "value": 8,
+          "target": "self"
+        }
+      ]
+    },
+    {
+      "id": "lifebloom",
+      "name": "Lifebloom",
+      "cardClass": "druid",
+      "cost": 9,
+      "rarity": "epic",
+      "set": "hs",
+      "description": "Restore 8 Health to all friendly characters. Summon two random 8-Cost creatures.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "heal",
+          "value": 8,
+          "target": "friendly-all"
+        },
+        {
+          "type": "summon-random",
+          "cost": 8,
+          "count": 2
+        }
+      ]
+    },
+    {
+      "id": "don_t_stand_in_the_fire",
+      "name": "Don't Stand in the Fire!",
+      "cardClass": "shaman",
+      "cost": 5,
+      "rarity": "rare",
+      "set": "hs",
+      "description": "Deal 10 damage randomly split among all enemy creatures. Overload: (1)",
+      "type": "sorcery",
+      "overload": 1,
+      "effects": [
+        {
+          "type": "random-damage",
+          "value": 1,
+          "count": 10,
+          "pool": "enemy-creatures"
+        }
+      ]
+    },
+    {
+      "id": "death_strike",
+      "name": "Death Strike",
+      "cardClass": "death_knight",
+      "cost": 4,
+      "rarity": "common",
+      "set": "hs",
+      "description": "Lifesteal Deal 6 damage to a creature.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 6,
+          "target": "creature",
+          "lifesteal": true
+        }
+      ]
+    },
+    {
+      "id": "lingering_zombie",
+      "name": "Lingering Zombie",
+      "cardClass": "druid",
+      "cost": 1,
+      "rarity": "common",
+      "set": "hs",
+      "description": "Deathrattle: Summon a 1/1 Disarmed Zombie with \"Deathrattle: Summon a 1/1 Zombie.\"",
+      "type": "creature",
+      "attack": 1,
+      "health": 1,
+      "tribe": "Undead",
+      "keywords": [
+        "deathrattle"
+      ],
+      "deathrattle": [
+        {
+          "type": "summon",
+          "count": 1,
+          "attack": 1,
+          "health": 1,
+          "name": "Disarmed Zombie",
+          "deathrattle": [
+            {
+              "type": "summon",
+              "count": 1,
+              "attack": 1,
+              "health": 1,
+              "name": "Zombie"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "firebrand",
+      "name": "Firebrand",
+      "cardClass": "mage",
+      "cost": 3,
+      "rarity": "common",
+      "set": "hs",
+      "description": "Spellburst: Deal 4 damage randomly split among all enemy creatures.",
+      "type": "creature",
+      "attack": 3,
+      "health": 4,
+      "ongoing": {
+        "on": "spell-played",
+        "once": true,
+        "effects": [
+          {
+            "type": "random-damage",
+            "value": 1,
+            "count": 4,
+            "pool": "enemy-creatures"
+          }
+        ]
+      }
+    },
+    {
+      "id": "lightning_bloom",
+      "name": "Lightning Bloom",
+      "cardClass": "druid__shaman",
+      "cost": 0,
+      "rarity": "common",
+      "set": "hs",
+      "description": "Refresh 2 Mana Crystals. Overload: (2)",
+      "type": "sorcery",
+      "overload": 2,
+      "effects": [
+        {
+          "type": "gain-mana",
+          "value": 2
+        }
+      ]
+    },
+    {
+      "id": "tidal_wave",
+      "name": "Tidal Wave",
+      "cardClass": "shaman",
+      "cost": 8,
+      "rarity": "common",
+      "set": "hs",
+      "description": "Lifesteal Deal 3 damage to all creatures.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 3,
+          "target": "all-creatures",
+          "lifesteal": true
+        }
+      ]
+    },
+    {
+      "id": "treeees",
+      "name": "TREEEES!!!",
+      "cardClass": "druid",
+      "cost": 5,
+      "rarity": "common",
+      "set": "hs",
+      "description": "Choose a creature. Summon four 2/2 Treants that attack it.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "summon",
+          "count": 4,
+          "attack": 2,
+          "health": 2,
+          "name": "Treants that attack it"
+        }
+      ]
+    },
+    {
+      "id": "baking_soda_volcano",
+      "name": "Baking Soda Volcano",
+      "cardClass": "shaman",
+      "cost": 4,
+      "rarity": "rare",
+      "set": "hs",
+      "description": "Lifesteal. Deal 10 damage randomly split among all creatures. Overload: (1)",
+      "type": "sorcery",
+      "overload": 1,
+      "effects": [
+        {
+          "type": "random-damage",
+          "value": 1,
+          "count": 10,
+          "pool": "all-creatures",
+          "lifesteal": true
+        }
+      ]
+    },
+    {
+      "id": "quality_assurance",
+      "name": "Quality Assurance",
+      "cardClass": "warrior",
+      "cost": 2,
+      "rarity": "common",
+      "set": "hs",
+      "description": "Draw 2 Taunt creatures.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "tutor",
+          "cardType": "creature",
+          "count": 2,
+          "requireKeyword": "taunt"
+        }
+      ]
+    },
+    {
+      "id": "grim_rally",
+      "name": "Grim Rally",
+      "cardClass": "warlock",
+      "cost": 1,
+      "rarity": "rare",
+      "set": "hs",
+      "description": "Destroy a friendly creature. Give your creatures +1/+1.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "destroy",
+          "target": "friendly-creature"
+        },
+        {
+          "type": "buff",
+          "attack": 1,
+          "health": 1,
+          "target": "friendly-creatures"
+        }
+      ]
+    },
+    {
+      "id": "blood_in_the_water",
+      "name": "Blood in the Water",
+      "cardClass": "rogue",
+      "cost": 6,
+      "rarity": "common",
+      "set": "hs",
+      "description": "Deal 3 damage to an enemy. Summon a 5/5 Shark with Rush.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 3,
+          "target": "enemy-any"
+        },
+        {
+          "type": "summon",
+          "count": 1,
+          "attack": 5,
+          "health": 5,
+          "name": "Shark with Rush"
+        }
+      ]
+    },
+    {
+      "id": "beeees",
+      "name": "BEEEES!!!",
+      "cardClass": "druid",
+      "cost": 3,
+      "rarity": "common",
+      "set": "hs",
+      "description": "Choose a creature. Summon four 1/1 Bees that attack it.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "summon",
+          "count": 4,
+          "attack": 1,
+          "health": 1,
+          "name": "Bees that attack it"
+        }
+      ]
+    },
+    {
+      "id": "penance",
+      "name": "Penance",
+      "cardClass": "priest",
+      "cost": 2,
+      "rarity": "common",
+      "set": "hs",
+      "description": "Lifesteal Deal 3 damage to a creature.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 3,
+          "target": "creature",
+          "lifesteal": true
+        }
+      ]
+    },
+    {
+      "id": "dinosize",
+      "name": "Dinosize",
+      "cardClass": "paladin",
+      "cost": 7,
+      "rarity": "epic",
+      "set": "hs",
+      "description": "Set a creature's stats to 7/14.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "set-attack",
+          "value": 7,
+          "target": "creature"
+        },
+        {
+          "type": "set-health",
+          "value": 14,
+          "target": "creature"
+        }
+      ]
+    },
+    {
+      "id": "mirage_caller",
+      "name": "Mirage Caller",
+      "cardClass": "priest",
+      "cost": 3,
+      "rarity": "rare",
+      "set": "hs",
+      "description": "Battlecry: Choose a creature. Summon a 1/1 copy of it.",
+      "type": "creature",
+      "attack": 2,
+      "health": 3,
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "summon",
+          "count": 1,
+          "attack": 1,
+          "health": 1,
+          "name": "copy of it"
+        }
+      ]
+    },
+    {
+      "id": "volcano",
+      "name": "Volcano",
+      "cardClass": "shaman",
+      "cost": 5,
+      "rarity": "rare",
+      "set": "hs",
+      "description": "Deal 15 damage randomly split among all creatures. Overload: (1)",
+      "type": "sorcery",
+      "overload": 1,
+      "effects": [
+        {
+          "type": "random-damage",
+          "value": 1,
+          "count": 15,
+          "pool": "all-creatures"
+        }
+      ]
+    },
+    {
+      "id": "kobold_miner",
+      "name": "Kobold Miner",
+      "cardClass": "neutral",
+      "cost": 2,
+      "rarity": "common",
+      "set": "hs",
+      "description": "Battlecry: Excavate a treasure.",
+      "type": "creature",
+      "attack": 1,
+      "health": 1,
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "excavate"
+        }
+      ]
+    },
+    {
+      "id": "cryopreservation",
+      "name": "Cryopreservation",
+      "cardClass": "mage",
+      "cost": 2,
+      "rarity": "common",
+      "set": "hs",
+      "description": "Freeze an enemy. Excavate a treasure.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "freeze",
+          "target": "creature"
+        },
+        {
+          "type": "excavate"
+        }
+      ]
+    },
+    {
+      "id": "reinforced_plating",
+      "name": "Reinforced Plating",
+      "cardClass": "warrior",
+      "cost": 3,
+      "rarity": "common",
+      "set": "hs",
+      "description": "Gain 6 Armor. Excavate a treasure.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "armor",
+          "value": 6
+        },
+        {
+          "type": "excavate"
+        }
+      ]
+    },
+    {
+      "id": "reap_what_you_sow",
+      "name": "Reap What You Sow",
+      "cardClass": "death_knight",
+      "cost": 3,
+      "rarity": "common",
+      "set": "hs",
+      "description": "Deal 3 damage. Excavate a treasure.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 3,
+          "target": "any"
+        },
+        {
+          "type": "excavate"
+        }
+      ]
+    },
+    {
+      "id": "blast_charge",
+      "name": "Blast Charge",
+      "cardClass": "warrior",
+      "cost": 2,
+      "rarity": "rare",
+      "set": "hs",
+      "description": "Destroy a damaged enemy creature. Excavate a treasure.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "destroy",
+          "target": "enemy-creature",
+          "requireDamaged": true
+        },
+        {
+          "type": "excavate"
+        }
+      ]
+    },
+    {
+      "id": "bloodrock_co_shovel",
+      "name": "Bloodrock Co. Shovel",
+      "cardClass": "rogue",
+      "cost": 1,
+      "rarity": "common",
+      "set": "hs",
+      "description": "Deathrattle: Excavate a treasure.",
+      "type": "weapon",
+      "attack": 1,
+      "durability": 0,
+      "deathrattle": [
+        {
+          "type": "excavate"
         }
       ]
     }
