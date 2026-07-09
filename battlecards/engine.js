@@ -1960,6 +1960,9 @@ function execEffects(state, pi, effects, target, source) {
 			for (const c of all) {
 				if (c === spare) continue;
 				if (e.tribe && !(c.tribe || '').includes(e.tribe)) continue;
+				// "Destroy all non-Paladin creatures": spare a class's cards
+				if (e.exceptClass && (c.cardClass || '').split('__').includes(e.exceptClass)) continue;
+				if (e.exceptTribe && (c.tribe || '').includes(e.exceptTribe)) continue;
 				c.damage = c.maxHealth;
 				c.shield = false;
 				emit(state, { type: 'destroy', uid: c.uid });
@@ -3278,8 +3281,14 @@ function execEffects(state, pi, effects, target, source) {
 				pool = defs.filter(d => d.colors?.includes(e.color));
 				if (!pool.length) pool = defs.filter(d => d.colors?.length);
 			} else {
-				const m = e.match.toLowerCase();
-				pool = defs.filter(d => d.name.toLowerCase().includes(m));
+				const m = (e.match || '').toLowerCase();
+				pool = m ? defs.filter(d => d.name.toLowerCase().includes(m)) : defs.slice();
+				// optional narrowing: "a random Frost SPELL" / "a random DRUID card"
+				if (e.cardType === 'spell') pool = pool.filter(d => d.type === 'sorcery' || d.type === 'instant');
+				else if (e.cardType) pool = pool.filter(d => d.type === e.cardType);
+				if (e.cardClass) pool = pool.filter(d =>
+					(d.cardClass || 'neutral').split('__').includes(e.cardClass));
+				pool = pool.filter(d => !d.token);
 				if (!pool.length) pool = defs.filter(d => d.colors?.length);
 			}
 			if (!pool.length) pool = defs;

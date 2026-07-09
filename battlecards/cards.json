@@ -49744,6 +49744,731 @@
           "value": 1
         }
       ]
+    },
+    {
+      "id": "grand_crusader",
+      "name": "Grand Crusader",
+      "cardClass": "neutral",
+      "cost": 6,
+      "rarity": "epic",
+      "set": "hs",
+      "description": "Battlecry: Add a random Paladin card to your hand.",
+      "type": "creature",
+      "attack": 5,
+      "health": 5,
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "conjure-named",
+          "count": 1,
+          "cardClass": "paladin"
+        }
+      ]
+    },
+    {
+      "id": "violet_haze",
+      "name": "Violet Haze",
+      "cardClass": "rogue",
+      "cost": 2,
+      "rarity": "common",
+      "set": "hs",
+      "description": "Add 2 random Deathrattle cards to your hand.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "conjure-named",
+          "count": 2,
+          "match": "Deathrattle"
+        }
+      ]
+    },
+    {
+      "id": "weaponized_pi_ata",
+      "name": "Weaponized Pi\u00f1ata",
+      "cardClass": "neutral",
+      "cost": 4,
+      "rarity": "epic",
+      "set": "hs",
+      "description": "Deathrattle: Add a random Legendary creature to your hand.",
+      "type": "creature",
+      "attack": 4,
+      "health": 3,
+      "tribe": "Mechanical",
+      "keywords": [
+        "deathrattle"
+      ],
+      "deathrattle": [
+        {
+          "type": "conjure-named",
+          "count": 1,
+          "match": "Legendary",
+          "cardType": "creature"
+        }
+      ]
+    },
+    {
+      "id": "babbling_bookcase",
+      "name": "Babbling Bookcase",
+      "cardClass": "mage",
+      "cost": 3,
+      "rarity": "rare",
+      "set": "hs",
+      "description": "Battlecry: Add 2 random Mage spells to your hand.",
+      "type": "creature",
+      "attack": 2,
+      "health": 4,
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "conjure-named",
+          "count": 2,
+          "cardClass": "mage",
+          "cardType": "spell"
+        }
+      ]
+    },
+    {
+      "id": "brightwing",
+      "name": "Brightwing",
+      "cardClass": "neutral",
+      "cost": 2,
+      "rarity": "legendary",
+      "set": "hs",
+      "description": "Battlecry: Add a random Legendary creature to your hand.",
+      "type": "creature",
+      "attack": 3,
+      "health": 2,
+      "tribe": "Dragon",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "conjure-named",
+          "count": 1,
+          "match": "Legendary",
+          "cardType": "creature"
+        }
+      ]
+    },
+    {
+      "id": "shallow_gravedigger",
+      "name": "Shallow Gravedigger",
+      "cardClass": "neutral",
+      "cost": 3,
+      "rarity": "rare",
+      "set": "hs",
+      "description": "Deathrattle: Add a random Deathrattle creature to your hand.",
+      "type": "creature",
+      "attack": 3,
+      "health": 1,
+      "tribe": "Undead",
+      "keywords": [
+        "deathrattle"
+      ],
+      "deathrattle": [
+        {
+          "type": "conjure-named",
+          "count": 1,
+          "match": "Deathrattle",
+          "cardType": "creature"
+        }
+      ]
+    },
+    {
+      "id": "arfus",
+      "name": "Arfus",
+      "cardClass": "neutral",
+      "cost": 4,
+      "rarity": "legendary",
+      "set": "hs",
+      "description": "Deathrattle: Add a random Lich King card to your hand.",
+      "type": "creature",
+      "attack": 2,
+      "health": 2,
+      "tribe": "Undead",
+      "keywords": [
+        "deathrattle"
+      ],
+      "deathrattle": [
+        {
+          "type": "conjure-named",
+          "count": 1,
+          "match": "Lich King"
+        }
+      ]
+    },
+    {
+      "id": "babbling_book",
+      "name": "Babbling Book",
+      "cardClass": "mage",
+      "cost": 1,
+      "rarity": "rare",
+      "set": "hs",
+      "description": "Battlecry: Add a random Mage spell to your hand.",
+      "type": "creature",
+      "attack": 1,
+      "health": 2,
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "conjure-named",
+          "count": 1,
+          "cardClass": "mage",
+          "cardType": "spell"
+        }
+      ]
+    },
+    {
+      "id": "shimmerfly",
+      "name": "Shimmerfly",
+      "cardClass": "hunter",
+      "cost": 1,
+      "rarity": "rare",
+      "set": "hs",
+      "description": "Deathrattle: Add a random Hunter spell to your hand.",
+      "type": "creature",
+      "attack": 1,
+      "health": 1,
+      "tribe": "Beast",
+      "keywords": [
+        "deathrattle"
+      ],
+      "deathrattle": [
+        {
+          "type": "conjure-named",
+          "count": 1,
+          "cardClass": "hunter",
+          "cardType": "spell"
+        }
+      ]
+    },
+    {
+      "id": "hopeful_dryad",
+      "name": "Hopeful Dryad",
+      "cardClass": "neutral",
+      "cost": 3,
+      "rarity": "rare",
+      "set": "hs",
+      "description": "Battlecry: Get a random Dream card.",
+      "type": "creature",
+      "attack": 3,
+      "health": 3,
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "conjure-named",
+          "count": 1,
+          "match": "Dream"
+        }
+      ]
+    },
+    {
+      "id": "sleep_paralysis",
+      "name": "Sleep Paralysis",
+      "cardClass": "warlock",
+      "cost": 5,
+      "rarity": "rare",
+      "set": "hs",
+      "description": "Choose One - Summon two 3/6 Demons with Taunt that can't attack; or Destroy an enemy creature.",
+      "type": "sorcery",
+      "choices": [
+        {
+          "text": "Summon two 3/6 Demons with Taunt that can't attack.",
+          "effects": [
+            {
+              "type": "summon",
+              "count": 2,
+              "attack": 3,
+              "health": 6,
+              "name": "Demons with Taunt that can't attack"
+            }
+          ]
+        },
+        {
+          "text": "Destroy an enemy creature.",
+          "effects": [
+            {
+              "type": "destroy",
+              "target": "enemy-creature"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "morbid_swarm",
+      "name": "Morbid Swarm",
+      "cardClass": "death_knight",
+      "cost": 1,
+      "rarity": "rare",
+      "set": "hs",
+      "description": "Choose One - Summon two 1/1 Ants; or Spend 2 Corpses to deal 4 damage to a creature.",
+      "type": "sorcery",
+      "choices": [
+        {
+          "text": "Summon two 1/1 Ants.",
+          "effects": [
+            {
+              "type": "summon",
+              "count": 2,
+              "attack": 1,
+              "health": 1,
+              "name": "Ants"
+            }
+          ]
+        },
+        {
+          "text": "Spend 2 Corpses to deal 4 damage to a creature.",
+          "effects": [
+            {
+              "type": "spend-corpses",
+              "value": 2,
+              "effects": [
+                {
+                  "type": "damage",
+                  "value": 4,
+                  "target": "creature"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "photosynthesis",
+      "name": "Photosynthesis",
+      "cardClass": "druid",
+      "cost": 3,
+      "rarity": "rare",
+      "set": "hs",
+      "description": "Restore 6 Health. Get 3 random Druid spells.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "heal",
+          "value": 6,
+          "target": "any"
+        },
+        {
+          "type": "conjure-named",
+          "count": 3,
+          "cardClass": "druid",
+          "cardType": "spell"
+        }
+      ]
+    },
+    {
+      "id": "tome_of_intellect",
+      "name": "Tome of Intellect",
+      "cardClass": "mage",
+      "cost": 1,
+      "rarity": "common",
+      "set": "hs",
+      "description": "Add a random Mage spell to your hand.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "conjure-named",
+          "count": 1,
+          "cardClass": "mage",
+          "cardType": "spell"
+        }
+      ]
+    },
+    {
+      "id": "v_ama_looming_death",
+      "name": "V'ama, Looming Death",
+      "cardClass": "paladin",
+      "cost": 9,
+      "rarity": "legendary",
+      "set": "hs",
+      "description": "Battlecry: Destroy all non-Paladin creatures.",
+      "type": "creature",
+      "attack": 5,
+      "health": 5,
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "destroy-all",
+          "exceptClass": "paladin"
+        }
+      ]
+    },
+    {
+      "id": "cold_snap",
+      "name": "Cold Snap",
+      "cardClass": "mage",
+      "cost": 1,
+      "rarity": "common",
+      "set": "hs",
+      "description": "Freeze an enemy. Get a random Frost spell.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "freeze",
+          "target": "creature"
+        },
+        {
+          "type": "conjure-named",
+          "count": 1,
+          "match": "Frost",
+          "cardType": "spell"
+        }
+      ]
+    },
+    {
+      "id": "secret_ingredient",
+      "name": "Secret Ingredient",
+      "cardClass": "druid",
+      "cost": 0,
+      "rarity": "common",
+      "set": "hs",
+      "description": "Choose One - Give your hero +2 Attack this turn; or get a random Druid card.",
+      "type": "sorcery",
+      "choices": [
+        {
+          "text": "Give your hero +2 Attack this turn.",
+          "effects": [
+            {
+              "type": "hero-temp-attack",
+              "value": 2
+            }
+          ]
+        },
+        {
+          "text": "get a random Druid card.",
+          "effects": [
+            {
+              "type": "conjure-named",
+              "count": 1,
+              "cardClass": "druid"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "contraband_wands",
+      "name": "Contraband Wands",
+      "cardClass": "mage",
+      "cost": 2,
+      "rarity": "common",
+      "set": "hs",
+      "description": "Get 3 Arcane Missiles.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "conjure-named",
+          "match": "Arcane Missiles",
+          "count": 3
+        }
+      ]
+    },
+    {
+      "id": "fiddlefire_imp",
+      "name": "Fiddlefire Imp",
+      "cardClass": "mage__warlock",
+      "cost": 3,
+      "rarity": "common",
+      "set": "hs",
+      "description": "Battlecry: Add a random Fire Mage and Fire Warlock spell to your hand.",
+      "type": "creature",
+      "attack": 3,
+      "health": 3,
+      "tribe": "Demon",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "conjure-named",
+          "count": 1,
+          "match": "Fire Mage and Fire Warlock",
+          "cardType": "spell"
+        }
+      ]
+    },
+    {
+      "id": "calamity_s_grasp",
+      "name": "Calamity's Grasp",
+      "cardClass": "demon_hunter",
+      "cost": 1,
+      "rarity": "rare",
+      "set": "hs",
+      "description": "Deathrattle: Add a random Outcast card to your hand.",
+      "type": "weapon",
+      "attack": 1,
+      "durability": 0,
+      "deathrattle": [
+        {
+          "type": "conjure-named",
+          "count": 1,
+          "match": "Outcast"
+        }
+      ]
+    },
+    {
+      "id": "xaril_poisoned_mind",
+      "name": "Xaril, Poisoned Mind",
+      "cardClass": "rogue",
+      "cost": 4,
+      "rarity": "legendary",
+      "set": "hs",
+      "description": "Battlecry and Deathrattle: Add a random Toxin card to your hand.",
+      "type": "creature",
+      "attack": 3,
+      "health": 2,
+      "keywords": [
+        "battlecry",
+        "deathrattle"
+      ],
+      "effects": [
+        {
+          "type": "conjure-named",
+          "count": 1,
+          "match": "Toxin"
+        }
+      ],
+      "deathrattle": [
+        {
+          "type": "conjure-named",
+          "count": 1,
+          "match": "Toxin"
+        }
+      ]
+    },
+    {
+      "id": "cabalist_s_tome",
+      "name": "Cabalist's Tome",
+      "cardClass": "mage",
+      "cost": 4,
+      "rarity": "epic",
+      "set": "hs",
+      "description": "Get 3 random Mage spells.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "conjure-named",
+          "count": 3,
+          "cardClass": "mage",
+          "cardType": "spell"
+        }
+      ]
+    },
+    {
+      "id": "umbral_geist",
+      "name": "Umbral Geist",
+      "cardClass": "neutral",
+      "cost": 2,
+      "rarity": "common",
+      "set": "hs",
+      "description": "Deathrattle: Add a random Shadow spell to your hand.",
+      "type": "creature",
+      "attack": 3,
+      "health": 1,
+      "tribe": "Undead",
+      "keywords": [
+        "deathrattle"
+      ],
+      "deathrattle": [
+        {
+          "type": "conjure-named",
+          "count": 1,
+          "match": "Shadow",
+          "cardType": "spell"
+        }
+      ]
+    },
+    {
+      "id": "resonance_coil",
+      "name": "Resonance Coil",
+      "cardClass": "mage",
+      "cost": 3,
+      "rarity": "common",
+      "set": "hs",
+      "description": "Deal 5 damage to a creature. Get a random Protoss spell.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 5,
+          "target": "creature"
+        },
+        {
+          "type": "conjure-named",
+          "count": 1,
+          "match": "Protoss",
+          "cardType": "spell"
+        }
+      ]
+    },
+    {
+      "id": "in_formation",
+      "name": "In Formation!",
+      "cardClass": "warrior",
+      "cost": 2,
+      "rarity": "common",
+      "set": "hs",
+      "description": "Add 2 random Taunt creatures to your hand.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "conjure-named",
+          "count": 2,
+          "match": "Taunt",
+          "cardType": "creature"
+        }
+      ]
+    },
+    {
+      "id": "thunderquake",
+      "name": "Thunderquake",
+      "cardClass": "shaman",
+      "cost": 2,
+      "rarity": "rare",
+      "set": "hs",
+      "description": "Deal 1 damage to all creatures. Get a Static Shock.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 1,
+          "target": "all-creatures"
+        },
+        {
+          "type": "conjure-named",
+          "match": "Static Shock",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "id": "twilight_mender",
+      "name": "Twilight Mender",
+      "cardClass": "priest",
+      "cost": 3,
+      "rarity": "common",
+      "set": "hs",
+      "description": "Deathrattle: Get a random Holy and Shadow spell.",
+      "type": "creature",
+      "attack": 3,
+      "health": 4,
+      "keywords": [
+        "deathrattle"
+      ],
+      "deathrattle": [
+        {
+          "type": "conjure-named",
+          "count": 1,
+          "match": "Holy and Shadow",
+          "cardType": "spell"
+        }
+      ]
+    },
+    {
+      "id": "pharaoh_cat",
+      "name": "Pharaoh Cat",
+      "cardClass": "rogue",
+      "cost": 1,
+      "rarity": "common",
+      "set": "hs",
+      "description": "Battlecry: Add a random Reborn creature to your hand.",
+      "type": "creature",
+      "attack": 1,
+      "health": 2,
+      "tribe": "Undead",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "conjure-named",
+          "count": 1,
+          "match": "Reborn",
+          "cardType": "creature"
+        }
+      ]
+    },
+    {
+      "id": "shimmering_tempest",
+      "name": "Shimmering Tempest",
+      "cardClass": "mage",
+      "cost": 2,
+      "rarity": "common",
+      "set": "hs",
+      "description": "Battlecry: Add a random Mage spell to your hand.",
+      "type": "creature",
+      "attack": 2,
+      "health": 2,
+      "tribe": "Elemental",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "conjure-named",
+          "count": 1,
+          "cardClass": "mage",
+          "cardType": "spell"
+        }
+      ]
+    },
+    {
+      "id": "miracle_salesman",
+      "name": "Miracle Salesman",
+      "cardClass": "neutral",
+      "cost": 1,
+      "rarity": "common",
+      "set": "hs",
+      "description": "Deathrattle: Get a Tradeable Snake Oil.",
+      "type": "creature",
+      "attack": 2,
+      "health": 2,
+      "keywords": [
+        "deathrattle"
+      ],
+      "deathrattle": [
+        {
+          "type": "conjure-named",
+          "match": "Tradeable Snake Oil",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "id": "shock_hopper",
+      "name": "Shock Hopper",
+      "cardClass": "shaman",
+      "cost": 1,
+      "rarity": "common",
+      "set": "hs",
+      "description": "Battlecry: Get a random Overload card.",
+      "type": "creature",
+      "attack": 1,
+      "health": 2,
+      "tribe": "Elemental",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "conjure-named",
+          "count": 1,
+          "match": "Overload"
+        }
+      ]
     }
   ]
 }
