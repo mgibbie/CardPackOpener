@@ -52874,6 +52874,250 @@
         ]
       },
       "partPower": 2
+    },
+    {
+      "id": "token_soldier_of_alakir",
+      "name": "Soldier of Al'Akir",
+      "cardClass": "shaman",
+      "cost": 1,
+      "rarity": "common",
+      "set": "hs",
+      "type": "creature",
+      "token": true,
+      "attack": 1,
+      "health": 2,
+      "description": "Adjacent creatures have +Attack (scales with Herald)."
+    },
+    {
+      "id": "token_soldier_of_azshara",
+      "name": "Soldier of Azshara",
+      "cardClass": "demon_hunter",
+      "cost": 1,
+      "rarity": "common",
+      "set": "hs",
+      "type": "creature",
+      "token": true,
+      "attack": 2,
+      "health": 1,
+      "description": "When summoned, give your hero +Attack this turn (scales with Herald)."
+    },
+    {
+      "id": "token_soldier_of_chogall",
+      "name": "Soldier of Cho'gall",
+      "cardClass": "warlock",
+      "cost": 1,
+      "rarity": "common",
+      "set": "hs",
+      "type": "creature",
+      "token": true,
+      "attack": 1,
+      "health": 1,
+      "description": "At the end of your turn, destroy the creature to the right to gain its size (scales with Herald)."
+    },
+    {
+      "id": "token_soldier_of_onyxia",
+      "name": "Soldier of Onyxia",
+      "cardClass": "death_knight",
+      "cost": 1,
+      "rarity": "common",
+      "set": "hs",
+      "type": "creature",
+      "token": true,
+      "attack": 1,
+      "health": 1,
+      "description": "When summoned, get a random low-Cost creature (Cost scales with Herald)."
+    },
+    {
+      "id": "token_soldier_of_ragnaros",
+      "name": "Soldier of Ragnaros",
+      "cardClass": "warrior",
+      "cost": 1,
+      "rarity": "common",
+      "set": "hs",
+      "type": "creature",
+      "token": true,
+      "attack": 2,
+      "health": 1,
+      "description": "Deathrattle: Deal damage to a random enemy (scales with Herald)."
+    },
+    {
+      "id": "token_soldier_of_sinestra",
+      "name": "Soldier of Sinestra",
+      "cardClass": "rogue",
+      "cost": 1,
+      "rarity": "common",
+      "set": "hs",
+      "type": "creature",
+      "token": true,
+      "attack": 1,
+      "health": 1,
+      "description": "When summoned, get a random cheaper spell (discount scales with Herald)."
+    },
+    {
+      "id": "experimental_animation",
+      "name": "Experimental Animation",
+      "cardClass": "death_knight",
+      "cost": 6,
+      "rarity": "common",
+      "set": "hs",
+      "description": "Herald . Deal 4 damage to all enemy creatures.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "herald"
+        },
+        {
+          "type": "damage",
+          "value": 4,
+          "target": "enemy-creatures"
+        }
+      ]
+    },
+    {
+      "id": "maniacal_follower",
+      "name": "Maniacal Follower",
+      "cardClass": "rogue",
+      "cost": 3,
+      "rarity": "epic",
+      "set": "hs",
+      "description": "Stealth Deathrattle: Herald .",
+      "type": "creature",
+      "attack": 4,
+      "health": 1,
+      "keywords": [
+        "stealth",
+        "deathrattle"
+      ],
+      "deathrattle": [
+        {
+          "type": "herald"
+        }
+      ]
+    },
+    {
+      "id": "scorching_ravager",
+      "name": "Scorching Ravager",
+      "cardClass": "warrior",
+      "cost": 4,
+      "rarity": "rare",
+      "set": "hs",
+      "description": "Battlecry: Herald . Give the Soldier Rush.",
+      "type": "creature",
+      "attack": 4,
+      "health": 3,
+      "tribe": "Dragon",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "herald",
+          "grant": "rush"
+        }
+      ]
+    },
+    {
+      "id": "armored_bloodletter",
+      "name": "Armored Bloodletter",
+      "cardClass": "demon_hunter",
+      "cost": 3,
+      "rarity": "common",
+      "set": "hs",
+      "description": "Rush Battlecry: Herald .",
+      "type": "creature",
+      "attack": 3,
+      "health": 1,
+      "tribe": "Naga",
+      "keywords": [
+        "rush",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "herald"
+        }
+      ]
+    },
+    {
+      "id": "skywall_sentinel",
+      "name": "Skywall Sentinel",
+      "cardClass": "shaman",
+      "cost": 2,
+      "rarity": "rare",
+      "set": "hs",
+      "description": "Taunt Battlecry: Herald .",
+      "type": "creature",
+      "attack": 0,
+      "health": 2,
+      "tribe": "Elemental",
+      "keywords": [
+        "taunt",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "herald"
+        }
+      ]
+    },
+    {
+      "id": "cataclysmic_war_axe",
+      "name": "Cataclysmic War Axe",
+      "cardClass": "warrior",
+      "cost": 3,
+      "rarity": "common",
+      "set": "hs",
+      "description": "Battlecry: Herald .",
+      "type": "weapon",
+      "attack": 3,
+      "durability": 0,
+      "effects": [
+        {
+          "type": "herald"
+        }
+      ]
+    },
+    {
+      "id": "envoy_of_the_end",
+      "name": "Envoy of the End",
+      "cardClass": "death_knight__rogue__shaman__warlock__warrior__demon_hunter",
+      "cost": 5,
+      "rarity": "common",
+      "set": "hs",
+      "description": "Taunt Battlecry: Herald .",
+      "type": "creature",
+      "attack": 5,
+      "health": 4,
+      "keywords": [
+        "taunt",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "herald"
+        }
+      ]
+    },
+    {
+      "id": "obsessive_technician",
+      "name": "Obsessive Technician",
+      "cardClass": "death_knight",
+      "cost": 4,
+      "rarity": "common",
+      "set": "hs",
+      "description": "Lifesteal Battlecry: Herald .",
+      "type": "creature",
+      "attack": 3,
+      "health": 5,
+      "keywords": [
+        "lifesteal",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "herald"
+        }
+      ]
     }
   ]
 }

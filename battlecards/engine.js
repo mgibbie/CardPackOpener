@@ -305,6 +305,7 @@ export function createGame(cardsById, rng = Math.random, playerDeckIds = null, p
 		corpses: 0,         // Death Knight resource
 		excavateCount: 0,   // Excavate: total digs this game (drives the looping tier)
 		jadeCount: 0,       // Jade Golem size counter (per-player; each golem +1/+1, cap 30)
+		heraldCount: 0,     // Herald: total this game (drives the Soldier's x1/x2/x4 scale)
 		heroTempAttack: 0,  // "your hero has +N Attack this turn"
 		costDiscounts: [],  // one-shot "next X costs (N) less" riders
 		creaturesPlayedThisTurn: 0, // Pint-Sized-style first-creature discounts
@@ -2126,6 +2127,44 @@ function execEffects(state, pi, effects, target, source) {
 				description: `A ${n}/${n} Jade Golem.`, attack: n, health: n,
 			});
 			if (c && e.grant && !c.keywords.includes(e.grant)) c.keywords.push(e.grant);
+		} else if (e.type === 'herald') {
+			// Herald: summon your class's Soldier; its stats + effect value scale
+			// x1 for your 1st-2nd Herald, x2 for the 3rd-4th, x4 for the 5th on.
+			const p = state.players[pi];
+			const prev = p.heraldCount || 0;
+			const m = prev < 2 ? 1 : prev < 4 ? 2 : 4;
+			p.heraldCount = prev + 1;
+			const SOL = {
+				shaman: { id: 'token_soldier_of_alakir', atk: 1, hp: 2 },
+				demon_hunter: { id: 'token_soldier_of_azshara', atk: 2, hp: 1 },
+				warlock: { id: 'token_soldier_of_chogall', atk: 1, hp: 1 },
+				death_knight: { id: 'token_soldier_of_onyxia', atk: 1, hp: 1 },
+				warrior: { id: 'token_soldier_of_ragnaros', atk: 2, hp: 1 },
+				rogue: { id: 'token_soldier_of_sinestra', atk: 1, hp: 1 },
+			};
+			const cls = SOL[p.heroClass] ? p.heroClass
+				: (source && (source.cardClass || '').split('__').find(c => SOL[c])) || 'warrior';
+			const spec = SOL[cls], def = state.cardsById[spec.id];
+			const soldier = def && summon(state, pi, def);
+			if (soldier) {
+				soldier.attack = spec.atk * m; soldier.maxHealth = spec.hp * m;
+				if (e.grant && !soldier.keywords.includes(e.grant)) soldier.keywords.push(e.grant);
+				if (cls === 'shaman') { soldier.aura = { attack: m, adjacent: true }; recomputeAuras(state); }
+				else if (cls === 'warrior') { soldier.deathrattle = [{ type: 'random-damage', value: m, count: 1, pool: 'enemies' }]; if (!soldier.keywords.includes('deathrattle')) soldier.keywords.push('deathrattle'); }
+				else if (cls === 'warlock') soldier.ongoing = { on: 'turn-end', effects: [{ type: 'destroy-right-gain', amount: m }] };
+				else if (cls === 'demon_hunter') execEffects(state, pi, [{ type: 'hero-temp-attack', value: m }], null, soldier);
+				else if (cls === 'death_knight') execEffects(state, pi, [{ type: 'conjure-cost', cost: m }], null, soldier);
+				else if (cls === 'rogue') execEffects(state, pi, [{ type: 'conjure-named', match: '', cardType: 'spell', costMod: -m, count: 1 }], null, soldier);
+				emit(state, { type: 'buff', uid: soldier.uid, attack: soldier.attack, hp: hp(soldier) });
+			}
+		} else if (e.type === 'destroy-right-gain') {
+			// Soldier of Cho'gall: destroy the creature to its right, gain +amount/+amount
+			if (source) {
+				const b = state.players[pi].board, idx = b.indexOf(source), r = b[idx + 1];
+				if (r && !isDead(r)) { r.damage = r.maxHealth; r.shield = false; emit(state, { type: 'destroy', uid: r.uid });
+					source.attack += e.amount || 1; source.maxHealth += e.amount || 1;
+					emit(state, { type: 'buff', uid: source.uid, attack: source.attack, hp: hp(source) }); }
+			}
 		} else if (e.type === 'buff-colossal') {
 			// an appendage that also grows its parent Colossal (Wickerfang's Legs)
 			if (source?.colossalOf) {
