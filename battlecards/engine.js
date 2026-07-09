@@ -663,7 +663,7 @@ const ALL_AZERITE_LEGENDARIES = [...new Set(Object.values(EXCAVATE_LEGENDARIES).
 // The Coin: an opponent developing a land (or a "gain a coin" effect) puts a
 // coin CARD into your hand instead of a hidden counter — play it any time for
 // +1 mana this turn, Hearthstone-style. Overflows are burned like any draw.
-function addCoin(state, pi) {
+export function addCoin(state, pi) {
 	const p = state.players[pi];
 	if (p.eliminated) return;
 	const def = state.cardsById['coin'];

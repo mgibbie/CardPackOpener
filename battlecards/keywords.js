@@ -167,3 +167,10 @@ export function keywordsFor(card) {
 	for (const k of K) if (k.p.some(p => new RegExp('\\b' + escRe(p) + '\\b', 'i').test(text))) add(k);
 	return out;
 }
+
+// Display label for an engine keyword tag (e.g. 'divine_shield' -> 'Divine Shield').
+// Falls back to a Title-Cased version of the tag for keywords with no glossary entry.
+export function keywordLabel(tag) {
+	if (byTag[tag]) return byTag[tag].p[0];
+	return tag.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+}

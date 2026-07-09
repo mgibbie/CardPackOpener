@@ -7,12 +7,30 @@ import * as Col from './collection.js';
 import * as Dungeon from './dungeon.js';
 import * as MPX from './mpmode.js';
 import * as Chat from './chat.js';
-import { keywordsFor, richHtml } from './keywords.js';
+import { keywordsFor, keywordLabel, richHtml } from './keywords.js';
 
 // small "what does this keyword do" lines shown beneath a card's rules text
 function keywordLinesHtml(card) {
 	return keywordsFor(card).map(k =>
 		`<div class="tt-kw"><b>${k.label}</b> — ${k.text}</div>`).join('');
+}
+
+// "Modifiers": keywords / stat changes the creature has now but didn't start with
+// (gained from buffs, auras, grants). Reads against the printed card definition.
+function modifierLinesHtml(card) {
+	if (!state || (card.type !== 'creature' && card.type !== 'weapon')) return '';
+	const def = state.cardsById?.[card.id] || {};
+	const base = new Set(def.keywords || []);
+	const gainedKw = [...new Set((card.keywords || []).filter(k => !base.has(k)))];
+	const bits = gainedKw.map(keywordLabel);
+	// stat swing vs. the printed body (permanent buffs + counters, ignoring this-turn temp)
+	if (card.type === 'creature') {
+		const dA = (card.attack || 0) - (def.attack || 0) - (card.tempAttack || 0);
+		const maxHp = card.maxHealth || 0, dH = maxHp - (def.health || 0);
+		if (dA || dH) bits.unshift(`${dA >= 0 ? '+' : ''}${dA}/${dH >= 0 ? '+' : ''}${dH}`);
+	}
+	if (!bits.length) return '';
+	return `<div class="tt-kw" style="color:#8fe39f"><b>Modifiers</b> — ${bits.join(', ')}</div>`;
 }
 
 // test-realm mode (?mp=1 + account token): dungeon runs use the account's
@@ -1813,7 +1831,8 @@ function updateTooltip(ev) {
 	if (card.paralyzed) extra += `<div class="tt-sub">⚡ Paralyzed — its attacks fail 50% of the time</div>`;
 	if (card.frozen) extra += `<div class="tt-sub">❄ Frozen — can't attack next turn</div>`;
 	tip.innerHTML = `<div class="tt-name">${card.name}</div><div class="tt-type">${typeLine}</div>`
-		+ `<div class="tt-desc">${richHtml(card.description || '')}</div>` + extra + keywordLinesHtml(card);
+		+ `<div class="tt-desc">${richHtml(card.description || '')}</div>` + extra
+		+ modifierLinesHtml(card) + keywordLinesHtml(card);
 	tip.style.display = 'block';
 	tip.style.left = `${Math.min(ev.clientX + 18, innerWidth - 290)}px`;
 	tip.style.top = `${Math.min(ev.clientY + 14, innerHeight - tip.offsetHeight - 12)}px`;
@@ -2630,7 +2649,7 @@ async function startDuelHost(cardsById) {
 			g.deck = shuffleIds([...cm.guestDeck]);
 			g.hand = [];
 			E.drawCards(state, 1, 4);
-			g.coins = 1;
+			E.addCoin(state, 1); // the 2nd player starts with The Coin (as a card)
 		}
 	}
 	frameCamera();

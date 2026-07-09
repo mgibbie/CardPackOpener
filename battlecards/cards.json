@@ -49727,6 +49727,23 @@
           "name": "Ice Shards that Freeze"
         }
       ]
+    },
+    {
+      "id": "coin",
+      "name": "The Coin",
+      "cardClass": "neutral",
+      "cost": 0,
+      "rarity": "basic",
+      "set": "core",
+      "type": "sorcery",
+      "token": true,
+      "description": "Gain 1 mana this turn only.",
+      "effects": [
+        {
+          "type": "temp-mana",
+          "value": 1
+        }
+      ]
     }
   ]
 }
