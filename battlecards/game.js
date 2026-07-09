@@ -2608,6 +2608,7 @@ async function startDuel(cardsById) {
 	}
 	duel.config = data.cardmatch;
 	duel.role = data.role; // 'host' | 'guest'
+	startDebugOverlay();
 	$('player-count').style.display = 'none';
 	$('class-select').style.display = 'none';
 	$('concede').style.display = 'none';
@@ -2735,27 +2736,46 @@ function startDuelGuest(cardsById) {
 	log(`Live duel: you vs ${cm.host}. Waiting for the board…`);
 	Chat.mount({ room: 'm:' + duel.id, canPost: true });
 	let panelsFor = 0;
+	const t0 = performance.now();
+	let lastPollNote = '';
 	const tick = async () => {
 		let data;
-		try { data = await MPX.call('card-poll', { id: duel.id }); } catch (e) { return; }
+		try { data = await MPX.call('card-poll', { id: duel.id }); }
+		catch (e) { duelDebug.pollErrors++; duelDebug.lastError = 'poll: ' + e.message; lastPollNote = 'network error'; return; }
 		if (!data) return;
+		lastPollNote = data.error ? data.error : data.snapshot ? 'snapshot ok' : 'no board yet';
+		duelDebug.lastPollAt = performance.now();
+		// still waiting for the first board? tell the tester what's happening
+		// instead of an eternal silent "Waiting…" (the bug report we can't act on)
+		if (!state && performance.now() - t0 > 10000) {
+			const secs = Math.round((performance.now() - t0) / 1000);
+			$('hint').textContent = `Waiting for ${cm.host}'s board… ${secs}s (last poll: ${lastPollNote})`;
+		}
 		// while an optimistic action is in flight, don't ingest the host's stale
 		// echo (it would revert our local move for a blink before catching up)
 		if (data.snapshot && data.seq !== duel.seq && (!duel.hold || performance.now() > duel.hold)) {
 			duel.seq = data.seq;
 			duel.hold = 0;
 			const snap = data.snapshot;
-			state = {
-				...snap, cardsById, rng: Math.random, events: [],
-				scryQueue: snap.scryQueue || [], discardQueue: snap.discardQueue || [], pickQueue: snap.pickQueue || [], dredgeQueue: snap.dredgeQueue || [], stack: snap.stack || [], priority: snap.priority ?? null, passers: snap.passers || [], priorityNext: snap.priorityNext || 0,
-			};
-			if (state.players.length !== panelsFor) {
-				playerCount = state.players.length;
-				frameCamera(); buildPanels(); buildSlotMarkers();
-				panelsFor = state.players.length;
+			try {
+				state = {
+					...snap, cardsById, rng: Math.random, events: [],
+					scryQueue: snap.scryQueue || [], discardQueue: snap.discardQueue || [], pickQueue: snap.pickQueue || [], dredgeQueue: snap.dredgeQueue || [], stack: snap.stack || [], priority: snap.priority ?? null, passers: snap.passers || [], priorityNext: snap.priorityNext || 0,
+				};
+				if (state.players.length !== panelsFor) {
+					playerCount = state.players.length;
+					frameCamera(); buildPanels(); buildSlotMarkers();
+					panelsFor = state.players.length;
+				}
+				updateHud();
+				openDuelModals(); // surface any scry/loot/discover the guest must resolve
+			} catch (e) {
+				// an ingest exception used to die silently and leave "Waiting for the
+				// board…" forever — surface it so testers can report something real
+				duelDebug.ingestErrors++; duelDebug.lastError = 'ingest: ' + e.message;
+				log(`(board update failed: ${e.message})`);
+				console.error('duel ingest error', e);
 			}
-			updateHud();
-			openDuelModals(); // surface any scry/loot/discover the guest must resolve
 		}
 		if (data.over && !$('duel-over')) {
 			const won = data.winner === HUMAN;
@@ -2797,6 +2817,26 @@ function openDuelModals() {
 	open();
 }
 
+// live counters for the ?debug=1 overlay + failure banners — the first friend
+// test failed with "it never loaded" and zero data; never again
+const duelDebug = { pubFails: 0, pubOk: 0, pollErrors: 0, ingestErrors: 0, lastError: '', lastPollAt: 0, lastPubAt: 0 };
+function startDebugOverlay() {
+	if (!new URLSearchParams(location.search).has('debug')) return;
+	const el = document.createElement('div');
+	el.style.cssText = 'position:fixed;left:8px;bottom:8px;z-index:99;font:11px monospace;'
+		+ 'color:#9fe39f;background:rgba(0,0,0,0.72);padding:6px 9px;border-radius:6px;pointer-events:none;white-space:pre';
+	document.body.appendChild(el);
+	setInterval(() => {
+		const age = t => t ? Math.round((performance.now() - t) / 1000) + 's ago' : 'never';
+		el.textContent = `duel ${duel.id || '-'} role=${duel.role || '-'} seq=${duel.seq}\n`
+			+ (duel.role === 'host'
+				? `publish ok=${duelDebug.pubOk} fail=${duelDebug.pubFails} last=${age(duelDebug.lastPubAt)}`
+				: `poll last=${age(duelDebug.lastPollAt)} errs=${duelDebug.pollErrors} ingestErrs=${duelDebug.ingestErrors}`)
+			+ `\nturn=${state?.current ?? '-'} over=${state?.over ?? '-'}`
+			+ (duelDebug.lastError ? `\nlastError: ${duelDebug.lastError.slice(0, 60)}` : '');
+	}, 1000);
+}
+
 let duelPubSeq = 0, duelPubStarted = false;
 function snapshotForDuel() {
 	if (!state) return null;
@@ -2814,7 +2854,20 @@ function publishDuel() {
 		id: duel.id, snapshot: snapshotForDuel(), seq: ++duelPubSeq,
 		label: `${cm.host} vs ${cm.guest}`,
 		over: !!state?.over, winner: state?.winner ?? null,
-	}).catch(() => {});
+	}).then(r => {
+		if (r?.error) throw new Error(r.error);
+		duelDebug.pubOk++; duelDebug.lastPubAt = performance.now();
+		if (duelDebug.pubFails >= 3) log('(connection restored — your opponent can see the board again)');
+		duelDebug.pubFails = 0;
+	}).catch(e => {
+		// a silently failing publish means the host plays on while the guest
+		// stares at "Waiting for the board…" — make it loud after 3 in a row
+		duelDebug.pubFails++; duelDebug.lastError = 'publish: ' + e.message;
+		if (duelDebug.pubFails === 3) {
+			banner('CONNECTION LOST', 2500);
+			log(`(board updates aren't reaching ${cm.guest}: ${e.message} — retrying)`);
+		}
+	});
 }
 function startDuelPublish() {
 	if (duelPubStarted) return;

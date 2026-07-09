@@ -282,22 +282,22 @@ export default async function handler(req) {
 		return json({ ok: true });
 	}
 
-	// friends list with live presence (online + where they are)
+	// friends list with live presence (online + where they are). All blob reads go
+	// in parallel — sequential strong-consistency reads made this the slowest call
+	// in the presence loop and stretched ghost-update latency
 	if (action === 'friends') {
-		const list = [];
-		for (const f of user.friends) {
-			const fu = await store.get(f);
-			const p = await store.get('presence:' + f);
+		const list = await Promise.all(user.friends.map(async (f) => {
+			const [fu, p] = await Promise.all([store.get(f), store.get('presence:' + f)]);
 			const online = p && Date.now() - p.lastSeen < ONLINE_MS;
-			list.push({
+			return {
 				username: f, friendCode: fu?.friendCode || '',
 				online: !!online,
 				map: online ? p.map : null, x: online ? p.x : 0, y: online ? p.y : 0,
 				facing: online ? p.facing : 'down',
 				status: online ? p.status : 'offline',
 				region: online ? p.region : '',
-			});
-		}
+			};
+		}));
 		return json({ friends: list, friendCode: user.friendCode });
 	}
 

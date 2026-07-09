@@ -17,9 +17,10 @@ export class Pvp {
 			matchId, match, mySide, spectator: !!spectator, onEnd,
 			phase: spectator ? 'watch' : 'menu',
 			menuIdx: 0, moveIdx: 0, switchIdx: 0,
-			msgQueue: [], msg: match.events?.find(e => typeof e === 'string') || 'Battle start!', msgT: 0,
+			evQueue: [], msg: match.events?.find(e => typeof e === 'string') || 'Battle start!', msgT: 0, msgHold: 1.0,
 			seq: match.seq, hover: null, ui: [],
 			shown: [this.hp(match, 0), this.hp(match, 1)],
+			dispHP: [this.hp(match, 0), this.hp(match, 1)], // HP the bars are drainng toward, stepped per event
 			t: 0, waiting: false, polling: true,
 		};
 		if (a.phase === 'menu') a.msg = `What will ${this.mine().name} do?`;
@@ -66,12 +67,27 @@ export class Pvp {
 		if (!a) return;
 		if (match.seq !== a.seq) {
 			a.seq = match.seq;
+			const prevActive = a.match?.sides?.map(sd => sd.active);
 			a.match = match;
 			this.loadSprites(match);
-			// queue the turn's string messages to scroll through
-			a.msgQueue = (match.events || []).filter(e => typeof e === 'string');
+			// play the turn IN ORDER: strings scroll as messages, {hit,side,dmg}
+			// markers step the HP bars when reached — instead of both bars
+			// snapping to the final result at once ("we moved at the same time")
+			const evs = (match.events || []).slice();
+			for (let s = 0; s < 2; s++) {
+				// pre-turn HP = final HP with every queued damage marker undone
+				let pre = this.hp(match, s);
+				for (const e of evs) if (e && e.hit && e.side === s) pre += e.dmg;
+				pre = Math.max(0, Math.min(this.monAt(s).maxHP, pre));
+				a.dispHP[s] = pre;
+				// resync the visible bar on a switch-in (different mon) or drift
+				if (!prevActive || prevActive[s] !== match.sides[s].active
+					|| Math.abs(a.shown[s] - pre) > 1) a.shown[s] = pre;
+			}
+			a.evQueue = evs;
 			a.phase = 'anim';
 			a.msgT = 0;
+			a.msgHold = 0;
 			a.waiting = false;
 		} else {
 			// keep names/hp fresh without disrupting the local menu
@@ -111,18 +127,26 @@ export class Pvp {
 		if (!a) return;
 		a.t += dt;
 		for (let s = 0; s < 2; s++) {
-			const target = this.hp(a.match, s);
+			const target = a.dispHP[s];
 			a.shown[s] += (target - a.shown[s]) * Math.min(1, dt * 5);
 			if (Math.abs(a.shown[s] - target) < 0.5) a.shown[s] = target;
 		}
 		if (a.phase === 'anim') {
-			const settled = a.shown.every((v, s) => Math.abs(v - this.hp(a.match, s)) < 0.5);
+			const settled = a.shown.every((v, s) => Math.abs(v - a.dispHP[s]) < 0.5);
 			a.msgT += dt;
-			if (a.msgT > 1.0 && settled) {
+			if (a.msgT > a.msgHold && settled) {
 				a.msgT = 0;
-				if (a.msgQueue.length) { a.msg = a.msgQueue.shift(); }
+				const next = a.evQueue.shift();
+				if (typeof next === 'string') { a.msg = next; a.msgHold = 1.0; }
+				else if (next && next.hit) {
+					// step this side's bar; the loop naturally waits for the drain
+					const cap = this.monAt(next.side).maxHP;
+					a.dispHP[next.side] = Math.max(0, Math.min(cap, a.dispHP[next.side] - next.dmg));
+					a.msgHold = 0.25;
+				} else if (next !== undefined) { a.msgHold = 0; } // unknown marker: skip
 				else {
-					// turn done — decide the next phase
+					// turn done — true up the bars and decide the next phase
+					for (let s = 0; s < 2; s++) a.dispHP[s] = this.hp(a.match, s);
 					if (a.match.over) { this.finish(); return; }
 					if (a.match.needsSwitch && a.match.needsSwitch[a.mySide] && !a.spectator) {
 						a.phase = 'switch'; a.switchIdx = 0; a.forcedSwitch = true;

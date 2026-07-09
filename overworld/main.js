@@ -1195,12 +1195,25 @@ async function pollPresence() {
 			}
 			if (f.online && f.map === world.current.name) {
 				here.add(f.username);
-				const g = ghosts.get(f.username) || { px: f.x * META, py: f.y * META };
-				g.tx = f.x; g.ty = f.y; g.facing = f.facing || 'down';
+				let g = ghosts.get(f.username);
+				if (!g) g = { px: f.x * META, py: f.y * META, path: [], facing: f.facing || 'down', missed: 0 };
+				g.missed = 0;
+				g.facingReported = f.facing || 'down';
+				// waypoint queue: append each newly-reported tile; the draw loop walks
+				// the ghost along the queue at a constant speed instead of snapping
+				const last = g.path.length ? g.path[g.path.length - 1] : { x: Math.round(g.px / META), y: Math.round(g.py / META) };
+				if (f.x !== last.x || f.y !== last.y) {
+					g.path.push({ x: f.x, y: f.y });
+					if (g.path.length > 6) g.path.splice(0, g.path.length - 6); // too far behind: skip ahead
+				}
 				ghosts.set(f.username, g);
 			}
 		}
-		for (const u of [...ghosts.keys()]) if (!here.has(u)) ghosts.delete(u);
+		// grace period: one missed poll can be a warp/heartbeat gap — deleting
+		// instantly made ghosts flicker ("glimpsed him every few frames")
+		for (const [u, g] of ghosts) {
+			if (!here.has(u) && ++g.missed >= 3) ghosts.delete(u);
+		}
 	} catch (e) {}
 }
 
@@ -1210,16 +1223,38 @@ function coLocated() {
 		|| friends.some(f => f.online && (f.map === world.current.name || (f.status || '').startsWith('visiting:')));
 }
 
-// draw every friend ghost on my map (eased toward their reported tile)
+// draw every friend ghost on my map, walking it along its waypoint queue at a
+// constant speed (like a real player) instead of ease-snapping to the last tile
+let ghostClock = 0;
 function drawFriendGhosts(ctx, camX, camY) {
 	if (!friendSprite || !ghosts.size) return;
+	const now = performance.now();
+	const dt = ghostClock ? Math.min((now - ghostClock) / 1000, 0.1) : 0.016;
+	ghostClock = now;
 	for (const [name, g] of ghosts) {
-		g.px += (g.tx * META - g.px) * 0.25;
-		g.py += (g.ty * META - g.py) * 0.25;
+		// catch-up speed scales with backlog: walk pace when current, run pace when
+		// 2+ tiles behind, so a sprinting friend stays smooth instead of teleporting
+		const speed = 120 * (g.path.length >= 2 ? 1.9 : 1.15);
+		let budget = speed * dt;
+		let moving = false;
+		while (budget > 0 && g.path.length) {
+			const wp = g.path[0];
+			const dx = wp.x * META - g.px, dy = wp.y * META - g.py;
+			const dist = Math.hypot(dx, dy);
+			if (dist <= budget) { g.px = wp.x * META; g.py = wp.y * META; g.path.shift(); budget -= dist; }
+			else {
+				g.px += (dx / dist) * budget; g.py += (dy / dist) * budget; budget = 0;
+			}
+			// face the way we're travelling; fall back to the reported facing at rest
+			g.facing = Math.abs(dx) > Math.abs(dy) ? (dx < 0 ? 'left' : 'right') : (dy < 0 ? 'up' : 'down');
+			moving = true;
+		}
+		if (!moving) g.facing = g.facingReported || g.facing || 'down';
+		const bob = moving && Math.floor(now / 150) % 2 ? -1 : 0; // subtle step bob
 		const mirror = g.facing === 'right';
 		const frameX = { down: 0, up: 1, left: 2, right: 2 }[g.facing] * 16;
 		ctx.save();
-		const x = g.px - camX, y = g.py - 16 - camY;
+		const x = Math.round(g.px - camX), y = Math.round(g.py - 16 - camY + bob);
 		if (mirror) { ctx.translate(x + 16, y); ctx.scale(-1, 1); }
 		else ctx.translate(x, y);
 		ctx.globalAlpha = 0.92;
@@ -1228,7 +1263,7 @@ function drawFriendGhosts(ctx, camX, camY) {
 		ctx.fillStyle = '#fff';
 		ctx.font = '6px monospace';
 		ctx.textAlign = 'center';
-		ctx.fillText(name.slice(0, 8), g.px - camX + 8, g.py - 18 - camY);
+		ctx.fillText(name.slice(0, 8), Math.round(g.px - camX) + 8, Math.round(g.py - 18 - camY));
 		ctx.textAlign = 'left';
 	}
 }

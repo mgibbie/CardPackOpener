@@ -132,7 +132,10 @@ function doMove(state, atkS, ev) {
 	if (move.category === 'Status' || !move.power) {
 		if (fx.heal) {
 			const amt = Math.floor(user.maxHP * fx.heal);
-			user.curHP = Math.min(user.maxHP, user.curHP + amt);
+			const applied = Math.min(user.maxHP, user.curHP + amt) - user.curHP;
+			user.curHP += applied;
+			// negative-dmg marker so the client's bar rises in sequence too
+			if (applied > 0) ev.push({ hit: true, side: atkS, dmg: -applied, name: user.name });
 			ev.push(`${user.name} regained health!`);
 		} else if (fx.status) {
 			applyStatus(target, fx.status, ev);
@@ -196,6 +199,8 @@ function resolveTurn(state) {
 		const sx = statOf(activeMon(state, x), 'spe'), sy = statOf(activeMon(state, y), 'spe');
 		return sx === sy ? (Math.random() < 0.5 ? -1 : 1) : sy - sx;
 	});
+	// say who's acting first — the resolved state alone reads as "simultaneous"
+	if (movers.length === 2) ev.push(`${activeMon(state, movers[0]).name} moves first!`);
 	for (const s of movers) { doMove(state, s, ev); faintCheck(state, ev); if (state.over) break; }
 	// end-of-turn: burn/poison chip
 	if (!state.over) {
