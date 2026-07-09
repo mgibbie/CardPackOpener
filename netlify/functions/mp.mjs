@@ -616,11 +616,11 @@ export default async function handler(req) {
 	}
 
 	// grant the caller a full playset of every collectible card (2 of each, 1 of
-	// each Legendary). A convenience for the private test realm — self-serve, so
-	// gate it behind MP_ADMINS (comma-separated usernames) if you want to restrict it.
+	// each Legendary). Restricted to the realm owner — override the allowlist with
+	// MP_ADMINS (comma-separated usernames) in the Netlify env if it ever changes.
 	if (action === 'grant-all') {
-		const admins = (process.env.MP_ADMINS || '').split(',').map(s => s.trim().toLowerCase()).filter(Boolean);
-		if (admins.length && !admins.includes(username)) return json({ error: 'not allowed' }, 403);
+		const admins = (process.env.MP_ADMINS || 'mgibbie').split(',').map(s => s.trim().toLowerCase()).filter(Boolean);
+		if (!admins.includes(username)) return json({ error: 'not allowed' }, 403);
 		for (const [id, [rarity]] of Object.entries(POOL)) {
 			const cap = rarity === 'legendary' ? MAX_LEGENDARY_COPIES : MAX_COPIES;
 			user.collection[id] = Math.max(user.collection[id] || 0, cap);
