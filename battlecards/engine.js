@@ -187,6 +187,10 @@ function instantiate(def, controller) {
 		ongoings: def.ongoings ? JSON.parse(JSON.stringify(def.ongoings)) : null, // combined triggers
 		medic: def.medic || 0,        // heals adjacent creatures N at end of turn
 		sac: def.sac || null,         // field-token activation: { cost, discard?, effects }
+		colossal: def.colossal || null, // appendage token ids summoned when this enters play
+		colossalOf: def.colossalOf || null, // this token is an appendage of the named Colossal
+		immuneWhile: def.immuneWhile || null, // immune while controlling a token of this name
+		partPower: def.partPower || 0, // escalating appendage damage (Xhilag's Stalks)
 		aura: def.aura || null,       // { attack, health, tribe?, others?, adjacent?, position?, keywords? }
 		auraAttack: 0,                // currently applied aura bonuses (recomputed)
 		auraHealth: 0,
@@ -735,6 +739,9 @@ function damageCreature(state, target, amount, source) {
 	if (target.dormantLeft > 0) return 0;     // dormant: immune while asleep
 	if (amount <= 0) return 0;
 	if (target.immuneTurn === state.turnNumber) return 0; // Bestial Wrath's Immune
+	// Colaque: immune while it controls its Shell appendage
+	if (target.immuneWhile && state.players[target.controller].board.some(c =>
+		!isDead(c) && c.name === target.immuneWhile)) return 0;
 	if (target.shield) {
 		target.shield = false;
 		emit(state, { type: 'shieldPop', uid: target.uid });
@@ -828,8 +835,13 @@ function isDead(c) {
 
 function freezeCreature(state, c) {
 	if (isDead(c)) return;
+	const wasFrozen = c.frozen;
 	c.frozen = state.turnNumber;
 	emit(state, { type: 'freeze', uid: c.uid });
+	// let each player's triggers react ("After an enemy creature is Frozen...")
+	if (!wasFrozen) for (let s = 0; s < state.players.length; s++) {
+		fireOngoing(state, s, 'creature-frozen', { frozen: c, byEnemy: c.controller !== s });
+	}
 }
 
 // silence: strips keywords, granted states, and death effects (stat buffs stay)
@@ -970,9 +982,20 @@ function summon(state, pi, tokenDef) {
 	p.board.push(c);
 	emit(state, { type: 'summon', player: pi, card: c });
 	questTick(state, 'summon', pi, 1, c);
+	summonColossalParts(state, pi, c);
 	fireOngoing(state, pi, 'summoned', { minion: c });
 	recomputeAuras(state);
 	return c;
+}
+
+// Colossal: a big minion summons its appendage tokens the moment it enters play,
+// before any of its own effects — played, summoned, or transformed in.
+function summonColossalParts(state, pi, card) {
+	if (!card.colossal?.length) return;
+	for (const id of card.colossal) {
+		const def = state.cardsById[id];
+		if (def) summon(state, pi, def);
+	}
 }
 
 // ---------- static auras ----------
@@ -1072,7 +1095,7 @@ function recomputeAuras(state) {
 // condition on an ongoing trigger, judged against the event's subject card
 // (the summoned/played/dead/damaged creature) or the owner's own state
 function ongoingCondOk(state, pi, cond, ctx) {
-	const subj = ctx.minion || ctx.played || ctx.dead || ctx.damaged || null;
+	const subj = ctx.minion || ctx.played || ctx.dead || ctx.damaged || ctx.frozen || null;
 	if (cond.maxAttack != null && !(subj && subj.attack <= cond.maxAttack)) return false;
 	if (cond.tribe && !(subj && (subj.tribe || '').includes(cond.tribe))) return false;
 	if (cond.overload && !(subj && subj.overload > 0)) return false;
@@ -1081,6 +1104,8 @@ function ongoingCondOk(state, pi, cond, ctx) {
 	if (cond.creature && !ctx.healedCreature) return false; // "whenever a MINION is healed"
 	if (cond.nontoken && (!subj || (subj.id || '').startsWith('token_'))) return false;
 	if (cond.cardId && !(subj && subj.id === cond.cardId)) return false; // Food sacrifices
+	if (cond.self && ctx.damaged !== ctx.self) return false; // "whenever THIS takes damage"
+	if (cond.enemy && !(subj && subj.controller !== pi)) return false; // "an ENEMY creature ..."
 	return true;
 }
 
@@ -1105,7 +1130,7 @@ function fireOngoing(state, pi, when, ctx = {}) {
 		for (const trig of trigs) {
 			if (!trig || trig.spent || trig.on !== when) continue;
 			// conditional triggers ("Whenever you summon a Beast...") gate before counters
-			if (trig.if && !ongoingCondOk(state, pi, trig.if, ctx)) continue;
+			if (trig.if && !ongoingCondOk(state, pi, trig.if, { ...ctx, self: card })) continue;
 			// Avenge-style triggers need N occurrences (once); Morbid-style `every`
 			// triggers fire on every Nth occurrence, repeating
 			if (trig.need || trig.every) {
@@ -1652,6 +1677,25 @@ function runSecretEffects(state, pi, effects, ctx) {
 				if (pool.length) ctx.target = pool[Math.floor(state.rng() * pool.length)];
 				break;
 			}
+			case 'gain-dead-stats': {
+				// Glugg: gain the ORIGINAL (printed) stats of the friendly creature that died
+				const dead = ctx.dead, def = dead && state.cardsById[dead.id], self = ctx.self;
+				if (self && def && !isDead(self)) {
+					self.attack += def.attack || 0;
+					self.maxHealth += def.health || 0;
+					emit(state, { type: 'buff', uid: self.uid, attack: self.attack, hp: hp(self) });
+				}
+				break;
+			}
+			case 'destroy-triggering': {
+				// Frost Queen Sindragosa: destroy the enemy creature that was just Frozen
+				const t = ctx.frozen || ctx.minion;
+				if (t && !isDead(t) && t.controller !== pi) {
+					t.damage = t.maxHealth; t.shield = false;
+					emit(state, { type: 'destroy', uid: t.uid });
+				}
+				break;
+			}
 			default:
 				// pass the firing permanent through as `source` so self-scoped
 				// effects (temp-buff-self, gain-weapon-attack) still work
@@ -1871,6 +1915,13 @@ function execEffects(state, pi, effects, target, source) {
 			else if (e.target === 'all-creatures') { for (const pl of state.players) for (const c of [...pl.board]) mend(c); }
 			else if (e.target === 'friendly-creatures') { for (const c of [...state.players[pi].board]) mend(c); }
 			else if (e.target === 'friendly-all') { mendHero(pi); for (const c of [...state.players[pi].board]) mend(c); }
+			else if (e.target === 'random-damaged-friendly') {
+				// Black Blood's Body: restore a random damaged friendly character
+				const pool = [...state.players[pi].board.filter(c => !isDead(c) && c.damage > 0)];
+				if (state.players[pi].life < STARTING_LIFE) pool.push('hero');
+				if (pool.length) { const t = pool[Math.floor(state.rng() * pool.length)];
+					if (t === 'hero') mendHero(pi); else mend(t); }
+			}
 			else {
 				const t = chosenCreature();
 				if (t) mend(t);
@@ -2075,6 +2126,84 @@ function execEffects(state, pi, effects, target, source) {
 				description: `A ${n}/${n} Jade Golem.`, attack: n, health: n,
 			});
 			if (c && e.grant && !c.keywords.includes(e.grant)) c.keywords.push(e.grant);
+		} else if (e.type === 'buff-colossal') {
+			// an appendage that also grows its parent Colossal (Wickerfang's Legs)
+			if (source?.colossalOf) {
+				const parent = state.players[pi].board.find(c => !isDead(c) && c.name === source.colossalOf);
+				if (parent) {
+					parent.attack += e.attack || 0;
+					parent.maxHealth += e.health || 0;
+					emit(state, { type: 'buff', uid: parent.uid, attack: parent.attack, hp: hp(parent) });
+				}
+			}
+		} else if (e.type === 'remove-colossal-keyword') {
+			// Chromatus' Heads: each head's death strips a keyword from the parent
+			if (source?.colossalOf) {
+				const parent = state.players[pi].board.find(c => c.name === source.colossalOf);
+				if (parent) {
+					parent.keywords = parent.keywords.filter(k => k !== e.keyword);
+					if (e.keyword === KW.DIVINE_SHIELD) parent.shield = false;
+					recomputeAuras(state);
+				}
+			}
+		} else if (e.type === 'grant-colossal-parts') {
+			// Hydralodon: give your appendages of this Colossal a keyword
+			for (const c of state.players[pi].board) {
+				if (c.colossalOf === source?.name && !c.keywords.includes(e.keyword)) c.keywords.push(e.keyword);
+			}
+		} else if (e.type === 'destroy-random-per-part') {
+			// Ozumat: destroy a random enemy creature for each living appendage
+			const parts = source ? state.players[pi].board.filter(c =>
+				!isDead(c) && c.colossalOf === source.name).length : 0;
+			for (let n = 0; n < parts; n++) {
+				const pool = enemies.flatMap(o => state.players[o].board.filter(c => !isDead(c)));
+				if (!pool.length) break;
+				const t = pool[Math.floor(state.rng() * pool.length)];
+				t.damage = t.maxHealth; t.shield = false;
+				emit(state, { type: 'destroy', uid: t.uid });
+			}
+		} else if (e.type === 'attack-random-enemy') {
+			// The Black Blood: swing at a random enemy creature
+			if (source && !isDead(source)) {
+				const pool = enemies.flatMap(o => state.players[o].board.filter(c => !isDead(c)));
+				if (pool.length) {
+					const t = pool[Math.floor(state.rng() * pool.length)];
+					resolveCombat(state, pi, source.uid, { type: 'creature', uid: t.uid, player: t.controller });
+				}
+			}
+		} else if (e.type === 'trigger-deathrattles') {
+			// Ragnaros: fire your creatures' Deathrattles without them dying
+			for (const c of [...state.players[pi].board]) {
+				if (!isDead(c) && c.deathrattle) execEffects(state, pi, c.deathrattle, null, c);
+			}
+		} else if (e.type === 'stalk-strike') {
+			// Xhilag's Stalk: deal its escalating power to a random enemy creature
+			const dmg = (source && source.partPower) || 2;
+			const pool = enemies.flatMap(o => state.players[o].board.filter(c => !isDead(c)));
+			if (pool.length) damageCreature(state, pool[Math.floor(state.rng() * pool.length)], dmg, source || null);
+		} else if (e.type === 'boost-parts-power') {
+			// Xhilag: raise the damage of all its Stalks
+			if (source) for (const c of state.players[pi].board) {
+				if (!isDead(c) && c.colossalOf === source.name) c.partPower = (c.partPower || 2) + (e.amount || 1);
+			}
+		} else if (e.type === 'summon-if-control') {
+			// Hydralodon Head deathrattle: only summons more if the parent survives
+			const held = state.players[pi].board.some(c => !isDead(c) && c.name === e.ifControl);
+			if (held) {
+				const def = state.cardsById[e.id];
+				if (def) for (let i = 0; i < (e.count || 1); i++) summon(state, pi, def);
+			}
+		} else if (e.type === 'force-attack') {
+			// Behemoth's Lure: force a random enemy to attack the Behemoth (parent)
+			const magnet = source && source.colossalOf ? (state.players[pi].board.find(c => !isDead(c) && c.name === source.colossalOf) || source) : source;
+			if (magnet && !isDead(magnet)) {
+				const pool = enemies.flatMap(o => state.players[o].board.filter(c =>
+					!isDead(c) && !c.frozen && c.attack > 0));
+				if (pool.length) {
+					const a = pool[Math.floor(state.rng() * pool.length)];
+					resolveCombat(state, a.controller, a.uid, { type: 'creature', uid: magnet.uid, player: magnet.controller });
+				}
+			}
 		} else if (e.type === 'summon-self-copy') {
 			// Saronite Chain Gang / Doppelgangster: fresh copies of the played minion
 			const def = source && state.cardsById[source.id];
@@ -3336,6 +3465,7 @@ function execEffects(state, pi, effects, target, source) {
 				const def = pool[Math.floor(state.rng() * pool.length)];
 				const card = instantiate(def, pi);
 				card.zone = 'hand';
+				if (e.costMod) card.cost = Math.max(0, (card.cost || 0) + e.costMod);
 				p.hand.push(card);
 				emit(state, { type: 'conjure', player: pi, card, color: e.color || null });
 				fireEmerge(state, pi, card);
@@ -3623,6 +3753,7 @@ export function playCard(state, pi, cardUid, target, choice, position) {
 			// Dormant creatures sleep through everything until they wake
 			emit(state, { type: 'dormant', player: pi, uid: card.uid, turns: card.dormantLeft });
 		} else {
+			summonColossalParts(state, pi, card); // appendages enter before the battlecry
 			fireOngoing(state, pi, 'summoned', { minion: card });
 			runBattlecry(state, pi, card, target, choice);
 			if (p.board.includes(card)) fireSecretsAll(state, pi, 'enemy-minion-played', { minion: card });
@@ -4021,6 +4152,7 @@ export function attack(state, pi, attackerUid, target) {
 		runSecretEffects(state, pi, attacker.ongoing.effects, { self: attacker });
 		if (attacker.ongoing?.once) attacker.ongoing = null;
 	}
+	fireOngoing(state, pi, 'friendly-attacks', { minion: attacker }); // Gaia-style reactions
 	// Cutpurse: when this creature attacks a hero
 	if (attacker.ongoing?.on === 'self-attacks-hero' && target.type === 'hero') {
 		runSecretEffects(state, pi, attacker.ongoing.effects, { self: attacker });

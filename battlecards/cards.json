@@ -9082,14 +9082,17 @@
       "id": "colaque",
       "name": "Colaque",
       "cardClass": "druid",
-      "cost": 7,
+      "cost": 5,
       "rarity": "legendary",
-      "set": "paper",
-      "description": "Colossal+1. Immune while you control Colaque's Shell.",
+      "set": "hs",
       "type": "creature",
       "attack": 6,
       "health": 5,
-      "tribe": "Beast God"
+      "colossal": [
+        "token_colaques_shell"
+      ],
+      "description": "Colossal +1. Immune while you control Colaque's Shell.",
+      "immuneWhile": "Colaque's Shell"
     },
     {
       "id": "crypt_keeper",
@@ -44809,14 +44812,25 @@
       "id": "chromatus",
       "name": "Chromatus",
       "cardClass": "paladin",
-      "cost": 8,
+      "cost": 10,
       "rarity": "legendary",
       "set": "hs",
-      "description": "Colossal +4 Taunt, Lifesteal, Elusive, Divine Shield",
       "type": "creature",
       "attack": 8,
       "health": 8,
-      "tribe": "Dragon"
+      "colossal": [
+        "token_green_head_of_chromatus",
+        "token_red_head_of_chromatus",
+        "token_blue_head_of_chromatus",
+        "token_bronze_head_of_chromatus"
+      ],
+      "description": "Colossal +4. Taunt, Lifesteal, Elusive, Divine Shield.",
+      "keywords": [
+        "taunt",
+        "lifesteal",
+        "elusive",
+        "divine_shield"
+      ]
     },
     {
       "id": "ravenous_felfisher",
@@ -47845,27 +47859,47 @@
       "id": "blackwater_behemoth",
       "name": "Blackwater Behemoth",
       "cardClass": "priest",
-      "cost": 7,
+      "cost": 8,
       "rarity": "legendary",
       "set": "hs",
-      "description": "Colossal +1 Lifesteal",
       "type": "creature",
       "attack": 8,
       "health": 10,
+      "colossal": [
+        "token_behemoths_lure"
+      ],
+      "description": "Colossal +1. Lifesteal.",
+      "keywords": [
+        "lifesteal"
+      ],
       "tribe": "Beast"
     },
     {
       "id": "xhilag_of_the_abyss",
       "name": "Xhilag of the Abyss",
-      "cardClass": "demonhunter",
-      "cost": 7,
+      "cardClass": "demon_hunter",
+      "cost": 5,
       "rarity": "legendary",
       "set": "hs",
-      "description": "Colossal +4 At the start of your turn, increase the damage of Xhilag's Stalks by 1.",
       "type": "creature",
       "attack": 3,
       "health": 6,
-      "tribe": "Demon"
+      "colossal": [
+        "token_xhilags_stalk",
+        "token_xhilags_stalk",
+        "token_xhilags_stalk",
+        "token_xhilags_stalk"
+      ],
+      "description": "Colossal +4. At the start of your turn, increase the damage of Xhilag's Stalks by 1.",
+      "ongoing": {
+        "on": "turn-start",
+        "effects": [
+          {
+            "type": "boost-parts-power",
+            "amount": 1
+          }
+        ]
+      }
     },
     {
       "id": "glaiveshark",
@@ -48028,11 +48062,18 @@
       "cost": 6,
       "rarity": "legendary",
       "set": "hs",
-      "description": "Colossal +2 Your Crabatoa Claws have +2 Attack.",
       "type": "creature",
       "attack": 6,
       "health": 5,
-      "tribe": "Beast"
+      "colossal": [
+        "token_crabatoas_claw",
+        "token_crabatoas_claw"
+      ],
+      "description": "Colossal +2. Your Crabatoa's Claws have +2 Attack.",
+      "aura": {
+        "attack": 2,
+        "name": "Crabatoa's Claw"
+      }
     },
     {
       "id": "sif",
@@ -52212,6 +52253,627 @@
           "type": "excavate"
         }
       ]
+    },
+    {
+      "id": "token_green_head_of_chromatus",
+      "name": "Green Head of Chromatus",
+      "cardClass": "neutral",
+      "cost": 1,
+      "rarity": "common",
+      "set": "hs",
+      "type": "creature",
+      "token": true,
+      "attack": 2,
+      "health": 3,
+      "colossalOf": "Chromatus",
+      "description": "Deathrattle: Chromatus loses Taunt.",
+      "keywords": [
+        "taunt",
+        "deathrattle"
+      ],
+      "deathrattle": [
+        {
+          "type": "remove-colossal-keyword",
+          "keyword": "taunt"
+        }
+      ]
+    },
+    {
+      "id": "token_red_head_of_chromatus",
+      "name": "Red Head of Chromatus",
+      "cardClass": "neutral",
+      "cost": 1,
+      "rarity": "common",
+      "set": "hs",
+      "type": "creature",
+      "token": true,
+      "attack": 2,
+      "health": 3,
+      "colossalOf": "Chromatus",
+      "description": "Deathrattle: Chromatus loses Lifesteal.",
+      "keywords": [
+        "lifesteal",
+        "deathrattle"
+      ],
+      "deathrattle": [
+        {
+          "type": "remove-colossal-keyword",
+          "keyword": "lifesteal"
+        }
+      ]
+    },
+    {
+      "id": "token_blue_head_of_chromatus",
+      "name": "Blue Head of Chromatus",
+      "cardClass": "neutral",
+      "cost": 1,
+      "rarity": "common",
+      "set": "hs",
+      "type": "creature",
+      "token": true,
+      "attack": 2,
+      "health": 3,
+      "colossalOf": "Chromatus",
+      "description": "Deathrattle: Chromatus loses Elusive.",
+      "keywords": [
+        "elusive",
+        "deathrattle"
+      ],
+      "deathrattle": [
+        {
+          "type": "remove-colossal-keyword",
+          "keyword": "elusive"
+        }
+      ]
+    },
+    {
+      "id": "token_bronze_head_of_chromatus",
+      "name": "Bronze Head of Chromatus",
+      "cardClass": "neutral",
+      "cost": 1,
+      "rarity": "common",
+      "set": "hs",
+      "type": "creature",
+      "token": true,
+      "attack": 2,
+      "health": 3,
+      "colossalOf": "Chromatus",
+      "description": "Deathrattle: Chromatus loses Divine Shield.",
+      "keywords": [
+        "divine_shield",
+        "deathrattle"
+      ],
+      "deathrattle": [
+        {
+          "type": "remove-colossal-keyword",
+          "keyword": "divine_shield"
+        }
+      ]
+    },
+    {
+      "id": "token_plume_of_vulcanos",
+      "name": "Plume of Vulcanos",
+      "cardClass": "neutral",
+      "cost": 1,
+      "rarity": "common",
+      "set": "hs",
+      "type": "creature",
+      "token": true,
+      "attack": 1,
+      "health": 4,
+      "colossalOf": "Vulcanos",
+      "description": "Whenever this takes damage, get a random Fire spell that costs (3) less.",
+      "ongoing": {
+        "on": "creature-damaged",
+        "if": {
+          "self": true
+        },
+        "effects": [
+          {
+            "type": "conjure-named",
+            "match": "Fire",
+            "cardType": "spell",
+            "costMod": -3,
+            "count": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "vulcanos",
+      "name": "Vulcanos",
+      "cardClass": "mage",
+      "cost": 9,
+      "rarity": "legendary",
+      "set": "hs",
+      "type": "creature",
+      "attack": 4,
+      "health": 8,
+      "colossal": [
+        "token_plume_of_vulcanos",
+        "token_plume_of_vulcanos"
+      ],
+      "description": "Colossal +2. At the end of your turn, deal 2 damage to all other creatures.",
+      "ongoing": {
+        "on": "turn-end",
+        "effects": [
+          {
+            "type": "damage",
+            "value": 2,
+            "target": "other-creatures"
+          }
+        ]
+      }
+    },
+    {
+      "id": "token_wickerfangs_leg",
+      "name": "Wickerfang's Leg",
+      "cardClass": "neutral",
+      "cost": 1,
+      "rarity": "common",
+      "set": "hs",
+      "type": "creature",
+      "token": true,
+      "attack": 0,
+      "health": 2,
+      "colossalOf": "Wickerfang",
+      "description": "At the end of your turn, this and Wickerfang gain +1/+1.",
+      "ongoing": {
+        "on": "turn-end",
+        "effects": [
+          {
+            "type": "buff-self",
+            "attack": 1,
+            "health": 1
+          },
+          {
+            "type": "buff-colossal",
+            "attack": 1,
+            "health": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "wickerfang",
+      "name": "Wickerfang",
+      "cardClass": "druid",
+      "cost": 8,
+      "rarity": "legendary",
+      "set": "hs",
+      "type": "creature",
+      "attack": 0,
+      "health": 5,
+      "colossal": [
+        "token_wickerfangs_leg",
+        "token_wickerfangs_leg",
+        "token_wickerfangs_leg",
+        "token_wickerfangs_leg"
+      ],
+      "description": "Colossal +4. Grows whenever its Legs grow."
+    },
+    {
+      "id": "token_gluggs_tail",
+      "name": "Glugg's Tail",
+      "cardClass": "neutral",
+      "cost": 1,
+      "rarity": "common",
+      "set": "hs",
+      "type": "creature",
+      "token": true,
+      "attack": 2,
+      "health": 2,
+      "colossalOf": "Glugg the Gulper",
+      "description": "Taunt.",
+      "keywords": [
+        "taunt"
+      ]
+    },
+    {
+      "id": "glugg_the_gulper",
+      "name": "Glugg the Gulper",
+      "cardClass": "shaman",
+      "cost": 6,
+      "rarity": "legendary",
+      "set": "hs",
+      "type": "creature",
+      "attack": 3,
+      "health": 5,
+      "colossal": [
+        "token_gluggs_tail",
+        "token_gluggs_tail",
+        "token_gluggs_tail"
+      ],
+      "description": "Colossal +3. After a friendly creature dies, gain its original stats.",
+      "ongoing": {
+        "on": "friendly-creature-died",
+        "effects": [
+          {
+            "type": "gain-dead-stats"
+          }
+        ]
+      }
+    },
+    {
+      "id": "token_ozumats_tentacle",
+      "name": "Ozumat's Tentacle",
+      "cardClass": "neutral",
+      "cost": 1,
+      "rarity": "common",
+      "set": "hs",
+      "type": "creature",
+      "token": true,
+      "attack": 1,
+      "health": 3,
+      "colossalOf": "Ozumat",
+      "description": "An appendage of Ozumat."
+    },
+    {
+      "id": "ozumat",
+      "name": "Ozumat",
+      "cardClass": "neutral",
+      "cost": 7,
+      "rarity": "legendary",
+      "set": "hs",
+      "type": "creature",
+      "attack": 6,
+      "health": 5,
+      "colossal": [
+        "token_ozumats_tentacle",
+        "token_ozumats_tentacle",
+        "token_ozumats_tentacle",
+        "token_ozumats_tentacle",
+        "token_ozumats_tentacle",
+        "token_ozumats_tentacle"
+      ],
+      "description": "Colossal +6. Deathrattle: Destroy a random enemy creature for each Ozumat's Tentacle.",
+      "keywords": [
+        "deathrattle"
+      ],
+      "deathrattle": [
+        {
+          "type": "destroy-random-per-part"
+        }
+      ]
+    },
+    {
+      "id": "token_sindragosas_wing",
+      "name": "Sindragosa's Wing",
+      "cardClass": "neutral",
+      "cost": 1,
+      "rarity": "common",
+      "set": "hs",
+      "type": "creature",
+      "token": true,
+      "attack": 2,
+      "health": 1,
+      "colossalOf": "Frost Queen Sindragosa",
+      "description": "Rush. Freezes any creature it damages.",
+      "keywords": [
+        "rush",
+        "freezer"
+      ]
+    },
+    {
+      "id": "frost_queen_sindragosa",
+      "name": "Frost Queen Sindragosa",
+      "cardClass": "death_knight",
+      "cost": 8,
+      "rarity": "legendary",
+      "set": "hs",
+      "type": "creature",
+      "attack": 6,
+      "health": 6,
+      "colossal": [
+        "token_sindragosas_wing",
+        "token_sindragosas_wing"
+      ],
+      "description": "Colossal +2. After an enemy creature is Frozen, destroy it.",
+      "ongoing": {
+        "on": "creature-frozen",
+        "if": {
+          "enemy": true
+        },
+        "effects": [
+          {
+            "type": "destroy-triggering"
+          }
+        ]
+      }
+    },
+    {
+      "id": "token_colaques_shell",
+      "name": "Colaque's Shell",
+      "cardClass": "neutral",
+      "cost": 1,
+      "rarity": "common",
+      "set": "hs",
+      "type": "creature",
+      "token": true,
+      "attack": 0,
+      "health": 8,
+      "colossalOf": "Colaque",
+      "description": "Taunt. Deathrattle: Gain 8 Armor.",
+      "keywords": [
+        "taunt",
+        "deathrattle"
+      ],
+      "deathrattle": [
+        {
+          "type": "armor",
+          "value": 8
+        }
+      ]
+    },
+    {
+      "id": "token_black_bloods_body",
+      "name": "Black Blood's Body",
+      "cardClass": "neutral",
+      "cost": 1,
+      "rarity": "common",
+      "set": "hs",
+      "type": "creature",
+      "token": true,
+      "attack": 2,
+      "health": 2,
+      "colossalOf": "The Black Blood",
+      "description": "At the end of your turn, restore 3 Health to a random damaged friendly character.",
+      "ongoing": {
+        "on": "turn-end",
+        "effects": [
+          {
+            "type": "heal",
+            "value": 3,
+            "target": "random-damaged-friendly"
+          }
+        ]
+      }
+    },
+    {
+      "id": "the_black_blood",
+      "name": "The Black Blood",
+      "cardClass": "priest",
+      "cost": 8,
+      "rarity": "legendary",
+      "set": "hs",
+      "type": "creature",
+      "attack": 5,
+      "health": 9,
+      "colossal": [
+        "token_black_bloods_body",
+        "token_black_bloods_body",
+        "token_black_bloods_body"
+      ],
+      "description": "Colossal +3. After you restore Health to a character, attack a random enemy creature.",
+      "ongoing": {
+        "on": "healed",
+        "effects": [
+          {
+            "type": "attack-random-enemy"
+          }
+        ]
+      }
+    },
+    {
+      "id": "token_hydralodon_head",
+      "name": "Hydralodon Head",
+      "cardClass": "neutral",
+      "cost": 1,
+      "rarity": "common",
+      "set": "hs",
+      "type": "creature",
+      "token": true,
+      "attack": 3,
+      "health": 1,
+      "colossalOf": "Hydralodon",
+      "description": "Deathrattle: If you control Hydralodon, summon 2 Hydralodon Heads.",
+      "keywords": [
+        "deathrattle"
+      ],
+      "deathrattle": [
+        {
+          "type": "summon-if-control",
+          "ifControl": "Hydralodon",
+          "id": "token_hydralodon_head",
+          "count": 2
+        }
+      ],
+      "tribe": "Beast"
+    },
+    {
+      "id": "hydralodon",
+      "name": "Hydralodon",
+      "cardClass": "hunter",
+      "cost": 7,
+      "rarity": "legendary",
+      "set": "hs",
+      "type": "creature",
+      "attack": 5,
+      "health": 5,
+      "colossal": [
+        "token_hydralodon_head",
+        "token_hydralodon_head"
+      ],
+      "description": "Colossal +2. Battlecry: Give your Hydralodon Heads Rush.",
+      "tribe": "Beast",
+      "effects": [
+        {
+          "type": "grant-colossal-parts",
+          "keyword": "rush"
+        }
+      ]
+    },
+    {
+      "id": "token_behemoths_lure",
+      "name": "Behemoth's Lure",
+      "cardClass": "neutral",
+      "cost": 1,
+      "rarity": "common",
+      "set": "hs",
+      "type": "creature",
+      "token": true,
+      "attack": 1,
+      "health": 4,
+      "colossalOf": "Blackwater Behemoth",
+      "description": "At the end of your turn, force a random enemy to attack Blackwater Behemoth.",
+      "ongoing": {
+        "on": "turn-end",
+        "effects": [
+          {
+            "type": "force-attack"
+          }
+        ]
+      },
+      "tribe": "Beast"
+    },
+    {
+      "id": "token_gaias_drill",
+      "name": "Gaia's Drill",
+      "cardClass": "neutral",
+      "cost": 1,
+      "rarity": "common",
+      "set": "hs",
+      "type": "creature",
+      "token": true,
+      "attack": 2,
+      "health": 3,
+      "colossalOf": "Gaia, the Techtonic",
+      "description": "Rush.",
+      "keywords": [
+        "rush"
+      ],
+      "tribe": "Mech"
+    },
+    {
+      "id": "gaia_the_techtonic",
+      "name": "Gaia, the Techtonic",
+      "cardClass": "mage",
+      "cost": 7,
+      "rarity": "legendary",
+      "set": "hs",
+      "type": "creature",
+      "attack": 5,
+      "health": 7,
+      "colossal": [
+        "token_gaias_drill",
+        "token_gaias_drill"
+      ],
+      "description": "Colossal +2. After a friendly Mech attacks, deal 1 damage to all enemies.",
+      "ongoing": {
+        "on": "friendly-attacks",
+        "if": {
+          "tribe": "Mech"
+        },
+        "effects": [
+          {
+            "type": "damage",
+            "value": 1,
+            "target": "enemies"
+          }
+        ]
+      },
+      "tribe": "Mech"
+    },
+    {
+      "id": "token_nellies_pirate_ship",
+      "name": "Nellie's Pirate Ship",
+      "cardClass": "neutral",
+      "cost": 1,
+      "rarity": "common",
+      "set": "hs",
+      "type": "creature",
+      "token": true,
+      "attack": 2,
+      "health": 6,
+      "colossalOf": "Nellie, the Great Thresher",
+      "description": "Taunt. Deathrattle: Add 3 Pirates to your hand.",
+      "keywords": [
+        "taunt",
+        "deathrattle"
+      ],
+      "deathrattle": [
+        {
+          "type": "conjure-named",
+          "tribe": "Pirate",
+          "cardType": "creature",
+          "count": 3
+        }
+      ],
+      "tribe": "Beast"
+    },
+    {
+      "id": "nellie_the_great_thresher",
+      "name": "Nellie, the Great Thresher",
+      "cardClass": "warrior",
+      "cost": 6,
+      "rarity": "legendary",
+      "set": "hs",
+      "type": "creature",
+      "attack": 5,
+      "health": 5,
+      "colossal": [
+        "token_nellies_pirate_ship"
+      ],
+      "description": "Colossal +1. Battlecry: Discover 3 Pirates to crew Nellie's Ship.",
+      "tribe": "Beast",
+      "effects": [
+        {
+          "type": "discover",
+          "pick": 3,
+          "cardType": "creature",
+          "tribe": "Pirate",
+          "count": 3
+        }
+      ]
+    },
+    {
+      "id": "token_crabatoas_claw",
+      "name": "Crabatoa's Claw",
+      "cardClass": "neutral",
+      "cost": 1,
+      "rarity": "common",
+      "set": "hs",
+      "type": "creature",
+      "token": true,
+      "attack": 2,
+      "health": 1,
+      "colossalOf": "Crabatoa",
+      "description": "Rush. Deathrattle: Equip a 2/1 Claw.",
+      "keywords": [
+        "rush",
+        "deathrattle"
+      ],
+      "deathrattle": [
+        {
+          "type": "equip",
+          "name": "Crabatoa's Claw",
+          "attack": 2,
+          "durability": 1
+        }
+      ]
+    },
+    {
+      "id": "token_xhilags_stalk",
+      "name": "Xhilag's Stalk",
+      "cardClass": "neutral",
+      "cost": 1,
+      "rarity": "common",
+      "set": "hs",
+      "type": "creature",
+      "token": true,
+      "attack": 1,
+      "health": 2,
+      "colossalOf": "Xhilag of the Abyss",
+      "description": "At the end of your turn, deal damage equal to its power to a random enemy.",
+      "ongoing": {
+        "on": "turn-end",
+        "effects": [
+          {
+            "type": "stalk-strike"
+          }
+        ]
+      },
+      "partPower": 2
     }
   ]
 }
