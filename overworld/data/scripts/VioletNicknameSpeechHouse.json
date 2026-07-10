@@ -1,0 +1,1 @@
+{"VioletNicknameSpeechHouseTeacherScript":[{"op":"faceplayer"},{"op":"msg","text":"VioletNicknameSpeechHouseTeacherText"}],"VioletNicknameSpeechHouseLassScript":[{"op":"faceplayer"},{"op":"msg","text":"VioletNicknameSpeechHouseLassText"}],"VioletNicknameSpeechHouseBirdScript":[{"op":"faceplayer"},{"op":"msg","text":"VioletNicknameSpeechHouseBirdText"},{"op":"end"}]}

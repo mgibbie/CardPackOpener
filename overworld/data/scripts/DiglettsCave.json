@@ -1,0 +1,1 @@
+{"DiglettsCavePokefanMScript":[{"op":"faceplayer"},{"op":"msg","text":"DiglettsCavePokefanMText"}],"DiglettsCaveHiddenMaxRevive":[{"op":"give","item":"MAX_REVIVE","count":1}]}

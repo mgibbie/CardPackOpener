@@ -1,0 +1,1 @@
+{"RouteBattleTowerGateShowSailorCallback":[{"op":"clearflag","flag":"EVENT_BATTLE_TOWER_OPEN_CIVILIANS"},{"op":"end"}],"Route40BattleTowerGateRockerScript":[{"op":"faceplayer"},{"op":"msg","text":"Route40BattleTowerGateRockerText"}],"Route40BattleTowerGateTwinScript":[{"op":"faceplayer"},{"op":"msg","text":"Route40BattleTowerGateTwinText"}]}
