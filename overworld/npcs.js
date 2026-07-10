@@ -124,7 +124,7 @@ export class NPCs {
 			if (ev.type !== 'object') return;
 			if (ev.flag && ev.flag !== '0') return;        // hidden-by-flag (story NPCs)
 			if (isTrainerEvent(ev)) return;                // trainers.js renders these
-			if (/BREAKABLE_ROCK|CUTTABLE_TREE|ITEM_BALL|BERRY_TREE|FRUIT_TREE/.test(ev.graphics_id || '')) return; // items.js owns these
+			if (/BREAKABLE_ROCK|CUTTABLE_TREE|ITEM_BALL|BERRY_TREE|FRUIT_TREE|BOULDER/.test(ev.graphics_id || '')) return; // items.js owns these
 			const file = this.gfx[ev.graphics_id]
 				|| (ev.graphics_id || '').replace('OBJ_EVENT_GFX_', '').toLowerCase() + '.png';
 			const img = await getImage(`data/people/${file}`).catch(() => null);

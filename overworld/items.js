@@ -80,6 +80,10 @@ export class Items {
 				this.fieldObjs.push({ tx: +o.x, ty: +o.y, kind: 'cut' });
 				continue;
 			}
+			if (g.includes('BOULDER')) {
+				this.fieldObjs.push({ tx: +o.x, ty: +o.y, kind: 'boulder' });
+				continue;
+			}
 			if (g.includes('ITEM_BALL')) {
 				const parsed = parseBallScript(o.script);
 				if (!parsed) continue;
@@ -142,11 +146,25 @@ export class Items {
 		const i = this.fieldObjs.indexOf(obj);
 		if (i >= 0) this.fieldObjs.splice(i, 1);
 	}
+	moveFieldObj(obj, tx, ty) {
+		obj.tx = tx; obj.ty = ty;
+	}
 
 	draw(ctx, camX, camY) {
 		for (const o of this.fieldObjs) {
 			const x = o.tx * META - camX, y = o.ty * META - camY;
-			if (o.kind === 'rock') {
+			if (o.kind === 'boulder') {
+				// a big rounded strength boulder filling the tile
+				ctx.fillStyle = '#8c837a';
+				ctx.beginPath(); ctx.ellipse(x + 8, y + 9, 7.5, 7, 0, 0, Math.PI * 2); ctx.fill();
+				ctx.fillStyle = '#a39a90';
+				ctx.beginPath(); ctx.ellipse(x + 6, y + 6, 3, 2.5, 0, 0, Math.PI * 2); ctx.fill();
+				ctx.fillStyle = '#6d665e';
+				ctx.beginPath(); ctx.ellipse(x + 10, y + 12, 3, 2, 0, 0, Math.PI * 2); ctx.fill();
+				ctx.strokeStyle = '#544e47';
+				ctx.lineWidth = 1;
+				ctx.beginPath(); ctx.ellipse(x + 8, y + 9, 7.5, 7, 0, 0, Math.PI * 2); ctx.stroke();
+			} else if (o.kind === 'rock') {
 				// cracked boulder
 				ctx.fillStyle = '#9a938a';
 				ctx.beginPath(); ctx.ellipse(x + 8, y + 9, 6.5, 5.5, 0, 0, Math.PI * 2); ctx.fill();

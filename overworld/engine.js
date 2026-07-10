@@ -363,7 +363,14 @@ export class Player {
 			? (this.world.isSurfable(nx, ny) || this.world.isPassable(nx, ny))
 			: this.world.isPassable(nx, ny) && !this.world.isSurfable(nx, ny);
 		if (!open) return;
-		if (this.blocked && this.blocked(nx, ny)) return;
+		if (this.blocked && this.blocked(nx, ny)) {
+			// a Strength boulder in the way may be shoved one tile ahead; if it
+			// moves, the player steps into the vacated tile
+			if (this.pushBoulder && this.pushBoulder(nx, ny, dx, dy)) {
+				this.beginMove(nx, ny, META, false);
+			}
+			return;
+		}
 		this.beginMove(nx, ny, META, false);
 	}
 

@@ -64,6 +64,31 @@ const starterMenu = { open: false, row: 0, col: 0, sprites: {} };
 const urlPinnedMap = new URLSearchParams(location.search).has('map');
 player.blocked = (tx, ty) => npcs.npcBlocks(tx, ty) || trainers.occupied(tx, ty) || services.blocks(tx, ty) || items.occupied(tx, ty);
 
+// Strength: shove a boulder one tile ahead if a party mon can use Strength and
+// the destination is clear. Returns true when the boulder actually moved.
+let strengthHinted = false;
+function partyHasStrength() {
+	return (party || []).some(m => m.curHP > 0
+		&& (m.moves.some(mv => mv.id === 'strength') || canLearn(m, 'strength')));
+}
+player.pushBoulder = (bx, by, dx, dy) => {
+	const obj = items.fieldObjAt(bx, by);
+	if (!obj || obj.kind !== 'boulder') return false;
+	if (!partyHasStrength()) {
+		if (!strengthHinted) {
+			strengthHinted = true;
+			dialog.open("It's a hefty boulder — but it won't budge.\n\nMaybe a strong POKeMON could push it.");
+		}
+		return false;
+	}
+	const tx = bx + dx, ty = by + dy;
+	// the tile beyond must be open floor (not water, not blocked by anything)
+	if (!world.isPassable(tx, ty) || world.isSurfable(tx, ty)) return false;
+	if (player.blocked(tx, ty)) return false;
+	items.moveFieldObj(obj, tx, ty);
+	return true;
+};
+
 trainers.onEngage = t => {
 	const { party: foeParty, info } = trainers.buildBattle(t, battle.data);
 	const begin = () => startTrainerBattle(t, foeParty, info);
