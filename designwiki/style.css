@@ -70,3 +70,36 @@ img.sprite {
   background: #eef2fb; border: 1px solid #e1e6f0; border-radius: 8px;
   padding: 6px; margin: 8px 0;
 }
+.t-Nuclear { background: #6a3fb0; }
+
+/* national-dex grid */
+.dex-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(168px, 1fr)); gap: 8px; margin-top: 12px; }
+.dex-tile { display: flex; gap: 10px; align-items: center; background: #fff; border: 1px solid #e1e6f0; border-radius: 8px; padding: 6px 10px; }
+.dex-tile:hover { border-color: #2b6cb0; text-decoration: none; box-shadow: 0 1px 4px rgba(43,108,176,.15); }
+.dex-spr { flex: 0 0 56px; width: 56px; height: 56px; display: flex; align-items: center; justify-content: center; }
+.dex-spr img.sprite { width: auto; max-width: 56px; max-height: 56px; margin: 0; padding: 2px; background: #f6f8fd; }
+.dex-meta { min-width: 0; line-height: 1.35; }
+.dex-meta .nm { font-weight: 600; color: #1c2230; }
+.dex-types { margin-top: 2px; }
+.dex-types .chip { font-size: 11px; padding: 0 6px; margin-right: 3px; }
+
+/* card gallery */
+.card-filters { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; margin: 12px 0; }
+.card-classsel { padding: 6px 10px; border: 1px solid #d3dae8; border-radius: 6px; font-size: 14px; background: #fff; color: #2d3550; max-width: 320px; }
+.cf { border: 1px solid #d3dae8; background: #fff; color: #45507a; border-radius: 14px; padding: 4px 12px; font-size: 13px; cursor: pointer; }
+.cf:hover { border-color: #2b6cb0; }
+.cf.on { background: #2b6cb0; color: #fff; border-color: #2b6cb0; }
+.card-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; margin-top: 6px; }
+.card-tile { background: #fff; border: 1px solid #e1e6f0; border-radius: 8px; overflow: hidden; }
+.card-tile:hover { border-color: #2b6cb0; box-shadow: 0 2px 8px rgba(43,108,176,.15); }
+.card-art { position: relative; height: 120px; background: #11151f; }
+.card-art img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.card-cost { position: absolute; top: 4px; left: 4px; width: 22px; height: 22px; border-radius: 50%;
+  background: #2456b8; color: #fff; font-weight: 700; font-size: 13px; display: flex; align-items: center; justify-content: center;
+  border: 2px solid #fff; box-shadow: 0 1px 2px rgba(0,0,0,.4); }
+.card-nm { font-weight: 600; color: #1c2230; font-size: 13px; padding: 5px 8px 0; line-height: 1.2; }
+.card-sub { display: flex; justify-content: space-between; font-size: 12px; padding: 2px 8px 7px; }
+.card-stats { font-weight: 700; color: #c2410c; }
+.showmore { display: block; margin: 14px auto; padding: 7px 16px; border: 1px solid #d3dae8; background: #fff;
+  color: #45507a; border-radius: 6px; cursor: pointer; }
+.showmore:hover { border-color: #2b6cb0; }

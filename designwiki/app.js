@@ -26,6 +26,8 @@ const typeChip = t => h('span', { class: 'chip t-' + t }, t);
 const pkLink = id => DB.pokemon[id] ? h('a', { href: '#/pokemon/' + id, class: 'species-link' }, DB.pokemon[id].name) : h('span', null, id || '?');
 const spriteImg = p => p && p.sprite ? h('img', { class: 'sprite', src: 'sprites/' + p.sprite, alt: p.name, onerror: e => e.target.remove() }) : null;
 const byName = (a, b) => String(a.name).localeCompare(String(b.name));
+// dex label: national number for standard mons, ✦ for custom/fakémon (negative id)
+const dexLabel = p => (p.num != null && p.num > 0) ? '#' + String(p.num).padStart(4, '0') : '✦';
 // Dex order: national dex (positive nums) first, custom mons (negative ids) after.
 const dexKey = n => n == null ? 2e9 : (n > 0 ? n : 1e9 - n);
 const byDex = (a, b) => dexKey(a.num) - dexKey(b.num);
@@ -57,6 +59,27 @@ function listView(file, title, items) {
 
 function kv(label, value) { return h('tr', null, h('th', null, label), h('td', null, value)); }
 
+// National-dex style grid: sprite thumbnail + number + name + type chips.
+// Standard species show their national number; custom/fakemon get a ✦.
+function pokedexView() {
+  const q = norm(searchEl.value);
+  const list = Object.values(DB.pokemon).sort(byDex)
+    .filter(p => !q || norm(p.name).includes(q) || String(p.num || '').includes(q));
+  const custom = list.filter(p => (p.num || 0) < 0).length;
+  content.replaceChildren(
+    h('h1', null, 'Pokédex ', h('span', { class: 'num' }, '(' + list.length + ')')),
+    h('p', { class: 'muted' }, 'National dex order · ' + (list.length - custom) + ' standard + ' + custom + ' custom/fakémon (✦). Click any entry for full stats, abilities & moves.'),
+    h('div', { class: 'dex-grid' }, list.map(p =>
+      h('a', { class: 'dex-tile', href: '#/pokemon/' + p.id },
+        h('div', { class: 'dex-spr' }, p.sprite
+          ? h('img', { class: 'sprite', loading: 'lazy', src: 'sprites/' + p.sprite, alt: p.name, onerror: e => e.target.remove() }) : null),
+        h('div', { class: 'dex-meta' },
+          h('div', { class: 'num' }, dexLabel(p)),
+          h('div', { class: 'nm' }, p.name),
+          h('div', { class: 'dex-types' }, typesArr(p.types).map(typeChip))))))
+  );
+}
+
 function pokemonDetail(id) {
   const p = DB.pokemon[id]; if (!p) return notFound();
   const stats = ['hp', 'atk', 'def', 'spa', 'spd', 'spe'];
@@ -65,7 +88,7 @@ function pokemonDetail(id) {
     h('div', null, list.map((m, i) => [i ? ', ' : '', mvLink(m)]).flat())
   ] : [];
   content.replaceChildren(
-    h('h1', null, h('span', { class: 'num' }, '#' + (p.num ?? '?') + ' '), p.name),
+    h('h1', null, h('span', { class: 'num' }, dexLabel(p) + ' '), p.name),
     spriteImg(p),
     h('div', null, typesArr(p.types).map(typeChip)),
     h('div', { style: 'margin:8px 0' }, 'Abilities: ', typesArr(p.abilities).map((a, i) => [i ? ', ' : '', abLink(a)]).flat()),
@@ -184,6 +207,68 @@ function regionView(rk) {
 }
 
 
+// Card Gallery — every card in Battlecards with its art. Card data + art live in
+// the sibling battlecards/ app; we lazy-load them the first time the view opens.
+let cardsPromise = null;
+const RARITY_COLOR = { common: '#8a94a6', uncommon: '#3f9d3f', rare: '#3b6cc4', epic: '#9b59b6', legendary: '#e0902f' };
+let cardClassFilter = 'all';
+function loadCards() {
+  if (!cardsPromise) cardsPromise = fetch('../battlecards/cards.json').then(r => r.json()).then(d => d.cards || d || []);
+  return cardsPromise;
+}
+async function cardGalleryView() {
+  content.replaceChildren(h('h1', null, 'Card Gallery'), h('p', { class: 'muted' }, 'Loading cards…'));
+  let cards;
+  try { cards = await loadCards(); } catch (e) { return content.replaceChildren(h('h1', null, 'Card Gallery'), h('p', { class: 'muted' }, 'Could not load battlecards/cards.json.')); }
+  if (location.hash.slice(1).split('/').filter(Boolean)[0] !== 'cards') return; // navigated away while loading
+  renderCards(cards);
+}
+function renderCards(cards) {
+  const q = norm(searchEl.value);
+  // count per class so the dropdown can show sizes (there are many custom classes)
+  const counts = {};
+  for (const c of cards) { const k = c.cardClass || 'neutral'; counts[k] = (counts[k] || 0) + 1; }
+  const classes = Object.keys(counts).sort((a, b) => counts[b] - counts[a]);
+  let list = cards.filter(c => cardClassFilter === 'all' || (c.cardClass || 'neutral') === cardClassFilter);
+  if (q) list = list.filter(c => norm(c.name).includes(q) || norm(c.cardClass).includes(q) || norm(c.type).includes(q) || norm(c.description).includes(q));
+  list.sort((a, b) => (a.cardClass || '').localeCompare(b.cardClass || '') || (a.cost || 0) - (b.cost || 0) || String(a.name).localeCompare(String(b.name)));
+
+  const sel = h('select', { class: 'card-classsel', onchange: e => { cardClassFilter = e.target.value; renderCards(cards); } },
+    h('option', { value: 'all', selected: cardClassFilter === 'all' ? '' : null }, 'All classes (' + cards.length + ')'),
+    ...classes.map(cl => h('option', { value: cl, selected: cardClassFilter === cl ? '' : null }, titleCase(cl) + ' (' + counts[cl] + ')')));
+  const filters = h('div', { class: 'card-filters' }, h('label', { class: 'muted' }, 'Class: '), sel);
+
+  const grid = h('div', { class: 'card-grid' });
+  const CAP = 400;
+  let shown = 0;
+  const more = h('button', { class: 'showmore' });
+  const renderMore = () => {
+    grid.append(...list.slice(shown, shown + CAP).map(cardTile));
+    shown = Math.min(shown + CAP, list.length);
+    if (shown >= list.length) more.remove(); else more.textContent = 'Show more (' + (list.length - shown) + ' hidden)';
+  };
+  more.addEventListener('click', renderMore);
+
+  content.replaceChildren(
+    h('h1', null, 'Card Gallery ', h('span', { class: 'num' }, '(' + list.length + ')')),
+    h('p', { class: 'muted' }, 'Every card in Battlecards. Search by name, class, type, or rules text; filter by class below.'),
+    filters, grid, more);
+  renderMore();
+}
+function cardTile(c) {
+  const isUnit = c.attack != null || c.health != null;
+  const stat = isUnit ? h('span', { class: 'card-stats' }, (c.attack ?? '?') + ' / ' + (c.health ?? '?')) : h('span', { class: 'muted' }, titleCase(c.type || ''));
+  return h('div', { class: 'card-tile', title: c.description || '' },
+    h('div', { class: 'card-art' },
+      h('img', { loading: 'lazy', src: '../battlecards/art/' + c.id + '.jpg', alt: c.name,
+        onerror: e => { if (!e.target.dataset.png) { e.target.dataset.png = 1; e.target.src = '../battlecards/art/' + c.id + '.png'; } else e.target.style.visibility = 'hidden'; } }),
+      h('span', { class: 'card-cost' }, String(c.cost ?? 0))),
+    h('div', { class: 'card-nm' }, c.name),
+    h('div', { class: 'card-sub' },
+      h('span', { style: 'color:' + (RARITY_COLOR[c.rarity] || '#8a94a6') }, titleCase(c.rarity || '—')),
+      stat));
+}
+
 // Battlecards design-work backlog: every card name held without a working
 // design, plus undefined keywords. Data from designwiki/data/battlecards.json
 // (regenerate with Magepunk66/tools/gen_battlecards_design.py).
@@ -240,8 +325,7 @@ function route() {
     a.classList.toggle('active', a.getAttribute('href') === '#' + hash || a.getAttribute('href') === '#/' + parts[0]));
   if (parts.length === 0) return home();
   const [section, id] = parts;
-  if (section === 'pokemon') return id ? pokemonDetail(id) :
-    listView('pokemon', 'Pokémon', Object.values(DB.pokemon).sort(byDex));
+  if (section === 'pokemon') return id ? pokemonDetail(id) : pokedexView();
   if (section === 'moves') return id ? moveDetail(id) :
     listView('moves', 'Moves', Object.values(DB.moves).sort(byName));
   if (section === 'abilities') return id ? abilityDetail(id) :
@@ -249,13 +333,17 @@ function route() {
   if (section === 'tms') return tmsView();
   if (section === 'unlearned') return unlearnedView();
   if (section === 'region') return regionView(id);
+  if (section === 'cards') return cardGalleryView();
   if (section === 'battlecards') return battlecardsView();
   notFound();
 }
 
 searchEl.addEventListener('input', () => {
   const s = (location.hash.slice(1) || '/').split('/').filter(Boolean);
-  if (['pokemon', 'moves', 'abilities', 'tms', 'unlearned', 'battlecards'].includes(s[0]) && !s[1]) route();
+  if (['pokemon', 'moves', 'abilities', 'tms', 'unlearned', 'battlecards', 'cards'].includes(s[0]) && !s[1]) {
+    if (s[0] === 'cards') { loadCards().then(renderCards); return; } // re-filter without reloading
+    route();
+  }
 });
 window.addEventListener('hashchange', route);
 
