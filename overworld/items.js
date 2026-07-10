@@ -42,6 +42,7 @@ export class Items {
 		this.world = world;
 		this.balls = [];
 		this.trees = [];
+		this.fieldObjs = [];
 		this.fruitMap = {};
 		this.ballImg = null;
 		try { this.collected = new Set(JSON.parse(localStorage.getItem(COLLECTED_KEY) || '[]')); }
@@ -67,9 +68,18 @@ export class Items {
 	loadForMap() {
 		this.balls = [];
 		this.trees = [];
+		this.fieldObjs = []; // smashable rocks / cuttable trees (respawn per visit)
 		const map = this.world.current.map;
 		for (const o of map.object_events || []) {
 			const g = String(o.graphics_id || '');
+			if (g.includes('BREAKABLE_ROCK')) {
+				this.fieldObjs.push({ tx: +o.x, ty: +o.y, kind: 'rock' });
+				continue;
+			}
+			if (g.includes('CUTTABLE_TREE')) {
+				this.fieldObjs.push({ tx: +o.x, ty: +o.y, kind: 'cut' });
+				continue;
+			}
 			if (g.includes('ITEM_BALL')) {
 				const parsed = parseBallScript(o.script);
 				if (!parsed) continue;
@@ -118,13 +128,42 @@ export class Items {
 		return null;
 	}
 
-	// visible balls and all trees are solid
+	// visible balls, berry trees, and field obstacles are solid
 	occupied(tx, ty) {
 		return this.balls.some(b => !b.hidden && b.tx === tx && b.ty === ty)
-			|| this.trees.some(t => t.tx === tx && t.ty === ty);
+			|| this.trees.some(t => t.tx === tx && t.ty === ty)
+			|| this.fieldObjs.some(o => o.tx === tx && o.ty === ty);
+	}
+
+	fieldObjAt(tx, ty) {
+		return this.fieldObjs.find(o => o.tx === tx && o.ty === ty) || null;
+	}
+	removeFieldObj(obj) {
+		const i = this.fieldObjs.indexOf(obj);
+		if (i >= 0) this.fieldObjs.splice(i, 1);
 	}
 
 	draw(ctx, camX, camY) {
+		for (const o of this.fieldObjs) {
+			const x = o.tx * META - camX, y = o.ty * META - camY;
+			if (o.kind === 'rock') {
+				// cracked boulder
+				ctx.fillStyle = '#9a938a';
+				ctx.beginPath(); ctx.ellipse(x + 8, y + 9, 6.5, 5.5, 0, 0, Math.PI * 2); ctx.fill();
+				ctx.fillStyle = '#7d766d';
+				ctx.beginPath(); ctx.ellipse(x + 6, y + 11, 3, 2.2, 0, 0, Math.PI * 2); ctx.fill();
+				ctx.strokeStyle = '#5e574f';
+				ctx.beginPath(); ctx.moveTo(x + 8, y + 4); ctx.lineTo(x + 6, y + 8); ctx.lineTo(x + 9, y + 12); ctx.stroke();
+			} else {
+				// scrawny cuttable tree
+				ctx.fillStyle = '#6b4a26';
+				ctx.fillRect(x + 7, y + 8, 3, 7);
+				ctx.fillStyle = '#4f9c3f';
+				ctx.beginPath(); ctx.ellipse(x + 8, y + 6, 5.5, 5, 0, 0, Math.PI * 2); ctx.fill();
+				ctx.strokeStyle = '#356b2a';
+				ctx.stroke();
+			}
+		}
 		for (const b of this.balls) {
 			if (b.hidden) continue;
 			const x = b.tx * META - camX, y = b.ty * META - camY;

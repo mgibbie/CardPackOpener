@@ -134,6 +134,25 @@ function interact() {
 	// item balls / berry trees / hidden items (facing tile, then standing tile)
 	const found = items.interactAt(fx, fy) || items.interactAt(player.tx, player.ty);
 	if (found) { dialog.open(found); return; }
+	// smashable rocks + cuttable trees: the lead mon clears the way
+	const fo = items.fieldObjAt(fx, fy);
+	if (fo) {
+		const lead = party.find(m => m.curHP > 0);
+		if (!lead) return;
+		if (fo.kind === 'rock') {
+			dialog.open(`${lead.name} smashed the rock!`, () => {
+				items.removeFieldObj(fo);
+				const grp = encounters.data[world.current.map.id]?.rock_smash;
+				if (grp && Math.random() * 100 < grp.rate) {
+					const pick = encounters.pick(world.current.map.id, 'rock_smash');
+					if (pick) startWildBattle(pick);
+				}
+			});
+		} else {
+			dialog.open(`${lead.name} cut down the tree!`, () => items.removeFieldObj(fo));
+		}
+		return;
+	}
 	const svc = services.kindAt(fx, fy);
 	if (svc === 'nurse') {
 		dialog.open('Welcome to the POKEMON CENTER!\n\nWe restored your POKEMON\nto full health. See you again!', () => healParty(party));
@@ -210,7 +229,7 @@ function startKey(k) {
 		const it = items[startMenu.idx];
 		startMenu.open = false;
 		if (it === 'POKeMON') { partyMenu.open = true; partyMenu.idx = 0; }
-		else if (it === 'BAG') { bagMenu.open = true; bagMenu.idx = 0; bagMenu.picking = false; }
+		else if (it === 'BAG') { bagMenu.open = true; bagMenu.idx = 0; bagMenu.picking = false; bagMenu.forget = null; bagMenu.flash = null; }
 		else if (it === 'CARDS') { cardsMenu.open = true; cardsMenu.idx = 0; }
 		else if (it === 'FRIENDS') { openFriends(); }
 		else if (it === 'POKeDEX') { const seen = party ? party.length : 0; dialog.open(`POKeDEX\n\nYou have caught ${seen} POKeMON so far.`); }
@@ -353,8 +372,75 @@ function useRareCandy(mon) {
 	return true;
 }
 
+// Gen3 TM/HM numbering -> move id; Crystal-style ids embed the move name
+// (tmraindance). Teaching consumes the TM.
+const GEN3_TM = [null, 'focuspunch', 'dragonclaw', 'waterpulse', 'calmmind', 'roar', 'toxic',
+	'hail', 'bulkup', 'bulletseed', 'hiddenpower', 'sunnyday', 'taunt', 'icebeam', 'blizzard',
+	'hyperbeam', 'lightscreen', 'protect', 'raindance', 'gigadrain', 'safeguard', 'frustration',
+	'solarbeam', 'irontail', 'thunderbolt', 'thunder', 'earthquake', 'return', 'dig', 'psychic',
+	'shadowball', 'brickbreak', 'doubleteam', 'reflect', 'shockwave', 'flamethrower', 'sludgebomb',
+	'sandstorm', 'fireblast', 'rocktomb', 'aerialace', 'torment', 'facade', 'secretpower', 'rest',
+	'attract', 'thief', 'steelwing', 'skillswap', 'snatch', 'overheat'];
+const GEN3_HM = [null, 'cut', 'fly', 'surf', 'strength', 'flash', 'rocksmash', 'waterfall', 'dive'];
+function tmMoveId(id) {
+	let m = /^tm(\d+)$/.exec(id);
+	if (m) return GEN3_TM[+m[1]] || null;
+	m = /^hm(\d+)$/.exec(id);
+	if (m) return GEN3_HM[+m[1]] || null;
+	m = /^tm([a-z0-9]+)$/.exec(id);
+	if (m && battle.data.moves[m[1]]) return m[1];
+	return null;
+}
+function canLearn(mon, mid) {
+	if (battle.data.extra?.[mon.speciesId]?.learn?.includes(mid)) return true;
+	return (battle.data.species[mon.speciesId]?.learnset || []).some(([, id2]) => id2 === mid);
+}
+
+// fishing: cast a rod from the bag while facing water. Rod tiers read the
+// classic Gen3 slot bands of the map's fishing table (0-1 / 2-4 / 5-9).
+function castRod(id, item) {
+	bagMenu.open = false;
+	const [dx, dy] = { down: [0, 1], up: [0, -1], left: [-1, 0], right: [1, 0] }[player.facing];
+	const fx = player.tx + dx, fy = player.ty + dy;
+	if (!world.isSurfable(fx, fy)) {
+		dialog.open('No good — you need to face the water to fish.');
+		return;
+	}
+	const grp = encounters.data[world.current.map.id]?.fishing;
+	const bands = { 1: [0, 1], 2: [2, 4], 3: [5, 9] };
+	const [lo, hi] = bands[item.tier] || [0, 1];
+	const slots = grp ? grp.slots.slice(lo, hi + 1) : [];
+	if (!slots.length || Math.random() > 0.6) {
+		dialog.open(`You cast the ${item.name}...\n\nNot even a nibble.`);
+		return;
+	}
+	const total = slots.reduce((s, x) => s + x.w, 0);
+	let r = Math.random() * total, slot = slots[0];
+	for (const s of slots) { r -= s.w; if (r <= 0) { slot = s; break; } }
+	const level = slot.min + Math.floor(Math.random() * (slot.max - slot.min + 1));
+	dialog.open(`You cast the ${item.name}...\n\nOh! A bite!`, () => startWildBattle({ id: slot.id, level }));
+}
+
 function bagKey(k) {
 	const entries = Object.entries(Bag.getBag()).filter(([, n]) => n > 0);
+	// forgetting a move to make room for a TM
+	if (bagMenu.forget) {
+		const f = bagMenu.forget;
+		if (k === 'ArrowUp') f.idx = (f.idx + 3) % 4;
+		if (k === 'ArrowDown') f.idx = (f.idx + 1) % 4;
+		if (k === 'x' || k === 'Escape') { bagMenu.forget = null; bagMenu.picking = false; }
+		if (k === 'z' || k === 'Enter') {
+			const info = battle.data.moves[f.mid];
+			const old = f.mon.moves[f.idx];
+			f.mon.moves[f.idx] = { id: f.mid, name: info.name, pp: info.pp, maxPp: info.pp };
+			Bag.consume(f.itemId);
+			saveParty(party);
+			bagMenu.flash = `Forgot ${old.name}, learned ${info.name}!`;
+			bagMenu.forget = null;
+			bagMenu.picking = false;
+		}
+		return;
+	}
 	if (bagMenu.picking) {
 		if (k === 'ArrowUp') bagMenu.pickIdx = (bagMenu.pickIdx + party.length - 1) % party.length;
 		if (k === 'ArrowDown') bagMenu.pickIdx = (bagMenu.pickIdx + 1) % party.length;
@@ -363,33 +449,60 @@ function bagKey(k) {
 			const [id] = entries[bagMenu.idx] || [];
 			const item = Bag.ITEMS[id];
 			const mon = party[bagMenu.pickIdx];
-			if (item && mon) {
-				if (item.kind === 'heal' && mon.curHP > 0 && mon.curHP < mon.maxHP) {
+			if (mon) {
+				if (item && item.kind === 'heal' && mon.curHP > 0 && mon.curHP < mon.maxHP) {
 					Bag.consume(id);
 					mon.curHP = Math.min(mon.maxHP, mon.curHP + item.amount);
 					saveParty(party);
 					bagMenu.picking = false;
-				} else if (item.kind === 'revive' && mon.curHP <= 0) {
+				} else if (item?.kind === 'revive' && mon.curHP <= 0) {
 					Bag.consume(id);
 					mon.curHP = Math.floor(mon.maxHP / 2);
 					mon.status = null;
 					saveParty(party);
 					bagMenu.picking = false;
-				} else if (item.kind === 'candy' && useRareCandy(mon)) {
+				} else if (item?.kind === 'candy' && useRareCandy(mon)) {
 					Bag.consume(id);
 					bagMenu.picking = false;
-				} else if (item.kind === 'ether' && mon.curHP > 0 && mon.moves.some(m => m.pp < m.maxPp)) {
+				} else if (item?.kind === 'ether' && mon.curHP > 0 && mon.moves.some(m => m.pp < m.maxPp)) {
 					Bag.consume(id);
 					for (const mv of mon.moves) mv.pp = Math.min(mv.maxPp, mv.pp + item.amount);
 					saveParty(party);
 					bagMenu.picking = false;
-				} else if (item.kind === 'held') {
+				} else if ((item?.kind === 'stone' || item?.kind === 'held') && mon.curHP > 0
+					&& (battle.data.extra?.[mon.speciesId]?.evos || [])
+						.some(e => e.type === 'item' && e.param === id && battle.data.species[e.target])) {
+					// an evolution item the selected species responds to
+					const evo = battle.data.extra[mon.speciesId].evos
+						.find(e => e.type === 'item' && e.param === id && battle.data.species[e.target]);
+					Bag.consume(id);
+					bagMenu.picking = false;
+					bagMenu.open = false;
+					evolution.evolveNow(mon, evo.target, battle.data);
+				} else if (item?.kind === 'held') {
 					// give the item; anything already held returns to the bag
 					Bag.consume(id);
 					if (mon.heldItem) Bag.addItem(mon.heldItem);
 					mon.heldItem = id;
 					saveParty(party);
 					bagMenu.picking = false;
+				} else if (item?.kind === 'stone') {
+					bagMenu.flash = `It won't have any effect on ${mon.name}.`;
+				} else if (tmMoveId(id)) {
+					const mid = tmMoveId(id);
+					const info = battle.data.moves[mid];
+					if (!info) bagMenu.flash = 'The disc is blank...';
+					else if (mon.moves.some(mv => mv.id === mid)) bagMenu.flash = `${mon.name} already knows ${info.name}!`;
+					else if (!canLearn(mon, mid)) bagMenu.flash = `${mon.name} can't learn ${info.name}.`;
+					else if (mon.moves.length < 4) {
+						mon.moves.push({ id: mid, name: info.name, pp: info.pp, maxPp: info.pp });
+						Bag.consume(id);
+						saveParty(party);
+						bagMenu.flash = `${mon.name} learned ${info.name}!`;
+						bagMenu.picking = false;
+					} else {
+						bagMenu.forget = { itemId: id, mid, mon, idx: 0 };
+					}
 				}
 			}
 		}
@@ -400,8 +513,12 @@ function bagKey(k) {
 	if (k === 'x' || k === 'Escape' || k === 'b') bagMenu.open = false;
 	if ((k === 'z' || k === 'Enter') && entries.length) {
 		const [id] = entries[bagMenu.idx];
-		const kind = Bag.ITEMS[id]?.kind;
-		if (['heal', 'revive', 'candy', 'ether', 'held'].includes(kind)) { bagMenu.picking = true; bagMenu.pickIdx = 0; }
+		const item = Bag.ITEMS[id];
+		if (item?.kind === 'rod') { castRod(id, item); return; }
+		if (['heal', 'revive', 'candy', 'ether', 'held', 'stone'].includes(item?.kind) || tmMoveId(id)) {
+			bagMenu.picking = true;
+			bagMenu.pickIdx = 0;
+		}
 	}
 }
 
@@ -476,7 +593,7 @@ function pressKey(k) {
 	}
 	if ((k === 'Enter' || k === 'm') && !loading) { startMenu.open = true; startMenu.idx = 0; return; }
 	if (k === 'p' && !loading) { partyMenu.open = true; partyMenu.idx = 0; return; }
-	if (k === 'b' && !loading) { bagMenu.open = true; bagMenu.idx = 0; bagMenu.picking = false; return; }
+	if (k === 'b' && !loading) { bagMenu.open = true; bagMenu.idx = 0; bagMenu.picking = false; bagMenu.forget = null; bagMenu.flash = null; return; }
 	if (k === 'z' && !loading) interact();
 }
 // any menu that consumes direction presses instead of walking
@@ -898,13 +1015,30 @@ function drawBagMenu(W, H) {
 		menuUi.push(b);
 		BUI.button(sctx, b, menuHover === bid || (bagMenu.idx === idx && !bagMenu.picking), u);
 	});
-	if (bagMenu.picking) {
+	if (bagMenu.forget) {
+		const f = bagMenu.forget;
+		sctx.fillStyle = BUI.C.text;
+		sctx.font = `${Math.round(15 * u)}px m6x11plus, monospace`;
+		sctx.fillText(`${f.mon.name}: forget which move?`, W * 0.5, 70 * u);
+		f.mon.moves.forEach((mv, i) => {
+			const bid = 'forget:' + i;
+			const b = { id: bid, x: W * 0.5, y: (76 + i * 52) * u, w: W * 0.47, h: 46 * u,
+				label: mv.name, right: `${mv.pp}/${mv.maxPp}` };
+			menuUi.push(b);
+			BUI.button(sctx, b, menuHover === bid || f.idx === i, u);
+		});
+	} else if (bagMenu.picking) {
 		sctx.fillStyle = BUI.C.text;
 		sctx.font = `${Math.round(15 * u)}px m6x11plus, monospace`;
 		sctx.fillText('Use on:', W * 0.5, 70 * u);
 		party.forEach((m, i) => {
 			monRow('use:' + i, W * 0.5, (76 + i * 54) * u, W * 0.47, 48 * u, m, bagMenu.pickIdx === i, u);
 		});
+	}
+	if (bagMenu.flash) {
+		sctx.fillStyle = BUI.C.accent;
+		sctx.font = `${Math.round(15 * u)}px m6x11plus, monospace`;
+		sctx.fillText(bagMenu.flash, 24 * u, H - 24 * u);
 	}
 }
 
@@ -1004,8 +1138,9 @@ function menuTap(id) {
 	if (kind === 'buy') { shopMenu.idx = +a; pressKey('z'); return; }
 	if (kind === 'shopscroll') { pressKey(+a > 0 ? 'ArrowDown' : 'ArrowUp'); return; }
 	if (kind === 'sail') { ferryMenu.idx = +a; pressKey('z'); return; }
-	if (kind === 'item') { bagMenu.idx = +a; bagMenu.picking = false; pressKey('z'); return; }
+	if (kind === 'item') { bagMenu.idx = +a; bagMenu.picking = false; bagMenu.forget = null; pressKey('z'); return; }
 	if (kind === 'use') { bagMenu.pickIdx = +a; pressKey('z'); return; }
+	if (kind === 'forget') { if (bagMenu.forget) bagMenu.forget.idx = +a; pressKey('z'); return; }
 	if (kind === 'pcp') { pcMenu.side = 0; pcMenu.idx = +a; pressKey('z'); return; }
 	if (kind === 'pcb') { pcMenu.side = 1; pcMenu.idx = +a; pressKey('z'); return; }
 	if (kind === 'start') { startMenu.idx = +a; pressKey('z'); return; }

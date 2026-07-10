@@ -12,14 +12,24 @@ export class Evolution {
 
 	get blocking() { return this.cur != null || this.queue.length > 0; }
 
-	// scan the party for pending level evolutions and start the sequence
+	// scan the party for pending level/friendship evolutions and start the sequence
 	async check(party, data) {
 		for (const mon of party) {
 			const evos = data.extra?.[mon.speciesId]?.evos || [];
-			const evo = evos.find(e => e.type === 'level' && mon.level >= e.param && data.species[e.target]);
+			const evo = evos.find(e => data.species[e.target]
+				&& ((e.type === 'level' && mon.level >= e.param)
+					|| (e.type === 'friendship' && (mon.friend ?? 70) >= (e.param || 220))));
 			if (evo) this.queue.push({ mon, target: evo.target });
 		}
 		if (this.queue.length && !this.cur) this.next(data);
+	}
+
+	// an evolution item was used on this mon: run the sequence right away
+	evolveNow(mon, target, data) {
+		if (!data.species[target]) return false;
+		this.queue.push({ mon, target });
+		if (!this.cur) this.next(data);
+		return true;
 	}
 
 	async next(data) {

@@ -396,6 +396,7 @@ export function buildMon(speciesId, level, data) {
 		speciesId, name: sp.name.toUpperCase(), level,
 		gender: Math.random() < 0.5 ? 'M' : 'F',
 		ability: (() => { const opts = data.abilities?.[speciesId]; return opts?.length ? opts[Math.floor(Math.random() * opts.length)] : null; })(),
+		friend: 70, // friendship: grows with wins/levels, some species evolve on it
 		types: [...sp.types], ivs, stats, maxHP: stats.hp, curHP: stats.hp,
 		exp: level ** 3, // medium-fast growth curve
 		moves, sprite: sp.sprite, num: sp.num,
@@ -1970,10 +1971,12 @@ export class Battle {
 	awardExp(mon, gain) {
 		const a = this.active;
 		mon.exp = (mon.exp ?? mon.level ** 3) + gain;
+		mon.friend = Math.min(255, (mon.friend ?? 70) + 2);
 		this.pushMsg(`${mon.name} gained ${gain} EXP!`);
 		const sp = this.data.species[mon.speciesId];
 		while (mon.level < 100 && mon.exp >= (mon.level + 1) ** 3) {
 			mon.level++;
+			mon.friend = Math.min(255, (mon.friend ?? 70) + 1);
 			const lvl = mon.level;
 			this.pushMsg(`${mon.name} grew to Lv${lvl}!`, () => {
 				const ivs = mon.ivs || { hp: 15, atk: 15, def: 15, spa: 15, spd: 15, spe: 15 };

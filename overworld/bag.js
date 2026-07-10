@@ -62,6 +62,38 @@ export const ITEMS = {
 	fullrestore: { name: 'FULL RESTORE', price: 0, kind: 'heal', amount: 999 },
 	maxpotion:   { name: 'MAX POTION',   price: 0, kind: 'heal', amount: 999 },
 	maxrevive:   { name: 'MAX REVIVE',   price: 0, kind: 'revive' },
+	// fishing rods: use from the bag while facing water
+	oldrod:      { name: 'OLD ROD',      price: 500,  kind: 'rod', tier: 1 },
+	goodrod:     { name: 'GOOD ROD',     price: 2500, kind: 'rod', tier: 2 },
+	superrod:    { name: 'SUPER ROD',    price: 8000, kind: 'rod', tier: 3 },
+	// evolution stones + one-off evolution items (use on a party member whose
+	// species evolves with it; species_extra evos carry the item ids)
+	firestone:   { name: 'FIRE STONE',    price: 2100, kind: 'stone' },
+	waterstone:  { name: 'WATER STONE',   price: 2100, kind: 'stone' },
+	thunderstone:{ name: 'THUNDERSTONE',  price: 2100, kind: 'stone' },
+	leafstone:   { name: 'LEAF STONE',    price: 2100, kind: 'stone' },
+	moonstone:   { name: 'MOON STONE',    price: 2100, kind: 'stone' },
+	sunstone:    { name: 'SUN STONE',     price: 2100, kind: 'stone' },
+	shinystone:  { name: 'SHINY STONE',   price: 3000, kind: 'stone' },
+	duskstone:   { name: 'DUSK STONE',    price: 3000, kind: 'stone' },
+	dawnstone:   { name: 'DAWN STONE',    price: 3000, kind: 'stone' },
+	icestone:    { name: 'ICE STONE',     price: 3000, kind: 'stone' },
+	linkingcord: { name: 'LINKING CORD',  price: 4000, kind: 'stone' },
+	ovalstone:   { name: 'OVAL STONE',    price: 2100, kind: 'stone' },
+	protector:   { name: 'PROTECTOR',     price: 3000, kind: 'stone' },
+	dragonscale: { name: 'DRAGON SCALE',  price: 3000, kind: 'stone' },
+	electirizer: { name: 'ELECTIRIZER',   price: 3000, kind: 'stone' },
+	magmarizer:  { name: 'MAGMARIZER',    price: 3000, kind: 'stone' },
+	upgrade:     { name: 'UP-GRADE',      price: 3000, kind: 'stone' },
+	dubiousdisc: { name: 'DUBIOUS DISC',  price: 3000, kind: 'stone' },
+	prismscale:  { name: 'PRISM SCALE',   price: 3000, kind: 'stone' },
+	razorfang:   { name: 'RAZOR FANG',    price: 3000, kind: 'stone' },
+	razorclaw:   { name: 'RAZOR CLAW',    price: 3000, kind: 'stone' },
+	reapercloth: { name: 'REAPER CLOTH',  price: 3000, kind: 'stone' },
+	deepseatooth:{ name: 'DEEPSEATOOTH',  price: 3000, kind: 'stone' },
+	deepseascale:{ name: 'DEEPSEASCALE',  price: 3000, kind: 'stone' },
+	whippeddream:{ name: 'WHIPPED DREAM', price: 3000, kind: 'stone' },
+	sachet:      { name: 'SACHET',        price: 3000, kind: 'stone' },
 };
 
 // display names for arbitrary picked-up item ids (TMs, berries, key items...)
@@ -85,7 +117,10 @@ export function nameOf(id) {
 	return id.toUpperCase();
 }
 export const SHOP_STOCK = ['pokeball', 'greatball', 'ultraball', 'potion', 'superpotion',
-	'hyperpotion', 'ether', 'revive', 'oranberry', 'sitrusberry', 'lumberry', 'leftovers',
+	'hyperpotion', 'ether', 'revive', 'oldrod', 'goodrod', 'superrod',
+	'firestone', 'waterstone', 'thunderstone', 'leafstone', 'moonstone', 'sunstone',
+	'shinystone', 'duskstone', 'dawnstone', 'icestone', 'linkingcord',
+	'oranberry', 'sitrusberry', 'lumberry', 'leftovers',
 	'choiceband', 'choicespecs', 'choicescarf', 'lifeorb', 'focussash', 'quickclaw',
 	'kingsrock', 'rockyhelmet', 'shellbell', 'scopelens', 'charcoal', 'mysticwater', 'magnet', 'miracleseed'];
 // held items a wild mon might be carrying (15% roll)
