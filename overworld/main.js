@@ -1334,10 +1334,13 @@ function checkCoordTrigger() {
 const STORY_SEED = {
 	KANTO: {
 		vars: {
-			// player already has a starter -> skip the "can't go out" block (0)
-			// and the pokedex-rating auto-scene (2); 1 is neither
+			// player already has a starter -> skip PalletTown's "can't go out"
+			// block (0) and the pokedex-rating auto-scene (2); 1 is neither.
+			// The lab's own scene var (VAR_MAP_SCENE_PALLET_TOWN_PROFESSOR_OAKS_LAB)
+			// is intentionally left at its default 0: that value skips both the
+			// ChooseStarter (1) and NationalDex (7) onFrame scenes, so a
+			// starter-holding region-picker walks into a normal, non-scripted lab.
 			VAR_MAP_SCENE_PALLET_TOWN_OAK: 1,
-			VAR_MAP_SCENE_OAKS_LAB: 1,
 		},
 		flags: [
 			'FLAG_ADVENTURE_STARTED',
