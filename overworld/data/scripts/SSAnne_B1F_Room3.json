@@ -1,0 +1,1 @@
+{"SSAnne_B1F_Room3_EventScript_Dylan":[{"op":"trainerbattle","args":["TRAINER_SAILOR_DYLAN","SSAnne_B1F_Room3_Text_DylanIntro","SSAnne_B1F_Room3_Text_DylanDefeat"]},{"op":"msg","text":"SSAnne_B1F_Room3_Text_DylanPostBattle"},{"op":"end"}]}

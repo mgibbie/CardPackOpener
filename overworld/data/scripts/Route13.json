@@ -1,0 +1,1 @@
+{"Route13_EventScript_TrainerTips1":[{"op":"msg","text":"Route13_Text_LookToLeftOfThatPost"},{"op":"end"}],"Route13_EventScript_TrainerTips2":[{"op":"msg","text":"Route13_Text_SelectToSwitchItems"},{"op":"end"}],"Route13_EventScript_RouteSign":[{"op":"msg","text":"Route13_Text_RouteSign"},{"op":"end"}]}

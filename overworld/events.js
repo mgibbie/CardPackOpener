@@ -1,10 +1,11 @@
 // events.js — story progression: a persisted flag/var store plus a cutscene
-// interpreter. Cutscenes are opcode lists (data), so they can be hand-authored
-// or transpiled from the decomp map scripts. While a cutscene runs it blocks
-// player input and drives NPC/player movement and dialogue.
+// interpreter. Cutscenes are opcode lists (data) — hand-authored or transpiled
+// from the decomp map scripts. The interpreter is label-addressable with a call
+// stack, so ported scripts' goto/call/return control flow works. While a
+// cutscene runs it freezes player input and drives NPC/player movement + text.
 const KEY = 'magepunk_story';
 const META = 16;
-const STEP_TIME = 0.22; // seconds per tile of scripted movement
+const STEP_TIME = { walk: 0.22, slow: 0.32, fast: 0.13, slide: 0.10, jump: 0.24, face: 0, noop: 0 };
 const DIRS = { down: [0, 1], up: [0, -1], left: [-1, 0], right: [1, 0] };
 
 function load() {
@@ -18,126 +19,212 @@ export function getFlag(f) { return !!store.flags[f]; }
 export function setFlag(f) { store.flags[f] = true; save(); }
 export function clearFlag(f) { delete store.flags[f]; save(); }
 export function getVar(v) { return store.vars[v] || 0; }
+export function hasVar(v) { return Object.prototype.hasOwnProperty.call(store.vars, v); }
 export function setVar(v, val) { store.vars[v] = val; save(); }
 export function resetStory() { store = { flags: {}, vars: {} }; save(); }
 
-// ctx bridges the cutscene to the game: { dialog, player, npcById(id), giveItem,
-// giveMon, healParty, hud }. Steps are plain objects; see the opcodes below.
+// resolve a symbolic value (a var name, TRUE/FALSE, or a literal number)
+function resolveValue(v) {
+	if (typeof v === 'number') return v;
+	if (v === 'TRUE') return 1;
+	if (v === 'FALSE') return 0;
+	if (typeof v === 'string' && /^VAR_/.test(v)) return getVar(v);
+	const n = Number(v);
+	return isNaN(n) ? v : n;
+}
+function cmp(a, op, b) {
+	switch (op) {
+		case 'eq': return a === b; case 'ne': return a !== b;
+		case 'lt': return a < b; case 'le': return a <= b;
+		case 'gt': return a > b; case 'ge': return a >= b;
+	}
+	return false;
+}
+
+// ctx bridges a cutscene to the game. Fields used:
+//   dialog, player, npcById(localId), talker (the NPC being talked to, or null),
+//   strings (label->string), playerName, giveItem, takeItem, giveMon, healParty,
+//   warp(map, warpId), setMetatile, hideObj, showObj, setObjXy, startTrainer,
+//   special(name, store), hud
 export class Cutscene {
 	constructor() { this.cur = null; }
 	get blocking() { return this.cur != null; }
 
-	// run an opcode list; onDone fires when it finishes
+	// hand-authored linear list: run it as a one-label program
 	start(steps, ctx, onDone) {
-		this.cur = { steps, ctx, i: 0, sub: null, t: 0, onDone };
+		this.run({ __entry__: steps }, '__entry__', ctx, onDone);
+	}
+
+	// run a label-addressable program (the transpiled map scripts)
+	run(program, entryLabel, ctx, onDone) {
+		const ops = program[entryLabel];
+		if (!ops) { onDone?.(); return; }
+		this.cur = { program, ctx, onDone, frames: [{ ops, i: 0 }], sub: null };
 		this._enter();
 	}
 
-	_finish() {
-		const cb = this.cur?.onDone;
-		this.cur = null;
-		cb?.();
-	}
-
-	// cancel a running cutscene without firing its onDone (e.g. skip)
 	stop() { this.cur = null; }
+	_finish() { const cb = this.cur?.onDone; this.cur = null; cb?.(); }
 
-	// begin the step at the cursor; instant steps apply and auto-advance
-	_enter() {
+	_frame() { const f = this.cur.frames; return f[f.length - 1]; }
+
+	// advance the cursor past the current op, popping finished frames
+	_advance() {
 		const c = this.cur;
 		if (!c) return;
-		if (c.i >= c.steps.length) { this._finish(); return; }
-		const s = c.steps[c.i];
-		const ctx = c.ctx;
-		c.sub = null; c.t = 0;
-		switch (s.op) {
-			case 'setflag': setFlag(s.flag); return this._advance();
-			case 'clearflag': clearFlag(s.flag); return this._advance();
-			case 'setvar': setVar(s.var, s.value); return this._advance();
-			case 'give': ctx.giveItem?.(s.item, s.count || 1); return this._advance();
-			case 'givemon': ctx.giveMon?.(s.species, s.level || 5); return this._advance();
-			case 'heal': ctx.healParty?.(); return this._advance();
-			case 'hud': if (s.text) ctx.hud?.(s.text); return this._advance();
-			case 'face': { const a = this._actor(s.who); if (a) a.facing = s.dir; return this._advance(); }
-			case 'if': {
-				// branch: run one of two sub-lists based on a flag
-				const branch = getFlag(s.flag) ? (s.then || []) : (s.else || []);
-				c.steps = [...c.steps.slice(0, c.i + 1), ...branch, ...c.steps.slice(c.i + 1)];
-				return this._advance();
-			}
-			case 'say':
-				ctx.dialog.open(s.text);
-				return; // waits in update() for the dialog to close
-			case 'move':
-				c.sub = this._planMove(s);
-				if (!c.sub) return this._advance();
-				return;
-			case 'wait':
-				c.sub = { kind: 'wait', left: s.sec || 0.4 };
-				return;
-			default:
-				return this._advance();
-		}
+		if (c.frames.length) this._frame().i++;
+		while (c.frames.length && this._frame().i >= this._frame().ops.length) c.frames.pop();
 	}
 
-	_advance() { if (this.cur) { this.cur.i++; this._enter(); } }
+	// jump (replace current frame's ops) or call (push a frame) to a label
+	_goto(label, isCall) {
+		const ops = this.cur.program[label];
+		if (!ops) return false;
+		if (isCall) this.cur.frames.push({ ops, i: 0 });
+		else { const fr = this._frame(); fr.ops = ops; fr.i = 0; }
+		return true;
+	}
 
 	_actor(who) {
 		const ctx = this.cur.ctx;
-		if (who === 'player') return ctx.player;
+		if (who === 'LOCALID_PLAYER' || who === 'player' || who == null) return ctx.player;
 		return ctx.npcById?.(who) || null;
 	}
 
-	// build a tile-by-tile movement plan from a path of directions or a delta
-	_planMove(s) {
-		const actor = this._actor(s.who);
+	// iterative interpreter: run instant ops until one waits (msg/move/wait) or
+	// the program ends. Control flow mutates the frame stack; never recurses.
+	_enter() {
+		let guard = 0;
+		while (this.cur && guard++ < 100000) {
+			const c = this.cur;
+			if (!c.frames.length) return this._finish();
+			const fr = this._frame();
+			if (fr.i >= fr.ops.length) { c.frames.pop(); continue; }
+			const op = fr.ops[fr.i];
+			const ctx = c.ctx;
+			switch (op.op) {
+				case 'lock': case 'release': case 'waitmove': case 'waitmsg':
+				case 'closemsg': case 'waitstate': case 'fade': break;
+				case 'faceplayer': if (ctx.talker && ctx.player) ctx.talker.facing = opposite(ctx.player.facing); break;
+				case 'setflag': setFlag(op.flag); break;
+				case 'clearflag': clearFlag(op.flag); break;
+				case 'setvar': setVar(op.var, resolveValue(op.value)); break;
+				case 'addvar': setVar(op.var, getVar(op.var) + resolveValue(op.value)); break;
+				case 'copyvar': setVar(op.dst, resolveValue(op.src)); break;
+				case 'setrespawn': break;
+				case 'give': ctx.giveItem?.(itemId(op.item), op.count || 1); break;
+				case 'takeitem': ctx.takeItem?.(itemId(op.item), op.count || 1); break;
+				case 'givemon': ctx.giveMon?.(speciesId(op.species), resolveValue(op.level) || 5); break;
+				case 'hideobj': { const a = this._actor(op.who); if (a) a.hidden = true; ctx.hideObj?.(op.who); break; }
+				case 'showobj': { const a = this._actor(op.who); if (a) a.hidden = false; ctx.showObj?.(op.who); break; }
+				case 'setobjxy': ctx.setObjXy?.(op.who, op.x, op.y); break;
+				case 'setmetatile': ctx.setMetatile?.(op.x, op.y, op.tile, op.impassable); break;
+				case 'special':
+					if (ctx.special?.(op.name, op.store) === 'wait') { this._advance(); c.sub = { kind: 'special' }; return; }
+					break;
+				case 'goto': this._goto(op.label, false); continue; // no advance
+				case 'call': this._advance(); this._goto(op.label, true); continue;
+				case 'return': if (c.frames.length) c.frames.pop(); continue;
+				case 'end': return this._finish();
+				case 'branch': {
+					let hit;
+					if (op.cond.flag != null) hit = getFlag(op.cond.flag) === !!op.cond.state;
+					else hit = cmp(getVar(op.cond.var), op.cond.cmp, resolveValue(op.cond.value));
+					if (hit) {
+						if (op.kind === 'call') { this._advance(); this._goto(op.label, true); }
+						else this._goto(op.label, false);
+						continue;
+					}
+					break;
+				}
+				case 'warp': ctx.warp?.(op.map, resolveValue(op.warp) || 0); return this._finish();
+				case 'trainerbattle':
+					if (ctx.startTrainer?.(op.args) === 'wait') { this._advance(); c.sub = { kind: 'battle' }; return; }
+					break;
+				case 'say': case 'msg': ctx.dialog.open(resolveText(ctx, op.text)); this._advance(); c.sub = { kind: 'say' }; return;
+				case 'move': { const plan = this._planMove(op); if (plan) { this._advance(); c.sub = plan; return; } break; }
+				case 'wait': this._advance(); c.sub = { kind: 'wait', left: (op.frames || 16) / 60 }; return;
+				default: break;
+			}
+			this._advance();
+		}
+	}
+
+	// a wait finished — resume the interpreter (cursor is already past the op)
+	_resume() { const c = this.cur; if (c) { c.sub = null; this._enter(); } }
+
+	_planMove(op) {
+		const actor = this._actor(op.who);
 		if (!actor) return null;
-		let path = s.path;
-		if (!path && s.dir && s.steps) path = Array(s.steps).fill(s.dir);
-		if (!path || !path.length) return null;
-		return { kind: 'move', actor, path, k: 0, from: null };
+		let steps = op.steps;
+		if (!steps && op.path) steps = op.path.map(d => ({ dir: d, mode: 'walk' }));
+		if (!steps && op.dir && op.count) steps = Array(op.count).fill({ dir: op.dir, mode: 'walk' });
+		if (!steps || !steps.length) return null;
+		return { kind: 'move', actor, steps, k: 0, from: null };
 	}
 
 	update(dt) {
 		const c = this.cur;
-		if (!c) return;
-		// a 'say' step waits for the dialog to be dismissed
-		const s = c.steps[c.i];
-		if (s && s.op === 'say') {
-			if (!c.ctx.dialog.blocking) this._advance();
-			return;
-		}
-		if (!c.sub) return;
-		if (c.sub.kind === 'wait') {
-			c.sub.left -= dt;
-			if (c.sub.left <= 0) this._advance();
-			return;
-		}
-		if (c.sub.kind === 'move') {
-			const mv = c.sub;
-			const actor = mv.actor;
-			if (mv.from == null) {
-				// start the next tile of the path
-				if (mv.k >= mv.path.length) return this._advance();
-				const dir = mv.path[mv.k];
-				const [dx, dy] = DIRS[dir] || [0, 0];
-				actor.facing = dir;
-				mv.from = [actor.tx, actor.ty];
-				mv.to = [actor.tx + dx, actor.ty + dy];
-				mv.t = 0;
+		if (!c || !c.sub) return;
+		const s = c.sub;
+		if (s.kind === 'say') { if (!c.ctx.dialog.blocking) this._resume(); return; }
+		if (s.kind === 'special' || s.kind === 'battle') return; // resumed via resume()
+		if (s.kind === 'wait') { s.left -= dt; if (s.left <= 0) this._resume(); return; }
+		if (s.kind === 'move') {
+			const actor = s.actor;
+			if (s.from == null) {
+				if (s.k >= s.steps.length) return this._resume();
+				const st = s.steps[s.k];
+				if (st.mode === 'face') { actor.facing = st.dir; s.k++; return; }
+				if (st.mode === 'noop') { s.k++; return; }
+				if (st.mode === 'delay') { s.from = 'delay'; s.t = 0; s.dur = (st.frames || 8) / 60; return; }
+				if (st.mode === 'invisible') { actor.hidden = st.v; s.k++; return; }
+				const [dx, dy] = DIRS[st.dir] || [0, 0];
+				actor.facing = st.dir;
+				s.from = [actor.tx, actor.ty];
+				s.to = [actor.tx + dx, actor.ty + dy];
+				s.t = 0; s.dur = STEP_TIME[st.mode] || STEP_TIME.walk;
 				if (typeof actor.stepParity === 'number') actor.stepParity ^= 1;
+				return;
 			}
-			mv.t += dt / STEP_TIME;
-			const p = Math.min(1, mv.t);
-			actor.px = mv.from[0] * META + (mv.to[0] - mv.from[0]) * META * p;
-			actor.py = mv.from[1] * META + (mv.to[1] - mv.from[1]) * META * p;
+			if (s.from === 'delay') { s.t += dt; if (s.t >= s.dur) { s.k++; s.from = null; } return; }
+			s.t += dt / (s.dur || STEP_TIME.walk);
+			const p = Math.min(1, s.t);
+			actor.px = s.from[0] * META + (s.to[0] - s.from[0]) * META * p;
+			actor.py = s.from[1] * META + (s.to[1] - s.from[1]) * META * p;
 			if (typeof actor.moving === 'boolean') actor.moving = p < 1;
 			if (p >= 1) {
-				actor.tx = mv.to[0]; actor.ty = mv.to[1];
+				actor.tx = s.to[0]; actor.ty = s.to[1];
 				actor.px = actor.tx * META; actor.py = actor.ty * META;
-				mv.k++; mv.from = null;
-				if (mv.k >= mv.path.length) this._advance();
+				s.k++; s.from = null;
+				if (s.k >= s.steps.length) this._resume();
 			}
 		}
 	}
+
+	// a special/trainerbattle that returned 'wait' resumes here when ready
+	resume() { if (this.cur && this.cur.sub && (this.cur.sub.kind === 'special' || this.cur.sub.kind === 'battle')) this._resume(); }
+}
+
+function opposite(dir) { return { up: 'down', down: 'up', left: 'right', right: 'left' }[dir] || 'down'; }
+
+// resolve a msg's text: prefer the strings map (ported label), else a literal
+// (hand-authored). Substitute the common {PLAYER}/{RIVAL} tokens.
+function resolveText(ctx, ref) {
+	let s = (ctx.strings && ctx.strings[ref] != null) ? ctx.strings[ref] : ref;
+	if (typeof s !== 'string') return '...';
+	s = s.replace(/\{PLAYER\}/g, ctx.playerName || 'PLAYER')
+		.replace(/\{RIVAL\}/g, ctx.rivalName || 'RIVAL')
+		.replace(/\{[A-Z_0-9]+\}/g, ''); // drop other control tokens
+	return s.trim() || '...';
+}
+
+// ITEM_POKE_BALL -> pokeball ; SPECIES_BULBASAUR -> bulbasaur
+function itemId(sym) {
+	if (typeof sym !== 'string') return sym;
+	return sym.replace(/^ITEM_/, '').toLowerCase().replace(/[^a-z0-9]/g, '');
+}
+function speciesId(sym) {
+	if (typeof sym !== 'string') return sym;
+	return sym.replace(/^SPECIES_/, '').toLowerCase().replace(/[^a-z0-9]/g, '');
 }

@@ -90,6 +90,7 @@ class NPC {
 	}
 
 	draw(ctx2d, camX, camY) {
+		if (this.hidden) return; // hidden by a script (removeobject/set_invisible)
 		const stills = { down: 0, up: 1, left: 2, right: 2 };
 		const walks = { down: [3, 4], up: [5, 6], left: [7, 8], right: [7, 8] };
 		let frame = stills[this.facing];
@@ -139,7 +140,7 @@ export class NPCs {
 	}
 
 	npcBlocks(tx, ty) {
-		return this.list.some(n => n.tx === tx && n.ty === ty);
+		return this.list.some(n => !n.hidden && n.tx === tx && n.ty === ty);
 	}
 
 	update(dt) {

@@ -1,0 +1,1 @@
+{"ThreeIsland_House2_EventScript_Man":[{"op":"lock"},{"op":"faceplayer"},{"op":"msg","text":"ThreeIsland_House2_Text_IAdmireSabrina"},{"op":"release"},{"op":"end"}],"ThreeIsland_House2_EventScript_Rocker":[{"op":"msg","text":"ThreeIsland_House2_Text_CantMakeThisSpoonBend"},{"op":"end"}]}

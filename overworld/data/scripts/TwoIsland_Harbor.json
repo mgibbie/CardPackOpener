@@ -1,0 +1,1 @@
+{"TwoIsland_Harbor_EventScript_Sailor":[{"op":"lock"},{"op":"faceplayer"},{"op":"msg","text":"Text_WhereDoYouWantToSail"},{"op":"waitmsg"},{"op":"setvar","var":"VAR_0x8004","value":"SEAGALLOP_TWO_ISLAND"},{"op":"goto","label":"EventScript_ChooseDestFromTwoIsland"},{"op":"end"}]}

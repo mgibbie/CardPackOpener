@@ -1,0 +1,1 @@
+{"MtEmber_RubyPath_B5F_EventScript_Ruby":[{"op":"lock"},{"op":"faceplayer"},{"op":"setflag","flag":"FLAG_GOT_RUBY"},{"op":"hideobj","who":"LOCALID_RUBY"},{"op":"give","item":"MtEmber_RubyPath_B3F_Text_FoundARuby","count":"ITEM_RUBY"},{"op":"release"},{"op":"end"}]}

@@ -1,0 +1,1 @@
+{"SixIsland_GreenPath_EventScript_RightRouteSign":[{"op":"msg","text":"SixIsland_GreenPath_Text_LeftRouteSign"},{"op":"end"}],"SixIsland_GreenPath_EventScript_LeftRouteSign":[{"op":"msg","text":"SixIsland_GreenPath_Text_RightRouteSign"},{"op":"end"}]}

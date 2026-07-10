@@ -1,0 +1,1 @@
+{"SixIsland_OutcastIsland_EventScript_Rocket":[{"op":"trainerbattle","args":["TRAINER_TEAM_ROCKET_GRUNT_46","SixIsland_OutcastIsland_Text_RocketIntro","SixIsland_OutcastIsland_Text_RocketDefeat"]},{"op":"msg","text":"SixIsland_OutcastIsland_Text_RocketPostBattle"},{"op":"end"}]}

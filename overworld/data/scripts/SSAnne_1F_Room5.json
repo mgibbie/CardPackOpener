@@ -1,0 +1,1 @@
+{"SSAnne_1F_Room5_EventScript_Arthur":[{"op":"trainerbattle","args":["TRAINER_GENTLEMAN_ARTHUR","SSAnne_1F_Room5_Text_ArthurIntro","SSAnne_1F_Room5_Text_ArthurDefeat"]},{"op":"msg","text":"SSAnne_1F_Room5_Text_ArthurPostBattle"},{"op":"end"}]}

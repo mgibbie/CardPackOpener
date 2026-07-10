@@ -1,0 +1,1 @@
+{"ThreeIsland_House1_EventScript_Lostelle":[{"op":"lock"},{"op":"faceplayer"},{"op":"special","name":"BufferBigGuyOrBigGirlString"},{"op":"msg","text":"ThreeIsland_House1_Text_YoureAlwaysSoCool"},{"op":"release"},{"op":"end"}],"ThreeIsland_House1_EventScript_DisplayCase":[{"op":"msg","text":"ThreeIsland_House1_Text_RareRocksGemsDisplayed"},{"op":"end"}]}

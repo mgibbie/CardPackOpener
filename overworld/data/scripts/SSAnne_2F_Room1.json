@@ -1,0 +1,1 @@
+{"SSAnne_2F_Room1_EventScript_Gentleman":[{"op":"lock"},{"op":"faceplayer"},{"op":"msg","text":"SSAnne_2F_Room1_Text_SleepingMonLookedLikeThis"},{"op":"waitmsg"},{"op":"setvar","var":"VAR_0x8004","value":"SPECIES_SNORLAX"},{"op":"special","name":"SetSeenMon"},{"op":"waitmsg"},{"op":"release"},{"op":"end"}]}

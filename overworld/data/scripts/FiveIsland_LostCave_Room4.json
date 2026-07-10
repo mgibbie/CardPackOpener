@@ -1,0 +1,1 @@
+{"FiveIsland_LostCave_Room4_EventScript_Laura":[{"op":"trainerbattle","args":["TRAINER_PSYCHIC_LAURA","FiveIsland_LostCave_Room4_Text_LauraIntro","FiveIsland_LostCave_Room4_Text_LauraDefeat"]},{"op":"msg","text":"FiveIsland_LostCave_Room4_Text_LauraPostBattle"},{"op":"end"}]}

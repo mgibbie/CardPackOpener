@@ -232,6 +232,8 @@ function interact() {
 		if (DAYCARE_MAPS.has(mid)) { openDaycare(); return; }
 		if (NAMERATER_MAPS.has(mid)) { openNameRater(); return; }
 		if (DELETER_MAPS.has(mid)) { openMoveShop(); return; }
+		// ported story script for this NPC (dialogue/movement/flags)
+		if (npc.ev && npc.ev.script && runScriptLabel(npc.ev.script, npc)) return;
 	}
 }
 
@@ -1000,17 +1002,37 @@ screen.addEventListener('pointerdown', e => {
 });
 
 // ---------- map transitions ----------
+// per-map ported scripts + resolved text (lazy-loaded, cached)
+let mapScripts = {}, mapStrings = {};
+const scriptCache = new Map();
+async function loadMapScripts(stem) {
+	mapScripts = {}; mapStrings = {};
+	if (!stem) return;
+	if (!scriptCache.has(stem)) {
+		const scr = await getJSON(`data/scripts/${stem}.json`).catch(() => null);
+		const str = await getJSON(`data/strings/${stem}.json`).catch(() => ({}));
+		scriptCache.set(stem, { scr, str });
+	}
+	const c = scriptCache.get(stem);
+	mapScripts = c.scr || {}; mapStrings = c.str || {};
+}
+
 async function refreshMapContent(label) {
 	await npcs.loadForMap();
 	await trainers.loadForMap();
 	npcs.list = npcs.list.filter(n => !trainers.list.some(t => t.ev === n.ev));
 	services.loadForMap();
 	items.loadForMap();
+	await loadMapScripts(world.current.name);
 	hud.textContent = world.current.map.name || label;
 	// arriving on a Fly-destination map registers it so you can fly back later
 	markFlyPoint(world.current.map.id);
 	savePos();
 	loading = false;
+	// run this map's ON_TRANSITION script (story vars, scene setup), then check
+	// for an ON_FRAME auto-cutscene now that the map is set up
+	runMapTransition();
+	checkOnFrame();
 }
 
 // visited Fly points (magepunk_flypoints); a town unlocks when you first stand on it
@@ -1121,6 +1143,9 @@ player.onArrive = () => {
 		const hit = world.connectionAt(player.tx, player.ty);
 		if (hit) { crossConnection(hit); return; }
 	}
+	// a coord_event trigger on this tile (var-gated) runs its ported script
+	if (!cutscene.blocking && checkCoordTrigger()) return;
+	if (!cutscene.blocking) checkOnFrame();
 	// trainer sight lines take priority over grass
 	if (!battle.blocking && trainers.checkSight(player.tx, player.ty)) return;
 	// wild encounter?
@@ -1159,25 +1184,86 @@ function npcById(localId) {
 	return npcs.list.find(n => n.ev && n.ev.local_id === localId) || null;
 }
 // the bridge a running cutscene uses to touch the game
-function cutsceneCtx() {
+function cutsceneCtx(talker) {
 	return {
-		dialog, player, npcById,
+		dialog, player, npcById, talker: talker || null,
+		strings: mapStrings,
+		playerName: (localStorage.getItem('magepunk_name') || 'PLAYER'),
+		rivalName: (localStorage.getItem('magepunk_rival') || 'GARY'),
 		giveItem: (id, n) => { Bag.addItem(id, n); Bag.registerName(id, (id || '').toUpperCase()); },
+		takeItem: (id, n) => { Bag.consume(id); },
 		giveMon: (species, level) => {
 			const mon = battle.data.species[species] && buildMonForGift(species, level);
 			if (mon) { Dex.markCaught(species); addCaught(party, mon); saveParty(party); }
 		},
 		healParty: () => healParty(party),
+		warp: (mapId, warpId) => warpTo(mapId, warpId),
+		setObjXy: (who, x, y) => { const n = npcById(who); if (n) { n.tx = x; n.ty = y; n.px = x * META; n.py = y * META; } },
+		hideObj: who => { const n = npcById(who); if (n) n.hidden = true; },
+		showObj: who => { const n = npcById(who); if (n) n.hidden = false; },
+		setMetatile: () => {}, // tile edits: not yet applied to the web layout
+		startTrainer: () => 'skip', // scripted trainer battles deferred to a later stage
+		special: name => runSpecial(name), // hand-written handlers; unknown -> no-op
 		hud: msg => { hud.textContent = msg; },
 	};
 }
 function buildMonForGift(species, level) {
-	// buildMon lives in battle.js; imported as statsFor's sibling — use the module
 	return battleBuildMon(species, level, battle.data);
 }
 function startCutscene(steps, onDone) {
 	if (cutscene.blocking) return;
 	cutscene.start(steps, cutsceneCtx(), onDone);
+}
+
+// ---------- ported map-script triggers ----------
+// resolve a script label (an NPC's `script`, a coord_event, a map trigger) and
+// run it through the interpreter with the current map's strings
+function runScriptLabel(label, talker) {
+	if (cutscene.blocking || !label || !mapScripts[label]) return false;
+	cutscene.run(mapScripts, label, cutsceneCtx(talker), () => { saveParty(party); });
+	return true;
+}
+// ON_TRANSITION runs silently on map entry (sets story vars, positions NPCs).
+// It is setup only, so run the instant ops and bail at any waiting op — it must
+// never block the game or pop dialogue.
+function runMapTransition() {
+	const meta = mapScripts.__map__;
+	if (!meta || !meta.onTransition || !mapScripts[meta.onTransition]) return;
+	if (cutscene.blocking) return;
+	cutscene.run(mapScripts, meta.onTransition, cutsceneCtx(), () => {});
+	if (cutscene.blocking) cutscene.stop(); // hit a wait — setup only, don't block
+}
+// ON_FRAME table: if a scene var matches, auto-run that cutscene. Value-0
+// entries are the "scene not started" default and must not fire from a blank
+// save (story vars default to 0) — they only trigger once a script has set the
+// var, which we track via an explicit presence check.
+function checkOnFrame() {
+	const meta = mapScripts.__map__;
+	if (!meta || !meta.onFrame || cutscene.blocking) return;
+	for (const e of meta.onFrame) {
+		if (e.value === 0 && !Story.hasVar(e.var)) continue;
+		if (Story.getVar(e.var) === e.value && mapScripts[e.label]) {
+			runScriptLabel(e.label);
+			return;
+		}
+	}
+}
+// coord_event trigger: stepping on a tile whose gating var matches its value
+// fires the tile's ported script (Oak stopping you at the town edge, etc.)
+function checkCoordTrigger() {
+	const evs = world.current.map.coord_events || [];
+	for (const e of evs) {
+		if (+e.x !== player.tx || +e.y !== player.ty) continue;
+		if (e.var && e.var !== '0' && Story.getVar(e.var) !== parseInt(e.var_value, 10)) continue;
+		if (e.script && mapScripts[e.script]) return runScriptLabel(e.script);
+	}
+	return false;
+}
+
+// stub special-command dispatch (Stage 3 fills in real handlers)
+function runSpecial(name) {
+	if (name === 'HealPlayerParty') { healParty(party); return; }
+	// unknown specials no-op so scripts don't hang
 }
 
 // the one-time new-game welcome: a short scripted intro that hands over a
@@ -2313,9 +2399,11 @@ function drawFriendGhosts(ctx, camX, camY) {
 	npcs.list = npcs.list.filter(n => !trainers.list.some(t => t.ev === n.ev));
 	services.loadForMap();
 	items.loadForMap();
+	await loadMapScripts(world.current.name);
 	hud.textContent = world.current.map.name || startMap;
 	markFlyPoint(world.current.map.id);
 	loading = false;
+	runMapTransition();
 	// headless test hook
 	// test hook: drive the player straight, bypassing the game loop's input
 	function freezeLoop(on) { loading = !!on; }
@@ -2357,6 +2445,7 @@ function drawFriendGhosts(ctx, camX, camY) {
 		Daycare, get daycareMenu() { return daycareMenu; }, get nameRater() { return nameRater; }, get moveShop() { return moveShop; },
 		openDaycare, openNameRater, openMoveShop, setNickname, relearnable,
 		Settings, get optionsMenu() { return optionsMenu; },
-		Story, get cutscene() { return cutscene; }, startCutscene, npcById, maybeIntroCutscene };
+		Story, get cutscene() { return cutscene; }, startCutscene, npcById, maybeIntroCutscene,
+		runScriptLabel, checkCoordTrigger, checkOnFrame, cutsceneCtx, get mapScripts() { return mapScripts; }, get mapStrings() { return mapStrings; } };
 	requestAnimationFrame(tick);
 })();

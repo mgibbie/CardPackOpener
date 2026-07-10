@@ -1,0 +1,1 @@
+{"Route10_EventScript_Unused":[{"op":"end"}],"Route10_EventScript_NorthRockTunnelSign":[{"op":"msg","text":"Route10_Text_RockTunnelDetourToLavender"},{"op":"end"}],"Route10_EventScript_SouthRockTunnelSign":[{"op":"msg","text":"Route10_Text_RockTunnel"},{"op":"end"}],"Route10_EventScript_PowerPlantSign":[{"op":"msg","text":"Route10_Text_PowerPlant"},{"op":"end"}]}

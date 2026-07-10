@@ -1,0 +1,1 @@
+{"__map__":{"onResume":"TrainerTower_OnResume","onFrame":[]},"TrainerTower_Roof_EventScript_Owner":[{"op":"call","label":"TrainerTower_EventScript_SpeakToOwner"},{"op":"end"}]}
