@@ -13,6 +13,7 @@ import { Evolution } from './evolution.js';
 import { Items } from './items.js';
 import * as Dex from './pokedex.js';
 import * as Fly from './flydata.js';
+import * as Clock from './clock.js';
 import { statsFor } from './battle.js';
 import { getImage } from './engine.js';
 import * as BUI from './battleui.js';
@@ -957,6 +958,39 @@ function cameraPos() {
 	return [cx, cy];
 }
 
+// day/night colour wash over the world (not menus/HUD). Keyed to the in-game
+// hour with smooth dawn/dusk ramps; indoor maps stay untinted.
+function drawDayNightTint(context) {
+	if (world.current?.map?.map_type === 'MAP_TYPE_INDOOR' || world.current?.map?.indoor) return;
+	const h = Clock.frac() * 24;
+	// piecewise [color, alpha] control points across the day, lerped between
+	const pts = [
+		[0, [12, 18, 54], 0.42],   // deep night
+		[5, [12, 18, 54], 0.42],   // pre-dawn
+		[7, [80, 60, 70], 0.20],   // dawn (warm)
+		[9, [255, 255, 255], 0.0], // full morning
+		[17, [255, 255, 255], 0.0],// day
+		[19, [90, 55, 60], 0.22],  // dusk (warm)
+		[21, [12, 18, 54], 0.42],  // night falls
+		[24, [12, 18, 54], 0.42],
+	];
+	let a = pts[0], b = pts[pts.length - 1];
+	for (let i = 0; i < pts.length - 1; i++) {
+		if (h >= pts[i][0] && h <= pts[i + 1][0]) { a = pts[i]; b = pts[i + 1]; break; }
+	}
+	const t = b[0] === a[0] ? 0 : (h - a[0]) / (b[0] - a[0]);
+	const lerp = (x, y) => x + (y - x) * t;
+	const col = [Math.round(lerp(a[1][0], b[1][0])), Math.round(lerp(a[1][1], b[1][1])), Math.round(lerp(a[1][2], b[1][2]))];
+	const alpha = lerp(a[2], b[2]);
+	if (alpha <= 0.01) return;
+	context.save();
+	context.globalCompositeOperation = 'multiply';
+	context.globalAlpha = alpha;
+	context.fillStyle = `rgb(${col[0]},${col[1]},${col[2]})`;
+	context.fillRect(0, 0, VIEW_W, VIEW_H);
+	context.restore();
+}
+
 // ---------- loop ----------
 let last = performance.now();
 let playAccum = 0;
@@ -996,6 +1030,7 @@ function tick(now) {
 	for (const s of sprites) s.draw(ctx, camX, camY);
 	drawFriendGhosts(ctx, camX, camY);
 	world.drawLayer(ctx, 'top', camX, camY);
+	drawDayNightTint(ctx);
 	if (!battle.blocking) evolution.draw(ctx);
 
 	sctx.drawImage(frame, 0, 0, VIEW_W * SCALE, VIEW_H * SCALE);
@@ -1364,6 +1399,7 @@ function drawTrainerCard(W, H) {
 		['NAME', name],
 		['REGION', region],
 		['MONEY', `$${money}`],
+		['TIME', `${Clock.label()} (${Clock.phaseLabel()})`],
 		['POKeDEX SEEN', String(c.seen)],
 		['POKeDEX OWNED', String(c.caught)],
 		['PARTY', `${party.length}/6`],
@@ -1959,6 +1995,6 @@ function drawFriendGhosts(ctx, camX, camY) {
 		get friends() { return friends; }, get visiting() { return visiting; }, refreshFriends, visitWorld, leaveVisit, heartbeat, pollPresence, get ghosts() { return ghosts; }, MP_ON,
 		get pvp() { return pvp; }, pvpParty, sendChallenge, enterMatch, pollChallenges, get pending() { return pendingChallengeTo; },
 		Dex, get dexMenu() { return dexMenu; }, get trainerCard() { return trainerCard; }, get partyMenu() { return partyMenu; }, get shopMenu() { return shopMenu; }, get bagMenu() { return bagMenu; }, Bag,
-		Fly, get townMap() { return townMap; }, openTownMap, flyTo, hasFlyPoint, markFlyPoint };
+		Fly, get townMap() { return townMap; }, openTownMap, flyTo, hasFlyPoint, markFlyPoint, Clock };
 	requestAnimationFrame(tick);
 })();

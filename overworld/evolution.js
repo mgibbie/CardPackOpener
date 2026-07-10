@@ -2,6 +2,7 @@
 // sprite sequence. Keeps IVs/exp/moves/damage; stats recalc for the new species.
 import { getImage, VIEW_W, VIEW_H } from './engine.js';
 import { statsFor } from './battle.js';
+import * as Clock from './clock.js';
 
 export class Evolution {
 	constructor() {
@@ -12,11 +13,14 @@ export class Evolution {
 
 	get blocking() { return this.cur != null || this.queue.length > 0; }
 
-	// scan the party for pending level/friendship evolutions and start the sequence
+	// scan the party for pending level/friendship evolutions and start the
+	// sequence. Time-gated evos (Eevee->Espeon by day / Umbreon by night) only
+	// fire when the clock's phase matches evo.time.
 	async check(party, data) {
+		const timeOk = e => !e.time || (e.time === 'day' ? Clock.isDay() : Clock.isNight());
 		for (const mon of party) {
 			const evos = data.extra?.[mon.speciesId]?.evos || [];
-			const evo = evos.find(e => data.species[e.target]
+			const evo = evos.find(e => data.species[e.target] && timeOk(e)
 				&& ((e.type === 'level' && mon.level >= e.param)
 					|| (e.type === 'friendship' && (mon.friend ?? 70) >= (e.param || 220))));
 			if (evo) this.queue.push({ mon, target: evo.target });
