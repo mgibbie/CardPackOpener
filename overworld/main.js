@@ -58,6 +58,7 @@ const items = new Items(world);
 const pvp = new Pvp();
 const cutscene = new Story.Cutscene();
 let signTexts = {};
+let trainerTeams = {}; // canonical TRAINER_id -> {class, party} (species/level/moves)
 let party = null;
 
 // starter picker (fresh saves): 3 regions x 3 starters
@@ -877,6 +878,7 @@ function starterKey(k) {
 		const id = row.ids[starterMenu.col];
 		party = createStarter(id, battle.data);
 		Dex.seedFrom(party);
+		seedStoryState(row.region);
 		try { localStorage.setItem('magepunk_region', row.region); } catch (e) {}
 		starterMenu.open = false;
 		// the row you picked from is the region you begin in
@@ -1231,9 +1233,27 @@ function runScriptLabel(label, talker) {
 // script (the player blacked out) after healing.
 function startScriptedBattle(trainerId, scriptLabel, talker) {
 	if (!party || !leadMon(party)) { Story.setVar('VAR_RESULT', 1); return 'skip'; }
+	// canonical team by TRAINER_ id first (exact species/level/moves), then the
+	// script-label roster, then a class-pool fallback at the map's level
+	const tid = (trainerId || '').replace(/^TRAINER_/, '');
+	const team = trainerTeams[tid];
 	const roster = scriptLabel && trainers.data?.rosters?.[scriptLabel];
 	let foeParty = [];
-	if (roster?.party?.length) {
+	let className = team?.class || roster?.class || 'Trainer';
+	if (team?.party?.length) {
+		foeParty = team.party.map(e => {
+			const mon = battleBuildMon(e.s, e.l, battle.data);
+			if (mon && e.moves?.length) {
+				mon.moves = e.moves.map(id => {
+					const mv = battle.data.moves[id];
+					return mv ? { id, name: mv.name, pp: mv.pp, maxPp: mv.pp } : null;
+				}).filter(Boolean);
+				if (!mon.moves.length) mon.moves = [{ id: 'tackle', name: 'Tackle', pp: 35, maxPp: 35 }];
+			}
+			return mon;
+		}).filter(Boolean);
+	}
+	if (!foeParty.length && roster?.party?.length) {
 		foeParty = roster.party.map(e => battleBuildMon(e.s, e.l, battle.data)).filter(Boolean);
 	}
 	if (!foeParty.length) {
@@ -1249,7 +1269,7 @@ function startScriptedBattle(trainerId, scriptLabel, talker) {
 	if (!foeParty.length) { Story.setVar('VAR_RESULT', 1); return 'skip'; }
 	const high = Math.max(5, ...foeParty.map(m => m.level));
 	const info = {
-		displayName: roster?.name ? `${roster.class || 'Trainer'} ${roster.name}` : (roster?.class || 'Trainer'),
+		displayName: roster?.name ? `${className} ${roster.name}` : className,
 		defeatText: '', money: high * 8,
 	};
 	battle.startTrainer(party, foeParty, info, result => {
@@ -1302,6 +1322,36 @@ function checkCoordTrigger() {
 		if (e.script && mapScripts[e.script]) return runScriptLabel(e.script);
 	}
 	return false;
+}
+
+// Stage 4 — reconcile the sandbox start with the linear story. The web player
+// gets a starter via the region picker, so the decomp scene vars that gate the
+// "you have no Pokemon yet" intro must be advanced past their trigger state or
+// the early cutscenes (Oak stopping you at the town edge) block a player who's
+// already ready. Seeded once on a new game for the chosen region.
+const STORY_SEED = {
+	KANTO: {
+		vars: {
+			// player already has a starter -> skip the "can't go out" block (0)
+			// and the pokedex-rating auto-scene (2); 1 is neither
+			VAR_MAP_SCENE_PALLET_TOWN_OAK: 1,
+			VAR_MAP_SCENE_OAKS_LAB: 1,
+		},
+		flags: [
+			'FLAG_ADVENTURE_STARTED',
+			'FLAG_GOT_FIRST_POKEMON',
+			'FLAG_HIDE_PALLET_TOWN_OAK', // Oak is in his lab, not blocking the road
+		],
+	},
+};
+function seedStoryState(region) {
+	if (Story.getFlag('story_seeded')) return;
+	const seed = STORY_SEED[region];
+	if (seed) {
+		for (const [k, v] of Object.entries(seed.vars || {})) Story.setVar(k, v);
+		for (const f of seed.flags || []) Story.setFlag(f);
+	}
+	Story.setFlag('story_seeded');
 }
 
 // special-command dispatch. Store-writing specials set `store` (a VAR_*) to a
@@ -2449,6 +2499,7 @@ function drawFriendGhosts(ctx, camX, camY) {
 	await services.init();
 	await items.init();
 	signTexts = await getJSON('data/sign_texts.json').catch(() => ({}));
+	trainerTeams = await getJSON('data/trainer_teams.json').catch(() => ({}));
 	party = loadParty(battle.data);
 	if (party) Dex.seedFrom([...party, ...getBox()]);
 	if (!party) {
@@ -2527,6 +2578,7 @@ function drawFriendGhosts(ctx, camX, camY) {
 		openDaycare, openNameRater, openMoveShop, setNickname, relearnable,
 		Settings, get optionsMenu() { return optionsMenu; },
 		Story, get cutscene() { return cutscene; }, startCutscene, npcById, maybeIntroCutscene,
-		runScriptLabel, checkCoordTrigger, checkOnFrame, cutsceneCtx, get mapScripts() { return mapScripts; }, get mapStrings() { return mapStrings; } };
+		runScriptLabel, checkCoordTrigger, checkOnFrame, cutsceneCtx, get mapScripts() { return mapScripts; }, get mapStrings() { return mapStrings; },
+		get trainerTeams() { return trainerTeams; }, seedStoryState, startScriptedBattle };
 	requestAnimationFrame(tick);
 })();
