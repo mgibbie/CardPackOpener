@@ -49210,11 +49210,8 @@
       ],
       "effects": [
         {
-          "type": "summon",
-          "count": 2,
-          "attack": 1,
-          "health": 1,
-          "name": "Boom Bots for each Bomb in your opponent's deck"
+          "type": "summon-per-enemy-bomb",
+          "per": 2
         }
       ]
     },
@@ -54266,6 +54263,160 @@
           }
         ]
       }
+    },
+    {
+      "id": "bomb",
+      "name": "Bomb",
+      "cardClass": "neutral",
+      "cost": 1,
+      "rarity": "common",
+      "set": "hs",
+      "token": true,
+      "type": "creature",
+      "attack": 0,
+      "health": 1,
+      "description": "Shuffled into a deck. When drawn, it explodes for 5 damage to that hero."
+    },
+    {
+      "id": "boom_bot",
+      "name": "Boom Bot",
+      "cardClass": "neutral",
+      "cost": 1,
+      "rarity": "common",
+      "set": "hs",
+      "token": true,
+      "type": "creature",
+      "attack": 1,
+      "health": 1,
+      "keywords": [
+        "deathrattle"
+      ],
+      "deathrattle": [
+        {
+          "type": "random-damage",
+          "value": 1,
+          "count": 4,
+          "pool": "enemies",
+          "range": [
+            1,
+            4
+          ]
+        }
+      ],
+      "description": "Deathrattle: Deal 1-4 damage to a random enemy."
+    },
+    {
+      "id": "seaforium_bomber",
+      "name": "Seaforium Bomber",
+      "cardClass": "neutral",
+      "cost": 5,
+      "rarity": "epic",
+      "set": "hs",
+      "description": "Battlecry: Shuffle a Bomb into your opponent's deck. When drawn, it explodes for 5 damage.",
+      "type": "creature",
+      "attack": 5,
+      "health": 5,
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "shuffle-bomb",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "id": "clockwork_goblin",
+      "name": "Clockwork Goblin",
+      "cardClass": "warrior",
+      "cost": 3,
+      "rarity": "rare",
+      "set": "hs",
+      "description": "Battlecry: Shuffle a Bomb into your opponent's deck. When drawn, it explodes for 5 damage.",
+      "type": "creature",
+      "attack": 3,
+      "health": 3,
+      "tribe": "Mechanical",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "shuffle-bomb",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "id": "wrenchcalibur",
+      "name": "Wrenchcalibur",
+      "cardClass": "warrior",
+      "cost": 4,
+      "rarity": "epic",
+      "set": "hs",
+      "description": "After your hero attacks, shuffle a Bomb into your opponent's deck.",
+      "type": "weapon",
+      "attack": 3,
+      "durability": 0,
+      "ongoing": {
+        "on": "hero-attacks",
+        "effects": [
+          {
+            "type": "shuffle-bomb",
+            "count": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "explodineer",
+      "name": "Explodineer",
+      "cardClass": "neutral",
+      "cost": 3,
+      "rarity": "common",
+      "set": "hs",
+      "description": "At the end of your turn, shuffle a Bomb into your opponent's deck. When drawn, it explodes for 5 damage.",
+      "type": "creature",
+      "attack": 2,
+      "health": 4,
+      "ongoing": {
+        "on": "turn-end",
+        "effects": [
+          {
+            "type": "shuffle-bomb",
+            "count": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "blast_from_the_past",
+      "name": "Blast from the Past",
+      "cardClass": "warrior",
+      "cost": 4,
+      "rarity": "common",
+      "set": "hs",
+      "description": "Get 2 Spare Parts. Summon two 1/1 Boom Bots. Shuffle a Bomb into your opponent's deck.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "conjure-named",
+          "match": "Spare Parts",
+          "count": 2
+        },
+        {
+          "type": "summon",
+          "count": 2,
+          "attack": 1,
+          "health": 1,
+          "name": "Boom Bots"
+        },
+        {
+          "type": "shuffle-bomb",
+          "count": 1
+        }
+      ]
     }
   ]
 }

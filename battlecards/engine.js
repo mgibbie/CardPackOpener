@@ -425,6 +425,14 @@ export function drawCards(state, pi, count) {
 			if (p.eliminated || state.over) break;
 			continue;
 		}
+		// Bomb: an enemy shuffled it in — it explodes on draw instead of being drawn
+		if (id === 'bomb') {
+			emit(state, { type: 'bombDetonated', player: pi });
+			damageHero(state, pi, 5, pi);
+			checkGameOver(state);
+			if (p.eliminated || state.over) break;
+			continue;
+		}
 		if (p.hand.length >= MAX_HAND) { emit(state, { type: 'burn', player: pi, cardId: id }); continue; }
 		const card = instantiate(state.cardsById[id], pi);
 		if (card.type === 'creature' && p.drawBuff) { card.attack += p.drawBuff.attack || 0; card.maxHealth += p.drawBuff.health || 0; }
@@ -2318,6 +2326,21 @@ function execEffects(state, pi, effects, target, source) {
 				const pick = pool[Math.floor(state.rng() * pool.length)];
 				if (pick.hero != null) damageHero(state, pick.hero, 1, pi); else damageCreature(state, pick.c, 1, source || null);
 			}
+		} else if (e.type === 'shuffle-bomb') {
+			// shuffle Bomb(s) into a random enemy's deck; they explode on draw
+			for (let n = 0; n < (e.count || 1); n++) {
+				const foes = enemies.filter(o => !state.players[o].eliminated);
+				if (!foes.length) break;
+				const od = state.players[foes[Math.floor(state.rng() * foes.length)]].deck;
+				od.splice(Math.floor(state.rng() * (od.length + 1)), 0, 'bomb');
+			}
+			emit(state, { type: 'bombShuffled', player: pi, count: e.count || 1 });
+		} else if (e.type === 'summon-per-enemy-bomb') {
+			// Blastmaster Boom: summon `per` Boom Bots for each Bomb in enemy decks
+			let bombs = 0;
+			for (const o of enemies) bombs += state.players[o].deck.filter(id => id === 'bomb').length;
+			const def = state.cardsById['boom_bot'];
+			if (def) for (let n = 0; n < bombs * (e.per || 1); n++) summon(state, pi, def);
 		} else if (e.type === 'invoke-galakrond') {
 			// Invoke Galakrond: power up your Galakrond (base -> upgraded at 2 -> maxed at 4)
 			state.players[pi].galakrondInvokes = (state.players[pi].galakrondInvokes || 0) + 1;
