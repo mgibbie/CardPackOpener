@@ -53632,6 +53632,335 @@
           "target": "creature"
         }
       ]
+    },
+    {
+      "id": "galakrond_the_wretched",
+      "name": "Galakrond, the Wretched",
+      "cardClass": "warlock",
+      "cost": 7,
+      "rarity": "legendary",
+      "set": "hs",
+      "type": "sorcery",
+      "description": "Battlecry: Summon random Demons (1/2/4 by Invokes). Maxed: also equip a 5/2 Claw.",
+      "effects": [
+        {
+          "type": "galakrond",
+          "gclass": "warlock",
+          "power": {
+            "name": "Galakrond's Malice",
+            "cost": 2,
+            "text": "Summon two 1/1 Imps.",
+            "effects": [
+              {
+                "type": "summon",
+                "count": 2,
+                "attack": 1,
+                "health": 1,
+                "name": "Imp",
+                "tribe": "Demon"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "galakrond_the_nightmare",
+      "name": "Galakrond, the Nightmare",
+      "cardClass": "rogue",
+      "cost": 7,
+      "rarity": "legendary",
+      "set": "hs",
+      "type": "sorcery",
+      "description": "Battlecry: Draw cards that cost (0) (1/2/4 by Invokes). Maxed: also equip a 5/2 Claw.",
+      "effects": [
+        {
+          "type": "galakrond",
+          "gclass": "rogue",
+          "power": {
+            "name": "Galakrond's Guile",
+            "cost": 2,
+            "text": "Add a Lackey to your hand.",
+            "effects": [
+              {
+                "type": "add-token",
+                "name": "Lackey",
+                "attack": 1,
+                "health": 1
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "galakrond_the_tempest",
+      "name": "Galakrond, the Tempest",
+      "cardClass": "shaman",
+      "cost": 7,
+      "rarity": "legendary",
+      "set": "hs",
+      "type": "sorcery",
+      "description": "Battlecry: Summon two Storms with Rush (2/2, 4/4, 8/8 by Invokes). Maxed: also equip a 5/2 Claw.",
+      "effects": [
+        {
+          "type": "galakrond",
+          "gclass": "shaman",
+          "power": {
+            "name": "Galakrond's Fury",
+            "cost": 2,
+            "text": "Summon a 2/1 Elemental with Rush.",
+            "effects": [
+              {
+                "type": "summon",
+                "count": 1,
+                "attack": 2,
+                "health": 1,
+                "name": "Elemental",
+                "keywords": [
+                  "rush"
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "galakrond_the_unbreakable",
+      "name": "Galakrond, the Unbreakable",
+      "cardClass": "warrior",
+      "cost": 7,
+      "rarity": "legendary",
+      "set": "hs",
+      "type": "sorcery",
+      "description": "Battlecry: Draw creatures and give them +4/+4 (1/2/4 by Invokes). Maxed: also equip a 5/2 Claw.",
+      "effects": [
+        {
+          "type": "galakrond",
+          "gclass": "warrior",
+          "power": {
+            "name": "Galakrond's Might",
+            "cost": 2,
+            "text": "Give your hero +3 Attack this turn.",
+            "effects": [
+              {
+                "type": "hero-temp-attack",
+                "value": 3
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "galakrond_the_unspeakable",
+      "name": "Galakrond, the Unspeakable",
+      "cardClass": "priest",
+      "cost": 7,
+      "rarity": "legendary",
+      "set": "hs",
+      "type": "sorcery",
+      "description": "Battlecry: Destroy random enemy creatures (1/2/4 by Invokes). Maxed: also equip a 5/2 Claw.",
+      "effects": [
+        {
+          "type": "galakrond",
+          "gclass": "priest",
+          "power": {
+            "name": "Galakrond's Wit",
+            "cost": 2,
+            "text": "Add a random Priest creature to your hand.",
+            "effects": [
+              {
+                "type": "conjure-named",
+                "match": "",
+                "cardType": "creature",
+                "cardClass": "priest",
+                "count": 1
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "ritual_chopper",
+      "name": "Ritual Chopper",
+      "cardClass": "warrior",
+      "cost": 2,
+      "rarity": "rare",
+      "set": "hs",
+      "description": "Battlecry: Invoke Galakrond.",
+      "type": "weapon",
+      "attack": 1,
+      "durability": 0,
+      "effects": [
+        {
+          "type": "invoke-galakrond"
+        }
+      ]
+    },
+    {
+      "id": "praise_galakrond",
+      "name": "Praise Galakrond!",
+      "cardClass": "rogue",
+      "cost": 1,
+      "rarity": "common",
+      "set": "hs",
+      "description": "Give a creature +1 Attack. Invoke Galakrond.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 1,
+          "health": 0,
+          "target": "creature"
+        },
+        {
+          "type": "invoke-galakrond"
+        }
+      ]
+    },
+    {
+      "id": "devoted_maniac",
+      "name": "Devoted Maniac",
+      "cardClass": "neutral",
+      "cost": 4,
+      "rarity": "common",
+      "set": "hs",
+      "description": "Rush Battlecry: Invoke Galakrond.",
+      "type": "creature",
+      "attack": 2,
+      "health": 2,
+      "keywords": [
+        "rush",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "invoke-galakrond"
+        }
+      ]
+    },
+    {
+      "id": "shield_of_galakrond",
+      "name": "Shield of Galakrond",
+      "cardClass": "neutral",
+      "cost": 5,
+      "rarity": "common",
+      "set": "hs",
+      "description": "Taunt Battlecry: Invoke Galakrond.",
+      "type": "creature",
+      "attack": 4,
+      "health": 5,
+      "tribe": "Draenei",
+      "keywords": [
+        "taunt",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "invoke-galakrond"
+        }
+      ]
+    },
+    {
+      "id": "time_rip",
+      "name": "Time Rip",
+      "cardClass": "priest",
+      "cost": 5,
+      "rarity": "rare",
+      "set": "hs",
+      "description": "Destroy a creature. Invoke Galakrond.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "destroy",
+          "target": "creature"
+        },
+        {
+          "type": "invoke-galakrond"
+        }
+      ]
+    },
+    {
+      "id": "seal_fate",
+      "name": "Seal Fate",
+      "cardClass": "rogue",
+      "cost": 3,
+      "rarity": "rare",
+      "set": "hs",
+      "description": "Deal 3 damage to an undamaged character. Invoke Galakrond.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 3,
+          "target": "undamaged-creature"
+        },
+        {
+          "type": "invoke-galakrond"
+        }
+      ]
+    },
+    {
+      "id": "invocation_of_frost",
+      "name": "Invocation of Frost",
+      "cardClass": "shaman",
+      "cost": 1,
+      "rarity": "common",
+      "set": "hs",
+      "description": "Freeze an enemy. Invoke Galakrond.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "freeze",
+          "target": "creature"
+        },
+        {
+          "type": "invoke-galakrond"
+        }
+      ]
+    },
+    {
+      "id": "awaken",
+      "name": "Awaken!",
+      "cardClass": "warrior",
+      "cost": 3,
+      "rarity": "common",
+      "set": "hs",
+      "description": "Invoke Galakrond. Deal 1 damage to all creatures.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "invoke-galakrond"
+        },
+        {
+          "type": "damage",
+          "value": 1,
+          "target": "all-creatures"
+        }
+      ]
+    },
+    {
+      "id": "disciple_of_galakrond",
+      "name": "Disciple of Galakrond",
+      "cardClass": "priest",
+      "cost": 1,
+      "rarity": "common",
+      "set": "hs",
+      "description": "Battlecry: Invoke Galakrond.",
+      "type": "creature",
+      "attack": 1,
+      "health": 2,
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "invoke-galakrond"
+        }
+      ]
     }
   ]
 }

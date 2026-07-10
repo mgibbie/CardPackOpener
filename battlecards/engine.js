@@ -311,6 +311,7 @@ export function createGame(cardsById, rng = Math.random, playerDeckIds = null, p
 		excavateCount: 0,   // Excavate: total digs this game (drives the looping tier)
 		jadeCount: 0,       // Jade Golem size counter (per-player; each golem +1/+1, cap 30)
 		heraldCount: 0,     // Herald: total this game (drives the Soldier's x1/x2/x4 scale)
+		galakrondInvokes: 0, // Invoke Galakrond count (0-1 base, 2-3 upgraded, 4+ maxed)
 		heroTempAttack: 0,  // "your hero has +N Attack this turn"
 		costDiscounts: [],  // one-shot "next X costs (N) less" riders
 		creaturesPlayedThisTurn: 0, // Pint-Sized-style first-creature discounts
@@ -2283,6 +2284,27 @@ function execEffects(state, pi, effects, target, source) {
 			// fire a chosen friendly creature's Deathrattle without it dying
 			const c = chosenCreature();
 			if (c && !isDead(c) && c.deathrattle) execEffects(state, pi, c.deathrattle, null, c);
+		} else if (e.type === 'invoke-galakrond') {
+			// Invoke Galakrond: power up your Galakrond (base -> upgraded at 2 -> maxed at 4)
+			state.players[pi].galakrondInvokes = (state.players[pi].galakrondInvokes || 0) + 1;
+			emit(state, { type: 'invokeGalakrond', player: pi, count: state.players[pi].galakrondInvokes });
+		} else if (e.type === 'galakrond') {
+			// Galakrond's Battlecry scales with your Invokes (0-1 base, 2-3 upgraded, 4+ maxed),
+			// installs the class Galakrond hero power, and equips a 5/2 Claw when maxed.
+			const p = state.players[pi];
+			const inv = p.galakrondInvokes || 0, tier = inv < 2 ? 0 : inv < 4 ? 1 : 2;
+			const scale = [1, 2, 4][tier];
+			const before = p.hand.length;
+			if (e.gclass === 'warlock') { for (let i = 0; i < scale; i++) execEffects(state, pi, [{ type: 'summon-random', tribe: 'Demon' }], null, source); }
+			else if (e.gclass === 'rogue') { drawCards(state, pi, scale); for (const c of p.hand.slice(before)) c.cost = 0; }
+			else if (e.gclass === 'shaman') { const s = [2, 4, 8][tier]; execEffects(state, pi, [{ type: 'summon', count: 2, attack: s, health: s, name: 'Storm', keywords: ['rush'] }], null, source); }
+			else if (e.gclass === 'warrior') { execEffects(state, pi, [{ type: 'tutor', cardType: 'creature', count: scale }], null, source); for (const c of p.hand.slice(before)) { c.attack += 4; c.maxHealth = (c.maxHealth || 0) + 4; } }
+			else if (e.gclass === 'priest') execEffects(state, pi, [{ type: 'destroy-random', count: scale }], null, source);
+			if (e.power && p.heroPowers.length < MAX_HERO_POWERS && !p.heroPowers.some(h => h.id === 'galakrond_' + e.gclass + '_power')) {
+				const hp = instantiate({ id: 'galakrond_' + e.gclass + '_power', name: e.power.name, type: 'heropower', cost: 0, rarity: 'basic', power: { cost: e.power.cost, effects: e.power.effects }, description: e.power.text, cardClass: e.gclass }, pi);
+				hp.zone = 'heropower'; p.heroPowers.push(hp);
+			}
+			if (tier === 2) execEffects(state, pi, [{ type: 'equip', name: 'Galakrond Claw', attack: 5, durability: 2 }], null, source);
 		} else if (e.type === 'summon-if-control') {
 			// Hydralodon Head deathrattle: only summons more if the parent survives
 			const held = state.players[pi].board.some(c => !isDead(c) && c.name === e.ifControl);
