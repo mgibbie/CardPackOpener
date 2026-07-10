@@ -15,6 +15,7 @@ import * as Dex from './pokedex.js';
 import * as Fly from './flydata.js';
 import * as Clock from './clock.js';
 import * as Daycare from './daycare.js';
+import * as Settings from './settings.js';
 import { statsFor } from './battle.js';
 import { getImage } from './engine.js';
 import * as BUI from './battleui.js';
@@ -245,6 +246,15 @@ const cardsMenu = { open: false, idx: 0 };
 const dexMenu = { open: false, idx: 0, detail: false, list: null };
 const trainerCard = { open: false };
 const townMap = { open: false, region: 0, idx: 0 };
+const optionsMenu = { open: false, idx: 0 };
+const OPTION_KEYS = ['textSpeed', 'sound', 'autoRun', 'dayNight'];
+function optionsKey(k) {
+	if (k === 'ArrowUp') optionsMenu.idx = (optionsMenu.idx + OPTION_KEYS.length - 1) % OPTION_KEYS.length;
+	if (k === 'ArrowDown') optionsMenu.idx = (optionsMenu.idx + 1) % OPTION_KEYS.length;
+	if (k === 'ArrowLeft') Settings.cycle(OPTION_KEYS[optionsMenu.idx], -1);
+	if (k === 'ArrowRight' || k === 'z' || k === 'Enter') Settings.cycle(OPTION_KEYS[optionsMenu.idx], 1);
+	if (k === 'x' || k === 'Escape') optionsMenu.open = false;
+}
 const daycareMenu = { open: false, mode: 'main', idx: 0, flash: null };
 const nameRater = { open: false, idx: 0 };
 const moveShop = { open: false, mode: 'main', idx: 0, mon: null, list: null, flash: null };
@@ -497,7 +507,7 @@ function startKey(k) {
 		else if (it === 'CARD') { trainerCard.open = true; }
 		else if (it === 'TOWN MAP') { openTownMap(); }
 		else if (it === 'SAVE') { saveParty(party); savePos(); dialog.open('Your journey has been saved.'); }
-		else if (it === 'OPTION') { dialog.open('OPTIONS\n\nControls: arrows/WASD move, Z confirm,\nX cancel, Enter/START menu.'); }
+		else if (it === 'OPTION') { optionsMenu.open = true; optionsMenu.idx = 0; }
 		else if (it === 'EXIT' && visiting) { leaveVisit(); }
 		// EXIT just closes
 	}
@@ -891,6 +901,7 @@ function pressKey(k) {
 	if (daycareMenu.open) { daycareKey(k); return; }
 	if (nameRater.open) { nameRaterKey(k); return; }
 	if (moveShop.open) { moveShopKey(k); return; }
+	if (optionsMenu.open) { optionsKey(k); return; }
 	if (trainerCard.open) { if (k === 'x' || k === 'z' || k === 'Escape' || k === 'Enter') trainerCard.open = false; return; }
 	if (partyMenu.open) {
 		if (partyMenu.summary) {
@@ -921,7 +932,7 @@ function pressKey(k) {
 const menuBlocking = () => starterMenu.open || dialog.blocking || evolution.blocking
 	|| battle.blocking || pvp.blocking || shopMenu.open || bagMenu.open || pcMenu.open || partyMenu.open || ferryMenu.open
 	|| startMenu.open || cardsMenu.open || friendsMenu.open || dexMenu.open || trainerCard.open || townMap.open
-	|| daycareMenu.open || nameRater.open || moveShop.open;
+	|| daycareMenu.open || nameRater.open || moveShop.open || optionsMenu.open;
 
 addEventListener('keydown', e => {
 	if (typingInChat()) return;
@@ -1150,6 +1161,7 @@ function cameraPos() {
 // day/night colour wash over the world (not menus/HUD). Keyed to the in-game
 // hour with smooth dawn/dusk ramps; indoor maps stay untinted.
 function drawDayNightTint(context) {
+	if (!Settings.get('dayNight')) return;
 	if (world.current?.map?.map_type === 'MAP_TYPE_INDOOR' || world.current?.map?.indoor) return;
 	const h = Clock.frac() * 24;
 	// piecewise [color, alpha] control points across the day, lerped between
@@ -1200,9 +1212,10 @@ function tick(now) {
 	battle.update(dt);
 	pvp.update(dt);
 	evolution.update(dt);
+	dialog.update(dt);
 	if (!battle.blocking && !pvp.blocking && !dialog.blocking && !evolution.blocking && !starterMenu.open) {
 		trainers.update(dt);
-		player.run = runHeld;
+		player.run = runHeld || Settings.get('autoRun');
 		// any open menu freezes the player even if a key was held as it opened
 		const moveDir = menuBlocking() ? null : (heldKeys[0] || null);
 		if (!trainers.engaging) player.update(dt, moveDir);
@@ -1239,6 +1252,7 @@ function tick(now) {
 		else if (daycareMenu.open) drawDaycare(SW, SH);
 		else if (nameRater.open) drawNameRater(SW, SH);
 		else if (moveShop.open) drawMoveShop(SW, SH);
+		else if (optionsMenu.open) drawOptions(SW, SH);
 		else if (trainerCard.open) drawTrainerCard(SW, SH);
 		else if (starterMenu.open) drawStarterMenu(SW, SH);
 		else if (ferryMenu.open) drawFerryMenu(SW, SH);
@@ -1648,6 +1662,39 @@ function drawNameRater(W, H) {
 	party.forEach((m, i) => monRow('nr:' + i, 24 * u, (76 + i * 62) * u, W - 48 * u, 56 * u, m, nameRater.idx === i, u));
 }
 
+function drawOptions(W, H) {
+	const u = H / 480;
+	menuChrome(W, H, u, 'OPTIONS', 'Arrows: ▲▼ pick   ◄► change   X: close');
+	OPTION_KEYS.forEach((key, i) => {
+		const o = Settings.OPTIONS[key];
+		const sel = optionsMenu.idx === i;
+		const bid = 'opt:' + i;
+		const b = { id: bid, x: 40 * u, y: (96 + i * 62) * u, w: W - 80 * u, h: 52 * u };
+		menuUi.push(b);
+		sctx.fillStyle = sel || menuHover === bid ? BUI.C.btnHover : BUI.C.btn;
+		BUI.rr(sctx, b.x, b.y, b.w, b.h, 8 * u); sctx.fill();
+		sctx.strokeStyle = sel ? BUI.C.accent : BUI.C.panelBorder;
+		sctx.lineWidth = sel ? 3 : 1;
+		BUI.rr(sctx, b.x + 1, b.y + 1, b.w - 2, b.h - 2, 8 * u); sctx.stroke();
+		sctx.fillStyle = BUI.C.text;
+		sctx.font = `${Math.round(18 * u)}px m6x11plus, monospace`;
+		sctx.fillText(o.label, b.x + 20 * u, b.y + 32 * u);
+		// value with ◄ ► chevrons
+		const val = Settings.displayValue(key);
+		sctx.textAlign = 'right';
+		sctx.fillStyle = BUI.C.accent;
+		sctx.fillText(val, b.x + b.w - 44 * u, b.y + 32 * u);
+		sctx.fillStyle = sel ? BUI.C.text : BUI.C.dim;
+		sctx.fillText('◄', b.x + b.w - 132 * u, b.y + 32 * u);
+		sctx.fillText('►', b.x + b.w - 20 * u, b.y + 32 * u);
+		sctx.textAlign = 'left';
+	});
+	// live preview line so text-speed changes are visible
+	sctx.fillStyle = BUI.C.dim;
+	sctx.font = `${Math.round(14 * u)}px m6x11plus, monospace`;
+	sctx.fillText('Changes save automatically.', 40 * u, H - 24 * u);
+}
+
 function drawMoveShop(W, H) {
 	const u = H / 480;
 	const m = moveShop;
@@ -1920,8 +1967,9 @@ function menuTap(id) {
 	if (kind === 'mspick') { moveShop.idx = +a; pressKey('z'); return; }
 	if (kind === 'msdel') { moveShop.idx = +a; pressKey('z'); return; }
 	if (kind === 'msrel') { moveShop.idx = +a; pressKey('z'); return; }
+	if (kind === 'opt') { optionsMenu.idx = +a; Settings.cycle(OPTION_KEYS[+a], 1); return; }
 }
-const anyMenuOpen = () => partyMenu.open || shopMenu.open || bagMenu.open || pcMenu.open || starterMenu.open || ferryMenu.open || startMenu.open || cardsMenu.open || friendsMenu.open || dexMenu.open || trainerCard.open || townMap.open || daycareMenu.open || nameRater.open || moveShop.open;
+const anyMenuOpen = () => partyMenu.open || shopMenu.open || bagMenu.open || pcMenu.open || starterMenu.open || ferryMenu.open || startMenu.open || cardsMenu.open || friendsMenu.open || dexMenu.open || trainerCard.open || townMap.open || daycareMenu.open || nameRater.open || moveShop.open || optionsMenu.open;
 
 // ---------- live PvP battles ----------
 // build a self-contained party snapshot the PvP engine can resolve without
@@ -2262,6 +2310,7 @@ function drawFriendGhosts(ctx, camX, camY) {
 		Dex, get dexMenu() { return dexMenu; }, get trainerCard() { return trainerCard; }, get partyMenu() { return partyMenu; }, get shopMenu() { return shopMenu; }, get bagMenu() { return bagMenu; }, Bag,
 		Fly, get townMap() { return townMap; }, openTownMap, flyTo, hasFlyPoint, markFlyPoint, Clock,
 		Daycare, get daycareMenu() { return daycareMenu; }, get nameRater() { return nameRater; }, get moveShop() { return moveShop; },
-		openDaycare, openNameRater, openMoveShop, setNickname, relearnable };
+		openDaycare, openNameRater, openMoveShop, setNickname, relearnable,
+		Settings, get optionsMenu() { return optionsMenu; } };
 	requestAnimationFrame(tick);
 })();
