@@ -11,6 +11,7 @@ import { getJSON } from './engine.js';
 import { loadParty, saveParty, healParty, leadMon, addCaught, createStarter } from './party.js';
 import { Evolution } from './evolution.js';
 import { Items } from './items.js';
+import * as Dex from './pokedex.js';
 import { statsFor } from './battle.js';
 import { getImage } from './engine.js';
 import * as BUI from './battleui.js';
@@ -71,6 +72,7 @@ trainers.onEngage = t => {
 };
 
 function startTrainerBattle(t, foeParty, info) {
+	for (const m of foeParty) Dex.markSeen(m.speciesId);
 	battle.startTrainer(party, foeParty, info, result => {
 		if (result === 'victory') {
 			trainers.markDefeated(t);
@@ -159,7 +161,7 @@ function interact() {
 		return;
 	}
 	if (svc === 'pc') { pcMenu.open = true; pcMenu.side = 0; pcMenu.idx = 0; return; }
-	if (svc === 'shop') { shopMenu.open = true; shopMenu.idx = 0; return; }
+	if (svc === 'shop') { shopMenu.open = true; shopMenu.idx = 0; shopMenu.mode = 'buy'; shopMenu.flash = null; return; }
 	if (svc === 'ferry') { ferryMenu.open = true; ferryMenu.idx = 0; return; }
 	// Surf: face water with a healthy Water-type and it paddles you out
 	if (!player.surfing && world.isSurfable(fx, fy)) {
@@ -195,16 +197,31 @@ function interact() {
 	if (npc) npc.facing = { up: 'down', down: 'up', left: 'right', right: 'left' }[player.facing];
 }
 
-const partyMenu = { open: false, idx: 0 };
+const partyMenu = { open: false, idx: 0, summary: false };
 const startMenu = { open: false, idx: 0 };
 const cardsMenu = { open: false, idx: 0 };
+const dexMenu = { open: false, idx: 0, detail: false, list: null };
+const trainerCard = { open: false };
+
+// full species list for the Pokédex, sorted by dex number (built once)
+function dexList() {
+	if (dexMenu.list) return dexMenu.list;
+	const sp = battle.data.species;
+	// standard dex (positive nums) first, ascending; fakemon/custom (num <= 0)
+	// after, ordered by magnitude so they group sensibly
+	const key = n => (n > 0 ? n : 100000 + Math.abs(n || 99999));
+	dexMenu.list = Object.keys(sp)
+		.map(id => ({ id, num: sp[id].num || 9999, name: sp[id].name }))
+		.sort((a, b) => key(a.num) - key(b.num) || a.name.localeCompare(b.name));
+	return dexMenu.list;
+}
 const friendsMenu = { open: false, idx: 0 };
 
 // the FireRed-style START menu (items depend on Test Realm mode)
 function startItems() {
 	const items = ['POKeDEX', 'POKeMON', 'CARDS'];
 	if (MP_ON) items.push('FRIENDS');
-	items.push('BAG', 'SAVE', 'OPTION', 'EXIT');
+	items.push('BAG', 'CARD', 'SAVE', 'OPTION', 'EXIT');
 	return items;
 }
 const cardsItems = () => MP_ON
@@ -228,16 +245,33 @@ function startKey(k) {
 	if (k === 'z') {
 		const it = items[startMenu.idx];
 		startMenu.open = false;
-		if (it === 'POKeMON') { partyMenu.open = true; partyMenu.idx = 0; }
+		if (it === 'POKeMON') { partyMenu.open = true; partyMenu.idx = 0; partyMenu.summary = false; }
 		else if (it === 'BAG') { bagMenu.open = true; bagMenu.idx = 0; bagMenu.picking = false; bagMenu.forget = null; bagMenu.flash = null; }
 		else if (it === 'CARDS') { cardsMenu.open = true; cardsMenu.idx = 0; }
 		else if (it === 'FRIENDS') { openFriends(); }
-		else if (it === 'POKeDEX') { const seen = party ? party.length : 0; dialog.open(`POKeDEX\n\nYou have caught ${seen} POKeMON so far.`); }
+		else if (it === 'POKeDEX') { dexMenu.open = true; dexMenu.idx = 0; dexMenu.detail = false; }
+		else if (it === 'CARD') { trainerCard.open = true; }
 		else if (it === 'SAVE') { saveParty(party); savePos(); dialog.open('Your journey has been saved.'); }
 		else if (it === 'OPTION') { dialog.open('OPTIONS\n\nControls: arrows/WASD move, Z confirm,\nX cancel, Enter/START menu.'); }
 		else if (it === 'EXIT' && visiting) { leaveVisit(); }
 		// EXIT just closes
 	}
+}
+
+function dexKey(k) {
+	const list = dexList();
+	if (dexMenu.detail) {
+		if (k === 'ArrowUp') dexMenu.idx = (dexMenu.idx + list.length - 1) % list.length;
+		if (k === 'ArrowDown') dexMenu.idx = (dexMenu.idx + 1) % list.length;
+		if (k === 'x' || k === 'Escape') dexMenu.detail = false;
+		return;
+	}
+	if (k === 'ArrowUp') dexMenu.idx = (dexMenu.idx + list.length - 1) % list.length;
+	if (k === 'ArrowDown') dexMenu.idx = (dexMenu.idx + 1) % list.length;
+	if (k === 'ArrowLeft') dexMenu.idx = Math.max(0, dexMenu.idx - 9);
+	if (k === 'ArrowRight') dexMenu.idx = Math.min(list.length - 1, dexMenu.idx + 9);
+	if (k === 'z' || k === 'Enter') { if (Dex.isSeen(list[dexMenu.idx].id)) dexMenu.detail = true; }
+	if (k === 'x' || k === 'Escape') dexMenu.open = false;
 }
 
 function cardsKey(k) {
@@ -336,7 +370,14 @@ function ferryKey(k) {
 		moveToMap(dest.file).then(() => dialog.open(`The ferry sets sail...\n\nWelcome to ${dest.label}!`));
 	}
 }
-const shopMenu = { open: false, idx: 0 };
+const shopMenu = { open: false, idx: 0, mode: 'buy' };
+// items the mart will buy back (must have a price); sell yields half
+function sellList() {
+	return Object.entries(Bag.getBag())
+		.filter(([id, n]) => n > 0 && Bag.ITEMS[id]?.price > 0)
+		.map(([id, n]) => ({ id, n }));
+}
+const sellPrice = id => Math.floor((Bag.ITEMS[id]?.price || 0) / 2);
 const bagMenu = { open: false, idx: 0, picking: false, pickIdx: 0 };
 const pcMenu = { open: false, side: 0, idx: 0 }; // side 0 = party (deposit), 1 = box (withdraw)
 
@@ -348,11 +389,31 @@ function setBox(box) {
 }
 
 function shopKey(k) {
-	if (k === 'ArrowUp') shopMenu.idx = (shopMenu.idx + Bag.SHOP_STOCK.length - 1) % Bag.SHOP_STOCK.length;
-	if (k === 'ArrowDown') shopMenu.idx = (shopMenu.idx + 1) % Bag.SHOP_STOCK.length;
+	// TAB / left-right flips between BUY and SELL
+	if (k === 'ArrowLeft' || k === 'ArrowRight' || k === 'Tab') {
+		shopMenu.mode = shopMenu.mode === 'buy' ? 'sell' : 'buy';
+		shopMenu.idx = 0;
+		return;
+	}
+	const list = shopMenu.mode === 'buy' ? Bag.SHOP_STOCK : sellList();
+	const n = Math.max(1, list.length);
+	if (k === 'ArrowUp') shopMenu.idx = (shopMenu.idx + n - 1) % n;
+	if (k === 'ArrowDown') shopMenu.idx = (shopMenu.idx + 1) % n;
 	if (k === 'z' || k === 'Enter') {
-		const id = Bag.SHOP_STOCK[shopMenu.idx];
-		shopMenu.flash = Bag.buy(id) ? `Bought ${Bag.ITEMS[id].name}!` : 'Not enough money!';
+		if (shopMenu.mode === 'buy') {
+			const id = Bag.SHOP_STOCK[shopMenu.idx];
+			shopMenu.flash = Bag.buy(id) ? `Bought ${Bag.ITEMS[id].name}!` : 'Not enough money!';
+		} else {
+			const entry = sellList()[shopMenu.idx];
+			if (entry) {
+				const gain = sellPrice(entry.id);
+				Bag.consume(entry.id);
+				Bag.earn(gain);
+				shopMenu.flash = `Sold ${Bag.ITEMS[entry.id].name} for $${gain}.`;
+				const after = sellList();
+				if (shopMenu.idx >= after.length) shopMenu.idx = Math.max(0, after.length - 1);
+			}
+		}
 	}
 	if (k === 'x' || k === 'Escape') shopMenu.open = false;
 }
@@ -556,6 +617,8 @@ function starterKey(k) {
 		const row = STARTERS[starterMenu.row];
 		const id = row.ids[starterMenu.col];
 		party = createStarter(id, battle.data);
+		Dex.seedFrom(party);
+		try { localStorage.setItem('magepunk_region', row.region); } catch (e) {}
 		starterMenu.open = false;
 		// the row you picked from is the region you begin in
 		const home = { KANTO: 'PalletTown', JOHTO: 'NewBarkTown', HOENN: 'LittlerootTown' }[row.region];
@@ -578,16 +641,25 @@ function pressKey(k) {
 	if (shopMenu.open) { shopKey(k); return; }
 	if (bagMenu.open) { bagKey(k); return; }
 	if (pcMenu.open) { pcKey(k); return; }
+	if (dexMenu.open) { dexKey(k); return; }
+	if (trainerCard.open) { if (k === 'x' || k === 'z' || k === 'Escape' || k === 'Enter') trainerCard.open = false; return; }
 	if (partyMenu.open) {
+		if (partyMenu.summary) {
+			// summary view: up/down cycles party members, Z makes lead, X closes
+			if (k === 'ArrowUp') partyMenu.idx = (partyMenu.idx + party.length - 1) % party.length;
+			if (k === 'ArrowDown') partyMenu.idx = (partyMenu.idx + 1) % party.length;
+			if ((k === 'z' || k === 'Enter') && partyMenu.idx > 0) {
+				const [m] = party.splice(partyMenu.idx, 1);
+				party.unshift(m);
+				partyMenu.idx = 0;
+				saveParty(party);
+			}
+			if (k === 'x' || k === 'Escape') partyMenu.summary = false;
+			return;
+		}
 		if (k === 'ArrowUp') partyMenu.idx = (partyMenu.idx + party.length - 1) % party.length;
 		if (k === 'ArrowDown') partyMenu.idx = (partyMenu.idx + 1) % party.length;
-		if ((k === 'z' || k === 'Enter') && partyMenu.idx > 0) {
-			// make selected mon the lead
-			const [m] = party.splice(partyMenu.idx, 1);
-			party.unshift(m);
-			partyMenu.idx = 0;
-			saveParty(party);
-		}
+		if (k === 'z' || k === 'Enter') partyMenu.summary = true;  // view the mon's summary
 		if (k === 'x' || k === 'p' || k === 'Escape') partyMenu.open = false;
 		return;
 	}
@@ -599,7 +671,7 @@ function pressKey(k) {
 // any menu that consumes direction presses instead of walking
 const menuBlocking = () => starterMenu.open || dialog.blocking || evolution.blocking
 	|| battle.blocking || pvp.blocking || shopMenu.open || bagMenu.open || pcMenu.open || partyMenu.open || ferryMenu.open
-	|| startMenu.open || cardsMenu.open || friendsMenu.open;
+	|| startMenu.open || cardsMenu.open || friendsMenu.open || dexMenu.open || trainerCard.open;
 
 addEventListener('keydown', e => {
 	if (typingInChat()) return;
@@ -761,15 +833,18 @@ player.onArrive = () => {
 
 function startWildBattle(pick, forceDouble) {
 	if (!party || !leadMon(party)) return;
+	Dex.markSeen(pick.id);
 	// a slice of grass encounters are horde-style double battles
 	const second = (forceDouble || Math.random() < 0.1)
 		&& party.filter(m => m.curHP > 0).length >= 2
 		? encounters.pick(world.current.map.id) : null;
+	if (second) Dex.markSeen(second.id);
 	battle.start(party, pick.id, pick.level, result => {
 		if (result === 'defeat') {
 			healParty(party);
 			hud.textContent = (world.current.map.name || '') + ' — party healed';
 		} else if (result === 'caught' && battle.lastCaught) {
+			Dex.markCaught(battle.lastCaught.speciesId);
 			const where = addCaught(party, battle.lastCaught);
 			hud.textContent = `${battle.lastCaught.name} ${where === 'party' ? 'joined the party!' : 'was sent to the box'}`;
 		} else {
@@ -789,11 +864,20 @@ function cameraPos() {
 
 // ---------- loop ----------
 let last = performance.now();
+let playAccum = 0;
 function tick(now) {
 	requestAnimationFrame(tick);
 	const dt = Math.min((now - last) / 1000, 0.05);
 	last = now;
 	if (loading || !world.current) return;
+
+	// accumulate playtime (whole seconds, throttled writes) for the Trainer Card
+	playAccum += dt;
+	if (playAccum >= 5) {
+		const s = (parseInt(localStorage.getItem('magepunk_playtime'), 10) || 0) + Math.floor(playAccum);
+		try { localStorage.setItem('magepunk_playtime', String(s)); } catch (e) {}
+		playAccum -= Math.floor(playAccum);
+	}
 
 	battle.update(dt);
 	pvp.update(dt);
@@ -831,6 +915,8 @@ function tick(now) {
 		else if (shopMenu.open) drawShopMenu(SW, SH);
 		else if (bagMenu.open) drawBagMenu(SW, SH);
 		else if (pcMenu.open) drawPcMenu(SW, SH);
+		else if (dexMenu.open) drawDexMenu(SW, SH);
+		else if (trainerCard.open) drawTrainerCard(SW, SH);
 		else if (starterMenu.open) drawStarterMenu(SW, SH);
 		else if (ferryMenu.open) drawFerryMenu(SW, SH);
 		else if (startMenu.open) drawStartMenu(SW, SH);
@@ -915,7 +1001,8 @@ function monRow(id, x, y, w, h, mon, selected, u, note) {
 
 function drawPartyMenu(W, H) {
 	const u = H / 480;
-	menuChrome(W, H, u, 'PARTY', 'Tap a POKEMON to make it your lead. TAKE returns its held item.');
+	if (partyMenu.summary) { drawSummary(W, H, u); return; }
+	menuChrome(W, H, u, 'PARTY', 'Tap a POKEMON to view its summary. TAKE returns its held item.');
 	party.forEach((m, i) => {
 		const note = (i === 0 ? 'LEAD ' : '') + (m.heldItem ? Bag.ITEMS[m.heldItem]?.name || m.heldItem : '');
 		monRow('party:' + i, 24 * u, (76 + i * 62) * u, W - 48 * u - (m.heldItem ? 74 * u : 0), 56 * u, m,
@@ -926,6 +1013,182 @@ function drawPartyMenu(W, H) {
 			menuUi.push(b);
 			BUI.button(sctx, b, menuHover === b.id, u);
 		}
+	});
+}
+
+const STAT_LABEL = { hp: 'HP', atk: 'ATTACK', def: 'DEFENSE', spa: 'SP. ATK', spd: 'SP. DEF', spe: 'SPEED' };
+
+// full-page summary for one party member: portrait, stats, moves
+function drawSummary(W, H, u) {
+	const m = party[partyMenu.idx];
+	if (!m) { partyMenu.summary = false; return; }
+	menuChrome(W, H, u, m.name, `Lv${m.level}   ${m.gender === 'M' ? '♂' : m.gender === 'F' ? '♀' : ''}   #${String(Math.abs(m.num || 0)).padStart(3, '0')}`);
+	// portrait + types on the left
+	const img = iconOf(m);
+	if (img) {
+		sctx.imageSmoothingEnabled = false;
+		const s = Math.min(160 * u / img.width, 160 * u / img.height);
+		sctx.drawImage(img, 40 * u, 90 * u, img.width * s, img.height * s);
+	}
+	sctx.font = `${Math.round(14 * u)}px m6x11plus, monospace`;
+	m.types.forEach((t, i) => {
+		const bw = 74 * u;
+		BUI.badge(sctx, 40 * u + i * (bw + 8 * u), 258 * u, bw, 22 * u,
+			BUI.TYPE_COLORS[t] || '#888', t.toUpperCase(), `${Math.round(12 * u)}px m6x11plus, monospace`);
+	});
+	sctx.fillStyle = BUI.C.dim;
+	sctx.font = `${Math.round(13 * u)}px m6x11plus, monospace`;
+	sctx.fillText(`ABILITY: ${(m.ability || '—').toUpperCase()}`, 40 * u, 302 * u);
+	sctx.fillText(`ITEM: ${m.heldItem ? (Bag.ITEMS[m.heldItem]?.name || m.heldItem) : '—'}`, 40 * u, 322 * u);
+	sctx.fillText(`FRIEND: ${m.friend ?? 70}`, 40 * u, 342 * u);
+	// stat bars on the right
+	const sx = W * 0.42, sw = W * 0.5;
+	sctx.font = `${Math.round(14 * u)}px m6x11plus, monospace`;
+	['hp', 'atk', 'def', 'spa', 'spd', 'spe'].forEach((st, i) => {
+		const y = (96 + i * 34) * u;
+		sctx.fillStyle = BUI.C.dim;
+		sctx.fillText(STAT_LABEL[st], sx, y);
+		const v = st === 'hp' ? m.maxHP : m.stats[st];
+		sctx.fillStyle = BUI.C.text;
+		sctx.textAlign = 'right';
+		sctx.fillText(String(v), sx + 96 * u, y);
+		sctx.textAlign = 'left';
+		const frac = Math.max(0.05, Math.min(1, v / 200));
+		BUI.bar(sctx, sx + 108 * u, y - 11 * u, sw - 108 * u, 12 * u, frac, BUI.C.accent, 4 * u);
+	});
+	// moves along the bottom
+	const my = 320 * u;
+	sctx.fillStyle = BUI.C.dim;
+	sctx.font = `${Math.round(13 * u)}px m6x11plus, monospace`;
+	sctx.fillText('MOVES', sx, my - 8 * u);
+	m.moves.forEach((mv, i) => {
+		const info = battle.data.moves[mv.id] || {};
+		const y = my + i * 30 * u;
+		const bw = (sw) / 2 - 8 * u;
+		const bx = sx + (i % 2) * (bw + 12 * u);
+		const yy = my + Math.floor(i / 2) * 34 * u;
+		sctx.fillStyle = BUI.C.btn;
+		BUI.rr(sctx, bx, yy, bw, 28 * u, 6 * u); sctx.fill();
+		const tc = BUI.TYPE_COLORS[info.type] || '#888';
+		sctx.fillStyle = tc;
+		sctx.fillRect(bx, yy, 4 * u, 28 * u);
+		sctx.fillStyle = BUI.C.text;
+		sctx.font = `${Math.round(13 * u)}px m6x11plus, monospace`;
+		sctx.fillText(mv.name, bx + 12 * u, yy + 13 * u);
+		sctx.fillStyle = BUI.C.dim;
+		sctx.font = `${Math.round(11 * u)}px m6x11plus, monospace`;
+		sctx.fillText(`${(info.type || '').toUpperCase()}  PP ${mv.pp}/${mv.maxPp}`, bx + 12 * u, yy + 25 * u);
+	});
+	// nav hint / lead button
+	const lead = { id: 'summary-lead', x: 40 * u, y: H - 52 * u, w: 200 * u, h: 40 * u,
+		label: partyMenu.idx === 0 ? 'IS LEAD' : 'MAKE LEAD', center: true };
+	menuUi.push(lead);
+	BUI.button(sctx, lead, menuHover === lead.id, u);
+}
+
+function drawDexMenu(W, H) {
+	const u = H / 480;
+	const list = dexList();
+	const c = Dex.counts();
+	if (dexMenu.detail) { drawDexDetail(W, H, u, list[dexMenu.idx]); return; }
+	menuChrome(W, H, u, 'POKeDEX', `Seen ${c.seen}   Caught ${c.caught}   —   tap a seen entry for details`);
+	const rows = 9;
+	const start = Math.max(0, Math.min(dexMenu.idx - 4, list.length - rows));
+	list.slice(start, start + rows).forEach((e, i) => {
+		const idx = start + i;
+		const seen = Dex.isSeen(e.id), caught = Dex.isCaught(e.id);
+		const bid = 'dex:' + idx;
+		const b = { id: bid, x: 24 * u, y: (76 + i * 40) * u, w: W - 48 * u, h: 34 * u };
+		menuUi.push(b);
+		sctx.fillStyle = dexMenu.idx === idx || menuHover === bid ? BUI.C.btnHover : BUI.C.btn;
+		BUI.rr(sctx, b.x, b.y, b.w, b.h, 6 * u); sctx.fill();
+		sctx.strokeStyle = dexMenu.idx === idx ? BUI.C.accent : BUI.C.panelBorder;
+		sctx.lineWidth = dexMenu.idx === idx ? 3 : 1;
+		BUI.rr(sctx, b.x + 1, b.y + 1, b.w - 2, b.h - 2, 6 * u); sctx.stroke();
+		sctx.fillStyle = BUI.C.dim;
+		sctx.font = `${Math.round(14 * u)}px m6x11plus, monospace`;
+		sctx.fillText(`#${String(Math.abs(e.num)).padStart(3, '0')}`, b.x + 12 * u, b.y + 22 * u);
+		sctx.fillStyle = seen ? BUI.C.text : BUI.C.faint;
+		sctx.font = `${Math.round(16 * u)}px m6x11plus, monospace`;
+		sctx.fillText(seen ? e.name.toUpperCase() : '----------', b.x + 70 * u, b.y + 22 * u);
+		if (caught) {
+			sctx.fillStyle = BUI.C.accent;
+			sctx.textAlign = 'right';
+			sctx.font = `${Math.round(13 * u)}px m6x11plus, monospace`;
+			sctx.fillText('● OWNED', b.x + b.w - 14 * u, b.y + 22 * u);
+			sctx.textAlign = 'left';
+		}
+	});
+}
+
+function drawDexDetail(W, H, u, e) {
+	if (!e) { dexMenu.detail = false; return; }
+	const sp = battle.data.species[e.id];
+	const caught = Dex.isCaught(e.id);
+	menuChrome(W, H, u, sp.name.toUpperCase(), `#${String(Math.abs(e.num)).padStart(3, '0')}   ${caught ? 'OWNED' : 'SEEN'}`);
+	const img = iconOf({ sprite: sp.sprite });
+	if (img) {
+		sctx.imageSmoothingEnabled = false;
+		const s = Math.min(180 * u / img.width, 180 * u / img.height);
+		sctx.drawImage(img, 50 * u, 100 * u, img.width * s, img.height * s);
+	}
+	sctx.font = `${Math.round(14 * u)}px m6x11plus, monospace`;
+	(sp.types || []).forEach((t, i) => {
+		const bw = 76 * u;
+		BUI.badge(sctx, 50 * u + i * (bw + 8 * u), 290 * u, bw, 22 * u,
+			BUI.TYPE_COLORS[t] || '#888', t.toUpperCase(), `${Math.round(12 * u)}px m6x11plus, monospace`);
+	});
+	const sx = W * 0.5, sw = W * 0.42;
+	sctx.font = `${Math.round(14 * u)}px m6x11plus, monospace`;
+	['hp', 'atk', 'def', 'spa', 'spd', 'spe'].forEach((st, i) => {
+		const y = (110 + i * 36) * u;
+		sctx.fillStyle = BUI.C.dim;
+		sctx.fillText(STAT_LABEL[st], sx, y);
+		const v = sp.baseStats[st] || 0;
+		sctx.fillStyle = BUI.C.text;
+		sctx.textAlign = 'right';
+		sctx.fillText(String(v), sx + 96 * u, y);
+		sctx.textAlign = 'left';
+		BUI.bar(sctx, sx + 108 * u, y - 11 * u, sw - 40 * u, 12 * u, Math.min(1, v / 200), BUI.C.accent, 4 * u);
+	});
+}
+
+// simple playtime accumulator (seconds), persisted; region stored on starter pick
+function playtimeStr() {
+	const s = parseInt(localStorage.getItem('magepunk_playtime'), 10) || 0;
+	const h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60);
+	return `${h}:${String(m).padStart(2, '0')}`;
+}
+function drawTrainerCard(W, H) {
+	const u = H / 480;
+	menuChrome(W, H, u, 'TRAINER CARD', 'Your journey so far.');
+	const c = Dex.counts();
+	const name = localStorage.getItem('magepunk_name') || 'PLAYER';
+	const region = localStorage.getItem('magepunk_region') || '—';
+	const money = Bag.getMoney();
+	const cardX = 60 * u, cardY = 90 * u, cardW = W - 120 * u, cardH = H - 190 * u;
+	sctx.fillStyle = 'rgba(30,54,92,0.9)';
+	BUI.rr(sctx, cardX, cardY, cardW, cardH, 16 * u); sctx.fill();
+	sctx.strokeStyle = BUI.C.accent; sctx.lineWidth = 3;
+	BUI.rr(sctx, cardX + 1, cardY + 1, cardW - 2, cardH - 2, 16 * u); sctx.stroke();
+	const lines = [
+		['NAME', name],
+		['REGION', region],
+		['MONEY', `$${money}`],
+		['POKeDEX SEEN', String(c.seen)],
+		['POKeDEX OWNED', String(c.caught)],
+		['PARTY', `${party.length}/6`],
+		['PLAYTIME', playtimeStr()],
+	];
+	sctx.font = `${Math.round(18 * u)}px m6x11plus, monospace`;
+	lines.forEach(([k, v], i) => {
+		const y = cardY + (44 + i * 40) * u;
+		sctx.fillStyle = BUI.C.dim;
+		sctx.fillText(k, cardX + 32 * u, y);
+		sctx.fillStyle = BUI.C.text;
+		sctx.textAlign = 'right';
+		sctx.fillText(v, cardX + cardW - 32 * u, y);
+		sctx.textAlign = 'left';
 	});
 }
 
@@ -972,20 +1235,35 @@ function drawStarterMenu(W, H) {
 
 function drawShopMenu(W, H) {
 	const u = H / 480;
-	menuChrome(W, H, u, 'POKE MART', `Money: $${Bag.getMoney()} — tap to buy`);
-	// windowed list: 7 rows around the selection, with scroll buttons
-	const start = Math.max(0, Math.min(shopMenu.idx - 3, Bag.SHOP_STOCK.length - 7));
-	Bag.SHOP_STOCK.slice(start, start + 7).forEach((id, i) => {
+	const selling = shopMenu.mode === 'sell';
+	menuChrome(W, H, u, 'POKE MART', `Money: $${Bag.getMoney()} — ${selling ? 'tap to sell (half price)' : 'tap to buy'}`);
+	// BUY / SELL tabs
+	['buy', 'sell'].forEach((m, i) => {
+		const bid = 'shopmode:' + m;
+		const b = { id: bid, x: (24 + i * 130) * u, y: 62 * u, w: 120 * u, h: 30 * u, label: m.toUpperCase(), center: true };
+		menuUi.push(b);
+		BUI.button(sctx, b, menuHover === bid || shopMenu.mode === m, u);
+	});
+	const rows = selling ? sellList() : Bag.SHOP_STOCK.map(id => ({ id }));
+	if (!rows.length) {
+		sctx.fillStyle = BUI.C.dim;
+		sctx.font = `${Math.round(16 * u)}px m6x11plus, monospace`;
+		sctx.fillText('Nothing to sell.', 24 * u, 140 * u);
+	}
+	const start = Math.max(0, Math.min(shopMenu.idx - 3, rows.length - 7));
+	rows.slice(start, start + 7).forEach((row, i) => {
 		const idx = start + i;
-		const it = Bag.ITEMS[id];
-		const bid = 'buy:' + idx;
-		const b = { id: bid, x: 24 * u, y: (76 + i * 52) * u, w: W - 118 * u, h: 46 * u,
-			label: it.name, sub: `have ${Bag.count(id)}`, right: `$${it.price}`, kbSel: shopMenu.idx === idx };
+		const it = Bag.ITEMS[row.id];
+		const bid = (selling ? 'sell:' : 'buy:') + idx;
+		const price = selling ? sellPrice(row.id) : it.price;
+		const b = { id: bid, x: 24 * u, y: (104 + i * 48) * u, w: W - 118 * u, h: 42 * u,
+			label: it.name, sub: selling ? `have ${row.n}` : `have ${Bag.count(row.id)}`,
+			right: `$${price}`, kbSel: shopMenu.idx === idx };
 		menuUi.push(b);
 		BUI.button(sctx, b, menuHover === bid || shopMenu.idx === idx, u);
 	});
-	for (const [id, label, y] of [['shopscroll:-1', '▲', 76], ['shopscroll:1', '▼', 300]]) {
-		const b = { id, x: W - 86 * u, y: y * u, w: 62 * u, h: 140 * u, label, center: true };
+	for (const [id, label, y] of [['shopscroll:-1', '▲', 104], ['shopscroll:1', '▼', 320]]) {
+		const b = { id, x: W - 86 * u, y: y * u, w: 62 * u, h: 130 * u, label, center: true };
 		menuUi.push(b);
 		BUI.button(sctx, b, menuHover === id, u);
 	}
@@ -1124,7 +1402,7 @@ function drawFriendsMenu(W, H) {
 function menuTap(id) {
 	const [kind, a, b2] = id.split(':');
 	if (kind === 'close') { pressKey('Escape'); pressKey('x'); return; }
-	if (kind === 'party') { partyMenu.idx = +a; if (+a > 0) pressKey('z'); return; }
+	if (kind === 'party') { partyMenu.idx = +a; pressKey('z'); return; }
 	if (kind === 'take') {
 		const mon = party[+a];
 		if (mon?.heldItem) {
@@ -1135,7 +1413,8 @@ function menuTap(id) {
 		return;
 	}
 	if (kind === 'starter') { starterMenu.row = +a; starterMenu.col = +b2; pressKey('z'); return; }
-	if (kind === 'buy') { shopMenu.idx = +a; pressKey('z'); return; }
+	if (kind === 'buy' || kind === 'sell') { shopMenu.idx = +a; pressKey('z'); return; }
+	if (kind === 'shopmode') { if (shopMenu.mode !== a) { shopMenu.mode = a; shopMenu.idx = 0; } return; }
 	if (kind === 'shopscroll') { pressKey(+a > 0 ? 'ArrowDown' : 'ArrowUp'); return; }
 	if (kind === 'sail') { ferryMenu.idx = +a; pressKey('z'); return; }
 	if (kind === 'item') { bagMenu.idx = +a; bagMenu.picking = false; bagMenu.forget = null; pressKey('z'); return; }
@@ -1146,8 +1425,10 @@ function menuTap(id) {
 	if (kind === 'start') { startMenu.idx = +a; pressKey('z'); return; }
 	if (kind === 'cards') { cardsMenu.idx = +a; pressKey('z'); return; }
 	if (kind === 'friend') { friendsMenu.idx = +a; pressKey('z'); return; }
+	if (kind === 'dex') { dexMenu.idx = +a; pressKey('z'); return; }
+	if (kind === 'summary-lead') { pressKey('z'); return; }
 }
-const anyMenuOpen = () => partyMenu.open || shopMenu.open || bagMenu.open || pcMenu.open || starterMenu.open || ferryMenu.open || startMenu.open || cardsMenu.open || friendsMenu.open;
+const anyMenuOpen = () => partyMenu.open || shopMenu.open || bagMenu.open || pcMenu.open || starterMenu.open || ferryMenu.open || startMenu.open || cardsMenu.open || friendsMenu.open || dexMenu.open || trainerCard.open;
 
 // ---------- live PvP battles ----------
 // build a self-contained party snapshot the PvP engine can resolve without
@@ -1416,6 +1697,7 @@ function drawFriendGhosts(ctx, camX, camY) {
 	await items.init();
 	signTexts = await getJSON('data/sign_texts.json').catch(() => ({}));
 	party = loadParty(battle.data);
+	if (party) Dex.seedFrom([...party, ...getBox()]);
 	if (!party) {
 		starterMenu.open = true;
 		for (const row of STARTERS) {
@@ -1482,6 +1764,7 @@ function drawFriendGhosts(ctx, camX, camY) {
 	window.__ow = { world, player, warpTo, moveToMap, npcs, encounters, battle, trainers, dialog, evolution, items, get party() { return party; }, get menuUi() { return menuUi; }, menuTap, pumpPlayer, freezeLoop, startWildBattle, interact,
 		get startMenu() { return startMenu; }, get cardsMenu() { return cardsMenu; }, get friendsMenu() { return friendsMenu; },
 		get friends() { return friends; }, get visiting() { return visiting; }, refreshFriends, visitWorld, leaveVisit, heartbeat, pollPresence, get ghosts() { return ghosts; }, MP_ON,
-		get pvp() { return pvp; }, pvpParty, sendChallenge, enterMatch, pollChallenges, get pending() { return pendingChallengeTo; } };
+		get pvp() { return pvp; }, pvpParty, sendChallenge, enterMatch, pollChallenges, get pending() { return pendingChallengeTo; },
+		Dex, get dexMenu() { return dexMenu; }, get trainerCard() { return trainerCard; }, get partyMenu() { return partyMenu; }, get shopMenu() { return shopMenu; }, get bagMenu() { return bagMenu; }, Bag };
 	requestAnimationFrame(tick);
 })();
