@@ -270,8 +270,6 @@ export class World {
 	isLedge(tx, ty, dir) { return this.behaviorAt(tx, ty) === MB_JUMP[dir]; }
 	isTallGrass(tx, ty) { return this.behaviorAt(tx, ty) === MB_TALL_GRASS; }
 	isCrackedFloor(tx, ty) { return this.behaviorAt(tx, ty) === MB_CRACKED_FLOOR; }
-	// deep water you can plunge beneath with Dive (surface, interior, Sootopolis)
-	isDiveable(tx, ty) { const b = this.behaviorAt(tx, ty); return b === 0x11 || b === 0x12 || b === 0x14; }
 
 	// surfable water: the 0x10-0x1B "sea/pond/river" behavior band. These
 	// tiles block walking (you need a Water-type to Surf) but are open once

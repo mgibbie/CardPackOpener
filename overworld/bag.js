@@ -94,6 +94,16 @@ export const ITEMS = {
 	deepseascale:{ name: 'DEEPSEASCALE',  price: 3000, kind: 'stone' },
 	whippeddream:{ name: 'WHIPPED DREAM', price: 3000, kind: 'stone' },
 	sachet:      { name: 'SACHET',        price: 3000, kind: 'stone' },
+	// HMs — reusable field-move discs (kind 'hm' so they're never consumed).
+	// Teach one to a compatible POKeMON, then use the move from the party menu.
+	hm1: { name: 'HM01 CUT',        price: 0, kind: 'hm' },
+	hm2: { name: 'HM02 FLY',        price: 0, kind: 'hm' },
+	hm3: { name: 'HM03 SURF',       price: 0, kind: 'hm' },
+	hm4: { name: 'HM04 STRENGTH',   price: 0, kind: 'hm' },
+	hm5: { name: 'HM05 FLASH',      price: 0, kind: 'hm' },
+	hm6: { name: 'HM06 ROCK SMASH', price: 0, kind: 'hm' },
+	hm7: { name: 'HM07 WATERFALL',  price: 0, kind: 'hm' },
+	hm8: { name: 'HM08 DIVE',       price: 0, kind: 'hm' },
 };
 
 // display names for arbitrary picked-up item ids (TMs, berries, key items...)

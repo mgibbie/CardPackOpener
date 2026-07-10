@@ -75,17 +75,14 @@ player.blocked = (tx, ty) => npcs.npcBlocks(tx, ty) || trainers.occupied(tx, ty)
 // Strength: shove a boulder one tile ahead if a party mon can use Strength and
 // the destination is clear. Returns true when the boulder actually moved.
 let strengthHinted = false;
-function partyHasStrength() {
-	return (party || []).some(m => m.curHP > 0
-		&& (m.moves.some(mv => mv.id === 'strength') || canLearn(m, 'strength')));
-}
 player.pushBoulder = (bx, by, dx, dy) => {
 	const obj = items.fieldObjAt(bx, by);
 	if (!obj || obj.kind !== 'boulder') return false;
-	if (!partyHasStrength()) {
+	// only shoves once STRENGTH has been used (from the party menu) on this map
+	if (!strengthActive) {
 		if (!strengthHinted) {
 			strengthHinted = true;
-			dialog.open("It's a hefty boulder — but it won't budge.\n\nMaybe a strong POKeMON could push it.");
+			dialog.open("It's a hefty boulder — but it won't budge.\n\nSTRENGTH could get it moving.");
 		}
 		return false;
 	}
@@ -169,23 +166,12 @@ function interact() {
 	// item balls / berry trees / hidden items (facing tile, then standing tile)
 	const found = items.interactAt(fx, fy) || items.interactAt(player.tx, player.ty);
 	if (found) { dialog.open(found); return; }
-	// smashable rocks + cuttable trees: the lead mon clears the way
+	// field obstacles: point the player at the right HM (used from the party menu)
 	const fo = items.fieldObjAt(fx, fy);
 	if (fo) {
-		const lead = party.find(m => m.curHP > 0);
-		if (!lead) return;
-		if (fo.kind === 'rock') {
-			dialog.open(`${lead.name} smashed the rock!`, () => {
-				items.removeFieldObj(fo);
-				const grp = encounters.data[world.current.map.id]?.rock_smash;
-				if (grp && Math.random() * 100 < grp.rate) {
-					const pick = encounters.pick(world.current.map.id, 'rock_smash');
-					if (pick) startWildBattle(pick);
-				}
-			});
-		} else {
-			dialog.open(`${lead.name} cut down the tree!`, () => items.removeFieldObj(fo));
-		}
+		dialog.open(fo.kind === 'rock' ? 'A rugged rock blocks the way.\n\nROCK SMASH could break it apart.'
+			: fo.kind === 'boulder' ? "It's a hefty boulder.\n\nSTRENGTH could push it aside."
+			: 'A leafy tree grows here.\n\nCUT could clear a path through it.');
 		return;
 	}
 	// a static legendary on the faced tile — walk up and challenge it
@@ -199,18 +185,9 @@ function interact() {
 	if (svc === 'pc') { pcMenu.open = true; pcMenu.side = 0; pcMenu.idx = 0; return; }
 	if (svc === 'shop') { shopMenu.open = true; shopMenu.idx = 0; shopMenu.mode = 'buy'; shopMenu.flash = null; return; }
 	if (svc === 'ferry') { ferryMenu.open = true; ferryMenu.idx = 0; return; }
-	// Surf: face water with a healthy Water-type and it paddles you out
+	// water's edge: SURF carries you across (used from the party menu)
 	if (!player.surfing && world.isSurfable(fx, fy)) {
-		const surfer = party.find(m => m.curHP > 0 && m.types?.includes('Water'));
-		if (surfer) {
-			dialog.open(`${surfer.name} paddles out onto the water!`, () => {
-				player.surfing = true;
-				player.biking = false;
-				player.beginMove(fx, fy, META, true);
-			});
-		} else {
-			dialog.open('The water is a deep blue...\n\nA WATER-type could carry you across.');
-		}
+		dialog.open('The water is a deep blue...\n\nSURF would carry you across.');
 		return;
 	}
 	const t = trainers.trainerAt(fx, fy);
@@ -250,7 +227,7 @@ const NAMERATER_MAPS = new Set(['MAP_GOLDENROD_NAME_RATER', 'MAP_JOHKANTO_LAVEND
 	'MAP_SLATEPORT_CITY_NAME_RATERS_HOUSE']);
 const DELETER_MAPS = new Set(['MAP_MOVE_DELETERS_HOUSE', 'MAP_LILYCOVE_CITY_MOVE_DELETERS_HOUSE']);
 
-const partyMenu = { open: false, idx: 0, summary: false };
+const partyMenu = { open: false, idx: 0, summary: false, action: null };
 const startMenu = { open: false, idx: 0 };
 const cardsMenu = { open: false, idx: 0 };
 const dexMenu = { open: false, idx: 0, detail: false, list: null };
@@ -822,12 +799,12 @@ function bagKey(k) {
 					else if (!canLearn(mon, mid)) bagMenu.flash = `${mon.name} can't learn ${info.name}.`;
 					else if (mon.moves.length < 4) {
 						mon.moves.push({ id: mid, name: info.name, pp: info.pp, maxPp: info.pp });
-						Bag.consume(id);
+						if (Bag.ITEMS[id]?.kind !== 'hm') Bag.consume(id); // HMs are reusable
 						saveParty(party);
 						bagMenu.flash = `${mon.name} learned ${info.name}!`;
 						bagMenu.picking = false;
 					} else {
-						bagMenu.forget = { itemId: id, mid, mon, idx: 0 };
+						bagMenu.forget = { itemId: id, mid, mon, idx: 0, keepItem: Bag.ITEMS[id]?.kind === 'hm' };
 					}
 				}
 			}
@@ -916,22 +893,33 @@ function pressKey(k) {
 	if (optionsMenu.open) { optionsKey(k); return; }
 	if (trainerCard.open) { if (k === 'x' || k === 'z' || k === 'Escape' || k === 'Enter') trainerCard.open = false; return; }
 	if (partyMenu.open) {
+		// the per-POKeMON action menu (field moves / summary / switch)
+		if (partyMenu.action) {
+			const a = partyMenu.action;
+			if (k === 'ArrowUp') a.idx = (a.idx + a.options.length - 1) % a.options.length;
+			if (k === 'ArrowDown') a.idx = (a.idx + 1) % a.options.length;
+			if (k === 'x' || k === 'Escape') { partyMenu.action = null; return; }
+			if (k === 'z' || k === 'Enter') {
+				const opt = a.options[a.idx];
+				if (opt.kind === 'field') useFieldMove(opt.hm, a.mon);
+				else if (opt.kind === 'summary') { partyMenu.action = null; partyMenu.summary = true; }
+				else if (opt.kind === 'switch') {
+					const [m] = party.splice(a.monIdx, 1);
+					party.unshift(m); partyMenu.idx = 0; saveParty(party); partyMenu.action = null;
+				} else partyMenu.action = null; // cancel
+			}
+			return;
+		}
 		if (partyMenu.summary) {
-			// summary view: up/down cycles party members, Z makes lead, X closes
+			// summary view: up/down cycles party members, X closes
 			if (k === 'ArrowUp') partyMenu.idx = (partyMenu.idx + party.length - 1) % party.length;
 			if (k === 'ArrowDown') partyMenu.idx = (partyMenu.idx + 1) % party.length;
-			if ((k === 'z' || k === 'Enter') && partyMenu.idx > 0) {
-				const [m] = party.splice(partyMenu.idx, 1);
-				party.unshift(m);
-				partyMenu.idx = 0;
-				saveParty(party);
-			}
 			if (k === 'x' || k === 'Escape') partyMenu.summary = false;
 			return;
 		}
 		if (k === 'ArrowUp') partyMenu.idx = (partyMenu.idx + party.length - 1) % party.length;
 		if (k === 'ArrowDown') partyMenu.idx = (partyMenu.idx + 1) % party.length;
-		if (k === 'z' || k === 'Enter') partyMenu.summary = true;  // view the mon's summary
+		if (k === 'z' || k === 'Enter') openPartyAction(partyMenu.idx); // choose an action for this mon
 		if (k === 'x' || k === 'p' || k === 'Escape') partyMenu.open = false;
 		return;
 	}
@@ -939,7 +927,6 @@ function pressKey(k) {
 	if (k === 'p' && !loading) { partyMenu.open = true; partyMenu.idx = 0; return; }
 	if (k === 'b' && !loading) { bagMenu.open = true; bagMenu.idx = 0; bagMenu.picking = false; bagMenu.forget = null; bagMenu.flash = null; return; }
 	if (k === 'c' && !loading) { toggleBike(); return; }
-	if (k === 'v' && !loading) { tryDive(); return; }
 	if (k === 'z' && !loading) interact();
 }
 // any menu that consumes direction presses instead of walking
@@ -1027,6 +1014,7 @@ async function loadMapScripts(stem) {
 }
 
 async function refreshMapContent(label) {
+	strengthActive = false; strengthHinted = false; // STRENGTH must be re-used per map
 	await npcs.loadForMap();
 	await trainers.loadForMap();
 	npcs.list = npcs.list.filter(n => !trainers.list.some(t => t.ev === n.ev));
@@ -1154,22 +1142,95 @@ async function diveTo(kind) { // 'dive' (down) | 'emerge' (up)
 	await refreshMapContent(file);
 	return true;
 }
-// try to dive from where the player stands, or emerge back to the surface.
-// The Emerald->web tileset flattens all sea to one "ocean" behavior, so rather
-// than look for specific deep-water tiles we gate on the map itself offering a
-// dive overlay (Route 105/125/127/129, Sootopolis, ...) while you're surfing.
-function tryDive() {
-	if (loading || player.moving) return;
-	const conns = world.current.map.connections || [];
-	if (conns.some(c => c.direction === 'emerge')) { diveTo('emerge'); return; } // underwater -> up
-	if (conns.some(c => c.direction === 'dive')) {
-		if (!player.surfing) { dialog.open('You need to be out on the water to DIVE.'); return; }
-		if (!party.some(m => m.curHP > 0 && m.types?.includes('Water'))) {
-			dialog.open('The sea is deep here...\n\nA WATER-type could take you under.');
+// ---------- HM field moves ----------
+// Faithful trigger: from the PARTY menu you pick a POKeMON that KNOWS the move
+// and choose it — and it only does anything where the move applies. Each `use()`
+// acts if the current tile/facing is valid, otherwise says why. STRENGTH stays
+// "active" for the map so boulders can then be shoved (reset on every map load).
+let strengthActive = false;
+function facingTile() {
+	const [dx, dy] = { down: [0, 1], up: [0, -1], left: [-1, 0], right: [1, 0] }[player.facing];
+	return [player.tx + dx, player.ty + dy, dx, dy];
+}
+const HM_FIELD = {
+	cut: { name: 'CUT', use() {
+		const [fx, fy] = facingTile();
+		const o = items.fieldObjAt(fx, fy);
+		if (o && o.kind === 'cut') { dialog.open('The tree was CUT down!', () => items.removeFieldObj(o)); return; }
+		dialog.open("There's nothing here to CUT.");
+	} },
+	rocksmash: { name: 'ROCK SMASH', use() {
+		const [fx, fy] = facingTile();
+		const o = items.fieldObjAt(fx, fy);
+		if (o && o.kind === 'rock') {
+			dialog.open('The rock was smashed to bits!', () => {
+				items.removeFieldObj(o);
+				const grp = encounters.data[world.current.map.id]?.rock_smash;
+				if (grp && Math.random() * 100 < grp.rate) { const pick = encounters.pick(world.current.map.id, 'rock_smash'); if (pick) startWildBattle(pick); }
+			});
 			return;
 		}
-		diveTo('dive');
-	}
+		dialog.open("There's no rock here to SMASH.");
+	} },
+	strength: { name: 'STRENGTH', use() {
+		const near = [[1, 0], [-1, 0], [0, 1], [0, -1]].some(([dx, dy]) => items.fieldObjAt(player.tx + dx, player.ty + dy)?.kind === 'boulder');
+		if (!near) { dialog.open("There's nothing here to use STRENGTH on."); return; }
+		strengthActive = true;
+		dialog.open('STRENGTH made it possible to move boulders!');
+	} },
+	surf: { name: 'SURF', use() {
+		if (player.surfing) { dialog.open("You're already on the water."); return; }
+		const [fx, fy] = facingTile();
+		if (world.isSurfable(fx, fy)) {
+			dialog.open('You surfed out onto the water!', () => { player.surfing = true; player.biking = false; player.beginMove(fx, fy, META, true); });
+			return;
+		}
+		dialog.open("You can't SURF here.");
+	} },
+	waterfall: { name: 'WATERFALL', use() {
+		const [fx, fy, dx, dy] = facingTile();
+		if (player.surfing && world.behaviorAt(fx, fy) === 0x13) { // MB_WATERFALL
+			let nx = fx, ny = fy;
+			while (world.behaviorAt(nx + dx, ny + dy) === 0x13) { nx += dx; ny += dy; }
+			const lx = nx + dx, ly = ny + dy;
+			if (world.isSurfable(lx, ly) || world.isPassable(lx, ly)) { dialog.open('You climbed the WATERFALL!', () => player.setTile(lx, ly)); return; }
+		}
+		dialog.open("You can't use WATERFALL here.");
+	} },
+	dive: { name: 'DIVE', use() {
+		// The Emerald->web tileset flattens all sea to one ocean behavior, so a
+		// "valid dive spot" is a map that offers a dive/emerge overlay.
+		const conns = world.current.map.connections || [];
+		if (conns.some(c => c.direction === 'emerge')) { diveTo('emerge'); return; }
+		if (conns.some(c => c.direction === 'dive')) {
+			if (!player.surfing) { dialog.open('You need to be out on the water to DIVE.'); return; }
+			diveTo('dive'); return;
+		}
+		dialog.open("You can't DIVE here — the water isn't deep enough.");
+	} },
+	flash: { name: 'FLASH', use() {
+		if (world.current.map.requires_flash) { Story.setFlag('flash_' + world.current.map.id); dialog.open('FLASH lit up the surroundings!'); return; }
+		dialog.open("It's not dark enough to need FLASH.");
+	} },
+	fly: { name: 'FLY', use() {
+		if (world.current.map.map_type === 'MAP_TYPE_INDOOR') { dialog.open("You can't FLY indoors."); return; }
+		openTownMap();
+	} },
+};
+function fieldMovesOf(mon) { return (mon?.moves || []).filter(mv => HM_FIELD[mv.id]); }
+function useFieldMove(hmId, mon) {
+	partyMenu.open = false; partyMenu.action = null; partyMenu.summary = false;
+	HM_FIELD[hmId]?.use(mon);
+}
+// build the little action menu shown when you pick a party member
+function openPartyAction(idx) {
+	const mon = party[idx];
+	if (!mon) return;
+	const opts = fieldMovesOf(mon).map(mv => ({ label: HM_FIELD[mv.id].name, kind: 'field', hm: mv.id }));
+	opts.push({ label: 'SUMMARY', kind: 'summary' });
+	if (idx > 0) opts.push({ label: 'SWITCH', kind: 'switch' });
+	opts.push({ label: 'CANCEL', kind: 'cancel' });
+	partyMenu.action = { mon, monIdx: idx, options: opts, idx: 0 };
 }
 
 // re-anchor when the player has walked into a connected map
@@ -1531,6 +1592,9 @@ function seedStoryState(region) {
 		for (const [k, v] of Object.entries(seed.vars || {})) Story.setVar(k, v);
 		for (const f of seed.flags || []) Story.setFlag(f);
 	}
+	// the 8 HMs come in the bag (reusable) — teach them to compatible POKeMON and
+	// use the field move from the party menu wherever it applies
+	for (let i = 1; i <= 8; i++) Bag.addItem('hm' + i);
 	Story.setFlag('story_seeded');
 }
 
@@ -1792,18 +1856,30 @@ function monRow(id, x, y, w, h, mon, selected, u, note) {
 function drawPartyMenu(W, H) {
 	const u = H / 480;
 	if (partyMenu.summary) { drawSummary(W, H, u); return; }
-	menuChrome(W, H, u, 'PARTY', 'Tap a POKEMON to view its summary. TAKE returns its held item.');
+	const act = partyMenu.action;
+	menuChrome(W, H, u, 'PARTY', act ? `Choose an action for ${act.mon.name}.` : 'Choose a POKEMON, then an action (field moves it knows, SUMMARY, SWITCH).');
 	party.forEach((m, i) => {
 		const note = (i === 0 ? 'LEAD ' : '') + (m.heldItem ? Bag.ITEMS[m.heldItem]?.name || m.heldItem : '');
-		monRow('party:' + i, 24 * u, (76 + i * 62) * u, W - 48 * u - (m.heldItem ? 74 * u : 0), 56 * u, m,
-			partyMenu.idx === i, u, note.trim());
-		if (m.heldItem) {
+		monRow('party:' + i, 24 * u, (76 + i * 62) * u, W - 48 * u - (m.heldItem && !act ? 74 * u : 0), 56 * u, m,
+			(act ? act.monIdx : partyMenu.idx) === i, u, note.trim());
+		if (m.heldItem && !act) {
 			const b = { id: 'take:' + i, x: W - 24 * u - 68 * u, y: (76 + i * 62) * u, w: 68 * u, h: 56 * u,
 				label: 'TAKE', center: true };
 			menuUi.push(b);
 			BUI.button(sctx, b, menuHover === b.id, u);
 		}
 	});
+	if (act) {
+		const bw = 168 * u, bh = 40 * u, gap = 8 * u, x = W - bw - 28 * u;
+		let y = (76 + act.monIdx * 62) * u;
+		const total = act.options.length * (bh + gap);
+		if (y + total > H - 12 * u) y = Math.max(70 * u, H - 12 * u - total);
+		act.options.forEach((opt, i) => {
+			const b = { id: 'pact:' + i, x, y: y + i * (bh + gap), w: bw, h: bh, label: opt.label, center: true };
+			menuUi.push(b);
+			BUI.button(sctx, b, act.idx === i || menuHover === b.id, u);
+		});
+	}
 }
 
 const STAT_LABEL = { hp: 'HP', atk: 'ATTACK', def: 'DEFENSE', spa: 'SP. ATK', spd: 'SP. DEF', spe: 'SPEED' };
@@ -2374,7 +2450,8 @@ function drawFriendsMenu(W, H) {
 function menuTap(id) {
 	const [kind, a, b2] = id.split(':');
 	if (kind === 'close') { pressKey('Escape'); pressKey('x'); return; }
-	if (kind === 'party') { partyMenu.idx = +a; pressKey('z'); return; }
+	if (kind === 'party') { if (!partyMenu.action) { partyMenu.idx = +a; pressKey('z'); } return; }
+	if (kind === 'pact') { if (partyMenu.action) { partyMenu.action.idx = +a; pressKey('z'); } return; }
 	if (kind === 'take') {
 		const mon = party[+a];
 		if (mon?.heldItem) {
@@ -2398,7 +2475,10 @@ function menuTap(id) {
 	if (kind === 'cards') { cardsMenu.idx = +a; pressKey('z'); return; }
 	if (kind === 'friend') { friendsMenu.idx = +a; pressKey('z'); return; }
 	if (kind === 'dex') { dexMenu.idx = +a; pressKey('z'); return; }
-	if (kind === 'summary-lead') { pressKey('z'); return; }
+	if (kind === 'summary-lead') {
+		if (partyMenu.summary && partyMenu.idx > 0) { const [m] = party.splice(partyMenu.idx, 1); party.unshift(m); partyMenu.idx = 0; saveParty(party); }
+		return;
+	}
 	if (kind === 'townreg') { townMap.region = +a; townMap.idx = 0; townMap.flash = null; return; }
 	if (kind === 'town') { townMap.idx = +a; townMap.flash = null; return; }
 	if (kind === 'townfly') { pressKey('z'); return; }
@@ -2762,6 +2842,6 @@ function drawFriendGhosts(ctx, camX, camY) {
 		runScriptLabel, checkCoordTrigger, checkOnFrame, cutsceneCtx, get mapScripts() { return mapScripts; }, get mapStrings() { return mapStrings; },
 		get trainerTeams() { return trainerTeams; }, seedStoryState, startScriptedBattle,
 		checkLegendaryTrigger, startLegendaryBattle, LEGENDARY_ENCOUNTERS,
-		toggleBike, tryDive, diveTo };
+		toggleBike, diveTo, HM_FIELD, useFieldMove, openPartyAction, fieldMovesOf };
 	requestAnimationFrame(tick);
 })();
