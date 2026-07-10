@@ -1292,19 +1292,20 @@ const LEGENDARY_ENCOUNTERS = {
 	MAP_MARINE_CAVE_END: { species: 'kyogre',   dex: 382, level: 70, x: 9,  y: 22, flag: 'legend_caught_kyogre',   intro: 'The water heaves — something immense stirs in the depths...' },
 	MAP_TERRA_CAVE_END:  { species: 'groudon',  dex: 383, level: 70, x: 17, y: 26, flag: 'legend_caught_groudon',  intro: 'The ground blazes with heat as a huge form rises...' },
 };
-// the on-map sprite for a still legendary, loaded from data/pokemon_ow/<dex>.png
+// a Pokemon's overworld sprite, loaded on demand from data/pokemon_ow/<id>.png
 const owMonCache = new Map();
-function owMonSprite(dex) {
-	if (!owMonCache.has(dex)) {
-		owMonCache.set(dex, null);
-		getImage(`data/pokemon_ow/${dex}.png`).then(img => owMonCache.set(dex, img)).catch(() => {});
+function owMonSprite(id) {
+	if (!id) return null;
+	if (!owMonCache.has(id)) {
+		owMonCache.set(id, null);
+		getImage(`data/pokemon_ow/${id}.png`).then(img => owMonCache.set(id, img)).catch(() => {});
 	}
-	return owMonCache.get(dex);
+	return owMonCache.get(id);
 }
 function drawLegendary(ctx, camX, camY) {
 	const e = legendaryHere();
-	if (!e || !e.dex) return;
-	const img = owMonSprite(e.dex);
+	if (!e) return;
+	const img = owMonSprite(e.species);
 	if (!img) return;
 	const cx = e.x * META + META / 2, by = e.y * META + META; // bottom-centre on the tile
 	ctx.drawImage(img, Math.round(cx - img.width / 2 - camX), Math.round(by - img.height - camY));
