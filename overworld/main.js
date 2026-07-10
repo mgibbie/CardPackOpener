@@ -234,7 +234,7 @@ const dexMenu = { open: false, idx: 0, detail: false, list: null };
 const trainerCard = { open: false };
 const townMap = { open: false, region: 0, idx: 0 };
 const optionsMenu = { open: false, idx: 0 };
-const OPTION_KEYS = ['textSpeed', 'sound', 'autoRun', 'dayNight'];
+const OPTION_KEYS = ['textSpeed', 'sound', 'autoRun', 'dayNight', 'followers'];
 function optionsKey(k) {
 	if (k === 'ArrowUp') optionsMenu.idx = (optionsMenu.idx + OPTION_KEYS.length - 1) % OPTION_KEYS.length;
 	if (k === 'ArrowDown') optionsMenu.idx = (optionsMenu.idx + 1) % OPTION_KEYS.length;
@@ -1026,6 +1026,7 @@ async function refreshMapContent(label) {
 	markFlyPoint(world.current.map.id);
 	savePos();
 	loading = false;
+	refreshFollower();
 	// run this map's ON_TRANSITION script (story vars, scene setup), then check
 	// for an ON_FRAME auto-cutscene now that the map is set up
 	runMapTransition();
@@ -1309,6 +1310,70 @@ function drawLegendary(ctx, camX, camY) {
 	if (!img) return;
 	const cx = e.x * META + META / 2, by = e.y * META + META; // bottom-centre on the tile
 	ctx.drawImage(img, Math.round(cx - img.width / 2 - camX), Math.round(by - img.height - camY));
+}
+
+// ---------- follower (lead POKeMON walks behind you, HG/SS style) ----------
+// 4x4 walk sheet from data/pokemon_follow/<id>.png: rows down/left/right/up,
+// cols = walk frames. It trails onto whatever tile the player just vacated.
+const followCache = new Map();
+function followSheet(id) {
+	if (!id) return null;
+	if (!followCache.has(id)) {
+		followCache.set(id, null);
+		getImage(`data/pokemon_follow/${id}.png`).then(img => followCache.set(id, img)).catch(() => {});
+	}
+	return followCache.get(id);
+}
+const FOLLOW_ROW = { down: 0, left: 1, right: 2, up: 3 };
+let follower = null;
+let lastPlayerTile = null;
+function refreshFollower() {
+	follower = null;
+	lastPlayerTile = { x: player.tx, y: player.ty };
+	if (!Settings.get('followers') || !party) return;
+	const lead = party.find(m => m.curHP > 0) || party[0];
+	if (!lead || !lead.speciesId) return;
+	follower = { id: lead.speciesId, tx: player.tx, ty: player.ty, px: player.tx * META, py: player.ty * META,
+		facing: player.facing, moving: false, from: null, to: null, t: 0, dur: 0.13, step: 0 };
+}
+function stepFollower(tx, ty) {
+	if (!follower) return;
+	if (follower.tx === tx && follower.ty === ty) return;
+	if (follower.moving) { follower.px = follower.to[0]; follower.py = follower.to[1]; follower.tx = Math.round(follower.px / META); follower.ty = Math.round(follower.py / META); }
+	const dx = tx - follower.tx, dy = ty - follower.ty;
+	follower.facing = Math.abs(dx) > Math.abs(dy) ? (dx > 0 ? 'right' : 'left') : (dy > 0 ? 'down' : 'up');
+	follower.from = [follower.px, follower.py];
+	follower.to = [tx * META, ty * META];
+	follower.tx = tx; follower.ty = ty; follower.moving = true; follower.t = 0;
+	follower.step ^= 1;
+	// keep pace with a running/biking player
+	follower.dur = player.biking ? 0.07 : player.run ? 0.08 : 0.13;
+}
+function updateFollower(dt) {
+	if (!Settings.get('followers')) { follower = null; return; }
+	if (!follower) { if (party) refreshFollower(); return; }
+	// the player moved onto a new tile — trail onto the one they left
+	if (lastPlayerTile && (player.tx !== lastPlayerTile.x || player.ty !== lastPlayerTile.y)) {
+		stepFollower(lastPlayerTile.x, lastPlayerTile.y);
+		lastPlayerTile = { x: player.tx, y: player.ty };
+	}
+	if (follower.moving) {
+		follower.t += dt / follower.dur;
+		if (follower.t >= 1) { follower.px = follower.to[0]; follower.py = follower.to[1]; follower.moving = false; }
+		else { follower.px = follower.from[0] + (follower.to[0] - follower.from[0]) * follower.t; follower.py = follower.from[1] + (follower.to[1] - follower.from[1]) * follower.t; }
+	}
+}
+function drawFollower(ctx, camX, camY) {
+	if (!follower || player.surfing) return;
+	const img = followSheet(follower.id);
+	if (!img) return;
+	const fs = img.width / 4;                 // 4 columns
+	const col = follower.moving ? (follower.step ? 1 : 3) : 0;
+	const row = FOLLOW_ROW[follower.facing] ?? 0;
+	const dw = 26, dh = 26;                    // a touch bigger than a tile
+	const dx = Math.round(follower.px + META / 2 - dw / 2 - camX);
+	const dy = Math.round(follower.py + META - dh - camY);
+	ctx.drawImage(img, col * fs, row * fs, fs, fs, dx, dy, dw, dh);
 }
 function legendaryHere() {
 	const e = LEGENDARY_ENCOUNTERS[world.current.map.id];
@@ -1744,6 +1809,7 @@ function tick(now) {
 		const moveDir = menuBlocking() ? null : (heldKeys[0] || null);
 		if (!trainers.engaging) player.update(dt, moveDir);
 		npcs.update(dt);
+		updateFollower(dt);
 	}
 
 	const [camX, camY] = cameraPos();
@@ -1753,7 +1819,9 @@ function tick(now) {
 	items.draw(ctx, camX, camY);
 	drawLegendary(ctx, camX, camY);
 	// sprites in y order so overlaps stack correctly
-	const sprites = [...npcs.list, ...trainers.list, player].sort((a, b) => a.py - b.py);
+	const sprites = [...npcs.list, ...trainers.list, player];
+	if (follower && !player.surfing) sprites.push({ py: follower.py, draw: drawFollower });
+	sprites.sort((a, b) => a.py - b.py);
 	for (const s of sprites) s.draw(ctx, camX, camY);
 	drawFriendGhosts(ctx, camX, camY);
 	world.drawLayer(ctx, 'top', camX, camY);
@@ -2861,6 +2929,7 @@ function drawFriendGhosts(ctx, camX, camY) {
 		runScriptLabel, checkCoordTrigger, checkOnFrame, cutsceneCtx, get mapScripts() { return mapScripts; }, get mapStrings() { return mapStrings; },
 		get trainerTeams() { return trainerTeams; }, seedStoryState, startScriptedBattle,
 		checkLegendaryTrigger, startLegendaryBattle, LEGENDARY_ENCOUNTERS,
-		toggleBike, diveTo, HM_FIELD, useFieldMove, openPartyAction, fieldMovesOf };
+		toggleBike, diveTo, HM_FIELD, useFieldMove, openPartyAction, fieldMovesOf,
+		refreshFollower, get follower() { return follower; } };
 	requestAnimationFrame(tick);
 })();

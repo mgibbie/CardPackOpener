@@ -8,8 +8,9 @@ export const OPTIONS = {
 	sound: { label: 'SOUND', values: ['off', 'low', 'mid', 'full'], show: v => v.toUpperCase() },
 	autoRun: { label: 'AUTO-RUN', values: [false, true], show: v => (v ? 'ON' : 'OFF') },
 	dayNight: { label: 'DAY & NIGHT', values: [true, false], show: v => (v ? 'ON' : 'OFF') },
+	followers: { label: 'FOLLOWERS', values: [true, false], show: v => (v ? 'ON' : 'OFF') },
 };
-const DEFAULTS = { textSpeed: 'mid', sound: 'full', autoRun: false, dayNight: true };
+const DEFAULTS = { textSpeed: 'mid', sound: 'full', autoRun: false, dayNight: true, followers: true };
 
 function load() {
 	try {
