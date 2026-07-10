@@ -1343,6 +1343,18 @@ const STORY_SEED = {
 			'FLAG_HIDE_PALLET_TOWN_OAK', // Oak is in his lab, not blocking the road
 		],
 	},
+	HOENN: {
+		vars: {
+			// past the moving-truck intro (1/2) and Birch's edge block + bag scene
+			// (coord triggers gate on 0/1/3), so a starter-holder can explore
+			VAR_LITTLEROOT_INTRO_STATE: 4,
+			VAR_LITTLEROOT_TOWN_STATE: 4,
+		},
+		flags: ['FLAG_ADVENTURE_STARTED', 'FLAG_GOT_FIRST_POKEMON'],
+	},
+	// JOHTO scripts aren't ported yet (Crystal .asm parser pending); the seed
+	// entry just marks the state so the flag logic is consistent
+	JOHTO: { vars: {}, flags: ['FLAG_ADVENTURE_STARTED', 'FLAG_GOT_FIRST_POKEMON'] },
 };
 function seedStoryState(region) {
 	if (Story.getFlag('story_seeded')) return;

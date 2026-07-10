@@ -1,0 +1,1 @@
+{"LavaridgeTown_House_EventScript_OldMan":[{"op":"msg","text":"LavaridgeTown_House_Text_WifeWarmingEggInHotSprings"},{"op":"end"}],"LavaridgeTown_House_EventScript_Zigzagoon":[{"op":"lock"},{"op":"faceplayer"},{"op":"msg","text":"LavaridgeTown_House_Text_Zigzagoon"},{"op":"release"},{"op":"end"}]}

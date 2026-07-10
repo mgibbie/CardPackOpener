@@ -1,0 +1,1 @@
+{"__map__":{"onTransition":"SkyPillar_Entrance_OnTransition"},"SkyPillar_Entrance_OnTransition":[{"op":"setflag","flag":"FLAG_LANDMARK_SKY_PILLAR"},{"op":"end"}]}

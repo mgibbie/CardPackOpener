@@ -1,1 +1,1 @@
-{"__map__":{"onTransition":"NavelRock_Exterior_OnTransition"},"NavelRock_Exterior_OnTransition":[{"op":"end"}]}
+{"__map__":{"onTransition":"NavelRock_Exterior_OnTransition"},"NavelRock_Exterior_OnTransition":[{"op":"setflag","flag":"FLAG_ARRIVED_AT_NAVEL_ROCK"},{"op":"end"}]}

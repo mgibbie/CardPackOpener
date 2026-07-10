@@ -106,6 +106,7 @@ export class Cutscene {
 				case 'lock': case 'release': case 'waitmove': case 'waitmsg':
 				case 'closemsg': case 'waitstate': case 'fade': break;
 				case 'faceplayer': if (ctx.talker && ctx.player) ctx.talker.facing = opposite(ctx.player.facing); break;
+				case 'face': { const a = this._actor(op.who); if (a && op.dir) a.facing = op.dir; break; }
 				case 'setflag': setFlag(op.flag); break;
 				case 'clearflag': clearFlag(op.flag); break;
 				case 'setvar': setVar(op.var, resolveValue(op.value)); break;

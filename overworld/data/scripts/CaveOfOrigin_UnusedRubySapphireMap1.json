@@ -1,0 +1,1 @@
+{"__map__":{"onTransition":"CaveOfOrigin_UnusedRubySapphireMap1_OnTransition"},"CaveOfOrigin_UnusedRubySapphireMap1_OnTransition":[{"op":"branch","kind":"call","cond":{"flag":"FLAG_UNUSED_RS_LEGENDARY_BATTLE_DONE","state":true},"label":"CaveOfOrigin_EventScript_DisableTriggers"},{"op":"end"}]}

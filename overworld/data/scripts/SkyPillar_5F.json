@@ -1,0 +1,1 @@
+{"__map__":{"onTransition":"SkyPillar_5F_OnTransition"},"SkyPillar_5F_OnTransition":[{"op":"branch","kind":"call","cond":{"var":"VAR_SKY_PILLAR_STATE","cmp":"lt","value":2},"label":"SkyPillar_5F_EventScript_CleanFloor"},{"op":"return"}],"SkyPillar_5F_EventScript_CleanFloor":[{"op":"return"}]}

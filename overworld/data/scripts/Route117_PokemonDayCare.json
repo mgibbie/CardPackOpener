@@ -1,0 +1,1 @@
+{"__map__":{"onTransition":"Route117_PokemonDayCare_OnTransition"},"Route117_PokemonDayCare_OnTransition":[{"op":"setflag","flag":"FLAG_LANDMARK_POKEMON_DAYCARE"},{"op":"end"}]}

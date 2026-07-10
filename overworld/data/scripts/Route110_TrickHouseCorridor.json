@@ -1,0 +1,1 @@
+{"__map__":{"onTransition":"Route110_TrickHouseCorridor_OnTransition"},"Route110_TrickHouseCorridor_OnTransition":[{"op":"setvar","var":"VAR_TRICK_HOUSE_ENTER_FROM_CORRIDOR","value":1},{"op":"end"}]}

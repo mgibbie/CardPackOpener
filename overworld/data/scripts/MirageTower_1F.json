@@ -1,0 +1,1 @@
+{"__map__":{"onTransition":"MirageTower_1F_OnTransition"},"MirageTower_1F_OnTransition":[{"op":"setflag","flag":"FLAG_ENTERED_MIRAGE_TOWER"},{"op":"setflag","flag":"FLAG_FORCE_MIRAGE_TOWER_VISIBLE"},{"op":"setflag","flag":"FLAG_LANDMARK_MIRAGE_TOWER"},{"op":"end"}]}

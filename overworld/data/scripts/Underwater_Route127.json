@@ -1,0 +1,1 @@
+{"__map__":{"onResume":"Underwater_Route127_OnResume"},"Underwater_Route127_OnResume":[{"op":"call","label":"AbnormalWeather_Underwater_SetupEscapeWarp"},{"op":"end"}]}
