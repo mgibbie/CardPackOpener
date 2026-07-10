@@ -14,6 +14,7 @@ import { Items } from './items.js';
 import * as Dex from './pokedex.js';
 import * as Fly from './flydata.js';
 import * as Clock from './clock.js';
+import * as Daycare from './daycare.js';
 import { statsFor } from './battle.js';
 import { getImage } from './engine.js';
 import * as BUI from './battleui.js';
@@ -221,8 +222,22 @@ function interact() {
 	}
 	// face-to-face NPC: have them turn toward the player
 	const npc = npcs.list.find(n => n.tx === fx && n.ty === fy);
-	if (npc) npc.facing = { up: 'down', down: 'up', left: 'right', right: 'left' }[player.facing];
+	if (npc) {
+		npc.facing = { up: 'down', down: 'up', left: 'right', right: 'left' }[player.facing];
+		// single-purpose service buildings: talking to the attendant runs it
+		const mid = world.current.map.id;
+		if (DAYCARE_MAPS.has(mid)) { openDaycare(); return; }
+		if (NAMERATER_MAPS.has(mid)) { openNameRater(); return; }
+		if (DELETER_MAPS.has(mid)) { openMoveShop(); return; }
+	}
 }
+
+// canonical service buildings (talk to the NPC inside to use the service)
+const DAYCARE_MAPS = new Set(['MAP_DAY_CARE', 'MAP_ROUTE5_POKEMON_DAY_CARE',
+	'MAP_ROUTE117_POKEMON_DAY_CARE', 'MAP_FOUR_ISLAND_POKEMON_DAY_CARE']);
+const NAMERATER_MAPS = new Set(['MAP_GOLDENROD_NAME_RATER', 'MAP_JOHKANTO_LAVENDER_NAME_RATER',
+	'MAP_SLATEPORT_CITY_NAME_RATERS_HOUSE']);
+const DELETER_MAPS = new Set(['MAP_MOVE_DELETERS_HOUSE', 'MAP_LILYCOVE_CITY_MOVE_DELETERS_HOUSE']);
 
 const partyMenu = { open: false, idx: 0, summary: false };
 const startMenu = { open: false, idx: 0 };
@@ -230,6 +245,13 @@ const cardsMenu = { open: false, idx: 0 };
 const dexMenu = { open: false, idx: 0, detail: false, list: null };
 const trainerCard = { open: false };
 const townMap = { open: false, region: 0, idx: 0 };
+const daycareMenu = { open: false, mode: 'main', idx: 0, flash: null };
+const nameRater = { open: false, idx: 0 };
+const moveShop = { open: false, mode: 'main', idx: 0, mon: null, list: null, flash: null };
+
+function openDaycare() { daycareMenu.open = true; daycareMenu.mode = 'main'; daycareMenu.idx = 0; daycareMenu.flash = null; }
+function openNameRater() { nameRater.open = true; nameRater.idx = 0; }
+function openMoveShop() { moveShop.open = true; moveShop.mode = 'main'; moveShop.idx = 0; moveShop.mon = null; moveShop.flash = null; }
 
 // open the Town Map to the region of the current map (or the first visited one)
 function openTownMap() {
@@ -261,6 +283,167 @@ function townKey(k) {
 		dialog.open(`Fly to ${t.name}?`, (declined) => {
 			if (declined !== 'x') flyTo(t.map, t.x, t.y);
 		});
+	}
+}
+
+// ---- daycare ----
+// dynamic action list for the daycare front desk
+function daycareOptions() {
+	const st = Daycare.get();
+	const opts = [];
+	st.slots.forEach((m, i) => {
+		if (m) {
+			const info = Daycare.withdrawInfo(i, battle.data);
+			opts.push({ label: `Take back ${m.name} (Lv${info.from}→${info.to}, $${info.cost})`, act: 'withdraw', slot: i });
+		}
+	});
+	if (Daycare.hasReadyEgg()) opts.push({ label: 'Collect the EGG!', act: 'egg' });
+	if (Daycare.canDeposit() && party.length > 1) opts.push({ label: 'Leave a POKeMON', act: 'deposit' });
+	opts.push({ label: 'See you later', act: 'leave' });
+	return opts;
+}
+function daycareKey(k) {
+	if (daycareMenu.mode === 'deposit') {
+		const cands = party.filter((m, i) => i > 0 || party.length > 1); // keep at least one
+		if (k === 'ArrowUp') daycareMenu.idx = (daycareMenu.idx + party.length - 1) % party.length;
+		if (k === 'ArrowDown') daycareMenu.idx = (daycareMenu.idx + 1) % party.length;
+		if (k === 'x' || k === 'Escape') { daycareMenu.mode = 'main'; daycareMenu.idx = 0; return; }
+		if (k === 'z' || k === 'Enter') {
+			if (party.length <= 1) { daycareMenu.flash = "You can't leave your last POKeMON!"; return; }
+			const mon = party[daycareMenu.idx];
+			if (!mon || !Daycare.canDeposit()) return;
+			party.splice(daycareMenu.idx, 1);
+			Daycare.deposit(mon);
+			saveParty(party);
+			daycareMenu.flash = `Left ${mon.name} at the Day Care.`;
+			daycareMenu.mode = 'main'; daycareMenu.idx = 0;
+		}
+		return;
+	}
+	const opts = daycareOptions();
+	if (k === 'ArrowUp') daycareMenu.idx = (daycareMenu.idx + opts.length - 1) % opts.length;
+	if (k === 'ArrowDown') daycareMenu.idx = (daycareMenu.idx + 1) % opts.length;
+	if (k === 'x' || k === 'Escape') { daycareMenu.open = false; return; }
+	if (k === 'z' || k === 'Enter') {
+		const o = opts[daycareMenu.idx];
+		if (!o) return;
+		if (o.act === 'leave') { daycareMenu.open = false; return; }
+		if (o.act === 'deposit') { daycareMenu.mode = 'deposit'; daycareMenu.idx = 0; daycareMenu.flash = null; return; }
+		if (o.act === 'withdraw') {
+			const info = Daycare.withdrawInfo(o.slot, battle.data);
+			if (!Bag.spend(info.cost)) { daycareMenu.flash = "You don't have enough money!"; return; }
+			const mon = Daycare.withdraw(o.slot, battle.data);
+			const where = addCaught(party, mon);
+			daycareMenu.flash = `Got ${mon.name} back! ${where === 'box' ? '(sent to the box)' : ''}`;
+			saveParty(party);
+			daycareMenu.idx = 0;
+		}
+		if (o.act === 'egg') {
+			const baby = Daycare.collectEgg(battle.data);
+			if (baby) {
+				Dex.markCaught(baby.speciesId);
+				const where = addCaught(party, baby);
+				daycareMenu.flash = `The EGG hatched into ${baby.name}! ${where === 'box' ? '(sent to the box)' : ''}`;
+			}
+			daycareMenu.idx = 0;
+		}
+	}
+}
+
+// ---- name rater ----
+function nameRaterKey(k) {
+	if (k === 'ArrowUp') nameRater.idx = (nameRater.idx + party.length - 1) % party.length;
+	if (k === 'ArrowDown') nameRater.idx = (nameRater.idx + 1) % party.length;
+	if (k === 'x' || k === 'Escape') { nameRater.open = false; return; }
+	if (k === 'z' || k === 'Enter') {
+		const mon = party[nameRater.idx];
+		if (mon) promptRename(mon);
+	}
+}
+// rename via the browser prompt (headless-safe: no prompt -> unchanged)
+function promptRename(mon) {
+	const speciesName = battle.data.species[mon.speciesId]?.name?.toUpperCase() || mon.name;
+	let name = null;
+	try { name = typeof prompt === 'function' ? prompt(`New name for ${mon.name}? (blank = ${speciesName})`, mon.name) : null; } catch (e) {}
+	if (name == null) return;
+	setNickname(mon, name);
+}
+function setNickname(mon, name) {
+	const clean = String(name).trim().slice(0, 12);
+	const speciesName = battle.data.species[mon.speciesId]?.name?.toUpperCase() || mon.name;
+	mon.name = clean || speciesName;
+	saveParty(party);
+	nameRater.open = false;
+}
+
+// ---- move deleter / reminder ----
+function relearnable(mon) {
+	const sp = battle.data.species[mon.speciesId];
+	const known = new Set(mon.moves.map(m => m.id));
+	const seen = new Set();
+	const out = [];
+	for (const [lv, id] of (sp?.learnset || [])) {
+		if (lv <= mon.level && !known.has(id) && !seen.has(id) && battle.data.moves[id]) {
+			seen.add(id); out.push(id);
+		}
+	}
+	return out;
+}
+function moveShopKey(k) {
+	const m = moveShop;
+	if (m.mode === 'main') {
+		if (k === 'ArrowUp') m.idx = (m.idx + 1) % 2;
+		if (k === 'ArrowDown') m.idx = (m.idx + 1) % 2;
+		if (k === 'x' || k === 'Escape') { m.open = false; return; }
+		if (k === 'z' || k === 'Enter') { m.mode = m.idx === 0 ? 'pick-delete' : 'pick-relearn'; m.idx = 0; }
+		return;
+	}
+	if (m.mode === 'pick-delete' || m.mode === 'pick-relearn') {
+		if (k === 'ArrowUp') m.idx = (m.idx + party.length - 1) % party.length;
+		if (k === 'ArrowDown') m.idx = (m.idx + 1) % party.length;
+		if (k === 'x' || k === 'Escape') { m.mode = 'main'; m.idx = 0; return; }
+		if (k === 'z' || k === 'Enter') {
+			m.mon = party[m.idx];
+			if (m.mode === 'pick-delete') { m.mode = 'delete-move'; m.idx = 0; }
+			else { m.list = relearnable(m.mon); m.mode = 'relearn-move'; m.idx = 0; if (!m.list.length) m.flash = `${m.mon.name} has no moves to recall.`; }
+		}
+		return;
+	}
+	if (m.mode === 'delete-move') {
+		const moves = m.mon.moves;
+		if (k === 'ArrowUp') m.idx = (m.idx + moves.length - 1) % moves.length;
+		if (k === 'ArrowDown') m.idx = (m.idx + 1) % moves.length;
+		if (k === 'x' || k === 'Escape') { m.mode = 'pick-delete'; m.idx = 0; return; }
+		if (k === 'z' || k === 'Enter') {
+			if (moves.length <= 1) { m.flash = "It can't forget its only move!"; return; }
+			const gone = moves.splice(m.idx, 1)[0];
+			saveParty(party);
+			m.flash = `${m.mon.name} forgot ${gone.name}.`;
+			m.mode = 'main'; m.idx = 0;
+		}
+		return;
+	}
+	if (m.mode === 'relearn-move') {
+		const list = m.list || [];
+		if (!list.length) { if (k === 'x' || k === 'z' || k === 'Escape' || k === 'Enter') { m.mode = 'main'; m.idx = 0; } return; }
+		if (k === 'ArrowUp') m.idx = (m.idx + list.length - 1) % list.length;
+		if (k === 'ArrowDown') m.idx = (m.idx + 1) % list.length;
+		if (k === 'x' || k === 'Escape') { m.mode = 'pick-relearn'; m.idx = 0; return; }
+		if (k === 'z' || k === 'Enter') {
+			const id = list[m.idx];
+			const info = battle.data.moves[id];
+			if (m.mon.moves.length < 4) {
+				m.mon.moves.push({ id, name: info.name, pp: info.pp, maxPp: info.pp });
+				saveParty(party);
+				m.flash = `${m.mon.name} recalled ${info.name}!`;
+				m.mode = 'main'; m.idx = 0;
+			} else {
+				bagMenu.forget = { itemId: null, mid: id, mon: m.mon, idx: 0, keepItem: true };
+				bagMenu.open = true; bagMenu.picking = false;
+				m.open = false;
+			}
+		}
+		return;
 	}
 }
 
@@ -556,7 +739,7 @@ function bagKey(k) {
 			const info = battle.data.moves[f.mid];
 			const old = f.mon.moves[f.idx];
 			f.mon.moves[f.idx] = { id: f.mid, name: info.name, pp: info.pp, maxPp: info.pp };
-			Bag.consume(f.itemId);
+			if (f.itemId && !f.keepItem) Bag.consume(f.itemId);
 			saveParty(party);
 			bagMenu.flash = `Forgot ${old.name}, learned ${info.name}!`;
 			bagMenu.forget = null;
@@ -705,6 +888,9 @@ function pressKey(k) {
 	if (pcMenu.open) { pcKey(k); return; }
 	if (dexMenu.open) { dexKey(k); return; }
 	if (townMap.open) { townKey(k); return; }
+	if (daycareMenu.open) { daycareKey(k); return; }
+	if (nameRater.open) { nameRaterKey(k); return; }
+	if (moveShop.open) { moveShopKey(k); return; }
 	if (trainerCard.open) { if (k === 'x' || k === 'z' || k === 'Escape' || k === 'Enter') trainerCard.open = false; return; }
 	if (partyMenu.open) {
 		if (partyMenu.summary) {
@@ -734,7 +920,8 @@ function pressKey(k) {
 // any menu that consumes direction presses instead of walking
 const menuBlocking = () => starterMenu.open || dialog.blocking || evolution.blocking
 	|| battle.blocking || pvp.blocking || shopMenu.open || bagMenu.open || pcMenu.open || partyMenu.open || ferryMenu.open
-	|| startMenu.open || cardsMenu.open || friendsMenu.open || dexMenu.open || trainerCard.open || townMap.open;
+	|| startMenu.open || cardsMenu.open || friendsMenu.open || dexMenu.open || trainerCard.open || townMap.open
+	|| daycareMenu.open || nameRater.open || moveShop.open;
 
 addEventListener('keydown', e => {
 	if (typingInChat()) return;
@@ -902,6 +1089,8 @@ async function crossConnection(hit) {
 }
 
 player.onArrive = () => {
+	// each completed step accrues Day Care EXP and incubates any egg
+	Daycare.step(battle.data, () => { hud.textContent = 'The Day Care egg is ready to hatch!'; });
 	// warp tile?
 	const w = world.warpAt(player.tx, player.ty);
 	if (!w) savePos();
@@ -1047,6 +1236,9 @@ function tick(now) {
 		else if (pcMenu.open) drawPcMenu(SW, SH);
 		else if (dexMenu.open) drawDexMenu(SW, SH);
 		else if (townMap.open) drawTownMap(SW, SH);
+		else if (daycareMenu.open) drawDaycare(SW, SH);
+		else if (nameRater.open) drawNameRater(SW, SH);
+		else if (moveShop.open) drawMoveShop(SW, SH);
 		else if (trainerCard.open) drawTrainerCard(SW, SH);
 		else if (starterMenu.open) drawStarterMenu(SW, SH);
 		else if (ferryMenu.open) drawFerryMenu(SW, SH);
@@ -1417,6 +1609,72 @@ function drawTrainerCard(W, H) {
 	});
 }
 
+// a simple scrollable option-list menu (label rows + optional flash)
+function optionList(W, H, u, title, sub, rows, sel, idPrefix, flash) {
+	menuChrome(W, H, u, title, sub);
+	const start = Math.max(0, Math.min(sel - 3, rows.length - 8));
+	rows.slice(start, start + 8).forEach((label, i) => {
+		const idx = start + i;
+		const bid = idPrefix + idx;
+		const b = { id: bid, x: 24 * u, y: (84 + i * 50) * u, w: W - 48 * u, h: 44 * u, label, center: false };
+		menuUi.push(b);
+		BUI.button(sctx, b, menuHover === bid || sel === idx, u);
+	});
+	if (flash) {
+		sctx.fillStyle = BUI.C.accent;
+		sctx.font = `${Math.round(15 * u)}px m6x11plus, monospace`;
+		sctx.fillText(flash, 24 * u, H - 18 * u);
+	}
+}
+
+function drawDaycare(W, H) {
+	const u = H / 480;
+	const st = Daycare.get();
+	if (daycareMenu.mode === 'deposit') {
+		menuChrome(W, H, u, 'DAY CARE', 'Which POKeMON should we look after?');
+		party.forEach((m, i) => monRow('dcdep:' + i, 24 * u, (76 + i * 62) * u, W - 48 * u, 56 * u, m, daycareMenu.idx === i, u));
+		if (daycareMenu.flash) { sctx.fillStyle = BUI.C.accent; sctx.font = `${Math.round(15 * u)}px m6x11plus, monospace`; sctx.fillText(daycareMenu.flash, 24 * u, H - 18 * u); }
+		return;
+	}
+	const inCare = st.slots.filter(Boolean).map(m => `${m.name} Lv${m.level}`).join(', ') || 'nobody right now';
+	const eggLine = Daycare.hasReadyEgg() ? '  •  An EGG is ready!' : (Daycare.eggPending() ? '  •  An EGG is on the way…' : '');
+	const opts = daycareOptions();
+	optionList(W, H, u, 'DAY CARE', `Looking after: ${inCare}${eggLine}`, opts.map(o => o.label), daycareMenu.idx, 'dc:', daycareMenu.flash);
+}
+
+function drawNameRater(W, H) {
+	const u = H / 480;
+	menuChrome(W, H, u, 'NAME RATER', 'Whose nickname shall I judge?');
+	party.forEach((m, i) => monRow('nr:' + i, 24 * u, (76 + i * 62) * u, W - 48 * u, 56 * u, m, nameRater.idx === i, u));
+}
+
+function drawMoveShop(W, H) {
+	const u = H / 480;
+	const m = moveShop;
+	if (m.mode === 'main') {
+		optionList(W, H, u, 'MOVE SERVICES', 'I can make a POKeMON forget or recall a move.',
+			['Forget a move', 'Recall a move'], m.idx, 'ms:', m.flash);
+		return;
+	}
+	if (m.mode === 'pick-delete' || m.mode === 'pick-relearn') {
+		menuChrome(W, H, u, 'MOVE SERVICES', m.mode === 'pick-delete' ? 'Which POKeMON forgets a move?' : 'Which POKeMON recalls a move?');
+		party.forEach((mo, i) => monRow('mspick:' + i, 24 * u, (76 + i * 62) * u, W - 48 * u, 56 * u, mo, m.idx === i, u));
+		if (m.flash) { sctx.fillStyle = BUI.C.accent; sctx.font = `${Math.round(15 * u)}px m6x11plus, monospace`; sctx.fillText(m.flash, 24 * u, H - 18 * u); }
+		return;
+	}
+	if (m.mode === 'delete-move') {
+		const labels = m.mon.moves.map(mv => { const info = battle.data.moves[mv.id] || {}; return `${mv.name}  [${(info.type || '').toUpperCase()}]`; });
+		optionList(W, H, u, `${m.mon.name} — forget which move?`, 'It needs to keep at least one move.', labels, m.idx, 'msdel:', m.flash);
+		return;
+	}
+	if (m.mode === 'relearn-move') {
+		const list = m.list || [];
+		const labels = list.length ? list.map(id => { const info = battle.data.moves[id] || {}; return `${info.name}  [${(info.type || '').toUpperCase()}]`; }) : ['(no moves to recall)'];
+		optionList(W, H, u, `${m.mon.name} — recall which move?`, 'Level-up moves it has learned before.', labels, m.idx, 'msrel:', m.flash);
+		return;
+	}
+}
+
 function drawStarterMenu(W, H) {
 	const u = H / 480;
 	menuChrome(W, H, u, 'CHOOSE YOUR FIRST POKEMON', 'Tap one to begin your journey.', false);
@@ -1655,8 +1913,15 @@ function menuTap(id) {
 	if (kind === 'townreg') { townMap.region = +a; townMap.idx = 0; townMap.flash = null; return; }
 	if (kind === 'town') { townMap.idx = +a; townMap.flash = null; return; }
 	if (kind === 'townfly') { pressKey('z'); return; }
+	if (kind === 'dc') { daycareMenu.idx = +a; pressKey('z'); return; }
+	if (kind === 'dcdep') { daycareMenu.idx = +a; pressKey('z'); return; }
+	if (kind === 'nr') { nameRater.idx = +a; pressKey('z'); return; }
+	if (kind === 'ms') { moveShop.idx = +a; pressKey('z'); return; }
+	if (kind === 'mspick') { moveShop.idx = +a; pressKey('z'); return; }
+	if (kind === 'msdel') { moveShop.idx = +a; pressKey('z'); return; }
+	if (kind === 'msrel') { moveShop.idx = +a; pressKey('z'); return; }
 }
-const anyMenuOpen = () => partyMenu.open || shopMenu.open || bagMenu.open || pcMenu.open || starterMenu.open || ferryMenu.open || startMenu.open || cardsMenu.open || friendsMenu.open || dexMenu.open || trainerCard.open || townMap.open;
+const anyMenuOpen = () => partyMenu.open || shopMenu.open || bagMenu.open || pcMenu.open || starterMenu.open || ferryMenu.open || startMenu.open || cardsMenu.open || friendsMenu.open || dexMenu.open || trainerCard.open || townMap.open || daycareMenu.open || nameRater.open || moveShop.open;
 
 // ---------- live PvP battles ----------
 // build a self-contained party snapshot the PvP engine can resolve without
@@ -1995,6 +2260,8 @@ function drawFriendGhosts(ctx, camX, camY) {
 		get friends() { return friends; }, get visiting() { return visiting; }, refreshFriends, visitWorld, leaveVisit, heartbeat, pollPresence, get ghosts() { return ghosts; }, MP_ON,
 		get pvp() { return pvp; }, pvpParty, sendChallenge, enterMatch, pollChallenges, get pending() { return pendingChallengeTo; },
 		Dex, get dexMenu() { return dexMenu; }, get trainerCard() { return trainerCard; }, get partyMenu() { return partyMenu; }, get shopMenu() { return shopMenu; }, get bagMenu() { return bagMenu; }, Bag,
-		Fly, get townMap() { return townMap; }, openTownMap, flyTo, hasFlyPoint, markFlyPoint, Clock };
+		Fly, get townMap() { return townMap; }, openTownMap, flyTo, hasFlyPoint, markFlyPoint, Clock,
+		Daycare, get daycareMenu() { return daycareMenu; }, get nameRater() { return nameRater; }, get moveShop() { return moveShop; },
+		openDaycare, openNameRater, openMoveShop, setNickname, relearnable };
 	requestAnimationFrame(tick);
 })();
