@@ -1184,9 +1184,10 @@ function npcById(localId) {
 	return npcs.list.find(n => n.ev && n.ev.local_id === localId) || null;
 }
 // the bridge a running cutscene uses to touch the game
-function cutsceneCtx(talker) {
+function cutsceneCtx(talker, scriptLabel) {
 	return {
 		dialog, player, npcById, talker: talker || null,
+		scriptLabel: scriptLabel || null,
 		strings: mapStrings,
 		playerName: (localStorage.getItem('magepunk_name') || 'PLAYER'),
 		rivalName: (localStorage.getItem('magepunk_rival') || 'GARY'),
@@ -1202,7 +1203,7 @@ function cutsceneCtx(talker) {
 		hideObj: who => { const n = npcById(who); if (n) n.hidden = true; },
 		showObj: who => { const n = npcById(who); if (n) n.hidden = false; },
 		setMetatile: () => {}, // tile edits: not yet applied to the web layout
-		startTrainer: () => 'skip', // scripted trainer battles deferred to a later stage
+		startBattle: trainerId => startScriptedBattle(trainerId, scriptLabel, talker),
 		special: (name, store) => runSpecial(name, store), // handlers write `store`; unknown -> 0
 		hud: msg => { hud.textContent = msg; },
 	};
@@ -1220,8 +1221,51 @@ function startCutscene(steps, onDone) {
 // run it through the interpreter with the current map's strings
 function runScriptLabel(label, talker) {
 	if (cutscene.blocking || !label || !mapScripts[label]) return false;
-	cutscene.run(mapScripts, label, cutsceneCtx(talker), () => { saveParty(party); });
+	cutscene.run(mapScripts, label, cutsceneCtx(talker, label), () => { saveParty(party); });
 	return true;
+}
+
+// a scripted trainerbattle: build the foe party (canonical roster keyed by the
+// running script label, else a class-pool team at the map's level), run it, and
+// resume the cutscene with the outcome in VAR_RESULT (1 = won). A loss stops the
+// script (the player blacked out) after healing.
+function startScriptedBattle(trainerId, scriptLabel, talker) {
+	if (!party || !leadMon(party)) { Story.setVar('VAR_RESULT', 1); return 'skip'; }
+	const roster = scriptLabel && trainers.data?.rosters?.[scriptLabel];
+	let foeParty = [];
+	if (roster?.party?.length) {
+		foeParty = roster.party.map(e => battleBuildMon(e.s, e.l, battle.data)).filter(Boolean);
+	}
+	if (!foeParty.length) {
+		const pool = trainers.data?.defaultPool || ['rattata', 'pidgey'];
+		const base = trainers.data?.mapLevel?.[world.current.map.id] || 12;
+		const n = 1 + Math.floor(Math.random() * 2);
+		for (let i = 0; i < n; i++) {
+			const mon = battleBuildMon(pool[Math.floor(Math.random() * pool.length)],
+				Math.max(5, base + (Math.floor(Math.random() * 5) - 2)), battle.data);
+			if (mon) foeParty.push(mon);
+		}
+	}
+	if (!foeParty.length) { Story.setVar('VAR_RESULT', 1); return 'skip'; }
+	const high = Math.max(5, ...foeParty.map(m => m.level));
+	const info = {
+		displayName: roster?.name ? `${roster.class || 'Trainer'} ${roster.name}` : (roster?.class || 'Trainer'),
+		defeatText: '', money: high * 8,
+	};
+	battle.startTrainer(party, foeParty, info, result => {
+		if (result === 'victory') {
+			Story.setVar('VAR_RESULT', 1);
+			if (talker && trainers.list.includes(talker)) trainers.markDefeated(talker);
+			saveParty(party);
+			cutscene.resume(); // continue the script (defeat text, post-battle)
+		} else {
+			// blacked out / fled: heal and abandon the rest of the script
+			Story.setVar('VAR_RESULT', 0);
+			if (result === 'defeat') { healParty(party); hud.textContent = (world.current.map.name || '') + ' — party healed'; }
+			cutscene.stop();
+		}
+	});
+	return 'wait';
 }
 // ON_TRANSITION runs silently on map entry (sets story vars, positions NPCs).
 // It is setup only, so run the instant ops and bail at any waiting op — it must

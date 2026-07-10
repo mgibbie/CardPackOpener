@@ -138,8 +138,30 @@ export class Cutscene {
 					break;
 				}
 				case 'warp': ctx.warp?.(op.map, resolveValue(op.warp) || 0); return this._finish();
-				case 'trainerbattle':
-					if (ctx.startTrainer?.(op.args) === 'wait') { this._advance(); c.sub = { kind: 'battle' }; return; }
+				case 'trainerbattle': {
+					// trainerbattle_single is self-contained: intro text -> battle ->
+					// (on win) defeat text -> optional post-battle script. Expand it
+					// into a sub-sequence and run that.
+					const a = op.args || [];
+					const texts = a.filter(x => /_Text_/.test(x));
+					const post = a.find(x => /_EventScript_/.test(x));
+					const seq = [];
+					if (texts[0]) seq.push({ op: 'msg', text: texts[0] });
+					seq.push({ op: '__battle', trainer: a[0] });
+					if (texts[1]) seq.push({ op: '__wontext', text: texts[1] });
+					if (post) seq.push({ op: 'goto', label: post });
+					seq.push({ op: 'return' });
+					this._advance();
+					c.program.__tb__ = seq; // held by reference once pushed (safe to overwrite)
+					this._goto('__tb__', true);
+					continue;
+				}
+				case '__battle':
+					if (ctx.startBattle?.(op.trainer) === 'wait') { this._advance(); c.sub = { kind: 'battle' }; return; }
+					break;
+				case '__wontext':
+					// only shown after a win; on a loss the script was already stopped
+					if (getVar('VAR_RESULT') === 1) { ctx.dialog.open(resolveText(ctx, op.text)); this._advance(); c.sub = { kind: 'say' }; return; }
 					break;
 				case 'say': case 'msg': ctx.dialog.open(resolveText(ctx, op.text)); this._advance(); c.sub = { kind: 'say' }; return;
 				case 'move': { const plan = this._planMove(op); if (plan) { this._advance(); c.sub = plan; return; } break; }
