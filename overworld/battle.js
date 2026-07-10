@@ -149,6 +149,7 @@ const MOVE_FX = {
 	poisonsting: { sec: { status: 'psn', ch: 30 } }, sludge: { sec: { status: 'psn', ch: 30 } },
 	sludgebomb: { sec: { status: 'psn', ch: 30 } }, smog: { sec: { status: 'psn', ch: 40 } },
 	poisonjab: { sec: { status: 'psn', ch: 30 } }, crosspoison: { sec: { status: 'psn', ch: 10 } },
+	fakeout: { sec: { flinch: true, ch: 100 }, firstTurn: true },
 	bite: { sec: { flinch: true, ch: 30 } }, headbutt: { sec: { flinch: true, ch: 30 } },
 	rockslide: { sec: { flinch: true, ch: 30 } }, airslash: { sec: { flinch: true, ch: 30 } },
 	ironhead: { sec: { flinch: true, ch: 30 } }, astonish: { sec: { flinch: true, ch: 30 } },
@@ -301,6 +302,40 @@ const MOVE_FX = {
 	simplebeam: { abilitySet: 'simple' },
 };
 
+// moves whose power is computed from battle state; (battle, user, target,
+// userBoosts, targetBoosts) => power. Falls back to data power when absent.
+const hpScale = (u) => Math.max(1, Math.floor(150 * u.curHP / u.maxHP));
+const pinchPower = (u) => {
+	const x = Math.floor(u.curHP * 48 / u.maxHP);
+	return x < 2 ? 200 : x < 5 ? 150 : x < 10 ? 100 : x < 17 ? 80 : x < 33 ? 40 : 20;
+};
+const posBoosts = (boosts) => Object.values(boosts).reduce((s, v) => s + Math.max(0, v || 0), 0);
+const POWER_FX = {
+	gyroball: (b, u, t, ub, tb) => Math.min(150, Math.floor(25 * b.statOf(t, tb, 'spe') / Math.max(1, b.statOf(u, ub, 'spe'))) + 1),
+	electroball: (b, u, t, ub, tb) => {
+		const r = b.statOf(u, ub, 'spe') / Math.max(1, b.statOf(t, tb, 'spe'));
+		return r >= 4 ? 150 : r >= 3 ? 120 : r >= 2 ? 80 : r >= 1 ? 60 : 40;
+	},
+	flail: (b, u) => pinchPower(u), reversal: (b, u) => pinchPower(u),
+	eruption: (b, u) => hpScale(u), waterspout: (b, u) => hpScale(u), dragonenergy: (b, u) => hpScale(u),
+	hex: (b, u, t) => t.status ? 130 : 65,
+	facade: (b, u) => u.status ? 140 : 70,
+	brine: (b, u, t) => t.curHP <= t.maxHP / 2 ? 130 : 65,
+	storedpower: (b, u, t, ub) => 20 + 20 * posBoosts(ub),
+	powertrip: (b, u, t, ub) => 20 + 20 * posBoosts(ub),
+	punishment: (b, u, t, ub, tb) => Math.min(200, 60 + 20 * posBoosts(tb)),
+	acrobatics: (b, u) => u.heldItem ? 55 : 110,
+	knockoff: (b, u, t) => t.heldItem ? 97 : 65,
+	smellingsalts: (b, u, t) => t.status === 'par' ? 140 : 70,
+	wakeupslap: (b, u, t) => t.status === 'slp' ? 140 : 70,
+	return: () => 102, frustration: () => 102,
+	weatherball: (b) => b.weatherKind() ? 100 : 50,
+	solarbeam: (b) => { const wk = b.weatherKind(); return wk && wk !== 'sun' ? 60 : 120; },
+	solarblade: (b) => { const wk = b.weatherKind(); return wk && wk !== 'sun' ? 62 : 125; },
+};
+// Weather Ball takes on the weather's element
+const WEATHERBALL_TYPE = { rain: 'Water', sun: 'Fire', sand: 'Rock', hail: 'Ice' };
+
 const STATUS_NAMES = { brn: 'BRN', psn: 'PSN', par: 'PAR', slp: 'SLP', frz: 'FRZ' };
 const STATUS_APPLIED_MSG = {
 	brn: 'was burned!', psn: 'was poisoned!', par: 'is paralyzed! It may be unable to move!',
@@ -309,6 +344,14 @@ const STATUS_APPLIED_MSG = {
 // type immunities to statuses (Gen3-ish)
 const STATUS_IMMUNE = {
 	brn: ['Fire'], frz: ['Ice'], psn: ['Poison', 'Steel'], par: [], slp: [],
+};
+// ability immunities to statuses (shared by direct status moves and secondaries)
+const STATUS_IMMUNE_AB = {
+	psn: ['immunity', 'pastelveil', 'purifyingsalt'],
+	par: ['limber', 'purifyingsalt'],
+	brn: ['waterveil', 'waterbubble', 'thermalexchange', 'purifyingsalt'],
+	frz: ['magmaarmor', 'purifyingsalt'],
+	slp: ['insomnia', 'vitalspirit', 'sweetveil', 'purifyingsalt'],
 };
 
 // ---------- mon construction (pokemonBuilder.lua port) ----------
@@ -663,6 +706,7 @@ export class Battle {
 			this.pushMsg(`${mon.name}'s Download raised its ${key === 'atk' ? 'Attack' : 'Sp. Atk'}!`);
 		}
 		if (ab === 'trace' && other.ability) {
+			this.snapAbility(mon);
 			mon.ability = other.ability;
 			this.pushMsg(`${mon.name} traced ${other.name}'s ${this.abilityName(other.ability)}!`);
 		}
@@ -693,6 +737,7 @@ export class Battle {
 		if (ab === 'pressure') this.pushMsg(`${mon.name} is exerting its Pressure!`);
 		if (ab === 'unnerve') this.pushMsg(`${mon.name}'s Unnerve makes the foe nervous!`);
 		if (ab === 'imposter' && other.curHP > 0) {
+			this.snapStats(mon); this.snapTypes(mon);
 			mon.stats = { ...other.stats, hp: mon.stats.hp };
 			mon.types = [...other.types];
 			mon.transformedMoves = mon.transformedMoves || mon.moves;
@@ -723,15 +768,8 @@ export class Battle {
 			this.pushMsg(`It doesn't affect ${target.name}...`);
 			return false;
 		}
-		const IMMUNE_AB = {
-			psn: ['immunity', 'pastelveil', 'purifyingsalt'],
-			par: ['limber', 'purifyingsalt'],
-			brn: ['waterveil', 'waterbubble', 'thermalexchange', 'purifyingsalt'],
-			frz: ['magmaarmor', 'purifyingsalt'],
-			slp: ['insomnia', 'vitalspirit', 'sweetveil', 'purifyingsalt'],
-		};
 		const tAb2 = this.abilityOf(target);
-		if ((IMMUNE_AB[st] || []).includes(tAb2)
+		if ((STATUS_IMMUNE_AB[st] || []).includes(tAb2)
 			|| (tAb2 === 'leafguard' && this.weatherKind() === 'sun')
 			|| (tAb2 === 'comatose')) {
 			this.pushMsg(`${target.name}'s ${this.abilityName(tAb2)} prevents that!`);
@@ -756,6 +794,13 @@ export class Battle {
 		this.pushMsg(`${target.name} became confused!`);
 		this.pushMsg('', () => this.checkBerry(target, target === this.active?.me ? 'me' : 'foe'));
 	}
+
+	// stats/types/ability are saved with the mon, so in-battle mutations
+	// (Transform, Trace, Power Trick, Soak, Skill Swap, ...) must snapshot the
+	// originals first; clearVolatiles restores them when the mon leaves battle
+	snapStats(mon) { if (!mon._origStats) mon._origStats = { ...mon.stats }; }
+	snapTypes(mon) { if (!mon._origTypes) mon._origTypes = [...mon.types]; }
+	snapAbility(mon) { if (!('_origAbility' in mon)) mon._origAbility = mon.ability; }
 
 	// battle-only conditions never leak into the save
 	clearVolatiles(mon, curing) {
@@ -812,6 +857,10 @@ export class Battle {
 			mon.moves = mon.transformedMoves;
 			delete mon.transformedMoves;
 		}
+		if (mon._origStats) { mon.stats = mon._origStats; delete mon._origStats; }
+		if (mon._origTypes) { mon.types = mon._origTypes; delete mon._origTypes; }
+		if ('_origAbility' in mon) { mon.ability = mon._origAbility; delete mon._origAbility; }
+		delete mon.acted;
 		mon.flinched = false;
 	}
 
@@ -835,6 +884,28 @@ export class Battle {
 			}
 			user.loafed = true;
 		}
+		// sleep and freeze resolve before confusion/attract so a sleeping mon
+		// can't burn confusion turns or hurt itself
+		if (user.status === 'slp') {
+			if (--user.sleepTurns <= 0) {
+				user.status = null;
+				this.pushMsg(`${user.name} woke up!`);
+			} else {
+				this.pushMsg(`${user.name} is fast asleep.`);
+				// Sleep Talk (and Snore) still work while sleeping
+				if (move?.id === 'sleeptalk' || move?.id === 'snore') return true;
+				return false;
+			}
+		}
+		if (user.status === 'frz') {
+			if (Math.random() < 0.2) {
+				user.status = null;
+				this.pushMsg(`${user.name} thawed out!`);
+			} else {
+				this.pushMsg(`${user.name} is frozen solid!`);
+				return false;
+			}
+		}
 		if (user.confuseTurns > 0) {
 			user.confuseTurns--;
 			if (user.confuseTurns <= 0) {
@@ -856,29 +927,9 @@ export class Battle {
 				}
 			}
 		}
-		if (user.status === 'slp') {
-			if (--user.sleepTurns <= 0) {
-				user.status = null;
-				this.pushMsg(`${user.name} woke up!`);
-			} else {
-				this.pushMsg(`${user.name} is fast asleep.`);
-				// Sleep Talk (and Snore) still work while sleeping
-				if (move?.id === 'sleeptalk' || move?.id === 'snore') return true;
-				return false;
-			}
-		}
 		if (user.attracted && Math.random() < 0.5) {
 			this.pushMsg(`${user.name} is immobilized by love!`);
 			return false;
-		}
-		if (user.status === 'frz') {
-			if (Math.random() < 0.2) {
-				user.status = null;
-				this.pushMsg(`${user.name} thawed out!`);
-			} else {
-				this.pushMsg(`${user.name} is frozen solid!`);
-				return false;
-			}
 		}
 		if (user.status === 'par' && Math.random() < 0.25) {
 			this.pushMsg(`${user.name} is fully paralyzed!`);
@@ -887,11 +938,20 @@ export class Battle {
 		return true;
 	}
 
-	useMove(user, userBoosts, target, targetBoosts, move, isFoe) {
+	useMove(user, userBoosts, target, targetBoosts, move, isFoe, opts = {}) {
 		const a = this.active;
 		let mv = this.data.moves[move.id] || {}; // -ate abilities reassign the type
 		const fx = MOVE_FX[move.id] || {};
-		if (!this.beforeMove(user, userBoosts, isFoe, move)) return;
+		// a move CALLED by Metronome/Copycat/Sleep Talk/etc. already passed the
+		// caller's status checks — re-running them would block Sleep Talk outright
+		// and double-roll paralysis/confusion
+		if (!opts.called && !this.beforeMove(user, userBoosts, isFoe, move)) return;
+		// Destiny Bond lasts until the user's next action; Fake Out only works
+		// on the user's first action after entering the field
+		user.destinyBond = fx.destinyBond ? user.destinyBond : false;
+		const firstAction = !user.acted;
+		user.acted = true;
+		if (fx.firstTurn && !firstAction) { this.pushMsg(`${user.name} used ${move.name}!`); this.pushMsg('But it failed!'); return; }
 		move.pp = Math.max(0, move.pp - 1);
 		// two-turn moves spend their first turn charging (PP refunded: one use, one PP)
 		if (fx.chargeText && !user.chargeMove && !(move.id === 'solarbeam' && a.weather?.kind === 'sun')) {
@@ -924,8 +984,8 @@ export class Battle {
 			this.pushMsg(`${target.name} protected itself!`);
 			return;
 		}
-		// a substitute soaks status tricks aimed through it
-		if (aimsAtFoe && mv.category === 'Status' && target.subHP > 0) {
+		// a substitute soaks status tricks aimed through it (sound bypasses)
+		if (aimsAtFoe && mv.category === 'Status' && target.subHP > 0 && !SOUND_MOVES.has(move.id)) {
 			this.pushMsg('But it failed!');
 			return;
 		}
@@ -952,6 +1012,13 @@ export class Battle {
 		if (tAbAcc === 'wonderskin' && mv.category === 'Status' && (mv.acc ?? 100) !== true) hitChance = Math.min(hitChance, 50);
 		if (this.itemFx(user)?.accBoost) hitChance *= this.itemFx(user).accBoost;
 		if (this.itemFx(target)?.evade) hitChance *= this.itemFx(target).evade;
+		// weather rewrites some moves' accuracy outright
+		const wkAcc = this.weatherKind();
+		if (move.id === 'thunder' || move.id === 'hurricane') {
+			if (wkAcc === 'rain') hitChance = 999;
+			else if (wkAcc === 'sun') hitChance = Math.min(hitChance, 50);
+		}
+		if (move.id === 'blizzard' && wkAcc === 'hail') hitChance = 999;
 		if (uAbAcc === 'noguard' || tAbAcc === 'noguard') hitChance = 999;
 		const sureHit = user.lockOn || target.telekinesis > 0;
 		if (user.lockOn) user.lockOn = false;
@@ -974,7 +1041,15 @@ export class Battle {
 				}
 				return;
 			}
-			if (fx.status) { this.applyStatus(target, fx.status, fx.bad, user); return; }
+			if (fx.status) {
+				// typed status moves respect type immunity (Thunder Wave vs Ground)
+				if (mv.type && effectiveness(mv.type, target.types) === 0) {
+					this.pushMsg(`It doesn't affect ${target.name}...`);
+					return;
+				}
+				this.applyStatus(target, fx.status, fx.bad, user);
+				return;
+			}
 			if (fx.confuse) {
 				// Swagger/Flatter pump the target's stat before confusing it
 				if (fx.foeBoost) {
@@ -1141,7 +1216,13 @@ export class Battle {
 		if (phys && (uAb === 'hugepower' || uAb === 'purepower')) A *= 2;
 		if (phys && uAb === 'hustle') A = Math.floor(A * 1.5);
 		if (phys && tAb === 'marvelscale' && target.status) D = Math.floor(D * 1.5);
-		const L = user.level, Pw = mv.power || 0;
+		// state-dependent power (Gyro Ball, Flail, Hex, Weather Ball, ...)
+		const L = user.level;
+		let Pw = mv.power || 0;
+		if (POWER_FX[move.id]) Pw = POWER_FX[move.id](this, user, target, userBoosts, targetBoosts);
+		if (move.id === 'weatherball' && WEATHERBALL_TYPE[this.weatherKind()]) {
+			mv = { ...mv, type: WEATHERBALL_TYPE[this.weatherKind()] };
+		}
 		if (Pw <= 0 && !fx.fixed && !fx.ohko) { this.pushMsg('But nothing happened!'); return; }
 		// absorbing / immune abilities take the hit instead
 		if (tAb === 'levitate' && mv.type === 'Ground') { this.pushMsg(`${target.name} floats with Levitate!`); return; }
@@ -1268,7 +1349,10 @@ export class Battle {
 				total += dmg;
 			}
 		}
-		total = Math.min(total, target.curHP);
+		// whether this hit lands on a substitute is known now: the sub then soaks
+		// the damage AND shields the mon behind it from secondaries/item theft
+		const hitsSub = target.subHP > 0 && !SOUND_MOVES.has(move.id);
+		total = Math.min(total, hitsSub ? target.subHP : target.curHP);
 		const targetSide = isFoe ? 'me' : 'foe';
 		this.pushAnim('lunge', isFoe ? 'foe' : 'me', 0.3, null, { slot: this.slotOfMon(user) });
 		this.pushAnim('hit', targetSide, 0.4, null, { color: UI.TYPE_COLORS[mv.type] || '#e8e8e8', slot: this.slotOfMon(target) });
@@ -1279,7 +1363,7 @@ export class Battle {
 				this.pushMsg(`${target.name}'s disguise served as a decoy!`);
 				return;
 			}
-			if (target.subHP > 0) {
+			if (hitsSub) {
 				target.subHP -= total;
 				if (target.subHP <= 0) {
 					target.subHP = 0;
@@ -1399,7 +1483,7 @@ export class Battle {
 				this.float(isFoe ? 'foe' : 'me', `-${rec}`, '#ff7a6b');
 			});
 		}
-		if (phys) {
+		if (phys && !hitsSub) {
 			this.pushMsg('', () => {
 				if (target.curHP <= 0 || user.curHP <= 0) return;
 				const dAb = this.abilityOf(target);
@@ -1424,7 +1508,7 @@ export class Battle {
 				}
 			});
 		}
-		if (fx.knockOff || fx.steal) {
+		if ((fx.knockOff || fx.steal) && !hitsSub) {
 			this.pushMsg('', () => {
 				if (target.curHP <= 0 || !target.heldItem) return;
 				if (this.abilityOf(target) === 'stickyhold') {
@@ -1475,7 +1559,7 @@ export class Battle {
 			});
 		}
 		const secCh = (fx.sec?.ch || 0) * (uAb === 'serenegrace' ? 2 : 1);
-		if (fx.sec && tAb !== 'shielddust' && uAb !== 'sheerforce' && Math.random() * 100 < secCh) {
+		if (fx.sec && !hitsSub && tAb !== 'shielddust' && uAb !== 'sheerforce' && Math.random() * 100 < secCh) {
 			this.pushMsg('', () => {
 				if (target.curHP <= 0) return;
 				if (fx.sec.flinch) { if (this.abilityOf(target) !== 'innerfocus') target.flinched = true; }
@@ -1492,7 +1576,11 @@ export class Battle {
 						target.confuseTurns = 2 + Math.floor(Math.random() * 4);
 						this.pushMsg(`${target.name} became confused!`);
 					}
-				} else if (!target.status && !(STATUS_IMMUNE[fx.sec.status] || []).some(t => target.types.includes(t))) {
+				} else if (!target.status
+					&& !(STATUS_IMMUNE[fx.sec.status] || []).some(t => target.types.includes(t))
+					&& !(STATUS_IMMUNE_AB[fx.sec.status] || []).includes(this.abilityOf(target))
+					&& !(this.abilityOf(target) === 'leafguard' && this.weatherKind() === 'sun')
+					&& this.abilityOf(target) !== 'comatose') {
 					target.status = fx.sec.status;
 					if (fx.sec.status === 'slp') target.sleepTurns = 1 + Math.floor(Math.random() * 3);
 					if (fx.sec.bad) { target.badPsn = true; target.toxicN = 1; }
@@ -1739,8 +1827,7 @@ export class Battle {
 		}
 		this.pushMsg('', () => this.checkFaints());
 		// flinch never carries between turns
-		a.me.flinched = false;
-		a.foe.flinched = false;
+		for (const m of [a.me, a.foe, a.meAlly, a.foeAlly]) if (m) m.flinched = false;
 	}
 
 	// Disable/Encore/Taunt/Torment restrictions, shared by the menu and the AI
@@ -1787,10 +1874,14 @@ export class Battle {
 		if (this.itemFx(a.foe)?.choice === 'spe') foeSpe *= 1.5;
 		if (a.me.unburdened) mySpe *= 2;
 		if (a.foe.unburdened) foeSpe *= 2;
-		if (this.itemFx(a.me)?.quickClaw && Math.random() < 0.2) mySpe += 99999;
-		if (this.itemFx(a.foe)?.quickClaw && Math.random() < 0.2) foeSpe += 99999;
-		if (a.fieldFx.trickRoom > 0) { const t = mySpe; mySpe = -mySpe; foeSpe = -foeSpe; }
-		const meFirst = myPrio !== foePrio ? myPrio > foePrio : (mySpe === foeSpe ? Math.random() < 0.5 : mySpe > foeSpe);
+		// Trick Room inverts speed order; Quick Claw jumps the speed bracket even
+		// then (it never outruns higher move priority)
+		if (a.fieldFx.trickRoom > 0) { mySpe = -mySpe; foeSpe = -foeSpe; }
+		const myQC = !!this.itemFx(a.me)?.quickClaw && Math.random() < 0.2;
+		const foeQC = !!this.itemFx(a.foe)?.quickClaw && Math.random() < 0.2;
+		const meFirst = myPrio !== foePrio ? myPrio > foePrio
+			: myQC !== foeQC ? myQC
+			: (mySpe === foeSpe ? Math.random() < 0.5 : mySpe > foeSpe);
 
 		const actions = meFirst
 			? [[a.me, a.meBoosts, a.foe, a.foeBoosts, myMove, false], [a.foe, a.foeBoosts, a.me, a.meBoosts, foeMove, true]]
@@ -1888,6 +1979,9 @@ export class Battle {
 				const ivs = mon.ivs || { hp: 15, atk: 15, def: 15, spa: 15, spd: 15, spe: 15 };
 				const oldMax = mon.maxHP;
 				mon.stats = statsFor(sp, ivs, lvl);
+				// the level-up recalc is the new canonical statline — don't let a
+				// Transform-snapshot restore roll it back after the battle
+				if (mon._origStats) mon._origStats = { ...mon.stats };
 				mon.maxHP = mon.stats.hp;
 				mon.curHP = Math.min(mon.maxHP, mon.curHP + (mon.maxHP - oldMax));
 				if (mon === a.me) a.meShownHP = mon.curHP;
@@ -2265,7 +2359,7 @@ export class Battle {
 			} else if (fx.call === 'nature') id = this.data.moves.triattack ? 'triattack' : 'swift';
 			if (!id || MOVE_FX[id]?.call) { this.pushMsg('But it failed!'); return true; }
 			const called = makeMove(id, this.data);
-			this.pushMsg('', () => this.useMove(user, userBoosts, target, targetBoosts, called, isFoe));
+			this.pushMsg('', () => this.useMove(user, userBoosts, target, targetBoosts, called, isFoe, { called: true }));
 			return true;
 		}
 		if (fx.mimic) {
@@ -2390,6 +2484,7 @@ export class Battle {
 			return true;
 		}
 		if (fx.statSwap) {
+			this.snapStats(user); this.snapStats(target);
 			for (const k of fx.statSwap) {
 				const t = user.stats[k];
 				user.stats[k] = target.stats[k];
@@ -2399,6 +2494,7 @@ export class Battle {
 			return true;
 		}
 		if (fx.statAvg) {
+			this.snapStats(user); this.snapStats(target);
 			for (const k of fx.statAvg) {
 				const avg = Math.floor((user.stats[k] + target.stats[k]) / 2);
 				user.stats[k] = avg; target.stats[k] = avg;
@@ -2407,6 +2503,7 @@ export class Battle {
 			return true;
 		}
 		if (fx.ownSwap) {
+			this.snapStats(user);
 			const [k1, k2] = fx.ownSwap;
 			const t = user.stats[k1];
 			user.stats[k1] = user.stats[k2];
@@ -2420,6 +2517,7 @@ export class Battle {
 			return true;
 		}
 		if (fx.transform) {
+			this.snapStats(user); this.snapTypes(user);
 			user.stats = { ...target.stats, hp: user.stats.hp };
 			user.types = [...target.types];
 			user.transformedMoves = user.transformedMoves || user.moves;
@@ -2438,6 +2536,7 @@ export class Battle {
 			return true;
 		}
 		if (fx.typeSelf) {
+			this.snapTypes(user);
 			user.types = fx.typeSelf === 'firstmove' ? [this.data.moves[user.moves[0]?.id]?.type || 'Normal']
 				: fx.typeSelf === 'copy' ? [...target.types]
 				: fx.typeSelf === 'random' ? [Object.keys(CHART)[Math.floor(Math.random() * 18)]]
@@ -2445,8 +2544,9 @@ export class Battle {
 			this.pushMsg(`${user.name} became ${user.types.join('/')} type!`);
 			return true;
 		}
-		if (fx.typeTarget) { target.types = [...fx.typeTarget]; this.pushMsg(`${target.name} became ${fx.typeTarget[0]} type!`); return true; }
+		if (fx.typeTarget) { this.snapTypes(target); target.types = [...fx.typeTarget]; this.pushMsg(`${target.name} became ${fx.typeTarget[0]} type!`); return true; }
 		if (fx.addType) {
+			this.snapTypes(target);
 			if (!target.types.includes(fx.addType)) target.types = [...target.types, fx.addType];
 			this.pushMsg(`${fx.addType} was added to ${target.name}!`);
 			return true;
@@ -2485,20 +2585,22 @@ export class Battle {
 		}
 		if (fx.abilityCopy) {
 			if (!target.ability) { this.pushMsg('But it failed!'); return true; }
+			this.snapAbility(user);
 			user.ability = target.ability;
 			this.pushMsg(`${user.name} copied ${target.name}'s ability!`);
 			return true;
 		}
 		if (fx.abilitySwap) {
+			this.snapAbility(user); this.snapAbility(target);
 			const t = user.ability;
 			user.ability = target.ability;
 			target.ability = t;
 			this.pushMsg('The battlers swapped abilities!');
 			return true;
 		}
-		if (fx.abilityGive) { target.ability = user.ability; this.pushMsg(`${target.name}'s ability changed!`); return true; }
+		if (fx.abilityGive) { this.snapAbility(target); target.ability = user.ability; this.pushMsg(`${target.name}'s ability changed!`); return true; }
 		if (fx.abilitySuppress) { target.abilitySuppressed = true; this.pushMsg(`${target.name}'s ability was suppressed!`); return true; }
-		if (fx.abilitySet) { target.ability = fx.abilitySet; this.pushMsg(`${target.name}'s ability changed!`); return true; }
+		if (fx.abilitySet) { this.snapAbility(target); target.ability = fx.abilitySet; this.pushMsg(`${target.name}'s ability changed!`); return true; }
 		return false;
 	}
 
