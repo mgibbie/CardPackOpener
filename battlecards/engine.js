@@ -313,6 +313,7 @@ export function createGame(cardsById, rng = Math.random, playerDeckIds = null, p
 		jadeCount: 0,       // Jade Golem size counter (per-player; each golem +1/+1, cap 30)
 		heraldCount: 0,     // Herald: total this game (drives the Soldier's x1/x2/x4 scale)
 		galakrondInvokes: 0, // Invoke Galakrond count (0-1 base, 2-3 upgraded, 4+ maxed)
+		cthunAtk: 0, cthunHp: 0, cthunTaunt: false, // C'Thun buffs, persist across zones
 		heroTempAttack: 0,  // "your hero has +N Attack this turn"
 		costDiscounts: [],  // one-shot "next X costs (N) less" riders
 		creaturesPlayedThisTurn: 0, // Pint-Sized-style first-creature discounts
@@ -427,6 +428,8 @@ export function drawCards(state, pi, count) {
 		if (p.hand.length >= MAX_HAND) { emit(state, { type: 'burn', player: pi, cardId: id }); continue; }
 		const card = instantiate(state.cardsById[id], pi);
 		if (card.type === 'creature' && p.drawBuff) { card.attack += p.drawBuff.attack || 0; card.maxHealth += p.drawBuff.health || 0; }
+		// C'Thun enters hand carrying every buff it collected while in your deck
+		if (card.id === 'c_thun') { card.attack = CTHUN_BASE + p.cthunAtk; card.maxHealth = CTHUN_BASE + p.cthunHp; if (p.cthunTaunt && !card.keywords.includes(KW.TAUNT)) card.keywords.push(KW.TAUNT); }
 		card.zone = 'hand';
 		p.hand.push(card);
 		emit(state, { type: 'draw', player: pi, card });
@@ -1019,6 +1022,20 @@ function summonColossalParts(state, pi, card) {
 // Herald scale: x1 for your 1st-2nd Herald, x2 for the 3rd-4th, x4 from the 5th on.
 // Herald-scaled appendages read this live, so more Heralds grow them.
 function heraldMult(count) { return count < 2 ? 1 : count < 4 ? 2 : 4; }
+
+// C'Thun: its buffs are tracked on the player and persist "wherever it is". Any
+// C'Thun instance in hand or on board is kept in sync with the 6/6 base + tracker.
+const CTHUN_BASE = 6;
+function syncCthun(state, pi) {
+	const p = state.players[pi];
+	for (const c of [...p.hand, ...p.board]) {
+		if (c.id !== 'c_thun') continue;
+		c.attack = CTHUN_BASE + p.cthunAtk;
+		c.maxHealth = CTHUN_BASE + p.cthunHp;
+		if (p.cthunTaunt && !c.keywords.includes(KW.TAUNT)) c.keywords.push(KW.TAUNT);
+		emit(state, { type: 'buff', uid: c.uid, attack: c.attack, hp: hp(c) });
+	}
+}
 
 // ---------- static auras ----------
 // "Your (other) <tribe> have +X/+Y" — bonuses are recomputed whenever the
@@ -2285,6 +2302,22 @@ function execEffects(state, pi, effects, target, source) {
 			// fire a chosen friendly creature's Deathrattle without it dying
 			const c = chosenCreature();
 			if (c && !isDead(c) && c.deathrattle) execEffects(state, pi, c.deathrattle, null, c);
+		} else if (e.type === 'buff-cthun') {
+			// buff your C'Thun wherever it is (hand/deck/board persist via the tracker)
+			const p = state.players[pi];
+			p.cthunAtk += e.value || 0; p.cthunHp += e.value || 0;
+			if (e.keyword === 'taunt') p.cthunTaunt = true;
+			syncCthun(state, pi);
+		} else if (e.type === 'cthun-blast') {
+			// C'Thun's Battlecry: damage equal to its Attack, split among all enemies
+			let hits = source ? source.attack : (CTHUN_BASE + state.players[pi].cthunAtk);
+			for (; hits > 0; hits--) {
+				const pool = [];
+				for (const o of enemies) { for (const c of state.players[o].board) if (!isDead(c)) pool.push({ c }); pool.push({ hero: o }); }
+				if (!pool.length) break;
+				const pick = pool[Math.floor(state.rng() * pool.length)];
+				if (pick.hero != null) damageHero(state, pick.hero, 1, pi); else damageCreature(state, pick.c, 1, source || null);
+			}
 		} else if (e.type === 'invoke-galakrond') {
 			// Invoke Galakrond: power up your Galakrond (base -> upgraded at 2 -> maxed at 4)
 			state.players[pi].galakrondInvokes = (state.players[pi].galakrondInvokes || 0) + 1;
@@ -2645,6 +2678,7 @@ function execEffects(state, pi, effects, target, source) {
 			else if (e.if.targetFriendlyTribe) ok = !!(t && t.controller === pi && (t.tribe || '').includes(e.if.targetFriendlyTribe));
 			else if (e.if.heroAttacked) ok = p.heroAttacksUsed > 0;
 			else if (e.if.controlMinAttack != null) ok = p.board.some(c => !isDead(c) && c !== source && c.attack >= e.if.controlMinAttack);
+			else if (e.if.cthunMinAttack != null) ok = (CTHUN_BASE + p.cthunAtk) >= e.if.cthunMinAttack;
 			else if (e.if.holdingTribe) ok = p.hand.some(c => (c.tribe || '').includes(e.if.holdingTribe));
 			else if (e.if.handEmpty) ok = p.hand.length === 0;
 			else if (e.if.excavatedTwice) ok = (p.excavateCount || 0) >= 2;

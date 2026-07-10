@@ -53966,6 +53966,306 @@
           "type": "invoke-galakrond"
         }
       ]
+    },
+    {
+      "id": "pyrotechnician",
+      "name": "Pyrotechnician",
+      "cardClass": "neutral",
+      "cost": 4,
+      "rarity": "common",
+      "set": "hs",
+      "description": "After you cast a spell, add a random Fire spell to your hand.",
+      "type": "creature",
+      "attack": 2,
+      "health": 5,
+      "ongoing": {
+        "on": "spell-played",
+        "effects": [
+          {
+            "type": "conjure-named",
+            "count": 1,
+            "match": "Fire",
+            "cardType": "spell"
+          }
+        ]
+      }
+    },
+    {
+      "id": "witch_s_cauldron",
+      "name": "Witch's Cauldron",
+      "cardClass": "neutral",
+      "cost": 3,
+      "rarity": "epic",
+      "set": "hs",
+      "description": "After a friendly creature dies, add a random Shaman spell to your hand.",
+      "type": "creature",
+      "attack": 0,
+      "health": 4,
+      "ongoing": {
+        "on": "friendly-creature-died",
+        "effects": [
+          {
+            "type": "conjure-named",
+            "count": 1,
+            "cardClass": "shaman",
+            "cardType": "spell"
+          }
+        ]
+      }
+    },
+    {
+      "id": "twilight_darkmender",
+      "name": "Twilight Darkmender",
+      "cardClass": "priest",
+      "cost": 5,
+      "rarity": "rare",
+      "set": "hs",
+      "description": "Battlecry: If your C'Thun has at least 10 Attack, restore 10 Health to your hero.",
+      "type": "creature",
+      "attack": 6,
+      "health": 5,
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "cthunMinAttack": 10
+          },
+          "then": [
+            {
+              "type": "heal",
+              "value": 10,
+              "target": "self"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "c_thun",
+      "name": "C'Thun",
+      "cardClass": "neutral",
+      "cost": 8,
+      "rarity": "legendary",
+      "set": "hs",
+      "description": "Battlecry: Deal damage equal to this creature's Attack randomly split among all enemies.",
+      "type": "creature",
+      "attack": 6,
+      "health": 6,
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "cthun-blast"
+        }
+      ]
+    },
+    {
+      "id": "beckoner_of_evil",
+      "name": "Beckoner of Evil",
+      "cardClass": "neutral",
+      "cost": 2,
+      "rarity": "common",
+      "set": "hs",
+      "description": "Battlecry: Give your C'Thun +2/+2 (wherever it is).",
+      "type": "creature",
+      "attack": 2,
+      "health": 3,
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "buff-cthun",
+          "value": 2
+        }
+      ]
+    },
+    {
+      "id": "c_thun_s_chosen",
+      "name": "C'Thun's Chosen",
+      "cardClass": "neutral",
+      "cost": 4,
+      "rarity": "common",
+      "set": "hs",
+      "description": "Divine Shield Battlecry: Give your C'Thun +3/+3 (wherever it is).",
+      "type": "creature",
+      "attack": 4,
+      "health": 2,
+      "tribe": "Undead",
+      "keywords": [
+        "divine_shield",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "buff-cthun",
+          "value": 3
+        }
+      ]
+    },
+    {
+      "id": "twilight_geomancer",
+      "name": "Twilight Geomancer",
+      "cardClass": "neutral",
+      "cost": 2,
+      "rarity": "common",
+      "set": "hs",
+      "description": "Taunt Battlecry: Give your C'Thun +1/+1 and Taunt (wherever it is).",
+      "type": "creature",
+      "attack": 1,
+      "health": 4,
+      "keywords": [
+        "taunt",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "buff-cthun",
+          "value": 1,
+          "keyword": "taunt"
+        }
+      ]
+    },
+    {
+      "id": "twilight_elder",
+      "name": "Twilight Elder",
+      "cardClass": "neutral",
+      "cost": 3,
+      "rarity": "common",
+      "set": "hs",
+      "description": "At the end of your turn, give your C'Thun +1/+1 (wherever it is).",
+      "type": "creature",
+      "attack": 3,
+      "health": 4,
+      "ongoing": {
+        "on": "turn-end",
+        "effects": [
+          {
+            "type": "buff-cthun",
+            "value": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "dark_arakkoa",
+      "name": "Dark Arakkoa",
+      "cardClass": "druid",
+      "cost": 6,
+      "rarity": "common",
+      "set": "hs",
+      "description": "Taunt Battlecry: Give your C'Thun +4/+4 (wherever it is).",
+      "type": "creature",
+      "attack": 5,
+      "health": 7,
+      "keywords": [
+        "taunt",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "buff-cthun",
+          "value": 4
+        }
+      ]
+    },
+    {
+      "id": "ancient_shieldbearer",
+      "name": "Ancient Shieldbearer",
+      "cardClass": "warrior",
+      "cost": 6,
+      "rarity": "rare",
+      "set": "hs",
+      "description": "Battlecry: If your C'Thun has at least 10 Attack, gain 10 Armor.",
+      "type": "creature",
+      "attack": 6,
+      "health": 6,
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "cthunMinAttack": 10
+          },
+          "then": [
+            {
+              "type": "armor",
+              "value": 10
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "usher_of_souls",
+      "name": "Usher of Souls",
+      "cardClass": "warlock",
+      "cost": 4,
+      "rarity": "common",
+      "set": "hs",
+      "description": "Whenever a creature dies, give your C'Thun +1/+1 (wherever it is).",
+      "type": "creature",
+      "attack": 3,
+      "health": 5,
+      "ongoing": {
+        "on": "creature-died",
+        "effects": [
+          {
+            "type": "buff-cthun",
+            "value": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "skeram_cultist",
+      "name": "Skeram Cultist",
+      "cardClass": "neutral",
+      "cost": 6,
+      "rarity": "rare",
+      "set": "hs",
+      "description": "Battlecry: Give your C'Thun +2/+2 (wherever it is).",
+      "type": "creature",
+      "attack": 7,
+      "health": 6,
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "buff-cthun",
+          "value": 2
+        }
+      ]
+    },
+    {
+      "id": "dune_sculptor",
+      "name": "Dune Sculptor",
+      "cardClass": "mage",
+      "cost": 3,
+      "rarity": "rare",
+      "set": "hs",
+      "description": "After you cast a spell, add a random Mage creature to your hand.",
+      "type": "creature",
+      "attack": 3,
+      "health": 3,
+      "ongoing": {
+        "on": "spell-played",
+        "effects": [
+          {
+            "type": "conjure-named",
+            "count": 1,
+            "cardClass": "mage",
+            "cardType": "creature"
+          }
+        ]
+      }
     }
   ]
 }
