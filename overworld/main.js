@@ -188,6 +188,9 @@ function interact() {
 		}
 		return;
 	}
+	// a static legendary on the faced tile — walk up and challenge it
+	const leg = legendaryHere();
+	if (leg && fx === leg.x && fy === leg.y) { startLegendaryBattle(leg); return; }
 	const svc = services.kindAt(fx, fy);
 	if (svc === 'nurse') {
 		dialog.open('Welcome to the POKEMON CENTER!\n\nWe restored your POKEMON\nto full health. See you again!', () => healParty(party));
@@ -1149,6 +1152,8 @@ player.onArrive = () => {
 	// a coord_event trigger on this tile (var-gated) runs its ported script
 	if (!cutscene.blocking && checkCoordTrigger()) return;
 	if (!cutscene.blocking) checkOnFrame();
+	// a static legendary sitting on this tile
+	if (!cutscene.blocking && !battle.blocking && checkLegendaryTrigger()) return;
 	// trainer sight lines take priority over grass
 	if (!battle.blocking && trainers.checkSight(player.tx, player.ty)) return;
 	// wild encounter?
@@ -1157,6 +1162,53 @@ player.onArrive = () => {
 		if (pick) startWildBattle(pick);
 	}
 };
+
+// ---------- static legendary encounters ----------
+// The decomp triggers these through an awakening cutscene + a legendary-battle
+// special the web engine doesn't run (and the overworld legendary sprites aren't
+// in the build), so a region-picker could never actually catch them. Instead we
+// place a catchable wild encounter on the legendary's tile: walk onto it (or
+// face it and interact) and a real battle starts — you can throw balls and keep
+// it. A caught/defeated flag stops it re-triggering. The plot awakening scenes
+// stay seeded off (they assume story state and lead to no catch); this is the
+// catch itself, decoupled from them.
+const LEGENDARY_ENCOUNTERS = {
+	MAP_SKY_PILLAR_TOP:  { species: 'rayquaza', level: 70, x: 14, y: 6,  flag: 'legend_caught_rayquaza', intro: 'A colossal POKeMON coils in the air above you...' },
+	MAP_MARINE_CAVE_END: { species: 'kyogre',   level: 70, x: 9,  y: 22, flag: 'legend_caught_kyogre',   intro: 'The water heaves — something immense stirs in the depths...' },
+	MAP_TERRA_CAVE_END:  { species: 'groudon',  level: 70, x: 17, y: 22, flag: 'legend_caught_groudon',  intro: 'The ground blazes with heat as a huge form rises...' },
+};
+function legendaryHere() {
+	const e = LEGENDARY_ENCOUNTERS[world.current.map.id];
+	return e && !Story.getFlag(e.flag) ? e : null;
+}
+function startLegendaryBattle(e) {
+	if (!party || !leadMon(party) || battle.blocking) return;
+	Dex.markSeen(e.species);
+	dialog.open(e.intro, () => {
+		battle.start(party, e.species, e.level, result => {
+			if (result === 'caught' && battle.lastCaught) {
+				Dex.markCaught(battle.lastCaught.speciesId);
+				const where = addCaught(party, battle.lastCaught);
+				hud.textContent = `${battle.lastCaught.name} ${where === 'party' ? 'joined the party!' : 'was sent to the box'}`;
+				Story.setFlag(e.flag);
+			} else if (result === 'victory') {
+				Story.setFlag(e.flag); // fainted it — it won't reappear (matches the games)
+				evolution.check(party, battle.data);
+			} else if (result === 'defeat') {
+				healParty(party);
+				hud.textContent = (world.current.map.name || '') + ' — party healed';
+			} else {
+				saveParty(party); // ran / fled: leave it catchable
+			}
+		});
+	});
+}
+// on-arrive: standing on the legendary's tile starts the encounter
+function checkLegendaryTrigger() {
+	const e = legendaryHere();
+	if (e && player.tx === e.x && player.ty === e.y) { startLegendaryBattle(e); return true; }
+	return false;
+}
 
 function startWildBattle(pick, forceDouble) {
 	if (!party || !leadMon(party)) return;
@@ -1363,7 +1415,10 @@ const STORY_SEED = {
 			// value — which clears the trigger without enabling a later one (each
 			// var's coord/onFrame gates were checked to exclude 1). The functional,
 			// self-resolving events (New Mauville locked door, museum entry fee,
-			// Trick House flavor) are intentionally left to fire.
+			// Trick House flavor) are intentionally left to fire. Skipping the
+			// legendary AWAKENING plot scenes here does not lose the legendaries:
+			// the catch itself is provided by LEGENDARY_ENCOUNTERS (a real
+			// catchable battle on Rayquaza/Kyogre/Groudon's tile).
 			VAR_OLDALE_TOWN_STATE: 1,
 			VAR_PETALBURG_CITY_STATE: 1,
 			VAR_SCOTT_PETALBURG_ENCOUNTER: 1,
@@ -2651,6 +2706,7 @@ function drawFriendGhosts(ctx, camX, camY) {
 		Settings, get optionsMenu() { return optionsMenu; },
 		Story, get cutscene() { return cutscene; }, startCutscene, npcById, maybeIntroCutscene,
 		runScriptLabel, checkCoordTrigger, checkOnFrame, cutsceneCtx, get mapScripts() { return mapScripts; }, get mapStrings() { return mapStrings; },
-		get trainerTeams() { return trainerTeams; }, seedStoryState, startScriptedBattle };
+		get trainerTeams() { return trainerTeams; }, seedStoryState, startScriptedBattle,
+		checkLegendaryTrigger, startLegendaryBattle, LEGENDARY_ENCOUNTERS };
 	requestAnimationFrame(tick);
 })();
