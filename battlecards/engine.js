@@ -484,6 +484,7 @@ const CHOSEN = {
 	exile: { creature: 'creature', 'enemy-creature': 'enemy-creature' },
 	disguise: { creature: 'creature', 'friendly-creature': 'friendly-creature' },
 	freeze: { any: 'any', creature: 'creature', 'enemy-creature': 'enemy-creature' },
+	'trigger-one-deathrattle': { 'friendly-creature': 'friendly-creature' },
 	silence: { creature: 'creature', 'enemy-creature': 'enemy-creature' },
 	'temp-buff': { creature: 'creature', 'friendly-creature': 'friendly-creature', 'friendly-any': 'friendly-any' },
 	'heal-full': { creature: 'creature', 'friendly-creature': 'friendly-creature' },
@@ -2278,6 +2279,10 @@ function execEffects(state, pi, effects, target, source) {
 			if (source) for (const c of state.players[pi].board) {
 				if (!isDead(c) && c.colossalOf === source.name) c.partPower = (c.partPower || 2) + (e.amount || 1);
 			}
+		} else if (e.type === 'trigger-one-deathrattle') {
+			// fire a chosen friendly creature's Deathrattle without it dying
+			const c = chosenCreature();
+			if (c && !isDead(c) && c.deathrattle) execEffects(state, pi, c.deathrattle, null, c);
 		} else if (e.type === 'summon-if-control') {
 			// Hydralodon Head deathrattle: only summons more if the parent survives
 			const held = state.players[pi].board.some(c => !isDead(c) && c.name === e.ifControl);
@@ -2506,7 +2511,10 @@ function execEffects(state, pi, effects, target, source) {
 				? state.players.flatMap(pl => pl.board.filter(c => !isDead(c)))
 				: e.target === 'enemy-creatures'
 					? enemies.flatMap(o => state.players[o].board.filter(c => !isDead(c)))
-					: [chosenCreature()].filter(Boolean);
+					: e.target === 'random-friendly'
+						? (() => { const pool = state.players[pi].board.filter(c => !isDead(c));
+							return pool.length ? [pool[Math.floor(state.rng() * pool.length)]] : []; })()
+						: [chosenCreature()].filter(Boolean);
 			for (const t of list) {
 				const owner = state.players[t.controller];
 				owner.board = owner.board.filter(c => c !== t);

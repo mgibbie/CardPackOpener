@@ -16690,12 +16690,10 @@
           "type": "buff",
           "attack": 2,
           "health": 2,
-          "target": "creature",
-          "tribe": "Beast"
+          "target": "creature"
         },
         {
-          "type": "temp-immune",
-          "target": "creature"
+          "type": "hero-immune"
         }
       ]
     },
@@ -53348,6 +53346,290 @@
           "cardType": "spell",
           "heraldScaled": true,
           "count": 1
+        }
+      ]
+    },
+    {
+      "id": "dead_ringer",
+      "name": "Dead Ringer",
+      "cardClass": "priest",
+      "cost": 2,
+      "rarity": "common",
+      "set": "hs",
+      "description": "Deathrattle: Draw a Deathrattle creature from your deck.",
+      "type": "creature",
+      "attack": 2,
+      "health": 1,
+      "tribe": "Undead",
+      "keywords": [
+        "deathrattle"
+      ],
+      "deathrattle": [
+        {
+          "type": "tutor",
+          "cardType": "creature",
+          "count": 1,
+          "requireKeyword": "deathrattle"
+        }
+      ]
+    },
+    {
+      "id": "waggle_pick",
+      "name": "Waggle Pick",
+      "cardClass": "rogue",
+      "cost": 4,
+      "rarity": "epic",
+      "set": "hs",
+      "description": "Deathrattle: Return a random friendly creature to your hand. It costs (2) less.",
+      "type": "weapon",
+      "attack": 4,
+      "durability": 0,
+      "deathrattle": [
+        {
+          "type": "bounce",
+          "target": "random-friendly",
+          "costMod": -2
+        }
+      ]
+    },
+    {
+      "id": "town_crier",
+      "name": "Town Crier",
+      "cardClass": "warrior",
+      "cost": 1,
+      "rarity": "epic",
+      "set": "hs",
+      "description": "Battlecry: Draw a Rush creature from your deck.",
+      "type": "creature",
+      "attack": 1,
+      "health": 2,
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "tutor",
+          "cardType": "creature",
+          "count": 1,
+          "requireKeyword": "rush"
+        }
+      ]
+    },
+    {
+      "id": "dark_conviction",
+      "name": "Dark Conviction",
+      "cardClass": "paladin",
+      "cost": 2,
+      "rarity": "common",
+      "set": "hs",
+      "description": "Set a creature's Attack and Health to 3.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "set-attack",
+          "value": 3,
+          "target": "creature"
+        },
+        {
+          "type": "set-health",
+          "value": 3,
+          "target": "creature"
+        }
+      ]
+    },
+    {
+      "id": "play_dead",
+      "name": "Play Dead",
+      "cardClass": "hunter",
+      "cost": 1,
+      "rarity": "common",
+      "set": "hs",
+      "description": "Trigger a friendly creature's Deathrattle.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "trigger-one-deathrattle",
+          "target": "friendly-creature"
+        }
+      ]
+    },
+    {
+      "id": "howling_commander",
+      "name": "Howling Commander",
+      "cardClass": "paladin",
+      "cost": 3,
+      "rarity": "rare",
+      "set": "hs",
+      "description": "Battlecry: Draw a Divine Shield creature from your deck.",
+      "type": "creature",
+      "attack": 2,
+      "health": 2,
+      "tribe": "Undead",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "tutor",
+          "cardType": "creature",
+          "count": 1,
+          "requireKeyword": "divine_shield"
+        }
+      ]
+    },
+    {
+      "id": "terrorscale_stalker",
+      "name": "Terrorscale Stalker",
+      "cardClass": "hunter",
+      "cost": 2,
+      "rarity": "rare",
+      "set": "hs",
+      "description": "Battlecry: Trigger a friendly creature's Deathrattle.",
+      "type": "creature",
+      "attack": 2,
+      "health": 3,
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "trigger-one-deathrattle",
+          "target": "friendly-creature"
+        }
+      ]
+    },
+    {
+      "id": "diving_gryphon",
+      "name": "Diving Gryphon",
+      "cardClass": "hunter",
+      "cost": 3,
+      "rarity": "rare",
+      "set": "hs",
+      "description": "Rush Battlecry: Draw a Rush creature from your deck.",
+      "type": "creature",
+      "attack": 4,
+      "health": 1,
+      "tribe": "Beast",
+      "keywords": [
+        "rush",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "tutor",
+          "cardType": "creature",
+          "count": 1,
+          "requireKeyword": "rush"
+        }
+      ]
+    },
+    {
+      "id": "anub_ar_ambusher",
+      "name": "Anub'ar Ambusher",
+      "cardClass": "rogue",
+      "cost": 4,
+      "rarity": "common",
+      "set": "hs",
+      "description": "Deathrattle: Return a random friendly creature to your hand.",
+      "type": "creature",
+      "attack": 5,
+      "health": 5,
+      "tribe": "Undead",
+      "keywords": [
+        "deathrattle"
+      ],
+      "deathrattle": [
+        {
+          "type": "bounce",
+          "target": "random-friendly"
+        }
+      ]
+    },
+    {
+      "id": "keeper_of_uldaman",
+      "name": "Keeper of Uldaman",
+      "cardClass": "paladin",
+      "cost": 3,
+      "rarity": "common",
+      "set": "hs",
+      "description": "Battlecry: Set a creature's Attack and Health to 3.",
+      "type": "creature",
+      "attack": 3,
+      "health": 4,
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "set-attack",
+          "value": 3,
+          "target": "creature"
+        },
+        {
+          "type": "set-health",
+          "value": 3,
+          "target": "creature"
+        }
+      ]
+    },
+    {
+      "id": "shadow_strike",
+      "name": "Shadow Strike",
+      "cardClass": "rogue",
+      "cost": 3,
+      "rarity": "common",
+      "set": "hs",
+      "description": "Deal 5 damage to an undamaged character.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 5,
+          "target": "undamaged-creature"
+        }
+      ]
+    },
+    {
+      "id": "princess_huhuran",
+      "name": "Princess Huhuran",
+      "cardClass": "hunter",
+      "cost": 5,
+      "rarity": "legendary",
+      "set": "hs",
+      "description": "Battlecry: Trigger a friendly creature's Deathrattle.",
+      "type": "creature",
+      "attack": 6,
+      "health": 5,
+      "tribe": "Beast",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "trigger-one-deathrattle",
+          "target": "friendly-creature"
+        }
+      ]
+    },
+    {
+      "id": "subdue",
+      "name": "Subdue",
+      "cardClass": "paladin",
+      "cost": 2,
+      "rarity": "common",
+      "set": "hs",
+      "description": "Set a creature's Attack and Health to 1.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "set-attack",
+          "value": 1,
+          "target": "creature"
+        },
+        {
+          "type": "set-health",
+          "value": 1,
+          "target": "creature"
         }
       ]
     }
