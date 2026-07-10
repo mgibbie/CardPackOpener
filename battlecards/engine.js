@@ -1896,6 +1896,7 @@ function execEffects(state, pi, effects, target, source) {
 				case 'enemy-hero': { const t = enemyHero(); if (t != null) damageHero(state, t, v, pi); break; }
 				case 'own-hero': damageHero(state, pi, v, pi); break;
 				case 'enemy-creatures': for (const o of enemies) for (const c of [...state.players[o].board]) { if (e.exceptTribe && (c.tribe || '').includes(e.exceptTribe)) continue; damageCreature(state, c, rollv(), null); } break;
+				case 'frozen-enemy-creatures': for (const o of enemies) for (const c of [...state.players[o].board]) { if (c.frozen) damageCreature(state, c, v, null); } break;
 				case 'all-creatures': for (const pl of state.players) for (const c of [...pl.board]) { if (e.exceptTribe && (c.tribe || '').includes(e.exceptTribe)) continue; damageCreature(state, c, v, null); } break;
 				case 'enemies':
 					for (const o of enemies) {
@@ -2341,6 +2342,11 @@ function execEffects(state, pi, effects, target, source) {
 			for (const o of enemies) bombs += state.players[o].deck.filter(id => id === 'bomb').length;
 			const def = state.cardsById['boom_bot'];
 			if (def) for (let n = 0; n < bombs * (e.per || 1); n++) summon(state, pi, def);
+		} else if (e.type === 'double-attack-self') {
+			if (source) { source.attack *= 2; emit(state, { type: 'buff', uid: source.uid, attack: source.attack, hp: hp(source) }); }
+		} else if (e.type === 'refresh-mana') {
+			const mp = state.players[pi].mana; mp.cur = mp.max;
+			emit(state, { type: 'mana', player: pi, cur: mp.cur, max: mp.max });
 		} else if (e.type === 'invoke-galakrond') {
 			// Invoke Galakrond: power up your Galakrond (base -> upgraded at 2 -> maxed at 4)
 			state.players[pi].galakrondInvokes = (state.players[pi].galakrondInvokes || 0) + 1;

@@ -54417,6 +54417,274 @@
           "count": 1
         }
       ]
+    },
+    {
+      "id": "stonemaul_anchorman",
+      "name": "Stonemaul Anchorman",
+      "cardClass": "warrior",
+      "cost": 5,
+      "rarity": "common",
+      "set": "hs",
+      "description": "Rush Frenzy: Draw a card.",
+      "type": "creature",
+      "attack": 4,
+      "health": 6,
+      "tribe": "Pirate",
+      "keywords": [
+        "rush"
+      ],
+      "ongoing": {
+        "on": "self-damaged",
+        "once": true,
+        "survives": true,
+        "effects": [
+          {
+            "type": "draw",
+            "value": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "lightfused_manasaber",
+      "name": "Lightfused Manasaber",
+      "cardClass": "neutral",
+      "cost": 6,
+      "rarity": "common",
+      "set": "hs",
+      "description": "Rush Spellburst: Gain Divine Shield.",
+      "type": "creature",
+      "attack": 6,
+      "health": 6,
+      "tribe": "Beast",
+      "keywords": [
+        "rush"
+      ],
+      "ongoing": {
+        "on": "spell-played",
+        "once": true,
+        "effects": [
+          {
+            "type": "grant",
+            "keyword": "divine_shield",
+            "target": "self"
+          }
+        ]
+      }
+    },
+    {
+      "id": "ur_zul_rager",
+      "name": "Ur'zul Rager",
+      "cardClass": "neutral",
+      "cost": 3,
+      "rarity": "common",
+      "set": "hs",
+      "description": "Lifesteal Spellburst: Attack a random enemy creature.",
+      "type": "creature",
+      "attack": 5,
+      "health": 1,
+      "tribe": "Demon",
+      "keywords": [
+        "lifesteal"
+      ],
+      "ongoing": {
+        "on": "spell-played",
+        "once": true,
+        "effects": [
+          {
+            "type": "attack-random-enemy"
+          }
+        ]
+      }
+    },
+    {
+      "id": "troubled_mechanic",
+      "name": "Troubled Mechanic",
+      "cardClass": "neutral",
+      "cost": 2,
+      "rarity": "common",
+      "set": "hs",
+      "description": "Divine Shield Spellburst: Draw a Draenei.",
+      "type": "creature",
+      "attack": 2,
+      "health": 1,
+      "tribe": "Draenei",
+      "keywords": [
+        "divine_shield"
+      ],
+      "ongoing": {
+        "on": "spell-played",
+        "once": true,
+        "effects": [
+          {
+            "type": "tutor",
+            "tribe": "Draenei",
+            "count": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "star_grazer",
+      "name": "Star Grazer",
+      "cardClass": "druid",
+      "cost": 8,
+      "rarity": "rare",
+      "set": "hs",
+      "description": "Elusive, Taunt Spellburst: Give your hero +8 Attack this turn and gain 8 Armor.",
+      "type": "creature",
+      "attack": 8,
+      "health": 8,
+      "tribe": "Beast",
+      "keywords": [
+        "elusive",
+        "taunt"
+      ],
+      "ongoing": {
+        "on": "spell-played",
+        "once": true,
+        "effects": [
+          {
+            "type": "hero-temp-attack",
+            "value": 8
+          },
+          {
+            "type": "armor",
+            "value": 8
+          }
+        ]
+      }
+    },
+    {
+      "id": "starscale_constellar",
+      "name": "Starscale Constellar",
+      "cardClass": "neutral",
+      "cost": 5,
+      "rarity": "common",
+      "set": "hs",
+      "description": "Spellburst: Double this creature's Attack.",
+      "type": "creature",
+      "attack": 4,
+      "health": 7,
+      "tribe": "Dragon",
+      "ongoing": {
+        "on": "spell-played",
+        "once": true,
+        "effects": [
+          {
+            "type": "double-attack-self"
+          }
+        ]
+      }
+    },
+    {
+      "id": "twig_of_the_world_tree",
+      "name": "Twig of the World Tree",
+      "cardClass": "druid",
+      "cost": 4,
+      "rarity": "legendary",
+      "set": "hs",
+      "description": "Deathrattle: Refresh your Mana Crystals.",
+      "type": "weapon",
+      "attack": 1,
+      "durability": 0,
+      "deathrattle": [
+        {
+          "type": "refresh-mana"
+        }
+      ]
+    },
+    {
+      "id": "goody_two_shields",
+      "name": "Goody Two-Shields",
+      "cardClass": "paladin",
+      "cost": 3,
+      "rarity": "rare",
+      "set": "hs",
+      "description": "Divine Shield Spellburst: Gain Divine Shield.",
+      "type": "creature",
+      "attack": 4,
+      "health": 2,
+      "keywords": [
+        "divine_shield"
+      ],
+      "ongoing": {
+        "on": "spell-played",
+        "once": true,
+        "effects": [
+          {
+            "type": "grant",
+            "keyword": "divine_shield",
+            "target": "self"
+          }
+        ]
+      }
+    },
+    {
+      "id": "forest_warden_omu",
+      "name": "Forest Warden Omu",
+      "cardClass": "druid",
+      "cost": 6,
+      "rarity": "legendary",
+      "set": "hs",
+      "description": "Spellburst: Refresh your Mana Crystals.",
+      "type": "creature",
+      "attack": 5,
+      "health": 4,
+      "ongoing": {
+        "on": "spell-played",
+        "once": true,
+        "effects": [
+          {
+            "type": "refresh-mana"
+          }
+        ]
+      }
+    },
+    {
+      "id": "soldier_of_the_infinite",
+      "name": "Soldier of the Infinite",
+      "cardClass": "neutral",
+      "cost": 5,
+      "rarity": "rare",
+      "set": "hs",
+      "description": "Rush Battlecry: Double this creature's Attack.",
+      "type": "creature",
+      "attack": 3,
+      "health": 5,
+      "tribe": "Dragon",
+      "keywords": [
+        "rush",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "double-attack-self"
+        }
+      ]
+    },
+    {
+      "id": "glacier_racer",
+      "name": "Glacier Racer",
+      "cardClass": "mage",
+      "cost": 1,
+      "rarity": "rare",
+      "set": "hs",
+      "description": "Spellburst: Deal 3 damage to all Frozen enemies.",
+      "type": "creature",
+      "attack": 1,
+      "health": 3,
+      "ongoing": {
+        "on": "spell-played",
+        "once": true,
+        "effects": [
+          {
+            "type": "damage",
+            "value": 3,
+            "target": "frozen-enemy-creatures"
+          }
+        ]
+      }
     }
   ]
 }
