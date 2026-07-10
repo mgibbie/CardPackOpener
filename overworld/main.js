@@ -1288,10 +1288,27 @@ player.onArrive = () => {
 // stay seeded off (they assume story state and lead to no catch); this is the
 // catch itself, decoupled from them.
 const LEGENDARY_ENCOUNTERS = {
-	MAP_SKY_PILLAR_TOP:  { species: 'rayquaza', level: 70, x: 14, y: 6,  flag: 'legend_caught_rayquaza', intro: 'A colossal POKeMON coils in the air above you...' },
-	MAP_MARINE_CAVE_END: { species: 'kyogre',   level: 70, x: 9,  y: 22, flag: 'legend_caught_kyogre',   intro: 'The water heaves — something immense stirs in the depths...' },
-	MAP_TERRA_CAVE_END:  { species: 'groudon',  level: 70, x: 17, y: 26, flag: 'legend_caught_groudon',  intro: 'The ground blazes with heat as a huge form rises...' },
+	MAP_SKY_PILLAR_TOP:  { species: 'rayquaza', dex: 384, level: 70, x: 14, y: 6,  flag: 'legend_caught_rayquaza', intro: 'A colossal POKeMON coils in the air above you...' },
+	MAP_MARINE_CAVE_END: { species: 'kyogre',   dex: 382, level: 70, x: 9,  y: 22, flag: 'legend_caught_kyogre',   intro: 'The water heaves — something immense stirs in the depths...' },
+	MAP_TERRA_CAVE_END:  { species: 'groudon',  dex: 383, level: 70, x: 17, y: 26, flag: 'legend_caught_groudon',  intro: 'The ground blazes with heat as a huge form rises...' },
 };
+// the on-map sprite for a still legendary, loaded from data/pokemon_ow/<dex>.png
+const owMonCache = new Map();
+function owMonSprite(dex) {
+	if (!owMonCache.has(dex)) {
+		owMonCache.set(dex, null);
+		getImage(`data/pokemon_ow/${dex}.png`).then(img => owMonCache.set(dex, img)).catch(() => {});
+	}
+	return owMonCache.get(dex);
+}
+function drawLegendary(ctx, camX, camY) {
+	const e = legendaryHere();
+	if (!e || !e.dex) return;
+	const img = owMonSprite(e.dex);
+	if (!img) return;
+	const cx = e.x * META + META / 2, by = e.y * META + META; // bottom-centre on the tile
+	ctx.drawImage(img, Math.round(cx - img.width / 2 - camX), Math.round(by - img.height - camY));
+}
 function legendaryHere() {
 	const e = LEGENDARY_ENCOUNTERS[world.current.map.id];
 	return e && !Story.getFlag(e.flag) ? e : null;
@@ -1733,6 +1750,7 @@ function tick(now) {
 	world.drawLayer(ctx, 'bottom', camX, camY);
 	services.draw(ctx, camX, camY);
 	items.draw(ctx, camX, camY);
+	drawLegendary(ctx, camX, camY);
 	// sprites in y order so overlaps stack correctly
 	const sprites = [...npcs.list, ...trainers.list, player].sort((a, b) => a.py - b.py);
 	for (const s of sprites) s.draw(ctx, camX, camY);
