@@ -187,6 +187,7 @@ function instantiate(def, controller) {
 		adventureSpent: false,        // the Adventure half has been cast; only the creature remains
 		ongoings: def.ongoings ? JSON.parse(JSON.stringify(def.ongoings)) : null, // combined triggers
 		medic: def.medic || 0,        // heals adjacent creatures N at end of turn
+		overheal: def.overheal || null, // fires when a heal overflows past full Health (Overheal)
 		sac: def.sac || null,         // field-token activation: { cost, discard?, effects }
 		colossal: def.colossal || null, // appendage token ids summoned when this enters play
 		colossalOf: def.colossalOf || null, // this token is an appendage of the named Colossal
@@ -845,9 +846,8 @@ function gainArmor(state, pi, amount) {
 function healHero(state, pi, amount) {
 	const p = state.players[pi];
 	const before = p.life;
-	// heroes never heal above their starting total (a dungeon run sets a
-	// lower maxLife per level so 15-HP heroes can't top up to 30)
-	p.life = Math.min(p.maxLife ?? STARTING_LIFE, p.life + amount);
+	// MTG-style: starting life is not a ceiling — a hero can be healed above it.
+	p.life += amount;
 	emit(state, { type: 'heal', targetType: 'hero', player: pi, amount, life: p.life });
 	// Lightwarden-style triggers fire only when healing actually landed
 	if (p.life > before) {
@@ -1846,10 +1846,15 @@ function execEffects(state, pi, effects, target, source) {
 	const chosenCreature = () => target?.type === 'creature' ? findCreature(state, target.uid) : null;
 	const healCreature = (c, v) => {
 		const healed = c.damage > 0 && v > 0;
+		// Overheal: the healing that overflows past full Health (wasted, but a bonus)
+		const overflow = v - c.damage;
 		c.damage = Math.max(0, c.damage - v);
 		emit(state, { type: 'heal', targetType: 'creature', uid: c.uid, amount: v, hp: hp(c) });
 		if (healed) {
 			for (let s2 = 0; s2 < state.players.length; s2++) fireOngoing(state, s2, 'healed', { healedCreature: c });
+		}
+		if (c.overheal && overflow > 0 && !isDead(c)) {
+			execEffects(state, c.controller, c.overheal, null, c);
 		}
 	};
 	const buffCreature = (c, atk, hpv) => {

@@ -54685,6 +54685,120 @@
           }
         ]
       }
+    },
+    {
+      "id": "holy_champion",
+      "name": "Holy Champion",
+      "cardClass": "priest",
+      "cost": 2,
+      "rarity": "common",
+      "set": "hs",
+      "type": "creature",
+      "attack": 1,
+      "health": 4,
+      "description": "Overheal: Gain +2 Attack.",
+      "overheal": [
+        {
+          "type": "buff-self",
+          "attack": 2
+        }
+      ]
+    },
+    {
+      "id": "mana_geode",
+      "name": "Mana Geode",
+      "cardClass": "priest",
+      "cost": 2,
+      "rarity": "epic",
+      "set": "hs",
+      "type": "creature",
+      "attack": 2,
+      "health": 3,
+      "description": "Overheal: Summon a 2/2 Crystal.",
+      "overheal": [
+        {
+          "type": "summon",
+          "count": 1,
+          "attack": 2,
+          "health": 2,
+          "name": "Crystal"
+        }
+      ]
+    },
+    {
+      "id": "crimson_clergy",
+      "name": "Crimson Clergy",
+      "cardClass": "priest",
+      "cost": 1,
+      "rarity": "rare",
+      "set": "hs",
+      "type": "creature",
+      "attack": 1,
+      "health": 3,
+      "description": "Overheal: Draw a card.",
+      "overheal": [
+        {
+          "type": "draw",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "injured_hauler",
+      "name": "Injured Hauler",
+      "cardClass": "priest",
+      "cost": 3,
+      "rarity": "common",
+      "set": "hs",
+      "type": "creature",
+      "attack": 3,
+      "health": 7,
+      "description": "Battlecry: Deal 4 damage to this creature. Overheal: Deal 2 damage to all enemy creatures.",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "damage-self",
+          "value": 4
+        }
+      ],
+      "overheal": [
+        {
+          "type": "damage",
+          "value": 2,
+          "target": "enemy-creatures"
+        }
+      ]
+    },
+    {
+      "id": "heartbreaker_hedanis",
+      "name": "Heartbreaker Hedanis",
+      "cardClass": "priest",
+      "cost": 4,
+      "rarity": "legendary",
+      "set": "hs",
+      "type": "creature",
+      "attack": 4,
+      "health": 8,
+      "description": "Battlecry: Deal 4 damage to this creature. Overheal: Deal 5 damage to a random enemy.",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "damage-self",
+          "value": 4
+        }
+      ],
+      "overheal": [
+        {
+          "type": "random-damage",
+          "value": 5,
+          "count": 1,
+          "pool": "enemies"
+        }
+      ]
     }
   ]
 }
