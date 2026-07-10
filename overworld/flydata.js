@@ -94,6 +94,32 @@ export const POS = {
 	MAP_EVER_GRANDE_CITY: [27, 8],
 };
 
+// region background art (Hoenn has none — it draws as a dot map). Marker
+// pixels sit on the baked city markers in each image.
+export const IMG = {
+	kanto: { file: 'townmap/kanto.png', w: 240, h: 160 },
+	johkanto: { file: 'townmap/kanto.png', w: 240, h: 160 },
+	johto: { file: 'townmap/johto.png', w: 160, h: 144 },
+	hoenn: null,
+};
+// Johto uses authentic landmark pixel coords (pokecrystal); Kanto/JohKanto use
+// the FireRed grid marker formula pixel = (8*col + 36, 8*row + 36).
+const JOHTO_PX = {
+	MAP_NEW_BARK_TOWN: [140, 100], MAP_CHERRYGROVE_CITY: [100, 100], MAP_VIOLET_CITY: [84, 60],
+	MAP_AZALEA_TOWN: [68, 124], MAP_GOLDENROD_CITY: [52, 92], MAP_ECRUTEAK_CITY: [68, 44],
+	MAP_OLIVINE_CITY: [36, 60], MAP_CIANWOOD_CITY: [20, 100], MAP_MAHOGANY_TOWN: [108, 44],
+	MAP_BLACKTHORN_CITY: [132, 44],
+};
+// marker pixel for a town within its region image, or null if the region has no art
+export function markerPx(region, mapId) {
+	if (region === 'johto') return JOHTO_PX[mapId] || null;
+	if (region === 'kanto' || region === 'johkanto') {
+		const g = POS[mapId];
+		return g ? [8 * g[0] + 36, 8 * g[1] + 36] : null;
+	}
+	return null;
+}
+
 // which region a fly-dest map belongs to (for auto-selecting the starting tab)
 export const REGION_OF = {};
 for (const r of REGION_ORDER) for (const t of FLY[r]) REGION_OF[t.map] = r;

@@ -1035,6 +1035,17 @@ function iconOf(mon) {
 	return iconCache.get(mon.sprite);
 }
 
+// lazily-loaded town-map region art (keyed by file path)
+const townImgCache = new Map();
+function townImg(file) {
+	if (!file) return null;
+	if (!townImgCache.has(file)) {
+		townImgCache.set(file, null);
+		getImage(`data/${file}`).then(img => townImgCache.set(file, img)).catch(() => {});
+	}
+	return townImgCache.get(file);
+}
+
 function menuChrome(W, H, u, title, sub, closable = true) {
 	menuUi = [];
 	sctx.fillStyle = 'rgba(10,8,18,0.82)';
@@ -1277,7 +1288,24 @@ function drawTownMap(W, H) {
 	sctx.strokeStyle = BUI.C.panelBorder; sctx.lineWidth = 2;
 	BUI.rr(sctx, px + 1, py + 1, pw - 2, ph - 2, 10 * u); sctx.stroke();
 	const pad = 22 * u;
+	// draw the region art (Kanto/Johto) letterboxed inside the panel; dots then
+	// sit on the image's baked city markers. Hoenn has no art -> grid dot map.
+	const meta = Fly.IMG[region];
+	const art = meta && townImg(meta.file);
+	let imgRect = null;
+	if (art) {
+		const scale = Math.min((pw - pad) / meta.w, (ph - pad) / meta.h);
+		const dw = meta.w * scale, dh = meta.h * scale;
+		const ix = px + (pw - dw) / 2, iy = py + (ph - dh) / 2;
+		sctx.imageSmoothingEnabled = false;
+		sctx.drawImage(art, ix, iy, dw, dh);
+		imgRect = { ix, iy, dw, dh };
+	}
 	const dotAt = t => {
+		if (imgRect) {
+			const mp = Fly.markerPx(region, t.map);
+			if (mp) return [imgRect.ix + (mp[0] / meta.w) * imgRect.dw, imgRect.iy + (mp[1] / meta.h) * imgRect.dh];
+		}
 		const g = Fly.POS[t.map] || [grid.w / 2, grid.h / 2];
 		return [px + pad + (g[0] + 0.5) / grid.w * (pw - pad * 2),
 			py + pad + (g[1] + 0.5) / grid.h * (ph - pad * 2)];
