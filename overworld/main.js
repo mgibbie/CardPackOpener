@@ -1203,7 +1203,7 @@ function cutsceneCtx(talker) {
 		showObj: who => { const n = npcById(who); if (n) n.hidden = false; },
 		setMetatile: () => {}, // tile edits: not yet applied to the web layout
 		startTrainer: () => 'skip', // scripted trainer battles deferred to a later stage
-		special: name => runSpecial(name), // hand-written handlers; unknown -> no-op
+		special: (name, store) => runSpecial(name, store), // handlers write `store`; unknown -> 0
 		hud: msg => { hud.textContent = msg; },
 	};
 }
@@ -1260,10 +1260,47 @@ function checkCoordTrigger() {
 	return false;
 }
 
-// stub special-command dispatch (Stage 3 fills in real handlers)
-function runSpecial(name) {
-	if (name === 'HealPlayerParty') { healParty(party); return; }
-	// unknown specials no-op so scripts don't hang
+// special-command dispatch. Store-writing specials set `store` (a VAR_*) to a
+// computed value the following branch reads; action specials just do the thing.
+// Unknown store-specials default to 0 so branches take the "nothing happened"
+// path deterministically rather than reading a stale var.
+const B_OUTCOME_WON = 1;
+function runSpecial(name, store) {
+	// query specials write their result to the given store var, or VAR_RESULT by
+	// the decomp convention when a plain `special` (no store) is used
+	const set = v => Story.setVar(store || 'VAR_RESULT', v | 0);
+	const living = () => (party || []).filter(m => m.curHP > 0);
+	switch (name) {
+		// --- action specials ---
+		case 'HealPlayerParty': healParty(party); return;
+		case 'SetSeenMon': case 'SetSeenMon2': return; // dex-see: numeric species, skipped
+		case 'DrawWholeMapView': case 'ShakeScreen': case 'SpawnCameraObject':
+		case 'RemoveCameraObject': case 'DisableMsgBoxWalkaway':
+		case 'QuestLog_CutRecording': return; // cosmetic / system
+
+		// --- store-writing queries (a following branch reads `store`) ---
+		case 'GetBattleOutcome': return set(B_OUTCOME_WON); // scripted battles skipped -> treat as won
+		case 'CalculatePlayerPartyCount': return set((party || []).length);
+		case 'GetPlayerPartyCountForOverworld': return set((party || []).length);
+		case 'IsNationalPokedexEnabled': return set(1);
+		case 'GetPokedexCount': case 'GetHoennPokedexCount': case 'GetKantoPokedexCount':
+			return set(Dex.counts().caught);
+		case 'GetLeadMonFriendship': case 'GetLeadMonFriendshipScore':
+			return set(living()[0] ? (living()[0].friend ?? 70) : 0);
+		case 'GetFirstFreePartySlot': return set(Math.min((party || []).length, 6));
+		case 'CountPartyAliveNonEggMonsExcept': case 'CalculatePlayerPartyCountMinusEgg':
+			return set(living().length);
+		case 'GetPartyMonSpecies': case 'ChoosePartyMon': case 'ScriptGetPartyMonSpecies':
+			return set(0); // party-slot pickers: default to the lead / no selection
+		case 'DoesPlayerPartyContainSpecies': case 'PlayerPartyContainsSpeciesWithPlayerID':
+			return set(0); // numeric species check: can't map reliably -> "no"
+		case 'IsSelectedMonEgg': return set(0);
+		case 'GetDaycareState': case 'GetNumLevelsGainedFromDaycare': return set(0);
+		default:
+			// any other store-special resolves to the deterministic default path
+			if (store) set(0);
+			return;
+	}
 }
 
 // the one-time new-game welcome: a short scripted intro that hands over a
