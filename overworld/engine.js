@@ -270,6 +270,9 @@ export class World {
 	isLedge(tx, ty, dir) { return this.behaviorAt(tx, ty) === MB_JUMP[dir]; }
 	isTallGrass(tx, ty) { return this.behaviorAt(tx, ty) === MB_TALL_GRASS; }
 	isCrackedFloor(tx, ty) { return this.behaviorAt(tx, ty) === MB_CRACKED_FLOOR; }
+	// a map whose sea can be dived into (offers a 'dive' overlay); its deep water
+	// gets a distinct tint so DIVE spots are readable
+	isDiveMap() { return (this.current.map.connections || []).some(c => c.direction === 'dive'); }
 
 	// surfable water: the 0x10-0x1B "sea/pond/river" behavior band. These
 	// tiles block walking (you need a Water-type to Surf) but are open once
@@ -305,6 +308,20 @@ export class World {
 		// main map
 		const cv = layer === 'bottom' ? this.current.canvases.bottom : this.current.canvases.top;
 		ctx.drawImage(cv, -camX, -camY);
+		// deep water you can DIVE beneath reads a touch darker + shimmers, so the
+		// dive-able sea is visually distinct from ordinary water (see isDiveMap)
+		if (layer === 'bottom' && this.isDiveMap()) {
+			const t = (typeof performance !== 'undefined' ? performance.now() : 0) / 1000;
+			for (let ty = startY; ty <= endY; ty++) {
+				for (let tx = startX; tx <= endX; tx++) {
+					if (tx < 0 || ty < 0 || tx >= lay.width || ty >= lay.height) continue;
+					if (!this.isSurfable(tx, ty)) continue;
+					const a = 0.15 + 0.035 * Math.sin(t * 1.3 + (tx + ty) * 0.35);
+					ctx.fillStyle = `rgba(6, 22, 66, ${a})`;
+					ctx.fillRect(tx * META - camX, ty * META - camY, META, META);
+				}
+			}
+		}
 		// connections
 		for (const dir of Object.keys(this.connections)) {
 			const conn = this.connections[dir];
