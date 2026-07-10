@@ -16,7 +16,8 @@ import * as Fly from './flydata.js';
 import * as Clock from './clock.js';
 import * as Daycare from './daycare.js';
 import * as Settings from './settings.js';
-import { statsFor } from './battle.js';
+import * as Story from './events.js';
+import { statsFor, buildMon as battleBuildMon } from './battle.js';
 import { getImage } from './engine.js';
 import * as BUI from './battleui.js';
 import * as MP from '../battlecards/mpmode.js';
@@ -55,6 +56,7 @@ const services = new Services(world);
 const evolution = new Evolution();
 const items = new Items(world);
 const pvp = new Pvp();
+const cutscene = new Story.Cutscene();
 let signTexts = {};
 let party = null;
 
@@ -878,7 +880,7 @@ function starterKey(k) {
 		// the row you picked from is the region you begin in
 		const home = { KANTO: 'PalletTown', JOHTO: 'NewBarkTown', HOENN: 'LittlerootTown' }[row.region];
 		const go = !urlPinnedMap && home && world.current.name !== home ? moveToMap(home) : Promise.resolve();
-		go.then(() => dialog.open(`You chose ${party[0].name}!\n\nYour journey begins in ${row.region}.`));
+		go.then(() => dialog.open(`You chose ${party[0].name}!\n\nYour journey begins in ${row.region}.`, () => maybeIntroCutscene()));
 	}
 }
 
@@ -886,6 +888,7 @@ function starterKey(k) {
 function pressKey(k) {
 	if (starterMenu.open) { starterKey(k); return; }
 	if (dialog.blocking) { dialog.key(k); return; }
+	if (cutscene.blocking) return; // a running cutscene swallows all other input
 	if (evolution.blocking) { evolution.key(k); return; }
 	if (battle.blocking) { battle.key(k); return; }
 	if (pvp.blocking) { pvp.key(k); return; }
@@ -929,7 +932,7 @@ function pressKey(k) {
 	if (k === 'z' && !loading) interact();
 }
 // any menu that consumes direction presses instead of walking
-const menuBlocking = () => starterMenu.open || dialog.blocking || evolution.blocking
+const menuBlocking = () => starterMenu.open || dialog.blocking || evolution.blocking || cutscene.blocking
 	|| battle.blocking || pvp.blocking || shopMenu.open || bagMenu.open || pcMenu.open || partyMenu.open || ferryMenu.open
 	|| startMenu.open || cardsMenu.open || friendsMenu.open || dexMenu.open || trainerCard.open || townMap.open
 	|| daycareMenu.open || nameRater.open || moveShop.open || optionsMenu.open;
@@ -1150,6 +1153,47 @@ function startWildBattle(pick, forceDouble) {
 	}, second);
 }
 
+// ---------- cutscenes ----------
+// find an on-map NPC by its object_event local_id (for scripted movement)
+function npcById(localId) {
+	return npcs.list.find(n => n.ev && n.ev.local_id === localId) || null;
+}
+// the bridge a running cutscene uses to touch the game
+function cutsceneCtx() {
+	return {
+		dialog, player, npcById,
+		giveItem: (id, n) => { Bag.addItem(id, n); Bag.registerName(id, (id || '').toUpperCase()); },
+		giveMon: (species, level) => {
+			const mon = battle.data.species[species] && buildMonForGift(species, level);
+			if (mon) { Dex.markCaught(species); addCaught(party, mon); saveParty(party); }
+		},
+		healParty: () => healParty(party),
+		hud: msg => { hud.textContent = msg; },
+	};
+}
+function buildMonForGift(species, level) {
+	// buildMon lives in battle.js; imported as statsFor's sibling — use the module
+	return battleBuildMon(species, level, battle.data);
+}
+function startCutscene(steps, onDone) {
+	if (cutscene.blocking) return;
+	cutscene.start(steps, cutsceneCtx(), onDone);
+}
+
+// the one-time new-game welcome: a short scripted intro that hands over a
+// starter kit and marks the intro flag so it never repeats
+function maybeIntroCutscene() {
+	if (Story.getFlag('intro_done') || !party) return;
+	startCutscene([
+		{ op: 'say', text: 'Welcome to the world of POKeMON!\n\nYour adventure starts here.' },
+		{ op: 'say', text: 'Take these to get you going.' },
+		{ op: 'give', item: 'pokeball', count: 5 },
+		{ op: 'give', item: 'potion', count: 3 },
+		{ op: 'hud', text: 'Received a starter kit!' },
+		{ op: 'setflag', flag: 'intro_done' },
+	]);
+}
+
 // ---------- camera ----------
 function cameraPos() {
 	// center on player sprite (feet tile center), GBA-style; no bounds clamp
@@ -1213,7 +1257,8 @@ function tick(now) {
 	pvp.update(dt);
 	evolution.update(dt);
 	dialog.update(dt);
-	if (!battle.blocking && !pvp.blocking && !dialog.blocking && !evolution.blocking && !starterMenu.open) {
+	cutscene.update(dt);
+	if (!battle.blocking && !pvp.blocking && !dialog.blocking && !evolution.blocking && !starterMenu.open && !cutscene.blocking) {
 		trainers.update(dt);
 		player.run = runHeld || Settings.get('autoRun');
 		// any open menu freezes the player even if a key was held as it opened
@@ -2311,6 +2356,7 @@ function drawFriendGhosts(ctx, camX, camY) {
 		Fly, get townMap() { return townMap; }, openTownMap, flyTo, hasFlyPoint, markFlyPoint, Clock,
 		Daycare, get daycareMenu() { return daycareMenu; }, get nameRater() { return nameRater; }, get moveShop() { return moveShop; },
 		openDaycare, openNameRater, openMoveShop, setNickname, relearnable,
-		Settings, get optionsMenu() { return optionsMenu; } };
+		Settings, get optionsMenu() { return optionsMenu; },
+		Story, get cutscene() { return cutscene; }, startCutscene, npcById, maybeIntroCutscene };
 	requestAnimationFrame(tick);
 })();
