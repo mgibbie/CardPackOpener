@@ -188,6 +188,8 @@ function instantiate(def, controller) {
 		ongoings: def.ongoings ? JSON.parse(JSON.stringify(def.ongoings)) : null, // combined triggers
 		medic: def.medic || 0,        // heals adjacent creatures N at end of turn
 		overheal: def.overheal || null, // fires when a heal overflows past full Health (Overheal)
+		corrupt: def.corrupt || null, // id of the corrupted (upgraded) form for Corrupt
+		corruptGrow: def.corruptGrow ? { ...def.corruptGrow } : null, // endless Corrupt: +stats in place
 		sac: def.sac || null,         // field-token activation: { cost, discard?, effects }
 		colossal: def.colossal || null, // appendage token ids summoned when this enters play
 		colossalOf: def.colossalOf || null, // this token is an appendage of the named Colossal
@@ -3875,6 +3877,31 @@ export function canPlay(state, pi, card) {
 	return true;
 }
 
+// Corrupt: a card in hand upgrades when you play a card that costs MORE than it.
+// One-shot cards swap to their corrupted form (`corrupt` def); endless ones
+// (`corruptGrow`) gain +stats in place and stay corruptible. All eligible Corrupt
+// cards in hand corrupt from a single costlier play.
+function corruptHandCards(state, pi, playedCost) {
+	const p = state.players[pi];
+	for (let i = 0; i < p.hand.length; i++) {
+		const c = p.hand[i];
+		if (!c.corrupt && !c.corruptGrow) continue;
+		if (playedCost <= effectiveCost(state, pi, c)) continue;
+		if (c.corruptGrow) {
+			c.attack = Math.max(0, c.attack + (c.corruptGrow.attack || 0));
+			c.maxHealth += c.corruptGrow.health || 0;
+			emit(state, { type: 'corrupted', player: pi, uid: c.uid, endless: true, name: c.name });
+		} else {
+			const def = state.cardsById[c.corrupt];
+			if (!def) continue;
+			const ni = instantiate(def, pi);
+			ni.zone = 'hand';
+			p.hand[i] = ni;
+			emit(state, { type: 'corrupted', player: pi, fromUid: c.uid, uid: ni.uid, name: ni.name });
+		}
+	}
+}
+
 export function playCard(state, pi, cardUid, target, choice, position) {
 	const p = state.players[pi];
 	// cards play from hand, the companion zone, or the command zone
@@ -3890,6 +3917,9 @@ export function playCard(state, pi, cardUid, target, choice, position) {
 	}
 	if (!card) return false;
 	if (!canPlay(state, pi, card)) return false;
+	// Corrupt compares the cost of the card being played (captured before its own
+	// discounts are consumed) against each Corrupt card still in hand.
+	const playedCost = effectiveCost(state, pi, card);
 	// Ward: targeting an enemy warded creature costs extra — unaffordable = illegal
 	const ward = wardOf(state, pi, target);
 	if (ward?.mana && availableMana(p) < effectiveCost(state, pi, card) + ward.mana) return false;
@@ -3912,6 +3942,7 @@ export function playCard(state, pi, cardUid, target, choice, position) {
 	}
 	emit(state, { type: 'play', player: pi, card, mana: availableMana(p) });
 	fireOngoing(state, pi, 'card-played', { played: card });
+	corruptHandCards(state, pi, playedCost);
 
 	if (card.type === 'creature' && card.magnetic && target?.type === 'creature'
 		&& (() => { const t = findCreature(state, target.uid);

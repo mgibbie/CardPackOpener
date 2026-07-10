@@ -54799,6 +54799,327 @@
           "pool": "enemies"
         }
       ]
+    },
+    {
+      "id": "horrendous_growth",
+      "name": "Horrendous Growth",
+      "cardClass": "neutral",
+      "cost": 2,
+      "rarity": "epic",
+      "set": "hs",
+      "type": "creature",
+      "attack": 2,
+      "health": 2,
+      "description": "Corrupt: Gain +1/+1. Can be Corrupted endlessly.",
+      "corruptGrow": {
+        "attack": 1,
+        "health": 1
+      }
+    },
+    {
+      "id": "strongman",
+      "name": "Strongman",
+      "cardClass": "neutral",
+      "cost": 7,
+      "rarity": "common",
+      "set": "hs",
+      "type": "creature",
+      "attack": 6,
+      "health": 6,
+      "description": "Taunt. Corrupt: This costs (0).",
+      "keywords": [
+        "taunt"
+      ],
+      "corrupt": "strongman_corrupted"
+    },
+    {
+      "id": "fleethoof_pearltusk",
+      "name": "Fleethoof Pearltusk",
+      "cardClass": "neutral",
+      "cost": 5,
+      "rarity": "epic",
+      "set": "hs",
+      "type": "creature",
+      "attack": 4,
+      "health": 4,
+      "description": "Rush. Corrupt: Gain +4/+4.",
+      "keywords": [
+        "rush"
+      ],
+      "tribe": "Beast",
+      "corrupt": "fleethoof_pearltusk_corrupted"
+    },
+    {
+      "id": "darkmoon_dirigible",
+      "name": "Darkmoon Dirigible",
+      "cardClass": "neutral",
+      "cost": 3,
+      "rarity": "common",
+      "set": "hs",
+      "type": "creature",
+      "attack": 3,
+      "health": 2,
+      "description": "Divine Shield. Corrupt: Gain Rush.",
+      "keywords": [
+        "divine_shield"
+      ],
+      "tribe": "Mech",
+      "corrupt": "darkmoon_dirigible_corrupted"
+    },
+    {
+      "id": "firework_elemental",
+      "name": "Firework Elemental",
+      "cardClass": "mage",
+      "cost": 5,
+      "rarity": "rare",
+      "set": "hs",
+      "type": "creature",
+      "attack": 3,
+      "health": 5,
+      "description": "Battlecry: Deal 3 damage to a creature. Corrupt: Deal 12 instead.",
+      "keywords": [
+        "battlecry"
+      ],
+      "tribe": "Elemental",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 3,
+          "target": "creature"
+        }
+      ],
+      "corrupt": "firework_elemental_corrupted"
+    },
+    {
+      "id": "circus_medic",
+      "name": "Circus Medic",
+      "cardClass": "neutral",
+      "cost": 4,
+      "rarity": "common",
+      "set": "hs",
+      "type": "creature",
+      "attack": 3,
+      "health": 4,
+      "description": "Battlecry: Restore 4 Health. Corrupt: Deal 4 damage instead.",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "heal",
+          "value": 4
+        }
+      ],
+      "corrupt": "circus_medic_corrupted"
+    },
+    {
+      "id": "dancing_cobra",
+      "name": "Dancing Cobra",
+      "cardClass": "hunter",
+      "cost": 2,
+      "rarity": "rare",
+      "set": "hs",
+      "type": "creature",
+      "attack": 1,
+      "health": 5,
+      "description": "Corrupt: Gain Poisonous.",
+      "tribe": "Beast",
+      "corrupt": "dancing_cobra_corrupted"
+    },
+    {
+      "id": "darkmoon_statue",
+      "name": "Darkmoon Statue",
+      "cardClass": "neutral",
+      "cost": 3,
+      "rarity": "epic",
+      "set": "hs",
+      "type": "creature",
+      "attack": 0,
+      "health": 5,
+      "description": "Your other creatures have +1 Attack. Corrupt: This gains +4 Attack.",
+      "aura": {
+        "attack": 1,
+        "others": true
+      },
+      "corrupt": "darkmoon_statue_corrupted"
+    },
+    {
+      "id": "carnival_clown",
+      "name": "Carnival Clown",
+      "cardClass": "neutral",
+      "cost": 9,
+      "rarity": "epic",
+      "set": "hs",
+      "type": "creature",
+      "attack": 4,
+      "health": 4,
+      "description": "Taunt. Battlecry: Summon 2 copies of this. Corrupt: Fill your board with copies.",
+      "keywords": [
+        "taunt",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "summon-self-copy",
+          "count": 2
+        }
+      ],
+      "corrupt": "carnival_clown_corrupted"
+    },
+    {
+      "id": "strongman_corrupted",
+      "name": "Strongman",
+      "cardClass": "neutral",
+      "cost": 0,
+      "rarity": "common",
+      "set": "hs",
+      "type": "creature",
+      "attack": 6,
+      "health": 6,
+      "token": true,
+      "description": "Corrupted. Taunt.",
+      "keywords": [
+        "taunt"
+      ]
+    },
+    {
+      "id": "fleethoof_pearltusk_corrupted",
+      "name": "Fleethoof Pearltusk",
+      "cardClass": "neutral",
+      "cost": 5,
+      "rarity": "common",
+      "set": "hs",
+      "type": "creature",
+      "attack": 8,
+      "health": 8,
+      "token": true,
+      "description": "Corrupted. Rush.",
+      "keywords": [
+        "rush"
+      ],
+      "tribe": "Beast"
+    },
+    {
+      "id": "darkmoon_dirigible_corrupted",
+      "name": "Darkmoon Dirigible",
+      "cardClass": "neutral",
+      "cost": 3,
+      "rarity": "common",
+      "set": "hs",
+      "type": "creature",
+      "attack": 3,
+      "health": 2,
+      "token": true,
+      "description": "Corrupted. Divine Shield, Rush.",
+      "keywords": [
+        "divine_shield",
+        "rush"
+      ],
+      "tribe": "Mech"
+    },
+    {
+      "id": "firework_elemental_corrupted",
+      "name": "Firework Elemental",
+      "cardClass": "mage",
+      "cost": 5,
+      "rarity": "common",
+      "set": "hs",
+      "type": "creature",
+      "attack": 3,
+      "health": 5,
+      "token": true,
+      "description": "Corrupted. Battlecry: Deal 12 damage to a creature.",
+      "keywords": [
+        "battlecry"
+      ],
+      "tribe": "Elemental",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 12,
+          "target": "creature"
+        }
+      ]
+    },
+    {
+      "id": "circus_medic_corrupted",
+      "name": "Circus Medic",
+      "cardClass": "neutral",
+      "cost": 4,
+      "rarity": "common",
+      "set": "hs",
+      "type": "creature",
+      "attack": 3,
+      "health": 4,
+      "token": true,
+      "description": "Corrupted. Battlecry: Deal 4 damage.",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "damage",
+          "value": 4,
+          "target": "creature"
+        }
+      ]
+    },
+    {
+      "id": "dancing_cobra_corrupted",
+      "name": "Dancing Cobra",
+      "cardClass": "hunter",
+      "cost": 2,
+      "rarity": "common",
+      "set": "hs",
+      "type": "creature",
+      "attack": 1,
+      "health": 5,
+      "token": true,
+      "description": "Corrupted. Poisonous.",
+      "keywords": [
+        "poisonous"
+      ],
+      "tribe": "Beast"
+    },
+    {
+      "id": "darkmoon_statue_corrupted",
+      "name": "Darkmoon Statue",
+      "cardClass": "neutral",
+      "cost": 3,
+      "rarity": "common",
+      "set": "hs",
+      "type": "creature",
+      "attack": 4,
+      "health": 5,
+      "token": true,
+      "description": "Corrupted. Your other creatures have +1 Attack.",
+      "aura": {
+        "attack": 1,
+        "others": true
+      }
+    },
+    {
+      "id": "carnival_clown_corrupted",
+      "name": "Carnival Clown",
+      "cardClass": "neutral",
+      "cost": 9,
+      "rarity": "common",
+      "set": "hs",
+      "type": "creature",
+      "attack": 4,
+      "health": 4,
+      "token": true,
+      "description": "Corrupted. Taunt. Battlecry: Fill your board with copies of this.",
+      "keywords": [
+        "taunt",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "summon-self-copy",
+          "count": 6
+        }
+      ]
     }
   ]
 }
