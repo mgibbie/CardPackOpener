@@ -12,6 +12,7 @@ import { loadParty, saveParty, healParty, leadMon, addCaught, createStarter } fr
 import { Evolution } from './evolution.js';
 import { Items } from './items.js';
 import * as Dex from './pokedex.js';
+import * as Fly from './flydata.js';
 import { statsFor } from './battle.js';
 import { getImage } from './engine.js';
 import * as BUI from './battleui.js';
@@ -227,6 +228,40 @@ const startMenu = { open: false, idx: 0 };
 const cardsMenu = { open: false, idx: 0 };
 const dexMenu = { open: false, idx: 0, detail: false, list: null };
 const trainerCard = { open: false };
+const townMap = { open: false, region: 0, idx: 0 };
+
+// open the Town Map to the region of the current map (or the first visited one)
+function openTownMap() {
+	townMap.open = true;
+	townMap.idx = 0;
+	townMap.flash = null;
+	const here = world.current?.map?.id;
+	const reg = Fly.REGION_OF[here] || 'kanto';
+	townMap.region = Math.max(0, Fly.REGION_ORDER.indexOf(reg));
+	// select the current town if we're standing on one
+	const towns = Fly.FLY[Fly.REGION_ORDER[townMap.region]];
+	const at = towns.findIndex(t => t.map === here);
+	if (at >= 0) townMap.idx = at;
+}
+
+function townKey(k) {
+	const region = Fly.REGION_ORDER[townMap.region];
+	const towns = Fly.FLY[region];
+	if (k === 'ArrowLeft') { townMap.region = (townMap.region + Fly.REGION_ORDER.length - 1) % Fly.REGION_ORDER.length; townMap.idx = 0; return; }
+	if (k === 'ArrowRight') { townMap.region = (townMap.region + 1) % Fly.REGION_ORDER.length; townMap.idx = 0; return; }
+	if (k === 'ArrowUp') { townMap.idx = (townMap.idx + towns.length - 1) % towns.length; return; }
+	if (k === 'ArrowDown') { townMap.idx = (townMap.idx + 1) % towns.length; return; }
+	if (k === 'x' || k === 'Escape') { townMap.open = false; return; }
+	if (k === 'z' || k === 'Enter') {
+		const t = towns[townMap.idx];
+		if (!hasFlyPoint(t.map)) { townMap.flash = "You haven't visited there yet."; return; }
+		if (world.current?.map?.id === t.map) { townMap.flash = "You're already here!"; return; }
+		townMap.open = false;
+		dialog.open(`Fly to ${t.name}?`, (declined) => {
+			if (declined !== 'x') flyTo(t.map, t.x, t.y);
+		});
+	}
+}
 
 // full species list for the Pokédex, sorted by dex number (built once)
 function dexList() {
@@ -246,7 +281,7 @@ const friendsMenu = { open: false, idx: 0 };
 function startItems() {
 	const items = ['POKeDEX', 'POKeMON', 'CARDS'];
 	if (MP_ON) items.push('FRIENDS');
-	items.push('BAG', 'CARD', 'SAVE', 'OPTION', 'EXIT');
+	items.push('BAG', 'TOWN MAP', 'CARD', 'SAVE', 'OPTION', 'EXIT');
 	return items;
 }
 const cardsItems = () => MP_ON
@@ -276,6 +311,7 @@ function startKey(k) {
 		else if (it === 'FRIENDS') { openFriends(); }
 		else if (it === 'POKeDEX') { dexMenu.open = true; dexMenu.idx = 0; dexMenu.detail = false; }
 		else if (it === 'CARD') { trainerCard.open = true; }
+		else if (it === 'TOWN MAP') { openTownMap(); }
 		else if (it === 'SAVE') { saveParty(party); savePos(); dialog.open('Your journey has been saved.'); }
 		else if (it === 'OPTION') { dialog.open('OPTIONS\n\nControls: arrows/WASD move, Z confirm,\nX cancel, Enter/START menu.'); }
 		else if (it === 'EXIT' && visiting) { leaveVisit(); }
@@ -667,6 +703,7 @@ function pressKey(k) {
 	if (bagMenu.open) { bagKey(k); return; }
 	if (pcMenu.open) { pcKey(k); return; }
 	if (dexMenu.open) { dexKey(k); return; }
+	if (townMap.open) { townKey(k); return; }
 	if (trainerCard.open) { if (k === 'x' || k === 'z' || k === 'Escape' || k === 'Enter') trainerCard.open = false; return; }
 	if (partyMenu.open) {
 		if (partyMenu.summary) {
@@ -696,7 +733,7 @@ function pressKey(k) {
 // any menu that consumes direction presses instead of walking
 const menuBlocking = () => starterMenu.open || dialog.blocking || evolution.blocking
 	|| battle.blocking || pvp.blocking || shopMenu.open || bagMenu.open || pcMenu.open || partyMenu.open || ferryMenu.open
-	|| startMenu.open || cardsMenu.open || friendsMenu.open || dexMenu.open || trainerCard.open;
+	|| startMenu.open || cardsMenu.open || friendsMenu.open || dexMenu.open || trainerCard.open || townMap.open;
 
 addEventListener('keydown', e => {
 	if (typingInChat()) return;
@@ -768,9 +805,28 @@ async function refreshMapContent(label) {
 	services.loadForMap();
 	items.loadForMap();
 	hud.textContent = world.current.map.name || label;
+	// arriving on a Fly-destination map registers it so you can fly back later
+	markFlyPoint(world.current.map.id);
 	savePos();
 	loading = false;
 }
+
+// visited Fly points (magepunk_flypoints); a town unlocks when you first stand on it
+let flyPoints = null;
+function loadFlyPoints() {
+	if (flyPoints) return flyPoints;
+	try { flyPoints = new Set(JSON.parse(localStorage.getItem('magepunk_flypoints') || '[]')); }
+	catch (e) { flyPoints = new Set(); }
+	return flyPoints;
+}
+function markFlyPoint(mapId) {
+	if (!mapId || !Fly.REGION_OF[mapId]) return;
+	const fp = loadFlyPoints();
+	if (fp.has(mapId)) return;
+	fp.add(mapId);
+	try { localStorage.setItem('magepunk_flypoints', JSON.stringify([...fp])); } catch (e) {}
+}
+function hasFlyPoint(mapId) { return loadFlyPoints().has(mapId); }
 
 // nearest walkable tile to a preferred spot (spiral search)
 function findLanding(px, py) {
@@ -809,6 +865,20 @@ async function warpTo(mapId, destWarpId) {
 	if (w) player.setTile(w.x, w.y);
 	else player.setTile(Math.floor(world.current.layout.width / 2), Math.floor(world.current.layout.height / 2));
 	world.lastWarpSource = source;
+	await refreshMapContent(file);
+}
+
+// Fly: warp straight to a town's landing tile (no warp-index lookup)
+async function flyTo(mapId, tx, ty) {
+	const file = world.fileFor(mapId);
+	if (!file) { console.warn('unknown fly dest', mapId); return; }
+	loading = true;
+	player.surfing = false;
+	await world.load(file);
+	const lay = world.current.layout;
+	const cx = Math.min(Math.max(0, tx), lay.width - 1);
+	const cy = Math.min(Math.max(0, ty), lay.height - 1);
+	player.setTile(...findLanding(cx, cy));
 	await refreshMapContent(file);
 }
 
@@ -941,6 +1011,7 @@ function tick(now) {
 		else if (bagMenu.open) drawBagMenu(SW, SH);
 		else if (pcMenu.open) drawPcMenu(SW, SH);
 		else if (dexMenu.open) drawDexMenu(SW, SH);
+		else if (townMap.open) drawTownMap(SW, SH);
 		else if (trainerCard.open) drawTrainerCard(SW, SH);
 		else if (starterMenu.open) drawStarterMenu(SW, SH);
 		else if (ferryMenu.open) drawFerryMenu(SW, SH);
@@ -1184,6 +1255,71 @@ function playtimeStr() {
 	const h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60);
 	return `${h}:${String(m).padStart(2, '0')}`;
 }
+function drawTownMap(W, H) {
+	const u = H / 480;
+	const region = Fly.REGION_ORDER[townMap.region];
+	const towns = Fly.FLY[region];
+	const sel = towns[townMap.idx];
+	menuChrome(W, H, u, 'TOWN MAP', 'Arrows: ◄► region  ▲▼ town   Z: fly   X: close');
+	// region tabs
+	Fly.REGION_ORDER.forEach((r, i) => {
+		const bid = 'townreg:' + i;
+		const b = { id: bid, x: (24 + i * 150) * u, y: 62 * u, w: 142 * u, h: 30 * u,
+			label: Fly.REGION_LABEL[r], center: true };
+		menuUi.push(b);
+		BUI.button(sctx, b, menuHover === bid || townMap.region === i, u);
+	});
+	// map panel: dots at normalized grid positions
+	const grid = Fly.GRID[region];
+	const px = 40 * u, py = 108 * u, pw = W - 320 * u, ph = H - 168 * u;
+	sctx.fillStyle = 'rgba(24,40,60,0.9)';
+	BUI.rr(sctx, px, py, pw, ph, 10 * u); sctx.fill();
+	sctx.strokeStyle = BUI.C.panelBorder; sctx.lineWidth = 2;
+	BUI.rr(sctx, px + 1, py + 1, pw - 2, ph - 2, 10 * u); sctx.stroke();
+	const pad = 22 * u;
+	const dotAt = t => {
+		const g = Fly.POS[t.map] || [grid.w / 2, grid.h / 2];
+		return [px + pad + (g[0] + 0.5) / grid.w * (pw - pad * 2),
+			py + pad + (g[1] + 0.5) / grid.h * (ph - pad * 2)];
+	};
+	towns.forEach((t, i) => {
+		const [dx, dy] = dotAt(t);
+		const visited = hasFlyPoint(t.map);
+		const isSel = townMap.idx === i;
+		const bid = 'town:' + i;
+		menuUi.push({ id: bid, x: dx - 12 * u, y: dy - 12 * u, w: 24 * u, h: 24 * u });
+		if (isSel) {
+			sctx.strokeStyle = BUI.C.accent; sctx.lineWidth = 2;
+			sctx.beginPath(); sctx.arc(dx, dy, 9 * u, 0, Math.PI * 2); sctx.stroke();
+		}
+		sctx.fillStyle = visited ? (isSel ? BUI.C.accent : '#e0554d') : 'rgba(217,230,242,0.35)';
+		sctx.beginPath(); sctx.arc(dx, dy, 4.5 * u, 0, Math.PI * 2); sctx.fill();
+	});
+	// selected town name + fly status on the right rail
+	const rx = W - 258 * u, ry = 108 * u;
+	sctx.fillStyle = 'rgba(24,40,60,0.9)';
+	BUI.rr(sctx, rx, ry, 234 * u, ph, 10 * u); sctx.fill();
+	sctx.strokeStyle = BUI.C.panelBorder; sctx.lineWidth = 2;
+	BUI.rr(sctx, rx + 1, ry + 1, 232 * u, ph - 2, 10 * u); sctx.stroke();
+	const visited = hasFlyPoint(sel.map);
+	sctx.fillStyle = BUI.C.text;
+	sctx.font = `${Math.round(18 * u)}px m6x11plus, monospace`;
+	sctx.fillText(sel.name, rx + 18 * u, ry + 36 * u);
+	sctx.fillStyle = visited ? BUI.C.accent : BUI.C.dim;
+	sctx.font = `${Math.round(14 * u)}px m6x11plus, monospace`;
+	sctx.fillText(visited ? 'Visited — Z to fly' : 'Not yet visited', rx + 18 * u, ry + 62 * u);
+	if (visited) {
+		const b = { id: 'townfly', x: rx + 18 * u, y: ry + ph - 56 * u, w: 198 * u, h: 40 * u, label: 'FLY HERE', center: true };
+		menuUi.push(b);
+		BUI.button(sctx, b, menuHover === 'townfly', u);
+	}
+	if (townMap.flash) {
+		sctx.fillStyle = BUI.C.accent;
+		sctx.font = `${Math.round(14 * u)}px m6x11plus, monospace`;
+		sctx.fillText(townMap.flash, 40 * u, H - 20 * u);
+	}
+}
+
 function drawTrainerCard(W, H) {
 	const u = H / 480;
 	menuChrome(W, H, u, 'TRAINER CARD', 'Your journey so far.');
@@ -1452,8 +1588,11 @@ function menuTap(id) {
 	if (kind === 'friend') { friendsMenu.idx = +a; pressKey('z'); return; }
 	if (kind === 'dex') { dexMenu.idx = +a; pressKey('z'); return; }
 	if (kind === 'summary-lead') { pressKey('z'); return; }
+	if (kind === 'townreg') { townMap.region = +a; townMap.idx = 0; townMap.flash = null; return; }
+	if (kind === 'town') { townMap.idx = +a; townMap.flash = null; return; }
+	if (kind === 'townfly') { pressKey('z'); return; }
 }
-const anyMenuOpen = () => partyMenu.open || shopMenu.open || bagMenu.open || pcMenu.open || starterMenu.open || ferryMenu.open || startMenu.open || cardsMenu.open || friendsMenu.open || dexMenu.open || trainerCard.open;
+const anyMenuOpen = () => partyMenu.open || shopMenu.open || bagMenu.open || pcMenu.open || starterMenu.open || ferryMenu.open || startMenu.open || cardsMenu.open || friendsMenu.open || dexMenu.open || trainerCard.open || townMap.open;
 
 // ---------- live PvP battles ----------
 // build a self-contained party snapshot the PvP engine can resolve without
@@ -1753,6 +1892,7 @@ function drawFriendGhosts(ctx, camX, camY) {
 	services.loadForMap();
 	items.loadForMap();
 	hud.textContent = world.current.map.name || startMap;
+	markFlyPoint(world.current.map.id);
 	loading = false;
 	// headless test hook
 	// test hook: drive the player straight, bypassing the game loop's input
@@ -1790,6 +1930,7 @@ function drawFriendGhosts(ctx, camX, camY) {
 		get startMenu() { return startMenu; }, get cardsMenu() { return cardsMenu; }, get friendsMenu() { return friendsMenu; },
 		get friends() { return friends; }, get visiting() { return visiting; }, refreshFriends, visitWorld, leaveVisit, heartbeat, pollPresence, get ghosts() { return ghosts; }, MP_ON,
 		get pvp() { return pvp; }, pvpParty, sendChallenge, enterMatch, pollChallenges, get pending() { return pendingChallengeTo; },
-		Dex, get dexMenu() { return dexMenu; }, get trainerCard() { return trainerCard; }, get partyMenu() { return partyMenu; }, get shopMenu() { return shopMenu; }, get bagMenu() { return bagMenu; }, Bag };
+		Dex, get dexMenu() { return dexMenu; }, get trainerCard() { return trainerCard; }, get partyMenu() { return partyMenu; }, get shopMenu() { return shopMenu; }, get bagMenu() { return bagMenu; }, Bag,
+		Fly, get townMap() { return townMap; }, openTownMap, flyTo, hasFlyPoint, markFlyPoint };
 	requestAnimationFrame(tick);
 })();
