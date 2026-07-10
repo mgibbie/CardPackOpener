@@ -44748,27 +44748,42 @@
       "id": "ragnaros_the_great_fire",
       "name": "Ragnaros, the Great Fire",
       "cardClass": "warrior",
-      "cost": 8,
+      "cost": 9,
       "rarity": "legendary",
       "set": "hs",
-      "description": "Colossal +2 At the end of your turn, trigger your creatures' Deathrattles.",
       "type": "creature",
       "attack": 8,
       "health": 8,
-      "tribe": "Elemental"
+      "colossal": [
+        "token_hand_of_ragnaros",
+        "token_hand_of_ragnaros"
+      ],
+      "description": "Colossal +2. At the end of your turn, trigger your creatures' Deathrattles.",
+      "ongoing": {
+        "on": "turn-end",
+        "effects": [
+          {
+            "type": "trigger-deathrattles"
+          }
+        ]
+      }
     },
     {
       "id": "azshara_ocean_lord",
       "name": "Azshara, Ocean Lord",
-      "cardClass": "demonhunter",
-      "cost": 8,
+      "cardClass": "demon_hunter",
+      "cost": 9,
       "rarity": "legendary",
       "set": "hs",
-      "description": "Colossal +2 Your hero has Windfury.",
       "type": "creature",
       "attack": 8,
       "health": 8,
-      "tribe": "Naga"
+      "colossal": [
+        "token_azsharas_tentacle",
+        "token_azsharas_tentacle"
+      ],
+      "description": "Colossal +2. Your hero has Windfury.",
+      "heroWindfury": true
     },
     {
       "id": "sinestra",
@@ -53118,6 +53133,133 @@
           "type": "herald"
         }
       ]
+    },
+    {
+      "id": "token_hand_of_ragnaros",
+      "name": "Hand of Ragnaros",
+      "cardClass": "neutral",
+      "cost": 1,
+      "rarity": "common",
+      "set": "hs",
+      "type": "creature",
+      "token": true,
+      "attack": 2,
+      "health": 1,
+      "colossalOf": "Ragnaros, the Great Fire",
+      "description": "Deathrattle: Deal damage to a random enemy (scales with Herald).",
+      "keywords": [
+        "deathrattle"
+      ],
+      "deathrattle": [
+        {
+          "type": "random-damage",
+          "heraldScaled": true,
+          "count": 1,
+          "pool": "enemies"
+        }
+      ]
+    },
+    {
+      "id": "token_azsharas_tentacle",
+      "name": "Azshara's Tentacle",
+      "cardClass": "neutral",
+      "cost": 1,
+      "rarity": "common",
+      "set": "hs",
+      "type": "creature",
+      "token": true,
+      "attack": 2,
+      "health": 1,
+      "colossalOf": "Azshara, Ocean Lord",
+      "description": "When summoned, give your hero +Attack this turn (scales with Herald).",
+      "onSummon": [
+        {
+          "type": "hero-temp-attack",
+          "heraldScaled": true
+        }
+      ]
+    },
+    {
+      "id": "token_charged_hand_of_alakir",
+      "name": "Charged Hand of Al'Akir",
+      "cardClass": "neutral",
+      "cost": 1,
+      "rarity": "common",
+      "set": "hs",
+      "type": "creature",
+      "token": true,
+      "attack": 1,
+      "health": 2,
+      "colossalOf": "Al'Akir, Lord of Storms",
+      "description": "Adjacent creatures have +Attack (scales with Herald).",
+      "aura": {
+        "heraldScaled": true,
+        "adjacent": true
+      }
+    },
+    {
+      "id": "alakir_lord_of_storms",
+      "name": "Al'Akir, Lord of Storms",
+      "cardClass": "shaman",
+      "cost": 8,
+      "rarity": "legendary",
+      "set": "hs",
+      "type": "creature",
+      "attack": 2,
+      "health": 8,
+      "colossal": [
+        "token_charged_hand_of_alakir",
+        "token_charged_hand_of_alakir"
+      ],
+      "description": "Colossal +2. Rush, Windfury. Battlecry: Get 2 creatures with Cost equal to this creature's Attack. They cost (1).",
+      "keywords": [
+        "rush",
+        "windfury"
+      ],
+      "effects": [
+        {
+          "type": "conjure-by-attack",
+          "count": 2,
+          "costTo": 1
+        }
+      ]
+    },
+    {
+      "id": "token_onyxias_wing",
+      "name": "Onyxia's Wing",
+      "cardClass": "neutral",
+      "cost": 1,
+      "rarity": "common",
+      "set": "hs",
+      "type": "creature",
+      "token": true,
+      "attack": 1,
+      "health": 1,
+      "colossalOf": "Arisen Onyxia",
+      "description": "When summoned, get a random low-Cost creature (Cost scales with Herald).",
+      "onSummon": [
+        {
+          "type": "conjure-cost",
+          "heraldScaled": true
+        }
+      ]
+    },
+    {
+      "id": "arisen_onyxia",
+      "name": "Arisen Onyxia",
+      "cardClass": "death_knight",
+      "cost": 7,
+      "rarity": "legendary",
+      "set": "hs",
+      "type": "creature",
+      "attack": 3,
+      "health": 6,
+      "colossal": [
+        "token_onyxias_wing",
+        "token_onyxias_wing"
+      ],
+      "description": "Colossal +2. When your hero would lose Health on your turn, gain that much max Health instead.",
+      "healToMaxHealth": true
     }
   ]
 }

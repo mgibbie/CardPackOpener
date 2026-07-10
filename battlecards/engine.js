@@ -191,6 +191,9 @@ function instantiate(def, controller) {
 		colossalOf: def.colossalOf || null, // this token is an appendage of the named Colossal
 		immuneWhile: def.immuneWhile || null, // immune while controlling a token of this name
 		partPower: def.partPower || 0, // escalating appendage damage (Xhilag's Stalks)
+		onSummon: def.onSummon || null, // "When summoned" effects for Colossal appendages
+		heroWindfury: !!def.heroWindfury, // Azshara: your hero can attack twice
+		healToMaxHealth: !!def.healToMaxHealth, // Arisen Onyxia: hero Health loss becomes max Health
 		aura: def.aura || null,       // { attack, health, tribe?, others?, adjacent?, position?, keywords? }
 		auraAttack: 0,                // currently applied aura bonuses (recomputed)
 		auraHealth: 0,
@@ -778,6 +781,13 @@ function damageCreature(state, target, amount, source) {
 function damageHero(state, pi, amount, src = null, pierce = false) {
 	if (amount <= 0) return 0;
 	const p = state.players[pi];
+	// Arisen Onyxia: on your turn, Health you would lose becomes max Health instead
+	if (state.current === pi && p.board.some(c => c.healToMaxHealth && !isDead(c))) {
+		p.maxLife = (p.maxLife ?? STARTING_LIFE) + amount;
+		p.life += amount;
+		emit(state, { type: 'heal', targetType: 'hero', player: pi, amount, life: p.life });
+		return 0;
+	}
 	if (p.heroImmuneTurn === state.turnNumber) return 0; // "can't take damage this turn"
 	// static hero-damage reduction (Lucky Horseshoe)
 	amount = Math.max(0, amount - staticValue(p, 'reduce-hero-damage'));
@@ -986,6 +996,8 @@ function summon(state, pi, tokenDef) {
 	summonColossalParts(state, pi, c);
 	fireOngoing(state, pi, 'summoned', { minion: c });
 	recomputeAuras(state);
+	// "When summoned" effects (Colossal appendages) fire after it lands
+	if (c.onSummon) execEffects(state, pi, c.onSummon, null, c);
 	return c;
 }
 
@@ -998,6 +1010,10 @@ function summonColossalParts(state, pi, card) {
 		if (def) summon(state, pi, def);
 	}
 }
+
+// Herald scale: x1 for your 1st-2nd Herald, x2 for the 3rd-4th, x4 from the 5th on.
+// Herald-scaled appendages read this live, so more Heralds grow them.
+function heraldMult(count) { return count < 2 ? 1 : count < 4 ? 2 : 4; }
 
 // ---------- static auras ----------
 // "Your (other) <tribe> have +X/+Y" — bonuses are recomputed whenever the
@@ -1029,7 +1045,8 @@ function recomputeAuras(state) {
 				if (a.position === 'ends' && idx !== 0 && idx !== p.board.length - 1) continue;
 				if (a.tribe && !a.tribe.split('|').some(t => (c.tribe || '').includes(t))) continue;
 				if (a.name && c.name !== a.name) continue; // Warhorse Trainer's Recruits
-				aBonus += a.attack || 0;
+				// Herald-scaled aura (Charged Hand of Al'Akir): +Attack grows with Heralds
+				aBonus += a.heraldScaled ? heraldMult(state.players[src.controller].heraldCount || 0) : (a.attack || 0);
 				hBonus += a.health || 0;
 				for (const k of a.keywords || []) granted.add(k);
 			}
@@ -1788,6 +1805,8 @@ function runDeathrattle(state, pi, card) {
 // `source` is the card whose effect is running (used by gain-weapon-attack).
 function execEffects(state, pi, effects, target, source) {
 	const enemies = opponentsOf(state, pi);
+	// current Herald multiplier for `heraldScaled` effects (Colossal appendages)
+	const hm = () => heraldMult(state.players[pi].heraldCount || 0);
 	const pickEnemy = () => enemies.length ? enemies[Math.floor(state.rng() * enemies.length)] : null;
 	// "the enemy hero": the chosen one, the only one, or (untargeted fallback) a random one
 	const enemyHero = () => {
@@ -2081,8 +2100,9 @@ function execEffects(state, pi, effects, target, source) {
 				}
 				if (!pool.length) break;
 				const pick = pool[Math.floor(state.rng() * pool.length)];
-				if (pick.hero != null) damageHero(state, pick.hero, e.value, pi);
-				else damageCreature(state, pick.c, e.value, null);
+				const rdv = e.heraldScaled ? hm() : e.value;
+				if (pick.hero != null) damageHero(state, pick.hero, rdv, pi);
+				else damageCreature(state, pick.c, rdv, null);
 			}
 			if (lsBefore != null) healHero(state, pi, Math.max(0, totalHurt() - lsBefore));
 		} else if (e.type === 'summon') {
@@ -2157,12 +2177,24 @@ function execEffects(state, pi, effects, target, source) {
 				else if (cls === 'rogue') execEffects(state, pi, [{ type: 'conjure-named', match: '', cardType: 'spell', costMod: -m, count: 1 }], null, soldier);
 				emit(state, { type: 'buff', uid: soldier.uid, attack: soldier.attack, hp: hp(soldier) });
 			}
+		} else if (e.type === 'conjure-by-attack') {
+			// Al'Akir: get e.count creatures whose Cost equals this creature's Attack
+			const pcost = source ? source.attack : 0;
+			const pp = state.players[pi];
+			const pool = Object.values(state.cardsById).filter(d => d.type === 'creature'
+				&& (d.cost || 0) === pcost && !d.token && !d.companion && !d.commander && !(d.colors && d.colors.length));
+			for (let n = 0; n < (e.count || 1) && pool.length && pp.hand.length < MAX_HAND; n++) {
+				const def = pool[Math.floor(state.rng() * pool.length)];
+				const card = instantiate(def, pi); card.zone = 'hand';
+				if (e.costTo != null) card.cost = e.costTo;
+				pp.hand.push(card); emit(state, { type: 'conjure', player: pi, card, color: null });
+			}
 		} else if (e.type === 'destroy-right-gain') {
 			// Soldier of Cho'gall: destroy the creature to its right, gain +amount/+amount
 			if (source) {
 				const b = state.players[pi].board, idx = b.indexOf(source), r = b[idx + 1];
 				if (r && !isDead(r)) { r.damage = r.maxHealth; r.shield = false; emit(state, { type: 'destroy', uid: r.uid });
-					source.attack += e.amount || 1; source.maxHealth += e.amount || 1;
+					const drg = e.heraldScaled ? hm() : (e.amount || 1); source.attack += drg; source.maxHealth += drg;
 					emit(state, { type: 'buff', uid: source.uid, attack: source.attack, hp: hp(source) }); }
 			}
 		} else if (e.type === 'buff-colossal') {
@@ -3088,8 +3120,9 @@ function execEffects(state, pi, effects, target, source) {
 		} else if (e.type === 'conjure-cost') {
 			// Discover-a-cost approximation: a random card of that cost
 			const p = state.players[pi];
+			const ccCost = e.heraldScaled ? hm() : e.cost;
 			const pool = Object.values(state.cardsById).filter(d =>
-				(d.cost || 0) === e.cost && d.type !== 'land' && !d.token
+				(d.cost || 0) === ccCost && d.type !== 'land' && !d.token
 				&& !d.companion && !d.commander && !(d.colors && d.colors.length));
 			if (pool.length && p.hand.length < MAX_HAND) {
 				const card = instantiate(pool[Math.floor(state.rng() * pool.length)], pi);
@@ -3324,8 +3357,9 @@ function execEffects(state, pi, effects, target, source) {
 				}
 			}
 		} else if (e.type === 'hero-temp-attack') {
-			state.players[pi].heroTempAttack += e.value;
-			emit(state, { type: 'heroBuffed', player: pi, amount: e.value });
+			const hta = e.heraldScaled ? hm() : e.value;
+			state.players[pi].heroTempAttack += hta;
+			emit(state, { type: 'heroBuffed', player: pi, amount: hta });
 		} else if (e.type === 'gain-corpses') {
 			state.players[pi].corpses += e.value;
 			emit(state, { type: 'corpses', player: pi, corpses: state.players[pi].corpses });
@@ -3504,7 +3538,8 @@ function execEffects(state, pi, effects, target, source) {
 				const def = pool[Math.floor(state.rng() * pool.length)];
 				const card = instantiate(def, pi);
 				card.zone = 'hand';
-				if (e.costMod) card.cost = Math.max(0, (card.cost || 0) + e.costMod);
+				const cmod = e.heraldScaled ? -hm() : (e.costMod || 0);
+				if (cmod) card.cost = Math.max(0, (card.cost || 0) + cmod);
 				p.hand.push(card);
 				emit(state, { type: 'conjure', player: pi, card, color: e.color || null });
 				fireEmerge(state, pi, card);
@@ -4304,8 +4339,8 @@ export function canHeroAttack(state, pi) {
 	if (state.over || state.current !== pi) return false;
 	const p = state.players[pi];
 	if (heroAttackValue(p) <= 0) return false; // temp attack lets weaponless heroes swing
-	const maxAttacks = p.weapon?.keywords.includes(KW.WINDFURY) ? 2 : 1;
-	return p.heroAttacksUsed < maxAttacks;
+	const windfury = p.weapon?.keywords.includes(KW.WINDFURY) || p.board.some(c => c.heroWindfury && !isDead(c)); // Azshara
+	return p.heroAttacksUsed < (windfury ? 2 : 1);
 }
 
 // same taunt/stealth rules as creature attacks; heroes have no rush restriction
