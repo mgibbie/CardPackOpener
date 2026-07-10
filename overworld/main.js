@@ -59,6 +59,7 @@ const pvp = new Pvp();
 const cutscene = new Story.Cutscene();
 let signTexts = {};
 let trainerTeams = {}; // canonical TRAINER_id -> {class, party} (species/level/moves)
+let commonStrings = {}; // cross-map / shared text labels (fallback for msg ops)
 let party = null;
 
 // starter picker (fresh saves): 3 regions x 3 starters
@@ -1191,6 +1192,7 @@ function cutsceneCtx(talker, scriptLabel) {
 		dialog, player, npcById, talker: talker || null,
 		scriptLabel: scriptLabel || null,
 		strings: mapStrings,
+		common: commonStrings,
 		playerName: (localStorage.getItem('magepunk_name') || 'PLAYER'),
 		rivalName: (localStorage.getItem('magepunk_rival') || 'GARY'),
 		giveItem: (id, n) => { Bag.addItem(id, n); Bag.registerName(id, (id || '').toUpperCase()); },
@@ -2512,6 +2514,7 @@ function drawFriendGhosts(ctx, camX, camY) {
 	await items.init();
 	signTexts = await getJSON('data/sign_texts.json').catch(() => ({}));
 	trainerTeams = await getJSON('data/trainer_teams.json').catch(() => ({}));
+	commonStrings = await getJSON('data/strings/_common.json').catch(() => ({}));
 	party = loadParty(battle.data);
 	if (party) Dex.seedFrom([...party, ...getBox()]);
 	if (!party) {

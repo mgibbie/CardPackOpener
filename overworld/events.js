@@ -231,10 +231,13 @@ export class Cutscene {
 
 function opposite(dir) { return { up: 'down', down: 'up', left: 'right', right: 'left' }[dir] || 'down'; }
 
-// resolve a msg's text: prefer the strings map (ported label), else a literal
-// (hand-authored). Substitute the common {PLAYER}/{RIVAL} tokens.
+// resolve a msg's text: the map's own strings first, then the shared common
+// map (cross-map / gText labels), else the literal (hand-authored). Substitute
+// the common {PLAYER}/{RIVAL} tokens.
 function resolveText(ctx, ref) {
-	let s = (ctx.strings && ctx.strings[ref] != null) ? ctx.strings[ref] : ref;
+	let s = ref;
+	if (ctx.strings && ctx.strings[ref] != null) s = ctx.strings[ref];
+	else if (ctx.common && ctx.common[ref] != null) s = ctx.common[ref];
 	if (typeof s !== 'string') return '...';
 	s = s.replace(/\{PLAYER\}/g, ctx.playerName || 'PLAYER')
 		.replace(/\{RIVAL\}/g, ctx.rivalName || 'RIVAL')
