@@ -1357,9 +1357,40 @@ const STORY_SEED = {
 		},
 		flags: ['FLAG_ADVENTURE_STARTED', 'FLAG_GOT_FIRST_POKEMON'],
 	},
-	// JOHTO scripts aren't ported yet (Crystal .asm parser pending); the seed
-	// entry just marks the state so the flag logic is consistent
-	JOHTO: { vars: {}, flags: ['FLAG_ADVENTURE_STARTED', 'FLAG_GOT_FIRST_POKEMON'] },
+	JOHTO: {
+		// Crystal gates its intro/story coord_events on a per-map scene var
+		// (VAR_SCENE_<Map>) that vanilla starts at 0 and advances as the linear
+		// story runs. A region-picker who already has a starter is "post-intro"
+		// everywhere, so rest each map that has a scene-0 coord_event at its NOOP
+		// scene — otherwise walking onto the trigger tile fires a forced cutscene
+		// (the New Bark teacher dragging you home, Mom's greeting, story blocks)
+		// that assumes intro state. Derived from the decomp scene tables
+		// (tools/crystal_inject_coord_events.py ships the coord_events themselves).
+		vars: {
+			VAR_SCENE_NewBarkTown: 1,
+			VAR_SCENE_PlayersHouse1F: 1,
+			VAR_SCENE_Route27: 1,
+			VAR_SCENE_Route32: 2,
+			VAR_SCENE_MahoganyTown: 1,
+			VAR_SCENE_OlivineCity: 1,
+			VAR_SCENE_OlivinePort: 1,
+			VAR_SCENE_VermilionPort: 1,
+			VAR_SCENE_FastShipB1F: 1,
+			VAR_SCENE_MountMoonSquare: 1,
+			VAR_SCENE_BurnedTowerB1F: 1,
+			VAR_SCENE_SproutTower3F: 1,
+			VAR_SCENE_EcruteakTinTowerEntrance: 1,
+			VAR_SCENE_WiseTriosRoom: 1,
+			VAR_SCENE_TeamRocketBaseB1F: 1,
+			VAR_SCENE_TeamRocketBaseB2F: 3,
+			VAR_SCENE_RadioTower5F: 2,
+			VAR_SCENE_GoldenrodMagnetTrainStation: 1,
+			VAR_SCENE_GoldenrodUndergroundSwitchRoomEntrances: 1,
+			VAR_SCENE_IndigoPlateauPokecenter1F: 1,
+			VAR_SCENE_VictoryRoad: 1,
+		},
+		flags: ['FLAG_ADVENTURE_STARTED', 'FLAG_GOT_FIRST_POKEMON'],
+	},
 };
 function seedStoryState(region) {
 	if (Story.getFlag('story_seeded')) return;
