@@ -194,6 +194,8 @@ function instantiate(def, controller) {
 		onSummon: def.onSummon || null, // "When summoned" effects for Colossal appendages
 		heroWindfury: !!def.heroWindfury, // Azshara: your hero can attack twice
 		healToMaxHealth: !!def.healToMaxHealth, // Arisen Onyxia: hero Health loss becomes max Health
+		castOtherClassTwice: !!def.castOtherClassTwice, // Sinestra: off-class spells cast twice
+		armsHitEnemyDeck: !!def.armsHitEnemyDeck, // Cho'gall: Arms/Soldiers destroy in the enemy deck
 		aura: def.aura || null,       // { attack, health, tribe?, others?, adjacent?, position?, keywords? }
 		auraAttack: 0,                // currently applied aura bonuses (recomputed)
 		auraHealth: 0,
@@ -2190,12 +2192,31 @@ function execEffects(state, pi, effects, target, source) {
 				pp.hand.push(card); emit(state, { type: 'conjure', player: pi, card, color: null });
 			}
 		} else if (e.type === 'destroy-right-gain') {
-			// Soldier of Cho'gall: destroy the creature to its right, gain +amount/+amount
+			// Cho'gall's Arms / Soldier of Cho'gall: destroy the creature to its right
+			// and grow. With Cho'gall in play the kill lands in a random enemy DECK
+			// instead, but the growth still happens.
 			if (source) {
-				const b = state.players[pi].board, idx = b.indexOf(source), r = b[idx + 1];
-				if (r && !isDead(r)) { r.damage = r.maxHealth; r.shield = false; emit(state, { type: 'destroy', uid: r.uid });
-					const drg = e.heraldScaled ? hm() : (e.amount || 1); source.attack += drg; source.maxHealth += drg;
-					emit(state, { type: 'buff', uid: source.uid, attack: source.attack, hp: hp(source) }); }
+				const drg = e.heraldScaled ? hm() : (e.amount || 1);
+				const deckMode = state.players[pi].board.some(c => c.armsHitEnemyDeck && !isDead(c));
+				let killed = false;
+				if (deckMode) {
+					const foes = enemies.filter(o => state.players[o].deck.some(id =>
+						state.cardsById[id]?.type === 'creature'));
+					if (foes.length) {
+						const o = foes[Math.floor(state.rng() * foes.length)];
+						const dk = state.players[o].deck;
+						const spots = dk.map((id, k) => state.cardsById[id]?.type === 'creature' ? k : -1).filter(k => k >= 0);
+						dk.splice(spots[Math.floor(state.rng() * spots.length)], 1);
+						killed = true;
+					}
+				} else {
+					const b = state.players[pi].board, r = b[b.indexOf(source) + 1];
+					if (r && !isDead(r)) { r.damage = r.maxHealth; r.shield = false; emit(state, { type: 'destroy', uid: r.uid }); killed = true; }
+				}
+				if (killed) {
+					source.attack += drg; source.maxHealth += drg;
+					emit(state, { type: 'buff', uid: source.uid, attack: source.attack, hp: hp(source) });
+				}
 			}
 		} else if (e.type === 'buff-colossal') {
 			// an appendage that also grows its parent Colossal (Wickerfang's Legs)
@@ -3933,6 +3954,17 @@ function resolveStackedSpell(state, entry) {
 	else {
 		state.exactKills = 0;
 		runSpell(state, pi, card, ctx.target, choice);
+		// Sinestra: your spells from another class cast twice (not your own class /
+		// neutral cards; guard `recasting` so the second cast never chains again)
+		const myClass = state.players[pi].heroClass;
+		const otherClass = card.cardClass && card.cardClass !== 'neutral'
+			&& !(card.cardClass.split('__').includes(myClass));
+		if (otherClass && !state.recasting
+			&& state.players[pi].board.some(c => c.castOtherClassTwice && !isDead(c))) {
+			state.recasting = true;
+			runSpell(state, pi, card, ctx.target, choice);
+			state.recasting = false;
+		}
 		if (card.honorableKill && state.exactKills > 0) {
 			emit(state, { type: 'honorableKill', player: pi });
 			execEffects(state, pi, card.honorableKill, ctx.target, card);

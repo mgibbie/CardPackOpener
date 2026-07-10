@@ -44789,14 +44789,18 @@
       "id": "sinestra",
       "name": "Sinestra",
       "cardClass": "rogue",
-      "cost": 6,
+      "cost": 7,
       "rarity": "legendary",
       "set": "hs",
-      "description": "Colossal +2 Your spells from other classes cast twice.",
       "type": "creature",
       "attack": 5,
       "health": 5,
-      "tribe": "Dragon"
+      "colossal": [
+        "token_sinestras_wing",
+        "token_sinestras_wing"
+      ],
+      "description": "Colossal +2. Your spells from other classes cast twice.",
+      "castOtherClassTwice": true
     },
     {
       "id": "twisted_monstrosity",
@@ -53260,6 +53264,92 @@
       ],
       "description": "Colossal +2. When your hero would lose Health on your turn, gain that much max Health instead.",
       "healToMaxHealth": true
+    },
+    {
+      "id": "token_chos_arm",
+      "name": "Cho's Arm",
+      "cardClass": "neutral",
+      "cost": 1,
+      "rarity": "common",
+      "set": "hs",
+      "type": "creature",
+      "token": true,
+      "attack": 1,
+      "health": 1,
+      "colossalOf": "Cho'gall, Mastermind",
+      "description": "At the end of your turn, destroy the creature to the right to gain its size (scales with Herald).",
+      "ongoing": {
+        "on": "turn-end",
+        "effects": [
+          {
+            "type": "destroy-right-gain",
+            "heraldScaled": true
+          }
+        ]
+      }
+    },
+    {
+      "id": "token_galls_arm",
+      "name": "Gall's Arm",
+      "cardClass": "neutral",
+      "cost": 1,
+      "rarity": "common",
+      "set": "hs",
+      "type": "creature",
+      "token": true,
+      "attack": 1,
+      "health": 1,
+      "colossalOf": "Cho'gall, Mastermind",
+      "description": "At the end of your turn, destroy the creature to the right to gain its size (scales with Herald).",
+      "ongoing": {
+        "on": "turn-end",
+        "effects": [
+          {
+            "type": "destroy-right-gain",
+            "heraldScaled": true
+          }
+        ]
+      }
+    },
+    {
+      "id": "chogall_mastermind",
+      "name": "Cho'gall, Mastermind",
+      "cardClass": "warlock",
+      "cost": 8,
+      "rarity": "legendary",
+      "set": "hs",
+      "type": "creature",
+      "attack": 6,
+      "health": 6,
+      "colossal": [
+        "token_chos_arm",
+        "token_galls_arm"
+      ],
+      "description": "Colossal +2. Your Arms and Soldiers destroy creatures in the enemy's deck instead.",
+      "armsHitEnemyDeck": true
+    },
+    {
+      "id": "token_sinestras_wing",
+      "name": "Sinestra's Wing",
+      "cardClass": "neutral",
+      "cost": 1,
+      "rarity": "common",
+      "set": "hs",
+      "type": "creature",
+      "token": true,
+      "attack": 1,
+      "health": 1,
+      "colossalOf": "Sinestra",
+      "description": "When summoned, get a random spell that costs less (scales with Herald).",
+      "onSummon": [
+        {
+          "type": "conjure-named",
+          "match": "",
+          "cardType": "spell",
+          "heraldScaled": true,
+          "count": 1
+        }
+      ]
     }
   ]
 }
