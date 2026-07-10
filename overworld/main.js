@@ -205,6 +205,7 @@ function interact() {
 		if (surfer) {
 			dialog.open(`${surfer.name} paddles out onto the water!`, () => {
 				player.surfing = true;
+				player.biking = false;
 				player.beginMove(fx, fy, META, true);
 			});
 		} else {
@@ -937,6 +938,8 @@ function pressKey(k) {
 	if ((k === 'Enter' || k === 'm') && !loading) { startMenu.open = true; startMenu.idx = 0; return; }
 	if (k === 'p' && !loading) { partyMenu.open = true; partyMenu.idx = 0; return; }
 	if (k === 'b' && !loading) { bagMenu.open = true; bagMenu.idx = 0; bagMenu.picking = false; bagMenu.forget = null; bagMenu.flash = null; return; }
+	if (k === 'c' && !loading) { toggleBike(); return; }
+	if (k === 'v' && !loading) { tryDive(); return; }
 	if (k === 'z' && !loading) interact();
 }
 // any menu that consumes direction presses instead of walking
@@ -1121,6 +1124,54 @@ async function backWarp() {
 	await refreshMapContent(src.name);
 }
 
+// ---------- Mach Bike ----------
+// A free field toggle: faster movement, and the only way across Sky Pillar's
+// cracked floors (engine gates those on player.biking). You can't bike on the
+// water, so surfing dismounts it.
+function toggleBike() {
+	if (loading || player.moving || player.surfing) return;
+	player.biking = !player.biking;
+	hud.textContent = player.biking ? 'You got on the MACH BIKE!' : 'You got off the MACH BIKE.';
+}
+
+// ---------- Dive ----------
+// Dive/emerge are overlay map connections (same footprint, offset 0): plunging
+// swaps the surface map for its underwater twin at the same tile, surfacing does
+// the reverse. Dive needs a Water-type in the party (same gate as Surf).
+async function diveTo(kind) { // 'dive' (down) | 'emerge' (up)
+	const c = (world.current.map.connections || []).find(x => x.direction === kind);
+	if (!c) return false;
+	const file = world.fileFor(c.map);
+	if (!file) return false;
+	loading = true;
+	const src = { name: world.current.name, tx: player.tx, ty: player.ty };
+	await world.load(file);
+	const lay = world.current.layout;
+	player.setTile(Math.min(player.tx, lay.width - 1), Math.min(player.ty, lay.height - 1));
+	player.surfing = kind === 'emerge'; // surface -> back on the waves; dive -> walk the seabed
+	player.biking = false;
+	world.lastWarpSource = src;
+	await refreshMapContent(file);
+	return true;
+}
+// try to dive from where the player stands, or emerge back to the surface.
+// The Emerald->web tileset flattens all sea to one "ocean" behavior, so rather
+// than look for specific deep-water tiles we gate on the map itself offering a
+// dive overlay (Route 105/125/127/129, Sootopolis, ...) while you're surfing.
+function tryDive() {
+	if (loading || player.moving) return;
+	const conns = world.current.map.connections || [];
+	if (conns.some(c => c.direction === 'emerge')) { diveTo('emerge'); return; } // underwater -> up
+	if (conns.some(c => c.direction === 'dive')) {
+		if (!player.surfing) { dialog.open('You need to be out on the water to DIVE.'); return; }
+		if (!party.some(m => m.curHP > 0 && m.types?.includes('Water'))) {
+			dialog.open('The sea is deep here...\n\nA WATER-type could take you under.');
+			return;
+		}
+		diveTo('dive');
+	}
+}
+
 // re-anchor when the player has walked into a connected map
 async function crossConnection(hit) {
 	loading = true;
@@ -1129,6 +1180,9 @@ async function crossConnection(hit) {
 	player.setTile(lx, ly);
 	await refreshMapContent(conn.name);
 }
+
+// nudge the player toward the bike when a cracked floor stops them
+player.onBlockedCracked = () => { hud.textContent = 'The floor here is cracked and unstable — a bike could carry you across (press C).'; };
 
 player.onArrive = () => {
 	// each completed step accrues Day Care EXP and incubates any egg
@@ -2707,6 +2761,7 @@ function drawFriendGhosts(ctx, camX, camY) {
 		Story, get cutscene() { return cutscene; }, startCutscene, npcById, maybeIntroCutscene,
 		runScriptLabel, checkCoordTrigger, checkOnFrame, cutsceneCtx, get mapScripts() { return mapScripts; }, get mapStrings() { return mapStrings; },
 		get trainerTeams() { return trainerTeams; }, seedStoryState, startScriptedBattle,
-		checkLegendaryTrigger, startLegendaryBattle, LEGENDARY_ENCOUNTERS };
+		checkLegendaryTrigger, startLegendaryBattle, LEGENDARY_ENCOUNTERS,
+		toggleBike, tryDive, diveTo };
 	requestAnimationFrame(tick);
 })();

@@ -10,6 +10,7 @@ const METATILE_MASK = 0x3FF, COLLISION_MASK = 0x0C00, BEHAVIOR_MASK = 0x1FF;
 const TILE_INDEX_MASK = 0x3FF, FLIP_X = 0x400, FLIP_Y = 0x800, PAL_MASK = 0xF000;
 const LAYER_COVERED = 1;
 const MB_TALL_GRASS = 0x02;
+const MB_CRACKED_FLOOR = 0xD2;
 const MB_JUMP = { right: 0x38, left: 0x39, up: 0x3A, down: 0x3B };
 
 const DATA = 'data';
@@ -268,6 +269,9 @@ export class World {
 
 	isLedge(tx, ty, dir) { return this.behaviorAt(tx, ty) === MB_JUMP[dir]; }
 	isTallGrass(tx, ty) { return this.behaviorAt(tx, ty) === MB_TALL_GRASS; }
+	isCrackedFloor(tx, ty) { return this.behaviorAt(tx, ty) === MB_CRACKED_FLOOR; }
+	// deep water you can plunge beneath with Dive (surface, interior, Sootopolis)
+	isDiveable(tx, ty) { const b = this.behaviorAt(tx, ty); return b === 0x11 || b === 0x12 || b === 0x14; }
 
 	// surfable water: the 0x10-0x1B "sea/pond/river" behavior band. These
 	// tiles block walking (you need a Water-type to Surf) but are open once
@@ -332,6 +336,7 @@ export class Player {
 		this.jumping = false;
 		this.moveFrom = null; this.moveTo = null; this.moveT = 0; this.moveDist = META;
 		this.animT = 0; this.stepParity = 0;
+		this.surfing = false; this.biking = false;
 	}
 
 	async init() {
@@ -363,6 +368,9 @@ export class Player {
 			? (this.world.isSurfable(nx, ny) || this.world.isPassable(nx, ny))
 			: this.world.isPassable(nx, ny) && !this.world.isSurfable(nx, ny);
 		if (!open) return;
+		// Sky Pillar's cracked floors give way underfoot — only the bike carries you
+		// across (they read as normal floor otherwise, so gate them explicitly)
+		if (this.world.isCrackedFloor(nx, ny) && !this.biking) { this.onBlockedCracked?.(); return; }
 		if (this.blocked && this.blocked(nx, ny)) {
 			// a Strength boulder in the way may be shoved one tile ahead; if it
 			// moves, the player steps into the vacated tile
@@ -388,8 +396,9 @@ export class Player {
 	update(dt, held) {
 		this.animT += dt;
 		if (this.moving) {
-			// hold B / Shift to run at nearly double speed
-			this.moveT += (SPEED * (this.run ? 1.85 : 1) * dt) / this.moveDist;
+			// the bike is fastest; hold B / Shift to run at nearly double speed
+			const pace = this.biking ? 2.2 : this.run ? 1.85 : 1;
+			this.moveT += (SPEED * pace * dt) / this.moveDist;
 			if (this.moveT >= 1) {
 				this.px = this.moveTo[0]; this.py = this.moveTo[1];
 				this.moving = false; this.jumping = false;
