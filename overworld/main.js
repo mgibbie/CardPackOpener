@@ -1175,7 +1175,7 @@ player.onArrive = () => {
 const LEGENDARY_ENCOUNTERS = {
 	MAP_SKY_PILLAR_TOP:  { species: 'rayquaza', level: 70, x: 14, y: 6,  flag: 'legend_caught_rayquaza', intro: 'A colossal POKeMON coils in the air above you...' },
 	MAP_MARINE_CAVE_END: { species: 'kyogre',   level: 70, x: 9,  y: 22, flag: 'legend_caught_kyogre',   intro: 'The water heaves — something immense stirs in the depths...' },
-	MAP_TERRA_CAVE_END:  { species: 'groudon',  level: 70, x: 17, y: 22, flag: 'legend_caught_groudon',  intro: 'The ground blazes with heat as a huge form rises...' },
+	MAP_TERRA_CAVE_END:  { species: 'groudon',  level: 70, x: 17, y: 26, flag: 'legend_caught_groudon',  intro: 'The ground blazes with heat as a huge form rises...' },
 };
 function legendaryHere() {
 	const e = LEGENDARY_ENCOUNTERS[world.current.map.id];
