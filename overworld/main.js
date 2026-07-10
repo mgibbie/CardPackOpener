@@ -1354,6 +1354,29 @@ const STORY_SEED = {
 			// (coord triggers gate on 0/1/3), so a starter-holder can explore
 			VAR_LITTLEROOT_INTRO_STATE: 4,
 			VAR_LITTLEROOT_TOWN_STATE: 4,
+			// Emerald gates forced story cutscenes on per-map/route state vars that
+			// vanilla starts at 0. A region-picker never runs the linear plot, so
+			// those scene-0 coord triggers would cold-fire cutscenes that assume
+			// absent NPCs/state (Oldale researcher shoving you back, Petalburg gym
+			// tour + Scott, Team Aqua/Magma set-pieces, rival ambushes, the
+			// legendary awakenings). Rest each at 1 — the "you've passed this beat"
+			// value — which clears the trigger without enabling a later one (each
+			// var's coord/onFrame gates were checked to exclude 1). The functional,
+			// self-resolving events (New Mauville locked door, museum entry fee,
+			// Trick House flavor) are intentionally left to fire.
+			VAR_OLDALE_TOWN_STATE: 1,
+			VAR_PETALBURG_CITY_STATE: 1,
+			VAR_SCOTT_PETALBURG_ENCOUNTER: 1,
+			VAR_PETALBURG_WOODS_STATE: 1,
+			VAR_ROUTE110_STATE: 1,
+			VAR_ROUTE118_STATE: 1,
+			VAR_ROUTE119_STATE: 1,
+			VAR_ROUTE121_STATE: 1,
+			VAR_METEOR_FALLS_STATE: 1,
+			VAR_MT_PYRE_STATE: 1,
+			VAR_SEAFLOOR_CAVERN_STATE: 1,
+			VAR_VICTORY_ROAD_1F_STATE: 1,
+			VAR_SKY_PILLAR_RAYQUAZA_CRY_DONE: 1,
 		},
 		flags: ['FLAG_ADVENTURE_STARTED', 'FLAG_GOT_FIRST_POKEMON'],
 	},
