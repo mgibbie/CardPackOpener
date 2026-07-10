@@ -150,6 +150,7 @@ function instantiate(def, controller) {
 		tempAttack: 0,               // "this turn" attack, expires at owner's turn end
 		tempHealth: 0,               // "this turn" health (Prowess)
 		power: def.power || null,   // hero power: { cost, effects }
+		armor: def.armor || 0,      // Armor granted when a hero card is played
 		quest: def.quest || null,   // quest: { goal: { type, count }, reward }
 		ongoing: def.ongoing || null, // permanent trigger: { on, effects }
 		static: def.static || null,   // permanent passive (e.g. reduce-hero-damage)
@@ -3920,6 +3921,23 @@ export function playCard(state, pi, cardUid, target, choice, position) {
 		card.zone = 'heropower';
 		p.heroPowers.push(card);
 		emit(state, { type: 'heroPowerInstalled', player: pi, card });
+	} else if (card.type === 'hero') {
+		// Hero cards: gain Armor, run the Battlecry, and ADD their Hero Power to a
+		// free slot (this game keeps your original Hero Power — it isn't replaced).
+		if (card.armor) gainArmor(state, pi, card.armor);
+		emit(state, { type: 'heroPlayed', player: pi, card });
+		if (card.effects) execEffects(state, pi, card.effects, target, card);
+		if (card.power && p.heroPowers.length < MAX_HERO_POWERS) {
+			const hpCard = instantiate({
+				id: card.id + '_power', name: card.power.name, type: 'heropower', cost: 0, rarity: 'basic',
+				power: { cost: card.power.cost, effects: card.power.effects || null, choices: card.power.choices || null },
+				description: `Hero Power (${card.power.cost}): ${card.power.text || ''}`, cardClass: card.cardClass,
+			}, pi);
+			hpCard.zone = 'heropower';
+			p.heroPowers.push(hpCard);
+			emit(state, { type: 'heroPowerInstalled', player: pi, card: hpCard });
+		}
+		toGraveyard(state, pi, card); // the hero card itself is spent
 	} else if (card.type === 'quest') {
 		card.zone = 'quest';
 		p.quests.push(card);

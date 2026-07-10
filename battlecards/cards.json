@@ -53640,29 +53640,30 @@
       "cost": 7,
       "rarity": "legendary",
       "set": "hs",
-      "type": "sorcery",
+      "type": "hero",
+      "armor": 5,
       "description": "Battlecry: Summon random Demons (1/2/4 by Invokes). Maxed: also equip a 5/2 Claw.",
       "effects": [
         {
           "type": "galakrond",
-          "gclass": "warlock",
-          "power": {
-            "name": "Galakrond's Malice",
-            "cost": 2,
-            "text": "Summon two 1/1 Imps.",
-            "effects": [
-              {
-                "type": "summon",
-                "count": 2,
-                "attack": 1,
-                "health": 1,
-                "name": "Imp",
-                "tribe": "Demon"
-              }
-            ]
-          }
+          "gclass": "warlock"
         }
-      ]
+      ],
+      "power": {
+        "name": "Galakrond's Malice",
+        "cost": 2,
+        "text": "Summon two 1/1 Imps.",
+        "effects": [
+          {
+            "type": "summon",
+            "count": 2,
+            "attack": 1,
+            "health": 1,
+            "name": "Imp",
+            "tribe": "Demon"
+          }
+        ]
+      }
     },
     {
       "id": "galakrond_the_nightmare",
@@ -53671,27 +53672,28 @@
       "cost": 7,
       "rarity": "legendary",
       "set": "hs",
-      "type": "sorcery",
+      "type": "hero",
+      "armor": 5,
       "description": "Battlecry: Draw cards that cost (0) (1/2/4 by Invokes). Maxed: also equip a 5/2 Claw.",
       "effects": [
         {
           "type": "galakrond",
-          "gclass": "rogue",
-          "power": {
-            "name": "Galakrond's Guile",
-            "cost": 2,
-            "text": "Add a Lackey to your hand.",
-            "effects": [
-              {
-                "type": "add-token",
-                "name": "Lackey",
-                "attack": 1,
-                "health": 1
-              }
-            ]
-          }
+          "gclass": "rogue"
         }
-      ]
+      ],
+      "power": {
+        "name": "Galakrond's Guile",
+        "cost": 2,
+        "text": "Add a Lackey to your hand.",
+        "effects": [
+          {
+            "type": "add-token",
+            "name": "Lackey",
+            "attack": 1,
+            "health": 1
+          }
+        ]
+      }
     },
     {
       "id": "galakrond_the_tempest",
@@ -53700,31 +53702,32 @@
       "cost": 7,
       "rarity": "legendary",
       "set": "hs",
-      "type": "sorcery",
+      "type": "hero",
+      "armor": 5,
       "description": "Battlecry: Summon two Storms with Rush (2/2, 4/4, 8/8 by Invokes). Maxed: also equip a 5/2 Claw.",
       "effects": [
         {
           "type": "galakrond",
-          "gclass": "shaman",
-          "power": {
-            "name": "Galakrond's Fury",
-            "cost": 2,
-            "text": "Summon a 2/1 Elemental with Rush.",
-            "effects": [
-              {
-                "type": "summon",
-                "count": 1,
-                "attack": 2,
-                "health": 1,
-                "name": "Elemental",
-                "keywords": [
-                  "rush"
-                ]
-              }
+          "gclass": "shaman"
+        }
+      ],
+      "power": {
+        "name": "Galakrond's Fury",
+        "cost": 2,
+        "text": "Summon a 2/1 Elemental with Rush.",
+        "effects": [
+          {
+            "type": "summon",
+            "count": 1,
+            "attack": 2,
+            "health": 1,
+            "name": "Elemental",
+            "keywords": [
+              "rush"
             ]
           }
-        }
-      ]
+        ]
+      }
     },
     {
       "id": "galakrond_the_unbreakable",
@@ -53733,25 +53736,26 @@
       "cost": 7,
       "rarity": "legendary",
       "set": "hs",
-      "type": "sorcery",
+      "type": "hero",
+      "armor": 5,
       "description": "Battlecry: Draw creatures and give them +4/+4 (1/2/4 by Invokes). Maxed: also equip a 5/2 Claw.",
       "effects": [
         {
           "type": "galakrond",
-          "gclass": "warrior",
-          "power": {
-            "name": "Galakrond's Might",
-            "cost": 2,
-            "text": "Give your hero +3 Attack this turn.",
-            "effects": [
-              {
-                "type": "hero-temp-attack",
-                "value": 3
-              }
-            ]
-          }
+          "gclass": "warrior"
         }
-      ]
+      ],
+      "power": {
+        "name": "Galakrond's Might",
+        "cost": 2,
+        "text": "Give your hero +3 Attack this turn.",
+        "effects": [
+          {
+            "type": "hero-temp-attack",
+            "value": 3
+          }
+        ]
+      }
     },
     {
       "id": "galakrond_the_unspeakable",
@@ -53760,28 +53764,29 @@
       "cost": 7,
       "rarity": "legendary",
       "set": "hs",
-      "type": "sorcery",
+      "type": "hero",
+      "armor": 5,
       "description": "Battlecry: Destroy random enemy creatures (1/2/4 by Invokes). Maxed: also equip a 5/2 Claw.",
       "effects": [
         {
           "type": "galakrond",
-          "gclass": "priest",
-          "power": {
-            "name": "Galakrond's Wit",
-            "cost": 2,
-            "text": "Add a random Priest creature to your hand.",
-            "effects": [
-              {
-                "type": "conjure-named",
-                "match": "",
-                "cardType": "creature",
-                "cardClass": "priest",
-                "count": 1
-              }
-            ]
-          }
+          "gclass": "priest"
         }
-      ]
+      ],
+      "power": {
+        "name": "Galakrond's Wit",
+        "cost": 2,
+        "text": "Add a random Priest creature to your hand.",
+        "effects": [
+          {
+            "type": "conjure-named",
+            "match": "",
+            "cardType": "creature",
+            "cardClass": "priest",
+            "count": 1
+          }
+        ]
+      }
     },
     {
       "id": "ritual_chopper",
