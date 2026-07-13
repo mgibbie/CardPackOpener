@@ -80,6 +80,41 @@ function pokedexView() {
   );
 }
 
+// Two gap-tracking pages: imported fakemon still missing sourced data.
+function gapTile(p, badges) {
+  return h('a', { class: 'dex-tile', href: '#/pokemon/' + p.id },
+    h('div', { class: 'dex-spr' }, p.sprite
+      ? h('img', { class: 'sprite', loading: 'lazy', src: 'sprites/' + p.sprite, alt: p.name, onerror: e => e.target.remove() }) : null),
+    h('div', { class: 'dex-meta' },
+      h('div', { class: 'nm' }, p.name),
+      h('div', { class: 'dex-types' }, typesArr(p.types).map(typeChip)),
+      h('div', { class: 'gap-badges' }, badges)));
+}
+function needsTypingView() {
+  const q = norm(searchEl.value);
+  const list = Object.values(DB.pokemon).filter(p => p.needsType)
+    .filter(p => !q || norm(p.name).includes(q)).sort(byName);
+  content.replaceChildren(
+    h('h1', null, 'Needs Typing ', h('span', { class: 'num' }, '(' + list.length + ')')),
+    h('p', { class: 'muted' }, 'Imported fakémon whose real type was never sourced — they still carry the placeholder Grass typing (and the placeholder ability). Find their real types (e.g. on Pokéngine) to finish them.'),
+    h('div', { class: 'dex-grid' }, list.map(p => gapTile(p, [h('span', { class: 'gap-badge gap-t' }, 'placeholder GRASS')])))
+  );
+}
+function needsDataView() {
+  const q = norm(searchEl.value);
+  const list = Object.values(DB.pokemon).filter(p => p.needsMoves)
+    .filter(p => !q || norm(p.name).includes(q)).sort(byName);
+  const nMoves = list.filter(p => p.gapMoves).length, nAbil = list.filter(p => p.gapAbility).length;
+  content.replaceChildren(
+    h('h1', null, 'Needs Moves / Abilities ', h('span', { class: 'num' }, '(' + list.length + ')')),
+    h('p', { class: 'muted' }, 'Fakémon that got a real type + stats but still need work: ' + nMoves + ' missing a real level-up moveset, ' + nAbil + ' still on the placeholder ability.'),
+    h('div', { class: 'dex-grid' }, list.map(p => gapTile(p, [
+      p.gapMoves ? h('span', { class: 'gap-badge gap-m' }, 'no moveset') : null,
+      p.gapAbility ? h('span', { class: 'gap-badge gap-a' }, 'placeholder ability') : null
+    ].filter(Boolean))))
+  );
+}
+
 function pokemonDetail(id) {
   const p = DB.pokemon[id]; if (!p) return notFound();
   const stats = ['hp', 'atk', 'def', 'spa', 'spd', 'spe'];
@@ -326,6 +361,8 @@ function route() {
   if (parts.length === 0) return home();
   const [section, id] = parts;
   if (section === 'pokemon') return id ? pokemonDetail(id) : pokedexView();
+  if (section === 'needs-typing') return needsTypingView();
+  if (section === 'needs-data') return needsDataView();
   if (section === 'moves') return id ? moveDetail(id) :
     listView('moves', 'Moves', Object.values(DB.moves).sort(byName));
   if (section === 'abilities') return id ? abilityDetail(id) :
@@ -340,7 +377,7 @@ function route() {
 
 searchEl.addEventListener('input', () => {
   const s = (location.hash.slice(1) || '/').split('/').filter(Boolean);
-  if (['pokemon', 'moves', 'abilities', 'tms', 'unlearned', 'battlecards', 'cards'].includes(s[0]) && !s[1]) {
+  if (['pokemon', 'moves', 'abilities', 'tms', 'unlearned', 'battlecards', 'cards', 'needs-typing', 'needs-data'].includes(s[0]) && !s[1]) {
     if (s[0] === 'cards') { loadCards().then(renderCards); return; } // re-filter without reloading
     route();
   }

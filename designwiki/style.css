@@ -83,6 +83,13 @@ img.sprite {
 .dex-types { margin-top: 2px; }
 .dex-types .chip { font-size: 11px; padding: 0 6px; margin-right: 3px; }
 
+/* gap-tracking pages (Needs Typing / Needs Moves) */
+.gap-badges { margin-top: 3px; }
+.gap-badge { display: inline-block; font-size: 10px; font-weight: 600; padding: 1px 6px; border-radius: 8px; margin-right: 3px; color: #fff; }
+.gap-badge.gap-t { background: #c0392b; }
+.gap-badge.gap-m { background: #b9770e; }
+.gap-badge.gap-a { background: #7d3cc0; }
+
 /* card gallery */
 .card-filters { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; margin: 12px 0; }
 .card-classsel { padding: 6px 10px; border: 1px solid #d3dae8; border-radius: 6px; font-size: 14px; background: #fff; color: #2d3550; max-width: 320px; }
