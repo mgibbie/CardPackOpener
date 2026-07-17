@@ -279,7 +279,7 @@ function removeEntity(uid) {
 // ---------- layout ----------
 const FLAT = new THREE.Euler(-Math.PI / 2, 0, 0);     // face up on the table
 const FACEDOWN = new THREE.Euler(Math.PI / 2, 0, 0);  // back up (set traps)
-const LAND_Z = 4.0, LAND_SPREAD = 1.15;               // slice-local land row
+const LAND_Z = 3.05, LAND_SPREAD = 1.15;              // slice-local land row (kept above the hero panel)
 const TRAP_Z = 4.9, TRAP_X = 2.55, TRAP_SPREAD = 1.2; // slice-local trap row
 
 // The land row is the only zone with furniture when empty: 5 slot outlines
