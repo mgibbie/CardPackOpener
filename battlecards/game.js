@@ -615,9 +615,16 @@ function layoutTargets() {
 				const spread = Math.min(1.55, 10.5 / Math.max(n, 1));
 				const x = (i - (n - 1) / 2) * spread;
 				const hovered = hoverUid === card.uid || (pending?.card.uid === card.uid);
-				ent.target.pos.set(x, 1.7 + (hovered ? 0.9 : 0) + i * 0.012, off + 6.9 - Math.abs(x) * 0.04 - (hovered ? 0.55 : 0));
-				ent.target.quat = sliceQuat(new THREE.Euler(-0.5, 0, -(i - (n - 1) / 2) * 0.03), HUMAN);
-				ent.target.scale = hovered ? 1.0 : 0.68;
+				if (handMini && !hovered) {
+					// tucked down below the hero panel so the panel reads clearly
+					ent.target.pos.set(x, 1.32 + i * 0.012, off + 7.5 - Math.abs(x) * 0.03);
+					ent.target.quat = sliceQuat(new THREE.Euler(-0.5, 0, -(i - (n - 1) / 2) * 0.03), HUMAN);
+					ent.target.scale = 0.5;
+				} else {
+					ent.target.pos.set(x, 1.7 + (hovered ? 0.9 : 0) + i * 0.012, off + 6.9 - Math.abs(x) * 0.04 - (hovered ? 0.55 : 0));
+					ent.target.quat = sliceQuat(new THREE.Euler(-0.5, 0, -(i - (n - 1) / 2) * 0.03), HUMAN);
+					ent.target.scale = hovered ? 1.0 : 0.68;
+				}
 			} else {
 				const spread = Math.min(1.0, 6.5 / Math.max(n, 1));
 				const x = (i - (n - 1) / 2) * spread;
@@ -971,6 +978,11 @@ function positionPanels() {
 		const mp = $('my-panel');
 		mp.style.left = `${(v.x + 1) / 2 * innerWidth}px`;
 		mp.style.top = `${(1 - v.y) / 2 * innerHeight}px`;
+		// a fresh turn brings your hand back up; while it's up the panel dims so the
+		// hand (which the canvas can't paint over a DOM node) reads as being in front
+		if (state.current === HUMAN && lastCurrent !== HUMAN) handMini = false;
+		lastCurrent = state.current;
+		mp.classList.toggle('hand-up', !handMini && state.current === HUMAN && !state.over);
 	}
 	const heroTargets = new Set();
 	if (pending) {
@@ -1839,6 +1851,8 @@ let state = null;
 let hoverUid = null;
 let pending = null;          // { card, spec, targets } — spell/battlecry targeting
 let selectedAttacker = null; // uid
+let handMini = false;        // true = hand tucked down so the hero panel reads clearly
+let lastCurrent = -1;        // tracks turn changes to auto-raise the hand each turn
 
 const raycaster = new THREE.Raycaster();
 const pointer = new THREE.Vector2();
@@ -1920,6 +1934,8 @@ addEventListener('pointermove', ev => {
 	mouseY = ev.clientY;
 	if (placing) placing.dragging = Math.hypot(mouseX - lastDownX, mouseY - lastDownY) > 14;
 	hoverUid = pick(ev, placing && placing.dragging ? placing.card.uid : null);
+	// reaching down toward your hand pops it back up
+	if (handMini && mouseY > innerHeight * 0.82) handMini = false;
 	if (placing && placing.dragging) $('tooltip').style.display = 'none';
 	else if (!TOUCH) updateTooltip(ev); // phones use long-press instead of hover
 	renderer.domElement.style.cursor = (placing && placing.dragging) ? 'grabbing'
@@ -2146,6 +2162,10 @@ renderer.domElement.addEventListener('pointerdown', ev => {
 		clearModes();
 		if (!card || card.controller !== HUMAN) return; // fall through to reselect own creature
 	}
+
+	// pressing anywhere on the field (not your hand) tucks the hand down so the
+	// hero panel is unobstructed; pressing a hand card keeps the hand up
+	handMini = !(card && card.zone === 'hand' && card.controller === HUMAN);
 
 	if (!card) {
 		// nothing card-like was hit: maybe an empty land slot of yours
