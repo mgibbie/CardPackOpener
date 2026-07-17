@@ -975,14 +975,18 @@ function positionPanels() {
 	// between your land row and your hand — mirroring the opponents' panels
 	{
 		const v = heroPos(HUMAN).project(camera);
+		// clear the land-slot row: drop the panel to just below where the slots project
+		const landY = (1 - toWorld(0, 0.05, sliceOff() + LAND_Z, HUMAN).project(camera).y) / 2 * innerHeight;
 		const mp = $('my-panel');
 		mp.style.left = `${(v.x + 1) / 2 * innerWidth}px`;
-		mp.style.top = `${(1 - v.y) / 2 * innerHeight}px`;
+		mp.style.top = `${Math.max((1 - v.y) / 2 * innerHeight, landY + 26)}px`;
 		// a fresh turn brings your hand back up; while it's up the panel dims so the
 		// hand (which the canvas can't paint over a DOM node) reads as being in front
 		if (state.current === HUMAN && lastCurrent !== HUMAN) handMini = false;
 		lastCurrent = state.current;
-		mp.classList.toggle('hand-up', !handMini && state.current === HUMAN && !state.over);
+		// hide the panel while the hand is up — but keep it up (clickable) while
+		// you're aiming a spell/attack, so your own hero stays targetable
+		mp.classList.toggle('hand-up', !handMini && state.current === HUMAN && !state.over && !pending && !selectedAttacker);
 	}
 	const heroTargets = new Set();
 	if (pending) {
