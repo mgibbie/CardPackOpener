@@ -1931,7 +1931,13 @@ function showInspect(card) {
 	inspectUid = card.uid;
 	const box = $('inspect');
 	box.innerHTML = '';
-	box.appendChild(drawCardFace(card)); // full-size render: art + rules, all on the face
+	// mirror the stat opts the 3D faces use, or a creature's health renders as 0
+	const opts = card.type === 'creature' ? { attack: card.attack, hp: E.hp(card), maxHealth: card.maxHealth }
+		: card.type === 'weapon' ? { attack: card.attack, durability: card.durability }
+		: card.type === 'location' ? { durability: card.durability }
+		: card.type === 'quest' ? { progress: card.progress || 0, goal: card.quest?.goal?.count }
+		: card.type === 'planeswalker' ? { loyalty: card.loyalty } : {};
+	box.appendChild(drawCardFace({ ...card, health: card.maxHealth }, opts)); // full-size: art + rules + stats
 	const kw = modifierLinesHtml(card) + keywordLinesHtml(card);
 	if (kw) { const d = document.createElement('div'); d.className = 'ins-kw'; d.innerHTML = kw; box.appendChild(d); }
 	const hint = document.createElement('div');
