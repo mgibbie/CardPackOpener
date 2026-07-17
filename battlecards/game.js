@@ -414,6 +414,49 @@ function playFromHand(card, ev, position) {
 	actPlay(card.uid, null, undefined, position);
 }
 
+// which of `targets` did the drop point land on (creature / walker / hero)?
+function resolveDropTarget(ev, targets) {
+	const c = cardOf(pick(ev));
+	if (c && c.zone === 'board') { const t = targets.find(t => t.type === 'creature' && t.uid === c.uid); if (t) return t; }
+	if (c && c.zone === 'planeswalker') { const t = targets.find(t => t.type === 'walker' && t.uid === c.uid); if (t) return t; }
+	const heroPi = heroPanelAt(ev.clientX, ev.clientY);
+	if (heroPi != null) { const t = targets.find(t => t.type === 'hero' && t.player === heroPi); if (t) return t; }
+	return null;
+}
+
+// a hand card dragged out onto the field: route by type. Creatures pick a board
+// gap; a targeted spell casts on whatever it's dropped on, else arms the arrow.
+function releasePlay(c, ev) {
+	if (c.adventure && !c.adventureSpent
+		&& (E.canPlay(state, HUMAN, c) || E.canPlayAdventure(state, HUMAN, c))) { openAdventureMenu(c, ev); return; }
+	if (!E.canPlay(state, HUMAN, c)) {
+		if (c.tradeable && E.canTrade(state, HUMAN, c)) openTradeMenu(c, ev);
+		return;
+	}
+	if (c.tradeable && E.canTrade(state, HUMAN, c)) { openTradeMenu(c, ev); return; }
+	if (c.type === 'creature' || c.type === 'location') {
+		const pos = placementIndexAt(ev.clientX);
+		if (c.choices) { openChoiceMenu(c, ev, pos); return; }
+		const over = cardOf(pick(ev));
+		if (c.magnetic && over && over.zone === 'board' && over.controller === HUMAN && (over.tribe || '').includes('Mech')) {
+			actPlay(c.uid, { type: 'creature', uid: over.uid, player: HUMAN });
+		} else {
+			playFromHand(c, ev, pos);
+		}
+		return;
+	}
+	if (c.choices) { openChoiceMenu(c, ev); return; }
+	const spec = E.targetSpec(state, HUMAN, c);
+	if (spec) {
+		const targets = E.legalTargets(state, HUMAN, spec);
+		const t = resolveDropTarget(ev, targets);
+		if (t) { actPlay(c.uid, t); return; }         // dropped right on a legal target
+		if (targets.length) { pending = { card: c, spec, targets, mode: 'play' }; updateHud(); return; }
+		if (spec.required) return;
+	}
+	actPlay(c.uid, null);
+}
+
 // choose-one hero powers pick a branch before targeting
 function openPowerChoiceMenu(card, ev) {
 	const menu = $('walker-menu');
@@ -561,6 +604,14 @@ function layoutTargets() {
 			const ent = entityFor(card);
 			seen.add(card.uid);
 			if (pi === HUMAN) {
+				// a card being dragged out of the hand floats under the cursor
+				if (placing && placing.dragging && card.uid === placing.card.uid) {
+					const wp = screenToGround(mouseX, mouseY, 1.35);
+					ent.target.pos.set(wp.x, 1.35, wp.z);
+					ent.target.quat = sliceQuat(new THREE.Euler(-0.62, 0, 0), HUMAN);
+					ent.target.scale = 0.9;
+					return;
+				}
 				const spread = Math.min(1.55, 10.5 / Math.max(n, 1));
 				const x = (i - (n - 1) / 2) * spread;
 				const hovered = hoverUid === card.uid || (pending?.card.uid === card.uid);
@@ -847,6 +898,8 @@ function updateHudSpectate() {
 function updateHud() {
 	if (!state) return;
 	if (spectateMode) { updateHudSpectate(); return; }
+	// the pinned inspect closes itself once its card is no longer in your hand
+	if (inspectUid != null) { const ic = cardOf(inspectUid); if (!ic || ic.zone !== 'hand' || ic.controller !== HUMAN) hideInspect(); }
 	const me = state.players[HUMAN];
 	$('my-life').textContent = me.life + (me.armor ? `+${me.armor}` : '');
 	$('my-mana').textContent = `${E.availableMana(me)}/${me.mana.max}`;
@@ -1790,6 +1843,18 @@ function pick(ev) {
 	return hits.length ? hits[0].object.userData.uid : null;
 }
 
+// project a screen point onto a horizontal world plane (for drag-follow)
+const _dragPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
+const _dragHit = new THREE.Vector3();
+function screenToGround(clientX, clientY, planeY) {
+	pointer.x = (clientX / innerWidth) * 2 - 1;
+	pointer.y = -(clientY / innerHeight) * 2 + 1;
+	raycaster.setFromCamera(pointer, camera);
+	_dragPlane.constant = -planeY;
+	const hit = raycaster.ray.intersectPlane(_dragPlane, _dragHit);
+	return hit || new THREE.Vector3(0, planeY, 0);
+}
+
 function cardOf(uid) {
 	if (!state || uid == null) return null;
 	for (const p of state.players) {
@@ -1842,7 +1907,11 @@ addEventListener('pointermove', ev => {
 	mouseX = ev.clientX;
 	mouseY = ev.clientY;
 	hoverUid = pick(ev);
-	if (!TOUCH) updateTooltip(ev); // phones use long-press instead of hover
+	if (placing) placing.dragging = Math.hypot(mouseX - lastDownX, mouseY - lastDownY) > 14;
+	if (placing && placing.dragging) $('tooltip').style.display = 'none';
+	else if (!TOUCH) updateTooltip(ev); // phones use long-press instead of hover
+	renderer.domElement.style.cursor = (placing && placing.dragging) ? 'grabbing'
+		: (hoverUid != null && cardOf(hoverUid)?.zone === 'hand' && cardOf(hoverUid)?.controller === HUMAN) ? 'grab' : '';
 });
 
 function clearModes() {
@@ -1851,8 +1920,30 @@ function clearModes() {
 	placing = null;
 	placeMarker.visible = false;
 	hideWalkerMenu();
+	hideInspect();
 	updateHud();
 }
+
+// ---------- click-to-inspect (look closely at a hand card without playing it) ----------
+let inspectUid = null, inspectPrev = null;
+
+function showInspect(card) {
+	inspectUid = card.uid;
+	const box = $('inspect');
+	box.innerHTML = '';
+	box.appendChild(drawCardFace(card)); // full-size render: art + rules, all on the face
+	const kw = modifierLinesHtml(card) + keywordLinesHtml(card);
+	if (kw) { const d = document.createElement('div'); d.className = 'ins-kw'; d.innerHTML = kw; box.appendChild(d); }
+	const hint = document.createElement('div');
+	const playable = state && state.current === HUMAN && E.canPlay(state, HUMAN, card);
+	hint.className = 'ins-hint' + (playable ? '' : ' no');
+	hint.textContent = playable ? '⬆ drag it onto the field to play'
+		: (state && state.current !== HUMAN ? 'wait for your turn to play' : 'not enough mana yet');
+	box.appendChild(hint);
+	box.style.display = 'block';
+}
+function hideInspect() { if (inspectUid == null) return; inspectUid = null; $('inspect').style.display = 'none'; }
+function toggleInspect(card) { if (inspectPrev === card.uid) hideInspect(); else showInspect(card); }
 
 // ---------- planeswalker ability menu ----------
 function hideWalkerMenu() {
@@ -1970,12 +2061,21 @@ addEventListener('contextmenu', ev => { ev.preventDefault(); clearModes(); });
 renderer.domElement.addEventListener('pointerdown', ev => {
 	hideWalkerMenu();
 	if (spectateMode || duel.busy) return;
-	if (ev.button !== 0 || !state || state.over || state.current !== HUMAN) return;
+	if (ev.button !== 0 || !state || state.over) return;
 	const uid = pick(ev);
 	const card = cardOf(uid);
 	if (TOUCH) {
 		$('tooltip').style.display = 'none';
 		startLongPress(uid, ev.clientX, ev.clientY);
+	}
+	// starting any gesture dismisses the pinned inspect; a tap re-opens it on release
+	inspectPrev = inspectUid;
+	hideInspect();
+
+	// off your turn you can still pick up a hand card to read it (never to play)
+	if (state.current !== HUMAN) {
+		if (card && card.zone === 'hand' && card.controller === HUMAN) placing = { card, dragging: false };
+		return;
 	}
 
 	// targeting mode: expect a creature click (hero clicks handled on the panels)
@@ -2014,18 +2114,9 @@ renderer.domElement.addEventListener('pointerdown', ev => {
 		return;
 	}
 	if (card.zone === 'hand' && card.controller === HUMAN) {
-		// Adventure creatures: choose to summon the creature or cast the spell half
-		if (card.adventure && !card.adventureSpent
-			&& (E.canPlay(state, HUMAN, card) || E.canPlayAdventure(state, HUMAN, card))) {
-			openAdventureMenu(card, ev); return;
-		}
-		if ((card.type === 'creature' || card.type === 'location') && E.canPlay(state, HUMAN, card)) {
-			placing = { card }; // slot picked on release: tap = right end, drag = gap
-			return;
-		}
-		if (TOUCH) { touchHandCard = card; return; } // play on release, not press
-		if (card.tradeable && E.canTrade(state, HUMAN, card)) { openTradeMenu(card, ev); return; }
-		playFromHand(card, ev);
+		// arm a drag; release decides — a click inspects, a drag up onto the field plays
+		placing = { card, dragging: false };
+		return;
 	} else if (card.zone === 'board' && card.controller === HUMAN) {
 		if (card.type === 'location') { if (E.canTapLand(state, HUMAN, card)) openTapMenu(card, ev); return; }
 		if (card.disguised && E.canUnmask(state, HUMAN, card)) { openUnmaskMenu(card, ev); return; }
@@ -2126,9 +2217,22 @@ function placementIndexAt(x) {
 }
 
 function updatePlaceMarker() {
-	const active = placing && state && state.players[HUMAN].board.length
-		&& Math.hypot(mouseX - lastDownX, mouseY - lastDownY) > 14
-		&& mouseY < innerHeight * 0.85;
+	// live hint while dragging a card out of the hand
+	if (placing && placing.dragging && state) {
+		const c = placing.card;
+		const yours = state.current === HUMAN;
+		const inPlay = mouseY < innerHeight * 0.80;
+		$('hint').textContent = !inPlay ? 'drag up onto the field to play · release here to cancel'
+			: !yours ? "can't play on your opponent's turn"
+			: E.canPlay(state, HUMAN, c) ? `release to play ${c.name}`
+			: (c.tradeable && E.canTrade(state, HUMAN, c)) ? `release to trade ${c.name}`
+			: `not enough mana for ${c.name}`;
+	}
+	const isCreature = placing && (placing.card.type === 'creature' || placing.card.type === 'location');
+	const active = isCreature && placing.dragging && state && state.current === HUMAN
+		&& state.players[HUMAN].board.length
+		&& E.canPlay(state, HUMAN, placing.card)
+		&& mouseY < innerHeight * 0.80;
 	placeMarker.visible = !!active;
 	if (!active) return;
 	const xs = boardScreenXs();
@@ -2212,41 +2316,27 @@ function tryCommitTargetAt(ev) {
 addEventListener('pointerup', ev => {
 	clearTimeout(longPressT);
 	if (spectateMode || duel.busy) return;
-	// creature placement: tap appends right, a drag onto the board picks the gap
+	// hand card released: a click (in place) inspects; a drag up onto the field plays
 	if (placing) {
 		const c = placing.card;
+		const dragged = placing.dragging;
 		placing = null;
 		touchHandCard = null;
 		placeMarker.visible = false;
-		if (ev.button === 0 && state && !state.over && state.current === HUMAN && !longPressFired) {
+		renderer.domElement.style.cursor = '';
+		if (ev.button === 0 && state && !state.over) {
 			const dist = Math.hypot(ev.clientX - lastDownX, ev.clientY - lastDownY);
-			if (dist < 14) {
-				if (c.tradeable && E.canTrade(state, HUMAN, c)) openTradeMenu(c, ev);
-				else playFromHand(c, ev);
-			} else if (ev.clientY < innerHeight * 0.85) {
-				// Magnetic: dropping the card onto a friendly Mech merges them
-				const over = cardOf(pick(ev));
-				if (c.magnetic && over && over.zone === 'board' && over.controller === HUMAN
-					&& (over.tribe || '').includes('Mech')) {
-					actPlay(c.uid, { type: 'creature', uid: over.uid, player: HUMAN });
-				} else {
-					playFromHand(c, ev, placementIndexAt(ev.clientX));
-				}
+			if (dragged && dist >= 14 && ev.clientY < innerHeight * 0.80 && state.current === HUMAN) {
+				releasePlay(c, ev);                        // dragged up onto the field: play it
+			} else if (!dragged && !longPressFired) {
+				toggleInspect(c);                          // a click/tap: look closely, never play
 			}
+			// else: dragged but dropped back in the hand row (or long-pressed) → no-op
 		}
+		if (state) updateHud();                        // clear the drag hint
 		return;
 	}
 	if (ev.button !== 0 || !state || state.over || state.current !== HUMAN) return;
-	// deferred touch hand-play: a short tap casts, a long-press only inspected
-	if (TOUCH && touchHandCard) {
-		const c = touchHandCard;
-		touchHandCard = null;
-		if (!longPressFired && Math.hypot(ev.clientX - lastDownX, ev.clientY - lastDownY) < 14) {
-			if (c.tradeable && E.canTrade(state, HUMAN, c)) openTradeMenu(c, ev);
-			else playFromHand(c, ev);
-		}
-		return;
-	}
 	if (!pending && !selectedAttacker) return;
 	// a release right where the press happened is a click, not a drag
 	if (Math.hypot(ev.clientX - lastDownX, ev.clientY - lastDownY) < 14) return;
