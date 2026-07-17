@@ -964,6 +964,14 @@ function positionPanels() {
 		el.style.left = `${(v.x + 1) / 2 * innerWidth}px`;
 		el.style.top = `${(1 - v.y) / 2 * innerHeight}px`;
 	}
+	// your own panel rides the projected hero point too, so it sits centered
+	// between your land row and your hand — mirroring the opponents' panels
+	{
+		const v = heroPos(HUMAN).project(camera);
+		const mp = $('my-panel');
+		mp.style.left = `${(v.x + 1) / 2 * innerWidth}px`;
+		mp.style.top = `${(1 - v.y) / 2 * innerHeight}px`;
+	}
 	const heroTargets = new Set();
 	if (pending) {
 		for (const t of pending.targets) if (t.type === 'hero') heroTargets.add(t.player);
