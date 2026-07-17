@@ -117,10 +117,10 @@
 		#my-panel { left: auto; width: auto; min-width: 150px; padding: 7px 12px; transform: translate(-50%, 0); transition: opacity 0.16s; }
 		#my-panel .life { font-size: 23px; }
 		#my-panel .sub { font-size: 11.5px; }
-		/* a WebGL hand can't paint over a DOM node, so while the hand is up the panel
-		   hides entirely (cards fully in front). Clicking the field tucks the hand
-		   down and the panel returns, solid, below the land slots. */
-		#my-panel.hand-up { opacity: 0; pointer-events: none; }
+		/* in normal play the hero panel is rendered as a 3D object in the scene
+		   (so the hand cards depth-sort in front of it); the DOM panel is only used
+		   by the read-only spectator view */
+		body.threed-hero #my-panel { display: none; }
 		/* while your hand is up it overlaps the panel; dim it so the hand reads in
 		   front (a WebGL hand can't paint over a DOM node). Clicking the field tucks
 		   the hand down and the panel goes solid again. */

@@ -36,7 +36,7 @@ function modifierLinesHtml(card) {
 // test-realm mode (?mp=1 + account token): dungeon runs use the account's
 // edited starter decks, and finishing a run — win or lose — earns a pack
 const MP_ON = MPX.mpMode();
-import { CARD_W, CARD_H, CARD_D, makeFaceTexture, makeBackTexture, classNameOf, drawCardFace, makeTokenTexture, TOKEN_W, TOKEN_H, drawHeroPortrait, drawPowerOrb, artListeners } from './cardart.js';
+import { CARD_W, CARD_H, CARD_D, makeFaceTexture, makeBackTexture, classNameOf, classColorOf, drawCardFace, makeTokenTexture, TOKEN_W, TOKEN_H, drawHeroPortrait, drawPowerOrb, artListeners } from './cardart.js';
 
 // the player index this client controls. Solo/host = 0; a live-duel guest = 1.
 // The board reorients so HUMAN always sits at the bottom facing the camera.
@@ -860,6 +860,120 @@ function buildPanels() {
 	mine.prepend(portraitBlock(HUMAN, true));
 	const myCls = classNameOf(state.players[HUMAN].heroClass);
 	$('my-title').textContent = myCls ? `You — ${myCls}` : 'Your Hero';
+	// normal play uses the 3D hero panel; spectators keep the DOM one
+	document.body.classList.toggle('threed-hero', !spectateMode);
+	if (!spectateMode) drawHeroPanel();
+}
+
+// ---------- 3D hero panel (your own hero, rendered in-scene so the hand cards
+// depth-sort in front of it — a DOM overlay can't sit behind WebGL cards) ----------
+const HP_W = 384, HP_H = 178;
+const heroPanelCanvas = document.createElement('canvas');
+heroPanelCanvas.width = HP_W; heroPanelCanvas.height = HP_H;
+const heroPanelTex = new THREE.CanvasTexture(heroPanelCanvas);
+heroPanelTex.colorSpace = THREE.SRGBColorSpace;
+const heroPanelMat = new THREE.MeshBasicMaterial({ map: heroPanelTex, transparent: true, depthTest: true, depthWrite: true, alphaTest: 0.3, side: THREE.DoubleSide });
+const heroPanelMesh = new THREE.Mesh(new THREE.PlaneGeometry(3.0, 3.0 * HP_H / HP_W), heroPanelMat);
+heroPanelMesh.userData.uid = 'heropanel';
+heroPanelMesh.renderOrder = 1;
+heroPanelMesh.visible = false;
+scene.add(heroPanelMesh);
+let heroOrbUV = null; // { x0, x1, y0, y1 } orb rect in 0..1 UV (y from the bottom)
+
+function hpRoundRect(ctx, x, y, w, h, r) {
+	ctx.beginPath();
+	ctx.moveTo(x + r, y);
+	ctx.arcTo(x + w, y, x + w, y + h, r);
+	ctx.arcTo(x + w, y + h, x, y + h, r);
+	ctx.arcTo(x, y + h, x, y, r);
+	ctx.arcTo(x, y, x + w, y, r);
+	ctx.closePath();
+}
+
+// is your own hero a legal target for the spell/attack currently being aimed?
+function heroSelfTargetable() {
+	if (!state) return false;
+	if (pending) return pending.targets.some(t => t.type === 'hero' && t.player === HUMAN);
+	if (selectedAttacker === 'HERO') return E.heroAttackTargets(state, HUMAN).some(t => t.type === 'hero' && t.player === HUMAN);
+	if (selectedAttacker) { const a = cardOf(selectedAttacker); return !!a && E.attackTargets(state, HUMAN, a).some(t => t.type === 'hero' && t.player === HUMAN); }
+	return false;
+}
+
+function drawHeroPanel() {
+	if (!state) return;
+	const me = state.players[HUMAN];
+	const ctx = heroPanelCanvas.getContext('2d');
+	ctx.clearRect(0, 0, HP_W, HP_H);
+	ctx.globalAlpha = me.eliminated ? 0.4 : 1;
+	// frame + state-coloured border (red targetable > green armed > gold your-turn)
+	const armed = state.current === HUMAN && !state.over && !pending && E.canHeroAttack(state, HUMAN);
+	const border = heroSelfTargetable() ? '#ff5f4f' : armed ? '#57e389'
+		: (state.current === HUMAN && !state.over) ? '#ffd25f' : (classColorOf(me.heroClass) || '#4a3f6b');
+	hpRoundRect(ctx, 6, 6, HP_W - 12, HP_H - 12, 20);
+	ctx.fillStyle = 'rgba(30,22,48,0.97)';
+	ctx.fill();
+	ctx.lineWidth = 4;
+	ctx.strokeStyle = border;
+	ctx.stroke();
+	// portrait + power orb sit in the TOP band of the panel — the hand cards cover
+	// only the lower part, so keep the interactive orb up here where it's clickable
+	const port = drawHeroPortrait(me.heroClass, 128);
+	const pS = 74;
+	ctx.drawImage(port, HP_W - pS - 14, 12, pS, pS);
+	const power = classPowerOf(HUMAN);
+	heroOrbUV = null;
+	if (power) {
+		const orb = drawPowerOrb(power.power.cost, 96);
+		const oS = 58, ox = HP_W - pS - 14 - oS - 8, oy = 16;
+		const usable = state.current === HUMAN && !state.over && E.canUseHeroPower(state, HUMAN, power);
+		ctx.save();
+		if (usable) { ctx.shadowColor = 'rgba(87,227,137,0.95)'; ctx.shadowBlur = 18; }
+		ctx.globalAlpha = (me.eliminated ? 0.4 : 1) * (usable ? 1 : 0.5);
+		ctx.drawImage(orb, ox, oy, oS, oS);
+		ctx.restore();
+		heroOrbUV = { x0: ox / HP_W, x1: (ox + oS) / HP_W, y0: 1 - (oy + oS) / HP_H, y1: 1 - oy / HP_H };
+	}
+	// text column
+	ctx.textAlign = 'left';
+	ctx.fillStyle = '#ff8a7a';
+	ctx.font = 'bold 48px system-ui, sans-serif';
+	ctx.fillText(me.life + (me.armor ? `+${me.armor}` : ''), 22, 62);
+	ctx.fillStyle = '#e8e2f4';
+	ctx.font = '19px system-ui, sans-serif';
+	const myCls = classNameOf(me.heroClass);
+	ctx.fillText(myCls ? `You — ${myCls}` : 'You', 22, 90);
+	ctx.fillStyle = '#cbb8e8';
+	ctx.font = '17px system-ui, sans-serif';
+	ctx.fillText(`Mana ${E.availableMana(me)}/${me.mana.max}  ·  Deck ${me.deck.length}`, 22, 116);
+	// gear line(s)
+	const gear = [];
+	if (me.weapon) gear.push(`⚔ ${me.weapon.attack}/${me.weapon.durability}`);
+	if (me.secrets.length) gear.push(`❓ ${me.secrets.length}`);
+	if (me.exile.length) gear.push(`⊘ ${me.exile.length}`);
+	if (me.fatigue) gear.push(`☠ ${me.fatigue}`);
+	if (me.corpses && me.heroClass === 'death_knight') gear.push(`⚰ ${me.corpses}`);
+	if (me.heroTempAttack) gear.push(`⚔ +${me.heroTempAttack}`);
+	ctx.fillStyle = '#ffd25f';
+	ctx.font = '14px system-ui, sans-serif';
+	if (gear.length) ctx.fillText(gear.slice(0, 4).join('   '), 22, 142);
+	ctx.globalAlpha = 1;
+	heroPanelTex.needsUpdate = true;
+}
+
+// keep the panel in sync with async hero-portrait art loads
+artListeners.add(() => { if (state && !spectateMode && heroPanelMesh.visible) drawHeroPanel(); });
+
+// raycast just the hero panel; returns the UV hit (for orb vs body) or null
+function pickHeroPanelUV(ev) {
+	if (!heroPanelMesh.visible) return null;
+	pointer.x = (ev.clientX / innerWidth) * 2 - 1;
+	pointer.y = -(ev.clientY / innerHeight) * 2 + 1;
+	raycaster.setFromCamera(pointer, camera);
+	const hit = raycaster.intersectObject(heroPanelMesh)[0];
+	return hit ? hit.uv : null;
+}
+function heroPanelOrbHit(uv) {
+	return !!(uv && heroOrbUV && uv.x >= heroOrbUV.x0 && uv.x <= heroOrbUV.x1 && uv.y >= heroOrbUV.y0 && uv.y <= heroOrbUV.y1);
 }
 
 // read-only HUD for a watcher: fill both sides' stats, mark whose turn it is,
@@ -961,6 +1075,7 @@ function updateHud() {
 		? `Choose ${pending.spec.why} for ${pending.card.name} (right-click to cancel)`
 		: (selectedAttacker === 'HERO' ? 'Choose a target for your hero attack (right-click to cancel)'
 			: selectedAttacker ? 'Choose an attack target (right-click to cancel)' : '');
+	if (!spectateMode) drawHeroPanel(); // repaint the in-scene hero panel texture
 }
 
 // projected screen positions + hero-target highlighting, refreshed per frame
@@ -971,22 +1086,14 @@ function positionPanels() {
 		el.style.left = `${(v.x + 1) / 2 * innerWidth}px`;
 		el.style.top = `${(1 - v.y) / 2 * innerHeight}px`;
 	}
-	// your own panel rides the projected hero point too, so it sits centered
-	// between your land row and your hand — mirroring the opponents' panels
-	{
-		const v = heroPos(HUMAN).project(camera);
-		// clear the land-slot row: drop the panel to just below where the slots project
-		const landY = (1 - toWorld(0, 0.05, sliceOff() + LAND_Z, HUMAN).project(camera).y) / 2 * innerHeight;
-		const mp = $('my-panel');
-		mp.style.left = `${(v.x + 1) / 2 * innerWidth}px`;
-		mp.style.top = `${Math.max((1 - v.y) / 2 * innerHeight, landY + 26)}px`;
-		// a fresh turn brings your hand back up; while it's up the panel dims so the
-		// hand (which the canvas can't paint over a DOM node) reads as being in front
-		if (state.current === HUMAN && lastCurrent !== HUMAN) handMini = false;
+	// your own hero panel is a 3D object in the scene (billboarded to the camera),
+	// sitting between your land row and hand so the hand cards depth-sort in front
+	if (!spectateMode) {
+		if (state.current === HUMAN && lastCurrent !== HUMAN) handMini = false; // a fresh turn raises your hand
 		lastCurrent = state.current;
-		// hide the panel while the hand is up — but keep it up (clickable) while
-		// you're aiming a spell/attack, so your own hero stays targetable
-		mp.classList.toggle('hand-up', !handMini && state.current === HUMAN && !state.over && !pending && !selectedAttacker);
+		heroPanelMesh.visible = true;
+		heroPanelMesh.position.copy(toWorld(0, 1.12, sliceOff() + 5.15, HUMAN));
+		heroPanelMesh.quaternion.copy(camera.quaternion);
 	}
 	const heroTargets = new Set();
 	if (pending) {
@@ -997,7 +1104,6 @@ function positionPanels() {
 		const a = cardOf(selectedAttacker);
 		if (a) for (const t of E.attackTargets(state, HUMAN, a)) if (t.type === 'hero') heroTargets.add(t.player);
 	}
-	$('my-panel').classList.toggle('targetable', heroTargets.has(HUMAN));
 	for (const [pi, el] of foePanelEls) el.classList.toggle('targetable', heroTargets.has(pi));
 	// eliminated slices lose their land-slot furniture too
 	for (const m of slotMarkers) m.mesh.visible = !state.players[m.pi].eliminated;
@@ -1869,6 +1975,7 @@ function pick(ev, excludeUid = null) {
 	// creature/hero behind it, not the card in your hand
 	const meshes = [];
 	for (const e of entities.values()) if (e.mesh.userData.uid !== excludeUid) meshes.push(e.mesh);
+	if (heroPanelMesh.visible && excludeUid !== 'heropanel') meshes.push(heroPanelMesh);
 	const hits = raycaster.intersectObjects(meshes);
 	return hits.length ? hits[0].object.userData.uid : null;
 }
@@ -2132,6 +2239,18 @@ renderer.domElement.addEventListener('pointerdown', ev => {
 	inspectPrev = inspectUid;
 	hideInspect();
 
+	// your own 3D hero panel: the orb fires the class power, elsewhere acts as the
+	// hero (arm an attack, or pick yourself as a spell/attack target via panelClick)
+	if (uid === 'heropanel') {
+		const power = classPowerOf(HUMAN);
+		if (heroPanelOrbHit(pickHeroPanelUV(ev)) && !pending && !selectedAttacker && power && E.canUseHeroPower(state, HUMAN, power)) {
+			activateHeroPower(power, ev);
+		} else {
+			panelClick(HUMAN);
+		}
+		return;
+	}
+
 	// off your turn you can still pick up a hand card to read it (never to play)
 	if (state.current !== HUMAN) {
 		if (card && card.zone === 'hand' && card.controller === HUMAN) placing = { card, dragging: false };
@@ -2324,9 +2443,10 @@ function startLongPress(uid, x, y) {
 }
 
 function heroPanelAt(x, y) {
+	// your own hero is the 3D panel mesh; opponents are DOM panels
+	if (pickHeroPanelUV({ clientX: x, clientY: y })) return HUMAN;
 	const el = document.elementFromPoint(x, y);
 	if (!el) return null;
-	if (el.closest('#my-panel')) return HUMAN;
 	for (const [pi, pel] of foePanelEls) if (pel.contains(el)) return pi;
 	return null;
 }
@@ -2594,6 +2714,21 @@ window.__game = {
 	},
 	// test hooks for the targeting arrow
 	armAttack(uid) { selectedAttacker = uid; updateHud(); },
+	// 3D hero-panel test hooks: screen positions of the orb and the panel body
+	orbScreenPos() {
+		if (!heroPanelMesh.visible || !heroOrbUV) return null;
+		const g = heroPanelMesh.geometry.parameters;
+		const lx = ((heroOrbUV.x0 + heroOrbUV.x1) / 2 - 0.5) * g.width;
+		const ly = ((heroOrbUV.y0 + heroOrbUV.y1) / 2 - 0.5) * g.height;
+		const v = heroPanelMesh.localToWorld(new THREE.Vector3(lx, ly, 0)).project(camera);
+		return { x: (v.x + 1) / 2 * innerWidth, y: (1 - v.y) / 2 * innerHeight };
+	},
+	panelScreenPos() {
+		if (!heroPanelMesh.visible) return null;
+		const g = heroPanelMesh.geometry.parameters;
+		const v = heroPanelMesh.localToWorld(new THREE.Vector3(-g.width * 0.32, g.height * 0.28, 0)).project(camera);
+		return { x: (v.x + 1) / 2 * innerWidth, y: (1 - v.y) / 2 * innerHeight };
+	},
 	get targeting() { return { pending: !!pending, attacker: selectedAttacker, drawn: arrowDrawn }; },
 	// live-duel test hooks
 	duel,
