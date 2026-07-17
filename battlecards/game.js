@@ -415,8 +415,8 @@ function playFromHand(card, ev, position) {
 }
 
 // which of `targets` did the drop point land on (creature / walker / hero)?
-function resolveDropTarget(ev, targets) {
-	const c = cardOf(pick(ev));
+function resolveDropTarget(ev, targets, excludeUid) {
+	const c = cardOf(pick(ev, excludeUid));
 	if (c && c.zone === 'board') { const t = targets.find(t => t.type === 'creature' && t.uid === c.uid); if (t) return t; }
 	if (c && c.zone === 'planeswalker') { const t = targets.find(t => t.type === 'walker' && t.uid === c.uid); if (t) return t; }
 	const heroPi = heroPanelAt(ev.clientX, ev.clientY);
@@ -437,7 +437,7 @@ function releasePlay(c, ev) {
 	if (c.type === 'creature' || c.type === 'location') {
 		const pos = placementIndexAt(ev.clientX);
 		if (c.choices) { openChoiceMenu(c, ev, pos); return; }
-		const over = cardOf(pick(ev));
+		const over = cardOf(pick(ev, c.uid));
 		if (c.magnetic && over && over.zone === 'board' && over.controller === HUMAN && (over.tribe || '').includes('Mech')) {
 			actPlay(c.uid, { type: 'creature', uid: over.uid, player: HUMAN });
 		} else {
@@ -449,7 +449,7 @@ function releasePlay(c, ev) {
 	const spec = E.targetSpec(state, HUMAN, c);
 	if (spec) {
 		const targets = E.legalTargets(state, HUMAN, spec);
-		const t = resolveDropTarget(ev, targets);
+		const t = resolveDropTarget(ev, targets, c.uid);
 		if (t) { actPlay(c.uid, t); return; }         // dropped right on a legal target
 		if (targets.length) { pending = { card: c, spec, targets, mode: 'play' }; updateHud(); return; }
 		if (spec.required) return;
@@ -1835,11 +1835,15 @@ let selectedAttacker = null; // uid
 const raycaster = new THREE.Raycaster();
 const pointer = new THREE.Vector2();
 
-function pick(ev) {
+function pick(ev, excludeUid = null) {
 	pointer.x = (ev.clientX / innerWidth) * 2 - 1;
 	pointer.y = -(ev.clientY / innerHeight) * 2 + 1;
 	raycaster.setFromCamera(pointer, camera);
-	const hits = raycaster.intersectObjects([...entities.values()].map(e => e.mesh));
+	// a card being dragged floats under the cursor; skip it so drops read the
+	// creature/hero behind it, not the card in your hand
+	const meshes = [];
+	for (const e of entities.values()) if (e.mesh.userData.uid !== excludeUid) meshes.push(e.mesh);
+	const hits = raycaster.intersectObjects(meshes);
 	return hits.length ? hits[0].object.userData.uid : null;
 }
 
@@ -1906,8 +1910,8 @@ function updateTooltip(ev) {
 addEventListener('pointermove', ev => {
 	mouseX = ev.clientX;
 	mouseY = ev.clientY;
-	hoverUid = pick(ev);
 	if (placing) placing.dragging = Math.hypot(mouseX - lastDownX, mouseY - lastDownY) > 14;
+	hoverUid = pick(ev, placing && placing.dragging ? placing.card.uid : null);
 	if (placing && placing.dragging) $('tooltip').style.display = 'none';
 	else if (!TOUCH) updateTooltip(ev); // phones use long-press instead of hover
 	renderer.domElement.style.cursor = (placing && placing.dragging) ? 'grabbing'
