@@ -159,4 +159,18 @@ export function unmount() {
 	el = null; room = null; seen = new Set(); lastTs = 0;
 }
 
+// wipe the visible log (e.g. when a new game starts) without re-fetching history:
+// seen/lastTs are kept so already-shown messages don't pop back on the next poll
+export function clear() {
+	if (!el) return;
+	const log = el.querySelector('.mc-log');
+	if (!log) return;
+	for (const row of [...log.children]) {
+		clearTimeout(row._t1);
+		clearTimeout(row._t2);
+		row.remove();
+	}
+	el.querySelector('.mc-min')?.classList.remove('flash');
+}
+
 export function active() { return !!el; }

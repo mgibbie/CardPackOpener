@@ -3065,6 +3065,7 @@ async function start() {
 	queue.length = 0;
 	queueBusy = false;
 	clearModes();
+	Chat.clear(); // fresh game → fresh chat log (no-op if chat isn't mounted)
 	$('restart').style.display = 'none';
 	$('player-count').value = String(playerCount);
 	logEl.innerHTML = '';
