@@ -1925,19 +1925,31 @@ function clearModes() {
 }
 
 // ---------- click-to-inspect (look closely at a hand card without playing it) ----------
-let inspectUid = null, inspectPrev = null;
+let inspectUid = null, inspectPrev = null, inspectArtFn = null;
+
+// mirror the stat opts the 3D faces use — without them a hand creature's health
+// (which lives in maxHealth, not card.health) renders as 0
+function inspectFaceOpts(card) {
+	return card.type === 'creature' ? { attack: card.attack, hp: E.hp(card), maxHealth: card.maxHealth }
+		: card.type === 'weapon' ? { attack: card.attack, durability: card.durability }
+		: card.type === 'location' ? { durability: card.durability }
+		: card.type === 'quest' ? { progress: card.progress || 0, goal: card.quest?.goal?.count }
+		: card.type === 'planeswalker' ? { loyalty: card.loyalty } : {};
+}
+
+// (re)paint the card face into the panel, replacing any face already there
+function renderInspectFace(card) {
+	const box = $('inspect');
+	const face = drawCardFace({ ...card, health: card.maxHealth }, inspectFaceOpts(card));
+	const old = box.querySelector('canvas');
+	if (old) box.replaceChild(face, old); else box.insertBefore(face, box.firstChild);
+}
 
 function showInspect(card) {
 	inspectUid = card.uid;
 	const box = $('inspect');
 	box.innerHTML = '';
-	// mirror the stat opts the 3D faces use, or a creature's health renders as 0
-	const opts = card.type === 'creature' ? { attack: card.attack, hp: E.hp(card), maxHealth: card.maxHealth }
-		: card.type === 'weapon' ? { attack: card.attack, durability: card.durability }
-		: card.type === 'location' ? { durability: card.durability }
-		: card.type === 'quest' ? { progress: card.progress || 0, goal: card.quest?.goal?.count }
-		: card.type === 'planeswalker' ? { loyalty: card.loyalty } : {};
-	box.appendChild(drawCardFace({ ...card, health: card.maxHealth }, opts)); // full-size: art + rules + stats
+	box.appendChild(drawCardFace({ ...card, health: card.maxHealth }, inspectFaceOpts(card))); // art + rules + stats
 	const kw = modifierLinesHtml(card) + keywordLinesHtml(card);
 	if (kw) { const d = document.createElement('div'); d.className = 'ins-kw'; d.innerHTML = kw; box.appendChild(d); }
 	const hint = document.createElement('div');
@@ -1947,8 +1959,18 @@ function showInspect(card) {
 		: (state && state.current !== HUMAN ? 'wait for your turn to play' : 'not enough mana yet');
 	box.appendChild(hint);
 	box.style.display = 'block';
+	// the face is drawn with a procedural fallback until its art image and the mana
+	// font load; repaint in place when they arrive (same as the 3D cards' refreshFace)
+	if (inspectArtFn) artListeners.delete(inspectArtFn);
+	inspectArtFn = id => { if (inspectUid === card.uid && (id === '*' || id === card.id)) renderInspectFace(card); };
+	artListeners.add(inspectArtFn);
 }
-function hideInspect() { if (inspectUid == null) return; inspectUid = null; $('inspect').style.display = 'none'; }
+function hideInspect() {
+	if (inspectUid == null) return;
+	inspectUid = null;
+	if (inspectArtFn) { artListeners.delete(inspectArtFn); inspectArtFn = null; }
+	$('inspect').style.display = 'none';
+}
 function toggleInspect(card) { if (inspectPrev === card.uid) hideInspect(); else showInspect(card); }
 
 // ---------- planeswalker ability menu ----------
