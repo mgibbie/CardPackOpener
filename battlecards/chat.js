@@ -23,6 +23,9 @@ const BAR = ['greetings', 'well_played', 'thanks', 'wow', 'oops', 'threaten', 'g
 const FADE_AFTER = 8000, FADE_DUR = 800; // a message lingers 8s, then fades over 0.8s
 
 let el = null, timer = null, room = null, me = null, seen = new Set(), lastTs = 0, poll = 1500;
+// when false, the next poll's messages are absorbed silently (marked seen) instead
+// of shown — so a fresh mount or a new game starts with an empty log, no backlog
+let primed = true;
 
 const STYLE = `
 #mp-chat{position:fixed;left:10px;bottom:10px;width:290px;max-width:44vw;z-index:9000;
@@ -104,11 +107,19 @@ export function send(text, emote) {
 	MP.call('chat-post', { room, text, emote }).catch(() => {});
 }
 
+// absorb a batch without showing it: mark every message seen + advance lastTs
+function absorb(messages) {
+	for (const m of messages) { seen.add(m.ts + ':' + m.from); lastTs = Math.max(lastTs, m.ts); }
+}
+
 async function tick() {
 	if (!room) return;
 	try {
 		const data = await MP.call('chat-get', { room, since: lastTs });
-		if (data && data.messages) render(data.messages);
+		if (data && data.messages) {
+			if (primed) render(data.messages);
+			else { absorb(data.messages); primed = true; } // swallow the pre-game backlog once
+		}
 	} catch (e) {}
 }
 
@@ -126,7 +137,7 @@ export function mount({ room: r, canPost = true } = {}) {
 	ensureStyle();
 	room = r;
 	me = MP.cachedState()?.username || null;
-	seen = new Set(); lastTs = 0;
+	seen = new Set(); lastTs = 0; primed = false; // hide whatever history already exists
 	el = document.createElement('div');
 	el.id = 'mp-chat';
 	el.innerHTML = `<div class="mc-log"></div><div class="mc-bar"><button class="mc-min" title="minimise chat">▾</button></div>`;
@@ -159,17 +170,17 @@ export function unmount() {
 	el = null; room = null; seen = new Set(); lastTs = 0;
 }
 
-// wipe the visible log (e.g. when a new game starts) without re-fetching history:
-// seen/lastTs are kept so already-shown messages don't pop back on the next poll
+// wipe the visible log (e.g. when a new game starts). Re-arms priming so the next
+// poll silently absorbs any pre-game messages instead of showing them.
 export function clear() {
 	if (!el) return;
 	const log = el.querySelector('.mc-log');
-	if (!log) return;
-	for (const row of [...log.children]) {
+	if (log) for (const row of [...log.children]) {
 		clearTimeout(row._t1);
 		clearTimeout(row._t2);
 		row.remove();
 	}
+	primed = false;
 	el.querySelector('.mc-min')?.classList.remove('flash');
 }
 
