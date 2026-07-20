@@ -19945,7 +19945,8 @@
           }
         ]
       },
-      "description": "Sacrifice: gain 1 mana."
+      "description": "Sacrifice: gain 1 mana.",
+      "tribe": "Token"
     },
     {
       "id": "food_token",
