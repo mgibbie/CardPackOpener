@@ -2,14 +2,15 @@
   "cards": [
     {
       "id": "savannah_lions",
-      "name": "Savannah Lions",
+      "name": "Godsbreath Tyrant",
       "type": "creature",
       "cardClass": "neutral",
       "cost": 1,
       "rarity": "common",
       "description": "A 2/1 creature.",
       "attack": 2,
-      "health": 1
+      "health": 1,
+      "tribe": "Beast"
     },
     {
       "id": "white_knight",
