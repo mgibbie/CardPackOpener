@@ -33,6 +33,21 @@ const filters = { search: '', mana: null, type: '', rarity: '', cls: '', ownedOn
 const isUncollectible = c => c.token || c.companion || c.commander
 	|| c.type === 'land' || c.type === 'heropower';
 
+// uncollectible / system cards filter under their own buckets, not a class:
+// all Lands, the five WUBRG colours (non-land), then a Generic catch-all
+const SYSTEM_BUCKETS = [
+	['__land__', 'Lands'], ['__c_W__', 'White'], ['__c_U__', 'Blue'], ['__c_B__', 'Black'],
+	['__c_R__', 'Red'], ['__c_G__', 'Green'], ['__generic__', 'Generic'],
+];
+const SYSTEM_KEYS = new Set(SYSTEM_BUCKETS.map(b => b[0]));
+function systemBucket(c) {
+	if (c.type === 'land') return '__land__';
+	const cols = c.colors || [];
+	for (const col of ['W', 'U', 'B', 'R', 'G']) if (cols.includes(col)) return '__c_' + col + '__';
+	if (cols.includes('C') || canonClass(c.cardClass || 'neutral') === 'magepunk') return '__generic__';
+	return null;
+}
+
 const $ = id => document.getElementById(id);
 const grid = $('grid');
 const tip = $('tip');
@@ -80,12 +95,15 @@ function applyFilters() {
 			if (filters.mana === 7 ? cost < 7 : cost !== filters.mana) return false;
 		}
 		const cc = canonClass(c.cardClass || 'neutral');
-		if (filters.cls === '__dual__') { if (!cc.includes('__')) return false; }
-		else if (filters.cls && cc !== filters.cls) return false;
+		const sb = systemBucket(c);
+		if (SYSTEM_KEYS.has(filters.cls)) { if (sb !== filters.cls) return false; }
+		else if (filters.cls === '__dual__') { if (sb || !cc.includes('__')) return false; }
+		else if (filters.cls && (sb || cc !== filters.cls)) return false;
 		if (filters.type && c.type !== filters.type) return false;
 		if (filters.rarity && (c.rarity || 'common') !== filters.rarity) return false;
 		if (filters.ownedOnly && !(collection[c.id] > 0)) return false;
-		if (!filters.showUncollectible && isUncollectible(c)) return false;
+		// hide uncollectible by default — unless you've picked one of their buckets
+		if (!filters.showUncollectible && isUncollectible(c) && !SYSTEM_KEYS.has(filters.cls)) return false;
 		return true;
 	});
 	$('count').textContent = `${filtered.length} of ${cards.length} cards`;
@@ -179,18 +197,26 @@ fetch('cards.json')
 			mpOwned = s?.collection || {};
 			data.cards = data.cards.filter(d => mpOwned[d.id] > 0);
 		}
-		// class filter: single classes (Neutral last) + one combined "Dual" bucket for
-		// every multi-class card (cardClass values joined with __), instead of a
-		// separate section per combination
-		const singles = [...new Set(data.cards.map(c => canonClass(c.cardClass || 'neutral')).filter(c => !c.includes('__')))]
+		// class filter: single classes (Neutral last) + a combined "Dual" bucket, then
+		// the uncollectible/system buckets (Lands, WUBRG colours, Generic). System
+		// cards are pulled out of their class so those options stay clean.
+		const nonSystem = data.cards.filter(c => !systemBucket(c));
+		const singles = [...new Set(nonSystem.map(c => canonClass(c.cardClass || 'neutral')).filter(c => !c.includes('__')))]
 			.sort((a, b) => a.localeCompare(b));
 		const classes = singles.filter(c => c !== 'neutral');
-		if (data.cards.some(c => canonClass(c.cardClass || 'neutral').includes('__'))) classes.push('__dual__');
+		if (nonSystem.some(c => canonClass(c.cardClass || 'neutral').includes('__'))) classes.push('__dual__');
 		if (singles.includes('neutral')) classes.push('neutral');
 		for (const cls of classes) {
 			const opt = document.createElement('option');
 			opt.value = cls;
 			opt.textContent = cls === '__dual__' ? 'Dual' : classNameOf(cls);
+			$('class-filter').appendChild(opt);
+		}
+		for (const [key, label] of SYSTEM_BUCKETS) {
+			if (!data.cards.some(c => systemBucket(c) === key)) continue;
+			const opt = document.createElement('option');
+			opt.value = key;
+			opt.textContent = label;
 			$('class-filter').appendChild(opt);
 		}
 		const rarityOrder = { legendary: 0, epic: 1, rare: 2, uncommon: 3, common: 4, special: 5 };

@@ -283,6 +283,20 @@ const tribeChip = (c, tribe) => SPELL_TYPES.has(c.type)
   : h('a', { class: 'tag-chip tribe', href: '#/tribe/' + norm(tribe) }, tribe);
 const canonClass = c => (CardArt ? CardArt.canonClass(c.cardClass || 'neutral') : (c.cardClass || 'neutral'));
 const isDualClass = c => canonClass(c).includes('__');
+// uncollectible / system cards get their own filter buckets instead of a class:
+// all Lands together, the five WUBRG colours (non-land), then a Generic catch-all
+const SYSTEM_BUCKETS = [
+  ['__land__', 'Lands'], ['__c_W__', 'White'], ['__c_U__', 'Blue'], ['__c_B__', 'Black'],
+  ['__c_R__', 'Red'], ['__c_G__', 'Green'], ['__generic__', 'Generic'],
+];
+const SYSTEM_KEYS = new Set(SYSTEM_BUCKETS.map(b => b[0]));
+function systemBucket(c) {
+  if (c.type === 'land') return '__land__';
+  const cols = c.colors || [];
+  for (const col of ['W', 'U', 'B', 'R', 'G']) if (cols.includes(col)) return '__c_' + col + '__';
+  if (cols.includes('C') || canonClass(c) === 'magepunk') return '__generic__'; // colourless system cards (Blood Gem, Abzan…)
+  return null; // an ordinary collectible card — stays under its class
+}
 
 async function cardGalleryView() {
   content.replaceChildren(h('h1', null, 'Card Gallery'), h('p', { class: 'muted' }, 'Loading cards…'));
@@ -297,22 +311,33 @@ function renderCards(cards) {
   // one combined "Dual" bucket for every multi-class card (cardClass joined with __),
   // instead of a separate option per combination; single classes counted on their own
   const counts = {}; let dual = 0;
-  for (const c of cards) { if (isDualClass(c)) dual++; else { const k = canonClass(c); counts[k] = (counts[k] || 0) + 1; } }
-  const classes = Object.keys(counts).sort((a, b) => counts[b] - counts[a]);
+  for (const c of cards) {
+    const sb = systemBucket(c);
+    if (sb) counts[sb] = (counts[sb] || 0) + 1;
+    else if (isDualClass(c)) dual++;
+    else { const k = canonClass(c); counts[k] = (counts[k] || 0) + 1; }
+  }
+  const classes = Object.keys(counts).filter(k => !k.startsWith('__')).sort((a, b) => counts[b] - counts[a]);
 
-  let list = cards.filter(c =>
-    cardClassFilter === 'all' ? true
-      : cardClassFilter === '__dual__' ? isDualClass(c)
-        : canonClass(c) === cardClassFilter);
+  let list = cards.filter(c => {
+    if (cardClassFilter === 'all') return true;
+    const sb = systemBucket(c);
+    if (cardClassFilter === '__dual__') return !sb && isDualClass(c);
+    if (SYSTEM_KEYS.has(cardClassFilter)) return sb === cardClassFilter;
+    return !sb && canonClass(c) === cardClassFilter; // class options exclude system cards
+  });
   if (q) list = list.filter(c => norm(c.name).includes(q) || norm(c.cardClass).includes(q) || norm(c.type).includes(q) || norm(c.description).includes(q));
   list.sort((a, b) => canonClass(a).localeCompare(canonClass(b)) || (a.cost || 0) - (b.cost || 0) || String(a.name).localeCompare(String(b.name)));
 
   const opt = (v, label, on) => h('option', { value: v, selected: on ? '' : null }, label);
   const sel = h('select', { class: 'card-classsel', onchange: e => { cardClassFilter = e.target.value; renderCards(cards); } },
-    opt('all', 'All classes (' + cards.length + ')', cardClassFilter === 'all'),
-    ...classes.map(cl => opt(cl, CardArt.classNameOf(cl) + ' (' + counts[cl] + ')', cardClassFilter === cl)),
-    dual ? opt('__dual__', 'Dual (' + dual + ')', cardClassFilter === '__dual__') : null);
-  const filters = h('div', { class: 'card-filters' }, h('label', { class: 'muted' }, 'Class: '), sel);
+    opt('all', 'All cards (' + cards.length + ')', cardClassFilter === 'all'),
+    h('optgroup', { label: 'Classes' },
+      ...classes.map(cl => opt(cl, CardArt.classNameOf(cl) + ' (' + counts[cl] + ')', cardClassFilter === cl)),
+      dual ? opt('__dual__', 'Dual (' + dual + ')', cardClassFilter === '__dual__') : null),
+    h('optgroup', { label: 'Uncollectible' },
+      ...SYSTEM_BUCKETS.filter(([k]) => counts[k]).map(([k, label]) => opt(k, label + ' (' + counts[k] + ')', cardClassFilter === k))));
+  const filters = h('div', { class: 'card-filters' }, h('label', { class: 'muted' }, 'Group: '), sel);
 
   const grid = h('div', { class: 'card-grid' });
   const CAP = 48; // faces are full canvases; page them in so big classes stay smooth
