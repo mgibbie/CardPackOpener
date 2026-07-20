@@ -43,13 +43,24 @@ export const CLASS_COLORS = {
 	ranger:        '#3d8a6b',
 };
 
+// a few near-duplicate class tags in the card data fold onto their real class,
+// so they name / colour / group together instead of splitting off
+const CLASS_ALIASES = {
+	demon_hunter_free: 'demon_hunter', demonhunter_free: 'demon_hunter', demonhunter: 'demon_hunter',
+};
+export function canonClass(cls) {
+	const c = cls || 'neutral';
+	if (CLASS_ALIASES[c]) return CLASS_ALIASES[c];
+	return c.split('__').map(p => CLASS_ALIASES[p] || p).join('__'); // fold inside dual combos too
+}
+
 // dual classes ('druid__priest') fall back to their first class's color
 export function classColorOf(cls) {
-	const c = cls || 'neutral';
+	const c = canonClass(cls);
 	return CLASS_COLORS[c] || CLASS_COLORS[c.split('__')[0]] || CLASS_COLORS.neutral;
 }
 export function classNameOf(cls) {
-	const c = cls || 'neutral';
+	const c = canonClass(cls);
 	if (CLASS_NAMES[c]) return CLASS_NAMES[c];
 	return c.split('__')
 		.map(p => p.split('_').map(w => w[0].toUpperCase() + w.slice(1)).join(' '))

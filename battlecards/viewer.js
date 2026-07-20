@@ -1,7 +1,7 @@
 // viewer.js — the collection browser: a paginated, filterable card book.
 // Card faces come from the shared procedural renderer; rules text appears in
 // a hover tooltip, and rules-cards carry a CSS-animated iridescent gem.
-import { drawCardFace, classNameOf, artListeners, preloadArt } from './cardart.js';
+import { drawCardFace, classNameOf, canonClass, artListeners, preloadArt } from './cardart.js';
 import { keywordsFor, richHtml } from './keywords.js';
 
 // small keyword-explanation lines shown beneath a card's rules text
@@ -79,8 +79,9 @@ function applyFilters() {
 			const cost = c.cost ?? 0;
 			if (filters.mana === 7 ? cost < 7 : cost !== filters.mana) return false;
 		}
-		if (filters.cls === '__dual__') { if (!(c.cardClass || '').includes('__')) return false; }
-		else if (filters.cls && (c.cardClass || 'neutral') !== filters.cls) return false;
+		const cc = canonClass(c.cardClass || 'neutral');
+		if (filters.cls === '__dual__') { if (!cc.includes('__')) return false; }
+		else if (filters.cls && cc !== filters.cls) return false;
 		if (filters.type && c.type !== filters.type) return false;
 		if (filters.rarity && (c.rarity || 'common') !== filters.rarity) return false;
 		if (filters.ownedOnly && !(collection[c.id] > 0)) return false;
@@ -181,10 +182,10 @@ fetch('cards.json')
 		// class filter: single classes (Neutral last) + one combined "Dual" bucket for
 		// every multi-class card (cardClass values joined with __), instead of a
 		// separate section per combination
-		const singles = [...new Set(data.cards.map(c => c.cardClass || 'neutral').filter(c => !c.includes('__')))]
+		const singles = [...new Set(data.cards.map(c => canonClass(c.cardClass || 'neutral')).filter(c => !c.includes('__')))]
 			.sort((a, b) => a.localeCompare(b));
 		const classes = singles.filter(c => c !== 'neutral');
-		if (data.cards.some(c => (c.cardClass || '').includes('__'))) classes.push('__dual__');
+		if (data.cards.some(c => canonClass(c.cardClass || 'neutral').includes('__'))) classes.push('__dual__');
 		if (singles.includes('neutral')) classes.push('neutral');
 		for (const cls of classes) {
 			const opt = document.createElement('option');

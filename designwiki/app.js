@@ -255,7 +255,8 @@ function loadCardart() {
   if (!cardartPromise) cardartPromise = import('../battlecards/cardart.js').then(m => (CardArt = m));
   return cardartPromise;
 }
-const isDualClass = c => (c.cardClass || '').includes('__');
+const canonClass = c => (CardArt ? CardArt.canonClass(c.cardClass || 'neutral') : (c.cardClass || 'neutral'));
+const isDualClass = c => canonClass(c).includes('__');
 
 async function cardGalleryView() {
   content.replaceChildren(h('h1', null, 'Card Gallery'), h('p', { class: 'muted' }, 'Loading cards…'));
@@ -270,15 +271,15 @@ function renderCards(cards) {
   // one combined "Dual" bucket for every multi-class card (cardClass joined with __),
   // instead of a separate option per combination; single classes counted on their own
   const counts = {}; let dual = 0;
-  for (const c of cards) { if (isDualClass(c)) dual++; else { const k = c.cardClass || 'neutral'; counts[k] = (counts[k] || 0) + 1; } }
+  for (const c of cards) { if (isDualClass(c)) dual++; else { const k = canonClass(c); counts[k] = (counts[k] || 0) + 1; } }
   const classes = Object.keys(counts).sort((a, b) => counts[b] - counts[a]);
 
   let list = cards.filter(c =>
     cardClassFilter === 'all' ? true
       : cardClassFilter === '__dual__' ? isDualClass(c)
-        : (c.cardClass || 'neutral') === cardClassFilter);
+        : canonClass(c) === cardClassFilter);
   if (q) list = list.filter(c => norm(c.name).includes(q) || norm(c.cardClass).includes(q) || norm(c.type).includes(q) || norm(c.description).includes(q));
-  list.sort((a, b) => (a.cardClass || '').localeCompare(b.cardClass || '') || (a.cost || 0) - (b.cost || 0) || String(a.name).localeCompare(String(b.name)));
+  list.sort((a, b) => canonClass(a).localeCompare(canonClass(b)) || (a.cost || 0) - (b.cost || 0) || String(a.name).localeCompare(String(b.name)));
 
   const opt = (v, label, on) => h('option', { value: v, selected: on ? '' : null }, label);
   const sel = h('select', { class: 'card-classsel', onchange: e => { cardClassFilter = e.target.value; renderCards(cards); } },
