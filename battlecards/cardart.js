@@ -259,6 +259,108 @@ function paintCoin(ctx, x, y, w, h) {
 	ctx.fill();
 }
 
+// emblems (dungeon-run treasures) have no photo art — draw a glowing runed
+// medallion, tinted + glyph-varied per card so each reads as its own treasure
+function paintEmblem(ctx, card, x, y, w, h) {
+	const seed = hashId(card.id || card.name || '?');
+	let s = seed >>> 0;
+	const rand = () => {
+		s = (s + 0x6D2B79F5) >>> 0;
+		let t = Math.imul(s ^ (s >>> 15), 1 | s);
+		t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+		return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+	};
+	const hue = seed % 360;
+	const cx = x + w / 2, cy = y + h / 2, R = Math.min(w, h) * 0.34;
+
+	// dark radial vault backdrop
+	const bg = ctx.createRadialGradient(cx, cy, 4, cx, cy, w * 0.7);
+	bg.addColorStop(0, `hsl(${hue}, 45%, 20%)`);
+	bg.addColorStop(1, `hsl(${(hue + 30) % 360}, 55%, 6%)`);
+	ctx.fillStyle = bg;
+	ctx.fillRect(x, y, w, h);
+
+	// radiating light shafts
+	ctx.save();
+	ctx.translate(cx, cy);
+	const rays = 12 + (seed % 6);
+	for (let i = 0; i < rays; i++) {
+		ctx.rotate((Math.PI * 2) / rays);
+		ctx.fillStyle = `hsla(${(hue + 40) % 360}, 85%, 70%, ${0.05 + rand() * 0.05})`;
+		ctx.beginPath();
+		ctx.moveTo(0, 0);
+		ctx.lineTo(-w * 0.5, -9);
+		ctx.lineTo(-w * 0.5, 9);
+		ctx.closePath();
+		ctx.fill();
+	}
+	ctx.restore();
+
+	// halo glow
+	const halo = ctx.createRadialGradient(cx, cy, R * 0.4, cx, cy, R * 1.9);
+	halo.addColorStop(0, `hsla(${(hue + 50) % 360}, 90%, 70%, 0.5)`);
+	halo.addColorStop(1, 'hsla(0,0%,0%,0)');
+	ctx.fillStyle = halo;
+	ctx.beginPath(); ctx.arc(cx, cy, R * 1.9, 0, Math.PI * 2); ctx.fill();
+
+	// gold metallic outer ring
+	ctx.lineWidth = R * 0.16;
+	const ring = ctx.createLinearGradient(cx - R, cy - R, cx + R, cy + R);
+	ring.addColorStop(0, '#f7e39b'); ring.addColorStop(0.5, '#b8892f'); ring.addColorStop(1, '#f2d178');
+	ctx.strokeStyle = ring;
+	ctx.beginPath(); ctx.arc(cx, cy, R, 0, Math.PI * 2); ctx.stroke();
+
+	// enamelled inner disc in the card's hue
+	const disc = ctx.createRadialGradient(cx - R * 0.3, cy - R * 0.3, R * 0.1, cx, cy, R);
+	disc.addColorStop(0, `hsl(${hue}, 70%, 56%)`);
+	disc.addColorStop(1, `hsl(${(hue + 20) % 360}, 65%, 26%)`);
+	ctx.fillStyle = disc;
+	ctx.beginPath(); ctx.arc(cx, cy, R * 0.88, 0, Math.PI * 2); ctx.fill();
+
+	// central rune (one of five, chosen by seed) in bright metal
+	ctx.save();
+	ctx.translate(cx, cy);
+	ctx.strokeStyle = '#fff4d6'; ctx.fillStyle = '#fff4d6';
+	ctx.lineWidth = R * 0.11; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+	ctx.shadowColor = 'rgba(0,0,0,0.45)'; ctx.shadowBlur = 6;
+	const gr = R * 0.5, glyph = (seed >> 5) % 5;
+	if (glyph === 0) {                 // five-point star
+		ctx.beginPath();
+		for (let i = 0; i < 5; i++) {
+			const a = -Math.PI / 2 + i * 2 * Math.PI / 5;
+			ctx.lineTo(Math.cos(a) * gr, Math.sin(a) * gr);
+			const a2 = a + Math.PI / 5;
+			ctx.lineTo(Math.cos(a2) * gr * 0.45, Math.sin(a2) * gr * 0.45);
+		}
+		ctx.closePath(); ctx.fill();
+	} else if (glyph === 1) {           // compass cross
+		ctx.beginPath(); ctx.moveTo(0, -gr); ctx.lineTo(0, gr); ctx.moveTo(-gr, 0); ctx.lineTo(gr, 0); ctx.stroke();
+		ctx.beginPath(); ctx.arc(0, 0, gr * 0.34, 0, Math.PI * 2); ctx.stroke();
+	} else if (glyph === 2) {           // triangle sigil
+		ctx.beginPath();
+		for (let i = 0; i < 3; i++) { const a = -Math.PI / 2 + i * 2 * Math.PI / 3; ctx.lineTo(Math.cos(a) * gr, Math.sin(a) * gr); }
+		ctx.closePath(); ctx.stroke();
+		ctx.beginPath(); ctx.arc(0, 0, gr * 0.24, 0, Math.PI * 2); ctx.fill();
+	} else if (glyph === 3) {           // watching eye
+		ctx.beginPath(); ctx.ellipse(0, 0, gr, gr * 0.6, 0, 0, Math.PI * 2); ctx.stroke();
+		ctx.beginPath(); ctx.arc(0, 0, gr * 0.3, 0, Math.PI * 2); ctx.fill();
+	} else {                            // angular rune
+		ctx.beginPath();
+		ctx.moveTo(0, -gr); ctx.lineTo(0, gr);
+		ctx.moveTo(0, -gr * 0.4); ctx.lineTo(gr * 0.6, -gr * 0.8);
+		ctx.moveTo(0, gr * 0.1); ctx.lineTo(-gr * 0.6, -gr * 0.3);
+		ctx.stroke();
+	}
+	ctx.restore();
+
+	// orbiting sparkles
+	for (let i = 0; i < 6; i++) {
+		ctx.fillStyle = `hsla(${(hue + 60) % 360}, 90%, 85%, ${0.5 + rand() * 0.4})`;
+		const a = rand() * Math.PI * 2, rr = R * (1.2 + rand() * 0.6);
+		ctx.beginPath(); ctx.arc(cx + Math.cos(a) * rr, cy + Math.sin(a) * rr, 1.5 + rand() * 2.5, 0, Math.PI * 2); ctx.fill();
+	}
+}
+
 // deterministic per-card generative art, painted inside the art window clip
 function paintArt(ctx, card, x, y, w, h) {
 	// real art wins when it's ready: cover-fit the crop into the window
@@ -271,6 +373,8 @@ function paintArt(ctx, card, x, y, w, h) {
 	}
 	// The Coin: an original procedurally-drawn gold coin (no external art)
 	if (card.id === 'coin') { paintCoin(ctx, x, y, w, h); return; }
+	// dungeon-run emblems: a glowing runed medallion instead of a landscape
+	if (card.type === 'emblem') { paintEmblem(ctx, card, x, y, w, h); return; }
 	const seed = hashId(card.id || card.name || '?');
 	// mulberry32: deterministic per card, always in [0, 1)
 	const rand = (() => {
