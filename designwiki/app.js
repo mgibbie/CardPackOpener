@@ -245,15 +245,38 @@ function regionView(rk) {
 // Card Gallery — every card in Battlecards, drawn with its real in-game face via
 // the sibling battlecards/cardart.js. Card data, art, and the renderer are all
 // lazy-loaded the first time a card view opens.
-let cardsPromise = null, cardartPromise = null, CardArt = null;
+let cardsPromise = null, cardartPromise = null, CardArt = null, CardKw = null, kwIndex = null;
 let cardClassFilter = 'all';
 function loadCards() {
   if (!cardsPromise) cardsPromise = fetch('../battlecards/cards.json').then(r => r.json()).then(d => d.cards || d || []);
   return cardsPromise;
 }
 function loadCardart() {
-  if (!cardartPromise) cardartPromise = import('../battlecards/cardart.js').then(m => (CardArt = m));
+  // the renderer (cardart) and the keyword glossary (keywords) both live in battlecards/
+  if (!cardartPromise) cardartPromise = Promise.all([
+    import('../battlecards/cardart.js'),
+    import('../battlecards/keywords.js'),
+  ]).then(([a, k]) => { CardArt = a; CardKw = k; });
   return cardartPromise;
+}
+// build (once) an index: keyword slug -> { label, text, cards: [] } across the pool
+function keywordIndex(cards) {
+  if (kwIndex) return kwIndex;
+  kwIndex = new Map();
+  for (const c of cards) for (const k of CardKw.keywordsFor(c)) {
+    const slug = norm(k.label);
+    let e = kwIndex.get(slug);
+    if (!e) { e = { label: k.label, text: k.text, cards: [] }; kwIndex.set(slug, e); }
+    e.cards.push(c);
+  }
+  return kwIndex;
+}
+const kwChip = label => h('a', { class: 'tag-chip kw', href: '#/keyword/' + norm(label) }, label);
+const cardTypeChip = type => h('a', { class: 'tag-chip type', href: '#/type/' + norm(type) }, titleCase(type || ''));
+const SPELL_TYPES = new Set(['sorcery', 'instant', 'secret', 'trap']);
+function tribeChip(c) {
+  const label = SPELL_TYPES.has(c.type) ? c.tribe + ' Spell' : c.tribe; // schools read "Fire Spell"
+  return h('a', { class: 'tag-chip tribe', href: '#/tribe/' + norm(c.tribe) }, label);
 }
 const canonClass = c => (CardArt ? CardArt.canonClass(c.cardClass || 'neutral') : (c.cardClass || 'neutral'));
 const isDualClass = c => canonClass(c).includes('__');
@@ -328,14 +351,60 @@ async function cardDetail(id) {
   else if (c.type === 'weapon') stats.push(c.attack + ' attack · ' + c.durability + ' durability');
   else if (c.type === 'location') stats.push((c.durability ?? 0) + ' uses');
   else if (c.type === 'planeswalker') stats.push((c.loyalty ?? 0) + ' loyalty');
+  const kws = CardKw.keywordsFor(c);
   content.replaceChildren(h('div', { class: 'card-page' },
     h('div', { class: 'card-page-face' }, face),
     h('div', { class: 'card-page-info' },
       h('h1', null, c.name),
-      h('div', { class: 'card-page-meta' }, CardArt.classNameOf(c.cardClass) + ' · ' + titleCase(c.type || '') + ' · ' + titleCase(c.rarity || 'common')),
+      h('div', { class: 'card-page-meta' }, CardArt.classNameOf(c.cardClass) + ' · ' + titleCase(c.rarity || 'common')),
+      // clickable type + tribe/school tags
+      h('div', { class: 'card-tags' }, cardTypeChip(c.type), c.tribe ? tribeChip(c) : null),
       h('div', { class: 'card-page-stats' }, stats.join('  ·  ')),
-      h('div', { class: 'card-page-rules' }, c.description ? c.description : h('span', { class: 'muted' }, 'No rules text.')),
+      c.description ? h('div', { class: 'card-page-rules', html: CardKw.richHtml(c.description) }) : h('div', { class: 'card-page-rules muted' }, 'No rules text.'),
+      // definition of every keyword on the card, each linking to its own page
+      kws.length ? h('h2', null, 'Keywords') : null,
+      kws.length ? h('div', { class: 'kw-defs' }, kws.map(k =>
+        h('div', { class: 'kw-def' }, kwChip(k.label), h('span', { class: 'kw-text' }, k.text)))) : null,
       h('p', null, h('a', { href: '#/cards' }, '← Card Gallery')))));
+}
+
+// a filtered subset of cards (by keyword / tribe / type), rendered as faces
+async function cardSubsetView(kind, slug) {
+  content.replaceChildren(h('p', { class: 'muted' }, 'Loading…'));
+  let cards;
+  try { [cards] = await Promise.all([loadCards(), loadCardart()]); }
+  catch (e) { return content.replaceChildren(h('h1', null, 'Cards'), h('p', { class: 'muted' }, 'Could not load the card data.')); }
+  let title, blurb = null, list;
+  if (kind === 'type') {
+    list = cards.filter(c => norm(c.type) === slug);
+    title = titleCase(slug) + ' cards';
+  } else if (kind === 'tribe') {
+    list = cards.filter(c => c.tribe && norm(c.tribe) === slug);
+    const spelly = list.length && SPELL_TYPES.has(list[0].type);
+    title = (list[0] ? list[0].tribe : titleCase(slug)) + (spelly ? ' spells' : '');
+  } else { // keyword
+    const e = keywordIndex(cards).get(slug);
+    if (!e) return content.replaceChildren(h('h1', null, 'Unknown keyword'), h('p', null, h('a', { href: '#/cards' }, '← Card Gallery')));
+    list = e.cards; title = e.label; blurb = e.text;
+  }
+  list = list.slice().sort((a, b) => (a.cost || 0) - (b.cost || 0) || String(a.name).localeCompare(String(b.name)));
+  const grid = h('div', { class: 'card-grid' });
+  const CAP = 48; let shown = 0;
+  const more = h('button', { class: 'showmore' });
+  const renderMore = async () => {
+    const batch = list.slice(shown, shown + CAP);
+    await CardArt.preloadArt(batch.map(c => c.id));
+    grid.append(...batch.map(cardTile));
+    shown += batch.length;
+    if (shown >= list.length) more.remove(); else more.textContent = 'Show more (' + (list.length - shown) + ' hidden)';
+  };
+  more.addEventListener('click', renderMore);
+  content.replaceChildren(
+    h('h1', null, title + ' ', h('span', { class: 'num' }, '(' + list.length + ')')),
+    blurb ? h('p', { class: 'muted' }, blurb) : null,
+    h('p', null, h('a', { href: '#/cards' }, '← Card Gallery')),
+    grid, more);
+  renderMore();
 }
 
 // Battlecards design-work backlog: every card name held without a working
@@ -409,11 +478,16 @@ async function designCardDetail(slug) {
     else if (impl.type === 'weapon') stats.push(impl.attack + ' attack · ' + impl.durability + ' durability');
     else if (impl.type === 'location') stats.push((impl.durability ?? 0) + ' uses');
     else if (impl.type === 'planeswalker') stats.push((impl.loyalty ?? 0) + ' loyalty');
+    const kws = CardKw.keywordsFor(impl);
     implBody.push(
       h('h2', null, 'Card data'),
-      h('div', { class: 'card-page-meta' }, art.classNameOf(impl.cardClass) + ' · ' + titleCase(impl.type || '') + ' · ' + titleCase(impl.rarity || 'common')),
+      h('div', { class: 'card-page-meta' }, art.classNameOf(impl.cardClass) + ' · ' + titleCase(impl.rarity || 'common')),
+      h('div', { class: 'card-tags' }, cardTypeChip(impl.type), impl.tribe ? tribeChip(impl) : null),
       h('div', { class: 'card-page-stats' }, stats.join('  ·  ')),
-      h('div', { class: 'card-page-rules' }, impl.description ? impl.description : h('span', { class: 'muted' }, 'No rules text.')),
+      impl.description ? h('div', { class: 'card-page-rules', html: CardKw.richHtml(impl.description) }) : h('div', { class: 'card-page-rules muted' }, 'No rules text.'),
+      kws.length ? h('h2', null, 'Keywords') : null,
+      kws.length ? h('div', { class: 'kw-defs' }, kws.map(k =>
+        h('div', { class: 'kw-def' }, kwChip(k.label), h('span', { class: 'kw-text' }, k.text)))) : null,
       h('p', null, h('a', { href: '#/cards/' + impl.id }, 'Open in Card Gallery →')));
   }
 
@@ -455,6 +529,9 @@ function route() {
   if (section === 'unlearned') return unlearnedView();
   if (section === 'region') return regionView(id);
   if (section === 'cards') return id ? cardDetail(id) : cardGalleryView();
+  if (section === 'keyword') return cardSubsetView('keyword', id);
+  if (section === 'tribe') return cardSubsetView('tribe', id);
+  if (section === 'type') return cardSubsetView('type', id);
   if (section === 'battlecards') return id ? designCardDetail(id) : battlecardsView();
   notFound();
 }

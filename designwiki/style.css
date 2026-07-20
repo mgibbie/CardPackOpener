@@ -107,7 +107,20 @@ img.sprite {
 .card-page-info { flex: 1; min-width: 260px; }
 .card-page-meta { color: #76819c; font-size: 12px; letter-spacing: .05em; text-transform: uppercase; margin: 2px 0 10px; }
 .card-page-stats { font-weight: 700; color: #c2410c; font-size: 15px; margin-bottom: 14px; }
-.card-page-rules { font-size: 15px; line-height: 1.55; background: #fff; border: 1px solid #e1e6f0; border-radius: 10px; padding: 14px 16px; white-space: pre-line; }
+.card-page-rules { font-size: 15px; line-height: 1.55; background: #fff; border: 1px solid #e1e6f0; border-radius: 10px; padding: 14px 16px; }
+.card-page-rules b { color: #1c2230; }
+/* clickable type / tribe / school tags */
+.card-tags { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 12px; }
+.tag-chip { display: inline-block; padding: 3px 11px; border-radius: 12px; font-size: 12.5px; font-weight: 600; border: 1px solid transparent; }
+.tag-chip:hover { text-decoration: none; filter: brightness(0.95); }
+.tag-chip.type { background: #e7edfa; color: #2b5cb0; border-color: #cdd9f2; }
+.tag-chip.tribe { background: #eae6f7; color: #6a3cb0; border-color: #ddd3f0; }
+.tag-chip.kw { background: #eef4ec; color: #2f7a3f; border-color: #d3e6d3; }
+/* keyword definition list on a card page */
+.kw-defs { display: flex; flex-direction: column; gap: 8px; margin-top: 4px; }
+.kw-def { display: flex; gap: 10px; align-items: baseline; }
+.kw-def .tag-chip { flex: none; }
+.kw-def .kw-text { color: #45507a; font-size: 14px; line-height: 1.4; }
 .card-tile { background: #fff; border: 1px solid #e1e6f0; border-radius: 8px; overflow: hidden; }
 .card-tile:hover { border-color: #2b6cb0; box-shadow: 0 2px 8px rgba(43,108,176,.15); }
 .card-art { position: relative; height: 120px; background: #11151f; }
