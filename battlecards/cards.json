@@ -49228,16 +49228,21 @@
       "cost": 8,
       "rarity": "epic",
       "set": "hs",
-      "description": "Summon a 10/10 copy of a creature in your deck.",
-      "type": "sorcery",
+      "description": "Battlecry: Summon a 10/10 Idol of Y'Shaarj.",
+      "type": "creature",
       "effects": [
         {
           "type": "summon",
           "count": 1,
           "attack": 10,
           "health": 10,
-          "name": "copy of a creature in your deck"
+          "name": "Idol of Y'Shaarj"
         }
+      ],
+      "attack": 10,
+      "health": 10,
+      "keywords": [
+        "battlecry"
       ]
     },
     {
