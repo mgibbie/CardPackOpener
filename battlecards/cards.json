@@ -55266,6 +55266,41 @@
         }
       ],
       "description": "Divine Shield & Elusive.\nDeathrattle: Add a coin to each player's hand."
+    },
+    {
+      "id": "furious_lutrin",
+      "name": "Furious Lutrin",
+      "cardClass": "barbarian",
+      "cost": 3,
+      "rarity": "common",
+      "type": "creature",
+      "attack": 2,
+      "health": 2,
+      "tribe": "Beast",
+      "ongoing": {
+        "on": "self-damaged",
+        "once": true,
+        "survives": true,
+        "effects": [
+          {
+            "type": "draw",
+            "value": 2
+          }
+        ]
+      },
+      "ongoings": [
+        {
+          "on": "creature-played",
+          "effects": [
+            {
+              "type": "buff-self",
+              "attack": 1,
+              "health": 1
+            }
+          ]
+        }
+      ],
+      "description": "Alliance: Gain +1/+1.\nFrenzy: Draw 2 cards."
     }
   ]
 }
