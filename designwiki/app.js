@@ -408,7 +408,7 @@ async function cardDetail(id) {
     h('div', { class: 'card-page-face' }, face),
     h('div', { class: 'card-page-info' },
       h('h1', null, c.name),
-      h('div', { class: 'card-page-meta' }, CardArt.classNameOf(c.cardClass) + ' · ' + titleCase(c.rarity || 'common')),
+      h('div', { class: 'card-page-meta' }, CardArt.classNameOf(c.cardClass) + (CardArt.isUncollectible(c) ? '' : ' · ' + titleCase(c.rarity || 'common'))),
       // clickable type + tribe/school tags
       h('div', { class: 'card-tags' }, cardTypeChip(c.type), tribesOf(c).map(t => tribeChip(c, t))),
       h('div', { class: 'card-page-stats' }, stats.join('  ·  ')),
@@ -538,7 +538,7 @@ async function designCardDetail(slug) {
     const kws = CardKw.keywordsFor(impl);
     implBody.push(
       h('h2', null, 'Card data'),
-      h('div', { class: 'card-page-meta' }, art.classNameOf(impl.cardClass) + ' · ' + titleCase(impl.rarity || 'common')),
+      h('div', { class: 'card-page-meta' }, art.classNameOf(impl.cardClass) + (art.isUncollectible(impl) ? '' : ' · ' + titleCase(impl.rarity || 'common'))),
       h('div', { class: 'card-tags' }, cardTypeChip(impl.type), tribesOf(impl).map(t => tribeChip(impl, t))),
       h('div', { class: 'card-page-stats' }, stats.join('  ·  ')),
       impl.description ? h('div', { class: 'card-page-rules', html: CardKw.richHtml(impl.description) }) : h('div', { class: 'card-page-rules muted' }, 'No rules text.'),

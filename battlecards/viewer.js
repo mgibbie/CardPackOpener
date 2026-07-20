@@ -1,7 +1,7 @@
 // viewer.js — the collection browser: a paginated, filterable card book.
 // Card faces come from the shared procedural renderer; rules text appears in
 // a hover tooltip, and rules-cards carry a CSS-animated iridescent gem.
-import { drawCardFace, classNameOf, canonClass, artListeners, preloadArt } from './cardart.js?v=20260720';
+import { drawCardFace, classNameOf, canonClass, artListeners, preloadArt, isUncollectible as isUncollectibleCard } from './cardart.js?v=20260720';
 import { keywordsFor, richHtml } from './keywords.js?v=20260720';
 
 // cache-busting: this module's own ?v=… (from viewer.html) is reused for the
@@ -157,7 +157,7 @@ function tileFor(card) {
 
 function typeLineOf(card) {
 	return classNameOf(card.cardClass).toUpperCase() + ' · ' + (card.tribe ? card.tribe + ' ' : '')
-		+ card.type.toUpperCase() + ' · ' + (card.rarity || 'common').toUpperCase();
+		+ card.type.toUpperCase() + (isUncollectibleCard(card) ? '' : ' · ' + (card.rarity || 'common').toUpperCase());
 }
 
 // tap/click a card for a big look with its full info

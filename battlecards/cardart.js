@@ -61,12 +61,23 @@ export function classColorOf(cls) {
 	return CLASS_COLORS[c] || CLASS_COLORS[c.split('__')[0]] || CLASS_COLORS.neutral;
 }
 // WUBRG-coloured cards tint their frame body with the colour's identity rather
-// than the neutral class brown. White reads as a pale ivory/silver frame.
-const COLOR_BODY = { W: '#ece7d4' };
+// than the neutral class brown (White reads as a pale ivory/silver frame).
+const COLOR_BODY = { W: '#ece7d4', U: '#356fb8', B: '#3c3742', R: '#b23a2c', G: '#3f8038' };
 export function bodyColorOf(card) {
 	const cols = (card && card.colors) || [];
 	for (const k of ['W', 'U', 'B', 'R', 'G']) if (COLOR_BODY[k] && cols.includes(k)) return COLOR_BODY[k];
 	return classColorOf(card && card.cardClass);
+}
+// uncollectible cards (tokens, lands, planes, emblems, hero powers, the WUBRG /
+// paper system cards) carry no meaningful rarity, so they show no rarity gem
+export function isUncollectible(card) {
+	if (!card) return false;
+	if (card.token || card.companion || card.commander || card.collectible === false) return true;
+	const t = card.type;
+	if (t === 'land' || t === 'plane' || t === 'emblem' || t === 'heropower' || t === 'hero') return true;
+	if ((card.colors || []).length) return true;              // WUBRG / colourless system cards
+	if (canonClass(card.cardClass) === 'magepunk') return true; // paper conjured (Blood Gem, Advanced Lands)
+	return false;
 }
 export function classNameOf(cls) {
 	const c = canonClass(cls);
@@ -533,18 +544,20 @@ export function drawCardFace(card, opts = {}) {
 	ctx.fillText(card.name, W / 2, 440);
 	ctx.textAlign = 'left';
 
-	// rarity gem under the banner
-	const rg = ctx.createRadialGradient(W / 2 - 4, 476, 2, W / 2, 480, 16);
-	rg.addColorStop(0, '#fff');
-	rg.addColorStop(0.35, rarity);
-	rg.addColorStop(1, shade(rarity, 0.4));
-	ctx.fillStyle = rg;
-	ctx.beginPath();
-	ctx.arc(W / 2, 480, 15, 0, Math.PI * 2);
-	ctx.fill();
-	ctx.strokeStyle = 'rgba(0,0,0,0.7)';
-	ctx.lineWidth = 3;
-	ctx.stroke();
+	// rarity gem under the banner — only collectible cards have a rarity
+	if (!isUncollectible(card)) {
+		const rg = ctx.createRadialGradient(W / 2 - 4, 476, 2, W / 2, 480, 16);
+		rg.addColorStop(0, '#fff');
+		rg.addColorStop(0.35, rarity);
+		rg.addColorStop(1, shade(rarity, 0.4));
+		ctx.fillStyle = rg;
+		ctx.beginPath();
+		ctx.arc(W / 2, 480, 15, 0, Math.PI * 2);
+		ctx.fill();
+		ctx.strokeStyle = 'rgba(0,0,0,0.7)';
+		ctx.lineWidth = 3;
+		ctx.stroke();
+	}
 
 	// rules text box: black text on light tan, keywords bold (no more gem)
 	const rbX = 60, rbY = 498, rbW = W - 120, rbH = 132;
