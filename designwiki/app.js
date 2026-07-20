@@ -494,6 +494,7 @@ function battlecardsView() {
       shown += next.length;
       grid.append(...next.map(it =>
         h('a', { class: 'card', href: '#/battlecards/' + norm(it.name) },
+          it.art ? h('img', { class: 'design-art', loading: 'lazy', src: '../battlecards/art/' + it.art + '.jpg' }) : null,
           h('div', { class: 'nm' }, it.name),
           it.note ? h('div', { class: 'muted', style: 'font-size:12px' }, it.note) : null)));
       if (shown >= items.length) more.remove();
@@ -520,7 +521,8 @@ async function designCardDetail(slug) {
   if (!db) return content.replaceChildren(h('h1', null, 'Battlecards data not loaded'));
   const occ = [];
   let name = slug;
-  for (const s of db.sections) for (const it of (s.items || [])) if (norm(it.name) === slug) { occ.push({ section: s.title, blurb: s.blurb, note: it.note }); name = it.name; }
+  let designArt = null;
+  for (const s of db.sections) for (const it of (s.items || [])) if (norm(it.name) === slug) { occ.push({ section: s.title, blurb: s.blurb, note: it.note }); name = it.name; if (it.art) designArt = it.art; }
   // cross-reference the real card pool (implemented cards) + its face
   let impl = null, art = null;
   try { const [cards, m] = await Promise.all([loadCards(), loadCardart()]); art = m; impl = cards.find(c => norm(c.name) === slug) || null; } catch (e) {}
@@ -562,8 +564,12 @@ async function designCardDetail(slug) {
     h('h2', null, 'Notes'), ...notesBody,
     ...implBody,
     h('p', null, h('a', { href: '#/battlecards' }, '← Design Work')));
-  content.replaceChildren(face
-    ? h('div', { class: 'card-page' }, h('div', { class: 'card-page-face' }, face), info)
+  // unbuilt design entries (e.g. plane candidates) carry a standalone art image
+  const artEl = (!face && designArt)
+    ? h('div', { class: 'card-page-face' }, h('img', { class: 'wiki-art-solo', src: '../battlecards/art/' + designArt + '.jpg' }))
+    : null;
+  content.replaceChildren((face || artEl)
+    ? h('div', { class: 'card-page' }, face ? h('div', { class: 'card-page-face' }, face) : artEl, info)
     : info);
 }
 

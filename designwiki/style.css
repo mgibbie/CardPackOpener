@@ -117,6 +117,8 @@ img.sprite {
 .tag-chip.tribe { background: #eae6f7; color: #6a3cb0; border-color: #ddd3f0; }
 .tag-chip.school { background: #fbeede; color: #b9770e; border-color: #f0dcc0; }
 .tag-chip.kw { background: #eef4ec; color: #2f7a3f; border-color: #d3e6d3; }
+/* design-work item thumbnail (plane candidates) */
+.card img.design-art { width: 100%; height: 96px; object-fit: cover; border-radius: 6px; margin-bottom: 6px; display: block; }
 /* per-card "Art" section: the illustration on its own, no frame */
 .card-art-section { margin-top: 22px; }
 .card-art-section .wiki-art-solo {
