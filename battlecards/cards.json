@@ -55239,6 +55239,33 @@
       "set": "dungeon",
       "token": true,
       "collectible": false
+    },
+    {
+      "id": "odd_minstrel",
+      "name": "Odd Minstrel",
+      "cardClass": "neutral",
+      "cost": 3,
+      "rarity": "epic",
+      "type": "creature",
+      "attack": 2,
+      "health": 4,
+      "tribe": "Human Bard",
+      "keywords": [
+        "divine_shield",
+        "elusive"
+      ],
+      "deathrattle": [
+        {
+          "type": "gain-coin",
+          "value": 1
+        },
+        {
+          "type": "give-enemy-card",
+          "id": "coin",
+          "count": 1
+        }
+      ],
+      "description": "Divine Shield & Elusive.\nDeathrattle: Add a coin to each player's hand."
     }
   ]
 }
