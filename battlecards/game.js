@@ -2440,12 +2440,18 @@ function placementIndexAt(x) {
 }
 
 function updatePlaceMarker() {
+	// releasing anywhere but back on your own hand counts as a play, so the drag
+	// hint/marker follow the same rule instead of a fixed height cutoff
+	const overOwnHand = placing && placing.dragging && (() => {
+		const cc = cardOf(pick({ clientX: mouseX, clientY: mouseY }, placing.card.uid));
+		return !!cc && cc.zone === 'hand' && cc.controller === HUMAN;
+	})();
 	// live hint while dragging a card out of the hand
 	if (placing && placing.dragging && state) {
 		const c = placing.card;
 		const yours = state.current === HUMAN;
-		const inPlay = mouseY < innerHeight * 0.80;
-		$('hint').textContent = !inPlay ? 'drag up onto the field to play · release here to cancel'
+		const inPlay = !overOwnHand && mouseY < innerHeight * 0.94;
+		$('hint').textContent = !inPlay ? 'drag onto the field to play · release on your hand to cancel'
 			: !yours ? "can't play on your opponent's turn"
 			: E.canPlay(state, HUMAN, c) ? `release to play ${c.name}`
 			: (c.tradeable && E.canTrade(state, HUMAN, c)) ? `release to trade ${c.name}`
@@ -2455,7 +2461,7 @@ function updatePlaceMarker() {
 	const active = isCreature && placing.dragging && state && state.current === HUMAN
 		&& state.players[HUMAN].board.length
 		&& E.canPlay(state, HUMAN, placing.card)
-		&& mouseY < innerHeight * 0.80;
+		&& !overOwnHand && mouseY < innerHeight * 0.94;
 	placeMarker.visible = !!active;
 	if (!active) return;
 	const xs = boardScreenXs();
@@ -2550,12 +2556,15 @@ addEventListener('pointerup', ev => {
 		renderer.domElement.style.cursor = '';
 		if (ev.button === 0 && state && !state.over) {
 			const dist = Math.hypot(ev.clientX - lastDownX, ev.clientY - lastDownY);
-			if (dragged && dist >= 14 && ev.clientY < innerHeight * 0.80 && state.current === HUMAN) {
-				releasePlay(c, ev);                        // dragged up onto the field: play it
+			// a drag plays wherever it lands EXCEPT back on your own hand — a fixed
+			// height cutoff wrongly cancelled drops onto the hero panel between them
+			const onHand = (() => { const cc = cardOf(pick(ev, c.uid)); return !!cc && cc.zone === 'hand' && cc.controller === HUMAN; })();
+			if (dragged && dist >= 14 && state.current === HUMAN && !onHand && ev.clientY < innerHeight * 0.94) {
+				releasePlay(c, ev);                        // dragged onto the field: play it
 			} else if (!dragged && !longPressFired) {
 				toggleInspect(c);                          // a click/tap: look closely, never play
 			}
-			// else: dragged but dropped back in the hand row (or long-pressed) → no-op
+			// else: dragged but dropped back onto the hand (or long-pressed) → no-op
 		}
 		if (state) updateHud();                        // clear the drag hint
 		return;
