@@ -43778,7 +43778,7 @@
       "rarity": "legendary",
       "set": "paper",
       "token": true,
-      "description": "Arrival: Each player draws 2 cards. At the start of your turn, flip a coin: heads you can't play odd-cost cards this turn, tails you can't play even-cost cards.\nChaos: Each player sacrifices a creature.\nDeparture: Each player draws 2 cards.",
+      "description": "Arrival: Each player draws 2 cards.\nAt the start of each player's turn, they flip a coin. If heads: odd-cost cards can't be played this turn. If tails: even-cost cards can't be played this turn.\nChaos: Each player sacrifices a creature.\nDeparture: Each player draws 2 cards.",
       "arrival": [
         {
           "type": "draw",
