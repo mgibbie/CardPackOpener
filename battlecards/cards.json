@@ -333,7 +333,7 @@
       "id": "backstab",
       "name": "Backstab",
       "type": "sorcery",
-      "cardClass": "bounty_hunter",
+      "cardClass": "rogue",
       "cost": 0,
       "rarity": "common",
       "description": "Deal 2 damage to an undamaged creature.",
