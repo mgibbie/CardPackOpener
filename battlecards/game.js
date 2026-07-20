@@ -1015,8 +1015,8 @@ function updateHudSpectate() {
 function updateHud() {
 	if (!state) return;
 	if (spectateMode) { updateHudSpectate(); return; }
-	// the pinned inspect closes itself once its card is no longer in your hand
-	if (inspectUid != null) { const ic = cardOf(inspectUid); if (!ic || ic.zone !== 'hand' || ic.controller !== HUMAN) hideInspect(); }
+	// the pinned inspect closes itself once its card leaves play entirely
+	if (inspectUid != null && !cardOf(inspectUid)) hideInspect();
 	const me = state.players[HUMAN];
 	$('my-life').textContent = me.life + (me.armor ? `+${me.armor}` : '');
 	$('my-mana').textContent = `${E.availableMana(me)}/${me.mana.max}`;
@@ -2081,6 +2081,8 @@ function renderInspectFace(card) {
 }
 
 function showInspect(card) {
+	if (!card) return;
+	if (card.disguised && card.controller !== HUMAN) return; // don't reveal a face-down enemy
 	inspectUid = card.uid;
 	const box = $('inspect');
 	box.innerHTML = '';
@@ -2115,7 +2117,8 @@ function showInspect(card) {
 		}
 	}
 	if (actions.children.length) box.appendChild(actions);
-	else {
+	else if (inHand) {
+		// a hand card you can't act on yet: explain why (field cards get no hint)
 		const hint = document.createElement('div');
 		hint.className = 'ins-hint no';
 		hint.textContent = state && state.current !== HUMAN ? 'wait for your turn to play' : 'not enough mana yet';
@@ -2300,9 +2303,11 @@ renderer.domElement.addEventListener('pointerdown', ev => {
 		return;
 	}
 
-	// off your turn you can still pick up a hand card to read it (never to play)
+	// off your turn you can still read a card: pick up a hand card, or inspect a
+	// card in play (yours or the opponent's)
 	if (state.current !== HUMAN) {
 		if (card && card.zone === 'hand' && card.controller === HUMAN) placing = { card, dragging: false };
+		else if (card && (card.zone === 'board' || card.zone === 'planeswalker')) showInspect(card);
 		return;
 	}
 
@@ -2350,6 +2355,7 @@ renderer.domElement.addEventListener('pointerdown', ev => {
 		placing = { card, dragging: false };
 		return;
 	} else if (card.zone === 'board' && card.controller === HUMAN) {
+		showInspect(card); // read it on the left; the click also does its normal action
 		if (card.type === 'location') { if (E.canTapLand(state, HUMAN, card)) openTapMenu(card, ev); return; }
 		if (card.disguised && E.canUnmask(state, HUMAN, card)) { openUnmaskMenu(card, ev); return; }
 		if (card.activated?.length) { openAbilityMenu(card, ev); return; }
@@ -2379,6 +2385,9 @@ renderer.domElement.addEventListener('pointerdown', ev => {
 	} else if (card.zone === 'land' && card.controller === HUMAN) {
 		// tap your land for one of its abilities
 		if (E.canTapLand(state, HUMAN, card)) openTapMenu(card, ev);
+	} else if (card.zone === 'board' || card.zone === 'planeswalker') {
+		// any other in-play card (an opponent's creature/walker): just inspect it
+		showInspect(card);
 	}
 });
 
