@@ -18798,7 +18798,6 @@
       "set": "paper",
       "token": true,
       "type": "sorcery",
-      "tribe": "Fel",
       "description": "Discover a 2-Cost card & draw a card.",
       "effects": [
         {
@@ -42047,7 +42046,6 @@
       "set": "paper",
       "token": true,
       "type": "sorcery",
-      "tribe": "Fel",
       "description": "Discover a 2-Cost card. It costs (0).",
       "effects": [
         {
@@ -42067,7 +42065,6 @@
       "set": "paper",
       "token": true,
       "type": "sorcery",
-      "tribe": "Fel",
       "description": "Discover a 3-Cost card. It costs (0).",
       "effects": [
         {
@@ -42087,7 +42084,6 @@
       "set": "paper",
       "token": true,
       "type": "sorcery",
-      "tribe": "Fel",
       "description": "Discover a 5-Cost card. It costs (0).",
       "effects": [
         {
