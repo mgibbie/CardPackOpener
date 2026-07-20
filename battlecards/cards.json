@@ -46627,7 +46627,7 @@
     {
       "id": "repulsive_gargantuan",
       "name": "Repulsive Gargantuan",
-      "cardClass": "deathknight",
+      "cardClass": "death_knight",
       "cost": 4,
       "rarity": "epic",
       "set": "hs",
@@ -46640,7 +46640,7 @@
     {
       "id": "stitched_giant",
       "name": "Stitched Giant",
-      "cardClass": "deathknight",
+      "cardClass": "death_knight",
       "cost": 9,
       "rarity": "epic",
       "set": "hs",
@@ -47603,7 +47603,7 @@
     {
       "id": "reanimated_pterrordax",
       "name": "Reanimated Pterrordax",
-      "cardClass": "deathknight",
+      "cardClass": "death_knight",
       "cost": 5,
       "rarity": "epic",
       "set": "hs",
@@ -47666,7 +47666,7 @@
     {
       "id": "staff_of_the_endbringer",
       "name": "Staff of the Endbringer",
-      "cardClass": "deathknight",
+      "cardClass": "death_knight",
       "cost": 3,
       "rarity": "legendary",
       "set": "hs",
@@ -48119,7 +48119,7 @@
     {
       "id": "chained_guardian",
       "name": "Chained Guardian",
-      "cardClass": "deathknight",
+      "cardClass": "death_knight",
       "cost": 11,
       "rarity": "epic",
       "set": "hs",
@@ -48516,7 +48516,7 @@
     {
       "id": "snow_shredder",
       "name": "Snow Shredder",
-      "cardClass": "deathknight",
+      "cardClass": "death_knight",
       "cost": 4,
       "rarity": "rare",
       "set": "hs",
@@ -49638,7 +49638,7 @@
     {
       "id": "ghouls_night",
       "name": "Ghouls' Night",
-      "cardClass": "deathknight",
+      "cardClass": "death_knight",
       "cost": 4,
       "rarity": "common",
       "set": "hs",
@@ -49700,7 +49700,7 @@
     {
       "id": "crop_rotation",
       "name": "Crop Rotation",
-      "cardClass": "deathknight",
+      "cardClass": "death_knight",
       "cost": 3,
       "rarity": "rare",
       "set": "hs",

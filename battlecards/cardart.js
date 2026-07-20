@@ -47,6 +47,7 @@ export const CLASS_COLORS = {
 // so they name / colour / group together instead of splitting off
 const CLASS_ALIASES = {
 	demon_hunter_free: 'demon_hunter', demonhunter_free: 'demon_hunter', demonhunter: 'demon_hunter',
+	deathknight: 'death_knight',
 };
 export function canonClass(cls) {
 	const c = cls || 'neutral';
