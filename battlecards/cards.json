@@ -44284,7 +44284,7 @@
     {
       "id": "ur_zul_giant",
       "name": "Ur'zul Giant",
-      "cardClass": "demonhunter",
+      "cardClass": "demon_hunter",
       "cost": 13,
       "rarity": "epic",
       "set": "hs",
@@ -44654,7 +44654,7 @@
     {
       "id": "glaivebound_adept",
       "name": "Glaivebound Adept",
-      "cardClass": "demonhunter_free",
+      "cardClass": "demon_hunter",
       "cost": 5,
       "rarity": "common",
       "set": "hs",
@@ -44684,7 +44684,7 @@
     {
       "id": "furious_felfin",
       "name": "Furious Felfin",
-      "cardClass": "demonhunter",
+      "cardClass": "demon_hunter",
       "cost": 2,
       "rarity": "rare",
       "set": "hs",
@@ -44852,7 +44852,7 @@
     {
       "id": "ravenous_felfisher",
       "name": "Ravenous Felfisher",
-      "cardClass": "demonhunter",
+      "cardClass": "demon_hunter",
       "cost": 6,
       "rarity": "rare",
       "set": "hs",
@@ -45321,7 +45321,7 @@
     {
       "id": "mythical_terror",
       "name": "Mythical Terror",
-      "cardClass": "demonhunter",
+      "cardClass": "demon_hunter",
       "cost": 7,
       "rarity": "epic",
       "set": "hs",
@@ -45570,7 +45570,7 @@
     {
       "id": "il_gynoth",
       "name": "Il'gynoth",
-      "cardClass": "demonhunter",
+      "cardClass": "demon_hunter",
       "cost": 4,
       "rarity": "legendary",
       "set": "hs",
@@ -45967,7 +45967,7 @@
     {
       "id": "shattershard_turret",
       "name": "Shattershard Turret",
-      "cardClass": "demonhunter",
+      "cardClass": "demon_hunter",
       "cost": 3,
       "rarity": "common",
       "set": "hs",
@@ -46087,7 +46087,7 @@
     {
       "id": "voronei_recruiter",
       "name": "Voronei Recruiter",
-      "cardClass": "demonhunter",
+      "cardClass": "demon_hunter",
       "cost": 2,
       "rarity": "common",
       "set": "hs",
@@ -46813,7 +46813,7 @@
     {
       "id": "sock_puppet_slitherspear",
       "name": "Sock Puppet Slitherspear",
-      "cardClass": "demonhunter",
+      "cardClass": "demon_hunter",
       "cost": 1,
       "rarity": "common",
       "set": "hs",
@@ -47010,7 +47010,7 @@
     {
       "id": "vengeful_walloper",
       "name": "Vengeful Walloper",
-      "cardClass": "demonhunter",
+      "cardClass": "demon_hunter",
       "cost": 7,
       "rarity": "rare",
       "set": "hs",
@@ -47120,7 +47120,7 @@
     {
       "id": "mutalisk",
       "name": "Mutalisk",
-      "cardClass": "demonhunter",
+      "cardClass": "demon_hunter",
       "cost": 4,
       "rarity": "rare",
       "set": "hs",
@@ -47278,7 +47278,7 @@
     {
       "id": "ancient_void_hound",
       "name": "Ancient Void Hound",
-      "cardClass": "demonhunter",
+      "cardClass": "demon_hunter",
       "cost": 9,
       "rarity": "epic",
       "set": "hs",
@@ -47529,7 +47529,7 @@
     {
       "id": "perennial_serpent",
       "name": "Perennial Serpent",
-      "cardClass": "demonhunter",
+      "cardClass": "demon_hunter",
       "cost": 8,
       "rarity": "rare",
       "set": "hs",
@@ -47683,7 +47683,7 @@
     {
       "id": "spirit_of_the_team",
       "name": "Spirit of the Team",
-      "cardClass": "demonhunter",
+      "cardClass": "demon_hunter",
       "cost": 2,
       "rarity": "rare",
       "set": "hs",
@@ -47921,7 +47921,7 @@
     {
       "id": "glaiveshark",
       "name": "Glaiveshark",
-      "cardClass": "demonhunter",
+      "cardClass": "demon_hunter",
       "cost": 4,
       "rarity": "common",
       "set": "hs",
@@ -48194,7 +48194,7 @@
     {
       "id": "argunite_golem",
       "name": "Argunite Golem",
-      "cardClass": "demonhunter",
+      "cardClass": "demon_hunter",
       "cost": 3,
       "rarity": "common",
       "set": "hs",
@@ -48218,7 +48218,7 @@
     {
       "id": "argus_the_emerald_star",
       "name": "Argus, the Emerald Star",
-      "cardClass": "demonhunter",
+      "cardClass": "demon_hunter",
       "cost": 7,
       "rarity": "legendary",
       "set": "hs",
@@ -48566,7 +48566,7 @@
     {
       "id": "aranna_thrill_seeker",
       "name": "Aranna, Thrill Seeker",
-      "cardClass": "demonhunter",
+      "cardClass": "demon_hunter",
       "cost": 5,
       "rarity": "legendary",
       "set": "hs",
@@ -50741,7 +50741,7 @@
     {
       "id": "soul_cleave",
       "name": "Soul Cleave",
-      "cardClass": "demon_hunter_free",
+      "cardClass": "demon_hunter",
       "cost": 3,
       "rarity": "common",
       "set": "hs",
