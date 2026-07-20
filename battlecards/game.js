@@ -1092,7 +1092,7 @@ function positionPanels() {
 		if (state.current === HUMAN && lastCurrent !== HUMAN) handMini = false; // a fresh turn raises your hand
 		lastCurrent = state.current;
 		heroPanelMesh.visible = true;
-		heroPanelMesh.position.copy(toWorld(0, 1.12, sliceOff() + 5.15, HUMAN));
+		heroPanelMesh.position.copy(toWorld(0, 0.92, sliceOff() + 5.15, HUMAN));
 		heroPanelMesh.quaternion.copy(camera.quaternion);
 	}
 	const heroTargets = new Set();
