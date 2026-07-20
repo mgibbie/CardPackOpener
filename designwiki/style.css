@@ -107,7 +107,7 @@ img.sprite {
 .card-page-info { flex: 1; min-width: 260px; }
 .card-page-meta { color: #76819c; font-size: 12px; letter-spacing: .05em; text-transform: uppercase; margin: 2px 0 10px; }
 .card-page-stats { font-weight: 700; color: #c2410c; font-size: 15px; margin-bottom: 14px; }
-.card-page-rules { font-size: 15px; line-height: 1.55; background: #fff; border: 1px solid #e1e6f0; border-radius: 10px; padding: 14px 16px; }
+.card-page-rules { font-size: 15px; line-height: 1.55; background: #fff; border: 1px solid #e1e6f0; border-radius: 10px; padding: 14px 16px; white-space: pre-line; }
 .card-tile { background: #fff; border: 1px solid #e1e6f0; border-radius: 8px; overflow: hidden; }
 .card-tile:hover { border-color: #2b6cb0; box-shadow: 0 2px 8px rgba(43,108,176,.15); }
 .card-art { position: relative; height: 120px; background: #11151f; }
