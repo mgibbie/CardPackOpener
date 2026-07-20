@@ -53,6 +53,7 @@ function ensureAdvThemes(list) {
 function systemBucket(c) {
 	if (c.type === 'land') return '__land__';
 	if (c.type === 'plane') return '__plane__';
+	if (c.type === 'emblem') return '__generic__'; // dungeon-run treasures / emblems
 	const cols = c.colors || [];
 	for (const col of ['W', 'U', 'B', 'R', 'G']) if (cols.includes(col)) return '__c_' + col + '__';
 	if (canonClass(c.cardClass || 'neutral') === 'magepunk') {

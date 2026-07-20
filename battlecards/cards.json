@@ -55116,6 +55116,174 @@
           "count": 6
         }
       ]
+    },
+    {
+      "id": "potion_of_vitality",
+      "name": "Potion of Vitality",
+      "cardClass": "neutral",
+      "cost": 0,
+      "rarity": "special",
+      "type": "emblem",
+      "description": "Double your starting Health.",
+      "set": "dungeon",
+      "token": true,
+      "collectible": false
+    },
+    {
+      "id": "crystal_gem",
+      "name": "Crystal Gem",
+      "cardClass": "neutral",
+      "cost": 0,
+      "rarity": "special",
+      "type": "emblem",
+      "description": "Start with an extra Mana Crystal.",
+      "set": "dungeon",
+      "token": true,
+      "collectible": false
+    },
+    {
+      "id": "small_backpacks",
+      "name": "Small Backpacks",
+      "cardClass": "neutral",
+      "cost": 0,
+      "rarity": "special",
+      "type": "emblem",
+      "description": "Start with 2 extra cards drawn.",
+      "set": "dungeon",
+      "token": true,
+      "collectible": false
+    },
+    {
+      "id": "captured_flag",
+      "name": "Captured Flag",
+      "cardClass": "neutral",
+      "cost": 0,
+      "rarity": "special",
+      "type": "emblem",
+      "description": "Your creatures have +1/+1.",
+      "set": "dungeon",
+      "token": true,
+      "collectible": false
+    },
+    {
+      "id": "khadgars_scrying_orb",
+      "name": "Khadgar's Scrying Orb",
+      "cardClass": "neutral",
+      "cost": 0,
+      "rarity": "special",
+      "type": "emblem",
+      "description": "Your spells cost (1) less.",
+      "set": "dungeon",
+      "token": true,
+      "collectible": false
+    },
+    {
+      "id": "grommashs_armguards",
+      "name": "Grommash's Armguards",
+      "cardClass": "neutral",
+      "cost": 0,
+      "rarity": "special",
+      "type": "emblem",
+      "description": "Your weapons cost (1).",
+      "set": "dungeon",
+      "token": true,
+      "collectible": false
+    },
+    {
+      "id": "scepter_of_summoning",
+      "name": "Scepter of Summoning",
+      "cardClass": "neutral",
+      "cost": 0,
+      "rarity": "special",
+      "type": "emblem",
+      "description": "Your creatures that cost (5) or more cost (5).",
+      "set": "dungeon",
+      "token": true,
+      "collectible": false
+    },
+    {
+      "id": "robe_of_the_magi",
+      "name": "Robe of the Magi",
+      "cardClass": "neutral",
+      "cost": 0,
+      "rarity": "special",
+      "type": "emblem",
+      "description": "Spell Damage +3.",
+      "set": "dungeon",
+      "token": true,
+      "collectible": false
+    },
+    {
+      "id": "glyph_of_warding",
+      "name": "Glyph of Warding",
+      "cardClass": "neutral",
+      "cost": 0,
+      "rarity": "special",
+      "type": "emblem",
+      "description": "Enemy creatures cost (1) more.",
+      "set": "dungeon",
+      "token": true,
+      "collectible": false
+    },
+    {
+      "id": "cloak_of_invisibility",
+      "name": "Cloak of Invisibility",
+      "cardClass": "neutral",
+      "cost": 0,
+      "rarity": "special",
+      "type": "emblem",
+      "description": "Your creatures have permanent Stealth.",
+      "set": "dungeon",
+      "token": true,
+      "collectible": false
+    },
+    {
+      "id": "mysterious_tome",
+      "name": "Mysterious Tome",
+      "cardClass": "neutral",
+      "cost": 0,
+      "rarity": "special",
+      "type": "emblem",
+      "description": "Start with 3 random Secrets in play.",
+      "set": "dungeon",
+      "token": true,
+      "collectible": false
+    },
+    {
+      "id": "totem_of_the_dead",
+      "name": "Totem of the Dead",
+      "cardClass": "neutral",
+      "cost": 0,
+      "rarity": "special",
+      "type": "emblem",
+      "description": "Your Deathrattles trigger twice.",
+      "set": "dungeon",
+      "token": true,
+      "collectible": false
+    },
+    {
+      "id": "battle_totem",
+      "name": "Battle Totem",
+      "cardClass": "neutral",
+      "cost": 0,
+      "rarity": "special",
+      "type": "emblem",
+      "description": "Your Battlecries trigger twice.",
+      "set": "dungeon",
+      "token": true,
+      "collectible": false
+    },
+    {
+      "id": "justicars_ring",
+      "name": "Justicar's Ring",
+      "cardClass": "neutral",
+      "cost": 0,
+      "rarity": "special",
+      "type": "emblem",
+      "description": "Your Hero Power costs (1).",
+      "set": "dungeon",
+      "token": true,
+      "collectible": false
     }
   ]
 }
