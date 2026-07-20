@@ -60,6 +60,14 @@ export function classColorOf(cls) {
 	const c = canonClass(cls);
 	return CLASS_COLORS[c] || CLASS_COLORS[c.split('__')[0]] || CLASS_COLORS.neutral;
 }
+// WUBRG-coloured cards tint their frame body with the colour's identity rather
+// than the neutral class brown. White reads as a pale ivory/silver frame.
+const COLOR_BODY = { W: '#ece7d4' };
+export function bodyColorOf(card) {
+	const cols = (card && card.colors) || [];
+	for (const k of ['W', 'U', 'B', 'R', 'G']) if (COLOR_BODY[k] && cols.includes(k)) return COLOR_BODY[k];
+	return classColorOf(card && card.cardClass);
+}
 export function classNameOf(cls) {
 	const c = canonClass(cls);
 	if (CLASS_NAMES[c]) return CLASS_NAMES[c];
@@ -456,9 +464,9 @@ export function drawCardFace(card, opts = {}) {
 
 	const rarity = RARITY_COLORS[card.rarity] || RARITY_COLORS.common;
 	const typeCol = TYPE_COLORS[card.type] || '#444';
-	const classCol = classColorOf(card.cardClass);
+	const classCol = bodyColorOf(card);
 
-	// frame body carries the CLASS color; banner and border carry the type
+	// frame body carries the CLASS color (or WUBRG colour); banner/border = type
 	const body = ctx.createLinearGradient(0, 0, 0, H);
 	body.addColorStop(0, shade(classCol, 1.0));
 	body.addColorStop(0.5, shade(classCol, 0.55));
