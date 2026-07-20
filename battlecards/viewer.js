@@ -36,15 +36,31 @@ const isUncollectible = c => c.token || c.companion || c.commander
 // uncollectible / system cards filter under their own buckets, not a class:
 // all Lands, the five WUBRG colours (non-land), then a Generic catch-all
 const SYSTEM_BUCKETS = [
-	['__land__', 'Lands'], ['__c_W__', 'White'], ['__c_U__', 'Blue'], ['__c_B__', 'Black'],
+	['__land__', 'Lands'], ['__advland__', 'Advanced Lands'],
+	['__c_W__', 'White'], ['__c_U__', 'Blue'], ['__c_B__', 'Black'],
 	['__c_R__', 'Red'], ['__c_G__', 'Green'], ['__generic__', 'Generic'],
 ];
 const SYSTEM_KEYS = new Set(SYSTEM_BUCKETS.map(b => b[0]));
+// theme words an advanced land can conjure (matched against a card's name)
+let advThemes = null;
+function ensureAdvThemes(list) {
+	if (advThemes) return;
+	advThemes = new Set();
+	for (const c of list) if (c.type === 'land') for (const tap of (c.taps || [])) for (const e of (tap.effects || []))
+		if (e.type === 'conjure-named' && e.match) advThemes.add(e.match.toLowerCase());
+}
 function systemBucket(c) {
 	if (c.type === 'land') return '__land__';
 	const cols = c.colors || [];
 	for (const col of ['W', 'U', 'B', 'R', 'G']) if (cols.includes(col)) return '__c_' + col + '__';
-	if (cols.includes('C') || canonClass(c.cardClass || 'neutral') === 'magepunk') return '__generic__';
+	if (canonClass(c.cardClass || 'neutral') === 'magepunk') {
+		// paper cards a land conjures (name matches a theme) are Advanced Lands; the
+		// rest (Blood Gem) are Generic
+		const nm = (c.name || '').toLowerCase();
+		if (advThemes) for (const t of advThemes) if (nm.includes(t)) return '__advland__';
+		return '__generic__';
+	}
+	if (cols.includes('C')) return '__generic__';
 	return null;
 }
 
@@ -198,8 +214,9 @@ fetch('cards.json')
 			data.cards = data.cards.filter(d => mpOwned[d.id] > 0);
 		}
 		// class filter: single classes (Neutral last) + a combined "Dual" bucket, then
-		// the uncollectible/system buckets (Lands, WUBRG colours, Generic). System
-		// cards are pulled out of their class so those options stay clean.
+		// the uncollectible/system buckets (Lands, Advanced Lands, WUBRG colours,
+		// Generic). System cards are pulled out of their class so options stay clean.
+		ensureAdvThemes(data.cards);
 		const nonSystem = data.cards.filter(c => !systemBucket(c));
 		const singles = [...new Set(nonSystem.map(c => canonClass(c.cardClass || 'neutral')).filter(c => !c.includes('__')))]
 			.sort((a, b) => a.localeCompare(b));

@@ -39496,17 +39496,13 @@
     {
       "id": "chrome_cat",
       "name": "Chrome Cat",
-      "colors": [
-        "C"
-      ],
       "cardClass": "neutral",
       "cost": 3,
       "rarity": "common",
-      "set": "wubrg",
       "type": "creature",
       "attack": 3,
       "health": 2,
-      "tribe": "Cat",
+      "tribe": "Mech Beast",
       "keywords": [
         "battlecry"
       ],

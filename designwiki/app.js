@@ -286,15 +286,31 @@ const isDualClass = c => canonClass(c).includes('__');
 // uncollectible / system cards get their own filter buckets instead of a class:
 // all Lands together, the five WUBRG colours (non-land), then a Generic catch-all
 const SYSTEM_BUCKETS = [
-  ['__land__', 'Lands'], ['__c_W__', 'White'], ['__c_U__', 'Blue'], ['__c_B__', 'Black'],
+  ['__land__', 'Lands'], ['__advland__', 'Advanced Lands'],
+  ['__c_W__', 'White'], ['__c_U__', 'Blue'], ['__c_B__', 'Black'],
   ['__c_R__', 'Red'], ['__c_G__', 'Green'], ['__generic__', 'Generic'],
 ];
 const SYSTEM_KEYS = new Set(SYSTEM_BUCKETS.map(b => b[0]));
+// theme words an advanced land can conjure (matched against a card's name) — once
+let advThemes = null;
+function ensureAdvThemes(cards) {
+  if (advThemes) return;
+  advThemes = new Set();
+  for (const c of cards) if (c.type === 'land') for (const tap of (c.taps || [])) for (const e of (tap.effects || []))
+    if (e.type === 'conjure-named' && e.match) advThemes.add(e.match.toLowerCase());
+}
 function systemBucket(c) {
   if (c.type === 'land') return '__land__';
   const cols = c.colors || [];
   for (const col of ['W', 'U', 'B', 'R', 'G']) if (cols.includes(col)) return '__c_' + col + '__';
-  if (cols.includes('C') || canonClass(c) === 'magepunk') return '__generic__'; // colourless system cards (Blood Gem, Abzan…)
+  if (canonClass(c) === 'magepunk') {
+    // paper system cards: ones a land conjures (name matches a theme) are Advanced
+    // Lands; the rest (Blood Gem) are Generic
+    const nm = (c.name || '').toLowerCase();
+    if (advThemes) for (const t of advThemes) if (nm.includes(t)) return '__advland__';
+    return '__generic__';
+  }
+  if (cols.includes('C')) return '__generic__';
   return null; // an ordinary collectible card — stays under its class
 }
 
@@ -307,6 +323,7 @@ async function cardGalleryView() {
   renderCards(cards);
 }
 function renderCards(cards) {
+  ensureAdvThemes(cards);
   const q = norm(searchEl.value);
   // one combined "Dual" bucket for every multi-class card (cardClass joined with __),
   // instead of a separate option per combination; single classes counted on their own
