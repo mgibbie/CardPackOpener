@@ -34,7 +34,7 @@ const filters = { search: '', mana: null, type: '', rarity: '', cls: '', ownedOn
 
 // cards you can't collect: lands (bought from slots), tokens, hero powers,
 // companions/commanders — hidden by default so the gallery is your card pool
-const isUncollectible = c => c.token || c.companion || c.commander
+const isUncollectible = c => c.token || c.companion || c.commander || c.collectible === false
 	|| c.type === 'land' || c.type === 'plane' || c.type === 'heropower';
 
 // uncollectible / system cards filter under their own buckets, not a class:

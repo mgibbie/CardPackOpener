@@ -17468,7 +17468,6 @@
       "type": "sorcery",
       "cost": 1,
       "rarity": "common",
-      "token": true,
       "effects": [
         {
           "type": "buff",
@@ -17477,7 +17476,8 @@
           "target": "creature"
         }
       ],
-      "description": "Give a creature +1/+1."
+      "description": "Give a creature +1/+1.",
+      "collectible": false
     },
     {
       "id": "acolyte_of_death",
@@ -49748,14 +49748,14 @@
       "rarity": "basic",
       "set": "core",
       "type": "sorcery",
-      "token": true,
       "description": "Gain 1 mana this turn only.",
       "effects": [
         {
           "type": "temp-mana",
           "value": 1
         }
-      ]
+      ],
+      "collectible": false
     },
     {
       "id": "grand_crusader",

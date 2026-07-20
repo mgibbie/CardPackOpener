@@ -258,7 +258,7 @@ export function createGame(cardsById, rng = Math.random, playerDeckIds = null, p
 	// never in decks: companions/commanders (own zones), lands (bought from the
 	// slot menu), and colored cards (conjured by lands during play)
 	const playable = Object.values(cardsById).filter(d =>
-		!UNPLAYABLE.has(d.id) && !d.companion && !d.commander && !d.token
+		!UNPLAYABLE.has(d.id) && !d.companion && !d.commander && !d.token && d.collectible !== false
 		&& d.type !== 'land' && !(d.colors && d.colors.length));
 	const shuffle = ids => {
 		for (let i = ids.length - 1; i > 0; i--) {
@@ -2243,7 +2243,7 @@ function execEffects(state, pi, effects, target, source) {
 			const pcost = source ? source.attack : 0;
 			const pp = state.players[pi];
 			const pool = Object.values(state.cardsById).filter(d => d.type === 'creature'
-				&& (d.cost || 0) === pcost && !d.token && !d.companion && !d.commander && !(d.colors && d.colors.length));
+				&& (d.cost || 0) === pcost && !d.token && d.collectible !== false && !d.companion && !d.commander && !(d.colors && d.colors.length));
 			for (let n = 0; n < (e.count || 1) && pool.length && pp.hand.length < MAX_HAND; n++) {
 				const def = pool[Math.floor(state.rng() * pool.length)];
 				const card = instantiate(def, pi); card.zone = 'hand';
@@ -3066,7 +3066,7 @@ function execEffects(state, pi, effects, target, source) {
 		} else if (e.type === 'reanimate') {
 			// summon the highest-Cost creature from your graveyard, with riders
 			const p = state.players[pi];
-			const cands = p.graveyard.filter(c => { const d = state.cardsById[c.id]; return d && d.type === 'creature' && !d.token; });
+			const cands = p.graveyard.filter(c => { const d = state.cardsById[c.id]; return d && d.type === 'creature' && !d.token && d.collectible !== false; });
 			if (cands.length) {
 				let best = cands[0];
 				for (const c of cands) if ((state.cardsById[c.id].cost || 0) > (state.cardsById[best.id].cost || 0)) best = c;
@@ -3091,7 +3091,7 @@ function execEffects(state, pi, effects, target, source) {
 			const p = state.players[pi];
 			const delta = e.delta || 3;
 			const rc = cost => { const pool = Object.values(state.cardsById).filter(d => d.type === 'creature'
-				&& (d.cost || 0) === cost && !d.token && !d.companion && !d.commander && !(d.colors && d.colors.length));
+				&& (d.cost || 0) === cost && !d.token && d.collectible !== false && !d.companion && !d.commander && !(d.colors && d.colors.length));
 				return pool.length ? pool[Math.floor(state.rng() * pool.length)] : null; };
 			for (const c of [...p.board]) {
 				if (c.type !== 'creature' || isDead(c)) continue;
@@ -3115,7 +3115,7 @@ function execEffects(state, pi, effects, target, source) {
 			const p = state.players[pi];
 			const pool = p.graveyard.filter(c => {
 				const d = state.cardsById[c.id];
-				return d && !d.token && (!e.cardType || d.type === e.cardType)
+				return d && !d.token && d.collectible !== false && (!e.cardType || d.type === e.cardType)
 					&& (e.maxCost == null || (d.cost || 0) <= e.maxCost)
 					&& (!e.tribe || (d.tribe || '').includes(e.tribe));
 			});
@@ -3208,7 +3208,7 @@ function execEffects(state, pi, effects, target, source) {
 			// cardClass 'enemy' = an opponent's class pool, 'other' = any class but yours
 			const p = state.players[pi];
 			let pool = Object.values(state.cardsById).filter(d =>
-				d.type !== 'land' && !d.token && !d.companion && !d.commander
+				d.type !== 'land' && !d.token && d.collectible !== false && !d.companion && !d.commander
 				&& !(d.colors && d.colors.length));
 			if (e.cardType === 'creature') pool = pool.filter(d => d.type === 'creature');
 			else if (e.cardType === 'spell') pool = pool.filter(d => isSpellType(d));
@@ -3240,7 +3240,7 @@ function execEffects(state, pi, effects, target, source) {
 			const victim = enemyHero();
 			if (victim != null) {
 				let pool = Object.values(state.cardsById).filter(d =>
-					d.type !== 'land' && !d.token && !d.companion && !d.commander
+					d.type !== 'land' && !d.token && d.collectible !== false && !d.companion && !d.commander
 					&& !(d.colors && d.colors.length));
 				if (e.cardType === 'creature') pool = pool.filter(d => d.type === 'creature');
 				const vp = state.players[victim];
@@ -3267,7 +3267,7 @@ function execEffects(state, pi, effects, target, source) {
 			const p = state.players[pi];
 			const ccCost = e.heraldScaled ? hm() : e.cost;
 			const pool = Object.values(state.cardsById).filter(d =>
-				(d.cost || 0) === ccCost && d.type !== 'land' && !d.token
+				(d.cost || 0) === ccCost && d.type !== 'land' && !d.token && d.collectible !== false
 				&& !d.companion && !d.commander && !(d.colors && d.colors.length));
 			if (pool.length && p.hand.length < MAX_HAND) {
 				const card = instantiate(pool[Math.floor(state.rng() * pool.length)], pi);
@@ -3355,7 +3355,7 @@ function execEffects(state, pi, effects, target, source) {
 		} else if (e.type === 'discover') {
 			// Discover: pick 1 of 3 random matches; Draft: pick 1 of 5
 			const discoverPool = () => Object.values(state.cardsById).filter(d => {
-				if (d.type === 'land' || d.token || d.companion || d.commander) return false;
+				if (d.type === 'land' || d.token || d.collectible === false || d.companion || d.commander) return false;
 				if (d.colors && d.colors.length) return false;
 				if (e.cardType === 'spell' ? !isSpellType(d) : (e.cardType && d.type !== e.cardType)) return false;
 				if (e.tribe && !(d.tribe || '').includes(e.tribe)) return false;
@@ -3594,7 +3594,7 @@ function execEffects(state, pi, effects, target, source) {
 				&& (e.minCost == null || (d.cost || 0) >= e.minCost)
 				&& (e.cost == null || (d.cost || 0) === e.cost)
 				&& (e.tribe == null || (d.tribe || '').includes(e.tribe))
-				&& !d.companion && !d.commander && !d.token && !(d.colors && d.colors.length));
+				&& !d.companion && !d.commander && !d.token && d.collectible !== false && !(d.colors && d.colors.length));
 			for (let i = 0; i < (e.count || 1) && pool.length; i++) {
 				const def = pool[Math.floor(state.rng() * pool.length)];
 				const owner = e.forEnemy && enemies.length
@@ -3674,7 +3674,7 @@ function execEffects(state, pi, effects, target, source) {
 				if (e.cardClass) pool = pool.filter(d =>
 					(d.cardClass || 'neutral').split('__').includes(e.cardClass));
 				if (e.tribe) pool = pool.filter(d => (d.tribe || '').includes(e.tribe));
-				pool = pool.filter(d => !d.token);
+				pool = pool.filter(d => !d.token && d.collectible !== false);
 				if (!pool.length) pool = defs.filter(d => d.colors?.length);
 			}
 			if (!pool.length) pool = defs;
