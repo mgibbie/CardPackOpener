@@ -37913,7 +37913,7 @@
           }
         ]
       },
-      "description": "Whenever you summon a Human, gain a +1/+1 counter."
+      "description": "Whenever you summon a Human, this gains +1/+1."
     },
     {
       "id": "secure_the_wastes",
