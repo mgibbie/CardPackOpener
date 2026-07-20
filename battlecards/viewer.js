@@ -43,7 +43,7 @@ const SYSTEM_BUCKETS = [
 	['__land__', 'Lands'], ['__advland__', 'Advanced Lands'],
 	['__c_W__', 'White'], ['__c_U__', 'Blue'], ['__c_B__', 'Black'],
 	['__c_R__', 'Red'], ['__c_G__', 'Green'], ['__generic__', 'Generic'],
-	['__plane__', 'Planes'], ['__excavate__', 'Excavate'],
+	['__plane__', 'Planes'], ['__excavate__', 'Excavate'], ['__appendage__', 'Appendages'],
 ];
 const SYSTEM_KEYS = new Set(SYSTEM_BUCKETS.map(b => b[0]));
 // theme words an advanced land can conjure (matched against a card's name)
@@ -56,6 +56,7 @@ function ensureAdvThemes(list) {
 }
 function systemBucket(c) {
 	if (c.excavate) return '__excavate__'; // excavate rewards (Azerite legendaries, …)
+	if (c.colossalOf) return '__appendage__'; // Colossal appendage tokens
 	if (c.type === 'land') return '__land__';
 	if (c.type === 'plane') return '__plane__';
 	if (c.type === 'emblem') return '__generic__'; // dungeon-run treasures / emblems
