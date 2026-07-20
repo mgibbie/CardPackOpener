@@ -3082,59 +3082,6 @@
       "description": "Trap: When your hero takes damage, gain 5 armor."
     },
     {
-      "id": "gold_vein",
-      "name": "Gold Vein",
-      "type": "land",
-      "cardClass": "bounty_hunter",
-      "cost": 0,
-      "rarity": "common",
-      "mana": 1,
-      "description": "Land: +1 mana at the start of each of your turns.\nSacrifice this land: Draw a card."
-    },
-    {
-      "id": "boomtown_claim",
-      "name": "Boomtown Claim",
-      "type": "land",
-      "cardClass": "bounty_hunter",
-      "cost": 0,
-      "rarity": "rare",
-      "mana": 2,
-      "description": "Land: +2 mana at the start of each of your turns.\nSacrifice this land: Draw a card."
-    },
-    {
-      "id": "crossroads_station",
-      "name": "Crossroads Station",
-      "type": "land",
-      "cardClass": "bounty_hunter",
-      "cost": 0,
-      "rarity": "uncommon",
-      "mana": 1,
-      "effects": [
-        {
-          "type": "draw",
-          "value": 1
-        }
-      ],
-      "description": "Land: +1 mana at the start of each of your turns. When played, draw a card.\nSacrifice this land: Draw a card."
-    },
-    {
-      "id": "hallowed_springs",
-      "name": "Hallowed Springs",
-      "type": "land",
-      "cardClass": "bounty_hunter",
-      "cost": 0,
-      "rarity": "uncommon",
-      "mana": 1,
-      "effects": [
-        {
-          "type": "heal",
-          "value": 5,
-          "target": "self"
-        }
-      ],
-      "description": "Land: +1 mana at the start of each of your turns. When played, restore 5 health to your hero.\nSacrifice this land: Draw a card."
-    },
-    {
       "id": "gunslingers_eye",
       "name": "Gunslinger's Eye",
       "type": "heropower",
