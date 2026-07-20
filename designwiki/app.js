@@ -274,10 +274,11 @@ function keywordIndex(cards) {
 const kwChip = label => h('a', { class: 'tag-chip kw', href: '#/keyword/' + norm(label) }, label);
 const cardTypeChip = type => h('a', { class: 'tag-chip type', href: '#/type/' + norm(type) }, titleCase(type || ''));
 const SPELL_TYPES = new Set(['sorcery', 'instant', 'secret', 'trap']);
-function tribeChip(c) {
-  const label = SPELL_TYPES.has(c.type) ? c.tribe + ' Spell' : c.tribe; // schools read "Fire Spell"
-  return h('a', { class: 'tag-chip tribe', href: '#/tribe/' + norm(c.tribe) }, label);
-}
+// a card's tribe field is a space-separated list ("Murloc Warrior" = two tribes)
+const tribesOf = c => (c.tribe ? (Array.isArray(c.tribe) ? c.tribe : String(c.tribe).trim().split(/\s+/)) : []).filter(Boolean);
+// one chip per tribe; a spell's school reads "Fire Spell"
+const tribeChip = (c, tribe) => h('a', { class: 'tag-chip tribe', href: '#/tribe/' + norm(tribe) },
+  SPELL_TYPES.has(c.type) ? tribe + ' Spell' : tribe);
 const canonClass = c => (CardArt ? CardArt.canonClass(c.cardClass || 'neutral') : (c.cardClass || 'neutral'));
 const isDualClass = c => canonClass(c).includes('__');
 
@@ -358,7 +359,7 @@ async function cardDetail(id) {
       h('h1', null, c.name),
       h('div', { class: 'card-page-meta' }, CardArt.classNameOf(c.cardClass) + ' · ' + titleCase(c.rarity || 'common')),
       // clickable type + tribe/school tags
-      h('div', { class: 'card-tags' }, cardTypeChip(c.type), c.tribe ? tribeChip(c) : null),
+      h('div', { class: 'card-tags' }, cardTypeChip(c.type), tribesOf(c).map(t => tribeChip(c, t))),
       h('div', { class: 'card-page-stats' }, stats.join('  ·  ')),
       c.description ? h('div', { class: 'card-page-rules', html: CardKw.richHtml(c.description) }) : h('div', { class: 'card-page-rules muted' }, 'No rules text.'),
       // definition of every keyword on the card, each linking to its own page
@@ -379,9 +380,10 @@ async function cardSubsetView(kind, slug) {
     list = cards.filter(c => norm(c.type) === slug);
     title = titleCase(slug) + ' cards';
   } else if (kind === 'tribe') {
-    list = cards.filter(c => c.tribe && norm(c.tribe) === slug);
-    const spelly = list.length && SPELL_TYPES.has(list[0].type);
-    title = (list[0] ? list[0].tribe : titleCase(slug)) + (spelly ? ' spells' : '');
+    list = cards.filter(c => tribesOf(c).some(t => norm(t) === slug));
+    // recover the tribe's original casing from a matching card
+    const orig = list.length ? tribesOf(list[0]).find(t => norm(t) === slug) : null;
+    title = orig || titleCase(slug);
   } else { // keyword
     const e = keywordIndex(cards).get(slug);
     if (!e) return content.replaceChildren(h('h1', null, 'Unknown keyword'), h('p', null, h('a', { href: '#/cards' }, '← Card Gallery')));
@@ -482,7 +484,7 @@ async function designCardDetail(slug) {
     implBody.push(
       h('h2', null, 'Card data'),
       h('div', { class: 'card-page-meta' }, art.classNameOf(impl.cardClass) + ' · ' + titleCase(impl.rarity || 'common')),
-      h('div', { class: 'card-tags' }, cardTypeChip(impl.type), impl.tribe ? tribeChip(impl) : null),
+      h('div', { class: 'card-tags' }, cardTypeChip(impl.type), tribesOf(impl).map(t => tribeChip(impl, t))),
       h('div', { class: 'card-page-stats' }, stats.join('  ·  ')),
       impl.description ? h('div', { class: 'card-page-rules', html: CardKw.richHtml(impl.description) }) : h('div', { class: 'card-page-rules muted' }, 'No rules text.'),
       kws.length ? h('h2', null, 'Keywords') : null,
