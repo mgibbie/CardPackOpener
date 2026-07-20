@@ -47637,19 +47637,6 @@
       "tribe": "Undead"
     },
     {
-      "id": "zilliax_deluxe_3000",
-      "name": "Zilliax Deluxe 3000",
-      "cardClass": "neutral",
-      "cost": 0,
-      "rarity": "legendary",
-      "set": "hs",
-      "description": "While building your deck, customize your very own Zilliax Deluxe 3000!",
-      "type": "creature",
-      "attack": 0,
-      "health": 0,
-      "tribe": "Mechanical"
-    },
-    {
       "id": "playhouse_giant",
       "name": "Playhouse Giant",
       "cardClass": "neutral",
