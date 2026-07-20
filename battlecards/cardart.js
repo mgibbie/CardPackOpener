@@ -116,6 +116,9 @@ function hashId(id) {
 // ---------- real card art (crops from the user's paper scans) ----------
 // art/index.json lists ids with a real crop; everything else stays
 // procedural. Images load lazily; listeners fire so live faces refresh.
+// Resolve art relative to THIS module (battlecards/art/) so faces render the
+// same whether the importer is the game or the design wiki in another folder.
+const ART_DIR = new URL('art/', import.meta.url).href;
 let artIndex = null;
 const artImgs = new Map(); // id -> HTMLImageElement
 export const artListeners = new Set(); // fn(id) called when an image (or the mana font) arrives
@@ -131,7 +134,7 @@ if (typeof document !== 'undefined' && typeof FontFace !== 'undefined') {
 	ff.load().then(f => { document.fonts.add(f); manaReady = true; for (const fn of artListeners) fn('*'); }).catch(() => {});
 }
 
-const artIndexReady = fetch('art/index.json')
+const artIndexReady = fetch(ART_DIR + 'index.json')
 	.then(r => (r.ok ? r.json() : []))
 	.then(ids => { artIndex = new Set(ids); })
 	.catch(() => { artIndex = new Set(); });
@@ -142,7 +145,7 @@ function artFor(id) {
 	if (!img) {
 		img = new Image();
 		img.onload = () => { for (const fn of artListeners) fn(id); };
-		img.src = 'art/' + id + '.jpg';
+		img.src = ART_DIR + id + '.jpg';
 		artImgs.set(id, img);
 	}
 	return img.complete && img.naturalWidth ? img : null;
@@ -156,7 +159,7 @@ export async function preloadArt(ids) {
 	await Promise.all([...new Set(ids)].map(id => new Promise(res => {
 		if (!artIndex.has(id)) return res();
 		let img = artImgs.get(id);
-		if (!img) { img = new Image(); img.src = 'art/' + id + '.jpg'; artImgs.set(id, img); }
+		if (!img) { img = new Image(); img.src = ART_DIR + id + '.jpg'; artImgs.set(id, img); }
 		if (img.complete) return res();
 		img.addEventListener('load', () => { for (const fn of artListeners) fn(id); res(); }, { once: true });
 		img.addEventListener('error', () => res(), { once: true });

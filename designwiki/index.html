@@ -5,6 +5,11 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Magepunk66 Wiki</title>
   <link rel="stylesheet" href="style.css">
+  <!-- the Card Gallery renders real in-game card faces via battlecards/cardart.js,
+       which imports three; map it so the dynamic import resolves -->
+  <script type="importmap">
+  { "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.165.0/build/three.module.js" } }
+  </script>
 </head>
 <body>
   <header>

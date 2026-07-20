@@ -79,7 +79,8 @@ function applyFilters() {
 			const cost = c.cost ?? 0;
 			if (filters.mana === 7 ? cost < 7 : cost !== filters.mana) return false;
 		}
-		if (filters.cls && (c.cardClass || 'neutral') !== filters.cls) return false;
+		if (filters.cls === '__dual__') { if (!(c.cardClass || '').includes('__')) return false; }
+		else if (filters.cls && (c.cardClass || 'neutral') !== filters.cls) return false;
 		if (filters.type && c.type !== filters.type) return false;
 		if (filters.rarity && (c.rarity || 'common') !== filters.rarity) return false;
 		if (filters.ownedOnly && !(collection[c.id] > 0)) return false;
@@ -177,13 +178,18 @@ fetch('cards.json')
 			mpOwned = s?.collection || {};
 			data.cards = data.cards.filter(d => mpOwned[d.id] > 0);
 		}
-		// class filter options, in play-set order with Neutral last
-		const classes = [...new Set(data.cards.map(c => c.cardClass || 'neutral'))]
-			.sort((a, b) => (a === 'neutral') - (b === 'neutral') || a.localeCompare(b));
+		// class filter: single classes (Neutral last) + one combined "Dual" bucket for
+		// every multi-class card (cardClass values joined with __), instead of a
+		// separate section per combination
+		const singles = [...new Set(data.cards.map(c => c.cardClass || 'neutral').filter(c => !c.includes('__')))]
+			.sort((a, b) => a.localeCompare(b));
+		const classes = singles.filter(c => c !== 'neutral');
+		if (data.cards.some(c => (c.cardClass || '').includes('__'))) classes.push('__dual__');
+		if (singles.includes('neutral')) classes.push('neutral');
 		for (const cls of classes) {
 			const opt = document.createElement('option');
 			opt.value = cls;
-			opt.textContent = classNameOf(cls);
+			opt.textContent = cls === '__dual__' ? 'Dual' : classNameOf(cls);
 			$('class-filter').appendChild(opt);
 		}
 		const rarityOrder = { legendary: 0, epic: 1, rare: 2, uncommon: 3, common: 4, special: 5 };

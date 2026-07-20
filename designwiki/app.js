@@ -242,66 +242,99 @@ function regionView(rk) {
 }
 
 
-// Card Gallery — every card in Battlecards with its art. Card data + art live in
-// the sibling battlecards/ app; we lazy-load them the first time the view opens.
-let cardsPromise = null;
-const RARITY_COLOR = { common: '#8a94a6', uncommon: '#3f9d3f', rare: '#3b6cc4', epic: '#9b59b6', legendary: '#e0902f' };
+// Card Gallery — every card in Battlecards, drawn with its real in-game face via
+// the sibling battlecards/cardart.js. Card data, art, and the renderer are all
+// lazy-loaded the first time a card view opens.
+let cardsPromise = null, cardartPromise = null, CardArt = null;
 let cardClassFilter = 'all';
 function loadCards() {
   if (!cardsPromise) cardsPromise = fetch('../battlecards/cards.json').then(r => r.json()).then(d => d.cards || d || []);
   return cardsPromise;
 }
+function loadCardart() {
+  if (!cardartPromise) cardartPromise = import('../battlecards/cardart.js').then(m => (CardArt = m));
+  return cardartPromise;
+}
+const isDualClass = c => (c.cardClass || '').includes('__');
+
 async function cardGalleryView() {
   content.replaceChildren(h('h1', null, 'Card Gallery'), h('p', { class: 'muted' }, 'Loading cards…'));
   let cards;
-  try { cards = await loadCards(); } catch (e) { return content.replaceChildren(h('h1', null, 'Card Gallery'), h('p', { class: 'muted' }, 'Could not load battlecards/cards.json.')); }
-  if (location.hash.slice(1).split('/').filter(Boolean)[0] !== 'cards') return; // navigated away while loading
+  try { [cards] = await Promise.all([loadCards(), loadCardart()]); }
+  catch (e) { return content.replaceChildren(h('h1', null, 'Card Gallery'), h('p', { class: 'muted' }, 'Could not load the card data.')); }
+  if ((location.hash.slice(1).split('/').filter(Boolean))[0] !== 'cards') return; // navigated away while loading
   renderCards(cards);
 }
 function renderCards(cards) {
   const q = norm(searchEl.value);
-  // count per class so the dropdown can show sizes (there are many custom classes)
-  const counts = {};
-  for (const c of cards) { const k = c.cardClass || 'neutral'; counts[k] = (counts[k] || 0) + 1; }
+  // one combined "Dual" bucket for every multi-class card (cardClass joined with __),
+  // instead of a separate option per combination; single classes counted on their own
+  const counts = {}; let dual = 0;
+  for (const c of cards) { if (isDualClass(c)) dual++; else { const k = c.cardClass || 'neutral'; counts[k] = (counts[k] || 0) + 1; } }
   const classes = Object.keys(counts).sort((a, b) => counts[b] - counts[a]);
-  let list = cards.filter(c => cardClassFilter === 'all' || (c.cardClass || 'neutral') === cardClassFilter);
+
+  let list = cards.filter(c =>
+    cardClassFilter === 'all' ? true
+      : cardClassFilter === '__dual__' ? isDualClass(c)
+        : (c.cardClass || 'neutral') === cardClassFilter);
   if (q) list = list.filter(c => norm(c.name).includes(q) || norm(c.cardClass).includes(q) || norm(c.type).includes(q) || norm(c.description).includes(q));
   list.sort((a, b) => (a.cardClass || '').localeCompare(b.cardClass || '') || (a.cost || 0) - (b.cost || 0) || String(a.name).localeCompare(String(b.name)));
 
+  const opt = (v, label, on) => h('option', { value: v, selected: on ? '' : null }, label);
   const sel = h('select', { class: 'card-classsel', onchange: e => { cardClassFilter = e.target.value; renderCards(cards); } },
-    h('option', { value: 'all', selected: cardClassFilter === 'all' ? '' : null }, 'All classes (' + cards.length + ')'),
-    ...classes.map(cl => h('option', { value: cl, selected: cardClassFilter === cl ? '' : null }, titleCase(cl) + ' (' + counts[cl] + ')')));
+    opt('all', 'All classes (' + cards.length + ')', cardClassFilter === 'all'),
+    ...classes.map(cl => opt(cl, CardArt.classNameOf(cl) + ' (' + counts[cl] + ')', cardClassFilter === cl)),
+    dual ? opt('__dual__', 'Dual (' + dual + ')', cardClassFilter === '__dual__') : null);
   const filters = h('div', { class: 'card-filters' }, h('label', { class: 'muted' }, 'Class: '), sel);
 
   const grid = h('div', { class: 'card-grid' });
-  const CAP = 400;
+  const CAP = 48; // faces are full canvases; page them in so big classes stay smooth
   let shown = 0;
   const more = h('button', { class: 'showmore' });
-  const renderMore = () => {
-    grid.append(...list.slice(shown, shown + CAP).map(cardTile));
-    shown = Math.min(shown + CAP, list.length);
+  const renderMore = async () => {
+    const batch = list.slice(shown, shown + CAP);
+    await CardArt.preloadArt(batch.map(c => c.id)); // art ready before we snapshot the face
+    grid.append(...batch.map(cardTile));
+    shown += batch.length;
     if (shown >= list.length) more.remove(); else more.textContent = 'Show more (' + (list.length - shown) + ' hidden)';
   };
   more.addEventListener('click', renderMore);
 
   content.replaceChildren(
     h('h1', null, 'Card Gallery ', h('span', { class: 'num' }, '(' + list.length + ')')),
-    h('p', { class: 'muted' }, 'Every card in Battlecards. Search by name, class, type, or rules text; filter by class below.'),
+    h('p', { class: 'muted' }, 'Every card in Battlecards, shown with its in-game face. Search by name, class, type, or rules text; filter by class. Click a card for its own page.'),
     filters, grid, more);
   renderMore();
 }
+// tile = the in-game face snapshotted to an <img> (lighter than keeping live canvases)
 function cardTile(c) {
-  const isUnit = c.attack != null || c.health != null;
-  const stat = isUnit ? h('span', { class: 'card-stats' }, (c.attack ?? '?') + ' / ' + (c.health ?? '?')) : h('span', { class: 'muted' }, titleCase(c.type || ''));
-  return h('div', { class: 'card-tile', title: c.description || '' },
-    h('div', { class: 'card-art' },
-      h('img', { loading: 'lazy', src: '../battlecards/art/' + c.id + '.jpg', alt: c.name,
-        onerror: e => { if (!e.target.dataset.png) { e.target.dataset.png = 1; e.target.src = '../battlecards/art/' + c.id + '.png'; } else e.target.style.visibility = 'hidden'; } }),
-      h('span', { class: 'card-cost' }, String(c.cost ?? 0))),
-    h('div', { class: 'card-nm' }, c.name),
-    h('div', { class: 'card-sub' },
-      h('span', { style: 'color:' + (RARITY_COLOR[c.rarity] || '#8a94a6') }, titleCase(c.rarity || '—')),
-      stat));
+  const canvas = CardArt.drawCardFace(c);
+  const img = h('img', { class: 'wiki-face', src: canvas.toDataURL(), alt: c.name, loading: 'lazy' });
+  return h('a', { class: 'wiki-card', href: '#/cards/' + c.id, title: c.name }, img);
+}
+// a single card's own page: full in-game face + its details
+async function cardDetail(id) {
+  content.replaceChildren(h('p', { class: 'muted' }, 'Loading card…'));
+  let cards;
+  try { [cards] = await Promise.all([loadCards(), loadCardart()]); }
+  catch (e) { return content.replaceChildren(h('h1', null, 'Card'), h('p', { class: 'muted' }, 'Could not load the card data.')); }
+  const c = cards.find(x => x.id === id);
+  if (!c) return content.replaceChildren(h('h1', null, 'Card not found'), h('p', null, h('a', { href: '#/cards' }, '← Card Gallery')));
+  await CardArt.preloadArt([id]);
+  const face = CardArt.drawCardFace(c); face.className = 'wiki-face-big';
+  const stats = ['Cost ' + (c.cost ?? 0)];
+  if (c.type === 'creature') stats.push((c.attack ?? '?') + ' / ' + (c.health ?? '?'));
+  else if (c.type === 'weapon') stats.push(c.attack + ' attack · ' + c.durability + ' durability');
+  else if (c.type === 'location') stats.push((c.durability ?? 0) + ' uses');
+  else if (c.type === 'planeswalker') stats.push((c.loyalty ?? 0) + ' loyalty');
+  content.replaceChildren(h('div', { class: 'card-page' },
+    h('div', { class: 'card-page-face' }, face),
+    h('div', { class: 'card-page-info' },
+      h('h1', null, c.name),
+      h('div', { class: 'card-page-meta' }, CardArt.classNameOf(c.cardClass) + ' · ' + titleCase(c.type || '') + ' · ' + titleCase(c.rarity || 'common')),
+      h('div', { class: 'card-page-stats' }, stats.join('  ·  ')),
+      h('div', { class: 'card-page-rules' }, c.description ? c.description : h('span', { class: 'muted' }, 'No rules text.')),
+      h('p', null, h('a', { href: '#/cards' }, '← Card Gallery')))));
 }
 
 // Battlecards design-work backlog: every card name held without a working
@@ -370,7 +403,7 @@ function route() {
   if (section === 'tms') return tmsView();
   if (section === 'unlearned') return unlearnedView();
   if (section === 'region') return regionView(id);
-  if (section === 'cards') return cardGalleryView();
+  if (section === 'cards') return id ? cardDetail(id) : cardGalleryView();
   if (section === 'battlecards') return battlecardsView();
   notFound();
 }
@@ -378,7 +411,7 @@ function route() {
 searchEl.addEventListener('input', () => {
   const s = (location.hash.slice(1) || '/').split('/').filter(Boolean);
   if (['pokemon', 'moves', 'abilities', 'tms', 'unlearned', 'battlecards', 'cards', 'needs-typing', 'needs-data'].includes(s[0]) && !s[1]) {
-    if (s[0] === 'cards') { loadCards().then(renderCards); return; } // re-filter without reloading
+    if (s[0] === 'cards') { loadCardart().then(loadCards).then(renderCards); return; } // re-filter without reloading
     route();
   }
 });
