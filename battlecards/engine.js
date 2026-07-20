@@ -344,6 +344,7 @@ export function createGame(cardsById, rng = Math.random, playerDeckIds = null, p
 		scryQueue: [],  // pending scry/gaze decisions: { chooser, deckOwner, ids }
 		discardQueue: [], // pending Loot discards: { player, count }
 		pickQueue: [],  // pending Discover/Draft picks: { player, ids, grant }
+		askQueue: [],   // pending optional "you may …" yes/no prompts: { player, prompt, yes, no, then, else }
 		dredgeQueue: [], // pending Dredge decisions: { player, ids } (bottom-of-deck)
 		stack: [],       // spells awaiting resolution (LIFO)
 		priority: null,  // player who currently holds priority to respond (or null)
@@ -405,6 +406,7 @@ function emit(state, ev) {
 // ---------- zones ----------
 export function drawCards(state, pi, count) {
 	const p = state.players[pi];
+	let drawn = 0; // cards that actually reached hand (not fatigue/burn/bomb) — for "if you do"
 	for (let i = 0; i < count; i++) {
 		if (p.deck.length === 0 && p.graveyard.length > 0) {
 			// reshuffle graveyard ids into deck (per BattleEngine.startPhase);
@@ -443,6 +445,7 @@ export function drawCards(state, pi, count) {
 		if (card.id === 'c_thun') { card.attack = CTHUN_BASE + p.cthunAtk; card.maxHealth = CTHUN_BASE + p.cthunHp; if (p.cthunTaunt && !card.keywords.includes(KW.TAUNT)) card.keywords.push(KW.TAUNT); }
 		card.zone = 'hand';
 		p.hand.push(card);
+		drawn++;
 		emit(state, { type: 'draw', player: pi, card });
 		questTick(state, 'draw', pi, 1, card);
 		// Ponder: fires on every card drawn after your first draw of the turn
@@ -450,6 +453,7 @@ export function drawCards(state, pi, count) {
 		if (p.drawsThisTurn > 1) firePonder(state, pi, { drawn: card });
 		fireEmerge(state, pi, card);
 	}
+	return drawn;
 }
 
 // Ponder triggers on extra draws / scry / dredge / gaze. A re-entrancy lock
@@ -1991,6 +1995,16 @@ function execEffects(state, pi, effects, target, source) {
 		} else if (e.type === 'draw') {
 			if (e.target === 'all') { for (let s2 = 0; s2 < state.players.length; s2++) if (!state.players[s2].eliminated) drawCards(state, s2, scaled(e)); }
 			else drawCards(state, pi, scaled(e));
+		} else if (e.type === 'draw-then') {
+			// draw N; run `then` only if a card was actually drawn ("if you do")
+			const n = drawCards(state, pi, scaled(e));
+			if (n > 0 && e.then) execEffects(state, pi, e.then, target, source);
+		} else if (e.type === 'may') {
+			// optional "you may …": defer a yes/no to the controller. The UI (or AI)
+			// resolves it via resolveAsk, running `then` on yes / `else` on no.
+			state.askQueue.push({ player: pi, prompt: e.prompt || '', yes: e.yes || 'Yes', no: e.no || 'No',
+				then: e.then || [], else: e.else || [] });
+			emit(state, { type: 'askStart', player: pi, prompt: e.prompt || '' });
 		} else if (e.type === 'buff') {
 			if (e.target === 'friendly-creatures') {
 				for (const c of state.players[pi].board) {
@@ -4813,6 +4827,14 @@ export function resolvePick(state, id) {
 		emit(state, { type: 'conjure', player: pend.player, card, color: null });
 		fireEmerge(state, pend.player, card);
 	}
+	return true;
+}
+
+// resolve the oldest pending optional "you may …" prompt (yes runs `then`)
+export function resolveAsk(state, yes) {
+	const pend = state.askQueue.shift();
+	if (!pend) return false;
+	execEffects(state, pend.player, yes ? pend.then : (pend.else || []), null, null);
 	return true;
 }
 

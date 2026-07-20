@@ -1254,6 +1254,7 @@ function pump() {
 	resolveAIScries();
 	resolveAIDiscards();
 	resolveAIPicks();
+	resolveAIAsks();
 	resolveAIDredges();
 	resolveAIResponds();
 	queue.push(...E.takeEvents(state));
@@ -1404,6 +1405,14 @@ function resolveAIPicks() {
 	}
 }
 
+// AI optional "you may …" prompts: the AI takes the beneficial option (yes)
+function resolveAIAsks() {
+	if (duel.on) return; // guest resolves their own optional prompts
+	while (state.askQueue.length && state.askQueue[0].player !== HUMAN) {
+		E.resolveAsk(state, true);
+	}
+}
+
 // AI Dredge: put the biggest card from the bottom three onto the deck
 function resolveAIDredges() {
 	if (duel.on) return; // guest resolves their own dredge
@@ -1470,6 +1479,30 @@ function openPickModal() {
 		row.appendChild(cell);
 	});
 	modal.style.display = 'block';
+}
+
+// optional "you may …" prompt: a centered yes/no using the decision popup
+function openAskModal() {
+	const pend = state.askQueue[0];
+	if (!pend || pend.player !== HUMAN) return;
+	const menu = $('walker-menu');
+	menu.innerHTML = `<div class="wm-title">${pend.prompt || 'Choose:'}</div>`;
+	const mk = (label, yes) => {
+		const btn = document.createElement('button');
+		btn.textContent = label;
+		btn.addEventListener('pointerdown', e => {
+			e.stopPropagation();
+			hideWalkerMenu();
+			if (isGuest()) { guestApply(() => E.resolveAsk(state, yes), { k: 'ask', yes }); return; }
+			E.resolveAsk(state, yes);
+			pump();
+			if (duel.on) publishDuel();
+		});
+		menu.appendChild(btn);
+	};
+	mk(pend.yes || 'Yes', true);
+	mk(pend.no || 'No', false);
+	showDecisionMenu();
 }
 
 function openDiscardModal() {
@@ -1767,6 +1800,10 @@ function nextEvent() {
 			log(`${nameOf(ev.player)} ${ev.count > 3 ? 'drafts' : 'discovers'} (${ev.count} options)`);
 			if (ev.player === HUMAN) openPickModal();
 			delay = 300;
+			break;
+		case 'askStart':
+			if (ev.player === HUMAN) openAskModal();
+			delay = 200;
 			break;
 		case 'dredgeStart':
 			log(`${nameOf(ev.player)} dredges (${ev.count})`);
@@ -3054,7 +3091,7 @@ function applyGuestIntent(it) {
 	const P = 1;
 	// scry/loot/discover resolutions can land on either player's turn; they only
 	// apply when the guest's decision is at the front of the matching queue.
-	const isResolve = it.k === 'scry' || it.k === 'discard' || it.k === 'pick';
+	const isResolve = it.k === 'scry' || it.k === 'discard' || it.k === 'pick' || it.k === 'ask';
 	if (!isResolve && state.current !== 1) return; // plays only on the guest's turn
 	try {
 		switch (it.k) {
@@ -3074,6 +3111,7 @@ function applyGuestIntent(it) {
 			case 'scry': if (state.scryQueue[0]?.chooser === P) E.resolveScry(state, it.picks || []); else return; break;
 			case 'discard': if (state.discardQueue[0]?.player === P) E.resolveDiscard(state, it.picks || []); else return; break;
 			case 'pick': if (state.pickQueue[0]?.player === P) E.resolvePick(state, it.id); else return; break;
+			case 'ask': if (state.askQueue[0]?.player === P) E.resolveAsk(state, it.yes); else return; break;
 			case 'dredge': if (state.dredgeQueue[0]?.player === P) E.resolveDredge(state, it.id); else return; break;
 			case 'respond': if (state.priority === P) E.resolveResponse(state, P, it.action ?? null); else return; break;
 			default: return;

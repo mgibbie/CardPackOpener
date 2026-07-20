@@ -55320,13 +55320,23 @@
         },
         "effects": [
           {
-            "type": "draw",
-            "value": 1
-          },
-          {
-            "type": "damage",
-            "value": 1,
-            "target": "enemy-heroes"
+            "type": "may",
+            "prompt": "Arcane Artisan: draw a card?",
+            "yes": "Draw",
+            "no": "Pass",
+            "then": [
+              {
+                "type": "draw-then",
+                "value": 1,
+                "then": [
+                  {
+                    "type": "damage",
+                    "value": 1,
+                    "target": "enemy-heroes"
+                  }
+                ]
+              }
+            ]
           }
         ]
       },
