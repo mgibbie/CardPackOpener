@@ -43672,7 +43672,7 @@
       "rarity": "legendary",
       "set": "paper",
       "token": true,
-      "description": "Arrival: Each player gains 5 Life. Instants & Sorceries that cost 4 cost 0 instead. Chaos: Each player draws a card. Departure: Deal 3 damage to all creatures.",
+      "description": "Arrival: Each player gains 5 Life. Instants & Sorceries that cost 4 cost 0 instead.\nChaos: Each player draws a card.\nDeparture: Deal 3 damage to all creatures.",
       "arrival": [
         {
           "type": "heal",
@@ -43709,7 +43709,7 @@
       "rarity": "legendary",
       "set": "paper",
       "token": true,
-      "description": "Arrival: Each Non-Human creature gains +3/+3. Humans can't attack. Chaos: Destroy all Humans. Departure: Deal 2 damage to all creatures.",
+      "description": "Arrival: Each Non-Human creature gains +3/+3. Humans can't attack.\nChaos: Destroy all Humans.\nDeparture: Deal 2 damage to all creatures.",
       "arrival": [
         {
           "type": "buff",
@@ -43742,7 +43742,7 @@
       "rarity": "legendary",
       "set": "paper",
       "token": true,
-      "description": "Arrival: Each player draws a card. When you play a creature you may sacrifice an artifact to give it +2/+2. Chaos: Each player draws 2 cards. Departure: Each player gains 2 Life.",
+      "description": "Arrival: Each player draws a card. When you play a creature you may sacrifice an artifact to give it +2/+2.\nChaos: Each player draws 2 cards.\nDeparture: Each player gains 2 Life.",
       "arrival": [
         {
           "type": "draw",
@@ -43778,7 +43778,7 @@
       "rarity": "legendary",
       "set": "paper",
       "token": true,
-      "description": "Arrival: Each player draws 2 cards. At the start of your turn, flip a coin: heads you can't play odd-cost cards this turn, tails you can't play even-cost cards. Chaos: Each player sacrifices a creature. Departure: Each player draws 2 cards.",
+      "description": "Arrival: Each player draws 2 cards. At the start of your turn, flip a coin: heads you can't play odd-cost cards this turn, tails you can't play even-cost cards.\nChaos: Each player sacrifices a creature.\nDeparture: Each player draws 2 cards.",
       "arrival": [
         {
           "type": "draw",
@@ -43810,7 +43810,7 @@
       "rarity": "legendary",
       "set": "paper",
       "token": true,
-      "description": "Arrival: Scry 2. Lands & Locations do not untap at the start of each turn. Chaos: Each player mills a card. Departure: Each player draws a card.",
+      "description": "Arrival: Scry 2. Lands & Locations do not untap at the start of each turn.\nChaos: Each player mills a card.\nDeparture: Each player draws a card.",
       "arrival": [
         {
           "type": "scry",
@@ -43843,7 +43843,7 @@
       "rarity": "legendary",
       "set": "paper",
       "token": true,
-      "description": "Arrival: Each player draws a card. Enchantment spells cost 1 less. Chaos: Each player sacrifices a creature.",
+      "description": "Arrival: Each player draws a card. Enchantment spells cost 1 less.\nChaos: Each player sacrifices a creature.",
       "arrival": [
         {
           "type": "draw",

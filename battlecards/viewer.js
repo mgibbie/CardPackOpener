@@ -31,7 +31,7 @@ const filters = { search: '', mana: null, type: '', rarity: '', cls: '', ownedOn
 // cards you can't collect: lands (bought from slots), tokens, hero powers,
 // companions/commanders — hidden by default so the gallery is your card pool
 const isUncollectible = c => c.token || c.companion || c.commander
-	|| c.type === 'land' || c.type === 'heropower';
+	|| c.type === 'land' || c.type === 'plane' || c.type === 'heropower';
 
 // uncollectible / system cards filter under their own buckets, not a class:
 // all Lands, the five WUBRG colours (non-land), then a Generic catch-all
@@ -39,6 +39,7 @@ const SYSTEM_BUCKETS = [
 	['__land__', 'Lands'], ['__advland__', 'Advanced Lands'],
 	['__c_W__', 'White'], ['__c_U__', 'Blue'], ['__c_B__', 'Black'],
 	['__c_R__', 'Red'], ['__c_G__', 'Green'], ['__generic__', 'Generic'],
+	['__plane__', 'Planes'],
 ];
 const SYSTEM_KEYS = new Set(SYSTEM_BUCKETS.map(b => b[0]));
 // theme words an advanced land can conjure (matched against a card's name)
@@ -51,6 +52,7 @@ function ensureAdvThemes(list) {
 }
 function systemBucket(c) {
 	if (c.type === 'land') return '__land__';
+	if (c.type === 'plane') return '__plane__';
 	const cols = c.colors || [];
 	for (const col of ['W', 'U', 'B', 'R', 'G']) if (cols.includes(col)) return '__c_' + col + '__';
 	if (canonClass(c.cardClass || 'neutral') === 'magepunk') {
