@@ -1,0 +1,6127 @@
+{
+ "white": [
+  {
+   "name": "Savannah Lions",
+   "cost": 1,
+   "type": "Creature \u2014 Cat",
+   "pt": "2/1",
+   "text": "",
+   "keywords": [],
+   "verdict": "EASY",
+   "why": "vanilla"
+  },
+  {
+   "name": "White Knight",
+   "cost": 2,
+   "type": "Creature \u2014 Human Knight",
+   "pt": "2/2",
+   "text": "First strike (This creature deals combat damage before creatures without first strike.)\nProtection from black (This creature can't be blocked, targeted, dealt damage, or enchanted by anything black.)",
+   "keywords": [
+    "First strike",
+    "Protection"
+   ],
+   "verdict": "REDESIGN",
+   "why": "protection/shadow"
+  },
+  {
+   "name": "Knight of the White Orchid",
+   "cost": 2,
+   "type": "Creature \u2014 Human Knight",
+   "pt": "2/2",
+   "text": "First strike\nWhen this creature enters, if an opponent controls more lands than you, you may search your library for a Plains card, put it onto the battlefield, then shuffle.",
+   "keywords": [
+    "First strike"
+   ],
+   "verdict": "HARD",
+   "why": "tutor-library"
+  },
+  {
+   "name": "Soltari Priest",
+   "cost": 2,
+   "type": "Creature \u2014 Soltari Cleric",
+   "pt": "2/1",
+   "text": "Protection from red\nShadow (This creature can block or be blocked by only creatures with shadow.)",
+   "keywords": [
+    "Shadow",
+    "Protection"
+   ],
+   "verdict": "REDESIGN",
+   "why": "protection/shadow"
+  },
+  {
+   "name": "Mother of Runes",
+   "cost": 1,
+   "type": "Creature \u2014 Human Cleric",
+   "pt": "1/1",
+   "text": "{T}: Target creature you control gains protection from the color of your choice until end of turn.",
+   "keywords": [],
+   "verdict": "REDESIGN",
+   "why": "protection/shadow"
+  },
+  {
+   "name": "Weathered Wayfarer",
+   "cost": 1,
+   "type": "Creature \u2014 Human Nomad Cleric",
+   "pt": "1/1",
+   "text": "{W}, {T}: Search your library for a land card, reveal it, put it into your hand, then shuffle. Activate only if an opponent controls more lands than you.",
+   "keywords": [],
+   "verdict": "HARD",
+   "why": "activated-ability+tutor-library"
+  },
+  {
+   "name": "Leonin Relic-Warder",
+   "cost": 2,
+   "type": "Creature \u2014 Cat Cleric",
+   "pt": "2/2",
+   "text": "When this creature enters, you may exile target artifact or enchantment.\nWhen this creature leaves the battlefield, return the exiled card to the battlefield under its owner's control.",
+   "keywords": [],
+   "verdict": "EASY",
+   "why": "known-effect-shape"
+  },
+  {
+   "name": "Thalia, Guardian of Thraben",
+   "cost": 2,
+   "type": "Legendary Creature \u2014 Human Soldier",
+   "pt": "2/1",
+   "text": "First strike\nNoncreature spells cost {1} more to cast.",
+   "keywords": [
+    "First strike"
+   ],
+   "verdict": "HARD",
+   "why": "unmatched-text"
+  },
+  {
+   "name": "Kor Skyfisher",
+   "cost": 2,
+   "type": "Creature \u2014 Kor Soldier",
+   "pt": "2/3",
+   "text": "Flying\nWhen this creature enters, return a permanent you control to its owner's hand.",
+   "keywords": [
+    "Flying"
+   ],
+   "verdict": "REDESIGN",
+   "why": "flying/reach/vigilance"
+  },
+  {
+   "name": "Flickerwisp",
+   "cost": 3,
+   "type": "Creature \u2014 Elemental",
+   "pt": "3/1",
+   "text": "Flying\nWhen this creature enters, exile another target permanent. Return that card to the battlefield under its owner's control at the beginning of the next end step.",
+   "keywords": [
+    "Flying"
+   ],
+   "verdict": "REDESIGN",
+   "why": "flying/reach/vigilance"
+  },
+  {
+   "name": "Blade Splicer",
+   "cost": 3,
+   "type": "Creature \u2014 Phyrexian Human Artificer",
+   "pt": "1/1",
+   "text": "When this creature enters, create a 3/3 colorless Phyrexian Golem artifact creature token.\nGolems you control have first strike.",
+   "keywords": [],
+   "verdict": "EASY",
+   "why": "known-effect-shape"
+  },
+  {
+   "name": "Precinct Captain",
+   "cost": 2,
+   "type": "Creature \u2014 Human Soldier",
+   "pt": "2/2",
+   "text": "First strike\nWhenever this creature deals combat damage to a player, create a 1/1 white Soldier creature token.",
+   "keywords": [
+    "First strike"
+   ],
+   "verdict": "EASY",
+   "why": "known-effect-shape"
+  },
+  {
+   "name": "Champion of the Parish",
+   "cost": 1,
+   "type": "Creature \u2014 Human Soldier",
+   "pt": "1/1",
+   "text": "Whenever another Human you control enters, put a +1/+1 counter on this creature.",
+   "keywords": [],
+   "verdict": "HARD",
+   "why": "counters/complex-cost"
+  },
+  {
+   "name": "Thalia's Lieutenant",
+   "cost": 2,
+   "type": "Creature \u2014 Human Soldier",
+   "pt": "1/1",
+   "text": "When this creature enters, put a +1/+1 counter on each other Human you control.\nWhenever another Human you control enters, put a +1/+1 counter on this creature.",
+   "keywords": [],
+   "verdict": "HARD",
+   "why": "counters/complex-cost"
+  },
+  {
+   "name": "Selfless Spirit",
+   "cost": 2,
+   "type": "Creature \u2014 Spirit Cleric",
+   "pt": "2/1",
+   "text": "Flying\nSacrifice this creature: Creatures you control gain indestructible until end of turn.",
+   "keywords": [
+    "Flying"
+   ],
+   "verdict": "REDESIGN",
+   "why": "flying/reach/vigilance"
+  },
+  {
+   "name": "Adanto Vanguard",
+   "cost": 2,
+   "type": "Creature \u2014 Vampire Soldier",
+   "pt": "1/1",
+   "text": "As long as this creature is attacking, it gets +2/+0.\nPay 4 life: This creature gains indestructible until end of turn. (Damage and effects that say \"destroy\" don't destroy it.)",
+   "keywords": [],
+   "verdict": "EASY",
+   "why": "known-effect-shape"
+  },
+  {
+   "name": "Ajani's Pridemate",
+   "cost": 2,
+   "type": "Creature \u2014 Cat Soldier",
+   "pt": "2/2",
+   "text": "Whenever you gain life, put a +1/+1 counter on this creature.",
+   "keywords": [],
+   "verdict": "HARD",
+   "why": "counters/complex-cost"
+  },
+  {
+   "name": "Soul Warden",
+   "cost": 1,
+   "type": "Creature \u2014 Human Cleric",
+   "pt": "1/1",
+   "text": "Whenever another creature enters, you gain 1 life.",
+   "keywords": [],
+   "verdict": "EASY",
+   "why": "known-effect-shape"
+  },
+  {
+   "name": "Soul's Attendant",
+   "cost": 1,
+   "type": "Creature \u2014 Human Cleric",
+   "pt": "1/1",
+   "text": "Whenever another creature enters, you may gain 1 life.",
+   "keywords": [],
+   "verdict": "EASY",
+   "why": "known-effect-shape"
+  },
+  {
+   "name": "Squadron Hawk",
+   "cost": 2,
+   "type": "Creature \u2014 Bird",
+   "pt": "1/1",
+   "text": "Flying\nWhen this creature enters, you may search your library for up to three cards named Squadron Hawk, reveal them, put them into your hand, then shuffle.",
+   "keywords": [
+    "Flying"
+   ],
+   "verdict": "REDESIGN",
+   "why": "flying/reach/vigilance"
+  },
+  {
+   "name": "Doomed Traveler",
+   "cost": 1,
+   "type": "Creature \u2014 Human Soldier",
+   "pt": "1/1",
+   "text": "When this creature dies, create a 1/1 white Spirit creature token with flying.",
+   "keywords": [],
+   "verdict": "REDESIGN",
+   "why": "flying/reach/vigilance"
+  },
+  {
+   "name": "Elite Vanguard",
+   "cost": 1,
+   "type": "Creature \u2014 Human Soldier",
+   "pt": "2/1",
+   "text": "",
+   "keywords": [],
+   "verdict": "EASY",
+   "why": "vanilla"
+  },
+  {
+   "name": "Student of Warfare",
+   "cost": 1,
+   "type": "Creature \u2014 Human Knight",
+   "pt": "1/1",
+   "text": "Level up {W} ({W}: Put a level counter on this. Level up only as a sorcery.)\nLEVEL 2-6\n3/3\nFirst strike\nLEVEL 7+\n4/4\nDouble strike",
+   "keywords": [
+    "First strike",
+    "Level Up",
+    "Double strike"
+   ],
+   "verdict": "HARD",
+   "why": "counters/complex-cost"
+  },
+  {
+   "name": "Knight of Meadowgrain",
+   "cost": 2,
+   "type": "Creature \u2014 Kithkin Knight",
+   "pt": "2/2",
+   "text": "First strike\nLifelink (Damage dealt by this creature also causes you to gain that much life.)",
+   "keywords": [
+    "Lifelink",
+    "First strike"
+   ],
+   "verdict": "EASY",
+   "why": "keywords-only"
+  },
+  {
+   "name": "Kor Firewalker",
+   "cost": 2,
+   "type": "Creature \u2014 Kor Soldier",
+   "pt": "2/2",
+   "text": "Protection from red\nWhenever a player casts a red spell, you may gain 1 life.",
+   "keywords": [
+    "Protection"
+   ],
+   "verdict": "REDESIGN",
+   "why": "protection/shadow"
+  },
+  {
+   "name": "Leonin Arbiter",
+   "cost": 2,
+   "type": "Creature \u2014 Cat Cleric",
+   "pt": "2/2",
+   "text": "Players can't search libraries. Any player may pay {2} for that player to ignore this effect until end of turn.",
+   "keywords": [],
+   "verdict": "HARD",
+   "why": "unmatched-text"
+  },
+  {
+   "name": "Aven Mindcensor",
+   "cost": 3,
+   "type": "Creature \u2014 Bird Wizard",
+   "pt": "2/1",
+   "text": "Flash\nFlying\nIf an opponent would search a library, that player searches the top four cards of that library instead.",
+   "keywords": [
+    "Flying",
+    "Flash"
+   ],
+   "verdict": "REDESIGN",
+   "why": "flying/reach/vigilance"
+  },
+  {
+   "name": "Serra Avenger",
+   "cost": 2,
+   "type": "Creature \u2014 Angel",
+   "pt": "3/3",
+   "text": "You can't cast Serra Avenger during your first, second, or third turns of the game.\nFlying, vigilance",
+   "keywords": [
+    "Flying",
+    "Vigilance"
+   ],
+   "verdict": "REDESIGN",
+   "why": "flying/reach/vigilance"
+  },
+  {
+   "name": "Wall of Omens",
+   "cost": 2,
+   "type": "Creature \u2014 Wall",
+   "pt": "0/4",
+   "text": "Defender\nWhen this creature enters, draw a card.",
+   "keywords": [
+    "Defender"
+   ],
+   "verdict": "EASY",
+   "why": "known-effect-shape"
+  },
+  {
+   "name": "Kor Sanctifiers",
+   "cost": 3,
+   "type": "Creature \u2014 Kor Cleric",
+   "pt": "2/3",
+   "text": "Kicker {W} (You may pay an additional {W} as you cast this spell.)\nWhen this creature enters, if it was kicked, destroy target artifact or enchantment.",
+   "keywords": [
+    "Kicker"
+   ],
+   "verdict": "HARD",
+   "why": "counters/complex-cost"
+  },
+  {
+   "name": "Kor Hookmaster",
+   "cost": 3,
+   "type": "Creature \u2014 Kor Soldier",
+   "pt": "2/2",
+   "text": "When this creature enters, tap target creature an opponent controls. That creature doesn't untap during its controller's next untap step.",
+   "keywords": [],
+   "verdict": "EASY",
+   "why": "known-effect-shape"
+  },
+  {
+   "name": "Kor Duelist",
+   "cost": 1,
+   "type": "Creature \u2014 Kor Soldier",
+   "pt": "1/1",
+   "text": "As long as this creature is equipped, it has double strike. (It deals both first-strike and regular combat damage.)",
+   "keywords": [],
+   "verdict": "HARD",
+   "why": "unmatched-text"
+  },
+  {
+   "name": "Kor Outfitter",
+   "cost": 2,
+   "type": "Creature \u2014 Kor Soldier",
+   "pt": "2/2",
+   "text": "When this creature enters, you may attach target Equipment you control to target creature you control.",
+   "keywords": [],
+   "verdict": "EASY",
+   "why": "known-effect-shape"
+  },
+  {
+   "name": "Steppe Lynx",
+   "cost": 1,
+   "type": "Creature \u2014 Cat",
+   "pt": "0/1",
+   "text": "Landfall \u2014 Whenever a land you control enters, this creature gets +2/+2 until end of turn.",
+   "keywords": [
+    "Landfall"
+   ],
+   "verdict": "EASY",
+   "why": "known-effect-shape"
+  },
+  {
+   "name": "Kor Scythemaster",
+   "cost": 3,
+   "type": "Creature \u2014 Kor Soldier Ally",
+   "pt": "3/1",
+   "text": "This creature has first strike as long as it's attacking.",
+   "keywords": [],
+   "verdict": "HARD",
+   "why": "unmatched-text"
+  },
+  {
+   "name": "Swords to Plowshares",
+   "cost": 1,
+   "type": "Instant",
+   "pt": null,
+   "text": "Exile target creature. Its controller gains life equal to its power.",
+   "keywords": [],
+   "verdict": "EASY",
+   "why": "known-effect-shape"
+  },
+  {
+   "name": "Path to Exile",
+   "cost": 1,
+   "type": "Instant",
+   "pt": null,
+   "text": "Exile target creature. Its controller may search their library for a basic land card, put that card onto the battlefield tapped, then shuffle.",
+   "keywords": [],
+   "verdict": "EASY",
+   "why": "known-effect-shape"
+  },
+  {
+   "name": "Wrath of God",
+   "cost": 4,
+   "type": "Sorcery",
+   "pt": null,
+   "text": "Destroy all creatures. They can't be regenerated.",
+   "keywords": [],
+   "verdict": "EASY",
+   "why": "known-effect-shape"
+  },
+  {
+   "name": "Day of Judgment",
+   "cost": 4,
+   "type": "Sorcery",
+   "pt": null,
+   "text": "Destroy all creatures.",
+   "keywords": [],
+   "verdict": "EASY",
+   "why": "known-effect-shape"
+  },
+  {
+   "name": "Oblivion Ring",
+   "cost": 3,
+   "type": "Enchantment",
+   "pt": null,
+   "text": "When this enchantment enters, exile another target nonland permanent.\nWhen this enchantment leaves the battlefield, return the exiled card to the battlefield under its owner's control.",
+   "keywords": [],
+   "verdict": "EASY",
+   "why": "known-effect-shape"
+  },
+  {
+   "name": "Banishing Light",
+   "cost": 3,
+   "type": "Enchantment",
+   "pt": null,
+   "text": "When this enchantment enters, exile target nonland permanent an opponent controls until this enchantment leaves the battlefield.",
+   "keywords": [],
+   "verdict": "EASY",
+   "why": "known-effect-shape"
+  },
+  {
+   "name": "Journey to Nowhere",
+   "cost": 2,
+   "type": "Enchantment",
+   "pt": null,
+   "text": "When this enchantment enters, exile target creature.\nWhen this enchantment leaves the battlefield, return the exiled card to the battlefield under its owner's control.",
+   "keywords": [],
+   "verdict": "EASY",
+   "why": "known-effect-shape"
+  },
+  {
+   "name": "Pacifism",
+   "cost": 2,
+   "type": "Enchantment \u2014 Aura",
+   "pt": null,
+   "text": "Enchant creature\nEnchanted creature can't attack or block.",
+   "keywords": [
+    "Enchant"
+   ],
+   "verdict": "HARD",
+   "why": "enchant-target"
+  },
+  {
+   "name": "Arrest",
+   "cost": 3,
+   "type": "Enchantment \u2014 Aura",
+   "pt": null,
+   "text": "Enchant creature\nEnchanted creature can't attack or block, and its activated abilities can't be activated.",
+   "keywords": [
+    "Enchant"
+   ],
+   "verdict": "HARD",
+   "why": "enchant-target"
+  },
+  {
+   "name": "Condemn",
+   "cost": 1,
+   "type": "Instant",
+   "pt": null,
+   "text": "Put target attacking creature on the bottom of its owner's library. Its controller gains life equal to its toughness.",
+   "keywords": [],
+   "verdict": "HARD",
+   "why": "unmatched-text"
+  },
+  {
+   "name": "Disenchant",
+   "cost": 2,
+   "type": "Instant",
+   "pt": null,
+   "text": "Destroy target artifact or enchantment.",
+   "keywords": [],
+   "verdict": "EASY",
+   "why": "known-effect-shape"
+  },
+  {
+   "name": "Return to Dust",
+   "cost": 4,
+   "type": "Instant",
+   "pt": null,
+   "text": "Exile target artifact or enchantment. If you cast this spell during your main phase, you may exile up to one other target artifact or enchantment.",
+   "keywords": [],
+   "verdict": "HARD",
+   "why": "unmatched-text"
+  },
+  {
+   "name": "Fragmentize",
+   "cost": 1,
+   "type": "Sorcery",
+   "pt": null,
+   "text": "Destroy target artifact or enchantment with mana value 4 or less.",
+   "keywords": [],
+   "verdict": "EASY",
+   "why": "known-effect-shape"
+  },
+  {
+   "name": "Healing Salve",
+   "cost": 1,
+   "type": "Instant",
+   "pt": null,
+   "text": "Choose one \u2014\n\u2022 Target player gains 3 life.\n\u2022 Prevent the next 3 damage that would be dealt to any target this turn.",
+   "keywords": [],
+   "verdict": "EASY",
+   "why": "known-effect-shape"
+  },
+  {
+   "name": "Rest for the Weary",
+   "cost": 2,
+   "type": "Instant",
+   "pt": null,
+   "text": "Target player gains 4 life.\nLandfall \u2014 If you had a land enter the battlefield under your control this turn, that player gains 8 life instead.",
+   "keywords": [
+    "Landfall"
+   ],
+   "verdict": "EASY",
+   "why": "known-effect-shape"
+  },
+  {
+   "name": "Ajani's Welcome",
+   "cost": 1,
+   "type": "Enchantment",
+   "pt": null,
+   "text": "Whenever a creature you control enters, you gain 1 life.",
+   "keywords": [],
+   "verdict": "EASY",
+   "why": "known-effect-shape"
+  },
+  {
+   "name": "Raise the Alarm",
+   "cost": 2,
+   "type": "Instant",
+   "pt": null,
+   "text": "Create two 1/1 white Soldier creature tokens.",
+   "keywords": [],
+   "verdict": "EASY",
+   "why": "known-effect-shape"
+  },
+  {
+   "name": "Spectral Procession",
+   "cost": 6,
+   "type": "Sorcery",
+   "pt": null,
+   "text": "Create three 1/1 white Spirit creature tokens with flying.",
+   "keywords": [],
+   "verdict": "REDESIGN",
+   "why": "flying/reach/vigilance"
+  },
+  {
+   "name": "Battle Screech",
+   "cost": 4,
+   "type": "Sorcery",
+   "pt": null,
+   "text": "Create two 1/1 white Bird creature tokens with flying.\nFlashback\u2014Tap three untapped white creatures you control. (You may cast this card from your graveyard for its flashback cost. Then exile it.)",
+   "keywords": [
+    "Flashback"
+   ],
+   "verdict": "REDESIGN",
+   "why": "flying/reach/vigilance"
+  },
+  {
+   "name": "Secure the Wastes",
+   "cost": 1,
+   "type": "Instant",
+   "pt": null,
+   "text": "Create X 1/1 white Warrior creature tokens.",
+   "keywords": [],
+   "verdict": "HARD",
+   "why": "unmatched-text"
+  },
+  {
+   "name": "Timely Reinforcements",
+   "cost": 3,
+   "type": "Sorcery",
+   "pt": null,
+   "text": "If you have less life than an opponent, you gain 6 life. If you control fewer creatures than an opponent, create three 1/1 white Soldier creature tokens.",
+   "keywords": [],
+   "verdict": "EASY",
+   "why": "known-effect-shape"
+  },
+  {
+   "name": "Midnight Haunting",
+   "cost": 3,
+   "type": "Instant",
+   "pt": null,
+   "text": "Create two 1/1 white Spirit creature tokens with flying.",
+   "keywords": [],
+   "verdict": "REDESIGN",
+   "why": "flying/reach/vigilance"
+  },
+  {
+   "name": "Intangible Virtue",
+   "cost": 2,
+   "type": "Enchantment",
+   "pt": null,
+   "text": "Creature tokens you control get +1/+1 and have vigilance.",
+   "keywords": [],
+   "verdict": "REDESIGN",
+   "why": "flying/reach/vigilance"
+  },
+  {
+   "name": "Honor of the Pure",
+   "cost": 2,
+   "type": "Enchantment",
+   "pt": null,
+   "text": "White creatures you control get +1/+1.",
+   "keywords": [],
+   "verdict": "EASY",
+   "why": "known-effect-shape"
+  },
+  {
+   "name": "Glorious Anthem",
+   "cost": 3,
+   "type": "Enchantment",
+   "pt": null,
+   "text": "Creatures you control get +1/+1.",
+   "keywords": [],
+   "verdict": "EASY",
+   "why": "known-effect-shape"
+  },
+  {
+   "name": "Serra's Blessing",
+   "cost": 2,
+   "type": "Enchantment",
+   "pt": null,
+   "text": "Creatures you control have vigilance. (Attacking doesn't cause them to tap.)",
+   "keywords": [],
+   "verdict": "REDESIGN",
+   "why": "flying/reach/vigilance"
+  },
+  {
+   "name": "Celestial Purge",
+   "cost": 2,
+   "type": "Instant",
+   "pt": null,
+   "text": "Exile target black or red permanent.",
+   "keywords": [],
+   "verdict": "HARD",
+   "why": "unmatched-text"
+  },
+  {
+   "name": "Revoke Existence",
+   "cost": 2,
+   "type": "Sorcery",
+   "pt": null,
+   "text": "Exile target artifact or enchantment.",
+   "keywords": [],
+   "verdict": "HARD",
+   "why": "unmatched-text"
+  },
+  {
+   "name": "Celestial Flare",
+   "cost": 2,
+   "type": "Instant",
+   "pt": null,
+   "text": "Target player sacrifices an attacking or blocking creature of their choice.",
+   "keywords": [],
+   "verdict": "HARD",
+   "why": "unmatched-text"
+  },
+  {
+   "name": "Sunlance",
+   "cost": 1,
+   "type": "Sorcery",
+   "pt": null,
+   "text": "Sunlance deals 3 damage to target nonwhite creature.",
+   "keywords": [],
+   "verdict": "EASY",
+   "why": "known-effect-shape"
+  },
+  {
+   "name": "Holy Light",
+   "cost": 3,
+   "type": "Instant",
+   "pt": null,
+   "text": "Nonwhite creatures get -1/-1 until end of turn.",
+   "keywords": [],
+   "verdict": "HARD",
+   "why": "unmatched-text"
+  },
+  {
+   "name": "Rebuff the Wicked",
+   "cost": 1,
+   "type": "Instant",
+   "pt": null,
+   "text": "Counter target spell that targets a permanent you control.",
+   "keywords": [],
+   "verdict": "EASY",
+   "why": "known-effect-shape"
+  },
+  {
+   "name": "Gods Willing",
+   "cost": 1,
+   "type": "Instant",
+   "pt": null,
+   "text": "Target creature you control gains protection from the color of your choice until end of turn. (It can't be blocked, targeted, dealt damage, enchanted, or equipped by anything of that color.)\nScry 1.",
+   "keywords": [
+    "Scry"
+   ],
+   "verdict": "REDESIGN",
+   "why": "protection/shadow"
+  },
+  {
+   "name": "Smite the Monstrous",
+   "cost": 4,
+   "type": "Instant",
+   "pt": null,
+   "text": "Destroy target creature with power 4 or greater.",
+   "keywords": [],
+   "verdict": "EASY",
+   "why": "known-effect-shape"
+  },
+  {
+   "name": "Declaration in Stone",
+   "cost": 2,
+   "type": "Sorcery",
+   "pt": null,
+   "text": "Exile target creature and all other creatures its controller controls with the same name as that creature. That player investigates for each nontoken creature exiled this way.",
+   "keywords": [
+    "Investigate"
+   ],
+   "verdict": "EASY",
+   "why": "known-effect-shape"
+  },
+  {
+   "name": "Akroma's Will",
+   "cost": 4,
+   "type": "Instant",
+   "pt": null,
+   "text": "Choose one. If you control a commander as you cast this spell, you may choose both instead.\n\u2022 Creatures you control gain flying, vigilance, and double strike until end of turn.\n\u2022 Creatures you control gain lifelink, indestructible, and protection from each color until end of turn.",
+   "keywords": [],
+   "verdict": "REDESIGN",
+   "why": "flying/reach/vigilance"
+  },
+  {
+   "name": "Smothering Tithe",
+   "cost": 4,
+   "type": "Enchantment",
+   "pt": null,
+   "text": "Whenever an opponent draws a card, that player may pay {2}. If the player doesn't, you create a Treasure token. (It's an artifact with \"{T}, Sacrifice this token: Add one mana of any color.\")",
+   "keywords": [
+    "Treasure"
+   ],
+   "verdict": "EASY",
+   "why": "known-effect-shape"
+  },
+  {
+   "name": "Sun Titan",
+   "cost": 6,
+   "type": "Creature \u2014 Giant",
+   "pt": "6/6",
+   "text": "Vigilance\nWhenever this creature enters or attacks, you may return target permanent card with mana value 3 or less from your graveyard to the battlefield.",
+   "keywords": [
+    "Vigilance"
+   ],
+   "verdict": "REDESIGN",
+   "why": "flying/reach/vigilance"
+  },
+  {
+   "name": "Ephemerate",
+   "cost": 1,
+   "type": "Instant",
+   "pt": null,
+   "text": "Exile target creature you control, then return it to the battlefield under its owner's control.\nRebound (If you cast this spell from your hand, exile it as it resolves. At the beginning of your next upkeep, you may cast this card from exile without paying its mana cost.)",
+   "keywords": [
+    "Rebound"
+   ],
+   "verdict": "EASY",
+   "why": "known-effect-shape"
+  },
+  {
+   "name": "Stoneforge Mystic",
+   "cost": 2,
+   "type": "Creature \u2014 Kor Artificer",
+   "pt": "1/2",
+   "text": "When this creature enters, you may search your library for an Equipment card, reveal it, put it into your hand, then shuffle.\n{1}{W}, {T}: You may put an Equipment card from your hand onto the battlefield.",
+   "keywords": [],
+   "verdict": "HARD",
+   "why": "activated-ability+tutor-library"
+  },
+  {
+   "name": "Prismatic Ending",
+   "cost": 1,
+   "type": "Sorcery",
+   "pt": null,
+   "text": "Converge \u2014 Exile target nonland permanent if its mana value is less than or equal to the number of colors of mana spent to cast this spell.",
+   "keywords": [
+    "Converge"
+   ],
+   "verdict": "HARD",
+   "why": "unmatched-text"
+  },
+  {
+   "name": "Solitude",
+   "cost": 5,
+   "type": "Creature \u2014 Elemental Incarnation",
+   "pt": "3/2",
+   "text": "Flash\nLifelink\nWhen this creature enters, exile up to one other target creature. That creature's controller gains life equal to its power.\nEvoke\u2014Exile a white card from your hand.",
+   "keywords": [
+    "Lifelink",
+    "Evoke",
+    "Flash"
+   ],
+   "verdict": "EASY",
+   "why": "known-effect-shape"
+  },
+  {
+   "name": "Leyline Binding",
+   "cost": 6,
+   "type": "Enchantment",
+   "pt": null,
+   "text": "Flash\nDomain \u2014 This spell costs {1} less to cast for each basic land type among lands you control.\nWhen this enchantment enters, exile target nonland permanent an opponent controls until this enchantment leaves the battlefield.",
+   "keywords": [
+    "Domain",
+    "Flash"
+   ],
+   "verdict": "EASY",
+   "why": "known-effect-shape"
+  },
+  {
+   "name": "March of Otherworldy Light",
+   "cost": 1,
+   "type": "Instant",
+   "pt": null,
+   "text": "As an additional cost to cast this spell, you may exile any number of white cards from your hand. This spell costs {2} less to cast for each card exiled this way.\nExile target artifact, creature, or enchantment with mana value X or less.",
+   "keywords": [],
+   "verdict": "HARD",
+   "why": "unmatched-text"
+  },
+  {
+   "name": "Rest in Peace",
+   "cost": 2,
+   "type": "Enchantment",
+   "pt": null,
+   "text": "When this enchantment enters, exile all graveyards.\nIf a card or token would be put into a graveyard from anywhere, exile it instead.",
+   "keywords": [],
+   "verdict": "EASY",
+   "why": "known-effect-shape"
+  },
+  {
+   "name": "Leyline of Sanctity",
+   "cost": 4,
+   "type": "Enchantment",
+   "pt": null,
+   "text": "If this card is in your opening hand, you may begin the game with it on the battlefield.\nYou have hexproof. (You can't be the target of spells or abilities your opponents control.)",
+   "keywords": [],
+   "verdict": "HARD",
+   "why": "unmatched-text"
+  },
+  {
+   "name": "Surge of Salvation",
+   "cost": 1,
+   "type": "Instant",
+   "pt": null,
+   "text": "You and permanents you control gain hexproof until end of turn. Prevent all damage that black and/or red sources would deal to creatures you control this turn.",
+   "keywords": [],
+   "verdict": "HARD",
+   "why": "unmatched-text"
+  },
+  {
+   "name": "Puresteel Paladin",
+   "cost": 2,
+   "type": "Creature \u2014 Human Knight",
+   "pt": "2/2",
+   "text": "Whenever an Equipment you control enters, you may draw a card.\nMetalcraft \u2014 Equipment you control have equip {0} as long as you control three or more artifacts.",
+   "keywords": [
+    "Metalcraft"
+   ],
+   "verdict": "HARD",
+   "why": "equipment"
+  },
+  {
+   "name": "Blacksmith's Skill",
+   "cost": 1,
+   "type": "Instant",
+   "pt": null,
+   "text": "Target permanent gains hexproof and indestructible until end of turn. If it's an artifact creature, it gets +2/+2 until end of turn.",
+   "keywords": [],
+   "verdict": "EASY",
+   "why": "known-effect-shape"
+  },
+  {
+   "name": "Steelshaper's Gift",
+   "cost": 1,
+   "type": "Sorcery",
+   "pt": null,
+   "text": "Search your library for an Equipment card, reveal that card, put it into your hand, then shuffle.",
+   "keywords": [],
+   "verdict": "HARD",
+   "why": "tutor-library"
+  },
+  {
+   "name": "Forge Anew",
+   "cost": 3,
+   "type": "Enchantment",
+   "pt": null,
+   "text": "When this enchantment enters, return target Equipment card from your graveyard to the battlefield.\nDuring your turn, you may activate equip abilities any time you could cast an instant.\nYou may pay {0} rather than pay the equip cost of the first equip ability you activate during each of your turns.",
+   "keywords": [],
+   "verdict": "HARD",
+   "why": "graveyard-recursion"
+  },
+  {
+   "name": "Hushbringer",
+   "cost": 2,
+   "type": "Creature \u2014 Faerie",
+   "pt": "1/2",
+   "text": "Flying, lifelink\nCreatures entering or dying don't cause abilities to trigger.",
+   "keywords": [
+    "Flying",
+    "Lifelink"
+   ],
+   "verdict": "REDESIGN",
+   "why": "flying/reach/vigilance"
+  },
+  {
+   "name": "Stony Silence",
+   "cost": 2,
+   "type": "Enchantment",
+   "pt": null,
+   "text": "Activated abilities of artifacts can't be activated.",
+   "keywords": [],
+   "verdict": "HARD",
+   "why": "unmatched-text"
+  },
+  {
+   "name": "The Wandering Emperor",
+   "cost": 4,
+   "type": "Legendary Planeswalker",
+   "pt": null,
+   "text": "Flash\nAs long as The Wandering Emperor entered this turn, you may activate her loyalty abilities any time you could cast an instant.\n+1: Put a +1/+1 counter on up to one target creature. It gains first strike until end of turn.\n\u22121: Create a 2/2 white Samurai creature token with vigilance.\n\u22122: Exile target tapped creature. You gain 2 life.",
+   "keywords": [
+    "Flash"
+   ],
+   "verdict": "REDESIGN",
+   "why": "flying/reach/vigilance"
+  },
+  {
+   "name": "Blossoming Calm",
+   "cost": 1,
+   "type": "Instant",
+   "pt": null,
+   "text": "You gain hexproof until your next turn. You gain 2 life.\nRebound (If you cast this spell from your hand, exile it as it resolves. At the beginning of your next upkeep, you may cast this card from exile without paying its mana cost.)",
+   "keywords": [
+    "Rebound"
+   ],
+   "verdict": "EASY",
+   "why": "known-effect-shape"
+  },
+  {
+   "name": "Dispatch",
+   "cost": 1,
+   "type": "Instant",
+   "pt": null,
+   "text": "Tap target creature.\nMetalcraft \u2014 If you control three or more artifacts, exile that creature.",
+   "keywords": [
+    "Metalcraft"
+   ],
+   "verdict": "HARD",
+   "why": "unmatched-text"
+  },
+  {
+   "name": "Charming Prince",
+   "cost": 2,
+   "type": "Creature \u2014 Human Noble",
+   "pt": "2/2",
+   "text": "When this creature enters, choose one \u2014\n\u2022 Scry 2.\n\u2022 You gain 3 life.\n\u2022 Exile another target creature you own. Return it to the battlefield under your control at the beginning of the next end step.",
+   "keywords": [
+    "Scry"
+   ],
+   "verdict": "EASY",
+   "why": "known-effect-shape"
+  },
+  {
+   "name": "Giant Killer",
+   "cost": 1,
+   "type": "Creature \u2014 Human Peasant // Instant \u2014 Adventure",
+   "pt": "1/2",
+   "text": "",
+   "keywords": [],
+   "verdict": "EASY",
+   "why": "vanilla"
+  },
+  {
+   "name": "Extraction Specialist",
+   "cost": 3,
+   "type": "Creature \u2014 Human Rogue",
+   "pt": "3/2",
+   "text": "Lifelink\nWhen this creature enters, return target creature card with mana value 2 or less from your graveyard to the battlefield. That creature can't attack or block for as long as you control this creature.",
+   "keywords": [
+    "Lifelink"
+   ],
+   "verdict": "HARD",
+   "why": "graveyard-recursion"
+  },
+  {
+   "name": "Sanctum Prelate",
+   "cost": 3,
+   "type": "Creature \u2014 Human Cleric",
+   "pt": "2/2",
+   "text": "As this creature enters, choose a number.\nNoncreature spells with mana value equal to the chosen number can't be cast.",
+   "keywords": [],
+   "verdict": "HARD",
+   "why": "unmatched-text"
+  },
+  {
+   "name": "Adeline, Resplendent Cathar",
+   "cost": 3,
+   "type": "Legendary Creature \u2014 Human Knight",
+   "pt": "*/4",
+   "text": "Vigilance\nAdeline's power is equal to the number of creatures you control.\nWhenever you attack, for each opponent, create a 1/1 white Human creature token that's tapped and attacking that player or a planeswalker they control.",
+   "keywords": [
+    "Vigilance"
+   ],
+   "verdict": "REDESIGN",
+   "why": "flying/reach/vigilance"
+  },
+  {
+   "name": "Felidar Guardian",
+   "cost": 4,
+   "type": "Creature \u2014 Cat Beast",
+   "pt": "1/4",
+   "text": "When this creature enters, you may exile another target permanent you control, then return that card to the battlefield under its owner's control.",
+   "keywords": [],
+   "verdict": "EASY",
+   "why": "known-effect-shape"
+  },
+  {
+   "name": "Touch the Spirit Realm",
+   "cost": 3,
+   "type": "Enchantment",
+   "pt": null,
+   "text": "When this enchantment enters, exile up to one target artifact or creature until this enchantment leaves the battlefield.\nChannel \u2014 {1}{W}, Discard this card: Exile target artifact or creature. Return it to the battlefield under its owner's control at the beginning of the next end step.",
+   "keywords": [
+    "Channel"
+   ],
+   "verdict": "HARD",
+   "why": "activated-ability"
+  },
+  {
+   "name": "Anointed Procession",
+   "cost": 4,
+   "type": "Enchantment",
+   "pt": null,
+   "text": "If an effect would create one or more tokens under your control, it creates twice that many of those tokens instead.",
+   "keywords": [],
+   "verdict": "EASY",
+   "why": "known-effect-shape"
+  },
+  {
+   "name": "Austere Command",
+   "cost": 6,
+   "type": "Sorcery",
+   "pt": null,
+   "text": "Choose two \u2014\n\u2022 Destroy all artifacts.\n\u2022 Destroy all enchantments.\n\u2022 Destroy all creatures with mana value 3 or less.\n\u2022 Destroy all creatures with mana value 4 or greater.",
+   "keywords": [],
+   "verdict": "EASY",
+   "why": "known-effect-shape"
+  },
+  {
+   "name": "Cathars' Crusade",
+   "cost": 5,
+   "type": "Enchantment",
+   "pt": null,
+   "text": "Whenever a creature you control enters, put a +1/+1 counter on each creature you control.",
+   "keywords": [],
+   "verdict": "HARD",
+   "why": "counters/complex-cost"
+  },
+  {
+   "name": "Drannith Magistrate",
+   "cost": 2,
+   "type": "Creature \u2014 Human Wizard",
+   "pt": "1/3",
+   "text": "Your opponents can't cast spells from anywhere other than their hands.",
+   "keywords": [],
+   "verdict": "HARD",
+   "why": "unmatched-text"
+  },
+  {
+   "name": "Enlightened Tutor",
+   "cost": 1,
+   "type": "Instant",
+   "pt": null,
+   "text": "Search your library for an artifact or enchantment card, reveal it, then shuffle and put that card on top.",
+   "keywords": [],
+   "verdict": "HARD",
+   "why": "tutor-library"
+  },
+  {
+   "name": "Farewell",
+   "cost": 6,
+   "type": "Sorcery",
+   "pt": null,
+   "text": "Choose one or more \u2014\n\u2022 Exile all artifacts.\n\u2022 Exile all creatures.\n\u2022 Exile all enchantments.\n\u2022 Exile all graveyards.",
+   "keywords": [],
+   "verdict": "HARD",
+   "why": "unmatched-text"
+  },
+  {
+   "name": "Felidar Retreat",
+   "cost": 4,
+   "type": "Enchantment",
+   "pt": null,
+   "text": "Landfall \u2014 Whenever a land you control enters, choose one \u2014\n\u2022 Create a 2/2 white Cat Beast creature token.\n\u2022 Put a +1/+1 counter on each creature you control. Those creatures gain vigilance until end of turn.",
+   "keywords": [
+    "Landfall"
+   ],
+   "verdict": "REDESIGN",
+   "why": "flying/reach/vigilance"
+  },
+  {
+   "name": "Flawless Maneuver",
+   "cost": 3,
+   "type": "Instant",
+   "pt": null,
+   "text": "If you control a commander, you may cast this spell without paying its mana cost.\nCreatures you control gain indestructible until end of turn.",
+   "keywords": [],
+   "verdict": "HARD",
+   "why": "unmatched-text"
+  },
+  {
+   "name": "Generous Gift",
+   "cost": 3,
+   "type": "Instant",
+   "pt": null,
+   "text": "Destroy target permanent. Its controller creates a 3/3 green Elephant creature token.",
+   "keywords": [],
+   "verdict": "EASY",
+   "why": "known-effect-shape"
+  },
+  {
+   "name": "Ghostly Prison",
+   "cost": 3,
+   "type": "Enchantment",
+   "pt": null,
+   "text": "Creatures can't attack you unless their controller pays {2} for each creature they control that's attacking you.",
+   "keywords": [],
+   "verdict": "EASY",
+   "why": "known-effect-shape"
+  },
+  {
+   "name": "Grand Abolisher",
+   "cost": 2,
+   "type": "Creature \u2014 Human Cleric",
+   "pt": "2/2",
+   "text": "During your turn, your opponents can't cast spells or activate abilities of artifacts, creatures, or enchantments.",
+   "keywords": [],
+   "verdict": "HARD",
+   "why": "unmatched-text"
+  },
+  {
+   "name": "Idyllic Tutor",
+   "cost": 3,
+   "type": "Sorcery",
+   "pt": null,
+   "text": "Search your library for an enchantment card, reveal it, put it into your hand, then shuffle.",
+   "keywords": [],
+   "verdict": "HARD",
+   "why": "tutor-library"
+  },
+  {
+   "name": "Reprieve",
+   "cost": 2,
+   "type": "Instant",
+   "pt": null,
+   "text": "Return target spell to its owner's hand.\nDraw a card.",
+   "keywords": [],
+   "verdict": "EASY",
+   "why": "known-effect-shape"
+  }
+ ],
+ "blue": [
+  {
+   "name": "Air Elemental",
+   "cost": 5,
+   "type": "Creature \u2014 Elemental",
+   "pt": "4/4",
+   "text": "Flying",
+   "keywords": [
+    "Flying"
+   ],
+   "verdict": "REDESIGN",
+   "why": "flying/reach/vigilance"
+  },
+  {
+   "name": "Wormfang Drake",
+   "cost": 3,
+   "type": "Creature \u2014 Nightmare Drake",
+   "pt": "3/4",
+   "text": "Flying\nWhen this creature enters, sacrifice it unless you exile a creature you control other than this creature.\nWhen this creature leaves the battlefield, return the exiled card to the battlefield under its owner's control.",
+   "keywords": [
+    "Flying"
+   ],
+   "verdict": "REDESIGN",
+   "why": "flying/reach/vigilance"
+  },
+  {
+   "name": "Delver of Secrets",
+   "cost": 1,
+   "type": "Creature \u2014 Human Wizard // Creature \u2014 Human Insect",
+   "pt": null,
+   "text": "",
+   "keywords": [
+    "Flying",
+    "Transform"
+   ],
+   "verdict": "REDESIGN",
+   "why": "flying/reach/vigilance"
+  },
+  {
+   "name": "Augur of Bolas",
+   "cost": 2,
+   "type": "Creature \u2014 Merfolk Wizard",
+   "pt": "1/3",
+   "text": "When this creature enters, look at the top three cards of your library. You may reveal an instant or sorcery card from among them and put it into your hand. Put the rest on the bottom of your library in any order.",
+   "keywords": [],
+   "verdict": "EASY",
+   "why": "known-effect-shape"
+  },
+  {
+   "name": "Merfolk Looter",
+   "cost": 2,
+   "type": "Creature \u2014 Merfolk Rogue",
+   "pt": "1/1",
+   "text": "{T}: Draw a card, then discard a card.",
+   "keywords": [],
+   "verdict": "HARD",
+   "why": "activated-ability"
+  },
+  {
+   "name": "Looter il-Kor",
+   "cost": 2,
+   "type": "Creature \u2014 Kor Rogue",
+   "pt": "1/1",
+   "text": "Shadow (This creature can block or be blocked by only creatures with shadow.)\nWhenever this creature deals damage to an opponent, draw a card, then discard a card.",
+   "keywords": [
+    "Shadow"
+   ],
+   "verdict": "REDESIGN",
+   "why": "protection/shadow"
+  },
+  {
+   "name": "Cloud of Faeries",
+   "cost": 2,
+   "type": "Creature \u2014 Faerie",
+   "pt": "1/1",
+   "text": "Flying\nWhen this creature enters, untap up to two lands.\nCycling {2} ({2}, Discard this card: Draw a card.)",
+   "keywords": [
+    "Flying",
+    "Cycling"
+   ],
+   "verdict": "REDESIGN",
+   "why": "flying/reach/vigilance"
+  },
+  {
+   "name": "Pestermite",
+   "cost": 3,
+   "type": "Creature \u2014 Faerie Rogue",
+   "pt": "2/1",
+   "text": "Flash\nFlying\nWhen this creature enters, you may tap or untap target permanent.",
+   "keywords": [
+    "Flying",
+    "Flash"
+   ],
+   "verdict": "REDESIGN",
+   "why": "flying/reach/vigilance"
+  },
+  {
+   "name": "Deceiver Exarch",
+   "cost": 3,
+   "type": "Creature \u2014 Phyrexian Cleric",
+   "pt": "1/4",
+   "text": "Flash (You may cast this spell any time you could cast an instant.)\nWhen this creature enters, choose one \u2014\n\u2022 Untap target permanent you control.\n\u2022 Tap target permanent an opponent controls.",
+   "keywords": [
+    "Flash"
+   ],
+   "verdict": "EASY",
+   "why": "known-effect-shape"
+  },
+  {
+   "name": "Spellstutter Sprite",
+   "cost": 2,
+   "type": "Creature \u2014 Faerie Wizard",
+   "pt": "1/1",
+   "text": "Flash\nFlying\nWhen this creature enters, counter target spell with mana value X or less, where X is the number of Faeries you control.",
+   "keywords": [
+    "Flying",
+    "Flash"
+   ],
+   "verdict": "REDESIGN",
+   "why": "flying/reach/vigilance"
+  },
+  {
+   "name": "Faerie Miscreant",
+   "cost": 1,
+   "type": "Creature \u2014 Faerie Rogue",
+   "pt": "1/1",
+   "text": "Flying\nWhen this creature enters, if you control another creature named Faerie Miscreant, draw a card.",
+   "keywords": [
+    "Flying"
+   ],
+   "verdict": "REDESIGN",
+   "why": "flying/reach/vigilance"
+  },
+  {
+   "name": "Ninja of the Deep Hours",
+   "cost": 4,
+   "type": "Creature \u2014 Human Ninja",
+   "pt": "2/2",
+   "text": "Ninjutsu {1}{U} ({1}{U}, Return an unblocked attacker you control to hand: Put this card onto the battlefield from your hand tapped and attacking.)\nWhenever this creature deals combat damage to a player, you may draw a card.",
+   "keywords": [
+    "Ninjutsu"
+   ],
+   "verdict": "EASY",
+   "why": "known-effect-shape"
+  },
+  {
+   "name": "Wingcrafter",
+   "cost": 1,
+   "type": "Creature \u2014 Human Wizard",
+   "pt": "1/1",
+   "text": "Soulbond (You may pair this creature with another unpaired creature when either enters. They remain paired for as long as you control both of them.)\nAs long as this creature is paired with another creature, both creatures have flying.",
+   "keywords": [
+    "Soulbond"
+   ],
+   "verdict": "REDESIGN",
+   "why": "flying/reach/vigilance"
+  },
+  {
+   "name": "Trinket Mage",
+   "cost": 3,
+   "type": "Creature \u2014 Human Wizard",
+   "pt": "2/2",
+   "text": "When this creature enters, you may search your library for an artifact card with mana value 1 or less, reveal that card, put it into your hand, then shuffle.",
+   "keywords": [],
+   "verdict": "HARD",
+   "why": "tutor-library"
+  },
+  {
+   "name": "Treasure Mage",
+   "cost": 3,
+   "type": "Creature \u2014 Human Wizard",
+   "pt": "2/2",
+   "text": "When this creature enters, you may search your library for an artifact card with mana value 6 or greater, reveal it, put it into your hand, then shuffle.",
+   "keywords": [],
+   "verdict": "HARD",
+   "why": "tutor-library"
+  },
+  {
+   "name": "Mulldrifter",
+   "cost": 5,
+   "type": "Creature \u2014 Elemental",
+   "pt": "2/2",
+   "text": "Flying\nWhen this creature enters, draw two cards.\nEvoke {2}{U} (You may cast this spell for its evoke cost. If you do, it's sacrificed when it enters.)",
+   "keywords": [
+    "Flying",
+    "Evoke"
+   ],
+   "verdict": "REDESIGN",
+   "why": "flying/reach/vigilance"
+  },
+  {
+   "name": "Man-o'-War",
+   "cost": 3,
+   "type": "Creature \u2014 Jellyfish",
+   "pt": "2/2",
+   "text": "When this creature enters, return target creature to its owner's hand.",
+   "keywords": [],
+   "verdict": "EASY",
+   "why": "known-effect-shape"
+  },
+  {
+   "name": "Aether Adept",
+   "cost": 3,
+   "type": "Creature \u2014 Human Wizard",
+   "pt": "2/2",
+   "text": "When this creature enters, return target creature to its owner's hand.",
+   "keywords": [],
+   "verdict": "EASY",
+   "why": "known-effect-shape"
+  },
+  {
+   "name": "Waterfront Bouncer",
+   "cost": 2,
+   "type": "Creature \u2014 Merfolk Spellshaper",
+   "pt": "1/1",
+   "text": "{U}, {T}, Discard a card: Return target creature to its owner's hand.",
+   "keywords": [],
+   "verdict": "HARD",
+   "why": "activated-ability"
+  },
+  {
+   "name": "Sea Gate Oracle",
+   "cost": 3,
+   "type": "Creature \u2014 Human Wizard",
+   "pt": "1/3",
+   "text": "When this creature enters, look at the top two cards of your library. Put one of them into your hand and the other on the bottom of your library.",
+   "keywords": [],
+   "verdict": "EASY",
+   "why": "known-effect-shape"
+  },
+  {
+   "name": "Jace's Phantasm",
+   "cost": 1,
+   "type": "Creature \u2014 Illusion",
+   "pt": "1/1",
+   "text": "Flying\nThis creature gets +4/+4 as long as an opponent has ten or more cards in their graveyard.",
+   "keywords": [
+    "Flying"
+   ],
+   "verdict": "REDESIGN",
+   "why": "flying/reach/vigilance"
+  },
+  {
+   "name": "Stitched Drake",
+   "cost": 3,
+   "type": "Creature \u2014 Zombie Drake",
+   "pt": "3/4",
+   "text": "As an additional cost to cast this spell, exile a creature card from your graveyard.\nFlying",
+   "keywords": [
+    "Flying"
+   ],
+   "verdict": "REDESIGN",
+   "why": "flying/reach/vigilance"
+  },
+  {
+   "name": "Jhessian Thief",
+   "cost": 3,
+   "type": "Creature \u2014 Human Rogue",
+   "pt": "1/3",
+   "text": "Prowess (Whenever you cast a noncreature spell, this creature gets +1/+1 until end of turn.)\nWhenever this creature deals combat damage to a player, draw a card.",
+   "keywords": [
+    "Prowess"
+   ],
+   "verdict": "EASY",
+   "why": "known-effect-shape"
+  },
+  {
+   "name": "Phantasmal Bear",
+   "cost": 1,
+   "type": "Creature \u2014 Bear Illusion",
+   "pt": "2/2",
+   "text": "When this creature becomes the target of a spell or ability, sacrifice it.",
+   "keywords": [],
+   "verdict": "HARD",
+   "why": "unmatched-text"
+  },
+  {
+   "name": "Storm Crow",
+   "cost": 2,
+   "type": "Creature \u2014 Bird",
+   "pt": "1/2",
+   "text": "Flying (This creature can't be blocked except by creatures with flying or reach.)",
+   "keywords": [
+    "Flying"
+   ],
+   "verdict": "REDESIGN",
+   "why": "flying/reach/vigilance"
+  },
+  {
+   "name": "Cloudfin Raptor",
+   "cost": 1,
+   "type": "Creature \u2014 Bird Mutant",
+   "pt": "0/1",
+   "text": "Flying\nEvolve (Whenever a creature you control enters, if that creature has greater power or toughness than this creature, put a +1/+1 counter on this creature.)",
+   "keywords": [
+    "Flying",
+    "Evolve"
+   ],
+   "verdict": "REDESIGN",
+   "why": "flying/reach/vigilance"
+  },
+  {
+   "name": "Frost Lynx",
+   "cost": 3,
+   "type": "Creature \u2014 Elemental Cat",
+   "pt": "2/2",
+   "text": "When this creature enters, tap target creature an opponent controls. That creature doesn't untap during its controller's next untap step.",
+   "keywords": [],
+   "verdict": "EASY",
+   "why": "known-effect-shape"
+  },
+  {
+   "name": "Neurok Commando",
+   "cost": 3,
+   "type": "Creature \u2014 Human Rogue",
+   "pt": "2/1",
+   "text": "Shroud (This creature can't be the target of spells or abilities.)\nWhenever this creature deals combat damage to a player, you may draw a card.",
+   "keywords": [
+    "Shroud"
+   ],
+   "verdict": "EASY",
+   "why": "known-effect-shape"
+  },
+  {
+   "name": "Sage Owl",
+   "cost": 2,
+   "type": "Creature \u2014 Bird",
+   "pt": "1/1",
+   "text": "Flying\nWhen this creature enters, look at the top four cards of your library, then put them back in any order.",
+   "keywords": [
+    "Flying"
+   ],
+   "verdict": "REDESIGN",
+   "why": "flying/reach/vigilance"
+  },
+  {
+   "name": "Sage's Row Denizen",
+   "cost": 3,
+   "type": "Creature \u2014 Vedalken Wizard",
+   "pt": "2/3",
+   "text": "Whenever another blue creature you control enters, target player mills two cards.",
+   "keywords": [
+    "Mill"
+   ],
+   "verdict": "EASY",
+   "why": "known-effect-shape"
+  },
+  {
+   "name": "Sage's Row Savant",
+   "cost": 2,
+   "type": "Creature \u2014 Vedalken Wizard",
+   "pt": "2/1",
+   "text": "When this creature enters, scry 2.",
+   "keywords": [
+    "Scry"
+   ],
+   "verdict": "EASY",
+   "why": "known-effect-shape"
+  },
+  {
+   "name": "Sigiled Starfish",
+   "cost": 2,
+   "type": "Creature \u2014 Starfish",
+   "pt": "0/3",
+   "text": "{T}: Scry 1. (Look at the top card of your library. You may put that card on the bottom.)",
+   "keywords": [
+    "Scry"
+   ],
+   "verdict": "HARD",
+   "why": "activated-ability"
+  },
+  {
+   "name": "Wind Drake",
+   "cost": 3,
+   "type": "Creature \u2014 Drake",
+   "pt": "2/2",
+   "text": "Flying",
+   "keywords": [
+    "Flying"
+   ],
+   "verdict": "REDESIGN",
+   "why": "flying/reach/vigilance"
+  },
+  {
+   "name": "Counterspell",
+   "cost": 2,
+   "type": "Instant",
+   "pt": null,
+   "text": "Counter target spell.",
+   "keywords": [],
+   "verdict": "EASY",
+   "why": "known-effect-shape"
+  },
+  {
+   "name": "Mana Leak",
+   "cost": 2,
+   "type": "Instant",
+   "pt": null,
+   "text": "Counter target spell unless its controller pays {3}.",
+   "keywords": [],
+   "verdict": "EASY",
+   "why": "known-effect-shape"
+  },
+  {
+   "name": "Remand",
+   "cost": 2,
+   "type": "Instant",
+   "pt": null,
+   "text": "Counter target spell. If that spell is countered this way, put it into its owner's hand instead of into that player's graveyard.\nDraw a card.",
+   "keywords": [],
+   "verdict": "EASY",
+   "why": "known-effect-shape"
+  },
+  {
+   "name": "Daze",
+   "cost": 2,
+   "type": "Instant",
+   "pt": null,
+   "text": "You may return an Island you control to its owner's hand rather than pay this spell's mana cost.\nCounter target spell unless its controller pays {1}.",
+   "keywords": [],
+   "verdict": "EASY",
+   "why": "known-effect-shape"
+  },
+  {
+   "name": "Spell Pierce",
+   "cost": 1,
+   "type": "Instant",
+   "pt": null,
+   "text": "Counter target noncreature spell unless its controller pays {2}.",
+   "keywords": [],
+   "verdict": "EASY",
+   "why": "known-effect-shape"
+  },
+  {
+   "name": "Negate",
+   "cost": 2,
+   "type": "Instant",
+   "pt": null,
+   "text": "Counter target noncreature spell.",
+   "keywords": [],
+   "verdict": "EASY",
+   "why": "known-effect-shape"
+  },
+  {
+   "name": "Dispel",
+   "cost": 1,
+   "type": "Instant",
+   "pt": null,
+   "text": "Counter target instant spell.",
+   "keywords": [],
+   "verdict": "EASY",
+   "why": "known-effect-shape"
+  },
+  {
+   "name": "Swan Song",
+   "cost": 1,
+   "type": "Instant",
+   "pt": null,
+   "text": "Counter target enchantment, instant, or sorcery spell. Its controller creates a 2/2 blue Bird creature token with flying.",
+   "keywords": [],
+   "verdict": "REDESIGN",
+   "why": "flying/reach/vigilance"
+  },
+  {
+   "name": "Force Spike",
+   "cost": 1,
+   "type": "Instant",
+   "pt": null,
+   "text": "Counter target spell unless its controller pays {1}.",
+   "keywords": [],
+   "verdict": "EASY",
+   "why": "known-effect-shape"
+  },
+  {
+   "name": "Logic Knot",
+   "cost": 2,
+   "type": "Instant",
+   "pt": null,
+   "text": "Delve (Each card you exile from your graveyard while casting this spell pays for {1}.)\nCounter target spell unless its controller pays {X}.",
+   "keywords": [
+    "Delve"
+   ],
+   "verdict": "HARD",
+   "why": "counters/complex-cost"
+  },
+  {
+   "name": "Brainstorm",
+   "cost": 1,
+   "type": "Instant",
+   "pt": null,
+   "text": "Draw three cards, then put two cards from your hand on top of your library in any order.",
+   "keywords": [],
+   "verdict": "EASY",
+   "why": "known-effect-shape"
+  },
+  {
+   "name": "Ponder",
+   "cost": 1,
+   "type": "Sorcery",
+   "pt": null,
+   "text": "Look at the top three cards of your library, then put them back in any order. You may shuffle.\nDraw a card.",
+   "keywords": [],
+   "verdict": "EASY",
+   "why": "known-effect-shape"
+  },
+  {
+   "name": "Preordain",
+   "cost": 1,
+   "type": "Sorcery",
+   "pt": null,
+   "text": "Scry 2, then draw a card. (To scry 2, look at the top two cards of your library, then put any number of them on the bottom and the rest on top in any order.)",
+   "keywords": [
+    "Scry"
+   ],
+   "verdict": "EASY",
+   "why": "known-effect-shape"
+  },
+  {
+   "name": "Serum Visions",
+   "cost": 1,
+   "type": "Sorcery",
+   "pt": null,
+   "text": "Draw a card. Scry 2.",
+   "keywords": [
+    "Scry"
+   ],
+   "verdict": "EASY",
+   "why": "known-effect-shape"
+  },
+  {
+   "name": "Opt",
+   "cost": 1,
+   "type": "Instant",
+   "pt": null,
+   "text": "Scry 1. (Look at the top card of your library. You may put that card on the bottom.)\nDraw a card.",
+   "keywords": [
+    "Scry"
+   ],
+   "verdict": "EASY",
+   "why": "known-effect-shape"
+  },
+  {
+   "name": "Gitaxian Probe",
+   "cost": 1,
+   "type": "Sorcery",
+   "pt": null,
+   "text": "({U/P} can be paid with either {U} or 2 life.)\nLook at target player's hand.\nDraw a card.",
+   "keywords": [],
+   "verdict": "EASY",
+   "why": "known-effect-shape"
+  },
+  {
+   "name": "Thought Scour",
+   "cost": 1,
+   "type": "Instant",
+   "pt": null,
+   "text": "Target player mills two cards.\nDraw a card.",
+   "keywords": [
+    "Mill"
+   ],
+   "verdict": "EASY",
+   "why": "known-effect-shape"
+  },
+  {
+   "name": "Chart a Course",
+   "cost": 2,
+   "type": "Sorcery",
+   "pt": null,
+   "text": "Draw two cards. Then discard a card unless you attacked this turn.",
+   "keywords": [],
+   "verdict": "EASY",
+   "why": "known-effect-shape"
+  },
+  {
+   "name": "Fact or Fiction",
+   "cost": 4,
+   "type": "Instant",
+   "pt": null,
+   "text": "Reveal the top five cards of your library. An opponent separates those cards into two piles. Put one pile into your hand and the other into your graveyard.",
+   "keywords": [],
+   "verdict": "HARD",
+   "why": "unmatched-text"
+  },
+  {
+   "name": "Jace's Ingenuity",
+   "cost": 5,
+   "type": "Instant",
+   "pt": null,
+   "text": "Draw three cards.",
+   "keywords": [],
+   "verdict": "EASY",
+   "why": "known-effect-shape"
+  },
+  {
+   "name": "Unsummon",
+   "cost": 1,
+   "type": "Instant",
+   "pt": null,
+   "text": "Return target creature to its owner's hand.",
+   "keywords": [],
+   "verdict": "EASY",
+   "why": "known-effect-shape"
+  },
+  {
+   "name": "Boomerang",
+   "cost": 2,
+   "type": "Instant",
+   "pt": null,
+   "text": "Return target permanent to its owner's hand.",
+   "keywords": [],
+   "verdict": "HARD",
+   "why": "unmatched-text"
+  },
+  {
+   "name": "Into the Roil",
+   "cost": 2,
+   "type": "Instant",
+   "pt": null,
+   "text": "Kicker {1}{U} (You may pay an additional {1}{U} as you cast this spell.)\nReturn target nonland permanent to its owner's hand. If this spell was kicked, draw a card.",
+   "keywords": [
+    "Kicker"
+   ],
+   "verdict": "HARD",
+   "why": "counters/complex-cost"
+  },
+  {
+   "name": "Aether Tradewinds",
+   "cost": 3,
+   "type": "Instant",
+   "pt": null,
+   "text": "Return target permanent you control and target permanent you don't control to their owners' hands.",
+   "keywords": [],
+   "verdict": "HARD",
+   "why": "unmatched-text"
+  },
+  {
+   "name": "Vapor Snag",
+   "cost": 1,
+   "type": "Instant",
+   "pt": null,
+   "text": "Return target creature to its owner's hand. Its controller loses 1 life.",
+   "keywords": [],
+   "verdict": "EASY",
+   "why": "known-effect-shape"
+  },
+  {
+   "name": "Snap",
+   "cost": 2,
+   "type": "Instant",
+   "pt": null,
+   "text": "Return target creature to its owner's hand. Untap up to two lands.",
+   "keywords": [],
+   "verdict": "EASY",
+   "why": "known-effect-shape"
+  },
+  {
+   "name": "High Tide",
+   "cost": 1,
+   "type": "Instant",
+   "pt": null,
+   "text": "Until end of turn, whenever a player taps an Island for mana, that player adds an additional {U}.",
+   "keywords": [],
+   "verdict": "HARD",
+   "why": "unmatched-text"
+  },
+  {
+   "name": "Frantic Search",
+   "cost": 3,
+   "type": "Instant",
+   "pt": null,
+   "text": "Draw two cards, then discard two cards. Untap up to three lands.",
+   "keywords": [],
+   "verdict": "EASY",
+   "why": "known-effect-shape"
+  },
+  {
+   "name": "Gush",
+   "cost": 5,
+   "type": "Instant",
+   "pt": null,
+   "text": "You may return two Islands you control to their owner's hand rather than pay this spell's mana cost.\nDraw two cards.",
+   "keywords": [],
+   "verdict": "EASY",
+   "why": "known-effect-shape"
+  },
+  {
+   "name": "Memory Lapse",
+   "cost": 2,
+   "type": "Instant",
+   "pt": null,
+   "text": "Counter target spell. If that spell is countered this way, put it on top of its owner's library instead of into that player's graveyard.",
+   "keywords": [],
+   "verdict": "EASY",
+   "why": "known-effect-shape"
+  },
+  {
+   "name": "Miscalculation",
+   "cost": 2,
+   "type": "Instant",
+   "pt": null,
+   "text": "Counter target spell unless its controller pays {2}.\nCycling {2} ({2}, Discard this card: Draw a card.)",
+   "keywords": [
+    "Cycling"
+   ],
+   "verdict": "HARD",
+   "why": "counters/complex-cost"
+  },
+  {
+   "name": "Spell Snare",
+   "cost": 1,
+   "type": "Instant",
+   "pt": null,
+   "text": "Counter target spell with mana value 2.",
+   "keywords": [],
+   "verdict": "EASY",
+   "why": "known-effect-shape"
+  },
+  {
+   "name": "Mental Misstep",
+   "cost": 1,
+   "type": "Instant",
+   "pt": null,
+   "text": "({U/P} can be paid with either {U} or 2 life.)\nCounter target spell with mana value 1.",
+   "keywords": [],
+   "verdict": "EASY",
+   "why": "known-effect-shape"
+  },
+  {
+   "name": "Prohibit",
+   "cost": 2,
+   "type": "Instant",
+   "pt": null,
+   "text": "Kicker {2} (You may pay an additional {2} as you cast this spell.)\nCounter target spell if its mana value is 2 or less. If this spell was kicked, counter that spell if its mana value is 4 or less instead.",
+   "keywords": [
+    "Kicker"
+   ],
+   "verdict": "HARD",
+   "why": "counters/complex-cost"
+  },
+  {
+   "name": "Flux Channeler",
+   "cost": 3,
+   "type": "Creature \u2014 Human Wizard",
+   "pt": "2/2",
+   "text": "Whenever you cast a noncreature spell, proliferate. (Choose any number of permanents and/or players, then give each another counter of each kind already there.)",
+   "keywords": [
+    "Proliferate"
+   ],
+   "verdict": "EASY",
+   "why": "known-effect-shape"
+  },
+  {
+   "name": "Misdirection",
+   "cost": 5,
+   "type": "Instant",
+   "pt": null,
+   "text": "You may exile a blue card from your hand rather than pay this spell's mana cost.\nChange the target of target spell with a single target.",
+   "keywords": [],
+   "verdict": "HARD",
+   "why": "unmatched-text"
+  },
+  {
+   "name": "Rite of Replication",
+   "cost": 4,
+   "type": "Sorcery",
+   "pt": null,
+   "text": "Kicker {5} (You may pay an additional {5} as you cast this spell.)\nCreate a token that's a copy of target creature. If this spell was kicked, create five of those tokens instead.",
+   "keywords": [
+    "Kicker"
+   ],
+   "verdict": "HARD",
+   "why": "counters/complex-cost"
+  },
+  {
+   "name": "Mirrormade",
+   "cost": 3,
+   "type": "Enchantment",
+   "pt": null,
+   "text": "You may have this enchantment enter as a copy of any artifact or enchantment on the battlefield.",
+   "keywords": [],
+   "verdict": "HARD",
+   "why": "unmatched-text"
+  },
+  {
+   "name": "Mechanized Production",
+   "cost": 4,
+   "type": "Enchantment \u2014 Aura",
+   "pt": null,
+   "text": "Enchant artifact you control\nAt the beginning of your upkeep, create a token that's a copy of enchanted artifact. Then if you control eight or more artifacts with the same name as one another, you win the game.",
+   "keywords": [
+    "Enchant"
+   ],
+   "verdict": "HARD",
+   "why": "enchant-target"
+  },
+  {
+   "name": "Body Double",
+   "cost": 5,
+   "type": "Creature \u2014 Shapeshifter",
+   "pt": "0/0",
+   "text": "You may have this creature enter as a copy of any creature card in a graveyard.",
+   "keywords": [],
+   "verdict": "HARD",
+   "why": "unmatched-text"
+  },
+  {
+   "name": "Clone",
+   "cost": 4,
+   "type": "Creature \u2014 Shapeshifter",
+   "pt": "0/0",
+   "text": "You may have this creature enter as a copy of any creature on the battlefield.",
+   "keywords": [],
+   "verdict": "HARD",
+   "why": "unmatched-text"
+  },
+  {
+   "name": "Glen Elendra, Archmage",
+   "cost": 4,
+   "type": "Creature \u2014 Faerie Wizard",
+   "pt": "2/2",
+   "text": "Flying\n{U}, Sacrifice this creature: Counter target noncreature spell.\nPersist (When this creature dies, if it had no -1/-1 counters on it, return it to the battlefield under its owner's control with a -1/-1 counter on it.)",
+   "keywords": [
+    "Flying",
+    "Persist"
+   ],
+   "verdict": "REDESIGN",
+   "why": "flying/reach/vigilance"
+  },
+  {
+   "name": "Pact of Negation",
+   "cost": 0,
+   "type": "Instant",
+   "pt": null,
+   "text": "Counter target spell.\nAt the beginning of your next upkeep, pay {3}{U}{U}. If you don't, you lose the game.",
+   "keywords": [],
+   "verdict": "EASY",
+   "why": "known-effect-shape"
+  },
+  {
+   "name": "Thirst for Knowledge",
+   "cost": 3,
+   "type": "Instant",
+   "pt": null,
+   "text": "Draw three cards. Then discard two cards unless you discard an artifact card.",
+   "keywords": [],
+   "verdict": "EASY",
+   "why": "known-effect-shape"
+  },
+  {
+   "name": "Forbid",
+   "cost": 3,
+   "type": "Instant",
+   "pt": null,
+   "text": "Buyback\u2014Discard two cards. (You may discard two cards in addition to any other costs as you cast this spell. If you do, put this card into your hand as it resolves.)\nCounter target spell.",
+   "keywords": [
+    "Buyback"
+   ],
+   "verdict": "EASY",
+   "why": "known-effect-shape"
+  },
+  {
+   "name": "Sower of Temptation",
+   "cost": 4,
+   "type": "Creature \u2014 Faerie Wizard",
+   "pt": "2/2",
+   "text": "Flying\nWhen this creature enters, gain control of target creature for as long as this creature remains on the battlefield.",
+   "keywords": [
+    "Flying"
+   ],
+   "verdict": "REDESIGN",
+   "why": "flying/reach/vigilance"
+  },
+  {
+   "name": "Copy Artifact",
+   "cost": 2,
+   "type": "Enchantment",
+   "pt": null,
+   "text": "You may have this enchantment enter as a copy of any artifact on the battlefield, except it's an enchantment in addition to its other types.",
+   "keywords": [],
+   "verdict": "HARD",
+   "why": "unmatched-text"
+  },
+  {
+   "name": "Master Transmuter",
+   "cost": 4,
+   "type": "Artifact Creature \u2014 Human Artificer",
+   "pt": "1/2",
+   "text": "{U}, {T}, Return an artifact you control to its owner's hand: You may put an artifact card from your hand onto the battlefield.",
+   "keywords": [],
+   "verdict": "HARD",
+   "why": "activated-ability"
+  },
+  {
+   "name": "Tradewind Rider",
+   "cost": 4,
+   "type": "Creature \u2014 Spirit",
+   "pt": "1/4",
+   "text": "Flying\n{T}, Tap two untapped creatures you control: Return target permanent to its owner's hand.",
+   "keywords": [
+    "Flying"
+   ],
+   "verdict": "REDESIGN",
+   "why": "flying/reach/vigilance"
+  },
+  {
+   "name": "Cryptic Command",
+   "cost": 4,
+   "type": "Instant",
+   "pt": null,
+   "text": "Choose two \u2014\n\u2022 Counter target spell.\n\u2022 Return target permanent to its owner's hand.\n\u2022 Tap all creatures your opponents control.\n\u2022 Draw a card.",
+   "keywords": [],
+   "verdict": "EASY",
+   "why": "known-effect-shape"
+  },
+  {
+   "name": "Stifle",
+   "cost": 1,
+   "type": "Instant",
+   "pt": null,
+   "text": "Counter target activated or triggered ability. (Mana abilities can't be targeted.)",
+   "keywords": [],
+   "verdict": "EASY",
+   "why": "known-effect-shape"
+  },
+  {
+   "name": "Force of Will",
+   "cost": 5,
+   "type": "Instant",
+   "pt": null,
+   "text": "You may pay 1 life and exile a blue card from your hand rather than pay this spell's mana cost.\nCounter target spell.",
+   "keywords": [],
+   "verdict": "EASY",
+   "why": "known-effect-shape"
+  },
+  {
+   "name": "Show & Tell",
+   "cost": 3,
+   "type": "Sorcery",
+   "pt": null,
+   "text": "Each player may put an artifact, creature, enchantment, or land card from their hand onto the battlefield.",
+   "keywords": [],
+   "verdict": "HARD",
+   "why": "unmatched-text"
+  },
+  {
+   "name": "Personal Tutor",
+   "cost": 1,
+   "type": "Sorcery",
+   "pt": null,
+   "text": "Search your library for a sorcery card, reveal it, then shuffle and put that card on top.",
+   "keywords": [],
+   "verdict": "HARD",
+   "why": "tutor-library"
+  },
+  {
+   "name": "Time Warp",
+   "cost": 5,
+   "type": "Sorcery",
+   "pt": null,
+   "text": "Target player takes an extra turn after this one.",
+   "keywords": [],
+   "verdict": "HARD",
+   "why": "unmatched-text"
+  },
+  {
+   "name": "Gilded Drake",
+   "cost": 2,
+   "type": "Creature \u2014 Drake",
+   "pt": "3/3",
+   "text": "Flying\nWhen this creature enters, exchange control of this creature and up to one target creature an opponent controls. If you don't or can't make an exchange, sacrifice this creature. This ability still resolves if its target becomes illegal.",
+   "keywords": [
+    "Flying"
+   ],
+   "verdict": "REDESIGN",
+   "why": "flying/reach/vigilance"
+  },
+  {
+   "name": "Snapcaster Mage",
+   "cost": 2,
+   "type": "Creature \u2014 Human Wizard",
+   "pt": "2/1",
+   "text": "Flash\nWhen this creature enters, target instant or sorcery card in your graveyard gains flashback until end of turn. The flashback cost is equal to its mana cost. (You may cast that card from your graveyard for its flashback cost. Then exile it.)",
+   "keywords": [
+    "Flash"
+   ],
+   "verdict": "HARD",
+   "why": "counters/complex-cost"
+  },
+  {
+   "name": "Timetwister",
+   "cost": 3,
+   "type": "Sorcery",
+   "pt": null,
+   "text": "Each player shuffles their hand and graveyard into their library, then draws seven cards. (Then put Timetwister into its owner's graveyard.)",
+   "keywords": [],
+   "verdict": "HARD",
+   "why": "unmatched-text"
+  },
+  {
+   "name": "Timewalk",
+   "cost": 2,
+   "type": "Sorcery",
+   "pt": null,
+   "text": "Take an extra turn after this one.",
+   "keywords": [],
+   "verdict": "HARD",
+   "why": "unmatched-text"
+  },
+  {
+   "name": "Ancestral Recall",
+   "cost": 1,
+   "type": "Instant",
+   "pt": null,
+   "text": "Target player draws three cards.",
+   "keywords": [],
+   "verdict": "EASY",
+   "why": "known-effect-shape"
+  },
+  {
+   "name": "Time Spiral",
+   "cost": 6,
+   "type": "Sorcery",
+   "pt": null,
+   "text": "Exile Time Spiral. Each player shuffles their hand and graveyard into their library, then draws seven cards. You untap up to six lands.",
+   "keywords": [],
+   "verdict": "HARD",
+   "why": "unmatched-text"
+  },
+  {
+   "name": "Tinker",
+   "cost": 3,
+   "type": "Sorcery",
+   "pt": null,
+   "text": "As an additional cost to cast this spell, sacrifice an artifact.\nSearch your library for an artifact card, put that card onto the battlefield, then shuffle.",
+   "keywords": [],
+   "verdict": "HARD",
+   "why": "tutor-library"
+  },
+  {
+   "name": "Baral, Chief of Compliance",
+   "cost": 2,
+   "type": "Legendary Creature \u2014 Human Wizard",
+   "pt": "1/3",
+   "text": "Instant and sorcery spells you cast cost {1} less to cast.\nWhenever a spell or ability you control counters a spell, you may draw a card. If you do, discard a card.",
+   "keywords": [],
+   "verdict": "EASY",
+   "why": "known-effect-shape"
+  },
+  {
+   "name": "Cyclonic Rift",
+   "cost": 2,
+   "type": "Instant",
+   "pt": null,
+   "text": "Return target nonland permanent you don't control to its owner's hand.\nOverload {6}{U} (You may cast this spell for its overload cost. If you do, change \"target\" in its text to \"each.\")",
+   "keywords": [
+    "Overload"
+   ],
+   "verdict": "HARD",
+   "why": "unmatched-text"
+  },
+  {
+   "name": "Mana Drain",
+   "cost": 2,
+   "type": "Instant",
+   "pt": null,
+   "text": "Counter target spell. At the beginning of your next main phase, add an amount of {C} equal to that spell's mana value.",
+   "keywords": [],
+   "verdict": "EASY",
+   "why": "known-effect-shape"
+  },
+  {
+   "name": "Rhystic Study",
+   "cost": 3,
+   "type": "Enchantment",
+   "pt": null,
+   "text": "Whenever an opponent casts a spell, you may draw a card unless that player pays {1}.",
+   "keywords": [],
+   "verdict": "EASY",
+   "why": "known-effect-shape"
+  },
+  {
+   "name": "Force of Negation",
+   "cost": 3,
+   "type": "Instant",
+   "pt": null,
+   "text": "If it's not your turn, you may exile a blue card from your hand rather than pay this spell's mana cost.\nCounter target noncreature spell. If that spell is countered this way, exile it instead of putting it into its owner's graveyard.",
+   "keywords": [],
+   "verdict": "EASY",
+   "why": "known-effect-shape"
+  },
+  {
+   "name": "Upheaval",
+   "cost": 6,
+   "type": "Sorcery",
+   "pt": null,
+   "text": "Return all permanents to their owners' hands.",
+   "keywords": [],
+   "verdict": "HARD",
+   "why": "unmatched-text"
+  },
+  {
+   "name": "Treasure Cruise",
+   "cost": 8,
+   "type": "Sorcery",
+   "pt": null,
+   "text": "Delve (Each card you exile from your graveyard while casting this spell pays for {1}.)\nDraw three cards.",
+   "keywords": [
+    "Delve"
+   ],
+   "verdict": "HARD",
+   "why": "counters/complex-cost"
+  },
+  {
+   "name": "Consider",
+   "cost": 1,
+   "type": "Instant",
+   "pt": null,
+   "text": "Surveil 1. (Look at the top card of your library. You may put it into your graveyard.)\nDraw a card.",
+   "keywords": [
+    "Surveil"
+   ],
+   "verdict": "EASY",
+   "why": "known-effect-shape"
+  },
+  {
+   "name": "Dig Through Time",
+   "cost": 8,
+   "type": "Instant",
+   "pt": null,
+   "text": "Delve (Each card you exile from your graveyard while casting this spell pays for {1}.)\nLook at the top seven cards of your library. Put two of them into your hand and the rest on the bottom of your library in any order.",
+   "keywords": [
+    "Delve"
+   ],
+   "verdict": "HARD",
+   "why": "counters/complex-cost"
+  }
+ ],
+ "black": [
+  {
+   "name": "Diregraf Ghoul",
+   "cost": 1,
+   "type": "Creature \u2014 Zombie",
+   "pt": "2/2",
+   "text": "This creature enters tapped.",
+   "keywords": [],
+   "verdict": "HARD",
+   "why": "unmatched-text"
+  },
+  {
+   "name": "Nantuko Shade",
+   "cost": 2,
+   "type": "Creature \u2014 Insect Shade",
+   "pt": "2/1",
+   "text": "{B}: This creature gets +1/+1 until end of turn.",
+   "keywords": [],
+   "verdict": "HARD",
+   "why": "activated-ability"
+  },
+  {
+   "name": "Vampire Nighthawk",
+   "cost": 3,
+   "type": "Creature \u2014 Vampire Shaman",
+   "pt": "2/3",
+   "text": "Flying\nDeathtouch (Any amount of damage this deals to a creature is enough to destroy it.)\nLifelink (Damage dealt by this creature also causes you to gain that much life.)",
+   "keywords": [
+    "Deathtouch",
+    "Flying",
+    "Lifelink"
+   ],
+   "verdict": "REDESIGN",
+   "why": "flying/reach/vigilance"
+  },
+  {
+   "name": "Gatekeeper of Malakir",
+   "cost": 2,
+   "type": "Creature \u2014 Vampire Warrior",
+   "pt": "2/2",
+   "text": "Kicker {B} (You may pay an additional {B} as you cast this spell.)\nWhen this creature enters, if it was kicked, target player sacrifices a creature of their choice.",
+   "keywords": [
+    "Kicker"
+   ],
+   "verdict": "HARD",
+   "why": "counters/complex-cost"
+  },
+  {
+   "name": "Dusk Legion Zealot",
+   "cost": 2,
+   "type": "Creature \u2014 Vampire Soldier",
+   "pt": "1/1",
+   "text": "When this creature enters, you draw a card and you lose 1 life.",
+   "keywords": [],
+   "verdict": "EASY",
+   "why": "known-effect-shape"
+  },
+  {
+   "name": "Gifted Aetherborn",
+   "cost": 2,
+   "type": "Creature \u2014 Aetherborn Vampire",
+   "pt": "2/3",
+   "text": "Deathtouch, lifelink",
+   "keywords": [
+    "Lifelink",
+    "Deathtouch"
+   ],
+   "verdict": "EASY",
+   "why": "keywords-only"
+  },
+  {
+   "name": "Festering Mummy",
+   "cost": 1,
+   "type": "Creature \u2014 Zombie",
+   "pt": "1/1",
+   "text": "When this creature dies, you may put a -1/-1 counter on target creature.",
+   "keywords": [],
+   "verdict": "HARD",
+   "why": "counters/complex-cost"
+  },
+  {
+   "name": "Fume Spitter",
+   "cost": 1,
+   "type": "Creature \u2014 Phyrexian Horror",
+   "pt": "1/1",
+   "text": "Sacrifice this creature: Put a -1/-1 counter on target creature.",
+   "keywords": [],
+   "verdict": "HARD",
+   "why": "counters/complex-cost"
+  },
+  {
+   "name": "Carrion Feeder",
+   "cost": 1,
+   "type": "Creature \u2014 Zombie",
+   "pt": "1/1",
+   "text": "This creature can't block.\nSacrifice a creature: Put a +1/+1 counter on this creature.",
+   "keywords": [],
+   "verdict": "HARD",
+   "why": "counters/complex-cost"
+  },
+  {
+   "name": "Vampire Interloper",
+   "cost": 2,
+   "type": "Creature \u2014 Vampire Scout",
+   "pt": "2/1",
+   "text": "Flying\nThis creature can't block.",
+   "keywords": [
+    "Flying"
+   ],
+   "verdict": "REDESIGN",
+   "why": "flying/reach/vigilance"
+  },
+  {
+   "name": "Reassembling Skeleton",
+   "cost": 2,
+   "type": "Creature \u2014 Skeleton Warrior",
+   "pt": "1/1",
+   "text": "{1}{B}: Return this card from your graveyard to the battlefield tapped.",
+   "keywords": [],
+   "verdict": "HARD",
+   "why": "activated-ability+graveyard-recursion"
+  },
+  {
+   "name": "Bloodsoaked Champion",
+   "cost": 1,
+   "type": "Creature \u2014 Human Warrior",
+   "pt": "2/1",
+   "text": "This creature can't block.\nRaid \u2014 {1}{B}: Return this card from your graveyard to the battlefield. Activate only if you attacked this turn.",
+   "keywords": [
+    "Raid"
+   ],
+   "verdict": "HARD",
+   "why": "activated-ability+graveyard-recursion"
+  },
+  {
+   "name": "Scrapheap Scrounger",
+   "cost": 2,
+   "type": "Artifact Creature \u2014 Construct",
+   "pt": "3/2",
+   "text": "This creature can't block.\n{1}{B}, Exile another creature card from your graveyard: Return this card from your graveyard to the battlefield.",
+   "keywords": [],
+   "verdict": "HARD",
+   "why": "activated-ability+graveyard-recursion"
+  },
+  {
+   "name": "Returned Pastcaller",
+   "cost": 6,
+   "type": "Creature \u2014 Spirit Cleric",
+   "pt": "4/2",
+   "text": "Flying\nWhen this creature enters, return target Spirit, instant, or sorcery card from your graveyard to your hand.",
+   "keywords": [
+    "Flying"
+   ],
+   "verdict": "REDESIGN",
+   "why": "flying/reach/vigilance"
+  },
+  {
+   "name": "Vampire Lacerator",
+   "cost": 1,
+   "type": "Creature \u2014 Vampire Warrior",
+   "pt": "2/2",
+   "text": "At the beginning of your upkeep, you lose 1 life unless an opponent has 10 or less life.",
+   "keywords": [],
+   "verdict": "EASY",
+   "why": "known-effect-shape"
+  },
+  {
+   "name": "Dread Wanderer",
+   "cost": 1,
+   "type": "Creature \u2014 Zombie Jackal",
+   "pt": "2/1",
+   "text": "This creature enters tapped.\n{2}{B}: Return this card from your graveyard to the battlefield. Activate only as a sorcery and only if you have one or fewer cards in hand.",
+   "keywords": [],
+   "verdict": "HARD",
+   "why": "activated-ability+graveyard-recursion"
+  },
+  {
+   "name": "Gutterbones",
+   "cost": 1,
+   "type": "Creature \u2014 Skeleton Warrior",
+   "pt": "2/1",
+   "text": "This creature enters tapped.\n{1}{B}: Return this card from your graveyard to your hand. Activate only during your turn and only if an opponent lost life this turn.",
+   "keywords": [],
+   "verdict": "HARD",
+   "why": "activated-ability+graveyard-recursion"
+  },
+  {
+   "name": "Stitcher's Supplier",
+   "cost": 1,
+   "type": "Creature \u2014 Zombie",
+   "pt": "1/1",
+   "text": "When this creature enters or dies, mill three cards. (Put the top three cards of your library into your graveyard.)",
+   "keywords": [
+    "Mill"
+   ],
+   "verdict": "EASY",
+   "why": "known-effect-shape"
+  },
+  {
+   "name": "Carrier Thrall",
+   "cost": 2,
+   "type": "Creature \u2014 Vampire",
+   "pt": "2/1",
+   "text": "When this creature dies, create a 1/1 colorless Eldrazi Scion creature token. It has \"Sacrifice this token: Add {C}.\"",
+   "keywords": [],
+   "verdict": "EASY",
+   "why": "known-effect-shape"
+  },
+  {
+   "name": "Wight of Precinct Six",
+   "cost": 2,
+   "type": "Creature \u2014 Zombie",
+   "pt": "1/1",
+   "text": "This creature gets +1/+1 for each creature card in your opponents' graveyards.",
+   "keywords": [],
+   "verdict": "EASY",
+   "why": "known-effect-shape"
+  },
+  {
+   "name": "Child of Night",
+   "cost": 2,
+   "type": "Creature \u2014 Vampire",
+   "pt": "2/1",
+   "text": "Lifelink",
+   "keywords": [
+    "Lifelink"
+   ],
+   "verdict": "EASY",
+   "why": "keywords-only"
+  },
+  {
+   "name": "Gurmag Angler",
+   "cost": 7,
+   "type": "Creature \u2014 Zombie Fish",
+   "pt": "5/5",
+   "text": "Delve (Each card you exile from your graveyard while casting this spell pays for {1}.)",
+   "keywords": [
+    "Delve"
+   ],
+   "verdict": "HARD",
+   "why": "counters/complex-cost"
+  },
+  {
+   "name": "Thornbow Archer",
+   "cost": 1,
+   "type": "Creature \u2014 Elf Archer",
+   "pt": "1/2",
+   "text": "Whenever this creature attacks, each opponent who doesn't control an Elf loses 1 life.",
+   "keywords": [],
+   "verdict": "HARD",
+   "why": "unmatched-text"
+  },
+  {
+   "name": "Rotting Rats",
+   "cost": 2,
+   "type": "Creature \u2014 Zombie Rat",
+   "pt": "1/1",
+   "text": "When this creature enters, each player discards a card.\nUnearth {1}{B} ({1}{B}: Return this card from your graveyard to the battlefield. It gains haste. Exile it at the beginning of the next end step or if it would leave the battlefield. Unearth only as a sorcery.)",
+   "keywords": [
+    "Unearth"
+   ],
+   "verdict": "EASY",
+   "why": "known-effect-shape"
+  },
+  {
+   "name": "Fleshbag Marauder",
+   "cost": 3,
+   "type": "Creature \u2014 Zombie Warrior",
+   "pt": "3/1",
+   "text": "When this creature enters, each player sacrifices a creature of their choice.",
+   "keywords": [],
+   "verdict": "EASY",
+   "why": "known-effect-shape"
+  },
+  {
+   "name": "Plaguecrafter",
+   "cost": 3,
+   "type": "Creature \u2014 Human Shaman",
+   "pt": "3/2",
+   "text": "When this creature enters, each player sacrifices a creature or planeswalker of their choice. Each player who can't discards a card.",
+   "keywords": [],
+   "verdict": "EASY",
+   "why": "known-effect-shape"
+  },
+  {
+   "name": "Bone Picker",
+   "cost": 4,
+   "type": "Creature \u2014 Bird",
+   "pt": "3/2",
+   "text": "This spell costs {3} less to cast if a creature died this turn.\nFlying, deathtouch",
+   "keywords": [
+    "Deathtouch",
+    "Flying"
+   ],
+   "verdict": "REDESIGN",
+   "why": "flying/reach/vigilance"
+  },
+  {
+   "name": "Stromgald Crusader",
+   "cost": 2,
+   "type": "Creature \u2014 Zombie Knight",
+   "pt": "2/1",
+   "text": "Protection from white\n{B}: This creature gains flying until end of turn.\n{B}{B}: This creature gets +1/+0 until end of turn.",
+   "keywords": [
+    "Protection"
+   ],
+   "verdict": "REDESIGN",
+   "why": "flying/reach/vigilance"
+  },
+  {
+   "name": "Gray Merchant of Asphodel",
+   "cost": 5,
+   "type": "Creature \u2014 Zombie",
+   "pt": "2/4",
+   "text": "When this creature enters, each opponent loses X life, where X is your devotion to black. You gain life equal to the life lost this way. (Each {B} in the mana costs of permanents you control counts toward your devotion to black.)",
+   "keywords": [],
+   "verdict": "EASY",
+   "why": "known-effect-shape"
+  },
+  {
+   "name": "Walking Corpse",
+   "cost": 2,
+   "type": "Creature \u2014 Zombie",
+   "pt": "2/2",
+   "text": "",
+   "keywords": [],
+   "verdict": "EASY",
+   "why": "vanilla"
+  },
+  {
+   "name": "Shambling Ghoul",
+   "cost": 2,
+   "type": "Creature \u2014 Zombie",
+   "pt": "2/3",
+   "text": "This creature enters tapped.",
+   "keywords": [],
+   "verdict": "HARD",
+   "why": "unmatched-text"
+  },
+  {
+   "name": "Black Cat",
+   "cost": 2,
+   "type": "Creature \u2014 Zombie Cat",
+   "pt": "1/1",
+   "text": "When this creature dies, target opponent discards a card at random.",
+   "keywords": [],
+   "verdict": "EASY",
+   "why": "known-effect-shape"
+  },
+  {
+   "name": "Returned Reveler",
+   "cost": 2,
+   "type": "Creature \u2014 Zombie Satyr",
+   "pt": "1/3",
+   "text": "When this creature dies, each player mills three cards.",
+   "keywords": [
+    "Mill"
+   ],
+   "verdict": "EASY",
+   "why": "known-effect-shape"
+  },
+  {
+   "name": "Sanitarium Skeleton",
+   "cost": 1,
+   "type": "Creature \u2014 Skeleton",
+   "pt": "1/2",
+   "text": "{2}{B}: Return this card from your graveyard to your hand.",
+   "keywords": [],
+   "verdict": "HARD",
+   "why": "activated-ability+graveyard-recursion"
+  },
+  {
+   "name": "Ostracize",
+   "cost": 1,
+   "type": "Sorcery",
+   "pt": null,
+   "text": "Target opponent reveals their hand. You choose a creature card from it. That player discards that card.",
+   "keywords": [],
+   "verdict": "HARD",
+   "why": "unmatched-text"
+  },
+  {
+   "name": "Divest",
+   "cost": 1,
+   "type": "Sorcery",
+   "pt": null,
+   "text": "Target player reveals their hand. You choose an artifact or creature card from it. That player discards that card.",
+   "keywords": [],
+   "verdict": "HARD",
+   "why": "unmatched-text"
+  },
+  {
+   "name": "Duress",
+   "cost": 1,
+   "type": "Sorcery",
+   "pt": null,
+   "text": "Target opponent reveals their hand. You choose a noncreature, nonland card from it. That player discards that card.",
+   "keywords": [],
+   "verdict": "HARD",
+   "why": "unmatched-text"
+  },
+  {
+   "name": "Hymn to Tourach",
+   "cost": 2,
+   "type": "Sorcery",
+   "pt": null,
+   "text": "Target player discards two cards at random.",
+   "keywords": [],
+   "verdict": "EASY",
+   "why": "known-effect-shape"
+  },
+  {
+   "name": "Mind Shatter",
+   "cost": 2,
+   "type": "Sorcery",
+   "pt": null,
+   "text": "Target player discards X cards at random.",
+   "keywords": [],
+   "verdict": "HARD",
+   "why": "unmatched-text"
+  },
+  {
+   "name": "Cabal Therapy",
+   "cost": 1,
+   "type": "Sorcery",
+   "pt": null,
+   "text": "Choose a nonland card name. Target player reveals their hand and discards all cards with that name.\nFlashback\u2014Sacrifice a creature. (You may cast this card from your graveyard for its flashback cost. Then exile it.)",
+   "keywords": [
+    "Flashback"
+   ],
+   "verdict": "HARD",
+   "why": "counters/complex-cost"
+  },
+  {
+   "name": "Grasp of Darkness",
+   "cost": 2,
+   "type": "Instant",
+   "pt": null,
+   "text": "Target creature gets -4/-4 until end of turn.",
+   "keywords": [],
+   "verdict": "HARD",
+   "why": "unmatched-text"
+  },
+  {
+   "name": "Fatal Push",
+   "cost": 1,
+   "type": "Instant",
+   "pt": null,
+   "text": "Destroy target creature if it has mana value 2 or less.\nRevolt \u2014 Destroy that creature if it has mana value 4 or less instead if a permanent left the battlefield under your control this turn.",
+   "keywords": [
+    "Revolt"
+   ],
+   "verdict": "EASY",
+   "why": "known-effect-shape"
+  },
+  {
+   "name": "Dismember",
+   "cost": 3,
+   "type": "Instant",
+   "pt": null,
+   "text": "({B/P} can be paid with either {B} or 2 life.)\nTarget creature gets -5/-5 until end of turn.",
+   "keywords": [],
+   "verdict": "HARD",
+   "why": "unmatched-text"
+  },
+  {
+   "name": "Go for the Throat",
+   "cost": 2,
+   "type": "Instant",
+   "pt": null,
+   "text": "Destroy target nonartifact creature.",
+   "keywords": [],
+   "verdict": "HARD",
+   "why": "unmatched-text"
+  },
+  {
+   "name": "Doom Blade",
+   "cost": 2,
+   "type": "Instant",
+   "pt": null,
+   "text": "Destroy target nonblack creature.",
+   "keywords": [],
+   "verdict": "HARD",
+   "why": "unmatched-text"
+  },
+  {
+   "name": "Ultimate Price",
+   "cost": 2,
+   "type": "Instant",
+   "pt": null,
+   "text": "Destroy target monocolored creature.",
+   "keywords": [],
+   "verdict": "HARD",
+   "why": "unmatched-text"
+  },
+  {
+   "name": "Victim of Night",
+   "cost": 2,
+   "type": "Instant",
+   "pt": null,
+   "text": "Destroy target non-Vampire, non-Werewolf, non-Zombie creature.",
+   "keywords": [],
+   "verdict": "HARD",
+   "why": "unmatched-text"
+  },
+  {
+   "name": "Murder",
+   "cost": 3,
+   "type": "Instant",
+   "pt": null,
+   "text": "Destroy target creature.",
+   "keywords": [],
+   "verdict": "EASY",
+   "why": "known-effect-shape"
+  },
+  {
+   "name": "Murderous Cut",
+   "cost": 5,
+   "type": "Instant",
+   "pt": null,
+   "text": "Delve (Each card you exile from your graveyard while casting this spell pays for {1}.)\nDestroy target creature.",
+   "keywords": [
+    "Delve"
+   ],
+   "verdict": "HARD",
+   "why": "counters/complex-cost"
+  },
+  {
+   "name": "Cast Down",
+   "cost": 2,
+   "type": "Instant",
+   "pt": null,
+   "text": "Destroy target nonlegendary creature.",
+   "keywords": [],
+   "verdict": "HARD",
+   "why": "unmatched-text"
+  },
+  {
+   "name": "Agonizing Remorse",
+   "cost": 2,
+   "type": "Sorcery",
+   "pt": null,
+   "text": "Target opponent reveals their hand. You choose a nonland card from it or a card from their graveyard. Exile that card. You lose 1 life.",
+   "keywords": [],
+   "verdict": "HARD",
+   "why": "unmatched-text"
+  },
+  {
+   "name": "Despise",
+   "cost": 1,
+   "type": "Sorcery",
+   "pt": null,
+   "text": "Target opponent reveals their hand. You choose a creature or planeswalker card from it. That player discards that card.",
+   "keywords": [],
+   "verdict": "HARD",
+   "why": "unmatched-text"
+  },
+  {
+   "name": "Distress",
+   "cost": 2,
+   "type": "Sorcery",
+   "pt": null,
+   "text": "Target player reveals their hand. You choose a nonland card from it. That player discards that card.",
+   "keywords": [],
+   "verdict": "HARD",
+   "why": "unmatched-text"
+  },
+  {
+   "name": "Mind Rot",
+   "cost": 3,
+   "type": "Sorcery",
+   "pt": null,
+   "text": "Target player discards two cards.",
+   "keywords": [],
+   "verdict": "EASY",
+   "why": "known-effect-shape"
+  },
+  {
+   "name": "Wrench Mind",
+   "cost": 2,
+   "type": "Sorcery",
+   "pt": null,
+   "text": "Target player discards two cards unless they discard an artifact card.",
+   "keywords": [],
+   "verdict": "EASY",
+   "why": "known-effect-shape"
+  },
+  {
+   "name": "Raven's Crime",
+   "cost": 1,
+   "type": "Sorcery",
+   "pt": null,
+   "text": "Target player discards a card.\nRetrace (You may cast this card from your graveyard by discarding a land card in addition to paying its other costs.)",
+   "keywords": [
+    "Retrace"
+   ],
+   "verdict": "EASY",
+   "why": "known-effect-shape"
+  },
+  {
+   "name": "Shrieking Affliction",
+   "cost": 1,
+   "type": "Enchantment",
+   "pt": null,
+   "text": "At the beginning of each opponent's upkeep, if that player has one or fewer cards in hand, they lose 3 life.",
+   "keywords": [],
+   "verdict": "HARD",
+   "why": "unmatched-text"
+  },
+  {
+   "name": "Reanimate",
+   "cost": 1,
+   "type": "Sorcery",
+   "pt": null,
+   "text": "Put target creature card from a graveyard onto the battlefield under your control. You lose life equal to that card's mana value.",
+   "keywords": [],
+   "verdict": "HARD",
+   "why": "unmatched-text"
+  },
+  {
+   "name": "Animate Dead",
+   "cost": 2,
+   "type": "Enchantment \u2014 Aura",
+   "pt": null,
+   "text": "Enchant creature card in a graveyard\nWhen this Aura enters, if it's on the battlefield, it loses \"enchant creature card in a graveyard\" and gains \"enchant creature put onto the battlefield with this Aura.\" Return enchanted creature card to the battlefield under your control and attach this Aura to it. When this Aura leaves the battlefield, that creature's controller sacrifices it.\nEnchanted creature gets -1/-0.",
+   "keywords": [
+    "Enchant"
+   ],
+   "verdict": "HARD",
+   "why": "enchant-target"
+  },
+  {
+   "name": "Necromancy",
+   "cost": 3,
+   "type": "Enchantment",
+   "pt": null,
+   "text": "You may cast this spell as though it had flash. If you cast it any time a sorcery couldn't have been cast, the controller of the permanent it becomes sacrifices it at the beginning of the next cleanup step.\nWhen this enchantment enters, if it's on the battlefield, it becomes an Aura with \"enchant creature put onto the battlefield with Necromancy.\" Put target creature card from a graveyard onto the battlefield under your control and attach this enchantment to it. When this enchantment leaves the battlefield, that creature's controller sacrifices it.",
+   "keywords": [],
+   "verdict": "HARD",
+   "why": "enchant-target"
+  },
+  {
+   "name": "Exhume",
+   "cost": 2,
+   "type": "Sorcery",
+   "pt": null,
+   "text": "Each player puts a creature card from their graveyard onto the battlefield.",
+   "keywords": [],
+   "verdict": "HARD",
+   "why": "unmatched-text"
+  },
+  {
+   "name": "Dance of the Dead",
+   "cost": 2,
+   "type": "Enchantment \u2014 Aura",
+   "pt": null,
+   "text": "Enchant creature card in a graveyard\nWhen this Aura enters, if it's on the battlefield, it loses \"enchant creature card in a graveyard\" and gains \"enchant creature put onto the battlefield with this Aura.\" Put enchanted creature card onto the battlefield tapped under your control and attach this Aura to it. When this Aura leaves the battlefield, that creature's controller sacrifices it.\nEnchanted creature gets +1/+1 and doesn't untap during its controller's untap step.\nAt the beginning of the upkeep of enchanted creature's controller, that player may pay {1}{B}. If the player does, untap that creature.",
+   "keywords": [
+    "Enchant"
+   ],
+   "verdict": "HARD",
+   "why": "enchant-target"
+  },
+  {
+   "name": "Unearth",
+   "cost": 1,
+   "type": "Sorcery",
+   "pt": null,
+   "text": "Return target creature card with mana value 3 or less from your graveyard to the battlefield.\nCycling {2} ({2}, Discard this card: Draw a card.)",
+   "keywords": [
+    "Cycling"
+   ],
+   "verdict": "HARD",
+   "why": "counters/complex-cost+graveyard-recursion"
+  },
+  {
+   "name": "Dread Return",
+   "cost": 4,
+   "type": "Sorcery",
+   "pt": null,
+   "text": "Return target creature card from your graveyard to the battlefield.\nFlashback\u2014Sacrifice three creatures. (You may cast this card from your graveyard for its flashback cost. Then exile it.)",
+   "keywords": [
+    "Flashback"
+   ],
+   "verdict": "HARD",
+   "why": "counters/complex-cost+graveyard-recursion"
+  },
+  {
+   "name": "Geth's Verdict",
+   "cost": 2,
+   "type": "Instant",
+   "pt": null,
+   "text": "Target player sacrifices a creature of their choice and loses 1 life.",
+   "keywords": [],
+   "verdict": "HARD",
+   "why": "unmatched-text"
+  },
+  {
+   "name": "Diabolic Edict",
+   "cost": 2,
+   "type": "Instant",
+   "pt": null,
+   "text": "Target player sacrifices a creature of their choice.",
+   "keywords": [],
+   "verdict": "HARD",
+   "why": "unmatched-text"
+  },
+  {
+   "name": "Chainer's Edict",
+   "cost": 2,
+   "type": "Sorcery",
+   "pt": null,
+   "text": "Target player sacrifices a creature of their choice.\nFlashback {5}{B}{B} (You may cast this card from your graveyard for its flashback cost. Then exile it.)",
+   "keywords": [
+    "Flashback"
+   ],
+   "verdict": "HARD",
+   "why": "counters/complex-cost"
+  },
+  {
+   "name": "Gravecrawler",
+   "cost": 1,
+   "type": "Creature \u2014 Zombie",
+   "pt": "2/1",
+   "text": "This creature can't block.\nYou may cast this card from your graveyard as long as you control a Zombie.",
+   "keywords": [],
+   "verdict": "HARD",
+   "why": "unmatched-text"
+  },
+  {
+   "name": "Imp's Mischief",
+   "cost": 2,
+   "type": "Instant",
+   "pt": null,
+   "text": "Change the target of target spell with a single target. You lose life equal to that spell's mana value.",
+   "keywords": [],
+   "verdict": "HARD",
+   "why": "unmatched-text"
+  },
+  {
+   "name": "Phyrexian Reclamation",
+   "cost": 1,
+   "type": "Enchantment",
+   "pt": null,
+   "text": "{1}{B}, Pay 2 life: Return target creature card from your graveyard to your hand.",
+   "keywords": [],
+   "verdict": "HARD",
+   "why": "activated-ability+graveyard-recursion"
+  },
+  {
+   "name": "Dauthi Voidwalker",
+   "cost": 2,
+   "type": "Creature \u2014 Dauthi Rogue",
+   "pt": "3/2",
+   "text": "Shadow (This creature can block or be blocked by only creatures with shadow.)\nIf a card would be put into an opponent's graveyard from anywhere, instead exile it with a void counter on it.\n{T}, Sacrifice this creature: Choose an exiled card an opponent owns with a void counter on it. You may play it this turn without paying its mana cost.",
+   "keywords": [
+    "Shadow"
+   ],
+   "verdict": "REDESIGN",
+   "why": "protection/shadow"
+  },
+  {
+   "name": "Demonic Tutor",
+   "cost": 2,
+   "type": "Sorcery",
+   "pt": null,
+   "text": "Search your library for a card, put that card into your hand, then shuffle.",
+   "keywords": [],
+   "verdict": "HARD",
+   "why": "tutor-library"
+  },
+  {
+   "name": "Toxic Deluge",
+   "cost": 3,
+   "type": "Sorcery",
+   "pt": null,
+   "text": "As an additional cost to cast this spell, pay X life.\nAll creatures get -X/-X until end of turn.",
+   "keywords": [],
+   "verdict": "HARD",
+   "why": "unmatched-text"
+  },
+  {
+   "name": "Deadly Dispute",
+   "cost": 2,
+   "type": "Instant",
+   "pt": null,
+   "text": "As an additional cost to cast this spell, sacrifice an artifact or creature.\nDraw two cards and create a Treasure token. (It's an artifact with \"{T}, Sacrifice this token: Add one mana of any color.\")",
+   "keywords": [
+    "Treasure"
+   ],
+   "verdict": "EASY",
+   "why": "known-effect-shape"
+  },
+  {
+   "name": "Black Market Connections",
+   "cost": 3,
+   "type": "Enchantment",
+   "pt": null,
+   "text": "At the beginning of your first main phase, choose one or more \u2014\n\u2022 Sell Contraband \u2014 Create a Treasure token. You lose 1 life.\n\u2022 Buy Information \u2014 Draw a card. You lose 2 life.\n\u2022 Hire a Mercenary \u2014 Create a 3/2 colorless Shapeshifter creature token with changeling. You lose 3 life. (It is every creature type.)",
+   "keywords": [
+    "Hire a Mercenary",
+    "Treasure",
+    "Sell Contraband",
+    "Buy Information"
+   ],
+   "verdict": "EASY",
+   "why": "known-effect-shape"
+  },
+  {
+   "name": "Ravenous Chupacabra",
+   "cost": 4,
+   "type": "Creature \u2014 Beast Horror",
+   "pt": "2/2",
+   "text": "When this creature enters, destroy target creature an opponent controls.",
+   "keywords": [],
+   "verdict": "EASY",
+   "why": "known-effect-shape"
+  },
+  {
+   "name": "Grim Hireling",
+   "cost": 4,
+   "type": "Creature \u2014 Tiefling Rogue",
+   "pt": "3/2",
+   "text": "Whenever one or more creatures you control deal combat damage to a player, create two Treasure tokens.\n{B}, Sacrifice X Treasures: Target creature gets -X/-X until end of turn. Activate only as a sorcery.",
+   "keywords": [
+    "Treasure"
+   ],
+   "verdict": "HARD",
+   "why": "activated-ability"
+  },
+  {
+   "name": "Exsanguinate",
+   "cost": 2,
+   "type": "Sorcery",
+   "pt": null,
+   "text": "Each opponent loses X life. You gain life equal to the life lost this way.",
+   "keywords": [],
+   "verdict": "HARD",
+   "why": "unmatched-text"
+  },
+  {
+   "name": "Damnation",
+   "cost": 4,
+   "type": "Sorcery",
+   "pt": null,
+   "text": "Destroy all creatures. They can't be regenerated.",
+   "keywords": [],
+   "verdict": "EASY",
+   "why": "known-effect-shape"
+  },
+  {
+   "name": "Blood Artist",
+   "cost": 2,
+   "type": "Creature \u2014 Vampire",
+   "pt": "0/1",
+   "text": "Whenever this creature or another creature dies, target player loses 1 life and you gain 1 life.",
+   "keywords": [],
+   "verdict": "EASY",
+   "why": "known-effect-shape"
+  },
+  {
+   "name": "Dark Confidant",
+   "cost": 2,
+   "type": "Creature \u2014 Human Wizard",
+   "pt": "2/1",
+   "text": "At the beginning of your upkeep, reveal the top card of your library and put that card into your hand. You lose life equal to its mana value.",
+   "keywords": [],
+   "verdict": "EASY",
+   "why": "known-effect-shape"
+  },
+  {
+   "name": "Bitterblossom",
+   "cost": 2,
+   "type": "Kindred Enchantment \u2014 Faerie",
+   "pt": null,
+   "text": "At the beginning of your upkeep, you lose 1 life and create a 1/1 black Faerie Rogue creature token with flying.",
+   "keywords": [],
+   "verdict": "REDESIGN",
+   "why": "flying/reach/vigilance"
+  },
+  {
+   "name": "Infernal Grasp",
+   "cost": 2,
+   "type": "Instant",
+   "pt": null,
+   "text": "Destroy target creature. You lose 2 life.",
+   "keywords": [],
+   "verdict": "EASY",
+   "why": "known-effect-shape"
+  },
+  {
+   "name": "Grave Titan",
+   "cost": 6,
+   "type": "Creature \u2014 Giant",
+   "pt": "6/6",
+   "text": "Deathtouch\nWhenever this creature enters or attacks, create two 2/2 black Zombie creature tokens.",
+   "keywords": [
+    "Deathtouch"
+   ],
+   "verdict": "EASY",
+   "why": "known-effect-shape"
+  },
+  {
+   "name": "Cut Down",
+   "cost": 1,
+   "type": "Instant",
+   "pt": null,
+   "text": "Destroy target creature with total power and toughness 5 or less.",
+   "keywords": [],
+   "verdict": "EASY",
+   "why": "known-effect-shape"
+  },
+  {
+   "name": "Griselbrand",
+   "cost": 8,
+   "type": "Legendary Creature \u2014 Demon",
+   "pt": "7/7",
+   "text": "Flying, lifelink\nPay 7 life: Draw seven cards.",
+   "keywords": [
+    "Flying",
+    "Lifelink"
+   ],
+   "verdict": "REDESIGN",
+   "why": "flying/reach/vigilance"
+  },
+  {
+   "name": "Grief",
+   "cost": 4,
+   "type": "Creature \u2014 Elemental Incarnation",
+   "pt": "3/2",
+   "text": "Menace\nWhen this creature enters, target opponent reveals their hand. You choose a nonland card from it. That player discards that card.\nEvoke\u2014Exile a black card from your hand.",
+   "keywords": [
+    "Evoke",
+    "Menace"
+   ],
+   "verdict": "EASY",
+   "why": "known-effect-shape"
+  },
+  {
+   "name": "Thoughtseize",
+   "cost": 1,
+   "type": "Sorcery",
+   "pt": null,
+   "text": "Target player reveals their hand. You choose a nonland card from it. That player discards that card. You lose 2 life.",
+   "keywords": [],
+   "verdict": "HARD",
+   "why": "unmatched-text"
+  },
+  {
+   "name": "Phyrexian Obliterator",
+   "cost": 4,
+   "type": "Creature \u2014 Phyrexian Horror",
+   "pt": "5/5",
+   "text": "Trample\nWhenever a source deals damage to this creature, that source's controller sacrifices that many permanents of their choice.",
+   "keywords": [
+    "Trample"
+   ],
+   "verdict": "HARD",
+   "why": "unmatched-text"
+  },
+  {
+   "name": "Sanguine Bond",
+   "cost": 5,
+   "type": "Enchantment",
+   "pt": null,
+   "text": "Whenever you gain life, target opponent loses that much life.",
+   "keywords": [],
+   "verdict": "HARD",
+   "why": "unmatched-text"
+  },
+  {
+   "name": "Read the Bones",
+   "cost": 3,
+   "type": "Sorcery",
+   "pt": null,
+   "text": "Scry 2, then draw two cards. You lose 2 life. (To scry 2, look at the top two cards of your library, then put any number of them on the bottom and the rest on top in any order.)",
+   "keywords": [
+    "Scry"
+   ],
+   "verdict": "EASY",
+   "why": "known-effect-shape"
+  },
+  {
+   "name": "Shriekmaw",
+   "cost": 5,
+   "type": "Creature \u2014 Elemental",
+   "pt": "3/2",
+   "text": "Fear (This creature can't be blocked except by artifact creatures and/or black creatures.)\nWhen this creature enters, destroy target nonartifact, nonblack creature.\nEvoke {1}{B} (You may cast this spell for its evoke cost. If you do, it's sacrificed when it enters.)",
+   "keywords": [
+    "Evoke",
+    "Fear"
+   ],
+   "verdict": "EASY",
+   "why": "known-effect-shape"
+  },
+  {
+   "name": "Crypt Ghast",
+   "cost": 4,
+   "type": "Creature \u2014 Spirit",
+   "pt": "2/2",
+   "text": "Extort (Whenever you cast a spell, you may pay {W/B}. If you do, each opponent loses 1 life and you gain that much life.)\nWhenever you tap a Swamp for mana, add an additional {B}.",
+   "keywords": [
+    "Extort"
+   ],
+   "verdict": "HARD",
+   "why": "unmatched-text"
+  },
+  {
+   "name": "Orcish Bowmasters",
+   "cost": 2,
+   "type": "Creature \u2014 Orc Archer",
+   "pt": "1/1",
+   "text": "Flash\nWhen this creature enters and whenever an opponent draws a card except the first one they draw in each of their draw steps, this creature deals 1 damage to any target. Then amass Orcs 1.",
+   "keywords": [
+    "Amass",
+    "Flash"
+   ],
+   "verdict": "EASY",
+   "why": "known-effect-shape"
+  },
+  {
+   "name": "Imperial Seal",
+   "cost": 1,
+   "type": "Sorcery",
+   "pt": null,
+   "text": "Search your library for a card, then shuffle and put that card on top. You lose 2 life.",
+   "keywords": [],
+   "verdict": "HARD",
+   "why": "tutor-library"
+  },
+  {
+   "name": "Night's Whisper",
+   "cost": 2,
+   "type": "Sorcery",
+   "pt": null,
+   "text": "You draw two cards and lose 2 life.",
+   "keywords": [],
+   "verdict": "EASY",
+   "why": "known-effect-shape"
+  },
+  {
+   "name": "Midnight Reaper",
+   "cost": 3,
+   "type": "Creature \u2014 Zombie Knight",
+   "pt": "3/2",
+   "text": "Whenever a nontoken creature you control dies, this creature deals 1 damage to you and you draw a card.",
+   "keywords": [],
+   "verdict": "EASY",
+   "why": "known-effect-shape"
+  },
+  {
+   "name": "Vilis, Broker of Blood",
+   "cost": 8,
+   "type": "Legendary Creature \u2014 Demon",
+   "pt": "8/8",
+   "text": "Flying\n{B}, Pay 2 life: Target creature gets -1/-1 until end of turn.\nWhenever you lose life, draw that many cards. (Damage causes loss of life.)",
+   "keywords": [
+    "Flying"
+   ],
+   "verdict": "REDESIGN",
+   "why": "flying/reach/vigilance"
+  },
+  {
+   "name": "Woe Strider",
+   "cost": 3,
+   "type": "Creature \u2014 Horror",
+   "pt": "3/2",
+   "text": "When this creature enters, create a 0/1 white Goat creature token.\nSacrifice another creature: Scry 1.\nEscape\u2014{3}{B}{B}, Exile four other cards from your graveyard. (You may cast this card from your graveyard for its escape cost.)\nThis creature escapes with two +1/+1 counters on it.",
+   "keywords": [
+    "Escape",
+    "Scry"
+   ],
+   "verdict": "HARD",
+   "why": "counters/complex-cost"
+  },
+  {
+   "name": "Massacre Wurm",
+   "cost": 6,
+   "type": "Creature \u2014 Phyrexian Wurm",
+   "pt": "6/5",
+   "text": "When this creature enters, creatures your opponents control get -2/-2 until end of turn.\nWhenever a creature an opponent controls dies, that player loses 2 life.",
+   "keywords": [],
+   "verdict": "EASY",
+   "why": "known-effect-shape"
+  },
+  {
+   "name": "Morbid Opportunist",
+   "cost": 3,
+   "type": "Creature \u2014 Human Rogue",
+   "pt": "1/3",
+   "text": "Whenever one or more other creatures die, draw a card. This ability triggers only once each turn.",
+   "keywords": [],
+   "verdict": "EASY",
+   "why": "known-effect-shape"
+  },
+  {
+   "name": "Scheming Symmetry",
+   "cost": 1,
+   "type": "Sorcery",
+   "pt": null,
+   "text": "Choose two target players. Each of them searches their library for a card, then shuffles and puts that card on top.",
+   "keywords": [],
+   "verdict": "HARD",
+   "why": "unmatched-text"
+  },
+  {
+   "name": "The Eldest Reborn",
+   "cost": 5,
+   "type": "Enchantment \u2014 Saga",
+   "pt": null,
+   "text": "(As this Saga enters and after your draw step, add a lore counter. Sacrifice after III.)\nI \u2014 Each opponent sacrifices a creature or planeswalker of their choice.\nII \u2014 Each opponent discards a card.\nIII \u2014 Put target creature or planeswalker card from a graveyard onto the battlefield under your control.",
+   "keywords": [],
+   "verdict": "EASY",
+   "why": "known-effect-shape"
+  },
+  {
+   "name": "Soul Shatter",
+   "cost": 3,
+   "type": "Instant",
+   "pt": null,
+   "text": "Each opponent sacrifices a creature or planeswalker with the greatest mana value among creatures and planeswalkers they control.",
+   "keywords": [],
+   "verdict": "HARD",
+   "why": "unmatched-text"
+  },
+  {
+   "name": "Hoarding Broodlord",
+   "cost": 8,
+   "type": "Creature \u2014 Dragon",
+   "pt": "7/6",
+   "text": "Convoke\nFlying\nWhen this creature enters, search your library for a card, exile it face down, then shuffle. For as long as that card remains exiled, you may play it.\nSpells you cast from exile have convoke.",
+   "keywords": [
+    "Flying",
+    "Convoke"
+   ],
+   "verdict": "REDESIGN",
+   "why": "flying/reach/vigilance"
+  },
+  {
+   "name": "Junji, the Midnight Sky",
+   "cost": 5,
+   "type": "Legendary Creature \u2014 Dragon Spirit",
+   "pt": "5/5",
+   "text": "Flying, menace\nWhen Junji dies, choose one \u2014\n\u2022 Each opponent discards two cards and loses 2 life.\n\u2022 Put target non-Dragon creature card from a graveyard onto the battlefield under your control. You lose 2 life.",
+   "keywords": [
+    "Flying",
+    "Menace"
+   ],
+   "verdict": "REDESIGN",
+   "why": "flying/reach/vigilance"
+  },
+  {
+   "name": "Death Baron",
+   "cost": 3,
+   "type": "Creature \u2014 Zombie Wizard",
+   "pt": "2/2",
+   "text": "Skeletons you control and other Zombies you control get +1/+1 and have deathtouch. (Any amount of damage they deal to a creature is enough to destroy it.)",
+   "keywords": [],
+   "verdict": "EASY",
+   "why": "known-effect-shape"
+  },
+  {
+   "name": "Patriarch's Bidding",
+   "cost": 5,
+   "type": "Sorcery",
+   "pt": null,
+   "text": "Each player chooses a creature type. Each player returns all creature cards of a type chosen this way from their graveyard to the battlefield.",
+   "keywords": [],
+   "verdict": "HARD",
+   "why": "unmatched-text"
+  },
+  {
+   "name": "Persist",
+   "cost": 2,
+   "type": "Sorcery",
+   "pt": null,
+   "text": "Return target nonlegendary creature card from your graveyard to the battlefield with a -1/-1 counter on it.",
+   "keywords": [],
+   "verdict": "HARD",
+   "why": "counters/complex-cost+graveyard-recursion"
+  }
+ ],
+ "red": [
+  {
+   "name": "Mogg Fanatic",
+   "cost": 1,
+   "type": "Creature \u2014 Goblin",
+   "pt": "1/1",
+   "text": "Sacrifice this creature: It deals 1 damage to any target.",
+   "keywords": [],
+   "verdict": "EASY",
+   "why": "known-effect-shape"
+  },
+  {
+   "name": "Goblin Sledder",
+   "cost": 1,
+   "type": "Creature \u2014 Goblin",
+   "pt": "1/1",
+   "text": "Sacrifice a Goblin: Target creature gets +1/+1 until end of turn.",
+   "keywords": [],
+   "verdict": "EASY",
+   "why": "known-effect-shape"
+  },
+  {
+   "name": "Goblin Cohort",
+   "cost": 1,
+   "type": "Creature \u2014 Goblin Warrior",
+   "pt": "2/2",
+   "text": "This creature can't attack unless you've cast a creature spell this turn.",
+   "keywords": [],
+   "verdict": "EASY",
+   "why": "known-effect-shape"
+  },
+  {
+   "name": "Goblin Matron",
+   "cost": 3,
+   "type": "Creature \u2014 Goblin",
+   "pt": "1/1",
+   "text": "When this creature enters, you may search your library for a Goblin card, reveal that card, put it into your hand, then shuffle.",
+   "keywords": [],
+   "verdict": "HARD",
+   "why": "tutor-library"
+  },
+  {
+   "name": "Goblin Instigator",
+   "cost": 2,
+   "type": "Creature \u2014 Goblin Rogue",
+   "pt": "1/1",
+   "text": "When this creature enters, create a 1/1 red Goblin creature token.",
+   "keywords": [],
+   "verdict": "EASY",
+   "why": "known-effect-shape"
+  },
+  {
+   "name": "Monastery Swiftspear",
+   "cost": 1,
+   "type": "Creature \u2014 Human Monk",
+   "pt": "1/2",
+   "text": "Haste\nProwess (Whenever you cast a noncreature spell, this creature gets +1/+1 until end of turn.)",
+   "keywords": [
+    "Prowess",
+    "Haste"
+   ],
+   "verdict": "HARD",
+   "why": "unmatched-text"
+  },
+  {
+   "name": "Satyr Hoplite",
+   "cost": 1,
+   "type": "Creature \u2014 Satyr Soldier",
+   "pt": "1/1",
+   "text": "Heroic \u2014 Whenever you cast a spell that targets this creature, put a +1/+1 counter on this creature.",
+   "keywords": [
+    "Heroic"
+   ],
+   "verdict": "HARD",
+   "why": "counters/complex-cost"
+  },
+  {
+   "name": "Goblin Heelcutter",
+   "cost": 4,
+   "type": "Creature \u2014 Goblin Berserker",
+   "pt": "3/2",
+   "text": "Whenever this creature attacks, target creature can't block this turn.\nDash {2}{R} (You may cast this spell for its dash cost. If you do, it gains haste, and it's returned from the battlefield to its owner's hand at the beginning of the next end step.)",
+   "keywords": [
+    "Dash"
+   ],
+   "verdict": "HARD",
+   "why": "unmatched-text"
+  },
+  {
+   "name": "Goblin Trashmaster",
+   "cost": 4,
+   "type": "Creature \u2014 Goblin Warrior",
+   "pt": "3/3",
+   "text": "Other Goblins you control get +1/+1.\nSacrifice a Goblin: Destroy target artifact.",
+   "keywords": [],
+   "verdict": "EASY",
+   "why": "known-effect-shape"
+  },
+  {
+   "name": "Ball Lightning",
+   "cost": 3,
+   "type": "Creature \u2014 Elemental",
+   "pt": "6/1",
+   "text": "Trample (This creature can deal excess combat damage to the player or planeswalker it's attacking.)\nHaste (This creature can attack and {T} as soon as it comes under your control.)\nAt the beginning of the end step, sacrifice this creature.",
+   "keywords": [
+    "Haste",
+    "Trample"
+   ],
+   "verdict": "HARD",
+   "why": "unmatched-text"
+  },
+  {
+   "name": "Borderland Marauder",
+   "cost": 2,
+   "type": "Creature \u2014 Human Warrior",
+   "pt": "1/2",
+   "text": "Whenever this creature attacks, it gets +2/+0 until end of turn.",
+   "keywords": [],
+   "verdict": "EASY",
+   "why": "known-effect-shape"
+  },
+  {
+   "name": "Hellspark Elemental",
+   "cost": 2,
+   "type": "Creature \u2014 Elemental",
+   "pt": "3/1",
+   "text": "Trample, haste\nAt the beginning of the end step, sacrifice this creature.\nUnearth {1}{R} ({1}{R}: Return this card from your graveyard to the battlefield. It gains haste. Exile it at the beginning of the next end step or if it would leave the battlefield. Unearth only as a sorcery.)",
+   "keywords": [
+    "Unearth",
+    "Haste",
+    "Trample"
+   ],
+   "verdict": "HARD",
+   "why": "unmatched-text"
+  },
+  {
+   "name": "Spark Elemental",
+   "cost": 1,
+   "type": "Creature \u2014 Elemental",
+   "pt": "3/1",
+   "text": "Trample, haste (This creature can deal excess combat damage to the player or planeswalker it's attacking. This creature can attack and {T} as soon as it comes under your control.)\nAt the beginning of the end step, sacrifice this creature.",
+   "keywords": [
+    "Haste",
+    "Trample"
+   ],
+   "verdict": "HARD",
+   "why": "unmatched-text"
+  },
+  {
+   "name": "Frenzied Goblin",
+   "cost": 1,
+   "type": "Creature \u2014 Goblin Berserker",
+   "pt": "1/1",
+   "text": "Whenever this creature attacks, you may pay {R}. If you do, target creature can't block this turn.",
+   "keywords": [],
+   "verdict": "HARD",
+   "why": "unmatched-text"
+  },
+  {
+   "name": "Gore-House Chainwalker",
+   "cost": 2,
+   "type": "Creature \u2014 Human Warrior",
+   "pt": "2/1",
+   "text": "Unleash (You may have this creature enter with a +1/+1 counter on it. It can't block as long as it has a +1/+1 counter on it.)",
+   "keywords": [
+    "Unleash"
+   ],
+   "verdict": "HARD",
+   "why": "unmatched-text"
+  },
+  {
+   "name": "Keldon Halberdier",
+   "cost": 5,
+   "type": "Creature \u2014 Human Warrior",
+   "pt": "4/1",
+   "text": "First strike\nSuspend 4\u2014{R} (Rather than cast this card from your hand, you may pay {R} and exile it with four time counters on it. At the beginning of your upkeep, remove a time counter. When the last is removed, you may cast it without paying its mana cost. It has haste.)",
+   "keywords": [
+    "First strike",
+    "Suspend"
+   ],
+   "verdict": "HARD",
+   "why": "unmatched-text"
+  },
+  {
+   "name": "Goblin Balloon Brigade",
+   "cost": 1,
+   "type": "Creature \u2014 Goblin Warrior",
+   "pt": "1/1",
+   "text": "{R}: This creature gains flying until end of turn.",
+   "keywords": [],
+   "verdict": "REDESIGN",
+   "why": "flying/reach/vigilance"
+  },
+  {
+   "name": "Lightning Mauler",
+   "cost": 2,
+   "type": "Creature \u2014 Human Berserker",
+   "pt": "2/1",
+   "text": "Soulbond (You may pair this creature with another unpaired creature when either enters. They remain paired for as long as you control both of them.)\nAs long as this creature is paired with another creature, both creatures have haste.",
+   "keywords": [
+    "Soulbond"
+   ],
+   "verdict": "HARD",
+   "why": "unmatched-text"
+  },
+  {
+   "name": "Ash Zealot",
+   "cost": 2,
+   "type": "Creature \u2014 Human Warrior",
+   "pt": "2/2",
+   "text": "First strike, haste\nWhenever a player casts a spell from a graveyard, this creature deals 3 damage to that player.",
+   "keywords": [
+    "First strike",
+    "Haste"
+   ],
+   "verdict": "EASY",
+   "why": "known-effect-shape"
+  },
+  {
+   "name": "Firefist Striker",
+   "cost": 2,
+   "type": "Creature \u2014 Human Soldier",
+   "pt": "2/1",
+   "text": "Battalion \u2014 Whenever this creature and at least two other creatures attack, target creature can't block this turn.",
+   "keywords": [
+    "Battalion"
+   ],
+   "verdict": "HARD",
+   "why": "unmatched-text"
+  },
+  {
+   "name": "Foundry Street Denizen",
+   "cost": 1,
+   "type": "Creature \u2014 Goblin Warrior",
+   "pt": "1/1",
+   "text": "Whenever another red creature you control enters, this creature gets +1/+0 until end of turn.",
+   "keywords": [],
+   "verdict": "EASY",
+   "why": "known-effect-shape"
+  },
+  {
+   "name": "Mogg War Marshal",
+   "cost": 2,
+   "type": "Creature \u2014 Goblin Warrior",
+   "pt": "1/1",
+   "text": "Echo {1}{R} (At the beginning of your upkeep, if this came under your control since the beginning of your last upkeep, sacrifice it unless you pay its echo cost.)\nWhen this creature enters or dies, create a 1/1 red Goblin creature token.",
+   "keywords": [
+    "Echo"
+   ],
+   "verdict": "EASY",
+   "why": "known-effect-shape"
+  },
+  {
+   "name": "Goblin Wardriver",
+   "cost": 2,
+   "type": "Creature \u2014 Goblin Warrior",
+   "pt": "2/2",
+   "text": "Battle cry (Whenever this creature attacks, each other attacking creature gets +1/+0 until end of turn.)",
+   "keywords": [
+    "Battle Cry"
+   ],
+   "verdict": "HARD",
+   "why": "unmatched-text"
+  },
+  {
+   "name": "Goblin Bushwhacker",
+   "cost": 1,
+   "type": "Creature \u2014 Goblin Warrior",
+   "pt": "1/1",
+   "text": "Kicker {R} (You may pay an additional {R} as you cast this spell.)\nWhen this creature enters, if it was kicked, creatures you control get +1/+0 and gain haste until end of turn.",
+   "keywords": [
+    "Kicker"
+   ],
+   "verdict": "HARD",
+   "why": "counters/complex-cost"
+  },
+  {
+   "name": "Goblin Arsonist",
+   "cost": 1,
+   "type": "Creature \u2014 Goblin Shaman",
+   "pt": "1/1",
+   "text": "When this creature dies, you may have it deal 1 damage to any target.",
+   "keywords": [],
+   "verdict": "EASY",
+   "why": "known-effect-shape"
+  },
+  {
+   "name": "Goblin Warchief",
+   "cost": 3,
+   "type": "Creature \u2014 Goblin Warrior",
+   "pt": "2/2",
+   "text": "Goblin spells you cast cost {1} less to cast.\nGoblins you control have haste.",
+   "keywords": [],
+   "verdict": "HARD",
+   "why": "unmatched-text"
+  },
+  {
+   "name": "Ember Hauler",
+   "cost": 2,
+   "type": "Creature \u2014 Goblin",
+   "pt": "2/2",
+   "text": "{1}, Sacrifice this creature: It deals 2 damage to any target.",
+   "keywords": [],
+   "verdict": "HARD",
+   "why": "activated-ability"
+  },
+  {
+   "name": "Bloodfire Dwarf",
+   "cost": 1,
+   "type": "Creature \u2014 Dwarf",
+   "pt": "1/1",
+   "text": "{R}, Sacrifice this creature: It deals 1 damage to each creature without flying.",
+   "keywords": [],
+   "verdict": "REDESIGN",
+   "why": "flying/reach/vigilance"
+  },
+  {
+   "name": "Kiln Fiend",
+   "cost": 2,
+   "type": "Creature \u2014 Elemental Beast",
+   "pt": "1/2",
+   "text": "Whenever you cast an instant or sorcery spell, this creature gets +3/+0 until end of turn.",
+   "keywords": [],
+   "verdict": "EASY",
+   "why": "known-effect-shape"
+  },
+  {
+   "name": "Stormblood Berserker",
+   "cost": 2,
+   "type": "Creature \u2014 Human Berserker",
+   "pt": "1/1",
+   "text": "Bloodthirst 2 (If an opponent was dealt damage this turn, this creature enters with two +1/+1 counters on it.)\nMenace (This creature can't be blocked except by two or more creatures.)",
+   "keywords": [
+    "Bloodthirst",
+    "Menace"
+   ],
+   "verdict": "HARD",
+   "why": "unmatched-text"
+  },
+  {
+   "name": "Flametongue Kavu",
+   "cost": 4,
+   "type": "Creature \u2014 Kavu",
+   "pt": "4/2",
+   "text": "When this creature enters, it deals 4 damage to target creature.",
+   "keywords": [],
+   "verdict": "EASY",
+   "why": "known-effect-shape"
+  },
+  {
+   "name": "Hell's Thunder",
+   "cost": 3,
+   "type": "Creature \u2014 Elemental",
+   "pt": "4/4",
+   "text": "Flying, haste\nAt the beginning of the end step, sacrifice this creature.\nUnearth {4}{R} ({4}{R}: Return this card from your graveyard to the battlefield. It gains haste. Exile it at the beginning of the next end step or if it would leave the battlefield. Unearth only as a sorcery.)",
+   "keywords": [
+    "Flying",
+    "Unearth",
+    "Haste"
+   ],
+   "verdict": "REDESIGN",
+   "why": "flying/reach/vigilance"
+  },
+  {
+   "name": "Keldon Marauders",
+   "cost": 2,
+   "type": "Creature \u2014 Human Warrior",
+   "pt": "3/3",
+   "text": "Vanishing 2 (This creature enters with two time counters on it. At the beginning of your upkeep, remove a time counter from it. When the last is removed, sacrifice it.)\nWhen this creature enters or leaves the battlefield, it deals 1 damage to target player or planeswalker.",
+   "keywords": [
+    "Vanishing"
+   ],
+   "verdict": "EASY",
+   "why": "known-effect-shape"
+  },
+  {
+   "name": "Mogg Flunkies",
+   "cost": 2,
+   "type": "Creature \u2014 Goblin",
+   "pt": "3/3",
+   "text": "This creature can't attack or block alone.",
+   "keywords": [],
+   "verdict": "EASY",
+   "why": "known-effect-shape"
+  },
+  {
+   "name": "Raging Goblin",
+   "cost": 1,
+   "type": "Creature \u2014 Goblin Berserker",
+   "pt": "1/1",
+   "text": "Haste (This creature can attack and {T} as soon as it comes under your control.)",
+   "keywords": [
+    "Haste"
+   ],
+   "verdict": "EASY",
+   "why": "keywords-only"
+  },
+  {
+   "name": "Lightning Bolt",
+   "cost": 1,
+   "type": "Instant",
+   "pt": null,
+   "text": "Lightning Bolt deals 3 damage to any target.",
+   "keywords": [],
+   "verdict": "EASY",
+   "why": "known-effect-shape"
+  },
+  {
+   "name": "Chain Lightning",
+   "cost": 1,
+   "type": "Sorcery",
+   "pt": null,
+   "text": "Chain Lightning deals 3 damage to any target. Then that player or that permanent's controller may pay {R}{R}. If the player does, they may copy this spell and may choose a new target for that copy.",
+   "keywords": [],
+   "verdict": "EASY",
+   "why": "known-effect-shape"
+  },
+  {
+   "name": "Lava Spike",
+   "cost": 1,
+   "type": "Sorcery \u2014 Arcane",
+   "pt": null,
+   "text": "Lava Spike deals 3 damage to target player or planeswalker.",
+   "keywords": [],
+   "verdict": "EASY",
+   "why": "known-effect-shape"
+  },
+  {
+   "name": "Rift Bolt",
+   "cost": 3,
+   "type": "Sorcery",
+   "pt": null,
+   "text": "Rift Bolt deals 3 damage to any target.\nSuspend 1\u2014{R} (Rather than cast this card from your hand, you may pay {R} and exile it with a time counter on it. At the beginning of your upkeep, remove a time counter. When the last is removed, you may cast it without paying its mana cost.)",
+   "keywords": [
+    "Suspend"
+   ],
+   "verdict": "EASY",
+   "why": "known-effect-shape"
+  },
+  {
+   "name": "Shard Volley",
+   "cost": 1,
+   "type": "Instant",
+   "pt": null,
+   "text": "As an additional cost to cast this spell, sacrifice a land.\nShard Volley deals 3 damage to any target.",
+   "keywords": [],
+   "verdict": "EASY",
+   "why": "known-effect-shape"
+  },
+  {
+   "name": "Burst Lightning",
+   "cost": 1,
+   "type": "Instant",
+   "pt": null,
+   "text": "Kicker {4} (You may pay an additional {4} as you cast this spell.)\nBurst Lightning deals 2 damage to any target. If this spell was kicked, it deals 4 damage instead.",
+   "keywords": [
+    "Kicker"
+   ],
+   "verdict": "HARD",
+   "why": "counters/complex-cost"
+  },
+  {
+   "name": "Incinerate",
+   "cost": 2,
+   "type": "Instant",
+   "pt": null,
+   "text": "Incinerate deals 3 damage to any target. A creature dealt damage this way can't be regenerated this turn.",
+   "keywords": [],
+   "verdict": "EASY",
+   "why": "known-effect-shape"
+  },
+  {
+   "name": "Searing Spear",
+   "cost": 2,
+   "type": "Instant",
+   "pt": null,
+   "text": "Searing Spear deals 3 damage to any target.",
+   "keywords": [],
+   "verdict": "EASY",
+   "why": "known-effect-shape"
+  },
+  {
+   "name": "Lightning Strike",
+   "cost": 2,
+   "type": "Instant",
+   "pt": null,
+   "text": "Lightning Strike deals 3 damage to any target.",
+   "keywords": [],
+   "verdict": "EASY",
+   "why": "known-effect-shape"
+  },
+  {
+   "name": "Skullcrack",
+   "cost": 2,
+   "type": "Instant",
+   "pt": null,
+   "text": "Players can't gain life this turn. Damage can't be prevented this turn. Skullcrack deals 3 damage to target player or planeswalker.",
+   "keywords": [],
+   "verdict": "EASY",
+   "why": "known-effect-shape"
+  },
+  {
+   "name": "Fireblast",
+   "cost": 6,
+   "type": "Instant",
+   "pt": null,
+   "text": "You may sacrifice two Mountains rather than pay this spell's mana cost.\nFireblast deals 4 damage to any target.",
+   "keywords": [],
+   "verdict": "EASY",
+   "why": "known-effect-shape"
+  },
+  {
+   "name": "Price of Progress",
+   "cost": 2,
+   "type": "Instant",
+   "pt": null,
+   "text": "Price of Progress deals damage to each player equal to twice the number of nonbasic lands that player controls.",
+   "keywords": [],
+   "verdict": "HARD",
+   "why": "unmatched-text"
+  },
+  {
+   "name": "Flame Rift",
+   "cost": 2,
+   "type": "Sorcery",
+   "pt": null,
+   "text": "Flame Rift deals 4 damage to each player.",
+   "keywords": [],
+   "verdict": "EASY",
+   "why": "known-effect-shape"
+  },
+  {
+   "name": "Sulfuric Vortex",
+   "cost": 3,
+   "type": "Enchantment",
+   "pt": null,
+   "text": "At the beginning of each player's upkeep, this enchantment deals 2 damage to that player.\nIf a player would gain life, that player gains no life instead.",
+   "keywords": [],
+   "verdict": "EASY",
+   "why": "known-effect-shape"
+  },
+  {
+   "name": "Fireball",
+   "cost": 1,
+   "type": "Sorcery",
+   "pt": null,
+   "text": "This spell costs {1} more to cast for each target beyond the first.\nFireball deals X damage divided evenly, rounded down, among any number of targets.",
+   "keywords": [],
+   "verdict": "HARD",
+   "why": "unmatched-text"
+  },
+  {
+   "name": "Flame Slash",
+   "cost": 1,
+   "type": "Sorcery",
+   "pt": null,
+   "text": "Flame Slash deals 4 damage to target creature.",
+   "keywords": [],
+   "verdict": "EASY",
+   "why": "known-effect-shape"
+  },
+  {
+   "name": "Rolling Thunder",
+   "cost": 2,
+   "type": "Sorcery",
+   "pt": null,
+   "text": "Rolling Thunder deals X damage divided as you choose among any number of targets.",
+   "keywords": [],
+   "verdict": "HARD",
+   "why": "unmatched-text"
+  },
+  {
+   "name": "Devil's Play",
+   "cost": 1,
+   "type": "Sorcery",
+   "pt": null,
+   "text": "Devil's Play deals X damage to any target.\nFlashback {X}{R}{R}{R} (You may cast this card from your graveyard for its flashback cost. Then exile it.)",
+   "keywords": [
+    "Flashback"
+   ],
+   "verdict": "HARD",
+   "why": "counters/complex-cost"
+  },
+  {
+   "name": "Volcanic Hammer",
+   "cost": 2,
+   "type": "Sorcery",
+   "pt": null,
+   "text": "Volcanic Hammer deals 3 damage to any target.",
+   "keywords": [],
+   "verdict": "EASY",
+   "why": "known-effect-shape"
+  },
+  {
+   "name": "Flame Javelin",
+   "cost": 6,
+   "type": "Instant",
+   "pt": null,
+   "text": "({2/R} can be paid with any two mana or with {R}. This card's mana value is 6.)\nFlame Javelin deals 4 damage to any target.",
+   "keywords": [],
+   "verdict": "EASY",
+   "why": "known-effect-shape"
+  },
+  {
+   "name": "Magma Jet",
+   "cost": 2,
+   "type": "Instant",
+   "pt": null,
+   "text": "Magma Jet deals 2 damage to any target. Scry 2.",
+   "keywords": [
+    "Scry"
+   ],
+   "verdict": "EASY",
+   "why": "known-effect-shape"
+  },
+  {
+   "name": "Pillar of Flame",
+   "cost": 1,
+   "type": "Sorcery",
+   "pt": null,
+   "text": "Pillar of Flame deals 2 damage to any target. If a creature dealt damage this way would die this turn, exile it instead.",
+   "keywords": [],
+   "verdict": "EASY",
+   "why": "known-effect-shape"
+  },
+  {
+   "name": "Searing Blaze",
+   "cost": 2,
+   "type": "Instant",
+   "pt": null,
+   "text": "Searing Blaze deals 1 damage to target player or planeswalker and 1 damage to target creature that player or that planeswalker's controller controls.\nLandfall \u2014 If you had a land enter the battlefield under your control this turn, Searing Blaze deals 3 damage to that player or planeswalker and 3 damage to that creature instead.",
+   "keywords": [
+    "Landfall"
+   ],
+   "verdict": "EASY",
+   "why": "known-effect-shape"
+  },
+  {
+   "name": "Shatter",
+   "cost": 2,
+   "type": "Instant",
+   "pt": null,
+   "text": "Destroy target artifact.",
+   "keywords": [],
+   "verdict": "EASY",
+   "why": "known-effect-shape"
+  },
+  {
+   "name": "Smash to Smithereens",
+   "cost": 2,
+   "type": "Instant",
+   "pt": null,
+   "text": "Destroy target artifact. Smash to Smithereens deals 3 damage to that artifact's controller.",
+   "keywords": [],
+   "verdict": "EASY",
+   "why": "known-effect-shape"
+  },
+  {
+   "name": "Shattering Spree",
+   "cost": 1,
+   "type": "Sorcery",
+   "pt": null,
+   "text": "Replicate {R} (When you cast this spell, copy it for each time you paid its replicate cost. You may choose new targets for the copies.)\nDestroy target artifact.",
+   "keywords": [
+    "Replicate"
+   ],
+   "verdict": "EASY",
+   "why": "known-effect-shape"
+  },
+  {
+   "name": "Vandalblast",
+   "cost": 1,
+   "type": "Sorcery",
+   "pt": null,
+   "text": "Destroy target artifact you don't control.\nOverload {4}{R} (You may cast this spell for its overload cost. If you do, change \"target\" in its text to \"each.\")",
+   "keywords": [
+    "Overload"
+   ],
+   "verdict": "EASY",
+   "why": "known-effect-shape"
+  },
+  {
+   "name": "By Force",
+   "cost": 1,
+   "type": "Sorcery",
+   "pt": null,
+   "text": "Destroy X target artifacts.",
+   "keywords": [],
+   "verdict": "HARD",
+   "why": "unmatched-text"
+  },
+  {
+   "name": "Abrade",
+   "cost": 2,
+   "type": "Instant",
+   "pt": null,
+   "text": "Choose one \u2014\n\u2022 Abrade deals 3 damage to target creature.\n\u2022 Destroy target artifact.",
+   "keywords": [],
+   "verdict": "EASY",
+   "why": "known-effect-shape"
+  },
+  {
+   "name": "Smelt",
+   "cost": 1,
+   "type": "Instant",
+   "pt": null,
+   "text": "Destroy target artifact.",
+   "keywords": [],
+   "verdict": "EASY",
+   "why": "known-effect-shape"
+  },
+  {
+   "name": "Meltdown",
+   "cost": 1,
+   "type": "Sorcery",
+   "pt": null,
+   "text": "Destroy each artifact with mana value X or less.",
+   "keywords": [],
+   "verdict": "HARD",
+   "why": "unmatched-text"
+  },
+  {
+   "name": "Shattering Pulse",
+   "cost": 2,
+   "type": "Instant",
+   "pt": null,
+   "text": "Buyback {3} (You may pay an additional {3} as you cast this spell. If you do, put this card into your hand as it resolves.)\nDestroy target artifact.",
+   "keywords": [
+    "Buyback"
+   ],
+   "verdict": "EASY",
+   "why": "known-effect-shape"
+  },
+  {
+   "name": "Pulverize",
+   "cost": 6,
+   "type": "Sorcery",
+   "pt": null,
+   "text": "You may sacrifice two Mountains rather than pay this spell's mana cost.\nDestroy all artifacts.",
+   "keywords": [],
+   "verdict": "HARD",
+   "why": "unmatched-text"
+  },
+  {
+   "name": "Reckless Abandon",
+   "cost": 1,
+   "type": "Sorcery",
+   "pt": null,
+   "text": "As an additional cost to cast this spell, sacrifice a creature.\nReckless Abandon deals 4 damage to any target.",
+   "keywords": [],
+   "verdict": "EASY",
+   "why": "known-effect-shape"
+  },
+  {
+   "name": "Pyroclasm",
+   "cost": 2,
+   "type": "Sorcery",
+   "pt": null,
+   "text": "Pyroclasm deals 2 damage to each creature.",
+   "keywords": [],
+   "verdict": "EASY",
+   "why": "known-effect-shape"
+  },
+  {
+   "name": "Imperial Recruiter",
+   "cost": 3,
+   "type": "Creature \u2014 Human Advisor",
+   "pt": "1/1",
+   "text": "When this creature enters, search your library for a creature card with power 2 or less, reveal it, put it into your hand, then shuffle.",
+   "keywords": [],
+   "verdict": "HARD",
+   "why": "tutor-library"
+  },
+  {
+   "name": "Chaos Warp",
+   "cost": 3,
+   "type": "Instant",
+   "pt": null,
+   "text": "The owner of target permanent shuffles it into their library, then reveals the top card of their library. If it's a permanent card, they put it onto the battlefield.",
+   "keywords": [],
+   "verdict": "HARD",
+   "why": "unmatched-text"
+  },
+  {
+   "name": "Gamble",
+   "cost": 1,
+   "type": "Sorcery",
+   "pt": null,
+   "text": "Search your library for a card, put that card into your hand, discard a card at random, then shuffle.",
+   "keywords": [],
+   "verdict": "HARD",
+   "why": "tutor-library"
+  },
+  {
+   "name": "Goblin Bombardment",
+   "cost": 2,
+   "type": "Enchantment",
+   "pt": null,
+   "text": "Sacrifice a creature: This enchantment deals 1 damage to any target.",
+   "keywords": [],
+   "verdict": "EASY",
+   "why": "known-effect-shape"
+  },
+  {
+   "name": "Balefire Dragon",
+   "cost": 7,
+   "type": "Creature \u2014 Dragon",
+   "pt": "6/6",
+   "text": "Flying\nWhenever this creature deals combat damage to a player, it deals that much damage to each creature that player controls.",
+   "keywords": [
+    "Flying"
+   ],
+   "verdict": "REDESIGN",
+   "why": "flying/reach/vigilance"
+  },
+  {
+   "name": "Utvara Hellkite",
+   "cost": 8,
+   "type": "Creature \u2014 Dragon",
+   "pt": "6/6",
+   "text": "Flying\nWhenever a Dragon you control attacks, create a 6/6 red Dragon creature token with flying.",
+   "keywords": [
+    "Flying"
+   ],
+   "verdict": "REDESIGN",
+   "why": "flying/reach/vigilance"
+  },
+  {
+   "name": "Red Elemental Blast",
+   "cost": 1,
+   "type": "Instant",
+   "pt": null,
+   "text": "Choose one \u2014\n\u2022 Counter target blue spell.\n\u2022 Destroy target blue permanent.",
+   "keywords": [],
+   "verdict": "EASY",
+   "why": "known-effect-shape"
+  },
+  {
+   "name": "Pyroblast",
+   "cost": 1,
+   "type": "Instant",
+   "pt": null,
+   "text": "Choose one \u2014\n\u2022 Counter target spell if it's blue.\n\u2022 Destroy target permanent if it's blue.",
+   "keywords": [],
+   "verdict": "EASY",
+   "why": "known-effect-shape"
+  },
+  {
+   "name": "Deflecting Swat",
+   "cost": 3,
+   "type": "Instant",
+   "pt": null,
+   "text": "If you control a commander, you may cast this spell without paying its mana cost.\nYou may choose new targets for target spell or ability.",
+   "keywords": [],
+   "verdict": "HARD",
+   "why": "unmatched-text"
+  },
+  {
+   "name": "Blood Moon",
+   "cost": 3,
+   "type": "Enchantment",
+   "pt": null,
+   "text": "Nonbasic lands are Mountains.",
+   "keywords": [],
+   "verdict": "HARD",
+   "why": "unmatched-text"
+  },
+  {
+   "name": "Fable of the Mirror-Breaker",
+   "cost": 3,
+   "type": "Enchantment \u2014 Saga // Enchantment Creature \u2014 Goblin Shaman",
+   "pt": null,
+   "text": "",
+   "keywords": [
+    "Transform",
+    "Treasure"
+   ],
+   "verdict": "EASY",
+   "why": "vanilla"
+  },
+  {
+   "name": "Ancient Copper Dragon",
+   "cost": 6,
+   "type": "Creature \u2014 Elder Dragon",
+   "pt": "6/5",
+   "text": "Flying\nWhenever this creature deals combat damage to a player, roll a d20. You create a number of Treasure tokens equal to the result.",
+   "keywords": [
+    "Flying",
+    "Treasure"
+   ],
+   "verdict": "REDESIGN",
+   "why": "flying/reach/vigilance"
+  },
+  {
+   "name": "Wheel of Fortune",
+   "cost": 3,
+   "type": "Sorcery",
+   "pt": null,
+   "text": "Each player discards their hand, then draws seven cards.",
+   "keywords": [],
+   "verdict": "HARD",
+   "why": "unmatched-text"
+  },
+  {
+   "name": "Dockside Extortionist",
+   "cost": 2,
+   "type": "Creature \u2014 Goblin Pirate",
+   "pt": "1/2",
+   "text": "When this creature enters, create X Treasure tokens, where X is the number of artifacts and enchantments your opponents control. (Treasure tokens are artifacts with \"{T}, Sacrifice this token: Add one mana of any color.\")",
+   "keywords": [
+    "Treasure"
+   ],
+   "verdict": "EASY",
+   "why": "known-effect-shape"
+  },
+  {
+   "name": "Ragavan, Nimble Pilferer",
+   "cost": 1,
+   "type": "Legendary Creature \u2014 Monkey Pirate",
+   "pt": "2/1",
+   "text": "Whenever Ragavan deals combat damage to a player, create a Treasure token and exile the top card of that player's library. Until end of turn, you may cast that card.\nDash {1}{R} (You may cast this spell for its dash cost. If you do, it gains haste, and it's returned from the battlefield to its owner's hand at the beginning of the next end step.)",
+   "keywords": [
+    "Treasure",
+    "Dash"
+   ],
+   "verdict": "EASY",
+   "why": "known-effect-shape"
+  },
+  {
+   "name": "Goblin Battle Jester",
+   "cost": 4,
+   "type": "Creature \u2014 Goblin",
+   "pt": "2/2",
+   "text": "Whenever you cast a red spell, target creature can't block this turn.",
+   "keywords": [],
+   "verdict": "EASY",
+   "why": "known-effect-shape"
+  },
+  {
+   "name": "Staff of the Flame Magus",
+   "cost": 3,
+   "type": "Artifact",
+   "pt": null,
+   "text": "Whenever you cast a red spell or a Mountain you control enters, you gain 1 life.",
+   "keywords": [],
+   "verdict": "EASY",
+   "why": "known-effect-shape"
+  },
+  {
+   "name": "Fervent Champion",
+   "cost": 1,
+   "type": "Creature \u2014 Human Knight",
+   "pt": "1/1",
+   "text": "First strike, haste\nWhenever this creature attacks, another target attacking Knight you control gets +1/+0 until end of turn.\nEquip abilities you activate that target this creature cost {3} less to activate.",
+   "keywords": [
+    "First strike",
+    "Haste"
+   ],
+   "verdict": "EASY",
+   "why": "known-effect-shape"
+  },
+  {
+   "name": "Fireball (Needs New Name)",
+   "verdict": "HARD",
+   "why": "not-found"
+  },
+  {
+   "name": "Goldspan Dragon",
+   "cost": 5,
+   "type": "Creature \u2014 Dragon",
+   "pt": "4/4",
+   "text": "Flying, haste\nWhenever this creature attacks or becomes the target of a spell, create a Treasure token.\nTreasures you control have \"{T}, Sacrifice this artifact: Add two mana of any one color.\"",
+   "keywords": [
+    "Flying",
+    "Treasure",
+    "Haste"
+   ],
+   "verdict": "REDESIGN",
+   "why": "flying/reach/vigilance"
+  },
+  {
+   "name": "Magda, Brazen Outlaw",
+   "cost": 2,
+   "type": "Legendary Creature \u2014 Dwarf Berserker",
+   "pt": "2/1",
+   "text": "Other Dwarves you control get +1/+0.\nWhenever a Dwarf you control becomes tapped, create a Treasure token.\nSacrifice five Treasures: Search your library for an artifact or Dragon card, put that card onto the battlefield, then shuffle.",
+   "keywords": [
+    "Treasure"
+   ],
+   "verdict": "HARD",
+   "why": "tutor-library"
+  },
+  {
+   "name": "Unholy Heat",
+   "cost": 1,
+   "type": "Instant",
+   "pt": null,
+   "text": "Unholy Heat deals 2 damage to target creature or planeswalker.\nDelirium \u2014 Unholy Heat deals 6 damage instead if there are four or more card types among cards in your graveyard.",
+   "keywords": [
+    "Delirium"
+   ],
+   "verdict": "EASY",
+   "why": "known-effect-shape"
+  },
+  {
+   "name": "Dragon's Rage Channeler",
+   "cost": 1,
+   "type": "Creature \u2014 Human Shaman",
+   "pt": "1/1",
+   "text": "Whenever you cast a noncreature spell, surveil 1. (Look at the top card of your library. You may put that card into your graveyard.)\nDelirium \u2014 As long as there are four or more card types among cards in your graveyard, this creature gets +2/+2, has flying, and attacks each combat if able.",
+   "keywords": [
+    "Delirium",
+    "Surveil"
+   ],
+   "verdict": "REDESIGN",
+   "why": "flying/reach/vigilance"
+  },
+  {
+   "name": "Jaxis, The Troublemaker",
+   "cost": 4,
+   "type": "Legendary Creature \u2014 Human Warrior",
+   "pt": "2/3",
+   "text": "{R}, {T}, Discard a card: Create a token that's a copy of another target creature you control. It gains haste and \"When this token dies, draw a card.\" Sacrifice it at the beginning of the next end step. Activate only as a sorcery.\nBlitz {1}{R} (If you cast this spell for its blitz cost, it gains haste and \"When this creature dies, draw a card.\" Sacrifice it at the beginning of the next end step.)",
+   "keywords": [
+    "Blitz"
+   ],
+   "verdict": "HARD",
+   "why": "activated-ability"
+  },
+  {
+   "name": "Professional Face-Breaker",
+   "cost": 3,
+   "type": "Creature \u2014 Human Warrior",
+   "pt": "2/3",
+   "text": "Menace\nWhenever one or more creatures you control deal combat damage to a player, create a Treasure token.\nSacrifice a Treasure: Exile the top card of your library. You may play that card this turn.",
+   "keywords": [
+    "Treasure",
+    "Menace"
+   ],
+   "verdict": "EASY",
+   "why": "known-effect-shape"
+  },
+  {
+   "name": "Structural Assault",
+   "cost": 5,
+   "type": "Sorcery",
+   "pt": null,
+   "text": "Destroy all artifacts, then Structural Assault deals damage to each creature equal to the number of artifacts that were put into graveyards from the battlefield this turn.",
+   "keywords": [],
+   "verdict": "HARD",
+   "why": "unmatched-text"
+  },
+  {
+   "name": "Arcane Bombardment",
+   "cost": 6,
+   "type": "Enchantment",
+   "pt": null,
+   "text": "Whenever you cast your first instant or sorcery spell each turn, exile an instant or sorcery card at random from your graveyard. Then copy each card exiled with this enchantment. You may cast any number of the copies without paying their mana costs.",
+   "keywords": [],
+   "verdict": "EASY",
+   "why": "known-effect-shape"
+  },
+  {
+   "name": "Bitter Reunion",
+   "cost": 2,
+   "type": "Enchantment",
+   "pt": null,
+   "text": "When this enchantment enters, you may discard a card. If you do, draw two cards.\n{1}, Sacrifice this enchantment: Creatures you control gain haste until end of turn.",
+   "keywords": [],
+   "verdict": "HARD",
+   "why": "activated-ability"
+  },
+  {
+   "name": "Dire Fleet Daredevil",
+   "cost": 2,
+   "type": "Creature \u2014 Human Pirate",
+   "pt": "2/1",
+   "text": "First strike\nWhen this creature enters, exile target instant or sorcery card from an opponent's graveyard. You may cast it this turn, and mana of any type can be spent to cast that spell. If that spell would be put into a graveyard, exile it instead.",
+   "keywords": [
+    "First strike"
+   ],
+   "verdict": "EASY",
+   "why": "known-effect-shape"
+  },
+  {
+   "name": "Cursed Mirror",
+   "cost": 3,
+   "type": "Artifact",
+   "pt": null,
+   "text": "{T}: Add {R}.\nAs this artifact enters, you may have it become a copy of any creature on the battlefield until end of turn, except it has haste.",
+   "keywords": [],
+   "verdict": "HARD",
+   "why": "activated-ability"
+  },
+  {
+   "name": "Bolt Bend",
+   "cost": 4,
+   "type": "Instant",
+   "pt": null,
+   "text": "This spell costs {3} less to cast if you control a creature with power 4 or greater.\nChange the target of target spell or ability with a single target.",
+   "keywords": [],
+   "verdict": "HARD",
+   "why": "unmatched-text"
+  },
+  {
+   "name": "Terror of the Peaks",
+   "cost": 5,
+   "type": "Creature \u2014 Dragon",
+   "pt": "5/4",
+   "text": "Flying\nSpells your opponents cast that target this creature cost an additional 3 life to cast.\nWhenever another creature you control enters, this creature deals damage equal to that creature's power to any target.",
+   "keywords": [
+    "Flying"
+   ],
+   "verdict": "REDESIGN",
+   "why": "flying/reach/vigilance"
+  },
+  {
+   "name": "Combat Celebrant",
+   "cost": 3,
+   "type": "Creature \u2014 Human Warrior",
+   "pt": "4/1",
+   "text": "If this creature hasn't been exerted this turn, you may exert it as it attacks. When you do, untap all other creatures you control and after this phase, there is an additional combat phase. (An exerted creature won't untap during your next untap step.)",
+   "keywords": [
+    "Exert"
+   ],
+   "verdict": "HARD",
+   "why": "unmatched-text"
+  },
+  {
+   "name": "Blasphemous Act",
+   "cost": 9,
+   "type": "Sorcery",
+   "pt": null,
+   "text": "This spell costs {1} less to cast for each creature on the battlefield.\nBlasphemous Act deals 13 damage to each creature.",
+   "keywords": [],
+   "verdict": "EASY",
+   "why": "known-effect-shape"
+  },
+  {
+   "name": "Thrill of Possibility",
+   "cost": 2,
+   "type": "Instant",
+   "pt": null,
+   "text": "As an additional cost to cast this spell, discard a card.\nDraw two cards.",
+   "keywords": [],
+   "verdict": "EASY",
+   "why": "known-effect-shape"
+  },
+  {
+   "name": "Storm-Kiln Artist",
+   "cost": 4,
+   "type": "Creature \u2014 Dwarf Shaman",
+   "pt": "2/2",
+   "text": "This creature gets +1/+0 for each artifact you control.\nMagecraft \u2014 Whenever you cast or copy an instant or sorcery spell, create a Treasure token. (It's an artifact with \"{T}, Sacrifice this token: Add one mana of any color.\")",
+   "keywords": [
+    "Treasure",
+    "Magecraft"
+   ],
+   "verdict": "EASY",
+   "why": "known-effect-shape"
+  },
+  {
+   "name": "Impact Tremors",
+   "cost": 2,
+   "type": "Enchantment",
+   "pt": null,
+   "text": "Whenever a creature you control enters, this enchantment deals 1 damage to each opponent.",
+   "keywords": [],
+   "verdict": "EASY",
+   "why": "known-effect-shape"
+  },
+  {
+   "name": "Unexpected WIndfall",
+   "cost": 4,
+   "type": "Instant",
+   "pt": null,
+   "text": "As an additional cost to cast this spell, discard a card.\nDraw two cards and create two Treasure tokens. (They're artifacts with \"{T}, Sacrifice this token: Add one mana of any color.\")",
+   "keywords": [
+    "Treasure"
+   ],
+   "verdict": "EASY",
+   "why": "known-effect-shape"
+  },
+  {
+   "name": "Warstorm Surge",
+   "cost": 6,
+   "type": "Enchantment",
+   "pt": null,
+   "text": "Whenever a creature you control enters, it deals damage equal to its power to any target.",
+   "keywords": [],
+   "verdict": "EASY",
+   "why": "known-effect-shape"
+  },
+  {
+   "name": "Dualcaster Mage",
+   "cost": 3,
+   "type": "Creature \u2014 Human Wizard",
+   "pt": "2/2",
+   "text": "Flash\nWhen this creature enters, copy target instant or sorcery spell. You may choose new targets for the copy.",
+   "keywords": [
+    "Flash"
+   ],
+   "verdict": "EASY",
+   "why": "known-effect-shape"
+  },
+  {
+   "name": "Chain Reaction",
+   "cost": 4,
+   "type": "Sorcery",
+   "pt": null,
+   "text": "Chain Reaction deals X damage to each creature, where X is the number of creatures on the battlefield.",
+   "keywords": [],
+   "verdict": "HARD",
+   "why": "unmatched-text"
+  }
+ ],
+ "green": [
+  {
+   "name": "Llanowar Elves",
+   "cost": 1,
+   "type": "Creature \u2014 Elf Druid",
+   "pt": "1/1",
+   "text": "{T}: Add {G}.",
+   "keywords": [],
+   "verdict": "HARD",
+   "why": "activated-ability"
+  },
+  {
+   "name": "Elvish Mystic",
+   "cost": 1,
+   "type": "Creature \u2014 Elf Druid",
+   "pt": "1/1",
+   "text": "{T}: Add {G}.",
+   "keywords": [],
+   "verdict": "HARD",
+   "why": "activated-ability"
+  },
+  {
+   "name": "Fyndhorn Elves",
+   "cost": 1,
+   "type": "Creature \u2014 Elf Druid",
+   "pt": "1/1",
+   "text": "{T}: Add {G}.",
+   "keywords": [],
+   "verdict": "HARD",
+   "why": "activated-ability"
+  },
+  {
+   "name": "Arbor Elf",
+   "cost": 1,
+   "type": "Creature \u2014 Elf Druid",
+   "pt": "1/1",
+   "text": "{T}: Untap target Forest.",
+   "keywords": [],
+   "verdict": "HARD",
+   "why": "activated-ability"
+  },
+  {
+   "name": "Elvish Pioneer",
+   "cost": 1,
+   "type": "Creature \u2014 Elf Druid",
+   "pt": "1/1",
+   "text": "When this creature enters, you may put a basic land card from your hand onto the battlefield tapped.",
+   "keywords": [],
+   "verdict": "EASY",
+   "why": "known-effect-shape"
+  },
+  {
+   "name": "Nettle Sentinel",
+   "cost": 1,
+   "type": "Creature \u2014 Elf Warrior",
+   "pt": "2/2",
+   "text": "This creature doesn't untap during your untap step.\nWhenever you cast a green spell, you may untap this creature.",
+   "keywords": [],
+   "verdict": "EASY",
+   "why": "known-effect-shape"
+  },
+  {
+   "name": "Safehold Elite",
+   "cost": 2,
+   "type": "Creature \u2014 Elf Scout",
+   "pt": "2/2",
+   "text": "Persist (When this creature dies, if it had no -1/-1 counters on it, return it to the battlefield under its owner's control with a -1/-1 counter on it.)",
+   "keywords": [
+    "Persist"
+   ],
+   "verdict": "HARD",
+   "why": "unmatched-text"
+  },
+  {
+   "name": "Eternal Witness",
+   "cost": 3,
+   "type": "Creature \u2014 Human Shaman",
+   "pt": "2/1",
+   "text": "When this creature enters, you may return target card from your graveyard to your hand.",
+   "keywords": [],
+   "verdict": "HARD",
+   "why": "graveyard-recursion"
+  },
+  {
+   "name": "Reclamation Sage",
+   "cost": 3,
+   "type": "Creature \u2014 Elf Shaman",
+   "pt": "2/1",
+   "text": "When this creature enters, you may destroy target artifact or enchantment.",
+   "keywords": [],
+   "verdict": "EASY",
+   "why": "known-effect-shape"
+  },
+  {
+   "name": "Acidic Slime",
+   "cost": 5,
+   "type": "Creature \u2014 Ooze",
+   "pt": "2/2",
+   "text": "Deathtouch (Any amount of damage this deals to a creature is enough to destroy it.)\nWhen this creature enters, destroy target artifact, enchantment, or land.",
+   "keywords": [
+    "Deathtouch"
+   ],
+   "verdict": "EASY",
+   "why": "known-effect-shape"
+  },
+  {
+   "name": "Sakura-Tribe Elder",
+   "cost": 2,
+   "type": "Creature \u2014 Snake Shaman",
+   "pt": "1/1",
+   "text": "Sacrifice this creature: Search your library for a basic land card, put that card onto the battlefield tapped, then shuffle.",
+   "keywords": [],
+   "verdict": "HARD",
+   "why": "tutor-library"
+  },
+  {
+   "name": "Wood Elves",
+   "cost": 3,
+   "type": "Creature \u2014 Elf Scout",
+   "pt": "1/1",
+   "text": "When this creature enters, search your library for a Forest card, put that card onto the battlefield, then shuffle.",
+   "keywords": [],
+   "verdict": "HARD",
+   "why": "tutor-library"
+  },
+  {
+   "name": "Farhaven Elf",
+   "cost": 3,
+   "type": "Creature \u2014 Elf Druid",
+   "pt": "1/1",
+   "text": "When this creature enters, you may search your library for a basic land card, put it onto the battlefield tapped, then shuffle.",
+   "keywords": [],
+   "verdict": "HARD",
+   "why": "tutor-library"
+  },
+  {
+   "name": "Strangleroot Geist",
+   "cost": 2,
+   "type": "Creature \u2014 Spirit",
+   "pt": "2/1",
+   "text": "Haste\nUndying (When this creature dies, if it had no +1/+1 counters on it, return it to the battlefield under its owner's control with a +1/+1 counter on it.)",
+   "keywords": [
+    "Undying",
+    "Haste"
+   ],
+   "verdict": "HARD",
+   "why": "unmatched-text"
+  },
+  {
+   "name": "Timberwatch Elf",
+   "cost": 3,
+   "type": "Creature \u2014 Elf",
+   "pt": "1/2",
+   "text": "{T}: Target creature gets +X/+X until end of turn, where X is the number of Elves on the battlefield.",
+   "keywords": [],
+   "verdict": "HARD",
+   "why": "activated-ability"
+  },
+  {
+   "name": "Leatherback Baloth",
+   "cost": 3,
+   "type": "Creature \u2014 Beast",
+   "pt": "4/5",
+   "text": "",
+   "keywords": [],
+   "verdict": "EASY",
+   "why": "vanilla"
+  },
+  {
+   "name": "Kalonian Tusker",
+   "cost": 2,
+   "type": "Creature \u2014 Beast",
+   "pt": "3/3",
+   "text": "",
+   "keywords": [],
+   "verdict": "EASY",
+   "why": "vanilla"
+  },
+  {
+   "name": "Garruk's Companion",
+   "cost": 2,
+   "type": "Creature \u2014 Beast",
+   "pt": "3/2",
+   "text": "Trample (This creature can deal excess combat damage to the player or planeswalker it's attacking.)",
+   "keywords": [
+    "Trample"
+   ],
+   "verdict": "EASY",
+   "why": "keywords-only"
+  },
+  {
+   "name": "Nessian Courser",
+   "cost": 3,
+   "type": "Creature \u2014 Centaur Warrior",
+   "pt": "3/3",
+   "text": "",
+   "keywords": [],
+   "verdict": "EASY",
+   "why": "vanilla"
+  },
+  {
+   "name": "Nessian Asp",
+   "cost": 5,
+   "type": "Creature \u2014 Snake",
+   "pt": "4/5",
+   "text": "Reach\n{6}{G}: Monstrosity 4. (If this creature isn't monstrous, put four +1/+1 counters on it and it becomes monstrous.)",
+   "keywords": [
+    "Reach",
+    "Monstrosity"
+   ],
+   "verdict": "REDESIGN",
+   "why": "flying/reach/vigilance"
+  },
+  {
+   "name": "Nessian Game Warden",
+   "cost": 5,
+   "type": "Creature \u2014 Beast",
+   "pt": "4/5",
+   "text": "When this creature enters, look at the top X cards of your library, where X is the number of Forests you control. You may reveal a creature card from among them and put it into your hand. Put the rest on the bottom of your library in any order.",
+   "keywords": [],
+   "verdict": "EASY",
+   "why": "known-effect-shape"
+  },
+  {
+   "name": "Nessian Hornbeetle",
+   "cost": 2,
+   "type": "Creature \u2014 Insect",
+   "pt": "2/2",
+   "text": "At the beginning of combat on your turn, if you control another creature with power 4 or greater, put a +1/+1 counter on this creature.",
+   "keywords": [],
+   "verdict": "HARD",
+   "why": "counters/complex-cost"
+  },
+  {
+   "name": "Nessian Boar",
+   "cost": 5,
+   "type": "Creature \u2014 Boar",
+   "pt": "10/6",
+   "text": "All creatures able to block this creature do so.\nWhenever this creature becomes blocked by a creature, that creature's controller draws a card.",
+   "keywords": [],
+   "verdict": "EASY",
+   "why": "known-effect-shape"
+  },
+  {
+   "name": "Nessian Demolok",
+   "cost": 5,
+   "type": "Creature \u2014 Beast",
+   "pt": "3/3",
+   "text": "Tribute 3 (As this creature enters, an opponent of your choice may put three +1/+1 counters on it.)\nWhen this creature enters, if tribute wasn't paid, destroy target noncreature permanent.",
+   "keywords": [
+    "Tribute"
+   ],
+   "verdict": "EASY",
+   "why": "known-effect-shape"
+  },
+  {
+   "name": "Baloth Gorger",
+   "cost": 4,
+   "type": "Creature \u2014 Beast",
+   "pt": "4/4",
+   "text": "Kicker {4} (You may pay an additional {4} as you cast this spell.)\nIf this creature was kicked, it enters with three +1/+1 counters on it.",
+   "keywords": [
+    "Kicker"
+   ],
+   "verdict": "HARD",
+   "why": "counters/complex-cost"
+  },
+  {
+   "name": "Elvish Visionary",
+   "cost": 2,
+   "type": "Creature \u2014 Elf Shaman",
+   "pt": "1/1",
+   "text": "When this creature enters, draw a card.",
+   "keywords": [],
+   "verdict": "EASY",
+   "why": "known-effect-shape"
+  },
+  {
+   "name": "Elvish Rejuvenator",
+   "cost": 3,
+   "type": "Creature \u2014 Elf Druid",
+   "pt": "1/1",
+   "text": "When this creature enters, look at the top five cards of your library. You may put a land card from among them onto the battlefield tapped. Put the rest on the bottom of your library in a random order.",
+   "keywords": [],
+   "verdict": "EASY",
+   "why": "known-effect-shape"
+  },
+  {
+   "name": "Elvish Reclaimer",
+   "cost": 1,
+   "type": "Creature \u2014 Elf Warrior",
+   "pt": "1/2",
+   "text": "This creature gets +2/+2 as long as there are three or more land cards in your graveyard.\n{2}, {T}, Sacrifice a land: Search your library for a land card, put it onto the battlefield tapped, then shuffle.",
+   "keywords": [],
+   "verdict": "HARD",
+   "why": "activated-ability+tutor-library"
+  },
+  {
+   "name": "Elvish Warrior",
+   "cost": 2,
+   "type": "Creature \u2014 Elf Warrior",
+   "pt": "2/3",
+   "text": "",
+   "keywords": [],
+   "verdict": "EASY",
+   "why": "vanilla"
+  },
+  {
+   "name": "Elvish Skysweeper",
+   "cost": 1,
+   "type": "Creature \u2014 Elf Warrior",
+   "pt": "1/1",
+   "text": "{4}{G}, Sacrifice a creature: Destroy target creature with flying.",
+   "keywords": [],
+   "verdict": "REDESIGN",
+   "why": "flying/reach/vigilance"
+  },
+  {
+   "name": "Elvish Branchbender",
+   "cost": 3,
+   "type": "Creature \u2014 Elf Druid",
+   "pt": "2/2",
+   "text": "{T}: Until end of turn, target Forest becomes an X/X Treefolk creature in addition to its other types, where X is the number of Elves you control.",
+   "keywords": [],
+   "verdict": "HARD",
+   "why": "activated-ability"
+  },
+  {
+   "name": "Elvish Herder",
+   "cost": 1,
+   "type": "Creature \u2014 Elf",
+   "pt": "1/1",
+   "text": "{G}: Target creature gains trample until end of turn.",
+   "keywords": [],
+   "verdict": "HARD",
+   "why": "activated-ability"
+  },
+  {
+   "name": "Sylvan Ranger",
+   "cost": 2,
+   "type": "Creature \u2014 Elf Scout Ranger",
+   "pt": "1/1",
+   "text": "When this creature enters, you may search your library for a basic land card, reveal it, put it into your hand, then shuffle.",
+   "keywords": [],
+   "verdict": "HARD",
+   "why": "tutor-library"
+  },
+  {
+   "name": "Civic Wayfinder",
+   "cost": 3,
+   "type": "Creature \u2014 Elf Druid Warrior",
+   "pt": "2/2",
+   "text": "When this creature enters, you may search your library for a basic land card, reveal it, put it into your hand, then shuffle.",
+   "keywords": [],
+   "verdict": "HARD",
+   "why": "tutor-library"
+  },
+  {
+   "name": "Rampant Growth",
+   "cost": 2,
+   "type": "Sorcery",
+   "pt": null,
+   "text": "Search your library for a basic land card, put that card onto the battlefield tapped, then shuffle.",
+   "keywords": [],
+   "verdict": "HARD",
+   "why": "tutor-library"
+  },
+  {
+   "name": "Farseek",
+   "cost": 2,
+   "type": "Sorcery",
+   "pt": null,
+   "text": "Search your library for a Plains, Island, Swamp, or Mountain card, put it onto the battlefield tapped, then shuffle.",
+   "keywords": [],
+   "verdict": "HARD",
+   "why": "tutor-library"
+  },
+  {
+   "name": "Cultivate",
+   "cost": 3,
+   "type": "Sorcery",
+   "pt": null,
+   "text": "Search your library for up to two basic land cards, reveal those cards, put one onto the battlefield tapped and the other into your hand, then shuffle.",
+   "keywords": [],
+   "verdict": "HARD",
+   "why": "tutor-library"
+  },
+  {
+   "name": "Kodama's Reach",
+   "cost": 3,
+   "type": "Sorcery \u2014 Arcane",
+   "pt": null,
+   "text": "Search your library for up to two basic land cards, reveal those cards, put one onto the battlefield tapped and the other into your hand, then shuffle.",
+   "keywords": [],
+   "verdict": "HARD",
+   "why": "tutor-library"
+  },
+  {
+   "name": "Explosive Vegetation",
+   "cost": 4,
+   "type": "Sorcery",
+   "pt": null,
+   "text": "Search your library for up to two basic land cards, put them onto the battlefield tapped, then shuffle.",
+   "keywords": [],
+   "verdict": "HARD",
+   "why": "tutor-library"
+  },
+  {
+   "name": "Skyshroud Claim",
+   "cost": 4,
+   "type": "Sorcery",
+   "pt": null,
+   "text": "Search your library for up to two Forest cards, put them onto the battlefield, then shuffle.",
+   "keywords": [],
+   "verdict": "HARD",
+   "why": "tutor-library"
+  },
+  {
+   "name": "Nature's Lore",
+   "cost": 2,
+   "type": "Sorcery",
+   "pt": null,
+   "text": "Search your library for a Forest card, put that card onto the battlefield, then shuffle.",
+   "keywords": [],
+   "verdict": "HARD",
+   "why": "tutor-library"
+  },
+  {
+   "name": "Three Visits",
+   "cost": 2,
+   "type": "Sorcery",
+   "pt": null,
+   "text": "Search your library for a Forest card, put it onto the battlefield, then shuffle.",
+   "keywords": [],
+   "verdict": "HARD",
+   "why": "tutor-library"
+  },
+  {
+   "name": "Search for Tomorrow",
+   "cost": 3,
+   "type": "Sorcery",
+   "pt": null,
+   "text": "Search your library for a basic land card, put it onto the battlefield, then shuffle.\nSuspend 2\u2014{G} (Rather than cast this card from your hand, you may pay {G} and exile it with two time counters on it. At the beginning of your upkeep, remove a time counter. When the last is removed, you may cast it without paying its mana cost.)",
+   "keywords": [
+    "Suspend"
+   ],
+   "verdict": "HARD",
+   "why": "tutor-library"
+  },
+  {
+   "name": "Harrow",
+   "cost": 3,
+   "type": "Instant",
+   "pt": null,
+   "text": "As an additional cost to cast this spell, sacrifice a land.\nSearch your library for up to two basic land cards, put them onto the battlefield, then shuffle.",
+   "keywords": [],
+   "verdict": "HARD",
+   "why": "tutor-library"
+  },
+  {
+   "name": "Edge of Autumn",
+   "cost": 2,
+   "type": "Sorcery",
+   "pt": null,
+   "text": "If you control four or fewer lands, search your library for a basic land card, put it onto the battlefield tapped, then shuffle.\nCycling\u2014Sacrifice a land. (Sacrifice a land, Discard this card: Draw a card.)",
+   "keywords": [
+    "Cycling"
+   ],
+   "verdict": "HARD",
+   "why": "counters/complex-cost+tutor-library"
+  },
+  {
+   "name": "Naturalize",
+   "cost": 2,
+   "type": "Instant",
+   "pt": null,
+   "text": "Destroy target artifact or enchantment.",
+   "keywords": [],
+   "verdict": "EASY",
+   "why": "known-effect-shape"
+  },
+  {
+   "name": "Nature's Claim",
+   "cost": 1,
+   "type": "Instant",
+   "pt": null,
+   "text": "Destroy target artifact or enchantment. Its controller gains 4 life.",
+   "keywords": [],
+   "verdict": "EASY",
+   "why": "known-effect-shape"
+  },
+  {
+   "name": "Krosan Grip",
+   "cost": 3,
+   "type": "Instant",
+   "pt": null,
+   "text": "Split second (As long as this spell is on the stack, players can't cast spells or activate abilities that aren't mana abilities.)\nDestroy target artifact or enchantment.",
+   "keywords": [
+    "Split second"
+   ],
+   "verdict": "EASY",
+   "why": "known-effect-shape"
+  },
+  {
+   "name": "Deglamer",
+   "cost": 2,
+   "type": "Instant",
+   "pt": null,
+   "text": "Choose target artifact or enchantment. Its owner shuffles it into their library.",
+   "keywords": [],
+   "verdict": "HARD",
+   "why": "unmatched-text"
+  },
+  {
+   "name": "Unravel the Aether",
+   "cost": 2,
+   "type": "Instant",
+   "pt": null,
+   "text": "Choose target artifact or enchantment. Its owner shuffles it into their library.",
+   "keywords": [],
+   "verdict": "HARD",
+   "why": "unmatched-text"
+  },
+  {
+   "name": "Beast Within",
+   "cost": 3,
+   "type": "Instant",
+   "pt": null,
+   "text": "Destroy target permanent. Its controller creates a 3/3 green Beast creature token.",
+   "keywords": [],
+   "verdict": "EASY",
+   "why": "known-effect-shape"
+  },
+  {
+   "name": "Desert Twister",
+   "cost": 6,
+   "type": "Sorcery",
+   "pt": null,
+   "text": "Destroy target permanent.",
+   "keywords": [],
+   "verdict": "HARD",
+   "why": "unmatched-text"
+  },
+  {
+   "name": "Bramblecrush",
+   "cost": 4,
+   "type": "Sorcery",
+   "pt": null,
+   "text": "Destroy target noncreature permanent.",
+   "keywords": [],
+   "verdict": "HARD",
+   "why": "unmatched-text"
+  },
+  {
+   "name": "Harmonize",
+   "cost": 4,
+   "type": "Sorcery",
+   "pt": null,
+   "text": "Draw three cards.",
+   "keywords": [],
+   "verdict": "EASY",
+   "why": "known-effect-shape"
+  },
+  {
+   "name": "Lead the Stampede",
+   "cost": 3,
+   "type": "Sorcery",
+   "pt": null,
+   "text": "Look at the top five cards of your library. You may reveal any number of creature cards from among them and put the revealed cards into your hand. Put the rest on the bottom of your library in any order.",
+   "keywords": [],
+   "verdict": "HARD",
+   "why": "unmatched-text"
+  },
+  {
+   "name": "Shamanic Revelation",
+   "cost": 5,
+   "type": "Sorcery",
+   "pt": null,
+   "text": "Draw a card for each creature you control.\nFerocious \u2014 You gain 4 life for each creature you control with power 4 or greater.",
+   "keywords": [
+    "Ferocious"
+   ],
+   "verdict": "EASY",
+   "why": "known-effect-shape"
+  },
+  {
+   "name": "Collective Unconscious",
+   "cost": 6,
+   "type": "Sorcery",
+   "pt": null,
+   "text": "Draw a card for each creature you control.",
+   "keywords": [],
+   "verdict": "EASY",
+   "why": "known-effect-shape"
+  },
+  {
+   "name": "Hunter's Insight",
+   "cost": 3,
+   "type": "Instant",
+   "pt": null,
+   "text": "Choose target creature you control. Whenever that creature deals combat damage to a player or planeswalker this turn, draw that many cards.",
+   "keywords": [],
+   "verdict": "HARD",
+   "why": "unmatched-text"
+  },
+  {
+   "name": "Life's Legacy",
+   "cost": 2,
+   "type": "Sorcery",
+   "pt": null,
+   "text": "As an additional cost to cast this spell, sacrifice a creature.\nDraw cards equal to the sacrificed creature's power.",
+   "keywords": [],
+   "verdict": "HARD",
+   "why": "unmatched-text"
+  },
+  {
+   "name": "Momentous Fall",
+   "cost": 4,
+   "type": "Instant",
+   "pt": null,
+   "text": "As an additional cost to cast this spell, sacrifice a creature.\nYou draw cards equal to the sacrificed creature's power, then you gain life equal to its toughness.",
+   "keywords": [],
+   "verdict": "HARD",
+   "why": "unmatched-text"
+  },
+  {
+   "name": "Prey Upon",
+   "cost": 1,
+   "type": "Sorcery",
+   "pt": null,
+   "text": "Target creature you control fights target creature you don't control. (Each deals damage equal to its power to the other.)",
+   "keywords": [
+    "Fight"
+   ],
+   "verdict": "HARD",
+   "why": "unmatched-text"
+  },
+  {
+   "name": "Slice in Twain",
+   "cost": 4,
+   "type": "Instant",
+   "pt": null,
+   "text": "Destroy target artifact or enchantment.\nDraw a card.",
+   "keywords": [],
+   "verdict": "EASY",
+   "why": "known-effect-shape"
+  },
+  {
+   "name": "Gaea's Gift",
+   "cost": 2,
+   "type": "Instant",
+   "pt": null,
+   "text": "Put a +1/+1 counter on target creature you control. It gains reach, trample, hexproof, and indestructible until end of turn. (It can't be the target of spells or abilities your opponents control. Damage and effects that say \"destroy\" don't destroy it.)",
+   "keywords": [],
+   "verdict": "REDESIGN",
+   "why": "flying/reach/vigilance"
+  },
+  {
+   "name": "Giant Growth",
+   "cost": 1,
+   "type": "Instant",
+   "pt": null,
+   "text": "Target creature gets +3/+3 until end of turn.",
+   "keywords": [],
+   "verdict": "EASY",
+   "why": "known-effect-shape"
+  },
+  {
+   "name": "Vines of Vastwood",
+   "cost": 1,
+   "type": "Instant",
+   "pt": null,
+   "text": "Kicker {G} (You may pay an additional {G} as you cast this spell.)\nTarget creature can't be the target of spells or abilities your opponents control this turn. If this spell was kicked, that creature gets +4/+4 until end of turn.",
+   "keywords": [
+    "Kicker"
+   ],
+   "verdict": "HARD",
+   "why": "counters/complex-cost"
+  },
+  {
+   "name": "Mutagenic Growth",
+   "cost": 1,
+   "type": "Instant",
+   "pt": null,
+   "text": "({G/P} can be paid with either {G} or 2 life.)\nTarget creature gets +2/+2 until end of turn.",
+   "keywords": [],
+   "verdict": "EASY",
+   "why": "known-effect-shape"
+  },
+  {
+   "name": "Groundswell",
+   "cost": 1,
+   "type": "Instant",
+   "pt": null,
+   "text": "Target creature gets +2/+2 until end of turn.\nLandfall \u2014 If you had a land enter the battlefield under your control this turn, that creature gets +4/+4 until end of turn instead.",
+   "keywords": [
+    "Landfall"
+   ],
+   "verdict": "EASY",
+   "why": "known-effect-shape"
+  },
+  {
+   "name": "Become Immense",
+   "cost": 6,
+   "type": "Instant",
+   "pt": null,
+   "text": "Delve (Each card you exile from your graveyard while casting this spell pays for {1}.)\nTarget creature gets +6/+6 until end of turn.",
+   "keywords": [
+    "Delve"
+   ],
+   "verdict": "HARD",
+   "why": "counters/complex-cost"
+  },
+  {
+   "name": "Invigorate",
+   "cost": 3,
+   "type": "Instant",
+   "pt": null,
+   "text": "If you control a Forest, rather than pay this spell's mana cost, you may have an opponent gain 3 life.\nTarget creature gets +4/+4 until end of turn.",
+   "keywords": [],
+   "verdict": "EASY",
+   "why": "known-effect-shape"
+  },
+  {
+   "name": "Ghalta, Primal Hunger",
+   "cost": 12,
+   "type": "Legendary Creature \u2014 Elder Dinosaur",
+   "pt": "12/12",
+   "text": "This spell costs {X} less to cast, where X is the total power of creatures you control.\nTrample (This creature can deal excess combat damage to the player or planeswalker it's attacking.)",
+   "keywords": [
+    "Trample"
+   ],
+   "verdict": "HARD",
+   "why": "unmatched-text"
+  },
+  {
+   "name": "Gargos, Vicious Watcher",
+   "cost": 6,
+   "type": "Legendary Creature \u2014 Hydra",
+   "pt": "8/7",
+   "text": "Vigilance\nHydra spells you cast cost {4} less to cast.\nWhenever a creature you control becomes the target of a spell, Gargos fights up to one target creature you don't control.",
+   "keywords": [
+    "Vigilance",
+    "Fight"
+   ],
+   "verdict": "REDESIGN",
+   "why": "flying/reach/vigilance"
+  },
+  {
+   "name": "Marwyn, the Nurturer",
+   "cost": 3,
+   "type": "Legendary Creature \u2014 Elf Druid",
+   "pt": "1/1",
+   "text": "Whenever another Elf you control enters, put a +1/+1 counter on Marwyn.\n{T}: Add an amount of {G} equal to Marwyn's power.",
+   "keywords": [],
+   "verdict": "HARD",
+   "why": "activated-ability+counters/complex-cost"
+  },
+  {
+   "name": "Ezuri, Renegade Leader",
+   "cost": 3,
+   "type": "Legendary Creature \u2014 Elf Warrior",
+   "pt": "2/2",
+   "text": "{G}: Regenerate another target Elf.\n{2}{G}{G}{G}: Elf creatures you control get +3/+3 and gain trample until end of turn.",
+   "keywords": [
+    "Regenerate"
+   ],
+   "verdict": "HARD",
+   "why": "activated-ability"
+  },
+  {
+   "name": "Omnath, Locus of Mana",
+   "cost": 3,
+   "type": "Legendary Creature \u2014 Elemental",
+   "pt": "1/1",
+   "text": "You don't lose unspent green mana as steps and phases end.\nOmnath gets +1/+1 for each unspent green mana you have.",
+   "keywords": [],
+   "verdict": "EASY",
+   "why": "known-effect-shape"
+  },
+  {
+   "name": "Pridemalkin",
+   "cost": 3,
+   "type": "Creature \u2014 Cat",
+   "pt": "2/1",
+   "text": "When this creature enters, put a +1/+1 counter on target creature you control.\nEach creature you control with a +1/+1 counter on it has trample. (It can deal excess combat damage to the player or planeswalker it's attacking.)",
+   "keywords": [],
+   "verdict": "HARD",
+   "why": "counters/complex-cost"
+  },
+  {
+   "name": "Wildwood Scourge",
+   "cost": 1,
+   "type": "Creature \u2014 Hydra",
+   "pt": "0/0",
+   "text": "This creature enters with X +1/+1 counters on it.\nWhenever one or more +1/+1 counters are put on another non-Hydra creature you control, put a +1/+1 counter on this creature.",
+   "keywords": [],
+   "verdict": "HARD",
+   "why": "counters/complex-cost"
+  },
+  {
+   "name": "Primal Might",
+   "cost": 1,
+   "type": "Sorcery",
+   "pt": null,
+   "text": "Target creature you control gets +X/+X until end of turn. Then it fights up to one target creature you don't control. (Each deals damage equal to its power to the other.)",
+   "keywords": [
+    "Fight"
+   ],
+   "verdict": "HARD",
+   "why": "unmatched-text"
+  },
+  {
+   "name": "Elder Gargaroth",
+   "cost": 5,
+   "type": "Creature \u2014 Beast",
+   "pt": "6/6",
+   "text": "Vigilance, reach, trample\nWhenever this creature attacks or blocks, choose one \u2014\n\u2022 Create a 3/3 green Beast creature token.\n\u2022 You gain 3 life.\n\u2022 Draw a card.",
+   "keywords": [
+    "Reach",
+    "Vigilance",
+    "Trample"
+   ],
+   "verdict": "REDESIGN",
+   "why": "flying/reach/vigilance"
+  },
+  {
+   "name": "Lotus Cobra",
+   "cost": 2,
+   "type": "Creature \u2014 Snake",
+   "pt": "2/1",
+   "text": "Landfall \u2014 Whenever a land you control enters, add one mana of any color.",
+   "keywords": [
+    "Landfall"
+   ],
+   "verdict": "EASY",
+   "why": "known-effect-shape"
+  },
+  {
+   "name": "Green Sun's Twilight",
+   "cost": 1,
+   "type": "Sorcery",
+   "pt": null,
+   "text": "Reveal the top X plus one cards of your library. Choose a creature card and/or a land card from among them. Put those cards into your hand and the rest on the bottom of your library in a random order. If X is 5 or more, instead put the chosen cards onto the battlefield or into your hand and the rest on the bottom of your library in a random order.",
+   "keywords": [],
+   "verdict": "HARD",
+   "why": "unmatched-text"
+  },
+  {
+   "name": "Tyrranax Rex",
+   "cost": 7,
+   "type": "Creature \u2014 Phyrexian Dinosaur",
+   "pt": "8/8",
+   "text": "This spell can't be countered.\nTrample, ward {4}, haste\nToxic 4 (Players dealt combat damage by this creature also get four poison counters.)",
+   "keywords": [
+    "Toxic",
+    "Haste",
+    "Trample",
+    "Ward"
+   ],
+   "verdict": "HARD",
+   "why": "unmatched-text"
+  },
+  {
+   "name": "Unnatural Restoration",
+   "cost": 2,
+   "type": "Sorcery",
+   "pt": null,
+   "text": "Return target permanent card from your graveyard to your hand. Proliferate. (Choose any number of permanents and/or players, then give each another counter of each kind already there.)",
+   "keywords": [
+    "Proliferate"
+   ],
+   "verdict": "HARD",
+   "why": "graveyard-recursion"
+  },
+  {
+   "name": "Cankerbloom",
+   "cost": 2,
+   "type": "Creature \u2014 Phyrexian Fungus",
+   "pt": "3/2",
+   "text": "{1}, Sacrifice this creature: Choose one \u2014\n\u2022 Destroy target artifact.\n\u2022 Destroy target enchantment.\n\u2022 Proliferate. (Choose any number of permanents and/or players, then give each another counter of each kind already there.)",
+   "keywords": [
+    "Proliferate"
+   ],
+   "verdict": "HARD",
+   "why": "activated-ability"
+  },
+  {
+   "name": "Silverback Elder",
+   "cost": 5,
+   "type": "Creature \u2014 Ape Shaman",
+   "pt": "5/7",
+   "text": "Whenever you cast a creature spell, choose one \u2014\n\u2022 Destroy target artifact or enchantment.\n\u2022 Look at the top five cards of your library. You may put a land card from among them onto the battlefield tapped. Put the rest on the bottom of your library in a random order.\n\u2022 You gain 4 life.",
+   "keywords": [],
+   "verdict": "EASY",
+   "why": "known-effect-shape"
+  },
+  {
+   "name": "Generous Visitor",
+   "cost": 1,
+   "type": "Creature \u2014 Spirit",
+   "pt": "1/1",
+   "text": "Whenever you cast an enchantment spell, put a +1/+1 counter on target creature.",
+   "keywords": [],
+   "verdict": "HARD",
+   "why": "counters/complex-cost"
+  },
+  {
+   "name": "Kami of Transience",
+   "cost": 2,
+   "type": "Creature \u2014 Spirit",
+   "pt": "2/2",
+   "text": "Trample\nWhenever you cast an enchantment spell, put a +1/+1 counter on this creature.\nAt the beginning of each end step, if an enchantment was put into your graveyard from the battlefield this turn, you may return this card from your graveyard to your hand.",
+   "keywords": [
+    "Trample"
+   ],
+   "verdict": "HARD",
+   "why": "counters/complex-cost+graveyard-recursion"
+  },
+  {
+   "name": "Boseiju Reaches Skyward",
+   "cost": 4,
+   "type": "Enchantment \u2014 Saga // Enchantment Creature \u2014 Plant",
+   "pt": null,
+   "text": "",
+   "keywords": [
+    "Reach",
+    "Transform"
+   ],
+   "verdict": "REDESIGN",
+   "why": "flying/reach/vigilance"
+  },
+  {
+   "name": "Kura, the Boundless Sky",
+   "cost": 5,
+   "type": "Legendary Creature \u2014 Dragon Spirit",
+   "pt": "4/4",
+   "text": "Flying, deathtouch\nWhen Kura dies, choose one \u2014\n\u2022 Search your library for up to three land cards, reveal them, put them into your hand, then shuffle.\n\u2022 Create an X/X green Spirit creature token, where X is the number of lands you control.",
+   "keywords": [
+    "Deathtouch",
+    "Flying"
+   ],
+   "verdict": "REDESIGN",
+   "why": "flying/reach/vigilance"
+  },
+  {
+   "name": "Jugan Defends the Temple",
+   "cost": 3,
+   "type": "Enchantment \u2014 Saga // Enchantment Creature \u2014 Dragon Spirit",
+   "pt": null,
+   "text": "",
+   "keywords": [
+    "Flying",
+    "Transform"
+   ],
+   "verdict": "REDESIGN",
+   "why": "flying/reach/vigilance"
+  },
+  {
+   "name": "Weaver of Harmony",
+   "cost": 2,
+   "type": "Enchantment Creature \u2014 Snake Druid",
+   "pt": "2/2",
+   "text": "Other enchantment creatures you control get +1/+1.\n{G}, {T}: Copy target activated or triggered ability you control from an enchantment source. You may choose new targets for the copy. (Mana abilities can't be targeted.)",
+   "keywords": [],
+   "verdict": "HARD",
+   "why": "activated-ability"
+  },
+  {
+   "name": "Questing Beast",
+   "cost": 4,
+   "type": "Legendary Creature \u2014 Beast",
+   "pt": "4/4",
+   "text": "Vigilance, deathtouch, haste\nQuesting Beast can't be blocked by creatures with power 2 or less.\nCombat damage that would be dealt by creatures you control can't be prevented.\nWhenever Questing Beast deals combat damage to an opponent, it deals that much damage to target planeswalker that player controls.",
+   "keywords": [
+    "Vigilance",
+    "Haste",
+    "Deathtouch"
+   ],
+   "verdict": "REDESIGN",
+   "why": "flying/reach/vigilance"
+  },
+  {
+   "name": "Primeval Titan",
+   "cost": 6,
+   "type": "Creature \u2014 Giant",
+   "pt": "6/6",
+   "text": "Trample\nWhenever this creature enters or attacks, you may search your library for up to two land cards, put them onto the battlefield tapped, then shuffle.",
+   "keywords": [
+    "Trample"
+   ],
+   "verdict": "HARD",
+   "why": "tutor-library"
+  },
+  {
+   "name": "Boulderbranch Golem",
+   "cost": 7,
+   "type": "Artifact Creature \u2014 Golem",
+   "pt": "6/5",
+   "text": "Prototype {3}{G} \u2014 3/3 (You may cast this spell with different mana cost, color, and size. It keeps its abilities and types.)\nWhen this creature enters, you gain life equal to its power.",
+   "keywords": [
+    "Prototype"
+   ],
+   "verdict": "EASY",
+   "why": "known-effect-shape"
+  },
+  {
+   "name": "Zenith Chronicler",
+   "cost": 2,
+   "type": "Artifact Creature \u2014 Phyrexian Construct",
+   "pt": "3/1",
+   "text": "Whenever a player casts their first multicolored spell each turn, each other player draws a card.",
+   "keywords": [],
+   "verdict": "EASY",
+   "why": "known-effect-shape"
+  },
+  {
+   "name": "Burnished Hart",
+   "cost": 3,
+   "type": "Artifact Creature \u2014 Elk",
+   "pt": "2/2",
+   "text": "{3}, Sacrifice this creature: Search your library for up to two basic land cards, put them onto the battlefield tapped, then shuffle.",
+   "keywords": [],
+   "verdict": "HARD",
+   "why": "activated-ability+tutor-library"
+  },
+  {
+   "name": "Bronze Walrus",
+   "cost": 3,
+   "type": "Artifact Creature \u2014 Walrus",
+   "pt": "2/2",
+   "text": "When this creature enters, scry 2. (Look at the top two cards of your library, then put any number of them on the bottom and the rest on top in any order.)\n{T}: Add one mana of any color.",
+   "keywords": [
+    "Scry"
+   ],
+   "verdict": "HARD",
+   "why": "activated-ability"
+  },
+  {
+   "name": "Chardalyn Dragon",
+   "cost": 6,
+   "type": "Artifact Creature \u2014 Dragon",
+   "pt": "4/4",
+   "text": "Flying",
+   "keywords": [
+    "Flying"
+   ],
+   "verdict": "REDESIGN",
+   "why": "flying/reach/vigilance"
+  },
+  {
+   "name": "Faceless One",
+   "cost": 5,
+   "type": "Legendary Enchantment Creature \u2014 Background",
+   "pt": "3/3",
+   "text": "If Faceless One is your commander, choose a color before the game begins. Faceless One is the chosen color.\nChoose a Background (You can have a Background as a second commander.)",
+   "keywords": [
+    "Choose a background"
+   ],
+   "verdict": "HARD",
+   "why": "unmatched-text"
+  },
+  {
+   "name": "Clockwork Fox",
+   "cost": 3,
+   "type": "Artifact Creature \u2014 Fox",
+   "pt": "3/2",
+   "text": "When this creature leaves the battlefield, you draw two cards and each opponent draws a card.",
+   "keywords": [],
+   "verdict": "EASY",
+   "why": "known-effect-shape"
+  },
+  {
+   "name": "Gate Colossus",
+   "cost": 8,
+   "type": "Artifact Creature \u2014 Construct",
+   "pt": "8/8",
+   "text": "Affinity for Gates (This spell costs {1} less to cast for each Gate you control.)\nThis creature can't be blocked by creatures with power 2 or less.\nWhenever a Gate you control enters, you may put this card from your graveyard on top of your library.",
+   "keywords": [
+    "Affinity"
+   ],
+   "verdict": "EASY",
+   "why": "known-effect-shape"
+  },
+  {
+   "name": "Iron Mastiff",
+   "cost": 4,
+   "type": "Artifact Creature \u2014 Dog",
+   "pt": "4/4",
+   "text": "Whenever this creature attacks, roll a d20 for each player being attacked and ignore all but the highest roll.\n1\u20149 | This creature deals damage equal to its power to you.\n10\u201419 | This creature deals damage equal to its power to defending player.\n20 | This creature deals damage equal to its power to each opponent.",
+   "keywords": [],
+   "verdict": "HARD",
+   "why": "unmatched-text"
+  },
+  {
+   "name": "Marching Duodrone",
+   "cost": 2,
+   "type": "Artifact Creature \u2014 Construct",
+   "pt": "2/2",
+   "text": "Whenever this creature attacks, each player creates a Treasure token. (It's an artifact with \"{T}, Sacrifice this token: Add one mana of any color.\")",
+   "keywords": [
+    "Treasure"
+   ],
+   "verdict": "EASY",
+   "why": "known-effect-shape"
+  },
+  {
+   "name": "Marut",
+   "cost": 8,
+   "type": "Artifact Creature \u2014 Construct",
+   "pt": "7/7",
+   "text": "Trample\nWhen this creature enters, if mana from a Treasure was spent to cast it, create a Treasure token for each mana from a Treasure spent to cast it. (It's an artifact with \"{T}, Sacrifice this token: Add one mana of any color.\")",
+   "keywords": [
+    "Treasure",
+    "Trample"
+   ],
+   "verdict": "EASY",
+   "why": "known-effect-shape"
+  },
+  {
+   "name": "Meteor Golem",
+   "cost": 7,
+   "type": "Artifact Creature \u2014 Golem",
+   "pt": "3/3",
+   "text": "When this creature enters, destroy target nonland permanent an opponent controls.",
+   "keywords": [],
+   "verdict": "EASY",
+   "why": "known-effect-shape"
+  },
+  {
+   "name": "Steel Hellkite",
+   "cost": 6,
+   "type": "Artifact Creature \u2014 Dragon",
+   "pt": "5/5",
+   "text": "Flying\n{2}: This creature gets +1/+0 until end of turn.\n{X}: Destroy each nonland permanent with mana value X whose controller was dealt combat damage by this creature this turn. Activate only once each turn.",
+   "keywords": [
+    "Flying"
+   ],
+   "verdict": "REDESIGN",
+   "why": "flying/reach/vigilance"
+  },
+  {
+   "name": "Lotus Field",
+   "cost": 0,
+   "type": "Land",
+   "pt": null,
+   "text": "Hexproof\nThis land enters tapped.\nWhen this land enters, sacrifice two lands.\n{T}: Add three mana of any one color.",
+   "keywords": [
+    "Hexproof"
+   ],
+   "verdict": "HARD",
+   "why": "activated-ability"
+  },
+  {
+   "name": "Universal Solvent",
+   "cost": 1,
+   "type": "Artifact",
+   "pt": null,
+   "text": "{7}, {T}, Sacrifice this artifact: Destroy target permanent.",
+   "keywords": [],
+   "verdict": "HARD",
+   "why": "activated-ability"
+  },
+  {
+   "name": "Vexing Puzzlebox",
+   "cost": 3,
+   "type": "Artifact",
+   "pt": null,
+   "text": "Whenever you roll one or more dice, put a number of charge counters on this artifact equal to the result.\n{T}: Add one mana of any color. Roll a d20.\n{T}, Remove 100 charge counters from this artifact: Search your library for an artifact card, put that card onto the battlefield, then shuffle.",
+   "keywords": [],
+   "verdict": "HARD",
+   "why": "activated-ability+tutor-library"
+  },
+  {
+   "name": "Abundant Maw",
+   "cost": 8,
+   "type": "Creature \u2014 Eldrazi Leech",
+   "pt": "6/4",
+   "text": "Emerge {6}{B} (You may cast this spell by sacrificing a creature and paying the emerge cost reduced by that creature's mana value.)\nWhen you cast this spell, target opponent loses 3 life and you gain 3 life.",
+   "keywords": [
+    "Emerge"
+   ],
+   "verdict": "EASY",
+   "why": "known-effect-shape"
+  },
+  {
+   "name": "Golos, Tireless Pilgrim",
+   "cost": 5,
+   "type": "Legendary Artifact Creature \u2014 Scout",
+   "pt": "3/5",
+   "text": "When Golos enters, you may search your library for a land card, put that card onto the battlefield tapped, then shuffle.\n{2}{W}{U}{B}{R}{G}: Exile the top three cards of your library. You may play them this turn without paying their mana costs.",
+   "keywords": [],
+   "verdict": "HARD",
+   "why": "activated-ability+tutor-library"
+  },
+  {
+   "name": "Paradox Engine",
+   "cost": 5,
+   "type": "Legendary Artifact",
+   "pt": null,
+   "text": "Whenever you cast a spell, untap all nonland permanents you control.",
+   "keywords": [],
+   "verdict": "EASY",
+   "why": "known-effect-shape"
+  },
+  {
+   "name": "Sundering Titan",
+   "cost": 8,
+   "type": "Artifact Creature \u2014 Golem",
+   "pt": "7/10",
+   "text": "When this creature enters or leaves the battlefield, choose a land of each basic land type, then destroy those lands.",
+   "keywords": [],
+   "verdict": "EASY",
+   "why": "known-effect-shape"
+  },
+  {
+   "name": "Chrome Cat",
+   "cost": 3,
+   "type": "Artifact Creature \u2014 Cat",
+   "pt": "3/2",
+   "text": "When this creature enters, scry 1.",
+   "keywords": [
+    "Scry"
+   ],
+   "verdict": "EASY",
+   "why": "known-effect-shape"
+  },
+  {
+   "name": "Eater of Virtue",
+   "cost": 1,
+   "type": "Legendary Artifact \u2014 Equipment",
+   "pt": null,
+   "text": "Whenever equipped creature dies, exile it.\nEquipped creature gets +2/+0.\nAs long as a card exiled with Eater of Virtue has flying, equipped creature has flying. The same is true for first strike, double strike, deathtouch, haste, hexproof, indestructible, lifelink, menace, protection, reach, trample, and vigilance.\nEquip {1}",
+   "keywords": [
+    "Equip"
+   ],
+   "verdict": "REDESIGN",
+   "why": "flying/reach/vigilance"
+  },
+  {
+   "name": "Fallaji Dragon Engine",
+   "cost": 8,
+   "type": "Artifact Creature \u2014 Dragon",
+   "pt": "5/5",
+   "text": "Prototype {2}{R} \u2014 1/3 (You may cast this spell with different mana cost, color, and size. It keeps its abilities and types.)\nFlying\n{2}: This creature gets +1/+0 until end of turn.",
+   "keywords": [
+    "Prototype",
+    "Flying"
+   ],
+   "verdict": "REDESIGN",
+   "why": "flying/reach/vigilance"
+  },
+  {
+   "name": "Halo Scarab",
+   "cost": 2,
+   "type": "Artifact Creature \u2014 Insect",
+   "pt": "2/1",
+   "text": "{2}, Exile this card from your graveyard: Create a Treasure token. (It's an artifact with \"{T}, Sacrifice this token: Add one mana of any color.\")",
+   "keywords": [
+    "Treasure"
+   ],
+   "verdict": "HARD",
+   "why": "activated-ability"
+  },
+  {
+   "name": "Haywire Mite",
+   "cost": 1,
+   "type": "Artifact Creature \u2014 Insect",
+   "pt": "1/1",
+   "text": "When this creature dies, you gain 2 life.\n{G}, Sacrifice this creature: Exile target noncreature artifact or noncreature enchantment.",
+   "keywords": [],
+   "verdict": "HARD",
+   "why": "activated-ability"
+  },
+  {
+   "name": "Reito Sentinel",
+   "cost": 3,
+   "type": "Artifact Creature \u2014 Construct",
+   "pt": "3/3",
+   "text": "Defender\nWhen this creature enters, target player mills three cards. (They put the top three cards of their library into their graveyard.)\n{3}: Put target card from a graveyard on the bottom of its owner's library.",
+   "keywords": [
+    "Mill",
+    "Defender"
+   ],
+   "verdict": "HARD",
+   "why": "activated-ability"
+  },
+  {
+   "name": "Rust Goliath",
+   "cost": 10,
+   "type": "Artifact Creature \u2014 Construct",
+   "pt": "10/10",
+   "text": "Prototype {3}{G}{G} \u2014 3/5 (You may cast this spell with different mana cost, color, and size. It keeps its abilities and types.)\nReach, trample",
+   "keywords": [
+    "Reach",
+    "Trample",
+    "Prototype"
+   ],
+   "verdict": "REDESIGN",
+   "why": "flying/reach/vigilance"
+  },
+  {
+   "name": "Symmetry Matrix",
+   "cost": 4,
+   "type": "Artifact",
+   "pt": null,
+   "text": "Whenever a creature you control with power equal to its toughness enters, you may pay {1}. If you do, draw a card.",
+   "keywords": [],
+   "verdict": "EASY",
+   "why": "known-effect-shape"
+  },
+  {
+   "name": "Walking Skyscraper",
+   "cost": 8,
+   "type": "Artifact Creature \u2014 Construct",
+   "pt": "8/8",
+   "text": "This spell costs {1} less to cast for each modified creature you control. (Equipment, Auras you control, and counters are modifications.)\nTrample\nThis creature has hexproof as long as it's untapped. (It can't be the target of spells or abilities your opponents control.)",
+   "keywords": [
+    "Trample"
+   ],
+   "verdict": "HARD",
+   "why": "unmatched-text"
+  },
+  {
+   "name": "Yotian Frontliner",
+   "cost": 1,
+   "type": "Artifact Creature \u2014 Soldier",
+   "pt": "1/1",
+   "text": "Whenever this creature attacks, another target creature you control gets +1/+1 until end of turn.\nUnearth {W} ({W}: Return this card from your graveyard to the battlefield. It gains haste. Exile it at the beginning of the next end step or if it would leave the battlefield. Unearth only as a sorcery.)",
+   "keywords": [
+    "Unearth"
+   ],
+   "verdict": "EASY",
+   "why": "known-effect-shape"
+  },
+  {
+   "name": "Bone Flute",
+   "cost": 3,
+   "type": "Artifact",
+   "pt": null,
+   "text": "{2}, {T}: All creatures get -1/-0 until end of turn.",
+   "keywords": [],
+   "verdict": "HARD",
+   "why": "activated-ability"
+  },
+  {
+   "name": "Dingus Egg",
+   "cost": 4,
+   "type": "Artifact",
+   "pt": null,
+   "text": "Whenever a land is put into a graveyard from the battlefield, this artifact deals 2 damage to that land's controller.",
+   "keywords": [],
+   "verdict": "EASY",
+   "why": "known-effect-shape"
+  },
+  {
+   "name": "Forcefield",
+   "cost": 3,
+   "type": "Artifact",
+   "pt": null,
+   "text": "{1}: The next time an unblocked creature of your choice would deal combat damage to you this turn, prevent all but 1 of that damage.",
+   "keywords": [],
+   "verdict": "HARD",
+   "why": "activated-ability"
+  },
+  {
+   "name": "Fountain of Youth",
+   "cost": 0,
+   "type": "Artifact",
+   "pt": null,
+   "text": "{2}, {T}: You gain 1 life.",
+   "keywords": [],
+   "verdict": "HARD",
+   "why": "activated-ability"
+  },
+  {
+   "name": "Hanweir, the Writhing Township",
+   "cost": 3,
+   "type": "Legendary Creature \u2014 Eldrazi Ooze",
+   "pt": "7/4",
+   "text": "Trample, haste\nWhenever Hanweir attacks, create two 3/2 colorless Eldrazi Horror creature tokens that are tapped and attacking.",
+   "keywords": [
+    "Haste",
+    "Trample"
+   ],
+   "verdict": "EASY",
+   "why": "known-effect-shape"
+  }
+ ]
+}

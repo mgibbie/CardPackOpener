@@ -1,0 +1,75 @@
+GREEN (70 cards: 35 Creatures + 35 Non-Creatures)
+
+Creatures (35):
+1. Llanowar Elves
+2. Elvish Mystic
+3. Fyndhorn Elves
+4. Arbor Elf
+5. Elvish Pioneer
+6. Nettle Sentinel
+7. Safehold Elite
+8. Eternal Witness
+9. Reclamation Sage
+10. Acidic Slime
+11. Sakura-Tribe Elder
+12. Wood Elves
+13. Farhaven Elf
+14. Strangleroot Geist
+15. Timberwatch Elf
+16. Leatherback Baloth
+17. Kalonian Tusker
+18. Garruk's Companion
+19. Nessian Courser
+20. Nessian Asp
+21. Nessian Game Warden
+22. Nessian Hornbeetle
+23. Nessian Boar
+24. Nessian Demolok
+25. Baloth Gorger
+26. Elvish Visionary
+27. Elvish Rejuvenator
+28. Elvish Reclaimer
+29. 
+30. Elvish Warrior
+31. Elvish Skysweeper
+32. Elvish Branchbender
+33. Elvish Herder
+34. Sylvan Ranger
+35. Civic Wayfinder
+
+Non-Creatures (35):
+1. Rampant Growth
+2. Farseek
+3. Cultivate
+4. Kodama's Reach
+5. Explosive Vegetation
+6. Skyshroud Claim
+7. Nature's Lore
+8. Three Visits
+9. Search for Tomorrow
+10. Harrow
+11. Edge of Autumn
+12. Naturalize
+13. Nature's Claim
+14. Krosan Grip
+15. Deglamer
+16. Unravel the Aether
+17. Beast Within
+18. Desert Twister
+19. Bramblecrush
+20. Harmonize
+21. Lead the Stampede
+22. Shamanic Revelation
+23. Collective Unconscious
+24. Hunter's Insight
+25. Life's Legacy
+26. Momentous Fall
+27. Prey Upon
+28. Slice in Twain
+29. Gaea's Gift
+30. Giant Growth
+31. Vines of Vastwood
+32. Mutagenic Growth
+33. Groundswell
+34. Become Immense
+35. Invigorate

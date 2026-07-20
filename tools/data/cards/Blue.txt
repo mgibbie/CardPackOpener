@@ -1,0 +1,75 @@
+BLUE (70 cards: 35 Creatures + 35 Non-Creatures)
+
+Creatures (35):
+1. Air Elemental
+2. Wormfang Drake
+3. 
+4. Delver of Secrets
+5. 
+6. Augur of Bolas
+7. Merfolk Looter
+8. Looter il-Kor
+9. Cloud of Faeries
+10. Pestermite
+11. Deceiver Exarch
+12. Spellstutter Sprite
+13. Faerie Miscreant
+14. Ninja of the Deep Hours
+15. Wingcrafter
+16. Trinket Mage
+17. Treasure Mage
+18. Mulldrifter
+19. Man-o'-War
+20. Aether Adept
+21. Waterfront Bouncer
+22. Sea Gate Oracle
+23. Jace's Phantasm
+24. Stitched Drake
+25. Jhessian Thief
+26. Phantasmal Bear
+27. Storm Crow
+28. Cloudfin Raptor
+29. Frost Lynx
+30. Neurok Commando
+31. Sage Owl
+32. Sage's Row Denizen
+33. Sage's Row Savant
+34. Sigiled Starfish
+35. Wind Drake
+
+Non-Creatures (35):
+1. Counterspell
+2. Mana Leak
+3. Remand
+4. Daze
+5. Spell Pierce
+6. Negate
+7. Dispel
+8. 
+9. Swan Song
+10. Force Spike
+11. Logic Knot
+12. Brainstorm
+13. Ponder
+14. Preordain
+15. Serum Visions
+16. Opt
+17. Gitaxian Probe
+18. Thought Scour
+19. Chart a Course
+20. Fact or Fiction
+21. Jace's Ingenuity
+22. Unsummon
+23. Boomerang
+24. Into the Roil
+25. Aether Tradewinds
+26. Vapor Snag
+27. Snap
+28. High Tide
+29. Frantic Search
+30. Gush
+31. Memory Lapse
+32. Miscalculation
+33. Spell Snare
+34. Mental Misstep
+35. Prohibit

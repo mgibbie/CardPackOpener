@@ -474,7 +474,7 @@ async function cardSubsetView(kind, slug) {
 
 // Battlecards design-work backlog: every card name held without a working
 // design, plus undefined keywords. Data from designwiki/data/battlecards.json
-// (regenerate with Magepunk66/tools/gen_battlecards_design.py).
+// (regenerate with tools/gen_battlecards_design.py — self-contained).
 function battlecardsView() {
   const db = DB.battlecards;
   if (!db) return content.replaceChildren(h('h1', null, 'Battlecards data not loaded'));

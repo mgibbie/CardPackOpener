@@ -1,2 +1,5 @@
 node_modules/
 package-lock.json
+
+# large third-party HS card dump used only by tools/gen_battlecards_design.py (kept local, not republished)
+tools/data/hs_cards_full.json

@@ -1,0 +1,75 @@
+RED (70 cards: 35 Creatures + 35 Non-Creatures)
+
+Creatures (35):
+1. Mogg Fanatic
+2. Goblin Sledder
+3. Goblin Cohort
+4. Goblin Matron
+5. Goblin Instigator
+6. Monastery Swiftspear
+7. Satyr Hoplite
+8. Goblin Heelcutter
+9. Goblin Trashmaster
+10. Ball Lightning
+11. Borderland Marauder
+12. Hellspark Elemental
+13. Spark Elemental
+14. Frenzied Goblin
+15. Gore-House Chainwalker
+16. Keldon Halberdier
+17. Goblin Balloon Brigade
+18. Lightning Mauler
+19. Ash Zealot
+20. Firefist Striker
+21. Foundry Street Denizen
+22. Mogg War Marshal
+23. Goblin Wardriver
+24. Goblin Bushwhacker
+25. Goblin Arsonist
+26. Goblin Warchief
+27. Ember Hauler
+28. Bloodfire Dwarf
+29. Kiln Fiend
+30. Stormblood Berserker
+31. Flametongue Kavu
+32. Hell's Thunder
+33. Keldon Marauders
+34. Mogg Flunkies
+35. Raging Goblin
+
+Non-Creatures (35):
+1. Lightning Bolt
+2. Chain Lightning
+3. Lava Spike
+4. Rift Bolt
+5. Shard Volley
+6. Burst Lightning
+7. Incinerate
+8. Searing Spear
+9. Lightning Strike
+10. Skullcrack
+11. Fireblast
+12. Price of Progress
+13. Flame Rift
+14. Sulfuric Vortex
+15. Fireball
+16. Flame Slash
+17. Rolling Thunder
+18. Devil's Play
+19. Volcanic Hammer
+20. Flame Javelin
+21. Magma Jet
+22. Pillar of Flame
+23. Searing Blaze
+24. Shatter
+25. Smash to Smithereens
+26. Shattering Spree
+27. Vandalblast
+28. By Force
+29. Abrade
+30. Smelt
+31. Meltdown
+32. Shattering Pulse
+33. Pulverize
+34. Reckless Abandon
+35. Pyroclasm

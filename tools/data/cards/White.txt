@@ -1,0 +1,75 @@
+WHITE (70 cards: 35 Creatures + 35 Non-Creatures)
+
+Creatures (35):
+1. Savannah Lions
+2. White Knight
+3. Knight of the White Orchid
+4. Soltari Priest
+5. Mother of Runes
+6. Weathered Wayfarer
+7. Leonin Relic-Warder
+8. Thalia, Guardian of Thraben
+9. Kor Skyfisher
+10. Flickerwisp
+11. Blade Splicer
+12. Precinct Captain
+13. Champion of the Parish
+14. Thalia's Lieutenant
+15. Selfless Spirit
+16. Adanto Vanguard
+17. Ajani's Pridemate
+18. Soul Warden
+19. Soul's Attendant
+20. Squadron Hawk
+21. Doomed Traveler
+22. Elite Vanguard
+23. Student of Warfare
+24. Knight of Meadowgrain
+25. Kor Firewalker
+26. Leonin Arbiter
+27. Aven Mindcensor
+28. Serra Avenger
+29. Wall of Omens
+30. Kor Sanctifiers
+31. Kor Hookmaster
+32. Kor Duelist
+33. Kor Outfitter
+34. Steppe Lynx
+35. Kor Scythemaster
+
+Non-Creatures (35):
+1. Swords to Plowshares
+2. Path to Exile
+3. Wrath of God
+4. Day of Judgment
+5. Oblivion Ring
+6. Banishing Light
+7. Journey to Nowhere
+8. Pacifism
+9. Arrest
+10. Condemn
+11. Disenchant
+12. Return to Dust
+13. Fragmentize
+14. Healing Salve
+15. Rest for the Weary
+16. Ajani's Welcome
+17. Raise the Alarm
+18. Spectral Procession
+19. Battle Screech
+20. Secure the Wastes
+21. Timely Reinforcements
+22. Midnight Haunting
+23. Intangible Virtue
+24. Honor of the Pure
+25. Glorious Anthem
+26. Serra's Blessing
+27. Celestial Purge
+28. Revoke Existence
+29. Celestial Flare
+30. Sunlance
+31. Holy Light
+32. Rebuff the Wicked
+33. Gods Willing
+34. Smite the Monstrous
+35. Declaration in Stone

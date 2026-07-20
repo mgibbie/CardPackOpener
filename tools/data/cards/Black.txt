@@ -1,0 +1,75 @@
+BLACK (70 cards: 35 Creatures + 35 Non-Creatures)
+
+Creatures (35):
+1. Diregraf Ghoul
+2. Nantuko Shade
+3. Vampire Nighthawk
+4. Gatekeeper of Malakir
+5. Dusk Legion Zealot
+6. Gifted Aetherborn
+7. Festering Mummy
+8. Fume Spitter
+9. Carrion Feeder
+10. Vampire Interloper
+11. Reassembling Skeleton
+12. Bloodsoaked Champion
+13. Scrapheap Scrounger
+14. Returned Pastcaller
+15. Vampire Lacerator
+16. Dread Wanderer
+17. Gutterbones
+18. Stitcher's Supplier
+19. Carrier Thrall
+20. Wight of Precinct Six
+21. Child of Night
+22. Gurmag Angler
+23. Thornbow Archer
+24. Rotting Rats
+25. Fleshbag Marauder
+26. Plaguecrafter
+27. Bone Picker
+28. Stromgald Crusader
+29. Gray Merchant of Asphodel
+30. Walking Corpse
+31. Shambling Ghoul
+32. Black Cat
+33. Returned Reveler
+34. Sanitarium Skeleton
+35. 
+
+Non-Creatures (35):
+1. Ostracize
+2. Divest
+3. Duress
+4. Hymn to Tourach
+5. Mind Shatter
+6. Cabal Therapy
+7. Grasp of Darkness
+8. Fatal Push
+9. Dismember
+10. Go for the Throat
+11. Doom Blade
+12. Ultimate Price
+13. Victim of Night
+14. Murder
+15. Murderous Cut
+16. Cast Down
+17. 
+18. 
+19. Agonizing Remorse
+20. Despise
+21. Distress
+22. Mind Rot
+23. Wrench Mind
+24. Raven's Crime
+25. Shrieking Affliction
+26. Reanimate
+27. Animate Dead
+28. Necromancy
+29. Exhume
+30. Dance of the Dead
+31. Unearth
+32. Dread Return
+33. Geth's Verdict
+34. Diabolic Edict
+35. Chainer's Edict
