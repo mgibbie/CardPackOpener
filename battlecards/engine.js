@@ -957,6 +957,7 @@ function sweepDeaths(state) {
 			}
 			if (c.marked) drawCards(state, c.markedBy, 2);
 			runDeathrattle(state, pi, c);
+			firePlaneTrigger(state, 'creature-died', pi); // Takenuma: the owner draws
 			if (c.commander && !p.eliminated) {
 				// commanders retreat to the command zone; the tax goes up
 				const fresh = instantiate(state.cardsById[c.id], pi);
@@ -1119,6 +1120,14 @@ function recomputeAuras(state) {
 			// "+N Attack while you have a weapon equipped"
 			if (c.condAttack && (c.condAttack.while !== 'weapon' || p.weapon)) {
 				aBonus += c.condAttack.attack || 0;
+			}
+			// active plane's continuous creature aura (Krosa +2/+2, Hippodrome -5/-0,
+			// Sokenzan +1/+1 & Rush): applies to every creature in play
+			const planeAura = activePlaneRule(state);
+			if (planeAura && planeAura.kind === 'aura') {
+				aBonus += planeAura.attack || 0;
+				hBonus += planeAura.health || 0;
+				for (const k of planeAura.keywords || []) granted.add(k);
 			}
 			const dA = aBonus - c.auraAttack, dH = hBonus - c.auraHealth;
 			if (dA || dH) {
@@ -3806,6 +3815,15 @@ function activePlaneRule(state) {
 	const pd = state.plane ? state.cardsById[state.plane] : null;
 	return pd && pd.staticRule ? pd.staticRule : null;
 }
+// the active plane's continuous trigger fires effects for player `pi` on an
+// event (turn-start, creature-died, spell-cast) — Lethe Lake, Takenuma, etc.
+function firePlaneTrigger(state, when, pi) {
+	const r = activePlaneRule(state);
+	if (r && r.kind === 'trigger' && r.on === when && r.effects && pi != null
+		&& state.players[pi] && !state.players[pi].eliminated && !state.over) {
+		execEffects(state, pi, r.effects, null, null);
+	}
+}
 
 // Primordia: when you play a creature you may sacrifice an artifact for +2/+2.
 // Auto-resolves by spending a spare token artifact (never a hand-made one).
@@ -4140,6 +4158,7 @@ function resolveStackedSpell(state, entry) {
 			execEffects(state, pi, card.honorableKill, ctx.target, card);
 		}
 		fireOngoing(state, pi, 'spell-played', { played: card });
+		firePlaneTrigger(state, 'spell-cast', pi); // Minamo / Fields of Summer
 		for (let s2 = 0; s2 < state.players.length; s2++) {
 			fireOngoing(state, s2, 'any-spell-played', { spell: card, caster: pi });
 			if (s2 !== pi) fireOngoing(state, s2, 'enemy-spell-played', { spell: card, caster: pi });
@@ -4250,6 +4269,7 @@ function resolveEntry(state, entry) {
 		}
 		if (entry.card.effects) execEffects(state, pi, entry.card.effects, entry.target, entry.card);
 		fireOngoing(state, pi, 'spell-played', { played: entry.card });
+		firePlaneTrigger(state, 'spell-cast', pi); // Minamo / Fields of Summer
 		for (let s2 = 0; s2 < state.players.length; s2++) fireOngoing(state, s2, 'any-spell-played', { spell: entry.card, caster: pi });
 		toGraveyard(state, pi, entry.card);
 		return;
@@ -4459,8 +4479,10 @@ function resolveCombat(state, pi, attackerUid, target) {
 	if (!attacker || isDead(attacker)) { sweepDeaths(state); return; }
 	if (target.type === 'creature') { const d = findCreature(state, target.uid); if (!d || isDead(d)) { sweepDeaths(state); return; } }
 	else if (target.type === 'walker') { if (!findWalker(state, target.uid)) { sweepDeaths(state); return; } }
+	// Stronghold Furnace: the active plane doubles all combat damage
+	const cmult = (activePlaneRule(state)?.kind === 'double-damage') ? 2 : 1;
 	if (target.type === 'hero') {
-		const dealt = damageHero(state, target.player, attacker.attack, pi, has(attacker, KW.PIERCING));
+		const dealt = damageHero(state, target.player, attacker.attack * cmult, pi, has(attacker, KW.PIERCING));
 		if (has(attacker, KW.LIFESTEAL) && dealt > 0) healHero(state, pi, dealt);
 		// Connect: combat damage to a player
 		if (dealt > 0 && attacker.ongoing?.on === 'self-hit-player') {
@@ -4470,8 +4492,8 @@ function resolveCombat(state, pi, attackerUid, target) {
 		// planeswalkers soak the hit with loyalty and never strike back
 		const w = findWalker(state, target.uid);
 		if (w) {
-			damageWalker(state, w, attacker.attack);
-			if (has(attacker, KW.LIFESTEAL)) healHero(state, pi, attacker.attack);
+			damageWalker(state, w, attacker.attack * cmult);
+			if (has(attacker, KW.LIFESTEAL)) healHero(state, pi, attacker.attack * cmult);
 		}
 	} else {
 		const defender = findCreature(state, target.uid);
@@ -4480,7 +4502,7 @@ function resolveCombat(state, pi, attackerUid, target) {
 		const aFirst = has(attacker, KW.FIRST_STRIKE) && !has(defender, KW.FIRST_STRIKE);
 		const dFirst = has(defender, KW.FIRST_STRIKE) && !has(attacker, KW.FIRST_STRIKE);
 		const strike = (src, dst) => {
-			const dealt = damageCreature(state, dst, src.attack, src);
+			const dealt = damageCreature(state, dst, src.attack * cmult, src);
 			if (has(src, KW.LIFESTEAL) && dealt > 0) healHero(state, src.controller, dealt);
 			if (has(src, KW.FREEZER) && !isDead(dst)) freezeCreature(state, dst);
 		};
@@ -5158,6 +5180,7 @@ export function endTurn(state) {
 	np.parityBlock = null; // Alara: a start-of-turn coin flip may block odd/even-cost plays
 	np.planarRollsThisTurn = 0;
 	{ const r = activePlaneRule(state); if (r && r.kind === 'coin-parity') { np.parityBlock = state.rng() < 0.5 ? 'odd' : 'even'; emit(state, { type: 'coinParity', player: state.current, block: np.parityBlock }); } }
+	firePlaneTrigger(state, 'turn-start', state.current); // Lethe Lake: mill at each turn's start
 	// stale this-turn cost riders lapse; Millhouse's gift comes due
 	np.costDiscounts = (np.costDiscounts || []).filter(d => !d.thisTurn);
 	np.freeSpellsThisTurn = !!np.freeSpellsNextTurn;

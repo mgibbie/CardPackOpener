@@ -55347,6 +55347,324 @@
         ]
       },
       "description": "If you control an artifact or an enchantment, whenever you cast an Arcane spell you may draw a card. If you do, each opponent loses 1 Life."
+    },
+    {
+      "id": "krosa",
+      "name": "Krosa",
+      "type": "plane",
+      "cost": 0,
+      "rarity": "legendary",
+      "set": "paper",
+      "token": true,
+      "description": "Arrival: Each player draws a card.\nStatic: All creatures have +2/+2.\nChaos: Each player draws 2 cards.\nDeparture: Deal 3 damage to all creatures.",
+      "arrival": [
+        {
+          "type": "draw",
+          "value": 1,
+          "target": "all"
+        }
+      ],
+      "staticRule": {
+        "kind": "aura",
+        "attack": 2,
+        "health": 2
+      },
+      "chaos": [
+        {
+          "type": "draw",
+          "value": 2,
+          "target": "all"
+        }
+      ],
+      "departure": [
+        {
+          "type": "damage",
+          "value": 3,
+          "target": "all-creatures"
+        }
+      ]
+    },
+    {
+      "id": "sokenzan",
+      "name": "Sokenzan",
+      "type": "plane",
+      "cost": 0,
+      "rarity": "legendary",
+      "set": "paper",
+      "token": true,
+      "description": "Arrival: Summon a 2/1 with Rush.\nStatic: All creatures have +1/+1 and Rush.\nChaos: Summon two 2/1 creatures with Rush.\nDeparture: Deal 2 damage to the enemy hero.",
+      "arrival": [
+        {
+          "type": "summon",
+          "count": 1,
+          "attack": 2,
+          "health": 1,
+          "name": "Ashland Raider",
+          "keywords": [
+            "rush"
+          ]
+        }
+      ],
+      "staticRule": {
+        "kind": "aura",
+        "attack": 1,
+        "health": 1,
+        "keywords": [
+          "rush"
+        ]
+      },
+      "chaos": [
+        {
+          "type": "summon",
+          "count": 2,
+          "attack": 2,
+          "health": 1,
+          "name": "Ashland Raider",
+          "keywords": [
+            "rush"
+          ]
+        }
+      ],
+      "departure": [
+        {
+          "type": "damage",
+          "value": 2,
+          "target": "enemy-heroes"
+        }
+      ]
+    },
+    {
+      "id": "the_hippodrome",
+      "name": "The Hippodrome",
+      "type": "plane",
+      "cost": 0,
+      "rarity": "legendary",
+      "set": "paper",
+      "token": true,
+      "description": "Arrival: Deal 1 damage to all creatures.\nStatic: All creatures have -5 Attack.\nChaos: Destroy a random creature.\nDeparture: Each player draws a card.",
+      "arrival": [
+        {
+          "type": "damage",
+          "value": 1,
+          "target": "all-creatures"
+        }
+      ],
+      "staticRule": {
+        "kind": "aura",
+        "attack": -5,
+        "health": 0
+      },
+      "chaos": [
+        {
+          "type": "destroy-random"
+        }
+      ],
+      "departure": [
+        {
+          "type": "draw",
+          "value": 1,
+          "target": "all"
+        }
+      ]
+    },
+    {
+      "id": "stronghold_furnace",
+      "name": "Stronghold Furnace",
+      "type": "plane",
+      "cost": 0,
+      "rarity": "legendary",
+      "set": "paper",
+      "token": true,
+      "description": "Arrival: Deal 2 damage to all creatures.\nStatic: Combat damage is doubled.\nChaos: Deal 2 damage to each opponent.\nDeparture: Deal 3 damage to the enemy hero.",
+      "arrival": [
+        {
+          "type": "damage",
+          "value": 2,
+          "target": "all-creatures"
+        }
+      ],
+      "staticRule": {
+        "kind": "double-damage"
+      },
+      "chaos": [
+        {
+          "type": "damage",
+          "value": 2,
+          "target": "enemy-heroes"
+        }
+      ],
+      "departure": [
+        {
+          "type": "damage",
+          "value": 3,
+          "target": "enemy-heroes"
+        }
+      ]
+    },
+    {
+      "id": "lethe_lake",
+      "name": "Lethe Lake",
+      "type": "plane",
+      "cost": 0,
+      "rarity": "legendary",
+      "set": "paper",
+      "token": true,
+      "description": "Arrival: Each player mills 2 cards.\nStatic: At the start of each turn, each player mills 3.\nChaos: Each player mills 5.\nDeparture: Each player draws a card.",
+      "arrival": [
+        {
+          "type": "mill",
+          "value": 2,
+          "target": "all"
+        }
+      ],
+      "staticRule": {
+        "kind": "trigger",
+        "on": "turn-start",
+        "effects": [
+          {
+            "type": "mill",
+            "value": 3,
+            "target": "all"
+          }
+        ]
+      },
+      "chaos": [
+        {
+          "type": "mill",
+          "value": 5,
+          "target": "all"
+        }
+      ],
+      "departure": [
+        {
+          "type": "draw",
+          "value": 1,
+          "target": "all"
+        }
+      ]
+    },
+    {
+      "id": "takenuma",
+      "name": "Takenuma",
+      "type": "plane",
+      "cost": 0,
+      "rarity": "legendary",
+      "set": "paper",
+      "token": true,
+      "description": "Arrival: Each player draws a card.\nStatic: Whenever a creature dies, its owner draws a card.\nChaos: Return a random creature to its owner's hand.\nDeparture: Deal 2 damage to all creatures.",
+      "arrival": [
+        {
+          "type": "draw",
+          "value": 1,
+          "target": "all"
+        }
+      ],
+      "staticRule": {
+        "kind": "trigger",
+        "on": "creature-died",
+        "effects": [
+          {
+            "type": "draw",
+            "value": 1
+          }
+        ]
+      },
+      "chaos": [
+        {
+          "type": "bounce",
+          "target": "random-friendly"
+        }
+      ],
+      "departure": [
+        {
+          "type": "damage",
+          "value": 2,
+          "target": "all-creatures"
+        }
+      ]
+    },
+    {
+      "id": "fields_of_summer",
+      "name": "Fields of Summer",
+      "type": "plane",
+      "cost": 0,
+      "rarity": "legendary",
+      "set": "paper",
+      "token": true,
+      "description": "Arrival: Each player gains 5 Life.\nStatic: Whenever you cast a spell, gain 2 Life.\nChaos: Each player gains 8 Life.\nDeparture: Each player draws a card.",
+      "arrival": [
+        {
+          "type": "heal",
+          "value": 5,
+          "target": "all-heroes"
+        }
+      ],
+      "staticRule": {
+        "kind": "trigger",
+        "on": "spell-cast",
+        "effects": [
+          {
+            "type": "heal",
+            "value": 2,
+            "target": "self"
+          }
+        ]
+      },
+      "chaos": [
+        {
+          "type": "heal",
+          "value": 8,
+          "target": "all-heroes"
+        }
+      ],
+      "departure": [
+        {
+          "type": "draw",
+          "value": 1,
+          "target": "all"
+        }
+      ]
+    },
+    {
+      "id": "minamo",
+      "name": "Minamo",
+      "type": "plane",
+      "cost": 0,
+      "rarity": "legendary",
+      "set": "paper",
+      "token": true,
+      "description": "Arrival: Each player draws a card.\nStatic: Whenever you cast a spell, draw a card.\nChaos: Each player draws a card.\nDeparture: Each player mills 2 cards.",
+      "arrival": [
+        {
+          "type": "draw",
+          "value": 1,
+          "target": "all"
+        }
+      ],
+      "staticRule": {
+        "kind": "trigger",
+        "on": "spell-cast",
+        "effects": [
+          {
+            "type": "draw",
+            "value": 1
+          }
+        ]
+      },
+      "chaos": [
+        {
+          "type": "draw",
+          "value": 1,
+          "target": "all"
+        }
+      ],
+      "departure": [
+        {
+          "type": "mill",
+          "value": 2,
+          "target": "all"
+        }
+      ]
     }
   ]
 }

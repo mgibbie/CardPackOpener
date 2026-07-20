@@ -73,9 +73,10 @@ const K = [
 	{ p: ['Alliance'], t: 'Triggers each time you play another creature.' },
 	{ p: ['Quickdraw'], t: 'Quickdraw N — draw N cards; cards drawn this way shuffle back into your deck at end of turn.' },
 	{ p: ['Mill'], t: 'Mill N — put the top N cards of a deck into its graveyard.' },
-	{ p: ['Arrival'], t: "A plane's effect that triggers when it arrives (becomes the active plane)." },
-	{ p: ['Departure'], t: "A plane's effect that triggers when it leaves play." },
-	{ p: ['Chaos'], t: 'A shared plane effect that fires when a planar roll comes up Chaos.' },
+	{ p: ['Arrival'], t: "A plane's effect that triggers when it arrives (becomes the active plane).", plane: true },
+	{ p: ['Departure'], t: "A plane's effect that triggers when it leaves play.", plane: true },
+	{ p: ['Chaos'], t: 'A shared plane effect that fires when a planar roll comes up Chaos.', plane: true },
+	{ p: ['Static'], t: "A plane's continuous effect that applies while it is the active plane.", plane: true },
 	{ p: ['Regenerate'], t: 'Regenerate N — restores N Health to itself at the end of your turn.' },
 	{ p: ['Ephemeral'], t: 'Destroyed at the end of the turn.' },
 	{ p: ['Bushido'], t: 'Gains +1/+1 whenever it attacks.' },
@@ -189,7 +190,12 @@ export function keywordsFor(card) {
 	const add = k => { if (k && !seen.has(k.p[0])) { seen.add(k.p[0]); out.push({ label: k.p[0], text: k.t }); } };
 	for (const tag of (card.keywords || [])) add(byTag[tag]);
 	const text = card.description || '';
-	for (const k of K) if (k.p.some(p => new RegExp('\\b' + escRe(p) + '\\b', 'i').test(text))) add(k);
+	const isPlane = card.type === 'plane';
+	for (const k of K) {
+		if (k.plane && !isPlane) continue;            // plane-only vocab (Arrival/Chaos/Departure/Static)
+		if (k.tag === 'static' && isPlane) continue;  // on planes, "Static" means the plane keyword, not combat Static
+		if (k.p.some(p => new RegExp('\\b' + escRe(p) + '\\b', 'i').test(text))) add(k);
+	}
 	return out;
 }
 
