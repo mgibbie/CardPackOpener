@@ -59,6 +59,7 @@ function systemBucket(c) {
 	if (c.type === 'land') return '__land__';
 	if (c.type === 'plane') return '__plane__';
 	if (c.type === 'emblem') return '__generic__'; // dungeon-run treasures / emblems
+	if ((c.tribe || '').split(/\s+/).includes('Token')) return '__generic__'; // Token-tribe cards (Blood/Clue/Food)
 	const cols = c.colors || [];
 	for (const col of ['W', 'U', 'B', 'R', 'G']) if (cols.includes(col)) return '__c_' + col + '__';
 	if (canonClass(c.cardClass || 'neutral') === 'magepunk') {

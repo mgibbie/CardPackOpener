@@ -475,6 +475,13 @@ function fireEmerge(state, pi, card) {
 }
 
 function toGraveyard(state, pi, card) {
+	// Token-tribe cards are exiled instead of hitting the graveyard (they leave
+	// no corpse and can't be referenced/reanimated from the grave)
+	if ((card.tribe || '').split(/\s+/).includes('Token')) {
+		card.zone = 'exile';
+		state.players[pi].exile.push(card);
+		return;
+	}
 	state.players[pi].graveyard.push(card);
 }
 

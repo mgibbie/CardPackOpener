@@ -19540,7 +19540,8 @@
           }
         ]
       },
-      "description": "Sacrifice \u2014 pay 1 and discard a card: draw a card."
+      "description": "Sacrifice \u2014 pay 1 and discard a card: draw a card.",
+      "tribe": "Token"
     },
     {
       "id": "darkfallen_neophyte",
@@ -19963,7 +19964,8 @@
           }
         ]
       },
-      "description": "Sacrifice \u2014 pay 2: restore 3 health to your hero."
+      "description": "Sacrifice \u2014 pay 2: restore 3 health to your hero.",
+      "tribe": "Token"
     },
     {
       "id": "clue_token",
@@ -19981,7 +19983,8 @@
           }
         ]
       },
-      "description": "Sacrifice \u2014 pay 2: draw a card."
+      "description": "Sacrifice \u2014 pay 2: draw a card.",
+      "tribe": "Token"
     },
     {
       "id": "kalecgos",
