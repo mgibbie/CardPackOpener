@@ -55356,7 +55356,7 @@
       "rarity": "legendary",
       "set": "paper",
       "token": true,
-      "description": "Arrival: Each player draws a card.\nStatic: All creatures have +2/+2.\nChaos: Each player draws 2 cards.\nDeparture: Deal 3 damage to all creatures.",
+      "description": "Arrival: Each player draws a card.\nAll creatures have +2/+2.\nChaos: Each player draws 2 cards.\nDeparture: Deal 3 damage to all creatures.",
       "arrival": [
         {
           "type": "draw",
@@ -55392,7 +55392,7 @@
       "rarity": "legendary",
       "set": "paper",
       "token": true,
-      "description": "Arrival: Summon a 2/1 with Rush.\nStatic: All creatures have +1/+1 and Rush.\nChaos: Summon two 2/1 creatures with Rush.\nDeparture: Deal 2 damage to the enemy hero.",
+      "description": "Arrival: Summon a 2/1 with Rush.\nAll creatures have +1/+1 and Rush.\nChaos: Summon two 2/1 creatures with Rush.\nDeparture: Deal 2 damage to the enemy hero.",
       "arrival": [
         {
           "type": "summon",
@@ -55441,7 +55441,7 @@
       "rarity": "legendary",
       "set": "paper",
       "token": true,
-      "description": "Arrival: Deal 1 damage to all creatures.\nStatic: All creatures have -5 Attack.\nChaos: Destroy a random creature.\nDeparture: Each player draws a card.",
+      "description": "Arrival: Deal 1 damage to all creatures.\nAll creatures have -5 Attack.\nChaos: Destroy a random creature.\nDeparture: Each player draws a card.",
       "arrival": [
         {
           "type": "damage",
@@ -55475,7 +55475,7 @@
       "rarity": "legendary",
       "set": "paper",
       "token": true,
-      "description": "Arrival: Deal 2 damage to all creatures.\nStatic: Combat damage is doubled.\nChaos: Deal 2 damage to each opponent.\nDeparture: Deal 3 damage to the enemy hero.",
+      "description": "Arrival: Deal 2 damage to all creatures.\nCombat damage is doubled.\nChaos: Deal 2 damage to each opponent.\nDeparture: Deal 3 damage to the enemy hero.",
       "arrival": [
         {
           "type": "damage",
@@ -55509,7 +55509,7 @@
       "rarity": "legendary",
       "set": "paper",
       "token": true,
-      "description": "Arrival: Each player mills 2 cards.\nStatic: At the start of each turn, each player mills 3.\nChaos: Each player mills 5.\nDeparture: Each player draws a card.",
+      "description": "Arrival: Each player mills 2 cards.\nAt the start of each turn, each player mills 3.\nChaos: Each player mills 5.\nDeparture: Each player draws a card.",
       "arrival": [
         {
           "type": "mill",
@@ -55551,7 +55551,7 @@
       "rarity": "legendary",
       "set": "paper",
       "token": true,
-      "description": "Arrival: Each player draws a card.\nStatic: Whenever a creature dies, its owner draws a card.\nChaos: Return a random creature to its owner's hand.\nDeparture: Deal 2 damage to all creatures.",
+      "description": "Arrival: Each player draws a card.\nWhenever a creature dies, its owner draws a card.\nChaos: Return a random creature to its owner's hand.\nDeparture: Deal 2 damage to all creatures.",
       "arrival": [
         {
           "type": "draw",
@@ -55591,7 +55591,7 @@
       "rarity": "legendary",
       "set": "paper",
       "token": true,
-      "description": "Arrival: Each player gains 5 Life.\nStatic: Whenever you cast a spell, gain 2 Life.\nChaos: Each player gains 8 Life.\nDeparture: Each player draws a card.",
+      "description": "Arrival: Each player gains 5 Life.\nWhenever you cast a spell, gain 2 Life.\nChaos: Each player gains 8 Life.\nDeparture: Each player draws a card.",
       "arrival": [
         {
           "type": "heal",
@@ -55633,7 +55633,7 @@
       "rarity": "legendary",
       "set": "paper",
       "token": true,
-      "description": "Arrival: Each player draws a card.\nStatic: Whenever you cast a spell, draw a card.\nChaos: Each player draws a card.\nDeparture: Each player mills 2 cards.",
+      "description": "Arrival: Each player draws a card.\nWhenever you cast a spell, draw a card.\nChaos: Each player draws a card.\nDeparture: Each player mills 2 cards.",
       "arrival": [
         {
           "type": "draw",
