@@ -1156,6 +1156,8 @@ function ongoingCondOk(state, pi, cond, ctx) {
 	if (cond.cardId && !(subj && subj.id === cond.cardId)) return false; // Food sacrifices
 	if (cond.self && ctx.damaged !== ctx.self) return false; // "whenever THIS takes damage"
 	if (cond.enemy && !(subj && subj.controller !== pi)) return false; // "an ENEMY creature ..."
+	if (cond.school && !(subj && schoolOf(subj) === cond.school)) return false; // "cast an Arcane spell"
+	if (cond.controlArtEnch && !(state.players[pi].artifacts.length || state.players[pi].enchantments.length)) return false; // "if you control an artifact or an enchantment"
 	return true;
 }
 

@@ -55301,6 +55301,36 @@
         }
       ],
       "description": "Alliance: Gain +1/+1.\nFrenzy: Draw 2 cards."
+    },
+    {
+      "id": "arcane_artisan",
+      "name": "Arcane Artisan",
+      "cardClass": "sorcerer",
+      "cost": 3,
+      "rarity": "rare",
+      "type": "creature",
+      "attack": 3,
+      "health": 3,
+      "tribe": "Human Wizard",
+      "ongoing": {
+        "on": "spell-played",
+        "if": {
+          "school": "Arcane",
+          "controlArtEnch": true
+        },
+        "effects": [
+          {
+            "type": "draw",
+            "value": 1
+          },
+          {
+            "type": "damage",
+            "value": 1,
+            "target": "enemy-heroes"
+          }
+        ]
+      },
+      "description": "If you control an artifact or an enchantment, whenever you cast an Arcane spell you may draw a card. If you do, each opponent loses 1 Life."
     }
   ]
 }
