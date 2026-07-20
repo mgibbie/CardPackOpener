@@ -408,20 +408,24 @@ async function cardDetail(id) {
   else if (c.type === 'location') stats.push((c.durability ?? 0) + ' uses');
   else if (c.type === 'planeswalker') stats.push((c.loyalty ?? 0) + ' loyalty');
   const kws = CardKw.keywordsFor(c);
-  content.replaceChildren(h('div', { class: 'card-page' },
-    h('div', { class: 'card-page-face' }, face),
-    h('div', { class: 'card-page-info' },
-      h('h1', null, c.name),
-      h('div', { class: 'card-page-meta' }, CardArt.classNameOf(c.cardClass) + (CardArt.showsRarity(c) ? ' · ' + titleCase(c.rarity || 'common') : '')),
-      // clickable type + tribe/school tags
-      h('div', { class: 'card-tags' }, cardTypeChip(c.type), tribesOf(c).map(t => tribeChip(c, t))),
-      h('div', { class: 'card-page-stats' }, stats.join('  ·  ')),
-      c.description ? h('div', { class: 'card-page-rules', html: CardKw.richHtml(c.description) }) : h('div', { class: 'card-page-rules muted' }, 'No rules text.'),
-      // definition of every keyword on the card, each linking to its own page
-      kws.length ? h('h2', null, 'Keywords') : null,
-      kws.length ? h('div', { class: 'kw-defs' }, kws.map(k =>
-        h('div', { class: 'kw-def' }, kwChip(k.label), h('span', { class: 'kw-text' }, k.text)))) : null,
-      h('p', null, h('a', { href: '#/cards' }, '← Card Gallery')))));
+  const artCanvas = CardArt.drawArt(c); artCanvas.className = 'wiki-art-solo';
+  content.replaceChildren(
+    h('div', { class: 'card-page' },
+      h('div', { class: 'card-page-face' }, face),
+      h('div', { class: 'card-page-info' },
+        h('h1', null, c.name),
+        h('div', { class: 'card-page-meta' }, CardArt.classNameOf(c.cardClass) + (CardArt.showsRarity(c) ? ' · ' + titleCase(c.rarity || 'common') : '')),
+        // clickable type + tribe/school tags
+        h('div', { class: 'card-tags' }, cardTypeChip(c.type), tribesOf(c).map(t => tribeChip(c, t))),
+        h('div', { class: 'card-page-stats' }, stats.join('  ·  ')),
+        c.description ? h('div', { class: 'card-page-rules', html: CardKw.richHtml(c.description) }) : h('div', { class: 'card-page-rules muted' }, 'No rules text.'),
+        // definition of every keyword on the card, each linking to its own page
+        kws.length ? h('h2', null, 'Keywords') : null,
+        kws.length ? h('div', { class: 'kw-defs' }, kws.map(k =>
+          h('div', { class: 'kw-def' }, kwChip(k.label), h('span', { class: 'kw-text' }, k.text)))) : null)),
+    // the card's illustration on its own, no frame
+    h('div', { class: 'card-art-section' }, h('h2', null, 'Art'), artCanvas),
+    h('p', null, h('a', { href: '#/cards' }, '← Card Gallery')));
 }
 
 // a filtered subset of cards (by keyword / tribe / type), rendered as faces

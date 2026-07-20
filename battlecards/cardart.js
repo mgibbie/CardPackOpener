@@ -784,6 +784,15 @@ export function makeFaceTexture(card, opts = {}) {
 	return tex;
 }
 
+// just the card's illustration — no frame, banner, or oval clip. Real art if
+// it's loaded (call preloadArt first), otherwise the procedural scene.
+export function drawArt(card, w = 448, h = 448) {
+	const c = document.createElement('canvas');
+	c.width = w; c.height = h;
+	paintArt(c.getContext('2d'), card, 0, 0, w, h);
+	return c;
+}
+
 // ---------- board tokens: HS-style minion ovals ----------
 // once a creature is in play it stops looking like a card: oval art,
 // heavy rim, and BIG stat gems that read from across the table

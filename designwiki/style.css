@@ -117,6 +117,12 @@ img.sprite {
 .tag-chip.tribe { background: #eae6f7; color: #6a3cb0; border-color: #ddd3f0; }
 .tag-chip.school { background: #fbeede; color: #b9770e; border-color: #f0dcc0; }
 .tag-chip.kw { background: #eef4ec; color: #2f7a3f; border-color: #d3e6d3; }
+/* per-card "Art" section: the illustration on its own, no frame */
+.card-art-section { margin-top: 22px; }
+.card-art-section .wiki-art-solo {
+  width: 360px; max-width: 82vw; height: auto; display: block; border-radius: 10px;
+  image-rendering: auto; box-shadow: 0 4px 16px rgba(0,0,0,.18); border: 1px solid #e1e6f0;
+}
 /* keyword definition list on a card page */
 .kw-defs { display: flex; flex-direction: column; gap: 8px; margin-top: 4px; }
 .kw-def { display: flex; gap: 10px; align-items: baseline; }
