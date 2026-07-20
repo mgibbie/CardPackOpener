@@ -115,6 +115,7 @@ img.sprite {
 .tag-chip:hover { text-decoration: none; filter: brightness(0.95); }
 .tag-chip.type { background: #e7edfa; color: #2b5cb0; border-color: #cdd9f2; }
 .tag-chip.tribe { background: #eae6f7; color: #6a3cb0; border-color: #ddd3f0; }
+.tag-chip.school { background: #fbeede; color: #b9770e; border-color: #f0dcc0; }
 .tag-chip.kw { background: #eef4ec; color: #2f7a3f; border-color: #d3e6d3; }
 /* keyword definition list on a card page */
 .kw-defs { display: flex; flex-direction: column; gap: 8px; margin-top: 4px; }

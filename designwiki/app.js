@@ -276,9 +276,11 @@ const cardTypeChip = type => h('a', { class: 'tag-chip type', href: '#/type/' + 
 const SPELL_TYPES = new Set(['sorcery', 'instant', 'secret', 'trap']);
 // a card's tribe field is a space-separated list ("Murloc Warrior" = two tribes)
 const tribesOf = c => (c.tribe ? (Array.isArray(c.tribe) ? c.tribe : String(c.tribe).trim().split(/\s+/)) : []).filter(Boolean);
-// one chip per tribe; a spell's school reads "Fire Spell"
-const tribeChip = (c, tribe) => h('a', { class: 'tag-chip tribe', href: '#/tribe/' + norm(tribe) },
-  SPELL_TYPES.has(c.type) ? tribe + ' Spell' : tribe);
+// one chip per tribe. A spell's tag is its SCHOOL (own page); a creature's is its
+// tribe (own page) — even when the word is shared (e.g. Fire spell vs Fire tribe).
+const tribeChip = (c, tribe) => SPELL_TYPES.has(c.type)
+  ? h('a', { class: 'tag-chip school', href: '#/school/' + norm(tribe) }, tribe + ' Spell')
+  : h('a', { class: 'tag-chip tribe', href: '#/tribe/' + norm(tribe) }, tribe);
 const canonClass = c => (CardArt ? CardArt.canonClass(c.cardClass || 'neutral') : (c.cardClass || 'neutral'));
 const isDualClass = c => canonClass(c).includes('__');
 
@@ -380,10 +382,14 @@ async function cardSubsetView(kind, slug) {
     list = cards.filter(c => norm(c.type) === slug);
     title = titleCase(slug) + ' cards';
   } else if (kind === 'tribe') {
-    list = cards.filter(c => tribesOf(c).some(t => norm(t) === slug));
-    // recover the tribe's original casing from a matching card
+    // creature (non-spell) tribes only, so a shared word like "Fire" stays separate
+    list = cards.filter(c => !SPELL_TYPES.has(c.type) && tribesOf(c).some(t => norm(t) === slug));
     const orig = list.length ? tribesOf(list[0]).find(t => norm(t) === slug) : null;
     title = orig || titleCase(slug);
+  } else if (kind === 'school') {
+    list = cards.filter(c => SPELL_TYPES.has(c.type) && tribesOf(c).some(t => norm(t) === slug));
+    const orig = list.length ? tribesOf(list[0]).find(t => norm(t) === slug) : null;
+    title = (orig || titleCase(slug)) + ' spells';
   } else { // keyword
     const e = keywordIndex(cards).get(slug);
     if (!e) return content.replaceChildren(h('h1', null, 'Unknown keyword'), h('p', null, h('a', { href: '#/cards' }, '← Card Gallery')));
@@ -533,6 +539,7 @@ function route() {
   if (section === 'cards') return id ? cardDetail(id) : cardGalleryView();
   if (section === 'keyword') return cardSubsetView('keyword', id);
   if (section === 'tribe') return cardSubsetView('tribe', id);
+  if (section === 'school') return cardSubsetView('school', id);
   if (section === 'type') return cardSubsetView('type', id);
   if (section === 'battlecards') return id ? designCardDetail(id) : battlecardsView();
   notFound();
