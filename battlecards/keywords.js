@@ -78,6 +78,7 @@ const K = [
 	{ p: ['Chaos'], t: 'A shared plane effect that fires when a planar roll comes up Chaos.' },
 	{ p: ['Regenerate'], t: 'Regenerate N — restores N Health to itself at the end of your turn.' },
 	{ p: ['Ephemeral'], t: 'Destroyed at the end of the turn.' },
+	{ p: ['Bushido'], t: 'Gains +1/+1 whenever it attacks.' },
 ];
 
 const escRe = s => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
