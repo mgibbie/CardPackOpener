@@ -42122,7 +42122,8 @@
             "rush"
           ]
         }
-      ]
+      ],
+      "excavate": true
     },
     {
       "id": "the_azerite_dolphin",
@@ -42148,7 +42149,8 @@
           "tribe": "Song",
           "setCost": 0
         }
-      ]
+      ],
+      "excavate": true
     },
     {
       "id": "the_azerite_dragon",
@@ -42172,7 +42174,8 @@
           "attack": 3,
           "health": 3
         }
-      ]
+      ],
+      "excavate": true
     },
     {
       "id": "the_azerite_goat",
@@ -42205,7 +42208,8 @@
             }
           ]
         }
-      ]
+      ],
+      "excavate": true
     },
     {
       "id": "the_azerite_hawk",
@@ -42231,7 +42235,8 @@
           "tribe": "Titan",
           "setCost": 1
         }
-      ]
+      ],
+      "excavate": true
     },
     {
       "id": "the_azerite_horse",
@@ -42272,7 +42277,8 @@
           "value": 5,
           "target": "any"
         }
-      ]
+      ],
+      "excavate": true
     },
     {
       "id": "the_azerite_hydra",
@@ -42313,7 +42319,8 @@
           "type": "scry",
           "value": 5
         }
-      ]
+      ],
+      "excavate": true
     },
     {
       "id": "the_azerite_lynx",
@@ -42342,7 +42349,8 @@
           "type": "destroy-all",
           "side": "enemy"
         }
-      ]
+      ],
+      "excavate": true
     },
     {
       "id": "the_azerite_mammoth",
@@ -42371,7 +42379,8 @@
           "type": "freeze",
           "target": "enemy-creatures"
         }
-      ]
+      ],
+      "excavate": true
     },
     {
       "id": "the_azerite_monkey",
@@ -42403,7 +42412,8 @@
           "count": 3,
           "to": "board"
         }
-      ]
+      ],
+      "excavate": true
     },
     {
       "id": "the_azerite_murloc",
@@ -42426,7 +42436,8 @@
           "type": "transform-cost",
           "delta": 3
         }
-      ]
+      ],
+      "excavate": true
     },
     {
       "id": "the_azerite_otter",
@@ -42469,7 +42480,8 @@
           "count": 1,
           "tribe": "Elemental"
         }
-      ]
+      ],
+      "excavate": true
     },
     {
       "id": "the_azerite_ox",
@@ -42495,7 +42507,8 @@
           "count": 2,
           "to": "board"
         }
-      ]
+      ],
+      "excavate": true
     },
     {
       "id": "the_azerite_pig",
@@ -42524,7 +42537,8 @@
           "type": "hero-temp-attack",
           "value": 6
         }
-      ]
+      ],
+      "excavate": true
     },
     {
       "id": "the_azerite_rabbit",
@@ -42557,7 +42571,8 @@
           "type": "adapt",
           "target": "friendly-creatures"
         }
-      ]
+      ],
+      "excavate": true
     },
     {
       "id": "the_azerite_rat",
@@ -42585,7 +42600,8 @@
             "reborn"
           ]
         }
-      ]
+      ],
+      "excavate": true
     },
     {
       "id": "the_azerite_rooster",
@@ -42626,7 +42642,8 @@
           "value": 99,
           "target": "friendly-creatures"
         }
-      ]
+      ],
+      "excavate": true
     },
     {
       "id": "the_azerite_scorpion",
@@ -42650,7 +42667,8 @@
           "cardType": "spell",
           "count": 6
         }
-      ]
+      ],
+      "excavate": true
     },
     {
       "id": "the_azerite_snake",
@@ -42679,7 +42697,8 @@
           "value": 10,
           "target": "self"
         }
-      ]
+      ],
+      "excavate": true
     },
     {
       "id": "the_azerite_tiger",
@@ -42721,7 +42740,8 @@
           "value": 8,
           "target": "self"
         }
-      ]
+      ],
+      "excavate": true
     },
     {
       "id": "the_azerite_wolf",
@@ -42765,7 +42785,8 @@
             }
           ]
         }
-      ]
+      ],
+      "excavate": true
     },
     {
       "id": "jewel_mine_overseer",

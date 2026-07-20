@@ -1,7 +1,7 @@
 // viewer.js — the collection browser: a paginated, filterable card book.
 // Card faces come from the shared procedural renderer; rules text appears in
 // a hover tooltip, and rules-cards carry a CSS-animated iridescent gem.
-import { drawCardFace, classNameOf, canonClass, artListeners, preloadArt, isUncollectible as isUncollectibleCard } from './cardart.js?v=20260720';
+import { drawCardFace, classNameOf, canonClass, artListeners, preloadArt, showsRarity } from './cardart.js?v=20260720';
 import { keywordsFor, richHtml } from './keywords.js?v=20260720';
 
 // cache-busting: this module's own ?v=… (from viewer.html) is reused for the
@@ -43,7 +43,7 @@ const SYSTEM_BUCKETS = [
 	['__land__', 'Lands'], ['__advland__', 'Advanced Lands'],
 	['__c_W__', 'White'], ['__c_U__', 'Blue'], ['__c_B__', 'Black'],
 	['__c_R__', 'Red'], ['__c_G__', 'Green'], ['__generic__', 'Generic'],
-	['__plane__', 'Planes'],
+	['__plane__', 'Planes'], ['__excavate__', 'Excavate'],
 ];
 const SYSTEM_KEYS = new Set(SYSTEM_BUCKETS.map(b => b[0]));
 // theme words an advanced land can conjure (matched against a card's name)
@@ -55,6 +55,7 @@ function ensureAdvThemes(list) {
 		if (e.type === 'conjure-named' && e.match) advThemes.add(e.match.toLowerCase());
 }
 function systemBucket(c) {
+	if (c.excavate) return '__excavate__'; // excavate rewards (Azerite legendaries, …)
 	if (c.type === 'land') return '__land__';
 	if (c.type === 'plane') return '__plane__';
 	if (c.type === 'emblem') return '__generic__'; // dungeon-run treasures / emblems
@@ -157,7 +158,7 @@ function tileFor(card) {
 
 function typeLineOf(card) {
 	return classNameOf(card.cardClass).toUpperCase() + ' · ' + (card.tribe ? card.tribe + ' ' : '')
-		+ card.type.toUpperCase() + (isUncollectibleCard(card) ? '' : ' · ' + (card.rarity || 'common').toUpperCase());
+		+ card.type.toUpperCase() + (showsRarity(card) ? ' · ' + (card.rarity || 'common').toUpperCase() : '');
 }
 
 // tap/click a card for a big look with its full info

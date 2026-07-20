@@ -79,6 +79,11 @@ export function isUncollectible(card) {
 	if (canonClass(card.cardClass) === 'magepunk') return true; // paper conjured (Blood Gem, Advanced Lands)
 	return false;
 }
+// most uncollectible cards have no meaningful rarity, but excavate rewards
+// (the Azerite class legendaries etc.) keep their rarity gem + label
+export function showsRarity(card) {
+	return !!card && (card.excavate === true || !isUncollectible(card));
+}
 export function classNameOf(cls) {
 	const c = canonClass(cls);
 	if (CLASS_NAMES[c]) return CLASS_NAMES[c];
@@ -648,8 +653,8 @@ export function drawCardFace(card, opts = {}) {
 	ctx.fillText(card.name, W / 2, 440);
 	ctx.textAlign = 'left';
 
-	// rarity gem under the banner — only collectible cards have a rarity
-	if (!isUncollectible(card)) {
+	// rarity gem under the banner — collectible cards + excavate rewards
+	if (showsRarity(card)) {
 		const rg = ctx.createRadialGradient(W / 2 - 4, 476, 2, W / 2, 480, 16);
 		rg.addColorStop(0, '#fff');
 		rg.addColorStop(0.35, rarity);

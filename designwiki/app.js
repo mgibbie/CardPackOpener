@@ -293,7 +293,7 @@ const SYSTEM_BUCKETS = [
   ['__land__', 'Lands'], ['__advland__', 'Advanced Lands'],
   ['__c_W__', 'White'], ['__c_U__', 'Blue'], ['__c_B__', 'Black'],
   ['__c_R__', 'Red'], ['__c_G__', 'Green'], ['__generic__', 'Generic'],
-  ['__plane__', 'Planes'],
+  ['__plane__', 'Planes'], ['__excavate__', 'Excavate'],
 ];
 const SYSTEM_KEYS = new Set(SYSTEM_BUCKETS.map(b => b[0]));
 // theme words an advanced land can conjure (matched against a card's name) — once
@@ -305,6 +305,7 @@ function ensureAdvThemes(cards) {
     if (e.type === 'conjure-named' && e.match) advThemes.add(e.match.toLowerCase());
 }
 function systemBucket(c) {
+  if (c.excavate) return '__excavate__'; // excavate rewards (Azerite legendaries, …)
   if (c.type === 'land') return '__land__';
   if (c.type === 'plane') return '__plane__';
   if (c.type === 'emblem') return '__generic__'; // dungeon-run treasures / emblems
@@ -408,7 +409,7 @@ async function cardDetail(id) {
     h('div', { class: 'card-page-face' }, face),
     h('div', { class: 'card-page-info' },
       h('h1', null, c.name),
-      h('div', { class: 'card-page-meta' }, CardArt.classNameOf(c.cardClass) + (CardArt.isUncollectible(c) ? '' : ' · ' + titleCase(c.rarity || 'common'))),
+      h('div', { class: 'card-page-meta' }, CardArt.classNameOf(c.cardClass) + (CardArt.showsRarity(c) ? ' · ' + titleCase(c.rarity || 'common') : '')),
       // clickable type + tribe/school tags
       h('div', { class: 'card-tags' }, cardTypeChip(c.type), tribesOf(c).map(t => tribeChip(c, t))),
       h('div', { class: 'card-page-stats' }, stats.join('  ·  ')),
@@ -538,7 +539,7 @@ async function designCardDetail(slug) {
     const kws = CardKw.keywordsFor(impl);
     implBody.push(
       h('h2', null, 'Card data'),
-      h('div', { class: 'card-page-meta' }, art.classNameOf(impl.cardClass) + (art.isUncollectible(impl) ? '' : ' · ' + titleCase(impl.rarity || 'common'))),
+      h('div', { class: 'card-page-meta' }, art.classNameOf(impl.cardClass) + (art.showsRarity(impl) ? ' · ' + titleCase(impl.rarity || 'common') : '')),
       h('div', { class: 'card-tags' }, cardTypeChip(impl.type), tribesOf(impl).map(t => tribeChip(impl, t))),
       h('div', { class: 'card-page-stats' }, stats.join('  ·  ')),
       impl.description ? h('div', { class: 'card-page-rules', html: CardKw.richHtml(impl.description) }) : h('div', { class: 'card-page-rules muted' }, 'No rules text.'),
