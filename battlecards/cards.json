@@ -18809,7 +18809,8 @@
           "type": "draw",
           "value": 1
         }
-      ]
+      ],
+      "excavate": true
     },
     {
       "id": "pioneer_s_pickaxe",
@@ -42054,7 +42055,8 @@
           "cost": 2,
           "setCost": 0
         }
-      ]
+      ],
+      "excavate": true
     },
     {
       "id": "azerite_chunk",
@@ -42073,7 +42075,8 @@
           "cost": 3,
           "setCost": 0
         }
-      ]
+      ],
+      "excavate": true
     },
     {
       "id": "azerite_gem",
@@ -42092,7 +42095,8 @@
           "cost": 5,
           "setCost": 0
         }
-      ]
+      ],
+      "excavate": true
     },
     {
       "id": "the_azerite_beetle",
