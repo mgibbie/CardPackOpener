@@ -358,7 +358,7 @@ function battlecardsView() {
       const next = items.slice(shown, shown + CAP);
       shown += next.length;
       grid.append(...next.map(it =>
-        h('div', { class: 'card' },
+        h('a', { class: 'card', href: '#/battlecards/' + norm(it.name) },
           h('div', { class: 'nm' }, it.name),
           it.note ? h('div', { class: 'muted', style: 'font-size:12px' }, it.note) : null)));
       if (shown >= items.length) more.remove();
@@ -375,6 +375,56 @@ function battlecardsView() {
     h('h1', null, 'Battlecards — Design Work ', h('span', { class: 'num' }, '(' + total + ' items)')),
     h('p', { class: 'muted' }, 'Everything named but not yet designed or functional: undefined keywords, pending paper cards, WUBRG cards awaiting redesigns or engine work, the advanced-land theme pools, classes without card lists — plus every unimplemented Hearthstone card across Constructed, solo adventures, Duels, Battlegrounds, and Mercenaries. Search filters every section.'),
     ...blocks);
+}
+
+// A single design-work card's page: everything we know about it — every backlog
+// section it's listed under (with note + context), plus its real in-game face and
+// full card data if it's already implemented in the card pool.
+async function designCardDetail(slug) {
+  const db = DB.battlecards;
+  if (!db) return content.replaceChildren(h('h1', null, 'Battlecards data not loaded'));
+  const occ = [];
+  let name = slug;
+  for (const s of db.sections) for (const it of (s.items || [])) if (norm(it.name) === slug) { occ.push({ section: s.title, blurb: s.blurb, note: it.note }); name = it.name; }
+  // cross-reference the real card pool (implemented cards) + its face
+  let impl = null, art = null;
+  try { const [cards, m] = await Promise.all([loadCards(), loadCardart()]); art = m; impl = cards.find(c => norm(c.name) === slug) || null; } catch (e) {}
+  if (!occ.length && !impl) return content.replaceChildren(h('h1', null, 'Card not found'), h('p', null, h('a', { href: '#/battlecards' }, '← Design Work')));
+
+  // Notes: one block per backlog section this card appears in
+  const notesBody = occ.length ? occ.map(o => h('div', { class: 'route' },
+    h('h3', null, o.section),
+    o.note ? h('p', null, o.note) : h('p', { class: 'muted' }, 'No note recorded.'),
+    o.blurb ? h('p', { class: 'muted', style: 'font-size:12px' }, o.blurb) : null))
+    : [h('p', { class: 'muted' }, 'Not in the design backlog.')];
+
+  // implemented-card details + link to its gallery page
+  const implBody = [];
+  let face = null;
+  if (impl && art) {
+    try { await art.preloadArt([impl.id]); face = art.drawCardFace(impl); face.className = 'wiki-face-big'; } catch (e) {}
+    const stats = ['Cost ' + (impl.cost ?? 0)];
+    if (impl.type === 'creature') stats.push((impl.attack ?? '?') + ' / ' + (impl.health ?? '?'));
+    else if (impl.type === 'weapon') stats.push(impl.attack + ' attack · ' + impl.durability + ' durability');
+    else if (impl.type === 'location') stats.push((impl.durability ?? 0) + ' uses');
+    else if (impl.type === 'planeswalker') stats.push((impl.loyalty ?? 0) + ' loyalty');
+    implBody.push(
+      h('h2', null, 'Card data'),
+      h('div', { class: 'card-page-meta' }, art.classNameOf(impl.cardClass) + ' · ' + titleCase(impl.type || '') + ' · ' + titleCase(impl.rarity || 'common')),
+      h('div', { class: 'card-page-stats' }, stats.join('  ·  ')),
+      h('div', { class: 'card-page-rules' }, impl.description ? impl.description : h('span', { class: 'muted' }, 'No rules text.')),
+      h('p', null, h('a', { href: '#/cards/' + impl.id }, 'Open in Card Gallery →')));
+  }
+
+  const info = h('div', { class: 'card-page-info' },
+    h('h1', null, name),
+    h('p', { class: 'card-page-meta' }, impl ? 'Implemented — in the card pool' : 'Design backlog — not yet implemented'),
+    h('h2', null, 'Notes'), ...notesBody,
+    ...implBody,
+    h('p', null, h('a', { href: '#/battlecards' }, '← Design Work')));
+  content.replaceChildren(face
+    ? h('div', { class: 'card-page' }, h('div', { class: 'card-page-face' }, face), info)
+    : info);
 }
 
 function notFound() { content.replaceChildren(h('h1', null, 'Not found')); }
@@ -404,7 +454,7 @@ function route() {
   if (section === 'unlearned') return unlearnedView();
   if (section === 'region') return regionView(id);
   if (section === 'cards') return id ? cardDetail(id) : cardGalleryView();
-  if (section === 'battlecards') return battlecardsView();
+  if (section === 'battlecards') return id ? designCardDetail(id) : battlecardsView();
   notFound();
 }
 
