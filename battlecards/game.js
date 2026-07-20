@@ -370,9 +370,7 @@ function openChoiceMenu(card, ev, position) {
 		});
 		menu.appendChild(btn);
 	});
-	menu.style.display = 'block';
-	menu.style.left = `${Math.min(ev.clientX, innerWidth - 300)}px`;
-	menu.style.top = `${Math.min(ev.clientY, innerHeight - 200)}px`;
+	showDecisionMenu();
 }
 
 // Tradeable cards offer Play or Trade (pay 1: shuffle back, draw a card)
@@ -397,9 +395,7 @@ function openTradeMenu(card, ev) {
 		actTrade(card.uid);
 	});
 	menu.appendChild(trade);
-	menu.style.display = 'block';
-	menu.style.left = `${Math.min(ev.clientX, innerWidth - 300)}px`;
-	menu.style.top = `${Math.min(ev.clientY, innerHeight - 200)}px`;
+	showDecisionMenu();
 }
 
 function playFromHand(card, ev, position) {
@@ -2154,7 +2150,22 @@ function toggleInspect(card) { if (inspectPrev === card.uid) hideInspect(); else
 
 // ---------- planeswalker ability menu ----------
 function hideWalkerMenu() {
-	$('walker-menu').style.display = 'none';
+	const menu = $('walker-menu');
+	menu.style.display = 'none';
+	menu.classList.remove('decision');
+	$('menu-backdrop').style.display = 'none';
+}
+
+// show the walker-menu as a centered, backdrop-dimmed decision popup — used for
+// hand-play choices (choose one / adventure / trade) so it can't be missed or
+// dismissed by a stray board click. Clicking the backdrop cancels.
+function showDecisionMenu() {
+	const menu = $('walker-menu');
+	const bd = $('menu-backdrop');
+	bd.style.display = 'block';
+	bd.onpointerdown = e => { e.stopPropagation(); hideWalkerMenu(); };
+	menu.classList.add('decision');
+	menu.style.display = 'block';
 }
 
 // activated creature abilities: pick Attack or one of the card's abilities
@@ -2232,9 +2243,7 @@ function openAdventureMenu(card, ev) {
 		actAdventure(card.uid, null);
 	});
 	menu.appendChild(abtn);
-	menu.style.display = 'block';
-	menu.style.left = `${Math.min(ev.clientX, innerWidth - 260)}px`;
-	menu.style.top = `${Math.min(ev.clientY, innerHeight - 160)}px`;
+	showDecisionMenu();
 }
 
 function openWalkerMenu(card, ev) {
