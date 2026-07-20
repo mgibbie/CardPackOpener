@@ -73,6 +73,14 @@
 		#inspect .ins-kw .tt-kw b { color: #9fd0ff; }
 		#inspect .ins-hint { margin-top: 9px; font-size: 11px; color: #9a8fc0; letter-spacing: .3px; }
 		#inspect .ins-hint.no { color: #d98a8a; }
+		/* action buttons re-enable pointer events on an otherwise click-through panel */
+		#inspect .ins-actions { margin-top: 9px; display: flex; flex-direction: column; gap: 5px; pointer-events: auto; }
+		#inspect .ins-actions button {
+			width: 100%; text-align: left; padding: 8px 11px; border-radius: 8px; cursor: pointer;
+			background: #3a2e5c; color: #e8e2f4; border: 1px solid #5a4a8a; font-size: 13px;
+		}
+		#inspect .ins-actions button:hover { background: #4c3d78; }
+		#inspect .ins-actions button.trade { background: #2f4a5c; border-color: #4a7a8a; }
 
 		/* scry / gaze decision modal */
 		#scry-modal {

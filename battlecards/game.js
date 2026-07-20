@@ -2091,12 +2091,40 @@ function showInspect(card) {
 	box.appendChild(drawCardFace({ ...card, health: card.maxHealth }, inspectFaceOpts(card))); // art + rules + stats
 	const kw = modifierLinesHtml(card) + keywordLinesHtml(card);
 	if (kw) { const d = document.createElement('div'); d.className = 'ins-kw'; d.innerHTML = kw; box.appendChild(d); }
-	const hint = document.createElement('div');
-	const playable = state && state.current === HUMAN && E.canPlay(state, HUMAN, card);
-	hint.className = 'ins-hint' + (playable ? '' : ' no');
-	hint.textContent = playable ? '⬆ drag it onto the field to play'
-		: (state && state.current !== HUMAN ? 'wait for your turn to play' : 'not enough mana yet');
-	box.appendChild(hint);
+	// action buttons — a choose-one / adventure / tradeable card can't be resolved by
+	// dragging alone, so offer the decision here (drag still works for everything)
+	const yourTurn = state && state.current === HUMAN && !state.over;
+	const playable = yourTurn && E.canPlay(state, HUMAN, card);
+	const inHand = card.zone === 'hand' && card.controller === HUMAN;
+	const actions = document.createElement('div');
+	actions.className = 'ins-actions';
+	const mkBtn = (label, fn, cls) => {
+		const btn = document.createElement('button');
+		btn.textContent = label;
+		if (cls) btn.className = cls;
+		btn.addEventListener('pointerdown', e => { e.stopPropagation(); hideInspect(); fn(e); });
+		actions.appendChild(btn);
+	};
+	if (inHand && yourTurn) {
+		if (card.adventure && !card.adventureSpent) {
+			if (E.canPlay(state, HUMAN, card)) mkBtn(`Summon ${card.name}`, e => playFromHand(card, e));
+			if (E.canPlayAdventure(state, HUMAN, card)) mkBtn(`Cast “${card.adventure.name}”`, e => openAdventureMenu(card, e));
+		} else if (card.choices && playable) {
+			card.choices.forEach((ch, i) => mkBtn(ch.text, e => playChoiceFromInspect(card, i, e)));
+		} else if (playable) {
+			mkBtn('Play', e => playFromHand(card, e));
+			if (card.tradeable && E.canTrade(state, HUMAN, card)) mkBtn('Trade (pay 1)', () => actTrade(card.uid), 'trade');
+		} else if (card.tradeable && E.canTrade(state, HUMAN, card)) {
+			mkBtn('Trade (pay 1)', () => actTrade(card.uid), 'trade');
+		}
+	}
+	if (actions.children.length) box.appendChild(actions);
+	else {
+		const hint = document.createElement('div');
+		hint.className = 'ins-hint no';
+		hint.textContent = state && state.current !== HUMAN ? 'wait for your turn to play' : 'not enough mana yet';
+		box.appendChild(hint);
+	}
 	box.style.display = 'block';
 	// the face is drawn with a procedural fallback until its art image and the mana
 	// font load; repaint in place when they arrive (same as the 3D cards' refreshFace)
@@ -2104,6 +2132,18 @@ function showInspect(card) {
 	inspectArtFn = id => { if (inspectUid === card.uid && (id === '*' || id === card.id)) renderInspectFace(card); };
 	artListeners.add(inspectArtFn);
 }
+// resolve a Choose-One from the inspect panel (mirrors openChoiceMenu's per-branch logic)
+function playChoiceFromInspect(card, i) {
+	if (!E.canPlay(state, HUMAN, card)) return;
+	const spec = E.targetSpec(state, HUMAN, card, i);
+	if (spec) {
+		const targets = E.legalTargets(state, HUMAN, spec);
+		if (targets.length) { pending = { card, spec, targets, mode: 'play', choice: i }; updateHud(); return; }
+		if (spec.required) return;
+	}
+	actPlay(card.uid, null, i);
+}
+
 function hideInspect() {
 	if (inspectUid == null) return;
 	inspectUid = null;
