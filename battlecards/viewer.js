@@ -1,8 +1,12 @@
 // viewer.js — the collection browser: a paginated, filterable card book.
 // Card faces come from the shared procedural renderer; rules text appears in
 // a hover tooltip, and rules-cards carry a CSS-animated iridescent gem.
-import { drawCardFace, classNameOf, canonClass, artListeners, preloadArt } from './cardart.js';
-import { keywordsFor, richHtml } from './keywords.js';
+import { drawCardFace, classNameOf, canonClass, artListeners, preloadArt } from './cardart.js?v=20260720';
+import { keywordsFor, richHtml } from './keywords.js?v=20260720';
+
+// cache-busting: this module's own ?v=… (from viewer.html) is reused for the
+// cards.json fetch so a version bump refreshes code and data together
+const CB = new URL(import.meta.url).search;
 
 // small keyword-explanation lines shown beneath a card's rules text
 function keywordLinesHtml(card) {
@@ -207,7 +211,7 @@ async function renderPage() {
 	for (const card of pageCards) grid.appendChild(tileFor(card));
 }
 
-fetch('cards.json')
+fetch('cards.json' + CB)
 	.then(r => r.json())
 	.then(async data => {
 		let mpOwned = null;

@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Magepunk66 Wiki</title>
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="style.css?v=20260720">
   <!-- the Card Gallery renders real in-game card faces via battlecards/cardart.js,
        which imports three; map it so the dynamic import resolves -->
   <script type="importmap">
@@ -37,6 +37,8 @@
     </nav>
     <main id="content">Loading…</main>
   </div>
-  <script src="app.js"></script>
+  <!-- bump ?v=… on a release to push fresh code+data to all clients (app.js
+       reads this version and appends it to every sub-resource it loads) -->
+  <script src="app.js?v=20260720"></script>
 </body>
 </html>

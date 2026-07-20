@@ -1,4 +1,8 @@
 'use strict';
+// cache-busting: the ?v=… on this script's own URL is propagated to every
+// sub-resource we load (data, cardart, keywords) so bumping the version in
+// index.html forces clients onto fresh code+data with no manual hard-refresh.
+const CB = (() => { try { return new URL(document.currentScript.src).search; } catch (e) { return ''; } })();
 // Static, read-only design wiki. Data is served as flat JSON from ./data/.
 // Designers change content by editing designwiki/data/*.json in the repo.
 const DB = {};
@@ -248,14 +252,14 @@ function regionView(rk) {
 let cardsPromise = null, cardartPromise = null, CardArt = null, CardKw = null, kwIndex = null;
 let cardClassFilter = 'all';
 function loadCards() {
-  if (!cardsPromise) cardsPromise = fetch('../battlecards/cards.json').then(r => r.json()).then(d => d.cards || d || []);
+  if (!cardsPromise) cardsPromise = fetch('../battlecards/cards.json' + CB).then(r => r.json()).then(d => d.cards || d || []);
   return cardsPromise;
 }
 function loadCardart() {
   // the renderer (cardart) and the keyword glossary (keywords) both live in battlecards/
   if (!cardartPromise) cardartPromise = Promise.all([
-    import('../battlecards/cardart.js'),
-    import('../battlecards/keywords.js'),
+    import('../battlecards/cardart.js' + CB),
+    import('../battlecards/keywords.js' + CB),
   ]).then(([a, k]) => { CardArt = a; CardKw = k; });
   return cardartPromise;
 }
@@ -602,7 +606,7 @@ window.addEventListener('hashchange', route);
 (async function init() {
   try {
     const [pk, mv, ab, rg, tm, bc] = await Promise.all(['pokemon', 'moves', 'abilities', 'regions', 'tms', 'battlecards']
-      .map(n => fetch('data/' + n + '.json').then(r => r.json())));
+      .map(n => fetch('data/' + n + '.json' + CB).then(r => r.json())));
     DB.pokemon = pk; DB.moves = mv; DB.abilities = ab; DB.regions = rg; DB.tms = tm; DB.battlecards = bc;
     for (const id in DB.pokemon) DB.pokemon[id].id = id;
     for (const id in DB.moves) DB.moves[id].id = id;
