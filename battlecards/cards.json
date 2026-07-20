@@ -3912,12 +3912,13 @@
       "cost": 2,
       "rarity": "rare",
       "set": "paper",
-      "description": "Can't Attack. Defender. Inspire: Luck: Draw a card.",
+      "description": "Pacifist. Defender. Inspire: Luck: Draw a card.",
       "type": "creature",
       "attack": 4,
       "health": 5,
       "tribe": "Undead Totem",
       "keywords": [
+        "pacifist",
         "defender"
       ],
       "ongoing": {
