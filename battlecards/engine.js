@@ -2015,6 +2015,14 @@ function execEffects(state, pi, effects, target, source) {
 			// draw N; run `then` only if a card was actually drawn ("if you do")
 			const n = drawCards(state, pi, scaled(e));
 			if (n > 0 && e.then) execEffects(state, pi, e.then, target, source);
+		} else if (e.type === 'draw-check') {
+			// draw N, then run `then` only if every newly-drawn card matches e.allType
+			const dp = state.players[pi];
+			const before = new Set(dp.hand.map(c => c.uid));
+			drawCards(state, pi, e.value || 1);
+			const drawn = dp.hand.filter(c => !before.has(c.uid));
+			if (drawn.length >= (e.value || 1) && (!e.allType || drawn.every(c => c.type === e.allType)) && e.then)
+				execEffects(state, pi, e.then, target, source);
 		} else if (e.type === 'may') {
 			// optional "you may …": defer a yes/no to the controller. The UI (or AI)
 			// resolves it via resolveAsk, running `then` on yes / `else` on no.
@@ -2027,6 +2035,7 @@ function execEffects(state, pi, effects, target, source) {
 					if (e.tribe && !(c.tribe || '').includes(e.tribe)) continue;
 					if (e.name && c.name !== e.name) continue; // Quartermaster's Recruits
 					if (e.requireKeyword && !c.keywords.includes(e.requireKeyword)) continue;
+					if (e.requireDamaged && !(c.damage > 0)) continue; // Ball and Chain
 					buffCreature(c, e.attack, e.health);
 				}
 			} else if (e.target === 'all-creatures') {
@@ -2753,6 +2762,8 @@ function execEffects(state, pi, effects, target, source) {
 			else if (e.if.manathirst != null) ok = (p.mana.max || 0) >= e.if.manathirst; // mana crystals this turn, regardless of spend
 			else if (e.if.finale) ok = availableMana(p) === 0; // you spent all your mana playing this card
 			else if (e.if.noFriendlyDeaths) ok = (p.diedThisTurn || 0) === 0;
+			else if (e.if.friendlyDied) ok = (p.diedThisTurn || 0) > 0;       // Bone Flurry
+			else if (e.if.deckAtLeast != null) ok = p.deck.length >= e.if.deckAtLeast; // Crowd Control
 			execEffects(state, pi, ok ? e.then : (e.else || []), target, source);
 		} else if (e.type === 'damage-then') {
 			// deal damage, then branch on whether the creature survived

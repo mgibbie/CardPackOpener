@@ -55704,6 +55704,194 @@
         }
       ],
       "description": "Deathrattle: Deal 3 damage to all other characters."
+    },
+    {
+      "id": "ball_and_chain",
+      "name": "Ball and Chain",
+      "cardClass": "warrior",
+      "cost": 1,
+      "rarity": "common",
+      "type": "weapon",
+      "attack": 1,
+      "durability": 2,
+      "set": "hs",
+      "keywords": [
+        "deathrattle"
+      ],
+      "deathrattle": [
+        {
+          "type": "buff",
+          "target": "friendly-creatures",
+          "requireDamaged": true,
+          "attack": 1,
+          "health": 2
+        }
+      ],
+      "description": "Deathrattle: Give your damaged minions +1/+2."
+    },
+    {
+      "id": "widows_bite",
+      "name": "Widow's Bite",
+      "cardClass": "druid",
+      "cost": 2,
+      "rarity": "common",
+      "type": "sorcery",
+      "set": "hs",
+      "effects": [
+        {
+          "type": "hero-temp-attack",
+          "value": 1
+        },
+        {
+          "type": "armor",
+          "value": 1
+        },
+        {
+          "type": "add-card",
+          "id": "widows_feast"
+        }
+      ],
+      "description": "Give your hero +1 Attack this turn.\nGain 1 Armor.\nAdd \"Widow's Feast\" to your hand."
+    },
+    {
+      "id": "widows_feast",
+      "name": "Widow's Feast",
+      "cardClass": "druid",
+      "cost": 2,
+      "rarity": "common",
+      "type": "sorcery",
+      "token": true,
+      "collectible": false,
+      "set": "hs",
+      "effects": [
+        {
+          "type": "hero-temp-attack",
+          "value": 2
+        },
+        {
+          "type": "armor",
+          "value": 2
+        },
+        {
+          "type": "add-card",
+          "id": "widows_banquet"
+        }
+      ],
+      "description": "Give your hero +2 Attack this turn.\nGain 2 Armor.\nAdd \"Widow's Banquet\" to your hand."
+    },
+    {
+      "id": "widows_banquet",
+      "name": "Widow's Banquet",
+      "cardClass": "druid",
+      "cost": 2,
+      "rarity": "common",
+      "type": "sorcery",
+      "token": true,
+      "collectible": false,
+      "set": "hs",
+      "effects": [
+        {
+          "type": "hero-temp-attack",
+          "value": 4
+        },
+        {
+          "type": "armor",
+          "value": 4
+        }
+      ],
+      "description": "Give your hero +4 Attack this turn.\nGain 4 Armor."
+    },
+    {
+      "id": "bone_flurry",
+      "name": "Bone Flurry",
+      "cardClass": "death_knight",
+      "cost": 2,
+      "rarity": "common",
+      "type": "sorcery",
+      "set": "hs",
+      "effects": [
+        {
+          "type": "random-damage",
+          "value": 1,
+          "count": 3,
+          "pool": "enemies"
+        },
+        {
+          "type": "conditional",
+          "if": {
+            "friendlyDied": true
+          },
+          "then": [
+            {
+              "type": "random-damage",
+              "value": 1,
+              "count": 3,
+              "pool": "enemies"
+            }
+          ]
+        }
+      ],
+      "description": "Deal 3 damage randomly split among enemies.\nIf a friendly minion died this turn, deal 3 more."
+    },
+    {
+      "id": "crowd_control",
+      "name": "Crowd Control",
+      "cardClass": "warrior",
+      "cost": 3,
+      "rarity": "rare",
+      "type": "sorcery",
+      "set": "hs",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 2,
+          "target": "all-creatures"
+        },
+        {
+          "type": "conditional",
+          "if": {
+            "deckAtLeast": 25
+          },
+          "then": [
+            {
+              "type": "damage",
+              "value": 2,
+              "target": "all-creatures"
+            }
+          ]
+        }
+      ],
+      "description": "Deal 2 damage to all minions.\nIf your deck has 25 or more cards, deal 2 more."
+    },
+    {
+      "id": "getaway_hogdriver",
+      "name": "Getaway Hogdriver",
+      "cardClass": "neutral",
+      "cost": 5,
+      "rarity": "epic",
+      "type": "creature",
+      "attack": 5,
+      "health": 2,
+      "tribe": "Quilboar",
+      "set": "hs",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "draw-check",
+          "value": 2,
+          "allType": "creature",
+          "then": [
+            {
+              "type": "grant",
+              "keyword": "charge",
+              "target": "self"
+            }
+          ]
+        }
+      ],
+      "description": "Battlecry: Draw 2 cards. If they're both minions, gain Charge."
     }
   ]
 }
