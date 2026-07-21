@@ -237,6 +237,14 @@ const playerMenu = { open: false, idx: 0, target: null };
 const PLAYER_MENU_ITEMS = ['POKeMON BATTLE', 'CARD BATTLE', 'TRADE', 'CANCEL'];
 // deck-selection phase before a card duel: pick which class deck to bring
 const deckSelect = { open: false, idx: 0, decks: [], onPick: null, prompt: '' };
+// RuneScape-style two-party trade window
+const TRADE_CATS = ['CARDS', 'PACKS', 'POKeMON', 'ITEMS'];
+const trade = {
+	open: false, id: null, role: null, them: 'PLAYER',   // role 'a' = requester, 'b' = accepter
+	mine: null, theirs: null, myAccept: false, theirAccept: false,
+	done: false, applied: false, cat: 0, idx: 0, rows: [], poll: null, status: '',
+};
+const emptyOffer = () => ({ cards: {}, packs: 0, pokemon: [], items: [] });
 // the username of a friend-ghost currently standing on tile (tx,ty), or null
 function ghostAt(tx, ty) {
 	for (const [name, g] of ghosts) {
@@ -562,6 +570,53 @@ function deckSelectKey(k) {
 function drawDeckSelect(W, H) {
 	const labels = deckSelect.decks.map(d => `${d.classId.replace(/_/g, ' ').toUpperCase()}  (${d.count})`);
 	drawVertical(W, H, H / 480, 'SELECT DECK', deckSelect.prompt, labels, deckSelect.idx, 'deck');
+}
+function offerLines(o) {
+	const out = [];
+	if (!o) return out;
+	for (const [id, n] of Object.entries(o.cards || {})) out.push(`${prettyId(id)} x${n}`);
+	if (o.packs) out.push(`Card Pack x${o.packs}`);
+	for (const m of (o.pokemon || [])) out.push(`${m.name} Lv.${m.level}`);
+	for (const it of (o.items || [])) out.push(`${Bag.nameOf(it.id)} x${it.count}`);
+	return out;
+}
+function drawTrade(W, H) {
+	const u = H / 480;
+	menuChrome(W, H, u, 'TRADE — ' + trade.them, trade.status || '', false);
+	sctx.textAlign = 'left';
+	const panel = (x, title, offer, accepted) => {
+		sctx.font = `bold ${11 * u}px monospace`;
+		sctx.fillStyle = accepted ? '#7CFC7C' : '#fff';
+		sctx.fillText(title + (accepted ? '  ✓' : ''), x, 70 * u);
+		sctx.font = `${9 * u}px monospace`;
+		const lines = offerLines(offer);
+		let y = 86 * u;
+		if (!lines.length) { sctx.fillStyle = '#888'; sctx.fillText('(nothing)', x, y); }
+		else for (const ln of lines.slice(0, 8)) { sctx.fillStyle = '#dfe3ee'; sctx.fillText(ln, x, y); y += 13 * u; }
+	};
+	panel(24 * u, 'YOUR OFFER', trade.mine, trade.myAccept);
+	panel(W / 2 + 12 * u, `${trade.them}'S OFFER`, trade.theirs, trade.theirAccept);
+	// category tabs + hint
+	sctx.font = `bold ${9 * u}px monospace`;
+	TRADE_CATS.forEach((c, i) => { sctx.fillStyle = i === trade.cat ? '#ffd25f' : '#8892a8'; sctx.fillText(c, (24 + i * 66) * u, 208 * u); });
+	sctx.fillStyle = '#8892a8'; sctx.font = `${7 * u}px monospace`;
+	sctx.fillText('< > category   up/down move   Z add / X remove', 24 * u, 222 * u);
+	// inventory + action rows
+	const rows = trade.rows, listTop = 236 * u, rowH = 19 * u;
+	const maxRows = Math.max(1, Math.floor((H - listTop - 10 * u) / rowH));
+	const start = Math.max(0, Math.min(trade.idx - (maxRows >> 1), Math.max(0, rows.length - maxRows)));
+	for (let vi = 0; vi < Math.min(maxRows, rows.length); vi++) {
+		const i = start + vi, r = rows[i]; if (!r) break;
+		const y = listTop + vi * rowH, sel = i === trade.idx, bx = 24 * u, bw = W - 48 * u;
+		if (sel) { sctx.fillStyle = 'rgba(255,210,95,0.22)'; sctx.fillRect(bx, y, bw, rowH - 3 * u); }
+		sctx.fillStyle = r.kind === 'cancel' ? '#ff8a8a' : r.kind === 'accept' ? '#7CFC7C' : '#fff';
+		sctx.font = `${9 * u}px monospace`;
+		let lab = r.label;
+		if (r.owned != null) lab += `   x${r.owned}` + (r.off ? `  → offering ${r.off}` : '');
+		else if (r.off) lab += '  (offered)';
+		sctx.fillText(lab, bx + 8 * u, y + 13 * u);
+		menuUi.push({ id: 'trade:' + i, x: bx, y, w: bw, h: rowH - 3 * u, label: '' });
+	}
 }
 
 function dexKey(k) {
@@ -942,6 +997,7 @@ function pressKey(k) {
 	if (evolution.blocking) { evolution.key(k); return; }
 	if (battle.blocking) { battle.key(k); return; }
 	if (pvp.blocking) { pvp.key(k); return; }
+	if (trade.open) { tradeKey(k); return; }
 	if (playerMenu.open) { playerMenuKey(k); return; }
 	if (deckSelect.open) { deckSelectKey(k); return; }
 	if (startMenu.open) { startKey(k); return; }
@@ -998,7 +1054,7 @@ function pressKey(k) {
 // any menu that consumes direction presses instead of walking
 const menuBlocking = () => starterMenu.open || dialog.blocking || evolution.blocking || cutscene.blocking
 	|| battle.blocking || pvp.blocking || shopMenu.open || bagMenu.open || pcMenu.open || partyMenu.open || ferryMenu.open
-	|| startMenu.open || playerMenu.open || deckSelect.open || cardsMenu.open || friendsMenu.open || dexMenu.open || trainerCard.open || townMap.open
+	|| trade.open || trade.open || startMenu.open || playerMenu.open || deckSelect.open || cardsMenu.open || friendsMenu.open || dexMenu.open || trainerCard.open || townMap.open
 	|| daycareMenu.open || nameRater.open || moveShop.open || optionsMenu.open;
 
 addEventListener('keydown', e => {
@@ -1920,6 +1976,7 @@ function tick(now) {
 		else if (trainerCard.open) drawTrainerCard(SW, SH);
 		else if (starterMenu.open) drawStarterMenu(SW, SH);
 		else if (ferryMenu.open) drawFerryMenu(SW, SH);
+		else if (trade.open) drawTrade(SW, SH);
 		else if (playerMenu.open) drawPlayerMenu(SW, SH);
 		else if (deckSelect.open) drawDeckSelect(SW, SH);
 		else if (startMenu.open) drawStartMenu(SW, SH);
@@ -2632,6 +2689,7 @@ function menuTap(id) {
 	if (kind === 'pcp') { pcMenu.side = 0; pcMenu.idx = +a; pressKey('z'); return; }
 	if (kind === 'pcb') { pcMenu.side = 1; pcMenu.idx = +a; pressKey('z'); return; }
 	if (kind === 'start') { startMenu.idx = +a; pressKey('z'); return; }
+	if (kind === 'trade') { trade.idx = +a; pressKey('z'); return; }
 	if (kind === 'player') { playerMenu.idx = +a; pressKey('z'); return; }
 	if (kind === 'deck') { deckSelect.idx = +a; pressKey('z'); return; }
 	if (kind === 'cards') { cardsMenu.idx = +a; pressKey('z'); return; }
@@ -2718,10 +2776,158 @@ async function sendCardChallenge(f) {
 		dialog.open(`Card battle challenge sent to ${f.username}!\n\nWaiting for them to accept…`);
 	});
 }
-// Phase 4 replaces this with the full RuneScape-style trade window
+// ---- trade: request → the other player accepts → both offer/lock/confirm ----
 async function startTrade(f) {
-	dialog.open(`Trade with ${f.username} — coming soon.`);
+	try { await MP.call('challenge', { to: f.username, battleType: 'trade' }); }
+	catch (e) { dialog.open('Could not send a trade request.'); return; }
+	dialog.open(`Trade request sent to ${f.username}!\n\nWaiting for them to accept…`);
+	const t0 = Date.now();
+	const wait = setInterval(async () => {
+		if (Date.now() - t0 > 60000 || trade.open) { clearInterval(wait); return; }
+		try {
+			const r = await MP.call('trade-mine');
+			if (r && r.tradeId) { clearInterval(wait); openTradeWindow(r.tradeId, 'a', f.username); }
+		} catch (e) {}
+	}, 1200);
 }
+function openTradeWindow(id, role, them) {
+	Object.assign(trade, {
+		open: true, id, role, them: them || 'PLAYER', mine: emptyOffer(), theirs: emptyOffer(),
+		myAccept: false, theirAccept: false, done: false, applied: false, cat: 0, idx: 0,
+		status: 'Add items with Z. Press ACCEPT when ready.',
+	});
+	rebuildTradeRows();
+	if (trade.poll) clearInterval(trade.poll);
+	trade.poll = setInterval(tradePoll, 800);
+}
+function closeTrade() {
+	if (trade.poll) clearInterval(trade.poll);
+	trade.poll = null; trade.open = false; trade.id = null;
+}
+async function cancelTrade() {
+	const id = trade.id;
+	closeTrade();
+	if (id) { try { await MP.call('trade-cancel', { id }); } catch (e) {} }
+}
+async function toggleAccept() {
+	trade.myAccept = !trade.myAccept;
+	try { const r = await MP.call('trade-lock', { id: trade.id, accepted: trade.myAccept }); if (r.trade) ingestTrade(r.trade); }
+	catch (e) {}
+}
+// build the browsable inventory rows for the current category, plus offer/accept/cancel rows
+function rebuildTradeRows() {
+	const cat = TRADE_CATS[trade.cat], rows = [];
+	if (cat === 'CARDS') {
+		const coll = (MP.cachedState() || {}).collection || {};
+		for (const [id, n] of Object.entries(coll)) {
+			const off = trade.mine.cards[id] || 0;
+			if (n > 0 || off) rows.push({ kind: 'card', id, label: prettyId(id), owned: n, off });
+		}
+		rows.sort((a, b) => a.label.localeCompare(b.label));
+	} else if (cat === 'PACKS') {
+		const st = MP.cachedState() || {};
+		rows.push({ kind: 'pack', id: 'pack', label: 'Card Pack', owned: st.packs || 0, off: trade.mine.packs });
+	} else if (cat === 'POKeMON') {
+		party.forEach((m, i) => rows.push({ kind: 'mon', src: 'party:' + i, label: `${m.name} Lv.${m.level}`, mon: m,
+			off: trade.mine.pokemon.some(o => o._src === 'party:' + i) ? 1 : 0 }));
+		getBox().forEach((m, i) => rows.push({ kind: 'mon', src: 'box:' + i, label: `${m.name} Lv.${m.level} (box)`, mon: m,
+			off: trade.mine.pokemon.some(o => o._src === 'box:' + i) ? 1 : 0 }));
+	} else if (cat === 'ITEMS') {
+		const bag = Bag.getBag();
+		for (const [id, n] of Object.entries(bag)) {
+			const off = (trade.mine.items.find(it => it.id === id) || {}).count || 0;
+			if (n > 0 || off) rows.push({ kind: 'item', id, label: Bag.nameOf(id), owned: n, off });
+		}
+	}
+	rows.push({ kind: 'accept', label: trade.myAccept ? '✓ ACCEPTED (Z to unaccept)' : 'ACCEPT OFFER' });
+	rows.push({ kind: 'cancel', label: 'CANCEL TRADE' });
+	trade.rows = rows;
+	if (trade.idx >= rows.length) trade.idx = Math.max(0, rows.length - 1);
+}
+function offerAdd(r) {
+	if (r.kind === 'card') { if ((trade.mine.cards[r.id] || 0) < r.owned) trade.mine.cards[r.id] = (trade.mine.cards[r.id] || 0) + 1; }
+	else if (r.kind === 'pack') { if (trade.mine.packs < r.owned) trade.mine.packs++; }
+	else if (r.kind === 'mon') {
+		if (r.off) trade.mine.pokemon = trade.mine.pokemon.filter(o => o._src !== r.src);
+		else { const snap = JSON.parse(JSON.stringify(r.mon)); snap._src = r.src; trade.mine.pokemon.push(snap); }
+	} else if (r.kind === 'item') {
+		const it = trade.mine.items.find(i => i.id === r.id);
+		if ((it?.count || 0) < r.owned) { if (it) it.count++; else trade.mine.items.push({ id: r.id, count: 1 }); }
+	} else return;
+	afterOfferChange();
+}
+function offerRemove(r) {
+	if (r.kind === 'card' && trade.mine.cards[r.id]) { if (--trade.mine.cards[r.id] <= 0) delete trade.mine.cards[r.id]; }
+	else if (r.kind === 'pack' && trade.mine.packs > 0) trade.mine.packs--;
+	else if (r.kind === 'mon' && r.off) trade.mine.pokemon = trade.mine.pokemon.filter(o => o._src !== r.src);
+	else if (r.kind === 'item') { const it = trade.mine.items.find(i => i.id === r.id); if (it && --it.count <= 0) trade.mine.items = trade.mine.items.filter(i => i.id !== r.id); }
+	else return;
+	afterOfferChange();
+}
+function afterOfferChange() {
+	trade.myAccept = false; trade.theirAccept = false; // any change unlocks both
+	rebuildTradeRows();
+	MP.call('trade-offer', { id: trade.id, offer: trade.mine }).then(r => r.trade && ingestTrade(r.trade)).catch(() => {});
+}
+async function tradePoll() {
+	if (!trade.open || !trade.id) return;
+	try {
+		const r = await MP.call('trade-poll', { id: trade.id });
+		if (r.gone) { trade.status = 'Trade ended.'; setTimeout(closeTrade, 900); return; }
+		if (r.trade) ingestTrade(r.trade);
+	} catch (e) {}
+}
+function ingestTrade(t) {
+	if (!t) return;
+	trade.theirs = trade.role === 'a' ? t.offerB : t.offerA;
+	trade.myAccept = trade.role === 'a' ? t.acceptA : t.acceptB;
+	trade.theirAccept = trade.role === 'a' ? t.acceptB : t.acceptA;
+	if (t.cancelled) { trade.status = 'The other player cancelled.'; setTimeout(closeTrade, 1200); return; }
+	if (t.done && !trade.applied) { trade.applied = true; trade.done = true; applyTradeSwap(t); trade.status = 'Trade complete!'; if (trade.poll) { clearInterval(trade.poll); trade.poll = null; } }
+	else if (!t.done) trade.status = trade.theirAccept ? 'They accepted — you accept to seal it.' : (trade.myAccept ? 'Waiting for them to accept…' : 'Add items, then ACCEPT.');
+	rebuildTradeRows();
+}
+// apply my half of a completed swap: cards/packs were moved server-side (just
+// refresh), Pokemon and bag items are local so I remove what I gave + add what I got
+function applyTradeSwap(t) {
+	const gave = trade.role === 'a' ? t.offerA : t.offerB;
+	const got = trade.role === 'a' ? t.offerB : t.offerA;
+	const partyRm = new Set(), boxRm = new Set();
+	for (const m of (gave.pokemon || [])) {
+		const [z, i] = String(m._src || '').split(':');
+		if (z === 'party') partyRm.add(+i); else if (z === 'box') boxRm.add(+i);
+	}
+	for (let i = party.length - 1; i >= 0; i--) if (partyRm.has(i)) party.splice(i, 1);
+	if (boxRm.size) setBox(getBox().filter((_, i) => !boxRm.has(i)));
+	if (got.pokemon && got.pokemon.length) {
+		const nb = getBox();
+		for (const m of got.pokemon) { const c = { ...m }; delete c._src; nb.push(c); }
+		setBox(nb);
+	}
+	for (const it of (gave.items || [])) for (let n = 0; n < (it.count | 0); n++) Bag.consume(it.id);
+	for (const it of (got.items || [])) Bag.addItem(it.id, it.count | 0);
+	saveParty(party);
+	MP.freshState().catch(() => {}); // pull the updated card collection / packs
+}
+function tradeKey(k) {
+	if (trade.done) { if (k === 'z' || k === 'x' || k === 'Enter' || k === 'Escape') closeTrade(); return; }
+	const rows = trade.rows; if (!rows.length) return;
+	if (k === 'ArrowUp') trade.idx = (trade.idx + rows.length - 1) % rows.length;
+	else if (k === 'ArrowDown') trade.idx = (trade.idx + 1) % rows.length;
+	else if (k === 'ArrowLeft') { trade.cat = (trade.cat + TRADE_CATS.length - 1) % TRADE_CATS.length; trade.idx = 0; rebuildTradeRows(); }
+	else if (k === 'ArrowRight') { trade.cat = (trade.cat + 1) % TRADE_CATS.length; trade.idx = 0; rebuildTradeRows(); }
+	else if (k === 'z' || k === 'Enter') {
+		const r = rows[trade.idx]; if (!r) return;
+		if (r.kind === 'accept') toggleAccept();
+		else if (r.kind === 'cancel') cancelTrade();
+		else offerAdd(r);
+	} else if (k === 'x' || k === 'Escape') {
+		const r = rows[trade.idx];
+		if (r && (r.kind === 'card' || r.kind === 'pack' || r.kind === 'mon' || r.kind === 'item')) offerRemove(r);
+		else cancelTrade();
+	}
+}
+const prettyId = id => String(id).replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
 async function pollChallenges() {
 	if (!MP_ON || pvp.blocking) return;
 	// did a friend accept our challenge?
@@ -2745,6 +2951,16 @@ async function pollChallenges() {
 }
 let incomingChallenge = null;
 function showIncoming(ch) {
+	if (ch.type === 'trade') {
+		dialog.open(`${ch.from} wants to TRADE!  Z=Accept  X=Decline`, async (declined) => {
+			const c = incomingChallenge; incomingChallenge = null;
+			if (!c) return;
+			if (declined === 'x') { await MP.call('decline-challenge', { from: c.from }); return; }
+			try { const r = await MP.call('trade-accept', { from: c.from }); if (r && r.tradeId) openTradeWindow(r.tradeId, 'b', c.from); else dialog.open((r && r.error) || 'Trade could not start.'); }
+			catch (e) { dialog.open('Trade could not start.'); }
+		});
+		return;
+	}
 	if (ch.type === 'card') {
 		dialog.open(`${ch.from} challenges you to a CARD battle!  Z=Accept  X=Decline`, async (declined) => {
 			const c = incomingChallenge; incomingChallenge = null;

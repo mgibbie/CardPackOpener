@@ -455,6 +455,113 @@ export default async function handler(req) {
 		return json({ matchId, match });
 	}
 
+	// ---------- player-to-player trade (RuneScape-style offer / lock / confirm) ----------
+	// Trade requests reuse the challenge inbox (type 'trade'). A live trade lives in
+	// trade:<id> = { a, b, offerA, offerB, acceptA, acceptB, done, cancelled }. Cards and
+	// packs are server-authoritative (validated + swapped here); Pokemon and bag items are
+	// client-side localStorage, so the final offers are echoed in the blob and each client
+	// applies its own half of that swap when it sees done:true.
+	const emptyOffer = () => ({ cards: {}, packs: 0, pokemon: [], items: [] });
+	const tradeSide = (t, u) => t.a === u ? 'A' : t.b === u ? 'B' : null;
+	const sanitizeOffer = (o) => ({
+		cards: (o && o.cards && typeof o.cards === 'object') ? o.cards : {},
+		packs: Math.max(0, (o && o.packs) | 0),
+		pokemon: Array.isArray(o && o.pokemon) ? o.pokemon.slice(0, 6) : [],
+		items: Array.isArray(o && o.items) ? o.items.slice(0, 20) : [],
+	});
+	const ownsOffer = (u, o) => {
+		if (!u) return false;
+		if ((o.packs | 0) > (u.packs || 0)) return false;
+		for (const [id, n] of Object.entries(o.cards || {})) if ((u.collection?.[id] || 0) < (n | 0)) return false;
+		return true; // Pokemon/items are client-authoritative (test realm)
+	};
+	const moveCards = (fromU, toU, cards) => {
+		for (const [id, n] of Object.entries(cards || {})) {
+			fromU.collection[id] = Math.max(0, (fromU.collection[id] || 0) - (n | 0));
+			if (!fromU.collection[id]) delete fromU.collection[id];
+			toU.collection[id] = (toU.collection[id] || 0) + (n | 0);
+		}
+	};
+
+	if (action === 'trade-accept') {
+		const from = String(body.from || '');
+		const list = (await store.get('challenge:' + username)) || [];
+		const ch = list.find(c => c.from === from && c.type === 'trade' && Date.now() - c.ts < CHALLENGE_MS);
+		if (!ch) return json({ error: 'that trade request expired' }, 404);
+		await store.setJSON('challenge:' + username, list.filter(c => !(c.from === from && c.type === 'trade')));
+		const tradeId = randCode() + randCode();
+		const trade = { id: tradeId, a: from, b: username, offerA: emptyOffer(), offerB: emptyOffer(),
+			acceptA: false, acceptB: false, done: false, cancelled: false, createdAt: Date.now(), lastActive: Date.now() };
+		await store.setJSON('trade:' + tradeId, trade);
+		await store.setJSON('tradeptr:' + from, { id: tradeId, ts: Date.now() });
+		await store.setJSON('tradeptr:' + username, { id: tradeId, ts: Date.now() });
+		return json({ tradeId, trade });
+	}
+
+	// the requester polls this to discover the trade the accepter just opened
+	if (action === 'trade-mine') {
+		const ptr = await store.get('tradeptr:' + username);
+		if (!ptr) return json({ tradeId: null });
+		const t = await store.get('trade:' + ptr.id);
+		if (!t || t.done || t.cancelled) { await store.delete('tradeptr:' + username); return json({ tradeId: null }); }
+		return json({ tradeId: ptr.id });
+	}
+
+	if (action === 'trade-poll') {
+		const t = await store.get('trade:' + String(body.id || ''));
+		if (!t) return json({ gone: true });
+		if (!tradeSide(t, username)) return json({ error: 'not your trade' }, 403);
+		t.lastActive = Date.now(); await store.setJSON('trade:' + t.id, t);
+		return json({ trade: t });
+	}
+
+	if (action === 'trade-offer') {
+		const t = await store.get('trade:' + String(body.id || ''));
+		if (!t || t.done || t.cancelled) return json({ error: 'trade closed', closed: true }, 409);
+		const side = tradeSide(t, username);
+		if (!side) return json({ error: 'not your trade' }, 403);
+		t['offer' + side] = sanitizeOffer(body.offer);
+		t.acceptA = false; t.acceptB = false; // any change unlocks both, RuneScape-style
+		t.lastActive = Date.now();
+		await store.setJSON('trade:' + t.id, t);
+		return json({ trade: t });
+	}
+
+	if (action === 'trade-lock') {
+		const t = await store.get('trade:' + String(body.id || ''));
+		if (!t || t.done || t.cancelled) return json({ error: 'trade closed', closed: true }, 409);
+		const side = tradeSide(t, username);
+		if (!side) return json({ error: 'not your trade' }, 403);
+		t['accept' + side] = body.accepted !== false;
+		if (t.acceptA && t.acceptB) {
+			const ua = await store.get(t.a), ub = await store.get(t.b);
+			if (!ownsOffer(ua, t.offerA) || !ownsOffer(ub, t.offerB)) {
+				t.acceptA = false; t.acceptB = false; t.lastActive = Date.now();
+				await store.setJSON('trade:' + t.id, t);
+				return json({ trade: t, error: 'an offer is no longer valid' });
+			}
+			moveCards(ua, ub, t.offerA.cards); moveCards(ub, ua, t.offerB.cards);
+			ua.packs = (ua.packs || 0) - (t.offerA.packs | 0) + (t.offerB.packs | 0);
+			ub.packs = (ub.packs || 0) - (t.offerB.packs | 0) + (t.offerA.packs | 0);
+			await store.setJSON(t.a, ua); await store.setJSON(t.b, ub);
+			t.done = true;
+			await store.delete('tradeptr:' + t.a); await store.delete('tradeptr:' + t.b);
+		}
+		t.lastActive = Date.now();
+		await store.setJSON('trade:' + t.id, t);
+		return json({ trade: t });
+	}
+
+	if (action === 'trade-cancel') {
+		const t = await store.get('trade:' + String(body.id || ''));
+		if (t && tradeSide(t, username) && !t.done) {
+			t.cancelled = true; t.lastActive = Date.now();
+			await store.setJSON('trade:' + t.id, t);
+			await store.delete('tradeptr:' + t.a); await store.delete('tradeptr:' + t.b);
+		}
+		return json({ ok: true });
+	}
+
 	// on boot, a client asks whether it has a battle to rejoin. Lazily clears a
 	// pointer to a match that's finished or gone.
 	if (action === 'my-current-match') {
