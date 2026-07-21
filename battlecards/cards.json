@@ -12327,30 +12327,6 @@
       ]
     },
     {
-      "id": "colaque_s_shell",
-      "name": "Colaque's Shell",
-      "cardClass": "druid",
-      "cost": 5,
-      "rarity": "legendary",
-      "set": "paper",
-      "description": "Appendage. Taunt. Deathrattle: Gain 8 Armor.",
-      "type": "creature",
-      "attack": 0,
-      "health": 8,
-      "tribe": "Beast God",
-      "keywords": [
-        "taunt",
-        "deathrattle"
-      ],
-      "deathrattle": [
-        {
-          "type": "armor",
-          "value": 8
-        }
-      ],
-      "colossalOf": "Colaque"
-    },
-    {
       "id": "emerald_grove_tiger",
       "name": "Emerald Grove Tiger",
       "cardClass": "naturalist",
