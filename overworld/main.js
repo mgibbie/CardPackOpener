@@ -127,6 +127,7 @@ const KEYMAP = {
 	w: 'up', s: 'down', a: 'left', d: 'right',
 };
 const heldKeys = [];
+let wasInBattle = false; // when a battle ends, flush held keys so we don't take a stray step out of it
 let runHeld = false; // Shift on keyboard, holding B on touch
 // while typing in the chat box, keys belong to the input, not the game
 const typingInChat = () => document.activeElement && document.activeElement.tagName === 'INPUT';
@@ -1802,6 +1803,11 @@ function tick(now) {
 	evolution.update(dt);
 	dialog.update(dt);
 	cutscene.update(dt);
+	// the moment combat ends, drop any key still held from before it — otherwise
+	// the player takes one stray step straight out of the battle
+	const inBattleNow = battle.blocking || pvp.blocking;
+	if (wasInBattle && !inBattleNow) heldKeys.length = 0;
+	wasInBattle = inBattleNow;
 	if (!battle.blocking && !pvp.blocking && !dialog.blocking && !evolution.blocking && !starterMenu.open && !cutscene.blocking) {
 		trainers.update(dt);
 		player.run = runHeld || Settings.get('autoRun');
