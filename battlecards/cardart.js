@@ -744,13 +744,19 @@ export function drawCardFace(card, opts = {}) {
 		ctx.strokeStyle = metal;
 		ctx.lineWidth = 2;
 		ctx.stroke();
-		ctx.font = 'italic 25px Georgia';
 		ctx.textAlign = 'center';
 		ctx.fillStyle = '#d9d2ea';
 		// a spell's tribe is its school — label it as such ("Frost Spell")
 		const isSpell = card.type === 'sorcery' || card.type === 'instant' || card.type === 'secret' || card.type === 'trap';
 		const SCHOOLS = ['Arcane', 'Fel', 'Fire', 'Frost', 'Holy', 'Nature', 'Shadow', 'Song'];
 		const plateLabel = isSpell && SCHOOLS.includes(card.tribe) ? `${card.tribe} Spell` : card.tribe;
+		// shrink the font so a long tribe (e.g. "Elemental Golem Explorer") stays
+		// inside its plate instead of overrunning into the attack/health plates
+		let tfs = 25;
+		ctx.font = `italic ${tfs}px Georgia`;
+		const maxLabelW = 164; // plate is 180 wide; leave a little padding
+		const labelW = ctx.measureText(plateLabel).width;
+		if (labelW > maxLabelW) ctx.font = `italic ${Math.max(13, tfs * maxLabelW / labelW)}px Georgia`;
 		ctx.fillText(plateLabel, W / 2, H - 49);
 		ctx.textAlign = 'left';
 	}
