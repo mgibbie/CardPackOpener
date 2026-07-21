@@ -548,10 +548,10 @@ function drawPlayerMenu(W, H) {
 // onPick({ classId, count, deck }). Auto-picks when there's only one option.
 async function openDeckSelect(prompt, onPick) {
 	let st; try { st = await MP.freshState(); } catch (e) { st = MP.cachedState(); }
-	const decks = Object.entries((st && st.decks) || {})
-		.filter(([id, list]) => (list || []).length >= 40)
-		.map(([id, list]) => ({ classId: id, count: list.length, deck: list }));
-	if (!decks.length) { dialog.open('You need a full 40-card class deck.\n\nBuild one in CARDS → DECK BUILDER first.'); return; }
+	const decks = ((st && st.decks) || [])
+		.filter(d => d && Array.isArray(d.cards) && d.cards.length >= 40)
+		.map(d => ({ classId: d.classId, count: d.cards.length, deck: d.cards, name: d.name, id: d.id }));
+	if (!decks.length) { dialog.open('You have no decks :('); return; }
 	if (decks.length === 1) { onPick(decks[0]); return; }
 	deckSelect.open = true; deckSelect.idx = 0; deckSelect.decks = decks;
 	deckSelect.onPick = onPick; deckSelect.prompt = prompt || 'Choose your deck';
@@ -568,7 +568,7 @@ function deckSelectKey(k) {
 	}
 }
 function drawDeckSelect(W, H) {
-	const labels = deckSelect.decks.map(d => `${d.classId.replace(/_/g, ' ').toUpperCase()}  (${d.count})`);
+	const labels = deckSelect.decks.map(d => `${(d.name || d.classId).toUpperCase()}  ·  ${d.classId.replace(/_/g, ' ')} (${d.count})`);
 	drawVertical(W, H, H / 480, 'SELECT DECK', deckSelect.prompt, labels, deckSelect.idx, 'deck');
 }
 function offerLines(o) {
@@ -2735,11 +2735,11 @@ async function cardParty() {
 	try { st = await MP.freshState(); } catch (e) { st = MP.cachedState(); }
 	if (!st || !st.decks) return null;
 	const saved = localStorage.getItem('magepunk_class_v1') || '';
-	const clsId = (st.decks[saved] && st.decks[saved].length >= 40) ? saved
-		: Object.keys(st.decks).find(k => (st.decks[k] || []).length >= 40);
-	const deck = clsId && st.decks[clsId];
-	if (!deck || deck.length < 40) return null;
-	return { deck, classId: clsId };
+	const list = Array.isArray(st.decks) ? st.decks : [];
+	const valid = list.filter(d => d && Array.isArray(d.cards) && d.cards.length >= 40);
+	if (!valid.length) return null;
+	const pick = valid.find(d => d.classId === saved) || valid[0];
+	return { deck: pick.cards, classId: pick.classId };
 }
 const goCardDuel = id => { location.href = '/battlecards/?cardpvp=' + encodeURIComponent(id) + '&mp=1'; };
 

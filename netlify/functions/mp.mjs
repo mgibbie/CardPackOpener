@@ -22,7 +22,19 @@ const PACK_SIZE = 5;
 const DECK_SIZE = 40;               // PvP constructed decks are 40 cards (dungeon decks are separate)
 const MAX_COPIES = 2;
 const MAX_LEGENDARY_COPIES = 1;
+const MAX_DECK_SLOTS = 40;          // each player can save up to 40 PvP decks
 const REWARD_COOLDOWN_MS = 60_000;  // one run reward a minute tops
+
+// A ready-made 40-card mage deck so a fresh account can duel without building.
+// Deletable like any slot — an account with zero decks can't start a card battle.
+const MAGE_STARTER = ['arcane_missiles', 'arcane_missiles', 'mirror_image', 'mirror_image', 'arcane_explosion', 'arcane_explosion', 'frostbolt', 'frostbolt', 'arcane_intellect', 'arcane_intellect', 'fireball', 'fireball', 'flamestrike', 'flamestrike', 'babbling_book', 'babbling_book', 'glacier_racer', 'glacier_racer', 'lab_partner', 'lab_partner', 'mana_wyrm', 'mana_wyrm', 'time_twisted_seer', 'time_twisted_seer', 'wand_thief', 'wand_thief', 'winterspring_whelp', 'winterspring_whelp', 'aqua_archivist', 'aqua_archivist', 'arcanologist', 'arcanologist', 'chill_o_matic', 'chill_o_matic', 'game_master', 'game_master', 'imprisoned_phoenix', 'imprisoned_phoenix', 'magic_dart_frog', 'magic_dart_frog'];
+const newDeckId = () => 'd_' + randomBytes(4).toString('hex');
+const mageStarterSlot = () => ({ id: newDeckId(), name: 'Mage Starter', classId: 'mage', cards: [...MAGE_STARTER] });
+const grantCards = (collection, ids) => {
+	const counts = {};
+	for (const id of ids) counts[id] = (counts[id] || 0) + 1;
+	for (const [id, n] of Object.entries(counts)) collection[id] = Math.max(collection[id] || 0, n);
+};
 
 const scrypt = (pw, salt) => new Promise((res, rej) =>
 	scryptCb(pw, salt, 32, (e, k) => e ? rej(e) : res(k)));
@@ -79,21 +91,31 @@ function startingCollection() {
 	return col;
 }
 
-// backfill any starter deck for a class added after the account was created
-// (plus the cards it needs), so a new class shows up for existing players too
-async function ensureStarterDecks(store, username, user) {
-	if (!user.decks) user.decks = {};
-	let changed = false;
-	for (const [cls, deck] of Object.entries(STARTER_DECKS)) {
-		if (Array.isArray(user.decks[cls])) continue;
-		user.decks[cls] = [...deck];
-		const counts = {};
-		for (const id of deck) counts[id] = (counts[id] || 0) + 1;
-		for (const [id, n] of Object.entries(counts)) user.collection[id] = Math.max(user.collection[id] || 0, n);
-		changed = true;
+// Migrate the old per-class deck object to a list of up to 40 PvP deck slots
+// (one-time). Legacy 10-card starter decks aren't valid 40-card PvP decks and
+// are dropped; if that leaves you with none, you get a Mage Starter so you can
+// duel right away. Runs once per account (guarded by decksMigrated) — after
+// that, deleting your last deck leaves you with none, by design.
+async function normalizeDecks(store, username, user) {
+	if (user.decksMigrated && Array.isArray(user.decks)) return;
+	let slots = [];
+	if (Array.isArray(user.decks)) {
+		slots = user.decks.filter(d => d && Array.isArray(d.cards));
+	} else if (user.decks && typeof user.decks === 'object') {
+		for (const [classId, cards] of Object.entries(user.decks)) {
+			if (Array.isArray(cards) && cards.length === DECK_SIZE) {
+				slots.push({ id: newDeckId(), name: classId, classId, cards: cards.map(String) });
+			}
+		}
 	}
-	if (changed) await store.setJSON(username, user);
-	return changed;
+	if (!slots.length) {
+		const slot = mageStarterSlot();
+		slots.push(slot);
+		grantCards(user.collection, slot.cards);
+	}
+	user.decks = slots.slice(0, MAX_DECK_SLOTS);
+	user.decksMigrated = true;
+	await store.setJSON(username, user);
 }
 
 const WEIGHTS = [['common', 60], ['uncommon', 25], ['rare', 10], ['epic', 4], ['legendary', 1]];
@@ -208,10 +230,14 @@ export default async function handler(req) {
 			code = randCode();
 			if (!(await store.get('code:' + code))) break;
 		}
+		const collection = startingCollection();
+		const starter = mageStarterSlot();
+		grantCards(collection, starter.cards);
 		const user = {
 			salt, hash, created: Date.now(),
-			collection: startingCollection(),
-			decks: Object.fromEntries(Object.entries(STARTER_DECKS).map(([k, v]) => [k, [...v]])),
+			collection,
+			decks: [starter],       // a ready 40-card mage deck; up to 40 slots
+			decksMigrated: true,
 			packs: 1, // a welcome pack to try the opener
 			stats: { runs: 0, wins: 0, packsOpened: 0, lastReward: 0 },
 			friendCode: code,
@@ -238,7 +264,7 @@ export default async function handler(req) {
 	const user = await store.get(username);
 	if (!user) return json({ error: 'account gone' }, 401);
 	await ensureFriendFields(store, username, user); // backfill code/friends
-	await ensureStarterDecks(store, username, user); // backfill new-class starter decks (e.g. Centurion)
+	await normalizeDecks(store, username, user); // migrate to 40 PvP deck slots + seed a Mage Starter
 
 	if (action === 'state') return json({ state: publicState(user, username) });
 
@@ -776,18 +802,26 @@ export default async function handler(req) {
 
 	if (action === 'save-deck') {
 		const classId = String(body.classId || '');
-		const deck = body.deck;
-		const err = deckError(classId, deck, effectiveCollection(user));
+		const cards = body.deck || body.cards;
+		const name = (String(body.name || '').trim() || classId || 'Deck').slice(0, 40);
+		const err = deckError(classId, cards, effectiveCollection(user));
 		if (err) return json({ error: err }, 400);
-		user.decks[classId] = deck.map(String);
+		if (!Array.isArray(user.decks)) user.decks = [];
+		const id = String(body.id || '');
+		const slot = id && user.decks.find(d => d.id === id);
+		if (slot) {
+			slot.name = name; slot.classId = classId; slot.cards = cards.map(String);
+		} else {
+			if (user.decks.length >= MAX_DECK_SLOTS) return json({ error: `all ${MAX_DECK_SLOTS} deck slots are full — delete one first` }, 400);
+			user.decks.push({ id: newDeckId(), name, classId, cards: cards.map(String) });
+		}
 		await store.setJSON(username, user);
 		return json({ state: publicState(user, username) });
 	}
 
-	if (action === 'reset-deck') {
-		const classId = String(body.classId || '');
-		if (!STARTER_DECKS[classId]) return json({ error: 'unknown class' }, 400);
-		user.decks[classId] = [...STARTER_DECKS[classId]];
+	if (action === 'delete-deck') {
+		const id = String(body.id || '');
+		if (Array.isArray(user.decks)) user.decks = user.decks.filter(d => d.id !== id);
 		await store.setJSON(username, user);
 		return json({ state: publicState(user, username) });
 	}

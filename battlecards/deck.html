@@ -29,6 +29,19 @@
 		.r-epic { border-left: 4px solid #9c27b0; }
 		.r-legendary { border-left: 4px solid #ff9800; }
 
+		#slot-list { max-height: 150px; overflow-y: auto; padding: 0 12px; }
+		.slot-row {
+			display: flex; justify-content: space-between; align-items: center; gap: 6px;
+			padding: 6px 10px; margin-bottom: 4px; background: #1c1430; border: 1px solid #3a3055;
+			border-radius: 6px; cursor: pointer; font-size: 12.5px;
+		}
+		.slot-row:hover { border-color: #8f6fff; }
+		.slot-row.active { border-color: #57e389; background: #1a2a20; }
+		.slot-row .s-name { font-weight: 600; }
+		.slot-row .s-meta { color: #9b93b3; font-size: 11px; }
+		#new-deck { margin: 6px 12px 0; padding: 7px; font-size: 13px; background: #241b38; color: #c9b8ff;
+			border: 1px dashed #4a3f6b; border-radius: 8px; cursor: pointer; width: calc(100% - 24px); }
+		#new-deck:hover { border-color: #8f6fff; }
 		#deck { background: #131022; border-left: 1px solid #2a2340; display: flex; flex-direction: column; }
 		#deck-list { overflow-y: auto; flex: 1; padding: 0 12px; }
 		.deck-row {
@@ -63,11 +76,17 @@
 			<div id="grid"></div>
 		</div>
 		<div id="deck">
-			<h2>DECK — click to remove</h2>
+			<h2>MY DECKS <span id="slot-count" style="color:#9b93b3;font-weight:400;font-size:12px"></span></h2>
+			<div id="slot-list"></div>
+			<button id="new-deck">＋ New Deck</button>
+			<h2 style="margin-top:14px">DECK — click a card to remove</h2>
+			<input id="deck-name" placeholder="Deck name" maxlength="40"
+				style="margin:0 12px 6px;width:calc(100% - 24px);box-sizing:border-box;background:#241b38;color:#e8e2f4;border:1px solid #4a3f6b;border-radius:6px;padding:6px 8px;font-size:13px">
 			<div id="deck-list"></div>
 			<div id="deck-footer">
 				<div id="deck-count">0 / 40</div>
 				<button id="save">Save Deck</button>
+				<button id="delete-deck" style="width:100%;margin-top:6px;padding:8px;font-size:13px;background:#3a2540;color:#ffa9a9;border:1px solid #5a3550;border-radius:8px;cursor:pointer;display:none">Delete This Deck</button>
 				<div id="status"></div>
 			</div>
 		</div>

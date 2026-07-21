@@ -1,27 +1,34 @@
-// deck.js — deck builder: collection grid -> 30-card deck, with a 3D preview.
+// deck.js — deck builder: pick a class, build a 40-card deck from your
+// collection, save it into one of up to 40 deck slots. Class is the FIRST
+// choice; the collection then filters to neutral + that class. In the test
+// realm slots live on the account (server-validated); otherwise localStorage.
 import * as THREE from 'three';
 import { CARD_W, CARD_H, CARD_D, makeFaceTexture, makeBackTexture } from './cardart.js';
 import * as Col from './collection.js';
 import * as MPX from './mpmode.js';
-import { STARTER_DECKS } from './dungeon.js';
 
-// The deck builder makes a 40-card constructed deck for PvP. You choose a class
-// FIRST, then the collection filters to neutral + that class's cards. In the
-// test realm the deck is stored per-class on the account (server-validated);
-// dungeon runs are a separate mode and use their own stock decks.
 const MP_ON = MPX.mpMode();
-const SIZE = Col.DECK_SIZE;
-let mpState = null;
-let mpClass = ''; // no class chosen yet — class is the first choice
+const SIZE = Col.DECK_SIZE;         // 40
+const MAX_SLOTS = 40;
+const SLOTS_KEY = 'magepunk_decks_v1';
 
+let mpState = null;
 let cards = [], cardsById = {};
 let collection = {};
-let deck = [];
+
+let slots = [];        // [{ id, name, classId, cards }]
+let editingId = null;  // slot being edited, or null for a brand-new deck
+let curClass = '';     // the working deck's class (class-first)
+let deck = [];         // working card ids
 
 const grid = document.getElementById('grid');
 const deckList = document.getElementById('deck-list');
 const deckCount = document.getElementById('deck-count');
+const slotList = document.getElementById('slot-list');
+const slotCount = document.getElementById('slot-count');
+const nameInput = document.getElementById('deck-name');
 const status = document.getElementById('status');
+const delBtn = document.getElementById('delete-deck');
 
 // ---------- 3D preview ----------
 const pv = document.getElementById('preview-canvas');
@@ -36,9 +43,9 @@ const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(38, 1, 0.1, 50);
 camera.position.set(0, 0, 7.4);
 scene.add(new THREE.AmbientLight(0xffffff, 0.95));
-const key = new THREE.DirectionalLight(0xffffff, 1.5);
-key.position.set(3, 5, 6);
-scene.add(key);
+const keyLight = new THREE.DirectionalLight(0xffffff, 1.5);
+keyLight.position.set(3, 5, 6);
+scene.add(keyLight);
 const rim = new THREE.PointLight(0x8f6fff, 10, 25);
 rim.position.set(-4, -2, 4);
 scene.add(rim);
@@ -68,12 +75,27 @@ const clock = new THREE.Clock();
 	renderer.render(scene, camera);
 })();
 
+// ---------- slot storage ----------
+const newId = () => 'd_' + Math.random().toString(36).slice(2, 10);
+function loadSlots() {
+	if (MP_ON) return Array.isArray(mpState?.decks) ? mpState.decks : [];
+	// free-play: localStorage, migrating an old single-deck save into a slot
+	let arr = [];
+	try { const p = JSON.parse(localStorage.getItem(SLOTS_KEY)); if (Array.isArray(p)) arr = p; } catch (e) {}
+	if (!arr.length) {
+		const old = Col.loadDeck();
+		if (old.length) arr = [{ id: newId(), name: 'My Deck', classId: localStorage.getItem('magepunk_class_v1') || '', cards: old }];
+	}
+	return arr;
+}
+function persistFree() { localStorage.setItem(SLOTS_KEY, JSON.stringify(slots)); }
+
 // ---------- deck logic ----------
 const inDeck = id => deck.filter(d => d === id).length;
 const limitOf = id => cardsById[id]?.rarity === 'legendary' ? Col.MAX_LEGENDARY_COPIES : Col.MAX_COPIES;
 
 function addCard(id) {
-	if (deck.length >= SIZE) { flash('Deck is full.'); return; }
+	if (deck.length >= SIZE) { flash('Deck is full (40).'); return; }
 	if (inDeck(id) >= limitOf(id)) { flash(`Max ${limitOf(id)} cop${limitOf(id) > 1 ? 'ies' : 'y'} of that card.`); return; }
 	if (inDeck(id) >= (collection[id] || 0)) { flash("You don't own more copies."); return; }
 	deck.push(id);
@@ -89,13 +111,44 @@ function flash(msg) {
 	clearTimeout(flash._t);
 	flash._t = setTimeout(() => { if (status.textContent === msg) status.textContent = ''; }, 2500);
 }
+const myClass = () => curClass;
 
-function myClass() {
-	if (MP_ON) return mpClass;
-	return localStorage.getItem('magepunk_class_v1') || '';
+// switch to editing a saved slot
+function editSlot(slot) {
+	editingId = slot.id;
+	curClass = slot.classId || '';
+	deck = [...slot.cards].filter(id => cardsById[id]);
+	nameInput.value = slot.name || '';
+	document.getElementById('class-select').value = curClass;
+	render();
+}
+// start a fresh deck (class-first)
+function newDeck() {
+	editingId = null;
+	curClass = '';
+	deck = [];
+	nameInput.value = '';
+	document.getElementById('class-select').value = '';
+	render();
+}
+
+function renderSlots() {
+	slotList.innerHTML = '';
+	slotCount.textContent = `${slots.length} / ${MAX_SLOTS}`;
+	for (const s of slots) {
+		const valid = Array.isArray(s.cards) && s.cards.length === SIZE;
+		const div = document.createElement('div');
+		div.className = 'slot-row' + (s.id === editingId ? ' active' : '');
+		div.innerHTML = `<span class="s-name">${s.name || s.classId || 'Deck'}</span>`
+			+ `<span class="s-meta">${(s.classId || '?').replace(/_/g, ' ')} · ${(s.cards || []).length}/${SIZE}${valid ? '' : ' ⚠'}</span>`;
+		div.onclick = () => editSlot(s);
+		slotList.appendChild(div);
+	}
+	delBtn.style.display = editingId ? '' : 'none';
 }
 
 function render() {
+	renderSlots();
 	// class is the first choice: nothing to build until one is picked
 	grid.innerHTML = '';
 	if (!myClass()) {
@@ -143,21 +196,56 @@ function render() {
 	deckCount.style.color = deck.length === SIZE ? '#57e389' : '#e8e2f4';
 }
 
+// ---------- save / delete ----------
 document.getElementById('save').onclick = async () => {
 	if (!myClass()) { flash('Choose a class first.'); return; }
+	if (deck.length !== SIZE) { flash(`Decks must be exactly ${SIZE} cards (has ${deck.length}).`); return; }
+	const name = (nameInput.value || '').trim() || `${myClass()} deck`;
 	if (MP_ON) {
-		if (deck.length !== SIZE) { flash(`Decks must be exactly ${SIZE} cards (has ${deck.length}).`); return; }
-		const data = await MPX.call('save-deck', { classId: mpClass, deck });
+		const data = await MPX.call('save-deck', { id: editingId || undefined, name, classId: myClass(), deck });
 		if (data.error) { flash(data.error); return; }
 		mpState = data.state;
-		flash(`${mpClass} deck saved — take it into card battles against other players.`);
+		slots = loadSlots();
+		// re-select the saved slot (new one is the last matching name/class)
+		const match = slots.find(s => s.id === editingId) || slots[slots.length - 1];
+		if (match) editingId = match.id;
+		render();
+		flash('Deck saved — take it into card battles.');
 		return;
 	}
 	const err = Col.validateDeck(deck, cardsById, collection, myClass());
 	if (err) { flash(err); return; }
-	Col.saveDeck(deck);
-	flash('Deck saved! It will be used in your next match.');
+	if (editingId) {
+		const s = slots.find(x => x.id === editingId);
+		if (s) { s.name = name; s.classId = myClass(); s.cards = [...deck]; }
+	} else {
+		if (slots.length >= MAX_SLOTS) { flash(`All ${MAX_SLOTS} deck slots are full — delete one first.`); return; }
+		const s = { id: newId(), name, classId: myClass(), cards: [...deck] };
+		slots.push(s); editingId = s.id;
+	}
+	persistFree();
+	Col.saveDeck(deck); // keep the single-deck save in sync for legacy match code
+	localStorage.setItem('magepunk_class_v1', myClass());
+	render();
+	flash('Deck saved!');
 };
+
+delBtn.onclick = async () => {
+	if (!editingId) return;
+	if (MP_ON) {
+		const data = await MPX.call('delete-deck', { id: editingId });
+		if (data.error) { flash(data.error); return; }
+		mpState = data.state;
+		slots = loadSlots();
+	} else {
+		slots = slots.filter(s => s.id !== editingId);
+		persistFree();
+	}
+	newDeck();
+	flash('Deck deleted.');
+};
+
+document.getElementById('new-deck').onclick = () => newDeck();
 
 // auto-fill helper: double-click the count to fill remaining slots with owned cards
 deckCount.ondblclick = () => {
@@ -171,32 +259,21 @@ deckCount.ondblclick = () => {
 	render();
 };
 
-// class picker: the FIRST choice. Picking a class filters the collection to
-// neutral + that class and loads any deck already saved for it. Switching class
-// prunes off-class cards from the working deck (neutrals + new class survive).
+// ---------- class picker: the FIRST choice ----------
 fetch('classes.json').then(r => r.json()).then(({ classes }) => {
 	const sel = document.getElementById('class-select');
 	sel.innerHTML = '<option value="">— choose class —</option>';
-	// PvP decks can be any class; the test realm exposes the classes with a card pool
-	const list = MP_ON ? classes.filter(c => STARTER_DECKS[c.id]) : classes;
-	for (const c of list) {
+	for (const c of classes) {
 		const opt = document.createElement('option');
 		opt.value = c.id;
 		opt.textContent = c.name;
 		sel.appendChild(opt);
 	}
-	sel.value = myClass();
+	sel.value = curClass;
 	sel.addEventListener('change', ev => {
-		const c = ev.target.value;
-		if (MP_ON) {
-			mpClass = c;
-			// load the saved PvP deck for this class (dropping anything now illegal)
-			deck = c ? [...(mpState?.decks?.[c] || [])].filter(id => cardsById[id] && Col.fitsClass(cardsById[id], c)) : [];
-		} else {
-			localStorage.setItem('magepunk_class_v1', c);
-			// keep the working deck but prune cards that don't fit the new class
-			deck = c ? deck.filter(id => Col.fitsClass(cardsById[id], c)) : [];
-		}
+		curClass = ev.target.value;
+		// keep the working deck but prune cards that no longer fit the class
+		deck = curClass ? deck.filter(id => Col.fitsClass(cardsById[id], curClass)) : [];
 		render();
 	});
 }).catch(() => {});
@@ -208,16 +285,14 @@ fetch('cards.json').then(r => r.json()).then(async data => {
 	if (MP_ON) {
 		mpState = await MPX.freshState();
 		collection = mpState?.collection || {};
-		// class-first: start with no class picked and an empty working deck
-		deck = [];
 	} else {
 		collection = Col.getCollection(cards);
-		// class-first: load the saved deck only if a class is already chosen
-		deck = myClass() ? Col.loadDeck().filter(id => cardsById[id] && Col.fitsClass(cardsById[id], myClass())) : [];
 	}
+	slots = loadSlots();
+	newDeck(); // class-first: start on a fresh deck; pick a slot to edit one
 	sizePreview();
 	addEventListener('resize', sizePreview);
 	render();
 	if (cards.length) showPreview(cards[0]);
-	window.__deck = { get deck() { return deck; }, addCard, removeCard, Col };
+	window.__deck = { get deck() { return deck; }, get slots() { return slots; }, addCard, removeCard, editSlot, newDeck, Col };
 });
