@@ -164,6 +164,8 @@ function interact() {
 	if (player.moving || trainers.engaging) return;
 	const [dx, dy] = { down: [0, 1], up: [0, -1], left: [-1, 0], right: [1, 0] }[player.facing];
 	const fx = player.tx + dx, fy = player.ty + dy;
+	// another player standing on the faced tile — challenge them or offer a trade
+	if (MP_ON) { const who = ghostAt(fx, fy); if (who) { playerMenu.open = true; playerMenu.idx = 0; playerMenu.target = who; return; } }
 	// item balls / berry trees / hidden items (facing tile, then standing tile)
 	const found = items.interactAt(fx, fy) || items.interactAt(player.tx, player.ty);
 	if (found) { dialog.open(found); return; }
@@ -230,6 +232,16 @@ const DELETER_MAPS = new Set(['MAP_MOVE_DELETERS_HOUSE', 'MAP_LILYCOVE_CITY_MOVE
 
 const partyMenu = { open: false, idx: 0, summary: false, action: null };
 const startMenu = { open: false, idx: 0 };
+// walk-up-and-talk: press Z facing another player's sprite to challenge or trade
+const playerMenu = { open: false, idx: 0, target: null };
+const PLAYER_MENU_ITEMS = ['POKeMON BATTLE', 'CARD BATTLE', 'TRADE', 'CANCEL'];
+// the username of a friend-ghost currently standing on tile (tx,ty), or null
+function ghostAt(tx, ty) {
+	for (const [name, g] of ghosts) {
+		if (Math.round(g.px / META) === tx && Math.round(g.py / META) === ty) return name;
+	}
+	return null;
+}
 const cardsMenu = { open: false, idx: 0 };
 const dexMenu = { open: false, idx: 0, detail: false, list: null };
 const trainerCard = { open: false };
@@ -499,6 +511,28 @@ function startKey(k) {
 		else if (it === 'EXIT' && visiting) { leaveVisit(); }
 		// EXIT just closes
 	}
+}
+
+function playerMenuKey(k) {
+	const items = PLAYER_MENU_ITEMS;
+	if (k === 'ArrowUp') playerMenu.idx = (playerMenu.idx + items.length - 1) % items.length;
+	if (k === 'ArrowDown') playerMenu.idx = (playerMenu.idx + 1) % items.length;
+	if (k === 'x' || k === 'Escape') { playerMenu.open = false; return; }
+	if (k === 'z' || k === 'Enter') {
+		const it = items[playerMenu.idx];
+		const who = playerMenu.target;
+		playerMenu.open = false;
+		if (!who) return;
+		const f = friends.find(fr => fr.username === who) || { username: who };
+		if (it === 'POKeMON BATTLE') sendChallenge(f);
+		else if (it === 'CARD BATTLE') sendCardChallenge(f);
+		else if (it === 'TRADE') startTrade(f);
+		// CANCEL just closes
+	}
+}
+function drawPlayerMenu(W, H) {
+	drawVertical(W, H, H / 480, playerMenu.target || 'PLAYER',
+		'Challenge them or offer a trade.', PLAYER_MENU_ITEMS, playerMenu.idx, 'player');
 }
 
 function dexKey(k) {
@@ -879,6 +913,7 @@ function pressKey(k) {
 	if (evolution.blocking) { evolution.key(k); return; }
 	if (battle.blocking) { battle.key(k); return; }
 	if (pvp.blocking) { pvp.key(k); return; }
+	if (playerMenu.open) { playerMenuKey(k); return; }
 	if (startMenu.open) { startKey(k); return; }
 	if (cardsMenu.open) { cardsKey(k); return; }
 	if (friendsMenu.open) { friendsKey(k); return; }
@@ -933,7 +968,7 @@ function pressKey(k) {
 // any menu that consumes direction presses instead of walking
 const menuBlocking = () => starterMenu.open || dialog.blocking || evolution.blocking || cutscene.blocking
 	|| battle.blocking || pvp.blocking || shopMenu.open || bagMenu.open || pcMenu.open || partyMenu.open || ferryMenu.open
-	|| startMenu.open || cardsMenu.open || friendsMenu.open || dexMenu.open || trainerCard.open || townMap.open
+	|| startMenu.open || playerMenu.open || cardsMenu.open || friendsMenu.open || dexMenu.open || trainerCard.open || townMap.open
 	|| daycareMenu.open || nameRater.open || moveShop.open || optionsMenu.open;
 
 addEventListener('keydown', e => {
@@ -1855,6 +1890,7 @@ function tick(now) {
 		else if (trainerCard.open) drawTrainerCard(SW, SH);
 		else if (starterMenu.open) drawStarterMenu(SW, SH);
 		else if (ferryMenu.open) drawFerryMenu(SW, SH);
+		else if (playerMenu.open) drawPlayerMenu(SW, SH);
 		else if (startMenu.open) drawStartMenu(SW, SH);
 		else if (cardsMenu.open) drawCardsMenu(SW, SH);
 		else if (friendsMenu.open) drawFriendsMenu(SW, SH);
@@ -2565,6 +2601,7 @@ function menuTap(id) {
 	if (kind === 'pcp') { pcMenu.side = 0; pcMenu.idx = +a; pressKey('z'); return; }
 	if (kind === 'pcb') { pcMenu.side = 1; pcMenu.idx = +a; pressKey('z'); return; }
 	if (kind === 'start') { startMenu.idx = +a; pressKey('z'); return; }
+	if (kind === 'player') { playerMenu.idx = +a; pressKey('z'); return; }
 	if (kind === 'cards') { cardsMenu.idx = +a; pressKey('z'); return; }
 	if (kind === 'friend') { friendsMenu.idx = +a; pressKey('z'); return; }
 	if (kind === 'dex') { dexMenu.idx = +a; pressKey('z'); return; }
@@ -2584,7 +2621,7 @@ function menuTap(id) {
 	if (kind === 'msrel') { moveShop.idx = +a; pressKey('z'); return; }
 	if (kind === 'opt') { optionsMenu.idx = +a; Settings.cycle(OPTION_KEYS[+a], 1); return; }
 }
-const anyMenuOpen = () => partyMenu.open || shopMenu.open || bagMenu.open || pcMenu.open || starterMenu.open || ferryMenu.open || startMenu.open || cardsMenu.open || friendsMenu.open || dexMenu.open || trainerCard.open || townMap.open || daycareMenu.open || nameRater.open || moveShop.open || optionsMenu.open;
+const anyMenuOpen = () => partyMenu.open || shopMenu.open || bagMenu.open || pcMenu.open || starterMenu.open || ferryMenu.open || startMenu.open || playerMenu.open || cardsMenu.open || friendsMenu.open || dexMenu.open || trainerCard.open || townMap.open || daycareMenu.open || nameRater.open || moveShop.open || optionsMenu.open;
 
 // ---------- live PvP battles ----------
 // build a self-contained party snapshot the PvP engine can resolve without
@@ -2646,6 +2683,10 @@ async function sendCardChallenge(f) {
 	await MP.call('challenge', { to: f.username, battleType: 'card', party });
 	pendingChallengeTo = f.username;
 	dialog.open(`Card battle challenge sent to ${f.username}!\n\nWaiting for them to accept…`);
+}
+// Phase 4 replaces this with the full RuneScape-style trade window
+async function startTrade(f) {
+	dialog.open(`Trade with ${f.username} — coming soon.`);
 }
 async function pollChallenges() {
 	if (!MP_ON || pvp.blocking) return;
