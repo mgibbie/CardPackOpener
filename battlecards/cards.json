@@ -12347,7 +12347,8 @@
           "type": "armor",
           "value": 8
         }
-      ]
+      ],
+      "colossalOf": "Colaque"
     },
     {
       "id": "emerald_grove_tiger",
