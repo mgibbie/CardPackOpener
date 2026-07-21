@@ -56193,9 +56193,7 @@
           {
             "type": "summon",
             "count": 1,
-            "attack": 1,
-            "health": 1,
-            "name": "Gibberling"
+            "summonId": "gibberling"
           }
         ]
       },

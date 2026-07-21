@@ -2207,6 +2207,9 @@ function execEffects(state, pi, effects, target, source) {
 				? enemies[Math.floor(state.rng() * enemies.length)] : pi;
 			for (let i = 0; i < n; i++) {
 				const opt = e.options ? e.options[Math.floor(state.rng() * e.options.length)] : e;
+				// summonId: instantiate a real card def so it keeps its own ongoing —
+				// e.g. Gibberling's Spellburst summons another Gibberling that snowballs
+				if (opt.summonId && state.cardsById[opt.summonId]) { summon(state, owner, state.cardsById[opt.summonId]); continue; }
 				// randomKeywords: each token rolls its own bonus (Bucket of Soldiers)
 				const kws = [...(opt.keywords || [])];
 				if (e.randomKeywords?.length) {
