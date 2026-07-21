@@ -235,6 +235,8 @@ const startMenu = { open: false, idx: 0 };
 // walk-up-and-talk: press Z facing another player's sprite to challenge or trade
 const playerMenu = { open: false, idx: 0, target: null };
 const PLAYER_MENU_ITEMS = ['POKeMON BATTLE', 'CARD BATTLE', 'TRADE', 'CANCEL'];
+// deck-selection phase before a card duel: pick which class deck to bring
+const deckSelect = { open: false, idx: 0, decks: [], onPick: null, prompt: '' };
 // the username of a friend-ghost currently standing on tile (tx,ty), or null
 function ghostAt(tx, ty) {
 	for (const [name, g] of ghosts) {
@@ -533,6 +535,33 @@ function playerMenuKey(k) {
 function drawPlayerMenu(W, H) {
 	drawVertical(W, H, H / 480, playerMenu.target || 'PLAYER',
 		'Challenge them or offer a trade.', PLAYER_MENU_ITEMS, playerMenu.idx, 'player');
+}
+// the deck-selection phase: list the account's class decks (10+ cards) and call
+// onPick({ classId, count, deck }). Auto-picks when there's only one option.
+async function openDeckSelect(prompt, onPick) {
+	let st; try { st = await MP.freshState(); } catch (e) { st = MP.cachedState(); }
+	const decks = Object.entries((st && st.decks) || {})
+		.filter(([id, list]) => (list || []).length >= 10)
+		.map(([id, list]) => ({ classId: id, count: list.length, deck: list }));
+	if (!decks.length) { dialog.open('You need a full class deck (10+ cards).\n\nBuild one in CARDS → DECK BUILDER first.'); return; }
+	if (decks.length === 1) { onPick(decks[0]); return; }
+	deckSelect.open = true; deckSelect.idx = 0; deckSelect.decks = decks;
+	deckSelect.onPick = onPick; deckSelect.prompt = prompt || 'Choose your deck';
+}
+function deckSelectKey(k) {
+	const n = deckSelect.decks.length;
+	if (k === 'ArrowUp') deckSelect.idx = (deckSelect.idx + n - 1) % n;
+	if (k === 'ArrowDown') deckSelect.idx = (deckSelect.idx + 1) % n;
+	if (k === 'x' || k === 'Escape') { deckSelect.open = false; deckSelect.onPick = null; return; }
+	if (k === 'z' || k === 'Enter') {
+		const picked = deckSelect.decks[deckSelect.idx], cb = deckSelect.onPick;
+		deckSelect.open = false; deckSelect.onPick = null;
+		if (cb && picked) cb(picked);
+	}
+}
+function drawDeckSelect(W, H) {
+	const labels = deckSelect.decks.map(d => `${d.classId.replace(/_/g, ' ').toUpperCase()}  (${d.count})`);
+	drawVertical(W, H, H / 480, 'SELECT DECK', deckSelect.prompt, labels, deckSelect.idx, 'deck');
 }
 
 function dexKey(k) {
@@ -914,6 +943,7 @@ function pressKey(k) {
 	if (battle.blocking) { battle.key(k); return; }
 	if (pvp.blocking) { pvp.key(k); return; }
 	if (playerMenu.open) { playerMenuKey(k); return; }
+	if (deckSelect.open) { deckSelectKey(k); return; }
 	if (startMenu.open) { startKey(k); return; }
 	if (cardsMenu.open) { cardsKey(k); return; }
 	if (friendsMenu.open) { friendsKey(k); return; }
@@ -968,7 +998,7 @@ function pressKey(k) {
 // any menu that consumes direction presses instead of walking
 const menuBlocking = () => starterMenu.open || dialog.blocking || evolution.blocking || cutscene.blocking
 	|| battle.blocking || pvp.blocking || shopMenu.open || bagMenu.open || pcMenu.open || partyMenu.open || ferryMenu.open
-	|| startMenu.open || playerMenu.open || cardsMenu.open || friendsMenu.open || dexMenu.open || trainerCard.open || townMap.open
+	|| startMenu.open || playerMenu.open || deckSelect.open || cardsMenu.open || friendsMenu.open || dexMenu.open || trainerCard.open || townMap.open
 	|| daycareMenu.open || nameRater.open || moveShop.open || optionsMenu.open;
 
 addEventListener('keydown', e => {
@@ -1891,6 +1921,7 @@ function tick(now) {
 		else if (starterMenu.open) drawStarterMenu(SW, SH);
 		else if (ferryMenu.open) drawFerryMenu(SW, SH);
 		else if (playerMenu.open) drawPlayerMenu(SW, SH);
+		else if (deckSelect.open) drawDeckSelect(SW, SH);
 		else if (startMenu.open) drawStartMenu(SW, SH);
 		else if (cardsMenu.open) drawCardsMenu(SW, SH);
 		else if (friendsMenu.open) drawFriendsMenu(SW, SH);
@@ -2602,6 +2633,7 @@ function menuTap(id) {
 	if (kind === 'pcb') { pcMenu.side = 1; pcMenu.idx = +a; pressKey('z'); return; }
 	if (kind === 'start') { startMenu.idx = +a; pressKey('z'); return; }
 	if (kind === 'player') { playerMenu.idx = +a; pressKey('z'); return; }
+	if (kind === 'deck') { deckSelect.idx = +a; pressKey('z'); return; }
 	if (kind === 'cards') { cardsMenu.idx = +a; pressKey('z'); return; }
 	if (kind === 'friend') { friendsMenu.idx = +a; pressKey('z'); return; }
 	if (kind === 'dex') { dexMenu.idx = +a; pressKey('z'); return; }
@@ -2621,7 +2653,7 @@ function menuTap(id) {
 	if (kind === 'msrel') { moveShop.idx = +a; pressKey('z'); return; }
 	if (kind === 'opt') { optionsMenu.idx = +a; Settings.cycle(OPTION_KEYS[+a], 1); return; }
 }
-const anyMenuOpen = () => partyMenu.open || shopMenu.open || bagMenu.open || pcMenu.open || starterMenu.open || ferryMenu.open || startMenu.open || playerMenu.open || cardsMenu.open || friendsMenu.open || dexMenu.open || trainerCard.open || townMap.open || daycareMenu.open || nameRater.open || moveShop.open || optionsMenu.open;
+const anyMenuOpen = () => partyMenu.open || shopMenu.open || bagMenu.open || pcMenu.open || starterMenu.open || ferryMenu.open || startMenu.open || playerMenu.open || deckSelect.open || cardsMenu.open || friendsMenu.open || dexMenu.open || trainerCard.open || townMap.open || daycareMenu.open || nameRater.open || moveShop.open || optionsMenu.open;
 
 // ---------- live PvP battles ----------
 // build a self-contained party snapshot the PvP engine can resolve without
@@ -2678,11 +2710,13 @@ async function sendChallenge(f) {
 	dialog.open(`Challenge sent to ${f.username}!\n\nWaiting for them to accept…`);
 }
 async function sendCardChallenge(f) {
-	const party = await cardParty();
-	if (!party) { dialog.open('You need a full class deck to card-battle.\n\nBuild one in CARDS → DECK BUILDER first.'); return; }
-	await MP.call('challenge', { to: f.username, battleType: 'card', party });
-	pendingChallengeTo = f.username;
-	dialog.open(`Card battle challenge sent to ${f.username}!\n\nWaiting for them to accept…`);
+	// deck-selection phase: pick which deck to bring, then send the challenge
+	openDeckSelect('Pick a deck to battle with', async (picked) => {
+		await MP.call('challenge', { to: f.username, battleType: 'card',
+			party: { deck: picked.deck, classId: picked.classId } });
+		pendingChallengeTo = f.username;
+		dialog.open(`Card battle challenge sent to ${f.username}!\n\nWaiting for them to accept…`);
+	});
 }
 // Phase 4 replaces this with the full RuneScape-style trade window
 async function startTrade(f) {
@@ -2716,11 +2750,13 @@ function showIncoming(ch) {
 			const c = incomingChallenge; incomingChallenge = null;
 			if (!c) return;
 			if (declined === 'x') { await MP.call('decline-challenge', { from: c.from }); return; }
-			const party = await cardParty();
-			if (!party) { dialog.open('You need a full class deck to card-battle.\n\nBuild one in CARDS → DECK BUILDER first.'); return; }
-			const data = await MP.call('accept-challenge', { from: c.from, battleType: 'card', party });
-			if (data.error) { dialog.open(data.error); return; }
-			goCardDuel(data.matchId);
+			// deck-selection phase before accepting the duel
+			openDeckSelect('Pick a deck to battle with', async (picked) => {
+				const data = await MP.call('accept-challenge', { from: c.from, battleType: 'card',
+					party: { deck: picked.deck, classId: picked.classId } });
+				if (data.error) { dialog.open(data.error); return; }
+				goCardDuel(data.matchId);
+			});
 		});
 		return;
 	}
