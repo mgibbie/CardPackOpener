@@ -190,6 +190,7 @@ function instantiate(def, controller) {
 		overheal: def.overheal || null, // fires when a heal overflows past full Health (Overheal)
 		corrupt: def.corrupt || null, // id of the corrupted (upgraded) form for Corrupt
 		corruptGrow: def.corruptGrow ? { ...def.corruptGrow } : null, // endless Corrupt: +stats in place
+		token: def.token || false,    // tokens are exiled on death — never hit the graveyard
 		sac: def.sac || null,         // field-token activation: { cost, discard?, effects }
 		colossal: def.colossal || null, // appendage token ids summoned when this enters play
 		colossalOf: def.colossalOf || null, // this token is an appendage of the named Colossal
@@ -438,7 +439,8 @@ export function drawCards(state, pi, count) {
 			if (p.eliminated || state.over) break;
 			continue;
 		}
-		if (p.hand.length >= MAX_HAND) { emit(state, { type: 'burn', player: pi, cardId: id }); continue; }
+		// No burn on overdraw: hand may exceed MAX_HAND during your turn and is
+		// trimmed back down at end of turn (MTG-style cleanup discard).
 		const card = instantiate(state.cardsById[id], pi);
 		if (card.type === 'creature' && p.drawBuff) { card.attack += p.drawBuff.attack || 0; card.maxHealth += p.drawBuff.health || 0; }
 		// C'Thun enters hand carrying every buff it collected while in your deck
@@ -475,9 +477,11 @@ function fireEmerge(state, pi, card) {
 }
 
 function toGraveyard(state, pi, card) {
-	// Token-tribe cards are exiled instead of hitting the graveyard (they leave
-	// no corpse and can't be referenced/reanimated from the grave)
-	if ((card.tribe || '').split(/\s+/).includes('Token')) {
+	// Tokens (summoned creatures, Blood/Clue/Food/Treasure, etc.) are exiled
+	// instead of hitting the graveyard — MTG-style, they leave no corpse and
+	// can't be referenced, reanimated, or reshuffled from the grave. Coins are
+	// NOT tokens, so they fall through to the graveyard and can reshuffle.
+	if (card.token || (card.tribe || '').split(/\s+/).includes('Token')) {
 		card.zone = 'exile';
 		state.players[pi].exile.push(card);
 		return;
@@ -673,7 +677,6 @@ function addCardToHand(state, pi, id) {
 	const p = state.players[pi];
 	const def = state.cardsById[id];
 	if (!def || p.eliminated) return null;
-	if (p.hand.length >= MAX_HAND) { emit(state, { type: 'burn', player: pi, cardId: id }); return null; }
 	const card = instantiate(def, pi);
 	card.zone = 'hand';
 	p.hand.push(card);
@@ -701,13 +704,12 @@ const ALL_AZERITE_LEGENDARIES = [...new Set(Object.values(EXCAVATE_LEGENDARIES).
 
 // The Coin: an opponent developing a land (or a "gain a coin" effect) puts a
 // coin CARD into your hand instead of a hidden counter — play it any time for
-// +1 mana this turn, Hearthstone-style. Overflows are burned like any draw.
+// +1 mana this turn, Hearthstone-style.
 export function addCoin(state, pi) {
 	const p = state.players[pi];
 	if (p.eliminated) return;
 	const def = state.cardsById['coin'];
 	if (!def) { p.coins = (p.coins || 0) + 1; return; } // fallback if the card is missing
-	if (p.hand.length >= MAX_HAND) { emit(state, { type: 'burn', player: pi, cardId: 'coin' }); return; }
 	const card = instantiate(def, pi);
 	card.zone = 'hand';
 	p.hand.push(card);
@@ -1502,7 +1504,7 @@ function runSecretEffects(state, pi, effects, ctx) {
 			case 'copy-spell': {
 				// Mana Bind: add a copy of the countered spell to your hand at cost 0
 				const sp = ctx.spell, pp = state.players[pi];
-				if (sp && state.cardsById[sp.id] && pp.hand.length < MAX_HAND) {
+				if (sp && state.cardsById[sp.id]) {
 					const cp = instantiate(state.cardsById[sp.id], pi);
 					cp.zone = 'hand'; cp.cost = 0;
 					pp.hand.push(cp);
@@ -1513,7 +1515,7 @@ function runSecretEffects(state, pi, effects, ctx) {
 			case 'return-played-spell': {
 				// Diligent Notetaker (Spellburst): return the just-cast spell to hand
 				const sp = ctx.played, pp = state.players[pi], def = sp && state.cardsById[sp.id];
-				if (def && pp.hand.length < MAX_HAND) {
+				if (def) {
 					const cp = instantiate(def, pi); cp.zone = 'hand';
 					pp.hand.push(cp);
 					emit(state, { type: 'conjure', player: pi, card: cp, color: null });
@@ -1607,7 +1609,7 @@ function runSecretEffects(state, pi, effects, ctx) {
 						to = opps.length ? opps[Math.floor(state.rng() * opps.length)] : -1;
 					}
 					const rp = to >= 0 ? state.players[to] : null;
-					if (rp && rp.hand.length < MAX_HAND) {
+					if (rp) {
 						const copy = instantiate(def, to);
 						copy.zone = 'hand';
 						rp.hand.push(copy);
@@ -1722,7 +1724,7 @@ function runSecretEffects(state, pi, effects, ctx) {
 					const owner = state.players[m.controller];
 					owner.board = owner.board.filter(c => c !== m);
 					const def = state.cardsById[m.id];
-					if (def && owner.hand.length < MAX_HAND) {
+					if (def) {
 						const nc = instantiate(def, m.controller);
 						nc.cost += e.costMod || 0;
 						nc.zone = 'hand';
@@ -2217,7 +2219,7 @@ function execEffects(state, pi, effects, target, source) {
 				}
 				summon(state, owner, {
 					id: 'token_' + opt.name.toLowerCase().replace(/[^a-z0-9]+/g, '_'),
-					name: opt.name, type: 'creature', cost: 0, rarity: 'common',
+					name: opt.name, type: 'creature', cost: 0, rarity: 'common', token: true,
 					description: opt.description || `A ${opt.attack}/${opt.health} token.`,
 					attack: opt.attack, health: opt.health,
 					keywords: kws,
@@ -2275,7 +2277,7 @@ function execEffects(state, pi, effects, target, source) {
 			const pp = state.players[pi];
 			const pool = Object.values(state.cardsById).filter(d => d.type === 'creature'
 				&& (d.cost || 0) === pcost && !d.token && d.collectible !== false && !d.companion && !d.commander && !(d.colors && d.colors.length));
-			for (let n = 0; n < (e.count || 1) && pool.length && pp.hand.length < MAX_HAND; n++) {
+			for (let n = 0; n < (e.count || 1) && pool.length; n++) {
 				const def = pool[Math.floor(state.rng() * pool.length)];
 				const card = instantiate(def, pi); card.zone = 'hand';
 				if (e.costTo != null) card.cost = e.costTo;
@@ -3461,7 +3463,7 @@ function execEffects(state, pi, effects, target, source) {
 				const opt = e.options ? e.options[Math.floor(state.rng() * e.options.length)] : e;
 				const tok = instantiate({
 					id: 'token_' + opt.name.toLowerCase().replace(/[^a-z0-9]+/g, '_'),
-					name: opt.name, type: 'creature', cost: 0, rarity: 'common',
+					name: opt.name, type: 'creature', cost: 0, rarity: 'common', token: true,
 					description: `A ${opt.attack}/${opt.health} ${opt.name}.`,
 					attack: opt.attack, health: opt.health,
 					keywords: opt.keywords || [],
@@ -5169,11 +5171,12 @@ export function endTurn(state) {
 		emit(state, { type: 'echoFade', player: pi, name: c.name });
 	}
 	p.hand = p.hand.filter(c => !c.echoGhost);
-	// discard down to max
-	while (p.hand.length > MAX_HAND) {
-		const c = p.hand.pop();
-		toGraveyard(state, pi, c);
-		emit(state, { type: 'discard', player: pi, card: c });
+	// MTG cleanup: discard down to the maximum hand size. The player chooses
+	// which cards (human via the discard modal, AI dumps its priciest) — this is
+	// why overdraw never burns: the cap is enforced here at end of turn, not on
+	// draw. The queue resolves before the next player meaningfully acts.
+	if (p.hand.length > MAX_HAND) {
+		state.discardQueue.push({ player: pi, count: p.hand.length - MAX_HAND });
 	}
 	p.mana.bonus = 0;
 	p.freeSpellsThisTurn = false;
