@@ -55647,6 +55647,28 @@
           "target": "all"
         }
       ]
+    },
+    {
+      "id": "concealing_confection",
+      "name": "Concealing Confection",
+      "cardClass": "neutral",
+      "cost": 1,
+      "rarity": "common",
+      "type": "creature",
+      "attack": 1,
+      "health": 2,
+      "tribe": "Mech",
+      "set": "hs",
+      "keywords": [
+        "deathrattle"
+      ],
+      "deathrattle": [
+        {
+          "type": "conjure-random",
+          "cardType": "weapon"
+        }
+      ],
+      "description": "Deathrattle: Get a random weapon."
     }
   ]
 }
