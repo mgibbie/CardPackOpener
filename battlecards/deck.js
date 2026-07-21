@@ -5,12 +5,14 @@ import * as Col from './collection.js';
 import * as MPX from './mpmode.js';
 import { STARTER_DECKS } from './dungeon.js';
 
-// test-realm mode: this page edits the 10-card dungeon STARTER decks,
-// one per class, stored on the account (server-validated)
+// The deck builder makes a 40-card constructed deck for PvP. You choose a class
+// FIRST, then the collection filters to neutral + that class's cards. In the
+// test realm the deck is stored per-class on the account (server-validated);
+// dungeon runs are a separate mode and use their own stock decks.
 const MP_ON = MPX.mpMode();
-const SIZE = MP_ON ? 10 : Col.DECK_SIZE;
+const SIZE = Col.DECK_SIZE;
 let mpState = null;
-let mpClass = 'druid';
+let mpClass = ''; // no class chosen yet — class is the first choice
 
 let cards = [], cardsById = {};
 let collection = {};
@@ -94,8 +96,18 @@ function myClass() {
 }
 
 function render() {
-	// collection grid: owned cards that fit your class (neutral + class + duals)
+	// class is the first choice: nothing to build until one is picked
 	grid.innerHTML = '';
+	if (!myClass()) {
+		grid.innerHTML = '<div style="padding:16px;color:#9b93b3;font-size:13px;line-height:1.6">'
+			+ 'Choose your <b style="color:#c9b8ff">class</b> above to start.<br>'
+			+ 'Your collection will filter to neutral cards plus that class\'s cards.</div>';
+		deckList.innerHTML = '';
+		deckCount.textContent = `0 / ${SIZE}`;
+		deckCount.style.color = '#9b93b3';
+		return;
+	}
+	// collection grid: owned cards that fit your class (neutral + class + duals)
 	const rarityOrder = { legendary: 0, epic: 1, rare: 2, uncommon: 3, common: 4 };
 	const owned = cards.filter(d => (collection[d.id] || 0) > 0 && Col.fitsClass(d, myClass()))
 		.sort((a, b) => (rarityOrder[a.rarity ?? 'common'] - rarityOrder[b.rarity ?? 'common'])
@@ -132,12 +144,13 @@ function render() {
 }
 
 document.getElementById('save').onclick = async () => {
+	if (!myClass()) { flash('Choose a class first.'); return; }
 	if (MP_ON) {
-		if (deck.length !== SIZE) { flash(`Starter decks are exactly ${SIZE} cards (has ${deck.length}).`); return; }
+		if (deck.length !== SIZE) { flash(`Decks must be exactly ${SIZE} cards (has ${deck.length}).`); return; }
 		const data = await MPX.call('save-deck', { classId: mpClass, deck });
 		if (data.error) { flash(data.error); return; }
 		mpState = data.state;
-		flash(`${mpClass} starter deck saved — your next dungeon run uses it.`);
+		flash(`${mpClass} deck saved — take it into card battles against other players.`);
 		return;
 	}
 	const err = Col.validateDeck(deck, cardsById, collection, myClass());
@@ -148,6 +161,7 @@ document.getElementById('save').onclick = async () => {
 
 // auto-fill helper: double-click the count to fill remaining slots with owned cards
 deckCount.ondblclick = () => {
+	if (!myClass()) { flash('Choose a class first.'); return; }
 	for (const def of cards) {
 		if (deck.length >= SIZE) break;
 		if (!Col.fitsClass(def, myClass())) continue;
@@ -157,11 +171,13 @@ deckCount.ondblclick = () => {
 	render();
 };
 
-// class picker: same choice the game uses; off-class cards leave the grid.
-// In the test realm it switches which STARTER deck you're editing instead.
+// class picker: the FIRST choice. Picking a class filters the collection to
+// neutral + that class and loads any deck already saved for it. Switching class
+// prunes off-class cards from the working deck (neutrals + new class survive).
 fetch('classes.json').then(r => r.json()).then(({ classes }) => {
 	const sel = document.getElementById('class-select');
-	sel.innerHTML = MP_ON ? '' : '<option value="">No class (all cards)</option>';
+	sel.innerHTML = '<option value="">— choose class —</option>';
+	// PvP decks can be any class; the test realm exposes the classes with a card pool
 	const list = MP_ON ? classes.filter(c => STARTER_DECKS[c.id]) : classes;
 	for (const c of list) {
 		const opt = document.createElement('option');
@@ -171,11 +187,15 @@ fetch('classes.json').then(r => r.json()).then(({ classes }) => {
 	}
 	sel.value = myClass();
 	sel.addEventListener('change', ev => {
+		const c = ev.target.value;
 		if (MP_ON) {
-			mpClass = ev.target.value;
-			deck = [...(mpState?.decks?.[mpClass] || STARTER_DECKS[mpClass])].filter(id => cardsById[id]);
+			mpClass = c;
+			// load the saved PvP deck for this class (dropping anything now illegal)
+			deck = c ? [...(mpState?.decks?.[c] || [])].filter(id => cardsById[id] && Col.fitsClass(cardsById[id], c)) : [];
 		} else {
-			localStorage.setItem('magepunk_class_v1', ev.target.value);
+			localStorage.setItem('magepunk_class_v1', c);
+			// keep the working deck but prune cards that don't fit the new class
+			deck = c ? deck.filter(id => Col.fitsClass(cardsById[id], c)) : [];
 		}
 		render();
 	});
@@ -188,12 +208,12 @@ fetch('cards.json').then(r => r.json()).then(async data => {
 	if (MP_ON) {
 		mpState = await MPX.freshState();
 		collection = mpState?.collection || {};
-		deck = [...(mpState?.decks?.[mpClass] || STARTER_DECKS[mpClass])].filter(id => cardsById[id]);
-		document.getElementById('class-select').value = mpClass;
+		// class-first: start with no class picked and an empty working deck
+		deck = [];
 	} else {
 		collection = Col.getCollection(cards);
-		// load saved deck, dropping anything no longer valid
-		deck = Col.loadDeck().filter(id => cardsById[id]);
+		// class-first: load the saved deck only if a class is already chosen
+		deck = myClass() ? Col.loadDeck().filter(id => cardsById[id] && Col.fitsClass(cardsById[id], myClass())) : [];
 	}
 	sizePreview();
 	addEventListener('resize', sizePreview);

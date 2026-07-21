@@ -3632,14 +3632,10 @@ function resumeRunOverlay(run) {
 	});
 }
 
-// the run's starting deck: the account's edited starter deck in MP mode,
-// the stock one otherwise
+// the run's starting deck: always the stock 10-card dungeon deck. Dungeon runs
+// are a separate mode from constructed PvP — the account's 40-card PvP decks
+// (user.decks) are NOT used here, and dungeon decks can't be taken into PvP.
 async function dungeonStarterDeck(clsId) {
-	if (MP_ON) {
-		const s = await MPX.freshState();
-		const mine = s?.decks?.[clsId];
-		if (Array.isArray(mine) && mine.length) return mine;
-	}
 	return Dungeon.STARTER_DECKS[clsId];
 }
 

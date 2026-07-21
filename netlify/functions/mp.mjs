@@ -19,7 +19,7 @@ import POOL from './pool-rarity.json';
 const SECRET = process.env.MP_SECRET || 'magepunk-dev-secret-set-MP_SECRET';
 const TOKEN_DAYS = 30;
 const PACK_SIZE = 5;
-const DECK_SIZE = 10;               // dungeon starter decks are 10 cards
+const DECK_SIZE = 40;               // PvP constructed decks are 40 cards (dungeon decks are separate)
 const MAX_COPIES = 2;
 const MAX_LEGENDARY_COPIES = 1;
 const REWARD_COOLDOWN_MS = 60_000;  // one run reward a minute tops

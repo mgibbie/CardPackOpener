@@ -5,7 +5,7 @@ const DECK_KEY = 'magepunk_deck_v1';
 
 export const PACK_PRICE = 100;
 export const PACK_SIZE = 5;
-export const DECK_SIZE = 30;
+export const DECK_SIZE = 40;
 export const MAX_COPIES = 2;
 export const MAX_LEGENDARY_COPIES = 1;
 const STARTING_GOLD = 300;

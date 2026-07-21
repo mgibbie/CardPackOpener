@@ -549,9 +549,9 @@ function drawPlayerMenu(W, H) {
 async function openDeckSelect(prompt, onPick) {
 	let st; try { st = await MP.freshState(); } catch (e) { st = MP.cachedState(); }
 	const decks = Object.entries((st && st.decks) || {})
-		.filter(([id, list]) => (list || []).length >= 10)
+		.filter(([id, list]) => (list || []).length >= 40)
 		.map(([id, list]) => ({ classId: id, count: list.length, deck: list }));
-	if (!decks.length) { dialog.open('You need a full class deck (10+ cards).\n\nBuild one in CARDS → DECK BUILDER first.'); return; }
+	if (!decks.length) { dialog.open('You need a full 40-card class deck.\n\nBuild one in CARDS → DECK BUILDER first.'); return; }
 	if (decks.length === 1) { onPick(decks[0]); return; }
 	deckSelect.open = true; deckSelect.idx = 0; deckSelect.decks = decks;
 	deckSelect.onPick = onPick; deckSelect.prompt = prompt || 'Choose your deck';
@@ -2735,10 +2735,10 @@ async function cardParty() {
 	try { st = await MP.freshState(); } catch (e) { st = MP.cachedState(); }
 	if (!st || !st.decks) return null;
 	const saved = localStorage.getItem('magepunk_class_v1') || '';
-	const clsId = st.decks[saved] ? saved
-		: (st.decks.mage ? 'mage' : Object.keys(st.decks).find(k => (st.decks[k] || []).length >= 10));
+	const clsId = (st.decks[saved] && st.decks[saved].length >= 40) ? saved
+		: Object.keys(st.decks).find(k => (st.decks[k] || []).length >= 40);
 	const deck = clsId && st.decks[clsId];
-	if (!deck || deck.length < 10) return null;
+	if (!deck || deck.length < 40) return null;
 	return { deck, classId: clsId };
 }
 const goCardDuel = id => { location.href = '/battlecards/?cardpvp=' + encodeURIComponent(id) + '&mp=1'; };
