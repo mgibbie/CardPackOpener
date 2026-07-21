@@ -1510,6 +1510,16 @@ function runSecretEffects(state, pi, effects, ctx) {
 				}
 				break;
 			}
+			case 'return-played-spell': {
+				// Diligent Notetaker (Spellburst): return the just-cast spell to hand
+				const sp = ctx.played, pp = state.players[pi], def = sp && state.cardsById[sp.id];
+				if (def && pp.hand.length < MAX_HAND) {
+					const cp = instantiate(def, pi); cp.zone = 'hand';
+					pp.hand.push(cp);
+					emit(state, { type: 'conjure', player: pi, card: cp, color: null });
+				}
+				break;
+			}
 			case 'prevent': ctx.prevented = true; break;
 			case 'armor': gainArmor(state, pi, e.value); break;
 			case 'reflect-damage': {
@@ -2764,6 +2774,8 @@ function execEffects(state, pi, effects, target, source) {
 			else if (e.if.noFriendlyDeaths) ok = (p.diedThisTurn || 0) === 0;
 			else if (e.if.friendlyDied) ok = (p.diedThisTurn || 0) > 0;       // Bone Flurry
 			else if (e.if.deckAtLeast != null) ok = p.deck.length >= e.if.deckAtLeast; // Crowd Control
+			else if (e.if.heroPowerUsed) ok = (p.heroPowers || []).some(h => h.usedThisTurn); // Manafeeder Panthara
+			else if (e.if.holdingSpellMinCost != null) ok = p.hand.some(c => (c.type === 'sorcery' || c.type === 'instant' || c.type === 'secret' || c.type === 'trap') && (c.cost || 0) >= e.if.holdingSpellMinCost); // Groundskeeper
 			execEffects(state, pi, ok ? e.then : (e.else || []), target, source);
 		} else if (e.type === 'damage-then') {
 			// deal damage, then branch on whether the creature survived
