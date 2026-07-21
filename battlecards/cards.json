@@ -46422,11 +46422,19 @@
       "cost": 7,
       "rarity": "common",
       "set": "hs",
-      "description": "Rush All friendly creatures are Poisonous.",
+      "description": "Rush.\nAll friendly minions are Poisonous.",
       "type": "creature",
       "attack": 1,
       "health": 7,
-      "tribe": "Beast"
+      "tribe": "Beast",
+      "keywords": [
+        "rush"
+      ],
+      "aura": {
+        "keywords": [
+          "poisonous"
+        ]
+      }
     },
     {
       "id": "alarm_o_matic",
@@ -46448,11 +46456,15 @@
       "cost": 2,
       "rarity": "common",
       "set": "hs",
-      "description": "Taunt Can't attack.",
+      "description": "Taunt & Pacifist.",
       "type": "creature",
       "attack": 2,
       "health": 6,
-      "tribe": "Undead"
+      "tribe": "Undead",
+      "keywords": [
+        "taunt",
+        "pacifist"
+      ]
     },
     {
       "id": "remixed_dispense_o_bot",
@@ -55669,6 +55681,29 @@
         }
       ],
       "description": "Deathrattle: Get a random weapon."
+    },
+    {
+      "id": "impfernal",
+      "name": "IMPFERNAL!",
+      "cardClass": "neutral",
+      "cost": 6,
+      "rarity": "epic",
+      "type": "creature",
+      "attack": 6,
+      "health": 6,
+      "tribe": "Demon",
+      "set": "hs",
+      "keywords": [
+        "deathrattle"
+      ],
+      "deathrattle": [
+        {
+          "type": "damage",
+          "value": 3,
+          "target": "other-characters"
+        }
+      ],
+      "description": "Deathrattle: Deal 3 damage to all other characters."
     }
   ]
 }
