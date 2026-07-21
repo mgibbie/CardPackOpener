@@ -44508,7 +44508,7 @@
       "type": "creature",
       "attack": 2,
       "health": 4,
-      "tribe": "Mechanical"
+      "tribe": "Mech"
     },
     {
       "id": "crystalsmith_kangor",
@@ -44562,7 +44562,7 @@
       "type": "creature",
       "attack": 8,
       "health": 8,
-      "tribe": "Mechanical"
+      "tribe": "Mech"
     },
     {
       "id": "whizbang_the_wonderful",
@@ -45036,7 +45036,7 @@
       "type": "creature",
       "attack": 8,
       "health": 8,
-      "tribe": "Mechanical"
+      "tribe": "Mech"
     },
     {
       "id": "snowfury_giant",
@@ -45475,7 +45475,7 @@
       "type": "creature",
       "attack": 3,
       "health": 6,
-      "tribe": "Mechanical"
+      "tribe": "Mech"
     },
     {
       "id": "tortotem",
@@ -46327,7 +46327,7 @@
       "type": "creature",
       "attack": 1,
       "health": 4,
-      "tribe": "Mechanical"
+      "tribe": "Mech"
     },
     {
       "id": "goblin_sapper",
@@ -46463,7 +46463,7 @@
       "type": "creature",
       "attack": 0,
       "health": 3,
-      "tribe": "Mechanical"
+      "tribe": "Mech"
     },
     {
       "id": "specter_of_despair",
@@ -46489,7 +46489,7 @@
       "type": "creature",
       "attack": 3,
       "health": 3,
-      "tribe": "Mechanical"
+      "tribe": "Mech"
     },
     {
       "id": "hollow_hound",
@@ -46805,7 +46805,7 @@
       "type": "creature",
       "attack": 3,
       "health": 3,
-      "tribe": "Mechanical"
+      "tribe": "Mech"
     },
     {
       "id": "tentacles_for_arms",
@@ -47147,7 +47147,7 @@
       "type": "creature",
       "attack": 4,
       "health": 4,
-      "tribe": "Mechanical"
+      "tribe": "Mech"
     },
     {
       "id": "chrono_boost",
@@ -47534,7 +47534,7 @@
       "type": "creature",
       "attack": 4,
       "health": 9,
-      "tribe": "Mechanical"
+      "tribe": "Mech"
     },
     {
       "id": "arrow_retriever",
@@ -47675,7 +47675,7 @@
       "type": "creature",
       "attack": 8,
       "health": 8,
-      "tribe": "Mechanical"
+      "tribe": "Mech"
     },
     {
       "id": "splendiferous_whizbang",
@@ -48109,7 +48109,7 @@
       "type": "creature",
       "attack": 1,
       "health": 3,
-      "tribe": "Mechanical"
+      "tribe": "Mech"
     },
     {
       "id": "angry_helhound",
@@ -48135,7 +48135,7 @@
       "type": "creature",
       "attack": 3,
       "health": 5,
-      "tribe": "Mechanical"
+      "tribe": "Mech"
     },
     {
       "id": "golganneth_the_thunderer",
@@ -48196,7 +48196,7 @@
       "type": "creature",
       "attack": 3,
       "health": 4,
-      "tribe": "Mechanical"
+      "tribe": "Mech"
     },
     {
       "id": "imposing_anubisath",
@@ -48557,7 +48557,7 @@
       "type": "creature",
       "attack": 1,
       "health": 8,
-      "tribe": "Mechanical"
+      "tribe": "Mech"
     },
     {
       "id": "bouldering_buddy",
@@ -49415,7 +49415,7 @@
       "type": "creature",
       "attack": 2,
       "health": 14,
-      "tribe": "Mechanical",
+      "tribe": "Mech",
       "ongoing": {
         "on": "turn-end",
         "effects": [
@@ -49815,7 +49815,7 @@
       "type": "creature",
       "attack": 4,
       "health": 3,
-      "tribe": "Mechanical",
+      "tribe": "Mech",
       "keywords": [
         "deathrattle"
       ],
@@ -52071,7 +52071,7 @@
       "type": "creature",
       "attack": 6,
       "health": 6,
-      "tribe": "Mechanical",
+      "tribe": "Mech",
       "keywords": [
         "taunt",
         "deathrattle"
@@ -52095,7 +52095,7 @@
       "type": "creature",
       "attack": 4,
       "health": 8,
-      "tribe": "Mechanical",
+      "tribe": "Mech",
       "keywords": [
         "taunt",
         "deathrattle"
@@ -52173,7 +52173,7 @@
       "type": "creature",
       "attack": 6,
       "health": 5,
-      "tribe": "Mechanical",
+      "tribe": "Mech",
       "keywords": [
         "rush",
         "battlecry"
@@ -52220,7 +52220,7 @@
       "type": "creature",
       "attack": 4,
       "health": 5,
-      "tribe": "Mechanical",
+      "tribe": "Mech",
       "keywords": [
         "taunt",
         "deathrattle"
@@ -54300,7 +54300,7 @@
       "type": "creature",
       "attack": 3,
       "health": 3,
-      "tribe": "Mechanical",
+      "tribe": "Mech",
       "keywords": [
         "battlecry"
       ],
