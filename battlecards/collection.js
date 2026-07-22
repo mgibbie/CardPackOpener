@@ -115,7 +115,13 @@ export function fitsClass(def, classId) {
 	return cc === 'neutral' || cc === classId || cc.split('__').includes(classId);
 }
 
-export function validateDeck(ids, cardsById, collection, classId) {
+// commander / companion: optional single cards that ride ALONGSIDE the 40-card
+// deck in their own zones (they don't count toward the 40). A deck may bring one,
+// both, or neither — 40 + 1 commander + 1 companion = 42 cards at most.
+export const isCommander = def => !!(def && def.commander);
+export const isCompanion = def => !!(def && def.companion);
+
+export function validateDeck(ids, cardsById, collection, classId, commander, companion) {
 	if (ids.length !== DECK_SIZE) return `Deck needs ${DECK_SIZE} cards (has ${ids.length}).`;
 	const counts = {};
 	for (const id of ids) {
@@ -126,6 +132,16 @@ export function validateDeck(ids, cardsById, collection, classId) {
 		const limit = cardsById[id].rarity === 'legendary' ? MAX_LEGENDARY_COPIES : MAX_COPIES;
 		if (counts[id] > limit) return `Too many copies of ${cardsById[id].name} (max ${limit}).`;
 		if (counts[id] > (collection[id] || 0)) return `You don't own ${counts[id]}x ${cardsById[id].name}.`;
+	}
+	if (commander) {
+		const c = cardsById[commander];
+		if (!isCommander(c)) return `That commander isn't valid.`;
+		if (!fitsClass(c, classId)) return `${c.name} isn't a ${classId} commander.`;
+	}
+	if (companion) {
+		const c = cardsById[companion];
+		if (!isCompanion(c)) return `That companion isn't valid.`;
+		if (!fitsClass(c, classId)) return `${c.name} isn't a ${classId} companion.`;
 	}
 	return null; // valid
 }

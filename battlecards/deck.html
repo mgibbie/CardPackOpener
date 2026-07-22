@@ -103,6 +103,26 @@
 		#zoom-add:hover { background: #7d63e6; }
 		#zoom-close { padding: 12px 18px; background: #241b38; color: #cdbcff; border: 1px solid #4a3f6b; border-radius: 8px; cursor: pointer; }
 
+		/* ---------- commander / companion loadout ---------- */
+		#loadout { display: flex; gap: 8px; padding: 0 12px 8px; }
+		.lo-slot { flex: 1; text-align: left; padding: 8px 10px; border-radius: 8px; background: #1c1430; border: 1px solid #3a3055; color: #cdbcff; font-size: 12px; cursor: pointer; line-height: 1.35; min-width: 0; }
+		.lo-slot:hover { border-color: #8f6fff; }
+		.lo-slot.set { border-color: #6b4fd4; background: #241b38; }
+		.lo-slot .lo-k { display: block; font-size: 10px; letter-spacing: .5px; color: #8f88a8; }
+		.lo-slot .lo-v { font-weight: 700; color: #fff; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+		#lopick { position: fixed; inset: 0; z-index: 65; background: rgba(6,4,12,0.88); display: none; align-items: center; justify-content: center; padding: 16px; }
+		#lopick.open { display: flex; }
+		#lopick-inner { background: #141024; border: 1px solid #3a3055; border-radius: 14px; padding: 18px; max-width: 680px; width: 100%; max-height: 90vh; overflow: auto; }
+		#lopick-title { margin: 0 0 12px; color: #c9b8ff; font-size: 16px; }
+		#lopick-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 10px; }
+		#lopick-grid .tile { cursor: pointer; }
+		#lopick-grid .tile.chosen { outline: 3px solid #57e389; border-radius: 8px; }
+		#lopick-grid .tile canvas { width: 100%; display: block; }
+		#lopick-empty { color: #9b93b3; padding: 10px 4px; }
+		#lopick-actions { display: flex; gap: 10px; margin-top: 14px; justify-content: flex-end; }
+		#lopick-remove { padding: 10px 16px; background: #3a2540; color: #ffa9a9; border: 1px solid #5a3550; border-radius: 8px; cursor: pointer; }
+		#lopick-close { padding: 10px 16px; background: #241b38; color: #cdbcff; border: 1px solid #4a3f6b; border-radius: 8px; cursor: pointer; }
+
 		/* ---------- drag to add ---------- */
 		.drag-ghost { position: fixed; width: 96px; z-index: 100; pointer-events: none; opacity: 0.92; transform: translate(-50%, -50%); filter: drop-shadow(0 6px 12px rgba(0,0,0,0.6)); }
 		.drag-ghost canvas { width: 100%; display: block; border-radius: 6px; }
@@ -164,6 +184,10 @@
 					<button id="back-to-decks">← My Decks</button>
 				</div>
 				<input id="deck-name" placeholder="Deck name" maxlength="40">
+				<div id="loadout">
+					<button class="lo-slot" id="lo-commander" data-kind="commander"></button>
+					<button class="lo-slot" id="lo-companion" data-kind="companion"></button>
+				</div>
 				<div id="deck-list"></div>
 				<div id="deck-footer">
 					<div id="deck-count">0 / 40</div>
@@ -173,6 +197,16 @@
 				</div>
 			</div>
 		</aside>
+	</div>
+	<div id="lopick">
+		<div id="lopick-inner">
+			<h3 id="lopick-title"></h3>
+			<div id="lopick-grid"></div>
+			<div id="lopick-actions">
+				<button id="lopick-remove">Remove</button>
+				<button id="lopick-close">Close</button>
+			</div>
+		</div>
 	</div>
 	<div id="zoom">
 		<div id="zoom-inner">

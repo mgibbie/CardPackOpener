@@ -25,6 +25,7 @@ let editingId = null;  // slot being edited, or null for a brand-new deck
 let curClass = '';     // the working deck's class
 let firstClass = '';   // first class alphabetically — the default for a new deck
 let deck = [];         // working card ids
+let curCommander = null, curCompanion = null; // optional loadout (own zones, +1 each)
 
 const filters = { tab: 'class', search: '', mana: null };
 let filtered = [], page = 0;
@@ -226,21 +227,69 @@ function renderDeckList() {
 		dl.appendChild(row);
 	}
 }
+function renderLoadout() {
+	for (const [kind, id] of [['commander', curCommander], ['companion', curCompanion]]) {
+		const el = $('lo-' + kind); if (!el) continue;
+		const name = id && cardsById[id] ? cardsById[id].name : 'none — tap to add';
+		el.classList.toggle('set', !!id);
+		el.innerHTML = `<span class="lo-k">${kind === 'commander' ? '⚔ COMMANDER' : '🐾 COMPANION'}</span><span class="lo-v">${name}</span>`;
+	}
+}
 function updateCounts() {
 	for (const id of tileById.keys()) refreshTile(id);
 	renderDeckList();
+	renderLoadout();
 	const full = deck.length === SIZE;
-	$('deck-count').textContent = `${deck.length} / ${SIZE}`;
+	const extras = (curCommander ? 1 : 0) + (curCompanion ? 1 : 0);
+	$('deck-count').textContent = extras ? `${deck.length} / ${SIZE}  (+${extras} = ${SIZE + extras})` : `${deck.length} / ${SIZE}`;
 	$('deck-count').style.color = full ? '#57e389' : '#e8e2f4';
 	$('toggle-deck').textContent = `DECK ${deck.length}/${SIZE}`;
 	$('toggle-deck').style.background = full ? '#2f9e5e' : '#6b4fd4';
 }
+
+// ---------- commander / companion picker ----------
+let pickKind = null;
+// commanders/companions are excluded from the collectible grid, so search the
+// full card set (cardsById) rather than the filtered `cards` list
+const loadoutPool = kind => Object.values(cardsById).filter(c => (kind === 'commander' ? c.commander : c.companion) && Col.fitsClass(c, curClass));
+function openLoadoutPicker(kind) {
+	if (!curClass) return;
+	pickKind = kind;
+	$('lopick-title').textContent = kind === 'commander' ? 'Choose a Commander' : 'Choose a Companion';
+	const grid = $('lopick-grid'); grid.innerHTML = '';
+	const pool = loadoutPool(kind);
+	const chosen = kind === 'commander' ? curCommander : curCompanion;
+	if (!pool.length) {
+		grid.innerHTML = `<div id="lopick-empty">No ${kind}s exist for ${classNameOf(curClass)} yet.</div>`;
+	} else {
+		preloadArt(pool.map(c => c.id)).then(() => {
+			for (const c of pool) {
+				const tile = document.createElement('div');
+				tile.className = 'tile' + (c.id === chosen ? ' chosen' : '');
+				const face = drawCardFace(c); face.style.width = '100%'; tile.appendChild(face);
+				tile.addEventListener('click', () => { setLoadout(kind, c.id); closeLoadoutPicker(); });
+				grid.appendChild(tile);
+			}
+		});
+	}
+	$('lopick-remove').style.display = chosen ? '' : 'none';
+	$('lopick').classList.add('open');
+}
+function setLoadout(kind, id) { if (kind === 'commander') curCommander = id; else curCompanion = id; updateCounts(); }
+function closeLoadoutPicker() { $('lopick').classList.remove('open'); pickKind = null; }
+$('lo-commander').addEventListener('click', () => openLoadoutPicker('commander'));
+$('lo-companion').addEventListener('click', () => openLoadoutPicker('companion'));
+$('lopick-remove').addEventListener('click', () => { if (pickKind) setLoadout(pickKind, null); closeLoadoutPicker(); });
+$('lopick-close').addEventListener('click', closeLoadoutPicker);
+$('lopick').addEventListener('click', e => { if (e.target.id === 'lopick') closeLoadoutPicker(); });
 
 // ---------- switching decks ----------
 function editSlot(slot) {
 	editingId = slot.id;
 	curClass = slot.classId || '';
 	deck = [...slot.cards].filter(id => cardsById[id]);
+	curCommander = slot.commander || null;
+	curCompanion = slot.companion || null;
 	$('deck-name').value = slot.name || '';
 	$('class-select').value = curClass;
 	renderSlots(); applyFilters(); updateCounts(); showEdit();
@@ -249,6 +298,7 @@ function newDeck() {
 	editingId = null;
 	curClass = firstClass;   // start on the first class alphabetically, cards showing
 	deck = [];
+	curCommander = curCompanion = null;
 	$('deck-name').value = '';
 	$('class-select').value = firstClass;
 	renderSlots(); applyFilters(); updateCounts(); showEdit();
@@ -262,7 +312,7 @@ $('save').onclick = async () => {
 	if (deck.length !== SIZE) { flash(`Decks must be exactly ${SIZE} cards (has ${deck.length}).`); return; }
 	const name = ($('deck-name').value || '').trim() || `${myClass()} deck`;
 	if (MP_ON) {
-		const data = await MPX.call('save-deck', { id: editingId || undefined, name, classId: myClass(), deck });
+		const data = await MPX.call('save-deck', { id: editingId || undefined, name, classId: myClass(), deck, commander: curCommander, companion: curCompanion });
 		if (data.error) { flash(data.error); return; }
 		mpState = data.state; slots = loadSlots();
 		const match = slots.find(s => s.id === editingId) || slots[slots.length - 1];
@@ -270,14 +320,14 @@ $('save').onclick = async () => {
 		renderSlots(); flash('Deck saved — take it into card battles.');
 		return;
 	}
-	const err = Col.validateDeck(deck, cardsById, collection, myClass());
+	const err = Col.validateDeck(deck, cardsById, collection, myClass(), curCommander, curCompanion);
 	if (err) { flash(err); return; }
 	if (editingId) {
 		const s = slots.find(x => x.id === editingId);
-		if (s) { s.name = name; s.classId = myClass(); s.cards = [...deck]; }
+		if (s) { s.name = name; s.classId = myClass(); s.cards = [...deck]; s.commander = curCommander; s.companion = curCompanion; }
 	} else {
 		if (slots.length >= MAX_SLOTS) { flash(`All ${MAX_SLOTS} slots are full — delete one first.`); return; }
-		const s = { id: newId(), name, classId: myClass(), cards: [...deck] };
+		const s = { id: newId(), name, classId: myClass(), cards: [...deck], commander: curCommander, companion: curCompanion };
 		slots.push(s); editingId = s.id;
 	}
 	persistFree();
@@ -292,7 +342,7 @@ $('delete-deck').onclick = async () => {
 		if (data.error) { flash(data.error); return; }
 		mpState = data.state; slots = loadSlots();
 	} else { slots = slots.filter(s => s.id !== editingId); persistFree(); }
-	editingId = null; curClass = firstClass; deck = [];
+	editingId = null; curClass = firstClass; deck = []; curCommander = curCompanion = null;
 	$('deck-name').value = ''; $('class-select').value = firstClass;
 	renderSlots(); applyFilters(); updateCounts(); showList();
 	flash('Deck deleted.');

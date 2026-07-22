@@ -3035,7 +3035,12 @@ async function startDuelHost(cardsById) {
 	} catch (e) {}
 	if (!resumed) {
 		const picks = [classPickFor(cm.hostClass), classPickFor(cm.guestClass)];
-		state = E.createGame(cardsById, Math.random, cm.hostDeck ? [...cm.hostDeck] : null, 2, picks);
+		// each side brings its own (optional) commander + companion loadout
+		const loadouts = [
+			{ commander: cm.hostCommander || null, companion: cm.hostCompanion || null },
+			{ commander: cm.guestCommander || null, companion: cm.guestCompanion || null },
+		];
+		state = E.createGame(cardsById, Math.random, cm.hostDeck ? [...cm.hostDeck] : null, 2, picks, loadouts);
 		state.classPicks = picks;
 		// give the guest their own deck + a fresh opening hand and the coin
 		const g = state.players[1];

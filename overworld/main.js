@@ -550,7 +550,7 @@ async function openDeckSelect(prompt, onPick) {
 	let st; try { st = await MP.freshState(); } catch (e) { st = MP.cachedState(); }
 	const decks = ((st && st.decks) || [])
 		.filter(d => d && Array.isArray(d.cards) && d.cards.length >= 40)
-		.map(d => ({ classId: d.classId, count: d.cards.length, deck: d.cards, name: d.name, id: d.id }));
+		.map(d => ({ classId: d.classId, count: d.cards.length, deck: d.cards, name: d.name, id: d.id, commander: d.commander || null, companion: d.companion || null }));
 	if (!decks.length) { dialog.open('You have no decks :('); return; }
 	if (decks.length === 1) { onPick(decks[0]); return; }
 	deckSelect.open = true; deckSelect.idx = 0; deckSelect.decks = decks;
@@ -2771,7 +2771,7 @@ async function sendCardChallenge(f) {
 	// deck-selection phase: pick which deck to bring, then send the challenge
 	openDeckSelect('Pick a deck to battle with', async (picked) => {
 		await MP.call('challenge', { to: f.username, battleType: 'card',
-			party: { deck: picked.deck, classId: picked.classId } });
+			party: { deck: picked.deck, classId: picked.classId, commander: picked.commander || null, companion: picked.companion || null } });
 		pendingChallengeTo = f.username;
 		dialog.open(`Card battle challenge sent to ${f.username}!\n\nWaiting for them to accept…`);
 	});
@@ -2988,7 +2988,7 @@ async function acceptChallengeFrom(from) {
 		// deck-selection phase before accepting the duel
 		openDeckSelect('Pick a deck to battle with', async (picked) => {
 			const data = await MP.call('accept-challenge', { from, battleType: 'card',
-				party: { deck: picked.deck, classId: picked.classId } });
+				party: { deck: picked.deck, classId: picked.classId, commander: picked.commander || null, companion: picked.companion || null } });
 			if (data.error) { dialog.open(data.error); return; }
 			goCardDuel(data.matchId);
 		});

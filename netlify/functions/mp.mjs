@@ -15,6 +15,7 @@ import fs from 'node:fs';
 import { STARTER_DECKS } from '../../battlecards/dungeon.js';
 import { createMatch, submitAction, replaceFainted, sideOf } from '../../battlecards/pvpbattle.js';
 import POOL from './pool-rarity.json';
+import LOADOUTS from './loadout-cards.json'; // { id: { kind:'commander'|'companion', cls } }
 
 const SECRET = process.env.MP_SECRET || 'magepunk-dev-secret-set-MP_SECRET';
 const TOKEN_DAYS = 30;
@@ -154,6 +155,15 @@ function deckError(classId, deck, collection) {
 		if (counts[id] > cap) return `too many copies of ${id}`;
 		if (counts[id] > (collection[id] || 0)) return `you don't own ${counts[id]}x ${id}`;
 	}
+	return null;
+}
+
+// optional commander + companion ride alongside the 40 (their own zones); each
+// must be the right kind and legal for the deck's class (or neutral)
+const loadoutClassOk = (cls, classId) => cls === 'neutral' || cls === classId || cls.split('__').includes(classId);
+function loadoutError(classId, commander, companion) {
+	if (commander) { const L = LOADOUTS[commander]; if (!L || L.kind !== 'commander') return `invalid commander: ${commander}`; if (!loadoutClassOk(L.cls, classId)) return `${commander} is not a ${classId} commander`; }
+	if (companion) { const L = LOADOUTS[companion]; if (!L || L.kind !== 'companion') return `invalid companion: ${companion}`; if (!loadoutClassOk(L.cls, classId)) return `${companion} is not a ${classId} companion`; }
 	return null;
 }
 
@@ -457,7 +467,9 @@ export default async function handler(req) {
 				id: matchId, type: 'card',
 				host: from, guest: username,
 				hostDeck: (ch.party?.deck) || null, hostClass: (ch.party?.classId) || null,
+				hostCommander: (ch.party?.commander) || null, hostCompanion: (ch.party?.companion) || null,
 				guestDeck: (body.party?.deck) || null, guestClass: (body.party?.classId) || null,
+				guestCommander: (body.party?.commander) || null, guestCompanion: (body.party?.companion) || null,
 				over: false, winner: null, createdAt: Date.now(), lastActive: Date.now(),
 			};
 			await store.setJSON('cardmatch:' + matchId, cm);
@@ -804,16 +816,18 @@ export default async function handler(req) {
 		const classId = String(body.classId || '');
 		const cards = body.deck || body.cards;
 		const name = (String(body.name || '').trim() || classId || 'Deck').slice(0, 40);
-		const err = deckError(classId, cards, effectiveCollection(user));
+		const commander = body.commander ? String(body.commander) : null;
+		const companion = body.companion ? String(body.companion) : null;
+		const err = deckError(classId, cards, effectiveCollection(user)) || loadoutError(classId, commander, companion);
 		if (err) return json({ error: err }, 400);
 		if (!Array.isArray(user.decks)) user.decks = [];
 		const id = String(body.id || '');
 		const slot = id && user.decks.find(d => d.id === id);
 		if (slot) {
-			slot.name = name; slot.classId = classId; slot.cards = cards.map(String);
+			slot.name = name; slot.classId = classId; slot.cards = cards.map(String); slot.commander = commander; slot.companion = companion;
 		} else {
 			if (user.decks.length >= MAX_DECK_SLOTS) return json({ error: `all ${MAX_DECK_SLOTS} deck slots are full — delete one first` }, 400);
-			user.decks.push({ id: newDeckId(), name, classId, cards: cards.map(String) });
+			user.decks.push({ id: newDeckId(), name, classId, cards: cards.map(String), commander, companion });
 		}
 		await store.setJSON(username, user);
 		return json({ state: publicState(user, username) });

@@ -255,7 +255,7 @@ export function opponentsOf(state, pi) {
 // ---------- game setup ----------
 // `classPicks` (optional): one class object per player from classes.json —
 // { id, name, power: { name, cost, effects|choices, text } | null, passive? }
-export function createGame(cardsById, rng = Math.random, playerDeckIds = null, playerCount = 2, classPicks = null) {
+export function createGame(cardsById, rng = Math.random, playerDeckIds = null, playerCount = 2, classPicks = null, loadouts = null) {
 	// never in decks: companions/commanders (own zones), lands (bought from the
 	// slot menu), and colored cards (conjured by lands during play)
 	const playable = Object.values(cardsById).filter(d =>
@@ -372,16 +372,21 @@ export function createGame(cardsById, rng = Math.random, playerDeckIds = null, p
 		});
 	}
 
-	// deal each player a random companion and commander into their zones
+	// commander + companion: when a per-deck loadout is supplied use the chosen
+	// cards (both optional — a deck may bring one, both, or neither); otherwise
+	// (single-player / dungeon) deal a random one of each, as before.
 	const companions = Object.values(cardsById).filter(d => d.companion);
 	const commanders = Object.values(cardsById).filter(d => d.commander);
 	state.players.forEach((p, i) => {
-		if (companions.length) {
-			p.companion = instantiate(companions[Math.floor(rng() * companions.length)], i);
+		const lo = loadouts ? (loadouts[i] || {}) : null;
+		const compId = lo ? lo.companion : (companions.length ? companions[Math.floor(rng() * companions.length)].id : null);
+		const cmdId = lo ? lo.commander : (commanders.length ? commanders[Math.floor(rng() * commanders.length)].id : null);
+		if (compId && cardsById[compId]?.companion) {
+			p.companion = instantiate(cardsById[compId], i);
 			p.companion.zone = 'companion';
 		}
-		if (commanders.length) {
-			const c = instantiate(commanders[Math.floor(rng() * commanders.length)], i);
+		if (cmdId && cardsById[cmdId]?.commander) {
+			const c = instantiate(cardsById[cmdId], i);
 			c.zone = 'command';
 			c.commander = true;
 			p.command = [c];
