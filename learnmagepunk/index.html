@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<title>Learn Magepunk — How to Play</title>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<meta name="description" content="Learn how to play Magepunk Battlecards: setup, turns, combat, lands, planes, classes, and every keyword — with links to the design wiki.">
+	<link rel="icon" href="data:,">
+	<style>
+		:root {
+			--bg: #0d0a14;
+			--panel: rgba(30,22,48,0.9);
+			--panel-solid: #1e1630;
+			--border: #4a3f6b;
+			--text: #e8e2f4;
+			--muted: #9d8fd4;
+			--gold: #ffd25f;
+			--violet: #8f6fff;
+			--green: #57e389;
+			--red: #ff5f4f;
+		}
+		* { box-sizing: border-box; }
+		html { scroll-behavior: smooth; }
+		body {
+			margin: 0; background: var(--bg); color: var(--text);
+			font-family: 'Segoe UI', system-ui, sans-serif; line-height: 1.6;
+		}
+		a { color: var(--violet); text-decoration: none; }
+		a:hover { text-decoration: underline; }
+		code { background: #241b38; border: 1px solid var(--border); border-radius: 4px; padding: 1px 5px; font-size: 0.92em; }
+
+		/* ---------- header ---------- */
+		header {
+			background: radial-gradient(ellipse at 50% -20%, #2c1f4d 0%, #16101f 60%, var(--bg) 100%);
+			border-bottom: 1px solid var(--border);
+			padding: 56px 24px 44px; text-align: center;
+		}
+		header h1 {
+			margin: 0; font-size: clamp(2rem, 6vw, 3.2rem); font-weight: 800; letter-spacing: 2px;
+			color: var(--gold); text-shadow: 0 2px 18px rgba(255,210,95,0.35), 0 2px 6px #000;
+		}
+		header .tagline { margin: 12px auto 0; max-width: 620px; color: var(--text); font-size: 1.08rem; }
+		header .sub { color: var(--muted); font-size: 0.95rem; margin-top: 6px; }
+		.cta-row { margin-top: 26px; display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+		.cta {
+			display: inline-block; padding: 10px 22px; border-radius: 10px; font-weight: 700;
+			border: 1px solid var(--border); background: var(--panel); color: var(--text);
+			transition: box-shadow 0.15s, transform 0.15s;
+		}
+		.cta:hover { box-shadow: 0 0 14px rgba(143,111,255,0.6); text-decoration: none; transform: translateY(-1px); }
+		.cta.primary { background: linear-gradient(180deg, #6b46d6, #4c2fa8); border-color: #8f6fff; }
+		.cta.gold { border-color: #8a6f2a; color: var(--gold); }
+
+		/* ---------- layout ---------- */
+		.wrap { display: flex; max-width: 1180px; margin: 0 auto; padding: 0 18px 80px; gap: 34px; }
+		nav.toc {
+			flex: 0 0 210px; position: sticky; top: 18px; align-self: flex-start;
+			max-height: calc(100vh - 36px); overflow-y: auto; padding: 16px 0;
+		}
+		nav.toc .toc-title { font-size: 0.75rem; letter-spacing: 2px; color: var(--muted); text-transform: uppercase; margin: 0 0 8px 12px; }
+		nav.toc a {
+			display: block; padding: 5px 12px; color: var(--text); font-size: 0.92rem;
+			border-left: 2px solid transparent; border-radius: 0 6px 6px 0;
+		}
+		nav.toc a:hover { background: var(--panel); border-left-color: var(--violet); text-decoration: none; }
+		main { flex: 1; min-width: 0; }
+
+		section { margin-top: 46px; scroll-margin-top: 20px; }
+		section h2 {
+			color: var(--gold); font-size: 1.5rem; letter-spacing: 1px; margin: 0 0 4px;
+			padding-bottom: 8px; border-bottom: 1px solid var(--border);
+		}
+		section h3 { color: var(--violet); font-size: 1.08rem; margin: 26px 0 6px; }
+		.lede { color: var(--muted); margin-top: 4px; }
+
+		.panel {
+			background: var(--panel); border: 1px solid var(--border); border-radius: 12px;
+			padding: 16px 20px; margin: 14px 0;
+		}
+		.callout { border-left: 3px solid var(--gold); }
+		.callout .co-title { color: var(--gold); font-weight: 700; }
+
+		/* stat chips */
+		.stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin: 14px 0; }
+		.stat {
+			background: var(--panel); border: 1px solid var(--border); border-radius: 10px;
+			padding: 10px 12px; text-align: center;
+		}
+		.stat .num { display: block; font-size: 1.5rem; font-weight: 800; color: var(--gold); }
+		.stat .lbl { display: block; font-size: 0.8rem; color: var(--muted); }
+
+		/* tables */
+		table { width: 100%; border-collapse: collapse; margin: 14px 0; font-size: 0.95rem; }
+		th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid #2d2344; vertical-align: top; }
+		th { color: var(--muted); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 1px; }
+		tr:hover td { background: rgba(143,111,255,0.06); }
+		.table-scroll { overflow-x: auto; }
+		td b, dd b { color: var(--gold); font-weight: 700; }
+
+		/* WUBRG boost cards */
+		.boost-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 12px; margin: 14px 0; }
+		.boost { border-radius: 12px; border: 1px solid var(--border); padding: 12px 14px; background: var(--panel); }
+		.boost h4 { margin: 0 0 8px; font-size: 1rem; }
+		.boost ol { margin: 0; padding-left: 22px; font-size: 0.88rem; }
+		.boost li { margin: 3px 0; }
+		.boost.w { border-color: #c7bf8c; } .boost.w h4 { color: #f6f0cf; }
+		.boost.u { border-color: #2f80d6; } .boost.u h4 { color: #7db8f0; }
+		.boost.b { border-color: #6d5f80; } .boost.b h4 { color: #cbb8e6; }
+		.boost.r { border-color: #d8462f; } .boost.r h4 { color: #ff9c8a; }
+		.boost.g { border-color: #41ab61; } .boost.g h4 { color: #7fe0a0; }
+
+		/* keyword glossary */
+		.kw-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 10px; margin-top: 16px; }
+		.kw {
+			background: var(--panel); border: 1px solid var(--border); border-radius: 10px;
+			padding: 10px 14px; font-size: 0.92rem;
+		}
+		.kw dt { font-weight: 800; color: var(--gold); }
+		.kw dt a { color: var(--gold); }
+		.kw dt .alias { font-weight: 400; color: var(--muted); font-size: 0.82rem; }
+		.kw dt .plane-tag {
+			font-weight: 600; font-size: 0.68rem; letter-spacing: 1px; text-transform: uppercase;
+			color: var(--violet); border: 1px solid var(--border); border-radius: 5px; padding: 1px 5px; margin-left: 6px; vertical-align: 1px;
+		}
+		.kw dd { margin: 3px 0 0; color: var(--text); }
+
+		footer {
+			border-top: 1px solid var(--border); margin-top: 40px; padding: 26px 18px 40px;
+			text-align: center; color: var(--muted); font-size: 0.9rem;
+		}
+
+		@media (max-width: 860px) {
+			.wrap { flex-direction: column; gap: 0; }
+			nav.toc {
+				position: static; flex: none; max-height: none; display: flex; flex-wrap: wrap; gap: 4px;
+				padding: 14px 0 0; border-bottom: 1px solid var(--border);
+			}
+			nav.toc .toc-title { flex-basis: 100%; margin-left: 0; }
+			nav.toc a { border: 1px solid var(--border); border-radius: 999px; padding: 4px 12px; font-size: 0.85rem; }
+		}
+	</style>
+</head>
+<body>
+
+<header>
+	<h1>LEARN MAGEPUNK</h1>
+	<p class="tagline">Magepunk Battlecards is a free-for-all card battler for 2&ndash;8 mages &mdash; summon creatures, develop lands, roll the planar die, and be the last hero standing.</p>
+	<p class="sub">Everything on this page comes straight from the game engine. Card-by-card details live in the <a href="/designwiki/">Design Wiki</a>.</p>
+	<div class="cta-row">
+		<a class="cta primary" href="/battlecards/">&#9654; Play Battlecards</a>
+		<a class="cta gold" href="/designwiki/#/cards">Card Gallery</a>
+		<a class="cta" href="/designwiki/">Design Wiki</a>
+	</div>
+</header>
+
+<div class="wrap">
+	<nav class="toc">
+		<p class="toc-title">Contents</p>
+		<a href="#basics">The Basics</a>
+		<a href="#turn">Your Turn</a>
+		<a href="#cards">Cards &amp; Types</a>
+		<a href="#classes">Classes</a>
+		<a href="#combat">Combat</a>
+		<a href="#lands">Lands &amp; Colors</a>
+		<a href="#planes">Planes</a>
+		<a href="#stack">The Stack</a>
+		<a href="#tokens">Tokens &amp; Systems</a>
+		<a href="#winning">Winning</a>
+		<a href="#modes">Game Modes</a>
+		<a href="#glossary">Keyword Glossary</a>
+	</nav>
+
+	<main>
+
+	<section id="basics">
+		<h2>The Basics</h2>
+		<p class="lede">A Hearthstone-style card battler with a Magic: The Gathering heart &mdash; lands, instants, the stack, planes, and up to 8 players around one table.</p>
+
+		<div class="stat-grid">
+			<div class="stat"><span class="num">40</span><span class="lbl">Starting Life</span></div>
+			<div class="stat"><span class="num">40</span><span class="lbl">Cards per Deck</span></div>
+			<div class="stat"><span class="num">2&ndash;8</span><span class="lbl">Players</span></div>
+			<div class="stat"><span class="num">12</span><span class="lbl">Max Mana Crystals</span></div>
+		</div>
+
+		<p>Every player is a hero with <b>40 Life</b>, a class with a <a href="#classes">hero power</a>, and a 40-card deck. With 3 or more players it's a <b>free-for-all</b> around a circular table &mdash; each player gets their own slice of the board, turns pass clockwise, and the <b>last hero standing wins</b>. There is no healing cap: your Life can climb above 40.</p>
+
+		<h3>Setup</h3>
+		<ul>
+			<li><b>Opening hands:</b> the first player draws <b>3 cards</b>; everyone else draws <b>4 cards</b> plus <a href="/designwiki/#/cards/coin">The Coin</a> (a 0-cost card: <i>&ldquo;Gain 1 mana this turn only&rdquo;</i>). There is no mulligan &mdash; you keep what you're dealt.</li>
+			<li><b>Companion &amp; Commander:</b> every player is also dealt one random <b>Companion</b> and one random <b>Commander</b> into their own zones. Both are playable from their zone; a Commander that dies returns to the command zone and costs <b>2 more</b> each time.</li>
+			<li><b>Turn one:</b> the first player takes the normal start-of-turn draw, so they effectively see 4 cards on their first turn too.</li>
+		</ul>
+
+		<h3>Deck rules</h3>
+		<ul>
+			<li>Exactly <b>40 cards</b>, from <b>your class's cards plus neutrals</b> (multi-class cards count for each listed class).</li>
+			<li>At most <b>2 copies</b> of any card, and only <b>1 copy of each Legendary</b>.</li>
+			<li>Lands, colored W/U/B/R/G cards, and tokens are never deck cards &mdash; you get those <a href="#lands">during play</a>.</li>
+		</ul>
+		<p>Build decks in the game's <a href="/battlecards/deck.html">deck builder</a>, and browse every card in the <a href="/designwiki/#/cards">Card Gallery</a>.</p>
+	</section>
+
+	<section id="turn">
+		<h2>Your Turn</h2>
+		<p class="lede">No rigid phases &mdash; on your turn you act in any order you like.</p>
+
+		<ul>
+			<li><b>Mana:</b> you start the game at 1 mana crystal. Each of your turns your maximum grows by 1 (up to <b>12</b>) and refills. Temporary mana (The Coin, land taps, &ldquo;gain mana&rdquo; effects) is a bonus pool that <b>expires at end of turn</b>. Cards with <b>Overload</b> lock that much of your mana next turn.</li>
+			<li><b>Draw:</b> you draw <b>1 card</b> at the start of every turn.</li>
+			<li><b>Do anything, in any order:</b> play cards, attack, use each hero power once, buy or tap <a href="#lands">lands</a>, use each creature's activated ability once, <a href="#planes">planeswalk</a>, cash in tokens, trade <b>Tradeable</b> cards&hellip; then press End Turn.</li>
+			<li><b>Hand limit:</b> <b>15 cards</b>. You never burn a draw &mdash; you can go over during your turn, then discard down to 15 at end of turn (you choose what to keep).</li>
+			<li><b>Running out of cards:</b> when your deck empties, your <b>graveyard is shuffled back in</b> (tokens excluded). Only when deck <i>and</i> graveyard are both empty does <b>fatigue</b> begin: each empty draw deals escalating damage to your hero (1, then 2, then 3&hellip;).</li>
+		</ul>
+
+		<div class="panel callout">
+			<span class="co-title">Zone limits</span><br>
+			Your creature row is <b>unlimited</b>. Capped zones: <b>5 lands</b>, <b>5 secrets</b>, <b>3 traps</b>, <b>3 quests</b>, <b>3 hero-power slots</b>.
+		</div>
+	</section>
+
+	<section id="cards">
+		<h2>Cards &amp; Types</h2>
+		<p class="lede">2,500+ cards across 16 types. Click a type to see every card of that type in the wiki.</p>
+
+		<div class="table-scroll"><table>
+			<tr><th>Type</th><th>How it works</th></tr>
+			<tr><td><a href="/designwiki/#/type/creature">Creature</a></td><td>Cost, Attack and Health. Damage sticks; a creature dies when damage reaches its Health. Enters play <i>summoning-sick</i> (can't attack until your next turn) unless it has <b>Charge</b> or <b>Rush</b>.</td></tr>
+			<tr><td><a href="/designwiki/#/type/sorcery">Sorcery</a></td><td>A one-shot spell, castable only on your own turn while the stack is empty.</td></tr>
+			<tr><td><a href="/designwiki/#/type/instant">Instant</a></td><td>A spell you can cast at any time you have priority &mdash; even on other players' turns, in response to spells or attacks. See <a href="#stack">The Stack</a>.</td></tr>
+			<tr><td><a href="/designwiki/#/type/weapon">Weapon</a></td><td>Attack / Durability. Equips to your hero and lets them swing; each attack costs 1 Durability, and the weapon breaks at 0. Playing a new weapon destroys the old one.</td></tr>
+			<tr><td><a href="/designwiki/#/type/land">Land</a></td><td>Not drawn &mdash; <a href="#lands">bought for 3 mana</a> during your turn. Taps for mana, color Boosts, or conjured cards.</td></tr>
+			<tr><td><a href="/designwiki/#/type/location">Location</a></td><td>Sits in your creature row but taps like a land. Its Durability is the number of taps before it crumbles. Can't be attacked or damaged.</td></tr>
+			<tr><td><a href="/designwiki/#/type/secret">Secret</a></td><td>Hidden until an enemy action springs it (attacking, playing a creature, casting a spell&hellip;). Fires once, only on opponents' turns. Max 5, no duplicates.</td></tr>
+			<tr><td><a href="/designwiki/#/type/trap">Trap</a></td><td>Like a secret, but face-down: opponents see <i>that</i> you have traps, not which. Max 3.</td></tr>
+			<tr><td><a href="/designwiki/#/type/quest">Quest</a></td><td>Sits in play ticking toward a goal (&ldquo;play N cards&rdquo;, &ldquo;summon N of a tribe&rdquo;&hellip;), then pays out a powerful reward. Max 3.</td></tr>
+			<tr><td><a href="/designwiki/#/type/planeswalker">Planeswalker</a></td><td>Enters with Loyalty. Use one loyalty ability per turn (+/&minus; its cost). Can be attacked when its owner has no Taunts &mdash; damage removes loyalty and it never strikes back. Dies at 0. Having one in play unlocks <a href="#planes">Planeswalking</a>.</td></tr>
+			<tr><td><a href="/designwiki/#/type/plane">Plane</a></td><td>A shared arena nobody controls, with <b>Arrival</b>, <b>Chaos</b>, <b>Departure</b> effects and a continuous <b>Static</b> rule. Changed by <b>Planeshift</b>.</td></tr>
+			<tr><td><a href="/designwiki/#/type/hero">Hero</a></td><td>Replaces your look, grants Armor, runs a battlecry, and <i>adds</i> its hero power to a free slot (you keep your original power).</td></tr>
+			<tr><td><a href="/designwiki/#/type/enchantment">Enchantment</a> / <a href="/designwiki/#/type/artifact">Artifact</a> / <a href="/designwiki/#/type/emblem">Emblem</a></td><td>Permanents in their own rows carrying ongoing triggers, statics, or cost modifiers.</td></tr>
+			<tr><td><a href="/designwiki/#/type/heropower">Hero Power</a></td><td>A playable card that installs a new hero power into one of your 3 slots.</td></tr>
+		</table></div>
+
+		<h3>Rarity &amp; spell schools</h3>
+		<p>Cards come in <b>Common, Uncommon, Rare, Epic, and Legendary</b>. Spells may belong to a school &mdash;
+			<a href="/designwiki/#/school/arcane">Arcane</a>, <a href="/designwiki/#/school/fel">Fel</a>, <a href="/designwiki/#/school/fire">Fire</a>, <a href="/designwiki/#/school/frost">Frost</a>, <a href="/designwiki/#/school/holy">Holy</a>, <a href="/designwiki/#/school/nature">Nature</a>, <a href="/designwiki/#/school/shadow">Shadow</a>, or <a href="/designwiki/#/school/song">Song</a> &mdash; which other cards can care about.</p>
+	</section>
+
+	<section id="classes">
+		<h2>Classes &amp; Hero Powers</h2>
+		<p class="lede">Your class decides which cards you can put in your deck and your hero power &mdash; usable once per turn.</p>
+
+		<div class="table-scroll"><table>
+			<tr><th>Class</th><th>Hero Power</th><th>Effect</th></tr>
+			<tr><td>Death Knight</td><td>Ghoul Charge (2)</td><td>Create a 1/1 Frail Ghoul. Also banks a Corpse whenever a friendly creature dies.</td></tr>
+			<tr><td>Demon Hunter</td><td>Demon Claws (1)</td><td>Your hero gains +1 Attack this turn.</td></tr>
+			<tr><td>Druid</td><td>Shapeshift (2)</td><td>+1 hero Attack this turn and 1 Armor.</td></tr>
+			<tr><td>Hunter</td><td>Steady Shot (2)</td><td>Deal 2 damage to an enemy hero.</td></tr>
+			<tr><td>Mage</td><td>Fireblast (2)</td><td>Deal 1 damage to any target.</td></tr>
+			<tr><td>Paladin</td><td>Reinforce (2)</td><td>Create a 1/1 Silver Hand Recruit.</td></tr>
+			<tr><td>Priest</td><td>Lesser Heal (2)</td><td>Choose one: restore 2 Health to a creature, or a player gains 2 Life.</td></tr>
+			<tr><td>Rogue</td><td>Dagger Mastery (2)</td><td>Equip a 1/2 Wicked Knife.</td></tr>
+			<tr><td>Shaman</td><td>Totemic Call (2)</td><td>Roll a d4: summon a random Totem.</td></tr>
+			<tr><td>Warlock</td><td>Life Tap (2)</td><td>Draw a card and lose 2 Life.</td></tr>
+			<tr><td>Warrior</td><td>Armor Up! (2)</td><td>Gain 2 Armor.</td></tr>
+			<tr><td>Bounty Hunter</td><td>Dead Eye (2)</td><td>Deal 2 damage to an enemy hero.</td></tr>
+			<tr><td>Bard</td><td>Village Performance! (2)</td><td>Roll a d4: add a random Song spell to your hand.</td></tr>
+			<tr><td>Ranger</td><td>Steward of Trees (3)</td><td>Choose one: 2 damage to a creature / +2/+2 to a friendly Beast / Luck: flip a coin to draw 2.</td></tr>
+			<tr><td>Sorcerer</td><td>Spellweaving (3)</td><td>Choose one of three tribal weavings (Spellburst-draw, Divine Shield, or Spell Damage +1).</td></tr>
+			<tr><td>Centurion</td><td>Muster (2)</td><td>Create a 1/1 Legionnaire with Taunt.</td></tr>
+			<tr><td>Barbarian &middot; Wizard</td><td>&mdash;</td><td>Hero powers still in design.</td></tr>
+		</table></div>
+	</section>
+
+	<section id="combat">
+		<h2>Combat</h2>
+		<p class="lede">Creatures trade blows simultaneously &mdash; and every attack can be responded to.</p>
+
+		<ul>
+			<li><b>Declaring an attack goes on <a href="#stack">the stack</a></b> &mdash; opponents can respond with instants before the damage lands.</li>
+			<li><b>Who you can hit:</b> any opponent's creatures, planeswalkers, or hero. If a defender has <a href="/designwiki/#/keyword/taunt">Taunt</a> creatures, your attacks must hit a Taunt first (each player's Taunts protect only their own board). <a href="/designwiki/#/keyword/piercing">Piercing</a> ignores Taunt entirely. <a href="/designwiki/#/keyword/stealth">Stealthed</a> and dormant creatures can't be attacked.</li>
+			<li><b>Attacks per turn:</b> one per creature (<a href="/designwiki/#/keyword/windfury">Windfury</a>: two). Creatures with 0 Attack, <a href="/designwiki/#/keyword/pacifist">Pacifist</a>, or that are Frozen or dormant can't attack.</li>
+			<li><b>Damage is simultaneous:</b> attacker and defender deal each other their Attack &mdash; unless one has <a href="/designwiki/#/keyword/firststrike">First Strike</a>, which deals its damage first; if that kills the other creature, there's no strike back. Two First Strikes cancel out.</li>
+			<li><b>Hero attacks:</b> your hero swings with <i>weapon Attack + temporary hero Attack</i>, once per turn (twice with a Windfury weapon). Attacking a creature means it <b>strikes back at your hero</b>. Each swing costs 1 weapon Durability. A temporary Attack buff lets even a weaponless hero swing.</li>
+			<li><b>Armor</b> absorbs hero damage before Life (Piercing skips it too).</li>
+		</ul>
+
+		<p>Combat is where most keywords live &mdash; <a href="/designwiki/#/keyword/divineshield">Divine Shield</a>, <a href="/designwiki/#/keyword/lifesteal">Lifesteal</a>, <a href="/designwiki/#/keyword/deathtouch">Deathtouch</a>, <a href="/designwiki/#/keyword/cleave">Cleave</a>, <a href="/designwiki/#/keyword/trample">Trample</a>, <a href="/designwiki/#/keyword/sanguine">Sanguine</a> and more. See the <a href="#glossary">full glossary</a> below.</p>
+	</section>
+
+	<section id="lands">
+		<h2>Lands &amp; Colors</h2>
+		<p class="lede">Lands aren't in your deck &mdash; you buy them mid-game, and they power a whole second color system.</p>
+
+		<ul>
+			<li>On your turn, pay <b>3 mana</b> to develop a land into one of your <b>5 land slots</b> &mdash; and every opponent receives <a href="/designwiki/#/cards/coin">The Coin</a> as compensation.</li>
+			<li>The five basics &mdash; Plains (W), Island (U), Swamp (B), Mountain (R), Forest (G) &mdash; set your <b>color identity</b>. Advanced lands unlock only when your basics cover their colors.</li>
+			<li><b>Tapping a basic</b>, choose one: <b>gain 1 mana</b>, give a friendly creature that color's <b>Boost</b>, or <b>Conjure</b> a random card of that color into your hand.</li>
+			<li>Lands and locations <b>double-tap</b>: after tapping they stay tapped through your next turn, untapping the turn after &mdash; so each is usable roughly every other turn.</li>
+			<li>Any land can be <b>sacrificed to draw a card</b>.</li>
+		</ul>
+
+		<h3>Color Boost tables</h3>
+		<p>A Boost rolls a d6 on that color's table and grants the result to a friendly creature. <a href="/designwiki/#/keyword/chromatic">Chromatic</a> creatures roll twice and keep both.</p>
+
+		<div class="boost-grid">
+			<div class="boost w"><h4>&#9898; White (Plains)</h4><ol>
+				<li>+1/+1</li><li>Defender</li><li>Inspire: Bolster 1</li><li>Taunt</li><li>Swift (First Strike)</li><li>Lifesteal</li></ol></div>
+			<div class="boost u"><h4>&#128309; Blue (Island)</h4><ol>
+				<li>Swing: Scry 1</li><li>+3 Health</li><li>Spell Damage +1</li><li>Prowess</li><li>+1/+1 <i>(Connect: Excavate, pending)</i></li><li>Hexproof</li></ol></div>
+			<div class="boost b"><h4>&#9899; Black (Swamp)</h4><ol>
+				<li>Venomous</li><li>Ward: 2 Life</li><li><i>Swing: Advance (pending)</i></li><li>Avenge 1: Gain 1 Life</li><li>Reborn</li><li>Deathtouch</li></ol></div>
+			<div class="boost r"><h4>&#128308; Red (Mountain)</h4><ol>
+				<li><i>Inspire: Dredge (pending)</i></li><li><i>Deathrattle: Planeshift (pending)</i></li><li>+3 Attack</li><li>Cleave</li><li>Sanguine</li><li>Impulsive</li></ol></div>
+			<div class="boost g"><h4>&#128994; Green (Forest)</h4><ol>
+				<li>Connect: Adapt</li><li>+2/+2</li><li>Frenzy: Bolster 1</li><li>Inspire: +1/+1</li><li>Windfury</li><li>Trample</li></ol></div>
+		</div>
+	</section>
+
+	<section id="planes">
+		<h2>Planes &amp; the Planar Die</h2>
+		<p class="lede">The whole table shares one arena plane &mdash; and daring mages can roll to change it.</p>
+
+		<ul>
+			<li>The active <a href="/designwiki/#/type/plane">plane</a> belongs to nobody. It has an <a href="/designwiki/#/keyword/arrival">Arrival</a> effect (fires when it appears), a <a href="/designwiki/#/keyword/chaos">Chaos</a> ability, a <a href="/designwiki/#/keyword/departure">Departure</a> effect (fires when it leaves), and a continuous <b>Static</b> rule that applies while it's active.</li>
+			<li><b>Planeswalking</b> requires a planeswalker in play or having used a <a href="/designwiki/#/keyword/spark">Spark</a> card.</li>
+			<li><b>Roll a d6:</b> on a <b>6</b>, <a href="/designwiki/#/keyword/planeshift">Planeshift</a> &mdash; swap to a random new plane (old Departure fires, new Arrival fires). On a <b>5</b>, trigger the current plane's <b>Chaos</b> ability. 1&ndash;4: nothing.</li>
+			<li><b>Cost:</b> your first roll each turn is free; each further roll that turn costs 1 more mana than the last (0, 1, 2&hellip;).</li>
+		</ul>
+
+		<div class="panel callout">
+			<span class="co-title">Example statics</span><br>
+			Stronghold Furnace doubles all combat damage &middot; Alkabah makes 4-cost spells free &middot; Belenon stops things untapping. Browse every plane in the <a href="/designwiki/#/type/plane">Card Gallery</a>.
+		</div>
+	</section>
+
+	<section id="stack">
+		<h2>The Stack &amp; Instants</h2>
+		<p class="lede">Nothing resolves instantly &mdash; everything can be answered.</p>
+
+		<ul>
+			<li>Spells, hero powers, activated abilities, land taps, and even <b>attacks</b> go on a last-in-first-out <b>stack</b>.</li>
+			<li>Opponents holding an <a href="/designwiki/#/type/instant">instant</a> (or an instant-speed ability or land tap) get a <b>priority window</b> to respond before the top of the stack resolves. Priority passes clockwise; when everyone passes, the top resolves.</li>
+			<li><a href="/designwiki/#/keyword/countertargetspell">Counter</a> instants remove a spell from the stack entirely &mdash; it never resolves.</li>
+			<li>The game has an <b>Auto-pass toggle</b>: turn it off and you get a short window to respond at instant speed to everything.</li>
+		</ul>
+	</section>
+
+	<section id="tokens">
+		<h2>Tokens &amp; Other Systems</h2>
+
+		<h3>Resource tokens</h3>
+		<div class="table-scroll"><table>
+			<tr><th>Token</th><th>Made by</th><th>Cash in</th></tr>
+			<tr><td>Blood Token</td><td><a href="/designwiki/#/keyword/sanguine">Sanguine</a> creatures attacking or being attacked</td><td>Sacrifice &mdash; pay 1 and discard a card: draw a card.</td></tr>
+			<tr><td>Clue</td><td><a href="/designwiki/#/keyword/investigate">Investigate</a></td><td>Sacrifice and pay 2: draw a card.</td></tr>
+			<tr><td>Food</td><td><a href="/designwiki/#/keyword/cook">Cook</a></td><td>Sacrifice and pay 2: restore 3 Health to your hero.</td></tr>
+			<tr><td>Treasure</td><td><a href="/designwiki/#/keyword/excavate">Excavate</a> &amp; friends</td><td>Sacrifice free: gain 1 mana.</td></tr>
+		</table></div>
+		<p>Tokens are <b>exiled</b> when they die &mdash; they never enter the graveyard or reshuffle. (The Coin is a real card, not a token, and does reshuffle.)</p>
+
+		<h3>Corpses</h3>
+		<p>Every friendly creature death banks a <b>Corpse</b> for its owner. All classes accrue them, but only Death Knights see a counter &mdash; their cards spend Corpses for effects.</p>
+
+		<h3>The Coin economy</h3>
+		<p><a href="/designwiki/#/cards/coin">The Coin</a> (+1 temporary mana) flows constantly: players going second start with one, and every time anyone develops a land, all their opponents get one.</p>
+	</section>
+
+	<section id="winning">
+		<h2>Winning &amp; Losing</h2>
+		<p>When a hero's <b>Life reaches 0</b> they are <b>eliminated</b> &mdash; their whole board and zones are cleared and their slice of the table goes dark. The game ends when one player remains: <b>last hero standing wins</b>. If everyone dies simultaneously, it's a draw.</p>
+	</section>
+
+	<section id="modes">
+		<h2>Game Modes &amp; Getting Cards</h2>
+
+		<h3>Battle (vs AI)</h3>
+		<p>2&ndash;8 player free-for-all against AI opponents. Rewards: <b>win +100 gold</b>, draw +50, loss +25.</p>
+
+		<h3>Dungeon Run</h3>
+		<p>Pick a class, take its fixed <b>10-card starter deck</b>, and climb an <b>8-level boss ladder</b>. In a run, you and the boss share a scaling life total &mdash; <b>15 HP at level 1, +5 per level</b>. After each win, choose 1 of 3 themed card buckets (all 3 cards join your deck); after every odd level, also pick 1 of 3 <b>Treasures</b> &mdash; permanent run passives like <i>double your starting Health</i> or <i>your spells cost (1) less</i>. Clearing level 8 pays <b>+500 gold</b>.</p>
+
+		<h3>Live PvP &amp; spectating</h3>
+		<p>Challenge a friend to a live duel, or spectate a friend's board in real time, through the <a href="/magepunktest/">test realm</a> account system.</p>
+
+		<h3>Packs &amp; collection</h3>
+		<p>New players start with <b>300 gold</b> and a starter collection (2&times; every common, 1&times; every uncommon). <a href="/battlecards/packs.html">Packs</a> cost <b>100 gold</b> and hold <b>5 cards</b> &mdash; the first four roll common 60% / uncommon 25% / rare 10% / epic 4% / legendary 1%, and the fifth is <b>guaranteed rare or better</b> (rare 75% / epic 20% / legendary 5%). Browse what you own in the <a href="/battlecards/viewer.html">collection viewer</a> and build decks in the <a href="/battlecards/deck.html">deck builder</a>.</p>
+	</section>
+
+	<section id="glossary">
+		<h2>Keyword Glossary</h2>
+		<p class="lede">Every keyword in the game, straight from the engine's glossary. Click a keyword to see every card that uses it in the Design Wiki.</p>
+		<dl class="kw-grid">
+	<div class="kw"><dt><a href="/designwiki/#/keyword/adapt">Adapt</a></dt><dd>Choose one of three upgrades for the creature.</dd></div>
+	<div class="kw"><dt><a href="/designwiki/#/keyword/alliance">Alliance</a></dt><dd>Triggers each time you play another creature.</dd></div>
+	<div class="kw"><dt><a href="/designwiki/#/keyword/arrival">Arrival</a> <span class="plane-tag">Plane</span></dt><dd>A plane's effect that triggers when it arrives (becomes the active plane).</dd></div>
+	<div class="kw"><dt><a href="/designwiki/#/keyword/avenge">Avenge</a></dt><dd>Avenge N — its effect triggers after N of your creatures have died.</dd></div>
+	<div class="kw"><dt><a href="/designwiki/#/keyword/battlecry">Battlecry</a></dt><dd>Triggers an effect when you play it from your hand.</dd></div>
+	<div class="kw"><dt><a href="/designwiki/#/keyword/bushido">Bushido</a></dt><dd>Gains +1/+1 whenever it attacks.</dd></div>
+	<div class="kw"><dt><a href="/designwiki/#/keyword/chaos">Chaos</a> <span class="plane-tag">Plane</span></dt><dd>A shared plane effect that fires when a planar roll comes up Chaos.</dd></div>
+	<div class="kw"><dt><a href="/designwiki/#/keyword/charge">Charge</a></dt><dd>Can attack anything the turn it is played.</dd></div>
+	<div class="kw"><dt><a href="/designwiki/#/keyword/chromatic">Chromatic</a></dt><dd>Its colour boosts roll twice and keep both results.</dd></div>
+	<div class="kw"><dt><a href="/designwiki/#/keyword/cleave">Cleave</a></dt><dd>Combat damage also hits the creatures beside the target.</dd></div>
+	<div class="kw"><dt><a href="/designwiki/#/keyword/colossal">Colossal</a></dt><dd>Colossal +N — enters play alongside its Appendage tokens.</dd></div>
+	<div class="kw"><dt><a href="/designwiki/#/keyword/combo">Combo</a></dt><dd>A bonus effect if you already played a card this turn.</dd></div>
+	<div class="kw"><dt><a href="/designwiki/#/keyword/connect">Connect</a></dt><dd>Triggers when this deals combat damage to the enemy hero.</dd></div>
+	<div class="kw"><dt><a href="/designwiki/#/keyword/constellation">Constellation</a></dt><dd>Triggers each time you play an Enchantment.</dd></div>
+	<div class="kw"><dt><a href="/designwiki/#/keyword/cook">Cook</a></dt><dd>Make a Food token — sacrifice it and pay 2 to restore 3 Health to your hero.</dd></div>
+	<div class="kw"><dt><a href="/designwiki/#/keyword/corrupt">Corrupt</a></dt><dd>While in your hand, upgrades once you play a card that costs more than it.</dd></div>
+	<div class="kw"><dt><a href="/designwiki/#/keyword/countertargetspell">Counter target spell</a> <span class="alias">(also: Counter)</span></dt><dd>When an opponent casts a spell, you may play this in response from your hand to counter it — it goes on the stack and is stopped before it resolves.</dd></div>
+	<div class="kw"><dt><a href="/designwiki/#/keyword/deathrattle">Deathrattle</a></dt><dd>Triggers an effect when it dies.</dd></div>
+	<div class="kw"><dt><a href="/designwiki/#/keyword/deathtouch">Deathtouch</a> <span class="alias">(also: Poisonous, Venomous)</span></dt><dd>Any damage it deals destroys the creature.</dd></div>
+	<div class="kw"><dt><a href="/designwiki/#/keyword/defender">Defender</a></dt><dd>May redirect attacks on your other permanents onto itself.</dd></div>
+	<div class="kw"><dt><a href="/designwiki/#/keyword/departure">Departure</a> <span class="plane-tag">Plane</span></dt><dd>A plane's effect that triggers when it leaves play.</dd></div>
+	<div class="kw"><dt><a href="/designwiki/#/keyword/discover">Discover</a></dt><dd>Choose one of three cards to add to your hand.</dd></div>
+	<div class="kw"><dt><a href="/designwiki/#/keyword/divineshield">Divine Shield</a></dt><dd>Ignores the first damage it would take.</dd></div>
+	<div class="kw"><dt><a href="/designwiki/#/keyword/dredge">Dredge</a></dt><dd>Look at the bottom 3 cards of your deck and put one on top (you don't draw it).</dd></div>
+	<div class="kw"><dt><a href="/designwiki/#/keyword/echo">Echo</a></dt><dd>Leaves a temporary copy in your hand when played, so you can keep replaying it while you have mana.</dd></div>
+	<div class="kw"><dt><a href="/designwiki/#/keyword/elusive">Elusive</a> <span class="alias">(also: Hexproof)</span></dt><dd>Can't be targeted by spells or Hero Powers.</dd></div>
+	<div class="kw"><dt><a href="/designwiki/#/keyword/emerge">Emerge</a></dt><dd>Triggers from your hand the moment this card is drawn or discovered (not from your opening hand).</dd></div>
+	<div class="kw"><dt><a href="/designwiki/#/keyword/ephemeral">Ephemeral</a></dt><dd>Destroyed at the end of the turn.</dd></div>
+	<div class="kw"><dt><a href="/designwiki/#/keyword/excavate">Excavate</a></dt><dd>Dig up a treasure to your hand; each Excavate is one tier higher (Common → Legendary), then loops.</dd></div>
+	<div class="kw"><dt><a href="/designwiki/#/keyword/finale">Finale</a></dt><dd>A bonus effect that happens if you spent all your remaining mana to play this card.</dd></div>
+	<div class="kw"><dt><a href="/designwiki/#/keyword/firebreathing">Firebreathing</a></dt><dd>Spend 1 mana any number of times: +1 Attack until end of turn.</dd></div>
+	<div class="kw"><dt><a href="/designwiki/#/keyword/firststrike">First Strike</a> <span class="alias">(also: Swift)</span></dt><dd>Deals its combat damage first.</dd></div>
+	<div class="kw"><dt><a href="/designwiki/#/keyword/freeze">Freeze</a> <span class="alias">(also: Frozen, Freezer)</span></dt><dd>A Frozen character skips its next attack.</dd></div>
+	<div class="kw"><dt><a href="/designwiki/#/keyword/frenzy">Frenzy</a></dt><dd>A one-time effect the first time this survives taking damage.</dd></div>
+	<div class="kw"><dt><a href="/designwiki/#/keyword/gaze">Gaze</a></dt><dd>Gaze N — look at the top N cards of your deck and reorder them (like Scry).</dd></div>
+	<div class="kw"><dt><a href="/designwiki/#/keyword/honorablekill">Honorable Kill</a></dt><dd>Bonus if it kills a creature with an exact-lethal blow.</dd></div>
+	<div class="kw"><dt><a href="/designwiki/#/keyword/impulsive">Impulsive</a></dt><dd>Must attack — it swings on its own before your turn ends.</dd></div>
+	<div class="kw"><dt><a href="/designwiki/#/keyword/inspire">Inspire</a></dt><dd>Triggers after you use your Hero Power.</dd></div>
+	<div class="kw"><dt><a href="/designwiki/#/keyword/investigate">Investigate</a></dt><dd>Make a Clue token — sacrifice it and pay 2 to draw a card.</dd></div>
+	<div class="kw"><dt><a href="/designwiki/#/keyword/lifesteal">Lifesteal</a></dt><dd>Damage it deals also heals your hero.</dd></div>
+	<div class="kw"><dt><a href="/designwiki/#/keyword/luck">Luck</a></dt><dd>Flip a coin: heads the effect happens, tails it fizzles.</dd></div>
+	<div class="kw"><dt><a href="/designwiki/#/keyword/magnetic">Magnetic</a></dt><dd>Play it left of a friendly Mech to fuse their stats and text.</dd></div>
+	<div class="kw"><dt><a href="/designwiki/#/keyword/manathirst">Manathirst</a></dt><dd>Manathirst N — a bonus effect that activates once your mana crystals this turn reach N (whether or not you have spent them).</dd></div>
+	<div class="kw"><dt><a href="/designwiki/#/keyword/medic">Medic</a></dt><dd>Medic N — restores N Health to the creatures beside it at the end of your turn.</dd></div>
+	<div class="kw"><dt><a href="/designwiki/#/keyword/mill">Mill</a></dt><dd>Mill N — put the top N cards of a deck into its graveyard.</dd></div>
+	<div class="kw"><dt><a href="/designwiki/#/keyword/morbid">Morbid</a></dt><dd>Morbid N — its effect triggers each time N creatures have died.</dd></div>
+	<div class="kw"><dt><a href="/designwiki/#/keyword/outcast">Outcast</a></dt><dd>A bonus if this was the left- or right-most card in your hand when you played it.</dd></div>
+	<div class="kw"><dt><a href="/designwiki/#/keyword/overheal">Overheal</a></dt><dd>A bonus that triggers when this is healed above its maximum Health.</dd></div>
+	<div class="kw"><dt><a href="/designwiki/#/keyword/overload">Overload</a></dt><dd>Locks that much of your mana next turn.</dd></div>
+	<div class="kw"><dt><a href="/designwiki/#/keyword/pacifist">Pacifist</a></dt><dd>Can't attack.</dd></div>
+	<div class="kw"><dt>Paralyzed <span class="alias">(also: Paralyze)</span></dt><dd>A Paralyzed creature's attacks fail 50% of the time (coin flip).</dd></div>
+	<div class="kw"><dt><a href="/designwiki/#/keyword/piercing">Piercing</a></dt><dd>Its attacks ignore Taunt.</dd></div>
+	<div class="kw"><dt><a href="/designwiki/#/keyword/planeshift">Planeshift</a></dt><dd>Shift the arena to a random plane (the old one departs, the new one arrives). The plane is shared — nobody controls it.</dd></div>
+	<div class="kw"><dt>Planeswalk</dt><dd>Roll the planar die (needs a planeswalker or Spark). First roll each turn is free, then +1 mana each. 6 = Planeshift, 5 = Chaos, 1-4 nothing.</dd></div>
+	<div class="kw"><dt><a href="/designwiki/#/keyword/ponder">Ponder</a></dt><dd>Triggers whenever you draw an extra card (past your first draw of the turn), Scry, Dredge or Gaze.</dd></div>
+	<div class="kw"><dt><a href="/designwiki/#/keyword/prowess">Prowess</a></dt><dd>Gains +1/+1 until end of turn each time you cast a spell.</dd></div>
+	<div class="kw"><dt><a href="/designwiki/#/keyword/quest">Quest</a></dt><dd>Complete its goal for a powerful reward.</dd></div>
+	<div class="kw"><dt><a href="/designwiki/#/keyword/quickdraw">Quickdraw</a></dt><dd>Quickdraw N — draw N cards; cards drawn this way shuffle back into your deck at end of turn.</dd></div>
+	<div class="kw"><dt><a href="/designwiki/#/keyword/reborn">Reborn</a></dt><dd>Returns with 1 Health the first time it dies.</dd></div>
+	<div class="kw"><dt><a href="/designwiki/#/keyword/regenerate">Regenerate</a></dt><dd>Regenerate N — restores N Health to itself at the end of your turn.</dd></div>
+	<div class="kw"><dt><a href="/designwiki/#/keyword/rush">Rush</a></dt><dd>Can attack enemy creatures the turn it is played.</dd></div>
+	<div class="kw"><dt><a href="/designwiki/#/keyword/sanguine">Sanguine</a></dt><dd>Banks a Blood Token whenever it attacks or is attacked.</dd></div>
+	<div class="kw"><dt><a href="/designwiki/#/keyword/scry">Scry</a></dt><dd>Scry N — look at the top N cards of your deck; keep them on top or send them to the bottom.</dd></div>
+	<div class="kw"><dt><a href="/designwiki/#/keyword/secret">Secret</a></dt><dd>Stays hidden until its trigger fires on the opponent's turn.</dd></div>
+	<div class="kw"><dt><a href="/designwiki/#/keyword/spark">Spark</a></dt><dd>Unlocks Planeswalk — you may now roll the planar die on your turn.</dd></div>
+	<div class="kw"><dt><a href="/designwiki/#/keyword/spelldamage">Spell Damage</a></dt><dd>Your spells deal extra damage.</dd></div>
+	<div class="kw"><dt><a href="/designwiki/#/keyword/spellburst">Spellburst</a></dt><dd>A one-time effect that triggers after you cast your next spell.</dd></div>
+	<div class="kw"><dt><a href="/designwiki/#/keyword/static">Static</a></dt><dd>50% chance to Paralyze any creature that survives combat with it.</dd></div>
+	<div class="kw"><dt><a href="/designwiki/#/keyword/static">Static</a> <span class="plane-tag">Plane</span></dt><dd>A plane's continuous effect that applies while it is the active plane.</dd></div>
+	<div class="kw"><dt><a href="/designwiki/#/keyword/stealth">Stealth</a></dt><dd>Can't be attacked or targeted until it attacks.</dd></div>
+	<div class="kw"><dt><a href="/designwiki/#/keyword/swing">Swing</a></dt><dd>Triggers when this attacks.</dd></div>
+	<div class="kw"><dt><a href="/designwiki/#/keyword/taunt">Taunt</a></dt><dd>Enemies must attack this before your other creatures.</dd></div>
+	<div class="kw"><dt><a href="/designwiki/#/keyword/tradeable">Tradeable</a></dt><dd>Drag it onto your deck to pay 1 and draw a card.</dd></div>
+	<div class="kw"><dt><a href="/designwiki/#/keyword/trample">Trample</a></dt><dd>Excess lethal damage carries over to the hero.</dd></div>
+	<div class="kw"><dt><a href="/designwiki/#/keyword/ward">Ward</a></dt><dd>Ward N — an opponent must pay N extra (mana or Life) to target this.</dd></div>
+	<div class="kw"><dt><a href="/designwiki/#/keyword/windfury">Windfury</a></dt><dd>Can attack twice each turn.</dd></div>
+</dl>
+	</section>
+
+	</main>
+</div>
+
+<footer>
+	<p><b style="color:var(--gold)">Magepunk</b> &mdash; <a href="/battlecards/">Play Battlecards</a> &middot; <a href="/designwiki/">Design Wiki</a> &middot; <a href="/designwiki/#/cards">Card Gallery</a> &middot; <a href="/">Home</a></p>
+	<p>Rules on this page are drawn directly from the game engine. Spotted a mismatch? The game is always right.</p>
+</footer>
+
+</body>
+</html>
