@@ -12,6 +12,8 @@ const K = [
 	{ p: ['Windfury'], t: 'Can attack twice each turn.', tag: 'windfury' },
 	{ p: ['Stealth'], t: "Can't be attacked or targeted until it attacks.", tag: 'stealth' },
 	{ p: ['Reborn'], t: 'Returns with 1 Health the first time it dies.', tag: 'reborn' },
+	{ p: ['Indestructible'], t: "Damage and “destroy” effects don't kill it — only being sacrificed does.", tag: 'indestructible' },
+	{ p: ['Landfall'], t: 'Triggers whenever a land you control enters (you develop a land).', tag: 'landfall' },
 	{ p: ['Deathtouch'], t: 'Any damage it deals to a creature destroys that creature.', tag: 'deathtouch' },
 	{ p: ['Venomous'], t: 'Like Deathtouch, but one-shot: the first time it damages a creature that creature is destroyed, then Venomous is used up.', tag: 'venomous' },
 	{ p: ['Poisonous'], t: 'Damaging a creature Poisons it instead of destroying it outright.', tag: 'poisonous' },

@@ -9,6 +9,7 @@ export const KW = {
 	BATTLECRY: 'battlecry', DEATHRATTLE: 'deathrattle', LIFESTEAL: 'lifesteal',
 	DIVINE_SHIELD: 'divine_shield', STEALTH: 'stealth', DEATHTOUCH: 'deathtouch',
 	POISONOUS: 'poisonous', VENOMOUS: 'venomous', FREEZER: 'freezer',
+	INDESTRUCTIBLE: 'indestructible', // survives damage & "destroy"; only sacrifice kills it
 	ELUSIVE: 'elusive', PIERCING: 'piercing',
 	PACIFIST: 'pacifist',   // can't attack (Ragnaros, Ancient Watcher)
 	CLEAVE: 'cleave',       // combat damage splashes to the defender's neighbors
@@ -518,6 +519,7 @@ const CHOSEN = {
 	'copy-summon': { creature: 'creature', 'friendly-creature': 'friendly-creature' },
 	'summon-with-stats': { 'friendly-creature': 'friendly-creature' },
 	exile: { creature: 'creature', 'enemy-creature': 'enemy-creature' },
+	'exile-until-return': { creature: 'creature', 'enemy-creature': 'enemy-creature' },
 	disguise: { creature: 'creature', 'friendly-creature': 'friendly-creature' },
 	freeze: { any: 'any', creature: 'creature', 'enemy-creature': 'enemy-creature' },
 	'trigger-one-deathrattle': { 'friendly-creature': 'friendly-creature' },
@@ -889,6 +891,9 @@ function healHero(state, pi, amount) {
 
 function isDead(c) {
 	if (c.type === 'location') return c.doomed || c.durability <= 0;
+	// Indestructible: lethal damage and "destroy" effects don't kill it — only
+	// a sacrifice does (which sets c.sacrificed).
+	if (has(c, KW.INDESTRUCTIBLE) && !c.sacrificed) return false;
 	return c.doomed || c.damage >= c.maxHealth;
 }
 
@@ -976,6 +981,17 @@ function sweepDeaths(state) {
 			}
 			if (c.marked) drawCards(state, c.markedBy, 2);
 			runDeathrattle(state, pi, c);
+			// Oblivion Ring leaves play: the creature it exiled returns (fresh)
+			if (c.oringExiled) {
+				const oe = c.oringExiled; c.oringExiled = null;
+				const ow = state.players[oe.owner];
+				const i = ow.exile.findIndex(x => x.uid === oe.uid);
+				if (i >= 0) {
+					const [ex] = ow.exile.splice(i, 1);
+					const back = summon(state, oe.owner, state.cardsById[ex.id] || ex);
+					if (back) emit(state, { type: 'returnFromExile', uid: back.uid, player: oe.owner, name: back.name });
+				}
+			}
 			firePlaneTrigger(state, 'creature-died', pi); // Takenuma: the owner draws
 			if (c.commander && !p.eliminated) {
 				// commanders retreat to the command zone; the tax goes up
@@ -1338,6 +1354,7 @@ export function buyLand(state, pi, landId) {
 	p.lands.push(card);
 	emit(state, { type: 'landPlayed', player: pi, card, mana: availableMana(p) });
 	runBattlecry(state, pi, card, null); // on-play land effects still fire
+	fireOngoing(state, pi, 'landfall', { land: card }); // Landfall: "whenever a land you control enters"
 	questTick(state, 'land', pi);
 	sweepDeaths(state);
 	return true;
@@ -1437,7 +1454,7 @@ export function activateAbility(state, pi, cardUid, i, target) {
 		emit(state, { type: 'discard', player: pi, card: c });
 	}
 	emit(state, { type: 'abilityUsed', player: pi, card, text: a.text });
-	if (a.sacrifice) { card.damage = card.maxHealth + 99; card.doomed = true; }
+	if (a.sacrifice) { card.damage = card.maxHealth + 99; card.doomed = true; card.sacrificed = true; }
 	stackAction(state, pi, { kind: 'ability', card, effects: a.effects, target });
 	return true;
 }
@@ -2164,6 +2181,18 @@ function execEffects(state, pi, effects, target, source) {
 				owner.board = owner.board.filter(c => c !== t);
 				t.zone = 'exile';
 				owner.exile.push(t);
+				emit(state, { type: 'exiled', uid: t.uid, player: t.controller, name: t.name });
+			}
+		} else if (e.type === 'exile-until-return') {
+			// Oblivion Ring / Fiend Hunter: exile a creature; it comes back (as a
+			// fresh permanent) when THIS card leaves play (see sweepDeaths).
+			const t = chosenCreature();
+			if (t && source) {
+				const owner = state.players[t.controller];
+				owner.board = owner.board.filter(c => c !== t);
+				t.zone = 'exile';
+				owner.exile.push(t);
+				source.oringExiled = { uid: t.uid, id: t.id, owner: t.controller };
 				emit(state, { type: 'exiled', uid: t.uid, player: t.controller, name: t.name });
 			}
 		} else if (e.type === 'emblem') {
