@@ -55389,7 +55389,7 @@
       "rarity": "legendary",
       "set": "paper",
       "token": true,
-      "description": "Arrival: Each player summons a 2/1 Dragon creature token.\nAll creatures have +1/+1 and Rush.\nChaos: Summon two 2/1 creatures with Rush.\nDeparture: Each player loses 2 life.",
+      "description": "Arrival: Each player summons a 2/1 Dragon creature token.\nAll creatures have +1/+1 and Rush.\nChaos: Summon two 2/1 Dragon creature tokens.\nDeparture: Each player loses 2 life.",
       "arrival": [
         {
           "type": "summon",
@@ -55416,12 +55416,11 @@
         {
           "type": "summon",
           "count": 2,
+          "name": "Dragon",
+          "tribe": "Dragon",
           "attack": 2,
           "health": 1,
-          "name": "Ashland Raider",
-          "keywords": [
-            "rush"
-          ]
+          "keywords": []
         }
       ],
       "departure": [
