@@ -56878,6 +56878,265 @@
       "keywords": [],
       "description": "",
       "effects": []
+    },
+    {
+      "id": "blacksmith_skill",
+      "name": "Blacksmith's Skill",
+      "type": "instant",
+      "cost": 1,
+      "colors": [
+        "W"
+      ],
+      "cardClass": "neutral",
+      "rarity": "common",
+      "set": "wubrg",
+      "description": "Give a creature Indestructible.",
+      "effects": [
+        {
+          "type": "grant",
+          "keyword": "indestructible",
+          "target": "creature"
+        }
+      ]
+    },
+    {
+      "id": "thraben_inspector",
+      "name": "Thraben Inspector",
+      "type": "creature",
+      "cost": 1,
+      "colors": [
+        "W"
+      ],
+      "cardClass": "neutral",
+      "attack": 1,
+      "health": 2,
+      "rarity": "common",
+      "set": "wubrg",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Draw a card.",
+      "effects": [
+        {
+          "type": "draw",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "frost_lynx",
+      "name": "Frost Lynx",
+      "type": "creature",
+      "cost": 3,
+      "colors": [
+        "U"
+      ],
+      "cardClass": "neutral",
+      "attack": 2,
+      "health": 2,
+      "rarity": "common",
+      "set": "wubrg",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Freeze an enemy creature.",
+      "effects": [
+        {
+          "type": "freeze",
+          "target": "enemy-creature"
+        }
+      ]
+    },
+    {
+      "id": "sea_gate_oracle",
+      "name": "Sea Gate Oracle",
+      "type": "creature",
+      "cost": 3,
+      "colors": [
+        "U"
+      ],
+      "cardClass": "neutral",
+      "attack": 1,
+      "health": 3,
+      "rarity": "common",
+      "set": "wubrg",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Draw a card.",
+      "effects": [
+        {
+          "type": "draw",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "cut_down",
+      "name": "Cut Down",
+      "type": "instant",
+      "cost": 1,
+      "colors": [
+        "B"
+      ],
+      "cardClass": "neutral",
+      "rarity": "common",
+      "set": "wubrg",
+      "description": "Destroy a creature with 3 or less Attack.",
+      "effects": [
+        {
+          "type": "destroy",
+          "target": "creature",
+          "maxAttack": 3
+        }
+      ]
+    },
+    {
+      "id": "vampire_nighthawk",
+      "name": "Vampire Nighthawk",
+      "type": "creature",
+      "cost": 3,
+      "colors": [
+        "B"
+      ],
+      "cardClass": "neutral",
+      "attack": 2,
+      "health": 3,
+      "rarity": "uncommon",
+      "set": "wubrg",
+      "keywords": [
+        "deathtouch",
+        "lifesteal"
+      ],
+      "description": "Deathtouch.\nLifesteal.",
+      "effects": []
+    },
+    {
+      "id": "unholy_heat",
+      "name": "Unholy Heat",
+      "type": "sorcery",
+      "cost": 1,
+      "colors": [
+        "R"
+      ],
+      "cardClass": "neutral",
+      "rarity": "common",
+      "set": "wubrg",
+      "description": "Deal 2 damage to a creature.",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 2,
+          "target": "creature"
+        }
+      ]
+    },
+    {
+      "id": "fervent_champion",
+      "name": "Fervent Champion",
+      "type": "creature",
+      "cost": 1,
+      "colors": [
+        "R"
+      ],
+      "cardClass": "neutral",
+      "attack": 1,
+      "health": 1,
+      "rarity": "rare",
+      "set": "wubrg",
+      "keywords": [
+        "first_strike",
+        "charge"
+      ],
+      "description": "First Strike.\nCharge.",
+      "effects": []
+    },
+    {
+      "id": "borderland_marauder",
+      "name": "Borderland Marauder",
+      "type": "creature",
+      "cost": 2,
+      "colors": [
+        "R"
+      ],
+      "cardClass": "neutral",
+      "attack": 1,
+      "health": 2,
+      "rarity": "common",
+      "set": "wubrg",
+      "keywords": [],
+      "description": "Whenever this attacks, it gets +2/+0 until end of turn.",
+      "ongoing": {
+        "on": "self-attacks",
+        "effects": [
+          {
+            "type": "temp-buff-self",
+            "attack": 2,
+            "health": 0
+          }
+        ]
+      }
+    },
+    {
+      "id": "ash_zealot",
+      "name": "Ash Zealot",
+      "type": "creature",
+      "cost": 2,
+      "colors": [
+        "R"
+      ],
+      "cardClass": "neutral",
+      "attack": 2,
+      "health": 2,
+      "rarity": "common",
+      "set": "wubrg",
+      "keywords": [
+        "first_strike",
+        "charge"
+      ],
+      "description": "First Strike.\nCharge.",
+      "effects": []
+    },
+    {
+      "id": "clockwork_fox",
+      "name": "Clockwork Fox",
+      "type": "creature",
+      "cost": 3,
+      "colors": [
+        "G"
+      ],
+      "cardClass": "neutral",
+      "attack": 3,
+      "health": 2,
+      "rarity": "common",
+      "set": "wubrg",
+      "keywords": [
+        "deathrattle"
+      ],
+      "description": "Deathrattle: Draw two cards.",
+      "deathrattle": [
+        {
+          "type": "draw",
+          "value": 2
+        }
+      ]
+    },
+    {
+      "id": "rumbling_baloth",
+      "name": "Rumbling Baloth",
+      "type": "creature",
+      "cost": 4,
+      "colors": [
+        "G"
+      ],
+      "cardClass": "neutral",
+      "attack": 4,
+      "health": 4,
+      "rarity": "common",
+      "set": "wubrg",
+      "keywords": [],
+      "description": "",
+      "effects": []
     }
   ]
 }
