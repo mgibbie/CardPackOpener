@@ -2216,25 +2216,22 @@ function execEffects(state, pi, effects, target, source) {
 		} else if (e.type === 'summon') {
 			// perEnemy: one token per enemy creature ("Unleash the Hounds");
 			// options: pick a random companion (Animal Companion);
-			// forEnemy: tokens go to a random opponent (Leeroy's Whelps)
+			// forEnemy: tokens go to a random opponent (Leeroy's Whelps);
+			// eachPlayer: every player summons the token(s) (Sokenzan's Arrival)
 			let n = e.count === 'X' ? (source?.xValue || 0) : (e.count || 1);
 			if (e.perEnemy) {
 				n = 0;
 				for (const o of enemies) n += state.players[o].board.filter(c => !isDead(c)).length;
 			}
-			const owner = e.forEnemy && enemies.length
-				? enemies[Math.floor(state.rng() * enemies.length)] : pi;
-			for (let i = 0; i < n; i++) {
+			const summonOne = (ownerIdx) => {
 				const opt = e.options ? e.options[Math.floor(state.rng() * e.options.length)] : e;
 				// summonId: instantiate a real card def so it keeps its own ongoing —
 				// e.g. Gibberling's Spellburst summons another Gibberling that snowballs
-				if (opt.summonId && state.cardsById[opt.summonId]) { summon(state, owner, state.cardsById[opt.summonId]); continue; }
+				if (opt.summonId && state.cardsById[opt.summonId]) { summon(state, ownerIdx, state.cardsById[opt.summonId]); return; }
 				// randomKeywords: each token rolls its own bonus (Bucket of Soldiers)
 				const kws = [...(opt.keywords || [])];
-				if (e.randomKeywords?.length) {
-					kws.push(e.randomKeywords[Math.floor(state.rng() * e.randomKeywords.length)]);
-				}
-				summon(state, owner, {
+				if (e.randomKeywords?.length) kws.push(e.randomKeywords[Math.floor(state.rng() * e.randomKeywords.length)]);
+				summon(state, ownerIdx, {
 					id: 'token_' + opt.name.toLowerCase().replace(/[^a-z0-9]+/g, '_'),
 					name: opt.name, type: 'creature', cost: 0, rarity: 'common', token: true,
 					description: opt.description || `A ${opt.attack}/${opt.health} token.`,
@@ -2245,7 +2242,11 @@ function execEffects(state, pi, effects, target, source) {
 					static: opt.static || e.static || null,
 					deathrattle: opt.deathrattle || null, // Underbelly Network's Rat
 				});
-			}
+			};
+			const owners = e.eachPlayer
+				? state.players.map((_, idx) => idx)
+				: [e.forEnemy && enemies.length ? enemies[Math.floor(state.rng() * enemies.length)] : pi];
+			for (const ownerIdx of owners) for (let i = 0; i < n; i++) summonOne(ownerIdx);
 		} else if (e.type === 'summon-jade') {
 			// Jade Golem: per-player counter, each golem +1/+1 over the last (cap 30/30).
 			// The counter advances even if the board is full and the summon fails.
