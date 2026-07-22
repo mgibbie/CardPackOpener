@@ -157,7 +157,11 @@ function renderSlots() {
 		const col = classColorOf(s.classId || 'neutral');
 		const div = document.createElement('div');
 		div.className = 'slot-row' + (s.id === editingId ? ' active' : '');
-		div.style.background = `linear-gradient(90deg, ${col} 0%, ${col} 42%, #1c1430 100%)`;
+		// hero art from the OCR class cards as the banner backdrop, darkened on the
+		// left for the name; classes without hero art fall back to the class colour
+		div.style.background =
+			`linear-gradient(90deg, rgba(6,4,12,0.78) 0%, rgba(6,4,12,0.28) 42%, rgba(6,4,12,0.2) 100%), `
+			+ `url('art/hero_${s.classId}.jpg') center 20% / cover, ${col}`;
 		div.innerHTML = `<span class="s-name">${s.name || s.classId || 'Deck'}</span>`
 			+ `<span class="s-count ${valid ? 'full' : 'partial'}">${(s.cards || []).length}/${SIZE}</span>`;
 		div.onclick = () => editSlot(s);
