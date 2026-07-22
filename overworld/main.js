@@ -2941,51 +2941,66 @@ async function pollChallenges() {
 			}
 		} catch (e) {}
 	}
-	// any incoming challenges?
-	if (incomingChallenge || anyMenuOpen() || dialog.blocking || battle.blocking) return;
-	try {
-		const data = await MP.call('challenges');
-		const ch = (data.challenges || [])[0];
-		if (ch) { incomingChallenge = ch; showIncoming(ch); }
-	} catch (e) {}
+	if (anyMenuOpen() || battle.blocking) return;
+	// fetch the freshest incoming challenge every tick
+	let ch = null;
+	try { const data = await MP.call('challenges'); ch = (data.challenges || [])[0] || null; }
+	catch (e) { return; }
+	if (incomingChallenge) {
+		// a challenge dialog is already up — refresh it if the pending challenge
+		// changed type or sender (e.g. they switched a POKeMON challenge to a
+		// card one), so we can never accept the wrong kind of battle
+		if (ch && (ch.from !== incomingChallenge.from || ch.type !== incomingChallenge.type)
+			&& !deckSelect.open && !trade.open) { incomingChallenge = ch; showIncoming(ch); }
+		return;
+	}
+	if (ch && !dialog.blocking && !deckSelect.open && !trade.open) { incomingChallenge = ch; showIncoming(ch); }
 }
 let incomingChallenge = null;
 function showIncoming(ch) {
-	if (ch.type === 'trade') {
-		dialog.open(`${ch.from} wants to TRADE!  Z=Accept  X=Decline`, async (declined) => {
-			const c = incomingChallenge; incomingChallenge = null;
-			if (!c) return;
-			if (declined === 'x') { await MP.call('decline-challenge', { from: c.from }); return; }
-			try { const r = await MP.call('trade-accept', { from: c.from }); if (r && r.tradeId) openTradeWindow(r.tradeId, 'b', c.from); else dialog.open((r && r.error) || 'Trade could not start.'); }
-			catch (e) { dialog.open('Trade could not start.'); }
-		});
-		return;
-	}
-	if (ch.type === 'card') {
-		dialog.open(`${ch.from} challenges you to a CARD battle!  Z=Accept  X=Decline`, async (declined) => {
-			const c = incomingChallenge; incomingChallenge = null;
-			if (!c) return;
-			if (declined === 'x') { await MP.call('decline-challenge', { from: c.from }); return; }
-			// deck-selection phase before accepting the duel
-			openDeckSelect('Pick a deck to battle with', async (picked) => {
-				const data = await MP.call('accept-challenge', { from: c.from, battleType: 'card',
-					party: { deck: picked.deck, classId: picked.classId } });
-				if (data.error) { dialog.open(data.error); return; }
-				goCardDuel(data.matchId);
-			});
-		});
-		return;
-	}
-	dialog.open(`${ch.from} challenges you to a POKeMON battle!\n\nPress Z to ACCEPT, X to decline.`, async (declined) => {
+	const label = ch.type === 'trade' ? `${ch.from} wants to TRADE!`
+		: ch.type === 'card' ? `${ch.from} challenges you to a CARD battle!`
+		: `${ch.from} challenges you to a POKeMON battle!`;
+	dialog.open(`${label}  Z=Accept  X=Decline`, async (declined) => {
 		const c = incomingChallenge; incomingChallenge = null;
 		if (!c) return;
 		if (declined === 'x') { await MP.call('decline-challenge', { from: c.from }); return; }
-		const snap = pvpParty();
-		if (!snap.length) { dialog.open('Your POKeMON need to be healthy to battle!'); return; }
-		const data = await MP.call('accept-challenge', { from: c.from, party: snap });
-		if (data.error) { dialog.open(data.error); return; }
-		enterMatch(data.matchId, false, data.match, sideOfMe(data.match));
+		await acceptChallengeFrom(c.from);
 	});
+}
+// Accept whatever <from> is actually offering RIGHT NOW. We re-read the stored
+// challenge type instead of trusting the (possibly stale) dialog, so a challenge
+// that changed type between display and accept still launches the correct battle.
+async function acceptChallengeFrom(from) {
+	let type;
+	try {
+		const data = await MP.call('challenges');
+		const cur = (data.challenges || []).find(c => c.from === from);
+		if (!cur) { dialog.open('That challenge is no longer available.'); return; }
+		type = cur.type;
+	} catch (e) { dialog.open('Could not reach the server.'); return; }
+	if (type === 'trade') {
+		try { const r = await MP.call('trade-accept', { from }); if (r && r.tradeId) openTradeWindow(r.tradeId, 'b', from); else dialog.open((r && r.error) || 'Trade could not start.'); }
+		catch (e) { dialog.open('Trade could not start.'); }
+		return;
+	}
+	if (type === 'card') {
+		// deck-selection phase before accepting the duel
+		openDeckSelect('Pick a deck to battle with', async (picked) => {
+			const data = await MP.call('accept-challenge', { from, battleType: 'card',
+				party: { deck: picked.deck, classId: picked.classId } });
+			if (data.error) { dialog.open(data.error); return; }
+			goCardDuel(data.matchId);
+		});
+		return;
+	}
+	// pokemon
+	const snap = pvpParty();
+	if (!snap.length) { dialog.open('Your POKeMON need to be healthy to battle!'); return; }
+	const data = await MP.call('accept-challenge', { from, party: snap });
+	if (data.error) { dialog.open(data.error); return; }
+	if (data.cardmatch) { goCardDuel(data.matchId); return; } // backend says it's a card duel
+	enterMatch(data.matchId, false, data.match, sideOfMe(data.match));
 }
 function sideOfMe(match) {
 	return match.sides.findIndex(sd => sd.name === (mpAccount?.username));
