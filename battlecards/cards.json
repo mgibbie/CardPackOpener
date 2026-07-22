@@ -56203,6 +56203,265 @@
         ]
       },
       "description": "Spellburst: Summon a Gibberling."
+    },
+    {
+      "id": "chain_lightning",
+      "name": "Chain Lightning",
+      "type": "sorcery",
+      "cost": 1,
+      "colors": [
+        "R"
+      ],
+      "cardClass": "neutral",
+      "rarity": "common",
+      "set": "wubrg",
+      "description": "Deal 3 damage to any target.",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 3,
+          "target": "any"
+        }
+      ]
+    },
+    {
+      "id": "incinerate",
+      "name": "Incinerate",
+      "type": "instant",
+      "cost": 2,
+      "colors": [
+        "R"
+      ],
+      "cardClass": "neutral",
+      "rarity": "common",
+      "set": "wubrg",
+      "description": "Deal 3 damage to any target.",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 3,
+          "target": "any"
+        }
+      ]
+    },
+    {
+      "id": "flame_rift",
+      "name": "Flame Rift",
+      "type": "sorcery",
+      "cost": 2,
+      "colors": [
+        "R"
+      ],
+      "cardClass": "neutral",
+      "rarity": "common",
+      "set": "wubrg",
+      "description": "Each player takes 4 damage.",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 4,
+          "target": "all-heroes"
+        }
+      ]
+    },
+    {
+      "id": "ancestral_recall",
+      "name": "Ancestral Recall",
+      "type": "instant",
+      "cost": 1,
+      "colors": [
+        "U"
+      ],
+      "cardClass": "neutral",
+      "rarity": "rare",
+      "set": "wubrg",
+      "description": "Draw 3 cards.",
+      "effects": [
+        {
+          "type": "draw",
+          "value": 3
+        }
+      ]
+    },
+    {
+      "id": "preordain",
+      "name": "Preordain",
+      "type": "sorcery",
+      "cost": 1,
+      "colors": [
+        "U"
+      ],
+      "cardClass": "neutral",
+      "rarity": "common",
+      "set": "wubrg",
+      "description": "Scry 2, then draw a card.",
+      "effects": [
+        {
+          "type": "scry",
+          "value": 2
+        },
+        {
+          "type": "draw",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "ponder",
+      "name": "Ponder",
+      "type": "sorcery",
+      "cost": 1,
+      "colors": [
+        "U"
+      ],
+      "cardClass": "neutral",
+      "rarity": "common",
+      "set": "wubrg",
+      "description": "Scry 3, then draw a card.",
+      "effects": [
+        {
+          "type": "scry",
+          "value": 3
+        },
+        {
+          "type": "draw",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "infernal_grasp",
+      "name": "Infernal Grasp",
+      "type": "instant",
+      "cost": 2,
+      "colors": [
+        "B"
+      ],
+      "cardClass": "neutral",
+      "rarity": "common",
+      "set": "wubrg",
+      "description": "Destroy a creature.\nYou lose 2 life.",
+      "effects": [
+        {
+          "type": "destroy",
+          "target": "creature"
+        },
+        {
+          "type": "damage",
+          "value": 2,
+          "target": "own-hero"
+        }
+      ]
+    },
+    {
+      "id": "sign_in_blood",
+      "name": "Sign in Blood",
+      "type": "sorcery",
+      "cost": 2,
+      "colors": [
+        "B"
+      ],
+      "cardClass": "neutral",
+      "rarity": "common",
+      "set": "wubrg",
+      "description": "Draw 2 cards.\nYou lose 2 life.",
+      "effects": [
+        {
+          "type": "draw",
+          "value": 2
+        },
+        {
+          "type": "damage",
+          "value": 2,
+          "target": "own-hero"
+        }
+      ]
+    },
+    {
+      "id": "swords_to_plowshares",
+      "name": "Swords to Plowshares",
+      "type": "instant",
+      "cost": 1,
+      "colors": [
+        "W"
+      ],
+      "cardClass": "neutral",
+      "rarity": "uncommon",
+      "set": "wubrg",
+      "description": "Exile a creature.",
+      "effects": [
+        {
+          "type": "exile",
+          "target": "creature"
+        }
+      ]
+    },
+    {
+      "id": "fiend_hunter",
+      "name": "Fiend Hunter",
+      "type": "creature",
+      "cost": 3,
+      "colors": [
+        "W"
+      ],
+      "cardClass": "neutral",
+      "attack": 1,
+      "health": 3,
+      "rarity": "rare",
+      "set": "wubrg",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Exile an enemy creature until Fiend Hunter leaves play.",
+      "effects": [
+        {
+          "type": "exile-until-return",
+          "target": "enemy-creature"
+        }
+      ]
+    },
+    {
+      "id": "steppe_lynx",
+      "name": "Steppe Lynx",
+      "type": "creature",
+      "cost": 1,
+      "colors": [
+        "W"
+      ],
+      "cardClass": "neutral",
+      "attack": 0,
+      "health": 1,
+      "rarity": "common",
+      "set": "wubrg",
+      "keywords": [],
+      "description": "Landfall: this gets +2/+2 until end of turn.",
+      "ongoing": {
+        "on": "landfall",
+        "effects": [
+          {
+            "type": "temp-buff-self",
+            "attack": 2,
+            "health": 2
+          }
+        ]
+      }
+    },
+    {
+      "id": "centaur_courser",
+      "name": "Centaur Courser",
+      "type": "creature",
+      "cost": 3,
+      "colors": [
+        "G"
+      ],
+      "cardClass": "neutral",
+      "attack": 3,
+      "health": 3,
+      "rarity": "common",
+      "set": "wubrg",
+      "keywords": [],
+      "description": "",
+      "effects": []
     }
   ]
 }

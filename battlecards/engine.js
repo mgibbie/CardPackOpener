@@ -2583,6 +2583,7 @@ function execEffects(state, pi, effects, target, source) {
 			const bump = t => {
 				t.attack += e.attack || 0;
 				t.tempAttack += e.attack || 0;
+				if (e.health) { t.maxHealth += e.health; t.tempHealth = (t.tempHealth || 0) + e.health; } // Giant Growth: +N/+N this turn
 				emit(state, { type: 'buff', uid: t.uid, attack: t.attack, hp: hp(t) });
 			};
 			if (e.target === 'friendly-creatures') {
