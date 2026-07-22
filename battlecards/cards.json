@@ -23935,14 +23935,14 @@
             "count": 1,
             "attack": 1,
             "health": 1,
-            "name": "Zombie",
+            "name": "Undead",
             "keywords": [
               "taunt"
             ]
           }
         ]
       },
-      "description": "Whenever you cast a spell, summon a 1/1 Zombie with Taunt.",
+      "description": "Whenever you cast a spell, summon a 1/1 Undead with Taunt.",
       "set": "hsx"
     },
     {
@@ -38387,7 +38387,7 @@
       "type": "creature",
       "attack": 2,
       "health": 2,
-      "tribe": "Zombie",
+      "tribe": "Undead",
       "description": "A 2/2 creature."
     },
     {
@@ -38470,25 +38470,6 @@
       "description": "Deathtouch.\nLifesteal."
     },
     {
-      "id": "child_of_night",
-      "name": "Child of Night",
-      "colors": [
-        "B"
-      ],
-      "cardClass": "neutral",
-      "cost": 2,
-      "rarity": "common",
-      "set": "wubrg",
-      "type": "creature",
-      "attack": 2,
-      "health": 1,
-      "tribe": "Vampire",
-      "keywords": [
-        "lifesteal"
-      ],
-      "description": "Lifesteal."
-    },
-    {
       "id": "walking_corpse",
       "name": "Walking Corpse",
       "colors": [
@@ -38501,7 +38482,7 @@
       "type": "creature",
       "attack": 2,
       "health": 2,
-      "tribe": "Zombie",
+      "tribe": "Undead",
       "description": "A 2/2 creature."
     },
     {
@@ -38517,7 +38498,7 @@
       "type": "creature",
       "attack": 2,
       "health": 3,
-      "tribe": "Zombie",
+      "tribe": "Undead",
       "description": "A 2/3 creature."
     },
     {
@@ -38533,7 +38514,7 @@
       "type": "creature",
       "attack": 1,
       "health": 1,
-      "tribe": "Zombie Cat",
+      "tribe": "Undead Cat",
       "keywords": [
         "deathrattle"
       ],
@@ -38643,25 +38624,6 @@
         }
       ],
       "description": "Target creature gets -5/-5 until end of turn."
-    },
-    {
-      "id": "murder",
-      "name": "Murder",
-      "colors": [
-        "B"
-      ],
-      "cardClass": "neutral",
-      "cost": 3,
-      "rarity": "common",
-      "set": "wubrg",
-      "type": "instant",
-      "effects": [
-        {
-          "type": "destroy",
-          "target": "creature"
-        }
-      ],
-      "description": "Destroy target creature."
     },
     {
       "id": "despise",
@@ -39415,7 +39377,7 @@
     },
     {
       "id": "zombie_chow",
-      "name": "Zombie Chow",
+      "name": "Undead Chow",
       "cardClass": "neutral",
       "cost": 1,
       "rarity": "common",
@@ -51098,12 +51060,12 @@
     },
     {
       "id": "lingering_zombie",
-      "name": "Lingering Zombie",
+      "name": "Lingering Undead",
       "cardClass": "druid",
       "cost": 1,
       "rarity": "common",
       "set": "hs",
-      "description": "Deathrattle: Summon a 1/1 Disarmed Zombie with \"Deathrattle: Summon a 1/1 Zombie.\"",
+      "description": "Deathrattle: Summon a 1/1 Disarmed Undead with \"Deathrattle: Summon a 1/1 Undead.\"",
       "type": "creature",
       "attack": 1,
       "health": 1,
@@ -51117,14 +51079,14 @@
           "count": 1,
           "attack": 1,
           "health": 1,
-          "name": "Disarmed Zombie",
+          "name": "Disarmed Undead",
           "deathrattle": [
             {
               "type": "summon",
               "count": 1,
               "attack": 1,
               "health": 1,
-              "name": "Zombie"
+              "name": "Undead"
             }
           ]
         }
@@ -56472,7 +56434,8 @@
           "type": "destroy",
           "target": "enemy-creature"
         }
-      ]
+      ],
+      "tribe": "Undead Beast"
     },
     {
       "id": "read_the_bones",
@@ -57166,7 +57129,8 @@
             "target": "self"
           }
         ]
-      }
+      },
+      "tribe": "Vampire Noble"
     },
     {
       "id": "lightning_helix",
@@ -57311,6 +57275,122 @@
       "set": "wubrg",
       "keywords": [],
       "description": "",
+      "effects": []
+    },
+    {
+      "id": "shock",
+      "name": "Shock",
+      "type": "instant",
+      "cost": 1,
+      "colors": [
+        "R"
+      ],
+      "cardClass": "neutral",
+      "rarity": "common",
+      "set": "wubrg",
+      "description": "Deal 2 damage to any target.",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 2,
+          "target": "any"
+        }
+      ]
+    },
+    {
+      "id": "divination",
+      "name": "Divination",
+      "type": "sorcery",
+      "cost": 3,
+      "colors": [
+        "U"
+      ],
+      "cardClass": "neutral",
+      "rarity": "common",
+      "set": "wubrg",
+      "description": "Draw 2 cards.",
+      "effects": [
+        {
+          "type": "draw",
+          "value": 2
+        }
+      ]
+    },
+    {
+      "id": "murder",
+      "name": "Murder",
+      "type": "instant",
+      "cost": 3,
+      "colors": [
+        "B"
+      ],
+      "cardClass": "neutral",
+      "rarity": "common",
+      "set": "wubrg",
+      "description": "Destroy a creature.",
+      "effects": [
+        {
+          "type": "destroy",
+          "target": "creature"
+        }
+      ]
+    },
+    {
+      "id": "grizzly_bears",
+      "name": "Grizzly Bears",
+      "type": "creature",
+      "cost": 2,
+      "colors": [
+        "G"
+      ],
+      "cardClass": "neutral",
+      "attack": 2,
+      "health": 2,
+      "rarity": "common",
+      "set": "wubrg",
+      "tribe": "Beast",
+      "keywords": [],
+      "description": "",
+      "effects": []
+    },
+    {
+      "id": "youthful_knight",
+      "name": "Youthful Knight",
+      "type": "creature",
+      "cost": 2,
+      "colors": [
+        "W"
+      ],
+      "cardClass": "neutral",
+      "attack": 2,
+      "health": 2,
+      "rarity": "common",
+      "set": "wubrg",
+      "tribe": "Human Knight",
+      "keywords": [
+        "first_strike"
+      ],
+      "description": "First Strike.",
+      "effects": []
+    },
+    {
+      "id": "child_of_night",
+      "name": "Child of Night",
+      "type": "creature",
+      "cost": 2,
+      "colors": [
+        "B"
+      ],
+      "cardClass": "neutral",
+      "attack": 2,
+      "health": 1,
+      "rarity": "common",
+      "set": "wubrg",
+      "tribe": "Vampire",
+      "keywords": [
+        "lifesteal"
+      ],
+      "description": "Lifesteal.",
       "effects": []
     }
   ]
