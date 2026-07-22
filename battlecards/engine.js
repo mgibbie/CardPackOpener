@@ -4528,7 +4528,7 @@ function resolveCombat(state, pi, attackerUid, target) {
 	if (!attacker || isDead(attacker)) { sweepDeaths(state); return; }
 	if (target.type === 'creature') { const d = findCreature(state, target.uid); if (!d || isDead(d)) { sweepDeaths(state); return; } }
 	else if (target.type === 'walker') { if (!findWalker(state, target.uid)) { sweepDeaths(state); return; } }
-	// Stronghold Furnace: the active plane doubles all combat damage
+	// Oxmorg: the active plane doubles all combat damage
 	const cmult = (activePlaneRule(state)?.kind === 'double-damage') ? 2 : 1;
 	if (target.type === 'hero') {
 		const dealt = damageHero(state, target.player, attacker.attack * cmult, pi, has(attacker, KW.PIERCING));
