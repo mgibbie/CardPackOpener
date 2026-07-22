@@ -2,10 +2,12 @@
 // as real card faces split into CLASS / NEUTRAL tabs, and assemble a 40-card
 // deck into one of up to 40 slots. Mobile-first: the deck is a slide-up panel.
 import { drawCardFace, canonClass, classNameOf, classColorOf, artListeners, preloadArt } from './cardart.js';
+import { keywordsFor, richHtml } from './keywords.js';
 import * as Col from './collection.js';
 import * as MPX from './mpmode.js';
 
 const MP_ON = MPX.mpMode();
+const TOUCH = matchMedia('(pointer: coarse)').matches;
 const SIZE = Col.DECK_SIZE;         // 40
 const MAX_SLOTS = 40;
 const SLOTS_KEY = 'magepunk_decks_v1';
@@ -97,9 +99,40 @@ function tileFor(card) {
 	const owned = document.createElement('div');
 	owned.className = 'owned';
 	tile.appendChild(owned);
-	tile.addEventListener('click', () => addCard(card.id));
+	// Tap/click opens the card's page; DRAG (to the deck) adds it.
+	if (TOUCH) {
+		tile.addEventListener('touchstart', e => onTouchStart(e, card), { passive: true });
+	} else {
+		tile.draggable = true;
+		tile.addEventListener('dragstart', e => { e.dataTransfer.setData('text/plain', card.id); e.dataTransfer.effectAllowed = 'copy'; });
+		tile.addEventListener('click', () => openCard(card));
+	}
 	tileById.set(card.id, { tile, owned });
 	return tile;
+}
+
+// ---------- card detail page ----------
+let zoomCard = null;
+function openCard(card) {
+	zoomCard = card;
+	const holder = $('zoom-card'); holder.innerHTML = ''; holder.appendChild(drawCardFace(card));
+	renderZoomInfo(card);
+	$('zoom').classList.add('open');
+	// repaint the big face once the real art streams in
+	setTimeout(() => { if (zoomCard === card && $('zoom').classList.contains('open')) { holder.innerHTML = ''; holder.appendChild(drawCardFace(card)); } }, 700);
+}
+function renderZoomInfo(card) {
+	const have = collection[card.id] || 0, used = inDeck(card.id);
+	const stats = [`Cost ${card.cost ?? 0}`];
+	if (card.type === 'creature') stats.push(`${card.attack}/${card.health}`);
+	if (card.type === 'weapon') stats.push(`${card.attack} atk · ${card.durability} dur`);
+	if (card.type === 'location') stats.push(`${card.durability} uses`);
+	$('zoom-info').innerHTML = `<div class="z-name">${card.name}</div>`
+		+ `<div class="z-type">${classNameOf(card.cardClass).toUpperCase()} · ${(card.tribe ? card.tribe + ' ' : '')}${(card.type || '').toUpperCase()}${card.rarity ? ' · ' + card.rarity.toUpperCase() : ''}</div>`
+		+ `<div class="z-stats">${stats.join(' · ')}</div>`
+		+ `<div class="z-desc">${card.description ? richHtml(card.description) : '<i>No rules text.</i>'}</div>`
+		+ keywordsFor(card).map(k => `<div class="z-kw"><b>${k.label}</b> — ${k.text}</div>`).join('')
+		+ `<div class="z-owned">You own ×${have}${used ? ` · ${used} in this deck` : ''}</div>`;
 }
 function refreshTile(id) {
 	const t = tileById.get(id); if (!t) return;
@@ -280,6 +313,65 @@ $('back-to-decks').addEventListener('click', backToDecks);
 $('toggle-deck').addEventListener('click', () => $('deck-panel').classList.toggle('open'));
 $('panel-close').addEventListener('click', () => $('deck-panel').classList.remove('open'));
 MOBILE.addEventListener('change', () => { PAGE_SIZE = MOBILE.matches ? 9 : 15; renderPage(); });
+
+// ---------- card page (zoom) wiring ----------
+$('zoom-add').addEventListener('click', () => { if (!zoomCard) return; addCard(zoomCard.id); renderZoomInfo(zoomCard); showEdit(); });
+$('zoom-close').addEventListener('click', () => $('zoom').classList.remove('open'));
+$('zoom').addEventListener('click', e => { if (e.target.id === 'zoom') $('zoom').classList.remove('open'); });
+addEventListener('keydown', e => { if (e.key === 'Escape') $('zoom').classList.remove('open'); });
+
+// ---------- drag a card onto the deck to add it ----------
+function dropAdd(id) { if (!id) return; addCard(id); showEdit(); }
+// mouse: native HTML5 drag-and-drop, deck panel is the drop zone
+const panel = $('deck-panel');
+panel.addEventListener('dragover', e => { e.preventDefault(); e.dataTransfer.dropEffect = 'copy'; panel.classList.add('drop-hover'); });
+panel.addEventListener('dragleave', e => { if (!panel.contains(e.relatedTarget)) panel.classList.remove('drop-hover'); });
+panel.addEventListener('drop', e => { e.preventDefault(); panel.classList.remove('drop-hover'); dropAdd(e.dataTransfer.getData('text/plain')); });
+
+// touch: long-press a card, then drag it onto the deck panel / DECK button
+let tdrag = null;
+const moveGhost = (x, y) => { if (tdrag?.ghost) { tdrag.ghost.style.left = x + 'px'; tdrag.ghost.style.top = y + 'px'; } };
+const dropTargetAt = (x, y) => { const el = document.elementFromPoint(x, y); return el && el.closest('#deck-panel, #toggle-deck'); };
+function onTouchStart(e, card) {
+	if (e.touches.length !== 1) return;
+	const t = e.touches[0];
+	tdrag = { card, sx: t.clientX, sy: t.clientY, dragging: false };
+	tdrag.hold = setTimeout(() => { if (tdrag) beginTouchDrag(t.clientX, t.clientY); }, 260);
+}
+function beginTouchDrag(x, y) {
+	tdrag.dragging = true;
+	navigator.vibrate?.(12);
+	const g = document.createElement('div'); g.className = 'drag-ghost';
+	g.appendChild(drawCardFace(tdrag.card));
+	document.body.appendChild(g); tdrag.ghost = g; moveGhost(x, y);
+	$('toggle-deck').classList.add('drop-target');
+}
+function clearTouchDrag() {
+	if (!tdrag) return;
+	clearTimeout(tdrag.hold); tdrag.ghost?.remove();
+	$('toggle-deck').classList.remove('drop-target', 'drop-hover'); $('deck-panel').classList.remove('drop-hover');
+	tdrag = null;
+}
+document.addEventListener('touchmove', e => {
+	if (!tdrag) return;
+	const t = e.touches[0], dist = Math.hypot(t.clientX - tdrag.sx, t.clientY - tdrag.sy);
+	if (!tdrag.dragging) { if (dist > 12) { clearTimeout(tdrag.hold); tdrag = null; } return; } // a scroll, not a drag
+	e.preventDefault(); // hold the page still while dragging a card
+	moveGhost(t.clientX, t.clientY);
+	const tgt = dropTargetAt(t.clientX, t.clientY);
+	$('toggle-deck').classList.toggle('drop-hover', !!(tgt && tgt.id === 'toggle-deck'));
+	$('deck-panel').classList.toggle('drop-hover', !!(tgt && tgt.id === 'deck-panel'));
+}, { passive: false });
+document.addEventListener('touchend', e => {
+	if (!tdrag) return;
+	const d = tdrag, t = e.changedTouches[0];
+	if (d.dragging) { if (dropTargetAt(t.clientX, t.clientY)) dropAdd(d.card.id); clearTouchDrag(); }
+	else {
+		clearTouchDrag();
+		if (Math.hypot(t.clientX - d.sx, t.clientY - d.sy) < 10) openCard(d.card); // a tap opens the card page
+	}
+});
+document.addEventListener('touchcancel', clearTouchDrag);
 
 // mana crystal filter row (0..6, 7+)
 for (let i = 0; i <= 7; i++) {

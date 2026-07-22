@@ -84,6 +84,32 @@
 		#status { font-size: 12.5px; margin-top: 8px; min-height: 18px; color: #ffd25f; text-align: center; }
 		#panel-close { display: none; }
 
+		/* ---------- card detail page (zoom) ---------- */
+		#zoom { position: fixed; inset: 0; z-index: 60; background: rgba(6,4,12,0.88); display: none; align-items: center; justify-content: center; padding: 16px; }
+		#zoom.open { display: flex; }
+		#zoom-inner { display: flex; gap: 20px; max-width: 760px; width: 100%; align-items: stretch; background: #141024; border: 1px solid #3a3055; border-radius: 14px; padding: 20px; max-height: 92vh; overflow: auto; }
+		#zoom-card { flex: 0 0 auto; }
+		#zoom-card canvas { width: 260px; max-width: 42vw; display: block; }
+		#zoom-right { flex: 1; display: flex; flex-direction: column; min-width: 180px; }
+		#zoom-info { flex: 1; }
+		.z-name { font-size: 22px; font-weight: 800; }
+		.z-type { color: #b7abd6; font-size: 12.5px; letter-spacing: .5px; margin: 4px 0 10px; }
+		.z-stats { color: #cdbcff; font-weight: 700; margin-bottom: 10px; }
+		.z-desc { font-size: 14px; line-height: 1.6; }
+		.z-kw { font-size: 12.5px; color: #9b93b3; margin-top: 8px; }
+		.z-owned { margin-top: 14px; color: #9fd8b0; font-weight: 700; }
+		#zoom-actions { display: flex; gap: 10px; margin-top: 18px; }
+		#zoom-add { flex: 1; padding: 12px; font-size: 15px; font-weight: 700; background: #6b4fd4; color: #fff; border: none; border-radius: 8px; cursor: pointer; }
+		#zoom-add:hover { background: #7d63e6; }
+		#zoom-close { padding: 12px 18px; background: #241b38; color: #cdbcff; border: 1px solid #4a3f6b; border-radius: 8px; cursor: pointer; }
+
+		/* ---------- drag to add ---------- */
+		.drag-ghost { position: fixed; width: 96px; z-index: 100; pointer-events: none; opacity: 0.92; transform: translate(-50%, -50%); filter: drop-shadow(0 6px 12px rgba(0,0,0,0.6)); }
+		.drag-ghost canvas { width: 100%; display: block; border-radius: 6px; }
+		.drop-hover { outline: 3px dashed #57e389; outline-offset: -3px; }
+		#toggle-deck.drop-target { box-shadow: 0 0 0 2px #57e389; }
+		.tile { -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; }
+
 		/* ---------- mobile ---------- */
 		@media (max-width: 820px) {
 			#toggle-deck { display: inline-block; }
@@ -147,6 +173,18 @@
 				</div>
 			</div>
 		</aside>
+	</div>
+	<div id="zoom">
+		<div id="zoom-inner">
+			<div id="zoom-card"></div>
+			<div id="zoom-right">
+				<div id="zoom-info"></div>
+				<div id="zoom-actions">
+					<button id="zoom-add">＋ Add to Deck</button>
+					<button id="zoom-close">Close</button>
+				</div>
+			</div>
+		</div>
 	</div>
 	<script type="module" src="deck.js"></script>
 	<script type="module" src="nav.js"></script>
