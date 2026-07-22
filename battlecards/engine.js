@@ -1140,7 +1140,7 @@ function recomputeAuras(state) {
 			if (c.condAttack && (c.condAttack.while !== 'weapon' || p.weapon)) {
 				aBonus += c.condAttack.attack || 0;
 			}
-			// active plane's continuous creature aura (Krosa +2/+2, Hippodrome -5/-0,
+			// active plane's continuous creature aura (Krosa +2/+2, Hippogyia -5/-0,
 			// Sokenzan +1/+1 & Rush): applies to every creature in play
 			const planeAura = activePlaneRule(state);
 			if (planeAura && planeAura.kind === 'aura') {
