@@ -38092,22 +38092,6 @@
       "description": "Whenever another creature enters, you may gain 1 life."
     },
     {
-      "id": "elite_vanguard",
-      "name": "Elite Vanguard",
-      "colors": [
-        "W"
-      ],
-      "cardClass": "neutral",
-      "cost": 1,
-      "rarity": "common",
-      "set": "wubrg",
-      "type": "creature",
-      "attack": 2,
-      "health": 1,
-      "tribe": "Human Soldier",
-      "description": "A 2/1 creature."
-    },
-    {
       "id": "knight_of_meadowgrain",
       "name": "Knight of Meadowgrain",
       "colors": [
@@ -38190,28 +38174,6 @@
       "description": "Destroy all creatures."
     },
     {
-      "id": "raise_the_alarm",
-      "name": "Raise the Alarm",
-      "colors": [
-        "W"
-      ],
-      "cardClass": "neutral",
-      "cost": 2,
-      "rarity": "common",
-      "set": "wubrg",
-      "type": "instant",
-      "effects": [
-        {
-          "type": "summon",
-          "count": 2,
-          "attack": 1,
-          "health": 1,
-          "name": "Soldier"
-        }
-      ],
-      "description": "Create two 1/1 white Soldier creature tokens."
-    },
-    {
       "id": "honor_of_the_pure",
       "name": "Honor of the Pure",
       "colors": [
@@ -38264,31 +38226,6 @@
         }
       ],
       "description": "Destroy target creature with power 4 or greater."
-    },
-    {
-      "id": "man_o_war",
-      "name": "Man-o'-War",
-      "colors": [
-        "U"
-      ],
-      "cardClass": "neutral",
-      "cost": 3,
-      "rarity": "common",
-      "set": "wubrg",
-      "type": "creature",
-      "attack": 2,
-      "health": 2,
-      "tribe": "Jellyfish",
-      "keywords": [
-        "battlecry"
-      ],
-      "effects": [
-        {
-          "type": "bounce",
-          "target": "creature"
-        }
-      ],
-      "description": "Battlecry: return target creature to its owner's hand.."
     },
     {
       "id": "aether_adept",
@@ -38424,52 +38361,6 @@
         }
       ],
       "description": "0: Scry 1."
-    },
-    {
-      "id": "serum_visions",
-      "name": "Serum Visions",
-      "colors": [
-        "U"
-      ],
-      "cardClass": "neutral",
-      "cost": 1,
-      "rarity": "common",
-      "set": "wubrg",
-      "type": "sorcery",
-      "effects": [
-        {
-          "type": "draw",
-          "value": 1
-        },
-        {
-          "type": "scry",
-          "value": 2
-        }
-      ],
-      "description": "Draw a card. Scry 2."
-    },
-    {
-      "id": "opt",
-      "name": "Opt",
-      "colors": [
-        "U"
-      ],
-      "cardClass": "neutral",
-      "cost": 1,
-      "rarity": "common",
-      "set": "wubrg",
-      "type": "instant",
-      "effects": [
-        {
-          "type": "scry",
-          "value": 1
-        },
-        {
-          "type": "draw",
-          "value": 1
-        }
-      ],
-      "description": "Scry 1. Draw a card."
     },
     {
       "id": "jace_s_ingenuity",
@@ -56730,6 +56621,263 @@
           "target": "enemy-hero"
         }
       ]
+    },
+    {
+      "id": "banisher_priest",
+      "name": "Banisher Priest",
+      "type": "creature",
+      "cost": 3,
+      "colors": [
+        "W"
+      ],
+      "cardClass": "neutral",
+      "attack": 2,
+      "health": 2,
+      "rarity": "rare",
+      "set": "wubrg",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Exile an enemy creature until Banisher Priest leaves play.",
+      "effects": [
+        {
+          "type": "exile-until-return",
+          "target": "enemy-creature"
+        }
+      ]
+    },
+    {
+      "id": "raise_the_alarm",
+      "name": "Raise the Alarm",
+      "type": "instant",
+      "cost": 2,
+      "colors": [
+        "W"
+      ],
+      "cardClass": "neutral",
+      "rarity": "common",
+      "set": "wubrg",
+      "description": "Summon two 1/1 Soldiers.",
+      "effects": [
+        {
+          "type": "summon",
+          "count": 2,
+          "name": "Soldier",
+          "attack": 1,
+          "health": 1
+        }
+      ]
+    },
+    {
+      "id": "elite_vanguard",
+      "name": "Elite Vanguard",
+      "type": "creature",
+      "cost": 1,
+      "colors": [
+        "W"
+      ],
+      "cardClass": "neutral",
+      "attack": 2,
+      "health": 1,
+      "rarity": "common",
+      "set": "wubrg",
+      "keywords": [],
+      "description": "",
+      "effects": []
+    },
+    {
+      "id": "opt",
+      "name": "Opt",
+      "type": "instant",
+      "cost": 1,
+      "colors": [
+        "U"
+      ],
+      "cardClass": "neutral",
+      "rarity": "common",
+      "set": "wubrg",
+      "description": "Scry 1, then draw a card.",
+      "effects": [
+        {
+          "type": "scry",
+          "value": 1
+        },
+        {
+          "type": "draw",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "serum_visions",
+      "name": "Serum Visions",
+      "type": "sorcery",
+      "cost": 1,
+      "colors": [
+        "U"
+      ],
+      "cardClass": "neutral",
+      "rarity": "common",
+      "set": "wubrg",
+      "description": "Draw a card, then Scry 2.",
+      "effects": [
+        {
+          "type": "draw",
+          "value": 1
+        },
+        {
+          "type": "scry",
+          "value": 2
+        }
+      ]
+    },
+    {
+      "id": "man_o_war",
+      "name": "Man-o'-War",
+      "type": "creature",
+      "cost": 3,
+      "colors": [
+        "U"
+      ],
+      "cardClass": "neutral",
+      "attack": 2,
+      "health": 2,
+      "rarity": "common",
+      "set": "wubrg",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Return a creature to its owner's hand.",
+      "effects": [
+        {
+          "type": "bounce",
+          "target": "creature"
+        }
+      ]
+    },
+    {
+      "id": "gravedigger",
+      "name": "Gravedigger",
+      "type": "creature",
+      "cost": 4,
+      "colors": [
+        "B"
+      ],
+      "cardClass": "neutral",
+      "attack": 2,
+      "health": 2,
+      "rarity": "common",
+      "set": "wubrg",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Return a creature from your graveyard to your hand.",
+      "effects": [
+        {
+          "type": "gy-return",
+          "to": "hand"
+        }
+      ]
+    },
+    {
+      "id": "goblin_guide",
+      "name": "Goblin Guide",
+      "type": "creature",
+      "cost": 1,
+      "colors": [
+        "R"
+      ],
+      "cardClass": "neutral",
+      "attack": 2,
+      "health": 2,
+      "rarity": "rare",
+      "set": "wubrg",
+      "keywords": [
+        "charge"
+      ],
+      "description": "Charge.",
+      "effects": []
+    },
+    {
+      "id": "abrade",
+      "name": "Abrade",
+      "type": "instant",
+      "cost": 2,
+      "colors": [
+        "R"
+      ],
+      "cardClass": "neutral",
+      "rarity": "common",
+      "set": "wubrg",
+      "description": "Deal 3 damage to a creature.",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 3,
+          "target": "creature"
+        }
+      ]
+    },
+    {
+      "id": "acidic_slime",
+      "name": "Acidic Slime",
+      "type": "creature",
+      "cost": 5,
+      "colors": [
+        "G"
+      ],
+      "cardClass": "neutral",
+      "attack": 2,
+      "health": 2,
+      "rarity": "common",
+      "set": "wubrg",
+      "keywords": [
+        "deathtouch",
+        "battlecry"
+      ],
+      "description": "Deathtouch.\nBattlecry: Destroy an enemy creature.",
+      "effects": [
+        {
+          "type": "destroy",
+          "target": "enemy-creature"
+        }
+      ]
+    },
+    {
+      "id": "beast_within",
+      "name": "Beast Within",
+      "type": "instant",
+      "cost": 3,
+      "colors": [
+        "G"
+      ],
+      "cardClass": "neutral",
+      "rarity": "common",
+      "set": "wubrg",
+      "description": "Destroy a creature.",
+      "effects": [
+        {
+          "type": "destroy",
+          "target": "creature"
+        }
+      ]
+    },
+    {
+      "id": "craw_wurm",
+      "name": "Craw Wurm",
+      "type": "creature",
+      "cost": 6,
+      "colors": [
+        "G"
+      ],
+      "cardClass": "neutral",
+      "attack": 6,
+      "health": 4,
+      "rarity": "common",
+      "set": "wubrg",
+      "keywords": [],
+      "description": "",
+      "effects": []
     }
   ]
 }
