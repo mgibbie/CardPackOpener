@@ -38112,32 +38112,6 @@
       "description": "First Strike.\nLifesteal."
     },
     {
-      "id": "wall_of_omens",
-      "name": "Wall of Omens",
-      "colors": [
-        "W"
-      ],
-      "cardClass": "neutral",
-      "cost": 2,
-      "rarity": "common",
-      "set": "wubrg",
-      "type": "creature",
-      "attack": 0,
-      "health": 4,
-      "tribe": "Wall",
-      "keywords": [
-        "pacifist",
-        "battlecry"
-      ],
-      "effects": [
-        {
-          "type": "draw",
-          "value": 1
-        }
-      ],
-      "description": "Pacifist.\nBattlecry: draw a card.."
-    },
-    {
       "id": "wrath_of_god",
       "name": "Wrath of God",
       "colors": [
@@ -57132,6 +57106,207 @@
       "cardClass": "neutral",
       "attack": 4,
       "health": 4,
+      "rarity": "common",
+      "set": "wubrg",
+      "keywords": [],
+      "description": "",
+      "effects": []
+    },
+    {
+      "id": "midnight_reaper",
+      "name": "Midnight Reaper",
+      "type": "creature",
+      "cost": 3,
+      "colors": [
+        "B"
+      ],
+      "cardClass": "neutral",
+      "attack": 3,
+      "health": 2,
+      "rarity": "rare",
+      "set": "wubrg",
+      "keywords": [],
+      "description": "Whenever a friendly creature dies, draw a card.",
+      "ongoing": {
+        "on": "friendly-creature-died",
+        "effects": [
+          {
+            "type": "draw",
+            "value": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "blood_artist",
+      "name": "Blood Artist",
+      "type": "creature",
+      "cost": 2,
+      "colors": [
+        "B"
+      ],
+      "cardClass": "neutral",
+      "attack": 0,
+      "health": 1,
+      "rarity": "uncommon",
+      "set": "wubrg",
+      "keywords": [],
+      "description": "Whenever any creature dies, the enemy hero loses 1 life & you gain 1 life.",
+      "ongoing": {
+        "on": "creature-died",
+        "effects": [
+          {
+            "type": "damage",
+            "value": 1,
+            "target": "enemy-hero"
+          },
+          {
+            "type": "heal",
+            "value": 1,
+            "target": "self"
+          }
+        ]
+      }
+    },
+    {
+      "id": "lightning_helix",
+      "name": "Lightning Helix",
+      "type": "instant",
+      "cost": 2,
+      "colors": [
+        "R",
+        "W"
+      ],
+      "cardClass": "neutral",
+      "rarity": "common",
+      "set": "wubrg",
+      "description": "Deal 3 damage to any target.\nGain 3 life.",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 3,
+          "target": "any"
+        },
+        {
+          "type": "heal",
+          "value": 3,
+          "target": "self"
+        }
+      ]
+    },
+    {
+      "id": "terminate",
+      "name": "Terminate",
+      "type": "instant",
+      "cost": 2,
+      "colors": [
+        "B",
+        "R"
+      ],
+      "cardClass": "neutral",
+      "rarity": "common",
+      "set": "wubrg",
+      "description": "Destroy an enemy creature.",
+      "effects": [
+        {
+          "type": "destroy",
+          "target": "enemy-creature"
+        }
+      ]
+    },
+    {
+      "id": "pelakka_wurm",
+      "name": "Pelakka Wurm",
+      "type": "creature",
+      "cost": 7,
+      "colors": [
+        "G"
+      ],
+      "cardClass": "neutral",
+      "attack": 7,
+      "health": 7,
+      "rarity": "uncommon",
+      "set": "wubrg",
+      "keywords": [
+        "battlecry",
+        "deathrattle"
+      ],
+      "description": "Battlecry: Gain 7 life.\nDeathrattle: Draw a card.",
+      "effects": [
+        {
+          "type": "heal",
+          "value": 7,
+          "target": "self"
+        }
+      ],
+      "deathrattle": [
+        {
+          "type": "draw",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "wall_of_omens",
+      "name": "Wall of Omens",
+      "type": "creature",
+      "cost": 2,
+      "colors": [
+        "W"
+      ],
+      "cardClass": "neutral",
+      "attack": 0,
+      "health": 4,
+      "rarity": "common",
+      "set": "wubrg",
+      "keywords": [
+        "taunt",
+        "battlecry"
+      ],
+      "description": "Taunt.\nBattlecry: Draw a card.",
+      "effects": [
+        {
+          "type": "draw",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "goblin_chainwhirler",
+      "name": "Goblin Chainwhirler",
+      "type": "creature",
+      "cost": 3,
+      "colors": [
+        "R"
+      ],
+      "cardClass": "neutral",
+      "attack": 3,
+      "health": 3,
+      "rarity": "rare",
+      "set": "wubrg",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Deal 1 damage to all enemy creatures.",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 1,
+          "target": "enemy-creatures"
+        }
+      ]
+    },
+    {
+      "id": "grizzled_outrider",
+      "name": "Grizzled Outrider",
+      "type": "creature",
+      "cost": 5,
+      "colors": [
+        "G"
+      ],
+      "cardClass": "neutral",
+      "attack": 4,
+      "health": 6,
       "rarity": "common",
       "set": "wubrg",
       "keywords": [],
