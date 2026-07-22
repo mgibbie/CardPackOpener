@@ -4441,7 +4441,10 @@ export function canAttackWith(state, pi, c) {
 	if (c.frozen) return false;
 	if (c.dormantLeft > 0) return false; // still asleep
 	if (has(c, KW.PACIFIST)) return false;
-	if (state.plane) { const pl = state.cardsById[state.plane]; if (pl && pl.noAttackTribe && (c.tribe || '').includes(pl.noAttackTribe)) return false; }
+	if (state.plane) {
+		const pr = activePlaneRule(state); // Bloomburrow: Humans can't attack
+		if (pr && pr.kind === 'cant-attack' && (c.tribe || '').includes(pr.tribe)) return false;
+	}
 	const maxAttacks = has(c, KW.WINDFURY) ? 2 : 1;
 	if (c.attacksUsed >= maxAttacks) return false;
 	if (c.sick && !has(c, KW.CHARGE) && !has(c, KW.RUSH)) return false;
