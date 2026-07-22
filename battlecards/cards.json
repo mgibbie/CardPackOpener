@@ -23935,14 +23935,14 @@
             "count": 1,
             "attack": 1,
             "health": 1,
-            "name": "Undead",
+            "name": "Zombie",
             "keywords": [
               "taunt"
             ]
           }
         ]
       },
-      "description": "Whenever you cast a spell, summon a 1/1 Undead with Taunt.",
+      "description": "Whenever you cast a spell, summon a 1/1 Zombie with Taunt.",
       "set": "hsx"
     },
     {
@@ -38546,25 +38546,6 @@
       "description": "Target opponent reveals their hand. You choose a creature card from it. That player discards that card."
     },
     {
-      "id": "duress",
-      "name": "Duress",
-      "colors": [
-        "B"
-      ],
-      "cardClass": "neutral",
-      "cost": 1,
-      "rarity": "common",
-      "set": "wubrg",
-      "type": "sorcery",
-      "effects": [
-        {
-          "type": "enemy-discard",
-          "value": 1
-        }
-      ],
-      "description": "Target opponent reveals their hand. You choose a noncreature, nonland card from it. That player discards that card."
-    },
-    {
       "id": "hymn_to_tourach",
       "name": "Hymn to Tourach",
       "colors": [
@@ -38662,25 +38643,6 @@
         }
       ],
       "description": "Target player reveals their hand. You choose a nonland card from it. That player discards that card."
-    },
-    {
-      "id": "mind_rot",
-      "name": "Mind Rot",
-      "colors": [
-        "B"
-      ],
-      "cardClass": "neutral",
-      "cost": 3,
-      "rarity": "common",
-      "set": "wubrg",
-      "type": "sorcery",
-      "effects": [
-        {
-          "type": "enemy-discard",
-          "value": 2
-        }
-      ],
-      "description": "Target player discards two cards."
     },
     {
       "id": "diabolic_edict",
@@ -38809,32 +38771,6 @@
         ]
       },
       "description": "Whenever you cast an instant or sorcery spell, this creature gets +3/+0 until end of turn."
-    },
-    {
-      "id": "flametongue_kavu",
-      "name": "Flametongue Kavu",
-      "colors": [
-        "R"
-      ],
-      "cardClass": "neutral",
-      "cost": 4,
-      "rarity": "common",
-      "set": "wubrg",
-      "type": "creature",
-      "attack": 4,
-      "health": 2,
-      "tribe": "Kavu",
-      "keywords": [
-        "battlecry"
-      ],
-      "effects": [
-        {
-          "type": "damage",
-          "value": 4,
-          "target": "creature"
-        }
-      ],
-      "description": "Battlecry: it deals 4 damage to target creature.."
     },
     {
       "id": "raging_goblin",
@@ -39377,7 +39313,7 @@
     },
     {
       "id": "zombie_chow",
-      "name": "Undead Chow",
+      "name": "Zombie Chow",
       "cardClass": "neutral",
       "cost": 1,
       "rarity": "common",
@@ -51060,12 +50996,12 @@
     },
     {
       "id": "lingering_zombie",
-      "name": "Lingering Undead",
+      "name": "Lingering Zombie",
       "cardClass": "druid",
       "cost": 1,
       "rarity": "common",
       "set": "hs",
-      "description": "Deathrattle: Summon a 1/1 Disarmed Undead with \"Deathrattle: Summon a 1/1 Undead.\"",
+      "description": "Deathrattle: Summon a 1/1 Disarmed Zombie with \"Deathrattle: Summon a 1/1 Zombie.\"",
       "type": "creature",
       "attack": 1,
       "health": 1,
@@ -51079,14 +51015,14 @@
           "count": 1,
           "attack": 1,
           "health": 1,
-          "name": "Disarmed Undead",
+          "name": "Disarmed Zombie",
           "deathrattle": [
             {
               "type": "summon",
               "count": 1,
               "attack": 1,
               "health": 1,
-              "name": "Undead"
+              "name": "Zombie"
             }
           ]
         }
@@ -57391,6 +57327,157 @@
         "lifesteal"
       ],
       "description": "Lifesteal.",
+      "effects": []
+    },
+    {
+      "id": "lava_coil",
+      "name": "Lava Coil",
+      "type": "instant",
+      "cost": 2,
+      "colors": [
+        "R"
+      ],
+      "cardClass": "neutral",
+      "rarity": "common",
+      "set": "wubrg",
+      "description": "Deal 4 damage to a creature.",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 4,
+          "target": "creature"
+        }
+      ]
+    },
+    {
+      "id": "flametongue_kavu",
+      "name": "Flametongue Kavu",
+      "type": "creature",
+      "cost": 4,
+      "colors": [
+        "R"
+      ],
+      "cardClass": "neutral",
+      "attack": 4,
+      "health": 2,
+      "rarity": "rare",
+      "set": "wubrg",
+      "tribe": "Beast",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Deal 4 damage to a creature.",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 4,
+          "target": "creature"
+        }
+      ]
+    },
+    {
+      "id": "mind_rot",
+      "name": "Mind Rot",
+      "type": "sorcery",
+      "cost": 3,
+      "colors": [
+        "B"
+      ],
+      "cardClass": "neutral",
+      "rarity": "common",
+      "set": "wubrg",
+      "description": "The enemy discards 2 cards at random.",
+      "effects": [
+        {
+          "type": "enemy-discard",
+          "count": 2
+        }
+      ]
+    },
+    {
+      "id": "duress",
+      "name": "Duress",
+      "type": "sorcery",
+      "cost": 1,
+      "colors": [
+        "B"
+      ],
+      "cardClass": "neutral",
+      "rarity": "common",
+      "set": "wubrg",
+      "description": "The enemy discards a card at random.",
+      "effects": [
+        {
+          "type": "enemy-discard",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "id": "repulse",
+      "name": "Repulse",
+      "type": "instant",
+      "cost": 3,
+      "colors": [
+        "U"
+      ],
+      "cardClass": "neutral",
+      "rarity": "common",
+      "set": "wubrg",
+      "description": "Return a creature to its owner's hand.\nDraw a card.",
+      "effects": [
+        {
+          "type": "bounce",
+          "target": "creature"
+        },
+        {
+          "type": "draw",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "icatian_javelineers",
+      "name": "Icatian Javelineers",
+      "type": "creature",
+      "cost": 1,
+      "colors": [
+        "W"
+      ],
+      "cardClass": "neutral",
+      "attack": 1,
+      "health": 1,
+      "rarity": "common",
+      "set": "wubrg",
+      "tribe": "Human Soldier",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Deal 1 damage to a creature.",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 1,
+          "target": "creature"
+        }
+      ]
+    },
+    {
+      "id": "axebane_stag",
+      "name": "Axebane Stag",
+      "type": "creature",
+      "cost": 5,
+      "colors": [
+        "G"
+      ],
+      "cardClass": "neutral",
+      "attack": 4,
+      "health": 5,
+      "rarity": "common",
+      "set": "wubrg",
+      "tribe": "Beast",
+      "keywords": [],
+      "description": "",
       "effects": []
     }
   ]
