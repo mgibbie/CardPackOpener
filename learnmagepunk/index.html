@@ -235,7 +235,7 @@
 			<tr><td><a href="/designwiki/#/type/trap">Trap</a></td><td>Like a secret, but face-down: opponents see <i>that</i> you have traps, not which. Max 3.</td></tr>
 			<tr><td><a href="/designwiki/#/type/quest">Quest</a></td><td>Sits in play ticking toward a goal (&ldquo;play N cards&rdquo;, &ldquo;summon N of a tribe&rdquo;&hellip;), then pays out a powerful reward. Max 3.</td></tr>
 			<tr><td><a href="/designwiki/#/type/planeswalker">Planeswalker</a></td><td>Enters with Loyalty. Use one loyalty ability per turn (+/&minus; its cost). Can be attacked when its owner has no Taunts &mdash; damage removes loyalty and it never strikes back. Dies at 0. Having one in play unlocks <a href="#planes">Planeswalking</a>.</td></tr>
-			<tr><td><a href="/designwiki/#/type/plane">Plane</a></td><td>A shared arena nobody controls, with <b>Arrival</b>, <b>Chaos</b>, <b>Departure</b> effects and a continuous <b>Static</b> rule. Changed by <b>Planeshift</b>.</td></tr>
+			<tr><td><a href="/designwiki/#/type/plane">Plane</a></td><td>A shared arena nobody controls, with <b>Arrival</b>, <b>Chaos</b>, <b>Departure</b> effects and a continuous rule that applies while it's active. Changed by <b>Planeshift</b>.</td></tr>
 			<tr><td><a href="/designwiki/#/type/hero">Hero</a></td><td>Replaces your look, grants Armor, runs a battlecry, and <i>adds</i> its hero power to a free slot (you keep your original power).</td></tr>
 			<tr><td><a href="/designwiki/#/type/enchantment">Enchantment</a> / <a href="/designwiki/#/type/artifact">Artifact</a> / <a href="/designwiki/#/type/emblem">Emblem</a></td><td>Permanents in their own rows carrying ongoing triggers, statics, or cost modifiers.</td></tr>
 			<tr><td><a href="/designwiki/#/type/heropower">Hero Power</a></td><td>A playable card that installs a new hero power into one of your 3 slots.</td></tr>
@@ -322,14 +322,14 @@
 		<p class="lede">The whole table shares one arena plane &mdash; and daring mages can roll to change it.</p>
 
 		<ul>
-			<li>The active <a href="/designwiki/#/type/plane">plane</a> belongs to nobody. It has an <a href="/designwiki/#/keyword/arrival">Arrival</a> effect (fires when it appears), a <a href="/designwiki/#/keyword/chaos">Chaos</a> ability, a <a href="/designwiki/#/keyword/departure">Departure</a> effect (fires when it leaves), and a continuous <b>Static</b> rule that applies while it's active.</li>
+			<li>The active <a href="/designwiki/#/type/plane">plane</a> belongs to nobody. It has an <a href="/designwiki/#/keyword/arrival">Arrival</a> effect (fires when it appears), a <a href="/designwiki/#/keyword/chaos">Chaos</a> ability, a <a href="/designwiki/#/keyword/departure">Departure</a> effect (fires when it leaves), and a continuous rule that applies the whole time it's the active plane.</li>
 			<li><b>Planeswalking</b> requires a planeswalker in play or having used a <a href="/designwiki/#/keyword/spark">Spark</a> card.</li>
 			<li><b>Roll a d6:</b> on a <b>6</b>, <a href="/designwiki/#/keyword/planeshift">Planeshift</a> &mdash; swap to a random new plane (old Departure fires, new Arrival fires). On a <b>5</b>, trigger the current plane's <b>Chaos</b> ability. 1&ndash;4: nothing.</li>
 			<li><b>Cost:</b> your first roll each turn is free; each further roll that turn costs 1 more mana than the last (0, 1, 2&hellip;).</li>
 		</ul>
 
 		<div class="panel callout">
-			<span class="co-title">Example statics</span><br>
+			<span class="co-title">Example plane rules</span><br>
 			Stronghold Furnace doubles all combat damage &middot; Alkabah makes 4-cost spells free &middot; Belenon stops things untapping. Browse every plane in the <a href="/designwiki/#/type/plane">Card Gallery</a>.
 		</div>
 	</section>
@@ -459,7 +459,6 @@
 	<div class="kw"><dt><a href="/designwiki/#/keyword/spelldamage">Spell Damage</a></dt><dd>Your spells deal extra damage.</dd></div>
 	<div class="kw"><dt><a href="/designwiki/#/keyword/spellburst">Spellburst</a></dt><dd>A one-time effect that triggers after you cast your next spell.</dd></div>
 	<div class="kw"><dt><a href="/designwiki/#/keyword/static">Static</a></dt><dd>50% chance to Paralyze any creature that survives combat with it.</dd></div>
-	<div class="kw"><dt><a href="/designwiki/#/keyword/static">Static</a> <span class="plane-tag">Plane</span></dt><dd>A plane's continuous effect that applies while it is the active plane.</dd></div>
 	<div class="kw"><dt><a href="/designwiki/#/keyword/stealth">Stealth</a></dt><dd>Can't be attacked or targeted until it attacks.</dd></div>
 	<div class="kw"><dt><a href="/designwiki/#/keyword/swing">Swing</a></dt><dd>Triggers when this attacks.</dd></div>
 	<div class="kw"><dt><a href="/designwiki/#/keyword/taunt">Taunt</a></dt><dd>Enemies must attack this before your other creatures.</dd></div>
