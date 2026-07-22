@@ -310,7 +310,7 @@ export function step(state, pi = 1) {
 		for (const t of creatureTs) {
 			const d = creatureOf(state, t);
 			if (!d) continue;
-			const kills = !d.shield && (a.attack >= E.hp(d) || E.has(a, E.KW.DEATHTOUCH));
+			const kills = !d.shield && (a.attack >= E.hp(d) || E.has(a, E.KW.DEATHTOUCH) || E.has(a, E.KW.VENOMOUS));
 			const survives = d.attack < E.hp(a) || a.shield;
 			if (kills && survives) {
 				const score = threatScore(d);

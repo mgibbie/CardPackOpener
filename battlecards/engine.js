@@ -8,7 +8,7 @@ export const KW = {
 	FIRST_STRIKE: 'first_strike', WINDFURY: 'windfury', DEFENDER: 'defender',
 	BATTLECRY: 'battlecry', DEATHRATTLE: 'deathrattle', LIFESTEAL: 'lifesteal',
 	DIVINE_SHIELD: 'divine_shield', STEALTH: 'stealth', DEATHTOUCH: 'deathtouch',
-	POISONOUS: 'poisonous', FREEZER: 'freezer',
+	POISONOUS: 'poisonous', VENOMOUS: 'venomous', FREEZER: 'freezer',
 	ELUSIVE: 'elusive', PIERCING: 'piercing',
 	PACIFIST: 'pacifist',   // can't attack (Ragnaros, Ancient Watcher)
 	CLEAVE: 'cleave',       // combat damage splashes to the defender's neighbors
@@ -790,12 +790,24 @@ function damageCreature(state, target, amount, source) {
 	}
 	target.damage += amount;
 	if (target.damage === target.maxHealth) state.exactKills = (state.exactKills || 0) + 1;
-	if (source && (has(source, KW.DEATHTOUCH) || has(source, KW.POISONOUS))) target.poisoned = true;
+	if (source) {
+		// Deathtouch: any damage it deals destroys the creature (persistent).
+		if (has(source, KW.DEATHTOUCH)) target.doomed = true;
+		// Venomous: like Deathtouch but one-shot — it's spent after the first kill.
+		if (has(source, KW.VENOMOUS)) {
+			target.doomed = true;
+			source.keywords = source.keywords.filter(k => k !== KW.VENOMOUS);
+			emit(state, { type: 'venomSpent', uid: source.uid });
+		}
+		// Poisonous: doesn't kill outright — it inflicts the Poisoned condition
+		// (2 damage at the end of its controller's turn).
+		if (has(source, KW.POISONOUS)) target.poisoned = true;
+	}
 	// Commanding Shout: friendly creatures can't drop below 1 health this turn
 	const owner = state.players[target.controller];
 	if (owner?.minionsSurviveTurn === state.turnNumber && target.damage >= target.maxHealth) {
 		target.damage = target.maxHealth - 1;
-		target.poisoned = false;
+		target.doomed = false;
 	}
 	emit(state, { type: 'damage', targetType: 'creature', uid: target.uid, amount, hp: hp(target) });
 	if (target.enrage || target.statRule) recomputeAuras(state); // enrage/Lightspawn track damage
@@ -876,8 +888,8 @@ function healHero(state, pi, amount) {
 }
 
 function isDead(c) {
-	if (c.type === 'location') return c.poisoned || c.durability <= 0;
-	return c.poisoned || c.damage >= c.maxHealth;
+	if (c.type === 'location') return c.doomed || c.durability <= 0;
+	return c.doomed || c.damage >= c.maxHealth;
 }
 
 function freezeCreature(state, c) {
@@ -951,7 +963,7 @@ function sweepDeaths(state) {
 			if (has(c, KW.REBORN) && !p.eliminated) {
 				c.keywords = c.keywords.filter(k => k !== KW.REBORN);
 				c.damage = c.maxHealth - 1;
-				c.poisoned = false;
+				c.doomed = false;
 				c.frozen = null;
 				c.sick = true;
 				c.attacksUsed = 0;
@@ -1373,7 +1385,7 @@ export function tapLand(state, pi, cardUid, tapIndex, target) {
 		card.durability -= 1;
 		emit(state, { type: 'locationDurability', player: pi, uid: card.uid, durability: card.durability });
 		if (card.durability <= 0) {
-			card.poisoned = true; // routes through the normal death sweep
+			card.doomed = true; // routes through the normal death sweep
 		}
 	}
 	stackAction(state, pi, { kind: 'landtap', card, effects: t.effects, target });
@@ -1425,7 +1437,7 @@ export function activateAbility(state, pi, cardUid, i, target) {
 		emit(state, { type: 'discard', player: pi, card: c });
 	}
 	emit(state, { type: 'abilityUsed', player: pi, card, text: a.text });
-	if (a.sacrifice) { card.damage = card.maxHealth + 99; card.poisoned = true; }
+	if (a.sacrifice) { card.damage = card.maxHealth + 99; card.doomed = true; }
 	stackAction(state, pi, { kind: 'ability', card, effects: a.effects, target });
 	return true;
 }
@@ -5106,6 +5118,11 @@ export function endTurn(state) {
 		}
 	}
 	fireOngoing(state, pi, 'turn-end');
+	// Poison: each Poisoned creature you control takes 2 damage at the end of
+	// your turn (the condition persists until the creature is cleansed or dies).
+	for (const c of [...p.board]) {
+		if (c.poisoned && !isDead(c)) { emit(state, { type: 'poisonTick', uid: c.uid }); damageCreature(state, c, 2, null); }
+	}
 	// Gruul-style triggers tick at the end of EVERY player's turn
 	for (let s2 = 0; s2 < state.players.length; s2++) fireOngoing(state, s2, 'every-turn-end', {});
 	// Medic N: patch up the board neighbors at end of turn
