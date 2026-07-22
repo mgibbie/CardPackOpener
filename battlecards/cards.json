@@ -55474,7 +55474,7 @@
       "rarity": "legendary",
       "set": "paper",
       "token": true,
-      "description": "Arrival: Deal 2 damage to all creatures.\nCombat damage is doubled.\nChaos: Deal 2 damage to each opponent.\nDeparture: Deal 3 damage to the enemy hero.",
+      "description": "Arrival: Deal 2 damage to all creatures.\nCombat damage is doubled.\nChaos: Each player loses 2 life.\nDeparture: Each player loses 5 life.",
       "arrival": [
         {
           "type": "damage",
@@ -55489,14 +55489,14 @@
         {
           "type": "damage",
           "value": 2,
-          "target": "enemy-heroes"
+          "target": "all-heroes"
         }
       ],
       "departure": [
         {
           "type": "damage",
-          "value": 3,
-          "target": "enemy-heroes"
+          "value": 5,
+          "target": "all-heroes"
         }
       ]
     },
