@@ -20,7 +20,8 @@ let collection = {};
 
 let slots = [];        // [{ id, name, classId, cards }]
 let editingId = null;  // slot being edited, or null for a brand-new deck
-let curClass = '';     // the working deck's class (class-first)
+let curClass = '';     // the working deck's class
+let firstClass = '';   // first class alphabetically — the default for a new deck
 let deck = [];         // working card ids
 
 const filters = { tab: 'class', search: '', mana: null };
@@ -213,10 +214,10 @@ function editSlot(slot) {
 }
 function newDeck() {
 	editingId = null;
-	curClass = '';
+	curClass = firstClass;   // start on the first class alphabetically, cards showing
 	deck = [];
 	$('deck-name').value = '';
-	$('class-select').value = '';
+	$('class-select').value = firstClass;
 	renderSlots(); applyFilters(); updateCounts(); showEdit();
 }
 // return to the My Decks list (keeps any unsaved edit state so re-entering resumes)
@@ -258,8 +259,8 @@ $('delete-deck').onclick = async () => {
 		if (data.error) { flash(data.error); return; }
 		mpState = data.state; slots = loadSlots();
 	} else { slots = slots.filter(s => s.id !== editingId); persistFree(); }
-	editingId = null; curClass = ''; deck = [];
-	$('deck-name').value = ''; $('class-select').value = '';
+	editingId = null; curClass = firstClass; deck = [];
+	$('deck-name').value = ''; $('class-select').value = firstClass;
 	renderSlots(); applyFilters(); updateCounts(); showList();
 	flash('Deck deleted.');
 };
@@ -293,24 +294,35 @@ for (let i = 0; i <= 7; i++) {
 	$('mana-row').appendChild(b);
 }
 
-// class picker: the FIRST choice
+// ---------- class picker (sorted A→Z; first one is the default) + boot ----------
+let classesReady = false, cardsReady = false;
+function maybeInit() {
+	if (!classesReady || !cardsReady) return;
+	slots = loadSlots();
+	renderSlots();
+	newDeck(); // open on the blank starting page with the first class selected
+	window.__deck = { get deck() { return deck; }, get slots() { return slots; }, addCard, removeCard, editSlot, newDeck, Col };
+}
+
 fetch('classes.json').then(r => r.json()).then(({ classes }) => {
 	const sel = $('class-select');
-	sel.innerHTML = '<option value="">— choose class —</option>';
-	for (const c of classes) {
+	const sorted = classes.slice().sort((a, b) => a.name.localeCompare(b.name));
+	sel.innerHTML = '';
+	for (const c of sorted) {
 		const opt = document.createElement('option');
 		opt.value = c.id; opt.textContent = c.name;
 		sel.appendChild(opt);
 	}
-	sel.value = curClass;
+	firstClass = sorted[0]?.id || '';
 	sel.addEventListener('change', ev => {
 		curClass = ev.target.value;
-		deck = curClass ? deck.filter(id => Col.fitsClass(cardsById[id], curClass)) : [];
+		deck = deck.filter(id => Col.fitsClass(cardsById[id], curClass));
 		applyFilters(); updateCounts();
 	});
+	classesReady = true;
+	maybeInit();
 }).catch(() => {});
 
-// ---------- boot ----------
 fetch('cards.json').then(r => r.json()).then(async data => {
 	const rarityOrder = { legendary: 0, epic: 1, rare: 2, uncommon: 3, common: 4, special: 5 };
 	cards = data.cards.filter(Col.collectible).slice().sort((a, b) =>
@@ -320,7 +332,6 @@ fetch('cards.json').then(r => r.json()).then(async data => {
 	for (const d of data.cards) cardsById[d.id] = d;
 	if (MP_ON) { mpState = await MPX.freshState(); collection = mpState?.collection || {}; }
 	else { collection = Col.getCollection(data.cards); }
-	slots = loadSlots();
-	renderSlots(); applyFilters(); updateCounts(); showList(); // open on the My Decks list
-	window.__deck = { get deck() { return deck; }, get slots() { return slots; }, addCard, removeCard, editSlot, newDeck, Col };
+	cardsReady = true;
+	maybeInit();
 });
