@@ -3862,7 +3862,7 @@ function activePlaneRule(state) {
 	return pd && pd.staticRule ? pd.staticRule : null;
 }
 // the active plane's continuous trigger fires effects for player `pi` on an
-// event (turn-start, creature-died, spell-cast) — Lethe Lake, Takenuma, etc.
+// event (turn-start, creature-died, spell-cast) — Oberaqua, Takenuma, etc.
 function firePlaneTrigger(state, when, pi) {
 	const r = activePlaneRule(state);
 	if (r && r.kind === 'trigger' && r.on === when && r.effects && pi != null
@@ -4204,7 +4204,7 @@ function resolveStackedSpell(state, entry) {
 			execEffects(state, pi, card.honorableKill, ctx.target, card);
 		}
 		fireOngoing(state, pi, 'spell-played', { played: card });
-		firePlaneTrigger(state, 'spell-cast', pi); // Minamo / Fields of Summer
+		firePlaneTrigger(state, 'spell-cast', pi); // Minamo / Elysaria
 		for (let s2 = 0; s2 < state.players.length; s2++) {
 			fireOngoing(state, s2, 'any-spell-played', { spell: card, caster: pi });
 			if (s2 !== pi) fireOngoing(state, s2, 'enemy-spell-played', { spell: card, caster: pi });
@@ -4315,7 +4315,7 @@ function resolveEntry(state, entry) {
 		}
 		if (entry.card.effects) execEffects(state, pi, entry.card.effects, entry.target, entry.card);
 		fireOngoing(state, pi, 'spell-played', { played: entry.card });
-		firePlaneTrigger(state, 'spell-cast', pi); // Minamo / Fields of Summer
+		firePlaneTrigger(state, 'spell-cast', pi); // Minamo / Elysaria
 		for (let s2 = 0; s2 < state.players.length; s2++) fireOngoing(state, s2, 'any-spell-played', { spell: entry.card, caster: pi });
 		toGraveyard(state, pi, entry.card);
 		return;
@@ -5235,7 +5235,7 @@ export function endTurn(state) {
 	np.parityBlock = null; // Alara: a start-of-turn coin flip may block odd/even-cost plays
 	np.planarRollsThisTurn = 0;
 	{ const r = activePlaneRule(state); if (r && r.kind === 'coin-parity') { np.parityBlock = state.rng() < 0.5 ? 'odd' : 'even'; emit(state, { type: 'coinParity', player: state.current, block: np.parityBlock }); } }
-	firePlaneTrigger(state, 'turn-start', state.current); // Lethe Lake: mill at each turn's start
+	firePlaneTrigger(state, 'turn-start', state.current); // Oberaqua: mill at each turn's start
 	// stale this-turn cost riders lapse; Millhouse's gift comes due
 	np.costDiscounts = (np.costDiscounts || []).filter(d => !d.thisTurn);
 	np.freeSpellsThisTurn = !!np.freeSpellsNextTurn;
