@@ -56462,6 +56462,274 @@
       "keywords": [],
       "description": "",
       "effects": []
+    },
+    {
+      "id": "giant_killer",
+      "name": "Giant Killer",
+      "type": "creature",
+      "cost": 1,
+      "colors": [
+        "W"
+      ],
+      "cardClass": "neutral",
+      "attack": 1,
+      "health": 2,
+      "rarity": "common",
+      "set": "wubrg",
+      "keywords": [],
+      "description": "",
+      "effects": []
+    },
+    {
+      "id": "sunlance",
+      "name": "Sunlance",
+      "type": "sorcery",
+      "cost": 1,
+      "colors": [
+        "W"
+      ],
+      "cardClass": "neutral",
+      "rarity": "common",
+      "set": "wubrg",
+      "description": "Deal 3 damage to a creature.",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 3,
+          "target": "creature"
+        }
+      ]
+    },
+    {
+      "id": "vapor_snag",
+      "name": "Vapor Snag",
+      "type": "instant",
+      "cost": 1,
+      "colors": [
+        "U"
+      ],
+      "cardClass": "neutral",
+      "rarity": "common",
+      "set": "wubrg",
+      "description": "Return an enemy creature to its owner's hand.\nThat player loses 1 life.",
+      "effects": [
+        {
+          "type": "bounce",
+          "target": "enemy-creature"
+        },
+        {
+          "type": "damage",
+          "value": 1,
+          "target": "enemy-hero"
+        }
+      ]
+    },
+    {
+      "id": "snap",
+      "name": "Snap",
+      "type": "instant",
+      "cost": 2,
+      "colors": [
+        "U"
+      ],
+      "cardClass": "neutral",
+      "rarity": "common",
+      "set": "wubrg",
+      "description": "Return a creature to its owner's hand.",
+      "effects": [
+        {
+          "type": "bounce",
+          "target": "creature"
+        }
+      ]
+    },
+    {
+      "id": "thought_scour",
+      "name": "Thought Scour",
+      "type": "instant",
+      "cost": 1,
+      "colors": [
+        "U"
+      ],
+      "cardClass": "neutral",
+      "rarity": "common",
+      "set": "wubrg",
+      "description": "Mill 2 cards, then draw a card.",
+      "effects": [
+        {
+          "type": "mill",
+          "value": 2
+        },
+        {
+          "type": "draw",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "chart_a_course",
+      "name": "Chart a Course",
+      "type": "sorcery",
+      "cost": 2,
+      "colors": [
+        "U"
+      ],
+      "cardClass": "neutral",
+      "rarity": "common",
+      "set": "wubrg",
+      "description": "Draw 2 cards.",
+      "effects": [
+        {
+          "type": "draw",
+          "value": 2
+        }
+      ]
+    },
+    {
+      "id": "ravenous_chupacabra",
+      "name": "Ravenous Chupacabra",
+      "type": "creature",
+      "cost": 4,
+      "colors": [
+        "B"
+      ],
+      "cardClass": "neutral",
+      "attack": 2,
+      "health": 2,
+      "rarity": "rare",
+      "set": "wubrg",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Destroy an enemy creature.",
+      "effects": [
+        {
+          "type": "destroy",
+          "target": "enemy-creature"
+        }
+      ]
+    },
+    {
+      "id": "read_the_bones",
+      "name": "Read the Bones",
+      "type": "sorcery",
+      "cost": 3,
+      "colors": [
+        "B"
+      ],
+      "cardClass": "neutral",
+      "rarity": "common",
+      "set": "wubrg",
+      "description": "Scry 2, then draw 2 cards.\nYou lose 2 life.",
+      "effects": [
+        {
+          "type": "scry",
+          "value": 2
+        },
+        {
+          "type": "draw",
+          "value": 2
+        },
+        {
+          "type": "damage",
+          "value": 2,
+          "target": "own-hero"
+        }
+      ]
+    },
+    {
+      "id": "doom_blade",
+      "name": "Doom Blade",
+      "type": "instant",
+      "cost": 2,
+      "colors": [
+        "B"
+      ],
+      "cardClass": "neutral",
+      "rarity": "common",
+      "set": "wubrg",
+      "description": "Destroy an enemy creature.",
+      "effects": [
+        {
+          "type": "destroy",
+          "target": "enemy-creature"
+        }
+      ]
+    },
+    {
+      "id": "pillar_of_flame",
+      "name": "Pillar of Flame",
+      "type": "sorcery",
+      "cost": 1,
+      "colors": [
+        "R"
+      ],
+      "cardClass": "neutral",
+      "rarity": "common",
+      "set": "wubrg",
+      "description": "Deal 2 damage to any target.",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 2,
+          "target": "any"
+        }
+      ]
+    },
+    {
+      "id": "mogg_fanatic",
+      "name": "Mogg Fanatic",
+      "type": "creature",
+      "cost": 1,
+      "colors": [
+        "R"
+      ],
+      "cardClass": "neutral",
+      "attack": 1,
+      "health": 1,
+      "rarity": "common",
+      "set": "wubrg",
+      "keywords": [],
+      "description": "Sacrifice this: deal 1 damage to any target.",
+      "activated": [
+        {
+          "cost": 0,
+          "sacrifice": true,
+          "effects": [
+            {
+              "type": "damage",
+              "value": 1,
+              "target": "any"
+            }
+          ],
+          "text": "Sacrifice: deal 1 damage to any target."
+        }
+      ]
+    },
+    {
+      "id": "goblin_arsonist",
+      "name": "Goblin Arsonist",
+      "type": "creature",
+      "cost": 1,
+      "colors": [
+        "R"
+      ],
+      "cardClass": "neutral",
+      "attack": 1,
+      "health": 1,
+      "rarity": "common",
+      "set": "wubrg",
+      "keywords": [
+        "deathrattle"
+      ],
+      "description": "Deathrattle: Deal 1 damage to the enemy hero.",
+      "deathrattle": [
+        {
+          "type": "damage",
+          "value": 1,
+          "target": "enemy-hero"
+        }
+      ]
     }
   ]
 }
