@@ -1,7 +1,7 @@
 // deck.js — Hearthstone-style deck builder. Pick a class, browse your collection
 // as real card faces split into CLASS / NEUTRAL tabs, and assemble a 40-card
 // deck into one of up to 40 slots. Mobile-first: the deck is a slide-up panel.
-import { drawCardFace, canonClass, classNameOf, artListeners, preloadArt } from './cardart.js';
+import { drawCardFace, canonClass, classNameOf, classColorOf, artListeners, preloadArt } from './cardart.js';
 import * as Col from './collection.js';
 import * as MPX from './mpmode.js';
 
@@ -88,22 +88,23 @@ function applyFilters() {
 function tileFor(card) {
 	const tile = document.createElement('div');
 	tile.className = 'tile';
-	const face = drawCardFace(card, { count: collection[card.id] || 0 });
+	const face = drawCardFace(card);
 	face.style.width = '100%';
 	tile.appendChild(face);
-	const badge = document.createElement('div');
-	badge.className = 'badge';
-	tile.appendChild(badge);
+	// Hearthstone-style owned-copies pill under the card (updates to show how
+	// many are still free once you start adding them to the deck)
+	const owned = document.createElement('div');
+	owned.className = 'owned';
+	tile.appendChild(owned);
 	tile.addEventListener('click', () => addCard(card.id));
-	tileById.set(card.id, { tile, badge });
+	tileById.set(card.id, { tile, owned });
 	return tile;
 }
 function refreshTile(id) {
 	const t = tileById.get(id); if (!t) return;
-	const used = inDeck(id), have = collection[id] || 0;
-	t.tile.classList.toggle('depleted', used >= Math.min(have, limitOf(id)));
-	t.badge.textContent = used ? `×${used}` : '';
-	t.badge.style.display = used ? '' : 'none';
+	const used = inDeck(id), have = collection[id] || 0, cap = Math.min(have, limitOf(id));
+	t.tile.classList.toggle('depleted', used >= cap);
+	t.owned.textContent = used ? `${have - used} left · ×${have}` : `×${have}`;
 }
 
 let renderToken = 0;
@@ -145,17 +146,33 @@ function renderSlots() {
 	const list = $('slot-list');
 	list.innerHTML = '';
 	$('slot-count').textContent = `${slots.length} / ${MAX_SLOTS}`;
+	if (!slots.length) {
+		const empty = document.createElement('div');
+		empty.id = 'decks-empty';
+		empty.textContent = 'No decks yet — create one below to start building. You can save up to 40.';
+		list.appendChild(empty);
+	}
 	for (const s of slots) {
 		const valid = Array.isArray(s.cards) && s.cards.length === SIZE;
+		const col = classColorOf(s.classId || 'neutral');
 		const div = document.createElement('div');
 		div.className = 'slot-row' + (s.id === editingId ? ' active' : '');
+		div.style.background = `linear-gradient(90deg, ${col} 0%, ${col} 42%, #1c1430 100%)`;
 		div.innerHTML = `<span class="s-name">${s.name || s.classId || 'Deck'}</span>`
-			+ `<span class="s-meta">${(s.classId || '?').replace(/_/g, ' ')} · ${(s.cards || []).length}/${SIZE}${valid ? '' : ' ⚠'}</span>`;
+			+ `<span class="s-count ${valid ? 'full' : 'partial'}">${(s.cards || []).length}/${SIZE}</span>`;
 		div.onclick = () => editSlot(s);
 		list.appendChild(div);
 	}
+	// Create-new-deck button at the BOTTOM of the deck scroll (Hearthstone-style)
+	const add = document.createElement('button');
+	add.id = 'new-deck';
+	add.textContent = '＋ Create New Deck';
+	add.onclick = () => newDeck();
+	list.appendChild(add);
 	$('delete-deck').style.display = editingId ? 'block' : 'none';
 }
+const showList = () => { $('decks-view').style.display = 'flex'; $('edit-view').style.display = 'none'; };
+const showEdit = () => { $('decks-view').style.display = 'none'; $('edit-view').style.display = 'flex'; };
 function renderDeckList() {
 	const dl = $('deck-list');
 	dl.innerHTML = '';
@@ -188,8 +205,7 @@ function editSlot(slot) {
 	deck = [...slot.cards].filter(id => cardsById[id]);
 	$('deck-name').value = slot.name || '';
 	$('class-select').value = curClass;
-	renderSlots(); applyFilters(); updateCounts();
-	if (MOBILE.matches) $('deck-panel').classList.add('open');
+	renderSlots(); applyFilters(); updateCounts(); showEdit();
 }
 function newDeck() {
 	editingId = null;
@@ -197,8 +213,10 @@ function newDeck() {
 	deck = [];
 	$('deck-name').value = '';
 	$('class-select').value = '';
-	renderSlots(); applyFilters(); updateCounts();
+	renderSlots(); applyFilters(); updateCounts(); showEdit();
 }
+// return to the My Decks list (keeps any unsaved edit state so re-entering resumes)
+function backToDecks() { renderSlots(); showList(); }
 
 // ---------- save / delete ----------
 $('save').onclick = async () => {
@@ -236,9 +254,11 @@ $('delete-deck').onclick = async () => {
 		if (data.error) { flash(data.error); return; }
 		mpState = data.state; slots = loadSlots();
 	} else { slots = slots.filter(s => s.id !== editingId); persistFree(); }
-	newDeck(); flash('Deck deleted.');
+	editingId = null; curClass = ''; deck = [];
+	$('deck-name').value = ''; $('class-select').value = '';
+	renderSlots(); applyFilters(); updateCounts(); showList();
+	flash('Deck deleted.');
 };
-$('new-deck').onclick = () => newDeck();
 
 // ---------- tabs, filters, pager, mobile toggle ----------
 for (const btn of document.querySelectorAll('.tab')) {
@@ -251,6 +271,7 @@ for (const btn of document.querySelectorAll('.tab')) {
 $('search').addEventListener('input', ev => { filters.search = ev.target.value.toLowerCase(); applyFilters(); });
 $('prev').addEventListener('click', () => flip(-1));
 $('next').addEventListener('click', () => flip(1));
+$('back-to-decks').addEventListener('click', backToDecks);
 $('toggle-deck').addEventListener('click', () => $('deck-panel').classList.toggle('open'));
 $('panel-close').addEventListener('click', () => $('deck-panel').classList.remove('open'));
 MOBILE.addEventListener('change', () => { PAGE_SIZE = MOBILE.matches ? 9 : 15; renderPage(); });
@@ -296,6 +317,6 @@ fetch('cards.json').then(r => r.json()).then(async data => {
 	if (MP_ON) { mpState = await MPX.freshState(); collection = mpState?.collection || {}; }
 	else { collection = Col.getCollection(data.cards); }
 	slots = loadSlots();
-	newDeck();
+	renderSlots(); applyFilters(); updateCounts(); showList(); // open on the My Decks list
 	window.__deck = { get deck() { return deck; }, get slots() { return slots; }, addCard, removeCard, editSlot, newDeck, Col };
 });
