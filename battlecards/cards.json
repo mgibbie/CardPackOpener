@@ -153,7 +153,7 @@
       "cardClass": "centurion",
       "cost": 5,
       "rarity": "epic",
-      "description": "Taunt. Divine Shield.",
+      "description": "Taunt.\nDivine Shield.",
       "attack": 4,
       "health": 6,
       "keywords": [
@@ -168,7 +168,7 @@
       "cardClass": "centurion",
       "cost": 2,
       "rarity": "common",
-      "description": "Give a creature +0/+3 and Taunt."
+      "description": "Give a creature +0/+3 & Taunt."
     },
     {
       "id": "rallying_cry",
@@ -186,7 +186,7 @@
       "cardClass": "centurion",
       "cost": 3,
       "rarity": "rare",
-      "description": "Deathtouch. Deathrattle: Deal 1 damage to a random opponent or creature you don't control.",
+      "description": "Deathtouch.\nDeathrattle: Deal 1 damage to a random opponent or creature you don't control.",
       "attack": 2,
       "health": 2,
       "tribe": "Beast",
@@ -244,7 +244,7 @@
       "cardClass": "naturalist",
       "cost": 6,
       "rarity": "legendary",
-      "description": "Taunt. At end of turn, restore 2 health to your hero.",
+      "description": "Taunt.\nAt end of turn, restore 2 health to your hero.",
       "attack": 5,
       "health": 8,
       "tribe": "Elemental",
@@ -312,7 +312,7 @@
       "cardClass": "bounty_hunter",
       "cost": 5,
       "rarity": "legendary",
-      "description": "Stealth. Deathtouch.",
+      "description": "Stealth.\nDeathtouch.",
       "attack": 5,
       "health": 4,
       "keywords": [
@@ -352,7 +352,7 @@
       "cardClass": "bounty_hunter",
       "cost": 1,
       "rarity": "legendary",
-      "description": "Quest: Quickdraw 9 cards. Reward: Deal 9 damage to all enemies.",
+      "description": "Quest: Quickdraw 9 cards.\nReward: Deal 9 damage to all enemies.",
       "keywords": [
         "quest"
       ]
@@ -406,7 +406,7 @@
       "cardClass": "bounty_hunter",
       "cost": 3,
       "rarity": "common",
-      "description": "Rush. Deathrattle: Deal 1 damage to each creature you don't control & each opponent loses 1 life.",
+      "description": "Rush.\nDeathrattle: Deal 1 damage to each creature you don't control & each opponent loses 1 life.",
       "attack": 3,
       "health": 2,
       "tribe": "Human Ranger",
@@ -431,7 +431,7 @@
       "cardClass": "bounty_hunter",
       "cost": 7,
       "rarity": "common",
-      "description": "Taunt. Costs 1 less for each coin in your graveyard.",
+      "description": "Taunt.\nCosts 1 less for each coin in your graveyard.",
       "attack": 5,
       "health": 8,
       "tribe": "Human Ranger",
@@ -1022,7 +1022,7 @@
         "stealth",
         "deathtouch"
       ],
-      "description": "Stealth. Deathtouch."
+      "description": "Stealth.\nDeathtouch."
     },
     {
       "id": "river_crocolisk",
@@ -1429,7 +1429,7 @@
           "target": "enemies"
         }
       ],
-      "description": "Deal 2 damage to the enemy hero and all enemy creatures."
+      "description": "Deal 2 damage to the enemy hero & all enemy creatures."
     },
     {
       "id": "dragonling_mechanic",
@@ -1508,7 +1508,7 @@
           "target": "everyone"
         }
       ],
-      "description": "Deal 3 damage to both heroes and every creature."
+      "description": "Deal 3 damage to both heroes & every creature."
     },
     {
       "id": "kor_kron_elite",
@@ -1547,7 +1547,7 @@
           "forEnemy": true
         }
       ],
-      "description": "Charge. Battlecry: Summon two 1/1 Whelps for your opponent."
+      "description": "Charge.\nBattlecry: Summon two 1/1 Whelps for your opponent."
     },
     {
       "id": "mogu_shan_warden",
@@ -1637,7 +1637,7 @@
           "target": "everyone"
         }
       ],
-      "description": "Taunt. Deathrattle: Deal 2 damage to both heroes and every creature."
+      "description": "Taunt.\nDeathrattle: Deal 2 damage to both heroes & every creature."
     },
     {
       "id": "assassinate",
@@ -1687,7 +1687,7 @@
           "target": "friendly-all"
         }
       ],
-      "description": "Battlecry: Restore 2 health to your hero and creatures."
+      "description": "Battlecry: Restore 2 health to your hero & creatures."
     },
     {
       "id": "fen_creeper",
@@ -1722,7 +1722,7 @@
           "target": "friendly-all"
         }
       ],
-      "description": "Deal 2 damage to the enemy hero and all enemy creatures. Restore 2 health to your hero and creatures."
+      "description": "Deal 2 damage to the enemy hero & all enemy creatures. Restore 2 health to your hero & creatures."
     },
     {
       "id": "nightblade",
@@ -2158,7 +2158,7 @@
         "taunt",
         "windfury"
       ],
-      "description": "Charge. Divine Shield. Taunt. Windfury."
+      "description": "Charge.\nDivine Shield.\nTaunt.\nWindfury."
     },
     {
       "id": "ironbark_protector",
@@ -2409,7 +2409,7 @@
           "target": "enemy-creature"
         }
       ],
-      "description": "Deal 1 damage to an enemy and freeze it."
+      "description": "Deal 1 damage to an enemy & freeze it."
     },
     {
       "id": "cleave",
@@ -2446,7 +2446,7 @@
           "target": "any"
         }
       ],
-      "description": "Deal 3 damage to any target and freeze it."
+      "description": "Deal 3 damage to any target & freeze it."
     },
     {
       "id": "mad_bomber",
@@ -2544,7 +2544,7 @@
           "target": "enemy-creatures"
         }
       ],
-      "description": "Deal 2 damage to all enemy creatures and freeze them."
+      "description": "Deal 2 damage to all enemy creatures & freeze them."
     },
     {
       "id": "deadly_poison",
@@ -2688,7 +2688,7 @@
           }
         ]
       },
-      "description": "Secret: When your hero is attacked, deal 2 damage to the enemy hero and all enemy creatures."
+      "description": "Secret: When your hero is attacked, deal 2 damage to the enemy hero & all enemy creatures."
     },
     {
       "id": "fiery_war_axe",
@@ -2720,7 +2720,7 @@
           }
         ]
       },
-      "description": "Secret: When an enemy creature attacks, return it to its owner's hand and it costs 2 more."
+      "description": "Secret: When an enemy creature attacks, return it to its owner's hand & it costs 2 more."
     },
     {
       "id": "misdirection",
@@ -2935,7 +2935,7 @@
           "durability": 1
         }
       ],
-      "description": "Battlecry: Give your weapon +1 Attack and +1 Durability.",
+      "description": "Battlecry: Give your weapon +1 Attack & +1 Durability.",
       "tribe": "Pirate"
     },
     {
@@ -2956,7 +2956,7 @@
           "drawDurability": true
         }
       ],
-      "description": "Battlecry: Destroy your opponent's weapon and draw a card for each durability it had."
+      "description": "Battlecry: Destroy your opponent's weapon & draw a card for each durability it had."
     },
     {
       "id": "bear_trap",
@@ -3020,7 +3020,7 @@
           }
         ]
       },
-      "description": "Trap: When your hero is attacked, deal 2 damage to every enemy hero and creature."
+      "description": "Trap: When your hero is attacked, deal 2 damage to every enemy hero & creature."
     },
     {
       "id": "rattlesnake_den",
@@ -3162,7 +3162,7 @@
           }
         ]
       },
-      "description": "Hero Power (2): Draw a card and take 2 damage."
+      "description": "Hero Power (2): Draw a card & take 2 damage."
     },
     {
       "id": "armorers_forge",
@@ -3227,7 +3227,7 @@
           }
         ]
       },
-      "description": "Quest: Summon 6 creatures. Reward: A 6/6 Longhorn with Trample."
+      "description": "Quest: Summon 6 creatures.\nReward: A 6/6 Longhorn with Trample."
     },
     {
       "id": "dead_mans_hand",
@@ -3248,7 +3248,7 @@
           }
         ]
       },
-      "description": "Quest: Play 5 spells. Reward: Draw 3 cards."
+      "description": "Quest: Play 5 spells.\nReward: Draw 3 cards."
     },
     {
       "id": "blood_feud",
@@ -3270,7 +3270,7 @@
           }
         ]
       },
-      "description": "Quest: 8 creatures die. Reward: Deal 2 damage to every enemy hero and creature."
+      "description": "Quest: 8 creatures die.\nReward: Deal 2 damage to every enemy hero & creature."
     },
     {
       "id": "railroad_contract",
@@ -3295,7 +3295,7 @@
           }
         ]
       },
-      "description": "Quest: Play 3 lands. Reward: Draw 2 cards and gain 5 armor."
+      "description": "Quest: Play 3 lands.\nReward: Draw 2 cards & gain 5 armor."
     },
     {
       "id": "bounty_board",
@@ -3318,7 +3318,7 @@
           }
         ]
       },
-      "description": "Quest: Attack 3 times with your hero. Reward: Equip a 4/3 Golden Revolver."
+      "description": "Quest: Attack 3 times with your hero.\nReward: Equip a 4/3 Golden Revolver."
     },
     {
       "id": "ranchers_brand",
@@ -3656,7 +3656,7 @@
           ]
         }
       ],
-      "description": "+2: Restore 4 health to your hero. \u22125: Deal 3 damage to all enemy creatures and summon a 5/5 Saguaro Guardian with Taunt."
+      "description": "+2: Restore 4 health to your hero. \u22125: Deal 3 damage to all enemy creatures & summon a 5/5 Saguaro Guardian with Taunt."
     },
     {
       "id": "dusty_the_coyote",
@@ -3694,7 +3694,7 @@
         }
       ],
       "companion": true,
-      "description": "Companion. Battlecry: Draw a card."
+      "description": "Companion.\nBattlecry: Draw a card."
     },
     {
       "id": "grizz_the_bear",
@@ -3747,7 +3747,7 @@
         }
       ],
       "commander": true,
-      "description": "Commander. Battlecry: Deal 2 damage to any target. Returns to the command zone when he dies, costing 2 more."
+      "description": "Commander.\nBattlecry: Deal 2 damage to any target. Returns to the command zone when he dies, costing 2 more."
     },
     {
       "id": "la_llorona_del_rio",
@@ -3822,7 +3822,7 @@
       "keywords": [
         "stealth"
       ],
-      "description": "Stealth. At the end of your turn, another random friendly creature gets +1 Health.",
+      "description": "Stealth.\nAt the end of your turn, another random friendly creature gets +1 Health.",
       "tribe": "Demon"
     },
     {
@@ -3838,7 +3838,7 @@
       "keywords": [
         "windfury"
       ],
-      "description": "Windfury. Overload: 2 mana locked next turn."
+      "description": "Windfury.\nOverload: 2 mana locked next turn."
     },
     {
       "id": "forked_lightning",
@@ -3856,7 +3856,7 @@
           "count": 2
         }
       ],
-      "description": "Deal 2 damage to 2 random enemy creatures. Overload: 2 mana locked next turn."
+      "description": "Deal 2 damage to 2 random enemy creatures.\nOverload: 2 mana locked next turn."
     },
     {
       "id": "mana_wyrm",
@@ -3963,7 +3963,7 @@
       "cost": 2,
       "rarity": "legendary",
       "set": "paper",
-      "description": "Spell Damage +1. Deathrattle: Draw a card.",
+      "description": "Spell Damage +1.\nDeathrattle: Draw a card.",
       "type": "creature",
       "attack": 1,
       "health": 1,
@@ -4052,7 +4052,7 @@
       "type": "weapon",
       "attack": 2,
       "durability": 3,
-      "description": "A 2/3 weapon. Overload: 1 mana locked next turn."
+      "description": "A 2/3 weapon.\nOverload: 1 mana locked next turn."
     },
     {
       "id": "wild_pyromancer",
@@ -4176,7 +4176,7 @@
           ]
         }
       ],
-      "description": "Summon two 2/3 Spirit Wolves with Taunt. Overload: 2 mana locked next turn."
+      "description": "Summon two 2/3 Spirit Wolves with Taunt.\nOverload: 2 mana locked next turn."
     },
     {
       "id": "flesheating_ghoul",
@@ -4245,7 +4245,7 @@
           }
         ]
       },
-      "description": "At the end of your turn, this takes 1 damage and summon a 1/1 Imp."
+      "description": "At the end of your turn, this takes 1 damage & summon a 1/1 Imp."
     },
     {
       "id": "lava_burst",
@@ -4262,7 +4262,7 @@
           "target": "any"
         }
       ],
-      "description": "Deal 5 damage to any target. Overload: 2 mana locked next turn."
+      "description": "Deal 5 damage to any target.\nOverload: 2 mana locked next turn."
     },
     {
       "id": "mana_tide_totem",
@@ -4408,7 +4408,7 @@
           "count": 2
         }
       ],
-      "description": "Charge. Battlecry: Discard 2 random cards.",
+      "description": "Charge.\nBattlecry: Discard 2 random cards.",
       "tribe": "Demon"
     },
     {
@@ -4424,7 +4424,7 @@
       "keywords": [
         "windfury"
       ],
-      "description": "Windfury. Overload: 2 mana locked next turn."
+      "description": "Windfury.\nOverload: 2 mana locked next turn."
     },
     {
       "id": "earth_elemental",
@@ -4439,7 +4439,7 @@
       "keywords": [
         "taunt"
       ],
-      "description": "Taunt. Overload: 3 mana locked next turn."
+      "description": "Taunt.\nOverload: 3 mana locked next turn."
     },
     {
       "id": "gadgetzan_auctioneer",
@@ -8831,7 +8831,7 @@
       "cost": 4,
       "rarity": "common",
       "set": "paper",
-      "description": "Taunt. Lifesteal.",
+      "description": "Taunt.\nLifesteal.",
       "type": "creature",
       "attack": 3,
       "health": 5,
@@ -8879,7 +8879,7 @@
       "cost": 8,
       "rarity": "rare",
       "set": "paper",
-      "description": "Rush. Deathrattle: Create a 5/9 Naga Demon Knight creature token with Taunt.",
+      "description": "Rush.\nDeathrattle: Create a 5/9 Naga Demon Knight creature token with Taunt.",
       "type": "creature",
       "attack": 9,
       "health": 5,
@@ -8949,7 +8949,7 @@
       "cost": 3,
       "rarity": "common",
       "set": "paper",
-      "description": "Rush. Deathrattle: Deal 1 damage to each creature you don't control.",
+      "description": "Rush.\nDeathrattle: Deal 1 damage to each creature you don't control.",
       "type": "creature",
       "attack": 3,
       "health": 2,
@@ -8986,7 +8986,7 @@
       "cost": 7,
       "rarity": "common",
       "set": "paper",
-      "description": "Taunt. Costs 1 less for each card drawn this turn.",
+      "description": "Taunt.\nCosts 1 less for each card drawn this turn.",
       "type": "creature",
       "attack": 6,
       "health": 7,
@@ -9002,7 +9002,7 @@
       "cost": 4,
       "rarity": "legendary",
       "set": "paper",
-      "description": "Charge. Creatures you don't control lose Taunt & Defender.",
+      "description": "Charge.\nCreatures you don't control lose Taunt & Defender.",
       "type": "creature",
       "attack": 3,
       "health": 5,
@@ -9018,7 +9018,7 @@
       "cost": 5,
       "rarity": "epic",
       "set": "paper",
-      "description": "Taunt. Costs 0 if you've cast a spell that costs 5 or more this turn.",
+      "description": "Taunt.\nCosts 0 if you've cast a spell that costs 5 or more this turn.",
       "type": "creature",
       "attack": 3,
       "health": 5,
@@ -9050,7 +9050,7 @@
       "cost": 8,
       "rarity": "common",
       "set": "paper",
-      "description": "Taunt. Costs 1 less for each Armor you have.",
+      "description": "Taunt.\nCosts 1 less for each Armor you have.",
       "type": "creature",
       "attack": 4,
       "health": 6,
@@ -9089,7 +9089,7 @@
       "cost": 4,
       "rarity": "legendary",
       "set": "paper",
-      "description": "Your Choose One cards and powers have all effects combined.",
+      "description": "Your Choose One cards & powers have all effects combined.",
       "type": "creature",
       "attack": 3,
       "health": 5,
@@ -9102,7 +9102,7 @@
       "cost": 9,
       "rarity": "rare",
       "set": "paper",
-      "description": "Rush. Taunt.",
+      "description": "Rush.\nTaunt.",
       "type": "creature",
       "attack": 10,
       "health": 10,
@@ -9222,7 +9222,7 @@
       "cost": 4,
       "rarity": "rare",
       "set": "paper",
-      "description": "Battlecry: Deal 2 damage to any target. Deathrattle: Draw a card.",
+      "description": "Battlecry: Deal 2 damage to any target.\nDeathrattle: Draw a card.",
       "type": "creature",
       "attack": 2,
       "health": 4,
@@ -9648,7 +9648,7 @@
       "cost": 5,
       "rarity": "common",
       "set": "paper",
-      "description": "Defender Static",
+      "description": "Defender\nStatic",
       "type": "creature",
       "attack": 1,
       "health": 7,
@@ -9781,7 +9781,7 @@
       "cost": 0,
       "rarity": "common",
       "set": "paper",
-      "description": "Taunt. The engineering equivalent of a \"Kick Me\" sticker.",
+      "description": "Taunt.\nThe engineering equivalent of a \"Kick Me\" sticker.",
       "type": "creature",
       "attack": 0,
       "health": 2,
@@ -9991,7 +9991,7 @@
       "cost": 1,
       "rarity": "rare",
       "set": "paper",
-      "description": "Defender. Can't attack unless you control an Island and an Artifact.",
+      "description": "Defender.\nCan't attack unless you control an Island & an Artifact.",
       "type": "creature",
       "attack": 4,
       "health": 3,
@@ -10111,7 +10111,7 @@
       "cost": 1,
       "rarity": "common",
       "set": "paper",
-      "description": "Rush. Magnetic.",
+      "description": "Rush.\nMagnetic.",
       "type": "creature",
       "attack": 1,
       "health": 1,
@@ -10239,7 +10239,7 @@
       "cost": 1,
       "rarity": "common",
       "set": "paper",
-      "description": "Taunt. Divine Shield.",
+      "description": "Taunt.\nDivine Shield.",
       "type": "creature",
       "attack": 0,
       "health": 2,
@@ -10381,7 +10381,7 @@
       "cost": 2,
       "rarity": "common",
       "set": "paper",
-      "description": "Lifesteal. Battlecry: Deal 1 damage.",
+      "description": "Lifesteal.\nBattlecry: Deal 1 damage.",
       "type": "creature",
       "attack": 2,
       "health": 1,
@@ -10405,7 +10405,7 @@
       "cost": 2,
       "rarity": "common",
       "set": "paper",
-      "description": "Stealth. Divine Shield.",
+      "description": "Stealth.\nDivine Shield.",
       "type": "creature",
       "attack": 1,
       "health": 2,
@@ -10445,7 +10445,7 @@
       "cost": 2,
       "rarity": "common",
       "set": "paper",
-      "description": "Rush. Windfury.",
+      "description": "Rush.\nWindfury.",
       "type": "creature",
       "attack": 1,
       "health": 4,
@@ -10506,7 +10506,7 @@
       "cost": 2,
       "rarity": "common",
       "set": "paper",
-      "description": "Elusive. Deathtouch.",
+      "description": "Elusive.\nDeathtouch.",
       "type": "creature",
       "attack": 2,
       "health": 1,
@@ -10570,7 +10570,7 @@
       "cost": 2,
       "rarity": "common",
       "set": "paper",
-      "description": "Elusive. Spellburst: Draw a card.",
+      "description": "Elusive.\nSpellburst: Draw a card.",
       "type": "creature",
       "attack": 3,
       "health": 2,
@@ -10648,7 +10648,7 @@
       "cost": 2,
       "rarity": "common",
       "set": "paper",
-      "description": "Venomous. Spellburst: Gain +3/+3.",
+      "description": "Venomous.\nSpellburst: Gain +3/+3.",
       "type": "creature",
       "attack": 1,
       "health": 2,
@@ -10776,7 +10776,7 @@
       "cost": 2,
       "rarity": "epic",
       "set": "paper",
-      "description": "All creatures take double damage from Instants, Sorceries, and Hero Powers.",
+      "description": "All creatures take double damage from Instants, Sorceries, & Hero Powers.",
       "type": "creature",
       "attack": 2,
       "health": 4,
@@ -11056,7 +11056,7 @@
       "cost": 2,
       "rarity": "common",
       "set": "paper",
-      "description": "Taunt. Deathtouch.",
+      "description": "Taunt.\nDeathtouch.",
       "type": "creature",
       "attack": 1,
       "health": 2,
@@ -11165,7 +11165,7 @@
       "cost": 2,
       "rarity": "uncommon",
       "set": "paper",
-      "description": "Charge. Your Dragons cost 1 less.",
+      "description": "Charge.\nYour Dragons cost 1 less.",
       "type": "creature",
       "attack": 1,
       "health": 1,
@@ -11240,7 +11240,7 @@
       "cost": 2,
       "rarity": "epic",
       "set": "paper",
-      "description": "Taunt & Divine Shield. Frenzy: Gain 3 Life.",
+      "description": "Taunt & Divine Shield.\nFrenzy: Gain 3 Life.",
       "type": "creature",
       "attack": 1,
       "health": 3,
@@ -11463,7 +11463,7 @@
       "cost": 3,
       "rarity": "legendary",
       "set": "paper",
-      "description": "Battlecry: Deal 2 damage to any target. Deathrattle: Draw a card.",
+      "description": "Battlecry: Deal 2 damage to any target.\nDeathrattle: Draw a card.",
       "type": "creature",
       "attack": 2,
       "health": 2,
@@ -11586,7 +11586,7 @@
       "cost": 4,
       "rarity": "rare",
       "set": "paper",
-      "description": "Windfury. Enchanted creatures have Windfury.",
+      "description": "Windfury.\nEnchanted creatures have Windfury.",
       "type": "creature",
       "attack": 4,
       "health": 4,
@@ -11641,7 +11641,7 @@
       "cost": 4,
       "rarity": "epic",
       "set": "paper",
-      "description": "Windfury. If an opponent would lose life during your turn, they lose twice that much life instead.",
+      "description": "Windfury.\nIf an opponent would lose life during your turn, they lose twice that much life instead.",
       "type": "creature",
       "attack": 2,
       "health": 4,
@@ -11726,7 +11726,7 @@
       "cost": 4,
       "rarity": "epic",
       "set": "paper",
-      "description": "Divine Shield. At the end of your turn, transform the lowest cost spell in your hand into a random spell that costs 1 more.",
+      "description": "Divine Shield.\nAt the end of your turn, transform the lowest cost spell in your hand into a random spell that costs 1 more.",
       "type": "creature",
       "attack": 3,
       "health": 3,
@@ -11843,7 +11843,7 @@
       "cost": 5,
       "rarity": "epic",
       "set": "paper",
-      "description": "Deathtouch. At the end of your turn, each opponent loses 5 Life.",
+      "description": "Deathtouch.\nAt the end of your turn, each opponent loses 5 Life.",
       "type": "creature",
       "attack": 5,
       "health": 4,
@@ -11892,7 +11892,7 @@
       "cost": 5,
       "rarity": "legendary",
       "set": "paper",
-      "description": "Battlecry: Gain 5 Life. Inspire: Freeze target creature. Medic 2 & Regenerate 2.",
+      "description": "Battlecry: Gain 5 Life.\nInspire: Freeze target creature. Medic 2 & Regenerate 2.",
       "type": "creature",
       "attack": 2,
       "health": 8,
@@ -11924,7 +11924,7 @@
       "cost": 5,
       "rarity": "legendary",
       "set": "paper",
-      "description": "Hexproof & Castellan. Your opponents have Spell Damage(-1). Deathrattle: Draw a card.",
+      "description": "Hexproof & Castellan. Your opponents have Spell Damage(-1).\nDeathrattle: Draw a card.",
       "type": "creature",
       "attack": 3,
       "health": 3,
@@ -12012,7 +12012,7 @@
       "cost": 6,
       "rarity": "common",
       "set": "paper",
-      "description": "Taunt & Divine Shield. Deathrattle: Draw a card.",
+      "description": "Taunt & Divine Shield.\nDeathrattle: Draw a card.",
       "type": "creature",
       "attack": 6,
       "health": 6,
@@ -12146,7 +12146,7 @@
       "cost": 7,
       "rarity": "legendary",
       "set": "paper",
-      "description": "Battlecry: Destroy target creature. Deathrattle: Draw a card.",
+      "description": "Battlecry: Destroy target creature.\nDeathrattle: Draw a card.",
       "type": "creature",
       "attack": 5,
       "health": 5,
@@ -12175,7 +12175,7 @@
       "cost": 8,
       "rarity": "legendary",
       "set": "paper",
-      "description": "Your Arcane spells cost 1 less. Arcane Spell Damage+1. Spellburst: Gain 10 Life.",
+      "description": "Your Arcane spells cost 1 less. Arcane Spell Damage+1.\nSpellburst: Gain 10 Life.",
       "type": "creature",
       "attack": 5,
       "health": 5,
@@ -12371,7 +12371,7 @@
       "cost": 1,
       "rarity": "common",
       "set": "paper",
-      "description": "Rush. Swing: Draw a card.",
+      "description": "Rush.\nSwing: Draw a card.",
       "type": "creature",
       "attack": 1,
       "health": 1,
@@ -12704,7 +12704,7 @@
       "cost": 3,
       "rarity": "rare",
       "set": "paper",
-      "description": "Divine Shield & Magnetic. Deathrattle: Create a 2/2 Treefolk creature token.",
+      "description": "Divine Shield & Magnetic.\nDeathrattle: Create a 2/2 Treefolk creature token.",
       "type": "creature",
       "attack": 3,
       "health": 2,
@@ -12765,7 +12765,7 @@
       "cost": 6,
       "rarity": "rare",
       "set": "paper",
-      "description": "Miniaturize & Taunt. Deathrattle: Create a 4/4 Dragon creature token with Elusive.",
+      "description": "Miniaturize & Taunt.\nDeathrattle: Create a 4/4 Dragon creature token with Elusive.",
       "type": "creature",
       "attack": 3,
       "health": 7,
@@ -12880,7 +12880,7 @@
       "cost": 3,
       "rarity": "common",
       "set": "paper",
-      "description": "( Runes: (R) ) Equip Hero After your Hero attacks and kills a creature, gain 2 Corpses.",
+      "description": "( Runes: (R) ) Equip Hero After your Hero attacks & kills a creature, gain 2 Corpses.",
       "type": "weapon",
       "attack": 3,
       "durability": 2,
@@ -13020,7 +13020,7 @@
       "cost": 5,
       "rarity": "rare",
       "set": "paper",
-      "description": "Spell Damage+1. Battlecry: Choose one. \u2022 Gain 8 Life. \u2022 Deal 4 damage to any target.",
+      "description": "Spell Damage+1.\nBattlecry: Choose one. \u2022 Gain 8 Life. \u2022 Deal 4 damage to any target.",
       "type": "creature",
       "attack": 4,
       "health": 5,
@@ -13162,7 +13162,7 @@
       "cost": 5,
       "rarity": "legendary",
       "set": "paper",
-      "description": "Taunt, Lifesteal, Ward 2 & Trample. Avenge 2: Gain +1/+1. Deathrattle: Deal 2 damage to any target.",
+      "description": "Taunt, Lifesteal, Ward 2 & Trample. Avenge 2: Gain +1/+1.\nDeathrattle: Deal 2 damage to any target.",
       "type": "creature",
       "attack": 4,
       "health": 4,
@@ -13320,7 +13320,7 @@
       "cost": 7,
       "rarity": "legendary",
       "set": "paper",
-      "description": "Taunt. Battlecry: You gain an emblem that says \u201cYour Treefolk have +1/+1\u201d.",
+      "description": "Taunt.\nBattlecry: You gain an emblem that says \u201cYour Treefolk have +1/+1\u201d.",
       "type": "creature",
       "attack": 5,
       "health": 10,
@@ -13470,7 +13470,7 @@
       "cost": 2,
       "rarity": "uncommon",
       "set": "paper",
-      "description": "Battlecry: Mill 3. Deathrattle: Summon a random creature with Mana Value 2 or less & Disguise it.",
+      "description": "Battlecry: Mill 3.\nDeathrattle: Summon a random creature with Mana Value 2 or less & Disguise it.",
       "type": "creature",
       "attack": 1,
       "health": 3,
@@ -13548,7 +13548,7 @@
       "cost": 4,
       "rarity": "uncommon",
       "set": "paper",
-      "description": "Firebreathing & Magnetic. Connect: Scry 3.",
+      "description": "Firebreathing & Magnetic.\nConnect: Scry 3.",
       "type": "creature",
       "attack": 4,
       "health": 3,
@@ -13698,7 +13698,7 @@
       "cost": 3,
       "rarity": "common",
       "set": "paper",
-      "description": "Rush. Deathrattle: Gaze 3 & Plunder.",
+      "description": "Rush.\nDeathrattle: Gaze 3 & Plunder.",
       "type": "creature",
       "attack": 3,
       "health": 1,
@@ -13725,7 +13725,7 @@
       "cost": 4,
       "rarity": "uncommon",
       "set": "paper",
-      "description": "Rush & Stealth. Deathrattle: Plunder. At the end of your turn, each player draws a spell.",
+      "description": "Rush & Stealth.\nDeathrattle: Plunder. At the end of your turn, each player draws a spell.",
       "type": "creature",
       "attack": 5,
       "health": 2,
@@ -13760,7 +13760,7 @@
           "target": "creature"
         }
       ],
-      "description": "Restore a creature to full health and give it Taunt."
+      "description": "Restore a creature to full health & give it Taunt."
     },
     {
       "id": "hunter_s_mark",
@@ -14116,7 +14116,7 @@
           "target": "creature"
         }
       ],
-      "description": "Give a creature Taunt and +2/+2."
+      "description": "Give a creature Taunt & +2/+2."
     },
     {
       "id": "power_of_the_wild",
@@ -14238,7 +14238,7 @@
           ]
         }
       ],
-      "description": "Choose one: Deal 3 damage to a creature; or Deal 1 damage to a creature and draw a card."
+      "description": "Choose one: Deal 3 damage to a creature; or Deal 1 damage to a creature & draw a card."
     },
     {
       "id": "youthful_brewmaster",
@@ -14324,7 +14324,7 @@
           "target": "friendly-creature"
         }
       ],
-      "description": "Give a friendly creature +2 Attack and Charge."
+      "description": "Give a friendly creature +2 Attack & Charge."
     },
     {
       "id": "coldlight_seer",
@@ -14421,7 +14421,7 @@
           ]
         }
       ],
-      "description": "Choose one: Give a creature +4 Attack; or Give a creature +4 Health and Taunt."
+      "description": "Choose one: Give a creature +4 Attack; or Give a creature +4 Health & Taunt."
     },
     {
       "id": "mind_control_tech",
@@ -14461,7 +14461,7 @@
           "target": "friendly-creatures"
         }
       ],
-      "description": "Give your hero and creatures +2 Attack until end of turn."
+      "description": "Give your hero & creatures +2 Attack until end of turn."
     },
     {
       "id": "sense_demons",
@@ -14615,7 +14615,7 @@
           "keyword": "taunt"
         }
       ],
-      "description": "Battlecry: Give adjacent creatures +1/+1 and Taunt."
+      "description": "Battlecry: Give adjacent creatures +1/+1 & Taunt."
     },
     {
       "id": "keeper_of_the_grove",
@@ -14883,7 +14883,7 @@
       "keywords": [
         "battlecry"
       ],
-      "description": "Choose one: Charge; or +2 Health and Taunt."
+      "description": "Choose one: Charge; or +2 Health & Taunt."
     },
     {
       "id": "frostwolf_warlord",
@@ -15021,7 +15021,7 @@
         "charge",
         "divine_shield"
       ],
-      "description": "Charge. Divine Shield."
+      "description": "Charge.\nDivine Shield."
     },
     {
       "id": "cabal_shadow_priest",
@@ -15079,7 +15079,7 @@
         "taunt",
         "divine_shield"
       ],
-      "description": "Taunt. Divine Shield."
+      "description": "Taunt.\nDivine Shield."
     },
     {
       "id": "sylvanas_windrunner",
@@ -15244,7 +15244,7 @@
       "keywords": [
         "battlecry"
       ],
-      "description": "Choose one: +5 Attack; or +5 Health and Taunt."
+      "description": "Choose one: +5 Attack; or +5 Health & Taunt."
     },
     {
       "id": "archmage_antonidas",
@@ -15309,7 +15309,7 @@
           "name": "Ashbringer"
         }
       ],
-      "description": "Divine Shield. Taunt. Deathrattle: Equip a 5/3 Ashbringer."
+      "description": "Divine Shield.\nTaunt.\nDeathrattle: Equip a 5/3 Ashbringer."
     },
     {
       "id": "twisting_nether",
@@ -15413,7 +15413,7 @@
           "type": "discard-all"
         }
       ],
-      "description": "Battlecry: Destroy all other creatures and discard your hand."
+      "description": "Battlecry: Destroy all other creatures & discard your hand."
     },
     {
       "id": "mind_control",
@@ -15591,7 +15591,7 @@
       "keywords": [
         "taunt"
       ],
-      "description": "Taunt. Costs 1 less for each Attack on your weapon."
+      "description": "Taunt.\nCosts 1 less for each Attack on your weapon."
     },
     {
       "id": "polymorph",
@@ -15749,7 +15749,7 @@
           "target": "creature"
         }
       ],
-      "description": "Give a creature +2 Attack. Combo: Give a creature +4 Attack."
+      "description": "Give a creature +2 Attack.\nCombo: Give a creature +4 Attack."
     },
     {
       "id": "defias_ringleader",
@@ -15792,7 +15792,7 @@
           "target": "any"
         }
       ],
-      "description": "Deal 2 damage to any target. Combo: Deal 4 damage to any target."
+      "description": "Deal 2 damage to any target.\nCombo: Deal 4 damage to any target."
     },
     {
       "id": "edwin_vancleef",
@@ -15839,7 +15839,7 @@
           "target": "any"
         }
       ],
-      "description": "Battlecry: Deal 1 damage to any target. Combo: Deal 2 damage to any target."
+      "description": "Battlecry: Deal 1 damage to any target.\nCombo: Deal 2 damage to any target."
     },
     {
       "id": "raging_worgen",
@@ -15856,7 +15856,7 @@
           "windfury"
         ]
       },
-      "description": "While damaged: Windfury and +1 Attack."
+      "description": "While damaged: Windfury & +1 Attack."
     },
     {
       "id": "si_7_agent",
@@ -15891,7 +15891,7 @@
       "keywords": [
         "taunt"
       ],
-      "description": "Taunt. While damaged: +3 Attack."
+      "description": "Taunt.\nWhile damaged: +3 Attack."
     },
     {
       "id": "spiteful_smith",
@@ -15939,7 +15939,7 @@
       "keywords": [
         "charge"
       ],
-      "description": "Charge. While damaged: +6 Attack."
+      "description": "Charge.\nWhile damaged: +6 Attack."
     },
     {
       "id": "sacrificial_pact",
@@ -15985,7 +15985,7 @@
       "cost": 1,
       "rarity": "epic",
       "set": "paper",
-      "description": "Battlecry: Destroy a Murloc and gain +2/+2.",
+      "description": "Battlecry: Destroy a Murloc & gain +2/+2.",
       "type": "creature",
       "attack": 1,
       "health": 2,
@@ -16550,7 +16550,7 @@
           "target": "any"
         }
       ],
-      "description": "Draw a card and deal damage equal to its cost."
+      "description": "Draw a card & deal damage equal to its cost."
     },
     {
       "id": "inner_rage",
@@ -16572,7 +16572,7 @@
           "target": "creature"
         }
       ],
-      "description": "Deal 1 damage to a creature and give it +2 Attack."
+      "description": "Deal 1 damage to a creature & give it +2 Attack."
     },
     {
       "id": "cruel_taskmaster",
@@ -16599,7 +16599,7 @@
           "target": "creature"
         }
       ],
-      "description": "Battlecry: Deal 1 damage to a creature and give it +2 Attack."
+      "description": "Battlecry: Deal 1 damage to a creature & give it +2 Attack."
     },
     {
       "id": "bestial_wrath",
@@ -16819,7 +16819,7 @@
           "target": "creature"
         }
       ],
-      "description": "Battlecry: Swap a creature's Attack and Health."
+      "description": "Battlecry: Swap a creature's Attack & Health."
     },
     {
       "id": "lightwell",
@@ -16996,7 +16996,7 @@
           "target": "enemy"
         }
       ],
-      "description": "Charge. Battlecry: Give your opponent a mana crystal."
+      "description": "Charge.\nBattlecry: Give your opponent a mana crystal."
     },
     {
       "id": "eaglehorn_bow",
@@ -17039,7 +17039,7 @@
           "value": 1
         }
       ],
-      "description": "Taunt. Battlecry: Destroy one of your mana crystals."
+      "description": "Taunt.\nBattlecry: Destroy one of your mana crystals."
     },
     {
       "id": "king_mukla",
@@ -17082,7 +17082,7 @@
           "target": "enemy-creatures"
         }
       ],
-      "description": "Deal 2-3 damage to every enemy creature. Overload: 2 mana locked next turn."
+      "description": "Deal 2-3 damage to every enemy creature.\nOverload: 2 mana locked next turn."
     },
     {
       "id": "murloc_warleader",
@@ -17148,7 +17148,7 @@
           }
         ]
       },
-      "description": "After you summon a creature, give it +1/+1 and this loses 1 Durability."
+      "description": "After you summon a creature, give it +1/+1 & this loses 1 Durability."
     },
     {
       "id": "void_terror",
@@ -17168,7 +17168,7 @@
           "type": "devour-adjacent"
         }
       ],
-      "description": "Battlecry: Devour both neighbors, gaining their Attack and Health."
+      "description": "Battlecry: Devour both neighbors, gaining their Attack & Health."
     },
     {
       "id": "ancient_mage",
@@ -17226,7 +17226,7 @@
           "target": "creature"
         }
       ],
-      "description": "Freeze a creature and its neighbors, dealing 1 damage to each."
+      "description": "Freeze a creature & its neighbors, dealing 1 damage to each."
     },
     {
       "id": "houndmaster",
@@ -17255,7 +17255,7 @@
           "tribe": "Beast"
         }
       ],
-      "description": "Battlecry: Give a friendly Beast +2/+2 and Taunt."
+      "description": "Battlecry: Give a friendly Beast +2/+2 & Taunt."
     },
     {
       "id": "lightspawn",
@@ -17286,7 +17286,7 @@
       "keywords": [
         "charge"
       ],
-      "description": "Charge. Has +1 Attack for each other Murloc in play."
+      "description": "Charge.\nHas +1 Attack for each other Murloc in play."
     },
     {
       "id": "shadow_madness",
@@ -17334,7 +17334,7 @@
           "target": "enemy-any"
         }
       ],
-      "description": "Deal 4 damage to an enemy and 1 to all other enemies."
+      "description": "Deal 4 damage to an enemy & 1 to all other enemies."
     },
     {
       "id": "explosive_shot",
@@ -17351,7 +17351,7 @@
           "target": "creature"
         }
       ],
-      "description": "Deal 5 damage to a creature and 2 to its neighbors."
+      "description": "Deal 5 damage to a creature & 2 to its neighbors."
     },
     {
       "id": "gladiator_s_longbow",
@@ -17396,7 +17396,7 @@
         "type": "double-spell",
         "value": 1
       },
-      "description": "Your spells and hero powers deal double damage and healing."
+      "description": "Your spells & hero powers deal double damage & healing."
     },
     {
       "id": "gruul",
@@ -17578,7 +17578,7 @@
       "cost": 4,
       "rarity": "legendary",
       "set": "paper",
-      "description": "( Runes: (R) (R) ) Taunt, Elite, Sadist, Sanguine. Deathrattle: Return this to your hand.",
+      "description": "( Runes: (R) (R) ) Taunt, Elite, Sadist, Sanguine.\nDeathrattle: Return this to your hand.",
       "type": "creature",
       "attack": 3,
       "health": 5,
@@ -17991,7 +17991,7 @@
       "cost": 4,
       "rarity": "legendary",
       "set": "paper",
-      "description": "Battlecry: Discard your hand. Deathrattle: Draw 3 cards.",
+      "description": "Battlecry: Discard your hand.\nDeathrattle: Draw 3 cards.",
       "type": "creature",
       "attack": 7,
       "health": 7,
@@ -18040,7 +18040,7 @@
       "cost": 5,
       "rarity": "rare",
       "set": "paper",
-      "description": "Taunt. Battlecry: Gain +1 Health for each card in your hand.",
+      "description": "Taunt.\nBattlecry: Gain +1 Health for each card in your hand.",
       "type": "creature",
       "attack": 4,
       "health": 3,
@@ -18450,7 +18450,7 @@
       "cost": 1,
       "rarity": "epic",
       "set": "paper",
-      "description": "Battlecry: You lose 5 Life and gain 5 Armor.",
+      "description": "Battlecry: You lose 5 Life & gain 5 Armor.",
       "type": "creature",
       "attack": 1,
       "health": 3,
@@ -18588,7 +18588,7 @@
       "cost": 2,
       "rarity": "common",
       "set": "paper",
-      "description": "Battlecry: Deal 1 damage to any target. Spellburst: Draw a Shadow spell.",
+      "description": "Battlecry: Deal 1 damage to any target.\nSpellburst: Draw a Shadow spell.",
       "type": "creature",
       "attack": 2,
       "health": 2,
@@ -18654,7 +18654,7 @@
       "cost": 7,
       "rarity": "legendary",
       "set": "paper",
-      "description": "Chromatic, Spell Damage+2 & Medic 3. Inspire: Draw a Spell.",
+      "description": "Chromatic, Spell Damage+2 & Medic 3.\nInspire: Draw a Spell.",
       "type": "creature",
       "attack": 6,
       "health": 6,
@@ -18685,7 +18685,7 @@
       "cost": 10,
       "rarity": "legendary",
       "set": "paper",
-      "description": "Battlecry: Each opponent sacrifices a creature. Sanguine & Taunt. Frenzy: Deal 6 damage to any target.",
+      "description": "Battlecry: Each opponent sacrifices a creature. Sanguine & Taunt.\nFrenzy: Deal 6 damage to any target.",
       "type": "creature",
       "attack": 13,
       "health": 13,
@@ -18720,7 +18720,7 @@
       "cost": 3,
       "rarity": "rare",
       "set": "paper",
-      "description": "Rush & Elusive. Swing: Draw a spell.",
+      "description": "Rush & Elusive.\nSwing: Draw a spell.",
       "type": "creature",
       "attack": 4,
       "health": 2,
@@ -18977,7 +18977,7 @@
       "cost": 2,
       "rarity": "common",
       "set": "paper",
-      "description": "Equip Hero Swing: Draw a card. Deathrattle: Quickdraw 2.",
+      "description": "Equip Hero Swing: Draw a card.\nDeathrattle: Quickdraw 2.",
       "type": "weapon",
       "attack": 1,
       "durability": 2,
@@ -19231,7 +19231,7 @@
       "cost": 10,
       "rarity": "legendary",
       "set": "paper",
-      "description": "( Runes: (R) (U) (G) ) Deal 7 damage to any target. Create four 4/4 Spirit creature tokens. Spend all of your Corpses and gain 1 Life for each Corpse spent this way.",
+      "description": "( Runes: (R) (U) (G) ) Deal 7 damage to any target. Create four 4/4 Spirit creature tokens. Spend all of your Corpses & gain 1 Life for each Corpse spent this way.",
       "type": "sorcery",
       "effects": [
         {
@@ -19519,7 +19519,7 @@
           }
         ]
       },
-      "description": "Sacrifice \u2014 pay 1 and discard a card: draw a card.",
+      "description": "Sacrifice \u2014 pay 1 & discard a card: draw a card.",
       "tribe": "Token"
     },
     {
@@ -19564,7 +19564,7 @@
       "cost": 4,
       "rarity": "uncommon",
       "set": "paper",
-      "description": "Reborn. At the end of your turn you may spend 4 Corpses to gain one of the following keywords: Lifesteal, Taunt, Trample, Sanguine, Divine Shield, or Windfury.",
+      "description": "Reborn.\nAt the end of your turn you may spend 4 Corpses to gain one of the following keywords: Lifesteal, Taunt, Trample, Sanguine, Divine Shield, or Windfury.",
       "type": "creature",
       "attack": 2,
       "health": 4,
@@ -19638,7 +19638,7 @@
       "cost": 2,
       "rarity": "common",
       "set": "paper",
-      "description": "Deal 1 damage to all creatures. Honorable Kill: Your hero gains +1 Attack this turn.",
+      "description": "Deal 1 damage to all creatures.\nHonorable Kill: Your hero gains +1 Attack this turn.",
       "type": "sorcery",
       "honorableKill": [
         {
@@ -19680,7 +19680,7 @@
       "cost": 3,
       "rarity": "common",
       "set": "paper",
-      "description": "Sanguine. Frenzy: Adapt.",
+      "description": "Sanguine.\nFrenzy: Adapt.",
       "type": "creature",
       "attack": 4,
       "health": 2,
@@ -19706,7 +19706,7 @@
       "cost": 4,
       "rarity": "rare",
       "set": "paper",
-      "description": "Miniaturize & Rush. Honorable Kill: Draw a card.",
+      "description": "Miniaturize & Rush.\nHonorable Kill: Draw a card.",
       "type": "creature",
       "attack": 4,
       "health": 4,
@@ -19767,7 +19767,7 @@
       "cost": 3,
       "rarity": "uncommon",
       "set": "paper",
-      "description": "Taunt & Chromatic. Alliance: Luck: Draw a card.",
+      "description": "Taunt & Chromatic.\nAlliance: Luck: Draw a card.",
       "type": "creature",
       "attack": 2,
       "health": 4,
@@ -19798,7 +19798,7 @@
       "cost": 5,
       "rarity": "common",
       "set": "paper",
-      "description": "Taunt Deathrattle: Luck: Return this card to your hand.",
+      "description": "Taunt\nDeathrattle: Luck: Return this card to your hand.",
       "type": "creature",
       "attack": 4,
       "health": 4,
@@ -19825,7 +19825,7 @@
       "cost": 5,
       "rarity": "rare",
       "set": "paper",
-      "description": "Sanguine, Windfury & Lifesteal. Deathrattle: Loot twice.",
+      "description": "Sanguine, Windfury & Lifesteal.\nDeathrattle: Loot twice.",
       "type": "creature",
       "attack": 3,
       "health": 3,
@@ -19850,7 +19850,7 @@
       "cost": 5,
       "rarity": "legendary",
       "set": "paper",
-      "description": "Windfury, Sanguine, Lifesteal & Reborn. Swing: Each opponent discards a card. Deathrattle: Loot.",
+      "description": "Windfury, Sanguine, Lifesteal & Reborn.\nSwing: Each opponent discards a card.\nDeathrattle: Loot.",
       "type": "creature",
       "attack": 4,
       "health": 4,
@@ -19885,7 +19885,7 @@
       "cost": 6,
       "rarity": "epic",
       "set": "paper",
-      "description": "Taunt, Divine Shield & Windfury. Deathrattle: Luck: Draw 2 cards.",
+      "description": "Taunt, Divine Shield & Windfury.\nDeathrattle: Luck: Draw 2 cards.",
       "type": "creature",
       "attack": 6,
       "health": 6,
@@ -20151,7 +20151,7 @@
       "cost": 3,
       "rarity": "rare",
       "set": "paper",
-      "description": "Taunt. Spellburst: Discover a Beast.",
+      "description": "Taunt.\nSpellburst: Discover a Beast.",
       "type": "creature",
       "attack": 2,
       "health": 2,
@@ -20255,7 +20255,7 @@
       "cost": 4,
       "rarity": "rare",
       "set": "paper",
-      "description": "Battlecry: Draft a Fire spell from any class. Deathrattle: Discover a Nature spell from any class that costs 3 or less.",
+      "description": "Battlecry: Draft a Fire spell from any class.\nDeathrattle: Discover a Nature spell from any class that costs 3 or less.",
       "type": "creature",
       "attack": 2,
       "health": 2,
@@ -20312,7 +20312,7 @@
       "cost": 7,
       "rarity": "legendary",
       "set": "paper",
-      "description": "Firebreathing, Impulsive, Static, Hexproof & Taunt. Your Spirits cost 1 less. Deathrattle: Draft a Spirit.",
+      "description": "Firebreathing, Impulsive, Static, Hexproof & Taunt. Your Spirits cost 1 less.\nDeathrattle: Draft a Spirit.",
       "type": "creature",
       "attack": 4,
       "health": 4,
@@ -20341,7 +20341,7 @@
       "cost": 9,
       "rarity": "epic",
       "set": "paper",
-      "description": "Charge, Trample & Windfury. Connect: Enrich.",
+      "description": "Charge, Trample & Windfury.\nConnect: Enrich.",
       "type": "creature",
       "attack": 6,
       "health": 6,
@@ -20415,7 +20415,7 @@
       "cost": 1,
       "rarity": "uncommon",
       "set": "paper",
-      "description": "Rush. Swing: Enrich.",
+      "description": "Rush.\nSwing: Enrich.",
       "type": "creature",
       "attack": 2,
       "health": 3,
@@ -20439,7 +20439,7 @@
       "cost": 12,
       "rarity": "legendary",
       "set": "paper",
-      "description": "Taunt, Rush, Ward 2, Lifesteal & Nature Spell Damage+1. Your Shadow spells & Dragons cost 1 less. Deathrattle: Scry 4 & Discover a Treefolk.",
+      "description": "Taunt, Rush, Ward 2, Lifesteal & Nature Spell Damage+1. Your Shadow spells & Dragons cost 1 less.\nDeathrattle: Scry 4 & Discover a Treefolk.",
       "type": "creature",
       "attack": 8,
       "health": 5,
@@ -20476,7 +20476,7 @@
       "cost": 3,
       "rarity": "rare",
       "set": "paper",
-      "description": "After this creature takes damage, draw a card. Deathrattle: Discover a Horror.",
+      "description": "After this creature takes damage, draw a card.\nDeathrattle: Discover a Horror.",
       "type": "creature",
       "attack": 1,
       "health": 3,
@@ -20508,7 +20508,7 @@
       "cost": 1,
       "rarity": "uncommon",
       "set": "paper",
-      "description": "Static & Elusive. Deathrattle: Discover an Artifact.",
+      "description": "Static & Elusive.\nDeathrattle: Discover an Artifact.",
       "type": "creature",
       "attack": 2,
       "health": 1,
@@ -20531,7 +20531,7 @@
       "cost": 2,
       "rarity": "uncommon",
       "set": "paper",
-      "description": "Battlecry: Disguise target creature. Deathrattle: Draft a Shadow spell.",
+      "description": "Battlecry: Disguise target creature.\nDeathrattle: Draft a Shadow spell.",
       "type": "creature",
       "attack": 2,
       "health": 1,
@@ -20562,7 +20562,7 @@
       "cost": 5,
       "rarity": "legendary",
       "set": "paper",
-      "description": "Battlecry: Discover a Nature spell. Bushido. Inspire: Scry 3. Deathrattle: Draw a Nature spell.",
+      "description": "Battlecry: Discover a Nature spell. Bushido.\nInspire: Scry 3.\nDeathrattle: Draw a Nature spell.",
       "type": "creature",
       "attack": 4,
       "health": 5,
@@ -20604,7 +20604,7 @@
       "cost": 3,
       "rarity": "common",
       "set": "paper",
-      "description": "Choose one - \u2022 Exile target creature with 3 or more Attack. \u2022 Draw 2 cards and take 2 damage. \u2022 Give a creature +2/+2. \u2022 Give a creature Taunt. \u2022 Give a creature Medic 2.",
+      "description": "Choose one - \u2022 Exile target creature with 3 or more Attack. \u2022 Draw 2 cards & take 2 damage. \u2022 Give a creature +2/+2. \u2022 Give a creature Taunt. \u2022 Give a creature Medic 2.",
       "type": "instant",
       "choices": [
         {
@@ -20692,7 +20692,7 @@
           "target": "all-creatures"
         }
       ],
-      "description": "Deal 1 damage to every creature. Overload: 2 mana locked next turn.",
+      "description": "Deal 1 damage to every creature.\nOverload: 2 mana locked next turn.",
       "set": "hsx"
     },
     {
@@ -20764,7 +20764,7 @@
           "target": "creature"
         }
       ],
-      "description": "Deal 2 damage to a creature. Overload: 1 mana locked next turn.",
+      "description": "Deal 2 damage to a creature.\nOverload: 1 mana locked next turn.",
       "set": "hsx"
     },
     {
@@ -20948,7 +20948,7 @@
           "forEnemy": true
         }
       ],
-      "description": "Rush. Battlecry: Summon a 2/1 Worm for your opponent.",
+      "description": "Rush.\nBattlecry: Summon a 2/1 Worm for your opponent.",
       "set": "hsx"
     },
     {
@@ -21119,7 +21119,7 @@
           "target": "any"
         }
       ],
-      "description": "Deal 1 damage to any target. Combo: Draw 1 card.",
+      "description": "Deal 1 damage to any target.\nCombo: Draw 1 card.",
       "set": "hsx"
     },
     {
@@ -21248,7 +21248,7 @@
       "type": "creature",
       "attack": 3,
       "health": 2,
-      "description": "A 3/2 creature. Spell Damage +1. Overload: 1 mana locked next turn.",
+      "description": "A 3/2 creature. Spell Damage +1.\nOverload: 1 mana locked next turn.",
       "set": "hsx"
     },
     {
@@ -21359,7 +21359,7 @@
       "cost": 1,
       "rarity": "common",
       "set": "paper",
-      "description": "Battlecry: Restore 2 Health to each creature you control and gain 2 Life.",
+      "description": "Battlecry: Restore 2 Health to each creature you control & gain 2 Life.",
       "type": "creature",
       "attack": 1,
       "health": 1,
@@ -21411,7 +21411,7 @@
           "target": "everyone"
         }
       ],
-      "description": "Deal 1 damage to both heroes and every creature.",
+      "description": "Deal 1 damage to both heroes & every creature.",
       "set": "hsx"
     },
     {
@@ -21442,7 +21442,7 @@
         "taunt",
         "divine_shield"
       ],
-      "description": "Taunt. Divine Shield.",
+      "description": "Taunt.\nDivine Shield.",
       "set": "hsx"
     },
     {
@@ -21490,7 +21490,7 @@
           "target": "own-hero"
         }
       ],
-      "description": "Rush. Deathrattle: Deal 4 damage to your own hero.",
+      "description": "Rush.\nDeathrattle: Deal 4 damage to your own hero.",
       "set": "hsx"
     },
     {
@@ -21684,7 +21684,7 @@
           "value": 2
         }
       ],
-      "description": "Draw 2 cards. Overload: 1 mana locked next turn.",
+      "description": "Draw 2 cards.\nOverload: 1 mana locked next turn.",
       "set": "hsx"
     },
     {
@@ -21863,7 +21863,7 @@
           "target": "creature"
         }
       ],
-      "description": "Deal 8 damage to a creature. Overload: 3 mana locked next turn.",
+      "description": "Deal 8 damage to a creature.\nOverload: 3 mana locked next turn.",
       "set": "hsx"
     },
     {
@@ -21880,7 +21880,7 @@
           "target": "friendly-all"
         }
       ],
-      "description": "Restore 6 health to your hero and creatures.",
+      "description": "Restore 6 health to your hero & creatures.",
       "set": "hsx"
     },
     {
@@ -21906,7 +21906,7 @@
           "name": "Dreadhound with Reborn"
         }
       ],
-      "description": "Rush. Deathrattle: Summon a 1/1 Dreadhound with Reborn.",
+      "description": "Rush.\nDeathrattle: Summon a 1/1 Dreadhound with Reborn.",
       "set": "hsx"
     },
     {
@@ -22044,7 +22044,7 @@
           "target": "creature"
         }
       ],
-      "description": "Deal 3 damage to a creature and 1 to its neighbors.",
+      "description": "Deal 3 damage to a creature & 1 to its neighbors.",
       "set": "hsx"
     },
     {
@@ -22118,7 +22118,7 @@
           "name": "Murloc"
         }
       ],
-      "description": "Rush. Deathrattle: Summon a 1/1 Murloc.",
+      "description": "Rush.\nDeathrattle: Summon a 1/1 Murloc.",
       "set": "hsx"
     },
     {
@@ -22490,7 +22490,7 @@
           "target": "enemy-creatures"
         }
       ],
-      "description": "Battlecry: Deal 1 damage to all enemy creatures. Overload: 1 mana locked next turn.",
+      "description": "Battlecry: Deal 1 damage to all enemy creatures.\nOverload: 1 mana locked next turn.",
       "set": "hsx"
     },
     {
@@ -22622,7 +22622,7 @@
           "value": 1
         }
       ],
-      "description": "Stealth. Deathrattle: Draw 1 card.",
+      "description": "Stealth.\nDeathrattle: Draw 1 card.",
       "set": "hsx"
     },
     {
@@ -22680,7 +22680,7 @@
           "target": "creature"
         }
       ],
-      "description": "Deal 4 damage to a creature. Overload: 1 mana locked next turn.",
+      "description": "Deal 4 damage to a creature.\nOverload: 1 mana locked next turn.",
       "set": "hsx"
     },
     {
@@ -22699,7 +22699,7 @@
       "keywords": [
         "divine_shield"
       ],
-      "description": "Divine Shield. Spell Damage +1.",
+      "description": "Divine Shield.\nSpell Damage +1.",
       "set": "hsx"
     },
     {
@@ -22756,7 +22756,7 @@
       "type": "creature",
       "attack": 3,
       "health": 4,
-      "description": "A 3/4 creature. Overload: 1 mana locked next turn.",
+      "description": "A 3/4 creature.\nOverload: 1 mana locked next turn.",
       "set": "hsx"
     },
     {
@@ -22883,7 +22883,7 @@
           "target": "all-creatures"
         }
       ],
-      "description": "Taunt. Deathrattle: Deal 1 damage to every creature.",
+      "description": "Taunt.\nDeathrattle: Deal 1 damage to every creature.",
       "set": "hsx"
     },
     {
@@ -22944,7 +22944,7 @@
           "target": "own-hero"
         }
       ],
-      "description": "Taunt. Battlecry: Deal 2 damage to your own hero.",
+      "description": "Taunt.\nBattlecry: Deal 2 damage to your own hero.",
       "set": "hsx"
     },
     {
@@ -23034,7 +23034,7 @@
         "charge",
         "divine_shield"
       ],
-      "description": "Charge. Divine Shield.",
+      "description": "Charge.\nDivine Shield.",
       "set": "hsx"
     },
     {
@@ -23221,7 +23221,7 @@
           "target": "self"
         }
       ],
-      "description": "Taunt. Deathrattle: Restore 4 health to your hero.",
+      "description": "Taunt.\nDeathrattle: Restore 4 health to your hero.",
       "set": "hsx"
     },
     {
@@ -23289,7 +23289,7 @@
       "keywords": [
         "taunt"
       ],
-      "description": "Taunt. Overload: 3 mana locked next turn.",
+      "description": "Taunt.\nOverload: 3 mana locked next turn.",
       "set": "hsx"
     },
     {
@@ -23352,7 +23352,7 @@
           "keyword": "rush"
         }
       ],
-      "description": "Rush. Deathrattle: Give adjacent creatures +1/+1 and Rush.",
+      "description": "Rush.\nDeathrattle: Give adjacent creatures +1/+1 & Rush.",
       "set": "hsx"
     },
     {
@@ -23406,7 +23406,7 @@
           "target": "friendly-all"
         }
       ],
-      "description": "Battlecry: Restore 2 health to your hero and creatures.",
+      "description": "Battlecry: Restore 2 health to your hero & creatures.",
       "set": "hsx"
     },
     {
@@ -23423,7 +23423,7 @@
         "stealth",
         "deathtouch"
       ],
-      "description": "Stealth. Deathtouch.",
+      "description": "Stealth.\nDeathtouch.",
       "set": "hsx"
     },
     {
@@ -23439,7 +23439,7 @@
         "charge",
         "taunt"
       ],
-      "description": "Charge. Taunt.",
+      "description": "Charge.\nTaunt.",
       "set": "hsx"
     },
     {
@@ -23469,7 +23469,7 @@
           ]
         }
       ],
-      "description": "Battlecry: Destroy a Beast and gain +1/+1.",
+      "description": "Battlecry: Destroy a Beast & gain +1/+1.",
       "set": "hsx"
     },
     {
@@ -23514,7 +23514,7 @@
           "tribe": "Beast"
         }
       ],
-      "description": "Battlecry: Give a friendly Beast +2/+2 and Rush.",
+      "description": "Battlecry: Give a friendly Beast +2/+2 & Rush.",
       "set": "hsx"
     },
     {
@@ -23580,7 +23580,7 @@
           "target": "any"
         }
       ],
-      "description": "Taunt. Battlecry: Restore 3 health to any target.",
+      "description": "Taunt.\nBattlecry: Restore 3 health to any target.",
       "set": "hsx"
     },
     {
@@ -23754,7 +23754,7 @@
           "name": "Living Paradoxes with Elusive"
         }
       ],
-      "description": "Elusive. Battlecry: Summon two 2/1 Living Paradoxes with Elusive.",
+      "description": "Elusive.\nBattlecry: Summon two 2/1 Living Paradoxes with Elusive.",
       "set": "hsx"
     },
     {
@@ -23983,7 +23983,7 @@
           "target": "own-hero"
         }
       ],
-      "description": "Give a creature +3/+3 and Divine Shield. Deal 3 damage to your own hero.",
+      "description": "Give a creature +3/+3 & Divine Shield. Deal 3 damage to your own hero.",
       "set": "hsx"
     },
     {
@@ -24026,7 +24026,7 @@
       "keywords": [
         "stealth"
       ],
-      "description": "Stealth. Spell Damage +1.",
+      "description": "Stealth.\nSpell Damage +1.",
       "set": "hsx"
     },
     {
@@ -24079,7 +24079,7 @@
         "stealth",
         "divine_shield"
       ],
-      "description": "Stealth. Divine Shield.",
+      "description": "Stealth.\nDivine Shield.",
       "set": "hsx"
     },
     {
@@ -24170,7 +24170,7 @@
         "divine_shield",
         "deathtouch"
       ],
-      "description": "Divine Shield. Deathtouch.",
+      "description": "Divine Shield.\nDeathtouch.",
       "set": "hsx"
     },
     {
@@ -24299,7 +24299,7 @@
           "value": 1
         }
       ],
-      "description": "Taunt. Deathrattle: Draw 1 card.",
+      "description": "Taunt.\nDeathrattle: Draw 1 card.",
       "set": "hsx"
     },
     {
@@ -24322,7 +24322,7 @@
           "target": "own-hero"
         }
       ],
-      "description": "Rush. Battlecry: Deal 4 damage to your own hero.",
+      "description": "Rush.\nBattlecry: Deal 4 damage to your own hero.",
       "set": "hsx"
     },
     {
@@ -24349,7 +24349,7 @@
           ]
         }
       ],
-      "description": "Your hero has +3 Attack this turn. Summon a 3/3 Elemental with Rush. Overload: 1 mana locked next turn.",
+      "description": "Your hero has +3 Attack this turn. Summon a 3/3 Elemental with Rush.\nOverload: 1 mana locked next turn.",
       "set": "hsx"
     },
     {
@@ -24660,7 +24660,7 @@
           ]
         }
       ],
-      "description": "Stealth. Deathrattle: Summon a 2/2 Wolf with Stealth.",
+      "description": "Stealth.\nDeathrattle: Summon a 2/2 Wolf with Stealth.",
       "set": "hsx"
     },
     {
@@ -24722,7 +24722,7 @@
           "value": 3
         }
       ],
-      "description": "Draw 3 cards. Combo: Destroy a random enemy creature.",
+      "description": "Draw 3 cards.\nCombo: Destroy a random enemy creature.",
       "set": "hsx"
     },
     {
@@ -24750,7 +24750,7 @@
           "target": "creature"
         }
       ],
-      "description": "Battlecry: Deal 1 damage to a creature and give it +4 Attack.",
+      "description": "Battlecry: Deal 1 damage to a creature & give it +4 Attack.",
       "set": "hsx"
     },
     {
@@ -24874,7 +24874,7 @@
       "type": "creature",
       "attack": 7,
       "health": 7,
-      "description": "A 7/7 creature. Overload: 2 mana locked next turn.",
+      "description": "A 7/7 creature.\nOverload: 2 mana locked next turn.",
       "set": "hsx"
     },
     {
@@ -24914,7 +24914,7 @@
           "name": "Mechs with Taunt and Divine Shield"
         }
       ],
-      "description": "Deathrattle: Summon two 1/2 Mechs with Taunt and Divine Shield.",
+      "description": "Deathrattle: Summon two 1/2 Mechs with Taunt & Divine Shield.",
       "set": "hsx"
     },
     {
@@ -24992,7 +24992,7 @@
         "rush",
         "taunt"
       ],
-      "description": "Rush. Taunt.",
+      "description": "Rush.\nTaunt.",
       "set": "hsx"
     },
     {
@@ -25038,7 +25038,7 @@
           "name": "Slime"
         }
       ],
-      "description": "Taunt. Deathrattle: Summon a 2/2 Slime.",
+      "description": "Taunt.\nDeathrattle: Summon a 2/2 Slime.",
       "set": "hsx"
     },
     {
@@ -25059,7 +25059,7 @@
           "target": "creature"
         }
       ],
-      "description": "Battlecry: Swap a creature's Attack and Health.",
+      "description": "Battlecry: Swap a creature's Attack & Health.",
       "set": "hsx"
     },
     {
@@ -25234,7 +25234,7 @@
           ]
         }
       ],
-      "description": "Rush. Deathrattle: Summon two 1/1 Assistants with Taunt.",
+      "description": "Rush.\nDeathrattle: Summon two 1/1 Assistants with Taunt.",
       "set": "hsx"
     },
     {
@@ -25297,7 +25297,7 @@
           "durability": 2
         }
       ],
-      "description": "Give your weapon +2 Attack and +2 Durability.",
+      "description": "Give your weapon +2 Attack & +2 Durability.",
       "set": "hsx"
     },
     {
@@ -25360,7 +25360,7 @@
       "type": "creature",
       "attack": 5,
       "health": 7,
-      "description": "A 5/7 creature. Spell Damage +2. Overload: 2 mana locked next turn.",
+      "description": "A 5/7 creature. Spell Damage +2.\nOverload: 2 mana locked next turn.",
       "set": "hsx"
     },
     {
@@ -25417,7 +25417,7 @@
           "name": "Sword"
         }
       ],
-      "description": "Taunt. Battlecry: Equip a 3/2 Sword.",
+      "description": "Taunt.\nBattlecry: Equip a 3/2 Sword.",
       "set": "hsx"
     },
     {
@@ -25446,7 +25446,7 @@
           ]
         }
       ],
-      "description": "Divine Shield. Deathrattle: Summon a 7/7 Tank with Divine Shield.",
+      "description": "Divine Shield.\nDeathrattle: Summon a 7/7 Tank with Divine Shield.",
       "set": "hsx"
     },
     {
@@ -25469,7 +25469,7 @@
           "value": 5
         }
       ],
-      "description": "Taunt. Deathrattle: Gain 5 armor.",
+      "description": "Taunt.\nDeathrattle: Gain 5 armor.",
       "set": "hsx"
     },
     {
@@ -25492,7 +25492,7 @@
           "target": "any"
         }
       ],
-      "description": "Divine Shield. Battlecry: Restore 3 health to any target.",
+      "description": "Divine Shield.\nBattlecry: Restore 3 health to any target.",
       "set": "hsx"
     },
     {
@@ -25806,7 +25806,7 @@
         "divine_shield",
         "rush"
       ],
-      "description": "Divine Shield. Rush.",
+      "description": "Divine Shield.\nRush.",
       "set": "hsx"
     },
     {
@@ -25918,7 +25918,7 @@
           "target": "friendly-creature"
         }
       ],
-      "description": "Battlecry: Give a friendly creature +3/+3. Overload: 1 mana locked next turn.",
+      "description": "Battlecry: Give a friendly creature +3/+3.\nOverload: 1 mana locked next turn.",
       "set": "hsx"
     },
     {
@@ -25988,7 +25988,7 @@
           "name": "Fighters with Rush and Reborn"
         }
       ],
-      "description": "Battlecry: Summon two 1/1 Fighters with Rush and Reborn.",
+      "description": "Battlecry: Summon two 1/1 Fighters with Rush & Reborn.",
       "set": "hsx"
     },
     {
@@ -26023,7 +26023,7 @@
         "taunt",
         "divine_shield"
       ],
-      "description": "Taunt. Divine Shield.",
+      "description": "Taunt.\nDivine Shield.",
       "set": "hsx"
     },
     {
@@ -26062,7 +26062,7 @@
       "keywords": [
         "rush"
       ],
-      "description": "Rush. Overload: 4 mana locked next turn.",
+      "description": "Rush.\nOverload: 4 mana locked next turn.",
       "set": "hsx"
     },
     {
@@ -26085,7 +26085,7 @@
           "target": "self"
         }
       ],
-      "description": "Taunt. Deathrattle: Restore 6 health to your hero.",
+      "description": "Taunt.\nDeathrattle: Restore 6 health to your hero.",
       "set": "hsx"
     },
     {
@@ -26220,7 +26220,7 @@
           "health": 1
         }
       ],
-      "description": "Taunt. Battlecry: Give adjacent creatures +1/+1.",
+      "description": "Taunt.\nBattlecry: Give adjacent creatures +1/+1.",
       "set": "hsx"
     },
     {
@@ -26236,7 +26236,7 @@
         "taunt",
         "deathtouch"
       ],
-      "description": "Taunt. Deathtouch.",
+      "description": "Taunt.\nDeathtouch.",
       "set": "hsx"
     },
     {
@@ -26268,7 +26268,7 @@
         "deathtouch",
         "rush"
       ],
-      "description": "Deathtouch. Rush.",
+      "description": "Deathtouch.\nRush.",
       "set": "hsx"
     },
     {
@@ -26354,7 +26354,7 @@
           ]
         }
       ],
-      "description": "Taunt. Deathrattle: Summon a 2/4 Muckmare with Taunt.",
+      "description": "Taunt.\nDeathrattle: Summon a 2/4 Muckmare with Taunt.",
       "set": "hsx"
     },
     {
@@ -26424,7 +26424,7 @@
         "divine_shield",
         "elusive"
       ],
-      "description": "Rush. Divine Shield. Elusive.",
+      "description": "Rush.\nDivine Shield.\nElusive.",
       "set": "hsx"
     },
     {
@@ -26441,7 +26441,7 @@
         "rush",
         "windfury"
       ],
-      "description": "Rush. Windfury.",
+      "description": "Rush.\nWindfury.",
       "set": "hsx"
     },
     {
@@ -26464,7 +26464,7 @@
           ]
         }
       ],
-      "description": "Summon three 2/4 Toads with Taunt. Overload: 3 mana locked next turn.",
+      "description": "Summon three 2/4 Toads with Taunt.\nOverload: 3 mana locked next turn.",
       "set": "hsx"
     },
     {
@@ -26490,7 +26490,7 @@
           "name": "Imp"
         }
       ],
-      "description": "Taunt. Deathrattle: Summon two 3/2 Imps.",
+      "description": "Taunt.\nDeathrattle: Summon two 3/2 Imps.",
       "set": "hsx"
     },
     {
@@ -26535,7 +26535,7 @@
           ]
         }
       ],
-      "description": "Taunt. Deathrattle: Summon a 0/5 Vault Safe with Taunt.",
+      "description": "Taunt.\nDeathrattle: Summon a 0/5 Vault Safe with Taunt.",
       "set": "hsx"
     },
     {
@@ -26557,7 +26557,7 @@
           }
         ]
       },
-      "description": "At the end of your turn, deal 2 damage to the enemy hero and all enemy creatures.",
+      "description": "At the end of your turn, deal 2 damage to the enemy hero & all enemy creatures.",
       "set": "hsx"
     },
     {
@@ -26581,7 +26581,7 @@
           "target": "enemies"
         }
       ],
-      "description": "Taunt. Deathrattle: Deal 2 damage to the enemy hero and all enemy creatures.",
+      "description": "Taunt.\nDeathrattle: Deal 2 damage to the enemy hero & all enemy creatures.",
       "set": "hsx"
     },
     {
@@ -26605,7 +26605,7 @@
           "count": 1
         }
       ],
-      "description": "Taunt. Deathrattle: Deal 4 damage to a random enemy.",
+      "description": "Taunt.\nDeathrattle: Deal 4 damage to a random enemy.",
       "set": "hsx"
     },
     {
@@ -26622,7 +26622,7 @@
         "elusive",
         "taunt"
       ],
-      "description": "Rush. Elusive. Taunt.",
+      "description": "Rush.\nElusive.\nTaunt.",
       "set": "hsx"
     },
     {
@@ -26657,7 +26657,7 @@
       "keywords": [
         "taunt"
       ],
-      "description": "Taunt. Spell Damage +1.",
+      "description": "Taunt.\nSpell Damage +1.",
       "set": "hsx"
     },
     {
@@ -26697,7 +26697,7 @@
         "rush",
         "taunt"
       ],
-      "description": "Rush. Taunt.",
+      "description": "Rush.\nTaunt.",
       "set": "hsx"
     },
     {
@@ -26762,7 +26762,7 @@
           "target": "friendly-creature"
         }
       ],
-      "description": "Battlecry: Give a friendly creature +4/+4 and Taunt.",
+      "description": "Battlecry: Give a friendly creature +4/+4 & Taunt.",
       "set": "hsx"
     },
     {
@@ -26835,7 +26835,7 @@
         "taunt",
         "elusive"
       ],
-      "description": "Taunt. Elusive.",
+      "description": "Taunt.\nElusive.",
       "set": "hsx"
     },
     {
@@ -26932,7 +26932,7 @@
           ]
         }
       ],
-      "description": "Taunt. Deathrattle: Summon two 2/4 Cubs with Taunt.",
+      "description": "Taunt.\nDeathrattle: Summon two 2/4 Cubs with Taunt.",
       "set": "hsx"
     },
     {
@@ -26985,7 +26985,7 @@
           "name": "Murloc"
         }
       ],
-      "description": "Taunt. Deathrattle: Summon three 1/1 Murlocs.",
+      "description": "Taunt.\nDeathrattle: Summon three 1/1 Murlocs.",
       "set": "hsx"
     },
     {
@@ -27026,7 +27026,7 @@
           "count": 1
         }
       ],
-      "description": "Rush. Deathrattle: Deal 7 damage to a random enemy.",
+      "description": "Rush.\nDeathrattle: Deal 7 damage to a random enemy.",
       "set": "hsx"
     },
     {
@@ -27183,7 +27183,7 @@
           "value": 8
         }
       ],
-      "description": "Taunt. Deathrattle: Gain 8 armor.",
+      "description": "Taunt.\nDeathrattle: Gain 8 armor.",
       "set": "hsx"
     },
     {
@@ -27199,7 +27199,7 @@
         "taunt",
         "divine_shield"
       ],
-      "description": "Taunt. Divine Shield.",
+      "description": "Taunt.\nDivine Shield.",
       "set": "hsx"
     },
     {
@@ -27275,7 +27275,7 @@
           ]
         }
       ],
-      "description": "Taunt. Deathrattle: Summon two 4/6 Knights with Taunt.",
+      "description": "Taunt.\nDeathrattle: Summon two 4/6 Knights with Taunt.",
       "set": "hsx"
     },
     {
@@ -27299,7 +27299,7 @@
           "target": "enemy-creatures"
         }
       ],
-      "description": "Taunt. Deathrattle: Deal 9 damage to all enemy creatures.",
+      "description": "Taunt.\nDeathrattle: Deal 9 damage to all enemy creatures.",
       "set": "hsx"
     },
     {
@@ -27409,7 +27409,7 @@
           "target": "enemy-creatures"
         }
       ],
-      "description": "Taunt. Deathrattle: Deal 3 damage to all enemy creatures.",
+      "description": "Taunt.\nDeathrattle: Deal 3 damage to all enemy creatures.",
       "set": "hsx"
     },
     {
@@ -27432,7 +27432,7 @@
           ]
         }
       ],
-      "description": "Summon three 5/6 Elementals with Taunt. Overload: 3 mana locked next turn.",
+      "description": "Summon three 5/6 Elementals with Taunt.\nOverload: 3 mana locked next turn.",
       "set": "hsx"
     },
     {
@@ -27487,7 +27487,7 @@
           ]
         }
       ],
-      "description": "Rush. Deathrattle: Summon an 8/8 Gravewing with Rush.",
+      "description": "Rush.\nDeathrattle: Summon an 8/8 Gravewing with Rush.",
       "set": "hsx"
     },
     {
@@ -27668,7 +27668,7 @@
       "cost": 1,
       "rarity": "uncommon",
       "set": "paper",
-      "description": "Battlecry: Target creature gains +1 Attack until end of turn. Swing: Gain +1 Attack.",
+      "description": "Battlecry: Target creature gains +1 Attack until end of turn.\nSwing: Gain +1 Attack.",
       "type": "creature",
       "attack": 1,
       "health": 3,
@@ -27850,7 +27850,7 @@
           "target": "enemy-creatures"
         }
       ],
-      "description": "Silence all enemy creatures. Tradeable: pay 1 to shuffle this into your deck and draw a card.",
+      "description": "Silence all enemy creatures. Tradeable: pay 1 to shuffle this into your deck & draw a card.",
       "set": "hsx"
     },
     {
@@ -27890,7 +27890,7 @@
           "target": "own-hero"
         }
       ],
-      "description": "Deal 4 damage to a creature and to your own hero.",
+      "description": "Deal 4 damage to a creature & to your own hero.",
       "set": "hsx"
     },
     {
@@ -28157,7 +28157,7 @@
           "requireKeyword": "taunt"
         }
       ],
-      "description": "Taunt. Battlecry: Discover a Taunt creature.",
+      "description": "Taunt.\nBattlecry: Discover a Taunt creature.",
       "set": "hsx"
     },
     {
@@ -28204,7 +28204,7 @@
           "target": "other-creatures"
         }
       ],
-      "description": "Give a friendly creature +3/+3. Deal 1 damage to every other creature. Overload: 1 mana locked next turn.",
+      "description": "Give a friendly creature +3/+3. Deal 1 damage to every other creature.\nOverload: 1 mana locked next turn.",
       "set": "hsx"
     },
     {
@@ -28345,7 +28345,7 @@
           "target": "any"
         }
       ],
-      "description": "Deal 2 damage to any target. Combo: Bank a Coin.",
+      "description": "Deal 2 damage to any target.\nCombo: Bank a Coin.",
       "set": "hsx"
     },
     {
@@ -28514,7 +28514,7 @@
         "lifesteal",
         "rush"
       ],
-      "description": "Lifesteal. Rush.",
+      "description": "Lifesteal.\nRush.",
       "set": "hsx"
     },
     {
@@ -28742,7 +28742,7 @@
           "value": 8
         }
       ],
-      "description": "Gain 8 armor. Tradeable: pay 1 to shuffle this into your deck and draw a card.",
+      "description": "Gain 8 armor. Tradeable: pay 1 to shuffle this into your deck & draw a card.",
       "set": "hsx"
     },
     {
@@ -28768,7 +28768,7 @@
           }
         ]
       },
-      "description": "After your hero attacks, gain 4 armor and draw 1 card.",
+      "description": "After your hero attacks, gain 4 armor & draw 1 card.",
       "set": "hsx"
     },
     {
@@ -28784,7 +28784,7 @@
       "keywords": [
         "rush"
       ],
-      "description": "Rush. Tradeable: pay 1 to shuffle this into your deck and draw a card.",
+      "description": "Rush.\nTradeable: pay 1 to shuffle this into your deck & draw a card.",
       "set": "hsx"
     },
     {
@@ -28808,7 +28808,7 @@
           "target": "enemies"
         }
       ],
-      "description": "Lifesteal. Taunt. Deathrattle: Deal 1 damage to the enemy hero and all enemy creatures.",
+      "description": "Lifesteal.\nTaunt.\nDeathrattle: Deal 1 damage to the enemy hero & all enemy creatures.",
       "set": "hsx"
     },
     {
@@ -28908,7 +28908,7 @@
           }
         ]
       },
-      "description": "After your hero attacks, deal 1 damage to the enemy hero and all enemy creatures.",
+      "description": "After your hero attacks, deal 1 damage to the enemy hero & all enemy creatures.",
       "set": "hsx"
     },
     {
@@ -28952,7 +28952,7 @@
           "type": "destroy-weapon"
         }
       ],
-      "description": "Battlecry: Destroy your opponent's weapon. Tradeable: pay 1 to shuffle this into your deck and draw a card.",
+      "description": "Battlecry: Destroy your opponent's weapon. Tradeable: pay 1 to shuffle this into your deck & draw a card.",
       "set": "hsx"
     },
     {
@@ -29005,7 +29005,7 @@
           "cost": 3
         }
       ],
-      "description": "Deal 3 damage to any target. Summon a random 3-cost creature. Overload: 1 mana locked next turn.",
+      "description": "Deal 3 damage to any target. Summon a random 3-cost creature.\nOverload: 1 mana locked next turn.",
       "set": "hsx"
     },
     {
@@ -29066,7 +29066,7 @@
         "lifesteal",
         "divine_shield"
       ],
-      "description": "Lifesteal. Divine Shield.",
+      "description": "Lifesteal.\nDivine Shield.",
       "set": "hsx"
     },
     {
@@ -29083,7 +29083,7 @@
         "deathtouch",
         "reborn"
       ],
-      "description": "Deathtouch. Reborn.",
+      "description": "Deathtouch.\nReborn.",
       "set": "hsx"
     },
     {
@@ -29186,7 +29186,7 @@
         "taunt",
         "reborn"
       ],
-      "description": "Taunt. Reborn.",
+      "description": "Taunt.\nReborn.",
       "set": "hsx"
     },
     {
@@ -29204,7 +29204,7 @@
         "rush",
         "lifesteal"
       ],
-      "description": "Rush. Lifesteal. Overload: 1 mana locked next turn.",
+      "description": "Rush.\nLifesteal.\nOverload: 1 mana locked next turn.",
       "set": "hsx"
     },
     {
@@ -29220,7 +29220,7 @@
         "charge",
         "lifesteal"
       ],
-      "description": "Charge. Lifesteal.",
+      "description": "Charge.\nLifesteal.",
       "set": "hsx"
     },
     {
@@ -29236,7 +29236,7 @@
         "divine_shield",
         "reborn"
       ],
-      "description": "Divine Shield. Reborn.",
+      "description": "Divine Shield.\nReborn.",
       "set": "hsx"
     },
     {
@@ -29253,7 +29253,7 @@
         "lifesteal",
         "taunt"
       ],
-      "description": "Lifesteal. Taunt.",
+      "description": "Lifesteal.\nTaunt.",
       "set": "hsx"
     },
     {
@@ -29270,7 +29270,7 @@
       "type": "creature",
       "attack": 3,
       "health": 4,
-      "description": "A 3/4 creature. Spell Damage +2. Tradeable: pay 1 to shuffle this into your deck and draw a card.",
+      "description": "A 3/4 creature. Spell Damage +2. Tradeable: pay 1 to shuffle this into your deck & draw a card.",
       "set": "hsx"
     },
     {
@@ -29292,7 +29292,7 @@
           "value": 6
         }
       ],
-      "description": "Taunt. Battlecry: Deals 6 damage to itself.",
+      "description": "Taunt.\nBattlecry: Deals 6 damage to itself.",
       "set": "hsx"
     },
     {
@@ -29372,7 +29372,7 @@
         "rush",
         "reborn"
       ],
-      "description": "Rush. Reborn.",
+      "description": "Rush.\nReborn.",
       "set": "hsx"
     },
     {
@@ -29394,7 +29394,7 @@
           "target": "creature"
         }
       ],
-      "description": "Battlecry: Silence a creature. Tradeable: pay 1 to shuffle this into your deck and draw a card.",
+      "description": "Battlecry: Silence a creature. Tradeable: pay 1 to shuffle this into your deck & draw a card.",
       "set": "hsx"
     },
     {
@@ -29726,7 +29726,7 @@
           "target": "any"
         }
       ],
-      "description": "Battlecry: Deal 3 damage to any target. Honorable Kill: this gains +3/+3.",
+      "description": "Battlecry: Deal 3 damage to any target.\nHonorable Kill: this gains +3/+3.",
       "set": "hsx"
     },
     {
@@ -29818,7 +29818,7 @@
         "taunt",
         "lifesteal"
       ],
-      "description": "Taunt. Lifesteal.",
+      "description": "Taunt.\nLifesteal.",
       "set": "hsx"
     },
     {
@@ -29861,7 +29861,7 @@
         "stealth",
         "reborn"
       ],
-      "description": "Stealth. Reborn.",
+      "description": "Stealth.\nReborn.",
       "set": "hsx"
     },
     {
@@ -29905,7 +29905,7 @@
           ]
         }
       ],
-      "description": "Summon two 2/7 Turtles with Taunt. Tradeable: pay 1 to shuffle this into your deck and draw a card.",
+      "description": "Summon two 2/7 Turtles with Taunt. Tradeable: pay 1 to shuffle this into your deck & draw a card.",
       "set": "hsx"
     },
     {
@@ -29928,7 +29928,7 @@
           "value": 6
         }
       ],
-      "description": "Taunt. Battlecry: Deals 6 damage to itself.",
+      "description": "Taunt.\nBattlecry: Deals 6 damage to itself.",
       "set": "hsx"
     },
     {
@@ -29952,7 +29952,7 @@
           "tribe": "Dragon"
         }
       ],
-      "description": "Taunt. Battlecry: Discover a Dragon.",
+      "description": "Taunt.\nBattlecry: Discover a Dragon.",
       "set": "hsx"
     },
     {
@@ -29970,7 +29970,7 @@
         "lifesteal",
         "taunt"
       ],
-      "description": "Elusive. Lifesteal. Taunt.",
+      "description": "Elusive.\nLifesteal.\nTaunt.",
       "set": "hsx"
     },
     {
@@ -30046,7 +30046,7 @@
         "divine_shield",
         "lifesteal"
       ],
-      "description": "Taunt. Divine Shield. Lifesteal.",
+      "description": "Taunt.\nDivine Shield.\nLifesteal.",
       "set": "hsx"
     },
     {
@@ -30068,7 +30068,7 @@
           "cost": 8
         }
       ],
-      "description": "Taunt. Deathrattle: Summon a random 8-cost creature.",
+      "description": "Taunt.\nDeathrattle: Summon a random 8-cost creature.",
       "set": "hsx"
     },
     {
@@ -30091,7 +30091,7 @@
           "value": 10
         }
       ],
-      "description": "Taunt. Battlecry: Deals 10 damage to itself.",
+      "description": "Taunt.\nBattlecry: Deals 10 damage to itself.",
       "set": "hsx"
     },
     {
@@ -30113,7 +30113,7 @@
           "target": "creature"
         }
       ],
-      "description": "Destroy a creature. Combo: Summon a random 8-cost creature.",
+      "description": "Destroy a creature.\nCombo: Summon a random 8-cost creature.",
       "set": "hsx"
     },
     {
@@ -30130,7 +30130,7 @@
         "taunt",
         "cleave"
       ],
-      "description": "Taunt. Cleave: combat damage splashes the defender's neighbors.",
+      "description": "Taunt.\nCleave: combat damage splashes the defender's neighbors.",
       "set": "hsx"
     },
     {
@@ -30195,7 +30195,7 @@
       "keywords": [
         "rush"
       ],
-      "description": "Rush. Honorable Kill: Deal 8 damage to the enemy hero.",
+      "description": "Rush.\nHonorable Kill: Deal 8 damage to the enemy hero.",
       "set": "hsx"
     },
     {
@@ -30213,7 +30213,7 @@
         "rush",
         "windfury"
       ],
-      "description": "Lifesteal. Rush. Windfury.",
+      "description": "Lifesteal.\nRush.\nWindfury.",
       "set": "hsx"
     },
     {
@@ -30253,7 +30253,7 @@
         "rush",
         "lifesteal"
       ],
-      "description": "Rush. Lifesteal.",
+      "description": "Rush.\nLifesteal.",
       "set": "hsx"
     },
     {
@@ -30292,7 +30292,7 @@
       "keywords": [
         "taunt"
       ],
-      "description": "Taunt. Has +2 Attack during opponents' turns.",
+      "description": "Taunt.\nHas +2 Attack during opponents' turns.",
       "set": "hsx"
     },
     {
@@ -30310,7 +30310,7 @@
       "keywords": [
         "reborn"
       ],
-      "description": "Reborn. While damaged: +2 Attack.",
+      "description": "Reborn.\nWhile damaged: +2 Attack.",
       "set": "hsx"
     },
     {
@@ -30334,7 +30334,7 @@
           "count": 1
         }
       ],
-      "description": "Lifesteal. Battlecry: Deal 2 damage to 1 random enemy creature.",
+      "description": "Lifesteal.\nBattlecry: Deal 2 damage to 1 random enemy creature.",
       "set": "hsx"
     },
     {
@@ -30358,7 +30358,7 @@
           "tribe": "Dragon"
         }
       ],
-      "description": "Lifesteal. Battlecry: Discover a Dragon.",
+      "description": "Lifesteal.\nBattlecry: Discover a Dragon.",
       "set": "hsx"
     },
     {
@@ -30382,7 +30382,7 @@
           "tribe": "Dragon"
         }
       ],
-      "description": "Deathtouch. Battlecry: Discover a Dragon.",
+      "description": "Deathtouch.\nBattlecry: Discover a Dragon.",
       "set": "hsx"
     },
     {
@@ -30410,7 +30410,7 @@
           ]
         }
       ],
-      "description": "Reborn. Deathrattle: Summon a 2/2 Undead Beast with Taunt.",
+      "description": "Reborn.\nDeathrattle: Summon a 2/2 Undead Beast with Taunt.",
       "set": "hsx"
     },
     {
@@ -30427,7 +30427,7 @@
       "keywords": [
         "taunt"
       ],
-      "description": "Taunt. Has +2 Attack during opponents' turns.",
+      "description": "Taunt.\nHas +2 Attack during opponents' turns.",
       "set": "hsx"
     },
     {
@@ -30446,7 +30446,7 @@
         "taunt",
         "reborn"
       ],
-      "description": "Taunt. Reborn. While damaged: +3 Attack.",
+      "description": "Taunt.\nReborn.\nWhile damaged: +3 Attack.",
       "set": "hsx"
     },
     {
@@ -30470,7 +30470,7 @@
           "cardType": "spell"
         }
       ],
-      "description": "Deathtouch. Battlecry: Discover a spell.",
+      "description": "Deathtouch.\nBattlecry: Discover a spell.",
       "set": "hsx"
     },
     {
@@ -30488,7 +30488,7 @@
       "keywords": [
         "taunt"
       ],
-      "description": "Taunt. While damaged: +3 Attack.",
+      "description": "Taunt.\nWhile damaged: +3 Attack.",
       "set": "hsx"
     },
     {
@@ -30517,7 +30517,7 @@
           ]
         }
       ],
-      "description": "Taunt. Reborn. Deathrattle: Summon a 4/4 Undead with Taunt.",
+      "description": "Taunt.\nReborn.\nDeathrattle: Summon a 4/4 Undead with Taunt.",
       "set": "hsx"
     },
     {
@@ -30534,7 +30534,7 @@
       "keywords": [
         "taunt"
       ],
-      "description": "Taunt. Has +3 Attack during opponents' turns.",
+      "description": "Taunt.\nHas +3 Attack during opponents' turns.",
       "set": "hsx"
     },
     {
@@ -30551,7 +30551,7 @@
       "keywords": [
         "taunt"
       ],
-      "description": "Taunt. Has +4 Attack during opponents' turns.",
+      "description": "Taunt.\nHas +4 Attack during opponents' turns.",
       "set": "hsx"
     },
     {
@@ -30569,7 +30569,7 @@
         "taunt",
         "lifesteal"
       ],
-      "description": "Taunt. Lifesteal. Has +6 Attack during opponents' turns.",
+      "description": "Taunt.\nLifesteal.\nHas +6 Attack during opponents' turns.",
       "set": "hsx"
     },
     {
@@ -30723,7 +30723,7 @@
           "target": "own-hero"
         }
       ],
-      "description": "Divine Shield. Battlecry: Deal 2 damage to your own hero.",
+      "description": "Divine Shield.\nBattlecry: Deal 2 damage to your own hero.",
       "set": "hsx"
     },
     {
@@ -30798,7 +30798,7 @@
           "target": "friendly-creatures"
         }
       ],
-      "description": "Give all your creatures +1/+1. Overload: 1 mana locked next turn.",
+      "description": "Give all your creatures +1/+1.\nOverload: 1 mana locked next turn.",
       "set": "hsx"
     },
     {
@@ -30821,7 +30821,7 @@
           ]
         }
       ],
-      "description": "Summon two 1/1 Sparks with Rush. Overload: 1 mana locked next turn.",
+      "description": "Summon two 1/1 Sparks with Rush.\nOverload: 1 mana locked next turn.",
       "set": "hsx"
     },
     {
@@ -30945,7 +30945,7 @@
           "forEnemy": true
         }
       ],
-      "description": "Taunt. Battlecry: Summon three 1/1 Raptors for your opponent.",
+      "description": "Taunt.\nBattlecry: Summon three 1/1 Raptors for your opponent.",
       "set": "hsx"
     },
     {
@@ -30973,7 +30973,7 @@
           "value": 1
         }
       ],
-      "description": "Battlecry: Discard 1 random card. Deathrattle: Draw 1 card.",
+      "description": "Battlecry: Discard 1 random card.\nDeathrattle: Draw 1 card.",
       "set": "hsx"
     },
     {
@@ -31085,7 +31085,7 @@
           "target": "friendly-all"
         }
       ],
-      "description": "Deal 1 damage to the enemy hero and all enemy creatures. Restore 1 health to your hero and creatures.",
+      "description": "Deal 1 damage to the enemy hero & all enemy creatures. Restore 1 health to your hero & creatures.",
       "set": "hsx"
     },
     {
@@ -31314,7 +31314,7 @@
       "keywords": [
         "rush"
       ],
-      "description": "Rush. While damaged: +3 Attack.",
+      "description": "Rush.\nWhile damaged: +3 Attack.",
       "set": "hsx"
     },
     {
@@ -31364,7 +31364,7 @@
           "target": "creature"
         }
       ],
-      "description": "Taunt. Battlecry: Give a creature Taunt.",
+      "description": "Taunt.\nBattlecry: Give a creature Taunt.",
       "set": "hsx"
     },
     {
@@ -31564,7 +31564,7 @@
           "per": "hand-cards"
         }
       ],
-      "description": "Taunt. Battlecry: Gains +1 Health for each card in your hand.",
+      "description": "Taunt.\nBattlecry: Gains +1 Health for each card in your hand.",
       "set": "hsx"
     },
     {
@@ -31629,7 +31629,7 @@
           "name": "Stirring Rod With Lifesteal"
         }
       ],
-      "description": "Lifesteal. Deathrattle: Equip a 2/3 Stirring Rod With Lifesteal.",
+      "description": "Lifesteal.\nDeathrattle: Equip a 2/3 Stirring Rod With Lifesteal.",
       "set": "hsx"
     },
     {
@@ -31782,7 +31782,7 @@
           "value": 4
         }
       ],
-      "description": "Lifesteal. Battlecry: Deals 4 damage to itself.",
+      "description": "Lifesteal.\nBattlecry: Deals 4 damage to itself.",
       "set": "hsx"
     },
     {
@@ -31801,7 +31801,7 @@
       "keywords": [
         "stealth"
       ],
-      "description": "Stealth. Spell Damage +1.",
+      "description": "Stealth.\nSpell Damage +1.",
       "set": "hsx"
     },
     {
@@ -31895,7 +31895,7 @@
       "keywords": [
         "stealth"
       ],
-      "description": "Stealth. At the start of your turn, this gains +1/+1.",
+      "description": "Stealth.\nAt the start of your turn, this gains +1/+1.",
       "set": "hsx"
     },
     {
@@ -31947,7 +31947,7 @@
           "name": "Microcopter"
         }
       ],
-      "description": "Your other Mechs have +1 Attack. Battlecry: Summon two 1/1 Microcopters.",
+      "description": "Your other Mechs have +1 Attack.\nBattlecry: Summon two 1/1 Microcopters.",
       "set": "hsx"
     },
     {
@@ -32024,7 +32024,7 @@
           "requireKeyword": "taunt"
         }
       ],
-      "description": "Taunt. Battlecry: Discover a Taunt creature.",
+      "description": "Taunt.\nBattlecry: Discover a Taunt creature.",
       "set": "hsx"
     },
     {
@@ -32081,7 +32081,7 @@
         "divine_shield",
         "lifesteal"
       ],
-      "description": "Taunt. Divine Shield. Lifesteal.",
+      "description": "Taunt.\nDivine Shield.\nLifesteal.",
       "set": "hsx"
     },
     {
@@ -32121,7 +32121,7 @@
         "taunt",
         "elusive"
       ],
-      "description": "Taunt. Elusive.",
+      "description": "Taunt.\nElusive.",
       "set": "hsx"
     },
     {
@@ -32168,7 +32168,7 @@
           "name": "Ooze with Poisonous and Rush"
         }
       ],
-      "description": "Deathrattle: Summon a 1/1 Ooze with Poisonous and Rush.",
+      "description": "Deathrattle: Summon a 1/1 Ooze with Poisonous & Rush.",
       "set": "hsx"
     },
     {
@@ -32209,7 +32209,7 @@
         "taunt",
         "windfury"
       ],
-      "description": "Rush. Divine Shield. Taunt. Windfury.",
+      "description": "Rush.\nDivine Shield.\nTaunt.\nWindfury.",
       "set": "hsx"
     },
     {
@@ -32265,7 +32265,7 @@
           "target": "enemy-creatures"
         }
       ],
-      "description": "Taunt. Battlecry: Deal 1 damage to all enemy creatures.",
+      "description": "Taunt.\nBattlecry: Deal 1 damage to all enemy creatures.",
       "set": "hsx"
     },
     {
@@ -32313,7 +32313,7 @@
           "name": "Pterrordaxes and Adapt them"
         }
       ],
-      "description": "Deal 3 damage to a creature. Summon three 1/1 Pterrordaxes and Adapt them.",
+      "description": "Deal 3 damage to a creature. Summon three 1/1 Pterrordaxes & Adapt them.",
       "set": "hsx"
     },
     {
@@ -32338,7 +32338,7 @@
           "target": "friendly-creatures"
         }
       ],
-      "description": "Summon a 1/2 Mech with Divine Shield and Taunt. Give all your creatures +1/+2.",
+      "description": "Summon a 1/2 Mech with Divine Shield & Taunt. Give all your creatures +1/+2.",
       "set": "hsx"
     },
     {
@@ -32453,7 +32453,7 @@
           "target": "any"
         }
       ],
-      "description": "Battlecry: Restore 6 health to any target. Overload: 1 mana locked next turn.",
+      "description": "Battlecry: Restore 6 health to any target.\nOverload: 1 mana locked next turn.",
       "set": "hsx"
     },
     {
@@ -32530,7 +32530,7 @@
           ]
         }
       ],
-      "description": "Choose one: Give a creature +2/+4 and Taunt; or Summon two 3/2 Raptors.",
+      "description": "Choose one: Give a creature +2/+4 & Taunt; or Summon two 3/2 Raptors.",
       "set": "hsx"
     },
     {
@@ -33012,7 +33012,7 @@
           "target": "own-hero"
         }
       ],
-      "description": "Battlecry: Deal 5 damage to an enemy creature. Deathrattle: Deal 5 damage to your own hero.",
+      "description": "Battlecry: Deal 5 damage to an enemy creature.\nDeathrattle: Deal 5 damage to your own hero.",
       "set": "hsx"
     },
     {
@@ -33136,7 +33136,7 @@
           "type": "destroy-random"
         }
       ],
-      "description": "Taunt. Deathrattle: Destroy a random enemy creature.",
+      "description": "Taunt.\nDeathrattle: Destroy a random enemy creature.",
       "set": "hsx"
     },
     {
@@ -33388,7 +33388,7 @@
           "name": "Mechs with Taunt and Divine Shield"
         }
       ],
-      "description": "Battlecry: Summon two 1/2 Mechs with Taunt and Divine Shield.",
+      "description": "Battlecry: Summon two 1/2 Mechs with Taunt & Divine Shield.",
       "set": "hsx"
     },
     {
@@ -33459,7 +33459,7 @@
           "name": "Spiders with Poisonous and Rush"
         }
       ],
-      "description": "Deathrattle: Summon two 1/1 Spiders with Poisonous and Rush. Tradeable: pay 1 to shuffle this into your deck and draw a card.",
+      "description": "Deathrattle: Summon two 1/1 Spiders with Poisonous & Rush. Tradeable: pay 1 to shuffle this into your deck & draw a card.",
       "set": "hsx"
     },
     {
@@ -33567,7 +33567,7 @@
           "forEnemy": true
         }
       ],
-      "description": "Rush. Battlecry: Summon two 2/1 Mucklings for your opponent.",
+      "description": "Rush.\nBattlecry: Summon two 2/1 Mucklings for your opponent.",
       "set": "hsx"
     },
     {
@@ -33669,7 +33669,7 @@
           ]
         }
       ],
-      "description": "Taunt. Deathrattle: Summon a 1/2 Slime with Taunt.",
+      "description": "Taunt.\nDeathrattle: Summon a 1/2 Slime with Taunt.",
       "set": "hsx"
     },
     {
@@ -33693,7 +33693,7 @@
           "count": 1
         }
       ],
-      "description": "Deathtouch. Deathrattle: Deal 1 damage to 1 random enemy creature.",
+      "description": "Deathtouch.\nDeathrattle: Deal 1 damage to 1 random enemy creature.",
       "set": "hsx"
     },
     {
@@ -33728,7 +33728,7 @@
           "target": "everyone"
         }
       ],
-      "description": "Deal 5 damage to both heroes and every creature.",
+      "description": "Deal 5 damage to both heroes & every creature.",
       "set": "hsx"
     },
     {
@@ -33779,7 +33779,7 @@
           "target": "self"
         }
       ],
-      "description": "Taunt. Reborn. Deathrattle: Restore 3 health to your hero.",
+      "description": "Taunt.\nReborn.\nDeathrattle: Restore 3 health to your hero.",
       "set": "hsx"
     },
     {
@@ -33838,7 +33838,7 @@
           "name": "Turtle Spike"
         }
       ],
-      "description": "Frenzy: gain 8 armor. Deathrattle: Equip a 2/5 Turtle Spike.",
+      "description": "Frenzy: gain 8 armor.\nDeathrattle: Equip a 2/5 Turtle Spike.",
       "set": "hsx"
     },
     {
@@ -33862,7 +33862,7 @@
           "target": "friendly-all"
         }
       ],
-      "description": "Taunt. Deathrattle: Restore 8 health to your hero and creatures.",
+      "description": "Taunt.\nDeathrattle: Restore 8 health to your hero & creatures.",
       "set": "hsx"
     },
     {
@@ -33921,7 +33921,7 @@
           "target": "creature"
         }
       ],
-      "description": "Deal 15 damage to a creature and 4 to its neighbors.",
+      "description": "Deal 15 damage to a creature & 4 to its neighbors.",
       "set": "hsx"
     },
     {
@@ -34155,7 +34155,7 @@
           "count": 1
         }
       ],
-      "description": "Taunt. Lifesteal. Reborn. Deathrattle: Deal 3 damage to a random enemy.",
+      "description": "Taunt.\nLifesteal.\nReborn.\nDeathrattle: Deal 3 damage to a random enemy.",
       "set": "hsx"
     },
     {
@@ -34188,7 +34188,7 @@
           ]
         }
       ],
-      "description": "Taunt. Deathrattle: If you're holding a Dragon: Deal 3 damage to every creature.",
+      "description": "Taunt.\nDeathrattle: If you're holding a Dragon: Deal 3 damage to every creature.",
       "set": "hsx"
     },
     {
@@ -34315,7 +34315,7 @@
           "keyword": "divine_shield"
         }
       ],
-      "description": "Taunt. Battlecry: Give adjacent creatures Divine Shield.",
+      "description": "Taunt.\nBattlecry: Give adjacent creatures Divine Shield.",
       "set": "hsx"
     },
     {
@@ -34445,7 +34445,7 @@
           "target": "all-creatures"
         }
       ],
-      "description": "Taunt. Deathrattle: Deal 3 damage to every creature.",
+      "description": "Taunt.\nDeathrattle: Deal 3 damage to every creature.",
       "set": "hsx"
     },
     {
@@ -34463,7 +34463,7 @@
         "reborn",
         "elusive"
       ],
-      "description": "Taunt. Reborn. Elusive.",
+      "description": "Taunt.\nReborn.\nElusive.",
       "set": "hsx"
     },
     {
@@ -34482,7 +34482,7 @@
           "name": "Golems with Taunt and Elusive"
         }
       ],
-      "description": "Summon two 5/6 Golems with Taunt and Elusive.",
+      "description": "Summon two 5/6 Golems with Taunt & Elusive.",
       "set": "hsx"
     },
     {
@@ -34532,7 +34532,7 @@
       "keywords": [
         "taunt"
       ],
-      "description": "Taunt. At the end of your turn, deal 5 damage to 1 random enemy creature.",
+      "description": "Taunt.\nAt the end of your turn, deal 5 damage to 1 random enemy creature.",
       "set": "hsx"
     },
     {
@@ -34562,7 +34562,7 @@
           "target": "self"
         }
       ],
-      "description": "At the end of your turn, deal 2 damage to the enemy hero and all enemy creatures. Honorable Kill: Restore 4 health to your hero.",
+      "description": "At the end of your turn, deal 2 damage to the enemy hero & all enemy creatures.\nHonorable Kill: Restore 4 health to your hero.",
       "set": "hsx"
     },
     {
@@ -34586,7 +34586,7 @@
           "name": "Blight Boar with Charge and Taunt"
         }
       ],
-      "description": "Deathrattle: Summon a 9/9 Blight Boar with Charge and Taunt.",
+      "description": "Deathrattle: Summon a 9/9 Blight Boar with Charge & Taunt.",
       "set": "hsx"
     },
     {
@@ -34632,7 +34632,7 @@
           "name": "Dreadlord with Lifesteal"
         }
       ],
-      "description": "Taunt. Deathrattle: Summon a 5/5 Dreadlord with Lifesteal.",
+      "description": "Taunt.\nDeathrattle: Summon a 5/5 Dreadlord with Lifesteal.",
       "set": "hsx"
     },
     {
@@ -34741,7 +34741,7 @@
           "target": "other-creatures"
         }
       ],
-      "description": "Taunt. Battlecry: Deal 2 damage to every other creature.",
+      "description": "Taunt.\nBattlecry: Deal 2 damage to every other creature.",
       "set": "hsx"
     },
     {
@@ -34864,7 +34864,7 @@
           "name": "Mechs with Taunt and Divine Shield"
         }
       ],
-      "description": "Taunt. Divine Shield. Deathrattle: Summon three 1/2 Mechs with Taunt and Divine Shield.",
+      "description": "Taunt.\nDivine Shield.\nDeathrattle: Summon three 1/2 Mechs with Taunt & Divine Shield.",
       "set": "hsx"
     },
     {
@@ -34888,7 +34888,7 @@
           "name": "Guardian with Taunt and Divine Shield"
         }
       ],
-      "description": "Restore 8 health to any target. Summon an 8/8 Guardian with Taunt and Divine Shield.",
+      "description": "Restore 8 health to any target. Summon an 8/8 Guardian with Taunt & Divine Shield.",
       "set": "hsx"
     },
     {
@@ -34910,7 +34910,7 @@
           "type": "destroy-random"
         }
       ],
-      "description": "Taunt. Lifesteal. Deathrattle: Destroy a random enemy creature.",
+      "description": "Taunt.\nLifesteal.\nDeathrattle: Destroy a random enemy creature.",
       "set": "hsx"
     },
     {
@@ -34926,7 +34926,7 @@
         "taunt",
         "elusive"
       ],
-      "description": "Taunt. Elusive.",
+      "description": "Taunt.\nElusive.",
       "set": "hsx"
     },
     {
@@ -34955,7 +34955,7 @@
           ]
         }
       ],
-      "description": "Taunt. Deathrattle: Summon three 1/3 Demons with Taunt.",
+      "description": "Taunt.\nDeathrattle: Summon three 1/3 Demons with Taunt.",
       "set": "hsx"
     },
     {
@@ -34992,7 +34992,7 @@
         "divine_shield",
         "reborn"
       ],
-      "description": "Divine Shield. Reborn.",
+      "description": "Divine Shield.\nReborn.",
       "set": "hsx"
     },
     {
@@ -35011,7 +35011,7 @@
       "keywords": [
         "rush"
       ],
-      "description": "Rush. Costs 1 less for each other card in your hand.",
+      "description": "Rush.\nCosts 1 less for each other card in your hand.",
       "set": "hsx"
     },
     {
@@ -35032,7 +35032,7 @@
         "taunt",
         "divine_shield"
       ],
-      "description": "Taunt. Divine Shield. Costs 1 less for each other card in your hand.",
+      "description": "Taunt.\nDivine Shield.\nCosts 1 less for each other card in your hand.",
       "set": "hsx"
     },
     {
@@ -35085,7 +35085,7 @@
           ]
         }
       ],
-      "description": "Taunt. Deathrattle: Summon a 7/7 Felcracked Colossus with Taunt.",
+      "description": "Taunt.\nDeathrattle: Summon a 7/7 Felcracked Colossus with Taunt.",
       "set": "hsx"
     },
     {
@@ -35102,7 +35102,7 @@
         "taunt",
         "elusive"
       ],
-      "description": "Taunt. Elusive.",
+      "description": "Taunt.\nElusive.",
       "set": "hsx"
     },
     {
@@ -35181,7 +35181,7 @@
           "health": 2
         }
       ],
-      "description": "Stealth. Deathrattle: Give a random friendly creature +2 Health.",
+      "description": "Stealth.\nDeathrattle: Give a random friendly creature +2 Health.",
       "set": "hsx"
     },
     {
@@ -35286,7 +35286,7 @@
           "target": "friendly-creature"
         }
       ],
-      "description": "Battlecry: Choose a friendly creature and gain a copy of its Deathrattle.",
+      "description": "Battlecry: Choose a friendly creature & gain a copy of its Deathrattle.",
       "set": "hsx"
     },
     {
@@ -35309,7 +35309,7 @@
           "target": "friendly-creature"
         }
       ],
-      "description": "Rush. Battlecry: Choose a friendly creature and gain a copy of its Deathrattle.",
+      "description": "Rush.\nBattlecry: Choose a friendly creature & gain a copy of its Deathrattle.",
       "set": "hsx"
     },
     {
@@ -35614,7 +35614,7 @@
       "keywords": [
         "rush"
       ],
-      "description": "Rush. Honorable Kill: gain Windfury.",
+      "description": "Rush.\nHonorable Kill: gain Windfury.",
       "set": "hsx"
     },
     {
@@ -35704,7 +35704,7 @@
           "value": 2
         }
       ],
-      "description": "Costs 1 less for each creature that died this turn. Battlecry: Draw 2 cards.",
+      "description": "Costs 1 less for each creature that died this turn.\nBattlecry: Draw 2 cards.",
       "set": "hsx"
     },
     {
@@ -35723,7 +35723,7 @@
       "keywords": [
         "taunt"
       ],
-      "description": "Taunt. Costs 1 less for each creature that died this turn.",
+      "description": "Taunt.\nCosts 1 less for each creature that died this turn.",
       "set": "hsx"
     },
     {
@@ -35893,7 +35893,7 @@
           "health": 1
         }
       ],
-      "description": "Reborn. Deathrattle: Give a random friendly creature +1/+1.",
+      "description": "Reborn.\nDeathrattle: Give a random friendly creature +1/+1.",
       "set": "hsx"
     },
     {
@@ -36088,7 +36088,7 @@
           "health": 1
         }
       ],
-      "description": "Taunt. Deathrattle: Give a random friendly creature +1/+1.",
+      "description": "Taunt.\nDeathrattle: Give a random friendly creature +1/+1.",
       "set": "hsx"
     },
     {
@@ -36154,7 +36154,7 @@
           "count": 2
         }
       ],
-      "description": "Taunt. Battlecry: Summon 2 copies of this creature.",
+      "description": "Taunt.\nBattlecry: Summon 2 copies of this creature.",
       "set": "hsx"
     },
     {
@@ -36494,7 +36494,7 @@
           ]
         }
       ],
-      "description": "Choose one: Summon five 2/2 Treants; or Give all your creatures +2/+4 and Taunt.",
+      "description": "Choose one: Summon five 2/2 Treants; or Give all your creatures +2/+4 & Taunt.",
       "set": "hsx"
     },
     {
@@ -36514,7 +36514,7 @@
       "keywords": [
         "rush"
       ],
-      "description": "Rush. Costs 1 less for each spell you've cast this game.",
+      "description": "Rush.\nCosts 1 less for each spell you've cast this game.",
       "set": "hsx"
     },
     {
@@ -36572,7 +36572,7 @@
           "count": 1
         }
       ],
-      "description": "Taunt. Battlecry: Summon a copy of this creature.",
+      "description": "Taunt.\nBattlecry: Summon a copy of this creature.",
       "set": "hsx"
     },
     {
@@ -36632,7 +36632,7 @@
       "keywords": [
         "taunt"
       ],
-      "description": "Taunt. Costs 1 less for each spell you've cast this game.",
+      "description": "Taunt.\nCosts 1 less for each spell you've cast this game.",
       "set": "hsx"
     },
     {
@@ -36654,7 +36654,7 @@
           "count": 1
         }
       ],
-      "description": "Taunt. Battlecry: Summon a copy of this creature."
+      "description": "Taunt.\nBattlecry: Summon a copy of this creature."
     },
     {
       "id": "stand_against_darkness",
@@ -36821,7 +36821,7 @@
           ]
         }
       ],
-      "description": "Battlecry: If you're holding a Dragon: gain +1 Attack and Charge",
+      "description": "Battlecry: If you're holding a Dragon: gain +1 Attack & Charge",
       "set": "hsx"
     },
     {
@@ -36992,7 +36992,7 @@
           ]
         }
       ],
-      "description": "Battlecry: If you're holding a Dragon: gain +1 Attack and Taunt",
+      "description": "Battlecry: If you're holding a Dragon: gain +1 Attack & Taunt",
       "set": "hsx"
     },
     {
@@ -37268,7 +37268,7 @@
           "taunt"
         ]
       },
-      "description": "Your Silver Hand Recruits have +2 Attack and Taunt.",
+      "description": "Your Silver Hand Recruits have +2 Attack & Taunt.",
       "set": "hsx"
     },
     {
@@ -37340,7 +37340,7 @@
           }
         ]
       },
-      "description": "Spellburst: gain +1 Attack and Taunt.",
+      "description": "Spellburst: gain +1 Attack & Taunt.",
       "set": "hsx"
     },
     {
@@ -37400,7 +37400,7 @@
           ]
         }
       ],
-      "description": "Battlecry: If you're holding a Dragon: gain +1 Attack and Rush",
+      "description": "Battlecry: If you're holding a Dragon: gain +1 Attack & Rush",
       "set": "hsx"
     },
     {
@@ -37461,7 +37461,7 @@
           ]
         }
       ],
-      "description": "Battlecry: If you're holding a Dragon: gain +1 Attack and Taunt",
+      "description": "Battlecry: If you're holding a Dragon: gain +1 Attack & Taunt",
       "set": "hsx"
     },
     {
@@ -37606,7 +37606,7 @@
           "count": 1
         }
       ],
-      "description": "Battlecry: Draw a Mech, Dragon, and Pirate from your deck.",
+      "description": "Battlecry: Draw a Mech, Dragon, & Pirate from your deck.",
       "set": "hsx"
     },
     {
@@ -37640,7 +37640,7 @@
           "count": 1
         }
       ],
-      "description": "Taunt. Battlecry: Draw a Beast, Dragon, and Murloc from your deck.",
+      "description": "Taunt.\nBattlecry: Draw a Beast, Dragon, & Murloc from your deck.",
       "set": "hsx"
     },
     {
@@ -37663,7 +37663,7 @@
           "forEnemy": true
         }
       ],
-      "description": "Taunt. Battlecry: Summon a random 2-cost creature for your opponent.",
+      "description": "Taunt.\nBattlecry: Summon a random 2-cost creature for your opponent.",
       "set": "hsx"
     },
     {
@@ -37747,7 +37747,7 @@
           ]
         }
       ],
-      "description": "Battlecry: If you're holding a Dragon: gain +1 Attack and Taunt",
+      "description": "Battlecry: If you're holding a Dragon: gain +1 Attack & Taunt",
       "set": "hsx"
     },
     {
@@ -37980,7 +37980,7 @@
           "to": "hand"
         }
       ],
-      "description": "Search your deck for any card and put it into your hand."
+      "description": "Search your deck for any card & put it into your hand."
     },
     {
       "id": "imperial_recruiter",
@@ -38037,7 +38037,7 @@
           }
         ]
       },
-      "description": "First Strike. Whenever this creature deals combat damage to a player, create a 1/1 white Soldier creature token."
+      "description": "First Strike.\nWhenever this creature deals combat damage to a player, create a 1/1 white Soldier creature token."
     },
     {
       "id": "soul_warden",
@@ -38125,7 +38125,7 @@
         "first_strike",
         "lifesteal"
       ],
-      "description": "First Strike. Lifesteal."
+      "description": "First Strike.\nLifesteal."
     },
     {
       "id": "wall_of_omens",
@@ -38151,7 +38151,7 @@
           "value": 1
         }
       ],
-      "description": "Pacifist. Battlecry: draw a card.."
+      "description": "Pacifist.\nBattlecry: draw a card.."
     },
     {
       "id": "wrath_of_god",
@@ -38370,7 +38370,7 @@
           }
         ]
       },
-      "description": "Elusive. Whenever this creature deals combat damage to a player, you may draw a card."
+      "description": "Elusive.\nWhenever this creature deals combat damage to a player, you may draw a card."
     },
     {
       "id": "sage_s_row_savant",
@@ -38582,7 +38582,7 @@
           "target": "own-hero"
         }
       ],
-      "description": "Battlecry: you draw a card and you lose 1 life.."
+      "description": "Battlecry: you draw a card & you lose 1 life.."
     },
     {
       "id": "gifted_aetherborn",
@@ -38602,7 +38602,7 @@
         "deathtouch",
         "lifesteal"
       ],
-      "description": "Deathtouch. Lifesteal."
+      "description": "Deathtouch.\nLifesteal."
     },
     {
       "id": "child_of_night",
@@ -38955,7 +38955,7 @@
           }
         ]
       },
-      "description": "Charge. Prowess: +1/+1 this turn whenever you cast a spell."
+      "description": "Charge.\nProwess: +1/+1 this turn whenever you cast a spell."
     },
     {
       "id": "kiln_fiend",
@@ -39421,7 +39421,7 @@
           "target": "own-hero"
         }
       ],
-      "description": "You draw two cards and lose 2 life."
+      "description": "You draw two cards & lose 2 life."
     },
     {
       "id": "chrome_cat",
@@ -39545,7 +39545,7 @@
           "target": "creature"
         }
       ],
-      "description": "Deal 1 damage to a creature and its neighbors.",
+      "description": "Deal 1 damage to a creature & its neighbors.",
       "set": "hsx"
     },
     {
@@ -39591,7 +39591,7 @@
           "target": "self"
         }
       ],
-      "description": "Lifesteal. Deal 1 damage to all enemy creatures. Tradeable: pay 1 to shuffle this into your deck and draw a card.",
+      "description": "Lifesteal.\nDeal 1 damage to all enemy creatures. Tradeable: pay 1 to shuffle this into your deck & draw a card.",
       "set": "hsx"
     },
     {
@@ -39749,7 +39749,7 @@
           "target": "creature"
         }
       ],
-      "description": "Deal 2 damage to a creature and its neighbors.",
+      "description": "Deal 2 damage to a creature & its neighbors.",
       "set": "hsx"
     },
     {
@@ -39968,7 +39968,7 @@
         "taunt",
         "freezer"
       ],
-      "description": "Taunt. Freezes anything it damages.",
+      "description": "Taunt.\nFreezes anything it damages.",
       "set": "hsx"
     },
     {
@@ -39984,7 +39984,7 @@
       "keywords": [
         "rush"
       ],
-      "description": "Rush. After it attacks and kills a creature, it may attack again.",
+      "description": "Rush.\nAfter it attacks & kills a creature, it may attack again.",
       "set": "hsx"
     },
     {
@@ -40000,7 +40000,7 @@
         "taunt",
         "freezer"
       ],
-      "description": "Taunt. Freezes anything it damages.",
+      "description": "Taunt.\nFreezes anything it damages.",
       "set": "hsx"
     },
     {
@@ -40016,7 +40016,7 @@
       "keywords": [
         "rush"
       ],
-      "description": "Rush. After it attacks and kills a creature, it may attack again.",
+      "description": "Rush.\nAfter it attacks & kills a creature, it may attack again.",
       "set": "hsx"
     },
     {
@@ -40033,7 +40033,7 @@
       "keywords": [
         "rush"
       ],
-      "description": "Rush. After it attacks and kills a creature, it may attack again.",
+      "description": "Rush.\nAfter it attacks & kills a creature, it may attack again.",
       "set": "hsx"
     },
     {
@@ -40065,7 +40065,7 @@
       "type": "creature",
       "attack": 1,
       "health": 3,
-      "description": "A 1/3 creature. Magnetic: may merge its stats and text onto a friendly Mech.",
+      "description": "A 1/3 creature. Magnetic: may merge its stats & text onto a friendly Mech.",
       "set": "hsx"
     },
     {
@@ -40162,7 +40162,7 @@
           "target": "creature"
         }
       ],
-      "description": "Deal 2 damage to a creature. Echo: replays all turn while you have the mana.",
+      "description": "Deal 2 damage to a creature.\nEcho: replays all turn while you have the mana.",
       "set": "hsx"
     },
     {
@@ -40179,7 +40179,7 @@
       "keywords": [
         "freezer"
       ],
-      "description": "Freezes anything it damages. Magnetic: may merge its stats and text onto a friendly Mech.",
+      "description": "Freezes anything it damages. Magnetic: may merge its stats & text onto a friendly Mech.",
       "set": "hsx"
     },
     {
@@ -40193,7 +40193,7 @@
       "type": "creature",
       "attack": 2,
       "health": 2,
-      "description": "A 2/2 creature. Echo: replays all turn while you have the mana.",
+      "description": "A 2/2 creature.\nEcho: replays all turn while you have the mana.",
       "set": "hsx"
     },
     {
@@ -40210,7 +40210,7 @@
       "keywords": [
         "rush"
       ],
-      "description": "Rush. Echo: replays all turn while you have the mana.",
+      "description": "Rush.\nEcho: replays all turn while you have the mana.",
       "set": "hsx"
     },
     {
@@ -40286,7 +40286,7 @@
           "target": "creature"
         }
       ],
-      "description": "Give a creature +1/+2. Echo: replays all turn while you have the mana.",
+      "description": "Give a creature +1/+2.\nEcho: replays all turn while you have the mana.",
       "set": "hsx"
     },
     {
@@ -40309,7 +40309,7 @@
           "target": "any"
         }
       ],
-      "description": "Battlecry: Restore 2 health to any target. Echo: replays all turn while you have the mana.",
+      "description": "Battlecry: Restore 2 health to any target.\nEcho: replays all turn while you have the mana.",
       "set": "hsx"
     },
     {
@@ -40326,7 +40326,7 @@
       "keywords": [
         "deathtouch"
       ],
-      "description": "Deathtouch. Magnetic: may merge its stats and text onto a friendly Mech.",
+      "description": "Deathtouch.\nMagnetic: may merge its stats & text onto a friendly Mech.",
       "set": "hsx"
     },
     {
@@ -40344,7 +40344,7 @@
           "target": "all-creatures"
         }
       ],
-      "description": "Deal 1 damage to every creature. Echo: replays all turn while you have the mana.",
+      "description": "Deal 1 damage to every creature.\nEcho: replays all turn while you have the mana.",
       "set": "hsx"
     },
     {
@@ -40361,7 +40361,7 @@
       "keywords": [
         "taunt"
       ],
-      "description": "Taunt. Magnetic: may merge its stats and text onto a friendly Mech.",
+      "description": "Taunt.\nMagnetic: may merge its stats & text onto a friendly Mech.",
       "set": "hsx"
     },
     {
@@ -40415,7 +40415,7 @@
       "keywords": [
         "taunt"
       ],
-      "description": "Taunt. Echo: replays all turn while you have the mana.",
+      "description": "Taunt.\nEcho: replays all turn while you have the mana.",
       "set": "hsx"
     },
     {
@@ -40442,7 +40442,7 @@
           "name": "Microbot"
         }
       ],
-      "description": "Deathrattle: Summon two 1/1 Microbots. Magnetic: may merge its stats and text onto a friendly Mech. Echo: replays all turn while you have the mana.",
+      "description": "Deathrattle: Summon two 1/1 Microbots. Magnetic: may merge its stats & text onto a friendly Mech.\nEcho: replays all turn while you have the mana.",
       "set": "hsx"
     },
     {
@@ -40482,7 +40482,7 @@
           "type": "destroy-random"
         }
       ],
-      "description": "Deathrattle: Destroy a random enemy creature. Magnetic: may merge its stats and text onto a friendly Mech.",
+      "description": "Deathrattle: Destroy a random enemy creature. Magnetic: may merge its stats & text onto a friendly Mech.",
       "set": "hsx"
     },
     {
@@ -40495,7 +40495,7 @@
       "type": "creature",
       "attack": 3,
       "health": 3,
-      "description": "A 3/3 creature. Echo: replays all turn while you have the mana.",
+      "description": "A 3/3 creature.\nEcho: replays all turn while you have the mana.",
       "set": "hsx"
     },
     {
@@ -40521,7 +40521,7 @@
           "name": "Microbot"
         }
       ],
-      "description": "Deathrattle: Summon three 1/1 Microbots. Magnetic: may merge its stats and text onto a friendly Mech.",
+      "description": "Deathrattle: Summon three 1/1 Microbots. Magnetic: may merge its stats & text onto a friendly Mech.",
       "set": "hsx"
     },
     {
@@ -40557,7 +40557,7 @@
       "type": "creature",
       "attack": 6,
       "health": 5,
-      "description": "A 6/5 creature. Magnetic: may merge its stats and text onto a friendly Mech.",
+      "description": "A 6/5 creature. Magnetic: may merge its stats & text onto a friendly Mech.",
       "set": "hsx"
     },
     {
@@ -40577,7 +40577,7 @@
         "lifesteal",
         "rush"
       ],
-      "description": "Divine Shield. Taunt. Lifesteal. Rush. Magnetic: may merge its stats and text onto a friendly Mech.",
+      "description": "Divine Shield.\nTaunt.\nLifesteal.\nRush.\nMagnetic: may merge its stats & text onto a friendly Mech.",
       "set": "hsx"
     },
     {
@@ -40601,7 +40601,7 @@
           }
         ]
       },
-      "description": "At the end of your turn, deal 1 damage to every other character. Magnetic: may merge its stats and text onto a friendly Mech.",
+      "description": "At the end of your turn, deal 1 damage to every other character. Magnetic: may merge its stats & text onto a friendly Mech.",
       "set": "hsx"
     },
     {
@@ -40618,7 +40618,7 @@
       "keywords": [
         "elusive"
       ],
-      "description": "Elusive. Magnetic: may merge its stats and text onto a friendly Mech.",
+      "description": "Elusive.\nMagnetic: may merge its stats & text onto a friendly Mech.",
       "set": "hsx"
     },
     {
@@ -40641,7 +40641,7 @@
           "cost": 8
         }
       ],
-      "description": "Deathrattle: Summon a random 8-cost creature. Magnetic: may merge its stats and text onto a friendly Mech.",
+      "description": "Deathrattle: Summon a random 8-cost creature. Magnetic: may merge its stats & text onto a friendly Mech.",
       "set": "hsx"
     },
     {
@@ -40665,7 +40665,7 @@
           }
         ]
       },
-      "description": "Quest: Play 3 Pirates. Reward: Draw a weapon.",
+      "description": "Quest: Play 3 Pirates.\nReward: Draw a weapon.",
       "set": "hsx"
     },
     {
@@ -40690,7 +40690,7 @@
           }
         ]
       },
-      "description": "Quest: Play 3 different 1-Cost cards. Reward: Equip a 1/4 Light's Justice.",
+      "description": "Quest: Play 3 different 1-Cost cards.\nReward: Equip a 1/4 Light's Justice.",
       "set": "hsx"
     },
     {
@@ -40762,7 +40762,7 @@
         "lifesteal",
         "divine_shield"
       ],
-      "description": "Rush. Lifesteal. Divine Shield. Miniaturize: playing this adds a 1/1 Mini copy costing 1 to your hand.",
+      "description": "Rush.\nLifesteal.\nDivine Shield.\nMiniaturize: playing this adds a 1/1 Mini copy costing 1 to your hand.",
       "set": "hsx"
     },
     {
@@ -40820,7 +40820,7 @@
           ]
         }
       ],
-      "description": "Give a creature +2/+1 and draw a card."
+      "description": "Give a creature +2/+1 & draw a card."
     },
     {
       "id": "chamber_of_aspects",
@@ -41000,7 +41000,7 @@
           ]
         }
       ],
-      "description": "Restore 3 health to your hero and creatures."
+      "description": "Restore 3 health to your hero & creatures."
     },
     {
       "id": "forge_of_wills",
@@ -41026,7 +41026,7 @@
           ]
         }
       ],
-      "description": "Choose a friendly creature. Summon a Giant with its stats and Rush."
+      "description": "Choose a friendly creature. Summon a Giant with its stats & Rush."
     },
     {
       "id": "great_hall",
@@ -41054,7 +41054,7 @@
           ]
         }
       ],
-      "description": "Set a creature's Attack and Health to 3."
+      "description": "Set a creature's Attack & Health to 3."
     },
     {
       "id": "hiking_trail",
@@ -41255,7 +41255,7 @@
           ]
         }
       ],
-      "description": "Deal 1 damage to a creature and give it +2 Attack."
+      "description": "Deal 1 damage to a creature & give it +2 Attack."
     },
     {
       "id": "the_eternal_hold",
@@ -41336,7 +41336,7 @@
           ]
         }
       ],
-      "description": "Give a creature +2 Health and Taunt, then Freeze it."
+      "description": "Give a creature +2 Health & Taunt, then Freeze it."
     },
     {
       "id": "ultralisk_cavern",
@@ -41371,7 +41371,7 @@
           ]
         }
       ],
-      "description": "Deal 1 damage to the enemy hero and all enemy creatures. Deathrattle: Summon an 8/8 Ultralisk with Rush."
+      "description": "Deal 1 damage to the enemy hero & all enemy creatures.\nDeathrattle: Summon an 8/8 Ultralisk with Rush."
     },
     {
       "id": "underbelly_network",
@@ -41504,7 +41504,7 @@
       "cost": 1,
       "rarity": "common",
       "set": "paper",
-      "description": "Divine Shield. Battlecry: Target Mech or Beast gains +1/+1.",
+      "description": "Divine Shield.\nBattlecry: Target Mech or Beast gains +1/+1.",
       "type": "creature",
       "attack": 1,
       "health": 1,
@@ -41529,7 +41529,7 @@
       "cost": 1,
       "rarity": "common",
       "set": "paper",
-      "description": "Battlecry: Deal 1 damage. Spellburst: Bounce this creature back to your hand.",
+      "description": "Battlecry: Deal 1 damage.\nSpellburst: Bounce this creature back to your hand.",
       "type": "creature",
       "attack": 1,
       "health": 1,
@@ -41732,7 +41732,7 @@
       "cost": 2,
       "rarity": "common",
       "set": "paper",
-      "description": "Stealth. At the end of your turn, gain 2 life & restore 2 health to each creature you control.",
+      "description": "Stealth.\nAt the end of your turn, gain 2 life & restore 2 health to each creature you control.",
       "type": "creature",
       "attack": 2,
       "health": 2,
@@ -41825,7 +41825,7 @@
       "cost": 3,
       "rarity": "rare",
       "set": "paper",
-      "description": "Magnetic. Swing: Dredge. This card can Magnetize to Pirates as well as Mechs.",
+      "description": "Magnetic.\nSwing: Dredge. This card can Magnetize to Pirates as well as Mechs.",
       "type": "creature",
       "attack": 2,
       "health": 4,
@@ -41847,7 +41847,7 @@
       "cost": 10,
       "rarity": "legendary",
       "set": "paper",
-      "description": "Battlecry & Deathrattle: Gain 6 Armor. Inspire: Gain 3 Armor & Dredge. Charge, Reborn, Lifesteal & Windfury.",
+      "description": "Battlecry & Deathrattle: Gain 6 Armor.\nInspire: Gain 3 Armor & Dredge. Charge, Reborn, Lifesteal & Windfury.",
       "type": "creature",
       "attack": 3,
       "health": 3,
@@ -41893,7 +41893,7 @@
       "cost": 12,
       "rarity": "legendary",
       "set": "paper",
-      "description": "Charge & Windfury. Deathrattle: Dredge & Discover a Dinosaur.",
+      "description": "Charge & Windfury.\nDeathrattle: Dredge & Discover a Dinosaur.",
       "type": "creature",
       "attack": 8,
       "health": 8,
@@ -41948,7 +41948,7 @@
       "cost": 5,
       "rarity": "rare",
       "set": "paper",
-      "description": "Battlecry & Deathrattle: Investigate & lose 2 Life. Inspire: Discover a spell & lose 2 Life:",
+      "description": "Battlecry & Deathrattle: Investigate & lose 2 Life.\nInspire: Discover a spell & lose 2 Life:",
       "type": "creature",
       "attack": 4,
       "health": 6,
@@ -42000,7 +42000,7 @@
       "cost": 5,
       "rarity": "legendary",
       "set": "paper",
-      "description": "Impulsive & Windfury. Ponder: Target creature gains Divine Shield.",
+      "description": "Impulsive & Windfury.\nPonder: Target creature gains Divine Shield.",
       "type": "creature",
       "attack": 3,
       "health": 3,
@@ -42778,7 +42778,7 @@
       "cost": 3,
       "rarity": "rare",
       "set": "paper",
-      "description": "Battlecry: Scry 5. Deathrattle: Excavate.",
+      "description": "Battlecry: Scry 5.\nDeathrattle: Excavate.",
       "type": "creature",
       "attack": 3,
       "health": 3,
@@ -42848,7 +42848,7 @@
       "cost": 5,
       "rarity": "common",
       "set": "paper",
-      "description": "Battlecry: Quickdraw 3. Windfury. Deathrattle: Luck: Excavate.",
+      "description": "Battlecry: Quickdraw 3. Windfury.\nDeathrattle: Luck: Excavate.",
       "type": "creature",
       "attack": 2,
       "health": 6,
@@ -42911,7 +42911,7 @@
       "cost": 7,
       "rarity": "legendary",
       "set": "paper",
-      "description": "Impulsive, Firebreathing, Bushido & Taunt. Deathrattle: Excavate & Plunder.",
+      "description": "Impulsive, Firebreathing, Bushido & Taunt.\nDeathrattle: Excavate & Plunder.",
       "type": "creature",
       "attack": 9,
       "health": 6,
@@ -42936,7 +42936,7 @@
       "cost": 9,
       "rarity": "epic",
       "set": "paper",
-      "description": "Battlecry: Quickdraw 3. Rush, Trample, Divine Shield & Taunt. Deathrattle: Excavate.",
+      "description": "Battlecry: Quickdraw 3. Rush, Trample, Divine Shield & Taunt.\nDeathrattle: Excavate.",
       "type": "creature",
       "attack": 4,
       "health": 16,
@@ -42968,7 +42968,7 @@
       "cost": 20,
       "rarity": "legendary",
       "set": "paper",
-      "description": "Rush & Trample. Costs 1 less for each creature in your graveyard. Deathrattle: Excavate twice & Loot twice. ( Runes: (R) (G) )",
+      "description": "Rush & Trample. Costs 1 less for each creature in your graveyard.\nDeathrattle: Excavate twice & Loot twice. ( Runes: (R) (G) )",
       "type": "creature",
       "attack": 8,
       "health": 3,
@@ -43049,7 +43049,7 @@
       "cost": 4,
       "rarity": "legendary",
       "set": "paper",
-      "description": "If this creature has not attacked this turn, your other creatures have Windfury. Swing: Excavate.",
+      "description": "If this creature has not attacked this turn, your other creatures have Windfury.\nSwing: Excavate.",
       "type": "creature",
       "attack": 8,
       "health": 4,
@@ -43129,7 +43129,7 @@
       "cost": 2,
       "rarity": "common",
       "set": "paper",
-      "description": "( Runes: (U) ) Battlecry: Deal 2 damage to any target. Finale: Deal 2 damage to all enemies instead.",
+      "description": "( Runes: (U) ) Battlecry: Deal 2 damage to any target.\nFinale: Deal 2 damage to all enemies instead.",
       "type": "creature",
       "attack": 2,
       "health": 1,
@@ -43167,7 +43167,7 @@
       "cost": 9,
       "rarity": "epic",
       "set": "paper",
-      "description": "Hexproof. Emerge: Destroy all creatures. Inspire: Luck: Discover a God.",
+      "description": "Hexproof.\nEmerge: Destroy all creatures.\nInspire: Luck: Discover a God.",
       "type": "creature",
       "attack": 6,
       "health": 6,
@@ -43519,7 +43519,7 @@
       "cost": 7,
       "rarity": "legendary",
       "set": "paper",
-      "description": "Rush. Emerge: Deal 2 damage to all Non-Mech creatures.",
+      "description": "Rush.\nEmerge: Deal 2 damage to all Non-Mech creatures.",
       "type": "creature",
       "attack": 7,
       "health": 7,
@@ -43824,7 +43824,7 @@
       "cost": 5,
       "rarity": "epic",
       "set": "paper",
-      "description": "Battlecry: Planeshift. Inspire: Luck: Plunder.",
+      "description": "Battlecry: Planeshift.\nInspire: Luck: Plunder.",
       "type": "creature",
       "attack": 2,
       "health": 2,
@@ -43897,7 +43897,7 @@
       "cost": 5,
       "rarity": "uncommon",
       "set": "paper",
-      "description": "Miniaturize. Deathrattle: Planeshift.",
+      "description": "Miniaturize.\nDeathrattle: Planeshift.",
       "type": "creature",
       "attack": 6,
       "health": 5,
@@ -43919,7 +43919,7 @@
       "cost": 4,
       "rarity": "epic",
       "set": "paper",
-      "description": "Battlecry: Spark. Deathrattle: Shuffle this card back into your deck.",
+      "description": "Battlecry: Spark.\nDeathrattle: Shuffle this card back into your deck.",
       "type": "creature",
       "attack": 3,
       "health": 5,
@@ -43946,7 +43946,7 @@
       "cost": 3,
       "rarity": "rare",
       "set": "paper",
-      "description": "Battlecry: If you control a creature with 5 or more Attack, gain +2/+2. Deathrattle: Each player may Spark.",
+      "description": "Battlecry: If you control a creature with 5 or more Attack, gain +2/+2.\nDeathrattle: Each player may Spark.",
       "type": "creature",
       "attack": 3,
       "health": 3,
@@ -44016,7 +44016,7 @@
           }
         ]
       },
-      "description": "Secret: When an opponent casts a spell, Counter it and add a copy to your hand that costs (0)."
+      "description": "Secret: When an opponent casts a spell, Counter it & add a copy to your hand that costs (0)."
     },
     {
       "id": "time_stop",
@@ -44042,7 +44042,7 @@
       "cost": 5,
       "rarity": "rare",
       "set": "hs",
-      "description": "Battlecry and Inspire: Deal 4 damage to each hero.",
+      "description": "Battlecry & Inspire: Deal 4 damage to each hero.",
       "type": "creature",
       "attack": 5,
       "health": 5,
@@ -44251,7 +44251,7 @@
       "cost": 7,
       "rarity": "epic",
       "set": "hs",
-      "description": "Taunt. Costs (1) less for each Beast you've summoned this game.",
+      "description": "Taunt.\nCosts (1) less for each Beast you've summoned this game.",
       "type": "creature",
       "attack": 4,
       "health": 5,
@@ -44335,7 +44335,7 @@
       "cost": 4,
       "rarity": "legendary",
       "set": "hs",
-      "description": "Battlecry and Deathrattle: Add a random Poison to your hand.",
+      "description": "Battlecry & Deathrattle: Add a random Poison to your hand.",
       "type": "creature",
       "attack": 3,
       "health": 2,
@@ -44379,7 +44379,7 @@
       "cost": 4,
       "rarity": "common",
       "set": "hs",
-      "description": "Battlecry and Frenzy: Deal 1 damage to all other creatures.",
+      "description": "Battlecry & Frenzy: Deal 1 damage to all other creatures.",
       "type": "creature",
       "attack": 3,
       "health": 6,
@@ -44415,7 +44415,7 @@
       "cost": 4,
       "rarity": "rare",
       "set": "hs",
-      "description": "After your hero attacks and kills a creature, draw a card.",
+      "description": "After your hero attacks & kills a creature, draw a card.",
       "type": "weapon",
       "attack": 3,
       "durability": 0,
@@ -44537,7 +44537,7 @@
       "cost": 9,
       "rarity": "rare",
       "set": "hs",
-      "description": "Rush. Costs (1) less for each friendly Treant that died this game.",
+      "description": "Rush.\nCosts (1) less for each friendly Treant that died this game.",
       "type": "creature",
       "attack": 8,
       "health": 8,
@@ -44638,7 +44638,7 @@
       "cost": 2,
       "rarity": "rare",
       "set": "hs",
-      "description": "Battlecry: If your hero attacked this turn, gain +1 Attack and Rush.",
+      "description": "Battlecry: If your hero attacked this turn, gain +1 Attack & Rush.",
       "type": "creature",
       "attack": 3,
       "health": 2,
@@ -45119,7 +45119,7 @@
       "cost": 6,
       "rarity": "rare",
       "set": "hs",
-      "description": "Rush. Costs (1) less for each card you've played this turn.",
+      "description": "Rush.\nCosts (1) less for each card you've played this turn.",
       "type": "creature",
       "attack": 4,
       "health": 4
@@ -45202,7 +45202,7 @@
       "cost": 3,
       "rarity": "legendary",
       "set": "hs",
-      "description": "Your deck size and starting Health are 40.",
+      "description": "Your deck size & starting Health are 40.",
       "type": "creature",
       "attack": 3,
       "health": 4
@@ -45251,7 +45251,7 @@
       "cost": 2,
       "rarity": "common",
       "set": "hs",
-      "description": "Has +2 Attack and Charge while damaged.",
+      "description": "Has +2 Attack & Charge while damaged.",
       "type": "creature",
       "attack": 1,
       "health": 4
@@ -45450,7 +45450,7 @@
       "cost": 7,
       "rarity": "rare",
       "set": "hs",
-      "description": "Taunt. Costs (1) less for each card you played this game that didn't start in your deck.",
+      "description": "Taunt.\nCosts (1) less for each card you played this game that didn't start in your deck.",
       "type": "creature",
       "attack": 3,
       "health": 6,
@@ -45536,7 +45536,7 @@
       "cost": 5,
       "rarity": "epic",
       "set": "hs",
-      "description": "Rush. Costs (1) less for each friendly creature with a unique creature type.",
+      "description": "Rush.\nCosts (1) less for each friendly creature with a unique creature type.",
       "type": "creature",
       "attack": 5,
       "health": 5,
@@ -45562,7 +45562,7 @@
       "cost": 5,
       "rarity": "legendary",
       "set": "hs",
-      "description": "On your turn, your hero has +2 Attack and Windfury.",
+      "description": "On your turn, your hero has +2 Attack & Windfury.",
       "type": "creature",
       "attack": 4,
       "health": 5
@@ -45909,7 +45909,7 @@
       "cost": 2,
       "rarity": "common",
       "set": "hs",
-      "description": "Elusive. Your first spell each turn costs (1) less. Starship Piece",
+      "description": "Elusive.\nYour first spell each turn costs (1) less. Starship Piece",
       "type": "creature",
       "attack": 1,
       "health": 4
@@ -45945,7 +45945,7 @@
       "cost": 5,
       "rarity": "common",
       "set": "hs",
-      "description": "Battlecry, Spellburst, and Deathrattle: Deal 2 damage to all other creatures.",
+      "description": "Battlecry, Spellburst, & Deathrattle: Deal 2 damage to all other creatures.",
       "type": "creature",
       "attack": 3,
       "health": 5,
@@ -45989,7 +45989,7 @@
       "cost": 4,
       "rarity": "epic",
       "set": "hs",
-      "description": "Immune while attacking. At the end of EACH turn, swap this creature's Attack and Health.",
+      "description": "Immune while attacking. At the end of EACH turn, swap this creature's Attack & Health.",
       "type": "creature",
       "attack": 7,
       "health": 2,
@@ -46054,7 +46054,7 @@
       "cost": 2,
       "rarity": "common",
       "set": "hs",
-      "description": "Battlecry and Spellburst: Draw a Libram.",
+      "description": "Battlecry & Spellburst: Draw a Libram.",
       "type": "creature",
       "attack": 2,
       "health": 2,
@@ -46103,7 +46103,7 @@
       "cost": 3,
       "rarity": "rare",
       "set": "hs",
-      "description": "Stealth Each turn this is in your hand, swap its Attack and Health.",
+      "description": "Stealth Each turn this is in your hand, swap its Attack & Health.",
       "type": "creature",
       "attack": 2,
       "health": 5
@@ -46115,7 +46115,7 @@
       "cost": 3,
       "rarity": "common",
       "set": "hs",
-      "description": "Lifesteal Each turn this is in your hand, swap its Attack and Health.",
+      "description": "Lifesteal Each turn this is in your hand, swap its Attack & Health.",
       "type": "creature",
       "attack": 2,
       "health": 4
@@ -46127,7 +46127,7 @@
       "cost": 8,
       "rarity": "rare",
       "set": "hs",
-      "description": "Divine Shield, Rush Each turn this is in your hand, swap its Attack and Health.",
+      "description": "Divine Shield, Rush Each turn this is in your hand, swap its Attack & Health.",
       "type": "creature",
       "attack": 3,
       "health": 8
@@ -46139,7 +46139,7 @@
       "cost": 4,
       "rarity": "common",
       "set": "hs",
-      "description": "Rush Each turn this is in your hand, swap its Attack and Health.",
+      "description": "Rush Each turn this is in your hand, swap its Attack & Health.",
       "type": "creature",
       "attack": 2,
       "health": 6
@@ -46151,7 +46151,7 @@
       "cost": 2,
       "rarity": "common",
       "set": "hs",
-      "description": "Spell Damage +1 Each turn this is in your hand, swap its Attack and Health.",
+      "description": "Spell Damage +1 Each turn this is in your hand, swap its Attack & Health.",
       "type": "creature",
       "attack": 1,
       "health": 4
@@ -46189,7 +46189,7 @@
       "cost": 3,
       "rarity": "rare",
       "set": "hs",
-      "description": "While this creature has 3 or more Attack, it has Taunt and Lifesteal.",
+      "description": "While this creature has 3 or more Attack, it has Taunt & Lifesteal.",
       "type": "creature",
       "attack": 2,
       "health": 5
@@ -46257,7 +46257,7 @@
       "cost": 2,
       "rarity": "common",
       "set": "hs",
-      "description": "Restore 4 Health to your hero and gain +2 Attack this turn.",
+      "description": "Restore 4 Health to your hero & gain +2 Attack this turn.",
       "type": "sorcery",
       "effects": [
         {
@@ -46921,7 +46921,7 @@
       "cost": 3,
       "rarity": "epic",
       "set": "hs",
-      "description": "Frenzy and Honorable Kill: Draw a card.",
+      "description": "Frenzy & Honorable Kill: Draw a card.",
       "type": "creature",
       "attack": 1,
       "health": 5,
@@ -46952,7 +46952,7 @@
       "cost": 2,
       "rarity": "common",
       "set": "hs",
-      "description": "Deal 3 damage. Honorable Kill: Discover a spell from another class.",
+      "description": "Deal 3 damage.\nHonorable Kill: Discover a spell from another class.",
       "type": "sorcery",
       "honorableKill": [
         {
@@ -46976,7 +46976,7 @@
       "cost": 7,
       "rarity": "rare",
       "set": "hs",
-      "description": "Rush. Costs (1) less for each Outcast card you've played this game.",
+      "description": "Rush.\nCosts (1) less for each Outcast card you've played this game.",
       "type": "creature",
       "attack": 5,
       "health": 5,
@@ -47086,7 +47086,7 @@
       "cost": 4,
       "rarity": "rare",
       "set": "hs",
-      "description": "Also damages creatures next to whomever this attacks (and the enemy hero if a neighbor is missing).",
+      "description": "Also damages creatures next to whomever this attacks (& the enemy hero if a neighbor is missing).",
       "type": "creature",
       "attack": 5,
       "health": 2
@@ -47098,7 +47098,7 @@
       "cost": 2,
       "rarity": "common",
       "set": "hs",
-      "description": "Taunt. Can't attack. Has +3 Attack if you control a location.",
+      "description": "Taunt.\nCan't attack. Has +3 Attack if you control a location.",
       "type": "creature",
       "attack": 1,
       "health": 6
@@ -47244,7 +47244,7 @@
       "cost": 9,
       "rarity": "epic",
       "set": "hs",
-      "description": "At the end of your turn, steal 1 Attack and Health from all enemy creatures.",
+      "description": "At the end of your turn, steal 1 Attack & Health from all enemy creatures.",
       "type": "creature",
       "attack": 10,
       "health": 10,
@@ -47451,7 +47451,7 @@
       "cost": 2,
       "rarity": "rare",
       "set": "hs",
-      "description": "Stealth Has +3 Attack and Immune while attacking.",
+      "description": "Stealth Has +3 Attack & Immune while attacking.",
       "type": "creature",
       "attack": 1,
       "health": 2,
@@ -47508,7 +47508,7 @@
       "cost": 5,
       "rarity": "common",
       "set": "hs",
-      "description": "Stealth. Costs (1) less for each time the enemy hero took damage this turn.",
+      "description": "Stealth.\nCosts (1) less for each time the enemy hero took damage this turn.",
       "type": "creature",
       "attack": 5,
       "health": 3,
@@ -47594,7 +47594,7 @@
       "cost": 9,
       "rarity": "legendary",
       "set": "hs",
-      "description": "At the end of your turn, set the Attack and Health of all enemy creatures to 1.",
+      "description": "At the end of your turn, set the Attack & Health of all enemy creatures to 1.",
       "type": "creature",
       "attack": 8,
       "health": 7,
@@ -47619,7 +47619,7 @@
       "cost": 6,
       "rarity": "epic",
       "set": "hs",
-      "description": "Lifesteal Costs (1) if you've cast a Holy and Shadow spell this turn.",
+      "description": "Lifesteal Costs (1) if you've cast a Holy & Shadow spell this turn.",
       "type": "creature",
       "attack": 4,
       "health": 7,
@@ -47699,7 +47699,7 @@
       "cost": 4,
       "rarity": "rare",
       "set": "hs",
-      "description": "Stealth for 1 turn. Your creatures' Battlecries and Combos trigger twice.",
+      "description": "Stealth for 1 turn. Your creatures' Battlecries & Combos trigger twice.",
       "type": "creature",
       "attack": 0,
       "health": 3,
@@ -47810,7 +47810,7 @@
       "cost": 3,
       "rarity": "common",
       "set": "hs",
-      "description": "Draw a Naga and a spell.",
+      "description": "Draw a Naga & a spell.",
       "type": "sorcery",
       "effects": [
         {
@@ -47926,7 +47926,7 @@
       "cost": 3,
       "rarity": "common",
       "set": "hs",
-      "description": "Battlecry and Deathrattle: Summon a 1/1 Piranha Swarmer.",
+      "description": "Battlecry & Deathrattle: Summon a 1/1 Piranha Swarmer.",
       "type": "creature",
       "attack": 3,
       "health": 2,
@@ -48060,7 +48060,7 @@
       "cost": 2,
       "rarity": "epic",
       "set": "hs",
-      "description": "Magnetic, Rush Can Magnetize to Mechs and Beasts.",
+      "description": "Magnetic, Rush Can Magnetize to Mechs & Beasts.",
       "type": "creature",
       "attack": 3,
       "health": 1
@@ -48171,7 +48171,7 @@
       "cost": 7,
       "rarity": "legendary",
       "set": "hs",
-      "description": "Titan Minions to the left of this have Rush, and ones to the right have Lifesteal.",
+      "description": "Titan Minions to the left of this have Rush, & ones to the right have Lifesteal.",
       "type": "creature",
       "attack": 5,
       "health": 9
@@ -48183,7 +48183,7 @@
       "cost": 3,
       "rarity": "common",
       "set": "hs",
-      "description": "Magnetic Stealth for 1 turn.",
+      "description": "Magnetic\nStealth for 1 turn.",
       "type": "creature",
       "attack": 3,
       "health": 4,
@@ -48258,7 +48258,7 @@
       "cost": 9,
       "rarity": "rare",
       "set": "hs",
-      "description": "Rush. Costs (1) less for each creature on the battlefield.",
+      "description": "Rush.\nCosts (1) less for each creature on the battlefield.",
       "type": "creature",
       "attack": 3,
       "health": 4
@@ -48722,7 +48722,7 @@
       "cost": 3,
       "rarity": "common",
       "set": "hs",
-      "description": "Battlecry and Deathrattle: Summon a 2/2 Treant.",
+      "description": "Battlecry & Deathrattle: Summon a 2/2 Treant.",
       "type": "creature",
       "attack": 2,
       "health": 2,
@@ -48908,7 +48908,7 @@
       "cost": 5,
       "rarity": "uncommon",
       "set": "paper",
-      "description": "Harried Dash 1 Sorcery \u2014 Adventure Create a 1/1 Beast creature token with Rush. Ward: Discard a card. Swing: Gain +1/+1.",
+      "description": "Harried Dash 1 Sorcery \u2014 Adventure Create a 1/1 Beast creature token with Rush. Ward: Discard a card.\nSwing: Gain +1/+1.",
       "type": "creature",
       "attack": 3,
       "health": 3,
@@ -50194,7 +50194,7 @@
       "cost": 3,
       "rarity": "common",
       "set": "hs",
-      "description": "Battlecry: Add a random Fire Mage and Fire Warlock spell to your hand.",
+      "description": "Battlecry: Add a random Fire Mage & Fire Warlock spell to your hand.",
       "type": "creature",
       "attack": 3,
       "health": 3,
@@ -50237,7 +50237,7 @@
       "cost": 4,
       "rarity": "legendary",
       "set": "hs",
-      "description": "Battlecry and Deathrattle: Add a random Toxin card to your hand.",
+      "description": "Battlecry & Deathrattle: Add a random Toxin card to your hand.",
       "type": "creature",
       "attack": 3,
       "health": 2,
@@ -50372,7 +50372,7 @@
       "cost": 3,
       "rarity": "common",
       "set": "hs",
-      "description": "Deathrattle: Get a random Holy and Shadow spell.",
+      "description": "Deathrattle: Get a random Holy & Shadow spell.",
       "type": "creature",
       "attack": 3,
       "health": 4,
@@ -50610,7 +50610,7 @@
       "cost": 3,
       "rarity": "common",
       "set": "hs",
-      "description": "Lifesteal. Deal 4 damage randomly split among all enemy creatures.",
+      "description": "Lifesteal.\nDeal 4 damage randomly split among all enemy creatures.",
       "type": "sorcery",
       "effects": [
         {
@@ -50835,7 +50835,7 @@
       "cost": 1,
       "rarity": "common",
       "set": "hs",
-      "description": "Battlecry: Destroy a friendly creature and gain +2/+2.",
+      "description": "Battlecry: Destroy a friendly creature & gain +2/+2.",
       "type": "creature",
       "attack": 1,
       "health": 1,
@@ -50958,7 +50958,7 @@
       "cost": 5,
       "rarity": "common",
       "set": "hs",
-      "description": "Gain 5 Armor. Summon a random 5-Cost creature and give it Taunt.",
+      "description": "Gain 5 Armor. Summon a random 5-Cost creature & give it Taunt.",
       "type": "sorcery",
       "effects": [
         {
@@ -51050,7 +51050,7 @@
       "cost": 1,
       "rarity": "common",
       "set": "hs",
-      "description": "Summon two random 1-Cost creatures. Overload: (1)",
+      "description": "Summon two random 1-Cost creatures.\nOverload: (1)",
       "type": "sorcery",
       "overload": 1,
       "effects": [
@@ -51201,7 +51201,7 @@
       "cost": 5,
       "rarity": "rare",
       "set": "hs",
-      "description": "Deal 10 damage randomly split among all enemy creatures. Overload: (1)",
+      "description": "Deal 10 damage randomly split among all enemy creatures.\nOverload: (1)",
       "type": "sorcery",
       "overload": 1,
       "effects": [
@@ -51296,7 +51296,7 @@
       "cost": 0,
       "rarity": "common",
       "set": "hs",
-      "description": "Refresh 2 Mana Crystals. Overload: (2)",
+      "description": "Refresh 2 Mana Crystals.\nOverload: (2)",
       "type": "sorcery",
       "overload": 2,
       "effects": [
@@ -51350,7 +51350,7 @@
       "cost": 4,
       "rarity": "rare",
       "set": "hs",
-      "description": "Lifesteal. Deal 10 damage randomly split among all creatures. Overload: (1)",
+      "description": "Lifesteal.\nDeal 10 damage randomly split among all creatures.\nOverload: (1)",
       "type": "sorcery",
       "overload": 1,
       "effects": [
@@ -51517,7 +51517,7 @@
       "cost": 5,
       "rarity": "rare",
       "set": "hs",
-      "description": "Deal 15 damage randomly split among all creatures. Overload: (1)",
+      "description": "Deal 15 damage randomly split among all creatures.\nOverload: (1)",
       "type": "sorcery",
       "overload": 1,
       "effects": [
@@ -51651,7 +51651,7 @@
       "cost": 5,
       "rarity": "common",
       "set": "hs",
-      "description": "Taunt Deathrattle: Draw a Holy spell and a Shadow spell.",
+      "description": "Taunt\nDeathrattle: Draw a Holy spell & a Shadow spell.",
       "type": "creature",
       "attack": 5,
       "health": 5,
@@ -51696,7 +51696,7 @@
       "cost": 2,
       "rarity": "common",
       "set": "hs",
-      "description": "Draw a card. Outcast: Draw another.",
+      "description": "Draw a card.\nOutcast: Draw another.",
       "type": "sorcery",
       "effects": [
         {
@@ -51743,7 +51743,7 @@
       "cost": 4,
       "rarity": "rare",
       "set": "hs",
-      "description": "Rush Outcast: Gain Immune this turn.",
+      "description": "Rush\nOutcast: Gain Immune this turn.",
       "type": "creature",
       "attack": 5,
       "health": 3,
@@ -51786,7 +51786,7 @@
       "cost": 5,
       "rarity": "common",
       "set": "hs",
-      "description": "Taunt Battlecry: Summon a Jade Golem.",
+      "description": "Taunt\nBattlecry: Summon a Jade Golem.",
       "type": "creature",
       "attack": 3,
       "health": 6,
@@ -51807,7 +51807,7 @@
       "cost": 1,
       "rarity": "common",
       "set": "hs",
-      "description": "Stealth Deathrattle: Summon a Jade Golem.",
+      "description": "Stealth\nDeathrattle: Summon a Jade Golem.",
       "type": "creature",
       "attack": 1,
       "health": 1,
@@ -51888,7 +51888,7 @@
       "cost": 6,
       "rarity": "legendary",
       "set": "hs",
-      "description": "Battlecry and Deathrattle: Summon a Jade Golem.",
+      "description": "Battlecry & Deathrattle: Summon a Jade Golem.",
       "type": "creature",
       "attack": 6,
       "health": 3,
@@ -51914,7 +51914,7 @@
       "cost": 0,
       "rarity": "common",
       "set": "hs",
-      "description": "Taunt Battlecry: Add a random Shaman spell to your hand.",
+      "description": "Taunt\nBattlecry: Add a random Shaman spell to your hand.",
       "type": "creature",
       "attack": 0,
       "health": 1,
@@ -51939,7 +51939,7 @@
       "cost": 6,
       "rarity": "common",
       "set": "hs",
-      "description": "Rush Deathrattle: Summon a 2/2 copy of another creature in your deck.",
+      "description": "Rush\nDeathrattle: Summon a 2/2 copy of another creature in your deck.",
       "type": "creature",
       "attack": 4,
       "health": 4,
@@ -51964,7 +51964,7 @@
       "cost": 4,
       "rarity": "rare",
       "set": "hs",
-      "description": "Rush Battlecry: Gain +3 Attack this turn.",
+      "description": "Rush\nBattlecry: Gain +3 Attack this turn.",
       "type": "creature",
       "attack": 2,
       "health": 5,
@@ -51986,7 +51986,7 @@
       "cost": 3,
       "rarity": "rare",
       "set": "hs",
-      "description": "Taunt Deathrattle: Get a Void Soul.",
+      "description": "Taunt\nDeathrattle: Get a Void Soul.",
       "type": "creature",
       "attack": 3,
       "health": 4,
@@ -52010,7 +52010,7 @@
       "cost": 5,
       "rarity": "rare",
       "set": "hs",
-      "description": "Rush Deathrattle: Summon three random 1-Cost creatures.",
+      "description": "Rush\nDeathrattle: Summon three random 1-Cost creatures.",
       "type": "creature",
       "attack": 6,
       "health": 3,
@@ -52033,7 +52033,7 @@
       "cost": 4,
       "rarity": "legendary",
       "set": "hs",
-      "description": "Stealth Deathrattle: Summon a 4/2 Forsaken Lilian that attacks a random enemy.",
+      "description": "Stealth\nDeathrattle: Summon a 4/2 Forsaken Lilian that attacks a random enemy.",
       "type": "creature",
       "attack": 4,
       "health": 2,
@@ -52058,7 +52058,7 @@
       "cost": 6,
       "rarity": "common",
       "set": "hs",
-      "description": "Taunt Deathrattle: Get a random Rewind card.",
+      "description": "Taunt\nDeathrattle: Get a random Rewind card.",
       "type": "creature",
       "attack": 6,
       "health": 6,
@@ -52082,7 +52082,7 @@
       "cost": 6,
       "rarity": "common",
       "set": "hs",
-      "description": "Taunt Deathrattle: Deal 8 damage randomly split among all enemy creatures.",
+      "description": "Taunt\nDeathrattle: Deal 8 damage randomly split among all enemy creatures.",
       "type": "creature",
       "attack": 4,
       "health": 8,
@@ -52107,7 +52107,7 @@
       "cost": 3,
       "rarity": "common",
       "set": "hs",
-      "description": "Rush Battlecry: If you control a creature with 4 or more Attack, gain +2/+2.",
+      "description": "Rush\nBattlecry: If you control a creature with 4 or more Attack, gain +2/+2.",
       "type": "creature",
       "attack": 3,
       "health": 3,
@@ -52138,7 +52138,7 @@
       "cost": 6,
       "rarity": "common",
       "set": "hs",
-      "description": "Taunt Battlecry: Adapt.",
+      "description": "Taunt\nBattlecry: Adapt.",
       "type": "creature",
       "attack": 6,
       "health": 6,
@@ -52160,7 +52160,7 @@
       "cost": 5,
       "rarity": "rare",
       "set": "hs",
-      "description": "Rush Battlecry: Excavate a treasure.",
+      "description": "Rush\nBattlecry: Excavate a treasure.",
       "type": "creature",
       "attack": 6,
       "health": 5,
@@ -52182,7 +52182,7 @@
       "cost": 2,
       "rarity": "rare",
       "set": "hs",
-      "description": "Divine Shield Deathrattle: Draw a Holy spell.",
+      "description": "Divine Shield\nDeathrattle: Draw a Holy spell.",
       "type": "creature",
       "attack": 2,
       "health": 1,
@@ -52207,7 +52207,7 @@
       "cost": 4,
       "rarity": "rare",
       "set": "hs",
-      "description": "Taunt Deathrattle: Excavate a treasure.",
+      "description": "Taunt\nDeathrattle: Excavate a treasure.",
       "type": "creature",
       "attack": 4,
       "health": 5,
@@ -52385,7 +52385,7 @@
       "attack": 0,
       "health": 2,
       "colossalOf": "Wickerfang",
-      "description": "At the end of your turn, this and Wickerfang gain +1/+1.",
+      "description": "At the end of your turn, this & Wickerfang gain +1/+1.",
       "ongoing": {
         "on": "turn-end",
         "effects": [
@@ -52494,7 +52494,7 @@
         "token_ozumats_tentacle",
         "token_ozumats_tentacle"
       ],
-      "description": "Colossal +6. Deathrattle: Destroy a random enemy creature for each Ozumat's Tentacle.",
+      "description": "Colossal +6.\nDeathrattle: Destroy a random enemy creature for each Ozumat's Tentacle.",
       "keywords": [
         "deathrattle"
       ],
@@ -52516,7 +52516,7 @@
       "attack": 2,
       "health": 1,
       "colossalOf": "Frost Queen Sindragosa",
-      "description": "Rush. Freezes any creature it damages.",
+      "description": "Rush.\nFreezes any creature it damages.",
       "keywords": [
         "rush",
         "freezer"
@@ -52561,7 +52561,7 @@
       "attack": 0,
       "health": 8,
       "colossalOf": "Colaque",
-      "description": "Taunt. Deathrattle: Gain 8 Armor.",
+      "description": "Taunt.\nDeathrattle: Gain 8 Armor.",
       "keywords": [
         "taunt",
         "deathrattle"
@@ -52662,7 +52662,7 @@
         "token_hydralodon_head",
         "token_hydralodon_head"
       ],
-      "description": "Colossal +2. Battlecry: Give your Hydralodon Heads Rush.",
+      "description": "Colossal +2.\nBattlecry: Give your Hydralodon Heads Rush.",
       "tribe": "Beast",
       "effects": [
         {
@@ -52754,7 +52754,7 @@
       "attack": 2,
       "health": 6,
       "colossalOf": "Nellie, the Great Thresher",
-      "description": "Taunt. Deathrattle: Add 3 Pirates to your hand.",
+      "description": "Taunt.\nDeathrattle: Add 3 Pirates to your hand.",
       "keywords": [
         "taunt",
         "deathrattle"
@@ -52782,7 +52782,7 @@
       "colossal": [
         "token_nellies_pirate_ship"
       ],
-      "description": "Colossal +1. Battlecry: Discover 3 Pirates to crew Nellie's Ship.",
+      "description": "Colossal +1.\nBattlecry: Discover 3 Pirates to crew Nellie's Ship.",
       "tribe": "Beast",
       "effects": [
         {
@@ -52806,7 +52806,7 @@
       "attack": 2,
       "health": 1,
       "colossalOf": "Crabatoa",
-      "description": "Rush. Deathrattle: Equip a 2/1 Claw.",
+      "description": "Rush.\nDeathrattle: Equip a 2/1 Claw.",
       "keywords": [
         "rush",
         "deathrattle"
@@ -52948,7 +52948,7 @@
       "cost": 3,
       "rarity": "epic",
       "set": "hs",
-      "description": "Stealth Deathrattle: Herald .",
+      "description": "Stealth\nDeathrattle: Herald .",
       "type": "creature",
       "attack": 4,
       "health": 1,
@@ -52991,7 +52991,7 @@
       "cost": 3,
       "rarity": "common",
       "set": "hs",
-      "description": "Rush Battlecry: Herald .",
+      "description": "Rush\nBattlecry: Herald .",
       "type": "creature",
       "attack": 3,
       "health": 1,
@@ -53013,7 +53013,7 @@
       "cost": 2,
       "rarity": "rare",
       "set": "hs",
-      "description": "Taunt Battlecry: Herald .",
+      "description": "Taunt\nBattlecry: Herald .",
       "type": "creature",
       "attack": 0,
       "health": 2,
@@ -53052,7 +53052,7 @@
       "cost": 5,
       "rarity": "common",
       "set": "hs",
-      "description": "Taunt Battlecry: Herald .",
+      "description": "Taunt\nBattlecry: Herald .",
       "type": "creature",
       "attack": 5,
       "health": 4,
@@ -53073,7 +53073,7 @@
       "cost": 4,
       "rarity": "common",
       "set": "hs",
-      "description": "Lifesteal Battlecry: Herald .",
+      "description": "Lifesteal\nBattlecry: Herald .",
       "type": "creature",
       "attack": 3,
       "health": 5,
@@ -53164,7 +53164,7 @@
         "token_charged_hand_of_alakir",
         "token_charged_hand_of_alakir"
       ],
-      "description": "Colossal +2. Rush, Windfury. Battlecry: Get 2 creatures with Cost equal to this creature's Attack. They cost (1).",
+      "description": "Colossal +2. Rush, Windfury.\nBattlecry: Get 2 creatures with Cost equal to this creature's Attack. They cost (1).",
       "keywords": [
         "rush",
         "windfury"
@@ -53274,7 +53274,7 @@
         "token_chos_arm",
         "token_galls_arm"
       ],
-      "description": "Colossal +2. Your Arms and Soldiers destroy creatures in the enemy's deck instead.",
+      "description": "Colossal +2. Your Arms & Soldiers destroy creatures in the enemy's deck instead.",
       "armsHitEnemyDeck": true
     },
     {
@@ -53373,7 +53373,7 @@
       "cost": 2,
       "rarity": "common",
       "set": "hs",
-      "description": "Set a creature's Attack and Health to 3.",
+      "description": "Set a creature's Attack & Health to 3.",
       "type": "sorcery",
       "effects": [
         {
@@ -53456,7 +53456,7 @@
       "cost": 3,
       "rarity": "rare",
       "set": "hs",
-      "description": "Rush Battlecry: Draw a Rush creature from your deck.",
+      "description": "Rush\nBattlecry: Draw a Rush creature from your deck.",
       "type": "creature",
       "attack": 4,
       "health": 1,
@@ -53503,7 +53503,7 @@
       "cost": 3,
       "rarity": "common",
       "set": "hs",
-      "description": "Battlecry: Set a creature's Attack and Health to 3.",
+      "description": "Battlecry: Set a creature's Attack & Health to 3.",
       "type": "creature",
       "attack": 3,
       "health": 4,
@@ -53569,7 +53569,7 @@
       "cost": 2,
       "rarity": "common",
       "set": "hs",
-      "description": "Set a creature's Attack and Health to 1.",
+      "description": "Set a creature's Attack & Health to 1.",
       "type": "sorcery",
       "effects": [
         {
@@ -53593,7 +53593,7 @@
       "set": "hs",
       "type": "hero",
       "armor": 5,
-      "description": "Battlecry: Summon random Demons (1/2/4 by Invokes). Maxed: also equip a 5/2 Claw.",
+      "description": "Battlecry: Summon random Demons (1/2/4 by Invokes).\nMaxed: also equip a 5/2 Claw.",
       "effects": [
         {
           "type": "galakrond",
@@ -53625,7 +53625,7 @@
       "set": "hs",
       "type": "hero",
       "armor": 5,
-      "description": "Battlecry: Draw cards that cost (0) (1/2/4 by Invokes). Maxed: also equip a 5/2 Claw.",
+      "description": "Battlecry: Draw cards that cost (0) (1/2/4 by Invokes).\nMaxed: also equip a 5/2 Claw.",
       "effects": [
         {
           "type": "galakrond",
@@ -53655,7 +53655,7 @@
       "set": "hs",
       "type": "hero",
       "armor": 5,
-      "description": "Battlecry: Summon two Storms with Rush (2/2, 4/4, 8/8 by Invokes). Maxed: also equip a 5/2 Claw.",
+      "description": "Battlecry: Summon two Storms with Rush (2/2, 4/4, 8/8 by Invokes).\nMaxed: also equip a 5/2 Claw.",
       "effects": [
         {
           "type": "galakrond",
@@ -53689,7 +53689,7 @@
       "set": "hs",
       "type": "hero",
       "armor": 5,
-      "description": "Battlecry: Draw creatures and give them +4/+4 (1/2/4 by Invokes). Maxed: also equip a 5/2 Claw.",
+      "description": "Battlecry: Draw creatures & give them +4/+4 (1/2/4 by Invokes).\nMaxed: also equip a 5/2 Claw.",
       "effects": [
         {
           "type": "galakrond",
@@ -53717,7 +53717,7 @@
       "set": "hs",
       "type": "hero",
       "armor": 5,
-      "description": "Battlecry: Destroy random enemy creatures (1/2/4 by Invokes). Maxed: also equip a 5/2 Claw.",
+      "description": "Battlecry: Destroy random enemy creatures (1/2/4 by Invokes).\nMaxed: also equip a 5/2 Claw.",
       "effects": [
         {
           "type": "galakrond",
@@ -53784,7 +53784,7 @@
       "cost": 4,
       "rarity": "common",
       "set": "hs",
-      "description": "Rush Battlecry: Invoke Galakrond.",
+      "description": "Rush\nBattlecry: Invoke Galakrond.",
       "type": "creature",
       "attack": 2,
       "health": 2,
@@ -53805,7 +53805,7 @@
       "cost": 5,
       "rarity": "common",
       "set": "hs",
-      "description": "Taunt Battlecry: Invoke Galakrond.",
+      "description": "Taunt\nBattlecry: Invoke Galakrond.",
       "type": "creature",
       "attack": 4,
       "health": 5,
@@ -54042,7 +54042,7 @@
       "cost": 4,
       "rarity": "common",
       "set": "hs",
-      "description": "Divine Shield Battlecry: Give your C'Thun +3/+3 (wherever it is).",
+      "description": "Divine Shield\nBattlecry: Give your C'Thun +3/+3 (wherever it is).",
       "type": "creature",
       "attack": 4,
       "health": 2,
@@ -54065,7 +54065,7 @@
       "cost": 2,
       "rarity": "common",
       "set": "hs",
-      "description": "Taunt Battlecry: Give your C'Thun +1/+1 and Taunt (wherever it is).",
+      "description": "Taunt\nBattlecry: Give your C'Thun +1/+1 & Taunt (wherever it is).",
       "type": "creature",
       "attack": 1,
       "health": 4,
@@ -54109,7 +54109,7 @@
       "cost": 6,
       "rarity": "common",
       "set": "hs",
-      "description": "Taunt Battlecry: Give your C'Thun +4/+4 (wherever it is).",
+      "description": "Taunt\nBattlecry: Give your C'Thun +4/+4 (wherever it is).",
       "type": "creature",
       "attack": 5,
       "health": 7,
@@ -54379,7 +54379,7 @@
       "cost": 5,
       "rarity": "common",
       "set": "hs",
-      "description": "Rush Frenzy: Draw a card.",
+      "description": "Rush\nFrenzy: Draw a card.",
       "type": "creature",
       "attack": 4,
       "health": 6,
@@ -54406,7 +54406,7 @@
       "cost": 6,
       "rarity": "common",
       "set": "hs",
-      "description": "Rush Spellburst: Gain Divine Shield.",
+      "description": "Rush\nSpellburst: Gain Divine Shield.",
       "type": "creature",
       "attack": 6,
       "health": 6,
@@ -54433,7 +54433,7 @@
       "cost": 3,
       "rarity": "common",
       "set": "hs",
-      "description": "Lifesteal Spellburst: Attack a random enemy creature.",
+      "description": "Lifesteal\nSpellburst: Attack a random enemy creature.",
       "type": "creature",
       "attack": 5,
       "health": 1,
@@ -54458,7 +54458,7 @@
       "cost": 2,
       "rarity": "common",
       "set": "hs",
-      "description": "Divine Shield Spellburst: Draw a Draenei.",
+      "description": "Divine Shield\nSpellburst: Draw a Draenei.",
       "type": "creature",
       "attack": 2,
       "health": 1,
@@ -54485,7 +54485,7 @@
       "cost": 8,
       "rarity": "rare",
       "set": "hs",
-      "description": "Elusive, Taunt Spellburst: Give your hero +8 Attack this turn and gain 8 Armor.",
+      "description": "Elusive, Taunt Spellburst: Give your hero +8 Attack this turn & gain 8 Armor.",
       "type": "creature",
       "attack": 8,
       "health": 8,
@@ -54555,7 +54555,7 @@
       "cost": 3,
       "rarity": "rare",
       "set": "hs",
-      "description": "Divine Shield Spellburst: Gain Divine Shield.",
+      "description": "Divine Shield\nSpellburst: Gain Divine Shield.",
       "type": "creature",
       "attack": 4,
       "health": 2,
@@ -54602,7 +54602,7 @@
       "cost": 5,
       "rarity": "rare",
       "set": "hs",
-      "description": "Rush Battlecry: Double this creature's Attack.",
+      "description": "Rush\nBattlecry: Double this creature's Attack.",
       "type": "creature",
       "attack": 3,
       "health": 5,
@@ -54707,7 +54707,7 @@
       "type": "creature",
       "attack": 3,
       "health": 7,
-      "description": "Battlecry: Deal 4 damage to this creature. Overheal: Deal 2 damage to all enemy creatures.",
+      "description": "Battlecry: Deal 4 damage to this creature.\nOverheal: Deal 2 damage to all enemy creatures.",
       "keywords": [
         "battlecry"
       ],
@@ -54735,7 +54735,7 @@
       "type": "creature",
       "attack": 4,
       "health": 8,
-      "description": "Battlecry: Deal 4 damage to this creature. Overheal: Deal 5 damage to a random enemy.",
+      "description": "Battlecry: Deal 4 damage to this creature.\nOverheal: Deal 5 damage to a random enemy.",
       "keywords": [
         "battlecry"
       ],
@@ -54780,7 +54780,7 @@
       "type": "creature",
       "attack": 6,
       "health": 6,
-      "description": "Taunt. Corrupt: This costs (0).",
+      "description": "Taunt.\nCorrupt: This costs (0).",
       "keywords": [
         "taunt"
       ],
@@ -54796,7 +54796,7 @@
       "type": "creature",
       "attack": 4,
       "health": 4,
-      "description": "Rush. Corrupt: Gain +4/+4.",
+      "description": "Rush.\nCorrupt: Gain +4/+4.",
       "keywords": [
         "rush"
       ],
@@ -54813,7 +54813,7 @@
       "type": "creature",
       "attack": 3,
       "health": 2,
-      "description": "Divine Shield. Corrupt: Gain Rush.",
+      "description": "Divine Shield.\nCorrupt: Gain Rush.",
       "keywords": [
         "divine_shield"
       ],
@@ -54830,7 +54830,7 @@
       "type": "creature",
       "attack": 3,
       "health": 5,
-      "description": "Battlecry: Deal 3 damage to a creature. Corrupt: Deal 12 instead.",
+      "description": "Battlecry: Deal 3 damage to a creature.\nCorrupt: Deal 12 instead.",
       "keywords": [
         "battlecry"
       ],
@@ -54854,7 +54854,7 @@
       "type": "creature",
       "attack": 3,
       "health": 4,
-      "description": "Battlecry: Restore 4 Health. Corrupt: Deal 4 damage instead.",
+      "description": "Battlecry: Restore 4 Health.\nCorrupt: Deal 4 damage instead.",
       "keywords": [
         "battlecry"
       ],
@@ -54890,7 +54890,7 @@
       "type": "creature",
       "attack": 0,
       "health": 5,
-      "description": "Your other creatures have +1 Attack. Corrupt: This gains +4 Attack.",
+      "description": "Your other creatures have +1 Attack.\nCorrupt: This gains +4 Attack.",
       "aura": {
         "attack": 1,
         "others": true
@@ -54907,7 +54907,7 @@
       "type": "creature",
       "attack": 4,
       "health": 4,
-      "description": "Taunt. Battlecry: Summon 2 copies of this. Corrupt: Fill your board with copies.",
+      "description": "Taunt.\nBattlecry: Summon 2 copies of this.\nCorrupt: Fill your board with copies.",
       "keywords": [
         "taunt",
         "battlecry"
@@ -54982,7 +54982,7 @@
       "attack": 3,
       "health": 5,
       "token": true,
-      "description": "Corrupted. Battlecry: Deal 12 damage to a creature.",
+      "description": "Corrupted.\nBattlecry: Deal 12 damage to a creature.",
       "keywords": [
         "battlecry"
       ],
@@ -55006,7 +55006,7 @@
       "attack": 3,
       "health": 4,
       "token": true,
-      "description": "Corrupted. Battlecry: Deal 4 damage.",
+      "description": "Corrupted.\nBattlecry: Deal 4 damage.",
       "keywords": [
         "battlecry"
       ],
@@ -55063,7 +55063,7 @@
       "attack": 4,
       "health": 4,
       "token": true,
-      "description": "Corrupted. Taunt. Battlecry: Fill your board with copies of this.",
+      "description": "Corrupted. Taunt.\nBattlecry: Fill your board with copies of this.",
       "keywords": [
         "taunt",
         "battlecry"
@@ -55389,7 +55389,7 @@
       "rarity": "legendary",
       "set": "paper",
       "token": true,
-      "description": "Arrival: Each player summons a 2/1 Dragon creature token.\nAll creatures have +1/+1 and Rush.\nChaos: Each player summons two 2/1 Dragon creature tokens.\nDeparture: Each player loses 2 life.",
+      "description": "Arrival: Each player summons a 2/1 Dragon creature token.\nAll creatures have +1/+1 & Rush.\nChaos: Each player summons two 2/1 Dragon creature tokens.\nDeparture: Each player loses 2 life.",
       "arrival": [
         {
           "type": "summon",
@@ -56028,7 +56028,7 @@
           "health": 4
         }
       ],
-      "description": "Give +4/+4 to all minions in your hand, deck, and battlefield."
+      "description": "Give +4/+4 to all minions in your hand, deck, & battlefield."
     },
     {
       "id": "onyx_magescribe",
