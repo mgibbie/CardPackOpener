@@ -38431,26 +38431,6 @@
       "description": "Battlecry: you draw a card & you lose 1 life.."
     },
     {
-      "id": "gifted_aetherborn",
-      "name": "Gifted Aetherborn",
-      "colors": [
-        "B"
-      ],
-      "cardClass": "neutral",
-      "cost": 2,
-      "rarity": "common",
-      "set": "wubrg",
-      "type": "creature",
-      "attack": 2,
-      "health": 3,
-      "tribe": "Aetherborn Vampire",
-      "keywords": [
-        "deathtouch",
-        "lifesteal"
-      ],
-      "description": "Deathtouch.\nLifesteal."
-    },
-    {
       "id": "walking_corpse",
       "name": "Walking Corpse",
       "colors": [
@@ -57874,6 +57854,119 @@
           "type": "damage",
           "value": 3,
           "target": "enemy-hero"
+        }
+      ]
+    },
+    {
+      "id": "returned_reveler",
+      "name": "Returned Reveler",
+      "type": "creature",
+      "cost": 2,
+      "colors": [
+        "B"
+      ],
+      "cardClass": "neutral",
+      "attack": 1,
+      "health": 3,
+      "rarity": "common",
+      "set": "wubrg",
+      "tribe": "Undead",
+      "keywords": [
+        "deathrattle"
+      ],
+      "description": "Deathrattle: Each player mills 3 cards.",
+      "deathrattle": [
+        {
+          "type": "mill",
+          "value": 3,
+          "target": "all"
+        }
+      ]
+    },
+    {
+      "id": "death_baron",
+      "name": "Death Baron",
+      "type": "creature",
+      "cost": 3,
+      "colors": [
+        "B"
+      ],
+      "cardClass": "neutral",
+      "attack": 2,
+      "health": 2,
+      "rarity": "rare",
+      "set": "wubrg",
+      "tribe": "Undead",
+      "keywords": [],
+      "description": "Your other Undead have +1/+1 and Deathtouch.",
+      "aura": {
+        "attack": 1,
+        "health": 1,
+        "others": true,
+        "tribe": "Undead",
+        "keywords": [
+          "deathtouch"
+        ]
+      }
+    },
+    {
+      "id": "gifted_aetherborn",
+      "name": "Gifted Aetherborn",
+      "type": "creature",
+      "cost": 2,
+      "colors": [
+        "B"
+      ],
+      "cardClass": "neutral",
+      "attack": 2,
+      "health": 3,
+      "rarity": "uncommon",
+      "set": "wubrg",
+      "tribe": "Vampire",
+      "keywords": [
+        "deathtouch",
+        "lifesteal"
+      ],
+      "description": "Deathtouch.\nLifesteal.",
+      "effects": []
+    },
+    {
+      "id": "shatter",
+      "name": "Shatter",
+      "type": "instant",
+      "cost": 2,
+      "colors": [
+        "R"
+      ],
+      "cardClass": "neutral",
+      "rarity": "common",
+      "set": "wubrg",
+      "description": "Destroy an enemy artifact.",
+      "effects": [
+        {
+          "type": "destroy-art-ench",
+          "count": 1,
+          "only": "artifact"
+        }
+      ]
+    },
+    {
+      "id": "smelt",
+      "name": "Smelt",
+      "type": "instant",
+      "cost": 1,
+      "colors": [
+        "R"
+      ],
+      "cardClass": "neutral",
+      "rarity": "common",
+      "set": "wubrg",
+      "description": "Destroy an enemy artifact.",
+      "effects": [
+        {
+          "type": "destroy-art-ench",
+          "count": 1,
+          "only": "artifact"
         }
       ]
     }

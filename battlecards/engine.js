@@ -2226,7 +2226,10 @@ function execEffects(state, pi, effects, target, source) {
 			// 'all'; exile:true exiles instead of destroying.
 			const scope = e.scope === 'all' ? state.players.map((_, i) => i) : enemies;
 			const pool = [];
-			for (const s2 of scope) for (const c of [...state.players[s2].artifacts, ...state.players[s2].enchantments]) pool.push([s2, c]);
+			for (const s2 of scope) for (const c of [...state.players[s2].artifacts, ...state.players[s2].enchantments]) {
+				if (e.only && c.type !== e.only) continue; // only:'artifact' or 'enchantment'
+				pool.push([s2, c]);
+			}
 			const n = e.count === 'all' ? pool.length : (e.count || 1);
 			for (let k = 0; k < n && pool.length; k++) {
 				const j = Math.floor(state.rng() * pool.length);
