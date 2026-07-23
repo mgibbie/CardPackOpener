@@ -75,7 +75,9 @@ for (const c of log) {
 		body,
 		cards: collectible.map(k => ({
 			id: k.id, name: k.name, type: k.type || 'creature',
-			class: k.class || 'neutral', rarity: k.rarity || 'common', cost: k.cost ?? null,
+			class: k.cardClass || 'neutral', rarity: k.rarity || 'common', cost: k.cost ?? null,
+			// WUBRG cards are class-neutral; their colors are the interesting label
+			...(k.colors && k.colors.length ? { colors: k.colors } : {}),
 		})),
 	});
 }
