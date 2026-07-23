@@ -351,8 +351,31 @@ function openLandShop(ev) {
 }
 
 // Choose One cards pick their branch before targeting
-// Choose two / choose one or more: toggle modes, then confirm (modes are non-targeted)
-function openMultiChoiceMenu(card, ev, position) {
+// after modes are chosen, target if any chosen mode needs one (e.g. Cryptic's bounce), then play
+function continueModalPlay(card, modes, position) {
+	const spec = E.targetSpec(state, HUMAN, card, modes);
+	if (spec) {
+		const targets = E.legalTargets(state, HUMAN, spec);
+		if (targets.length) { pending = { card, spec, targets, mode: 'play', position, choice: modes }; updateHud(); return; }
+		if (spec.required) return;
+	}
+	actPlay(card.uid, null, modes, position);
+}
+
+// modal instant cast IN RESPONSE (Cryptic): after modes, target if needed, then submit the response
+function continueModalRespond(card, modes) {
+	const spec = E.targetSpec(state, HUMAN, card, modes);
+	if (spec) {
+		const targets = E.legalTargets(state, HUMAN, spec);
+		if (targets.length) { pending = { card, spec, targets, mode: 'respond', action: { kind: 'spell', uid: card.uid, choice: modes } }; updateHud(); return; }
+		if (spec.required) return;
+	}
+	submitRespond({ kind: 'spell', uid: card.uid, choice: modes, target: null });
+}
+
+// Choose two / choose one or more: toggle modes, then confirm. `commit(modes)` defaults to playing.
+function openMultiChoiceMenu(card, ev, position, commit) {
+	commit = commit || (modes => continueModalPlay(card, modes, position));
 	const menu = $('walker-menu');
 	const min = card.chooseCount || card.chooseMin || 1;
 	const max = card.chooseCount || card.chooseMax || card.choices.length;
@@ -380,7 +403,7 @@ function openMultiChoiceMenu(card, ev, position) {
 			e.stopPropagation();
 			if (chosen.size < min || chosen.size > max) return;
 			hideWalkerMenu();
-			actPlay(card.uid, null, [...chosen], position);
+			commit([...chosen]);
 		});
 		menu.appendChild(done);
 	};
@@ -1476,6 +1499,12 @@ function openRespondModal() {
 	modal.innerHTML = `<div class="wm-title" id="respond-title">${titleText()}</div><div class="scry-row" style="flex-wrap:wrap"></div>`;
 	const row = modal.querySelector('.scry-row');
 	const act = (o) => {
+		// modal instant cast in response (Cryptic Command): pick modes, then target if needed
+		if (o.kind === 'spell' && o.card.choices && (o.card.chooseCount > 1 || o.card.chooseMax)) {
+			clearRespondTimer(); respondSig = null; modal.style.display = 'none';
+			openMultiChoiceMenu(o.card, null, undefined, modes => continueModalRespond(o.card, modes));
+			return;
+		}
 		const spec = o.kind === 'spell'
 			? (o.card.counterSpell ? null : E.targetSpec(state, HUMAN, o.card))
 			: o.kind === 'ability' ? E.abilitySpec(state, HUMAN, o.card, o.index)

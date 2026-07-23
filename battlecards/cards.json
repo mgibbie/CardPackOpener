@@ -59155,6 +59155,57 @@
         ]
       },
       "description": "Goblin spells you cast cost 1 less.\nGoblins you control have Haste (Charge)."
+    },
+    {
+      "id": "cryptic_command",
+      "name": "Cryptic Command",
+      "type": "instant",
+      "cost": 4,
+      "colors": [
+        "U"
+      ],
+      "cardClass": "neutral",
+      "rarity": "rare",
+      "set": "wubrg",
+      "chooseCount": 2,
+      "description": "Choose two \u2014\n> Counter target spell.\n> Return target creature to its owner's hand.\n> Tap all creatures your opponents control.\n> Draw a card.",
+      "choices": [
+        {
+          "text": "Counter target spell",
+          "effects": [
+            {
+              "type": "counter-stack"
+            }
+          ]
+        },
+        {
+          "text": "Return target creature to its owner's hand",
+          "effects": [
+            {
+              "type": "bounce",
+              "target": "creature"
+            }
+          ]
+        },
+        {
+          "text": "Tap all creatures your opponents control",
+          "effects": [
+            {
+              "type": "freeze",
+              "target": "enemy-creatures"
+            }
+          ]
+        },
+        {
+          "text": "Draw a card",
+          "effects": [
+            {
+              "type": "draw",
+              "value": 1
+            }
+          ]
+        }
+      ]
     }
   ]
 }

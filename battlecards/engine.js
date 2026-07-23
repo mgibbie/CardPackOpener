@@ -2347,6 +2347,10 @@ function execEffects(state, pi, effects, target, source) {
 					}
 				}
 			}
+		} else if (e.type === 'counter-stack') {
+			// Cryptic Command's counter mode: counter the topmost spell now on the stack
+			const top = [...state.stack].reverse().find(en => en.kind === 'spell' && !en.countered);
+			if (top) counterStackEntry(state, top, 'graveyard');
 		} else if (e.type === 'fight') {
 			// two-target fight: the chosen fighter (target.uid) and its foe
 			// (target.fightTarget) each deal damage equal to their power to the other
