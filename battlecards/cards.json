@@ -31030,36 +31030,6 @@
       "set": "hsx"
     },
     {
-      "id": "invigorate",
-      "name": "Invigorate",
-      "cardClass": "druid",
-      "cost": 2,
-      "rarity": "rare",
-      "type": "sorcery",
-      "choices": [
-        {
-          "text": "Gain an empty mana crystal",
-          "effects": [
-            {
-              "type": "gain-max-mana",
-              "value": 1
-            }
-          ]
-        },
-        {
-          "text": "Draw 1 card",
-          "effects": [
-            {
-              "type": "draw",
-              "value": 1
-            }
-          ]
-        }
-      ],
-      "description": "Choose one: Gain an empty mana crystal; or Draw 1 card.",
-      "set": "hsx"
-    },
-    {
       "id": "kolkar_pack_runner",
       "name": "Kolkar Pack Runner",
       "cardClass": "hunter",
@@ -58666,6 +58636,111 @@
         },
         {
           "type": "enrich"
+        }
+      ]
+    },
+    {
+      "id": "fireblast",
+      "name": "Fireblast",
+      "type": "instant",
+      "cost": 6,
+      "colors": [
+        "R"
+      ],
+      "cardClass": "neutral",
+      "rarity": "common",
+      "set": "wubrg",
+      "altCost": {
+        "label": "Sacrifice two Mountains",
+        "sacrificeLand": {
+          "color": "R",
+          "count": 2
+        }
+      },
+      "description": "You may sacrifice two Mountains rather than pay this spell's cost.\nDeal 4 damage to any target.",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 4,
+          "target": "any"
+        }
+      ]
+    },
+    {
+      "id": "force_of_will",
+      "name": "Force of Will",
+      "type": "instant",
+      "cost": 5,
+      "colors": [
+        "U"
+      ],
+      "cardClass": "neutral",
+      "rarity": "rare",
+      "set": "wubrg",
+      "counterSpell": true,
+      "altCost": {
+        "label": "Pay 1 life, exile a blue card",
+        "life": 1,
+        "exileFromHand": {
+          "color": "U",
+          "count": 1
+        }
+      },
+      "description": "You may pay 1 life & exile a blue card from your hand rather than pay this spell's cost.\nCounter target spell."
+    },
+    {
+      "id": "force_of_negation",
+      "name": "Force of Negation",
+      "type": "instant",
+      "cost": 3,
+      "colors": [
+        "U"
+      ],
+      "cardClass": "neutral",
+      "rarity": "rare",
+      "set": "wubrg",
+      "counterSpell": true,
+      "counter": {
+        "notType": "creature",
+        "to": "exile"
+      },
+      "altCost": {
+        "label": "Exile a blue card",
+        "require": {
+          "notYourTurn": true
+        },
+        "exileFromHand": {
+          "color": "U",
+          "count": 1
+        }
+      },
+      "description": "If it's not your turn, you may exile a blue card from your hand rather than pay this spell's cost.\nCounter target noncreature spell.\nExile it instead of putting it into a graveyard."
+    },
+    {
+      "id": "invigorate",
+      "name": "Invigorate",
+      "type": "instant",
+      "cost": 3,
+      "colors": [
+        "G"
+      ],
+      "cardClass": "neutral",
+      "rarity": "common",
+      "set": "wubrg",
+      "altCost": {
+        "label": "An opponent gains 3 life",
+        "require": {
+          "land": "G"
+        },
+        "opponentGain": 3
+      },
+      "description": "If you control a Forest, you may have an opponent gain 3 life rather than pay this spell's cost.\nTarget creature gets +4/+4 until end of turn.",
+      "effects": [
+        {
+          "type": "temp-buff",
+          "attack": 4,
+          "health": 4,
+          "target": "creature"
         }
       ]
     }

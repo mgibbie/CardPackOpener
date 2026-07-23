@@ -157,6 +157,7 @@ function instantiate(def, controller) {
 		static: def.static || null,   // permanent passive (e.g. reduce-hero-damage)
 		attackTax: def.attackTax ? { ...def.attackTax } : null, // Ghostly Prison: cost to attack this controller's hero
 		addCost: def.addCost ? { ...def.addCost } : null, // additional casting cost: { discard: N } or { sacrifice: 'creature'|'land'|'artifact'|'artifact-or-creature' }
+		altCost: def.altCost ? { ...def.altCost } : null, // optional cost paid INSTEAD of mana: { label, require?, life?, sacrificeLand?, exileFromHand?, opponentGain? }
 		costMod: def.costMod || null, // board cost aura: { cardType, amount, scope, floor?, firstEachTurn? }
 		selfCost: def.selfCost || null, // self-scaling printed cost: { per, amount }
 		enrage: def.enrage || null,   // while damaged: { attack?, health?, keywords?, weaponAttack? }
@@ -3985,6 +3986,35 @@ function execEffects(state, pi, effects, target, source) {
 	recomputeAuras(state);
 }
 
+// ---------- alternative casting costs (pay something INSTEAD of mana) ----------
+const landsOfColor = (p, color) => p.lands.filter(l => (l.colors || []).includes(color));
+export function canPayMana(state, pi, card) { return availableMana(state.players[pi]) >= effectiveCost(state, pi, card); }
+export function canPayAlt(state, pi, card) {
+	const a = card.altCost; if (!a) return false;
+	const p = state.players[pi];
+	if (a.require) {
+		if (a.require.land && !p.lands.some(l => (l.colors || []).includes(a.require.land))) return false;
+		if (a.require.notYourTurn && state.current === pi) return false;
+	}
+	if (a.life && p.life <= a.life) return false; // won't pay life you can't survive
+	if (a.sacrificeLand && landsOfColor(p, a.sacrificeLand.color).length < a.sacrificeLand.count) return false;
+	if (a.exileFromHand && p.hand.filter(c => c !== card && (c.colors || []).includes(a.exileFromHand.color)).length < a.exileFromHand.count) return false;
+	return true;
+}
+function payAlt(state, pi, card) {
+	const a = card.altCost, p = state.players[pi];
+	if (a.life) { p.life -= a.life; emit(state, { type: 'lifePaid', player: pi, amount: a.life, life: p.life }); }
+	if (a.sacrificeLand) for (let k = 0; k < a.sacrificeLand.count; k++) {
+		const idx = p.lands.findIndex(l => (l.colors || []).includes(a.sacrificeLand.color));
+		if (idx >= 0) { const [land] = p.lands.splice(idx, 1); emit(state, { type: 'landSacrificed', player: pi, card: land }); }
+	}
+	if (a.exileFromHand) for (let k = 0; k < a.exileFromHand.count; k++) {
+		const idx = p.hand.findIndex(c => c !== card && (c.colors || []).includes(a.exileFromHand.color));
+		if (idx >= 0) { const [c] = p.hand.splice(idx, 1); c.zone = 'exile'; p.exile.push(c); emit(state, { type: 'exileCard', player: pi, card: c }); }
+	}
+	if (a.opponentGain) for (const o of opponentsOf(state, pi)) healHero(state, o, a.opponentGain);
+}
+
 // ---------- additional casting costs (sacrifice / discard as a cost) ----------
 // the permanents pi could sacrifice to satisfy an additional cost of `kind`
 function sacPool(state, pi, kind) {
@@ -4199,7 +4229,7 @@ export function canPlay(state, pi, card) {
 	if (state.over) return false;
 	if (card.type === 'instant') { if (!hasPriority(state, pi)) return false; }
 	else if (!(state.current === pi && state.priority == null && state.stack.length === 0)) return false;
-	if (availableMana(state.players[pi]) < effectiveCost(state, pi, card)) return false;
+	if (availableMana(state.players[pi]) < effectiveCost(state, pi, card) && !(card.altCost && canPayAlt(state, pi, card))) return false;
 	{ const pb = state.players[pi].parityBlock; if (pb && ((card.cost % 2 === 1 ? 'odd' : 'even') === pb)) return false; }
 	if (card.type === 'secret') {
 		const p = state.players[pi];
@@ -4246,7 +4276,7 @@ function corruptHandCards(state, pi, playedCost) {
 	}
 }
 
-export function playCard(state, pi, cardUid, target, choice, position) {
+export function playCard(state, pi, cardUid, target, choice, position, useAlt) {
 	const p = state.players[pi];
 	// cards play from hand, the companion zone, or the command zone
 	let card = null, take = null;
@@ -4270,7 +4300,9 @@ export function playCard(state, pi, cardUid, target, choice, position) {
 
 	take();
 	if (ward) payWard(state, pi, target);
-	if (card.xSpell) {
+	if (card.altCost && canPayAlt(state, pi, card) && (useAlt || availableMana(p) < effectiveCost(state, pi, card))) {
+		payAlt(state, pi, card); // paid the alternative cost instead of mana (chosen, or forced when mana is short)
+	} else if (card.xSpell) {
 		// X-spells drink every remaining point; X = what's left after the base cost
 		card.xValue = Math.max(0, availableMana(p) - effectiveCost(state, pi, card));
 		spendMana(p, availableMana(p));
@@ -4491,7 +4523,7 @@ export function hasPriority(state, pi) {
 function canCastInResponse(state, pi, card) {
 	if (card.type !== 'instant') return false;
 	const p = state.players[pi];
-	if (availableMana(p) < effectiveCost(state, pi, card)) return false;
+	if (availableMana(p) < effectiveCost(state, pi, card) && !(card.altCost && canPayAlt(state, pi, card))) return false;
 	if (card.counterSpell) return !!topMatchingSpell(state, card); // a legal spell to counter (respects type/MV restriction)
 	const spec = targetSpec(state, pi, card);
 	if (spec && spec.required && legalTargets(state, pi, spec).length === 0) return false;
@@ -4599,6 +4631,9 @@ function counterStackEntry(state, tgt, to) {
 	} else if (to === 'top') {
 		card.zone = 'deck';
 		state.players[owner].deck.push(card.id); // deck top = end of the array
+	} else if (to === 'exile') {
+		card.zone = 'exile';
+		state.players[owner].exile.push(card); // Force of Negation
 	} else {
 		toGraveyard(state, owner, card);
 	}
@@ -4700,7 +4735,7 @@ export function resolveResponse(state, pi, action, target, choice) {
 	if (typeof action !== 'object') action = { kind: 'spell', uid: action, target, choice };
 	if (action.kind === 'ability') return activateAbility(state, pi, action.uid, action.index, action.target);
 	if (action.kind === 'landtap') return tapLand(state, pi, action.uid, action.index, action.target);
-	return playCard(state, pi, action.uid, action.target, action.choice); // spell
+	return playCard(state, pi, action.uid, action.target, action.choice, undefined, action.useAlt); // spell
 }
 
 // ---------- Adventures: a creature card with a spell "adventure" half ----------

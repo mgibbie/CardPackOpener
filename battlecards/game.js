@@ -398,16 +398,39 @@ function openTradeMenu(card, ev) {
 	showDecisionMenu();
 }
 
-function playFromHand(card, ev, position) {
-	if (!E.canPlay(state, HUMAN, card)) return;
-	if (card.choices) { openChoiceMenu(card, ev, position); return; }
+// alternative-cost cards you can afford BOTH ways offer a choice: mana or the alt cost
+function openAltMenu(card, ev, position) {
+	const menu = $('walker-menu');
+	menu.innerHTML = `<div class="wm-title">${card.name} — how to pay?</div>`;
+	const mk = (label, cost, useAlt) => {
+		const btn = document.createElement('button');
+		btn.innerHTML = cost != null ? `<span class="wm-cost">${cost}</span>${label}` : label;
+		btn.addEventListener('pointerdown', e => { e.stopPropagation(); hideWalkerMenu(); continuePlay(card, position, useAlt); });
+		menu.appendChild(btn);
+	};
+	mk('Pay normally', E.effectiveCost(state, HUMAN, card), false);
+	mk(card.altCost.label || 'Alternative cost', null, true);
+	showDecisionMenu();
+}
+
+// having settled the cost, pick a target (if any) then play
+function continuePlay(card, position, useAlt) {
 	const spec = E.targetSpec(state, HUMAN, card);
 	if (spec) {
 		const targets = E.legalTargets(state, HUMAN, spec);
-		if (targets.length) { pending = { card, spec, targets, mode: 'play', position }; updateHud(); return; }
+		if (targets.length) { pending = { card, spec, targets, mode: 'play', position, useAlt }; updateHud(); return; }
 		if (spec.required) return;
 	}
-	actPlay(card.uid, null, undefined, position);
+	actPlay(card.uid, null, undefined, position, useAlt);
+}
+
+function playFromHand(card, ev, position) {
+	if (!E.canPlay(state, HUMAN, card)) return;
+	if (card.choices) { openChoiceMenu(card, ev, position); return; }
+	if (card.altCost && E.canPayAlt(state, HUMAN, card) && E.canPayMana(state, HUMAN, card)) { openAltMenu(card, ev, position); return; }
+	// only one payment option available: pick it automatically
+	const useAlt = !!(card.altCost && !E.canPayMana(state, HUMAN, card) && E.canPayAlt(state, HUMAN, card));
+	continuePlay(card, position, useAlt);
 }
 
 // which of `targets` did the drop point land on (creature / walker / hero)?
@@ -442,15 +465,17 @@ function releasePlay(c, ev) {
 		return;
 	}
 	if (c.choices) { openChoiceMenu(c, ev); return; }
+	if (c.altCost && E.canPayAlt(state, HUMAN, c) && E.canPayMana(state, HUMAN, c)) { openAltMenu(c, ev); return; }
+	const ua = !!(c.altCost && !E.canPayMana(state, HUMAN, c) && E.canPayAlt(state, HUMAN, c));
 	const spec = E.targetSpec(state, HUMAN, c);
 	if (spec) {
 		const targets = E.legalTargets(state, HUMAN, spec);
 		const t = resolveDropTarget(ev, targets, c.uid);
-		if (t) { actPlay(c.uid, t); return; }         // dropped right on a legal target
-		if (targets.length) { pending = { card: c, spec, targets, mode: 'play' }; updateHud(); return; }
+		if (t) { actPlay(c.uid, t, undefined, undefined, ua); return; } // dropped right on a legal target
+		if (targets.length) { pending = { card: c, spec, targets, mode: 'play', useAlt: ua }; updateHud(); return; }
 		if (spec.required) return;
 	}
-	actPlay(c.uid, null);
+	actPlay(c.uid, null, undefined, undefined, ua);
 }
 
 // choose-one hero powers pick a branch before targeting
@@ -1363,7 +1388,15 @@ function submitRespond(action) {
 function respondOptions() {
 	const me = state.players[HUMAN];
 	const out = [];
-	for (const c of E.responseOptions(state, HUMAN)) out.push({ kind: 'spell', card: c, label: `${c.counterSpell ? 'Counter' : 'Cast'} ${c.name} (${E.effectiveCost(state, HUMAN, c)})` });
+	for (const c of E.responseOptions(state, HUMAN)) {
+		const verb = c.counterSpell ? 'Counter' : 'Cast';
+		if (c.altCost && E.canPayAlt(state, HUMAN, c)) {
+			if (E.canPayMana(state, HUMAN, c)) out.push({ kind: 'spell', card: c, useAlt: false, label: `${verb} ${c.name} (${E.effectiveCost(state, HUMAN, c)})` });
+			out.push({ kind: 'spell', card: c, useAlt: true, label: `${verb} ${c.name} — ${c.altCost.label}` });
+		} else {
+			out.push({ kind: 'spell', card: c, useAlt: false, label: `${verb} ${c.name} (${E.effectiveCost(state, HUMAN, c)})` });
+		}
+	}
 	for (const c of me.board) if (c.activated) c.activated.forEach((a, i) => { if (E.canActivate(state, HUMAN, c, i)) out.push({ kind: 'ability', card: c, index: i, label: `${c.name}: ${a.text || 'ability'}` }); });
 	for (const l of [...me.lands, ...me.board.filter(x => x.type === 'location')]) E.landTaps(l).forEach((t, i) => { if (t.effects.some(e => e.type !== 'gain-mana') && E.canTapLand(state, HUMAN, l, i)) out.push({ kind: 'landtap', card: l, index: i, label: `${l.name}: ${t.text}` }); });
 	return out;
@@ -1390,10 +1423,10 @@ function openRespondModal() {
 			: E.tapSpec(state, HUMAN, o.card, o.index);
 		if (spec) {
 			const targets = E.legalTargets(state, HUMAN, spec);
-			if (targets.length) { clearRespondTimer(); respondSig = null; modal.style.display = 'none'; pending = { card: o.card, spec, targets, mode: 'respond', action: { kind: o.kind, uid: o.card.uid, index: o.index } }; updateHud(); return; }
+			if (targets.length) { clearRespondTimer(); respondSig = null; modal.style.display = 'none'; pending = { card: o.card, spec, targets, mode: 'respond', action: { kind: o.kind, uid: o.card.uid, index: o.index, useAlt: o.useAlt } }; updateHud(); return; }
 			if (spec.required) return;
 		}
-		submitRespond({ kind: o.kind, uid: o.card.uid, index: o.index, target: null });
+		submitRespond({ kind: o.kind, uid: o.card.uid, index: o.index, target: null, useAlt: o.useAlt });
 	};
 	opts.forEach(o => {
 		const btn = document.createElement('button'); btn.className = 'scry-done'; btn.style.margin = '4px'; btn.textContent = o.label;
@@ -2499,7 +2532,7 @@ function commitPending(t) {
 		else if (p.mode === 'tap') { localFn = () => E.tapLand(state, HUMAN, p.card.uid, p.tapIndex, t); intent = { k: 'tap', uid: p.card.uid, tapIndex: p.tapIndex, target: t || null }; }
 		else if (p.mode === 'respond') { const a = { ...p.action, target: t || null }; localFn = () => E.resolveResponse(state, HUMAN, a); intent = { k: 'respond', action: a }; }
 		else if (p.mode === 'adventure') { localFn = () => E.playAdventure(state, HUMAN, p.card.uid, t, p.choice); intent = { k: 'adventure', uid: p.card.uid, target: t || null, choice: p.choice }; }
-		else { localFn = () => E.playCard(state, HUMAN, p.card.uid, t, p.choice, p.position); intent = { k: 'play', uid: p.card.uid, target: t || null, choice: p.choice, position: p.position }; }
+		else { localFn = () => E.playCard(state, HUMAN, p.card.uid, t, p.choice, p.position, p.useAlt); intent = { k: 'play', uid: p.card.uid, target: t || null, choice: p.choice, position: p.position, useAlt: p.useAlt }; }
 		clearModes();
 		guestApply(localFn, intent);
 		return;
@@ -2511,7 +2544,7 @@ function commitPending(t) {
 	else if (pending.mode === 'tap') E.tapLand(state, HUMAN, pending.card.uid, pending.tapIndex, t);
 	else if (pending.mode === 'respond') { E.resolveResponse(state, HUMAN, { ...pending.action, target: t || null }); }
 	else if (pending.mode === 'adventure') E.playAdventure(state, HUMAN, pending.card.uid, t, pending.choice);
-	else E.playCard(state, HUMAN, pending.card.uid, t, pending.choice, pending.position);
+	else E.playCard(state, HUMAN, pending.card.uid, t, pending.choice, pending.position, pending.useAlt);
 	clearModes();
 	pump();
 	if (duel.on) publishDuel();
@@ -3161,7 +3194,7 @@ function applyGuestIntent(it) {
 	if (!isResolve && state.current !== 1) return; // plays only on the guest's turn
 	try {
 		switch (it.k) {
-			case 'play': E.playCard(state, P, it.uid, it.target || null, it.choice, it.position); break;
+			case 'play': E.playCard(state, P, it.uid, it.target || null, it.choice, it.position, it.useAlt); break;
 				case 'adventure': E.playAdventure(state, P, it.uid, it.target || null, it.choice); break;
 			case 'power': E.useHeroPower(state, P, it.uid, it.target || null, it.choice); break;
 			case 'planeswalk': E.planeswalk(state, P); break;
@@ -3352,9 +3385,9 @@ function guestApply(localFn, intent) {
 	updateHud();
 	MPX.call('card-act', { id: duel.id, intent }).catch(() => {});
 }
-function actPlay(uid, target, choice, position) {
-	if (isGuest()) return guestApply(() => E.playCard(state, HUMAN, uid, target, choice, position), { k: 'play', uid, target: target || null, choice, position });
-	E.playCard(state, HUMAN, uid, target, choice, position); pump();
+function actPlay(uid, target, choice, position, useAlt) {
+	if (isGuest()) return guestApply(() => E.playCard(state, HUMAN, uid, target, choice, position, useAlt), { k: 'play', uid, target: target || null, choice, position, useAlt });
+	E.playCard(state, HUMAN, uid, target, choice, position, useAlt); pump();
 	if (duel.on) publishDuel();
 }
 function actAdventure(uid, target, choice) {
