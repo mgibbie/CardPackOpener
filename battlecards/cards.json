@@ -58547,6 +58547,127 @@
         "amount": 2
       },
       "description": "Creatures can't attack you unless their controller pays 2 for each attacking creature."
+    },
+    {
+      "id": "thrill_of_possibility",
+      "name": "Thrill of Possibility",
+      "type": "instant",
+      "cost": 2,
+      "colors": [
+        "R"
+      ],
+      "cardClass": "neutral",
+      "rarity": "common",
+      "set": "wubrg",
+      "addCost": {
+        "discard": 1
+      },
+      "description": "As an additional cost, discard a card.\nDraw two cards.",
+      "effects": [
+        {
+          "type": "draw",
+          "value": 2
+        }
+      ]
+    },
+    {
+      "id": "unexpected_windfall",
+      "name": "Unexpected Windfall",
+      "type": "instant",
+      "cost": 4,
+      "colors": [
+        "R"
+      ],
+      "cardClass": "neutral",
+      "rarity": "common",
+      "set": "wubrg",
+      "addCost": {
+        "discard": 1
+      },
+      "description": "As an additional cost, discard a card.\nDraw two cards & create two Treasure tokens.",
+      "effects": [
+        {
+          "type": "draw",
+          "value": 2
+        },
+        {
+          "type": "enrich"
+        },
+        {
+          "type": "enrich"
+        }
+      ]
+    },
+    {
+      "id": "shard_volley",
+      "name": "Shard Volley",
+      "type": "instant",
+      "cost": 1,
+      "colors": [
+        "R"
+      ],
+      "cardClass": "neutral",
+      "rarity": "common",
+      "set": "wubrg",
+      "addCost": {
+        "sacrifice": "land"
+      },
+      "description": "As an additional cost, sacrifice a land.\nDeal 3 damage to any target.",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 3,
+          "target": "any"
+        }
+      ]
+    },
+    {
+      "id": "reckless_abandon",
+      "name": "Reckless Abandon",
+      "type": "sorcery",
+      "cost": 1,
+      "colors": [
+        "R"
+      ],
+      "cardClass": "neutral",
+      "rarity": "common",
+      "set": "wubrg",
+      "addCost": {
+        "sacrifice": "creature"
+      },
+      "description": "As an additional cost, sacrifice a creature.\nDeal 4 damage to any target.",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 4,
+          "target": "any"
+        }
+      ]
+    },
+    {
+      "id": "deadly_dispute",
+      "name": "Deadly Dispute",
+      "type": "instant",
+      "cost": 2,
+      "colors": [
+        "B"
+      ],
+      "cardClass": "neutral",
+      "rarity": "common",
+      "set": "wubrg",
+      "addCost": {
+        "sacrifice": "artifact-or-creature"
+      },
+      "description": "As an additional cost, sacrifice an artifact or creature.\nDraw two cards & create a Treasure token.",
+      "effects": [
+        {
+          "type": "draw",
+          "value": 2
+        },
+        {
+          "type": "enrich"
+        }
+      ]
     }
   ]
 }

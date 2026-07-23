@@ -1255,6 +1255,7 @@ function pump() {
 	resolveAIDiscards();
 	resolveAIPicks();
 	resolveAIAsks();
+	resolveAISacs();
 	resolveAIDredges();
 	resolveAIResponds();
 	queue.push(...E.takeEvents(state));
@@ -1269,6 +1270,18 @@ function resolveAIDiscards() {
 		const p = state.players[pend.player];
 		const picks = [...p.hand].sort((a, b) => b.cost - a.cost).slice(0, pend.count).map(c => c.uid);
 		E.resolveDiscard(state, picks);
+	}
+}
+
+function resolveAISacs() {
+	if (duel.on) return; // guest resolves their own sacrifice-as-cost picks
+	while (state.sacQueue.length && state.sacQueue[0].player !== HUMAN) {
+		const pend = state.sacQueue[0];
+		const p = state.players[pend.player];
+		// sacrifice the cheapest eligible permanent (prefer tokens/Treasures)
+		const pool = pend.uids.map(u => p.board.find(c => c.uid === u) || p.artifacts.find(c => c.uid === u)).filter(Boolean);
+		const pick = pool.sort((a, b) => (a.token ? -1 : 0) - (b.token ? -1 : 0) || (a.cost || 0) - (b.cost || 0))[0];
+		E.resolveSac(state, pick ? pick.uid : (pend.uids[0]));
 	}
 }
 
@@ -1553,6 +1566,38 @@ function openDiscardModal() {
 	modal.style.display = 'block';
 }
 
+// sacrifice-as-cost: pick one of your permanents to sacrifice (Reckless Abandon, Deadly Dispute)
+function openSacModal() {
+	const pend = state.sacQueue[0];
+	if (!pend || pend.player !== HUMAN) return;
+	const me = state.players[HUMAN];
+	const pool = pend.uids.map(u => me.board.find(c => c.uid === u) || me.artifacts.find(c => c.uid === u)).filter(Boolean);
+	if (!pool.length) { E.resolveSac(state, pend.uids[0]); pump(); if (duel.on) publishDuel(); return; }
+	const label = pend.kind === 'artifact-or-creature' ? 'a permanent' : (pend.kind === 'artifact' ? 'an artifact' : 'a creature');
+	const modal = $('scry-modal');
+	modal.innerHTML = `<div class="wm-title">Sacrifice ${label}</div><div class="scry-row"></div>`;
+	const row = modal.querySelector('.scry-row');
+	const commit = uid => {
+		modal.style.display = 'none';
+		if (isGuest()) { guestApply(() => E.resolveSac(state, uid), { k: 'sac', uid }); return; }
+		E.resolveSac(state, uid); pump(); if (duel.on) publishDuel();
+	};
+	pool.forEach(card => {
+		const cell = document.createElement('div');
+		cell.className = 'scry-cell';
+		const face = drawCardFace(card);
+		face.style.width = '110px';
+		cell.appendChild(face);
+		const btn = document.createElement('button');
+		btn.textContent = 'Sacrifice';
+		btn.className = 'scry-done';
+		btn.addEventListener('pointerdown', e => { e.stopPropagation(); commit(card.uid); });
+		cell.appendChild(btn);
+		row.appendChild(cell);
+	});
+	modal.style.display = 'block';
+}
+
 function nextEvent() {
 	const ev = queue.shift();
 	if (!ev) { queueBusy = false; updateHud(); if (state && state.priority === HUMAN) openRespondModal(); maybeRunAI(); return; }
@@ -1809,6 +1854,10 @@ function nextEvent() {
 			if (ev.player === HUMAN) openAskModal();
 			delay = 200;
 			break;
+		case 'sacStart':
+			if (ev.player === HUMAN) openSacModal();
+			delay = 200;
+			break;
 		case 'dredgeStart':
 			log(`${nameOf(ev.player)} dredges (${ev.count})`);
 			if (ev.player === HUMAN) openDredgeModal();
@@ -1984,6 +2033,7 @@ function maybeRunAI() {
 	if (state.pickQueue.length && state.pickQueue[0].player === HUMAN) return; // discover pick first
 	if (state.dredgeQueue.length && state.dredgeQueue[0].player === HUMAN) return; // dredge pick first
 	if (state.askQueue.length && state.askQueue[0].player === HUMAN) return; // your yes/no prompt (e.g. soft-counter pay) first
+	if (state.sacQueue.length && state.sacQueue[0].player === HUMAN) return; // your sacrifice-as-cost pick first
 	if (state.priority === HUMAN) return; // your counter window first
 	clearTimeout(aiTimer);
 	aiTimer = setTimeout(() => {
@@ -2885,7 +2935,7 @@ function snapshotState() {
 		classPicks: state.classPicks || null,
 		playerCount: state.players.length,
 		// pending decisions so a watcher can see the Discover/scry options being weighed
-		scryQueue: state.scryQueue || [], discardQueue: state.discardQueue || [], pickQueue: state.pickQueue || [], dredgeQueue: state.dredgeQueue || [], askQueue: state.askQueue || [], stack: state.stack || [], priority: state.priority ?? null, passers: state.passers || [], priorityNext: state.priorityNext || 0,
+		scryQueue: state.scryQueue || [], discardQueue: state.discardQueue || [], pickQueue: state.pickQueue || [], dredgeQueue: state.dredgeQueue || [], askQueue: state.askQueue || [], sacQueue: state.sacQueue || [], stack: state.stack || [], priority: state.priority ?? null, passers: state.passers || [], priorityNext: state.priorityNext || 0,
 	};
 }
 
@@ -2936,7 +2986,7 @@ function startSpectate(cardsById) {
 		// the watcher can see the Discover/scry options while they're being weighed
 		state = {
 			...snap, cardsById, rng: Math.random, events: [],
-			scryQueue: snap.scryQueue || [], discardQueue: snap.discardQueue || [], pickQueue: snap.pickQueue || [], dredgeQueue: snap.dredgeQueue || [], askQueue: snap.askQueue || [], stack: snap.stack || [], priority: snap.priority ?? null, passers: snap.passers || [], priorityNext: snap.priorityNext || 0,
+			scryQueue: snap.scryQueue || [], discardQueue: snap.discardQueue || [], pickQueue: snap.pickQueue || [], dredgeQueue: snap.dredgeQueue || [], askQueue: snap.askQueue || [], sacQueue: snap.sacQueue || [], stack: snap.stack || [], priority: snap.priority ?? null, passers: snap.passers || [], priorityNext: snap.priorityNext || 0,
 		};
 		if (snap.playerCount !== spectatePanelsFor) {
 			playerCount = snap.playerCount;
@@ -3038,7 +3088,7 @@ async function startDuelHost(cardsById) {
 			const snap = prev.snapshot;
 			state = {
 				...snap, cardsById, rng: Math.random, events: [],
-				scryQueue: snap.scryQueue || [], discardQueue: snap.discardQueue || [], pickQueue: snap.pickQueue || [], dredgeQueue: snap.dredgeQueue || [], askQueue: snap.askQueue || [], stack: snap.stack || [], priority: snap.priority ?? null, passers: snap.passers || [], priorityNext: snap.priorityNext || 0,
+				scryQueue: snap.scryQueue || [], discardQueue: snap.discardQueue || [], pickQueue: snap.pickQueue || [], dredgeQueue: snap.dredgeQueue || [], askQueue: snap.askQueue || [], sacQueue: snap.sacQueue || [], stack: snap.stack || [], priority: snap.priority ?? null, passers: snap.passers || [], priorityNext: snap.priorityNext || 0,
 			};
 			duelPubSeq = prev.seq || 0; // continue the sequence so the guest sees fresh
 			resumed = true;
@@ -3129,6 +3179,7 @@ function applyGuestIntent(it) {
 			case 'discard': if (state.discardQueue[0]?.player === P) E.resolveDiscard(state, it.picks || []); else return; break;
 			case 'pick': if (state.pickQueue[0]?.player === P) E.resolvePick(state, it.id); else return; break;
 			case 'ask': if (state.askQueue[0]?.player === P) E.resolveAsk(state, it.yes); else return; break;
+			case 'sac': if (state.sacQueue[0]?.player === P) E.resolveSac(state, it.uid); else return; break;
 			case 'dredge': if (state.dredgeQueue[0]?.player === P) E.resolveDredge(state, it.id); else return; break;
 			case 'respond': if (state.priority === P) E.resolveResponse(state, P, it.action ?? null); else return; break;
 			default: return;
@@ -3171,7 +3222,7 @@ function startDuelGuest(cardsById) {
 			try {
 				state = {
 					...snap, cardsById, rng: Math.random, events: [],
-					scryQueue: snap.scryQueue || [], discardQueue: snap.discardQueue || [], pickQueue: snap.pickQueue || [], dredgeQueue: snap.dredgeQueue || [], askQueue: snap.askQueue || [], stack: snap.stack || [], priority: snap.priority ?? null, passers: snap.passers || [], priorityNext: snap.priorityNext || 0,
+					scryQueue: snap.scryQueue || [], discardQueue: snap.discardQueue || [], pickQueue: snap.pickQueue || [], dredgeQueue: snap.dredgeQueue || [], askQueue: snap.askQueue || [], sacQueue: snap.sacQueue || [], stack: snap.stack || [], priority: snap.priority ?? null, passers: snap.passers || [], priorityNext: snap.priorityNext || 0,
 				};
 				if (state.players.length !== panelsFor) {
 					playerCount = state.players.length;
@@ -3213,13 +3264,15 @@ function startDuelGuest(cardsById) {
 // prompt on every poll.
 function openDuelModals() {
 	if (!isGuest() || !state) return;
-	const sq = state.scryQueue[0], dq = state.discardQueue[0], pq = state.pickQueue[0], dr = state.dredgeQueue[0];
+	const sq = state.scryQueue[0], dq = state.discardQueue[0], pq = state.pickQueue[0], dr = state.dredgeQueue[0], aq = state.askQueue[0], scq = state.sacQueue[0];
 
 	let sig = null, open = null;
 	if (sq && sq.chooser === HUMAN) { sig = 'scry:' + sq.ids.join(','); open = openScryModal; }
 	else if (dq && dq.player === HUMAN) { sig = 'discard:' + dq.count + ':' + state.players[HUMAN].hand.map(c => c.uid).join(','); open = openDiscardModal; }
 	else if (pq && pq.player === HUMAN) { sig = 'pick:' + pq.ids.join(','); open = openPickModal; }
 	else if (dr && dr.player === HUMAN) { sig = 'dredge:' + dr.ids.join(','); open = openDredgeModal; }
+	else if (aq && aq.player === HUMAN) { sig = 'ask:' + (aq.prompt || '') + ':' + (aq.counterPay?.targetUid ?? aq.payOr?.amount ?? ''); open = openAskModal; }
+	else if (scq && scq.player === HUMAN) { sig = 'sac:' + scq.uids.join(','); open = openSacModal; }
 	else if (state.priority === HUMAN) { sig = 'respond:' + (state.stack[state.stack.length - 1] || {}).uid; open = openRespondModal; }
 	if (sig === duel.modalSig) return; // already showing (or already submitted) this one
 	duel.modalSig = sig;
@@ -3256,7 +3309,7 @@ function snapshotForDuel() {
 		over: state.over, winner: state.winner, classPicks: state.classPicks || null,
 		playerCount: state.players.length,
 		// carry pending decisions so the guest can resolve their own scry/loot/discover
-		scryQueue: state.scryQueue || [], discardQueue: state.discardQueue || [], pickQueue: state.pickQueue || [], dredgeQueue: state.dredgeQueue || [], askQueue: state.askQueue || [], stack: state.stack || [], priority: state.priority ?? null, passers: state.passers || [], priorityNext: state.priorityNext || 0,
+		scryQueue: state.scryQueue || [], discardQueue: state.discardQueue || [], pickQueue: state.pickQueue || [], dredgeQueue: state.dredgeQueue || [], askQueue: state.askQueue || [], sacQueue: state.sacQueue || [], stack: state.stack || [], priority: state.priority ?? null, passers: state.passers || [], priorityNext: state.priorityNext || 0,
 	};
 }
 function publishDuel() {

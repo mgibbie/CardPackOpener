@@ -156,6 +156,7 @@ function instantiate(def, controller) {
 		ongoing: def.ongoing || null, // permanent trigger: { on, effects }
 		static: def.static || null,   // permanent passive (e.g. reduce-hero-damage)
 		attackTax: def.attackTax ? { ...def.attackTax } : null, // Ghostly Prison: cost to attack this controller's hero
+		addCost: def.addCost ? { ...def.addCost } : null, // additional casting cost: { discard: N } or { sacrifice: 'creature'|'land'|'artifact'|'artifact-or-creature' }
 		costMod: def.costMod || null, // board cost aura: { cardType, amount, scope, floor?, firstEachTurn? }
 		selfCost: def.selfCost || null, // self-scaling printed cost: { per, amount }
 		enrage: def.enrage || null,   // while damaged: { attack?, health?, keywords?, weaponAttack? }
@@ -352,6 +353,7 @@ export function createGame(cardsById, rng = Math.random, playerDeckIds = null, p
 		discardQueue: [], // pending Loot discards: { player, count }
 		pickQueue: [],  // pending Discover/Draft picks: { player, ids, grant }
 		askQueue: [],   // pending optional "you may …" yes/no prompts: { player, prompt, yes, no, then, else }
+		sacQueue: [],   // pending sacrifice-as-cost picks: { player, kind, uids, addCostSpell }
 		dredgeQueue: [], // pending Dredge decisions: { player, ids } (bottom-of-deck)
 		stack: [],       // spells awaiting resolution (LIFO)
 		priority: null,  // player who currently holds priority to respond (or null)
@@ -3983,6 +3985,77 @@ function execEffects(state, pi, effects, target, source) {
 	recomputeAuras(state);
 }
 
+// ---------- additional casting costs (sacrifice / discard as a cost) ----------
+// the permanents pi could sacrifice to satisfy an additional cost of `kind`
+function sacPool(state, pi, kind) {
+	const p = state.players[pi];
+	const creatures = p.board.filter(c => c.type === 'creature' && !isDead(c));
+	if (kind === 'creature') return creatures;
+	if (kind === 'artifact') return [...p.artifacts];
+	if (kind === 'artifact-or-creature') return [...creatures, ...p.artifacts];
+	return [];
+}
+function canPayAddCost(state, pi, card) {
+	const ac = card.addCost, p = state.players[pi];
+	if (ac.discard) return p.hand.filter(c => c !== card).length >= ac.discard;
+	if (ac.sacrifice === 'land') return p.lands.length >= 1;
+	if (ac.sacrifice) return sacPool(state, pi, ac.sacrifice).length >= 1;
+	return true;
+}
+// sacrifice one chosen permanent as a cost (bypasses indestructible; fires deathrattles via sweep)
+function sacrificeAsCost(state, pi, card) {
+	const p = state.players[pi];
+	if (p.board.includes(card)) {
+		card.sacrificed = true; card.damage = card.maxHealth; card.shield = false;
+		emit(state, { type: 'destroy', uid: card.uid });
+		sweepDeaths(state);
+	} else if (p.artifacts.includes(card)) {
+		p.artifacts = p.artifacts.filter(c => c !== card);
+		emit(state, { type: 'tokenSacrificed', player: pi, card });
+		recomputeAuras(state);
+	}
+}
+// resolve an additional-cost spell off the stack once its cost is paid (mirrors resolveStackedSpell's tail)
+function resolveAddCostSpell(state, pi, card, target, choice) {
+	state.exactKills = 0;
+	runSpell(state, pi, card, target, choice);
+	if (card.honorableKill && state.exactKills > 0) execEffects(state, pi, card.honorableKill, target, card);
+	fireOngoing(state, pi, 'spell-played', { played: card });
+	firePlaneTrigger(state, 'spell-cast', pi);
+	for (let s2 = 0; s2 < state.players.length; s2++) {
+		fireOngoing(state, s2, 'any-spell-played', { spell: card, caster: pi });
+		if (s2 !== pi) fireOngoing(state, s2, 'enemy-spell-played', { spell: card, caster: pi });
+	}
+	toGraveyard(state, pi, card);
+	sweepDeaths(state);
+	checkGameOver(state);
+}
+// pay a spell's additional cost, then resolve it (synchronously, or via a pick queue)
+function payAddCost(state, pi, card, target, choice) {
+	const p = state.players[pi], ac = card.addCost, cont = { card, target, choice };
+	if (ac.discard) {
+		const n = Math.min(ac.discard, p.hand.length);
+		if (n > 0) { state.discardQueue.push({ player: pi, count: n, addCostSpell: cont }); emit(state, { type: 'lootStart', player: pi, count: n }); return; }
+	} else if (ac.sacrifice === 'land') {
+		if (p.lands.length) { const [land] = p.lands.splice(p.lands.length - 1, 1); emit(state, { type: 'landSacrificed', player: pi, card: land }); }
+	} else if (ac.sacrifice) {
+		const pool = sacPool(state, pi, ac.sacrifice);
+		if (pool.length > 1) { state.sacQueue.push({ player: pi, kind: ac.sacrifice, uids: pool.map(c => c.uid), addCostSpell: cont }); emit(state, { type: 'sacStart', player: pi, kind: ac.sacrifice }); return; }
+		if (pool.length === 1) sacrificeAsCost(state, pi, pool[0]);
+	}
+	resolveAddCostSpell(state, pi, card, target, choice);
+}
+// resolve the oldest pending sacrifice-as-cost with the chosen permanent
+export function resolveSac(state, uid) {
+	const pend = state.sacQueue.shift();
+	if (!pend) return false;
+	const pool = sacPool(state, pend.player, pend.kind);
+	const card = pool.find(c => c.uid === uid) || pool[0];
+	if (card) sacrificeAsCost(state, pend.player, card);
+	if (pend.addCostSpell) { const { card: spell, target, choice } = pend.addCostSpell; resolveAddCostSpell(state, pend.player, spell, target, choice); }
+	return true;
+}
+
 function runSpell(state, pi, card, target, choice) {
 	execEffects(state, pi, liveEffectsOf(state, pi, card, choice), target, card);
 	// Outcast: extra spell effects when cast from the edge of hand
@@ -4144,6 +4217,7 @@ export function canPlay(state, pi, card) {
 	}
 	const spec = targetSpec(state, pi, card);
 	if (spec && spec.required && legalTargets(state, pi, spec).length === 0) return false;
+	if (card.addCost && !canPayAddCost(state, pi, card)) return false; // must be able to pay the extra cost
 	return true;
 }
 
@@ -4326,9 +4400,11 @@ export function playCard(state, pi, cardUid, target, choice, position) {
 		questTick(state, 'spell', pi);
 		p.spellsPlayedThisTurn++;
 		p.spellsPlayedTotal = (p.spellsPlayedTotal || 0) + 1; // Arcane Giant
+		// additional-cost spells pay the extra cost first (off-stack), then resolve
+		if (card.addCost) payAddCost(state, pi, card, target, choice);
 		// The Stack: opponents get priority to respond (an instant/Counter) before this
 		// resolves. If none can respond it resolves at once (the common path).
-		stackSpell(state, pi, card, target, choice);
+		else stackSpell(state, pi, card, target, choice);
 	}
 	// Echo: a ghost copy slips into hand, playable until the turn ends
 	if (card.echo && !p.eliminated && p.hand.length < MAX_HAND && !state.over) {
@@ -5225,6 +5301,8 @@ export function resolveDiscard(state, uids) {
 	}
 	// discard-then rewards (Blood Token's draw comes after the discard)
 	if (pend.then) execEffects(state, pend.player, pend.then, null, null);
+	// additional-cost spell: the discard was the cost — now resolve the spell
+	if (pend.addCostSpell) { const { card, target, choice } = pend.addCostSpell; resolveAddCostSpell(state, pend.player, card, target, choice); }
 	return true;
 }
 
