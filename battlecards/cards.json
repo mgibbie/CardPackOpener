@@ -56530,30 +56530,6 @@
       ]
     },
     {
-      "id": "thraben_inspector",
-      "name": "Thraben Inspector",
-      "type": "creature",
-      "cost": 1,
-      "colors": [
-        "W"
-      ],
-      "cardClass": "neutral",
-      "attack": 1,
-      "health": 2,
-      "rarity": "common",
-      "set": "wubrg",
-      "keywords": [
-        "battlecry"
-      ],
-      "description": "Battlecry: Draw a card.",
-      "effects": [
-        {
-          "type": "draw",
-          "value": 1
-        }
-      ]
-    },
-    {
       "id": "frost_lynx",
       "name": "Frost Lynx",
       "type": "creature",
@@ -62125,6 +62101,30 @@
         "defender"
       ],
       "description": "Defender."
+    },
+    {
+      "id": "thraben_inspector",
+      "name": "Thraben Inspector",
+      "type": "creature",
+      "cost": 1,
+      "colors": [
+        "W"
+      ],
+      "cardClass": "neutral",
+      "attack": 1,
+      "health": 2,
+      "rarity": "common",
+      "set": "wubrg",
+      "tribe": "Human Soldier",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Investigate.",
+      "effects": [
+        {
+          "type": "investigate"
+        }
+      ]
     }
   ]
 }
