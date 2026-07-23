@@ -359,6 +359,7 @@ export function createGame(cardsById, rng = Math.random, playerDeckIds = null, p
 		pickQueue: [],  // pending Discover/Draft picks: { player, ids, grant }
 		askQueue: [],   // pending optional "you may …" yes/no prompts: { player, prompt, yes, no, then, else }
 		sacQueue: [],   // pending sacrifice-as-cost picks: { player, kind, uids, addCostSpell }
+		pendingReturns: [], // delayed blink: creatures to return at the next end step
 		dredgeQueue: [], // pending Dredge decisions: { player, ids } (bottom-of-deck)
 		stack: [],       // spells awaiting resolution (LIFO)
 		priority: null,  // player who currently holds priority to respond (or null)
@@ -1161,6 +1162,19 @@ function summon(state, pi, tokenDef) {
 	// "When summoned" effects (Colossal appendages) fire after it lands
 	if (c.onSummon) execEffects(state, pi, c.onSummon, null, c);
 	return c;
+}
+
+// return a blinked creature as a fresh permanent and retrigger its Battlecry
+// (guarded against runaway blink chains, e.g. two Felidar Guardians)
+function returnBlinked(state, controller, def) {
+	const fresh = summon(state, controller, def);
+	if (!fresh) return null;
+	fresh.sick = true; // it just entered
+	emit(state, { type: 'blinkIn', uid: fresh.uid, player: controller, name: fresh.name });
+	state.blinkDepth = (state.blinkDepth || 0) + 1;
+	if (state.blinkDepth < 20) runBattlecry(state, controller, fresh, null);
+	state.blinkDepth--;
+	return fresh;
 }
 
 // Colossal: a big minion summons its appendage tokens the moment it enters play,
@@ -2324,13 +2338,11 @@ function execEffects(state, pi, effects, target, source) {
 				if (!t.token) { // tokens cease to exist when they leave play
 					const def = state.cardsById[t.id] || { id: t.id, name: t.name, type: 'creature', cost: t.cost,
 						attack: t.attack, health: t.maxHealth, rarity: t.rarity, description: t.description, tribe: t.tribe };
-					const fresh = summon(state, owner, def);
-					if (fresh) {
-						fresh.sick = true; // it just entered
-						emit(state, { type: 'blinkIn', uid: fresh.uid, player: owner, name: fresh.name });
-						state.blinkDepth = (state.blinkDepth || 0) + 1;
-						if (state.blinkDepth < 20) runBattlecry(state, owner, fresh, null); // retrigger ETB (guarded vs infinite loops)
-						state.blinkDepth--;
+					if (e.delayed) {
+						// "return at the beginning of the next end step" — it's gone this turn (dodges wipes)
+						(state.pendingReturns = state.pendingReturns || []).push({ controller: pi, def });
+					} else {
+						returnBlinked(state, owner, def); // immediate flicker
 					}
 				}
 			}
@@ -5576,6 +5588,13 @@ export function endTurn(state) {
 		}
 	}
 	if (state.over) return;
+
+	// Delayed blink: creatures exiled "until the next end step" return now (fresh, retriggering their Battlecry)
+	if (state.pendingReturns && state.pendingReturns.length) {
+		const due = state.pendingReturns; state.pendingReturns = [];
+		for (const r of due) returnBlinked(state, r.controller, r.def);
+		sweepDeaths(state);
+	}
 
 	// end-of-turn triggers
 	for (const c of [...p.board]) {

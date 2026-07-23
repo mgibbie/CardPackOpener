@@ -59025,7 +59025,7 @@
       "keywords": [
         "battlecry"
       ],
-      "description": "Battlecry: Choose one \u2014\n> Scry 2.\n> You gain 3 life.\n> Blink another creature you control.",
+      "description": "Battlecry: Choose one \u2014\n> Scry 2.\n> You gain 3 life.\n> Blink another creature you control (returns at the next end step).",
       "choices": [
         {
           "text": "Scry 2",
@@ -59047,12 +59047,13 @@
           ]
         },
         {
-          "text": "Blink another creature you control",
+          "text": "Exile another creature you control, return it at the next end step",
           "effects": [
             {
               "type": "blink",
               "target": "friendly-creature",
-              "excludeSelf": true
+              "excludeSelf": true,
+              "delayed": true
             }
           ]
         }
