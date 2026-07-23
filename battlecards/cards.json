@@ -59079,6 +59079,82 @@
           "target": "friendly-creature"
         }
       ]
+    },
+    {
+      "id": "ghalta",
+      "name": "Ghalta, Primal Hunger",
+      "type": "creature",
+      "cost": 12,
+      "colors": [
+        "G"
+      ],
+      "cardClass": "neutral",
+      "attack": 12,
+      "health": 12,
+      "rarity": "rare",
+      "set": "wubrg",
+      "tribe": "Elder Dinosaur",
+      "keywords": [
+        "trample"
+      ],
+      "selfCost": {
+        "per": "board-power",
+        "amount": -1
+      },
+      "description": "This costs 1 less to cast for each point of power among creatures you control.\nTrample."
+    },
+    {
+      "id": "thalia_guardian",
+      "name": "Thalia, Guardian of Thraben",
+      "type": "creature",
+      "cost": 2,
+      "colors": [
+        "W"
+      ],
+      "cardClass": "neutral",
+      "attack": 2,
+      "health": 1,
+      "rarity": "rare",
+      "set": "wubrg",
+      "tribe": "Human Soldier",
+      "keywords": [
+        "first_strike"
+      ],
+      "costMod": {
+        "cardType": "noncreature",
+        "amount": 1,
+        "scope": "all"
+      },
+      "description": "First strike.\nNoncreature spells cost 1 more to cast."
+    },
+    {
+      "id": "goblin_warchief",
+      "name": "Goblin Warchief",
+      "type": "creature",
+      "cost": 3,
+      "colors": [
+        "R"
+      ],
+      "cardClass": "neutral",
+      "attack": 2,
+      "health": 2,
+      "rarity": "uncommon",
+      "set": "wubrg",
+      "tribe": "Goblin Warrior",
+      "keywords": [],
+      "costMod": {
+        "cardType": "all",
+        "tribe": "Goblin",
+        "amount": -1,
+        "scope": "own"
+      },
+      "aura": {
+        "tribe": "Goblin",
+        "keywords": [
+          "charge"
+        ]
+      },
+      "description": "Goblin spells you cast cost 1 less.\nGoblins you control have Haste (Charge)."
     }
   ]
 }

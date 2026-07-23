@@ -4205,7 +4205,10 @@ export function schoolOf(card) {
 
 // ---------- cost modifiers ----------
 const isSpellType = card => card.type === 'sorcery' || card.type === 'instant' || card.type === 'secret' || card.type === 'trap';
-const costTypeMatches = (card, t) => t === 'all' || (t === 'spell' ? isSpellType(card) : card.type === t);
+const costTypeMatches = (card, t) => t === 'all'
+	|| (t === 'spell' ? isSpellType(card)
+		: t === 'noncreature' ? (card.type !== 'creature' && card.type !== 'land') // Thalia
+		: card.type === t);
 
 // a live one-shot discount usable on this card right now, or -1
 function discountIndex(state, p, card) {
@@ -4266,6 +4269,8 @@ export function effectiveCost(state, pi, card) {
 			n = state.diedThisTurn || 0;
 		} else if (card.selfCost.per === 'spells-this-game') {
 			n = p.spellsPlayedTotal || 0;
+		} else if (card.selfCost.per === 'board-power') {
+			n = p.board.reduce((s, x) => isDead(x) ? s : s + (x.attack || 0), 0); // Ghalta
 		}
 		c += card.selfCost.amount * n;
 	}
