@@ -540,6 +540,7 @@ const CHOSEN = {
 	exile: { creature: 'creature', 'enemy-creature': 'enemy-creature' },
 	'exile-until-return': { creature: 'creature', 'enemy-creature': 'enemy-creature' },
 	blink: { creature: 'creature', 'friendly-creature': 'friendly-creature' },
+	fight: { 'friendly-creature': 'friendly-creature', creature: 'creature' },
 	'attach-equip': { creature: 'creature', 'friendly-creature': 'friendly-creature' },
 	disguise: { creature: 'creature', 'friendly-creature': 'friendly-creature' },
 	freeze: { any: 'any', creature: 'creature', 'enemy-creature': 'enemy-creature' },
@@ -2345,6 +2346,17 @@ function execEffects(state, pi, effects, target, source) {
 						returnBlinked(state, owner, def); // immediate flicker
 					}
 				}
+			}
+		} else if (e.type === 'fight') {
+			// two-target fight: the chosen fighter (target.uid) and its foe
+			// (target.fightTarget) each deal damage equal to their power to the other
+			const aC = chosenCreature();
+			const bC = target && target.fightTarget != null ? findCreature(state, target.fightTarget) : null;
+			if (aC && bC && aC !== bC && !isDead(aC) && !isDead(bC)) {
+				const pa = aC.attack, pb = bC.attack;
+				emit(state, { type: 'fight', a: aC.uid, b: bC.uid });
+				damageCreature(state, bC, pa, aC);
+				damageCreature(state, aC, pb, bC);
 			}
 		} else if (e.type === 'exile') {
 			// removed from the game: no death, no deathrattle, never reshuffled

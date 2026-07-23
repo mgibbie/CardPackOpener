@@ -59058,6 +59058,27 @@
           ]
         }
       ]
+    },
+    {
+      "id": "prey_upon",
+      "name": "Prey Upon",
+      "type": "sorcery",
+      "cost": 1,
+      "colors": [
+        "G"
+      ],
+      "cardClass": "neutral",
+      "rarity": "common",
+      "set": "wubrg",
+      "fight": true,
+      "fightTarget": "enemy-creature",
+      "description": "A creature you control fights a creature you don't control.\n(Each deals damage equal to its power to the other.)",
+      "effects": [
+        {
+          "type": "fight",
+          "target": "friendly-creature"
+        }
+      ]
     }
   ]
 }

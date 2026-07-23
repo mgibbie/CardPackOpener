@@ -527,8 +527,8 @@ function releasePlay(c, ev) {
 	if (spec) {
 		const targets = E.legalTargets(state, HUMAN, spec);
 		const t = resolveDropTarget(ev, targets, c.uid);
-		if (t) { actPlay(c.uid, t, undefined, undefined, ua); return; } // dropped right on a legal target
-		if (targets.length) { pending = { card: c, spec, targets, mode: 'play', useAlt: ua }; updateHud(); return; }
+		if (t && !c.fight) { actPlay(c.uid, t, undefined, undefined, ua); return; } // dropped right on a legal target
+		if (targets.length) { pending = { card: c, spec, targets, mode: 'play', useAlt: ua }; updateHud(); return; } // fight cards always take the two-step path
 		if (spec.required) return;
 	}
 	actPlay(c.uid, null, undefined, undefined, ua);
@@ -2582,6 +2582,21 @@ renderer.domElement.addEventListener('pointerdown', ev => {
 
 // resolve a pending targeted action (play, hero power, walker, or land tap)
 function commitPending(t) {
+	// two-target fight (Prey Upon): first pick your fighter, then pick the creature it fights
+	if (pending && pending.card && pending.card.fight && pending.mode === 'play') {
+		if (pending.fightStep !== 2) {
+			pending.fighter = t;
+			pending.fightStep = 2;
+			const spec2 = { targets: pending.card.fightTarget || 'enemy-creature', required: true, why: 'a creature to fight' };
+			const targets = E.legalTargets(state, HUMAN, spec2);
+			if (!targets.length) { clearModes(); return; }
+			pending.spec = spec2; pending.targets = targets;
+			updateHud();
+			return;
+		}
+		// second pick made: fuse both into one target the fight effect reads
+		t = { type: 'creature', uid: pending.fighter.uid, player: pending.fighter.player, fightTarget: t.uid, fightTargetPlayer: t.player };
+	}
 	if (isGuest()) {
 		const p = pending;
 		let localFn, intent;
