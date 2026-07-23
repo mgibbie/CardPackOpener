@@ -62487,6 +62487,319 @@
         "per": "artifacts",
         "amount": -1
       }
+    },
+    {
+      "id": "shrinkmeister",
+      "name": "Shrinkmeister",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "priest",
+      "attack": 3,
+      "health": 2,
+      "rarity": "rare",
+      "set": "GVG",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Give a minion -3 Attack this turn.",
+      "effects": [
+        {
+          "type": "temp-buff",
+          "attack": -3,
+          "target": "creature"
+        }
+      ]
+    },
+    {
+      "id": "metaltooth_leaper",
+      "name": "Metaltooth Leaper",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "hunter",
+      "attack": 3,
+      "health": 3,
+      "rarity": "rare",
+      "set": "GVG",
+      "tribe": "Mech",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Give your Mechs +2 Attack.",
+      "effects": [
+        {
+          "type": "buff",
+          "target": "friendly-creatures",
+          "tribe": "Mech",
+          "attack": 2
+        }
+      ]
+    },
+    {
+      "id": "anodized_robo_cub",
+      "name": "Anodized Robo Cub",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "druid",
+      "attack": 2,
+      "health": 2,
+      "rarity": "rare",
+      "set": "GVG",
+      "tribe": "Mech",
+      "keywords": [
+        "taunt",
+        "battlecry"
+      ],
+      "description": "Taunt. Choose One - +1 Attack; or +1 Health.",
+      "choices": [
+        {
+          "text": "+1 Attack",
+          "effects": [
+            {
+              "type": "buff-self",
+              "attack": 1
+            }
+          ]
+        },
+        {
+          "text": "+1 Health",
+          "effects": [
+            {
+              "type": "buff-self",
+              "health": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "upgraded_repair_bot",
+      "name": "Upgraded Repair Bot",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "priest",
+      "attack": 5,
+      "health": 5,
+      "rarity": "rare",
+      "set": "GVG",
+      "tribe": "Mech",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Give a friendly Mech +4 Health.",
+      "effects": [
+        {
+          "type": "buff",
+          "target": "friendly-creature",
+          "tribe": "Mech",
+          "health": 4
+        }
+      ]
+    },
+    {
+      "id": "druid_of_the_fang",
+      "name": "Druid of the Fang",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "druid",
+      "attack": 4,
+      "health": 4,
+      "rarity": "rare",
+      "set": "GVG",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: If you have a Beast, become a 7/7.",
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "controlTribe": "Beast"
+          },
+          "then": [
+            {
+              "type": "buff-self",
+              "attack": 3,
+              "health": 3
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "dr_boom",
+      "name": "Dr. Boom",
+      "type": "creature",
+      "cost": 7,
+      "cardClass": "neutral",
+      "attack": 7,
+      "health": 7,
+      "rarity": "rare",
+      "set": "GVG",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Summon two 1/1 Boom Bots. WARNING: Bots may explode.",
+      "effects": [
+        {
+          "type": "summon",
+          "count": 2,
+          "attack": 1,
+          "health": 1,
+          "name": "Boom Bot",
+          "tribe": "Mech",
+          "keywords": [
+            "deathrattle"
+          ],
+          "deathrattle": [
+            {
+              "type": "damage",
+              "value": 2,
+              "target": "enemy-hero"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "soot_spewer",
+      "name": "Soot Spewer",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "mage",
+      "attack": 3,
+      "health": 4,
+      "rarity": "rare",
+      "set": "GVG",
+      "tribe": "Mech",
+      "keywords": [],
+      "description": "Spell Damage +1.",
+      "static": {
+        "type": "spell-damage",
+        "value": 1
+      }
+    },
+    {
+      "id": "grove_tender",
+      "name": "Grove Tender",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "druid",
+      "attack": 2,
+      "health": 4,
+      "rarity": "rare",
+      "set": "GVG",
+      "keywords": [],
+      "description": "Choose One - Each player draws a card; or Each player gains a Mana Crystal.",
+      "choices": [
+        {
+          "text": "Each player draws",
+          "effects": [
+            {
+              "type": "draw-all",
+              "value": 1
+            }
+          ]
+        },
+        {
+          "text": "Gain a Mana Crystal",
+          "effects": [
+            {
+              "type": "gain-max-mana",
+              "value": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "troggzor_the_earthinator",
+      "name": "Troggzor the Earthinator",
+      "type": "creature",
+      "cost": 7,
+      "cardClass": "neutral",
+      "attack": 6,
+      "health": 6,
+      "rarity": "rare",
+      "set": "GVG",
+      "tribe": "Elemental",
+      "keywords": [],
+      "description": "Whenever your opponent casts a spell, summon a 3/5 Trogg.",
+      "ongoing": {
+        "on": "enemy-spell-played",
+        "effects": [
+          {
+            "type": "summon",
+            "count": 1,
+            "attack": 3,
+            "health": 5,
+            "name": "Burly Rockjaw Trogg",
+            "tribe": "Troll"
+          }
+        ]
+      }
+    },
+    {
+      "id": "sneeds_old_shredder",
+      "name": "Sneed\u2019s Old Shredder",
+      "type": "creature",
+      "cost": 7,
+      "cardClass": "neutral",
+      "attack": 5,
+      "health": 7,
+      "rarity": "rare",
+      "set": "GVG",
+      "tribe": "Mech",
+      "keywords": [
+        "deathrattle"
+      ],
+      "description": "Deathrattle: Summon a random big minion.",
+      "deathrattle": [
+        {
+          "type": "summon-random",
+          "minCost": 6
+        }
+      ]
+    },
+    {
+      "id": "dunemaul_shaman",
+      "name": "Dunemaul Shaman",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "shaman",
+      "attack": 5,
+      "health": 4,
+      "rarity": "rare",
+      "set": "GVG",
+      "tribe": "Ogre",
+      "keywords": [
+        "windfury"
+      ],
+      "overload": 1,
+      "description": "Windfury. Overload: (1)."
+    },
+    {
+      "id": "fel_cannon",
+      "name": "Fel Cannon",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "warlock",
+      "attack": 3,
+      "health": 5,
+      "rarity": "rare",
+      "set": "GVG",
+      "tribe": "Mech",
+      "keywords": [],
+      "description": "At the end of your turn, deal 2 damage to the enemy hero.",
+      "ongoing": {
+        "on": "turn-end",
+        "effects": [
+          {
+            "type": "damage",
+            "value": 2,
+            "target": "enemy-hero"
+          }
+        ]
+      }
     }
   ]
 }
