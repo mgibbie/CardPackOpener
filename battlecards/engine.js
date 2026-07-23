@@ -184,6 +184,7 @@ function instantiate(def, controller) {
 		honorableKill: def.honorableKill || null, // effects on an EXACT lethal blow
 		emerge: def.emerge || null,   // fires from hand when drawn/discovered (not opening hand)
 		counterSpell: !!def.counterSpell, // instant that counters a spell on the stack
+		counter: def.counter ? { ...def.counter } : null, // conditional counter: { type?, notType?, manaValue?, unlessPay?, to? }
 		adventure: def.adventure ? JSON.parse(JSON.stringify(def.adventure)) : null, // {name,cost,type,effects}
 		adventureSpent: false,        // the Adventure half has been cast; only the creature remains
 		ongoings: def.ongoings ? JSON.parse(JSON.stringify(def.ongoings)) : null, // combined triggers
@@ -4390,7 +4391,7 @@ function canCastInResponse(state, pi, card) {
 	if (card.type !== 'instant') return false;
 	const p = state.players[pi];
 	if (availableMana(p) < effectiveCost(state, pi, card)) return false;
-	if (card.counterSpell) return state.stack.some(e => !e.countered && e.kind === 'spell');
+	if (card.counterSpell) return !!topMatchingSpell(state, card); // a legal spell to counter (respects type/MV restriction)
 	const spec = targetSpec(state, pi, card);
 	if (spec && spec.required && legalTargets(state, pi, spec).length === 0) return false;
 	return true;
@@ -4442,6 +4443,8 @@ export function pendingSpellFor(state, pi) {
 // advance priority: skip players who can't respond, resolve the top when all pass
 function offerPriority(state) {
 	while (state.stack.length) {
+		// a soft-counter payment decision is pending: halt the stack until it's answered
+		if (state.askQueue.some(a => a.counterPay)) { state.priority = null; return; }
 		const n = state.players.length;
 		let decider = null, pi = state.priorityNext, checked = 0;
 		while (checked < n) {
@@ -4460,16 +4463,64 @@ function offerPriority(state) {
 	state.passers = [];
 }
 
+// does this counter's restriction admit `entry` (a stack spell) as a legal target?
+// `unlessPay` is NOT a targeting restriction (a soft counter is always castable).
+function counterMatches(card, entry) {
+	const cfg = card.counter;
+	if (!cfg) return true; // unconditional Counterspell
+	const sc = entry.card;
+	if (cfg.type && sc.type !== cfg.type) return false;         // Dispel: instant only
+	if (cfg.notType && sc.type === cfg.notType) return false;   // Negate: noncreature
+	if (cfg.manaValue != null && (sc.cost || 0) !== cfg.manaValue) return false; // Spell Snare: MV 2
+	return true;
+}
+
+// the topmost uncountered spell on the stack this counter may legally target
+function topMatchingSpell(state, card) {
+	for (let i = state.stack.length - 1; i >= 0; i--) {
+		const e = state.stack[i];
+		if (e.kind === 'spell' && !e.countered && counterMatches(card, e)) return e;
+	}
+	return null;
+}
+
+// remove a countered spell from the stack and send it to its destination:
+// 'graveyard' (default), 'hand' (Remand), or 'top' of the owner's library (Memory Lapse)
+function counterStackEntry(state, tgt, to) {
+	if (!tgt || tgt.countered) return;
+	tgt.countered = true;
+	state.stack = state.stack.filter(e => e !== tgt);
+	emit(state, { type: 'countered', player: tgt.caster, name: tgt.card.name });
+	const owner = tgt.caster, card = tgt.card;
+	if (to === 'hand') {
+		if (state.players[owner].hand.length < MAX_HAND) { card.zone = 'hand'; state.players[owner].hand.push(card); }
+		else toGraveyard(state, owner, card);
+	} else if (to === 'top') {
+		card.zone = 'deck';
+		state.players[owner].deck.push(card.id); // deck top = end of the array
+	} else {
+		toGraveyard(state, owner, card);
+	}
+}
+
 // resolve one entry (dispatch by kind). A Counter removes the entry it targets.
 function resolveEntry(state, entry) {
 	const pi = entry.caster;
 	if (entry.counters != null) {
 		const tgt = state.stack.find(e => e.uid === entry.counters);
-		if (tgt && !tgt.countered) {
-			tgt.countered = true;
-			state.stack = state.stack.filter(e => e !== tgt);
-			emit(state, { type: 'countered', player: tgt.caster, name: tgt.card.name });
-			toGraveyard(state, tgt.caster, tgt.card);
+		if (tgt && !tgt.countered && counterMatches(entry.card, tgt)) {
+			const cfg = entry.card.counter || {};
+			const controller = tgt.caster;
+			if (cfg.unlessPay && availableMana(state.players[controller]) >= cfg.unlessPay) {
+				// soft counter: the spell's controller may pay to save it (interactive)
+				state.askQueue.push({ player: controller,
+					prompt: `Pay ${cfg.unlessPay} or ${tgt.card.name} is countered?`,
+					yes: `Pay ${cfg.unlessPay}`, no: 'Let it be countered',
+					counterPay: { targetUid: tgt.uid, amount: cfg.unlessPay, to: cfg.to || 'graveyard' } });
+				emit(state, { type: 'askStart', player: controller, prompt: `Pay ${cfg.unlessPay} to save ${tgt.card.name}?` });
+			} else {
+				counterStackEntry(state, tgt, cfg.to || 'graveyard');
+			}
 		}
 		if (entry.card.effects) execEffects(state, pi, entry.card.effects, entry.target, entry.card);
 		fireOngoing(state, pi, 'spell-played', { played: entry.card });
@@ -4515,8 +4566,8 @@ function stackAction(state, caster, entry) {
 	entry.caster = caster;
 	entry.countered = false;
 	if (entry.kind === 'spell' && entry.card.counterSpell) {
-		const top = state.stack[state.stack.length - 1];
-		if (top) entry.counters = top.uid;
+		const tm = topMatchingSpell(state, entry.card); // the legal spell this counter locks onto
+		if (tm) entry.counters = tm.uid;
 	}
 	state.stack.push(entry);
 	// only announce a stack pause when someone can actually respond
@@ -5083,6 +5134,21 @@ export function resolvePick(state, id) {
 export function resolveAsk(state, yes) {
 	const pend = state.askQueue.shift();
 	if (!pend) return false;
+	if (pend.counterPay) {
+		// soft-counter payment: yes = pay N (spell survives), no/can't-pay = counter it
+		const cp = pend.counterPay;
+		const tgt = state.stack.find(e => e.uid === cp.targetUid);
+		if (tgt && !tgt.countered) {
+			if (yes && availableMana(state.players[pend.player]) >= cp.amount) {
+				spendMana(state.players[pend.player], cp.amount);
+				emit(state, { type: 'counterPaid', player: pend.player, name: tgt.card.name, amount: cp.amount });
+			} else {
+				counterStackEntry(state, tgt, cp.to);
+			}
+		}
+		offerPriority(state); // resume draining the stack now that the decision is made
+		return true;
+	}
 	execEffects(state, pend.player, yes ? pend.then : (pend.else || []), null, null);
 	return true;
 }

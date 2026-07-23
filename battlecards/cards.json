@@ -58331,6 +58331,149 @@
           "value": 2
         }
       ]
+    },
+    {
+      "id": "negate",
+      "name": "Negate",
+      "type": "instant",
+      "cost": 2,
+      "colors": [
+        "U"
+      ],
+      "cardClass": "neutral",
+      "rarity": "common",
+      "set": "wubrg",
+      "counterSpell": true,
+      "counter": {
+        "notType": "creature"
+      },
+      "description": "Counter target noncreature spell."
+    },
+    {
+      "id": "dispel",
+      "name": "Dispel",
+      "type": "instant",
+      "cost": 1,
+      "colors": [
+        "U"
+      ],
+      "cardClass": "neutral",
+      "rarity": "common",
+      "set": "wubrg",
+      "counterSpell": true,
+      "counter": {
+        "type": "instant"
+      },
+      "description": "Counter target instant spell."
+    },
+    {
+      "id": "spell_snare",
+      "name": "Spell Snare",
+      "type": "instant",
+      "cost": 1,
+      "colors": [
+        "U"
+      ],
+      "cardClass": "neutral",
+      "rarity": "common",
+      "set": "wubrg",
+      "counterSpell": true,
+      "counter": {
+        "manaValue": 2
+      },
+      "description": "Counter target spell with mana value 2."
+    },
+    {
+      "id": "mana_leak",
+      "name": "Mana Leak",
+      "type": "instant",
+      "cost": 2,
+      "colors": [
+        "U"
+      ],
+      "cardClass": "neutral",
+      "rarity": "common",
+      "set": "wubrg",
+      "counterSpell": true,
+      "counter": {
+        "unlessPay": 3
+      },
+      "description": "Counter target spell unless its controller pays 3."
+    },
+    {
+      "id": "force_spike",
+      "name": "Force Spike",
+      "type": "instant",
+      "cost": 1,
+      "colors": [
+        "U"
+      ],
+      "cardClass": "neutral",
+      "rarity": "common",
+      "set": "wubrg",
+      "counterSpell": true,
+      "counter": {
+        "unlessPay": 1
+      },
+      "description": "Counter target spell unless its controller pays 1."
+    },
+    {
+      "id": "spell_pierce",
+      "name": "Spell Pierce",
+      "type": "instant",
+      "cost": 1,
+      "colors": [
+        "U"
+      ],
+      "cardClass": "neutral",
+      "rarity": "common",
+      "set": "wubrg",
+      "counterSpell": true,
+      "counter": {
+        "notType": "creature",
+        "unlessPay": 2
+      },
+      "description": "Counter target noncreature spell unless its controller pays 2."
+    },
+    {
+      "id": "remand",
+      "name": "Remand",
+      "type": "instant",
+      "cost": 2,
+      "colors": [
+        "U"
+      ],
+      "cardClass": "neutral",
+      "rarity": "common",
+      "set": "wubrg",
+      "counterSpell": true,
+      "counter": {
+        "to": "hand"
+      },
+      "effects": [
+        {
+          "type": "draw",
+          "value": 1
+        }
+      ],
+      "description": "Counter target spell.\nReturn it to its owner's hand.\nDraw a card."
+    },
+    {
+      "id": "memory_lapse",
+      "name": "Memory Lapse",
+      "type": "instant",
+      "cost": 2,
+      "colors": [
+        "U"
+      ],
+      "cardClass": "neutral",
+      "rarity": "common",
+      "set": "wubrg",
+      "counterSpell": true,
+      "counter": {
+        "to": "top"
+      },
+      "description": "Counter target spell.\nPut it on top of its owner's library instead of into the graveyard."
     }
   ]
 }

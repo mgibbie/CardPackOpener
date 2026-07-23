@@ -1983,6 +1983,7 @@ function maybeRunAI() {
 	if (state.discardQueue.length && state.discardQueue[0].player === HUMAN) return; // loot pick first
 	if (state.pickQueue.length && state.pickQueue[0].player === HUMAN) return; // discover pick first
 	if (state.dredgeQueue.length && state.dredgeQueue[0].player === HUMAN) return; // dredge pick first
+	if (state.askQueue.length && state.askQueue[0].player === HUMAN) return; // your yes/no prompt (e.g. soft-counter pay) first
 	if (state.priority === HUMAN) return; // your counter window first
 	clearTimeout(aiTimer);
 	aiTimer = setTimeout(() => {
@@ -2884,7 +2885,7 @@ function snapshotState() {
 		classPicks: state.classPicks || null,
 		playerCount: state.players.length,
 		// pending decisions so a watcher can see the Discover/scry options being weighed
-		scryQueue: state.scryQueue || [], discardQueue: state.discardQueue || [], pickQueue: state.pickQueue || [], dredgeQueue: state.dredgeQueue || [], stack: state.stack || [], priority: state.priority ?? null, passers: state.passers || [], priorityNext: state.priorityNext || 0,
+		scryQueue: state.scryQueue || [], discardQueue: state.discardQueue || [], pickQueue: state.pickQueue || [], dredgeQueue: state.dredgeQueue || [], askQueue: state.askQueue || [], stack: state.stack || [], priority: state.priority ?? null, passers: state.passers || [], priorityNext: state.priorityNext || 0,
 	};
 }
 
@@ -2935,7 +2936,7 @@ function startSpectate(cardsById) {
 		// the watcher can see the Discover/scry options while they're being weighed
 		state = {
 			...snap, cardsById, rng: Math.random, events: [],
-			scryQueue: snap.scryQueue || [], discardQueue: snap.discardQueue || [], pickQueue: snap.pickQueue || [], dredgeQueue: snap.dredgeQueue || [], stack: snap.stack || [], priority: snap.priority ?? null, passers: snap.passers || [], priorityNext: snap.priorityNext || 0,
+			scryQueue: snap.scryQueue || [], discardQueue: snap.discardQueue || [], pickQueue: snap.pickQueue || [], dredgeQueue: snap.dredgeQueue || [], askQueue: snap.askQueue || [], stack: snap.stack || [], priority: snap.priority ?? null, passers: snap.passers || [], priorityNext: snap.priorityNext || 0,
 		};
 		if (snap.playerCount !== spectatePanelsFor) {
 			playerCount = snap.playerCount;
@@ -3037,7 +3038,7 @@ async function startDuelHost(cardsById) {
 			const snap = prev.snapshot;
 			state = {
 				...snap, cardsById, rng: Math.random, events: [],
-				scryQueue: snap.scryQueue || [], discardQueue: snap.discardQueue || [], pickQueue: snap.pickQueue || [], dredgeQueue: snap.dredgeQueue || [], stack: snap.stack || [], priority: snap.priority ?? null, passers: snap.passers || [], priorityNext: snap.priorityNext || 0,
+				scryQueue: snap.scryQueue || [], discardQueue: snap.discardQueue || [], pickQueue: snap.pickQueue || [], dredgeQueue: snap.dredgeQueue || [], askQueue: snap.askQueue || [], stack: snap.stack || [], priority: snap.priority ?? null, passers: snap.passers || [], priorityNext: snap.priorityNext || 0,
 			};
 			duelPubSeq = prev.seq || 0; // continue the sequence so the guest sees fresh
 			resumed = true;
@@ -3170,7 +3171,7 @@ function startDuelGuest(cardsById) {
 			try {
 				state = {
 					...snap, cardsById, rng: Math.random, events: [],
-					scryQueue: snap.scryQueue || [], discardQueue: snap.discardQueue || [], pickQueue: snap.pickQueue || [], dredgeQueue: snap.dredgeQueue || [], stack: snap.stack || [], priority: snap.priority ?? null, passers: snap.passers || [], priorityNext: snap.priorityNext || 0,
+					scryQueue: snap.scryQueue || [], discardQueue: snap.discardQueue || [], pickQueue: snap.pickQueue || [], dredgeQueue: snap.dredgeQueue || [], askQueue: snap.askQueue || [], stack: snap.stack || [], priority: snap.priority ?? null, passers: snap.passers || [], priorityNext: snap.priorityNext || 0,
 				};
 				if (state.players.length !== panelsFor) {
 					playerCount = state.players.length;
@@ -3255,7 +3256,7 @@ function snapshotForDuel() {
 		over: state.over, winner: state.winner, classPicks: state.classPicks || null,
 		playerCount: state.players.length,
 		// carry pending decisions so the guest can resolve their own scry/loot/discover
-		scryQueue: state.scryQueue || [], discardQueue: state.discardQueue || [], pickQueue: state.pickQueue || [], dredgeQueue: state.dredgeQueue || [], stack: state.stack || [], priority: state.priority ?? null, passers: state.passers || [], priorityNext: state.priorityNext || 0,
+		scryQueue: state.scryQueue || [], discardQueue: state.discardQueue || [], pickQueue: state.pickQueue || [], dredgeQueue: state.dredgeQueue || [], askQueue: state.askQueue || [], stack: state.stack || [], priority: state.priority ?? null, passers: state.passers || [], priorityNext: state.priorityNext || 0,
 	};
 }
 function publishDuel() {
