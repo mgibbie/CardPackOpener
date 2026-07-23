@@ -60264,7 +60264,7 @@
       "set": "wubrg",
       "tribe": "Spirit",
       "keywords": [],
-      "description": "(1), Sacrifice a creature: Tap a creature so it can't attack next turn.",
+      "description": "(1), Sacrifice a creature: Freeze a creature.",
       "activated": [
         {
           "cost": 1,
@@ -60275,7 +60275,7 @@
               "target": "creature"
             }
           ],
-          "text": "(1), Sacrifice a creature: Tap a creature"
+          "text": "(1), Sacrifice a creature: Freeze a creature"
         }
       ]
     },
