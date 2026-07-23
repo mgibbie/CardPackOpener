@@ -59991,6 +59991,197 @@
           "value": 3
         }
       ]
+    },
+    {
+      "id": "llanowar_elves",
+      "name": "Llanowar Elves",
+      "type": "creature",
+      "cost": 1,
+      "colors": [
+        "G"
+      ],
+      "cardClass": "neutral",
+      "attack": 1,
+      "health": 1,
+      "rarity": "common",
+      "set": "wubrg",
+      "tribe": "Elf Druid",
+      "keywords": [],
+      "description": "Tap: Add 1 mana. (Once per turn; not the turn it enters.)",
+      "activated": [
+        {
+          "cost": 0,
+          "tap": true,
+          "effects": [
+            {
+              "type": "gain-mana",
+              "value": 1
+            }
+          ],
+          "text": "Add 1 mana"
+        }
+      ]
+    },
+    {
+      "id": "elvish_mystic",
+      "name": "Elvish Mystic",
+      "type": "creature",
+      "cost": 1,
+      "colors": [
+        "G"
+      ],
+      "cardClass": "neutral",
+      "attack": 1,
+      "health": 1,
+      "rarity": "common",
+      "set": "wubrg",
+      "tribe": "Elf Druid",
+      "keywords": [],
+      "description": "Tap: Add 1 mana. (Once per turn; not the turn it enters.)",
+      "activated": [
+        {
+          "cost": 0,
+          "tap": true,
+          "effects": [
+            {
+              "type": "gain-mana",
+              "value": 1
+            }
+          ],
+          "text": "Add 1 mana"
+        }
+      ]
+    },
+    {
+      "id": "fyndhorn_elves",
+      "name": "Fyndhorn Elves",
+      "type": "creature",
+      "cost": 1,
+      "colors": [
+        "G"
+      ],
+      "cardClass": "neutral",
+      "attack": 1,
+      "health": 1,
+      "rarity": "common",
+      "set": "wubrg",
+      "tribe": "Elf Druid",
+      "keywords": [],
+      "description": "Tap: Add 1 mana. (Once per turn; not the turn it enters.)",
+      "activated": [
+        {
+          "cost": 0,
+          "tap": true,
+          "effects": [
+            {
+              "type": "gain-mana",
+              "value": 1
+            }
+          ],
+          "text": "Add 1 mana"
+        }
+      ]
+    },
+    {
+      "id": "elvish_herder",
+      "name": "Elvish Herder",
+      "type": "creature",
+      "cost": 1,
+      "colors": [
+        "G"
+      ],
+      "cardClass": "neutral",
+      "attack": 1,
+      "health": 1,
+      "rarity": "common",
+      "set": "wubrg",
+      "tribe": "Elf",
+      "keywords": [],
+      "description": "(1): Target creature gains Trample.",
+      "activated": [
+        {
+          "cost": 1,
+          "repeatable": true,
+          "effects": [
+            {
+              "type": "grant",
+              "keyword": "trample",
+              "target": "creature"
+            }
+          ],
+          "text": "Give a creature Trample"
+        }
+      ]
+    },
+    {
+      "id": "goblin_sledder",
+      "name": "Goblin Sledder",
+      "type": "creature",
+      "cost": 1,
+      "colors": [
+        "R"
+      ],
+      "cardClass": "neutral",
+      "attack": 1,
+      "health": 1,
+      "rarity": "common",
+      "set": "wubrg",
+      "tribe": "Goblin",
+      "keywords": [],
+      "description": "Sacrifice a Goblin: Target creature gets +1/+1 until end of turn.",
+      "activated": [
+        {
+          "sacCost": {
+            "tribe": "Goblin"
+          },
+          "effects": [
+            {
+              "type": "temp-buff",
+              "attack": 1,
+              "health": 1,
+              "target": "creature"
+            }
+          ],
+          "text": "Sacrifice a Goblin: +1/+1"
+        }
+      ]
+    },
+    {
+      "id": "goblin_trashmaster",
+      "name": "Goblin Trashmaster",
+      "type": "creature",
+      "cost": 4,
+      "colors": [
+        "R"
+      ],
+      "cardClass": "neutral",
+      "attack": 3,
+      "health": 3,
+      "rarity": "rare",
+      "set": "wubrg",
+      "tribe": "Goblin Warrior",
+      "keywords": [],
+      "description": "Other Goblins you control get +1/+1.\nSacrifice a Goblin: Destroy an enemy artifact.",
+      "aura": {
+        "tribe": "Goblin",
+        "attack": 1,
+        "health": 1,
+        "others": true
+      },
+      "activated": [
+        {
+          "sacCost": {
+            "tribe": "Goblin"
+          },
+          "effects": [
+            {
+              "type": "destroy-art-ench",
+              "count": 1
+            }
+          ],
+          "text": "Sacrifice a Goblin: Destroy an artifact"
+        }
+      ]
     }
   ]
 }
