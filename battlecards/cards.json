@@ -59149,7 +59149,7 @@
       "cardClass": "neutral",
       "rarity": "uncommon",
       "set": "wubrg",
-      "description": "Summon three 1/1 Spirits with Flying.",
+      "description": "Summon three 1/1 Spirit tokens with Flying & Lifesteal.",
       "effects": [
         {
           "type": "summon",
@@ -59159,7 +59159,8 @@
           "name": "Spirit",
           "tribe": "Spirit",
           "keywords": [
-            "flying"
+            "flying",
+            "lifesteal"
           ]
         }
       ]
