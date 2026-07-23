@@ -3014,9 +3014,9 @@ function execEffects(state, pi, effects, target, source) {
 				emit(state, { type: 'buff', uid: source.uid, attack: source.attack, hp: hp(source) });
 			}
 		} else if (e.type === 'destroy-random-each') {
-			// Void Crusher: destroy a random creature on each player's board
+			// Void Crusher: destroy a random creature on each player's board (never itself)
 			for (const pl of state.players) {
-				const pool = pl.board.filter(c => !isDead(c) && c.type !== 'location');
+				const pool = pl.board.filter(c => !isDead(c) && c.type !== 'location' && c !== source);
 				if (pool.length) { const t = pool[Math.floor(state.rng() * pool.length)]; t.damage = t.maxHealth; t.shield = false; emit(state, { type: 'destroy', uid: t.uid }); }
 			}
 		} else if (e.type === 'copy-enemy-hero-power') {
