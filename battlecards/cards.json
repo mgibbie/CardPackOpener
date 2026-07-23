@@ -64903,6 +64903,233 @@
           ]
         }
       ]
+    },
+    {
+      "id": "brave_archer",
+      "name": "Brave Archer",
+      "type": "creature",
+      "cost": 1,
+      "cardClass": "hunter",
+      "attack": 2,
+      "health": 1,
+      "rarity": "common",
+      "set": "TGT",
+      "description": "Inspire: If your hand is empty, each other player loses 2 life.",
+      "ongoing": {
+        "on": "hero-power-used",
+        "effects": [
+          {
+            "type": "conditional",
+            "if": {
+              "handEmpty": true
+            },
+            "then": [
+              {
+                "type": "damage",
+                "value": 2,
+                "target": "enemy-heroes"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "nexus_champion_saraad",
+      "name": "Nexus-Champion Saraad",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "neutral",
+      "attack": 4,
+      "health": 5,
+      "rarity": "legendary",
+      "set": "TGT",
+      "description": "Inspire: Add a random spell to your hand.",
+      "ongoing": {
+        "on": "hero-power-used",
+        "effects": [
+          {
+            "type": "conjure-random",
+            "cardType": "spell",
+            "count": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "void_crusher",
+      "name": "Void Crusher",
+      "type": "creature",
+      "cost": 6,
+      "cardClass": "warlock",
+      "attack": 5,
+      "health": 4,
+      "rarity": "rare",
+      "set": "TGT",
+      "description": "Inspire: Destroy a random creature for each player.",
+      "ongoing": {
+        "on": "hero-power-used",
+        "effects": [
+          {
+            "type": "destroy-random-each"
+          }
+        ]
+      }
+    },
+    {
+      "id": "dalaran_aspirant",
+      "name": "Dalaran Aspirant",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "mage",
+      "attack": 3,
+      "health": 5,
+      "rarity": "common",
+      "set": "TGT",
+      "description": "Spell Damage +1. Inspire: Gain Spell Damage +1.",
+      "static": {
+        "type": "spell-damage",
+        "value": 1
+      },
+      "ongoing": {
+        "on": "hero-power-used",
+        "effects": [
+          {
+            "type": "buff-spell-damage-self",
+            "value": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "argent_watchman",
+      "name": "Argent Watchman",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "neutral",
+      "attack": 2,
+      "health": 4,
+      "rarity": "rare",
+      "set": "TGT",
+      "keywords": [
+        "pacifist"
+      ],
+      "description": "Can't attack. Inspire: Can attack as normal this turn.",
+      "ongoing": {
+        "on": "hero-power-used",
+        "effects": [
+          {
+            "type": "enable-attack-self"
+          }
+        ]
+      }
+    },
+    {
+      "id": "frost_giant",
+      "name": "Frost Giant",
+      "type": "creature",
+      "cost": 10,
+      "cardClass": "neutral",
+      "attack": 8,
+      "health": 8,
+      "rarity": "epic",
+      "set": "TGT",
+      "description": "Costs (1) less for each time you used your Hero Power this game.",
+      "selfCost": {
+        "per": "hero-powers-game",
+        "amount": -1
+      }
+    },
+    {
+      "id": "fallen_hero",
+      "name": "Fallen Hero",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "mage",
+      "attack": 3,
+      "health": 2,
+      "rarity": "rare",
+      "set": "TGT",
+      "description": "Your Hero Power deals 1 extra damage.",
+      "static": {
+        "type": "hero-power-damage",
+        "value": 1
+      }
+    },
+    {
+      "id": "maiden_of_the_lake",
+      "name": "Maiden of the Lake",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "neutral",
+      "attack": 2,
+      "health": 6,
+      "rarity": "common",
+      "set": "TGT",
+      "description": "Your Hero Power costs (1).",
+      "heroPowerCostSet": 1
+    },
+    {
+      "id": "fencing_coach",
+      "name": "Fencing Coach",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "neutral",
+      "attack": 2,
+      "health": 2,
+      "rarity": "rare",
+      "set": "TGT",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: The next time you use your Hero Power this turn, it costs (2) less.",
+      "effects": [
+        {
+          "type": "hero-power-discount",
+          "value": 2
+        }
+      ]
+    },
+    {
+      "id": "saboteur",
+      "name": "Saboteur",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "neutral",
+      "attack": 4,
+      "health": 3,
+      "rarity": "rare",
+      "set": "TGT",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Your opponent's Hero Power costs (5) more next turn.",
+      "effects": [
+        {
+          "type": "tax-enemy-hero-power",
+          "value": 5
+        }
+      ]
+    },
+    {
+      "id": "sideshow_spelleater",
+      "name": "Sideshow Spelleater",
+      "type": "creature",
+      "cost": 6,
+      "cardClass": "neutral",
+      "attack": 6,
+      "health": 5,
+      "rarity": "epic",
+      "set": "TGT",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Copy your opponent's Hero Power.",
+      "effects": [
+        {
+          "type": "copy-enemy-hero-power"
+        }
+      ]
     }
   ]
 }

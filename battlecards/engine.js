@@ -343,6 +343,9 @@ export function createGame(cardsById, rng = Math.random, playerDeckIds = null, p
 		diedThisTurnIds: [], // Kel'Thuzad: non-token creatures that died this turn
 		deathLogIds: [],     // Feugen/Stalagg: everything that died this game
 		spellTaxNext: 0,     // Loatheb: extra cost on this player's spells next turn
+		heroPowerTaxNext: 0,      // Saboteur: your Hero Power costs more next turn
+		heroPowerDiscountNext: 0, // Fencing Coach: your next Hero Power costs less
+		heroPowersUsedGame: 0,    // Frost Giant: total Hero Powers used this game
 		eliminated: false,
 	});
 
@@ -2202,6 +2205,7 @@ function execEffects(state, pi, effects, target, source) {
 			if (source && (source.type === 'sorcery' || source.type === 'instant')) {
 				v += staticValue(state.players[pi], 'spell-damage');
 			}
+			if (state.hpDamageBonus) v += state.hpDamageBonus; // Fallen Hero: your Hero Power deals extra
 			v = boost(v);
 			// Lightning Storm rolls its damage per target
 			const rollv = () => e.range
@@ -2999,6 +3003,35 @@ function execEffects(state, pi, effects, target, source) {
 				const [lo, hi] = e.range || [1, 1];
 				buffCreature(source, lo + Math.floor(state.rng() * (hi - lo + 1)), e.health || 0);
 			}
+		} else if (e.type === 'enable-attack-self') {
+			// Argent Watchman: may attack this turn despite Can't Attack
+			if (source) source.attackAnywayTurn = state.turnNumber;
+		} else if (e.type === 'buff-spell-damage-self') {
+			// Dalaran Aspirant: raise this creature's Spell Damage static
+			if (source && !isDead(source)) {
+				if (!source.static || source.static.type !== 'spell-damage') source.static = { type: 'spell-damage', value: 0 };
+				source.static.value = (source.static.value || 0) + (e.value || 1);
+				emit(state, { type: 'buff', uid: source.uid, attack: source.attack, hp: hp(source) });
+			}
+		} else if (e.type === 'destroy-random-each') {
+			// Void Crusher: destroy a random creature on each player's board
+			for (const pl of state.players) {
+				const pool = pl.board.filter(c => !isDead(c) && c.type !== 'location');
+				if (pool.length) { const t = pool[Math.floor(state.rng() * pool.length)]; t.damage = t.maxHealth; t.shield = false; emit(state, { type: 'destroy', uid: t.uid }); }
+			}
+		} else if (e.type === 'copy-enemy-hero-power') {
+			// Sideshow Spelleater: copy a random opponent's Hero Power
+			const p = state.players[pi];
+			for (const o of enemies) {
+				const src = state.players[o].heroPowers[0];
+				if (src && p.heroPowers.length < MAX_HERO_POWERS && !p.heroPowers.some(h => h.id === src.id)) {
+					const copy = instantiate(state.cardsById[src.id] || { id: src.id, name: src.name, type: 'heropower', power: src.power }, pi);
+					copy.zone = 'heropower'; copy.usedThisTurn = false;
+					p.heroPowers.push(copy);
+					emit(state, { type: 'heroPowerGained', player: pi, card: copy });
+				}
+				break;
+			}
 		} else if (e.type === 'damage-self') {
 			if (source && source.zone === 'board' && !isDead(source)) damageCreature(state, source, e.value, null);
 		} else if (e.type === 'destroy-self') {
@@ -3048,6 +3081,12 @@ function execEffects(state, pi, effects, target, source) {
 		} else if (e.type === 'tax-enemy-spells') {
 			// Loatheb: each opponent's spells cost more on their next turn
 			for (const o of enemies) state.players[o].spellTaxNext = (state.players[o].spellTaxNext || 0) + (e.value || 0);
+		} else if (e.type === 'tax-enemy-hero-power') {
+			// Saboteur: each opponent's Hero Power costs more next turn
+			for (const o of enemies) state.players[o].heroPowerTaxNext = (state.players[o].heroPowerTaxNext || 0) + (e.value || 0);
+		} else if (e.type === 'hero-power-discount') {
+			// Fencing Coach: your next Hero Power this turn costs less
+			state.players[pi].heroPowerDiscountNext = (state.players[pi].heroPowerDiscountNext || 0) + (e.value || 0);
 		} else if (e.type === 'resurrect-died-this-turn') {
 			// Kel'Thuzad: summon all your creatures that died this turn
 			const p = state.players[pi];
@@ -4583,6 +4622,8 @@ export function effectiveCost(state, pi, card) {
 			n = p.spellsPlayedTotal || 0;
 		} else if (card.selfCost.per === 'board-power') {
 			n = p.board.reduce((s, x) => isDead(x) ? s : s + (x.attack || 0), 0); // Ghalta
+		} else if (card.selfCost.per === 'hero-powers-game') {
+			n = p.heroPowersUsedGame || 0; // Frost Giant
 		} else if (card.selfCost.per === 'artifacts') {
 			n = p.artifacts.length; // Affinity for artifacts (Treasures/Clues/Food count)
 		}
@@ -5089,7 +5130,9 @@ function resolveEntry(state, entry) {
 		return;
 	}
 	if (entry.kind === 'heropower') {
+		state.hpDamageBonus = staticValue(state.players[pi], 'hero-power-damage'); // Fallen Hero
 		execEffects(state, pi, entry.effects, entry.target, entry.card);
+		state.hpDamageBonus = 0;
 		fireOngoing(state, pi, 'hero-power-used', {}); // Inspire
 		return;
 	}
@@ -5196,7 +5239,7 @@ export function canAttackWith(state, pi, c) {
 	if (state.over || state.current !== pi || state.priority != null || state.stack.length || c.attack <= 0) return false;
 	if (c.frozen) return false;
 	if (c.dormantLeft > 0) return false; // still asleep
-	if (has(c, KW.PACIFIST)) return false;
+	if (has(c, KW.PACIFIST) && c.attackAnywayTurn !== state.turnNumber) return false; // Argent Watchman: Inspire lets it attack this turn
 	if (state.plane) {
 		const pr = activePlaneRule(state); // Bloomburrow: Humans can't attack
 		if (pr && pr.kind === 'cant-attack' && (c.tribe || '').includes(pr.tribe)) return false;
@@ -5859,11 +5902,22 @@ export function heroPowerSpec(state, pi, card, choice) {
 	return targetSpec(state, pi, { id: card.id, type: 'sorcery', effects: powerEffectsOf(card, choice) });
 }
 
+// a Hero Power's live cost after board/one-shot modifiers (Maiden of the Lake
+// sets it to 1, Saboteur taxes it, Fencing Coach discounts the next use)
+export function heroPowerCost(state, pi, card) {
+	const p = state.players[pi];
+	let c = card.power.cost;
+	const set = p.board.filter(x => x.heroPowerCostSet != null && !isDead(x)).map(x => x.heroPowerCostSet);
+	if (set.length) c = Math.min(c, ...set); // Maiden of the Lake
+	c += (p.heroPowerTaxNext || 0) - (p.heroPowerDiscountNext || 0);
+	return Math.max(0, c);
+}
+
 export function canUseHeroPower(state, pi, card, choice) {
 	if (state.over || !(state.current === pi && state.priority == null && state.stack.length === 0)) return false;
 	const p = state.players[pi];
 	if (!p.heroPowers.includes(card) || card.usedThisTurn) return false;
-	if (availableMana(p) < card.power.cost) return false;
+	if (availableMana(p) < heroPowerCost(state, pi, card)) return false;
 	const spec = heroPowerSpec(state, pi, card, choice);
 	if (spec && spec.required && legalTargets(state, pi, spec).length === 0) return false;
 	return true;
@@ -5873,10 +5927,13 @@ export function useHeroPower(state, pi, cardUid, target, choice) {
 	const p = state.players[pi];
 	const card = p.heroPowers.find(c => c.uid === cardUid);
 	if (!card || !canUseHeroPower(state, pi, card, choice)) return false;
+	const cost = heroPowerCost(state, pi, card);
 	const ward = wardOf(state, pi, target);
-	if (ward?.mana && availableMana(p) < card.power.cost + ward.mana) return false;
+	if (ward?.mana && availableMana(p) < cost + ward.mana) return false;
 	if (ward) payWard(state, pi, target);
-	spendMana(p, card.power.cost);
+	spendMana(p, cost);
+	p.heroPowerDiscountNext = 0; // Fencing Coach's discount is one-shot
+	p.heroPowersUsedGame = (p.heroPowersUsedGame || 0) + 1; // Frost Giant
 	card.usedThisTurn = true;
 	emit(state, { type: 'heroPowerUsed', player: pi, card, mana: availableMana(p) });
 	stackAction(state, pi, { kind: 'heropower', card, effects: powerEffectsOf(card, choice), target });
@@ -5954,6 +6011,7 @@ export function endTurn(state) {
 	const pi = state.current;
 	const p = state.players[pi];
 	p.spellTaxNext = 0; // Loatheb's tax only lasts this player's turn
+	p.heroPowerTaxNext = 0; // Saboteur's Hero Power tax only lasts this turn
 
 	// Impulsive creatures refuse to end the turn without swinging
 	for (const c of [...p.board]) {
