@@ -464,6 +464,12 @@ export function drawCards(state, pi, count) {
 		p.drawsThisTurn = (p.drawsThisTurn || 0) + 1;
 		if (p.drawsThisTurn > 1) firePonder(state, pi, { drawn: card });
 		fireEmerge(state, pi, card);
+		// opponents may react to your draw (Smothering Tithe: pay {2} or I get a Treasure)
+		if (state.dealt && !state.enemyDrawLock) {
+			state.enemyDrawLock = true;
+			try { for (let s2 = 0; s2 < state.players.length; s2++) if (s2 !== pi && !state.players[s2].eliminated) fireOngoing(state, s2, 'enemy-draws', { drawer: pi }); }
+			finally { state.enemyDrawLock = false; }
+		}
 	}
 	return drawn;
 }
@@ -1892,6 +1898,24 @@ function runSecretEffects(state, pi, effects, ctx) {
 				if (t && !isDead(t) && t.controller !== pi) {
 					t.damage = t.maxHealth; t.shield = false;
 					emit(state, { type: 'destroy', uid: t.uid });
+				}
+				break;
+			}
+			case 'opponent-may-pay': {
+				// Rhystic Study / Smothering Tithe: the opponent tied to this trigger
+				// (the caster / the drawer) may pay `amount`; if they don't, the
+				// enchantment's controller (pi) gets `else`. `pi` and benefit are captured now.
+				const opp = ctx.caster != null ? ctx.caster : (ctx.drawer != null ? ctx.drawer : null);
+				if (opp != null && opp !== pi && !state.players[opp].eliminated) {
+					const benefit = e.else || [];
+					if (availableMana(state.players[opp]) >= e.amount) {
+						state.askQueue.push({ player: opp,
+							prompt: e.prompt || `Pay ${e.amount}?`, yes: `Pay ${e.amount}`, no: e.no || 'Decline',
+							payOr: { amount: e.amount, benefitPi: pi, benefit } });
+						emit(state, { type: 'askStart', player: opp, prompt: e.prompt || `Pay ${e.amount}?` });
+					} else {
+						execEffects(state, pi, benefit, null, ctx.self || null); // can't pay: controller gets it now
+					}
 				}
 				break;
 			}
@@ -5147,6 +5171,17 @@ export function resolveAsk(state, yes) {
 			}
 		}
 		offerPriority(state); // resume draining the stack now that the decision is made
+		return true;
+	}
+	if (pend.payOr) {
+		// Rhystic Study-style tax: pay `amount` to deny the benefit, else the controller gets it
+		const po = pend.payOr;
+		if (yes && availableMana(state.players[pend.player]) >= po.amount) {
+			spendMana(state.players[pend.player], po.amount);
+			emit(state, { type: 'taxPaid', player: pend.player, amount: po.amount });
+		} else {
+			execEffects(state, po.benefitPi, po.benefit || [], null, null);
+		}
 		return true;
 	}
 	execEffects(state, pend.player, yes ? pend.then : (pend.else || []), null, null);

@@ -58474,6 +58474,63 @@
         "to": "top"
       },
       "description": "Counter target spell.\nPut it on top of its owner's library instead of into the graveyard."
+    },
+    {
+      "id": "rhystic_study",
+      "name": "Rhystic Study",
+      "type": "enchantment",
+      "cost": 3,
+      "colors": [
+        "U"
+      ],
+      "cardClass": "neutral",
+      "rarity": "rare",
+      "set": "wubrg",
+      "description": "Whenever an opponent casts a spell, they must pay 1 or you draw a card.",
+      "ongoing": {
+        "on": "enemy-spell-played",
+        "effects": [
+          {
+            "type": "opponent-may-pay",
+            "amount": 1,
+            "prompt": "Pay 1 or your opponent draws a card?",
+            "else": [
+              {
+                "type": "draw",
+                "value": 1
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "smothering_tithe",
+      "name": "Smothering Tithe",
+      "type": "enchantment",
+      "cost": 4,
+      "colors": [
+        "W"
+      ],
+      "cardClass": "neutral",
+      "rarity": "rare",
+      "set": "wubrg",
+      "description": "Whenever an opponent draws a card, they must pay 2 or you create a Treasure token.",
+      "ongoing": {
+        "on": "enemy-draws",
+        "effects": [
+          {
+            "type": "opponent-may-pay",
+            "amount": 2,
+            "prompt": "Pay 2 or your opponent creates a Treasure?",
+            "else": [
+              {
+                "type": "enrich"
+              }
+            ]
+          }
+        ]
+      }
     }
   ]
 }
