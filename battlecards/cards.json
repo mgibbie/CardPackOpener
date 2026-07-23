@@ -59168,7 +59168,7 @@
       "rarity": "rare",
       "set": "wubrg",
       "chooseCount": 2,
-      "description": "Choose two \u2014\n> Counter target spell.\n> Return target creature to its owner's hand.\n> Tap all creatures your opponents control.\n> Draw a card.",
+      "description": "Choose two \u2014\n> Counter target spell.\n> Return target permanent to its owner's hand.\n> Tap all creatures your opponents control.\n> Draw a card.",
       "choices": [
         {
           "text": "Counter target spell",
@@ -59179,11 +59179,11 @@
           ]
         },
         {
-          "text": "Return target creature to its owner's hand",
+          "text": "Return target permanent to its owner's hand",
           "effects": [
             {
               "type": "bounce",
-              "target": "creature"
+              "target": "permanent"
             }
           ]
         },

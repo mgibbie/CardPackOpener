@@ -514,8 +514,7 @@ function playFromHand(card, ev, position) {
 // which of `targets` did the drop point land on (creature / walker / hero)?
 function resolveDropTarget(ev, targets, excludeUid) {
 	const c = cardOf(pick(ev, excludeUid));
-	if (c && c.zone === 'board') { const t = targets.find(t => t.type === 'creature' && t.uid === c.uid); if (t) return t; }
-	if (c && c.zone === 'planeswalker') { const t = targets.find(t => t.type === 'walker' && t.uid === c.uid); if (t) return t; }
+	if (c) { const t = targets.find(t => t.uid === c.uid); if (t) return t; } // any permanent by uid
 	const heroPi = heroPanelAt(ev.clientX, ev.clientY);
 	if (heroPi != null) { const t = targets.find(t => t.type === 'hero' && t.player === heroPi); if (t) return t; }
 	return null;
@@ -2525,10 +2524,10 @@ renderer.domElement.addEventListener('pointerdown', ev => {
 		return;
 	}
 
-	// targeting mode: expect a creature click (hero clicks handled on the panels)
+	// targeting mode: click any legal permanent (hero clicks handled on the panels)
 	if (pending) {
-		if (card && card.zone === 'board') {
-			const t = pending.targets.find(t => t.type === 'creature' && t.uid === card.uid);
+		if (card && card.uid != null) {
+			const t = pending.targets.find(t => t.uid === card.uid);
 			if (t) { commitPending(t); return; }
 		}
 		clearModes();
@@ -2755,8 +2754,8 @@ function tryCommitTargetAt(ev) {
 	const card = cardOf(uid);
 	const heroPi = heroPanelAt(ev.clientX, ev.clientY);
 	if (pending) {
-		if (card && card.zone === 'board') {
-			const t = pending.targets.find(t => t.type === 'creature' && t.uid === card.uid);
+		if (card && card.uid != null) {
+			const t = pending.targets.find(t => t.uid === card.uid);
 			if (t) { commitPending(t); return true; }
 		}
 		if (heroPi != null) {
@@ -2916,7 +2915,8 @@ function updateRings() {
 	if (!state) return;
 	const validCreatureTargets = new Set();
 	const attackable = t => t.type === 'creature' || t.type === 'walker';
-	if (pending) for (const t of pending.targets) if (attackable(t)) validCreatureTargets.add(t.uid);
+	// a pending spell can target ANY legal permanent (creature/artifact/enchantment/walker/location)
+	if (pending) for (const t of pending.targets) if (t.uid != null) validCreatureTargets.add(t.uid);
 	if (selectedAttacker === 'HERO') {
 		for (const t of E.heroAttackTargets(state, HUMAN)) if (attackable(t)) validCreatureTargets.add(t.uid);
 	} else if (selectedAttacker) {

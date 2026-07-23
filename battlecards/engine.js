@@ -553,7 +553,7 @@ const CHOSEN = {
 	'attack-equals-health': { creature: 'creature', 'friendly-creature': 'friendly-creature' },
 	'double-health': { creature: 'creature', 'friendly-creature': 'friendly-creature' },
 	'double-attack': { creature: 'creature', 'friendly-creature': 'friendly-creature' },
-	bounce: { creature: 'creature', 'enemy-creature': 'enemy-creature', 'friendly-creature': 'friendly-creature' },
+	bounce: { creature: 'creature', 'enemy-creature': 'enemy-creature', 'friendly-creature': 'friendly-creature', permanent: 'permanent' },
 	'mind-control': { 'enemy-creature': 'enemy-creature' },
 	transform: { creature: 'creature', 'enemy-creature': 'enemy-creature' },
 	'transform-copy': { creature: 'creature' },
@@ -638,7 +638,7 @@ export function targetSpec(state, pi, card, choice) {
 			any: 'any target', creature: 'a creature',
 			'enemy-creature': 'an enemy creature', 'friendly-creature': 'a friendly creature',
 			'friendly-any': 'a friendly character', 'enemy-hero': 'an enemy hero',
-			'enemy-any': 'an enemy', 'any-hero': 'a hero',
+			'enemy-any': 'an enemy', 'any-hero': 'a hero', permanent: 'any permanent',
 		}[kind];
 		if (e.target === 'undamaged-creature') { filter = c => c.damage === 0; why = 'an undamaged creature'; }
 		if (e.maxAttack != null) { filter = c => c.attack <= e.maxAttack; why = `a creature with ${e.maxAttack} or less Attack`; }
@@ -688,6 +688,21 @@ export function legalTargets(state, pi, spec) {
 	if (spec.targets === 'any-hero') {
 		out.push({ type: 'hero', player: pi });
 		for (const o of opps) out.push({ type: 'hero', player: o });
+	}
+	if (spec.targets === 'permanent') {
+		const pushPermanents = (side) => {
+			const P = state.players[side];
+			for (const c of P.board) {
+				if (c.dormantLeft > 0) continue;
+				if (side !== pi && (c.stealthed || has(c, KW.ELUSIVE))) continue;
+				if (!spec.filter || spec.filter(c)) out.push({ type: c.type === 'location' ? 'location' : 'creature', uid: c.uid, player: side });
+			}
+			for (const c of P.artifacts) if (!spec.filter || spec.filter(c)) out.push({ type: 'artifact', uid: c.uid, player: side });
+			for (const c of P.enchantments) if (!spec.filter || spec.filter(c)) out.push({ type: 'enchantment', uid: c.uid, player: side });
+			for (const c of P.planeswalkers) if (!spec.filter || spec.filter(c)) out.push({ type: 'walker', uid: c.uid, player: side });
+		};
+		pushPermanents(pi);
+		for (const o of opps) pushPermanents(o);
 	}
 	return out;
 }
@@ -1163,6 +1178,36 @@ function summon(state, pi, tokenDef) {
 	// "When summoned" effects (Colossal appendages) fire after it lands
 	if (c.onSummon) execEffects(state, pi, c.onSummon, null, c);
 	return c;
+}
+
+// find any permanent by uid across all zones (board/artifacts/enchantments/planeswalkers)
+function findPermanent(state, uid) {
+	for (const p of state.players)
+		for (const zone of [p.board, p.artifacts, p.enchantments, p.planeswalkers]) {
+			const c = zone.find(x => x.uid === uid);
+			if (c) return c;
+		}
+	return null;
+}
+// return any permanent to its owner's hand (Cryptic Command's bounce mode, etc.)
+function bouncePermanent(state, ownerPi, card, costMod = 0) {
+	const owner = state.players[ownerPi];
+	owner.board = owner.board.filter(c => c !== card);
+	owner.artifacts = owner.artifacts.filter(c => c !== card);
+	owner.enchantments = owner.enchantments.filter(c => c !== card);
+	owner.planeswalkers = owner.planeswalkers.filter(c => c !== card);
+	for (const pl of state.players) for (const eq of pl.artifacts) if (eq.equip && eq.attachedTo === card.uid) eq.attachedTo = null;
+	if (!card.token) { // tokens cease to exist when they leave play
+		const def = state.cardsById[card.id];
+		if (def && owner.hand.length < MAX_HAND) {
+			const c = instantiate(def, ownerPi);
+			c.zone = 'hand';
+			c.cost = Math.max(0, (def.cost || 0) + costMod);
+			owner.hand.push(c);
+		}
+	}
+	emit(state, { type: 'bounce', uid: card.uid, player: ownerPi, name: card.name });
+	recomputeAuras(state);
 }
 
 // return a blinked creature as a fresh permanent and retrigger its Battlecry
@@ -2937,6 +2982,14 @@ function execEffects(state, pi, effects, target, source) {
 				emit(state, { type: 'discard', player: pi, card: c });
 			}
 		} else if (e.type === 'bounce') {
+			if (e.target === 'permanent') {
+				// single chosen permanent of any type (creature/artifact/enchantment/walker/location)
+				if (target && target.uid != null) {
+					const t = findPermanent(state, target.uid);
+					if (t) bouncePermanent(state, target.player, t, e.costMod || 0);
+				}
+				continue;
+			}
 			// return creature(s) to the owner's hand as fresh copies
 			const list = e.target === 'all-creatures'
 				? state.players.flatMap(pl => pl.board.filter(c => !isDead(c)))
