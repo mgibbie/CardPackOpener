@@ -59206,6 +59206,31 @@
           ]
         }
       ]
+    },
+    {
+      "id": "flux_channeler",
+      "name": "Flux Channeler",
+      "type": "creature",
+      "cost": 3,
+      "colors": [
+        "U"
+      ],
+      "cardClass": "neutral",
+      "attack": 2,
+      "health": 2,
+      "rarity": "uncommon",
+      "set": "wubrg",
+      "tribe": "Human Wizard",
+      "keywords": [],
+      "description": "Whenever you cast a noncreature spell, Proliferate.\n(Proliferate: each creature you've strengthened gets another +1/+1, and each of your planeswalkers 1 loyalty.)",
+      "ongoing": {
+        "on": "spell-played",
+        "effects": [
+          {
+            "type": "proliferate"
+          }
+        ]
+      }
     }
   ]
 }

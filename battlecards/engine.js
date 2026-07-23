@@ -2115,6 +2115,8 @@ function execEffects(state, pi, effects, target, source) {
 	const buffCreature = (c, atk, hpv) => {
 		c.attack += atk;
 		c.maxHealth += hpv;
+		// any permanent +1/+1 banks a "counter" so Proliferate can find it later
+		if (atk > 0 && hpv > 0) c.counters = (c.counters || 0) + Math.min(atk, hpv);
 		emit(state, { type: 'buff', uid: c.uid, attack: c.attack, hp: hp(c) });
 	};
 	// Shield Slam-style scaling: the effect's value multiplies by a live count
@@ -3432,10 +3434,17 @@ function execEffects(state, pi, effects, target, source) {
 			const t = e.target === 'self' ? source : chosenCreature();
 			if (t && t.zone === 'board' && !isDead(t)) {
 				const n = e.value === 'X' ? (source?.xValue || 0) : (e.value || 1);
-				t.counters += n;
-				buffCreature(t, n, n);
-				emit(state, { type: 'buff', uid: t.uid, attack: t.attack, hp: hp(t) });
+				buffCreature(t, n, n); // buffCreature banks the counters
 			}
+		} else if (e.type === 'proliferate') {
+			// each creature you've strengthened grows +1/+1; each of your planeswalkers gains 1 loyalty
+			const pp = state.players[pi];
+			for (const c of [...pp.board]) {
+				if (c.type === 'location' || isDead(c)) continue;
+				if ((c.counters || 0) > 0) buffCreature(c, 1, 1);
+			}
+			for (const w of pp.planeswalkers) { w.loyalty = (w.loyalty || 0) + 1; emit(state, { type: 'walkerLoyalty', uid: w.uid, loyalty: w.loyalty }); }
+			emit(state, { type: 'proliferate', player: pi });
 		} else if (e.type === 'reanimate') {
 			// summon the highest-Cost creature from your graveyard, with riders
 			const p = state.players[pi];

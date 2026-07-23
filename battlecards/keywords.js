@@ -15,6 +15,7 @@ const K = [
 	{ p: ['Indestructible'], t: "Damage and “destroy” effects don't kill it — only being sacrificed does.", tag: 'indestructible' },
 	{ p: ['Landfall'], t: 'Triggers whenever a land you control enters (you develop a land).', tag: 'landfall' },
 	{ p: ['Blink'], t: 'Exile a creature, then immediately return it — resetting it and retriggering its Battlecry.', tag: 'blink' },
+	{ p: ['Proliferate'], t: "Give each creature you've strengthened (that has a permanent +1/+1) another +1/+1, and each of your planeswalkers 1 loyalty.", tag: 'proliferate' },
 	{ p: ['Deathtouch'], t: 'Any damage it deals to a creature destroys that creature.', tag: 'deathtouch' },
 	{ p: ['Venomous'], t: 'Like Deathtouch, but one-shot: the first time it damages a creature that creature is destroyed, then Venomous is used up.', tag: 'venomous' },
 	{ p: ['Poisonous'], t: 'Damaging a creature Poisons it instead of destroying it outright.', tag: 'poisonous' },
