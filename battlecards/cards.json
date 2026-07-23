@@ -38342,7 +38342,7 @@
       "type": "creature",
       "attack": 1,
       "health": 1,
-      "tribe": "Undead Cat",
+      "tribe": "Undead Beast",
       "keywords": [
         "deathrattle"
       ],
@@ -57946,7 +57946,7 @@
       "health": 1,
       "rarity": "rare",
       "set": "wubrg",
-      "tribe": "Cat",
+      "tribe": "Beast",
       "keywords": [],
       "description": "A 2/1 for one mana."
     },
@@ -57998,7 +57998,7 @@
       "health": 2,
       "rarity": "common",
       "set": "wubrg",
-      "tribe": "Cat",
+      "tribe": "Beast",
       "keywords": [
         "battlecry"
       ],
@@ -58844,7 +58844,7 @@
       "health": 4,
       "rarity": "uncommon",
       "set": "wubrg",
-      "tribe": "Cat Beast",
+      "tribe": "Beast",
       "keywords": [
         "battlecry"
       ],
@@ -59223,7 +59223,7 @@
       "health": 2,
       "rarity": "uncommon",
       "set": "wubrg",
-      "tribe": "Cat Soldier",
+      "tribe": "Beast Soldier",
       "keywords": [],
       "description": "Whenever you gain life, this creature gets +1/+1.",
       "ongoing": {
@@ -60816,7 +60816,7 @@
       "health": 2,
       "rarity": "common",
       "set": "wubrg",
-      "tribe": "Pegasus",
+      "tribe": "Beast",
       "keywords": [],
       "description": ""
     },
@@ -60850,7 +60850,7 @@
       "health": 2,
       "rarity": "common",
       "set": "wubrg",
-      "tribe": "Cat Cleric",
+      "tribe": "Beast Cleric",
       "keywords": [
         "lifesteal"
       ],
@@ -60869,7 +60869,7 @@
       "health": 2,
       "rarity": "common",
       "set": "wubrg",
-      "tribe": "Dog",
+      "tribe": "Beast",
       "keywords": [],
       "description": ""
     },
@@ -62069,7 +62069,7 @@
       "health": 4,
       "rarity": "common",
       "set": "wubrg",
-      "tribe": "Cat Beast",
+      "tribe": "Beast",
       "keywords": [],
       "description": ""
     },
