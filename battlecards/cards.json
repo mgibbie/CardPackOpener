@@ -62251,6 +62251,132 @@
           "type": "cook"
         }
       ]
+    },
+    {
+      "id": "novice_inspector",
+      "name": "Novice Inspector",
+      "type": "creature",
+      "cost": 1,
+      "cardClass": "neutral",
+      "rarity": "common",
+      "set": "wubrg",
+      "attack": 1,
+      "health": 2,
+      "tribe": "Human Detective",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Investigate.",
+      "effects": [
+        {
+          "type": "investigate"
+        }
+      ]
+    },
+    {
+      "id": "prosperous_pirates",
+      "name": "Prosperous Pirates",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "neutral",
+      "rarity": "common",
+      "set": "wubrg",
+      "attack": 3,
+      "health": 3,
+      "tribe": "Human Pirate",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Enrich twice.",
+      "effects": [
+        {
+          "type": "enrich"
+        },
+        {
+          "type": "enrich"
+        }
+      ]
+    },
+    {
+      "id": "trufflesnout",
+      "name": "Trufflesnout",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "neutral",
+      "rarity": "common",
+      "set": "wubrg",
+      "attack": 1,
+      "health": 1,
+      "tribe": "Boar",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Cook.",
+      "effects": [
+        {
+          "type": "cook"
+        }
+      ]
+    },
+    {
+      "id": "trail_of_evidence",
+      "name": "Trail of Evidence",
+      "type": "enchantment",
+      "cost": 3,
+      "cardClass": "neutral",
+      "rarity": "common",
+      "set": "wubrg",
+      "description": "Whenever you cast a spell, Investigate.",
+      "ongoing": {
+        "on": "spell-played",
+        "effects": [
+          {
+            "type": "investigate"
+          }
+        ]
+      }
+    },
+    {
+      "id": "bygone_bishop",
+      "name": "Bygone Bishop",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "neutral",
+      "rarity": "common",
+      "set": "wubrg",
+      "attack": 2,
+      "health": 3,
+      "tribe": "Spirit Cleric",
+      "description": "Whenever you play a creature, Investigate.",
+      "ongoing": {
+        "on": "creature-played",
+        "effects": [
+          {
+            "type": "investigate"
+          }
+        ]
+      }
+    },
+    {
+      "id": "zhentarim_bandit",
+      "name": "Zhentarim Bandit",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "neutral",
+      "rarity": "common",
+      "set": "wubrg",
+      "attack": 2,
+      "health": 1,
+      "tribe": "Halfling Rogue",
+      "description": "Whenever this attacks, Enrich.",
+      "ongoing": {
+        "on": "self-attacks",
+        "effects": [
+          {
+            "type": "enrich"
+          }
+        ]
+      }
     }
   ]
 }
