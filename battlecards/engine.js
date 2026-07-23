@@ -9,7 +9,7 @@ export const KW = {
 	BATTLECRY: 'battlecry', DEATHRATTLE: 'deathrattle', LIFESTEAL: 'lifesteal',
 	DIVINE_SHIELD: 'divine_shield', STEALTH: 'stealth', DEATHTOUCH: 'deathtouch',
 	POISONOUS: 'poisonous', VENOMOUS: 'venomous', FREEZER: 'freezer',
-	INDESTRUCTIBLE: 'indestructible', // survives damage & "destroy"; only sacrifice kills it
+	IMMUNE: 'immune', // can't take damage; "destroy" effects don't kill it either (only sacrifice)
 	ELUSIVE: 'elusive', PIERCING: 'piercing',
 	PACIFIST: 'pacifist',   // can't attack (Ragnaros, Ancient Watcher)
 	CLEAVE: 'cleave',       // combat damage splashes to the defender's neighbors
@@ -156,7 +156,10 @@ function instantiate(def, controller) {
 		armor: def.armor || 0,      // Armor granted when a hero card is played
 		quest: def.quest || null,   // quest: { goal: { type, count }, reward }
 		ongoing: def.ongoing || null, // permanent trigger: { on, effects }
-		static: def.static || null,   // permanent passive (e.g. reduce-hero-damage)
+		static: def.static ? { ...def.static } : null,   // permanent passive (e.g. reduce-hero-damage)
+		heroImmuneAura: def.heroImmuneAura || false,     // Mal'Ganis: your hero is Immune while this lives
+		heroPowerCostSet: def.heroPowerCostSet ?? null,  // Maiden of the Lake: your Hero Power costs this
+		redirectHeroDamage: def.redirectHeroDamage || false, // Bolf Ramshield: takes your hero's damage
 		attackTax: def.attackTax ? { ...def.attackTax } : null, // Ghostly Prison: cost to attack this controller's hero
 		addCost: def.addCost ? { ...def.addCost } : null, // additional casting cost: { discard: N } or { sacrifice: 'creature'|'land'|'artifact'|'artifact-or-creature' }
 		altCost: def.altCost ? { ...def.altCost } : null, // optional cost paid INSTEAD of mana: { label, require?, life?, sacrificeLand?, exileFromHand?, opponentGain? }
@@ -470,6 +473,7 @@ export function drawCards(state, pi, count) {
 		// C'Thun enters hand carrying every buff it collected while in your deck
 		if (card.id === 'c_thun') { card.attack = CTHUN_BASE + p.cthunAtk; card.maxHealth = CTHUN_BASE + p.cthunHp; if (p.cthunTaunt && !card.keywords.includes(KW.TAUNT)) card.keywords.push(KW.TAUNT); }
 		card.zone = 'hand';
+		if (state.hpResolver === pi && staticValue(p, 'hero-power-draw-zero') > 0) card.cost = 0; // Wilfred Fizzlebang
 		p.hand.push(card);
 		drawn++;
 		emit(state, { type: 'draw', player: pi, card });
@@ -842,7 +846,8 @@ function damageCreature(state, target, amount, source) {
 	if (target.type === 'location') return 0; // locations only wear out by tapping
 	if (target.dormantLeft > 0) return 0;     // dormant: immune while asleep
 	if (amount <= 0) return 0;
-	if (target.immuneTurn === state.turnNumber) return 0; // Bestial Wrath's Immune
+	if (has(target, KW.IMMUNE)) return 0; // Immune: prevents all damage
+	if (target.immuneTurn === state.turnNumber) return 0; // temporary Immune (Bestial Wrath / Stablemaster)
 	// Colaque: immune while it controls its Shell appendage
 	if (target.immuneWhile && state.players[target.controller].board.some(c =>
 		!isDead(c) && c.name === target.immuneWhile)) return 0;
@@ -906,6 +911,9 @@ function damageHero(state, pi, amount, src = null, pierce = false) {
 	}
 	if (p.heroImmuneTurn === state.turnNumber) return 0; // "can't take damage this turn"
 	if (p.board.some(c => c.heroImmuneAura && !isDead(c))) return 0; // Mal'Ganis: your hero is Immune
+	// Bolf Ramshield: the hero's damage is taken by this creature instead
+	const bolf = p.board.find(c => c.redirectHeroDamage && !isDead(c));
+	if (bolf) { damageCreature(state, bolf, amount, null); return 0; }
 	// static hero-damage reduction (Lucky Horseshoe)
 	amount = Math.max(0, amount - staticValue(p, 'reduce-hero-damage'));
 	if (amount <= 0) return 0;
@@ -960,9 +968,9 @@ function healHero(state, pi, amount) {
 
 function isDead(c) {
 	if (c.type === 'location') return c.doomed || c.durability <= 0;
-	// Indestructible: lethal damage and "destroy" effects don't kill it — only
+	// Immune: lethal damage and "destroy" effects don't kill it — only
 	// a sacrifice does (which sets c.sacrificed).
-	if (has(c, KW.INDESTRUCTIBLE) && !c.sacrificed) return false;
+	if (has(c, KW.IMMUNE) && !c.sacrificed) return false;
 	return c.doomed || c.damage >= c.maxHealth;
 }
 
@@ -1941,6 +1949,12 @@ function runSecretEffects(state, pi, effects, ctx) {
 			case 'mirror-damage-to-own-hero': {
 				// Wrathguard: when this takes damage, deal that much to your own hero
 				if (ctx.amount > 0) damageHero(state, pi, ctx.amount, pi);
+				break;
+			}
+			case 'destroy-damaged': {
+				// Acidmaw: destroy the creature that was just damaged
+				const t = ctx.damaged;
+				if (t && !isDead(t)) { t.damage = t.maxHealth; t.shield = false; emit(state, { type: 'destroy', uid: t.uid }); }
 				break;
 			}
 			case 'copy-drawn': {
@@ -2948,6 +2962,23 @@ function execEffects(state, pi, effects, target, source) {
 			const before = new Set(p.hand.map(c => c.uid));
 			drawCards(state, pi, e.value || 1);
 			for (const c of p.hand) if (!before.has(c.uid)) c.cost = e.cost;
+		} else if (e.type === 'draw-creatures-to-board') {
+			// Varian Wrynn: draw N; any creatures drawn go straight into play (no battlecry)
+			const p = state.players[pi];
+			const before = new Set(p.hand.map(c => c.uid));
+			drawCards(state, pi, e.value || 1);
+			for (const c of p.hand.filter(x => !before.has(x.uid))) {
+				if (c.type === 'creature' && !p.eliminated) {
+					p.hand = p.hand.filter(x => x !== c);
+					c.zone = 'board'; p.board.push(c);
+					emit(state, { type: 'summon', player: pi, card: c });
+					fireOngoing(state, pi, 'summoned', { minion: c });
+				}
+			}
+			recomputeAuras(state);
+		} else if (e.type === 'upgrade-hero-power') {
+			// Justicar Trueheart: your Hero Power resolves twice from now on
+			state.players[pi].heroPowerUpgraded = true;
 		} else if (e.type === 'draw-all') {
 			for (let s2 = 0; s2 < state.players.length; s2++) {
 				if (!state.players[s2].eliminated) drawCards(state, s2, e.value);
@@ -3754,7 +3785,7 @@ function execEffects(state, pi, effects, target, source) {
 			// buff creatures in hand + on the battlefield now, and creatures still in
 			// the deck as they are drawn (deck cards have no live identity until drawn)
 			const p = state.players[pi];
-			for (const c of p.board) if (c.type === 'creature' && !isDead(c)) buffCreature(c, e.attack || 0, e.health || 0);
+			if (!e.skipBoard) for (const c of p.board) if (c.type === 'creature' && !isDead(c)) buffCreature(c, e.attack || 0, e.health || 0); // Mistcaller: hand+deck only
 			for (const c of p.hand) if (c.type === 'creature') { c.attack += e.attack || 0; c.maxHealth += e.health || 0; }
 			p.drawBuff = p.drawBuff || { attack: 0, health: 0 };
 			p.drawBuff.attack += e.attack || 0; p.drawBuff.health += e.health || 0;
@@ -3898,17 +3929,23 @@ function execEffects(state, pi, effects, target, source) {
 					&& d.cardClass !== p.heroClass);
 			}
 			// `copies`: pick ONE match and add that same card N times; else N distinct rolls
-			const rolls = e.copies ? Array(e.copies).fill(pool.length ? pool[Math.floor(state.rng() * pool.length)] : null)
-				: Array.from({ length: e.count || 1 }, () => pool.length ? pool[Math.floor(state.rng() * pool.length)] : null);
-			for (const def of rolls) {
-				if (!def || p.hand.length >= MAX_HAND) break;
-				const card = instantiate(def, pi);
-				card.zone = 'hand';
-				if (e.setCost != null) card.cost = e.setCost;
-				p.hand.push(card);
-				emit(state, { type: 'conjure', player: pi, card, color: null });
-				fireEmerge(state, pi, card);
-			}
+			const addTo = (own) => {
+				const op = state.players[own];
+				const picks = e.copies ? Array(e.copies).fill(pool.length ? pool[Math.floor(state.rng() * pool.length)] : null)
+					: Array.from({ length: e.count || 1 }, () => pool.length ? pool[Math.floor(state.rng() * pool.length)] : null);
+				for (const def of picks) {
+					if (!def || op.hand.length >= MAX_HAND) break;
+					const card = instantiate(def, own);
+					card.zone = 'hand';
+					if (e.setCost != null) card.cost = e.setCost;
+					op.hand.push(card);
+					emit(state, { type: 'conjure', player: own, card, color: null });
+					fireEmerge(state, own, card);
+				}
+			};
+			// Spellslinger: eachPlayer gives every player their own random card
+			if (e.eachPlayer) { for (let i = 0; i < state.players.length; i++) if (!state.players[i].eliminated) addTo(i); }
+			else addTo(pi);
 		} else if (e.type === 'give-enemy-random') {
 			// Mulch: a random creature lands in an opponent's hand
 			const victim = enemyHero();
@@ -5152,7 +5189,10 @@ function resolveEntry(state, entry) {
 	}
 	if (entry.kind === 'heropower') {
 		state.hpDamageBonus = staticValue(state.players[pi], 'hero-power-damage'); // Fallen Hero
+		state.hpResolver = pi; // Wilfred: cards drawn during a Hero Power cost 0
 		execEffects(state, pi, entry.effects, entry.target, entry.card);
+		if (state.players[pi].heroPowerUpgraded) execEffects(state, pi, entry.effects, entry.target, entry.card); // Justicar: fires twice
+		state.hpResolver = null;
 		state.hpDamageBonus = 0;
 		fireOngoing(state, pi, 'hero-power-used', {}); // Inspire
 		return;

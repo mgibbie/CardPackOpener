@@ -56520,7 +56520,7 @@
       "cardClass": "neutral",
       "rarity": "common",
       "set": "wubrg",
-      "description": "Give a creature Indestructible.",
+      "description": "Give a creature Immune.",
       "effects": [
         {
           "type": "grant",
@@ -65429,6 +65429,236 @@
             "type": "mirror-damage-to-own-hero"
           }
         ]
+      }
+    },
+    {
+      "id": "acidmaw",
+      "name": "Acidmaw",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "hunter",
+      "attack": 4,
+      "health": 2,
+      "rarity": "legendary",
+      "set": "TGT",
+      "tribe": "Beast",
+      "description": "Whenever an enemy creature takes damage, destroy it.",
+      "ongoing": {
+        "on": "creature-damaged",
+        "if": {
+          "enemy": true
+        },
+        "effects": [
+          {
+            "type": "destroy-damaged"
+          }
+        ]
+      }
+    },
+    {
+      "id": "stablemaster",
+      "name": "Stablemaster",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "hunter",
+      "attack": 4,
+      "health": 2,
+      "rarity": "epic",
+      "set": "TGT",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Give a friendly Beast Immune this turn.",
+      "effects": [
+        {
+          "type": "temp-immune",
+          "target": "friendly-creature",
+          "tribe": "Beast"
+        }
+      ]
+    },
+    {
+      "id": "spellslinger",
+      "name": "Spellslinger",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "mage",
+      "attack": 3,
+      "health": 4,
+      "rarity": "common",
+      "set": "TGT",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Both players get a random spell.",
+      "effects": [
+        {
+          "type": "conjure-random",
+          "cardType": "spell",
+          "count": 1,
+          "eachPlayer": true
+        }
+      ]
+    },
+    {
+      "id": "dreadsteed",
+      "name": "Dreadsteed",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "warlock",
+      "attack": 1,
+      "health": 1,
+      "rarity": "epic",
+      "set": "TGT",
+      "tribe": "Demon",
+      "keywords": [
+        "deathrattle"
+      ],
+      "description": "Deathrattle: At the end of the turn, summon a Dreadsteed.",
+      "deathrattle": [
+        {
+          "type": "emblem",
+          "name": "Dreadsteed Rebirth",
+          "ongoing": {
+            "on": "every-turn-end",
+            "once": true,
+            "effects": [
+              {
+                "type": "summon",
+                "count": 1,
+                "summonId": "dreadsteed"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "the_mistcaller",
+      "name": "The Mistcaller",
+      "type": "creature",
+      "cost": 6,
+      "cardClass": "shaman",
+      "attack": 4,
+      "health": 4,
+      "rarity": "legendary",
+      "set": "TGT",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Give all creatures in your hand and deck +1/+1.",
+      "effects": [
+        {
+          "type": "buff-zones",
+          "attack": 1,
+          "health": 1,
+          "skipBoard": true
+        }
+      ]
+    },
+    {
+      "id": "bolf_ramshield",
+      "name": "Bolf Ramshield",
+      "type": "creature",
+      "cost": 6,
+      "cardClass": "neutral",
+      "attack": 3,
+      "health": 9,
+      "rarity": "legendary",
+      "set": "TGT",
+      "description": "Whenever your hero takes damage, this creature takes it instead.",
+      "redirectHeroDamage": true
+    },
+    {
+      "id": "anubarak",
+      "name": "Anub'arak",
+      "type": "creature",
+      "cost": 8,
+      "cardClass": "rogue",
+      "attack": 8,
+      "health": 4,
+      "rarity": "legendary",
+      "set": "TGT",
+      "keywords": [
+        "deathrattle"
+      ],
+      "description": "Deathrattle: Summon a 4/4 Nerubian with \"Deathrattle: Summon Anub'arak.\"",
+      "deathrattle": [
+        {
+          "type": "summon",
+          "count": 1,
+          "name": "Nerubian",
+          "attack": 4,
+          "health": 4,
+          "keywords": [
+            "deathrattle"
+          ],
+          "deathrattle": [
+            {
+              "type": "summon",
+              "count": 1,
+              "summonId": "anubarak"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "varian_wrynn",
+      "name": "Varian Wrynn",
+      "type": "creature",
+      "cost": 10,
+      "cardClass": "warrior",
+      "attack": 7,
+      "health": 7,
+      "rarity": "legendary",
+      "set": "TGT",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Draw 3 cards. Put any creatures you drew directly into play.",
+      "effects": [
+        {
+          "type": "draw-creatures-to-board",
+          "value": 3
+        }
+      ]
+    },
+    {
+      "id": "justicar_trueheart",
+      "name": "Justicar Trueheart",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "neutral",
+      "attack": 6,
+      "health": 4,
+      "rarity": "legendary",
+      "set": "TGT",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Upgrade your Hero Power so it resolves twice.",
+      "effects": [
+        {
+          "type": "upgrade-hero-power"
+        }
+      ]
+    },
+    {
+      "id": "wilfred_fizzlebang",
+      "name": "Wilfred Fizzlebang",
+      "type": "creature",
+      "cost": 6,
+      "cardClass": "warlock",
+      "attack": 4,
+      "health": 4,
+      "rarity": "legendary",
+      "set": "TGT",
+      "tribe": "Demon",
+      "description": "Cards you draw from your Hero Power cost (0).",
+      "static": {
+        "type": "hero-power-draw-zero",
+        "value": 1
       }
     }
   ]

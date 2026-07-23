@@ -12,7 +12,7 @@ const K = [
 	{ p: ['Windfury'], t: 'Can attack twice each turn.', tag: 'windfury' },
 	{ p: ['Stealth'], t: "Can't be attacked or targeted until it attacks.", tag: 'stealth' },
 	{ p: ['Reborn'], t: 'Returns with 1 Health the first time it dies.', tag: 'reborn' },
-	{ p: ['Indestructible'], t: "Damage and “destroy” effects don't kill it — only being sacrificed does.", tag: 'indestructible' },
+	{ p: ['Immune'], t: "Can't take damage, and “destroy” effects don't kill it — only being sacrificed does.", tag: 'immune' },
 	{ p: ['Landfall'], t: 'Triggers whenever a land you control enters (you develop a land).', tag: 'landfall' },
 	{ p: ['Blink'], t: 'Exile a creature, then immediately return it — resetting it and retriggering its Battlecry.', tag: 'blink' },
 	{ p: ['Proliferate'], t: "Give each creature you've strengthened (that has a permanent +1/+1) another +1/+1, and each of your planeswalkers 1 loyalty.", tag: 'proliferate' },
