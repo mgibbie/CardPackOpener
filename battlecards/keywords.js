@@ -21,7 +21,7 @@ const K = [
 	{ p: ['Cook'], t: 'Create a Food token (Sacrifice, pay 2: restore 3 Health).', tag: 'cook' },
 	{ p: ['Deathtouch'], t: 'Any damage it deals to a creature destroys that creature.', tag: 'deathtouch' },
 	{ p: ['Venomous'], t: 'Like Deathtouch, but one-shot: the first time it damages a creature that creature is destroyed, then Venomous is used up.', tag: 'venomous' },
-	{ p: ['Poisonous'], t: 'Damaging a creature Poisons it instead of destroying it outright.', tag: 'poisonous' },
+	{ p: ['Poisonous'], t: 'A creature this damages becomes Poisoned: it loses 2 Health at the end of its controller\'s turn (until cleansed or destroyed).', tag: 'poisonous' },
 	{ p: ['Poisoned'], t: "At the end of its controller's turn, a Poisoned creature takes 2 damage. The condition stays until it's cleansed or dies.", tag: 'poisoned' },
 	{ p: ['Elusive', 'Hexproof'], t: "Can't be targeted by spells or Hero Powers.", tag: 'elusive' },
 	{ p: ['Trample'], t: 'Excess lethal damage carries over to the hero.', tag: 'trample' },

@@ -72,7 +72,7 @@ export const BOOST_TABLES = {
 		{ label: 'Hexproof', keyword: 'elusive' },
 	],
 	B: [
-		{ label: 'Venomous', keyword: 'deathtouch' },
+		{ label: 'Venomous', keyword: 'venomous' },
 		{ label: 'Ward: 2 Life', ward: { life: 2 } },
 		PENDING('Swing: Advance'),
 		{ label: 'Avenge 1: Gain 1 Life', ongoing: { on: 'friendly-creature-died', every: 1, effects: [{ type: 'heal', value: 1, target: 'self' }] } },
@@ -97,8 +97,7 @@ export const BOOST_TABLES = {
 	],
 };
 
-// Adapt d10 (paper glossary; Poisonous approximated as deathtouch, stealth
-// permanent rather than one-turn)
+// Adapt d10 (paper glossary; Stealth is permanent here rather than one-turn)
 export const ADAPT_TABLE = [
 	{ label: 'Divine Shield', keyword: 'divine_shield' },
 	{ label: '+3 Attack', attack: 3, health: 0 },
@@ -109,7 +108,7 @@ export const ADAPT_TABLE = [
 	{ label: '+1/+1', attack: 1, health: 1 },
 	{ label: '+3 Health', attack: 0, health: 3 },
 	{ label: 'Stealth', keyword: 'stealth' },
-	{ label: 'Poisonous', keyword: 'deathtouch' },
+	{ label: 'Poisonous', keyword: 'poisonous' },
 ];
 
 // Cards whose mechanics aren't implemented yet (quests, quickdraw, inspire,
