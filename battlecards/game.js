@@ -351,7 +351,45 @@ function openLandShop(ev) {
 }
 
 // Choose One cards pick their branch before targeting
+// Choose two / choose one or more: toggle modes, then confirm (modes are non-targeted)
+function openMultiChoiceMenu(card, ev, position) {
+	const menu = $('walker-menu');
+	const min = card.chooseCount || card.chooseMin || 1;
+	const max = card.chooseCount || card.chooseMax || card.choices.length;
+	const chosen = new Set();
+	const render = () => {
+		const label = min === max ? `${min}` : `${min}–${max}`;
+		menu.innerHTML = `<div class="wm-title">${card.name} — choose ${label}:</div>`;
+		card.choices.forEach((ch, i) => {
+			const btn = document.createElement('button');
+			btn.textContent = (chosen.has(i) ? '☑ ' : '☐ ') + ch.text;
+			if (chosen.has(i)) btn.classList.add('bottom');
+			btn.addEventListener('pointerdown', e => {
+				e.stopPropagation();
+				if (chosen.has(i)) chosen.delete(i);
+				else if (chosen.size < max) chosen.add(i);
+				render();
+			});
+			menu.appendChild(btn);
+		});
+		const done = document.createElement('button');
+		done.className = 'scry-done';
+		done.textContent = `Cast (${chosen.size})`;
+		done.disabled = chosen.size < min || chosen.size > max;
+		done.addEventListener('pointerdown', e => {
+			e.stopPropagation();
+			if (chosen.size < min || chosen.size > max) return;
+			hideWalkerMenu();
+			actPlay(card.uid, null, [...chosen], position);
+		});
+		menu.appendChild(done);
+	};
+	render();
+	showDecisionMenu();
+}
+
 function openChoiceMenu(card, ev, position) {
+	if (card.chooseCount > 1 || card.chooseMax) { openMultiChoiceMenu(card, ev, position); return; }
 	const menu = $('walker-menu');
 	menu.innerHTML = `<div class="wm-title">${card.name} — choose one:</div>`;
 	card.choices.forEach((ch, i) => {
@@ -2254,7 +2292,8 @@ function showInspect(card) {
 			if (E.canPlay(state, HUMAN, card)) mkBtn(`Summon ${card.name}`, e => playFromHand(card, e));
 			if (E.canPlayAdventure(state, HUMAN, card)) mkBtn(`Cast “${card.adventure.name}”`, e => openAdventureMenu(card, e));
 		} else if (card.choices && playable) {
-			card.choices.forEach((ch, i) => mkBtn(ch.text, e => playChoiceFromInspect(card, i, e)));
+			if (card.chooseCount > 1 || card.chooseMax) mkBtn('Choose modes…', e => { hideInspect(); openMultiChoiceMenu(card, e); });
+			else card.choices.forEach((ch, i) => mkBtn(ch.text, e => playChoiceFromInspect(card, i, e)));
 		} else if (playable) {
 			mkBtn('Play', e => playFromHand(card, e));
 			if (card.tradeable && E.canTrade(state, HUMAN, card)) mkBtn('Trade (pay 1)', () => actTrade(card.uid), 'trade');

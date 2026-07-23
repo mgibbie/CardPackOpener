@@ -58867,6 +58867,120 @@
           }
         ]
       }
+    },
+    {
+      "id": "austere_command",
+      "name": "Austere Command",
+      "type": "sorcery",
+      "cost": 6,
+      "colors": [
+        "W"
+      ],
+      "cardClass": "neutral",
+      "rarity": "rare",
+      "set": "wubrg",
+      "chooseCount": 2,
+      "description": "Choose two \u2014\n> Destroy all artifacts.\n> Destroy all enchantments.\n> Destroy all creatures with mana value 3 or less.\n> Destroy all creatures with mana value 4 or greater.",
+      "choices": [
+        {
+          "text": "Destroy all artifacts",
+          "effects": [
+            {
+              "type": "destroy-art-ench",
+              "scope": "all",
+              "count": "all",
+              "only": "artifact"
+            }
+          ]
+        },
+        {
+          "text": "Destroy all enchantments",
+          "effects": [
+            {
+              "type": "destroy-art-ench",
+              "scope": "all",
+              "count": "all",
+              "only": "enchantment"
+            }
+          ]
+        },
+        {
+          "text": "Destroy all creatures with mana value 3 or less",
+          "effects": [
+            {
+              "type": "destroy-all",
+              "maxCost": 3
+            }
+          ]
+        },
+        {
+          "text": "Destroy all creatures with mana value 4 or greater",
+          "effects": [
+            {
+              "type": "destroy-all",
+              "minCost": 4
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "farewell",
+      "name": "Farewell",
+      "type": "sorcery",
+      "cost": 6,
+      "colors": [
+        "W"
+      ],
+      "cardClass": "neutral",
+      "rarity": "rare",
+      "set": "wubrg",
+      "chooseMin": 1,
+      "chooseMax": 4,
+      "description": "Choose one or more \u2014\n> Exile all artifacts.\n> Exile all creatures.\n> Exile all enchantments.\n> Exile all graveyards.",
+      "choices": [
+        {
+          "text": "Exile all artifacts",
+          "effects": [
+            {
+              "type": "destroy-art-ench",
+              "scope": "all",
+              "count": "all",
+              "only": "artifact",
+              "exile": true
+            }
+          ]
+        },
+        {
+          "text": "Exile all creatures",
+          "effects": [
+            {
+              "type": "destroy-all",
+              "exile": true
+            }
+          ]
+        },
+        {
+          "text": "Exile all enchantments",
+          "effects": [
+            {
+              "type": "destroy-art-ench",
+              "scope": "all",
+              "count": "all",
+              "only": "enchantment",
+              "exile": true
+            }
+          ]
+        },
+        {
+          "text": "Exile all graveyards",
+          "effects": [
+            {
+              "type": "clear-graveyards"
+            }
+          ]
+        }
+      ]
     }
   ]
 }

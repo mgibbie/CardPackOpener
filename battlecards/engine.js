@@ -148,6 +148,9 @@ function instantiate(def, controller) {
 		taps: def.taps || null,     // land tap abilities: [{ text, effects }]
 		tapped: false,
 		choices: def.choices || null, // Choose One branches: [{ text, effects }]
+		chooseCount: def.chooseCount || null, // Choose Two: exactly N modes
+		chooseMin: def.chooseMin || null,     // Choose one or more: at least N
+		chooseMax: def.chooseMax || null,     // Choose one or more: at most N
 		tempAttack: 0,               // "this turn" attack, expires at owner's turn end
 		tempHealth: 0,               // "this turn" health (Prowess)
 		power: def.power || null,   // hero power: { cost, effects }
@@ -573,7 +576,11 @@ const CHOSEN = {
 
 // Choose One cards resolve to one branch's effects at play time
 export function effectsOf(card, choice) {
-	if (card.choices) return card.choices[choice ?? 0]?.effects || [];
+	if (card.choices) {
+		// choose-two / choose-one-or-more pass an array of chosen mode indices
+		if (Array.isArray(choice)) return choice.flatMap(i => card.choices[i]?.effects || []);
+		return card.choices[choice ?? 0]?.effects || [];
+	}
 	return card.effects;
 }
 
@@ -2285,10 +2292,23 @@ function execEffects(state, pi, effects, target, source) {
 				// "Destroy all non-Paladin creatures": spare a class's cards
 				if (e.exceptClass && (c.cardClass || '').split('__').includes(e.exceptClass)) continue;
 				if (e.exceptTribe && (c.tribe || '').includes(e.exceptTribe)) continue;
-				c.damage = c.maxHealth;
-				c.shield = false;
-				emit(state, { type: 'destroy', uid: c.uid });
+				if (e.maxCost != null && (c.cost || 0) > e.maxCost) continue; // Austere Command: MV 3 or less
+				if (e.minCost != null && (c.cost || 0) < e.minCost) continue; // Austere Command: MV 4 or greater
+				if (e.exile) {
+					const owner = state.players[c.controller];
+					owner.board = owner.board.filter(x => x !== c);
+					c.zone = 'exile'; owner.exile.push(c);
+					emit(state, { type: 'exiled', uid: c.uid, player: c.controller, name: c.name });
+				} else {
+					c.damage = c.maxHealth;
+					c.shield = false;
+					emit(state, { type: 'destroy', uid: c.uid });
+				}
 			}
+		} else if (e.type === 'clear-graveyards') {
+			// Farewell: exile every card in every graveyard
+			for (const pl of state.players) { for (const c of pl.graveyard) { c.zone = 'exile'; pl.exile.push(c); } pl.graveyard = []; }
+			emit(state, { type: 'graveyardsCleared', player: pi });
 		} else if (e.type === 'exile') {
 			// removed from the game: no death, no deathrattle, never reshuffled
 			const t = chosenCreature();
