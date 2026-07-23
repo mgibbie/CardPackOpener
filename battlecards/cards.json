@@ -61902,6 +61902,229 @@
       "tribe": "Elephant",
       "keywords": [],
       "description": ""
+    },
+    {
+      "id": "ageless_guardian",
+      "name": "Ageless Guardian",
+      "type": "creature",
+      "cost": 2,
+      "colors": [
+        "W"
+      ],
+      "cardClass": "neutral",
+      "attack": 1,
+      "health": 4,
+      "rarity": "common",
+      "set": "wubrg",
+      "tribe": "Spirit Soldier",
+      "keywords": [],
+      "description": ""
+    },
+    {
+      "id": "alaborn_trooper",
+      "name": "Alaborn Trooper",
+      "type": "creature",
+      "cost": 3,
+      "colors": [
+        "W"
+      ],
+      "cardClass": "neutral",
+      "attack": 2,
+      "health": 3,
+      "rarity": "common",
+      "set": "wubrg",
+      "tribe": "Human Soldier",
+      "keywords": [],
+      "description": ""
+    },
+    {
+      "id": "ancient_carp",
+      "name": "Ancient Carp",
+      "type": "creature",
+      "cost": 5,
+      "colors": [
+        "U"
+      ],
+      "cardClass": "neutral",
+      "attack": 2,
+      "health": 5,
+      "rarity": "common",
+      "set": "wubrg",
+      "tribe": "Fish",
+      "keywords": [],
+      "description": ""
+    },
+    {
+      "id": "armored_cancrix",
+      "name": "Armored Cancrix",
+      "type": "creature",
+      "cost": 5,
+      "colors": [
+        "U"
+      ],
+      "cardClass": "neutral",
+      "attack": 2,
+      "health": 5,
+      "rarity": "common",
+      "set": "wubrg",
+      "tribe": "Crab",
+      "keywords": [],
+      "description": ""
+    },
+    {
+      "id": "armored_whirl_turtle",
+      "name": "Armored Whirl Turtle",
+      "type": "creature",
+      "cost": 3,
+      "colors": [
+        "U"
+      ],
+      "cardClass": "neutral",
+      "attack": 0,
+      "health": 5,
+      "rarity": "common",
+      "set": "wubrg",
+      "tribe": "Turtle",
+      "keywords": [],
+      "description": ""
+    },
+    {
+      "id": "douser_of_lights",
+      "name": "Douser of Lights",
+      "type": "creature",
+      "cost": 5,
+      "colors": [
+        "B"
+      ],
+      "cardClass": "neutral",
+      "attack": 4,
+      "health": 5,
+      "rarity": "common",
+      "set": "wubrg",
+      "tribe": "Horror",
+      "keywords": [],
+      "description": ""
+    },
+    {
+      "id": "dreg_reaver",
+      "name": "Dreg Reaver",
+      "type": "creature",
+      "cost": 5,
+      "colors": [
+        "B"
+      ],
+      "cardClass": "neutral",
+      "attack": 4,
+      "health": 3,
+      "rarity": "common",
+      "set": "wubrg",
+      "tribe": "Zombie Beast",
+      "keywords": [],
+      "description": ""
+    },
+    {
+      "id": "barbarian_horde",
+      "name": "Barbarian Horde",
+      "type": "creature",
+      "cost": 4,
+      "colors": [
+        "R"
+      ],
+      "cardClass": "neutral",
+      "attack": 3,
+      "health": 3,
+      "rarity": "common",
+      "set": "wubrg",
+      "tribe": "Human Barbarian Soldier",
+      "keywords": [],
+      "description": ""
+    },
+    {
+      "id": "alpha_tyrranax",
+      "name": "Alpha Tyrranax",
+      "type": "creature",
+      "cost": 6,
+      "colors": [
+        "G"
+      ],
+      "cardClass": "neutral",
+      "attack": 6,
+      "health": 5,
+      "rarity": "common",
+      "set": "wubrg",
+      "tribe": "Dinosaur Beast",
+      "keywords": [],
+      "description": ""
+    },
+    {
+      "id": "ferocious_zheng",
+      "name": "Ferocious Zheng",
+      "type": "creature",
+      "cost": 4,
+      "colors": [
+        "G"
+      ],
+      "cardClass": "neutral",
+      "attack": 4,
+      "health": 4,
+      "rarity": "common",
+      "set": "wubrg",
+      "tribe": "Cat Beast",
+      "keywords": [],
+      "description": ""
+    },
+    {
+      "id": "garruk_s_gorehorn",
+      "name": "Garruk's Gorehorn",
+      "type": "creature",
+      "cost": 5,
+      "colors": [
+        "G"
+      ],
+      "cardClass": "neutral",
+      "attack": 7,
+      "health": 3,
+      "rarity": "common",
+      "set": "wubrg",
+      "tribe": "Beast",
+      "keywords": [],
+      "description": ""
+    },
+    {
+      "id": "capital_guard",
+      "name": "Capital Guard",
+      "type": "creature",
+      "cost": 2,
+      "colors": [
+        "R"
+      ],
+      "cardClass": "neutral",
+      "attack": 2,
+      "health": 2,
+      "rarity": "common",
+      "set": "wubrg",
+      "tribe": "Human Soldier",
+      "keywords": [],
+      "description": ""
+    },
+    {
+      "id": "blistering_barrier",
+      "name": "Blistering Barrier",
+      "type": "creature",
+      "cost": 3,
+      "colors": [
+        "R"
+      ],
+      "cardClass": "neutral",
+      "attack": 5,
+      "health": 2,
+      "rarity": "common",
+      "set": "wubrg",
+      "tribe": "Wall",
+      "keywords": [
+        "defender"
+      ],
+      "description": "Defender."
     }
   ]
 }
