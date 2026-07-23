@@ -4354,6 +4354,8 @@ export function effectiveCost(state, pi, card) {
 			n = p.spellsPlayedTotal || 0;
 		} else if (card.selfCost.per === 'board-power') {
 			n = p.board.reduce((s, x) => isDead(x) ? s : s + (x.attack || 0), 0); // Ghalta
+		} else if (card.selfCost.per === 'artifacts') {
+			n = p.artifacts.length; // Affinity for artifacts (Treasures/Clues/Food count)
 		}
 		c += card.selfCost.amount * n;
 	}

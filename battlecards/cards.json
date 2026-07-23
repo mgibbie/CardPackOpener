@@ -62377,6 +62377,116 @@
           }
         ]
       }
+    },
+    {
+      "id": "mayhem_devil",
+      "name": "Mayhem Devil",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "neutral",
+      "attack": 3,
+      "health": 3,
+      "rarity": "common",
+      "set": "wubrg",
+      "tribe": "Devil",
+      "description": "Whenever you sacrifice a token, deal 1 damage to the enemy hero.",
+      "ongoing": {
+        "on": "token-sacrificed",
+        "effects": [
+          {
+            "type": "damage",
+            "value": 1,
+            "target": "enemy-hero"
+          }
+        ]
+      }
+    },
+    {
+      "id": "disciple_of_the_vault",
+      "name": "Disciple of the Vault",
+      "type": "creature",
+      "cost": 1,
+      "cardClass": "neutral",
+      "attack": 1,
+      "health": 1,
+      "rarity": "common",
+      "set": "wubrg",
+      "tribe": "Human Cleric",
+      "description": "Whenever you sacrifice a token, the enemy loses 1 life & you gain 1.",
+      "ongoing": {
+        "on": "token-sacrificed",
+        "effects": [
+          {
+            "type": "damage",
+            "value": 1,
+            "target": "enemy-hero"
+          },
+          {
+            "type": "heal",
+            "value": 1,
+            "target": "self"
+          }
+        ]
+      }
+    },
+    {
+      "id": "ravenous_squirrel",
+      "name": "Ravenous Squirrel",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "neutral",
+      "attack": 2,
+      "health": 2,
+      "rarity": "common",
+      "set": "wubrg",
+      "tribe": "Squirrel",
+      "description": "Whenever you sacrifice a token, put a +1/+1 counter on this creature.",
+      "ongoing": {
+        "on": "token-sacrificed",
+        "effects": [
+          {
+            "type": "add-counters",
+            "target": "self",
+            "value": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "frogmite",
+      "name": "Frogmite",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "neutral",
+      "attack": 2,
+      "health": 2,
+      "rarity": "common",
+      "set": "wubrg",
+      "tribe": "Frog",
+      "keywords": [],
+      "description": "Affinity for artifacts (costs 1 less per artifact you control).",
+      "selfCost": {
+        "per": "artifacts",
+        "amount": -1
+      }
+    },
+    {
+      "id": "myr_enforcer",
+      "name": "Myr Enforcer",
+      "type": "creature",
+      "cost": 7,
+      "cardClass": "neutral",
+      "attack": 4,
+      "health": 4,
+      "rarity": "common",
+      "set": "wubrg",
+      "tribe": "Myr",
+      "keywords": [],
+      "description": "Affinity for artifacts (costs 1 less per artifact you control).",
+      "selfCost": {
+        "per": "artifacts",
+        "amount": -1
+      }
     }
   ]
 }
