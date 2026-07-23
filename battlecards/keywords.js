@@ -16,8 +16,6 @@ const K = [
 	{ p: ['Landfall'], t: 'Triggers whenever a land you control enters (you develop a land).', tag: 'landfall' },
 	{ p: ['Blink'], t: 'Exile a creature, then immediately return it — resetting it and retriggering its Battlecry.', tag: 'blink' },
 	{ p: ['Proliferate'], t: "Give each creature you've strengthened (that has a permanent +1/+1) another +1/+1, and each of your planeswalkers 1 loyalty.", tag: 'proliferate' },
-	{ p: ['Flying'], t: 'Flavor only — there is no blocking in this format, so Flying has no rules effect here.', tag: 'flying' },
-	{ p: ['Vigilance'], t: 'Flavor only — attacking never taps in this format, so Vigilance has no rules effect here.', tag: 'vigilance' },
 	{ p: ['Menace'], t: 'Flavor only — there is no blocking in this format, so Menace has no rules effect here.', tag: 'menace' },
 	{ p: ['Reach'], t: 'Flavor only — there is no blocking in this format, so Reach has no rules effect here.', tag: 'reach' },
 	{ p: ['Deathtouch'], t: 'Any damage it deals to a creature destroys that creature.', tag: 'deathtouch' },

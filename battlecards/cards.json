@@ -12899,7 +12899,7 @@
       "cost": 5,
       "rarity": "rare",
       "set": "paper",
-      "description": "Choose one: \u2022 Gain 12 Armor. \u2022 Create two 3/3  Beast creature tokens with Taunt.",
+      "description": "Choose one: \u2022 Gain 12 Armor. \u2022 Create two 3/3 Beast creature tokens with Taunt.",
       "type": "sorcery",
       "choices": [
         {
@@ -22344,7 +22344,7 @@
           "name": "Impcaster with"
         }
       ],
-      "description": "Deathrattle: Summon a 1/1 Impcaster with. Spell Damage +1.",
+      "description": "Deathrattle: Summon a 1/1 Impcaster. Spell Damage +1.",
       "set": "hsx"
     },
     {
@@ -45582,7 +45582,7 @@
       "cost": 3,
       "rarity": "rare",
       "set": "hs",
-      "description": "Rush, Taunt, ...Stealth?",
+      "description": "Rush, Taunt,...Stealth?",
       "type": "creature",
       "attack": 2,
       "health": 5,
@@ -52482,7 +52482,7 @@
       "cost": 6,
       "rarity": "common",
       "set": "hs",
-      "description": "Herald . Deal 4 damage to all enemy creatures.",
+      "description": "Herald. Deal 4 damage to all enemy creatures.",
       "type": "sorcery",
       "effects": [
         {
@@ -52502,7 +52502,7 @@
       "cost": 3,
       "rarity": "epic",
       "set": "hs",
-      "description": "Stealth\nDeathrattle: Herald .",
+      "description": "Stealth\nDeathrattle: Herald.",
       "type": "creature",
       "attack": 4,
       "health": 1,
@@ -52523,7 +52523,7 @@
       "cost": 4,
       "rarity": "rare",
       "set": "hs",
-      "description": "Battlecry: Herald . Give the Soldier Rush.",
+      "description": "Battlecry: Herald. Give the Soldier Rush.",
       "type": "creature",
       "attack": 4,
       "health": 3,
@@ -52545,7 +52545,7 @@
       "cost": 3,
       "rarity": "common",
       "set": "hs",
-      "description": "Rush\nBattlecry: Herald .",
+      "description": "Rush\nBattlecry: Herald.",
       "type": "creature",
       "attack": 3,
       "health": 1,
@@ -52567,7 +52567,7 @@
       "cost": 2,
       "rarity": "rare",
       "set": "hs",
-      "description": "Taunt\nBattlecry: Herald .",
+      "description": "Taunt\nBattlecry: Herald.",
       "type": "creature",
       "attack": 0,
       "health": 2,
@@ -52589,7 +52589,7 @@
       "cost": 3,
       "rarity": "common",
       "set": "hs",
-      "description": "Battlecry: Herald .",
+      "description": "Battlecry: Herald.",
       "type": "weapon",
       "attack": 3,
       "durability": 0,
@@ -52606,7 +52606,7 @@
       "cost": 5,
       "rarity": "common",
       "set": "hs",
-      "description": "Taunt\nBattlecry: Herald .",
+      "description": "Taunt\nBattlecry: Herald.",
       "type": "creature",
       "attack": 5,
       "health": 4,
@@ -52627,7 +52627,7 @@
       "cost": 4,
       "rarity": "common",
       "set": "hs",
-      "description": "Lifesteal\nBattlecry: Herald .",
+      "description": "Lifesteal\nBattlecry: Herald.",
       "type": "creature",
       "attack": 3,
       "health": 5,
@@ -59098,7 +59098,7 @@
       "keywords": [
         "deathrattle"
       ],
-      "description": "Deathrattle: Summon a 1/1 Spirit with Flying.",
+      "description": "Deathrattle: Summon a 1/1 Spirit.",
       "effects": [
         {
           "type": "summon",
@@ -59107,9 +59107,7 @@
           "health": 1,
           "name": "Spirit",
           "tribe": "Spirit",
-          "keywords": [
-            "flying"
-          ]
+          "keywords": []
         }
       ]
     },
@@ -59149,7 +59147,7 @@
       "cardClass": "neutral",
       "rarity": "uncommon",
       "set": "wubrg",
-      "description": "Summon three 1/1 Spirit tokens with Flying & Lifesteal.",
+      "description": "Summon three 1/1 Spirit tokens with Lifesteal.",
       "effects": [
         {
           "type": "summon",
@@ -59159,7 +59157,6 @@
           "name": "Spirit",
           "tribe": "Spirit",
           "keywords": [
-            "flying",
             "lifesteal"
           ]
         }
@@ -59176,7 +59173,7 @@
       "cardClass": "neutral",
       "rarity": "common",
       "set": "wubrg",
-      "description": "Summon two 1/1 Spirits with Flying.",
+      "description": "Summon two 1/1 Spirits.",
       "effects": [
         {
           "type": "summon",
@@ -59185,9 +59182,7 @@
           "health": 1,
           "name": "Spirit",
           "tribe": "Spirit",
-          "keywords": [
-            "flying"
-          ]
+          "keywords": []
         }
       ]
     },
@@ -59275,11 +59270,8 @@
       "rarity": "rare",
       "set": "wubrg",
       "tribe": "Angel",
-      "keywords": [
-        "flying",
-        "vigilance"
-      ],
-      "description": "Flying, Vigilance."
+      "keywords": [],
+      "description": ""
     },
     {
       "id": "idyllic_tutor",
@@ -59316,10 +59308,9 @@
       "set": "wubrg",
       "tribe": "Kor Soldier",
       "keywords": [
-        "flying",
         "battlecry"
       ],
-      "description": "Flying.\nBattlecry: Return a permanent to its owner's hand.",
+      "description": "Battlecry: Return a permanent to its owner's hand.",
       "effects": [
         {
           "type": "bounce",
@@ -59341,10 +59332,8 @@
       "rarity": "common",
       "set": "wubrg",
       "tribe": "Drake",
-      "keywords": [
-        "flying"
-      ],
-      "description": "Flying."
+      "keywords": [],
+      "description": ""
     },
     {
       "id": "storm_crow",
@@ -59360,10 +59349,8 @@
       "rarity": "common",
       "set": "wubrg",
       "tribe": "Bird",
-      "keywords": [
-        "flying"
-      ],
-      "description": "Flying."
+      "keywords": [],
+      "description": ""
     },
     {
       "id": "faerie_miscreant",
@@ -59379,10 +59366,8 @@
       "rarity": "common",
       "set": "wubrg",
       "tribe": "Faerie Rogue",
-      "keywords": [
-        "flying"
-      ],
-      "description": "Flying."
+      "keywords": [],
+      "description": ""
     },
     {
       "id": "mulldrifter",
@@ -59399,10 +59384,9 @@
       "set": "wubrg",
       "tribe": "Elemental",
       "keywords": [
-        "flying",
         "battlecry"
       ],
-      "description": "Flying.\nBattlecry: Draw two cards.",
+      "description": "Battlecry: Draw two cards.",
       "effects": [
         {
           "type": "draw",
@@ -59499,10 +59483,9 @@
       "set": "wubrg",
       "tribe": "Faerie Wizard",
       "keywords": [
-        "flying",
         "battlecry"
       ],
-      "description": "Flying.\nBattlecry: Take control of an enemy creature.",
+      "description": "Battlecry: Take control of an enemy creature.",
       "effects": [
         {
           "type": "mind-control",
@@ -59525,7 +59508,7 @@
       "counter": {
         "notType": "creature"
       },
-      "description": "Counter target noncreature spell.\nIts controller summons a 2/2 Bird with Flying.",
+      "description": "Counter target noncreature spell.\nIts controller summons a 2/2 Bird.",
       "effects": [
         {
           "type": "summon",
@@ -59535,9 +59518,7 @@
           "health": 2,
           "name": "Bird",
           "tribe": "Bird",
-          "keywords": [
-            "flying"
-          ]
+          "keywords": []
         }
       ]
     },
@@ -59556,10 +59537,9 @@
       "set": "wubrg",
       "tribe": "Bird",
       "keywords": [
-        "flying",
         "battlecry"
       ],
-      "description": "Flying.\nBattlecry: Scry 3.",
+      "description": "Battlecry: Scry 3.",
       "effects": [
         {
           "type": "scry",
@@ -59690,10 +59670,8 @@
       "rarity": "common",
       "set": "wubrg",
       "tribe": "Vampire Scout",
-      "keywords": [
-        "flying"
-      ],
-      "description": "Flying."
+      "keywords": [],
+      "description": ""
     },
     {
       "id": "exsanguinate",
@@ -59753,7 +59731,7 @@
       "cardClass": "neutral",
       "rarity": "rare",
       "set": "wubrg",
-      "description": "At the start of your turn, lose 1 life & summon a 1/1 Faerie Rogue with Flying.",
+      "description": "At the start of your turn, lose 1 life & summon a 1/1 Faerie Rogue.",
       "ongoing": {
         "on": "turn-start",
         "effects": [
@@ -59769,9 +59747,7 @@
             "health": 1,
             "name": "Faerie Rogue",
             "tribe": "Faerie Rogue",
-            "keywords": [
-              "flying"
-            ]
+            "keywords": []
           }
         ]
       }
@@ -59790,10 +59766,8 @@
       "rarity": "common",
       "set": "wubrg",
       "tribe": "Dragon",
-      "keywords": [
-        "flying"
-      ],
-      "description": "Flying."
+      "keywords": [],
+      "description": ""
     },
     {
       "id": "questing_beast",
@@ -59810,11 +59784,10 @@
       "set": "wubrg",
       "tribe": "Beast",
       "keywords": [
-        "vigilance",
         "deathtouch",
         "charge"
       ],
-      "description": "Vigilance, Deathtouch, Haste."
+      "description": "Deathtouch, Haste."
     },
     {
       "id": "reito_sentinel",
@@ -60107,10 +60080,8 @@
       "rarity": "common",
       "set": "wubrg",
       "tribe": "Bat",
-      "keywords": [
-        "flying"
-      ],
-      "description": "Flying.\n(1), Pay 1 life: This gets +1/+1 until end of turn.",
+      "keywords": [],
+      "description": "(1), Pay 1 life: This gets +1/+1 until end of turn.",
       "activated": [
         {
           "cost": 1,
@@ -60342,10 +60313,9 @@
       "set": "wubrg",
       "tribe": "Beast",
       "keywords": [
-        "flying",
         "trample"
       ],
-      "description": "Flying, Trample."
+      "description": "Trample."
     },
     {
       "id": "beast_in_show",
@@ -60592,10 +60562,8 @@
       "rarity": "common",
       "set": "wubrg",
       "tribe": "Elemental",
-      "keywords": [
-        "flying"
-      ],
-      "description": "Flying."
+      "keywords": [],
+      "description": ""
     },
     {
       "id": "azure_drake",
@@ -60611,10 +60579,8 @@
       "rarity": "common",
       "set": "wubrg",
       "tribe": "Drake",
-      "keywords": [
-        "flying"
-      ],
-      "description": "Flying."
+      "keywords": [],
+      "description": ""
     },
     {
       "id": "cloud_manta",
@@ -60630,10 +60596,8 @@
       "rarity": "common",
       "set": "wubrg",
       "tribe": "Fish",
-      "keywords": [
-        "flying"
-      ],
-      "description": "Flying."
+      "keywords": [],
+      "description": ""
     },
     {
       "id": "fighting_drake",
@@ -60649,10 +60613,8 @@
       "rarity": "common",
       "set": "wubrg",
       "tribe": "Drake",
-      "keywords": [
-        "flying"
-      ],
-      "description": "Flying."
+      "keywords": [],
+      "description": ""
     },
     {
       "id": "bay_falcon",
@@ -60668,11 +60630,8 @@
       "rarity": "common",
       "set": "wubrg",
       "tribe": "Bird",
-      "keywords": [
-        "flying",
-        "vigilance"
-      ],
-      "description": "Flying, Vigilance."
+      "keywords": [],
+      "description": ""
     },
     {
       "id": "faerie_invaders",
@@ -60688,10 +60647,8 @@
       "rarity": "common",
       "set": "wubrg",
       "tribe": "Faerie Rogue",
-      "keywords": [
-        "flying"
-      ],
-      "description": "Flying."
+      "keywords": [],
+      "description": ""
     },
     {
       "id": "giant_octopus",
@@ -60826,11 +60783,8 @@
       "rarity": "common",
       "set": "wubrg",
       "tribe": "Griffin",
-      "keywords": [
-        "flying",
-        "vigilance"
-      ],
-      "description": "Flying, Vigilance."
+      "keywords": [],
+      "description": ""
     },
     {
       "id": "aerial_responder",
@@ -60847,11 +60801,9 @@
       "set": "wubrg",
       "tribe": "Dwarf Soldier",
       "keywords": [
-        "flying",
-        "lifesteal",
-        "vigilance"
+        "lifesteal"
       ],
-      "description": "Flying, Lifelink, Vigilance."
+      "description": "Lifesteal"
     },
     {
       "id": "armored_pegasus",
@@ -60867,10 +60819,8 @@
       "rarity": "common",
       "set": "wubrg",
       "tribe": "Pegasus",
-      "keywords": [
-        "flying"
-      ],
-      "description": "Flying."
+      "keywords": [],
+      "description": ""
     },
     {
       "id": "alabaster_kirin",
@@ -60886,11 +60836,8 @@
       "rarity": "common",
       "set": "wubrg",
       "tribe": "Kirin",
-      "keywords": [
-        "flying",
-        "vigilance"
-      ],
-      "description": "Flying, Vigilance."
+      "keywords": [],
+      "description": ""
     },
     {
       "id": "ajanis_sunstriker",
@@ -60909,7 +60856,7 @@
       "keywords": [
         "lifesteal"
       ],
-      "description": "Lifelink."
+      "description": "Lifesteal."
     },
     {
       "id": "alpine_watchdog",
@@ -60925,10 +60872,8 @@
       "rarity": "common",
       "set": "wubrg",
       "tribe": "Dog",
-      "keywords": [
-        "vigilance"
-      ],
-      "description": "Vigilance."
+      "keywords": [],
+      "description": ""
     },
     {
       "id": "angel_of_light",
@@ -60944,11 +60889,8 @@
       "rarity": "common",
       "set": "wubrg",
       "tribe": "Angel",
-      "keywords": [
-        "flying",
-        "vigilance"
-      ],
-      "description": "Flying, Vigilance."
+      "keywords": [],
+      "description": ""
     },
     {
       "id": "aven_fleetwing",
@@ -60965,10 +60907,9 @@
       "set": "wubrg",
       "tribe": "Bird Soldier",
       "keywords": [
-        "flying",
         "elusive"
       ],
-      "description": "Flying, Hexproof."
+      "description": "Hexproof."
     },
     {
       "id": "benthic_giant",
@@ -61091,7 +61032,7 @@
       "keywords": [
         "lifesteal"
       ],
-      "description": "Lifelink."
+      "description": "Lifesteal."
     },
     {
       "id": "barony_vampire",
@@ -61124,10 +61065,8 @@
       "rarity": "common",
       "set": "wubrg",
       "tribe": "Imp",
-      "keywords": [
-        "flying"
-      ],
-      "description": "Flying."
+      "keywords": [],
+      "description": ""
     },
     {
       "id": "arrogant_vampire",
@@ -61143,10 +61082,8 @@
       "rarity": "common",
       "set": "wubrg",
       "tribe": "Vampire",
-      "keywords": [
-        "flying"
-      ],
-      "description": "Flying."
+      "keywords": [],
+      "description": ""
     },
     {
       "id": "bartizan_bats",
@@ -61162,10 +61099,8 @@
       "rarity": "common",
       "set": "wubrg",
       "tribe": "Bat",
-      "keywords": [
-        "flying"
-      ],
-      "description": "Flying."
+      "keywords": [],
+      "description": ""
     },
     {
       "id": "blood_glutton",
@@ -61184,7 +61119,7 @@
       "keywords": [
         "lifesteal"
       ],
-      "description": "Lifelink."
+      "description": "Lifesteal."
     },
     {
       "id": "daggerdrome_imp",
@@ -61201,10 +61136,9 @@
       "set": "wubrg",
       "tribe": "Imp",
       "keywords": [
-        "flying",
         "lifesteal"
       ],
-      "description": "Flying, Lifelink."
+      "description": "Lifesteal."
     },
     {
       "id": "cursed_minotaur",
@@ -61258,10 +61192,8 @@
       "rarity": "common",
       "set": "wubrg",
       "tribe": "Zombie Bird",
-      "keywords": [
-        "flying"
-      ],
-      "description": "Flying."
+      "keywords": [],
+      "description": ""
     },
     {
       "id": "catacomb_crocodile",
@@ -61382,7 +61314,7 @@
       "keywords": [
         "lifesteal"
       ],
-      "description": "Lifelink."
+      "description": "Lifesteal."
     },
     {
       "id": "balduvian_barbarians",
@@ -61507,10 +61439,9 @@
       "set": "wubrg",
       "tribe": "Beast",
       "keywords": [
-        "vigilance",
         "charge"
       ],
-      "description": "Vigilance, Haste."
+      "description": "Haste."
     },
     {
       "id": "charging_monstrosaur",
@@ -61617,10 +61548,9 @@
       "set": "wubrg",
       "tribe": "Beast",
       "keywords": [
-        "vigilance",
         "charge"
       ],
-      "description": "Vigilance, Haste."
+      "description": "Haste."
     },
     {
       "id": "armored_wolf_rider",
@@ -61739,10 +61669,9 @@
       "set": "wubrg",
       "tribe": "Jackal Archer",
       "keywords": [
-        "reach",
-        "vigilance"
+        "reach"
       ],
-      "description": "Reach, Vigilance."
+      "description": "Reach"
     },
     {
       "id": "blanchwood_treefolk",
@@ -61830,10 +61759,8 @@
       "rarity": "common",
       "set": "wubrg",
       "tribe": "Beast",
-      "keywords": [
-        "vigilance"
-      ],
-      "description": "Vigilance."
+      "keywords": [],
+      "description": ""
     },
     {
       "id": "canopy_gorger",
