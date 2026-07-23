@@ -1764,6 +1764,13 @@ function nextEvent() {
 		case 'draw':
 			delay = ev.player === HUMAN ? 180 : 90;
 			break;
+		case 'joust': {
+			const mine = ev.myName ? `${ev.myName} (${ev.myCost})` : 'nothing';
+			const theirs = ev.enemyName ? `${ev.enemyName} (${ev.enemyCost})` : 'nothing';
+			log(`${nameOf(ev.player)} Jousts: ${mine} vs ${theirs} — ${ev.win ? 'won!' : 'lost'}`);
+			delay = 480;
+			break;
+		}
 		case 'play':
 			log(`${nameOf(ev.player)} played ${ev.card.name}`);
 			delay = 420;

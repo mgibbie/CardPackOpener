@@ -64739,6 +64739,170 @@
           }
         ]
       }
+    },
+    {
+      "id": "gadgetzan_jouster",
+      "name": "Gadgetzan Jouster",
+      "type": "creature",
+      "cost": 1,
+      "cardClass": "neutral",
+      "attack": 1,
+      "health": 2,
+      "rarity": "common",
+      "set": "TGT",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Joust target player. If you win, gain +1/+1.",
+      "effects": [
+        {
+          "type": "joust",
+          "then": [
+            {
+              "type": "buff-self",
+              "attack": 1,
+              "health": 1
+            }
+          ],
+          "target": "enemy-hero"
+        }
+      ]
+    },
+    {
+      "id": "kings_elekk",
+      "name": "King's Elekk",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "hunter",
+      "attack": 3,
+      "health": 2,
+      "rarity": "common",
+      "set": "TGT",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Joust target player. If you win, draw the revealed creature.",
+      "effects": [
+        {
+          "type": "joust",
+          "drawWinner": true,
+          "target": "enemy-hero"
+        }
+      ]
+    },
+    {
+      "id": "armored_warhorse",
+      "name": "Armored Warhorse",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "neutral",
+      "attack": 5,
+      "health": 3,
+      "rarity": "rare",
+      "set": "TGT",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Joust target player. If you win, gain Charge.",
+      "effects": [
+        {
+          "type": "joust",
+          "then": [
+            {
+              "type": "grant",
+              "target": "self",
+              "keyword": "charge"
+            }
+          ],
+          "target": "enemy-hero"
+        }
+      ]
+    },
+    {
+      "id": "tuskarr_jouster",
+      "name": "Tuskarr Jouster",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "paladin",
+      "attack": 5,
+      "health": 5,
+      "rarity": "rare",
+      "set": "TGT",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Joust target player. If you win, restore 7 Health to your hero.",
+      "effects": [
+        {
+          "type": "joust",
+          "then": [
+            {
+              "type": "heal",
+              "target": "self",
+              "value": 7
+            }
+          ],
+          "target": "enemy-hero"
+        }
+      ]
+    },
+    {
+      "id": "master_jouster",
+      "name": "Master Jouster",
+      "type": "creature",
+      "cost": 6,
+      "cardClass": "neutral",
+      "attack": 5,
+      "health": 6,
+      "rarity": "rare",
+      "set": "TGT",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Joust target player. If you win, gain Taunt and Divine Shield.",
+      "effects": [
+        {
+          "type": "joust",
+          "then": [
+            {
+              "type": "grant",
+              "target": "self",
+              "keyword": "taunt"
+            },
+            {
+              "type": "grant",
+              "target": "self",
+              "keyword": "divine_shield"
+            }
+          ],
+          "target": "enemy-hero"
+        }
+      ]
+    },
+    {
+      "id": "the_skeleton_knight",
+      "name": "The Skeleton Knight",
+      "type": "creature",
+      "cost": 6,
+      "cardClass": "neutral",
+      "attack": 7,
+      "health": 4,
+      "rarity": "legendary",
+      "set": "TGT",
+      "keywords": [
+        "deathrattle"
+      ],
+      "description": "Deathrattle: Joust a random opponent. If you win, return this to your hand.",
+      "deathrattle": [
+        {
+          "type": "joust",
+          "then": [
+            {
+              "type": "return-self-to-hand"
+            }
+          ]
+        }
+      ]
     }
   ]
 }

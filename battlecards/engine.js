@@ -637,8 +637,9 @@ export function targetSpec(state, pi, card, choice) {
 	// (combo-aware: an active combo line replaces the base effects)
 	for (const e of liveEffectsOf(state, pi, card, choice) || []) {
 		let kind = CHOSEN[e.type]?.[e.target];
-		// "the enemy hero" is unambiguous in 1v1 but a choice with 3+ players
-		if (!kind && e.target === 'enemy-hero' && e.type === 'damage' && opponentsOf(state, pi).length > 1) {
+		// "the enemy hero" is unambiguous in 1v1 but a choice with 3+ players;
+		// Joust likewise lets you pick which opponent to Joust against
+		if (!kind && e.target === 'enemy-hero' && (e.type === 'damage' || e.type === 'joust') && opponentsOf(state, pi).length > 1) {
 			kind = 'enemy-hero';
 		}
 		if (!kind) continue;
@@ -660,8 +661,9 @@ export function targetSpec(state, pi, card, choice) {
 			filter = c => tribes.some(t => (c.tribe || '').includes(t));
 			why = `a friendly ${e.tribe.replace(/\|/g, '/')}`;
 		}
-		// spells need their target; creature/weapon battlecries fizzle without one
-		const required = card.type !== 'creature' && card.type !== 'weapon';
+		// spells need their target; creature/weapon battlecries fizzle without one.
+		// picking which opponent (enemy-hero, e.g. Joust/multi-target burn) is required.
+		const required = kind === 'enemy-hero' || (card.type !== 'creature' && card.type !== 'weapon');
 		return { targets: kind, filter, required, why };
 	}
 	return null;
@@ -3546,6 +3548,39 @@ function execEffects(state, pi, effects, target, source) {
 				state.players[pi].board.push(t);
 				emit(state, { type: 'mindControl', uid: t.uid, player: pi, name: t.name });
 				recomputeAuras(state);
+			}
+		} else if (e.type === 'joust') {
+			// Reveal a random creature from each deck; you win if yours costs more.
+			// An empty deck reveals nothing: no creature = can't win / auto-loses.
+			const p = state.players[pi];
+			const creaturePicks = deck => {
+				const idxs = [];
+				for (let i = 0; i < deck.length; i++) { const def = state.cardsById[deck[i]]; if (def?.type === 'creature' && !def.token) idxs.push(i); }
+				return idxs;
+			};
+			const myPool = creaturePicks(p.deck);
+			const myPick = myPool.length ? myPool[Math.floor(state.rng() * myPool.length)] : -1;
+			const myCost = myPick >= 0 ? (state.cardsById[p.deck[myPick]].cost || 0) : null;
+			const myName = myPick >= 0 ? state.cardsById[p.deck[myPick]].name : null;
+			let enemyCost = null, enemyName = null;
+			// joust the chosen player; with no target (2p / deathrattle) a random opponent
+			const foe = (target?.type === 'hero' && target.player !== pi) ? target.player
+				: (enemies.length ? enemies[Math.floor(state.rng() * enemies.length)] : null);
+			if (foe != null) {
+				const ed = state.players[foe].deck;
+				const ePool = creaturePicks(ed);
+				if (ePool.length) { const ei = ePool[Math.floor(state.rng() * ePool.length)]; enemyCost = state.cardsById[ed[ei]].cost || 0; enemyName = state.cardsById[ed[ei]].name; }
+			}
+			const win = myCost != null && (enemyCost == null || myCost > enemyCost);
+			emit(state, { type: 'joust', player: pi, opponent: foe, myName, myCost, enemyName, enemyCost, win });
+			if (win) {
+				if (e.drawWinner && myPick >= 0 && p.hand.length < MAX_HAND) {
+					const [id] = p.deck.splice(myPick, 1);
+					const card = instantiate(state.cardsById[id], pi);
+					card.zone = 'hand'; p.hand.push(card);
+					emit(state, { type: 'draw', player: pi, card });
+				}
+				if (e.then) execEffects(state, pi, e.then, target, source);
 			}
 		} else if (e.type === 'return-self-to-hand') {
 			// "Deathrattle: Return this to your hand" — a fresh copy comes back
