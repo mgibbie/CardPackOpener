@@ -4325,31 +4325,6 @@
       "description": "Whenever you cast a spell, summon a 1/1 Violet Apprentice."
     },
     {
-      "id": "azure_drake",
-      "name": "Azure Drake",
-      "cardClass": "neutral",
-      "cost": 5,
-      "rarity": "rare",
-      "static": {
-        "type": "spell-damage",
-        "value": 1
-      },
-      "type": "creature",
-      "attack": 4,
-      "health": 4,
-      "keywords": [
-        "battlecry"
-      ],
-      "effects": [
-        {
-          "type": "draw",
-          "value": 1
-        }
-      ],
-      "description": "Battlecry: Draw 1 card. Spell Damage +1.",
-      "tribe": "Dragon"
-    },
-    {
       "id": "doomguard",
       "name": "Doomguard",
       "cardClass": "warlock",
@@ -13454,28 +13429,6 @@
       ]
     },
     {
-      "id": "coral_commando",
-      "name": "Coral Commando",
-      "cardClass": "neutral",
-      "cost": 3,
-      "rarity": "common",
-      "set": "paper",
-      "description": "Constellation: Gaze 2.",
-      "type": "creature",
-      "attack": 3,
-      "health": 2,
-      "tribe": "Merfolk Warrior",
-      "ongoing": {
-        "on": "enchantment-played",
-        "effects": [
-          {
-            "type": "gaze",
-            "value": 2
-          }
-        ]
-      }
-    },
-    {
       "id": "green_eyes_baby_dragon",
       "name": "Green Eyes Baby Dragon",
       "cardClass": "neutral",
@@ -20729,22 +20682,6 @@
         }
       ],
       "description": "Battlecry: Give a friendly creature +1 Attack.",
-      "set": "hsx"
-    },
-    {
-      "id": "air_elemental",
-      "name": "Air Elemental",
-      "cardClass": "shaman",
-      "cost": 1,
-      "rarity": "common",
-      "tribe": "Elemental",
-      "type": "creature",
-      "attack": 3,
-      "health": 1,
-      "keywords": [
-        "elusive"
-      ],
-      "description": "Elusive.",
       "set": "hsx"
     },
     {
@@ -38939,22 +38876,6 @@
       "description": "Battlecry: draw a card.."
     },
     {
-      "id": "elvish_warrior",
-      "name": "Elvish Warrior",
-      "colors": [
-        "G"
-      ],
-      "cardClass": "neutral",
-      "cost": 2,
-      "rarity": "common",
-      "set": "wubrg",
-      "type": "creature",
-      "attack": 2,
-      "health": 3,
-      "tribe": "Elf Warrior",
-      "description": "A 2/3 creature."
-    },
-    {
       "id": "harmonize",
       "name": "Harmonize",
       "colors": [
@@ -56080,23 +56001,6 @@
       }
     },
     {
-      "id": "centaur_courser",
-      "name": "Centaur Courser",
-      "type": "creature",
-      "cost": 3,
-      "colors": [
-        "G"
-      ],
-      "cardClass": "neutral",
-      "attack": 3,
-      "health": 3,
-      "rarity": "common",
-      "set": "wubrg",
-      "keywords": [],
-      "description": "",
-      "effects": []
-    },
-    {
       "id": "giant_killer",
       "name": "Giant Killer",
       "type": "creature",
@@ -56604,23 +56508,6 @@
           "target": "creature"
         }
       ]
-    },
-    {
-      "id": "craw_wurm",
-      "name": "Craw Wurm",
-      "type": "creature",
-      "cost": 6,
-      "colors": [
-        "G"
-      ],
-      "cardClass": "neutral",
-      "attack": 6,
-      "health": 4,
-      "rarity": "common",
-      "set": "wubrg",
-      "keywords": [],
-      "description": "",
-      "effects": []
     },
     {
       "id": "blacksmith_skill",
@@ -60457,6 +60344,510 @@
           "text": "(1), Sacrifice a creature: Tap a creature"
         }
       ]
+    },
+    {
+      "id": "argothian_swine",
+      "name": "Argothian Swine",
+      "type": "creature",
+      "cost": 3,
+      "colors": [
+        "G"
+      ],
+      "cardClass": "neutral",
+      "attack": 3,
+      "health": 3,
+      "rarity": "common",
+      "set": "wubrg",
+      "tribe": "Boar",
+      "keywords": [
+        "trample"
+      ],
+      "description": "Trample."
+    },
+    {
+      "id": "assault_zeppelid",
+      "name": "Assault Zeppelid",
+      "type": "creature",
+      "cost": 4,
+      "colors": [
+        "G"
+      ],
+      "cardClass": "neutral",
+      "attack": 3,
+      "health": 3,
+      "rarity": "common",
+      "set": "wubrg",
+      "tribe": "Beast",
+      "keywords": [
+        "flying",
+        "trample"
+      ],
+      "description": "Flying, Trample."
+    },
+    {
+      "id": "beast_in_show",
+      "name": "Beast in Show",
+      "type": "creature",
+      "cost": 6,
+      "colors": [
+        "G"
+      ],
+      "cardClass": "neutral",
+      "attack": 6,
+      "health": 4,
+      "rarity": "common",
+      "set": "wubrg",
+      "tribe": "Beast",
+      "keywords": [
+        "trample"
+      ],
+      "description": "Trample."
+    },
+    {
+      "id": "ambush_viper",
+      "name": "Ambush Viper",
+      "type": "creature",
+      "cost": 3,
+      "colors": [
+        "G"
+      ],
+      "cardClass": "neutral",
+      "attack": 2,
+      "health": 1,
+      "rarity": "common",
+      "set": "wubrg",
+      "tribe": "Snake",
+      "keywords": [
+        "deathtouch"
+      ],
+      "description": "Deathtouch."
+    },
+    {
+      "id": "archers_of_qarsi",
+      "name": "Archers of Qarsi",
+      "type": "creature",
+      "cost": 4,
+      "colors": [
+        "G"
+      ],
+      "cardClass": "neutral",
+      "attack": 5,
+      "health": 2,
+      "rarity": "common",
+      "set": "wubrg",
+      "tribe": "Snake Archer",
+      "keywords": [
+        "reach",
+        "defender"
+      ],
+      "description": "Reach, Defender."
+    },
+    {
+      "id": "bassara_tower_archer",
+      "name": "Bassara Tower Archer",
+      "type": "creature",
+      "cost": 3,
+      "colors": [
+        "G"
+      ],
+      "cardClass": "neutral",
+      "attack": 2,
+      "health": 1,
+      "rarity": "common",
+      "set": "wubrg",
+      "tribe": "Human Archer",
+      "keywords": [
+        "reach",
+        "elusive"
+      ],
+      "description": "Reach, Hexproof."
+    },
+    {
+      "id": "alpine_grizzly",
+      "name": "Alpine Grizzly",
+      "type": "creature",
+      "cost": 3,
+      "colors": [
+        "G"
+      ],
+      "cardClass": "neutral",
+      "attack": 4,
+      "health": 2,
+      "rarity": "common",
+      "set": "wubrg",
+      "tribe": "Bear",
+      "keywords": [],
+      "description": ""
+    },
+    {
+      "id": "axebane_beast",
+      "name": "Axebane Beast",
+      "type": "creature",
+      "cost": 4,
+      "colors": [
+        "G"
+      ],
+      "cardClass": "neutral",
+      "attack": 3,
+      "health": 4,
+      "rarity": "common",
+      "set": "wubrg",
+      "tribe": "Beast",
+      "keywords": [],
+      "description": ""
+    },
+    {
+      "id": "centaur_courser",
+      "name": "Centaur Courser",
+      "type": "creature",
+      "cost": 3,
+      "colors": [
+        "G"
+      ],
+      "cardClass": "neutral",
+      "attack": 3,
+      "health": 3,
+      "rarity": "common",
+      "set": "wubrg",
+      "tribe": "Centaur Warrior",
+      "keywords": [],
+      "description": ""
+    },
+    {
+      "id": "craw_wurm",
+      "name": "Craw Wurm",
+      "type": "creature",
+      "cost": 6,
+      "colors": [
+        "G"
+      ],
+      "cardClass": "neutral",
+      "attack": 6,
+      "health": 4,
+      "rarity": "common",
+      "set": "wubrg",
+      "tribe": "Wurm",
+      "keywords": [],
+      "description": ""
+    },
+    {
+      "id": "elvish_warrior",
+      "name": "Elvish Warrior",
+      "type": "creature",
+      "cost": 2,
+      "colors": [
+        "G"
+      ],
+      "cardClass": "neutral",
+      "attack": 2,
+      "health": 3,
+      "rarity": "common",
+      "set": "wubrg",
+      "tribe": "Elf Warrior",
+      "keywords": [],
+      "description": ""
+    },
+    {
+      "id": "durkwood_boars",
+      "name": "Durkwood Boars",
+      "type": "creature",
+      "cost": 5,
+      "colors": [
+        "G"
+      ],
+      "cardClass": "neutral",
+      "attack": 4,
+      "health": 4,
+      "rarity": "common",
+      "set": "wubrg",
+      "tribe": "Boar",
+      "keywords": [],
+      "description": ""
+    },
+    {
+      "id": "feral_krushok",
+      "name": "Feral Krushok",
+      "type": "creature",
+      "cost": 5,
+      "colors": [
+        "G"
+      ],
+      "cardClass": "neutral",
+      "attack": 5,
+      "health": 4,
+      "rarity": "common",
+      "set": "wubrg",
+      "tribe": "Beast",
+      "keywords": [],
+      "description": ""
+    },
+    {
+      "id": "colossodon_yearling",
+      "name": "Colossodon Yearling",
+      "type": "creature",
+      "cost": 3,
+      "colors": [
+        "G"
+      ],
+      "cardClass": "neutral",
+      "attack": 2,
+      "health": 4,
+      "rarity": "common",
+      "set": "wubrg",
+      "tribe": "Beast",
+      "keywords": [],
+      "description": ""
+    },
+    {
+      "id": "cylian_elf",
+      "name": "Cylian Elf",
+      "type": "creature",
+      "cost": 2,
+      "colors": [
+        "G"
+      ],
+      "cardClass": "neutral",
+      "attack": 2,
+      "health": 2,
+      "rarity": "common",
+      "set": "wubrg",
+      "tribe": "Elf Scout",
+      "keywords": [],
+      "description": ""
+    },
+    {
+      "id": "air_elemental",
+      "name": "Air Elemental",
+      "type": "creature",
+      "cost": 5,
+      "colors": [
+        "U"
+      ],
+      "cardClass": "neutral",
+      "attack": 4,
+      "health": 4,
+      "rarity": "common",
+      "set": "wubrg",
+      "tribe": "Elemental",
+      "keywords": [
+        "flying"
+      ],
+      "description": "Flying."
+    },
+    {
+      "id": "azure_drake",
+      "name": "Azure Drake",
+      "type": "creature",
+      "cost": 4,
+      "colors": [
+        "U"
+      ],
+      "cardClass": "neutral",
+      "attack": 2,
+      "health": 4,
+      "rarity": "common",
+      "set": "wubrg",
+      "tribe": "Drake",
+      "keywords": [
+        "flying"
+      ],
+      "description": "Flying."
+    },
+    {
+      "id": "cloud_manta",
+      "name": "Cloud Manta",
+      "type": "creature",
+      "cost": 4,
+      "colors": [
+        "U"
+      ],
+      "cardClass": "neutral",
+      "attack": 3,
+      "health": 2,
+      "rarity": "common",
+      "set": "wubrg",
+      "tribe": "Fish",
+      "keywords": [
+        "flying"
+      ],
+      "description": "Flying."
+    },
+    {
+      "id": "fighting_drake",
+      "name": "Fighting Drake",
+      "type": "creature",
+      "cost": 4,
+      "colors": [
+        "U"
+      ],
+      "cardClass": "neutral",
+      "attack": 2,
+      "health": 4,
+      "rarity": "common",
+      "set": "wubrg",
+      "tribe": "Drake",
+      "keywords": [
+        "flying"
+      ],
+      "description": "Flying."
+    },
+    {
+      "id": "bay_falcon",
+      "name": "Bay Falcon",
+      "type": "creature",
+      "cost": 2,
+      "colors": [
+        "U"
+      ],
+      "cardClass": "neutral",
+      "attack": 1,
+      "health": 1,
+      "rarity": "common",
+      "set": "wubrg",
+      "tribe": "Bird",
+      "keywords": [
+        "flying",
+        "vigilance"
+      ],
+      "description": "Flying, Vigilance."
+    },
+    {
+      "id": "faerie_invaders",
+      "name": "Faerie Invaders",
+      "type": "creature",
+      "cost": 4,
+      "colors": [
+        "U"
+      ],
+      "cardClass": "neutral",
+      "attack": 3,
+      "health": 3,
+      "rarity": "common",
+      "set": "wubrg",
+      "tribe": "Faerie Rogue",
+      "keywords": [
+        "flying"
+      ],
+      "description": "Flying."
+    },
+    {
+      "id": "giant_octopus",
+      "name": "Giant Octopus",
+      "type": "creature",
+      "cost": 4,
+      "colors": [
+        "U"
+      ],
+      "cardClass": "neutral",
+      "attack": 3,
+      "health": 3,
+      "rarity": "common",
+      "set": "wubrg",
+      "tribe": "Octopus",
+      "keywords": [],
+      "description": ""
+    },
+    {
+      "id": "coral_commando",
+      "name": "Coral Commando",
+      "type": "creature",
+      "cost": 3,
+      "colors": [
+        "U"
+      ],
+      "cardClass": "neutral",
+      "attack": 3,
+      "health": 2,
+      "rarity": "common",
+      "set": "wubrg",
+      "tribe": "Merfolk Warrior",
+      "keywords": [],
+      "description": ""
+    },
+    {
+      "id": "amphin_cutthroat",
+      "name": "Amphin Cutthroat",
+      "type": "creature",
+      "cost": 3,
+      "colors": [
+        "U"
+      ],
+      "cardClass": "neutral",
+      "attack": 2,
+      "health": 4,
+      "rarity": "common",
+      "set": "wubrg",
+      "tribe": "Salamander Rogue",
+      "keywords": [],
+      "description": ""
+    },
+    {
+      "id": "horned_turtle",
+      "name": "Horned Turtle",
+      "type": "creature",
+      "cost": 3,
+      "colors": [
+        "U"
+      ],
+      "cardClass": "neutral",
+      "attack": 1,
+      "health": 4,
+      "rarity": "common",
+      "set": "wubrg",
+      "tribe": "Turtle",
+      "keywords": [],
+      "description": ""
+    },
+    {
+      "id": "tolarian_scholar",
+      "name": "Tolarian Scholar",
+      "type": "creature",
+      "cost": 3,
+      "colors": [
+        "U"
+      ],
+      "cardClass": "neutral",
+      "attack": 2,
+      "health": 3,
+      "rarity": "common",
+      "set": "wubrg",
+      "tribe": "Human Wizard",
+      "keywords": [],
+      "description": ""
+    },
+    {
+      "id": "ancient_crab",
+      "name": "Ancient Crab",
+      "type": "creature",
+      "cost": 4,
+      "colors": [
+        "U"
+      ],
+      "cardClass": "neutral",
+      "attack": 1,
+      "health": 5,
+      "rarity": "common",
+      "set": "wubrg",
+      "tribe": "Crab",
+      "keywords": [],
+      "description": ""
+    },
+    {
+      "id": "maritime_guard",
+      "name": "Maritime Guard",
+      "type": "creature",
+      "cost": 2,
+      "colors": [
+        "U"
+      ],
+      "cardClass": "neutral",
+      "attack": 1,
+      "health": 3,
+      "rarity": "common",
+      "set": "wubrg",
+      "tribe": "Merfolk Soldier",
+      "keywords": [],
+      "description": ""
     }
   ]
 }
