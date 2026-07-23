@@ -62654,7 +62654,7 @@
             {
               "type": "damage",
               "value": 2,
-              "target": "enemy-hero"
+              "target": "enemy-heroes"
             }
           ]
         }
@@ -62789,17 +62789,329 @@
       "set": "GVG",
       "tribe": "Mech",
       "keywords": [],
-      "description": "At the end of your turn, deal 2 damage to the enemy hero.",
+      "description": "At the end of your turn, each other player loses 2 life.",
       "ongoing": {
         "on": "turn-end",
         "effects": [
           {
             "type": "damage",
             "value": 2,
-            "target": "enemy-hero"
+            "target": "enemy-heroes"
           }
         ]
       }
+    },
+    {
+      "id": "hobgoblin",
+      "name": "Hobgoblin",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "neutral",
+      "attack": 2,
+      "health": 3,
+      "rarity": "rare",
+      "set": "GVG",
+      "description": "Whenever you summon a creature with 1 or less Attack, give it +2/+2.",
+      "ongoing": {
+        "on": "summoned",
+        "if": {
+          "maxAttack": 1
+        },
+        "effects": [
+          {
+            "type": "buff-minion",
+            "attack": 2,
+            "health": 2
+          }
+        ]
+      }
+    },
+    {
+      "id": "ships_cannon",
+      "name": "Ship's Cannon",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "neutral",
+      "attack": 2,
+      "health": 3,
+      "rarity": "rare",
+      "set": "GVG",
+      "description": "After you summon a Pirate, deal 2 damage to a random enemy.",
+      "ongoing": {
+        "on": "summoned",
+        "if": {
+          "tribe": "Pirate"
+        },
+        "effects": [
+          {
+            "type": "random-damage",
+            "value": 2,
+            "count": 1,
+            "pool": "enemies"
+          }
+        ]
+      }
+    },
+    {
+      "id": "siltfin_spiritwalker",
+      "name": "Siltfin Spiritwalker",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "shaman",
+      "attack": 2,
+      "health": 5,
+      "rarity": "rare",
+      "set": "GVG",
+      "tribe": "Murloc",
+      "overload": 1,
+      "description": "Whenever another friendly Murloc dies, draw a card. Overload (1).",
+      "ongoing": {
+        "on": "friendly-creature-died",
+        "if": {
+          "tribe": "Murloc"
+        },
+        "effects": [
+          {
+            "type": "draw",
+            "value": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "clockwork_gnome",
+      "name": "Clockwork Gnome",
+      "type": "creature",
+      "cost": 1,
+      "cardClass": "neutral",
+      "attack": 2,
+      "health": 1,
+      "rarity": "rare",
+      "set": "GVG",
+      "tribe": "Mech",
+      "keywords": [
+        "deathrattle"
+      ],
+      "description": "Deathrattle: Add a Spare Part to your hand.",
+      "deathrattle": [
+        {
+          "type": "add-card",
+          "id": "sparepart"
+        }
+      ]
+    },
+    {
+      "id": "mech_bear_cat",
+      "name": "Mech-Bear-Cat",
+      "type": "creature",
+      "cost": 6,
+      "cardClass": "druid",
+      "attack": 7,
+      "health": 6,
+      "rarity": "rare",
+      "set": "GVG",
+      "tribe": "Beast",
+      "description": "Whenever this creature takes damage, add a Spare Part to your hand.",
+      "ongoing": {
+        "on": "self-damaged",
+        "effects": [
+          {
+            "type": "add-card",
+            "id": "sparepart"
+          }
+        ]
+      }
+    },
+    {
+      "id": "tinkertown_technician",
+      "name": "Tinkertown Technician",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "neutral",
+      "attack": 3,
+      "health": 3,
+      "rarity": "rare",
+      "set": "GVG",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: If you have a Mech, gain +1/+1 and add a Spare Part to your hand.",
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "controlTribe": "Mech"
+          },
+          "then": [
+            {
+              "type": "buff-self",
+              "attack": 1,
+              "health": 1
+            },
+            {
+              "type": "add-card",
+              "id": "sparepart"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "mechanical_yeti",
+      "name": "Mechanical Yeti",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "neutral",
+      "attack": 4,
+      "health": 5,
+      "rarity": "rare",
+      "set": "GVG",
+      "tribe": "Mech",
+      "keywords": [
+        "deathrattle"
+      ],
+      "description": "Deathrattle: Give each player a Spare Part.",
+      "deathrattle": [
+        {
+          "type": "add-card",
+          "id": "sparepart",
+          "eachPlayer": true
+        }
+      ]
+    },
+    {
+      "id": "iron_sensei",
+      "name": "Iron Sensei",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "rogue",
+      "attack": 2,
+      "health": 2,
+      "rarity": "rare",
+      "set": "GVG",
+      "tribe": "Mech",
+      "description": "At the end of your turn, give another friendly Mech +2/+2.",
+      "ongoing": {
+        "on": "turn-end",
+        "effects": [
+          {
+            "type": "buff-random-friendly",
+            "tribe": "Mech",
+            "excludeSelf": true,
+            "attack": 2,
+            "health": 2
+          }
+        ]
+      }
+    },
+    {
+      "id": "scarlet_purifier",
+      "name": "Scarlet Purifier",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "paladin",
+      "attack": 4,
+      "health": 3,
+      "rarity": "rare",
+      "set": "GVG",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Deal 2 damage to all creatures with Deathrattle.",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 2,
+          "target": "all-creatures",
+          "requireKeyword": "deathrattle"
+        }
+      ]
+    },
+    {
+      "id": "lil_exorcist",
+      "name": "Lil' Exorcist",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "neutral",
+      "attack": 2,
+      "health": 3,
+      "rarity": "rare",
+      "set": "GVG",
+      "keywords": [
+        "taunt",
+        "battlecry"
+      ],
+      "description": "Taunt. Battlecry: Gain +1/+1 for each enemy Deathrattle creature.",
+      "effects": [
+        {
+          "type": "buff-self",
+          "per": "enemy-deathrattle",
+          "attack": 1,
+          "health": 1
+        }
+      ]
+    },
+    {
+      "id": "floating_watcher",
+      "name": "Floating Watcher",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "warlock",
+      "attack": 4,
+      "health": 4,
+      "rarity": "rare",
+      "set": "GVG",
+      "tribe": "Demon",
+      "description": "Whenever you lose life on your turn, gain +2/+2.",
+      "ongoing": {
+        "on": "own-hero-damaged",
+        "effects": [
+          {
+            "type": "buff-self",
+            "attack": 2,
+            "health": 2
+          }
+        ]
+      }
+    },
+    {
+      "id": "anima_golem",
+      "name": "Anima Golem",
+      "type": "creature",
+      "cost": 6,
+      "cardClass": "warlock",
+      "attack": 9,
+      "health": 9,
+      "rarity": "rare",
+      "set": "GVG",
+      "tribe": "Mech",
+      "description": "At the end of each turn, destroy this creature if it's your only one.",
+      "ongoing": {
+        "on": "every-turn-end",
+        "effects": [
+          {
+            "type": "destroy-self",
+            "ifAlone": true
+          }
+        ]
+      }
+    },
+    {
+      "id": "sparepart",
+      "name": "Spare Part",
+      "type": "spell",
+      "cost": 1,
+      "token": true,
+      "rarity": "common",
+      "set": "GVG",
+      "description": "Give a random friendly creature +1/+1.",
+      "effects": [
+        {
+          "type": "buff-random-friendly",
+          "attack": 1,
+          "health": 1
+        }
+      ]
     }
   ]
 }

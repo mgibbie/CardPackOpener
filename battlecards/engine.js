@@ -902,6 +902,7 @@ function damageHero(state, pi, amount, src = null, pierce = false) {
 		emit(state, { type: 'damage', targetType: 'hero', player: pi, amount, life: p.life });
 		fireSecrets(state, pi, 'hero-takes-damage', { fatal: false, amount, src });
 		questTick(state, 'damage-taken', pi, amount);
+		if (state.current === pi) fireOngoing(state, pi, 'own-hero-damaged', {});
 		return amount;
 	}
 	// fatal-damage secrets (Ice Block) fire before the damage lands
@@ -917,6 +918,7 @@ function damageHero(state, pi, amount, src = null, pierce = false) {
 	emit(state, { type: 'damage', targetType: 'hero', player: pi, amount, life: p.life });
 	if (toLife > 0) fireSecrets(state, pi, 'hero-takes-damage', { fatal: false, amount: toLife, src });
 	if (toLife > 0) questTick(state, 'damage-taken', pi, toLife);
+	if (toLife > 0 && state.current === pi) fireOngoing(state, pi, 'own-hero-damaged', {});
 	return toLife;
 }
 
@@ -1864,7 +1866,9 @@ function runSecretEffects(state, pi, effects, ctx) {
 				break;
 			}
 			case 'buff-random-friendly': {
-				const pool = state.players[pi].board.filter(c => !isDead(c) && (!e.excludeSelf || c !== ctx.self));
+				const pool = state.players[pi].board.filter(c => !isDead(c)
+					&& (!e.excludeSelf || c !== ctx.self)
+					&& (!e.tribe || (c.tribe || '').includes(e.tribe)));
 				if (pool.length) {
 					const m = pool[Math.floor(state.rng() * pool.length)];
 					m.attack += e.attack || 0;
@@ -2173,7 +2177,7 @@ function execEffects(state, pi, effects, target, source) {
 				case 'own-hero': damageHero(state, pi, v, pi); break;
 				case 'enemy-creatures': for (const o of enemies) for (const c of [...state.players[o].board]) { if (e.exceptTribe && (c.tribe || '').includes(e.exceptTribe)) continue; damageCreature(state, c, rollv(), null); } break;
 				case 'frozen-enemy-creatures': for (const o of enemies) for (const c of [...state.players[o].board]) { if (c.frozen) damageCreature(state, c, v, null); } break;
-				case 'all-creatures': for (const pl of state.players) for (const c of [...pl.board]) { if (e.exceptTribe && (c.tribe || '').includes(e.exceptTribe)) continue; damageCreature(state, c, v, null); } break;
+				case 'all-creatures': for (const pl of state.players) for (const c of [...pl.board]) { if (e.exceptTribe && (c.tribe || '').includes(e.exceptTribe)) continue; if (e.requireKeyword && !c.keywords.includes(e.requireKeyword)) continue; damageCreature(state, c, v, null); } break;
 				case 'enemies':
 					for (const o of enemies) {
 						for (const c of [...state.players[o].board]) damageCreature(state, c, v, null);
@@ -2834,15 +2838,18 @@ function execEffects(state, pi, effects, target, source) {
 			if (state.rng() < 0.5) execEffects(state, pi, e.effects, target, source);
 			else emit(state, { type: 'luckFail', player: pi });
 		} else if (e.type === 'add-card') {
-			const p = state.players[pi];
 			const def = state.cardsById[e.id];
-			if (def && p.hand.length < MAX_HAND) {
-				const card = instantiate(def, pi);
-				card.zone = 'hand';
-				p.hand.push(card);
-				emit(state, { type: 'conjure', player: pi, card, color: null });
-			} else if (!def) {
-				drawCards(state, pi, 1); // named card not in the pool yet
+			const targets = e.eachPlayer ? state.players.map((_, idx) => idx).filter(idx => !state.players[idx].eliminated) : [pi];
+			for (const tp of targets) {
+				const tpp = state.players[tp];
+				if (def && tpp.hand.length < MAX_HAND) {
+					const card = instantiate(def, tp);
+					card.zone = 'hand';
+					tpp.hand.push(card);
+					emit(state, { type: 'conjure', player: tp, card, color: null });
+				} else if (!def) {
+					drawCards(state, tp, 1); // named card not in the pool yet
+				}
 			}
 		} else if (e.type === 'grant-ongoing') {
 			const t = chosenCreature();
@@ -2924,10 +2931,22 @@ function execEffects(state, pi, effects, target, source) {
 				if (e.per === 'other-friendly') n = state.players[pi].board.filter(c => c !== source && !isDead(c)).length;
 				else if (e.per === 'hand-cards') n = state.players[pi].hand.length;
 				else if (e.per === 'cards-played') n = state.players[pi].cardsPlayedThisTurn;
+				else if (e.per === 'enemy-deathrattle') n = state.players.reduce((s, pl, idx) =>
+					idx === pi ? s : s + pl.board.filter(c => !isDead(c) && c.keywords.includes('deathrattle')).length, 0);
 				if (n > 0) buffCreature(source, (e.attack || 0) * n, (e.health || 0) * n);
 			}
 		} else if (e.type === 'damage-self') {
 			if (source && source.zone === 'board' && !isDead(source)) damageCreature(state, source, e.value, null);
+		} else if (e.type === 'destroy-self') {
+			// Anima Golem: destroy the source (optionally only if it's your only creature)
+			if (source && source.zone === 'board' && !isDead(source)) {
+				const alone = state.players[pi].board.filter(c => c !== source && !isDead(c) && c.type !== 'location').length === 0;
+				if (!e.ifAlone || alone) {
+					source.damage = source.maxHealth;
+					source.shield = false;
+					emit(state, { type: 'destroy', uid: source.uid });
+				}
+			}
 		} else if (e.type === 'pay-or-sacrifice') {
 			// "sacrifice this unless you pay N": pay from leftover mana if able, else destroy the source
 			const pp = state.players[pi];
