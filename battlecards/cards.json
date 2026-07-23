@@ -59825,6 +59825,106 @@
           "only": "artifact"
         }
       ]
+    },
+    {
+      "id": "vampire_interloper",
+      "name": "Vampire Interloper",
+      "type": "creature",
+      "cost": 2,
+      "colors": [
+        "B"
+      ],
+      "cardClass": "neutral",
+      "attack": 2,
+      "health": 1,
+      "rarity": "common",
+      "set": "wubrg",
+      "tribe": "Vampire Scout",
+      "keywords": [
+        "flying"
+      ],
+      "description": "Flying."
+    },
+    {
+      "id": "exsanguinate",
+      "name": "Exsanguinate",
+      "type": "sorcery",
+      "cost": 2,
+      "colors": [
+        "B"
+      ],
+      "cardClass": "neutral",
+      "rarity": "uncommon",
+      "set": "wubrg",
+      "xSpell": true,
+      "description": "Drain X: the enemy loses X life & you gain that much. (X is your leftover mana.)",
+      "effects": [
+        {
+          "type": "damage",
+          "value": "X",
+          "target": "enemy-hero"
+        },
+        {
+          "type": "heal",
+          "value": "X",
+          "target": "self"
+        }
+      ]
+    },
+    {
+      "id": "mind_shatter",
+      "name": "Mind Shatter",
+      "type": "sorcery",
+      "cost": 2,
+      "colors": [
+        "B"
+      ],
+      "cardClass": "neutral",
+      "rarity": "rare",
+      "set": "wubrg",
+      "xSpell": true,
+      "description": "The enemy discards X cards at random. (X is your leftover mana.)",
+      "effects": [
+        {
+          "type": "enemy-discard",
+          "count": "X",
+          "random": true
+        }
+      ]
+    },
+    {
+      "id": "bitterblossom",
+      "name": "Bitterblossom",
+      "type": "enchantment",
+      "cost": 2,
+      "colors": [
+        "B"
+      ],
+      "cardClass": "neutral",
+      "rarity": "rare",
+      "set": "wubrg",
+      "description": "At the start of your turn, lose 1 life & summon a 1/1 Faerie Rogue with Flying.",
+      "ongoing": {
+        "on": "turn-start",
+        "effects": [
+          {
+            "type": "damage",
+            "value": 1,
+            "target": "own-hero"
+          },
+          {
+            "type": "summon",
+            "count": 1,
+            "attack": 1,
+            "health": 1,
+            "name": "Faerie Rogue",
+            "tribe": "Faerie Rogue",
+            "keywords": [
+              "flying"
+            ]
+          }
+        ]
+      }
     }
   ]
 }

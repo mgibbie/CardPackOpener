@@ -2217,7 +2217,7 @@ function execEffects(state, pi, effects, target, source) {
 			}
 			if (lsBefore != null) healHero(state, pi, Math.max(0, totalHurt() - lsBefore));
 		} else if (e.type === 'heal') {
-			const v = boost(e.value);
+			const v = e.value === 'X' ? (source?.xValue || 0) : boost(e.value);
 			// Auchenai Soulpriest: your healing deals damage instead
 			const harm = staticValue(state.players[pi], 'heal-becomes-damage') > 0;
 			const mendHero = who => harm ? damageHero(state, who, v, pi) : healHero(state, who, v);
@@ -3773,9 +3773,10 @@ function execEffects(state, pi, effects, target, source) {
 			}
 		} else if (e.type === 'enemy-discard') {
 			// each opponent discards at random
+			const dn = e.count === 'X' ? (source?.xValue || 0) : (e.count || 1);
 			for (const o of enemies) {
 				const op = state.players[o];
-				for (let i = 0; i < (e.count || 1) && op.hand.length; i++) {
+				for (let i = 0; i < dn && op.hand.length; i++) {
 					const j = Math.floor(state.rng() * op.hand.length);
 					const [c] = op.hand.splice(j, 1);
 					toGraveyard(state, o, c);
