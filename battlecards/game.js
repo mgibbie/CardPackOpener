@@ -413,24 +413,41 @@ function openAltMenu(card, ev, position) {
 	showDecisionMenu();
 }
 
+// kicker cards you can afford base+kicker offer a "cast vs cast-kicked" choice
+function openKickerMenu(card, ev, position) {
+	const menu = $('walker-menu');
+	menu.innerHTML = `<div class="wm-title">${card.name} — kicker?</div>`;
+	const base = E.effectiveCost(state, HUMAN, card);
+	const mk = (label, cost, kicked) => {
+		const btn = document.createElement('button');
+		btn.innerHTML = `<span class="wm-cost">${cost}</span>${label}`;
+		btn.addEventListener('pointerdown', e => { e.stopPropagation(); hideWalkerMenu(); continuePlay(card, position, false, kicked); });
+		menu.appendChild(btn);
+	};
+	mk('Cast', base, false);
+	mk('Cast with kicker', base + card.kicker.cost, true);
+	showDecisionMenu();
+}
+
 // having settled the cost, pick a target (if any) then play
-function continuePlay(card, position, useAlt) {
+function continuePlay(card, position, useAlt, kicked) {
 	const spec = E.targetSpec(state, HUMAN, card);
 	if (spec) {
 		const targets = E.legalTargets(state, HUMAN, spec);
-		if (targets.length) { pending = { card, spec, targets, mode: 'play', position, useAlt }; updateHud(); return; }
+		if (targets.length) { pending = { card, spec, targets, mode: 'play', position, useAlt, kicked }; updateHud(); return; }
 		if (spec.required) return;
 	}
-	actPlay(card.uid, null, undefined, position, useAlt);
+	actPlay(card.uid, null, undefined, position, useAlt, kicked);
 }
 
 function playFromHand(card, ev, position) {
 	if (!E.canPlay(state, HUMAN, card)) return;
 	if (card.choices) { openChoiceMenu(card, ev, position); return; }
 	if (card.altCost && E.canPayAlt(state, HUMAN, card) && E.canPayMana(state, HUMAN, card)) { openAltMenu(card, ev, position); return; }
+	if (card.kicker && E.canKick(state, HUMAN, card)) { openKickerMenu(card, ev, position); return; }
 	// only one payment option available: pick it automatically
 	const useAlt = !!(card.altCost && !E.canPayMana(state, HUMAN, card) && E.canPayAlt(state, HUMAN, card));
-	continuePlay(card, position, useAlt);
+	continuePlay(card, position, useAlt, false);
 }
 
 // which of `targets` did the drop point land on (creature / walker / hero)?
@@ -466,6 +483,7 @@ function releasePlay(c, ev) {
 	}
 	if (c.choices) { openChoiceMenu(c, ev); return; }
 	if (c.altCost && E.canPayAlt(state, HUMAN, c) && E.canPayMana(state, HUMAN, c)) { openAltMenu(c, ev); return; }
+	if (c.kicker && E.canKick(state, HUMAN, c)) { openKickerMenu(c, ev); return; }
 	const ua = !!(c.altCost && !E.canPayMana(state, HUMAN, c) && E.canPayAlt(state, HUMAN, c));
 	const spec = E.targetSpec(state, HUMAN, c);
 	if (spec) {
@@ -1393,6 +1411,9 @@ function respondOptions() {
 		if (c.altCost && E.canPayAlt(state, HUMAN, c)) {
 			if (E.canPayMana(state, HUMAN, c)) out.push({ kind: 'spell', card: c, useAlt: false, label: `${verb} ${c.name} (${E.effectiveCost(state, HUMAN, c)})` });
 			out.push({ kind: 'spell', card: c, useAlt: true, label: `${verb} ${c.name} — ${c.altCost.label}` });
+		} else if (c.kicker && E.canKick(state, HUMAN, c)) {
+			out.push({ kind: 'spell', card: c, kicked: false, label: `${verb} ${c.name} (${E.effectiveCost(state, HUMAN, c)})` });
+			out.push({ kind: 'spell', card: c, kicked: true, label: `${verb} ${c.name} + kicker (${E.effectiveCost(state, HUMAN, c) + c.kicker.cost})` });
 		} else {
 			out.push({ kind: 'spell', card: c, useAlt: false, label: `${verb} ${c.name} (${E.effectiveCost(state, HUMAN, c)})` });
 		}
@@ -1423,10 +1444,10 @@ function openRespondModal() {
 			: E.tapSpec(state, HUMAN, o.card, o.index);
 		if (spec) {
 			const targets = E.legalTargets(state, HUMAN, spec);
-			if (targets.length) { clearRespondTimer(); respondSig = null; modal.style.display = 'none'; pending = { card: o.card, spec, targets, mode: 'respond', action: { kind: o.kind, uid: o.card.uid, index: o.index, useAlt: o.useAlt } }; updateHud(); return; }
+			if (targets.length) { clearRespondTimer(); respondSig = null; modal.style.display = 'none'; pending = { card: o.card, spec, targets, mode: 'respond', action: { kind: o.kind, uid: o.card.uid, index: o.index, useAlt: o.useAlt, kicked: o.kicked } }; updateHud(); return; }
 			if (spec.required) return;
 		}
-		submitRespond({ kind: o.kind, uid: o.card.uid, index: o.index, target: null, useAlt: o.useAlt });
+		submitRespond({ kind: o.kind, uid: o.card.uid, index: o.index, target: null, useAlt: o.useAlt, kicked: o.kicked });
 	};
 	opts.forEach(o => {
 		const btn = document.createElement('button'); btn.className = 'scry-done'; btn.style.margin = '4px'; btn.textContent = o.label;
@@ -2532,7 +2553,7 @@ function commitPending(t) {
 		else if (p.mode === 'tap') { localFn = () => E.tapLand(state, HUMAN, p.card.uid, p.tapIndex, t); intent = { k: 'tap', uid: p.card.uid, tapIndex: p.tapIndex, target: t || null }; }
 		else if (p.mode === 'respond') { const a = { ...p.action, target: t || null }; localFn = () => E.resolveResponse(state, HUMAN, a); intent = { k: 'respond', action: a }; }
 		else if (p.mode === 'adventure') { localFn = () => E.playAdventure(state, HUMAN, p.card.uid, t, p.choice); intent = { k: 'adventure', uid: p.card.uid, target: t || null, choice: p.choice }; }
-		else { localFn = () => E.playCard(state, HUMAN, p.card.uid, t, p.choice, p.position, p.useAlt); intent = { k: 'play', uid: p.card.uid, target: t || null, choice: p.choice, position: p.position, useAlt: p.useAlt }; }
+		else { localFn = () => E.playCard(state, HUMAN, p.card.uid, t, p.choice, p.position, p.useAlt, p.kicked); intent = { k: 'play', uid: p.card.uid, target: t || null, choice: p.choice, position: p.position, useAlt: p.useAlt, kicked: p.kicked }; }
 		clearModes();
 		guestApply(localFn, intent);
 		return;
@@ -2544,7 +2565,7 @@ function commitPending(t) {
 	else if (pending.mode === 'tap') E.tapLand(state, HUMAN, pending.card.uid, pending.tapIndex, t);
 	else if (pending.mode === 'respond') { E.resolveResponse(state, HUMAN, { ...pending.action, target: t || null }); }
 	else if (pending.mode === 'adventure') E.playAdventure(state, HUMAN, pending.card.uid, t, pending.choice);
-	else E.playCard(state, HUMAN, pending.card.uid, t, pending.choice, pending.position, pending.useAlt);
+	else E.playCard(state, HUMAN, pending.card.uid, t, pending.choice, pending.position, pending.useAlt, pending.kicked);
 	clearModes();
 	pump();
 	if (duel.on) publishDuel();
@@ -3194,7 +3215,7 @@ function applyGuestIntent(it) {
 	if (!isResolve && state.current !== 1) return; // plays only on the guest's turn
 	try {
 		switch (it.k) {
-			case 'play': E.playCard(state, P, it.uid, it.target || null, it.choice, it.position, it.useAlt); break;
+			case 'play': E.playCard(state, P, it.uid, it.target || null, it.choice, it.position, it.useAlt, it.kicked); break;
 				case 'adventure': E.playAdventure(state, P, it.uid, it.target || null, it.choice); break;
 			case 'power': E.useHeroPower(state, P, it.uid, it.target || null, it.choice); break;
 			case 'planeswalk': E.planeswalk(state, P); break;
@@ -3385,9 +3406,9 @@ function guestApply(localFn, intent) {
 	updateHud();
 	MPX.call('card-act', { id: duel.id, intent }).catch(() => {});
 }
-function actPlay(uid, target, choice, position, useAlt) {
-	if (isGuest()) return guestApply(() => E.playCard(state, HUMAN, uid, target, choice, position, useAlt), { k: 'play', uid, target: target || null, choice, position, useAlt });
-	E.playCard(state, HUMAN, uid, target, choice, position, useAlt); pump();
+function actPlay(uid, target, choice, position, useAlt, kicked) {
+	if (isGuest()) return guestApply(() => E.playCard(state, HUMAN, uid, target, choice, position, useAlt, kicked), { k: 'play', uid, target: target || null, choice, position, useAlt, kicked });
+	E.playCard(state, HUMAN, uid, target, choice, position, useAlt, kicked); pump();
 	if (duel.on) publishDuel();
 }
 function actAdventure(uid, target, choice) {

@@ -58743,6 +58743,130 @@
           "target": "creature"
         }
       ]
+    },
+    {
+      "id": "burst_lightning",
+      "name": "Burst Lightning",
+      "type": "instant",
+      "cost": 1,
+      "colors": [
+        "R"
+      ],
+      "cardClass": "neutral",
+      "rarity": "common",
+      "set": "wubrg",
+      "description": "Deal 2 damage to any target.\nKicker 4 \u2014 if kicked, deal 4 damage instead.",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 2,
+          "target": "any"
+        }
+      ],
+      "kicker": {
+        "cost": 4,
+        "effects": [
+          {
+            "type": "damage",
+            "value": 2,
+            "target": "any"
+          }
+        ]
+      }
+    },
+    {
+      "id": "rite_of_replication",
+      "name": "Rite of Replication",
+      "type": "sorcery",
+      "cost": 4,
+      "colors": [
+        "U"
+      ],
+      "cardClass": "neutral",
+      "rarity": "rare",
+      "set": "wubrg",
+      "description": "Create a token copy of target creature.\nKicker 5 \u2014 if kicked, create five copies instead.",
+      "effects": [
+        {
+          "type": "copy-summon"
+        }
+      ],
+      "kicker": {
+        "cost": 5,
+        "effects": [
+          {
+            "type": "copy-summon"
+          },
+          {
+            "type": "copy-summon"
+          },
+          {
+            "type": "copy-summon"
+          },
+          {
+            "type": "copy-summon"
+          }
+        ]
+      }
+    },
+    {
+      "id": "baloth_gorger",
+      "name": "Baloth Gorger",
+      "type": "creature",
+      "cost": 4,
+      "colors": [
+        "G"
+      ],
+      "cardClass": "neutral",
+      "attack": 4,
+      "health": 4,
+      "rarity": "common",
+      "set": "wubrg",
+      "tribe": "Beast",
+      "keywords": [],
+      "description": "Kicker 4 \u2014 if kicked, enters with three +1/+1 counters (a 7/7).",
+      "kicker": {
+        "cost": 4,
+        "effects": [
+          {
+            "type": "buff-self",
+            "attack": 3,
+            "health": 3
+          }
+        ]
+      }
+    },
+    {
+      "id": "goblin_bushwhacker",
+      "name": "Goblin Bushwhacker",
+      "type": "creature",
+      "cost": 1,
+      "colors": [
+        "R"
+      ],
+      "cardClass": "neutral",
+      "attack": 1,
+      "health": 1,
+      "rarity": "common",
+      "set": "wubrg",
+      "tribe": "Goblin Warrior",
+      "keywords": [],
+      "description": "Kicker 1 \u2014 if kicked, creatures you control get +1/+0 & gain Rush until end of turn.",
+      "kicker": {
+        "cost": 1,
+        "effects": [
+          {
+            "type": "temp-buff",
+            "target": "friendly-creatures",
+            "attack": 1
+          },
+          {
+            "type": "grant",
+            "keyword": "rush",
+            "target": "friendly-creatures"
+          }
+        ]
+      }
     }
   ]
 }

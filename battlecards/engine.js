@@ -158,6 +158,7 @@ function instantiate(def, controller) {
 		attackTax: def.attackTax ? { ...def.attackTax } : null, // Ghostly Prison: cost to attack this controller's hero
 		addCost: def.addCost ? { ...def.addCost } : null, // additional casting cost: { discard: N } or { sacrifice: 'creature'|'land'|'artifact'|'artifact-or-creature' }
 		altCost: def.altCost ? { ...def.altCost } : null, // optional cost paid INSTEAD of mana: { label, require?, life?, sacrificeLand?, exileFromHand?, opponentGain? }
+		kicker: def.kicker ? JSON.parse(JSON.stringify(def.kicker)) : null, // optional ADDITIONAL cost for a bonus: { cost, effects }
 		costMod: def.costMod || null, // board cost aura: { cardType, amount, scope, floor?, firstEachTurn? }
 		selfCost: def.selfCost || null, // self-scaling printed cost: { per, amount }
 		enrage: def.enrage || null,   // while damaged: { attack?, health?, keywords?, weaponAttack? }
@@ -583,7 +584,13 @@ export function comboActive(state, pi) {
 }
 export function liveEffectsOf(state, pi, card, choice) {
 	if (card.combo && comboActive(state, pi)) return card.combo;
-	return effectsOf(card, choice);
+	const base = effectsOf(card, choice) || [];
+	// Kicker: when kicked, the bonus effects run in addition to the base ones
+	if (card._kicked && card.kicker && card.kicker.effects) return [...base, ...card.kicker.effects];
+	return base;
+}
+export function canKick(state, pi, card) {
+	return !!(card.kicker && availableMana(state.players[pi]) >= effectiveCost(state, pi, card) + card.kicker.cost);
 }
 
 // Returns null (no target needed) or { targets, filter(card)?, required, why }
@@ -1935,7 +1942,7 @@ function runSecretEffects(state, pi, effects, ctx) {
 function runBattlecry(state, pi, card, target, choice) {
 	const p = state.players[pi];
 	// data-driven battlecries (imported sets); legacy ids stay hand-scripted below
-	if ((card.effects || card.choices || card.combo) && !LEGACY_SCRIPTED.has(card.id)) {
+	if ((card.effects || card.choices || card.combo || (card._kicked && card.kicker)) && !LEGACY_SCRIPTED.has(card.id)) {
 		execEffects(state, pi, liveEffectsOf(state, pi, card, choice), target, card);
 		// Battle Totem (dungeon treasure / Jin'zo passive) or a live Brann
 		if (p.battlecriesTwice
@@ -4276,7 +4283,7 @@ function corruptHandCards(state, pi, playedCost) {
 	}
 }
 
-export function playCard(state, pi, cardUid, target, choice, position, useAlt) {
+export function playCard(state, pi, cardUid, target, choice, position, useAlt, kicked) {
 	const p = state.players[pi];
 	// cards play from hand, the companion zone, or the command zone
 	let card = null, take = null;
@@ -4300,7 +4307,11 @@ export function playCard(state, pi, cardUid, target, choice, position, useAlt) {
 
 	take();
 	if (ward) payWard(state, pi, target);
-	if (card.altCost && canPayAlt(state, pi, card) && (useAlt || availableMana(p) < effectiveCost(state, pi, card))) {
+	card._kicked = false;
+	if (kicked && card.kicker && availableMana(p) >= effectiveCost(state, pi, card) + card.kicker.cost) {
+		card._kicked = true; // paid the base cost + the kicker
+		spendMana(p, effectiveCost(state, pi, card) + card.kicker.cost);
+	} else if (card.altCost && canPayAlt(state, pi, card) && (useAlt || availableMana(p) < effectiveCost(state, pi, card))) {
 		payAlt(state, pi, card); // paid the alternative cost instead of mana (chosen, or forced when mana is short)
 	} else if (card.xSpell) {
 		// X-spells drink every remaining point; X = what's left after the base cost
@@ -4735,7 +4746,7 @@ export function resolveResponse(state, pi, action, target, choice) {
 	if (typeof action !== 'object') action = { kind: 'spell', uid: action, target, choice };
 	if (action.kind === 'ability') return activateAbility(state, pi, action.uid, action.index, action.target);
 	if (action.kind === 'landtap') return tapLand(state, pi, action.uid, action.index, action.target);
-	return playCard(state, pi, action.uid, action.target, action.choice, undefined, action.useAlt); // spell
+	return playCard(state, pi, action.uid, action.target, action.choice, undefined, action.useAlt, action.kicked); // spell
 }
 
 // ---------- Adventures: a creature card with a spell "adventure" half ----------
