@@ -1,6 +1,3676 @@
 {
-	"generated": "2026-07-22",
+	"generated": "2026-07-23",
 	"entries": [
+		{
+			"sha": "e3c856a",
+			"date": "2026-07-23",
+			"kind": "cards",
+			"title": "Clue/Treasure/Food payoffs (neutral)",
+			"body": "Sacrifice payoffs via the token-sacrificed trigger: Mayhem Devil (sac a\ntoken -> 1 dmg to enemy), Disciple of the Vault (drain 1), Ravenous\nSquirrel (+1/+1 counter). Plus \"having\" payoffs via a new selfCost\n'artifacts' mode (affinity): Frogmite and Myr Enforcer cost 1 less per\nartifact you control, so Treasures/Clues/Food make them cheaper. All\nneutral/deck-legal. Verified in-node.",
+			"cards": [
+				{
+					"id": "mayhem_devil",
+					"name": "Mayhem Devil",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 3
+				},
+				{
+					"id": "disciple_of_the_vault",
+					"name": "Disciple of the Vault",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 1
+				},
+				{
+					"id": "ravenous_squirrel",
+					"name": "Ravenous Squirrel",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 2
+				},
+				{
+					"id": "frogmite",
+					"name": "Frogmite",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 4
+				},
+				{
+					"id": "myr_enforcer",
+					"name": "Myr Enforcer",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 7
+				}
+			]
+		},
+		{
+			"sha": "8748016",
+			"date": "2026-07-23",
+			"kind": "cards",
+			"title": "6 more neutral Investigate/Enrich/Cook cards (varied triggers)",
+			"body": "Novice Inspector (Battlecry: Investigate), Prosperous Pirates (Battlecry:\nEnrich twice), Trufflesnout (Battlecry: Cook), Trail of Evidence\n(enchantment - on any spell you cast: Investigate), Bygone Bishop (on\nplaying a creature: Investigate), Zhentarim Bandit (on attack: Enrich).\nAll neutral/deck-legal. Verified in-node: battlecry, on-spell, on-creature,\nand on-attack token creation.",
+			"cards": [
+				{
+					"id": "novice_inspector",
+					"name": "Novice Inspector",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 1
+				},
+				{
+					"id": "prosperous_pirates",
+					"name": "Prosperous Pirates",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 5
+				},
+				{
+					"id": "trufflesnout",
+					"name": "Trufflesnout",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 3
+				},
+				{
+					"id": "trail_of_evidence",
+					"name": "Trail of Evidence",
+					"type": "enchantment",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 3
+				},
+				{
+					"id": "bygone_bishop",
+					"name": "Bygone Bishop",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 3
+				},
+				{
+					"id": "zhentarim_bandit",
+					"name": "Zhentarim Bandit",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 2
+				}
+			]
+		},
+		{
+			"sha": "e9a6974",
+			"date": "2026-07-23",
+			"kind": "cards",
+			"title": "neutral Enrich/Cook creatures + fix Doomed Traveler deathrattle",
+			"body": "Six neutral (colorless, deck-legal) token-makers using the new keywords:\nSailor of Means (Battlecry: Enrich), Dire Fleet Hoarder & Impulsive\nPilferer (Deathrattle: Enrich), Gilded Goose & Tough Cookie (Battlecry:\nCook), Mintstrosity (Deathrattle: Cook). Also fixed Doomed Traveler, whose\ndeathrattle was authored in `effects` instead of the `deathrattle` field\n(so it never fired). Verified in-node: battlecry + deathrattle token\ncreation all work.",
+			"cards": [
+				{
+					"id": "sailor_of_means",
+					"name": "Sailor of Means",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 3
+				},
+				{
+					"id": "dire_fleet_hoarder",
+					"name": "Dire Fleet Hoarder",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 2
+				},
+				{
+					"id": "impulsive_pilferer",
+					"name": "Impulsive Pilferer",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 1
+				},
+				{
+					"id": "gilded_goose",
+					"name": "Gilded Goose",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 1
+				},
+				{
+					"id": "tough_cookie",
+					"name": "Tough Cookie",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 2
+				},
+				{
+					"id": "mintstrosity",
+					"name": "Mintstrosity",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 2
+				}
+			]
+		},
+		{
+			"sha": "1c02d7f",
+			"date": "2026-07-23",
+			"kind": "patch",
+			"title": "Thraben Inspector (Battlecry: Investigate)",
+			"body": "1-mana 1/2 Human Soldier whose battlecry uses the new Investigate keyword\nto make a Clue token. Verified in-node.",
+			"cards": []
+		},
+		{
+			"sha": "f1b14bc",
+			"date": "2026-07-23",
+			"kind": "patch",
+			"title": "register Investigate / Enrich / Cook as keywords",
+			"body": "Glossary entries (with card-text bolding + tooltips) for the three\ntoken-making effect-words, backed by the existing investigate/enrich/cook\neffects: Investigate -> Clue (sac, pay 2: draw), Enrich -> Treasure (sac:\ngain 1 mana), Cook -> Food (sac, pay 2: heal 3).",
+			"cards": []
+		},
+		{
+			"sha": "8afbecd",
+			"date": "2026-07-23",
+			"kind": "patch",
+			"title": "Martyred Rusalka wording -> Freeze",
+			"body": "The ability already used the freeze effect; reworded the text/description\nfrom \"Tap a creature\" to \"Freeze a creature\" to match the game's term.",
+			"cards": []
+		},
+		{
+			"sha": "39545c3",
+			"date": "2026-07-23",
+			"kind": "patch",
+			"title": "retribe Cats, Dogs, and Pegasi as Beasts",
+			"body": "9 cards updated: Cat/Dog/Pegasus -> Beast in tribe strings, deduping\ncompound types (Cat Beast -> Beast, Cat Cleric -> Beast Cleric, Cat Soldier\n-> Beast Soldier, Undead Cat -> Undead Beast).",
+			"cards": []
+		},
+		{
+			"sha": "5a97211",
+			"date": "2026-07-23",
+			"kind": "cards",
+			"title": "true 70 per color in the gallery count (13 non-land cards)",
+			"body": "The /designwiki gallery buckets each card under the first WUBRG colour it\nhas and excludes lands/tokens — so the earlier \"70\" (which counted colored\nbasic lands) overshot the lands but left the real card pool at 67-69. Added\n13 vanilla non-land creatures so every colour's gallery bucket is exactly\n70: W +2, U +3, B +2, R +3, G +3 (R needed extra since multicolour cards\nbucket under their earlier colour). Verified against the wiki's exact\nsystemBucket logic.",
+			"cards": [
+				{
+					"id": "ageless_guardian",
+					"name": "Ageless Guardian",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 2,
+					"colors": [
+						"W"
+					]
+				},
+				{
+					"id": "alaborn_trooper",
+					"name": "Alaborn Trooper",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 3,
+					"colors": [
+						"W"
+					]
+				},
+				{
+					"id": "ancient_carp",
+					"name": "Ancient Carp",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 5,
+					"colors": [
+						"U"
+					]
+				},
+				{
+					"id": "armored_cancrix",
+					"name": "Armored Cancrix",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 5,
+					"colors": [
+						"U"
+					]
+				},
+				{
+					"id": "armored_whirl_turtle",
+					"name": "Armored Whirl Turtle",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 3,
+					"colors": [
+						"U"
+					]
+				},
+				{
+					"id": "douser_of_lights",
+					"name": "Douser of Lights",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 5,
+					"colors": [
+						"B"
+					]
+				},
+				{
+					"id": "dreg_reaver",
+					"name": "Dreg Reaver",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 5,
+					"colors": [
+						"B"
+					]
+				},
+				{
+					"id": "barbarian_horde",
+					"name": "Barbarian Horde",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 4,
+					"colors": [
+						"R"
+					]
+				},
+				{
+					"id": "alpha_tyrranax",
+					"name": "Alpha Tyrranax",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 6,
+					"colors": [
+						"G"
+					]
+				},
+				{
+					"id": "ferocious_zheng",
+					"name": "Ferocious Zheng",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 4,
+					"colors": [
+						"G"
+					]
+				},
+				{
+					"id": "garruk_s_gorehorn",
+					"name": "Garruk's Gorehorn",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 5,
+					"colors": [
+						"G"
+					]
+				},
+				{
+					"id": "capital_guard",
+					"name": "Capital Guard",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 2,
+					"colors": [
+						"R"
+					]
+				},
+				{
+					"id": "blistering_barrier",
+					"name": "Blistering Barrier",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 3,
+					"colors": [
+						"R"
+					]
+				}
+			]
+		},
+		{
+			"sha": "9427b5f",
+			"date": "2026-07-23",
+			"kind": "patch",
+			"title": "strip Menace & Reach flavor keywords too",
+			"body": "Completes removal of the inert combat keywords (no blocking in this format):\nMenace and Reach stripped from all cards/tokens, descriptions cleaned, and\ntheir glossary entries removed. No flavor-only evasion keywords remain.",
+			"cards": []
+		},
+		{
+			"sha": "511cf1c",
+			"date": "2026-07-23",
+			"kind": "patch",
+			"title": "remove Flying & Vigilance flavor keywords; Lifelink -> Lifesteal",
+			"body": "Per design, no inert flavor keywords: stripped Flying (34 cards) and\nVigilance (12 cards) from every card and token, cleaned their descriptions,\nand removed both glossary entries. Cards that were only Flying/Vigilance\nare now vanilla. Also renamed every \"Lifelink\" mention to \"Lifesteal\" in\ncard text (the engine keyword was already 'lifesteal'). Menace and Reach\nremain for now.",
+			"cards": []
+		},
+		{
+			"sha": "b47ddf3",
+			"date": "2026-07-23",
+			"kind": "patch",
+			"title": "Spectral Procession spirits gain Lifesteal",
+			"body": "The 1/1 Spirits now have Lifesteal (kept Flying as flavor). They were\nalready creature tokens (the summon effect sets token:true, so they exile\non death and can't be bounced to hand). Verified in-node.",
+			"cards": []
+		},
+		{
+			"sha": "1da8c2a",
+			"date": "2026-07-23",
+			"kind": "cards",
+			"title": "fill all five colors to exactly 70 (65 vanilla/keyword creatures)",
+			"body": "Simple non-legendary bodies from Scryfall closing the remaining gaps:\nWhite +7, Blue +7, Black +18, Red +13, Green +20. Evasion keywords\n(Flying/Vigilance/Menace/Reach) are flavor with no rules effect; hexproof\nmaps to Elusive, haste to Charge, lifelink to Lifesteal. Every WUBRG color\nnow sits at 70 collectible cards.",
+			"cards": [
+				{
+					"id": "abbey_griffin",
+					"name": "Abbey Griffin",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 4,
+					"colors": [
+						"W"
+					]
+				},
+				{
+					"id": "aerial_responder",
+					"name": "Aerial Responder",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 3,
+					"colors": [
+						"W"
+					]
+				},
+				{
+					"id": "armored_pegasus",
+					"name": "Armored Pegasus",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 2,
+					"colors": [
+						"W"
+					]
+				},
+				{
+					"id": "alabaster_kirin",
+					"name": "Alabaster Kirin",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 4,
+					"colors": [
+						"W"
+					]
+				},
+				{
+					"id": "ajanis_sunstriker",
+					"name": "Ajani’s Sunstriker",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 2,
+					"colors": [
+						"W"
+					]
+				},
+				{
+					"id": "alpine_watchdog",
+					"name": "Alpine Watchdog",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 2,
+					"colors": [
+						"W"
+					]
+				},
+				{
+					"id": "angel_of_light",
+					"name": "Angel of Light",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 5,
+					"colors": [
+						"W"
+					]
+				},
+				{
+					"id": "aven_fleetwing",
+					"name": "Aven Fleetwing",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 3,
+					"colors": [
+						"U"
+					]
+				},
+				{
+					"id": "benthic_giant",
+					"name": "Benthic Giant",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 5,
+					"colors": [
+						"U"
+					]
+				},
+				{
+					"id": "fortress_crab",
+					"name": "Fortress Crab",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 3,
+					"colors": [
+						"U"
+					]
+				},
+				{
+					"id": "coral_merfolk",
+					"name": "Coral Merfolk",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 2,
+					"colors": [
+						"U"
+					]
+				},
+				{
+					"id": "naga_eternal",
+					"name": "Naga Eternal",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 3,
+					"colors": [
+						"U"
+					]
+				},
+				{
+					"id": "lumengrid_warden",
+					"name": "Lumengrid Warden",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 3,
+					"colors": [
+						"U"
+					]
+				},
+				{
+					"id": "jhessian_lookout",
+					"name": "Jhessian Lookout",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 2,
+					"colors": [
+						"U"
+					]
+				},
+				{
+					"id": "barony_vampire",
+					"name": "Barony Vampire",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 3,
+					"colors": [
+						"B"
+					]
+				},
+				{
+					"id": "bog_imp",
+					"name": "Bog Imp",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 2,
+					"colors": [
+						"B"
+					]
+				},
+				{
+					"id": "arrogant_vampire",
+					"name": "Arrogant Vampire",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 5,
+					"colors": [
+						"B"
+					]
+				},
+				{
+					"id": "bartizan_bats",
+					"name": "Bartizan Bats",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 4,
+					"colors": [
+						"B"
+					]
+				},
+				{
+					"id": "blood_glutton",
+					"name": "Blood Glutton",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 5,
+					"colors": [
+						"B"
+					]
+				},
+				{
+					"id": "daggerdrome_imp",
+					"name": "Daggerdrome Imp",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 2,
+					"colors": [
+						"B"
+					]
+				},
+				{
+					"id": "cursed_minotaur",
+					"name": "Cursed Minotaur",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 3,
+					"colors": [
+						"B"
+					]
+				},
+				{
+					"id": "alley_strangler",
+					"name": "Alley Strangler",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 3,
+					"colors": [
+						"B"
+					]
+				},
+				{
+					"id": "carrion_screecher",
+					"name": "Carrion Screecher",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 4,
+					"colors": [
+						"B"
+					]
+				},
+				{
+					"id": "catacomb_crocodile",
+					"name": "Catacomb Crocodile",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 5,
+					"colors": [
+						"B"
+					]
+				},
+				{
+					"id": "cabal_evangel",
+					"name": "Cabal Evangel",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 2,
+					"colors": [
+						"B"
+					]
+				},
+				{
+					"id": "canal_monitor",
+					"name": "Canal Monitor",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 5,
+					"colors": [
+						"B"
+					]
+				},
+				{
+					"id": "dakmor_scorpion",
+					"name": "Dakmor Scorpion",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 2,
+					"colors": [
+						"B"
+					]
+				},
+				{
+					"id": "bane_alley_blackguard",
+					"name": "Bane Alley Blackguard",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 2,
+					"colors": [
+						"B"
+					]
+				},
+				{
+					"id": "bogstomper",
+					"name": "Bogstomper",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 6,
+					"colors": [
+						"B"
+					]
+				},
+				{
+					"id": "charity_extractor",
+					"name": "Charity Extractor",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 4,
+					"colors": [
+						"B"
+					]
+				},
+				{
+					"id": "balduvian_barbarians",
+					"name": "Balduvian Barbarians",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 3,
+					"colors": [
+						"R"
+					]
+				},
+				{
+					"id": "boggart_brute",
+					"name": "Boggart Brute",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 3,
+					"colors": [
+						"R"
+					]
+				},
+				{
+					"id": "borderland_minotaur",
+					"name": "Borderland Minotaur",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 4,
+					"colors": [
+						"R"
+					]
+				},
+				{
+					"id": "canyon_minotaur",
+					"name": "Canyon Minotaur",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 4,
+					"colors": [
+						"R"
+					]
+				},
+				{
+					"id": "brazen_scourge",
+					"name": "Brazen Scourge",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 3,
+					"colors": [
+						"R"
+					]
+				},
+				{
+					"id": "breakneck_berserker",
+					"name": "Breakneck Berserker",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 3,
+					"colors": [
+						"R"
+					]
+				},
+				{
+					"id": "cerodon_yearling",
+					"name": "Cerodon Yearling",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 2,
+					"colors": [
+						"R"
+					]
+				},
+				{
+					"id": "charging_monstrosaur",
+					"name": "Charging Monstrosaur",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 5,
+					"colors": [
+						"R"
+					]
+				},
+				{
+					"id": "cobblebrute",
+					"name": "Cobblebrute",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 4,
+					"colors": [
+						"R"
+					]
+				},
+				{
+					"id": "anaba_bodyguard",
+					"name": "Anaba Bodyguard",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 4,
+					"colors": [
+						"R"
+					]
+				},
+				{
+					"id": "axegrinder_giant",
+					"name": "Axegrinder Giant",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 6,
+					"colors": [
+						"R"
+					]
+				},
+				{
+					"id": "bonebreaker_giant",
+					"name": "Bonebreaker Giant",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 5,
+					"colors": [
+						"R"
+					]
+				},
+				{
+					"id": "bull_cerodon",
+					"name": "Bull Cerodon",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 6,
+					"colors": [
+						"R"
+					]
+				},
+				{
+					"id": "armored_wolf_rider",
+					"name": "Armored Wolf-Rider",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 5,
+					"colors": [
+						"G"
+					]
+				},
+				{
+					"id": "ashcoat_bear",
+					"name": "Ashcoat Bear",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 2,
+					"colors": [
+						"G"
+					]
+				},
+				{
+					"id": "balduvian_bears",
+					"name": "Balduvian Bears",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 2,
+					"colors": [
+						"G"
+					]
+				},
+				{
+					"id": "barbary_apes",
+					"name": "Barbary Apes",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 3,
+					"colors": [
+						"G"
+					]
+				},
+				{
+					"id": "barbtooth_wurm",
+					"name": "Barbtooth Wurm",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 6,
+					"colors": [
+						"G"
+					]
+				},
+				{
+					"id": "bear_cub",
+					"name": "Bear Cub",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 2,
+					"colors": [
+						"G"
+					]
+				},
+				{
+					"id": "bitterbow_sharpshooters",
+					"name": "Bitterbow Sharpshooters",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 5,
+					"colors": [
+						"G"
+					]
+				},
+				{
+					"id": "blanchwood_treefolk",
+					"name": "Blanchwood Treefolk",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 5,
+					"colors": [
+						"G"
+					]
+				},
+				{
+					"id": "bounding_wolf",
+					"name": "Bounding Wolf",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 3,
+					"colors": [
+						"G"
+					]
+				},
+				{
+					"id": "brambleweft_behemoth",
+					"name": "Brambleweft Behemoth",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 6,
+					"colors": [
+						"G"
+					]
+				},
+				{
+					"id": "broodhunter_wurm",
+					"name": "Broodhunter Wurm",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 4,
+					"colors": [
+						"G"
+					]
+				},
+				{
+					"id": "brushstrider",
+					"name": "Brushstrider",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 2,
+					"colors": [
+						"G"
+					]
+				},
+				{
+					"id": "canopy_gorger",
+					"name": "Canopy Gorger",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 6,
+					"colors": [
+						"G"
+					]
+				},
+				{
+					"id": "elvish_ranger",
+					"name": "Elvish Ranger",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 3,
+					"colors": [
+						"G"
+					]
+				},
+				{
+					"id": "colossapede",
+					"name": "Colossapede",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 6,
+					"colors": [
+						"G"
+					]
+				},
+				{
+					"id": "cowl_prowler",
+					"name": "Cowl Prowler",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 6,
+					"colors": [
+						"G"
+					]
+				},
+				{
+					"id": "fusion_elemental",
+					"name": "Fusion Elemental",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 5,
+					"colors": [
+						"G"
+					]
+				},
+				{
+					"id": "forest_bear",
+					"name": "Forest Bear",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 2,
+					"colors": [
+						"G"
+					]
+				},
+				{
+					"id": "catacomb_slug",
+					"name": "Catacomb Slug",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 5,
+					"colors": [
+						"B"
+					]
+				},
+				{
+					"id": "trained_armodon",
+					"name": "Trained Armodon",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 3,
+					"colors": [
+						"G"
+					]
+				}
+			]
+		},
+		{
+			"sha": "6a710b1",
+			"date": "2026-07-23",
+			"kind": "cards",
+			"title": "28 vanilla/keyword-only creatures (Green + Blue fill)",
+			"body": "Simple non-legendary bodies from Scryfall to grow the two biggest gaps.\nGreen (15): Argothian Swine, Assault Zeppelid, Beast in Show, Ambush Viper\n(deathtouch), Archers of Qarsi, Bassara Tower Archer (hexproof->elusive),\nAlpine Grizzly, Axebane Beast, Centaur Courser, Craw Wurm, Elvish Warrior,\nDurkwood Boars, Feral Krushok, Colossodon Yearling, Cylian Elf.\nBlue (13): Air Elemental, Azure Drake, Cloud Manta, Fighting Drake, Bay\nFalcon, Faerie Invaders, Giant Octopus, Coral Commando, Amphin Cutthroat,\nHorned Turtle, Tolarian Scholar, Ancient Crab, Maritime Guard.\nEvasion keywords are flavor (no rules effect). Green 39->54, Blue 50->63.",
+			"cards": [
+				{
+					"id": "argothian_swine",
+					"name": "Argothian Swine",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 3,
+					"colors": [
+						"G"
+					]
+				},
+				{
+					"id": "assault_zeppelid",
+					"name": "Assault Zeppelid",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 4,
+					"colors": [
+						"G"
+					]
+				},
+				{
+					"id": "beast_in_show",
+					"name": "Beast in Show",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 6,
+					"colors": [
+						"G"
+					]
+				},
+				{
+					"id": "ambush_viper",
+					"name": "Ambush Viper",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 3,
+					"colors": [
+						"G"
+					]
+				},
+				{
+					"id": "archers_of_qarsi",
+					"name": "Archers of Qarsi",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 4,
+					"colors": [
+						"G"
+					]
+				},
+				{
+					"id": "bassara_tower_archer",
+					"name": "Bassara Tower Archer",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 3,
+					"colors": [
+						"G"
+					]
+				},
+				{
+					"id": "alpine_grizzly",
+					"name": "Alpine Grizzly",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 3,
+					"colors": [
+						"G"
+					]
+				},
+				{
+					"id": "axebane_beast",
+					"name": "Axebane Beast",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 4,
+					"colors": [
+						"G"
+					]
+				},
+				{
+					"id": "durkwood_boars",
+					"name": "Durkwood Boars",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 5,
+					"colors": [
+						"G"
+					]
+				},
+				{
+					"id": "feral_krushok",
+					"name": "Feral Krushok",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 5,
+					"colors": [
+						"G"
+					]
+				},
+				{
+					"id": "colossodon_yearling",
+					"name": "Colossodon Yearling",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 3,
+					"colors": [
+						"G"
+					]
+				},
+				{
+					"id": "cylian_elf",
+					"name": "Cylian Elf",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 2,
+					"colors": [
+						"G"
+					]
+				},
+				{
+					"id": "cloud_manta",
+					"name": "Cloud Manta",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 4,
+					"colors": [
+						"U"
+					]
+				},
+				{
+					"id": "fighting_drake",
+					"name": "Fighting Drake",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 4,
+					"colors": [
+						"U"
+					]
+				},
+				{
+					"id": "bay_falcon",
+					"name": "Bay Falcon",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 2,
+					"colors": [
+						"U"
+					]
+				},
+				{
+					"id": "faerie_invaders",
+					"name": "Faerie Invaders",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 4,
+					"colors": [
+						"U"
+					]
+				},
+				{
+					"id": "giant_octopus",
+					"name": "Giant Octopus",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 4,
+					"colors": [
+						"U"
+					]
+				},
+				{
+					"id": "amphin_cutthroat",
+					"name": "Amphin Cutthroat",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 3,
+					"colors": [
+						"U"
+					]
+				},
+				{
+					"id": "horned_turtle",
+					"name": "Horned Turtle",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 3,
+					"colors": [
+						"U"
+					]
+				},
+				{
+					"id": "tolarian_scholar",
+					"name": "Tolarian Scholar",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 3,
+					"colors": [
+						"U"
+					]
+				},
+				{
+					"id": "ancient_crab",
+					"name": "Ancient Crab",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 4,
+					"colors": [
+						"U"
+					]
+				},
+				{
+					"id": "maritime_guard",
+					"name": "Maritime Guard",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 2,
+					"colors": [
+						"U"
+					]
+				}
+			]
+		},
+		{
+			"sha": "33f4a7f",
+			"date": "2026-07-23",
+			"kind": "cards",
+			"title": "12 simple activated-ability creatures (Scryfall-sourced)",
+			"body": "Non-legendary sac-outlets, firebreathing-style pumps, and pay-life pumps —\nall mana / sacrifice / life costs, none tap. Black: Viscera Seer, Carrion\nFeeder, Bloodthrone Vampire, Plagued Rusalka, Cutthroat Contender, Grimclaw\nBats. Red: Scorched Rusalka, Blazing Rootwalla, Bold Impaler, Bellows\nLizard. Green: Starved Rusalka. White: Martyred Rusalka. Verified in-node:\nsac-to-scry, mana+sac burn, once-per-turn vs repeatable pumps, pay-life\npumps, and mana+life combined costs. B 47->53, R 53->57, G 38->39, W 62->63.",
+			"cards": [
+				{
+					"id": "viscera_seer",
+					"name": "Viscera Seer",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 1,
+					"colors": [
+						"B"
+					]
+				},
+				{
+					"id": "carrion_feeder",
+					"name": "Carrion Feeder",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 1,
+					"colors": [
+						"B"
+					]
+				},
+				{
+					"id": "bloodthrone_vampire",
+					"name": "Bloodthrone Vampire",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 2,
+					"colors": [
+						"B"
+					]
+				},
+				{
+					"id": "plagued_rusalka",
+					"name": "Plagued Rusalka",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 1,
+					"colors": [
+						"B"
+					]
+				},
+				{
+					"id": "cutthroat_contender",
+					"name": "Cutthroat Contender",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 1,
+					"colors": [
+						"B"
+					]
+				},
+				{
+					"id": "grimclaw_bats",
+					"name": "Grimclaw Bats",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 1,
+					"colors": [
+						"B"
+					]
+				},
+				{
+					"id": "scorched_rusalka",
+					"name": "Scorched Rusalka",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 1,
+					"colors": [
+						"R"
+					]
+				},
+				{
+					"id": "blazing_rootwalla",
+					"name": "Blazing Rootwalla",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 1,
+					"colors": [
+						"R"
+					]
+				},
+				{
+					"id": "bold_impaler",
+					"name": "Bold Impaler",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 1,
+					"colors": [
+						"R"
+					]
+				},
+				{
+					"id": "bellows_lizard",
+					"name": "Bellows Lizard",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 1,
+					"colors": [
+						"R"
+					]
+				},
+				{
+					"id": "starved_rusalka",
+					"name": "Starved Rusalka",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 1,
+					"colors": [
+						"G"
+					]
+				},
+				{
+					"id": "martyred_rusalka",
+					"name": "Martyred Rusalka",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 1,
+					"colors": [
+						"W"
+					]
+				}
+			]
+		},
+		{
+			"sha": "7428ac4",
+			"date": "2026-07-23",
+			"kind": "patch",
+			"title": "drop tap from activated abilities (creatures don't tap)",
+			"body": "Per design: creatures never tap in this format, so activated abilities may\ncost mana, life, or a sacrifice — but not tapping. Reverted the tap cost\n(summoning-sickness gate + can't-attack-after) and removed the three\ntap-for-mana dorks (Llanowar Elves, Elvish Mystic, Fyndhorn Elves) that\nrelied on it. Kept the sacrifice-a-creature cost (Goblin Sledder, Goblin\nTrashmaster) and mana-cost abilities (Elvish Herder, {G} written as a\nneutral 1). Colored ability costs are authored as generic mana.\n\nVerified in-node: Elvish Herder's 1-mana grant works without tapping,\nGoblin Sledder's sac-a-Goblin buff still resolves. Green 41->38, Red 53.",
+			"cards": []
+		},
+		{
+			"sha": "ba04e23",
+			"date": "2026-07-23",
+			"kind": "cards",
+			"title": "activated-ability costs (tap + sacrifice-a-creature) + 6 cards",
+			"body": "Extends the existing activated-ability system (which already had mana /\nsacrifice-self / pay-life / discard costs and full client UI):\n- `tap: true` abilities respect summoning sickness (can't use the turn it\n  enters) and tapping means the creature can't attack that turn -> real\n  mana dorks.\n- `sacCost: { tribe? }` costs sacrifice another creature (auto if only one\n  legal, else the sacQueue picker prompts), then the ability resolves.\n\nCards: Llanowar Elves / Elvish Mystic / Fyndhorn Elves / Elvish Herder (G),\nGoblin Sledder / Goblin Trashmaster (R). Verified in-node: dork sickness/\nonce-per-turn/can't-attack-after, sac-a-Goblin auto & prompted, buff target,\nGoblin lord aura + sac-to-destroy. No client changes (ability menu + sac\npicker already wired). Green 37->41, Red 51->53.",
+			"cards": [
+				{
+					"id": "llanowar_elves",
+					"name": "Llanowar Elves",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 1,
+					"colors": [
+						"G"
+					]
+				},
+				{
+					"id": "elvish_mystic",
+					"name": "Elvish Mystic",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 1,
+					"colors": [
+						"G"
+					]
+				},
+				{
+					"id": "fyndhorn_elves",
+					"name": "Fyndhorn Elves",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 1,
+					"colors": [
+						"G"
+					]
+				},
+				{
+					"id": "elvish_herder",
+					"name": "Elvish Herder",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 1,
+					"colors": [
+						"G"
+					]
+				},
+				{
+					"id": "goblin_sledder",
+					"name": "Goblin Sledder",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 1,
+					"colors": [
+						"R"
+					]
+				},
+				{
+					"id": "goblin_trashmaster",
+					"name": "Goblin Trashmaster",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "rare",
+					"cost": 4,
+					"colors": [
+						"R"
+					]
+				}
+			]
+		},
+		{
+			"sha": "b0bca6b",
+			"date": "2026-07-23",
+			"kind": "cards",
+			"title": "Green roster wave toward 70 (3 cards)",
+			"body": "Chardalyn Dragon (flyer), Questing Beast (haste/deathtouch, plus inert\nvigilance & can't-be-blocked-by-small as flavor), Reito Sentinel (defender;\nmill the enemy 3). Green 34 -> 37. Green's remaining pool is mostly\ntap/mana-ability ramp, Elves, and big creatures with complex triggers.",
+			"cards": [
+				{
+					"id": "chardalyn_dragon",
+					"name": "Chardalyn Dragon",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 6,
+					"colors": [
+						"G"
+					]
+				},
+				{
+					"id": "questing_beast",
+					"name": "Questing Beast",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "mythic",
+					"cost": 4,
+					"colors": [
+						"G"
+					]
+				},
+				{
+					"id": "reito_sentinel",
+					"name": "Reito Sentinel",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 3,
+					"colors": [
+						"G"
+					]
+				}
+			]
+		},
+		{
+			"sha": "a465f4f",
+			"date": "2026-07-23",
+			"kind": "cards",
+			"title": "Black roster wave toward 70 (4 cards) + X fixes",
+			"body": "Vampire Interloper (flyer), Exsanguinate (X drain), Mind Shatter (X random\ndiscard), Bitterblossom (turn-start: lose 1, make a Faerie). heal and\nenemy-discard now resolve value/count 'X' from the caster's xValue (they\ndidn't before). Verified in-node. Black 43 -> 47.",
+			"cards": [
+				{
+					"id": "vampire_interloper",
+					"name": "Vampire Interloper",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 2,
+					"colors": [
+						"B"
+					]
+				},
+				{
+					"id": "exsanguinate",
+					"name": "Exsanguinate",
+					"type": "sorcery",
+					"class": "neutral",
+					"rarity": "uncommon",
+					"cost": 2,
+					"colors": [
+						"B"
+					]
+				},
+				{
+					"id": "mind_shatter",
+					"name": "Mind Shatter",
+					"type": "sorcery",
+					"class": "neutral",
+					"rarity": "rare",
+					"cost": 2,
+					"colors": [
+						"B"
+					]
+				},
+				{
+					"id": "bitterblossom",
+					"name": "Bitterblossom",
+					"type": "enchantment",
+					"class": "neutral",
+					"rarity": "rare",
+					"cost": 2,
+					"colors": [
+						"B"
+					]
+				}
+			]
+		},
+		{
+			"sha": "ba993dd",
+			"date": "2026-07-23",
+			"kind": "cards",
+			"title": "Red roster wave toward 70 (4 cards)",
+			"body": "Ball Lightning & Spark Elemental (haste/trample, self-destruct at end of\nturn via a turn-end damage-self ongoing), Gamble (search any + random\ndiscard), Pulverize (alt-cost sac 2 Mountains -> destroy all artifacts).\nVerified in-node. Red 47 -> 51. Red's faithful pool is thin (most remaining\nare Goblins with activated/tribal abilities or Dragons with complex\ntriggers), so it lands short of 70 per the faithful-only choice.",
+			"cards": [
+				{
+					"id": "ball_lightning",
+					"name": "Ball Lightning",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "rare",
+					"cost": 3,
+					"colors": [
+						"R"
+					]
+				},
+				{
+					"id": "spark_elemental",
+					"name": "Spark Elemental",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 1,
+					"colors": [
+						"R"
+					]
+				},
+				{
+					"id": "gamble",
+					"name": "Gamble",
+					"type": "sorcery",
+					"class": "neutral",
+					"rarity": "rare",
+					"cost": 1,
+					"colors": [
+						"R"
+					]
+				},
+				{
+					"id": "pulverize",
+					"name": "Pulverize",
+					"type": "sorcery",
+					"class": "neutral",
+					"rarity": "uncommon",
+					"cost": 6,
+					"colors": [
+						"R"
+					]
+				}
+			]
+		},
+		{
+			"sha": "49e4576",
+			"date": "2026-07-23",
+			"kind": "cards",
+			"title": "Blue roster wave toward 70 (10 cards)",
+			"body": "Wind Drake / Storm Crow / Faerie Miscreant (flyers), Mulldrifter (draw 2),\nBoomerang (bounce a permanent), Into the Roil (bounce + kicker draw),\nTrinket Mage (tutor a small artifact), Sower of Temptation (steal a\ncreature), Swan Song (counter noncreature -> opponent gets a 2/2 Bird),\nSage Owl (Scry 3). Verified in-node. Blue 40 -> 50.",
+			"cards": [
+				{
+					"id": "wind_drake",
+					"name": "Wind Drake",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 3,
+					"colors": [
+						"U"
+					]
+				},
+				{
+					"id": "storm_crow",
+					"name": "Storm Crow",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 2,
+					"colors": [
+						"U"
+					]
+				},
+				{
+					"id": "faerie_miscreant",
+					"name": "Faerie Miscreant",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 1,
+					"colors": [
+						"U"
+					]
+				},
+				{
+					"id": "mulldrifter",
+					"name": "Mulldrifter",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 5,
+					"colors": [
+						"U"
+					]
+				},
+				{
+					"id": "boomerang",
+					"name": "Boomerang",
+					"type": "instant",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 2,
+					"colors": [
+						"U"
+					]
+				},
+				{
+					"id": "into_the_roil",
+					"name": "Into the Roil",
+					"type": "instant",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 2,
+					"colors": [
+						"U"
+					]
+				},
+				{
+					"id": "trinket_mage",
+					"name": "Trinket Mage",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 3,
+					"colors": [
+						"U"
+					]
+				},
+				{
+					"id": "sower_of_temptation",
+					"name": "Sower of Temptation",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "rare",
+					"cost": 4,
+					"colors": [
+						"U"
+					]
+				},
+				{
+					"id": "swan_song",
+					"name": "Swan Song",
+					"type": "instant",
+					"class": "neutral",
+					"rarity": "rare",
+					"cost": 1,
+					"colors": [
+						"U"
+					]
+				},
+				{
+					"id": "sage_owl",
+					"name": "Sage Owl",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 2,
+					"colors": [
+						"U"
+					]
+				}
+			]
+		},
+		{
+			"sha": "f74bbea",
+			"date": "2026-07-23",
+			"kind": "cards",
+			"title": "White roster wave toward 70 (10 cards) + evasion-as-flavor",
+			"body": "Toward the 70-per-color goal. Evasion keywords (Flying/Vigilance/Menace/\nReach) are mechanically inert in a no-block format, so they're now imported\nas flavor with glossary notes stating they have no rules effect here — the\nhonest way to include those cards.\n\nWhite: Doomed Traveler, Kor Hookmaster (freeze), Spectral Procession &\nMidnight Haunting (Spirit tokens), Cathars' Crusade (buff on each ETB),\nAjani's Pridemate (grows on lifegain), Kor Scythemaster, Serra Avenger,\nIdyllic Tutor (search enchantment), Kor Skyfisher (bounce a permanent).\nAll use existing/built mechanics; verified in-node. White 52 -> 62.",
+			"cards": [
+				{
+					"id": "doomed_traveler",
+					"name": "Doomed Traveler",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 1,
+					"colors": [
+						"W"
+					]
+				},
+				{
+					"id": "kor_hookmaster",
+					"name": "Kor Hookmaster",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 3,
+					"colors": [
+						"W"
+					]
+				},
+				{
+					"id": "spectral_procession",
+					"name": "Spectral Procession",
+					"type": "sorcery",
+					"class": "neutral",
+					"rarity": "uncommon",
+					"cost": 6,
+					"colors": [
+						"W"
+					]
+				},
+				{
+					"id": "midnight_haunting",
+					"name": "Midnight Haunting",
+					"type": "instant",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 3,
+					"colors": [
+						"W"
+					]
+				},
+				{
+					"id": "cathars_crusade",
+					"name": "Cathars' Crusade",
+					"type": "enchantment",
+					"class": "neutral",
+					"rarity": "rare",
+					"cost": 5,
+					"colors": [
+						"W"
+					]
+				},
+				{
+					"id": "ajanis_pridemate",
+					"name": "Ajani's Pridemate",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "uncommon",
+					"cost": 2,
+					"colors": [
+						"W"
+					]
+				},
+				{
+					"id": "kor_scythemaster",
+					"name": "Kor Scythemaster",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 3,
+					"colors": [
+						"W"
+					]
+				},
+				{
+					"id": "serra_avenger",
+					"name": "Serra Avenger",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "rare",
+					"cost": 2,
+					"colors": [
+						"W"
+					]
+				},
+				{
+					"id": "idyllic_tutor",
+					"name": "Idyllic Tutor",
+					"type": "sorcery",
+					"class": "neutral",
+					"rarity": "uncommon",
+					"cost": 3,
+					"colors": [
+						"W"
+					]
+				},
+				{
+					"id": "kor_skyfisher",
+					"name": "Kor Skyfisher",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 2,
+					"colors": [
+						"W"
+					]
+				}
+			]
+		},
+		{
+			"sha": "ad53946",
+			"date": "2026-07-23",
+			"kind": "cards",
+			"title": "proliferate (adapted to this game's buff model) + Flux Channeler",
+			"body": "This game had no live counter usage (0 cards used the counters field; all 45\npermanent buffs go through buffCreature). Per design call, any permanent\n+1/+1 now banks a \"counter\": buffCreature increments c.counters by\nmin(atk,hp) on a positive +N/+N. Proliferate then grows each of your\nstrengthened creatures (counters > 0) by +1/+1 and each of your\nplaneswalkers by 1 loyalty. add-counters no longer double-increments (the\nbuff primitive owns it now). Kept the keyword name \"Proliferate\" but the\nreminder text avoids the word \"counter\" (which here means counterspell).\n\nCard: Flux Channeler (whenever you cast a noncreature spell, Proliferate).\nVerified in-node: buff-self banks counters, plain creatures don't;\nproliferate grows strengthened creatures only, and planeswalker loyalty.\n\nSkipped: Cankerbloom (activated sac + choose-one) and Unnatural Restoration\n(return-a-permanent-from-graveyard + proliferate) need more mechanics.",
+			"cards": [
+				{
+					"id": "flux_channeler",
+					"name": "Flux Channeler",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "uncommon",
+					"cost": 3,
+					"colors": [
+						"U"
+					]
+				}
+			]
+		},
+		{
+			"sha": "61cfd65",
+			"date": "2026-07-23",
+			"kind": "patch",
+			"title": "bounce any permanent + a 'permanent' target kind",
+			"body": "\"Return target permanent\" now hits creatures, artifacts, enchantments,\nplaneswalkers, and locations (Cryptic Command's bounce mode). Engine:\nlegalTargets gains a 'permanent' kind that offers every permanent across\nzones; findPermanent + bouncePermanent locate a target in any zone and\nreturn it to its owner's hand (tokens still cease to exist; equipment\ndetaches; auras recompute). CHOSEN/targetSpec learn 'permanent'.\n\nClient: play-targeting now matches any legal permanent by uid (tap ×2,\ndrag resolveDropTarget, and the target-ring highlight) — attack targeting\nis unchanged (still creatures/walkers only). Artifacts/enchantments/\nplaneswalkers were already clickable entities, so no new rendering.\n\nVerified in-node: legalTargets permanent lists creature/artifact/\nenchantment; bouncing each returns the card to hand; Cryptic [bounce,draw]\ntargets and bounces an artifact. Creature-only spells are unaffected.\nThe expanded targeting UI needs a live realm test.",
+			"cards": []
+		},
+		{
+			"sha": "5ec2f90",
+			"date": "2026-07-23",
+			"kind": "cards",
+			"title": "Cryptic Command (modal choose-two with mixed targeting)",
+			"body": "Ties together the recent mechanics: choose-two (array choice), the two-step\ntargeting, and the counter stack. New counter-stack effect counters the\ntopmost spell at resolution (Cryptic's counter mode, cast in response).\nBounce reuses creature bounce, tap-all reuses mass freeze, draw is draw.\n\nClient: the multi-choice menu now takes a commit callback and routes to\ntargeting when a chosen mode needs one (Cryptic's bounce), via\ncontinueModalPlay; the respond window gains modal support so a modal\ninstant (Cryptic) can be cast in response — continueModalRespond picks\nmodes, targets if needed, then submits. Choice arrays already thread\nthrough play + respond.\n\nVerified in-node: counter+draw in response (spell countered, card drawn),\nbounce+tap (one enemy bounced, the rest frozen), bounce+draw, and array-\nchoice targetSpec (bounce needs a creature, tap/draw need none).\n\nNotes: \"return target permanent\" is creature-only here (no artifact/\nenchantment/land bounce); the AI casts Cryptic sub-optimally (skips it in\nresponse, fizzles a mode-less cast on its turn). Modal menu + respond\ntargeting need a live realm test.",
+			"cards": [
+				{
+					"id": "cryptic_command",
+					"name": "Cryptic Command",
+					"type": "instant",
+					"class": "neutral",
+					"rarity": "rare",
+					"cost": 4,
+					"colors": [
+						"U"
+					]
+				}
+			]
+		},
+		{
+			"sha": "beae3e7",
+			"date": "2026-07-23",
+			"kind": "cards",
+			"title": "cost-reduction / affinity + Ghalta, Thalia, Goblin Warchief",
+			"body": "Two small additions to the existing cost engine: selfCost gains a\n'board-power' mode (a card's own cost drops by the total power of your\ncreatures — Ghalta), and costTypeMatches gains 'noncreature' (Thalia's\ntax). Board cost auras (costMod) and tribe keyword-granting auras were\nalready supported. All engine-side (the client already displays\neffectiveCost), so no client changes.\n\nCards: Ghalta, Primal Hunger (costs 1 less per point of board power;\nTrample), Thalia, Guardian of Thraben (First strike; noncreature spells\ncost 1 more, symmetric), Goblin Warchief (your Goblin spells cost 1 less;\nGoblins have Haste). Verified in-node: Ghalta 12->2->0 as power grows,\nThalia +1 to both players' noncreature spells only, Warchief -1 to your\nGoblins only + fresh Goblins attack immediately.\n\nSkipped: Baral (second counter-draw ability), Storm-Kiln Artist (attack\nscales per artifact + Magecraft), Gate Colossus (Affinity for Gates — no\nGates exist here), Gargos (vigilance/evasion + fight trigger).",
+			"cards": [
+				{
+					"id": "ghalta",
+					"name": "Ghalta, Primal Hunger",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "rare",
+					"cost": 12,
+					"colors": [
+						"G"
+					]
+				},
+				{
+					"id": "thalia_guardian",
+					"name": "Thalia, Guardian of Thraben",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "rare",
+					"cost": 2,
+					"colors": [
+						"W"
+					]
+				},
+				{
+					"id": "goblin_warchief",
+					"name": "Goblin Warchief",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "uncommon",
+					"cost": 3,
+					"colors": [
+						"R"
+					]
+				}
+			]
+		},
+		{
+			"sha": "3ad94f5",
+			"date": "2026-07-23",
+			"kind": "cards",
+			"title": "fight mechanic (two-target) + Prey Upon",
+			"body": "Adds a `fight` effect and the engine's first two-target flow: a card with\nfight:true asks you to pick your creature, then the creature it fights;\neach deals damage equal to its power to the other (via damageCreature, so\ndeathtouch/shield/lifesteal all apply). The two picks fuse into one target\nobject ({uid: fighter, fightTarget: foe}) so nothing else needs a new\nparam. Client: commitPending runs the two-step pick and fight cards always\ntake the targeting path (never a direct drop). Added fight to the CHOSEN\ntargeting map (first pick = friendly-creature).\n\nCard: Prey Upon. Verified in-node: survivor at correct HP, mutual lethal\nkills, deathtouch fighter kills a bigger creature while dying to it,\ntargetSpec picks a friendly creature first.\n\nSkipped: Primal Might (X-spell + optional fight on the same creature needs\nX-scaled buff + optional second target) and Gargos (vigilance/evasion +\ncost reduction). Two-step targeting UI needs a live realm test.",
+			"cards": [
+				{
+					"id": "prey_upon",
+					"name": "Prey Upon",
+					"type": "sorcery",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 1,
+					"colors": [
+						"G"
+					]
+				}
+			]
+		},
+		{
+			"sha": "6120858",
+			"date": "2026-07-23",
+			"kind": "patch",
+			"title": "delayed blink (return at next end step) + faithful Charming Prince",
+			"body": "Adds `blink` with `delayed: true`: the creature is exiled immediately (gone\nfor the turn, so it dodges board wipes) and returns as a fresh permanent at\nthe beginning of the next end step, retriggering its Battlecry. Shared\nreturnBlinked() helper (immediate + delayed both reset the creature, keep\nthe blinkDepth loop guard, mark it summoning-sick). endTurn drains a new\nstate.pendingReturns list. Reuses the standard battlecry targeting, so no\nclient changes.\n\nCharming Prince's blink mode is now delayed (matching MTG's \"return at the\nbeginning of the next end step\"); Felidar Guardian stays immediate. Both\ntimings now exist. Verified in-node: exile-now/return-EOT, damage reset,\nbattlecry retrigger, and dodging a Wrath cast while blinked.",
+			"cards": []
+		},
+		{
+			"sha": "3051d32",
+			"date": "2026-07-23",
+			"kind": "cards",
+			"title": "blink (flicker) effect + Felidar Guardian, Charming Prince",
+			"body": "Blink is an effect-word (like bounce), not a creature passive: a battlecry\ncan \"Blink target creature\". It exiles the creature and immediately returns\nit as a FRESH permanent — resetting damage/auras/temp-buffs and\nretriggering its Battlecry. Tokens cease to exist when blinked (no return);\nequipment detaches; excludeSelf keeps \"another target creature\" off the\nsource; a blinkDepth cap guards against infinite blink chains (Felidar +\nFelidar). Added to the targeting CHOSEN map, so it reuses the standard\nbattlecry / choose-one targeting flows (no client changes). \"Blink\" is now\na glossary keyword term (keywords.js) for card-text bolding.\n\nCards: Felidar Guardian (Battlecry: blink another creature you control),\nCharming Prince (Battlecry choose one: Scry 2 / gain 3 / blink another\ncreature you control). Verified in-node: damage reset, battlecry retrigger,\nfresh uid, no self-blink loop, all Charming Prince modes.\n\nNote: implemented as IMMEDIATE blink (return now), matching the requested\n\"retrigger its battlecry\" behavior. MTG Charming Prince/Flickerwisp use a\ndelayed (end-of-turn) return; that timing would need a delayed-trigger\nmechanic and is deferred.",
+			"cards": [
+				{
+					"id": "felidar_guardian",
+					"name": "Felidar Guardian",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "uncommon",
+					"cost": 4,
+					"colors": [
+						"W"
+					]
+				},
+				{
+					"id": "charming_prince",
+					"name": "Charming Prince",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "rare",
+					"cost": 2,
+					"colors": [
+						"W"
+					]
+				}
+			]
+		},
+		{
+			"sha": "756a7a7",
+			"date": "2026-07-23",
+			"kind": "cards",
+			"title": "modal choose-two / one-or-more + Austere Command, Farewell",
+			"body": "Extends the existing Choose-One system to multi-modal: `chooseCount` N\n(choose exactly two) or `chooseMin`/`chooseMax` (choose one or more). The\n`choice` param now accepts an array of mode indices; effectsOf concatenates\nthe chosen modes' effects (flows through runSpell/liveEffectsOf, so the\nguest relay + host intent carry the array unchanged). Client adds a\ntoggle-and-confirm multi-select menu (main play + inspect panel).\n\nEngine effects added: destroy-all now supports exile + minCost/maxCost (MV\nfilters); new clear-graveyards effect (Farewell's exile-all-graveyards).\n\nCards: Austere Command (choose two: destroy all artifacts / enchantments /\ncreatures MV<=3 / MV>=4), Farewell (choose one or more: exile all\nartifacts / creatures / enchantments / graveyards). Verified in-node:\nMV-filtered wipes, exile-not-graveyard, graveyard clear, arbitrary subsets.\n\nSkipped: Cryptic Command (choose-two with two targets — engine is single-\ntarget) and choose-one cards whose modes need unbuilt mechanics (flicker:\nCharming Prince; tap/untap: Deceiver Exarch; proliferate: Cankerbloom;\nevasion grants: Akroma's Will / Elder Gargaroth). Multi-select menu needs\na live realm test.",
+			"cards": [
+				{
+					"id": "austere_command",
+					"name": "Austere Command",
+					"type": "sorcery",
+					"class": "neutral",
+					"rarity": "rare",
+					"cost": 6,
+					"colors": [
+						"W"
+					]
+				},
+				{
+					"id": "farewell",
+					"name": "Farewell",
+					"type": "sorcery",
+					"class": "neutral",
+					"rarity": "rare",
+					"cost": 6,
+					"colors": [
+						"W"
+					]
+				}
+			]
+		},
+		{
+			"sha": "6a674ef",
+			"date": "2026-07-23",
+			"kind": "cards",
+			"title": "kicker mechanic + Burst Lightning/Rite/Baloth/Bushwhacker",
+			"body": "Adds a `kicker: { cost, effects }` field: an optional ADDITIONAL cost paid\non top of the base cost for a bonus. When kicked, playCard spends base +\nkicker cost and sets card._kicked; liveEffectsOf appends the kicker effects\nto the base ones (covers both runSpell and runBattlecry, so kicked spells\nAND kicked creature ETBs work). runBattlecry now also fires for a kicked\ncreature with no base effects. Exports canKick.\n\nClient: kicker cards you can afford base+kicker open a \"Cast vs Cast with\nkicker\" menu (main play + drag paths); in the respond window a kicker\ninstant shows both options. A `kicked` flag threads through actPlay, the\npending play/respond commit, guest relay, and host intent (parallel to the\nalt-cost useAlt flag).\n\nCards: Burst Lightning (2 dmg -> 4), Rite of Replication (1 copy -> 5),\nBaloth Gorger (4/4 -> enters 7/7), Goblin Bushwhacker (kicked: your\ncreatures +1/+0 & gain Rush this turn). Verified in-node.\n\nSkipped: Gatekeeper of Malakir (choice-edict unsupported), Into the Roil\n(needs nonland-permanent bounce), Prohibit (counter-param kicker + MV<=N),\nVines of Vastwood (temp untargetable doesn't map). Cost menus need a live\nrealm test.",
+			"cards": [
+				{
+					"id": "burst_lightning",
+					"name": "Burst Lightning",
+					"type": "instant",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 1,
+					"colors": [
+						"R"
+					]
+				},
+				{
+					"id": "rite_of_replication",
+					"name": "Rite of Replication",
+					"type": "sorcery",
+					"class": "neutral",
+					"rarity": "rare",
+					"cost": 4,
+					"colors": [
+						"U"
+					]
+				},
+				{
+					"id": "baloth_gorger",
+					"name": "Baloth Gorger",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 4,
+					"colors": [
+						"G"
+					]
+				},
+				{
+					"id": "goblin_bushwhacker",
+					"name": "Goblin Bushwhacker",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 1,
+					"colors": [
+						"R"
+					]
+				}
+			]
+		},
+		{
+			"sha": "950457f",
+			"date": "2026-07-23",
+			"kind": "cards",
+			"title": "alternative casting costs + Fireblast/FoW/FoN/Invigorate",
+			"body": "Adds an `altCost` field: an optional cost paid INSTEAD of mana, chosen at\ncast time. Supports require{land|notYourTurn}, life, sacrificeLand{color,\ncount}, exileFromHand{color,count}, opponentGain. Lands are basic-typed so\n\"sacrifice two Mountains\" / \"control a Forest\" resolve faithfully. canPlay/\ncanCastInResponse allow a card affordable EITHER way; playCard takes a\nuseAlt flag (and auto-alts when mana is short, so the AI/any caller stays\nsafe). Also adds counter to:'exile' for Force of Negation.\n\nClient: alt-cost cards you can pay both ways open a cost-choice menu (main\nplay + drag paths); in the respond window an alt counter shows as two\noptions (mana vs alt). useAlt threads through actPlay, the pending\nplay/respond commit, guest relay, and host intent.\n\nCards: Fireblast (sac 2 Mountains), Force of Will (1 life + exile a blue\ncard), Force of Negation (exile a blue card if not your turn; counters a\nnoncreature spell, exiling it), Invigorate (opponent gains 3 if you\ncontrol a Forest; +4/+4). Verified in-node: both cost paths, land-type\ngating, life/exile payment, opponent-gain, and exile-on-counter.\n\nSkipped as unmappable: Phyrexian mana (no colored pips) and Daze (returns\na land to hand, but this engine can't replay lands from hand). Cost-choice\nmenus need a live realm test, like the recent prompts.",
+			"cards": [
+				{
+					"id": "fireblast",
+					"name": "Fireblast",
+					"type": "instant",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 6,
+					"colors": [
+						"R"
+					]
+				},
+				{
+					"id": "force_of_will",
+					"name": "Force of Will",
+					"type": "instant",
+					"class": "neutral",
+					"rarity": "rare",
+					"cost": 5,
+					"colors": [
+						"U"
+					]
+				},
+				{
+					"id": "force_of_negation",
+					"name": "Force of Negation",
+					"type": "instant",
+					"class": "neutral",
+					"rarity": "rare",
+					"cost": 3,
+					"colors": [
+						"U"
+					]
+				}
+			]
+		},
+		{
+			"sha": "38d053f",
+			"date": "2026-07-23",
+			"kind": "cards",
+			"title": "additional casting costs (discard/sacrifice) + 5 cards",
+			"body": "Adds an `addCost` field for mandatory extra costs paid before a spell\nresolves: { discard: N } reuses the existing discard picker; { sacrifice:\n'creature'|'land'|'artifact'|'artifact-or-creature' } auto-sacs a fungible\nland, auto-pays a lone option, or opens a new interactive sacrifice picker\n(sacQueue) when there's a real choice. canPlay gates on affordability, and\nthe spell's effects resolve as the continuation once the cost is paid\n(cost-before-effect, faithful). New sacQueue is fully client-wired\n(picker modal, AI drain, guest relay, host intent, MP snapshot, gate).\n\nAlso fixed a latent gap: the guest-side modal dispatcher didn't handle\naskQueue, so soft-counter / Rhystic / Smothering pay prompts wouldn't have\nreached a GUEST controller. Added askQueue (and sacQueue) there.\n\nCards: Thrill of Possibility, Unexpected Windfall, Shard Volley, Reckless\nAbandon, Deadly Dispute. Verified in-node: affordability gating, discard\ndraw, land auto-sac + burn, interactive creature sac holding damage until\nchosen, single-option auto-sac, artifact-or-creature choice.\n\nNote: additional-cost spells resolve off-stack (not counterable) so the\ncost/effect order stays correct; and the new sac picker UI needs a live\nrealm test, same caveat as the recent prompts.",
+			"cards": [
+				{
+					"id": "thrill_of_possibility",
+					"name": "Thrill of Possibility",
+					"type": "instant",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 2,
+					"colors": [
+						"R"
+					]
+				},
+				{
+					"id": "unexpected_windfall",
+					"name": "Unexpected Windfall",
+					"type": "instant",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 4,
+					"colors": [
+						"R"
+					]
+				},
+				{
+					"id": "shard_volley",
+					"name": "Shard Volley",
+					"type": "instant",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 1,
+					"colors": [
+						"R"
+					]
+				},
+				{
+					"id": "reckless_abandon",
+					"name": "Reckless Abandon",
+					"type": "sorcery",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 1,
+					"colors": [
+						"R"
+					]
+				},
+				{
+					"id": "deadly_dispute",
+					"name": "Deadly Dispute",
+					"type": "instant",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 2,
+					"colors": [
+						"B"
+					]
+				}
+			]
+		},
+		{
+			"sha": "4069f60",
+			"date": "2026-07-23",
+			"kind": "cards",
+			"title": "attack-tax mechanic + Ghostly Prison",
+			"body": "Adds an `attackTax` permanent field (Ghostly Prison: {amount:2}). A creature\nmay only be declared at a defender's hero if its controller can afford the\ndefender's summed attack tax; the cost is spent as an additional cost of\ndeclaring (MTG's \"pay as you declare attackers, or the declaration is\nillegal\"). Only creature attacks at the hero are taxed — creatures/walkers\nand weapon-hero swings are untouched. Flows through client + AI unchanged\nsince both route via attackTargets()/attack().\n\nVerified in-node: hero offered & charged 2 when affordable, gated out and\ndeclaration rejected when not, creatures still free at 0 mana, no effect\nwhen no Prison is in play.",
+			"cards": [
+				{
+					"id": "ghostly_prison",
+					"name": "Ghostly Prison",
+					"type": "enchantment",
+					"class": "neutral",
+					"rarity": "rare",
+					"cost": 3,
+					"colors": [
+						"W"
+					]
+				}
+			]
+		},
+		{
+			"sha": "b832396",
+			"date": "2026-07-23",
+			"kind": "cards",
+			"title": "opponent-may-pay mechanic + Rhystic Study, Smothering Tithe",
+			"body": "Generalizes the pay-prompt infra into an `opponent-may-pay` ongoing effect:\nthe opponent tied to a trigger (the spell's caster / the drawer) may pay N\nvia askQueue; if they don't (or can't afford it), the enchantment's\ncontroller gets a benefit. Reuses the counter pay UI (askQueue is already\nMP-synced + client-wired). Adds a new `enemy-draws` ongoing trigger fired\nper opponent draw (guarded by state.dealt + a re-entrancy lock).\n\nCards: Rhystic Study (opponent pays 1 per spell or you draw), Smothering\nTithe (opponent pays 2 per draw or you make a Treasure). Verified in-node:\nprompt routing to the right opponent, pay vs decline, can't-afford\nauto-benefit, and per-card firing on multi-draws.\n\nNote: vs the AI the pay prompt auto-resolves to \"pay\" (existing askQueue\nbehavior), so these read as PvP-facing taxes. The pay MODAL itself needs a\nlive realm test, same caveat as the counters/equip UI.",
+			"cards": [
+				{
+					"id": "rhystic_study",
+					"name": "Rhystic Study",
+					"type": "enchantment",
+					"class": "neutral",
+					"rarity": "rare",
+					"cost": 3,
+					"colors": [
+						"U"
+					]
+				},
+				{
+					"id": "smothering_tithe",
+					"name": "Smothering Tithe",
+					"type": "enchantment",
+					"class": "neutral",
+					"rarity": "rare",
+					"cost": 4,
+					"colors": [
+						"W"
+					]
+				}
+			]
+		},
+		{
+			"sha": "856b604",
+			"date": "2026-07-23",
+			"kind": "cards",
+			"title": "conditional counters mechanic + 8 blue counterspells",
+			"body": "Engine: counters gain an optional `counter` config — type/notType/manaValue\ntargeting restrictions (canCast gates on a legal matching stack spell), a\nfaithful interactive `unlessPay` soft counter (the countered spell's\ncontroller gets a yes/no pay prompt via askQueue; the stack pauses until\nanswered), and a `to: hand|top` destination for counter-to-hand /\ncounter-to-top. Client: askQueue is now carried in MP snapshots and gates\nhuman actions so a guest controller sees their pay prompt.\n\nCards: Negate, Dispel, Spell Snare, Mana Leak, Force Spike, Spell Pierce,\nRemand, Memory Lapse. Full matrix verified in-node (target legality, pay\nvs decline, hard-counter-when-broke, hand/top destinations).\n\nThe soft-counter pay MODAL + guest relay can only be exercised live, so it\nstill needs a realm test (same caveat as the equip UI).",
+			"cards": [
+				{
+					"id": "negate",
+					"name": "Negate",
+					"type": "instant",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 2,
+					"colors": [
+						"U"
+					]
+				},
+				{
+					"id": "dispel",
+					"name": "Dispel",
+					"type": "instant",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 1,
+					"colors": [
+						"U"
+					]
+				},
+				{
+					"id": "spell_snare",
+					"name": "Spell Snare",
+					"type": "instant",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 1,
+					"colors": [
+						"U"
+					]
+				},
+				{
+					"id": "mana_leak",
+					"name": "Mana Leak",
+					"type": "instant",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 2,
+					"colors": [
+						"U"
+					]
+				},
+				{
+					"id": "force_spike",
+					"name": "Force Spike",
+					"type": "instant",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 1,
+					"colors": [
+						"U"
+					]
+				},
+				{
+					"id": "spell_pierce",
+					"name": "Spell Pierce",
+					"type": "instant",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 1,
+					"colors": [
+						"U"
+					]
+				},
+				{
+					"id": "remand",
+					"name": "Remand",
+					"type": "instant",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 2,
+					"colors": [
+						"U"
+					]
+				},
+				{
+					"id": "memory_lapse",
+					"name": "Memory Lapse",
+					"type": "instant",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 2,
+					"colors": [
+						"U"
+					]
+				}
+			]
+		},
+		{
+			"sha": "bab175f",
+			"date": "2026-07-23",
+			"kind": "cards",
+			"title": "Battlecards WUBRG wave 12: 3 fully-faithful imports",
+			"body": "Lotus Cobra (Landfall: gain 1 mana when a land enters), Revoke Existence\n(exile an artifact/enchantment), Bronze Walrus (ETB scry 2). All verified\nin-node against existing mechanics. Clone was evaluated but dropped: its\n0/0 enter-as-copy needs a replacement-effect the engine can't model\nfaithfully.",
+			"cards": [
+				{
+					"id": "lotus_cobra",
+					"name": "Lotus Cobra",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "rare",
+					"cost": 2,
+					"colors": [
+						"G"
+					]
+				},
+				{
+					"id": "revoke_existence",
+					"name": "Revoke Existence",
+					"type": "sorcery",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 2,
+					"colors": [
+						"W"
+					]
+				},
+				{
+					"id": "bronze_walrus",
+					"name": "Bronze Walrus",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 3
+				}
+			]
+		},
+		{
+			"sha": "2e4420b",
+			"date": "2026-07-23",
+			"kind": "cards",
+			"title": "Battlecards WUBRG wave 11: 7 fully-faithful imports",
+			"body": "Savannah Lions (vanilla 2/1), Counterspell (counter target spell),\nLightning Bolt (3 dmg any target), Chrome Cat (ETB scry 1),\nReclamation Sage / Nature's Claim / Slice in Twain (artifact/enchantment\nremoval). All map to existing engine mechanics with no compromises;\nverified in-node.",
+			"cards": [
+				{
+					"id": "reclamation_sage",
+					"name": "Reclamation Sage",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 3,
+					"colors": [
+						"G"
+					]
+				},
+				{
+					"id": "natures_claim",
+					"name": "Nature's Claim",
+					"type": "instant",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 1,
+					"colors": [
+						"G"
+					]
+				},
+				{
+					"id": "slice_in_twain",
+					"name": "Slice in Twain",
+					"type": "instant",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 4,
+					"colors": [
+						"G"
+					]
+				}
+			]
+		},
+		{
+			"sha": "fd665ed",
+			"date": "2026-07-23",
+			"kind": "cards",
+			"title": "add Puresteel Paladin + Kor Outfitter (equipment-matters)",
+			"body": "Puresteel Paladin: Metalcraft grants free equip at 3+ artifacts, and draws\na card whenever an Equipment enters. Kor Outfitter: battlecry attaches an\nEquipment you control to a friendly creature.",
+			"cards": [
+				{
+					"id": "puresteel_paladin",
+					"name": "Puresteel Paladin",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "rare",
+					"cost": 2,
+					"colors": [
+						"W"
+					]
+				},
+				{
+					"id": "kor_outfitter",
+					"name": "Kor Outfitter",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 2,
+					"colors": [
+						"W"
+					]
+				}
+			]
+		},
+		{
+			"sha": "acf9cdf",
+			"date": "2026-07-23",
+			"kind": "cards",
+			"title": "Equipment-matters: Stoneforge Mystic + Steelshaper's Gift",
+			"body": "- search effect gains an `equipment:true` filter (tutor an Equipment from deck).\n- deploy-equip effect + resolvePick mode: put an Equipment from hand into play\n  (unattached); picks when you hold more than one.\n- Steelshaper's Gift (W): tutor an Equipment to hand.\n- Stoneforge Mystic (W, 1/2): Battlecry tutor an Equipment to hand, plus an\n  activated (1): put an Equipment from your hand into play — once per turn\n  (via abilityUsedThisTurn, matching the tap).\n\nVerified in-engine: both tutor an Equipment (pick from deck); Stoneforge deploys\nfrom hand to the artifacts zone and is correctly limited to once per turn.",
+			"cards": [
+				{
+					"id": "steelshapers_gift",
+					"name": "Steelshaper's Gift",
+					"type": "sorcery",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 1,
+					"colors": [
+						"W"
+					]
+				},
+				{
+					"id": "stoneforge_mystic",
+					"name": "Stoneforge Mystic",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "rare",
+					"cost": 2,
+					"colors": [
+						"W"
+					]
+				}
+			]
+		},
+		{
+			"sha": "83a1325",
+			"date": "2026-07-23",
+			"kind": "cards",
+			"title": "Equipment mechanic + 6 Equipment cards",
+			"body": "Faithful creature Equipment (per the design decision):\n- Equipment is an artifact with an `equip:{cost,attack?,health?,keywords?}` field.\n  It plays to the artifacts zone unattached.\n- New engine API: equipTargets / canEquip / equip(equipUid, creatureUid) — pay\n  the equip cost, attach to one of your creatures. Bonuses apply via\n  recomputeAuras, so they vanish if detached/destroyed.\n- Persists: when the equipped creature dies it detaches and stays in play;\n  re-equipping moves it. Destroying the Equipment removes the buff.\n- Duel client: click an Equipment -> target one of your creatures (new 'equip'\n  pending mode, guest-relay intent, equipAttached event log).\n\nCards (neutral artifacts, deck-legal): Bone Saw (+1/+0), Bonesplitter (+2/+0),\nShort Sword (+1/+1), Vulshok Morningstar (+1/+1), Basilisk Collar (Deathtouch +\nLifesteal), Loxodon Warhammer (+3/+0, Trample, Lifesteal).\n\nVerified in-engine: equip +2/+0; creature dies -> equipment persists & detaches;\nre-equip moves it; destroy -> buff gone; two equipment stack; keyword-granting\nworks. Card game boots clean with the equip API. Live duel equip UI needs a\nrealm test.",
+			"cards": [
+				{
+					"id": "bone_saw",
+					"name": "Bone Saw",
+					"type": "artifact",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 0
+				},
+				{
+					"id": "bonesplitter",
+					"name": "Bonesplitter",
+					"type": "artifact",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 1
+				},
+				{
+					"id": "short_sword",
+					"name": "Short Sword",
+					"type": "artifact",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 1
+				},
+				{
+					"id": "vulshok_morningstar",
+					"name": "Vulshok Morningstar",
+					"type": "artifact",
+					"class": "neutral",
+					"rarity": "uncommon",
+					"cost": 2
+				},
+				{
+					"id": "basilisk_collar",
+					"name": "Basilisk Collar",
+					"type": "artifact",
+					"class": "neutral",
+					"rarity": "rare",
+					"cost": 1
+				},
+				{
+					"id": "loxodon_warhammer",
+					"name": "Loxodon Warhammer",
+					"type": "artifact",
+					"class": "neutral",
+					"rarity": "uncommon",
+					"cost": 3
+				}
+			]
+		},
+		{
+			"sha": "c8a5416",
+			"date": "2026-07-23",
+			"kind": "cards",
+			"title": "WUBRG import wave 10: 5 faithful cards (no evasion)",
+			"body": "Per the decision to skip evasion keywords and keep adaptations faithful:\n- Death Baron (B): aura — your other Undead get +1/+1 and Deathtouch (verified:\n  buffs Undead only, not Beasts).\n- Returned Reveler (B): Deathrattle — each player mills 3.\n- Gifted Aetherborn (B): 2/3 Deathtouch + Lifesteal, Vampire.\n- Shatter, Smelt (R): destroy an enemy artifact — added an only:'artifact'\n  filter to destroy-art-ench so it spares enchantments (faithful).\n\nThe vanilla/keyword-creature pool with no evasion is exhausted; what remains\nmostly needs evasion (skipped) or per-card design calls.",
+			"cards": [
+				{
+					"id": "returned_reveler",
+					"name": "Returned Reveler",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 2,
+					"colors": [
+						"B"
+					]
+				},
+				{
+					"id": "death_baron",
+					"name": "Death Baron",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "rare",
+					"cost": 3,
+					"colors": [
+						"B"
+					]
+				},
+				{
+					"id": "shatter",
+					"name": "Shatter",
+					"type": "instant",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 2,
+					"colors": [
+						"R"
+					]
+				},
+				{
+					"id": "smelt",
+					"name": "Smelt",
+					"type": "instant",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 1,
+					"colors": [
+						"R"
+					]
+				}
+			]
+		},
+		{
+			"sha": "85721c8",
+			"date": "2026-07-23",
+			"kind": "cards",
+			"title": "WUBRG import wave 9: 11 cards",
+			"body": "- White: Blade Splicer (Battlecry summon a 3/3 Golem), Fragmentize (destroy an\n  artifact/enchantment), Ajani's Welcome (enchantment: gain 1 when a creature\n  enters), Generous Gift (destroy an enemy creature, it gives them a 3/3)\n- Black: Carrier Thrall (Deathrattle 1/1), Fleshbag Marauder (each player\n  sacrifices), Gray Merchant (Battlecry 3 to face + gain 3), Grave Titan\n  (6/6 Deathtouch + two 2/2 Undead), Fatal Push (destroy a <=2 Attack creature)\n- Red: Impact Tremors (enchantment: 1 to face when a creature enters), Smash to\n  Smithereens (destroy an artifact/enchantment + 3 to face)\n\nExercises enchantment 'summoned' ongoing triggers, sacrifice-each, and\nsummon-for-enemy. All effect-verified in-engine; art from Scryfall.",
+			"cards": [
+				{
+					"id": "blade_splicer",
+					"name": "Blade Splicer",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "rare",
+					"cost": 3,
+					"colors": [
+						"W"
+					]
+				},
+				{
+					"id": "fragmentize",
+					"name": "Fragmentize",
+					"type": "sorcery",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 1,
+					"colors": [
+						"W"
+					]
+				},
+				{
+					"id": "ajanis_welcome",
+					"name": "Ajani's Welcome",
+					"type": "enchantment",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 1,
+					"colors": [
+						"W"
+					]
+				},
+				{
+					"id": "generous_gift",
+					"name": "Generous Gift",
+					"type": "instant",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 3,
+					"colors": [
+						"W"
+					]
+				},
+				{
+					"id": "carrier_thrall",
+					"name": "Carrier Thrall",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 2,
+					"colors": [
+						"B"
+					]
+				},
+				{
+					"id": "fleshbag_marauder",
+					"name": "Fleshbag Marauder",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 3,
+					"colors": [
+						"B"
+					]
+				},
+				{
+					"id": "gray_merchant",
+					"name": "Gray Merchant of Asphodel",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 5,
+					"colors": [
+						"B"
+					]
+				},
+				{
+					"id": "grave_titan",
+					"name": "Grave Titan",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "rare",
+					"cost": 6,
+					"colors": [
+						"B"
+					]
+				},
+				{
+					"id": "fatal_push",
+					"name": "Fatal Push",
+					"type": "instant",
+					"class": "neutral",
+					"rarity": "uncommon",
+					"cost": 1,
+					"colors": [
+						"B"
+					]
+				},
+				{
+					"id": "impact_tremors",
+					"name": "Impact Tremors",
+					"type": "enchantment",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 2,
+					"colors": [
+						"R"
+					]
+				},
+				{
+					"id": "smash_to_smithereens",
+					"name": "Smash to Smithereens",
+					"type": "instant",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 2,
+					"colors": [
+						"R"
+					]
+				}
+			]
+		},
+		{
+			"sha": "302d57d",
+			"date": "2026-07-23",
+			"kind": "cards",
+			"title": "Artifact/enchantment mechanic + WUBRG wave 8 (7 cards)",
+			"body": "Engine builds on the existing artifact/enchantment permanent zones:\n- destroyPermanent(): pull an artifact/enchantment from its zone, fire its\n  deathrattle (on destroy), return any Oblivion-Ring-exiled creature (it leaves\n  play), then send it to graveyard or exile.\n- destroy-art-ench effect: non-targeted removal (no board-permanent targeting\n  UI) — scope enemy/all, count N/all, exile flag.\n- Enchantment O-Rings now work end to end: an enchantment's ETB exiles a\n  creature (exile-until-return), and destroying that enchantment returns it.\n\nWave 8: Disenchant, Naturalize (destroy an enemy artifact/enchantment), Return\nto Dust (exile up to two), Kor Sanctifiers (Battlecry: destroy one), Oblivion\nRing / Journey to Nowhere / Banishing Light (enchantment O-Rings).\n\nVerified in-engine: Disenchant clears an enemy enchantment; Oblivion Ring exiles\na 6/4 and Naturalize destroying the ring returns it; Kor Sanctifiers' battlecry\ndestroys an artifact. Art from Scryfall.",
+			"cards": [
+				{
+					"id": "disenchant",
+					"name": "Disenchant",
+					"type": "instant",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 2,
+					"colors": [
+						"W"
+					]
+				},
+				{
+					"id": "return_to_dust",
+					"name": "Return to Dust",
+					"type": "instant",
+					"class": "neutral",
+					"rarity": "uncommon",
+					"cost": 4,
+					"colors": [
+						"W"
+					]
+				},
+				{
+					"id": "kor_sanctifiers",
+					"name": "Kor Sanctifiers",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 4,
+					"colors": [
+						"W"
+					]
+				},
+				{
+					"id": "oblivion_ring",
+					"name": "Oblivion Ring",
+					"type": "enchantment",
+					"class": "neutral",
+					"rarity": "uncommon",
+					"cost": 3,
+					"colors": [
+						"W"
+					]
+				},
+				{
+					"id": "journey_to_nowhere",
+					"name": "Journey to Nowhere",
+					"type": "enchantment",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 2,
+					"colors": [
+						"W"
+					]
+				},
+				{
+					"id": "banishing_light",
+					"name": "Banishing Light",
+					"type": "enchantment",
+					"class": "neutral",
+					"rarity": "uncommon",
+					"cost": 3,
+					"colors": [
+						"W"
+					]
+				}
+			]
+		},
+		{
+			"sha": "2f5c540",
+			"date": "2026-07-22",
+			"kind": "cards",
+			"title": "WUBRG wave 7 (7 cards) + revert Zombie card-name changes",
+			"body": "Revert: restored the card NAMES/descriptions/token names that the wave-6 sweep\nhad changed (Zombie Chow, Lingering Zombie, Sand Drudge's token, etc.) — the\nrequest was about tribes only. The tribe fields stay Undead (Diregraf Ghoul =\nUndead, Black Cat = Undead Cat, etc.).\n\nWave 7: Lava Coil (4 to a creature), Flametongue Kavu (Battlecry 4 to a\ncreature), Mind Rot (enemy discards 2), Duress (enemy discards 1), Repulse\n(bounce + draw), Icatian Javelineers (Battlecry 1 to a creature), Axebane Stag\n(4/5). Exercises enemy-discard; all effect-verified; art from Scryfall.",
+			"cards": [
+				{
+					"id": "lava_coil",
+					"name": "Lava Coil",
+					"type": "instant",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 2,
+					"colors": [
+						"R"
+					]
+				},
+				{
+					"id": "repulse",
+					"name": "Repulse",
+					"type": "instant",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 3,
+					"colors": [
+						"U"
+					]
+				},
+				{
+					"id": "icatian_javelineers",
+					"name": "Icatian Javelineers",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 1,
+					"colors": [
+						"W"
+					]
+				},
+				{
+					"id": "axebane_stag",
+					"name": "Axebane Stag",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 5,
+					"colors": [
+						"G"
+					]
+				}
+			]
+		},
+		{
+			"sha": "cc9698b",
+			"date": "2026-07-22",
+			"kind": "cards",
+			"title": "WUBRG wave 6 (6 cards) + tribe changes",
+			"body": "Tribes:\n- Zombie -> Undead everywhere (tribes, summoned-token names, descriptions,\n  nested effects; 7 cards touched, 0 \"Zombie\" strings left).\n- Ravenous Chupacabra -> Undead Beast.\n- Blood Artist -> Vampire Noble.\n\nWave 6 (small): Shock (2 any), Divination (draw 2), Murder (destroy a creature),\nGrizzly Bears (2/2 Beast), Youthful Knight (2/2 First Strike, Human Knight),\nChild of Night (2/1 Lifesteal, Vampire). Effect-verified; art from Scryfall.\n\nNote: card names that contained \"Zombie\" also became Undead (e.g. Zombie Chow ->\nUndead Chow) since the request was to change all zombies; ids unchanged so art\nstill maps.",
+			"cards": [
+				{
+					"id": "shock",
+					"name": "Shock",
+					"type": "instant",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 1,
+					"colors": [
+						"R"
+					]
+				},
+				{
+					"id": "divination",
+					"name": "Divination",
+					"type": "sorcery",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 3,
+					"colors": [
+						"U"
+					]
+				},
+				{
+					"id": "grizzly_bears",
+					"name": "Grizzly Bears",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 2,
+					"colors": [
+						"G"
+					]
+				},
+				{
+					"id": "youthful_knight",
+					"name": "Youthful Knight",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 2,
+					"colors": [
+						"W"
+					]
+				}
+			]
+		},
+		{
+			"sha": "ea58ae9",
+			"date": "2026-07-22",
+			"kind": "cards",
+			"title": "WUBRG import wave 5: 8 cards + art (death-triggers + multicolor)",
+			"body": "- Black: Midnight Reaper (draw when a friendly creature dies), Blood Artist\n  (any creature dies -> enemy -1, you +1)\n- Multicolor: Lightning Helix (R/W: 3 damage + gain 3), Terminate (B/R: destroy\n  an enemy creature)\n- Green: Pelakka Wurm (Battlecry gain 7 + Deathrattle draw), Grizzled Outrider\n  (4/6)\n- White: Wall of Omens (Taunt + Battlecry draw)\n- Red: Goblin Chainwhirler (Battlecry: 1 to all enemy creatures)\n\nExercises the friendly-creature-died / creature-died death triggers and the\nfirst multicolor cards. All effect-verified in-engine; art from Scryfall.",
+			"cards": [
+				{
+					"id": "midnight_reaper",
+					"name": "Midnight Reaper",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "rare",
+					"cost": 3,
+					"colors": [
+						"B"
+					]
+				},
+				{
+					"id": "blood_artist",
+					"name": "Blood Artist",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "uncommon",
+					"cost": 2,
+					"colors": [
+						"B"
+					]
+				},
+				{
+					"id": "lightning_helix",
+					"name": "Lightning Helix",
+					"type": "instant",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 2,
+					"colors": [
+						"R",
+						"W"
+					]
+				},
+				{
+					"id": "terminate",
+					"name": "Terminate",
+					"type": "instant",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 2,
+					"colors": [
+						"B",
+						"R"
+					]
+				},
+				{
+					"id": "pelakka_wurm",
+					"name": "Pelakka Wurm",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "uncommon",
+					"cost": 7,
+					"colors": [
+						"G"
+					]
+				},
+				{
+					"id": "goblin_chainwhirler",
+					"name": "Goblin Chainwhirler",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "rare",
+					"cost": 3,
+					"colors": [
+						"R"
+					]
+				},
+				{
+					"id": "grizzled_outrider",
+					"name": "Grizzled Outrider",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 5,
+					"colors": [
+						"G"
+					]
+				}
+			]
+		},
+		{
+			"sha": "0c7fec4",
+			"date": "2026-07-22",
+			"kind": "cards",
+			"title": "WUBRG import wave 4: 12 cards + art (Indestructible exercised)",
+			"body": "- White: Blacksmith's Skill (grant Indestructible), Thraben Inspector (Battlecry\n  draw)\n- Blue: Frost Lynx (Battlecry freeze an enemy), Sea Gate Oracle (Battlecry draw)\n- Black: Cut Down (destroy a creature with <=3 Attack), Vampire Nighthawk\n  (Deathtouch + Lifesteal)\n- Red: Unholy Heat (2 dmg to a creature), Fervent Champion (1/1 First\n  Strike/Charge), Borderland Marauder (+2/+0 when it attacks), Ash Zealot (2/2\n  First Strike/Charge)\n- Green: Clockwork Fox (Deathrattle draw 2), Rumbling Baloth (4/4)\n\nIndestructible now used by a real card (Blacksmith's Skill grant → survives\nlethal). New shapes verified: grant-keyword, battlecry freeze, conditional\ndestroy (maxAttack), self-attacks temp buff, deathtouch+lifesteal. Art from\nScryfall.",
+			"cards": [
+				{
+					"id": "blacksmith_skill",
+					"name": "Blacksmith's Skill",
+					"type": "instant",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 1,
+					"colors": [
+						"W"
+					]
+				},
+				{
+					"id": "thraben_inspector",
+					"name": "Thraben Inspector",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 1,
+					"colors": [
+						"W"
+					]
+				},
+				{
+					"id": "frost_lynx",
+					"name": "Frost Lynx",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 3,
+					"colors": [
+						"U"
+					]
+				},
+				{
+					"id": "sea_gate_oracle",
+					"name": "Sea Gate Oracle",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 3,
+					"colors": [
+						"U"
+					]
+				},
+				{
+					"id": "cut_down",
+					"name": "Cut Down",
+					"type": "instant",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 1,
+					"colors": [
+						"B"
+					]
+				},
+				{
+					"id": "vampire_nighthawk",
+					"name": "Vampire Nighthawk",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "uncommon",
+					"cost": 3,
+					"colors": [
+						"B"
+					]
+				},
+				{
+					"id": "unholy_heat",
+					"name": "Unholy Heat",
+					"type": "sorcery",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 1,
+					"colors": [
+						"R"
+					]
+				},
+				{
+					"id": "fervent_champion",
+					"name": "Fervent Champion",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "rare",
+					"cost": 1,
+					"colors": [
+						"R"
+					]
+				},
+				{
+					"id": "borderland_marauder",
+					"name": "Borderland Marauder",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 2,
+					"colors": [
+						"R"
+					]
+				},
+				{
+					"id": "ash_zealot",
+					"name": "Ash Zealot",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 2,
+					"colors": [
+						"R"
+					]
+				},
+				{
+					"id": "clockwork_fox",
+					"name": "Clockwork Fox",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 3,
+					"colors": [
+						"G"
+					]
+				},
+				{
+					"id": "rumbling_baloth",
+					"name": "Rumbling Baloth",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 4,
+					"colors": [
+						"G"
+					]
+				}
+			]
+		},
+		{
+			"sha": "9a23be5",
+			"date": "2026-07-22",
+			"kind": "cards",
+			"title": "WUBRG import wave 3: 12 cards + art",
+			"body": "- White: Banisher Priest (O-Ring #2), Raise the Alarm (summon two 1/1),\n  Elite Vanguard (2/1)\n- Blue: Opt (scry 1 + draw), Serum Visions (draw + scry 2), Man-o'-War\n  (Battlecry: bounce a creature)\n- Black: Gravedigger (Battlecry: return a creature from your graveyard)\n- Red: Goblin Guide (2/2 Charge), Abrade (3 dmg to a creature)\n- Green: Acidic Slime (Deathtouch + Battlecry destroy an enemy creature),\n  Beast Within (destroy a creature), Craw Wurm (6/4)\n\nNew shapes exercised: summon-from-spell, graveyard-return (pick), bounce\nbattlecry, deathtouch creature, Charge. All effect-verified in-engine; art from\nScryfall.",
+			"cards": [
+				{
+					"id": "banisher_priest",
+					"name": "Banisher Priest",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "rare",
+					"cost": 3,
+					"colors": [
+						"W"
+					]
+				},
+				{
+					"id": "gravedigger",
+					"name": "Gravedigger",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 4,
+					"colors": [
+						"B"
+					]
+				},
+				{
+					"id": "goblin_guide",
+					"name": "Goblin Guide",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "rare",
+					"cost": 1,
+					"colors": [
+						"R"
+					]
+				},
+				{
+					"id": "abrade",
+					"name": "Abrade",
+					"type": "instant",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 2,
+					"colors": [
+						"R"
+					]
+				},
+				{
+					"id": "acidic_slime",
+					"name": "Acidic Slime",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 5,
+					"colors": [
+						"G"
+					]
+				},
+				{
+					"id": "beast_within",
+					"name": "Beast Within",
+					"type": "instant",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 3,
+					"colors": [
+						"G"
+					]
+				},
+				{
+					"id": "craw_wurm",
+					"name": "Craw Wurm",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 6,
+					"colors": [
+						"G"
+					]
+				}
+			]
+		},
+		{
+			"sha": "0f5f615",
+			"date": "2026-07-22",
+			"kind": "cards",
+			"title": "WUBRG import wave 2: 12 cards + art",
+			"body": "- White: Giant Killer (1/2), Sunlance (3 dmg to a creature)\n- Blue: Vapor Snag (bounce + 1 face), Snap (bounce), Thought Scour (mill 2 +\n  draw), Chart a Course (draw 2)\n- Black: Ravenous Chupacabra (Battlecry destroy an enemy creature), Read the\n  Bones (scry 2 + draw 2 + lose 2), Doom Blade (destroy an enemy creature)\n- Red: Pillar of Flame (2 any), Mogg Fanatic (sacrifice: 1 any), Goblin\n  Arsonist (Deathrattle: 1 to face)\n\nMTG-only riders trimmed to fit (e.g. Sunlance drops \"nonwhite\", Doom Blade drops\n\"nonblack\", Chart a Course drops the attack condition). All effect-verified\nin-engine (destroy/bounce/activated-sacrifice/deathrattle/mill/scry) and art\nfetched from Scryfall.",
+			"cards": [
+				{
+					"id": "giant_killer",
+					"name": "Giant Killer",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 1,
+					"colors": [
+						"W"
+					]
+				},
+				{
+					"id": "sunlance",
+					"name": "Sunlance",
+					"type": "sorcery",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 1,
+					"colors": [
+						"W"
+					]
+				},
+				{
+					"id": "vapor_snag",
+					"name": "Vapor Snag",
+					"type": "instant",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 1,
+					"colors": [
+						"U"
+					]
+				},
+				{
+					"id": "snap",
+					"name": "Snap",
+					"type": "instant",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 2,
+					"colors": [
+						"U"
+					]
+				},
+				{
+					"id": "thought_scour",
+					"name": "Thought Scour",
+					"type": "instant",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 1,
+					"colors": [
+						"U"
+					]
+				},
+				{
+					"id": "chart_a_course",
+					"name": "Chart a Course",
+					"type": "sorcery",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 2,
+					"colors": [
+						"U"
+					]
+				},
+				{
+					"id": "ravenous_chupacabra",
+					"name": "Ravenous Chupacabra",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "rare",
+					"cost": 4,
+					"colors": [
+						"B"
+					]
+				},
+				{
+					"id": "read_the_bones",
+					"name": "Read the Bones",
+					"type": "sorcery",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 3,
+					"colors": [
+						"B"
+					]
+				},
+				{
+					"id": "doom_blade",
+					"name": "Doom Blade",
+					"type": "instant",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 2,
+					"colors": [
+						"B"
+					]
+				},
+				{
+					"id": "pillar_of_flame",
+					"name": "Pillar of Flame",
+					"type": "sorcery",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 1,
+					"colors": [
+						"R"
+					]
+				},
+				{
+					"id": "mogg_fanatic",
+					"name": "Mogg Fanatic",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 1,
+					"colors": [
+						"R"
+					]
+				},
+				{
+					"id": "goblin_arsonist",
+					"name": "Goblin Arsonist",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 1,
+					"colors": [
+						"R"
+					]
+				}
+			]
+		},
+		{
+			"sha": "bec9b6e",
+			"date": "2026-07-22",
+			"kind": "cards",
+			"title": "WUBRG import wave 1: 12 cards + art",
+			"body": "First import wave, exercising the new mechanics end-to-end:\n- Burn: Chain Lightning, Incinerate, Flame Rift, (Lava Spike existed)\n- Draw: Ancestral Recall, Preordain, Ponder\n- Removal: Infernal Grasp, Sign in Blood, Swords to Plowshares\n- O-Ring: Fiend Hunter (exile-until-return)\n- Landfall: Steppe Lynx (+2/+2 on a developed land)\nAlso extended temp-buff to carry health (Giant Growth +3/+3, already in pool).\n\nArt fetched from Scryfall art_crop for all 12; added to art/index.json.\n\nVerified in-engine: every effect resolves (damage/any, all-heroes, draw, scry,\ndestroy+self-loss, exile, O-Ring exile→return on death, landfall temp-buff,\nGiant Growth 3/3→6/6) and Fiend Hunter renders with art in the gallery.",
+			"cards": [
+				{
+					"id": "chain_lightning",
+					"name": "Chain Lightning",
+					"type": "sorcery",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 1,
+					"colors": [
+						"R"
+					]
+				},
+				{
+					"id": "incinerate",
+					"name": "Incinerate",
+					"type": "instant",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 2,
+					"colors": [
+						"R"
+					]
+				},
+				{
+					"id": "flame_rift",
+					"name": "Flame Rift",
+					"type": "sorcery",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 2,
+					"colors": [
+						"R"
+					]
+				},
+				{
+					"id": "ancestral_recall",
+					"name": "Ancestral Recall",
+					"type": "instant",
+					"class": "neutral",
+					"rarity": "rare",
+					"cost": 1,
+					"colors": [
+						"U"
+					]
+				},
+				{
+					"id": "preordain",
+					"name": "Preordain",
+					"type": "sorcery",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 1,
+					"colors": [
+						"U"
+					]
+				},
+				{
+					"id": "ponder",
+					"name": "Ponder",
+					"type": "sorcery",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 1,
+					"colors": [
+						"U"
+					]
+				},
+				{
+					"id": "infernal_grasp",
+					"name": "Infernal Grasp",
+					"type": "instant",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 2,
+					"colors": [
+						"B"
+					]
+				},
+				{
+					"id": "sign_in_blood",
+					"name": "Sign in Blood",
+					"type": "sorcery",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 2,
+					"colors": [
+						"B"
+					]
+				},
+				{
+					"id": "swords_to_plowshares",
+					"name": "Swords to Plowshares",
+					"type": "instant",
+					"class": "neutral",
+					"rarity": "uncommon",
+					"cost": 1,
+					"colors": [
+						"W"
+					]
+				},
+				{
+					"id": "fiend_hunter",
+					"name": "Fiend Hunter",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "rare",
+					"cost": 3,
+					"colors": [
+						"W"
+					]
+				},
+				{
+					"id": "steppe_lynx",
+					"name": "Steppe Lynx",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 1,
+					"colors": [
+						"W"
+					]
+				},
+				{
+					"id": "centaur_courser",
+					"name": "Centaur Courser",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 3,
+					"colors": [
+						"G"
+					]
+				}
+			]
+		},
+		{
+			"sha": "0bc59cb",
+			"date": "2026-07-22",
+			"kind": "patch",
+			"title": "Engine: add Indestructible, Landfall, and exile-until-return (O-Ring)",
+			"body": "Foundation for the WUBRG import wave. Three MTG mechanics the EASY list needs:\n\n- Indestructible (keyword): lethal damage and \"destroy\" effects don't kill it;\n  only a sacrifice (sets c.sacrificed) does. Handled in isDead.\n- Landfall: buyLand now fires a 'landfall' ongoing trigger, so cards with\n  ongoing {on:'landfall', ...} react to a land you develop.\n- exile-until-return (O-Ring): a battlecry exiles a target creature and records\n  it on the source; when the source leaves play (sweepDeaths), the creature\n  returns as a fresh permanent. Added to the target-spec map.\n\n(+1/+1 counters already existed via add-counters / can just be a +1/+1 buff.)\n\nVerified in-engine: indestructible survives lethal + dies to sacrifice; landfall\nbuffs +2/+2 on a developed land; O-Ring exiles a 5/5 then returns it when the\nring dies.",
+			"cards": []
+		},
+		{
+			"sha": "71b786f",
+			"date": "2026-07-22",
+			"kind": "patch",
+			"title": "Rename planes: Lethe Lake -> Oberaqua, Fields of Summer -> Elysaria",
+			"body": "Display names only; ids (lethe_lake, fields_of_summer) and their effects\nunchanged. Comments updated too.",
+			"cards": []
+		},
+		{
+			"sha": "496ee7f",
+			"date": "2026-07-22",
+			"kind": "patch",
+			"title": "Rename plane The Hippodrome -> Hippogyia",
+			"body": "Display name only; id (the_hippodrome) and the -5 Attack aura staticRule\nunchanged.",
+			"cards": []
+		},
+		{
+			"sha": "9193066",
+			"date": "2026-07-22",
+			"kind": "patch",
+			"title": "Oxmorg: Chaos = each player loses 2 life, Departure = each player loses 5 life",
+			"body": "Both retargeted from enemy-heroes to all-heroes (each player) and reworded.",
+			"cards": []
+		},
+		{
+			"sha": "02b3212",
+			"date": "2026-07-22",
+			"kind": "patch",
+			"title": "Rename plane Stronghold Furnace -> Oxmorg",
+			"body": "Display name only; the id (stronghold_furnace) and the double-damage staticRule\nare unchanged, so nothing that references the plane breaks.",
+			"cards": []
+		},
+		{
+			"sha": "7bbd8e5",
+			"date": "2026-07-22",
+			"kind": "patch",
+			"title": "Card text: one effect per line + \"&\" for \"and\" (collection-wide)",
+			"body": "Reformatted 572 card descriptions:\n- Each ability/effect starts on its own line — leading keyword abilities peel off\n  (e.g. \"Taunt Battlecry:\" -> \"Taunt\" / \"Battlecry:\", \"Charge. Divine Shield.\n  Taunt. Windfury.\" -> four lines), and colon-triggers split (Battlecry,\n  Deathrattle, Spellburst, Quest/Reward, etc.). Multi-clause effect bodies (a\n  single Battlecry that does two things, conditionals like \"...deal 2 more\") are\n  left intact so nothing gets wrongly separated.\n- \"and\" -> \"&\" wherever it's a standalone word.\n\nChoose One / bulleted / rune-weapon / Equip Hero texts are left as-is. Verified:\n0 anomalies, JSON valid, 0 remaining \" and \" in descriptions, and a 4-keyword\ncard still fits its rules box.",
+			"cards": []
+		},
+		{
+			"sha": "695c524",
+			"date": "2026-07-22",
+			"kind": "patch",
+			"title": "Sokenzan: Chaos summons two 2/1 Dragons for each player",
+			"body": "Adds eachPlayer to the Chaos summon (engine already supports it), matching the\nArrival's each-player behavior.",
+			"cards": []
+		},
+		{
+			"sha": "a7f45f1",
+			"date": "2026-07-22",
+			"kind": "patch",
+			"title": "Sokenzan: Chaos summons two 2/1 Dragon tokens (no Rush)",
+			"body": "Matches the Dragon-token Arrival. Base tokens carry no Rush (the plane's aura\nstill grants Rush while it's active).",
+			"cards": []
+		},
+		{
+			"sha": "8bcacab",
+			"date": "2026-07-22",
+			"kind": "patch",
+			"title": "Sokenzan: each player summons a 2/1 Dragon; Departure = each player loses 2 life",
+			"body": "- Arrival now reads \"Each player summons a 2/1 Dragon creature token\" and does\n  exactly that (summon effect gains an `eachPlayer` option; token is a 2/1\n  Dragon). Previously only the arriving player got a 2/1.\n- Departure changed from \"Deal 2 damage to the enemy hero\" to \"Each player loses\n  2 life\" (damage target all-heroes).\n\nVerified in-engine: arrival gives both players a 2/1 Dragon; departure drops\nboth heroes by 2.",
+			"cards": []
+		},
+		{
+			"sha": "81c7cb6",
+			"date": "2026-07-22",
+			"kind": "patch",
+			"title": "Bloomburrow: \"Humans can't attack\" as a proper staticRule",
+			"body": "The effect already worked via a one-off noAttackTribe field on the card, but it\nwasn't a staticRule like the other planes' ongoing abilities. Converted it:\nbloomburrow gets staticRule { kind:'cant-attack', tribe:'Human' }, canAttackWith\nchecks the active plane's staticRule for that kind, and the now-unused\nnoAttackTribe field + engine check are removed.\n\nVerified: under Bloomburrow a Human(-tribe) creature can't attack, a Beast can,\nand the restriction lifts once the plane departs.",
+			"cards": []
+		},
+		{
+			"sha": "c473a59",
+			"date": "2026-07-22",
+			"kind": "patch",
+			"title": "Planes: each ability on its own line",
+			"body": "5 planes bundled their ongoing/triggered ability onto the Arrival line. Split\nthem so every ability (Arrival / the static rule / Chaos / Departure) starts on\na new line, matching the other 9 planes: alkabah, bloomburrow, primordia,\nbelenon, zendikar. Display-only (mechanics live in the structured\narrival/chaos/departure/staticRule fields) — no gameplay change.",
+			"cards": []
+		},
 		{
 			"sha": "32a5886",
 			"date": "2026-07-22",
@@ -108,7 +3778,7 @@
 					"id": "cram_session",
 					"name": "Cram Session",
 					"type": "sorcery",
-					"class": "neutral",
+					"class": "mage",
 					"rarity": "rare",
 					"cost": 2
 				},
@@ -124,7 +3794,7 @@
 					"id": "molten_blast",
 					"name": "Molten Blast",
 					"type": "sorcery",
-					"class": "neutral",
+					"class": "shaman",
 					"rarity": "rare",
 					"cost": 3
 				},
@@ -132,7 +3802,7 @@
 					"id": "boneweb_egg",
 					"name": "Boneweb Egg",
 					"type": "creature",
-					"class": "neutral",
+					"class": "warlock",
 					"rarity": "rare",
 					"cost": 2
 				},
@@ -140,7 +3810,7 @@
 					"id": "survival_of_the_fittest",
 					"name": "Survival of the Fittest",
 					"type": "sorcery",
-					"class": "neutral",
+					"class": "druid",
 					"rarity": "epic",
 					"cost": 10
 				},
@@ -156,7 +3826,7 @@
 					"id": "adorable_infestation",
 					"name": "Adorable Infestation",
 					"type": "sorcery",
-					"class": "neutral",
+					"class": "hunter",
 					"rarity": "common",
 					"cost": 1
 				},
@@ -172,7 +3842,7 @@
 					"id": "groundskeeper",
 					"name": "Groundskeeper",
 					"type": "creature",
-					"class": "neutral",
+					"class": "druid",
 					"rarity": "rare",
 					"cost": 4
 				},
@@ -180,7 +3850,7 @@
 					"id": "diligent_notetaker",
 					"name": "Diligent Notetaker",
 					"type": "creature",
-					"class": "neutral",
+					"class": "shaman",
 					"rarity": "rare",
 					"cost": 2
 				},
@@ -188,7 +3858,7 @@
 					"id": "gibberling",
 					"name": "Gibberling",
 					"type": "creature",
-					"class": "neutral",
+					"class": "druid",
 					"rarity": "common",
 					"cost": 2
 				}
@@ -205,7 +3875,7 @@
 					"id": "ball_and_chain",
 					"name": "Ball and Chain",
 					"type": "weapon",
-					"class": "neutral",
+					"class": "warrior",
 					"rarity": "common",
 					"cost": 1
 				},
@@ -213,7 +3883,7 @@
 					"id": "widows_bite",
 					"name": "Widow's Bite",
 					"type": "sorcery",
-					"class": "neutral",
+					"class": "druid",
 					"rarity": "common",
 					"cost": 2
 				},
@@ -221,7 +3891,7 @@
 					"id": "bone_flurry",
 					"name": "Bone Flurry",
 					"type": "sorcery",
-					"class": "neutral",
+					"class": "death_knight",
 					"rarity": "common",
 					"cost": 2
 				},
@@ -229,7 +3899,7 @@
 					"id": "crowd_control",
 					"name": "Crowd Control",
 					"type": "sorcery",
-					"class": "neutral",
+					"class": "warrior",
 					"rarity": "rare",
 					"cost": 3
 				},
@@ -408,7 +4078,7 @@
 					"id": "arcane_artisan",
 					"name": "Arcane Artisan",
 					"type": "creature",
-					"class": "neutral",
+					"class": "sorcerer",
 					"rarity": "rare",
 					"cost": 3
 				}
@@ -425,7 +4095,7 @@
 					"id": "furious_lutrin",
 					"name": "Furious Lutrin",
 					"type": "creature",
-					"class": "neutral",
+					"class": "barbarian",
 					"rarity": "common",
 					"cost": 3
 				}

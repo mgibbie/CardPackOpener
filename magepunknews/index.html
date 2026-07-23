@@ -139,8 +139,11 @@ const fmtDate = iso => new Date(iso + 'T12:00:00').toLocaleDateString('en-US', {
 const cap = s => s.charAt(0).toUpperCase() + s.slice(1);
 let entries = [], filter = 'all';
 
+const COLOR_NAMES = { W: 'White', U: 'Blue', B: 'Black', R: 'Red', G: 'Green' };
 function cardChip(c) {
-	const cls = (c.class || 'neutral').split('__').map(cap).join(' / ');
+	const cls = c.colors && c.colors.length
+		? c.colors.map(x => COLOR_NAMES[x] || x).join('/')
+		: (c.class || 'neutral').split('__').map(cap).join(' / ');
 	return `<a class="card-chip" href="/designwiki/#/cards/${esc(c.id)}">` +
 		(c.cost != null ? `<span class="cost">${esc(c.cost)}</span>` : '') +
 		`<span class="r-${esc(c.rarity)}">${esc(c.name)}</span>` +
