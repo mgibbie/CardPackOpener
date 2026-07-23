@@ -59925,6 +59925,72 @@
           }
         ]
       }
+    },
+    {
+      "id": "chardalyn_dragon",
+      "name": "Chardalyn Dragon",
+      "type": "creature",
+      "cost": 6,
+      "colors": [
+        "G"
+      ],
+      "cardClass": "neutral",
+      "attack": 4,
+      "health": 4,
+      "rarity": "common",
+      "set": "wubrg",
+      "tribe": "Dragon",
+      "keywords": [
+        "flying"
+      ],
+      "description": "Flying."
+    },
+    {
+      "id": "questing_beast",
+      "name": "Questing Beast",
+      "type": "creature",
+      "cost": 4,
+      "colors": [
+        "G"
+      ],
+      "cardClass": "neutral",
+      "attack": 4,
+      "health": 4,
+      "rarity": "mythic",
+      "set": "wubrg",
+      "tribe": "Beast",
+      "keywords": [
+        "vigilance",
+        "deathtouch",
+        "charge"
+      ],
+      "description": "Vigilance, Deathtouch, Haste."
+    },
+    {
+      "id": "reito_sentinel",
+      "name": "Reito Sentinel",
+      "type": "creature",
+      "cost": 3,
+      "colors": [
+        "G"
+      ],
+      "cardClass": "neutral",
+      "attack": 3,
+      "health": 3,
+      "rarity": "common",
+      "set": "wubrg",
+      "tribe": "Construct",
+      "keywords": [
+        "defender",
+        "battlecry"
+      ],
+      "description": "Defender.\nBattlecry: The enemy mills three cards.",
+      "effects": [
+        {
+          "type": "mill",
+          "value": 3
+        }
+      ]
     }
   ]
 }
