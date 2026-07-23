@@ -59231,6 +59231,251 @@
           }
         ]
       }
+    },
+    {
+      "id": "doomed_traveler",
+      "name": "Doomed Traveler",
+      "type": "creature",
+      "cost": 1,
+      "colors": [
+        "W"
+      ],
+      "cardClass": "neutral",
+      "attack": 1,
+      "health": 1,
+      "rarity": "common",
+      "set": "wubrg",
+      "tribe": "Human Soldier",
+      "keywords": [
+        "deathrattle"
+      ],
+      "description": "Deathrattle: Summon a 1/1 Spirit with Flying.",
+      "effects": [
+        {
+          "type": "summon",
+          "count": 1,
+          "attack": 1,
+          "health": 1,
+          "name": "Spirit",
+          "tribe": "Spirit",
+          "keywords": [
+            "flying"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "kor_hookmaster",
+      "name": "Kor Hookmaster",
+      "type": "creature",
+      "cost": 3,
+      "colors": [
+        "W"
+      ],
+      "cardClass": "neutral",
+      "attack": 2,
+      "health": 2,
+      "rarity": "common",
+      "set": "wubrg",
+      "tribe": "Kor Soldier",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Tap an enemy creature (it can't attack next turn).",
+      "effects": [
+        {
+          "type": "freeze",
+          "target": "enemy-creature"
+        }
+      ]
+    },
+    {
+      "id": "spectral_procession",
+      "name": "Spectral Procession",
+      "type": "sorcery",
+      "cost": 6,
+      "colors": [
+        "W"
+      ],
+      "cardClass": "neutral",
+      "rarity": "uncommon",
+      "set": "wubrg",
+      "description": "Summon three 1/1 Spirits with Flying.",
+      "effects": [
+        {
+          "type": "summon",
+          "count": 3,
+          "attack": 1,
+          "health": 1,
+          "name": "Spirit",
+          "tribe": "Spirit",
+          "keywords": [
+            "flying"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "midnight_haunting",
+      "name": "Midnight Haunting",
+      "type": "instant",
+      "cost": 3,
+      "colors": [
+        "W"
+      ],
+      "cardClass": "neutral",
+      "rarity": "common",
+      "set": "wubrg",
+      "description": "Summon two 1/1 Spirits with Flying.",
+      "effects": [
+        {
+          "type": "summon",
+          "count": 2,
+          "attack": 1,
+          "health": 1,
+          "name": "Spirit",
+          "tribe": "Spirit",
+          "keywords": [
+            "flying"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "cathars_crusade",
+      "name": "Cathars' Crusade",
+      "type": "enchantment",
+      "cost": 5,
+      "colors": [
+        "W"
+      ],
+      "cardClass": "neutral",
+      "rarity": "rare",
+      "set": "wubrg",
+      "description": "Whenever a creature you control enters, give your creatures +1/+1.",
+      "ongoing": {
+        "on": "summoned",
+        "effects": [
+          {
+            "type": "buff",
+            "target": "friendly-creatures",
+            "attack": 1,
+            "health": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "ajanis_pridemate",
+      "name": "Ajani's Pridemate",
+      "type": "creature",
+      "cost": 2,
+      "colors": [
+        "W"
+      ],
+      "cardClass": "neutral",
+      "attack": 2,
+      "health": 2,
+      "rarity": "uncommon",
+      "set": "wubrg",
+      "tribe": "Cat Soldier",
+      "keywords": [],
+      "description": "Whenever you gain life, this creature gets +1/+1.",
+      "ongoing": {
+        "on": "healed",
+        "effects": [
+          {
+            "type": "add-counters",
+            "target": "self",
+            "value": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "kor_scythemaster",
+      "name": "Kor Scythemaster",
+      "type": "creature",
+      "cost": 3,
+      "colors": [
+        "W"
+      ],
+      "cardClass": "neutral",
+      "attack": 3,
+      "health": 1,
+      "rarity": "common",
+      "set": "wubrg",
+      "tribe": "Kor Soldier",
+      "keywords": [
+        "first_strike"
+      ],
+      "description": "First strike."
+    },
+    {
+      "id": "serra_avenger",
+      "name": "Serra Avenger",
+      "type": "creature",
+      "cost": 2,
+      "colors": [
+        "W"
+      ],
+      "cardClass": "neutral",
+      "attack": 3,
+      "health": 3,
+      "rarity": "rare",
+      "set": "wubrg",
+      "tribe": "Angel",
+      "keywords": [
+        "flying",
+        "vigilance"
+      ],
+      "description": "Flying, Vigilance."
+    },
+    {
+      "id": "idyllic_tutor",
+      "name": "Idyllic Tutor",
+      "type": "sorcery",
+      "cost": 3,
+      "colors": [
+        "W"
+      ],
+      "cardClass": "neutral",
+      "rarity": "uncommon",
+      "set": "wubrg",
+      "description": "Search your deck for an enchantment & put it into your hand.",
+      "effects": [
+        {
+          "type": "search",
+          "cardType": "enchantment",
+          "to": "hand"
+        }
+      ]
+    },
+    {
+      "id": "kor_skyfisher",
+      "name": "Kor Skyfisher",
+      "type": "creature",
+      "cost": 2,
+      "colors": [
+        "W"
+      ],
+      "cardClass": "neutral",
+      "attack": 2,
+      "health": 3,
+      "rarity": "common",
+      "set": "wubrg",
+      "tribe": "Kor Soldier",
+      "keywords": [
+        "flying",
+        "battlecry"
+      ],
+      "description": "Flying.\nBattlecry: Return a permanent to its owner's hand.",
+      "effects": [
+        {
+          "type": "bounce",
+          "target": "permanent"
+        }
+      ]
     }
   ]
 }
