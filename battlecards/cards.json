@@ -58531,6 +58531,22 @@
           }
         ]
       }
+    },
+    {
+      "id": "ghostly_prison",
+      "name": "Ghostly Prison",
+      "type": "enchantment",
+      "cost": 3,
+      "colors": [
+        "W"
+      ],
+      "cardClass": "neutral",
+      "rarity": "rare",
+      "set": "wubrg",
+      "attackTax": {
+        "amount": 2
+      },
+      "description": "Creatures can't attack you unless their controller pays 2 for each attacking creature."
     }
   ]
 }

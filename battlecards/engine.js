@@ -155,6 +155,7 @@ function instantiate(def, controller) {
 		quest: def.quest || null,   // quest: { goal: { type, count }, reward }
 		ongoing: def.ongoing || null, // permanent trigger: { on, effects }
 		static: def.static || null,   // permanent passive (e.g. reduce-hero-damage)
+		attackTax: def.attackTax ? { ...def.attackTax } : null, // Ghostly Prison: cost to attack this controller's hero
 		costMod: def.costMod || null, // board cost aura: { cardType, amount, scope, floor?, firstEachTurn? }
 		selfCost: def.selfCost || null, // self-scaling printed cost: { per, amount }
 		enrage: def.enrage || null,   // while damaged: { attack?, health?, keywords?, weaponAttack? }
@@ -4688,6 +4689,16 @@ export function canAttackWith(state, pi, c) {
 // legal attack targets, honoring taunt and stealth; rush = creatures only while
 // sick. Free-for-all: any opponent is attackable; a player's taunts only
 // protect their own slice.
+// Ghostly Prison-style tax: what it costs pi to send a creature at defenderPi's hero
+function heroAttackTax(state, defenderPi) {
+	const p = state.players[defenderPi];
+	let tax = 0;
+	for (const c of [...p.enchantments, ...p.artifacts, ...p.board]) {
+		if (c.attackTax && !(c.zone === 'board' && isDead(c))) tax += c.attackTax.amount || 0;
+	}
+	return tax;
+}
+
 export function attackTargets(state, pi, attacker) {
 	const out = [];
 	const rushOnly = attacker.sick && has(attacker, KW.RUSH) && !has(attacker, KW.CHARGE);
@@ -4698,7 +4709,9 @@ export function attackTargets(state, pi, attacker) {
 		out.push(...(taunts.length ? taunts : board).map(c => ({ type: 'creature', uid: c.uid, player: opp })));
 		if (!taunts.length) {
 			for (const w of state.players[opp].planeswalkers) out.push({ type: 'walker', uid: w.uid, player: opp });
-			if (!rushOnly) out.push({ type: 'hero', player: opp });
+			// the hero is only a legal target if pi can afford the attack tax (Ghostly Prison)
+			const tax = heroAttackTax(state, opp);
+			if (!rushOnly && (tax === 0 || availableMana(state.players[pi]) >= tax)) out.push({ type: 'hero', player: opp });
 		}
 	}
 	return out;
@@ -4709,6 +4722,16 @@ export function attack(state, pi, attackerUid, target) {
 	if (!attacker || !canAttackWith(state, pi, attacker)) return false;
 	const legal = attackTargets(state, pi, attacker);
 	if (!legal.some(t => t.type === target.type && t.uid === target.uid && t.player === target.player)) return false;
+
+	// Ghostly Prison: pay the attack tax as an additional cost of declaring at the hero
+	if (target.type === 'hero') {
+		const tax = heroAttackTax(state, target.player);
+		if (tax > 0) {
+			if (availableMana(state.players[pi]) < tax) return false; // can't afford: declaration is illegal
+			spendMana(state.players[pi], tax);
+			emit(state, { type: 'attackTaxPaid', player: pi, defender: target.player, amount: tax });
+		}
+	}
 
 	attacker.attacksUsed++;
 	attacker.stealthed = false;
