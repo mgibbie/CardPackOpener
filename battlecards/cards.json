@@ -59716,6 +59716,115 @@
           "value": 3
         }
       ]
+    },
+    {
+      "id": "ball_lightning",
+      "name": "Ball Lightning",
+      "type": "creature",
+      "cost": 3,
+      "colors": [
+        "R"
+      ],
+      "cardClass": "neutral",
+      "attack": 6,
+      "health": 1,
+      "rarity": "rare",
+      "set": "wubrg",
+      "tribe": "Elemental",
+      "keywords": [
+        "charge",
+        "trample"
+      ],
+      "description": "Haste, Trample.\nSacrificed at the end of your turn.",
+      "ongoing": {
+        "on": "turn-end",
+        "effects": [
+          {
+            "type": "damage-self",
+            "value": 99
+          }
+        ]
+      }
+    },
+    {
+      "id": "spark_elemental",
+      "name": "Spark Elemental",
+      "type": "creature",
+      "cost": 1,
+      "colors": [
+        "R"
+      ],
+      "cardClass": "neutral",
+      "attack": 3,
+      "health": 1,
+      "rarity": "common",
+      "set": "wubrg",
+      "tribe": "Elemental",
+      "keywords": [
+        "charge",
+        "trample"
+      ],
+      "description": "Haste, Trample.\nSacrificed at the end of your turn.",
+      "ongoing": {
+        "on": "turn-end",
+        "effects": [
+          {
+            "type": "damage-self",
+            "value": 99
+          }
+        ]
+      }
+    },
+    {
+      "id": "gamble",
+      "name": "Gamble",
+      "type": "sorcery",
+      "cost": 1,
+      "colors": [
+        "R"
+      ],
+      "cardClass": "neutral",
+      "rarity": "rare",
+      "set": "wubrg",
+      "description": "Search your deck for a card & put it into your hand, then discard a card at random.",
+      "effects": [
+        {
+          "type": "search",
+          "to": "hand"
+        },
+        {
+          "type": "discard-random",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "pulverize",
+      "name": "Pulverize",
+      "type": "sorcery",
+      "cost": 6,
+      "colors": [
+        "R"
+      ],
+      "cardClass": "neutral",
+      "rarity": "uncommon",
+      "set": "wubrg",
+      "altCost": {
+        "label": "Sacrifice two Mountains",
+        "sacrificeLand": {
+          "color": "R",
+          "count": 2
+        }
+      },
+      "description": "You may sacrifice two Mountains rather than pay this spell's cost.\nDestroy all artifacts.",
+      "effects": [
+        {
+          "type": "destroy-art-ench",
+          "scope": "all",
+          "count": "all",
+          "only": "artifact"
+        }
+      ]
     }
   ]
 }
