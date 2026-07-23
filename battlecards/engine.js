@@ -1406,6 +1406,7 @@ function ongoingCondOk(state, pi, cond, ctx) {
 	if (cond.overload && !(subj && subj.overload > 0)) return false;
 	if (cond.cardType && !(subj && subj.type === cond.cardType)) return false;
 	if (cond.keyword && !(subj && (subj.keywords || []).includes(cond.keyword))) return false; // Undertaker: a Deathrattle minion
+	if (cond.maxHealthSubj != null && !(subj && hp(subj) <= cond.maxHealthSubj)) return false; // Steward of Darkshire: a 1-Health minion
 	if (cond.spellCost != null && !(subj && (subj.cost || 0) === cond.spellCost)) return false; // Gazlowe: a 1-Cost spell
 	if (cond.controlSecret && !state.players[pi].secrets.length) return false;
 	if (cond.creature && !ctx.healedCreature) return false; // "whenever a MINION is healed"
@@ -3054,6 +3055,7 @@ function execEffects(state, pi, effects, target, source) {
 				else if (e.per === 'enemy-deathrattle') n = state.players.reduce((s, pl, idx) =>
 					idx === pi ? s : s + pl.board.filter(c => !isDead(c) && c.keywords.includes('deathrattle')).length, 0);
 				else if (e.per === 'friendly-tribe') n = state.players[pi].board.filter(c => c !== source && !isDead(c) && (c.tribe || '').includes(e.tribe)).length; // Draenei Totemcarver
+				else if (e.per === 'enemy-creatures') n = state.players.reduce((s, pl, idx) => idx === pi ? s : s + pl.board.filter(c => !isDead(c) && c.type !== 'location').length, 0); // Cyclopian Horror
 				if (n > 0) buffCreature(source, (e.attack || 0) * n, (e.health || 0) * n);
 			}
 		} else if (e.type === 'buff-self-random') {

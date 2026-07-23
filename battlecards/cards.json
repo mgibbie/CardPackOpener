@@ -66067,6 +66067,346 @@
           "count": 3
         }
       ]
+    },
+    {
+      "id": "disciple_of_cthun",
+      "name": "Disciple of C\u2019Thun",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "neutral",
+      "attack": 2,
+      "health": 2,
+      "rarity": "rare",
+      "set": "OG",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Deal 2 damage. Give your C'Thun +2/+2 (wherever it is).",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 2,
+          "target": "creature"
+        },
+        {
+          "type": "buff-cthun",
+          "value": 2
+        }
+      ]
+    },
+    {
+      "id": "cult_sorcerer",
+      "name": "Cult Sorcerer",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "mage",
+      "attack": 3,
+      "health": 2,
+      "rarity": "rare",
+      "set": "OG",
+      "description": "Spell Damage +1. After you cast a spell, give your C'Thun +1/+1.",
+      "static": {
+        "type": "spell-damage",
+        "value": 1
+      },
+      "ongoing": {
+        "on": "spell-played",
+        "effects": [
+          {
+            "type": "buff-cthun",
+            "value": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "klaxxi_amber_weaver",
+      "name": "Klaxxi Amber-Weaver",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "druid",
+      "attack": 4,
+      "health": 5,
+      "rarity": "rare",
+      "set": "OG",
+      "keywords": [
+        "taunt",
+        "battlecry"
+      ],
+      "description": "Taunt. Battlecry: If your C'Thun has at least 10 Attack, gain +5 Health.",
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "cthunMinAttack": 10
+          },
+          "then": [
+            {
+              "type": "buff-self",
+              "attack": 0,
+              "health": 5
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "crazed_worshipper",
+      "name": "Crazed Worshipper",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "neutral",
+      "attack": 3,
+      "health": 6,
+      "rarity": "epic",
+      "set": "OG",
+      "keywords": [
+        "taunt"
+      ],
+      "description": "Taunt. Whenever this creature takes damage, give your C'Thun +2/+2 (wherever it is).",
+      "ongoing": {
+        "on": "self-damaged",
+        "effects": [
+          {
+            "type": "buff-cthun",
+            "value": 2
+          }
+        ]
+      }
+    },
+    {
+      "id": "hooded_acolyte",
+      "name": "Hooded Acolyte",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "priest",
+      "attack": 3,
+      "health": 6,
+      "rarity": "common",
+      "set": "OG",
+      "keywords": [
+        "taunt"
+      ],
+      "description": "Taunt. Whenever a character is healed, give your C'Thun +1/+1 (wherever it is).",
+      "ongoing": {
+        "on": "healed",
+        "effects": [
+          {
+            "type": "buff-cthun",
+            "value": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "twin_emperor_veklor",
+      "name": "Twin Emperor Vek\u2019lor",
+      "type": "creature",
+      "cost": 7,
+      "cardClass": "neutral",
+      "attack": 6,
+      "health": 7,
+      "rarity": "legendary",
+      "set": "OG",
+      "tribe": "Dragon",
+      "keywords": [
+        "taunt",
+        "battlecry"
+      ],
+      "description": "Taunt. Battlecry: If your C'Thun has at least 10 Attack, summon another Twin Emperor.",
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "cthunMinAttack": 10
+          },
+          "then": [
+            {
+              "type": "summon",
+              "count": 1,
+              "summonId": "twin_emperor_veklor"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "doomcaller",
+      "name": "Doomcaller",
+      "type": "creature",
+      "cost": 8,
+      "cardClass": "neutral",
+      "attack": 7,
+      "health": 9,
+      "rarity": "rare",
+      "set": "OG",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Give your C'Thun +2/+2 (wherever it is).",
+      "effects": [
+        {
+          "type": "buff-cthun",
+          "value": 2
+        }
+      ]
+    },
+    {
+      "id": "addled_grizzly",
+      "name": "Addled Grizzly",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "druid",
+      "attack": 2,
+      "health": 2,
+      "rarity": "rare",
+      "set": "OG",
+      "tribe": "Beast",
+      "description": "After you summon a Beast, give it +1/+1.",
+      "ongoing": {
+        "on": "summoned",
+        "if": {
+          "tribe": "Beast"
+        },
+        "effects": [
+          {
+            "type": "buff-minion",
+            "attack": 1,
+            "health": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "steward_of_darkshire",
+      "name": "Steward of Darkshire",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "paladin",
+      "attack": 4,
+      "health": 3,
+      "rarity": "rare",
+      "set": "OG",
+      "description": "Whenever you summon a 1-Health creature, give it Divine Shield.",
+      "ongoing": {
+        "on": "summoned",
+        "if": {
+          "maxHealthSubj": 1
+        },
+        "effects": [
+          {
+            "type": "grant-minion",
+            "keyword": "divine_shield"
+          }
+        ]
+      }
+    },
+    {
+      "id": "midnight_drake",
+      "name": "Midnight Drake",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "neutral",
+      "attack": 1,
+      "health": 4,
+      "rarity": "rare",
+      "set": "OG",
+      "tribe": "Dragon",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Gain +1 Attack for each other card in your hand.",
+      "effects": [
+        {
+          "type": "buff-self",
+          "per": "hand-cards",
+          "attack": 1,
+          "health": 0
+        }
+      ]
+    },
+    {
+      "id": "blackwater_pirate",
+      "name": "Blackwater Pirate",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "neutral",
+      "attack": 2,
+      "health": 5,
+      "rarity": "rare",
+      "set": "OG",
+      "tribe": "Pirate",
+      "description": "Your weapons cost (2) less.",
+      "costMod": {
+        "cardType": "weapon",
+        "amount": -2,
+        "scope": "own"
+      }
+    },
+    {
+      "id": "malkorok",
+      "name": "Malkorok",
+      "type": "creature",
+      "cost": 7,
+      "cardClass": "warrior",
+      "attack": 6,
+      "health": 5,
+      "rarity": "legendary",
+      "set": "OG",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Equip a random weapon.",
+      "effects": [
+        {
+          "type": "equip-random"
+        }
+      ]
+    },
+    {
+      "id": "cyclopian_horror",
+      "name": "Cyclopian Horror",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "neutral",
+      "attack": 3,
+      "health": 3,
+      "rarity": "epic",
+      "set": "OG",
+      "keywords": [
+        "taunt",
+        "battlecry"
+      ],
+      "description": "Taunt. Battlecry: Gain +1 Health for each enemy creature.",
+      "effects": [
+        {
+          "type": "buff-self",
+          "per": "enemy-creatures",
+          "attack": 0,
+          "health": 1
+        }
+      ]
+    },
+    {
+      "id": "selfless_hero",
+      "name": "Selfless Hero",
+      "type": "creature",
+      "cost": 1,
+      "cardClass": "paladin",
+      "attack": 2,
+      "health": 1,
+      "rarity": "rare",
+      "set": "OG",
+      "keywords": [
+        "deathrattle"
+      ],
+      "description": "Deathrattle: Give a random friendly creature Divine Shield.",
+      "deathrattle": [
+        {
+          "type": "grant",
+          "keyword": "divine_shield"
+        }
+      ]
     }
   ]
 }
