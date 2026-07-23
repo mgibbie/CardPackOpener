@@ -1,0 +1,492 @@
+{
+	"generated": "2026-07-22",
+	"entries": [
+		{
+			"sha": "32a5886",
+			"date": "2026-07-22",
+			"kind": "patch",
+			"title": "Keywords: split Deathtouch / Venomous / Poisonous (+ Poisoned condition)",
+			"body": "They were all the same instant-kill. Now distinct:\n- Deathtouch: any damage it deals to a creature destroys it (persistent).\n- Venomous: same, but one-shot — spent after the first kill (like Divine Shield),\n  and removed from the creature.\n- Poisonous: doesn't kill outright — it applies the Poisoned condition.\n- Poisoned: at the end of its controller's turn the creature takes 2 damage;\n  persists until cleansed or dead.\n\nThe old `poisoned` flag (which actually meant \"marked for death\") is renamed to\n`doomed`; `poisoned` now means the real condition. Added KW.VENOMOUS, the\nend-of-turn poison tick, split the keyword glossary into four entries, and\ntaught the AI that Venomous (not Poisonous) counts as a kill.\n\nVerified in-engine: 1-attack deathtouch/venomous each kill a 10-HP wall;\nvenomous is consumed after; poisonous leaves the wall alive+poisoned; the poison\ndeals 2 at the end of the controller's turn.",
+			"cards": []
+		},
+		{
+			"sha": "c0728bc",
+			"date": "2026-07-22",
+			"kind": "patch",
+			"title": "Decks: optional commander + companion (40 + 1 + 1 = 42)",
+			"body": "Each deck may bring one commander and one companion — both optional, each in its\nown zone alongside the 40-card deck, so the true max is 42.\n\n- Engine: createGame takes a per-player `loadouts` arg; when supplied it uses the\n  chosen commander/companion (or none), otherwise it keeps the legacy random\n  deal for single-player/dungeon. Verified both paths.\n- Deckbuilder: COMMANDER / COMPANION slots under the deck name open a picker of\n  the class's commander/companion cards (rendered faces); equip/remove updates\n  the count to \"40 / 40 (+2 = 42)\". Stored on the deck slot; validated (right\n  kind + class) client- and server-side.\n- MP: challenge party, accept-challenge match config, and the duel boot all\n  carry hostCommander/hostCompanion + guestCommander/guestCompanion; mp.mjs\n  validates via new loadout-cards.json and stores them on the slot.\n\nVerified: engine uses chosen loadout (p0) and empty for a deck with none (p1);\ndeckbuilder equips Sheriff Goldie + Dusty the Coyote, count shows +2 = 42, save\npersists both. Live two-client duel with loadouts still needs a realm test.",
+			"cards": []
+		},
+		{
+			"sha": "8d5b393",
+			"date": "2026-07-21",
+			"kind": "patch",
+			"title": "Deckbuilder: drag cards to add, tap/click opens the card page",
+			"body": "- Tap/click a card opens its detail page (big face, type line, rules with\n  keyword explanations, owned count) with an + Add to Deck button and Close.\n- Building is now drag-driven: on desktop, drag a card onto the deck panel to\n  add it (HTML5 DnD, panel highlights on hover); on touch, long-press a card\n  and drag it onto the deck panel / DECK button (a ghost follows your finger,\n  short moves still scroll the grid). Adding switches the panel to the deck\n  editor so you see the card land.\n- The + Add to Deck button on the card page is the easy add path on mobile.\n\nVerified headless (mouse mode): tiles are draggable; click opens the page;\nAdd-to-Deck grows the deck and updates the owned line; a drop on the deck panel\nadds the card and reveals the editor. 0 errors.",
+			"cards": []
+		},
+		{
+			"sha": "683acd0",
+			"date": "2026-07-21",
+			"kind": "patch",
+			"title": "Deckbuilder: default to first class alphabetically on open / New Deck",
+			"body": "The class dropdown is sorted A→Z and the first class (Barbarian) is selected by\ndefault. Opening the builder and hitting New Deck both land on the blank\nstarting page with that class already selected and its cards showing, instead\nof the \"pick a class\" prompt. Boot waits for both classes.json and cards.json\nbefore initializing so firstClass is always known.\n\nVerified headless: boot + New Deck select Barbarian with cards shown, empty\ndeck, no prompt; 0 errors.",
+			"cards": []
+		},
+		{
+			"sha": "8ba6991",
+			"date": "2026-07-21",
+			"kind": "patch",
+			"title": "Deck banners: hero art backdrops from the OCR class cards",
+			"body": "Cropped the art window from the 16 class \"hero\" cards in the paper OCR set\n(all_cards.json type_line \"Class\" → source PNGs) into art/hero_<classId>.jpg and\nregistered them in art/index.json. Deck banners in MY DECKS now use the class\nhero art as the background (darkened on the left so the deck name stays legible),\nfalling back to the flat class colour for any class without hero art.\n\nVerified: banners render mage/warlock/hunter hero art with readable names and\nN/40 counts; 0 errors.",
+			"cards": []
+		},
+		{
+			"sha": "8b09ed4",
+			"date": "2026-07-21",
+			"kind": "patch",
+			"title": "Deckbuilder: Hearthstone-style My Decks panel + card owned-pills",
+			"body": "- Right panel is now a two-mode \"My Decks\" view: a scrollable list of\n  class-colored deck banners (name + N/40 count, green when complete, gold when\n  partial, active deck highlighted), with the + Create New Deck button at the\n  BOTTOM of the deck scroll. Selecting a deck (or creating one) switches to an\n  edit view with a ← My Decks back button, deck name, card list, save/delete.\n- Collection cards show a Hearthstone-style owned pill under each card\n  (\"×2\", or \"1 left · ×2\" as copies go into the deck); depleted cards dim.\n- Boot opens on the My Decks list; deleting a deck returns there.\n\nVerified headless: boot shows the list with Create at the bottom of the scroll;\ncreate → edit view; save a 40-card deck → banner shows \"40/40\" green with the\nclass color; back returns to the list. 0 errors. Screenshot matches the HS\ncollection-manager layout.",
+			"cards": []
+		},
+		{
+			"sha": "932e102",
+			"date": "2026-07-21",
+			"kind": "patch",
+			"title": "Deckbuilder redesign: real card faces, Class/Neutral tabs, mobile-first",
+			"body": "Rebuilt the collection view on the gallery's renderer instead of text rows:\n- Real rendered card faces (drawCardFace) in a responsive grid, paginated with\n  preloadArt so art streams in cleanly; art-load repaints the page.\n- Hearthstone-style CLASS / NEUTRAL tabs that split the pool for the chosen\n  class, plus a mana-cost filter row (0–7+) and a search box.\n- Tap a card to add (owned/in-deck badges, depleted dimming); tap a deck row to\n  remove. Cheap per-tile count updates, no full re-render on each add.\n- Mobile-first: single-column grid and the deck becomes a slide-up panel behind\n  a DECK n/40 toggle; dropped the heavy 3D preview entirely.\n- Slot logic (MY DECKS up to 40, new/edit/delete/name, save) carried over.\n\nFix: the Delete button had CSS display:none, so setting inline display='' fell\nback to none and it never showed — now sets 'block'.\n\nVerified headless: class prompt → pick class → real canvas tiles in both tabs,\nmana filter + pager + search, tap-to-add with badge, save a full 40 into a slot,\ndelete button visible, mobile toggle opens the deck panel. 0 errors.",
+			"cards": []
+		},
+		{
+			"sha": "118d061",
+			"date": "2026-07-21",
+			"kind": "patch",
+			"title": "Decks: 40 deck slots, Mage Starter seed, delete + empty-state",
+			"body": "Deck storage moves from one-per-class to a list of up to 40 named PvP deck\nslots (user.decks: [{id,name,classId,cards}]).\n\nBackend (mp.mjs):\n- normalizeDecks() migrates the old per-class object to slots one-time; legacy\n  10-card starter decks are dropped, and if that leaves none you get a 40-card\n  Mage Starter. New accounts start with the Mage Starter too. So both test\n  accounts get a ready mage deck and can skip building.\n- save-deck creates/updates a slot by id (cap 40, \"slots full\" past that);\n  delete-deck removes one. reset-deck removed. Mage Starter validated against\n  the real pool (exactly 40, mage/neutral, within copy caps).\n\nClient:\n- Deck builder is now slot-based: MY DECKS list (up to 40), ＋ New Deck, per-deck\n  name, Save (create/update), Delete This Deck. Class stays the first choice.\n  Free-play stores slots in localStorage (migrating the old single deck).\n- Overworld card battle reads the slot array; with no valid 40-card deck it\n  shows \"You have no decks :(\" and blocks the battle (both challenger and\n  accepter). Deck-select labels show the deck name.\n\nVerified: slot lifecycle headless (build→save→new→edit→delete, 0 errors);\nbackend slot/migration/cap/delete logic unit-tested against pool-rarity.json;\noverworld boots clean.",
+			"cards": []
+		},
+		{
+			"sha": "ff5aefd",
+			"date": "2026-07-21",
+			"kind": "patch",
+			"title": "Decks: 40-card class-based PvP constructed + class-first builder",
+			"body": "Constructed/PvP decks are now 40 cards (was 30 free-play / 10 MP). Players\nbuild their own from their collection; DECK_SIZE=40 in collection.js and the\nMP backend (mp.mjs) validates 40. Overworld card-battle deck selection\n(openDeckSelect + cardParty) now requires a full 40-card deck.\n\nDungeon runs are fully separated: dungeonStarterDeck() always uses the stock\n10-card Dungeon.STARTER_DECKS and never reads the account's PvP decks, so a\ndungeon deck can't leak into PvP and vice-versa.\n\nDeckbuilder polish — class is the FIRST choice:\n- No \"all cards\" option; you pick a class before anything shows.\n- With no class the collection is a prompt (\"choose your class\"); picking one\n  filters to neutral + that class (+ duals) and loads any deck saved for it.\n- Switching class prunes off-class cards from the working deck.\n- Count reads \"/ 40\"; save/auto-fill require a class; MP save stores a 40-card\n  PvP deck per class (\"take it into card battles\").\n\nVerified headless: builder boots to a class prompt at 0/40, picking Mage\nfilters the grid, no errors; overworld still boots clean.",
+			"cards": []
+		},
+		{
+			"sha": "3ddb3bc",
+			"date": "2026-07-21",
+			"kind": "patch",
+			"title": "Rules: MTG hand-size cleanup + tokens exile on death",
+			"body": "Hand size (MAX_HAND 15): drawing/gaining a card past 15 no longer burns it.\nThe hand may exceed 15 during your turn; at end of turn you discard down to 15,\nMTG-style — YOUR choice which cards (human via the discard modal, AI dumps its\npriciest). Replaces the old auto-pop-newest trim. Removed the burn-on-overdraw\nin drawCards/addCardToHand/addCoin and the silent < MAX_HAND drops on\nreturn-to-hand / copy-spell / conjure effects.\n\nTokens: instantiate() now carries the token flag, and every summoned token\n(inline opt-summons included) is marked token:true. toGraveyard exiles any\ntoken — summoned creatures, Blood/Clue/Food/Treasure — instead of sending it to\nthe graveyard, so tokens leave no corpse and can't be reanimated, referenced,\nor reshuffled. Coins are NOT tokens and still go to the graveyard (reshuffle).\n\nVerified in-engine: overdraw to 29 with no burn; end-of-turn queues a 14-card\nchoose-your-discard down to 15; deck-out reshuffles the graveyard (tokens\nexcluded); a summoned token dies to exile, not the graveyard.",
+			"cards": []
+		},
+		{
+			"sha": "d45b0a2",
+			"date": "2026-07-21",
+			"kind": "patch",
+			"title": "Gibberling snowballs properly",
+			"body": "Add summonId support to the summon effect: instantiate a real card def so the\nsummoned token keeps its own ongoing. Gibberling's Spellburst now summons a\nreal Gibberling (with Spellburst), so each spell grows the board (1->2->3->4,\nverified) instead of making an inert 1/1.",
+			"cards": []
+		},
+		{
+			"sha": "c7ea33b",
+			"date": "2026-07-21",
+			"kind": "cards",
+			"title": "import 12 Scholomance Academy cards (+ Cub token)",
+			"body": "New cards (none already in pool), with wiki art:\n- Ras Frostwhisper, Cram Session, Brain Freeze (Combo), Molten Blast,\n  Boneweb Egg, Survival of the Fittest (buff-zones), Onyx Magescribe\n  (Spellburst), Adorable Infestation, Manafeeder Panthara, Groundskeeper,\n  Diligent Notetaker (Spellburst), Gibberling.\n\nSmall engine additions: conditional predicates heroPowerUsed +\nholdingSpellMinCost; a return-played-spell effect in runSecretEffects (for\nSpellburst \"return the spell\"). Spellburst reuses the once-per spell-played\nongoing; buff-zones/combo already existed.\n\nVerified live: end-of-turn AoE, Combo (freeze+3), buff-zones (board & hand\n+4/+4), heroPowerUsed & holdingSpellMinCost conditionals both directions,\nSpellburst conjure, and Notetaker returning the real cast spell. Gibberling\nsummons a plain 1/1 (inline summon can't carry its own Spellburst, so it\ndoesn't infinitely snowball).",
+			"cards": [
+				{
+					"id": "ras_frostwhisper",
+					"name": "Ras Frostwhisper",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "legendary",
+					"cost": 5
+				},
+				{
+					"id": "cram_session",
+					"name": "Cram Session",
+					"type": "sorcery",
+					"class": "neutral",
+					"rarity": "rare",
+					"cost": 2
+				},
+				{
+					"id": "brain_freeze",
+					"name": "Brain Freeze",
+					"type": "sorcery",
+					"class": "neutral",
+					"rarity": "rare",
+					"cost": 1
+				},
+				{
+					"id": "molten_blast",
+					"name": "Molten Blast",
+					"type": "sorcery",
+					"class": "neutral",
+					"rarity": "rare",
+					"cost": 3
+				},
+				{
+					"id": "boneweb_egg",
+					"name": "Boneweb Egg",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "rare",
+					"cost": 2
+				},
+				{
+					"id": "survival_of_the_fittest",
+					"name": "Survival of the Fittest",
+					"type": "sorcery",
+					"class": "neutral",
+					"rarity": "epic",
+					"cost": 10
+				},
+				{
+					"id": "onyx_magescribe",
+					"name": "Onyx Magescribe",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 6
+				},
+				{
+					"id": "adorable_infestation",
+					"name": "Adorable Infestation",
+					"type": "sorcery",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 1
+				},
+				{
+					"id": "manafeeder_panthara",
+					"name": "Manafeeder Panthara",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 2
+				},
+				{
+					"id": "groundskeeper",
+					"name": "Groundskeeper",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "rare",
+					"cost": 4
+				},
+				{
+					"id": "diligent_notetaker",
+					"name": "Diligent Notetaker",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "rare",
+					"cost": 2
+				},
+				{
+					"id": "gibberling",
+					"name": "Gibberling",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 2
+				}
+			]
+		},
+		{
+			"sha": "8c8889a",
+			"date": "2026-07-21",
+			"kind": "cards",
+			"title": "EVH import batch 2 — 5 cards, faithfully wired",
+			"body": "Add (with wiki art + 3 small engine additions):\n- Ball and Chain (1 warrior weapon): Deathrattle buff your DAMAGED minions\n  +1/+2 (new buff requireDamaged filter).\n- Widow's Bite (2 druid): hero +1 Atk this turn, +1 Armor, add Widow's Feast\n  -> Widow's Banquet chain (two new token spells).\n- Bone Flurry (2 DK): 3 dmg split among enemies; if a friendly minion died\n  this turn, 3 more (new conditional friendlyDied).\n- Crowd Control (3 warrior): 2 dmg to all minions; +2 more if deck >= 25 (new\n  conditional deckAtLeast).\n- Getaway Hogdriver (5 neutral Quilboar): Battlecry draw 2; if both minions,\n  gain Charge (new draw-check effect).\n\nVerified live: buff hits only damaged, deck>=25 doubles, both-minions grants\nCharge, Widow's Feast is added. Skipped Disguised Watchman (Disguise) and\nMolten Gold (cast-3-spells transform) — both need bespoke mechanics.",
+			"cards": [
+				{
+					"id": "ball_and_chain",
+					"name": "Ball and Chain",
+					"type": "weapon",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 1
+				},
+				{
+					"id": "widows_bite",
+					"name": "Widow's Bite",
+					"type": "sorcery",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 2
+				},
+				{
+					"id": "bone_flurry",
+					"name": "Bone Flurry",
+					"type": "sorcery",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 2
+				},
+				{
+					"id": "crowd_control",
+					"name": "Crowd Control",
+					"type": "sorcery",
+					"class": "neutral",
+					"rarity": "rare",
+					"cost": 3
+				},
+				{
+					"id": "getaway_hogdriver",
+					"name": "Getaway Hogdriver",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "epic",
+					"cost": 5
+				}
+			]
+		},
+		{
+			"sha": "1608f1a",
+			"date": "2026-07-21",
+			"kind": "cards",
+			"title": "EVH import batch 1 — IMPFERNAL! + fix two stubs",
+			"body": "- Add IMPFERNAL! (6-mana 6/6 neutral epic Demon; Deathrattle: 3 damage to all\n  other characters) with wiki art.\n- Fix Specter of Despair: its Taunt/\"Can't attack\" were text-only (it could\n  actually attack) -> keywords taunt + pacifist.\n- Fix Arachnathid: Rush + \"friendly minions Poisonous\" were text-only ->\n  keyword rush + poisonous aura.\nLotus Bookie and Sewer Imp were already wired correctly.",
+			"cards": [
+				{
+					"id": "impfernal",
+					"name": "IMPFERNAL!",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "epic",
+					"cost": 6
+				}
+			]
+		},
+		{
+			"sha": "e2bdd41",
+			"date": "2026-07-21",
+			"kind": "cards",
+			"title": "add Concealing Confection (neutral common Mech)",
+			"body": "1-mana 1/2 Mech: Deathrattle - get a random weapon (conjure-random weapon).\nArt from the supplied Concealing_Confection_full.jpg.",
+			"cards": [
+				{
+					"id": "concealing_confection",
+					"name": "Concealing Confection",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 1
+				}
+			]
+		},
+		{
+			"sha": "fda66be",
+			"date": "2026-07-21",
+			"kind": "patch",
+			"title": "consolidate to one Colaque's Shell",
+			"body": "Remove the stray collectible duplicate (colaque_s_shell) — nothing summoned\nor referenced it. Keep token_colaques_shell, the actual appendage Colaque\nsummons. Also drop its art + pool-rarity entry.",
+			"cards": []
+		},
+		{
+			"sha": "d007a5b",
+			"date": "2026-07-21",
+			"kind": "patch",
+			"title": "rename \"Mechanical\" tribe -> \"Mech\"",
+			"body": "22 cards folded into the existing Mech tribe.",
+			"cards": []
+		},
+		{
+			"sha": "6d161d5",
+			"date": "2026-07-21",
+			"kind": "patch",
+			"title": "move Colaque's Shell into Appendages",
+			"body": "Tag the collectible colaque_s_shell creature with colossalOf: Colaque so it\nbuckets under Appendages alongside the generated token.",
+			"cards": []
+		},
+		{
+			"sha": "b52b63d",
+			"date": "2026-07-21",
+			"kind": "patch",
+			"title": "Mica, Wanderknight - line break before Spell Damage",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "be2b881",
+			"date": "2026-07-20",
+			"kind": "patch",
+			"title": "Idol of Y'Shaarj is a 10/10 creature (Battlecry summons a 10/10)",
+			"body": "Was an 8-mana sorcery; now a 10/10 Priest creature whose Battlecry summons a\n10/10 Idol of Y'Shaarj token. The token (token_idol_of_y_shaarj) gets a copy\nof the idol's art so it looks identical; it has no battlecry, so no loop.",
+			"cards": []
+		},
+		{
+			"sha": "4af19d4",
+			"date": "2026-07-20",
+			"kind": "patch",
+			"title": "drop the \"Static:\" prefix on planes",
+			"body": "The persistent effect line stands on its own between Arrival and Chaos.",
+			"cards": []
+		},
+		{
+			"sha": "e72a7a6",
+			"date": "2026-07-20",
+			"kind": "patch",
+			"title": "add 8 Planechase-style planes + 3 plane static mechanisms",
+			"body": "New planes (Arrival/Static/Chaos/Departure), adapted from MTG planes into the\ngame's idiom:\n- Krosa (all creatures +2/+2), Sokenzan (all +1/+1 & Rush), The Hippodrome\n  (all -5 Attack) -> new plane \"aura\" staticRule wired into recomputeAuras.\n- Stronghold Furnace (combat damage doubled) -> new \"double-damage\" rule in\n  resolveCombat.\n- Lethe Lake (turn-start mill), Takenuma (creature dies -> owner draws),\n  Fields of Summer (cast -> gain life), Minamo (cast -> draw) -> general\n  plane \"trigger\" staticRule fired at turn-start / sweepDeaths / spell-cast.\ndrawCards already handled; effects reuse existing types (draw/mill/heal/\ndamage/summon/destroy-random/bounce).\n\nkeywords.js: scope the plane vocabulary (Arrival/Chaos/Departure/Static) so a\nplane's \"Static:\" shows the plane meaning while the combat Static keyword\nstill reads as paralyze on creatures.\n\nVerified live: auras (5/5, 0/3, 4/4+Rush), doubled combat (6), death-draw,\ncast-draw, cast-life, turn-start mill — all correct, 0 errors. Planes bucket\nnow lists 14.",
+			"cards": []
+		},
+		{
+			"sha": "1a8c4c2",
+			"date": "2026-07-20",
+			"kind": "patch",
+			"title": "Backstab is a Rogue card (was bounty_hunter)",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "f37cd54",
+			"date": "2026-07-20",
+			"kind": "patch",
+			"title": "Ancient Watcher - Defender & Pacifist on line 1, Inspire below",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "1456a58",
+			"date": "2026-07-20",
+			"kind": "patch",
+			"title": "Ancient Watcher uses the Pacifist keyword",
+			"body": "Its \"Can't Attack\" was text-only (never enforced). Add the pacifist keyword\n(engine already blocks attacks for it) and reword the card to \"Pacifist.\"",
+			"cards": []
+		},
+		{
+			"sha": "daa8c4f",
+			"date": "2026-07-20",
+			"kind": "patch",
+			"title": "rename Savannah Lions -> Godsbreath Tyrant + Beast tribe",
+			"body": "Kept the id (savannah_lions) so any art reference stays intact.",
+			"cards": []
+		},
+		{
+			"sha": "660f345",
+			"date": "2026-07-20",
+			"kind": "patch",
+			"title": "Coin & Banana are non-collectible but not tokens (reshuffle)",
+			"body": "They were flagged token:true, which both hid them AND made them cease to\nexist on deck reshuffle. Split those concerns:\n- Coin & Banana: drop token, add collectible:false.\n- All pool/collection/discover/generation filters now also exclude\n  collectible:false (so they stay out of decks, the collectible pool, random\n  generation, and are hidden in the gallery — unchanged behavior).\n- The graveyard-reshuffle filter keys on token only, so Coin & Banana now\n  reshuffle back into the deck; true tokens (Blood/Clue/Food/Treasure) still\n  cease to exist. viewer isUncollectible + cardart honor collectible:false.\n\nVerified: Coin/Banana reshuffle; Blood Token does not; they stay in Generic\nand never appear under a collectible class.",
+			"cards": []
+		},
+		{
+			"sha": "6f50545",
+			"date": "2026-07-20",
+			"kind": "patch",
+			"title": "Treasure Token -> Token tribe; Coin & Banana -> Generic",
+			"body": "- Treasure Token gets tribe \"Token\" (so it joins Generic and exiles instead\n  of graveyarding, like Blood/Clue/Food).\n- The Coin and Banana bucket into uncollectible Generic by id (kept as plain\n  neutral token spells — no tribe/exile change). Generic is now 21.",
+			"cards": []
+		},
+		{
+			"sha": "ad6fdf3",
+			"date": "2026-07-20",
+			"kind": "patch",
+			"title": "Token tribe -> Generic + exile-instead-of-graveyard",
+			"body": "- Tag Blood Token, Clue Token, Food Token with tribe \"Token\".\n- systemBucket buckets any Token-tribe card into uncollectible Generic\n  (gallery + viewer), so those three move out of their class into Generic.\n- toGraveyard now exiles Token-tribe cards instead of adding them to the\n  graveyard (no corpse, unreanimatable). Verified in a live game: a Token\n  creature dying lands in exile; a normal creature still goes to graveyard.",
+			"cards": []
+		},
+		{
+			"sha": "cfa3f31",
+			"date": "2026-07-20",
+			"kind": "patch",
+			"title": "optional draws — `may` prompt + draw-success gating",
+			"body": "Add a reusable optional-decision mechanism so \"you may …\" effects actually\nprompt and can be declined, and gate follow-ups on a real draw:\n- drawCards() now returns the number of cards that reached hand.\n- new effect `draw-then`: draw N, run `then` only if a card was drawn.\n- new effect `may` + state.askQueue + resolveAsk(): defers a yes/no to the\n  controller; AI auto-takes it (resolveAIAsks), the human gets a centered\n  Draw/Pass popup (openAskModal, reusing the choose-one decision menu), with\n  multiplayer guest relay (k:'ask').\n- Arcane Artisan now uses may -> draw-then -> damage, so you may draw, and\n  each opponent loses 1 Life only if you actually drew.\n\nVerified in a live game: casting an Arcane spell (with an artifact) prompts;\nDraw -> deck -1 and opponent -1; Pass -> no change; nothing happens until the\nchoice is made.",
+			"cards": []
+		},
+		{
+			"sha": "bd74b10",
+			"date": "2026-07-20",
+			"kind": "cards",
+			"title": "add Arcane Artisan (sorcerer rare) + conditional trigger support",
+			"body": "3-mana 3/3 Human Wizard: if you control an artifact or enchantment, whenever\nyou cast an Arcane spell, draw a card and each opponent loses 1 Life.\n\nWired as a spell-played ongoing gated by two new ongoingCondOk checks:\n- cond.school: the played spell's school (schoolOf) must match (Arcane)\n- cond.controlArtEnch: caster must control an artifact or enchantment\nBoth are additive and unused elsewhere, so no regression. Verified in a live\ngame: fires only with an artifact + Arcane spell (draw + opponent -1 Life),\ngated off otherwise. Art cropped from the supplied card image.",
+			"cards": [
+				{
+					"id": "arcane_artisan",
+					"name": "Arcane Artisan",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "rare",
+					"cost": 3
+				}
+			]
+		},
+		{
+			"sha": "2522759",
+			"date": "2026-07-20",
+			"kind": "cards",
+			"title": "add Furious Lutrin (barbarian common)",
+			"body": "3-mana 2/2 Beast. Alliance (creature-played -> buff-self +1/+1) via ongoings,\nFrenzy (self-damaged, once/survives -> draw 2) via ongoing so the damage\nhandler fires it exactly once. Art cropped from the supplied card image.",
+			"cards": [
+				{
+					"id": "furious_lutrin",
+					"name": "Furious Lutrin",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 3
+				}
+			]
+		},
+		{
+			"sha": "9bafbcc",
+			"date": "2026-07-20",
+			"kind": "patch",
+			"title": "reorder Triumphant Troubadour tribes to Angel Barbarian Bard",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "83f3fee",
+			"date": "2026-07-20",
+			"kind": "patch",
+			"title": "put Swing / Frenzy abilities on their own lines",
+			"body": "- Gogogo Goram: Swing ability on its own line below Trample & Magnetic.\n- Triumphant Troubadour: Frenzy on its own line, separate from Lifesteal.",
+			"cards": []
+		},
+		{
+			"sha": "4ebcc18",
+			"date": "2026-07-20",
+			"kind": "cards",
+			"title": "add Odd Minstrel (neutral epic collectible)",
+			"body": "3-mana 2/4 neutral Human Bard: Divine Shield & Elusive; Deathrattle adds a\ncoin to each player's hand (gain-coin + give-enemy-card). Art cropped from\nthe supplied card image into art/odd_minstrel.jpg + indexed.",
+			"cards": [
+				{
+					"id": "odd_minstrel",
+					"name": "Odd Minstrel",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "epic",
+					"cost": 3
+				}
+			]
+		},
+		{
+			"sha": "a1113fa",
+			"date": "2026-07-20",
+			"kind": "patch",
+			"title": "excavate spells have no spell school",
+			"body": "Remove the \"Fel\" spell school (tribe) from Azerite Fragment, Fool's Azerite,\nAzerite Chunk, and Azerite Gem. They stay plain sorceries with no school.",
+			"cards": []
+		},
+		{
+			"sha": "adb0a4d",
+			"date": "2026-07-20",
+			"kind": "patch",
+			"title": "flag the 4 excavate dig spells into Excavate",
+			"body": "Mark Azerite Fragment, Fool's Azerite, Azerite Chunk, and Azerite Gem with\nexcavate:true so they join the Excavate section (25 total). They keep their\nrarities (uncommon/common/rare/epic) via the existing showsRarity rule.",
+			"cards": []
+		},
+		{
+			"sha": "28ab31a",
+			"date": "2026-07-20",
+			"kind": "patch",
+			"title": "Battlecards/wiki: new Excavate uncollectible section (keeps rarity)",
+			"body": "- Mark the 21 Azerite class legendaries with excavate:true.\n- Add an \"Excavate\" bucket to the gallery/viewer uncollectible group, keyed\n  off the excavate flag (checked first in systemBucket so these come out of\n  their class sections).\n- Unlike other uncollectible cards, excavate cards keep their rarity: add\n  showsRarity(card) (collectible OR excavate) and use it for the rarity gem\n  on the face and the \"· Rarity\" text in the wiki meta + viewer type-line.",
+			"cards": []
+		}
+	]
+}

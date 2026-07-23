@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<title>Magepunk News — Patch Notes &amp; Card Releases</title>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<meta name="description" content="Magepunk Battlecards news: patch notes and every new card release, straight from the game's development history.">
+	<link rel="icon" href="data:,">
+	<style>
+		:root {
+			--bg: #0d0a14;
+			--panel: rgba(30,22,48,0.9);
+			--border: #4a3f6b;
+			--text: #e8e2f4;
+			--muted: #9d8fd4;
+			--gold: #ffd25f;
+			--violet: #8f6fff;
+			--green: #57e389;
+		}
+		* { box-sizing: border-box; }
+		body {
+			margin: 0; background: var(--bg); color: var(--text);
+			font-family: 'Segoe UI', system-ui, sans-serif; line-height: 1.6;
+		}
+		a { color: var(--violet); text-decoration: none; }
+		a:hover { text-decoration: underline; }
+
+		header {
+			background: radial-gradient(ellipse at 50% -20%, #2c1f4d 0%, #16101f 60%, var(--bg) 100%);
+			border-bottom: 1px solid var(--border);
+			padding: 48px 24px 38px; text-align: center;
+		}
+		header h1 {
+			margin: 0; font-size: clamp(1.8rem, 5vw, 2.8rem); font-weight: 800; letter-spacing: 2px;
+			color: var(--gold); text-shadow: 0 2px 18px rgba(255,210,95,0.35), 0 2px 6px #000;
+		}
+		header .tagline { margin: 10px auto 0; max-width: 640px; color: var(--muted); }
+		.cta-row { margin-top: 20px; display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+		.cta {
+			display: inline-block; padding: 8px 18px; border-radius: 10px; font-weight: 700; font-size: 0.95rem;
+			border: 1px solid var(--border); background: var(--panel); color: var(--text);
+			transition: box-shadow 0.15s;
+		}
+		.cta:hover { box-shadow: 0 0 14px rgba(143,111,255,0.6); text-decoration: none; }
+		.cta.primary { background: linear-gradient(180deg, #6b46d6, #4c2fa8); border-color: #8f6fff; }
+
+		main { max-width: 860px; margin: 0 auto; padding: 24px 18px 80px; }
+
+		/* filter tabs */
+		.filters { display: flex; gap: 8px; margin: 10px 0 4px; flex-wrap: wrap; }
+		.filters button {
+			background: var(--panel); color: var(--text); border: 1px solid var(--border);
+			border-radius: 999px; padding: 5px 16px; font: inherit; font-size: 0.9rem; cursor: pointer;
+		}
+		.filters button:hover { box-shadow: 0 0 10px rgba(143,111,255,0.5); }
+		.filters button.on { border-color: var(--gold); color: var(--gold); font-weight: 700; }
+
+		/* timeline */
+		.day { margin-top: 30px; }
+		.day > h2 {
+			font-size: 0.95rem; letter-spacing: 2px; text-transform: uppercase; color: var(--muted);
+			border-bottom: 1px solid var(--border); padding-bottom: 6px; margin: 0 0 12px;
+		}
+		article {
+			background: var(--panel); border: 1px solid var(--border); border-radius: 12px;
+			padding: 14px 18px; margin: 12px 0;
+		}
+		article.cards { border-left: 3px solid var(--gold); }
+		article.patch { border-left: 3px solid var(--violet); }
+		.entry-head { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+		.badge {
+			font-size: 0.68rem; font-weight: 700; letter-spacing: 1px; text-transform: uppercase;
+			border-radius: 5px; padding: 2px 8px; white-space: nowrap;
+		}
+		.badge.cards { background: rgba(255,210,95,0.14); color: var(--gold); border: 1px solid #8a6f2a; }
+		.badge.patch { background: rgba(143,111,255,0.14); color: var(--violet); border: 1px solid var(--border); }
+		.entry-title { font-weight: 700; font-size: 1.05rem; color: var(--text); }
+		article .body {
+			margin: 8px 0 0; color: var(--muted); font-size: 0.92rem; white-space: pre-wrap;
+		}
+		details.body-toggle { margin-top: 6px; }
+		details.body-toggle summary { cursor: pointer; color: var(--muted); font-size: 0.85rem; }
+
+		/* card chips */
+		.card-row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+		.card-chip {
+			display: inline-flex; align-items: center; gap: 7px;
+			background: #241b38; border: 1px solid var(--border); border-radius: 8px;
+			padding: 4px 10px; font-size: 0.88rem; color: var(--text);
+		}
+		.card-chip:hover { border-color: var(--gold); text-decoration: none; box-shadow: 0 0 10px rgba(255,210,95,0.35); }
+		.card-chip .cost {
+			display: inline-flex; align-items: center; justify-content: center;
+			width: 20px; height: 20px; border-radius: 50%; flex: none;
+			background: #2f80d6; color: #fff; font-weight: 800; font-size: 0.78rem;
+		}
+		.card-chip .meta { color: var(--muted); font-size: 0.76rem; }
+		.r-common { color: #cfc9dd; } .r-uncommon { color: #9be29b; } .r-rare { color: #6fb1ff; }
+		.r-epic { color: #c98aff; } .r-legendary { color: var(--gold); }
+
+		.loading, .empty { text-align: center; color: var(--muted); margin: 40px 0; }
+
+		footer {
+			border-top: 1px solid var(--border); margin-top: 40px; padding: 26px 18px 40px;
+			text-align: center; color: var(--muted); font-size: 0.9rem;
+		}
+	</style>
+</head>
+<body>
+
+<header>
+	<h1>MAGEPUNK NEWS</h1>
+	<p class="tagline">Patch notes and new card releases for Magepunk Battlecards, straight from the game's development history.</p>
+	<div class="cta-row">
+		<a class="cta primary" href="/battlecards/">&#9654; Play Battlecards</a>
+		<a class="cta" href="/learnmagepunk/">Learn to Play</a>
+		<a class="cta" href="/designwiki/#/cards">Card Gallery</a>
+	</div>
+</header>
+
+<main>
+	<div class="filters" id="filters">
+		<button data-f="all" class="on">All</button>
+		<button data-f="cards">&#127183; Card Releases</button>
+		<button data-f="patch">&#128736; Patch Notes</button>
+	</div>
+	<div id="feed"><p class="loading">Loading news&hellip;</p></div>
+</main>
+
+<footer>
+	<p><b style="color:var(--gold)">Magepunk</b> &mdash; <a href="/battlecards/">Play Battlecards</a> &middot; <a href="/learnmagepunk/">Learn to Play</a> &middot; <a href="/designwiki/">Design Wiki</a> &middot; <a href="/">Home</a></p>
+	<p id="stamp"></p>
+</footer>
+
+<script>
+const feed = document.getElementById('feed');
+const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const fmtDate = iso => new Date(iso + 'T12:00:00').toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+const cap = s => s.charAt(0).toUpperCase() + s.slice(1);
+let entries = [], filter = 'all';
+
+function cardChip(c) {
+	const cls = (c.class || 'neutral').split('__').map(cap).join(' / ');
+	return `<a class="card-chip" href="/designwiki/#/cards/${esc(c.id)}">` +
+		(c.cost != null ? `<span class="cost">${esc(c.cost)}</span>` : '') +
+		`<span class="r-${esc(c.rarity)}">${esc(c.name)}</span>` +
+		`<span class="meta">${esc(cls)} ${esc(cap(c.type))}</span></a>`;
+}
+
+function render() {
+	const shown = entries.filter(e => filter === 'all' || e.kind === filter);
+	if (!shown.length) { feed.innerHTML = '<p class="empty">Nothing here yet.</p>'; return; }
+	let html = '', day = null;
+	for (const e of shown) {
+		if (e.date !== day) {
+			if (day !== null) html += '</div>';
+			day = e.date;
+			html += `<div class="day"><h2>${esc(fmtDate(day))}</h2>`;
+		}
+		const badge = e.kind === 'cards'
+			? `&#127183; ${e.cards.length} new card${e.cards.length === 1 ? '' : 's'}`
+			: '&#128736; Patch';
+		html += `<article class="${e.kind}">` +
+			`<div class="entry-head"><span class="badge ${e.kind}">${badge}</span>` +
+			`<span class="entry-title">${esc(e.title)}</span></div>`;
+		if (e.cards && e.cards.length) html += `<div class="card-row">${e.cards.map(cardChip).join('')}</div>`;
+		if (e.body) html += `<details class="body-toggle"><summary>Details</summary><div class="body">${esc(e.body)}</div></details>`;
+		html += '</article>';
+	}
+	html += '</div>';
+	feed.innerHTML = html;
+}
+
+document.getElementById('filters').addEventListener('click', ev => {
+	const b = ev.target.closest('button'); if (!b) return;
+	filter = b.dataset.f;
+	for (const x of document.querySelectorAll('.filters button')) x.classList.toggle('on', x === b);
+	render();
+});
+
+fetch('news.json?v=' + Date.now()).then(r => r.json()).then(data => {
+	entries = data.entries || [];
+	document.getElementById('stamp').textContent = 'Last updated ' + fmtDate(data.generated) + ' · generated from the game’s commit history.';
+	render();
+}).catch(() => { feed.innerHTML = '<p class="empty">Couldn’t load the news feed.</p>'; });
+</script>
+
+</body>
+</html>
