@@ -63099,7 +63099,7 @@
     {
       "id": "sparepart",
       "name": "Spare Part",
-      "type": "spell",
+      "type": "sorcery",
       "cost": 1,
       "token": true,
       "rarity": "common",
@@ -63843,6 +63843,243 @@
           "times": 2
         }
       ]
+    },
+    {
+      "id": "undertaker",
+      "name": "Undertaker",
+      "type": "creature",
+      "cost": 1,
+      "cardClass": "neutral",
+      "attack": 1,
+      "health": 2,
+      "rarity": "common",
+      "set": "NAXX",
+      "description": "Whenever you summon a Deathrattle creature, gain +1/+1.",
+      "ongoing": {
+        "on": "summoned",
+        "if": {
+          "keyword": "deathrattle"
+        },
+        "effects": [
+          {
+            "type": "buff-self",
+            "attack": 1,
+            "health": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "echoing_ooze",
+      "name": "Echoing Ooze",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "neutral",
+      "attack": 1,
+      "health": 2,
+      "rarity": "epic",
+      "set": "NAXX",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Summon an exact copy of this creature at the end of the turn.",
+      "ongoing": {
+        "on": "turn-end",
+        "once": true,
+        "effects": [
+          {
+            "type": "summon-self-copy"
+          }
+        ]
+      }
+    },
+    {
+      "id": "mad_scientist",
+      "name": "Mad Scientist",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "neutral",
+      "attack": 2,
+      "health": 2,
+      "rarity": "common",
+      "set": "NAXX",
+      "keywords": [
+        "deathrattle"
+      ],
+      "description": "Deathrattle: Put a Secret from your deck into play.",
+      "deathrattle": [
+        {
+          "type": "deploy-secret-from-deck"
+        }
+      ]
+    },
+    {
+      "id": "deathlord",
+      "name": "Deathlord",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "neutral",
+      "attack": 2,
+      "health": 8,
+      "rarity": "rare",
+      "set": "NAXX",
+      "keywords": [
+        "taunt",
+        "deathrattle"
+      ],
+      "description": "Taunt. Deathrattle: Your opponent puts a creature from their deck into play.",
+      "deathrattle": [
+        {
+          "type": "enemy-summon-from-deck"
+        }
+      ]
+    },
+    {
+      "id": "stoneskin_gargoyle",
+      "name": "Stoneskin Gargoyle",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "neutral",
+      "attack": 1,
+      "health": 4,
+      "rarity": "common",
+      "set": "NAXX",
+      "description": "At the start of your turn, restore this creature to full Health.",
+      "ongoing": {
+        "on": "turn-start",
+        "effects": [
+          {
+            "type": "heal-full",
+            "target": "self"
+          }
+        ]
+      }
+    },
+    {
+      "id": "wailing_soul",
+      "name": "Wailing Soul",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "neutral",
+      "attack": 3,
+      "health": 5,
+      "rarity": "rare",
+      "set": "NAXX",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Silence your other creatures.",
+      "effects": [
+        {
+          "type": "silence",
+          "target": "friendly-others"
+        }
+      ]
+    },
+    {
+      "id": "feugen",
+      "name": "Feugen",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "neutral",
+      "attack": 4,
+      "health": 7,
+      "rarity": "legendary",
+      "set": "NAXX",
+      "keywords": [
+        "deathrattle"
+      ],
+      "description": "Deathrattle: If Stalagg also died this game, summon an 11/11 Thaddius.",
+      "deathrattle": [
+        {
+          "type": "conditional",
+          "if": {
+            "diedThisGame": "stalagg"
+          },
+          "then": [
+            {
+              "type": "summon",
+              "count": 1,
+              "attack": 11,
+              "health": 11,
+              "name": "Thaddius"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "loatheb",
+      "name": "Loatheb",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "neutral",
+      "attack": 5,
+      "health": 5,
+      "rarity": "legendary",
+      "set": "NAXX",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Enemy spells cost (5) more next turn.",
+      "effects": [
+        {
+          "type": "tax-enemy-spells",
+          "value": 5
+        }
+      ]
+    },
+    {
+      "id": "stalagg",
+      "name": "Stalagg",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "neutral",
+      "attack": 7,
+      "health": 4,
+      "rarity": "legendary",
+      "set": "NAXX",
+      "keywords": [
+        "deathrattle"
+      ],
+      "description": "Deathrattle: If Feugen also died this game, summon an 11/11 Thaddius.",
+      "deathrattle": [
+        {
+          "type": "conditional",
+          "if": {
+            "diedThisGame": "feugen"
+          },
+          "then": [
+            {
+              "type": "summon",
+              "count": 1,
+              "attack": 11,
+              "health": 11,
+              "name": "Thaddius"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "kelthuzad",
+      "name": "Kel\u2019Thuzad",
+      "type": "creature",
+      "cost": 8,
+      "cardClass": "neutral",
+      "attack": 6,
+      "health": 8,
+      "rarity": "legendary",
+      "set": "NAXX",
+      "description": "At the end of each turn, summon all friendly creatures that died this turn.",
+      "ongoing": {
+        "on": "every-turn-end",
+        "effects": [
+          {
+            "type": "resurrect-died-this-turn"
+          }
+        ]
+      }
     }
   ]
 }

@@ -340,6 +340,9 @@ export function createGame(cardsById, rng = Math.random, playerDeckIds = null, p
 		mana: { cur: 1, max: 1, bonus: 0 },
 		coins: 0,
 		diedThisTurn: 0,
+		diedThisTurnIds: [], // Kel'Thuzad: non-token creatures that died this turn
+		deathLogIds: [],     // Feugen/Stalagg: everything that died this game
+		spellTaxNext: 0,     // Loatheb: extra cost on this player's spells next turn
 		eliminated: false,
 	});
 
@@ -1076,6 +1079,10 @@ function sweepDeaths(state) {
 			}
 			p.diedThisTurn++;
 			state.diedThisTurn = (state.diedThisTurn || 0) + 1;
+			if (state.cardsById[c.id] && !c.token) {
+				p.diedThisTurnIds.push(c.id);
+				if (!p.deathLogIds.includes(c.id)) p.deathLogIds.push(c.id);
+			}
 			emit(state, { type: 'death', uid: c.uid, player: pi, name: c.name });
 			// Equipment on this creature detaches and stays in play (can be re-equipped)
 			for (const pl of state.players) for (const eq of pl.artifacts) if (eq.equip && eq.attachedTo === c.uid) eq.attachedTo = null;
@@ -1379,6 +1386,7 @@ function ongoingCondOk(state, pi, cond, ctx) {
 	if (cond.tribe && !(subj && (subj.tribe || '').includes(cond.tribe))) return false;
 	if (cond.overload && !(subj && subj.overload > 0)) return false;
 	if (cond.cardType && !(subj && subj.type === cond.cardType)) return false;
+	if (cond.keyword && !(subj && (subj.keywords || []).includes(cond.keyword))) return false; // Undertaker: a Deathrattle minion
 	if (cond.spellCost != null && !(subj && (subj.cost || 0) === cond.spellCost)) return false; // Gazlowe: a 1-Cost spell
 	if (cond.controlSecret && !state.players[pi].secrets.length) return false;
 	if (cond.creature && !ctx.healedCreature) return false; // "whenever a MINION is healed"
@@ -2522,6 +2530,7 @@ function execEffects(state, pi, effects, target, source) {
 			else { const t = chosenCreature(); if (t) freezeCreature(state, t); /* hero freeze: no-op (heroes can't attack) */ }
 		} else if (e.type === 'silence') {
 			if (e.target === 'enemy-creatures') { for (const o of enemies) for (const c of state.players[o].board) silenceCreature(state, c); }
+			else if (e.target === 'friendly-others') { for (const c of [...state.players[pi].board]) if (c !== source && !isDead(c)) silenceCreature(state, c); } // Wailing Soul
 			else { const t = chosenCreature(); if (t) silenceCreature(state, t); }
 		} else if (e.type === 'random-damage') {
 			// count independent hits of `value` at random members of the pool;
@@ -2987,8 +2996,35 @@ function execEffects(state, pi, effects, target, source) {
 				}
 			}
 		} else if (e.type === 'heal-full') {
-			const t = chosenCreature();
+			const t = e.target === 'self' ? source : chosenCreature(); // Stoneskin Gargoyle: restore self
 			if (t && t.damage > 0) healCreature(t, t.damage);
+		} else if (e.type === 'summon-self-copy') {
+			// Echoing Ooze: a copy carrying this creature's CURRENT stats/keywords
+			if (source) summon(state, pi, { id: source.id, name: source.name, type: 'creature',
+				cost: source.cost || 0, rarity: source.rarity || 'common', token: true, tribe: source.tribe || '',
+				attack: source.attack, health: source.maxHealth, keywords: [...(source.keywords || [])],
+				description: source.description || '' });
+		} else if (e.type === 'deploy-secret-from-deck') {
+			// Mad Scientist: pull a Secret out of your deck and arm it for free
+			const p = state.players[pi];
+			const si = p.deck.findIndex(id => state.cardsById[id]?.secret);
+			if (si >= 0) { const [id] = p.deck.splice(si, 1); installSecret(state, pi, id); }
+		} else if (e.type === 'enemy-summon-from-deck') {
+			// Deathlord: each opponent puts a creature from their deck into play
+			for (const o of enemies) {
+				const op = state.players[o];
+				const ci = op.deck.findIndex(id => state.cardsById[id]?.type === 'creature' && !state.cardsById[id].token);
+				if (ci >= 0) { const [id] = op.deck.splice(ci, 1); summon(state, o, state.cardsById[id]); }
+			}
+		} else if (e.type === 'tax-enemy-spells') {
+			// Loatheb: each opponent's spells cost more on their next turn
+			for (const o of enemies) state.players[o].spellTaxNext = (state.players[o].spellTaxNext || 0) + (e.value || 0);
+		} else if (e.type === 'resurrect-died-this-turn') {
+			// Kel'Thuzad: summon all your creatures that died this turn
+			const p = state.players[pi];
+			const ids = p.diedThisTurnIds.slice();
+			p.diedThisTurnIds = [];
+			for (const id of ids) { const def = state.cardsById[id]; if (def) summon(state, pi, def); }
 		} else if (e.type === 'set-health') {
 			// "Change a creature's Health to N" — keeps aura bonuses on top
 			const list = e.target === 'all-creatures'
@@ -3170,6 +3206,8 @@ function execEffects(state, pi, effects, target, source) {
 			let ok = true;
 			if (e.if.controlTribe) ok = p.board.some(c => !isDead(c) && (c.tribe || '').includes(e.if.controlTribe));
 			else if (e.if.minOtherCreatures != null) ok = p.board.filter(c => !isDead(c) && c !== source && c.type !== 'location').length >= e.if.minOtherCreatures; // Nesting Roc
+			else if (e.if.diedThisGame) ok = p.deathLogIds.includes(e.if.diedThisGame); // Feugen/Stalagg
+			else if (e.if.enemyMaxHealth != null) ok = opponentsOf(state, pi).some(o => state.players[o].life <= e.if.enemyMaxHealth); // Drakonid Crusher
 			else if (e.if.maxHealthSelf != null) ok = p.life <= e.if.maxHealthSelf;
 			else if (e.if.targetFrozen) ok = !!(t && t.frozen);
 			else if (e.if.targetFriendlyTribe) ok = !!(t && t.controller === pi && (t.tribe || '').includes(e.if.targetFriendlyTribe));
@@ -4512,6 +4550,7 @@ export function effectiveCost(state, pi, card) {
 		c = planeR.setZero ? 0 : c + (planeR.amount || 0);
 	}
 	if (p.freeSpellsThisTurn && isSpellType(card)) c = 0;
+	if (p.spellTaxNext > 0 && isSpellType(card)) c += p.spellTaxNext; // Loatheb
 	return Math.max(0, c);
 }
 
@@ -5838,6 +5877,7 @@ export function endTurn(state) {
 	if (state.over) return;
 	const pi = state.current;
 	const p = state.players[pi];
+	p.spellTaxNext = 0; // Loatheb's tax only lasts this player's turn
 
 	// Impulsive creatures refuse to end the turn without swinging
 	for (const c of [...p.board]) {
@@ -5970,6 +6010,7 @@ export function endTurn(state) {
 	state.turnNumber++;
 	const np = state.players[state.current];
 	np.diedThisTurn = 0;
+	np.diedThisTurnIds = [];
 	state.diedThisTurn = 0; // global "died this turn" (Volcanic Drake discounts)
 	np.heroAttacksUsed = 0;
 	np.landsPlayedThisTurn = 0;
