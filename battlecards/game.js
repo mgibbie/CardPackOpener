@@ -1648,6 +1648,10 @@ function nextEvent() {
 			delay = 420;
 			break;
 		}
+		case 'equipAttached':
+			log(`${nameOf(ev.player)} equipped ${ev.name}`);
+			delay = 200;
+			break;
 		case 'weaponEquip':
 			log(`${nameOf(ev.player)} equipped ${ev.card.name} (${ev.card.attack}/${ev.card.durability})`);
 			delay = 320;
@@ -2400,6 +2404,10 @@ renderer.domElement.addEventListener('pointerdown', ev => {
 	} else if (card.zone === 'heropower' && card.controller === HUMAN) {
 		// click an installed hero power to activate it
 		activateHeroPower(card, ev);
+	} else if (card.zone === 'artifact' && card.controller === HUMAN && card.equip && E.canEquip(state, HUMAN, card.uid)) {
+		// click an Equipment to attach/move it — then pick one of your creatures
+		const targets = E.equipTargets(state, HUMAN, card.uid);
+		if (targets.length) { pending = { card, targets, mode: 'equip' }; updateHud(); }
 	} else if (card.zone === 'artifact' && card.controller === HUMAN && card.sac) {
 		// click a field token (Blood/Treasure/Food) to sacrifice it
 		if (E.canSacrifice(state, HUMAN, card)) {
@@ -2435,6 +2443,7 @@ function commitPending(t) {
 		let localFn, intent;
 		if (p.mode === 'power') { localFn = () => E.useHeroPower(state, HUMAN, p.card.uid, t, p.choice); intent = { k: 'power', uid: p.card.uid, target: t || null, choice: p.choice }; }
 		else if (p.mode === 'activate') { localFn = () => E.activateAbility(state, HUMAN, p.card.uid, p.ability, t); intent = { k: 'activate', uid: p.card.uid, ability: p.ability, target: t || null }; }
+		else if (p.mode === 'equip') { localFn = () => E.equip(state, HUMAN, p.card.uid, t.uid); intent = { k: 'equip', uid: p.card.uid, target: t.uid }; }
 		else if (p.mode === 'walker') { localFn = () => E.useWalker(state, HUMAN, p.card.uid, p.ability, t); intent = { k: 'walker', uid: p.card.uid, ability: p.ability, target: t || null }; }
 		else if (p.mode === 'tap') { localFn = () => E.tapLand(state, HUMAN, p.card.uid, p.tapIndex, t); intent = { k: 'tap', uid: p.card.uid, tapIndex: p.tapIndex, target: t || null }; }
 		else if (p.mode === 'respond') { const a = { ...p.action, target: t || null }; localFn = () => E.resolveResponse(state, HUMAN, a); intent = { k: 'respond', action: a }; }
@@ -2446,6 +2455,7 @@ function commitPending(t) {
 	}
 	if (pending.mode === 'power') E.useHeroPower(state, HUMAN, pending.card.uid, t, pending.choice);
 	else if (pending.mode === 'activate') E.activateAbility(state, HUMAN, pending.card.uid, pending.ability, t);
+	else if (pending.mode === 'equip') E.equip(state, HUMAN, pending.card.uid, t.uid);
 	else if (pending.mode === 'walker') E.useWalker(state, HUMAN, pending.card.uid, pending.ability, t);
 	else if (pending.mode === 'tap') E.tapLand(state, HUMAN, pending.card.uid, pending.tapIndex, t);
 	else if (pending.mode === 'respond') { E.resolveResponse(state, HUMAN, { ...pending.action, target: t || null }); }
@@ -3105,6 +3115,7 @@ function applyGuestIntent(it) {
 			case 'power': E.useHeroPower(state, P, it.uid, it.target || null, it.choice); break;
 			case 'planeswalk': E.planeswalk(state, P); break;
 			case 'activate': E.activateAbility(state, P, it.uid, it.ability, it.target || null); break;
+			case 'equip': E.equip(state, P, it.uid, it.target); break;
 			case 'walker': E.useWalker(state, P, it.uid, it.ability, it.target || null); break;
 			case 'tap': E.tapLand(state, P, it.uid, it.tapIndex, it.target || null); break;
 			case 'attack': E.attack(state, P, it.attacker, it.target); break;

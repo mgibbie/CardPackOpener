@@ -192,6 +192,8 @@ function instantiate(def, controller) {
 		corrupt: def.corrupt || null, // id of the corrupted (upgraded) form for Corrupt
 		corruptGrow: def.corruptGrow ? { ...def.corruptGrow } : null, // endless Corrupt: +stats in place
 		token: def.token || false,    // tokens are exiled on death — never hit the graveyard
+		equip: def.equip || null,     // Equipment: { cost, attack?, health?, keywords? } — attach to a creature
+		attachedTo: null,             // uid of the creature this Equipment rides (null = unattached)
 		sac: def.sac || null,         // field-token activation: { cost, discard?, effects }
 		colossal: def.colossal || null, // appendage token ids summoned when this enters play
 		colossalOf: def.colossalOf || null, // this token is an appendage of the named Colossal
@@ -965,6 +967,37 @@ function destroyPermanent(state, ownerPi, card, toExile = false) {
 	recomputeAuras(state);
 }
 
+// ---------- Equipment: attach an Equipment artifact to one of your creatures.
+// The Equipment stays in play when the creature dies (detaches) and can be moved
+// by equipping again. Its bonuses are applied in recomputeAuras. ----------
+export function equipTargets(state, pi, equipUid) {
+	const p = state.players[pi];
+	const eq = p.artifacts.find(a => a.uid === equipUid);
+	if (!eq || !eq.equip) return [];
+	return p.board.filter(c => c.type !== 'location' && c.dormantLeft <= 0 && !isDead(c))
+		.map(c => ({ type: 'creature', uid: c.uid, player: pi }));
+}
+export function canEquip(state, pi, equipUid) {
+	if (state.over || state.current !== pi || state.stack.length || state.priority != null) return false;
+	const p = state.players[pi];
+	const eq = p.artifacts.find(a => a.uid === equipUid);
+	if (!eq || !eq.equip) return false;
+	if (availableMana(p) < (eq.equip.cost || 0)) return false;
+	return equipTargets(state, pi, equipUid).length > 0;
+}
+export function equip(state, pi, equipUid, creatureUid) {
+	if (!canEquip(state, pi, equipUid)) return false;
+	const p = state.players[pi];
+	const eq = p.artifacts.find(a => a.uid === equipUid);
+	const target = p.board.find(c => c.uid === creatureUid && !isDead(c));
+	if (!target) return false;
+	spendMana(p, eq.equip.cost || 0);
+	eq.attachedTo = creatureUid;
+	emit(state, { type: 'equipAttached', player: pi, equipUid, creatureUid, name: eq.name });
+	recomputeAuras(state);
+	return true;
+}
+
 function sweepDeaths(state) {
 	for (let pi = 0; pi < state.players.length; pi++) {
 		const p = state.players[pi];
@@ -983,6 +1016,8 @@ function sweepDeaths(state) {
 			p.diedThisTurn++;
 			state.diedThisTurn = (state.diedThisTurn || 0) + 1;
 			emit(state, { type: 'death', uid: c.uid, player: pi, name: c.name });
+			// Equipment on this creature detaches and stays in play (can be re-equipped)
+			for (const pl of state.players) for (const eq of pl.artifacts) if (eq.equip && eq.attachedTo === c.uid) eq.attachedTo = null;
 			// every friendly death banks a Corpse for its owner (all classes;
 			// only Death Knights get a UI indicator — others track it hidden)
 			if (!p.eliminated) {
@@ -1153,6 +1188,16 @@ function recomputeAuras(state) {
 				aBonus += a.heraldScaled ? heraldMult(state.players[src.controller].heraldCount || 0) : (a.attack || 0);
 				hBonus += a.health || 0;
 				for (const k of a.keywords || []) granted.add(k);
+			}
+			// Equipment attached to this creature contributes its bonuses. It's its
+			// own permanent — it survives the creature (detaches) and can be moved,
+			// so its buff is applied here (recomputed), never baked into base stats.
+			for (const eq of p.artifacts) {
+				if (eq.equip && eq.attachedTo === c.uid) {
+					aBonus += eq.equip.attack || 0;
+					hBonus += eq.equip.health || 0;
+					for (const k of eq.equip.keywords || []) granted.add(k);
+				}
 			}
 			// Enrage: a self-aura that only applies while the creature is damaged
 			if (c.enrage && c.damage > 0 && !isDead(c)) {

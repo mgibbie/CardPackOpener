@@ -57969,6 +57969,102 @@
           "only": "artifact"
         }
       ]
+    },
+    {
+      "id": "bone_saw",
+      "name": "Bone Saw",
+      "type": "artifact",
+      "cost": 0,
+      "cardClass": "neutral",
+      "rarity": "common",
+      "set": "wubrg",
+      "equip": {
+        "cost": 1,
+        "attack": 1,
+        "health": 0
+      },
+      "description": "Equipped creature has +1/+0.\nEquip (1)."
+    },
+    {
+      "id": "bonesplitter",
+      "name": "Bonesplitter",
+      "type": "artifact",
+      "cost": 1,
+      "cardClass": "neutral",
+      "rarity": "common",
+      "set": "wubrg",
+      "equip": {
+        "cost": 1,
+        "attack": 2,
+        "health": 0
+      },
+      "description": "Equipped creature has +2/+0.\nEquip (1)."
+    },
+    {
+      "id": "short_sword",
+      "name": "Short Sword",
+      "type": "artifact",
+      "cost": 1,
+      "cardClass": "neutral",
+      "rarity": "common",
+      "set": "wubrg",
+      "equip": {
+        "cost": 1,
+        "attack": 1,
+        "health": 1
+      },
+      "description": "Equipped creature has +1/+1.\nEquip (1)."
+    },
+    {
+      "id": "vulshok_morningstar",
+      "name": "Vulshok Morningstar",
+      "type": "artifact",
+      "cost": 2,
+      "cardClass": "neutral",
+      "rarity": "uncommon",
+      "set": "wubrg",
+      "equip": {
+        "cost": 1,
+        "attack": 1,
+        "health": 1
+      },
+      "description": "Equipped creature has +1/+1.\nEquip (1)."
+    },
+    {
+      "id": "basilisk_collar",
+      "name": "Basilisk Collar",
+      "type": "artifact",
+      "cost": 1,
+      "cardClass": "neutral",
+      "rarity": "rare",
+      "set": "wubrg",
+      "equip": {
+        "cost": 2,
+        "keywords": [
+          "deathtouch",
+          "lifesteal"
+        ]
+      },
+      "description": "Equipped creature has Deathtouch & Lifesteal.\nEquip (2)."
+    },
+    {
+      "id": "loxodon_warhammer",
+      "name": "Loxodon Warhammer",
+      "type": "artifact",
+      "cost": 3,
+      "cardClass": "neutral",
+      "rarity": "uncommon",
+      "set": "wubrg",
+      "equip": {
+        "cost": 3,
+        "attack": 3,
+        "health": 0,
+        "keywords": [
+          "trample",
+          "lifesteal"
+        ]
+      },
+      "description": "Equipped creature has +3/+0, Trample & Lifesteal.\nEquip (3)."
     }
   ]
 }
