@@ -1,18 +1,6 @@
 {
   "cards": [
     {
-      "id": "savannah_lions",
-      "name": "Godsbreath Tyrant",
-      "type": "creature",
-      "cardClass": "neutral",
-      "cost": 1,
-      "rarity": "common",
-      "description": "A 2/1 creature.",
-      "attack": 2,
-      "health": 1,
-      "tribe": "Beast"
-    },
-    {
       "id": "white_knight",
       "name": "White Knight",
       "type": "creature",
@@ -40,22 +28,6 @@
         {
           "type": "damage",
           "value": 6,
-          "target": "any"
-        }
-      ]
-    },
-    {
-      "id": "lightning_bolt",
-      "name": "Lightning Bolt",
-      "type": "instant",
-      "cardClass": "neutral",
-      "cost": 1,
-      "rarity": "common",
-      "description": "Deal 3 damage to any target.",
-      "effects": [
-        {
-          "type": "damage",
-          "value": 3,
           "target": "any"
         }
       ]
@@ -2783,18 +2755,6 @@
         ]
       },
       "description": "Secret: After your opponent plays a creature, deal 4 damage to it."
-    },
-    {
-      "id": "counterspell",
-      "name": "Counterspell",
-      "cardClass": "mage",
-      "cost": 3,
-      "rarity": "rare",
-      "set": "paper",
-      "type": "instant",
-      "tribe": "Arcane",
-      "counterSpell": true,
-      "description": "Counter target spell."
     },
     {
       "id": "ice_barrier",
@@ -39148,27 +39108,6 @@
       "description": "You draw two cards & lose 2 life."
     },
     {
-      "id": "chrome_cat",
-      "name": "Chrome Cat",
-      "cardClass": "neutral",
-      "cost": 3,
-      "rarity": "common",
-      "type": "creature",
-      "attack": 3,
-      "health": 2,
-      "tribe": "Mech Beast",
-      "keywords": [
-        "battlecry"
-      ],
-      "effects": [
-        {
-          "type": "scry",
-          "value": 1
-        }
-      ],
-      "description": "Battlecry: scry 1.."
-    },
-    {
       "id": "bladed_cultist",
       "name": "Bladed Cultist",
       "cardClass": "rogue",
@@ -58172,6 +58111,155 @@
         {
           "type": "attach-equip",
           "target": "friendly-creature"
+        }
+      ]
+    },
+    {
+      "id": "savannah_lions",
+      "name": "Savannah Lions",
+      "type": "creature",
+      "cost": 1,
+      "colors": [
+        "W"
+      ],
+      "cardClass": "neutral",
+      "attack": 2,
+      "health": 1,
+      "rarity": "rare",
+      "set": "wubrg",
+      "tribe": "Cat",
+      "keywords": [],
+      "description": "A 2/1 for one mana."
+    },
+    {
+      "id": "counterspell",
+      "name": "Counterspell",
+      "type": "instant",
+      "cost": 2,
+      "colors": [
+        "U"
+      ],
+      "cardClass": "neutral",
+      "rarity": "common",
+      "set": "wubrg",
+      "counterSpell": true,
+      "description": "Counter target spell.",
+      "effects": []
+    },
+    {
+      "id": "lightning_bolt",
+      "name": "Lightning Bolt",
+      "type": "instant",
+      "cost": 1,
+      "colors": [
+        "R"
+      ],
+      "cardClass": "neutral",
+      "rarity": "common",
+      "set": "wubrg",
+      "description": "Deal 3 damage to any target.",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 3,
+          "target": "any"
+        }
+      ]
+    },
+    {
+      "id": "chrome_cat",
+      "name": "Chrome Cat",
+      "type": "creature",
+      "cost": 2,
+      "colors": [
+        "G"
+      ],
+      "cardClass": "neutral",
+      "attack": 3,
+      "health": 2,
+      "rarity": "common",
+      "set": "wubrg",
+      "tribe": "Cat",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Scry 1.",
+      "effects": [
+        {
+          "type": "scry",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "reclamation_sage",
+      "name": "Reclamation Sage",
+      "type": "creature",
+      "cost": 3,
+      "colors": [
+        "G"
+      ],
+      "cardClass": "neutral",
+      "attack": 2,
+      "health": 1,
+      "rarity": "common",
+      "set": "wubrg",
+      "tribe": "Elf Shaman",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: You may destroy an enemy artifact or enchantment.",
+      "effects": [
+        {
+          "type": "destroy-art-ench",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "id": "natures_claim",
+      "name": "Nature's Claim",
+      "type": "instant",
+      "cost": 1,
+      "colors": [
+        "G"
+      ],
+      "cardClass": "neutral",
+      "rarity": "common",
+      "set": "wubrg",
+      "description": "Destroy an enemy artifact or enchantment.\nIts controller gains 4 life.",
+      "effects": [
+        {
+          "type": "destroy-art-ench",
+          "count": 1
+        },
+        {
+          "type": "heal",
+          "value": 4,
+          "target": "enemy-hero"
+        }
+      ]
+    },
+    {
+      "id": "slice_in_twain",
+      "name": "Slice in Twain",
+      "type": "instant",
+      "cost": 4,
+      "colors": [
+        "G"
+      ],
+      "cardClass": "neutral",
+      "rarity": "common",
+      "set": "wubrg",
+      "description": "Destroy an enemy artifact or enchantment.\nDraw a card.",
+      "effects": [
+        {
+          "type": "destroy-art-ench",
+          "count": 1
+        },
+        {
+          "type": "draw",
+          "value": 1
         }
       ]
     }
