@@ -59075,7 +59075,7 @@
         "deathrattle"
       ],
       "description": "Deathrattle: Summon a 1/1 Spirit.",
-      "effects": [
+      "deathrattle": [
         {
           "type": "summon",
           "count": 1,
@@ -62123,6 +62123,132 @@
       "effects": [
         {
           "type": "investigate"
+        }
+      ]
+    },
+    {
+      "id": "sailor_of_means",
+      "name": "Sailor of Means",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "neutral",
+      "attack": 1,
+      "health": 4,
+      "rarity": "common",
+      "set": "wubrg",
+      "tribe": "Human Pirate",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Enrich.",
+      "effects": [
+        {
+          "type": "enrich"
+        }
+      ]
+    },
+    {
+      "id": "dire_fleet_hoarder",
+      "name": "Dire Fleet Hoarder",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "neutral",
+      "attack": 2,
+      "health": 1,
+      "rarity": "common",
+      "set": "wubrg",
+      "tribe": "Human Pirate",
+      "keywords": [
+        "deathrattle"
+      ],
+      "description": "Deathrattle: Enrich.",
+      "deathrattle": [
+        {
+          "type": "enrich"
+        }
+      ]
+    },
+    {
+      "id": "impulsive_pilferer",
+      "name": "Impulsive Pilferer",
+      "type": "creature",
+      "cost": 1,
+      "cardClass": "neutral",
+      "attack": 1,
+      "health": 1,
+      "rarity": "common",
+      "set": "wubrg",
+      "tribe": "Goblin Pirate",
+      "keywords": [
+        "deathrattle"
+      ],
+      "description": "Deathrattle: Enrich.",
+      "deathrattle": [
+        {
+          "type": "enrich"
+        }
+      ]
+    },
+    {
+      "id": "gilded_goose",
+      "name": "Gilded Goose",
+      "type": "creature",
+      "cost": 1,
+      "cardClass": "neutral",
+      "attack": 0,
+      "health": 2,
+      "rarity": "common",
+      "set": "wubrg",
+      "tribe": "Bird",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Cook.",
+      "effects": [
+        {
+          "type": "cook"
+        }
+      ]
+    },
+    {
+      "id": "tough_cookie",
+      "name": "Tough Cookie",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "neutral",
+      "attack": 2,
+      "health": 2,
+      "rarity": "common",
+      "set": "wubrg",
+      "tribe": "Golem",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Cook.",
+      "effects": [
+        {
+          "type": "cook"
+        }
+      ]
+    },
+    {
+      "id": "mintstrosity",
+      "name": "Mintstrosity",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "neutral",
+      "attack": 3,
+      "health": 1,
+      "rarity": "common",
+      "set": "wubrg",
+      "tribe": "Horror",
+      "keywords": [
+        "deathrattle"
+      ],
+      "description": "Deathrattle: Cook.",
+      "deathrattle": [
+        {
+          "type": "cook"
         }
       ]
     }
