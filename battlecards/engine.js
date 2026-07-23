@@ -1592,7 +1592,6 @@ export function canActivate(state, pi, card, i) {
 	if ((a.cost || 0) > availableMana(p)) return false;
 	if (a.discardRandom && p.hand.length === 0) return false;
 	if (a.payLife && p.life <= a.payLife) return false;
-	if (a.tap && card.sick) return false; // {T} abilities need the creature to have been in play since your last turn
 	if (a.sacCost && !p.board.some(c => c.type === 'creature' && !isDead(c) && (!a.sacCost.tribe || (c.tribe || '').includes(a.sacCost.tribe)))) return false;
 	const spec = abilitySpec(state, pi, card, i);
 	if (spec && spec.required && legalTargets(state, pi, spec).length === 0) return false;
@@ -1622,7 +1621,6 @@ export function activateAbility(state, pi, cardUid, i, target) {
 		toGraveyard(state, pi, c);
 		emit(state, { type: 'discard', player: pi, card: c });
 	}
-	if (a.tap) card.attacksUsed = (card.attacksUsed || 0) + 99; // tapping for the ability means it can't attack this turn
 	emit(state, { type: 'abilityUsed', player: pi, card, text: a.text });
 	if (a.sacrifice) { card.damage = card.maxHealth + 99; card.doomed = true; card.sacrificed = true; }
 	// cost "Sacrifice a <creature>": pick which one, then the effects resolve
