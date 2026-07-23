@@ -3951,6 +3951,7 @@ function execEffects(state, pi, effects, target, source) {
 			else if (e.cardType === 'weapon') pool = pool.filter(d => d.type === 'weapon');
 			if (e.minAttack != null) pool = pool.filter(d => (d.attack || 0) >= e.minAttack);
 			if (e.tribe) pool = pool.filter(d => (d.tribe || '').includes(e.tribe));
+			if (e.rarity) pool = pool.filter(d => d.rarity === e.rarity); // Golden Monkey: Legendaries
 			if (e.cardClass === 'enemy') {
 				const victim = enemyHero();
 				const cls = victim != null && state.players[victim].heroClass;
@@ -4094,6 +4095,15 @@ function execEffects(state, pi, effects, target, source) {
 		} else if (e.type === 'grant-medic') {
 			const t = chosenCreature();
 			if (t) t.medic = (t.medic || 0) + e.value;
+		} else if (e.type === 'discover' && e.heroPower) {
+			// Sir Finley: Discover a new Hero Power (replaces yours on pick)
+			const pool = Object.values(state.cardsById).filter(d => d.type === 'heropower' && d.power);
+			const ids = [];
+			for (let i = 0; i < 3 && pool.length; i++) ids.push(pool.splice(Math.floor(state.rng() * pool.length), 1)[0].id);
+			if (ids.length && !state.players[pi].eliminated) {
+				state.pickQueue.push({ player: pi, ids, heroPower: true });
+				emit(state, { type: 'pickStart', player: pi, count: ids.length });
+			}
 		} else if (e.type === 'discover') {
 			// Discover: pick 1 of 3 random matches; Draft: pick 1 of 5
 			const discoverPool = () => Object.values(state.cardsById).filter(d => {
@@ -5020,6 +5030,15 @@ function resolveStackedSpell(state, entry) {
 				if (tc.ongoing?.on === 'spell-targeted-self') spellTrigs.push(tc.ongoing);
 				if (tc.ongoings) for (const o of tc.ongoings) if (o.on === 'spell-targeted-self') spellTrigs.push(o);
 				for (const o of spellTrigs) runSecretEffects(state, pi, o.effects, { self: tc });
+				// Djinni of Zephyrs: a spell on ANOTHER friendly creature is copied onto each Djinni
+				if (!state.djinniEcho) {
+					const djinnis = state.players[pi].board.filter(c => c.id === 'djinni_of_zephyrs' && !isDead(c) && c !== tc);
+					for (const dj of djinnis) {
+						state.djinniEcho = true;
+						runSpell(state, pi, card, { type: 'creature', uid: dj.uid, player: pi }, choice);
+						state.djinniEcho = false;
+					}
+				}
 			}
 		}
 		// Sinestra: your spells from another class cast twice (not your own class /
@@ -5797,6 +5816,18 @@ export function resolvePick(state, id) {
 			}
 		}
 		recomputeAuras(state);
+		return true;
+	}
+	if (pend.heroPower) {
+		// Sir Finley: replace your Hero Power with the discovered one
+		const pp = state.players[pend.player];
+		const def = state.cardsById[pend.ids.includes(id) ? id : pend.ids[0]];
+		if (def && !pp.eliminated) {
+			const power = instantiate(def, pend.player);
+			power.zone = 'heropower'; power.usedThisTurn = false;
+			pp.heroPowers = [power];
+			emit(state, { type: 'heroPowerGained', player: pend.player, card: power });
+		}
 		return true;
 	}
 	const chosen = pend.ids.includes(id) ? id : pend.ids[0];

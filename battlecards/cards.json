@@ -65970,6 +65970,103 @@
           "target": "own-hero"
         }
       ]
+    },
+    {
+      "id": "djinni_of_zephyrs",
+      "name": "Djinni of Zephyrs",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "neutral",
+      "attack": 4,
+      "health": 6,
+      "rarity": "epic",
+      "set": "LOE",
+      "tribe": "Elemental",
+      "description": "After you cast a spell on another friendly creature, cast a copy of it targeting this creature."
+    },
+    {
+      "id": "sir_finley",
+      "name": "Sir Finley Mrrgglton",
+      "type": "creature",
+      "cost": 1,
+      "cardClass": "neutral",
+      "attack": 1,
+      "health": 3,
+      "rarity": "legendary",
+      "set": "LOE",
+      "tribe": "Murloc",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Discover a new Hero Power.",
+      "effects": [
+        {
+          "type": "discover",
+          "heroPower": true
+        }
+      ]
+    },
+    {
+      "id": "elise_starseeker",
+      "name": "Elise Starseeker",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "neutral",
+      "attack": 3,
+      "health": 5,
+      "rarity": "legendary",
+      "set": "LOE",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Shuffle the 'Map to the Golden Monkey' into your deck.",
+      "effects": [
+        {
+          "type": "shuffle-into-deck",
+          "id": "map_to_golden_monkey"
+        }
+      ]
+    },
+    {
+      "id": "map_to_golden_monkey",
+      "name": "Map to the Golden Monkey",
+      "type": "sorcery",
+      "cost": 1,
+      "token": true,
+      "rarity": "common",
+      "set": "LOE",
+      "description": "Shuffle the 'Golden Monkey' into your deck.",
+      "effects": [
+        {
+          "type": "shuffle-into-deck",
+          "id": "golden_monkey"
+        }
+      ]
+    },
+    {
+      "id": "golden_monkey",
+      "name": "Golden Monkey",
+      "type": "creature",
+      "cost": 4,
+      "token": true,
+      "tribe": "Beast",
+      "attack": 6,
+      "health": 6,
+      "rarity": "legendary",
+      "set": "LOE",
+      "keywords": [
+        "taunt",
+        "battlecry"
+      ],
+      "description": "Taunt. Battlecry: Add 3 random Legendary creatures to your hand.",
+      "effects": [
+        {
+          "type": "conjure-random",
+          "cardType": "creature",
+          "rarity": "legendary",
+          "count": 3
+        }
+      ]
     }
   ]
 }
