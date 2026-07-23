@@ -2988,6 +2988,7 @@ function execEffects(state, pi, effects, target, source) {
 				else if (e.per === 'cards-played') n = state.players[pi].cardsPlayedThisTurn;
 				else if (e.per === 'enemy-deathrattle') n = state.players.reduce((s, pl, idx) =>
 					idx === pi ? s : s + pl.board.filter(c => !isDead(c) && c.keywords.includes('deathrattle')).length, 0);
+				else if (e.per === 'friendly-tribe') n = state.players[pi].board.filter(c => c !== source && !isDead(c) && (c.tribe || '').includes(e.tribe)).length; // Draenei Totemcarver
 				if (n > 0) buffCreature(source, (e.attack || 0) * n, (e.health || 0) * n);
 			}
 		} else if (e.type === 'buff-self-random') {
@@ -3069,6 +3070,8 @@ function execEffects(state, pi, effects, target, source) {
 				? state.players.flatMap(pl => pl.board.filter(c => !isDead(c)))
 				: e.target === 'all-others'
 				? state.players.flatMap(pl => pl.board.filter(c => !isDead(c) && c !== source))
+				: e.target === 'enemy-creatures'
+				? enemies.flatMap(o => state.players[o].board.filter(c => !isDead(c))) // Eadric the Pure
 				: [chosenCreature()].filter(Boolean);
 			for (const t of list) {
 				t.attack = e.value + (t.auraAttack || 0);
@@ -3234,6 +3237,7 @@ function execEffects(state, pi, effects, target, source) {
 			else if (e.if.minOtherCreatures != null) ok = p.board.filter(c => !isDead(c) && c !== source && c.type !== 'location').length >= e.if.minOtherCreatures; // Nesting Roc
 			else if (e.if.diedThisGame) ok = p.deathLogIds.includes(e.if.diedThisGame); // Feugen/Stalagg
 			else if (e.if.enemyMaxHealth != null) ok = opponentsOf(state, pi).some(o => state.players[o].life <= e.if.enemyMaxHealth); // Drakonid Crusher
+			else if (e.if.controlStatic) ok = p.board.some(c => !isDead(c) && c.static?.type === e.if.controlStatic); // Master of Ceremonies: a Spell Damage minion
 			else if (e.if.maxHealthSelf != null) ok = p.life <= e.if.maxHealthSelf;
 			else if (e.if.targetFrozen) ok = !!(t && t.frozen);
 			else if (e.if.targetFriendlyTribe) ok = !!(t && t.controller === pi && (t.tribe || '').includes(e.if.targetFriendlyTribe));
@@ -4180,6 +4184,7 @@ function execEffects(state, pi, effects, target, source) {
 				&& (e.minCost == null || (d.cost || 0) >= e.minCost)
 				&& (e.cost == null || (d.cost || 0) === e.cost)
 				&& (e.tribe == null || (d.tribe || '').includes(e.tribe))
+				&& (e.rarity == null || d.rarity === e.rarity)
 				&& !d.companion && !d.commander && !d.token && d.collectible !== false && !(d.colors && d.colors.length));
 			for (let i = 0; i < (e.count || 1) && pool.length; i++) {
 				const def = pool[Math.floor(state.rng() * pool.length)];

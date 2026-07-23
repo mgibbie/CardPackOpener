@@ -64425,6 +64425,320 @@
           "count": 2
         }
       ]
+    },
+    {
+      "id": "boneguard_lieutenant",
+      "name": "Boneguard Lieutenant",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "neutral",
+      "attack": 3,
+      "health": 2,
+      "rarity": "common",
+      "set": "TGT",
+      "description": "Inspire: Gain +1 Health.",
+      "ongoing": {
+        "on": "hero-power-used",
+        "effects": [
+          {
+            "type": "buff-self",
+            "attack": 0,
+            "health": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "dragonhawk_rider",
+      "name": "Dragonhawk Rider",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "neutral",
+      "attack": 3,
+      "health": 3,
+      "rarity": "common",
+      "set": "TGT",
+      "description": "Inspire: Gain Windfury this turn.",
+      "ongoing": {
+        "on": "hero-power-used",
+        "effects": [
+          {
+            "type": "grant-self",
+            "keyword": "windfury"
+          }
+        ]
+      }
+    },
+    {
+      "id": "thunder_bluff_valiant",
+      "name": "Thunder Bluff Valiant",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "shaman",
+      "attack": 3,
+      "health": 6,
+      "rarity": "rare",
+      "set": "TGT",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry and Inspire: Give your Totems +2 Attack.",
+      "effects": [
+        {
+          "type": "buff",
+          "target": "friendly-creatures",
+          "tribe": "Totem",
+          "attack": 2,
+          "health": 0
+        }
+      ],
+      "ongoing": {
+        "on": "hero-power-used",
+        "effects": [
+          {
+            "type": "buff",
+            "target": "friendly-creatures",
+            "tribe": "Totem",
+            "attack": 2,
+            "health": 0
+          }
+        ]
+      }
+    },
+    {
+      "id": "wildwalker",
+      "name": "Wildwalker",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "druid",
+      "attack": 4,
+      "health": 4,
+      "rarity": "common",
+      "set": "TGT",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Give a friendly Beast +3 Health.",
+      "effects": [
+        {
+          "type": "buff",
+          "target": "friendly-creature",
+          "tribe": "Beast",
+          "attack": 0,
+          "health": 3
+        }
+      ]
+    },
+    {
+      "id": "shady_dealer",
+      "name": "Shady Dealer",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "rogue",
+      "attack": 4,
+      "health": 3,
+      "rarity": "rare",
+      "set": "TGT",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: If you have a Pirate, gain +1/+1.",
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "controlTribe": "Pirate"
+          },
+          "then": [
+            {
+              "type": "buff-self",
+              "attack": 1,
+              "health": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "lights_champion",
+      "name": "Light's Champion",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "neutral",
+      "attack": 4,
+      "health": 3,
+      "rarity": "rare",
+      "set": "TGT",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Silence a Demon.",
+      "effects": [
+        {
+          "type": "silence",
+          "target": "creature"
+        }
+      ]
+    },
+    {
+      "id": "crowd_favorite",
+      "name": "Crowd Favorite",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "neutral",
+      "attack": 4,
+      "health": 4,
+      "rarity": "epic",
+      "set": "TGT",
+      "description": "Whenever you play a card with Battlecry, gain +1/+1.",
+      "ongoing": {
+        "on": "creature-played",
+        "if": {
+          "keyword": "battlecry"
+        },
+        "effects": [
+          {
+            "type": "buff-self",
+            "attack": 1,
+            "health": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "ram_wrangler",
+      "name": "Ram Wrangler",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "hunter",
+      "attack": 3,
+      "health": 3,
+      "rarity": "rare",
+      "set": "TGT",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: If you have a Beast, summon a random Beast.",
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "controlTribe": "Beast"
+          },
+          "then": [
+            {
+              "type": "summon-random",
+              "tribe": "Beast"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "draenei_totemcarver",
+      "name": "Draenei Totemcarver",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "shaman",
+      "attack": 4,
+      "health": 5,
+      "rarity": "rare",
+      "set": "TGT",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Gain +1/+1 for each friendly Totem.",
+      "effects": [
+        {
+          "type": "buff-self",
+          "per": "friendly-tribe",
+          "tribe": "Totem",
+          "attack": 1,
+          "health": 1
+        }
+      ]
+    },
+    {
+      "id": "master_of_ceremonies",
+      "name": "Master of Ceremonies",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "neutral",
+      "attack": 4,
+      "health": 2,
+      "rarity": "epic",
+      "set": "TGT",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: If you have a creature with Spell Damage, gain +2/+2.",
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "controlStatic": "spell-damage"
+          },
+          "then": [
+            {
+              "type": "buff-self",
+              "attack": 2,
+              "health": 2
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "eadric_the_pure",
+      "name": "Eadric the Pure",
+      "type": "creature",
+      "cost": 7,
+      "cardClass": "paladin",
+      "attack": 3,
+      "health": 7,
+      "rarity": "legendary",
+      "set": "TGT",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Change all enemy creatures' Attack to 1.",
+      "effects": [
+        {
+          "type": "set-attack",
+          "target": "enemy-creatures",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "confessor_paletress",
+      "name": "Confessor Paletress",
+      "type": "creature",
+      "cost": 7,
+      "cardClass": "priest",
+      "attack": 3,
+      "health": 7,
+      "rarity": "legendary",
+      "set": "TGT",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry and Inspire: Summon a random Legendary creature.",
+      "effects": [
+        {
+          "type": "summon-random",
+          "rarity": "legendary"
+        }
+      ],
+      "ongoing": {
+        "on": "hero-power-used",
+        "effects": [
+          {
+            "type": "summon-random",
+            "rarity": "legendary"
+          }
+        ]
+      }
     }
   ]
 }
