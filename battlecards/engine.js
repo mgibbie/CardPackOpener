@@ -2281,6 +2281,20 @@ function execEffects(state, pi, effects, target, source) {
 				const [own, c] = pool.splice(j, 1)[0];
 				destroyPermanent(state, own, c, !!e.exile);
 			}
+		} else if (e.type === 'deploy-equip') {
+			// Stoneforge Mystic: put an Equipment from your hand into play (unattached)
+			const pp = state.players[pi];
+			const pool = pp.hand.filter(c => c.equip);
+			const drop = (card) => {
+				pp.hand = pp.hand.filter(x => x !== card);
+				card.zone = 'artifact'; card.attachedTo = null;
+				pp.artifacts.push(card);
+				if (card.effects) execEffects(state, pi, card.effects, null, card);
+				recomputeAuras(state);
+				emit(state, { type: 'deployedEquip', player: pi, uid: card.uid, name: card.name });
+			};
+			if (pool.length === 1) drop(pool[0]);
+			else if (pool.length > 1) state.pickQueue.push({ player: pi, ids: [...new Set(pool.map(c => c.id))].slice(0, 8), mode: 'deploy-equip', title: 'Put an Equipment into play' });
 		} else if (e.type === 'emblem') {
 			const p = state.players[pi];
 			if (!p.eliminated) {
@@ -3305,7 +3319,8 @@ function execEffects(state, pi, effects, target, source) {
 					: !e.cardType || d.type === e.cardType)
 					&& (e.maxCost == null || (d.cost || 0) <= e.maxCost)
 					&& (e.maxAttack == null || (d.attack || 0) <= e.maxAttack)
-					&& (!e.tribe || (d.tribe || '').includes(e.tribe));
+					&& (!e.tribe || (d.tribe || '').includes(e.tribe))
+					&& (!e.equipment || !!d.equip); // Steelshaper's Gift / Stoneforge: Equipment only
 			}))];
 			// pick: Discover-from-deck flavor — offer N randomly-sampled matches
 			if (e.pick) {
@@ -5002,6 +5017,18 @@ export function resolvePick(state, id) {
 				const j = Math.floor(state.rng() * (i + 1));
 				[p.deck[i], p.deck[j]] = [p.deck[j], p.deck[i]];
 			}
+		}
+		return true;
+	}
+	if (pend.mode === 'deploy-equip') {
+		const idx = p.hand.findIndex(c => c.id === chosen && c.equip);
+		if (idx >= 0 && !p.eliminated) {
+			const [card] = p.hand.splice(idx, 1);
+			card.zone = 'artifact'; card.attachedTo = null;
+			p.artifacts.push(card);
+			if (card.effects) execEffects(state, pend.player, card.effects, null, card);
+			recomputeAuras(state);
+			emit(state, { type: 'deployedEquip', player: pend.player, uid: card.uid, name: card.name });
 		}
 		return true;
 	}

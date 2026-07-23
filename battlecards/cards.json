@@ -58065,6 +58065,63 @@
         ]
       },
       "description": "Equipped creature has +3/+0, Trample & Lifesteal.\nEquip (3)."
+    },
+    {
+      "id": "steelshapers_gift",
+      "name": "Steelshaper's Gift",
+      "type": "sorcery",
+      "cost": 1,
+      "colors": [
+        "W"
+      ],
+      "cardClass": "neutral",
+      "rarity": "common",
+      "set": "wubrg",
+      "description": "Search your deck for an Equipment and put it into your hand.",
+      "effects": [
+        {
+          "type": "search",
+          "equipment": true,
+          "to": "hand"
+        }
+      ]
+    },
+    {
+      "id": "stoneforge_mystic",
+      "name": "Stoneforge Mystic",
+      "type": "creature",
+      "cost": 2,
+      "colors": [
+        "W"
+      ],
+      "cardClass": "neutral",
+      "attack": 1,
+      "health": 2,
+      "rarity": "rare",
+      "set": "wubrg",
+      "tribe": "Kor Artificer",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Search your deck for an Equipment and put it into your hand.\n(1): Put an Equipment from your hand into play. (Once per turn.)",
+      "effects": [
+        {
+          "type": "search",
+          "equipment": true,
+          "to": "hand"
+        }
+      ],
+      "activated": [
+        {
+          "cost": 1,
+          "effects": [
+            {
+              "type": "deploy-equip"
+            }
+          ],
+          "text": "Put an Equipment from your hand into play."
+        }
+      ]
     }
   ]
 }
