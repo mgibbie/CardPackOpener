@@ -475,6 +475,12 @@ export function drawCards(state, pi, count) {
 		p.drawsThisTurn = (p.drawsThisTurn || 0) + 1;
 		if (p.drawsThisTurn > 1) firePonder(state, pi, { drawn: card });
 		fireEmerge(state, pi, card);
+		// Chromaggus: "whenever you draw a card…" (guard against re-entrant copies)
+		if (state.dealt && !state.drawTrigLock) {
+			state.drawTrigLock = true;
+			try { fireOngoing(state, pi, 'card-drawn', { card }); }
+			finally { state.drawTrigLock = false; }
+		}
 		// opponents may react to your draw (Smothering Tithe: pay {2} or I get a Treasure)
 		if (state.dealt && !state.enemyDrawLock) {
 			state.enemyDrawLock = true;
@@ -1922,6 +1928,19 @@ function runSecretEffects(state, pi, effects, ctx) {
 				}
 				break;
 			}
+			case 'copy-drawn': {
+				// Chromaggus: put another copy of the just-drawn card into your hand
+				const drawn = ctx.card;
+				const p = state.players[pi];
+				const def = drawn && state.cardsById[drawn.id];
+				if (def && p.hand.length < MAX_HAND) {
+					const copy = instantiate(def, pi);
+					copy.zone = 'hand';
+					p.hand.push(copy);
+					emit(state, { type: 'conjure', player: pi, card: copy, color: null });
+				}
+				break;
+			}
 			case 'damage-self': {
 				const m = ctx.self;
 				if (m && !isDead(m)) damageCreature(state, m, e.value, null);
@@ -2355,6 +2374,7 @@ function execEffects(state, pi, effects, target, source) {
 				&& (e.maxCost == null || (t.cost || 0) <= e.maxCost)
 				&& (e.minAttack == null || t.attack >= e.minAttack)
 				&& (e.requireKeyword == null || t.keywords.includes(e.requireKeyword))
+				&& (e.requireRarity == null || t.rarity === e.requireRarity)
 				&& (e.tribe == null || (t.tribe || '').includes(e.tribe))
 				&& !(e.requireDamaged && t.damage === 0)) {
 				t.damage = t.maxHealth;
@@ -2970,6 +2990,12 @@ function execEffects(state, pi, effects, target, source) {
 					idx === pi ? s : s + pl.board.filter(c => !isDead(c) && c.keywords.includes('deathrattle')).length, 0);
 				if (n > 0) buffCreature(source, (e.attack || 0) * n, (e.health || 0) * n);
 			}
+		} else if (e.type === 'buff-self-random') {
+			// Fireguard Destroyer: gain a random amount of Attack in [min,max]
+			if (source && source.zone === 'board' && !isDead(source)) {
+				const [lo, hi] = e.range || [1, 1];
+				buffCreature(source, lo + Math.floor(state.rng() * (hi - lo + 1)), e.health || 0);
+			}
 		} else if (e.type === 'damage-self') {
 			if (source && source.zone === 'board' && !isDead(source)) damageCreature(state, source, e.value, null);
 		} else if (e.type === 'destroy-self') {
@@ -3352,7 +3378,7 @@ function execEffects(state, pi, effects, target, source) {
 			p.mana.max = Math.max(0, p.mana.max - (e.value || 1));
 			p.mana.cur = Math.min(p.mana.cur, p.mana.max);
 		} else if (e.type === 'set-hero-health') {
-			const who = target?.type === 'hero' ? target.player : enemyHero();
+			const who = e.target === 'self' ? pi : (target?.type === 'hero' ? target.player : enemyHero()); // Majordomo: your own hero
 			if (who != null) {
 				state.players[who].life = e.value;
 				emit(state, { type: 'heal', targetType: 'hero', player: who, amount: 0, life: e.value });
@@ -4814,6 +4840,16 @@ function resolveStackedSpell(state, entry) {
 	else {
 		state.exactKills = 0;
 		runSpell(state, pi, card, ctx.target, choice);
+		// Dragonkin Sorcerer: "whenever you target this creature with a spell"
+		if (ctx.target?.type === 'creature') {
+			const tc = findCreature(state, ctx.target.uid);
+			if (tc && tc.controller === pi && !isDead(tc)) {
+				const spellTrigs = [];
+				if (tc.ongoing?.on === 'spell-targeted-self') spellTrigs.push(tc.ongoing);
+				if (tc.ongoings) for (const o of tc.ongoings) if (o.on === 'spell-targeted-self') spellTrigs.push(o);
+				for (const o of spellTrigs) runSecretEffects(state, pi, o.effects, { self: tc });
+			}
+		}
 		// Sinestra: your spells from another class cast twice (not your own class /
 		// neutral cards; guard `recasting` so the second cast never chains again)
 		const myClass = state.players[pi].heroClass;

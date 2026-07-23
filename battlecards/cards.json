@@ -64080,6 +64080,351 @@
           }
         ]
       }
+    },
+    {
+      "id": "twilight_whelp",
+      "name": "Twilight Whelp",
+      "type": "creature",
+      "cost": 1,
+      "cardClass": "priest",
+      "attack": 2,
+      "health": 1,
+      "rarity": "common",
+      "set": "BRM",
+      "tribe": "Dragon",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: If you're holding a Dragon, gain +2 Health.",
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "holdingTribe": "Dragon"
+          },
+          "then": [
+            {
+              "type": "buff-self",
+              "attack": 0,
+              "health": 2
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "blackwing_technician",
+      "name": "Blackwing Technician",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "neutral",
+      "attack": 2,
+      "health": 4,
+      "rarity": "common",
+      "set": "BRM",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: If you're holding a Dragon, gain +1/+1.",
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "holdingTribe": "Dragon"
+          },
+          "then": [
+            {
+              "type": "buff-self",
+              "attack": 1,
+              "health": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "druid_of_the_flame",
+      "name": "Druid of the Flame",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "druid",
+      "attack": 2,
+      "health": 2,
+      "rarity": "common",
+      "set": "BRM",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Choose One - Become a 5/2; or a 2/5.",
+      "choices": [
+        {
+          "text": "5/2",
+          "effects": [
+            {
+              "type": "buff-self",
+              "attack": 3,
+              "health": 0
+            }
+          ]
+        },
+        {
+          "text": "2/5",
+          "effects": [
+            {
+              "type": "buff-self",
+              "attack": 0,
+              "health": 3
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "core_rager",
+      "name": "Core Rager",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "hunter",
+      "attack": 4,
+      "health": 4,
+      "rarity": "rare",
+      "set": "BRM",
+      "tribe": "Beast",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: If your hand is empty, gain +3/+3.",
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "handEmpty": true
+          },
+          "then": [
+            {
+              "type": "buff-self",
+              "attack": 3,
+              "health": 3
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "dragonkin_sorcerer",
+      "name": "Dragonkin Sorcerer",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "neutral",
+      "attack": 3,
+      "health": 5,
+      "rarity": "common",
+      "set": "BRM",
+      "tribe": "Dragon",
+      "description": "Whenever you target this creature with a spell, gain +1/+1.",
+      "ongoing": {
+        "on": "spell-targeted-self",
+        "effects": [
+          {
+            "type": "buff-self",
+            "attack": 1,
+            "health": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "fireguard_destroyer",
+      "name": "Fireguard Destroyer",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "shaman",
+      "attack": 3,
+      "health": 6,
+      "rarity": "common",
+      "set": "BRM",
+      "overload": 1,
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Gain 1-4 Attack. Overload (1).",
+      "effects": [
+        {
+          "type": "buff-self-random",
+          "range": [
+            1,
+            4
+          ]
+        }
+      ]
+    },
+    {
+      "id": "grim_patron",
+      "name": "Grim Patron",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "neutral",
+      "attack": 3,
+      "health": 3,
+      "rarity": "rare",
+      "set": "BRM",
+      "description": "After this creature survives damage, summon another Grim Patron.",
+      "ongoing": {
+        "on": "self-damaged",
+        "survives": true,
+        "effects": [
+          {
+            "type": "summon",
+            "count": 1,
+            "summonId": "grim_patron"
+          }
+        ]
+      }
+    },
+    {
+      "id": "drakonid_crusher",
+      "name": "Drakonid Crusher",
+      "type": "creature",
+      "cost": 6,
+      "cardClass": "neutral",
+      "attack": 6,
+      "health": 6,
+      "rarity": "common",
+      "set": "BRM",
+      "tribe": "Dragon",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: If your opponent has 15 or less Health, gain +3/+3.",
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "enemyMaxHealth": 15
+          },
+          "then": [
+            {
+              "type": "buff-self",
+              "attack": 3,
+              "health": 3
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "rend_blackhand",
+      "name": "Rend Blackhand",
+      "type": "creature",
+      "cost": 7,
+      "cardClass": "neutral",
+      "attack": 8,
+      "health": 4,
+      "rarity": "legendary",
+      "set": "BRM",
+      "tribe": "Dragon",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: If you're holding a Dragon, destroy a Legendary creature.",
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "holdingTribe": "Dragon"
+          },
+          "then": [
+            {
+              "type": "destroy",
+              "target": "creature",
+              "requireRarity": "legendary"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "chromaggus",
+      "name": "Chromaggus",
+      "type": "creature",
+      "cost": 8,
+      "cardClass": "neutral",
+      "attack": 6,
+      "health": 8,
+      "rarity": "legendary",
+      "set": "BRM",
+      "tribe": "Dragon",
+      "description": "Whenever you draw a card, put another copy into your hand.",
+      "ongoing": {
+        "on": "card-drawn",
+        "effects": [
+          {
+            "type": "copy-drawn"
+          }
+        ]
+      }
+    },
+    {
+      "id": "majordomo_executus",
+      "name": "Majordomo Executus",
+      "type": "creature",
+      "cost": 9,
+      "cardClass": "neutral",
+      "attack": 9,
+      "health": 7,
+      "rarity": "legendary",
+      "set": "BRM",
+      "keywords": [
+        "deathrattle"
+      ],
+      "description": "Deathrattle: Replace your hero with Ragnaros the Firelord (8 Health; end of turn, deal 8 to a random enemy).",
+      "deathrattle": [
+        {
+          "type": "set-hero-health",
+          "target": "self",
+          "value": 8
+        },
+        {
+          "type": "emblem",
+          "name": "Ragnaros the Firelord",
+          "description": "At the end of your turn, deal 8 damage to a random enemy.",
+          "ongoing": {
+            "on": "turn-end",
+            "effects": [
+              {
+                "type": "random-damage",
+                "value": 8,
+                "count": 1,
+                "pool": "enemies"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "nefarian",
+      "name": "Nefarian",
+      "type": "creature",
+      "cost": 9,
+      "cardClass": "neutral",
+      "attack": 8,
+      "health": 8,
+      "rarity": "legendary",
+      "set": "BRM",
+      "tribe": "Dragon",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Add 2 random spells to your hand (from your opponent's class).",
+      "effects": [
+        {
+          "type": "conjure-random",
+          "cardClass": "enemy",
+          "cardType": "spell",
+          "count": 2
+        }
+      ]
     }
   ]
 }
