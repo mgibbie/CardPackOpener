@@ -57029,24 +57029,6 @@
       ]
     },
     {
-      "id": "grizzly_bears",
-      "name": "Grizzly Bears",
-      "type": "creature",
-      "cost": 2,
-      "colors": [
-        "G"
-      ],
-      "cardClass": "neutral",
-      "attack": 2,
-      "health": 2,
-      "rarity": "common",
-      "set": "wubrg",
-      "tribe": "Beast",
-      "keywords": [],
-      "description": "",
-      "effects": []
-    },
-    {
       "id": "youthful_knight",
       "name": "Youthful Knight",
       "type": "creature",
@@ -57064,26 +57046,6 @@
         "first_strike"
       ],
       "description": "First Strike.",
-      "effects": []
-    },
-    {
-      "id": "child_of_night",
-      "name": "Child of Night",
-      "type": "creature",
-      "cost": 2,
-      "colors": [
-        "B"
-      ],
-      "cardClass": "neutral",
-      "attack": 2,
-      "health": 1,
-      "rarity": "common",
-      "set": "wubrg",
-      "tribe": "Vampire",
-      "keywords": [
-        "lifesteal"
-      ],
-      "description": "Lifesteal.",
       "effects": []
     },
     {
@@ -60846,6 +60808,1182 @@
       "rarity": "common",
       "set": "wubrg",
       "tribe": "Merfolk Soldier",
+      "keywords": [],
+      "description": ""
+    },
+    {
+      "id": "abbey_griffin",
+      "name": "Abbey Griffin",
+      "type": "creature",
+      "cost": 4,
+      "colors": [
+        "W"
+      ],
+      "cardClass": "neutral",
+      "attack": 2,
+      "health": 2,
+      "rarity": "common",
+      "set": "wubrg",
+      "tribe": "Griffin",
+      "keywords": [
+        "flying",
+        "vigilance"
+      ],
+      "description": "Flying, Vigilance."
+    },
+    {
+      "id": "aerial_responder",
+      "name": "Aerial Responder",
+      "type": "creature",
+      "cost": 3,
+      "colors": [
+        "W"
+      ],
+      "cardClass": "neutral",
+      "attack": 2,
+      "health": 3,
+      "rarity": "common",
+      "set": "wubrg",
+      "tribe": "Dwarf Soldier",
+      "keywords": [
+        "flying",
+        "lifesteal",
+        "vigilance"
+      ],
+      "description": "Flying, Lifelink, Vigilance."
+    },
+    {
+      "id": "armored_pegasus",
+      "name": "Armored Pegasus",
+      "type": "creature",
+      "cost": 2,
+      "colors": [
+        "W"
+      ],
+      "cardClass": "neutral",
+      "attack": 1,
+      "health": 2,
+      "rarity": "common",
+      "set": "wubrg",
+      "tribe": "Pegasus",
+      "keywords": [
+        "flying"
+      ],
+      "description": "Flying."
+    },
+    {
+      "id": "alabaster_kirin",
+      "name": "Alabaster Kirin",
+      "type": "creature",
+      "cost": 4,
+      "colors": [
+        "W"
+      ],
+      "cardClass": "neutral",
+      "attack": 2,
+      "health": 3,
+      "rarity": "common",
+      "set": "wubrg",
+      "tribe": "Kirin",
+      "keywords": [
+        "flying",
+        "vigilance"
+      ],
+      "description": "Flying, Vigilance."
+    },
+    {
+      "id": "ajanis_sunstriker",
+      "name": "Ajani\u2019s Sunstriker",
+      "type": "creature",
+      "cost": 2,
+      "colors": [
+        "W"
+      ],
+      "cardClass": "neutral",
+      "attack": 2,
+      "health": 2,
+      "rarity": "common",
+      "set": "wubrg",
+      "tribe": "Cat Cleric",
+      "keywords": [
+        "lifesteal"
+      ],
+      "description": "Lifelink."
+    },
+    {
+      "id": "alpine_watchdog",
+      "name": "Alpine Watchdog",
+      "type": "creature",
+      "cost": 2,
+      "colors": [
+        "W"
+      ],
+      "cardClass": "neutral",
+      "attack": 2,
+      "health": 2,
+      "rarity": "common",
+      "set": "wubrg",
+      "tribe": "Dog",
+      "keywords": [
+        "vigilance"
+      ],
+      "description": "Vigilance."
+    },
+    {
+      "id": "angel_of_light",
+      "name": "Angel of Light",
+      "type": "creature",
+      "cost": 5,
+      "colors": [
+        "W"
+      ],
+      "cardClass": "neutral",
+      "attack": 3,
+      "health": 3,
+      "rarity": "common",
+      "set": "wubrg",
+      "tribe": "Angel",
+      "keywords": [
+        "flying",
+        "vigilance"
+      ],
+      "description": "Flying, Vigilance."
+    },
+    {
+      "id": "aven_fleetwing",
+      "name": "Aven Fleetwing",
+      "type": "creature",
+      "cost": 3,
+      "colors": [
+        "U"
+      ],
+      "cardClass": "neutral",
+      "attack": 2,
+      "health": 2,
+      "rarity": "common",
+      "set": "wubrg",
+      "tribe": "Bird Soldier",
+      "keywords": [
+        "flying",
+        "elusive"
+      ],
+      "description": "Flying, Hexproof."
+    },
+    {
+      "id": "benthic_giant",
+      "name": "Benthic Giant",
+      "type": "creature",
+      "cost": 5,
+      "colors": [
+        "U"
+      ],
+      "cardClass": "neutral",
+      "attack": 4,
+      "health": 5,
+      "rarity": "common",
+      "set": "wubrg",
+      "tribe": "Giant",
+      "keywords": [
+        "elusive"
+      ],
+      "description": "Hexproof."
+    },
+    {
+      "id": "fortress_crab",
+      "name": "Fortress Crab",
+      "type": "creature",
+      "cost": 3,
+      "colors": [
+        "U"
+      ],
+      "cardClass": "neutral",
+      "attack": 1,
+      "health": 6,
+      "rarity": "common",
+      "set": "wubrg",
+      "tribe": "Crab",
+      "keywords": [],
+      "description": ""
+    },
+    {
+      "id": "coral_merfolk",
+      "name": "Coral Merfolk",
+      "type": "creature",
+      "cost": 2,
+      "colors": [
+        "U"
+      ],
+      "cardClass": "neutral",
+      "attack": 2,
+      "health": 1,
+      "rarity": "common",
+      "set": "wubrg",
+      "tribe": "Merfolk",
+      "keywords": [],
+      "description": ""
+    },
+    {
+      "id": "naga_eternal",
+      "name": "Naga Eternal",
+      "type": "creature",
+      "cost": 3,
+      "colors": [
+        "U"
+      ],
+      "cardClass": "neutral",
+      "attack": 3,
+      "health": 2,
+      "rarity": "common",
+      "set": "wubrg",
+      "tribe": "Zombie Snake",
+      "keywords": [],
+      "description": ""
+    },
+    {
+      "id": "lumengrid_warden",
+      "name": "Lumengrid Warden",
+      "type": "creature",
+      "cost": 3,
+      "colors": [
+        "U"
+      ],
+      "cardClass": "neutral",
+      "attack": 1,
+      "health": 3,
+      "rarity": "common",
+      "set": "wubrg",
+      "tribe": "Human Wizard",
+      "keywords": [],
+      "description": ""
+    },
+    {
+      "id": "jhessian_lookout",
+      "name": "Jhessian Lookout",
+      "type": "creature",
+      "cost": 2,
+      "colors": [
+        "U"
+      ],
+      "cardClass": "neutral",
+      "attack": 2,
+      "health": 1,
+      "rarity": "common",
+      "set": "wubrg",
+      "tribe": "Human Scout",
+      "keywords": [],
+      "description": ""
+    },
+    {
+      "id": "child_of_night",
+      "name": "Child of Night",
+      "type": "creature",
+      "cost": 2,
+      "colors": [
+        "B"
+      ],
+      "cardClass": "neutral",
+      "attack": 2,
+      "health": 1,
+      "rarity": "common",
+      "set": "wubrg",
+      "tribe": "Vampire",
+      "keywords": [
+        "lifesteal"
+      ],
+      "description": "Lifelink."
+    },
+    {
+      "id": "barony_vampire",
+      "name": "Barony Vampire",
+      "type": "creature",
+      "cost": 3,
+      "colors": [
+        "B"
+      ],
+      "cardClass": "neutral",
+      "attack": 3,
+      "health": 2,
+      "rarity": "common",
+      "set": "wubrg",
+      "tribe": "Vampire",
+      "keywords": [],
+      "description": ""
+    },
+    {
+      "id": "bog_imp",
+      "name": "Bog Imp",
+      "type": "creature",
+      "cost": 2,
+      "colors": [
+        "B"
+      ],
+      "cardClass": "neutral",
+      "attack": 1,
+      "health": 1,
+      "rarity": "common",
+      "set": "wubrg",
+      "tribe": "Imp",
+      "keywords": [
+        "flying"
+      ],
+      "description": "Flying."
+    },
+    {
+      "id": "arrogant_vampire",
+      "name": "Arrogant Vampire",
+      "type": "creature",
+      "cost": 5,
+      "colors": [
+        "B"
+      ],
+      "cardClass": "neutral",
+      "attack": 4,
+      "health": 3,
+      "rarity": "common",
+      "set": "wubrg",
+      "tribe": "Vampire",
+      "keywords": [
+        "flying"
+      ],
+      "description": "Flying."
+    },
+    {
+      "id": "bartizan_bats",
+      "name": "Bartizan Bats",
+      "type": "creature",
+      "cost": 4,
+      "colors": [
+        "B"
+      ],
+      "cardClass": "neutral",
+      "attack": 3,
+      "health": 1,
+      "rarity": "common",
+      "set": "wubrg",
+      "tribe": "Bat",
+      "keywords": [
+        "flying"
+      ],
+      "description": "Flying."
+    },
+    {
+      "id": "blood_glutton",
+      "name": "Blood Glutton",
+      "type": "creature",
+      "cost": 5,
+      "colors": [
+        "B"
+      ],
+      "cardClass": "neutral",
+      "attack": 4,
+      "health": 3,
+      "rarity": "common",
+      "set": "wubrg",
+      "tribe": "Vampire",
+      "keywords": [
+        "lifesteal"
+      ],
+      "description": "Lifelink."
+    },
+    {
+      "id": "daggerdrome_imp",
+      "name": "Daggerdrome Imp",
+      "type": "creature",
+      "cost": 2,
+      "colors": [
+        "B"
+      ],
+      "cardClass": "neutral",
+      "attack": 1,
+      "health": 1,
+      "rarity": "common",
+      "set": "wubrg",
+      "tribe": "Imp",
+      "keywords": [
+        "flying",
+        "lifesteal"
+      ],
+      "description": "Flying, Lifelink."
+    },
+    {
+      "id": "cursed_minotaur",
+      "name": "Cursed Minotaur",
+      "type": "creature",
+      "cost": 3,
+      "colors": [
+        "B"
+      ],
+      "cardClass": "neutral",
+      "attack": 3,
+      "health": 2,
+      "rarity": "common",
+      "set": "wubrg",
+      "tribe": "Zombie Minotaur",
+      "keywords": [
+        "menace"
+      ],
+      "description": "Menace."
+    },
+    {
+      "id": "alley_strangler",
+      "name": "Alley Strangler",
+      "type": "creature",
+      "cost": 3,
+      "colors": [
+        "B"
+      ],
+      "cardClass": "neutral",
+      "attack": 2,
+      "health": 3,
+      "rarity": "common",
+      "set": "wubrg",
+      "tribe": "Aetherborn Rogue",
+      "keywords": [
+        "menace"
+      ],
+      "description": "Menace."
+    },
+    {
+      "id": "carrion_screecher",
+      "name": "Carrion Screecher",
+      "type": "creature",
+      "cost": 4,
+      "colors": [
+        "B"
+      ],
+      "cardClass": "neutral",
+      "attack": 3,
+      "health": 1,
+      "rarity": "common",
+      "set": "wubrg",
+      "tribe": "Zombie Bird",
+      "keywords": [
+        "flying"
+      ],
+      "description": "Flying."
+    },
+    {
+      "id": "catacomb_crocodile",
+      "name": "Catacomb Crocodile",
+      "type": "creature",
+      "cost": 5,
+      "colors": [
+        "B"
+      ],
+      "cardClass": "neutral",
+      "attack": 3,
+      "health": 7,
+      "rarity": "common",
+      "set": "wubrg",
+      "tribe": "Crocodile",
+      "keywords": [],
+      "description": ""
+    },
+    {
+      "id": "cabal_evangel",
+      "name": "Cabal Evangel",
+      "type": "creature",
+      "cost": 2,
+      "colors": [
+        "B"
+      ],
+      "cardClass": "neutral",
+      "attack": 2,
+      "health": 2,
+      "rarity": "common",
+      "set": "wubrg",
+      "tribe": "Human Cleric",
+      "keywords": [],
+      "description": ""
+    },
+    {
+      "id": "canal_monitor",
+      "name": "Canal Monitor",
+      "type": "creature",
+      "cost": 5,
+      "colors": [
+        "B"
+      ],
+      "cardClass": "neutral",
+      "attack": 5,
+      "health": 3,
+      "rarity": "common",
+      "set": "wubrg",
+      "tribe": "Lizard",
+      "keywords": [],
+      "description": ""
+    },
+    {
+      "id": "dakmor_scorpion",
+      "name": "Dakmor Scorpion",
+      "type": "creature",
+      "cost": 2,
+      "colors": [
+        "B"
+      ],
+      "cardClass": "neutral",
+      "attack": 2,
+      "health": 1,
+      "rarity": "common",
+      "set": "wubrg",
+      "tribe": "Scorpion",
+      "keywords": [],
+      "description": ""
+    },
+    {
+      "id": "bane_alley_blackguard",
+      "name": "Bane Alley Blackguard",
+      "type": "creature",
+      "cost": 2,
+      "colors": [
+        "B"
+      ],
+      "cardClass": "neutral",
+      "attack": 1,
+      "health": 3,
+      "rarity": "common",
+      "set": "wubrg",
+      "tribe": "Human Rogue",
+      "keywords": [],
+      "description": ""
+    },
+    {
+      "id": "bogstomper",
+      "name": "Bogstomper",
+      "type": "creature",
+      "cost": 6,
+      "colors": [
+        "B"
+      ],
+      "cardClass": "neutral",
+      "attack": 6,
+      "health": 5,
+      "rarity": "common",
+      "set": "wubrg",
+      "tribe": "Beast",
+      "keywords": [],
+      "description": ""
+    },
+    {
+      "id": "charity_extractor",
+      "name": "Charity Extractor",
+      "type": "creature",
+      "cost": 4,
+      "colors": [
+        "B"
+      ],
+      "cardClass": "neutral",
+      "attack": 1,
+      "health": 5,
+      "rarity": "common",
+      "set": "wubrg",
+      "tribe": "Human Knight",
+      "keywords": [
+        "lifesteal"
+      ],
+      "description": "Lifelink."
+    },
+    {
+      "id": "balduvian_barbarians",
+      "name": "Balduvian Barbarians",
+      "type": "creature",
+      "cost": 3,
+      "colors": [
+        "R"
+      ],
+      "cardClass": "neutral",
+      "attack": 3,
+      "health": 2,
+      "rarity": "common",
+      "set": "wubrg",
+      "tribe": "Human Barbarian",
+      "keywords": [],
+      "description": ""
+    },
+    {
+      "id": "boggart_brute",
+      "name": "Boggart Brute",
+      "type": "creature",
+      "cost": 3,
+      "colors": [
+        "R"
+      ],
+      "cardClass": "neutral",
+      "attack": 3,
+      "health": 2,
+      "rarity": "common",
+      "set": "wubrg",
+      "tribe": "Goblin Warrior",
+      "keywords": [
+        "menace"
+      ],
+      "description": "Menace."
+    },
+    {
+      "id": "borderland_minotaur",
+      "name": "Borderland Minotaur",
+      "type": "creature",
+      "cost": 4,
+      "colors": [
+        "R"
+      ],
+      "cardClass": "neutral",
+      "attack": 4,
+      "health": 3,
+      "rarity": "common",
+      "set": "wubrg",
+      "tribe": "Minotaur Warrior",
+      "keywords": [],
+      "description": ""
+    },
+    {
+      "id": "canyon_minotaur",
+      "name": "Canyon Minotaur",
+      "type": "creature",
+      "cost": 4,
+      "colors": [
+        "R"
+      ],
+      "cardClass": "neutral",
+      "attack": 3,
+      "health": 3,
+      "rarity": "common",
+      "set": "wubrg",
+      "tribe": "Minotaur Warrior",
+      "keywords": [],
+      "description": ""
+    },
+    {
+      "id": "brazen_scourge",
+      "name": "Brazen Scourge",
+      "type": "creature",
+      "cost": 3,
+      "colors": [
+        "R"
+      ],
+      "cardClass": "neutral",
+      "attack": 3,
+      "health": 3,
+      "rarity": "common",
+      "set": "wubrg",
+      "tribe": "Gremlin",
+      "keywords": [
+        "charge"
+      ],
+      "description": "Haste."
+    },
+    {
+      "id": "breakneck_berserker",
+      "name": "Breakneck Berserker",
+      "type": "creature",
+      "cost": 3,
+      "colors": [
+        "R"
+      ],
+      "cardClass": "neutral",
+      "attack": 3,
+      "health": 2,
+      "rarity": "common",
+      "set": "wubrg",
+      "tribe": "Dwarf Berserker",
+      "keywords": [
+        "charge"
+      ],
+      "description": "Haste."
+    },
+    {
+      "id": "cerodon_yearling",
+      "name": "Cerodon Yearling",
+      "type": "creature",
+      "cost": 2,
+      "colors": [
+        "R"
+      ],
+      "cardClass": "neutral",
+      "attack": 2,
+      "health": 2,
+      "rarity": "common",
+      "set": "wubrg",
+      "tribe": "Beast",
+      "keywords": [
+        "vigilance",
+        "charge"
+      ],
+      "description": "Vigilance, Haste."
+    },
+    {
+      "id": "charging_monstrosaur",
+      "name": "Charging Monstrosaur",
+      "type": "creature",
+      "cost": 5,
+      "colors": [
+        "R"
+      ],
+      "cardClass": "neutral",
+      "attack": 5,
+      "health": 5,
+      "rarity": "common",
+      "set": "wubrg",
+      "tribe": "Dinosaur",
+      "keywords": [
+        "charge",
+        "trample"
+      ],
+      "description": "Haste, Trample."
+    },
+    {
+      "id": "cobblebrute",
+      "name": "Cobblebrute",
+      "type": "creature",
+      "cost": 4,
+      "colors": [
+        "R"
+      ],
+      "cardClass": "neutral",
+      "attack": 5,
+      "health": 2,
+      "rarity": "common",
+      "set": "wubrg",
+      "tribe": "Elemental",
+      "keywords": [],
+      "description": ""
+    },
+    {
+      "id": "anaba_bodyguard",
+      "name": "Anaba Bodyguard",
+      "type": "creature",
+      "cost": 4,
+      "colors": [
+        "R"
+      ],
+      "cardClass": "neutral",
+      "attack": 2,
+      "health": 3,
+      "rarity": "common",
+      "set": "wubrg",
+      "tribe": "Minotaur",
+      "keywords": [
+        "first_strike"
+      ],
+      "description": "First strike."
+    },
+    {
+      "id": "axegrinder_giant",
+      "name": "Axegrinder Giant",
+      "type": "creature",
+      "cost": 6,
+      "colors": [
+        "R"
+      ],
+      "cardClass": "neutral",
+      "attack": 6,
+      "health": 4,
+      "rarity": "common",
+      "set": "wubrg",
+      "tribe": "Giant Warrior",
+      "keywords": [],
+      "description": ""
+    },
+    {
+      "id": "bonebreaker_giant",
+      "name": "Bonebreaker Giant",
+      "type": "creature",
+      "cost": 5,
+      "colors": [
+        "R"
+      ],
+      "cardClass": "neutral",
+      "attack": 4,
+      "health": 4,
+      "rarity": "common",
+      "set": "wubrg",
+      "tribe": "Giant",
+      "keywords": [],
+      "description": ""
+    },
+    {
+      "id": "bull_cerodon",
+      "name": "Bull Cerodon",
+      "type": "creature",
+      "cost": 6,
+      "colors": [
+        "R"
+      ],
+      "cardClass": "neutral",
+      "attack": 5,
+      "health": 5,
+      "rarity": "common",
+      "set": "wubrg",
+      "tribe": "Beast",
+      "keywords": [
+        "vigilance",
+        "charge"
+      ],
+      "description": "Vigilance, Haste."
+    },
+    {
+      "id": "armored_wolf_rider",
+      "name": "Armored Wolf-Rider",
+      "type": "creature",
+      "cost": 5,
+      "colors": [
+        "G"
+      ],
+      "cardClass": "neutral",
+      "attack": 4,
+      "health": 6,
+      "rarity": "common",
+      "set": "wubrg",
+      "tribe": "Elf Knight",
+      "keywords": [],
+      "description": ""
+    },
+    {
+      "id": "ashcoat_bear",
+      "name": "Ashcoat Bear",
+      "type": "creature",
+      "cost": 2,
+      "colors": [
+        "G"
+      ],
+      "cardClass": "neutral",
+      "attack": 2,
+      "health": 2,
+      "rarity": "common",
+      "set": "wubrg",
+      "tribe": "Bear",
+      "keywords": [],
+      "description": ""
+    },
+    {
+      "id": "balduvian_bears",
+      "name": "Balduvian Bears",
+      "type": "creature",
+      "cost": 2,
+      "colors": [
+        "G"
+      ],
+      "cardClass": "neutral",
+      "attack": 2,
+      "health": 2,
+      "rarity": "common",
+      "set": "wubrg",
+      "tribe": "Bear",
+      "keywords": [],
+      "description": ""
+    },
+    {
+      "id": "barbary_apes",
+      "name": "Barbary Apes",
+      "type": "creature",
+      "cost": 3,
+      "colors": [
+        "G"
+      ],
+      "cardClass": "neutral",
+      "attack": 2,
+      "health": 2,
+      "rarity": "common",
+      "set": "wubrg",
+      "tribe": "Ape",
+      "keywords": [],
+      "description": ""
+    },
+    {
+      "id": "barbtooth_wurm",
+      "name": "Barbtooth Wurm",
+      "type": "creature",
+      "cost": 6,
+      "colors": [
+        "G"
+      ],
+      "cardClass": "neutral",
+      "attack": 6,
+      "health": 4,
+      "rarity": "common",
+      "set": "wubrg",
+      "tribe": "Wurm",
+      "keywords": [],
+      "description": ""
+    },
+    {
+      "id": "bear_cub",
+      "name": "Bear Cub",
+      "type": "creature",
+      "cost": 2,
+      "colors": [
+        "G"
+      ],
+      "cardClass": "neutral",
+      "attack": 2,
+      "health": 2,
+      "rarity": "common",
+      "set": "wubrg",
+      "tribe": "Bear",
+      "keywords": [],
+      "description": ""
+    },
+    {
+      "id": "bitterbow_sharpshooters",
+      "name": "Bitterbow Sharpshooters",
+      "type": "creature",
+      "cost": 5,
+      "colors": [
+        "G"
+      ],
+      "cardClass": "neutral",
+      "attack": 4,
+      "health": 4,
+      "rarity": "common",
+      "set": "wubrg",
+      "tribe": "Jackal Archer",
+      "keywords": [
+        "reach",
+        "vigilance"
+      ],
+      "description": "Reach, Vigilance."
+    },
+    {
+      "id": "blanchwood_treefolk",
+      "name": "Blanchwood Treefolk",
+      "type": "creature",
+      "cost": 5,
+      "colors": [
+        "G"
+      ],
+      "cardClass": "neutral",
+      "attack": 4,
+      "health": 5,
+      "rarity": "common",
+      "set": "wubrg",
+      "tribe": "Treefolk",
+      "keywords": [],
+      "description": ""
+    },
+    {
+      "id": "bounding_wolf",
+      "name": "Bounding Wolf",
+      "type": "creature",
+      "cost": 3,
+      "colors": [
+        "G"
+      ],
+      "cardClass": "neutral",
+      "attack": 3,
+      "health": 2,
+      "rarity": "common",
+      "set": "wubrg",
+      "tribe": "Wolf",
+      "keywords": [
+        "reach"
+      ],
+      "description": "Reach."
+    },
+    {
+      "id": "brambleweft_behemoth",
+      "name": "Brambleweft Behemoth",
+      "type": "creature",
+      "cost": 6,
+      "colors": [
+        "G"
+      ],
+      "cardClass": "neutral",
+      "attack": 6,
+      "health": 6,
+      "rarity": "common",
+      "set": "wubrg",
+      "tribe": "Elemental",
+      "keywords": [
+        "trample"
+      ],
+      "description": "Trample."
+    },
+    {
+      "id": "broodhunter_wurm",
+      "name": "Broodhunter Wurm",
+      "type": "creature",
+      "cost": 4,
+      "colors": [
+        "G"
+      ],
+      "cardClass": "neutral",
+      "attack": 4,
+      "health": 3,
+      "rarity": "common",
+      "set": "wubrg",
+      "tribe": "Wurm",
+      "keywords": [],
+      "description": ""
+    },
+    {
+      "id": "brushstrider",
+      "name": "Brushstrider",
+      "type": "creature",
+      "cost": 2,
+      "colors": [
+        "G"
+      ],
+      "cardClass": "neutral",
+      "attack": 3,
+      "health": 1,
+      "rarity": "common",
+      "set": "wubrg",
+      "tribe": "Beast",
+      "keywords": [
+        "vigilance"
+      ],
+      "description": "Vigilance."
+    },
+    {
+      "id": "canopy_gorger",
+      "name": "Canopy Gorger",
+      "type": "creature",
+      "cost": 6,
+      "colors": [
+        "G"
+      ],
+      "cardClass": "neutral",
+      "attack": 6,
+      "health": 5,
+      "rarity": "common",
+      "set": "wubrg",
+      "tribe": "Wurm",
+      "keywords": [],
+      "description": ""
+    },
+    {
+      "id": "elvish_ranger",
+      "name": "Elvish Ranger",
+      "type": "creature",
+      "cost": 3,
+      "colors": [
+        "G"
+      ],
+      "cardClass": "neutral",
+      "attack": 4,
+      "health": 1,
+      "rarity": "common",
+      "set": "wubrg",
+      "tribe": "Elf Ranger",
+      "keywords": [],
+      "description": ""
+    },
+    {
+      "id": "colossapede",
+      "name": "Colossapede",
+      "type": "creature",
+      "cost": 6,
+      "colors": [
+        "G"
+      ],
+      "cardClass": "neutral",
+      "attack": 5,
+      "health": 5,
+      "rarity": "common",
+      "set": "wubrg",
+      "tribe": "Insect",
+      "keywords": [],
+      "description": ""
+    },
+    {
+      "id": "cowl_prowler",
+      "name": "Cowl Prowler",
+      "type": "creature",
+      "cost": 6,
+      "colors": [
+        "G"
+      ],
+      "cardClass": "neutral",
+      "attack": 6,
+      "health": 6,
+      "rarity": "common",
+      "set": "wubrg",
+      "tribe": "Wurm",
+      "keywords": [],
+      "description": ""
+    },
+    {
+      "id": "fusion_elemental",
+      "name": "Fusion Elemental",
+      "type": "creature",
+      "cost": 5,
+      "colors": [
+        "G"
+      ],
+      "cardClass": "neutral",
+      "attack": 8,
+      "health": 8,
+      "rarity": "common",
+      "set": "wubrg",
+      "tribe": "Elemental",
+      "keywords": [],
+      "description": ""
+    },
+    {
+      "id": "forest_bear",
+      "name": "Forest Bear",
+      "type": "creature",
+      "cost": 2,
+      "colors": [
+        "G"
+      ],
+      "cardClass": "neutral",
+      "attack": 2,
+      "health": 2,
+      "rarity": "common",
+      "set": "wubrg",
+      "tribe": "Bear",
+      "keywords": [],
+      "description": ""
+    },
+    {
+      "id": "grizzly_bears",
+      "name": "Grizzly Bears",
+      "type": "creature",
+      "cost": 2,
+      "colors": [
+        "G"
+      ],
+      "cardClass": "neutral",
+      "attack": 2,
+      "health": 2,
+      "rarity": "common",
+      "set": "wubrg",
+      "tribe": "Bear",
+      "keywords": [],
+      "description": ""
+    },
+    {
+      "id": "catacomb_slug",
+      "name": "Catacomb Slug",
+      "type": "creature",
+      "cost": 5,
+      "colors": [
+        "B"
+      ],
+      "cardClass": "neutral",
+      "attack": 2,
+      "health": 6,
+      "rarity": "common",
+      "set": "wubrg",
+      "tribe": "Slug",
+      "keywords": [],
+      "description": ""
+    },
+    {
+      "id": "trained_armodon",
+      "name": "Trained Armodon",
+      "type": "creature",
+      "cost": 3,
+      "colors": [
+        "G"
+      ],
+      "cardClass": "neutral",
+      "attack": 3,
+      "health": 3,
+      "rarity": "common",
+      "set": "wubrg",
+      "tribe": "Elephant",
       "keywords": [],
       "description": ""
     }
