@@ -60092,6 +60092,371 @@
           "text": "Sacrifice a Goblin: Destroy an artifact"
         }
       ]
+    },
+    {
+      "id": "viscera_seer",
+      "name": "Viscera Seer",
+      "type": "creature",
+      "cost": 1,
+      "colors": [
+        "B"
+      ],
+      "cardClass": "neutral",
+      "attack": 1,
+      "health": 1,
+      "rarity": "common",
+      "set": "wubrg",
+      "tribe": "Vampire Wizard",
+      "keywords": [],
+      "description": "Sacrifice a creature: Scry 1.",
+      "activated": [
+        {
+          "sacCost": {},
+          "effects": [
+            {
+              "type": "scry",
+              "value": 1
+            }
+          ],
+          "text": "Sacrifice a creature: Scry 1"
+        }
+      ]
+    },
+    {
+      "id": "carrion_feeder",
+      "name": "Carrion Feeder",
+      "type": "creature",
+      "cost": 1,
+      "colors": [
+        "B"
+      ],
+      "cardClass": "neutral",
+      "attack": 1,
+      "health": 1,
+      "rarity": "common",
+      "set": "wubrg",
+      "tribe": "Zombie",
+      "keywords": [],
+      "description": "Sacrifice a creature: Put a +1/+1 counter on this creature.",
+      "activated": [
+        {
+          "sacCost": {},
+          "effects": [
+            {
+              "type": "add-counters",
+              "target": "self",
+              "value": 1
+            }
+          ],
+          "text": "Sacrifice a creature: +1/+1 counter"
+        }
+      ]
+    },
+    {
+      "id": "bloodthrone_vampire",
+      "name": "Bloodthrone Vampire",
+      "type": "creature",
+      "cost": 2,
+      "colors": [
+        "B"
+      ],
+      "cardClass": "neutral",
+      "attack": 1,
+      "health": 1,
+      "rarity": "common",
+      "set": "wubrg",
+      "tribe": "Vampire",
+      "keywords": [],
+      "description": "Sacrifice a creature: This gets +2/+2 until end of turn.",
+      "activated": [
+        {
+          "sacCost": {},
+          "effects": [
+            {
+              "type": "temp-buff-self",
+              "attack": 2,
+              "health": 2
+            }
+          ],
+          "text": "Sacrifice a creature: +2/+2"
+        }
+      ]
+    },
+    {
+      "id": "plagued_rusalka",
+      "name": "Plagued Rusalka",
+      "type": "creature",
+      "cost": 1,
+      "colors": [
+        "B"
+      ],
+      "cardClass": "neutral",
+      "attack": 1,
+      "health": 1,
+      "rarity": "common",
+      "set": "wubrg",
+      "tribe": "Spirit",
+      "keywords": [],
+      "description": "(1), Sacrifice a creature: Target creature gets -1/-1 until end of turn.",
+      "activated": [
+        {
+          "cost": 1,
+          "sacCost": {},
+          "effects": [
+            {
+              "type": "temp-buff",
+              "attack": -1,
+              "health": -1,
+              "target": "creature"
+            }
+          ],
+          "text": "(1), Sacrifice a creature: -1/-1"
+        }
+      ]
+    },
+    {
+      "id": "cutthroat_contender",
+      "name": "Cutthroat Contender",
+      "type": "creature",
+      "cost": 1,
+      "colors": [
+        "B"
+      ],
+      "cardClass": "neutral",
+      "attack": 1,
+      "health": 1,
+      "rarity": "common",
+      "set": "wubrg",
+      "tribe": "Vampire Warrior",
+      "keywords": [],
+      "description": "Pay 1 life: This gets +1/+0 until end of turn. (Once per turn.)",
+      "activated": [
+        {
+          "payLife": 1,
+          "effects": [
+            {
+              "type": "temp-buff-self",
+              "attack": 1
+            }
+          ],
+          "text": "Pay 1 life: +1/+0"
+        }
+      ]
+    },
+    {
+      "id": "grimclaw_bats",
+      "name": "Grimclaw Bats",
+      "type": "creature",
+      "cost": 1,
+      "colors": [
+        "B"
+      ],
+      "cardClass": "neutral",
+      "attack": 1,
+      "health": 1,
+      "rarity": "common",
+      "set": "wubrg",
+      "tribe": "Bat",
+      "keywords": [
+        "flying"
+      ],
+      "description": "Flying.\n(1), Pay 1 life: This gets +1/+1 until end of turn.",
+      "activated": [
+        {
+          "cost": 1,
+          "payLife": 1,
+          "repeatable": true,
+          "effects": [
+            {
+              "type": "temp-buff-self",
+              "attack": 1,
+              "health": 1
+            }
+          ],
+          "text": "(1), Pay 1 life: +1/+1"
+        }
+      ]
+    },
+    {
+      "id": "scorched_rusalka",
+      "name": "Scorched Rusalka",
+      "type": "creature",
+      "cost": 1,
+      "colors": [
+        "R"
+      ],
+      "cardClass": "neutral",
+      "attack": 1,
+      "health": 1,
+      "rarity": "common",
+      "set": "wubrg",
+      "tribe": "Spirit",
+      "keywords": [],
+      "description": "(1), Sacrifice a creature: Deal 1 damage to the enemy hero.",
+      "activated": [
+        {
+          "cost": 1,
+          "sacCost": {},
+          "effects": [
+            {
+              "type": "damage",
+              "value": 1,
+              "target": "enemy-hero"
+            }
+          ],
+          "text": "(1), Sacrifice a creature: 1 damage"
+        }
+      ]
+    },
+    {
+      "id": "blazing_rootwalla",
+      "name": "Blazing Rootwalla",
+      "type": "creature",
+      "cost": 1,
+      "colors": [
+        "R"
+      ],
+      "cardClass": "neutral",
+      "attack": 1,
+      "health": 1,
+      "rarity": "common",
+      "set": "wubrg",
+      "tribe": "Lizard",
+      "keywords": [],
+      "description": "(1): This gets +2/+0 until end of turn. (Once per turn.)",
+      "activated": [
+        {
+          "cost": 1,
+          "effects": [
+            {
+              "type": "temp-buff-self",
+              "attack": 2
+            }
+          ],
+          "text": "(1): +2/+0"
+        }
+      ]
+    },
+    {
+      "id": "bold_impaler",
+      "name": "Bold Impaler",
+      "type": "creature",
+      "cost": 1,
+      "colors": [
+        "R"
+      ],
+      "cardClass": "neutral",
+      "attack": 1,
+      "health": 2,
+      "rarity": "common",
+      "set": "wubrg",
+      "tribe": "Vampire Knight",
+      "keywords": [],
+      "description": "(3): This gets +2/+0 until end of turn.",
+      "activated": [
+        {
+          "cost": 3,
+          "repeatable": true,
+          "effects": [
+            {
+              "type": "temp-buff-self",
+              "attack": 2
+            }
+          ],
+          "text": "(3): +2/+0"
+        }
+      ]
+    },
+    {
+      "id": "bellows_lizard",
+      "name": "Bellows Lizard",
+      "type": "creature",
+      "cost": 1,
+      "colors": [
+        "R"
+      ],
+      "cardClass": "neutral",
+      "attack": 1,
+      "health": 1,
+      "rarity": "common",
+      "set": "wubrg",
+      "tribe": "Lizard",
+      "keywords": [],
+      "description": "(2): This gets +1/+0 until end of turn.",
+      "activated": [
+        {
+          "cost": 2,
+          "repeatable": true,
+          "effects": [
+            {
+              "type": "temp-buff-self",
+              "attack": 1
+            }
+          ],
+          "text": "(2): +1/+0"
+        }
+      ]
+    },
+    {
+      "id": "starved_rusalka",
+      "name": "Starved Rusalka",
+      "type": "creature",
+      "cost": 1,
+      "colors": [
+        "G"
+      ],
+      "cardClass": "neutral",
+      "attack": 1,
+      "health": 1,
+      "rarity": "common",
+      "set": "wubrg",
+      "tribe": "Spirit",
+      "keywords": [],
+      "description": "(1), Sacrifice a creature: Gain 1 life.",
+      "activated": [
+        {
+          "cost": 1,
+          "sacCost": {},
+          "effects": [
+            {
+              "type": "heal",
+              "value": 1,
+              "target": "self"
+            }
+          ],
+          "text": "(1), Sacrifice a creature: Gain 1 life"
+        }
+      ]
+    },
+    {
+      "id": "martyred_rusalka",
+      "name": "Martyred Rusalka",
+      "type": "creature",
+      "cost": 1,
+      "colors": [
+        "W"
+      ],
+      "cardClass": "neutral",
+      "attack": 1,
+      "health": 1,
+      "rarity": "common",
+      "set": "wubrg",
+      "tribe": "Spirit",
+      "keywords": [],
+      "description": "(1), Sacrifice a creature: Tap a creature so it can't attack next turn.",
+      "activated": [
+        {
+          "cost": 1,
+          "sacCost": {},
+          "effects": [
+            {
+              "type": "freeze",
+              "target": "creature"
+            }
+          ],
+          "text": "(1), Sacrifice a creature: Tap a creature"
+        }
+      ]
     }
   ]
 }
