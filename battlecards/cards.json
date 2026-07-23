@@ -65660,6 +65660,316 @@
         "type": "hero-power-draw-zero",
         "value": 1
       }
+    },
+    {
+      "id": "tunnel_trogg",
+      "name": "Tunnel Trogg",
+      "type": "creature",
+      "cost": 1,
+      "cardClass": "shaman",
+      "attack": 1,
+      "health": 3,
+      "rarity": "common",
+      "set": "LOE",
+      "description": "Whenever you Overload, gain +1 Attack per locked Mana Crystal.",
+      "ongoing": {
+        "on": "overloaded-self",
+        "effects": [
+          {
+            "type": "buff-self-by-amount",
+            "attack": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "reliquary_seeker",
+      "name": "Reliquary Seeker",
+      "type": "creature",
+      "cost": 1,
+      "cardClass": "warlock",
+      "attack": 1,
+      "health": 1,
+      "rarity": "rare",
+      "set": "LOE",
+      "tribe": "Demon",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: If you have 6 other creatures, gain +4/+4.",
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "minOtherCreatures": 6
+          },
+          "then": [
+            {
+              "type": "buff-self",
+              "attack": 4,
+              "health": 4
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "museum_curator",
+      "name": "Museum Curator",
+      "type": "creature",
+      "cost": 1,
+      "cardClass": "priest",
+      "attack": 1,
+      "health": 2,
+      "rarity": "common",
+      "set": "LOE",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Discover a Deathrattle card. It costs (1) less.",
+      "effects": [
+        {
+          "type": "discover",
+          "requireKeyword": "deathrattle",
+          "costMod": -1
+        }
+      ]
+    },
+    {
+      "id": "desert_camel",
+      "name": "Desert Camel",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "hunter",
+      "attack": 2,
+      "health": 4,
+      "rarity": "common",
+      "set": "LOE",
+      "tribe": "Beast",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Put a 1-Cost creature from each deck into play.",
+      "effects": [
+        {
+          "type": "summon-from-deck-each",
+          "cost": 1
+        }
+      ]
+    },
+    {
+      "id": "gorillabot_a3",
+      "name": "Gorillabot A-3",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "neutral",
+      "attack": 3,
+      "health": 4,
+      "rarity": "common",
+      "set": "LOE",
+      "tribe": "Mech",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: If you control another Mech, Discover a Mech.",
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "controlOtherTribe": "Mech"
+          },
+          "then": [
+            {
+              "type": "discover",
+              "cardType": "creature",
+              "tribe": "Mech"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "rumbling_elemental",
+      "name": "Rumbling Elemental",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "shaman",
+      "attack": 2,
+      "health": 6,
+      "rarity": "common",
+      "set": "LOE",
+      "tribe": "Elemental",
+      "description": "After you play a Battlecry creature, deal 2 damage to a random enemy.",
+      "ongoing": {
+        "on": "creature-played",
+        "if": {
+          "keyword": "battlecry"
+        },
+        "effects": [
+          {
+            "type": "random-damage",
+            "value": 2,
+            "count": 1,
+            "pool": "enemies"
+          }
+        ]
+      }
+    },
+    {
+      "id": "ancient_shade",
+      "name": "Ancient Shade",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "neutral",
+      "attack": 7,
+      "health": 4,
+      "rarity": "rare",
+      "set": "LOE",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Shuffle an 'Ancient Curse' into your deck that deals 7 damage when drawn.",
+      "effects": [
+        {
+          "type": "shuffle-into-deck",
+          "id": "ancient_curse"
+        }
+      ]
+    },
+    {
+      "id": "summoning_stone",
+      "name": "Summoning Stone",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "neutral",
+      "attack": 0,
+      "health": 6,
+      "rarity": "rare",
+      "set": "LOE",
+      "description": "Whenever you cast a spell, summon a random creature of the same Cost.",
+      "ongoing": {
+        "on": "spell-played",
+        "effects": [
+          {
+            "type": "summon-of-spell-cost"
+          }
+        ]
+      }
+    },
+    {
+      "id": "naga_sea_witch",
+      "name": "Naga Sea Witch",
+      "type": "creature",
+      "cost": 8,
+      "cardClass": "neutral",
+      "attack": 5,
+      "health": 5,
+      "rarity": "epic",
+      "set": "LOE",
+      "tribe": "Naga",
+      "description": "Your cards cost (5).",
+      "costMod": {
+        "setCost": 5,
+        "scope": "own",
+        "cardType": "all"
+      }
+    },
+    {
+      "id": "fossilized_devilsaur",
+      "name": "Fossilized Devilsaur",
+      "type": "creature",
+      "cost": 8,
+      "cardClass": "neutral",
+      "attack": 8,
+      "health": 8,
+      "rarity": "common",
+      "set": "LOE",
+      "tribe": "Beast",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: If you control another Beast, gain Taunt.",
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "controlOtherTribe": "Beast"
+          },
+          "then": [
+            {
+              "type": "grant",
+              "target": "self",
+              "keyword": "taunt"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "reno_jackson",
+      "name": "Reno Jackson",
+      "type": "creature",
+      "cost": 6,
+      "cardClass": "neutral",
+      "attack": 4,
+      "health": 6,
+      "rarity": "legendary",
+      "set": "LOE",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: If your deck has no duplicates, fully heal your hero.",
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "noDuplicates": true
+          },
+          "then": [
+            {
+              "type": "heal-hero-full"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "arch_thief_rafaam",
+      "name": "Arch-Thief Rafaam",
+      "type": "creature",
+      "cost": 9,
+      "cardClass": "neutral",
+      "attack": 7,
+      "health": 8,
+      "rarity": "legendary",
+      "set": "LOE",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Discover a powerful Artifact.",
+      "effects": [
+        {
+          "type": "discover",
+          "cardType": "artifact"
+        }
+      ]
+    },
+    {
+      "id": "ancient_curse",
+      "name": "Ancient Curse",
+      "type": "sorcery",
+      "cost": 0,
+      "token": true,
+      "rarity": "common",
+      "set": "LOE",
+      "description": "When you draw this, deal 7 damage to your hero.",
+      "emerge": [
+        {
+          "type": "damage",
+          "value": 7,
+          "target": "own-hero"
+        }
+      ]
     }
   ]
 }

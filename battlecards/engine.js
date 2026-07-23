@@ -1957,6 +1957,22 @@ function runSecretEffects(state, pi, effects, ctx) {
 				if (t && !isDead(t)) { t.damage = t.maxHealth; t.shield = false; emit(state, { type: 'destroy', uid: t.uid }); }
 				break;
 			}
+			case 'buff-self-by-amount': {
+				// Tunnel Trogg: +1 Attack per locked crystal (the Overload amount)
+				const m = ctx.self;
+				if (m && !isDead(m) && ctx.amount > 0) {
+					m.attack += (e.attack || 1) * ctx.amount;
+					m.maxHealth += (e.health || 0) * ctx.amount;
+					emit(state, { type: 'buff', uid: m.uid, attack: m.attack, hp: hp(m) });
+				}
+				break;
+			}
+			case 'summon-of-spell-cost': {
+				// Summoning Stone: summon a random creature of the cast spell's Cost
+				const cost = ctx.played ? (ctx.played.cost || 0) : 0;
+				execEffects(state, pi, [{ type: 'summon-random', cost }], null, ctx.self);
+				break;
+			}
 			case 'copy-drawn': {
 				// Chromaggus: put another copy of the just-drawn card into your hand
 				const drawn = ctx.card;
@@ -3129,6 +3145,19 @@ function execEffects(state, pi, effects, target, source) {
 				const ci = op.deck.findIndex(id => state.cardsById[id]?.type === 'creature' && !state.cardsById[id].token);
 				if (ci >= 0) { const [id] = op.deck.splice(ci, 1); summon(state, o, state.cardsById[id]); }
 			}
+		} else if (e.type === 'summon-from-deck-each') {
+			// Desert Camel: every player puts a creature of Cost N from their deck into play
+			for (let s3 = 0; s3 < state.players.length; s3++) {
+				const pl = state.players[s3];
+				if (pl.eliminated) continue;
+				const ci = pl.deck.findIndex(id => { const def = state.cardsById[id]; return def?.type === 'creature' && !def.token && (e.cost == null || (def.cost || 0) === e.cost); });
+				if (ci >= 0) { const [id] = pl.deck.splice(ci, 1); summon(state, s3, state.cardsById[id]); }
+			}
+		} else if (e.type === 'heal-hero-full') {
+			// Reno Jackson: restore your hero to full
+			const p = state.players[pi];
+			const full = p.maxLife ?? STARTING_LIFE;
+			if (p.life < full) healHero(state, pi, full - p.life);
 		} else if (e.type === 'tax-enemy-spells') {
 			// Loatheb: each opponent's spells cost more on their next turn
 			for (const o of enemies) state.players[o].spellTaxNext = (state.players[o].spellTaxNext || 0) + (e.value || 0);
@@ -3330,6 +3359,8 @@ function execEffects(state, pi, effects, target, source) {
 			else if (e.if.minOtherCreatures != null) ok = p.board.filter(c => !isDead(c) && c !== source && c.type !== 'location').length >= e.if.minOtherCreatures; // Nesting Roc
 			else if (e.if.diedThisGame) ok = p.deathLogIds.includes(e.if.diedThisGame); // Feugen/Stalagg
 			else if (e.if.enemyMaxHealth != null) ok = opponentsOf(state, pi).some(o => state.players[o].life <= e.if.enemyMaxHealth); // Drakonid Crusher
+			else if (e.if.noDuplicates) ok = new Set(p.deck).size === p.deck.length; // Reno Jackson
+			else if (e.if.controlOtherTribe) ok = p.board.some(c => c !== source && !isDead(c) && (c.tribe || '').includes(e.if.controlOtherTribe)); // Gorillabot / Fossilized Devilsaur
 			else if (e.if.controlStatic) ok = p.board.some(c => !isDead(c) && c.static?.type === e.if.controlStatic); // Master of Ceremonies: a Spell Damage minion
 			else if (e.if.maxHealthSelf != null) ok = p.life <= e.if.maxHealthSelf;
 			else if (e.if.targetFrozen) ok = !!(t && t.frozen);
@@ -4086,7 +4117,7 @@ function execEffects(state, pi, effects, target, source) {
 					ids.push(pool.splice(Math.floor(state.rng() * pool.length), 1)[0].id);
 				}
 				if (!ids.length) break;
-				state.pickQueue.push({ player: pi, ids, grant: e.grant || null, buff: e.buff || null, to: e.to || null });
+				state.pickQueue.push({ player: pi, ids, grant: e.grant || null, buff: e.buff || null, to: e.to || null, costMod: e.costMod || null });
 				emit(state, { type: 'pickStart', player: pi, count: ids.length });
 			}
 		} else if (e.type === 'loot') {
@@ -4697,6 +4728,7 @@ export function effectiveCost(state, pi, card) {
 			if (m.minCost != null && card.cost < m.minCost) continue;
 			if (m.firstEachTurn && (m.cardType === 'spell'
 				? p.spellsPlayedThisTurn : p.creaturesPlayedThisTurn) > 0) continue;
+			if (m.setCost != null) { c = m.setCost; continue; } // Naga Sea Witch: your cards cost N
 			const before = c;
 			c += m.amount;
 			// "but not less than (1)": the reduction stops at the floor
@@ -4814,6 +4846,7 @@ export function playCard(state, pi, cardUid, target, choice, position, useAlt, k
 	if (card.overload) {
 		p.overloadPending += card.overload;
 		emit(state, { type: 'overload', player: pi, amount: card.overload });
+		fireOngoing(state, pi, 'overloaded-self', { amount: card.overload }); // Tunnel Trogg
 	}
 	emit(state, { type: 'play', player: pi, card, mana: availableMana(p) });
 	fireOngoing(state, pi, 'card-played', { played: card });
@@ -5830,6 +5863,7 @@ export function resolvePick(state, id) {
 			card.attack += pend.buff.attack || 0;
 			card.maxHealth += pend.buff.health || 0;
 		}
+		if (pend.costMod) card.cost = Math.max(0, (card.cost || 0) + pend.costMod); // Museum Curator: costs (1) less
 		p.hand.push(card);
 		emit(state, { type: 'conjure', player: pend.player, card, color: null });
 		fireEmerge(state, pend.player, card);
