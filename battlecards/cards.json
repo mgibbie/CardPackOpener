@@ -58262,6 +58262,75 @@
           "value": 1
         }
       ]
+    },
+    {
+      "id": "lotus_cobra",
+      "name": "Lotus Cobra",
+      "type": "creature",
+      "cost": 2,
+      "colors": [
+        "G"
+      ],
+      "cardClass": "neutral",
+      "attack": 2,
+      "health": 1,
+      "rarity": "rare",
+      "set": "wubrg",
+      "tribe": "Snake",
+      "keywords": [],
+      "description": "Landfall: Whenever a land enters under your control, gain 1 mana this turn.",
+      "ongoing": {
+        "on": "landfall",
+        "effects": [
+          {
+            "type": "gain-mana",
+            "value": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "revoke_existence",
+      "name": "Revoke Existence",
+      "type": "sorcery",
+      "cost": 2,
+      "colors": [
+        "W"
+      ],
+      "cardClass": "neutral",
+      "rarity": "common",
+      "set": "wubrg",
+      "description": "Exile an enemy artifact or enchantment.",
+      "effects": [
+        {
+          "type": "destroy-art-ench",
+          "count": 1,
+          "exile": true
+        }
+      ]
+    },
+    {
+      "id": "bronze_walrus",
+      "name": "Bronze Walrus",
+      "type": "creature",
+      "cost": 3,
+      "colors": [],
+      "cardClass": "neutral",
+      "attack": 2,
+      "health": 2,
+      "rarity": "common",
+      "set": "wubrg",
+      "tribe": "Walrus",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Scry 2.",
+      "effects": [
+        {
+          "type": "scry",
+          "value": 2
+        }
+      ]
     }
   ]
 }
