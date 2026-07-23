@@ -57600,6 +57600,282 @@
           "target": "enemy-creature"
         }
       ]
+    },
+    {
+      "id": "blade_splicer",
+      "name": "Blade Splicer",
+      "type": "creature",
+      "cost": 3,
+      "colors": [
+        "W"
+      ],
+      "cardClass": "neutral",
+      "attack": 1,
+      "health": 1,
+      "rarity": "rare",
+      "set": "wubrg",
+      "tribe": "Phyrexian Human",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Summon a 3/3 Golem.",
+      "effects": [
+        {
+          "type": "summon",
+          "count": 1,
+          "name": "Golem",
+          "attack": 3,
+          "health": 3
+        }
+      ]
+    },
+    {
+      "id": "fragmentize",
+      "name": "Fragmentize",
+      "type": "sorcery",
+      "cost": 1,
+      "colors": [
+        "W"
+      ],
+      "cardClass": "neutral",
+      "rarity": "common",
+      "set": "wubrg",
+      "description": "Destroy an enemy artifact or enchantment.",
+      "effects": [
+        {
+          "type": "destroy-art-ench",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "id": "ajanis_welcome",
+      "name": "Ajani's Welcome",
+      "type": "enchantment",
+      "cost": 1,
+      "colors": [
+        "W"
+      ],
+      "cardClass": "neutral",
+      "rarity": "common",
+      "set": "wubrg",
+      "description": "Whenever a friendly creature enters, gain 1 life.",
+      "ongoing": {
+        "on": "summoned",
+        "effects": [
+          {
+            "type": "heal",
+            "value": 1,
+            "target": "self"
+          }
+        ]
+      }
+    },
+    {
+      "id": "generous_gift",
+      "name": "Generous Gift",
+      "type": "instant",
+      "cost": 3,
+      "colors": [
+        "W"
+      ],
+      "cardClass": "neutral",
+      "rarity": "common",
+      "set": "wubrg",
+      "description": "Destroy an enemy creature.\nIts owner summons a 3/3 Elephant.",
+      "effects": [
+        {
+          "type": "destroy",
+          "target": "enemy-creature"
+        },
+        {
+          "type": "summon",
+          "count": 1,
+          "name": "Elephant",
+          "attack": 3,
+          "health": 3,
+          "forEnemy": true
+        }
+      ]
+    },
+    {
+      "id": "carrier_thrall",
+      "name": "Carrier Thrall",
+      "type": "creature",
+      "cost": 2,
+      "colors": [
+        "B"
+      ],
+      "cardClass": "neutral",
+      "attack": 2,
+      "health": 1,
+      "rarity": "common",
+      "set": "wubrg",
+      "tribe": "Undead",
+      "keywords": [
+        "deathrattle"
+      ],
+      "description": "Deathrattle: Summon a 1/1 Scion.",
+      "deathrattle": [
+        {
+          "type": "summon",
+          "count": 1,
+          "name": "Scion",
+          "attack": 1,
+          "health": 1
+        }
+      ]
+    },
+    {
+      "id": "fleshbag_marauder",
+      "name": "Fleshbag Marauder",
+      "type": "creature",
+      "cost": 3,
+      "colors": [
+        "B"
+      ],
+      "cardClass": "neutral",
+      "attack": 3,
+      "health": 1,
+      "rarity": "common",
+      "set": "wubrg",
+      "tribe": "Undead",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Each player sacrifices a creature.",
+      "effects": [
+        {
+          "type": "sacrifice-each"
+        }
+      ]
+    },
+    {
+      "id": "gray_merchant",
+      "name": "Gray Merchant of Asphodel",
+      "type": "creature",
+      "cost": 5,
+      "colors": [
+        "B"
+      ],
+      "cardClass": "neutral",
+      "attack": 2,
+      "health": 4,
+      "rarity": "common",
+      "set": "wubrg",
+      "tribe": "Undead",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Deal 3 damage to the enemy hero & gain 3 life.",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 3,
+          "target": "enemy-hero"
+        },
+        {
+          "type": "heal",
+          "value": 3,
+          "target": "self"
+        }
+      ]
+    },
+    {
+      "id": "grave_titan",
+      "name": "Grave Titan",
+      "type": "creature",
+      "cost": 6,
+      "colors": [
+        "B"
+      ],
+      "cardClass": "neutral",
+      "attack": 6,
+      "health": 6,
+      "rarity": "rare",
+      "set": "wubrg",
+      "tribe": "Undead Giant",
+      "keywords": [
+        "deathtouch",
+        "battlecry"
+      ],
+      "description": "Deathtouch.\nBattlecry: Summon two 2/2 Undead.",
+      "effects": [
+        {
+          "type": "summon",
+          "count": 2,
+          "name": "Undead",
+          "attack": 2,
+          "health": 2
+        }
+      ]
+    },
+    {
+      "id": "fatal_push",
+      "name": "Fatal Push",
+      "type": "instant",
+      "cost": 1,
+      "colors": [
+        "B"
+      ],
+      "cardClass": "neutral",
+      "rarity": "uncommon",
+      "set": "wubrg",
+      "description": "Destroy a creature with 2 or less Attack.",
+      "effects": [
+        {
+          "type": "destroy",
+          "target": "creature",
+          "maxAttack": 2
+        }
+      ]
+    },
+    {
+      "id": "impact_tremors",
+      "name": "Impact Tremors",
+      "type": "enchantment",
+      "cost": 2,
+      "colors": [
+        "R"
+      ],
+      "cardClass": "neutral",
+      "rarity": "common",
+      "set": "wubrg",
+      "description": "Whenever a friendly creature enters, deal 1 damage to the enemy hero.",
+      "ongoing": {
+        "on": "summoned",
+        "effects": [
+          {
+            "type": "damage",
+            "value": 1,
+            "target": "enemy-hero"
+          }
+        ]
+      }
+    },
+    {
+      "id": "smash_to_smithereens",
+      "name": "Smash to Smithereens",
+      "type": "instant",
+      "cost": 2,
+      "colors": [
+        "R"
+      ],
+      "cardClass": "neutral",
+      "rarity": "common",
+      "set": "wubrg",
+      "description": "Destroy an enemy artifact or enchantment.\nDeal 3 damage to the enemy hero.",
+      "effects": [
+        {
+          "type": "destroy-art-ench",
+          "count": 1
+        },
+        {
+          "type": "damage",
+          "value": 3,
+          "target": "enemy-hero"
+        }
+      ]
     }
   ]
 }
