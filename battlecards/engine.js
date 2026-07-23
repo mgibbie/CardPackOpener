@@ -861,11 +861,15 @@ function damageCreature(state, target, amount, source) {
 	emit(state, { type: 'damage', targetType: 'creature', uid: target.uid, amount, hp: hp(target) });
 	if (target.enrage || target.statRule) recomputeAuras(state); // enrage/Lightspawn track damage
 	// whenever-a-minion-takes-damage triggers (fires even if the hit is lethal);
-	// Frenzy variants fire once and only on surviving the hit
-	if (target.ongoing?.on === 'self-damaged') {
-		const o = target.ongoing;
+	// Frenzy variants fire once and only on surviving the hit. Boosts can stack
+	// extra self-damaged triggers into `ongoings`, so check both slots.
+	const selfDmgTrigs = [];
+	if (target.ongoing?.on === 'self-damaged') selfDmgTrigs.push(target.ongoing);
+	if (target.ongoings) for (const o of target.ongoings) if (o.on === 'self-damaged') selfDmgTrigs.push(o);
+	for (const o of selfDmgTrigs) {
+		if (o.spent) continue;
 		if (!o.survives || !isDead(target)) {
-			if (o.once) target.ongoing = null;
+			if (o.once) { o.spent = true; if (o === target.ongoing) target.ongoing = null; }
 			runSecretEffects(state, target.controller, o.effects, { self: target, damaged: target });
 		}
 	}
@@ -5435,7 +5439,13 @@ function applyRollEntry(state, t, entry) {
 	t.attack += entry.attack || 0;
 	t.maxHealth += entry.health || 0;
 	if (entry.static && !t.static) t.static = { ...entry.static };
-	if (entry.ongoing && !t.ongoing) t.ongoing = JSON.parse(JSON.stringify(entry.ongoing));
+	if (entry.ongoing) {
+		// a boosted creature keeps its own ability: the first trigger fills the
+		// singular slot, any further boosts (Bolster/Inspire/…) stack into ongoings
+		const clone = JSON.parse(JSON.stringify(entry.ongoing));
+		if (!t.ongoing) t.ongoing = clone;
+		else (t.ongoings = t.ongoings || []).push(clone);
+	}
 	if (entry.deathrattle) t.deathrattle = [...(t.deathrattle || []), ...entry.deathrattle];
 	if (entry.ward && !t.ward) t.ward = { ...entry.ward };
 }
