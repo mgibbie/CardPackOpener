@@ -888,6 +888,7 @@ function damageHero(state, pi, amount, src = null, pierce = false) {
 		return 0;
 	}
 	if (p.heroImmuneTurn === state.turnNumber) return 0; // "can't take damage this turn"
+	if (p.board.some(c => c.heroImmuneAura && !isDead(c))) return 0; // Mal'Ganis: your hero is Immune
 	// static hero-damage reduction (Lucky Horseshoe)
 	amount = Math.max(0, amount - staticValue(p, 'reduce-hero-damage'));
 	if (amount <= 0) return 0;
@@ -925,6 +926,7 @@ function damageHero(state, pi, amount, src = null, pierce = false) {
 function gainArmor(state, pi, amount) {
 	state.players[pi].armor += amount;
 	emit(state, { type: 'armor', player: pi, amount, armor: state.players[pi].armor });
+	fireOngoing(state, pi, 'armor-gained', {}); // Siege Engine
 }
 
 function healHero(state, pi, amount) {
@@ -1374,6 +1376,7 @@ function ongoingCondOk(state, pi, cond, ctx) {
 	if (cond.tribe && !(subj && (subj.tribe || '').includes(cond.tribe))) return false;
 	if (cond.overload && !(subj && subj.overload > 0)) return false;
 	if (cond.cardType && !(subj && subj.type === cond.cardType)) return false;
+	if (cond.spellCost != null && !(subj && (subj.cost || 0) === cond.spellCost)) return false; // Gazlowe: a 1-Cost spell
 	if (cond.controlSecret && !state.players[pi].secrets.length) return false;
 	if (cond.creature && !ctx.healedCreature) return false; // "whenever a MINION is healed"
 	if (cond.nontoken && (!subj || (subj.id || '').startsWith('token_'))) return false;
@@ -3299,6 +3302,56 @@ function execEffects(state, pi, effects, target, source) {
 				t.tempHealth = 0;
 				emit(state, { type: 'buff', uid: t.uid, attack: t.attack, hp: hp(t) });
 			}
+		} else if (e.type === 'swap-health-with') {
+			// Vol'jin: swap this creature's Health with a chosen creature's
+			const t = chosenCreature();
+			if (t && source && source.zone === 'board' && !isDead(source) && t !== source) {
+				const sh = source.maxHealth, sd = source.damage;
+				source.maxHealth = t.maxHealth; source.damage = t.damage;
+				t.maxHealth = sh; t.damage = sd;
+				emit(state, { type: 'buff', uid: source.uid, attack: source.attack, hp: hp(source) });
+				emit(state, { type: 'buff', uid: t.uid, attack: t.attack, hp: hp(t) });
+			}
+		} else if (e.type === 'double-attack-self') {
+			// Gahz'rilla: double this creature's Attack
+			if (source && source.zone === 'board' && !isDead(source)) buffCreature(source, source.attack, 0);
+		} else if (e.type === 'grant-random-others') {
+			// Enhance-o Mechano: each other friendly creature gains a random keyword
+			const kws = e.keywords || ['windfury', 'taunt', 'divine_shield'];
+			for (const c of state.players[pi].board) {
+				if (c === source || isDead(c) || c.type === 'location') continue;
+				const k = kws[Math.floor(state.rng() * kws.length)];
+				if (!c.keywords.includes(k)) {
+					c.keywords.push(k);
+					if (k === 'divine_shield') c.shield = true;
+					emit(state, { type: 'buff', uid: c.uid, attack: c.attack, hp: hp(c) });
+				}
+			}
+		} else if (e.type === 'equip-random') {
+			// Blingtron 3000: equip a random weapon (self, or each player)
+			const pool = Object.values(state.cardsById).filter(d => d.type === 'weapon'
+				&& !d.token && d.collectible !== false && !(d.colors && d.colors.length) && d.attack && d.durability);
+			const who = e.eachPlayer ? state.players.map((_, i) => i).filter(i => !state.players[i].eliminated) : [pi];
+			for (const tp of who) {
+				if (!pool.length) break;
+				const wd = pool[Math.floor(state.rng() * pool.length)];
+				execEffects(state, tp, [{ type: 'equip', name: wd.name, attack: wd.attack, durability: wd.durability }], null, null);
+			}
+		} else if (e.type === 'steal-secret') {
+			// Kezan Mystic: take control of a random enemy Secret
+			for (const o of enemies) {
+				const p2 = state.players[o];
+				if (!p2.secrets.length) continue;
+				const idx = Math.floor(state.rng() * p2.secrets.length);
+				const sec = p2.secrets[idx];
+				if (state.players[pi].secrets.length >= MAX_SECRETS
+					|| state.players[pi].secrets.some(s => s.id === sec.id)) break;
+				p2.secrets.splice(idx, 1);
+				sec.controller = pi; sec.zone = 'secret';
+				state.players[pi].secrets.push(sec);
+				emit(state, { type: 'secretPlayed', player: pi, card: sec });
+				break; // one secret
+			}
 		} else if (e.type === 'shadowflame') {
 			// sacrifice a friendly creature, its attack burns every enemy creature
 			const t = chosenCreature();
@@ -3841,7 +3894,17 @@ function execEffects(state, pi, effects, target, source) {
 				if (pool.length) t = pool[Math.floor(state.rng() * pool.length)];
 			} else t = chosenCreature();
 			if (t) {
-				const opt = e.options ? e.options[Math.floor(state.rng() * e.options.length)] : e;
+				let opt = e.options ? e.options[Math.floor(state.rng() * e.options.length)] : e;
+				if (e.randomCost) {
+					// Recombobulator: become a random creature of the same Cost
+					const pool = Object.values(state.cardsById).filter(d => d.type === 'creature'
+						&& (d.cost || 0) === (t.cost || 0) && !d.token && d.collectible !== false
+						&& !d.companion && !d.commander && !(d.colors && d.colors.length) && d.id !== t.id);
+					if (pool.length) {
+						const rd = pool[Math.floor(state.rng() * pool.length)];
+						opt = { name: rd.name, attack: rd.attack, health: rd.health, keywords: rd.keywords || [] };
+					}
+				}
 				const tok = instantiate({
 					id: 'token_' + opt.name.toLowerCase().replace(/[^a-z0-9]+/g, '_'),
 					name: opt.name, type: 'creature', cost: 0, rarity: 'common', token: true,

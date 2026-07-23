@@ -63112,6 +63112,296 @@
           "health": 1
         }
       ]
+    },
+    {
+      "id": "toshley",
+      "name": "Toshley",
+      "type": "creature",
+      "cost": 6,
+      "cardClass": "neutral",
+      "attack": 5,
+      "health": 7,
+      "rarity": "rare",
+      "set": "GVG",
+      "tribe": "Mech",
+      "keywords": [
+        "battlecry",
+        "deathrattle"
+      ],
+      "description": "Battlecry and Deathrattle: Add a Spare Part to your hand.",
+      "effects": [
+        {
+          "type": "add-card",
+          "id": "sparepart"
+        }
+      ],
+      "deathrattle": [
+        {
+          "type": "add-card",
+          "id": "sparepart"
+        }
+      ]
+    },
+    {
+      "id": "mekgineer_thermaplugg",
+      "name": "Mekgineer Thermaplugg",
+      "type": "creature",
+      "cost": 9,
+      "cardClass": "neutral",
+      "attack": 9,
+      "health": 7,
+      "rarity": "rare",
+      "set": "GVG",
+      "tribe": "Mech",
+      "description": "Whenever an enemy creature dies, summon a 1/1 Leper Gnome.",
+      "ongoing": {
+        "on": "creature-died",
+        "if": {
+          "enemy": true
+        },
+        "effects": [
+          {
+            "type": "summon",
+            "count": 1,
+            "attack": 1,
+            "health": 1,
+            "name": "Leper Gnome",
+            "keywords": [
+              "deathrattle"
+            ],
+            "deathrattle": [
+              {
+                "type": "damage",
+                "value": 2,
+                "target": "enemy-heroes"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "neptulon",
+      "name": "Neptulon",
+      "type": "creature",
+      "cost": 7,
+      "cardClass": "shaman",
+      "attack": 7,
+      "health": 7,
+      "rarity": "rare",
+      "set": "GVG",
+      "tribe": "Murloc",
+      "overload": 3,
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Add 4 random Murlocs to your hand. Overload (3).",
+      "effects": [
+        {
+          "type": "conjure-random",
+          "tribe": "Murloc",
+          "count": 4
+        }
+      ]
+    },
+    {
+      "id": "voljin",
+      "name": "Vol'jin",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "priest",
+      "attack": 6,
+      "health": 2,
+      "rarity": "rare",
+      "set": "GVG",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Swap Health with another creature.",
+      "effects": [
+        {
+          "type": "swap-health-with",
+          "target": "creature"
+        }
+      ]
+    },
+    {
+      "id": "siege_engine",
+      "name": "Siege Engine",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "warrior",
+      "attack": 5,
+      "health": 5,
+      "rarity": "rare",
+      "set": "GVG",
+      "tribe": "Mech",
+      "description": "Whenever you gain Armor, give this creature +1 Attack.",
+      "ongoing": {
+        "on": "armor-gained",
+        "effects": [
+          {
+            "type": "buff-self",
+            "attack": 1,
+            "health": 0
+          }
+        ]
+      }
+    },
+    {
+      "id": "gahzrilla",
+      "name": "Gahz'rilla",
+      "type": "creature",
+      "cost": 7,
+      "cardClass": "hunter",
+      "attack": 6,
+      "health": 9,
+      "rarity": "rare",
+      "set": "GVG",
+      "tribe": "Beast",
+      "description": "Whenever this creature takes damage, double its Attack.",
+      "ongoing": {
+        "on": "self-damaged",
+        "effects": [
+          {
+            "type": "double-attack-self"
+          }
+        ]
+      }
+    },
+    {
+      "id": "malganis",
+      "name": "Mal'Ganis",
+      "type": "creature",
+      "cost": 9,
+      "cardClass": "warlock",
+      "attack": 9,
+      "health": 7,
+      "rarity": "rare",
+      "set": "GVG",
+      "tribe": "Demon",
+      "description": "Your other Demons have +2/+2. Your hero is Immune.",
+      "aura": {
+        "tribe": "Demon",
+        "others": true,
+        "attack": 2,
+        "health": 2
+      },
+      "heroImmuneAura": true
+    },
+    {
+      "id": "gazlowe",
+      "name": "Gazlowe",
+      "type": "creature",
+      "cost": 6,
+      "cardClass": "neutral",
+      "attack": 3,
+      "health": 6,
+      "rarity": "rare",
+      "set": "GVG",
+      "tribe": "Mech",
+      "description": "Whenever you cast a 1-cost spell, add a random Mech to your hand.",
+      "ongoing": {
+        "on": "spell-played",
+        "if": {
+          "spellCost": 1
+        },
+        "effects": [
+          {
+            "type": "conjure-random",
+            "tribe": "Mech",
+            "count": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "enhance_o_mechano",
+      "name": "Enhance-o Mechano",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "neutral",
+      "attack": 3,
+      "health": 2,
+      "rarity": "rare",
+      "set": "GVG",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Give your other creatures Windfury, Taunt, or Divine Shield (at random).",
+      "effects": [
+        {
+          "type": "grant-random-others",
+          "keywords": [
+            "windfury",
+            "taunt",
+            "divine_shield"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "recombobulator",
+      "name": "Recombobulator",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "neutral",
+      "attack": 3,
+      "health": 2,
+      "rarity": "rare",
+      "set": "GVG",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Transform a friendly creature into a random one of the same Cost.",
+      "effects": [
+        {
+          "type": "transform",
+          "randomCost": true,
+          "target": "friendly-creature"
+        }
+      ]
+    },
+    {
+      "id": "blingtron_3000",
+      "name": "Blingtron 3000",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "neutral",
+      "attack": 3,
+      "health": 4,
+      "rarity": "rare",
+      "set": "GVG",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Equip a random weapon for each player.",
+      "effects": [
+        {
+          "type": "equip-random",
+          "eachPlayer": true
+        }
+      ]
+    },
+    {
+      "id": "kezan_mystic",
+      "name": "Kezan Mystic",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "neutral",
+      "attack": 4,
+      "health": 3,
+      "rarity": "rare",
+      "set": "GVG",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Take control of a random enemy Secret.",
+      "effects": [
+        {
+          "type": "steal-secret"
+        }
+      ]
     }
   ]
 }
