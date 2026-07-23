@@ -194,6 +194,7 @@ function instantiate(def, controller) {
 		token: def.token || false,    // tokens are exiled on death — never hit the graveyard
 		equip: def.equip || null,     // Equipment: { cost, attack?, health?, keywords? } — attach to a creature
 		attachedTo: null,             // uid of the creature this Equipment rides (null = unattached)
+		freeEquipMetalcraft: def.freeEquipMetalcraft || false, // Puresteel Paladin: equip {0} at 3+ artifacts
 		sac: def.sac || null,         // field-token activation: { cost, discard?, effects }
 		colossal: def.colossal || null, // appendage token ids summoned when this enters play
 		colossalOf: def.colossalOf || null, // this token is an appendage of the named Colossal
@@ -522,6 +523,7 @@ const CHOSEN = {
 	'summon-with-stats': { 'friendly-creature': 'friendly-creature' },
 	exile: { creature: 'creature', 'enemy-creature': 'enemy-creature' },
 	'exile-until-return': { creature: 'creature', 'enemy-creature': 'enemy-creature' },
+	'attach-equip': { creature: 'creature', 'friendly-creature': 'friendly-creature' },
 	disguise: { creature: 'creature', 'friendly-creature': 'friendly-creature' },
 	freeze: { any: 'any', creature: 'creature', 'enemy-creature': 'enemy-creature' },
 	'trigger-one-deathrattle': { 'friendly-creature': 'friendly-creature' },
@@ -977,12 +979,20 @@ export function equipTargets(state, pi, equipUid) {
 	return p.board.filter(c => c.type !== 'location' && c.dormantLeft <= 0 && !isDead(c))
 		.map(c => ({ type: 'creature', uid: c.uid, player: pi }));
 }
+// Puresteel Paladin: Metalcraft — your Equipment cost {0} to equip while you
+// control three or more artifacts.
+function equipCostFor(state, pi, eq) {
+	const p = state.players[pi];
+	const metalcraft = p.artifacts.length >= 3
+		&& p.board.some(c => c.freeEquipMetalcraft && !isDead(c));
+	return metalcraft ? 0 : (eq.equip.cost || 0);
+}
 export function canEquip(state, pi, equipUid) {
 	if (state.over || state.current !== pi || state.stack.length || state.priority != null) return false;
 	const p = state.players[pi];
 	const eq = p.artifacts.find(a => a.uid === equipUid);
 	if (!eq || !eq.equip) return false;
-	if (availableMana(p) < (eq.equip.cost || 0)) return false;
+	if (availableMana(p) < equipCostFor(state, pi, eq)) return false;
 	return equipTargets(state, pi, equipUid).length > 0;
 }
 export function equip(state, pi, equipUid, creatureUid) {
@@ -991,7 +1001,7 @@ export function equip(state, pi, equipUid, creatureUid) {
 	const eq = p.artifacts.find(a => a.uid === equipUid);
 	const target = p.board.find(c => c.uid === creatureUid && !isDead(c));
 	if (!target) return false;
-	spendMana(p, eq.equip.cost || 0);
+	spendMana(p, equipCostFor(state, pi, eq));
 	eq.attachedTo = creatureUid;
 	emit(state, { type: 'equipAttached', player: pi, equipUid, creatureUid, name: eq.name });
 	recomputeAuras(state);
@@ -2292,9 +2302,25 @@ function execEffects(state, pi, effects, target, source) {
 				if (card.effects) execEffects(state, pi, card.effects, null, card);
 				recomputeAuras(state);
 				emit(state, { type: 'deployedEquip', player: pi, uid: card.uid, name: card.name });
+				fireOngoing(state, pi, 'equipment-entered', { equip: card });
 			};
 			if (pool.length === 1) drop(pool[0]);
 			else if (pool.length > 1) state.pickQueue.push({ player: pi, ids: [...new Set(pool.map(c => c.id))].slice(0, 8), mode: 'deploy-equip', title: 'Put an Equipment into play' });
+		} else if (e.type === 'attach-equip') {
+			// Kor Outfitter: attach an Equipment you control to a friendly creature
+			// (free). No board-permanent targeting UI, so pick an unattached one you
+			// control (else any) and put it on the chosen creature.
+			const t = chosenCreature();
+			const pp = state.players[pi];
+			if (t && !isDead(t)) {
+				const eqs = pp.artifacts.filter(a => a.equip);
+				const eq = eqs.find(a => a.attachedTo === null) || eqs[0];
+				if (eq) {
+					eq.attachedTo = t.uid;
+					emit(state, { type: 'equipAttached', player: pi, equipUid: eq.uid, creatureUid: t.uid, name: eq.name });
+					recomputeAuras(state);
+				}
+			}
 		} else if (e.type === 'emblem') {
 			const p = state.players[pi];
 			if (!p.eliminated) {
@@ -4265,6 +4291,7 @@ export function playCard(state, pi, cardUid, target, choice, position) {
 		recomputeAuras(state);
 		if (card.effects) execEffects(state, pi, card.effects, target, card); // permanent battlecries
 		if (card.type === 'enchantment') fireOngoing(state, pi, 'enchantment-played', { played: card });
+		if (card.equip) fireOngoing(state, pi, 'equipment-entered', { equip: card }); // Puresteel Paladin
 	} else if (card.type === 'planeswalker') {
 		card.zone = 'planeswalker';
 		p.planeswalkers.push(card);
@@ -5029,6 +5056,7 @@ export function resolvePick(state, id) {
 			if (card.effects) execEffects(state, pend.player, card.effects, null, card);
 			recomputeAuras(state);
 			emit(state, { type: 'deployedEquip', player: pend.player, uid: card.uid, name: card.name });
+			fireOngoing(state, pend.player, 'equipment-entered', { equip: card });
 		}
 		return true;
 	}

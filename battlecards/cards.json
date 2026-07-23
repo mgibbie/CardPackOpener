@@ -58122,6 +58122,58 @@
           "text": "Put an Equipment from your hand into play."
         }
       ]
+    },
+    {
+      "id": "puresteel_paladin",
+      "name": "Puresteel Paladin",
+      "type": "creature",
+      "cost": 2,
+      "colors": [
+        "W"
+      ],
+      "cardClass": "neutral",
+      "attack": 2,
+      "health": 2,
+      "rarity": "rare",
+      "set": "wubrg",
+      "tribe": "Human Soldier",
+      "keywords": [],
+      "freeEquipMetalcraft": true,
+      "description": "Metalcraft \u2014 Your Equipment cost (0) to equip while you control 3 or more artifacts.\nWhenever an Equipment enters, draw a card.",
+      "ongoing": {
+        "on": "equipment-entered",
+        "effects": [
+          {
+            "type": "draw",
+            "value": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "kor_outfitter",
+      "name": "Kor Outfitter",
+      "type": "creature",
+      "cost": 2,
+      "colors": [
+        "W"
+      ],
+      "cardClass": "neutral",
+      "attack": 2,
+      "health": 2,
+      "rarity": "common",
+      "set": "wubrg",
+      "tribe": "Kor Soldier",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Attach an Equipment you control to a friendly creature.",
+      "effects": [
+        {
+          "type": "attach-equip",
+          "target": "friendly-creature"
+        }
+      ]
     }
   ]
 }
