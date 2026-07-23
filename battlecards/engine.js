@@ -538,6 +538,7 @@ const CHOSEN = {
 	'summon-with-stats': { 'friendly-creature': 'friendly-creature' },
 	exile: { creature: 'creature', 'enemy-creature': 'enemy-creature' },
 	'exile-until-return': { creature: 'creature', 'enemy-creature': 'enemy-creature' },
+	blink: { creature: 'creature', 'friendly-creature': 'friendly-creature' },
 	'attach-equip': { creature: 'creature', 'friendly-creature': 'friendly-creature' },
 	disguise: { creature: 'creature', 'friendly-creature': 'friendly-creature' },
 	freeze: { any: 'any', creature: 'creature', 'enemy-creature': 'enemy-creature' },
@@ -643,6 +644,7 @@ export function targetSpec(state, pi, card, choice) {
 		if (e.minAttack != null) { filter = c => c.attack >= e.minAttack; why = `a creature with ${e.minAttack} or more Attack`; }
 		if (e.requireKeyword != null) { filter = c => c.keywords.includes(e.requireKeyword); why = `a creature with ${e.requireKeyword.replace(/_/g, ' ')}`; }
 		if (e.requireDamaged) { filter = c => c.damage > 0; why = 'a damaged creature'; }
+		if (e.excludeSelf) { const prev = filter; filter = c => c !== card && (!prev || prev(c)); why = (why || 'a creature') + ' other than this'; }
 		if (e.tribe) {
 			const tribes = e.tribe.split('|');
 			filter = c => tribes.some(t => (c.tribe || '').includes(t));
@@ -2309,6 +2311,29 @@ function execEffects(state, pi, effects, target, source) {
 			// Farewell: exile every card in every graveyard
 			for (const pl of state.players) { for (const c of pl.graveyard) { c.zone = 'exile'; pl.exile.push(c); } pl.graveyard = []; }
 			emit(state, { type: 'graveyardsCleared', player: pi });
+		} else if (e.type === 'blink') {
+			// Flicker: exile a creature, then immediately return it as a fresh
+			// permanent (resets damage/auras/buffs) and retrigger its Battlecry.
+			const t = chosenCreature();
+			if (t && t.zone === 'board' && !isDead(t) && t !== source) {
+				const owner = t.controller;
+				state.players[owner].board = state.players[owner].board.filter(c => c !== t);
+				for (const pl of state.players) for (const eq of pl.artifacts) if (eq.equip && eq.attachedTo === t.uid) eq.attachedTo = null;
+				emit(state, { type: 'blinkOut', uid: t.uid, player: owner, name: t.name });
+				recomputeAuras(state);
+				if (!t.token) { // tokens cease to exist when they leave play
+					const def = state.cardsById[t.id] || { id: t.id, name: t.name, type: 'creature', cost: t.cost,
+						attack: t.attack, health: t.maxHealth, rarity: t.rarity, description: t.description, tribe: t.tribe };
+					const fresh = summon(state, owner, def);
+					if (fresh) {
+						fresh.sick = true; // it just entered
+						emit(state, { type: 'blinkIn', uid: fresh.uid, player: owner, name: fresh.name });
+						state.blinkDepth = (state.blinkDepth || 0) + 1;
+						if (state.blinkDepth < 20) runBattlecry(state, owner, fresh, null); // retrigger ETB (guarded vs infinite loops)
+						state.blinkDepth--;
+					}
+				}
+			}
 		} else if (e.type === 'exile') {
 			// removed from the game: no death, no deathrattle, never reshuffled
 			const t = chosenCreature();

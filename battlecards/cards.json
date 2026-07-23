@@ -58981,6 +58981,82 @@
           ]
         }
       ]
+    },
+    {
+      "id": "felidar_guardian",
+      "name": "Felidar Guardian",
+      "type": "creature",
+      "cost": 4,
+      "colors": [
+        "W"
+      ],
+      "cardClass": "neutral",
+      "attack": 1,
+      "health": 4,
+      "rarity": "uncommon",
+      "set": "wubrg",
+      "tribe": "Cat Beast",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Blink another creature you control.",
+      "effects": [
+        {
+          "type": "blink",
+          "target": "friendly-creature",
+          "excludeSelf": true
+        }
+      ]
+    },
+    {
+      "id": "charming_prince",
+      "name": "Charming Prince",
+      "type": "creature",
+      "cost": 2,
+      "colors": [
+        "W"
+      ],
+      "cardClass": "neutral",
+      "attack": 2,
+      "health": 2,
+      "rarity": "rare",
+      "set": "wubrg",
+      "tribe": "Human Noble",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Choose one \u2014\n> Scry 2.\n> You gain 3 life.\n> Blink another creature you control.",
+      "choices": [
+        {
+          "text": "Scry 2",
+          "effects": [
+            {
+              "type": "scry",
+              "value": 2
+            }
+          ]
+        },
+        {
+          "text": "Gain 3 life",
+          "effects": [
+            {
+              "type": "heal",
+              "value": 3,
+              "target": "self"
+            }
+          ]
+        },
+        {
+          "text": "Blink another creature you control",
+          "effects": [
+            {
+              "type": "blink",
+              "target": "friendly-creature",
+              "excludeSelf": true
+            }
+          ]
+        }
+      ]
     }
   ]
 }
