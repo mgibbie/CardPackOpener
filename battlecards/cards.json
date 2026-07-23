@@ -13915,25 +13915,6 @@
       "description": "Copy a random card from an opponent's hand."
     },
     {
-      "id": "naturalize",
-      "name": "Naturalize",
-      "cardClass": "druid",
-      "cost": 1,
-      "rarity": "common",
-      "type": "sorcery",
-      "effects": [
-        {
-          "type": "destroy",
-          "target": "creature"
-        },
-        {
-          "type": "draw-enemy",
-          "value": 2
-        }
-      ],
-      "description": "Destroy a creature. Your opponent draws 2 cards."
-    },
-    {
       "id": "power_word_shield",
       "name": "Power Word: Shield",
       "cardClass": "priest",
@@ -57479,6 +57460,146 @@
       "keywords": [],
       "description": "",
       "effects": []
+    },
+    {
+      "id": "disenchant",
+      "name": "Disenchant",
+      "type": "instant",
+      "cost": 2,
+      "colors": [
+        "W"
+      ],
+      "cardClass": "neutral",
+      "rarity": "common",
+      "set": "wubrg",
+      "description": "Destroy an enemy artifact or enchantment.",
+      "effects": [
+        {
+          "type": "destroy-art-ench",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "id": "naturalize",
+      "name": "Naturalize",
+      "type": "instant",
+      "cost": 2,
+      "colors": [
+        "G"
+      ],
+      "cardClass": "neutral",
+      "rarity": "common",
+      "set": "wubrg",
+      "description": "Destroy an enemy artifact or enchantment.",
+      "effects": [
+        {
+          "type": "destroy-art-ench",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "id": "return_to_dust",
+      "name": "Return to Dust",
+      "type": "instant",
+      "cost": 4,
+      "colors": [
+        "W"
+      ],
+      "cardClass": "neutral",
+      "rarity": "uncommon",
+      "set": "wubrg",
+      "description": "Exile up to two enemy artifacts or enchantments.",
+      "effects": [
+        {
+          "type": "destroy-art-ench",
+          "count": 2,
+          "exile": true
+        }
+      ]
+    },
+    {
+      "id": "kor_sanctifiers",
+      "name": "Kor Sanctifiers",
+      "type": "creature",
+      "cost": 4,
+      "colors": [
+        "W"
+      ],
+      "cardClass": "neutral",
+      "attack": 2,
+      "health": 3,
+      "rarity": "common",
+      "set": "wubrg",
+      "tribe": "Kor Cleric",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Destroy an enemy artifact or enchantment.",
+      "effects": [
+        {
+          "type": "destroy-art-ench",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "id": "oblivion_ring",
+      "name": "Oblivion Ring",
+      "type": "enchantment",
+      "cost": 3,
+      "colors": [
+        "W"
+      ],
+      "cardClass": "neutral",
+      "rarity": "uncommon",
+      "set": "wubrg",
+      "description": "When this enters, exile an enemy creature until Oblivion Ring leaves play.",
+      "effects": [
+        {
+          "type": "exile-until-return",
+          "target": "enemy-creature"
+        }
+      ]
+    },
+    {
+      "id": "journey_to_nowhere",
+      "name": "Journey to Nowhere",
+      "type": "enchantment",
+      "cost": 2,
+      "colors": [
+        "W"
+      ],
+      "cardClass": "neutral",
+      "rarity": "common",
+      "set": "wubrg",
+      "description": "When this enters, exile an enemy creature until it leaves play.",
+      "effects": [
+        {
+          "type": "exile-until-return",
+          "target": "enemy-creature"
+        }
+      ]
+    },
+    {
+      "id": "banishing_light",
+      "name": "Banishing Light",
+      "type": "enchantment",
+      "cost": 3,
+      "colors": [
+        "W"
+      ],
+      "cardClass": "neutral",
+      "rarity": "uncommon",
+      "set": "wubrg",
+      "description": "When this enters, exile an enemy creature until Banishing Light leaves play.",
+      "effects": [
+        {
+          "type": "exile-until-return",
+          "target": "enemy-creature"
+        }
+      ]
     }
   ]
 }

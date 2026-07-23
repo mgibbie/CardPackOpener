@@ -940,6 +940,31 @@ function silenceCreature(state, c) {
 	recomputeAuras(state);
 }
 
+// Destroy (or exile) an artifact/enchantment permanent — they don't go through
+// the creature death sweep. Pull it from its zone, fire its deathrattle (on
+// destroy), return any Oblivion-Ring-exiled creature (leaves play either way),
+// then send it to the graveyard (or exile).
+function destroyPermanent(state, ownerPi, card, toExile = false) {
+	const p = state.players[ownerPi];
+	const zoneKey = card.type === 'enchantment' ? 'enchantments' : 'artifacts';
+	if (!p[zoneKey].includes(card)) return;
+	p[zoneKey] = p[zoneKey].filter(c => c !== card);
+	emit(state, { type: toExile ? 'exiled' : 'destroy', uid: card.uid, player: ownerPi, name: card.name });
+	if (!toExile && card.deathrattle) runDeathrattle(state, ownerPi, card);
+	if (card.oringExiled) {
+		const oe = card.oringExiled; card.oringExiled = null;
+		const ow = state.players[oe.owner];
+		const i = ow.exile.findIndex(x => x.uid === oe.uid);
+		if (i >= 0) {
+			const [ex] = ow.exile.splice(i, 1);
+			const back = summon(state, oe.owner, state.cardsById[ex.id] || ex);
+			if (back) emit(state, { type: 'returnFromExile', uid: back.uid, player: oe.owner, name: back.name });
+		}
+	}
+	if (toExile) { card.zone = 'exile'; p.exile.push(card); } else toGraveyard(state, ownerPi, card);
+	recomputeAuras(state);
+}
+
 function sweepDeaths(state) {
 	for (let pi = 0; pi < state.players.length; pi++) {
 		const p = state.players[pi];
@@ -2194,6 +2219,19 @@ function execEffects(state, pi, effects, target, source) {
 				owner.exile.push(t);
 				source.oringExiled = { uid: t.uid, id: t.id, owner: t.controller };
 				emit(state, { type: 'exiled', uid: t.uid, player: t.controller, name: t.name });
+			}
+		} else if (e.type === 'destroy-art-ench') {
+			// non-targeted artifact/enchantment removal (there's no board-permanent
+			// targeting UI). scope 'enemy' (default) or 'all'; count N (default 1) or
+			// 'all'; exile:true exiles instead of destroying.
+			const scope = e.scope === 'all' ? state.players.map((_, i) => i) : enemies;
+			const pool = [];
+			for (const s2 of scope) for (const c of [...state.players[s2].artifacts, ...state.players[s2].enchantments]) pool.push([s2, c]);
+			const n = e.count === 'all' ? pool.length : (e.count || 1);
+			for (let k = 0; k < n && pool.length; k++) {
+				const j = Math.floor(state.rng() * pool.length);
+				const [own, c] = pool.splice(j, 1)[0];
+				destroyPermanent(state, own, c, !!e.exile);
 			}
 		} else if (e.type === 'emblem') {
 			const p = state.players[pi];
