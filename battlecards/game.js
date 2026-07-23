@@ -1533,9 +1533,16 @@ function resolveAIPicks() {
 	if (duel.on) return; // guest resolves their own Discover/Draft picks
 	while (state.pickQueue.length && state.pickQueue[0].player !== HUMAN) {
 		const pend = state.pickQueue[0];
+		if (pend.mode === 'adapt') { E.resolvePick(state, bestAdaptId(pend)); continue; }
 		const best = [...pend.ids].sort((a, b) => (state.cardsById[b]?.cost || 0) - (state.cardsById[a]?.cost || 0))[0];
 		E.resolvePick(state, best);
 	}
+}
+
+// AI Adapt: value each rolled option and take the strongest
+function bestAdaptId(pend) {
+	const score = e => (e.attack || 0) + (e.health || 0) + (e.keyword ? 3 : 0) + (e.deathrattle ? 3 : 0);
+	return [...pend.ids].sort((a, b) => score(E.ADAPT_TABLE[Number(b)]) - score(E.ADAPT_TABLE[Number(a)]))[0];
 }
 
 // AI optional "you may …" prompts: the AI takes the beneficial option (yes)
@@ -1589,6 +1596,31 @@ function openPickModal() {
 	const pend = state.pickQueue[0];
 	if (!pend || pend.player !== HUMAN) return;
 	const modal = $('scry-modal'); // reuse the scry chrome
+	if (pend.mode === 'adapt') {
+		// Adapt: three rolled upgrades (labels, not cards) — choose one
+		modal.innerHTML = `<div class="wm-title">Adapt — choose one</div><div class="scry-row"></div>`;
+		const row = modal.querySelector('.scry-row');
+		pend.ids.forEach(id => {
+			const entry = E.ADAPT_TABLE[Number(id)];
+			const cell = document.createElement('div');
+			cell.className = 'scry-cell';
+			cell.innerHTML = `<div class="adapt-opt">${entry ? entry.label : '?'}</div>`;
+			const btn = document.createElement('button');
+			btn.textContent = 'Choose';
+			btn.addEventListener('pointerdown', e => {
+				e.stopPropagation();
+				modal.style.display = 'none';
+				if (isGuest()) { guestApply(() => E.resolvePick(state, id), { k: 'pick', id }); return; }
+				E.resolvePick(state, id);
+				pump();
+				if (duel.on) publishDuel();
+			});
+			cell.appendChild(btn);
+			row.appendChild(cell);
+		});
+		modal.style.display = 'block';
+		return;
+	}
 	modal.innerHTML = `<div class="wm-title">${pend.title || (pend.ids.length > 3 ? 'Draft' : 'Discover')} — take one</div><div class="scry-row"></div>`;
 	const row = modal.querySelector('.scry-row');
 	pend.ids.forEach(id => {
@@ -1967,6 +1999,11 @@ function nextEvent() {
 			break;
 		case 'pickStart':
 			log(`${nameOf(ev.player)} ${ev.count > 3 ? 'drafts' : 'discovers'} (${ev.count} options)`);
+			if (ev.player === HUMAN) openPickModal();
+			delay = 300;
+			break;
+		case 'adaptOffer':
+			log(`${nameOf(ev.player)} Adapts (3 options)`);
 			if (ev.player === HUMAN) openPickModal();
 			delay = 300;
 			break;

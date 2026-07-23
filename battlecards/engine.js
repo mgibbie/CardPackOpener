@@ -2939,13 +2939,14 @@ function execEffects(state, pi, effects, target, source) {
 				emit(state, { type: 'buff', uid: t.uid, attack: t.attack, hp: hp(t) });
 			}
 		} else if (e.type === 'adapt') {
-			// paper glossary d10 (implementable subset; 10 entries kept)
-			if (e.target === 'friendly-creatures') {
-				for (const c of [...state.players[pi].board]) if (!isDead(c)) applyAdapt(state, c);
-			} else {
-				const t = chosenCreature() || (source && source.zone === 'board' && !isDead(source) ? source : null);
-				if (t) applyAdapt(state, t);
-			}
+			// paper rule: roll a d10 three times (reroll dupes); the controller
+			// picks ONE of the three, applied to the adapting creature(s)
+			let targets;
+			if (e.target === 'friendly-creatures') targets = state.players[pi].board.filter(c => !isDead(c));
+			else if (e.tribe) targets = state.players[pi].board.filter(c => !isDead(c) && (c.tribe || '').includes(e.tribe));
+			else { const t = chosenCreature() || (source && source.zone === 'board' && !isDead(source) ? source : null); targets = t ? [t] : []; }
+			targets = targets.filter(c => c.type !== 'location');
+			for (let n = 0; n < (e.times || 1); n++) queueAdapt(state, pi, targets); // Ravenous Pterrordax: Adapt twice
 		} else if (e.type === 'buff-self') {
 			// battlecry/choice self-pump; `per` scales by a count
 			if (source && source.zone === 'board' && !isDead(source)) {
@@ -5446,6 +5447,20 @@ function applyAdapt(state, t) {
 	emit(state, { type: 'boosted', uid: t.uid, color: 'adapt', roll: roll + 1, label: ADAPT_TABLE[roll].label, attack: t.attack, hp: hp(t) });
 }
 
+// paper Adapt: roll a d10 three times, rerolling repeats, then queue a pick so
+// the controller chooses one of the three to apply to every adapting creature
+function queueAdapt(state, pi, targets) {
+	if (!targets.length) return;
+	const options = [];
+	while (options.length < 3) {
+		const r = Math.floor(state.rng() * ADAPT_TABLE.length);
+		if (!options.includes(r)) options.push(r);
+	}
+	state.pickQueue.push({ player: pi, mode: 'adapt', ids: options.map(String),
+		adaptUids: targets.map(c => c.uid), title: 'Adapt' });
+	emit(state, { type: 'adaptOffer', player: pi, options, uids: targets.map(c => c.uid) });
+}
+
 // ---------- paper Defender: coin-flip attack redirection ----------
 // When an attack targets a defending player's permanent or hero, each of
 // their OTHER creatures with Defender gets one 50% flip to become the new
@@ -5508,6 +5523,21 @@ export function resolveDredge(state, id) {
 export function resolvePick(state, id) {
 	const pend = state.pickQueue.shift();
 	if (!pend) return false;
+	if (pend.mode === 'adapt') {
+		// apply the chosen adaptation to every still-living adapting creature
+		const idx = pend.ids.includes(String(id)) ? Number(id) : Number(pend.ids[0]);
+		const entry = ADAPT_TABLE[idx];
+		const p = state.players[pend.player];
+		for (const uid of pend.adaptUids) {
+			const t = p.board.find(c => c.uid === uid);
+			if (t && !isDead(t)) {
+				applyRollEntry(state, t, entry);
+				emit(state, { type: 'boosted', uid: t.uid, color: 'adapt', roll: idx + 1, label: entry.label, attack: t.attack, hp: hp(t) });
+			}
+		}
+		recomputeAuras(state);
+		return true;
+	}
 	const chosen = pend.ids.includes(id) ? id : pend.ids[0];
 	const p = state.players[pend.player];
 	const def = state.cardsById[chosen];

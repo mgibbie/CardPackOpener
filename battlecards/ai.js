@@ -142,6 +142,12 @@ export function step(state, pi = 1) {
 	// -1c. resolve pending Discover/Draft picks: take the biggest card
 	if (state.pickQueue.length && state.pickQueue[0].player === pi) {
 		const pend = state.pickQueue[0];
+		if (pend.mode === 'adapt') {
+			const score = e => (e.attack || 0) + (e.health || 0) + (e.keyword ? 3 : 0) + (e.deathrattle ? 3 : 0);
+			const best = [...pend.ids].sort((a, b) => score(E.ADAPT_TABLE[Number(b)]) - score(E.ADAPT_TABLE[Number(a)]))[0];
+			E.resolvePick(state, best);
+			return true;
+		}
 		const best = [...pend.ids].sort((a, b) => (state.cardsById[b]?.cost || 0) - (state.cardsById[a]?.cost || 0))[0];
 		E.resolvePick(state, best);
 		return true;

@@ -62,7 +62,7 @@ const K = [
 	{ p: ['Swing'], t: 'Triggers when this attacks.' },
 	{ p: ['Ponder'], t: 'Triggers whenever you draw an extra card (past your first draw of the turn), Scry, Dredge or Gaze.' },
 	{ p: ['Honorable Kill'], t: 'Bonus if it kills a creature with an exact-lethal blow.' },
-	{ p: ['Adapt'], t: 'Choose one of three upgrades for the creature.' },
+	{ p: ['Adapt'], t: 'Roll a d10 three times (reroll repeats); choose one of the three upgrades to give the creature.' },
 	{ p: ['Quest'], t: 'Complete its goal for a powerful reward.', tag: 'quest' },
 	// heals, coin flips, and other mechanics that were showing up unbolded
 	{ p: ['Medic'], t: 'Medic N — restores N Health to the creatures beside it at the end of your turn.' },

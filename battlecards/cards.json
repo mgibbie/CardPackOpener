@@ -63723,6 +63723,126 @@
         "taunt"
       ],
       "description": "An 8/12 Beast with Taunt."
+    },
+    {
+      "id": "crackling_razormaw",
+      "name": "Crackling Razormaw",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "hunter",
+      "attack": 3,
+      "health": 2,
+      "rarity": "common",
+      "set": "UNGORO",
+      "tribe": "Beast",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Adapt a friendly Beast.",
+      "effects": [
+        {
+          "type": "adapt",
+          "target": "creature"
+        }
+      ]
+    },
+    {
+      "id": "ravasaur_runt",
+      "name": "Ravasaur Runt",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "neutral",
+      "attack": 2,
+      "health": 2,
+      "rarity": "common",
+      "set": "UNGORO",
+      "tribe": "Beast",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: If you control at least 2 other creatures, Adapt.",
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "minOtherCreatures": 2
+          },
+          "then": [
+            {
+              "type": "adapt"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "vicious_fledgling",
+      "name": "Vicious Fledgling",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "neutral",
+      "attack": 3,
+      "health": 3,
+      "rarity": "rare",
+      "set": "UNGORO",
+      "tribe": "Beast",
+      "description": "After this creature attacks a hero, Adapt.",
+      "ongoing": {
+        "on": "self-attacks-hero",
+        "effects": [
+          {
+            "type": "adapt"
+          }
+        ]
+      }
+    },
+    {
+      "id": "gentle_megasaur",
+      "name": "Gentle Megasaur",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "neutral",
+      "attack": 5,
+      "health": 4,
+      "rarity": "epic",
+      "set": "UNGORO",
+      "tribe": "Beast",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Adapt your Murlocs.",
+      "effects": [
+        {
+          "type": "adapt",
+          "tribe": "Murloc"
+        }
+      ]
+    },
+    {
+      "id": "ravenous_pterrordax",
+      "name": "Ravenous Pterrordax",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "warlock",
+      "attack": 3,
+      "health": 3,
+      "rarity": "common",
+      "set": "UNGORO",
+      "tribe": "Beast",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Destroy a friendly creature to Adapt twice.",
+      "effects": [
+        {
+          "type": "destroy",
+          "target": "friendly-creature"
+        },
+        {
+          "type": "adapt",
+          "times": 2
+        }
+      ]
     }
   ]
 }
