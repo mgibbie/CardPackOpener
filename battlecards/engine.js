@@ -2242,6 +2242,7 @@ function execEffects(state, pi, effects, target, source) {
 			const mend = c => harm ? damageCreature(state, c, v, null) : healCreature(c, v);
 			if (e.target === 'self') mendHero(pi);
 			else if (e.target === 'enemy-hero') { const t = enemyHero(); if (t != null) mendHero(t); }
+			else if (e.target === 'enemy-heroes') { for (const o of opponentsOf(state, pi)) mendHero(o); }
 			else if (e.target === 'all-heroes') { for (let s = 0; s < state.players.length; s++) if (!state.players[s].eliminated) mendHero(s); }
 			else if (e.target === 'all-creatures') { for (const pl of state.players) for (const c of [...pl.board]) mend(c); }
 			else if (e.target === 'friendly-creatures') { for (const c of [...state.players[pi].board]) mend(c); }

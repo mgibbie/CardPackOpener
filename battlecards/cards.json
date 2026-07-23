@@ -622,7 +622,7 @@
         {
           "type": "damage",
           "value": 2,
-          "target": "enemy-hero"
+          "target": "enemy-heroes"
         }
       ]
     },
@@ -687,10 +687,10 @@
         {
           "type": "damage",
           "value": 3,
-          "target": "enemy-hero"
+          "target": "enemy-heroes"
         }
       ],
-      "description": "Deal 3 damage to the enemy hero."
+      "description": "Each other player loses 3 life."
     },
     {
       "id": "stonetusk_boar",
@@ -930,10 +930,10 @@
         {
           "type": "damage",
           "value": 5,
-          "target": "enemy-hero"
+          "target": "enemy-heroes"
         }
       ],
-      "description": "Deal 5 damage to the enemy hero."
+      "description": "Each other player loses 5 life."
     },
     {
       "id": "murloc_tidehunter",
@@ -1401,7 +1401,7 @@
           "target": "enemies"
         }
       ],
-      "description": "Deal 2 damage to the enemy hero & all enemy creatures."
+      "description": "Deal 2 damage to all enemy creatures & each other player loses 2 life."
     },
     {
       "id": "dragonling_mechanic",
@@ -1694,7 +1694,7 @@
           "target": "friendly-all"
         }
       ],
-      "description": "Deal 2 damage to the enemy hero & all enemy creatures. Restore 2 health to your hero & creatures."
+      "description": "Deal 2 damage to all enemy creatures & each other player loses 2 life. Restore 2 health to your hero & creatures."
     },
     {
       "id": "nightblade",
@@ -1712,10 +1712,10 @@
         {
           "type": "damage",
           "value": 3,
-          "target": "enemy-hero"
+          "target": "enemy-heroes"
         }
       ],
-      "description": "Battlecry: Deal 3 damage to the enemy hero."
+      "description": "Battlecry: Each other player loses 3 life."
     },
     {
       "id": "silver_hand_knight",
@@ -2549,7 +2549,7 @@
           }
         ]
       },
-      "description": "Secret: When your hero takes damage, deal that much damage to the enemy hero."
+      "description": "Secret: When your hero takes damage, each other player loses that much life."
     },
     {
       "id": "light_s_justice",
@@ -2660,7 +2660,7 @@
           }
         ]
       },
-      "description": "Secret: When your hero is attacked, deal 2 damage to the enemy hero & all enemy creatures."
+      "description": "Secret: When your hero is attacked, deal 2 damage to all enemy creatures & each other player loses 2 life."
     },
     {
       "id": "fiery_war_axe",
@@ -2980,7 +2980,7 @@
           }
         ]
       },
-      "description": "Trap: When your hero is attacked, deal 2 damage to every enemy hero & creature."
+      "description": "Trap: When your hero is attacked, deal 2 damage to every enemy creature & each other player loses 2 life."
     },
     {
       "id": "rattlesnake_den",
@@ -3230,7 +3230,7 @@
           }
         ]
       },
-      "description": "Quest: 8 creatures die.\nReward: Deal 2 damage to every enemy hero & creature."
+      "description": "Quest: 8 creatures die.\nReward: Deal 2 damage to every enemy creature & each other player loses 2 life."
     },
     {
       "id": "railroad_contract",
@@ -12469,7 +12469,7 @@
         {
           "type": "damage",
           "value": 3,
-          "target": "enemy-hero"
+          "target": "enemy-heroes"
         }
       ]
     },
@@ -12803,7 +12803,7 @@
           {
             "type": "damage",
             "value": 2,
-            "target": "enemy-hero"
+            "target": "enemy-heroes"
           }
         ]
       }
@@ -22952,10 +22952,10 @@
         {
           "type": "damage",
           "value": 2,
-          "target": "enemy-hero"
+          "target": "enemy-heroes"
         }
       ],
-      "description": "Deathrattle: Deal 2 damage to the enemy hero.",
+      "description": "Deathrattle: Each other player loses 2 life.",
       "set": "hsx"
     },
     {
@@ -23938,10 +23938,10 @@
         {
           "type": "damage",
           "value": 3,
-          "target": "enemy-hero"
+          "target": "enemy-heroes"
         }
       ],
-      "description": "Deathrattle: Deal 3 damage to the enemy hero.",
+      "description": "Deathrattle: Each other player loses 3 life.",
       "set": "hsx"
     },
     {
@@ -24382,11 +24382,11 @@
           {
             "type": "damage",
             "value": 2,
-            "target": "enemy-hero"
+            "target": "enemy-heroes"
           }
         ]
       },
-      "description": "Whenever this creature takes damage, deal 2 damage to the enemy hero.",
+      "description": "Whenever this creature takes damage, each other player loses 2 life.",
       "set": "hsx"
     },
     {
@@ -24804,12 +24804,12 @@
       "type": "sorcery",
       "choices": [
         {
-          "text": "Deal 4 damage to the enemy hero",
+          "text": "Each other player loses 4 life",
           "effects": [
             {
               "type": "damage",
               "value": 4,
-              "target": "enemy-hero"
+              "target": "enemy-heroes"
             }
           ]
         },
@@ -24829,7 +24829,7 @@
           ]
         }
       ],
-      "description": "Choose one: Deal 4 damage to the enemy hero; or Summon two 3/2 Wolves with Rush.",
+      "description": "Choose one: Each other player loses 4 life; or Summon two 3/2 Wolves with Rush.",
       "set": "hsx"
     },
     {
@@ -26435,7 +26435,7 @@
           }
         ]
       },
-      "description": "At the end of your turn, deal 2 damage to the enemy hero & all enemy creatures.",
+      "description": "At the end of your turn, deal 2 damage to all enemy creatures & each other player loses 2 life.",
       "set": "hsx"
     },
     {
@@ -26459,7 +26459,7 @@
           "target": "enemies"
         }
       ],
-      "description": "Taunt.\nDeathrattle: Deal 2 damage to the enemy hero & all enemy creatures.",
+      "description": "Taunt.\nDeathrattle: Deal 2 damage to all enemy creatures & each other player loses 2 life.",
       "set": "hsx"
     },
     {
@@ -26593,11 +26593,11 @@
           {
             "type": "damage",
             "value": 2,
-            "target": "enemy-hero"
+            "target": "enemy-heroes"
           }
         ]
       },
-      "description": "After a friendly creature dies, deal 2 damage to the enemy hero.",
+      "description": "After a friendly creature dies, each other player loses 2 life.",
       "set": "hsx"
     },
     {
@@ -28686,7 +28686,7 @@
           "target": "enemies"
         }
       ],
-      "description": "Lifesteal.\nTaunt.\nDeathrattle: Deal 1 damage to the enemy hero & all enemy creatures.",
+      "description": "Lifesteal.\nTaunt.\nDeathrattle: Deal 1 damage to all enemy creatures & each other player loses 1 life.",
       "set": "hsx"
     },
     {
@@ -28786,7 +28786,7 @@
           }
         ]
       },
-      "description": "After your hero attacks, deal 1 damage to the enemy hero & all enemy creatures.",
+      "description": "After your hero attacks, deal 1 damage to all enemy creatures & each other player loses 1 life.",
       "set": "hsx"
     },
     {
@@ -30067,13 +30067,13 @@
         {
           "type": "damage",
           "value": 8,
-          "target": "enemy-hero"
+          "target": "enemy-heroes"
         }
       ],
       "keywords": [
         "rush"
       ],
-      "description": "Rush.\nHonorable Kill: Deal 8 damage to the enemy hero.",
+      "description": "Rush.\nHonorable Kill: Each other player loses 8 life.",
       "set": "hsx"
     },
     {
@@ -30963,7 +30963,7 @@
           "target": "friendly-all"
         }
       ],
-      "description": "Deal 1 damage to the enemy hero & all enemy creatures. Restore 1 health to your hero & creatures.",
+      "description": "Deal 1 damage to all enemy creatures & each other player loses 1 life. Restore 1 health to your hero & creatures.",
       "set": "hsx"
     },
     {
@@ -33177,11 +33177,11 @@
           {
             "type": "damage",
             "value": 4,
-            "target": "enemy-hero"
+            "target": "enemy-heroes"
           }
         ]
       },
-      "description": "At the end of your turn, deal 4 damage to the enemy hero.",
+      "description": "At the end of your turn, each other player loses 4 life.",
       "set": "hsx"
     },
     {
@@ -34410,7 +34410,7 @@
           "target": "self"
         }
       ],
-      "description": "At the end of your turn, deal 2 damage to the enemy hero & all enemy creatures.\nHonorable Kill: Restore 4 health to your hero.",
+      "description": "At the end of your turn, deal 2 damage to all enemy creatures & each other player loses 2 life.\nHonorable Kill: Restore 4 health to your hero.",
       "set": "hsx"
     },
     {
@@ -38634,7 +38634,7 @@
         {
           "type": "damage",
           "value": 3,
-          "target": "enemy-hero"
+          "target": "enemy-heroes"
         }
       ],
       "description": "this creature deals 3 damage to target player or planeswalker."
@@ -39121,7 +39121,7 @@
         {
           "type": "heal",
           "value": 5,
-          "target": "enemy-hero"
+          "target": "enemy-heroes"
         }
       ]
     },
@@ -39367,10 +39367,10 @@
         {
           "type": "heal",
           "value": 5,
-          "target": "enemy-hero"
+          "target": "enemy-heroes"
         }
       ],
-      "description": "Deathrattle: Restore 5 health to the enemy hero.",
+      "description": "Deathrattle: Each other player gains 5 life.",
       "set": "hsx"
     },
     {
@@ -39437,10 +39437,10 @@
         {
           "type": "heal",
           "value": 8,
-          "target": "enemy-hero"
+          "target": "enemy-heroes"
         }
       ],
-      "description": "Deathrattle: Restore 8 health to the enemy hero.",
+      "description": "Deathrattle: Each other player gains 8 life.",
       "set": "hsx"
     },
     {
@@ -40915,7 +40915,7 @@
       ],
       "taps": [
         {
-          "text": "Deal 1 damage to the enemy hero and all enemy creatures.",
+          "text": "Deal 1 damage to all enemy creatures and each other player loses 1 life.",
           "effects": [
             {
               "type": "damage",
@@ -40925,7 +40925,7 @@
           ]
         }
       ],
-      "description": "Deal 1 damage to the enemy hero & all enemy creatures.\nDeathrattle: Summon an 8/8 Ultralisk with Rush."
+      "description": "Deal 1 damage to all enemy creatures & each other player loses 1 life.\nDeathrattle: Summon an 8/8 Ultralisk with Rush."
     },
     {
       "id": "underbelly_network",
@@ -42227,7 +42227,7 @@
         {
           "type": "damage",
           "value": 10,
-          "target": "enemy-hero"
+          "target": "enemy-heroes"
         },
         {
           "type": "heal",
@@ -45078,7 +45078,7 @@
       "cost": 4,
       "rarity": "legendary",
       "set": "hs",
-      "description": "Lifesteal Your Lifesteal damages the enemy hero instead of healing you.",
+      "description": "Lifesteal Your Lifesteal damages each other player instead of healing you.",
       "type": "creature",
       "attack": 2,
       "health": 6
@@ -45229,7 +45229,7 @@
       "cost": 10,
       "rarity": "common",
       "set": "hs",
-      "description": "At the end of your turn, attack a random enemy creature (excess damage hits the enemy hero).",
+      "description": "At the end of your turn, attack a random enemy creature (excess damage hits each other player).",
       "type": "creature",
       "attack": 12,
       "health": 7,
@@ -46640,7 +46640,7 @@
       "cost": 4,
       "rarity": "rare",
       "set": "hs",
-      "description": "Also damages creatures next to whomever this attacks (& the enemy hero if a neighbor is missing).",
+      "description": "Also damages creatures next to whomever this attacks (& each other player if a neighbor is missing).",
       "type": "creature",
       "attack": 5,
       "health": 2
@@ -47062,7 +47062,7 @@
       "cost": 5,
       "rarity": "common",
       "set": "hs",
-      "description": "Stealth.\nCosts (1) less for each time the enemy hero took damage this turn.",
+      "description": "Stealth.\nCosts (1) less for each time an opponent lost life this turn.",
       "type": "creature",
       "attack": 5,
       "health": 3,
@@ -56057,7 +56057,7 @@
         {
           "type": "damage",
           "value": 1,
-          "target": "enemy-hero"
+          "target": "enemy-heroes"
         }
       ]
     },
@@ -56260,12 +56260,12 @@
       "keywords": [
         "deathrattle"
       ],
-      "description": "Deathrattle: Deal 1 damage to the enemy hero.",
+      "description": "Deathrattle: Each other player loses 1 life.",
       "deathrattle": [
         {
           "type": "damage",
           "value": 1,
-          "target": "enemy-hero"
+          "target": "enemy-heroes"
         }
       ]
     },
@@ -56783,14 +56783,14 @@
       "rarity": "uncommon",
       "set": "wubrg",
       "keywords": [],
-      "description": "Whenever any creature dies, the enemy hero loses 1 life & you gain 1 life.",
+      "description": "Whenever any creature dies, each other player loses 1 life & you gain 1 life.",
       "ongoing": {
         "on": "creature-died",
         "effects": [
           {
             "type": "damage",
             "value": 1,
-            "target": "enemy-hero"
+            "target": "enemy-heroes"
           },
           {
             "type": "heal",
@@ -57481,12 +57481,12 @@
       "keywords": [
         "battlecry"
       ],
-      "description": "Battlecry: Deal 3 damage to the enemy hero & gain 3 life.",
+      "description": "Battlecry: Each other player loses 3 life & you gain 3 life.",
       "effects": [
         {
           "type": "damage",
           "value": 3,
-          "target": "enemy-hero"
+          "target": "enemy-heroes"
         },
         {
           "type": "heal",
@@ -57555,14 +57555,14 @@
       "cardClass": "neutral",
       "rarity": "common",
       "set": "wubrg",
-      "description": "Whenever a friendly creature enters, deal 1 damage to the enemy hero.",
+      "description": "Whenever a friendly creature enters, each other player loses 1 life.",
       "ongoing": {
         "on": "summoned",
         "effects": [
           {
             "type": "damage",
             "value": 1,
-            "target": "enemy-hero"
+            "target": "enemy-heroes"
           }
         ]
       }
@@ -57578,7 +57578,7 @@
       "cardClass": "neutral",
       "rarity": "common",
       "set": "wubrg",
-      "description": "Destroy an enemy artifact or enchantment.\nDeal 3 damage to the enemy hero.",
+      "description": "Destroy an enemy artifact or enchantment.\nEach other player loses 3 life.",
       "effects": [
         {
           "type": "destroy-art-ench",
@@ -57587,7 +57587,7 @@
         {
           "type": "damage",
           "value": 3,
-          "target": "enemy-hero"
+          "target": "enemy-heroes"
         }
       ]
     },
@@ -58031,7 +58031,7 @@
         {
           "type": "heal",
           "value": 4,
-          "target": "enemy-hero"
+          "target": "enemy-heroes"
         }
       ]
     },
@@ -59666,7 +59666,7 @@
         {
           "type": "damage",
           "value": "X",
-          "target": "enemy-hero"
+          "target": "enemy-heroes"
         },
         {
           "type": "heal",
@@ -60089,7 +60089,7 @@
       "set": "wubrg",
       "tribe": "Spirit",
       "keywords": [],
-      "description": "(1), Sacrifice a creature: Deal 1 damage to the enemy hero.",
+      "description": "(1), Sacrifice a creature: Each other player loses 1 life.",
       "activated": [
         {
           "cost": 1,
@@ -60098,7 +60098,7 @@
             {
               "type": "damage",
               "value": 1,
-              "target": "enemy-hero"
+              "target": "enemy-heroes"
             }
           ],
           "text": "(1), Sacrifice a creature: 1 damage"
@@ -62389,14 +62389,14 @@
       "rarity": "common",
       "set": "wubrg",
       "tribe": "Devil",
-      "description": "Whenever you sacrifice a token, deal 1 damage to the enemy hero.",
+      "description": "Whenever you sacrifice a token, each other player loses 1 life.",
       "ongoing": {
         "on": "token-sacrificed",
         "effects": [
           {
             "type": "damage",
             "value": 1,
-            "target": "enemy-hero"
+            "target": "enemy-heroes"
           }
         ]
       }
@@ -62419,7 +62419,7 @@
           {
             "type": "damage",
             "value": 1,
-            "target": "enemy-hero"
+            "target": "enemy-heroes"
           },
           {
             "type": "heal",
