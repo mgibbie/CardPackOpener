@@ -60370,10 +60370,9 @@
       "set": "wubrg",
       "tribe": "Snake Archer",
       "keywords": [
-        "reach",
         "defender"
       ],
-      "description": "Reach, Defender."
+      "description": "Defender."
     },
     {
       "id": "bassara_tower_archer",
@@ -60390,10 +60389,9 @@
       "set": "wubrg",
       "tribe": "Human Archer",
       "keywords": [
-        "reach",
         "elusive"
       ],
-      "description": "Reach, Hexproof."
+      "description": "Hexproof."
     },
     {
       "id": "alpine_grizzly",
@@ -61154,10 +61152,8 @@
       "rarity": "common",
       "set": "wubrg",
       "tribe": "Zombie Minotaur",
-      "keywords": [
-        "menace"
-      ],
-      "description": "Menace."
+      "keywords": [],
+      "description": ""
     },
     {
       "id": "alley_strangler",
@@ -61173,10 +61169,8 @@
       "rarity": "common",
       "set": "wubrg",
       "tribe": "Aetherborn Rogue",
-      "keywords": [
-        "menace"
-      ],
-      "description": "Menace."
+      "keywords": [],
+      "description": ""
     },
     {
       "id": "carrion_screecher",
@@ -61347,10 +61341,8 @@
       "rarity": "common",
       "set": "wubrg",
       "tribe": "Goblin Warrior",
-      "keywords": [
-        "menace"
-      ],
-      "description": "Menace."
+      "keywords": [],
+      "description": ""
     },
     {
       "id": "borderland_minotaur",
@@ -61668,10 +61660,8 @@
       "rarity": "common",
       "set": "wubrg",
       "tribe": "Jackal Archer",
-      "keywords": [
-        "reach"
-      ],
-      "description": "Reach"
+      "keywords": [],
+      "description": ""
     },
     {
       "id": "blanchwood_treefolk",
@@ -61704,10 +61694,8 @@
       "rarity": "common",
       "set": "wubrg",
       "tribe": "Wolf",
-      "keywords": [
-        "reach"
-      ],
-      "description": "Reach."
+      "keywords": [],
+      "description": ""
     },
     {
       "id": "brambleweft_behemoth",
