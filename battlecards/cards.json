@@ -65130,6 +65130,306 @@
           "type": "copy-enemy-hero-power"
         }
       ]
+    },
+    {
+      "id": "buccaneer",
+      "name": "Buccaneer",
+      "type": "creature",
+      "cost": 1,
+      "cardClass": "rogue",
+      "attack": 2,
+      "health": 1,
+      "rarity": "common",
+      "set": "TGT",
+      "tribe": "Pirate",
+      "description": "Whenever you equip a weapon, give it +1 Attack.",
+      "ongoing": {
+        "on": "weapon-equipped",
+        "effects": [
+          {
+            "type": "buff-weapon",
+            "attack": 1,
+            "durability": 0
+          }
+        ]
+      }
+    },
+    {
+      "id": "druid_of_the_saber",
+      "name": "Druid of the Saber",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "druid",
+      "attack": 2,
+      "health": 1,
+      "rarity": "common",
+      "set": "TGT",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Choose One - Become a 2/1 with Charge; or a 3/2 with Stealth.",
+      "choices": [
+        {
+          "text": "2/1 Charge",
+          "effects": [
+            {
+              "type": "grant",
+              "target": "self",
+              "keyword": "charge"
+            }
+          ]
+        },
+        {
+          "text": "3/2 Stealth",
+          "effects": [
+            {
+              "type": "buff-self",
+              "attack": 1,
+              "health": 1
+            },
+            {
+              "type": "grant",
+              "target": "self",
+              "keyword": "stealth"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "gormok_the_impaler",
+      "name": "Gormok the Impaler",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "neutral",
+      "attack": 4,
+      "health": 4,
+      "rarity": "legendary",
+      "set": "TGT",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: If you have at least 4 other creatures, deal 4 damage.",
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "minOtherCreatures": 4
+          },
+          "then": [
+            {
+              "type": "damage",
+              "value": 4,
+              "target": "creature"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "fjola_lightbane",
+      "name": "Fjola Lightbane",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "neutral",
+      "attack": 3,
+      "health": 4,
+      "rarity": "legendary",
+      "set": "TGT",
+      "description": "Whenever you target this creature with a spell, gain Divine Shield.",
+      "ongoing": {
+        "on": "spell-targeted-self",
+        "effects": [
+          {
+            "type": "grant-self",
+            "keyword": "divine_shield"
+          }
+        ]
+      }
+    },
+    {
+      "id": "eydis_darkbane",
+      "name": "Eydis Darkbane",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "neutral",
+      "attack": 3,
+      "health": 4,
+      "rarity": "legendary",
+      "set": "TGT",
+      "description": "Whenever you target this creature with a spell, deal 3 damage to a random enemy.",
+      "ongoing": {
+        "on": "spell-targeted-self",
+        "effects": [
+          {
+            "type": "random-damage",
+            "value": 3,
+            "count": 1,
+            "pool": "enemies"
+          }
+        ]
+      }
+    },
+    {
+      "id": "darnassus_aspirant",
+      "name": "Darnassus Aspirant",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "druid",
+      "attack": 2,
+      "health": 3,
+      "rarity": "rare",
+      "set": "TGT",
+      "keywords": [
+        "battlecry",
+        "deathrattle"
+      ],
+      "description": "Battlecry: Gain an empty Mana Crystal. Deathrattle: Lose a Mana Crystal.",
+      "effects": [
+        {
+          "type": "gain-max-mana",
+          "value": 1
+        }
+      ],
+      "deathrattle": [
+        {
+          "type": "lose-max-mana",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "mysterious_challenger",
+      "name": "Mysterious Challenger",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "paladin",
+      "attack": 5,
+      "health": 5,
+      "rarity": "epic",
+      "set": "TGT",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Put one of each Secret from your deck into play.",
+      "effects": [
+        {
+          "type": "deploy-secret-from-deck",
+          "all": true
+        }
+      ]
+    },
+    {
+      "id": "sea_reaver",
+      "name": "Sea Reaver",
+      "type": "creature",
+      "cost": 6,
+      "cardClass": "warrior",
+      "attack": 6,
+      "health": 7,
+      "rarity": "epic",
+      "set": "TGT",
+      "description": "When you draw this, deal 1 damage to your creatures.",
+      "emerge": [
+        {
+          "type": "damage",
+          "value": 1,
+          "target": "own-creatures"
+        }
+      ]
+    },
+    {
+      "id": "rhonin",
+      "name": "Rhonin",
+      "type": "creature",
+      "cost": 8,
+      "cardClass": "mage",
+      "attack": 7,
+      "health": 7,
+      "rarity": "legendary",
+      "set": "TGT",
+      "keywords": [
+        "deathrattle"
+      ],
+      "description": "Deathrattle: Add 3 copies of Arcane Missiles to your hand.",
+      "deathrattle": [
+        {
+          "type": "add-card",
+          "id": "arcane_missiles"
+        },
+        {
+          "type": "add-card",
+          "id": "arcane_missiles"
+        },
+        {
+          "type": "add-card",
+          "id": "arcane_missiles"
+        }
+      ]
+    },
+    {
+      "id": "shadowfiend",
+      "name": "Shadowfiend",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "priest",
+      "attack": 2,
+      "health": 3,
+      "rarity": "epic",
+      "set": "TGT",
+      "description": "Whenever you draw a card, reduce its Cost by (1).",
+      "ongoing": {
+        "on": "card-drawn",
+        "effects": [
+          {
+            "type": "reduce-drawn-cost",
+            "value": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "tiny_knight_of_evil",
+      "name": "Tiny Knight of Evil",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "warlock",
+      "attack": 3,
+      "health": 2,
+      "rarity": "rare",
+      "set": "TGT",
+      "description": "Whenever you discard a card, gain +2/+1.",
+      "ongoing": {
+        "on": "card-discarded",
+        "effects": [
+          {
+            "type": "buff-self",
+            "attack": 2,
+            "health": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "wrathguard",
+      "name": "Wrathguard",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "warlock",
+      "attack": 4,
+      "health": 3,
+      "rarity": "common",
+      "set": "TGT",
+      "tribe": "Demon",
+      "description": "Whenever this creature takes damage, also deal that amount to your hero.",
+      "ongoing": {
+        "on": "self-damaged",
+        "effects": [
+          {
+            "type": "mirror-damage-to-own-hero"
+          }
+        ]
+      }
     }
   ]
 }

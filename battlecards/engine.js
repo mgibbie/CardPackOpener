@@ -884,7 +884,7 @@ function damageCreature(state, target, amount, source) {
 		if (o.spent) continue;
 		if (!o.survives || !isDead(target)) {
 			if (o.once) { o.spent = true; if (o === target.ongoing) target.ongoing = null; }
-			runSecretEffects(state, target.controller, o.effects, { self: target, damaged: target });
+			runSecretEffects(state, target.controller, o.effects, { self: target, damaged: target, amount });
 		}
 	}
 	for (let s2 = 0; s2 < state.players.length; s2++) fireOngoing(state, s2, 'creature-damaged', { damaged: target });
@@ -1933,6 +1933,16 @@ function runSecretEffects(state, pi, effects, ctx) {
 				}
 				break;
 			}
+			case 'reduce-drawn-cost': {
+				// Shadowfiend: the just-drawn card costs (N) less
+				if (ctx.card) ctx.card.cost = Math.max(0, (ctx.card.cost || 0) - (e.value || 1));
+				break;
+			}
+			case 'mirror-damage-to-own-hero': {
+				// Wrathguard: when this takes damage, deal that much to your own hero
+				if (ctx.amount > 0) damageHero(state, pi, ctx.amount, pi);
+				break;
+			}
 			case 'copy-drawn': {
 				// Chromaggus: put another copy of the just-drawn card into your hand
 				const drawn = ctx.card;
@@ -2919,6 +2929,7 @@ function execEffects(state, pi, effects, target, source) {
 				const [c] = p.hand.splice(j, 1);
 				toGraveyard(state, pi, c);
 				emit(state, { type: 'discard', player: pi, card: c });
+				fireOngoing(state, pi, 'card-discarded', { card: c }); // Tiny Knight of Evil
 			}
 		} else if (e.type === 'discard-lowest') {
 			// Lakkari Felhound: discard your N lowest-Cost cards
@@ -2929,6 +2940,7 @@ function execEffects(state, pi, effects, target, source) {
 				const [c] = p.hand.splice(li, 1);
 				toGraveyard(state, pi, c);
 				emit(state, { type: 'discard', player: pi, card: c });
+				fireOngoing(state, pi, 'card-discarded', { card: c });
 			}
 		} else if (e.type === 'draw-set-cost') {
 			// Bright-Eyed Scout: draw a card and change its Cost
@@ -3067,10 +3079,18 @@ function execEffects(state, pi, effects, target, source) {
 				attack: source.attack, health: source.maxHealth, keywords: [...(source.keywords || [])],
 				description: source.description || '' });
 		} else if (e.type === 'deploy-secret-from-deck') {
-			// Mad Scientist: pull a Secret out of your deck and arm it for free
+			// Mad Scientist: one Secret. Mysterious Challenger (all): one of each.
 			const p = state.players[pi];
-			const si = p.deck.findIndex(id => state.cardsById[id]?.secret);
-			if (si >= 0) { const [id] = p.deck.splice(si, 1); installSecret(state, pi, id); }
+			if (e.all) {
+				const seen = new Set();
+				for (const id of [...p.deck]) {
+					const def = state.cardsById[id];
+					if (def?.secret && !seen.has(id)) { seen.add(id); const i = p.deck.indexOf(id); if (i >= 0) { p.deck.splice(i, 1); installSecret(state, pi, id); } }
+				}
+			} else {
+				const si = p.deck.findIndex(id => state.cardsById[id]?.secret);
+				if (si >= 0) { const [id] = p.deck.splice(si, 1); installSecret(state, pi, id); }
+			}
 		} else if (e.type === 'enemy-summon-from-deck') {
 			// Deathlord: each opponent puts a creature from their deck into play
 			for (const o of enemies) {
@@ -3153,6 +3173,7 @@ function execEffects(state, pi, effects, target, source) {
 				const c = p.hand.pop();
 				toGraveyard(state, pi, c);
 				emit(state, { type: 'discard', player: pi, card: c });
+				fireOngoing(state, pi, 'card-discarded', { card: c });
 			}
 		} else if (e.type === 'bounce') {
 			if (e.target === 'permanent') {
