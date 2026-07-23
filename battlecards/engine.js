@@ -2380,6 +2380,7 @@ function execEffects(state, pi, effects, target, source) {
 				if (e.exceptTribe && (c.tribe || '').includes(e.exceptTribe)) continue;
 				if (e.maxCost != null && (c.cost || 0) > e.maxCost) continue; // Austere Command: MV 3 or less
 				if (e.minCost != null && (c.cost || 0) < e.minCost) continue; // Austere Command: MV 4 or greater
+				if (e.requireDamaged && !(c.damage > 0)) continue; // King Mosh: only damaged creatures
 				if (e.exile) {
 					const owner = state.players[c.controller];
 					owner.board = owner.board.filter(x => x !== c);
@@ -2514,6 +2515,7 @@ function execEffects(state, pi, effects, target, source) {
 			}
 		} else if (e.type === 'freeze') {
 			if (e.target === 'enemy-creatures') { for (const o of enemies) for (const c of state.players[o].board) freezeCreature(state, c); }
+			else if (e.target === 'self') { if (source && !isDead(source)) freezeCreature(state, source); } // Frozen Crusher
 			else { const t = chosenCreature(); if (t) freezeCreature(state, t); /* hero freeze: no-op (heroes can't attack) */ }
 		} else if (e.type === 'silence') {
 			if (e.target === 'enemy-creatures') { for (const o of enemies) for (const c of state.players[o].board) silenceCreature(state, c); }
@@ -2880,6 +2882,22 @@ function execEffects(state, pi, effects, target, source) {
 				toGraveyard(state, pi, c);
 				emit(state, { type: 'discard', player: pi, card: c });
 			}
+		} else if (e.type === 'discard-lowest') {
+			// Lakkari Felhound: discard your N lowest-Cost cards
+			const p = state.players[pi];
+			for (let k = 0; k < (e.count || 1) && p.hand.length; k++) {
+				let li = 0;
+				for (let j = 1; j < p.hand.length; j++) if ((p.hand[j].cost || 0) < (p.hand[li].cost || 0)) li = j;
+				const [c] = p.hand.splice(li, 1);
+				toGraveyard(state, pi, c);
+				emit(state, { type: 'discard', player: pi, card: c });
+			}
+		} else if (e.type === 'draw-set-cost') {
+			// Bright-Eyed Scout: draw a card and change its Cost
+			const p = state.players[pi];
+			const before = new Set(p.hand.map(c => c.uid));
+			drawCards(state, pi, e.value || 1);
+			for (const c of p.hand) if (!before.has(c.uid)) c.cost = e.cost;
 		} else if (e.type === 'draw-all') {
 			for (let s2 = 0; s2 < state.players.length; s2++) {
 				if (!state.players[s2].eliminated) drawCards(state, s2, e.value);
@@ -2971,6 +2989,8 @@ function execEffects(state, pi, effects, target, source) {
 			// "Change a creature's Health to N" — keeps aura bonuses on top
 			const list = e.target === 'all-creatures'
 				? state.players.flatMap(pl => pl.board.filter(c => !isDead(c)))
+				: e.target === 'all-others'
+				? state.players.flatMap(pl => pl.board.filter(c => !isDead(c) && c !== source))
 				: [chosenCreature()].filter(Boolean);
 			for (const t of list) {
 				t.maxHealth = e.value + (t.auraHealth || 0);
@@ -2979,8 +2999,12 @@ function execEffects(state, pi, effects, target, source) {
 				emit(state, { type: 'buff', uid: t.uid, attack: t.attack, hp: hp(t) });
 			}
 		} else if (e.type === 'set-attack') {
-			const t = chosenCreature();
-			if (t) {
+			const list = e.target === 'all-creatures'
+				? state.players.flatMap(pl => pl.board.filter(c => !isDead(c)))
+				: e.target === 'all-others'
+				? state.players.flatMap(pl => pl.board.filter(c => !isDead(c) && c !== source))
+				: [chosenCreature()].filter(Boolean);
+			for (const t of list) {
 				t.attack = e.value + (t.auraAttack || 0);
 				t.tempAttack = 0;
 				emit(state, { type: 'buff', uid: t.uid, attack: t.attack, hp: hp(t) });
@@ -3116,6 +3140,7 @@ function execEffects(state, pi, effects, target, source) {
 					if (e.cardType === 'spell' ? !isSpellType(def)
 						: (e.cardType && def.type !== e.cardType)) continue;
 					if (e.maxCost != null && (def.cost || 0) > e.maxCost) continue;
+					if (e.cost != null && (def.cost || 0) !== e.cost) continue; // Tol'vir Warden: exactly N-Cost
 					if (e.requireKeyword && !(def.keywords || []).includes(e.requireKeyword)) continue;
 					idxs.push(j);
 				}
@@ -3140,6 +3165,7 @@ function execEffects(state, pi, effects, target, source) {
 			const p = state.players[pi];
 			let ok = true;
 			if (e.if.controlTribe) ok = p.board.some(c => !isDead(c) && (c.tribe || '').includes(e.if.controlTribe));
+			else if (e.if.minOtherCreatures != null) ok = p.board.filter(c => !isDead(c) && c !== source && c.type !== 'location').length >= e.if.minOtherCreatures; // Nesting Roc
 			else if (e.if.maxHealthSelf != null) ok = p.life <= e.if.maxHealthSelf;
 			else if (e.if.targetFrozen) ok = !!(t && t.frozen);
 			else if (e.if.targetFriendlyTribe) ok = !!(t && t.controller === pi && (t.tribe || '').includes(e.if.targetFriendlyTribe));
@@ -3458,6 +3484,17 @@ function execEffects(state, pi, effects, target, source) {
 				card.zone = 'hand';
 				p.hand.push(card);
 				emit(state, { type: 'conjure', player: pi, card, color: null });
+			}
+		} else if (e.type === 'shuffle-into-deck') {
+			// Raptor/Direhorn Hatchling: shuffle a specific token creature into your deck
+			const p = state.players[pi];
+			if (e.id && state.cardsById[e.id] && !p.eliminated) {
+				for (let n = 0; n < (e.count || 1); n++) p.deck.push(e.id);
+				for (let i = p.deck.length - 1; i > 0; i--) {
+					const j = Math.floor(state.rng() * (i + 1));
+					[p.deck[i], p.deck[j]] = [p.deck[j], p.deck[i]];
+				}
+				emit(state, { type: 'shuffledIntoDeck', player: pi, cardId: e.id });
 			}
 		} else if (e.type === 'shuffle-self-into-deck') {
 			// "Shuffle this card back into your deck" — Astral Tiger recursion
@@ -4190,6 +4227,7 @@ function execEffects(state, pi, effects, target, source) {
 			const victim = (chosen != null && state.players[chosen].weapon) ? chosen
 				: armed.length ? armed[Math.floor(state.rng() * armed.length)] : null;
 			if (victim != null) {
+				if (e.gainArmorEqAttack) gainArmor(state, pi, state.players[victim].weapon.attack || 0); // Gluttonous Ooze
 				if (e.drawDurability) drawCards(state, pi, state.players[victim].weapon.durability);
 				breakWeapon(state, victim, true);
 			}

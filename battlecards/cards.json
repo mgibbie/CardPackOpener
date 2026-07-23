@@ -63402,6 +63402,327 @@
           "type": "steal-secret"
         }
       ]
+    },
+    {
+      "id": "radiant_elemental",
+      "name": "Radiant Elemental",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "priest",
+      "attack": 2,
+      "health": 3,
+      "rarity": "common",
+      "set": "UNGORO",
+      "tribe": "Elemental",
+      "description": "Your spells cost (1) less (but not less than 1).",
+      "costMod": {
+        "cardType": "spell",
+        "amount": -1,
+        "scope": "own",
+        "floor": 1
+      }
+    },
+    {
+      "id": "igneous_elemental",
+      "name": "Igneous Elemental",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "neutral",
+      "attack": 3,
+      "health": 3,
+      "rarity": "common",
+      "set": "UNGORO",
+      "tribe": "Elemental",
+      "keywords": [
+        "deathrattle"
+      ],
+      "description": "Deathrattle: Add two 1/2 Flame Elementals to your hand.",
+      "deathrattle": [
+        {
+          "type": "add-card",
+          "id": "flame_elemental"
+        },
+        {
+          "type": "add-card",
+          "id": "flame_elemental"
+        }
+      ]
+    },
+    {
+      "id": "frozen_crusher",
+      "name": "Frozen Crusher",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "neutral",
+      "attack": 8,
+      "health": 8,
+      "rarity": "rare",
+      "set": "UNGORO",
+      "description": "After this creature attacks, Freeze it.",
+      "ongoing": {
+        "on": "self-attacks",
+        "effects": [
+          {
+            "type": "freeze",
+            "target": "self"
+          }
+        ]
+      }
+    },
+    {
+      "id": "nesting_roc",
+      "name": "Nesting Roc",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "neutral",
+      "attack": 4,
+      "health": 7,
+      "rarity": "rare",
+      "set": "UNGORO",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: If you control at least 2 other creatures, gain Taunt.",
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "minOtherCreatures": 2
+          },
+          "then": [
+            {
+              "type": "grant",
+              "target": "self",
+              "keyword": "taunt"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "king_mosh",
+      "name": "King Mosh",
+      "type": "creature",
+      "cost": 7,
+      "cardClass": "warrior",
+      "attack": 9,
+      "health": 7,
+      "rarity": "legendary",
+      "set": "UNGORO",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Destroy all damaged creatures.",
+      "effects": [
+        {
+          "type": "destroy-all",
+          "requireDamaged": true
+        }
+      ]
+    },
+    {
+      "id": "sunkeeper_tarim",
+      "name": "Sunkeeper Tarim",
+      "type": "creature",
+      "cost": 6,
+      "cardClass": "paladin",
+      "attack": 3,
+      "health": 7,
+      "rarity": "legendary",
+      "set": "UNGORO",
+      "keywords": [
+        "taunt",
+        "battlecry"
+      ],
+      "description": "Taunt. Battlecry: Set all other creatures' Attack and Health to 3.",
+      "effects": [
+        {
+          "type": "set-attack",
+          "target": "all-others",
+          "value": 3
+        },
+        {
+          "type": "set-health",
+          "target": "all-others",
+          "value": 3
+        }
+      ]
+    },
+    {
+      "id": "gluttonous_ooze",
+      "name": "Gluttonous Ooze",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "neutral",
+      "attack": 3,
+      "health": 3,
+      "rarity": "epic",
+      "set": "UNGORO",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Destroy your opponent's weapon and gain Armor equal to its Attack.",
+      "effects": [
+        {
+          "type": "destroy-weapon",
+          "gainArmorEqAttack": true
+        }
+      ]
+    },
+    {
+      "id": "raptor_hatchling",
+      "name": "Raptor Hatchling",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "hunter",
+      "attack": 2,
+      "health": 1,
+      "rarity": "rare",
+      "set": "UNGORO",
+      "tribe": "Beast",
+      "keywords": [
+        "deathrattle"
+      ],
+      "description": "Deathrattle: Shuffle a 4/5 Raptor into your deck.",
+      "deathrattle": [
+        {
+          "type": "shuffle-into-deck",
+          "id": "ung_raptor"
+        }
+      ]
+    },
+    {
+      "id": "direhorn_hatchling",
+      "name": "Direhorn Hatchling",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "warrior",
+      "attack": 4,
+      "health": 6,
+      "rarity": "rare",
+      "set": "UNGORO",
+      "tribe": "Beast",
+      "keywords": [
+        "taunt",
+        "deathrattle"
+      ],
+      "description": "Taunt. Deathrattle: Shuffle an 8/12 Direhorn with Taunt into your deck.",
+      "deathrattle": [
+        {
+          "type": "shuffle-into-deck",
+          "id": "ung_direhorn"
+        }
+      ]
+    },
+    {
+      "id": "lakkari_felhound",
+      "name": "Lakkari Felhound",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "warlock",
+      "attack": 3,
+      "health": 8,
+      "rarity": "common",
+      "set": "UNGORO",
+      "tribe": "Demon",
+      "keywords": [
+        "taunt",
+        "battlecry"
+      ],
+      "description": "Taunt. Battlecry: Discard your two lowest-Cost cards.",
+      "effects": [
+        {
+          "type": "discard-lowest",
+          "count": 2
+        }
+      ]
+    },
+    {
+      "id": "tolvir_warden",
+      "name": "Tol'vir Warden",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "hunter",
+      "attack": 3,
+      "health": 4,
+      "rarity": "rare",
+      "set": "UNGORO",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Draw two 1-Cost creatures from your deck.",
+      "effects": [
+        {
+          "type": "tutor",
+          "cardType": "creature",
+          "cost": 1,
+          "count": 2
+        }
+      ]
+    },
+    {
+      "id": "bright_eyed_scout",
+      "name": "Bright-Eyed Scout",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "neutral",
+      "attack": 3,
+      "health": 4,
+      "rarity": "epic",
+      "set": "UNGORO",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Draw a card. Change its Cost to (5).",
+      "effects": [
+        {
+          "type": "draw-set-cost",
+          "value": 1,
+          "cost": 5
+        }
+      ]
+    },
+    {
+      "id": "flame_elemental",
+      "name": "Flame Elemental",
+      "type": "creature",
+      "cost": 1,
+      "token": true,
+      "tribe": "Elemental",
+      "attack": 1,
+      "health": 2,
+      "rarity": "common",
+      "set": "UNGORO",
+      "description": "A 1/2 Elemental."
+    },
+    {
+      "id": "ung_raptor",
+      "name": "Raptor",
+      "type": "creature",
+      "cost": 4,
+      "token": true,
+      "tribe": "Beast",
+      "attack": 4,
+      "health": 5,
+      "rarity": "common",
+      "set": "UNGORO",
+      "description": "A 4/5 Beast."
+    },
+    {
+      "id": "ung_direhorn",
+      "name": "Direhorn",
+      "type": "creature",
+      "cost": 5,
+      "token": true,
+      "tribe": "Beast",
+      "attack": 8,
+      "health": 12,
+      "rarity": "common",
+      "set": "UNGORO",
+      "keywords": [
+        "taunt"
+      ],
+      "description": "An 8/12 Beast with Taunt."
     }
   ]
 }
