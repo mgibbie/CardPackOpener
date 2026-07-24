@@ -71940,6 +71940,496 @@
           "attack": 3
         }
       ]
+    },
+    {
+      "id": "raven_familiar",
+      "name": "Raven Familiar",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "mage",
+      "attack": 2,
+      "health": 2,
+      "rarity": "common",
+      "set": "LOOTAPALOOZA",
+      "tribe": "Beast",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Reveal a spell in each deck. If yours costs more, draw it.",
+      "effects": [
+        {
+          "type": "spell-joust-draw"
+        }
+      ]
+    },
+    {
+      "id": "leyline_manipulator",
+      "name": "Leyline Manipulator",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "mage",
+      "attack": 4,
+      "health": 5,
+      "rarity": "rare",
+      "set": "LOOTAPALOOZA",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: If you're holding cards that didn't start in your deck, reduce their Cost by (2).",
+      "effects": [
+        {
+          "type": "discount-foreign-hand",
+          "value": 2
+        }
+      ]
+    },
+    {
+      "id": "windshear_stormcaller",
+      "name": "Windshear Stormcaller",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "shaman",
+      "attack": 5,
+      "health": 5,
+      "rarity": "epic",
+      "set": "LOOTAPALOOZA",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: If you control 4 Totems, summon Al'Akir the Windlord.",
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "controlTribeCount": {
+              "tribe": "Totem",
+              "count": 4
+            }
+          },
+          "then": [
+            {
+              "type": "summon",
+              "count": 1,
+              "summonId": "al_akir_the_windlord"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "spiteful_summoner",
+      "name": "Spiteful Summoner",
+      "type": "creature",
+      "cost": 6,
+      "cardClass": "neutral",
+      "attack": 4,
+      "health": 4,
+      "rarity": "epic",
+      "set": "LOOTAPALOOZA",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Reveal a spell from your deck. Summon a random creature with the same Cost.",
+      "effects": [
+        {
+          "type": "reveal-spell-summon"
+        }
+      ]
+    },
+    {
+      "id": "corridor_creeper",
+      "name": "Corridor Creeper",
+      "type": "creature",
+      "cost": 7,
+      "cardClass": "neutral",
+      "attack": 2,
+      "health": 5,
+      "rarity": "epic",
+      "set": "LOOTAPALOOZA",
+      "description": "Costs (1) less whenever a creature dies while this is in your hand.",
+      "cheaperOnDeath": true
+    },
+    {
+      "id": "marin_the_fox",
+      "name": "Marin the Fox",
+      "type": "creature",
+      "cost": 8,
+      "cardClass": "neutral",
+      "attack": 6,
+      "health": 6,
+      "rarity": "legendary",
+      "set": "LOOTAPALOOZA",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Summon a 0/8 Treasure Chest for your opponent.",
+      "effects": [
+        {
+          "type": "summon",
+          "count": 1,
+          "summonId": "marin_treasure_chest",
+          "forEnemy": true
+        }
+      ]
+    },
+    {
+      "id": "dragoncaller_alanna",
+      "name": "Dragoncaller Alanna",
+      "type": "creature",
+      "cost": 9,
+      "cardClass": "mage",
+      "attack": 3,
+      "health": 3,
+      "rarity": "legendary",
+      "set": "LOOTAPALOOZA",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Summon a 5/5 Dragon for each spell you cast this game that costs (5) or more.",
+      "effects": [
+        {
+          "type": "summon-dragons-per-big-spell"
+        }
+      ]
+    },
+    {
+      "id": "marin_treasure_chest",
+      "name": "Treasure Chest",
+      "type": "creature",
+      "cost": 0,
+      "token": true,
+      "attack": 0,
+      "health": 8,
+      "rarity": "legendary",
+      "set": "LOOTAPALOOZA",
+      "keywords": [
+        "taunt",
+        "deathrattle"
+      ],
+      "description": "Taunt. Deathrattle: Give its owner a treasure.",
+      "deathrattle": [
+        {
+          "type": "enrich"
+        }
+      ]
+    },
+    {
+      "id": "faldorei_strider",
+      "name": "Fal'dorei Strider",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "rogue",
+      "attack": 4,
+      "health": 4,
+      "rarity": "epic",
+      "set": "LOOTAPALOOZA",
+      "tribe": "Beast",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Shuffle 3 Ambushes into your deck. When drawn, summon a 4/4 Spider.",
+      "effects": [
+        {
+          "type": "shuffle-into-deck",
+          "id": "faldorei_ambush",
+          "count": 3
+        }
+      ]
+    },
+    {
+      "id": "the_darkness",
+      "name": "The Darkness",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "neutral",
+      "attack": 20,
+      "health": 20,
+      "rarity": "legendary",
+      "set": "LOOTAPALOOZA",
+      "dormant": 99,
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Starts Dormant. Battlecry: Shuffle 3 Candles into the enemy deck. When drawn, this awakens.",
+      "effects": [
+        {
+          "type": "shuffle-into-deck",
+          "id": "darkness_candle",
+          "count": 3,
+          "enemy": true
+        }
+      ],
+      "dormantBattlecry": true
+    },
+    {
+      "id": "temporus",
+      "name": "Temporus",
+      "type": "creature",
+      "cost": 7,
+      "cardClass": "priest",
+      "attack": 6,
+      "health": 6,
+      "rarity": "legendary",
+      "set": "LOOTAPALOOZA",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Your opponent takes two turns. Then you take two turns.",
+      "effects": [
+        {
+          "type": "grant-double-turns"
+        }
+      ]
+    },
+    {
+      "id": "lynessa_sunsorrow",
+      "name": "Lynessa Sunsorrow",
+      "type": "creature",
+      "cost": 7,
+      "cardClass": "paladin",
+      "attack": 1,
+      "health": 1,
+      "rarity": "legendary",
+      "set": "LOOTAPALOOZA",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Cast each spell you cast on your creatures this game on this one.",
+      "effects": [
+        {
+          "type": "cast-remembered-on-self"
+        }
+      ]
+    },
+    {
+      "id": "king_togwaggle",
+      "name": "King Togwaggle",
+      "type": "creature",
+      "cost": 8,
+      "cardClass": "neutral",
+      "attack": 5,
+      "health": 5,
+      "rarity": "legendary",
+      "set": "LOOTAPALOOZA",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Swap decks with your opponent. Give them a Ransom spell to swap back.",
+      "effects": [
+        {
+          "type": "swap-decks"
+        }
+      ]
+    },
+    {
+      "id": "rin_the_first_disciple",
+      "name": "Rin, the First Disciple",
+      "type": "creature",
+      "cost": 6,
+      "cardClass": "warlock",
+      "attack": 3,
+      "health": 6,
+      "rarity": "legendary",
+      "set": "LOOTAPALOOZA",
+      "keywords": [
+        "taunt",
+        "deathrattle"
+      ],
+      "description": "Taunt. Deathrattle: Add 'The First Seal' to your hand.",
+      "deathrattle": [
+        {
+          "type": "add-card",
+          "id": "the_first_seal"
+        }
+      ]
+    },
+    {
+      "id": "faldorei_ambush",
+      "name": "Fal'dorei Ambush",
+      "type": "sorcery",
+      "cost": 0,
+      "token": true,
+      "rarity": "epic",
+      "set": "LOOTAPALOOZA",
+      "drawTrigger": true,
+      "onDraw": [
+        {
+          "type": "summon",
+          "count": 1,
+          "attack": 4,
+          "health": 4,
+          "name": "Spider",
+          "tribe": "Beast"
+        }
+      ],
+      "description": "When drawn, summon a 4/4 Spider."
+    },
+    {
+      "id": "darkness_candle",
+      "name": "Candle",
+      "type": "sorcery",
+      "cost": 1,
+      "token": true,
+      "rarity": "legendary",
+      "set": "LOOTAPALOOZA",
+      "drawTrigger": true,
+      "onDraw": [
+        {
+          "type": "awaken-darkness"
+        }
+      ],
+      "description": "When drawn, The Darkness awakens."
+    },
+    {
+      "id": "kings_ransom",
+      "name": "King's Ransom",
+      "type": "sorcery",
+      "cost": 5,
+      "token": true,
+      "rarity": "legendary",
+      "set": "LOOTAPALOOZA",
+      "description": "Swap decks with your opponent.",
+      "effects": [
+        {
+          "type": "swap-decks",
+          "back": true
+        }
+      ]
+    },
+    {
+      "id": "the_first_seal",
+      "name": "The First Seal",
+      "type": "sorcery",
+      "cost": 1,
+      "token": true,
+      "rarity": "legendary",
+      "set": "LOOTAPALOOZA",
+      "description": "Summon a 2/2 Imp. Add 'The Second Seal' to your hand.",
+      "effects": [
+        {
+          "type": "summon",
+          "count": 1,
+          "attack": 2,
+          "health": 2,
+          "name": "Imp",
+          "tribe": "Demon"
+        },
+        {
+          "type": "add-card",
+          "id": "the_second_seal"
+        }
+      ]
+    },
+    {
+      "id": "the_second_seal",
+      "name": "The Second Seal",
+      "type": "sorcery",
+      "cost": 2,
+      "token": true,
+      "rarity": "legendary",
+      "set": "LOOTAPALOOZA",
+      "description": "Summon two 2/2 Imps. Add 'The Third Seal' to your hand.",
+      "effects": [
+        {
+          "type": "summon",
+          "count": 2,
+          "attack": 2,
+          "health": 2,
+          "name": "Imp",
+          "tribe": "Demon"
+        },
+        {
+          "type": "add-card",
+          "id": "the_third_seal"
+        }
+      ]
+    },
+    {
+      "id": "the_third_seal",
+      "name": "The Third Seal",
+      "type": "sorcery",
+      "cost": 3,
+      "token": true,
+      "rarity": "legendary",
+      "set": "LOOTAPALOOZA",
+      "description": "Summon three 2/2 Imps. Add 'The Fourth Seal' to your hand.",
+      "effects": [
+        {
+          "type": "summon",
+          "count": 3,
+          "attack": 2,
+          "health": 2,
+          "name": "Imp",
+          "tribe": "Demon"
+        },
+        {
+          "type": "add-card",
+          "id": "the_fourth_seal"
+        }
+      ]
+    },
+    {
+      "id": "the_fourth_seal",
+      "name": "The Fourth Seal",
+      "type": "sorcery",
+      "cost": 4,
+      "token": true,
+      "rarity": "legendary",
+      "set": "LOOTAPALOOZA",
+      "description": "Summon four 2/2 Imps. Add 'The Final Seal' to your hand.",
+      "effects": [
+        {
+          "type": "summon",
+          "count": 4,
+          "attack": 2,
+          "health": 2,
+          "name": "Imp",
+          "tribe": "Demon"
+        },
+        {
+          "type": "add-card",
+          "id": "the_final_seal"
+        }
+      ]
+    },
+    {
+      "id": "the_final_seal",
+      "name": "The Final Seal",
+      "type": "sorcery",
+      "cost": 5,
+      "token": true,
+      "rarity": "legendary",
+      "set": "LOOTAPALOOZA",
+      "description": "Summon five 2/2 Imps. Add 'Azari, the Devourer' to your hand.",
+      "effects": [
+        {
+          "type": "summon",
+          "count": 5,
+          "attack": 2,
+          "health": 2,
+          "name": "Imp",
+          "tribe": "Demon"
+        },
+        {
+          "type": "add-card",
+          "id": "azari_the_devourer"
+        }
+      ]
+    },
+    {
+      "id": "azari_the_devourer",
+      "name": "Azari, the Devourer",
+      "type": "sorcery",
+      "cost": 5,
+      "token": true,
+      "rarity": "legendary",
+      "set": "LOOTAPALOOZA",
+      "description": "Destroy your opponent's deck.",
+      "effects": [
+        {
+          "type": "destroy-enemy-deck"
+        }
+      ]
     }
   ]
 }

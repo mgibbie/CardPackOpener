@@ -171,6 +171,8 @@ function instantiate(def, controller) {
 		kicker: def.kicker ? JSON.parse(JSON.stringify(def.kicker)) : null, // optional ADDITIONAL cost for a bonus: { cost, effects }
 		costMod: def.costMod || null, // board cost aura: { cardType, amount, scope, floor?, firstEachTurn? }
 		heroPowerFreezes: !!def.heroPowerFreezes, // Ice Walker: your Hero Power also Freezes its target
+		cheaperOnDeath: !!def.cheaperOnDeath, // Corridor Creeper: costs (1) less per creature that dies while in hand
+		dormantBattlecry: !!def.dormantBattlecry, // The Darkness: fire the Battlecry even though it enters Dormant
 		selfCost: def.selfCost || null, // self-scaling printed cost: { per, amount }
 		enrage: def.enrage || null,   // while damaged: { attack?, health?, keywords?, weaponAttack? }
 		combo: def.combo || null,     // effects used instead when a card was played earlier this turn
@@ -360,6 +362,8 @@ export function createGame(cardsById, rng = Math.random, playerDeckIds = null, p
 		nextMurlocFree: false,    // Seadevil Stinger: the next Murloc this turn is free
 		nextSecretCost: null,     // Kabal Lackey: the next Secret this turn costs this much
 		nextBattlecryDouble: false, // Murmuring Elemental: your next Battlecry this turn fires twice
+		bigSpellsGame: 0,         // Dragoncaller Alanna: spells costing 5+ cast this game
+		spellsOnFriendly: [],     // Lynessa Sunsorrow: spell ids you cast on your own creatures
 		elementalThisTurn: false, // played an Elemental this turn
 		elementalLastTurn: false, // played an Elemental on your previous turn (Un'Goro)
 		elementalsPlayedGame: 0,  // Ozruk: total Elementals played this game
@@ -480,9 +484,20 @@ export function drawCards(state, pi, count) {
 			if (p.eliminated || state.over) break;
 			continue;
 		}
+		// draw-trigger tokens (Fal'dorei Ambush, The Darkness's Candle): fire an
+		// effect on draw and are consumed instead of entering the hand
+		const trigDef = state.cardsById[id];
+		if (trigDef && trigDef.drawTrigger) {
+			emit(state, { type: 'drawTrigger', player: pi, cardId: id, name: trigDef.name });
+			execEffects(state, pi, trigDef.onDraw || [], null, null);
+			checkGameOver(state);
+			if (p.eliminated || state.over) break;
+			continue;
+		}
 		// No burn on overdraw: hand may exceed MAX_HAND during your turn and is
 		// trimmed back down at end of turn (MTG-style cleanup discard).
 		const card = instantiate(state.cardsById[id], pi);
+		card.fromDeck = true; // drawn from your deck — Leyline Manipulator ignores these
 		if (card.type === 'creature' && p.drawBuff) { card.attack += p.drawBuff.attack || 0; card.maxHealth += p.drawBuff.health || 0; }
 		// C'Thun enters hand carrying every buff it collected while in your deck
 		if (card.id === 'c_thun') { card.attack = CTHUN_BASE + p.cthunAtk; card.maxHealth = CTHUN_BASE + p.cthunHp; if (p.cthunTaunt && !card.keywords.includes(KW.TAUNT)) card.keywords.push(KW.TAUNT); }
@@ -1131,6 +1146,8 @@ function sweepDeaths(state) {
 			// Bolvar Fordragon: grows in hand as your creatures die
 			for (const hc of p.hand) if (hc.id === 'bolvar_fordragon') { hc.attack += 1; emit(state, { type: 'buff', uid: hc.uid, attack: hc.attack, hp: hp(hc) }); }
 			emit(state, { type: 'death', uid: c.uid, player: pi, name: c.name });
+			// Corridor Creeper: cheaper in every hand for each creature that dies
+			for (const pl of state.players) for (const hc of pl.hand) if (hc.cheaperOnDeath && (hc.cost || 0) > 0) hc.cost = Math.max(0, hc.cost - 1);
 			// Equipment on this creature detaches and stays in play (can be re-equipped)
 			for (const pl of state.players) for (const eq of pl.artifacts) if (eq.equip && eq.attachedTo === c.uid) eq.attachedTo = null;
 			// every friendly death banks a Corpse for its owner (all classes;
@@ -3554,6 +3571,7 @@ function execEffects(state, pi, effects, target, source) {
 			else if (e.if.deckNoCost != null) ok = !p.deck.some(id => (state.cardsById[id]?.cost || 0) === e.if.deckNoCost); // Prince Keleseth / Valanar
 			else if (e.if.deckHasKeyword) ok = p.deck.some(id => { const def = state.cardsById[id]; return def?.type === 'creature' && (def.keywords || []).includes(e.if.deckHasKeyword); }); // Corpsetaker
 			else if (e.if.noOtherCreatures) ok = !p.board.some(c => c !== source && !isDead(c) && c.type !== 'location'); // Lone Champion
+			else if (e.if.controlTribeCount) ok = p.board.filter(c => !isDead(c) && (c.tribe || '').includes(e.if.controlTribeCount.tribe)).length >= e.if.controlTribeCount.count; // Windshear Stormcaller
 			execEffects(state, pi, ok ? e.then : (e.else || []), target, source);
 		} else if (e.type === 'damage-then') {
 			// deal damage, then branch on whether the creature survived
@@ -3757,6 +3775,67 @@ function execEffects(state, pi, effects, target, source) {
 				c.zone = 'hand'; state.players[pi].hand.push(c);
 				emit(state, { type: 'conjure', player: pi, card: c, color: null });
 			}
+		} else if (e.type === 'awaken-darkness') {
+			// The Darkness's Candle: wake any dormant Darkness on the board
+			for (const pl of state.players) for (const c of pl.board) {
+				if (c.name === 'The Darkness' && c.dormantLeft > 0) { c.dormantLeft = 0; emit(state, { type: 'awaken', uid: c.uid, player: c.controller }); }
+			}
+		} else if (e.type === 'grant-double-turns') {
+			// Temporus: your opponent takes two turns, then you take two turns
+			const o = enemies[0];
+			if (o != null) state.forcedTurns = [o, o, pi, pi];
+		} else if (e.type === 'swap-decks') {
+			// King Togwaggle: swap decks with an opponent (and hand them a Ransom to swap back)
+			const o = enemies[0];
+			if (o != null) {
+				const tmp = state.players[pi].deck; state.players[pi].deck = state.players[o].deck; state.players[o].deck = tmp;
+				emit(state, { type: 'decksSwapped', player: pi, other: o });
+				if (!e.back) execEffects(state, pi, [{ type: 'give-enemy-card', id: 'kings_ransom' }], null, source);
+			}
+		} else if (e.type === 'destroy-enemy-deck') {
+			// Azari, the Devourer: destroy your opponent's deck
+			for (const o of enemies) state.players[o].deck = [];
+			emit(state, { type: 'deckDestroyed' });
+		} else if (e.type === 'cast-remembered-on-self') {
+			// Lynessa Sunsorrow: recast every spell you cast on your creatures this game onto this one
+			const p = state.players[pi];
+			if (source && p.spellsOnFriendly) for (const id of [...p.spellsOnFriendly]) {
+				const def = state.cardsById[id];
+				if (def && def.effects && source.zone === 'board' && !isDead(source)) {
+					execEffects(state, pi, JSON.parse(JSON.stringify(def.effects)), { type: 'creature', uid: source.uid, player: pi }, source);
+				}
+			}
+		} else if (e.type === 'spell-joust-draw') {
+			// Raven Familiar: reveal a random spell from each deck; if yours costs more, draw it
+			const p = state.players[pi];
+			const mine = p.deck.map(id => state.cardsById[id]).filter(d => d && isSpellType(d));
+			const foe = enemies[0] != null ? state.players[enemies[0]].deck.map(id => state.cardsById[id]).filter(d => d && isSpellType(d)) : [];
+			if (mine.length) {
+				const my = mine[Math.floor(state.rng() * mine.length)];
+				const their = foe.length ? foe[Math.floor(state.rng() * foe.length)] : null;
+				emit(state, { type: 'joust', player: pi, myName: my.name, myCost: my.cost, enemyName: their?.name || null, enemyCost: their?.cost ?? null, win: (my.cost || 0) > (their?.cost ?? -1) });
+				if ((my.cost || 0) > (their?.cost ?? -1) && p.hand.length < MAX_HAND) {
+					const j = p.deck.indexOf(my.id);
+					if (j >= 0) { p.deck.splice(j, 1); const card = instantiate(my, pi); card.zone = 'hand'; p.hand.push(card); emit(state, { type: 'conjure', player: pi, card, color: null }); }
+				}
+			}
+		} else if (e.type === 'reveal-spell-summon') {
+			// Spiteful Summoner: reveal a random spell in your deck, summon a random minion of its Cost
+			const p = state.players[pi];
+			const spells = p.deck.map(id => state.cardsById[id]).filter(d => d && isSpellType(d));
+			if (spells.length) {
+				const sp = spells[Math.floor(state.rng() * spells.length)];
+				emit(state, { type: 'joust', player: pi, myName: sp.name, myCost: sp.cost, enemyName: null, enemyCost: null, win: true });
+				execEffects(state, pi, [{ type: 'summon-random', cost: sp.cost || 0 }], target, source);
+			}
+		} else if (e.type === 'summon-dragons-per-big-spell') {
+			// Dragoncaller Alanna: a 5/5 Dragon for each 5+ Cost spell cast this game
+			const n = state.players[pi].bigSpellsGame || 0;
+			for (let i = 0; i < n; i++) summon(state, pi, { id: 'token_dragon_5_5', name: 'Dragon', type: 'creature', cost: 5, token: true, tribe: 'Dragon', rarity: 'common', attack: 5, health: 5, description: 'A 5/5 Dragon.' });
+		} else if (e.type === 'discount-foreign-hand') {
+			// Leyline Manipulator: cheaper for cards that didn't start in your deck
+			const p = state.players[pi];
+			for (const c of p.hand) if (!c.fromDeck && c !== source) c.cost = Math.max(0, (c.cost || 0) - (e.value || 2));
 		} else if (e.type === 'set-next-battlecry-double') {
 			// Murmuring Elemental: arm the next Battlecry this turn to fire twice
 			state.players[pi].nextBattlecryDouble = true;
@@ -5632,7 +5711,7 @@ export function playCard(state, pi, cardUid, target, choice, position, useAlt, k
 		questTick(state, 'summon', pi, 1, card);
 		if (card.dormantLeft > 0) {
 			// Dormant creatures sleep through everything until they wake
-			emit(state, { type: 'dormant', player: pi, uid: card.uid, turns: card.dormantLeft });
+			emit(state, { type: 'dormant', player: pi, uid: card.uid, turns: card.dormantLeft }); if (card.dormantBattlecry) runBattlecry(state, pi, card, target, choice); /* The Darkness fires its Battlecry while dormant */
 		} else {
 			summonColossalParts(state, pi, card); // appendages enter before the battlecry
 			fireOngoing(state, pi, 'summoned', { minion: card });
@@ -5721,6 +5800,9 @@ export function playCard(state, pi, cardUid, target, choice, position, useAlt, k
 		questTick(state, 'spell', pi);
 		p.spellsPlayedThisTurn++;
 		p.spellsPlayedTotal = (p.spellsPlayedTotal || 0) + 1; // Arcane Giant
+		if ((card.cost || 0) >= 5) p.bigSpellsGame = (p.bigSpellsGame || 0) + 1; // Dragoncaller Alanna
+		// Lynessa Sunsorrow: remember spells you cast on your own creatures
+		if (target && target.type === 'creature') { const tc = findCreature(state, target.uid); if (tc && tc.controller === pi) (p.spellsOnFriendly = p.spellsOnFriendly || []).push(card.id); }
 		// additional-cost spells pay the extra cost first (off-stack), then resolve
 		if (card.addCost) payAddCost(state, pi, card, target, choice);
 		// The Stack: opponents get priority to respond (an instant/Counter) before this
@@ -7066,10 +7148,15 @@ export function endTurn(state) {
 		}
 	}
 
-	// switch: next alive player clockwise
+	// switch: next alive player clockwise — unless Temporus queued forced turns
 	let next = state.current;
-	do { next = (next + 1) % state.players.length; }
-	while (state.players[next].eliminated && next !== state.current);
+	if (state.forcedTurns && state.forcedTurns.length) {
+		do { next = state.forcedTurns.shift(); } while (next != null && state.players[next]?.eliminated && state.forcedTurns.length);
+		if (next == null || state.players[next]?.eliminated) { next = state.current; do { next = (next + 1) % state.players.length; } while (state.players[next].eliminated && next !== state.current); }
+	} else {
+		do { next = (next + 1) % state.players.length; }
+		while (state.players[next].eliminated && next !== state.current);
+	}
 	state.current = next;
 	state.turnNumber++;
 	const np = state.players[state.current];
