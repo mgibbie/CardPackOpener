@@ -69283,6 +69283,329 @@
           "target": "any"
         }
       ]
+    },
+    {
+      "id": "hydrologist",
+      "name": "Hydrologist",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "paladin",
+      "attack": 2,
+      "health": 2,
+      "rarity": "common",
+      "set": "UNGORO",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Discover and cast a Secret.",
+      "effects": [
+        {
+          "type": "discover",
+          "cardType": "secret",
+          "installSecret": true
+        }
+      ]
+    },
+    {
+      "id": "biteweed",
+      "name": "Biteweed",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "rogue",
+      "attack": 1,
+      "health": 2,
+      "rarity": "epic",
+      "set": "UNGORO",
+      "keywords": [
+        "combo"
+      ],
+      "description": "Combo: Gain +1/+1 for each other card you've played this turn.",
+      "effects": [
+        {
+          "type": "buff-self",
+          "per": "cards-played",
+          "attack": 1,
+          "health": 1
+        }
+      ],
+      "combo": [
+        {
+          "type": "buff-self",
+          "per": "cards-played",
+          "attack": 1,
+          "health": 1
+        }
+      ]
+    },
+    {
+      "id": "fire_plume_harbinger",
+      "name": "Fire Plume Harbinger",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "shaman",
+      "attack": 1,
+      "health": 1,
+      "rarity": "rare",
+      "set": "UNGORO",
+      "tribe": "Elemental",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Reduce the Cost of Elementals in your hand by (1).",
+      "effects": [
+        {
+          "type": "discount-hand-tribe",
+          "tribe": "Elemental",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "chittering_tunneler",
+      "name": "Chittering Tunneler",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "warlock",
+      "attack": 2,
+      "health": 2,
+      "rarity": "epic",
+      "set": "UNGORO",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Discover a spell. Deal damage to your hero equal to its Cost.",
+      "effects": [
+        {
+          "type": "discover",
+          "cardType": "spell",
+          "damageSelfByCost": true
+        }
+      ]
+    },
+    {
+      "id": "curious_glimmerroot",
+      "name": "Curious Glimmerroot",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "priest",
+      "attack": 3,
+      "health": 4,
+      "rarity": "epic",
+      "set": "UNGORO",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Look at 3 cards. Add a copy of one that started in your opponent's deck.",
+      "effects": [
+        {
+          "type": "discover",
+          "fromEnemyDeck": true
+        }
+      ]
+    },
+    {
+      "id": "giant_anaconda",
+      "name": "Giant Anaconda",
+      "type": "creature",
+      "cost": 7,
+      "cardClass": "druid",
+      "attack": 5,
+      "health": 3,
+      "rarity": "epic",
+      "set": "UNGORO",
+      "tribe": "Beast",
+      "keywords": [
+        "taunt",
+        "deathrattle"
+      ],
+      "description": "Taunt. Deathrattle: Summon a creature from your hand with 5 or more Attack.",
+      "deathrattle": [
+        {
+          "type": "summon-from-hand-min-attack",
+          "minAttack": 5
+        }
+      ]
+    },
+    {
+      "id": "charged_devilsaur",
+      "name": "Charged Devilsaur",
+      "type": "creature",
+      "cost": 7,
+      "cardClass": "neutral",
+      "attack": 7,
+      "health": 7,
+      "rarity": "epic",
+      "set": "UNGORO",
+      "tribe": "Beast",
+      "keywords": [
+        "charge",
+        "battlecry"
+      ],
+      "description": "Charge. Battlecry: Can't attack heroes this turn.",
+      "effects": [
+        {
+          "type": "cant-attack-heroes-turn"
+        }
+      ]
+    },
+    {
+      "id": "tortollan_primalist",
+      "name": "Tortollan Primalist",
+      "type": "creature",
+      "cost": 8,
+      "cardClass": "neutral",
+      "attack": 5,
+      "health": 5,
+      "rarity": "epic",
+      "set": "UNGORO",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Discover a spell and cast it with random targets.",
+      "effects": [
+        {
+          "type": "discover",
+          "cardType": "spell",
+          "castRandom": true
+        }
+      ]
+    },
+    {
+      "id": "pyros",
+      "name": "Pyros",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "mage",
+      "attack": 2,
+      "health": 2,
+      "rarity": "legendary",
+      "set": "UNGORO",
+      "tribe": "Elemental",
+      "keywords": [
+        "deathrattle"
+      ],
+      "description": "Deathrattle: Return this to your hand as a 6/6 that costs (4).",
+      "deathrattle": [
+        {
+          "type": "add-card",
+          "id": "pyros_6"
+        }
+      ]
+    },
+    {
+      "id": "clutchmother_zavas",
+      "name": "Clutchmother Zavas",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "warlock",
+      "attack": 2,
+      "health": 2,
+      "rarity": "legendary",
+      "set": "UNGORO",
+      "tribe": "Demon",
+      "description": "Whenever you discard this, give it +2/+2 and return it to your hand.",
+      "returnBuffedOnDiscard": true
+    },
+    {
+      "id": "the_voraxx",
+      "name": "The Voraxx",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "neutral",
+      "attack": 3,
+      "health": 4,
+      "rarity": "legendary",
+      "set": "UNGORO",
+      "tribe": "Elemental",
+      "description": "After you cast a spell on this creature, summon a 1/1 Plant.",
+      "ongoing": {
+        "on": "spell-targeted-self",
+        "effects": [
+          {
+            "type": "summon",
+            "count": 1,
+            "attack": 1,
+            "health": 1,
+            "name": "Plant"
+          }
+        ]
+      }
+    },
+    {
+      "id": "spiritsinger_umbra",
+      "name": "Spiritsinger Umbra",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "neutral",
+      "attack": 3,
+      "health": 4,
+      "rarity": "legendary",
+      "set": "UNGORO",
+      "description": "After you summon a creature, trigger its Deathrattle effect.",
+      "ongoing": {
+        "on": "summoned",
+        "effects": [
+          {
+            "type": "trigger-summoned-deathrattle"
+          }
+        ]
+      }
+    },
+    {
+      "id": "hemet_jungle_hunter",
+      "name": "Hemet, Jungle Hunter",
+      "type": "creature",
+      "cost": 6,
+      "cardClass": "neutral",
+      "attack": 6,
+      "health": 6,
+      "rarity": "legendary",
+      "set": "UNGORO",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Destroy all cards in your deck that cost (3) or less.",
+      "effects": [
+        {
+          "type": "destroy-deck-max-cost",
+          "maxCost": 3
+        }
+      ]
+    },
+    {
+      "id": "pyros_6",
+      "name": "Pyros",
+      "type": "creature",
+      "cost": 4,
+      "token": true,
+      "tribe": "Elemental",
+      "attack": 6,
+      "health": 6,
+      "rarity": "legendary",
+      "set": "UNGORO",
+      "keywords": [
+        "deathrattle"
+      ],
+      "description": "Deathrattle: Return this as a 10/10 that costs (10).",
+      "deathrattle": [
+        {
+          "type": "add-card",
+          "id": "pyros_10"
+        }
+      ]
+    },
+    {
+      "id": "pyros_10",
+      "name": "Pyros",
+      "type": "creature",
+      "cost": 10,
+      "token": true,
+      "tribe": "Elemental",
+      "attack": 10,
+      "health": 10,
+      "rarity": "legendary",
+      "set": "UNGORO",
+      "description": "A 10/10 Elemental."
     }
   ]
 }

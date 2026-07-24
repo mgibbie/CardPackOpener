@@ -163,6 +163,7 @@ function instantiate(def, controller) {
 		costReducePerTurn: def.costReducePerTurn || false,   // Nerubian Prophet: -1 cost each turn in hand
 		transformInHand: def.transformInHand || false,       // Shifter Zerus: transforms each turn in hand
 		summonOnDiscard: def.summonOnDiscard || false,       // Silverware Golem: summon it when discarded
+		returnBuffedOnDiscard: def.returnBuffedOnDiscard || false, // Clutchmother Zavas: +2/+2 and return
 		heroPowerHitsMinions: def.heroPowerHitsMinions || false, // Steamwheedle Sniper: Hero Power can target minions
 		attackTax: def.attackTax ? { ...def.attackTax } : null, // Ghostly Prison: cost to attack this controller's hero
 		addCost: def.addCost ? { ...def.addCost } : null, // additional casting cost: { discard: N } or { sacrifice: 'creature'|'land'|'artifact'|'artifact-or-creature' }
@@ -2003,6 +2004,12 @@ function runSecretEffects(state, pi, effects, ctx) {
 				if (ctx.amount > 0) gainArmor(state, pi, ctx.amount);
 				break;
 			}
+			case 'trigger-summoned-deathrattle': {
+				// Spiritsinger Umbra: fire the just-summoned creature's Deathrattle now
+				const m = ctx.minion;
+				if (m && m !== ctx.self && m.deathrattle) runDeathrattle(state, m.controller, m);
+				break;
+			}
 			case 'copy-enemy-spell': {
 				// Trade Prince Gallywix: copy the cast spell, give its caster a Coin
 				const spell = ctx.spell;
@@ -3026,7 +3033,7 @@ function execEffects(state, pi, effects, target, source) {
 				const [c] = p.hand.splice(j, 1);
 				toGraveyard(state, pi, c);
 				emit(state, { type: 'discard', player: pi, card: c });
-				if (!c.token) state.players[pi].discardLogIds.push(c.id); if (c.summonOnDiscard && state.cardsById[c.id]) summon(state, pi, state.cardsById[c.id]); fireOngoing(state, pi, 'card-discarded', { card: c }); // Tiny Knight of Evil
+				if (!c.token) state.players[pi].discardLogIds.push(c.id); if (c.summonOnDiscard && state.cardsById[c.id]) summon(state, pi, state.cardsById[c.id]); if (c.returnBuffedOnDiscard && state.players[pi].hand.length < MAX_HAND) { c.attack += 2; c.maxHealth += 2; c.zone='hand'; state.players[pi].hand.push(c); const gi = state.players[pi].graveyard.indexOf(c); if (gi>=0) state.players[pi].graveyard.splice(gi,1); emit(state,{type:'conjure',player:pi,card:c,color:null}); } fireOngoing(state, pi, 'card-discarded', { card: c }); // Tiny Knight of Evil
 			}
 		} else if (e.type === 'discard-lowest') {
 			// Lakkari Felhound: discard your N lowest-Cost cards
@@ -3037,7 +3044,7 @@ function execEffects(state, pi, effects, target, source) {
 				const [c] = p.hand.splice(li, 1);
 				toGraveyard(state, pi, c);
 				emit(state, { type: 'discard', player: pi, card: c });
-				if (!c.token) state.players[pi].discardLogIds.push(c.id); if (c.summonOnDiscard && state.cardsById[c.id]) summon(state, pi, state.cardsById[c.id]); fireOngoing(state, pi, 'card-discarded', { card: c });
+				if (!c.token) state.players[pi].discardLogIds.push(c.id); if (c.summonOnDiscard && state.cardsById[c.id]) summon(state, pi, state.cardsById[c.id]); if (c.returnBuffedOnDiscard && state.players[pi].hand.length < MAX_HAND) { c.attack += 2; c.maxHealth += 2; c.zone='hand'; state.players[pi].hand.push(c); const gi = state.players[pi].graveyard.indexOf(c); if (gi>=0) state.players[pi].graveyard.splice(gi,1); emit(state,{type:'conjure',player:pi,card:c,color:null}); } fireOngoing(state, pi, 'card-discarded', { card: c });
 			}
 		} else if (e.type === 'draw-set-cost') {
 			// Bright-Eyed Scout: draw a card and change its Cost
@@ -3302,7 +3309,7 @@ function execEffects(state, pi, effects, target, source) {
 				const c = p.hand.pop();
 				toGraveyard(state, pi, c);
 				emit(state, { type: 'discard', player: pi, card: c });
-				if (!c.token) state.players[pi].discardLogIds.push(c.id); if (c.summonOnDiscard && state.cardsById[c.id]) summon(state, pi, state.cardsById[c.id]); fireOngoing(state, pi, 'card-discarded', { card: c });
+				if (!c.token) state.players[pi].discardLogIds.push(c.id); if (c.summonOnDiscard && state.cardsById[c.id]) summon(state, pi, state.cardsById[c.id]); if (c.returnBuffedOnDiscard && state.players[pi].hand.length < MAX_HAND) { c.attack += 2; c.maxHealth += 2; c.zone='hand'; state.players[pi].hand.push(c); const gi = state.players[pi].graveyard.indexOf(c); if (gi>=0) state.players[pi].graveyard.splice(gi,1); emit(state,{type:'conjure',player:pi,card:c,color:null}); } fireOngoing(state, pi, 'card-discarded', { card: c });
 			}
 		} else if (e.type === 'bounce') {
 			if (e.target === 'permanent') {
@@ -3768,6 +3775,22 @@ function execEffects(state, pi, effects, target, source) {
 			for (const o of enemies) for (const c of state.players[o].board) {
 				if (c.stealthed || c.keywords.includes(KW.STEALTH)) { c.stealthed = false; c.keywords = c.keywords.filter(k => k !== KW.STEALTH); emit(state, { type: 'buff', uid: c.uid, attack: c.attack, hp: hp(c) }); }
 			}
+		} else if (e.type === 'cant-attack-heroes-turn') {
+			// Charged Devilsaur: this creature can't attack heroes this turn
+			if (source) source.noHeroAttackTurn = state.turnNumber;
+		} else if (e.type === 'discount-hand-tribe') {
+			// Fire Plume Harbinger: reduce the Cost of a tribe's cards in your hand
+			for (const c of state.players[pi].hand) if ((c.tribe || '').includes(e.tribe)) c.cost = Math.max(0, (c.cost || 0) - (e.value || 1));
+		} else if (e.type === 'summon-from-hand-min-attack') {
+			// Giant Anaconda: put a creature from your hand with N+ Attack into play
+			const p = state.players[pi];
+			const pool = p.hand.filter(c => c.type === 'creature' && c.attack >= (e.minAttack || 0));
+			if (pool.length) { const c = pool[Math.floor(state.rng() * pool.length)]; p.hand = p.hand.filter(x => x !== c); c.zone = 'board'; p.board.push(c); emit(state, { type: 'summon', player: pi, card: c }); fireOngoing(state, pi, 'summoned', { minion: c }); growBlubberBaron(state, pi, c); recomputeAuras(state); }
+		} else if (e.type === 'destroy-deck-max-cost') {
+			// Hemet, Jungle Hunter: destroy all cards in your deck costing N or less
+			const p = state.players[pi];
+			p.deck = p.deck.filter(id => (state.cardsById[id]?.cost || 0) > (e.maxCost || 0));
+			emit(state, { type: 'shuffledIntoDeck', player: pi, count: 0 });
 		} else if (e.type === 'summon-random-discarded') {
 			// Cruel Dinomancer: summon a random creature you discarded this game
 			const p = state.players[pi];
@@ -4487,8 +4510,14 @@ function execEffects(state, pi, effects, target, source) {
 				emit(state, { type: 'pickStart', player: pi, count: ids.length });
 			}
 		} else if (e.type === 'discover') {
-			// Discover: pick 1 of 3 random matches; Draft: pick 1 of 5
-			const discoverPool = () => Object.values(state.cardsById).filter(d => {
+			// Discover: pick 1 of 3 random matches; Draft: pick 1 of 5. Curious
+			// Glimmerroot (fromEnemyDeck) samples the opponent's deck.
+			const enemyDeckDefs = () => {
+				const foe = enemies[0];
+				if (foe == null) return [];
+				return [...new Set(state.players[foe].deck)].map(id => state.cardsById[id]).filter(d => d && d.type === 'creature' && !d.token);
+			};
+			const discoverPool = () => (e.fromEnemyDeck ? enemyDeckDefs() : Object.values(state.cardsById)).filter(d => {
 				if (d.type === 'land' || d.token || d.collectible === false || d.companion || d.commander) return false;
 				if (d.colors && d.colors.length) return false;
 				if (e.cardType === 'spell' ? !isSpellType(d) : (e.cardType && d.type !== e.cardType)) return false;
@@ -4510,7 +4539,7 @@ function execEffects(state, pi, effects, target, source) {
 					ids.push(pool.splice(Math.floor(state.rng() * pool.length), 1)[0].id);
 				}
 				if (!ids.length) break;
-				state.pickQueue.push({ player: pi, ids, grant: e.grant || null, buff: e.buff || null, to: e.to || null, costMod: e.costMod || null, healByCost: e.healByCost || false });
+				state.pickQueue.push({ player: pi, ids, grant: e.grant || null, buff: e.buff || null, to: e.to || null, costMod: e.costMod || null, healByCost: e.healByCost || false, installSecret: e.installSecret || false, castRandom: e.castRandom || false, damageSelfByCost: e.damageSelfByCost || false });
 				emit(state, { type: 'pickStart', player: pi, count: ids.length });
 			}
 		} else if (e.type === 'loot') {
@@ -5786,7 +5815,8 @@ export function attackTargets(state, pi, attacker) {
 			for (const w of state.players[opp].planeswalkers) out.push({ type: 'walker', uid: w.uid, player: opp });
 			// the hero is only a legal target if pi can afford the attack tax (Ghostly Prison)
 			const tax = heroAttackTax(state, opp);
-			if (!rushOnly && (tax === 0 || availableMana(state.players[pi]) >= tax)) out.push({ type: 'hero', player: opp });
+			const noHero = attacker.noHeroAttackTurn === state.turnNumber; // Charged Devilsaur
+			if (!rushOnly && !noHero && (tax === 0 || availableMana(state.players[pi]) >= tax)) out.push({ type: 'hero', player: opp });
 		}
 	}
 	return out;
@@ -6299,6 +6329,19 @@ export function resolvePick(state, id) {
 		summon(state, pend.player, def);
 		return true;
 	}
+	if (def && pend.installSecret && def.secret && !p.eliminated) {
+		installSecret(state, pend.player, def.id); // Hydrologist
+		return true;
+	}
+	if (def && pend.castRandom && !p.eliminated) {
+		// Tortollan Primalist: cast the discovered spell with a random target
+		const spell = instantiate(def, pend.player);
+		const spec = targetSpec(state, pend.player, spell, null);
+		let tgt = null;
+		if (spec) { const legal = legalTargets(state, pend.player, spec); if (legal.length) tgt = legal[Math.floor(state.rng() * legal.length)]; }
+		if (!spec || tgt || !spec.required) { emit(state, { type: 'conjure', player: pend.player, card: spell, color: null }); runSpell(state, pend.player, spell, tgt, null); sweepDeaths(state); }
+		return true;
+	}
 	if (def && !p.eliminated && p.hand.length < MAX_HAND) {
 		const card = instantiate(def, pend.player);
 		card.zone = 'hand';
@@ -6309,6 +6352,7 @@ export function resolvePick(state, id) {
 		}
 		if (pend.costMod) card.cost = Math.max(0, (card.cost || 0) + pend.costMod); // Museum Curator: costs (1) less
 		if (pend.healByCost) healHero(state, pend.player, card.cost || 0); // Ivory Knight: restore Health = its Cost
+		if (pend.damageSelfByCost) damageHero(state, pend.player, card.cost || 0, pend.player); // Chittering Tunneler
 		p.hand.push(card);
 		emit(state, { type: 'conjure', player: pend.player, card, color: null });
 		fireEmerge(state, pend.player, card);
