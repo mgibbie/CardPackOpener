@@ -976,7 +976,7 @@ function damageHero(state, pi, amount, src = null, pierce = false) {
 			if (ctx.prevented) return 0;
 		}
 		p.life = Math.max(0, p.life - amount);
-		p.heroDamagedThisTurn = true; // Duskbat / Deathweb Spider
+		p.heroDamagedThisTurn = true; p.heroDamageTakenThisTurn = (p.heroDamageTakenThisTurn || 0) + amount; // Duskbat / Nethersoul Buster
 		emit(state, { type: 'damage', targetType: 'hero', player: pi, amount, life: p.life });
 		fireSecrets(state, pi, 'hero-takes-damage', { fatal: false, amount, src });
 		questTick(state, 'damage-taken', pi, amount);
@@ -993,7 +993,7 @@ function damageHero(state, pi, amount, src = null, pierce = false) {
 	p.armor -= absorbed;
 	const toLife = amount - absorbed;
 	p.life = Math.max(0, p.life - toLife);
-	if (toLife > 0) p.heroDamagedThisTurn = true; // Duskbat / Deathweb Spider
+	if (toLife > 0) { p.heroDamagedThisTurn = true; p.heroDamageTakenThisTurn = (p.heroDamageTakenThisTurn || 0) + toLife; } // Duskbat / Nethersoul Buster
 	emit(state, { type: 'damage', targetType: 'hero', player: pi, amount, life: p.life });
 	if (toLife > 0) fireSecrets(state, pi, 'hero-takes-damage', { fatal: false, amount: toLife, src });
 	if (toLife > 0) questTick(state, 'damage-taken', pi, toLife);
@@ -1894,6 +1894,17 @@ function runSecretEffects(state, pi, effects, ctx) {
 					const c = ctx.card;
 					if (c && c.type === 'creature' && state.cardsById[c.id]) {
 						const cp = instantiate(state.cardsById[c.id], pi);
+						cp.attack = e.attack ?? 1; cp.maxHealth = e.health ?? 1;
+						cp.zone = 'board'; cp.sick = true; state.players[pi].board.push(cp);
+						emit(state, { type: 'summon', player: pi, card: cp }); fireOngoing(state, pi, 'summoned', { minion: cp }); recomputeAuras(state);
+					}
+					break;
+				}
+				case 'summon-enemy-minion-copy': {
+					// Holomancer: summon a stat-fixed copy of the creature an opponent just played
+					const m = ctx.minion;
+					if (m && state.cardsById[m.id]) {
+						const cp = instantiate(state.cardsById[m.id], pi);
 						cp.attack = e.attack ?? 1; cp.maxHealth = e.health ?? 1;
 						cp.zone = 'board'; cp.sick = true; state.players[pi].board.push(cp);
 						emit(state, { type: 'summon', player: pi, card: cp }); fireOngoing(state, pi, 'summoned', { minion: cp }); recomputeAuras(state);
@@ -3273,6 +3284,7 @@ function execEffects(state, pi, effects, target, source) {
 				else if (e.per === 'hand-cards') n = state.players[pi].hand.length;
 				else if (e.per === 'hand-spells') n = state.players[pi].hand.filter(c => isSpellType(c)).length; // Brainstormer
 				else if (e.per === 'pogos-played') n = state.players[pi].pogoCount || 0; // Pogo-Hopper
+				else if (e.per === 'hero-damage-taken') n = state.players[pi].heroDamageTakenThisTurn || 0; // Nethersoul Buster
 				else if (e.per === 'cards-played') n = state.players[pi].cardsPlayedThisTurn;
 				else if (e.per === 'enemy-deathrattle') n = state.players.reduce((s, pl, idx) =>
 					idx === pi ? s : s + pl.board.filter(c => !isDead(c) && c.keywords.includes('deathrattle')).length, 0);
@@ -3564,6 +3576,7 @@ function execEffects(state, pi, effects, target, source) {
 		} else if (e.type === 'tutor') {
 			// pull matching cards out of your deck into your hand
 			const p = state.players[pi];
+			const drawnIds = new Set();
 			for (let i = 0; i < (e.count || 1); i++) {
 				if (p.hand.length >= MAX_HAND) break;
 				const idxs = [];
@@ -3574,7 +3587,7 @@ function execEffects(state, pi, effects, target, source) {
 					if (e.cardType === 'spell' ? !isSpellType(def)
 						: (e.cardType && def.type !== e.cardType)) continue;
 					if (e.maxCost != null && (def.cost || 0) > e.maxCost) continue;
-					if (e.cost != null && (def.cost || 0) !== e.cost) continue; // Tol'vir Warden: exactly N-Cost
+					if (e.minCost != null && (def.cost || 0) < e.minCost) continue; if (e.cardType === 'secret' && !def.secret) continue; if (e.distinct && drawnIds.has(p.deck[j])) continue; if (e.cost != null && (def.cost || 0) !== e.cost) continue; // Tol'vir Warden: exactly N-Cost + Storm Chaser/Subject 9
 					if (e.requireKeyword && !(def.keywords || []).includes(e.requireKeyword)) continue;
 					idxs.push(j);
 				}
@@ -3582,6 +3595,7 @@ function execEffects(state, pi, effects, target, source) {
 				// Witchwood Piper: draw the LOWEST-Cost match; else a random match
 				const j = e.lowest ? idxs.reduce((best, k) => (state.cardsById[p.deck[k]].cost || 0) < (state.cardsById[p.deck[best]].cost || 0) ? k : best, idxs[0]) : idxs[Math.floor(state.rng() * idxs.length)];
 				const [id] = p.deck.splice(j, 1);
+				drawnIds.add(id);
 				const card = instantiate(state.cardsById[id], pi);
 				card.zone = 'hand';
 				p.hand.push(card);
@@ -3644,6 +3658,9 @@ function execEffects(state, pi, effects, target, source) {
 			else if (e.if.deckAllEven) ok = p.deck.length > 0 && p.deck.every(id => ((state.cardsById[id]?.cost || 0) % 2) === 0); // Murkspark Eel
 			else if (e.if.deckAllOdd) ok = p.deck.length > 0 && p.deck.every(id => ((state.cardsById[id]?.cost || 0) % 2) === 1); // Gloom Stag / Glitter Moth
 			else if (e.if.anyDiedThisTurn) ok = (state.diedThisTurn || 0) > 0; // Carrion Drake
+			else if (e.if.controlCountHealth) ok = p.board.filter(c => !isDead(c) && c.type !== 'location' && hp(c) >= e.if.controlCountHealth.health).length >= e.if.controlCountHealth.count; // Star Aligner
+			else if (e.if.emptyEverything) ok = p.deck.length === 0 && p.hand.length === 0 && !p.board.some(c => c !== source && !isDead(c) && c.type !== 'location'); // Mecha'thun
+			else if (e.if.hasRememberedSpells) ok = !!(source && source.rememberedSpells && source.rememberedSpells.length); // Zerek, Master Cloner
 			execEffects(state, pi, ok ? e.then : (e.else || []), target, source);
 		} else if (e.type === 'damage-then') {
 			// deal damage, then branch on whether the creature survived
@@ -3847,6 +3864,19 @@ function execEffects(state, pi, effects, target, source) {
 				c.zone = 'hand'; state.players[pi].hand.push(c);
 				emit(state, { type: 'conjure', player: pi, card: c, color: null });
 			}
+		} else if (e.type === 'summon-random-hand-size') {
+			// Astromancer: summon a random creature costing exactly your hand size
+			execEffects(state, pi, [{ type: 'summon-random', cost: state.players[pi].hand.length }], target, source);
+		} else if (e.type === 'reduce-random-hand-minion-cost') {
+			// Dreampetal Florist: cheapen a random creature in your hand
+			const p = state.players[pi];
+			const pool = p.hand.filter(c => c.type === 'creature' && (c.cost || 0) > 0);
+			if (pool.length) { const c = pool[Math.floor(state.rng() * pool.length)]; c.cost = Math.max(0, (c.cost || 0) - (e.value || 1)); }
+		} else if (e.type === 'shuffle-remembered-into-deck') {
+			// Test Subject: shuffle every spell cast on this creature into your deck
+			const p = state.players[pi];
+			for (const id of (source?.rememberedSpells || [])) { if (state.cardsById[id]) p.deck.push(id); }
+			for (let i = p.deck.length - 1; i > 0; i--) { const j = Math.floor(state.rng() * (i + 1)); [p.deck[i], p.deck[j]] = [p.deck[j], p.deck[i]]; }
 		} else if (e.type === 'inc-pogo') {
 			// Pogo-Hopper: track how many you've played so the next gains more
 			state.players[pi].pogoCount = (state.players[pi].pogoCount || 0) + 1;
@@ -5898,6 +5928,8 @@ export function playCard(state, pi, cardUid, target, choice, position, useAlt, k
 			growBlubberBaron(state, pi, card);
 			runBattlecry(state, pi, card, target, choice);
 			if (p.board.includes(card)) fireSecretsAll(state, pi, 'enemy-minion-played', { minion: card });
+			// opponents' ongoing reactions to you playing a creature (Holomancer / Harbinger Celestia)
+			if (p.board.includes(card) && !isDead(card)) for (const o of opponentsOf(state, pi)) fireOngoing(state, o, 'enemy-creature-played', { minion: card });
 			if (p.board.includes(card) && !isDead(card)) fireOngoing(state, pi, 'creature-played', { minion: card });
 			// Swamp King Dred: after an opponent plays a creature, Dred attacks it
 			if (p.board.includes(card) && !isDead(card)) {
@@ -7346,7 +7378,7 @@ export function endTurn(state) {
 	const np = state.players[state.current];
 	np.diedThisTurn = 0;
 	np.diedThisTurnIds = [];
-	np.heroDamagedThisTurn = false; // "took damage this turn" resets each turn
+	np.heroDamagedThisTurn = false; np.heroDamageTakenThisTurn = 0; // "took damage this turn" resets each turn
 	// Chameleos: each of your turns it morphs into a random card an opponent holds
 	for (const c of np.hand) {
 		if (!c.chameleosTransform) continue;

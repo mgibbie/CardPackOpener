@@ -74213,6 +74213,356 @@
         "rush"
       ],
       "description": "Rush."
+    },
+    {
+      "id": "nethersoul_buster",
+      "name": "Nethersoul Buster",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "warlock",
+      "attack": 1,
+      "health": 5,
+      "rarity": "rare",
+      "set": "BOOMSDAY",
+      "tribe": "Demon",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Gain +1 Attack for each damage your hero has taken this turn.",
+      "effects": [
+        {
+          "type": "buff-self",
+          "per": "hero-damage-taken",
+          "attack": 1,
+          "health": 0
+        }
+      ]
+    },
+    {
+      "id": "thunderhead",
+      "name": "Thunderhead",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "shaman",
+      "attack": 3,
+      "health": 6,
+      "rarity": "epic",
+      "set": "BOOMSDAY",
+      "tribe": "Elemental",
+      "description": "After you play a card with Overload, summon two 1/1 Sparks with Rush.",
+      "ongoing": {
+        "on": "overloaded-self",
+        "effects": [
+          {
+            "type": "summon",
+            "count": 2,
+            "summonId": "bot_spark"
+          }
+        ]
+      }
+    },
+    {
+      "id": "spark_drill",
+      "name": "Spark Drill",
+      "type": "creature",
+      "cost": 6,
+      "cardClass": "neutral",
+      "attack": 5,
+      "health": 1,
+      "rarity": "rare",
+      "set": "BOOMSDAY",
+      "tribe": "Mech",
+      "keywords": [
+        "rush",
+        "deathrattle"
+      ],
+      "description": "Rush. Deathrattle: Add two 1/1 Sparks with Rush to your hand.",
+      "deathrattle": [
+        {
+          "type": "add-card",
+          "id": "bot_spark",
+          "count": 2
+        }
+      ]
+    },
+    {
+      "id": "arcane_dynamo",
+      "name": "Arcane Dynamo",
+      "type": "creature",
+      "cost": 6,
+      "cardClass": "neutral",
+      "attack": 3,
+      "health": 4,
+      "rarity": "rare",
+      "set": "BOOMSDAY",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Discover a spell that costs (5) or more.",
+      "effects": [
+        {
+          "type": "discover",
+          "cardType": "spell",
+          "minCost": 5
+        }
+      ]
+    },
+    {
+      "id": "meteorologist",
+      "name": "Meteorologist",
+      "type": "creature",
+      "cost": 6,
+      "cardClass": "mage",
+      "attack": 3,
+      "health": 3,
+      "rarity": "rare",
+      "set": "BOOMSDAY",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: For each card in your hand, deal 1 damage to a random enemy.",
+      "effects": [
+        {
+          "type": "random-damage",
+          "value": 1,
+          "perHandCard": true,
+          "pool": "enemy-creatures"
+        }
+      ]
+    },
+    {
+      "id": "astromancer",
+      "name": "Astromancer",
+      "type": "creature",
+      "cost": 7,
+      "cardClass": "mage",
+      "attack": 5,
+      "health": 5,
+      "rarity": "epic",
+      "set": "BOOMSDAY",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Summon a random creature with Cost equal to your hand size.",
+      "effects": [
+        {
+          "type": "summon-random-hand-size"
+        }
+      ]
+    },
+    {
+      "id": "star_aligner",
+      "name": "Star Aligner",
+      "type": "creature",
+      "cost": 7,
+      "cardClass": "neutral",
+      "attack": 7,
+      "health": 7,
+      "rarity": "epic",
+      "set": "BOOMSDAY",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: If you control 3 creatures with 7 Health, deal 7 damage to all enemies.",
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "controlCountHealth": {
+              "health": 7,
+              "count": 3
+            }
+          },
+          "then": [
+            {
+              "type": "damage",
+              "value": 7,
+              "target": "enemies"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "dreampetal_florist",
+      "name": "Dreampetal Florist",
+      "type": "creature",
+      "cost": 7,
+      "cardClass": "druid",
+      "attack": 4,
+      "health": 4,
+      "rarity": "epic",
+      "set": "BOOMSDAY",
+      "description": "At the end of your turn, reduce the Cost of a random creature in your hand by (7).",
+      "ongoing": {
+        "on": "turn-end",
+        "effects": [
+          {
+            "type": "reduce-random-hand-minion-cost",
+            "value": 7
+          }
+        ]
+      }
+    },
+    {
+      "id": "subject_9",
+      "name": "Subject 9",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "neutral",
+      "attack": 4,
+      "health": 4,
+      "rarity": "legendary",
+      "set": "BOOMSDAY",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Draw 5 different Secrets from your deck.",
+      "effects": [
+        {
+          "type": "tutor",
+          "cardType": "secret",
+          "distinct": true,
+          "count": 5
+        }
+      ]
+    },
+    {
+      "id": "mechathun",
+      "name": "Mecha'thun",
+      "type": "creature",
+      "cost": 10,
+      "cardClass": "neutral",
+      "attack": 10,
+      "health": 10,
+      "rarity": "legendary",
+      "set": "BOOMSDAY",
+      "keywords": [
+        "deathrattle"
+      ],
+      "description": "Deathrattle: If you have no cards in your deck, hand, and battlefield, destroy the enemy hero.",
+      "deathrattle": [
+        {
+          "type": "conditional",
+          "if": {
+            "emptyEverything": true
+          },
+          "then": [
+            {
+              "type": "damage",
+              "value": 999,
+              "target": "enemy-heroes"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "dr_morrigan",
+      "name": "Dr. Morrigan",
+      "type": "creature",
+      "cost": 6,
+      "cardClass": "warlock",
+      "attack": 5,
+      "health": 5,
+      "rarity": "legendary",
+      "set": "BOOMSDAY",
+      "tribe": "Mech",
+      "keywords": [
+        "deathrattle"
+      ],
+      "description": "Deathrattle: Swap this with a creature from your deck.",
+      "deathrattle": [
+        {
+          "type": "recruit"
+        }
+      ]
+    },
+    {
+      "id": "test_subject",
+      "name": "Test Subject",
+      "type": "creature",
+      "cost": 1,
+      "cardClass": "priest",
+      "attack": 0,
+      "health": 2,
+      "rarity": "rare",
+      "set": "BOOMSDAY",
+      "keywords": [
+        "deathrattle"
+      ],
+      "description": "Deathrattle: Shuffle any spells you cast on this creature into your deck.",
+      "ongoing": {
+        "on": "spell-targeted-self",
+        "effects": [
+          {
+            "type": "remember-spell"
+          }
+        ]
+      },
+      "deathrattle": [
+        {
+          "type": "shuffle-remembered-into-deck"
+        }
+      ]
+    },
+    {
+      "id": "zerek_master_cloner",
+      "name": "Zerek, Master Cloner",
+      "type": "creature",
+      "cost": 6,
+      "cardClass": "priest",
+      "attack": 5,
+      "health": 5,
+      "rarity": "legendary",
+      "set": "BOOMSDAY",
+      "keywords": [
+        "deathrattle"
+      ],
+      "description": "Deathrattle: If you've cast any spells on this creature, resummon it.",
+      "ongoing": {
+        "on": "spell-targeted-self",
+        "effects": [
+          {
+            "type": "remember-spell"
+          }
+        ]
+      },
+      "deathrattle": [
+        {
+          "type": "conditional",
+          "if": {
+            "hasRememberedSpells": true
+          },
+          "then": [
+            {
+              "type": "resummon-source"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "holomancer",
+      "name": "Holomancer",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "neutral",
+      "attack": 3,
+      "health": 3,
+      "rarity": "epic",
+      "set": "BOOMSDAY",
+      "description": "After your opponent plays a creature, summon a 1/1 copy of it.",
+      "ongoing": {
+        "on": "enemy-creature-played",
+        "effects": [
+          {
+            "type": "summon-enemy-minion-copy",
+            "attack": 1,
+            "health": 1
+          }
+        ]
+      }
     }
   ]
 }
