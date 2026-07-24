@@ -68673,6 +68673,186 @@
           }
         ]
       }
+    },
+    {
+      "id": "patches_the_pirate",
+      "name": "Patches the Pirate",
+      "type": "creature",
+      "cost": 1,
+      "cardClass": "neutral",
+      "attack": 1,
+      "health": 1,
+      "rarity": "legendary",
+      "set": "GANGS",
+      "tribe": "Pirate",
+      "keywords": [
+        "charge"
+      ],
+      "description": "After you play a Pirate, summon this creature from your deck."
+    },
+    {
+      "id": "kazakus",
+      "name": "Kazakus",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "neutral",
+      "attack": 3,
+      "health": 3,
+      "rarity": "legendary",
+      "set": "GANGS",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: If your deck has no duplicates, create a custom potion.",
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "noDuplicates": true
+          },
+          "then": [
+            {
+              "type": "create-kazakus-potion"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "seadevil_stinger",
+      "name": "Seadevil Stinger",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "warlock",
+      "attack": 4,
+      "health": 2,
+      "rarity": "rare",
+      "set": "GANGS",
+      "tribe": "Murloc",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: The next Murloc you play this turn is free.",
+      "effects": [
+        {
+          "type": "next-murloc-free"
+        }
+      ]
+    },
+    {
+      "id": "blubber_baron",
+      "name": "Blubber Baron",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "neutral",
+      "attack": 1,
+      "health": 1,
+      "rarity": "epic",
+      "set": "GANGS",
+      "description": "Whenever you summon a Battlecry creature while this is in your hand, gain +1/+1."
+    },
+    {
+      "id": "kabal_lackey",
+      "name": "Kabal Lackey",
+      "type": "creature",
+      "cost": 1,
+      "cardClass": "mage",
+      "attack": 2,
+      "health": 1,
+      "rarity": "common",
+      "set": "GANGS",
+      "description": "Battlecry: The next Secret you play this turn costs (1).",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "next-secret-cost",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "lotus_illusionist",
+      "name": "Lotus Illusionist",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "shaman",
+      "attack": 3,
+      "health": 5,
+      "rarity": "epic",
+      "set": "GANGS",
+      "description": "After this creature attacks a hero, transform it into a random 6-Cost creature.",
+      "ongoing": {
+        "on": "self-attacks-hero",
+        "effects": [
+          {
+            "type": "transform-self-random-cost",
+            "cost": 6
+          }
+        ]
+      }
+    },
+    {
+      "id": "kazakus_potion_a",
+      "name": "Kazakus Potion",
+      "type": "sorcery",
+      "cost": 5,
+      "token": true,
+      "rarity": "epic",
+      "set": "GANGS",
+      "description": "Deal 4 damage to all enemies and draw 2 cards.",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 4,
+          "target": "enemies"
+        },
+        {
+          "type": "draw",
+          "value": 2
+        }
+      ]
+    },
+    {
+      "id": "kazakus_potion_b",
+      "name": "Kazakus Potion",
+      "type": "sorcery",
+      "cost": 5,
+      "token": true,
+      "rarity": "epic",
+      "set": "GANGS",
+      "description": "Give your creatures +3/+3.",
+      "effects": [
+        {
+          "type": "buff",
+          "target": "friendly-creatures",
+          "attack": 3,
+          "health": 3
+        }
+      ]
+    },
+    {
+      "id": "kazakus_potion_c",
+      "name": "Kazakus Potion",
+      "type": "sorcery",
+      "cost": 5,
+      "token": true,
+      "rarity": "epic",
+      "set": "GANGS",
+      "description": "Summon two random creatures and restore 8 Health.",
+      "effects": [
+        {
+          "type": "summon-random",
+          "count": 2,
+          "maxCost": 5
+        },
+        {
+          "type": "heal",
+          "value": 8,
+          "target": "self"
+        }
+      ]
     }
   ]
 }

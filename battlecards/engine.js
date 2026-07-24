@@ -355,6 +355,8 @@ export function createGame(cardsById, rng = Math.random, playerDeckIds = null, p
 		heroPowerDiscountNext: 0, // Fencing Coach: your next Hero Power costs less
 		heroPowersUsedGame: 0,    // Frost Giant: total Hero Powers used this game
 		heroPowerFreeGame: false, // Raza the Chained: your Hero Power costs (0) this game
+		nextMurlocFree: false,    // Seadevil Stinger: the next Murloc this turn is free
+		nextSecretCost: null,     // Kabal Lackey: the next Secret this turn costs this much
 		eliminated: false,
 	});
 
@@ -1223,6 +1225,7 @@ function summon(state, pi, tokenDef) {
 	questTick(state, 'summon', pi, 1, c);
 	summonColossalParts(state, pi, c);
 	fireOngoing(state, pi, 'summoned', { minion: c });
+	growBlubberBaron(state, pi, c);
 	recomputeAuras(state);
 	// "When summoned" effects (Colossal appendages) fire after it lands
 	if (c.onSummon) execEffects(state, pi, c.onSummon, null, c);
@@ -1410,6 +1413,15 @@ function recomputeAuras(state) {
 				emit(state, { type: 'buff', uid: c.uid, attack: c.attack, hp: hp(c) });
 			}
 		});
+	}
+}
+
+// Blubber Baron: grows in hand whenever you summon a Battlecry creature
+function growBlubberBaron(state, pi, summoned) {
+	if (!summoned?.keywords?.includes('battlecry')) return;
+	for (const h of state.players[pi].hand) if (h.id === 'blubber_baron') {
+		h.attack += 1; h.maxHealth += 1;
+		emit(state, { type: 'buff', uid: h.uid, attack: h.attack, hp: hp(h) });
 	}
 }
 
@@ -3645,6 +3657,32 @@ function execEffects(state, pi, effects, target, source) {
 		} else if (e.type === 'hero-power-free-game') {
 			// Raza the Chained
 			state.players[pi].heroPowerFreeGame = true;
+		} else if (e.type === 'next-murloc-free') {
+			state.players[pi].nextMurlocFree = true; // Seadevil Stinger
+		} else if (e.type === 'next-secret-cost') {
+			state.players[pi].nextSecretCost = e.value != null ? e.value : 1; // Kabal Lackey
+		} else if (e.type === 'create-kazakus-potion') {
+			// Kazakus: a random custom-style potion into your hand
+			const potions = ['kazakus_potion_a', 'kazakus_potion_b', 'kazakus_potion_c'];
+			const id = potions[Math.floor(state.rng() * potions.length)];
+			const p = state.players[pi];
+			if (state.cardsById[id] && p.hand.length < MAX_HAND) { const c = instantiate(state.cardsById[id], pi); c.zone = 'hand'; p.hand.push(c); emit(state, { type: 'conjure', player: pi, card: c, color: null }); }
+		} else if (e.type === 'transform-self-random-cost') {
+			// Lotus Illusionist: become a random creature of a given Cost
+			if (source && source.zone === 'board' && !isDead(source)) {
+				const pool = Object.values(state.cardsById).filter(d => d.type === 'creature' && (d.cost || 0) === e.cost
+					&& !d.token && d.collectible !== false && !d.companion && !d.commander && !(d.colors && d.colors.length) && d.id !== source.id);
+				if (pool.length) {
+					const rd = pool[Math.floor(state.rng() * pool.length)];
+					const tok = instantiate({ id: 'token_' + rd.id, name: rd.name, type: 'creature', cost: 0, rarity: 'common', token: true,
+						tribe: rd.tribe, description: rd.description, attack: rd.attack, health: rd.health, keywords: rd.keywords || [] }, source.controller);
+					tok.zone = 'board'; tok.sick = source.sick;
+					const board = state.players[source.controller].board;
+					board[board.indexOf(source)] = tok; source.zone = 'gone';
+					emit(state, { type: 'transformed', uid: source.uid, player: source.controller, from: source.name, card: tok });
+					recomputeAuras(state);
+				}
+			}
 		} else if (e.type === 'free-next-spell') {
 			// Inkmaster Solia: the next spell this turn costs (0)
 			state.players[pi].freeSpellsThisTurn = true;
@@ -5090,6 +5128,8 @@ export function effectiveCost(state, pi, card) {
 		c = planeR.setZero ? 0 : c + (planeR.amount || 0);
 	}
 	if (p.freeSpellsThisTurn && isSpellType(card)) c = 0;
+	if (p.nextMurlocFree && card.type === 'creature' && (card.tribe || '').includes('Murloc')) c = 0; // Seadevil Stinger (Health-cost approximated as free)
+	if (p.nextSecretCost != null && card.secret) c = Math.min(c, p.nextSecretCost); // Kabal Lackey
 	if (p.spellTaxNext > 0 && isSpellType(card)) c += p.spellTaxNext; // Loatheb
 	return Math.max(0, c);
 }
@@ -5195,6 +5235,14 @@ export function playCard(state, pi, cardUid, target, choice, position, useAlt, k
 	fireOngoing(state, pi, 'card-played', { played: card });
 	for (const o of opponentsOf(state, pi)) fireOngoing(state, o, 'enemy-card-played', { played: card, caster: pi }); // Fel Reaver
 	corruptHandCards(state, pi, playedCost);
+	// Patches the Pirate: playing a Pirate pulls Patches out of your deck
+	if (card.type === 'creature' && (card.tribe || '').includes('Pirate') && card.id !== 'patches_the_pirate') {
+		const idx = p.deck.indexOf('patches_the_pirate');
+		if (idx >= 0) { p.deck.splice(idx, 1); summon(state, pi, state.cardsById['patches_the_pirate']); }
+	}
+	// one-shot "next X" discounts are spent when the matching card is played
+	if (card.type === 'creature' && (card.tribe || '').includes('Murloc')) p.nextMurlocFree = false;
+	if (card.secret) p.nextSecretCost = null;
 
 	if (card.type === 'creature' && card.magnetic && target?.type === 'creature'
 		&& (() => { const t = findCreature(state, target.uid);
@@ -5232,6 +5280,7 @@ export function playCard(state, pi, cardUid, target, choice, position, useAlt, k
 		} else {
 			summonColossalParts(state, pi, card); // appendages enter before the battlecry
 			fireOngoing(state, pi, 'summoned', { minion: card });
+			growBlubberBaron(state, pi, card);
 			runBattlecry(state, pi, card, target, choice);
 			if (p.board.includes(card)) fireSecretsAll(state, pi, 'enemy-minion-played', { minion: card });
 			if (p.board.includes(card) && !isDead(card)) fireOngoing(state, pi, 'creature-played', { minion: card });
@@ -6499,6 +6548,7 @@ export function endTurn(state) {
 	const p = state.players[pi];
 	p.spellTaxNext = 0; // Loatheb's tax only lasts this player's turn
 	p.heroPowerTaxNext = 0; // Saboteur's Hero Power tax only lasts this turn
+	p.nextMurlocFree = false; p.nextSecretCost = null; // Seadevil Stinger / Kabal Lackey are "this turn"
 
 	// Impulsive creatures refuse to end the turn without swinging
 	for (const c of [...p.board]) {
