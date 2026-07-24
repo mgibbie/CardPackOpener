@@ -81884,6 +81884,559 @@
           "cardClass": "mage"
         }
       ]
+    },
+    {
+      "id": "infectious_sporeling",
+      "name": "Infectious Sporeling",
+      "type": "creature",
+      "cost": 1,
+      "cardClass": "neutral",
+      "attack": 1,
+      "health": 2,
+      "rarity": "rare",
+      "set": "BLACK_TEMPLE",
+      "description": "After this damages a minion, turn it into an Infectious Sporeling.",
+      "ongoing": {
+        "on": "self-deals-damage",
+        "effects": [
+          {
+            "type": "transform-victim-into",
+            "id": "infectious_sporeling"
+          }
+        ]
+      }
+    },
+    {
+      "id": "ashtongue_slayer",
+      "name": "Ashtongue Slayer",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "rogue",
+      "attack": 3,
+      "health": 2,
+      "rarity": "rare",
+      "set": "BLACK_TEMPLE",
+      "tribe": "Draenei",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Give a Stealthed minion +3 Attack and Immune this turn.",
+      "effects": [
+        {
+          "type": "buff",
+          "target": "friendly-creature",
+          "requireKeyword": "stealth",
+          "attack": 3
+        },
+        {
+          "type": "grant-immune-turn",
+          "target": "friendly-creature"
+        }
+      ]
+    },
+    {
+      "id": "kanrethad_ebonlocke",
+      "name": "Kanrethad Ebonlocke",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "warlock",
+      "attack": 3,
+      "health": 2,
+      "rarity": "legendary",
+      "set": "BLACK_TEMPLE",
+      "keywords": [
+        "deathrattle"
+      ],
+      "costMod": {
+        "cardType": "creature",
+        "tribe": "Demon",
+        "amount": -1
+      },
+      "description": "Your Demons cost (1) less. Deathrattle: Shuffle 'Kanrethad Prime' into your deck.",
+      "deathrattle": [
+        {
+          "type": "shuffle-into-deck",
+          "id": "kanrethad_prime",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "id": "murgur_murgurgle",
+      "name": "Murgur Murgurgle",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "paladin",
+      "attack": 2,
+      "health": 1,
+      "rarity": "legendary",
+      "set": "BLACK_TEMPLE",
+      "tribe": "Murloc",
+      "keywords": [
+        "divine_shield",
+        "deathrattle"
+      ],
+      "description": "Divine Shield. Deathrattle: Shuffle 'Murgurgle Prime' into your deck.",
+      "deathrattle": [
+        {
+          "type": "shuffle-into-deck",
+          "id": "murgurgle_prime",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "id": "sethekk_veilweaver",
+      "name": "Sethekk Veilweaver",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "priest",
+      "attack": 2,
+      "health": 3,
+      "rarity": "epic",
+      "set": "BLACK_TEMPLE",
+      "description": "After you cast a spell on a minion, add a Priest spell to your hand.",
+      "ongoing": {
+        "on": "spell-cast-on-creature",
+        "effects": [
+          {
+            "type": "conjure-random",
+            "cardType": "spell",
+            "cardClass": "priest"
+          }
+        ]
+      }
+    },
+    {
+      "id": "shadowjeweler_hanar",
+      "name": "Shadowjeweler Hanar",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "rogue",
+      "attack": 1,
+      "health": 4,
+      "rarity": "legendary",
+      "set": "BLACK_TEMPLE",
+      "tribe": "Draenei",
+      "description": "After you play a Secret, Discover a Secret from a different class.",
+      "ongoing": {
+        "on": "secret-played",
+        "effects": [
+          {
+            "type": "discover",
+            "cardType": "secret"
+          }
+        ]
+      }
+    },
+    {
+      "id": "akama",
+      "name": "Akama",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "rogue",
+      "attack": 3,
+      "health": 4,
+      "rarity": "legendary",
+      "set": "BLACK_TEMPLE",
+      "tribe": "Draenei",
+      "keywords": [
+        "stealth",
+        "deathrattle"
+      ],
+      "description": "Stealth. Deathrattle: Shuffle 'Akama Prime' into your deck.",
+      "deathrattle": [
+        {
+          "type": "shuffle-into-deck",
+          "id": "akama_prime",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "id": "archspore_msshifn",
+      "name": "Archspore Msshi'fn",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "druid",
+      "attack": 3,
+      "health": 4,
+      "rarity": "legendary",
+      "set": "BLACK_TEMPLE",
+      "keywords": [
+        "taunt",
+        "deathrattle"
+      ],
+      "description": "Taunt. Deathrattle: Shuffle 'Msshi'fn Prime' into your deck.",
+      "deathrattle": [
+        {
+          "type": "shuffle-into-deck",
+          "id": "msshifn_prime",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "id": "augmented_porcupine",
+      "name": "Augmented Porcupine",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "hunter",
+      "attack": 2,
+      "health": 4,
+      "rarity": "epic",
+      "set": "BLACK_TEMPLE",
+      "tribe": "Beast",
+      "keywords": [
+        "deathrattle"
+      ],
+      "description": "Deathrattle: Deal this minion's Attack damage randomly split among all enemies.",
+      "deathrattle": [
+        {
+          "type": "random-damage",
+          "countByAttack": true,
+          "value": 1,
+          "pool": "enemies"
+        }
+      ]
+    },
+    {
+      "id": "blistering_rot",
+      "name": "Blistering Rot",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "neutral",
+      "attack": 1,
+      "health": 2,
+      "rarity": "rare",
+      "set": "BLACK_TEMPLE",
+      "description": "At the end of your turn, summon a Rot with stats equal to this minion's.",
+      "ongoing": {
+        "on": "turn-end",
+        "effects": [
+          {
+            "type": "summon-with-source-stats",
+            "name": "Rot",
+            "id": "bt_rot"
+          }
+        ]
+      }
+    },
+    {
+      "id": "bonechewer_raider",
+      "name": "Bonechewer Raider",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "warrior",
+      "attack": 3,
+      "health": 3,
+      "rarity": "common",
+      "set": "BLACK_TEMPLE",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: If there is a damaged minion, gain +1/+1 and Rush.",
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "anyDamaged": true
+          },
+          "then": [
+            {
+              "type": "buff-self",
+              "attack": 1,
+              "health": 1
+            },
+            {
+              "type": "grant",
+              "keyword": "rush",
+              "target": "self"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "dragonmaw_overseer",
+      "name": "Dragonmaw Overseer",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "priest",
+      "attack": 2,
+      "health": 2,
+      "rarity": "rare",
+      "set": "BLACK_TEMPLE",
+      "description": "At the end of your turn, give another friendly minion +2/+2.",
+      "ongoing": {
+        "on": "turn-end",
+        "effects": [
+          {
+            "type": "buff-random-friendly",
+            "attack": 2,
+            "health": 2
+          }
+        ]
+      }
+    },
+    {
+      "id": "greyheart_sage",
+      "name": "Greyheart Sage",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "rogue",
+      "attack": 3,
+      "health": 3,
+      "rarity": "epic",
+      "set": "BLACK_TEMPLE",
+      "tribe": "Draenei",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: If you control a Stealthed minion, draw 2 cards.",
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "controlStealthed": true
+          },
+          "then": [
+            {
+              "type": "draw",
+              "value": 2
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "imprisoned_satyr",
+      "name": "Imprisoned Satyr",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "druid",
+      "attack": 3,
+      "health": 3,
+      "rarity": "common",
+      "set": "BLACK_TEMPLE",
+      "tribe": "Demon",
+      "dormant": 2,
+      "description": "Dormant for 2 turns. When this awakens, reduce the Cost of a random minion in your hand by (5).",
+      "awaken": [
+        {
+          "type": "reduce-random-hand-cost",
+          "value": 5
+        }
+      ]
+    },
+    {
+      "id": "lady_vashj",
+      "name": "Lady Vashj",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "shaman",
+      "attack": 4,
+      "health": 3,
+      "rarity": "legendary",
+      "set": "BLACK_TEMPLE",
+      "tribe": "Naga",
+      "keywords": [
+        "deathrattle"
+      ],
+      "static": {
+        "type": "spell-damage",
+        "value": 1
+      },
+      "description": "Spell Damage +1. Deathrattle: Shuffle 'Vashj Prime' into your deck.",
+      "deathrattle": [
+        {
+          "type": "shuffle-into-deck",
+          "id": "vashj_prime",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "id": "felfin_navigator",
+      "name": "Felfin Navigator",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "neutral",
+      "attack": 4,
+      "health": 4,
+      "rarity": "common",
+      "set": "BLACK_TEMPLE",
+      "tribe": "Murloc",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Give your other Murlocs +1/+1.",
+      "effects": [
+        {
+          "type": "buff",
+          "target": "friendly-creatures",
+          "tribe": "Murloc",
+          "excludeSelf": true,
+          "attack": 1,
+          "health": 1
+        }
+      ]
+    },
+    {
+      "id": "kanrethad_prime",
+      "name": "Kanrethad Prime",
+      "type": "creature",
+      "cost": 8,
+      "cardClass": "warlock",
+      "attack": 7,
+      "health": 6,
+      "rarity": "legendary",
+      "set": "BLACK_TEMPLE",
+      "tribe": "Demon",
+      "keywords": [
+        "battlecry"
+      ],
+      "token": true,
+      "collectible": false,
+      "description": "Battlecry: Summon 3 friendly Demons that died this game.",
+      "effects": [
+        {
+          "type": "summon-died-tribe",
+          "tribe": "Demon",
+          "count": 3
+        }
+      ]
+    },
+    {
+      "id": "murgurgle_prime",
+      "name": "Murgurgle Prime",
+      "type": "creature",
+      "cost": 8,
+      "cardClass": "paladin",
+      "attack": 6,
+      "health": 3,
+      "rarity": "legendary",
+      "set": "BLACK_TEMPLE",
+      "tribe": "Murloc",
+      "keywords": [
+        "divine_shield",
+        "battlecry"
+      ],
+      "token": true,
+      "collectible": false,
+      "description": "Divine Shield. Battlecry: Summon 4 random Murlocs. Give them Divine Shield.",
+      "effects": [
+        {
+          "type": "summon-random",
+          "tribe": "Murloc",
+          "count": 4,
+          "grant": "divine_shield"
+        }
+      ]
+    },
+    {
+      "id": "akama_prime",
+      "name": "Akama Prime",
+      "type": "creature",
+      "cost": 6,
+      "cardClass": "rogue",
+      "attack": 6,
+      "health": 5,
+      "rarity": "legendary",
+      "set": "BLACK_TEMPLE",
+      "tribe": "Draenei",
+      "keywords": [
+        "stealth"
+      ],
+      "token": true,
+      "collectible": false,
+      "description": "Permanently Stealthed."
+    },
+    {
+      "id": "msshifn_prime",
+      "name": "Msshi'fn Prime",
+      "type": "creature",
+      "cost": 10,
+      "cardClass": "druid",
+      "attack": 9,
+      "health": 9,
+      "rarity": "legendary",
+      "set": "BLACK_TEMPLE",
+      "keywords": [
+        "taunt"
+      ],
+      "token": true,
+      "collectible": false,
+      "description": "Taunt. Choose One - Summon a 9/9 Fungal Giant with Taunt; or Rush.",
+      "choices": [
+        {
+          "text": "Summon a 9/9 Fungal Giant with Taunt",
+          "effects": [
+            {
+              "type": "summon",
+              "count": 1,
+              "summonId": "bt_fungal_giant"
+            }
+          ]
+        },
+        {
+          "text": "Rush",
+          "effects": [
+            {
+              "type": "grant",
+              "keyword": "rush",
+              "target": "self"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "vashj_prime",
+      "name": "Vashj Prime",
+      "type": "creature",
+      "cost": 7,
+      "cardClass": "shaman",
+      "attack": 5,
+      "health": 4,
+      "rarity": "legendary",
+      "set": "BLACK_TEMPLE",
+      "tribe": "Naga",
+      "keywords": [
+        "battlecry"
+      ],
+      "token": true,
+      "collectible": false,
+      "static": {
+        "type": "spell-damage",
+        "value": 1
+      },
+      "description": "Spell Damage +1. Battlecry: Draw 3 spells. Reduce their Cost by (3).",
+      "effects": [
+        {
+          "type": "tutor",
+          "cardType": "spell",
+          "count": 3,
+          "costMod": -3
+        }
+      ]
+    },
+    {
+      "id": "bt_fungal_giant",
+      "name": "Fungal Giant",
+      "type": "creature",
+      "cost": 0,
+      "cardClass": "druid",
+      "attack": 9,
+      "health": 9,
+      "rarity": "common",
+      "set": "BLACK_TEMPLE",
+      "keywords": [
+        "taunt"
+      ],
+      "token": true,
+      "collectible": false,
+      "description": "Taunt."
     }
   ]
 }

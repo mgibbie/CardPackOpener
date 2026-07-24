@@ -603,6 +603,7 @@ const CHOSEN = {
 	'grant-spell-damage': { 'friendly-creature': 'friendly-creature', creature: 'creature' },
 	'damage-per-cards-played': { creature: 'creature', 'enemy-creature': 'enemy-creature' },
 	'damage-target-by-attack': { creature: 'creature', 'enemy-creature': 'enemy-creature' },
+	'grant-immune-turn': { creature: 'creature', 'friendly-creature': 'friendly-creature' },
 	'transform-into-token': { 'friendly-creature': 'friendly-creature', creature: 'creature' },
 	'mark-doomed': { creature: 'creature', 'enemy-creature': 'enemy-creature' },
 	'devour-target': { 'friendly-creature': 'friendly-creature' },
@@ -2530,6 +2531,18 @@ function runSecretEffects(state, pi, effects, ctx) {
 				// Soulbound Ashtongue: also deal the damage taken to your hero
 				if (ctx.amount) damageHero(state, pi, ctx.amount, pi);
 				break;
+			case 'transform-victim-into': {
+				// Infectious Sporeling: turn the minion this just damaged into a copy of `id`
+				const v = ctx.victim; const base = state.cardsById[e.id];
+				if (v && !isDead(v) && base) {
+					const tok = instantiate(JSON.parse(JSON.stringify(base)), v.controller);
+					tok.zone = 'board'; tok.sick = v.sick;
+					const board = state.players[v.controller].board;
+					const bi = board.indexOf(v);
+					if (bi >= 0) { board[bi] = tok; v.zone = 'gone'; emit(state, { type: 'transformed', uid: v.uid, player: v.controller, from: v.name, card: tok }); recomputeAuras(state); }
+				}
+				break;
+			}
 			default:
 				// pass the firing permanent through as `source` so self-scoped
 				// effects (temp-buff-self, gain-weapon-attack) still work
@@ -2807,7 +2820,8 @@ function execEffects(state, pi, effects, target, source) {
 			if (e.target === 'friendly-creatures') {
 				for (const c of state.players[pi].board) {
 					if (e.tribe && !(c.tribe || '').includes(e.tribe)) continue;
-					if (e.name && c.name !== e.name) continue; // Quartermaster's Recruits
+					if (e.excludeSelf && c === source) continue; // Felfin Navigator: your OTHER Murlocs
+						if (e.name && c.name !== e.name) continue; // Quartermaster's Recruits
 					if (e.requireKeyword && !c.keywords.includes(e.requireKeyword)) continue;
 					if (e.requireDamaged && !(c.damage > 0)) continue; // Ball and Chain
 					buffCreature(c, e.attack, e.health);
@@ -3052,6 +3066,7 @@ function execEffects(state, pi, effects, target, source) {
 			// count independent hits of `value` at random members of the pool;
 			// Jungle Gym: extra hits for each friendly of a tribe
 			let hits = e.count || 1;
+			if (e.countByAttack && source) hits = source.attack || 0; // Augmented Porcupine: split its Attack
 			if (e.perFriendlyTribe) {
 				hits += state.players[pi].board.filter(c => !isDead(c)
 					&& (c.tribe || '').includes(e.perFriendlyTribe)).length;
@@ -3834,6 +3849,7 @@ function execEffects(state, pi, effects, target, source) {
 				if (e.setAttack != null) card.attack = e.setAttack; // Jepetto Joybuzz: set to 1/1, cost 1
 				if (e.setHealth != null) card.maxHealth = e.setHealth;
 				if (e.setCost != null) card.cost = e.setCost;
+				if (e.costMod) card.cost = Math.max(0, (card.cost || 0) + e.costMod); // Vashj Prime: reduce drawn spells' Cost
 				if (e.gainDeathrattle && source && card.deathrattle && card.deathrattle.length) { source.deathrattle = [...(source.deathrattle || []), ...JSON.parse(JSON.stringify(card.deathrattle))]; if (!source.keywords.includes('deathrattle')) source.keywords.push('deathrattle'); } // Necrium Apothecary
 				p.hand.push(card);
 				emit(state, { type: 'conjure', player: pi, card, color: null });
@@ -3903,6 +3919,8 @@ function execEffects(state, pi, effects, target, source) {
 			else if (e.if.controlFrozen) ok = p.board.some(c => !isDead(c) && c.frozen); // Ice Cream Peddler
 			else if (e.if.healedGame != null) ok = (p.healedGame || 0) >= e.if.healedGame; // Zandalari Templar
 			else if (e.if.playedQuestGame) ok = !!p.questsPlayedGame; // Sky Gen'ral Kragg
+			else if (e.if.anyDamaged) ok = state.players.some(pl => pl.board.some(c => !isDead(c) && c.type !== 'location' && c.damage > 0)); // Bonechewer Raider
+			else if (e.if.controlStealthed) ok = p.board.some(c => !isDead(c) && c.stealthed); // Greyheart Sage
 			else if (e.if.hpDamageGame != null) ok = (p.hpDamageGame || 0) >= e.if.hpDamageGame; // Jan'alai, the Dragonhawk
 			else if (e.if.deckEmpty) ok = p.deck.length === 0; // Chef Nomi
 			else if (e.if.holdingOtherClass) ok = p.hand.some(c => c !== source && c.cardClass && c.cardClass !== 'neutral' && c.cardClass !== p.heroClass); // Underbelly Fence
@@ -5058,6 +5076,26 @@ function execEffects(state, pi, effects, target, source) {
 				for (const o of enemies) { for (const c of state.players[o].board) if (!isDead(c) && c.type !== 'location' && !c.stealthed && c.dormantLeft <= 0) foes.push({ type: 'creature', uid: c.uid, player: o }); foes.push({ type: 'hero', player: o }); }
 				if (foes.length) resolveCombat(state, pi, source.uid, foes[Math.floor(state.rng() * foes.length)]);
 			}
+		} else if (e.type === 'grant-immune-turn') {
+			// Ashtongue Slayer: give a minion Immune until end of turn
+			const t = chosenCreature();
+			if (t) { if (!t.keywords.includes(KW.IMMUNE)) t.keywords.push(KW.IMMUNE); t.immuneTurnClear = true; emit(state, { type: 'buff', uid: t.uid, attack: t.attack, hp: hp(t) }); }
+		} else if (e.type === 'summon-died-tribe') {
+			// Kanrethad Prime: resummon friendly minions of a tribe that died this game
+			const p = state.players[pi];
+			const pool = [...new Set(p.deathLogIds)].map(id => state.cardsById[id]).filter(d => d && d.type === 'creature' && (d.tribe || '').includes(e.tribe));
+			for (let i = 0; i < (e.count || 1) && pool.length; i++) summon(state, pi, pool[Math.floor(state.rng() * pool.length)]);
+		} else if (e.type === 'summon-with-source-stats') {
+			// Blistering Rot: summon a token with stats equal to the source minion
+			if (source) { const a = source.attack || 0, h = hp(source) || 1; const tok = summon(state, pi, { id: e.id || 'token_rot', name: e.name || 'Rot', type: 'creature', cost: 0, token: true, rarity: 'common', attack: a, health: h, description: `A ${a}/${h} token.` }); }
+		} else if (e.type === 'buff-random-friendly') {
+			// Dragonmaw Overseer: buff a random OTHER friendly minion
+			const pool = state.players[pi].board.filter(c => c !== source && !isDead(c) && c.type !== 'location');
+			if (pool.length) buffCreature(pool[Math.floor(state.rng() * pool.length)], e.attack || 0, e.health || 0);
+		} else if (e.type === 'reduce-random-hand-cost') {
+			// Imprisoned Satyr: reduce the Cost of a random minion in your hand
+			const pool = state.players[pi].hand.filter(c => c.type === 'creature');
+			if (pool.length) { const c = pool[Math.floor(state.rng() * pool.length)]; c.cost = Math.max(0, (c.cost || 0) - (e.value || 1)); }
 		} else if (e.type === 'curse-enemy-card') {
 			// Chaos Gazer: curse a card in the opponent's hand; if unplayed by the
 			// end of their next turn, they take damage (resolved in endTurn)
@@ -6160,7 +6198,7 @@ function execEffects(state, pi, effects, target, source) {
 				const c = summon(state, owner, def);
 				if (c && e.disguise) disguiseCreature(state, c);
 				// "...and give it Taunt": grant a keyword to the summoned creature
-				if (c && e.grant && !c.keywords.includes(e.grant)) c.keywords.push(e.grant);
+				if (c && e.grant && !c.keywords.includes(e.grant)) { c.keywords.push(e.grant); if (e.grant === KW.DIVINE_SHIELD) c.shield = true; if (e.grant === KW.STEALTH) c.stealthed = true; }
 			}
 		} else if (e.type === 'add-token') {
 			// Fire Fly: a fresh token creature lands in your hand
@@ -6369,6 +6407,7 @@ function resolveAddCostSpell(state, pi, card, target, choice) {
 	runSpell(state, pi, card, target, choice);
 	if (card.honorableKill && state.exactKills > 0) execEffects(state, pi, card.honorableKill, target, card);
 	fireOngoing(state, pi, 'spell-played', { played: card });
+	if (target && target.type === 'creature') fireOngoing(state, pi, 'spell-cast-on-creature', { played: card }); // Sethekk Veilweaver
 	firePlaneTrigger(state, 'spell-cast', pi);
 	for (let s2 = 0; s2 < state.players.length; s2++) {
 		fireOngoing(state, s2, 'any-spell-played', { spell: card, caster: pi });
@@ -6926,6 +6965,7 @@ function resolveStackedSpell(state, entry) {
 			execEffects(state, pi, card.honorableKill, ctx.target, card);
 		}
 		fireOngoing(state, pi, 'spell-played', { played: card });
+		if (ctx.target && ctx.target.type === 'creature') fireOngoing(state, pi, 'spell-cast-on-creature', { played: card }); // Sethekk Veilweaver
 		if (card.choices) fireOngoing(state, pi, 'choose-spell-played', { played: card }); // Keeper Stalladris
 		firePlaneTrigger(state, 'spell-cast', pi); // Minamo / Elysaria
 		for (let s2 = 0; s2 < state.players.length; s2++) {
@@ -7424,8 +7464,8 @@ function resolveCombat(state, pi, attackerUid, target) {
 		// Wind-up Burglebot: "whenever this attacks a minion and survives"
 		if (!isDead(attacker)) fireCreatureTrigger(state, attacker, 'self-attacks-survives');
 		// Alley Armorsmith: "whenever this deals damage" — either combatant that dealt any
-		if (attacker.attack > 0) fireCreatureTrigger(state, attacker, 'self-deals-damage', { amount: attacker.attack });
-		if (defBefore > 0 && !isDead(defender)) fireCreatureTrigger(state, defender, 'self-deals-damage', { amount: defBefore });
+		if (attacker.attack > 0) fireCreatureTrigger(state, attacker, 'self-deals-damage', { amount: attacker.attack, victim: defender });
+		if (defBefore > 0 && !isDead(defender)) fireCreatureTrigger(state, defender, 'self-deals-damage', { amount: defBefore, victim: attacker });
 	}
 	sweepDeaths(state);
 }
@@ -8079,6 +8119,7 @@ export function endTurn(state) {
 	p.spellTaxNext = 0; // Loatheb's tax only lasts this player's turn
 	p.battlecryTaxNext = 0; // Boompistol Bully's tax only lasts through this player's turn
 	{ const cursed = p.hand.filter(c => c.cursed); if (cursed.length) { let dmg = 0; for (const c of cursed) { dmg += c.curseDamage || 3; c.cursed = false; } damageHero(state, pi, dmg, pi); } } // Chaos Gazer: unplayed cursed cards bite
+	for (const c of p.board) if (c.immuneTurnClear) { c.keywords = c.keywords.filter(k => k !== KW.IMMUNE); c.immuneTurnClear = false; } // Ashtongue Slayer: "Immune this turn" wears off
 	p.heroPowerTaxNext = 0; // Saboteur's Hero Power tax only lasts this turn
 	p.nextMurlocFree = false; p.nextSecretCost = null; // Seadevil Stinger / Kabal Lackey are "this turn"
 	p.nextBattlecryDouble = false; // Murmuring Elemental only lasts this turn
