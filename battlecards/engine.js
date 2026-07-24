@@ -246,6 +246,7 @@ function instantiate(def, controller) {
 		outcast: def.outcast || null, // Ashes of Outland: extra battlecry/spell effect from hand's edge
 		handDeathGrowth: !!def.handDeathGrowth, // Blood Herald: +1/+1 whenever a friendly minion dies while in hand
 		heroPowerCostReduce: def.heroPowerCostReduce || 0, // Felfire Deadeye: your Hero Power costs this much less
+		outcastCostReduce: def.outcastCostReduce || 0, // Line Hopper: your Outcast cards cost this much less
 		deathrattle: def.deathrattle || null,
 		tribe: def.tribe || null,
 		controller,
@@ -2763,6 +2764,7 @@ function execEffects(state, pi, effects, target, source) {
 		const spellLS = source && (source.type === 'sorcery' || source.type === 'instant') && state.players[pi].spellsLifestealThisTurn; // Omega Mind
 			const lsBefore = (e.type === 'damage' || e.type === 'random-damage') && (e.lifesteal || spellLS) ? totalHurt() : null;
 		if (e.type === 'damage') {
+			if (e.requireElementalLastTurn && !state.players[pi].elementalLastTurn) continue; // Gyreworm
 			// friendly Spell Damage boosts direct spell damage
 			let v = e.value === 'source-attack' ? (source?.attack || 0) : scaled(e); // Sergeant Sally
 			if (source && (source.type === 'sorcery' || source.type === 'instant')) {
@@ -3999,6 +4001,7 @@ function execEffects(state, pi, effects, target, source) {
 			else if (e.if.castSpellLastTurn) ok = !!p.castSpellLastTurn; // Marshspawn / Shattered Rumbler
 			else if (e.if.heroHealthChanged) ok = !!p.heroHealthChangedThisTurn; // Brittlebone Destroyer
 			else if (e.if.hasSpellDamage) ok = staticValue(p, 'spell-damage') > 0; // Sorcerous Substitute
+			else if (e.if.hasArmor) ok = (p.armor || 0) > 0; // Ironclad
 			else if (e.if.hpDamageGame != null) ok = (p.hpDamageGame || 0) >= e.if.hpDamageGame; // Jan'alai, the Dragonhawk
 			else if (e.if.deckEmpty) ok = p.deck.length === 0; // Chef Nomi
 			else if (e.if.holdingOtherClass) ok = p.hand.some(c => c !== source && c.cardClass && c.cardClass !== 'neutral' && c.cardClass !== p.heroClass); // Underbelly Fence
@@ -5302,6 +5305,13 @@ function execEffects(state, pi, effects, target, source) {
 					summon(state, pi, def);
 				}
 			}
+		} else if (e.type === 'buff-all-tribe') {
+			// Grand Totem Eys'or: +X/+X to a tribe in hand, deck and battlefield
+			const p = state.players[pi];
+			for (const c of p.board) if (c !== source && !isDead(c) && c.type !== 'location' && (c.tribe || '').includes(e.tribe)) buffCreature(c, e.attack || 0, e.health || 0);
+			for (const c of p.hand) if (c.type === 'creature' && (c.tribe || '').includes(e.tribe)) { c.attack += e.attack || 0; c.maxHealth += e.health || 0; }
+			p.drawBuffTribe = p.drawBuffTribe || {};
+			p.drawBuffTribe[e.tribe] = { attack: (p.drawBuffTribe[e.tribe]?.attack || 0) + (e.attack || 0), health: (p.drawBuffTribe[e.tribe]?.health || 0) + (e.health || 0) };
 		} else if (e.type === 'buff-deck-tribe') {
 			// Shan'do Wildclaw: give a tribe in your deck +X/+X (applied as they're drawn)
 			const p = state.players[pi];
@@ -6122,6 +6132,7 @@ function execEffects(state, pi, effects, target, source) {
 			};
 			// Spellslinger: eachPlayer gives every player their own random card
 			if (e.eachPlayer) { for (let i = 0; i < state.players.length; i++) if (!state.players[i].eliminated) addTo(i); }
+			else if (e.toEnemy) { for (const o of enemies) addTo(o); } // K'thir Ritualist
 			else addTo(pi);
 		} else if (e.type === 'give-enemy-random') {
 			// Mulch: a random creature lands in an opponent's hand
@@ -6939,6 +6950,7 @@ export function effectiveCost(state, pi, card) {
 	}
 	if (p.spellTaxNext > 0 && isSpellType(card)) c += p.spellTaxNext; // Loatheb
 	if (p.nextComboDiscount > 0 && card.combo) c = Math.max(0, c - p.nextComboDiscount); // Foxy Fraud
+	if ((card.keywords || []).includes('outcast')) { const r = p.board.filter(x => x.outcastCostReduce && !isDead(x)).reduce((s, x) => s + x.outcastCostReduce, 0); if (r) c = Math.max(0, c - r); } // Line Hopper
 	if (p.battlecryTaxNext > 0 && (card.keywords || []).includes('battlecry')) c += p.battlecryTaxNext; // Boompistol Bully
 	if (p.libramDiscount > 0 && /Libram/.test(card.name || '')) c = Math.max(0, c - p.libramDiscount); // Aldor Attendant/Truthseeker
 	return Math.max(0, c);

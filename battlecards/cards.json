@@ -84847,6 +84847,547 @@
           "health": 1
         }
       ]
+    },
+    {
+      "id": "faire_arborist",
+      "name": "Faire Arborist",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "druid",
+      "attack": 2,
+      "health": 2,
+      "rarity": "common",
+      "set": "DARKMOON_FAIRE",
+      "corrupt": "faire_arborist_corrupted",
+      "description": "Choose One - Draw a card; or Summon a 2/2 Treant. Corrupt: Do both.",
+      "choices": [
+        {
+          "text": "Draw a card",
+          "effects": [
+            {
+              "type": "draw",
+              "value": 1
+            }
+          ]
+        },
+        {
+          "text": "Summon a 2/2 Treant",
+          "effects": [
+            {
+              "type": "summon",
+              "count": 1,
+              "summonId": "dmf_treant"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "fairground_fool",
+      "name": "Fairground Fool",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "priest",
+      "attack": 4,
+      "health": 3,
+      "rarity": "common",
+      "set": "DARKMOON_FAIRE",
+      "keywords": [
+        "taunt"
+      ],
+      "corrupt": "fairground_fool_corrupted",
+      "description": "Taunt. Corrupt: Gain +4 Health."
+    },
+    {
+      "id": "felsteel_executioner",
+      "name": "Felsteel Executioner",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "demonhunter",
+      "attack": 4,
+      "health": 3,
+      "rarity": "epic",
+      "set": "DARKMOON_FAIRE",
+      "tribe": "Elemental",
+      "corrupt": "felsteel_executioner_corrupted",
+      "description": "Corrupt: Become a weapon."
+    },
+    {
+      "id": "grand_totem_eysor",
+      "name": "Grand Totem Eys'or",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "shaman",
+      "attack": 0,
+      "health": 4,
+      "rarity": "legendary",
+      "set": "DARKMOON_FAIRE",
+      "tribe": "Totem",
+      "description": "At the end of your turn, give +1/+1 to all other Totems in your hand, deck and battlefield.",
+      "ongoing": {
+        "on": "turn-end",
+        "effects": [
+          {
+            "type": "buff-all-tribe",
+            "tribe": "Totem",
+            "attack": 1,
+            "health": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "gyreworm",
+      "name": "Gyreworm",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "neutral",
+      "attack": 3,
+      "health": 2,
+      "rarity": "common",
+      "set": "DARKMOON_FAIRE",
+      "tribe": "Elemental",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: If you played an Elemental last turn, deal 3 damage.",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 3,
+          "target": "any",
+          "requireElementalLastTurn": true
+        }
+      ]
+    },
+    {
+      "id": "imprisoned_celestial",
+      "name": "Imprisoned Celestial",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "paladin",
+      "attack": 4,
+      "health": 5,
+      "rarity": "rare",
+      "set": "DARKMOON_FAIRE",
+      "tribe": "Beast",
+      "dormant": 2,
+      "description": "Dormant for 2 turns. Spellburst: Give your minions Divine Shield.",
+      "ongoing": {
+        "on": "spell-played",
+        "once": true,
+        "effects": [
+          {
+            "type": "grant",
+            "target": "friendly-creatures",
+            "keyword": "divine_shield"
+          }
+        ]
+      }
+    },
+    {
+      "id": "inconspicuous_rider",
+      "name": "Inconspicuous Rider",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "neutral",
+      "attack": 2,
+      "health": 2,
+      "rarity": "common",
+      "set": "DARKMOON_FAIRE",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Cast a Secret from your deck.",
+      "effects": [
+        {
+          "type": "deploy-secret-from-deck"
+        }
+      ]
+    },
+    {
+      "id": "insatiable_felhound",
+      "name": "Insatiable Felhound",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "demonhunter",
+      "attack": 2,
+      "health": 5,
+      "rarity": "common",
+      "set": "DARKMOON_FAIRE",
+      "tribe": "Demon",
+      "keywords": [
+        "taunt"
+      ],
+      "corrupt": "insatiable_felhound_corrupted",
+      "description": "Taunt. Corrupt: Gain +1/+1 and Lifesteal."
+    },
+    {
+      "id": "ironclad",
+      "name": "Ironclad",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "warrior",
+      "attack": 2,
+      "health": 4,
+      "rarity": "common",
+      "set": "DARKMOON_FAIRE",
+      "tribe": "Mech",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: If your hero has Armor, gain +2/+2.",
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "hasArmor": true
+          },
+          "then": [
+            {
+              "type": "buff-self",
+              "attack": 2,
+              "health": 2
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "kthir_ritualist",
+      "name": "K'thir Ritualist",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "neutral",
+      "attack": 4,
+      "health": 4,
+      "rarity": "rare",
+      "set": "DARKMOON_FAIRE",
+      "keywords": [
+        "taunt",
+        "battlecry"
+      ],
+      "description": "Taunt. Battlecry: Add a random 4-Cost minion to your opponent's hand.",
+      "effects": [
+        {
+          "type": "conjure-random",
+          "cardType": "creature",
+          "cost": 4,
+          "toEnemy": true
+        }
+      ]
+    },
+    {
+      "id": "kiri_chosen_of_elune",
+      "name": "Kiri, Chosen of Elune",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "druid",
+      "attack": 2,
+      "health": 2,
+      "rarity": "legendary",
+      "set": "DARKMOON_FAIRE",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Add a Solar Eclipse and Lunar Eclipse to your hand.",
+      "effects": [
+        {
+          "type": "add-card",
+          "id": "dmf_solar_eclipse",
+          "count": 1
+        },
+        {
+          "type": "add-card",
+          "id": "dmf_lunar_eclipse",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "id": "line_hopper",
+      "name": "Line Hopper",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "demonhunter",
+      "attack": 3,
+      "health": 4,
+      "rarity": "common",
+      "set": "DARKMOON_FAIRE",
+      "outcastCostReduce": 1,
+      "description": "Your Outcast cards cost (1) less."
+    },
+    {
+      "id": "luckysoul_hoarder",
+      "name": "Luckysoul Hoarder",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "neutral",
+      "attack": 3,
+      "health": 4,
+      "rarity": "rare",
+      "set": "DARKMOON_FAIRE",
+      "keywords": [
+        "battlecry"
+      ],
+      "corrupt": "luckysoul_hoarder_corrupted",
+      "description": "Battlecry: Shuffle 2 Soul Fragments into your deck. Corrupt: Draw a card.",
+      "effects": [
+        {
+          "type": "shuffle-soul-fragments",
+          "count": 2
+        }
+      ]
+    },
+    {
+      "id": "magicfin",
+      "name": "Magicfin",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "shaman",
+      "attack": 3,
+      "health": 4,
+      "rarity": "epic",
+      "set": "DARKMOON_FAIRE",
+      "tribe": "Murloc",
+      "description": "After a friendly Murloc dies, add a random Legendary minion to your hand.",
+      "ongoing": {
+        "on": "friendly-creature-died",
+        "if": {
+          "tribe": "Murloc"
+        },
+        "effects": [
+          {
+            "type": "conjure-random",
+            "cardType": "creature",
+            "rarity": "legendary"
+          }
+        ]
+      }
+    },
+    {
+      "id": "manari_mosher",
+      "name": "Man'ari Mosher",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "warlock",
+      "attack": 3,
+      "health": 4,
+      "rarity": "common",
+      "set": "DARKMOON_FAIRE",
+      "tribe": "Demon",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Give a friendly Demon +3 Attack and Lifesteal this turn.",
+      "effects": [
+        {
+          "type": "buff",
+          "target": "friendly-creature",
+          "tribe": "Demon",
+          "attack": 3
+        },
+        {
+          "type": "grant",
+          "keyword": "lifesteal",
+          "target": "friendly-creature",
+          "tribe": "Demon"
+        }
+      ]
+    },
+    {
+      "id": "nazmani_bloodweaver",
+      "name": "Nazmani Bloodweaver",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "priest",
+      "attack": 2,
+      "health": 5,
+      "rarity": "rare",
+      "set": "DARKMOON_FAIRE",
+      "description": "After you cast a spell, reduce the Cost of a random card in your hand by (1).",
+      "ongoing": {
+        "on": "spell-played",
+        "effects": [
+          {
+            "type": "reduce-random-hand-cost",
+            "value": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "faire_arborist_corrupted",
+      "name": "Faire Arborist",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "druid",
+      "attack": 2,
+      "health": 2,
+      "rarity": "common",
+      "set": "DARKMOON_FAIRE",
+      "keywords": [
+        "battlecry"
+      ],
+      "token": true,
+      "collectible": false,
+      "description": "Draw a card and summon a 2/2 Treant.",
+      "effects": [
+        {
+          "type": "draw",
+          "value": 1
+        },
+        {
+          "type": "summon",
+          "count": 1,
+          "summonId": "dmf_treant"
+        }
+      ]
+    },
+    {
+      "id": "fairground_fool_corrupted",
+      "name": "Fairground Fool",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "priest",
+      "attack": 4,
+      "health": 7,
+      "rarity": "common",
+      "set": "DARKMOON_FAIRE",
+      "keywords": [
+        "taunt"
+      ],
+      "token": true,
+      "collectible": false,
+      "description": "Taunt."
+    },
+    {
+      "id": "felsteel_executioner_corrupted",
+      "name": "Felsteel Executioner",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "demonhunter",
+      "attack": 4,
+      "health": 3,
+      "rarity": "epic",
+      "set": "DARKMOON_FAIRE",
+      "tribe": "Elemental",
+      "keywords": [
+        "battlecry"
+      ],
+      "token": true,
+      "collectible": false,
+      "description": "Battlecry: Equip a 4/2 Sword.",
+      "effects": [
+        {
+          "type": "equip",
+          "name": "Felsteel Sword",
+          "attack": 4,
+          "durability": 2
+        }
+      ]
+    },
+    {
+      "id": "insatiable_felhound_corrupted",
+      "name": "Insatiable Felhound",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "demonhunter",
+      "attack": 3,
+      "health": 6,
+      "rarity": "common",
+      "set": "DARKMOON_FAIRE",
+      "tribe": "Demon",
+      "keywords": [
+        "taunt",
+        "lifesteal"
+      ],
+      "token": true,
+      "collectible": false,
+      "description": "Taunt, Lifesteal."
+    },
+    {
+      "id": "luckysoul_hoarder_corrupted",
+      "name": "Luckysoul Hoarder",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "neutral",
+      "attack": 3,
+      "health": 4,
+      "rarity": "rare",
+      "set": "DARKMOON_FAIRE",
+      "keywords": [
+        "battlecry"
+      ],
+      "token": true,
+      "collectible": false,
+      "description": "Battlecry: Shuffle 2 Soul Fragments into your deck. Draw a card.",
+      "effects": [
+        {
+          "type": "shuffle-soul-fragments",
+          "count": 2
+        },
+        {
+          "type": "draw",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "dmf_treant",
+      "name": "Treant",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "druid",
+      "attack": 2,
+      "health": 2,
+      "rarity": "common",
+      "set": "DARKMOON_FAIRE",
+      "token": true,
+      "collectible": false,
+      "description": "A 2/2 Treant."
+    },
+    {
+      "id": "dmf_solar_eclipse",
+      "name": "Solar Eclipse",
+      "type": "sorcery",
+      "cost": 2,
+      "token": true,
+      "collectible": false,
+      "cardClass": "druid",
+      "rarity": "common",
+      "set": "DARKMOON_FAIRE",
+      "description": "Deal 3 damage.",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 3,
+          "target": "any"
+        }
+      ]
+    },
+    {
+      "id": "dmf_lunar_eclipse",
+      "name": "Lunar Eclipse",
+      "type": "sorcery",
+      "cost": 3,
+      "token": true,
+      "collectible": false,
+      "cardClass": "druid",
+      "rarity": "common",
+      "set": "DARKMOON_FAIRE",
+      "description": "Deal 2 damage. Draw a card.",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 2,
+          "target": "any"
+        },
+        {
+          "type": "draw",
+          "value": 1
+        }
+      ]
     }
   ]
 }
