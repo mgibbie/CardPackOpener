@@ -1979,8 +1979,9 @@ function runSecretEffects(state, pi, effects, ctx) {
 					}
 					break;
 				}
-				case 'buff-random-hand-on-death': {
-					// Spirit of the Bat: a friendly creature died -> buff a random creature in your hand
+				case 'buff-random-hand-on-death':
+				case 'buff-random-hand': {
+					// Spirit of the Bat / History Buff: buff a random creature in your hand
 					const pool = state.players[pi].hand.filter(c => c.type === 'creature');
 					if (pool.length) { const c = pool[Math.floor(state.rng() * pool.length)]; c.attack += e.attack || 0; c.maxHealth += e.health || 0; emit(state, { type: 'buff', uid: c.uid, attack: c.attack, hp: hp(c) }); }
 					break;
@@ -3617,7 +3618,7 @@ function execEffects(state, pi, effects, target, source) {
 				emit(state, { type: 'buff', uid: t.uid, attack: t.attack, hp: hp(t) });
 			}
 		} else if (e.type === 'double-health') {
-			const t = chosenCreature();
+			const t = e.target === 'self' ? source : chosenCreature(); // Faceless Lurker: this minion
 			if (t) { t.maxHealth += hp(t); emit(state, { type: 'buff', uid: t.uid, attack: t.attack, hp: hp(t) }); }
 		} else if (e.type === 'double-attack') {
 			const t = chosenCreature();
@@ -3744,7 +3745,7 @@ function execEffects(state, pi, effects, target, source) {
 					if (e.cardType === 'spell' ? !isSpellType(def)
 						: (e.cardType && def.type !== e.cardType)) continue;
 					if (e.maxCost != null && (def.cost || 0) > e.maxCost) continue;
-					if (e.minCost != null && (def.cost || 0) < e.minCost) continue; if (e.cardType === 'secret' && !def.secret) continue; if (e.distinct && drawnIds.has(p.deck[j])) continue; if (e.cost != null && (def.cost || 0) !== e.cost) continue; // Tol'vir Warden: exactly N-Cost + Storm Chaser/Subject 9
+					if (e.minCost != null && (def.cost || 0) < e.minCost) continue; if (e.cardType === 'secret' && !def.secret) continue; if (e.distinct && drawnIds.has(p.deck[j])) continue; if (e.health != null && (def.health || 0) !== e.health) continue; if (e.cost != null && (def.cost || 0) !== e.cost) continue; // Tol'vir Warden/Storm Chaser/Subject 9/Salhet's Pride
 					if (e.requireKeyword && !(def.keywords || []).includes(e.requireKeyword)) continue;
 					idxs.push(j);
 				}
@@ -4077,6 +4078,21 @@ function execEffects(state, pi, effects, target, source) {
 				const bc = chosen.flatMap(sp => JSON.parse(JSON.stringify(sp.effects || [])));
 				const horror = instantiate({ id: 'dal_drustvar_horror', name: 'Drustvar Horror', type: 'creature', cost: 5, token: true, rarity: 'epic', set: 'DALARAN', attack: 5, health: 5, keywords: bc.length ? ['battlecry'] : [], description: '5/5. ' + chosen.map(s => s.name).join(', '), effects: bc }, pi);
 				horror.zone = 'hand'; p.hand.push(horror); emit(state, { type: 'conjure', player: pi, card: horror, color: null });
+			}
+		} else if (e.type === 'heal-adjacent-full') {
+			// Neferset Ritualist: restore the creatures flanking this one to full Health
+			const board = state.players[pi].board;
+			const idx = board.indexOf(source);
+			for (const nb of [board[idx - 1], board[idx + 1]]) if (nb && !isDead(nb) && nb.damage > 0) { nb.damage = 0; emit(state, { type: 'heal', targetType: 'creature', uid: nb.uid, amount: 0, hp: hp(nb) }); }
+		} else if (e.type === 'copy-hand-random-tribe') {
+			// Ramkahen Wildtamer: copy a random creature of a tribe in your hand
+			const p = state.players[pi];
+			const pool = p.hand.filter(c => c.type === 'creature' && (!e.tribe || (c.tribe || '').includes(e.tribe)));
+			if (pool.length && p.hand.length < MAX_HAND) {
+				const src = pool[Math.floor(state.rng() * pool.length)];
+				const def = state.cardsById[src.id] || src;
+				const c = instantiate(def, pi); c.zone = 'hand'; p.hand.push(c);
+				emit(state, { type: 'conjure', player: pi, card: c, color: null });
 			}
 		} else if (e.type === 'grant-hero-elusive') {
 			// Spellward Jeweler: your hero can't be targeted until your next turn
