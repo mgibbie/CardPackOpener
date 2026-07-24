@@ -67711,6 +67711,84 @@
           ]
         }
       ]
+    },
+    {
+      "id": "jade_idol",
+      "name": "Jade Idol",
+      "type": "sorcery",
+      "cost": 1,
+      "cardClass": "druid",
+      "rarity": "rare",
+      "set": "GANGS",
+      "description": "Choose One - Summon a Jade Golem; or Shuffle 3 copies of this card into your deck.",
+      "choices": [
+        {
+          "text": "Summon a Jade Golem",
+          "effects": [
+            {
+              "type": "summon-jade"
+            }
+          ]
+        },
+        {
+          "text": "Shuffle 3 copies",
+          "effects": [
+            {
+              "type": "shuffle-into-deck",
+              "id": "jade_idol",
+              "count": 3
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "jade_shuriken",
+      "name": "Jade Shuriken",
+      "type": "sorcery",
+      "cost": 2,
+      "cardClass": "rogue",
+      "rarity": "common",
+      "set": "GANGS",
+      "description": "Deal 3 damage. Combo: Summon a Jade Golem.",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 3,
+          "target": "any"
+        }
+      ],
+      "combo": [
+        {
+          "type": "damage",
+          "value": 3,
+          "target": "any"
+        },
+        {
+          "type": "summon-jade"
+        }
+      ]
+    },
+    {
+      "id": "jade_claws",
+      "name": "Jade Claws",
+      "type": "weapon",
+      "cost": 2,
+      "cardClass": "shaman",
+      "rarity": "rare",
+      "set": "GANGS",
+      "attack": 2,
+      "durability": 2,
+      "overload": 1,
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Summon a Jade Golem. Overload: (1).",
+      "effects": [
+        {
+          "type": "summon-jade"
+        }
+      ]
     }
   ]
 }
