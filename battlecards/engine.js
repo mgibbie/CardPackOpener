@@ -547,7 +547,7 @@ export function drawCards(state, pi, count) {
 		// opponents may react to your draw (Smothering Tithe: pay {2} or I get a Treasure)
 		if (state.dealt && !state.enemyDrawLock) {
 			state.enemyDrawLock = true;
-			try { for (let s2 = 0; s2 < state.players.length; s2++) if (s2 !== pi && !state.players[s2].eliminated) fireOngoing(state, s2, 'enemy-draws', { drawer: pi }); }
+			try { for (let s2 = 0; s2 < state.players.length; s2++) if (s2 !== pi && !state.players[s2].eliminated) fireOngoing(state, s2, 'enemy-draws', { drawer: pi, card }); }
 			finally { state.enemyDrawLock = false; }
 		}
 	}
@@ -974,6 +974,7 @@ function damageCreature(state, target, amount, source) {
 		target.doomed = false;
 	}
 	emit(state, { type: 'damage', targetType: 'creature', uid: target.uid, amount, hp: hp(target) });
+	if (amount > 0 && target.diesOnDamage && !isDead(target)) target.damage = target.maxHealth; // Jandice Barov's cursed copy
 	if (target.enrage || target.statRule) recomputeAuras(state); // enrage/Lightspawn track damage
 	// whenever-a-minion-takes-damage triggers (fires even if the hit is lethal);
 	// Frenzy variants fire once and only on surviving the hit. Boosts can stack
@@ -2543,6 +2544,24 @@ function runSecretEffects(state, pi, effects, ctx) {
 				// Soulbound Ashtongue: also deal the damage taken to your hero
 				if (ctx.amount) damageHero(state, pi, ctx.amount, pi);
 				break;
+			case 'add-copy-cost': {
+				// Keymaster Alabaster: when the opponent draws, copy that card to your hand at a set Cost
+				const drawn = ctx.card;
+				const p = state.players[pi];
+				if (drawn && state.cardsById[drawn.id] && p.hand.length < MAX_HAND) {
+					const copy = instantiate(state.cardsById[drawn.id], pi);
+					copy.zone = 'hand'; copy.cost = e.value != null ? e.value : (copy.cost || 0);
+					p.hand.push(copy);
+					emit(state, { type: 'conjure', player: pi, card: copy, color: null });
+				}
+				break;
+			}
+			case 'set-victim-stats': {
+				// Turalyon, the Tenured: set the attacked minion's Attack and Health to N
+				const v = ctx.victim;
+				if (v && !isDead(v)) { v.attack = e.value || 3; v.maxHealth = e.value || 3; v.damage = 0; v.tempHealth = 0; emit(state, { type: 'buff', uid: v.uid, attack: v.attack, hp: hp(v) }); }
+				break;
+			}
 			case 'buff-self-by-spell-cost': {
 				// Speaker Gidra (Spellburst): gain Attack and Health equal to the spell's Cost
 				const cost = ctx.played ? (ctx.played.cost || 0) : 0;
@@ -3601,7 +3620,8 @@ function execEffects(state, pi, effects, target, source) {
 			}
 		} else if (e.type === 'grant-spell-damage') {
 			// Tuskarr Fisherman: give a chosen friendly creature Spell Damage +N
-			const t = chosenCreature();
+			// (target 'self' = the source, for Mozaki's growing Spell Damage)
+			const t = e.target === 'self' ? (source && source.zone === 'board' && !isDead(source) ? source : null) : chosenCreature();
 			if (t) {
 				if (!t.static || t.static.type !== 'spell-damage') t.static = { type: 'spell-damage', value: 0 };
 				t.static.value = (t.static.value || 0) + (e.value || 1);
@@ -3971,6 +3991,7 @@ function execEffects(state, pi, effects, target, source) {
 			else if (e.if.controlStealthed) ok = p.board.some(c => !isDead(c) && c.stealthed); // Greyheart Sage
 			else if (e.if.castSpellLastTurn) ok = !!p.castSpellLastTurn; // Marshspawn / Shattered Rumbler
 			else if (e.if.heroHealthChanged) ok = !!p.heroHealthChangedThisTurn; // Brittlebone Destroyer
+			else if (e.if.hasSpellDamage) ok = staticValue(p, 'spell-damage') > 0; // Sorcerous Substitute
 			else if (e.if.hpDamageGame != null) ok = (p.hpDamageGame || 0) >= e.if.hpDamageGame; // Jan'alai, the Dragonhawk
 			else if (e.if.deckEmpty) ok = p.deck.length === 0; // Chef Nomi
 			else if (e.if.holdingOtherClass) ok = p.hand.some(c => c !== source && c.cardClass && c.cardClass !== 'neutral' && c.cardClass !== p.heroClass); // Underbelly Fence
@@ -5218,6 +5239,44 @@ function execEffects(state, pi, effects, target, source) {
 				p.hand = state.players[foe].hand.map(c => { const def = state.cardsById[c.id]; const nc = def ? instantiate(def, pi) : JSON.parse(JSON.stringify(c)); nc.zone = 'hand'; return nc; });
 				p.illuciaSwap = true;
 				emit(state, { type: 'handSwap', player: pi });
+			}
+		} else if (e.type === 'hero-attack') {
+			// give your hero +N Attack this turn (Soulshard Lapidary)
+			state.players[pi].heroTempAttack += e.value || 0;
+			emit(state, { type: 'heroAttack', player: pi, attack: heroAttackValue(state.players[pi]) });
+		} else if (e.type === 'destroy-soul-fragment') {
+			// generic: destroy a Soul Fragment in your deck (heals 2), then run `then`
+			const p = state.players[pi];
+			const fi = p.deck.indexOf('sch_soul_fragment');
+			if (fi >= 0) { p.deck.splice(fi, 1); healHero(state, pi, 2); if (e.then) execEffects(state, pi, e.then, target, source); }
+		} else if (e.type === 'jandice-barov') {
+			// Jandice Barov: summon two random 5-Cost minions; one secretly dies when damaged
+			const before = state.players[pi].board.length;
+			execEffects(state, pi, [{ type: 'summon-random', cost: 5, count: 2 }], null, source);
+			const fresh = state.players[pi].board.slice(before).filter(c => !isDead(c));
+			if (fresh.length) fresh[Math.floor(state.rng() * fresh.length)].diesOnDamage = true;
+		} else if (e.type === 'vectus') {
+			// Vectus: summon two 1/1 Whelps, each gains a Deathrattle from a minion that died this game
+			const drPool = [...new Set(state.players[pi].deathLogIds)].map(id => state.cardsById[id]).filter(d => d && d.deathrattle && d.deathrattle.length);
+			for (let n = 0; n < 2; n++) {
+				const c = summon(state, pi, { id: 'sch_whelp', name: 'Whelp', type: 'creature', cost: 1, token: true, rarity: 'common', tribe: 'Dragon', attack: 1, health: 1, description: 'A 1/1 Whelp.' });
+				if (c && drPool.length) { const d = drPool[Math.floor(state.rng() * drPool.length)]; c.deathrattle = JSON.parse(JSON.stringify(d.deathrattle)); if (!c.keywords.includes('deathrattle')) c.keywords.push('deathrattle'); }
+			}
+		} else if (e.type === 'summon-per-fragment') {
+			// Soulciologist Malicia: for each Soul Fragment in your deck, summon a token
+			const p = state.players[pi];
+			const n = p.deck.filter(id => id === 'sch_soul_fragment').length;
+			for (let i = 0; i < n; i++) summon(state, pi, { id: e.summonId || 'sch_soul', name: e.name || 'Soul', type: 'creature', cost: 3, token: true, rarity: 'common', attack: 3, health: 3, keywords: ['rush'], description: 'Rush.' });
+		} else if (e.type === 'resummon-self-diminished') {
+			// Rattlegore: resummon this minion with -1/-1 (recurses down to 1/1)
+			if (source) {
+				const na = (source.attack || 0) - 1, nh = (source.maxHealth || 0) - 1;
+				if (na > 0 && nh > 0) {
+					const base = state.cardsById[source.id] || {};
+					const def = { id: 'token_' + source.id, name: source.name, type: 'creature', cost: source.cost || 0, token: true, rarity: base.rarity || 'legendary', tribe: source.tribe || null, attack: na, health: nh, keywords: [...(base.keywords || [])].filter(k => k !== 'deathrattle'), description: source.name, deathrattle: [{ type: 'resummon-self-diminished' }] };
+					if (!def.keywords.includes('deathrattle')) def.keywords.push('deathrattle');
+					summon(state, pi, def);
+				}
 			}
 		} else if (e.type === 'buff-deck-tribe') {
 			// Shan'do Wildclaw: give a tribe in your deck +X/+X (applied as they're drawn)

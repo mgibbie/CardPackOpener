@@ -83943,6 +83943,489 @@
       "token": true,
       "collectible": false,
       "description": "A 4/4 token."
+    },
+    {
+      "id": "jandice_barov",
+      "name": "Jandice Barov",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "neutral",
+      "attack": 2,
+      "health": 1,
+      "rarity": "legendary",
+      "set": "SCHOLOMANCE",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Summon two random 5-Cost minions. Secretly pick one that dies when it takes damage.",
+      "effects": [
+        {
+          "type": "jandice-barov"
+        }
+      ]
+    },
+    {
+      "id": "mozaki_master_duelist",
+      "name": "Mozaki, Master Duelist",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "mage",
+      "attack": 3,
+      "health": 8,
+      "rarity": "legendary",
+      "set": "SCHOLOMANCE",
+      "description": "After you cast a spell, gain Spell Damage +1.",
+      "ongoing": {
+        "on": "spell-played",
+        "effects": [
+          {
+            "type": "grant-spell-damage",
+            "target": "self",
+            "value": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "soulshard_lapidary",
+      "name": "Soulshard Lapidary",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "demonhunter",
+      "attack": 5,
+      "health": 5,
+      "rarity": "common",
+      "set": "SCHOLOMANCE",
+      "tribe": "Draenei",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Destroy a Soul Fragment in your deck to give your hero +5 Attack this turn.",
+      "effects": [
+        {
+          "type": "destroy-soul-fragment",
+          "then": [
+            {
+              "type": "hero-attack",
+              "value": 5
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "teachers_pet",
+      "name": "Teacher's Pet",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "hunter",
+      "attack": 4,
+      "health": 5,
+      "rarity": "rare",
+      "set": "SCHOLOMANCE",
+      "tribe": "Beast",
+      "keywords": [
+        "taunt",
+        "deathrattle"
+      ],
+      "description": "Taunt. Deathrattle: Summon a random 3-Cost Beast.",
+      "deathrattle": [
+        {
+          "type": "summon-random",
+          "cost": 3,
+          "tribe": "Beast"
+        }
+      ]
+    },
+    {
+      "id": "totem_goliath",
+      "name": "Totem Goliath",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "shaman",
+      "attack": 5,
+      "health": 5,
+      "rarity": "epic",
+      "set": "SCHOLOMANCE",
+      "tribe": "Totem",
+      "keywords": [
+        "deathrattle"
+      ],
+      "overload": 1,
+      "description": "Deathrattle: Summon all four basic Totems. Overload: (1)",
+      "deathrattle": [
+        {
+          "type": "summon",
+          "count": 1,
+          "summonId": "sch_totem_healing"
+        },
+        {
+          "type": "summon",
+          "count": 1,
+          "summonId": "sch_totem_searing"
+        },
+        {
+          "type": "summon",
+          "count": 1,
+          "summonId": "sch_totem_stoneclaw"
+        },
+        {
+          "type": "summon",
+          "count": 1,
+          "summonId": "sch_totem_wrath"
+        }
+      ]
+    },
+    {
+      "id": "twilight_runner",
+      "name": "Twilight Runner",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "druid",
+      "attack": 5,
+      "health": 4,
+      "rarity": "rare",
+      "set": "SCHOLOMANCE",
+      "tribe": "Beast",
+      "keywords": [
+        "stealth"
+      ],
+      "description": "Stealth. Whenever this attacks, draw 2 cards.",
+      "ongoing": {
+        "on": "self-attacks",
+        "effects": [
+          {
+            "type": "draw",
+            "value": 2
+          }
+        ]
+      }
+    },
+    {
+      "id": "vectus",
+      "name": "Vectus",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "neutral",
+      "attack": 4,
+      "health": 4,
+      "rarity": "legendary",
+      "set": "SCHOLOMANCE",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Summon two 1/1 Whelps. Each gains a Deathrattle from your minions that died this game.",
+      "effects": [
+        {
+          "type": "vectus"
+        }
+      ]
+    },
+    {
+      "id": "void_drinker",
+      "name": "Void Drinker",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "warlock",
+      "attack": 4,
+      "health": 5,
+      "rarity": "epic",
+      "set": "SCHOLOMANCE",
+      "tribe": "Demon",
+      "keywords": [
+        "taunt",
+        "battlecry"
+      ],
+      "description": "Taunt. Battlecry: Destroy a Soul Fragment in your deck to gain +3/+3.",
+      "effects": [
+        {
+          "type": "destroy-soul-fragment",
+          "then": [
+            {
+              "type": "buff-self",
+              "attack": 3,
+              "health": 3
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "smug_senior",
+      "name": "Smug Senior",
+      "type": "creature",
+      "cost": 6,
+      "cardClass": "neutral",
+      "attack": 5,
+      "health": 7,
+      "rarity": "common",
+      "set": "SCHOLOMANCE",
+      "keywords": [
+        "taunt",
+        "deathrattle"
+      ],
+      "description": "Taunt. Deathrattle: Add a 5/7 Ghost with Taunt to your hand.",
+      "deathrattle": [
+        {
+          "type": "add-card",
+          "id": "sch_ghost_taunt",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "id": "sorcerous_substitute",
+      "name": "Sorcerous Substitute",
+      "type": "creature",
+      "cost": 6,
+      "cardClass": "neutral",
+      "attack": 6,
+      "health": 6,
+      "rarity": "common",
+      "set": "SCHOLOMANCE",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: If you have Spell Damage, summon a copy of this.",
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "hasSpellDamage": true
+          },
+          "then": [
+            {
+              "type": "summon-copy-self"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "keymaster_alabaster",
+      "name": "Keymaster Alabaster",
+      "type": "creature",
+      "cost": 7,
+      "cardClass": "neutral",
+      "attack": 6,
+      "health": 8,
+      "rarity": "legendary",
+      "set": "SCHOLOMANCE",
+      "description": "Whenever your opponent draws a card, add a copy to your hand that costs (1).",
+      "ongoing": {
+        "on": "enemy-draws",
+        "effects": [
+          {
+            "type": "add-copy-cost",
+            "value": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "soulciologist_malicia",
+      "name": "Soulciologist Malicia",
+      "type": "creature",
+      "cost": 7,
+      "cardClass": "warlock",
+      "attack": 5,
+      "health": 5,
+      "rarity": "legendary",
+      "set": "SCHOLOMANCE",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: For each Soul Fragment in your deck, summon a 3/3 Soul with Rush.",
+      "effects": [
+        {
+          "type": "summon-per-fragment",
+          "summonId": "sch_soul",
+          "name": "Soul"
+        }
+      ]
+    },
+    {
+      "id": "archwitch_willow",
+      "name": "Archwitch Willow",
+      "type": "creature",
+      "cost": 8,
+      "cardClass": "warlock",
+      "attack": 5,
+      "health": 5,
+      "rarity": "legendary",
+      "set": "SCHOLOMANCE",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Summon a random Demon from your hand and deck.",
+      "effects": [
+        {
+          "type": "summon-from-hand",
+          "tribe": "Demon",
+          "count": 1
+        },
+        {
+          "type": "recruit",
+          "tribe": "Demon",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "id": "turalyon_the_tenured",
+      "name": "Turalyon, the Tenured",
+      "type": "creature",
+      "cost": 8,
+      "cardClass": "paladin",
+      "attack": 3,
+      "health": 12,
+      "rarity": "legendary",
+      "set": "SCHOLOMANCE",
+      "keywords": [
+        "rush"
+      ],
+      "description": "Rush. Whenever this attacks a minion, set the defender's Attack and Health to 3.",
+      "ongoing": {
+        "on": "self-attacks-creature",
+        "effects": [
+          {
+            "type": "set-victim-stats",
+            "value": 3
+          }
+        ]
+      }
+    },
+    {
+      "id": "rattlegore",
+      "name": "Rattlegore",
+      "type": "creature",
+      "cost": 9,
+      "cardClass": "warrior",
+      "attack": 9,
+      "health": 9,
+      "rarity": "legendary",
+      "set": "SCHOLOMANCE",
+      "tribe": "Undead",
+      "keywords": [
+        "deathrattle"
+      ],
+      "description": "Deathrattle: Resummon this with -1/-1.",
+      "deathrattle": [
+        {
+          "type": "resummon-self-diminished"
+        }
+      ]
+    },
+    {
+      "id": "sch_soul",
+      "name": "Soul",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "neutral",
+      "attack": 3,
+      "health": 3,
+      "rarity": "common",
+      "set": "SCHOLOMANCE",
+      "keywords": [
+        "rush"
+      ],
+      "token": true,
+      "collectible": false,
+      "description": "Rush."
+    },
+    {
+      "id": "sch_ghost_taunt",
+      "name": "Ghost",
+      "type": "creature",
+      "cost": 6,
+      "cardClass": "neutral",
+      "attack": 5,
+      "health": 7,
+      "rarity": "common",
+      "set": "SCHOLOMANCE",
+      "keywords": [
+        "taunt"
+      ],
+      "token": true,
+      "collectible": false,
+      "description": "Taunt."
+    },
+    {
+      "id": "sch_totem_healing",
+      "name": "Healing Totem",
+      "type": "creature",
+      "cost": 1,
+      "cardClass": "shaman",
+      "attack": 0,
+      "health": 2,
+      "rarity": "common",
+      "set": "SCHOLOMANCE",
+      "tribe": "Totem",
+      "token": true,
+      "collectible": false,
+      "description": "At the end of your turn, restore 1 Health to your minions.",
+      "ongoing": {
+        "on": "turn-end",
+        "effects": [
+          {
+            "type": "heal",
+            "target": "friendly-creatures",
+            "value": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "sch_totem_searing",
+      "name": "Searing Totem",
+      "type": "creature",
+      "cost": 1,
+      "cardClass": "shaman",
+      "attack": 1,
+      "health": 1,
+      "rarity": "common",
+      "set": "SCHOLOMANCE",
+      "tribe": "Totem",
+      "token": true,
+      "collectible": false,
+      "description": "A 1/1 Totem."
+    },
+    {
+      "id": "sch_totem_stoneclaw",
+      "name": "Stoneclaw Totem",
+      "type": "creature",
+      "cost": 1,
+      "cardClass": "shaman",
+      "attack": 0,
+      "health": 2,
+      "rarity": "common",
+      "set": "SCHOLOMANCE",
+      "tribe": "Totem",
+      "keywords": [
+        "taunt"
+      ],
+      "token": true,
+      "collectible": false,
+      "description": "Taunt."
+    },
+    {
+      "id": "sch_totem_wrath",
+      "name": "Wrath of Air Totem",
+      "type": "creature",
+      "cost": 1,
+      "cardClass": "shaman",
+      "attack": 0,
+      "health": 2,
+      "rarity": "common",
+      "set": "SCHOLOMANCE",
+      "tribe": "Totem",
+      "token": true,
+      "collectible": false,
+      "static": {
+        "type": "spell-damage",
+        "value": 1
+      },
+      "description": "Spell Damage +1."
     }
   ]
 }
