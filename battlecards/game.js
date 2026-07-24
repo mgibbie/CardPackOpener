@@ -216,6 +216,20 @@ function faceMaterialFor(card) {
 	return new THREE.MeshStandardMaterial({ map: tex, roughness: 0.35, metalness: 0.12 });
 }
 
+// everything the rendered face shows, as a compact string — when it changes the
+// cached texture must repaint. This is the guest's only stat-sync path: it ingests
+// authoritative snapshots WITHOUT the event stream that normally drives refreshFace,
+// so without this its board faces freeze at summon-time numbers (the 1/3-vs-6/2 bug).
+function faceSig(card) {
+	const s = card.type === 'creature' ? `${card.attack}/${E.hp(card)}/${card.maxHealth}/${card.shield ? 1 : 0}/${card.stealthed ? 1 : 0}/${card.disguised ? 1 : 0}/${(card.keywords || []).join('.')}`
+		: card.type === 'weapon' ? `${card.attack}/${card.durability}`
+		: card.type === 'location' ? `d${card.durability}`
+		: card.type === 'quest' ? `p${card.progress || 0}`
+		: card.type === 'planeswalker' ? `l${card.loyalty}`
+		: '';
+	return `${formFor(card)}|${card.cost}|${s}`;
+}
+
 function buildBody(card, form, faceMat) {
 	const mesh = form === 'token'
 		? new THREE.Mesh(tokenGeo, faceMat)
@@ -240,16 +254,21 @@ function entityFor(card) {
 		ent.mesh = mesh;
 		ent.faceMat = faceMat;
 		ent.form = form;
+		ent.faceSig = faceSig(card); // face freshly built for the new form
 	}
 	if (!ent) {
 		const faceMat = faceMaterialFor(card);
 		const mesh = buildBody(card, form, faceMat);
 		mesh.position.set(card.controller === HUMAN ? 9 : -9, 0.3, card.controller === HUMAN ? 6.5 : -6.5);
 		scene.add(mesh);
-		ent = { card, mesh, faceMat, form, target: { pos: new THREE.Vector3(), quat: new THREE.Quaternion(), scale: 1 }, ring: makeRing('#57e389') };
+		ent = { card, mesh, faceMat, form, faceSig: faceSig(card), target: { pos: new THREE.Vector3(), quat: new THREE.Quaternion(), scale: 1 }, ring: makeRing('#57e389') };
 		entities.set(card.uid, ent);
 	}
 	ent.card = card;
+	// repaint the cached face when the card's shown stats drift from what's on screen
+	// (covers the guest's snapshot-only sync, and is a harmless safety net elsewhere)
+	const sig = faceSig(card);
+	if (ent.faceSig !== sig) { refreshFace(ent); ent.faceSig = sig; }
 	return ent;
 }
 
@@ -258,6 +277,7 @@ function refreshFace(ent) {
 	const nm = faceMaterialFor(ent.card);
 	ent.faceMat.map = nm.map;
 	ent.faceMat.needsUpdate = true;
+	ent.faceSig = faceSig(ent.card); // keep the sync-check in step with event-driven repaints
 }
 
 // when a real art crop finishes loading, live faces using it repaint
