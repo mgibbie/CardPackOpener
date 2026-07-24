@@ -3383,6 +3383,10 @@ function execEffects(state, pi, effects, target, source) {
 			else if (e.if.noDuplicates) ok = new Set(p.deck).size === p.deck.length; // Reno Jackson
 			else if (e.if.controlOtherTribe) ok = p.board.some(c => c !== source && !isDead(c) && (c.tribe || '').includes(e.if.controlOtherTribe)); // Gorillabot / Fossilized Devilsaur
 			else if (e.if.controlSecret) ok = p.secrets.length > 0; // Avian Watcher
+			else if (e.if.enemyFrozen) ok = opponentsOf(state, pi).some(o => state.players[o].board.some(c => c.frozen && !isDead(c))); // Cryomancer
+			else if (e.if.enemyHasTaunt) ok = opponentsOf(state, pi).some(o => state.players[o].board.some(c => !isDead(c) && has(c, KW.TAUNT))); // Spiked Hogrider
+			else if (e.if.enemyHandEmpty) ok = opponentsOf(state, pi).some(o => state.players[o].hand.length === 0); // Tanaris Hogchopper
+			else if (e.if.weaponAttack != null) ok = !!(p.weapon && p.weapon.attack >= e.if.weaponAttack); // Luckydo Buccaneer
 			else if (e.if.controlStatic) ok = p.board.some(c => !isDead(c) && c.static?.type === e.if.controlStatic); // Master of Ceremonies: a Spell Damage minion
 			else if (e.if.maxHealthSelf != null) ok = p.life <= e.if.maxHealthSelf;
 			else if (e.if.targetFrozen) ok = !!(t && t.frozen);
@@ -3581,6 +3585,11 @@ function execEffects(state, pi, effects, target, source) {
 			}
 			for (let i = p.deck.length - 1; i > 0; i--) { const j = Math.floor(state.rng() * (i + 1)); [p.deck[i], p.deck[j]] = [p.deck[j], p.deck[i]]; }
 			emit(state, { type: 'shuffledIntoDeck', player: pi, count: e.count || 1 });
+		} else if (e.type === 'remove-enemy-stealth') {
+			// Streetwise Investigator: enemy creatures lose Stealth
+			for (const o of enemies) for (const c of state.players[o].board) {
+				if (c.stealthed || c.keywords.includes(KW.STEALTH)) { c.stealthed = false; c.keywords = c.keywords.filter(k => k !== KW.STEALTH); emit(state, { type: 'buff', uid: c.uid, attack: c.attack, hp: hp(c) }); }
+			}
 		} else if (e.type === 'summon-random-died-this-turn') {
 			// Onyx Bishop: resurrect a random friendly creature that died this turn
 			const p = state.players[pi];
@@ -4217,15 +4226,20 @@ function execEffects(state, pi, effects, target, source) {
 				if (p.hand.length === before) break; // nothing left to draw
 			}
 		} else if (e.type === 'buff-hand') {
-			// hand-buffs: pump creatures still waiting in your hand
+			// hand-buffs: pump creatures (or a weapon) still waiting in your hand
 			const p = state.players[pi];
-			let pool = p.hand.filter(c => c.type === 'creature');
-			if (e.requireKeyword) pool = pool.filter(c => c.keywords.includes(e.requireKeyword)); // Forlorn Stalker: Deathrattle minions
+			let pool;
+			if (e.cardType === 'weapon') pool = p.hand.filter(c => c.type === 'weapon'); // Grimestreet Pawnbroker
+			else {
+				pool = p.hand.filter(c => c.type === 'creature');
+				if (e.tribe) pool = pool.filter(c => (c.tribe || '').includes(e.tribe)); // Grimscale Chum / Trogg Beastrager
+				if (e.requireKeyword) pool = pool.filter(c => c.keywords.includes(e.requireKeyword)); // Forlorn Stalker
+			}
 			const targets = e.all || e.requireKeyword ? pool
 				: pool.length ? [pool[Math.floor(state.rng() * pool.length)]] : [];
 			for (const c of targets) {
 				c.attack += e.attack || 0;
-				c.maxHealth += e.health || 0;
+				if (c.type === 'weapon') c.durability += e.health || 0; else c.maxHealth += e.health || 0;
 			}
 		} else if (e.type === 'enrich') {
 			gainTokenCard(state, pi, 'treasure_token');
@@ -4298,6 +4312,7 @@ function execEffects(state, pi, effects, target, source) {
 				if (e.minCost != null && (d.cost || 0) < e.minCost) return false;
 				if (e.hasStatic && d.static?.type !== e.hasStatic) return false;
 				if (e.requireKeyword && !(d.keywords || []).includes(e.requireKeyword)) return false;
+				if (e.cardClasses && !e.cardClasses.includes(d.cardClass || 'neutral')) return false; // Grimestreet Informant / Kabal Courier / Lotus Agents
 				return true;
 			});
 			// `count` queues that many separate Discovers; `to:'board'` summons the pick

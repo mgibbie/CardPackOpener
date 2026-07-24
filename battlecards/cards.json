@@ -10056,23 +10056,6 @@
       ]
     },
     {
-      "id": "small_time_buccaneer",
-      "name": "Small Time Buccaneer",
-      "cardClass": "neutral",
-      "cost": 1,
-      "rarity": "rare",
-      "set": "paper",
-      "description": "This creature has +2 Attack while you have a weapon equipped.",
-      "type": "creature",
-      "attack": 1,
-      "health": 1,
-      "tribe": "Dwarf Pirate",
-      "condAttack": {
-        "attack": 2,
-        "while": "weapon"
-      }
-    },
-    {
       "id": "southsea_deckhand",
       "name": "Southsea Deckhand",
       "cardClass": "neutral",
@@ -67392,6 +67375,342 @@
           }
         ]
       }
+    },
+    {
+      "id": "small_time_buccaneer",
+      "name": "Small-Time Buccaneer",
+      "type": "creature",
+      "cost": 1,
+      "cardClass": "neutral",
+      "attack": 2,
+      "health": 1,
+      "rarity": "rare",
+      "set": "GANGS",
+      "tribe": "Pirate",
+      "description": "Has +2 Attack while you have a weapon equipped.",
+      "condAttack": {
+        "attack": 2,
+        "while": "weapon"
+      }
+    },
+    {
+      "id": "grimscale_chum",
+      "name": "Grimscale Chum",
+      "type": "creature",
+      "cost": 1,
+      "cardClass": "paladin",
+      "attack": 2,
+      "health": 1,
+      "rarity": "common",
+      "set": "GANGS",
+      "tribe": "Murloc",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Give a random Murloc in your hand +1/+1.",
+      "effects": [
+        {
+          "type": "buff-hand",
+          "tribe": "Murloc",
+          "attack": 1,
+          "health": 1
+        }
+      ]
+    },
+    {
+      "id": "trogg_beastrager",
+      "name": "Trogg Beastrager",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "hunter",
+      "attack": 3,
+      "health": 2,
+      "rarity": "rare",
+      "set": "GANGS",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Give a random Beast in your hand +1/+1.",
+      "effects": [
+        {
+          "type": "buff-hand",
+          "tribe": "Beast",
+          "attack": 1,
+          "health": 1
+        }
+      ]
+    },
+    {
+      "id": "grimestreet_pawnbroker",
+      "name": "Grimestreet Pawnbroker",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "warrior",
+      "attack": 3,
+      "health": 3,
+      "rarity": "rare",
+      "set": "GANGS",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Give a random weapon in your hand +1/+1.",
+      "effects": [
+        {
+          "type": "buff-hand",
+          "cardType": "weapon",
+          "attack": 1,
+          "health": 1
+        }
+      ]
+    },
+    {
+      "id": "crystalweaver",
+      "name": "Crystalweaver",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "warlock",
+      "attack": 5,
+      "health": 4,
+      "rarity": "common",
+      "set": "GANGS",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Give your Demons +1/+1.",
+      "effects": [
+        {
+          "type": "buff",
+          "target": "friendly-creatures",
+          "tribe": "Demon",
+          "attack": 1,
+          "health": 1
+        }
+      ]
+    },
+    {
+      "id": "shadow_sensei",
+      "name": "Shadow Sensei",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "rogue",
+      "attack": 4,
+      "health": 4,
+      "rarity": "rare",
+      "set": "GANGS",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Give a Stealthed creature +2/+2.",
+      "effects": [
+        {
+          "type": "buff",
+          "target": "friendly-creature",
+          "requireKeyword": "stealth",
+          "attack": 2,
+          "health": 2
+        }
+      ]
+    },
+    {
+      "id": "cryomancer",
+      "name": "Cryomancer",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "mage",
+      "attack": 5,
+      "health": 5,
+      "rarity": "common",
+      "set": "GANGS",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: If an enemy is Frozen, gain +2/+2.",
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "enemyFrozen": true
+          },
+          "then": [
+            {
+              "type": "buff-self",
+              "attack": 2,
+              "health": 2
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "spiked_hogrider",
+      "name": "Spiked Hogrider",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "neutral",
+      "attack": 5,
+      "health": 5,
+      "rarity": "rare",
+      "set": "GANGS",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: If an enemy creature has Taunt, gain Charge.",
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "enemyHasTaunt": true
+          },
+          "then": [
+            {
+              "type": "grant",
+              "target": "self",
+              "keyword": "charge"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "streetwise_investigator",
+      "name": "Streetwise Investigator",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "neutral",
+      "attack": 4,
+      "health": 6,
+      "rarity": "common",
+      "set": "GANGS",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Enemy creatures lose Stealth.",
+      "effects": [
+        {
+          "type": "remove-enemy-stealth"
+        }
+      ]
+    },
+    {
+      "id": "defias_cleaner",
+      "name": "Defias Cleaner",
+      "type": "creature",
+      "cost": 6,
+      "cardClass": "neutral",
+      "attack": 5,
+      "health": 7,
+      "rarity": "epic",
+      "set": "GANGS",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Silence a creature with Deathrattle.",
+      "effects": [
+        {
+          "type": "silence",
+          "target": "creature",
+          "requireKeyword": "deathrattle"
+        }
+      ]
+    },
+    {
+      "id": "lotus_assassin",
+      "name": "Lotus Assassin",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "rogue",
+      "attack": 5,
+      "health": 5,
+      "rarity": "epic",
+      "set": "GANGS",
+      "keywords": [
+        "stealth"
+      ],
+      "description": "Stealth. Whenever this attacks and kills a creature, gain Stealth.",
+      "ongoing": {
+        "on": "self-kills-creature",
+        "effects": [
+          {
+            "type": "grant-self",
+            "keyword": "stealth"
+          }
+        ]
+      }
+    },
+    {
+      "id": "grimestreet_informant",
+      "name": "Grimestreet Informant",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "neutral",
+      "attack": 2,
+      "health": 2,
+      "rarity": "rare",
+      "set": "GANGS",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Discover a Hunter, Paladin, or Warrior card.",
+      "effects": [
+        {
+          "type": "discover",
+          "cardClasses": [
+            "hunter",
+            "paladin",
+            "warrior"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "kabal_courier",
+      "name": "Kabal Courier",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "neutral",
+      "attack": 2,
+      "health": 2,
+      "rarity": "rare",
+      "set": "GANGS",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Discover a Mage, Priest, or Warlock card.",
+      "effects": [
+        {
+          "type": "discover",
+          "cardClasses": [
+            "mage",
+            "priest",
+            "warlock"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "lotus_agents",
+      "name": "Lotus Agents",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "neutral",
+      "attack": 3,
+      "health": 3,
+      "rarity": "rare",
+      "set": "GANGS",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Discover a Druid, Rogue, or Shaman card.",
+      "effects": [
+        {
+          "type": "discover",
+          "cardClasses": [
+            "druid",
+            "rogue",
+            "shaman"
+          ]
+        }
+      ]
     }
   ]
 }
