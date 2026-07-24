@@ -1093,6 +1093,7 @@ function updateHudSpectate() {
 	$('my-life').textContent = me.life + (me.armor ? `+${me.armor}` : '');
 	$('my-mana').textContent = `${E.availableMana(me)}/${me.mana.max}`;
 	$('my-deck').textContent = me.deck.length;
+	updateManaHud(me);
 	$('my-gear').innerHTML = gearOf(me).join('<br>');
 	$('my-panel').classList.toggle('turn', state.current === HUMAN && !state.over);
 	$('my-panel').classList.toggle('dead', me.eliminated);
@@ -1115,6 +1116,16 @@ function updateHudSpectate() {
 		: `${label(state.current)} is playing…`;
 }
 
+// bottom-left mana readout — always in the clear, unlike the 3D hero panel's
+function updateManaHud(me) {
+	const el = $('mana-hud'); if (!el) return;
+	const cur = E.availableMana(me), max = me.mana.max;
+	$('mana-hud-val').textContent = `${cur}/${max}`;
+	el.style.display = 'flex';
+	el.classList.toggle('empty', cur === 0);
+	el.classList.toggle('tapped', cur > 0 && cur < max);
+}
+
 function updateHud() {
 	if (!state) return;
 	if (spectateMode) { updateHudSpectate(); return; }
@@ -1124,6 +1135,7 @@ function updateHud() {
 	$('my-life').textContent = me.life + (me.armor ? `+${me.armor}` : '');
 	$('my-mana').textContent = `${E.availableMana(me)}/${me.mana.max}`;
 	$('my-deck').textContent = me.deck.length;
+	updateManaHud(me);
 	const myGear = [];
 	if (me.weapon) myGear.push(`⚔ ${me.weapon.name} ${me.weapon.attack}/${me.weapon.durability}`);
 	if (me.secrets.length) myGear.push('❓ ' + me.secrets.map(s => s.name).join(', '));
@@ -2161,6 +2173,7 @@ function nextEvent() {
 			break;
 		case 'gameOver': {
 			const won = ev.winner === HUMAN;
+			const mh = $('mana-hud'); if (mh) mh.style.display = 'none';
 			banner(ev.winner == null ? 'Draw!' : won ? 'VICTORY!' : `DEFEAT — ${nameOf(ev.winner)} wins`, 0);
 			const reward = ev.winner == null ? 50 : won ? 100 : 25;
 			Col.earnGold(reward);

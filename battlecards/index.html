@@ -156,12 +156,27 @@
 		#coin-btn:hover { background: #d4ad38; }
 		#planeswalk-btn { bottom: calc(46% - 112px); background: #2f7d8c; }
 		#planeswalk-btn:hover { background: #3c9fb2; }
+		/* parked in the bottom-right corner so it never floats over the hand */
 		#autopass-btn {
-			position: fixed; right: 26px; bottom: calc(46% - 156px); padding: 8px 16px;
+			position: fixed; right: 16px; bottom: 16px; z-index: 30; padding: 8px 16px;
 			font-size: 13px; font-weight: 700; border: none; border-radius: 8px; cursor: pointer;
 			background: #3a3055; color: #cfc7e6;
 		}
 		#autopass-btn.holding { background: #c76b2e; color: #fff; }
+
+		/* always-visible mana readout, bottom-left corner (the 3D hero panel's
+		   mana text is easy to miss, so mirror it here in the clear) */
+		#mana-hud {
+			position: fixed; left: 16px; bottom: 16px; z-index: 30; display: none;
+			align-items: center; gap: 8px; padding: 7px 14px 7px 12px;
+			background: rgba(20,16,34,0.74); border: 1px solid #3a6ea5; border-radius: 11px;
+			text-shadow: 0 2px 6px #000; pointer-events: none; user-select: none;
+		}
+		#mana-hud .mh-icon { font-size: 19px; line-height: 1; filter: drop-shadow(0 0 4px rgba(90,180,255,0.7)); }
+		#mana-hud .mh-label { font-size: 10.5px; font-weight: 700; letter-spacing: 1.5px; color: #8fb0d4; }
+		#mana-hud .mh-val { font-size: 22px; font-weight: 800; color: #7fd0ff; line-height: 1; }
+		#mana-hud.tapped .mh-val { color: #cbb8e8; }
+		#mana-hud.empty .mh-val { color: #8a7fa8; }
 
 		#log {
 			position: fixed; right: 18px; top: 52px; width: 250px; font-size: 12.5px; color: #b9b0d4;
@@ -199,6 +214,9 @@
 			.panel .life { font-size: 24px; }
 			.panel .sub, .panel .gear { font-size: 11px; }
 			#end-turn, #coin-btn { right: 10px; padding: 14px 18px; font-size: 15px; }
+			#autopass-btn { right: 10px; bottom: 10px; padding: 7px 12px; font-size: 12px; }
+			#mana-hud { left: 10px; bottom: 10px; padding: 6px 11px; }
+			#mana-hud .mh-val { font-size: 19px; }
 			#log { display: none; }
 			#hint { font-size: 12.5px; bottom: 6px; width: 94%; text-align: center; }
 			#banner { font-size: 34px; }
@@ -237,6 +255,7 @@
 	<button id="coin-btn" style="display:none">Coin (+1 mana)</button>
 	<button id="planeswalk-btn" style="display:none">Planeswalk</button>
 	<button id="autopass-btn" title="When on, you auto-pass priority. Turn off to get a 4s window to respond at instant speed.">Auto-pass: ON</button>
+	<div id="mana-hud" class="hud"><span class="mh-icon">🔷</span><span class="mh-label">MANA</span><span class="mh-val" id="mana-hud-val">1/1</span></div>
 	<div id="log" class="hud"></div>
 	<div id="hint" class="hud"></div>
 	<div id="banner"></div>
