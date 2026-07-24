@@ -1970,6 +1970,12 @@ function runSecretEffects(state, pi, effects, ctx) {
 					if (sp) execEffects(state, pi, [{ type: 'tutor', cardType: 'spell', cost: (sp.cost || 0) + (e.value || 1) }], null, ctx.self);
 					break;
 				}
+				case 'set-summoned-health-to-attack': {
+					// High Priest Amet: a creature you summoned gets Health equal to its Attack
+					const m = ctx.minion;
+					if (m && m !== ctx.self) { m.maxHealth = m.attack; m.damage = 0; emit(state, { type: 'buff', uid: m.uid, attack: m.attack, hp: hp(m) }); }
+					break;
+				}
 				case 'buff-summoned-if-tribe': {
 					// Spirit of the Lynx: you summoned a creature of a tribe -> buff it
 					const m = ctx.minion;
@@ -3665,6 +3671,9 @@ function execEffects(state, pi, effects, target, source) {
 					: e.target === 'random-friendly'
 						? (() => { const pool = state.players[pi].board.filter(c => !isDead(c));
 							return pool.length ? [pool[Math.floor(state.rng() * pool.length)]] : []; })()
+					: e.target === 'random-enemy'
+						? (() => { const pool = enemies.flatMap(o => state.players[o].board.filter(c => !isDead(c) && c.type !== 'location'));
+							return pool.length ? [pool[Math.floor(state.rng() * pool.length)]] : []; })() // Sahket Sapper
 						: [chosenCreature()].filter(Boolean);
 			for (const t of list) {
 				const owner = state.players[t.controller];
@@ -3831,6 +3840,7 @@ function execEffects(state, pi, effects, target, source) {
 			else if (e.if.deckEmpty) ok = p.deck.length === 0; // Chef Nomi
 			else if (e.if.holdingOtherClass) ok = p.hand.some(c => c !== source && c.cardClass && c.cardClass !== 'neutral' && c.cardClass !== p.heroClass); // Underbelly Fence
 			else if (e.if.controlLackey) ok = p.board.some(c => !isDead(c) && typeof c.id === 'string' && c.id.startsWith('lackey_')); // Heistbaron Togwaggle
+			else if (e.if.unspentMana) ok = availableMana(p) > 0; // Crystal Merchant
 			execEffects(state, pi, ok ? e.then : (e.else || []), target, source);
 		} else if (e.type === 'damage-then') {
 			// deal damage, then branch on whether the creature survived
@@ -4078,6 +4088,29 @@ function execEffects(state, pi, effects, target, source) {
 				const bc = chosen.flatMap(sp => JSON.parse(JSON.stringify(sp.effects || [])));
 				const horror = instantiate({ id: 'dal_drustvar_horror', name: 'Drustvar Horror', type: 'creature', cost: 5, token: true, rarity: 'epic', set: 'DALARAN', attack: 5, health: 5, keywords: bc.length ? ['battlecry'] : [], description: '5/5. ' + chosen.map(s => s.name).join(', '), effects: bc }, pi);
 				horror.zone = 'hand'; p.hand.push(horror); emit(state, { type: 'conjure', player: pi, card: horror, color: null });
+			}
+		} else if (e.type === 'summon-random-died-game') {
+			// Psychopomp: summon a random friendly creature that died this game, optionally granting a keyword
+			const p = state.players[pi];
+			const pool = [...new Set(p.deathLogIds)].map(id => state.cardsById[id]).filter(d => d && d.type === 'creature');
+			if (pool.length) { const c = summon(state, pi, pool[Math.floor(state.rng() * pool.length)]); if (c && e.grant && !c.keywords.includes(e.grant)) c.keywords.push(e.grant); }
+		} else if (e.type === 'destroy-and-selfdamage-by-health') {
+			// Riftcleaver: destroy a creature; your hero takes damage equal to its Health
+			const t = chosenCreature();
+			if (t) { const h = hp(t); t.damage = t.maxHealth; t.shield = false; emit(state, { type: 'destroy', uid: t.uid }); damageHero(state, pi, h, pi); }
+		} else if (e.type === 'enemy-summon-from-hand-and-damage') {
+			// Wild Bloodstinger: pull a creature from the opponent's hand into play, then hit it
+			const o = enemies[0];
+			if (o != null) {
+				const op = state.players[o];
+				const pool = op.hand.filter(c => c.type === 'creature');
+				if (pool.length && op.board.filter(c => !isDead(c)).length < 7) {
+					const c = pool[Math.floor(state.rng() * pool.length)];
+					op.hand = op.hand.filter(x => x !== c);
+					c.zone = 'board'; c.sick = true; op.board.push(c);
+					emit(state, { type: 'summon', player: o, card: c }); fireOngoing(state, o, 'summoned', { minion: c }); recomputeAuras(state);
+					damageCreature(state, c, e.value || 5, source);
+				}
 			}
 		} else if (e.type === 'heal-adjacent-full') {
 			// Neferset Ritualist: restore the creatures flanking this one to full Health
@@ -5546,7 +5579,8 @@ function execEffects(state, pi, effects, target, source) {
 			};
 			const ownDeckDefs = () => [...new Set(state.players[pi].deck)].map(id => state.cardsById[id]).filter(d => d && d.type === 'creature' && !d.token); // Stitched Tracker
 			const enemyHandDefs = () => { const foe = enemies[0]; return foe == null ? [] : state.players[foe].hand.map(c => state.cardsById[c.id] || c).filter(d => d && !d.token); }; // Madame Lazul
-			const discoverPool = () => (e.fromEnemyDeck ? enemyDeckDefs() : e.fromEnemyHand ? enemyHandDefs() : e.fromOwnDeck ? ownDeckDefs() : Object.values(state.cardsById)).filter(d => {
+			const diedDefs = () => [...new Set(state.players[pi].deathLogIds)].map(id => state.cardsById[id]).filter(d => d && d.type === 'creature'); // Body Wrapper
+			const discoverPool = () => (e.fromEnemyDeck ? enemyDeckDefs() : e.fromEnemyHand ? enemyHandDefs() : e.fromDied ? diedDefs() : e.fromOwnDeck ? ownDeckDefs() : Object.values(state.cardsById)).filter(d => {
 				if (d.type === 'land' || d.token || d.collectible === false || d.companion || d.commander) return false;
 				if (d.colors && d.colors.length) return false;
 				if (e.cardType === 'spell' ? !isSpellType(d) : (e.cardType && d.type !== e.cardType)) return false;

@@ -78438,6 +78438,379 @@
         "taunt"
       ],
       "description": "Taunt."
+    },
+    {
+      "id": "crystal_merchant",
+      "name": "Crystal Merchant",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "druid",
+      "attack": 1,
+      "health": 4,
+      "rarity": "epic",
+      "set": "ULDUM",
+      "description": "If you have any unspent Mana at the end of your turn, draw a card.",
+      "ongoing": {
+        "on": "turn-end",
+        "effects": [
+          {
+            "type": "conditional",
+            "if": {
+              "unspentMana": true
+            },
+            "then": [
+              {
+                "type": "draw",
+                "value": 1
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "arcane_flakmage",
+      "name": "Arcane Flakmage",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "mage",
+      "attack": 3,
+      "health": 2,
+      "rarity": "rare",
+      "set": "ULDUM",
+      "description": "After you play a Secret, deal 2 damage to all enemy minions.",
+      "ongoing": {
+        "on": "secret-played",
+        "effects": [
+          {
+            "type": "damage",
+            "value": 2,
+            "target": "enemy-creatures"
+          }
+        ]
+      }
+    },
+    {
+      "id": "evil_totem",
+      "name": "EVIL Totem",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "shaman",
+      "attack": 0,
+      "health": 2,
+      "rarity": "common",
+      "set": "ULDUM",
+      "tribe": "Totem",
+      "description": "At the end of your turn, add a Lackey to your hand.",
+      "ongoing": {
+        "on": "turn-end",
+        "effects": [
+          {
+            "type": "add-lackey"
+          }
+        ]
+      }
+    },
+    {
+      "id": "evil_recruiter",
+      "name": "EVIL Recruiter",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "warlock",
+      "attack": 3,
+      "health": 3,
+      "rarity": "common",
+      "set": "ULDUM",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Destroy a friendly Lackey to summon a 5/5 Demon.",
+      "effects": [
+        {
+          "type": "destroy",
+          "target": "friendly-creature"
+        },
+        {
+          "type": "summon",
+          "count": 1,
+          "attack": 5,
+          "health": 5,
+          "name": "Demon",
+          "tribe": "Demon"
+        }
+      ]
+    },
+    {
+      "id": "vulpera_scoundrel",
+      "name": "Vulpera Scoundrel",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "neutral",
+      "attack": 2,
+      "health": 3,
+      "rarity": "epic",
+      "set": "ULDUM",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Discover a spell.",
+      "effects": [
+        {
+          "type": "discover",
+          "cardType": "spell"
+        }
+      ]
+    },
+    {
+      "id": "wretched_reclaimer",
+      "name": "Wretched Reclaimer",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "priest",
+      "attack": 3,
+      "health": 3,
+      "rarity": "rare",
+      "set": "ULDUM",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Destroy a friendly minion, then return it to life.",
+      "effects": [
+        {
+          "type": "destroy-and-remember",
+          "target": "friendly-creature",
+          "excludeSelf": true
+        },
+        {
+          "type": "resummon-remembered"
+        }
+      ]
+    },
+    {
+      "id": "bloodsworn_mercenary",
+      "name": "Bloodsworn Mercenary",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "warrior",
+      "attack": 3,
+      "health": 3,
+      "rarity": "epic",
+      "set": "ULDUM",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Choose a damaged friendly minion. Summon a copy of it.",
+      "effects": [
+        {
+          "type": "copy-summon",
+          "target": "friendly-creature",
+          "requireDamaged": true
+        }
+      ]
+    },
+    {
+      "id": "garden_gnome",
+      "name": "Garden Gnome",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "druid",
+      "attack": 2,
+      "health": 3,
+      "rarity": "rare",
+      "set": "ULDUM",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: If you're holding a spell that costs (5) or more, summon two 2/2 Treants.",
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "holdingSpellMinCost": 5
+          },
+          "then": [
+            {
+              "type": "summon",
+              "count": 2,
+              "attack": 2,
+              "health": 2,
+              "name": "Treant"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "diseased_vulture",
+      "name": "Diseased Vulture",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "warlock",
+      "attack": 3,
+      "health": 5,
+      "rarity": "epic",
+      "set": "ULDUM",
+      "tribe": "Beast",
+      "description": "Whenever your hero takes damage on your turn, summon a random 3-Cost minion.",
+      "ongoing": {
+        "on": "own-hero-damaged",
+        "effects": [
+          {
+            "type": "summon-random",
+            "cost": 3
+          }
+        ]
+      }
+    },
+    {
+      "id": "psychopomp",
+      "name": "Psychopomp",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "priest",
+      "attack": 3,
+      "health": 1,
+      "rarity": "epic",
+      "set": "ULDUM",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Summon a random friendly minion that died this game. Give it Reborn.",
+      "effects": [
+        {
+          "type": "summon-random-died-game",
+          "grant": "reborn"
+        }
+      ]
+    },
+    {
+      "id": "sahket_sapper",
+      "name": "Sahket Sapper",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "rogue",
+      "attack": 4,
+      "health": 4,
+      "rarity": "rare",
+      "set": "ULDUM",
+      "keywords": [
+        "deathrattle"
+      ],
+      "description": "Deathrattle: Return a random enemy minion to your opponent's hand.",
+      "deathrattle": [
+        {
+          "type": "bounce",
+          "target": "random-enemy"
+        }
+      ]
+    },
+    {
+      "id": "body_wrapper",
+      "name": "Body Wrapper",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "neutral",
+      "attack": 4,
+      "health": 4,
+      "rarity": "epic",
+      "set": "ULDUM",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Discover a friendly minion that died this game.",
+      "effects": [
+        {
+          "type": "discover",
+          "fromDied": true
+        }
+      ]
+    },
+    {
+      "id": "scarlet_webweaver",
+      "name": "Scarlet Webweaver",
+      "type": "creature",
+      "cost": 6,
+      "cardClass": "hunter",
+      "attack": 5,
+      "health": 5,
+      "rarity": "epic",
+      "set": "ULDUM",
+      "tribe": "Beast",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Reduce the Cost of a random Beast in your hand by (5).",
+      "effects": [
+        {
+          "type": "buff-hand",
+          "tribe": "Beast",
+          "random": true,
+          "cost": 5
+        }
+      ]
+    },
+    {
+      "id": "riftcleaver",
+      "name": "Riftcleaver",
+      "type": "creature",
+      "cost": 6,
+      "cardClass": "warlock",
+      "attack": 7,
+      "health": 5,
+      "rarity": "epic",
+      "set": "ULDUM",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Destroy a minion. Your hero takes damage equal to its Health.",
+      "effects": [
+        {
+          "type": "destroy-and-selfdamage-by-health",
+          "target": "creature"
+        }
+      ]
+    },
+    {
+      "id": "wild_bloodstinger",
+      "name": "Wild Bloodstinger",
+      "type": "creature",
+      "cost": 6,
+      "cardClass": "hunter",
+      "attack": 6,
+      "health": 9,
+      "rarity": "epic",
+      "set": "ULDUM",
+      "tribe": "Beast",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Summon a minion from your opponent's hand. Deal 5 damage to it.",
+      "effects": [
+        {
+          "type": "enemy-summon-from-hand-and-damage",
+          "value": 5
+        }
+      ]
+    },
+    {
+      "id": "high_priest_amet",
+      "name": "High Priest Amet",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "priest",
+      "attack": 2,
+      "health": 7,
+      "rarity": "legendary",
+      "set": "ULDUM",
+      "description": "Whenever you summon a minion, set its Health equal to its Attack.",
+      "ongoing": {
+        "on": "summoned",
+        "effects": [
+          {
+            "type": "set-summoned-health-to-attack"
+          }
+        ]
+      }
     }
   ]
 }
