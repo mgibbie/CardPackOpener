@@ -66700,6 +66700,285 @@
           "health": 1
         }
       ]
+    },
+    {
+      "id": "vilefin_inquisitor",
+      "name": "Vilefin Inquisitor",
+      "type": "creature",
+      "cost": 1,
+      "cardClass": "paladin",
+      "attack": 1,
+      "health": 3,
+      "rarity": "epic",
+      "set": "OG",
+      "tribe": "Murloc",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Your Hero Power becomes 'Summon a 1/1 Murloc.'",
+      "effects": [
+        {
+          "type": "set-hero-power",
+          "powerId": "hp_the_tide"
+        }
+      ]
+    },
+    {
+      "id": "forbidden_ancient",
+      "name": "Forbidden Ancient",
+      "type": "creature",
+      "cost": 1,
+      "cardClass": "druid",
+      "attack": 1,
+      "health": 1,
+      "rarity": "epic",
+      "set": "OG",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Spend all your Mana. Gain +1/+1 for each Mana spent.",
+      "effects": [
+        {
+          "type": "spend-all-mana-buff",
+          "attack": 1,
+          "health": 1
+        }
+      ]
+    },
+    {
+      "id": "eater_of_secrets",
+      "name": "Eater of Secrets",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "neutral",
+      "attack": 2,
+      "health": 4,
+      "rarity": "rare",
+      "set": "OG",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Destroy all enemy Secrets. Gain +1/+1 for each.",
+      "effects": [
+        {
+          "type": "destroy-enemy-secrets",
+          "buffSelf": true
+        }
+      ]
+    },
+    {
+      "id": "shifting_shade",
+      "name": "Shifting Shade",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "priest",
+      "attack": 4,
+      "health": 3,
+      "rarity": "rare",
+      "set": "OG",
+      "keywords": [
+        "deathrattle"
+      ],
+      "description": "Deathrattle: Copy a card from your opponent's deck and add it to your hand.",
+      "deathrattle": [
+        {
+          "type": "copy-from-enemy-deck"
+        }
+      ]
+    },
+    {
+      "id": "servant_of_yogg_saron",
+      "name": "Servant of Yogg-Saron",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "mage",
+      "attack": 5,
+      "health": 4,
+      "rarity": "rare",
+      "set": "OG",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Cast a random spell that costs (5) or more (targets chosen randomly).",
+      "effects": [
+        {
+          "type": "cast-random-spell",
+          "minCost": 5,
+          "count": 1
+        }
+      ]
+    },
+    {
+      "id": "shadowcaster",
+      "name": "Shadowcaster",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "rogue",
+      "attack": 4,
+      "health": 4,
+      "rarity": "epic",
+      "set": "OG",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Choose a friendly creature. Add a 1/1 copy to your hand that costs (1).",
+      "effects": [
+        {
+          "type": "copy-to-hand-cheap",
+          "target": "friendly-creature",
+          "attack": 1,
+          "health": 1,
+          "cost": 1
+        }
+      ]
+    },
+    {
+      "id": "nerubian_prophet",
+      "name": "Nerubian Prophet",
+      "type": "creature",
+      "cost": 6,
+      "cardClass": "neutral",
+      "attack": 4,
+      "health": 4,
+      "rarity": "common",
+      "set": "OG",
+      "description": "At the start of your turn, reduce this card's Cost by (1).",
+      "costReducePerTurn": true
+    },
+    {
+      "id": "giant_sand_worm",
+      "name": "Giant Sand Worm",
+      "type": "creature",
+      "cost": 8,
+      "cardClass": "hunter",
+      "attack": 8,
+      "health": 8,
+      "rarity": "epic",
+      "set": "OG",
+      "tribe": "Beast",
+      "description": "Whenever this attacks and kills a creature, it may attack again.",
+      "attackAgainOnKill": true
+    },
+    {
+      "id": "shifter_zerus",
+      "name": "Shifter Zerus",
+      "type": "creature",
+      "cost": 1,
+      "cardClass": "neutral",
+      "attack": 1,
+      "health": 1,
+      "rarity": "legendary",
+      "set": "OG",
+      "description": "Each turn this is in your hand, transform it into a random creature.",
+      "transformInHand": true
+    },
+    {
+      "id": "nat_the_darkfisher",
+      "name": "Nat, the Darkfisher",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "neutral",
+      "attack": 2,
+      "health": 4,
+      "rarity": "legendary",
+      "set": "OG",
+      "description": "At the start of your opponent's turn, they have a 50% chance to draw an extra card.",
+      "ongoing": {
+        "on": "enemy-turn-start",
+        "effects": [
+          {
+            "type": "maybe-draw-drawer",
+            "chance": 0.5
+          }
+        ]
+      }
+    },
+    {
+      "id": "chogall",
+      "name": "Cho\u2019gall",
+      "type": "creature",
+      "cost": 8,
+      "cardClass": "warlock",
+      "attack": 8,
+      "health": 8,
+      "rarity": "legendary",
+      "set": "OG",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Return all cards you discarded this game to your hand. They cost (0).",
+      "effects": [
+        {
+          "type": "return-discarded",
+          "freeCost": true
+        }
+      ]
+    },
+    {
+      "id": "the_boogeymonster",
+      "name": "The Boogeymonster",
+      "type": "creature",
+      "cost": 8,
+      "cardClass": "neutral",
+      "attack": 6,
+      "health": 7,
+      "rarity": "legendary",
+      "set": "OG",
+      "description": "Whenever this attacks and kills a creature, gain +2/+2.",
+      "ongoing": {
+        "on": "self-kills-creature",
+        "effects": [
+          {
+            "type": "buff-self",
+            "attack": 2,
+            "health": 2
+          }
+        ]
+      }
+    },
+    {
+      "id": "yogg_saron",
+      "name": "Yogg-Saron, Hope\u2019s End",
+      "type": "creature",
+      "cost": 10,
+      "cardClass": "neutral",
+      "attack": 7,
+      "health": 5,
+      "rarity": "legendary",
+      "set": "OG",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Cast a random spell for each spell you've cast this game (targets chosen randomly).",
+      "effects": [
+        {
+          "type": "cast-random-spell",
+          "perSpellsCast": true
+        }
+      ]
+    },
+    {
+      "id": "hp_the_tide",
+      "name": "The Tide",
+      "type": "heropower",
+      "cost": 0,
+      "token": true,
+      "rarity": "common",
+      "set": "OG",
+      "description": "Summon a 1/1 Murloc.",
+      "power": {
+        "cost": 2,
+        "effects": [
+          {
+            "type": "summon",
+            "count": 1,
+            "attack": 1,
+            "health": 1,
+            "name": "Murloc",
+            "tribe": "Murloc"
+          }
+        ]
+      }
     }
   ]
 }
