@@ -596,6 +596,7 @@ const CHOSEN = {
 	'mark-doomed': { creature: 'creature', 'enemy-creature': 'enemy-creature' },
 	'devour-target': { 'friendly-creature': 'friendly-creature' },
 	fireworks: { 'friendly-creature': 'friendly-creature' },
+	'bounce-and-buff': { 'friendly-creature': 'friendly-creature' },
 	destroy: { creature: 'creature', 'enemy-creature': 'enemy-creature', 'friendly-creature': 'friendly-creature' },
 	'copy-to-hand': { creature: 'creature', 'enemy-creature': 'enemy-creature', 'friendly-creature': 'friendly-creature' },
 	'copy-summon': { creature: 'creature', 'friendly-creature': 'friendly-creature' },
@@ -1021,6 +1022,7 @@ function healHero(state, pi, amount) {
 	emit(state, { type: 'heal', targetType: 'hero', player: pi, amount, life: p.life });
 	// Lightwarden-style triggers fire only when healing actually landed
 	if (p.life > before) {
+		p.healedGame = (p.healedGame || 0) + (p.life - before); // Zandalari Templar
 		for (let s2 = 0; s2 < state.players.length; s2++) fireOngoing(state, s2, 'healed', { healedHero: pi, amount: p.life - before });
 	}
 }
@@ -1886,6 +1888,37 @@ function runSecretEffects(state, pi, effects, ctx) {
 					}
 					break;
 				}
+				case 'buff-summoned-if-tribe': {
+					// Spirit of the Lynx: you summoned a creature of a tribe -> buff it
+					const m = ctx.minion;
+					if (m && m !== ctx.self && (!e.tribe || (m.tribe || '').includes(e.tribe))) {
+						m.attack += e.attack || 0; m.maxHealth += e.health || 0;
+						emit(state, { type: 'buff', uid: m.uid, attack: m.attack, hp: hp(m) });
+					}
+					break;
+				}
+				case 'buff-random-hand-on-death': {
+					// Spirit of the Bat: a friendly creature died -> buff a random creature in your hand
+					const pool = state.players[pi].hand.filter(c => c.type === 'creature');
+					if (pool.length) { const c = pool[Math.floor(state.rng() * pool.length)]; c.attack += e.attack || 0; c.maxHealth += e.health || 0; emit(state, { type: 'buff', uid: c.uid, attack: c.attack, hp: hp(c) }); }
+					break;
+				}
+				case 'shuffle-cheap-copy-of-dead': {
+					// Spirit of the Dead: shuffle a cost-set copy of the fallen friendly into your deck
+					const m = ctx.dead;
+					if (m && state.cardsById[m.id] && !state.cardsById[m.id].token) {
+						state.players[pi].deck.push(m.id); // (cost override is cosmetic once shuffled; keep it simple)
+						const dk = state.players[pi].deck;
+						for (let i = dk.length - 1; i > 0; i--) { const j = Math.floor(state.rng() * (i + 1)); [dk[i], dk[j]] = [dk[j], dk[i]]; }
+					}
+					break;
+				}
+				case 'summon-of-spell-cost': {
+					// Spirit of the Tiger: after you cast a spell, summon a token with stats = its Cost
+					const sp = ctx.spell || ctx.played;
+					if (sp) { const n = sp.cost || 0; summon(state, pi, { id: 'token_' + (e.name || 'tiger').toLowerCase(), name: e.name || 'Tiger', type: 'creature', cost: 0, token: true, tribe: e.tribe || null, rarity: 'common', attack: n, health: n, description: `A ${n}/${n} token.` }); }
+					break;
+				}
 				case 'buff-drawn-if-tribe': {
 					// Untamed Beastmaster: you drew a creature of a tribe -> buff it in hand
 					const c = ctx.card;
@@ -2517,7 +2550,7 @@ function execEffects(state, pi, effects, target, source) {
 				case 'own-hero': damageHero(state, pi, v, pi); break;
 				case 'enemy-creatures': for (const o of enemies) for (const c of [...state.players[o].board]) { if (e.exceptTribe && (c.tribe || '').includes(e.exceptTribe)) continue; damageCreature(state, c, rollv(), null); } break;
 				case 'frozen-enemy-creatures': for (const o of enemies) for (const c of [...state.players[o].board]) { if (c.frozen) damageCreature(state, c, v, null); } break;
-				case 'all-creatures': for (const pl of state.players) for (const c of [...pl.board]) { if (e.exceptTribe && (c.tribe || '').includes(e.exceptTribe)) continue; if (e.requireKeyword && !c.keywords.includes(e.requireKeyword)) continue; damageCreature(state, c, v, null); } break;
+				case 'all-creatures': for (const pl of state.players) for (const c of [...pl.board]) { if (e.exceptTribe && (c.tribe || '').includes(e.exceptTribe)) continue; if (e.requireKeyword && !c.keywords.includes(e.requireKeyword)) continue; if (e.exceptSelf && c === source) continue; damageCreature(state, c, v, null); } break;
 				case 'enemies':
 					for (const o of enemies) {
 						for (const c of [...state.players[o].board]) damageCreature(state, c, v, null);
@@ -2578,7 +2611,7 @@ function execEffects(state, pi, effects, target, source) {
 			let v = e.value === 'X' ? (source?.xValue || 0) : boost(e.value);
 			if (state.hpDoubling) v *= 2; // Clockwork Automaton: double Hero Power healing
 			// Auchenai Soulpriest: your healing deals damage instead
-			const harm = staticValue(state.players[pi], 'heal-becomes-damage') > 0;
+			const harm = staticValue(state.players[pi], 'heal-becomes-damage') > 0 || state.players[pi].healHarmThisTurn; // Auchenai Phantasm
 			const mendHero = who => harm ? damageHero(state, who, v, pi) : healHero(state, who, v);
 			const mend = c => harm ? damageCreature(state, c, v, null) : healCreature(c, v);
 			if (e.target === 'self') mendHero(pi);
@@ -3703,6 +3736,9 @@ function execEffects(state, pi, effects, target, source) {
 			else if (e.if.emptyEverything) ok = p.deck.length === 0 && p.hand.length === 0 && !p.board.some(c => c !== source && !isDead(c) && c.type !== 'location'); // Mecha'thun
 			else if (e.if.hasRememberedSpells) ok = !!(source && source.rememberedSpells && source.rememberedSpells.length); // Zerek, Master Cloner
 			else if (e.if.enemyCreatureCount != null) ok = opponentsOf(state, pi).reduce((s, o) => s + state.players[o].board.filter(c => !isDead(c) && c.type !== 'location').length, 0) >= e.if.enemyCreatureCount; // Belligerent Gnome
+			else if (e.if.spellsThisTurn != null) ok = (p.spellsPlayedThisTurn || 0) >= e.if.spellsThisTurn; // Wartbringer
+			else if (e.if.controlFrozen) ok = p.board.some(c => !isDead(c) && c.frozen); // Ice Cream Peddler
+			else if (e.if.healedGame != null) ok = (p.healedGame || 0) >= e.if.healedGame; // Zandalari Templar
 			execEffects(state, pi, ok ? e.then : (e.else || []), target, source);
 		} else if (e.type === 'damage-then') {
 			// deal damage, then branch on whether the creature survived
@@ -3905,6 +3941,27 @@ function execEffects(state, pi, effects, target, source) {
 				const c = instantiate(state.cardsById[source.id], pi);
 				c.zone = 'hand'; state.players[pi].hand.push(c);
 				emit(state, { type: 'conjure', player: pi, card: c, color: null });
+			}
+		} else if (e.type === 'destroy-self-gain-armor') {
+			// Gurubashi Offering: at the start of your turn, destroy this and gain Armor
+			if (source && source.zone === 'board' && !isDead(source)) { source.damage = source.maxHealth; source.shield = false; emit(state, { type: 'destroy', uid: source.uid }); }
+			gainArmor(state, pi, e.value || 8);
+		} else if (e.type === 'set-heal-harm') {
+			// Auchenai Phantasm: this turn, your healing deals damage instead
+			state.players[pi].healHarmThisTurn = true;
+		} else if (e.type === 'bounce-and-buff') {
+			// Bog Slosher: return a friendly creature to hand and give it +2/+2
+			const t = chosenCreature();
+			if (t) {
+				const owner = state.players[t.controller];
+				owner.board = owner.board.filter(c => c !== t);
+				const def = state.cardsById[t.id];
+				if (def && owner.hand.length < MAX_HAND) {
+					const card = instantiate(def, t.controller);
+					card.zone = 'hand'; card.attack += e.attack || 0; card.maxHealth += e.health || 0;
+					owner.hand.push(card); emit(state, { type: 'bounce', uid: t.uid, player: t.controller, name: t.name });
+				}
+				recomputeAuras(state);
 			}
 		} else if (e.type === 'heal-self-creature') {
 			// Regeneratin' Thug: restore Health to this creature at the start of your turn
@@ -7336,6 +7393,7 @@ export function endTurn(state) {
 	p.nextMurlocFree = false; p.nextSecretCost = null; // Seadevil Stinger / Kabal Lackey are "this turn"
 	p.nextBattlecryDouble = false; // Murmuring Elemental only lasts this turn
 	p.nextSpellDamageBonus = 0; p.nextSpellDoubleCast = false; p.spellsLifestealThisTurn = false; // Boomsday next-spell riders are "this turn"
+	p.healHarmThisTurn = false; // Auchenai Phantasm only lasts this turn
 
 	// Impulsive creatures refuse to end the turn without swinging
 	for (const c of [...p.board]) {

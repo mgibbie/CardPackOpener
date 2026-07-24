@@ -75184,6 +75184,439 @@
           "health": 1
         }
       ]
+    },
+    {
+      "id": "spirit_of_the_bat",
+      "name": "Spirit of the Bat",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "warlock",
+      "attack": 0,
+      "health": 3,
+      "rarity": "rare",
+      "set": "TROLL",
+      "keywords": [
+        "stealth",
+        "battlecry"
+      ],
+      "description": "Stealth for 1 turn. After a friendly creature dies, give a creature in your hand +1/+1.",
+      "effects": [
+        {
+          "type": "temp-stealth-self"
+        }
+      ],
+      "ongoing": {
+        "on": "friendly-creature-died",
+        "effects": [
+          {
+            "type": "buff-random-hand-on-death",
+            "attack": 1,
+            "health": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "spirit_of_the_lynx",
+      "name": "Spirit of the Lynx",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "hunter",
+      "attack": 0,
+      "health": 3,
+      "rarity": "rare",
+      "set": "TROLL",
+      "keywords": [
+        "stealth",
+        "battlecry"
+      ],
+      "description": "Stealth for 1 turn. Whenever you summon a Beast, give it +1/+1.",
+      "effects": [
+        {
+          "type": "temp-stealth-self"
+        }
+      ],
+      "ongoing": {
+        "on": "summoned",
+        "effects": [
+          {
+            "type": "buff-summoned-if-tribe",
+            "tribe": "Beast",
+            "attack": 1,
+            "health": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "spirit_of_the_tiger",
+      "name": "Spirit of the Tiger",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "paladin",
+      "attack": 0,
+      "health": 3,
+      "rarity": "rare",
+      "set": "TROLL",
+      "keywords": [
+        "stealth",
+        "battlecry"
+      ],
+      "description": "Stealth for 1 turn. After you cast a spell, summon a Tiger with stats equal to its Cost.",
+      "effects": [
+        {
+          "type": "temp-stealth-self"
+        }
+      ],
+      "ongoing": {
+        "on": "spell-played",
+        "effects": [
+          {
+            "type": "summon-of-spell-cost",
+            "name": "Tiger",
+            "tribe": "Beast"
+          }
+        ]
+      }
+    },
+    {
+      "id": "spirit_of_the_dead",
+      "name": "Spirit of the Dead",
+      "type": "creature",
+      "cost": 1,
+      "cardClass": "priest",
+      "attack": 0,
+      "health": 3,
+      "rarity": "rare",
+      "set": "TROLL",
+      "keywords": [
+        "stealth",
+        "battlecry"
+      ],
+      "description": "Stealth for 1 turn. After a friendly creature dies, shuffle a 1-Cost copy of it into your deck.",
+      "effects": [
+        {
+          "type": "temp-stealth-self"
+        }
+      ],
+      "ongoing": {
+        "on": "friendly-creature-died",
+        "effects": [
+          {
+            "type": "shuffle-cheap-copy-of-dead"
+          }
+        ]
+      }
+    },
+    {
+      "id": "bloodsail_howler",
+      "name": "Bloodsail Howler",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "rogue",
+      "attack": 1,
+      "health": 1,
+      "rarity": "rare",
+      "set": "TROLL",
+      "tribe": "Pirate",
+      "keywords": [
+        "rush",
+        "battlecry"
+      ],
+      "description": "Rush. Battlecry: Gain +1/+1 for each other Pirate you control.",
+      "effects": [
+        {
+          "type": "buff-self",
+          "per": "friendly-tribe",
+          "tribe": "Pirate",
+          "attack": 1,
+          "health": 1
+        }
+      ]
+    },
+    {
+      "id": "gurubashi_offering",
+      "name": "Gurubashi Offering",
+      "type": "creature",
+      "cost": 1,
+      "cardClass": "neutral",
+      "attack": 0,
+      "health": 2,
+      "rarity": "epic",
+      "set": "TROLL",
+      "description": "At the start of your turn, destroy this and gain 8 Armor.",
+      "ongoing": {
+        "on": "turn-start",
+        "effects": [
+          {
+            "type": "destroy-self-gain-armor",
+            "value": 8
+          }
+        ]
+      }
+    },
+    {
+      "id": "wartbringer",
+      "name": "Wartbringer",
+      "type": "creature",
+      "cost": 1,
+      "cardClass": "shaman",
+      "attack": 2,
+      "health": 1,
+      "rarity": "common",
+      "set": "TROLL",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: If you played 2 spells this turn, deal 2 damage.",
+      "effects": [
+        {
+          "type": "conditional",
+          "target": "any",
+          "if": {
+            "spellsThisTurn": 2
+          },
+          "then": [
+            {
+              "type": "damage",
+              "value": 2,
+              "target": "any"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "waterboy",
+      "name": "Waterboy",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "neutral",
+      "attack": 2,
+      "health": 1,
+      "rarity": "rare",
+      "set": "TROLL",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Your next Hero Power this turn costs (0).",
+      "effects": [
+        {
+          "type": "hero-power-discount",
+          "value": 99
+        }
+      ]
+    },
+    {
+      "id": "auchenai_phantasm",
+      "name": "Auchenai Phantasm",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "priest",
+      "attack": 3,
+      "health": 2,
+      "rarity": "epic",
+      "set": "TROLL",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: This turn, your healing effects deal damage instead.",
+      "effects": [
+        {
+          "type": "set-heal-harm"
+        }
+      ]
+    },
+    {
+      "id": "soup_vendor",
+      "name": "Soup Vendor",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "neutral",
+      "attack": 1,
+      "health": 4,
+      "rarity": "rare",
+      "set": "TROLL",
+      "description": "Whenever you restore 3 or more Health to your hero, draw a card.",
+      "ongoing": {
+        "on": "healed",
+        "effects": [
+          {
+            "type": "draw-on-big-heal",
+            "min": 3,
+            "value": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "bog_slosher",
+      "name": "Bog Slosher",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "shaman",
+      "attack": 3,
+      "health": 3,
+      "rarity": "rare",
+      "set": "TROLL",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Return a friendly creature to your hand and give it +2/+2.",
+      "effects": [
+        {
+          "type": "bounce-and-buff",
+          "target": "friendly-creature",
+          "attack": 2,
+          "health": 2
+        }
+      ]
+    },
+    {
+      "id": "reckless_diretroll",
+      "name": "Reckless Diretroll",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "warlock",
+      "attack": 2,
+      "health": 6,
+      "rarity": "common",
+      "set": "TROLL",
+      "keywords": [
+        "taunt",
+        "battlecry"
+      ],
+      "description": "Taunt. Battlecry: Discard your lowest Cost card.",
+      "effects": [
+        {
+          "type": "discard-lowest",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "id": "ice_cream_peddler",
+      "name": "Ice Cream Peddler",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "neutral",
+      "attack": 3,
+      "health": 5,
+      "rarity": "epic",
+      "set": "TROLL",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: If you control a Frozen creature, gain 8 Armor.",
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "controlFrozen": true
+          },
+          "then": [
+            {
+              "type": "armor",
+              "value": 8
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "arcanosaur",
+      "name": "Arcanosaur",
+      "type": "creature",
+      "cost": 6,
+      "cardClass": "mage",
+      "attack": 3,
+      "health": 3,
+      "rarity": "common",
+      "set": "TROLL",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: If you played an Elemental last turn, deal 3 damage to all other creatures.",
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "elementalLastTurn": true
+          },
+          "then": [
+            {
+              "type": "damage",
+              "value": 3,
+              "target": "all-creatures",
+              "exceptSelf": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "zandalari_templar",
+      "name": "Zandalari Templar",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "paladin",
+      "attack": 4,
+      "health": 4,
+      "rarity": "rare",
+      "set": "TROLL",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: If you've restored 10 Health this game, gain +4/+4 and Taunt.",
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "healedGame": 10
+          },
+          "then": [
+            {
+              "type": "buff-self",
+              "attack": 4,
+              "health": 4
+            },
+            {
+              "type": "grant",
+              "target": "self",
+              "keyword": "taunt"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "bloodscalp_strategist",
+      "name": "Bloodscalp Strategist",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "hunter",
+      "attack": 2,
+      "health": 4,
+      "rarity": "rare",
+      "set": "TROLL",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: If you have a weapon equipped, Discover a spell.",
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "weaponEquipped": true
+          },
+          "then": [
+            {
+              "type": "discover",
+              "cardType": "spell"
+            }
+          ]
+        }
+      ]
     }
   ]
 }
