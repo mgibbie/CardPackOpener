@@ -71593,6 +71593,353 @@
       "rarity": "common",
       "set": "LOOTAPALOOZA",
       "description": "A 1/1 Silver Hand Recruit."
+    },
+    {
+      "id": "murmuring_elemental",
+      "name": "Murmuring Elemental",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "shaman",
+      "attack": 1,
+      "health": 1,
+      "rarity": "rare",
+      "set": "LOOTAPALOOZA",
+      "tribe": "Elemental",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Your next Battlecry this turn triggers twice.",
+      "effects": [
+        {
+          "type": "set-next-battlecry-double"
+        }
+      ]
+    },
+    {
+      "id": "dragonslayer",
+      "name": "Dragonslayer",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "neutral",
+      "attack": 4,
+      "health": 3,
+      "rarity": "common",
+      "set": "LOOTAPALOOZA",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Deal 6 damage to a Dragon.",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 6,
+          "target": "creature",
+          "tribe": "Dragon"
+        }
+      ]
+    },
+    {
+      "id": "rummaging_kobold",
+      "name": "Rummaging Kobold",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "neutral",
+      "attack": 1,
+      "health": 3,
+      "rarity": "epic",
+      "set": "LOOTAPALOOZA",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Return one of your destroyed weapons to your hand.",
+      "effects": [
+        {
+          "type": "return-destroyed-weapon"
+        }
+      ]
+    },
+    {
+      "id": "sonya_shadowdancer",
+      "name": "Sonya Shadowdancer",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "rogue",
+      "attack": 2,
+      "health": 2,
+      "rarity": "legendary",
+      "set": "LOOTAPALOOZA",
+      "description": "After a friendly creature dies, add a 1/1 copy of it to your hand. It costs (1).",
+      "ongoing": {
+        "on": "friendly-creature-died",
+        "effects": [
+          {
+            "type": "add-copy-of-dead",
+            "attack": 1,
+            "health": 1,
+            "cost": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "zola_the_gorgon",
+      "name": "Zola the Gorgon",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "neutral",
+      "attack": 2,
+      "health": 2,
+      "rarity": "legendary",
+      "set": "LOOTAPALOOZA",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Choose a friendly creature. Add a Golden copy of it to your hand.",
+      "effects": [
+        {
+          "type": "copy-to-hand",
+          "target": "friendly-creature"
+        }
+      ]
+    },
+    {
+      "id": "ebon_dragonsmith",
+      "name": "Ebon Dragonsmith",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "neutral",
+      "attack": 3,
+      "health": 4,
+      "rarity": "rare",
+      "set": "LOOTAPALOOZA",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Reduce the Cost of a random weapon in your hand by (2).",
+      "effects": [
+        {
+          "type": "buff-hand",
+          "cardType": "weapon",
+          "random": true,
+          "cost": 2
+        }
+      ]
+    },
+    {
+      "id": "hoarding_dragon",
+      "name": "Hoarding Dragon",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "neutral",
+      "attack": 5,
+      "health": 6,
+      "rarity": "common",
+      "set": "LOOTAPALOOZA",
+      "tribe": "Dragon",
+      "keywords": [
+        "deathrattle"
+      ],
+      "description": "Deathrattle: Give your opponent two Coins.",
+      "deathrattle": [
+        {
+          "type": "give-enemy-card",
+          "id": "coin",
+          "count": 2
+        }
+      ]
+    },
+    {
+      "id": "carnivorous_cube",
+      "name": "Carnivorous Cube",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "neutral",
+      "attack": 4,
+      "health": 6,
+      "rarity": "epic",
+      "set": "LOOTAPALOOZA",
+      "keywords": [
+        "battlecry",
+        "deathrattle"
+      ],
+      "description": "Battlecry: Destroy a friendly creature. Deathrattle: Summon 2 copies of it.",
+      "effects": [
+        {
+          "type": "destroy-and-remember",
+          "target": "friendly-creature",
+          "excludeSelf": true
+        }
+      ],
+      "deathrattle": [
+        {
+          "type": "resummon-remembered",
+          "count": 2
+        }
+      ]
+    },
+    {
+      "id": "ixlid_fungal_lord",
+      "name": "Ixlid, Fungal Lord",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "druid",
+      "attack": 2,
+      "health": 4,
+      "rarity": "legendary",
+      "set": "LOOTAPALOOZA",
+      "description": "After you play a creature, summon a copy of it.",
+      "ongoing": {
+        "on": "creature-played",
+        "effects": [
+          {
+            "type": "summon-copy-of-played"
+          }
+        ]
+      }
+    },
+    {
+      "id": "seeping_oozeling",
+      "name": "Seeping Oozeling",
+      "type": "creature",
+      "cost": 6,
+      "cardClass": "hunter",
+      "attack": 5,
+      "health": 4,
+      "rarity": "rare",
+      "set": "LOOTAPALOOZA",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Gain the Deathrattle of a random creature in your deck.",
+      "effects": [
+        {
+          "type": "gain-deathrattle-from-deck"
+        }
+      ]
+    },
+    {
+      "id": "grumble_worldshaker",
+      "name": "Grumble, Worldshaker",
+      "type": "creature",
+      "cost": 6,
+      "cardClass": "shaman",
+      "attack": 7,
+      "health": 7,
+      "rarity": "legendary",
+      "set": "LOOTAPALOOZA",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Return your other creatures to your hand. They cost (1).",
+      "effects": [
+        {
+          "type": "bounce",
+          "target": "friendly-others",
+          "setCost": 1
+        }
+      ]
+    },
+    {
+      "id": "grizzled_guardian",
+      "name": "Grizzled Guardian",
+      "type": "creature",
+      "cost": 8,
+      "cardClass": "druid",
+      "attack": 3,
+      "health": 5,
+      "rarity": "rare",
+      "set": "LOOTAPALOOZA",
+      "keywords": [
+        "taunt",
+        "deathrattle"
+      ],
+      "description": "Taunt. Deathrattle: Recruit 2 creatures that cost (4) or less.",
+      "deathrattle": [
+        {
+          "type": "recruit",
+          "maxCost": 4,
+          "count": 2
+        }
+      ]
+    },
+    {
+      "id": "kathrena_winterwisp",
+      "name": "Kathrena Winterwisp",
+      "type": "creature",
+      "cost": 8,
+      "cardClass": "hunter",
+      "attack": 6,
+      "health": 6,
+      "rarity": "legendary",
+      "set": "LOOTAPALOOZA",
+      "tribe": "Beast",
+      "keywords": [
+        "battlecry",
+        "deathrattle"
+      ],
+      "description": "Battlecry and Deathrattle: Recruit a Beast.",
+      "effects": [
+        {
+          "type": "recruit",
+          "tribe": "Beast"
+        }
+      ],
+      "deathrattle": [
+        {
+          "type": "recruit",
+          "tribe": "Beast"
+        }
+      ]
+    },
+    {
+      "id": "geosculptor_yip",
+      "name": "Geosculptor Yip",
+      "type": "creature",
+      "cost": 8,
+      "cardClass": "warrior",
+      "attack": 4,
+      "health": 8,
+      "rarity": "legendary",
+      "set": "LOOTAPALOOZA",
+      "description": "At the end of your turn, summon a random creature with Cost equal to your Armor (up to 10).",
+      "ongoing": {
+        "on": "turn-end",
+        "effects": [
+          {
+            "type": "summon-random-armor-cost",
+            "max": 10
+          }
+        ]
+      }
+    },
+    {
+      "id": "master_oakheart",
+      "name": "Master Oakheart",
+      "type": "creature",
+      "cost": 9,
+      "cardClass": "neutral",
+      "attack": 5,
+      "health": 5,
+      "rarity": "legendary",
+      "set": "LOOTAPALOOZA",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Recruit a 1, 2, and 3-Attack creature.",
+      "effects": [
+        {
+          "type": "recruit",
+          "attack": 1
+        },
+        {
+          "type": "recruit",
+          "attack": 2
+        },
+        {
+          "type": "recruit",
+          "attack": 3
+        }
+      ]
     }
   ]
 }

@@ -359,6 +359,7 @@ export function createGame(cardsById, rng = Math.random, playerDeckIds = null, p
 		heroPowerFreeGame: false, // Raza the Chained: your Hero Power costs (0) this game
 		nextMurlocFree: false,    // Seadevil Stinger: the next Murloc this turn is free
 		nextSecretCost: null,     // Kabal Lackey: the next Secret this turn costs this much
+		nextBattlecryDouble: false, // Murmuring Elemental: your next Battlecry this turn fires twice
 		elementalThisTurn: false, // played an Elemental this turn
 		elementalLastTurn: false, // played an Elemental on your previous turn (Un'Goro)
 		elementalsPlayedGame: 0,  // Ozruk: total Elementals played this game
@@ -565,7 +566,7 @@ const CHOSEN = {
 	'damage-per-cards-played': { creature: 'creature', 'enemy-creature': 'enemy-creature' },
 	'transform-into-token': { 'friendly-creature': 'friendly-creature', creature: 'creature' },
 	destroy: { creature: 'creature', 'enemy-creature': 'enemy-creature', 'friendly-creature': 'friendly-creature' },
-	'copy-to-hand': { creature: 'creature', 'enemy-creature': 'enemy-creature' },
+	'copy-to-hand': { creature: 'creature', 'enemy-creature': 'enemy-creature', 'friendly-creature': 'friendly-creature' },
 	'copy-summon': { creature: 'creature', 'friendly-creature': 'friendly-creature' },
 	'summon-with-stats': { 'friendly-creature': 'friendly-creature' },
 	exile: { creature: 'creature', 'enemy-creature': 'enemy-creature' },
@@ -592,7 +593,7 @@ const CHOSEN = {
 	'swap-stats-with': { creature: 'creature', 'friendly-creature': 'friendly-creature' },
 	'copy-stats': { creature: 'creature', 'friendly-creature': 'friendly-creature' },
 	'copy-to-hand-cheap': { creature: 'creature', 'friendly-creature': 'friendly-creature' },
-	'destroy-and-remember': { creature: 'creature', 'enemy-creature': 'enemy-creature' },
+	'destroy-and-remember': { creature: 'creature', 'enemy-creature': 'enemy-creature', 'friendly-creature': 'friendly-creature' },
 	'copy-to-deck': { 'friendly-creature': 'friendly-creature', creature: 'creature' },
 	'summon-copies-from-deck': { 'friendly-creature': 'friendly-creature', creature: 'creature' },
 	'blade-of-cthun': { creature: 'creature', 'enemy-creature': 'enemy-creature' },
@@ -1823,7 +1824,25 @@ function runSecretEffects(state, pi, effects, ctx) {
 			}
 			case 'prevent': ctx.prevented = true; break;
 			case 'armor': gainArmor(state, pi, e.value); break;
-			case 'add-frozen-copy': {
+			case 'summon-copy-of-played': {
+					// Ixlid, Fungal Lord: summon a copy of the creature you just played
+					const m = ctx.minion;
+					if (m && m !== ctx.self) { const def = state.cardsById[m.id]; if (def) summon(state, pi, def); }
+					break;
+				}
+				case 'add-copy-of-dead': {
+					// Sonya Shadowdancer: add a 1/1 copy of the fallen friendly to your hand
+					const m = ctx.dead;
+					const pp = state.players[pi];
+					if (m && pp.hand.length < MAX_HAND) {
+						const def = state.cardsById[m.id] || { id: m.id, name: m.name, type: 'creature', rarity: m.rarity, description: m.description, attack: m.attack, health: m.maxHealth, keywords: [...(m.keywords || [])], tribe: m.tribe };
+						const card = instantiate(def, pi);
+						card.zone = 'hand'; card.attack = e.attack ?? 1; card.maxHealth = e.health ?? 1; card.cost = e.cost ?? 1;
+						pp.hand.push(card); emit(state, { type: 'conjure', player: pi, card, color: null });
+					}
+					break;
+				}
+				case 'add-frozen-copy': {
 					// Moorabi: whenever ANOTHER creature is Frozen, add a copy of it to your hand
 					const fz = ctx.frozen;
 					if (fz && fz !== ctx.self) {
@@ -2217,9 +2236,13 @@ function runBattlecry(state, pi, card, target, choice) {
 	const p = state.players[pi];
 	// data-driven battlecries (imported sets); legacy ids stay hand-scripted below
 	if ((card.effects || card.choices || card.combo || (card._kicked && card.kicker)) && !LEGACY_SCRIPTED.has(card.id)) {
+		// Murmuring Elemental: this card's Battlecry fires twice (consumed here, but
+		// never by the card that armed it — its own effect sets the flag AFTER this read)
+		const flagDouble = p.nextBattlecryDouble;
+		if (flagDouble) p.nextBattlecryDouble = false;
 		execEffects(state, pi, liveEffectsOf(state, pi, card, choice), target, card);
 		// Battle Totem (dungeon treasure / Jin'zo passive) or a live Brann
-		if (p.battlecriesTwice
+		if (flagDouble || p.battlecriesTwice
 			|| p.board.some(c => c.battlecryDouble && !isDead(c) && c !== card)) {
 			execEffects(state, pi, liveEffectsOf(state, pi, card, choice), target, card);
 		}
@@ -3384,6 +3407,8 @@ function execEffects(state, pi, effects, target, source) {
 				? state.players.flatMap(pl => pl.board.filter(c => !isDead(c)))
 				: e.target === 'enemy-creatures'
 					? enemies.flatMap(o => state.players[o].board.filter(c => !isDead(c)))
+					: e.target === 'friendly-others'
+						? state.players[pi].board.filter(c => !isDead(c) && c !== source && c.type !== 'location') // Grumble, Worldshaker
 					: e.target === 'random-friendly'
 						? (() => { const pool = state.players[pi].board.filter(c => !isDead(c));
 							return pool.length ? [pool[Math.floor(state.rng() * pool.length)]] : []; })()
@@ -3395,7 +3420,7 @@ function execEffects(state, pi, effects, target, source) {
 				if (def && owner.hand.length < MAX_HAND) {
 					const card = instantiate(def, t.controller);
 					card.zone = 'hand';
-					card.cost = Math.max(0, (def.cost || 0) + (e.costMod || 0));
+					card.cost = e.setCost != null ? e.setCost : Math.max(0, (def.cost || 0) + (e.costMod || 0));
 					owner.hand.push(card);
 				}
 				emit(state, { type: 'bounce', uid: t.uid, player: t.controller, name: t.name });
@@ -3732,6 +3757,43 @@ function execEffects(state, pi, effects, target, source) {
 				c.zone = 'hand'; state.players[pi].hand.push(c);
 				emit(state, { type: 'conjure', player: pi, card: c, color: null });
 			}
+		} else if (e.type === 'set-next-battlecry-double') {
+			// Murmuring Elemental: arm the next Battlecry this turn to fire twice
+			state.players[pi].nextBattlecryDouble = true;
+		} else if (e.type === 'gain-deathrattle-from-deck') {
+			// Seeping Oozeling: copy the Deathrattle of a random creature in your deck
+			const p = state.players[pi];
+			const pool = [...new Set(p.deck)].map(id => state.cardsById[id]).filter(d => d && d.type === 'creature' && d.deathrattle && d.deathrattle.length);
+			if (pool.length && source) {
+				const pick = pool[Math.floor(state.rng() * pool.length)];
+				source.deathrattle = [...(source.deathrattle || []), ...JSON.parse(JSON.stringify(pick.deathrattle))];
+				if (!source.keywords.includes('deathrattle')) source.keywords.push('deathrattle');
+			}
+		} else if (e.type === 'return-destroyed-weapon') {
+			// Rummaging Kobold: return a destroyed weapon from your graveyard to your hand
+			const p = state.players[pi];
+			const weps = p.graveyard.filter(c => c.type === 'weapon');
+			if (weps.length && p.hand.length < MAX_HAND) {
+				const w = weps[Math.floor(state.rng() * weps.length)];
+				const def = state.cardsById[w.id] || w;
+				const card = instantiate(def, pi); card.zone = 'hand'; p.hand.push(card);
+				const gi = p.graveyard.indexOf(w); if (gi >= 0) p.graveyard.splice(gi, 1);
+				emit(state, { type: 'conjure', player: pi, card, color: null });
+			}
+		} else if (e.type === 'give-enemy-card') {
+			// Hoarding Dragon: add copies of a card to each opponent's hand
+			const def = state.cardsById[e.id];
+			if (def) for (const o of enemies) {
+				for (let i = 0; i < (e.count || 1); i++) {
+					if (state.players[o].hand.length >= MAX_HAND) break;
+					const card = instantiate(def, o); card.zone = 'hand'; state.players[o].hand.push(card);
+					emit(state, { type: 'conjure', player: o, card, color: null });
+				}
+			}
+		} else if (e.type === 'summon-random-armor-cost') {
+			// Geosculptor Yip: summon a random creature costing exactly your Armor (cap 10)
+			const cost = Math.min(e.max ?? 10, state.players[pi].armor || 0);
+			execEffects(state, pi, [{ type: 'summon-random', cost }], target, source);
 		} else if (e.type === 'gain-armor-per') {
 			// Drywhisker Armorer: gain Armor scaled by a count
 			let n = 0;
@@ -4057,8 +4119,10 @@ function execEffects(state, pi, effects, target, source) {
 			const t = chosenCreature();
 			if (t && source) { source.moatVictim = t.id; t.damage = t.maxHealth; t.shield = false; emit(state, { type: 'destroy', uid: t.uid }); }
 		} else if (e.type === 'resummon-remembered') {
-			// Moat Lurker's Deathrattle
-			if (source?.moatVictim && state.cardsById[source.moatVictim]) summon(state, pi, state.cardsById[source.moatVictim]);
+			// Moat Lurker's Deathrattle (count>1: Carnivorous Cube summons 2 copies)
+			if (source?.moatVictim && state.cardsById[source.moatVictim]) {
+				for (let i = 0; i < (e.count || 1); i++) summon(state, pi, state.cardsById[source.moatVictim]);
+			}
 		} else if (e.type === 'set-hero-power') {
 			// Vilefin Inquisitor: replace your Hero Power with a specific one
 			const def = state.cardsById[e.powerId];
@@ -4695,6 +4759,7 @@ function execEffects(state, pi, effects, target, source) {
 			for (const c of targets) {
 				c.attack += e.attack || 0;
 				if (c.type === 'weapon') c.durability += e.health || 0; else c.maxHealth += e.health || 0;
+				if (e.cost) c.cost = Math.max(0, (c.cost || 0) - e.cost); // Ebon Dragonsmith: cheaper weapon
 			}
 		} else if (e.type === 'enrich') {
 			gainTokenCard(state, pi, 'treasure_token');
@@ -6876,6 +6941,7 @@ export function endTurn(state) {
 	p.spellTaxNext = 0; // Loatheb's tax only lasts this player's turn
 	p.heroPowerTaxNext = 0; // Saboteur's Hero Power tax only lasts this turn
 	p.nextMurlocFree = false; p.nextSecretCost = null; // Seadevil Stinger / Kabal Lackey are "this turn"
+	p.nextBattlecryDouble = false; // Murmuring Elemental only lasts this turn
 
 	// Impulsive creatures refuse to end the turn without swinging
 	for (const c of [...p.board]) {
