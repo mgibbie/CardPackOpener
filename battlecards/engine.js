@@ -354,6 +354,7 @@ export function createGame(cardsById, rng = Math.random, playerDeckIds = null, p
 		heroPowerTaxNext: 0,      // Saboteur: your Hero Power costs more next turn
 		heroPowerDiscountNext: 0, // Fencing Coach: your next Hero Power costs less
 		heroPowersUsedGame: 0,    // Frost Giant: total Hero Powers used this game
+		heroPowerFreeGame: false, // Raza the Chained: your Hero Power costs (0) this game
 		eliminated: false,
 	});
 
@@ -582,6 +583,8 @@ const CHOSEN = {
 	'copy-stats': { creature: 'creature', 'friendly-creature': 'friendly-creature' },
 	'copy-to-hand-cheap': { creature: 'creature', 'friendly-creature': 'friendly-creature' },
 	'destroy-and-remember': { creature: 'creature', 'enemy-creature': 'enemy-creature' },
+	'copy-to-deck': { 'friendly-creature': 'friendly-creature', creature: 'creature' },
+	'summon-copies-from-deck': { 'friendly-creature': 'friendly-creature', creature: 'creature' },
 	'blade-of-cthun': { creature: 'creature', 'enemy-creature': 'enemy-creature' },
 	conditional: { any: 'any', creature: 'creature' },
 	'damage-then': { any: 'any', creature: 'creature' },
@@ -3639,6 +3642,70 @@ function execEffects(state, pi, effects, target, source) {
 				summon(state, pi, { id: 'token_v07tr0n', name: 'V-07-TR-0N', type: 'creature', cost: 0, rarity: 'legendary',
 					token: true, tribe: 'Mech', attack: 7, health: 8, keywords: ['charge', 'windfury'], description: 'A 7/8 Mech with Charge and Windfury.' });
 			}
+		} else if (e.type === 'hero-power-free-game') {
+			// Raza the Chained
+			state.players[pi].heroPowerFreeGame = true;
+		} else if (e.type === 'free-next-spell') {
+			// Inkmaster Solia: the next spell this turn costs (0)
+			state.players[pi].freeSpellsThisTurn = true;
+		} else if (e.type === 'refresh-mana') {
+			// Kun the Forgotten King: refill your Mana Crystals
+			const p = state.players[pi];
+			p.mana.cur = p.mana.max;
+			emit(state, { type: 'manaGained', player: pi });
+		} else if (e.type === 'draw-until') {
+			// Wrathion: keep drawing until you draw a card that isn't the given tribe
+			const p = state.players[pi];
+			let guard = 0;
+			while (guard++ < 40 && p.hand.length < MAX_HAND) {
+				const before = p.hand.length;
+				drawCards(state, pi, 1);
+				if (p.hand.length === before) break; // fatigue / empty
+				const drawn = p.hand[p.hand.length - 1];
+				if (!(drawn.type === 'creature' && (drawn.tribe || '').includes(e.exceptTribe))) break;
+			}
+		} else if (e.type === 'copy-to-deck') {
+			// Manic Soulcaster: shuffle a copy of a chosen friendly creature into your deck
+			const t = chosenCreature();
+			const p = state.players[pi];
+			if (t && state.cardsById[t.id]) {
+				p.deck.push(t.id);
+				for (let i = p.deck.length - 1; i > 0; i--) { const j = Math.floor(state.rng() * (i + 1)); [p.deck[i], p.deck[j]] = [p.deck[j], p.deck[i]]; }
+				emit(state, { type: 'shuffledIntoDeck', player: pi, cardId: t.id });
+			}
+		} else if (e.type === 'summon-copies-from-deck') {
+			// Madam Goya: summon every copy of a chosen friendly creature from your deck
+			const t = chosenCreature();
+			const p = state.players[pi];
+			if (t) {
+				const rest = [];
+				for (const id of p.deck) { if (id === t.id) summon(state, pi, state.cardsById[id]); else rest.push(id); }
+				p.deck = rest;
+			}
+		} else if (e.type === 'enemy-summon-from-hand') {
+			// Dirty Rat: each opponent puts a random creature from their hand into play
+			for (const o of enemies) {
+				const op = state.players[o];
+				const pool = op.hand.filter(c => c.type === 'creature');
+				if (pool.length) { const c = pool[Math.floor(state.rng() * pool.length)]; op.hand = op.hand.filter(x => x !== c); c.zone = 'board'; op.board.push(c); emit(state, { type: 'summon', player: o, card: c }); fireOngoing(state, o, 'summoned', { minion: c }); }
+			}
+			recomputeAuras(state);
+		} else if (e.type === 'draw-both-to') {
+			// Genzo, the Shark: every player draws until they have N cards
+			for (let s3 = 0; s3 < state.players.length; s3++) {
+				const pl = state.players[s3];
+				let guard = 0;
+				while (pl.hand.length < (e.value || 3) && guard++ < 20) { const before = pl.hand.length; drawCards(state, s3, 1); if (pl.hand.length === before) break; }
+			}
+		} else if (e.type === 'summon-from-deck-tribe') {
+			// Finja: summon N creatures of a tribe from your deck onto the battlefield
+			const p = state.players[pi];
+			for (let n = 0; n < (e.count || 1); n++) {
+				const idx = p.deck.findIndex(id => { const def = state.cardsById[id]; return def?.type === 'creature' && !def.token && (!e.tribe || (def.tribe || '').includes(e.tribe)); });
+				if (idx < 0) break;
+				const [id] = p.deck.splice(idx, 1);
+				summon(state, pi, state.cardsById[id]);
+			}
 		} else if (e.type === 'mill-self') {
 			// Fel Reaver: burn the top N cards of your own deck
 			const p = state.players[pi];
@@ -3770,10 +3837,11 @@ function execEffects(state, pi, effects, target, source) {
 				if (def?.type === 'creature' && (def.keywords || []).includes('deathrattle')) summon(state, pi, def);
 			}
 		} else if (e.type === 'summon-dragons-from-hand') {
-			// Deathwing, Dragonlord: put all Dragons from your hand into play
+			// Deathwing (Dragons) / Krul the Unshackled (tribe: Demon)
 			const p = state.players[pi];
+			const tribe = e.tribe || 'Dragon';
 			for (const c of [...p.hand]) {
-				if (c.type === 'creature' && (c.tribe || '').includes('Dragon')) {
+				if (c.type === 'creature' && (c.tribe || '').includes(tribe)) {
 					p.hand = p.hand.filter(x => x !== c);
 					c.zone = 'board'; p.board.push(c);
 					emit(state, { type: 'summon', player: pi, card: c });
@@ -3972,15 +4040,15 @@ function execEffects(state, pi, effects, target, source) {
 				emit(state, { type: 'conjure', player: pi, card, color: null });
 			}
 		} else if (e.type === 'shuffle-into-deck') {
-			// Raptor/Direhorn Hatchling: shuffle a specific token creature into your deck
-			const p = state.players[pi];
-			if (e.id && state.cardsById[e.id] && !p.eliminated) {
-				for (let n = 0; n < (e.count || 1); n++) p.deck.push(e.id);
-				for (let i = p.deck.length - 1; i > 0; i--) {
-					const j = Math.floor(state.rng() * (i + 1));
-					[p.deck[i], p.deck[j]] = [p.deck[j], p.deck[i]];
-				}
-				emit(state, { type: 'shuffledIntoDeck', player: pi, cardId: e.id });
+			// Raptor/Direhorn Hatchling: shuffle a token into your deck; Weasel
+			// Tunneler (enemy:true) shuffles itself into an opponent's deck
+			const owners = e.enemy ? enemies.filter(o => !state.players[o].eliminated) : [pi];
+			for (const own of owners) {
+				const dk = state.players[own].deck;
+				if (!e.id || !state.cardsById[e.id]) break;
+				for (let n = 0; n < (e.count || 1); n++) dk.push(e.id);
+				for (let i = dk.length - 1; i > 0; i--) { const j = Math.floor(state.rng() * (i + 1)); [dk[i], dk[j]] = [dk[j], dk[i]]; }
+				emit(state, { type: 'shuffledIntoDeck', player: own, cardId: e.id });
 			}
 		} else if (e.type === 'shuffle-self-into-deck') {
 			// "Shuffle this card back into your deck" — Astral Tiger recursion
@@ -5798,6 +5866,8 @@ function resolveCombat(state, pi, attackerUid, target) {
 			if (attacker.ongoings) for (const o of attacker.ongoings) if (o.on === 'self-kills-creature') trigs.push(o);
 			for (const o of trigs) runSecretEffects(state, pi, o.effects, { self: attacker });
 		}
+		// Knuckles: "after this attacks a minion" (fires even if it dies? HS: it survives to hit)
+		if (!isDead(attacker)) fireCreatureTrigger(state, attacker, 'self-attacks-creature');
 		// Wind-up Burglebot: "whenever this attacks a minion and survives"
 		if (!isDead(attacker)) fireCreatureTrigger(state, attacker, 'self-attacks-survives');
 		// Alley Armorsmith: "whenever this deals damage" — either combatant that dealt any
@@ -6322,6 +6392,7 @@ export function heroPowerSpec(state, pi, card, choice) {
 // sets it to 1, Saboteur taxes it, Fencing Coach discounts the next use)
 export function heroPowerCost(state, pi, card) {
 	const p = state.players[pi];
+	if (p.heroPowerFreeGame) return 0; // Raza the Chained
 	let c = card.power.cost;
 	const set = p.board.filter(x => x.heroPowerCostSet != null && !isDead(x)).map(x => x.heroPowerCostSet);
 	if (set.length) c = Math.min(c, ...set); // Maiden of the Lake

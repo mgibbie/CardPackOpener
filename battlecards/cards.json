@@ -68348,6 +68348,331 @@
           }
         ]
       }
+    },
+    {
+      "id": "raza_the_chained",
+      "name": "Raza the Chained",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "priest",
+      "attack": 5,
+      "health": 5,
+      "rarity": "legendary",
+      "set": "GANGS",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: If your deck has no duplicates, your Hero Power costs (0) this game.",
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "noDuplicates": true
+          },
+          "then": [
+            {
+              "type": "hero-power-free-game"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "inkmaster_solia",
+      "name": "Inkmaster Solia",
+      "type": "creature",
+      "cost": 7,
+      "cardClass": "mage",
+      "attack": 5,
+      "health": 5,
+      "rarity": "legendary",
+      "set": "GANGS",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: If your deck has no duplicates, the next spell you cast this turn costs (0).",
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "noDuplicates": true
+          },
+          "then": [
+            {
+              "type": "free-next-spell"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "krul_the_unshackled",
+      "name": "Krul the Unshackled",
+      "type": "creature",
+      "cost": 9,
+      "cardClass": "warlock",
+      "attack": 9,
+      "health": 9,
+      "rarity": "legendary",
+      "set": "GANGS",
+      "tribe": "Demon",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: If your deck has no duplicates, summon all Demons from your hand.",
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "noDuplicates": true
+          },
+          "then": [
+            {
+              "type": "summon-dragons-from-hand",
+              "tribe": "Demon"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "kun_the_forgotten_king",
+      "name": "Kun the Forgotten King",
+      "type": "creature",
+      "cost": 10,
+      "cardClass": "druid",
+      "attack": 7,
+      "health": 7,
+      "rarity": "legendary",
+      "set": "GANGS",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Choose One - Gain 10 Armor; or Refresh your Mana Crystals.",
+      "choices": [
+        {
+          "text": "Gain 10 Armor",
+          "effects": [
+            {
+              "type": "armor",
+              "value": 10
+            }
+          ]
+        },
+        {
+          "text": "Refresh Mana",
+          "effects": [
+            {
+              "type": "refresh-mana"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "wrathion",
+      "name": "Wrathion",
+      "type": "creature",
+      "cost": 6,
+      "cardClass": "neutral",
+      "attack": 4,
+      "health": 5,
+      "rarity": "legendary",
+      "set": "GANGS",
+      "tribe": "Dragon",
+      "keywords": [
+        "taunt",
+        "battlecry"
+      ],
+      "description": "Taunt. Battlecry: Draw cards until you draw one that isn't a Dragon.",
+      "effects": [
+        {
+          "type": "draw-until",
+          "exceptTribe": "Dragon"
+        }
+      ]
+    },
+    {
+      "id": "weasel_tunneler",
+      "name": "Weasel Tunneler",
+      "type": "creature",
+      "cost": 1,
+      "cardClass": "neutral",
+      "attack": 1,
+      "health": 1,
+      "rarity": "epic",
+      "set": "GANGS",
+      "tribe": "Beast",
+      "keywords": [
+        "deathrattle"
+      ],
+      "description": "Deathrattle: Shuffle this creature into your opponent's deck.",
+      "deathrattle": [
+        {
+          "type": "shuffle-into-deck",
+          "id": "weasel_tunneler",
+          "enemy": true
+        }
+      ]
+    },
+    {
+      "id": "manic_soulcaster",
+      "name": "Manic Soulcaster",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "mage",
+      "attack": 3,
+      "health": 4,
+      "rarity": "epic",
+      "set": "GANGS",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Choose a friendly creature. Shuffle a copy into your deck.",
+      "effects": [
+        {
+          "type": "copy-to-deck",
+          "target": "friendly-creature"
+        }
+      ]
+    },
+    {
+      "id": "madam_goya",
+      "name": "Madam Goya",
+      "type": "creature",
+      "cost": 6,
+      "cardClass": "neutral",
+      "attack": 4,
+      "health": 3,
+      "rarity": "legendary",
+      "set": "GANGS",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Choose a friendly creature. Summon any copies of it in your deck.",
+      "effects": [
+        {
+          "type": "summon-copies-from-deck",
+          "target": "friendly-creature"
+        }
+      ]
+    },
+    {
+      "id": "dirty_rat",
+      "name": "Dirty Rat",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "neutral",
+      "attack": 2,
+      "health": 6,
+      "rarity": "epic",
+      "set": "GANGS",
+      "keywords": [
+        "taunt",
+        "battlecry"
+      ],
+      "description": "Taunt. Battlecry: Your opponent summons a random creature from their hand.",
+      "effects": [
+        {
+          "type": "enemy-summon-from-hand"
+        }
+      ]
+    },
+    {
+      "id": "knuckles",
+      "name": "Knuckles",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "hunter",
+      "attack": 3,
+      "health": 7,
+      "rarity": "legendary",
+      "set": "GANGS",
+      "tribe": "Beast",
+      "description": "After this attacks a creature, it also hits the enemy hero.",
+      "ongoing": {
+        "on": "self-attacks-creature",
+        "effects": [
+          {
+            "type": "damage",
+            "value": "source-attack",
+            "target": "enemy-heroes"
+          }
+        ]
+      }
+    },
+    {
+      "id": "genzo_the_shark",
+      "name": "Genzo, the Shark",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "neutral",
+      "attack": 5,
+      "health": 4,
+      "rarity": "legendary",
+      "set": "GANGS",
+      "tribe": "Pirate",
+      "description": "Whenever this attacks, both players draw until they have 3 cards.",
+      "ongoing": {
+        "on": "self-attacks",
+        "effects": [
+          {
+            "type": "draw-both-to",
+            "value": 3
+          }
+        ]
+      }
+    },
+    {
+      "id": "finja_the_flying_star",
+      "name": "Finja, the Flying Star",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "neutral",
+      "attack": 3,
+      "health": 5,
+      "rarity": "legendary",
+      "set": "GANGS",
+      "tribe": "Murloc",
+      "keywords": [
+        "stealth"
+      ],
+      "description": "Stealth. Whenever this attacks and kills a creature, summon 2 Murlocs from your deck.",
+      "ongoing": {
+        "on": "self-kills-creature",
+        "effects": [
+          {
+            "type": "summon-from-deck-tribe",
+            "tribe": "Murloc",
+            "count": 2
+          }
+        ]
+      }
+    },
+    {
+      "id": "shaku_the_collector",
+      "name": "Shaku, the Collector",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "rogue",
+      "attack": 2,
+      "health": 4,
+      "rarity": "legendary",
+      "set": "GANGS",
+      "keywords": [
+        "stealth"
+      ],
+      "description": "Stealth. Whenever this attacks, add a card from another class to your hand.",
+      "ongoing": {
+        "on": "self-attacks",
+        "effects": [
+          {
+            "type": "conjure-random",
+            "cardClass": "other",
+            "count": 1
+          }
+        ]
+      }
     }
   ]
 }
