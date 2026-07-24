@@ -77377,6 +77377,390 @@
           "health": 1
         }
       ]
+    },
+    {
+      "id": "underbelly_fence",
+      "name": "Underbelly Fence",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "rogue",
+      "attack": 2,
+      "health": 3,
+      "rarity": "rare",
+      "set": "DALARAN",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: If you're holding a card from another class, gain +1/+1 and Rush.",
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "holdingOtherClass": true
+          },
+          "then": [
+            {
+              "type": "buff-self",
+              "attack": 1,
+              "health": 1
+            },
+            {
+              "type": "grant",
+              "target": "self",
+              "keyword": "rush"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "spellward_jeweler",
+      "name": "Spellward Jeweler",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "neutral",
+      "attack": 3,
+      "health": 4,
+      "rarity": "rare",
+      "set": "DALARAN",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Your hero is Elusive until your next turn.",
+      "effects": [
+        {
+          "type": "grant-hero-elusive"
+        }
+      ]
+    },
+    {
+      "id": "portal_overfiend",
+      "name": "Portal Overfiend",
+      "type": "creature",
+      "cost": 6,
+      "cardClass": "neutral",
+      "attack": 5,
+      "health": 6,
+      "rarity": "epic",
+      "set": "DALARAN",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Shuffle 3 Portals into your deck. When drawn, summon a 2/2 Demon with Rush.",
+      "effects": [
+        {
+          "type": "shuffle-into-deck",
+          "id": "dal_portal_demon",
+          "count": 3
+        }
+      ]
+    },
+    {
+      "id": "underbelly_ooze",
+      "name": "Underbelly Ooze",
+      "type": "creature",
+      "cost": 7,
+      "cardClass": "neutral",
+      "attack": 3,
+      "health": 5,
+      "rarity": "rare",
+      "set": "DALARAN",
+      "description": "After this creature survives damage, summon a copy of it.",
+      "ongoing": {
+        "on": "self-damaged",
+        "survives": true,
+        "effects": [
+          {
+            "type": "summon-self-copy"
+          }
+        ]
+      }
+    },
+    {
+      "id": "exotic_mountseller",
+      "name": "Exotic Mountseller",
+      "type": "creature",
+      "cost": 7,
+      "cardClass": "neutral",
+      "attack": 5,
+      "health": 8,
+      "rarity": "rare",
+      "set": "DALARAN",
+      "description": "Whenever you cast a spell, summon a random 3-Cost Beast.",
+      "ongoing": {
+        "on": "spell-played",
+        "effects": [
+          {
+            "type": "summon-random",
+            "cost": 3,
+            "tribe": "Beast"
+          }
+        ]
+      }
+    },
+    {
+      "id": "jumbo_imp",
+      "name": "Jumbo Imp",
+      "type": "creature",
+      "cost": 10,
+      "cardClass": "warlock",
+      "attack": 8,
+      "health": 8,
+      "rarity": "epic",
+      "set": "DALARAN",
+      "tribe": "Demon",
+      "cheaperOnTribeDeath": "Demon",
+      "description": "Costs (1) less whenever a friendly Demon dies while this is in your hand."
+    },
+    {
+      "id": "khadgar",
+      "name": "Khadgar",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "mage",
+      "attack": 2,
+      "health": 2,
+      "rarity": "legendary",
+      "set": "DALARAN",
+      "description": "Your cards that summon creatures summon twice as many."
+    },
+    {
+      "id": "scargil",
+      "name": "Scargil",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "shaman",
+      "attack": 4,
+      "health": 4,
+      "rarity": "legendary",
+      "set": "DALARAN",
+      "tribe": "Murloc",
+      "description": "Your Murlocs cost (1).",
+      "costMod": {
+        "cardType": "creature",
+        "tribe": "Murloc",
+        "setCost": 1
+      }
+    },
+    {
+      "id": "nozari",
+      "name": "Nozari",
+      "type": "creature",
+      "cost": 10,
+      "cardClass": "paladin",
+      "attack": 4,
+      "health": 12,
+      "rarity": "legendary",
+      "set": "DALARAN",
+      "tribe": "Dragon",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Restore both heroes to full Health.",
+      "effects": [
+        {
+          "type": "heal-all-full"
+        }
+      ]
+    },
+    {
+      "id": "chef_nomi",
+      "name": "Chef Nomi",
+      "type": "creature",
+      "cost": 7,
+      "cardClass": "neutral",
+      "attack": 6,
+      "health": 6,
+      "rarity": "legendary",
+      "set": "DALARAN",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: If your deck is empty, summon six 6/6 Greasefire Elementals.",
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "deckEmpty": true
+          },
+          "then": [
+            {
+              "type": "summon",
+              "count": 6,
+              "attack": 6,
+              "health": 6,
+              "name": "Greasefire Elemental",
+              "tribe": "Elemental"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "jepetto_joybuzz",
+      "name": "Jepetto Joybuzz",
+      "type": "creature",
+      "cost": 8,
+      "cardClass": "neutral",
+      "attack": 6,
+      "health": 6,
+      "rarity": "legendary",
+      "set": "DALARAN",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Draw 2 minions from your deck. Set their Attack, Health, and Cost to 1.",
+      "effects": [
+        {
+          "type": "tutor",
+          "cardType": "creature",
+          "count": 2,
+          "setAttack": 1,
+          "setHealth": 1,
+          "setCost": 1
+        }
+      ]
+    },
+    {
+      "id": "barista_lynchen",
+      "name": "Barista Lynchen",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "neutral",
+      "attack": 4,
+      "health": 5,
+      "rarity": "legendary",
+      "set": "DALARAN",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Add a copy of each of your other Battlecry creatures to your hand.",
+      "effects": [
+        {
+          "type": "copy-board-battlecries"
+        }
+      ]
+    },
+    {
+      "id": "the_boom_reaver",
+      "name": "The Boom Reaver",
+      "type": "creature",
+      "cost": 10,
+      "cardClass": "warrior",
+      "attack": 7,
+      "health": 9,
+      "rarity": "legendary",
+      "set": "DALARAN",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Summon a copy of a creature in your deck. Give it Rush.",
+      "effects": [
+        {
+          "type": "summon-deck-copy",
+          "grant": "rush"
+        }
+      ]
+    },
+    {
+      "id": "madame_lazul",
+      "name": "Madame Lazul",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "priest",
+      "attack": 3,
+      "health": 2,
+      "rarity": "legendary",
+      "set": "DALARAN",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Discover a copy of a card in your opponent's hand.",
+      "effects": [
+        {
+          "type": "discover",
+          "fromEnemyHand": true
+        }
+      ]
+    },
+    {
+      "id": "vereesa_windrunner",
+      "name": "Vereesa Windrunner",
+      "type": "creature",
+      "cost": 7,
+      "cardClass": "hunter",
+      "attack": 5,
+      "health": 6,
+      "rarity": "legendary",
+      "set": "DALARAN",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Equip Thori'dal, the Stars' Fury.",
+      "effects": [
+        {
+          "type": "equip-id",
+          "id": "thoridal"
+        }
+      ]
+    },
+    {
+      "id": "oblivitron",
+      "name": "Oblivitron",
+      "type": "creature",
+      "cost": 6,
+      "cardClass": "hunter",
+      "attack": 3,
+      "health": 4,
+      "rarity": "legendary",
+      "set": "DALARAN",
+      "tribe": "Mech",
+      "keywords": [
+        "deathrattle"
+      ],
+      "description": "Deathrattle: Summon a Mech from your hand and trigger its Deathrattle.",
+      "deathrattle": [
+        {
+          "type": "summon-from-hand-min-attack",
+          "tribe": "Mech"
+        }
+      ]
+    },
+    {
+      "id": "dal_portal_demon",
+      "name": "Portal",
+      "type": "sorcery",
+      "cost": 4,
+      "token": true,
+      "rarity": "epic",
+      "set": "DALARAN",
+      "drawTrigger": true,
+      "onDraw": [
+        {
+          "type": "summon",
+          "count": 1,
+          "attack": 2,
+          "health": 2,
+          "name": "Felhound",
+          "tribe": "Demon",
+          "keywords": [
+            "rush"
+          ]
+        }
+      ],
+      "description": "When drawn, summon a 2/2 Demon with Rush."
+    },
+    {
+      "id": "thoridal",
+      "name": "Thori'dal, the Stars' Fury",
+      "type": "weapon",
+      "cost": 7,
+      "token": true,
+      "attack": 4,
+      "durability": 3,
+      "rarity": "legendary",
+      "set": "DALARAN",
+      "description": "A 4/3 weapon."
     }
   ]
 }

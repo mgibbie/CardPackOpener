@@ -172,6 +172,7 @@ function instantiate(def, controller) {
 		costMod: def.costMod || null, // board cost aura: { cardType, amount, scope, floor?, firstEachTurn? }
 		heroPowerFreezes: !!def.heroPowerFreezes, // Ice Walker: your Hero Power also Freezes its target
 		cheaperOnDeath: !!def.cheaperOnDeath, // Corridor Creeper: costs (1) less per creature that dies while in hand
+		cheaperOnTribeDeath: def.cheaperOnTribeDeath || null, // Jumbo Imp: cheaper per friendly Demon that dies
 		dormantBattlecry: !!def.dormantBattlecry, // The Darkness: fire the Battlecry even though it enters Dormant
 		heroPowerDouble: !!def.heroPowerDouble, // Clockwork Automaton: double your Hero Power's damage and healing
 		deathrattleDiscount: def.deathrattleDiscount || 0, // Reckless Experimenter: your Deathrattle creatures cost this much less
@@ -740,6 +741,8 @@ export function targetSpec(state, pi, card, choice) {
 export function legalTargets(state, pi, spec) {
 	const out = [];
 	const opps = opponentsOf(state, pi);
+	// Spellward Jeweler: an Elusive enemy hero can't be targeted this window
+	const pushHero = (side) => { if (side !== pi && (state.players[side].heroElusiveUntil || 0) >= state.turnNumber) return; out.push({ type: 'hero', player: side }); };
 	const pushCreatures = (side) => {
 		for (const c of state.players[side].board) {
 			if (c.type === 'location') continue; // locations aren't creatures
@@ -753,19 +756,19 @@ export function legalTargets(state, pi, spec) {
 		pushCreatures(pi);
 		for (const o of opps) pushCreatures(o);
 		out.push({ type: 'hero', player: pi });
-		for (const o of opps) out.push({ type: 'hero', player: o });
+		for (const o of opps) pushHero(o);
 	}
 	if (spec.targets === 'creature') { pushCreatures(pi); for (const o of opps) pushCreatures(o); }
 	if (spec.targets === 'enemy-creature') { for (const o of opps) pushCreatures(o); }
 	if (spec.targets === 'friendly-creature') { pushCreatures(pi); }
 	if (spec.targets === 'friendly-any') { pushCreatures(pi); out.push({ type: 'hero', player: pi }); }
-	if (spec.targets === 'enemy-hero') { for (const o of opps) out.push({ type: 'hero', player: o }); }
+	if (spec.targets === 'enemy-hero') { for (const o of opps) pushHero(o); }
 	if (spec.targets === 'enemy-any') {
-		for (const o of opps) { pushCreatures(o); out.push({ type: 'hero', player: o }); }
+		for (const o of opps) { pushCreatures(o); pushHero(o); }
 	}
 	if (spec.targets === 'any-hero') {
 		out.push({ type: 'hero', player: pi });
-		for (const o of opps) out.push({ type: 'hero', player: o });
+		for (const o of opps) pushHero(o);
 	}
 	if (spec.targets === 'permanent') {
 		const pushPermanents = (side) => {
@@ -1181,6 +1184,8 @@ function sweepDeaths(state) {
 			emit(state, { type: 'death', uid: c.uid, player: pi, name: c.name });
 			// Corridor Creeper: cheaper in every hand for each creature that dies
 			for (const pl of state.players) for (const hc of pl.hand) if (hc.cheaperOnDeath && (hc.cost || 0) > 0) hc.cost = Math.max(0, hc.cost - 1);
+			// Jumbo Imp: cheaper in the owner's hand when a friendly creature of its tribe dies
+			for (const hc of p.hand) if (hc.cheaperOnTribeDeath && (hc.cost || 0) > 0 && (c.tribe || '').includes(hc.cheaperOnTribeDeath)) hc.cost = Math.max(0, hc.cost - 1);
 			// Equipment on this creature detaches and stays in play (can be re-equipped)
 			for (const pl of state.players) for (const eq of pl.artifacts) if (eq.equip && eq.attachedTo === c.uid) eq.attachedTo = null;
 			// every friendly death banks a Corpse for its owner (all classes;
@@ -3702,6 +3707,9 @@ function execEffects(state, pi, effects, target, source) {
 				const card = instantiate(state.cardsById[id], pi);
 				card.zone = 'hand';
 				if (e.buff) { card.attack += e.buff.attack || 0; card.maxHealth += e.buff.health || 0; } // Akali, the Rhino
+				if (e.setAttack != null) card.attack = e.setAttack; // Jepetto Joybuzz: set to 1/1, cost 1
+				if (e.setHealth != null) card.maxHealth = e.setHealth;
+				if (e.setCost != null) card.cost = e.setCost;
 				p.hand.push(card);
 				emit(state, { type: 'conjure', player: pi, card, color: null });
 			}
@@ -3771,6 +3779,7 @@ function execEffects(state, pi, effects, target, source) {
 			else if (e.if.healedGame != null) ok = (p.healedGame || 0) >= e.if.healedGame; // Zandalari Templar
 			else if (e.if.hpDamageGame != null) ok = (p.hpDamageGame || 0) >= e.if.hpDamageGame; // Jan'alai, the Dragonhawk
 			else if (e.if.deckEmpty) ok = p.deck.length === 0; // Chef Nomi
+			else if (e.if.holdingOtherClass) ok = p.hand.some(c => c !== source && c.cardClass && c.cardClass !== 'neutral' && c.cardClass !== p.heroClass); // Underbelly Fence
 			execEffects(state, pi, ok ? e.then : (e.else || []), target, source);
 		} else if (e.type === 'damage-then') {
 			// deal damage, then branch on whether the creature survived
@@ -3975,6 +3984,9 @@ function execEffects(state, pi, effects, target, source) {
 				c.zone = 'hand'; state.players[pi].hand.push(c);
 				emit(state, { type: 'conjure', player: pi, card: c, color: null });
 			}
+		} else if (e.type === 'grant-hero-elusive') {
+			// Spellward Jeweler: your hero can't be targeted until your next turn
+			state.players[pi].heroElusiveUntil = state.turnNumber + 2;
 		} else if (e.type === 'transform-copy-from-deck') {
 			// Muckmorpher: become a stat-set copy of a random creature in your deck
 			const p = state.players[pi];
@@ -5423,7 +5435,8 @@ function execEffects(state, pi, effects, target, source) {
 				return [...new Set(state.players[foe].deck)].map(id => state.cardsById[id]).filter(d => d && d.type === 'creature' && !d.token);
 			};
 			const ownDeckDefs = () => [...new Set(state.players[pi].deck)].map(id => state.cardsById[id]).filter(d => d && d.type === 'creature' && !d.token); // Stitched Tracker
-			const discoverPool = () => (e.fromEnemyDeck ? enemyDeckDefs() : e.fromOwnDeck ? ownDeckDefs() : Object.values(state.cardsById)).filter(d => {
+			const enemyHandDefs = () => { const foe = enemies[0]; return foe == null ? [] : state.players[foe].hand.map(c => state.cardsById[c.id] || c).filter(d => d && !d.token); }; // Madame Lazul
+			const discoverPool = () => (e.fromEnemyDeck ? enemyDeckDefs() : e.fromEnemyHand ? enemyHandDefs() : e.fromOwnDeck ? ownDeckDefs() : Object.values(state.cardsById)).filter(d => {
 				if (d.type === 'land' || d.token || d.collectible === false || d.companion || d.commander) return false;
 				if (d.colors && d.colors.length) return false;
 				if (e.cardType === 'spell' ? !isSpellType(d) : (e.cardType && d.type !== e.cardType)) return false;
