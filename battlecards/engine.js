@@ -3553,6 +3553,34 @@ function execEffects(state, pi, effects, target, source) {
 				t.tempHealth = 0;
 				emit(state, { type: 'buff', uid: t.uid, attack: t.attack, hp: hp(t) });
 			}
+		} else if (e.type === 'equip-id') {
+			// Medivh: equip a specific weapon card (keeps its ongoing, e.g. Atiesh)
+			const p = state.players[pi];
+			const def = state.cardsById[e.id];
+			if (def && !p.eliminated) {
+				if (p.weapon) breakWeapon(state, pi, true);
+				const w = instantiate(def, pi); w.zone = 'weapon'; p.weapon = w;
+				emit(state, { type: 'weaponEquip', player: pi, card: w });
+				fireOngoing(state, pi, 'weapon-equipped');
+			}
+		} else if (e.type === 'discount-other-class-hand') {
+			// Ethereal Peddler: cards in hand from another class cost less
+			const p = state.players[pi];
+			const mine = p.heroClass;
+			for (const c of p.hand) {
+				const cc = c.cardClass || 'neutral';
+				if (cc !== 'neutral' && cc !== mine && !cc.split('__').includes(mine)) c.cost = Math.max(0, (c.cost || 0) - (e.amount || 2));
+			}
+		} else if (e.type === 'shuffle-random-legendaries') {
+			// Prince Malchezaar: shuffle N random Legendary creatures into your deck
+			const p = state.players[pi];
+			const pool = Object.values(state.cardsById).filter(d => d.type === 'creature' && d.rarity === 'legendary'
+				&& !d.token && d.collectible !== false && !d.companion && !d.commander && !(d.colors && d.colors.length));
+			for (let n = 0; n < (e.count || 1) && pool.length; n++) {
+				p.deck.push(pool[Math.floor(state.rng() * pool.length)].id);
+			}
+			for (let i = p.deck.length - 1; i > 0; i--) { const j = Math.floor(state.rng() * (i + 1)); [p.deck[i], p.deck[j]] = [p.deck[j], p.deck[i]]; }
+			emit(state, { type: 'shuffledIntoDeck', player: pi, count: e.count || 1 });
 		} else if (e.type === 'summon-random-died-this-turn') {
 			// Onyx Bishop: resurrect a random friendly creature that died this turn
 			const p = state.players[pi];

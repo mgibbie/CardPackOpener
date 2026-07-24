@@ -67309,6 +67309,89 @@
       "attack": 3,
       "durability": 2,
       "description": "A 3/2 weapon."
+    },
+    {
+      "id": "ethereal_peddler",
+      "name": "Ethereal Peddler",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "rogue",
+      "attack": 5,
+      "health": 6,
+      "rarity": "rare",
+      "set": "KARA",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: If you're holding any cards from another class, reduce their Cost by (2).",
+      "effects": [
+        {
+          "type": "discount-other-class-hand",
+          "amount": 2
+        }
+      ]
+    },
+    {
+      "id": "prince_malchezaar",
+      "name": "Prince Malchezaar",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "neutral",
+      "attack": 5,
+      "health": 6,
+      "rarity": "legendary",
+      "set": "KARA",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Shuffle 5 extra Legendary creatures into your deck.",
+      "effects": [
+        {
+          "type": "shuffle-random-legendaries",
+          "count": 5
+        }
+      ]
+    },
+    {
+      "id": "medivh_the_guardian",
+      "name": "Medivh, the Guardian",
+      "type": "creature",
+      "cost": 8,
+      "cardClass": "neutral",
+      "attack": 7,
+      "health": 7,
+      "rarity": "legendary",
+      "set": "KARA",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Equip Atiesh, Greatstaff of the Guardian.",
+      "effects": [
+        {
+          "type": "equip-id",
+          "id": "atiesh"
+        }
+      ]
+    },
+    {
+      "id": "atiesh",
+      "name": "Atiesh",
+      "type": "weapon",
+      "cost": 3,
+      "token": true,
+      "rarity": "legendary",
+      "set": "KARA",
+      "attack": 1,
+      "durability": 3,
+      "description": "After you cast a spell, summon a random creature of that spell\u2019s Cost.",
+      "ongoing": {
+        "on": "spell-played",
+        "effects": [
+          {
+            "type": "summon-of-spell-cost"
+          }
+        ]
+      }
     }
   ]
 }
