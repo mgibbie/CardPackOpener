@@ -76975,6 +76975,408 @@
           "health": 1
         }
       ]
+    },
+    {
+      "id": "evil_genius",
+      "name": "EVIL Genius",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "warlock",
+      "attack": 2,
+      "health": 2,
+      "rarity": "common",
+      "set": "DALARAN",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Destroy a friendly minion to add 2 random Lackeys to your hand.",
+      "effects": [
+        {
+          "type": "destroy",
+          "target": "friendly-creature"
+        },
+        {
+          "type": "add-lackey",
+          "count": 2
+        }
+      ]
+    },
+    {
+      "id": "mana_cyclone",
+      "name": "Mana Cyclone",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "mage",
+      "attack": 2,
+      "health": 2,
+      "rarity": "epic",
+      "set": "DALARAN",
+      "tribe": "Elemental",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: For each spell you've cast this turn, add a random Mage spell to your hand.",
+      "effects": [
+        {
+          "type": "conjure-random",
+          "cardType": "spell",
+          "cardClass": "mage",
+          "countPer": "spells-this-turn"
+        }
+      ]
+    },
+    {
+      "id": "underbelly_angler",
+      "name": "Underbelly Angler",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "shaman",
+      "attack": 2,
+      "health": 3,
+      "rarity": "rare",
+      "set": "DALARAN",
+      "tribe": "Murloc",
+      "description": "After you play a Murloc, add a random Murloc to your hand.",
+      "ongoing": {
+        "on": "creature-played",
+        "effects": [
+          {
+            "type": "if-played-then",
+            "tribe": "Murloc",
+            "then": [
+              {
+                "type": "conjure-random",
+                "cardType": "creature",
+                "tribe": "Murloc",
+                "count": 1
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "lifeweaver",
+      "name": "Lifeweaver",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "druid",
+      "attack": 2,
+      "health": 5,
+      "rarity": "rare",
+      "set": "DALARAN",
+      "description": "Whenever you restore Health, add a random Druid spell to your hand.",
+      "ongoing": {
+        "on": "healed",
+        "effects": [
+          {
+            "type": "conjure-random",
+            "cardType": "spell",
+            "cardClass": "druid",
+            "count": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "hecklebot",
+      "name": "Hecklebot",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "neutral",
+      "attack": 3,
+      "health": 8,
+      "rarity": "rare",
+      "set": "DALARAN",
+      "keywords": [
+        "taunt",
+        "battlecry"
+      ],
+      "description": "Taunt. Battlecry: Your opponent summons a minion from their deck.",
+      "effects": [
+        {
+          "type": "enemy-summon-from-deck"
+        }
+      ]
+    },
+    {
+      "id": "arcane_fletcher",
+      "name": "Arcane Fletcher",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "hunter",
+      "attack": 3,
+      "health": 3,
+      "rarity": "epic",
+      "set": "DALARAN",
+      "description": "Whenever you play a 1-Cost minion, draw a spell from your deck.",
+      "ongoing": {
+        "on": "creature-played",
+        "effects": [
+          {
+            "type": "if-played-then",
+            "cost": 1,
+            "then": [
+              {
+                "type": "tutor",
+                "cardType": "spell"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "omega_devastator",
+      "name": "Omega Devastator",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "warrior",
+      "attack": 4,
+      "health": 5,
+      "rarity": "epic",
+      "set": "DALARAN",
+      "tribe": "Mech",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: If you have 10 Mana Crystals, deal 10 damage to a minion.",
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "manathirst": 10
+          },
+          "then": [
+            {
+              "type": "damage",
+              "value": 10,
+              "target": "creature"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "soldier_of_fortune",
+      "name": "Soldier of Fortune",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "neutral",
+      "attack": 5,
+      "health": 6,
+      "rarity": "common",
+      "set": "DALARAN",
+      "description": "Whenever this creature attacks, give your opponent a Coin.",
+      "ongoing": {
+        "on": "self-attacks",
+        "effects": [
+          {
+            "type": "give-enemy-card",
+            "id": "coin",
+            "count": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "dragon_speaker",
+      "name": "Dragon Speaker",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "paladin",
+      "attack": 3,
+      "health": 5,
+      "rarity": "epic",
+      "set": "DALARAN",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Give all Dragons in your hand +3/+3.",
+      "effects": [
+        {
+          "type": "buff-hand",
+          "tribe": "Dragon",
+          "all": true,
+          "attack": 3,
+          "health": 3
+        }
+      ]
+    },
+    {
+      "id": "azerite_elemental",
+      "name": "Azerite Elemental",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "neutral",
+      "attack": 2,
+      "health": 7,
+      "rarity": "epic",
+      "set": "DALARAN",
+      "tribe": "Elemental",
+      "description": "At the start of your turn, gain Spell Damage +2.",
+      "ongoing": {
+        "on": "turn-start",
+        "effects": [
+          {
+            "type": "buff-spell-damage-self",
+            "value": 2
+          }
+        ]
+      }
+    },
+    {
+      "id": "recurring_villain",
+      "name": "Recurring Villain",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "neutral",
+      "attack": 3,
+      "health": 6,
+      "rarity": "rare",
+      "set": "DALARAN",
+      "keywords": [
+        "deathrattle"
+      ],
+      "description": "Deathrattle: If this minion has 4 or more Attack, resummon it.",
+      "deathrattle": [
+        {
+          "type": "conditional",
+          "if": {
+            "selfAttack": 4
+          },
+          "then": [
+            {
+              "type": "resummon-source"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "crystal_stag",
+      "name": "Crystal Stag",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "druid",
+      "attack": 4,
+      "health": 4,
+      "rarity": "epic",
+      "set": "DALARAN",
+      "tribe": "Beast",
+      "keywords": [
+        "rush",
+        "battlecry"
+      ],
+      "description": "Rush. Battlecry: If you've restored 5 Health this game, summon a copy of this.",
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "healedGame": 5
+          },
+          "then": [
+            {
+              "type": "summon",
+              "count": 1,
+              "summonId": "crystal_stag"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "aranasi_broodmother",
+      "name": "Aranasi Broodmother",
+      "type": "creature",
+      "cost": 6,
+      "cardClass": "warlock",
+      "attack": 4,
+      "health": 6,
+      "rarity": "common",
+      "set": "DALARAN",
+      "tribe": "Demon",
+      "keywords": [
+        "taunt"
+      ],
+      "description": "Taunt. When you draw this, restore 4 Health to your hero.",
+      "emerge": [
+        {
+          "type": "heal",
+          "value": 4,
+          "target": "self"
+        }
+      ]
+    },
+    {
+      "id": "muckmorpher",
+      "name": "Muckmorpher",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "shaman",
+      "attack": 4,
+      "health": 4,
+      "rarity": "epic",
+      "set": "DALARAN",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Transform into a 4/4 copy of a different minion in your deck.",
+      "effects": [
+        {
+          "type": "transform-copy-from-deck",
+          "setAttack": 4,
+          "setHealth": 4
+        }
+      ]
+    },
+    {
+      "id": "shadowy_figure",
+      "name": "Shadowy Figure",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "priest",
+      "attack": 2,
+      "health": 2,
+      "rarity": "epic",
+      "set": "DALARAN",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Transform into a 2/2 copy of a friendly Deathrattle minion.",
+      "effects": [
+        {
+          "type": "transform-copy",
+          "target": "friendly-creature",
+          "requireKeyword": "deathrattle",
+          "setAttack": 2,
+          "setHealth": 2
+        }
+      ]
+    },
+    {
+      "id": "mad_summoner",
+      "name": "Mad Summoner",
+      "type": "creature",
+      "cost": 6,
+      "cardClass": "neutral",
+      "attack": 4,
+      "health": 4,
+      "rarity": "rare",
+      "set": "DALARAN",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Fill each player's board with 1/1 Imps.",
+      "effects": [
+        {
+          "type": "fill-board-each",
+          "name": "Imp",
+          "tribe": "Demon",
+          "attack": 1,
+          "health": 1
+        }
+      ]
     }
   ]
 }

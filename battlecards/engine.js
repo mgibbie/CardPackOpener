@@ -624,7 +624,7 @@ const CHOSEN = {
 	bounce: { creature: 'creature', 'enemy-creature': 'enemy-creature', 'friendly-creature': 'friendly-creature', permanent: 'permanent' },
 	'mind-control': { 'enemy-creature': 'enemy-creature' },
 	transform: { creature: 'creature', 'enemy-creature': 'enemy-creature', 'friendly-creature': 'friendly-creature' },
-	'transform-copy': { creature: 'creature' },
+	'transform-copy': { creature: 'creature', 'friendly-creature': 'friendly-creature' },
 	'swap-health-with': { creature: 'creature', 'friendly-creature': 'friendly-creature' },
 	'swap-stats-with': { creature: 'creature', 'friendly-creature': 'friendly-creature' },
 	'copy-stats': { creature: 'creature', 'friendly-creature': 'friendly-creature' },
@@ -1902,6 +1902,14 @@ function runSecretEffects(state, pi, effects, ctx) {
 					}
 					break;
 				}
+				case 'if-played-then': {
+					// generic "after you play a creature matching X, do Y" (Underbelly Angler, Arcane Fletcher)
+					const m = ctx.minion;
+					if (m && m !== ctx.self && (e.cost == null || (m.cost || 0) === e.cost) && (!e.tribe || (m.tribe || '').includes(e.tribe))) {
+						execEffects(state, pi, JSON.parse(JSON.stringify(e.then || [])), null, ctx.self);
+					}
+					break;
+				}
 				case 'tutor-spell-cost-plus': {
 					// Spirit of the Frog: draw a spell costing (cast spell's cost + N)
 					const sp = ctx.spell || ctx.played;
@@ -2959,6 +2967,7 @@ function execEffects(state, pi, effects, target, source) {
 				n = 0;
 				for (const o of enemies) n += state.players[o].board.filter(c => !isDead(c)).length;
 			}
+			if (!e.eachPlayer && !e.forEnemy && state.players[pi].board.some(c => c.id === 'khadgar' && !isDead(c))) n *= 2; // Khadgar: summon twice as many
 			const summonOne = (ownerIdx) => {
 				const opt = e.options ? e.options[Math.floor(state.rng() * e.options.length)] : e;
 				// summonId: instantiate a real card def so it keeps its own ongoing —
@@ -3761,6 +3770,7 @@ function execEffects(state, pi, effects, target, source) {
 			else if (e.if.controlFrozen) ok = p.board.some(c => !isDead(c) && c.frozen); // Ice Cream Peddler
 			else if (e.if.healedGame != null) ok = (p.healedGame || 0) >= e.if.healedGame; // Zandalari Templar
 			else if (e.if.hpDamageGame != null) ok = (p.hpDamageGame || 0) >= e.if.hpDamageGame; // Jan'alai, the Dragonhawk
+			else if (e.if.deckEmpty) ok = p.deck.length === 0; // Chef Nomi
 			execEffects(state, pi, ok ? e.then : (e.else || []), target, source);
 		} else if (e.type === 'damage-then') {
 			// deal damage, then branch on whether the creature survived
@@ -3965,6 +3975,46 @@ function execEffects(state, pi, effects, target, source) {
 				c.zone = 'hand'; state.players[pi].hand.push(c);
 				emit(state, { type: 'conjure', player: pi, card: c, color: null });
 			}
+		} else if (e.type === 'transform-copy-from-deck') {
+			// Muckmorpher: become a stat-set copy of a random creature in your deck
+			const p = state.players[pi];
+			const pool = [...new Set(p.deck)].map(id => state.cardsById[id]).filter(d => d && d.type === 'creature' && !d.token && d.id !== (source && source.id));
+			if (pool.length && source && source.zone === 'board' && !isDead(source)) {
+				const def = pool[Math.floor(state.rng() * pool.length)];
+				const clone = instantiate(def, source.controller);
+				clone.zone = 'board'; clone.sick = source.sick;
+				if (e.setAttack != null) clone.attack = e.setAttack;
+				if (e.setHealth != null) { clone.maxHealth = e.setHealth; clone.damage = 0; }
+				const board = p.board; board[board.indexOf(source)] = clone; source.zone = 'gone';
+				emit(state, { type: 'transformed', uid: source.uid, player: source.controller, from: source.name, card: clone });
+				recomputeAuras(state);
+			}
+		} else if (e.type === 'fill-board-each') {
+			// Mad Summoner: fill every player's board with tokens
+			for (let s2 = 0; s2 < state.players.length; s2++) {
+				if (state.players[s2].eliminated) continue;
+				while (state.players[s2].board.filter(c => !isDead(c)).length < 7) {
+					const c = summon(state, s2, { id: 'token_' + (e.name || 'imp').toLowerCase(), name: e.name || 'Imp', type: 'creature', cost: 1, token: true, tribe: e.tribe || null, rarity: 'common', attack: e.attack || 1, health: e.health || 1, description: `A ${e.attack || 1}/${e.health || 1} token.` });
+					if (!c) break;
+				}
+			}
+		} else if (e.type === 'heal-all-full') {
+			// Nozari: restore both heroes to full Health
+			for (let s2 = 0; s2 < state.players.length; s2++) { const pl = state.players[s2]; if (pl.eliminated) continue; if (pl.life < STARTING_LIFE) healHero(state, s2, STARTING_LIFE - pl.life); }
+		} else if (e.type === 'copy-board-battlecries') {
+			// Barista Lynchen: add a copy of each of your other Battlecry creatures to hand
+			const p = state.players[pi];
+			for (const c of p.board) {
+				if (c === source || isDead(c) || c.type !== 'creature' || !(c.keywords || []).includes('battlecry')) continue;
+				if (p.hand.length >= MAX_HAND) break;
+				const def = state.cardsById[c.id]; if (!def) continue;
+				const cp = instantiate(def, pi); cp.zone = 'hand'; p.hand.push(cp); emit(state, { type: 'conjure', player: pi, card: cp, color: null });
+			}
+		} else if (e.type === 'summon-deck-copy') {
+			// The Boom Reaver: summon a copy of a random creature in your deck (kept in deck), grant a keyword
+			const p = state.players[pi];
+			const pool = [...new Set(p.deck)].map(id => state.cardsById[id]).filter(d => d && d.type === 'creature' && !d.token);
+			if (pool.length) { const c = summon(state, pi, pool[Math.floor(state.rng() * pool.length)]); if (c && e.grant && !c.keywords.includes(e.grant)) c.keywords.push(e.grant); }
 		} else if (e.type === 'add-lackey') {
 			// Rise of Shadows: add a random Lackey to your hand
 			const lackeys = ['lackey_ethereal', 'lackey_faceless', 'lackey_goblin', 'lackey_kobold', 'lackey_witchy'];
@@ -5212,10 +5262,11 @@ function execEffects(state, pi, effects, target, source) {
 				pool = pool.filter(d => d.cardClass === e.cardClass); // Lyra: a specific class
 			}
 			// `copies`: pick ONE match and add that same card N times; else N distinct rolls
+			const cnt = e.countPer === 'spells-this-turn' ? (p.spellsPlayedThisTurn || 0) : (e.count || 1); // Mana Cyclone
 			const addTo = (own) => {
 				const op = state.players[own];
 				const picks = e.copies ? Array(e.copies).fill(pool.length ? pool[Math.floor(state.rng() * pool.length)] : null)
-					: Array.from({ length: e.count || 1 }, () => pool.length ? pool[Math.floor(state.rng() * pool.length)] : null);
+					: Array.from({ length: cnt }, () => pool.length ? pool[Math.floor(state.rng() * pool.length)] : null);
 				for (const def of picks) {
 					if (!def || op.hand.length >= MAX_HAND) break;
 					const card = instantiate(def, own);
@@ -5504,6 +5555,8 @@ function execEffects(state, pi, effects, target, source) {
 				clone.shield = t.shield;
 				clone.stealthed = t.stealthed;
 				clone.sick = source.sick;
+				if (e.setAttack != null) clone.attack = e.setAttack; // Shadowy Figure: a 2/2 copy
+				if (e.setHealth != null) { clone.maxHealth = e.setHealth; clone.damage = 0; }
 				const board = state.players[source.controller].board;
 				board[board.indexOf(source)] = clone;
 				source.zone = 'gone';
