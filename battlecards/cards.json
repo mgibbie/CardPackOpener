@@ -77761,6 +77761,286 @@
       "rarity": "legendary",
       "set": "DALARAN",
       "description": "A 4/3 weapon."
+    },
+    {
+      "id": "unseen_saboteur",
+      "name": "Unseen Saboteur",
+      "type": "creature",
+      "cost": 6,
+      "cardClass": "neutral",
+      "attack": 5,
+      "health": 6,
+      "rarity": "epic",
+      "set": "DALARAN",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Your opponent casts a random spell from their hand (targets chosen randomly).",
+      "effects": [
+        {
+          "type": "cast-enemy-random-spell"
+        }
+      ]
+    },
+    {
+      "id": "keeper_stalladris",
+      "name": "Keeper Stalladris",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "druid",
+      "attack": 2,
+      "health": 3,
+      "rarity": "legendary",
+      "set": "DALARAN",
+      "description": "After you cast a Choose One spell, add copies of both choices to your hand.",
+      "ongoing": {
+        "on": "choose-spell-played",
+        "effects": [
+          {
+            "type": "add-choose-copies"
+          }
+        ]
+      }
+    },
+    {
+      "id": "heistbaron_togwaggle",
+      "name": "Heistbaron Togwaggle",
+      "type": "creature",
+      "cost": 6,
+      "cardClass": "rogue",
+      "attack": 5,
+      "health": 5,
+      "rarity": "legendary",
+      "set": "DALARAN",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: If you control a Lackey, choose a fantastic treasure.",
+      "choices": [
+        {
+          "text": "Draw 3 cards",
+          "effects": [
+            {
+              "type": "conditional",
+              "if": {
+                "controlLackey": true
+              },
+              "then": [
+                {
+                  "type": "draw",
+                  "value": 3
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "text": "Deal 3 to all enemies",
+          "effects": [
+            {
+              "type": "conditional",
+              "if": {
+                "controlLackey": true
+              },
+              "then": [
+                {
+                  "type": "damage",
+                  "value": 3,
+                  "target": "enemies"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "text": "Add 2 random spells",
+          "effects": [
+            {
+              "type": "conditional",
+              "if": {
+                "controlLackey": true
+              },
+              "then": [
+                {
+                  "type": "conjure-random",
+                  "cardType": "spell",
+                  "count": 2
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "text": "Gain +5/+5",
+          "effects": [
+            {
+              "type": "conditional",
+              "if": {
+                "controlLackey": true
+              },
+              "then": [
+                {
+                  "type": "buff-self",
+                  "attack": 5,
+                  "health": 5
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "arch_villain_rafaam",
+      "name": "Arch-Villain Rafaam",
+      "type": "creature",
+      "cost": 7,
+      "cardClass": "warlock",
+      "attack": 7,
+      "health": 8,
+      "rarity": "legendary",
+      "set": "DALARAN",
+      "keywords": [
+        "taunt",
+        "battlecry"
+      ],
+      "description": "Taunt. Battlecry: Replace your hand and deck with Legendary minions.",
+      "effects": [
+        {
+          "type": "replace-with-legendaries"
+        }
+      ]
+    },
+    {
+      "id": "swampqueen_hagatha",
+      "name": "Swampqueen Hagatha",
+      "type": "creature",
+      "cost": 7,
+      "cardClass": "shaman",
+      "attack": 5,
+      "health": 5,
+      "rarity": "legendary",
+      "set": "DALARAN",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Add a 5/5 Horror to your hand. Teach it two Shaman spells.",
+      "effects": [
+        {
+          "type": "add-hagatha-horror"
+        }
+      ]
+    },
+    {
+      "id": "tak_nozwhisker",
+      "name": "Tak Nozwhisker",
+      "type": "creature",
+      "cost": 7,
+      "cardClass": "rogue",
+      "attack": 6,
+      "health": 6,
+      "rarity": "legendary",
+      "set": "DALARAN",
+      "description": "Whenever you shuffle a card into your deck, add a copy to your hand.",
+      "ongoing": {
+        "on": "card-shuffled",
+        "effects": [
+          {
+            "type": "add-shuffled-copy"
+          }
+        ]
+      }
+    },
+    {
+      "id": "lucentbark",
+      "name": "Lucentbark",
+      "type": "creature",
+      "cost": 8,
+      "cardClass": "druid",
+      "attack": 4,
+      "health": 8,
+      "rarity": "legendary",
+      "set": "DALARAN",
+      "keywords": [
+        "taunt",
+        "deathrattle"
+      ],
+      "description": "Taunt. Deathrattle: Go Dormant. Restore 5 Health to awaken this creature.",
+      "deathrattle": [
+        {
+          "type": "summon",
+          "count": 1,
+          "summonId": "lucentbark_seed"
+        }
+      ]
+    },
+    {
+      "id": "fel_lord_betrug",
+      "name": "Fel Lord Betrug",
+      "type": "creature",
+      "cost": 8,
+      "cardClass": "warlock",
+      "attack": 5,
+      "health": 7,
+      "rarity": "legendary",
+      "set": "DALARAN",
+      "tribe": "Demon",
+      "description": "Whenever you draw a creature, summon a copy with Rush that dies at end of turn.",
+      "ongoing": {
+        "on": "card-drawn",
+        "effects": [
+          {
+            "type": "summon-drawn-rush-doom"
+          }
+        ]
+      }
+    },
+    {
+      "id": "archivist_elysiana",
+      "name": "Archivist Elysiana",
+      "type": "creature",
+      "cost": 8,
+      "cardClass": "neutral",
+      "attack": 7,
+      "health": 7,
+      "rarity": "legendary",
+      "set": "DALARAN",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Rebuild your deck with 2 copies each of 5 random cards.",
+      "effects": [
+        {
+          "type": "rebuild-deck-random",
+          "count": 5
+        }
+      ]
+    },
+    {
+      "id": "lucentbark_seed",
+      "name": "Soul of the Forest",
+      "type": "creature",
+      "cost": 8,
+      "token": true,
+      "attack": 0,
+      "health": 8,
+      "rarity": "legendary",
+      "set": "DALARAN",
+      "dormant": 999,
+      "keywords": [
+        "pacifist"
+      ],
+      "description": "Restore 5 Health to awaken Lucentbark.",
+      "ongoing": {
+        "on": "healed",
+        "effects": [
+          {
+            "type": "awaken-on-heal",
+            "threshold": 5,
+            "into": "lucentbark"
+          }
+        ]
+      }
     }
   ]
 }

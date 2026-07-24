@@ -1907,6 +1907,55 @@ function runSecretEffects(state, pi, effects, ctx) {
 					}
 					break;
 				}
+				case 'awaken-on-heal': {
+					// Lucentbark's dormant seed: restore 5 Health (total) to wake it up
+					const self = ctx.self;
+					if (self && ctx.healedHero === pi) {
+						self._healBank = (self._healBank || 0) + (ctx.amount || 0);
+						if (self._healBank >= (e.threshold || 5) && state.cardsById[e.into]) {
+							const tok = instantiate(state.cardsById[e.into], self.controller);
+							tok.zone = 'board'; tok.sick = false;
+							const board = state.players[self.controller].board;
+							board[board.indexOf(self)] = tok; self.zone = 'gone';
+							emit(state, { type: 'transformed', uid: self.uid, player: self.controller, from: self.name, card: tok });
+							recomputeAuras(state);
+						}
+					}
+					break;
+				}
+				case 'add-shuffled-copy': {
+					// Tak Nozwhisker: when you shuffle a card in, add a copy to your hand
+					const def = ctx.cardId && state.cardsById[ctx.cardId];
+					if (def && !def.token && state.players[pi].hand.length < MAX_HAND) {
+						const c = instantiate(def, pi); c.zone = 'hand'; state.players[pi].hand.push(c);
+						emit(state, { type: 'conjure', player: pi, card: c, color: null });
+					}
+					break;
+				}
+				case 'add-choose-copies': {
+					// Keeper Stalladris: after a Choose One spell, add copies of both choices
+					// (approximated: two copies of the spell you cast)
+					const sp = ctx.played;
+					if (sp && state.cardsById[sp.id]) for (let i = 0; i < 2; i++) {
+						if (state.players[pi].hand.length >= MAX_HAND) break;
+						const c = instantiate(state.cardsById[sp.id], pi); c.zone = 'hand'; state.players[pi].hand.push(c);
+						emit(state, { type: 'conjure', player: pi, card: c, color: null });
+					}
+					break;
+				}
+				case 'summon-drawn-rush-doom': {
+					// Fel Lord Betrug: drew a creature -> summon a Rush copy that dies at end of turn
+					const c = ctx.card;
+					if (c && c.type === 'creature' && state.cardsById[c.id]) {
+						const cp = instantiate(state.cardsById[c.id], pi);
+						cp.zone = 'board'; cp.sick = true;
+						if (!cp.keywords.includes('rush')) cp.keywords.push('rush');
+						cp.doomTurn = state.turnNumber;
+						state.players[pi].board.push(cp);
+						emit(state, { type: 'summon', player: pi, card: cp }); fireOngoing(state, pi, 'summoned', { minion: cp }); recomputeAuras(state);
+					}
+					break;
+				}
 				case 'if-played-then': {
 					// generic "after you play a creature matching X, do Y" (Underbelly Angler, Arcane Fletcher)
 					const m = ctx.minion;
@@ -3780,6 +3829,7 @@ function execEffects(state, pi, effects, target, source) {
 			else if (e.if.hpDamageGame != null) ok = (p.hpDamageGame || 0) >= e.if.hpDamageGame; // Jan'alai, the Dragonhawk
 			else if (e.if.deckEmpty) ok = p.deck.length === 0; // Chef Nomi
 			else if (e.if.holdingOtherClass) ok = p.hand.some(c => c !== source && c.cardClass && c.cardClass !== 'neutral' && c.cardClass !== p.heroClass); // Underbelly Fence
+			else if (e.if.controlLackey) ok = p.board.some(c => !isDead(c) && typeof c.id === 'string' && c.id.startsWith('lackey_')); // Heistbaron Togwaggle
 			execEffects(state, pi, ok ? e.then : (e.else || []), target, source);
 		} else if (e.type === 'damage-then') {
 			// deal damage, then branch on whether the creature survived
@@ -3983,6 +4033,50 @@ function execEffects(state, pi, effects, target, source) {
 				const c = instantiate(state.cardsById[source.id], pi);
 				c.zone = 'hand'; state.players[pi].hand.push(c);
 				emit(state, { type: 'conjure', player: pi, card: c, color: null });
+			}
+		} else if (e.type === 'cast-enemy-random-spell') {
+			// Unseen Saboteur: an opponent casts a random spell from their hand at random targets
+			const o = enemies[0];
+			if (o != null) {
+				const op = state.players[o];
+				const spells = op.hand.filter(c => isSpellType(c));
+				if (spells.length) {
+					const sp = spells[Math.floor(state.rng() * spells.length)];
+					op.hand = op.hand.filter(c => c !== sp);
+					const spec = targetSpec(state, o, sp, null);
+					let tgt = null;
+					if (spec) { const legal = legalTargets(state, o, spec); if (legal.length) tgt = legal[Math.floor(state.rng() * legal.length)]; }
+					if (!spec || tgt || !spec.required) { runSpell(state, o, sp, tgt, null); sweepDeaths(state); }
+				}
+			}
+		} else if (e.type === 'replace-with-legendaries') {
+			// Arch-Villain Rafaam: replace your hand and deck with random Legendary creatures
+			const p = state.players[pi];
+			const legends = Object.values(state.cardsById).filter(d => d.type === 'creature' && d.rarity === 'legendary' && !d.token && d.collectible !== false && !d.companion && !d.commander && !(d.colors && d.colors.length));
+			if (legends.length) {
+				const handN = p.hand.filter(c => c !== source).length;
+				p.hand = p.hand.filter(c => c === source);
+				for (let i = 0; i < handN && p.hand.length < MAX_HAND; i++) { const c = instantiate(legends[Math.floor(state.rng() * legends.length)], pi); c.zone = 'hand'; p.hand.push(c); emit(state, { type: 'conjure', player: pi, card: c, color: null }); }
+				p.deck = p.deck.map(() => legends[Math.floor(state.rng() * legends.length)].id);
+			}
+		} else if (e.type === 'rebuild-deck-random') {
+			// Archivist Elysiana: replace your deck with 2 copies each of some random cards
+			const p = state.players[pi];
+			const pool = Object.values(state.cardsById).filter(d => d.type !== 'land' && !d.token && d.collectible !== false && !d.companion && !d.commander && !(d.colors && d.colors.length));
+			const deck = [];
+			for (let i = 0; i < (e.count || 5) && pool.length; i++) { const d = pool[Math.floor(state.rng() * pool.length)]; deck.push(d.id, d.id); }
+			p.deck = deck;
+			for (let i = p.deck.length - 1; i > 0; i--) { const j = Math.floor(state.rng() * (i + 1)); [p.deck[i], p.deck[j]] = [p.deck[j], p.deck[i]]; }
+		} else if (e.type === 'add-hagatha-horror') {
+			// Swampqueen Hagatha: add a 5/5 Horror with two random Shaman spells baked in
+			const p = state.players[pi];
+			if (p.hand.length < MAX_HAND) {
+				const spells = Object.values(state.cardsById).filter(d => isSpellType(d) && d.cardClass === 'shaman' && !d.token && d.collectible !== false && !(d.colors && d.colors.length));
+				const chosen = [];
+				for (let i = 0; i < 2 && spells.length; i++) chosen.push(spells[Math.floor(state.rng() * spells.length)]);
+				const bc = chosen.flatMap(sp => JSON.parse(JSON.stringify(sp.effects || [])));
+				const horror = instantiate({ id: 'dal_drustvar_horror', name: 'Drustvar Horror', type: 'creature', cost: 5, token: true, rarity: 'epic', set: 'DALARAN', attack: 5, health: 5, keywords: bc.length ? ['battlecry'] : [], description: '5/5. ' + chosen.map(s => s.name).join(', '), effects: bc }, pi);
+				horror.zone = 'hand'; p.hand.push(horror); emit(state, { type: 'conjure', player: pi, card: horror, color: null });
 			}
 		} else if (e.type === 'grant-hero-elusive') {
 			// Spellward Jeweler: your hero can't be targeted until your next turn
@@ -4503,7 +4597,7 @@ function execEffects(state, pi, effects, target, source) {
 				const total = (e.count || 1) * (1 + elekk);
 				for (let n = 0; n < total; n++) p.deck.push(t.id);
 				for (let i = p.deck.length - 1; i > 0; i--) { const j = Math.floor(state.rng() * (i + 1)); [p.deck[i], p.deck[j]] = [p.deck[j], p.deck[i]]; }
-				emit(state, { type: 'shuffledIntoDeck', player: pi, cardId: t.id });
+				emit(state, { type: 'shuffledIntoDeck', player: pi, cardId: t.id }); fireOngoing(state, pi, 'card-shuffled', { cardId: t.id });
 			}
 		} else if (e.type === 'summon-copies-from-deck') {
 			// Madam Goya: summon every copy of a chosen friendly creature from your deck
@@ -5033,7 +5127,7 @@ function execEffects(state, pi, effects, target, source) {
 				if (!e.id || !state.cardsById[e.id]) break;
 				for (let n = 0; n < (e.count || 1) * (own === pi ? (1 + elekkS) : 1); n++) dk.push(e.id);
 				for (let i = dk.length - 1; i > 0; i--) { const j = Math.floor(state.rng() * (i + 1)); [dk[i], dk[j]] = [dk[j], dk[i]]; }
-				emit(state, { type: 'shuffledIntoDeck', player: own, cardId: e.id });
+				emit(state, { type: 'shuffledIntoDeck', player: own, cardId: e.id }); if (own === pi) fireOngoing(state, pi, 'card-shuffled', { cardId: e.id });
 			}
 		} else if (e.type === 'shuffle-self-into-deck') {
 			// "Shuffle this card back into your deck" — Astral Tiger recursion
@@ -5044,7 +5138,7 @@ function execEffects(state, pi, effects, target, source) {
 					const j = Math.floor(state.rng() * (i + 1));
 					[p.deck[i], p.deck[j]] = [p.deck[j], p.deck[i]];
 				}
-				emit(state, { type: 'shuffledIntoDeck', player: pi, cardId: source.id });
+				emit(state, { type: 'shuffledIntoDeck', player: pi, cardId: source.id }); fireOngoing(state, pi, 'card-shuffled', { cardId: source.id });
 			}
 		} else if (e.type === 'shuffle-hand') {
 			// shuffle your hand into your deck (tokens evaporate)
@@ -6458,6 +6552,7 @@ function resolveStackedSpell(state, entry) {
 			execEffects(state, pi, card.honorableKill, ctx.target, card);
 		}
 		fireOngoing(state, pi, 'spell-played', { played: card });
+		if (card.choices) fireOngoing(state, pi, 'choose-spell-played', { played: card }); // Keeper Stalladris
 		firePlaneTrigger(state, 'spell-cast', pi); // Minamo / Elysaria
 		for (let s2 = 0; s2 < state.players.length; s2++) {
 			fireOngoing(state, s2, 'any-spell-played', { spell: card, caster: pi });
