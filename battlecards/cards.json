@@ -82437,6 +82437,484 @@
       "token": true,
       "collectible": false,
       "description": "Taunt."
+    },
+    {
+      "id": "bogstrok_clacker",
+      "name": "Bogstrok Clacker",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "shaman",
+      "attack": 3,
+      "health": 3,
+      "rarity": "rare",
+      "set": "BLACK_TEMPLE",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Transform adjacent minions into random minions that cost (1) more.",
+      "effects": [
+        {
+          "type": "transform-adjacent-costplus",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "marshspawn",
+      "name": "Marshspawn",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "shaman",
+      "attack": 3,
+      "health": 4,
+      "rarity": "common",
+      "set": "BLACK_TEMPLE",
+      "tribe": "Elemental",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: If you cast a spell last turn, Discover a spell.",
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "castSpellLastTurn": true
+          },
+          "then": [
+            {
+              "type": "discover",
+              "cardType": "spell"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "teron_gorefiend",
+      "name": "Teron Gorefiend",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "neutral",
+      "attack": 3,
+      "health": 4,
+      "rarity": "legendary",
+      "set": "BLACK_TEMPLE",
+      "tribe": "Undead",
+      "keywords": [
+        "battlecry",
+        "deathrattle"
+      ],
+      "description": "Battlecry: Destroy all other friendly minions. Deathrattle: Resummon them with +1/+1.",
+      "effects": [
+        {
+          "type": "sacrifice-others-remember"
+        }
+      ],
+      "deathrattle": [
+        {
+          "type": "resummon-remembered-buffed"
+        }
+      ]
+    },
+    {
+      "id": "warmaul_challenger",
+      "name": "Warmaul Challenger",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "warrior",
+      "attack": 1,
+      "health": 10,
+      "rarity": "epic",
+      "set": "BLACK_TEMPLE",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Choose an enemy minion. Battle it to the death!",
+      "effects": [
+        {
+          "type": "fight",
+          "target": "enemy-creature",
+          "selfFights": true
+        }
+      ]
+    },
+    {
+      "id": "zixor_apex_predator",
+      "name": "Zixor, Apex Predator",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "hunter",
+      "attack": 2,
+      "health": 4,
+      "rarity": "legendary",
+      "set": "BLACK_TEMPLE",
+      "tribe": "Beast",
+      "keywords": [
+        "rush",
+        "deathrattle"
+      ],
+      "description": "Rush. Deathrattle: Shuffle 'Zixor Prime' into your deck.",
+      "deathrattle": [
+        {
+          "type": "shuffle-into-deck",
+          "id": "zixor_prime",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "id": "burrowing_scorpid",
+      "name": "Burrowing Scorpid",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "neutral",
+      "attack": 5,
+      "health": 2,
+      "rarity": "common",
+      "set": "BLACK_TEMPLE",
+      "tribe": "Beast",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Deal 2 damage. If that kills the target, gain Stealth.",
+      "effects": [
+        {
+          "type": "damage-stealth-on-kill",
+          "value": 2,
+          "target": "enemy-creature"
+        }
+      ]
+    },
+    {
+      "id": "kargath_bladefist",
+      "name": "Kargath Bladefist",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "warrior",
+      "attack": 4,
+      "health": 4,
+      "rarity": "legendary",
+      "set": "BLACK_TEMPLE",
+      "keywords": [
+        "rush",
+        "deathrattle"
+      ],
+      "description": "Rush. Deathrattle: Shuffle 'Kargath Prime' into your deck.",
+      "deathrattle": [
+        {
+          "type": "shuffle-into-deck",
+          "id": "kargath_prime",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "id": "magtheridon",
+      "name": "Magtheridon",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "neutral",
+      "attack": 12,
+      "health": 12,
+      "rarity": "legendary",
+      "set": "BLACK_TEMPLE",
+      "tribe": "Demon",
+      "keywords": [
+        "battlecry"
+      ],
+      "dormant": 99,
+      "dormantBattlecry": true,
+      "description": "Dormant. Battlecry: Summon three 1/3 enemy Warders. When they die, destroy all minions and awaken.",
+      "effects": [
+        {
+          "type": "summon",
+          "count": 3,
+          "summonId": "bt_magtheridon_warder",
+          "forEnemy": true
+        }
+      ]
+    },
+    {
+      "id": "maiev_shadowsong",
+      "name": "Maiev Shadowsong",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "neutral",
+      "attack": 4,
+      "health": 3,
+      "rarity": "legendary",
+      "set": "BLACK_TEMPLE",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Choose a minion. It goes Dormant for 2 turns.",
+      "effects": [
+        {
+          "type": "make-dormant",
+          "value": 2,
+          "target": "creature"
+        }
+      ]
+    },
+    {
+      "id": "nightshade_matron",
+      "name": "Nightshade Matron",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "warlock",
+      "attack": 5,
+      "health": 5,
+      "rarity": "common",
+      "set": "BLACK_TEMPLE",
+      "tribe": "Demon",
+      "keywords": [
+        "rush",
+        "battlecry"
+      ],
+      "description": "Rush. Battlecry: Discard your highest Cost card.",
+      "effects": [
+        {
+          "type": "discard-lowest",
+          "highest": true,
+          "count": 1
+        }
+      ]
+    },
+    {
+      "id": "replicat_o_tron",
+      "name": "Replicat-o-tron",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "neutral",
+      "attack": 3,
+      "health": 3,
+      "rarity": "epic",
+      "set": "BLACK_TEMPLE",
+      "tribe": "Mech",
+      "description": "At the end of your turn, transform a neighbor into a copy of this.",
+      "ongoing": {
+        "on": "turn-end",
+        "effects": [
+          {
+            "type": "transform-neighbor-into-copy-self"
+          }
+        ]
+      }
+    },
+    {
+      "id": "rustsworn_cultist",
+      "name": "Rustsworn Cultist",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "neutral",
+      "attack": 3,
+      "health": 3,
+      "rarity": "common",
+      "set": "BLACK_TEMPLE",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Give your other minions \"Deathrattle: Summon a 1/1 Demon.\"",
+      "effects": [
+        {
+          "type": "grant-deathrattle",
+          "target": "friendly-others",
+          "effects": [
+            {
+              "type": "summon",
+              "count": 1,
+              "summonId": "bt_rustsworn_demon"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "aldor_truthseeker",
+      "name": "Aldor Truthseeker",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "paladin",
+      "attack": 4,
+      "health": 6,
+      "rarity": "rare",
+      "set": "BLACK_TEMPLE",
+      "tribe": "Draenei",
+      "keywords": [
+        "taunt",
+        "battlecry"
+      ],
+      "description": "Taunt. Battlecry: Reduce the Cost of your Librams by (2) this game.",
+      "effects": [
+        {
+          "type": "reduce-libram-cost",
+          "value": 2
+        }
+      ]
+    },
+    {
+      "id": "scrap_golem",
+      "name": "Scrap Golem",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "warrior",
+      "attack": 4,
+      "health": 5,
+      "rarity": "rare",
+      "set": "BLACK_TEMPLE",
+      "tribe": "Mech",
+      "keywords": [
+        "taunt",
+        "deathrattle"
+      ],
+      "description": "Taunt. Deathrattle: Gain Armor equal to this minion's Attack.",
+      "deathrattle": [
+        {
+          "type": "gain-armor-by-attack"
+        }
+      ]
+    },
+    {
+      "id": "shattered_rumbler",
+      "name": "Shattered Rumbler",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "shaman",
+      "attack": 5,
+      "health": 6,
+      "rarity": "epic",
+      "set": "BLACK_TEMPLE",
+      "tribe": "Elemental",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: If you cast a spell last turn, deal 2 damage to all other minions.",
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "castSpellLastTurn": true
+          },
+          "then": [
+            {
+              "type": "damage-all-minions",
+              "value": 2,
+              "exceptSource": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "waste_warden",
+      "name": "Waste Warden",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "neutral",
+      "attack": 3,
+      "health": 3,
+      "rarity": "epic",
+      "set": "BLACK_TEMPLE",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Deal 3 damage to a minion and all others of the same minion type.",
+      "effects": [
+        {
+          "type": "damage-target-and-same-tribe",
+          "value": 3,
+          "target": "creature"
+        }
+      ]
+    },
+    {
+      "id": "zixor_prime",
+      "name": "Zixor Prime",
+      "type": "creature",
+      "cost": 8,
+      "cardClass": "hunter",
+      "attack": 4,
+      "health": 4,
+      "rarity": "legendary",
+      "set": "BLACK_TEMPLE",
+      "tribe": "Beast",
+      "keywords": [
+        "rush",
+        "battlecry"
+      ],
+      "token": true,
+      "collectible": false,
+      "description": "Rush. Battlecry: Summon 3 copies of this minion.",
+      "effects": [
+        {
+          "type": "summon-copy-self",
+          "count": 3
+        }
+      ]
+    },
+    {
+      "id": "kargath_prime",
+      "name": "Kargath Prime",
+      "type": "creature",
+      "cost": 8,
+      "cardClass": "warrior",
+      "attack": 10,
+      "health": 10,
+      "rarity": "legendary",
+      "set": "BLACK_TEMPLE",
+      "tribe": "Mech",
+      "keywords": [
+        "rush"
+      ],
+      "token": true,
+      "collectible": false,
+      "description": "Rush. Whenever this attacks and kills a minion, gain 10 Armor.",
+      "ongoing": {
+        "on": "self-kills-creature",
+        "effects": [
+          {
+            "type": "armor",
+            "value": 10
+          }
+        ]
+      }
+    },
+    {
+      "id": "bt_magtheridon_warder",
+      "name": "Warder",
+      "type": "creature",
+      "cost": 0,
+      "cardClass": "neutral",
+      "attack": 1,
+      "health": 3,
+      "rarity": "common",
+      "set": "BLACK_TEMPLE",
+      "token": true,
+      "collectible": false,
+      "keywords": [
+        "deathrattle"
+      ],
+      "description": "Deathrattle: If all Warders are dead, destroy all minions and awaken Magtheridon.",
+      "deathrattle": [
+        {
+          "type": "magtheridon-warder-death"
+        }
+      ]
+    },
+    {
+      "id": "bt_rustsworn_demon",
+      "name": "Rustsworn Demon",
+      "type": "creature",
+      "cost": 1,
+      "cardClass": "neutral",
+      "attack": 1,
+      "health": 1,
+      "rarity": "common",
+      "set": "BLACK_TEMPLE",
+      "tribe": "Demon",
+      "token": true,
+      "collectible": false,
+      "description": "A 1/1 Demon."
     }
   ]
 }

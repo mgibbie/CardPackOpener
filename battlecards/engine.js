@@ -604,6 +604,9 @@ const CHOSEN = {
 	'damage-per-cards-played': { creature: 'creature', 'enemy-creature': 'enemy-creature' },
 	'damage-target-by-attack': { creature: 'creature', 'enemy-creature': 'enemy-creature' },
 	'grant-immune-turn': { creature: 'creature', 'friendly-creature': 'friendly-creature' },
+	'damage-stealth-on-kill': { creature: 'creature', 'enemy-creature': 'enemy-creature', any: 'any', 'enemy-any': 'enemy-any' },
+	'make-dormant': { creature: 'creature', 'enemy-creature': 'enemy-creature', 'friendly-creature': 'friendly-creature' },
+	'damage-target-and-same-tribe': { creature: 'creature', 'enemy-creature': 'enemy-creature' },
 	'transform-into-token': { 'friendly-creature': 'friendly-creature', creature: 'creature' },
 	'mark-doomed': { creature: 'creature', 'enemy-creature': 'enemy-creature' },
 	'devour-target': { 'friendly-creature': 'friendly-creature' },
@@ -621,7 +624,7 @@ const CHOSEN = {
 	exile: { creature: 'creature', 'enemy-creature': 'enemy-creature' },
 	'exile-until-return': { creature: 'creature', 'enemy-creature': 'enemy-creature' },
 	blink: { creature: 'creature', 'friendly-creature': 'friendly-creature' },
-	fight: { 'friendly-creature': 'friendly-creature', creature: 'creature' },
+	fight: { 'friendly-creature': 'friendly-creature', creature: 'creature', 'enemy-creature': 'enemy-creature' },
 	'attach-equip': { creature: 'creature', 'friendly-creature': 'friendly-creature' },
 	disguise: { creature: 'creature', 'friendly-creature': 'friendly-creature' },
 	freeze: { any: 'any', creature: 'creature', 'enemy-creature': 'enemy-creature' },
@@ -2960,8 +2963,8 @@ function execEffects(state, pi, effects, target, source) {
 		} else if (e.type === 'fight') {
 			// two-target fight: the chosen fighter (target.uid) and its foe
 			// (target.fightTarget) each deal damage equal to their power to the other
-			const aC = chosenCreature();
-			const bC = target && target.fightTarget != null ? findCreature(state, target.fightTarget) : null;
+			const aC = e.selfFights ? source : chosenCreature();
+			const bC = e.selfFights ? chosenCreature() : (target && target.fightTarget != null ? findCreature(state, target.fightTarget) : null);
 			if (aC && bC && aC !== bC && !isDead(aC) && !isDead(bC)) {
 				const pa = aC.attack, pb = bC.attack;
 				emit(state, { type: 'fight', a: aC.uid, b: bC.uid });
@@ -3857,6 +3860,7 @@ function execEffects(state, pi, effects, target, source) {
 		} else if (e.type === 'grant-deathrattle') {
 			const targets = e.target === 'creature' ? [chosenCreature()].filter(Boolean)
 				: e.target === 'self' ? (source && source.zone === 'board' && !isDead(source) ? [source] : []) // Fatespinner
+				: e.target === 'friendly-others' ? state.players[pi].board.filter(c => c !== source && !isDead(c) && c.type !== 'location') // Rustsworn Cultist
 				: state.players[pi].board.filter(c => !isDead(c));
 			for (const c of targets) {
 				c.deathrattle = (c.deathrattle || []).concat(JSON.parse(JSON.stringify(e.effects)));
@@ -3921,6 +3925,7 @@ function execEffects(state, pi, effects, target, source) {
 			else if (e.if.playedQuestGame) ok = !!p.questsPlayedGame; // Sky Gen'ral Kragg
 			else if (e.if.anyDamaged) ok = state.players.some(pl => pl.board.some(c => !isDead(c) && c.type !== 'location' && c.damage > 0)); // Bonechewer Raider
 			else if (e.if.controlStealthed) ok = p.board.some(c => !isDead(c) && c.stealthed); // Greyheart Sage
+			else if (e.if.castSpellLastTurn) ok = !!p.castSpellLastTurn; // Marshspawn / Shattered Rumbler
 			else if (e.if.hpDamageGame != null) ok = (p.hpDamageGame || 0) >= e.if.hpDamageGame; // Jan'alai, the Dragonhawk
 			else if (e.if.deckEmpty) ok = p.deck.length === 0; // Chef Nomi
 			else if (e.if.holdingOtherClass) ok = p.hand.some(c => c !== source && c.cardClass && c.cardClass !== 'neutral' && c.cardClass !== p.heroClass); // Underbelly Fence
@@ -5050,7 +5055,8 @@ function execEffects(state, pi, effects, target, source) {
 			if (atk > 0 && pool.length) buffCreature(pool[Math.floor(state.rng() * pool.length)], atk, 0);
 		} else if (e.type === 'damage-all-minions') {
 			// Risky Skipper: deal `value` to every minion on both sides
-			for (const pl of state.players) for (const c of [...pl.board]) if (!isDead(c) && c.type !== 'location') damageCreature(state, c, e.value || 1, source);
+			// (exceptSource omits the caster — Shattered Rumbler: "all OTHER minions")
+			for (const pl of state.players) for (const c of [...pl.board]) if (!isDead(c) && c.type !== 'location' && !(e.exceptSource && c === source)) damageCreature(state, c, e.value || 1, source);
 			sweepDeaths(state);
 		} else if (e.type === 'damage-target-by-attack') {
 			// Aeon Reaver: deal damage to a minion equal to its own Attack
@@ -5060,8 +5066,8 @@ function execEffects(state, pi, effects, target, source) {
 			// Boompistol Bully: enemy Battlecry cards cost more next turn
 			for (const o of enemies) state.players[o].battlecryTaxNext = (state.players[o].battlecryTaxNext || 0) + (e.value || 5);
 		} else if (e.type === 'summon-copy-self') {
-			// Animated Avalanche: summon a copy of this minion
-			if (source) { const base = state.cardsById[source.id]; if (base) summon(state, pi, JSON.parse(JSON.stringify(base))); }
+			// Animated Avalanche: summon a copy of this minion (count copies — Zixor Prime)
+			if (source) { const base = state.cardsById[source.id]; if (base) for (let n = 0; n < (e.count || 1); n++) summon(state, pi, JSON.parse(JSON.stringify(base))); }
 		} else if (e.type === 'reduce-libram-cost') {
 			// Aldor Attendant / Aldor Truthseeker: your Librams cost less this game
 			state.players[pi].libramDiscount = (state.players[pi].libramDiscount || 0) + (e.value || 1);
@@ -5096,6 +5102,84 @@ function execEffects(state, pi, effects, target, source) {
 			// Imprisoned Satyr: reduce the Cost of a random minion in your hand
 			const pool = state.players[pi].hand.filter(c => c.type === 'creature');
 			if (pool.length) { const c = pool[Math.floor(state.rng() * pool.length)]; c.cost = Math.max(0, (c.cost || 0) - (e.value || 1)); }
+		} else if (e.type === 'transform-adjacent-costplus') {
+			// Bogstrok Clacker: transform each neighbor into a random minion costing (1) more
+			if (source) {
+				const board = state.players[pi].board;
+				const i = board.indexOf(source);
+				for (const j of [i - 1, i + 1]) {
+					const nb = board[j];
+					if (!nb || isDead(nb) || nb.type === 'location') continue;
+					const want = (nb.cost || 0) + (e.value || 1);
+					const pool = Object.values(state.cardsById).filter(d => d.type === 'creature' && (d.cost || 0) === want && !d.token && d.collectible !== false && !d.companion && !d.commander && !(d.colors && d.colors.length));
+					if (!pool.length) continue;
+					const def = JSON.parse(JSON.stringify(pool[Math.floor(state.rng() * pool.length)]));
+					const tok = instantiate(def, nb.controller); tok.zone = 'board'; tok.sick = nb.sick;
+					board[board.indexOf(nb)] = tok; nb.zone = 'gone';
+					emit(state, { type: 'transformed', uid: nb.uid, player: nb.controller, from: nb.name, card: tok });
+				}
+				recomputeAuras(state);
+			}
+		} else if (e.type === 'sacrifice-others-remember') {
+			// Teron Gorefiend: destroy all other friendly minions, remembering them
+			const others = state.players[pi].board.filter(c => c !== source && !isDead(c) && c.type !== 'location');
+			if (source) source.rememberedMinions = others.map(c => ({ id: c.id, name: c.name, tribe: c.tribe || null, attack: c.attack || 0, health: hp(c) }));
+			for (const c of others) { c.damage = c.maxHealth; c.shield = false; emit(state, { type: 'destroy', uid: c.uid }); }
+			sweepDeaths(state);
+		} else if (e.type === 'resummon-remembered-buffed') {
+			// Teron Gorefiend deathrattle: resummon the remembered minions with +1/+1
+			for (const m of (source && source.rememberedMinions) || []) {
+				const base = state.cardsById[m.id];
+				const def = base ? JSON.parse(JSON.stringify(base)) : { id: 'token_' + (m.name || 'minion').toLowerCase().replace(/\W+/g, '_'), name: m.name, type: 'creature', cost: 0, token: true, rarity: 'common', tribe: m.tribe };
+				def.attack = (m.attack || 0) + 1; def.health = (m.health || 0) + 1;
+				summon(state, pi, def);
+			}
+		} else if (e.type === 'damage-stealth-on-kill') {
+			// Burrowing Scorpid: deal damage; if it kills, gain Stealth
+			const t = chosenCreature();
+			if (t) { const before = isDead(t); damageCreature(state, t, e.value || 2, source); if (!before && isDead(t) && source && !isDead(source) && !source.keywords.includes(KW.STEALTH)) { source.keywords.push(KW.STEALTH); source.stealthed = true; } }
+			sweepDeaths(state);
+		} else if (e.type === 'make-dormant') {
+			// Maiev Shadowsong: send a chosen minion Dormant
+			const t = chosenCreature();
+			if (t) { t.dormantLeft = e.value || 2; emit(state, { type: 'dormant', player: t.controller, uid: t.uid, turns: t.dormantLeft }); }
+		} else if (e.type === 'transform-neighbor-into-copy-self') {
+			// Replicat-o-tron: at end of turn, turn a neighbor into a copy of this
+			if (source) {
+				const board = state.players[pi].board;
+				const i = board.indexOf(source);
+				const nbs = [board[i - 1], board[i + 1]].filter(c => c && !isDead(c) && c.type !== 'location' && c.id !== source.id);
+				if (nbs.length) {
+					const nb = nbs[Math.floor(state.rng() * nbs.length)];
+					const base = state.cardsById[source.id];
+					if (base) { const tok = instantiate(JSON.parse(JSON.stringify(base)), nb.controller); tok.zone = 'board'; tok.sick = nb.sick; board[board.indexOf(nb)] = tok; nb.zone = 'gone'; emit(state, { type: 'transformed', uid: nb.uid, player: nb.controller, from: nb.name, card: tok }); recomputeAuras(state); }
+				}
+			}
+		} else if (e.type === 'gain-armor-by-attack') {
+			// Scrap Golem: gain Armor equal to this minion's Attack
+			const amt = source ? (source.attack || 0) : 0;
+			if (amt > 0) gainArmor(state, pi, amt);
+		} else if (e.type === 'damage-target-and-same-tribe') {
+			// Waste Warden: deal damage to a minion and all others of the same type
+			const t = chosenCreature();
+			if (t) {
+				const tribe = t.tribe || '';
+				damageCreature(state, t, e.value || 3, source);
+				if (tribe) for (const pl of state.players) for (const c of [...pl.board]) if (c !== t && !isDead(c) && c.type !== 'location' && (c.tribe || '') && tribe.split('/').some(tr => (c.tribe || '').includes(tr))) damageCreature(state, c, e.value || 3, source);
+				sweepDeaths(state);
+			}
+		} else if (e.type === 'magtheridon-warder-death') {
+			// Magtheridon's Warders: when the last one dies, wipe the board and awaken him
+			const anyWarder = state.players.some(pl => pl.board.some(c => c.id === 'bt_magtheridon_warder' && !isDead(c)));
+			if (!anyWarder) {
+				let mag = null, magOwner = -1;
+				for (let s2 = 0; s2 < state.players.length; s2++) for (const c of state.players[s2].board) if (c.id === 'magtheridon' && c.dormantLeft > 0) { mag = c; magOwner = s2; }
+				if (mag) {
+					mag.dormantLeft = 0; mag.sick = true; emit(state, { type: 'awaken', player: magOwner, uid: mag.uid, name: mag.name });
+					for (const pl of state.players) for (const c of [...pl.board]) if (c !== mag && !isDead(c) && c.type !== 'location') { c.damage = c.maxHealth; c.shield = false; emit(state, { type: 'destroy', uid: c.uid }); }
+					sweepDeaths(state);
+				}
+			}
 		} else if (e.type === 'curse-enemy-card') {
 			// Chaos Gazer: curse a card in the opponent's hand; if unplayed by the
 			// end of their next turn, they take damage (resolved in endTurn)
@@ -8120,6 +8204,7 @@ export function endTurn(state) {
 	p.battlecryTaxNext = 0; // Boompistol Bully's tax only lasts through this player's turn
 	{ const cursed = p.hand.filter(c => c.cursed); if (cursed.length) { let dmg = 0; for (const c of cursed) { dmg += c.curseDamage || 3; c.cursed = false; } damageHero(state, pi, dmg, pi); } } // Chaos Gazer: unplayed cursed cards bite
 	for (const c of p.board) if (c.immuneTurnClear) { c.keywords = c.keywords.filter(k => k !== KW.IMMUNE); c.immuneTurnClear = false; } // Ashtongue Slayer: "Immune this turn" wears off
+	p.castSpellLastTurn = (p.spellsPlayedThisTurn || 0) > 0; // Marshspawn / Shattered Rumbler: remember spellcasting across turns
 	p.heroPowerTaxNext = 0; // Saboteur's Hero Power tax only lasts this turn
 	p.nextMurlocFree = false; p.nextSecretCost = null; // Seadevil Stinger / Kabal Lackey are "this turn"
 	p.nextBattlecryDouble = false; // Murmuring Elemental only lasts this turn
