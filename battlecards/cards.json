@@ -79897,6 +79897,444 @@
           "pool": "enemies"
         }
       ]
+    },
+    {
+      "id": "dwarven_sharpshooter",
+      "name": "Dwarven Sharpshooter",
+      "type": "creature",
+      "cost": 1,
+      "cardClass": "hunter",
+      "attack": 1,
+      "health": 3,
+      "rarity": "common",
+      "set": "DRAGONS",
+      "heroPowerHitsMinions": true,
+      "description": "Your Hero Power can target minions."
+    },
+    {
+      "id": "scion_of_ruin",
+      "name": "Scion of Ruin",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "warrior",
+      "attack": 3,
+      "health": 2,
+      "rarity": "epic",
+      "set": "DRAGONS",
+      "keywords": [
+        "rush",
+        "battlecry"
+      ],
+      "description": "Rush. Battlecry: If you've Invoked twice, summon 2 copies of this.",
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "invokedTwice": true
+          },
+          "then": [
+            {
+              "type": "summon-self-copy",
+              "count": 2
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "evil_quartermaster",
+      "name": "EVIL Quartermaster",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "warrior",
+      "attack": 2,
+      "health": 3,
+      "rarity": "common",
+      "set": "DRAGONS",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Add a Lackey to your hand. Gain 3 Armor.",
+      "effects": [
+        {
+          "type": "add-lackey"
+        },
+        {
+          "type": "armor",
+          "value": 3
+        }
+      ]
+    },
+    {
+      "id": "dragonblight_cultist",
+      "name": "Dragonblight Cultist",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "warlock",
+      "attack": 1,
+      "health": 1,
+      "rarity": "rare",
+      "set": "DRAGONS",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Invoke Galakrond. Gain +1 Attack for each other friendly minion.",
+      "effects": [
+        {
+          "type": "invoke"
+        },
+        {
+          "type": "buff-self",
+          "per": "other-friendly",
+          "attack": 1,
+          "health": 0
+        }
+      ]
+    },
+    {
+      "id": "blowtorch_saboteur",
+      "name": "Blowtorch Saboteur",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "neutral",
+      "attack": 3,
+      "health": 3,
+      "rarity": "epic",
+      "set": "DRAGONS",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Your opponent's next Hero Power costs (2) more.",
+      "effects": [
+        {
+          "type": "tax-enemy-hero-power",
+          "value": 2
+        }
+      ]
+    },
+    {
+      "id": "umbral_skulker",
+      "name": "Umbral Skulker",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "rogue",
+      "attack": 3,
+      "health": 3,
+      "rarity": "epic",
+      "set": "DRAGONS",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: If you've Invoked twice, add 3 Coins to your hand.",
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "invokedTwice": true
+          },
+          "then": [
+            {
+              "type": "add-card",
+              "id": "coin",
+              "count": 3
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "veiled_worshipper",
+      "name": "Veiled Worshipper",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "warlock",
+      "attack": 5,
+      "health": 4,
+      "rarity": "epic",
+      "set": "DRAGONS",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: If you've Invoked twice, draw 3 cards.",
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "invokedTwice": true
+          },
+          "then": [
+            {
+              "type": "draw",
+              "value": 3
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "fate_weaver",
+      "name": "Fate Weaver",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "priest",
+      "attack": 3,
+      "health": 6,
+      "rarity": "epic",
+      "set": "DRAGONS",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: If you've Invoked twice, reduce the Cost of cards in your hand by (1).",
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "invokedTwice": true
+          },
+          "then": [
+            {
+              "type": "discount-hand",
+              "value": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "corrupt_elementalist",
+      "name": "Corrupt Elementalist",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "shaman",
+      "attack": 3,
+      "health": 3,
+      "rarity": "rare",
+      "set": "DRAGONS",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Invoke Galakrond twice.",
+      "effects": [
+        {
+          "type": "invoke",
+          "times": 2
+        }
+      ]
+    },
+    {
+      "id": "cumulo_maximus",
+      "name": "Cumulo-Maximus",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "shaman",
+      "attack": 5,
+      "health": 5,
+      "rarity": "epic",
+      "set": "DRAGONS",
+      "tribe": "Elemental",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: If you have Overloaded Mana Crystals, deal 5 damage.",
+      "effects": [
+        {
+          "type": "conditional",
+          "target": "any",
+          "if": {
+            "overloaded": true
+          },
+          "then": [
+            {
+              "type": "damage",
+              "value": 5,
+              "target": "any"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "abyssal_summoner",
+      "name": "Abyssal Summoner",
+      "type": "creature",
+      "cost": 6,
+      "cardClass": "warlock",
+      "attack": 2,
+      "health": 2,
+      "rarity": "common",
+      "set": "DRAGONS",
+      "tribe": "Demon",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Summon a Demon with Taunt and stats equal to your hand size.",
+      "effects": [
+        {
+          "type": "summon-hand-size-stats",
+          "name": "Abyssal Enforcer",
+          "tribe": "Demon",
+          "keywords": [
+            "taunt"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "dragoncaster",
+      "name": "Dragoncaster",
+      "type": "creature",
+      "cost": 6,
+      "cardClass": "mage",
+      "attack": 4,
+      "health": 4,
+      "rarity": "rare",
+      "set": "DRAGONS",
+      "tribe": "Dragon",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: If you're holding a Dragon, your next spell this turn costs (0).",
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "holdingTribe": "Dragon"
+          },
+          "then": [
+            {
+              "type": "free-next-spell"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "lightforged_zealot",
+      "name": "Lightforged Zealot",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "paladin",
+      "attack": 4,
+      "health": 2,
+      "rarity": "rare",
+      "set": "DRAGONS",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: If your deck has no Neutral cards, equip a 4/2 Truesilver Champion.",
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "deckNoNeutral": true
+          },
+          "then": [
+            {
+              "type": "equip",
+              "name": "Truesilver Champion",
+              "attack": 4,
+              "durability": 2
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "lightforged_crusader",
+      "name": "Lightforged Crusader",
+      "type": "creature",
+      "cost": 7,
+      "cardClass": "paladin",
+      "attack": 7,
+      "health": 7,
+      "rarity": "epic",
+      "set": "DRAGONS",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: If your deck has no Neutral cards, add 5 random Paladin cards to your hand.",
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "deckNoNeutral": true
+          },
+          "then": [
+            {
+              "type": "conjure-random",
+              "cardClass": "paladin",
+              "count": 5
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "kobold_stickyfinger",
+      "name": "Kobold Stickyfinger",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "neutral",
+      "attack": 4,
+      "health": 4,
+      "rarity": "epic",
+      "set": "DRAGONS",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Steal your opponent's weapon.",
+      "effects": [
+        {
+          "type": "steal-enemy-weapon"
+        }
+      ]
+    },
+    {
+      "id": "dragonbane",
+      "name": "Dragonbane",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "hunter",
+      "attack": 3,
+      "health": 5,
+      "rarity": "legendary",
+      "set": "DRAGONS",
+      "tribe": "Mech",
+      "description": "After you use your Hero Power, deal 5 damage to a random enemy.",
+      "ongoing": {
+        "on": "hero-power-used",
+        "effects": [
+          {
+            "type": "random-damage",
+            "value": 5,
+            "count": 1,
+            "pool": "enemies"
+          }
+        ]
+      }
+    },
+    {
+      "id": "frizz_kindleroost",
+      "name": "Frizz Kindleroost",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "neutral",
+      "attack": 5,
+      "health": 4,
+      "rarity": "legendary",
+      "set": "DRAGONS",
+      "tribe": "Dragon",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Reduce the Cost of Dragons in your deck by (2).",
+      "effects": [
+        {
+          "type": "reduce-deck-tribe-cost",
+          "tribe": "Dragon",
+          "value": 2
+        }
+      ]
     }
   ]
 }

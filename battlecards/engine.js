@@ -517,6 +517,7 @@ export function drawCards(state, pi, count) {
 		card.fromDeck = true; // drawn from your deck — Leyline Manipulator ignores these
 		if (p.deckInnerFire && card.type === 'creature') card.attack = card.maxHealth; // Lady in White
 		if (card.type === 'creature' && p.drawBuff) { card.attack += p.drawBuff.attack || 0; card.maxHealth += p.drawBuff.health || 0; }
+		if (card.type === 'creature' && p.deckTribeDiscount) { for (const tr in p.deckTribeDiscount) if ((card.tribe || '').includes(tr)) card.cost = Math.max(0, (card.cost || 0) - p.deckTribeDiscount[tr]); } // Frizz Kindleroost
 		// C'Thun enters hand carrying every buff it collected while in your deck
 		if (card.id === 'c_thun') { card.attack = CTHUN_BASE + p.cthunAtk; card.maxHealth = CTHUN_BASE + p.cthunHp; if (p.cthunTaunt && !card.keywords.includes(KW.TAUNT)) card.keywords.push(KW.TAUNT); }
 		card.zone = 'hand';
@@ -3865,6 +3866,8 @@ function execEffects(state, pi, effects, target, source) {
 			else if (e.if.boardFullOfId) ok = p.board.filter(c => !isDead(c) && c.type !== 'location').length >= 7 && p.board.every(c => isDead(c) || c.type === 'location' || c.id === e.if.boardFullOfId); // Mogu Cultist
 			else if (e.if.enemyControlTribe) ok = opponentsOf(state, pi).some(o => state.players[o].board.some(c => !isDead(c) && (c.tribe || '').includes(e.if.enemyControlTribe))); // Dragonmaw Poacher
 			else if (e.if.invokedTwice) ok = (p.invokeCount || 0) >= 2; // Descent of Dragons "Invoked twice"
+			else if (e.if.deckNoNeutral) ok = p.deck.length > 0 && p.deck.every(id => (state.cardsById[id]?.cardClass || 'neutral') !== 'neutral'); // Lightforged Zealot/Crusader
+			else if (e.if.overloaded) ok = (p.overloadPending || 0) > 0 || (p.overloadLockedThisTurn || 0) > 0; // Cumulo-Maximus
 			execEffects(state, pi, ok ? e.then : (e.else || []), target, source);
 		} else if (e.type === 'damage-then') {
 			// deal damage, then branch on whether the creature survived
@@ -4113,6 +4116,23 @@ function execEffects(state, pi, effects, target, source) {
 				const horror = instantiate({ id: 'dal_drustvar_horror', name: 'Drustvar Horror', type: 'creature', cost: 5, token: true, rarity: 'epic', set: 'DALARAN', attack: 5, health: 5, keywords: bc.length ? ['battlecry'] : [], description: '5/5. ' + chosen.map(s => s.name).join(', '), effects: bc }, pi);
 				horror.zone = 'hand'; p.hand.push(horror); emit(state, { type: 'conjure', player: pi, card: horror, color: null });
 			}
+		} else if (e.type === 'steal-enemy-weapon') {
+			// Kobold Stickyfinger: take the opponent's weapon
+			const o = enemies[0];
+			if (o != null && state.players[o].weapon) {
+				const w = state.players[o].weapon; state.players[o].weapon = null;
+				if (state.players[pi].weapon) breakWeapon(state, pi, true);
+				w.controller = pi; state.players[pi].weapon = w;
+				emit(state, { type: 'weaponEquipped', player: pi, card: w });
+			}
+		} else if (e.type === 'summon-hand-size-stats') {
+			// Abyssal Summoner: summon a token with stats equal to your hand size
+			const n = state.players[pi].hand.length;
+			summon(state, pi, { id: 'token_' + (e.name || 'imp').toLowerCase(), name: e.name || 'Abyssal Enforcer', type: 'creature', cost: 0, token: true, tribe: e.tribe || null, rarity: 'common', attack: n, health: n, keywords: e.keywords || [], description: `A ${n}/${n} token.` });
+		} else if (e.type === 'reduce-deck-tribe-cost') {
+			// Frizz Kindleroost: Dragons drawn from your deck cost less
+			state.players[pi].deckTribeDiscount = state.players[pi].deckTribeDiscount || {};
+			state.players[pi].deckTribeDiscount[e.tribe] = (state.players[pi].deckTribeDiscount[e.tribe] || 0) + (e.value || 2);
 		} else if (e.type === 'destroy-enemy-armor') {
 			// Platebreaker: destroy the opponent's Armor (and deal that much, if asked)
 			for (const o of enemies) {
