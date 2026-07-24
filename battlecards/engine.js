@@ -3834,6 +3834,35 @@ function execEffects(state, pi, effects, target, source) {
 				c.zone = 'hand'; state.players[pi].hand.push(c);
 				emit(state, { type: 'conjure', player: pi, card: c, color: null });
 			}
+		} else if (e.type === 'double-health-others') {
+			// Glitter Moth: double the Health of your OTHER creatures
+			for (const c of state.players[pi].board) {
+				if (c === source || isDead(c) || c.type === 'location') continue;
+				c.maxHealth += hp(c); emit(state, { type: 'buff', uid: c.uid, attack: c.attack, hp: hp(c) });
+			}
+		} else if (e.type === 'damage-self-per-enemy-hand') {
+			// Witchwood Grizzly: lose 1 Health for each card in your opponent's hand
+			const n = enemies.reduce((s, o) => s + state.players[o].hand.length, 0);
+			if (n > 0) damageHero(state, pi, n, pi);
+		} else if (e.type === 'buff-hand-double') {
+			// Emeriss: double Attack and Health of all creatures in your hand
+			for (const c of state.players[pi].hand) if (c.type === 'creature') { c.attack += c.attack; c.maxHealth += c.maxHealth; }
+		} else if (e.type === 'godfrey-loop') {
+			// Lord Godfrey: deal N to all other creatures; if any die, repeat
+			let again = true, guard = 24;
+			while (again && guard-- > 0 && !state.over) {
+				const hit = [];
+				for (const pl of state.players) for (const c of pl.board) if (c !== source && !isDead(c) && c.type !== 'location') hit.push(c);
+				if (!hit.length) break;
+				for (const c of hit) damageCreature(state, c, e.value || 2, source);
+				again = hit.some(c => isDead(c));
+				sweepDeaths(state);
+			}
+		} else if (e.type === 'transform-deck-cost') {
+			// Prince Liam: transform every N-Cost card in your deck into a random Legendary creature
+			const p = state.players[pi];
+			const legends = Object.values(state.cardsById).filter(d => d.type === 'creature' && d.rarity === 'legendary' && !d.token && d.collectible !== false && !d.companion && !d.commander && !(d.colors && d.colors.length));
+			if (legends.length) p.deck = p.deck.map(id => ((state.cardsById[id]?.cost || 0) === (e.cost ?? 1)) ? legends[Math.floor(state.rng() * legends.length)].id : id);
 		} else if (e.type === 'mark-doomed') {
 			// Voodoo Doll: remember a chosen creature; destroy it when this dies
 			const t = chosenCreature();
@@ -4263,7 +4292,7 @@ function execEffects(state, pi, effects, target, source) {
 		} else if (e.type === 'summon-from-hand-min-attack') {
 			// Giant Anaconda: put a creature from your hand with N+ Attack into play
 			const p = state.players[pi];
-			const pool = p.hand.filter(c => c.type === 'creature' && c.attack >= (e.minAttack || 0));
+			const pool = p.hand.filter(c => c.type === 'creature' && c.attack >= (e.minAttack || 0) && (!e.requireKeyword || c.keywords.includes(e.requireKeyword))); // Coffin Crasher: a Deathrattle creature
 			if (pool.length) { const c = pool[Math.floor(state.rng() * pool.length)]; p.hand = p.hand.filter(x => x !== c); c.zone = 'board'; p.board.push(c); emit(state, { type: 'summon', player: pi, card: c }); fireOngoing(state, pi, 'summoned', { minion: c }); growBlubberBaron(state, pi, c); recomputeAuras(state); }
 		} else if (e.type === 'destroy-deck-max-cost') {
 			// Hemet, Jungle Hunter: destroy all cards in your deck costing N or less

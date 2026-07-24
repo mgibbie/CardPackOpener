@@ -73251,6 +73251,357 @@
           }
         ]
       }
+    },
+    {
+      "id": "bellringer_sentry",
+      "name": "Bellringer Sentry",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "paladin",
+      "attack": 3,
+      "health": 4,
+      "rarity": "rare",
+      "set": "GILNEAS",
+      "keywords": [
+        "battlecry",
+        "deathrattle"
+      ],
+      "description": "Battlecry and Deathrattle: Put a Secret from your deck into the battlefield.",
+      "effects": [
+        {
+          "type": "deploy-secret-from-deck"
+        }
+      ],
+      "deathrattle": [
+        {
+          "type": "deploy-secret-from-deck"
+        }
+      ]
+    },
+    {
+      "id": "witchwood_grizzly",
+      "name": "Witchwood Grizzly",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "neutral",
+      "attack": 3,
+      "health": 12,
+      "rarity": "rare",
+      "set": "GILNEAS",
+      "tribe": "Beast",
+      "keywords": [
+        "taunt",
+        "battlecry"
+      ],
+      "description": "Taunt. Battlecry: Lose 1 Health for each card in your opponent's hand.",
+      "effects": [
+        {
+          "type": "damage-self-per-enemy-hand"
+        }
+      ]
+    },
+    {
+      "id": "glitter_moth",
+      "name": "Glitter Moth",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "priest",
+      "attack": 4,
+      "health": 4,
+      "rarity": "epic",
+      "set": "GILNEAS",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: If your deck has only odd-Cost cards, double the Health of your other creatures.",
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "deckAllOdd": true
+          },
+          "then": [
+            {
+              "type": "double-health-others"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "cursed_castaway",
+      "name": "Cursed Castaway",
+      "type": "creature",
+      "cost": 6,
+      "cardClass": "rogue",
+      "attack": 5,
+      "health": 3,
+      "rarity": "rare",
+      "set": "GILNEAS",
+      "tribe": "Pirate",
+      "keywords": [
+        "rush",
+        "deathrattle"
+      ],
+      "description": "Rush. Deathrattle: Draw a Combo card from your deck.",
+      "deathrattle": [
+        {
+          "type": "tutor",
+          "requireKeyword": "combo"
+        }
+      ]
+    },
+    {
+      "id": "coffin_crasher",
+      "name": "Coffin Crasher",
+      "type": "creature",
+      "cost": 6,
+      "cardClass": "priest",
+      "attack": 6,
+      "health": 5,
+      "rarity": "rare",
+      "set": "GILNEAS",
+      "keywords": [
+        "deathrattle"
+      ],
+      "description": "Deathrattle: Summon a Deathrattle creature from your hand.",
+      "deathrattle": [
+        {
+          "type": "summon-from-hand-min-attack",
+          "requireKeyword": "deathrattle"
+        }
+      ]
+    },
+    {
+      "id": "bogshaper",
+      "name": "Bogshaper",
+      "type": "creature",
+      "cost": 7,
+      "cardClass": "shaman",
+      "attack": 4,
+      "health": 8,
+      "rarity": "epic",
+      "set": "GILNEAS",
+      "tribe": "Elemental",
+      "description": "Whenever you cast a spell, draw a creature from your deck.",
+      "ongoing": {
+        "on": "spell-played",
+        "effects": [
+          {
+            "type": "tutor",
+            "cardType": "creature"
+          }
+        ]
+      }
+    },
+    {
+      "id": "the_glass_knight",
+      "name": "The Glass Knight",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "paladin",
+      "attack": 4,
+      "health": 3,
+      "rarity": "legendary",
+      "set": "GILNEAS",
+      "keywords": [
+        "divine_shield"
+      ],
+      "description": "Divine Shield. Whenever you restore Health, gain Divine Shield.",
+      "ongoing": {
+        "on": "healed",
+        "effects": [
+          {
+            "type": "grant-self-shield-on-heal"
+          }
+        ]
+      }
+    },
+    {
+      "id": "darius_crowley",
+      "name": "Darius Crowley",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "warrior",
+      "attack": 4,
+      "health": 5,
+      "rarity": "legendary",
+      "set": "GILNEAS",
+      "keywords": [
+        "rush"
+      ],
+      "description": "Rush. After this attacks and kills a creature, gain +2/+2.",
+      "ongoing": {
+        "on": "self-kills-creature",
+        "effects": [
+          {
+            "type": "buff-self",
+            "attack": 2,
+            "health": 2
+          }
+        ]
+      }
+    },
+    {
+      "id": "dollmaster_dorian",
+      "name": "Dollmaster Dorian",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "neutral",
+      "attack": 2,
+      "health": 6,
+      "rarity": "legendary",
+      "set": "GILNEAS",
+      "description": "Whenever you draw a creature, summon a 1/1 copy of it.",
+      "ongoing": {
+        "on": "card-drawn",
+        "effects": [
+          {
+            "type": "summon-drawn-copy",
+            "attack": 1,
+            "health": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "emeriss",
+      "name": "Emeriss",
+      "type": "creature",
+      "cost": 10,
+      "cardClass": "hunter",
+      "attack": 8,
+      "health": 8,
+      "rarity": "legendary",
+      "set": "GILNEAS",
+      "tribe": "Dragon",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Double the Attack and Health of all creatures in your hand.",
+      "effects": [
+        {
+          "type": "buff-hand-double"
+        }
+      ]
+    },
+    {
+      "id": "countess_ashmore",
+      "name": "Countess Ashmore",
+      "type": "creature",
+      "cost": 7,
+      "cardClass": "neutral",
+      "attack": 6,
+      "health": 6,
+      "rarity": "legendary",
+      "set": "GILNEAS",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Draw a Rush, Lifesteal, and Deathrattle card from your deck.",
+      "effects": [
+        {
+          "type": "tutor",
+          "requireKeyword": "rush"
+        },
+        {
+          "type": "tutor",
+          "requireKeyword": "lifesteal"
+        },
+        {
+          "type": "tutor",
+          "requireKeyword": "deathrattle"
+        }
+      ]
+    },
+    {
+      "id": "splintergraft",
+      "name": "Splintergraft",
+      "type": "creature",
+      "cost": 8,
+      "cardClass": "druid",
+      "attack": 8,
+      "health": 8,
+      "rarity": "legendary",
+      "set": "GILNEAS",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Choose a friendly creature. Add a 10/10 copy to your hand that costs (10).",
+      "effects": [
+        {
+          "type": "copy-to-hand",
+          "target": "friendly-creature",
+          "setAttack": 10,
+          "setHealth": 10,
+          "setCost": 10
+        }
+      ]
+    },
+    {
+      "id": "lord_godfrey",
+      "name": "Lord Godfrey",
+      "type": "creature",
+      "cost": 7,
+      "cardClass": "warlock",
+      "attack": 4,
+      "health": 4,
+      "rarity": "legendary",
+      "set": "GILNEAS",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Deal 2 damage to all other creatures. If any die, repeat this Battlecry.",
+      "effects": [
+        {
+          "type": "godfrey-loop",
+          "value": 2
+        }
+      ]
+    },
+    {
+      "id": "toki_time_tinker",
+      "name": "Toki, Time-Tinker",
+      "type": "creature",
+      "cost": 6,
+      "cardClass": "mage",
+      "attack": 5,
+      "health": 5,
+      "rarity": "legendary",
+      "set": "GILNEAS",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Add a random Legendary creature from the past to your hand.",
+      "effects": [
+        {
+          "type": "conjure-random",
+          "cardType": "creature",
+          "rarity": "legendary",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "id": "prince_liam",
+      "name": "Prince Liam",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "paladin",
+      "attack": 5,
+      "health": 5,
+      "rarity": "legendary",
+      "set": "GILNEAS",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Transform all 1-Cost cards in your deck into random Legendary creatures.",
+      "effects": [
+        {
+          "type": "transform-deck-cost",
+          "cost": 1
+        }
+      ]
     }
   ]
 }
