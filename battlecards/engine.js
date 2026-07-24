@@ -3371,8 +3371,9 @@ function execEffects(state, pi, effects, target, source) {
 			const p = state.players[pi];
 			for (let k = 0; k < (e.count || 1) && p.hand.length; k++) {
 				let li = 0;
-				for (let j = 1; j < p.hand.length; j++) if ((p.hand[j].cost || 0) < (p.hand[li].cost || 0)) li = j;
+				for (let j = 1; j < p.hand.length; j++) if (e.highest ? (p.hand[j].cost || 0) > (p.hand[li].cost || 0) : (p.hand[j].cost || 0) < (p.hand[li].cost || 0)) li = j; // Expired Merchant: highest
 				const [c] = p.hand.splice(li, 1);
+				if (e.remember && source) source.discardedId = c.id; // Expired Merchant deathrattle
 				toGraveyard(state, pi, c);
 				emit(state, { type: 'discard', player: pi, card: c });
 				if (!c.token) state.players[pi].discardLogIds.push(c.id); if (c.summonOnDiscard && state.cardsById[c.id]) summon(state, pi, state.cardsById[c.id]); if (c.returnBuffedOnDiscard && state.players[pi].hand.length < MAX_HAND) { c.attack += 2; c.maxHealth += 2; c.zone='hand'; state.players[pi].hand.push(c); const gi = state.players[pi].graveyard.indexOf(c); if (gi>=0) state.players[pi].graveyard.splice(gi,1); emit(state,{type:'conjure',player:pi,card:c,color:null}); } if (c.copiesOnDiscard && state.cardsById[c.id]) { for (let n = 0; n < c.copiesOnDiscard && state.players[pi].hand.length < MAX_HAND; n++) { const cp = instantiate(state.cardsById[c.id], pi); cp.zone = 'hand'; state.players[pi].hand.push(cp); emit(state, { type: 'conjure', player: pi, card: cp, color: null }); } } fireOngoing(state, pi, 'card-discarded', { card: c }); /* High Priestess Jekliik */
@@ -4101,6 +4102,30 @@ function execEffects(state, pi, effects, target, source) {
 				const horror = instantiate({ id: 'dal_drustvar_horror', name: 'Drustvar Horror', type: 'creature', cost: 5, token: true, rarity: 'epic', set: 'DALARAN', attack: 5, health: 5, keywords: bc.length ? ['battlecry'] : [], description: '5/5. ' + chosen.map(s => s.name).join(', '), effects: bc }, pi);
 				horror.zone = 'hand'; p.hand.push(horror); emit(state, { type: 'conjure', player: pi, card: horror, color: null });
 			}
+		} else if (e.type === 'duplicate-hand') {
+			// Elise the Enlightened: add a copy of each other card in your hand
+			const pp = state.players[pi];
+			for (const c of [...pp.hand]) {
+				if (c === source || pp.hand.length >= MAX_HAND) continue;
+				const def = state.cardsById[c.id]; if (!def) continue;
+				const cp = instantiate(def, pi); cp.zone = 'hand'; pp.hand.push(cp);
+				emit(state, { type: 'conjure', player: pi, card: cp, color: null });
+			}
+		} else if (e.type === 'summon-per-hand-spell') {
+			// King Phaoris: for each spell in your hand, summon a random creature of its Cost
+			const pp = state.players[pi];
+			for (const c of pp.hand.filter(x => isSpellType(x))) {
+				if (pp.board.filter(x => !isDead(x)).length >= 7) break;
+				execEffects(state, pi, [{ type: 'summon-random', cost: c.cost || 0 }], target, source);
+			}
+		} else if (e.type === 'add-remembered-discard') {
+			// Expired Merchant's Deathrattle: add copies of the discarded card
+			if (source?.discardedId && state.cardsById[source.discardedId]) execEffects(state, pi, [{ type: 'add-card', id: source.discardedId, count: e.count || 2 }], target, source);
+		} else if (e.type === 'sacrifice-selves-summon') {
+			// Mogu Cultist: destroy all copies of this creature, summon a token
+			const pp = state.players[pi];
+			for (const c of [...pp.board]) if (c.id === source.id && !isDead(c)) { c.damage = c.maxHealth; c.shield = false; emit(state, { type: 'destroy', uid: c.uid }); }
+			if (e.summonId && state.cardsById[e.summonId]) summon(state, pi, state.cardsById[e.summonId]);
 		} else if (e.type === 'debuff-enemies-attack-turn') {
 			// Quicksand Elemental: all enemy creatures lose Attack until your turn ends
 			for (const o of enemies) for (const c of state.players[o].board) {
@@ -5630,7 +5655,7 @@ function execEffects(state, pi, effects, target, source) {
 				if (foe == null) return [];
 				return [...new Set(state.players[foe].deck)].map(id => state.cardsById[id]).filter(d => d && d.type === 'creature' && !d.token);
 			};
-			const ownDeckDefs = () => [...new Set(state.players[pi].deck)].map(id => state.cardsById[id]).filter(d => d && d.type === 'creature' && !d.token); // Stitched Tracker
+			const ownDeckDefs = () => [...new Set(state.players[pi].deck)].map(id => state.cardsById[id]).filter(d => d && !d.token && (e.cardType === 'spell' ? isSpellType(d) : d.type === 'creature')); // Stitched Tracker / Tortollan Pilgrim
 			const enemyHandDefs = () => { const foe = enemies[0]; return foe == null ? [] : state.players[foe].hand.map(c => state.cardsById[c.id] || c).filter(d => d && !d.token); }; // Madame Lazul
 			const diedDefs = () => [...new Set(state.players[pi].deathLogIds)].map(id => state.cardsById[id]).filter(d => d && d.type === 'creature'); // Body Wrapper
 			const discoverPool = () => (e.fromEnemyDeck ? enemyDeckDefs() : e.fromEnemyHand ? enemyHandDefs() : e.fromDied ? diedDefs() : e.fromOwnDeck ? ownDeckDefs() : Object.values(state.cardsById)).filter(d => {

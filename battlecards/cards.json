@@ -79160,6 +79160,293 @@
           "value": 4
         }
       ]
+    },
+    {
+      "id": "mogu_cultist",
+      "name": "Mogu Cultist",
+      "type": "creature",
+      "cost": 1,
+      "cardClass": "neutral",
+      "attack": 1,
+      "health": 1,
+      "rarity": "epic",
+      "set": "ULDUM",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: If your board is full of Mogu Cultists, sacrifice them all and summon Highkeeper Ra.",
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "boardFullOfId": "mogu_cultist"
+          },
+          "then": [
+            {
+              "type": "sacrifice-selves-summon",
+              "summonId": "uld_highkeeper_ra"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "expired_merchant",
+      "name": "Expired Merchant",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "warlock",
+      "attack": 2,
+      "health": 1,
+      "rarity": "rare",
+      "set": "ULDUM",
+      "keywords": [
+        "battlecry",
+        "deathrattle"
+      ],
+      "description": "Battlecry: Discard your highest Cost card. Deathrattle: Add 2 copies of it to your hand.",
+      "effects": [
+        {
+          "type": "discard-lowest",
+          "highest": true,
+          "remember": true,
+          "count": 1
+        }
+      ],
+      "deathrattle": [
+        {
+          "type": "add-remembered-discard",
+          "count": 2
+        }
+      ]
+    },
+    {
+      "id": "tortollan_pilgrim",
+      "name": "Tortollan Pilgrim",
+      "type": "creature",
+      "cost": 8,
+      "cardClass": "mage",
+      "attack": 5,
+      "health": 5,
+      "rarity": "epic",
+      "set": "ULDUM",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Discover a spell in your deck and cast it with random targets.",
+      "effects": [
+        {
+          "type": "discover",
+          "cardType": "spell",
+          "fromOwnDeck": true,
+          "castRandom": true
+        }
+      ]
+    },
+    {
+      "id": "zephrys_the_great",
+      "name": "Zephrys the Great",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "neutral",
+      "attack": 3,
+      "health": 2,
+      "rarity": "legendary",
+      "set": "ULDUM",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: If your deck has no duplicates, wish for the perfect card.",
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "noDuplicates": true
+          },
+          "then": [
+            {
+              "type": "discover",
+              "cardType": "spell"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "sir_finley_of_the_sands",
+      "name": "Sir Finley of the Sands",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "paladin",
+      "attack": 2,
+      "health": 3,
+      "rarity": "legendary",
+      "set": "ULDUM",
+      "tribe": "Murloc",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: If your deck has no duplicates, Discover an upgraded Hero Power.",
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "noDuplicates": true
+          },
+          "then": [
+            {
+              "type": "upgrade-hero-power"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "elise_the_enlightened",
+      "name": "Elise the Enlightened",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "druid",
+      "attack": 5,
+      "health": 5,
+      "rarity": "legendary",
+      "set": "ULDUM",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: If your deck has no duplicates, duplicate your hand.",
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "noDuplicates": true
+          },
+          "then": [
+            {
+              "type": "duplicate-hand"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "reno_the_relicologist",
+      "name": "Reno the Relicologist",
+      "type": "creature",
+      "cost": 6,
+      "cardClass": "mage",
+      "attack": 4,
+      "health": 6,
+      "rarity": "legendary",
+      "set": "ULDUM",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: If your deck has no duplicates, deal 10 damage randomly split among all enemy minions.",
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "noDuplicates": true
+          },
+          "then": [
+            {
+              "type": "random-damage",
+              "value": 1,
+              "count": 10,
+              "pool": "enemy-creatures"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "dinotamer_brann",
+      "name": "Dinotamer Brann",
+      "type": "creature",
+      "cost": 7,
+      "cardClass": "hunter",
+      "attack": 2,
+      "health": 4,
+      "rarity": "legendary",
+      "set": "ULDUM",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: If your deck has no duplicates, summon King Krush.",
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "noDuplicates": true
+          },
+          "then": [
+            {
+              "type": "summon",
+              "count": 1,
+              "summonId": "uld_king_krush"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "king_phaoris",
+      "name": "King Phaoris",
+      "type": "creature",
+      "cost": 10,
+      "cardClass": "neutral",
+      "attack": 5,
+      "health": 5,
+      "rarity": "legendary",
+      "set": "ULDUM",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: For each spell in your hand, summon a random minion of the same Cost.",
+      "effects": [
+        {
+          "type": "summon-per-hand-spell"
+        }
+      ]
+    },
+    {
+      "id": "uld_highkeeper_ra",
+      "name": "Highkeeper Ra",
+      "type": "creature",
+      "cost": 10,
+      "token": true,
+      "attack": 11,
+      "health": 11,
+      "rarity": "legendary",
+      "set": "ULDUM",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Deal 5 damage to each other player.",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 5,
+          "target": "enemy-heroes"
+        }
+      ]
+    },
+    {
+      "id": "uld_king_krush",
+      "name": "King Krush",
+      "type": "creature",
+      "cost": 9,
+      "token": true,
+      "tribe": "Beast",
+      "attack": 8,
+      "health": 8,
+      "rarity": "legendary",
+      "set": "ULDUM",
+      "keywords": [
+        "charge"
+      ],
+      "description": "Charge."
     }
   ]
 }
