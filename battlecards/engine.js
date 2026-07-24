@@ -245,6 +245,7 @@ function instantiate(def, controller) {
 		effects: def.effects || null,
 		outcast: def.outcast || null, // Ashes of Outland: extra battlecry/spell effect from hand's edge
 		handDeathGrowth: !!def.handDeathGrowth, // Blood Herald: +1/+1 whenever a friendly minion dies while in hand
+		heroPowerCostReduce: def.heroPowerCostReduce || 0, // Felfire Deadeye: your Hero Power costs this much less
 		deathrattle: def.deathrattle || null,
 		tribe: def.tribe || null,
 		controller,
@@ -359,6 +360,7 @@ export function createGame(cardsById, rng = Math.random, playerDeckIds = null, p
 		freeSpellsNextTurn: false,  // Millhouse: spells free on your next turn
 		freeSpellsThisTurn: false,
 		spellsCostOneThisTurn: false, // Ysiel Windsinger: your spells cost (1) this turn
+		nextComboDiscount: 0, // Foxy Fraud: your next Combo card this turn costs less
 		mana: { cur: 1, max: 1, bonus: 0 },
 		coins: 0,
 		diedThisTurn: 0,
@@ -2023,9 +2025,13 @@ function runSecretEffects(state, pi, effects, ctx) {
 					break;
 				}
 				case 'buff-summoned-if-tribe': {
-					// Spirit of the Lynx: you summoned a creature of a tribe -> buff it
+					// Spirit of the Lynx: you summoned a creature of a tribe -> buff it.
+					// Also gates on requireKeyword (Parade Leader: Rush) and maxHealth
+					// (Carnival Barker: a 1-Health minion).
 					const m = ctx.minion;
-					if (m && m !== ctx.self && (!e.tribe || (m.tribe || '').includes(e.tribe))) {
+					if (m && m !== ctx.self && (!e.tribe || (m.tribe || '').includes(e.tribe))
+						&& (!e.requireKeyword || (m.keywords || []).includes(e.requireKeyword))
+						&& (e.maxHealth == null || hp(m) <= e.maxHealth)) {
 						m.attack += e.attack || 0; m.maxHealth += e.health || 0;
 						emit(state, { type: 'buff', uid: m.uid, attack: m.attack, hp: hp(m) });
 					}
@@ -2631,7 +2637,7 @@ function runBattlecry(state, pi, card, target, choice) {
 		}
 	}
 	// Outcast: an extra battlecry when played from the edge of hand
-	if (card.outcast && card._outcast) execEffects(state, pi, card.outcast.effects, target, card);
+	if (card.outcast && card._outcast) { execEffects(state, pi, card.outcast.effects, target, card); fireOngoing(state, pi, 'outcast-played', { played: card }); } // Redeemed Pariah reacts
 	switch (card.id) {
 		case 'wandering_merchant': drawCards(state, pi, 1); break;
 		case 'legion_commander': {
@@ -3478,7 +3484,8 @@ function execEffects(state, pi, effects, target, source) {
 			const t = chosenCreature();
 			if (t) t.static = { ...e.static };
 		} else if (e.type === 'armor') {
-			gainArmor(state, pi, e.value);
+			if (e.target === 'all-heroes') { for (let s2 = 0; s2 < state.players.length; s2++) if (!state.players[s2].eliminated) gainArmor(state, s2, e.value); } // Armor Vendor
+			else gainArmor(state, pi, e.value);
 		} else if (e.type === 'install-secret') {
 			installSecret(state, pi, e.id);
 		} else if (e.type === 'discount-hand') {
@@ -5240,6 +5247,23 @@ function execEffects(state, pi, effects, target, source) {
 				p.illuciaSwap = true;
 				emit(state, { type: 'handSwap', player: pi });
 			}
+		} else if (e.type === 'set-combo-discount') {
+			// Foxy Fraud: your next Combo card this turn costs less
+			state.players[pi].nextComboDiscount = (state.players[pi].nextComboDiscount || 0) + (e.value || 2);
+		} else if (e.type === 'silence-all') {
+			// Showstopper: Silence every minion on the board
+			for (const pl of state.players) for (const c of pl.board) if (!isDead(c) && c.type !== 'location') silenceCreature(state, c);
+		} else if (e.type === 'shuffle-lowest-hand-into-deck') {
+			// Safety Inspector: shuffle the lowest-Cost card from your hand into your deck
+			const p = state.players[pi];
+			const pool = p.hand.filter(c => c !== source);
+			if (pool.length) {
+				let lo = pool[0];
+				for (const c of pool) if ((c.cost || 0) < (lo.cost || 0)) lo = c;
+				p.hand = p.hand.filter(c => c !== lo);
+				if (!lo.token && state.cardsById[lo.id]) { p.deck.push(lo.id); for (let i = p.deck.length - 1; i > 0; i--) { const j = Math.floor(state.rng() * (i + 1)); [p.deck[i], p.deck[j]] = [p.deck[j], p.deck[i]]; } }
+				emit(state, { type: 'shuffle', player: pi });
+			}
 		} else if (e.type === 'hero-attack') {
 			// give your hero +N Attack this turn (Soulshard Lapidary)
 			state.players[pi].heroTempAttack += e.value || 0;
@@ -6763,7 +6787,7 @@ export function resolveSac(state, uid) {
 function runSpell(state, pi, card, target, choice) {
 	execEffects(state, pi, liveEffectsOf(state, pi, card, choice), target, card);
 	// Outcast: extra spell effects when cast from the edge of hand
-	if (card.outcast && card._outcast) execEffects(state, pi, card.outcast.effects, target, card);
+	if (card.outcast && card._outcast) { execEffects(state, pi, card.outcast.effects, target, card); fireOngoing(state, pi, 'outcast-played', { played: card }); } // Redeemed Pariah reacts
 	// scripted text
 	switch (card.id) {
 		case 'natures_blessing': drawCards(state, pi, 1); break;
@@ -6914,6 +6938,7 @@ export function effectiveCost(state, pi, card) {
 		if (disc) c = Math.max(0, c - disc);
 	}
 	if (p.spellTaxNext > 0 && isSpellType(card)) c += p.spellTaxNext; // Loatheb
+	if (p.nextComboDiscount > 0 && card.combo) c = Math.max(0, c - p.nextComboDiscount); // Foxy Fraud
 	if (p.battlecryTaxNext > 0 && (card.keywords || []).includes('battlecry')) c += p.battlecryTaxNext; // Boompistol Bully
 	if (p.libramDiscount > 0 && /Libram/.test(card.name || '')) c = Math.max(0, c - p.libramDiscount); // Aldor Attendant/Truthseeker
 	return Math.max(0, c);
@@ -6990,6 +7015,7 @@ export function playCard(state, pi, cardUid, target, choice, position, useAlt, k
 	// Corrupt compares the cost of the card being played (captured before its own
 	// discounts are consumed) against each Corrupt card still in hand.
 	const playedCost = effectiveCost(state, pi, card);
+	if (card.combo && p.nextComboDiscount > 0) p.nextComboDiscount = 0; // Foxy Fraud discount is spent by the next Combo card
 	// Ward: targeting an enemy warded creature costs extra — unaffordable = illegal
 	const ward = wardOf(state, pi, target);
 	if (ward?.mana && availableMana(p) < effectiveCost(state, pi, card) + ward.mana) return false;
@@ -8332,6 +8358,7 @@ export function heroPowerCost(state, pi, card) {
 	const set = p.board.filter(x => x.heroPowerCostSet != null && !isDead(x)).map(x => x.heroPowerCostSet);
 	if (set.length) c = Math.min(c, ...set); // Maiden of the Lake
 	c += (p.heroPowerTaxNext || 0) - (p.heroPowerDiscountNext || 0);
+	c -= p.board.filter(x => x.heroPowerCostReduce && !isDead(x)).reduce((s, x) => s + x.heroPowerCostReduce, 0); // Felfire Deadeye
 	return Math.max(0, c);
 }
 
@@ -8438,6 +8465,7 @@ export function endTurn(state) {
 	for (const c of p.board) if (c.immuneTurnClear) { c.keywords = c.keywords.filter(k => k !== KW.IMMUNE); c.immuneTurnClear = false; } // Ashtongue Slayer: "Immune this turn" wears off
 	p.castSpellLastTurn = (p.spellsPlayedThisTurn || 0) > 0; // Marshspawn / Shattered Rumbler: remember spellcasting across turns
 	p.spellsCostOneThisTurn = false; // Ysiel Windsinger only lasts this turn
+	p.nextComboDiscount = 0; // Foxy Fraud only lasts this turn
 	for (const c of p.hand) c.drawnThisTurn = false; // Keli'dan: "drawn this turn" resets at end of your turn
 	if (p.illuciaSwap) { p.hand = p.savedHand || []; p.savedHand = null; p.illuciaSwap = false; emit(state, { type: 'handSwap', player: pi }); } // Mindrender Illucia: hand reverts at end of turn
 	p.heroPowerTaxNext = 0; // Saboteur's Hero Power tax only lasts this turn

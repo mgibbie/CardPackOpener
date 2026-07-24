@@ -84426,6 +84426,427 @@
         "value": 1
       },
       "description": "Spell Damage +1."
+    },
+    {
+      "id": "armor_vendor",
+      "name": "Armor Vendor",
+      "type": "creature",
+      "cost": 1,
+      "cardClass": "neutral",
+      "attack": 1,
+      "health": 3,
+      "rarity": "rare",
+      "set": "DARKMOON_FAIRE",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Give 4 Armor to each hero.",
+      "effects": [
+        {
+          "type": "armor",
+          "value": 4,
+          "target": "all-heroes"
+        }
+      ]
+    },
+    {
+      "id": "prize_plunderer",
+      "name": "Prize Plunderer",
+      "type": "creature",
+      "cost": 1,
+      "cardClass": "rogue",
+      "attack": 2,
+      "health": 1,
+      "rarity": "rare",
+      "set": "DARKMOON_FAIRE",
+      "tribe": "Pirate",
+      "description": "Combo: Deal 1 damage to a minion for each other card you've played this turn.",
+      "combo": [
+        {
+          "type": "damage-per-cards-played",
+          "value": 1,
+          "target": "creature"
+        }
+      ]
+    },
+    {
+      "id": "safety_inspector",
+      "name": "Safety Inspector",
+      "type": "creature",
+      "cost": 1,
+      "cardClass": "neutral",
+      "attack": 1,
+      "health": 3,
+      "rarity": "rare",
+      "set": "DARKMOON_FAIRE",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Shuffle the lowest-Cost card from your hand into your deck. Draw a card.",
+      "effects": [
+        {
+          "type": "shuffle-lowest-hand-into-deck"
+        },
+        {
+          "type": "draw",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "bumper_car",
+      "name": "Bumper Car",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "warrior",
+      "attack": 1,
+      "health": 3,
+      "rarity": "rare",
+      "set": "DARKMOON_FAIRE",
+      "tribe": "Mech",
+      "keywords": [
+        "rush",
+        "deathrattle"
+      ],
+      "description": "Rush. Deathrattle: Add two 1/1 Riders with Rush to your hand.",
+      "deathrattle": [
+        {
+          "type": "add-card",
+          "id": "dmf_rider",
+          "count": 2
+        }
+      ]
+    },
+    {
+      "id": "confection_cyclone",
+      "name": "Confection Cyclone",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "mage",
+      "attack": 3,
+      "health": 2,
+      "rarity": "common",
+      "set": "DARKMOON_FAIRE",
+      "tribe": "Elemental",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Add two 1/2 Sugar Elementals to your hand.",
+      "effects": [
+        {
+          "type": "add-card",
+          "id": "dmf_sugar_elemental",
+          "count": 2
+        }
+      ]
+    },
+    {
+      "id": "etc_god_of_metal",
+      "name": "E.T.C., God of Metal",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "warrior",
+      "attack": 1,
+      "health": 4,
+      "rarity": "legendary",
+      "set": "DARKMOON_FAIRE",
+      "description": "After a friendly Rush minion attacks, deal 2 damage to the enemy hero.",
+      "ongoing": {
+        "on": "friendly-attacks",
+        "if": {
+          "keyword": "rush"
+        },
+        "effects": [
+          {
+            "type": "damage",
+            "value": 2,
+            "target": "enemy-heroes"
+          }
+        ]
+      }
+    },
+    {
+      "id": "felfire_deadeye",
+      "name": "Felfire Deadeye",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "neutral",
+      "attack": 2,
+      "health": 3,
+      "rarity": "common",
+      "set": "DARKMOON_FAIRE",
+      "heroPowerCostReduce": 1,
+      "description": "Your Hero Power costs (1) less."
+    },
+    {
+      "id": "foxy_fraud",
+      "name": "Foxy Fraud",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "rogue",
+      "attack": 3,
+      "health": 2,
+      "rarity": "common",
+      "set": "DARKMOON_FAIRE",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Your next Combo card this turn costs (2) less.",
+      "effects": [
+        {
+          "type": "set-combo-discount",
+          "value": 2
+        }
+      ]
+    },
+    {
+      "id": "parade_leader",
+      "name": "Parade Leader",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "neutral",
+      "attack": 2,
+      "health": 3,
+      "rarity": "common",
+      "set": "DARKMOON_FAIRE",
+      "tribe": "Undead",
+      "description": "After you summon a Rush minion, give it +2 Attack.",
+      "ongoing": {
+        "on": "summoned",
+        "effects": [
+          {
+            "type": "buff-summoned-if-tribe",
+            "requireKeyword": "rush",
+            "attack": 2
+          }
+        ]
+      }
+    },
+    {
+      "id": "redeemed_pariah",
+      "name": "Redeemed Pariah",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "demonhunter",
+      "attack": 2,
+      "health": 3,
+      "rarity": "common",
+      "set": "DARKMOON_FAIRE",
+      "description": "After you play an Outcast card, gain +1/+1.",
+      "ongoing": {
+        "on": "outcast-played",
+        "effects": [
+          {
+            "type": "buff-self",
+            "attack": 1,
+            "health": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "showstopper",
+      "name": "Showstopper",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "neutral",
+      "attack": 3,
+      "health": 2,
+      "rarity": "common",
+      "set": "DARKMOON_FAIRE",
+      "keywords": [
+        "deathrattle"
+      ],
+      "description": "Deathrattle: Silence all minions.",
+      "deathrattle": [
+        {
+          "type": "silence-all"
+        }
+      ]
+    },
+    {
+      "id": "sweet_tooth",
+      "name": "Sweet Tooth",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "rogue",
+      "attack": 3,
+      "health": 2,
+      "rarity": "common",
+      "set": "DARKMOON_FAIRE",
+      "corrupt": "sweet_tooth_corrupted",
+      "description": "Corrupt: Gain +2 Attack and Stealth."
+    },
+    {
+      "id": "tenwu_of_the_red_smoke",
+      "name": "Tenwu of the Red Smoke",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "rogue",
+      "attack": 3,
+      "health": 2,
+      "rarity": "legendary",
+      "set": "DARKMOON_FAIRE",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Return a friendly minion to your hand. It costs (1) this turn.",
+      "effects": [
+        {
+          "type": "bounce",
+          "target": "friendly-creature",
+          "setCost": 1
+        }
+      ]
+    },
+    {
+      "id": "banana_vendor",
+      "name": "Banana Vendor",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "neutral",
+      "attack": 2,
+      "health": 4,
+      "rarity": "common",
+      "set": "DARKMOON_FAIRE",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Add 2 Bananas to each player's hand.",
+      "effects": [
+        {
+          "type": "add-card",
+          "id": "dmf_banana",
+          "count": 2,
+          "eachPlayer": true
+        }
+      ]
+    },
+    {
+      "id": "carnival_barker",
+      "name": "Carnival Barker",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "paladin",
+      "attack": 3,
+      "health": 2,
+      "rarity": "rare",
+      "set": "DARKMOON_FAIRE",
+      "description": "Whenever you summon a 1-Health minion, give it +1/+2.",
+      "ongoing": {
+        "on": "summoned",
+        "effects": [
+          {
+            "type": "buff-summoned-if-tribe",
+            "maxHealth": 1,
+            "attack": 1,
+            "health": 2
+          }
+        ]
+      }
+    },
+    {
+      "id": "dreaming_drake",
+      "name": "Dreaming Drake",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "druid",
+      "attack": 3,
+      "health": 4,
+      "rarity": "common",
+      "set": "DARKMOON_FAIRE",
+      "tribe": "Dragon",
+      "keywords": [
+        "taunt"
+      ],
+      "corrupt": "dreaming_drake_corrupted",
+      "description": "Taunt. Corrupt: Gain +2/+2."
+    },
+    {
+      "id": "sweet_tooth_corrupted",
+      "name": "Sweet Tooth",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "rogue",
+      "attack": 5,
+      "health": 2,
+      "rarity": "common",
+      "set": "DARKMOON_FAIRE",
+      "keywords": [
+        "stealth"
+      ],
+      "token": true,
+      "collectible": false,
+      "description": "Stealth."
+    },
+    {
+      "id": "dreaming_drake_corrupted",
+      "name": "Dreaming Drake",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "druid",
+      "attack": 5,
+      "health": 6,
+      "rarity": "common",
+      "set": "DARKMOON_FAIRE",
+      "tribe": "Dragon",
+      "keywords": [
+        "taunt"
+      ],
+      "token": true,
+      "collectible": false,
+      "description": "Taunt."
+    },
+    {
+      "id": "dmf_rider",
+      "name": "Rider",
+      "type": "creature",
+      "cost": 1,
+      "cardClass": "warrior",
+      "attack": 1,
+      "health": 1,
+      "rarity": "common",
+      "set": "DARKMOON_FAIRE",
+      "keywords": [
+        "rush"
+      ],
+      "token": true,
+      "collectible": false,
+      "description": "Rush."
+    },
+    {
+      "id": "dmf_sugar_elemental",
+      "name": "Sugar Elemental",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "mage",
+      "attack": 1,
+      "health": 2,
+      "rarity": "common",
+      "set": "DARKMOON_FAIRE",
+      "tribe": "Elemental",
+      "token": true,
+      "collectible": false,
+      "description": "A 1/2 Elemental."
+    },
+    {
+      "id": "dmf_banana",
+      "name": "Bananas",
+      "type": "sorcery",
+      "cost": 1,
+      "token": true,
+      "collectible": false,
+      "rarity": "common",
+      "set": "DARKMOON_FAIRE",
+      "description": "Give a minion +1/+1.",
+      "effects": [
+        {
+          "type": "buff",
+          "target": "creature",
+          "attack": 1,
+          "health": 1
+        }
+      ]
     }
   ]
 }
