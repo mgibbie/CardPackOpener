@@ -74563,6 +74563,222 @@
           }
         ]
       }
+    },
+    {
+      "id": "fireworks_tech",
+      "name": "Fireworks Tech",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "hunter",
+      "attack": 2,
+      "health": 1,
+      "rarity": "rare",
+      "set": "BOOMSDAY",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Give a friendly Mech +1/+1. If it has Deathrattle, trigger it.",
+      "effects": [
+        {
+          "type": "fireworks",
+          "target": "friendly-creature",
+          "tribe": "Mech",
+          "attack": 1,
+          "health": 1
+        }
+      ]
+    },
+    {
+      "id": "celestial_emissary",
+      "name": "Celestial Emissary",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "mage",
+      "attack": 2,
+      "health": 1,
+      "rarity": "rare",
+      "set": "BOOMSDAY",
+      "tribe": "Elemental",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Your next spell this turn has Spell Damage +2.",
+      "effects": [
+        {
+          "type": "set-next-spell-damage",
+          "value": 2
+        }
+      ]
+    },
+    {
+      "id": "omega_mind",
+      "name": "Omega Mind",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "shaman",
+      "attack": 2,
+      "health": 3,
+      "rarity": "epic",
+      "set": "BOOMSDAY",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: If you have 10 Mana Crystals, your spells have Lifesteal this turn.",
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "manathirst": 10
+          },
+          "then": [
+            {
+              "type": "set-spells-lifesteal"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "electra_stormsurge",
+      "name": "Electra Stormsurge",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "shaman",
+      "attack": 3,
+      "health": 3,
+      "rarity": "legendary",
+      "set": "BOOMSDAY",
+      "tribe": "Elemental",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Your next spell this turn casts twice.",
+      "effects": [
+        {
+          "type": "set-next-spell-double"
+        }
+      ]
+    },
+    {
+      "id": "augmented_elekk",
+      "name": "Augmented Elekk",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "neutral",
+      "attack": 3,
+      "health": 4,
+      "rarity": "epic",
+      "set": "BOOMSDAY",
+      "tribe": "Beast",
+      "description": "Whenever you shuffle a card into a deck, shuffle in an extra copy."
+    },
+    {
+      "id": "reckless_experimenter",
+      "name": "Reckless Experimenter",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "priest",
+      "attack": 4,
+      "health": 6,
+      "rarity": "epic",
+      "set": "BOOMSDAY",
+      "deathrattleDiscount": 3,
+      "description": "Deathrattle creatures you play cost (3) less, but die at the end of the turn.",
+      "ongoing": {
+        "on": "creature-played",
+        "effects": [
+          {
+            "type": "doom-played-deathrattle"
+          }
+        ]
+      }
+    },
+    {
+      "id": "gloop_sprayer",
+      "name": "Gloop Sprayer",
+      "type": "creature",
+      "cost": 7,
+      "cardClass": "druid",
+      "attack": 4,
+      "health": 4,
+      "rarity": "common",
+      "set": "BOOMSDAY",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Summon a copy of each adjacent creature.",
+      "effects": [
+        {
+          "type": "copy-adjacent"
+        }
+      ]
+    },
+    {
+      "id": "harbinger_celestia",
+      "name": "Harbinger Celestia",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "neutral",
+      "attack": 5,
+      "health": 6,
+      "rarity": "legendary",
+      "set": "BOOMSDAY",
+      "keywords": [
+        "stealth"
+      ],
+      "description": "Stealth. After your opponent plays a creature, become a copy of it.",
+      "ongoing": {
+        "on": "enemy-creature-played",
+        "effects": [
+          {
+            "type": "become-copy-of-played"
+          }
+        ]
+      }
+    },
+    {
+      "id": "stargazer_luna",
+      "name": "Stargazer Luna",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "mage",
+      "attack": 2,
+      "health": 4,
+      "rarity": "legendary",
+      "set": "BOOMSDAY",
+      "description": "After you play the right-most card in your hand, draw a card.",
+      "ongoing": {
+        "on": "rightmost-card-played",
+        "effects": [
+          {
+            "type": "draw",
+            "value": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "myra_rotspring",
+      "name": "Myra Rotspring",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "rogue",
+      "attack": 4,
+      "health": 2,
+      "rarity": "legendary",
+      "set": "BOOMSDAY",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Discover a Deathrattle creature. Also gain its Deathrattle.",
+      "effects": [
+        {
+          "type": "discover",
+          "cardType": "creature",
+          "requireKeyword": "deathrattle",
+          "gainDeathrattle": true
+        }
+      ]
     }
   ]
 }

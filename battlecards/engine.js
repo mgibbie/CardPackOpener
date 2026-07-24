@@ -174,6 +174,7 @@ function instantiate(def, controller) {
 		cheaperOnDeath: !!def.cheaperOnDeath, // Corridor Creeper: costs (1) less per creature that dies while in hand
 		dormantBattlecry: !!def.dormantBattlecry, // The Darkness: fire the Battlecry even though it enters Dormant
 		heroPowerDouble: !!def.heroPowerDouble, // Clockwork Automaton: double your Hero Power's damage and healing
+		deathrattleDiscount: def.deathrattleDiscount || 0, // Reckless Experimenter: your Deathrattle creatures cost this much less
 		chameleosTransform: !!def.chameleosTransform, // Chameleos: morph into an enemy hand card each turn
 		selfCost: def.selfCost || null, // self-scaling printed cost: { per, amount }
 		enrage: def.enrage || null,   // while damaged: { attack?, health?, keywords?, weaponAttack? }
@@ -371,6 +372,9 @@ export function createGame(cardsById, rng = Math.random, playerDeckIds = null, p
 		battlecriesPlayedGame: [],// Shudderwock: Battlecry card ids played this game
 		deckInnerFire: false,     // Lady in White: drawn creatures get Attack = Health
 		pogoCount: 0,             // Pogo-Hopper: how many you've played this game
+		nextSpellDamageBonus: 0,  // Celestial Emissary: your next spell has +N Spell Damage
+		nextSpellDoubleCast: false, // Electra Stormsurge: your next spell casts twice
+		spellsLifestealThisTurn: false, // Omega Mind: your spells have Lifesteal this turn
 		elementalThisTurn: false, // played an Elemental this turn
 		elementalLastTurn: false, // played an Elemental on your previous turn (Un'Goro)
 		elementalsPlayedGame: 0,  // Ozruk: total Elementals played this game
@@ -590,6 +594,7 @@ const CHOSEN = {
 	'transform-into-token': { 'friendly-creature': 'friendly-creature', creature: 'creature' },
 	'mark-doomed': { creature: 'creature', 'enemy-creature': 'enemy-creature' },
 	'devour-target': { 'friendly-creature': 'friendly-creature' },
+	fireworks: { 'friendly-creature': 'friendly-creature' },
 	destroy: { creature: 'creature', 'enemy-creature': 'enemy-creature', 'friendly-creature': 'friendly-creature' },
 	'copy-to-hand': { creature: 'creature', 'enemy-creature': 'enemy-creature', 'friendly-creature': 'friendly-creature' },
 	'copy-summon': { creature: 'creature', 'friendly-creature': 'friendly-creature' },
@@ -1900,6 +1905,26 @@ function runSecretEffects(state, pi, effects, ctx) {
 					}
 					break;
 				}
+				case 'become-copy-of-played': {
+					// Harbinger Celestia: transform into a full copy of the creature an opponent just played
+					const m = ctx.minion;
+					if (m && ctx.self && ctx.self.zone === 'board' && !isDead(ctx.self) && state.cardsById[m.id]) {
+						const owner = ctx.self.controller;
+						const tok = instantiate(state.cardsById[m.id], owner);
+						tok.zone = 'board'; tok.sick = ctx.self.sick;
+						const board = state.players[owner].board;
+						board[board.indexOf(ctx.self)] = tok; ctx.self.zone = 'gone';
+						emit(state, { type: 'transformed', uid: ctx.self.uid, player: owner, from: ctx.self.name, card: tok });
+						recomputeAuras(state);
+					}
+					break;
+				}
+				case 'doom-played-deathrattle': {
+					// Reckless Experimenter: a Deathrattle creature you played dies at end of turn
+					const m = ctx.minion;
+					if (m && m !== ctx.self && (m.keywords || []).includes('deathrattle')) m.doomTurn = state.turnNumber;
+					break;
+				}
 				case 'summon-enemy-minion-copy': {
 					// Holomancer: summon a stat-fixed copy of the creature an opponent just played
 					const m = ctx.minion;
@@ -2457,12 +2482,13 @@ function execEffects(state, pi, effects, target, source) {
 		// as the total hurt delta so shields absorbing damage heal nothing.
 		const totalHurt = () => state.players.reduce((s, pl) =>
 			s + pl.board.reduce((b, c) => b + c.damage, 0) - pl.life - pl.armor, 0);
-		const lsBefore = (e.type === 'damage' || e.type === 'random-damage') && e.lifesteal ? totalHurt() : null;
+		const spellLS = source && (source.type === 'sorcery' || source.type === 'instant') && state.players[pi].spellsLifestealThisTurn; // Omega Mind
+			const lsBefore = (e.type === 'damage' || e.type === 'random-damage') && (e.lifesteal || spellLS) ? totalHurt() : null;
 		if (e.type === 'damage') {
 			// friendly Spell Damage boosts direct spell damage
 			let v = e.value === 'source-attack' ? (source?.attack || 0) : scaled(e); // Sergeant Sally
 			if (source && (source.type === 'sorcery' || source.type === 'instant')) {
-				v += staticValue(state.players[pi], 'spell-damage');
+				v += staticValue(state.players[pi], 'spell-damage') + (state.players[pi].nextSpellDamageBonus || 0);
 			}
 			if (state.hpDamageBonus) v += state.hpDamageBonus; // Fallen Hero: your Hero Power deals extra
 			if (state.hpDoubling) v *= 2; // Clockwork Automaton: double Hero Power damage
@@ -3666,7 +3692,7 @@ function execEffects(state, pi, effects, target, source) {
 			// deal damage, then branch on whether the creature survived
 			let v = e.value;
 			if (source && (source.type === 'sorcery' || source.type === 'instant')) {
-				v += staticValue(state.players[pi], 'spell-damage');
+				v += staticValue(state.players[pi], 'spell-damage') + (state.players[pi].nextSpellDamageBonus || 0);
 			}
 			const t = chosenCreature();
 			if (t) {
@@ -3863,6 +3889,26 @@ function execEffects(state, pi, effects, target, source) {
 				const c = instantiate(state.cardsById[source.id], pi);
 				c.zone = 'hand'; state.players[pi].hand.push(c);
 				emit(state, { type: 'conjure', player: pi, card: c, color: null });
+			}
+		} else if (e.type === 'set-next-spell-damage') {
+			state.players[pi].nextSpellDamageBonus = (state.players[pi].nextSpellDamageBonus || 0) + (e.value || 2); // Celestial Emissary
+		} else if (e.type === 'set-next-spell-double') {
+			state.players[pi].nextSpellDoubleCast = true; // Electra Stormsurge
+		} else if (e.type === 'set-spells-lifesteal') {
+			state.players[pi].spellsLifestealThisTurn = true; // Omega Mind
+		} else if (e.type === 'fireworks') {
+			// Fireworks Tech: give a chosen friendly Mech +1/+1; if it has a Deathrattle, trigger it
+			const t = chosenCreature();
+			if (t) {
+				buffCreature(t, e.attack || 1, e.health || 1);
+				if (t.deathrattle && t.deathrattle.length) runDeathrattle(state, t.controller, t);
+			}
+		} else if (e.type === 'copy-adjacent') {
+			// Gloop Sprayer: summon a copy of each creature flanking this one
+			const board = state.players[pi].board;
+			const idx = board.indexOf(source);
+			for (const adj of [board[idx - 1], board[idx + 1]]) {
+				if (adj && !isDead(adj) && adj.type !== 'location') { const def = state.cardsById[adj.id]; if (def) summon(state, pi, def); }
 			}
 		} else if (e.type === 'summon-random-hand-size') {
 			// Astromancer: summon a random creature costing exactly your hand size
@@ -4186,7 +4232,9 @@ function execEffects(state, pi, effects, target, source) {
 			const t = chosenCreature();
 			const p = state.players[pi];
 			if (t && state.cardsById[t.id]) {
-				p.deck.push(t.id);
+				const elekk = p.board.filter(c => c.id === 'augmented_elekk' && !isDead(c)).length; // Augmented Elekk: an extra copy per shuffle
+				const total = (e.count || 1) * (1 + elekk);
+				for (let n = 0; n < total; n++) p.deck.push(t.id);
 				for (let i = p.deck.length - 1; i > 0; i--) { const j = Math.floor(state.rng() * (i + 1)); [p.deck[i], p.deck[j]] = [p.deck[j], p.deck[i]]; }
 				emit(state, { type: 'shuffledIntoDeck', player: pi, cardId: t.id });
 			}
@@ -4709,10 +4757,11 @@ function execEffects(state, pi, effects, target, source) {
 			// Raptor/Direhorn Hatchling: shuffle a token into your deck; Weasel
 			// Tunneler (enemy:true) shuffles itself into an opponent's deck
 			const owners = e.enemy ? enemies.filter(o => !state.players[o].eliminated) : [pi];
+			const elekkS = state.players[pi].board.filter(c => c.id === 'augmented_elekk' && !isDead(c)).length; // Augmented Elekk
 			for (const own of owners) {
 				const dk = state.players[own].deck;
 				if (!e.id || !state.cardsById[e.id]) break;
-				for (let n = 0; n < (e.count || 1); n++) dk.push(e.id);
+				for (let n = 0; n < (e.count || 1) * (own === pi ? (1 + elekkS) : 1); n++) dk.push(e.id);
 				for (let i = dk.length - 1; i > 0; i--) { const j = Math.floor(state.rng() * (i + 1)); [dk[i], dk[j]] = [dk[j], dk[i]]; }
 				emit(state, { type: 'shuffledIntoDeck', player: own, cardId: e.id });
 			}
@@ -5137,7 +5186,7 @@ function execEffects(state, pi, effects, target, source) {
 					ids.push(pool.splice(Math.floor(state.rng() * pool.length), 1)[0].id);
 				}
 				if (!ids.length) break;
-				state.pickQueue.push({ player: pi, ids, grant: e.grant || null, buff: e.buff || null, to: e.to || null, costMod: e.costMod || null, healByCost: e.healByCost || false, installSecret: e.installSecret || false, castRandom: e.castRandom || false, damageSelfByCost: e.damageSelfByCost || false });
+				state.pickQueue.push({ player: pi, ids, grant: e.grant || null, buff: e.buff || null, to: e.to || null, costMod: e.costMod || null, healByCost: e.healByCost || false, installSecret: e.installSecret || false, castRandom: e.castRandom || false, damageSelfByCost: e.damageSelfByCost || false, gainDeathrattleUid: e.gainDeathrattle && source ? source.uid : null });
 				emit(state, { type: 'pickStart', player: pi, count: ids.length });
 			}
 		} else if (e.type === 'loot') {
@@ -5770,6 +5819,11 @@ export function effectiveCost(state, pi, card) {
 	if (p.freeSpellsThisTurn && isSpellType(card)) c = 0;
 	if (p.nextMurlocFree && card.type === 'creature' && (card.tribe || '').includes('Murloc')) c = 0; // Seadevil Stinger (Health-cost approximated as free)
 	if (p.nextSecretCost != null && card.secret) c = Math.min(c, p.nextSecretCost); // Kabal Lackey
+	// Reckless Experimenter: your Deathrattle creatures cost less
+	if (card.type === 'creature' && (card.keywords || []).includes('deathrattle')) {
+		const disc = p.board.reduce((s, x) => (!isDead(x) && x.deathrattleDiscount) ? s + x.deathrattleDiscount : s, 0);
+		if (disc) c = Math.max(0, c - disc);
+	}
 	if (p.spellTaxNext > 0 && isSpellType(card)) c += p.spellTaxNext; // Loatheb
 	return Math.max(0, c);
 }
@@ -5833,6 +5887,7 @@ export function playCard(state, pi, cardUid, target, choice, position, useAlt, k
 	const idx = p.hand.findIndex(c => c.uid === cardUid);
 	// Outcast: a bonus if this was the left- or right-most card in hand when played
 	const outcastActive = idx >= 0 && (idx === 0 || idx === p.hand.length - 1);
+	const wasRightmost = idx >= 0 && idx === p.hand.length - 1; // Stargazer Luna
 	if (idx >= 0) { card = p.hand[idx]; take = () => p.hand.splice(idx, 1); card._outcast = outcastActive; }
 	else if (p.companion?.uid === cardUid) { card = p.companion; take = () => { p.companion = null; }; }
 	else {
@@ -5876,6 +5931,7 @@ export function playCard(state, pi, cardUid, target, choice, position, useAlt, k
 	if (card.cardClass && card.cardClass !== 'neutral' && card.cardClass !== p.heroClass && card.id !== 'tess_greymane') p.otherClassPlayedGame.push(card.id);
 	if ((card.keywords || []).includes('battlecry') && card.effects && card.id !== 'shudderwock') p.battlecriesPlayedGame.push(card.id);
 	fireOngoing(state, pi, 'card-played', { played: card });
+	if (wasRightmost) fireOngoing(state, pi, 'rightmost-card-played', { played: card }); // Stargazer Luna
 	for (const o of opponentsOf(state, pi)) fireOngoing(state, o, 'enemy-card-played', { played: card, caster: pi }); // Fel Reaver
 	corruptHandCards(state, pi, playedCost);
 	// Patches the Pirate: playing a Pirate pulls Patches out of your deck
@@ -6103,6 +6159,14 @@ function resolveStackedSpell(state, entry) {
 			runSpell(state, pi, card, ctx.target, choice);
 			state.recasting = false;
 		}
+		// Electra Stormsurge: your next spell this turn casts twice
+		if (state.players[pi].nextSpellDoubleCast && !state.recasting) {
+			state.players[pi].nextSpellDoubleCast = false;
+			state.recasting = true;
+			runSpell(state, pi, card, ctx.target, choice);
+			state.recasting = false;
+		}
+		state.players[pi].nextSpellDamageBonus = 0; // Celestial Emissary bonus is spent by this spell
 		if (card.honorableKill && state.exactKills > 0) {
 			emit(state, { type: 'honorableKill', player: pi });
 			execEffects(state, pi, card.honorableKill, ctx.target, card);
@@ -6984,6 +7048,10 @@ export function resolvePick(state, id) {
 		if (pend.costMod) card.cost = Math.max(0, (card.cost || 0) + pend.costMod); // Museum Curator: costs (1) less
 		if (pend.healByCost) healHero(state, pend.player, card.cost || 0); // Ivory Knight: restore Health = its Cost
 		if (pend.damageSelfByCost) damageHero(state, pend.player, card.cost || 0, pend.player); // Chittering Tunneler
+			if (pend.gainDeathrattleUid != null && def.deathrattle) { // Myra Rotspring: also gain its Deathrattle
+				const src = findCreature(state, pend.gainDeathrattleUid);
+				if (src && !isDead(src)) { src.deathrattle = [...(src.deathrattle || []), ...JSON.parse(JSON.stringify(def.deathrattle))]; if (!src.keywords.includes('deathrattle')) src.keywords.push('deathrattle'); }
+			}
 		p.hand.push(card);
 		emit(state, { type: 'conjure', player: pend.player, card, color: null });
 		fireEmerge(state, pend.player, card);
@@ -7240,6 +7308,7 @@ export function endTurn(state) {
 	p.heroPowerTaxNext = 0; // Saboteur's Hero Power tax only lasts this turn
 	p.nextMurlocFree = false; p.nextSecretCost = null; // Seadevil Stinger / Kabal Lackey are "this turn"
 	p.nextBattlecryDouble = false; // Murmuring Elemental only lasts this turn
+	p.nextSpellDamageBonus = 0; p.nextSpellDoubleCast = false; p.spellsLifestealThisTurn = false; // Boomsday next-spell riders are "this turn"
 
 	// Impulsive creatures refuse to end the turn without swinging
 	for (const c of [...p.board]) {
