@@ -570,8 +570,12 @@ const CHOSEN = {
 	'double-attack': { creature: 'creature', 'friendly-creature': 'friendly-creature' },
 	bounce: { creature: 'creature', 'enemy-creature': 'enemy-creature', 'friendly-creature': 'friendly-creature', permanent: 'permanent' },
 	'mind-control': { 'enemy-creature': 'enemy-creature' },
-	transform: { creature: 'creature', 'enemy-creature': 'enemy-creature' },
+	transform: { creature: 'creature', 'enemy-creature': 'enemy-creature', 'friendly-creature': 'friendly-creature' },
 	'transform-copy': { creature: 'creature' },
+	'swap-health-with': { creature: 'creature', 'friendly-creature': 'friendly-creature' },
+	'swap-stats-with': { creature: 'creature', 'friendly-creature': 'friendly-creature' },
+	'copy-stats': { creature: 'creature', 'friendly-creature': 'friendly-creature' },
+	'blade-of-cthun': { creature: 'creature', 'enemy-creature': 'enemy-creature' },
 	conditional: { any: 'any', creature: 'creature' },
 	'damage-then': { any: 'any', creature: 'creature' },
 	'draw-damage': { any: 'any' },
@@ -580,7 +584,7 @@ const CHOSEN = {
 	attach: { creature: 'creature', 'friendly-creature': 'friendly-creature' },
 	'attach-curse': { creature: 'creature', 'enemy-creature': 'enemy-creature' },
 	'add-counters': { creature: 'creature', 'friendly-creature': 'friendly-creature' },
-	'temp-immune': { creature: 'creature' },
+	'temp-immune': { creature: 'creature', 'friendly-creature': 'friendly-creature' },
 	'swap-stats': { creature: 'creature' },
 	shadowflame: { 'friendly-creature': 'friendly-creature' },
 	swipe: { 'enemy-any': 'enemy-any' },
@@ -2593,6 +2597,10 @@ function execEffects(state, pi, effects, target, source) {
 			}
 		} else if (e.type === 'freeze') {
 			if (e.target === 'enemy-creatures') { for (const o of enemies) for (const c of state.players[o].board) freezeCreature(state, c); }
+			else if (e.target === 'random-enemy') { // Demented Frostcaller
+				const pool = enemies.flatMap(o => state.players[o].board.filter(c => !isDead(c) && !c.frozen && c.type !== 'location'));
+				if (pool.length) freezeCreature(state, pool[Math.floor(state.rng() * pool.length)]);
+			}
 			else if (e.target === 'self') { if (source && !isDead(source)) freezeCreature(state, source); } // Frozen Crusher
 			else { const t = chosenCreature(); if (t) freezeCreature(state, t); /* hero freeze: no-op (heroes can't attack) */ }
 		} else if (e.type === 'silence') {
@@ -3526,6 +3534,65 @@ function execEffects(state, pi, effects, target, source) {
 				t.tempHealth = 0;
 				emit(state, { type: 'buff', uid: t.uid, attack: t.attack, hp: hp(t) });
 			}
+		} else if (e.type === 'unlock-overload') {
+			// Eternal Sentinel: give back the Mana Crystals locked this turn, and
+			// cancel next turn's pending lock
+			const p = state.players[pi];
+			if (p.overloadLockedThisTurn) { p.mana.cur += p.overloadLockedThisTurn; p.overloadLockedThisTurn = 0; }
+			p.overloadPending = 0;
+			emit(state, { type: 'manaGained', player: pi });
+		} else if (e.type === 'copy-stats') {
+			// Faceless Shambler: copy a friendly creature's Attack and Health
+			const t = chosenCreature();
+			if (t && source && !isDead(source)) {
+				source.attack = t.attack;
+				source.maxHealth = t.maxHealth;
+				emit(state, { type: 'buff', uid: source.uid, attack: source.attack, hp: hp(source) });
+			}
+		} else if (e.type === 'heal-per-enemy') {
+			// Cult Apothecary: restore N to your hero for each enemy creature
+			const n = enemies.reduce((s, o) => s + state.players[o].board.filter(c => !isDead(c) && c.type !== 'location').length, 0);
+			if (n > 0) healHero(state, pi, (e.value || 0) * n);
+		} else if (e.type === 'swap-stats-with') {
+			// Darkspeaker: swap this creature's Attack & Health with a chosen one
+			const t = chosenCreature();
+			if (t && source && source.zone === 'board' && !isDead(source) && t !== source) {
+				const sa = source.attack, sh = source.maxHealth, sd = source.damage;
+				source.attack = t.attack; source.maxHealth = t.maxHealth; source.damage = t.damage;
+				t.attack = sa; t.maxHealth = sh; t.damage = sd;
+				emit(state, { type: 'buff', uid: source.uid, attack: source.attack, hp: hp(source) });
+				emit(state, { type: 'buff', uid: t.uid, attack: t.attack, hp: hp(t) });
+			}
+		} else if (e.type === 'blade-of-cthun') {
+			// Blade of C'Thun: destroy a creature, add its Attack/Health to C'Thun
+			const t = chosenCreature();
+			if (t) {
+				const a = t.attack, h2 = t.maxHealth;
+				t.damage = t.maxHealth; t.shield = false;
+				emit(state, { type: 'destroy', uid: t.uid });
+				const p = state.players[pi];
+				p.cthunAtk += a; p.cthunHp += h2;
+				syncCthun(state, pi);
+			}
+		} else if (e.type === 'summon-deathrattle-died') {
+			// N'Zoth: summon your Deathrattle creatures that died this game
+			const p = state.players[pi];
+			for (const id of p.deathLogIds) {
+				const def = state.cardsById[id];
+				if (def?.type === 'creature' && (def.keywords || []).includes('deathrattle')) summon(state, pi, def);
+			}
+		} else if (e.type === 'summon-dragons-from-hand') {
+			// Deathwing, Dragonlord: put all Dragons from your hand into play
+			const p = state.players[pi];
+			for (const c of [...p.hand]) {
+				if (c.type === 'creature' && (c.tribe || '').includes('Dragon')) {
+					p.hand = p.hand.filter(x => x !== c);
+					c.zone = 'board'; p.board.push(c);
+					emit(state, { type: 'summon', player: pi, card: c });
+					fireOngoing(state, pi, 'summoned', { minion: c });
+				}
+			}
+			recomputeAuras(state);
 		} else if (e.type === 'swap-health-with') {
 			// Vol'jin: swap this creature's Health with a chosen creature's
 			const t = chosenCreature();
@@ -4040,8 +4107,9 @@ function execEffects(state, pi, effects, target, source) {
 		} else if (e.type === 'buff-hand') {
 			// hand-buffs: pump creatures still waiting in your hand
 			const p = state.players[pi];
-			const pool = p.hand.filter(c => c.type === 'creature');
-			const targets = e.all ? pool
+			let pool = p.hand.filter(c => c.type === 'creature');
+			if (e.requireKeyword) pool = pool.filter(c => c.keywords.includes(e.requireKeyword)); // Forlorn Stalker: Deathrattle minions
+			const targets = e.all || e.requireKeyword ? pool
 				: pool.length ? [pool[Math.floor(state.rng() * pool.length)]] : [];
 			for (const c of targets) {
 				c.attack += e.attack || 0;
@@ -4180,9 +4248,10 @@ function execEffects(state, pi, effects, target, source) {
 			if (t) {
 				let opt = e.options ? e.options[Math.floor(state.rng() * e.options.length)] : e;
 				if (e.randomCost) {
-					// Recombobulator: become a random creature of the same Cost
+					// Recombobulator: same Cost. Master of Evolution: costDelta +1
+					const want = (t.cost || 0) + (e.costDelta || 0);
 					const pool = Object.values(state.cardsById).filter(d => d.type === 'creature'
-						&& (d.cost || 0) === (t.cost || 0) && !d.token && d.collectible !== false
+						&& (d.cost || 0) === want && !d.token && d.collectible !== false
 						&& !d.companion && !d.commander && !(d.colors && d.colors.length) && d.id !== t.id);
 					if (pool.length) {
 						const rd = pool[Math.floor(state.rng() * pool.length)];
@@ -6291,9 +6360,11 @@ export function endTurn(state) {
 	if (state.turnNumber > 1 && np.mana.max < MAX_BASE_MANA) np.mana.max++;
 	np.mana.cur = np.mana.max;
 	// overload: mana spent ahead of time stays locked this turn
+	np.overloadLockedThisTurn = 0;
 	if (np.overloadPending) {
 		np.mana.cur = Math.max(0, np.mana.cur - np.overloadPending);
 		emit(state, { type: 'overloaded', player: state.current, amount: np.overloadPending });
+		np.overloadLockedThisTurn = np.overloadPending; // Eternal Sentinel can give these back
 		np.overloadPending = 0;
 	}
 	// Conceal's stealth wears off at the owner's next turn

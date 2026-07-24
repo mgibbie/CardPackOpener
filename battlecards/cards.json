@@ -17336,23 +17336,6 @@
       "description": "Battlecry: Set a hero's remaining health to 15."
     },
     {
-      "id": "banana",
-      "name": "Banana",
-      "type": "sorcery",
-      "cost": 1,
-      "rarity": "common",
-      "effects": [
-        {
-          "type": "buff",
-          "attack": 1,
-          "health": 1,
-          "target": "creature"
-        }
-      ],
-      "description": "Give a creature +1/+1.",
-      "collectible": false
-    },
-    {
       "id": "acolyte_of_death",
       "name": "Acolyte of Death",
       "cardClass": "death_knight",
@@ -66405,6 +66388,316 @@
         {
           "type": "grant",
           "keyword": "divine_shield"
+        }
+      ]
+    },
+    {
+      "id": "eternal_sentinel",
+      "name": "Eternal Sentinel",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "shaman",
+      "attack": 3,
+      "health": 2,
+      "rarity": "epic",
+      "set": "OG",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Unlock your Overloaded Mana Crystals.",
+      "effects": [
+        {
+          "type": "unlock-overload"
+        }
+      ]
+    },
+    {
+      "id": "forlorn_stalker",
+      "name": "Forlorn Stalker",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "hunter",
+      "attack": 4,
+      "health": 2,
+      "rarity": "rare",
+      "set": "OG",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Give all Deathrattle creatures in your hand +1/+1.",
+      "effects": [
+        {
+          "type": "buff-hand",
+          "requireKeyword": "deathrattle",
+          "attack": 1,
+          "health": 1
+        }
+      ]
+    },
+    {
+      "id": "bloodsail_cultist",
+      "name": "Bloodsail Cultist",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "warrior",
+      "attack": 3,
+      "health": 4,
+      "rarity": "rare",
+      "set": "OG",
+      "tribe": "Pirate",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: If you control another Pirate, give your weapon +1/+1.",
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "controlOtherTribe": "Pirate"
+          },
+          "then": [
+            {
+              "type": "buff-weapon",
+              "attack": 1,
+              "durability": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "demented_frostcaller",
+      "name": "Demented Frostcaller",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "mage",
+      "attack": 2,
+      "health": 4,
+      "rarity": "rare",
+      "set": "OG",
+      "description": "After you cast a spell, Freeze a random enemy.",
+      "ongoing": {
+        "on": "spell-played",
+        "effects": [
+          {
+            "type": "freeze",
+            "target": "random-enemy"
+          }
+        ]
+      }
+    },
+    {
+      "id": "faceless_shambler",
+      "name": "Faceless Shambler",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "neutral",
+      "attack": 1,
+      "health": 1,
+      "rarity": "epic",
+      "set": "OG",
+      "keywords": [
+        "taunt",
+        "battlecry"
+      ],
+      "description": "Taunt. Battlecry: Copy a friendly creature's Attack and Health.",
+      "effects": [
+        {
+          "type": "copy-stats",
+          "target": "friendly-creature"
+        }
+      ]
+    },
+    {
+      "id": "cult_apothecary",
+      "name": "Cult Apothecary",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "neutral",
+      "attack": 4,
+      "health": 4,
+      "rarity": "common",
+      "set": "OG",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: For each enemy creature, restore 2 Health to your hero.",
+      "effects": [
+        {
+          "type": "heal-per-enemy",
+          "value": 2
+        }
+      ]
+    },
+    {
+      "id": "master_of_evolution",
+      "name": "Master of Evolution",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "shaman",
+      "attack": 4,
+      "health": 5,
+      "rarity": "rare",
+      "set": "OG",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Transform a friendly creature into a random one that costs (1) more.",
+      "effects": [
+        {
+          "type": "transform",
+          "randomCost": true,
+          "costDelta": 1,
+          "target": "friendly-creature"
+        }
+      ]
+    },
+    {
+      "id": "darkspeaker",
+      "name": "Darkspeaker",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "neutral",
+      "attack": 3,
+      "health": 6,
+      "rarity": "epic",
+      "set": "OG",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Swap stats with a friendly creature.",
+      "effects": [
+        {
+          "type": "swap-stats-with",
+          "target": "friendly-creature"
+        }
+      ]
+    },
+    {
+      "id": "ancient_harbinger",
+      "name": "Ancient Harbinger",
+      "type": "creature",
+      "cost": 6,
+      "cardClass": "neutral",
+      "attack": 4,
+      "health": 6,
+      "rarity": "epic",
+      "set": "OG",
+      "description": "At the start of your turn, put a 10-Cost creature from your deck into your hand.",
+      "ongoing": {
+        "on": "turn-start",
+        "effects": [
+          {
+            "type": "tutor",
+            "cardType": "creature",
+            "cost": 10,
+            "count": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "blade_of_cthun",
+      "name": "Blade of C\u2019Thun",
+      "type": "creature",
+      "cost": 7,
+      "cardClass": "rogue",
+      "attack": 4,
+      "health": 4,
+      "rarity": "epic",
+      "set": "OG",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Destroy a creature. Add its Attack and Health to your C'Thun (wherever it is).",
+      "effects": [
+        {
+          "type": "blade-of-cthun",
+          "target": "creature"
+        }
+      ]
+    },
+    {
+      "id": "nzoth_the_corruptor",
+      "name": "N\u2019Zoth, the Corruptor",
+      "type": "creature",
+      "cost": 10,
+      "cardClass": "neutral",
+      "attack": 5,
+      "health": 7,
+      "rarity": "legendary",
+      "set": "OG",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Summon your Deathrattle creatures that died this game.",
+      "effects": [
+        {
+          "type": "summon-deathrattle-died"
+        }
+      ]
+    },
+    {
+      "id": "deathwing_dragonlord",
+      "name": "Deathwing, Dragonlord",
+      "type": "creature",
+      "cost": 10,
+      "cardClass": "neutral",
+      "attack": 12,
+      "health": 12,
+      "rarity": "legendary",
+      "set": "OG",
+      "tribe": "Dragon",
+      "keywords": [
+        "deathrattle"
+      ],
+      "description": "Deathrattle: Put all Dragons from your hand into play.",
+      "deathrattle": [
+        {
+          "type": "summon-dragons-from-hand"
+        }
+      ]
+    },
+    {
+      "id": "mukla_tyrant",
+      "name": "Mukla, Tyrant of the Vale",
+      "type": "creature",
+      "cost": 6,
+      "cardClass": "neutral",
+      "attack": 5,
+      "health": 5,
+      "rarity": "legendary",
+      "set": "OG",
+      "tribe": "Beast",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Add 2 Bananas to your hand.",
+      "effects": [
+        {
+          "type": "add-card",
+          "id": "banana"
+        },
+        {
+          "type": "add-card",
+          "id": "banana"
+        }
+      ]
+    },
+    {
+      "id": "banana",
+      "name": "Bananas",
+      "type": "sorcery",
+      "cost": 1,
+      "token": true,
+      "rarity": "common",
+      "set": "OG",
+      "description": "Give a creature +1/+1.",
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 1,
+          "health": 1
         }
       ]
     }
