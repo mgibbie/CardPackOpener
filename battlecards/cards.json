@@ -75617,6 +75617,361 @@
           ]
         }
       ]
+    },
+    {
+      "id": "daring_fire_eater",
+      "name": "Daring Fire-Eater",
+      "type": "creature",
+      "cost": 1,
+      "cardClass": "mage",
+      "attack": 1,
+      "health": 1,
+      "rarity": "common",
+      "set": "TROLL",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Your next Hero Power this turn deals 2 more damage.",
+      "effects": [
+        {
+          "type": "set-next-hero-power-damage",
+          "value": 2
+        }
+      ]
+    },
+    {
+      "id": "immortal_prelate",
+      "name": "Immortal Prelate",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "paladin",
+      "attack": 1,
+      "health": 3,
+      "rarity": "epic",
+      "set": "TROLL",
+      "keywords": [
+        "deathrattle"
+      ],
+      "description": "Deathrattle: Shuffle this into your deck. It keeps any enchantments.",
+      "deathrattle": [
+        {
+          "type": "shuffle-self-into-deck"
+        }
+      ]
+    },
+    {
+      "id": "masked_contender",
+      "name": "Masked Contender",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "neutral",
+      "attack": 2,
+      "health": 4,
+      "rarity": "epic",
+      "set": "TROLL",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: If you control a Secret, cast a Secret from your deck.",
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "controlSecret": true
+          },
+          "then": [
+            {
+              "type": "deploy-secret-from-deck"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "soulwarden",
+      "name": "Soulwarden",
+      "type": "creature",
+      "cost": 6,
+      "cardClass": "warlock",
+      "attack": 6,
+      "health": 6,
+      "rarity": "epic",
+      "set": "TROLL",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Add 3 random cards you discarded this game to your hand.",
+      "effects": [
+        {
+          "type": "return-discarded",
+          "random": true,
+          "count": 3
+        }
+      ]
+    },
+    {
+      "id": "war_master_voone",
+      "name": "War Master Voone",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "warrior",
+      "attack": 4,
+      "health": 3,
+      "rarity": "legendary",
+      "set": "TROLL",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Copy all Dragons in your hand.",
+      "effects": [
+        {
+          "type": "copy-hand-tribe",
+          "tribe": "Dragon"
+        }
+      ]
+    },
+    {
+      "id": "halazzi_the_lynx",
+      "name": "Halazzi, the Lynx",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "hunter",
+      "attack": 4,
+      "health": 2,
+      "rarity": "legendary",
+      "set": "TROLL",
+      "tribe": "Beast",
+      "keywords": [
+        "rush",
+        "battlecry"
+      ],
+      "description": "Rush. Battlecry: Fill your hand with 1/1 Lynxes that have Rush.",
+      "effects": [
+        {
+          "type": "fill-hand-token",
+          "id": "trl_lynx"
+        }
+      ]
+    },
+    {
+      "id": "mojomaster_zihi",
+      "name": "Mojomaster Zihi",
+      "type": "creature",
+      "cost": 6,
+      "cardClass": "neutral",
+      "attack": 5,
+      "health": 5,
+      "rarity": "legendary",
+      "set": "TROLL",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Set each player to 5 Mana Crystals.",
+      "effects": [
+        {
+          "type": "set-mana-all",
+          "value": 5
+        }
+      ]
+    },
+    {
+      "id": "captain_hooktusk",
+      "name": "Captain Hooktusk",
+      "type": "creature",
+      "cost": 8,
+      "cardClass": "rogue",
+      "attack": 6,
+      "health": 3,
+      "rarity": "legendary",
+      "set": "TROLL",
+      "tribe": "Pirate",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Summon 3 Pirates from your deck. Give them Rush.",
+      "effects": [
+        {
+          "type": "recruit",
+          "tribe": "Pirate",
+          "count": 3,
+          "grant": "rush"
+        }
+      ]
+    },
+    {
+      "id": "hireek_the_bat",
+      "name": "Hir'eek, the Bat",
+      "type": "creature",
+      "cost": 8,
+      "cardClass": "warlock",
+      "attack": 1,
+      "health": 1,
+      "rarity": "legendary",
+      "set": "TROLL",
+      "tribe": "Beast",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Fill your board with copies of this creature.",
+      "effects": [
+        {
+          "type": "fill-board-self"
+        }
+      ]
+    },
+    {
+      "id": "princess_talanji",
+      "name": "Princess Talanji",
+      "type": "creature",
+      "cost": 8,
+      "cardClass": "priest",
+      "attack": 7,
+      "health": 5,
+      "rarity": "legendary",
+      "set": "TROLL",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Summon all creatures from your hand that didn't start in your deck.",
+      "effects": [
+        {
+          "type": "summon-foreign-from-hand"
+        }
+      ]
+    },
+    {
+      "id": "oondasta",
+      "name": "Oondasta",
+      "type": "creature",
+      "cost": 9,
+      "cardClass": "neutral",
+      "attack": 7,
+      "health": 7,
+      "rarity": "legendary",
+      "set": "TROLL",
+      "tribe": "Beast",
+      "keywords": [
+        "rush",
+        "overkill"
+      ],
+      "description": "Rush. Overkill: Summon a Beast from your hand.",
+      "overkill": [
+        {
+          "type": "summon-from-hand-min-attack",
+          "tribe": "Beast"
+        }
+      ]
+    },
+    {
+      "id": "akali_the_rhino",
+      "name": "Akali, the Rhino",
+      "type": "creature",
+      "cost": 8,
+      "cardClass": "warrior",
+      "attack": 5,
+      "health": 5,
+      "rarity": "legendary",
+      "set": "TROLL",
+      "keywords": [
+        "rush",
+        "overkill"
+      ],
+      "description": "Rush. Overkill: Draw a Rush creature from your deck. Give it +5/+5.",
+      "overkill": [
+        {
+          "type": "tutor",
+          "requireKeyword": "rush",
+          "buff": {
+            "attack": 5,
+            "health": 5
+          }
+        }
+      ]
+    },
+    {
+      "id": "bwonsamdi_the_dead",
+      "name": "Bwonsamdi, the Dead",
+      "type": "creature",
+      "cost": 7,
+      "cardClass": "priest",
+      "attack": 7,
+      "health": 7,
+      "rarity": "legendary",
+      "set": "TROLL",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Draw 1-Cost creatures from your deck until your hand is full.",
+      "effects": [
+        {
+          "type": "tutor",
+          "cardType": "creature",
+          "cost": 1,
+          "count": 20
+        }
+      ]
+    },
+    {
+      "id": "high_priest_thekal",
+      "name": "High Priest Thekal",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "paladin",
+      "attack": 3,
+      "health": 4,
+      "rarity": "legendary",
+      "set": "TROLL",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Convert all but 1 of your Hero's Health into Armor.",
+      "effects": [
+        {
+          "type": "set-life-to-armor"
+        }
+      ]
+    },
+    {
+      "id": "da_undatakah",
+      "name": "Da Undatakah",
+      "type": "creature",
+      "cost": 8,
+      "cardClass": "neutral",
+      "attack": 8,
+      "health": 5,
+      "rarity": "legendary",
+      "set": "TROLL",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Gain the Deathrattle effects of 3 friendly creatures that died this game.",
+      "effects": [
+        {
+          "type": "gain-deathrattles-from-died",
+          "count": 3
+        }
+      ]
+    },
+    {
+      "id": "gral_the_shark",
+      "name": "Gral, the Shark",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "rogue",
+      "attack": 2,
+      "health": 2,
+      "rarity": "legendary",
+      "set": "TROLL",
+      "tribe": "Beast",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Eat a creature in your deck and gain its stats.",
+      "effects": [
+        {
+          "type": "eat-from-deck"
+        }
+      ]
     }
   ]
 }

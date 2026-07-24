@@ -3672,6 +3672,7 @@ function execEffects(state, pi, effects, target, source) {
 				drawnIds.add(id);
 				const card = instantiate(state.cardsById[id], pi);
 				card.zone = 'hand';
+				if (e.buff) { card.attack += e.buff.attack || 0; card.maxHealth += e.buff.health || 0; } // Akali, the Rhino
 				p.hand.push(card);
 				emit(state, { type: 'conjure', player: pi, card, color: null });
 			}
@@ -3910,7 +3911,8 @@ function execEffects(state, pi, effects, target, source) {
 				if (!idxs.length) break;
 				const j = idxs[Math.floor(state.rng() * idxs.length)];
 				const [id] = p.deck.splice(j, 1);
-				summon(state, pi, state.cardsById[id]);
+				const c = summon(state, pi, state.cardsById[id]);
+				if (c && e.grant && !c.keywords.includes(e.grant)) c.keywords.push(e.grant); // Captain Hooktusk: give them Rush
 			}
 		} else if (e.type === 'swap-stats-all') {
 			// Void Ripper: swap Attack and Health of all OTHER creatures
@@ -3941,6 +3943,64 @@ function execEffects(state, pi, effects, target, source) {
 				const c = instantiate(state.cardsById[source.id], pi);
 				c.zone = 'hand'; state.players[pi].hand.push(c);
 				emit(state, { type: 'conjure', player: pi, card: c, color: null });
+			}
+		} else if (e.type === 'set-next-hero-power-damage') {
+			// Daring Fire-Eater: your next Hero Power this turn deals more
+			state.players[pi].heroPowerDamageNext = (state.players[pi].heroPowerDamageNext || 0) + (e.value || 2);
+		} else if (e.type === 'copy-hand-tribe') {
+			// War Master Voone: copy all creatures of a tribe in your hand
+			const p = state.players[pi];
+			const copies = p.hand.filter(c => c.type === 'creature' && (!e.tribe || (c.tribe || '').includes(e.tribe)));
+			for (const c of copies) { if (p.hand.length >= MAX_HAND) break; const def = state.cardsById[c.id] || c; const cp = instantiate(def, pi); cp.zone = 'hand'; p.hand.push(cp); emit(state, { type: 'conjure', player: pi, card: cp, color: null }); }
+		} else if (e.type === 'fill-hand-token') {
+			// Halazzi, the Lynx: fill your hand with a token
+			const p = state.players[pi];
+			const def = state.cardsById[e.id];
+			while (def && p.hand.length < MAX_HAND) { const cp = instantiate(def, pi); cp.zone = 'hand'; p.hand.push(cp); emit(state, { type: 'conjure', player: pi, card: cp, color: null }); }
+		} else if (e.type === 'set-mana-all') {
+			// Mojomaster Zihi: set each player to N Mana Crystals
+			for (const pl of state.players) { if (pl.eliminated) continue; pl.mana.max = e.value || 5; pl.mana.cur = Math.min(pl.mana.cur, pl.mana.max); }
+			emit(state, { type: 'manaGained', player: pi, amount: 0, mana: availableMana(state.players[pi]) });
+		} else if (e.type === 'fill-board-self') {
+			// Hir'eek, the Bat: fill your board with copies of this creature
+			const p = state.players[pi];
+			const def = source && (state.cardsById[source.id] || source);
+			if (def) while (p.board.filter(c => !isDead(c)).length < 7) { const c = summon(state, pi, def); if (!c) break; }
+		} else if (e.type === 'summon-foreign-from-hand') {
+			// Princess Talanji: summon every creature in hand that didn't start in your deck
+			const p = state.players[pi];
+			for (const c of [...p.hand]) {
+				if (c.type !== 'creature' || c.fromDeck) continue;
+				if (p.board.filter(x => !isDead(x)).length >= 7) break;
+				p.hand = p.hand.filter(x => x !== c);
+				c.zone = 'board'; c.sick = true; p.board.push(c);
+				emit(state, { type: 'summon', player: pi, card: c }); fireOngoing(state, pi, 'summoned', { minion: c });
+			}
+			recomputeAuras(state);
+		} else if (e.type === 'set-life-to-armor') {
+			// High Priest Thekal: convert all but 1 Health into Armor
+			const p = state.players[pi];
+			const conv = Math.max(0, p.life - 1);
+			p.life -= conv; gainArmor(state, pi, conv);
+			emit(state, { type: 'damage', targetType: 'hero', player: pi, amount: 0, life: p.life });
+		} else if (e.type === 'gain-deathrattles-from-died') {
+			// Da Undatakah: gain the Deathrattles of N friendly creatures that died this game
+			const p = state.players[pi];
+			const pool = [...new Set(p.deathLogIds)].map(id => state.cardsById[id]).filter(d => d && d.type === 'creature' && d.deathrattle && d.deathrattle.length);
+			for (let i = 0; i < (e.count || 3) && pool.length && source; i++) {
+				const def = pool.splice(Math.floor(state.rng() * pool.length), 1)[0];
+				source.deathrattle = [...(source.deathrattle || []), ...JSON.parse(JSON.stringify(def.deathrattle))];
+			}
+			if (source && source.deathrattle && source.deathrattle.length && !source.keywords.includes('deathrattle')) source.keywords.push('deathrattle');
+		} else if (e.type === 'eat-from-deck') {
+			// Gral, the Shark: eat a random creature in your deck, gain its stats
+			const p = state.players[pi];
+			const idxs = p.deck.map((id, j) => ({ id, j })).filter(x => state.cardsById[x.id]?.type === 'creature' && !state.cardsById[x.id].token);
+			if (idxs.length && source && source.zone === 'board' && !isDead(source)) {
+				const pick = idxs[Math.floor(state.rng() * idxs.length)];
+				const def = state.cardsById[pick.id];
+				p.deck.splice(pick.j, 1);
+				buffCreature(source, def.attack || 0, def.health || 0);
 			}
 		} else if (e.type === 'destroy-self-gain-armor') {
 			// Gurubashi Offering: at the start of your turn, destroy this and gain Armor
@@ -4503,7 +4563,7 @@ function execEffects(state, pi, effects, target, source) {
 		} else if (e.type === 'summon-from-hand-min-attack') {
 			// Giant Anaconda: put a creature from your hand with N+ Attack into play
 			const p = state.players[pi];
-			const pool = p.hand.filter(c => c.type === 'creature' && c.attack >= (e.minAttack || 0) && (e.maxCost == null || (c.cost || 0) <= e.maxCost) && (!e.requireKeyword || c.keywords.includes(e.requireKeyword))); // Coffin Crasher / Piloted Reaper
+			const pool = p.hand.filter(c => c.type === 'creature' && c.attack >= (e.minAttack || 0) && (e.maxCost == null || (c.cost || 0) <= e.maxCost) && (!e.requireKeyword || c.keywords.includes(e.requireKeyword)) && (!e.tribe || (c.tribe || '').includes(e.tribe))); // Coffin Crasher / Piloted Reaper / Oondasta
 			if (pool.length) { const c = pool[Math.floor(state.rng() * pool.length)]; p.hand = p.hand.filter(x => x !== c); c.zone = 'board'; p.board.push(c); emit(state, { type: 'summon', player: pi, card: c }); fireOngoing(state, pi, 'summoned', { minion: c }); growBlubberBaron(state, pi, c); recomputeAuras(state); }
 		} else if (e.type === 'destroy-deck-max-cost') {
 			// Hemet, Jungle Hunter: destroy all cards in your deck costing N or less
@@ -4563,9 +4623,11 @@ function execEffects(state, pi, effects, target, source) {
 				p.hand.push(card); emit(state, { type: 'conjure', player: pi, card, color: null });
 			}
 		} else if (e.type === 'return-discarded') {
-			// Cho'gall: return everything you discarded this game to your hand
+			// Cho'gall: return everything you discarded this game; Soulwarden: N random
 			const p = state.players[pi];
-			for (const id of p.discardLogIds) { if (p.hand.length >= MAX_HAND) break; const def = state.cardsById[id]; if (def) { const card = instantiate(def, pi); card.zone = 'hand'; if (e.freeCost) card.cost = 0; p.hand.push(card); emit(state, { type: 'conjure', player: pi, card, color: null }); } }
+			let ids = p.discardLogIds;
+			if (e.random) { const pool = [...p.discardLogIds]; ids = []; for (let i = 0; i < (e.count || 1) && pool.length; i++) ids.push(pool.splice(Math.floor(state.rng() * pool.length), 1)[0]); }
+			for (const id of ids) { if (p.hand.length >= MAX_HAND) break; const def = state.cardsById[id]; if (def) { const card = instantiate(def, pi); card.zone = 'hand'; if (e.freeCost) card.cost = 0; p.hand.push(card); emit(state, { type: 'conjure', player: pi, card, color: null }); } }
 		} else if (e.type === 'cast-random-spell') {
 			// Servant of Yogg-Saron / Yogg-Saron: cast random spells with random targets
 			const times = e.perSpellsCast ? (state.players[pi].spellsPlayedTotal || 0) : (e.count || 1);
@@ -6434,7 +6496,8 @@ function resolveEntry(state, entry) {
 		return;
 	}
 	if (entry.kind === 'heropower') {
-		state.hpDamageBonus = staticValue(state.players[pi], 'hero-power-damage'); // Fallen Hero
+		state.hpDamageBonus = staticValue(state.players[pi], 'hero-power-damage') + (state.players[pi].heroPowerDamageNext || 0); // Fallen Hero / Daring Fire-Eater
+		state.players[pi].heroPowerDamageNext = 0;
 		state.hpDoubling = state.players[pi].board.some(c => c.heroPowerDouble && !isDead(c)); // Clockwork Automaton
 		state.hpResolver = pi; // Wilfred: cards drawn during a Hero Power cost 0
 		execEffects(state, pi, entry.effects, entry.target, entry.card);
@@ -7394,6 +7457,7 @@ export function endTurn(state) {
 	p.nextBattlecryDouble = false; // Murmuring Elemental only lasts this turn
 	p.nextSpellDamageBonus = 0; p.nextSpellDoubleCast = false; p.spellsLifestealThisTurn = false; // Boomsday next-spell riders are "this turn"
 	p.healHarmThisTurn = false; // Auchenai Phantasm only lasts this turn
+	p.heroPowerDamageNext = 0; // Daring Fire-Eater only lasts this turn
 
 	// Impulsive creatures refuse to end the turn without swinging
 	for (const c of [...p.board]) {
