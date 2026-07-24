@@ -10762,19 +10762,6 @@
       }
     },
     {
-      "id": "pint_sized_summoner",
-      "name": "Pint Sized Summoner",
-      "cardClass": "neutral",
-      "cost": 2,
-      "rarity": "rare",
-      "set": "paper",
-      "description": "The first creature you play each turn costs 1 less.",
-      "type": "creature",
-      "attack": 2,
-      "health": 2,
-      "tribe": "Gnome Wizard"
-    },
-    {
       "id": "plated_beetle",
       "name": "Plated Beetle",
       "cardClass": "neutral",
@@ -68179,6 +68166,188 @@
         "windfury"
       ],
       "description": "A 10/10 with Windfury."
+    },
+    {
+      "id": "pint_sized_summoner",
+      "name": "Pint-Sized Summoner",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "neutral",
+      "attack": 2,
+      "health": 2,
+      "rarity": "common",
+      "set": "EXPERT1",
+      "description": "The first creature you play each turn costs (1) less.",
+      "costMod": {
+        "cardType": "creature",
+        "amount": -1,
+        "scope": "own",
+        "firstEachTurn": true
+      }
+    },
+    {
+      "id": "fel_reaver",
+      "name": "Fel Reaver",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "neutral",
+      "attack": 8,
+      "health": 8,
+      "rarity": "rare",
+      "set": "GVG",
+      "tribe": "Mech",
+      "description": "Whenever your opponent plays a card, remove the top 3 cards of your deck.",
+      "ongoing": {
+        "on": "enemy-card-played",
+        "effects": [
+          {
+            "type": "mill-self",
+            "value": 3
+          }
+        ]
+      }
+    },
+    {
+      "id": "trade_prince_gallywix",
+      "name": "Trade Prince Gallywix",
+      "type": "creature",
+      "cost": 6,
+      "cardClass": "rogue",
+      "attack": 5,
+      "health": 8,
+      "rarity": "rare",
+      "set": "GVG",
+      "description": "Whenever your opponent casts a spell, gain a copy of it and give them a Coin.",
+      "ongoing": {
+        "on": "enemy-spell-played",
+        "effects": [
+          {
+            "type": "copy-enemy-spell"
+          }
+        ]
+      }
+    },
+    {
+      "id": "malorne",
+      "name": "Malorne",
+      "type": "creature",
+      "cost": 7,
+      "cardClass": "druid",
+      "attack": 9,
+      "health": 7,
+      "rarity": "rare",
+      "set": "GVG",
+      "tribe": "Beast",
+      "keywords": [
+        "deathrattle"
+      ],
+      "description": "Deathrattle: Shuffle this creature into your deck.",
+      "deathrattle": [
+        {
+          "type": "shuffle-into-deck",
+          "id": "malorne"
+        }
+      ]
+    },
+    {
+      "id": "iron_juggernaut",
+      "name": "Iron Juggernaut",
+      "type": "creature",
+      "cost": 6,
+      "cardClass": "warrior",
+      "attack": 6,
+      "health": 5,
+      "rarity": "rare",
+      "set": "GVG",
+      "tribe": "Mech",
+      "keywords": [
+        "battlecry",
+        "deathrattle"
+      ],
+      "description": "Battlecry and Deathrattle: Shuffle a Mine into your opponent's deck. When drawn, it explodes for 10 damage.",
+      "effects": [
+        {
+          "type": "shuffle-bomb",
+          "id": "mine",
+          "count": 1
+        }
+      ],
+      "deathrattle": [
+        {
+          "type": "shuffle-bomb",
+          "id": "mine",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "id": "bolvar_fordragon",
+      "name": "Bolvar Fordragon",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "paladin",
+      "attack": 1,
+      "health": 7,
+      "rarity": "rare",
+      "set": "GVG",
+      "keywords": [
+        "divine_shield"
+      ],
+      "description": "Whenever a friendly creature dies while this is in your hand, gain +1 Attack."
+    },
+    {
+      "id": "steamwheedle_sniper",
+      "name": "Steamwheedle Sniper",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "hunter",
+      "attack": 2,
+      "health": 3,
+      "rarity": "rare",
+      "set": "GVG",
+      "description": "Your Hero Power can target creatures.",
+      "heroPowerHitsMinions": true
+    },
+    {
+      "id": "gnomish_experimenter",
+      "name": "Gnomish Experimenter",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "neutral",
+      "attack": 3,
+      "health": 2,
+      "rarity": "rare",
+      "set": "GVG",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Draw a card. If it's a creature, transform it into a Chicken.",
+      "effects": [
+        {
+          "type": "draw-transform-to-chicken"
+        }
+      ]
+    },
+    {
+      "id": "mimirons_head",
+      "name": "Mimiron's Head",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "neutral",
+      "attack": 4,
+      "health": 5,
+      "rarity": "rare",
+      "set": "GVG",
+      "tribe": "Mech",
+      "description": "At the start of your turn, if you have at least 3 Mechs, destroy them all and form V-07-TR-0N.",
+      "ongoing": {
+        "on": "turn-start",
+        "effects": [
+          {
+            "type": "mimiron-assemble"
+          }
+        ]
+      }
     }
   ]
 }

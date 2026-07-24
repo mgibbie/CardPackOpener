@@ -163,6 +163,7 @@ function instantiate(def, controller) {
 		costReducePerTurn: def.costReducePerTurn || false,   // Nerubian Prophet: -1 cost each turn in hand
 		transformInHand: def.transformInHand || false,       // Shifter Zerus: transforms each turn in hand
 		summonOnDiscard: def.summonOnDiscard || false,       // Silverware Golem: summon it when discarded
+		heroPowerHitsMinions: def.heroPowerHitsMinions || false, // Steamwheedle Sniper: Hero Power can target minions
 		attackTax: def.attackTax ? { ...def.attackTax } : null, // Ghostly Prison: cost to attack this controller's hero
 		addCost: def.addCost ? { ...def.addCost } : null, // additional casting cost: { discard: N } or { sacrifice: 'creature'|'land'|'artifact'|'artifact-or-creature' }
 		altCost: def.altCost ? { ...def.altCost } : null, // optional cost paid INSTEAD of mana: { label, require?, life?, sacrificeLand?, exileFromHand?, opponentGain? }
@@ -462,10 +463,10 @@ export function drawCards(state, pi, count) {
 			if (p.eliminated || state.over) break;
 			continue;
 		}
-		// Bomb: an enemy shuffled it in — it explodes on draw instead of being drawn
-		if (id === 'bomb') {
+		// Bomb / Mine: an enemy shuffled it in — it explodes on draw
+		if (id === 'bomb' || id === 'mine') {
 			emit(state, { type: 'bombDetonated', player: pi });
-			damageHero(state, pi, 5, pi);
+			damageHero(state, pi, id === 'mine' ? 10 : 5, pi); // Iron Juggernaut's Mine hits for 10
 			checkGameOver(state);
 			if (p.eliminated || state.over) break;
 			continue;
@@ -1112,6 +1113,8 @@ function sweepDeaths(state) {
 				p.diedThisTurnIds.push(c.id);
 				if (!p.deathLogIds.includes(c.id)) p.deathLogIds.push(c.id);
 			}
+			// Bolvar Fordragon: grows in hand as your creatures die
+			for (const hc of p.hand) if (hc.id === 'bolvar_fordragon') { hc.attack += 1; emit(state, { type: 'buff', uid: hc.uid, attack: hc.attack, hp: hp(hc) }); }
 			emit(state, { type: 'death', uid: c.uid, player: pi, name: c.name });
 			// Equipment on this creature detaches and stays in play (can be re-equipped)
 			for (const pl of state.players) for (const eq of pl.artifacts) if (eq.equip && eq.attachedTo === c.uid) eq.attachedTo = null;
@@ -1980,6 +1983,17 @@ function runSecretEffects(state, pi, effects, ctx) {
 			case 'gain-armor-by-amount': {
 				// Alley Armorsmith: gain Armor equal to the damage just dealt
 				if (ctx.amount > 0) gainArmor(state, pi, ctx.amount);
+				break;
+			}
+			case 'copy-enemy-spell': {
+				// Trade Prince Gallywix: copy the cast spell, give its caster a Coin
+				const spell = ctx.spell;
+				const pp = state.players[pi];
+				if (spell && state.cardsById[spell.id] && pp.hand.length < MAX_HAND) {
+					const c = instantiate(state.cardsById[spell.id], pi); c.zone = 'hand';
+					pp.hand.push(c); emit(state, { type: 'conjure', player: pi, card: c, color: null });
+				}
+				if (ctx.caster != null) addCoin(state, ctx.caster);
 				break;
 			}
 			case 'destroy-damaged': {
@@ -2862,7 +2876,7 @@ function execEffects(state, pi, effects, target, source) {
 				const foes = enemies.filter(o => !state.players[o].eliminated);
 				if (!foes.length) break;
 				const od = state.players[foes[Math.floor(state.rng() * foes.length)]].deck;
-				od.splice(Math.floor(state.rng() * (od.length + 1)), 0, 'bomb');
+				od.splice(Math.floor(state.rng() * (od.length + 1)), 0, e.id || 'bomb'); // Iron Juggernaut: id:'mine'
 			}
 			emit(state, { type: 'bombShuffled', player: pi, count: e.count || 1 });
 		} else if (e.type === 'summon-per-enemy-bomb') {
@@ -3604,6 +3618,37 @@ function execEffects(state, pi, effects, target, source) {
 			}
 			for (let i = p.deck.length - 1; i > 0; i--) { const j = Math.floor(state.rng() * (i + 1)); [p.deck[i], p.deck[j]] = [p.deck[j], p.deck[i]]; }
 			emit(state, { type: 'shuffledIntoDeck', player: pi, count: e.count || 1 });
+		} else if (e.type === 'draw-transform-to-chicken') {
+			// Gnomish Experimenter: draw a card; if it's a creature, make it a 1/1 Chicken
+			const p = state.players[pi];
+			const before = new Set(p.hand.map(c => c.uid));
+			drawCards(state, pi, 1);
+			const drawn = p.hand.find(c => !before.has(c.uid));
+			if (drawn && drawn.type === 'creature') {
+				drawn.id = 'token_chicken'; drawn.name = 'Chicken'; drawn.attack = 1; drawn.maxHealth = 1;
+				drawn.cost = 0; drawn.keywords = []; drawn.tribe = 'Beast'; drawn.effects = null; drawn.ongoing = null; drawn.deathrattle = null;
+				emit(state, { type: 'transformed', uid: drawn.uid, player: pi, from: 'card', card: drawn });
+			}
+		} else if (e.type === 'mimiron-assemble') {
+			// Mimiron's Head: if you have 3+ Mechs, destroy them and form V-07-TR-0N
+			const p = state.players[pi];
+			const mechs = p.board.filter(c => !isDead(c) && (c.tribe || '').includes('Mech'));
+			if (mechs.length >= 3) {
+				for (const m of mechs) { m.damage = m.maxHealth; m.shield = false; emit(state, { type: 'destroy', uid: m.uid }); }
+				sweepDeaths(state);
+				summon(state, pi, { id: 'token_v07tr0n', name: 'V-07-TR-0N', type: 'creature', cost: 0, rarity: 'legendary',
+					token: true, tribe: 'Mech', attack: 7, health: 8, keywords: ['charge', 'windfury'], description: 'A 7/8 Mech with Charge and Windfury.' });
+			}
+		} else if (e.type === 'mill-self') {
+			// Fel Reaver: burn the top N cards of your own deck
+			const p = state.players[pi];
+			for (let i = 0; i < (e.value || 1); i++) {
+				const id = p.deck.pop();
+				if (!id) break;
+				const def = state.cardsById[id];
+				if (def && !def.token) { const c = instantiate(def, pi); c.zone = 'graveyard'; p.graveyard.push(c); }
+				emit(state, { type: 'mill', player: pi });
+			}
 		} else if (e.type === 'refresh-hero-power') {
 			// Auctionmaster Beardo: your Hero Power can be used again this turn
 			for (const hp of state.players[pi].heroPowers) hp.usedThisTurn = false;
@@ -5080,6 +5125,7 @@ export function playCard(state, pi, cardUid, target, choice, position, useAlt, k
 	}
 	emit(state, { type: 'play', player: pi, card, mana: availableMana(p) });
 	fireOngoing(state, pi, 'card-played', { played: card });
+	for (const o of opponentsOf(state, pi)) fireOngoing(state, o, 'enemy-card-played', { played: card, caster: pi }); // Fel Reaver
 	corruptHandCards(state, pi, playedCost);
 
 	if (card.type === 'creature' && card.magnetic && target?.type === 'creature'
@@ -6256,10 +6302,20 @@ export function powerEffectsOf(card, choice) {
 }
 
 // derive the activation's target choice from the power's effects
+// Steamwheedle Sniper: your Hero Power can also target minions — broaden any
+// enemy-hero damage in the power's effects to "any" target
+function heroPowerEffects(state, pi, card, choice) {
+	let effects = powerEffectsOf(card, choice);
+	if (state.players[pi].board.some(c => c.heroPowerHitsMinions && !isDead(c))) {
+		effects = effects.map(e => e.type === 'damage' && (e.target === 'enemy-hero' || e.target == null) ? { ...e, target: 'any' } : e);
+	}
+	return effects;
+}
+
 export function heroPowerSpec(state, pi, card, choice) {
 	if (!card.power) return null;
 	if (card.power.choices && choice == null) return null; // branch menu comes first
-	return targetSpec(state, pi, { id: card.id, type: 'sorcery', effects: powerEffectsOf(card, choice) });
+	return targetSpec(state, pi, { id: card.id, type: 'sorcery', effects: heroPowerEffects(state, pi, card, choice) });
 }
 
 // a Hero Power's live cost after board/one-shot modifiers (Maiden of the Lake
@@ -6296,7 +6352,7 @@ export function useHeroPower(state, pi, cardUid, target, choice) {
 	p.heroPowersUsedGame = (p.heroPowersUsedGame || 0) + 1; // Frost Giant
 	card.usedThisTurn = true;
 	emit(state, { type: 'heroPowerUsed', player: pi, card, mana: availableMana(p) });
-	stackAction(state, pi, { kind: 'heropower', card, effects: powerEffectsOf(card, choice), target });
+	stackAction(state, pi, { kind: 'heropower', card, effects: heroPowerEffects(state, pi, card, choice), target });
 	return true;
 }
 
