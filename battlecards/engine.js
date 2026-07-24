@@ -983,7 +983,7 @@ function healHero(state, pi, amount) {
 	emit(state, { type: 'heal', targetType: 'hero', player: pi, amount, life: p.life });
 	// Lightwarden-style triggers fire only when healing actually landed
 	if (p.life > before) {
-		for (let s2 = 0; s2 < state.players.length; s2++) fireOngoing(state, s2, 'healed', { healedHero: pi });
+		for (let s2 = 0; s2 < state.players.length; s2++) fireOngoing(state, s2, 'healed', { healedHero: pi, amount: p.life - before });
 	}
 }
 
@@ -1819,7 +1819,15 @@ function runSecretEffects(state, pi, effects, ctx) {
 			}
 			case 'prevent': ctx.prevented = true; break;
 			case 'armor': gainArmor(state, pi, e.value); break;
-			case 'reflect-damage': {
+			case 'damage-random-enemy-heal': {
+					// Blackguard: when YOUR hero is healed, deal that much to a random enemy minion
+					if (ctx.healedHero === pi && (ctx.amount || 0) > 0) {
+						const bpool = opponentsOf(state, pi).flatMap(o => state.players[o].board.filter(c => !isDead(c) && c.type !== 'location'));
+						if (bpool.length) damageCreature(state, bpool[Math.floor(state.rng() * bpool.length)], ctx.amount, null);
+					}
+					break;
+				}
+				case 'reflect-damage': {
 				// hit whoever dealt the damage; fall back to a random enemy
 				const opps = opponentsOf(state, pi);
 				const src = ctx.src != null && ctx.src !== pi && !state.players[ctx.src]?.eliminated ? ctx.src : null;
@@ -3142,6 +3150,7 @@ function execEffects(state, pi, effects, target, source) {
 				else if (e.per === 'enemy-creatures') n = state.players.reduce((s, pl, idx) => idx === pi ? s : s + pl.board.filter(c => !isDead(c) && c.type !== 'location').length, 0); // Cyclopian Horror
 				else if (e.per === 'elementals-game') n = state.players[pi].elementalsPlayedGame || 0; // Ozruk
 					else if (e.per === 'died-this-turn') n = state.diedThisTurn || 0; // Wicked Skeleton
+					else if (e.per === 'damaged-creatures') n = state.players.reduce((s, pl) => s + pl.board.filter(c => !isDead(c) && c.type !== 'location' && c.damage > 0).length, 0); // Death Revenant
 				if (n > 0) buffCreature(source, (e.attack || 0) * n, (e.health || 0) * n);
 			}
 		} else if (e.type === 'buff-self-random') {
@@ -3492,6 +3501,8 @@ function execEffects(state, pi, effects, target, source) {
 			else if (e.if.heroPowerUsed) ok = (p.heroPowers || []).some(h => h.usedThisTurn); // Manafeeder Panthara
 			else if (e.if.holdingSpellMinCost != null) ok = p.hand.some(c => (c.type === 'sorcery' || c.type === 'instant' || c.type === 'secret' || c.type === 'trap') && (c.cost || 0) >= e.if.holdingSpellMinCost); // Groundskeeper
 			else if (e.if.enemyTurn) ok = state.current !== pi; // Skelemancer / Vryghoul / Mountainfire Armor (died on opponent's turn)
+			else if (e.if.deckNoCost != null) ok = !p.deck.some(id => (state.cardsById[id]?.cost || 0) === e.if.deckNoCost); // Prince Keleseth / Valanar
+			else if (e.if.deckHasKeyword) ok = p.deck.some(id => { const def = state.cardsById[id]; return def?.type === 'creature' && (def.keywords || []).includes(e.if.deckHasKeyword); }); // Corpsetaker
 			execEffects(state, pi, ok ? e.then : (e.else || []), target, source);
 		} else if (e.type === 'damage-then') {
 			// deal damage, then branch on whether the creature survived
@@ -3784,6 +3795,42 @@ function execEffects(state, pi, effects, target, source) {
 				const [id] = p.deck.splice(idx, 1);
 				summon(state, pi, state.cardsById[id]);
 			}
+		} else if (e.type === 'summon-from-deck-weaker') {
+			// Meat Wagon: summon a creature from your deck with less Attack than this one
+			const p = state.players[pi];
+			const cap = source ? source.attack : (e.maxAttack ?? 0);
+			for (let n = 0; n < (e.count || 1); n++) {
+				const idx = p.deck.findIndex(id => { const def = state.cardsById[id]; return def?.type === 'creature' && !def.token && (def.attack || 0) < cap; });
+				if (idx < 0) break;
+				const [id] = p.deck.splice(idx, 1);
+				summon(state, pi, state.cardsById[id]);
+			}
+		} else if (e.type === 'summon-died-this-game') {
+			// Hadronox (Taunt) / Abominable Bowman (Beast, random): resummon fallen friendlies
+			const p = state.players[pi];
+			let ids = p.deathLogIds.filter(id => {
+				const def = state.cardsById[id];
+				if (!def || def.type !== 'creature') return false;
+				if (e.keyword && !(def.keywords || []).includes(e.keyword)) return false;
+				if (e.tribe && !(def.tribe || '').includes(e.tribe)) return false;
+				return true;
+			});
+			if (e.random) { if (ids.length) ids = [ids[Math.floor(state.rng() * ids.length)]]; else ids = []; }
+			for (const id of ids) summon(state, pi, state.cardsById[id]);
+		} else if (e.type === 'discard-weapons-gain-stats') {
+			// Furnacefire Colossus: discard all weapons in hand, gain their Attack+Durability
+			const p = state.players[pi];
+			let atk = 0, hlth = 0;
+			for (const c of [...p.hand]) {
+				if (c.type === 'weapon') {
+					atk += c.attack || 0; hlth += c.durability || 0;
+					p.hand = p.hand.filter(x => x !== c);
+					toGraveyard(state, pi, c);
+					emit(state, { type: 'discard', player: pi, card: c });
+					if (!c.token) p.discardLogIds.push(c.id);
+				}
+			}
+			if (source && source.zone === 'board' && !isDead(source) && (atk || hlth)) buffCreature(source, atk, hlth);
 		} else if (e.type === 'mill-self') {
 			// Fel Reaver: burn the top N cards of your own deck
 			const p = state.players[pi];
@@ -4251,8 +4298,8 @@ function execEffects(state, pi, effects, target, source) {
 			// buff creatures in hand + on the battlefield now, and creatures still in
 			// the deck as they are drawn (deck cards have no live identity until drawn)
 			const p = state.players[pi];
-			if (!e.skipBoard) for (const c of p.board) if (c.type === 'creature' && !isDead(c)) buffCreature(c, e.attack || 0, e.health || 0); // Mistcaller: hand+deck only
-			for (const c of p.hand) if (c.type === 'creature') { c.attack += e.attack || 0; c.maxHealth += e.health || 0; }
+			if (!e.skipBoard && !e.deckOnly) for (const c of p.board) if (c.type === 'creature' && !isDead(c)) buffCreature(c, e.attack || 0, e.health || 0); // Mistcaller: hand+deck only
+			if (!e.deckOnly) for (const c of p.hand) if (c.type === 'creature') { c.attack += e.attack || 0; c.maxHealth += e.health || 0; } // Prince Keleseth: deck only
 			p.drawBuff = p.drawBuff || { attack: 0, health: 0 };
 			p.drawBuff.attack += e.attack || 0; p.drawBuff.health += e.health || 0;
 		} else if (e.type === 'transform-cost') {
@@ -4482,7 +4529,8 @@ function execEffects(state, pi, effects, target, source) {
 				if (e.tribe) pool = pool.filter(c => (c.tribe || '').includes(e.tribe)); // Grimscale Chum / Trogg Beastrager
 				if (e.requireKeyword) pool = pool.filter(c => c.keywords.includes(e.requireKeyword)); // Forlorn Stalker
 			}
-			const targets = e.all || e.requireKeyword ? pool
+			const targets = e.random ? (pool.length ? [pool[Math.floor(state.rng() * pool.length)]] : []) // Deathaxe Punisher: one random match
+				: e.all || e.requireKeyword ? pool
 				: pool.length ? [pool[Math.floor(state.rng() * pool.length)]] : [];
 			for (const c of targets) {
 				c.attack += e.attack || 0;

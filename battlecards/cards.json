@@ -70269,6 +70269,488 @@
           ]
         }
       ]
+    },
+    {
+      "id": "druid_of_the_swarm",
+      "name": "Druid of the Swarm",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "druid",
+      "attack": 1,
+      "health": 2,
+      "rarity": "rare",
+      "set": "ICECROWN",
+      "tribe": "Beast",
+      "description": "Choose One - Become a 1/2 with Poisonous; or a 1/5 with Taunt.",
+      "choices": [
+        {
+          "text": "1/2 Poisonous",
+          "effects": [
+            {
+              "type": "grant",
+              "target": "self",
+              "keyword": "poisonous"
+            }
+          ]
+        },
+        {
+          "text": "1/5 Taunt",
+          "effects": [
+            {
+              "type": "buff-self",
+              "attack": 0,
+              "health": 3
+            },
+            {
+              "type": "grant",
+              "target": "self",
+              "keyword": "taunt"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "gnomeferatu",
+      "name": "Gnomeferatu",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "warlock",
+      "attack": 2,
+      "health": 3,
+      "rarity": "epic",
+      "set": "ICECROWN",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Remove the top card of an opponent's deck.",
+      "effects": [
+        {
+          "type": "mill",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "valkyr_soulclaimer",
+      "name": "Val'kyr Soulclaimer",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "warrior",
+      "attack": 1,
+      "health": 4,
+      "rarity": "rare",
+      "set": "ICECROWN",
+      "description": "After this creature survives damage, summon a 2/2 Ghoul.",
+      "ongoing": {
+        "on": "self-damaged",
+        "survives": true,
+        "effects": [
+          {
+            "type": "summon",
+            "count": 1,
+            "attack": 2,
+            "health": 2,
+            "name": "Ghoul"
+          }
+        ]
+      }
+    },
+    {
+      "id": "arrogant_crusader",
+      "name": "Arrogant Crusader",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "paladin",
+      "attack": 5,
+      "health": 2,
+      "rarity": "rare",
+      "set": "ICECROWN",
+      "keywords": [
+        "deathrattle"
+      ],
+      "description": "Deathrattle: If it's an opponent's turn, summon a 2/2 Ghoul.",
+      "deathrattle": [
+        {
+          "type": "conditional",
+          "if": {
+            "enemyTurn": true
+          },
+          "then": [
+            {
+              "type": "summon",
+              "count": 1,
+              "attack": 2,
+              "health": 2,
+              "name": "Ghoul"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "rattling_rascal",
+      "name": "Rattling Rascal",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "neutral",
+      "attack": 2,
+      "health": 2,
+      "rarity": "epic",
+      "set": "ICECROWN",
+      "keywords": [
+        "battlecry",
+        "deathrattle"
+      ],
+      "description": "Battlecry: Summon a 5/5 Skeleton. Deathrattle: Summon one for your opponent.",
+      "effects": [
+        {
+          "type": "summon",
+          "count": 1,
+          "attack": 5,
+          "health": 5,
+          "name": "Skeleton"
+        }
+      ],
+      "deathrattle": [
+        {
+          "type": "summon",
+          "count": 1,
+          "attack": 5,
+          "health": 5,
+          "name": "Skeleton",
+          "forEnemy": true
+        }
+      ]
+    },
+    {
+      "id": "deathaxe_punisher",
+      "name": "Deathaxe Punisher",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "neutral",
+      "attack": 3,
+      "health": 3,
+      "rarity": "epic",
+      "set": "ICECROWN",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Give a random Lifesteal creature in your hand +2/+2.",
+      "effects": [
+        {
+          "type": "buff-hand",
+          "requireKeyword": "lifesteal",
+          "random": true,
+          "attack": 2,
+          "health": 2
+        }
+      ]
+    },
+    {
+      "id": "meat_wagon",
+      "name": "Meat Wagon",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "neutral",
+      "attack": 1,
+      "health": 4,
+      "rarity": "epic",
+      "set": "ICECROWN",
+      "keywords": [
+        "deathrattle"
+      ],
+      "description": "Deathrattle: Summon a creature from your deck with less Attack than this one.",
+      "deathrattle": [
+        {
+          "type": "summon-from-deck-weaker"
+        }
+      ]
+    },
+    {
+      "id": "corpsetaker",
+      "name": "Corpsetaker",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "neutral",
+      "attack": 3,
+      "health": 3,
+      "rarity": "epic",
+      "set": "ICECROWN",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Gain Taunt if your deck has a Taunt creature. Repeat for Divine Shield, Lifesteal, Windfury.",
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "deckHasKeyword": "taunt"
+          },
+          "then": [
+            {
+              "type": "grant",
+              "target": "self",
+              "keyword": "taunt"
+            }
+          ]
+        },
+        {
+          "type": "conditional",
+          "if": {
+            "deckHasKeyword": "divine_shield"
+          },
+          "then": [
+            {
+              "type": "grant",
+              "target": "self",
+              "keyword": "divine_shield"
+            }
+          ]
+        },
+        {
+          "type": "conditional",
+          "if": {
+            "deckHasKeyword": "lifesteal"
+          },
+          "then": [
+            {
+              "type": "grant",
+              "target": "self",
+              "keyword": "lifesteal"
+            }
+          ]
+        },
+        {
+          "type": "conditional",
+          "if": {
+            "deckHasKeyword": "windfury"
+          },
+          "then": [
+            {
+              "type": "grant",
+              "target": "self",
+              "keyword": "windfury"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "keening_banshee",
+      "name": "Keening Banshee",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "neutral",
+      "attack": 5,
+      "health": 5,
+      "rarity": "rare",
+      "set": "ICECROWN",
+      "description": "Whenever you play a card, remove the top 3 cards of your deck.",
+      "ongoing": {
+        "on": "card-played",
+        "effects": [
+          {
+            "type": "mill-self",
+            "value": 3
+          }
+        ]
+      }
+    },
+    {
+      "id": "death_revenant",
+      "name": "Death Revenant",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "warrior",
+      "attack": 3,
+      "health": 3,
+      "rarity": "rare",
+      "set": "ICECROWN",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Gain +1/+1 for each damaged creature.",
+      "effects": [
+        {
+          "type": "buff-self",
+          "per": "damaged-creatures",
+          "attack": 1,
+          "health": 1
+        }
+      ]
+    },
+    {
+      "id": "furnacefire_colossus",
+      "name": "Furnacefire Colossus",
+      "type": "creature",
+      "cost": 6,
+      "cardClass": "neutral",
+      "attack": 6,
+      "health": 6,
+      "rarity": "epic",
+      "set": "ICECROWN",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Discard all weapons from your hand and gain their stats.",
+      "effects": [
+        {
+          "type": "discard-weapons-gain-stats"
+        }
+      ]
+    },
+    {
+      "id": "blackguard",
+      "name": "Blackguard",
+      "type": "creature",
+      "cost": 6,
+      "cardClass": "paladin",
+      "attack": 3,
+      "health": 9,
+      "rarity": "epic",
+      "set": "ICECROWN",
+      "description": "Whenever your hero is healed, deal that much damage to a random enemy creature.",
+      "ongoing": {
+        "on": "healed",
+        "effects": [
+          {
+            "type": "damage-random-enemy-heal"
+          }
+        ]
+      }
+    },
+    {
+      "id": "abominable_bowman",
+      "name": "Abominable Bowman",
+      "type": "creature",
+      "cost": 7,
+      "cardClass": "hunter",
+      "attack": 6,
+      "health": 7,
+      "rarity": "epic",
+      "set": "ICECROWN",
+      "keywords": [
+        "deathrattle"
+      ],
+      "description": "Deathrattle: Summon a random friendly Beast that died this game.",
+      "deathrattle": [
+        {
+          "type": "summon-died-this-game",
+          "tribe": "Beast",
+          "random": true
+        }
+      ]
+    },
+    {
+      "id": "prince_keleseth",
+      "name": "Prince Keleseth",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "neutral",
+      "attack": 2,
+      "health": 2,
+      "rarity": "legendary",
+      "set": "ICECROWN",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: If your deck has no 2-Cost cards, give all creatures in your deck +1/+1.",
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "deckNoCost": 2
+          },
+          "then": [
+            {
+              "type": "buff-zones",
+              "deckOnly": true,
+              "attack": 1,
+              "health": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "prince_valanar",
+      "name": "Prince Valanar",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "neutral",
+      "attack": 4,
+      "health": 4,
+      "rarity": "legendary",
+      "set": "ICECROWN",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: If your deck has no 4-Cost cards, gain Lifesteal and Taunt.",
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "deckNoCost": 4
+          },
+          "then": [
+            {
+              "type": "grant",
+              "target": "self",
+              "keyword": "lifesteal"
+            },
+            {
+              "type": "grant",
+              "target": "self",
+              "keyword": "taunt"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "rotface",
+      "name": "Rotface",
+      "type": "creature",
+      "cost": 8,
+      "cardClass": "warrior",
+      "attack": 4,
+      "health": 6,
+      "rarity": "legendary",
+      "set": "ICECROWN",
+      "description": "After this creature survives damage, summon a random Legendary creature.",
+      "ongoing": {
+        "on": "self-damaged",
+        "survives": true,
+        "effects": [
+          {
+            "type": "summon-random",
+            "rarity": "legendary"
+          }
+        ]
+      }
+    },
+    {
+      "id": "hadronox",
+      "name": "Hadronox",
+      "type": "creature",
+      "cost": 9,
+      "cardClass": "druid",
+      "attack": 3,
+      "health": 7,
+      "rarity": "legendary",
+      "set": "ICECROWN",
+      "tribe": "Beast",
+      "keywords": [
+        "deathrattle"
+      ],
+      "description": "Deathrattle: Summon your Taunt creatures that died this game.",
+      "deathrattle": [
+        {
+          "type": "summon-died-this-game",
+          "keyword": "taunt"
+        }
+      ]
     }
   ]
 }
