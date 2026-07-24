@@ -70751,6 +70751,446 @@
           "keyword": "taunt"
         }
       ]
+    },
+    {
+      "id": "animated_berserker",
+      "name": "Animated Berserker",
+      "type": "creature",
+      "cost": 1,
+      "cardClass": "warrior",
+      "attack": 1,
+      "health": 3,
+      "rarity": "common",
+      "set": "ICECROWN",
+      "description": "After you play a creature, deal 1 damage to it.",
+      "ongoing": {
+        "on": "creature-played",
+        "effects": [
+          {
+            "type": "damage-minion",
+            "value": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "ice_walker",
+      "name": "Ice Walker",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "mage",
+      "attack": 1,
+      "health": 3,
+      "rarity": "rare",
+      "set": "ICECROWN",
+      "description": "Your Hero Power also Freezes the target.",
+      "heroPowerFreezes": true
+    },
+    {
+      "id": "fatespinner",
+      "name": "Fatespinner",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "druid",
+      "attack": 5,
+      "health": 3,
+      "rarity": "epic",
+      "set": "ICECROWN",
+      "keywords": [
+        "deathrattle"
+      ],
+      "description": "Choose a Deathrattle - Deal 3 damage to all creatures; or Give them +2/+2.",
+      "choices": [
+        {
+          "text": "Deal 3 to all",
+          "effects": [
+            {
+              "type": "grant-deathrattle",
+              "target": "self",
+              "effects": [
+                {
+                  "type": "damage",
+                  "value": 3,
+                  "target": "all-creatures"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "text": "Give +2/+2",
+          "effects": [
+            {
+              "type": "grant-deathrattle",
+              "target": "self",
+              "effects": [
+                {
+                  "type": "buff",
+                  "target": "all-creatures",
+                  "attack": 2,
+                  "health": 2
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "spectral_pillager",
+      "name": "Spectral Pillager",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "rogue",
+      "attack": 5,
+      "health": 5,
+      "rarity": "epic",
+      "set": "ICECROWN",
+      "keywords": [
+        "combo"
+      ],
+      "description": "Combo: Deal 2 damage to a creature for each other card you've played this turn.",
+      "effects": [
+        {
+          "type": "damage-per-cards-played",
+          "value": 2,
+          "target": "creature"
+        }
+      ],
+      "combo": [
+        {
+          "type": "damage-per-cards-played",
+          "value": 2,
+          "target": "creature"
+        }
+      ]
+    },
+    {
+      "id": "tomb_lurker",
+      "name": "Tomb Lurker",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "neutral",
+      "attack": 5,
+      "health": 3,
+      "rarity": "epic",
+      "set": "ICECROWN",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Add a random Deathrattle creature that died this game to your hand.",
+      "effects": [
+        {
+          "type": "add-random-died",
+          "keyword": "deathrattle"
+        }
+      ]
+    },
+    {
+      "id": "skulking_geist",
+      "name": "Skulking Geist",
+      "type": "creature",
+      "cost": 6,
+      "cardClass": "neutral",
+      "attack": 4,
+      "health": 6,
+      "rarity": "epic",
+      "set": "ICECROWN",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Destroy all 1-Cost spells in both hands and decks.",
+      "effects": [
+        {
+          "type": "destroy-cost-spells",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "nerubian_unraveler",
+      "name": "Nerubian Unraveler",
+      "type": "creature",
+      "cost": 6,
+      "cardClass": "neutral",
+      "attack": 5,
+      "health": 5,
+      "rarity": "epic",
+      "set": "ICECROWN",
+      "description": "Spells cost (2) more.",
+      "costMod": {
+        "cardType": "spell",
+        "amount": 2,
+        "scope": "all"
+      }
+    },
+    {
+      "id": "professor_putricide",
+      "name": "Professor Putricide",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "hunter",
+      "attack": 5,
+      "health": 4,
+      "rarity": "legendary",
+      "set": "ICECROWN",
+      "description": "After you play a Secret, put a random Hunter Secret into play.",
+      "ongoing": {
+        "on": "secret-played",
+        "effects": [
+          {
+            "type": "install-random-secret",
+            "cardClass": "hunter"
+          }
+        ]
+      }
+    },
+    {
+      "id": "bolvar_fireblood",
+      "name": "Bolvar, Fireblood",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "paladin",
+      "attack": 1,
+      "health": 7,
+      "rarity": "legendary",
+      "set": "ICECROWN",
+      "keywords": [
+        "divine_shield"
+      ],
+      "description": "Divine Shield. After a friendly creature loses Divine Shield, gain +2 Attack.",
+      "ongoing": {
+        "on": "friendly-divine-shield-lost",
+        "effects": [
+          {
+            "type": "buff-self",
+            "attack": 2
+          }
+        ]
+      }
+    },
+    {
+      "id": "moorabi",
+      "name": "Moorabi",
+      "type": "creature",
+      "cost": 6,
+      "cardClass": "shaman",
+      "attack": 4,
+      "health": 4,
+      "rarity": "legendary",
+      "set": "ICECROWN",
+      "description": "Whenever another creature is Frozen, add a copy of it to your hand.",
+      "ongoing": {
+        "on": "creature-frozen",
+        "effects": [
+          {
+            "type": "add-frozen-copy"
+          }
+        ]
+      }
+    },
+    {
+      "id": "archbishop_benedictus",
+      "name": "Archbishop Benedictus",
+      "type": "creature",
+      "cost": 7,
+      "cardClass": "priest",
+      "attack": 4,
+      "health": 6,
+      "rarity": "legendary",
+      "set": "ICECROWN",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Shuffle a copy of your opponent's deck into your deck.",
+      "effects": [
+        {
+          "type": "copy-enemy-deck"
+        }
+      ]
+    },
+    {
+      "id": "the_lich_king",
+      "name": "The Lich King",
+      "type": "creature",
+      "cost": 8,
+      "cardClass": "neutral",
+      "attack": 8,
+      "health": 8,
+      "rarity": "legendary",
+      "set": "ICECROWN",
+      "keywords": [
+        "taunt"
+      ],
+      "description": "Taunt. At the end of your turn, add a random Lich King card to your hand.",
+      "ongoing": {
+        "on": "turn-end",
+        "effects": [
+          {
+            "type": "add-random-lich-king"
+          }
+        ]
+      }
+    },
+    {
+      "id": "lk_death_coil",
+      "name": "Death Coil",
+      "type": "sorcery",
+      "cost": 2,
+      "token": true,
+      "lichKingCard": true,
+      "rarity": "epic",
+      "set": "ICECROWN",
+      "cardClass": "neutral",
+      "description": "Deal 3 damage.",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 3,
+          "target": "any"
+        }
+      ]
+    },
+    {
+      "id": "lk_anti_magic_shell",
+      "name": "Anti-Magic Shell",
+      "type": "sorcery",
+      "cost": 3,
+      "token": true,
+      "lichKingCard": true,
+      "rarity": "epic",
+      "set": "ICECROWN",
+      "cardClass": "neutral",
+      "description": "Give your creatures +2 Health.",
+      "effects": [
+        {
+          "type": "buff",
+          "target": "friendly-creatures",
+          "attack": 0,
+          "health": 2
+        }
+      ]
+    },
+    {
+      "id": "lk_death_and_decay",
+      "name": "Death and Decay",
+      "type": "sorcery",
+      "cost": 3,
+      "token": true,
+      "lichKingCard": true,
+      "rarity": "epic",
+      "set": "ICECROWN",
+      "cardClass": "neutral",
+      "description": "Deal 3 damage to all enemies.",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 3,
+          "target": "enemies"
+        }
+      ]
+    },
+    {
+      "id": "lk_obliterate",
+      "name": "Obliterate",
+      "type": "sorcery",
+      "cost": 2,
+      "token": true,
+      "lichKingCard": true,
+      "rarity": "epic",
+      "set": "ICECROWN",
+      "cardClass": "neutral",
+      "description": "Destroy a creature.",
+      "effects": [
+        {
+          "type": "destroy",
+          "target": "creature"
+        }
+      ]
+    },
+    {
+      "id": "lk_army_of_the_dead",
+      "name": "Army of the Dead",
+      "type": "sorcery",
+      "cost": 6,
+      "token": true,
+      "lichKingCard": true,
+      "rarity": "epic",
+      "set": "ICECROWN",
+      "cardClass": "neutral",
+      "description": "Summon four 2/2 Ghouls.",
+      "effects": [
+        {
+          "type": "summon",
+          "count": 4,
+          "attack": 2,
+          "health": 2,
+          "name": "Ghoul"
+        }
+      ]
+    },
+    {
+      "id": "lk_frostmourne",
+      "name": "Frostmourne",
+      "type": "weapon",
+      "cost": 7,
+      "token": true,
+      "lichKingCard": true,
+      "rarity": "epic",
+      "set": "ICECROWN",
+      "cardClass": "neutral",
+      "attack": 5,
+      "durability": 3,
+      "description": "A 5/3 weapon."
+    },
+    {
+      "id": "prince_taldaram",
+      "name": "Prince Taldaram",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "neutral",
+      "attack": 3,
+      "health": 3,
+      "rarity": "legendary",
+      "set": "ICECROWN",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: If your deck has no 3-Cost cards, transform into a 3/3 copy of a creature in your hand.",
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "deckNoCost": 3
+          },
+          "then": [
+            {
+              "type": "become-copy-of-hand",
+              "setStats": 3
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "lilian_voss",
+      "name": "Lilian Voss",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "rogue",
+      "attack": 4,
+      "health": 5,
+      "rarity": "legendary",
+      "set": "ICECROWN",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Replace all spells in your hand with random spells.",
+      "effects": [
+        {
+          "type": "replace-spells-random"
+        }
+      ]
     }
   ]
 }
