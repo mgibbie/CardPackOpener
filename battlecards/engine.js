@@ -173,6 +173,8 @@ function instantiate(def, controller) {
 		heroPowerFreezes: !!def.heroPowerFreezes, // Ice Walker: your Hero Power also Freezes its target
 		cheaperOnDeath: !!def.cheaperOnDeath, // Corridor Creeper: costs (1) less per creature that dies while in hand
 		dormantBattlecry: !!def.dormantBattlecry, // The Darkness: fire the Battlecry even though it enters Dormant
+		heroPowerDouble: !!def.heroPowerDouble, // Clockwork Automaton: double your Hero Power's damage and healing
+		chameleosTransform: !!def.chameleosTransform, // Chameleos: morph into an enemy hand card each turn
 		selfCost: def.selfCost || null, // self-scaling printed cost: { per, amount }
 		enrage: def.enrage || null,   // while damaged: { attack?, health?, keywords?, weaponAttack? }
 		combo: def.combo || null,     // effects used instead when a card was played earlier this turn
@@ -365,6 +367,9 @@ export function createGame(cardsById, rng = Math.random, playerDeckIds = null, p
 		heroDamagedThisTurn: false, // Duskbat / Deathweb Spider: did your hero take damage this turn
 		bigSpellsGame: 0,         // Dragoncaller Alanna: spells costing 5+ cast this game
 		spellsOnFriendly: [],     // Lynessa Sunsorrow: spell ids you cast on your own creatures
+		otherClassPlayedGame: [], // Tess Greymane: other-class card ids played this game
+		battlecriesPlayedGame: [],// Shudderwock: Battlecry card ids played this game
+		deckInnerFire: false,     // Lady in White: drawn creatures get Attack = Health
 		elementalThisTurn: false, // played an Elemental this turn
 		elementalLastTurn: false, // played an Elemental on your previous turn (Un'Goro)
 		elementalsPlayedGame: 0,  // Ozruk: total Elementals played this game
@@ -499,6 +504,7 @@ export function drawCards(state, pi, count) {
 		// trimmed back down at end of turn (MTG-style cleanup discard).
 		const card = instantiate(state.cardsById[id], pi);
 		card.fromDeck = true; // drawn from your deck — Leyline Manipulator ignores these
+		if (p.deckInnerFire && card.type === 'creature') card.attack = card.maxHealth; // Lady in White
 		if (card.type === 'creature' && p.drawBuff) { card.attack += p.drawBuff.attack || 0; card.maxHealth += p.drawBuff.health || 0; }
 		// C'Thun enters hand carrying every buff it collected while in your deck
 		if (card.id === 'c_thun') { card.attack = CTHUN_BASE + p.cthunAtk; card.maxHealth = CTHUN_BASE + p.cthunHp; if (p.cthunTaunt && !card.keywords.includes(KW.TAUNT)) card.keywords.push(KW.TAUNT); }
@@ -2447,6 +2453,7 @@ function execEffects(state, pi, effects, target, source) {
 				v += staticValue(state.players[pi], 'spell-damage');
 			}
 			if (state.hpDamageBonus) v += state.hpDamageBonus; // Fallen Hero: your Hero Power deals extra
+			if (state.hpDoubling) v *= 2; // Clockwork Automaton: double Hero Power damage
 			v = boost(v);
 			// Lightning Storm rolls its damage per target
 			const rollv = () => e.range
@@ -2515,7 +2522,8 @@ function execEffects(state, pi, effects, target, source) {
 			}
 			if (lsBefore != null) healHero(state, pi, Math.max(0, totalHurt() - lsBefore));
 		} else if (e.type === 'heal') {
-			const v = e.value === 'X' ? (source?.xValue || 0) : boost(e.value);
+			let v = e.value === 'X' ? (source?.xValue || 0) : boost(e.value);
+			if (state.hpDoubling) v *= 2; // Clockwork Automaton: double Hero Power healing
 			// Auchenai Soulpriest: your healing deals damage instead
 			const harm = staticValue(state.players[pi], 'heal-becomes-damage') > 0;
 			const mendHero = who => harm ? damageHero(state, who, v, pi) : healHero(state, who, v);
@@ -3833,6 +3841,37 @@ function execEffects(state, pi, effects, target, source) {
 				const c = instantiate(state.cardsById[source.id], pi);
 				c.zone = 'hand'; state.players[pi].hand.push(c);
 				emit(state, { type: 'conjure', player: pi, card: c, color: null });
+			}
+		} else if (e.type === 'set-self-hp-cost') {
+			// Genn Greymane: your Hero Power costs (1) (a board aura via heroPowerCostSet)
+			if (source) source.heroPowerCostSet = e.value ?? 1;
+		} else if (e.type === 'set-deck-inner-fire') {
+			// Lady in White: creatures drawn from your deck get Attack equal to Health
+			state.players[pi].deckInnerFire = true;
+		} else if (e.type === 'copy-enemy-hand') {
+			// Azalina Soulthief: replace your hand with a copy of an opponent's
+			const o = enemies[0];
+			if (o != null) {
+				const p = state.players[pi];
+				p.hand = [];
+				for (const ec of state.players[o].hand) {
+					if (p.hand.length >= MAX_HAND) break;
+					const def = state.cardsById[ec.id] || ec;
+					const card = instantiate(def, pi); card.zone = 'hand'; p.hand.push(card);
+					emit(state, { type: 'conjure', player: pi, card, color: null });
+				}
+			}
+		} else if (e.type === 'repeat-battlecries' || e.type === 'replay-other-class') {
+			// Shudderwock / Tess Greymane: re-run remembered effects with random targets
+			const list = e.type === 'repeat-battlecries' ? state.players[pi].battlecriesPlayedGame : state.players[pi].otherClassPlayedGame;
+			const randTarget = () => {
+				const pool = [];
+				for (let s2 = 0; s2 < state.players.length; s2++) { if (state.players[s2].eliminated) continue; for (const c of state.players[s2].board) if (!isDead(c) && c.type !== 'location') pool.push({ type: 'creature', uid: c.uid, player: s2 }); pool.push({ type: 'hero', player: s2 }); }
+				return pool.length ? pool[Math.floor(state.rng() * pool.length)] : null;
+			};
+			for (const id of [...list]) {
+				const def = state.cardsById[id];
+				if (def && def.effects) execEffects(state, pi, JSON.parse(JSON.stringify(def.effects)), randTarget(), source);
 			}
 		} else if (e.type === 'double-health-others') {
 			// Glitter Moth: double the Health of your OTHER creatures
@@ -5788,6 +5827,9 @@ export function playCard(state, pi, cardUid, target, choice, position, useAlt, k
 		fireOngoing(state, pi, 'overloaded-self', { amount: card.overload }); // Tunnel Trogg
 	}
 	emit(state, { type: 'play', player: pi, card, mana: availableMana(p) });
+	// history for Tess Greymane (other-class cards) and Shudderwock (Battlecries)
+	if (card.cardClass && card.cardClass !== 'neutral' && card.cardClass !== p.heroClass && card.id !== 'tess_greymane') p.otherClassPlayedGame.push(card.id);
+	if ((card.keywords || []).includes('battlecry') && card.effects && card.id !== 'shudderwock') p.battlecriesPlayedGame.push(card.id);
 	fireOngoing(state, pi, 'card-played', { played: card });
 	for (const o of opponentsOf(state, pi)) fireOngoing(state, o, 'enemy-card-played', { played: card, caster: pi }); // Fel Reaver
 	corruptHandCards(state, pi, playedCost);
@@ -6203,11 +6245,13 @@ function resolveEntry(state, entry) {
 	}
 	if (entry.kind === 'heropower') {
 		state.hpDamageBonus = staticValue(state.players[pi], 'hero-power-damage'); // Fallen Hero
+		state.hpDoubling = state.players[pi].board.some(c => c.heroPowerDouble && !isDead(c)); // Clockwork Automaton
 		state.hpResolver = pi; // Wilfred: cards drawn during a Hero Power cost 0
 		execEffects(state, pi, entry.effects, entry.target, entry.card);
 		if (state.players[pi].heroPowerUpgraded) execEffects(state, pi, entry.effects, entry.target, entry.card); // Justicar: fires twice
 		state.hpResolver = null;
 		state.hpDamageBonus = 0;
+		state.hpDoubling = false;
 		// Ice Walker: your Hero Power also Freezes its target
 		if (entry.target?.type === 'creature' && state.players[pi].board.some(c => c.heroPowerFreezes && !isDead(c))) {
 			const it = findCreature(state, entry.target.uid);
@@ -7288,6 +7332,19 @@ export function endTurn(state) {
 	np.diedThisTurn = 0;
 	np.diedThisTurnIds = [];
 	np.heroDamagedThisTurn = false; // "took damage this turn" resets each turn
+	// Chameleos: each of your turns it morphs into a random card an opponent holds
+	for (const c of np.hand) {
+		if (!c.chameleosTransform) continue;
+		const foe = opponentsOf(state, state.current).find(o => state.players[o].hand.length);
+		if (foe == null) continue;
+		const eh = state.players[foe].hand;
+		const pick = state.cardsById[eh[Math.floor(state.rng() * eh.length)].id];
+		if (!pick) continue;
+		const morph = instantiate(pick, state.current);
+		morph.uid = c.uid; morph.zone = 'hand'; morph.chameleosTransform = true;
+		np.hand[np.hand.indexOf(c)] = morph;
+		emit(state, { type: 'conjure', player: state.current, card: morph, color: null });
+	}
 	state.diedThisTurn = 0; // global "died this turn" (Volcanic Drake discounts)
 	np.heroAttacksUsed = 0;
 	np.landsPlayedThisTurn = 0;

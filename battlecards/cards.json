@@ -73602,6 +73602,170 @@
           "cost": 1
         }
       ]
+    },
+    {
+      "id": "clockwork_automaton",
+      "name": "Clockwork Automaton",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "neutral",
+      "attack": 4,
+      "health": 4,
+      "rarity": "common",
+      "set": "GILNEAS",
+      "tribe": "Mech",
+      "heroPowerDouble": true,
+      "description": "Double the damage and healing of your Hero Power."
+    },
+    {
+      "id": "chameleos",
+      "name": "Chameleos",
+      "type": "creature",
+      "cost": 1,
+      "cardClass": "priest",
+      "attack": 1,
+      "health": 1,
+      "rarity": "legendary",
+      "set": "GILNEAS",
+      "chameleosTransform": true,
+      "description": "Each turn this is in your hand, transform it into a card your opponent is holding."
+    },
+    {
+      "id": "genn_greymane",
+      "name": "Genn Greymane",
+      "type": "creature",
+      "cost": 6,
+      "cardClass": "neutral",
+      "attack": 6,
+      "health": 5,
+      "rarity": "legendary",
+      "set": "GILNEAS",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: If your deck has only even-Cost cards, your Hero Power costs (1).",
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "deckAllEven": true
+          },
+          "then": [
+            {
+              "type": "set-self-hp-cost",
+              "value": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "baku_the_mooneater",
+      "name": "Baku the Mooneater",
+      "type": "creature",
+      "cost": 9,
+      "cardClass": "neutral",
+      "attack": 7,
+      "health": 8,
+      "rarity": "legendary",
+      "set": "GILNEAS",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: If your deck has only odd-Cost cards, upgrade your Hero Power.",
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "deckAllOdd": true
+          },
+          "then": [
+            {
+              "type": "upgrade-hero-power"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "lady_in_white",
+      "name": "Lady in White",
+      "type": "creature",
+      "cost": 6,
+      "cardClass": "priest",
+      "attack": 5,
+      "health": 5,
+      "rarity": "legendary",
+      "set": "GILNEAS",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Cast 'Inner Fire' on every creature in your deck (set Attack equal to Health).",
+      "effects": [
+        {
+          "type": "set-deck-inner-fire"
+        }
+      ]
+    },
+    {
+      "id": "azalina_soulthief",
+      "name": "Azalina Soulthief",
+      "type": "creature",
+      "cost": 7,
+      "cardClass": "neutral",
+      "attack": 3,
+      "health": 3,
+      "rarity": "legendary",
+      "set": "GILNEAS",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Replace your hand with a copy of your opponent's.",
+      "effects": [
+        {
+          "type": "copy-enemy-hand"
+        }
+      ]
+    },
+    {
+      "id": "tess_greymane",
+      "name": "Tess Greymane",
+      "type": "creature",
+      "cost": 7,
+      "cardClass": "rogue",
+      "attack": 6,
+      "health": 6,
+      "rarity": "legendary",
+      "set": "GILNEAS",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Replay every card from another class you've played this game (targets chosen randomly).",
+      "effects": [
+        {
+          "type": "replay-other-class"
+        }
+      ]
+    },
+    {
+      "id": "shudderwock",
+      "name": "Shudderwock",
+      "type": "creature",
+      "cost": 9,
+      "cardClass": "shaman",
+      "attack": 6,
+      "health": 6,
+      "rarity": "legendary",
+      "set": "GILNEAS",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Repeat all other Battlecries from cards you played this game (targets chosen randomly).",
+      "effects": [
+        {
+          "type": "repeat-battlecries"
+        }
+      ]
     }
   ]
 }
