@@ -2226,6 +2226,7 @@ let state = null;
 let hoverUid = null;
 let pending = null;          // { card, spec, targets } — spell/battlecry targeting
 let selectedAttacker = null; // uid
+let heroPress = null;        // { power } — orb pressed; a quick release uses it, a hold previews
 let handMini = false;        // true = hand tucked down so the hero panel reads clearly
 let lastCurrent = -1;        // tracks turn changes to auto-raise the hand each turn
 
@@ -2322,6 +2323,7 @@ function clearModes() {
 	pending = null;
 	selectedAttacker = null;
 	placing = null;
+	heroPress = null;
 	placeMarker.visible = false;
 	hideWalkerMenu();
 	hideInspect();
@@ -2385,6 +2387,10 @@ function showInspect(card) {
 		} else if (card.tradeable && E.canTrade(state, HUMAN, card)) {
 			mkBtn('Trade (pay 1)', () => actTrade(card.uid), 'trade');
 		}
+	}
+	// a held hero power gets a deliberate "Use" button, mirroring a hand card's Play
+	if (card.zone === 'heropower' && card.controller === HUMAN && yourTurn && E.canUseHeroPower(state, HUMAN, card)) {
+		mkBtn(`Use ${card.name}`, e => activateHeroPower(card, e));
 	}
 	if (actions.children.length) box.appendChild(actions);
 	else if (inHand) {
@@ -2566,7 +2572,9 @@ renderer.domElement.addEventListener('pointerdown', ev => {
 	if (uid === 'heropanel') {
 		const power = classPowerOf(HUMAN);
 		if (heroPanelOrbHit(pickHeroPanelUV(ev)) && !pending && !selectedAttacker && power && E.canUseHeroPower(state, HUMAN, power)) {
-			activateHeroPower(power, ev);
+			// don't fire on press — arm it: a quick release uses the power, but a
+			// press-and-hold previews it instead (see startLongPress + pointerup)
+			heroPress = { power };
 		} else {
 			panelClick(HUMAN);
 		}
@@ -2793,10 +2801,11 @@ function startLongPress(uid, x, y) {
 	longPressT = setTimeout(() => {
 		if (Math.hypot(mouseX - x, mouseY - y) > 12) return; // moved: it's a drag, not a hold
 		longPressFired = true;
-		const c = cardOf(uid);
+		// hold the hero-power orb to read it (it has no card uid of its own)
+		const c = cardOf(uid) || (uid === 'heropanel' ? classPowerOf(HUMAN) : null);
 		if (c) {
-			// full card reader (with a "Play" button when it's a legal play), so a
-			// held card is previewed, never cast — the release is suppressed below
+			// full card reader (with a Play / Use button when it's a legal action), so
+			// a held card/power is previewed, never triggered — release is suppressed below
 			$('tooltip').style.display = 'none';
 			hideInspect();
 			showInspect(c);
@@ -2865,6 +2874,16 @@ function tryCommitTargetAt(ev) {
 addEventListener('pointerup', ev => {
 	clearTimeout(longPressT);
 	if (spectateMode || duel.busy) return;
+	// hero-power orb released: a quick click uses it; a press-and-hold only previewed
+	if (heroPress) {
+		const power = heroPress.power;
+		heroPress = null;
+		if (ev.button === 0 && !longPressFired && state && !state.over && state.current === HUMAN) {
+			const dist = Math.hypot(ev.clientX - lastDownX, ev.clientY - lastDownY);
+			if (dist < 14) activateHeroPower(power, ev); // deliberate tap → use; hold/drag → no-op
+		}
+		return;
+	}
 	// hand card released: a click (in place) inspects; a drag up onto the field plays
 	if (placing) {
 		const c = placing.card;
