@@ -362,6 +362,7 @@ export function createGame(cardsById, rng = Math.random, playerDeckIds = null, p
 		nextMurlocFree: false,    // Seadevil Stinger: the next Murloc this turn is free
 		nextSecretCost: null,     // Kabal Lackey: the next Secret this turn costs this much
 		nextBattlecryDouble: false, // Murmuring Elemental: your next Battlecry this turn fires twice
+		heroDamagedThisTurn: false, // Duskbat / Deathweb Spider: did your hero take damage this turn
 		bigSpellsGame: 0,         // Dragoncaller Alanna: spells costing 5+ cast this game
 		spellsOnFriendly: [],     // Lynessa Sunsorrow: spell ids you cast on your own creatures
 		elementalThisTurn: false, // played an Elemental this turn
@@ -966,6 +967,7 @@ function damageHero(state, pi, amount, src = null, pierce = false) {
 			if (ctx.prevented) return 0;
 		}
 		p.life = Math.max(0, p.life - amount);
+		p.heroDamagedThisTurn = true; // Duskbat / Deathweb Spider
 		emit(state, { type: 'damage', targetType: 'hero', player: pi, amount, life: p.life });
 		fireSecrets(state, pi, 'hero-takes-damage', { fatal: false, amount, src });
 		questTick(state, 'damage-taken', pi, amount);
@@ -982,6 +984,7 @@ function damageHero(state, pi, amount, src = null, pierce = false) {
 	p.armor -= absorbed;
 	const toLife = amount - absorbed;
 	p.life = Math.max(0, p.life - toLife);
+	if (toLife > 0) p.heroDamagedThisTurn = true; // Duskbat / Deathweb Spider
 	emit(state, { type: 'damage', targetType: 'hero', player: pi, amount, life: p.life });
 	if (toLife > 0) fireSecrets(state, pi, 'hero-takes-damage', { fatal: false, amount: toLife, src });
 	if (toLife > 0) questTick(state, 'damage-taken', pi, toLife);
@@ -2607,6 +2610,7 @@ function execEffects(state, pi, effects, target, source) {
 				if (e.maxCost != null && (c.cost || 0) > e.maxCost) continue; // Austere Command: MV 3 or less
 				if (e.minCost != null && (c.cost || 0) < e.minCost) continue; // Austere Command: MV 4 or greater
 				if (e.requireDamaged && !(c.damage > 0)) continue; // King Mosh: only damaged creatures
+				if (e.maxAttack != null && (c.attack || 0) > e.maxAttack) continue; // Mossy Horror: 2 or less Attack
 				if (e.exile) {
 					const owner = state.players[c.controller];
 					owner.board = owner.board.filter(x => x !== c);
@@ -3513,7 +3517,8 @@ function execEffects(state, pi, effects, target, source) {
 					idxs.push(j);
 				}
 				if (!idxs.length) break;
-				const j = idxs[Math.floor(state.rng() * idxs.length)];
+				// Witchwood Piper: draw the LOWEST-Cost match; else a random match
+				const j = e.lowest ? idxs.reduce((best, k) => (state.cardsById[p.deck[k]].cost || 0) < (state.cardsById[p.deck[best]].cost || 0) ? k : best, idxs[0]) : idxs[Math.floor(state.rng() * idxs.length)];
 				const [id] = p.deck.splice(j, 1);
 				const card = instantiate(state.cardsById[id], pi);
 				card.zone = 'hand';
@@ -3572,6 +3577,8 @@ function execEffects(state, pi, effects, target, source) {
 			else if (e.if.deckHasKeyword) ok = p.deck.some(id => { const def = state.cardsById[id]; return def?.type === 'creature' && (def.keywords || []).includes(e.if.deckHasKeyword); }); // Corpsetaker
 			else if (e.if.noOtherCreatures) ok = !p.board.some(c => c !== source && !isDead(c) && c.type !== 'location'); // Lone Champion
 			else if (e.if.controlTribeCount) ok = p.board.filter(c => !isDead(c) && (c.tribe || '').includes(e.if.controlTribeCount.tribe)).length >= e.if.controlTribeCount.count; // Windshear Stormcaller
+			else if (e.if.heroTookDamage) ok = !!p.heroDamagedThisTurn; // Duskbat / Deathweb Spider
+			else if (e.if.onlyCreature) ok = !state.players.some(pl => pl.board.some(c => c !== source && !isDead(c) && c.type !== 'location')); // Night Prowler
 			execEffects(state, pi, ok ? e.then : (e.else || []), target, source);
 		} else if (e.type === 'damage-then') {
 			// deal damage, then branch on whether the creature survived
@@ -4735,6 +4742,7 @@ function execEffects(state, pi, effects, target, source) {
 			else if (e.cardType === 'spell') pool = pool.filter(d => isSpellType(d));
 			else if (e.cardType === 'weapon') pool = pool.filter(d => d.type === 'weapon');
 			if (e.minAttack != null) pool = pool.filter(d => (d.attack || 0) >= e.minAttack);
+			if (e.cost != null) pool = pool.filter(d => (d.cost || 0) === e.cost); // Ravencaller / Tanglefur Mystic
 			if (e.tribe) pool = pool.filter(d => (d.tribe || '').includes(e.tribe));
 			if (e.rarity) pool = pool.filter(d => d.rarity === e.rarity); // Golden Monkey: Legendaries
 			if (e.cardClass === 'enemy') {
@@ -5809,6 +5817,8 @@ export function playCard(state, pi, cardUid, target, choice, position, useAlt, k
 		// resolves. If none can respond it resolves at once (the common path).
 		else stackSpell(state, pi, card, target, choice);
 	}
+	// Echo cards trigger Mistwraith-style payoffs each time they're played
+	if (card.echo) fireOngoing(state, pi, 'echo-played', { played: card });
 	// Echo: a ghost copy slips into hand, playable until the turn ends
 	if (card.echo && !p.eliminated && p.hand.length < MAX_HAND && !state.over) {
 		const def = state.cardsById[card.id];
@@ -7162,6 +7172,7 @@ export function endTurn(state) {
 	const np = state.players[state.current];
 	np.diedThisTurn = 0;
 	np.diedThisTurnIds = [];
+	np.heroDamagedThisTurn = false; // "took damage this turn" resets each turn
 	state.diedThisTurn = 0; // global "died this turn" (Volcanic Drake discounts)
 	np.heroAttacksUsed = 0;
 	np.landsPlayedThisTurn = 0;

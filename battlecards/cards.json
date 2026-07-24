@@ -72430,6 +72430,397 @@
           "type": "destroy-enemy-deck"
         }
       ]
+    },
+    {
+      "id": "lost_spirit",
+      "name": "Lost Spirit",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "neutral",
+      "attack": 1,
+      "health": 1,
+      "rarity": "common",
+      "set": "GILNEAS",
+      "keywords": [
+        "deathrattle"
+      ],
+      "description": "Deathrattle: Give your creatures +1 Attack.",
+      "deathrattle": [
+        {
+          "type": "buff",
+          "target": "friendly-creatures",
+          "attack": 1,
+          "health": 0
+        }
+      ]
+    },
+    {
+      "id": "cathedral_gargoyle",
+      "name": "Cathedral Gargoyle",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "paladin",
+      "attack": 2,
+      "health": 2,
+      "rarity": "epic",
+      "set": "GILNEAS",
+      "tribe": "Dragon",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: If you're holding a Dragon, gain Taunt and Divine Shield.",
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "holdingTribe": "Dragon"
+          },
+          "then": [
+            {
+              "type": "grant",
+              "target": "self",
+              "keyword": "taunt"
+            },
+            {
+              "type": "grant",
+              "target": "self",
+              "keyword": "divine_shield"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "baleful_banker",
+      "name": "Baleful Banker",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "neutral",
+      "attack": 2,
+      "health": 2,
+      "rarity": "epic",
+      "set": "GILNEAS",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Choose a friendly creature. Shuffle a copy into your deck.",
+      "effects": [
+        {
+          "type": "copy-to-deck",
+          "target": "friendly-creature"
+        }
+      ]
+    },
+    {
+      "id": "ravencaller",
+      "name": "Ravencaller",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "neutral",
+      "attack": 2,
+      "health": 1,
+      "rarity": "common",
+      "set": "GILNEAS",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Add two random 1-Cost creatures to your hand.",
+      "effects": [
+        {
+          "type": "conjure-random",
+          "cardType": "creature",
+          "cost": 1,
+          "count": 2
+        }
+      ]
+    },
+    {
+      "id": "tanglefur_mystic",
+      "name": "Tanglefur Mystic",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "neutral",
+      "attack": 3,
+      "health": 4,
+      "rarity": "common",
+      "set": "GILNEAS",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Add a random 2-Cost creature to each player's hand.",
+      "effects": [
+        {
+          "type": "conjure-random",
+          "cardType": "creature",
+          "cost": 2,
+          "eachPlayer": true
+        }
+      ]
+    },
+    {
+      "id": "duskbat",
+      "name": "Duskbat",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "warlock",
+      "attack": 2,
+      "health": 4,
+      "rarity": "common",
+      "set": "GILNEAS",
+      "tribe": "Beast",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: If your hero took damage this turn, summon two 1/1 Bats.",
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "heroTookDamage": true
+          },
+          "then": [
+            {
+              "type": "summon",
+              "count": 2,
+              "attack": 1,
+              "health": 1,
+              "name": "Bat",
+              "tribe": "Beast"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "hench_clan_thug",
+      "name": "Hench-Clan Thug",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "neutral",
+      "attack": 3,
+      "health": 3,
+      "rarity": "common",
+      "set": "GILNEAS",
+      "description": "After your hero attacks, give this creature +1/+1.",
+      "ongoing": {
+        "on": "hero-attacks",
+        "effects": [
+          {
+            "type": "buff-self",
+            "attack": 1,
+            "health": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "blackwald_pixie",
+      "name": "Blackwald Pixie",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "neutral",
+      "attack": 3,
+      "health": 4,
+      "rarity": "common",
+      "set": "GILNEAS",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Refresh your Hero Power.",
+      "effects": [
+        {
+          "type": "refresh-hero-power"
+        }
+      ]
+    },
+    {
+      "id": "blink_fox",
+      "name": "Blink Fox",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "rogue",
+      "attack": 3,
+      "health": 3,
+      "rarity": "common",
+      "set": "GILNEAS",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Add a random card to your hand (from your opponent's class).",
+      "effects": [
+        {
+          "type": "conjure-random",
+          "cardClass": "enemy",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "id": "mistwraith",
+      "name": "Mistwraith",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "rogue",
+      "attack": 3,
+      "health": 5,
+      "rarity": "rare",
+      "set": "GILNEAS",
+      "description": "Whenever you play an Echo card, gain +1/+1.",
+      "ongoing": {
+        "on": "echo-played",
+        "effects": [
+          {
+            "type": "buff-self",
+            "attack": 1,
+            "health": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "witchwood_piper",
+      "name": "Witchwood Piper",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "neutral",
+      "attack": 3,
+      "health": 3,
+      "rarity": "rare",
+      "set": "GILNEAS",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Draw the lowest Cost creature from your deck.",
+      "effects": [
+        {
+          "type": "tutor",
+          "cardType": "creature",
+          "lowest": true
+        }
+      ]
+    },
+    {
+      "id": "lifedrinker",
+      "name": "Lifedrinker",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "neutral",
+      "attack": 3,
+      "health": 3,
+      "rarity": "rare",
+      "set": "GILNEAS",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Each other player loses 3 life. Restore 3 Health to your hero.",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 3,
+          "target": "enemy-heroes"
+        },
+        {
+          "type": "heal",
+          "value": 3,
+          "target": "self"
+        }
+      ]
+    },
+    {
+      "id": "night_prowler",
+      "name": "Night Prowler",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "neutral",
+      "attack": 3,
+      "health": 3,
+      "rarity": "rare",
+      "set": "GILNEAS",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: If this is the only creature on the battlefield, gain +3/+3.",
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "onlyCreature": true
+          },
+          "then": [
+            {
+              "type": "buff-self",
+              "attack": 3,
+              "health": 3
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "mossy_horror",
+      "name": "Mossy Horror",
+      "type": "creature",
+      "cost": 6,
+      "cardClass": "neutral",
+      "attack": 2,
+      "health": 7,
+      "rarity": "epic",
+      "set": "GILNEAS",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Destroy all other creatures with 2 or less Attack.",
+      "effects": [
+        {
+          "type": "destroy-all",
+          "others": true,
+          "maxAttack": 2
+        }
+      ]
+    },
+    {
+      "id": "festeroot_hulk",
+      "name": "Festeroot Hulk",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "warrior",
+      "attack": 2,
+      "health": 7,
+      "rarity": "rare",
+      "set": "GILNEAS",
+      "description": "After a friendly creature attacks, gain +1 Attack.",
+      "ongoing": {
+        "on": "friendly-attacks",
+        "effects": [
+          {
+            "type": "buff-self",
+            "attack": 1,
+            "health": 0
+          }
+        ]
+      }
+    },
+    {
+      "id": "curio_collector",
+      "name": "Curio Collector",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "mage",
+      "attack": 4,
+      "health": 4,
+      "rarity": "rare",
+      "set": "GILNEAS",
+      "description": "Whenever you draw a card, gain +1/+1.",
+      "ongoing": {
+        "on": "card-drawn",
+        "effects": [
+          {
+            "type": "buff-self",
+            "attack": 1,
+            "health": 1
+          }
+        ]
+      }
     }
   ]
 }
