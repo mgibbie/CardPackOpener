@@ -370,6 +370,7 @@ export function createGame(cardsById, rng = Math.random, playerDeckIds = null, p
 		otherClassPlayedGame: [], // Tess Greymane: other-class card ids played this game
 		battlecriesPlayedGame: [],// Shudderwock: Battlecry card ids played this game
 		deckInnerFire: false,     // Lady in White: drawn creatures get Attack = Health
+		pogoCount: 0,             // Pogo-Hopper: how many you've played this game
 		elementalThisTurn: false, // played an Elemental this turn
 		elementalLastTurn: false, // played an Elemental on your previous turn (Un'Goro)
 		elementalsPlayedGame: 0,  // Ozruk: total Elementals played this game
@@ -2821,10 +2822,12 @@ function execEffects(state, pi, effects, target, source) {
 				hits += state.players[pi].board.filter(c => !isDead(c)
 					&& (c.tribe || '').includes(e.perFriendlyTribe)).length;
 			}
+			if (e.perHandCard) hits = state.players[pi].hand.length; // Meteorologist
 			for (let i = 0; i < hits; i++) {
 				const pool = [];
-				const pushBoard = side => { for (const c of state.players[side].board) if (!isDead(c)) pool.push({ c }); };
-				if (e.pool === 'enemy-creatures') { for (const o of enemies) pushBoard(o); }
+				const pushBoard = side => { for (const c of state.players[side].board) if (!isDead(c) && c.type !== 'location' && !(e.exceptTribe && (c.tribe || '').includes(e.exceptTribe))) pool.push({ c }); };
+				if (e.pool === 'friendly-others') { for (const c of state.players[pi].board) if (!isDead(c) && c !== source && c.type !== 'location') pool.push({ c }); } // Loose Specimen
+				else if (e.pool === 'enemy-creatures') { for (const o of enemies) pushBoard(o); }
 				else if (e.pool === 'all-creatures') { for (let s = 0; s < state.players.length; s++) pushBoard(s); }
 				else if (e.pool === 'enemies') { for (const o of enemies) { pushBoard(o); pool.push({ hero: o }); } }
 				else if (e.pool === 'characters') {
@@ -3268,6 +3271,8 @@ function execEffects(state, pi, effects, target, source) {
 				let n = 1;
 				if (e.per === 'other-friendly') n = state.players[pi].board.filter(c => c !== source && !isDead(c)).length;
 				else if (e.per === 'hand-cards') n = state.players[pi].hand.length;
+				else if (e.per === 'hand-spells') n = state.players[pi].hand.filter(c => isSpellType(c)).length; // Brainstormer
+				else if (e.per === 'pogos-played') n = state.players[pi].pogoCount || 0; // Pogo-Hopper
 				else if (e.per === 'cards-played') n = state.players[pi].cardsPlayedThisTurn;
 				else if (e.per === 'enemy-deathrattle') n = state.players.reduce((s, pl, idx) =>
 					idx === pi ? s : s + pl.board.filter(c => !isDead(c) && c.keywords.includes('deathrattle')).length, 0);
@@ -3842,6 +3847,16 @@ function execEffects(state, pi, effects, target, source) {
 				c.zone = 'hand'; state.players[pi].hand.push(c);
 				emit(state, { type: 'conjure', player: pi, card: c, color: null });
 			}
+		} else if (e.type === 'inc-pogo') {
+			// Pogo-Hopper: track how many you've played so the next gains more
+			state.players[pi].pogoCount = (state.players[pi].pogoCount || 0) + 1;
+		} else if (e.type === 'temp-stealth-self') {
+			// Coppertail Imposter: gain Stealth until your next turn
+			if (source && source.zone === 'board' && !isDead(source)) {
+				source.tempStealth = true; source.stealthed = true;
+				if (!source.keywords.includes(KW.STEALTH)) source.keywords.push(KW.STEALTH);
+				emit(state, { type: 'buff', uid: source.uid, attack: source.attack, hp: hp(source) });
+			}
 		} else if (e.type === 'set-self-hp-cost') {
 			// Genn Greymane: your Hero Power costs (1) (a board aura via heroPowerCostSet)
 			if (source) source.heroPowerCostSet = e.value ?? 1;
@@ -4331,7 +4346,7 @@ function execEffects(state, pi, effects, target, source) {
 		} else if (e.type === 'summon-from-hand-min-attack') {
 			// Giant Anaconda: put a creature from your hand with N+ Attack into play
 			const p = state.players[pi];
-			const pool = p.hand.filter(c => c.type === 'creature' && c.attack >= (e.minAttack || 0) && (!e.requireKeyword || c.keywords.includes(e.requireKeyword))); // Coffin Crasher: a Deathrattle creature
+			const pool = p.hand.filter(c => c.type === 'creature' && c.attack >= (e.minAttack || 0) && (e.maxCost == null || (c.cost || 0) <= e.maxCost) && (!e.requireKeyword || c.keywords.includes(e.requireKeyword))); // Coffin Crasher / Piloted Reaper
 			if (pool.length) { const c = pool[Math.floor(state.rng() * pool.length)]; p.hand = p.hand.filter(x => x !== c); c.zone = 'board'; p.board.push(c); emit(state, { type: 'summon', player: pi, card: c }); fireOngoing(state, pi, 'summoned', { minion: c }); growBlubberBaron(state, pi, c); recomputeAuras(state); }
 		} else if (e.type === 'destroy-deck-max-cost') {
 			// Hemet, Jungle Hunter: destroy all cards in your deck costing N or less
