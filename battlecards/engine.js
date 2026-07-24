@@ -604,6 +604,8 @@ const CHOSEN = {
 	fireworks: { 'friendly-creature': 'friendly-creature' },
 	'bounce-and-buff': { 'friendly-creature': 'friendly-creature' },
 	'copy-health': { 'friendly-creature': 'friendly-creature' },
+	'transform-target-into-source': { 'friendly-creature': 'friendly-creature' },
+	'mark-summon-copy': { 'enemy-creature': 'enemy-creature' },
 	destroy: { creature: 'creature', 'enemy-creature': 'enemy-creature', 'friendly-creature': 'friendly-creature' },
 	'copy-to-hand': { creature: 'creature', 'enemy-creature': 'enemy-creature', 'friendly-creature': 'friendly-creature' },
 	'copy-summon': { creature: 'creature', 'friendly-creature': 'friendly-creature' },
@@ -1986,6 +1988,11 @@ function runSecretEffects(state, pi, effects, ctx) {
 					// High Priest Amet: a creature you summoned gets Health equal to its Attack
 					const m = ctx.minion;
 					if (m && m !== ctx.self) { m.maxHealth = m.attack; m.damage = 0; emit(state, { type: 'buff', uid: m.uid, attack: m.attack, hp: hp(m) }); }
+					break;
+				}
+				case 'if-nth-spell-then': {
+					// Chenvaala: after every 3rd spell this turn, run an effect
+					if (((state.players[pi].spellsPlayedThisTurn || 0) % (e.every || 3)) === 0 && (state.players[pi].spellsPlayedThisTurn || 0) > 0) execEffects(state, pi, JSON.parse(JSON.stringify(e.then || [])), null, ctx.self);
 					break;
 				}
 				case 'if-summoned-tribe-then': {
@@ -3617,6 +3624,8 @@ function execEffects(state, pi, effects, target, source) {
 				? state.players.flatMap(pl => pl.board.filter(c => !isDead(c)))
 				: e.target === 'all-others'
 				? state.players.flatMap(pl => pl.board.filter(c => !isDead(c) && c !== source))
+				: e.target === 'enemy-creatures'
+				? enemies.flatMap(o => state.players[o].board.filter(c => !isDead(c) && c.type !== 'location')) // Veranus
 				: [chosenCreature()].filter(Boolean);
 			for (const t of list) {
 				t.maxHealth = e.value + (t.auraHealth || 0);
@@ -3790,6 +3799,7 @@ function execEffects(state, pi, effects, target, source) {
 				if (e.setAttack != null) card.attack = e.setAttack; // Jepetto Joybuzz: set to 1/1, cost 1
 				if (e.setHealth != null) card.maxHealth = e.setHealth;
 				if (e.setCost != null) card.cost = e.setCost;
+				if (e.gainDeathrattle && source && card.deathrattle && card.deathrattle.length) { source.deathrattle = [...(source.deathrattle || []), ...JSON.parse(JSON.stringify(card.deathrattle))]; if (!source.keywords.includes('deathrattle')) source.keywords.push('deathrattle'); } // Necrium Apothecary
 				p.hand.push(card);
 				emit(state, { type: 'conjure', player: pi, card, color: null });
 			}
@@ -4116,6 +4126,58 @@ function execEffects(state, pi, effects, target, source) {
 				const horror = instantiate({ id: 'dal_drustvar_horror', name: 'Drustvar Horror', type: 'creature', cost: 5, token: true, rarity: 'epic', set: 'DALARAN', attack: 5, health: 5, keywords: bc.length ? ['battlecry'] : [], description: '5/5. ' + chosen.map(s => s.name).join(', '), effects: bc }, pi);
 				horror.zone = 'hand'; p.hand.push(horror); emit(state, { type: 'conjure', player: pi, card: horror, color: null });
 			}
+		} else if (e.type === 'equip-destroyed-weapon') {
+			// Hoard Pillager: re-equip a weapon from your graveyard
+			const p = state.players[pi];
+			const weps = p.graveyard.filter(c => c.type === 'weapon');
+			if (weps.length) {
+				const w = weps[Math.floor(state.rng() * weps.length)];
+				const gi = p.graveyard.indexOf(w); if (gi >= 0) p.graveyard.splice(gi, 1);
+				const def = state.cardsById[w.id] || w;
+				execEffects(state, pi, [{ type: 'equip-id', id: def.id }], null, source);
+			}
+		} else if (e.type === 'transform-target-into-source') {
+			// Faceless Corruptor: turn a chosen friendly creature into a copy of this one
+			const t = chosenCreature();
+			if (t && source && state.cardsById[source.id]) {
+				const owner = t.controller;
+				const clone = instantiate(state.cardsById[source.id], owner);
+				clone.zone = 'board'; clone.sick = t.sick;
+				const board = state.players[owner].board; board[board.indexOf(t)] = clone; t.zone = 'gone';
+				emit(state, { type: 'transformed', uid: t.uid, player: owner, from: t.name, card: clone });
+				recomputeAuras(state);
+			}
+		} else if (e.type === 'attack-all-minions') {
+			// Deathwing, Mad Aspect: attack every other creature
+			if (source && source.zone === 'board' && !isDead(source)) {
+				for (const pl of state.players) for (const c of [...pl.board]) {
+					if (c === source || isDead(c) || c.type === 'location') continue;
+					if (isDead(source)) break;
+					resolveCombat(state, source.controller, source.uid, { type: 'creature', uid: c.uid, player: c.controller });
+				}
+			}
+		} else if (e.type === 'mark-summon-copy') {
+			// Mindflayer Kaahrj: remember a chosen creature; Deathrattle summons a copy
+			const t = chosenCreature();
+			if (t && source) source.copyVictimId = t.id;
+		} else if (e.type === 'summon-marked-copy') {
+			if (source?.copyVictimId && state.cardsById[source.copyVictimId]) summon(state, pi, state.cardsById[source.copyVictimId]);
+		} else if (e.type === 'draw-and-summon-if-tribe') {
+			// Utgarde Grapplesnipe: both players draw; a drawn creature of a tribe is summoned
+			for (let s2 = 0; s2 < state.players.length; s2++) {
+				const pl = state.players[s2]; if (pl.eliminated) continue;
+				const before = pl.hand.length;
+				drawCards(state, s2, 1);
+				const drawn = pl.hand.length > before ? pl.hand[pl.hand.length - 1] : null;
+				if (drawn && drawn.type === 'creature' && (drawn.tribe || '').includes(e.tribe) && pl.board.filter(c => !isDead(c)).length < 7) {
+					pl.hand = pl.hand.filter(c => c !== drawn); drawn.zone = 'board'; drawn.sick = true; pl.board.push(drawn);
+					emit(state, { type: 'summon', player: s2, card: drawn }); fireOngoing(state, s2, 'summoned', { minion: drawn });
+				}
+			}
+			recomputeAuras(state);
+		} else if (e.type === 'set-max-hand-draw') {
+			// Valdris Felgorge: draw cards (our hand cap is already generous)
+			drawCards(state, pi, e.draw || 4);
 		} else if (e.type === 'steal-enemy-weapon') {
 			// Kobold Stickyfinger: take the opponent's weapon
 			const o = enemies[0];
@@ -6478,6 +6540,8 @@ export function playCard(state, pi, cardUid, target, choice, position, useAlt, k
 	if (card.type === 'creature' && (card.tribe || '').includes('Pirate') && card.id !== 'patches_the_pirate') {
 		const idx = p.deck.indexOf('patches_the_pirate');
 		if (idx >= 0) { p.deck.splice(idx, 1); summon(state, pi, state.cardsById['patches_the_pirate']); }
+		// Parachute Brigand: playing a Pirate summons Parachute Brigand out of your hand
+		if (card.id !== 'parachute_brigand') { const pb = p.hand.find(c => c.id === 'parachute_brigand'); if (pb && p.board.filter(c => !isDead(c)).length < 7) { p.hand = p.hand.filter(c => c !== pb); pb.zone = 'board'; pb.sick = true; p.board.push(pb); emit(state, { type: 'summon', player: pi, card: pb }); fireOngoing(state, pi, 'summoned', { minion: pb }); recomputeAuras(state); } }
 	}
 	// one-shot "next X" discounts are spent when the matching card is played
 	if (card.type === 'creature' && (card.tribe || '').includes('Murloc')) p.nextMurlocFree = false;

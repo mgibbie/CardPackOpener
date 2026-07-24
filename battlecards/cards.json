@@ -80335,6 +80335,405 @@
           "value": 2
         }
       ]
+    },
+    {
+      "id": "parachute_brigand",
+      "name": "Parachute Brigand",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "neutral",
+      "attack": 2,
+      "health": 2,
+      "rarity": "common",
+      "set": "DRAGONS",
+      "tribe": "Pirate",
+      "description": "After you play a Pirate, summon this minion from your hand."
+    },
+    {
+      "id": "phase_stalker",
+      "name": "Phase Stalker",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "hunter",
+      "attack": 2,
+      "health": 3,
+      "rarity": "rare",
+      "set": "DRAGONS",
+      "tribe": "Beast",
+      "description": "After you use your Hero Power, cast a Secret from your deck.",
+      "ongoing": {
+        "on": "hero-power-used",
+        "effects": [
+          {
+            "type": "deploy-secret-from-deck"
+          }
+        ]
+      }
+    },
+    {
+      "id": "hoard_pillager",
+      "name": "Hoard Pillager",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "neutral",
+      "attack": 4,
+      "health": 2,
+      "rarity": "rare",
+      "set": "DRAGONS",
+      "tribe": "Pirate",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Equip one of your destroyed weapons.",
+      "effects": [
+        {
+          "type": "equip-destroyed-weapon"
+        }
+      ]
+    },
+    {
+      "id": "faceless_corruptor",
+      "name": "Faceless Corruptor",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "neutral",
+      "attack": 5,
+      "health": 4,
+      "rarity": "rare",
+      "set": "DRAGONS",
+      "keywords": [
+        "rush",
+        "battlecry"
+      ],
+      "description": "Rush. Battlecry: Transform one of your minions into a copy of this.",
+      "effects": [
+        {
+          "type": "transform-target-into-source",
+          "target": "friendly-creature"
+        }
+      ]
+    },
+    {
+      "id": "chenvaala",
+      "name": "Chenvaala",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "mage",
+      "attack": 2,
+      "health": 5,
+      "rarity": "legendary",
+      "set": "DRAGONS",
+      "tribe": "Elemental",
+      "description": "After you cast three spells in a turn, summon a 5/5 Elemental.",
+      "ongoing": {
+        "on": "spell-played",
+        "effects": [
+          {
+            "type": "if-nth-spell-then",
+            "every": 3,
+            "then": [
+              {
+                "type": "summon",
+                "count": 1,
+                "attack": 5,
+                "health": 5,
+                "name": "Snowball",
+                "tribe": "Elemental"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "dragonrider_talritha",
+      "name": "Dragonrider Talritha",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "paladin",
+      "attack": 3,
+      "health": 3,
+      "rarity": "legendary",
+      "set": "DRAGONS",
+      "keywords": [
+        "deathrattle"
+      ],
+      "description": "Deathrattle: Give a Dragon in your hand +3/+3 and this Deathrattle.",
+      "deathrattle": [
+        {
+          "type": "buff-hand",
+          "tribe": "Dragon",
+          "random": true,
+          "attack": 3,
+          "health": 3
+        }
+      ]
+    },
+    {
+      "id": "mindflayer_kaahrj",
+      "name": "Mindflayer Kaahrj",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "priest",
+      "attack": 3,
+      "health": 3,
+      "rarity": "legendary",
+      "set": "DRAGONS",
+      "keywords": [
+        "battlecry",
+        "deathrattle"
+      ],
+      "description": "Battlecry: Choose an enemy minion. Deathrattle: Summon a new copy of it.",
+      "effects": [
+        {
+          "type": "mark-summon-copy",
+          "target": "enemy-creature"
+        }
+      ],
+      "deathrattle": [
+        {
+          "type": "summon-marked-copy"
+        }
+      ]
+    },
+    {
+      "id": "veranus",
+      "name": "Veranus",
+      "type": "creature",
+      "cost": 6,
+      "cardClass": "hunter",
+      "attack": 7,
+      "health": 6,
+      "rarity": "legendary",
+      "set": "DRAGONS",
+      "tribe": "Dragon",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Change the Health of all enemy minions to 1.",
+      "effects": [
+        {
+          "type": "set-health",
+          "target": "enemy-creatures",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "deathwing_mad_aspect",
+      "name": "Deathwing, Mad Aspect",
+      "type": "creature",
+      "cost": 8,
+      "cardClass": "warrior",
+      "attack": 12,
+      "health": 12,
+      "rarity": "legendary",
+      "set": "DRAGONS",
+      "tribe": "Dragon",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Attack ALL other minions.",
+      "effects": [
+        {
+          "type": "attack-all-minions"
+        }
+      ]
+    },
+    {
+      "id": "zzeraku_the_warped",
+      "name": "Zzeraku the Warped",
+      "type": "creature",
+      "cost": 7,
+      "cardClass": "warlock",
+      "attack": 4,
+      "health": 12,
+      "rarity": "legendary",
+      "set": "DRAGONS",
+      "tribe": "Demon",
+      "description": "Whenever your hero takes damage, summon a 6/6 Nether Drake.",
+      "ongoing": {
+        "on": "own-hero-damaged",
+        "effects": [
+          {
+            "type": "summon",
+            "count": 1,
+            "attack": 6,
+            "health": 6,
+            "name": "Nether Drake",
+            "tribe": "Dragon"
+          }
+        ]
+      }
+    },
+    {
+      "id": "valdris_felgorge",
+      "name": "Valdris Felgorge",
+      "type": "creature",
+      "cost": 7,
+      "cardClass": "warlock",
+      "attack": 4,
+      "health": 4,
+      "rarity": "legendary",
+      "set": "DRAGONS",
+      "tribe": "Demon",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Increase your maximum hand size to 12. Draw 4 cards.",
+      "effects": [
+        {
+          "type": "set-max-hand-draw",
+          "draw": 4
+        }
+      ]
+    },
+    {
+      "id": "dragonqueen_alexstrasza",
+      "name": "Dragonqueen Alexstrasza",
+      "type": "creature",
+      "cost": 9,
+      "cardClass": "neutral",
+      "attack": 8,
+      "health": 8,
+      "rarity": "legendary",
+      "set": "DRAGONS",
+      "tribe": "Dragon",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: If your deck has no duplicates, add 2 other random Dragons to your hand. They cost (0).",
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "noDuplicates": true
+          },
+          "then": [
+            {
+              "type": "conjure-random",
+              "cardType": "creature",
+              "tribe": "Dragon",
+              "count": 2,
+              "setCost": 0
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "ysera_unleashed",
+      "name": "Ysera, Unleashed",
+      "type": "creature",
+      "cost": 9,
+      "cardClass": "druid",
+      "attack": 4,
+      "health": 12,
+      "rarity": "legendary",
+      "set": "DRAGONS",
+      "tribe": "Dragon",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Shuffle 7 Dream Portals into your deck. When drawn, summon a random Dragon.",
+      "effects": [
+        {
+          "type": "shuffle-into-deck",
+          "id": "drg_dream_portal",
+          "count": 7
+        }
+      ]
+    },
+    {
+      "id": "utgarde_grapplesnipe",
+      "name": "Utgarde Grapplesnipe",
+      "type": "creature",
+      "cost": 6,
+      "cardClass": "neutral",
+      "attack": 5,
+      "health": 5,
+      "rarity": "rare",
+      "set": "DRAGONS",
+      "description": "Battlecry: Both players draw a card. If it's a Dragon, summon it.",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "draw-and-summon-if-tribe",
+          "tribe": "Dragon"
+        }
+      ]
+    },
+    {
+      "id": "necrium_apothecary",
+      "name": "Necrium Apothecary",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "rogue",
+      "attack": 2,
+      "health": 5,
+      "rarity": "epic",
+      "set": "DRAGONS",
+      "keywords": [
+        "combo"
+      ],
+      "description": "Combo: Draw a Deathrattle minion from your deck and gain its Deathrattle.",
+      "effects": [
+        {
+          "type": "tutor",
+          "cardType": "creature",
+          "requireKeyword": "deathrattle",
+          "gainDeathrattle": true
+        }
+      ],
+      "combo": [
+        {
+          "type": "tutor",
+          "cardType": "creature",
+          "requireKeyword": "deathrattle",
+          "gainDeathrattle": true
+        }
+      ]
+    },
+    {
+      "id": "stowaway",
+      "name": "Stowaway",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "rogue",
+      "attack": 4,
+      "health": 4,
+      "rarity": "rare",
+      "set": "DRAGONS",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: If there are cards in your deck that didn't start there, draw 2 of them.",
+      "effects": [
+        {
+          "type": "draw",
+          "value": 2
+        }
+      ]
+    },
+    {
+      "id": "drg_dream_portal",
+      "name": "Dream Portal",
+      "type": "sorcery",
+      "cost": 10,
+      "token": true,
+      "rarity": "legendary",
+      "set": "DRAGONS",
+      "drawTrigger": true,
+      "onDraw": [
+        {
+          "type": "summon-random",
+          "tribe": "Dragon",
+          "count": 1
+        }
+      ],
+      "description": "When drawn, summon a random Dragon."
     }
   ]
 }
