@@ -162,6 +162,7 @@ function instantiate(def, controller) {
 		redirectHeroDamage: def.redirectHeroDamage || false, // Bolf Ramshield: takes your hero's damage
 		costReducePerTurn: def.costReducePerTurn || false,   // Nerubian Prophet: -1 cost each turn in hand
 		transformInHand: def.transformInHand || false,       // Shifter Zerus: transforms each turn in hand
+		summonOnDiscard: def.summonOnDiscard || false,       // Silverware Golem: summon it when discarded
 		attackTax: def.attackTax ? { ...def.attackTax } : null, // Ghostly Prison: cost to attack this controller's hero
 		addCost: def.addCost ? { ...def.addCost } : null, // additional casting cost: { discard: N } or { sacrifice: 'creature'|'land'|'artifact'|'artifact-or-creature' }
 		altCost: def.altCost ? { ...def.altCost } : null, // optional cost paid INSTEAD of mana: { label, require?, life?, sacrificeLand?, exileFromHand?, opponentGain? }
@@ -579,6 +580,7 @@ const CHOSEN = {
 	'swap-stats-with': { creature: 'creature', 'friendly-creature': 'friendly-creature' },
 	'copy-stats': { creature: 'creature', 'friendly-creature': 'friendly-creature' },
 	'copy-to-hand-cheap': { creature: 'creature', 'friendly-creature': 'friendly-creature' },
+	'destroy-and-remember': { creature: 'creature', 'enemy-creature': 'enemy-creature' },
 	'blade-of-cthun': { creature: 'creature', 'enemy-creature': 'enemy-creature' },
 	conditional: { any: 'any', creature: 'creature' },
 	'damage-then': { any: 'any', creature: 'creature' },
@@ -2977,7 +2979,7 @@ function execEffects(state, pi, effects, target, source) {
 				const [c] = p.hand.splice(j, 1);
 				toGraveyard(state, pi, c);
 				emit(state, { type: 'discard', player: pi, card: c });
-				if (!c.token) state.players[pi].discardLogIds.push(c.id); fireOngoing(state, pi, 'card-discarded', { card: c }); // Tiny Knight of Evil
+				if (!c.token) state.players[pi].discardLogIds.push(c.id); if (c.summonOnDiscard && state.cardsById[c.id]) summon(state, pi, state.cardsById[c.id]); fireOngoing(state, pi, 'card-discarded', { card: c }); // Tiny Knight of Evil
 			}
 		} else if (e.type === 'discard-lowest') {
 			// Lakkari Felhound: discard your N lowest-Cost cards
@@ -2988,7 +2990,7 @@ function execEffects(state, pi, effects, target, source) {
 				const [c] = p.hand.splice(li, 1);
 				toGraveyard(state, pi, c);
 				emit(state, { type: 'discard', player: pi, card: c });
-				if (!c.token) state.players[pi].discardLogIds.push(c.id); fireOngoing(state, pi, 'card-discarded', { card: c });
+				if (!c.token) state.players[pi].discardLogIds.push(c.id); if (c.summonOnDiscard && state.cardsById[c.id]) summon(state, pi, state.cardsById[c.id]); fireOngoing(state, pi, 'card-discarded', { card: c });
 			}
 		} else if (e.type === 'draw-set-cost') {
 			// Bright-Eyed Scout: draw a card and change its Cost
@@ -3252,7 +3254,7 @@ function execEffects(state, pi, effects, target, source) {
 				const c = p.hand.pop();
 				toGraveyard(state, pi, c);
 				emit(state, { type: 'discard', player: pi, card: c });
-				if (!c.token) state.players[pi].discardLogIds.push(c.id); fireOngoing(state, pi, 'card-discarded', { card: c });
+				if (!c.token) state.players[pi].discardLogIds.push(c.id); if (c.summonOnDiscard && state.cardsById[c.id]) summon(state, pi, state.cardsById[c.id]); fireOngoing(state, pi, 'card-discarded', { card: c });
 			}
 		} else if (e.type === 'bounce') {
 			if (e.target === 'permanent') {
@@ -3380,6 +3382,7 @@ function execEffects(state, pi, effects, target, source) {
 			else if (e.if.enemyMaxHealth != null) ok = opponentsOf(state, pi).some(o => state.players[o].life <= e.if.enemyMaxHealth); // Drakonid Crusher
 			else if (e.if.noDuplicates) ok = new Set(p.deck).size === p.deck.length; // Reno Jackson
 			else if (e.if.controlOtherTribe) ok = p.board.some(c => c !== source && !isDead(c) && (c.tribe || '').includes(e.if.controlOtherTribe)); // Gorillabot / Fossilized Devilsaur
+			else if (e.if.controlSecret) ok = p.secrets.length > 0; // Avian Watcher
 			else if (e.if.controlStatic) ok = p.board.some(c => !isDead(c) && c.static?.type === e.if.controlStatic); // Master of Ceremonies: a Spell Damage minion
 			else if (e.if.maxHealthSelf != null) ok = p.life <= e.if.maxHealthSelf;
 			else if (e.if.targetFrozen) ok = !!(t && t.frozen);
@@ -3550,6 +3553,24 @@ function execEffects(state, pi, effects, target, source) {
 				t.tempHealth = 0;
 				emit(state, { type: 'buff', uid: t.uid, attack: t.attack, hp: hp(t) });
 			}
+		} else if (e.type === 'summon-random-died-this-turn') {
+			// Onyx Bishop: resurrect a random friendly creature that died this turn
+			const p = state.players[pi];
+			const ids = p.diedThisTurnIds.filter(id => state.cardsById[id]?.type === 'creature');
+			if (ids.length) summon(state, pi, state.cardsById[ids[Math.floor(state.rng() * ids.length)]]);
+		} else if (e.type === 'buff-random-of-tribes') {
+			// Zoobot / Menagerie Magician: buff a random friendly of each listed tribe
+			for (const tribe of e.tribes || []) {
+				const pool = state.players[pi].board.filter(c => !isDead(c) && c !== source && (c.tribe || '').includes(tribe));
+				if (pool.length) { const t = pool[Math.floor(state.rng() * pool.length)]; t.attack += e.attack || 0; t.maxHealth += e.health || 0; emit(state, { type: 'buff', uid: t.uid, attack: t.attack, hp: hp(t) }); }
+			}
+		} else if (e.type === 'destroy-and-remember') {
+			// Moat Lurker: destroy a creature; its Deathrattle brings it back
+			const t = chosenCreature();
+			if (t && source) { source.moatVictim = t.id; t.damage = t.maxHealth; t.shield = false; emit(state, { type: 'destroy', uid: t.uid }); }
+		} else if (e.type === 'resummon-remembered') {
+			// Moat Lurker's Deathrattle
+			if (source?.moatVictim && state.cardsById[source.moatVictim]) summon(state, pi, state.cardsById[source.moatVictim]);
 		} else if (e.type === 'set-hero-power') {
 			// Vilefin Inquisitor: replace your Hero Power with a specific one
 			const def = state.cardsById[e.powerId];
@@ -4260,7 +4281,7 @@ function execEffects(state, pi, effects, target, source) {
 					ids.push(pool.splice(Math.floor(state.rng() * pool.length), 1)[0].id);
 				}
 				if (!ids.length) break;
-				state.pickQueue.push({ player: pi, ids, grant: e.grant || null, buff: e.buff || null, to: e.to || null, costMod: e.costMod || null });
+				state.pickQueue.push({ player: pi, ids, grant: e.grant || null, buff: e.buff || null, to: e.to || null, costMod: e.costMod || null, healByCost: e.healByCost || false });
 				emit(state, { type: 'pickStart', player: pi, count: ids.length });
 			}
 		} else if (e.type === 'loot') {
@@ -6036,6 +6057,7 @@ export function resolvePick(state, id) {
 			card.maxHealth += pend.buff.health || 0;
 		}
 		if (pend.costMod) card.cost = Math.max(0, (card.cost || 0) + pend.costMod); // Museum Curator: costs (1) less
+		if (pend.healByCost) healHero(state, pend.player, card.cost || 0); // Ivory Knight: restore Health = its Cost
 		p.hand.push(card);
 		emit(state, { type: 'conjure', player: pend.player, card, color: null });
 		fireEmerge(state, pend.player, card);

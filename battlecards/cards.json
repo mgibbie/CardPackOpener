@@ -66979,6 +66979,336 @@
           }
         ]
       }
+    },
+    {
+      "id": "arcane_anomaly",
+      "name": "Arcane Anomaly",
+      "type": "creature",
+      "cost": 1,
+      "cardClass": "neutral",
+      "attack": 2,
+      "health": 1,
+      "rarity": "common",
+      "set": "KARA",
+      "tribe": "Elemental",
+      "description": "After you cast a spell, give this creature +1 Health.",
+      "ongoing": {
+        "on": "spell-played",
+        "effects": [
+          {
+            "type": "buff-self",
+            "attack": 0,
+            "health": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "malchezaars_imp",
+      "name": "Malchezaar's Imp",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "warlock",
+      "attack": 1,
+      "health": 3,
+      "rarity": "common",
+      "set": "KARA",
+      "tribe": "Demon",
+      "description": "Whenever you discard a card, draw a card.",
+      "ongoing": {
+        "on": "card-discarded",
+        "effects": [
+          {
+            "type": "draw",
+            "value": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "deadly_fork",
+      "name": "Deadly Fork",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "rogue",
+      "attack": 3,
+      "health": 2,
+      "rarity": "common",
+      "set": "KARA",
+      "keywords": [
+        "deathrattle"
+      ],
+      "description": "Deathrattle: Add a 3/2 weapon to your hand.",
+      "deathrattle": [
+        {
+          "type": "add-card",
+          "id": "sharp_fork"
+        }
+      ]
+    },
+    {
+      "id": "zoobot",
+      "name": "Zoobot",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "neutral",
+      "attack": 3,
+      "health": 3,
+      "rarity": "common",
+      "set": "KARA",
+      "tribe": "Mech",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Give a random friendly Beast, Dragon, and Murloc +1/+1.",
+      "effects": [
+        {
+          "type": "buff-random-of-tribes",
+          "tribes": [
+            "Beast",
+            "Dragon",
+            "Murloc"
+          ],
+          "attack": 1,
+          "health": 1
+        }
+      ]
+    },
+    {
+      "id": "silverware_golem",
+      "name": "Silverware Golem",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "warlock",
+      "attack": 3,
+      "health": 4,
+      "rarity": "rare",
+      "set": "KARA",
+      "description": "If you discard this creature, summon it.",
+      "summonOnDiscard": true
+    },
+    {
+      "id": "ivory_knight",
+      "name": "Ivory Knight",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "paladin",
+      "attack": 4,
+      "health": 4,
+      "rarity": "rare",
+      "set": "KARA",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Discover a spell. Restore Health to your hero equal to its Cost.",
+      "effects": [
+        {
+          "type": "discover",
+          "cardType": "spell",
+          "healByCost": true
+        }
+      ]
+    },
+    {
+      "id": "onyx_bishop",
+      "name": "Onyx Bishop",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "priest",
+      "attack": 3,
+      "health": 4,
+      "rarity": "rare",
+      "set": "KARA",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Summon a random friendly creature that died this turn.",
+      "effects": [
+        {
+          "type": "summon-random-died-this-turn"
+        }
+      ]
+    },
+    {
+      "id": "avian_watcher",
+      "name": "Avian Watcher",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "neutral",
+      "attack": 3,
+      "health": 6,
+      "rarity": "rare",
+      "set": "KARA",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: If you control a Secret, gain +1/+1 and Taunt.",
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "controlSecret": true
+          },
+          "then": [
+            {
+              "type": "buff-self",
+              "attack": 1,
+              "health": 1
+            },
+            {
+              "type": "grant",
+              "target": "self",
+              "keyword": "taunt"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "menagerie_warden",
+      "name": "Menagerie Warden",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "druid",
+      "attack": 5,
+      "health": 4,
+      "rarity": "common",
+      "set": "KARA",
+      "tribe": "Beast",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Choose a friendly Beast. Summon a copy of it.",
+      "effects": [
+        {
+          "type": "copy-summon",
+          "target": "friendly-creature"
+        }
+      ]
+    },
+    {
+      "id": "menagerie_magician",
+      "name": "Menagerie Magician",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "mage",
+      "attack": 4,
+      "health": 4,
+      "rarity": "common",
+      "set": "KARA",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Give a random friendly Beast, Dragon, and Murloc +2/+2.",
+      "effects": [
+        {
+          "type": "buff-random-of-tribes",
+          "tribes": [
+            "Beast",
+            "Dragon",
+            "Murloc"
+          ],
+          "attack": 2,
+          "health": 2
+        }
+      ]
+    },
+    {
+      "id": "book_wyrm",
+      "name": "Book Wyrm",
+      "type": "creature",
+      "cost": 6,
+      "cardClass": "neutral",
+      "attack": 3,
+      "health": 6,
+      "rarity": "rare",
+      "set": "KARA",
+      "tribe": "Dragon",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: If you're holding a Dragon, destroy an enemy creature with 3 or less Attack.",
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "holdingTribe": "Dragon"
+          },
+          "then": [
+            {
+              "type": "destroy",
+              "target": "enemy-creature",
+              "maxAttack": 3
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "moat_lurker",
+      "name": "Moat Lurker",
+      "type": "creature",
+      "cost": 6,
+      "cardClass": "neutral",
+      "attack": 3,
+      "health": 3,
+      "rarity": "rare",
+      "set": "KARA",
+      "keywords": [
+        "battlecry",
+        "deathrattle"
+      ],
+      "description": "Battlecry: Destroy a creature. Deathrattle: Resummon it.",
+      "effects": [
+        {
+          "type": "destroy-and-remember",
+          "target": "creature"
+        }
+      ],
+      "deathrattle": [
+        {
+          "type": "resummon-remembered"
+        }
+      ]
+    },
+    {
+      "id": "moroes",
+      "name": "Moroes",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "neutral",
+      "attack": 1,
+      "health": 1,
+      "rarity": "legendary",
+      "set": "KARA",
+      "keywords": [
+        "stealth"
+      ],
+      "description": "Stealth. At the end of your turn, summon a 1/1 Steward.",
+      "ongoing": {
+        "on": "turn-end",
+        "effects": [
+          {
+            "type": "summon",
+            "count": 1,
+            "attack": 1,
+            "health": 1,
+            "name": "Steward"
+          }
+        ]
+      }
+    },
+    {
+      "id": "sharp_fork",
+      "name": "Sharp Fork",
+      "type": "weapon",
+      "cost": 3,
+      "token": true,
+      "rarity": "common",
+      "set": "KARA",
+      "attack": 3,
+      "durability": 2,
+      "description": "A 3/2 weapon."
     }
   ]
 }
