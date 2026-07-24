@@ -78811,6 +78811,355 @@
           }
         ]
       }
+    },
+    {
+      "id": "quicksand_elemental",
+      "name": "Quicksand Elemental",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "neutral",
+      "attack": 3,
+      "health": 2,
+      "rarity": "rare",
+      "set": "ULDUM",
+      "tribe": "Elemental",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Give all enemy minions -2 Attack this turn.",
+      "effects": [
+        {
+          "type": "debuff-enemies-attack-turn",
+          "value": 2
+        }
+      ]
+    },
+    {
+      "id": "whirlkick_master",
+      "name": "Whirlkick Master",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "rogue",
+      "attack": 1,
+      "health": 2,
+      "rarity": "epic",
+      "set": "ULDUM",
+      "description": "Whenever you play a Combo card, add a random Combo card to your hand.",
+      "ongoing": {
+        "on": "combo-card-played",
+        "effects": [
+          {
+            "type": "conjure-random",
+            "cardType": "creature",
+            "requireKeyword": "combo",
+            "count": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "mischief_maker",
+      "name": "Mischief Maker",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "neutral",
+      "attack": 3,
+      "health": 3,
+      "rarity": "epic",
+      "set": "ULDUM",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Swap the top card of your deck with your opponent's.",
+      "effects": [
+        {
+          "type": "swap-deck-tops"
+        }
+      ]
+    },
+    {
+      "id": "oasis_surger",
+      "name": "Oasis Surger",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "druid",
+      "attack": 3,
+      "health": 3,
+      "rarity": "common",
+      "set": "ULDUM",
+      "tribe": "Elemental",
+      "keywords": [
+        "rush"
+      ],
+      "description": "Rush. Choose One - Gain +2/+2; or Summon a copy of this minion.",
+      "choices": [
+        {
+          "text": "Gain +2/+2",
+          "effects": [
+            {
+              "type": "buff-self",
+              "attack": 2,
+              "health": 2
+            }
+          ]
+        },
+        {
+          "text": "Summon a copy",
+          "effects": [
+            {
+              "type": "summon-self-copy"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "naga_sand_witch",
+      "name": "Naga Sand Witch",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "mage",
+      "attack": 5,
+      "health": 5,
+      "rarity": "rare",
+      "set": "ULDUM",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Change the Cost of spells in your hand to (5).",
+      "effects": [
+        {
+          "type": "set-hand-spell-cost",
+          "value": 5
+        }
+      ]
+    },
+    {
+      "id": "mortuary_machine",
+      "name": "Mortuary Machine",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "neutral",
+      "attack": 8,
+      "health": 8,
+      "rarity": "epic",
+      "set": "ULDUM",
+      "tribe": "Mech",
+      "description": "After your opponent plays a minion, give it Reborn.",
+      "ongoing": {
+        "on": "enemy-creature-played",
+        "effects": [
+          {
+            "type": "grant-keyword-to-played",
+            "keyword": "reborn"
+          }
+        ]
+      }
+    },
+    {
+      "id": "desert_obelisk",
+      "name": "Desert Obelisk",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "neutral",
+      "attack": 0,
+      "health": 5,
+      "rarity": "epic",
+      "set": "ULDUM",
+      "description": "If you control 3 of these at the end of your turn, deal 5 damage to a random enemy.",
+      "ongoing": {
+        "on": "turn-end",
+        "effects": [
+          {
+            "type": "conditional",
+            "if": {
+              "controlCountId": {
+                "id": "desert_obelisk",
+                "count": 3
+              }
+            },
+            "then": [
+              {
+                "type": "random-damage",
+                "value": 5,
+                "count": 1,
+                "pool": "enemies"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "blatant_decoy",
+      "name": "Blatant Decoy",
+      "type": "creature",
+      "cost": 6,
+      "cardClass": "neutral",
+      "attack": 5,
+      "health": 5,
+      "rarity": "epic",
+      "set": "ULDUM",
+      "keywords": [
+        "deathrattle"
+      ],
+      "description": "Deathrattle: Each player summons the lowest Cost minion from their hand.",
+      "deathrattle": [
+        {
+          "type": "summon-cheapest-from-hand-each"
+        }
+      ]
+    },
+    {
+      "id": "anka_the_buried",
+      "name": "Anka, the Buried",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "rogue",
+      "attack": 5,
+      "health": 5,
+      "rarity": "legendary",
+      "set": "ULDUM",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Change each Deathrattle minion in your hand into a 1/1 that costs (1).",
+      "effects": [
+        {
+          "type": "buff-hand",
+          "requireKeyword": "deathrattle",
+          "all": true,
+          "setAttack": 1,
+          "setHealth": 1,
+          "setCost": 1
+        }
+      ]
+    },
+    {
+      "id": "armagedillo",
+      "name": "Armagedillo",
+      "type": "creature",
+      "cost": 6,
+      "cardClass": "warrior",
+      "attack": 4,
+      "health": 8,
+      "rarity": "legendary",
+      "set": "ULDUM",
+      "tribe": "Beast",
+      "keywords": [
+        "taunt"
+      ],
+      "description": "Taunt. At the end of your turn, give all Taunt minions in your hand +2/+2.",
+      "ongoing": {
+        "on": "turn-end",
+        "effects": [
+          {
+            "type": "buff-hand",
+            "requireKeyword": "taunt",
+            "all": true,
+            "attack": 2,
+            "health": 2
+          }
+        ]
+      }
+    },
+    {
+      "id": "siamat",
+      "name": "Siamat",
+      "type": "creature",
+      "cost": 7,
+      "cardClass": "neutral",
+      "attack": 6,
+      "health": 6,
+      "rarity": "legendary",
+      "set": "ULDUM",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Gain 2 of Rush, Taunt, Divine Shield, or Windfury (your choice).",
+      "choices": [
+        {
+          "text": "Rush & Taunt",
+          "effects": [
+            {
+              "type": "grant",
+              "target": "self",
+              "keyword": "rush"
+            },
+            {
+              "type": "grant",
+              "target": "self",
+              "keyword": "taunt"
+            }
+          ]
+        },
+        {
+          "text": "Divine Shield & Windfury",
+          "effects": [
+            {
+              "type": "grant",
+              "target": "self",
+              "keyword": "divine_shield"
+            },
+            {
+              "type": "grant",
+              "target": "self",
+              "keyword": "windfury"
+            }
+          ]
+        },
+        {
+          "text": "Taunt & Divine Shield",
+          "effects": [
+            {
+              "type": "grant",
+              "target": "self",
+              "keyword": "taunt"
+            },
+            {
+              "type": "grant",
+              "target": "self",
+              "keyword": "divine_shield"
+            }
+          ]
+        },
+        {
+          "text": "Rush & Windfury",
+          "effects": [
+            {
+              "type": "grant",
+              "target": "self",
+              "keyword": "rush"
+            },
+            {
+              "type": "grant",
+              "target": "self",
+              "keyword": "windfury"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "dark_pharaoh_tekahn",
+      "name": "Dark Pharaoh Tekahn",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "warlock",
+      "attack": 4,
+      "health": 4,
+      "rarity": "legendary",
+      "set": "ULDUM",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: For the rest of the game, your Lackeys are 4/4.",
+      "effects": [
+        {
+          "type": "set-lackey-buff",
+          "value": 4
+        }
+      ]
     }
   ]
 }

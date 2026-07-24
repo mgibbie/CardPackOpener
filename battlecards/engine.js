@@ -1970,6 +1970,16 @@ function runSecretEffects(state, pi, effects, ctx) {
 					if (sp) execEffects(state, pi, [{ type: 'tutor', cardType: 'spell', cost: (sp.cost || 0) + (e.value || 1) }], null, ctx.self);
 					break;
 				}
+				case 'grant-keyword-to-played': {
+					// Mortuary Machine: give a keyword to the creature just played
+					const m = ctx.minion;
+					if (m && m !== ctx.self && e.keyword && !m.keywords.includes(e.keyword)) {
+						m.keywords.push(e.keyword);
+						if (e.keyword === KW.DIVINE_SHIELD) m.shield = true;
+						emit(state, { type: 'buff', uid: m.uid, attack: m.attack, hp: hp(m) });
+					}
+					break;
+				}
 				case 'set-summoned-health-to-attack': {
 					// High Priest Amet: a creature you summoned gets Health equal to its Attack
 					const m = ctx.minion;
@@ -3841,6 +3851,8 @@ function execEffects(state, pi, effects, target, source) {
 			else if (e.if.holdingOtherClass) ok = p.hand.some(c => c !== source && c.cardClass && c.cardClass !== 'neutral' && c.cardClass !== p.heroClass); // Underbelly Fence
 			else if (e.if.controlLackey) ok = p.board.some(c => !isDead(c) && typeof c.id === 'string' && c.id.startsWith('lackey_')); // Heistbaron Togwaggle
 			else if (e.if.unspentMana) ok = availableMana(p) > 0; // Crystal Merchant
+			else if (e.if.controlCountId) ok = p.board.filter(c => !isDead(c) && c.id === e.if.controlCountId.id).length >= e.if.controlCountId.count; // Desert Obelisk
+			else if (e.if.boardFullOfId) ok = p.board.filter(c => !isDead(c) && c.type !== 'location').length >= 7 && p.board.every(c => isDead(c) || c.type === 'location' || c.id === e.if.boardFullOfId); // Mogu Cultist
 			execEffects(state, pi, ok ? e.then : (e.else || []), target, source);
 		} else if (e.type === 'damage-then') {
 			// deal damage, then branch on whether the creature survived
@@ -4089,6 +4101,37 @@ function execEffects(state, pi, effects, target, source) {
 				const horror = instantiate({ id: 'dal_drustvar_horror', name: 'Drustvar Horror', type: 'creature', cost: 5, token: true, rarity: 'epic', set: 'DALARAN', attack: 5, health: 5, keywords: bc.length ? ['battlecry'] : [], description: '5/5. ' + chosen.map(s => s.name).join(', '), effects: bc }, pi);
 				horror.zone = 'hand'; p.hand.push(horror); emit(state, { type: 'conjure', player: pi, card: horror, color: null });
 			}
+		} else if (e.type === 'debuff-enemies-attack-turn') {
+			// Quicksand Elemental: all enemy creatures lose Attack until your turn ends
+			for (const o of enemies) for (const c of state.players[o].board) {
+				if (isDead(c) || c.type === 'location' || c.attack <= 0) continue;
+				const d = Math.min(c.attack, e.value || 2);
+				c.attack -= d; c.turnAtkDebuff = (c.turnAtkDebuff || 0) + d;
+				emit(state, { type: 'buff', uid: c.uid, attack: c.attack, hp: hp(c) });
+			}
+		} else if (e.type === 'swap-deck-tops') {
+			// Mischief Maker: swap the top card of your deck with your opponent's
+			const o = enemies[0], mp = state.players[pi];
+			if (o != null && mp.deck.length && state.players[o].deck.length) {
+				const a = mp.deck.pop(), b = state.players[o].deck.pop();
+				mp.deck.push(b); state.players[o].deck.push(a);
+			}
+		} else if (e.type === 'set-hand-spell-cost') {
+			// Naga Sand Witch: set the Cost of spells in your hand
+			for (const c of state.players[pi].hand) if (isSpellType(c)) c.cost = e.value ?? 5;
+		} else if (e.type === 'summon-cheapest-from-hand-each') {
+			// Blatant Decoy: each player summons the lowest-Cost creature from their hand
+			for (let s2 = 0; s2 < state.players.length; s2++) {
+				const pl = state.players[s2];
+				if (pl.eliminated || pl.board.filter(c => !isDead(c)).length >= 7) continue;
+				const pool = pl.hand.filter(c => c.type === 'creature');
+				if (!pool.length) continue;
+				const cheap = pool.reduce((a, b) => (b.cost || 0) < (a.cost || 0) ? b : a);
+				pl.hand = pl.hand.filter(c => c !== cheap);
+				cheap.zone = 'board'; cheap.sick = true; pl.board.push(cheap);
+				emit(state, { type: 'summon', player: s2, card: cheap }); fireOngoing(state, s2, 'summoned', { minion: cheap });
+			}
+			recomputeAuras(state);
 		} else if (e.type === 'summon-random-died-game') {
 			// Psychopomp: summon a random friendly creature that died this game, optionally granting a keyword
 			const p = state.players[pi];
@@ -4127,6 +4170,10 @@ function execEffects(state, pi, effects, target, source) {
 				const c = instantiate(def, pi); c.zone = 'hand'; p.hand.push(c);
 				emit(state, { type: 'conjure', player: pi, card: c, color: null });
 			}
+		} else if (e.type === 'set-lackey-buff') {
+			// Dark Pharaoh Tekahn: for the rest of the game, your Lackeys are N/N
+			state.players[pi].lackeyBuff = e.value || 4;
+			for (const c of state.players[pi].hand) if (typeof c.id === 'string' && c.id.startsWith('lackey_')) { c.attack = e.value || 4; c.maxHealth = e.value || 4; }
 		} else if (e.type === 'grant-hero-elusive') {
 			// Spellward Jeweler: your hero can't be targeted until your next turn
 			state.players[pi].heroElusiveUntil = state.turnNumber + 2;
@@ -4174,8 +4221,10 @@ function execEffects(state, pi, effects, target, source) {
 			// Rise of Shadows: add a random Lackey to your hand
 			const lackeys = ['lackey_ethereal', 'lackey_faceless', 'lackey_goblin', 'lackey_kobold', 'lackey_witchy'];
 			for (let i = 0; i < (e.count || 1); i++) {
-				if (state.players[pi].hand.length >= MAX_HAND) break;
+				const p2 = state.players[pi];
+				if (p2.hand.length >= MAX_HAND) break;
 				execEffects(state, pi, [{ type: 'add-card', id: lackeys[Math.floor(state.rng() * lackeys.length)] }], target, source);
+				if (p2.lackeyBuff) { const added = p2.hand[p2.hand.length - 1]; if (added && added.id.startsWith('lackey_')) { added.attack = p2.lackeyBuff; added.maxHealth = p2.lackeyBuff; } } // Dark Pharaoh Tekahn
 			}
 		} else if (e.type === 'silence-adjacent') {
 			// Dalaran Librarian: silence the creatures flanking this one
@@ -5403,6 +5452,7 @@ function execEffects(state, pi, effects, target, source) {
 			else if (e.cardType === 'spell') pool = pool.filter(d => isSpellType(d));
 			else if (e.cardType === 'weapon') pool = pool.filter(d => d.type === 'weapon');
 			if (e.minAttack != null) pool = pool.filter(d => (d.attack || 0) >= e.minAttack);
+			if (e.requireKeyword) pool = pool.filter(d => (d.keywords || []).includes(e.requireKeyword)); // Whirlkick Master: a Combo card
 			if (e.cost != null) pool = pool.filter(d => (d.cost || 0) === e.cost); // Ravencaller / Tanglefur Mystic
 			if (e.tribe) pool = pool.filter(d => (d.tribe || '').includes(e.tribe));
 			if (e.rarity) pool = pool.filter(d => d.rarity === e.rarity); // Golden Monkey: Legendaries
@@ -5509,6 +5559,9 @@ function execEffects(state, pi, effects, target, source) {
 				c.attack += e.attack || 0;
 				if (c.type === 'weapon') c.durability += e.health || 0; else c.maxHealth += e.health || 0;
 				if (e.cost) c.cost = Math.max(0, (c.cost || 0) - e.cost); // Ebon Dragonsmith: cheaper weapon
+				if (e.setAttack != null) c.attack = e.setAttack; // Anka, the Buried: a 1/1 that costs 1
+				if (e.setHealth != null) c.maxHealth = e.setHealth;
+				if (e.setCost != null) c.cost = e.setCost;
 			}
 		} else if (e.type === 'enrich') {
 			gainTokenCard(state, pi, 'treasure_token');
@@ -6350,6 +6403,7 @@ export function playCard(state, pi, cardUid, target, choice, position, useAlt, k
 	if ((card.keywords || []).includes('battlecry') && card.effects && card.id !== 'shudderwock') p.battlecriesPlayedGame.push(card.id);
 	fireOngoing(state, pi, 'card-played', { played: card });
 	if (wasRightmost) fireOngoing(state, pi, 'rightmost-card-played', { played: card }); // Stargazer Luna
+	if (card.combo) fireOngoing(state, pi, 'combo-card-played', { played: card }); // Whirlkick Master
 	for (const o of opponentsOf(state, pi)) fireOngoing(state, o, 'enemy-card-played', { played: card, caster: pi }); // Fel Reaver
 	corruptHandCards(state, pi, playedCost);
 	// Patches the Pirate: playing a Pirate pulls Patches out of your deck
@@ -7759,6 +7813,7 @@ export function endTurn(state) {
 	p.nextSpellDamageBonus = 0; p.nextSpellDoubleCast = false; p.spellsLifestealThisTurn = false; // Boomsday next-spell riders are "this turn"
 	p.healHarmThisTurn = false; // Auchenai Phantasm only lasts this turn
 	p.heroPowerDamageNext = 0; // Daring Fire-Eater only lasts this turn
+	for (const pl of state.players) for (const c of pl.board) if (c.turnAtkDebuff) { c.attack += c.turnAtkDebuff; c.turnAtkDebuff = 0; emit(state, { type: 'buff', uid: c.uid, attack: c.attack, hp: hp(c) }); } // Quicksand Elemental restores
 
 	// Impulsive creatures refuse to end the turn without swinging
 	for (const c of [...p.board]) {
