@@ -363,6 +363,7 @@ export function createGame(cardsById, rng = Math.random, playerDeckIds = null, p
 		freeSpellsThisTurn: false,
 		spellsCostOneThisTurn: false, // Ysiel Windsinger: your spells cost (1) this turn
 		nextComboDiscount: 0, // Foxy Fraud: your next Combo card this turn costs less
+		corruptedPlayedIds: [], // Y'Shaarj: Corrupted cards you've played this game
 		mana: { cur: 1, max: 1, bonus: 0 },
 		coins: 0,
 		diedThisTurn: 0,
@@ -2035,7 +2036,9 @@ function runSecretEffects(state, pi, effects, ctx) {
 					const m = ctx.minion;
 					if (m && m !== ctx.self && (!e.tribe || (m.tribe || '').includes(e.tribe))
 						&& (!e.requireKeyword || (m.keywords || []).includes(e.requireKeyword))
+						&& (!e.ifName || m.name === e.ifName)
 						&& (e.maxHealth == null || hp(m) <= e.maxHealth)) {
+						if (e.grant && !m.keywords.includes(e.grant)) { m.keywords.push(e.grant); if (e.grant === KW.DIVINE_SHIELD) m.shield = true; } // Lothraxion
 						m.attack += e.attack || 0; m.maxHealth += e.health || 0;
 						emit(state, { type: 'buff', uid: m.uid, attack: m.attack, hp: hp(m) });
 					}
@@ -3499,8 +3502,10 @@ function execEffects(state, pi, effects, target, source) {
 			// Hunter's Call: cards in hand permanently cost (N) less
 			for (const c of state.players[pi].hand) c.cost = Math.max(0, c.cost - (e.value || 1));
 		} else if (e.type === 'mill') {
-			// Devour: burn the top N cards of an opponent's deck (target 'all' = everyone)
+			// Devour: burn the top N cards of an opponent's deck (target 'all' = everyone,
+			// 'self' = your own deck — Tickatus)
 			if (e.target === 'all') { for (let s2 = 0; s2 < state.players.length; s2++) for (let i = 0; i < (e.value || 1); i++) state.players[s2].deck.pop(); }
+			else if (e.target === 'self') { for (let i = 0; i < (e.value || 1); i++) state.players[pi].deck.pop(); }
 			else { const victim = enemyHero(); if (victim != null) { for (let i = 0; i < (e.value || 1); i++) state.players[victim].deck.pop(); } }
 		} else if (e.type === 'discard-random') {
 			const p = state.players[pi];
@@ -4008,6 +4013,7 @@ function execEffects(state, pi, effects, target, source) {
 			else if (e.if.hasSpellDamage) ok = staticValue(p, 'spell-damage') > 0; // Sorcerous Substitute
 			else if (e.if.hasArmor) ok = (p.armor || 0) > 0; // Ironclad
 			else if (e.if.holdingSecret) ok = p.hand.some(c => c.secret); // Sparkjoy Cheat
+			else if (e.if.spellsGame != null) ok = (p.spellsPlayedTotal || 0) >= e.if.spellsGame; // Yogg-Saron, Master of Fate
 			else if (e.if.hpDamageGame != null) ok = (p.hpDamageGame || 0) >= e.if.hpDamageGame; // Jan'alai, the Dragonhawk
 			else if (e.if.deckEmpty) ok = p.deck.length === 0; // Chef Nomi
 			else if (e.if.holdingOtherClass) ok = p.hand.some(c => c !== source && c.cardClass && c.cardClass !== 'neutral' && c.cardClass !== p.heroClass); // Underbelly Fence
@@ -5318,6 +5324,61 @@ function execEffects(state, pi, effects, target, source) {
 			const before = new Set(p.hand.map(c => c.uid));
 			drawCards(state, pi, 1);
 			for (const c of p.hand) if (!before.has(c.uid)) c.stiltReward = e.value || 4;
+		} else if (e.type === 'copy-hand-edges') {
+			// Zai, the Incredible: add copies of the leftmost and rightmost cards in hand
+			const p = state.players[pi];
+			const others = p.hand.filter(c => c !== source);
+			const picks = others.length ? [...new Set([others[0], others[others.length - 1]])] : [];
+			for (const c of picks) { if (p.hand.length >= MAX_HAND) break; const inst = instantiate(state.cardsById[c.id] || c, pi); inst.zone = 'hand'; p.hand.push(inst); emit(state, { type: 'conjure', player: pi, card: inst, color: null }); }
+		} else if (e.type === 'draw-minion-buff') {
+			// Claw Machine: draw a minion and give it +X/+X
+			const p = state.players[pi];
+			const before = new Set(p.hand.map(c => c.uid));
+			execEffects(state, pi, [{ type: 'tutor', cardType: 'creature', count: 1 }], target, source);
+			for (const c of p.hand) if (!before.has(c.uid) && c.type === 'creature') { c.attack += e.attack || 0; c.maxHealth += e.health || 0; emit(state, { type: 'buff', uid: c.uid, attack: c.attack, hp: hp(c) }); }
+		} else if (e.type === 'draw-all-copies-random') {
+			// Grand Empress Shek'zara: pick a random card in your deck, draw all copies of it
+			const p = state.players[pi];
+			if (p.deck.length) {
+				const pickId = p.deck[Math.floor(state.rng() * p.deck.length)];
+				let guard = 30;
+				while (p.deck.includes(pickId) && p.hand.length < MAX_HAND && guard-- > 0) {
+					const i = p.deck.indexOf(pickId); p.deck.splice(i, 1);
+					const nc = instantiate(state.cardsById[pickId], pi); nc.zone = 'hand'; p.hand.push(nc);
+					emit(state, { type: 'conjure', player: pi, card: nc, color: null });
+				}
+			}
+		} else if (e.type === 'summon-from-deck-suicide') {
+			// Maxima Blastenheimer: summon a minion from your deck; it attacks the enemy hero, then dies
+			const p = state.players[pi];
+			const idxs = p.deck.map((id, i) => [id, i]).filter(([id]) => state.cardsById[id]?.type === 'creature');
+			if (idxs.length) {
+				const [id, di] = idxs[Math.floor(state.rng() * idxs.length)];
+				p.deck.splice(di, 1);
+				const c = summon(state, pi, state.cardsById[id]);
+				if (c) { const foe = enemies[0]; if (foe != null) resolveCombat(state, pi, c.uid, { type: 'hero', player: foe }); if (!isDead(c)) { c.damage = c.maxHealth; emit(state, { type: 'destroy', uid: c.uid }); sweepDeaths(state); } }
+			}
+		} else if (e.type === 'resurrect-per-tribe') {
+			// N'Zoth, God of the Deep: resurrect one friendly dead minion of each tribe
+			const p = state.players[pi];
+			const seen = new Set();
+			for (const id of p.deathLogIds) {
+				const def = state.cardsById[id];
+				if (!def || def.type !== 'creature') continue;
+				const tribe = def.tribe || 'none';
+				if (seen.has(tribe)) continue;
+				seen.add(tribe);
+				summon(state, pi, def);
+			}
+		} else if (e.type === 'readd-corrupted-free') {
+			// Y'Shaarj, the Defiler: add a copy of each Corrupted card played this game, cost 0 this turn
+			const p = state.players[pi];
+			for (const id of p.corruptedPlayedIds || []) {
+				if (p.hand.length >= MAX_HAND) break;
+				const def = state.cardsById[id]; if (!def) continue;
+				const nc = instantiate(def, pi); nc.zone = 'hand'; nc.cost = 0; nc.freeThisTurn = true; p.hand.push(nc);
+				emit(state, { type: 'conjure', player: pi, card: nc, color: null });
+			}
 		} else if (e.type === 'cast-secret-from-hand') {
 			// Sparkjoy Cheat: cast a Secret from your hand (install it), then run `then`
 			const p = state.players[pi];
@@ -7078,6 +7139,7 @@ export function playCard(state, pi, cardUid, target, choice, position, useAlt, k
 	const playedCost = effectiveCost(state, pi, card);
 	if (card.combo && p.nextComboDiscount > 0) p.nextComboDiscount = 0; // Foxy Fraud discount is spent by the next Combo card
 	if (card.stiltReward) { p.heroTempAttack += card.stiltReward; emit(state, { type: 'heroAttack', player: pi, attack: heroAttackValue(p) }); card.stiltReward = 0; } // Stiltstepper
+	if (typeof card.id === 'string' && card.id.endsWith('_corrupted')) (p.corruptedPlayedIds = p.corruptedPlayedIds || []).push(card.id); // Y'Shaarj tracks Corrupted cards played
 	// Ward: targeting an enemy warded creature costs extra — unaffordable = illegal
 	const ward = wardOf(state, pi, target);
 	if (ward?.mana && availableMana(p) < effectiveCost(state, pi, card) + ward.mana) return false;

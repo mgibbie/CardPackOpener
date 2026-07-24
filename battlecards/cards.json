@@ -85854,6 +85854,459 @@
         }
       ],
       "description": "When drawn, summon a 3/3 Plush Bear."
+    },
+    {
+      "id": "keywarden_ivory",
+      "name": "Keywarden Ivory",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "neutral",
+      "attack": 4,
+      "health": 5,
+      "rarity": "legendary",
+      "set": "DARKMOON_FAIRE",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Discover a Dual Class spell from any class. Spellburst: Get another copy.",
+      "effects": [
+        {
+          "type": "discover",
+          "cardType": "spell"
+        }
+      ],
+      "ongoing": {
+        "on": "spell-played",
+        "once": true,
+        "effects": [
+          {
+            "type": "conjure-random",
+            "cardType": "spell"
+          }
+        ]
+      }
+    },
+    {
+      "id": "lothraxion_the_redeemed",
+      "name": "Lothraxion the Redeemed",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "paladin",
+      "attack": 5,
+      "health": 5,
+      "rarity": "legendary",
+      "set": "DARKMOON_FAIRE",
+      "tribe": "Demon",
+      "description": "Battlecry: For the rest of the game, after you summon a Silver Hand Recruit, give it Divine Shield.",
+      "ongoing": {
+        "on": "summoned",
+        "effects": [
+          {
+            "type": "buff-summoned-if-tribe",
+            "ifName": "Silver Hand Recruit",
+            "grant": "divine_shield"
+          }
+        ]
+      }
+    },
+    {
+      "id": "trampling_rhino",
+      "name": "Trampling Rhino",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "hunter",
+      "attack": 5,
+      "health": 5,
+      "rarity": "rare",
+      "set": "DARKMOON_FAIRE",
+      "tribe": "Beast",
+      "keywords": [
+        "rush",
+        "trample"
+      ],
+      "description": "Rush. After this attacks and kills a minion, excess damage hits the enemy hero."
+    },
+    {
+      "id": "zai_the_incredible",
+      "name": "Zai, the Incredible",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "demonhunter",
+      "attack": 6,
+      "health": 4,
+      "rarity": "legendary",
+      "set": "DARKMOON_FAIRE",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Copy the left- and right-most cards in your hand.",
+      "effects": [
+        {
+          "type": "copy-hand-edges"
+        }
+      ]
+    },
+    {
+      "id": "claw_machine",
+      "name": "Claw Machine",
+      "type": "creature",
+      "cost": 6,
+      "cardClass": "neutral",
+      "attack": 6,
+      "health": 3,
+      "rarity": "common",
+      "set": "DARKMOON_FAIRE",
+      "tribe": "Mech",
+      "keywords": [
+        "rush",
+        "deathrattle"
+      ],
+      "description": "Rush. Deathrattle: Draw a minion and give it +3/+3.",
+      "deathrattle": [
+        {
+          "type": "draw-minion-buff",
+          "attack": 3,
+          "health": 3
+        }
+      ]
+    },
+    {
+      "id": "grand_empress_shekzara",
+      "name": "Grand Empress Shek'zara",
+      "type": "creature",
+      "cost": 6,
+      "cardClass": "rogue",
+      "attack": 5,
+      "health": 7,
+      "rarity": "legendary",
+      "set": "DARKMOON_FAIRE",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Discover a card in your deck and draw all copies of it.",
+      "effects": [
+        {
+          "type": "draw-all-copies-random"
+        }
+      ]
+    },
+    {
+      "id": "maxima_blastenheimer",
+      "name": "Maxima Blastenheimer",
+      "type": "creature",
+      "cost": 6,
+      "cardClass": "hunter",
+      "attack": 4,
+      "health": 4,
+      "rarity": "legendary",
+      "set": "DARKMOON_FAIRE",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Summon a minion from your deck. It attacks the enemy hero, then dies.",
+      "effects": [
+        {
+          "type": "summon-from-deck-suicide"
+        }
+      ]
+    },
+    {
+      "id": "sayge_seer_of_darkmoon",
+      "name": "Sayge, Seer of Darkmoon",
+      "type": "creature",
+      "cost": 6,
+      "cardClass": "mage",
+      "attack": 5,
+      "health": 5,
+      "rarity": "legendary",
+      "set": "DARKMOON_FAIRE",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Draw 1 card. (Upgraded for each friendly Secret that has triggered this game!)",
+      "effects": [
+        {
+          "type": "draw",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "tickatus",
+      "name": "Tickatus",
+      "type": "creature",
+      "cost": 6,
+      "cardClass": "warlock",
+      "attack": 8,
+      "health": 8,
+      "rarity": "legendary",
+      "set": "DARKMOON_FAIRE",
+      "tribe": "Demon",
+      "keywords": [
+        "battlecry"
+      ],
+      "corrupt": "tickatus_corrupted",
+      "description": "Battlecry: Remove the top 5 cards from your deck. Corrupt: Your opponent's deck instead.",
+      "effects": [
+        {
+          "type": "mill",
+          "value": 5,
+          "target": "self"
+        }
+      ]
+    },
+    {
+      "id": "darkmoon_tonk",
+      "name": "Darkmoon Tonk",
+      "type": "creature",
+      "cost": 7,
+      "cardClass": "hunter",
+      "attack": 8,
+      "health": 5,
+      "rarity": "rare",
+      "set": "DARKMOON_FAIRE",
+      "tribe": "Mech",
+      "keywords": [
+        "deathrattle"
+      ],
+      "description": "Deathrattle: Fire four missiles at random enemies that deal 2 damage each.",
+      "deathrattle": [
+        {
+          "type": "random-damage",
+          "count": 4,
+          "value": 2,
+          "pool": "enemies"
+        }
+      ]
+    },
+    {
+      "id": "silas_darkmoon",
+      "name": "Silas Darkmoon",
+      "type": "creature",
+      "cost": 7,
+      "cardClass": "neutral",
+      "attack": 4,
+      "health": 4,
+      "rarity": "legendary",
+      "set": "DARKMOON_FAIRE",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Choose a direction to rotate all minions.",
+      "effects": [
+        {
+          "type": "mind-control-random"
+        }
+      ]
+    },
+    {
+      "id": "ghuun_the_blood_god",
+      "name": "G'huun the Blood God",
+      "type": "creature",
+      "cost": 8,
+      "cardClass": "priest",
+      "attack": 8,
+      "health": 8,
+      "rarity": "legendary",
+      "set": "DARKMOON_FAIRE",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Draw 2 cards. They cost Health instead of Mana.",
+      "effects": [
+        {
+          "type": "draw",
+          "value": 2
+        }
+      ]
+    },
+    {
+      "id": "high_exarch_yrel",
+      "name": "High Exarch Yrel",
+      "type": "creature",
+      "cost": 8,
+      "cardClass": "paladin",
+      "attack": 7,
+      "health": 5,
+      "rarity": "legendary",
+      "set": "DARKMOON_FAIRE",
+      "tribe": "Draenei",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: If your deck has no Neutral cards, gain Rush, Lifesteal, Taunt, and Divine Shield.",
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "deckNoNeutral": true
+          },
+          "then": [
+            {
+              "type": "grant",
+              "keyword": "rush",
+              "target": "self"
+            },
+            {
+              "type": "grant",
+              "keyword": "lifesteal",
+              "target": "self"
+            },
+            {
+              "type": "grant",
+              "keyword": "taunt",
+              "target": "self"
+            },
+            {
+              "type": "grant",
+              "keyword": "divine_shield",
+              "target": "self"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "blood_of_ghuun",
+      "name": "Blood of G'huun",
+      "type": "creature",
+      "cost": 9,
+      "cardClass": "priest",
+      "attack": 8,
+      "health": 8,
+      "rarity": "epic",
+      "set": "DARKMOON_FAIRE",
+      "tribe": "Elemental",
+      "keywords": [
+        "taunt"
+      ],
+      "description": "Taunt. At the end of your turn, summon a 5/5 copy of a minion in your deck.",
+      "ongoing": {
+        "on": "turn-end",
+        "effects": [
+          {
+            "type": "summon-deck-copy",
+            "attack": 5,
+            "health": 5
+          }
+        ]
+      }
+    },
+    {
+      "id": "nzoth_god_of_the_deep",
+      "name": "N'Zoth, God of the Deep",
+      "type": "creature",
+      "cost": 9,
+      "cardClass": "neutral",
+      "attack": 5,
+      "health": 7,
+      "rarity": "legendary",
+      "set": "DARKMOON_FAIRE",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Resurrect a friendly minion of each minion type.",
+      "effects": [
+        {
+          "type": "resurrect-per-tribe"
+        }
+      ]
+    },
+    {
+      "id": "cthun_the_shattered",
+      "name": "C'Thun, the Shattered",
+      "type": "creature",
+      "cost": 10,
+      "cardClass": "neutral",
+      "attack": 6,
+      "health": 6,
+      "rarity": "legendary",
+      "set": "DARKMOON_FAIRE",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Deal 30 damage randomly split among all enemies.",
+      "effects": [
+        {
+          "type": "random-damage",
+          "count": 30,
+          "value": 1,
+          "pool": "enemies"
+        }
+      ]
+    },
+    {
+      "id": "yshaarj_the_defiler",
+      "name": "Y'Shaarj, the Defiler",
+      "type": "creature",
+      "cost": 10,
+      "cardClass": "neutral",
+      "attack": 10,
+      "health": 10,
+      "rarity": "legendary",
+      "set": "DARKMOON_FAIRE",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Add a copy of each Corrupted card you've played this game to your hand. They cost (0) this turn.",
+      "effects": [
+        {
+          "type": "readd-corrupted-free"
+        }
+      ]
+    },
+    {
+      "id": "yogg_saron_master_of_fate",
+      "name": "Yogg-Saron, Master of Fate",
+      "type": "creature",
+      "cost": 10,
+      "cardClass": "neutral",
+      "attack": 7,
+      "health": 5,
+      "rarity": "legendary",
+      "set": "DARKMOON_FAIRE",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: If you've cast 10 spells this game, spin the Wheel of Yogg-Saron.",
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "spellsGame": 10
+          },
+          "then": [
+            {
+              "type": "cast-random-spell",
+              "count": 4
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "tickatus_corrupted",
+      "name": "Tickatus",
+      "type": "creature",
+      "cost": 6,
+      "cardClass": "warlock",
+      "attack": 8,
+      "health": 8,
+      "rarity": "legendary",
+      "set": "DARKMOON_FAIRE",
+      "tribe": "Demon",
+      "keywords": [
+        "battlecry"
+      ],
+      "token": true,
+      "collectible": false,
+      "description": "Battlecry: Remove the top 5 cards from your opponent's deck.",
+      "effects": [
+        {
+          "type": "mill",
+          "value": 5
+        }
+      ]
     }
   ]
 }
