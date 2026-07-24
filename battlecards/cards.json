@@ -79447,6 +79447,456 @@
         "charge"
       ],
       "description": "Charge."
+    },
+    {
+      "id": "bloodsail_flybooter",
+      "name": "Bloodsail Flybooter",
+      "type": "creature",
+      "cost": 1,
+      "cardClass": "rogue",
+      "attack": 1,
+      "health": 1,
+      "rarity": "common",
+      "set": "DRAGONS",
+      "tribe": "Pirate",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Add two 1/1 Pirates to your hand.",
+      "effects": [
+        {
+          "type": "add-card",
+          "id": "drg_sky_pirate",
+          "count": 2
+        }
+      ]
+    },
+    {
+      "id": "hot_air_balloon",
+      "name": "Hot Air Balloon",
+      "type": "creature",
+      "cost": 1,
+      "cardClass": "neutral",
+      "attack": 1,
+      "health": 2,
+      "rarity": "common",
+      "set": "DRAGONS",
+      "description": "At the start of your turn, gain +1 Health.",
+      "ongoing": {
+        "on": "turn-start",
+        "effects": [
+          {
+            "type": "buff-self",
+            "attack": 0,
+            "health": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "violet_spellwing",
+      "name": "Violet Spellwing",
+      "type": "creature",
+      "cost": 1,
+      "cardClass": "mage",
+      "attack": 2,
+      "health": 1,
+      "rarity": "common",
+      "set": "DRAGONS",
+      "keywords": [
+        "deathrattle"
+      ],
+      "description": "Deathrattle: Add an 'Arcane Missiles' spell to your hand.",
+      "deathrattle": [
+        {
+          "type": "add-card",
+          "id": "drg_arcane_missiles"
+        }
+      ]
+    },
+    {
+      "id": "tasty_flyfish",
+      "name": "Tasty Flyfish",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "neutral",
+      "attack": 2,
+      "health": 2,
+      "rarity": "common",
+      "set": "DRAGONS",
+      "tribe": "Murloc",
+      "keywords": [
+        "deathrattle"
+      ],
+      "description": "Deathrattle: Give a Dragon in your hand +2/+2.",
+      "deathrattle": [
+        {
+          "type": "buff-hand",
+          "tribe": "Dragon",
+          "random": true,
+          "attack": 2,
+          "health": 2
+        }
+      ]
+    },
+    {
+      "id": "dragon_breeder",
+      "name": "Dragon Breeder",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "neutral",
+      "attack": 2,
+      "health": 3,
+      "rarity": "rare",
+      "set": "DRAGONS",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Choose a friendly Dragon. Add a copy of it to your hand.",
+      "effects": [
+        {
+          "type": "copy-to-hand",
+          "target": "friendly-creature",
+          "tribe": "Dragon"
+        }
+      ]
+    },
+    {
+      "id": "goboglide_tech",
+      "name": "Goboglide Tech",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "neutral",
+      "attack": 3,
+      "health": 3,
+      "rarity": "common",
+      "set": "DRAGONS",
+      "tribe": "Mech",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: If you control a Mech, gain +1/+1.",
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "controlOtherTribe": "Mech"
+          },
+          "then": [
+            {
+              "type": "buff-self",
+              "attack": 1,
+              "health": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "fire_hawk",
+      "name": "Fire Hawk",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "neutral",
+      "attack": 1,
+      "health": 3,
+      "rarity": "common",
+      "set": "DRAGONS",
+      "tribe": "Elemental",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Gain +1 Attack for each card in your opponent's hand.",
+      "effects": [
+        {
+          "type": "buff-self",
+          "per": "enemy-hand",
+          "attack": 1,
+          "health": 0
+        }
+      ]
+    },
+    {
+      "id": "bad_luck_albatross",
+      "name": "Bad Luck Albatross",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "neutral",
+      "attack": 4,
+      "health": 3,
+      "rarity": "rare",
+      "set": "DRAGONS",
+      "tribe": "Beast",
+      "keywords": [
+        "deathrattle"
+      ],
+      "description": "Deathrattle: Shuffle two 1/1 Albatross into your opponent's deck.",
+      "deathrattle": [
+        {
+          "type": "shuffle-into-deck",
+          "id": "drg_albatross",
+          "count": 2,
+          "enemy": true
+        }
+      ]
+    },
+    {
+      "id": "skybarge",
+      "name": "Skybarge",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "warrior",
+      "attack": 2,
+      "health": 5,
+      "rarity": "rare",
+      "set": "DRAGONS",
+      "tribe": "Mech",
+      "description": "After you summon a Pirate, deal 2 damage to a random enemy.",
+      "ongoing": {
+        "on": "summoned",
+        "effects": [
+          {
+            "type": "if-summoned-tribe-then",
+            "tribe": "Pirate",
+            "then": [
+              {
+                "type": "random-damage",
+                "value": 2,
+                "count": 1,
+                "pool": "enemies"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "dragonmaw_poacher",
+      "name": "Dragonmaw Poacher",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "neutral",
+      "attack": 4,
+      "health": 4,
+      "rarity": "rare",
+      "set": "DRAGONS",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: If your opponent controls a Dragon, gain +2/+2 and Rush.",
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "enemyControlTribe": "Dragon"
+          },
+          "then": [
+            {
+              "type": "buff-self",
+              "attack": 2,
+              "health": 2
+            },
+            {
+              "type": "grant",
+              "target": "self",
+              "keyword": "rush"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "zuldrak_ritualist",
+      "name": "Zul'Drak Ritualist",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "neutral",
+      "attack": 3,
+      "health": 9,
+      "rarity": "rare",
+      "set": "DRAGONS",
+      "keywords": [
+        "taunt",
+        "battlecry"
+      ],
+      "description": "Taunt. Battlecry: Summon three random 2-Cost minions for your opponent.",
+      "effects": [
+        {
+          "type": "summon-random",
+          "cost": 2,
+          "count": 3,
+          "forEnemy": true
+        }
+      ]
+    },
+    {
+      "id": "platebreaker",
+      "name": "Platebreaker",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "neutral",
+      "attack": 5,
+      "health": 5,
+      "rarity": "common",
+      "set": "DRAGONS",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Destroy your opponent's Armor. Deal that much damage to them.",
+      "effects": [
+        {
+          "type": "destroy-enemy-armor",
+          "thenDamage": true
+        }
+      ]
+    },
+    {
+      "id": "skyfin",
+      "name": "Skyfin",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "neutral",
+      "attack": 3,
+      "health": 3,
+      "rarity": "epic",
+      "set": "DRAGONS",
+      "tribe": "Murloc",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: If you're holding a Dragon, summon two 1/1 Murlocs.",
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "holdingTribe": "Dragon"
+          },
+          "then": [
+            {
+              "type": "summon",
+              "count": 2,
+              "attack": 1,
+              "health": 1,
+              "name": "Murloc",
+              "tribe": "Murloc"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "cobalt_spellkin",
+      "name": "Cobalt Spellkin",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "neutral",
+      "attack": 3,
+      "health": 5,
+      "rarity": "rare",
+      "set": "DRAGONS",
+      "tribe": "Dragon",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Add two 1-Cost spells to your hand.",
+      "effects": [
+        {
+          "type": "conjure-random",
+          "cardType": "spell",
+          "cost": 1,
+          "count": 2
+        }
+      ]
+    },
+    {
+      "id": "camouflaged_dirigible",
+      "name": "Camouflaged Dirigible",
+      "type": "creature",
+      "cost": 6,
+      "cardClass": "neutral",
+      "attack": 6,
+      "health": 6,
+      "rarity": "common",
+      "set": "DRAGONS",
+      "tribe": "Mech",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Give your other Mechs Stealth until your next turn.",
+      "effects": [
+        {
+          "type": "grant",
+          "target": "friendly-others",
+          "ifTribe": "Mech",
+          "keyword": "stealth"
+        }
+      ]
+    },
+    {
+      "id": "nozdormu_the_timeless",
+      "name": "Nozdormu the Timeless",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "paladin",
+      "attack": 8,
+      "health": 8,
+      "rarity": "legendary",
+      "set": "DRAGONS",
+      "tribe": "Dragon",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Set each player to 10 Mana Crystals.",
+      "effects": [
+        {
+          "type": "set-mana-all",
+          "value": 10
+        }
+      ]
+    },
+    {
+      "id": "drg_sky_pirate",
+      "name": "Sky Pirate",
+      "type": "creature",
+      "cost": 1,
+      "token": true,
+      "tribe": "Pirate",
+      "attack": 1,
+      "health": 1,
+      "rarity": "common",
+      "set": "DRAGONS",
+      "description": "A 1/1 Pirate."
+    },
+    {
+      "id": "drg_albatross",
+      "name": "Albatross",
+      "type": "creature",
+      "cost": 1,
+      "token": true,
+      "tribe": "Beast",
+      "attack": 1,
+      "health": 1,
+      "rarity": "common",
+      "set": "DRAGONS",
+      "description": "A 1/1 Albatross."
+    },
+    {
+      "id": "drg_arcane_missiles",
+      "name": "Arcane Missiles",
+      "type": "sorcery",
+      "cost": 1,
+      "token": true,
+      "rarity": "common",
+      "set": "DRAGONS",
+      "description": "Deal 3 damage randomly split among enemies.",
+      "effects": [
+        {
+          "type": "random-damage",
+          "value": 1,
+          "count": 3,
+          "pool": "enemies"
+        }
+      ]
     }
   ]
 }

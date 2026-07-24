@@ -376,6 +376,7 @@ export function createGame(cardsById, rng = Math.random, playerDeckIds = null, p
 		battlecriesPlayedGame: [],// Shudderwock: Battlecry card ids played this game
 		deckInnerFire: false,     // Lady in White: drawn creatures get Attack = Health
 		pogoCount: 0,             // Pogo-Hopper: how many you've played this game
+		invokeCount: 0,           // Descent of Dragons: times you've Invoked Galakrond
 		nextSpellDamageBonus: 0,  // Celestial Emissary: your next spell has +N Spell Damage
 		nextSpellDoubleCast: false, // Electra Stormsurge: your next spell casts twice
 		spellsLifestealThisTurn: false, // Omega Mind: your spells have Lifesteal this turn
@@ -1986,6 +1987,12 @@ function runSecretEffects(state, pi, effects, ctx) {
 					if (m && m !== ctx.self) { m.maxHealth = m.attack; m.damage = 0; emit(state, { type: 'buff', uid: m.uid, attack: m.attack, hp: hp(m) }); }
 					break;
 				}
+				case 'if-summoned-tribe-then': {
+					// Skybarge: after you summon a creature of a tribe, run an effect
+					const m = ctx.minion;
+					if (m && m !== ctx.self && (!e.tribe || (m.tribe || '').includes(e.tribe))) execEffects(state, pi, JSON.parse(JSON.stringify(e.then || [])), null, ctx.self);
+					break;
+				}
 				case 'buff-summoned-if-tribe': {
 					// Spirit of the Lynx: you summoned a creature of a tribe -> buff it
 					const m = ctx.minion;
@@ -2793,10 +2800,11 @@ function execEffects(state, pi, effects, target, source) {
 			}
 		} else if (e.type === 'grant') {
 			const grantTo = e.target === 'friendly-creatures' ? state.players[pi].board
+				: e.target === 'friendly-others' ? state.players[pi].board.filter(c => c !== source) // Camouflaged Dirigible
 				: e.target === 'self' ? (source && source.zone === 'board' && !isDead(source) ? [source] : [])
 				: [chosenCreature()].filter(Boolean);
 			// tribe-restricted grants never fall back to a random creature
-			if (!grantTo.length && e.target !== 'friendly-creatures' && e.target !== 'self' && !e.tribe) {
+			if (!grantTo.length && e.target !== 'friendly-creatures' && e.target !== 'friendly-others' && e.target !== 'self' && !e.tribe) {
 				// triggered grants without a chosen target bless a random friendly
 				const pool = state.players[pi].board.filter(c => !isDead(c));
 				if (pool.length) grantTo.push(pool[Math.floor(state.rng() * pool.length)]);
@@ -3460,6 +3468,7 @@ function execEffects(state, pi, effects, target, source) {
 				else if (e.per === 'hand-spells') n = state.players[pi].hand.filter(c => isSpellType(c)).length; // Brainstormer
 				else if (e.per === 'pogos-played') n = state.players[pi].pogoCount || 0; // Pogo-Hopper
 				else if (e.per === 'hero-damage-taken') n = state.players[pi].heroDamageTakenThisTurn || 0; // Nethersoul Buster
+				else if (e.per === 'enemy-hand') n = opponentsOf(state, pi).reduce((s, o) => s + state.players[o].hand.length, 0); // Fire Hawk
 				else if (e.per === 'cards-played') n = state.players[pi].cardsPlayedThisTurn;
 				else if (e.per === 'enemy-deathrattle') n = state.players.reduce((s, pl, idx) =>
 					idx === pi ? s : s + pl.board.filter(c => !isDead(c) && c.keywords.includes('deathrattle')).length, 0);
@@ -3854,6 +3863,8 @@ function execEffects(state, pi, effects, target, source) {
 			else if (e.if.unspentMana) ok = availableMana(p) > 0; // Crystal Merchant
 			else if (e.if.controlCountId) ok = p.board.filter(c => !isDead(c) && c.id === e.if.controlCountId.id).length >= e.if.controlCountId.count; // Desert Obelisk
 			else if (e.if.boardFullOfId) ok = p.board.filter(c => !isDead(c) && c.type !== 'location').length >= 7 && p.board.every(c => isDead(c) || c.type === 'location' || c.id === e.if.boardFullOfId); // Mogu Cultist
+			else if (e.if.enemyControlTribe) ok = opponentsOf(state, pi).some(o => state.players[o].board.some(c => !isDead(c) && (c.tribe || '').includes(e.if.enemyControlTribe))); // Dragonmaw Poacher
+			else if (e.if.invokedTwice) ok = (p.invokeCount || 0) >= 2; // Descent of Dragons "Invoked twice"
 			execEffects(state, pi, ok ? e.then : (e.else || []), target, source);
 		} else if (e.type === 'damage-then') {
 			// deal damage, then branch on whether the creature survived
@@ -4102,6 +4113,18 @@ function execEffects(state, pi, effects, target, source) {
 				const horror = instantiate({ id: 'dal_drustvar_horror', name: 'Drustvar Horror', type: 'creature', cost: 5, token: true, rarity: 'epic', set: 'DALARAN', attack: 5, health: 5, keywords: bc.length ? ['battlecry'] : [], description: '5/5. ' + chosen.map(s => s.name).join(', '), effects: bc }, pi);
 				horror.zone = 'hand'; p.hand.push(horror); emit(state, { type: 'conjure', player: pi, card: horror, color: null });
 			}
+		} else if (e.type === 'destroy-enemy-armor') {
+			// Platebreaker: destroy the opponent's Armor (and deal that much, if asked)
+			for (const o of enemies) {
+				const amt = state.players[o].armor;
+				state.players[o].armor = 0;
+				if (amt > 0) { emit(state, { type: 'armor', player: o, amount: -amt, armor: 0 }); if (e.thenDamage) damageHero(state, o, amt, pi); }
+			}
+		} else if (e.type === 'invoke') {
+			// Descent of Dragons: Invoke Galakrond (tracked as a counter; grants a small bonus)
+			const p = state.players[pi];
+			p.invokeCount = (p.invokeCount || 0) + (e.times || 1);
+			if (source && source.zone === 'board' && !isDead(source) && (e.attack || e.health)) buffCreature(source, e.attack || 0, e.health || 0);
 		} else if (e.type === 'duplicate-hand') {
 			// Elise the Enlightened: add a copy of each other card in your hand
 			const pp = state.players[pi];
