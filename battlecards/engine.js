@@ -357,6 +357,9 @@ export function createGame(cardsById, rng = Math.random, playerDeckIds = null, p
 		heroPowerFreeGame: false, // Raza the Chained: your Hero Power costs (0) this game
 		nextMurlocFree: false,    // Seadevil Stinger: the next Murloc this turn is free
 		nextSecretCost: null,     // Kabal Lackey: the next Secret this turn costs this much
+		elementalThisTurn: false, // played an Elemental this turn
+		elementalLastTurn: false, // played an Elemental on your previous turn (Un'Goro)
+		elementalsPlayedGame: 0,  // Ozruk: total Elementals played this game
 		eliminated: false,
 	});
 
@@ -3119,6 +3122,7 @@ function execEffects(state, pi, effects, target, source) {
 					idx === pi ? s : s + pl.board.filter(c => !isDead(c) && c.keywords.includes('deathrattle')).length, 0);
 				else if (e.per === 'friendly-tribe') n = state.players[pi].board.filter(c => c !== source && !isDead(c) && (c.tribe || '').includes(e.tribe)).length; // Draenei Totemcarver
 				else if (e.per === 'enemy-creatures') n = state.players.reduce((s, pl, idx) => idx === pi ? s : s + pl.board.filter(c => !isDead(c) && c.type !== 'location').length, 0); // Cyclopian Horror
+				else if (e.per === 'elementals-game') n = state.players[pi].elementalsPlayedGame || 0; // Ozruk
 				if (n > 0) buffCreature(source, (e.attack || 0) * n, (e.health || 0) * n);
 			}
 		} else if (e.type === 'buff-self-random') {
@@ -3435,6 +3439,8 @@ function execEffects(state, pi, effects, target, source) {
 			else if (e.if.enemyHandSize != null) ok = opponentsOf(state, pi).some(o => state.players[o].hand.length >= e.if.enemyHandSize); // Leatherclad Hogleader
 			else if (e.if.controlHealth != null) ok = p.board.some(c => !isDead(c) && hp(c) >= e.if.controlHealth); // Fight Promoter
 			else if (e.if.selfAttack != null) ok = !!(source && source.attack >= e.if.selfAttack); // Meanstreet Marshal
+			else if (e.if.elementalLastTurn) ok = !!p.elementalLastTurn; // Thunder Lizard, Blazecaller, …
+			else if (e.if.holdingMinAttack != null) ok = p.hand.some(c => c.type === 'creature' && c.attack >= e.if.holdingMinAttack); // Elder Longneck
 			else if (e.if.controlStatic) ok = p.board.some(c => !isDead(c) && c.static?.type === e.if.controlStatic); // Master of Ceremonies: a Spell Damage minion
 			else if (e.if.maxHealthSelf != null) ok = p.life <= e.if.maxHealthSelf;
 			else if (e.if.targetFrozen) ok = !!(t && t.frozen);
@@ -3762,6 +3768,11 @@ function execEffects(state, pi, effects, target, source) {
 			for (const o of enemies) for (const c of state.players[o].board) {
 				if (c.stealthed || c.keywords.includes(KW.STEALTH)) { c.stealthed = false; c.keywords = c.keywords.filter(k => k !== KW.STEALTH); emit(state, { type: 'buff', uid: c.uid, attack: c.attack, hp: hp(c) }); }
 			}
+		} else if (e.type === 'summon-random-discarded') {
+			// Cruel Dinomancer: summon a random creature you discarded this game
+			const p = state.players[pi];
+			const ids = p.discardLogIds.filter(id => state.cardsById[id]?.type === 'creature');
+			if (ids.length) summon(state, pi, state.cardsById[ids[Math.floor(state.rng() * ids.length)]]);
 		} else if (e.type === 'summon-random-died-this-turn') {
 			// Onyx Bishop: resurrect a random friendly creature that died this turn
 			const p = state.players[pi];
@@ -4322,6 +4333,8 @@ function execEffects(state, pi, effects, target, source) {
 			} else if (e.cardClass === 'other') {
 				pool = pool.filter(d => d.cardClass && d.cardClass !== 'neutral'
 					&& d.cardClass !== p.heroClass);
+			} else if (e.cardClass) {
+				pool = pool.filter(d => d.cardClass === e.cardClass); // Lyra: a specific class
 			}
 			// `copies`: pick ONE match and add that same card N times; else N distinct rolls
 			const addTo = (own) => {
@@ -5243,6 +5256,8 @@ export function playCard(state, pi, cardUid, target, choice, position, useAlt, k
 	// one-shot "next X" discounts are spent when the matching card is played
 	if (card.type === 'creature' && (card.tribe || '').includes('Murloc')) p.nextMurlocFree = false;
 	if (card.secret) p.nextSecretCost = null;
+	// Un'Goro Elemental synergy: track that you played an Elemental this turn
+	if (card.type === 'creature' && (card.tribe || '').includes('Elemental')) { p.elementalThisTurn = true; p.elementalsPlayedGame = (p.elementalsPlayedGame || 0) + 1; }
 
 	if (card.type === 'creature' && card.magnetic && target?.type === 'creature'
 		&& (() => { const t = findCreature(state, target.uid);
@@ -6753,6 +6768,8 @@ export function endTurn(state) {
 		c.abilityUsedThisTurn = false;
 	}
 	emit(state, { type: 'turnStart', player: state.current, turnNumber: state.turnNumber });
+	// Un'Goro Elemental synergy: carry "played an Elemental" into this turn
+	{ const cp = state.players[state.current]; cp.elementalLastTurn = cp.elementalThisTurn; cp.elementalThisTurn = false; }
 	// in-hand "each turn" effects (Nerubian Prophet: cost -1; Shifter Zerus: transform)
 	const cur = state.players[state.current];
 	for (const c of cur.hand) {

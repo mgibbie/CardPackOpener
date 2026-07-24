@@ -36525,30 +36525,6 @@
       "set": "hsx"
     },
     {
-      "id": "flame_geyser",
-      "name": "Flame Geyser",
-      "cardClass": "mage",
-      "cost": 1,
-      "rarity": "common",
-      "type": "sorcery",
-      "effects": [
-        {
-          "type": "damage",
-          "value": 2,
-          "target": "any"
-        },
-        {
-          "type": "add-token",
-          "attack": 1,
-          "health": 2,
-          "name": "Elemental",
-          "tribe": "Elemental"
-        }
-      ],
-      "description": "Deal 2 damage to any target. Add a 1/2 Elemental token to your hand.",
-      "set": "hsx"
-    },
-    {
       "id": "gravelsnout_knight",
       "name": "Gravelsnout Knight",
       "cardClass": "neutral",
@@ -68851,6 +68827,460 @@
           "type": "heal",
           "value": 8,
           "target": "self"
+        }
+      ]
+    },
+    {
+      "id": "thunder_lizard",
+      "name": "Thunder Lizard",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "neutral",
+      "attack": 3,
+      "health": 3,
+      "rarity": "common",
+      "set": "UNGORO",
+      "tribe": "Elemental",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: If you played an Elemental last turn, Adapt.",
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "elementalLastTurn": true
+          },
+          "then": [
+            {
+              "type": "adapt"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "tolvir_stoneshaper",
+      "name": "Tol'vir Stoneshaper",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "neutral",
+      "attack": 3,
+      "health": 6,
+      "rarity": "rare",
+      "set": "UNGORO",
+      "tribe": "Elemental",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: If you played an Elemental last turn, gain Taunt and Divine Shield.",
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "elementalLastTurn": true
+          },
+          "then": [
+            {
+              "type": "grant",
+              "target": "self",
+              "keyword": "taunt"
+            },
+            {
+              "type": "grant",
+              "target": "self",
+              "keyword": "divine_shield"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "servant_of_kalimos",
+      "name": "Servant of Kalimos",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "neutral",
+      "attack": 5,
+      "health": 5,
+      "rarity": "rare",
+      "set": "UNGORO",
+      "tribe": "Elemental",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: If you played an Elemental last turn, Discover an Elemental.",
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "elementalLastTurn": true
+          },
+          "then": [
+            {
+              "type": "discover",
+              "cardType": "creature",
+              "tribe": "Elemental"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "blazecaller",
+      "name": "Blazecaller",
+      "type": "creature",
+      "cost": 6,
+      "cardClass": "neutral",
+      "attack": 6,
+      "health": 6,
+      "rarity": "epic",
+      "set": "UNGORO",
+      "tribe": "Elemental",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: If you played an Elemental last turn, deal 5 damage.",
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "elementalLastTurn": true
+          },
+          "then": [
+            {
+              "type": "damage",
+              "value": 5,
+              "target": "any"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "stone_sentinel",
+      "name": "Stone Sentinel",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "shaman",
+      "attack": 4,
+      "health": 4,
+      "rarity": "epic",
+      "set": "UNGORO",
+      "tribe": "Elemental",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: If you played an Elemental last turn, summon two 2/3 Rock Elementals.",
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "elementalLastTurn": true
+          },
+          "then": [
+            {
+              "type": "summon",
+              "count": 2,
+              "attack": 2,
+              "health": 3,
+              "name": "Rock Elemental",
+              "tribe": "Elemental"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "steam_surger",
+      "name": "Steam Surger",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "mage",
+      "attack": 5,
+      "health": 4,
+      "rarity": "rare",
+      "set": "UNGORO",
+      "tribe": "Elemental",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: If you played an Elemental last turn, add a 'Flame Geyser' to your hand.",
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "elementalLastTurn": true
+          },
+          "then": [
+            {
+              "type": "add-card",
+              "id": "flame_geyser"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "ozruk",
+      "name": "Ozruk",
+      "type": "creature",
+      "cost": 8,
+      "cardClass": "neutral",
+      "attack": 8,
+      "health": 8,
+      "rarity": "legendary",
+      "set": "UNGORO",
+      "tribe": "Elemental",
+      "keywords": [
+        "taunt",
+        "battlecry"
+      ],
+      "description": "Taunt. Battlecry: Gain +5 Health for each Elemental you played this game.",
+      "effects": [
+        {
+          "type": "buff-self",
+          "per": "elementals-game",
+          "attack": 0,
+          "health": 5
+        }
+      ]
+    },
+    {
+      "id": "crystalline_oracle",
+      "name": "Crystalline Oracle",
+      "type": "creature",
+      "cost": 1,
+      "cardClass": "priest",
+      "attack": 1,
+      "health": 2,
+      "rarity": "rare",
+      "set": "UNGORO",
+      "tribe": "Elemental",
+      "keywords": [
+        "deathrattle"
+      ],
+      "description": "Deathrattle: Copy a card from your opponent's deck and add it to your hand.",
+      "deathrattle": [
+        {
+          "type": "copy-from-enemy-deck"
+        }
+      ]
+    },
+    {
+      "id": "cruel_dinomancer",
+      "name": "Cruel Dinomancer",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "warlock",
+      "attack": 5,
+      "health": 5,
+      "rarity": "rare",
+      "set": "UNGORO",
+      "keywords": [
+        "deathrattle"
+      ],
+      "description": "Deathrattle: Summon a random creature you discarded this game.",
+      "deathrattle": [
+        {
+          "type": "summon-random-discarded"
+        }
+      ]
+    },
+    {
+      "id": "shellshifter",
+      "name": "Shellshifter",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "druid",
+      "attack": 3,
+      "health": 3,
+      "rarity": "rare",
+      "set": "UNGORO",
+      "tribe": "Beast",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Choose One - Become a 5/3 with Stealth; or a 3/5 with Taunt.",
+      "choices": [
+        {
+          "text": "5/3 Stealth",
+          "effects": [
+            {
+              "type": "buff-self",
+              "attack": 2,
+              "health": 0
+            },
+            {
+              "type": "grant",
+              "target": "self",
+              "keyword": "stealth"
+            }
+          ]
+        },
+        {
+          "text": "3/5 Taunt",
+          "effects": [
+            {
+              "type": "buff-self",
+              "attack": 0,
+              "health": 2
+            },
+            {
+              "type": "grant",
+              "target": "self",
+              "keyword": "taunt"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "elder_longneck",
+      "name": "Elder Longneck",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "druid",
+      "attack": 5,
+      "health": 1,
+      "rarity": "common",
+      "set": "UNGORO",
+      "tribe": "Beast",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: If you're holding a creature with 5 or more Attack, gain Stealth.",
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "holdingMinAttack": 5
+          },
+          "then": [
+            {
+              "type": "grant",
+              "target": "self",
+              "keyword": "stealth"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "razorpetal_lasher",
+      "name": "Razorpetal Lasher",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "rogue",
+      "attack": 2,
+      "health": 2,
+      "rarity": "common",
+      "set": "UNGORO",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Add a Razorpetal to your hand that deals 2 damage.",
+      "effects": [
+        {
+          "type": "add-card",
+          "id": "razorpetal"
+        }
+      ]
+    },
+    {
+      "id": "primalfin_lookout",
+      "name": "Primalfin Lookout",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "neutral",
+      "attack": 3,
+      "health": 2,
+      "rarity": "common",
+      "set": "UNGORO",
+      "tribe": "Murloc",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: If you control another Murloc, Discover a Murloc.",
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "controlOtherTribe": "Murloc"
+          },
+          "then": [
+            {
+              "type": "discover",
+              "cardType": "creature",
+              "tribe": "Murloc"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "lyra_the_sunshard",
+      "name": "Lyra the Sunshard",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "priest",
+      "attack": 3,
+      "health": 5,
+      "rarity": "legendary",
+      "set": "UNGORO",
+      "tribe": "Elemental",
+      "description": "Whenever you cast a spell, add a random Priest spell to your hand.",
+      "ongoing": {
+        "on": "spell-played",
+        "effects": [
+          {
+            "type": "conjure-random",
+            "cardType": "spell",
+            "cardClass": "priest",
+            "count": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "flame_geyser",
+      "name": "Flame Geyser",
+      "type": "sorcery",
+      "cost": 2,
+      "token": true,
+      "rarity": "common",
+      "set": "UNGORO",
+      "description": "Deal 2 damage. Summon a 0/2 Fire Elemental.",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 2,
+          "target": "any"
+        },
+        {
+          "type": "summon",
+          "count": 1,
+          "attack": 0,
+          "health": 2,
+          "name": "Fire Elemental",
+          "tribe": "Elemental"
+        }
+      ]
+    },
+    {
+      "id": "razorpetal",
+      "name": "Razorpetal",
+      "type": "sorcery",
+      "cost": 1,
+      "token": true,
+      "rarity": "common",
+      "set": "UNGORO",
+      "description": "Deal 2 damage.",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 2,
+          "target": "any"
         }
       ]
     }
