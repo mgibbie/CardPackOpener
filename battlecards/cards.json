@@ -74779,6 +74779,411 @@
           "gainDeathrattle": true
         }
       ]
+    },
+    {
+      "id": "springpaw",
+      "name": "Springpaw",
+      "type": "creature",
+      "cost": 1,
+      "cardClass": "hunter",
+      "attack": 1,
+      "health": 1,
+      "rarity": "common",
+      "set": "TROLL",
+      "tribe": "Beast",
+      "keywords": [
+        "rush",
+        "battlecry"
+      ],
+      "description": "Rush. Battlecry: Add a 1/1 Lynx with Rush to your hand.",
+      "effects": [
+        {
+          "type": "add-card",
+          "id": "trl_lynx"
+        }
+      ]
+    },
+    {
+      "id": "gurubashi_chicken",
+      "name": "Gurubashi Chicken",
+      "type": "creature",
+      "cost": 1,
+      "cardClass": "neutral",
+      "attack": 1,
+      "health": 1,
+      "rarity": "common",
+      "set": "TROLL",
+      "tribe": "Beast",
+      "keywords": [
+        "overkill"
+      ],
+      "description": "Overkill: Gain +5 Attack.",
+      "overkill": [
+        {
+          "type": "buff-self",
+          "attack": 5,
+          "health": 0
+        }
+      ]
+    },
+    {
+      "id": "helpless_hatchling",
+      "name": "Helpless Hatchling",
+      "type": "creature",
+      "cost": 1,
+      "cardClass": "neutral",
+      "attack": 1,
+      "health": 1,
+      "rarity": "common",
+      "set": "TROLL",
+      "keywords": [
+        "deathrattle"
+      ],
+      "description": "Deathrattle: Reduce the Cost of a Beast in your hand by (1).",
+      "deathrattle": [
+        {
+          "type": "buff-hand",
+          "tribe": "Beast",
+          "random": true,
+          "cost": 1
+        }
+      ]
+    },
+    {
+      "id": "savage_striker",
+      "name": "Savage Striker",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "druid",
+      "attack": 2,
+      "health": 3,
+      "rarity": "common",
+      "set": "TROLL",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Deal damage to an enemy minion equal to your hero's Attack.",
+      "effects": [
+        {
+          "type": "damage",
+          "valuePer": "hero-attack",
+          "value": 1,
+          "target": "enemy-creature"
+        }
+      ]
+    },
+    {
+      "id": "booty_bay_bookie",
+      "name": "Booty Bay Bookie",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "neutral",
+      "attack": 3,
+      "health": 3,
+      "rarity": "rare",
+      "set": "TROLL",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Give your opponent a Coin.",
+      "effects": [
+        {
+          "type": "give-enemy-card",
+          "id": "coin",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "id": "belligerent_gnome",
+      "name": "Belligerent Gnome",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "neutral",
+      "attack": 1,
+      "health": 4,
+      "rarity": "rare",
+      "set": "TROLL",
+      "keywords": [
+        "taunt",
+        "battlecry"
+      ],
+      "description": "Taunt. Battlecry: If your opponent has 2 or more minions, gain +1 Attack.",
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "enemyCreatureCount": 2
+          },
+          "then": [
+            {
+              "type": "buff-self",
+              "attack": 1,
+              "health": 0
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "shieldbreaker",
+      "name": "Shieldbreaker",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "neutral",
+      "attack": 2,
+      "health": 1,
+      "rarity": "rare",
+      "set": "TROLL",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Silence an enemy creature with Taunt.",
+      "effects": [
+        {
+          "type": "silence",
+          "target": "enemy-creature",
+          "requireKeyword": "taunt"
+        }
+      ]
+    },
+    {
+      "id": "banana_buffoon",
+      "name": "Banana Buffoon",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "neutral",
+      "attack": 2,
+      "health": 2,
+      "rarity": "common",
+      "set": "TROLL",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Add 2 Bananas to your hand.",
+      "effects": [
+        {
+          "type": "add-card",
+          "id": "trl_banana",
+          "count": 2
+        }
+      ]
+    },
+    {
+      "id": "half_time_scavenger",
+      "name": "Half-Time Scavenger",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "neutral",
+      "attack": 3,
+      "health": 5,
+      "rarity": "common",
+      "set": "TROLL",
+      "keywords": [
+        "stealth",
+        "overkill"
+      ],
+      "description": "Stealth. Overkill: Gain 3 Armor.",
+      "overkill": [
+        {
+          "type": "armor",
+          "value": 3
+        }
+      ]
+    },
+    {
+      "id": "ticket_scalper",
+      "name": "Ticket Scalper",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "neutral",
+      "attack": 5,
+      "health": 3,
+      "rarity": "common",
+      "set": "TROLL",
+      "keywords": [
+        "overkill"
+      ],
+      "description": "Overkill: Draw 2 cards.",
+      "overkill": [
+        {
+          "type": "draw",
+          "value": 2
+        }
+      ]
+    },
+    {
+      "id": "sightless_ranger",
+      "name": "Sightless Ranger",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "neutral",
+      "attack": 3,
+      "health": 4,
+      "rarity": "common",
+      "set": "TROLL",
+      "keywords": [
+        "rush",
+        "overkill"
+      ],
+      "description": "Rush. Overkill: Summon two 1/1 Bats.",
+      "overkill": [
+        {
+          "type": "summon",
+          "count": 2,
+          "attack": 1,
+          "health": 1,
+          "name": "Bat",
+          "tribe": "Beast"
+        }
+      ]
+    },
+    {
+      "id": "arena_patron",
+      "name": "Arena Patron",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "neutral",
+      "attack": 3,
+      "health": 3,
+      "rarity": "rare",
+      "set": "TROLL",
+      "keywords": [
+        "overkill"
+      ],
+      "description": "Overkill: Summon another Arena Patron.",
+      "overkill": [
+        {
+          "type": "summon",
+          "count": 1,
+          "summonId": "arena_patron"
+        }
+      ]
+    },
+    {
+      "id": "ironhide_direhorn",
+      "name": "Ironhide Direhorn",
+      "type": "creature",
+      "cost": 7,
+      "cardClass": "druid",
+      "attack": 7,
+      "health": 7,
+      "rarity": "common",
+      "set": "TROLL",
+      "tribe": "Beast",
+      "keywords": [
+        "overkill"
+      ],
+      "description": "Overkill: Summon a 5/5 Ironhide Runt.",
+      "overkill": [
+        {
+          "type": "summon",
+          "count": 1,
+          "attack": 5,
+          "health": 5,
+          "name": "Ironhide Runt",
+          "tribe": "Beast"
+        }
+      ]
+    },
+    {
+      "id": "linecracker",
+      "name": "Linecracker",
+      "type": "creature",
+      "cost": 7,
+      "cardClass": "druid",
+      "attack": 5,
+      "health": 10,
+      "rarity": "epic",
+      "set": "TROLL",
+      "tribe": "Beast",
+      "keywords": [
+        "overkill"
+      ],
+      "description": "Overkill: Double this minion's Attack.",
+      "overkill": [
+        {
+          "type": "double-attack-self"
+        }
+      ]
+    },
+    {
+      "id": "untamed_beastmaster",
+      "name": "Untamed Beastmaster",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "neutral",
+      "attack": 3,
+      "health": 4,
+      "rarity": "epic",
+      "set": "TROLL",
+      "description": "Whenever you draw a Beast, give it +2/+2.",
+      "ongoing": {
+        "on": "card-drawn",
+        "effects": [
+          {
+            "type": "buff-drawn-if-tribe",
+            "tribe": "Beast",
+            "attack": 2,
+            "health": 2
+          }
+        ]
+      }
+    },
+    {
+      "id": "regeneratin_thug",
+      "name": "Regeneratin' Thug",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "neutral",
+      "attack": 3,
+      "health": 5,
+      "rarity": "common",
+      "set": "TROLL",
+      "description": "At the start of your turn, restore 2 Health to this creature.",
+      "ongoing": {
+        "on": "turn-start",
+        "effects": [
+          {
+            "type": "heal-self-creature",
+            "value": 2
+          }
+        ]
+      }
+    },
+    {
+      "id": "trl_lynx",
+      "name": "Lynx",
+      "type": "creature",
+      "cost": 1,
+      "token": true,
+      "tribe": "Beast",
+      "attack": 1,
+      "health": 1,
+      "rarity": "common",
+      "set": "TROLL",
+      "keywords": [
+        "rush"
+      ],
+      "description": "Rush."
+    },
+    {
+      "id": "trl_banana",
+      "name": "Banana",
+      "type": "sorcery",
+      "cost": 1,
+      "token": true,
+      "rarity": "common",
+      "set": "TROLL",
+      "description": "Give a minion +1/+1.",
+      "effects": [
+        {
+          "type": "buff",
+          "target": "creature",
+          "attack": 1,
+          "health": 1
+        }
+      ]
     }
   ]
 }

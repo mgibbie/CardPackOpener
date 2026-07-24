@@ -175,6 +175,7 @@ function instantiate(def, controller) {
 		dormantBattlecry: !!def.dormantBattlecry, // The Darkness: fire the Battlecry even though it enters Dormant
 		heroPowerDouble: !!def.heroPowerDouble, // Clockwork Automaton: double your Hero Power's damage and healing
 		deathrattleDiscount: def.deathrattleDiscount || 0, // Reckless Experimenter: your Deathrattle creatures cost this much less
+		overkill: def.overkill ? JSON.parse(JSON.stringify(def.overkill)) : null, // Rastakhan: excess-damage-on-attack trigger
 		chameleosTransform: !!def.chameleosTransform, // Chameleos: morph into an enemy hand card each turn
 		selfCost: def.selfCost || null, // self-scaling printed cost: { per, amount }
 		enrage: def.enrage || null,   // while damaged: { attack?, health?, keywords?, weaponAttack? }
@@ -1883,6 +1884,20 @@ function runSecretEffects(state, pi, effects, ctx) {
 						if (!ctx.self.keywords.includes(KW.DIVINE_SHIELD)) ctx.self.keywords.push(KW.DIVINE_SHIELD);
 						emit(state, { type: 'buff', uid: ctx.self.uid, attack: ctx.self.attack, hp: hp(ctx.self) });
 					}
+					break;
+				}
+				case 'buff-drawn-if-tribe': {
+					// Untamed Beastmaster: you drew a creature of a tribe -> buff it in hand
+					const c = ctx.card;
+					if (c && c.type === 'creature' && (!e.tribe || (c.tribe || '').includes(e.tribe))) {
+						c.attack += e.attack || 0; c.maxHealth += e.health || 0;
+						emit(state, { type: 'buff', uid: c.uid, attack: c.attack, hp: hp(c) });
+					}
+					break;
+				}
+				case 'draw-on-big-heal': {
+					// Soup Vendor: restore N+ to your hero -> draw a card
+					if (ctx.healedHero === pi && (ctx.amount || 0) >= (e.min || 3)) drawCards(state, pi, e.value || 1);
 					break;
 				}
 				case 'add-drawn-copy': {
@@ -3687,6 +3702,7 @@ function execEffects(state, pi, effects, target, source) {
 			else if (e.if.controlCountHealth) ok = p.board.filter(c => !isDead(c) && c.type !== 'location' && hp(c) >= e.if.controlCountHealth.health).length >= e.if.controlCountHealth.count; // Star Aligner
 			else if (e.if.emptyEverything) ok = p.deck.length === 0 && p.hand.length === 0 && !p.board.some(c => c !== source && !isDead(c) && c.type !== 'location'); // Mecha'thun
 			else if (e.if.hasRememberedSpells) ok = !!(source && source.rememberedSpells && source.rememberedSpells.length); // Zerek, Master Cloner
+			else if (e.if.enemyCreatureCount != null) ok = opponentsOf(state, pi).reduce((s, o) => s + state.players[o].board.filter(c => !isDead(c) && c.type !== 'location').length, 0) >= e.if.enemyCreatureCount; // Belligerent Gnome
 			execEffects(state, pi, ok ? e.then : (e.else || []), target, source);
 		} else if (e.type === 'damage-then') {
 			// deal damage, then branch on whether the creature survived
@@ -3889,6 +3905,12 @@ function execEffects(state, pi, effects, target, source) {
 				const c = instantiate(state.cardsById[source.id], pi);
 				c.zone = 'hand'; state.players[pi].hand.push(c);
 				emit(state, { type: 'conjure', player: pi, card: c, color: null });
+			}
+		} else if (e.type === 'heal-self-creature') {
+			// Regeneratin' Thug: restore Health to this creature at the start of your turn
+			if (source && source.zone === 'board' && !isDead(source) && source.damage > 0) {
+				source.damage = Math.max(0, source.damage - (e.value || 2));
+				emit(state, { type: 'heal', targetType: 'creature', uid: source.uid, amount: e.value || 2, hp: hp(source) });
 			}
 		} else if (e.type === 'set-next-spell-damage') {
 			state.players[pi].nextSpellDamageBonus = (state.players[pi].nextSpellDamageBonus || 0) + (e.value || 2); // Celestial Emissary
@@ -6637,6 +6659,11 @@ function resolveCombat(state, pi, attackerUid, target) {
 		if (has(attacker, KW.TRAMPLE) && isDead(defender)) {
 			const excess = attacker.attack - defHpBefore;
 			if (excess > 0) damageHero(state, target.player, excess, pi);
+			}
+			// Overkill: dealing MORE than lethal to a minion on your turn triggers a bonus
+			if (attacker.overkill && isDead(defender) && state.current === pi && (attacker.attack * cmult) > defHpBefore) {
+				emit(state, { type: 'overkill', uid: attacker.uid, player: pi });
+				execEffects(state, pi, JSON.parse(JSON.stringify(attacker.overkill)), null, attacker);
 		}
 		// Honorable Kill: this creature scored an EXACT lethal blow
 		if (attacker.honorableKill && isDead(defender) && defender.damage === defender.maxHealth
