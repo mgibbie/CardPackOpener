@@ -563,6 +563,7 @@ const CHOSEN = {
 	grant: { creature: 'creature', 'friendly-creature': 'friendly-creature' },
 	'grant-spell-damage': { 'friendly-creature': 'friendly-creature', creature: 'creature' },
 	'damage-per-cards-played': { creature: 'creature', 'enemy-creature': 'enemy-creature' },
+	'transform-into-token': { 'friendly-creature': 'friendly-creature', creature: 'creature' },
 	destroy: { creature: 'creature', 'enemy-creature': 'enemy-creature', 'friendly-creature': 'friendly-creature' },
 	'copy-to-hand': { creature: 'creature', 'enemy-creature': 'enemy-creature' },
 	'copy-summon': { creature: 'creature', 'friendly-creature': 'friendly-creature' },
@@ -2031,7 +2032,13 @@ function runSecretEffects(state, pi, effects, ctx) {
 				if (ctx.amount > 0) gainArmor(state, pi, ctx.amount);
 				break;
 			}
-			case 'trigger-summoned-deathrattle': {
+			case 'gain-armor-spell-cost': {
+					// Arcane Artificer: gain Armor equal to the cast spell's Cost
+					const sp = ctx.spell || ctx.played;
+					if (sp) gainArmor(state, pi, sp.cost || 0);
+					break;
+				}
+				case 'trigger-summoned-deathrattle': {
 				// Spiritsinger Umbra: fire the just-summoned creature's Deathrattle now
 				const m = ctx.minion;
 				if (m && m !== ctx.self && m.deathrattle) runDeathrattle(state, m.controller, m);
@@ -3521,6 +3528,7 @@ function execEffects(state, pi, effects, target, source) {
 			else if (e.if.enemyTurn) ok = state.current !== pi; // Skelemancer / Vryghoul / Mountainfire Armor (died on opponent's turn)
 			else if (e.if.deckNoCost != null) ok = !p.deck.some(id => (state.cardsById[id]?.cost || 0) === e.if.deckNoCost); // Prince Keleseth / Valanar
 			else if (e.if.deckHasKeyword) ok = p.deck.some(id => { const def = state.cardsById[id]; return def?.type === 'creature' && (def.keywords || []).includes(e.if.deckHasKeyword); }); // Corpsetaker
+			else if (e.if.noOtherCreatures) ok = !p.board.some(c => c !== source && !isDead(c) && c.type !== 'location'); // Lone Champion
 			execEffects(state, pi, ok ? e.then : (e.else || []), target, source);
 		} else if (e.type === 'damage-then') {
 			// deal damage, then branch on whether the creature survived
@@ -3674,6 +3682,61 @@ function execEffects(state, pi, effects, target, source) {
 				t.tempHealth = 0;
 				emit(state, { type: 'buff', uid: t.uid, attack: t.attack, hp: hp(t) });
 			}
+		} else if (e.type === 'recruit') {
+			// Kobolds Recruit: summon a random matching creature straight from your deck
+			const p = state.players[pi];
+			for (let i = 0; i < (e.count || 1); i++) {
+				const idxs = [];
+				for (let j = 0; j < p.deck.length; j++) {
+					const def = state.cardsById[p.deck[j]];
+					if (!def || def.type !== 'creature' || def.token) continue;
+					if (e.tribe && !(def.tribe || '').includes(e.tribe)) continue;
+					if (e.maxCost != null && (def.cost || 0) > e.maxCost) continue;
+					if (e.minCost != null && (def.cost || 0) < e.minCost) continue;
+					if (e.cost != null && (def.cost || 0) !== e.cost) continue;
+					if (e.attack != null && (def.attack || 0) !== e.attack) continue;
+					idxs.push(j);
+				}
+				if (!idxs.length) break;
+				const j = idxs[Math.floor(state.rng() * idxs.length)];
+				const [id] = p.deck.splice(j, 1);
+				summon(state, pi, state.cardsById[id]);
+			}
+		} else if (e.type === 'swap-stats-all') {
+			// Void Ripper: swap Attack and Health of all OTHER creatures
+			for (const pl of state.players) for (const c of [...pl.board]) {
+				if (c === source || isDead(c) || c.type !== 'creature') continue;
+				const a = c.attack, h2 = hp(c);
+				c.attack = h2; c.maxHealth = a; c.damage = 0; c.tempAttack = 0; c.tempHealth = 0;
+				emit(state, { type: 'buff', uid: c.uid, attack: c.attack, hp: hp(c) });
+			}
+		} else if (e.type === 'transform-into-token') {
+			// Furbolg Mossbinder: turn a chosen creature into a fixed-stat token
+			const t = chosenCreature();
+			if (t && t.controller != null && !isDead(t)) {
+				const owner = t.controller;
+				const tok = instantiate({ id: 'token_' + (e.name || 'token').toLowerCase().replace(/[^a-z0-9]+/g, '_'),
+					name: e.name || 'Elemental', type: 'creature', cost: 0, rarity: 'common', token: true,
+					tribe: e.tribe || null, attack: e.attack, health: e.health, keywords: e.keywords || [],
+					description: e.description || `A ${e.attack}/${e.health} token.` }, owner);
+				tok.zone = 'board'; tok.sick = t.sick;
+				const board = state.players[owner].board;
+				board[board.indexOf(t)] = tok; t.zone = 'gone';
+				emit(state, { type: 'transformed', uid: t.uid, player: owner, from: t.name, card: tok });
+				recomputeAuras(state);
+			}
+		} else if (e.type === 'add-self-copy') {
+			// Feral Gibberer: add a copy of this creature to your hand
+			if (source && state.cardsById[source.id] && state.players[pi].hand.length < MAX_HAND) {
+				const c = instantiate(state.cardsById[source.id], pi);
+				c.zone = 'hand'; state.players[pi].hand.push(c);
+				emit(state, { type: 'conjure', player: pi, card: c, color: null });
+			}
+		} else if (e.type === 'gain-armor-per') {
+			// Drywhisker Armorer: gain Armor scaled by a count
+			let n = 0;
+			if (e.per === 'enemy-creatures') for (const o of enemies) n += state.players[o].board.filter(c => !isDead(c) && c.type !== 'location').length;
+			if (n > 0) gainArmor(state, pi, (e.value || 1) * n);
 		} else if (e.type === 'equip-id') {
 			// Medivh: equip a specific weapon card (keeps its ongoing, e.g. Atiesh)
 			const p = state.players[pi];

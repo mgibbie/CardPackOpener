@@ -71191,6 +71191,408 @@
           "type": "replace-spells-random"
         }
       ]
+    },
+    {
+      "id": "kobold_librarian",
+      "name": "Kobold Librarian",
+      "type": "creature",
+      "cost": 1,
+      "cardClass": "warlock",
+      "attack": 2,
+      "health": 1,
+      "rarity": "common",
+      "set": "LOOTAPALOOZA",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Draw a card. Deal 2 damage to your hero.",
+      "effects": [
+        {
+          "type": "draw",
+          "value": 1
+        },
+        {
+          "type": "damage",
+          "value": 2,
+          "target": "own-hero"
+        }
+      ]
+    },
+    {
+      "id": "arcane_artificer",
+      "name": "Arcane Artificer",
+      "type": "creature",
+      "cost": 1,
+      "cardClass": "mage",
+      "attack": 1,
+      "health": 3,
+      "rarity": "rare",
+      "set": "LOOTAPALOOZA",
+      "description": "Whenever you cast a spell, gain Armor equal to its Cost.",
+      "ongoing": {
+        "on": "spell-played",
+        "effects": [
+          {
+            "type": "gain-armor-spell-cost"
+          }
+        ]
+      }
+    },
+    {
+      "id": "feral_gibberer",
+      "name": "Feral Gibberer",
+      "type": "creature",
+      "cost": 1,
+      "cardClass": "neutral",
+      "attack": 1,
+      "health": 1,
+      "rarity": "rare",
+      "set": "LOOTAPALOOZA",
+      "description": "After this creature attacks a hero, add a copy of it to your hand.",
+      "ongoing": {
+        "on": "self-attacks-hero",
+        "effects": [
+          {
+            "type": "add-self-copy"
+          }
+        ]
+      }
+    },
+    {
+      "id": "cavern_shinyfinder",
+      "name": "Cavern Shinyfinder",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "rogue",
+      "attack": 3,
+      "health": 1,
+      "rarity": "common",
+      "set": "LOOTAPALOOZA",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Draw a weapon from your deck.",
+      "effects": [
+        {
+          "type": "tutor",
+          "cardType": "weapon"
+        }
+      ]
+    },
+    {
+      "id": "drywhisker_armorer",
+      "name": "Drywhisker Armorer",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "warrior",
+      "attack": 2,
+      "health": 2,
+      "rarity": "common",
+      "set": "LOOTAPALOOZA",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: For each enemy creature, gain 2 Armor.",
+      "effects": [
+        {
+          "type": "gain-armor-per",
+          "per": "enemy-creatures",
+          "value": 2
+        }
+      ]
+    },
+    {
+      "id": "drygulch_jailor",
+      "name": "Drygulch Jailor",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "paladin",
+      "attack": 1,
+      "health": 1,
+      "rarity": "common",
+      "set": "LOOTAPALOOZA",
+      "keywords": [
+        "deathrattle"
+      ],
+      "description": "Deathrattle: Add 3 Silver Hand Recruits to your hand.",
+      "deathrattle": [
+        {
+          "type": "add-card",
+          "id": "silver_hand_recruit",
+          "count": 3
+        }
+      ]
+    },
+    {
+      "id": "lone_champion",
+      "name": "Lone Champion",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "neutral",
+      "attack": 2,
+      "health": 4,
+      "rarity": "rare",
+      "set": "LOOTAPALOOZA",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: If you control no other creatures, gain Taunt and Divine Shield.",
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "noOtherCreatures": true
+          },
+          "then": [
+            {
+              "type": "grant",
+              "target": "self",
+              "keyword": "taunt"
+            },
+            {
+              "type": "grant",
+              "target": "self",
+              "keyword": "divine_shield"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "boisterous_bard",
+      "name": "Boisterous Bard",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "neutral",
+      "attack": 3,
+      "health": 2,
+      "rarity": "common",
+      "set": "LOOTAPALOOZA",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Give your other creatures +1 Health.",
+      "effects": [
+        {
+          "type": "buff",
+          "target": "friendly-others",
+          "attack": 0,
+          "health": 1
+        }
+      ]
+    },
+    {
+      "id": "void_ripper",
+      "name": "Void Ripper",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "neutral",
+      "attack": 3,
+      "health": 3,
+      "rarity": "epic",
+      "set": "LOOTAPALOOZA",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Swap the Attack and Health of all other creatures.",
+      "effects": [
+        {
+          "type": "swap-stats-all"
+        }
+      ]
+    },
+    {
+      "id": "twilight_acolyte",
+      "name": "Twilight Acolyte",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "priest",
+      "attack": 2,
+      "health": 4,
+      "rarity": "epic",
+      "set": "LOOTAPALOOZA",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: If you're holding a Dragon, swap this creature's Attack with another creature's.",
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "holdingTribe": "Dragon"
+          },
+          "then": [
+            {
+              "type": "swap-stats-with",
+              "target": "creature"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "hooked_reaver",
+      "name": "Hooked Reaver",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "warlock",
+      "attack": 4,
+      "health": 4,
+      "rarity": "rare",
+      "set": "LOOTAPALOOZA",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: If you have 15 or less Health, gain +3/+3 and Taunt.",
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "maxHealthSelf": 15
+          },
+          "then": [
+            {
+              "type": "buff-self",
+              "attack": 3,
+              "health": 3
+            },
+            {
+              "type": "grant",
+              "target": "self",
+              "keyword": "taunt"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "elven_minstrel",
+      "name": "Elven Minstrel",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "rogue",
+      "attack": 3,
+      "health": 3,
+      "rarity": "rare",
+      "set": "LOOTAPALOOZA",
+      "keywords": [
+        "combo"
+      ],
+      "description": "Combo: Draw 2 creatures from your deck.",
+      "effects": [
+        {
+          "type": "tutor",
+          "cardType": "creature",
+          "count": 2
+        }
+      ],
+      "combo": [
+        {
+          "type": "tutor",
+          "cardType": "creature",
+          "count": 2
+        }
+      ]
+    },
+    {
+      "id": "furbolg_mossbinder",
+      "name": "Furbolg Mossbinder",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "neutral",
+      "attack": 1,
+      "health": 1,
+      "rarity": "rare",
+      "set": "LOOTAPALOOZA",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Transform a friendly creature into a 6/6 Elemental.",
+      "effects": [
+        {
+          "type": "transform-into-token",
+          "target": "friendly-creature",
+          "name": "Elemental",
+          "tribe": "Elemental",
+          "attack": 6,
+          "health": 6
+        }
+      ]
+    },
+    {
+      "id": "guild_recruiter",
+      "name": "Guild Recruiter",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "neutral",
+      "attack": 2,
+      "health": 4,
+      "rarity": "common",
+      "set": "LOOTAPALOOZA",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Recruit a creature that costs (4) or less.",
+      "effects": [
+        {
+          "type": "recruit",
+          "maxCost": 4
+        }
+      ]
+    },
+    {
+      "id": "possessed_lackey",
+      "name": "Possessed Lackey",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "warlock",
+      "attack": 2,
+      "health": 2,
+      "rarity": "rare",
+      "set": "LOOTAPALOOZA",
+      "keywords": [
+        "deathrattle"
+      ],
+      "description": "Deathrattle: Recruit a Demon.",
+      "deathrattle": [
+        {
+          "type": "recruit",
+          "tribe": "Demon"
+        }
+      ]
+    },
+    {
+      "id": "silver_vanguard",
+      "name": "Silver Vanguard",
+      "type": "creature",
+      "cost": 7,
+      "cardClass": "neutral",
+      "attack": 3,
+      "health": 3,
+      "rarity": "common",
+      "set": "LOOTAPALOOZA",
+      "keywords": [
+        "deathrattle"
+      ],
+      "description": "Deathrattle: Recruit an 8-Cost creature.",
+      "deathrattle": [
+        {
+          "type": "recruit",
+          "cost": 8
+        }
+      ]
+    },
+    {
+      "id": "silver_hand_recruit",
+      "name": "Silver Hand Recruit",
+      "type": "creature",
+      "cost": 1,
+      "token": true,
+      "attack": 1,
+      "health": 1,
+      "rarity": "common",
+      "set": "LOOTAPALOOZA",
+      "description": "A 1/1 Silver Hand Recruit."
     }
   ]
 }
