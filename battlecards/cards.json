@@ -69606,6 +69606,173 @@
       "rarity": "legendary",
       "set": "UNGORO",
       "description": "A 10/10 Elemental."
+    },
+    {
+      "id": "sherazin",
+      "name": "Sherazin, Corpse Flower",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "rogue",
+      "attack": 6,
+      "health": 3,
+      "rarity": "legendary",
+      "set": "UNGORO",
+      "keywords": [
+        "deathrattle"
+      ],
+      "description": "Deathrattle: Go Dormant. Play 4 cards in a turn to revive this creature.",
+      "deathrattle": [
+        {
+          "type": "summon",
+          "count": 1,
+          "summonId": "sherazin_seed"
+        }
+      ]
+    },
+    {
+      "id": "kalimos_primal_lord",
+      "name": "Kalimos, Primal Lord",
+      "type": "creature",
+      "cost": 7,
+      "cardClass": "shaman",
+      "attack": 7,
+      "health": 7,
+      "rarity": "legendary",
+      "set": "UNGORO",
+      "tribe": "Elemental",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: If you played an Elemental last turn, cast a random Elemental Invocation.",
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "elementalLastTurn": true
+          },
+          "then": [
+            {
+              "type": "random-invocation"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "elise_the_trailblazer",
+      "name": "Elise the Trailblazer",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "neutral",
+      "attack": 5,
+      "health": 5,
+      "rarity": "legendary",
+      "set": "UNGORO",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Shuffle a sealed Un'Goro pack into your deck.",
+      "effects": [
+        {
+          "type": "shuffle-into-deck",
+          "id": "ungoro_pack"
+        }
+      ]
+    },
+    {
+      "id": "swamp_king_dred",
+      "name": "Swamp King Dred",
+      "type": "creature",
+      "cost": 7,
+      "cardClass": "hunter",
+      "attack": 9,
+      "health": 9,
+      "rarity": "legendary",
+      "set": "UNGORO",
+      "tribe": "Beast",
+      "description": "After your opponent plays a creature, attack it."
+    },
+    {
+      "id": "primalfin_champion",
+      "name": "Primalfin Champion",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "paladin",
+      "attack": 1,
+      "health": 3,
+      "rarity": "epic",
+      "set": "UNGORO",
+      "tribe": "Murloc",
+      "keywords": [
+        "deathrattle"
+      ],
+      "description": "Deathrattle: Return any spells you cast on this creature to your hand.",
+      "ongoing": {
+        "on": "spell-targeted-self",
+        "effects": [
+          {
+            "type": "remember-spell"
+          }
+        ]
+      },
+      "deathrattle": [
+        {
+          "type": "return-remembered-spells"
+        }
+      ]
+    },
+    {
+      "id": "lightfused_stegodon",
+      "name": "Lightfused Stegodon",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "paladin",
+      "attack": 3,
+      "health": 3,
+      "rarity": "rare",
+      "set": "UNGORO",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Adapt your Silver Hand Recruits.",
+      "effects": [
+        {
+          "type": "adapt",
+          "name": "Silver Hand Recruit"
+        }
+      ]
+    },
+    {
+      "id": "sherazin_seed",
+      "name": "Sherazin, Seed",
+      "type": "creature",
+      "cost": 0,
+      "token": true,
+      "attack": 0,
+      "health": 1,
+      "rarity": "legendary",
+      "set": "UNGORO",
+      "keywords": [
+        "pacifist"
+      ],
+      "description": "Play 4 cards in a turn to revive Sherazin."
+    },
+    {
+      "id": "ungoro_pack",
+      "name": "Un'Goro Pack",
+      "type": "sorcery",
+      "cost": 5,
+      "token": true,
+      "rarity": "legendary",
+      "set": "UNGORO",
+      "description": "Add 5 random creatures to your hand.",
+      "effects": [
+        {
+          "type": "conjure-random",
+          "cardType": "creature",
+          "count": 5
+        }
+      ]
     }
   ]
 }

@@ -2010,6 +2010,11 @@ function runSecretEffects(state, pi, effects, ctx) {
 				if (m && m !== ctx.self && m.deathrattle) runDeathrattle(state, m.controller, m);
 				break;
 			}
+			case 'remember-spell': {
+				// Primalfin Champion: record spells cast on this creature
+				if (ctx.self && ctx.spell) { (ctx.self.rememberedSpells = ctx.self.rememberedSpells || []).push(ctx.spell.id); }
+				break;
+			}
 			case 'copy-enemy-spell': {
 				// Trade Prince Gallywix: copy the cast spell, give its caster a Coin
 				const spell = ctx.spell;
@@ -3113,7 +3118,8 @@ function execEffects(state, pi, effects, target, source) {
 			// paper rule: roll a d10 three times (reroll dupes); the controller
 			// picks ONE of the three, applied to the adapting creature(s)
 			let targets;
-			if (e.target === 'friendly-creatures') targets = state.players[pi].board.filter(c => !isDead(c));
+			if (e.name) targets = state.players[pi].board.filter(c => !isDead(c) && c.name === e.name); // Lightfused Stegodon: Silver Hand Recruits
+			else if (e.target === 'friendly-creatures') targets = state.players[pi].board.filter(c => !isDead(c));
 			else if (e.tribe) targets = state.players[pi].board.filter(c => !isDead(c) && (c.tribe || '').includes(e.tribe));
 			else { const t = chosenCreature() || (source && source.zone === 'board' && !isDead(source) ? source : null); targets = t ? [t] : []; }
 			targets = targets.filter(c => c.type !== 'location');
@@ -3775,6 +3781,17 @@ function execEffects(state, pi, effects, target, source) {
 			for (const o of enemies) for (const c of state.players[o].board) {
 				if (c.stealthed || c.keywords.includes(KW.STEALTH)) { c.stealthed = false; c.keywords = c.keywords.filter(k => k !== KW.STEALTH); emit(state, { type: 'buff', uid: c.uid, attack: c.attack, hp: hp(c) }); }
 			}
+		} else if (e.type === 'return-remembered-spells') {
+			// Primalfin Champion: return the spells cast on it to your hand
+			const p = state.players[pi];
+			for (const id of (source?.rememberedSpells || [])) { if (p.hand.length >= MAX_HAND) break; const def = state.cardsById[id]; if (def) { const c = instantiate(def, pi); c.zone = 'hand'; p.hand.push(c); emit(state, { type: 'conjure', player: pi, card: c, color: null }); } }
+		} else if (e.type === 'random-invocation') {
+			// Kalimos, Primal Lord: cast a random Elemental Invocation
+			const inv = Math.floor(state.rng() * 4);
+			if (inv === 0) execEffects(state, pi, [{ type: 'damage', value: 6, target: 'enemy-heroes' }], target, source);
+			else if (inv === 1) execEffects(state, pi, [{ type: 'damage', value: 3, target: 'enemy-creatures' }], target, source);
+			else if (inv === 2) execEffects(state, pi, [{ type: 'heal', value: 12, target: 'self' }], target, source);
+			else execEffects(state, pi, [{ type: 'summon', count: 2, attack: 6, health: 6, name: 'Elemental', tribe: 'Elemental' }], target, source);
 		} else if (e.type === 'cant-attack-heroes-turn') {
 			// Charged Devilsaur: this creature can't attack heroes this turn
 			if (source) source.noHeroAttackTurn = state.turnNumber;
@@ -5328,6 +5345,14 @@ export function playCard(state, pi, cardUid, target, choice, position, useAlt, k
 			runBattlecry(state, pi, card, target, choice);
 			if (p.board.includes(card)) fireSecretsAll(state, pi, 'enemy-minion-played', { minion: card });
 			if (p.board.includes(card) && !isDead(card)) fireOngoing(state, pi, 'creature-played', { minion: card });
+			// Swamp King Dred: after an opponent plays a creature, Dred attacks it
+			if (p.board.includes(card) && !isDead(card)) {
+				for (const o of opponentsOf(state, pi)) {
+					for (const dred of state.players[o].board.filter(c => c.id === 'swamp_king_dred' && !isDead(c))) {
+						if (p.board.includes(card) && !isDead(card) && !isDead(dred)) resolveCombat(state, o, dred.uid, { type: 'creature', uid: card.uid, player: pi });
+					}
+				}
+			}
 			applyPlaneOnCreaturePlayed(state, pi, card);
 		}
 	} else if (card.type === 'location') {
@@ -5436,6 +5461,14 @@ export function playCard(state, pi, cardUid, target, choice, position, useAlt, k
 	questTick(state, 'play', pi, 1, card); // "Play N cards" quests
 	// counted AFTER resolution so Combo sees only cards played EARLIER this turn
 	p.cardsPlayedThisTurn++;
+	// Sherazin, Corpse Flower: play 4 cards in a turn to revive the seed
+	if (p.cardsPlayedThisTurn >= 4) {
+		for (const seed of p.board.filter(c => c.id === 'sherazin_seed' && !isDead(c))) {
+			const rev = instantiate(state.cardsById['sherazin'], pi);
+			rev.zone = 'board'; p.board[p.board.indexOf(seed)] = rev; seed.zone = 'gone';
+			emit(state, { type: 'transformed', uid: seed.uid, player: pi, from: 'Sherazin, Seed', card: rev });
+		}
+	}
 	sweepDeaths(state);
 	return true;
 }
@@ -5456,7 +5489,7 @@ function resolveStackedSpell(state, entry) {
 				const spellTrigs = [];
 				if (tc.ongoing?.on === 'spell-targeted-self') spellTrigs.push(tc.ongoing);
 				if (tc.ongoings) for (const o of tc.ongoings) if (o.on === 'spell-targeted-self') spellTrigs.push(o);
-				for (const o of spellTrigs) runSecretEffects(state, pi, o.effects, { self: tc });
+				for (const o of spellTrigs) runSecretEffects(state, pi, o.effects, { self: tc, spell: card });
 				// Djinni of Zephyrs: a spell on ANOTHER friendly creature is copied onto each Djinni
 				if (!state.djinniEcho) {
 					const djinnis = state.players[pi].board.filter(c => c.id === 'djinni_of_zephyrs' && !isDead(c) && c !== tc);
