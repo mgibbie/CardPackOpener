@@ -83546,6 +83546,403 @@
       "token": true,
       "collectible": false,
       "description": "Stealth."
+    },
+    {
+      "id": "shando_wildclaw",
+      "name": "Shan'do Wildclaw",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "hunter",
+      "attack": 3,
+      "health": 3,
+      "rarity": "legendary",
+      "set": "SCHOLOMANCE",
+      "description": "Choose One - Give Beasts in your deck +1/+1; or Transform into a copy of a friendly Beast.",
+      "choices": [
+        {
+          "text": "Give Beasts in your deck +1/+1",
+          "effects": [
+            {
+              "type": "buff-deck-tribe",
+              "tribe": "Beast",
+              "attack": 1,
+              "health": 1
+            }
+          ]
+        },
+        {
+          "text": "Transform into a copy of a friendly Beast",
+          "effects": [
+            {
+              "type": "become-friendly-tribe-copy",
+              "tribe": "Beast"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "shardshatter_mystic",
+      "name": "Shardshatter Mystic",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "demonhunter",
+      "attack": 3,
+      "health": 2,
+      "rarity": "rare",
+      "set": "SCHOLOMANCE",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Destroy a Soul Fragment in your deck to deal 3 damage to all other minions.",
+      "effects": [
+        {
+          "type": "destroy-fragment-then-aoe",
+          "value": 3
+        }
+      ]
+    },
+    {
+      "id": "speaker_gidra",
+      "name": "Speaker Gidra",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "neutral",
+      "attack": 1,
+      "health": 4,
+      "rarity": "legendary",
+      "set": "SCHOLOMANCE",
+      "keywords": [
+        "rush",
+        "windfury"
+      ],
+      "description": "Rush, Windfury. Spellburst: Gain Attack and Health equal to the spell's Cost.",
+      "ongoing": {
+        "on": "spell-played",
+        "once": true,
+        "effects": [
+          {
+            "type": "buff-self-by-spell-cost"
+          }
+        ]
+      }
+    },
+    {
+      "id": "brittlebone_destroyer",
+      "name": "Brittlebone Destroyer",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "priest",
+      "attack": 3,
+      "health": 3,
+      "rarity": "rare",
+      "set": "SCHOLOMANCE",
+      "tribe": "Undead",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: If your hero's Health changed this turn, destroy a minion.",
+      "effects": [
+        {
+          "type": "destroy",
+          "target": "creature",
+          "requireHeroHealthChanged": true
+        }
+      ]
+    },
+    {
+      "id": "cabal_acolyte",
+      "name": "Cabal Acolyte",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "priest",
+      "attack": 2,
+      "health": 6,
+      "rarity": "epic",
+      "set": "SCHOLOMANCE",
+      "keywords": [
+        "taunt"
+      ],
+      "description": "Taunt. Spellburst: Gain control of a random enemy minion with 2 or less Attack.",
+      "ongoing": {
+        "on": "spell-played",
+        "once": true,
+        "effects": [
+          {
+            "type": "mind-control-random",
+            "maxAttack": 2
+          }
+        ]
+      }
+    },
+    {
+      "id": "disciplinarian_gandling",
+      "name": "Disciplinarian Gandling",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "priest",
+      "attack": 3,
+      "health": 6,
+      "rarity": "legendary",
+      "set": "SCHOLOMANCE",
+      "description": "After you play a minion, destroy it and summon a 4/4 Failed Student.",
+      "ongoing": {
+        "on": "creature-played",
+        "effects": [
+          {
+            "type": "gandling"
+          }
+        ]
+      }
+    },
+    {
+      "id": "fishy_flyer",
+      "name": "Fishy Flyer",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "neutral",
+      "attack": 4,
+      "health": 3,
+      "rarity": "common",
+      "set": "SCHOLOMANCE",
+      "tribe": "Murloc",
+      "keywords": [
+        "rush",
+        "deathrattle"
+      ],
+      "description": "Rush. Deathrattle: Add a 4/3 Ghost with Rush to your hand.",
+      "deathrattle": [
+        {
+          "type": "add-card",
+          "id": "sch_ghost_rush",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "id": "high_abbess_alura",
+      "name": "High Abbess Alura",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "paladin",
+      "attack": 3,
+      "health": 6,
+      "rarity": "legendary",
+      "set": "SCHOLOMANCE",
+      "tribe": "Draenei",
+      "description": "Spellburst: Cast a spell from your deck (targets this if possible).",
+      "ongoing": {
+        "on": "spell-played",
+        "once": true,
+        "effects": [
+          {
+            "type": "cast-spell-from-deck"
+          }
+        ]
+      }
+    },
+    {
+      "id": "lorekeeper_polkelt",
+      "name": "Lorekeeper Polkelt",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "neutral",
+      "attack": 4,
+      "health": 5,
+      "rarity": "legendary",
+      "set": "SCHOLOMANCE",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Reorder your deck from the highest Cost card to the lowest Cost card.",
+      "effects": [
+        {
+          "type": "reorder-deck"
+        }
+      ]
+    },
+    {
+      "id": "shifty_sophomore",
+      "name": "Shifty Sophomore",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "rogue",
+      "attack": 4,
+      "health": 4,
+      "rarity": "rare",
+      "set": "SCHOLOMANCE",
+      "keywords": [
+        "stealth"
+      ],
+      "description": "Stealth. Spellburst: Add a Combo card to your hand.",
+      "ongoing": {
+        "on": "spell-played",
+        "once": true,
+        "effects": [
+          {
+            "type": "conjure-random",
+            "requireKeyword": "combo"
+          }
+        ]
+      }
+    },
+    {
+      "id": "star_student_stelina",
+      "name": "Star Student Stelina",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "demonhunter",
+      "attack": 4,
+      "health": 3,
+      "rarity": "legendary",
+      "set": "SCHOLOMANCE",
+      "keywords": [
+        "outcast"
+      ],
+      "description": "Outcast: Look at 3 cards in your opponent's hand. Shuffle one of them into their deck.",
+      "outcast": {
+        "effects": [
+          {
+            "type": "shuffle-enemy-hand-card"
+          }
+        ]
+      }
+    },
+    {
+      "id": "steeldancer",
+      "name": "Steeldancer",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "neutral",
+      "attack": 4,
+      "health": 4,
+      "rarity": "epic",
+      "set": "SCHOLOMANCE",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Summon a random minion with Cost equal to your weapon's Attack.",
+      "effects": [
+        {
+          "type": "summon-random",
+          "costFromWeapon": true
+        }
+      ]
+    },
+    {
+      "id": "vilefiend_trainer",
+      "name": "Vilefiend Trainer",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "demonhunter",
+      "attack": 5,
+      "health": 4,
+      "rarity": "common",
+      "set": "SCHOLOMANCE",
+      "keywords": [
+        "outcast"
+      ],
+      "description": "Outcast: Summon two 1/1 Demons.",
+      "outcast": {
+        "effects": [
+          {
+            "type": "summon",
+            "count": 2,
+            "summonId": "bt_rustsworn_demon"
+          }
+        ]
+      }
+    },
+    {
+      "id": "blood_herald",
+      "name": "Blood Herald",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "demonhunter",
+      "attack": 1,
+      "health": 1,
+      "rarity": "common",
+      "set": "SCHOLOMANCE",
+      "tribe": "Undead",
+      "handDeathGrowth": true,
+      "description": "Whenever a friendly minion dies while this is in your hand, gain +1/+1."
+    },
+    {
+      "id": "doctor_krastinov",
+      "name": "Doctor Krastinov",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "neutral",
+      "attack": 4,
+      "health": 4,
+      "rarity": "legendary",
+      "set": "SCHOLOMANCE",
+      "keywords": [
+        "rush"
+      ],
+      "description": "Rush. Whenever this attacks, give your weapon +1/+1.",
+      "ongoing": {
+        "on": "self-attacks",
+        "effects": [
+          {
+            "type": "buff-weapon",
+            "attack": 1,
+            "durability": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "headmaster_kelthuzad",
+      "name": "Headmaster Kel'Thuzad",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "neutral",
+      "attack": 4,
+      "health": 6,
+      "rarity": "legendary",
+      "set": "SCHOLOMANCE",
+      "description": "Spellburst: If the spell destroys any minions, summon them.",
+      "ongoing": {
+        "on": "spell-played",
+        "once": true,
+        "effects": [
+          {
+            "type": "summon-all-died-this-turn"
+          }
+        ]
+      }
+    },
+    {
+      "id": "sch_ghost_rush",
+      "name": "Ghost",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "neutral",
+      "attack": 4,
+      "health": 3,
+      "rarity": "common",
+      "set": "SCHOLOMANCE",
+      "keywords": [
+        "rush"
+      ],
+      "token": true,
+      "collectible": false,
+      "description": "Rush."
+    },
+    {
+      "id": "sch_failed_student",
+      "name": "Failed Student",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "neutral",
+      "attack": 4,
+      "health": 4,
+      "rarity": "common",
+      "set": "SCHOLOMANCE",
+      "token": true,
+      "collectible": false,
+      "description": "A 4/4 token."
     }
   ]
 }
