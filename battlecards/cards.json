@@ -83145,6 +83145,407 @@
           "type": "spells-cost-one"
         }
       ]
+    },
+    {
+      "id": "animated_broomstick",
+      "name": "Animated Broomstick",
+      "type": "creature",
+      "cost": 1,
+      "cardClass": "neutral",
+      "attack": 1,
+      "health": 1,
+      "rarity": "common",
+      "set": "SCHOLOMANCE",
+      "keywords": [
+        "rush",
+        "battlecry"
+      ],
+      "description": "Rush. Battlecry: Give your other minions Rush.",
+      "effects": [
+        {
+          "type": "grant",
+          "keyword": "rush",
+          "target": "friendly-others"
+        }
+      ]
+    },
+    {
+      "id": "spirit_jailer",
+      "name": "Spirit Jailer",
+      "type": "creature",
+      "cost": 1,
+      "cardClass": "warlock",
+      "attack": 1,
+      "health": 3,
+      "rarity": "common",
+      "set": "SCHOLOMANCE",
+      "tribe": "Demon",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Shuffle 2 Soul Fragments into your deck.",
+      "effects": [
+        {
+          "type": "shuffle-soul-fragments",
+          "count": 2
+        }
+      ]
+    },
+    {
+      "id": "tour_guide",
+      "name": "Tour Guide",
+      "type": "creature",
+      "cost": 1,
+      "cardClass": "neutral",
+      "attack": 1,
+      "health": 1,
+      "rarity": "common",
+      "set": "SCHOLOMANCE",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Your next Hero Power costs (0).",
+      "effects": [
+        {
+          "type": "hero-power-discount",
+          "value": 99
+        }
+      ]
+    },
+    {
+      "id": "wolpertinger",
+      "name": "Wolpertinger",
+      "type": "creature",
+      "cost": 1,
+      "cardClass": "hunter",
+      "attack": 1,
+      "health": 1,
+      "rarity": "common",
+      "set": "SCHOLOMANCE",
+      "tribe": "Beast",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Summon a copy of this.",
+      "effects": [
+        {
+          "type": "summon-copy-self"
+        }
+      ]
+    },
+    {
+      "id": "argent_braggart",
+      "name": "Argent Braggart",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "paladin",
+      "attack": 1,
+      "health": 1,
+      "rarity": "epic",
+      "set": "SCHOLOMANCE",
+      "tribe": "Draenei",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Set this minion's Attack and Health to the highest in the battlefield.",
+      "effects": [
+        {
+          "type": "set-stats-to-highest"
+        }
+      ]
+    },
+    {
+      "id": "cult_neophyte",
+      "name": "Cult Neophyte",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "neutral",
+      "attack": 3,
+      "health": 2,
+      "rarity": "rare",
+      "set": "SCHOLOMANCE",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Your opponent's spells cost (1) more next turn.",
+      "effects": [
+        {
+          "type": "tax-enemy-spells",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "sneaky_delinquent",
+      "name": "Sneaky Delinquent",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "neutral",
+      "attack": 3,
+      "health": 1,
+      "rarity": "common",
+      "set": "SCHOLOMANCE",
+      "keywords": [
+        "stealth",
+        "deathrattle"
+      ],
+      "description": "Stealth. Deathrattle: Add a 3/1 Ghost with Stealth to your hand.",
+      "deathrattle": [
+        {
+          "type": "add-card",
+          "id": "sch_ghost",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "id": "wandmaker",
+      "name": "Wandmaker",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "neutral",
+      "attack": 2,
+      "health": 2,
+      "rarity": "common",
+      "set": "SCHOLOMANCE",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Add a 1-Cost spell from your class to your hand.",
+      "effects": [
+        {
+          "type": "conjure-random",
+          "cardType": "spell",
+          "cost": 1,
+          "cardClass": "own"
+        }
+      ]
+    },
+    {
+      "id": "educated_elekk",
+      "name": "Educated Elekk",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "neutral",
+      "attack": 3,
+      "health": 4,
+      "rarity": "epic",
+      "set": "SCHOLOMANCE",
+      "tribe": "Beast",
+      "keywords": [
+        "deathrattle"
+      ],
+      "description": "Whenever a spell is played, this minion remembers it. Deathrattle: Shuffle the spells into your deck.",
+      "ongoing": {
+        "on": "any-spell-played",
+        "effects": [
+          {
+            "type": "remember-spell"
+          }
+        ]
+      },
+      "deathrattle": [
+        {
+          "type": "shuffle-remembered-into-deck"
+        }
+      ]
+    },
+    {
+      "id": "enchanted_cauldron",
+      "name": "Enchanted Cauldron",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "neutral",
+      "attack": 1,
+      "health": 6,
+      "rarity": "epic",
+      "set": "SCHOLOMANCE",
+      "description": "Spellburst: Cast a random spell of the same Cost.",
+      "ongoing": {
+        "on": "spell-played",
+        "once": true,
+        "effects": [
+          {
+            "type": "cast-random-same-cost"
+          }
+        ]
+      }
+    },
+    {
+      "id": "instructor_fireheart",
+      "name": "Instructor Fireheart",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "shaman",
+      "attack": 3,
+      "health": 3,
+      "rarity": "legendary",
+      "set": "SCHOLOMANCE",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Discover a spell that costs (1) or more. If you play it this turn, repeat this effect.",
+      "effects": [
+        {
+          "type": "discover",
+          "cardType": "spell",
+          "minCost": 1
+        }
+      ]
+    },
+    {
+      "id": "lord_barov",
+      "name": "Lord Barov",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "paladin",
+      "attack": 3,
+      "health": 2,
+      "rarity": "legendary",
+      "set": "SCHOLOMANCE",
+      "keywords": [
+        "battlecry",
+        "deathrattle"
+      ],
+      "description": "Battlecry: Set the Health of all other minions to 1. Deathrattle: Deal 1 damage to all minions.",
+      "effects": [
+        {
+          "type": "set-health",
+          "target": "all-others",
+          "value": 1
+        }
+      ],
+      "deathrattle": [
+        {
+          "type": "damage-all-minions",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "magehunter",
+      "name": "Magehunter",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "demonhunter",
+      "attack": 2,
+      "health": 3,
+      "rarity": "rare",
+      "set": "SCHOLOMANCE",
+      "keywords": [
+        "rush"
+      ],
+      "description": "Rush. Whenever this attacks a minion, Silence it.",
+      "ongoing": {
+        "on": "self-attacks-creature",
+        "effects": [
+          {
+            "type": "silence-victim"
+          }
+        ]
+      }
+    },
+    {
+      "id": "mindrender_illucia",
+      "name": "Mindrender Illucia",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "priest",
+      "attack": 1,
+      "health": 3,
+      "rarity": "legendary",
+      "set": "SCHOLOMANCE",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Replace your hand with a copy of your opponent's until end of turn.",
+      "effects": [
+        {
+          "type": "swap-hand-with-enemy"
+        }
+      ]
+    },
+    {
+      "id": "playmaker",
+      "name": "Playmaker",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "warrior",
+      "attack": 4,
+      "health": 3,
+      "rarity": "epic",
+      "set": "SCHOLOMANCE",
+      "description": "After you play a Rush minion, summon a copy with 1 Health remaining.",
+      "ongoing": {
+        "on": "creature-played",
+        "if": {
+          "keyword": "rush"
+        },
+        "effects": [
+          {
+            "type": "summon-copy-of-played",
+            "health": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "shadowlight_scholar",
+      "name": "Shadowlight Scholar",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "warlock",
+      "attack": 3,
+      "health": 4,
+      "rarity": "rare",
+      "set": "SCHOLOMANCE",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Destroy a Soul Fragment in your deck to deal 3 damage.",
+      "effects": [
+        {
+          "type": "destroy-fragment-then-damage",
+          "value": 3,
+          "target": "any"
+        }
+      ]
+    },
+    {
+      "id": "sch_soul_fragment",
+      "name": "Soul Fragment",
+      "type": "sorcery",
+      "cost": 0,
+      "token": true,
+      "collectible": false,
+      "rarity": "common",
+      "set": "SCHOLOMANCE",
+      "drawTrigger": true,
+      "onDraw": [
+        {
+          "type": "heal",
+          "target": "self",
+          "value": 2
+        }
+      ],
+      "description": "Casts When Drawn. Restore 2 Health to your hero."
+    },
+    {
+      "id": "sch_ghost",
+      "name": "Ghost",
+      "type": "creature",
+      "cost": 1,
+      "cardClass": "neutral",
+      "attack": 3,
+      "health": 1,
+      "rarity": "common",
+      "set": "SCHOLOMANCE",
+      "keywords": [
+        "stealth"
+      ],
+      "token": true,
+      "collectible": false,
+      "description": "Stealth."
     }
   ]
 }

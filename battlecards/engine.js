@@ -611,6 +611,7 @@ const CHOSEN = {
 	'damage-target-and-same-tribe': { creature: 'creature', 'enemy-creature': 'enemy-creature' },
 	'damage-chain-neighbors': { 'enemy-creature': 'enemy-creature', creature: 'creature' },
 	kelidan: { creature: 'creature', 'enemy-creature': 'enemy-creature' },
+	'destroy-fragment-then-damage': { any: 'any', 'enemy-any': 'enemy-any', creature: 'creature', 'enemy-creature': 'enemy-creature' },
 	'transform-into-token': { 'friendly-creature': 'friendly-creature', creature: 'creature' },
 	'mark-doomed': { creature: 'creature', 'enemy-creature': 'enemy-creature' },
 	'devour-target': { 'friendly-creature': 'friendly-creature' },
@@ -2538,6 +2539,23 @@ function runSecretEffects(state, pi, effects, ctx) {
 				// Soulbound Ashtongue: also deal the damage taken to your hero
 				if (ctx.amount) damageHero(state, pi, ctx.amount, pi);
 				break;
+			case 'cast-random-same-cost': {
+				// Enchanted Cauldron (Spellburst): cast a random spell of the just-cast spell's Cost
+				const cost = ctx.played ? (ctx.played.cost || 0) : 0;
+				execEffects(state, pi, [{ type: 'cast-random-spell', count: 1, cost }], null, ctx.self || null);
+				break;
+			}
+			case 'silence-victim': {
+				// Magehunter: Silence the minion this just attacked
+				if (ctx.victim && !isDead(ctx.victim)) silenceCreature(state, ctx.victim);
+				break;
+			}
+			case 'summon-copy-of-played': {
+				// Playmaker: summon a copy of the just-played minion with N Health remaining
+				const m = ctx.minion; const base = m && state.cardsById[m.id];
+				if (base) { const c = summon(state, pi, JSON.parse(JSON.stringify(base))); if (c && e.health != null) { c.damage = Math.max(0, (c.maxHealth || 1) - e.health); emit(state, { type: 'damage', targetType: 'creature', uid: c.uid, amount: 0, hp: hp(c) }); } }
+				break;
+			}
 			case 'transform-victim-into': {
 				// Infectious Sporeling: turn the minion this just damaged into a copy of `id`
 				const v = ctx.victim; const base = state.cardsById[e.id];
@@ -5143,6 +5161,43 @@ function execEffects(state, pi, effects, target, source) {
 				const t = chosenCreature();
 				if (t) { t.damage = t.maxHealth; t.shield = false; emit(state, { type: 'destroy', uid: t.uid }); sweepDeaths(state); }
 			}
+		} else if (e.type === 'set-stats-to-highest') {
+			// Argent Braggart: set this minion's Attack and Health to the highest on the board
+			if (source) {
+				let hiA = 0, hiH = 0;
+				for (const pl of state.players) for (const c of pl.board) { if (isDead(c) || c.type === 'location') continue; hiA = Math.max(hiA, c.attack || 0); hiH = Math.max(hiH, hp(c) || 0); }
+				source.attack = Math.max(source.attack || 0, hiA);
+				source.maxHealth = Math.max(hp(source), hiH); source.damage = 0;
+				emit(state, { type: 'buff', uid: source.uid, attack: source.attack, hp: hp(source) });
+			}
+		} else if (e.type === 'shuffle-soul-fragments') {
+			// Spirit Jailer / etc: shuffle N Soul Fragments into your deck
+			const p = state.players[pi];
+			for (let n = 0; n < (e.count || 2); n++) p.deck.push('sch_soul_fragment');
+			for (let i = p.deck.length - 1; i > 0; i--) { const j = Math.floor(state.rng() * (i + 1)); [p.deck[i], p.deck[j]] = [p.deck[j], p.deck[i]]; }
+			emit(state, { type: 'shuffle', player: pi });
+		} else if (e.type === 'destroy-fragment-then-damage') {
+			// Shadowlight Scholar: destroy a Soul Fragment in your deck to deal damage
+			const p = state.players[pi];
+			const fi = p.deck.indexOf('sch_soul_fragment');
+			if (fi >= 0) {
+				p.deck.splice(fi, 1);
+				healHero(state, pi, 2); // destroying a Soul Fragment restores 2 Health
+				const t = chosenCreature() || (target && target.type === 'hero' ? target : null);
+				if (target && target.type === 'hero') damageHero(state, target.player, e.value || 3, pi);
+				else if (t) damageCreature(state, t, e.value || 3, source);
+				sweepDeaths(state);
+			}
+		} else if (e.type === 'swap-hand-with-enemy') {
+			// Mindrender Illucia: replace your hand with a copy of your opponent's until end of turn
+			const foe = enemies[0];
+			if (foe != null && !source?._illuciaDone) {
+				const p = state.players[pi];
+				p.savedHand = p.hand;
+				p.hand = state.players[foe].hand.map(c => { const def = state.cardsById[c.id]; const nc = def ? instantiate(def, pi) : JSON.parse(JSON.stringify(c)); nc.zone = 'hand'; return nc; });
+				p.illuciaSwap = true;
+				emit(state, { type: 'handSwap', player: pi });
+			}
 		} else if (e.type === 'transform-adjacent-costplus') {
 			// Bogstrok Clacker: transform each neighbor into a random minion costing (1) more
 			if (source) {
@@ -5380,6 +5435,7 @@ function execEffects(state, pi, effects, target, source) {
 				const pool = Object.values(state.cardsById).filter(d => isSpellType(d) && !d.token && d.collectible !== false
 					&& !(d.colors && d.colors.length) && !d.choices && !d.xSpell && !d.counterSpell
 					&& (e.cardClass == null || (d.cardClass || 'neutral') === e.cardClass) // Solarian Prime: Mage spells
+					&& (e.cost == null || (d.cost || 0) === e.cost) // Enchanted Cauldron: same Cost
 					&& (e.minCost == null || (d.cost || 0) >= e.minCost));
 				if (!pool.length) break;
 				const spell = instantiate(pool[Math.floor(state.rng() * pool.length)], pi);
@@ -5890,7 +5946,7 @@ function execEffects(state, pi, effects, target, source) {
 				pool = pool.filter(d => d.cardClass && d.cardClass !== 'neutral'
 					&& d.cardClass !== p.heroClass);
 			} else if (e.cardClass) {
-				pool = pool.filter(d => d.cardClass === e.cardClass); // Lyra: a specific class
+				pool = e.cardClass === 'own' ? (p.heroClass ? pool.filter(d => (d.cardClass || 'neutral') === p.heroClass) : pool) : pool.filter(d => d.cardClass === e.cardClass); // Wandmaker: your class / Lyra: a specific class
 			}
 			// `copies`: pick ONE match and add that same card N times; else N distinct rolls
 			const cnt = e.countPer === 'spells-this-turn' ? (p.spellsPlayedThisTurn || 0) : (e.count || 1); // Mana Cyclone
@@ -7586,7 +7642,7 @@ function resolveCombat(state, pi, attackerUid, target) {
 			for (const o of trigs) runSecretEffects(state, pi, o.effects, { self: attacker });
 		}
 		// Knuckles: "after this attacks a minion" (fires even if it dies? HS: it survives to hit)
-		if (!isDead(attacker)) fireCreatureTrigger(state, attacker, 'self-attacks-creature');
+		if (!isDead(attacker)) fireCreatureTrigger(state, attacker, 'self-attacks-creature', { victim: defender });
 		// Wind-up Burglebot: "whenever this attacks a minion and survives"
 		if (!isDead(attacker)) fireCreatureTrigger(state, attacker, 'self-attacks-survives');
 		// Alley Armorsmith: "whenever this deals damage" — either combatant that dealt any
@@ -8249,6 +8305,7 @@ export function endTurn(state) {
 	p.castSpellLastTurn = (p.spellsPlayedThisTurn || 0) > 0; // Marshspawn / Shattered Rumbler: remember spellcasting across turns
 	p.spellsCostOneThisTurn = false; // Ysiel Windsinger only lasts this turn
 	for (const c of p.hand) c.drawnThisTurn = false; // Keli'dan: "drawn this turn" resets at end of your turn
+	if (p.illuciaSwap) { p.hand = p.savedHand || []; p.savedHand = null; p.illuciaSwap = false; emit(state, { type: 'handSwap', player: pi }); } // Mindrender Illucia: hand reverts at end of turn
 	p.heroPowerTaxNext = 0; // Saboteur's Hero Power tax only lasts this turn
 	p.nextMurlocFree = false; p.nextSecretCost = null; // Seadevil Stinger / Kabal Lackey are "this turn"
 	p.nextBattlecryDouble = false; // Murmuring Elemental only lasts this turn
