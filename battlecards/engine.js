@@ -363,6 +363,7 @@ export function createGame(cardsById, rng = Math.random, playerDeckIds = null, p
 		deathLogIds: [],     // Feugen/Stalagg: everything that died this game
 		discardLogIds: [],   // Cho'gall: everything you discarded this game
 		spellTaxNext: 0,     // Loatheb: extra cost on this player's spells next turn
+		battlecryTaxNext: 0, // Boompistol Bully: extra cost on this player's Battlecry cards next turn
 		heroPowerTaxNext: 0,      // Saboteur: your Hero Power costs more next turn
 		heroPowerDiscountNext: 0, // Fencing Coach: your next Hero Power costs less
 		heroPowersUsedGame: 0,    // Frost Giant: total Hero Powers used this game
@@ -599,6 +600,7 @@ const CHOSEN = {
 	grant: { creature: 'creature', 'friendly-creature': 'friendly-creature' },
 	'grant-spell-damage': { 'friendly-creature': 'friendly-creature', creature: 'creature' },
 	'damage-per-cards-played': { creature: 'creature', 'enemy-creature': 'enemy-creature' },
+	'damage-target-by-attack': { creature: 'creature', 'enemy-creature': 'enemy-creature' },
 	'transform-into-token': { 'friendly-creature': 'friendly-creature', creature: 'creature' },
 	'mark-doomed': { creature: 'creature', 'enemy-creature': 'enemy-creature' },
 	'devour-target': { 'friendly-creature': 'friendly-creature' },
@@ -2652,6 +2654,7 @@ function execEffects(state, pi, effects, target, source) {
 		if (!e.valuePer) return e.value;
 		const p = state.players[pi];
 		if (e.valuePer === 'armor') return (e.value || 1) * p.armor;
+		if (e.valuePer === 'cards-played') return (e.value || 1) * (p.cardsPlayedThisTurn || 0); // Shadow Sculptor
 		if (e.valuePer === 'hero-attack') return heroAttackValue(p);
 		if (e.valuePer === 'damaged-friendly') {
 			let n = p.board.filter(c => !isDead(c) && c.damage > 0).length;
@@ -3892,6 +3895,7 @@ function execEffects(state, pi, effects, target, source) {
 			else if (e.if.spellsThisTurn != null) ok = (p.spellsPlayedThisTurn || 0) >= e.if.spellsThisTurn; // Wartbringer
 			else if (e.if.controlFrozen) ok = p.board.some(c => !isDead(c) && c.frozen); // Ice Cream Peddler
 			else if (e.if.healedGame != null) ok = (p.healedGame || 0) >= e.if.healedGame; // Zandalari Templar
+			else if (e.if.playedQuestGame) ok = !!p.questsPlayedGame; // Sky Gen'ral Kragg
 			else if (e.if.hpDamageGame != null) ok = (p.hpDamageGame || 0) >= e.if.hpDamageGame; // Jan'alai, the Dragonhawk
 			else if (e.if.deckEmpty) ok = p.deck.length === 0; // Chef Nomi
 			else if (e.if.holdingOtherClass) ok = p.hand.some(c => c !== source && c.cardClass && c.cardClass !== 'neutral' && c.cardClass !== p.heroClass); // Underbelly Fence
@@ -5014,6 +5018,30 @@ function execEffects(state, pi, effects, target, source) {
 			const t = chosenCreature();
 			const n = state.players[pi].cardsPlayedThisTurn || 0;
 			if (t && n > 0) damageCreature(state, t, (e.value || 1) * n, source);
+		} else if (e.type === 'give-attack-to-random-friendly') {
+			// Fiendish Servant: hand this minion's Attack to a random friendly minion
+			const atk = source ? (source.attack || 0) : 0;
+			const pool = state.players[pi].board.filter(c => c !== source && !isDead(c) && c.type !== 'location');
+			if (atk > 0 && pool.length) buffCreature(pool[Math.floor(state.rng() * pool.length)], atk, 0);
+		} else if (e.type === 'damage-all-minions') {
+			// Risky Skipper: deal `value` to every minion on both sides
+			for (const pl of state.players) for (const c of [...pl.board]) if (!isDead(c) && c.type !== 'location') damageCreature(state, c, e.value || 1, source);
+			sweepDeaths(state);
+		} else if (e.type === 'damage-target-by-attack') {
+			// Aeon Reaver: deal damage to a minion equal to its own Attack
+			const t = chosenCreature();
+			if (t) damageCreature(state, t, t.attack || 0, source);
+		} else if (e.type === 'tax-enemy-battlecry') {
+			// Boompistol Bully: enemy Battlecry cards cost more next turn
+			for (const o of enemies) state.players[o].battlecryTaxNext = (state.players[o].battlecryTaxNext || 0) + (e.value || 5);
+		} else if (e.type === 'summon-copy-self') {
+			// Animated Avalanche: summon a copy of this minion
+			if (source) { const base = state.cardsById[source.id]; if (base) summon(state, pi, JSON.parse(JSON.stringify(base))); }
+		} else if (e.type === 'curse-enemy-card') {
+			// Chaos Gazer: curse a card in the opponent's hand; if unplayed by the
+			// end of their next turn, they take damage (resolved in endTurn)
+			const foe = enemies[0];
+			if (foe != null) { const h = state.players[foe].hand.filter(c => !c.cursed); if (h.length) { const cc = h[Math.floor(state.rng() * h.length)]; cc.cursed = true; cc.curseDamage = e.value || 3; emit(state, { type: 'cursed', player: foe, uid: cc.uid }); } }
 		} else if (e.type === 'become-copy-of-hand') {
 			// Prince Taldaram: transform into a stat-fixed copy of a random creature in hand
 			if (source && source.zone === 'board' && !isDead(source)) {
@@ -6509,6 +6537,7 @@ export function effectiveCost(state, pi, card) {
 		if (disc) c = Math.max(0, c - disc);
 	}
 	if (p.spellTaxNext > 0 && isSpellType(card)) c += p.spellTaxNext; // Loatheb
+	if (p.battlecryTaxNext > 0 && (card.keywords || []).includes('battlecry')) c += p.battlecryTaxNext; // Boompistol Bully
 	return Math.max(0, c);
 }
 
@@ -6675,6 +6704,8 @@ export function playCard(state, pi, cardUid, target, choice, position, useAlt, k
 			// opponents' ongoing reactions to you playing a creature (Holomancer / Harbinger Celestia)
 			if (p.board.includes(card) && !isDead(card)) for (const o of opponentsOf(state, pi)) fireOngoing(state, o, 'enemy-creature-played', { minion: card });
 			if (p.board.includes(card) && !isDead(card)) fireOngoing(state, pi, 'creature-played', { minion: card });
+			// Grand Lackey Erkh: after you play a Lackey
+			if (p.board.includes(card) && !isDead(card) && typeof card.id === 'string' && card.id.startsWith('lackey_')) fireOngoing(state, pi, 'lackey-played', { minion: card });
 			// Swamp King Dred: after an opponent plays a creature, Dred attacks it
 			if (p.board.includes(card) && !isDead(card)) {
 				for (const o of opponentsOf(state, pi)) {
@@ -8023,6 +8054,8 @@ export function endTurn(state) {
 	const pi = state.current;
 	const p = state.players[pi];
 	p.spellTaxNext = 0; // Loatheb's tax only lasts this player's turn
+	p.battlecryTaxNext = 0; // Boompistol Bully's tax only lasts through this player's turn
+	{ const cursed = p.hand.filter(c => c.cursed); if (cursed.length) { let dmg = 0; for (const c of cursed) { dmg += c.curseDamage || 3; c.cursed = false; } damageHero(state, pi, dmg, pi); } } // Chaos Gazer: unplayed cursed cards bite
 	p.heroPowerTaxNext = 0; // Saboteur's Hero Power tax only lasts this turn
 	p.nextMurlocFree = false; p.nextSecretCost = null; // Seadevil Stinger / Kabal Lackey are "this turn"
 	p.nextBattlecryDouble = false; // Murmuring Elemental only lasts this turn

@@ -81086,6 +81086,362 @@
           }
         ]
       }
+    },
+    {
+      "id": "cleric_of_scales",
+      "name": "Cleric of Scales",
+      "type": "creature",
+      "cost": 1,
+      "cardClass": "priest",
+      "attack": 1,
+      "health": 1,
+      "rarity": "rare",
+      "set": "YEAR_OF_THE_DRAGON",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: If you're holding a Dragon, Discover a spell from your deck.",
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "holdingTribe": "Dragon"
+          },
+          "then": [
+            {
+              "type": "discover",
+              "fromOwnDeck": true,
+              "cardType": "spell"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "fiendish_servant",
+      "name": "Fiendish Servant",
+      "type": "creature",
+      "cost": 1,
+      "cardClass": "warlock",
+      "attack": 2,
+      "health": 1,
+      "rarity": "common",
+      "set": "YEAR_OF_THE_DRAGON",
+      "tribe": "Demon",
+      "keywords": [
+        "deathrattle"
+      ],
+      "description": "Deathrattle: Give this minion's Attack to a random friendly minion.",
+      "deathrattle": [
+        {
+          "type": "give-attack-to-random-friendly"
+        }
+      ]
+    },
+    {
+      "id": "risky_skipper",
+      "name": "Risky Skipper",
+      "type": "creature",
+      "cost": 1,
+      "cardClass": "warrior",
+      "attack": 1,
+      "health": 3,
+      "rarity": "rare",
+      "set": "YEAR_OF_THE_DRAGON",
+      "tribe": "Pirate",
+      "description": "After you play a minion, deal 1 damage to all minions.",
+      "ongoing": {
+        "on": "creature-played",
+        "effects": [
+          {
+            "type": "damage-all-minions",
+            "value": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "steel_beetle",
+      "name": "Steel Beetle",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "druid",
+      "attack": 2,
+      "health": 3,
+      "rarity": "rare",
+      "set": "YEAR_OF_THE_DRAGON",
+      "tribe": "Beast",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: If you're holding a spell that costs (5) or more, gain 5 Armor.",
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "holdingSpellMinCost": 5
+          },
+          "then": [
+            {
+              "type": "armor",
+              "value": 5
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "chaos_gazer",
+      "name": "Chaos Gazer",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "warlock",
+      "attack": 4,
+      "health": 3,
+      "rarity": "epic",
+      "set": "YEAR_OF_THE_DRAGON",
+      "tribe": "Demon",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Curse a playable card in your opponent's hand. They have 1 turn to play it!",
+      "effects": [
+        {
+          "type": "curse-enemy-card",
+          "value": 3
+        }
+      ]
+    },
+    {
+      "id": "skydiving_instructor",
+      "name": "Skydiving Instructor",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "neutral",
+      "attack": 2,
+      "health": 2,
+      "rarity": "common",
+      "set": "YEAR_OF_THE_DRAGON",
+      "tribe": "Draenei",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Summon a 1-Cost minion from your deck.",
+      "effects": [
+        {
+          "type": "recruit",
+          "maxCost": 1
+        }
+      ]
+    },
+    {
+      "id": "escaped_manasaber",
+      "name": "Escaped Manasaber",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "neutral",
+      "attack": 3,
+      "health": 5,
+      "rarity": "epic",
+      "set": "YEAR_OF_THE_DRAGON",
+      "tribe": "Beast",
+      "keywords": [
+        "stealth"
+      ],
+      "description": "Stealth. Whenever this attacks, gain 1 Mana Crystal this turn only.",
+      "ongoing": {
+        "on": "self-attacks",
+        "effects": [
+          {
+            "type": "temp-mana",
+            "value": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "grand_lackey_erkh",
+      "name": "Grand Lackey Erkh",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "neutral",
+      "attack": 2,
+      "health": 3,
+      "rarity": "legendary",
+      "set": "YEAR_OF_THE_DRAGON",
+      "description": "After you play a Lackey, add a Lackey to your hand.",
+      "ongoing": {
+        "on": "lackey-played",
+        "effects": [
+          {
+            "type": "add-lackey",
+            "count": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "sky_genral_kragg",
+      "name": "Sky Gen'ral Kragg",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "neutral",
+      "attack": 2,
+      "health": 3,
+      "rarity": "legendary",
+      "set": "YEAR_OF_THE_DRAGON",
+      "tribe": "Pirate",
+      "keywords": [
+        "taunt",
+        "battlecry"
+      ],
+      "description": "Taunt. Battlecry: If you've played a Quest this game, summon a 4/2 Parrot with Rush.",
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "playedQuestGame": true
+          },
+          "then": [
+            {
+              "type": "summon",
+              "count": 1,
+              "summonId": "yod_kragg_parrot"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "boompistol_bully",
+      "name": "Boompistol Bully",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "neutral",
+      "attack": 5,
+      "health": 5,
+      "rarity": "epic",
+      "set": "YEAR_OF_THE_DRAGON",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Enemy Battlecry cards cost (5) more next turn.",
+      "effects": [
+        {
+          "type": "tax-enemy-battlecry",
+          "value": 5
+        }
+      ]
+    },
+    {
+      "id": "scalelord",
+      "name": "Scalelord",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "paladin",
+      "attack": 5,
+      "health": 6,
+      "rarity": "rare",
+      "set": "YEAR_OF_THE_DRAGON",
+      "tribe": "Dragon",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Give your Murlocs Divine Shield.",
+      "effects": [
+        {
+          "type": "grant",
+          "target": "friendly-creatures",
+          "ifTribe": "Murloc",
+          "keyword": "divine_shield"
+        }
+      ]
+    },
+    {
+      "id": "shadow_sculptor",
+      "name": "Shadow Sculptor",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "rogue",
+      "attack": 3,
+      "health": 2,
+      "rarity": "epic",
+      "set": "YEAR_OF_THE_DRAGON",
+      "description": "Combo: Draw a card for each card you've played this turn.",
+      "combo": [
+        {
+          "type": "draw",
+          "value": 1,
+          "valuePer": "cards-played"
+        }
+      ]
+    },
+    {
+      "id": "aeon_reaver",
+      "name": "Aeon Reaver",
+      "type": "creature",
+      "cost": 6,
+      "cardClass": "priest",
+      "attack": 4,
+      "health": 4,
+      "rarity": "common",
+      "set": "YEAR_OF_THE_DRAGON",
+      "tribe": "Dragon",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Deal damage to a minion equal to its Attack.",
+      "effects": [
+        {
+          "type": "damage-target-by-attack",
+          "target": "creature"
+        }
+      ]
+    },
+    {
+      "id": "animated_avalanche",
+      "name": "Animated Avalanche",
+      "type": "creature",
+      "cost": 7,
+      "cardClass": "mage",
+      "attack": 7,
+      "health": 6,
+      "rarity": "common",
+      "set": "YEAR_OF_THE_DRAGON",
+      "tribe": "Elemental",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: If you played an Elemental last turn, summon a copy of this.",
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "elementalLastTurn": true
+          },
+          "then": [
+            {
+              "type": "summon-copy-self"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "yod_kragg_parrot",
+      "name": "Parrot",
+      "type": "creature",
+      "cost": 4,
+      "token": true,
+      "attack": 4,
+      "health": 2,
+      "rarity": "common",
+      "set": "YEAR_OF_THE_DRAGON",
+      "tribe": "Beast",
+      "keywords": [
+        "rush"
+      ],
+      "description": "Rush."
     }
   ]
 }
