@@ -560,6 +560,7 @@ const CHOSEN = {
 	'grant-ongoing': { 'friendly-creature': 'friendly-creature' },
 	'grant-static': { 'friendly-creature': 'friendly-creature' },
 	grant: { creature: 'creature', 'friendly-creature': 'friendly-creature' },
+	'grant-spell-damage': { 'friendly-creature': 'friendly-creature', creature: 'creature' },
 	destroy: { creature: 'creature', 'enemy-creature': 'enemy-creature', 'friendly-creature': 'friendly-creature' },
 	'copy-to-hand': { creature: 'creature', 'enemy-creature': 'enemy-creature' },
 	'copy-summon': { creature: 'creature', 'friendly-creature': 'friendly-creature' },
@@ -1728,6 +1729,7 @@ function breakWeapon(state, pi, destroyed) {
 	emit(state, { type: 'weaponBreak', player: pi, name: w.name, destroyed: !!destroyed });
 	if (w.deathrattle) execEffects(state, pi, w.deathrattle, null, w); // Quick Pick
 	recomputeAuras(state); // Southsea Deckhand loses conditional Charge
+	fireOngoing(state, pi, 'weapon-destroyed', {}); // Grave Shambler
 }
 
 function degradeWeapon(state, pi) {
@@ -2672,6 +2674,7 @@ function execEffects(state, pi, effects, target, source) {
 				if (pool.length) freezeCreature(state, pool[Math.floor(state.rng() * pool.length)]);
 			}
 			else if (e.target === 'self') { if (source && !isDead(source)) freezeCreature(state, source); } // Frozen Crusher
+			else if (e.target === 'friendly-others') { for (const c of state.players[pi].board) if (c !== source && !isDead(c)) freezeCreature(state, c); } // Hyldnir Frostrider
 			else { const t = chosenCreature(); if (t) freezeCreature(state, t); /* hero freeze: no-op (heroes can't attack) */ }
 		} else if (e.type === 'silence') {
 			if (e.target === 'enemy-creatures') { for (const o of enemies) for (const c of state.players[o].board) silenceCreature(state, c); }
@@ -3005,13 +3008,15 @@ function execEffects(state, pi, effects, target, source) {
 			const targets = e.eachPlayer ? state.players.map((_, idx) => idx).filter(idx => !state.players[idx].eliminated) : [pi];
 			for (const tp of targets) {
 				const tpp = state.players[tp];
-				if (def && tpp.hand.length < MAX_HAND) {
-					const card = instantiate(def, tp);
-					card.zone = 'hand';
-					tpp.hand.push(card);
-					emit(state, { type: 'conjure', player: tp, card, color: null });
-				} else if (!def) {
-					drawCards(state, tp, 1); // named card not in the pool yet
+				for (let n = 0; n < (e.count || 1); n++) {
+					if (def && tpp.hand.length < MAX_HAND) {
+						const card = instantiate(def, tp);
+						card.zone = 'hand';
+						tpp.hand.push(card);
+						emit(state, { type: 'conjure', player: tp, card, color: null });
+					} else if (!def) {
+						drawCards(state, tp, 1); // named card not in the pool yet
+					}
 				}
 			}
 		} else if (e.type === 'grant-ongoing') {
@@ -3136,6 +3141,7 @@ function execEffects(state, pi, effects, target, source) {
 				else if (e.per === 'friendly-tribe') n = state.players[pi].board.filter(c => c !== source && !isDead(c) && (c.tribe || '').includes(e.tribe)).length; // Draenei Totemcarver
 				else if (e.per === 'enemy-creatures') n = state.players.reduce((s, pl, idx) => idx === pi ? s : s + pl.board.filter(c => !isDead(c) && c.type !== 'location').length, 0); // Cyclopian Horror
 				else if (e.per === 'elementals-game') n = state.players[pi].elementalsPlayedGame || 0; // Ozruk
+					else if (e.per === 'died-this-turn') n = state.diedThisTurn || 0; // Wicked Skeleton
 				if (n > 0) buffCreature(source, (e.attack || 0) * n, (e.health || 0) * n);
 			}
 		} else if (e.type === 'buff-self-random') {
@@ -3153,6 +3159,20 @@ function execEffects(state, pi, effects, target, source) {
 				if (!source.static || source.static.type !== 'spell-damage') source.static = { type: 'spell-damage', value: 0 };
 				source.static.value = (source.static.value || 0) + (e.value || 1);
 				emit(state, { type: 'buff', uid: source.uid, attack: source.attack, hp: hp(source) });
+			}
+		} else if (e.type === 'grant-spell-damage') {
+			// Tuskarr Fisherman: give a chosen friendly creature Spell Damage +N
+			const t = chosenCreature();
+			if (t) {
+				if (!t.static || t.static.type !== 'spell-damage') t.static = { type: 'spell-damage', value: 0 };
+				t.static.value = (t.static.value || 0) + (e.value || 1);
+				emit(state, { type: 'buff', uid: t.uid, attack: t.attack, hp: hp(t) });
+			}
+		} else if (e.type === 'gain-weapon-stats') {
+			// Phantom Freebooter: gain +Attack/+Health equal to your weapon's stats
+			if (source && source.zone === 'board' && !isDead(source)) {
+				const w = state.players[pi].weapon;
+				if (w) buffCreature(source, w.attack || 0, w.durability || 0);
 			}
 		} else if (e.type === 'destroy-random-each') {
 			// Void Crusher: destroy a random creature on each player's board
@@ -3471,6 +3491,7 @@ function execEffects(state, pi, effects, target, source) {
 			else if (e.if.deckAtLeast != null) ok = p.deck.length >= e.if.deckAtLeast; // Crowd Control
 			else if (e.if.heroPowerUsed) ok = (p.heroPowers || []).some(h => h.usedThisTurn); // Manafeeder Panthara
 			else if (e.if.holdingSpellMinCost != null) ok = p.hand.some(c => (c.type === 'sorcery' || c.type === 'instant' || c.type === 'secret' || c.type === 'trap') && (c.cost || 0) >= e.if.holdingSpellMinCost); // Groundskeeper
+			else if (e.if.enemyTurn) ok = state.current !== pi; // Skelemancer / Vryghoul / Mountainfire Armor (died on opponent's turn)
 			execEffects(state, pi, ok ? e.then : (e.else || []), target, source);
 		} else if (e.type === 'damage-then') {
 			// deal damage, then branch on whether the creature survived
@@ -4534,7 +4555,8 @@ function execEffects(state, pi, effects, target, source) {
 				if (foe == null) return [];
 				return [...new Set(state.players[foe].deck)].map(id => state.cardsById[id]).filter(d => d && d.type === 'creature' && !d.token);
 			};
-			const discoverPool = () => (e.fromEnemyDeck ? enemyDeckDefs() : Object.values(state.cardsById)).filter(d => {
+			const ownDeckDefs = () => [...new Set(state.players[pi].deck)].map(id => state.cardsById[id]).filter(d => d && d.type === 'creature' && !d.token); // Stitched Tracker
+			const discoverPool = () => (e.fromEnemyDeck ? enemyDeckDefs() : e.fromOwnDeck ? ownDeckDefs() : Object.values(state.cardsById)).filter(d => {
 				if (d.type === 'land' || d.token || d.collectible === false || d.companion || d.commander) return false;
 				if (d.colors && d.colors.length) return false;
 				if (e.cardType === 'spell' ? !isSpellType(d) : (e.cardType && d.type !== e.cardType)) return false;
