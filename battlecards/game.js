@@ -2553,10 +2553,10 @@ renderer.domElement.addEventListener('pointerdown', ev => {
 	if (ev.button !== 0 || !state || state.over) return;
 	const uid = pick(ev);
 	const card = cardOf(uid);
-	if (TOUCH) {
-		$('tooltip').style.display = 'none';
-		startLongPress(uid, ev.clientX, ev.clientY);
-	}
+	if (TOUCH) $('tooltip').style.display = 'none';
+	// press-and-hold any card to open its full preview — and block the release
+	// from casting, so you can read a card without risking a play (desktop + touch)
+	startLongPress(uid, ev.clientX, ev.clientY);
 	// starting any gesture dismisses the pinned inspect; a tap re-opens it on release
 	inspectPrev = inspectUid;
 	hideInspect();
@@ -2755,8 +2755,9 @@ function updatePlaceMarker() {
 		const cc = cardOf(pick({ clientX: mouseX, clientY: mouseY }, placing.card.uid));
 		return !!cc && cc.zone === 'hand' && cc.controller === HUMAN;
 	})();
-	// live hint while dragging a card out of the hand
-	if (placing && placing.dragging && state) {
+	// live hint while dragging a card out of the hand (suppressed once a press-and-
+	// hold turns the gesture into a preview)
+	if (placing && placing.dragging && !longPressFired && state) {
 		const c = placing.card;
 		const yours = state.current === HUMAN;
 		const inPlay = !overOwnHand && mouseY < innerHeight * 0.94;
@@ -2767,7 +2768,7 @@ function updatePlaceMarker() {
 			: `not enough mana for ${c.name}`;
 	}
 	const isCreature = placing && (placing.card.type === 'creature' || placing.card.type === 'location');
-	const active = isCreature && placing.dragging && state && state.current === HUMAN
+	const active = isCreature && placing.dragging && !longPressFired && state && state.current === HUMAN
 		&& state.players[HUMAN].board.length
 		&& E.canPlay(state, HUMAN, placing.card)
 		&& !overOwnHand && mouseY < innerHeight * 0.94;
@@ -2790,11 +2791,20 @@ function startLongPress(uid, x, y) {
 	longPressFired = false;
 	if (!uid) return;
 	longPressT = setTimeout(() => {
-		if (Math.hypot(mouseX - x, mouseY - y) > 12) return;
+		if (Math.hypot(mouseX - x, mouseY - y) > 12) return; // moved: it's a drag, not a hold
 		longPressFired = true;
-		hoverUid = uid;
-		updateTooltip({ clientX: x, clientY: y });
-	}, 480);
+		const c = cardOf(uid);
+		if (c) {
+			// full card reader (with a "Play" button when it's a legal play), so a
+			// held card is previewed, never cast — the release is suppressed below
+			$('tooltip').style.display = 'none';
+			hideInspect();
+			showInspect(c);
+		} else {
+			hoverUid = uid;
+			updateTooltip({ clientX: x, clientY: y });
+		}
+	}, 380);
 }
 
 function heroPanelAt(x, y) {
@@ -2868,12 +2878,12 @@ addEventListener('pointerup', ev => {
 			// a drag plays wherever it lands EXCEPT back on your own hand — a fixed
 			// height cutoff wrongly cancelled drops onto the hero panel between them
 			const onHand = (() => { const cc = cardOf(pick(ev, c.uid)); return !!cc && cc.zone === 'hand' && cc.controller === HUMAN; })();
-			if (dragged && dist >= 14 && state.current === HUMAN && !onHand && ev.clientY < innerHeight * 0.94) {
+			if (dragged && dist >= 14 && !longPressFired && state.current === HUMAN && !onHand && ev.clientY < innerHeight * 0.94) {
 				releasePlay(c, ev);                        // dragged onto the field: play it
 			} else if (!dragged && !longPressFired) {
 				toggleInspect(c);                          // a click/tap: look closely, never play
 			}
-			// else: dragged but dropped back onto the hand (or long-pressed) → no-op
+			// else: long-pressed (previewing) or dropped back onto the hand → no-op, never casts
 		}
 		if (state) updateHud();                        // clear the drag hint
 		return;
