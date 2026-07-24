@@ -1407,6 +1407,16 @@ function recomputeAuras(state) {
 	}
 }
 
+// fire a single creature's own ongoing triggers by name (combat reactions:
+// self-attacks-survives, self-deals-damage, …); ctx.self is the creature
+function fireCreatureTrigger(state, c, when, extra = {}) {
+	if (!c || isDead(c)) return;
+	const trigs = [];
+	if (c.ongoing?.on === when) trigs.push(c.ongoing);
+	if (c.ongoings) for (const o of c.ongoings) if (o.on === when) trigs.push(o);
+	for (const o of trigs) runSecretEffects(state, c.controller, o.effects, { self: c, ...extra });
+}
+
 // condition on an ongoing trigger, judged against the event's subject card
 // (the summoned/played/dead/damaged creature) or the owner's own state
 function ongoingCondOk(state, pi, cond, ctx) {
@@ -1967,6 +1977,11 @@ function runSecretEffects(state, pi, effects, ctx) {
 				if (state.rng() < (e.chance || 0.5)) drawCards(state, ctx.drawer ?? state.current, 1);
 				break;
 			}
+			case 'gain-armor-by-amount': {
+				// Alley Armorsmith: gain Armor equal to the damage just dealt
+				if (ctx.amount > 0) gainArmor(state, pi, ctx.amount);
+				break;
+			}
 			case 'destroy-damaged': {
 				// Acidmaw: destroy the creature that was just damaged
 				const t = ctx.damaged;
@@ -2257,7 +2272,7 @@ function execEffects(state, pi, effects, target, source) {
 		const lsBefore = (e.type === 'damage' || e.type === 'random-damage') && e.lifesteal ? totalHurt() : null;
 		if (e.type === 'damage') {
 			// friendly Spell Damage boosts direct spell damage
-			let v = scaled(e);
+			let v = e.value === 'source-attack' ? (source?.attack || 0) : scaled(e); // Sergeant Sally
 			if (source && (source.type === 'sorcery' || source.type === 'instant')) {
 				v += staticValue(state.players[pi], 'spell-damage');
 			}
@@ -2651,7 +2666,7 @@ function execEffects(state, pi, effects, target, source) {
 			// options: pick a random companion (Animal Companion);
 			// forEnemy: tokens go to a random opponent (Leeroy's Whelps);
 			// eachPlayer: every player summons the token(s) (Sokenzan's Arrival)
-			let n = e.count === 'X' ? (source?.xValue || 0) : (e.count || 1);
+			let n = e.count === 'X' ? (source?.xValue || 0) : e.count === 'source-attack' ? (source?.attack || 0) : (e.count || 1); // Rat Pack
 			if (e.perEnemy) {
 				n = 0;
 				for (const o of enemies) n += state.players[o].board.filter(c => !isDead(c)).length;
@@ -3387,6 +3402,10 @@ function execEffects(state, pi, effects, target, source) {
 			else if (e.if.enemyHasTaunt) ok = opponentsOf(state, pi).some(o => state.players[o].board.some(c => !isDead(c) && has(c, KW.TAUNT))); // Spiked Hogrider
 			else if (e.if.enemyHandEmpty) ok = opponentsOf(state, pi).some(o => state.players[o].hand.length === 0); // Tanaris Hogchopper
 			else if (e.if.weaponAttack != null) ok = !!(p.weapon && p.weapon.attack >= e.if.weaponAttack); // Luckydo Buccaneer
+			else if (e.if.weaponEquipped) ok = !!p.weapon; // Hobart Grapplehammer
+			else if (e.if.enemyHandSize != null) ok = opponentsOf(state, pi).some(o => state.players[o].hand.length >= e.if.enemyHandSize); // Leatherclad Hogleader
+			else if (e.if.controlHealth != null) ok = p.board.some(c => !isDead(c) && hp(c) >= e.if.controlHealth); // Fight Promoter
+			else if (e.if.selfAttack != null) ok = !!(source && source.attack >= e.if.selfAttack); // Meanstreet Marshal
 			else if (e.if.controlStatic) ok = p.board.some(c => !isDead(c) && c.static?.type === e.if.controlStatic); // Master of Ceremonies: a Spell Damage minion
 			else if (e.if.maxHealthSelf != null) ok = p.life <= e.if.maxHealthSelf;
 			else if (e.if.targetFrozen) ok = !!(t && t.frozen);
@@ -3585,6 +3604,9 @@ function execEffects(state, pi, effects, target, source) {
 			}
 			for (let i = p.deck.length - 1; i > 0; i--) { const j = Math.floor(state.rng() * (i + 1)); [p.deck[i], p.deck[j]] = [p.deck[j], p.deck[i]]; }
 			emit(state, { type: 'shuffledIntoDeck', player: pi, count: e.count || 1 });
+		} else if (e.type === 'refresh-hero-power') {
+			// Auctionmaster Beardo: your Hero Power can be used again this turn
+			for (const hp of state.players[pi].heroPowers) hp.usedThisTurn = false;
 		} else if (e.type === 'remove-enemy-stealth') {
 			// Streetwise Investigator: enemy creatures lose Stealth
 			for (const o of enemies) for (const c of state.players[o].board) {
@@ -5679,6 +5701,7 @@ function resolveCombat(state, pi, attackerUid, target) {
 		const defender = findCreature(state, target.uid);
 		if (!defender) return false;
 		const defHpBefore = hp(defender);
+		const defBefore = defender.attack; // for Alley Armorsmith's retaliation damage
 		const aFirst = has(attacker, KW.FIRST_STRIKE) && !has(defender, KW.FIRST_STRIKE);
 		const dFirst = has(defender, KW.FIRST_STRIKE) && !has(attacker, KW.FIRST_STRIKE);
 		const strike = (src, dst) => {
@@ -5729,6 +5752,11 @@ function resolveCombat(state, pi, attackerUid, target) {
 			if (attacker.ongoings) for (const o of attacker.ongoings) if (o.on === 'self-kills-creature') trigs.push(o);
 			for (const o of trigs) runSecretEffects(state, pi, o.effects, { self: attacker });
 		}
+		// Wind-up Burglebot: "whenever this attacks a minion and survives"
+		if (!isDead(attacker)) fireCreatureTrigger(state, attacker, 'self-attacks-survives');
+		// Alley Armorsmith: "whenever this deals damage" — either combatant that dealt any
+		if (attacker.attack > 0) fireCreatureTrigger(state, attacker, 'self-deals-damage', { amount: attacker.attack });
+		if (defBefore > 0 && !isDead(defender)) fireCreatureTrigger(state, defender, 'self-deals-damage', { amount: defBefore });
 	}
 	sweepDeaths(state);
 }

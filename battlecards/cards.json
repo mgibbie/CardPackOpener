@@ -67789,6 +67789,396 @@
           "type": "summon-jade"
         }
       ]
+    },
+    {
+      "id": "tanaris_hogchopper",
+      "name": "Tanaris Hogchopper",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "neutral",
+      "attack": 4,
+      "health": 4,
+      "rarity": "common",
+      "set": "GANGS",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: If your opponent's hand is empty, gain +2/+2 and Charge.",
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "enemyHandEmpty": true
+          },
+          "then": [
+            {
+              "type": "buff-self",
+              "attack": 2,
+              "health": 2
+            },
+            {
+              "type": "grant",
+              "target": "self",
+              "keyword": "charge"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "luckydo_buccaneer",
+      "name": "Luckydo Buccaneer",
+      "type": "creature",
+      "cost": 6,
+      "cardClass": "rogue",
+      "attack": 5,
+      "health": 5,
+      "rarity": "epic",
+      "set": "GANGS",
+      "tribe": "Pirate",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: If your weapon has at least 3 Attack, gain +4/+4.",
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "weaponAttack": 3
+          },
+          "then": [
+            {
+              "type": "buff-self",
+              "attack": 4,
+              "health": 4
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "leatherclad_hogleader",
+      "name": "Leatherclad Hogleader",
+      "type": "creature",
+      "cost": 6,
+      "cardClass": "neutral",
+      "attack": 6,
+      "health": 6,
+      "rarity": "epic",
+      "set": "GANGS",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: If your opponent has 6 or more cards in hand, gain Charge.",
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "enemyHandSize": 6
+          },
+          "then": [
+            {
+              "type": "grant",
+              "target": "self",
+              "keyword": "charge"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "fight_promoter",
+      "name": "Fight Promoter",
+      "type": "creature",
+      "cost": 6,
+      "cardClass": "neutral",
+      "attack": 4,
+      "health": 4,
+      "rarity": "epic",
+      "set": "GANGS",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: If you control a creature with 6 or more Health, draw 2 cards.",
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "controlHealth": 6
+          },
+          "then": [
+            {
+              "type": "draw",
+              "value": 2
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "daring_reporter",
+      "name": "Daring Reporter",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "neutral",
+      "attack": 3,
+      "health": 3,
+      "rarity": "common",
+      "set": "GANGS",
+      "description": "Whenever your opponent draws a card, gain +1/+1.",
+      "ongoing": {
+        "on": "enemy-draws",
+        "effects": [
+          {
+            "type": "buff-self",
+            "attack": 1,
+            "health": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "meanstreet_marshal",
+      "name": "Meanstreet Marshal",
+      "type": "creature",
+      "cost": 1,
+      "cardClass": "paladin",
+      "attack": 1,
+      "health": 2,
+      "rarity": "epic",
+      "set": "GANGS",
+      "keywords": [
+        "deathrattle"
+      ],
+      "description": "Deathrattle: If this creature has 2 or more Attack, draw a card.",
+      "deathrattle": [
+        {
+          "type": "conditional",
+          "if": {
+            "selfAttack": 2
+          },
+          "then": [
+            {
+              "type": "draw",
+              "value": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "drakonid_operative",
+      "name": "Drakonid Operative",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "priest",
+      "attack": 4,
+      "health": 5,
+      "rarity": "rare",
+      "set": "GANGS",
+      "tribe": "Dragon",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: If you're holding a Dragon, Discover a card from your opponent's class.",
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "holdingTribe": "Dragon"
+          },
+          "then": [
+            {
+              "type": "discover",
+              "cardClass": "enemy"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "hobart_grapplehammer",
+      "name": "Hobart Grapplehammer",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "warrior",
+      "attack": 2,
+      "health": 2,
+      "rarity": "legendary",
+      "set": "GANGS",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: If you have a weapon equipped, give weapons in your hand +1/+1.",
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "weaponEquipped": true
+          },
+          "then": [
+            {
+              "type": "buff-hand",
+              "cardType": "weapon",
+              "all": true,
+              "attack": 1,
+              "health": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "auctionmaster_beardo",
+      "name": "Auctionmaster Beardo",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "neutral",
+      "attack": 3,
+      "health": 4,
+      "rarity": "legendary",
+      "set": "GANGS",
+      "description": "After you cast a spell, refresh your Hero Power.",
+      "ongoing": {
+        "on": "spell-played",
+        "effects": [
+          {
+            "type": "refresh-hero-power"
+          }
+        ]
+      }
+    },
+    {
+      "id": "rat_pack",
+      "name": "Rat Pack",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "hunter",
+      "attack": 2,
+      "health": 2,
+      "rarity": "epic",
+      "set": "GANGS",
+      "tribe": "Beast",
+      "keywords": [
+        "deathrattle"
+      ],
+      "description": "Deathrattle: Summon a number of 1/1 Rats equal to this creature's Attack.",
+      "deathrattle": [
+        {
+          "type": "summon",
+          "count": "source-attack",
+          "attack": 1,
+          "health": 1,
+          "name": "Rat",
+          "tribe": "Beast"
+        }
+      ]
+    },
+    {
+      "id": "sergeant_sally",
+      "name": "Sergeant Sally",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "neutral",
+      "attack": 1,
+      "health": 1,
+      "rarity": "legendary",
+      "set": "GANGS",
+      "keywords": [
+        "deathrattle"
+      ],
+      "description": "Deathrattle: Deal damage equal to this creature's Attack to all enemy creatures.",
+      "deathrattle": [
+        {
+          "type": "damage",
+          "value": "source-attack",
+          "target": "enemy-creatures"
+        }
+      ]
+    },
+    {
+      "id": "white_eyes",
+      "name": "White Eyes",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "shaman",
+      "attack": 5,
+      "health": 5,
+      "rarity": "legendary",
+      "set": "GANGS",
+      "tribe": "Elemental",
+      "keywords": [
+        "taunt",
+        "deathrattle"
+      ],
+      "description": "Taunt. Deathrattle: Shuffle 'The Storm Guardian' into your deck.",
+      "deathrattle": [
+        {
+          "type": "shuffle-into-deck",
+          "id": "the_storm_guardian"
+        }
+      ]
+    },
+    {
+      "id": "alley_armorsmith",
+      "name": "Alley Armorsmith",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "warrior",
+      "attack": 3,
+      "health": 7,
+      "rarity": "rare",
+      "set": "GANGS",
+      "keywords": [
+        "taunt"
+      ],
+      "description": "Taunt. Whenever this creature deals damage, gain that much Armor.",
+      "ongoing": {
+        "on": "self-deals-damage",
+        "effects": [
+          {
+            "type": "gain-armor-by-amount"
+          }
+        ]
+      }
+    },
+    {
+      "id": "windup_burglebot",
+      "name": "Wind-up Burglebot",
+      "type": "creature",
+      "cost": 6,
+      "cardClass": "neutral",
+      "attack": 5,
+      "health": 5,
+      "rarity": "epic",
+      "set": "GANGS",
+      "tribe": "Mech",
+      "description": "Whenever this attacks a creature and survives, draw a card.",
+      "ongoing": {
+        "on": "self-attacks-survives",
+        "effects": [
+          {
+            "type": "draw",
+            "value": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "the_storm_guardian",
+      "name": "The Storm Guardian",
+      "type": "creature",
+      "cost": 5,
+      "token": true,
+      "tribe": "Elemental",
+      "attack": 10,
+      "health": 10,
+      "rarity": "legendary",
+      "set": "GANGS",
+      "keywords": [
+        "windfury"
+      ],
+      "description": "A 10/10 with Windfury."
     }
   ]
 }
