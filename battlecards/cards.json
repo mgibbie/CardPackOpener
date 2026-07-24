@@ -72821,6 +72821,436 @@
           }
         ]
       }
+    },
+    {
+      "id": "murkspark_eel",
+      "name": "Murkspark Eel",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "shaman",
+      "attack": 2,
+      "health": 3,
+      "rarity": "rare",
+      "set": "GILNEAS",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: If your deck has only even-Cost cards, deal 2 damage.",
+      "effects": [
+        {
+          "type": "conditional",
+          "target": "any",
+          "if": {
+            "deckAllEven": true
+          },
+          "then": [
+            {
+              "type": "damage",
+              "value": 2,
+              "target": "any"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "druid_of_the_scythe",
+      "name": "Druid of the Scythe",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "druid",
+      "attack": 2,
+      "health": 2,
+      "rarity": "common",
+      "set": "GILNEAS",
+      "tribe": "Beast",
+      "description": "Choose One - Become a 4/2 with Rush; or a 2/4 with Taunt.",
+      "choices": [
+        {
+          "text": "4/2 Rush",
+          "effects": [
+            {
+              "type": "buff-self",
+              "attack": 2,
+              "health": 0
+            },
+            {
+              "type": "grant",
+              "target": "self",
+              "keyword": "rush"
+            }
+          ]
+        },
+        {
+          "text": "2/4 Taunt",
+          "effects": [
+            {
+              "type": "buff-self",
+              "attack": 0,
+              "health": 2
+            },
+            {
+              "type": "grant",
+              "target": "self",
+              "keyword": "taunt"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "ratcatcher",
+      "name": "Ratcatcher",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "warlock",
+      "attack": 2,
+      "health": 2,
+      "rarity": "epic",
+      "set": "GILNEAS",
+      "keywords": [
+        "rush",
+        "battlecry"
+      ],
+      "description": "Rush. Battlecry: Destroy a friendly creature and gain its Attack and Health.",
+      "effects": [
+        {
+          "type": "devour-target",
+          "target": "friendly-creature"
+        }
+      ]
+    },
+    {
+      "id": "voodoo_doll",
+      "name": "Voodoo Doll",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "neutral",
+      "attack": 1,
+      "health": 1,
+      "rarity": "epic",
+      "set": "GILNEAS",
+      "keywords": [
+        "battlecry",
+        "deathrattle"
+      ],
+      "description": "Battlecry: Choose a creature. Deathrattle: Destroy the chosen creature.",
+      "effects": [
+        {
+          "type": "mark-doomed",
+          "target": "creature"
+        }
+      ],
+      "deathrattle": [
+        {
+          "type": "destroy-marked"
+        }
+      ]
+    },
+    {
+      "id": "arcane_keysmith",
+      "name": "Arcane Keysmith",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "mage",
+      "attack": 2,
+      "health": 2,
+      "rarity": "epic",
+      "set": "GILNEAS",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Discover a Secret. Put it into the battlefield.",
+      "effects": [
+        {
+          "type": "discover",
+          "cardType": "secret",
+          "installSecret": true
+        }
+      ]
+    },
+    {
+      "id": "mad_hatter",
+      "name": "Mad Hatter",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "neutral",
+      "attack": 3,
+      "health": 2,
+      "rarity": "rare",
+      "set": "GILNEAS",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Randomly toss 3 hats to other creatures. Each hat gives +1/+1.",
+      "effects": [
+        {
+          "type": "random-buff-others",
+          "count": 3,
+          "attack": 1,
+          "health": 1
+        }
+      ]
+    },
+    {
+      "id": "totem_cruncher",
+      "name": "Totem Cruncher",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "shaman",
+      "attack": 2,
+      "health": 3,
+      "rarity": "epic",
+      "set": "GILNEAS",
+      "keywords": [
+        "taunt",
+        "battlecry"
+      ],
+      "description": "Taunt. Battlecry: Destroy your Totems. Gain +2/+2 for each destroyed.",
+      "effects": [
+        {
+          "type": "destroy-own-totems-buff",
+          "attack": 2,
+          "health": 2
+        }
+      ]
+    },
+    {
+      "id": "toxmonger",
+      "name": "Toxmonger",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "hunter",
+      "attack": 2,
+      "health": 4,
+      "rarity": "epic",
+      "set": "GILNEAS",
+      "description": "Whenever you play a 1-Cost creature, give it Poisonous.",
+      "ongoing": {
+        "on": "creature-played",
+        "effects": [
+          {
+            "type": "grant-played-if-cost",
+            "cost": 1,
+            "keyword": "poisonous"
+          }
+        ]
+      }
+    },
+    {
+      "id": "gloom_stag",
+      "name": "Gloom Stag",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "druid",
+      "attack": 2,
+      "health": 6,
+      "rarity": "epic",
+      "set": "GILNEAS",
+      "tribe": "Beast",
+      "keywords": [
+        "taunt",
+        "battlecry"
+      ],
+      "description": "Taunt. Battlecry: If your deck has only odd-Cost cards, gain +2/+2.",
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "deckAllOdd": true
+          },
+          "then": [
+            {
+              "type": "buff-self",
+              "attack": 2,
+              "health": 2
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "deathweb_spider",
+      "name": "Deathweb Spider",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "warlock",
+      "attack": 4,
+      "health": 6,
+      "rarity": "epic",
+      "set": "GILNEAS",
+      "tribe": "Beast",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: If your hero took damage this turn, gain Lifesteal.",
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "heroTookDamage": true
+          },
+          "then": [
+            {
+              "type": "grant",
+              "target": "self",
+              "keyword": "lifesteal"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "bonfire_elemental",
+      "name": "Bonfire Elemental",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "mage",
+      "attack": 5,
+      "health": 5,
+      "rarity": "rare",
+      "set": "GILNEAS",
+      "tribe": "Elemental",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: If you played an Elemental last turn, draw a card.",
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "elementalLastTurn": true
+          },
+          "then": [
+            {
+              "type": "draw",
+              "value": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "carrion_drake",
+      "name": "Carrion Drake",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "hunter",
+      "attack": 3,
+      "health": 7,
+      "rarity": "rare",
+      "set": "GILNEAS",
+      "tribe": "Dragon",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: If a creature died this turn, gain Poisonous.",
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "anyDiedThisTurn": true
+          },
+          "then": [
+            {
+              "type": "grant",
+              "target": "self",
+              "keyword": "poisonous"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "worgen_abomination",
+      "name": "Worgen Abomination",
+      "type": "creature",
+      "cost": 7,
+      "cardClass": "neutral",
+      "attack": 6,
+      "health": 6,
+      "rarity": "epic",
+      "set": "GILNEAS",
+      "description": "At the end of your turn, deal 2 damage to all other damaged creatures.",
+      "ongoing": {
+        "on": "turn-end",
+        "effects": [
+          {
+            "type": "damage-all-others-damaged",
+            "value": 2
+          }
+        ]
+      }
+    },
+    {
+      "id": "nightscale_matriarch",
+      "name": "Nightscale Matriarch",
+      "type": "creature",
+      "cost": 7,
+      "cardClass": "priest",
+      "attack": 4,
+      "health": 9,
+      "rarity": "rare",
+      "set": "GILNEAS",
+      "tribe": "Dragon",
+      "description": "Whenever a friendly creature is healed, summon a 3/3 Whelp.",
+      "ongoing": {
+        "on": "healed",
+        "effects": [
+          {
+            "type": "summon-on-friendly-heal",
+            "name": "Whelp",
+            "tribe": "Dragon",
+            "attack": 3,
+            "health": 3
+          }
+        ]
+      }
+    },
+    {
+      "id": "face_collector",
+      "name": "Face Collector",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "rogue",
+      "attack": 2,
+      "health": 2,
+      "rarity": "legendary",
+      "set": "GILNEAS",
+      "echo": true,
+      "keywords": [
+        "echo",
+        "battlecry"
+      ],
+      "description": "Echo. Battlecry: Add a random Legendary creature to your hand.",
+      "effects": [
+        {
+          "type": "conjure-random",
+          "cardType": "creature",
+          "rarity": "legendary",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "id": "archmage_arugal",
+      "name": "Archmage Arugal",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "mage",
+      "attack": 2,
+      "health": 2,
+      "rarity": "legendary",
+      "set": "GILNEAS",
+      "description": "Whenever you draw a creature, add a copy of it to your hand.",
+      "ongoing": {
+        "on": "card-drawn",
+        "effects": [
+          {
+            "type": "add-drawn-copy"
+          }
+        ]
+      }
     }
   ]
 }

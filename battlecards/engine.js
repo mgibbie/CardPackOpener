@@ -581,6 +581,8 @@ const CHOSEN = {
 	'grant-spell-damage': { 'friendly-creature': 'friendly-creature', creature: 'creature' },
 	'damage-per-cards-played': { creature: 'creature', 'enemy-creature': 'enemy-creature' },
 	'transform-into-token': { 'friendly-creature': 'friendly-creature', creature: 'creature' },
+	'mark-doomed': { creature: 'creature', 'enemy-creature': 'enemy-creature' },
+	'devour-target': { 'friendly-creature': 'friendly-creature' },
 	destroy: { creature: 'creature', 'enemy-creature': 'enemy-creature', 'friendly-creature': 'friendly-creature' },
 	'copy-to-hand': { creature: 'creature', 'enemy-creature': 'enemy-creature', 'friendly-creature': 'friendly-creature' },
 	'copy-summon': { creature: 'creature', 'friendly-creature': 'friendly-creature' },
@@ -1844,7 +1846,54 @@ function runSecretEffects(state, pi, effects, ctx) {
 			}
 			case 'prevent': ctx.prevented = true; break;
 			case 'armor': gainArmor(state, pi, e.value); break;
-			case 'summon-copy-of-played': {
+			case 'grant-played-if-cost': {
+					// Toxmonger: give the creature you just played a keyword if it costs N
+					const m = ctx.minion;
+					if (m && m !== ctx.self && (m.cost || 0) === (e.cost ?? 1) && !m.keywords.includes(e.keyword)) {
+						m.keywords.push(e.keyword);
+						if (e.keyword === KW.DIVINE_SHIELD) m.shield = true;
+						emit(state, { type: 'buff', uid: m.uid, attack: m.attack, hp: hp(m) });
+					}
+					break;
+				}
+				case 'summon-on-friendly-heal': {
+					// Nightscale Matriarch: a friendly creature was healed -> summon a token
+					if (ctx.healedCreature && ctx.healedCreature.controller === pi) {
+						summon(state, pi, { id: 'token_' + (e.name || 'whelp').toLowerCase(), name: e.name || 'Whelp', type: 'creature', cost: 0, token: true, tribe: e.tribe || null, rarity: 'common', attack: e.attack || 3, health: e.health || 3, description: `A ${e.attack || 3}/${e.health || 3} token.` });
+					}
+					break;
+				}
+				case 'grant-self-shield-on-heal': {
+					// The Glass Knight: whenever you restore Health, regain Divine Shield
+					const healedYours = ctx.healedHero === pi || (ctx.healedCreature && ctx.healedCreature.controller === pi);
+					if (healedYours && ctx.self && !ctx.self.shield && !isDead(ctx.self)) {
+						ctx.self.shield = true;
+						if (!ctx.self.keywords.includes(KW.DIVINE_SHIELD)) ctx.self.keywords.push(KW.DIVINE_SHIELD);
+						emit(state, { type: 'buff', uid: ctx.self.uid, attack: ctx.self.attack, hp: hp(ctx.self) });
+					}
+					break;
+				}
+				case 'add-drawn-copy': {
+					// Archmage Arugal: you drew a creature -> add a copy to your hand
+					const c = ctx.card;
+					if (c && c.type === 'creature' && state.cardsById[c.id] && state.players[pi].hand.length < MAX_HAND) {
+						const cp = instantiate(state.cardsById[c.id], pi); cp.zone = 'hand'; state.players[pi].hand.push(cp);
+						emit(state, { type: 'conjure', player: pi, card: cp, color: null });
+					}
+					break;
+				}
+				case 'summon-drawn-copy': {
+					// Dollmaster Dorian: you drew a creature -> summon a 1/1 copy of it
+					const c = ctx.card;
+					if (c && c.type === 'creature' && state.cardsById[c.id]) {
+						const cp = instantiate(state.cardsById[c.id], pi);
+						cp.attack = e.attack ?? 1; cp.maxHealth = e.health ?? 1;
+						cp.zone = 'board'; cp.sick = true; state.players[pi].board.push(cp);
+						emit(state, { type: 'summon', player: pi, card: cp }); fireOngoing(state, pi, 'summoned', { minion: cp }); recomputeAuras(state);
+					}
+					break;
+				}
+				case 'summon-copy-of-played': {
 					// Ixlid, Fungal Lord: summon a copy of the creature you just played
 					const m = ctx.minion;
 					if (m && m !== ctx.self) { const def = state.cardsById[m.id]; if (def) summon(state, pi, def); }
@@ -3579,6 +3628,9 @@ function execEffects(state, pi, effects, target, source) {
 			else if (e.if.controlTribeCount) ok = p.board.filter(c => !isDead(c) && (c.tribe || '').includes(e.if.controlTribeCount.tribe)).length >= e.if.controlTribeCount.count; // Windshear Stormcaller
 			else if (e.if.heroTookDamage) ok = !!p.heroDamagedThisTurn; // Duskbat / Deathweb Spider
 			else if (e.if.onlyCreature) ok = !state.players.some(pl => pl.board.some(c => c !== source && !isDead(c) && c.type !== 'location')); // Night Prowler
+			else if (e.if.deckAllEven) ok = p.deck.length > 0 && p.deck.every(id => ((state.cardsById[id]?.cost || 0) % 2) === 0); // Murkspark Eel
+			else if (e.if.deckAllOdd) ok = p.deck.length > 0 && p.deck.every(id => ((state.cardsById[id]?.cost || 0) % 2) === 1); // Gloom Stag / Glitter Moth
+			else if (e.if.anyDiedThisTurn) ok = (state.diedThisTurn || 0) > 0; // Carrion Drake
 			execEffects(state, pi, ok ? e.then : (e.else || []), target, source);
 		} else if (e.type === 'damage-then') {
 			// deal damage, then branch on whether the creature survived
@@ -3781,6 +3833,40 @@ function execEffects(state, pi, effects, target, source) {
 				const c = instantiate(state.cardsById[source.id], pi);
 				c.zone = 'hand'; state.players[pi].hand.push(c);
 				emit(state, { type: 'conjure', player: pi, card: c, color: null });
+			}
+		} else if (e.type === 'mark-doomed') {
+			// Voodoo Doll: remember a chosen creature; destroy it when this dies
+			const t = chosenCreature();
+			if (t && source) source.doomedUid = t.uid;
+		} else if (e.type === 'destroy-marked') {
+			// Voodoo Doll's Deathrattle
+			if (source?.doomedUid != null) { const t = findCreature(state, source.doomedUid); if (t && !isDead(t)) { t.damage = t.maxHealth; t.shield = false; emit(state, { type: 'destroy', uid: t.uid }); } }
+		} else if (e.type === 'devour-target') {
+			// Ratcatcher: destroy a chosen friendly creature, gain its Attack and Health
+			const t = chosenCreature();
+			if (t && source && source.zone === 'board' && !isDead(source) && t !== source) {
+				const a = t.attack, h2 = hp(t);
+				t.damage = t.maxHealth; t.shield = false; emit(state, { type: 'destroy', uid: t.uid });
+				buffCreature(source, a, h2);
+			}
+		} else if (e.type === 'random-buff-others') {
+			// Mad Hatter: toss N +1/+1 hats onto random OTHER creatures (may stack)
+			for (let i = 0; i < (e.count || 1); i++) {
+				const pool = state.players[pi].board.filter(c => c !== source && !isDead(c) && c.type !== 'location');
+				if (!pool.length) break;
+				buffCreature(pool[Math.floor(state.rng() * pool.length)], e.attack || 1, e.health || 1);
+			}
+		} else if (e.type === 'destroy-own-totems-buff') {
+			// Totem Cruncher: destroy your Totems, gain +2/+2 for each
+			const p = state.players[pi];
+			const totems = p.board.filter(c => c !== source && !isDead(c) && (c.tribe || '').includes('Totem'));
+			for (const t of totems) { t.damage = t.maxHealth; t.shield = false; emit(state, { type: 'destroy', uid: t.uid }); }
+			if (totems.length && source && source.zone === 'board' && !isDead(source)) buffCreature(source, (e.attack || 2) * totems.length, (e.health || 2) * totems.length);
+		} else if (e.type === 'damage-all-others-damaged') {
+			// Worgen Abomination: at end of turn, hit every OTHER already-damaged creature
+			for (const pl of state.players) for (const c of [...pl.board]) {
+				if (c === source || isDead(c) || c.type === 'location' || c.damage <= 0) continue;
+				damageCreature(state, c, e.value || 2, null);
 			}
 		} else if (e.type === 'awaken-darkness') {
 			// The Darkness's Candle: wake any dormant Darkness on the board
