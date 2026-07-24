@@ -80646,7 +80646,7 @@
     },
     {
       "id": "utgarde_grapplesnipe",
-      "name": "Utgarde Grapplesnipe",
+      "name": "Utgarde Grapplesniper",
       "type": "creature",
       "cost": 6,
       "cardClass": "neutral",
@@ -80734,6 +80734,358 @@
         }
       ],
       "description": "When drawn, summon a random Dragon."
+    },
+    {
+      "id": "wyrmrest_purifier",
+      "name": "Wyrmrest Purifier",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "neutral",
+      "attack": 3,
+      "health": 2,
+      "rarity": "epic",
+      "set": "DRAGONS",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Transform all Neutral cards in your deck into random cards from your class.",
+      "effects": [
+        {
+          "type": "transform-deck-neutral"
+        }
+      ]
+    },
+    {
+      "id": "transmogrifier",
+      "name": "Transmogrifier",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "neutral",
+      "attack": 2,
+      "health": 3,
+      "rarity": "epic",
+      "set": "DRAGONS",
+      "tribe": "Mech",
+      "description": "Whenever you draw a card, transform it into a random Legendary minion.",
+      "ongoing": {
+        "on": "card-drawn",
+        "effects": [
+          {
+            "type": "transform-drawn-legendary"
+          }
+        ]
+      }
+    },
+    {
+      "id": "envoy_of_lazul",
+      "name": "Envoy of Lazul",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "priest",
+      "attack": 2,
+      "health": 2,
+      "rarity": "epic",
+      "set": "DRAGONS",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Look at 3 cards. Guess which one is in your opponent's hand to get a copy of it.",
+      "effects": [
+        {
+          "type": "discover",
+          "fromEnemyHand": true
+        }
+      ]
+    },
+    {
+      "id": "grizzled_wizard",
+      "name": "Grizzled Wizard",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "neutral",
+      "attack": 3,
+      "health": 2,
+      "rarity": "epic",
+      "set": "DRAGONS",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Swap Hero Powers with your opponent until your next turn.",
+      "effects": [
+        {
+          "type": "swap-hero-powers"
+        }
+      ]
+    },
+    {
+      "id": "tentacled_menace",
+      "name": "Tentacled Menace",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "neutral",
+      "attack": 6,
+      "health": 5,
+      "rarity": "epic",
+      "set": "DRAGONS",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Each player draws a card. Swap their Costs.",
+      "effects": [
+        {
+          "type": "draw-both-swap-cost"
+        }
+      ]
+    },
+    {
+      "id": "chromatic_egg",
+      "name": "Chromatic Egg",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "neutral",
+      "attack": 0,
+      "health": 3,
+      "rarity": "epic",
+      "set": "DRAGONS",
+      "keywords": [
+        "battlecry",
+        "deathrattle"
+      ],
+      "description": "Battlecry: Secretly Discover a Dragon to hatch into. Deathrattle: Hatch!",
+      "effects": [
+        {
+          "type": "chromatic-egg"
+        }
+      ],
+      "deathrattle": [
+        {
+          "type": "hatch-egg"
+        }
+      ]
+    },
+    {
+      "id": "utgarde_grapplesniper",
+      "name": "Utgarde Grapplesniper",
+      "type": "creature",
+      "cost": 6,
+      "cardClass": "neutral",
+      "attack": 5,
+      "health": 5,
+      "rarity": "rare",
+      "set": "DRAGONS",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Both players draw a card. If it's a Dragon, summon it.",
+      "effects": [
+        {
+          "type": "draw-and-summon-if-tribe",
+          "tribe": "Dragon"
+        }
+      ]
+    },
+    {
+      "id": "waxadred",
+      "name": "Waxadred",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "rogue",
+      "attack": 7,
+      "health": 5,
+      "rarity": "legendary",
+      "set": "DRAGONS",
+      "keywords": [
+        "deathrattle"
+      ],
+      "description": "Deathrattle: Shuffle a Candle into your deck that resummons Waxadred when drawn.",
+      "deathrattle": [
+        {
+          "type": "shuffle-into-deck",
+          "id": "drg_waxadred_candle",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "id": "bandersmosh",
+      "name": "Bandersmosh",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "shaman",
+      "attack": 5,
+      "health": 5,
+      "rarity": "legendary",
+      "set": "DRAGONS",
+      "bandersmoshTransform": true,
+      "description": "Each turn this is in your hand, transform it into a 5/5 copy of a random Legendary minion."
+    },
+    {
+      "id": "flik_skyshiv",
+      "name": "Flik Skyshiv",
+      "type": "creature",
+      "cost": 6,
+      "cardClass": "rogue",
+      "attack": 4,
+      "health": 4,
+      "rarity": "legendary",
+      "set": "DRAGONS",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Destroy a minion and all copies of it (wherever they are).",
+      "effects": [
+        {
+          "type": "destroy-all-copies",
+          "target": "creature"
+        }
+      ]
+    },
+    {
+      "id": "kronx_dragonhoof",
+      "name": "Kronx Dragonhoof",
+      "type": "creature",
+      "cost": 6,
+      "cardClass": "neutral",
+      "attack": 6,
+      "health": 6,
+      "rarity": "legendary",
+      "set": "DRAGONS",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: If you've Invoked twice, unleash a Devastation (deal 5 to all enemies). Otherwise gain 5 Armor.",
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "invokedTwice": true
+          },
+          "then": [
+            {
+              "type": "devastation"
+            }
+          ],
+          "else": [
+            {
+              "type": "armor",
+              "value": 5
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "nithogg",
+      "name": "Nithogg",
+      "type": "creature",
+      "cost": 6,
+      "cardClass": "shaman",
+      "attack": 5,
+      "health": 5,
+      "rarity": "legendary",
+      "set": "DRAGONS",
+      "keywords": [
+        "battlecry"
+      ],
+      "overload": 2,
+      "description": "Battlecry: Summon two 0/3 Eggs. Next turn they hatch into 4/4 Drakes with Rush.",
+      "effects": [
+        {
+          "type": "summon",
+          "count": 2,
+          "summonId": "drg_nithogg_egg"
+        }
+      ]
+    },
+    {
+      "id": "murozond_the_infinite",
+      "name": "Murozond the Infinite",
+      "type": "creature",
+      "cost": 8,
+      "cardClass": "priest",
+      "attack": 8,
+      "health": 8,
+      "rarity": "legendary",
+      "set": "DRAGONS",
+      "tribe": "Dragon",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Play all cards your opponent played last turn.",
+      "effects": [
+        {
+          "type": "replay-opponent-last-turn"
+        }
+      ]
+    },
+    {
+      "id": "sathrovarr",
+      "name": "Sathrovarr",
+      "type": "creature",
+      "cost": 9,
+      "cardClass": "neutral",
+      "attack": 5,
+      "health": 5,
+      "rarity": "legendary",
+      "set": "DRAGONS",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Choose a friendly minion. Add a copy of it to your hand, deck, and battlefield.",
+      "effects": [
+        {
+          "type": "copy-to-all-zones",
+          "target": "friendly-creature"
+        }
+      ]
+    },
+    {
+      "id": "drg_waxadred_candle",
+      "name": "Waxadred's Candle",
+      "type": "sorcery",
+      "cost": 1,
+      "token": true,
+      "rarity": "legendary",
+      "set": "DRAGONS",
+      "drawTrigger": true,
+      "onDraw": [
+        {
+          "type": "summon",
+          "count": 1,
+          "summonId": "waxadred"
+        }
+      ],
+      "description": "When drawn, resummon Waxadred."
+    },
+    {
+      "id": "drg_nithogg_egg",
+      "name": "Nithogg Egg",
+      "type": "creature",
+      "cost": 0,
+      "token": true,
+      "attack": 0,
+      "health": 3,
+      "rarity": "legendary",
+      "set": "DRAGONS",
+      "keywords": [
+        "pacifist"
+      ],
+      "description": "Next turn, hatch into a 4/4 Drake with Rush.",
+      "ongoing": {
+        "on": "turn-start",
+        "effects": [
+          {
+            "type": "hatch-self-into",
+            "name": "Drake",
+            "tribe": "Dragon",
+            "attack": 4,
+            "health": 4,
+            "keywords": [
+              "rush"
+            ]
+          }
+        ]
+      }
     }
   ]
 }

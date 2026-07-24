@@ -180,6 +180,7 @@ function instantiate(def, controller) {
 		heroPowerAdjacent: !!def.heroPowerAdjacent, // Spirit of the Dragonhawk
 		copiesOnDiscard: def.copiesOnDiscard || 0, // High Priestess Jekliik: add copies when discarded
 		chameleosTransform: !!def.chameleosTransform, // Chameleos: morph into an enemy hand card each turn
+		bandersmoshTransform: !!def.bandersmoshTransform, // Bandersmosh: morph into a 5/5 Legendary each turn
 		selfCost: def.selfCost || null, // self-scaling printed cost: { per, amount }
 		enrage: def.enrage || null,   // while damaged: { attack?, health?, keywords?, weaponAttack? }
 		combo: def.combo || null,     // effects used instead when a card was played earlier this turn
@@ -606,6 +607,8 @@ const CHOSEN = {
 	'copy-health': { 'friendly-creature': 'friendly-creature' },
 	'transform-target-into-source': { 'friendly-creature': 'friendly-creature' },
 	'mark-summon-copy': { 'enemy-creature': 'enemy-creature' },
+	'destroy-all-copies': { creature: 'creature', 'enemy-creature': 'enemy-creature' },
+	'copy-to-all-zones': { 'friendly-creature': 'friendly-creature' },
 	destroy: { creature: 'creature', 'enemy-creature': 'enemy-creature', 'friendly-creature': 'friendly-creature' },
 	'copy-to-hand': { creature: 'creature', 'enemy-creature': 'enemy-creature', 'friendly-creature': 'friendly-creature' },
 	'copy-summon': { creature: 'creature', 'friendly-creature': 'friendly-creature' },
@@ -2045,6 +2048,28 @@ function runSecretEffects(state, pi, effects, ctx) {
 				case 'draw-on-big-heal': {
 					// Soup Vendor: restore N+ to your hero -> draw a card
 					if (ctx.healedHero === pi && (ctx.amount || 0) >= (e.min || 3)) drawCards(state, pi, e.value || 1);
+					break;
+				}
+				case 'hatch-self-into': {
+					// Nithogg's Egg: at your turn start, become a fixed-stat token
+					const self = ctx.self;
+					if (self && self.zone === 'board' && !isDead(self)) {
+						const tok = instantiate({ id: 'token_' + (e.name || 'drake').toLowerCase(), name: e.name || 'Drake', type: 'creature', cost: 0, token: true, tribe: e.tribe || null, rarity: 'common', attack: e.attack || 4, health: e.health || 4, keywords: e.keywords || [], description: `A ${e.attack || 4}/${e.health || 4} token.` }, self.controller);
+						tok.zone = 'board'; tok.sick = false;
+						const board = state.players[self.controller].board;
+						board[board.indexOf(self)] = tok; self.zone = 'gone';
+						emit(state, { type: 'transformed', uid: self.uid, player: self.controller, from: self.name, card: tok });
+						recomputeAuras(state);
+					}
+					break;
+				}
+				case 'transform-drawn-legendary': {
+					// Transmogrifier: replace a drawn card with a random Legendary creature
+					const c = ctx.card;
+					if (c) {
+						const legs = Object.values(state.cardsById).filter(d => d.type === 'creature' && d.rarity === 'legendary' && !d.token && d.collectible !== false && !(d.colors && d.colors.length));
+						if (legs.length) { const pick = legs[Math.floor(state.rng() * legs.length)]; const p2 = state.players[pi]; const idx = p2.hand.indexOf(c); if (idx >= 0) { const nc = instantiate(pick, pi); nc.zone = 'hand'; p2.hand[idx] = nc; emit(state, { type: 'conjure', player: pi, card: nc, color: null }); } }
+					}
 					break;
 				}
 				case 'add-drawn-copy': {
@@ -4125,6 +4150,64 @@ function execEffects(state, pi, effects, target, source) {
 				const bc = chosen.flatMap(sp => JSON.parse(JSON.stringify(sp.effects || [])));
 				const horror = instantiate({ id: 'dal_drustvar_horror', name: 'Drustvar Horror', type: 'creature', cost: 5, token: true, rarity: 'epic', set: 'DALARAN', attack: 5, health: 5, keywords: bc.length ? ['battlecry'] : [], description: '5/5. ' + chosen.map(s => s.name).join(', '), effects: bc }, pi);
 				horror.zone = 'hand'; p.hand.push(horror); emit(state, { type: 'conjure', player: pi, card: horror, color: null });
+			}
+		} else if (e.type === 'transform-deck-neutral') {
+			// Wyrmrest Purifier: turn every Neutral card in your deck into a random class card
+			const p = state.players[pi], cls = p.heroClass;
+			const pool = Object.values(state.cardsById).filter(d => d.cardClass === cls && !d.token && d.collectible !== false && !(d.colors && d.colors.length) && d.type !== 'land');
+			if (cls && pool.length) p.deck = p.deck.map(id => (state.cardsById[id]?.cardClass || 'neutral') === 'neutral' ? pool[Math.floor(state.rng() * pool.length)].id : id);
+		} else if (e.type === 'swap-hero-powers') {
+			// Grizzled Wizard: swap Hero Powers with an opponent
+			const o = enemies[0];
+			if (o != null) { const tmp = state.players[pi].heroPowers; state.players[pi].heroPowers = state.players[o].heroPowers; state.players[o].heroPowers = tmp; emit(state, { type: 'heroPowerGained', player: pi, card: state.players[pi].heroPowers[0] }); }
+		} else if (e.type === 'draw-both-swap-cost') {
+			// Tentacled Menace: each player draws a card, then swap the two drawn cards' Costs
+			const o = enemies[0];
+			const before0 = state.players[pi].hand.length; drawCards(state, pi, 1);
+			const my = state.players[pi].hand.length > before0 ? state.players[pi].hand[state.players[pi].hand.length - 1] : null;
+			let their = null;
+			if (o != null) { const b = state.players[o].hand.length; drawCards(state, o, 1); their = state.players[o].hand.length > b ? state.players[o].hand[state.players[o].hand.length - 1] : null; }
+			if (my && their) { const t = my.cost; my.cost = their.cost; their.cost = t; }
+		} else if (e.type === 'chromatic-egg') {
+			// Chromatic Egg: remember a random Dragon; Deathrattle hatches it
+			const pool = Object.values(state.cardsById).filter(d => d.type === 'creature' && (d.tribe || '').includes('Dragon') && !d.token && d.collectible !== false && !(d.colors && d.colors.length));
+			if (pool.length && source) source.hatchId = pool[Math.floor(state.rng() * pool.length)].id;
+		} else if (e.type === 'hatch-egg') {
+			if (source?.hatchId && state.cardsById[source.hatchId]) summon(state, pi, state.cardsById[source.hatchId]);
+		} else if (e.type === 'destroy-all-copies') {
+			// Flik Skyshiv: destroy a chosen creature and every copy of it, everywhere
+			const t = chosenCreature();
+			if (t) {
+				const id = t.id;
+				for (const pl of state.players) {
+					for (const c of [...pl.board]) if (c.id === id && !isDead(c)) { c.damage = c.maxHealth; c.shield = false; emit(state, { type: 'destroy', uid: c.uid }); }
+					pl.hand = pl.hand.filter(c => c.id !== id);
+					pl.deck = pl.deck.filter(cid => cid !== id);
+				}
+			}
+		} else if (e.type === 'devastation') {
+			// Kronx Dragonhoof: approximate Galakrond's Devastation (deal 5 to all enemies)
+			execEffects(state, pi, [{ type: 'damage', value: 5, target: 'enemy-creatures' }, { type: 'damage', value: 5, target: 'enemy-heroes' }], target, source);
+		} else if (e.type === 'replay-opponent-last-turn') {
+			// Murozond the Infinite: play all cards your opponent played last turn (random targets)
+			const o = enemies[0];
+			if (o != null) {
+				const randTarget = () => { const pool = []; for (let s2 = 0; s2 < state.players.length; s2++) { for (const c of state.players[s2].board) if (!isDead(c) && c.type !== 'location') pool.push({ type: 'creature', uid: c.uid, player: s2 }); pool.push({ type: 'hero', player: s2 }); } return pool.length ? pool[Math.floor(state.rng() * pool.length)] : null; };
+				for (const id of (state.players[o].cardsPlayedLastTurnIds || [])) {
+					const def = state.cardsById[id];
+					if (!def) continue;
+					if (def.type === 'creature') { if (state.players[pi].board.filter(c => !isDead(c)).length < 7) summon(state, pi, def); }
+					else if (isSpellType(def) && def.effects) execEffects(state, pi, JSON.parse(JSON.stringify(def.effects)), randTarget(), source);
+				}
+			}
+		} else if (e.type === 'copy-to-all-zones') {
+			// Sathrovarr: add a copy of a chosen friendly creature to hand, deck, and board
+			const t = chosenCreature();
+			const p = state.players[pi];
+			if (t && state.cardsById[t.id]) {
+				if (p.hand.length < MAX_HAND) { const c = instantiate(state.cardsById[t.id], pi); c.zone = 'hand'; p.hand.push(c); emit(state, { type: 'conjure', player: pi, card: c, color: null }); }
+				p.deck.push(t.id); for (let i = p.deck.length - 1; i > 0; i--) { const j = Math.floor(state.rng() * (i + 1)); [p.deck[i], p.deck[j]] = [p.deck[j], p.deck[i]]; }
+				if (p.board.filter(c => !isDead(c)).length < 7) summon(state, pi, state.cardsById[t.id]);
 			}
 		} else if (e.type === 'equip-destroyed-weapon') {
 			// Hoard Pillager: re-equip a weapon from your graveyard
@@ -6534,6 +6617,7 @@ export function playCard(state, pi, cardUid, target, choice, position, useAlt, k
 	fireOngoing(state, pi, 'card-played', { played: card });
 	if (wasRightmost) fireOngoing(state, pi, 'rightmost-card-played', { played: card }); // Stargazer Luna
 	if (card.combo) fireOngoing(state, pi, 'combo-card-played', { played: card }); // Whirlkick Master
+	if (!card.token) (p.cardsPlayedThisTurnIds = p.cardsPlayedThisTurnIds || []).push(card.id); // Murozond the Infinite
 	for (const o of opponentsOf(state, pi)) fireOngoing(state, o, 'enemy-card-played', { played: card, caster: pi }); // Fel Reaver
 	corruptHandCards(state, pi, playedCost);
 	// Patches the Pirate: playing a Pirate pulls Patches out of your deck
@@ -8086,6 +8170,18 @@ export function endTurn(state) {
 	np.diedThisTurnIds = [];
 	np.heroDamagedThisTurn = false; np.heroDamageTakenThisTurn = 0; // "took damage this turn" resets each turn
 	np.spellsPlayedLastTurnIds = np.spellsPlayedThisTurnIds || []; np.spellsPlayedThisTurnIds = []; // Krag'wa, the Frog
+	np.cardsPlayedLastTurnIds = np.cardsPlayedThisTurnIds || []; np.cardsPlayedThisTurnIds = []; // Murozond the Infinite
+	// Bandersmosh: at your turn start, hand copies morph into a 5/5 Legendary
+	for (const c of np.hand) {
+		if (!c.bandersmoshTransform) continue;
+		const legs = Object.values(state.cardsById).filter(d => d.type === 'creature' && d.rarity === 'legendary' && !d.token && d.collectible !== false && !(d.colors && d.colors.length));
+		if (!legs.length) continue;
+		const pick = legs[Math.floor(state.rng() * legs.length)];
+		const morph = instantiate(pick, state.current);
+		morph.uid = c.uid; morph.zone = 'hand'; morph.bandersmoshTransform = true; morph.attack = 5; morph.maxHealth = 5; morph.cost = c.cost;
+		np.hand[np.hand.indexOf(c)] = morph;
+		emit(state, { type: 'conjure', player: state.current, card: morph, color: null });
+	}
 	// Chameleos: each of your turns it morphs into a random card an opponent holds
 	for (const c of np.hand) {
 		if (!c.chameleosTransform) continue;
