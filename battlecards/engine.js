@@ -600,6 +600,7 @@ const CHOSEN = {
 	'devour-target': { 'friendly-creature': 'friendly-creature' },
 	fireworks: { 'friendly-creature': 'friendly-creature' },
 	'bounce-and-buff': { 'friendly-creature': 'friendly-creature' },
+	'copy-health': { 'friendly-creature': 'friendly-creature' },
 	destroy: { creature: 'creature', 'enemy-creature': 'enemy-creature', 'friendly-creature': 'friendly-creature' },
 	'copy-to-hand': { creature: 'creature', 'enemy-creature': 'enemy-creature', 'friendly-creature': 'friendly-creature' },
 	'copy-summon': { creature: 'creature', 'friendly-creature': 'friendly-creature' },
@@ -1874,11 +1875,12 @@ function runSecretEffects(state, pi, effects, ctx) {
 			case 'prevent': ctx.prevented = true; break;
 			case 'armor': gainArmor(state, pi, e.value); break;
 			case 'grant-played-if-cost': {
-					// Toxmonger: give the creature you just played a keyword if it costs N
+					// Toxmonger: give the creature you just played a keyword if it costs N;
+					// Magic Carpet also pumps it (+Attack) and grants Rush
 					const m = ctx.minion;
-					if (m && m !== ctx.self && (m.cost || 0) === (e.cost ?? 1) && !m.keywords.includes(e.keyword)) {
-						m.keywords.push(e.keyword);
-						if (e.keyword === KW.DIVINE_SHIELD) m.shield = true;
+					if (m && m !== ctx.self && (m.cost || 0) === (e.cost ?? 1)) {
+						if (e.keyword && !m.keywords.includes(e.keyword)) { m.keywords.push(e.keyword); if (e.keyword === KW.DIVINE_SHIELD) m.shield = true; }
+						if (e.attack || e.health) { m.attack += e.attack || 0; m.maxHealth += e.health || 0; }
 						emit(state, { type: 'buff', uid: m.uid, attack: m.attack, hp: hp(m) });
 					}
 					break;
@@ -3962,6 +3964,25 @@ function execEffects(state, pi, effects, target, source) {
 				const c = instantiate(state.cardsById[source.id], pi);
 				c.zone = 'hand'; state.players[pi].hand.push(c);
 				emit(state, { type: 'conjure', player: pi, card: c, color: null });
+			}
+		} else if (e.type === 'add-lackey') {
+			// Rise of Shadows: add a random Lackey to your hand
+			const lackeys = ['lackey_ethereal', 'lackey_faceless', 'lackey_goblin', 'lackey_kobold', 'lackey_witchy'];
+			for (let i = 0; i < (e.count || 1); i++) {
+				if (state.players[pi].hand.length >= MAX_HAND) break;
+				execEffects(state, pi, [{ type: 'add-card', id: lackeys[Math.floor(state.rng() * lackeys.length)] }], target, source);
+			}
+		} else if (e.type === 'silence-adjacent') {
+			// Dalaran Librarian: silence the creatures flanking this one
+			const board = state.players[pi].board;
+			const idx = board.indexOf(source);
+			for (const nb of [board[idx - 1], board[idx + 1]]) if (nb && !isDead(nb)) silenceCreature(state, nb);
+		} else if (e.type === 'copy-health') {
+			// Faceless Rager: set this creature's Health equal to a chosen friendly's
+			const t = chosenCreature();
+			if (t && source && source.zone === 'board' && !isDead(source)) {
+				source.maxHealth = hp(t); source.damage = 0;
+				emit(state, { type: 'buff', uid: source.uid, attack: source.attack, hp: hp(source) });
 			}
 		} else if (e.type === 'copy-opening-hand') {
 			// Hex Lord Malacrass: add a copy of your opening hand (minus this card)
