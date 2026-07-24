@@ -2,6 +2,1646 @@
 	"generated": "2026-07-23",
 	"entries": [
 		{
+			"sha": "1199197",
+			"date": "2026-07-23",
+			"kind": "patch",
+			"title": "Battlecards duel: fix stale creature faces on the guest (1/3 vs 6/2 desync)",
+			"body": "Report: a Mana Wyrm read 1/3 on one player's screen and 6/2 on the other's.\n\nRoot cause was rendering, not game state. The guest never runs the event\nanimator: it ingests the host's authoritative snapshots (events discarded)\nand drives the board purely through layoutTargets -> entityFor. entityFor\nrebinds ent.card to the fresh snapshot object but never repainted the cached\nface texture, so a creature's 3D face froze at its summon-time stats while\nthe underlying state (and the host, which is event-driven) moved on. A Mana\nWyrm that grew via spell casts kept showing 1/3 on the guest.\n\nFix: give each entity a faceSig() of everything the face renders (stats,\nkeywords, shield/stealth/disguise, cost, durability, loyalty, progress) and\nrepaint whenever it changes. entityFor now refreshes the face on any stat\ndrift — the guest's only sync path — and refreshFace keeps the signature in\nstep so the event-driven path doesn't double-paint. General safety net for\nsolo/host too.",
+			"cards": []
+		},
+		{
+			"sha": "48b60a7",
+			"date": "2026-07-23",
+			"kind": "patch",
+			"title": "press-and-hold to preview the hero power without using it",
+			"body": "Same treatment as cards. The class-power orb previously fired on press, so\ntrying to read it triggered it.\n\n- Pressing the orb now arms it instead of activating; a quick release uses\n  the power, a press-and-hold (~380ms) opens its full reader instead.\n- The long-press preview resolves the hero power via classPowerOf (the orb\n  has no card uid of its own) and shows it in the card reader.\n- The reader gains a \"Use <power>\" button so it can also be triggered\n  deliberately from the preview, mirroring a hand card's Play button.\n- clearModes() resets the armed orb.",
+			"cards": []
+		},
+		{
+			"sha": "2b62b28",
+			"date": "2026-07-23",
+			"kind": "patch",
+			"title": "press-and-hold to preview a card without casting it",
+			"body": "Playtest pain: cards cast on release when the player only meant to look at\nthem (any pointer move >=14px on release counted as a drag-to-play), and the\nhold-to-preview gesture was wired for touch only.\n\n- Arm the long-press on every card press (desktop + touch), not just touch.\n- A ~380ms hold now opens the full card reader (showInspect) — which already\n  carries an explicit \"Play\" button — instead of the small hover tooltip.\n- Once a hold fires, the release is a no-op: the drag-to-play branch is gated\n  on !longPressFired, so a previewed card can never cast on release. The play\n  hint and green placement marker are likewise suppressed during a preview.\n- Quick drag-to-play is unchanged: moving >12px before the hold timer cancels\n  it, so deliberate drags still play normally.",
+			"cards": []
+		},
+		{
+			"sha": "3eefc77",
+			"date": "2026-07-23",
+			"kind": "patch",
+			"title": "Battlecards UI: bottom-left mana readout + move Auto-pass to bottom-right",
+			"body": "Playtest feedback: mana wasn't visible anywhere (it only lived on the 3D\nhero-panel texture, easy to miss) and the Auto-pass button floated over the\nhand where it blocked cards.\n\n- New #mana-hud chip pinned bottom-left, always in the clear; mirrors\n  available/max mana every HUD update, hidden on game over. Colors shift\n  when tapped out / empty.\n- Auto-pass button moved from mid-right to the bottom-right corner so it no\n  longer overlaps the fanned hand. Mobile positions tightened to match.",
+			"cards": []
+		},
+		{
+			"sha": "2c0d697",
+			"date": "2026-07-23",
+			"kind": "cards",
+			"title": "Finish Knights of the Frozen Throne (91/91 minions)",
+			"body": "Final KotFT slice (14 cards): Animated Berserker, Ice Walker, Fatespinner,\nSpectral Pillager, Tomb Lurker, Skulking Geist, Nerubian Unraveler,\nProfessor Putricide, Bolvar Fireblood, Moorabi, Archbishop Benedictus,\nThe Lich King (+6 Lich King token cards), Prince Taldaram, Lilian Voss.\n\nEngine additions: friendly-divine-shield-lost trigger (Bolvar); secret-\nplayed trigger + install-random-secret (Putricide); creature-frozen copy\n(Moorabi add-frozen-copy); grant-deathrattle target:self (Fatespinner);\ndamage-per-cards-played (Spectral Pillager); add-random-died (Tomb Lurker);\ndestroy-cost-spells (Skulking Geist); copy-enemy-deck (Archbishop); global\nspell-cost aura via costMod scope:all (Nerubian Unraveler); add-random-\nlich-king + Lich King token pool; heroPowerFreezes hook (Ice Walker);\nbecome-copy-of-hand (Taldaram); replace-spells-random (Lilian Voss).\n\nKotFT collectible minions now 100% complete. Card total 3,204.",
+			"cards": [
+				{
+					"id": "animated_berserker",
+					"name": "Animated Berserker",
+					"type": "creature",
+					"class": "warrior",
+					"rarity": "common",
+					"cost": 1
+				},
+				{
+					"id": "ice_walker",
+					"name": "Ice Walker",
+					"type": "creature",
+					"class": "mage",
+					"rarity": "rare",
+					"cost": 2
+				},
+				{
+					"id": "fatespinner",
+					"name": "Fatespinner",
+					"type": "creature",
+					"class": "druid",
+					"rarity": "epic",
+					"cost": 5
+				},
+				{
+					"id": "spectral_pillager",
+					"name": "Spectral Pillager",
+					"type": "creature",
+					"class": "rogue",
+					"rarity": "epic",
+					"cost": 5
+				},
+				{
+					"id": "tomb_lurker",
+					"name": "Tomb Lurker",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "epic",
+					"cost": 5
+				},
+				{
+					"id": "skulking_geist",
+					"name": "Skulking Geist",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "epic",
+					"cost": 6
+				},
+				{
+					"id": "nerubian_unraveler",
+					"name": "Nerubian Unraveler",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "epic",
+					"cost": 6
+				},
+				{
+					"id": "professor_putricide",
+					"name": "Professor Putricide",
+					"type": "creature",
+					"class": "hunter",
+					"rarity": "legendary",
+					"cost": 4
+				},
+				{
+					"id": "bolvar_fireblood",
+					"name": "Bolvar, Fireblood",
+					"type": "creature",
+					"class": "paladin",
+					"rarity": "legendary",
+					"cost": 5
+				},
+				{
+					"id": "moorabi",
+					"name": "Moorabi",
+					"type": "creature",
+					"class": "shaman",
+					"rarity": "legendary",
+					"cost": 6
+				},
+				{
+					"id": "archbishop_benedictus",
+					"name": "Archbishop Benedictus",
+					"type": "creature",
+					"class": "priest",
+					"rarity": "legendary",
+					"cost": 7
+				},
+				{
+					"id": "the_lich_king",
+					"name": "The Lich King",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "legendary",
+					"cost": 8
+				},
+				{
+					"id": "prince_taldaram",
+					"name": "Prince Taldaram",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "legendary",
+					"cost": 3
+				},
+				{
+					"id": "lilian_voss",
+					"name": "Lilian Voss",
+					"type": "creature",
+					"class": "rogue",
+					"rarity": "legendary",
+					"cost": 4
+				}
+			]
+		},
+		{
+			"sha": "4803dc1",
+			"date": "2026-07-23",
+			"kind": "cards",
+			"title": "Import Knights of the Frozen Throne minions, batch 2 (17 cards)",
+			"body": "Druid of the Swarm, Gnomeferatu, Val'kyr Soulclaimer, Arrogant Crusader,\nRattling Rascal, Deathaxe Punisher, Meat Wagon, Corpsetaker, Keening\nBanshee, Death Revenant, Furnacefire Colossus, Blackguard, Abominable\nBowman, Prince Keleseth, Prince Valanar, Rotface, Hadronox.\n\nEngine additions: buff-self per damaged-creatures; conditional deckNoCost\n(Princes) and deckHasKeyword (Corpsetaker); buff-zones deckOnly; buff-hand\nrandom single; summon-from-deck-weaker (Meat Wagon); summon-died-this-game\nwith tribe/keyword/random (Hadronox, Abominable Bowman); discard-weapons-\ngain-stats (Furnacefire Colossus); healed-trigger amount + damage-random-\nenemy-heal (Blackguard). Uses existing self-damaged survives trigger for\nVal'kyr Soulclaimer / Rotface.",
+			"cards": [
+				{
+					"id": "druid_of_the_swarm",
+					"name": "Druid of the Swarm",
+					"type": "creature",
+					"class": "druid",
+					"rarity": "rare",
+					"cost": 2
+				},
+				{
+					"id": "gnomeferatu",
+					"name": "Gnomeferatu",
+					"type": "creature",
+					"class": "warlock",
+					"rarity": "epic",
+					"cost": 2
+				},
+				{
+					"id": "valkyr_soulclaimer",
+					"name": "Val'kyr Soulclaimer",
+					"type": "creature",
+					"class": "warrior",
+					"rarity": "rare",
+					"cost": 3
+				},
+				{
+					"id": "arrogant_crusader",
+					"name": "Arrogant Crusader",
+					"type": "creature",
+					"class": "paladin",
+					"rarity": "rare",
+					"cost": 4
+				},
+				{
+					"id": "rattling_rascal",
+					"name": "Rattling Rascal",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "epic",
+					"cost": 4
+				},
+				{
+					"id": "deathaxe_punisher",
+					"name": "Deathaxe Punisher",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "epic",
+					"cost": 4
+				},
+				{
+					"id": "meat_wagon",
+					"name": "Meat Wagon",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "epic",
+					"cost": 4
+				},
+				{
+					"id": "corpsetaker",
+					"name": "Corpsetaker",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "epic",
+					"cost": 4
+				},
+				{
+					"id": "keening_banshee",
+					"name": "Keening Banshee",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "rare",
+					"cost": 4
+				},
+				{
+					"id": "death_revenant",
+					"name": "Death Revenant",
+					"type": "creature",
+					"class": "warrior",
+					"rarity": "rare",
+					"cost": 5
+				},
+				{
+					"id": "furnacefire_colossus",
+					"name": "Furnacefire Colossus",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "epic",
+					"cost": 6
+				},
+				{
+					"id": "blackguard",
+					"name": "Blackguard",
+					"type": "creature",
+					"class": "paladin",
+					"rarity": "epic",
+					"cost": 6
+				},
+				{
+					"id": "abominable_bowman",
+					"name": "Abominable Bowman",
+					"type": "creature",
+					"class": "hunter",
+					"rarity": "epic",
+					"cost": 7
+				},
+				{
+					"id": "prince_keleseth",
+					"name": "Prince Keleseth",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "legendary",
+					"cost": 2
+				},
+				{
+					"id": "prince_valanar",
+					"name": "Prince Valanar",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "legendary",
+					"cost": 4
+				},
+				{
+					"id": "rotface",
+					"name": "Rotface",
+					"type": "creature",
+					"class": "warrior",
+					"rarity": "legendary",
+					"cost": 8
+				},
+				{
+					"id": "hadronox",
+					"name": "Hadronox",
+					"type": "creature",
+					"class": "druid",
+					"rarity": "legendary",
+					"cost": 9
+				}
+			]
+		},
+		{
+			"sha": "bb423b3",
+			"date": "2026-07-23",
+			"kind": "cards",
+			"title": "Import Knights of the Frozen Throne minions (20 cards)",
+			"body": "First KotFT slice: Wretched Tiller, Tuskarr Fisherman, Shadow Ascendant,\nColdwraith, Deathspeaker, Crypt Lord, Vryghoul, Mountainfire Armor,\nStitched Tracker, Plague Scientist, Phantom Freebooter, Grave Shambler,\nWicked Skeleton, Ghastly Conjurer, Hyldnir Frostrider, Bone Baron,\nSunborne Val'kyr, Skelemancer, Corpse Raiser, Necrotic Geist (+Skeleton/\nMirror Image tokens).\n\nEngine additions: freeze friendly-others, buff-self per died-this-turn,\nconditional enemyTurn (opponent-turn deathrattles), grant-spell-damage,\ngain-weapon-stats, add-card count, discover fromOwnDeck, weapon-destroyed\ntrigger.",
+			"cards": [
+				{
+					"id": "wretched_tiller",
+					"name": "Wretched Tiller",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 1
+				},
+				{
+					"id": "tuskarr_fisherman",
+					"name": "Tuskarr Fisherman",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 2
+				},
+				{
+					"id": "shadow_ascendant",
+					"name": "Shadow Ascendant",
+					"type": "creature",
+					"class": "priest",
+					"rarity": "common",
+					"cost": 2
+				},
+				{
+					"id": "coldwraith",
+					"name": "Coldwraith",
+					"type": "creature",
+					"class": "mage",
+					"rarity": "common",
+					"cost": 3
+				},
+				{
+					"id": "deathspeaker",
+					"name": "Deathspeaker",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 3
+				},
+				{
+					"id": "crypt_lord",
+					"name": "Crypt Lord",
+					"type": "creature",
+					"class": "druid",
+					"rarity": "common",
+					"cost": 3
+				},
+				{
+					"id": "vryghoul",
+					"name": "Vryghoul",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 3
+				},
+				{
+					"id": "mountainfire_armor",
+					"name": "Mountainfire Armor",
+					"type": "creature",
+					"class": "warrior",
+					"rarity": "rare",
+					"cost": 3
+				},
+				{
+					"id": "stitched_tracker",
+					"name": "Stitched Tracker",
+					"type": "creature",
+					"class": "hunter",
+					"rarity": "common",
+					"cost": 3
+				},
+				{
+					"id": "plague_scientist",
+					"name": "Plague Scientist",
+					"type": "creature",
+					"class": "rogue",
+					"rarity": "common",
+					"cost": 3
+				},
+				{
+					"id": "phantom_freebooter",
+					"name": "Phantom Freebooter",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "rare",
+					"cost": 4
+				},
+				{
+					"id": "grave_shambler",
+					"name": "Grave Shambler",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 4
+				},
+				{
+					"id": "wicked_skeleton",
+					"name": "Wicked Skeleton",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 4
+				},
+				{
+					"id": "ghastly_conjurer",
+					"name": "Ghastly Conjurer",
+					"type": "creature",
+					"class": "mage",
+					"rarity": "rare",
+					"cost": 4
+				},
+				{
+					"id": "hyldnir_frostrider",
+					"name": "Hyldnir Frostrider",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 4
+				},
+				{
+					"id": "bone_baron",
+					"name": "Bone Baron",
+					"type": "creature",
+					"class": "rogue",
+					"rarity": "common",
+					"cost": 5
+				},
+				{
+					"id": "sunborne_valkyr",
+					"name": "Sunborne Val'kyr",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 5
+				},
+				{
+					"id": "skelemancer",
+					"name": "Skelemancer",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 5
+				},
+				{
+					"id": "corpse_raiser",
+					"name": "Corpse Raiser",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "rare",
+					"cost": 5
+				},
+				{
+					"id": "necrotic_geist",
+					"name": "Necrotic Geist",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 6
+				}
+			]
+		},
+		{
+			"sha": "aee15ff",
+			"date": "2026-07-23",
+			"kind": "cards",
+			"title": "Finish Journey to Un'Goro (92/92 minions)",
+			"body": "Final 6 legendaries: Sherazin (Corpse Flower), Kalimos, Elise the\nTrailblazer, Swamp King Dred, Primalfin Champion, Lightfused Stegodon\n(+ Sherazin Seed and Un'Goro Pack tokens). Art from HearthstoneJSON.\nUNGORO is complete.\n\nEngine additions:\n- Sherazin: Deathrattle leaves a 0/1 Seed; playing 4 cards in a turn\n  revives it (hook after cardsPlayedThisTurn++)\n- Swamp King Dred: after an opponent plays a creature, Dred auto-attacks\n  it via resolveCombat (hook in the play flow)\n- Primalfin Champion: spell-targeted-self now carries the spell in ctx;\n  remember-spell records them, return-remembered-spells gives them back\n- Kalimos: random-invocation (one of 4) gated by elementalLastTurn\n- Lightfused Stegodon: adapt with a name filter (Silver Hand Recruits)\n- Elise: shuffles an Un'Goro Pack token that conjures 5 random creatures\n  (a faithful stand-in for the sealed-pack chain)\n\nAll checks pass (Sherazin revives on the 4th card; Dred kills the played\nminion; Primalfin remembers + returns spells).",
+			"cards": [
+				{
+					"id": "sherazin",
+					"name": "Sherazin, Corpse Flower",
+					"type": "creature",
+					"class": "rogue",
+					"rarity": "legendary",
+					"cost": 4
+				},
+				{
+					"id": "kalimos_primal_lord",
+					"name": "Kalimos, Primal Lord",
+					"type": "creature",
+					"class": "shaman",
+					"rarity": "legendary",
+					"cost": 7
+				},
+				{
+					"id": "elise_the_trailblazer",
+					"name": "Elise the Trailblazer",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "legendary",
+					"cost": 5
+				},
+				{
+					"id": "swamp_king_dred",
+					"name": "Swamp King Dred",
+					"type": "creature",
+					"class": "hunter",
+					"rarity": "legendary",
+					"cost": 7
+				},
+				{
+					"id": "primalfin_champion",
+					"name": "Primalfin Champion",
+					"type": "creature",
+					"class": "paladin",
+					"rarity": "epic",
+					"cost": 2
+				},
+				{
+					"id": "lightfused_stegodon",
+					"name": "Lightfused Stegodon",
+					"type": "creature",
+					"class": "paladin",
+					"rarity": "rare",
+					"cost": 3
+				}
+			]
+		},
+		{
+			"sha": "ac2107f",
+			"date": "2026-07-23",
+			"kind": "cards",
+			"title": "Un'Goro batch 3: 13 minions (Discover cluster + quirky legendaries)",
+			"body": "Adds: Hydrologist, Biteweed, Fire Plume Harbinger, Chittering Tunneler,\nCurious Glimmerroot, Giant Anaconda, Charged Devilsaur, Tortollan Primalist,\nPyros, Clutchmother Zavas, The Voraxx, Spiritsinger Umbra, Hemet Jungle\nHunter (+ Pyros 6/6 and 10/10 rebirth tokens). Art from HearthstoneJSON.\nUNGORO now 86/92 minions.\n\nEngine additions -- Discover pickQueue flags:\n- installSecret (Hydrologist: discover + arm a Secret)\n- castRandom (Tortollan Primalist: discover a spell + cast with random target)\n- damageSelfByCost (Chittering Tunneler)\n- fromEnemyDeck (Curious Glimmerroot: sample the opponent's deck)\nOther effects:\n- discount-hand-tribe (Fire Plume Harbinger), summon-from-hand-min-attack\n  (Giant Anaconda), destroy-deck-max-cost (Hemet), cant-attack-heroes-turn\n  (Charged Devilsaur, via attackTargets), trigger-summoned-deathrattle\n  (Spiritsinger Umbra)\n- returnBuffedOnDiscard field + discard hook (Clutchmother Zavas)\n- Pyros: token rebirth chain (2/2 -> 6/6 -> 10/10); The Voraxx reuses\n  spell-targeted-self; Biteweed reuses combo + buff-self per cards-played\n- conjure-random specific-class filter fix (from last batch, Lyra)\n\nAll 18 checks pass.",
+			"cards": [
+				{
+					"id": "hydrologist",
+					"name": "Hydrologist",
+					"type": "creature",
+					"class": "paladin",
+					"rarity": "common",
+					"cost": 2
+				},
+				{
+					"id": "biteweed",
+					"name": "Biteweed",
+					"type": "creature",
+					"class": "rogue",
+					"rarity": "epic",
+					"cost": 2
+				},
+				{
+					"id": "fire_plume_harbinger",
+					"name": "Fire Plume Harbinger",
+					"type": "creature",
+					"class": "shaman",
+					"rarity": "rare",
+					"cost": 2
+				},
+				{
+					"id": "chittering_tunneler",
+					"name": "Chittering Tunneler",
+					"type": "creature",
+					"class": "warlock",
+					"rarity": "epic",
+					"cost": 2
+				},
+				{
+					"id": "curious_glimmerroot",
+					"name": "Curious Glimmerroot",
+					"type": "creature",
+					"class": "priest",
+					"rarity": "epic",
+					"cost": 3
+				},
+				{
+					"id": "giant_anaconda",
+					"name": "Giant Anaconda",
+					"type": "creature",
+					"class": "druid",
+					"rarity": "epic",
+					"cost": 7
+				},
+				{
+					"id": "charged_devilsaur",
+					"name": "Charged Devilsaur",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "epic",
+					"cost": 7
+				},
+				{
+					"id": "tortollan_primalist",
+					"name": "Tortollan Primalist",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "epic",
+					"cost": 8
+				},
+				{
+					"id": "pyros",
+					"name": "Pyros",
+					"type": "creature",
+					"class": "mage",
+					"rarity": "legendary",
+					"cost": 2
+				},
+				{
+					"id": "clutchmother_zavas",
+					"name": "Clutchmother Zavas",
+					"type": "creature",
+					"class": "warlock",
+					"rarity": "legendary",
+					"cost": 2
+				},
+				{
+					"id": "the_voraxx",
+					"name": "The Voraxx",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "legendary",
+					"cost": 3
+				},
+				{
+					"id": "spiritsinger_umbra",
+					"name": "Spiritsinger Umbra",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "legendary",
+					"cost": 5
+				},
+				{
+					"id": "hemet_jungle_hunter",
+					"name": "Hemet, Jungle Hunter",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "legendary",
+					"cost": 6
+				}
+			]
+		},
+		{
+			"sha": "7c63891",
+			"date": "2026-07-23",
+			"kind": "cards",
+			"title": "Un'Goro batch 2: 14 minions + Elemental-synergy tracker",
+			"body": "Adds: Thunder Lizard, Tol'vir Stoneshaper, Servant of Kalimos, Blazecaller,\nStone Sentinel, Steam Surger, Ozruk, Crystalline Oracle, Cruel Dinomancer,\nShellshifter, Elder Longneck, Razorpetal Lasher, Primalfin Lookout, Lyra\nthe Sunshard (+ Flame Geyser / Razorpetal tokens). Art from HearthstoneJSON.\nUNGORO now 73/92 minions.\n\nEngine additions:\n- Elemental synergy: elementalThisTurn / elementalLastTurn / elementalsPlayedGame\n  tracked at play time + rolled over at turn start. conditional if.elementalLastTurn\n  drives Thunder Lizard/Tol'vir/Servant/Blazecaller/Stone Sentinel/Steam Surger;\n  buff-self per 'elementals-game' drives Ozruk (counts itself, as in HS)\n- conditional if.holdingMinAttack (Elder Longneck)\n- summon-random-discarded (Cruel Dinomancer, via discardLogIds)\n- conjure-random now filters by a specific cardClass (Lyra: Priest spells)\nReused: copy-from-enemy-deck (Crystalline Oracle), discover tribe (Servant/\nPrimalfin), choices (Shellshifter), controlOtherTribe (Primalfin), add-card\ntokens (Steam Surger/Razorpetal Lasher).\n\nAll checks pass (Ozruk +20 for 3 prior + itself is correct; Lyra adds a\nPriest spell).",
+			"cards": [
+				{
+					"id": "thunder_lizard",
+					"name": "Thunder Lizard",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 3
+				},
+				{
+					"id": "tolvir_stoneshaper",
+					"name": "Tol'vir Stoneshaper",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "rare",
+					"cost": 4
+				},
+				{
+					"id": "servant_of_kalimos",
+					"name": "Servant of Kalimos",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "rare",
+					"cost": 5
+				},
+				{
+					"id": "blazecaller",
+					"name": "Blazecaller",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "epic",
+					"cost": 6
+				},
+				{
+					"id": "stone_sentinel",
+					"name": "Stone Sentinel",
+					"type": "creature",
+					"class": "shaman",
+					"rarity": "epic",
+					"cost": 5
+				},
+				{
+					"id": "steam_surger",
+					"name": "Steam Surger",
+					"type": "creature",
+					"class": "mage",
+					"rarity": "rare",
+					"cost": 4
+				},
+				{
+					"id": "ozruk",
+					"name": "Ozruk",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "legendary",
+					"cost": 8
+				},
+				{
+					"id": "crystalline_oracle",
+					"name": "Crystalline Oracle",
+					"type": "creature",
+					"class": "priest",
+					"rarity": "rare",
+					"cost": 1
+				},
+				{
+					"id": "cruel_dinomancer",
+					"name": "Cruel Dinomancer",
+					"type": "creature",
+					"class": "warlock",
+					"rarity": "rare",
+					"cost": 5
+				},
+				{
+					"id": "shellshifter",
+					"name": "Shellshifter",
+					"type": "creature",
+					"class": "druid",
+					"rarity": "rare",
+					"cost": 4
+				},
+				{
+					"id": "elder_longneck",
+					"name": "Elder Longneck",
+					"type": "creature",
+					"class": "druid",
+					"rarity": "common",
+					"cost": 3
+				},
+				{
+					"id": "razorpetal_lasher",
+					"name": "Razorpetal Lasher",
+					"type": "creature",
+					"class": "rogue",
+					"rarity": "common",
+					"cost": 2
+				},
+				{
+					"id": "primalfin_lookout",
+					"name": "Primalfin Lookout",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 2
+				},
+				{
+					"id": "lyra_the_sunshard",
+					"name": "Lyra the Sunshard",
+					"type": "creature",
+					"class": "priest",
+					"rarity": "legendary",
+					"cost": 4
+				}
+			]
+		},
+		{
+			"sha": "74abc31",
+			"date": "2026-07-23",
+			"kind": "cards",
+			"title": "Finish Mean Streets of Gadgetzan (99/99 minions)",
+			"body": "Final 6 -- the awkward ones: Patches the Pirate, Kazakus, Seadevil Stinger,\nBlubber Baron, Kabal Lackey, Lotus Illusionist (+ 3 Kazakus Potion tokens).\nArt from HearthstoneJSON. GANGS is complete.\n\nEngine additions:\n- Patches: playing a Pirate pulls Patches out of your deck (hook in the\n  play flow's card-played step)\n- Blubber Baron: grows in hand whenever you summon a Battlecry creature\n  (growBlubberBaron helper at both summoned fire points)\n- Seadevil Stinger: nextMurlocFree flag (Health-cost approximated as free);\n  Kabal Lackey: nextSecretCost flag; both applied in effectiveCost and\n  cleared at turn end\n- Kazakus: no-dupes -> a random Kazakus Potion token (a faithful stand-in\n  for the multi-step custom-spell builder)\n- Lotus Illusionist: transform-self-random-cost on self-attacks-hero\n\nAll 10 checks pass.",
+			"cards": [
+				{
+					"id": "patches_the_pirate",
+					"name": "Patches the Pirate",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "legendary",
+					"cost": 1
+				},
+				{
+					"id": "kazakus",
+					"name": "Kazakus",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "legendary",
+					"cost": 4
+				},
+				{
+					"id": "seadevil_stinger",
+					"name": "Seadevil Stinger",
+					"type": "creature",
+					"class": "warlock",
+					"rarity": "rare",
+					"cost": 4
+				},
+				{
+					"id": "blubber_baron",
+					"name": "Blubber Baron",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "epic",
+					"cost": 3
+				},
+				{
+					"id": "kabal_lackey",
+					"name": "Kabal Lackey",
+					"type": "creature",
+					"class": "mage",
+					"rarity": "common",
+					"cost": 1
+				},
+				{
+					"id": "lotus_illusionist",
+					"name": "Lotus Illusionist",
+					"type": "creature",
+					"class": "shaman",
+					"rarity": "epic",
+					"cost": 4
+				}
+			]
+		},
+		{
+			"sha": "3b7babd",
+			"date": "2026-07-23",
+			"kind": "cards",
+			"title": "GANGS batch 3: 13 legendaries (no-dupes, combat, tutors)",
+			"body": "Adds: Raza the Chained, Inkmaster Solia, Krul the Unshackled, Kun the\nForgotten King, Wrathion, Weasel Tunneler, Manic Soulcaster, Madam Goya,\nDirty Rat, Knuckles, Genzo the Shark, Finja the Flying Star, Shaku the\nCollector. Art from HearthstoneJSON. GANGS now 93/99 minions.\n\nEngine additions:\n- heroPowerFreeGame flag (Raza) via hero-power-free-game effect + heroPowerCost\n- free-next-spell (Inkmaster, sets freeSpellsThisTurn), refresh-mana (Kun),\n  draw-until exceptTribe (Wrathion)\n- summon-dragons-from-hand generalized with a tribe param (Krul: Demons)\n- shuffle-into-deck enemy option (Weasel Tunneler)\n- copy-to-deck (Manic Soulcaster), summon-copies-from-deck (Madam Goya),\n  enemy-summon-from-hand (Dirty Rat), draw-both-to (Genzo),\n  summon-from-deck-tribe (Finja)\n- new self-attacks-creature combat trigger (Knuckles -> its Attack to the\n  enemy hero, via damage source-attack). Genzo/Shaku reuse self-attacks;\n  Finja reuses self-kills-creature.\n\nAll 17 checks pass.",
+			"cards": [
+				{
+					"id": "raza_the_chained",
+					"name": "Raza the Chained",
+					"type": "creature",
+					"class": "priest",
+					"rarity": "legendary",
+					"cost": 5
+				},
+				{
+					"id": "inkmaster_solia",
+					"name": "Inkmaster Solia",
+					"type": "creature",
+					"class": "mage",
+					"rarity": "legendary",
+					"cost": 7
+				},
+				{
+					"id": "krul_the_unshackled",
+					"name": "Krul the Unshackled",
+					"type": "creature",
+					"class": "warlock",
+					"rarity": "legendary",
+					"cost": 9
+				},
+				{
+					"id": "kun_the_forgotten_king",
+					"name": "Kun the Forgotten King",
+					"type": "creature",
+					"class": "druid",
+					"rarity": "legendary",
+					"cost": 10
+				},
+				{
+					"id": "wrathion",
+					"name": "Wrathion",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "legendary",
+					"cost": 6
+				},
+				{
+					"id": "weasel_tunneler",
+					"name": "Weasel Tunneler",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "epic",
+					"cost": 1
+				},
+				{
+					"id": "manic_soulcaster",
+					"name": "Manic Soulcaster",
+					"type": "creature",
+					"class": "mage",
+					"rarity": "epic",
+					"cost": 3
+				},
+				{
+					"id": "madam_goya",
+					"name": "Madam Goya",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "legendary",
+					"cost": 6
+				},
+				{
+					"id": "dirty_rat",
+					"name": "Dirty Rat",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "epic",
+					"cost": 2
+				},
+				{
+					"id": "knuckles",
+					"name": "Knuckles",
+					"type": "creature",
+					"class": "hunter",
+					"rarity": "legendary",
+					"cost": 5
+				},
+				{
+					"id": "genzo_the_shark",
+					"name": "Genzo, the Shark",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "legendary",
+					"cost": 4
+				},
+				{
+					"id": "finja_the_flying_star",
+					"name": "Finja, the Flying Star",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "legendary",
+					"cost": 5
+				},
+				{
+					"id": "shaku_the_collector",
+					"name": "Shaku, the Collector",
+					"type": "creature",
+					"class": "rogue",
+					"rarity": "legendary",
+					"cost": 3
+				}
+			]
+		},
+		{
+			"sha": "155256c",
+			"date": "2026-07-23",
+			"kind": "cards",
+			"title": "Finish GVG (95/95) + Classic Pint-Sized Summoner (155/155)",
+			"body": "Imports the 8 hard GVG legendaries I had deferred, plus Classic's last\nminion. GVG and Classic (EXPERT1) are now complete on collectible minions.\n\n- Pint-Sized Summoner: costMod firstEachTurn on creatures (already supported)\n- Fel Reaver: new 'enemy-card-played' trigger + mill-self\n- Trade Prince Gallywix: enemy-spell-played -> copy-enemy-spell (copy to\n  hand + give the caster a Coin)\n- Malorne: GVG-original Deathrattle (shuffle itself into your deck)\n- Iron Juggernaut: shuffle-bomb id:'mine' -> a Mine that explodes for 10 on\n  draw (extended the bomb path)\n- Bolvar Fordragon: grows in hand as your creatures die (sweepDeaths hook)\n- Steamwheedle Sniper: heroPowerHitsMinions flag broadens Hero Power damage\n  from enemy-hero to 'any' in heroPowerSpec/useHeroPower\n- Gnomish Experimenter: draw-transform-to-chicken\n- Mimiron's Head: turn-start mimiron-assemble -> destroy 3 Mechs, form a 7/8\n  V-07-TR-0N (Charge + Windfury)\n\nAll 12 checks pass.",
+			"cards": [
+				{
+					"id": "fel_reaver",
+					"name": "Fel Reaver",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "rare",
+					"cost": 5
+				},
+				{
+					"id": "trade_prince_gallywix",
+					"name": "Trade Prince Gallywix",
+					"type": "creature",
+					"class": "rogue",
+					"rarity": "rare",
+					"cost": 6
+				},
+				{
+					"id": "malorne",
+					"name": "Malorne",
+					"type": "creature",
+					"class": "druid",
+					"rarity": "rare",
+					"cost": 7
+				},
+				{
+					"id": "iron_juggernaut",
+					"name": "Iron Juggernaut",
+					"type": "creature",
+					"class": "warrior",
+					"rarity": "rare",
+					"cost": 6
+				},
+				{
+					"id": "bolvar_fordragon",
+					"name": "Bolvar Fordragon",
+					"type": "creature",
+					"class": "paladin",
+					"rarity": "rare",
+					"cost": 5
+				},
+				{
+					"id": "steamwheedle_sniper",
+					"name": "Steamwheedle Sniper",
+					"type": "creature",
+					"class": "hunter",
+					"rarity": "rare",
+					"cost": 2
+				},
+				{
+					"id": "gnomish_experimenter",
+					"name": "Gnomish Experimenter",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "rare",
+					"cost": 3
+				},
+				{
+					"id": "mimirons_head",
+					"name": "Mimiron's Head",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "rare",
+					"cost": 5
+				}
+			]
+		},
+		{
+			"sha": "eb3a7fa",
+			"date": "2026-07-23",
+			"kind": "cards",
+			"title": "GANGS batch 2: 14 minions (conditionals, deathrattles, combat triggers)",
+			"body": "Adds: Tanaris Hogchopper, Luckydo Buccaneer, Leatherclad Hogleader, Fight\nPromoter, Daring Reporter, Meanstreet Marshal, Drakonid Operative, Hobart\nGrapplehammer, Auctionmaster Beardo, Rat Pack, Sergeant Sally, White Eyes,\nAlley Armorsmith, Wind-up Burglebot (+ The Storm Guardian token). Art from\nHearthstoneJSON. GANGS now 80/99 minions.\n\nEngine additions:\n- conditionals: weaponEquipped, enemyHandSize, controlHealth, selfAttack\n- source-attack scaling for damage (Sergeant Sally) and summon count (Rat\n  Pack)\n- refresh-hero-power (Auctionmaster Beardo)\n- two combat triggers via a new fireCreatureTrigger helper: self-deals-\n  damage (Alley Armorsmith -> gain-armor-by-amount) and self-attacks-\n  survives (Wind-up Burglebot)\nReused: enemy-draws (Daring Reporter), enemyHandEmpty/weaponAttack\nconditionals, discover cardClass enemy (Drakonid Operative), buff-hand\nweapon (Hobart), shuffle-into-deck (White Eyes).\n\nAll 14 checks pass.",
+			"cards": [
+				{
+					"id": "tanaris_hogchopper",
+					"name": "Tanaris Hogchopper",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 4
+				},
+				{
+					"id": "luckydo_buccaneer",
+					"name": "Luckydo Buccaneer",
+					"type": "creature",
+					"class": "rogue",
+					"rarity": "epic",
+					"cost": 6
+				},
+				{
+					"id": "leatherclad_hogleader",
+					"name": "Leatherclad Hogleader",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "epic",
+					"cost": 6
+				},
+				{
+					"id": "fight_promoter",
+					"name": "Fight Promoter",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "epic",
+					"cost": 6
+				},
+				{
+					"id": "daring_reporter",
+					"name": "Daring Reporter",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 4
+				},
+				{
+					"id": "meanstreet_marshal",
+					"name": "Meanstreet Marshal",
+					"type": "creature",
+					"class": "paladin",
+					"rarity": "epic",
+					"cost": 1
+				},
+				{
+					"id": "drakonid_operative",
+					"name": "Drakonid Operative",
+					"type": "creature",
+					"class": "priest",
+					"rarity": "rare",
+					"cost": 4
+				},
+				{
+					"id": "hobart_grapplehammer",
+					"name": "Hobart Grapplehammer",
+					"type": "creature",
+					"class": "warrior",
+					"rarity": "legendary",
+					"cost": 4
+				},
+				{
+					"id": "auctionmaster_beardo",
+					"name": "Auctionmaster Beardo",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "legendary",
+					"cost": 3
+				},
+				{
+					"id": "rat_pack",
+					"name": "Rat Pack",
+					"type": "creature",
+					"class": "hunter",
+					"rarity": "epic",
+					"cost": 3
+				},
+				{
+					"id": "sergeant_sally",
+					"name": "Sergeant Sally",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "legendary",
+					"cost": 3
+				},
+				{
+					"id": "white_eyes",
+					"name": "White Eyes",
+					"type": "creature",
+					"class": "shaman",
+					"rarity": "legendary",
+					"cost": 5
+				},
+				{
+					"id": "alley_armorsmith",
+					"name": "Alley Armorsmith",
+					"type": "creature",
+					"class": "warrior",
+					"rarity": "rare",
+					"cost": 5
+				},
+				{
+					"id": "windup_burglebot",
+					"name": "Wind-up Burglebot",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "epic",
+					"cost": 6
+				}
+			]
+		},
+		{
+			"sha": "bbae174",
+			"date": "2026-07-23",
+			"kind": "cards",
+			"title": "GANGS Jade Golem cluster: import the 3 remaining Jade cards",
+			"body": "The Jade minions (Jade Spirit/Chieftain/Behemoth/Swarmer, Aya) were already\nin; the cluster's last pieces are non-minion cards: Jade Idol (druid spell),\nJade Shuriken (rogue spell), Jade Claws (shaman weapon). Art from\nHearthstoneJSON.\n\nAll three reuse existing mechanics -- the summon-jade per-player growing\ngolem, Choose One (Jade Idol: summon vs shuffle 3 copies via shuffle-into-\ndeck), Combo (Jade Shuriken adds a golem when a card was played earlier this\nturn), and weapon battlecries (Jade Claws, with Overload 1). Verified golem\ngrowth 1/1 -> 2/2, the Idol split choice, and the Shuriken combo.",
+			"cards": [
+				{
+					"id": "jade_idol",
+					"name": "Jade Idol",
+					"type": "sorcery",
+					"class": "druid",
+					"rarity": "rare",
+					"cost": 1
+				},
+				{
+					"id": "jade_shuriken",
+					"name": "Jade Shuriken",
+					"type": "sorcery",
+					"class": "rogue",
+					"rarity": "common",
+					"cost": 2
+				},
+				{
+					"id": "jade_claws",
+					"name": "Jade Claws",
+					"type": "weapon",
+					"class": "shaman",
+					"rarity": "rare",
+					"cost": 2
+				}
+			]
+		},
+		{
+			"sha": "5ba8407",
+			"date": "2026-07-23",
+			"kind": "cards",
+			"title": "Mean Streets of Gadgetzan: first 14 minions (tri-class + hand-buffs)",
+			"body": "Adds: Small-Time Buccaneer, Grimscale Chum, Trogg Beastrager, Grimestreet\nPawnbroker, Crystalweaver, Shadow Sensei, Cryomancer, Spiked Hogrider,\nStreetwise Investigator, Defias Cleaner, Lotus Assassin, Grimestreet\nInformant, Kabal Courier, Lotus Agents. Art from HearthstoneJSON. GANGS\nnow 66/99 minions.\n\nEngine additions:\n- buff-hand generalized: tribe filter (Grimscale Chum / Trogg Beastrager)\n  and cardType 'weapon' (Grimestreet Pawnbroker)\n- discover cardClasses list (the Grimestreet/Kabal/Lotus tri-class Discovers)\n- conditionals: enemyFrozen (Cryomancer), enemyHasTaunt (Spiked Hogrider),\n  enemyHandEmpty, weaponAttack (for later)\n- remove-enemy-stealth (Streetwise Investigator)\nReused: condAttack while weapon (Small-Time Buccaneer), buff tribe\n(Crystalweaver), buff requireKeyword (Shadow Sensei), silence requireKeyword\n(Defias Cleaner), self-kills-creature + grant-self (Lotus Assassin).\n\nAll 14 checks pass.",
+			"cards": [
+				{
+					"id": "grimscale_chum",
+					"name": "Grimscale Chum",
+					"type": "creature",
+					"class": "paladin",
+					"rarity": "common",
+					"cost": 1
+				},
+				{
+					"id": "trogg_beastrager",
+					"name": "Trogg Beastrager",
+					"type": "creature",
+					"class": "hunter",
+					"rarity": "rare",
+					"cost": 2
+				},
+				{
+					"id": "grimestreet_pawnbroker",
+					"name": "Grimestreet Pawnbroker",
+					"type": "creature",
+					"class": "warrior",
+					"rarity": "rare",
+					"cost": 3
+				},
+				{
+					"id": "crystalweaver",
+					"name": "Crystalweaver",
+					"type": "creature",
+					"class": "warlock",
+					"rarity": "common",
+					"cost": 4
+				},
+				{
+					"id": "shadow_sensei",
+					"name": "Shadow Sensei",
+					"type": "creature",
+					"class": "rogue",
+					"rarity": "rare",
+					"cost": 4
+				},
+				{
+					"id": "cryomancer",
+					"name": "Cryomancer",
+					"type": "creature",
+					"class": "mage",
+					"rarity": "common",
+					"cost": 5
+				},
+				{
+					"id": "spiked_hogrider",
+					"name": "Spiked Hogrider",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "rare",
+					"cost": 5
+				},
+				{
+					"id": "streetwise_investigator",
+					"name": "Streetwise Investigator",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 5
+				},
+				{
+					"id": "defias_cleaner",
+					"name": "Defias Cleaner",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "epic",
+					"cost": 6
+				},
+				{
+					"id": "lotus_assassin",
+					"name": "Lotus Assassin",
+					"type": "creature",
+					"class": "rogue",
+					"rarity": "epic",
+					"cost": 5
+				},
+				{
+					"id": "grimestreet_informant",
+					"name": "Grimestreet Informant",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "rare",
+					"cost": 2
+				},
+				{
+					"id": "kabal_courier",
+					"name": "Kabal Courier",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "rare",
+					"cost": 2
+				},
+				{
+					"id": "lotus_agents",
+					"name": "Lotus Agents",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "rare",
+					"cost": 3
+				}
+			]
+		},
+		{
+			"sha": "20ee2ee",
+			"date": "2026-07-23",
+			"kind": "cards",
+			"title": "Finish One Night in Karazhan (34/34 minions)",
+			"body": "Final 3: Ethereal Peddler, Prince Malchezaar, Medivh the Guardian (+ Atiesh\nweapon token). Art from HearthstoneJSON. KARA is complete.\n\nEngine additions:\n- discount-other-class-hand (Ethereal Peddler)\n- equip-id: equip a specific weapon card keeping its ongoing (Medivh's\n  Atiesh = a weapon with spell-played -> summon-of-spell-cost, reusing the\n  Summoning Stone effect; weapons already participate in fireOngoing)\n- shuffle-random-legendaries (Prince Malchezaar) -- there is no start-of-game\n  hook, so this is a play-time approximation that shuffles 5 random\n  Legendaries into your deck instead of at game start\n\nAll 7 checks pass (Atiesh summons a creature after a cast spell; Peddler\ndiscounts only other-class cards).",
+			"cards": [
+				{
+					"id": "ethereal_peddler",
+					"name": "Ethereal Peddler",
+					"type": "creature",
+					"class": "rogue",
+					"rarity": "rare",
+					"cost": 5
+				},
+				{
+					"id": "prince_malchezaar",
+					"name": "Prince Malchezaar",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "legendary",
+					"cost": 5
+				},
+				{
+					"id": "medivh_the_guardian",
+					"name": "Medivh, the Guardian",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "legendary",
+					"cost": 8
+				}
+			]
+		},
+		{
+			"sha": "10d37ac",
+			"date": "2026-07-23",
+			"kind": "cards",
+			"title": "One Night in Karazhan: first 13 minions",
+			"body": "Adds: Arcane Anomaly, Malchezaar's Imp, Deadly Fork, Zoobot, Silverware\nGolem, Ivory Knight, Onyx Bishop, Avian Watcher, Menagerie Warden,\nMenagerie Magician, Book Wyrm, Moat Lurker, Moroes (+ Sharp Fork weapon\ntoken). Art from HearthstoneJSON. KARA now 31/34 minions.\n\nEngine additions:\n- summon-random-died-this-turn (Onyx Bishop, via diedThisTurnIds)\n- buff-random-of-tribes (Zoobot / Menagerie Magician)\n- destroy-and-remember + resummon-remembered (Moat Lurker)\n- summonOnDiscard field + discard-site hook (Silverware Golem)\n- discover healByCost (Ivory Knight)\n- conditional if.controlSecret (Avian Watcher)\nReused: card-discarded (Malchezaar's Imp), copy-summon (Menagerie Warden),\nconditional holdingTribe + destroy maxAttack (Book Wyrm), turn-end summon\n(Moroes), add-card for the weapon token (Deadly Fork).\n\nAll 16 checks pass.",
+			"cards": [
+				{
+					"id": "arcane_anomaly",
+					"name": "Arcane Anomaly",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 1
+				},
+				{
+					"id": "malchezaars_imp",
+					"name": "Malchezaar's Imp",
+					"type": "creature",
+					"class": "warlock",
+					"rarity": "common",
+					"cost": 2
+				},
+				{
+					"id": "deadly_fork",
+					"name": "Deadly Fork",
+					"type": "creature",
+					"class": "rogue",
+					"rarity": "common",
+					"cost": 3
+				},
+				{
+					"id": "zoobot",
+					"name": "Zoobot",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 3
+				},
+				{
+					"id": "silverware_golem",
+					"name": "Silverware Golem",
+					"type": "creature",
+					"class": "warlock",
+					"rarity": "rare",
+					"cost": 3
+				},
+				{
+					"id": "ivory_knight",
+					"name": "Ivory Knight",
+					"type": "creature",
+					"class": "paladin",
+					"rarity": "rare",
+					"cost": 4
+				},
+				{
+					"id": "onyx_bishop",
+					"name": "Onyx Bishop",
+					"type": "creature",
+					"class": "priest",
+					"rarity": "rare",
+					"cost": 4
+				},
+				{
+					"id": "avian_watcher",
+					"name": "Avian Watcher",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "rare",
+					"cost": 5
+				},
+				{
+					"id": "menagerie_warden",
+					"name": "Menagerie Warden",
+					"type": "creature",
+					"class": "druid",
+					"rarity": "common",
+					"cost": 5
+				},
+				{
+					"id": "menagerie_magician",
+					"name": "Menagerie Magician",
+					"type": "creature",
+					"class": "mage",
+					"rarity": "common",
+					"cost": 5
+				},
+				{
+					"id": "book_wyrm",
+					"name": "Book Wyrm",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "rare",
+					"cost": 6
+				},
+				{
+					"id": "moat_lurker",
+					"name": "Moat Lurker",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "rare",
+					"cost": 6
+				},
+				{
+					"id": "moroes",
+					"name": "Moroes",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "legendary",
+					"cost": 3
+				}
+			]
+		},
+		{
+			"sha": "46f594e",
+			"date": "2026-07-23",
+			"kind": "cards",
+			"title": "Finish Whispers of the Old Gods (102/102 minions)",
+			"body": "Final 13, the chaotic tail: Vilefin Inquisitor, Forbidden Ancient, Eater of\nSecrets, Shifting Shade, Servant of Yogg-Saron, Shadowcaster, Nerubian\nProphet, Giant Sand Worm, Shifter Zerus, Nat the Darkfisher, Cho'gall, The\nBoogeymonster, Yogg-Saron. Plus The Tide hero-power token. Art from\nHearthstoneJSON. OG is complete.\n\nEngine additions:\n- cast-random-spell (Servant: a 5+ spell; Yogg: one per spell cast this game\n  via spellsPlayedTotal) -- picks random spells, auto-targets randomly\n- self-kills-creature combat trigger (The Boogeymonster); Giant Sand Worm\n  reuses the existing attackAgainOnKill field\n- in-hand per-turn effects processed at turn start: costReducePerTurn\n  (Nerubian Prophet) and transformInHand (Shifter Zerus)\n- enemy-turn-start trigger + maybe-draw-drawer (Nat the Darkfisher)\n- discardLogIds tracking at every discard site + return-discarded (Cho'gall)\n- set-hero-power + The Tide token (Vilefin), spend-all-mana-buff (Forbidden\n  Ancient), copy-from-enemy-deck (Shifting Shade), copy-to-hand-cheap\n  (Shadowcaster), destroy-enemy-secrets buffSelf (Eater of Secrets)\n\nFixed: a pre-existing destroy-enemy-secrets shadowed my duplicate -- extended\nthe original with a buffSelf option instead. All checks pass (Boogeymonster\nand Giant Sand Worm verified via real combat; Nat ~half over 200 trials).",
+			"cards": [
+				{
+					"id": "vilefin_inquisitor",
+					"name": "Vilefin Inquisitor",
+					"type": "creature",
+					"class": "paladin",
+					"rarity": "epic",
+					"cost": 1
+				},
+				{
+					"id": "forbidden_ancient",
+					"name": "Forbidden Ancient",
+					"type": "creature",
+					"class": "druid",
+					"rarity": "epic",
+					"cost": 1
+				},
+				{
+					"id": "eater_of_secrets",
+					"name": "Eater of Secrets",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "rare",
+					"cost": 4
+				},
+				{
+					"id": "shifting_shade",
+					"name": "Shifting Shade",
+					"type": "creature",
+					"class": "priest",
+					"rarity": "rare",
+					"cost": 4
+				},
+				{
+					"id": "servant_of_yogg_saron",
+					"name": "Servant of Yogg-Saron",
+					"type": "creature",
+					"class": "mage",
+					"rarity": "rare",
+					"cost": 5
+				},
+				{
+					"id": "shadowcaster",
+					"name": "Shadowcaster",
+					"type": "creature",
+					"class": "rogue",
+					"rarity": "epic",
+					"cost": 5
+				},
+				{
+					"id": "nerubian_prophet",
+					"name": "Nerubian Prophet",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 6
+				},
+				{
+					"id": "giant_sand_worm",
+					"name": "Giant Sand Worm",
+					"type": "creature",
+					"class": "hunter",
+					"rarity": "epic",
+					"cost": 8
+				},
+				{
+					"id": "shifter_zerus",
+					"name": "Shifter Zerus",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "legendary",
+					"cost": 1
+				},
+				{
+					"id": "nat_the_darkfisher",
+					"name": "Nat, the Darkfisher",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "legendary",
+					"cost": 2
+				},
+				{
+					"id": "chogall",
+					"name": "Cho’gall",
+					"type": "creature",
+					"class": "warlock",
+					"rarity": "legendary",
+					"cost": 8
+				},
+				{
+					"id": "the_boogeymonster",
+					"name": "The Boogeymonster",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "legendary",
+					"cost": 8
+				},
+				{
+					"id": "yogg_saron",
+					"name": "Yogg-Saron, Hope’s End",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "legendary",
+					"cost": 10
+				}
+			]
+		},
+		{
+			"sha": "e38d202",
+			"date": "2026-07-23",
+			"kind": "cards",
+			"title": "OG batch 2: 13 more Old Gods minions + targeting-map fix",
+			"body": "Adds: Eternal Sentinel, Forlorn Stalker, Bloodsail Cultist, Demented\nFrostcaller, Faceless Shambler, Cult Apothecary, Master of Evolution,\nDarkspeaker, Ancient Harbinger, Blade of C'Thun, N'Zoth the Corruptor,\nDeathwing Dragonlord, Mukla (+ Bananas token). Art from HearthstoneJSON.\nOG now 89/102 minions.\n\nEngine additions:\n- unlock-overload + overloadLockedThisTurn tracking (Eternal Sentinel)\n- buff-hand requireKeyword (Forlorn Stalker), freeze target 'random-enemy'\n  (Demented Frostcaller), copy-stats (Faceless Shambler), heal-per-enemy\n  (Cult Apothecary), transform costDelta (Master of Evolution),\n  swap-stats-with (Darkspeaker), blade-of-cthun (destroy + add stats to\n  C'Thun), summon-deathrattle-died (N'Zoth via deathLogIds),\n  summon-dragons-from-hand (Deathwing). Ancient Harbinger reuses tutor;\n  Mukla reuses add-card.\n\nIMPORTANT fix: several targeted battlecries (temp-immune/friendly-creature,\nswap-health-with, transform/friendly-creature) had no CHOSEN targeting\nentry -- a duplicate 'temp-immune' key in CHOSEN also shadowed the fix -- so\nStablemaster, Vol'jin, and Recombobulator would not have prompted for a\ntarget in real play. Added the missing entries; all now offer a target.\n\nAll 18 checks pass.",
+			"cards": [
+				{
+					"id": "eternal_sentinel",
+					"name": "Eternal Sentinel",
+					"type": "creature",
+					"class": "shaman",
+					"rarity": "epic",
+					"cost": 2
+				},
+				{
+					"id": "forlorn_stalker",
+					"name": "Forlorn Stalker",
+					"type": "creature",
+					"class": "hunter",
+					"rarity": "rare",
+					"cost": 3
+				},
+				{
+					"id": "bloodsail_cultist",
+					"name": "Bloodsail Cultist",
+					"type": "creature",
+					"class": "warrior",
+					"rarity": "rare",
+					"cost": 3
+				},
+				{
+					"id": "demented_frostcaller",
+					"name": "Demented Frostcaller",
+					"type": "creature",
+					"class": "mage",
+					"rarity": "rare",
+					"cost": 4
+				},
+				{
+					"id": "faceless_shambler",
+					"name": "Faceless Shambler",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "epic",
+					"cost": 4
+				},
+				{
+					"id": "cult_apothecary",
+					"name": "Cult Apothecary",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 4
+				},
+				{
+					"id": "master_of_evolution",
+					"name": "Master of Evolution",
+					"type": "creature",
+					"class": "shaman",
+					"rarity": "rare",
+					"cost": 4
+				},
+				{
+					"id": "darkspeaker",
+					"name": "Darkspeaker",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "epic",
+					"cost": 5
+				},
+				{
+					"id": "ancient_harbinger",
+					"name": "Ancient Harbinger",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "epic",
+					"cost": 6
+				},
+				{
+					"id": "blade_of_cthun",
+					"name": "Blade of C’Thun",
+					"type": "creature",
+					"class": "rogue",
+					"rarity": "epic",
+					"cost": 7
+				},
+				{
+					"id": "nzoth_the_corruptor",
+					"name": "N’Zoth, the Corruptor",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "legendary",
+					"cost": 10
+				},
+				{
+					"id": "deathwing_dragonlord",
+					"name": "Deathwing, Dragonlord",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "legendary",
+					"cost": 10
+				},
+				{
+					"id": "mukla_tyrant",
+					"name": "Mukla, Tyrant of the Vale",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "legendary",
+					"cost": 6
+				}
+			]
+		},
+		{
 			"sha": "64ed6b6",
 			"date": "2026-07-23",
 			"kind": "cards",
