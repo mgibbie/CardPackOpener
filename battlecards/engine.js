@@ -243,6 +243,7 @@ function instantiate(def, controller) {
 		damage: 0,
 		keywords: [...(def.keywords || [])],
 		effects: def.effects || null,
+		outcast: def.outcast || null, // Ashes of Outland: extra battlecry/spell effect from hand's edge
 		deathrattle: def.deathrattle || null,
 		tribe: def.tribe || null,
 		controller,
@@ -364,6 +365,7 @@ export function createGame(cardsById, rng = Math.random, playerDeckIds = null, p
 		discardLogIds: [],   // Cho'gall: everything you discarded this game
 		spellTaxNext: 0,     // Loatheb: extra cost on this player's spells next turn
 		battlecryTaxNext: 0, // Boompistol Bully: extra cost on this player's Battlecry cards next turn
+		libramDiscount: 0,   // Aldor Attendant/Truthseeker: your Librams cost this much less (game-long)
 		heroPowerTaxNext: 0,      // Saboteur: your Hero Power costs more next turn
 		heroPowerDiscountNext: 0, // Fencing Coach: your next Hero Power costs less
 		heroPowersUsedGame: 0,    // Frost Giant: total Hero Powers used this game
@@ -2524,6 +2526,10 @@ function runSecretEffects(state, pi, effects, ctx) {
 				}
 				break;
 			}
+			case 'mirror-to-hero':
+				// Soulbound Ashtongue: also deal the damage taken to your hero
+				if (ctx.amount) damageHero(state, pi, ctx.amount, pi);
+				break;
 			default:
 				// pass the firing permanent through as `source` so self-scoped
 				// effects (temp-buff-self, gain-weapon-attack) still work
@@ -3711,6 +3717,7 @@ function execEffects(state, pi, effects, target, source) {
 				if (!c.token) state.players[pi].discardLogIds.push(c.id); if (c.summonOnDiscard && state.cardsById[c.id]) summon(state, pi, state.cardsById[c.id]); if (c.returnBuffedOnDiscard && state.players[pi].hand.length < MAX_HAND) { c.attack += 2; c.maxHealth += 2; c.zone='hand'; state.players[pi].hand.push(c); const gi = state.players[pi].graveyard.indexOf(c); if (gi>=0) state.players[pi].graveyard.splice(gi,1); emit(state,{type:'conjure',player:pi,card:c,color:null}); } if (c.copiesOnDiscard && state.cardsById[c.id]) { for (let n = 0; n < c.copiesOnDiscard && state.players[pi].hand.length < MAX_HAND; n++) { const cp = instantiate(state.cardsById[c.id], pi); cp.zone = 'hand'; state.players[pi].hand.push(cp); emit(state, { type: 'conjure', player: pi, card: cp, color: null }); } } fireOngoing(state, pi, 'card-discarded', { card: c }); /* High Priestess Jekliik */
 			}
 		} else if (e.type === 'bounce') {
+			if (e.requireControlSecret && !state.players[pi].secrets.length) continue; // Blackjack Stunner
 			if (e.target === 'permanent') {
 				// single chosen permanent of any type (creature/artifact/enchantment/walker/location)
 				if (target && target.uid != null) {
@@ -5037,6 +5044,20 @@ function execEffects(state, pi, effects, target, source) {
 		} else if (e.type === 'summon-copy-self') {
 			// Animated Avalanche: summon a copy of this minion
 			if (source) { const base = state.cardsById[source.id]; if (base) summon(state, pi, JSON.parse(JSON.stringify(base))); }
+		} else if (e.type === 'reduce-libram-cost') {
+			// Aldor Attendant / Aldor Truthseeker: your Librams cost less this game
+			state.players[pi].libramDiscount = (state.players[pi].libramDiscount || 0) + (e.value || 1);
+		} else if (e.type === 'buff-random-hand-tribe') {
+			// Helboar: give a random matching minion in your hand +attack/+health
+			const pool = state.players[pi].hand.filter(c => c.type === 'creature' && (c.tribe || '').includes(e.tribe));
+			if (pool.length) { const t = pool[Math.floor(state.rng() * pool.length)]; t.attack = (t.attack || 0) + (e.attack || 0); t.maxHealth = (t.maxHealth || 0) + (e.health || 0); t.health = (t.health || 0) + (e.health || 0); }
+		} else if (e.type === 'attack-random-enemy') {
+			// Imprisoned Felmaw: on awaken, attack a random enemy character
+			if (source && !isDead(source)) {
+				const foes = [];
+				for (const o of enemies) { for (const c of state.players[o].board) if (!isDead(c) && c.type !== 'location' && !c.stealthed && c.dormantLeft <= 0) foes.push({ type: 'creature', uid: c.uid, player: o }); foes.push({ type: 'hero', player: o }); }
+				if (foes.length) resolveCombat(state, pi, source.uid, foes[Math.floor(state.rng() * foes.length)]);
+			}
 		} else if (e.type === 'curse-enemy-card') {
 			// Chaos Gazer: curse a card in the opponent's hand; if unplayed by the
 			// end of their next turn, they take damage (resolved in endTurn)
@@ -5195,6 +5216,7 @@ function execEffects(state, pi, effects, target, source) {
 			for (let n = 0; n < times && !state.over; n++) {
 				const pool = Object.values(state.cardsById).filter(d => isSpellType(d) && !d.token && d.collectible !== false
 					&& !(d.colors && d.colors.length) && !d.choices && !d.xSpell && !d.counterSpell
+					&& (e.cardClass == null || (d.cardClass || 'neutral') === e.cardClass) // Solarian Prime: Mage spells
 					&& (e.minCost == null || (d.cost || 0) >= e.minCost));
 				if (!pool.length) break;
 				const spell = instantiate(pool[Math.floor(state.rng() * pool.length)], pi);
@@ -6538,6 +6560,7 @@ export function effectiveCost(state, pi, card) {
 	}
 	if (p.spellTaxNext > 0 && isSpellType(card)) c += p.spellTaxNext; // Loatheb
 	if (p.battlecryTaxNext > 0 && (card.keywords || []).includes('battlecry')) c += p.battlecryTaxNext; // Boompistol Bully
+	if (p.libramDiscount > 0 && /Libram/.test(card.name || '')) c = Math.max(0, c - p.libramDiscount); // Aldor Attendant/Truthseeker
 	return Math.max(0, c);
 }
 

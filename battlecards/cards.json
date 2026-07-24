@@ -81442,6 +81442,448 @@
         "rush"
       ],
       "description": "Rush."
+    },
+    {
+      "id": "aldor_attendant",
+      "name": "Aldor Attendant",
+      "type": "creature",
+      "cost": 1,
+      "cardClass": "paladin",
+      "attack": 1,
+      "health": 3,
+      "rarity": "common",
+      "set": "BLACK_TEMPLE",
+      "tribe": "Draenei",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Reduce the Cost of your Librams by (1) this game.",
+      "effects": [
+        {
+          "type": "reduce-libram-cost",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "crimson_sigil_runner",
+      "name": "Crimson Sigil Runner",
+      "type": "creature",
+      "cost": 1,
+      "cardClass": "demonhunter",
+      "attack": 1,
+      "health": 1,
+      "rarity": "common",
+      "set": "BLACK_TEMPLE",
+      "keywords": [
+        "outcast"
+      ],
+      "description": "Outcast: Draw a card.",
+      "outcast": {
+        "effects": [
+          {
+            "type": "draw",
+            "value": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "ethereal_augmerchant",
+      "name": "Ethereal Augmerchant",
+      "type": "creature",
+      "cost": 1,
+      "cardClass": "neutral",
+      "attack": 2,
+      "health": 1,
+      "rarity": "common",
+      "set": "BLACK_TEMPLE",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Deal 1 damage to a minion and give it Spell Damage +1.",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 1,
+          "target": "creature"
+        },
+        {
+          "type": "grant-spell-damage",
+          "value": 1,
+          "target": "creature"
+        }
+      ]
+    },
+    {
+      "id": "guardian_augmerchant",
+      "name": "Guardian Augmerchant",
+      "type": "creature",
+      "cost": 1,
+      "cardClass": "neutral",
+      "attack": 2,
+      "health": 1,
+      "rarity": "common",
+      "set": "BLACK_TEMPLE",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Deal 1 damage to a minion and give it Divine Shield.",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 1,
+          "target": "creature"
+        },
+        {
+          "type": "grant",
+          "keyword": "divine_shield",
+          "target": "creature"
+        }
+      ]
+    },
+    {
+      "id": "rocket_augmerchant",
+      "name": "Rocket Augmerchant",
+      "type": "creature",
+      "cost": 1,
+      "cardClass": "neutral",
+      "attack": 2,
+      "health": 1,
+      "rarity": "common",
+      "set": "BLACK_TEMPLE",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Deal 1 damage to a minion and give it Rush.",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 1,
+          "target": "creature"
+        },
+        {
+          "type": "grant",
+          "keyword": "rush",
+          "target": "creature"
+        }
+      ]
+    },
+    {
+      "id": "helboar",
+      "name": "Helboar",
+      "type": "creature",
+      "cost": 1,
+      "cardClass": "hunter",
+      "attack": 2,
+      "health": 1,
+      "rarity": "common",
+      "set": "BLACK_TEMPLE",
+      "tribe": "Beast",
+      "keywords": [
+        "deathrattle"
+      ],
+      "description": "Deathrattle: Give a random Beast in your hand +1/+1.",
+      "deathrattle": [
+        {
+          "type": "buff-random-hand-tribe",
+          "tribe": "Beast",
+          "attack": 1,
+          "health": 1
+        }
+      ]
+    },
+    {
+      "id": "soulbound_ashtongue",
+      "name": "Soulbound Ashtongue",
+      "type": "creature",
+      "cost": 1,
+      "cardClass": "neutral",
+      "attack": 1,
+      "health": 4,
+      "rarity": "common",
+      "set": "BLACK_TEMPLE",
+      "tribe": "Draenei",
+      "description": "Whenever this minion takes damage, also deal that amount to your hero.",
+      "ongoing": {
+        "on": "self-damaged",
+        "effects": [
+          {
+            "type": "mirror-to-hero"
+          }
+        ]
+      }
+    },
+    {
+      "id": "bonechewer_brawler",
+      "name": "Bonechewer Brawler",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "neutral",
+      "attack": 2,
+      "health": 3,
+      "rarity": "common",
+      "set": "BLACK_TEMPLE",
+      "keywords": [
+        "taunt"
+      ],
+      "description": "Taunt. Whenever this minion takes damage, gain +2 Attack.",
+      "ongoing": {
+        "on": "self-damaged",
+        "effects": [
+          {
+            "type": "buff-self",
+            "attack": 2
+          }
+        ]
+      }
+    },
+    {
+      "id": "bonechewer_vanguard",
+      "name": "Bonechewer Vanguard",
+      "type": "creature",
+      "cost": 7,
+      "cardClass": "neutral",
+      "attack": 4,
+      "health": 10,
+      "rarity": "common",
+      "set": "BLACK_TEMPLE",
+      "keywords": [
+        "taunt"
+      ],
+      "description": "Taunt. Whenever this minion takes damage, gain +2 Attack.",
+      "ongoing": {
+        "on": "self-damaged",
+        "effects": [
+          {
+            "type": "buff-self",
+            "attack": 2
+          }
+        ]
+      }
+    },
+    {
+      "id": "dragonmaw_sentinel",
+      "name": "Dragonmaw Sentinel",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "priest",
+      "attack": 1,
+      "health": 4,
+      "rarity": "rare",
+      "set": "BLACK_TEMPLE",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: If you're holding a Dragon, gain +1 Attack and Lifesteal.",
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "holdingTribe": "Dragon"
+          },
+          "then": [
+            {
+              "type": "buff-self",
+              "attack": 1
+            },
+            {
+              "type": "grant",
+              "keyword": "lifesteal",
+              "target": "self"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "blackjack_stunner",
+      "name": "Blackjack Stunner",
+      "type": "creature",
+      "cost": 1,
+      "cardClass": "rogue",
+      "attack": 1,
+      "health": 2,
+      "rarity": "rare",
+      "set": "BLACK_TEMPLE",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: If you control a Secret, return a minion to its owner's hand. It costs (2) more.",
+      "effects": [
+        {
+          "type": "bounce",
+          "target": "creature",
+          "costMod": 2,
+          "requireControlSecret": true
+        }
+      ]
+    },
+    {
+      "id": "apexis_smuggler",
+      "name": "Apexis Smuggler",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "mage",
+      "attack": 2,
+      "health": 3,
+      "rarity": "epic",
+      "set": "BLACK_TEMPLE",
+      "description": "After you play a Secret, Discover a spell.",
+      "ongoing": {
+        "on": "secret-played",
+        "effects": [
+          {
+            "type": "discover",
+            "cardType": "spell"
+          }
+        ]
+      }
+    },
+    {
+      "id": "imprisoned_felmaw",
+      "name": "Imprisoned Felmaw",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "hunter",
+      "attack": 5,
+      "health": 4,
+      "rarity": "common",
+      "set": "BLACK_TEMPLE",
+      "tribe": "Demon",
+      "dormant": 2,
+      "description": "Dormant for 2 turns. When this awakens, attack a random enemy.",
+      "awaken": [
+        {
+          "type": "attack-random-enemy"
+        }
+      ]
+    },
+    {
+      "id": "darkglare",
+      "name": "Darkglare",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "warlock",
+      "attack": 3,
+      "health": 4,
+      "rarity": "epic",
+      "set": "BLACK_TEMPLE",
+      "tribe": "Demon",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: If your hero took damage this turn, refresh 3 Mana Crystals.",
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "heroTookDamage": true
+          },
+          "then": [
+            {
+              "type": "refresh-mana",
+              "value": 3
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "reliquary_of_souls",
+      "name": "Reliquary of Souls",
+      "type": "creature",
+      "cost": 1,
+      "cardClass": "priest",
+      "attack": 1,
+      "health": 3,
+      "rarity": "legendary",
+      "set": "BLACK_TEMPLE",
+      "keywords": [
+        "lifesteal",
+        "deathrattle"
+      ],
+      "description": "Lifesteal. Deathrattle: Shuffle 'Reliquary Prime' into your deck.",
+      "deathrattle": [
+        {
+          "type": "shuffle-into-deck",
+          "id": "reliquary_prime",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "id": "astromancer_solarian",
+      "name": "Astromancer Solarian",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "mage",
+      "attack": 3,
+      "health": 2,
+      "rarity": "legendary",
+      "set": "BLACK_TEMPLE",
+      "keywords": [
+        "deathrattle"
+      ],
+      "static": {
+        "type": "spell-damage",
+        "value": 1
+      },
+      "description": "Spell Damage +1. Deathrattle: Shuffle 'Solarian Prime' into your deck.",
+      "deathrattle": [
+        {
+          "type": "shuffle-into-deck",
+          "id": "solarian_prime",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "id": "reliquary_prime",
+      "name": "Reliquary Prime",
+      "type": "creature",
+      "cost": 7,
+      "cardClass": "priest",
+      "attack": 6,
+      "health": 8,
+      "rarity": "legendary",
+      "set": "BLACK_TEMPLE",
+      "keywords": [
+        "taunt",
+        "lifesteal"
+      ],
+      "token": true,
+      "collectible": false,
+      "description": "Taunt, Lifesteal."
+    },
+    {
+      "id": "solarian_prime",
+      "name": "Solarian Prime",
+      "type": "creature",
+      "cost": 7,
+      "cardClass": "mage",
+      "attack": 7,
+      "health": 7,
+      "rarity": "legendary",
+      "set": "BLACK_TEMPLE",
+      "tribe": "Demon",
+      "keywords": [
+        "battlecry"
+      ],
+      "token": true,
+      "collectible": false,
+      "static": {
+        "type": "spell-damage",
+        "value": 1
+      },
+      "description": "Spell Damage +1. Battlecry: Cast 5 random Mage spells (targets enemies if possible).",
+      "effects": [
+        {
+          "type": "cast-random-spell",
+          "count": 5,
+          "cardClass": "mage"
+        }
+      ]
     }
   ]
 }
