@@ -357,6 +357,7 @@ export function createGame(cardsById, rng = Math.random, playerDeckIds = null, p
 		spellsPlayedThisTurn: 0,    // Kalecgos-style first-spell discounts
 		freeSpellsNextTurn: false,  // Millhouse: spells free on your next turn
 		freeSpellsThisTurn: false,
+		spellsCostOneThisTurn: false, // Ysiel Windsinger: your spells cost (1) this turn
 		mana: { cur: 1, max: 1, bonus: 0 },
 		coins: 0,
 		diedThisTurn: 0,
@@ -519,6 +520,7 @@ export function drawCards(state, pi, count) {
 		// trimmed back down at end of turn (MTG-style cleanup discard).
 		const card = instantiate(state.cardsById[id], pi);
 		card.fromDeck = true; // drawn from your deck — Leyline Manipulator ignores these
+		card.drawnThisTurn = true; // Keli'dan the Breaker: "If drawn this turn"
 		if (p.deckInnerFire && card.type === 'creature') card.attack = card.maxHealth; // Lady in White
 		if (card.type === 'creature' && p.drawBuff) { card.attack += p.drawBuff.attack || 0; card.maxHealth += p.drawBuff.health || 0; }
 		if (card.type === 'creature' && p.deckTribeDiscount) { for (const tr in p.deckTribeDiscount) if ((card.tribe || '').includes(tr)) card.cost = Math.max(0, (card.cost || 0) - p.deckTribeDiscount[tr]); } // Frizz Kindleroost
@@ -607,6 +609,8 @@ const CHOSEN = {
 	'damage-stealth-on-kill': { creature: 'creature', 'enemy-creature': 'enemy-creature', any: 'any', 'enemy-any': 'enemy-any' },
 	'make-dormant': { creature: 'creature', 'enemy-creature': 'enemy-creature', 'friendly-creature': 'friendly-creature' },
 	'damage-target-and-same-tribe': { creature: 'creature', 'enemy-creature': 'enemy-creature' },
+	'damage-chain-neighbors': { 'enemy-creature': 'enemy-creature', creature: 'creature' },
+	kelidan: { creature: 'creature', 'enemy-creature': 'enemy-creature' },
 	'transform-into-token': { 'friendly-creature': 'friendly-creature', creature: 'creature' },
 	'mark-doomed': { creature: 'creature', 'enemy-creature': 'enemy-creature' },
 	'devour-target': { 'friendly-creature': 'friendly-creature' },
@@ -3077,7 +3081,7 @@ function execEffects(state, pi, effects, target, source) {
 			if (e.perHandCard) hits = state.players[pi].hand.length; // Meteorologist
 			for (let i = 0; i < hits; i++) {
 				const pool = [];
-				const pushBoard = side => { for (const c of state.players[side].board) if (!isDead(c) && c.type !== 'location' && !(e.exceptTribe && (c.tribe || '').includes(e.exceptTribe))) pool.push({ c }); };
+				const pushBoard = side => { for (const c of state.players[side].board) if (!isDead(c) && c.type !== 'location' && !(e.exceptTribe && (c.tribe || '').includes(e.exceptTribe)) && !(e.exceptSource && c === source)) pool.push({ c }); };
 				if (e.pool === 'friendly-others') { for (const c of state.players[pi].board) if (!isDead(c) && c !== source && c.type !== 'location') pool.push({ c }); } // Loose Specimen
 				else if (e.pool === 'enemy-creatures') { for (const o of enemies) pushBoard(o); }
 				else if (e.pool === 'all-creatures') { for (let s = 0; s < state.players.length; s++) pushBoard(s); }
@@ -3356,11 +3360,13 @@ function execEffects(state, pi, effects, target, source) {
 			const def = source && state.cardsById[source.id];
 			if (def) for (let i = 0; i < (e.count || 1); i++) summon(state, pi, def);
 		} else if (e.type === 'summon-from-hand') {
-			// Voidcaller: a random qualifying creature jumps from hand to board
+			// Voidcaller: a random qualifying creature jumps from hand to board.
+			// count>1 pulls that many (Beastmaster Leoroxx: 3 Beasts from hand)
 			const p = state.players[pi];
-			const pool = p.hand.filter(c => c.type === 'creature'
-				&& (!e.tribe || (c.tribe || '').includes(e.tribe)));
-			if (pool.length) {
+			for (let n = 0; n < (e.count || 1); n++) {
+				const pool = p.hand.filter(c => c.type === 'creature'
+					&& (!e.tribe || (c.tribe || '').includes(e.tribe)));
+				if (!pool.length) break;
 				const c = pool[Math.floor(state.rng() * pool.length)];
 				p.hand = p.hand.filter(x => x !== c);
 				c.zone = 'board';
@@ -5102,6 +5108,41 @@ function execEffects(state, pi, effects, target, source) {
 			// Imprisoned Satyr: reduce the Cost of a random minion in your hand
 			const pool = state.players[pi].hand.filter(c => c.type === 'creature');
 			if (pool.length) { const c = pool[Math.floor(state.rng() * pool.length)]; c.cost = Math.max(0, (c.cost || 0) - (e.value || 1)); }
+		} else if (e.type === 'add-spells-on-friendly-to-hand') {
+			// Lady Liadrin: add a copy of each spell you cast on friendly characters this game
+			const p = state.players[pi];
+			for (const id of p.spellsOnFriendly || []) {
+				const def = state.cardsById[id];
+				if (!def || p.hand.length >= MAX_HAND) continue;
+				const card = instantiate(def, pi); card.zone = 'hand'; p.hand.push(card);
+				emit(state, { type: 'conjure', player: pi, card, color: null });
+			}
+		} else if (e.type === 'spells-cost-one') {
+			// Ysiel Windsinger: your spells cost (1) this turn
+			state.players[pi].spellsCostOneThisTurn = true;
+		} else if (e.type === 'damage-chain-neighbors') {
+			// The Lurker Below: deal damage to an enemy minion; if it dies, hit a neighbor, repeat
+			let t = chosenCreature();
+			let guard = 12;
+			while (t && !isDead(t) && guard-- > 0) {
+				const owner = state.players[t.controller];
+				const idx = owner.board.indexOf(t);
+				damageCreature(state, t, e.value || 3, source);
+				if (!isDead(t)) break;
+				// pick a living neighbor of the one that just died
+				const neighbors = [owner.board[idx - 1], owner.board[idx + 1]].filter(c => c && !isDead(c) && c.type !== 'location');
+				t = neighbors.length ? neighbors[Math.floor(state.rng() * neighbors.length)] : null;
+			}
+			sweepDeaths(state);
+		} else if (e.type === 'kelidan') {
+			// Keli'dan the Breaker: destroy a minion; if drawn this turn, destroy all others instead
+			if (source && source.drawnThisTurn) {
+				for (const pl of state.players) for (const c of [...pl.board]) if (c !== source && !isDead(c) && c.type !== 'location') { c.damage = c.maxHealth; c.shield = false; emit(state, { type: 'destroy', uid: c.uid }); }
+				sweepDeaths(state);
+			} else {
+				const t = chosenCreature();
+				if (t) { t.damage = t.maxHealth; t.shield = false; emit(state, { type: 'destroy', uid: t.uid }); sweepDeaths(state); }
+			}
 		} else if (e.type === 'transform-adjacent-costplus') {
 			// Bogstrok Clacker: transform each neighbor into a random minion costing (1) more
 			if (source) {
@@ -6674,6 +6715,7 @@ export function effectiveCost(state, pi, card) {
 		c = planeR.setZero ? 0 : c + (planeR.amount || 0);
 	}
 	if (p.freeSpellsThisTurn && isSpellType(card)) c = 0;
+	if (p.spellsCostOneThisTurn && isSpellType(card)) c = Math.min(c, 1); // Ysiel Windsinger
 	if (p.nextMurlocFree && card.type === 'creature' && (card.tribe || '').includes('Murloc')) c = 0; // Seadevil Stinger (Health-cost approximated as free)
 	if (p.nextSecretCost != null && card.secret) c = Math.min(c, p.nextSecretCost); // Kabal Lackey
 	// Reckless Experimenter: your Deathrattle creatures cost less
@@ -8205,6 +8247,8 @@ export function endTurn(state) {
 	{ const cursed = p.hand.filter(c => c.cursed); if (cursed.length) { let dmg = 0; for (const c of cursed) { dmg += c.curseDamage || 3; c.cursed = false; } damageHero(state, pi, dmg, pi); } } // Chaos Gazer: unplayed cursed cards bite
 	for (const c of p.board) if (c.immuneTurnClear) { c.keywords = c.keywords.filter(k => k !== KW.IMMUNE); c.immuneTurnClear = false; } // Ashtongue Slayer: "Immune this turn" wears off
 	p.castSpellLastTurn = (p.spellsPlayedThisTurn || 0) > 0; // Marshspawn / Shattered Rumbler: remember spellcasting across turns
+	p.spellsCostOneThisTurn = false; // Ysiel Windsinger only lasts this turn
+	for (const c of p.hand) c.drawnThisTurn = false; // Keli'dan: "drawn this turn" resets at end of your turn
 	p.heroPowerTaxNext = 0; // Saboteur's Hero Power tax only lasts this turn
 	p.nextMurlocFree = false; p.nextSecretCost = null; // Seadevil Stinger / Kabal Lackey are "this turn"
 	p.nextBattlecryDouble = false; // Murmuring Elemental only lasts this turn

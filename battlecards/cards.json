@@ -82915,6 +82915,236 @@
       "token": true,
       "collectible": false,
       "description": "A 1/1 Demon."
+    },
+    {
+      "id": "fel_summoner",
+      "name": "Fel Summoner",
+      "type": "creature",
+      "cost": 6,
+      "cardClass": "demonhunter",
+      "attack": 8,
+      "health": 3,
+      "rarity": "common",
+      "set": "BLACK_TEMPLE",
+      "keywords": [
+        "deathrattle"
+      ],
+      "description": "Deathrattle: Summon a random Demon from your hand.",
+      "deathrattle": [
+        {
+          "type": "summon-from-hand",
+          "tribe": "Demon",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "id": "kelidan_the_breaker",
+      "name": "Keli'dan the Breaker",
+      "type": "creature",
+      "cost": 6,
+      "cardClass": "warlock",
+      "attack": 3,
+      "health": 3,
+      "rarity": "legendary",
+      "set": "BLACK_TEMPLE",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Destroy a minion. If drawn this turn, instead destroy all minions except this one.",
+      "effects": [
+        {
+          "type": "kelidan",
+          "target": "creature"
+        }
+      ]
+    },
+    {
+      "id": "scavenging_shivarra",
+      "name": "Scavenging Shivarra",
+      "type": "creature",
+      "cost": 6,
+      "cardClass": "neutral",
+      "attack": 6,
+      "health": 3,
+      "rarity": "common",
+      "set": "BLACK_TEMPLE",
+      "tribe": "Demon",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Deal 6 damage randomly split among all other minions.",
+      "effects": [
+        {
+          "type": "random-damage",
+          "count": 6,
+          "value": 1,
+          "pool": "all-creatures",
+          "exceptSource": true
+        }
+      ]
+    },
+    {
+      "id": "the_lurker_below",
+      "name": "The Lurker Below",
+      "type": "creature",
+      "cost": 6,
+      "cardClass": "shaman",
+      "attack": 6,
+      "health": 5,
+      "rarity": "legendary",
+      "set": "BLACK_TEMPLE",
+      "tribe": "Beast",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Deal 3 damage to an enemy minion. If it dies, repeat on one of its neighbors.",
+      "effects": [
+        {
+          "type": "damage-chain-neighbors",
+          "value": 3,
+          "target": "enemy-creature"
+        }
+      ]
+    },
+    {
+      "id": "lady_liadrin",
+      "name": "Lady Liadrin",
+      "type": "creature",
+      "cost": 7,
+      "cardClass": "paladin",
+      "attack": 4,
+      "health": 6,
+      "rarity": "legendary",
+      "set": "BLACK_TEMPLE",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Add a copy of each spell you cast on friendly characters this game to your hand.",
+      "effects": [
+        {
+          "type": "add-spells-on-friendly-to-hand"
+        }
+      ]
+    },
+    {
+      "id": "marsh_hydra",
+      "name": "Marsh Hydra",
+      "type": "creature",
+      "cost": 7,
+      "cardClass": "druid",
+      "attack": 7,
+      "health": 7,
+      "rarity": "epic",
+      "set": "BLACK_TEMPLE",
+      "tribe": "Beast",
+      "keywords": [
+        "rush"
+      ],
+      "description": "Rush. After this attacks, add a random 8-Cost minion to your hand.",
+      "ongoing": {
+        "on": "self-attacks",
+        "effects": [
+          {
+            "type": "conjure-random",
+            "cardType": "creature",
+            "cost": 8
+          }
+        ]
+      }
+    },
+    {
+      "id": "skeletal_dragon",
+      "name": "Skeletal Dragon",
+      "type": "creature",
+      "cost": 7,
+      "cardClass": "priest",
+      "attack": 4,
+      "health": 9,
+      "rarity": "epic",
+      "set": "BLACK_TEMPLE",
+      "tribe": "Dragon",
+      "keywords": [
+        "taunt"
+      ],
+      "description": "Taunt. At the end of your turn, add a Dragon to your hand.",
+      "ongoing": {
+        "on": "turn-end",
+        "effects": [
+          {
+            "type": "conjure-random",
+            "cardType": "creature",
+            "tribe": "Dragon"
+          }
+        ]
+      }
+    },
+    {
+      "id": "beastmaster_leoroxx",
+      "name": "Beastmaster Leoroxx",
+      "type": "creature",
+      "cost": 8,
+      "cardClass": "hunter",
+      "attack": 5,
+      "health": 5,
+      "rarity": "legendary",
+      "set": "BLACK_TEMPLE",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Summon 3 Beasts from your hand.",
+      "effects": [
+        {
+          "type": "summon-from-hand",
+          "tribe": "Beast",
+          "count": 3
+        }
+      ]
+    },
+    {
+      "id": "pit_commander",
+      "name": "Pit Commander",
+      "type": "creature",
+      "cost": 9,
+      "cardClass": "demonhunter",
+      "attack": 7,
+      "health": 9,
+      "rarity": "epic",
+      "set": "BLACK_TEMPLE",
+      "tribe": "Demon",
+      "keywords": [
+        "taunt"
+      ],
+      "description": "Taunt. At the end of your turn, summon a Demon from your deck.",
+      "ongoing": {
+        "on": "turn-end",
+        "effects": [
+          {
+            "type": "recruit",
+            "tribe": "Demon"
+          }
+        ]
+      }
+    },
+    {
+      "id": "ysiel_windsinger",
+      "name": "Ysiel Windsinger",
+      "type": "creature",
+      "cost": 9,
+      "cardClass": "druid",
+      "attack": 5,
+      "health": 5,
+      "rarity": "legendary",
+      "set": "BLACK_TEMPLE",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Your spells cost (1) this turn.",
+      "effects": [
+        {
+          "type": "spells-cost-one"
+        }
+      ]
     }
   ]
 }
