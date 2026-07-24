@@ -85388,6 +85388,472 @@
           "value": 1
         }
       ]
+    },
+    {
+      "id": "pit_master",
+      "name": "Pit Master",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "shaman",
+      "attack": 1,
+      "health": 2,
+      "rarity": "rare",
+      "set": "DARKMOON_FAIRE",
+      "keywords": [
+        "battlecry"
+      ],
+      "corrupt": "pit_master_corrupted",
+      "description": "Battlecry: Summon a 3/2 Duelist. Corrupt: Summon two.",
+      "effects": [
+        {
+          "type": "summon",
+          "count": 1,
+          "summonId": "dmf_duelist"
+        }
+      ]
+    },
+    {
+      "id": "revenant_rascal",
+      "name": "Revenant Rascal",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "warlock",
+      "attack": 3,
+      "health": 3,
+      "rarity": "epic",
+      "set": "DARKMOON_FAIRE",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Destroy a Mana Crystal for each player.",
+      "effects": [
+        {
+          "type": "lose-max-mana",
+          "value": 1,
+          "target": "all"
+        }
+      ]
+    },
+    {
+      "id": "saddlemaster",
+      "name": "Saddlemaster",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "hunter",
+      "attack": 3,
+      "health": 4,
+      "rarity": "rare",
+      "set": "DARKMOON_FAIRE",
+      "description": "After you play a Beast, add a random Beast to your hand.",
+      "ongoing": {
+        "on": "creature-played",
+        "if": {
+          "tribe": "Beast"
+        },
+        "effects": [
+          {
+            "type": "conjure-random",
+            "cardType": "creature",
+            "tribe": "Beast"
+          }
+        ]
+      }
+    },
+    {
+      "id": "sparkjoy_cheat",
+      "name": "Sparkjoy Cheat",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "rogue",
+      "attack": 3,
+      "health": 3,
+      "rarity": "rare",
+      "set": "DARKMOON_FAIRE",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: If you're holding a Secret, cast it and draw a card.",
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "holdingSecret": true
+          },
+          "then": [
+            {
+              "type": "cast-secret-from-hand",
+              "then": [
+                {
+                  "type": "draw",
+                  "value": 1
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "stiltstepper",
+      "name": "Stiltstepper",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "demonhunter",
+      "attack": 4,
+      "health": 1,
+      "rarity": "epic",
+      "set": "DARKMOON_FAIRE",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Draw a card. If you play it this turn, give your hero +4 Attack this turn.",
+      "effects": [
+        {
+          "type": "draw-stilt-reward",
+          "value": 4
+        }
+      ]
+    },
+    {
+      "id": "ticket_master",
+      "name": "Ticket Master",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "rogue",
+      "attack": 4,
+      "health": 3,
+      "rarity": "rare",
+      "set": "DARKMOON_FAIRE",
+      "keywords": [
+        "deathrattle"
+      ],
+      "description": "Deathrattle: Shuffle 3 Tickets into your deck. When drawn, summon a 3/3 Plush Bear.",
+      "deathrattle": [
+        {
+          "type": "shuffle-into-deck",
+          "id": "dmf_ticket",
+          "count": 3
+        }
+      ]
+    },
+    {
+      "id": "balloon_merchant",
+      "name": "Balloon Merchant",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "paladin",
+      "attack": 3,
+      "health": 5,
+      "rarity": "rare",
+      "set": "DARKMOON_FAIRE",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Give your Silver Hand Recruits +1 Attack and Divine Shield.",
+      "effects": [
+        {
+          "type": "buff",
+          "target": "friendly-creatures",
+          "name": "Silver Hand Recruit",
+          "attack": 1
+        },
+        {
+          "type": "grant",
+          "target": "friendly-creatures",
+          "ifName": "Silver Hand Recruit",
+          "keyword": "divine_shield"
+        }
+      ]
+    },
+    {
+      "id": "fire_breather",
+      "name": "Fire Breather",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "warlock",
+      "attack": 4,
+      "health": 3,
+      "rarity": "rare",
+      "set": "DARKMOON_FAIRE",
+      "tribe": "Demon",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Deal 2 damage to all minions except Demons.",
+      "effects": [
+        {
+          "type": "damage-all-minions",
+          "value": 2,
+          "exceptTribe": "Demon"
+        }
+      ]
+    },
+    {
+      "id": "lightsteed",
+      "name": "Lightsteed",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "priest",
+      "attack": 3,
+      "health": 6,
+      "rarity": "rare",
+      "set": "DARKMOON_FAIRE",
+      "tribe": "Elemental",
+      "healBonusHealth": 2,
+      "description": "Your healing effects also give affected minions +2 Health."
+    },
+    {
+      "id": "occult_conjurer",
+      "name": "Occult Conjurer",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "mage",
+      "attack": 4,
+      "health": 4,
+      "rarity": "epic",
+      "set": "DARKMOON_FAIRE",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: If you control a Secret, summon a copy of this.",
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "controlSecret": true
+          },
+          "then": [
+            {
+              "type": "summon-copy-self"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "the_nameless_one",
+      "name": "The Nameless One",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "priest",
+      "attack": 4,
+      "health": 4,
+      "rarity": "legendary",
+      "set": "DARKMOON_FAIRE",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Choose a minion. Become a 4/4 copy of it, then Silence it.",
+      "effects": [
+        {
+          "type": "become-copy-of-target",
+          "stats": 4,
+          "target": "creature"
+        }
+      ]
+    },
+    {
+      "id": "carousel_gryphon",
+      "name": "Carousel Gryphon",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "paladin",
+      "attack": 5,
+      "health": 5,
+      "rarity": "common",
+      "set": "DARKMOON_FAIRE",
+      "tribe": "Mech",
+      "keywords": [
+        "divine_shield"
+      ],
+      "corrupt": "carousel_gryphon_corrupted",
+      "description": "Divine Shield. Corrupt: Gain +3/+3 and Taunt."
+    },
+    {
+      "id": "dark_inquisitor_xanesh",
+      "name": "Dark Inquisitor Xanesh",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "priest",
+      "attack": 3,
+      "health": 5,
+      "rarity": "legendary",
+      "set": "DARKMOON_FAIRE",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Reduce the Cost of all Corrupt and Corrupted cards in your hand and deck by (2).",
+      "effects": [
+        {
+          "type": "reduce-corrupt-cost",
+          "value": 2
+        }
+      ]
+    },
+    {
+      "id": "envoy_rustwix",
+      "name": "Envoy Rustwix",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "warlock",
+      "attack": 5,
+      "health": 4,
+      "rarity": "legendary",
+      "set": "DARKMOON_FAIRE",
+      "tribe": "Demon",
+      "keywords": [
+        "deathrattle"
+      ],
+      "description": "Deathrattle: Shuffle 3 random Prime Legendary minions into your deck.",
+      "deathrattle": [
+        {
+          "type": "shuffle-random-primes",
+          "count": 3
+        }
+      ]
+    },
+    {
+      "id": "fortune_teller",
+      "name": "Fortune Teller",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "priest",
+      "attack": 3,
+      "health": 3,
+      "rarity": "common",
+      "set": "DARKMOON_FAIRE",
+      "tribe": "Mech",
+      "keywords": [
+        "taunt",
+        "battlecry"
+      ],
+      "description": "Taunt. Battlecry: Gain +1/+1 for each spell in your hand.",
+      "effects": [
+        {
+          "type": "buff-self",
+          "attack": 1,
+          "health": 1,
+          "per": "hand-spells"
+        }
+      ]
+    },
+    {
+      "id": "greybough",
+      "name": "Greybough",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "druid",
+      "attack": 4,
+      "health": 6,
+      "rarity": "legendary",
+      "set": "DARKMOON_FAIRE",
+      "keywords": [
+        "taunt",
+        "deathrattle"
+      ],
+      "description": "Taunt. Deathrattle: Give a random friendly minion \"Deathrattle: Summon Greybough.\"",
+      "deathrattle": [
+        {
+          "type": "grant-deathrattle-random",
+          "effects": [
+            {
+              "type": "summon",
+              "count": 1,
+              "summonId": "greybough"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "pit_master_corrupted",
+      "name": "Pit Master",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "shaman",
+      "attack": 1,
+      "health": 2,
+      "rarity": "rare",
+      "set": "DARKMOON_FAIRE",
+      "keywords": [
+        "battlecry"
+      ],
+      "token": true,
+      "collectible": false,
+      "description": "Battlecry: Summon two 3/2 Duelists.",
+      "effects": [
+        {
+          "type": "summon",
+          "count": 2,
+          "summonId": "dmf_duelist"
+        }
+      ]
+    },
+    {
+      "id": "carousel_gryphon_corrupted",
+      "name": "Carousel Gryphon",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "paladin",
+      "attack": 8,
+      "health": 8,
+      "rarity": "common",
+      "set": "DARKMOON_FAIRE",
+      "tribe": "Mech",
+      "keywords": [
+        "divine_shield",
+        "taunt"
+      ],
+      "token": true,
+      "collectible": false,
+      "description": "Divine Shield, Taunt."
+    },
+    {
+      "id": "dmf_duelist",
+      "name": "Duelist",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "shaman",
+      "attack": 3,
+      "health": 2,
+      "rarity": "common",
+      "set": "DARKMOON_FAIRE",
+      "token": true,
+      "collectible": false,
+      "description": "A 3/2 token."
+    },
+    {
+      "id": "dmf_plush_bear",
+      "name": "Plush Bear",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "rogue",
+      "attack": 3,
+      "health": 3,
+      "rarity": "common",
+      "set": "DARKMOON_FAIRE",
+      "token": true,
+      "collectible": false,
+      "description": "A 3/3 token."
+    },
+    {
+      "id": "dmf_ticket",
+      "name": "Ticket",
+      "type": "sorcery",
+      "cost": 1,
+      "token": true,
+      "collectible": false,
+      "rarity": "common",
+      "set": "DARKMOON_FAIRE",
+      "drawTrigger": true,
+      "onDraw": [
+        {
+          "type": "summon",
+          "count": 1,
+          "summonId": "dmf_plush_bear"
+        }
+      ],
+      "description": "When drawn, summon a 3/3 Plush Bear."
     }
   ]
 }

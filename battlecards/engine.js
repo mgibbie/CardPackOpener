@@ -247,6 +247,7 @@ function instantiate(def, controller) {
 		handDeathGrowth: !!def.handDeathGrowth, // Blood Herald: +1/+1 whenever a friendly minion dies while in hand
 		heroPowerCostReduce: def.heroPowerCostReduce || 0, // Felfire Deadeye: your Hero Power costs this much less
 		outcastCostReduce: def.outcastCostReduce || 0, // Line Hopper: your Outcast cards cost this much less
+		healBonusHealth: def.healBonusHealth || 0, // Lightsteed: your heals also give the minion +Health
 		deathrattle: def.deathrattle || null,
 		tribe: def.tribe || null,
 		controller,
@@ -528,6 +529,7 @@ export function drawCards(state, pi, count) {
 		if (p.deckInnerFire && card.type === 'creature') card.attack = card.maxHealth; // Lady in White
 		if (card.type === 'creature' && p.drawBuff) { card.attack += p.drawBuff.attack || 0; card.maxHealth += p.drawBuff.health || 0; }
 		if (card.type === 'creature' && p.drawBuffTribe) { for (const tr in p.drawBuffTribe) if ((card.tribe || '').includes(tr)) { card.attack += p.drawBuffTribe[tr].attack || 0; card.maxHealth += p.drawBuffTribe[tr].health || 0; } } // Shan'do Wildclaw
+		if (p.corruptDeckDiscount && (card.corrupt || card.corruptGrow)) card.cost = Math.max(0, (card.cost || 0) - p.corruptDeckDiscount); // Dark Inquisitor Xanesh
 		if (card.type === 'creature' && p.deckTribeDiscount) { for (const tr in p.deckTribeDiscount) if ((card.tribe || '').includes(tr)) card.cost = Math.max(0, (card.cost || 0) - p.deckTribeDiscount[tr]); } // Frizz Kindleroost
 		// C'Thun enters hand carrying every buff it collected while in your deck
 		if (card.id === 'c_thun') { card.attack = CTHUN_BASE + p.cthunAtk; card.maxHealth = CTHUN_BASE + p.cthunHp; if (p.cthunTaunt && !card.keywords.includes(KW.TAUNT)) card.keywords.push(KW.TAUNT); }
@@ -616,6 +618,7 @@ const CHOSEN = {
 	'damage-target-and-same-tribe': { creature: 'creature', 'enemy-creature': 'enemy-creature' },
 	'damage-chain-neighbors': { 'enemy-creature': 'enemy-creature', creature: 'creature' },
 	kelidan: { creature: 'creature', 'enemy-creature': 'enemy-creature' },
+	'become-copy-of-target': { creature: 'creature', 'enemy-creature': 'enemy-creature', 'friendly-creature': 'friendly-creature' },
 	'destroy-fragment-then-damage': { any: 'any', 'enemy-any': 'enemy-any', creature: 'creature', 'enemy-creature': 'enemy-creature' },
 	'transform-into-token': { 'friendly-creature': 'friendly-creature', creature: 'creature' },
 	'mark-doomed': { creature: 'creature', 'enemy-creature': 'enemy-creature' },
@@ -2723,6 +2726,7 @@ function execEffects(state, pi, effects, target, source) {
 		const overflow = v - c.damage;
 		c.damage = Math.max(0, c.damage - v);
 		emit(state, { type: 'heal', targetType: 'creature', uid: c.uid, amount: v, hp: hp(c) });
+		if (v > 0 && !isDead(c)) { const hb = state.players[pi].board.filter(x => x.healBonusHealth && !isDead(x)).reduce((s, x) => s + x.healBonusHealth, 0); if (hb) { c.maxHealth += hb; emit(state, { type: 'buff', uid: c.uid, attack: c.attack, hp: hp(c) }); } } // Lightsteed
 		if (healed) {
 			for (let s2 = 0; s2 < state.players.length; s2++) fireOngoing(state, s2, 'healed', { healedCreature: c });
 		}
@@ -2939,6 +2943,7 @@ function execEffects(state, pi, effects, target, source) {
 			for (const c of grantTo) {
 				// Castle Kennels: some grants only take on a matching tribe
 				if (e.ifTribe && !(c.tribe || '').includes(e.ifTribe)) continue;
+				if (e.ifName && c.name !== e.ifName) continue; // Balloon Merchant: Silver Hand Recruits
 				if (!c.keywords.includes(e.keyword)) c.keywords.push(e.keyword);
 				if (e.keyword === KW.DIVINE_SHIELD) c.shield = true;
 				if (e.keyword === KW.STEALTH) c.stealthed = true;
@@ -4002,6 +4007,7 @@ function execEffects(state, pi, effects, target, source) {
 			else if (e.if.heroHealthChanged) ok = !!p.heroHealthChangedThisTurn; // Brittlebone Destroyer
 			else if (e.if.hasSpellDamage) ok = staticValue(p, 'spell-damage') > 0; // Sorcerous Substitute
 			else if (e.if.hasArmor) ok = (p.armor || 0) > 0; // Ironclad
+			else if (e.if.holdingSecret) ok = p.hand.some(c => c.secret); // Sparkjoy Cheat
 			else if (e.if.hpDamageGame != null) ok = (p.hpDamageGame || 0) >= e.if.hpDamageGame; // Jan'alai, the Dragonhawk
 			else if (e.if.deckEmpty) ok = p.deck.length === 0; // Chef Nomi
 			else if (e.if.holdingOtherClass) ok = p.hand.some(c => c !== source && c.cardClass && c.cardClass !== 'neutral' && c.cardClass !== p.heroClass); // Underbelly Fence
@@ -4144,9 +4150,9 @@ function execEffects(state, pi, effects, target, source) {
 				emit(state, { type: 'manaGained', player: who, amount: 0, mana: availableMana(wp) });
 			}
 		} else if (e.type === 'lose-max-mana') {
-			const p = state.players[pi];
-			p.mana.max = Math.max(0, p.mana.max - (e.value || 1));
-			p.mana.cur = Math.min(p.mana.cur, p.mana.max);
+			// Revenant Rascal: target 'all' destroys a Mana Crystal for each player
+			const victims = e.target === 'all' ? state.players.map((_, i) => i).filter(i => !state.players[i].eliminated) : [pi];
+			for (const vi of victims) { const vp = state.players[vi]; vp.mana.max = Math.max(0, vp.mana.max - (e.value || 1)); vp.mana.cur = Math.min(vp.mana.cur, vp.mana.max); }
 		} else if (e.type === 'set-hero-health') {
 			const who = e.target === 'self' ? pi : (target?.type === 'hero' ? target.player : enemyHero()); // Majordomo: your own hero
 			if (who != null) {
@@ -5131,8 +5137,9 @@ function execEffects(state, pi, effects, target, source) {
 			if (atk > 0 && pool.length) buffCreature(pool[Math.floor(state.rng() * pool.length)], atk, 0);
 		} else if (e.type === 'damage-all-minions') {
 			// Risky Skipper: deal `value` to every minion on both sides
-			// (exceptSource omits the caster — Shattered Rumbler: "all OTHER minions")
-			for (const pl of state.players) for (const c of [...pl.board]) if (!isDead(c) && c.type !== 'location' && !(e.exceptSource && c === source)) damageCreature(state, c, e.value || 1, source);
+			// (exceptSource omits the caster — Shattered Rumbler: "all OTHER minions";
+			//  exceptTribe skips a tribe — Fire Breather: "except Demons")
+			for (const pl of state.players) for (const c of [...pl.board]) if (!isDead(c) && c.type !== 'location' && !(e.exceptSource && c === source) && !(e.exceptTribe && (c.tribe || '').includes(e.exceptTribe))) damageCreature(state, c, e.value || 1, source);
 			sweepDeaths(state);
 		} else if (e.type === 'damage-target-by-attack') {
 			// Aeon Reaver: deal damage to a minion equal to its own Attack
@@ -5305,6 +5312,48 @@ function execEffects(state, pi, effects, target, source) {
 					summon(state, pi, def);
 				}
 			}
+		} else if (e.type === 'draw-stilt-reward') {
+			// Stiltstepper: draw a card; if you play it this turn, give your hero +N Attack
+			const p = state.players[pi];
+			const before = new Set(p.hand.map(c => c.uid));
+			drawCards(state, pi, 1);
+			for (const c of p.hand) if (!before.has(c.uid)) c.stiltReward = e.value || 4;
+		} else if (e.type === 'cast-secret-from-hand') {
+			// Sparkjoy Cheat: cast a Secret from your hand (install it), then run `then`
+			const p = state.players[pi];
+			const si = p.hand.findIndex(c => c.secret);
+			if (si >= 0) { const [c] = p.hand.splice(si, 1); installSecret(state, pi, c.id); if (e.then) execEffects(state, pi, e.then, target, source); }
+		} else if (e.type === 'become-copy-of-target') {
+			// The Nameless One: become a set-stat copy of a chosen minion, then Silence it
+			const t = chosenCreature();
+			if (t && source && source.zone === 'board' && !isDead(source)) {
+				const base = state.cardsById[t.id];
+				if (base) {
+					const def = JSON.parse(JSON.stringify(base));
+					def.attack = e.stats ?? 4; def.health = e.stats ?? 4; def.token = true; def.id = 'token_' + base.id;
+					const tok = instantiate(def, pi); tok.zone = 'board'; tok.sick = source.sick;
+					const board = state.players[pi].board; board[board.indexOf(source)] = tok; source.zone = 'gone';
+					emit(state, { type: 'transformed', uid: source.uid, player: pi, from: source.name, card: tok });
+					silenceCreature(state, t);
+					recomputeAuras(state);
+				}
+			}
+		} else if (e.type === 'reduce-corrupt-cost') {
+			// Dark Inquisitor Xanesh: your Corrupt/Corrupted cards cost less (hand now, deck on draw)
+			const p = state.players[pi];
+			for (const c of p.hand) if (c.corrupt || c.corruptGrow) c.cost = Math.max(0, (c.cost || 0) - (e.value || 2));
+			p.corruptDeckDiscount = (p.corruptDeckDiscount || 0) + (e.value || 2);
+		} else if (e.type === 'shuffle-random-primes') {
+			// Envoy Rustwix: shuffle N random Prime Legendary minions into your deck
+			const primes = Object.values(state.cardsById).filter(d => typeof d.id === 'string' && d.id.endsWith('_prime') && d.type === 'creature');
+			const p = state.players[pi];
+			for (let n = 0; n < (e.count || 3) && primes.length; n++) p.deck.push(primes[Math.floor(state.rng() * primes.length)].id);
+			for (let i = p.deck.length - 1; i > 0; i--) { const j = Math.floor(state.rng() * (i + 1)); [p.deck[i], p.deck[j]] = [p.deck[j], p.deck[i]]; }
+			emit(state, { type: 'shuffle', player: pi });
+		} else if (e.type === 'grant-deathrattle-random') {
+			// Greybough: give a random friendly minion a Deathrattle
+			const pool = state.players[pi].board.filter(c => c !== source && !isDead(c) && c.type !== 'location');
+			if (pool.length) { const c = pool[Math.floor(state.rng() * pool.length)]; c.deathrattle = (c.deathrattle || []).concat(JSON.parse(JSON.stringify(e.effects))); if (!c.keywords.includes('deathrattle')) c.keywords.push('deathrattle'); }
 		} else if (e.type === 'buff-all-tribe') {
 			// Grand Totem Eys'or: +X/+X to a tribe in hand, deck and battlefield
 			const p = state.players[pi];
@@ -7028,6 +7077,7 @@ export function playCard(state, pi, cardUid, target, choice, position, useAlt, k
 	// discounts are consumed) against each Corrupt card still in hand.
 	const playedCost = effectiveCost(state, pi, card);
 	if (card.combo && p.nextComboDiscount > 0) p.nextComboDiscount = 0; // Foxy Fraud discount is spent by the next Combo card
+	if (card.stiltReward) { p.heroTempAttack += card.stiltReward; emit(state, { type: 'heroAttack', player: pi, attack: heroAttackValue(p) }); card.stiltReward = 0; } // Stiltstepper
 	// Ward: targeting an enemy warded creature costs extra — unaffordable = illegal
 	const ward = wardOf(state, pi, target);
 	if (ward?.mana && availableMana(p) < effectiveCost(state, pi, card) + ward.mana) return false;
