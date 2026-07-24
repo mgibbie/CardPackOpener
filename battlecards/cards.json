@@ -75972,6 +75972,469 @@
           "type": "eat-from-deck"
         }
       ]
+    },
+    {
+      "id": "spirit_of_the_raptor",
+      "name": "Spirit of the Raptor",
+      "type": "creature",
+      "cost": 1,
+      "cardClass": "druid",
+      "attack": 0,
+      "health": 3,
+      "rarity": "rare",
+      "set": "TROLL",
+      "keywords": [
+        "stealth",
+        "battlecry"
+      ],
+      "description": "Stealth for 1 turn. After your hero attacks and kills a creature, draw a card.",
+      "effects": [
+        {
+          "type": "temp-stealth-self"
+        }
+      ],
+      "ongoing": {
+        "on": "hero-kills-minion",
+        "effects": [
+          {
+            "type": "draw",
+            "value": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "spirit_of_the_dragonhawk",
+      "name": "Spirit of the Dragonhawk",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "mage",
+      "attack": 0,
+      "health": 3,
+      "rarity": "rare",
+      "set": "TROLL",
+      "keywords": [
+        "stealth",
+        "battlecry"
+      ],
+      "description": "Stealth for 1 turn. Your Hero Power also targets adjacent creatures.",
+      "effects": [
+        {
+          "type": "temp-stealth-self"
+        }
+      ],
+      "heroPowerAdjacent": true
+    },
+    {
+      "id": "spirit_of_the_frog",
+      "name": "Spirit of the Frog",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "shaman",
+      "attack": 0,
+      "health": 3,
+      "rarity": "rare",
+      "set": "TROLL",
+      "keywords": [
+        "stealth",
+        "battlecry"
+      ],
+      "description": "Stealth for 1 turn. Whenever you cast a spell, draw a spell from your deck that costs (1) more.",
+      "effects": [
+        {
+          "type": "temp-stealth-self"
+        }
+      ],
+      "ongoing": {
+        "on": "spell-played",
+        "effects": [
+          {
+            "type": "tutor-spell-cost-plus",
+            "value": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "zentimo",
+      "name": "Zentimo",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "shaman",
+      "attack": 1,
+      "health": 3,
+      "rarity": "legendary",
+      "set": "TROLL",
+      "description": "Whenever you target a creature with a spell, cast it again on its neighbors."
+    },
+    {
+      "id": "pyromaniac",
+      "name": "Pyromaniac",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "mage",
+      "attack": 3,
+      "health": 4,
+      "rarity": "rare",
+      "set": "TROLL",
+      "description": "Whenever your Hero Power kills a creature, draw a card.",
+      "ongoing": {
+        "on": "hero-power-kills-minion",
+        "effects": [
+          {
+            "type": "draw",
+            "value": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "wardruid_loti",
+      "name": "Wardruid Loti",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "druid",
+      "attack": 1,
+      "health": 2,
+      "rarity": "legendary",
+      "set": "TROLL",
+      "tribe": "Beast",
+      "description": "Choose One - Transform into one of Loti's four dinosaur forms.",
+      "choices": [
+        {
+          "text": "3/5 Taunt",
+          "effects": [
+            {
+              "type": "buff-self",
+              "attack": 2,
+              "health": 3
+            },
+            {
+              "type": "grant",
+              "target": "self",
+              "keyword": "taunt"
+            }
+          ]
+        },
+        {
+          "text": "5/2 Rush",
+          "effects": [
+            {
+              "type": "buff-self",
+              "attack": 4,
+              "health": 0
+            },
+            {
+              "type": "grant",
+              "target": "self",
+              "keyword": "rush"
+            }
+          ]
+        },
+        {
+          "text": "4/4 Poisonous",
+          "effects": [
+            {
+              "type": "buff-self",
+              "attack": 3,
+              "health": 2
+            },
+            {
+              "type": "grant",
+              "target": "self",
+              "keyword": "poisonous"
+            }
+          ]
+        },
+        {
+          "text": "2/3 Stealth",
+          "effects": [
+            {
+              "type": "buff-self",
+              "attack": 1,
+              "health": 1
+            },
+            {
+              "type": "grant",
+              "target": "self",
+              "keyword": "stealth"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "drakkari_trickster",
+      "name": "Drakkari Trickster",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "neutral",
+      "attack": 3,
+      "health": 4,
+      "rarity": "epic",
+      "set": "TROLL",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Give each player a copy of a random card from their opponent's deck.",
+      "effects": [
+        {
+          "type": "drakkari-swap"
+        }
+      ]
+    },
+    {
+      "id": "griftah",
+      "name": "Griftah",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "neutral",
+      "attack": 4,
+      "health": 5,
+      "rarity": "legendary",
+      "set": "TROLL",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Discover a card. Give a random card to your opponent.",
+      "effects": [
+        {
+          "type": "discover",
+          "cardType": "creature"
+        },
+        {
+          "type": "give-enemy-random"
+        }
+      ]
+    },
+    {
+      "id": "high_priestess_jekliik",
+      "name": "High Priestess Jeklik",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "warlock",
+      "attack": 3,
+      "health": 5,
+      "rarity": "legendary",
+      "set": "TROLL",
+      "keywords": [
+        "taunt",
+        "lifesteal"
+      ],
+      "description": "Taunt, Lifesteal. When you discard this, add 2 copies of it to your hand.",
+      "copiesOnDiscard": 2
+    },
+    {
+      "id": "treespeaker",
+      "name": "Treespeaker",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "druid",
+      "attack": 4,
+      "health": 4,
+      "rarity": "epic",
+      "set": "TROLL",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Transform your Treants into 5/5 Ancients.",
+      "effects": [
+        {
+          "type": "transform-treants"
+        }
+      ]
+    },
+    {
+      "id": "snapjaw_shellfighter",
+      "name": "Snapjaw Shellfighter",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "neutral",
+      "attack": 3,
+      "health": 8,
+      "rarity": "epic",
+      "set": "TROLL",
+      "description": "Whenever an adjacent creature takes damage, this creature takes it instead."
+    },
+    {
+      "id": "kragwa_the_frog",
+      "name": "Krag'wa, the Frog",
+      "type": "creature",
+      "cost": 6,
+      "cardClass": "shaman",
+      "attack": 4,
+      "health": 6,
+      "rarity": "legendary",
+      "set": "TROLL",
+      "tribe": "Beast",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Return all spells you played last turn to your hand.",
+      "effects": [
+        {
+          "type": "return-last-turn-spells"
+        }
+      ]
+    },
+    {
+      "id": "gurubashi_hypemon",
+      "name": "Gurubashi Hypemon",
+      "type": "creature",
+      "cost": 7,
+      "cardClass": "rogue",
+      "attack": 5,
+      "health": 7,
+      "rarity": "epic",
+      "set": "TROLL",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Discover a 1/1 copy of a Battlecry creature. It costs (1).",
+      "effects": [
+        {
+          "type": "discover",
+          "cardType": "creature",
+          "requireKeyword": "battlecry",
+          "setAttack": 1,
+          "setHealth": 1,
+          "setCost": 1
+        }
+      ]
+    },
+    {
+      "id": "gonk_the_raptor",
+      "name": "Gonk, the Raptor",
+      "type": "creature",
+      "cost": 7,
+      "cardClass": "druid",
+      "attack": 4,
+      "health": 6,
+      "rarity": "legendary",
+      "set": "TROLL",
+      "description": "After your hero attacks and kills a creature, it may attack again."
+    },
+    {
+      "id": "janalai_the_dragonhawk",
+      "name": "Jan'alai, the Dragonhawk",
+      "type": "creature",
+      "cost": 7,
+      "cardClass": "mage",
+      "attack": 4,
+      "health": 4,
+      "rarity": "legendary",
+      "set": "TROLL",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: If your Hero Power dealt 8 damage this game, summon Ragnaros the Firelord.",
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "hpDamageGame": 8
+          },
+          "then": [
+            {
+              "type": "summon",
+              "count": 1,
+              "summonId": "trl_ragnaros"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "hex_lord_malacrass",
+      "name": "Hex Lord Malacrass",
+      "type": "creature",
+      "cost": 8,
+      "cardClass": "mage",
+      "attack": 5,
+      "health": 5,
+      "rarity": "legendary",
+      "set": "TROLL",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Add a copy of your opening hand to your hand (except this card).",
+      "effects": [
+        {
+          "type": "copy-opening-hand"
+        }
+      ]
+    },
+    {
+      "id": "hakkar_the_soulflayer",
+      "name": "Hakkar, the Soulflayer",
+      "type": "creature",
+      "cost": 10,
+      "cardClass": "neutral",
+      "attack": 9,
+      "health": 6,
+      "rarity": "legendary",
+      "set": "TROLL",
+      "keywords": [
+        "deathrattle"
+      ],
+      "description": "Deathrattle: Shuffle a Corrupted Blood into each player's deck.",
+      "deathrattle": [
+        {
+          "type": "shuffle-into-deck",
+          "id": "trl_corrupted_blood",
+          "eachPlayer": true
+        }
+      ]
+    },
+    {
+      "id": "trl_ragnaros",
+      "name": "Ragnaros the Firelord",
+      "type": "creature",
+      "cost": 8,
+      "token": true,
+      "tribe": "Elemental",
+      "attack": 8,
+      "health": 8,
+      "rarity": "legendary",
+      "set": "TROLL",
+      "keywords": [
+        "pacifist"
+      ],
+      "description": "Can't attack. At the end of your turn, deal 8 damage to a random enemy.",
+      "ongoing": {
+        "on": "turn-end",
+        "effects": [
+          {
+            "type": "random-damage",
+            "value": 8,
+            "count": 1,
+            "pool": "enemies"
+          }
+        ]
+      }
+    },
+    {
+      "id": "trl_corrupted_blood",
+      "name": "Corrupted Blood",
+      "type": "sorcery",
+      "cost": 0,
+      "token": true,
+      "rarity": "common",
+      "set": "TROLL",
+      "drawTrigger": true,
+      "onDraw": [
+        {
+          "type": "damage",
+          "value": 3,
+          "target": "own-hero"
+        },
+        {
+          "type": "shuffle-into-deck",
+          "id": "trl_corrupted_blood",
+          "count": 2
+        }
+      ],
+      "description": "When drawn, deal 3 damage to your hero and shuffle 2 more copies into your deck."
     }
   ]
 }
