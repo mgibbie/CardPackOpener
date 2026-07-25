@@ -538,6 +538,7 @@ export function drawCards(state, pi, count) {
 		if (card.id === 'c_thun') { card.attack = CTHUN_BASE + p.cthunAtk; card.maxHealth = CTHUN_BASE + p.cthunHp; if (p.cthunTaunt && !card.keywords.includes(KW.TAUNT)) card.keywords.push(KW.TAUNT); }
 		card.zone = 'hand';
 		if (state.hpResolver === pi && staticValue(p, 'hero-power-draw-zero') > 0) card.cost = 0; // Wilfred Fizzlebang
+		if (!p.stealerUsedThisTurn && p.board.some(x => x.id === 'stealer_of_souls' && !isDead(x))) { card.cost = 0; p.stealerUsedThisTurn = true; } // Stealer of Souls (Health-cost approximated as free)
 		p.hand.push(card);
 		drawn++;
 		emit(state, { type: 'draw', player: pi, card });
@@ -1073,6 +1074,7 @@ function healHero(state, pi, amount) {
 	if (p.life > before) {
 		p.heroHealthChangedThisTurn = true; // Brittlebone Destroyer
 		p.healedThisTurn = true; // Cleric of An'she
+		p.healedAmountThisTurn = (p.healedAmountThisTurn || 0) + (p.life - before); // Xyrella
 		p.healedGame = (p.healedGame || 0) + (p.life - before); // Zandalari Templar
 		for (let s2 = 0; s2 < state.players.length; s2++) fireOngoing(state, s2, 'healed', { healedHero: pi, amount: p.life - before });
 	}
@@ -2576,6 +2578,11 @@ function runSecretEffects(state, pi, effects, ctx) {
 				if (base) { const def = JSON.parse(JSON.stringify(base)); def.keywords = (def.keywords || []).filter(k => k !== e.keyword); const c = summon(state, pi, def); }
 				break;
 			}
+			case 'gain-armor-by-amount': {
+				// Gold Road Grunt (Frenzy): gain Armor equal to the damage just taken
+				if (ctx.amount) gainArmor(state, pi, ctx.amount);
+				break;
+			}
 			case 'bump-drawn-cost': {
 				// Far Watch Post: after the opponent draws, that card costs more (capped)
 				const drawn = ctx.card;
@@ -2750,6 +2757,7 @@ function execEffects(state, pi, effects, target, source) {
 	const chosenCreature = () => target?.type === 'creature' ? findCreature(state, target.uid) : null;
 	const healCreature = (c, v) => {
 		const healed = c.damage > 0 && v > 0;
+		const landed = Math.min(v, c.damage); // Xyrella: healing that actually restored Health
 		// Overheal: the healing that overflows past full Health (wasted, but a bonus)
 		const overflow = v - c.damage;
 		c.damage = Math.max(0, c.damage - v);
@@ -2757,6 +2765,7 @@ function execEffects(state, pi, effects, target, source) {
 		if (v > 0 && !isDead(c)) { const hb = state.players[pi].board.filter(x => x.healBonusHealth && !isDead(x)).reduce((s, x) => s + x.healBonusHealth, 0); if (hb) { c.maxHealth += hb; emit(state, { type: 'buff', uid: c.uid, attack: c.attack, hp: hp(c) }); } } // Lightsteed
 		if (healed) {
 			state.players[pi].healedThisTurn = true; // Cleric of An'she
+			state.players[pi].healedAmountThisTurn = (state.players[pi].healedAmountThisTurn || 0) + landed; // Xyrella
 			for (let s2 = 0; s2 < state.players.length; s2++) fireOngoing(state, s2, 'healed', { healedCreature: c });
 		}
 		if (c.overheal && overflow > 0 && !isDead(c)) {
@@ -3181,6 +3190,7 @@ function execEffects(state, pi, effects, target, source) {
 					&& (c.tribe || '').includes(e.perFriendlyTribe)).length;
 			}
 			if (e.perHandCard) hits = state.players[pi].hand.length; // Meteorologist
+			if (e.perHandSpell) hits = state.players[pi].hand.filter(c => isSpellType(c)).length; // Void Flayer
 			for (let i = 0; i < hits; i++) {
 				const pool = [];
 				const pushBoard = side => { for (const c of state.players[side].board) if (!isDead(c) && c.type !== 'location' && !(e.exceptTribe && (c.tribe || '').includes(e.exceptTribe)) && !(e.exceptSource && c === source)) pool.push({ c }); };
@@ -4243,6 +4253,7 @@ function execEffects(state, pi, effects, target, source) {
 			}
 		} else if (e.type === 'transform-into-token') {
 			// Furbolg Mossbinder: turn a chosen creature into a fixed-stat token
+			if (e.requireElementalLastTurn && !state.players[pi].elementalLastTurn) continue; // Lilypad Lurker
 			const t = chosenCreature();
 			if (t && t.controller != null && !isDead(t)) {
 				const owner = t.controller;
@@ -5362,6 +5373,22 @@ function execEffects(state, pi, effects, target, source) {
 			const before = new Set(p.hand.map(c => c.uid));
 			drawCards(state, pi, 1);
 			for (const c of p.hand) if (!before.has(c.uid)) c.stiltReward = e.value || 4;
+		} else if (e.type === 'varden') {
+			// Varden Dawngrasp: freeze all enemy minions; already-frozen ones take damage instead
+			for (const o of enemies) for (const c of [...state.players[o].board]) { if (isDead(c) || c.type === 'location') continue; if (c.frozen) damageCreature(state, c, e.value || 4, source); else freezeCreature(state, c); }
+			sweepDeaths(state);
+		} else if (e.type === 'damage-enemies-by-heal') {
+			// Xyrella: deal damage to all enemy minions equal to Health restored this turn
+			const amt = state.players[pi].healedAmountThisTurn || 0;
+			if (amt > 0) { for (const o of enemies) for (const c of [...state.players[o].board]) if (!isDead(c) && c.type !== 'location') damageCreature(state, c, amt, source); sweepDeaths(state); }
+		} else if (e.type === 'secrets-to-soldiers') {
+			// Cannonmaster Smythe: transform your Secrets into 3/3 Soldiers
+			const p = state.players[pi];
+			const n = p.secrets.length; p.secrets = [];
+			for (let i = 0; i < n; i++) summon(state, pi, { id: e.summonId || 'bar_soldier', name: e.name || 'Soldier', type: 'creature', cost: 3, token: true, rarity: 'common', attack: 3, health: 3, description: 'A 3/3 Soldier.' });
+		} else if (e.type === 'enemy-draw') {
+			// Southsea Scoundrel: the opponent also draws
+			for (const o of enemies) drawCards(state, o, e.value || 1);
 		} else if (e.type === 'damage-enemies-by-attack') {
 			// Blademaster Samuro (Frenzy): deal damage = this minion's Attack to all enemy minions
 			const amt = source ? (source.attack || 0) : 0;
@@ -8823,7 +8850,7 @@ export function endTurn(state) {
 	const np = state.players[state.current];
 	np.diedThisTurn = 0;
 	np.diedThisTurnIds = [];
-	np.heroDamagedThisTurn = false; np.heroDamageTakenThisTurn = 0; np.heroHealthChangedThisTurn = false; np.healedThisTurn = false; // "took damage this turn" resets each turn
+	np.heroDamagedThisTurn = false; np.heroDamageTakenThisTurn = 0; np.heroHealthChangedThisTurn = false; np.healedThisTurn = false; np.healedAmountThisTurn = 0; np.stealerUsedThisTurn = false; // "took damage this turn" resets each turn
 	np.spellsPlayedLastTurnIds = np.spellsPlayedThisTurnIds || []; np.spellsPlayedThisTurnIds = []; // Krag'wa, the Frog
 	np.cardsPlayedLastTurnIds = np.cardsPlayedThisTurnIds || []; np.cardsPlayedThisTurnIds = []; // Murozond the Infinite
 	// Bandersmosh: at your turn start, hand copies morph into a 5/5 Legendary

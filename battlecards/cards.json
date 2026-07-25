@@ -87588,6 +87588,465 @@
       "token": true,
       "collectible": false,
       "description": "A 5/5 Golem."
+    },
+    {
+      "id": "southsea_scoundrel",
+      "name": "Southsea Scoundrel",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "neutral",
+      "attack": 5,
+      "health": 5,
+      "rarity": "epic",
+      "set": "THE_BARRENS",
+      "tribe": "Pirate",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Discover a card in your opponent's deck. They draw theirs as well.",
+      "effects": [
+        {
+          "type": "discover",
+          "fromEnemyDeck": true
+        },
+        {
+          "type": "enemy-draw",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "spirit_healer",
+      "name": "Spirit Healer",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "neutral",
+      "attack": 3,
+      "health": 6,
+      "rarity": "epic",
+      "set": "THE_BARRENS",
+      "tribe": "Undead",
+      "description": "After you cast a Holy spell, give a random friendly minion +2 Health.",
+      "ongoing": {
+        "on": "spell-played",
+        "if": {
+          "school": "Holy"
+        },
+        "effects": [
+          {
+            "type": "buff-random-friendly",
+            "health": 2
+          }
+        ]
+      }
+    },
+    {
+      "id": "stealer_of_souls",
+      "name": "Stealer of Souls",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "warlock",
+      "attack": 2,
+      "health": 6,
+      "rarity": "rare",
+      "set": "THE_BARRENS",
+      "tribe": "Demon",
+      "description": "The first card you draw each turn costs Health instead of Mana."
+    },
+    {
+      "id": "varden_dawngrasp",
+      "name": "Varden Dawngrasp",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "mage",
+      "attack": 3,
+      "health": 3,
+      "rarity": "legendary",
+      "set": "THE_BARRENS",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Freeze all enemy minions. If any are already Frozen, deal 4 damage to them instead.",
+      "effects": [
+        {
+          "type": "varden",
+          "value": 4
+        }
+      ]
+    },
+    {
+      "id": "vengeful_spirit",
+      "name": "Vengeful Spirit",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "demonhunter",
+      "attack": 4,
+      "health": 4,
+      "rarity": "epic",
+      "set": "THE_BARRENS",
+      "tribe": "Undead",
+      "keywords": [
+        "outcast"
+      ],
+      "description": "Outcast: Draw 2 Deathrattle minions.",
+      "outcast": {
+        "effects": [
+          {
+            "type": "tutor",
+            "cardType": "creature",
+            "requireKeyword": "deathrattle",
+            "count": 2
+          }
+        ]
+      }
+    },
+    {
+      "id": "veteran_warmedic",
+      "name": "Veteran Warmedic",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "paladin",
+      "attack": 3,
+      "health": 5,
+      "rarity": "epic",
+      "set": "THE_BARRENS",
+      "description": "After you cast a Holy spell, summon a 2/2 Medic with Lifesteal.",
+      "ongoing": {
+        "on": "spell-played",
+        "if": {
+          "school": "Holy"
+        },
+        "effects": [
+          {
+            "type": "summon",
+            "count": 1,
+            "summonId": "bar_medic"
+          }
+        ]
+      }
+    },
+    {
+      "id": "void_flayer",
+      "name": "Void Flayer",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "priest",
+      "attack": 3,
+      "health": 4,
+      "rarity": "rare",
+      "set": "THE_BARRENS",
+      "tribe": "Undead",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: For each spell in your hand, deal 1 damage to a random enemy minion.",
+      "effects": [
+        {
+          "type": "random-damage",
+          "perHandSpell": true,
+          "value": 1,
+          "pool": "enemy-creatures"
+        }
+      ]
+    },
+    {
+      "id": "warsong_wrangler",
+      "name": "Warsong Wrangler",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "hunter",
+      "attack": 3,
+      "health": 4,
+      "rarity": "epic",
+      "set": "THE_BARRENS",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Discover a Beast from your deck. Give all copies of it +2/+1 (wherever they are).",
+      "effects": [
+        {
+          "type": "discover",
+          "fromOwnDeck": true,
+          "cardType": "creature",
+          "tribe": "Beast"
+        }
+      ]
+    },
+    {
+      "id": "xyrella",
+      "name": "Xyrella",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "priest",
+      "attack": 4,
+      "health": 4,
+      "rarity": "legendary",
+      "set": "THE_BARRENS",
+      "tribe": "Draenei",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: If you've restored Health this turn, deal that much damage to all enemy minions.",
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "healedThisTurn": true
+          },
+          "then": [
+            {
+              "type": "damage-enemies-by-heal"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "barak_kodobane",
+      "name": "Barak Kodobane",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "hunter",
+      "attack": 3,
+      "health": 5,
+      "rarity": "legendary",
+      "set": "THE_BARRENS",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Draw a 1, 2, and 3-Cost spell.",
+      "effects": [
+        {
+          "type": "tutor",
+          "cardType": "spell",
+          "cost": 1,
+          "count": 1
+        },
+        {
+          "type": "tutor",
+          "cardType": "spell",
+          "cost": 2,
+          "count": 1
+        },
+        {
+          "type": "tutor",
+          "cardType": "spell",
+          "cost": 3,
+          "count": 1
+        }
+      ]
+    },
+    {
+      "id": "cannonmaster_smythe",
+      "name": "Cannonmaster Smythe",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "paladin",
+      "attack": 4,
+      "health": 4,
+      "rarity": "legendary",
+      "set": "THE_BARRENS",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Transform your Secrets into 3/3 Soldiers. They transform back when they die.",
+      "effects": [
+        {
+          "type": "secrets-to-soldiers",
+          "summonId": "bar_soldier"
+        }
+      ]
+    },
+    {
+      "id": "gold_road_grunt",
+      "name": "Gold Road Grunt",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "neutral",
+      "attack": 3,
+      "health": 7,
+      "rarity": "common",
+      "set": "THE_BARRENS",
+      "keywords": [
+        "taunt"
+      ],
+      "description": "Taunt. Frenzy: Gain Armor equal to the damage taken.",
+      "ongoing": {
+        "on": "self-damaged",
+        "once": true,
+        "survives": true,
+        "effects": [
+          {
+            "type": "gain-armor-by-amount"
+          }
+        ]
+      }
+    },
+    {
+      "id": "lilypad_lurker",
+      "name": "Lilypad Lurker",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "shaman",
+      "attack": 5,
+      "health": 6,
+      "rarity": "epic",
+      "set": "THE_BARRENS",
+      "tribe": "Elemental",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: If you played an Elemental last turn, transform an enemy minion into a 0/1 Frog with Taunt.",
+      "effects": [
+        {
+          "type": "transform-into-token",
+          "target": "enemy-creature",
+          "requireElementalLastTurn": true,
+          "name": "Frog",
+          "tribe": "Beast",
+          "attack": 0,
+          "health": 1,
+          "keywords": [
+            "taunt"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "morshan_elite",
+      "name": "Mor'shan Elite",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "warrior",
+      "attack": 4,
+      "health": 4,
+      "rarity": "epic",
+      "set": "THE_BARRENS",
+      "keywords": [
+        "taunt",
+        "battlecry"
+      ],
+      "description": "Taunt. Battlecry: If your hero attacked this turn, summon a copy of this.",
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "heroAttacked": true
+          },
+          "then": [
+            {
+              "type": "summon-copy-self"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "neeru_fireblade",
+      "name": "Neeru Fireblade",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "warlock",
+      "attack": 5,
+      "health": 5,
+      "rarity": "legendary",
+      "set": "THE_BARRENS",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: If your deck is empty, open a portal that fills your board with 3/2 Imps each turn.",
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "deckEmpty": true
+          },
+          "then": [
+            {
+              "type": "summon",
+              "count": 3,
+              "summonId": "bar_imp"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "priest_of_anshe",
+      "name": "Priest of An'she",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "priest",
+      "attack": 5,
+      "health": 5,
+      "rarity": "epic",
+      "set": "THE_BARRENS",
+      "keywords": [
+        "taunt",
+        "battlecry"
+      ],
+      "description": "Taunt. Battlecry: If you've restored Health this turn, gain +3/+3.",
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "healedThisTurn": true
+          },
+          "then": [
+            {
+              "type": "buff-self",
+              "attack": 3,
+              "health": 3
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "bar_medic",
+      "name": "Medic",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "paladin",
+      "attack": 2,
+      "health": 2,
+      "rarity": "common",
+      "set": "THE_BARRENS",
+      "token": true,
+      "collectible": false,
+      "keywords": [
+        "lifesteal"
+      ],
+      "description": "Lifesteal."
+    },
+    {
+      "id": "bar_soldier",
+      "name": "Soldier",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "paladin",
+      "attack": 3,
+      "health": 3,
+      "rarity": "common",
+      "set": "THE_BARRENS",
+      "token": true,
+      "collectible": false,
+      "description": "A 3/3 Soldier."
+    },
+    {
+      "id": "bar_imp",
+      "name": "Imp",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "warlock",
+      "attack": 3,
+      "health": 2,
+      "rarity": "common",
+      "set": "THE_BARRENS",
+      "tribe": "Demon",
+      "token": true,
+      "collectible": false,
+      "description": "A 3/2 Imp."
     }
   ]
 }
