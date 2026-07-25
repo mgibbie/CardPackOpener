@@ -249,6 +249,7 @@ function instantiate(def, controller) {
 		outcastCostReduce: def.outcastCostReduce || 0, // Line Hopper: your Outcast cards cost this much less
 		healBonusHealth: def.healBonusHealth || 0, // Lightsteed: your heals also give the minion +Health
 		foreignCostReduce: def.foreignCostReduce || 0, // Arcane Luminary: cards that didn't start in your deck cost less
+		schoolCostReduce: def.schoolCostReduce ? { ...def.schoolCostReduce } : null, // Lady Anacondra: {school, amount}
 		deathrattle: def.deathrattle || null,
 		tribe: def.tribe || null,
 		controller,
@@ -624,6 +625,7 @@ const CHOSEN = {
 	kelidan: { creature: 'creature', 'enemy-creature': 'enemy-creature' },
 	'become-copy-of-target': { creature: 'creature', 'enemy-creature': 'enemy-creature', 'friendly-creature': 'friendly-creature' },
 	'steal-until-bigger': { 'enemy-creature': 'enemy-creature', creature: 'creature' },
+	'swap-with-hand': { creature: 'creature', 'enemy-creature': 'enemy-creature', 'friendly-creature': 'friendly-creature' },
 	'destroy-fragment-then-damage': { any: 'any', 'enemy-any': 'enemy-any', creature: 'creature', 'enemy-creature': 'enemy-creature' },
 	'transform-into-token': { 'friendly-creature': 'friendly-creature', creature: 'creature' },
 	'mark-doomed': { creature: 'creature', 'enemy-creature': 'enemy-creature' },
@@ -4235,6 +4237,7 @@ function execEffects(state, pi, effects, target, source) {
 					if (e.minCost != null && (def.cost || 0) < e.minCost) continue;
 					if (e.cost != null && (def.cost || 0) !== e.cost) continue;
 					if (e.attack != null && (def.attack || 0) !== e.attack) continue;
+					if (e.requireKeyword && !(def.keywords || []).includes(e.requireKeyword)) continue; // Death Speaker Blackthorn
 					idxs.push(j);
 				}
 				if (!idxs.length) break;
@@ -5373,6 +5376,57 @@ function execEffects(state, pi, effects, target, source) {
 			const before = new Set(p.hand.map(c => c.uid));
 			drawCards(state, pi, 1);
 			for (const c of p.hand) if (!before.has(c.uid)) c.stiltReward = e.value || 4;
+		} else if (e.type === 'transform-self-into-token') {
+			// Druid of the Plains (Frenzy): transform this minion into a fixed-stat token
+			if (source && source.zone === 'board' && !isDead(source)) {
+				const tok = instantiate({ id: 'token_' + (e.name || 'token').toLowerCase().replace(/[^a-z0-9]+/g, '_'), name: e.name || 'Token', type: 'creature', cost: e.cost || 0, rarity: 'common', token: true, tribe: e.tribe || source.tribe || null, attack: e.attack, health: e.health, keywords: e.keywords || [], description: e.description || `A ${e.attack}/${e.health} token.` }, pi);
+				tok.zone = 'board'; tok.sick = source.sick;
+				const board = state.players[pi].board; board[board.indexOf(source)] = tok; source.zone = 'gone';
+				emit(state, { type: 'transformed', uid: source.uid, player: pi, from: source.name, card: tok }); recomputeAuras(state);
+			}
+		} else if (e.type === 'swap-with-hand') {
+			// Shadow Hunter Vol'jin: swap a chosen minion with a random one in its owner's hand
+			const t = chosenCreature();
+			if (t) {
+				const owner = state.players[t.controller];
+				const handMinions = owner.hand.filter(c => c.type === 'creature');
+				if (handMinions.length) {
+					const hm = handMinions[Math.floor(state.rng() * handMinions.length)];
+					// board minion -> hand (as a fresh card), hand minion -> board
+					const bi = owner.board.indexOf(t);
+					const hi = owner.hand.indexOf(hm);
+					owner.hand.splice(hi, 1);
+					hm.zone = 'board'; hm.sick = true; owner.board[bi] = hm;
+					const def = state.cardsById[t.id];
+					if (def && owner.hand.length < MAX_HAND) { const nc = instantiate(def, t.controller); nc.zone = 'hand'; owner.hand.push(nc); }
+					t.zone = 'gone';
+					emit(state, { type: 'summon', player: t.controller, card: hm }); recomputeAuras(state);
+				}
+			}
+		} else if (e.type === 'eat-enemy-hand-minion') {
+			// Mutanus the Devourer: eat a random minion in the opponent's hand, gain its stats
+			const foe = enemies[0];
+			if (foe != null && source) {
+				const pool = state.players[foe].hand.filter(c => c.type === 'creature');
+				if (pool.length) { const m = pool[Math.floor(state.rng() * pool.length)]; state.players[foe].hand = state.players[foe].hand.filter(c => c !== m); buffCreature(source, m.attack || 0, hp(m) || 0); }
+			}
+		} else if (e.type === 'resurrect-frenzy') {
+			// Overlord Saurfang: resurrect friendly minions that had Frenzy
+			const p = state.players[pi];
+			const isFrenzy = def => { const o = def.ongoing; const list = o ? [o] : []; if (def.ongoings) list.push(...def.ongoings); return list.some(t => t && t.on === 'self-damaged' && t.survives); };
+			const pool = [...new Set(p.deathLogIds)].map(id => state.cardsById[id]).filter(d => d && d.type === 'creature' && isFrenzy(d));
+			for (let i = 0; i < (e.count || 2) && pool.length; i++) summon(state, pi, pool[Math.floor(state.rng() * pool.length)]);
+		} else if (e.type === 'equip-weapon-from-deck') {
+			// Selfless Sidekick: equip a random weapon from your deck
+			const p = state.players[pi];
+			const idxs = p.deck.map((id, i) => [id, i]).filter(([id]) => state.cardsById[id]?.type === 'weapon');
+			if (idxs.length) { const [id, di] = idxs[Math.floor(state.rng() * idxs.length)]; p.deck.splice(di, 1); if (p.weapon) breakWeapon(state, pi, true); const w = instantiate(state.cardsById[id], pi); w.zone = 'weapon'; p.weapon = w; emit(state, { type: 'weaponEquip', player: pi, card: w }); recomputeAuras(state); runBattlecry(state, pi, w, null); }
+		} else if (e.type === 'primordial-protector') {
+			// Primordial Protector: draw your highest-Cost spell, summon a random minion of that Cost
+			const p = state.players[pi];
+			let bestI = -1, bestC = -1;
+			for (let i = 0; i < p.deck.length; i++) { const d = state.cardsById[p.deck[i]]; if (d && isSpellType(d) && (d.cost || 0) > bestC) { bestC = d.cost || 0; bestI = i; } }
+			if (bestI >= 0) { const [id] = p.deck.splice(bestI, 1); const nc = instantiate(state.cardsById[id], pi); nc.zone = 'hand'; p.hand.push(nc); emit(state, { type: 'conjure', player: pi, card: nc, color: null }); execEffects(state, pi, [{ type: 'summon-random', cost: bestC }], null, source); }
 		} else if (e.type === 'varden') {
 			// Varden Dawngrasp: freeze all enemy minions; already-frozen ones take damage instead
 			for (const o of enemies) for (const c of [...state.players[o].board]) { if (isDead(c) || c.type === 'location') continue; if (c.frozen) damageCreature(state, c, e.value || 4, source); else freezeCreature(state, c); }
@@ -7169,6 +7223,7 @@ export function effectiveCost(state, pi, card) {
 	if (p.nextCardsDiscount && p.nextCardsDiscount.count > 0) c = Math.max(0, c - p.nextCardsDiscount.amount); // Scabbs Cutterbutter
 	if ((card.keywords || []).includes('outcast')) { const r = p.board.filter(x => x.outcastCostReduce && !isDead(x)).reduce((s, x) => s + x.outcastCostReduce, 0); if (r) c = Math.max(0, c - r); } // Line Hopper
 	if (!card.fromDeck) { const r = p.board.filter(x => x.foreignCostReduce && !isDead(x)).reduce((s, x) => s + x.foreignCostReduce, 0); if (r) c = Math.max(1, c - r); } // Arcane Luminary: not below 1
+	{ const sch = schoolOf(card); if (sch) { const r = p.board.filter(x => x.schoolCostReduce && x.schoolCostReduce.school === sch && !isDead(x)).reduce((s, x) => s + x.schoolCostReduce.amount, 0); if (r) c = Math.max(0, c - r); } } // Lady Anacondra: Nature spells
 	if (p.battlecryTaxNext > 0 && (card.keywords || []).includes('battlecry')) c += p.battlecryTaxNext; // Boompistol Bully
 	if (p.libramDiscount > 0 && /Libram/.test(card.name || '')) c = Math.max(0, c - p.libramDiscount); // Aldor Attendant/Truthseeker
 	return Math.max(0, c);

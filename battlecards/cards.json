@@ -88047,6 +88047,307 @@
       "token": true,
       "collectible": false,
       "description": "A 3/2 Imp."
+    },
+    {
+      "id": "razormane_raider",
+      "name": "Razormane Raider",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "neutral",
+      "attack": 5,
+      "health": 6,
+      "rarity": "common",
+      "set": "THE_BARRENS",
+      "tribe": "Quilboar",
+      "description": "Frenzy: Attack a random enemy.",
+      "ongoing": {
+        "on": "self-damaged",
+        "once": true,
+        "survives": true,
+        "effects": [
+          {
+            "type": "attack-random-enemy"
+          }
+        ]
+      }
+    },
+    {
+      "id": "shadow_hunter_voljin",
+      "name": "Shadow Hunter Vol'jin",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "neutral",
+      "attack": 3,
+      "health": 6,
+      "rarity": "legendary",
+      "set": "THE_BARRENS",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Choose a minion. Swap it with a random one in its owner's hand.",
+      "effects": [
+        {
+          "type": "swap-with-hand",
+          "target": "creature"
+        }
+      ]
+    },
+    {
+      "id": "lady_anacondra",
+      "name": "Lady Anacondra",
+      "type": "creature",
+      "cost": 6,
+      "cardClass": "druid",
+      "attack": 3,
+      "health": 7,
+      "rarity": "legendary",
+      "set": "THE_BARRENS",
+      "schoolCostReduce": {
+        "school": "Nature",
+        "amount": 2
+      },
+      "description": "Your Nature spells cost (2) less."
+    },
+    {
+      "id": "death_speaker_blackthorn",
+      "name": "Death Speaker Blackthorn",
+      "type": "creature",
+      "cost": 7,
+      "cardClass": "demonhunter",
+      "attack": 3,
+      "health": 6,
+      "rarity": "legendary",
+      "set": "THE_BARRENS",
+      "tribe": "Quilboar",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Summon 3 Deathrattle minions that cost (5) or less from your deck.",
+      "effects": [
+        {
+          "type": "recruit",
+          "requireKeyword": "deathrattle",
+          "maxCost": 5,
+          "count": 3
+        }
+      ]
+    },
+    {
+      "id": "druid_of_the_plains",
+      "name": "Druid of the Plains",
+      "type": "creature",
+      "cost": 7,
+      "cardClass": "druid",
+      "attack": 7,
+      "health": 6,
+      "rarity": "epic",
+      "set": "THE_BARRENS",
+      "tribe": "Beast",
+      "keywords": [
+        "rush"
+      ],
+      "description": "Rush. Frenzy: Transform into a 6/7 Kodo with Taunt.",
+      "ongoing": {
+        "on": "self-damaged",
+        "once": true,
+        "survives": true,
+        "effects": [
+          {
+            "type": "transform-self-into-token",
+            "name": "Kodo",
+            "tribe": "Beast",
+            "attack": 6,
+            "health": 7,
+            "keywords": [
+              "taunt"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "mutanus_the_devourer",
+      "name": "Mutanus the Devourer",
+      "type": "creature",
+      "cost": 7,
+      "cardClass": "neutral",
+      "attack": 4,
+      "health": 4,
+      "rarity": "legendary",
+      "set": "THE_BARRENS",
+      "tribe": "Murloc",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Eat a minion in your opponent's hand. Gain its stats.",
+      "effects": [
+        {
+          "type": "eat-enemy-hand-minion"
+        }
+      ]
+    },
+    {
+      "id": "overlord_saurfang",
+      "name": "Overlord Saurfang",
+      "type": "creature",
+      "cost": 7,
+      "cardClass": "warrior",
+      "attack": 5,
+      "health": 4,
+      "rarity": "legendary",
+      "set": "THE_BARRENS",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Resurrect 2 friendly Frenzy minions. Deal 1 damage to all other minions.",
+      "effects": [
+        {
+          "type": "resurrect-frenzy",
+          "count": 2
+        },
+        {
+          "type": "damage-all-minions",
+          "value": 1,
+          "exceptSource": true
+        }
+      ]
+    },
+    {
+      "id": "selfless_sidekick",
+      "name": "Selfless Sidekick",
+      "type": "creature",
+      "cost": 7,
+      "cardClass": "neutral",
+      "attack": 6,
+      "health": 6,
+      "rarity": "common",
+      "set": "THE_BARRENS",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Equip a random weapon from your deck.",
+      "effects": [
+        {
+          "type": "equip-weapon-from-deck"
+        }
+      ]
+    },
+    {
+      "id": "deviate_dreadfang",
+      "name": "Deviate Dreadfang",
+      "type": "creature",
+      "cost": 8,
+      "cardClass": "druid",
+      "attack": 4,
+      "health": 9,
+      "rarity": "rare",
+      "set": "THE_BARRENS",
+      "tribe": "Beast",
+      "description": "After you cast a Nature spell, summon a 4/2 Viper with Rush.",
+      "ongoing": {
+        "on": "spell-played",
+        "if": {
+          "school": "Nature"
+        },
+        "effects": [
+          {
+            "type": "summon",
+            "count": 1,
+            "summonId": "bar_viper"
+          }
+        ]
+      }
+    },
+    {
+      "id": "mordresh_fire_eye",
+      "name": "Mordresh Fire Eye",
+      "type": "creature",
+      "cost": 8,
+      "cardClass": "mage",
+      "attack": 8,
+      "health": 8,
+      "rarity": "legendary",
+      "set": "THE_BARRENS",
+      "tribe": "Undead",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: If you've dealt 10 damage with your Hero Power this game, deal 10 damage to all enemies.",
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "hpDamageGame": 10
+          },
+          "then": [
+            {
+              "type": "damage",
+              "value": 10,
+              "target": "enemies"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "primordial_protector",
+      "name": "Primordial Protector",
+      "type": "creature",
+      "cost": 8,
+      "cardClass": "neutral",
+      "attack": 6,
+      "health": 6,
+      "rarity": "epic",
+      "set": "THE_BARRENS",
+      "tribe": "Elemental",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Draw your highest Cost spell. Summon a random minion with the same Cost.",
+      "effects": [
+        {
+          "type": "primordial-protector"
+        }
+      ]
+    },
+    {
+      "id": "taintheart_tormenter",
+      "name": "Taintheart Tormenter",
+      "type": "creature",
+      "cost": 8,
+      "cardClass": "demonhunter",
+      "attack": 8,
+      "health": 8,
+      "rarity": "rare",
+      "set": "THE_BARRENS",
+      "tribe": "Demon",
+      "keywords": [
+        "taunt"
+      ],
+      "costMod": {
+        "cardType": "spell",
+        "amount": 2,
+        "scope": "enemies"
+      },
+      "description": "Taunt. Your opponent's spells cost (2) more."
+    },
+    {
+      "id": "bar_viper",
+      "name": "Viper",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "druid",
+      "attack": 4,
+      "health": 2,
+      "rarity": "common",
+      "set": "THE_BARRENS",
+      "tribe": "Beast",
+      "token": true,
+      "collectible": false,
+      "keywords": [
+        "rush"
+      ],
+      "description": "Rush."
     }
   ]
 }
