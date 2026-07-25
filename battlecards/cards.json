@@ -89168,6 +89168,382 @@
         "rush"
       ],
       "description": "Rush."
+    },
+    {
+      "id": "psyfiend",
+      "name": "Psyfiend",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "priest",
+      "attack": 3,
+      "health": 4,
+      "rarity": "rare",
+      "set": "STORMWIND",
+      "description": "After you cast a Shadow spell, deal 2 damage to each hero.",
+      "ongoing": {
+        "on": "spell-played",
+        "if": {
+          "school": "Shadow"
+        },
+        "effects": [
+          {
+            "type": "damage",
+            "value": 2,
+            "target": "all-heroes"
+          }
+        ]
+      }
+    },
+    {
+      "id": "si7_operative",
+      "name": "SI:7 Operative",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "rogue",
+      "attack": 2,
+      "health": 4,
+      "rarity": "common",
+      "set": "STORMWIND",
+      "keywords": [
+        "rush"
+      ],
+      "description": "Rush. After this attacks a minion, gain Stealth.",
+      "ongoing": {
+        "on": "self-attacks-creature",
+        "effects": [
+          {
+            "type": "grant",
+            "keyword": "stealth",
+            "target": "self"
+          }
+        ]
+      }
+    },
+    {
+      "id": "stormwind_piper",
+      "name": "Stormwind Piper",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "hunter",
+      "attack": 1,
+      "health": 6,
+      "rarity": "common",
+      "set": "STORMWIND",
+      "tribe": "Demon",
+      "description": "After this minion attacks, give your Beasts +1/+1.",
+      "ongoing": {
+        "on": "self-attacks",
+        "effects": [
+          {
+            "type": "buff",
+            "target": "friendly-creatures",
+            "tribe": "Beast",
+            "attack": 1,
+            "health": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "traveling_merchant",
+      "name": "Traveling Merchant",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "neutral",
+      "attack": 2,
+      "health": 3,
+      "rarity": "common",
+      "set": "STORMWIND",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Tradeable. Battlecry: Gain +1/+1 for each other friendly minion you control.",
+      "effects": [
+        {
+          "type": "buff-self",
+          "attack": 1,
+          "health": 1,
+          "per": "other-friendly"
+        }
+      ]
+    },
+    {
+      "id": "two_faced_investor",
+      "name": "Two-Faced Investor",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "neutral",
+      "attack": 2,
+      "health": 4,
+      "rarity": "rare",
+      "set": "STORMWIND",
+      "description": "At the end of your turn, reduce the Cost of a card in your hand by (1).",
+      "ongoing": {
+        "on": "turn-end",
+        "effects": [
+          {
+            "type": "reduce-random-hand-cost",
+            "anyCard": true,
+            "value": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "cheesemonger",
+      "name": "Cheesemonger",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "neutral",
+      "attack": 3,
+      "health": 6,
+      "rarity": "epic",
+      "set": "STORMWIND",
+      "description": "Whenever your opponent casts a spell, add a random spell with the same Cost to your hand.",
+      "ongoing": {
+        "on": "enemy-spell-played",
+        "effects": [
+          {
+            "type": "conjure-same-cost-spell"
+          }
+        ]
+      }
+    },
+    {
+      "id": "deepwater_evoker",
+      "name": "Deepwater Evoker",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "mage",
+      "attack": 3,
+      "health": 4,
+      "rarity": "rare",
+      "set": "STORMWIND",
+      "tribe": "Pirate",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Draw a spell. Gain Armor equal to its Cost.",
+      "effects": [
+        {
+          "type": "draw-spell-armor"
+        }
+      ]
+    },
+    {
+      "id": "edwin_defias_kingpin",
+      "name": "Edwin, Defias Kingpin",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "rogue",
+      "attack": 4,
+      "health": 4,
+      "rarity": "legendary",
+      "set": "STORMWIND",
+      "tribe": "Pirate",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Draw a card. If you play it this turn, gain +2/+2 and repeat this effect.",
+      "effects": [
+        {
+          "type": "draw-edwin-reward",
+          "value": 2
+        }
+      ]
+    },
+    {
+      "id": "felgorger",
+      "name": "Felgorger",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "demonhunter",
+      "attack": 4,
+      "health": 3,
+      "rarity": "epic",
+      "set": "STORMWIND",
+      "tribe": "Demon",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Draw a Fel spell. Reduce its Cost by (2).",
+      "effects": [
+        {
+          "type": "draw-spell-school-then",
+          "school": "Fel",
+          "discount": 2
+        }
+      ]
+    },
+    {
+      "id": "first_blade_of_wrynn",
+      "name": "First Blade of Wrynn",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "paladin",
+      "attack": 3,
+      "health": 5,
+      "rarity": "epic",
+      "set": "STORMWIND",
+      "keywords": [
+        "divine_shield",
+        "battlecry"
+      ],
+      "description": "Divine Shield. Battlecry: Gain Rush if this has at least 4 Attack.",
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "selfAttack": 4
+          },
+          "then": [
+            {
+              "type": "grant",
+              "keyword": "rush",
+              "target": "self"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "granite_forgeborn",
+      "name": "Granite Forgeborn",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "shaman",
+      "attack": 4,
+      "health": 5,
+      "rarity": "rare",
+      "set": "STORMWIND",
+      "tribe": "Elemental",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Reduce the Cost of Elementals in your hand and deck by (1).",
+      "effects": [
+        {
+          "type": "reduce-deck-tribe-cost",
+          "tribe": "Elemental",
+          "value": 1,
+          "alsoHand": true
+        }
+      ]
+    },
+    {
+      "id": "hullbreaker",
+      "name": "Hullbreaker",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "warlock",
+      "attack": 4,
+      "health": 3,
+      "rarity": "rare",
+      "set": "STORMWIND",
+      "tribe": "Demon",
+      "keywords": [
+        "battlecry",
+        "deathrattle"
+      ],
+      "description": "Battlecry and Deathrattle: Draw a spell. Your hero takes damage equal to its Cost.",
+      "effects": [
+        {
+          "type": "draw-spell-selfdamage"
+        }
+      ],
+      "deathrattle": [
+        {
+          "type": "draw-spell-selfdamage"
+        }
+      ]
+    },
+    {
+      "id": "monstrous_parrot",
+      "name": "Monstrous Parrot",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "hunter",
+      "attack": 3,
+      "health": 4,
+      "rarity": "common",
+      "set": "STORMWIND",
+      "tribe": "Beast",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Get a copy of the last friendly Deathrattle minion that died.",
+      "effects": [
+        {
+          "type": "copy-last-deathrattle-died"
+        }
+      ]
+    },
+    {
+      "id": "multicaster",
+      "name": "Multicaster",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "neutral",
+      "attack": 3,
+      "health": 4,
+      "rarity": "rare",
+      "set": "STORMWIND",
+      "tribe": "Pirate",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Draw a card for each different spell school you've cast this game.",
+      "effects": [
+        {
+          "type": "draw-per-schools"
+        }
+      ]
+    },
+    {
+      "id": "park_panther",
+      "name": "Park Panther",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "druid",
+      "attack": 4,
+      "health": 4,
+      "rarity": "rare",
+      "set": "STORMWIND",
+      "tribe": "Beast",
+      "keywords": [
+        "rush"
+      ],
+      "description": "Rush. Whenever this attacks, give your hero +3 Attack this turn.",
+      "ongoing": {
+        "on": "self-attacks",
+        "effects": [
+          {
+            "type": "hero-attack",
+            "value": 3
+          }
+        ]
+      }
+    },
+    {
+      "id": "persistent_peddler",
+      "name": "Persistent Peddler",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "demonhunter",
+      "attack": 4,
+      "health": 3,
+      "rarity": "rare",
+      "set": "STORMWIND",
+      "keywords": [
+        "deathrattle"
+      ],
+      "description": "Tradeable. Deathrattle: Summon a Persistent Peddler from your deck.",
+      "deathrattle": [
+        {
+          "type": "recruit",
+          "cardId": "persistent_peddler"
+        }
+      ]
     }
   ]
 }

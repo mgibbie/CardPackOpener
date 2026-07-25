@@ -1222,6 +1222,7 @@ function sweepDeaths(state) {
 				p.diedThisTurnIds.push(c.id);
 				if (!p.deathLogIds.includes(c.id)) p.deathLogIds.push(c.id);
 					(p.diedCountById = p.diedCountById || {})[c.id] = (p.diedCountById[c.id] || 0) + 1; // Elwynn Boar
+					if ((c.keywords || []).includes('deathrattle')) p.lastDeathrattleDied = c.id; // Monstrous Parrot
 			}
 			// Bolvar Fordragon: grows in hand as your creatures die
 			for (const hc of p.hand) if (hc.id === 'bolvar_fordragon') { hc.attack += 1; emit(state, { type: 'buff', uid: hc.uid, attack: hc.attack, hp: hp(hc) }); }
@@ -2571,6 +2572,15 @@ function runSecretEffects(state, pi, effects, ctx) {
 				// Soulbound Ashtongue: also deal the damage taken to your hero
 				if (ctx.amount) damageHero(state, pi, ctx.amount, pi);
 				break;
+			case 'conjure-same-cost-spell': {
+				// Cheesemonger: when the opponent casts a spell, add a random spell of the same Cost
+				const sp = ctx.spell; const p = state.players[pi];
+				if (sp && p.hand.length < MAX_HAND) {
+					const pool = Object.values(state.cardsById).filter(d => isSpellType(d) && !d.token && d.collectible !== false && !(d.colors && d.colors.length) && (d.cost || 0) === (sp.cost || 0));
+					if (pool.length) { const nc = instantiate(pool[Math.floor(state.rng() * pool.length)], pi); nc.zone = 'hand'; p.hand.push(nc); emit(state, { type: 'conjure', player: pi, card: nc, color: null }); }
+				}
+				break;
+			}
 			case 'add-copy-of-played-free': {
 				// Tamsin Roame: when you cast a qualifying spell, add a (0)-cost copy to hand
 				const sp = ctx.played; const p = state.players[pi];
@@ -4252,6 +4262,7 @@ function execEffects(state, pi, effects, target, source) {
 					if (e.cost != null && (def.cost || 0) !== e.cost) continue;
 					if (e.attack != null && (def.attack || 0) !== e.attack) continue;
 					if (e.requireKeyword && !(def.keywords || []).includes(e.requireKeyword)) continue; // Death Speaker Blackthorn
+					if (e.cardId && p.deck[j] !== e.cardId) continue; // Persistent Peddler: a copy of itself
 					idxs.push(j);
 				}
 				if (!idxs.length) break;
@@ -4460,8 +4471,10 @@ function execEffects(state, pi, effects, target, source) {
 			summon(state, pi, { id: 'token_' + (e.name || 'imp').toLowerCase(), name: e.name || 'Abyssal Enforcer', type: 'creature', cost: 0, token: true, tribe: e.tribe || null, rarity: 'common', attack: n, health: n, keywords: e.keywords || [], description: `A ${n}/${n} token.` });
 		} else if (e.type === 'reduce-deck-tribe-cost') {
 			// Frizz Kindleroost: Dragons drawn from your deck cost less
+			// (alsoHand -> Granite Forgeborn reduces Elementals already in hand too)
 			state.players[pi].deckTribeDiscount = state.players[pi].deckTribeDiscount || {};
 			state.players[pi].deckTribeDiscount[e.tribe] = (state.players[pi].deckTribeDiscount[e.tribe] || 0) + (e.value || 2);
+			if (e.alsoHand) for (const c of state.players[pi].hand) if (c.type === 'creature' && (c.tribe || '').includes(e.tribe)) c.cost = Math.max(0, (c.cost || 0) - (e.value || 2));
 		} else if (e.type === 'destroy-enemy-armor') {
 			// Platebreaker: destroy the opponent's Armor (and deal that much, if asked)
 			for (const o of enemies) {
@@ -5254,6 +5267,8 @@ function execEffects(state, pi, effects, target, source) {
 			// (tribe filter -> Fangbound Druid reduces a Beast; school -> Florist reduces a Nature spell)
 			const pool = e.school
 				? state.players[pi].hand.filter(c => schoolOf(c) === e.school)
+				: e.anyCard
+				? state.players[pi].hand.filter(c => c !== source) // Two-Faced Investor
 				: state.players[pi].hand.filter(c => c.type === 'creature' && (!e.tribe || (c.tribe || '').includes(e.tribe)));
 			if (pool.length) { const c = pool[Math.floor(state.rng() * pool.length)]; c.cost = Math.max(0, (c.cost || 0) - (e.value || 1)); }
 		} else if (e.type === 'add-spells-on-friendly-to-hand') {
@@ -5393,6 +5408,35 @@ function execEffects(state, pi, effects, target, source) {
 			const before = new Set(p.hand.map(c => c.uid));
 			drawCards(state, pi, 1);
 			for (const c of p.hand) if (!before.has(c.uid)) c.stiltReward = e.value || 4;
+		} else if (e.type === 'draw-edwin-reward') {
+			// Edwin, Defias Kingpin: draw a card; if you play it this turn, buff this +N/+N
+			const p = state.players[pi];
+			const before = new Set(p.hand.map(c => c.uid));
+			drawCards(state, pi, 1);
+			for (const c of p.hand) if (!before.has(c.uid)) { c.edwinReward = e.value || 2; c.edwinUid = source ? source.uid : null; }
+		} else if (e.type === 'draw-spell-armor') {
+			// Deepwater Evoker: draw a spell, gain Armor equal to its Cost
+			const p = state.players[pi];
+			const before = new Set(p.hand.map(c => c.uid));
+			execEffects(state, pi, [{ type: 'tutor', cardType: 'spell', count: 1 }], target, source);
+			const drawn = p.hand.find(c => !before.has(c.uid));
+			if (drawn) gainArmor(state, pi, drawn.cost || 0);
+		} else if (e.type === 'draw-spell-selfdamage') {
+			// Hullbreaker: draw a spell, your hero takes damage equal to its Cost
+			const p = state.players[pi];
+			const before = new Set(p.hand.map(c => c.uid));
+			execEffects(state, pi, [{ type: 'tutor', cardType: 'spell', count: 1 }], target, source);
+			const drawn = p.hand.find(c => !before.has(c.uid));
+			if (drawn && (drawn.cost || 0) > 0) damageHero(state, pi, drawn.cost || 0, pi);
+		} else if (e.type === 'draw-per-schools') {
+			// Multicaster: draw a card for each different spell school cast this game
+			const n = Object.keys(state.players[pi].schoolsCastGame || {}).length;
+			if (n > 0) drawCards(state, pi, n);
+		} else if (e.type === 'copy-last-deathrattle-died') {
+			// Monstrous Parrot: add a copy of the last friendly Deathrattle minion that died
+			const p = state.players[pi];
+			const id = p.lastDeathrattleDied;
+			if (id && state.cardsById[id] && p.hand.length < MAX_HAND) { const nc = instantiate(state.cardsById[id], pi); nc.zone = 'hand'; p.hand.push(nc); emit(state, { type: 'conjure', player: pi, card: nc, color: null }); }
 		} else if (e.type === 'buff-hand-minions') {
 			// Alliance Bannerman: give minions in your hand +X/+X
 			for (const c of state.players[pi].hand) if (c.type === 'creature') { c.attack += e.attack || 0; c.maxHealth += e.health || 0; }
@@ -7357,6 +7401,7 @@ export function playCard(state, pi, cardUid, target, choice, position, useAlt, k
 	if (card.combo && p.nextComboDiscount > 0) p.nextComboDiscount = 0; // Foxy Fraud discount is spent by the next Combo card
 	if (p.nextCardsDiscount && p.nextCardsDiscount.count > 0) { p.nextCardsDiscount.count -= 1; if (p.nextCardsDiscount.count <= 0) p.nextCardsDiscount = null; } // Scabbs: consumed per card
 	if (card.stiltReward) { p.heroTempAttack += card.stiltReward; emit(state, { type: 'heroAttack', player: pi, attack: heroAttackValue(p) }); card.stiltReward = 0; } // Stiltstepper
+	if (card.edwinReward) { const ed = p.board.find(x => x.uid === card.edwinUid && !isDead(x)); if (ed) { ed.attack += card.edwinReward; ed.maxHealth += card.edwinReward; emit(state, { type: 'buff', uid: ed.uid, attack: ed.attack, hp: hp(ed) }); } card.edwinReward = 0; } // Edwin, Defias Kingpin
 	if (typeof card.id === 'string' && card.id.endsWith('_corrupted')) (p.corruptedPlayedIds = p.corruptedPlayedIds || []).push(card.id); // Y'Shaarj tracks Corrupted cards played
 	if (p.copycatFor != null && state.cardsById[card.id]) { const cc = state.players[p.copycatFor]; if (cc && cc.hand.length < MAX_HAND) { const nc = instantiate(state.cardsById[card.id], p.copycatFor); nc.zone = 'hand'; cc.hand.push(nc); emit(state, { type: 'conjure', player: p.copycatFor, card: nc, color: null }); } p.copycatFor = null; } // Copycat
 	// Ward: targeting an enemy warded creature costs extra — unaffordable = illegal
@@ -7535,7 +7580,7 @@ export function playCard(state, pi, cardUid, target, choice, position, useAlt, k
 	} else {
 		questTick(state, 'spell', pi);
 		p.spellsPlayedThisTurn++;
-		{ const sch = schoolOf(card); if (sch) (p.schoolsCastThisTurn = p.schoolsCastThisTurn || {})[sch] = true; } // Metamorfin: "cast a Fel spell this turn"
+		{ const sch = schoolOf(card); if (sch) { (p.schoolsCastThisTurn = p.schoolsCastThisTurn || {})[sch] = true; (p.schoolsCastGame = p.schoolsCastGame || {})[sch] = true; } } // Metamorfin / Multicaster
 		p.spellsPlayedTotal = (p.spellsPlayedTotal || 0) + 1; // Arcane Giant
 		if ((card.cost || 0) >= 5) p.bigSpellsGame = (p.bigSpellsGame || 0) + 1; // Dragoncaller Alanna
 		(p.spellsPlayedThisTurnIds = p.spellsPlayedThisTurnIds || []).push(card.id); // Krag'wa, the Frog
