@@ -88777,6 +88777,397 @@
       "token": true,
       "collectible": false,
       "description": "A 2/1 Squirrel."
+    },
+    {
+      "id": "si7_skulker",
+      "name": "SI:7 Skulker",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "neutral",
+      "attack": 2,
+      "health": 2,
+      "rarity": "common",
+      "set": "STORMWIND",
+      "keywords": [
+        "stealth",
+        "battlecry"
+      ],
+      "description": "Stealth. Battlecry: The next card you draw costs (1) less.",
+      "effects": [
+        {
+          "type": "set-next-draw-discount",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "stockades_prisoner",
+      "name": "Stockades Prisoner",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "neutral",
+      "attack": 5,
+      "health": 4,
+      "rarity": "epic",
+      "set": "STORMWIND",
+      "dormant": 2,
+      "description": "Starts Dormant. After you play 3 cards, this awakens."
+    },
+    {
+      "id": "twilight_deceptor",
+      "name": "Twilight Deceptor",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "priest",
+      "attack": 2,
+      "health": 3,
+      "rarity": "common",
+      "set": "STORMWIND",
+      "tribe": "Draenei",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: If any hero took damage this turn, draw a Shadow spell.",
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "anyHeroDamagedThisTurn": true
+          },
+          "then": [
+            {
+              "type": "tutor",
+              "cardType": "spell",
+              "school": "Shadow",
+              "count": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "wickerclaw",
+      "name": "Wickerclaw",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "druid",
+      "attack": 1,
+      "health": 4,
+      "rarity": "common",
+      "set": "STORMWIND",
+      "tribe": "Beast",
+      "description": "After your hero gains Attack, this minion gains +2 Attack.",
+      "ongoing": {
+        "on": "hero-gained-attack",
+        "effects": [
+          {
+            "type": "buff-self",
+            "attack": 2
+          }
+        ]
+      }
+    },
+    {
+      "id": "alliance_bannerman",
+      "name": "Alliance Bannerman",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "paladin",
+      "attack": 2,
+      "health": 2,
+      "rarity": "common",
+      "set": "STORMWIND",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Draw a minion. Give minions in your hand +1/+1.",
+      "effects": [
+        {
+          "type": "tutor",
+          "cardType": "creature",
+          "count": 1
+        },
+        {
+          "type": "buff-hand-minions",
+          "attack": 1,
+          "health": 1
+        }
+      ]
+    },
+    {
+      "id": "brilliant_macaw",
+      "name": "Brilliant Macaw",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "shaman",
+      "attack": 3,
+      "health": 3,
+      "rarity": "common",
+      "set": "STORMWIND",
+      "tribe": "Beast",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Repeat the last Battlecry you played.",
+      "effects": [
+        {
+          "type": "repeat-last-battlecry"
+        }
+      ]
+    },
+    {
+      "id": "catacomb_guard",
+      "name": "Catacomb Guard",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "paladin",
+      "attack": 1,
+      "health": 4,
+      "rarity": "rare",
+      "set": "STORMWIND",
+      "keywords": [
+        "lifesteal",
+        "battlecry"
+      ],
+      "description": "Lifesteal. Battlecry: Deal damage equal to this minion's Attack to an enemy minion.",
+      "effects": [
+        {
+          "type": "damage",
+          "value": "source-attack",
+          "target": "enemy-creature"
+        }
+      ]
+    },
+    {
+      "id": "copycat",
+      "name": "Copycat",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "priest",
+      "attack": 3,
+      "health": 4,
+      "rarity": "rare",
+      "set": "STORMWIND",
+      "tribe": "Beast",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Add a copy of the next card your opponent plays to your hand.",
+      "effects": [
+        {
+          "type": "arm-copycat"
+        }
+      ]
+    },
+    {
+      "id": "crows_nest_lookout",
+      "name": "Crow's Nest Lookout",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "demonhunter",
+      "attack": 2,
+      "health": 2,
+      "rarity": "common",
+      "set": "STORMWIND",
+      "tribe": "Demon",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Deal 2 damage to the left and right-most enemy minions.",
+      "effects": [
+        {
+          "type": "damage-flanks",
+          "value": 2
+        }
+      ]
+    },
+    {
+      "id": "defias_cannoneer",
+      "name": "Defias Cannoneer",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "warrior",
+      "attack": 3,
+      "health": 3,
+      "rarity": "common",
+      "set": "STORMWIND",
+      "tribe": "Pirate",
+      "description": "After your hero attacks, deal 2 damage to a random enemy twice.",
+      "ongoing": {
+        "on": "hero-attacks",
+        "effects": [
+          {
+            "type": "random-damage",
+            "count": 2,
+            "value": 2,
+            "pool": "enemies"
+          }
+        ]
+      }
+    },
+    {
+      "id": "enthusiastic_banker",
+      "name": "Enthusiastic Banker",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "neutral",
+      "attack": 2,
+      "health": 3,
+      "rarity": "epic",
+      "set": "STORMWIND",
+      "tribe": "Draenei",
+      "keywords": [
+        "deathrattle"
+      ],
+      "description": "At the end of your turn, store a card from your deck. Deathrattle: Add the stored cards to your hand.",
+      "ongoing": {
+        "on": "turn-end",
+        "effects": [
+          {
+            "type": "store-deck-card"
+          }
+        ]
+      },
+      "deathrattle": [
+        {
+          "type": "add-stored-cards"
+        }
+      ]
+    },
+    {
+      "id": "flightmaster_dungar",
+      "name": "Flightmaster Dungar",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "neutral",
+      "attack": 3,
+      "health": 3,
+      "rarity": "legendary",
+      "set": "STORMWIND",
+      "dormant": 2,
+      "description": "Battlecry: Choose a flightpath and go Dormant. Awaken with a bonus when you complete it!",
+      "awaken": [
+        {
+          "type": "summon",
+          "count": 2,
+          "summonId": "sw_gryphon"
+        }
+      ]
+    },
+    {
+      "id": "loan_shark",
+      "name": "Loan Shark",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "rogue",
+      "attack": 3,
+      "health": 4,
+      "rarity": "common",
+      "set": "STORMWIND",
+      "tribe": "Beast",
+      "keywords": [
+        "battlecry",
+        "deathrattle"
+      ],
+      "description": "Battlecry: Give your opponent a Coin. Deathrattle: You get two.",
+      "effects": [
+        {
+          "type": "add-card",
+          "id": "coin",
+          "count": 1,
+          "toEnemy": true
+        }
+      ],
+      "deathrattle": [
+        {
+          "type": "add-card",
+          "id": "coin",
+          "count": 2
+        }
+      ]
+    },
+    {
+      "id": "nobleman",
+      "name": "Nobleman",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "neutral",
+      "attack": 2,
+      "health": 3,
+      "rarity": "epic",
+      "set": "STORMWIND",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Create a Golden copy of a random card in your hand.",
+      "effects": [
+        {
+          "type": "copy-random-hand-card"
+        }
+      ]
+    },
+    {
+      "id": "northshire_farmer",
+      "name": "Northshire Farmer",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "neutral",
+      "attack": 3,
+      "health": 3,
+      "rarity": "common",
+      "set": "STORMWIND",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Choose a friendly Beast. Shuffle three 3/3 copies into your deck.",
+      "effects": [
+        {
+          "type": "shuffle-copies-of-target",
+          "target": "friendly-creature",
+          "tribe": "Beast",
+          "count": 3
+        }
+      ]
+    },
+    {
+      "id": "oracle_of_elune",
+      "name": "Oracle of Elune",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "druid",
+      "attack": 2,
+      "health": 4,
+      "rarity": "epic",
+      "set": "STORMWIND",
+      "description": "After you play a minion that costs (2) or less, summon a copy of it.",
+      "ongoing": {
+        "on": "creature-played",
+        "if": {
+          "maxCost": 2
+        },
+        "effects": [
+          {
+            "type": "summon-copy-of-played"
+          }
+        ]
+      }
+    },
+    {
+      "id": "sw_gryphon",
+      "name": "Gryphon",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "neutral",
+      "attack": 3,
+      "health": 3,
+      "rarity": "common",
+      "set": "STORMWIND",
+      "token": true,
+      "collectible": false,
+      "keywords": [
+        "rush"
+      ],
+      "description": "Rush."
     }
   ]
 }

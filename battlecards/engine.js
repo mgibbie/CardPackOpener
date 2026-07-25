@@ -541,6 +541,7 @@ export function drawCards(state, pi, count) {
 		card.zone = 'hand';
 		if (state.hpResolver === pi && staticValue(p, 'hero-power-draw-zero') > 0) card.cost = 0; // Wilfred Fizzlebang
 		if (!p.stealerUsedThisTurn && p.board.some(x => x.id === 'stealer_of_souls' && !isDead(x))) { card.cost = 0; p.stealerUsedThisTurn = true; } // Stealer of Souls (Health-cost approximated as free)
+		if (p.nextDrawDiscount > 0) { card.cost = Math.max(0, (card.cost || 0) - p.nextDrawDiscount); p.nextDrawDiscount = 0; } // SI:7 Skulker
 		p.hand.push(card);
 		if (card.copyOnDraw && state.cardsById[card.id] && p.hand.length < MAX_HAND) { const cp = instantiate(state.cardsById[card.id], pi); cp.zone = 'hand'; p.hand.push(cp); emit(state, { type: 'conjure', player: pi, card: cp, color: null }); } // Encumbered Pack Mule
 		drawn++;
@@ -628,6 +629,7 @@ const CHOSEN = {
 	'become-copy-of-target': { creature: 'creature', 'enemy-creature': 'enemy-creature', 'friendly-creature': 'friendly-creature' },
 	'steal-until-bigger': { 'enemy-creature': 'enemy-creature', creature: 'creature' },
 	'swap-with-hand': { creature: 'creature', 'enemy-creature': 'enemy-creature', 'friendly-creature': 'friendly-creature' },
+	'shuffle-copies-of-target': { 'friendly-creature': 'friendly-creature', creature: 'creature' },
 	'destroy-fragment-then-damage': { any: 'any', 'enemy-any': 'enemy-any', creature: 'creature', 'enemy-creature': 'enemy-creature' },
 	'transform-into-token': { 'friendly-creature': 'friendly-creature', creature: 'creature' },
 	'mark-doomed': { creature: 'creature', 'enemy-creature': 'enemy-creature' },
@@ -1554,6 +1556,7 @@ function ongoingCondOk(state, pi, cond, ctx) {
 	if (cond.keyword && !(subj && (subj.keywords || []).includes(cond.keyword))) return false; // Undertaker: a Deathrattle minion
 	if (cond.maxHealthSubj != null && !(subj && hp(subj) <= cond.maxHealthSubj)) return false; // Steward of Darkshire: a 1-Health minion
 	if (cond.spellCost != null && !(subj && (subj.cost || 0) === cond.spellCost)) return false; // Gazlowe: a 1-Cost spell
+	if (cond.maxCost != null && !(subj && (subj.cost || 0) <= cond.maxCost)) return false; // Oracle of Elune: a minion that costs (2) or less
 	if (cond.controlSecret && !state.players[pi].secrets.length) return false;
 	if (cond.creature && !ctx.healedCreature) return false; // "whenever a MINION is healed"
 	if (cond.nontoken && (!subj || (subj.id || '').startsWith('token_'))) return false;
@@ -3969,6 +3972,7 @@ function execEffects(state, pi, effects, target, source) {
 					if (e.tribe && !(def.tribe || '').includes(e.tribe)) continue;
 					if (e.cardType === 'spell' ? !isSpellType(def)
 						: (e.cardType && def.type !== e.cardType)) continue;
+					if (e.school && schoolOf(def) !== e.school) continue; // Twilight Deceptor
 					if (e.maxCost != null && (def.cost || 0) > e.maxCost) continue;
 					if (e.minCost != null && (def.cost || 0) < e.minCost) continue; if (e.cardType === 'secret' && !def.secret) continue; if (e.distinct && drawnIds.has(p.deck[j])) continue; if (e.health != null && (def.health || 0) !== e.health) continue; if (e.cost != null && (def.cost || 0) !== e.cost) continue; // Tol'vir Warden/Storm Chaser/Subject 9/Salhet's Pride
 					if (e.requireKeyword && !(def.keywords || []).includes(e.requireKeyword)) continue;
@@ -4069,6 +4073,7 @@ function execEffects(state, pi, effects, target, source) {
 			else if (e.if.holdingSchool) ok = p.hand.some(c => schoolOf(c) === e.if.holdingSchool); // Toad of the Wilds
 			else if (e.if.castSchoolThisTurn) ok = !!(p.schoolsCastThisTurn && p.schoolsCastThisTurn[e.if.castSchoolThisTurn]); // Metamorfin
 			else if (e.if.diedCountGame) ok = (p.diedCountById?.[e.if.diedCountGame.id] || 0) >= e.if.diedCountGame.count; // Elwynn Boar
+			else if (e.if.anyHeroDamagedThisTurn) ok = state.players.some(pl => pl.heroDamagedThisTurn); // Twilight Deceptor
 			else if (e.if.hpDamageGame != null) ok = (p.hpDamageGame || 0) >= e.if.hpDamageGame; // Jan'alai, the Dragonhawk
 			else if (e.if.deckEmpty) ok = p.deck.length === 0; // Chef Nomi
 			else if (e.if.holdingOtherClass) ok = p.hand.some(c => c !== source && c.cardClass && c.cardClass !== 'neutral' && c.cardClass !== p.heroClass); // Underbelly Fence
@@ -5347,6 +5352,7 @@ function execEffects(state, pi, effects, target, source) {
 			// give your hero +N Attack this turn (Soulshard Lapidary)
 			state.players[pi].heroTempAttack += e.value || 0;
 			emit(state, { type: 'heroAttack', player: pi, attack: heroAttackValue(state.players[pi]) });
+			if ((e.value || 0) > 0) fireOngoing(state, pi, 'hero-gained-attack', {}); // Wickerclaw
 		} else if (e.type === 'destroy-soul-fragment') {
 			// generic: destroy a Soul Fragment in your deck (heals 2), then run `then`
 			const p = state.players[pi];
@@ -5387,6 +5393,39 @@ function execEffects(state, pi, effects, target, source) {
 			const before = new Set(p.hand.map(c => c.uid));
 			drawCards(state, pi, 1);
 			for (const c of p.hand) if (!before.has(c.uid)) c.stiltReward = e.value || 4;
+		} else if (e.type === 'buff-hand-minions') {
+			// Alliance Bannerman: give minions in your hand +X/+X
+			for (const c of state.players[pi].hand) if (c.type === 'creature') { c.attack += e.attack || 0; c.maxHealth += e.health || 0; }
+		} else if (e.type === 'set-next-draw-discount') {
+			// SI:7 Skulker: the next card you draw costs less
+			state.players[pi].nextDrawDiscount = (state.players[pi].nextDrawDiscount || 0) + (e.value || 1);
+		} else if (e.type === 'damage-flanks') {
+			// Crow's Nest Lookout: deal damage to the left- and right-most enemy minions
+			for (const o of enemies) { const board = state.players[o].board.filter(c => !isDead(c) && c.type !== 'location'); const targets = [...new Set([board[0], board[board.length - 1]])].filter(Boolean); for (const t of targets) damageCreature(state, t, e.value || 2, source); }
+			sweepDeaths(state);
+		} else if (e.type === 'copy-random-hand-card') {
+			// Nobleman: create a copy of a random card in your hand
+			const p = state.players[pi];
+			const pool = p.hand.filter(c => c !== source && state.cardsById[c.id]);
+			if (pool.length && p.hand.length < MAX_HAND) { const src = pool[Math.floor(state.rng() * pool.length)]; const nc = instantiate(state.cardsById[src.id], pi); nc.zone = 'hand'; p.hand.push(nc); emit(state, { type: 'conjure', player: pi, card: nc, color: null }); }
+		} else if (e.type === 'shuffle-copies-of-target') {
+			// Northshire Farmer: shuffle N stat-set copies of a chosen friendly into your deck
+			const t = chosenCreature();
+			if (t) { const p = state.players[pi]; for (let i = 0; i < (e.count || 3); i++) p.deck.push(t.id); for (let i = p.deck.length - 1; i > 0; i--) { const j = Math.floor(state.rng() * (i + 1)); [p.deck[i], p.deck[j]] = [p.deck[j], p.deck[i]]; } emit(state, { type: 'shuffle', player: pi }); }
+		} else if (e.type === 'store-deck-card') {
+			// Enthusiastic Banker: move a card from your deck onto this minion's stash
+			if (source && state.players[pi].deck.length) { const id = state.players[pi].deck.pop(); (source.storedCards = source.storedCards || []).push(id); }
+		} else if (e.type === 'add-stored-cards') {
+			// Enthusiastic Banker deathrattle: add the stashed cards to your hand
+			const p = state.players[pi];
+			for (const id of (source && source.storedCards) || []) { if (p.hand.length >= MAX_HAND) break; const def = state.cardsById[id]; if (!def) continue; const nc = instantiate(def, pi); nc.zone = 'hand'; p.hand.push(nc); emit(state, { type: 'conjure', player: pi, card: nc, color: null }); }
+		} else if (e.type === 'arm-copycat') {
+			// Copycat: arm to copy the next card the opponent plays
+			for (const o of enemies) state.players[o].copycatFor = pi;
+		} else if (e.type === 'repeat-last-battlecry') {
+			// Brilliant Macaw: replay the last Battlecry you played
+			const lb = state.players[pi].lastBattlecryThisGame;
+			if (lb && lb.effects) execEffects(state, pi, JSON.parse(JSON.stringify(lb.effects)), lb.target || null, source);
 		} else if (e.type === 'repeat-first-battlecry') {
 			// Bolner Hammerbeak: replay the first Battlecry played this turn
 			const fb = state.players[pi].firstBattlecryThisTurn;
@@ -7319,6 +7358,7 @@ export function playCard(state, pi, cardUid, target, choice, position, useAlt, k
 	if (p.nextCardsDiscount && p.nextCardsDiscount.count > 0) { p.nextCardsDiscount.count -= 1; if (p.nextCardsDiscount.count <= 0) p.nextCardsDiscount = null; } // Scabbs: consumed per card
 	if (card.stiltReward) { p.heroTempAttack += card.stiltReward; emit(state, { type: 'heroAttack', player: pi, attack: heroAttackValue(p) }); card.stiltReward = 0; } // Stiltstepper
 	if (typeof card.id === 'string' && card.id.endsWith('_corrupted')) (p.corruptedPlayedIds = p.corruptedPlayedIds || []).push(card.id); // Y'Shaarj tracks Corrupted cards played
+	if (p.copycatFor != null && state.cardsById[card.id]) { const cc = state.players[p.copycatFor]; if (cc && cc.hand.length < MAX_HAND) { const nc = instantiate(state.cardsById[card.id], p.copycatFor); nc.zone = 'hand'; cc.hand.push(nc); emit(state, { type: 'conjure', player: p.copycatFor, card: nc, color: null }); } p.copycatFor = null; } // Copycat
 	// Ward: targeting an enemy warded creature costs extra — unaffordable = illegal
 	const ward = wardOf(state, pi, target);
 	if (ward?.mana && availableMana(p) < effectiveCost(state, pi, card) + ward.mana) return false;
@@ -7407,7 +7447,7 @@ export function playCard(state, pi, cardUid, target, choice, position, useAlt, k
 			fireOngoing(state, pi, 'summoned', { minion: card });
 			growBlubberBaron(state, pi, card);
 			runBattlecry(state, pi, card, target, choice);
-			if ((card.keywords || []).includes('battlecry') && card.effects) { if (!p.firstBattlecryThisTurn) p.firstBattlecryThisTurn = { effects: JSON.parse(JSON.stringify(card.effects)), target }; fireOngoing(state, pi, 'battlecry-minion-played', { minion: card }); } // Bolner Hammerbeak
+			if ((card.keywords || []).includes('battlecry') && card.effects) { if (!p.firstBattlecryThisTurn) p.firstBattlecryThisTurn = { effects: JSON.parse(JSON.stringify(card.effects)), target }; fireOngoing(state, pi, 'battlecry-minion-played', { minion: card }); p.lastBattlecryThisGame = { effects: JSON.parse(JSON.stringify(card.effects)), target }; } // Bolner Hammerbeak / Brilliant Macaw
 				if (p.board.includes(card)) fireSecretsAll(state, pi, 'enemy-minion-played', { minion: card });
 			// opponents' ongoing reactions to you playing a creature (Holomancer / Harbinger Celestia)
 			if (p.board.includes(card) && !isDead(card)) for (const o of opponentsOf(state, pi)) fireOngoing(state, o, 'enemy-creature-played', { minion: card });
