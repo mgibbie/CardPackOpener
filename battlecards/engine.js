@@ -248,6 +248,7 @@ function instantiate(def, controller) {
 		heroPowerCostReduce: def.heroPowerCostReduce || 0, // Felfire Deadeye: your Hero Power costs this much less
 		outcastCostReduce: def.outcastCostReduce || 0, // Line Hopper: your Outcast cards cost this much less
 		healBonusHealth: def.healBonusHealth || 0, // Lightsteed: your heals also give the minion +Health
+		foreignCostReduce: def.foreignCostReduce || 0, // Arcane Luminary: cards that didn't start in your deck cost less
 		deathrattle: def.deathrattle || null,
 		tribe: def.tribe || null,
 		controller,
@@ -2782,6 +2783,7 @@ function execEffects(state, pi, effects, target, source) {
 		if (e.type === 'damage') {
 			if (e.requireElementalLastTurn && !state.players[pi].elementalLastTurn) continue; // Gyreworm
 				if (e.requireControlOtherTribe && !state.players[pi].board.some(c => c !== source && !isDead(c) && (c.tribe || '').includes(e.requireControlOtherTribe))) continue; // South Coast Chieftain
+				if (e.requireDeckAtMost != null && state.players[pi].deck.length > e.requireDeckAtMost) continue; // Blood Shard Bristleback
 			// friendly Spell Damage boosts direct spell damage
 			let v = e.value === 'source-attack' ? (source?.attack || 0) : scaled(e); // Sergeant Sally
 			if (source && (source.type === 'sorcery' || source.type === 'instant')) {
@@ -3998,6 +4000,7 @@ function execEffects(state, pi, effects, target, source) {
 			else if (e.if.noFriendlyDeaths) ok = (p.diedThisTurn || 0) === 0;
 			else if (e.if.friendlyDied) ok = (p.diedThisTurn || 0) > 0;       // Bone Flurry
 			else if (e.if.deckAtLeast != null) ok = p.deck.length >= e.if.deckAtLeast; // Crowd Control
+			else if (e.if.deckAtMost != null) ok = p.deck.length <= e.if.deckAtMost; // Blood Shard Bristleback
 			else if (e.if.heroPowerUsed) ok = (p.heroPowers || []).some(h => h.usedThisTurn); // Manafeeder Panthara
 			else if (e.if.holdingSpellMinCost != null) ok = p.hand.some(c => (c.type === 'sorcery' || c.type === 'instant' || c.type === 'secret' || c.type === 'trap') && (c.cost || 0) >= e.if.holdingSpellMinCost); // Groundskeeper
 			else if (e.if.enemyTurn) ok = state.current !== pi; // Skelemancer / Vryghoul / Mountainfire Armor (died on opponent's turn)
@@ -5203,7 +5206,8 @@ function execEffects(state, pi, effects, target, source) {
 			if (pool.length) buffCreature(pool[Math.floor(state.rng() * pool.length)], e.attack || 0, e.health || 0);
 		} else if (e.type === 'reduce-random-hand-cost') {
 			// Imprisoned Satyr: reduce the Cost of a random minion in your hand
-			const pool = state.players[pi].hand.filter(c => c.type === 'creature');
+			// (tribe filter -> Fangbound Druid reduces a Beast)
+			const pool = state.players[pi].hand.filter(c => c.type === 'creature' && (!e.tribe || (c.tribe || '').includes(e.tribe)));
 			if (pool.length) { const c = pool[Math.floor(state.rng() * pool.length)]; c.cost = Math.max(0, (c.cost || 0) - (e.value || 1)); }
 		} else if (e.type === 'add-spells-on-friendly-to-hand') {
 			// Lady Liadrin: add a copy of each spell you cast on friendly characters this game
@@ -5338,6 +5342,19 @@ function execEffects(state, pi, effects, target, source) {
 			const before = new Set(p.hand.map(c => c.uid));
 			drawCards(state, pi, 1);
 			for (const c of p.hand) if (!before.has(c.uid)) c.stiltReward = e.value || 4;
+		} else if (e.type === 'copy-enemy-secrets') {
+			// Horde Operative: copy the opponent's Secrets and put them into play
+			for (const o of enemies) for (const sec of [...state.players[o].secrets]) { if (state.players[pi].secrets.length < 5 && state.cardsById[sec.id]) installSecret(state, pi, sec.id); }
+		} else if (e.type === 'draw-spell-school-then') {
+			// Devout / Frostweave Dungeoneer: draw a spell; if it's a `school` spell, run `then` (bonus)
+			const p = state.players[pi];
+			const before = new Set(p.hand.map(c => c.uid));
+			execEffects(state, pi, [{ type: 'tutor', cardType: 'spell', count: 1 }], target, source);
+			const drawn = p.hand.find(c => !before.has(c.uid));
+			if (drawn && schoolOf(drawn) === e.school) {
+				if (e.discount) drawn.cost = Math.max(0, (drawn.cost || 0) - e.discount);
+				if (e.then) execEffects(state, pi, e.then, target, source);
+			}
 		} else if (e.type === 'steal-until-bigger') {
 			// Serena Bloodfeather: move 1/1 from the target to this until this is bigger
 			const t = chosenCreature();
@@ -7087,6 +7104,7 @@ export function effectiveCost(state, pi, card) {
 	if (p.spellTaxNext > 0 && isSpellType(card)) c += p.spellTaxNext; // Loatheb
 	if (p.nextComboDiscount > 0 && card.combo) c = Math.max(0, c - p.nextComboDiscount); // Foxy Fraud
 	if ((card.keywords || []).includes('outcast')) { const r = p.board.filter(x => x.outcastCostReduce && !isDead(x)).reduce((s, x) => s + x.outcastCostReduce, 0); if (r) c = Math.max(0, c - r); } // Line Hopper
+	if (!card.fromDeck) { const r = p.board.filter(x => x.foreignCostReduce && !isDead(x)).reduce((s, x) => s + x.foreignCostReduce, 0); if (r) c = Math.max(1, c - r); } // Arcane Luminary: not below 1
 	if (p.battlecryTaxNext > 0 && (card.keywords || []).includes('battlecry')) c += p.battlecryTaxNext; // Boompistol Bully
 	if (p.libramDiscount > 0 && /Libram/.test(card.name || '')) c = Math.max(0, c - p.libramDiscount); // Aldor Attendant/Truthseeker
 	return Math.max(0, c);
@@ -7258,6 +7276,7 @@ export function playCard(state, pi, cardUid, target, choice, position, useAlt, k
 			// opponents' ongoing reactions to you playing a creature (Holomancer / Harbinger Celestia)
 			if (p.board.includes(card) && !isDead(card)) for (const o of opponentsOf(state, pi)) fireOngoing(state, o, 'enemy-creature-played', { minion: card });
 			if (p.board.includes(card) && !isDead(card)) fireOngoing(state, pi, 'creature-played', { minion: card });
+				if ((card.keywords || []).includes('battlecry') || card.combo) fireOngoing(state, pi, 'battlecry-or-combo-played', { played: card }); // Field Contact
 			// Grand Lackey Erkh: after you play a Lackey
 			if (p.board.includes(card) && !isDead(card) && typeof card.id === 'string' && card.id.startsWith('lackey_')) fireOngoing(state, pi, 'lackey-played', { minion: card });
 			// Swamp King Dred: after an opponent plays a creature, Dred attacks it
@@ -7457,6 +7476,7 @@ function resolveStackedSpell(state, entry) {
 			execEffects(state, pi, card.honorableKill, ctx.target, card);
 		}
 		fireOngoing(state, pi, 'spell-played', { played: card });
+		if (card.combo) fireOngoing(state, pi, 'battlecry-or-combo-played', { played: card }); // Field Contact
 		if (ctx.target && ctx.target.type === 'creature') fireOngoing(state, pi, 'spell-cast-on-creature', { played: card }); // Sethekk Veilweaver
 		if (card.choices) fireOngoing(state, pi, 'choose-spell-played', { played: card }); // Keeper Stalladris
 		firePlaneTrigger(state, 'spell-cast', pi); // Minamo / Elysaria

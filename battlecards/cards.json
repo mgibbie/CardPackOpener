@@ -86740,6 +86740,442 @@
           }
         ]
       }
+    },
+    {
+      "id": "arcane_luminary",
+      "name": "Arcane Luminary",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "mage",
+      "attack": 4,
+      "health": 3,
+      "rarity": "epic",
+      "set": "THE_BARRENS",
+      "tribe": "Elemental",
+      "foreignCostReduce": 2,
+      "description": "Cards that didn't start in your deck cost (2) less (but not less than 1)."
+    },
+    {
+      "id": "archdruid_naralex",
+      "name": "Archdruid Naralex",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "neutral",
+      "attack": 3,
+      "health": 3,
+      "rarity": "legendary",
+      "set": "THE_BARRENS",
+      "dormant": 2,
+      "description": "Dormant for 2 turns. While Dormant, add a Dream card to your hand at the end of your turn.",
+      "ongoing": {
+        "on": "turn-end",
+        "effects": [
+          {
+            "type": "add-card",
+            "id": "bar_dream",
+            "count": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "arid_stormer",
+      "name": "Arid Stormer",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "shaman",
+      "attack": 2,
+      "health": 5,
+      "rarity": "common",
+      "set": "THE_BARRENS",
+      "tribe": "Elemental",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: If you played an Elemental last turn, gain Rush and Windfury.",
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "elementalLastTurn": true
+          },
+          "then": [
+            {
+              "type": "grant",
+              "keyword": "rush",
+              "target": "self"
+            },
+            {
+              "type": "grant",
+              "keyword": "windfury",
+              "target": "self"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "barrens_trapper",
+      "name": "Barrens Trapper",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "neutral",
+      "attack": 2,
+      "health": 4,
+      "rarity": "common",
+      "set": "THE_BARRENS",
+      "deathrattleDiscount": 1,
+      "description": "Your Deathrattle cards cost (1) less."
+    },
+    {
+      "id": "blood_shard_bristleback",
+      "name": "Blood Shard Bristleback",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "warlock",
+      "attack": 3,
+      "health": 3,
+      "rarity": "rare",
+      "set": "THE_BARRENS",
+      "tribe": "Quilboar",
+      "keywords": [
+        "lifesteal",
+        "battlecry"
+      ],
+      "description": "Lifesteal. Battlecry: If your deck contains 10 or fewer cards, deal 6 damage to a minion.",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 6,
+          "target": "creature",
+          "requireDeckAtMost": 10
+        }
+      ]
+    },
+    {
+      "id": "crossroads_gossiper",
+      "name": "Crossroads Gossiper",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "neutral",
+      "attack": 4,
+      "health": 3,
+      "rarity": "common",
+      "set": "THE_BARRENS",
+      "description": "After a friendly Secret is revealed, gain +2/+2.",
+      "ongoing": {
+        "on": "secret-revealed",
+        "effects": [
+          {
+            "type": "buff-self",
+            "attack": 2,
+            "health": 2
+          }
+        ]
+      }
+    },
+    {
+      "id": "devout_dungeoneer",
+      "name": "Devout Dungeoneer",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "priest",
+      "attack": 2,
+      "health": 3,
+      "rarity": "rare",
+      "set": "THE_BARRENS",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Draw a spell. If it's a Holy spell, reduce its Cost by (2).",
+      "effects": [
+        {
+          "type": "draw-spell-school-then",
+          "school": "Holy",
+          "discount": 2
+        }
+      ]
+    },
+    {
+      "id": "fangbound_druid",
+      "name": "Fangbound Druid",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "druid",
+      "attack": 4,
+      "health": 3,
+      "rarity": "common",
+      "set": "THE_BARRENS",
+      "keywords": [
+        "taunt",
+        "deathrattle"
+      ],
+      "description": "Taunt. Deathrattle: Reduce the Cost of a Beast in your hand by (2).",
+      "deathrattle": [
+        {
+          "type": "reduce-random-hand-cost",
+          "tribe": "Beast",
+          "value": 2
+        }
+      ]
+    },
+    {
+      "id": "field_contact",
+      "name": "Field Contact",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "rogue",
+      "attack": 3,
+      "health": 2,
+      "rarity": "rare",
+      "set": "THE_BARRENS",
+      "description": "After you play a Battlecry or Combo card, draw a card.",
+      "ongoing": {
+        "on": "battlecry-or-combo-played",
+        "effects": [
+          {
+            "type": "draw",
+            "value": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "frostweave_dungeoneer",
+      "name": "Frostweave Dungeoneer",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "mage",
+      "attack": 2,
+      "health": 3,
+      "rarity": "rare",
+      "set": "THE_BARRENS",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Draw a spell. If it's a Frost spell, summon two 1/1 Elementals that Freeze.",
+      "effects": [
+        {
+          "type": "draw-spell-school-then",
+          "school": "Frost",
+          "then": [
+            {
+              "type": "summon",
+              "count": 2,
+              "summonId": "bar_freeze_elemental"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "guff_runetotem",
+      "name": "Guff Runetotem",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "druid",
+      "attack": 2,
+      "health": 4,
+      "rarity": "legendary",
+      "set": "THE_BARRENS",
+      "description": "After you cast a Nature spell, give another friendly minion +2/+2.",
+      "ongoing": {
+        "on": "spell-played",
+        "if": {
+          "school": "Nature"
+        },
+        "effects": [
+          {
+            "type": "buff-random-friendly",
+            "excludeSelf": true,
+            "attack": 2,
+            "health": 2
+          }
+        ]
+      }
+    },
+    {
+      "id": "horde_operative",
+      "name": "Horde Operative",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "neutral",
+      "attack": 3,
+      "health": 4,
+      "rarity": "rare",
+      "set": "THE_BARRENS",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Copy your opponent's Secrets and put them into play.",
+      "effects": [
+        {
+          "type": "copy-enemy-secrets"
+        }
+      ]
+    },
+    {
+      "id": "kabal_outfitter",
+      "name": "Kabal Outfitter",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "warlock",
+      "attack": 3,
+      "health": 3,
+      "rarity": "common",
+      "set": "THE_BARRENS",
+      "keywords": [
+        "battlecry",
+        "deathrattle"
+      ],
+      "description": "Battlecry and Deathrattle: Give another random friendly minion +1/+1.",
+      "effects": [
+        {
+          "type": "buff-random-friendly",
+          "attack": 1,
+          "health": 1
+        }
+      ],
+      "deathrattle": [
+        {
+          "type": "buff-random-friendly",
+          "attack": 1,
+          "health": 1
+        }
+      ]
+    },
+    {
+      "id": "mankrik",
+      "name": "Mankrik",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "neutral",
+      "attack": 3,
+      "health": 4,
+      "rarity": "legendary",
+      "set": "THE_BARRENS",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Help Mankrik find his wife! She was last seen somewhere in your deck.",
+      "effects": [
+        {
+          "type": "shuffle-into-deck",
+          "id": "bar_olgra",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "id": "morshan_watch_post",
+      "name": "Mor'shan Watch Post",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "neutral",
+      "attack": 3,
+      "health": 5,
+      "rarity": "rare",
+      "set": "THE_BARRENS",
+      "keywords": [
+        "pacifist"
+      ],
+      "description": "Can't attack. After your opponent plays a minion, summon a 2/2 Grunt.",
+      "ongoing": {
+        "on": "enemy-creature-played",
+        "effects": [
+          {
+            "type": "summon",
+            "count": 1,
+            "summonId": "bar_grunt"
+          }
+        ]
+      }
+    },
+    {
+      "id": "pack_kodo",
+      "name": "Pack Kodo",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "hunter",
+      "attack": 3,
+      "health": 3,
+      "rarity": "common",
+      "set": "THE_BARRENS",
+      "tribe": "Beast",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Discover a Beast, Secret, or weapon.",
+      "effects": [
+        {
+          "type": "discover",
+          "cardType": "creature",
+          "tribe": "Beast"
+        }
+      ]
+    },
+    {
+      "id": "bar_dream",
+      "name": "Dream",
+      "type": "sorcery",
+      "cost": 0,
+      "token": true,
+      "collectible": false,
+      "rarity": "common",
+      "set": "THE_BARRENS",
+      "description": "Return a minion to its owner\u2019s hand.",
+      "effects": [
+        {
+          "type": "bounce",
+          "target": "creature"
+        }
+      ]
+    },
+    {
+      "id": "bar_freeze_elemental",
+      "name": "Living Tempest",
+      "type": "creature",
+      "cost": 1,
+      "cardClass": "mage",
+      "attack": 1,
+      "health": 1,
+      "rarity": "common",
+      "set": "THE_BARRENS",
+      "tribe": "Elemental",
+      "token": true,
+      "collectible": false,
+      "description": "A 1/1 Elemental."
+    },
+    {
+      "id": "bar_grunt",
+      "name": "Grunt",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "neutral",
+      "attack": 2,
+      "health": 2,
+      "rarity": "common",
+      "set": "THE_BARRENS",
+      "token": true,
+      "collectible": false,
+      "description": "A 2/2 Grunt."
+    },
+    {
+      "id": "bar_olgra",
+      "name": "Olgra, Mankrik's Wife",
+      "type": "creature",
+      "cost": 6,
+      "cardClass": "neutral",
+      "attack": 7,
+      "health": 7,
+      "rarity": "legendary",
+      "set": "THE_BARRENS",
+      "token": true,
+      "collectible": false,
+      "keywords": [
+        "rush"
+      ],
+      "description": "Rush."
     }
   ]
 }
