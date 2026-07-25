@@ -250,6 +250,7 @@ function instantiate(def, controller) {
 		healBonusHealth: def.healBonusHealth || 0, // Lightsteed: your heals also give the minion +Health
 		foreignCostReduce: def.foreignCostReduce || 0, // Arcane Luminary: cards that didn't start in your deck cost less
 		schoolCostReduce: def.schoolCostReduce ? { ...def.schoolCostReduce } : null, // Lady Anacondra: {school, amount}
+		copyOnDraw: !!def.copyOnDraw, // Encumbered Pack Mule: drawing this adds a copy to hand
 		deathrattle: def.deathrattle || null,
 		tribe: def.tribe || null,
 		controller,
@@ -541,6 +542,7 @@ export function drawCards(state, pi, count) {
 		if (state.hpResolver === pi && staticValue(p, 'hero-power-draw-zero') > 0) card.cost = 0; // Wilfred Fizzlebang
 		if (!p.stealerUsedThisTurn && p.board.some(x => x.id === 'stealer_of_souls' && !isDead(x))) { card.cost = 0; p.stealerUsedThisTurn = true; } // Stealer of Souls (Health-cost approximated as free)
 		p.hand.push(card);
+		if (card.copyOnDraw && state.cardsById[card.id] && p.hand.length < MAX_HAND) { const cp = instantiate(state.cardsById[card.id], pi); cp.zone = 'hand'; p.hand.push(cp); emit(state, { type: 'conjure', player: pi, card: cp, color: null }); } // Encumbered Pack Mule
 		drawn++;
 		emit(state, { type: 'draw', player: pi, card });
 		questTick(state, 'draw', pi, 1, card);
@@ -1217,6 +1219,7 @@ function sweepDeaths(state) {
 			if (state.cardsById[c.id] && !c.token) {
 				p.diedThisTurnIds.push(c.id);
 				if (!p.deathLogIds.includes(c.id)) p.deathLogIds.push(c.id);
+					(p.diedCountById = p.diedCountById || {})[c.id] = (p.diedCountById[c.id] || 0) + 1; // Elwynn Boar
 			}
 			// Bolvar Fordragon: grows in hand as your creatures die
 			for (const hc of p.hand) if (hc.id === 'bolvar_fordragon') { hc.attack += 1; emit(state, { type: 'buff', uid: hc.uid, attack: hc.attack, hp: hp(hc) }); }
@@ -2811,9 +2814,12 @@ function execEffects(state, pi, effects, target, source) {
 			if (e.requireElementalLastTurn && !state.players[pi].elementalLastTurn) continue; // Gyreworm
 				if (e.requireControlOtherTribe && !state.players[pi].board.some(c => c !== source && !isDead(c) && (c.tribe || '').includes(e.requireControlOtherTribe))) continue; // South Coast Chieftain
 				if (e.requireDeckAtMost != null && state.players[pi].deck.length > e.requireDeckAtMost) continue; // Blood Shard Bristleback
+				if (e.requireHoldingSchool && !state.players[pi].hand.some(c => schoolOf(c) === e.requireHoldingSchool)) continue; // Defias Leper
+				if (e.requireHeroDamagedThisTurn && !state.players[pi].heroDamagedThisTurn) continue; // Shadowblade Slinger
 			// friendly Spell Damage boosts direct spell damage
 			let v = e.value === 'source-attack' ? (source?.attack || 0) : scaled(e); // Sergeant Sally
-			if (e.altValueIfDrawn != null && source && source.drawnThisTurn) v = e.altValueIfDrawn; // Oil Rig Ambusher
+			if (e.valueFromHeroDamage) v = state.players[pi].heroDamageTakenThisTurn || 0; // Shadowblade Slinger
+				if (e.altValueIfDrawn != null && source && source.drawnThisTurn) v = e.altValueIfDrawn; // Oil Rig Ambusher
 			if (source && (source.type === 'sorcery' || source.type === 'instant')) {
 				v += staticValue(state.players[pi], 'spell-damage') + (state.players[pi].nextSpellDamageBonus || 0);
 			}
@@ -3516,7 +3522,8 @@ function execEffects(state, pi, effects, target, source) {
 			else emit(state, { type: 'luckFail', player: pi });
 		} else if (e.type === 'add-card') {
 			const def = state.cardsById[e.id];
-			const targets = e.eachPlayer ? state.players.map((_, idx) => idx).filter(idx => !state.players[idx].eliminated) : [pi];
+			const targets = e.eachPlayer ? state.players.map((_, idx) => idx).filter(idx => !state.players[idx].eliminated)
+					: e.toEnemy ? opponentsOf(state, pi) : [pi]; // Mailbox Dancer gives the opponent a Coin
 			for (const tp of targets) {
 				const tpp = state.players[tp];
 				for (let n = 0; n < (e.count || 1); n++) {
@@ -4060,6 +4067,8 @@ function execEffects(state, pi, effects, target, source) {
 			else if (e.if.spellsGame != null) ok = (p.spellsPlayedTotal || 0) >= e.if.spellsGame; // Yogg-Saron, Master of Fate
 			else if (e.if.healedThisTurn) ok = !!p.healedThisTurn; // Cleric of An'she
 			else if (e.if.holdingSchool) ok = p.hand.some(c => schoolOf(c) === e.if.holdingSchool); // Toad of the Wilds
+			else if (e.if.castSchoolThisTurn) ok = !!(p.schoolsCastThisTurn && p.schoolsCastThisTurn[e.if.castSchoolThisTurn]); // Metamorfin
+			else if (e.if.diedCountGame) ok = (p.diedCountById?.[e.if.diedCountGame.id] || 0) >= e.if.diedCountGame.count; // Elwynn Boar
 			else if (e.if.hpDamageGame != null) ok = (p.hpDamageGame || 0) >= e.if.hpDamageGame; // Jan'alai, the Dragonhawk
 			else if (e.if.deckEmpty) ok = p.deck.length === 0; // Chef Nomi
 			else if (e.if.holdingOtherClass) ok = p.hand.some(c => c !== source && c.cardClass && c.cardClass !== 'neutral' && c.cardClass !== p.heroClass); // Underbelly Fence
@@ -5237,8 +5246,10 @@ function execEffects(state, pi, effects, target, source) {
 			if (pool.length) buffCreature(pool[Math.floor(state.rng() * pool.length)], e.attack || 0, e.health || 0);
 		} else if (e.type === 'reduce-random-hand-cost') {
 			// Imprisoned Satyr: reduce the Cost of a random minion in your hand
-			// (tribe filter -> Fangbound Druid reduces a Beast)
-			const pool = state.players[pi].hand.filter(c => c.type === 'creature' && (!e.tribe || (c.tribe || '').includes(e.tribe)));
+			// (tribe filter -> Fangbound Druid reduces a Beast; school -> Florist reduces a Nature spell)
+			const pool = e.school
+				? state.players[pi].hand.filter(c => schoolOf(c) === e.school)
+				: state.players[pi].hand.filter(c => c.type === 'creature' && (!e.tribe || (c.tribe || '').includes(e.tribe)));
 			if (pool.length) { const c = pool[Math.floor(state.rng() * pool.length)]; c.cost = Math.max(0, (c.cost || 0) - (e.value || 1)); }
 		} else if (e.type === 'add-spells-on-friendly-to-hand') {
 			// Lady Liadrin: add a copy of each spell you cast on friendly characters this game
@@ -5376,6 +5387,10 @@ function execEffects(state, pi, effects, target, source) {
 			const before = new Set(p.hand.map(c => c.uid));
 			drawCards(state, pi, 1);
 			for (const c of p.hand) if (!before.has(c.uid)) c.stiltReward = e.value || 4;
+		} else if (e.type === 'repeat-first-battlecry') {
+			// Bolner Hammerbeak: replay the first Battlecry played this turn
+			const fb = state.players[pi].firstBattlecryThisTurn;
+			if (fb && fb.effects) execEffects(state, pi, JSON.parse(JSON.stringify(fb.effects)), fb.target || null, source);
 		} else if (e.type === 'transform-self-into-token') {
 			// Druid of the Plains (Frenzy): transform this minion into a fixed-stat token
 			if (source && source.zone === 'board' && !isDead(source)) {
@@ -7392,7 +7407,8 @@ export function playCard(state, pi, cardUid, target, choice, position, useAlt, k
 			fireOngoing(state, pi, 'summoned', { minion: card });
 			growBlubberBaron(state, pi, card);
 			runBattlecry(state, pi, card, target, choice);
-			if (p.board.includes(card)) fireSecretsAll(state, pi, 'enemy-minion-played', { minion: card });
+			if ((card.keywords || []).includes('battlecry') && card.effects) { if (!p.firstBattlecryThisTurn) p.firstBattlecryThisTurn = { effects: JSON.parse(JSON.stringify(card.effects)), target }; fireOngoing(state, pi, 'battlecry-minion-played', { minion: card }); } // Bolner Hammerbeak
+				if (p.board.includes(card)) fireSecretsAll(state, pi, 'enemy-minion-played', { minion: card });
 			// opponents' ongoing reactions to you playing a creature (Holomancer / Harbinger Celestia)
 			if (p.board.includes(card) && !isDead(card)) for (const o of opponentsOf(state, pi)) fireOngoing(state, o, 'enemy-creature-played', { minion: card });
 			if (p.board.includes(card) && !isDead(card)) fireOngoing(state, pi, 'creature-played', { minion: card });
@@ -7479,6 +7495,7 @@ export function playCard(state, pi, cardUid, target, choice, position, useAlt, k
 	} else {
 		questTick(state, 'spell', pi);
 		p.spellsPlayedThisTurn++;
+		{ const sch = schoolOf(card); if (sch) (p.schoolsCastThisTurn = p.schoolsCastThisTurn || {})[sch] = true; } // Metamorfin: "cast a Fel spell this turn"
 		p.spellsPlayedTotal = (p.spellsPlayedTotal || 0) + 1; // Arcane Giant
 		if ((card.cost || 0) >= 5) p.bigSpellsGame = (p.bigSpellsGame || 0) + 1; // Dragoncaller Alanna
 		(p.spellsPlayedThisTurnIds = p.spellsPlayedThisTurnIds || []).push(card.id); // Krag'wa, the Frog
@@ -8938,7 +8955,7 @@ export function endTurn(state) {
 	np.creaturesPlayedThisTurn = 0;
 	np.cardsPlayedThisTurn = 0;
 	np.drawsThisTurn = 0; // reset before the mandatory draw so it counts as the first
-	np.spellsPlayedThisTurn = 0;
+	np.spellsPlayedThisTurn = 0; np.schoolsCastThisTurn = {}; np.firstBattlecryThisTurn = null; // Metamorfin / Bolner Hammerbeak
 	np.parityBlock = null; // Alara: a start-of-turn coin flip may block odd/even-cost plays
 	np.planarRollsThisTurn = 0;
 	{ const r = activePlaneRule(state); if (r && r.kind === 'coin-parity') { np.parityBlock = state.rng() < 0.5 ? 'odd' : 'even'; emit(state, { type: 'coinParity', player: state.current, block: np.parityBlock }); } }

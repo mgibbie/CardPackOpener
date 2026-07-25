@@ -88348,6 +88348,435 @@
         "rush"
       ],
       "description": "Rush."
+    },
+    {
+      "id": "druid_of_the_reef",
+      "name": "Druid of the Reef",
+      "type": "creature",
+      "cost": 1,
+      "cardClass": "druid",
+      "attack": 1,
+      "health": 1,
+      "rarity": "common",
+      "set": "STORMWIND",
+      "description": "Choose One - Transform into a 3/1 Shark with Rush; or a 1/3 Turtle with Taunt.",
+      "choices": [
+        {
+          "text": "3/1 Shark with Rush",
+          "effects": [
+            {
+              "type": "transform-self-into-token",
+              "name": "Shark",
+              "tribe": "Beast",
+              "attack": 3,
+              "health": 1,
+              "keywords": [
+                "rush"
+              ]
+            }
+          ]
+        },
+        {
+          "text": "1/3 Turtle with Taunt",
+          "effects": [
+            {
+              "type": "transform-self-into-token",
+              "name": "Turtle",
+              "tribe": "Beast",
+              "attack": 1,
+              "health": 3,
+              "keywords": [
+                "taunt"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "elwynn_boar",
+      "name": "Elwynn Boar",
+      "type": "creature",
+      "cost": 1,
+      "cardClass": "neutral",
+      "attack": 1,
+      "health": 1,
+      "rarity": "epic",
+      "set": "STORMWIND",
+      "tribe": "Beast",
+      "keywords": [
+        "deathrattle"
+      ],
+      "description": "Deathrattle: If you had 7 Elwynn Boars die this game, equip a 15/3 Sword of a Thousand Truths.",
+      "deathrattle": [
+        {
+          "type": "conditional",
+          "if": {
+            "diedCountGame": {
+              "id": "elwynn_boar",
+              "count": 7
+            }
+          },
+          "then": [
+            {
+              "type": "equip",
+              "name": "Sword of a Thousand Truths",
+              "attack": 15,
+              "durability": 3
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "metamorfin",
+      "name": "Metamorfin",
+      "type": "creature",
+      "cost": 1,
+      "cardClass": "demonhunter",
+      "attack": 1,
+      "health": 2,
+      "rarity": "common",
+      "set": "STORMWIND",
+      "tribe": "Murloc",
+      "keywords": [
+        "taunt",
+        "battlecry"
+      ],
+      "description": "Taunt. Battlecry: If you've cast a Fel spell this turn, gain +2/+2.",
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "castSchoolThisTurn": "Fel"
+          },
+          "then": [
+            {
+              "type": "buff-self",
+              "attack": 2,
+              "health": 2
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "shadowblade_slinger",
+      "name": "Shadowblade Slinger",
+      "type": "creature",
+      "cost": 1,
+      "cardClass": "warlock",
+      "attack": 2,
+      "health": 1,
+      "rarity": "common",
+      "set": "STORMWIND",
+      "tribe": "Pirate",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: If you've taken damage this turn, deal that much to an enemy minion.",
+      "effects": [
+        {
+          "type": "damage",
+          "valueFromHeroDamage": true,
+          "target": "enemy-creature",
+          "requireHeroDamagedThisTurn": true
+        }
+      ]
+    },
+    {
+      "id": "vibrant_squirrel",
+      "name": "Vibrant Squirrel",
+      "type": "creature",
+      "cost": 1,
+      "cardClass": "druid",
+      "attack": 2,
+      "health": 1,
+      "rarity": "rare",
+      "set": "STORMWIND",
+      "tribe": "Beast",
+      "keywords": [
+        "deathrattle"
+      ],
+      "description": "Deathrattle: Shuffle 4 Acorns into your deck. When drawn, summon a 2/1 Squirrel.",
+      "deathrattle": [
+        {
+          "type": "shuffle-into-deck",
+          "id": "sw_acorn",
+          "count": 4
+        }
+      ]
+    },
+    {
+      "id": "auctioneer_jaxon",
+      "name": "Auctioneer Jaxon",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "neutral",
+      "attack": 2,
+      "health": 3,
+      "rarity": "legendary",
+      "set": "STORMWIND",
+      "description": "Whenever you Trade, Discover a card from your deck to draw instead."
+    },
+    {
+      "id": "bloodbound_imp",
+      "name": "Bloodbound Imp",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "warlock",
+      "attack": 2,
+      "health": 5,
+      "rarity": "common",
+      "set": "STORMWIND",
+      "tribe": "Demon",
+      "description": "Whenever this attacks, deal 2 damage to your hero.",
+      "ongoing": {
+        "on": "self-attacks",
+        "effects": [
+          {
+            "type": "damage",
+            "value": 2,
+            "target": "own-hero"
+          }
+        ]
+      }
+    },
+    {
+      "id": "bolner_hammerbeak",
+      "name": "Bolner Hammerbeak",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "shaman",
+      "attack": 1,
+      "health": 4,
+      "rarity": "legendary",
+      "set": "STORMWIND",
+      "description": "After you play a Battlecry minion, repeat the first Battlecry played this turn.",
+      "ongoing": {
+        "on": "battlecry-minion-played",
+        "effects": [
+          {
+            "type": "repeat-first-battlecry"
+          }
+        ]
+      }
+    },
+    {
+      "id": "deeprun_engineer",
+      "name": "Deeprun Engineer",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "neutral",
+      "attack": 1,
+      "health": 2,
+      "rarity": "common",
+      "set": "STORMWIND",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Discover a Mech. It costs (1) less.",
+      "effects": [
+        {
+          "type": "discover",
+          "cardType": "creature",
+          "tribe": "Mech",
+          "costMod": -1
+        }
+      ]
+    },
+    {
+      "id": "defias_leper",
+      "name": "Defias Leper",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "priest",
+      "attack": 3,
+      "health": 2,
+      "rarity": "common",
+      "set": "STORMWIND",
+      "tribe": "Pirate",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: If you're holding a Shadow spell, deal 2 damage.",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 2,
+          "target": "any",
+          "requireHoldingSchool": "Shadow"
+        }
+      ]
+    },
+    {
+      "id": "encumbered_pack_mule",
+      "name": "Encumbered Pack Mule",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "neutral",
+      "attack": 2,
+      "health": 3,
+      "rarity": "rare",
+      "set": "STORMWIND",
+      "tribe": "Beast",
+      "keywords": [
+        "taunt"
+      ],
+      "copyOnDraw": true,
+      "description": "Taunt. When you draw this, add a copy of it to your hand."
+    },
+    {
+      "id": "florist",
+      "name": "Florist",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "neutral",
+      "attack": 2,
+      "health": 3,
+      "rarity": "common",
+      "set": "STORMWIND",
+      "description": "At the end of your turn, reduce the Cost of a Nature spell in your hand by (1).",
+      "ongoing": {
+        "on": "turn-end",
+        "effects": [
+          {
+            "type": "reduce-random-hand-cost",
+            "school": "Nature",
+            "value": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "jerry_rig_carpenter",
+      "name": "Jerry Rig Carpenter",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "druid",
+      "attack": 2,
+      "health": 1,
+      "rarity": "rare",
+      "set": "STORMWIND",
+      "tribe": "Pirate",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Draw a Choose One spell and split it.",
+      "effects": [
+        {
+          "type": "tutor",
+          "cardType": "spell",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "id": "mailbox_dancer",
+      "name": "Mailbox Dancer",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "neutral",
+      "attack": 3,
+      "health": 2,
+      "rarity": "rare",
+      "set": "STORMWIND",
+      "keywords": [
+        "battlecry",
+        "deathrattle"
+      ],
+      "description": "Battlecry: Add a Coin to your hand. Deathrattle: Give your opponent one.",
+      "effects": [
+        {
+          "type": "add-card",
+          "id": "coin",
+          "count": 1
+        }
+      ],
+      "deathrattle": [
+        {
+          "type": "add-card",
+          "id": "coin",
+          "count": 1,
+          "toEnemy": true
+        }
+      ]
+    },
+    {
+      "id": "pandaren_importer",
+      "name": "Pandaren Importer",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "neutral",
+      "attack": 1,
+      "health": 3,
+      "rarity": "common",
+      "set": "STORMWIND",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Discover a spell that didn't start in your deck.",
+      "effects": [
+        {
+          "type": "discover",
+          "cardType": "spell"
+        }
+      ]
+    },
+    {
+      "id": "prestors_pyromancer",
+      "name": "Prestor's Pyromancer",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "mage",
+      "attack": 2,
+      "health": 3,
+      "rarity": "common",
+      "set": "STORMWIND",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Your next Fire spell has Spell Damage +2.",
+      "effects": [
+        {
+          "type": "set-next-spell-damage",
+          "value": 2
+        }
+      ]
+    },
+    {
+      "id": "sw_acorn",
+      "name": "Acorn",
+      "type": "sorcery",
+      "cost": 0,
+      "token": true,
+      "collectible": false,
+      "rarity": "common",
+      "set": "STORMWIND",
+      "drawTrigger": true,
+      "onDraw": [
+        {
+          "type": "summon",
+          "count": 1,
+          "summonId": "sw_squirrel"
+        }
+      ],
+      "description": "When drawn, summon a 2/1 Squirrel."
+    },
+    {
+      "id": "sw_squirrel",
+      "name": "Squirrel",
+      "type": "creature",
+      "cost": 1,
+      "cardClass": "druid",
+      "attack": 2,
+      "health": 1,
+      "rarity": "common",
+      "set": "STORMWIND",
+      "tribe": "Beast",
+      "token": true,
+      "collectible": false,
+      "description": "A 2/1 Squirrel."
     }
   ]
 }
