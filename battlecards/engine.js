@@ -542,6 +542,14 @@ export function drawCards(state, pi, count) {
 		if (state.hpResolver === pi && staticValue(p, 'hero-power-draw-zero') > 0) card.cost = 0; // Wilfred Fizzlebang
 		if (!p.stealerUsedThisTurn && p.board.some(x => x.id === 'stealer_of_souls' && !isDead(x))) { card.cost = 0; p.stealerUsedThisTurn = true; } // Stealer of Souls (Health-cost approximated as free)
 		if (p.nextDrawDiscount > 0) { card.cost = Math.max(0, (card.cost || 0) - p.nextDrawDiscount); p.nextDrawDiscount = 0; } // SI:7 Skulker
+		if (p.castWhenDrawn > 0 && isSpellType(card) && !card.counterSpell && !card.xSpell) { // Sheldras Moontree
+			p.castWhenDrawn -= 1;
+			const spec = targetSpec(state, pi, card, null); let tgt = null;
+			if (spec) { const legal = legalTargets(state, pi, spec); tgt = legal.length ? legal[Math.floor(state.rng() * legal.length)] : null; if (spec.required && !tgt) { p.hand.push(card); drawn++; continue; } }
+			emit(state, { type: 'conjure', player: pi, card, color: null });
+			runSpell(state, pi, card, tgt, card.choices ? 0 : null); sweepDeaths(state);
+			drawn++; continue;
+		}
 		p.hand.push(card);
 		if (card.copyOnDraw && state.cardsById[card.id] && p.hand.length < MAX_HAND) { const cp = instantiate(state.cardsById[card.id], pi); cp.zone = 'hand'; p.hand.push(cp); emit(state, { type: 'conjure', player: pi, card: cp, color: null }); } // Encumbered Pack Mule
 		drawn++;
@@ -5416,6 +5424,46 @@ function execEffects(state, pi, effects, target, source) {
 			const before = new Set(p.hand.map(c => c.uid));
 			drawCards(state, pi, 1);
 			for (const c of p.hand) if (!before.has(c.uid)) { c.edwinReward = e.value || 2; c.edwinUid = source ? source.uid : null; }
+		} else if (e.type === 'transform-deck-tribe') {
+			// Lady Prestor: transform minions in your deck into random `tribe` (keep Cost)
+			const p = state.players[pi];
+			const pool = Object.values(state.cardsById).filter(d => d.type === 'creature' && (d.tribe || '').includes(e.tribe) && !d.token && d.collectible !== false && !d.companion && !d.commander && !(d.colors && d.colors.length));
+			if (pool.length) p.deck = p.deck.map(id => { const d = state.cardsById[id]; if (!d || d.type !== 'creature') return id; const cands = pool.filter(x => (x.cost || 0) === (d.cost || 0)); return cands.length ? cands[Math.floor(state.rng() * cands.length)].id : pool[Math.floor(state.rng() * pool.length)].id; });
+		} else if (e.type === 'cast-all-fel') {
+			// Jace Darkweaver: cast all Fel spells you've played this game
+			for (const id of [...(state.players[pi].felSpellsGame || [])]) {
+				const def = state.cardsById[id]; if (!def) continue;
+				const spell = instantiate(def, pi);
+				const spec = targetSpec(state, pi, spell, null);
+				let tgt = null; if (spec) { const legal = legalTargets(state, pi, spec); const enemyT = legal.find(t => t.player !== pi); tgt = enemyT || (legal.length ? legal[Math.floor(state.rng() * legal.length)] : null); }
+				emit(state, { type: 'conjure', player: pi, card: spell, color: null });
+				runSpell(state, pi, spell, tgt, null); sweepDeaths(state);
+			}
+		} else if (e.type === 'repeat-big-spell') {
+			// Grey Sage Parrot: repeat the last spell you cast that costs (6) or more
+			const lb = state.players[pi].lastBigSpell;
+			const def = lb && state.cardsById[lb.id];
+			if (def) { const spell = instantiate(def, pi); const spec = targetSpec(state, pi, spell, null); let tgt = lb.target; if (spec && (!tgt || !legalTargets(state, pi, spec).some(t => t.uid === tgt.uid))) { const legal = legalTargets(state, pi, spec); tgt = legal.length ? legal[Math.floor(state.rng() * legal.length)] : null; } emit(state, { type: 'conjure', player: pi, card: spell, color: null }); runSpell(state, pi, spell, tgt, null); sweepDeaths(state); }
+		} else if (e.type === 'cast-highest-hand-spell') {
+			// Clumsy Courier: cast the highest-Cost spell from your hand (random target)
+			const p = state.players[pi];
+			let best = null; for (const c of p.hand) if (isSpellType(c) && (!best || (c.cost || 0) > (best.cost || 0))) best = c;
+			if (best) { p.hand = p.hand.filter(c => c !== best); const spec = targetSpec(state, pi, best, null); let tgt = null; if (spec) { const legal = legalTargets(state, pi, spec); tgt = legal.length ? legal[Math.floor(state.rng() * legal.length)] : null; } emit(state, { type: 'conjure', player: pi, card: best, color: null }); runSpell(state, pi, best, tgt, null); sweepDeaths(state); }
+		} else if (e.type === 'lothar') {
+			// Lothar: attack a random enemy minion; if it dies, gain +3/+3
+			if (source && !isDead(source)) {
+				const pool = enemies.flatMap(o => state.players[o].board.filter(c => !isDead(c) && c.type !== 'location' && !c.stealthed && c.dormantLeft <= 0).map(c => ({ o, c })));
+				if (pool.length) { const { o, c } = pool[Math.floor(state.rng() * pool.length)]; resolveCombat(state, pi, source.uid, { type: 'creature', uid: c.uid, player: o }); if (isDead(c) && !isDead(source)) buffCreature(source, e.attack || 3, e.health || 3); }
+			}
+		} else if (e.type === 'varian') {
+			// Varian: draw a Rush minion to gain Rush; repeat for Taunt and Divine Shield
+			const p = state.players[pi];
+			for (const kw of ['rush', 'taunt', 'divine_shield']) {
+				const before = new Set(p.hand.map(c => c.uid));
+				execEffects(state, pi, [{ type: 'tutor', cardType: 'creature', requireKeyword: kw, count: 1 }], null, source);
+				const drawn = p.hand.find(c => !before.has(c.uid));
+				if (drawn && source && !isDead(source) && !source.keywords.includes(kw)) { source.keywords.push(kw); if (kw === 'divine_shield') source.shield = true; }
+			}
 		} else if (e.type === 'swap-attack-extremes') {
 			// Wealth Redistributor: swap the Attack of the highest- and lowest-Attack minions
 			const all = state.players.flatMap(pl => pl.board.filter(c => !isDead(c) && c.type !== 'location'));
@@ -5462,6 +5510,9 @@ function execEffects(state, pi, effects, target, source) {
 		} else if (e.type === 'set-next-draw-discount') {
 			// SI:7 Skulker: the next card you draw costs less
 			state.players[pi].nextDrawDiscount = (state.players[pi].nextDrawDiscount || 0) + (e.value || 1);
+		} else if (e.type === 'set-cast-when-drawn') {
+			// Sheldras Moontree: the next N spells you draw are Cast When Drawn
+			state.players[pi].castWhenDrawn = (state.players[pi].castWhenDrawn || 0) + (e.value || 3);
 		} else if (e.type === 'damage-flanks') {
 			// Crow's Nest Lookout: deal damage to the left- and right-most enemy minions
 			for (const o of enemies) { const board = state.players[o].board.filter(c => !isDead(c) && c.type !== 'location'); const targets = [...new Set([board[0], board[board.length - 1]])].filter(Boolean); for (const t of targets) damageCreature(state, t, e.value || 2, source); }
@@ -7289,6 +7340,8 @@ export function effectiveCost(state, pi, card) {
 			n = state.diedThisTurn || 0;
 		} else if (card.selfCost.per === 'spells-this-game') {
 			n = p.spellsPlayedTotal || 0;
+		} else if (card.selfCost.per === 'si7-played') {
+			n = p.si7PlayedGame || 0; // SI:7 Assassin
 		} else if (card.selfCost.per === 'board-power') {
 			n = p.board.reduce((s, x) => isDead(x) ? s : s + (x.attack || 0), 0); // Ghalta
 		} else if (card.selfCost.per === 'hero-powers-game') {
@@ -7601,7 +7654,8 @@ export function playCard(state, pi, cardUid, target, choice, position, useAlt, k
 	} else {
 		questTick(state, 'spell', pi);
 		p.spellsPlayedThisTurn++;
-		{ const sch = schoolOf(card); if (sch) { (p.schoolsCastThisTurn = p.schoolsCastThisTurn || {})[sch] = true; (p.schoolsCastGame = p.schoolsCastGame || {})[sch] = true; } } // Metamorfin / Multicaster
+		{ const sch = schoolOf(card); if (sch) { (p.schoolsCastThisTurn = p.schoolsCastThisTurn || {})[sch] = true; (p.schoolsCastGame = p.schoolsCastGame || {})[sch] = true; if (sch === 'Fel') (p.felSpellsGame = p.felSpellsGame || []).push(card.id); } } // Metamorfin / Multicaster / Jace Darkweaver
+		if ((card.cost || 0) >= 6) p.lastBigSpell = { id: card.id, target }; // Grey Sage Parrot
 		p.spellsPlayedTotal = (p.spellsPlayedTotal || 0) + 1; // Arcane Giant
 		if ((card.cost || 0) >= 5) p.bigSpellsGame = (p.bigSpellsGame || 0) + 1; // Dragoncaller Alanna
 		(p.spellsPlayedThisTurnIds = p.spellsPlayedThisTurnIds || []).push(card.id); // Krag'wa, the Frog

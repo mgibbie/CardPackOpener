@@ -89971,6 +89971,245 @@
         "taunt"
       ],
       "description": "Taunt."
+    },
+    {
+      "id": "grey_sage_parrot",
+      "name": "Grey Sage Parrot",
+      "type": "creature",
+      "cost": 6,
+      "cardClass": "mage",
+      "attack": 4,
+      "health": 5,
+      "rarity": "common",
+      "set": "STORMWIND",
+      "tribe": "Beast",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Repeat the last spell you\u2019ve cast that costs (6) or more.",
+      "effects": [
+        {
+          "type": "repeat-big-spell"
+        }
+      ]
+    },
+    {
+      "id": "highlord_fordragon",
+      "name": "Highlord Fordragon",
+      "type": "creature",
+      "cost": 6,
+      "cardClass": "paladin",
+      "attack": 5,
+      "health": 5,
+      "rarity": "legendary",
+      "set": "STORMWIND",
+      "keywords": [
+        "divine_shield"
+      ],
+      "description": "Divine Shield. After a friendly minion loses Divine Shield, give a minion in your hand +5/+5.",
+      "ongoing": {
+        "on": "friendly-divine-shield-lost",
+        "effects": [
+          {
+            "type": "buff-random-hand",
+            "attack": 5,
+            "health": 5
+          }
+        ]
+      }
+    },
+    {
+      "id": "lady_prestor",
+      "name": "Lady Prestor",
+      "type": "creature",
+      "cost": 6,
+      "cardClass": "neutral",
+      "attack": 6,
+      "health": 7,
+      "rarity": "legendary",
+      "set": "STORMWIND",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Transform minions in your deck into random Dragons. (They keep their original stats and Cost.)",
+      "effects": [
+        {
+          "type": "transform-deck-tribe",
+          "tribe": "Dragon"
+        }
+      ]
+    },
+    {
+      "id": "clumsy_courier",
+      "name": "Clumsy Courier",
+      "type": "creature",
+      "cost": 7,
+      "cardClass": "mage",
+      "attack": 4,
+      "health": 5,
+      "rarity": "epic",
+      "set": "STORMWIND",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Cast the highest Cost spell from your hand.",
+      "effects": [
+        {
+          "type": "cast-highest-hand-spell"
+        }
+      ]
+    },
+    {
+      "id": "lothar",
+      "name": "Lothar",
+      "type": "creature",
+      "cost": 7,
+      "cardClass": "warrior",
+      "attack": 7,
+      "health": 7,
+      "rarity": "legendary",
+      "set": "STORMWIND",
+      "description": "At the end of your turn, attack a random enemy minion. If it dies, gain +3/+3.",
+      "ongoing": {
+        "on": "turn-end",
+        "effects": [
+          {
+            "type": "lothar",
+            "attack": 3,
+            "health": 3
+          }
+        ]
+      }
+    },
+    {
+      "id": "si7_assassin",
+      "name": "SI:7 Assassin",
+      "type": "creature",
+      "cost": 7,
+      "cardClass": "rogue",
+      "attack": 4,
+      "health": 4,
+      "rarity": "rare",
+      "set": "STORMWIND",
+      "selfCost": {
+        "per": "si7-played",
+        "amount": -1
+      },
+      "description": "Costs (1) less for each SI:7 card you've played this game. Combo: Destroy an enemy minion.",
+      "combo": [
+        {
+          "type": "destroy",
+          "target": "enemy-creature"
+        }
+      ]
+    },
+    {
+      "id": "goliath_sneeds_masterpiece",
+      "name": "Goliath, Sneed's Masterpiece",
+      "type": "creature",
+      "cost": 8,
+      "cardClass": "neutral",
+      "attack": 8,
+      "health": 8,
+      "rarity": "legendary",
+      "set": "STORMWIND",
+      "tribe": "Mech",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Fire five rockets at enemy minions that deal 2 damage each. (You pick the targets!)",
+      "effects": [
+        {
+          "type": "random-damage",
+          "count": 5,
+          "value": 2,
+          "pool": "enemy-creatures"
+        }
+      ]
+    },
+    {
+      "id": "grand_magus_antonidas",
+      "name": "Grand Magus Antonidas",
+      "type": "creature",
+      "cost": 8,
+      "cardClass": "mage",
+      "attack": 6,
+      "health": 6,
+      "rarity": "legendary",
+      "set": "STORMWIND",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: If you've cast a Fire spell on each of your last three turns, cast 3 Fireballs at random enemies.",
+      "effects": [
+        {
+          "type": "random-damage",
+          "count": 3,
+          "value": 6,
+          "pool": "enemies"
+        }
+      ]
+    },
+    {
+      "id": "jace_darkweaver",
+      "name": "Jace Darkweaver",
+      "type": "creature",
+      "cost": 8,
+      "cardClass": "demonhunter",
+      "attack": 7,
+      "health": 5,
+      "rarity": "legendary",
+      "set": "STORMWIND",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Cast all Fel spells you\u2019ve played this game (targets enemies if possible).",
+      "effects": [
+        {
+          "type": "cast-all-fel"
+        }
+      ]
+    },
+    {
+      "id": "sheldras_moontree",
+      "name": "Sheldras Moontree",
+      "type": "creature",
+      "cost": 8,
+      "cardClass": "druid",
+      "attack": 5,
+      "health": 5,
+      "rarity": "legendary",
+      "set": "STORMWIND",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: The next 3 spells you draw are Cast When Drawn.",
+      "effects": [
+        {
+          "type": "set-cast-when-drawn",
+          "value": 3
+        }
+      ]
+    },
+    {
+      "id": "varian_king_of_stormwind",
+      "name": "Varian, King of Stormwind",
+      "type": "creature",
+      "cost": 8,
+      "cardClass": "neutral",
+      "attack": 7,
+      "health": 7,
+      "rarity": "legendary",
+      "set": "STORMWIND",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Draw a Rush minion to gain Rush. Repeat for Taunt and Divine Shield.",
+      "effects": [
+        {
+          "type": "varian"
+        }
+      ]
     }
   ]
 }
