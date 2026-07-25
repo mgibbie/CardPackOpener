@@ -90210,6 +90210,423 @@
           "type": "varian"
         }
       ]
+    },
+    {
+      "id": "grave_defiler",
+      "name": "Grave Defiler",
+      "type": "creature",
+      "cost": 1,
+      "cardClass": "warlock",
+      "attack": 2,
+      "health": 1,
+      "rarity": "common",
+      "set": "ALTERAC_VALLEY",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Choose a Fel spell in your hand. Get a copy of it.",
+      "effects": [
+        {
+          "type": "copy-hand-school-spell",
+          "school": "Fel"
+        }
+      ]
+    },
+    {
+      "id": "irondeep_trogg",
+      "name": "Irondeep Trogg",
+      "type": "creature",
+      "cost": 1,
+      "cardClass": "neutral",
+      "attack": 1,
+      "health": 2,
+      "rarity": "rare",
+      "set": "ALTERAC_VALLEY",
+      "description": "After your opponent casts a spell, summon another Irondeep Trogg.",
+      "ongoing": {
+        "on": "enemy-spell-played",
+        "effects": [
+          {
+            "type": "summon",
+            "count": 1,
+            "summonId": "irondeep_trogg"
+          }
+        ]
+      }
+    },
+    {
+      "id": "ivus_the_forest_lord",
+      "name": "Ivus, the Forest Lord",
+      "type": "creature",
+      "cost": 1,
+      "cardClass": "neutral",
+      "attack": 1,
+      "health": 1,
+      "rarity": "legendary",
+      "set": "ALTERAC_VALLEY",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Spend the rest of your Mana and gain +2/+2, Rush, Divine Shield, or Taunt at random for each.",
+      "effects": [
+        {
+          "type": "ivus"
+        }
+      ]
+    },
+    {
+      "id": "shivering_sorceress",
+      "name": "Shivering Sorceress",
+      "type": "creature",
+      "cost": 1,
+      "cardClass": "mage",
+      "attack": 2,
+      "health": 2,
+      "rarity": "common",
+      "set": "ALTERAC_VALLEY",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Reduce the Cost of the highest Cost spell in your hand by (1).",
+      "effects": [
+        {
+          "type": "reduce-highest-hand-spell",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "amplified_snowflurry",
+      "name": "Amplified Snowflurry",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "mage",
+      "attack": 2,
+      "health": 3,
+      "rarity": "common",
+      "set": "ALTERAC_VALLEY",
+      "tribe": "Elemental",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Your next Hero Power costs (0) and Freezes the target.",
+      "effects": [
+        {
+          "type": "hero-power-discount",
+          "value": 99
+        }
+      ]
+    },
+    {
+      "id": "clawfury_adept",
+      "name": "Clawfury Adept",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "druid",
+      "attack": 2,
+      "health": 3,
+      "rarity": "common",
+      "set": "ALTERAC_VALLEY",
+      "tribe": "Beast",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Give all other friendly characters +1 Attack this turn.",
+      "effects": [
+        {
+          "type": "buff",
+          "target": "friendly-creatures",
+          "excludeSelf": true,
+          "attack": 1
+        }
+      ]
+    },
+    {
+      "id": "forsaken_lieutenant",
+      "name": "Forsaken Lieutenant",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "rogue",
+      "attack": 2,
+      "health": 2,
+      "rarity": "epic",
+      "set": "ALTERAC_VALLEY",
+      "tribe": "Undead",
+      "keywords": [
+        "stealth"
+      ],
+      "description": "Stealth. After you play a Deathrattle minion, become a 2/2 copy of it with Rush.",
+      "ongoing": {
+        "on": "creature-played",
+        "if": {
+          "keyword": "deathrattle"
+        },
+        "effects": [
+          {
+            "type": "become-2-2-copy-rush"
+          }
+        ]
+      }
+    },
+    {
+      "id": "gankster",
+      "name": "Gankster",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "neutral",
+      "attack": 4,
+      "health": 2,
+      "rarity": "common",
+      "set": "ALTERAC_VALLEY",
+      "keywords": [
+        "stealth"
+      ],
+      "description": "Stealth. After your opponent plays a minion, attack it.",
+      "ongoing": {
+        "on": "enemy-creature-played",
+        "effects": [
+          {
+            "type": "attack-played-minion"
+          }
+        ]
+      }
+    },
+    {
+      "id": "luminous_geode",
+      "name": "Luminous Geode",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "priest",
+      "attack": 1,
+      "health": 4,
+      "rarity": "common",
+      "set": "ALTERAC_VALLEY",
+      "tribe": "Elemental",
+      "description": "After a friendly minion is healed, give it +2 Attack.",
+      "ongoing": {
+        "on": "healed",
+        "if": {
+          "creature": true
+        },
+        "effects": [
+          {
+            "type": "buff-healed-creature",
+            "attack": 2
+          }
+        ]
+      }
+    },
+    {
+      "id": "ram_commander",
+      "name": "Ram Commander",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "neutral",
+      "attack": 2,
+      "health": 2,
+      "rarity": "common",
+      "set": "ALTERAC_VALLEY",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Add two 1/1 Rams with Rush to your hand.",
+      "effects": [
+        {
+          "type": "add-card",
+          "id": "av_ram",
+          "count": 2
+        }
+      ]
+    },
+    {
+      "id": "sleetbreaker",
+      "name": "Sleetbreaker",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "shaman",
+      "attack": 3,
+      "health": 2,
+      "rarity": "rare",
+      "set": "ALTERAC_VALLEY",
+      "tribe": "Elemental",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Add a Windchill to your hand.",
+      "effects": [
+        {
+          "type": "add-card",
+          "id": "av_windchill",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "id": "sneaky_scout",
+      "name": "Sneaky Scout",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "neutral",
+      "attack": 3,
+      "health": 2,
+      "rarity": "common",
+      "set": "ALTERAC_VALLEY",
+      "keywords": [
+        "stealth"
+      ],
+      "description": "Stealth. Honorable Kill: Your next Hero Power costs (0).",
+      "honorableKill": [
+        {
+          "type": "hero-power-discount",
+          "value": 99
+        }
+      ]
+    },
+    {
+      "id": "bunker_sergeant",
+      "name": "Bunker Sergeant",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "neutral",
+      "attack": 2,
+      "health": 4,
+      "rarity": "common",
+      "set": "ALTERAC_VALLEY",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: If your opponent has 2 or more minions, deal 1 damage to all enemy minions.",
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "enemyCreatureCount": 2
+          },
+          "then": [
+            {
+              "type": "damage",
+              "value": 1,
+              "target": "enemy-creatures"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "cheaty_snobold",
+      "name": "Cheaty Snobold",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "shaman",
+      "attack": 3,
+      "health": 4,
+      "rarity": "epic",
+      "set": "ALTERAC_VALLEY",
+      "description": "After an enemy is Frozen, deal 3 damage to it.",
+      "ongoing": {
+        "on": "creature-frozen",
+        "if": {
+          "enemy": true
+        },
+        "effects": [
+          {
+            "type": "damage-frozen",
+            "value": 3
+          }
+        ]
+      }
+    },
+    {
+      "id": "double_agent",
+      "name": "Double Agent",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "rogue",
+      "attack": 3,
+      "health": 3,
+      "rarity": "common",
+      "set": "ALTERAC_VALLEY",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: If you're holding a card from another class, summon a copy of this.",
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "holdingOtherClass": true
+          },
+          "then": [
+            {
+              "type": "summon-copy-self"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "glory_chaser",
+      "name": "Glory Chaser",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "warrior",
+      "attack": 4,
+      "health": 3,
+      "rarity": "common",
+      "set": "ALTERAC_VALLEY",
+      "description": "After you play a Taunt minion, draw a card.",
+      "ongoing": {
+        "on": "creature-played",
+        "if": {
+          "keyword": "taunt"
+        },
+        "effects": [
+          {
+            "type": "draw",
+            "value": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "av_ram",
+      "name": "Ram",
+      "type": "creature",
+      "cost": 1,
+      "cardClass": "neutral",
+      "attack": 1,
+      "health": 1,
+      "rarity": "common",
+      "set": "ALTERAC_VALLEY",
+      "token": true,
+      "collectible": false,
+      "keywords": [
+        "rush"
+      ],
+      "description": "Rush."
+    },
+    {
+      "id": "av_windchill",
+      "name": "Windchill",
+      "type": "sorcery",
+      "cost": 1,
+      "token": true,
+      "collectible": false,
+      "cardClass": "shaman",
+      "tribe": "Frost",
+      "rarity": "common",
+      "set": "ALTERAC_VALLEY",
+      "description": "Freeze an enemy. Draw a card.",
+      "effects": [
+        {
+          "type": "freeze",
+          "target": "creature"
+        },
+        {
+          "type": "draw",
+          "value": 1
+        }
+      ]
     }
   ]
 }

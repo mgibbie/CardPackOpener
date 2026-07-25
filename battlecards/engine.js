@@ -2604,6 +2604,35 @@ function runSecretEffects(state, pi, effects, ctx) {
 				if (base) { const def = JSON.parse(JSON.stringify(base)); def.keywords = (def.keywords || []).filter(k => k !== e.keyword); const c = summon(state, pi, def); }
 				break;
 			}
+			case 'attack-played-minion': {
+				// Gankster: attack the minion the opponent just played
+				const m = ctx.minion;
+				if (m && !isDead(m) && ctx.self && !isDead(ctx.self)) resolveCombat(state, ctx.self.controller, ctx.self.uid, { type: 'creature', uid: m.uid, player: m.controller });
+				break;
+			}
+			case 'damage-frozen': {
+				// Cheaty Snobold: deal damage to the minion that was just Frozen
+				const f = ctx.frozen;
+				if (f && !isDead(f)) { damageCreature(state, f, e.value || 3, ctx.self || null); sweepDeaths(state); }
+				break;
+			}
+			case 'buff-healed-creature': {
+				// Luminous Geode: give the just-healed minion +Attack
+				const hc = ctx.healedCreature;
+				if (hc && !isDead(hc)) { hc.attack += e.attack || 0; hc.maxHealth += e.health || 0; emit(state, { type: 'buff', uid: hc.uid, attack: hc.attack, hp: hp(hc) }); }
+				break;
+			}
+			case 'become-2-2-copy-rush': {
+				// Forsaken Lieutenant: become a 2/2 copy of the played Deathrattle minion, with Rush
+				const m2 = ctx.minion; const self = ctx.self; const base2 = m2 && state.cardsById[m2.id];
+				if (base2 && self && self.zone === 'board' && !isDead(self)) {
+					const def = JSON.parse(JSON.stringify(base2)); def.attack = 2; def.health = 2; def.token = true; def.id = 'token_' + base2.id; def.keywords = [...new Set([...(def.keywords || []), 'rush'])];
+					const tok = instantiate(def, pi); tok.zone = 'board'; tok.sick = self.sick;
+					const board = state.players[pi].board; board[board.indexOf(self)] = tok; self.zone = 'gone';
+					emit(state, { type: 'transformed', uid: self.uid, player: pi, from: self.name, card: tok }); recomputeAuras(state);
+				}
+				break;
+			}
 			case 'gain-armor-by-amount': {
 				// Gold Road Grunt (Frenzy): gain Armor equal to the damage just taken
 				if (ctx.amount) gainArmor(state, pi, ctx.amount);
@@ -5424,6 +5453,26 @@ function execEffects(state, pi, effects, target, source) {
 			const before = new Set(p.hand.map(c => c.uid));
 			drawCards(state, pi, 1);
 			for (const c of p.hand) if (!before.has(c.uid)) { c.edwinReward = e.value || 2; c.edwinUid = source ? source.uid : null; }
+		} else if (e.type === 'copy-hand-school-spell') {
+			// Grave Defiler: get a copy of a Fel spell in your hand
+			const p = state.players[pi];
+			const pool = p.hand.filter(c => schoolOf(c) === e.school);
+			if (pool.length && p.hand.length < MAX_HAND) { const src = pool[Math.floor(state.rng() * pool.length)]; const nc = instantiate(state.cardsById[src.id] || src, pi); nc.zone = 'hand'; p.hand.push(nc); emit(state, { type: 'conjure', player: pi, card: nc, color: null }); }
+		} else if (e.type === 'reduce-highest-hand-spell') {
+			// Shivering Sorceress: reduce the Cost of the highest-Cost spell in your hand
+			let best = null; for (const c of state.players[pi].hand) if (isSpellType(c) && (!best || (c.cost || 0) > (best.cost || 0))) best = c;
+			if (best) best.cost = Math.max(0, (best.cost || 0) - (e.value || 1));
+		} else if (e.type === 'ivus') {
+			// Ivus, the Forest Lord: spend the rest of your Mana; per crystal, a random bonus
+			const p = state.players[pi];
+			let n = availableMana(p);
+			p.mana.cur = Math.max(0, p.mana.cur - n); p.mana.bonus = 0;
+			for (let i = 0; i < n && source && !isDead(source); i++) {
+				const roll = Math.floor(state.rng() * 4);
+				if (roll === 0) buffCreature(source, 2, 2);
+				else { const kw = ['rush', 'divine_shield', 'taunt'][roll - 1]; if (!source.keywords.includes(kw)) { source.keywords.push(kw); if (kw === 'divine_shield') source.shield = true; } }
+			}
+			emit(state, { type: 'buff', uid: source.uid, attack: source.attack, hp: hp(source) });
 		} else if (e.type === 'transform-deck-tribe') {
 			// Lady Prestor: transform minions in your deck into random `tribe` (keep Cost)
 			const p = state.players[pi];
