@@ -89544,6 +89544,433 @@
           "cardId": "persistent_peddler"
         }
       ]
+    },
+    {
+      "id": "remote_controlled_golem",
+      "name": "Remote-Controlled Golem",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "warrior",
+      "attack": 3,
+      "health": 6,
+      "rarity": "epic",
+      "set": "STORMWIND",
+      "tribe": "Mech",
+      "description": "After this takes damage, shuffle two Golem Parts into your deck. When drawn, summon a 2/1 Mech.",
+      "ongoing": {
+        "on": "self-damaged",
+        "effects": [
+          {
+            "type": "shuffle-into-deck",
+            "id": "sw_golem_part",
+            "count": 2
+          }
+        ]
+      }
+    },
+    {
+      "id": "si7_informant",
+      "name": "SI:7 Informant",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "rogue",
+      "attack": 3,
+      "health": 3,
+      "rarity": "common",
+      "set": "STORMWIND",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Gain +1/+1 for each other SI:7 card you've played this game.",
+      "effects": [
+        {
+          "type": "buff-self",
+          "attack": 1,
+          "health": 1,
+          "per": "si7-others"
+        }
+      ]
+    },
+    {
+      "id": "spice_bread_baker",
+      "name": "Spice Bread Baker",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "neutral",
+      "attack": 3,
+      "health": 2,
+      "rarity": "common",
+      "set": "STORMWIND",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Restore Health to your hero equal to your hand size.",
+      "effects": [
+        {
+          "type": "heal",
+          "target": "self",
+          "valueFromHandSize": true
+        }
+      ]
+    },
+    {
+      "id": "spirit_alpha",
+      "name": "Spirit Alpha",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "shaman",
+      "attack": 2,
+      "health": 5,
+      "rarity": "common",
+      "set": "STORMWIND",
+      "tribe": "Undead",
+      "description": "After you play a card with Overload, summon a 2/3 Spirit Wolf with Taunt.",
+      "ongoing": {
+        "on": "overload-card-played",
+        "effects": [
+          {
+            "type": "summon",
+            "count": 1,
+            "summonId": "sw_spirit_wolf"
+          }
+        ]
+      }
+    },
+    {
+      "id": "suckerhook",
+      "name": "Suckerhook",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "shaman",
+      "attack": 3,
+      "health": 6,
+      "rarity": "rare",
+      "set": "STORMWIND",
+      "tribe": "Pirate",
+      "description": "At the end of your turn, transform your weapon into one that costs (1) more.",
+      "ongoing": {
+        "on": "turn-end",
+        "effects": [
+          {
+            "type": "buff-weapon",
+            "attack": 1,
+            "durability": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "sunwing_squawker",
+      "name": "Sunwing Squawker",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "paladin",
+      "attack": 3,
+      "health": 4,
+      "rarity": "common",
+      "set": "STORMWIND",
+      "tribe": "Beast",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Repeat the last spell you cast on a friendly minion on this.",
+      "effects": [
+        {
+          "type": "cast-last-onfriendly-on-self"
+        }
+      ]
+    },
+    {
+      "id": "darkbishop_benedictus",
+      "name": "Darkbishop Benedictus",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "priest",
+      "attack": 5,
+      "health": 6,
+      "rarity": "legendary",
+      "set": "STORMWIND",
+      "description": "Start of Game: If the spells in your deck are all Shadow, enter Shadowform."
+    },
+    {
+      "id": "defias_blastfisher",
+      "name": "Defias Blastfisher",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "hunter",
+      "attack": 3,
+      "health": 2,
+      "rarity": "common",
+      "set": "STORMWIND",
+      "tribe": "Pirate",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Deal 2 damage to a random enemy. Repeat for each of your Beasts.",
+      "effects": [
+        {
+          "type": "random-damage",
+          "count": 1,
+          "value": 2,
+          "pool": "enemies",
+          "perFriendlyTribe": "Beast"
+        }
+      ]
+    },
+    {
+      "id": "lions_guard",
+      "name": "Lion's Guard",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "neutral",
+      "attack": 4,
+      "health": 6,
+      "rarity": "common",
+      "set": "STORMWIND",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: If you have 15 or less Health, gain +2/+4 and Taunt.",
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "maxHealthSelf": 15
+          },
+          "then": [
+            {
+              "type": "buff-self",
+              "attack": 2,
+              "health": 4
+            },
+            {
+              "type": "grant",
+              "keyword": "taunt",
+              "target": "self"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "sanctum_chandler",
+      "name": "Sanctum Chandler",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "mage",
+      "attack": 4,
+      "health": 5,
+      "rarity": "rare",
+      "set": "STORMWIND",
+      "tribe": "Elemental",
+      "description": "After you cast a Fire spell, draw a spell.",
+      "ongoing": {
+        "on": "spell-played",
+        "if": {
+          "school": "Fire"
+        },
+        "effects": [
+          {
+            "type": "tutor",
+            "cardType": "spell",
+            "count": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "shady_bartender",
+      "name": "Shady Bartender",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "warlock",
+      "attack": 4,
+      "health": 4,
+      "rarity": "common",
+      "set": "STORMWIND",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Tradeable. Battlecry: Give your Demons +2/+2.",
+      "effects": [
+        {
+          "type": "buff",
+          "target": "friendly-creatures",
+          "tribe": "Demon",
+          "attack": 2,
+          "health": 2
+        }
+      ]
+    },
+    {
+      "id": "the_rat_king",
+      "name": "The Rat King",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "hunter",
+      "attack": 5,
+      "health": 5,
+      "rarity": "legendary",
+      "set": "STORMWIND",
+      "tribe": "Beast",
+      "keywords": [
+        "rush",
+        "deathrattle"
+      ],
+      "description": "Rush. Deathrattle: Go Dormant. Revive after 5 friendly minions die.",
+      "deathrattle": [
+        {
+          "type": "summon-copy-self"
+        }
+      ]
+    },
+    {
+      "id": "wealth_redistributor",
+      "name": "Wealth Redistributor",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "paladin",
+      "attack": 2,
+      "health": 8,
+      "rarity": "rare",
+      "set": "STORMWIND",
+      "tribe": "Pirate",
+      "keywords": [
+        "taunt",
+        "battlecry"
+      ],
+      "description": "Taunt. Battlecry: Swap the Attack of the highest and lowest Attack minion.",
+      "effects": [
+        {
+          "type": "swap-attack-extremes"
+        }
+      ]
+    },
+    {
+      "id": "cornelius_roame",
+      "name": "Cornelius Roame",
+      "type": "creature",
+      "cost": 6,
+      "cardClass": "neutral",
+      "attack": 4,
+      "health": 5,
+      "rarity": "legendary",
+      "set": "STORMWIND",
+      "description": "At the start and end of each player's turn, draw a card.",
+      "ongoings": [
+        {
+          "on": "turn-start",
+          "effects": [
+            {
+              "type": "draw",
+              "value": 1
+            }
+          ]
+        },
+        {
+          "on": "every-turn-end",
+          "effects": [
+            {
+              "type": "draw",
+              "value": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "cowardly_grunt",
+      "name": "Cowardly Grunt",
+      "type": "creature",
+      "cost": 6,
+      "cardClass": "warrior",
+      "attack": 6,
+      "health": 2,
+      "rarity": "rare",
+      "set": "STORMWIND",
+      "keywords": [
+        "deathrattle"
+      ],
+      "description": "Deathrattle: Summon a minion from your deck.",
+      "deathrattle": [
+        {
+          "type": "recruit",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "id": "entitled_customer",
+      "name": "Entitled Customer",
+      "type": "creature",
+      "cost": 6,
+      "cardClass": "warlock",
+      "attack": 3,
+      "health": 2,
+      "rarity": "epic",
+      "set": "STORMWIND",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Deal damage equal to your hand size to all other minions.",
+      "effects": [
+        {
+          "type": "damage-all-minions",
+          "valueFromHandSize": true,
+          "exceptSource": true
+        }
+      ]
+    },
+    {
+      "id": "sw_golem_part",
+      "name": "Golem Parts",
+      "type": "sorcery",
+      "cost": 0,
+      "token": true,
+      "collectible": false,
+      "rarity": "common",
+      "set": "STORMWIND",
+      "drawTrigger": true,
+      "onDraw": [
+        {
+          "type": "summon",
+          "count": 1,
+          "summonId": "sw_mech"
+        }
+      ],
+      "description": "When drawn, summon a 2/1 Mech."
+    },
+    {
+      "id": "sw_mech",
+      "name": "Mech",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "warrior",
+      "attack": 2,
+      "health": 1,
+      "rarity": "common",
+      "set": "STORMWIND",
+      "tribe": "Mech",
+      "token": true,
+      "collectible": false,
+      "description": "A 2/1 Mech."
+    },
+    {
+      "id": "sw_spirit_wolf",
+      "name": "Spirit Wolf",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "shaman",
+      "attack": 2,
+      "health": 3,
+      "rarity": "common",
+      "set": "STORMWIND",
+      "token": true,
+      "collectible": false,
+      "keywords": [
+        "taunt"
+      ],
+      "description": "Taunt."
     }
   ]
 }

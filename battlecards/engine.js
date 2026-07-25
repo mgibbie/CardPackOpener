@@ -2906,7 +2906,7 @@ function execEffects(state, pi, effects, target, source) {
 			}
 			if (lsBefore != null) healHero(state, pi, Math.max(0, totalHurt() - lsBefore));
 		} else if (e.type === 'heal') {
-			let v = e.value === 'X' ? (source?.xValue || 0) : boost(e.value);
+			let v = e.value === "X" ? (source?.xValue || 0) : e.valueFromHandSize ? state.players[pi].hand.length : boost(e.value); // Spice Bread Baker
 			if (state.hpDoubling) v *= 2; // Clockwork Automaton: double Hero Power healing
 			// Auchenai Soulpriest: your healing deals damage instead
 			const harm = staticValue(state.players[pi], 'heal-becomes-damage') > 0 || state.players[pi].healHarmThisTurn; // Auchenai Phantasm
@@ -3669,6 +3669,7 @@ function execEffects(state, pi, effects, target, source) {
 			if (source && source.zone === 'board' && !isDead(source)) {
 				let n = 1;
 				if (e.per === 'other-friendly') n = state.players[pi].board.filter(c => c !== source && !isDead(c)).length;
+				else if (e.per === 'si7-others') n = Math.max(0, (state.players[pi].si7PlayedGame || 0) - 1); // SI:7 Informant
 				else if (e.per === 'hand-cards') n = state.players[pi].hand.length;
 				else if (e.per === 'hand-spells') n = state.players[pi].hand.filter(c => isSpellType(c)).length; // Brainstormer
 				else if (e.per === 'pogos-played') n = state.players[pi].pogoCount || 0; // Pogo-Hopper
@@ -5220,7 +5221,8 @@ function execEffects(state, pi, effects, target, source) {
 			// Risky Skipper: deal `value` to every minion on both sides
 			// (exceptSource omits the caster — Shattered Rumbler: "all OTHER minions";
 			//  exceptTribe skips a tribe — Fire Breather: "except Demons")
-			for (const pl of state.players) for (const c of [...pl.board]) if (!isDead(c) && c.type !== 'location' && !(e.exceptSource && c === source) && !(e.exceptTribe && (c.tribe || '').includes(e.exceptTribe))) damageCreature(state, c, e.value || 1, source);
+			const dv = e.valueFromHandSize ? state.players[pi].hand.length : (e.value || 1); // Entitled Customer
+			for (const pl of state.players) for (const c of [...pl.board]) if (!isDead(c) && c.type !== 'location' && !(e.exceptSource && c === source) && !(e.exceptTribe && (c.tribe || '').includes(e.exceptTribe))) damageCreature(state, c, dv, source);
 			sweepDeaths(state);
 		} else if (e.type === 'damage-target-by-attack') {
 			// Aeon Reaver: deal damage to a minion equal to its own Attack
@@ -5414,6 +5416,23 @@ function execEffects(state, pi, effects, target, source) {
 			const before = new Set(p.hand.map(c => c.uid));
 			drawCards(state, pi, 1);
 			for (const c of p.hand) if (!before.has(c.uid)) { c.edwinReward = e.value || 2; c.edwinUid = source ? source.uid : null; }
+		} else if (e.type === 'swap-attack-extremes') {
+			// Wealth Redistributor: swap the Attack of the highest- and lowest-Attack minions
+			const all = state.players.flatMap(pl => pl.board.filter(c => !isDead(c) && c.type !== 'location'));
+			if (all.length >= 2) {
+				let hi = all[0], lo = all[0];
+				for (const c of all) { if (c.attack > hi.attack) hi = c; if (c.attack < lo.attack) lo = c; }
+				if (hi !== lo) { const t = hi.attack; hi.attack = lo.attack; lo.attack = t; emit(state, { type: 'buff', uid: hi.uid, attack: hi.attack, hp: hp(hi) }); emit(state, { type: 'buff', uid: lo.uid, attack: lo.attack, hp: hp(lo) }); }
+			}
+		} else if (e.type === 'cast-last-onfriendly-on-self') {
+			// Sunwing Squawker: recast the last spell you cast on a friendly minion, on this
+			const p = state.players[pi];
+			const ids = p.spellsOnFriendly || [];
+			const id = ids[ids.length - 1];
+			const def = id && state.cardsById[id];
+			if (def && def.effects && source && source.zone === 'board' && !isDead(source)) {
+				execEffects(state, pi, JSON.parse(JSON.stringify(def.effects)), { type: 'creature', uid: source.uid, player: pi }, source);
+			}
 		} else if (e.type === 'draw-spell-armor') {
 			// Deepwater Evoker: draw a spell, gain Armor equal to its Cost
 			const p = state.players[pi];
@@ -7403,6 +7422,8 @@ export function playCard(state, pi, cardUid, target, choice, position, useAlt, k
 	if (card.stiltReward) { p.heroTempAttack += card.stiltReward; emit(state, { type: 'heroAttack', player: pi, attack: heroAttackValue(p) }); card.stiltReward = 0; } // Stiltstepper
 	if (card.edwinReward) { const ed = p.board.find(x => x.uid === card.edwinUid && !isDead(x)); if (ed) { ed.attack += card.edwinReward; ed.maxHealth += card.edwinReward; emit(state, { type: 'buff', uid: ed.uid, attack: ed.attack, hp: hp(ed) }); } card.edwinReward = 0; } // Edwin, Defias Kingpin
 	if (typeof card.id === 'string' && card.id.endsWith('_corrupted')) (p.corruptedPlayedIds = p.corruptedPlayedIds || []).push(card.id); // Y'Shaarj tracks Corrupted cards played
+	if (/^SI:7/.test(card.name || '')) p.si7PlayedGame = (p.si7PlayedGame || 0) + 1; // SI:7 Informant
+	if (card.overload) fireOngoing(state, pi, 'overload-card-played', { played: card }); // Spirit Alpha
 	if (p.copycatFor != null && state.cardsById[card.id]) { const cc = state.players[p.copycatFor]; if (cc && cc.hand.length < MAX_HAND) { const nc = instantiate(state.cardsById[card.id], p.copycatFor); nc.zone = 'hand'; cc.hand.push(nc); emit(state, { type: 'conjure', player: p.copycatFor, card: nc, color: null }); } p.copycatFor = null; } // Copycat
 	// Ward: targeting an enemy warded creature costs extra — unaffordable = illegal
 	const ward = wardOf(state, pi, target);
