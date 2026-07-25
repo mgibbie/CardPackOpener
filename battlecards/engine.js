@@ -251,6 +251,7 @@ function instantiate(def, controller) {
 		foreignCostReduce: def.foreignCostReduce || 0, // Arcane Luminary: cards that didn't start in your deck cost less
 		schoolCostReduce: def.schoolCostReduce ? { ...def.schoolCostReduce } : null, // Lady Anacondra: {school, amount}
 		copyOnDraw: !!def.copyOnDraw, // Encumbered Pack Mule: drawing this adds a copy to hand
+		doubleBuffs: !!def.doubleBuffs, // Saidan the Scarlet: buffs to this are doubled
 		deathrattle: def.deathrattle || null,
 		tribe: def.tribe || null,
 		controller,
@@ -368,6 +369,7 @@ export function createGame(cardsById, rng = Math.random, playerDeckIds = null, p
 		nextComboDiscount: 0, // Foxy Fraud: your next Combo card this turn costs less
 		corruptedPlayedIds: [], // Y'Shaarj: Corrupted cards you've played this game
 		nextCardsDiscount: null, // Scabbs Cutterbutter: {count, amount} for your next cards this turn
+		nextChooseOneDiscount: 0, // Pride Seeker: your next Choose One card costs this much less
 		mana: { cur: 1, max: 1, bonus: 0 },
 		coins: 0,
 		diedThisTurn: 0,
@@ -638,6 +640,7 @@ const CHOSEN = {
 	'steal-until-bigger': { 'enemy-creature': 'enemy-creature', creature: 'creature' },
 	'swap-with-hand': { creature: 'creature', 'enemy-creature': 'enemy-creature', 'friendly-creature': 'friendly-creature' },
 	'shuffle-copies-of-target': { 'friendly-creature': 'friendly-creature', creature: 'creature' },
+	'sacrifice-summon-costplus': { 'friendly-creature': 'friendly-creature' },
 	'destroy-fragment-then-damage': { any: 'any', 'enemy-any': 'enemy-any', creature: 'creature', 'enemy-creature': 'enemy-creature' },
 	'transform-into-token': { 'friendly-creature': 'friendly-creature', creature: 'creature' },
 	'mark-doomed': { creature: 'creature', 'enemy-creature': 'enemy-creature' },
@@ -1571,6 +1574,7 @@ function ongoingCondOk(state, pi, cond, ctx) {
 	if (cond.nontoken && (!subj || (subj.id || '').startsWith('token_'))) return false;
 	if (cond.cardId && !(subj && subj.id === cond.cardId)) return false; // Food sacrifices
 	if (cond.self && ctx.damaged !== ctx.self) return false; // "whenever THIS takes damage"
+	if (cond.selfTarget && ctx.targetCreature !== ctx.self) return false; // Stormwind Avenger: a spell cast on THIS minion
 	if (cond.enemy && !(subj && subj.controller !== pi)) return false; // "an ENEMY creature ..."
 	if (cond.school && !(subj && schoolOf(subj) === cond.school)) return false; // "cast an Arcane spell"
 	if (cond.controlArtEnch && !(state.players[pi].artifacts.length || state.players[pi].enchantments.length)) return false; // "if you control an artifact or an enchantment"
@@ -2828,6 +2832,8 @@ function execEffects(state, pi, effects, target, source) {
 		}
 	};
 	const buffCreature = (c, atk, hpv) => {
+		atk = atk || 0; hpv = hpv || 0; // robustness: undefined stat -> 0
+		if (c.doubleBuffs) { atk *= 2; hpv *= 2; } // Saidan the Scarlet
 		c.attack += atk;
 		c.maxHealth += hpv;
 		// any permanent +1/+1 banks a "counter" so Proliferate can find it later
@@ -3227,9 +3233,12 @@ function execEffects(state, pi, effects, target, source) {
 			}
 		} else if (e.type === 'freeze') {
 			if (e.target === 'enemy-creatures') { for (const o of enemies) for (const c of state.players[o].board) freezeCreature(state, c); }
-			else if (e.target === 'random-enemy') { // Demented Frostcaller
-				const pool = enemies.flatMap(o => state.players[o].board.filter(c => !isDead(c) && !c.frozen && c.type !== 'location'));
-				if (pool.length) freezeCreature(state, pool[Math.floor(state.rng() * pool.length)]);
+			else if (e.target === 'random-enemy') { // Demented Frostcaller / Popsicooler (count)
+				for (let i = 0; i < (e.count || 1); i++) {
+					const pool = enemies.flatMap(o => state.players[o].board.filter(c => !isDead(c) && !c.frozen && c.type !== 'location'));
+					if (!pool.length) break;
+					freezeCreature(state, pool[Math.floor(state.rng() * pool.length)]);
+				}
 			}
 			else if (e.target === 'self') { if (source && !isDead(source)) freezeCreature(state, source); } // Frozen Crusher
 			else if (e.target === 'friendly-others') { for (const c of state.players[pi].board) if (c !== source && !isDead(c)) freezeCreature(state, c); } // Hyldnir Frostrider
@@ -5453,6 +5462,27 @@ function execEffects(state, pi, effects, target, source) {
 			const before = new Set(p.hand.map(c => c.uid));
 			drawCards(state, pi, 1);
 			for (const c of p.hand) if (!before.has(c.uid)) { c.edwinReward = e.value || 2; c.edwinUid = source ? source.uid : null; }
+		} else if (e.type === 'swap-hand-stats') {
+			// Reflecto Engineer: swap Attack and Health of all minions in both hands
+			for (const pl of state.players) for (const c of pl.hand) if (c.type === 'creature') { const a = c.attack || 0, h2 = c.maxHealth || 0; c.attack = h2; c.maxHealth = a; }
+		} else if (e.type === 'set-choose-one-discount') {
+			// Pride Seeker: your next Choose One card costs less
+			state.players[pi].nextChooseOneDiscount = (state.players[pi].nextChooseOneDiscount || 0) + (e.value || 2);
+		} else if (e.type === 'sacrifice-summon-costplus') {
+			// Sacrificial Summoner: destroy a friendly minion, summon a deck minion costing (1) more
+			const t = chosenCreature();
+			if (t && t.controller === pi) {
+				const cost = (t.cost || 0) + (e.value || 1);
+				t.damage = t.maxHealth; t.shield = false; emit(state, { type: 'destroy', uid: t.uid }); sweepDeaths(state);
+				execEffects(state, pi, [{ type: 'recruit', cost }], null, source);
+			}
+		} else if (e.type === 'draw-spell-cheap') {
+			// Stonehearth Vindicator: draw a spell costing (maxCost) or less; it costs (0) this turn
+			const p = state.players[pi];
+			const before = new Set(p.hand.map(c => c.uid));
+			execEffects(state, pi, [{ type: 'tutor', cardType: 'spell', maxCost: e.maxCost ?? 3, count: 1 }], target, source);
+			const drawn = p.hand.find(c => !before.has(c.uid));
+			if (drawn) drawn.cost = 0;
 		} else if (e.type === 'copy-hand-school-spell') {
 			// Grave Defiler: get a copy of a Fel spell in your hand
 			const p = state.players[pi];
@@ -7244,7 +7274,7 @@ function resolveAddCostSpell(state, pi, card, target, choice) {
 	runSpell(state, pi, card, target, choice);
 	if (card.honorableKill && state.exactKills > 0) execEffects(state, pi, card.honorableKill, target, card);
 	fireOngoing(state, pi, 'spell-played', { played: card });
-	if (target && target.type === 'creature') fireOngoing(state, pi, 'spell-cast-on-creature', { played: card }); // Sethekk Veilweaver
+	if (target && target.type === 'creature') fireOngoing(state, pi, 'spell-cast-on-creature', { played: card, targetCreature: findCreature(state, target.uid) }); // Sethekk Veilweaver / Stormwind Avenger
 	firePlaneTrigger(state, 'spell-cast', pi);
 	for (let s2 = 0; s2 < state.players.length; s2++) {
 		fireOngoing(state, s2, 'any-spell-played', { spell: card, caster: pi });
@@ -7440,6 +7470,7 @@ export function effectiveCost(state, pi, card) {
 	if (p.spellTaxNext > 0 && isSpellType(card)) c += p.spellTaxNext; // Loatheb
 	if (p.nextComboDiscount > 0 && card.combo) c = Math.max(0, c - p.nextComboDiscount); // Foxy Fraud
 	if (p.nextCardsDiscount && p.nextCardsDiscount.count > 0) c = Math.max(0, c - p.nextCardsDiscount.amount); // Scabbs Cutterbutter
+	if (p.nextChooseOneDiscount > 0 && card.choices) c = Math.max(0, c - p.nextChooseOneDiscount); // Pride Seeker
 	if ((card.keywords || []).includes('outcast')) { const r = p.board.filter(x => x.outcastCostReduce && !isDead(x)).reduce((s, x) => s + x.outcastCostReduce, 0); if (r) c = Math.max(0, c - r); } // Line Hopper
 	if (!card.fromDeck) { const r = p.board.filter(x => x.foreignCostReduce && !isDead(x)).reduce((s, x) => s + x.foreignCostReduce, 0); if (r) c = Math.max(1, c - r); } // Arcane Luminary: not below 1
 	{ const sch = schoolOf(card); if (sch) { const r = p.board.filter(x => x.schoolCostReduce && x.schoolCostReduce.school === sch && !isDead(x)).reduce((s, x) => s + x.schoolCostReduce.amount, 0); if (r) c = Math.max(0, c - r); } } // Lady Anacondra: Nature spells
@@ -7520,6 +7551,7 @@ export function playCard(state, pi, cardUid, target, choice, position, useAlt, k
 	// discounts are consumed) against each Corrupt card still in hand.
 	const playedCost = effectiveCost(state, pi, card);
 	if (card.combo && p.nextComboDiscount > 0) p.nextComboDiscount = 0; // Foxy Fraud discount is spent by the next Combo card
+	if (card.choices && p.nextChooseOneDiscount > 0) p.nextChooseOneDiscount = 0; // Pride Seeker discount is spent by the next Choose One card
 	if (p.nextCardsDiscount && p.nextCardsDiscount.count > 0) { p.nextCardsDiscount.count -= 1; if (p.nextCardsDiscount.count <= 0) p.nextCardsDiscount = null; } // Scabbs: consumed per card
 	if (card.stiltReward) { p.heroTempAttack += card.stiltReward; emit(state, { type: 'heroAttack', player: pi, attack: heroAttackValue(p) }); card.stiltReward = 0; } // Stiltstepper
 	if (card.edwinReward) { const ed = p.board.find(x => x.uid === card.edwinUid && !isDead(x)); if (ed) { ed.attack += card.edwinReward; ed.maxHealth += card.edwinReward; emit(state, { type: 'buff', uid: ed.uid, attack: ed.attack, hp: hp(ed) }); } card.edwinReward = 0; } // Edwin, Defias Kingpin
@@ -7823,7 +7855,7 @@ function resolveStackedSpell(state, entry) {
 		}
 		fireOngoing(state, pi, 'spell-played', { played: card });
 		if (card.combo) fireOngoing(state, pi, 'battlecry-or-combo-played', { played: card }); // Field Contact
-		if (ctx.target && ctx.target.type === 'creature') fireOngoing(state, pi, 'spell-cast-on-creature', { played: card }); // Sethekk Veilweaver
+		if (ctx.target && ctx.target.type === 'creature') fireOngoing(state, pi, 'spell-cast-on-creature', { played: card, targetCreature: findCreature(state, ctx.target.uid) }); // Sethekk Veilweaver / Stormwind Avenger
 		if (card.choices) fireOngoing(state, pi, 'choose-spell-played', { played: card }); // Keeper Stalladris
 		firePlaneTrigger(state, 'spell-cast', pi); // Minamo / Elysaria
 		for (let s2 = 0; s2 < state.players.length; s2++) {
@@ -8984,6 +9016,7 @@ export function endTurn(state) {
 	p.spellsCostOneThisTurn = false; // Ysiel Windsinger only lasts this turn
 	p.nextComboDiscount = 0; // Foxy Fraud only lasts this turn
 	p.nextCardsDiscount = null; // Scabbs Cutterbutter only lasts this turn
+	p.nextChooseOneDiscount = 0; // Pride Seeker only lasts until used
 	for (const c of p.hand) c.drawnThisTurn = false; // Keli'dan: "drawn this turn" resets at end of your turn
 	if (p.illuciaSwap) { p.hand = p.savedHand || []; p.savedHand = null; p.illuciaSwap = false; emit(state, { type: 'handSwap', player: pi }); } // Mindrender Illucia: hand reverts at end of turn
 	p.heroPowerTaxNext = 0; // Saboteur's Hero Power tax only lasts this turn

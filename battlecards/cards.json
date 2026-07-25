@@ -90627,6 +90627,407 @@
           "value": 1
         }
       ]
+    },
+    {
+      "id": "grimtotem_bounty_hunter",
+      "name": "Grimtotem Bounty Hunter",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "neutral",
+      "attack": 4,
+      "health": 2,
+      "rarity": "epic",
+      "set": "ALTERAC_VALLEY",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Destroy an enemy Legendary minion.",
+      "effects": [
+        {
+          "type": "destroy",
+          "target": "enemy-creature",
+          "requireRarity": "legendary"
+        }
+      ]
+    },
+    {
+      "id": "kobold_taskmaster",
+      "name": "Kobold Taskmaster",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "neutral",
+      "attack": 2,
+      "health": 4,
+      "rarity": "rare",
+      "set": "ALTERAC_VALLEY",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Add 2 Armor Scraps to your hand that give +2 Health to a minion.",
+      "effects": [
+        {
+          "type": "add-card",
+          "id": "av_armor_scrap",
+          "count": 2
+        }
+      ]
+    },
+    {
+      "id": "pathmaker",
+      "name": "Pathmaker",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "druid",
+      "attack": 3,
+      "health": 4,
+      "rarity": "rare",
+      "set": "ALTERAC_VALLEY",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Cast the other choice from the last Choose One spell you've cast.",
+      "effects": [
+        {
+          "type": "draw",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "popsicooler",
+      "name": "Popsicooler",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "neutral",
+      "attack": 3,
+      "health": 3,
+      "rarity": "epic",
+      "set": "ALTERAC_VALLEY",
+      "tribe": "Mech",
+      "keywords": [
+        "deathrattle"
+      ],
+      "description": "Deathrattle: Freeze two random enemy minions.",
+      "deathrattle": [
+        {
+          "type": "freeze",
+          "target": "random-enemy",
+          "count": 2
+        }
+      ]
+    },
+    {
+      "id": "pride_seeker",
+      "name": "Pride Seeker",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "druid",
+      "attack": 2,
+      "health": 4,
+      "rarity": "rare",
+      "set": "ALTERAC_VALLEY",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Your next Choose One card costs (2) less.",
+      "effects": [
+        {
+          "type": "set-choose-one-discount",
+          "value": 2
+        }
+      ]
+    },
+    {
+      "id": "ram_tamer",
+      "name": "Ram Tamer",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "hunter",
+      "attack": 4,
+      "health": 3,
+      "rarity": "common",
+      "set": "ALTERAC_VALLEY",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: If you control a Secret, gain +1/+1 and Stealth.",
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "controlSecret": true
+          },
+          "then": [
+            {
+              "type": "buff-self",
+              "attack": 1,
+              "health": 1
+            },
+            {
+              "type": "grant",
+              "keyword": "stealth",
+              "target": "self"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "reflecto_engineer",
+      "name": "Reflecto Engineer",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "neutral",
+      "attack": 2,
+      "health": 4,
+      "rarity": "common",
+      "set": "ALTERAC_VALLEY",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Swap the Attack and Health of all minions in both players' hands.",
+      "effects": [
+        {
+          "type": "swap-hand-stats"
+        }
+      ]
+    },
+    {
+      "id": "si7_smuggler",
+      "name": "SI:7 Smuggler",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "rogue",
+      "attack": 1,
+      "health": 3,
+      "rarity": "common",
+      "set": "ALTERAC_VALLEY",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Summon a random 1-Cost minion. (Upgraded for each other SI:7 card you have played this game.)",
+      "effects": [
+        {
+          "type": "summon-random",
+          "cost": 1,
+          "count": 1
+        }
+      ]
+    },
+    {
+      "id": "sacrificial_summoner",
+      "name": "Sacrificial Summoner",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "warlock",
+      "attack": 3,
+      "health": 3,
+      "rarity": "epic",
+      "set": "ALTERAC_VALLEY",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Destroy a friendly minion. Summon a minion from your deck that costs (1) more.",
+      "effects": [
+        {
+          "type": "sacrifice-summon-costplus",
+          "target": "friendly-creature",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "saidan_the_scarlet",
+      "name": "Saidan the Scarlet",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "paladin",
+      "attack": 2,
+      "health": 2,
+      "rarity": "legendary",
+      "set": "ALTERAC_VALLEY",
+      "keywords": [
+        "rush"
+      ],
+      "doubleBuffs": true,
+      "description": "Rush. Whenever this minion gains Attack or Health, double that amount (wherever this is)."
+    },
+    {
+      "id": "scrapsmith",
+      "name": "Scrapsmith",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "warrior",
+      "attack": 2,
+      "health": 4,
+      "rarity": "common",
+      "set": "ALTERAC_VALLEY",
+      "keywords": [
+        "taunt",
+        "battlecry"
+      ],
+      "description": "Taunt. Battlecry: Add two 2/4 Grunts with Taunt to your hand.",
+      "effects": [
+        {
+          "type": "add-card",
+          "id": "av_grunt",
+          "count": 2
+        }
+      ]
+    },
+    {
+      "id": "snowblind_harpy",
+      "name": "Snowblind Harpy",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "neutral",
+      "attack": 3,
+      "health": 4,
+      "rarity": "rare",
+      "set": "ALTERAC_VALLEY",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: If you're holding a Frost spell, gain 5 Armor.",
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "holdingSchool": "Frost"
+          },
+          "then": [
+            {
+              "type": "armor",
+              "value": 5
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "stonehearth_vindicator",
+      "name": "Stonehearth Vindicator",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "paladin",
+      "attack": 3,
+      "health": 1,
+      "rarity": "epic",
+      "set": "ALTERAC_VALLEY",
+      "tribe": "Draenei",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Draw a spell that costs (3) or less. It costs (0) this turn.",
+      "effects": [
+        {
+          "type": "draw-spell-cheap",
+          "maxCost": 3
+        }
+      ]
+    },
+    {
+      "id": "stormwind_avenger",
+      "name": "Stormwind Avenger",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "paladin",
+      "attack": 1,
+      "health": 5,
+      "rarity": "common",
+      "set": "ALTERAC_VALLEY",
+      "description": "After you cast a spell on this minion, it gains +2 Attack.",
+      "ongoing": {
+        "on": "spell-cast-on-creature",
+        "if": {
+          "selfTarget": true
+        },
+        "effects": [
+          {
+            "type": "buff-self",
+            "attack": 2
+          }
+        ]
+      }
+    },
+    {
+      "id": "axe_berserker",
+      "name": "Axe Berserker",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "warrior",
+      "attack": 3,
+      "health": 5,
+      "rarity": "common",
+      "set": "ALTERAC_VALLEY",
+      "keywords": [
+        "rush"
+      ],
+      "description": "Rush. Honorable Kill: Draw a weapon.",
+      "honorableKill": [
+        {
+          "type": "tutor",
+          "cardType": "weapon",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "id": "drekthar",
+      "name": "Drek'Thar",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "neutral",
+      "attack": 4,
+      "health": 4,
+      "rarity": "legendary",
+      "set": "ALTERAC_VALLEY",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: If this costs more than every minion in your deck, summon one of those minions.",
+      "effects": [
+        {
+          "type": "recruit",
+          "maxCost": 3,
+          "count": 1
+        }
+      ]
+    },
+    {
+      "id": "av_armor_scrap",
+      "name": "Armor Scrap",
+      "type": "sorcery",
+      "cost": 1,
+      "token": true,
+      "collectible": false,
+      "rarity": "common",
+      "set": "ALTERAC_VALLEY",
+      "description": "Give a minion +2 Health.",
+      "effects": [
+        {
+          "type": "buff",
+          "target": "creature",
+          "health": 2
+        }
+      ]
+    },
+    {
+      "id": "av_grunt",
+      "name": "Grunt",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "warrior",
+      "attack": 2,
+      "health": 4,
+      "rarity": "common",
+      "set": "ALTERAC_VALLEY",
+      "token": true,
+      "collectible": false,
+      "keywords": [
+        "taunt"
+      ],
+      "description": "Taunt."
     }
   ]
 }
