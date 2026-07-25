@@ -87176,6 +87176,418 @@
         "rush"
       ],
       "description": "Rush."
+    },
+    {
+      "id": "primal_dungeoneer",
+      "name": "Primal Dungeoneer",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "shaman",
+      "attack": 2,
+      "health": 3,
+      "rarity": "rare",
+      "set": "THE_BARRENS",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Draw a spell. If it's a Nature spell, also draw an Elemental.",
+      "effects": [
+        {
+          "type": "draw-spell-school-then",
+          "school": "Nature",
+          "then": [
+            {
+              "type": "tutor",
+              "cardType": "creature",
+              "tribe": "Elemental",
+              "count": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "razorfen_beastmaster",
+      "name": "Razorfen Beastmaster",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "demonhunter",
+      "attack": 3,
+      "health": 3,
+      "rarity": "rare",
+      "set": "THE_BARRENS",
+      "tribe": "Quilboar",
+      "keywords": [
+        "deathrattle"
+      ],
+      "description": "Deathrattle: Summon a Deathrattle minion that costs (4) or less from your hand.",
+      "deathrattle": [
+        {
+          "type": "summon-from-hand",
+          "maxCost": 4,
+          "requireKeyword": "deathrattle"
+        }
+      ]
+    },
+    {
+      "id": "rimetongue",
+      "name": "Rimetongue",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "mage",
+      "attack": 3,
+      "health": 4,
+      "rarity": "rare",
+      "set": "THE_BARRENS",
+      "description": "After you cast a Frost spell, summon a 1/1 Elemental that Freezes.",
+      "ongoing": {
+        "on": "spell-played",
+        "if": {
+          "school": "Frost"
+        },
+        "effects": [
+          {
+            "type": "summon",
+            "count": 1,
+            "summonId": "bar_freeze_elemental"
+          }
+        ]
+      }
+    },
+    {
+      "id": "rokara",
+      "name": "Rokara",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "warrior",
+      "attack": 2,
+      "health": 3,
+      "rarity": "legendary",
+      "set": "THE_BARRENS",
+      "keywords": [
+        "rush"
+      ],
+      "description": "Rush. After a friendly minion attacks and survives, give it +1/+1.",
+      "ongoing": {
+        "on": "friendly-attacks-survives",
+        "effects": [
+          {
+            "type": "buff-summoned-if-tribe",
+            "attack": 1,
+            "health": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "tamsin_roame",
+      "name": "Tamsin Roame",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "warlock",
+      "attack": 1,
+      "health": 3,
+      "rarity": "legendary",
+      "set": "THE_BARRENS",
+      "tribe": "Undead",
+      "description": "Whenever you cast a Shadow spell that costs (1) or more, add a copy to your hand that costs (0).",
+      "ongoing": {
+        "on": "spell-played",
+        "if": {
+          "school": "Shadow"
+        },
+        "effects": [
+          {
+            "type": "add-copy-of-played-free",
+            "minCost": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "tavish_stormpike",
+      "name": "Tavish Stormpike",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "hunter",
+      "attack": 2,
+      "health": 5,
+      "rarity": "legendary",
+      "set": "THE_BARRENS",
+      "description": "After a friendly Beast attacks, summon a Beast from your deck that costs (1) less.",
+      "ongoing": {
+        "on": "friendly-attacks",
+        "if": {
+          "tribe": "Beast"
+        },
+        "effects": [
+          {
+            "type": "recruit",
+            "tribe": "Beast"
+          }
+        ]
+      }
+    },
+    {
+      "id": "blademaster_samuro",
+      "name": "Blademaster Samuro",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "neutral",
+      "attack": 1,
+      "health": 6,
+      "rarity": "legendary",
+      "set": "THE_BARRENS",
+      "keywords": [
+        "rush"
+      ],
+      "description": "Rush. Frenzy: Deal damage equal to this minion's Attack to all enemy minions.",
+      "ongoing": {
+        "on": "self-damaged",
+        "once": true,
+        "survives": true,
+        "effects": [
+          {
+            "type": "damage-enemies-by-attack"
+          }
+        ]
+      }
+    },
+    {
+      "id": "cariel_roame",
+      "name": "Cariel Roame",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "paladin",
+      "attack": 4,
+      "health": 3,
+      "rarity": "legendary",
+      "set": "THE_BARRENS",
+      "keywords": [
+        "rush",
+        "divine_shield"
+      ],
+      "description": "Rush, Divine Shield. Whenever this attacks, reduce the Cost of Holy spells in your hand by (1).",
+      "ongoing": {
+        "on": "self-attacks",
+        "effects": [
+          {
+            "type": "reduce-hand-school-cost",
+            "school": "Holy",
+            "value": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "firemancer_flurgl",
+      "name": "Firemancer Flurgl",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "shaman",
+      "attack": 2,
+      "health": 3,
+      "rarity": "legendary",
+      "set": "THE_BARRENS",
+      "tribe": "Murloc",
+      "description": "After you play a Murloc, deal 1 damage to all enemies.",
+      "ongoing": {
+        "on": "creature-played",
+        "if": {
+          "tribe": "Murloc"
+        },
+        "effects": [
+          {
+            "type": "damage",
+            "value": 1,
+            "target": "enemies"
+          }
+        ]
+      }
+    },
+    {
+      "id": "gruntled_patron",
+      "name": "Gruntled Patron",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "neutral",
+      "attack": 3,
+      "health": 3,
+      "rarity": "common",
+      "set": "THE_BARRENS",
+      "description": "Frenzy: Summon another Gruntled Patron.",
+      "ongoing": {
+        "on": "self-damaged",
+        "once": true,
+        "survives": true,
+        "effects": [
+          {
+            "type": "summon-copy-self"
+          }
+        ]
+      }
+    },
+    {
+      "id": "kazakus_golem_shaper",
+      "name": "Kazakus, Golem Shaper",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "neutral",
+      "attack": 3,
+      "health": 3,
+      "rarity": "legendary",
+      "set": "THE_BARRENS",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: If your deck has no 4-Cost cards, build a custom Golem.",
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "deckNoCost": 4
+          },
+          "then": [
+            {
+              "type": "summon",
+              "count": 1,
+              "summonId": "bar_golem"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "kurtrus_ashfallen",
+      "name": "Kurtrus Ashfallen",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "demonhunter",
+      "attack": 3,
+      "health": 4,
+      "rarity": "legendary",
+      "set": "THE_BARRENS",
+      "keywords": [
+        "battlecry",
+        "outcast"
+      ],
+      "description": "Battlecry: Attack the left and right-most enemy minions. Outcast: Immune this turn.",
+      "effects": [
+        {
+          "type": "attack-flanks"
+        }
+      ],
+      "outcast": {
+        "effects": [
+          {
+            "type": "grant-immune-turn",
+            "target": "self"
+          }
+        ]
+      }
+    },
+    {
+      "id": "oil_rig_ambusher",
+      "name": "Oil Rig Ambusher",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "rogue",
+      "attack": 4,
+      "health": 4,
+      "rarity": "rare",
+      "set": "THE_BARRENS",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Deal 2 damage. If this entered your hand this turn, deal 4 instead.",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 2,
+          "altValueIfDrawn": 4,
+          "target": "any"
+        }
+      ]
+    },
+    {
+      "id": "plaguemaw_the_rotting",
+      "name": "Plaguemaw the Rotting",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "druid",
+      "attack": 3,
+      "health": 4,
+      "rarity": "legendary",
+      "set": "THE_BARRENS",
+      "tribe": "Quilboar",
+      "description": "After a friendly minion with Taunt dies, summon a new copy of it without Taunt.",
+      "ongoing": {
+        "on": "friendly-creature-died",
+        "if": {
+          "keyword": "taunt"
+        },
+        "effects": [
+          {
+            "type": "summon-dead-copy-no-keyword",
+            "keyword": "taunt"
+          }
+        ]
+      }
+    },
+    {
+      "id": "reckless_apprentice",
+      "name": "Reckless Apprentice",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "mage",
+      "attack": 3,
+      "health": 5,
+      "rarity": "rare",
+      "set": "THE_BARRENS",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Fire your Hero Power at all enemies.",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 1,
+          "target": "enemies"
+        }
+      ]
+    },
+    {
+      "id": "scabbs_cutterbutter",
+      "name": "Scabbs Cutterbutter",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "rogue",
+      "attack": 3,
+      "health": 3,
+      "rarity": "legendary",
+      "set": "THE_BARRENS",
+      "description": "Combo: The next two cards you play this turn cost (2) less.",
+      "combo": [
+        {
+          "type": "set-next-cards-discount",
+          "count": 2,
+          "value": 2
+        }
+      ]
+    },
+    {
+      "id": "bar_golem",
+      "name": "Golem",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "neutral",
+      "attack": 5,
+      "health": 5,
+      "rarity": "common",
+      "set": "THE_BARRENS",
+      "token": true,
+      "collectible": false,
+      "description": "A 5/5 Golem."
     }
   ]
 }

@@ -365,6 +365,7 @@ export function createGame(cardsById, rng = Math.random, playerDeckIds = null, p
 		spellsCostOneThisTurn: false, // Ysiel Windsinger: your spells cost (1) this turn
 		nextComboDiscount: 0, // Foxy Fraud: your next Combo card this turn costs less
 		corruptedPlayedIds: [], // Y'Shaarj: Corrupted cards you've played this game
+		nextCardsDiscount: null, // Scabbs Cutterbutter: {count, amount} for your next cards this turn
 		mana: { cur: 1, max: 1, bonus: 0 },
 		coins: 0,
 		diedThisTurn: 0,
@@ -2560,6 +2561,21 @@ function runSecretEffects(state, pi, effects, ctx) {
 				// Soulbound Ashtongue: also deal the damage taken to your hero
 				if (ctx.amount) damageHero(state, pi, ctx.amount, pi);
 				break;
+			case 'add-copy-of-played-free': {
+				// Tamsin Roame: when you cast a qualifying spell, add a (0)-cost copy to hand
+				const sp = ctx.played; const p = state.players[pi];
+				if (sp && (sp.cost || 0) >= (e.minCost || 0) && state.cardsById[sp.id] && p.hand.length < MAX_HAND) {
+					const nc = instantiate(state.cardsById[sp.id], pi); nc.zone = 'hand'; nc.cost = 0; p.hand.push(nc);
+					emit(state, { type: 'conjure', player: pi, card: nc, color: null });
+				}
+				break;
+			}
+			case 'summon-dead-copy-no-keyword': {
+				// Plaguemaw the Rotting: resummon the fallen minion without a keyword
+				const dead = ctx.dead; const base = dead && state.cardsById[dead.id];
+				if (base) { const def = JSON.parse(JSON.stringify(base)); def.keywords = (def.keywords || []).filter(k => k !== e.keyword); const c = summon(state, pi, def); }
+				break;
+			}
 			case 'bump-drawn-cost': {
 				// Far Watch Post: after the opponent draws, that card costs more (capped)
 				const drawn = ctx.card;
@@ -2786,6 +2802,7 @@ function execEffects(state, pi, effects, target, source) {
 				if (e.requireDeckAtMost != null && state.players[pi].deck.length > e.requireDeckAtMost) continue; // Blood Shard Bristleback
 			// friendly Spell Damage boosts direct spell damage
 			let v = e.value === 'source-attack' ? (source?.attack || 0) : scaled(e); // Sergeant Sally
+			if (e.altValueIfDrawn != null && source && source.drawnThisTurn) v = e.altValueIfDrawn; // Oil Rig Ambusher
 			if (source && (source.type === 'sorcery' || source.type === 'instant')) {
 				v += staticValue(state.players[pi], 'spell-damage') + (state.players[pi].nextSpellDamageBonus || 0);
 			}
@@ -5189,8 +5206,8 @@ function execEffects(state, pi, effects, target, source) {
 				if (foes.length) resolveCombat(state, pi, source.uid, foes[Math.floor(state.rng() * foes.length)]);
 			}
 		} else if (e.type === 'grant-immune-turn') {
-			// Ashtongue Slayer: give a minion Immune until end of turn
-			const t = chosenCreature();
+			// Ashtongue Slayer: give a minion Immune until end of turn (target 'self' = source, Kurtrus Outcast)
+			const t = e.target === 'self' ? (source && source.zone === 'board' && !isDead(source) ? source : null) : chosenCreature();
 			if (t) { if (!t.keywords.includes(KW.IMMUNE)) t.keywords.push(KW.IMMUNE); t.immuneTurnClear = true; emit(state, { type: 'buff', uid: t.uid, attack: t.attack, hp: hp(t) }); }
 		} else if (e.type === 'summon-died-tribe') {
 			// Kanrethad Prime: resummon friendly minions of a tribe that died this game
@@ -5284,6 +5301,9 @@ function execEffects(state, pi, effects, target, source) {
 		} else if (e.type === 'set-combo-discount') {
 			// Foxy Fraud: your next Combo card this turn costs less
 			state.players[pi].nextComboDiscount = (state.players[pi].nextComboDiscount || 0) + (e.value || 2);
+		} else if (e.type === 'set-next-cards-discount') {
+			// Scabbs Cutterbutter: your next N cards this turn cost less
+			state.players[pi].nextCardsDiscount = { count: e.count || 2, amount: e.value || 2 };
 		} else if (e.type === 'silence-all') {
 			// Showstopper: Silence every minion on the board
 			for (const pl of state.players) for (const c of pl.board) if (!isDead(c) && c.type !== 'location') silenceCreature(state, c);
@@ -5342,6 +5362,22 @@ function execEffects(state, pi, effects, target, source) {
 			const before = new Set(p.hand.map(c => c.uid));
 			drawCards(state, pi, 1);
 			for (const c of p.hand) if (!before.has(c.uid)) c.stiltReward = e.value || 4;
+		} else if (e.type === 'damage-enemies-by-attack') {
+			// Blademaster Samuro (Frenzy): deal damage = this minion's Attack to all enemy minions
+			const amt = source ? (source.attack || 0) : 0;
+			if (amt > 0) { for (const o of enemies) for (const c of [...state.players[o].board]) if (!isDead(c) && c.type !== 'location') damageCreature(state, c, amt, source); sweepDeaths(state); }
+		} else if (e.type === 'reduce-hand-school-cost') {
+			// Cariel Roame: reduce the Cost of a spell school in your hand
+			for (const c of state.players[pi].hand) if (schoolOf(c) === e.school) c.cost = Math.max(0, (c.cost || 0) - (e.value || 1));
+		} else if (e.type === 'attack-flanks') {
+			// Kurtrus Ashfallen: attack the left- and right-most enemy minions
+			if (source && !isDead(source)) {
+				for (const o of enemies) {
+					const board = state.players[o].board.filter(c => !isDead(c) && c.type !== 'location' && c.dormantLeft <= 0);
+					const targets = [...new Set([board[0], board[board.length - 1]])].filter(Boolean);
+					for (const t of targets) { if (!isDead(source) && !isDead(t)) resolveCombat(state, pi, source.uid, { type: 'creature', uid: t.uid, player: o }); }
+				}
+			}
 		} else if (e.type === 'copy-enemy-secrets') {
 			// Horde Operative: copy the opponent's Secrets and put them into play
 			for (const o of enemies) for (const sec of [...state.players[o].secrets]) { if (state.players[pi].secrets.length < 5 && state.cardsById[sec.id]) installSecret(state, pi, sec.id); }
@@ -7103,6 +7139,7 @@ export function effectiveCost(state, pi, card) {
 	}
 	if (p.spellTaxNext > 0 && isSpellType(card)) c += p.spellTaxNext; // Loatheb
 	if (p.nextComboDiscount > 0 && card.combo) c = Math.max(0, c - p.nextComboDiscount); // Foxy Fraud
+	if (p.nextCardsDiscount && p.nextCardsDiscount.count > 0) c = Math.max(0, c - p.nextCardsDiscount.amount); // Scabbs Cutterbutter
 	if ((card.keywords || []).includes('outcast')) { const r = p.board.filter(x => x.outcastCostReduce && !isDead(x)).reduce((s, x) => s + x.outcastCostReduce, 0); if (r) c = Math.max(0, c - r); } // Line Hopper
 	if (!card.fromDeck) { const r = p.board.filter(x => x.foreignCostReduce && !isDead(x)).reduce((s, x) => s + x.foreignCostReduce, 0); if (r) c = Math.max(1, c - r); } // Arcane Luminary: not below 1
 	if (p.battlecryTaxNext > 0 && (card.keywords || []).includes('battlecry')) c += p.battlecryTaxNext; // Boompistol Bully
@@ -7182,6 +7219,7 @@ export function playCard(state, pi, cardUid, target, choice, position, useAlt, k
 	// discounts are consumed) against each Corrupt card still in hand.
 	const playedCost = effectiveCost(state, pi, card);
 	if (card.combo && p.nextComboDiscount > 0) p.nextComboDiscount = 0; // Foxy Fraud discount is spent by the next Combo card
+	if (p.nextCardsDiscount && p.nextCardsDiscount.count > 0) { p.nextCardsDiscount.count -= 1; if (p.nextCardsDiscount.count <= 0) p.nextCardsDiscount = null; } // Scabbs: consumed per card
 	if (card.stiltReward) { p.heroTempAttack += card.stiltReward; emit(state, { type: 'heroAttack', player: pi, attack: heroAttackValue(p) }); card.stiltReward = 0; } // Stiltstepper
 	if (typeof card.id === 'string' && card.id.endsWith('_corrupted')) (p.corruptedPlayedIds = p.corruptedPlayedIds || []).push(card.id); // Y'Shaarj tracks Corrupted cards played
 	// Ward: targeting an enemy warded creature costs extra — unaffordable = illegal
@@ -7865,6 +7903,7 @@ export function attack(state, pi, attackerUid, target) {
 		if (attacker.ongoing?.once) attacker.ongoing = null;
 	}
 	fireOngoing(state, pi, 'friendly-attacks', { minion: attacker }); // Gaia-style reactions
+	if (!isDead(attacker)) fireOngoing(state, pi, 'friendly-attacks-survives', { minion: attacker }); // Rokara
 	// Cutpurse: when this creature attacks a hero
 	if (attacker.ongoing?.on === 'self-attacks-hero' && target.type === 'hero') {
 		runSecretEffects(state, pi, attacker.ongoing.effects, { self: attacker });
@@ -8636,6 +8675,7 @@ export function endTurn(state) {
 	p.castSpellLastTurn = (p.spellsPlayedThisTurn || 0) > 0; // Marshspawn / Shattered Rumbler: remember spellcasting across turns
 	p.spellsCostOneThisTurn = false; // Ysiel Windsinger only lasts this turn
 	p.nextComboDiscount = 0; // Foxy Fraud only lasts this turn
+	p.nextCardsDiscount = null; // Scabbs Cutterbutter only lasts this turn
 	for (const c of p.hand) c.drawnThisTurn = false; // Keli'dan: "drawn this turn" resets at end of your turn
 	if (p.illuciaSwap) { p.hand = p.savedHand || []; p.savedHand = null; p.illuciaSwap = false; emit(state, { type: 'handSwap', player: pi }); } // Mindrender Illucia: hand reverts at end of turn
 	p.heroPowerTaxNext = 0; // Saboteur's Hero Power tax only lasts this turn
