@@ -86307,6 +86307,439 @@
           "value": 5
         }
       ]
+    },
+    {
+      "id": "cleric_of_anshe",
+      "name": "Cleric of An'she",
+      "type": "creature",
+      "cost": 1,
+      "cardClass": "priest",
+      "attack": 1,
+      "health": 2,
+      "rarity": "common",
+      "set": "THE_BARRENS",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: If you've restored Health this turn, Discover a spell from your deck.",
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "healedThisTurn": true
+          },
+          "then": [
+            {
+              "type": "discover",
+              "fromOwnDeck": true,
+              "cardType": "spell"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "meeting_stone",
+      "name": "Meeting Stone",
+      "type": "creature",
+      "cost": 1,
+      "cardClass": "neutral",
+      "attack": 0,
+      "health": 2,
+      "rarity": "common",
+      "set": "THE_BARRENS",
+      "description": "At the end of your turn, add a 2/2 Adventurer with a random bonus effect to your hand.",
+      "ongoing": {
+        "on": "turn-end",
+        "effects": [
+          {
+            "type": "add-card",
+            "id": "bar_adventurer",
+            "count": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "sunscale_raptor",
+      "name": "Sunscale Raptor",
+      "type": "creature",
+      "cost": 1,
+      "cardClass": "hunter",
+      "attack": 1,
+      "health": 3,
+      "rarity": "rare",
+      "set": "THE_BARRENS",
+      "tribe": "Beast",
+      "description": "Frenzy: Shuffle a Sunscale Raptor into your deck with permanent +2/+1.",
+      "ongoing": {
+        "on": "self-damaged",
+        "once": true,
+        "survives": true,
+        "effects": [
+          {
+            "type": "shuffle-into-deck",
+            "id": "bar_sunscale_buffed",
+            "count": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "wailing_vapor",
+      "name": "Wailing Vapor",
+      "type": "creature",
+      "cost": 1,
+      "cardClass": "shaman",
+      "attack": 1,
+      "health": 3,
+      "rarity": "common",
+      "set": "THE_BARRENS",
+      "tribe": "Elemental",
+      "description": "After you play an Elemental, gain +1 Attack.",
+      "ongoing": {
+        "on": "creature-played",
+        "if": {
+          "tribe": "Elemental"
+        },
+        "effects": [
+          {
+            "type": "buff-self",
+            "attack": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "warsong_envoy",
+      "name": "Warsong Envoy",
+      "type": "creature",
+      "cost": 1,
+      "cardClass": "warrior",
+      "attack": 1,
+      "health": 3,
+      "rarity": "rare",
+      "set": "THE_BARRENS",
+      "description": "Frenzy: Gain +1 Attack for each damaged character.",
+      "ongoing": {
+        "on": "self-damaged",
+        "once": true,
+        "survives": true,
+        "effects": [
+          {
+            "type": "buff-self",
+            "attack": 1,
+            "per": "damaged-creatures"
+          }
+        ]
+      }
+    },
+    {
+      "id": "apothecarys_caravan",
+      "name": "Apothecary's Caravan",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "warlock",
+      "attack": 1,
+      "health": 3,
+      "rarity": "rare",
+      "set": "THE_BARRENS",
+      "description": "At the start of your turn, summon a 1-Cost minion from your deck.",
+      "ongoing": {
+        "on": "turn-start",
+        "effects": [
+          {
+            "type": "recruit",
+            "maxCost": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "far_watch_post",
+      "name": "Far Watch Post",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "neutral",
+      "attack": 2,
+      "health": 3,
+      "rarity": "common",
+      "set": "THE_BARRENS",
+      "keywords": [
+        "pacifist"
+      ],
+      "description": "Can't attack. After your opponent draws a card, it costs (1) more (up to 10).",
+      "ongoing": {
+        "on": "enemy-draws",
+        "effects": [
+          {
+            "type": "bump-drawn-cost",
+            "value": 1,
+            "cap": 10
+          }
+        ]
+      }
+    },
+    {
+      "id": "lushwater_scout",
+      "name": "Lushwater Scout",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "neutral",
+      "attack": 1,
+      "health": 3,
+      "rarity": "common",
+      "set": "THE_BARRENS",
+      "tribe": "Murloc",
+      "description": "After you summon a Murloc, give it +1 Attack and Rush.",
+      "ongoing": {
+        "on": "summoned",
+        "effects": [
+          {
+            "type": "buff-summoned-if-tribe",
+            "tribe": "Murloc",
+            "attack": 1,
+            "grant": "rush"
+          }
+        ]
+      }
+    },
+    {
+      "id": "man_at_arms",
+      "name": "Man-at-Arms",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "warrior",
+      "attack": 2,
+      "health": 3,
+      "rarity": "common",
+      "set": "THE_BARRENS",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: If you have a weapon equipped, gain +1/+1.",
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "weaponEquipped": true
+          },
+          "then": [
+            {
+              "type": "buff-self",
+              "attack": 1,
+              "health": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "peon",
+      "name": "Peon",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "neutral",
+      "attack": 2,
+      "health": 3,
+      "rarity": "common",
+      "set": "THE_BARRENS",
+      "description": "Frenzy: Add a random spell from your class to your hand.",
+      "ongoing": {
+        "on": "self-damaged",
+        "once": true,
+        "survives": true,
+        "effects": [
+          {
+            "type": "conjure-random",
+            "cardType": "spell",
+            "cardClass": "own"
+          }
+        ]
+      }
+    },
+    {
+      "id": "razorboar",
+      "name": "Razorboar",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "demonhunter",
+      "attack": 3,
+      "health": 2,
+      "rarity": "common",
+      "set": "THE_BARRENS",
+      "tribe": "Beast",
+      "keywords": [
+        "deathrattle"
+      ],
+      "description": "Deathrattle: Summon a Deathrattle minion that costs (3) or less from your hand.",
+      "deathrattle": [
+        {
+          "type": "summon-from-hand",
+          "maxCost": 3,
+          "requireKeyword": "deathrattle"
+        }
+      ]
+    },
+    {
+      "id": "serena_bloodfeather",
+      "name": "Serena Bloodfeather",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "priest",
+      "attack": 1,
+      "health": 1,
+      "rarity": "legendary",
+      "set": "THE_BARRENS",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Choose an enemy minion. Steal Attack and Health from it until this has more.",
+      "effects": [
+        {
+          "type": "steal-until-bigger",
+          "target": "enemy-creature"
+        }
+      ]
+    },
+    {
+      "id": "south_coast_chieftain",
+      "name": "South Coast Chieftain",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "shaman",
+      "attack": 3,
+      "health": 2,
+      "rarity": "common",
+      "set": "THE_BARRENS",
+      "tribe": "Murloc",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: If you control another Murloc, deal 2 damage.",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 2,
+          "target": "any",
+          "requireControlOtherTribe": "Murloc"
+        }
+      ]
+    },
+    {
+      "id": "talented_arcanist",
+      "name": "Talented Arcanist",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "neutral",
+      "attack": 1,
+      "health": 3,
+      "rarity": "common",
+      "set": "THE_BARRENS",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Your next spell this turn has Spell Damage +2.",
+      "effects": [
+        {
+          "type": "set-next-spell-damage",
+          "value": 2
+        }
+      ]
+    },
+    {
+      "id": "tinyfins_caravan",
+      "name": "Tinyfin's Caravan",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "shaman",
+      "attack": 1,
+      "health": 3,
+      "rarity": "rare",
+      "set": "THE_BARRENS",
+      "description": "At the start of your turn, draw a Murloc.",
+      "ongoing": {
+        "on": "turn-start",
+        "effects": [
+          {
+            "type": "tutor",
+            "tribe": "Murloc",
+            "count": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "toad_of_the_wilds",
+      "name": "Toad of the Wilds",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "neutral",
+      "attack": 2,
+      "health": 2,
+      "rarity": "common",
+      "set": "THE_BARRENS",
+      "tribe": "Beast",
+      "keywords": [
+        "taunt",
+        "battlecry"
+      ],
+      "description": "Taunt. Battlecry: If you're holding a Nature spell, gain +2 Health.",
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "holdingSchool": "Nature"
+          },
+          "then": [
+            {
+              "type": "buff-self",
+              "health": 2
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "bar_adventurer",
+      "name": "Adventurer",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "neutral",
+      "attack": 2,
+      "health": 2,
+      "rarity": "common",
+      "set": "THE_BARRENS",
+      "token": true,
+      "collectible": false,
+      "description": "A 2/2 Adventurer."
+    },
+    {
+      "id": "bar_sunscale_buffed",
+      "name": "Sunscale Raptor",
+      "type": "creature",
+      "cost": 1,
+      "cardClass": "hunter",
+      "attack": 3,
+      "health": 4,
+      "rarity": "rare",
+      "set": "THE_BARRENS",
+      "tribe": "Beast",
+      "token": true,
+      "collectible": false,
+      "description": "Frenzy: Shuffle a Sunscale Raptor into your deck with permanent +2/+1.",
+      "ongoing": {
+        "on": "self-damaged",
+        "once": true,
+        "survives": true,
+        "effects": [
+          {
+            "type": "shuffle-into-deck",
+            "id": "bar_sunscale_buffed",
+            "count": 1
+          }
+        ]
+      }
     }
   ]
 }

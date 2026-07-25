@@ -620,6 +620,7 @@ const CHOSEN = {
 	'damage-chain-neighbors': { 'enemy-creature': 'enemy-creature', creature: 'creature' },
 	kelidan: { creature: 'creature', 'enemy-creature': 'enemy-creature' },
 	'become-copy-of-target': { creature: 'creature', 'enemy-creature': 'enemy-creature', 'friendly-creature': 'friendly-creature' },
+	'steal-until-bigger': { 'enemy-creature': 'enemy-creature', creature: 'creature' },
 	'destroy-fragment-then-damage': { any: 'any', 'enemy-any': 'enemy-any', creature: 'creature', 'enemy-creature': 'enemy-creature' },
 	'transform-into-token': { 'friendly-creature': 'friendly-creature', creature: 'creature' },
 	'mark-doomed': { creature: 'creature', 'enemy-creature': 'enemy-creature' },
@@ -1069,6 +1070,7 @@ function healHero(state, pi, amount) {
 	// Lightwarden-style triggers fire only when healing actually landed
 	if (p.life > before) {
 		p.heroHealthChangedThisTurn = true; // Brittlebone Destroyer
+		p.healedThisTurn = true; // Cleric of An'she
 		p.healedGame = (p.healedGame || 0) + (p.life - before); // Zandalari Templar
 		for (let s2 = 0; s2 < state.players.length; s2++) fireOngoing(state, s2, 'healed', { healedHero: pi, amount: p.life - before });
 	}
@@ -2557,6 +2559,12 @@ function runSecretEffects(state, pi, effects, ctx) {
 				// Soulbound Ashtongue: also deal the damage taken to your hero
 				if (ctx.amount) damageHero(state, pi, ctx.amount, pi);
 				break;
+			case 'bump-drawn-cost': {
+				// Far Watch Post: after the opponent draws, that card costs more (capped)
+				const drawn = ctx.card;
+				if (drawn) drawn.cost = Math.min(e.cap || 10, (drawn.cost || 0) + (e.value || 1));
+				break;
+			}
 			case 'add-copy-cost': {
 				// Keymaster Alabaster: when the opponent draws, copy that card to your hand at a set Cost
 				const drawn = ctx.card;
@@ -2731,6 +2739,7 @@ function execEffects(state, pi, effects, target, source) {
 		emit(state, { type: 'heal', targetType: 'creature', uid: c.uid, amount: v, hp: hp(c) });
 		if (v > 0 && !isDead(c)) { const hb = state.players[pi].board.filter(x => x.healBonusHealth && !isDead(x)).reduce((s, x) => s + x.healBonusHealth, 0); if (hb) { c.maxHealth += hb; emit(state, { type: 'buff', uid: c.uid, attack: c.attack, hp: hp(c) }); } } // Lightsteed
 		if (healed) {
+			state.players[pi].healedThisTurn = true; // Cleric of An'she
 			for (let s2 = 0; s2 < state.players.length; s2++) fireOngoing(state, s2, 'healed', { healedCreature: c });
 		}
 		if (c.overheal && overflow > 0 && !isDead(c)) {
@@ -2772,6 +2781,7 @@ function execEffects(state, pi, effects, target, source) {
 			const lsBefore = (e.type === 'damage' || e.type === 'random-damage') && (e.lifesteal || spellLS) ? totalHurt() : null;
 		if (e.type === 'damage') {
 			if (e.requireElementalLastTurn && !state.players[pi].elementalLastTurn) continue; // Gyreworm
+				if (e.requireControlOtherTribe && !state.players[pi].board.some(c => c !== source && !isDead(c) && (c.tribe || '').includes(e.requireControlOtherTribe))) continue; // South Coast Chieftain
 			// friendly Spell Damage boosts direct spell damage
 			let v = e.value === 'source-attack' ? (source?.attack || 0) : scaled(e); // Sergeant Sally
 			if (source && (source.type === 'sorcery' || source.type === 'instant')) {
@@ -3438,7 +3448,9 @@ function execEffects(state, pi, effects, target, source) {
 			const p = state.players[pi];
 			for (let n = 0; n < (e.count || 1); n++) {
 				const pool = p.hand.filter(c => c.type === 'creature'
-					&& (!e.tribe || (c.tribe || '').includes(e.tribe)));
+					&& (!e.tribe || (c.tribe || '').includes(e.tribe))
+					&& (e.maxCost == null || (c.cost || 0) <= e.maxCost) // Razorboar
+					&& (!e.requireKeyword || (c.keywords || []).includes(e.requireKeyword)));
 				if (!pool.length) break;
 				const c = pool[Math.floor(state.rng() * pool.length)];
 				p.hand = p.hand.filter(x => x !== c);
@@ -4014,6 +4026,8 @@ function execEffects(state, pi, effects, target, source) {
 			else if (e.if.hasArmor) ok = (p.armor || 0) > 0; // Ironclad
 			else if (e.if.holdingSecret) ok = p.hand.some(c => c.secret); // Sparkjoy Cheat
 			else if (e.if.spellsGame != null) ok = (p.spellsPlayedTotal || 0) >= e.if.spellsGame; // Yogg-Saron, Master of Fate
+			else if (e.if.healedThisTurn) ok = !!p.healedThisTurn; // Cleric of An'she
+			else if (e.if.holdingSchool) ok = p.hand.some(c => schoolOf(c) === e.if.holdingSchool); // Toad of the Wilds
 			else if (e.if.hpDamageGame != null) ok = (p.hpDamageGame || 0) >= e.if.hpDamageGame; // Jan'alai, the Dragonhawk
 			else if (e.if.deckEmpty) ok = p.deck.length === 0; // Chef Nomi
 			else if (e.if.holdingOtherClass) ok = p.hand.some(c => c !== source && c.cardClass && c.cardClass !== 'neutral' && c.cardClass !== p.heroClass); // Underbelly Fence
@@ -5324,6 +5338,18 @@ function execEffects(state, pi, effects, target, source) {
 			const before = new Set(p.hand.map(c => c.uid));
 			drawCards(state, pi, 1);
 			for (const c of p.hand) if (!before.has(c.uid)) c.stiltReward = e.value || 4;
+		} else if (e.type === 'steal-until-bigger') {
+			// Serena Bloodfeather: move 1/1 from the target to this until this is bigger
+			const t = chosenCreature();
+			if (t && source && !isDead(source)) {
+				let guard = 40;
+				while (guard-- > 0 && (source.attack <= t.attack || hp(source) <= hp(t)) && t.attack > 1 && hp(t) > 1) {
+					t.attack -= 1; t.maxHealth -= 1;
+					source.attack += 1; source.maxHealth += 1;
+				}
+				emit(state, { type: 'buff', uid: t.uid, attack: t.attack, hp: hp(t) });
+				emit(state, { type: 'buff', uid: source.uid, attack: source.attack, hp: hp(source) });
+			}
 		} else if (e.type === 'copy-hand-edges') {
 			// Zai, the Incredible: add copies of the leftmost and rightmost cards in hand
 			const p = state.players[pi];
@@ -8737,7 +8763,7 @@ export function endTurn(state) {
 	const np = state.players[state.current];
 	np.diedThisTurn = 0;
 	np.diedThisTurnIds = [];
-	np.heroDamagedThisTurn = false; np.heroDamageTakenThisTurn = 0; np.heroHealthChangedThisTurn = false; // "took damage this turn" resets each turn
+	np.heroDamagedThisTurn = false; np.heroDamageTakenThisTurn = 0; np.heroHealthChangedThisTurn = false; np.healedThisTurn = false; // "took damage this turn" resets each turn
 	np.spellsPlayedLastTurnIds = np.spellsPlayedThisTurnIds || []; np.spellsPlayedThisTurnIds = []; // Krag'wa, the Frog
 	np.cardsPlayedLastTurnIds = np.cardsPlayedThisTurnIds || []; np.cardsPlayedThisTurnIds = []; // Murozond the Infinite
 	// Bandersmosh: at your turn start, hand copies morph into a 5/5 Legendary
