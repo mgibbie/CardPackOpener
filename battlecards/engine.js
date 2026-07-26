@@ -1078,6 +1078,7 @@ function damageHero(state, pi, amount, src = null, pierce = false) {
 
 function gainArmor(state, pi, amount) {
 	state.players[pi].armor += amount;
+	if (amount > 0) state.players[pi].armorGainedGame = (state.players[pi].armorGainedGame || 0) + amount; // Captain Galvangar
 	emit(state, { type: 'armor', player: pi, amount, armor: state.players[pi].armor });
 	fireOngoing(state, pi, 'armor-gained', {}); // Siege Engine
 }
@@ -3234,6 +3235,7 @@ function execEffects(state, pi, effects, target, source) {
 			}
 		} else if (e.type === 'freeze') {
 			if (e.target === 'enemy-creatures') { for (const o of enemies) for (const c of state.players[o].board) freezeCreature(state, c); }
+			else if (e.target === 'all-others') { for (const pl of state.players) for (const c of pl.board) if (c !== source && !isDead(c) && c.type !== 'location') freezeCreature(state, c); } // Snowfall Guardian
 			else if (e.target === 'random-enemy') { // Demented Frostcaller / Popsicooler (count)
 				for (let i = 0; i < (e.count || 1); i++) {
 					const pool = enemies.flatMap(o => state.players[o].board.filter(c => !isDead(c) && !c.frozen && c.type !== 'location'));
@@ -4135,6 +4137,7 @@ function execEffects(state, pi, effects, target, source) {
 			else if (e.if.holdingSchoolsBoth) ok = e.if.holdingSchoolsBoth.every(sch => p.hand.some(c => schoolOf(c) === sch)); // Lightmaw Netherdrake
 			else if (e.if.holdingTribeMinCost) ok = p.hand.some(c => (c.tribe || '').includes(e.if.holdingTribeMinCost.tribe) && (c.cost || 0) >= e.if.holdingTribeMinCost.cost); // Warden of Chains
 			else if (e.if.notHonorablyKilled) ok = !(source && source.honorablyKilled); // Korrak the Bloodrager
+			else if (e.if.armorGainedGame != null) ok = (p.armorGainedGame || 0) >= e.if.armorGainedGame; // Captain Galvangar
 			else if (e.if.hpDamageGame != null) ok = (p.hpDamageGame || 0) >= e.if.hpDamageGame; // Jan'alai, the Dragonhawk
 			else if (e.if.deckEmpty) ok = p.deck.length === 0; // Chef Nomi
 			else if (e.if.holdingOtherClass) ok = p.hand.some(c => c !== source && c.cardClass && c.cardClass !== 'neutral' && c.cardClass !== p.heroClass); // Underbelly Fence
@@ -5466,6 +5469,35 @@ function execEffects(state, pi, effects, target, source) {
 			const before = new Set(p.hand.map(c => c.uid));
 			drawCards(state, pi, 1);
 			for (const c of p.hand) if (!before.has(c.uid)) { c.edwinReward = e.value || 2; c.edwinUid = source ? source.uid : null; }
+		} else if (e.type === 'spammy-arcanist') {
+			// Spammy Arcanist: deal 1 to all other minions; if any die, repeat
+			let guard = 30;
+			while (guard-- > 0) {
+				const before = state.players.reduce((n, pl) => n + pl.board.filter(c => !isDead(c) && c.type !== 'location').length, 0);
+				for (const pl of state.players) for (const c of [...pl.board]) if (!isDead(c) && c.type !== 'location' && c !== source) damageCreature(state, c, e.value || 1, source);
+				sweepDeaths(state);
+				const after = state.players.reduce((n, pl) => n + pl.board.filter(c => !isDead(c) && c.type !== 'location').length, 0);
+				if (after >= before) break; // nothing died
+			}
+		} else if (e.type === 'transform-self-into-deck-tribe') {
+			// Caria Felsoul: transform into an N/N copy of a minion of `tribe` from your deck
+			const p = state.players[pi];
+			const ids = p.deck.filter(id => { const d = state.cardsById[id]; return d && d.type === 'creature' && (d.tribe || '').includes(e.tribe); });
+			if (ids.length && source && source.zone === 'board' && !isDead(source)) {
+				const base = state.cardsById[ids[Math.floor(state.rng() * ids.length)]];
+				const def = JSON.parse(JSON.stringify(base)); if (e.stats != null) { def.attack = e.stats; def.health = e.stats; } def.token = true; def.id = 'token_' + base.id;
+				const tok = instantiate(def, pi); tok.zone = 'board'; tok.sick = source.sick;
+				const board = state.players[pi].board; board[board.indexOf(source)] = tok; source.zone = 'gone';
+				emit(state, { type: 'transformed', uid: source.uid, player: pi, from: source.name, card: tok }); recomputeAuras(state);
+			}
+		} else if (e.type === 'summon-per-frost') {
+			// Bearon Gla'shear: summon a token for each Frost spell cast this game
+			const n = state.players[pi].frostSpellsGame || 0;
+			for (let i = 0; i < n; i++) summon(state, pi, state.cardsById[e.summonId] || { id: e.summonId, name: e.name || 'Elemental', type: 'creature', cost: 0, token: true, rarity: 'common', attack: 3, health: 4 });
+		} else if (e.type === 'eat-random-enemy') {
+			// Abominable Lieutenant: destroy a random enemy minion, gain its stats
+			const pool = enemies.flatMap(o => state.players[o].board.filter(c => !isDead(c) && c.type !== 'location'));
+			if (pool.length && source && !isDead(source)) { const t = pool[Math.floor(state.rng() * pool.length)]; const a = t.attack || 0, h2 = hp(t) || 0; t.damage = t.maxHealth; t.shield = false; emit(state, { type: 'destroy', uid: t.uid }); sweepDeaths(state); buffCreature(source, a, h2); }
 		} else if (e.type === 'reduce-deck-minions-cost') {
 			// Vanndar Stormpike: reduce the Cost of minions in your hand and deck
 			const p = state.players[pi];
@@ -5547,7 +5579,7 @@ function execEffects(state, pi, effects, target, source) {
 		} else if (e.type === 'cast-highest-hand-spell') {
 			// Clumsy Courier: cast the highest-Cost spell from your hand (random target)
 			const p = state.players[pi];
-			let best = null; for (const c of p.hand) if (isSpellType(c) && (!best || (c.cost || 0) > (best.cost || 0))) best = c;
+			let best = null; for (const c of p.hand) if (isSpellType(c) && (!e.school || schoolOf(c) === e.school) && (!best || (c.cost || 0) > (best.cost || 0))) best = c; // e.school -> Felwalker
 			if (best) { p.hand = p.hand.filter(c => c !== best); const spec = targetSpec(state, pi, best, null); let tgt = null; if (spec) { const legal = legalTargets(state, pi, spec); tgt = legal.length ? legal[Math.floor(state.rng() * legal.length)] : null; } emit(state, { type: 'conjure', player: pi, card: best, color: null }); runSpell(state, pi, best, tgt, null); sweepDeaths(state); }
 		} else if (e.type === 'lothar') {
 			// Lothar: attack a random enemy minion; if it dies, gain +3/+3
@@ -7757,7 +7789,7 @@ export function playCard(state, pi, cardUid, target, choice, position, useAlt, k
 	} else {
 		questTick(state, 'spell', pi);
 		p.spellsPlayedThisTurn++;
-		{ const sch = schoolOf(card); if (sch) { (p.schoolsCastThisTurn = p.schoolsCastThisTurn || {})[sch] = true; (p.schoolsCastGame = p.schoolsCastGame || {})[sch] = true; if (sch === 'Fel') (p.felSpellsGame = p.felSpellsGame || []).push(card.id); } } // Metamorfin / Multicaster / Jace Darkweaver
+		{ const sch = schoolOf(card); if (sch) { (p.schoolsCastThisTurn = p.schoolsCastThisTurn || {})[sch] = true; (p.schoolsCastGame = p.schoolsCastGame || {})[sch] = true; if (sch === 'Fel') (p.felSpellsGame = p.felSpellsGame || []).push(card.id); if (sch === 'Frost') p.frostSpellsGame = (p.frostSpellsGame || 0) + 1; } } // Metamorfin / Multicaster / Jace / Bearon
 		if ((card.cost || 0) >= 6) p.lastBigSpell = { id: card.id, target }; // Grey Sage Parrot
 		p.spellsPlayedTotal = (p.spellsPlayedTotal || 0) + 1; // Arcane Giant
 		if ((card.cost || 0) >= 5) p.bigSpellsGame = (p.bigSpellsGame || 0) + 1; // Dragoncaller Alanna

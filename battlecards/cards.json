@@ -91443,6 +91443,451 @@
         "rush"
       ],
       "description": "Rush."
+    },
+    {
+      "id": "pet_collector",
+      "name": "Pet Collector",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "hunter",
+      "attack": 4,
+      "health": 4,
+      "rarity": "common",
+      "set": "ALTERAC_VALLEY",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Summon a Beast from your deck that costs (5) or less.",
+      "effects": [
+        {
+          "type": "recruit",
+          "tribe": "Beast",
+          "maxCost": 5
+        }
+      ]
+    },
+    {
+      "id": "spammy_arcanist",
+      "name": "Spammy Arcanist",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "neutral",
+      "attack": 3,
+      "health": 4,
+      "rarity": "epic",
+      "set": "ALTERAC_VALLEY",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Deal 1 damage to all other minions. If any die, repeat this.",
+      "effects": [
+        {
+          "type": "spammy-arcanist",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "spawn_of_deathwing",
+      "name": "Spawn of Deathwing",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "warlock",
+      "attack": 6,
+      "health": 6,
+      "rarity": "common",
+      "set": "ALTERAC_VALLEY",
+      "tribe": "Dragon",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Destroy a random enemy minion. Discard a random card.",
+      "effects": [
+        {
+          "type": "destroy-random",
+          "count": 1
+        },
+        {
+          "type": "discard-random",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "id": "balinda_stonehearth",
+      "name": "Balinda Stonehearth",
+      "type": "creature",
+      "cost": 6,
+      "cardClass": "mage",
+      "attack": 5,
+      "health": 5,
+      "rarity": "legendary",
+      "set": "ALTERAC_VALLEY",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Draw 2 spells. Swap their Costs with this minion's stats.",
+      "effects": [
+        {
+          "type": "tutor",
+          "cardType": "spell",
+          "count": 2
+        }
+      ]
+    },
+    {
+      "id": "captain_galvangar",
+      "name": "Captain Galvangar",
+      "type": "creature",
+      "cost": 6,
+      "cardClass": "warrior",
+      "attack": 6,
+      "health": 6,
+      "rarity": "legendary",
+      "set": "ALTERAC_VALLEY",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: If you have gained 15 or more Armor this game, gain +3/+3 and Charge.",
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "armorGainedGame": 15
+          },
+          "then": [
+            {
+              "type": "buff-self",
+              "attack": 3,
+              "health": 3
+            },
+            {
+              "type": "grant",
+              "keyword": "charge",
+              "target": "self"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "caria_felsoul",
+      "name": "Caria Felsoul",
+      "type": "creature",
+      "cost": 6,
+      "cardClass": "demonhunter",
+      "attack": 6,
+      "health": 6,
+      "rarity": "legendary",
+      "set": "ALTERAC_VALLEY",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Transform into a 6/6 copy of a Demon in your deck.",
+      "effects": [
+        {
+          "type": "transform-self-into-deck-tribe",
+          "tribe": "Demon",
+          "stats": 6
+        }
+      ]
+    },
+    {
+      "id": "felwalker",
+      "name": "Felwalker",
+      "type": "creature",
+      "cost": 6,
+      "cardClass": "warlock",
+      "attack": 3,
+      "health": 7,
+      "rarity": "common",
+      "set": "ALTERAC_VALLEY",
+      "tribe": "Demon",
+      "keywords": [
+        "taunt",
+        "battlecry"
+      ],
+      "description": "Taunt. Battlecry: Cast the highest Cost Fel spell from your hand.",
+      "effects": [
+        {
+          "type": "cast-highest-hand-spell",
+          "school": "Fel"
+        }
+      ]
+    },
+    {
+      "id": "mida_pure_light",
+      "name": "Mi'da, Pure Light",
+      "type": "creature",
+      "cost": 6,
+      "cardClass": "priest",
+      "attack": 4,
+      "health": 6,
+      "rarity": "legendary",
+      "set": "ALTERAC_VALLEY",
+      "keywords": [
+        "divine_shield",
+        "lifesteal",
+        "deathrattle"
+      ],
+      "description": "Divine Shield, Lifesteal. Deathrattle: Shuffle a Fragment into your deck that resummons Mi'da when drawn.",
+      "deathrattle": [
+        {
+          "type": "shuffle-into-deck",
+          "id": "av_mida_fragment",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "id": "snowfall_guardian",
+      "name": "Snowfall Guardian",
+      "type": "creature",
+      "cost": 6,
+      "cardClass": "shaman",
+      "attack": 5,
+      "health": 5,
+      "rarity": "common",
+      "set": "ALTERAC_VALLEY",
+      "tribe": "Elemental",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Freeze all other minions.",
+      "effects": [
+        {
+          "type": "freeze",
+          "target": "all-others"
+        }
+      ]
+    },
+    {
+      "id": "undying_disciple",
+      "name": "Undying Disciple",
+      "type": "creature",
+      "cost": 6,
+      "cardClass": "priest",
+      "attack": 3,
+      "health": 7,
+      "rarity": "rare",
+      "set": "ALTERAC_VALLEY",
+      "tribe": "Undead",
+      "keywords": [
+        "taunt",
+        "deathrattle"
+      ],
+      "description": "Taunt. Deathrattle: Deal damage equal to this minion's Attack to all enemy minions.",
+      "deathrattle": [
+        {
+          "type": "damage-enemies-by-attack"
+        }
+      ]
+    },
+    {
+      "id": "bearon_glashear",
+      "name": "Bearon Gla'shear",
+      "type": "creature",
+      "cost": 7,
+      "cardClass": "shaman",
+      "attack": 6,
+      "health": 6,
+      "rarity": "legendary",
+      "set": "ALTERAC_VALLEY",
+      "tribe": "Elemental",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: For each Frost spell you've cast this game, summon a 3/4 Elemental that Freezes.",
+      "effects": [
+        {
+          "type": "summon-per-frost",
+          "summonId": "av_frost_elemental"
+        }
+      ]
+    },
+    {
+      "id": "abominable_lieutenant",
+      "name": "Abominable Lieutenant",
+      "type": "creature",
+      "cost": 8,
+      "cardClass": "neutral",
+      "attack": 3,
+      "health": 5,
+      "rarity": "epic",
+      "set": "ALTERAC_VALLEY",
+      "tribe": "Undead",
+      "description": "At the end of your turn, eat a random enemy minion and gain its stats.",
+      "ongoing": {
+        "on": "turn-end",
+        "effects": [
+          {
+            "type": "eat-random-enemy"
+          }
+        ]
+      }
+    },
+    {
+      "id": "kazakusan",
+      "name": "Kazakusan",
+      "type": "creature",
+      "cost": 8,
+      "cardClass": "neutral",
+      "attack": 8,
+      "health": 8,
+      "rarity": "legendary",
+      "set": "ALTERAC_VALLEY",
+      "tribe": "Dragon",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: If you played 4 other Dragons this game, craft a custom deck of Treasures.",
+      "effects": [
+        {
+          "type": "draw",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "templar_captain",
+      "name": "Templar Captain",
+      "type": "creature",
+      "cost": 8,
+      "cardClass": "paladin",
+      "attack": 8,
+      "health": 8,
+      "rarity": "rare",
+      "set": "ALTERAC_VALLEY",
+      "keywords": [
+        "rush"
+      ],
+      "description": "Rush. After this attacks a minion, summon a 5/5 Defender with Taunt.",
+      "ongoing": {
+        "on": "self-attacks-creature",
+        "effects": [
+          {
+            "type": "summon",
+            "count": 1,
+            "summonId": "av_defender"
+          }
+        ]
+      }
+    },
+    {
+      "id": "wing_commander_ichman",
+      "name": "Wing Commander Ichman",
+      "type": "creature",
+      "cost": 9,
+      "cardClass": "hunter",
+      "attack": 5,
+      "health": 4,
+      "rarity": "legendary",
+      "set": "ALTERAC_VALLEY",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Summon a Beast from your deck and give it Rush. If it kills a minion this turn, repeat.",
+      "effects": [
+        {
+          "type": "recruit",
+          "tribe": "Beast",
+          "grant": "rush"
+        }
+      ]
+    },
+    {
+      "id": "raid_boss_onyxia",
+      "name": "Raid Boss Onyxia",
+      "type": "creature",
+      "cost": 10,
+      "cardClass": "neutral",
+      "attack": 8,
+      "health": 8,
+      "rarity": "legendary",
+      "set": "ALTERAC_VALLEY",
+      "tribe": "Dragon",
+      "keywords": [
+        "rush",
+        "battlecry"
+      ],
+      "immuneWhile": "Whelp",
+      "description": "Rush. Immune while you control a Whelp. Battlecry: Summon six 2/1 Whelps with Rush.",
+      "effects": [
+        {
+          "type": "summon",
+          "count": 6,
+          "summonId": "av_whelp"
+        }
+      ]
+    },
+    {
+      "id": "av_mida_fragment",
+      "name": "Fragment of Mi'da",
+      "type": "sorcery",
+      "cost": 1,
+      "token": true,
+      "collectible": false,
+      "rarity": "common",
+      "set": "ALTERAC_VALLEY",
+      "drawTrigger": true,
+      "onDraw": [
+        {
+          "type": "summon",
+          "count": 1,
+          "summonId": "mida_pure_light"
+        }
+      ],
+      "description": "When drawn, resummon Mi'da."
+    },
+    {
+      "id": "av_frost_elemental",
+      "name": "Frostbitten Elemental",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "shaman",
+      "attack": 3,
+      "health": 4,
+      "rarity": "common",
+      "set": "ALTERAC_VALLEY",
+      "tribe": "Elemental",
+      "token": true,
+      "collectible": false,
+      "description": "A 3/4 Elemental."
+    },
+    {
+      "id": "av_defender",
+      "name": "Defender",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "paladin",
+      "attack": 5,
+      "health": 5,
+      "rarity": "common",
+      "set": "ALTERAC_VALLEY",
+      "token": true,
+      "collectible": false,
+      "keywords": [
+        "taunt"
+      ],
+      "description": "Taunt."
+    },
+    {
+      "id": "av_whelp",
+      "name": "Whelp",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "neutral",
+      "attack": 2,
+      "health": 1,
+      "rarity": "common",
+      "set": "ALTERAC_VALLEY",
+      "tribe": "Dragon",
+      "token": true,
+      "collectible": false,
+      "keywords": [
+        "rush"
+      ],
+      "description": "Rush."
     }
   ]
 }
