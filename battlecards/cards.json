@@ -91028,6 +91028,421 @@
         "taunt"
       ],
       "description": "Taunt."
+    },
+    {
+      "id": "gear_grubber",
+      "name": "Gear Grubber",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "neutral",
+      "attack": 4,
+      "health": 5,
+      "rarity": "rare",
+      "set": "ALTERAC_VALLEY",
+      "tribe": "Draenei",
+      "keywords": [
+        "taunt"
+      ],
+      "costReducePerTurn": true,
+      "description": "Taunt. If you end your turn with any unspent Mana, reduce this card's Cost by (1)."
+    },
+    {
+      "id": "ice_revenant",
+      "name": "Ice Revenant",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "neutral",
+      "attack": 4,
+      "health": 5,
+      "rarity": "common",
+      "set": "ALTERAC_VALLEY",
+      "tribe": "Elemental",
+      "description": "Whenever you cast a Frost spell, gain +2/+2.",
+      "ongoing": {
+        "on": "spell-played",
+        "if": {
+          "school": "Frost"
+        },
+        "effects": [
+          {
+            "type": "buff-self",
+            "attack": 2,
+            "health": 2
+          }
+        ]
+      }
+    },
+    {
+      "id": "korrak_the_bloodrager",
+      "name": "Korrak the Bloodrager",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "neutral",
+      "attack": 3,
+      "health": 5,
+      "rarity": "legendary",
+      "set": "ALTERAC_VALLEY",
+      "keywords": [
+        "deathrattle"
+      ],
+      "description": "Deathrattle: If this wasn't Honorably Killed, resummon Korrak.",
+      "deathrattle": [
+        {
+          "type": "conditional",
+          "if": {
+            "notHonorablyKilled": true
+          },
+          "then": [
+            {
+              "type": "summon-copy-self"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "lightmaw_netherdrake",
+      "name": "Lightmaw Netherdrake",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "priest",
+      "attack": 4,
+      "health": 4,
+      "rarity": "rare",
+      "set": "ALTERAC_VALLEY",
+      "tribe": "Dragon",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: If you're holding a Holy and a Shadow spell, deal 3 damage to all other minions.",
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "holdingSchoolsBoth": [
+              "Holy",
+              "Shadow"
+            ]
+          },
+          "then": [
+            {
+              "type": "damage-all-minions",
+              "value": 3,
+              "exceptSource": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "najak_hexxen",
+      "name": "Najak Hexxen",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "priest",
+      "attack": 1,
+      "health": 4,
+      "rarity": "legendary",
+      "set": "ALTERAC_VALLEY",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Take control of an enemy minion. Deathrattle: Give the minion back.",
+      "effects": [
+        {
+          "type": "mind-control",
+          "target": "enemy-creature"
+        }
+      ]
+    },
+    {
+      "id": "onyxian_drake",
+      "name": "Onyxian Drake",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "warrior",
+      "attack": 4,
+      "health": 5,
+      "rarity": "common",
+      "set": "ALTERAC_VALLEY",
+      "tribe": "Dragon",
+      "keywords": [
+        "taunt",
+        "battlecry"
+      ],
+      "description": "Taunt. Battlecry: Deal damage equal to your Armor to an enemy minion.",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 1,
+          "valuePer": "armor",
+          "target": "enemy-creature"
+        }
+      ]
+    },
+    {
+      "id": "raid_negotiator",
+      "name": "Raid Negotiator",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "druid",
+      "attack": 3,
+      "health": 4,
+      "rarity": "rare",
+      "set": "ALTERAC_VALLEY",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Discover a Choose One card. It has both effects combined.",
+      "effects": [
+        {
+          "type": "discover",
+          "cardType": "creature"
+        }
+      ]
+    },
+    {
+      "id": "razorglaive_sentinel",
+      "name": "Razorglaive Sentinel",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "demonhunter",
+      "attack": 5,
+      "health": 4,
+      "rarity": "common",
+      "set": "ALTERAC_VALLEY",
+      "description": "After you play the left or right-most card in your hand, draw a card.",
+      "ongoing": {
+        "on": "edge-card-played",
+        "effects": [
+          {
+            "type": "draw",
+            "value": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "stormpike_battle_ram",
+      "name": "Stormpike Battle Ram",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "hunter",
+      "attack": 4,
+      "health": 3,
+      "rarity": "rare",
+      "set": "ALTERAC_VALLEY",
+      "tribe": "Beast",
+      "keywords": [
+        "rush",
+        "deathrattle"
+      ],
+      "description": "Rush. Deathrattle: Your next Beast costs (2) less.",
+      "deathrattle": [
+        {
+          "type": "reduce-deck-tribe-cost",
+          "tribe": "Beast",
+          "value": 2,
+          "alsoHand": true
+        }
+      ]
+    },
+    {
+      "id": "tower_sergeant",
+      "name": "Tower Sergeant",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "neutral",
+      "attack": 4,
+      "health": 4,
+      "rarity": "common",
+      "set": "ALTERAC_VALLEY",
+      "tribe": "Undead",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: If you control at least 2 other minions, gain +2/+2.",
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "minOtherCreatures": 2
+          },
+          "then": [
+            {
+              "type": "buff-self",
+              "attack": 2,
+              "health": 2
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "vanndar_stormpike",
+      "name": "Vanndar Stormpike",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "neutral",
+      "attack": 4,
+      "health": 4,
+      "rarity": "legendary",
+      "set": "ALTERAC_VALLEY",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: If this costs less than every minion in your deck, reduce their Cost by (3).",
+      "effects": [
+        {
+          "type": "reduce-deck-minions-cost",
+          "value": 3
+        }
+      ]
+    },
+    {
+      "id": "warden_of_chains",
+      "name": "Warden of Chains",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "demonhunter",
+      "attack": 2,
+      "health": 6,
+      "rarity": "rare",
+      "set": "ALTERAC_VALLEY",
+      "keywords": [
+        "taunt",
+        "battlecry"
+      ],
+      "description": "Taunt. Battlecry: If you're holding a Demon that costs (5) or more, gain +1/+2.",
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "holdingTribeMinCost": {
+              "tribe": "Demon",
+              "cost": 5
+            }
+          },
+          "then": [
+            {
+              "type": "buff-self",
+              "attack": 1,
+              "health": 2
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "wing_commander_mulverick",
+      "name": "Wing Commander Mulverick",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "druid",
+      "attack": 2,
+      "health": 5,
+      "rarity": "legendary",
+      "set": "ALTERAC_VALLEY",
+      "keywords": [
+        "rush",
+        "battlecry"
+      ],
+      "description": "Rush. Your minions have \"Honorable Kill: Summon a 2/2 Wyvern with Rush.\"",
+      "effects": [
+        {
+          "type": "grant-honorable-kill",
+          "effects": [
+            {
+              "type": "summon",
+              "count": 1,
+              "summonId": "av_wyvern"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "blood_guard",
+      "name": "Blood Guard",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "neutral",
+      "attack": 4,
+      "health": 7,
+      "rarity": "common",
+      "set": "ALTERAC_VALLEY",
+      "description": "Whenever this minion takes damage, give your minions +1 Attack.",
+      "ongoing": {
+        "on": "self-damaged",
+        "effects": [
+          {
+            "type": "buff",
+            "target": "friendly-creatures",
+            "attack": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "cerathine_fleetrunner",
+      "name": "Cera'thine Fleetrunner",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "rogue",
+      "attack": 5,
+      "health": 5,
+      "rarity": "legendary",
+      "set": "ALTERAC_VALLEY",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Replace your minions in hand and deck with ones from other classes. They cost (2) less.",
+      "effects": [
+        {
+          "type": "replace-minions-other-class",
+          "value": 2
+        }
+      ]
+    },
+    {
+      "id": "hollow_abomination",
+      "name": "Hollow Abomination",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "warlock",
+      "attack": 2,
+      "health": 8,
+      "rarity": "common",
+      "set": "ALTERAC_VALLEY",
+      "tribe": "Undead",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Deal 1 damage to all enemy minions. Honorable Kill: Gain the minion's Attack.",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 1,
+          "target": "enemy-creatures"
+        }
+      ]
+    },
+    {
+      "id": "av_wyvern",
+      "name": "Wyvern",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "druid",
+      "attack": 2,
+      "health": 2,
+      "rarity": "common",
+      "set": "ALTERAC_VALLEY",
+      "token": true,
+      "collectible": false,
+      "keywords": [
+        "rush"
+      ],
+      "description": "Rush."
     }
   ]
 }

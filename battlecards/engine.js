@@ -537,6 +537,7 @@ export function drawCards(state, pi, count) {
 		if (card.type === 'creature' && p.drawBuff) { card.attack += p.drawBuff.attack || 0; card.maxHealth += p.drawBuff.health || 0; }
 		if (card.type === 'creature' && p.drawBuffTribe) { for (const tr in p.drawBuffTribe) if ((card.tribe || '').includes(tr)) { card.attack += p.drawBuffTribe[tr].attack || 0; card.maxHealth += p.drawBuffTribe[tr].health || 0; } } // Shan'do Wildclaw
 		if (p.corruptDeckDiscount && (card.corrupt || card.corruptGrow)) card.cost = Math.max(0, (card.cost || 0) - p.corruptDeckDiscount); // Dark Inquisitor Xanesh
+		if (p.deckMinionDiscount && card.type === 'creature') card.cost = Math.max(0, (card.cost || 0) - p.deckMinionDiscount); // Vanndar / Cera'thine
 		if (card.type === 'creature' && p.deckTribeDiscount) { for (const tr in p.deckTribeDiscount) if ((card.tribe || '').includes(tr)) card.cost = Math.max(0, (card.cost || 0) - p.deckTribeDiscount[tr]); } // Frizz Kindleroost
 		// C'Thun enters hand carrying every buff it collected while in your deck
 		if (card.id === 'c_thun') { card.attack = CTHUN_BASE + p.cthunAtk; card.maxHealth = CTHUN_BASE + p.cthunHp; if (p.cthunTaunt && !card.keywords.includes(KW.TAUNT)) card.keywords.push(KW.TAUNT); }
@@ -4131,6 +4132,9 @@ function execEffects(state, pi, effects, target, source) {
 			else if (e.if.castSchoolThisTurn) ok = !!(p.schoolsCastThisTurn && p.schoolsCastThisTurn[e.if.castSchoolThisTurn]); // Metamorfin
 			else if (e.if.diedCountGame) ok = (p.diedCountById?.[e.if.diedCountGame.id] || 0) >= e.if.diedCountGame.count; // Elwynn Boar
 			else if (e.if.anyHeroDamagedThisTurn) ok = state.players.some(pl => pl.heroDamagedThisTurn); // Twilight Deceptor
+			else if (e.if.holdingSchoolsBoth) ok = e.if.holdingSchoolsBoth.every(sch => p.hand.some(c => schoolOf(c) === sch)); // Lightmaw Netherdrake
+			else if (e.if.holdingTribeMinCost) ok = p.hand.some(c => (c.tribe || '').includes(e.if.holdingTribeMinCost.tribe) && (c.cost || 0) >= e.if.holdingTribeMinCost.cost); // Warden of Chains
+			else if (e.if.notHonorablyKilled) ok = !(source && source.honorablyKilled); // Korrak the Bloodrager
 			else if (e.if.hpDamageGame != null) ok = (p.hpDamageGame || 0) >= e.if.hpDamageGame; // Jan'alai, the Dragonhawk
 			else if (e.if.deckEmpty) ok = p.deck.length === 0; // Chef Nomi
 			else if (e.if.holdingOtherClass) ok = p.hand.some(c => c !== source && c.cardClass && c.cardClass !== 'neutral' && c.cardClass !== p.heroClass); // Underbelly Fence
@@ -5462,6 +5466,23 @@ function execEffects(state, pi, effects, target, source) {
 			const before = new Set(p.hand.map(c => c.uid));
 			drawCards(state, pi, 1);
 			for (const c of p.hand) if (!before.has(c.uid)) { c.edwinReward = e.value || 2; c.edwinUid = source ? source.uid : null; }
+		} else if (e.type === 'reduce-deck-minions-cost') {
+			// Vanndar Stormpike: reduce the Cost of minions in your hand and deck
+			const p = state.players[pi];
+			for (const c of p.hand) if (c.type === 'creature') c.cost = Math.max(0, (c.cost || 0) - (e.value || 3));
+			p.deckMinionDiscount = (p.deckMinionDiscount || 0) + (e.value || 3);
+		} else if (e.type === 'grant-honorable-kill') {
+			// Wing Commander Mulverick: give your minions an Honorable Kill effect
+			for (const c of state.players[pi].board) if (!isDead(c) && c.type !== 'location') c.honorableKill = JSON.parse(JSON.stringify(e.effects));
+		} else if (e.type === 'replace-minions-other-class') {
+			// Cera'thine Fleetrunner: replace hand+deck minions with random other-class ones, cheaper
+			const p = state.players[pi];
+			const pool = Object.values(state.cardsById).filter(d => d.type === 'creature' && d.cardClass && d.cardClass !== 'neutral' && d.cardClass !== p.heroClass && !d.token && d.collectible !== false && !d.companion && !d.commander && !(d.colors && d.colors.length));
+			if (pool.length) {
+				for (let i = 0; i < p.hand.length; i++) { const c = p.hand[i]; if (c.type !== 'creature') continue; const def = pool[Math.floor(state.rng() * pool.length)]; const nc = instantiate(def, pi); nc.zone = 'hand'; nc.cost = Math.max(0, (def.cost || 0) - (e.value || 2)); p.hand[i] = nc; }
+				p.deck = p.deck.map(id => { const d = state.cardsById[id]; if (!d || d.type !== 'creature') return id; return pool[Math.floor(state.rng() * pool.length)].id; });
+				p.deckMinionDiscount = (p.deckMinionDiscount || 0) + (e.value || 2);
+			}
 		} else if (e.type === 'swap-hand-stats') {
 			// Reflecto Engineer: swap Attack and Health of all minions in both hands
 			for (const pl of state.players) for (const c of pl.hand) if (c.type === 'creature') { const a = c.attack || 0, h2 = c.maxHealth || 0; c.attack = h2; c.maxHealth = a; }
@@ -7653,6 +7674,7 @@ export function playCard(state, pi, cardUid, target, choice, position, useAlt, k
 			if (p.board.includes(card) && !isDead(card)) for (const o of opponentsOf(state, pi)) fireOngoing(state, o, 'enemy-creature-played', { minion: card });
 			if (p.board.includes(card) && !isDead(card)) fireOngoing(state, pi, 'creature-played', { minion: card });
 				if ((card.keywords || []).includes('battlecry') || card.combo) fireOngoing(state, pi, 'battlecry-or-combo-played', { played: card }); // Field Contact
+				if (card._outcast) fireOngoing(state, pi, 'edge-card-played', { played: card }); // Razorglaive Sentinel
 			// Grand Lackey Erkh: after you play a Lackey
 			if (p.board.includes(card) && !isDead(card) && typeof card.id === 'string' && card.id.startsWith('lackey_')) fireOngoing(state, pi, 'lackey-played', { minion: card });
 			// Swamp King Dred: after an opponent plays a creature, Dred attacks it
@@ -7855,6 +7877,7 @@ function resolveStackedSpell(state, entry) {
 		}
 		fireOngoing(state, pi, 'spell-played', { played: card });
 		if (card.combo) fireOngoing(state, pi, 'battlecry-or-combo-played', { played: card }); // Field Contact
+		if (card._outcast) fireOngoing(state, pi, 'edge-card-played', { played: card }); // Razorglaive Sentinel
 		if (ctx.target && ctx.target.type === 'creature') fireOngoing(state, pi, 'spell-cast-on-creature', { played: card, targetCreature: findCreature(state, ctx.target.uid) }); // Sethekk Veilweaver / Stormwind Avenger
 		if (card.choices) fireOngoing(state, pi, 'choose-spell-played', { played: card }); // Keeper Stalladris
 		firePlaneTrigger(state, 'spell-cast', pi); // Minamo / Elysaria
@@ -8333,11 +8356,13 @@ function resolveCombat(state, pi, attackerUid, target) {
 				emit(state, { type: 'overkill', uid: attacker.uid, player: pi });
 				execEffects(state, pi, JSON.parse(JSON.stringify(attacker.overkill)), null, attacker);
 		}
-		// Honorable Kill: this creature scored an EXACT lethal blow
+		// Honorable Kill: an EXACT lethal blow (mark the victim so Korrak knows)
+		if (isDead(defender) && defender.damage === defender.maxHealth) defender.honorablyKilled = true; // Korrak the Bloodrager
 		if (attacker.honorableKill && isDead(defender) && defender.damage === defender.maxHealth
 			&& !isDead(attacker)) {
 			emit(state, { type: 'honorableKill', uid: attacker.uid, player: pi });
 			runSecretEffects(state, pi, attacker.honorableKill, { self: attacker });
+			// Wing Commander Mulverick: friendly minions with a granted Honorable Kill also fire
 		}
 		// "After this attacks and kills a minion, it may attack again."
 		if (attacker.attackAgainOnKill && isDead(defender) && !isDead(attacker)) {
