@@ -370,6 +370,8 @@ export function createGame(cardsById, rng = Math.random, playerDeckIds = null, p
 		corruptedPlayedIds: [], // Y'Shaarj: Corrupted cards you've played this game
 		nextCardsDiscount: null, // Scabbs Cutterbutter: {count, amount} for your next cards this turn
 		nextChooseOneDiscount: 0, // Pride Seeker: your next Choose One card costs this much less
+		nextSpellDiscount: 0, // Murkwater Scribe: your next spell costs this much less
+		nextTribeDiscount: null, // Clownfish: {tribe, count, amount} for your next minions of a tribe
 		mana: { cur: 1, max: 1, bonus: 0 },
 		coins: 0,
 		diedThisTurn: 0,
@@ -2617,6 +2619,17 @@ function runSecretEffects(state, pi, effects, ctx) {
 				if (m && !isDead(m) && ctx.self && !isDead(ctx.self)) resolveCombat(state, ctx.self.controller, ctx.self.uid, { type: 'creature', uid: m.uid, player: m.controller });
 				break;
 			}
+			case 'damage-hero-by-spell-cost': {
+				// Raj Naz'jan: deal damage to the enemy hero equal to the cast spell's Cost
+				const cost = ctx.played ? (ctx.played.cost || 0) : 0;
+				if (cost > 0) for (const o of opponentsOf(state, pi)) damageHero(state, o, cost, pi);
+				break;
+			}
+			case 'buff-self-if-unspent-mana': {
+				// Spirit of the Tides: buff at end of turn if you have unspent Mana
+				if (availableMana(state.players[pi]) > 0 && ctx.self && !isDead(ctx.self)) { ctx.self.attack += e.attack || 0; ctx.self.maxHealth += e.health || 0; emit(state, { type: 'buff', uid: ctx.self.uid, attack: ctx.self.attack, hp: hp(ctx.self) }); }
+				break;
+			}
 			case 'destroy-self-if-amount': {
 				// Bubbler: pop when it takes exactly `amount` damage
 				if (ctx.amount === (e.amount ?? 1) && ctx.self && !isDead(ctx.self)) { ctx.self.damage = ctx.self.maxHealth; ctx.self.shield = false; emit(state, { type: 'destroy', uid: ctx.self.uid }); sweepDeaths(state); }
@@ -3734,6 +3747,7 @@ function execEffects(state, pi, effects, target, source) {
 				let n = 1;
 				if (e.per === 'other-friendly') n = state.players[pi].board.filter(c => c !== source && !isDead(c)).length;
 				else if (e.per === 'si7-others') n = Math.max(0, (state.players[pi].si7PlayedGame || 0) - 1); // SI:7 Informant
+				else if (e.per === 'spells-this-turn') n = state.players[pi].spellsPlayedThisTurn || 0; // Queensguard
 				else if (e.per === 'hand-cards') n = state.players[pi].hand.length;
 				else if (e.per === 'hand-spells') n = state.players[pi].hand.filter(c => isSpellType(c)).length; // Brainstormer
 				else if (e.per === 'pogos-played') n = state.players[pi].pogoCount || 0; // Pogo-Hopper
@@ -4153,6 +4167,7 @@ function execEffects(state, pi, effects, target, source) {
 			else if (e.if.holdingTribeMinCost) ok = p.hand.some(c => (c.tribe || '').includes(e.if.holdingTribeMinCost.tribe) && (c.cost || 0) >= e.if.holdingTribeMinCost.cost); // Warden of Chains
 			else if (e.if.notHonorablyKilled) ok = !(source && source.honorablyKilled); // Korrak the Bloodrager
 			else if (e.if.armorGainedGame != null) ok = (p.armorGainedGame || 0) >= e.if.armorGainedGame; // Captain Galvangar
+			else if (e.if.spellsCastWhileHeld != null) ok = (source && source.spellsCastWhileHeld || 0) >= e.if.spellsCastWhileHeld; // Spellcoiler / Ancient Krakenbane
 			else if (e.if.hpDamageGame != null) ok = (p.hpDamageGame || 0) >= e.if.hpDamageGame; // Jan'alai, the Dragonhawk
 			else if (e.if.deckEmpty) ok = p.deck.length === 0; // Chef Nomi
 			else if (e.if.holdingOtherClass) ok = p.hand.some(c => c !== source && c.cardClass && c.cardClass !== 'neutral' && c.cardClass !== p.heroClass); // Underbelly Fence
@@ -5486,6 +5501,20 @@ function execEffects(state, pi, effects, target, source) {
 			const before = new Set(p.hand.map(c => c.uid));
 			drawCards(state, pi, 1);
 			for (const c of p.hand) if (!before.has(c.uid)) { c.edwinReward = e.value || 2; c.edwinUid = source ? source.uid : null; }
+		} else if (e.type === 'set-next-spell-discount') {
+			// Murkwater Scribe: your next spell costs less
+			state.players[pi].nextSpellDiscount = (state.players[pi].nextSpellDiscount || 0) + (e.value || 1);
+		} else if (e.type === 'set-tribe-discount') {
+			// Clownfish: your next N minions of a tribe cost less
+			state.players[pi].nextTribeDiscount = { tribe: e.tribe, count: e.count || 2, amount: e.value || 2 };
+		} else if (e.type === 'buff-hand-tribe') {
+			// Voidgill: give all minions of a tribe in your hand +X/+X
+			for (const c of state.players[pi].hand) if (c.type === 'creature' && (c.tribe || '').includes(e.tribe)) { c.attack = (c.attack || 0) + (e.attack || 0); c.maxHealth = (c.maxHealth || 0) + (e.health || 0); }
+		} else if (e.type === 'reduce-hand-edges-cost') {
+			// Wayward Sage: reduce the Cost of the left- and right-most cards in your hand
+			const p = state.players[pi];
+			const others = p.hand.filter(c => c !== source);
+			for (const c of [...new Set([others[0], others[others.length - 1]])].filter(Boolean)) c.cost = Math.max(0, (c.cost || 0) - (e.value || 1));
 		} else if (e.type === 'put-on-bottom') {
 			// Azsharan Scavenger: put a card on the bottom of your deck (front of the array)
 			for (let i = 0; i < (e.count || 1); i++) state.players[pi].deck.unshift(e.id);
@@ -7559,6 +7588,8 @@ export function effectiveCost(state, pi, card) {
 	if (p.nextComboDiscount > 0 && card.combo) c = Math.max(0, c - p.nextComboDiscount); // Foxy Fraud
 	if (p.nextCardsDiscount && p.nextCardsDiscount.count > 0) c = Math.max(0, c - p.nextCardsDiscount.amount); // Scabbs Cutterbutter
 	if (p.nextChooseOneDiscount > 0 && card.choices) c = Math.max(0, c - p.nextChooseOneDiscount); // Pride Seeker
+	if (p.nextSpellDiscount > 0 && isSpellType(card)) c = Math.max(0, c - p.nextSpellDiscount); // Murkwater Scribe
+	if (p.nextTribeDiscount && p.nextTribeDiscount.count > 0 && card.type === 'creature' && (card.tribe || '').includes(p.nextTribeDiscount.tribe)) c = Math.max(0, c - p.nextTribeDiscount.amount); // Clownfish
 	if ((card.keywords || []).includes('outcast')) { const r = p.board.filter(x => x.outcastCostReduce && !isDead(x)).reduce((s, x) => s + x.outcastCostReduce, 0); if (r) c = Math.max(0, c - r); } // Line Hopper
 	if (!card.fromDeck) { const r = p.board.filter(x => x.foreignCostReduce && !isDead(x)).reduce((s, x) => s + x.foreignCostReduce, 0); if (r) c = Math.max(1, c - r); } // Arcane Luminary: not below 1
 	{ const sch = schoolOf(card); if (sch) { const r = p.board.filter(x => x.schoolCostReduce && x.schoolCostReduce.school === sch && !isDead(x)).reduce((s, x) => s + x.schoolCostReduce.amount, 0); if (r) c = Math.max(0, c - r); } } // Lady Anacondra: Nature spells
@@ -7640,6 +7671,8 @@ export function playCard(state, pi, cardUid, target, choice, position, useAlt, k
 	const playedCost = effectiveCost(state, pi, card);
 	if (card.combo && p.nextComboDiscount > 0) p.nextComboDiscount = 0; // Foxy Fraud discount is spent by the next Combo card
 	if (card.choices && p.nextChooseOneDiscount > 0) p.nextChooseOneDiscount = 0; // Pride Seeker discount is spent by the next Choose One card
+	if (isSpellType(card) && p.nextSpellDiscount > 0) p.nextSpellDiscount = 0; // Murkwater Scribe: spent by the next spell
+	if (card.type === 'creature' && p.nextTribeDiscount && p.nextTribeDiscount.count > 0 && (card.tribe || '').includes(p.nextTribeDiscount.tribe)) { p.nextTribeDiscount.count -= 1; if (p.nextTribeDiscount.count <= 0) p.nextTribeDiscount = null; } // Clownfish
 	if (p.nextCardsDiscount && p.nextCardsDiscount.count > 0) { p.nextCardsDiscount.count -= 1; if (p.nextCardsDiscount.count <= 0) p.nextCardsDiscount = null; } // Scabbs: consumed per card
 	if (card.stiltReward) { p.heroTempAttack += card.stiltReward; emit(state, { type: 'heroAttack', player: pi, attack: heroAttackValue(p) }); card.stiltReward = 0; } // Stiltstepper
 	if (card.edwinReward) { const ed = p.board.find(x => x.uid === card.edwinUid && !isDead(x)); if (ed) { ed.attack += card.edwinReward; ed.maxHealth += card.edwinReward; emit(state, { type: 'buff', uid: ed.uid, attack: ed.attack, hp: hp(ed) }); } card.edwinReward = 0; } // Edwin, Defias Kingpin
@@ -7824,6 +7857,7 @@ export function playCard(state, pi, cardUid, target, choice, position, useAlt, k
 	} else {
 		questTick(state, 'spell', pi);
 		p.spellsPlayedThisTurn++;
+		for (const hc of p.hand) hc.spellsCastWhileHeld = (hc.spellsCastWhileHeld || 0) + 1; // Naga: Spellcoiler / Ancient Krakenbane
 		{ const sch = schoolOf(card); if (sch) { (p.schoolsCastThisTurn = p.schoolsCastThisTurn || {})[sch] = true; (p.schoolsCastGame = p.schoolsCastGame || {})[sch] = true; if (sch === 'Fel') (p.felSpellsGame = p.felSpellsGame || []).push(card.id); if (sch === 'Frost') p.frostSpellsGame = (p.frostSpellsGame || 0) + 1; } } // Metamorfin / Multicaster / Jace / Bearon
 		if ((card.cost || 0) >= 6) p.lastBigSpell = { id: card.id, target }; // Grey Sage Parrot
 		p.spellsPlayedTotal = (p.spellsPlayedTotal || 0) + 1; // Arcane Giant

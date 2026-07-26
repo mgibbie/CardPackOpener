@@ -92268,6 +92268,440 @@
           "health": 1
         }
       ]
+    },
+    {
+      "id": "murkwater_scribe",
+      "name": "Murkwater Scribe",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "neutral",
+      "attack": 3,
+      "health": 2,
+      "rarity": "common",
+      "set": "THE_SUNKEN_CITY",
+      "tribe": "Naga",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: The next spell you play costs (1) less.",
+      "effects": [
+        {
+          "type": "set-next-spell-discount",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "obsidiansmith",
+      "name": "Obsidiansmith",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "warrior",
+      "attack": 3,
+      "health": 2,
+      "rarity": "rare",
+      "set": "THE_SUNKEN_CITY",
+      "tribe": "Pirate",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Dredge. If it's a minion or a weapon, give it +1/+1.",
+      "effects": [
+        {
+          "type": "dredge"
+        }
+      ]
+    },
+    {
+      "id": "queensguard",
+      "name": "Queensguard",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "priest",
+      "attack": 2,
+      "health": 3,
+      "rarity": "common",
+      "set": "THE_SUNKEN_CITY",
+      "tribe": "Naga",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Gain +1/+1 for each spell you've cast this turn.",
+      "effects": [
+        {
+          "type": "buff-self",
+          "attack": 1,
+          "health": 1,
+          "per": "spells-this-turn"
+        }
+      ]
+    },
+    {
+      "id": "raj_nazjan",
+      "name": "Raj Naz'jan",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "hunter",
+      "attack": 2,
+      "health": 3,
+      "rarity": "legendary",
+      "set": "THE_SUNKEN_CITY",
+      "tribe": "Naga",
+      "description": "After you cast a spell, deal damage equal to its Cost to the enemy Hero.",
+      "ongoing": {
+        "on": "spell-played",
+        "effects": [
+          {
+            "type": "damage-hero-by-spell-cost"
+          }
+        ]
+      }
+    },
+    {
+      "id": "seafloor_savior",
+      "name": "Seafloor Savior",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "paladin",
+      "attack": 2,
+      "health": 2,
+      "rarity": "common",
+      "set": "THE_SUNKEN_CITY",
+      "tribe": "Mech",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Dredge. If it's a minion, give it this minion's Attack and Health.",
+      "effects": [
+        {
+          "type": "dredge"
+        }
+      ]
+    },
+    {
+      "id": "security_automaton",
+      "name": "Security Automaton",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "neutral",
+      "attack": 1,
+      "health": 3,
+      "rarity": "common",
+      "set": "THE_SUNKEN_CITY",
+      "tribe": "Mech",
+      "description": "After you summon a Mech, gain +1/+1.",
+      "ongoing": {
+        "on": "summoned",
+        "if": {
+          "tribe": "Mech"
+        },
+        "effects": [
+          {
+            "type": "buff-self",
+            "attack": 1,
+            "health": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "spellcoiler",
+      "name": "Spellcoiler",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "mage",
+      "attack": 2,
+      "health": 3,
+      "rarity": "common",
+      "set": "THE_SUNKEN_CITY",
+      "tribe": "Naga",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: If you've cast a spell while holding this, Discover a spell.",
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "spellsCastWhileHeld": 1
+          },
+          "then": [
+            {
+              "type": "discover",
+              "cardType": "spell"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "spirit_of_the_tides",
+      "name": "Spirit of the Tides",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "druid",
+      "attack": 2,
+      "health": 2,
+      "rarity": "rare",
+      "set": "THE_SUNKEN_CITY",
+      "tribe": "Elemental",
+      "description": "If you have any unspent Mana at the end of your turn, gain +1/+2.",
+      "ongoing": {
+        "on": "turn-end",
+        "effects": [
+          {
+            "type": "buff-self-if-unspent-mana",
+            "attack": 1,
+            "health": 2
+          }
+        ]
+      }
+    },
+    {
+      "id": "submerged_spacerock",
+      "name": "Submerged Spacerock",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "mage",
+      "attack": 2,
+      "health": 2,
+      "rarity": "rare",
+      "set": "THE_SUNKEN_CITY",
+      "tribe": "Elemental",
+      "keywords": [
+        "deathrattle"
+      ],
+      "description": "Deathrattle: Add two Arcane Mage spells to your hand. They are Temporary.",
+      "deathrattle": [
+        {
+          "type": "conjure-random",
+          "cardType": "spell",
+          "cardClass": "mage",
+          "count": 2
+        }
+      ]
+    },
+    {
+      "id": "voidgill",
+      "name": "Voidgill",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "warlock",
+      "attack": 3,
+      "health": 2,
+      "rarity": "rare",
+      "set": "THE_SUNKEN_CITY",
+      "tribe": "Murloc",
+      "keywords": [
+        "deathrattle"
+      ],
+      "description": "Deathrattle: Give all Murlocs in your hand +1/+1.",
+      "deathrattle": [
+        {
+          "type": "buff-hand-tribe",
+          "tribe": "Murloc",
+          "attack": 1,
+          "health": 1
+        }
+      ]
+    },
+    {
+      "id": "wayward_sage",
+      "name": "Wayward Sage",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "demonhunter",
+      "attack": 2,
+      "health": 2,
+      "rarity": "epic",
+      "set": "THE_SUNKEN_CITY",
+      "tribe": "Naga",
+      "keywords": [
+        "outcast"
+      ],
+      "description": "Outcast: Reduce the Cost of the left and right-most cards in your hand by (1).",
+      "outcast": {
+        "effects": [
+          {
+            "type": "reduce-hand-edges-cost",
+            "value": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "ancient_krakenbane",
+      "name": "Ancient Krakenbane",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "hunter",
+      "attack": 3,
+      "health": 3,
+      "rarity": "rare",
+      "set": "THE_SUNKEN_CITY",
+      "tribe": "Naga",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: If you've cast three spells while holding this, deal 5 damage.",
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "spellsCastWhileHeld": 3
+          },
+          "then": [
+            {
+              "type": "damage",
+              "value": 5,
+              "target": "any"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "azsharan_mooncatcher",
+      "name": "Azsharan Mooncatcher",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "paladin",
+      "attack": 4,
+      "health": 2,
+      "rarity": "rare",
+      "set": "THE_SUNKEN_CITY",
+      "tribe": "Mech",
+      "keywords": [
+        "divine_shield",
+        "battlecry"
+      ],
+      "description": "Divine Shield. Battlecry: Put a 'Sunken Mooncatcher' on the bottom of your deck.",
+      "effects": [
+        {
+          "type": "put-on-bottom",
+          "id": "tsc_sunken_mooncatcher",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "id": "azsharan_sweeper",
+      "name": "Azsharan Sweeper",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "mage",
+      "attack": 3,
+      "health": 4,
+      "rarity": "common",
+      "set": "THE_SUNKEN_CITY",
+      "tribe": "Mech",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Put a 'Sunken Sweeper' on the bottom of your deck.",
+      "effects": [
+        {
+          "type": "put-on-bottom",
+          "id": "tsc_sunken_sweeper",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "id": "bloodscent_vilefin",
+      "name": "Bloodscent Vilefin",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "warlock",
+      "attack": 3,
+      "health": 4,
+      "rarity": "rare",
+      "set": "THE_SUNKEN_CITY",
+      "tribe": "Murloc",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Dredge. If it's a Murloc, change its Cost to Health instead of Mana.",
+      "effects": [
+        {
+          "type": "dredge"
+        }
+      ]
+    },
+    {
+      "id": "clownfish",
+      "name": "Clownfish",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "shaman",
+      "attack": 3,
+      "health": 2,
+      "rarity": "common",
+      "set": "THE_SUNKEN_CITY",
+      "tribe": "Murloc",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Your next two Murlocs cost (2) less.",
+      "effects": [
+        {
+          "type": "set-tribe-discount",
+          "tribe": "Murloc",
+          "count": 2,
+          "value": 2
+        }
+      ]
+    },
+    {
+      "id": "tsc_sunken_mooncatcher",
+      "name": "Sunken Mooncatcher",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "paladin",
+      "attack": 4,
+      "health": 2,
+      "rarity": "rare",
+      "set": "THE_SUNKEN_CITY",
+      "tribe": "Mech",
+      "token": true,
+      "collectible": false,
+      "keywords": [
+        "divine_shield",
+        "battlecry"
+      ],
+      "description": "Divine Shield. Battlecry: Summon a 2/1 Mecha-Jouster.",
+      "effects": [
+        {
+          "type": "summon",
+          "count": 1,
+          "summonId": "sw_mech"
+        }
+      ]
+    },
+    {
+      "id": "tsc_sunken_sweeper",
+      "name": "Sunken Sweeper",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "mage",
+      "attack": 3,
+      "health": 4,
+      "rarity": "common",
+      "set": "THE_SUNKEN_CITY",
+      "tribe": "Mech",
+      "token": true,
+      "collectible": false,
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Summon two 1/1 Mechs.",
+      "effects": [
+        {
+          "type": "summon",
+          "count": 2,
+          "summonId": "sw_mech"
+        }
+      ]
     }
   ]
 }
