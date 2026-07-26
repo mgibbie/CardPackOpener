@@ -93623,6 +93623,601 @@
       "token": true,
       "collectible": false,
       "description": "A 1/1 Naga."
+    },
+    {
+      "id": "twinbow_terrorcoil",
+      "name": "Twinbow Terrorcoil",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "hunter",
+      "attack": 4,
+      "health": 4,
+      "rarity": "rare",
+      "set": "THE_SUNKEN_CITY",
+      "tribe": "Naga",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: If you've cast a spell while holding this, your next spell casts twice.",
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "spellsCastWhileHeld": 1
+          },
+          "then": [
+            {
+              "type": "set-next-spell-double"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "azsharan_sentinel",
+      "name": "Azsharan Sentinel",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "neutral",
+      "attack": 5,
+      "health": 6,
+      "rarity": "common",
+      "set": "THE_SUNKEN_CITY",
+      "keywords": [
+        "taunt",
+        "deathrattle"
+      ],
+      "description": "Taunt. Deathrattle: Put a 'Sunken Sentinel' on the bottom of your deck.",
+      "deathrattle": [
+        {
+          "type": "put-on-bottom",
+          "id": "tsc_sunken_sentinel",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "id": "bootstrap_sunkeneer",
+      "name": "Bootstrap Sunkeneer",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "rogue",
+      "attack": 4,
+      "health": 4,
+      "rarity": "epic",
+      "set": "THE_SUNKEN_CITY",
+      "tribe": "Pirate",
+      "description": "Combo: Put an enemy minion on the bottom of your opponent's deck.",
+      "combo": [
+        {
+          "type": "bounce-to-deck-bottom",
+          "target": "enemy-creature"
+        }
+      ]
+    },
+    {
+      "id": "commander_ulthok",
+      "name": "Commander Ulthok",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "warlock",
+      "attack": 7,
+      "health": 7,
+      "rarity": "legendary",
+      "set": "THE_SUNKEN_CITY",
+      "description": "Battlecry: Your opponent's cards cost Health instead of Mana next turn."
+    },
+    {
+      "id": "ini_stormcoil",
+      "name": "Ini Stormcoil",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "neutral",
+      "attack": 4,
+      "health": 4,
+      "rarity": "legendary",
+      "set": "THE_SUNKEN_CITY",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Choose a friendly Mech. Summon a copy of it with Rush, Windfury, and Divine Shield.",
+      "effects": [
+        {
+          "type": "summon-copy-of-target-buffed",
+          "target": "friendly-creature",
+          "keywords": [
+            "rush",
+            "windfury",
+            "divine_shield"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "lady_ashvane",
+      "name": "Lady Ashvane",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "warrior",
+      "attack": 5,
+      "health": 5,
+      "rarity": "legendary",
+      "set": "THE_SUNKEN_CITY",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Give all weapons in your hand, deck, and battlefield +1/+1.",
+      "effects": [
+        {
+          "type": "buff-weapons",
+          "attack": 1,
+          "health": 1
+        }
+      ]
+    },
+    {
+      "id": "lady_nazjar",
+      "name": "Lady Naz'jar",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "mage",
+      "attack": 5,
+      "health": 5,
+      "rarity": "legendary",
+      "set": "THE_SUNKEN_CITY",
+      "tribe": "Naga",
+      "description": "While in your hand, this transforms after you cast a Fire, Frost, or Arcane spell."
+    },
+    {
+      "id": "queen_azshara",
+      "name": "Queen Azshara",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "neutral",
+      "attack": 5,
+      "health": 5,
+      "rarity": "legendary",
+      "set": "THE_SUNKEN_CITY",
+      "tribe": "Naga",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: If you've cast three spells while holding this, choose an Ancient Relic.",
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "spellsCastWhileHeld": 3
+          },
+          "then": [
+            {
+              "type": "discover",
+              "cardType": "spell"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "zaqul",
+      "name": "Za'qul",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "warlock",
+      "attack": 6,
+      "health": 5,
+      "rarity": "legendary",
+      "set": "THE_SUNKEN_CITY",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Your Abyssal Curses heal you for the damage they deal. Battlecry: Give your opponent an Abyssal Curse.",
+      "effects": [
+        {
+          "type": "add-card",
+          "id": "tsc_abyssal_curse",
+          "count": 1,
+          "toEnemy": true
+        }
+      ]
+    },
+    {
+      "id": "barbaric_sorceress",
+      "name": "Barbaric Sorceress",
+      "type": "creature",
+      "cost": 6,
+      "cardClass": "neutral",
+      "attack": 3,
+      "health": 7,
+      "rarity": "common",
+      "set": "THE_SUNKEN_CITY",
+      "tribe": "Naga",
+      "keywords": [
+        "taunt",
+        "battlecry"
+      ],
+      "description": "Taunt. Battlecry: Swap the Cost of a random spell in each player's hand.",
+      "effects": [
+        {
+          "type": "reduce-random-hand-cost",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "coilskar_commander",
+      "name": "Coilskar Commander",
+      "type": "creature",
+      "cost": 6,
+      "cardClass": "demonhunter",
+      "attack": 3,
+      "health": 7,
+      "rarity": "epic",
+      "set": "THE_SUNKEN_CITY",
+      "tribe": "Naga",
+      "keywords": [
+        "taunt",
+        "battlecry"
+      ],
+      "description": "Taunt. Battlecry: If you've cast three spells while holding this, summon two copies of this.",
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "spellsCastWhileHeld": 3
+          },
+          "then": [
+            {
+              "type": "summon-copy-self",
+              "count": 2
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "green_thumb_gardener",
+      "name": "Green-Thumb Gardener",
+      "type": "creature",
+      "cost": 6,
+      "cardClass": "druid",
+      "attack": 5,
+      "health": 5,
+      "rarity": "rare",
+      "set": "THE_SUNKEN_CITY",
+      "tribe": "Naga",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Refresh empty Mana Crystals equal to the Cost of the highest Cost spell in your hand.",
+      "effects": [
+        {
+          "type": "refresh-highest-spell"
+        }
+      ]
+    },
+    {
+      "id": "stormcoil_mothership",
+      "name": "Stormcoil Mothership",
+      "type": "creature",
+      "cost": 6,
+      "cardClass": "neutral",
+      "attack": 5,
+      "health": 4,
+      "rarity": "rare",
+      "set": "THE_SUNKEN_CITY",
+      "tribe": "Mech",
+      "keywords": [
+        "rush",
+        "deathrattle"
+      ],
+      "description": "Rush. Deathrattle: Summon two random Mechs that cost (3) or less.",
+      "deathrattle": [
+        {
+          "type": "summon-random",
+          "tribe": "Mech",
+          "maxCost": 3,
+          "count": 2
+        }
+      ]
+    },
+    {
+      "id": "blackscale_brute",
+      "name": "Blackscale Brute",
+      "type": "creature",
+      "cost": 7,
+      "cardClass": "warrior",
+      "attack": 5,
+      "health": 6,
+      "rarity": "rare",
+      "set": "THE_SUNKEN_CITY",
+      "tribe": "Naga",
+      "keywords": [
+        "taunt",
+        "battlecry"
+      ],
+      "description": "Taunt. Battlecry: If you have a weapon equipped, summon a 5/6 Naga with Rush.",
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "weaponEquipped": true
+          },
+          "then": [
+            {
+              "type": "summon",
+              "count": 1,
+              "summonId": "tsc_naga_5_6"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "hedra_the_heretic",
+      "name": "Hedra the Heretic",
+      "type": "creature",
+      "cost": 7,
+      "cardClass": "druid",
+      "attack": 4,
+      "health": 5,
+      "rarity": "legendary",
+      "set": "THE_SUNKEN_CITY",
+      "tribe": "Naga",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: For each spell you've cast while holding this, summon a minion of that spell's Cost.",
+      "effects": [
+        {
+          "type": "hedra"
+        }
+      ]
+    },
+    {
+      "id": "pirate_admiral_hooktusk",
+      "name": "Pirate Admiral Hooktusk",
+      "type": "creature",
+      "cost": 7,
+      "cardClass": "rogue",
+      "attack": 7,
+      "health": 7,
+      "rarity": "legendary",
+      "set": "THE_SUNKEN_CITY",
+      "tribe": "Pirate",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: If you have summoned 7 other Pirates this game, plunder the enemy!",
+      "effects": [
+        {
+          "type": "random-damage",
+          "count": 3,
+          "value": 3,
+          "pool": "enemies"
+        }
+      ]
+    },
+    {
+      "id": "slithering_deathscale",
+      "name": "Slithering Deathscale",
+      "type": "creature",
+      "cost": 7,
+      "cardClass": "neutral",
+      "attack": 5,
+      "health": 9,
+      "rarity": "epic",
+      "set": "THE_SUNKEN_CITY",
+      "tribe": "Naga",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: If you've cast three spells while holding this, deal 3 damage to all enemies.",
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "spellsCastWhileHeld": 3
+          },
+          "then": [
+            {
+              "type": "damage",
+              "value": 3,
+              "target": "enemies"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "the_leviathan",
+      "name": "The Leviathan",
+      "type": "creature",
+      "cost": 7,
+      "cardClass": "paladin",
+      "attack": 4,
+      "health": 5,
+      "rarity": "legendary",
+      "set": "THE_SUNKEN_CITY",
+      "tribe": "Mech",
+      "keywords": [
+        "rush",
+        "divine_shield"
+      ],
+      "description": "Colossal +1. Rush, Divine Shield. After this attacks, Dredge.",
+      "ongoing": {
+        "on": "self-attacks",
+        "effects": [
+          {
+            "type": "dredge"
+          }
+        ]
+      }
+    },
+    {
+      "id": "wrathspine_enchanter",
+      "name": "Wrathspine Enchanter",
+      "type": "creature",
+      "cost": 7,
+      "cardClass": "shaman",
+      "attack": 5,
+      "health": 4,
+      "rarity": "epic",
+      "set": "THE_SUNKEN_CITY",
+      "tribe": "Naga",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Cast a copy of a Fire, Frost, and Nature spell in your hand (targets chosen randomly).",
+      "effects": [
+        {
+          "type": "wrathspine"
+        }
+      ]
+    },
+    {
+      "id": "gigafin",
+      "name": "Gigafin",
+      "type": "creature",
+      "cost": 8,
+      "cardClass": "warlock",
+      "attack": 7,
+      "health": 4,
+      "rarity": "legendary",
+      "set": "THE_SUNKEN_CITY",
+      "tribe": "Murloc",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Colossal +1. Battlecry: Devour all enemy minions. Deathrattle: Spit them back out.",
+      "effects": [
+        {
+          "type": "destroy-all-enemies"
+        }
+      ]
+    },
+    {
+      "id": "tidal_revenant",
+      "name": "Tidal Revenant",
+      "type": "creature",
+      "cost": 8,
+      "cardClass": "warrior",
+      "attack": 5,
+      "health": 8,
+      "rarity": "common",
+      "set": "THE_SUNKEN_CITY",
+      "tribe": "Elemental",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Deal 5 damage. Gain 8 Armor.",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 5,
+          "target": "any"
+        },
+        {
+          "type": "armor",
+          "value": 8
+        }
+      ]
+    },
+    {
+      "id": "trenchstalker",
+      "name": "Trenchstalker",
+      "type": "creature",
+      "cost": 9,
+      "cardClass": "warrior",
+      "attack": 8,
+      "health": 9,
+      "rarity": "epic",
+      "set": "THE_SUNKEN_CITY",
+      "tribe": "Beast",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Attack three different random enemies.",
+      "effects": [
+        {
+          "type": "attack-random-enemy",
+          "count": 3
+        }
+      ]
+    },
+    {
+      "id": "neptulon_the_tidehunter",
+      "name": "Neptulon the Tidehunter",
+      "type": "creature",
+      "cost": 10,
+      "cardClass": "neutral",
+      "attack": 7,
+      "health": 7,
+      "rarity": "legendary",
+      "set": "THE_SUNKEN_CITY",
+      "tribe": "Elemental",
+      "keywords": [
+        "rush",
+        "windfury"
+      ],
+      "description": "Colossal +2, Rush, Windfury. Whenever Neptulon attacks, if you control any Hands, they attack instead."
+    },
+    {
+      "id": "tsc_sunken_sentinel",
+      "name": "Sunken Sentinel",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "neutral",
+      "attack": 5,
+      "health": 6,
+      "rarity": "common",
+      "set": "THE_SUNKEN_CITY",
+      "token": true,
+      "collectible": false,
+      "keywords": [
+        "taunt",
+        "battlecry"
+      ],
+      "description": "Taunt. Battlecry: Summon two 2/2 Sentries.",
+      "effects": [
+        {
+          "type": "summon",
+          "count": 2,
+          "summonId": "tsc_sentry"
+        }
+      ]
+    },
+    {
+      "id": "tsc_sentry",
+      "name": "Sentry",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "neutral",
+      "attack": 2,
+      "health": 2,
+      "rarity": "common",
+      "set": "THE_SUNKEN_CITY",
+      "token": true,
+      "collectible": false,
+      "description": "A 2/2."
+    },
+    {
+      "id": "tsc_naga_5_6",
+      "name": "Sea Serpent",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "warrior",
+      "attack": 5,
+      "health": 6,
+      "rarity": "common",
+      "set": "THE_SUNKEN_CITY",
+      "tribe": "Naga",
+      "token": true,
+      "collectible": false,
+      "keywords": [
+        "rush"
+      ],
+      "description": "Rush."
     }
   ]
 }

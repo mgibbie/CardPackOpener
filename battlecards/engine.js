@@ -646,6 +646,8 @@ const CHOSEN = {
 	'sacrifice-summon-costplus': { 'friendly-creature': 'friendly-creature' },
 	'discover-target-tribe': { 'friendly-creature': 'friendly-creature' },
 	'steal-health': { creature: 'creature', 'enemy-creature': 'enemy-creature' },
+	'bounce-to-deck-bottom': { 'enemy-creature': 'enemy-creature', creature: 'creature' },
+	'summon-copy-of-target-buffed': { 'friendly-creature': 'friendly-creature' },
 	'destroy-fragment-then-damage': { any: 'any', 'enemy-any': 'enemy-any', creature: 'creature', 'enemy-creature': 'enemy-creature' },
 	'transform-into-token': { 'friendly-creature': 'friendly-creature', creature: 'creature' },
 	'mark-doomed': { creature: 'creature', 'enemy-creature': 'enemy-creature' },
@@ -3464,13 +3466,16 @@ function execEffects(state, pi, effects, target, source) {
 				emit(state, { type: 'destroy', uid: t.uid });
 			}
 		} else if (e.type === 'attack-random-enemy') {
-			// The Black Blood: swing at a random enemy creature
-			if (source && !isDead(source)) {
-				const pool = enemies.flatMap(o => state.players[o].board.filter(c => !isDead(c)));
-				if (pool.length) {
-					const t = pool[Math.floor(state.rng() * pool.length)];
-					resolveCombat(state, pi, source.uid, { type: 'creature', uid: t.uid, player: t.controller });
-				}
+			// The Black Blood: swing at a random enemy creature (count -> Trenchstalker: 3 different)
+			const hit = new Set();
+			for (let i = 0; i < (e.count || 1); i++) {
+				if (!source || isDead(source)) break;
+				const pool = enemies.flatMap(o => state.players[o].board.filter(c => !isDead(c) && c.type !== 'location' && !hit.has(c.uid)));
+				if (!pool.length) break;
+				const t = pool[Math.floor(state.rng() * pool.length)];
+				hit.add(t.uid);
+				resolveCombat(state, pi, source.uid, { type: 'creature', uid: t.uid, player: t.controller });
+				sweepDeaths(state);
 			}
 		} else if (e.type === 'trigger-deathrattles') {
 			// Ragnaros: fire your creatures' Deathrattles without them dying
@@ -5514,6 +5519,46 @@ function execEffects(state, pi, effects, target, source) {
 			const before = new Set(p.hand.map(c => c.uid));
 			drawCards(state, pi, 1);
 			for (const c of p.hand) if (!before.has(c.uid)) { c.edwinReward = e.value || 2; c.edwinUid = source ? source.uid : null; }
+		} else if (e.type === 'bounce-to-deck-bottom') {
+			// Bootstrap Sunkeneer: put an enemy minion on the bottom of its owner's deck
+			const t = chosenCreature();
+			if (t && t.controller != null) { const owner = state.players[t.controller]; owner.board = owner.board.filter(c => c !== t); if (state.cardsById[t.id]) owner.deck.unshift(t.id); t.zone = 'gone'; emit(state, { type: 'bounce', uid: t.uid, player: t.controller, name: t.name }); recomputeAuras(state); }
+		} else if (e.type === 'summon-copy-of-target-buffed') {
+			// Ini Stormcoil: summon a copy of a chosen friendly minion with granted keywords
+			const t = chosenCreature();
+			if (t) { const base = state.cardsById[t.id]; if (base) { const c = summon(state, pi, JSON.parse(JSON.stringify(base))); if (c) for (const kw of e.keywords || []) { if (!c.keywords.includes(kw)) { c.keywords.push(kw); if (kw === KW.DIVINE_SHIELD) c.shield = true; } } } }
+		} else if (e.type === 'refresh-highest-spell') {
+			// Green-Thumb Gardener: refresh empty crystals equal to your highest-Cost spell
+			const p = state.players[pi];
+			let best = 0; for (const c of p.hand) if (isSpellType(c)) best = Math.max(best, c.cost || 0);
+			if (best > 0) { p.mana.cur = Math.min(p.mana.max, p.mana.cur + best); emit(state, { type: 'manaGained', player: pi }); }
+		} else if (e.type === 'hedra') {
+			// Hedra the Heretic: for each spell cast while holding this, summon a minion of that Cost
+			for (const id of (source && source.spellsHeldIds) || []) {
+				const cost = state.cardsById[id]?.cost || 0;
+				execEffects(state, pi, [{ type: 'summon-random', cost }], null, source);
+			}
+		} else if (e.type === 'wrathspine') {
+			// Wrathspine Enchanter: cast a copy of a Fire, Frost, and Nature spell in your hand
+			const p = state.players[pi];
+			for (const sch of ['Fire', 'Frost', 'Nature']) {
+				const src = p.hand.find(c => schoolOf(c) === sch);
+				if (!src || !state.cardsById[src.id]) continue;
+				const spell = instantiate(state.cardsById[src.id], pi);
+				const spec = targetSpec(state, pi, spell, null);
+				let tgt = null; if (spec) { const legal = legalTargets(state, pi, spec); tgt = legal.length ? legal[Math.floor(state.rng() * legal.length)] : null; }
+				emit(state, { type: 'conjure', player: pi, card: spell, color: null });
+				runSpell(state, pi, spell, tgt, null); sweepDeaths(state);
+			}
+		} else if (e.type === 'buff-weapons') {
+			// Lady Ashvane: buff weapons in hand and equipped (+ deck via a draw aura)
+			const p = state.players[pi];
+			if (p.weapon) { p.weapon.attack += e.attack || 0; p.weapon.durability += e.health || 0; emit(state, { type: 'weaponDurability', player: pi, attack: p.weapon.attack, durability: p.weapon.durability }); }
+			for (const c of p.hand) if (c.type === 'weapon') { c.attack = (c.attack || 0) + (e.attack || 0); c.durability = (c.durability || 0) + (e.health || 0); }
+		} else if (e.type === 'destroy-all-enemies') {
+			// Gigafin: destroy all enemy minions (spit-back simplified away)
+			for (const o of enemies) for (const c of [...state.players[o].board]) if (!isDead(c) && c.type !== 'location') { c.damage = c.maxHealth; c.shield = false; emit(state, { type: 'destroy', uid: c.uid }); }
+			sweepDeaths(state);
 		} else if (e.type === 'add-back-held-spells') {
 			// Commander Sivara: add the spells you cast while holding this back to your hand
 			const p = state.players[pi];
