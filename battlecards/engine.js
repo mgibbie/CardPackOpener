@@ -5587,6 +5587,30 @@ function execEffects(state, pi, effects, target, source) {
 			// Party Favor Totem: summon N random basic Totems
 			const pool = ['sch_totem_healing', 'sch_totem_searing', 'sch_totem_stoneclaw', 'sch_totem_wrath'];
 			for (let n = 0; n < (e.count || 1); n++) { const id = pool[Math.floor(state.rng() * pool.length)]; if (state.cardsById[id]) summon(state, pi, state.cardsById[id]); }
+		} else if (e.type === 'summon-copy-of-self') {
+			// Mischievous Imp / Scuttlebutt Ghoul / Partner in Crime: summon N copies of this minion
+			if (e.requireSecret && !state.players[pi].secrets.length) continue;
+			const def = source && state.cardsById[source.id];
+			if (def) for (let n = 0; n < (e.count || 1); n++) summon(state, pi, def);
+		} else if (e.type === 'grant-self-endturn-summon-copy') {
+			// Partner in Crime: at end of your turn, summon a copy of this minion (one-shot)
+			if (source) source.ongoing = { on: 'turn-end', once: true, effects: [{ type: 'summon-copy-of-self', count: e.count || 1 }] };
+		} else if (e.type === 'cast-secret-from-deck') {
+			// Private Eye: install N Secrets from your deck (Combo casts 2)
+			const p = state.players[pi];
+			for (let n = 0; n < (e.count || 1); n++) {
+				const idx = p.deck.findIndex(id => state.cardsById[id]?.secret && !p.secrets.some(s => s.id === id));
+				if (idx < 0) break;
+				const [id] = p.deck.splice(idx, 1);
+				installSecret(state, pi, id);
+			}
+		} else if (e.type === 'copy-random-enemy-hand') {
+			// Incriminating Psychic: copy N random cards from the opponent's hand into yours
+			const foe = enemies[0], p = state.players[pi];
+			if (foe != null) { const src = state.players[foe].hand.slice(); for (let n = 0; n < (e.count || 1) && src.length && p.hand.length < MAX_HAND; n++) { const i = Math.floor(state.rng() * src.length); const [ec] = src.splice(i, 1); const def = state.cardsById[ec.id] || ec; const card = instantiate(def, pi); card.zone = 'hand'; p.hand.push(card); emit(state, { type: 'conjure', player: pi, card, color: null }); } }
+		} else if (e.type === 'draw-both-until') {
+			// Sightless Magistrate: both players draw until they have N cards
+			for (let s2 = 0; s2 < state.players.length; s2++) { const pl = state.players[s2]; let guard = 0; while (pl.hand.length < (e.value || 5) && pl.hand.length < MAX_HAND && guard++ < 20) { const before = pl.hand.length; drawCards(state, s2, 1); if (pl.hand.length === before) break; } }
 		} else if (e.type === 'become-copy-of-dead') {
 			// Creepy Painting: become a copy of a minion that died (runs via ongoing ctx.dead)
 			// handled in runSecretEffects; no-op here

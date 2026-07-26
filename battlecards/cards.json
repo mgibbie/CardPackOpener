@@ -94980,6 +94980,426 @@
       "overload": 2,
       "description": "Overload: (2)",
       "effects": []
+    },
+    {
+      "id": "baroness_vashj",
+      "name": "Baroness Vashj",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "shaman",
+      "attack": 3,
+      "health": 6,
+      "rarity": "legendary",
+      "set": "REVENDRETH",
+      "tribe": "Naga",
+      "description": "If this would transform into a minion, summon that minion instead."
+    },
+    {
+      "id": "buffet_biggun",
+      "name": "Buffet Biggun",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "paladin",
+      "attack": 2,
+      "health": 4,
+      "rarity": "common",
+      "set": "REVENDRETH",
+      "keywords": [
+        "battlecry"
+      ],
+      "infuse": {
+        "count": 3,
+        "id": "rev_buffet_biggun_infused"
+      },
+      "description": "Battlecry: Summon two Silver Hand Recruits. Infuse (3): Give them +2 Attack and Divine Shield.",
+      "effects": [
+        {
+          "type": "summon",
+          "count": 2,
+          "summonId": "rev_silver_hand"
+        }
+      ]
+    },
+    {
+      "id": "chatty_bartender",
+      "name": "Chatty Bartender",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "mage",
+      "attack": 4,
+      "health": 4,
+      "rarity": "common",
+      "set": "REVENDRETH",
+      "description": "At the end of your turn, if you control a Secret, deal 2 damage to all enemies.",
+      "ongoing": {
+        "on": "turn-end",
+        "if": {
+          "controlSecret": true
+        },
+        "effects": [
+          {
+            "type": "damage",
+            "value": 2,
+            "target": "enemies"
+          }
+        ]
+      }
+    },
+    {
+      "id": "dispossessed_soul",
+      "name": "Dispossessed Soul",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "neutral",
+      "attack": 4,
+      "health": 5,
+      "rarity": "rare",
+      "set": "REVENDRETH",
+      "tribe": "Undead",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: If you control a location, Discover a copy of a card in your deck."
+    },
+    {
+      "id": "halkias",
+      "name": "Halkias",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "rogue",
+      "attack": 5,
+      "health": 4,
+      "rarity": "legendary",
+      "set": "REVENDRETH",
+      "tribe": "Elemental",
+      "keywords": [
+        "stealth",
+        "deathrattle"
+      ],
+      "description": "Stealth. Deathrattle: Store Halkias's soul inside of a friendly Secret. It resummons Halkias when triggered.",
+      "deathrattle": [
+        {
+          "type": "add-card",
+          "id": "halkias",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "id": "incriminating_psychic",
+      "name": "Incriminating Psychic",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "priest",
+      "attack": 2,
+      "health": 6,
+      "rarity": "common",
+      "set": "REVENDRETH",
+      "tribe": "Dragon",
+      "keywords": [
+        "taunt",
+        "deathrattle"
+      ],
+      "description": "Taunt. Deathrattle: Copy two random cards from your opponent's hand.",
+      "deathrattle": [
+        {
+          "type": "copy-random-enemy-hand",
+          "count": 2
+        }
+      ]
+    },
+    {
+      "id": "mischievous_imp",
+      "name": "Mischievous Imp",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "warlock",
+      "attack": 3,
+      "health": 3,
+      "rarity": "rare",
+      "set": "REVENDRETH",
+      "tribe": "Demon",
+      "keywords": [
+        "battlecry"
+      ],
+      "infuse": {
+        "count": 3,
+        "id": "rev_mischievous_imp_infused"
+      },
+      "description": "Battlecry: Summon a copy of this. Infuse (3): Summon two copies instead.",
+      "effects": [
+        {
+          "type": "summon-copy-of-self",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "id": "murlocula",
+      "name": "Murlocula",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "neutral",
+      "attack": 3,
+      "health": 4,
+      "rarity": "common",
+      "set": "REVENDRETH",
+      "tribe": "Murloc",
+      "keywords": [
+        "lifesteal"
+      ],
+      "infuse": {
+        "count": 4,
+        "id": "rev_murlocula_infused"
+      },
+      "description": "Lifesteal. Infuse (4): This costs (0)."
+    },
+    {
+      "id": "orion_mansion_manager",
+      "name": "Orion, Mansion Manager",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "mage",
+      "attack": 3,
+      "health": 5,
+      "rarity": "legendary",
+      "set": "REVENDRETH",
+      "description": "After a friendly Secret is revealed, cast a different Mage Secret and gain +2/+2."
+    },
+    {
+      "id": "partner_in_crime",
+      "name": "Partner in Crime",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "priest",
+      "attack": 2,
+      "health": 5,
+      "rarity": "common",
+      "set": "REVENDRETH",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Summon a copy of this minion at the end of your turn.",
+      "effects": [
+        {
+          "type": "grant-self-endturn-summon-copy",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "id": "private_eye",
+      "name": "Private Eye",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "rogue",
+      "attack": 3,
+      "health": 4,
+      "rarity": "common",
+      "set": "REVENDRETH",
+      "keywords": [
+        "battlecry",
+        "combo"
+      ],
+      "description": "Battlecry: Cast a Secret from your deck. Combo: Cast 2 instead.",
+      "effects": [
+        {
+          "type": "cast-secret-from-deck",
+          "count": 1
+        }
+      ],
+      "combo": [
+        {
+          "type": "cast-secret-from-deck",
+          "count": 2
+        }
+      ]
+    },
+    {
+      "id": "prosecutor_meltranix",
+      "name": "Prosecutor Mel'tranix",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "demonhunter",
+      "attack": 2,
+      "health": 6,
+      "rarity": "legendary",
+      "set": "REVENDRETH",
+      "tribe": "Demon",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Your opponent can only play their left- and right-most cards on their next turn."
+    },
+    {
+      "id": "scuttlebutt_ghoul",
+      "name": "Scuttlebutt Ghoul",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "neutral",
+      "attack": 2,
+      "health": 5,
+      "rarity": "common",
+      "set": "REVENDRETH",
+      "keywords": [
+        "taunt",
+        "battlecry"
+      ],
+      "description": "Taunt. Battlecry: If you control a Secret, summon a copy of this.",
+      "effects": [
+        {
+          "type": "summon-copy-of-self",
+          "count": 1,
+          "requireSecret": true
+        }
+      ]
+    },
+    {
+      "id": "sightless_magistrate",
+      "name": "Sightless Magistrate",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "demonhunter",
+      "attack": 5,
+      "health": 4,
+      "rarity": "common",
+      "set": "REVENDRETH",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Both players draw until they have 5 cards.",
+      "effects": [
+        {
+          "type": "draw-both-until",
+          "value": 5
+        }
+      ]
+    },
+    {
+      "id": "stonebound_gargon",
+      "name": "Stonebound Gargon",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "hunter",
+      "attack": 3,
+      "health": 5,
+      "rarity": "common",
+      "set": "REVENDRETH",
+      "tribe": "Beast",
+      "keywords": [
+        "rush"
+      ],
+      "description": "Rush. Infuse (3): Also damages the minions next to whomever this attacks."
+    },
+    {
+      "id": "the_stonewright",
+      "name": "The Stonewright",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "shaman",
+      "attack": 5,
+      "health": 4,
+      "rarity": "legendary",
+      "set": "REVENDRETH",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: For the rest of the game, your Totems have +2 Attack.",
+      "effects": [
+        {
+          "type": "emblem",
+          "name": "Stonewright",
+          "description": "Your Totems have +2 Attack.",
+          "aura": {
+            "tribe": "Totem",
+            "attack": 2
+          }
+        }
+      ]
+    },
+    {
+      "id": "rev_silver_hand_ds",
+      "name": "Silver Hand Recruit",
+      "type": "creature",
+      "cost": 1,
+      "cardClass": "paladin",
+      "attack": 3,
+      "health": 1,
+      "rarity": "common",
+      "set": "REVENDRETH",
+      "token": true,
+      "collectible": false,
+      "keywords": [
+        "divine_shield"
+      ],
+      "description": "Divine Shield."
+    },
+    {
+      "id": "rev_buffet_biggun_infused",
+      "name": "Buffet Biggun",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "paladin",
+      "attack": 2,
+      "health": 4,
+      "rarity": "common",
+      "set": "REVENDRETH",
+      "token": true,
+      "collectible": false,
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Summon two Silver Hand Recruits with +2 Attack and Divine Shield.",
+      "effects": [
+        {
+          "type": "summon",
+          "count": 2,
+          "summonId": "rev_silver_hand_ds"
+        }
+      ]
+    },
+    {
+      "id": "rev_mischievous_imp_infused",
+      "name": "Mischievous Imp",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "warlock",
+      "attack": 3,
+      "health": 3,
+      "rarity": "rare",
+      "set": "REVENDRETH",
+      "tribe": "Demon",
+      "token": true,
+      "collectible": false,
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Summon two copies of Mischievous Imp.",
+      "effects": [
+        {
+          "type": "summon",
+          "count": 2,
+          "summonId": "mischievous_imp"
+        }
+      ]
+    },
+    {
+      "id": "rev_murlocula_infused",
+      "name": "Murlocula",
+      "type": "creature",
+      "cost": 0,
+      "cardClass": "neutral",
+      "attack": 3,
+      "health": 4,
+      "rarity": "common",
+      "set": "REVENDRETH",
+      "tribe": "Murloc",
+      "token": true,
+      "collectible": false,
+      "keywords": [
+        "lifesteal"
+      ],
+      "description": "Lifesteal. Costs (0)."
     }
   ]
 }
