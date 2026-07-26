@@ -245,6 +245,8 @@ function instantiate(def, controller) {
 		effects: def.effects || null,
 		outcast: def.outcast || null, // Ashes of Outland: extra battlecry/spell effect from hand's edge
 		handDeathGrowth: !!def.handDeathGrowth, // Blood Herald: +1/+1 whenever a friendly minion dies while in hand
+		infuse: def.infuse ? { ...def.infuse } : null, // Castle Nathria Infuse: {count, id} -> transform after N friendly deaths in hand
+		infuseCounter: 0,
 		heroPowerCostReduce: def.heroPowerCostReduce || 0, // Felfire Deadeye: your Hero Power costs this much less
 		outcastCostReduce: def.outcastCostReduce || 0, // Line Hopper: your Outcast cards cost this much less
 		healBonusHealth: def.healBonusHealth || 0, // Lightsteed: your heals also give the minion +Health
@@ -547,6 +549,7 @@ export function drawCards(state, pi, count) {
 		if (state.hpResolver === pi && staticValue(p, 'hero-power-draw-zero') > 0) card.cost = 0; // Wilfred Fizzlebang
 		if (!p.stealerUsedThisTurn && p.board.some(x => x.id === 'stealer_of_souls' && !isDead(x))) { card.cost = 0; p.stealerUsedThisTurn = true; } // Stealer of Souls (Health-cost approximated as free)
 		if (p.nextDrawDiscount > 0) { card.cost = Math.max(0, (card.cost || 0) - p.nextDrawDiscount); p.nextDrawDiscount = 0; } // SI:7 Skulker
+		if (p.drawPunishTurn === state.turnNumber && p.drawPunishDamage > 0) damageHero(state, pi, p.drawPunishDamage, null); // Ashen Elemental
 		if (p.castWhenDrawn > 0 && isSpellType(card) && !card.counterSpell && !card.xSpell) { // Sheldras Moontree
 			p.castWhenDrawn -= 1;
 			const spec = targetSpec(state, pi, card, null); let tgt = null;
@@ -648,6 +651,7 @@ const CHOSEN = {
 	'steal-health': { creature: 'creature', 'enemy-creature': 'enemy-creature' },
 	'bounce-to-deck-bottom': { 'enemy-creature': 'enemy-creature', creature: 'creature' },
 	'summon-copy-of-target-buffed': { 'friendly-creature': 'friendly-creature' },
+	'set-target-stats': { creature: 'creature', 'enemy-creature': 'enemy-creature' },
 	'destroy-fragment-then-damage': { any: 'any', 'enemy-any': 'enemy-any', creature: 'creature', 'enemy-creature': 'enemy-creature' },
 	'transform-into-token': { 'friendly-creature': 'friendly-creature', creature: 'creature' },
 	'mark-doomed': { creature: 'creature', 'enemy-creature': 'enemy-creature' },
@@ -1075,6 +1079,7 @@ function damageHero(state, pi, amount, src = null, pierce = false) {
 	const toLife = amount - absorbed;
 	p.life = Math.max(0, p.life - toLife);
 	if (toLife > 0) { p.heroDamagedThisTurn = true; p.heroHealthChangedThisTurn = true; p.heroDamageTakenThisTurn = (p.heroDamageTakenThisTurn || 0) + toLife; } // Duskbat / Nethersoul Buster / Brittlebone Destroyer
+	if (toLife > 0 && src != null && src !== pi && state.players[src]) state.players[src].damageToEnemyHeroThisTurn = (state.players[src].damageToEnemyHeroThisTurn || 0) + toLife; // Crooked Cook
 	emit(state, { type: 'damage', targetType: 'hero', player: pi, amount, life: p.life });
 	if (toLife > 0) fireSecrets(state, pi, 'hero-takes-damage', { fatal: false, amount: toLife, src });
 	if (toLife > 0) questTick(state, 'damage-taken', pi, toLife);
@@ -1302,6 +1307,7 @@ function sweepDeaths(state) {
 			for (let s2 = 0; s2 < state.players.length; s2++) fireOngoing(state, s2, 'creature-died', { dead: c });
 			fireOngoing(state, pi, 'friendly-creature-died', { dead: c });
 				for (const hc of state.players[pi].hand) if (hc.handDeathGrowth) { hc.attack += 1; hc.maxHealth += 1; } // Blood Herald: grows while in hand
+				{ const p2 = state.players[pi]; for (let hi = 0; hi < p2.hand.length; hi++) { const hc = p2.hand[hi]; if (hc.infuse && !hc._infused) { hc.infuseCounter = (hc.infuseCounter || 0) + 1; if (hc.infuseCounter >= hc.infuse.count && state.cardsById[hc.infuse.id]) { const ni = instantiate(state.cardsById[hc.infuse.id], pi); ni.zone = 'hand'; ni._infused = true; p2.hand[hi] = ni; emit(state, { type: 'infused', player: pi, uid: hc.uid, name: ni.name }); } } } } // Castle Nathria Infuse
 			fireSecrets(state, pi, 'friendly-minion-died', { minion: c }); // Redemption
 		}
 	}
@@ -4175,6 +4181,7 @@ function execEffects(state, pi, effects, target, source) {
 			else if (e.if.armorGainedGame != null) ok = (p.armorGainedGame || 0) >= e.if.armorGainedGame; // Captain Galvangar
 			else if (e.if.spellsCastWhileHeld != null) ok = (source && source.spellsCastWhileHeld || 0) >= e.if.spellsCastWhileHeld; // Spellcoiler / Ancient Krakenbane
 			else if (e.if.schoolWhileHeld) ok = !!(source && source.schoolsWhileHeld && source.schoolsWhileHeld[e.if.schoolWhileHeld]); // Heralds
+			else if (e.if.dealtHeroDamage != null) ok = (p.damageToEnemyHeroThisTurn || 0) >= e.if.dealtHeroDamage; // Crooked Cook
 			else if (e.if.hpDamageGame != null) ok = (p.hpDamageGame || 0) >= e.if.hpDamageGame; // Jan'alai, the Dragonhawk
 			else if (e.if.deckEmpty) ok = p.deck.length === 0; // Chef Nomi
 			else if (e.if.holdingOtherClass) ok = p.hand.some(c => c !== source && c.cardClass && c.cardClass !== 'neutral' && c.cardClass !== p.heroClass); // Underbelly Fence
@@ -5519,6 +5526,19 @@ function execEffects(state, pi, effects, target, source) {
 			const before = new Set(p.hand.map(c => c.uid));
 			drawCards(state, pi, 1);
 			for (const c of p.hand) if (!before.has(c.uid)) { c.edwinReward = e.value || 2; c.edwinUid = source ? source.uid : null; }
+		} else if (e.type === 'shuffle-hand-card-into-deck') {
+			// Bibliomite: shuffle a card from your hand into your deck (random, drawing a card)
+			const p = state.players[pi];
+			const pool = p.hand.filter(c => c !== source && state.cardsById[c.id] && !c.token);
+			if (pool.length) { const c = pool[Math.floor(state.rng() * pool.length)]; p.hand = p.hand.filter(x => x !== c); p.deck.push(c.id); for (let i = p.deck.length - 1; i > 0; i--) { const j = Math.floor(state.rng() * (i + 1)); [p.deck[i], p.deck[j]] = [p.deck[j], p.deck[i]]; } if (e.draw) drawCards(state, pi, 1); }
+		} else if (e.type === 'set-target-stats') {
+			// Class Action Lawyer: set a minion's Attack and Health (gated on deckNoNeutral)
+			if (e.requireDeckNoNeutral && state.players[pi].deck.some(id => (state.cardsById[id]?.cardClass || 'neutral') === 'neutral')) continue;
+			const t = chosenCreature();
+			if (t) { t.attack = e.attack ?? 1; t.maxHealth = e.health ?? 1; t.damage = 0; t.tempHealth = 0; emit(state, { type: 'buff', uid: t.uid, attack: t.attack, hp: hp(t) }); }
+		} else if (e.type === 'arm-enemy-draw-punish') {
+			// Ashen Elemental: the opponent's draws next turn deal damage to them
+			for (const o of enemies) { state.players[o].drawPunishTurn = state.turnNumber + 1; state.players[o].drawPunishDamage = e.value || 2; }
 		} else if (e.type === 'bounce-to-deck-bottom') {
 			// Bootstrap Sunkeneer: put an enemy minion on the bottom of its owner's deck
 			const t = chosenCreature();
@@ -5984,11 +6004,12 @@ function execEffects(state, pi, effects, target, source) {
 				const base = state.cardsById[t.id];
 				if (base) {
 					const def = JSON.parse(JSON.stringify(base));
-					def.attack = e.stats ?? 4; def.health = e.stats ?? 4; def.token = true; def.id = 'token_' + base.id;
+					if (!e.fullCopy) { def.attack = e.stats ?? 4; def.health = e.stats ?? 4; } // Imp-oster: fullCopy keeps stats
+					def.token = true; def.id = 'token_' + base.id;
 					const tok = instantiate(def, pi); tok.zone = 'board'; tok.sick = source.sick;
 					const board = state.players[pi].board; board[board.indexOf(source)] = tok; source.zone = 'gone';
 					emit(state, { type: 'transformed', uid: source.uid, player: pi, from: source.name, card: tok });
-					silenceCreature(state, t);
+					if (e.silence) silenceCreature(state, t); // The Nameless One silences; Imp-oster doesn't
 					recomputeAuras(state);
 				}
 			}
@@ -9360,7 +9381,7 @@ export function endTurn(state) {
 	const np = state.players[state.current];
 	np.diedThisTurn = 0;
 	np.diedThisTurnIds = [];
-	np.heroDamagedThisTurn = false; np.heroDamageTakenThisTurn = 0; np.heroHealthChangedThisTurn = false; np.healedThisTurn = false; np.healedAmountThisTurn = 0; np.stealerUsedThisTurn = false; // "took damage this turn" resets each turn
+	np.heroDamagedThisTurn = false; np.heroDamageTakenThisTurn = 0; np.heroHealthChangedThisTurn = false; np.healedThisTurn = false; np.healedAmountThisTurn = 0; np.stealerUsedThisTurn = false; np.damageToEnemyHeroThisTurn = 0; // "took damage this turn" resets each turn
 	np.spellsPlayedLastTurnIds = np.spellsPlayedThisTurnIds || []; np.spellsPlayedThisTurnIds = []; // Krag'wa, the Frog
 	np.cardsPlayedLastTurnIds = np.cardsPlayedThisTurnIds || []; np.cardsPlayedThisTurnIds = []; // Murozond the Infinite
 	// Bandersmosh: at your turn start, hand copies morph into a 5/5 Legendary

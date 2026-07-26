@@ -85623,7 +85623,8 @@
         {
           "type": "become-copy-of-target",
           "stats": 4,
-          "target": "creature"
+          "target": "creature",
+          "silence": true
         }
       ]
     },
@@ -94218,6 +94219,410 @@
         "rush"
       ],
       "description": "Rush."
+    },
+    {
+      "id": "dredger_staff",
+      "name": "Dredger Staff",
+      "type": "creature",
+      "cost": 1,
+      "cardClass": "neutral",
+      "attack": 1,
+      "health": 2,
+      "rarity": "common",
+      "set": "REVENDRETH",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Give minions in your hand +1 Health.",
+      "effects": [
+        {
+          "type": "buff-hand-minions",
+          "health": 1
+        }
+      ]
+    },
+    {
+      "id": "sinful_sous_chef",
+      "name": "Sinful Sous Chef",
+      "type": "creature",
+      "cost": 1,
+      "cardClass": "paladin",
+      "attack": 2,
+      "health": 1,
+      "rarity": "common",
+      "set": "REVENDRETH",
+      "tribe": "Undead",
+      "keywords": [
+        "deathrattle"
+      ],
+      "description": "Deathrattle: Add 2 Silver Hand Recruits to your hand.",
+      "deathrattle": [
+        {
+          "type": "add-card",
+          "id": "rev_silver_hand",
+          "count": 2
+        }
+      ]
+    },
+    {
+      "id": "sinstone_totem",
+      "name": "Sinstone Totem",
+      "type": "creature",
+      "cost": 1,
+      "cardClass": "neutral",
+      "attack": 0,
+      "health": 3,
+      "rarity": "common",
+      "set": "REVENDRETH",
+      "tribe": "Totem",
+      "description": "At the end of your turn, gain +1 Health.",
+      "ongoing": {
+        "on": "turn-end",
+        "effects": [
+          {
+            "type": "buff-self",
+            "health": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "suspicious_alchemist",
+      "name": "Suspicious Alchemist",
+      "type": "creature",
+      "cost": 1,
+      "cardClass": "mage",
+      "attack": 1,
+      "health": 3,
+      "rarity": "rare",
+      "set": "REVENDRETH",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Discover a spell. If your opponent guesses your choice, they get a copy.",
+      "effects": [
+        {
+          "type": "discover",
+          "cardType": "spell"
+        }
+      ]
+    },
+    {
+      "id": "suspicious_usher",
+      "name": "Suspicious Usher",
+      "type": "creature",
+      "cost": 1,
+      "cardClass": "priest",
+      "attack": 1,
+      "health": 3,
+      "rarity": "rare",
+      "set": "REVENDRETH",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Discover a Legendary minion. If your opponent guesses your choice, they get a copy.",
+      "effects": [
+        {
+          "type": "discover",
+          "cardType": "creature",
+          "rarity": "legendary"
+        }
+      ]
+    },
+    {
+      "id": "anonymous_informant",
+      "name": "Anonymous Informant",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "neutral",
+      "attack": 2,
+      "health": 3,
+      "rarity": "common",
+      "set": "REVENDRETH",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: The next Secret you play costs (0).",
+      "effects": [
+        {
+          "type": "next-secret-cost",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "id": "attorney_at_maw",
+      "name": "Attorney-at-Maw",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "druid",
+      "attack": 1,
+      "health": 3,
+      "rarity": "common",
+      "set": "REVENDRETH",
+      "description": "Choose One - Silence a minion; or Give a minion Immune this turn.",
+      "choices": [
+        {
+          "text": "Silence a minion",
+          "effects": [
+            {
+              "type": "silence",
+              "target": "creature"
+            }
+          ]
+        },
+        {
+          "text": "Give a minion Immune this turn",
+          "effects": [
+            {
+              "type": "grant-immune-turn",
+              "target": "creature"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "bibliomite",
+      "name": "Bibliomite",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "demonhunter",
+      "attack": 5,
+      "health": 4,
+      "rarity": "common",
+      "set": "REVENDRETH",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Choose a card in your hand to shuffle into your deck.",
+      "effects": [
+        {
+          "type": "shuffle-hand-card-into-deck",
+          "draw": true
+        }
+      ]
+    },
+    {
+      "id": "class_action_lawyer",
+      "name": "Class Action Lawyer",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "paladin",
+      "attack": 2,
+      "health": 3,
+      "rarity": "rare",
+      "set": "REVENDRETH",
+      "tribe": "Draenei",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: If your deck has no Neutral cards, set a minion's stats to 1/1.",
+      "effects": [
+        {
+          "type": "set-target-stats",
+          "target": "creature",
+          "attack": 1,
+          "health": 1,
+          "requireDeckNoNeutral": true
+        }
+      ]
+    },
+    {
+      "id": "crooked_cook",
+      "name": "Crooked Cook",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "neutral",
+      "attack": 1,
+      "health": 4,
+      "rarity": "rare",
+      "set": "REVENDRETH",
+      "description": "At the end of your turn, if you dealt 3 or more damage to the enemy hero, draw a card.",
+      "ongoing": {
+        "on": "turn-end",
+        "if": {
+          "dealtHeroDamage": 3
+        },
+        "effects": [
+          {
+            "type": "draw",
+            "value": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "imp_oster",
+      "name": "Imp-oster",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "warlock",
+      "attack": 1,
+      "health": 1,
+      "rarity": "common",
+      "set": "REVENDRETH",
+      "tribe": "Demon",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Choose a friendly Imp. Transform into a copy of it.",
+      "effects": [
+        {
+          "type": "become-copy-of-target",
+          "target": "friendly-creature",
+          "fullCopy": true
+        }
+      ]
+    },
+    {
+      "id": "mysterious_visitor",
+      "name": "Mysterious Visitor",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "priest",
+      "attack": 2,
+      "health": 3,
+      "rarity": "epic",
+      "set": "REVENDRETH",
+      "description": "Battlecry: Reduce the Cost of cards copied from your opponent by (3)."
+    },
+    {
+      "id": "priest_of_the_deceased",
+      "name": "Priest of the Deceased",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "neutral",
+      "attack": 2,
+      "health": 3,
+      "rarity": "common",
+      "set": "REVENDRETH",
+      "keywords": [
+        "taunt"
+      ],
+      "infuse": {
+        "count": 3,
+        "id": "rev_priest_of_the_deceased_infused"
+      },
+      "description": "Taunt. Infuse (3): Gain +2/+2."
+    },
+    {
+      "id": "sketchy_stranger",
+      "name": "Sketchy Stranger",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "neutral",
+      "attack": 2,
+      "health": 2,
+      "rarity": "common",
+      "set": "REVENDRETH",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Discover a Secret from another class.",
+      "effects": [
+        {
+          "type": "discover",
+          "cardType": "secret"
+        }
+      ]
+    },
+    {
+      "id": "spirit_poacher",
+      "name": "Spirit Poacher",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "hunter",
+      "attack": 2,
+      "health": 2,
+      "rarity": "rare",
+      "set": "REVENDRETH",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Summon a random Dormant Wildseed.",
+      "effects": [
+        {
+          "type": "summon",
+          "count": 1,
+          "summonId": "rev_wildseed"
+        }
+      ]
+    },
+    {
+      "id": "ashen_elemental",
+      "name": "Ashen Elemental",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "neutral",
+      "attack": 2,
+      "health": 4,
+      "rarity": "epic",
+      "set": "REVENDRETH",
+      "tribe": "Elemental",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Whenever your opponent draws a card next turn, they take 2 damage.",
+      "effects": [
+        {
+          "type": "arm-enemy-draw-punish",
+          "value": 2
+        }
+      ]
+    },
+    {
+      "id": "rev_silver_hand",
+      "name": "Silver Hand Recruit",
+      "type": "creature",
+      "cost": 1,
+      "cardClass": "paladin",
+      "attack": 1,
+      "health": 1,
+      "rarity": "common",
+      "set": "REVENDRETH",
+      "token": true,
+      "collectible": false,
+      "description": "A 1/1 Recruit."
+    },
+    {
+      "id": "rev_priest_of_the_deceased_infused",
+      "name": "Priest of the Deceased",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "neutral",
+      "attack": 4,
+      "health": 5,
+      "rarity": "common",
+      "set": "REVENDRETH",
+      "keywords": [
+        "taunt"
+      ],
+      "token": true,
+      "collectible": false,
+      "description": "Taunt."
+    },
+    {
+      "id": "rev_wildseed",
+      "name": "Dormant Wildseed",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "hunter",
+      "attack": 2,
+      "health": 3,
+      "rarity": "common",
+      "set": "REVENDRETH",
+      "tribe": "Beast",
+      "token": true,
+      "collectible": false,
+      "dormant": 2,
+      "description": "Dormant for 2 turns. When this awakens, draw a card.",
+      "awaken": [
+        {
+          "type": "draw",
+          "value": 1
+        }
+      ]
     }
   ]
 }
