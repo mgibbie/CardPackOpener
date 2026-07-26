@@ -92702,6 +92702,469 @@
           "summonId": "sw_mech"
         }
       ]
+    },
+    {
+      "id": "crushclaw_enforcer",
+      "name": "Crushclaw Enforcer",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "neutral",
+      "attack": 3,
+      "health": 4,
+      "rarity": "rare",
+      "set": "THE_SUNKEN_CITY",
+      "tribe": "Naga",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: If you've cast a spell while holding this, draw a Naga.",
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "spellsCastWhileHeld": 1
+          },
+          "then": [
+            {
+              "type": "tutor",
+              "cardType": "creature",
+              "tribe": "Naga",
+              "count": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "cutlass_courier",
+      "name": "Cutlass Courier",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "rogue",
+      "attack": 2,
+      "health": 5,
+      "rarity": "common",
+      "set": "THE_SUNKEN_CITY",
+      "tribe": "Pirate",
+      "description": "After your hero attacks, draw a Pirate.",
+      "ongoing": {
+        "on": "hero-attacks",
+        "effects": [
+          {
+            "type": "tutor",
+            "cardType": "creature",
+            "tribe": "Pirate",
+            "count": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "handmaiden",
+      "name": "Handmaiden",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "priest",
+      "attack": 3,
+      "health": 2,
+      "rarity": "rare",
+      "set": "THE_SUNKEN_CITY",
+      "tribe": "Naga",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: If you've cast three spells while holding this, draw 3 cards.",
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "spellsCastWhileHeld": 3
+          },
+          "then": [
+            {
+              "type": "draw",
+              "value": 3
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "herald_of_chaos",
+      "name": "Herald of Chaos",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "demonhunter",
+      "attack": 3,
+      "health": 4,
+      "rarity": "common",
+      "set": "THE_SUNKEN_CITY",
+      "tribe": "Naga",
+      "keywords": [
+        "lifesteal",
+        "battlecry"
+      ],
+      "description": "Lifesteal. Battlecry: If you've cast a Fel spell while holding this, gain Rush.",
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "schoolWhileHeld": "Fel"
+          },
+          "then": [
+            {
+              "type": "grant",
+              "keyword": "rush",
+              "target": "self"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "herald_of_light",
+      "name": "Herald of Light",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "priest",
+      "attack": 3,
+      "health": 4,
+      "rarity": "common",
+      "set": "THE_SUNKEN_CITY",
+      "tribe": "Naga",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: If you've cast a Holy spell while holding this, restore 6 Health to all friendly characters.",
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "schoolWhileHeld": "Holy"
+          },
+          "then": [
+            {
+              "type": "heal",
+              "target": "friendly-all",
+              "value": 6
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "herald_of_nature",
+      "name": "Herald of Nature",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "druid",
+      "attack": 3,
+      "health": 3,
+      "rarity": "common",
+      "set": "THE_SUNKEN_CITY",
+      "tribe": "Naga",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: If you've cast a Nature spell while holding this, give your other minions +1/+1.",
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "schoolWhileHeld": "Nature"
+          },
+          "then": [
+            {
+              "type": "buff",
+              "target": "friendly-creatures",
+              "excludeSelf": true,
+              "attack": 1,
+              "health": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "herald_of_shadows",
+      "name": "Herald of Shadows",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "warlock",
+      "attack": 4,
+      "health": 2,
+      "rarity": "common",
+      "set": "THE_SUNKEN_CITY",
+      "tribe": "Naga",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: If you've cast a Shadow spell while holding this, steal 2 Health from a minion.",
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "schoolWhileHeld": "Shadow"
+          },
+          "then": [
+            {
+              "type": "steal-health",
+              "target": "creature",
+              "value": 2
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "lady_stheno",
+      "name": "Lady S'theno",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "demonhunter",
+      "attack": 1,
+      "health": 4,
+      "rarity": "legendary",
+      "set": "THE_SUNKEN_CITY",
+      "tribe": "Naga",
+      "description": "Immune while attacking. After you cast a spell, attack the lowest Health enemy.",
+      "ongoing": {
+        "on": "spell-played",
+        "effects": [
+          {
+            "type": "attack-lowest-enemy"
+          }
+        ]
+      }
+    },
+    {
+      "id": "mecha_shark",
+      "name": "Mecha-Shark",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "mage",
+      "attack": 4,
+      "health": 3,
+      "rarity": "common",
+      "set": "THE_SUNKEN_CITY",
+      "tribe": "Mech",
+      "description": "After you summon a Mech, deal 3 damage randomly split among all enemies.",
+      "ongoing": {
+        "on": "summoned",
+        "if": {
+          "tribe": "Mech"
+        },
+        "effects": [
+          {
+            "type": "random-damage",
+            "count": 3,
+            "value": 1,
+            "pool": "enemies"
+          }
+        ]
+      }
+    },
+    {
+      "id": "myrmidon",
+      "name": "Myrmidon",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "paladin",
+      "attack": 3,
+      "health": 4,
+      "rarity": "common",
+      "set": "THE_SUNKEN_CITY",
+      "tribe": "Naga",
+      "description": "After you cast a spell on this minion, draw a card.",
+      "ongoing": {
+        "on": "spell-cast-on-creature",
+        "if": {
+          "selfTarget": true
+        },
+        "effects": [
+          {
+            "type": "draw",
+            "value": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "piranha_poacher",
+      "name": "Piranha Poacher",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "shaman",
+      "attack": 2,
+      "health": 5,
+      "rarity": "rare",
+      "set": "THE_SUNKEN_CITY",
+      "tribe": "Murloc",
+      "description": "At the end of your turn, add a 1/1 Piranha Swarmer to your hand.",
+      "ongoing": {
+        "on": "turn-end",
+        "effects": [
+          {
+            "type": "add-card",
+            "id": "piranha_swarmer",
+            "count": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "radiance_of_azshara",
+      "name": "Radiance of Azshara",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "shaman",
+      "attack": 3,
+      "health": 4,
+      "rarity": "legendary",
+      "set": "THE_SUNKEN_CITY",
+      "tribe": "Elemental",
+      "schoolCostReduce": {
+        "school": "Nature",
+        "amount": 1
+      },
+      "description": "Fire Spell Damage +2. Your Nature spells cost (1) less. After you cast a Frost spell, gain 3 Armor.",
+      "ongoing": {
+        "on": "spell-played",
+        "if": {
+          "school": "Frost"
+        },
+        "effects": [
+          {
+            "type": "armor",
+            "value": 3
+          }
+        ]
+      }
+    },
+    {
+      "id": "shimmering_sunfish",
+      "name": "Shimmering Sunfish",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "paladin",
+      "attack": 2,
+      "health": 5,
+      "rarity": "rare",
+      "set": "THE_SUNKEN_CITY",
+      "tribe": "Beast",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: If you're holding a Holy spell, gain Taunt and Divine Shield.",
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "holdingSchool": "Holy"
+          },
+          "then": [
+            {
+              "type": "grant",
+              "keyword": "taunt",
+              "target": "self"
+            },
+            {
+              "type": "grant",
+              "keyword": "divine_shield",
+              "target": "self"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "sirakess_cultist",
+      "name": "Sira'kess Cultist",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "warlock",
+      "attack": 3,
+      "health": 4,
+      "rarity": "common",
+      "set": "THE_SUNKEN_CITY",
+      "tribe": "Naga",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Give your opponent an Abyssal Curse.",
+      "effects": [
+        {
+          "type": "add-card",
+          "id": "tsc_abyssal_curse",
+          "count": 1,
+          "toEnemy": true
+        }
+      ]
+    },
+    {
+      "id": "smothering_starfish",
+      "name": "Smothering Starfish",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "neutral",
+      "attack": 2,
+      "health": 4,
+      "rarity": "epic",
+      "set": "THE_SUNKEN_CITY",
+      "tribe": "Beast",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Silence ALL other minions.",
+      "effects": [
+        {
+          "type": "silence-all",
+          "exceptSource": true
+        }
+      ]
+    },
+    {
+      "id": "snapdragon",
+      "name": "Snapdragon",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "neutral",
+      "attack": 3,
+      "health": 3,
+      "rarity": "rare",
+      "set": "THE_SUNKEN_CITY",
+      "tribe": "Beast",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Give all Battlecry minions in your deck +1/+1.",
+      "effects": [
+        {
+          "type": "buff-hand-tribe-keyword",
+          "keyword": "battlecry",
+          "attack": 1,
+          "health": 1
+        }
+      ]
+    },
+    {
+      "id": "tsc_abyssal_curse",
+      "name": "Abyssal Curse",
+      "type": "sorcery",
+      "cost": 0,
+      "token": true,
+      "collectible": false,
+      "rarity": "common",
+      "set": "THE_SUNKEN_CITY",
+      "drawTrigger": true,
+      "onDraw": [
+        {
+          "type": "damage",
+          "value": 3,
+          "target": "own-hero"
+        }
+      ],
+      "description": "When drawn, deal 3 damage to your hero."
     }
   ]
 }

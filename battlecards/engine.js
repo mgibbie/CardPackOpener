@@ -645,6 +645,7 @@ const CHOSEN = {
 	'shuffle-copies-of-target': { 'friendly-creature': 'friendly-creature', creature: 'creature' },
 	'sacrifice-summon-costplus': { 'friendly-creature': 'friendly-creature' },
 	'discover-target-tribe': { 'friendly-creature': 'friendly-creature' },
+	'steal-health': { creature: 'creature', 'enemy-creature': 'enemy-creature' },
 	'destroy-fragment-then-damage': { any: 'any', 'enemy-any': 'enemy-any', creature: 'creature', 'enemy-creature': 'enemy-creature' },
 	'transform-into-token': { 'friendly-creature': 'friendly-creature', creature: 'creature' },
 	'mark-doomed': { creature: 'creature', 'enemy-creature': 'enemy-creature' },
@@ -4168,6 +4169,7 @@ function execEffects(state, pi, effects, target, source) {
 			else if (e.if.notHonorablyKilled) ok = !(source && source.honorablyKilled); // Korrak the Bloodrager
 			else if (e.if.armorGainedGame != null) ok = (p.armorGainedGame || 0) >= e.if.armorGainedGame; // Captain Galvangar
 			else if (e.if.spellsCastWhileHeld != null) ok = (source && source.spellsCastWhileHeld || 0) >= e.if.spellsCastWhileHeld; // Spellcoiler / Ancient Krakenbane
+			else if (e.if.schoolWhileHeld) ok = !!(source && source.schoolsWhileHeld && source.schoolsWhileHeld[e.if.schoolWhileHeld]); // Heralds
 			else if (e.if.hpDamageGame != null) ok = (p.hpDamageGame || 0) >= e.if.hpDamageGame; // Jan'alai, the Dragonhawk
 			else if (e.if.deckEmpty) ok = p.deck.length === 0; // Chef Nomi
 			else if (e.if.holdingOtherClass) ok = p.hand.some(c => c !== source && c.cardClass && c.cardClass !== 'neutral' && c.cardClass !== p.heroClass); // Underbelly Fence
@@ -5437,8 +5439,19 @@ function execEffects(state, pi, effects, target, source) {
 			// Scabbs Cutterbutter: your next N cards this turn cost less
 			state.players[pi].nextCardsDiscount = { count: e.count || 2, amount: e.value || 2 };
 		} else if (e.type === 'silence-all') {
-			// Showstopper: Silence every minion on the board
-			for (const pl of state.players) for (const c of pl.board) if (!isDead(c) && c.type !== 'location') silenceCreature(state, c);
+			// Showstopper: Silence every minion on the board (exceptSource -> Smothering Starfish)
+			for (const pl of state.players) for (const c of pl.board) if (!isDead(c) && c.type !== 'location' && !(e.exceptSource && c === source)) silenceCreature(state, c);
+		} else if (e.type === 'attack-lowest-enemy') {
+			// Lady S'theno: attack the lowest-Health enemy minion
+			if (source && !isDead(source)) {
+				let best = null, bo = -1;
+				for (const o of enemies) for (const c of state.players[o].board) if (!isDead(c) && c.type !== 'location' && !c.stealthed && c.dormantLeft <= 0) { if (!best || hp(c) < hp(best)) { best = c; bo = o; } }
+				if (best) resolveCombat(state, pi, source.uid, { type: 'creature', uid: best.uid, player: bo });
+			}
+		} else if (e.type === 'steal-health') {
+			// Herald of Shadows: steal Health from a minion (it loses Health, this gains it)
+			const t = chosenCreature();
+			if (t && source && !isDead(source)) { const amt = Math.min(e.value || 2, hp(t) - 1 >= 0 ? (e.value || 2) : 0); t.maxHealth = Math.max(1, t.maxHealth - (e.value || 2)); t.damage = Math.min(t.damage, t.maxHealth); buffCreature(source, 0, e.value || 2); emit(state, { type: 'buff', uid: t.uid, attack: t.attack, hp: hp(t) }); }
 		} else if (e.type === 'shuffle-lowest-hand-into-deck') {
 			// Safety Inspector: shuffle the lowest-Cost card from your hand into your deck
 			const p = state.players[pi];
@@ -5510,6 +5523,9 @@ function execEffects(state, pi, effects, target, source) {
 		} else if (e.type === 'buff-hand-tribe') {
 			// Voidgill: give all minions of a tribe in your hand +X/+X
 			for (const c of state.players[pi].hand) if (c.type === 'creature' && (c.tribe || '').includes(e.tribe)) { c.attack = (c.attack || 0) + (e.attack || 0); c.maxHealth = (c.maxHealth || 0) + (e.health || 0); }
+		} else if (e.type === 'buff-hand-tribe-keyword') {
+			// Snapdragon: give all minions with a keyword in your hand +X/+X (deck approximated as hand)
+			for (const c of state.players[pi].hand) if (c.type === 'creature' && (c.keywords || []).includes(e.keyword)) { c.attack = (c.attack || 0) + (e.attack || 0); c.maxHealth = (c.maxHealth || 0) + (e.health || 0); }
 		} else if (e.type === 'reduce-hand-edges-cost') {
 			// Wayward Sage: reduce the Cost of the left- and right-most cards in your hand
 			const p = state.players[pi];
@@ -7857,7 +7873,7 @@ export function playCard(state, pi, cardUid, target, choice, position, useAlt, k
 	} else {
 		questTick(state, 'spell', pi);
 		p.spellsPlayedThisTurn++;
-		for (const hc of p.hand) hc.spellsCastWhileHeld = (hc.spellsCastWhileHeld || 0) + 1; // Naga: Spellcoiler / Ancient Krakenbane
+		{ const sc = schoolOf(card); for (const hc of p.hand) { hc.spellsCastWhileHeld = (hc.spellsCastWhileHeld || 0) + 1; if (sc) (hc.schoolsWhileHeld = hc.schoolsWhileHeld || {})[sc] = true; } } // Naga: Spellcoiler / Ancient Krakenbane / Heralds
 		{ const sch = schoolOf(card); if (sch) { (p.schoolsCastThisTurn = p.schoolsCastThisTurn || {})[sch] = true; (p.schoolsCastGame = p.schoolsCastGame || {})[sch] = true; if (sch === 'Fel') (p.felSpellsGame = p.felSpellsGame || []).push(card.id); if (sch === 'Frost') p.frostSpellsGame = (p.frostSpellsGame || 0) + 1; } } // Metamorfin / Multicaster / Jace / Bearon
 		if ((card.cost || 0) >= 6) p.lastBigSpell = { id: card.id, target }; // Grey Sage Parrot
 		p.spellsPlayedTotal = (p.spellsPlayedTotal || 0) + 1; // Arcane Giant
