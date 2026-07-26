@@ -642,6 +642,7 @@ const CHOSEN = {
 	'swap-with-hand': { creature: 'creature', 'enemy-creature': 'enemy-creature', 'friendly-creature': 'friendly-creature' },
 	'shuffle-copies-of-target': { 'friendly-creature': 'friendly-creature', creature: 'creature' },
 	'sacrifice-summon-costplus': { 'friendly-creature': 'friendly-creature' },
+	'discover-target-tribe': { 'friendly-creature': 'friendly-creature' },
 	'destroy-fragment-then-damage': { any: 'any', 'enemy-any': 'enemy-any', creature: 'creature', 'enemy-creature': 'enemy-creature' },
 	'transform-into-token': { 'friendly-creature': 'friendly-creature', creature: 'creature' },
 	'mark-doomed': { creature: 'creature', 'enemy-creature': 'enemy-creature' },
@@ -2614,6 +2615,20 @@ function runSecretEffects(state, pi, effects, ctx) {
 				// Gankster: attack the minion the opponent just played
 				const m = ctx.minion;
 				if (m && !isDead(m) && ctx.self && !isDead(ctx.self)) resolveCombat(state, ctx.self.controller, ctx.self.uid, { type: 'creature', uid: m.uid, player: m.controller });
+				break;
+			}
+			case 'destroy-self-if-amount': {
+				// Bubbler: pop when it takes exactly `amount` damage
+				if (ctx.amount === (e.amount ?? 1) && ctx.self && !isDead(ctx.self)) { ctx.self.damage = ctx.self.maxHealth; ctx.self.shield = false; emit(state, { type: 'destroy', uid: ctx.self.uid }); sweepDeaths(state); }
+				break;
+			}
+			case 'recast-played-on-random-friendly': {
+				// Kotori Lightblade: recast the spell just cast on this, on another friendly minion
+				const sp = ctx.played; const def = sp && state.cardsById[sp.id];
+				if (def && def.effects) {
+					const pool = state.players[pi].board.filter(c => c !== ctx.self && !isDead(c) && c.type !== 'location');
+					if (pool.length) { const t = pool[Math.floor(state.rng() * pool.length)]; execEffects(state, pi, JSON.parse(JSON.stringify(def.effects)), { type: 'creature', uid: t.uid, player: pi }, ctx.self); }
+				}
 				break;
 			}
 			case 'damage-frozen': {
@@ -5135,9 +5150,11 @@ function execEffects(state, pi, effects, target, source) {
 			// Inkmaster Solia: the next spell this turn costs (0)
 			state.players[pi].freeSpellsThisTurn = true;
 		} else if (e.type === 'refresh-mana') {
-			// Kun the Forgotten King: refill your Mana Crystals
+			// Kun the Forgotten King: refill your Mana Crystals.
+			// value / valuePer:'spells-this-turn' -> refresh only that many (Priestess Valishj)
 			const p = state.players[pi];
-			p.mana.cur = p.mana.max;
+			const n = e.valuePer === 'spells-this-turn' ? (p.spellsPlayedThisTurn || 0) : e.value;
+			p.mana.cur = n != null ? Math.min(p.mana.max, p.mana.cur + n) : p.mana.max;
 			emit(state, { type: 'manaGained', player: pi });
 		} else if (e.type === 'draw-until') {
 			// Wrathion: keep drawing until you draw a card that isn't the given tribe
@@ -5469,6 +5486,24 @@ function execEffects(state, pi, effects, target, source) {
 			const before = new Set(p.hand.map(c => c.uid));
 			drawCards(state, pi, 1);
 			for (const c of p.hand) if (!before.has(c.uid)) { c.edwinReward = e.value || 2; c.edwinUid = source ? source.uid : null; }
+		} else if (e.type === 'put-on-bottom') {
+			// Azsharan Scavenger: put a card on the bottom of your deck (front of the array)
+			for (let i = 0; i < (e.count || 1); i++) state.players[pi].deck.unshift(e.id);
+		} else if (e.type === 'swap-hand-deck-bottom') {
+			// Sir Finley, Sea Guide: swap your hand with the bottom of your deck
+			const p = state.players[pi];
+			const handIds = p.hand.filter(c => state.cardsById[c.id] && !c.token).map(c => c.id);
+			const n = handIds.length;
+			const bottom = p.deck.splice(0, Math.min(n, p.deck.length));
+			p.deck.unshift(...handIds); // old hand goes to the bottom
+			p.hand = [];
+			for (const id of bottom) { if (state.cardsById[id]) { const nc = instantiate(state.cardsById[id], pi); nc.zone = 'hand'; p.hand.push(nc); } }
+			emit(state, { type: 'handSwap', player: pi });
+		} else if (e.type === 'discover-target-tribe') {
+			// Amalgam of the Deep: discover a minion of the chosen friendly minion's type
+			const t = chosenCreature();
+			const tribe = t && (t.tribe || '').split('/')[0];
+			execEffects(state, pi, [{ type: 'discover', cardType: 'creature', tribe: tribe || undefined }], null, source);
 		} else if (e.type === 'spammy-arcanist') {
 			// Spammy Arcanist: deal 1 to all other minions; if any die, repeat
 			let guard = 30;

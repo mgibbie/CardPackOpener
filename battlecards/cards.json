@@ -40960,31 +40960,6 @@
       ]
     },
     {
-      "id": "click_clocker",
-      "name": "Click Clocker",
-      "cardClass": "neutral",
-      "cost": 1,
-      "rarity": "common",
-      "set": "paper",
-      "description": "Divine Shield.\nBattlecry: Target Mech or Beast gains +1/+1.",
-      "type": "creature",
-      "attack": 1,
-      "health": 1,
-      "tribe": "Mech Beast",
-      "keywords": [
-        "divine_shield",
-        "battlecry"
-      ],
-      "effects": [
-        {
-          "type": "buff",
-          "attack": 1,
-          "health": 1,
-          "target": "creature"
-        }
-      ]
-    },
-    {
       "id": "pen_flinger",
       "name": "Pen Flinger",
       "cardClass": "neutral",
@@ -91888,6 +91863,411 @@
         "rush"
       ],
       "description": "Rush."
+    },
+    {
+      "id": "bottomfeeder",
+      "name": "Bottomfeeder",
+      "type": "creature",
+      "cost": 1,
+      "cardClass": "druid",
+      "attack": 1,
+      "health": 3,
+      "rarity": "epic",
+      "set": "THE_SUNKEN_CITY",
+      "tribe": "Beast",
+      "keywords": [
+        "deathrattle"
+      ],
+      "description": "Deathrattle: Add a Bottomfeeder to the bottom of your deck with permanent +2/+2.",
+      "deathrattle": [
+        {
+          "type": "put-on-bottom",
+          "id": "tsc_bottomfeeder_big",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "id": "bubbler",
+      "name": "Bubbler",
+      "type": "creature",
+      "cost": 1,
+      "cardClass": "neutral",
+      "attack": 2,
+      "health": 4,
+      "rarity": "common",
+      "set": "THE_SUNKEN_CITY",
+      "tribe": "Elemental",
+      "description": "After this minion takes exactly one damage, destroy it. (Pop!)",
+      "ongoing": {
+        "on": "self-damaged",
+        "effects": [
+          {
+            "type": "destroy-self-if-amount",
+            "amount": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "click_clocker",
+      "name": "Click-Clocker",
+      "type": "creature",
+      "cost": 1,
+      "cardClass": "neutral",
+      "attack": 1,
+      "health": 1,
+      "rarity": "common",
+      "set": "THE_SUNKEN_CITY",
+      "tribe": "Mech",
+      "keywords": [
+        "divine_shield",
+        "battlecry"
+      ],
+      "description": "Divine Shield. Battlecry: Give a random Mech in your hand +1/+1.",
+      "effects": [
+        {
+          "type": "buff-random-hand-tribe",
+          "tribe": "Mech",
+          "attack": 1,
+          "health": 1
+        }
+      ]
+    },
+    {
+      "id": "dozing_kelpkeeper",
+      "name": "Dozing Kelpkeeper",
+      "type": "creature",
+      "cost": 1,
+      "cardClass": "druid",
+      "attack": 4,
+      "health": 4,
+      "rarity": "rare",
+      "set": "THE_SUNKEN_CITY",
+      "tribe": "Naga",
+      "keywords": [
+        "rush"
+      ],
+      "dormant": 2,
+      "description": "Rush. Starts Dormant. After you have cast 5 Mana worth of spells, awaken."
+    },
+    {
+      "id": "piranha_swarmer",
+      "name": "Piranha Swarmer",
+      "type": "creature",
+      "cost": 1,
+      "cardClass": "neutral",
+      "attack": 1,
+      "health": 1,
+      "rarity": "common",
+      "set": "THE_SUNKEN_CITY",
+      "tribe": "Beast",
+      "keywords": [
+        "rush"
+      ],
+      "description": "Rush. After you summon a Piranha Swarmer, gain +1 Attack.",
+      "ongoing": {
+        "on": "summoned",
+        "if": {
+          "cardId": "piranha_swarmer"
+        },
+        "effects": [
+          {
+            "type": "buff-self",
+            "attack": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "priestess_valishj",
+      "name": "Priestess Valishj",
+      "type": "creature",
+      "cost": 1,
+      "cardClass": "priest",
+      "attack": 1,
+      "health": 1,
+      "rarity": "legendary",
+      "set": "THE_SUNKEN_CITY",
+      "tribe": "Naga",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Refresh an empty Mana Crystal for each spell you've cast this turn.",
+      "effects": [
+        {
+          "type": "refresh-mana",
+          "valuePer": "spells-this-turn"
+        }
+      ]
+    },
+    {
+      "id": "shattershambler",
+      "name": "Shattershambler",
+      "type": "creature",
+      "cost": 1,
+      "cardClass": "rogue",
+      "attack": 1,
+      "health": 3,
+      "rarity": "rare",
+      "set": "THE_SUNKEN_CITY",
+      "tribe": "Elemental",
+      "description": "Battlecry: Your next Deathrattle minion costs (1) less, but immediately dies when played."
+    },
+    {
+      "id": "sir_finley_sea_guide",
+      "name": "Sir Finley, Sea Guide",
+      "type": "creature",
+      "cost": 1,
+      "cardClass": "neutral",
+      "attack": 1,
+      "health": 3,
+      "rarity": "legendary",
+      "set": "THE_SUNKEN_CITY",
+      "tribe": "Murloc",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Swap your hand with the bottom of your deck.",
+      "effects": [
+        {
+          "type": "swap-hand-deck-bottom"
+        }
+      ]
+    },
+    {
+      "id": "trench_surveyor",
+      "name": "Trench Surveyor",
+      "type": "creature",
+      "cost": 1,
+      "cardClass": "mage",
+      "attack": 2,
+      "health": 1,
+      "rarity": "rare",
+      "set": "THE_SUNKEN_CITY",
+      "tribe": "Mech",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Dredge. If it's a Mech, draw it.",
+      "effects": [
+        {
+          "type": "dredge"
+        }
+      ]
+    },
+    {
+      "id": "vicious_slitherspear",
+      "name": "Vicious Slitherspear",
+      "type": "creature",
+      "cost": 1,
+      "cardClass": "neutral",
+      "attack": 1,
+      "health": 3,
+      "rarity": "rare",
+      "set": "THE_SUNKEN_CITY",
+      "tribe": "Naga",
+      "description": "After you cast a spell, gain +1 Attack until your next turn.",
+      "ongoing": {
+        "on": "spell-played",
+        "effects": [
+          {
+            "type": "buff-self",
+            "attack": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "amalgam_of_the_deep",
+      "name": "Amalgam of the Deep",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "neutral",
+      "attack": 2,
+      "health": 3,
+      "rarity": "epic",
+      "set": "THE_SUNKEN_CITY",
+      "tribe": "All",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Choose a friendly minion. Discover a minion of the same minion type.",
+      "effects": [
+        {
+          "type": "discover-target-tribe",
+          "target": "friendly-creature"
+        }
+      ]
+    },
+    {
+      "id": "anchored_totem",
+      "name": "Anchored Totem",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "shaman",
+      "attack": 0,
+      "health": 3,
+      "rarity": "common",
+      "set": "THE_SUNKEN_CITY",
+      "tribe": "Totem",
+      "description": "After you summon a 1-Cost minion, give it +2/+1.",
+      "ongoing": {
+        "on": "summoned",
+        "if": {
+          "maxCost": 1
+        },
+        "effects": [
+          {
+            "type": "buff-summoned-if-tribe",
+            "attack": 2,
+            "health": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "azsharan_scavenger",
+      "name": "Azsharan Scavenger",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "warlock",
+      "attack": 2,
+      "health": 3,
+      "rarity": "common",
+      "set": "THE_SUNKEN_CITY",
+      "tribe": "Murloc",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Put a 'Sunken Scavenger' on the bottom of your deck.",
+      "effects": [
+        {
+          "type": "put-on-bottom",
+          "id": "tsc_sunken_scavenger",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "id": "fossil_fanatic",
+      "name": "Fossil Fanatic",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "demonhunter",
+      "attack": 2,
+      "health": 2,
+      "rarity": "common",
+      "set": "THE_SUNKEN_CITY",
+      "description": "After your hero attacks, draw a Fel spell.",
+      "ongoing": {
+        "on": "hero-attacks",
+        "effects": [
+          {
+            "type": "tutor",
+            "cardType": "spell",
+            "school": "Fel",
+            "count": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "k9_0tron",
+      "name": "K9-0tron",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "hunter",
+      "attack": 2,
+      "health": 3,
+      "rarity": "common",
+      "set": "THE_SUNKEN_CITY",
+      "tribe": "Mech",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Dredge. If it's a 1-Cost minion, summon it.",
+      "effects": [
+        {
+          "type": "dredge"
+        }
+      ]
+    },
+    {
+      "id": "kotori_lightblade",
+      "name": "Kotori Lightblade",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "paladin",
+      "attack": 2,
+      "health": 3,
+      "rarity": "legendary",
+      "set": "THE_SUNKEN_CITY",
+      "description": "After you cast a Holy spell on this, cast it again on another friendly minion.",
+      "ongoing": {
+        "on": "spell-cast-on-creature",
+        "if": {
+          "selfTarget": true
+        },
+        "effects": [
+          {
+            "type": "recast-played-on-random-friendly"
+          }
+        ]
+      }
+    },
+    {
+      "id": "tsc_bottomfeeder_big",
+      "name": "Bottomfeeder",
+      "type": "creature",
+      "cost": 1,
+      "cardClass": "druid",
+      "attack": 3,
+      "health": 5,
+      "rarity": "epic",
+      "set": "THE_SUNKEN_CITY",
+      "tribe": "Beast",
+      "token": true,
+      "collectible": false,
+      "keywords": [
+        "deathrattle"
+      ],
+      "description": "Deathrattle: Add a Bottomfeeder to the bottom of your deck with permanent +2/+2.",
+      "deathrattle": [
+        {
+          "type": "put-on-bottom",
+          "id": "tsc_bottomfeeder_big",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "id": "tsc_sunken_scavenger",
+      "name": "Sunken Scavenger",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "warlock",
+      "attack": 4,
+      "health": 4,
+      "rarity": "common",
+      "set": "THE_SUNKEN_CITY",
+      "tribe": "Murloc",
+      "token": true,
+      "collectible": false,
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Give your Murlocs +1/+1.",
+      "effects": [
+        {
+          "type": "buff",
+          "target": "friendly-creatures",
+          "tribe": "Murloc",
+          "excludeSelf": true,
+          "attack": 1,
+          "health": 1
+        }
+      ]
     }
   ]
 }
