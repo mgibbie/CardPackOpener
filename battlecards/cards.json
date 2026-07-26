@@ -93165,6 +93165,464 @@
         }
       ],
       "description": "When drawn, deal 3 damage to your hero."
+    },
+    {
+      "id": "twin_fin_fin_twin",
+      "name": "Twin-fin Fin Twin",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "neutral",
+      "attack": 2,
+      "health": 1,
+      "rarity": "rare",
+      "set": "THE_SUNKEN_CITY",
+      "tribe": "Murloc",
+      "keywords": [
+        "rush",
+        "battlecry"
+      ],
+      "description": "Rush. Battlecry: Summon a copy of this.",
+      "effects": [
+        {
+          "type": "summon-copy-self"
+        }
+      ]
+    },
+    {
+      "id": "ambassador_faelin",
+      "name": "Ambassador Faelin",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "neutral",
+      "attack": 4,
+      "health": 5,
+      "rarity": "legendary",
+      "set": "THE_SUNKEN_CITY",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Put 3 Colossal minions on the bottom of your deck.",
+      "effects": [
+        {
+          "type": "put-on-bottom",
+          "id": "tsc_colossal",
+          "count": 3
+        }
+      ]
+    },
+    {
+      "id": "azsharan_defector",
+      "name": "Azsharan Defector",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "demonhunter",
+      "attack": 5,
+      "health": 3,
+      "rarity": "rare",
+      "set": "THE_SUNKEN_CITY",
+      "keywords": [
+        "rush",
+        "deathrattle"
+      ],
+      "description": "Rush. Deathrattle: Put a 'Sunken Defector' on the bottom of your deck.",
+      "deathrattle": [
+        {
+          "type": "put-on-bottom",
+          "id": "tsc_sunken_defector",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "id": "azsharan_saber",
+      "name": "Azsharan Saber",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "hunter",
+      "attack": 4,
+      "health": 3,
+      "rarity": "common",
+      "set": "THE_SUNKEN_CITY",
+      "tribe": "Beast",
+      "keywords": [
+        "rush",
+        "deathrattle"
+      ],
+      "description": "Rush. Deathrattle: Put a 'Sunken Saber' on the bottom of your deck.",
+      "deathrattle": [
+        {
+          "type": "put-on-bottom",
+          "id": "tsc_sunken_saber",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "id": "baba_naga",
+      "name": "Baba Naga",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "neutral",
+      "attack": 4,
+      "health": 4,
+      "rarity": "common",
+      "set": "THE_SUNKEN_CITY",
+      "tribe": "Naga",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: If you've cast a spell while holding this, deal 3 damage.",
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "spellsCastWhileHeld": 1
+          },
+          "then": [
+            {
+              "type": "damage",
+              "value": 3,
+              "target": "any"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "blademaster_okani",
+      "name": "Blademaster Okani",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "neutral",
+      "attack": 2,
+      "health": 6,
+      "rarity": "legendary",
+      "set": "THE_SUNKEN_CITY",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Secretly choose to Counter the next minion or spell your opponent plays while this is alive."
+    },
+    {
+      "id": "bubblebot",
+      "name": "Bubblebot",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "paladin",
+      "attack": 4,
+      "health": 4,
+      "rarity": "common",
+      "set": "THE_SUNKEN_CITY",
+      "tribe": "Mech",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Give your other Mechs Divine Shield and Taunt.",
+      "effects": [
+        {
+          "type": "grant",
+          "target": "friendly-others",
+          "ifTribe": "Mech",
+          "keyword": "divine_shield"
+        },
+        {
+          "type": "grant",
+          "target": "friendly-others",
+          "ifTribe": "Mech",
+          "keyword": "taunt"
+        }
+      ]
+    },
+    {
+      "id": "coilfang_constrictor",
+      "name": "Coilfang Constrictor",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "neutral",
+      "attack": 5,
+      "health": 4,
+      "rarity": "rare",
+      "set": "THE_SUNKEN_CITY",
+      "tribe": "Beast",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Look at 3 cards in your opponent's hand and choose one. It can't be played next turn.",
+      "effects": [
+        {
+          "type": "lock-enemy-hand-card"
+        }
+      ]
+    },
+    {
+      "id": "commander_sivara",
+      "name": "Commander Sivara",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "mage",
+      "attack": 3,
+      "health": 5,
+      "rarity": "legendary",
+      "set": "THE_SUNKEN_CITY",
+      "tribe": "Naga",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: If you've cast three spells while holding this, add those spells back to your hand.",
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "spellsCastWhileHeld": 3
+          },
+          "then": [
+            {
+              "type": "add-back-held-spells"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "disarming_elemental",
+      "name": "Disarming Elemental",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "priest",
+      "attack": 4,
+      "health": 4,
+      "rarity": "rare",
+      "set": "THE_SUNKEN_CITY",
+      "tribe": "Elemental",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Dredge for your opponent. Set its Cost to (6).",
+      "effects": [
+        {
+          "type": "dredge"
+        }
+      ]
+    },
+    {
+      "id": "excavation_specialist",
+      "name": "Excavation Specialist",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "neutral",
+      "attack": 3,
+      "health": 6,
+      "rarity": "common",
+      "set": "THE_SUNKEN_CITY",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Dredge. Reduce its Cost by (1).",
+      "effects": [
+        {
+          "type": "dredge"
+        }
+      ]
+    },
+    {
+      "id": "igneous_lavagorger",
+      "name": "Igneous Lavagorger",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "warrior",
+      "attack": 3,
+      "health": 5,
+      "rarity": "common",
+      "set": "THE_SUNKEN_CITY",
+      "tribe": "Elemental",
+      "keywords": [
+        "taunt",
+        "battlecry"
+      ],
+      "description": "Taunt. Battlecry: Dredge. Gain Armor equal to its Cost.",
+      "effects": [
+        {
+          "type": "dredge"
+        }
+      ]
+    },
+    {
+      "id": "school_teacher",
+      "name": "School Teacher",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "neutral",
+      "attack": 5,
+      "health": 4,
+      "rarity": "epic",
+      "set": "THE_SUNKEN_CITY",
+      "tribe": "Naga",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Add a 1/1 Nagaling to your hand. Discover a spell that costs (3) or less to teach it.",
+      "effects": [
+        {
+          "type": "add-card",
+          "id": "tsc_nagaling",
+          "count": 1
+        },
+        {
+          "type": "discover",
+          "cardType": "spell",
+          "maxCost": 3
+        }
+      ]
+    },
+    {
+      "id": "spitelash_siren",
+      "name": "Spitelash Siren",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "mage",
+      "attack": 2,
+      "health": 5,
+      "rarity": "epic",
+      "set": "THE_SUNKEN_CITY",
+      "tribe": "Naga",
+      "description": "After you play a Naga, refresh two Mana Crystals.",
+      "ongoing": {
+        "on": "creature-played",
+        "if": {
+          "tribe": "Naga"
+        },
+        "effects": [
+          {
+            "type": "refresh-mana",
+            "value": 2
+          }
+        ]
+      }
+    },
+    {
+      "id": "swiftscale_trickster",
+      "name": "Swiftscale Trickster",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "rogue",
+      "attack": 2,
+      "health": 2,
+      "rarity": "rare",
+      "set": "THE_SUNKEN_CITY",
+      "tribe": "Naga",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Your next spell this turn costs (0).",
+      "effects": [
+        {
+          "type": "set-next-spell-discount",
+          "value": 99
+        }
+      ]
+    },
+    {
+      "id": "tidelost_burrower",
+      "name": "Tidelost Burrower",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "shaman",
+      "attack": 4,
+      "health": 4,
+      "rarity": "common",
+      "set": "THE_SUNKEN_CITY",
+      "tribe": "Murloc",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Dredge. If it's a Murloc, summon a 2/2 copy of it.",
+      "effects": [
+        {
+          "type": "dredge"
+        }
+      ]
+    },
+    {
+      "id": "tsc_colossal",
+      "name": "Sea Giant",
+      "type": "creature",
+      "cost": 6,
+      "cardClass": "neutral",
+      "attack": 8,
+      "health": 8,
+      "rarity": "common",
+      "set": "THE_SUNKEN_CITY",
+      "token": true,
+      "collectible": false,
+      "description": "An 8/8."
+    },
+    {
+      "id": "tsc_sunken_defector",
+      "name": "Sunken Defector",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "demonhunter",
+      "attack": 5,
+      "health": 3,
+      "rarity": "rare",
+      "set": "THE_SUNKEN_CITY",
+      "token": true,
+      "collectible": false,
+      "keywords": [
+        "rush",
+        "battlecry"
+      ],
+      "description": "Rush. Battlecry: Add a random Demon Hunter spell to your hand.",
+      "effects": [
+        {
+          "type": "conjure-random",
+          "cardType": "spell",
+          "cardClass": "demonhunter"
+        }
+      ]
+    },
+    {
+      "id": "tsc_sunken_saber",
+      "name": "Sunken Saber",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "hunter",
+      "attack": 4,
+      "health": 3,
+      "rarity": "common",
+      "set": "THE_SUNKEN_CITY",
+      "tribe": "Beast",
+      "token": true,
+      "collectible": false,
+      "keywords": [
+        "rush",
+        "battlecry"
+      ],
+      "description": "Rush. Battlecry: Give a friendly Beast +2/+2.",
+      "effects": [
+        {
+          "type": "buff",
+          "target": "friendly-creature",
+          "tribe": "Beast",
+          "attack": 2,
+          "health": 2
+        }
+      ]
+    },
+    {
+      "id": "tsc_nagaling",
+      "name": "Nagaling",
+      "type": "creature",
+      "cost": 1,
+      "cardClass": "neutral",
+      "attack": 1,
+      "health": 1,
+      "rarity": "common",
+      "set": "THE_SUNKEN_CITY",
+      "tribe": "Naga",
+      "token": true,
+      "collectible": false,
+      "description": "A 1/1 Naga."
     }
   ]
 }

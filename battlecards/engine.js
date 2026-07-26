@@ -5514,6 +5514,14 @@ function execEffects(state, pi, effects, target, source) {
 			const before = new Set(p.hand.map(c => c.uid));
 			drawCards(state, pi, 1);
 			for (const c of p.hand) if (!before.has(c.uid)) { c.edwinReward = e.value || 2; c.edwinUid = source ? source.uid : null; }
+		} else if (e.type === 'add-back-held-spells') {
+			// Commander Sivara: add the spells you cast while holding this back to your hand
+			const p = state.players[pi];
+			for (const id of (source && source.spellsHeldIds) || []) { if (p.hand.length >= MAX_HAND) break; const def = state.cardsById[id]; if (!def) continue; const nc = instantiate(def, pi); nc.zone = 'hand'; p.hand.push(nc); emit(state, { type: 'conjure', player: pi, card: nc, color: null }); }
+		} else if (e.type === 'lock-enemy-hand-card') {
+			// Coilfang Constrictor: a random card in the opponent's hand can't be played next turn
+			const foe = enemies[0];
+			if (foe != null) { const fh = state.players[foe].hand; if (fh.length) { const c = fh[Math.floor(state.rng() * fh.length)]; c.lockedUntilTurn = state.turnNumber + 2; } }
 		} else if (e.type === 'set-next-spell-discount') {
 			// Murkwater Scribe: your next spell costs less
 			state.players[pi].nextSpellDiscount = (state.players[pi].nextSpellDiscount || 0) + (e.value || 1);
@@ -7617,6 +7625,7 @@ export function effectiveCost(state, pi, card) {
 // ---------- public actions ----------
 export function canPlay(state, pi, card) {
 	if (state.over) return false;
+	if (card.lockedUntilTurn && state.turnNumber < card.lockedUntilTurn) return false; // Coilfang Constrictor
 	if (card.type === 'instant') { if (!hasPriority(state, pi)) return false; }
 	else if (!(state.current === pi && state.priority == null && state.stack.length === 0)) return false;
 	if (availableMana(state.players[pi]) < effectiveCost(state, pi, card) && !(card.altCost && canPayAlt(state, pi, card))) return false;
@@ -7873,7 +7882,7 @@ export function playCard(state, pi, cardUid, target, choice, position, useAlt, k
 	} else {
 		questTick(state, 'spell', pi);
 		p.spellsPlayedThisTurn++;
-		{ const sc = schoolOf(card); for (const hc of p.hand) { hc.spellsCastWhileHeld = (hc.spellsCastWhileHeld || 0) + 1; if (sc) (hc.schoolsWhileHeld = hc.schoolsWhileHeld || {})[sc] = true; } } // Naga: Spellcoiler / Ancient Krakenbane / Heralds
+		{ const sc = schoolOf(card); for (const hc of p.hand) { hc.spellsCastWhileHeld = (hc.spellsCastWhileHeld || 0) + 1; if (sc) (hc.schoolsWhileHeld = hc.schoolsWhileHeld || {})[sc] = true; (hc.spellsHeldIds = hc.spellsHeldIds || []).push(card.id); } } // Naga: Spellcoiler / Heralds / Commander Sivara
 		{ const sch = schoolOf(card); if (sch) { (p.schoolsCastThisTurn = p.schoolsCastThisTurn || {})[sch] = true; (p.schoolsCastGame = p.schoolsCastGame || {})[sch] = true; if (sch === 'Fel') (p.felSpellsGame = p.felSpellsGame || []).push(card.id); if (sch === 'Frost') p.frostSpellsGame = (p.frostSpellsGame || 0) + 1; } } // Metamorfin / Multicaster / Jace / Bearon
 		if ((card.cost || 0) >= 6) p.lastBigSpell = { id: card.id, target }; // Grey Sage Parrot
 		p.spellsPlayedTotal = (p.spellsPlayedTotal || 0) + 1; // Arcane Giant
