@@ -94623,6 +94623,363 @@
           "value": 1
         }
       ]
+    },
+    {
+      "id": "creepy_painting",
+      "name": "Creepy Painting",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "neutral",
+      "attack": 0,
+      "health": 6,
+      "rarity": "common",
+      "set": "REVENDRETH",
+      "description": "After another minion dies, become a copy of it.",
+      "ongoing": {
+        "on": "creature-died",
+        "effects": [
+          {
+            "type": "become-copy-of-dead"
+          }
+        ]
+      }
+    },
+    {
+      "id": "demolition_renovator",
+      "name": "Demolition Renovator",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "neutral",
+      "attack": 3,
+      "health": 3,
+      "rarity": "epic",
+      "set": "REVENDRETH",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Tradeable. Battlecry: Destroy an enemy location."
+    },
+    {
+      "id": "dinner_performer",
+      "name": "Dinner Performer",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "neutral",
+      "attack": 2,
+      "health": 3,
+      "rarity": "common",
+      "set": "REVENDRETH",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Summon a random minion from your deck that you can afford to play.",
+      "effects": [
+        {
+          "type": "summon-from-deck-affordable"
+        }
+      ]
+    },
+    {
+      "id": "forensic_duster",
+      "name": "Forensic Duster",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "neutral",
+      "attack": 3,
+      "health": 4,
+      "rarity": "common",
+      "set": "REVENDRETH",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Your opponent's minions cost (1) more next turn.",
+      "effects": [
+        {
+          "type": "enemy-minion-tax-next-turn",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "framester",
+      "name": "Framester",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "shaman",
+      "attack": 3,
+      "health": 3,
+      "rarity": "rare",
+      "set": "REVENDRETH",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Shuffle 3 'Framed' cards into the opponent's deck. When drawn, they Overload for (2).",
+      "effects": [
+        {
+          "type": "shuffle-cards-into-enemy-deck",
+          "id": "rev_framed",
+          "count": 3
+        }
+      ]
+    },
+    {
+      "id": "ghastly_gravedigger",
+      "name": "Ghastly Gravedigger",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "rogue",
+      "attack": 4,
+      "health": 3,
+      "rarity": "epic",
+      "set": "REVENDRETH",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: If you control a Secret, choose a card in your opponent's hand to shuffle into their deck.",
+      "effects": [
+        {
+          "type": "shuffle-enemy-hand-card-choose",
+          "requireSecret": true
+        }
+      ]
+    },
+    {
+      "id": "invitation_courier",
+      "name": "Invitation Courier",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "neutral",
+      "attack": 3,
+      "health": 4,
+      "rarity": "rare",
+      "set": "REVENDRETH",
+      "description": "After a card is added to your hand from another class, copy it."
+    },
+    {
+      "id": "muckborn_servant",
+      "name": "Muckborn Servant",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "paladin",
+      "attack": 2,
+      "health": 4,
+      "rarity": "common",
+      "set": "REVENDRETH",
+      "keywords": [
+        "taunt",
+        "battlecry"
+      ],
+      "description": "Taunt. Battlecry: Discover a Paladin card.",
+      "effects": [
+        {
+          "type": "discover",
+          "cardClasses": [
+            "paladin"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "murloc_holmes",
+      "name": "Murloc Holmes",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "neutral",
+      "attack": 3,
+      "health": 4,
+      "rarity": "legendary",
+      "set": "REVENDRETH",
+      "tribe": "Murloc",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Solve 3 Clues about your opponent's cards to get copies of them.",
+      "effects": [
+        {
+          "type": "discover",
+          "fromEnemyHand": true,
+          "count": 3,
+          "to": "hand"
+        }
+      ]
+    },
+    {
+      "id": "party_favor_totem",
+      "name": "Party Favor Totem",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "shaman",
+      "attack": 0,
+      "health": 3,
+      "rarity": "rare",
+      "set": "REVENDRETH",
+      "tribe": "Totem",
+      "description": "At the end of your turn, summon a random basic Totem. Infuse (2): Summon two instead.",
+      "infuse": {
+        "count": 2,
+        "id": "rev_party_favor_totem_infused"
+      },
+      "ongoing": {
+        "on": "turn-end",
+        "effects": [
+          {
+            "type": "summon-random-basic-totem",
+            "count": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "pelagos",
+      "name": "Pelagos",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "priest",
+      "attack": 1,
+      "health": 6,
+      "rarity": "legendary",
+      "set": "REVENDRETH",
+      "description": "After you cast a spell on a friendly minion, set its Attack and Health to the higher of the two."
+    },
+    {
+      "id": "shadowborn",
+      "name": "Shadowborn",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "warlock",
+      "attack": 3,
+      "health": 3,
+      "rarity": "common",
+      "set": "REVENDRETH",
+      "tribe": "Beast",
+      "keywords": [
+        "deathrattle"
+      ],
+      "description": "Deathrattle: Reduce the Cost of the highest Cost Shadow spell in your hand by (3).",
+      "deathrattle": [
+        {
+          "type": "reduce-highest-school-spell",
+          "school": "Shadow",
+          "value": 3
+        }
+      ]
+    },
+    {
+      "id": "stewart_the_steward",
+      "name": "Stewart the Steward",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "paladin",
+      "attack": 3,
+      "health": 3,
+      "rarity": "legendary",
+      "set": "REVENDRETH",
+      "keywords": [
+        "deathrattle"
+      ],
+      "description": "Deathrattle: Give the next Silver Hand Recruit you summon +3/+3 and this Deathrattle.",
+      "deathrattle": [
+        {
+          "type": "grant-next-recruit-buff",
+          "attack": 3,
+          "health": 3,
+          "chain": true
+        }
+      ]
+    },
+    {
+      "id": "suspicious_pirate",
+      "name": "Suspicious Pirate",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "warrior",
+      "attack": 3,
+      "health": 4,
+      "rarity": "rare",
+      "set": "REVENDRETH",
+      "tribe": "Pirate",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Discover a weapon. If your opponent guesses your choice, they get a copy.",
+      "effects": [
+        {
+          "type": "discover",
+          "cardType": "weapon"
+        }
+      ]
+    },
+    {
+      "id": "the_harvester_of_envy",
+      "name": "The Harvester of Envy",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "priest",
+      "attack": 4,
+      "health": 3,
+      "rarity": "legendary",
+      "set": "REVENDRETH",
+      "description": "After you play a card copied from the opponent, steal the original."
+    },
+    {
+      "id": "weapons_expert",
+      "name": "Weapons Expert",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "warrior",
+      "attack": 3,
+      "health": 2,
+      "rarity": "rare",
+      "set": "REVENDRETH",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: If you have a weapon equipped, give it +1/+1. Otherwise, draw a weapon.",
+      "effects": [
+        {
+          "type": "buff-weapon-or-draw-weapon",
+          "attack": 1,
+          "durability": 1
+        }
+      ]
+    },
+    {
+      "id": "rev_party_favor_totem_infused",
+      "name": "Party Favor Totem",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "shaman",
+      "attack": 0,
+      "health": 3,
+      "rarity": "rare",
+      "set": "REVENDRETH",
+      "tribe": "Totem",
+      "token": true,
+      "collectible": false,
+      "description": "At the end of your turn, summon two random basic Totems.",
+      "ongoing": {
+        "on": "turn-end",
+        "effects": [
+          {
+            "type": "summon-random-basic-totem",
+            "count": 2
+          }
+        ]
+      }
+    },
+    {
+      "id": "rev_framed",
+      "name": "Framed",
+      "type": "sorcery",
+      "cost": 0,
+      "cardClass": "neutral",
+      "rarity": "common",
+      "set": "REVENDRETH",
+      "token": true,
+      "collectible": false,
+      "overload": 2,
+      "description": "Overload: (2)",
+      "effects": []
     }
   ]
 }

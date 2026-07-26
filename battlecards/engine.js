@@ -1356,6 +1356,7 @@ function summon(state, pi, tokenDef) {
 	if (p.eliminated) return null;
 	const c = instantiate(tokenDef, pi);
 	c.zone = 'board';
+	if (p.nextRecruitBuff && c.name === 'Silver Hand Recruit') { c.attack += p.nextRecruitBuff.attack || 0; c.maxHealth += p.nextRecruitBuff.health || 0; if (p.nextRecruitBuff.deathrattle) { c.deathrattle = (c.deathrattle || []).concat(JSON.parse(JSON.stringify(p.nextRecruitBuff.deathrattle))); if (!c.keywords.includes('deathrattle')) c.keywords.push('deathrattle'); } p.nextRecruitBuff = null; } // Stewart the Steward
 	p.board.push(c);
 	emit(state, { type: 'summon', player: pi, card: c });
 	questTick(state, 'summon', pi, 1, c);
@@ -1929,6 +1930,18 @@ function runSecretEffects(state, pi, effects, ctx) {
 	for (const e of effects || []) {
 		switch (e.type) {
 			case 'counter': ctx.countered = true; break;
+			case 'become-copy-of-dead': {
+				// Creepy Painting: transform into a copy of a minion that just died
+				const dead = ctx.dead, self = ctx.self;
+				const def = dead && state.cardsById[dead.id];
+				if (def && self && dead !== self && def.type === 'creature' && !isDead(self)) {
+					const fresh = instantiate(def, pi);
+					const board = state.players[pi].board;
+					const i = board.indexOf(self);
+					if (i >= 0) { fresh.uid = self.uid; fresh.zone = 'board'; fresh.sick = self.sick; board[i] = fresh; emit(state, { type: 'transform', uid: self.uid, name: fresh.name }); recomputeAuras(state); }
+				}
+				break;
+			}
 			case 'copy-spell': {
 				// Mana Bind: add a copy of the countered spell to your hand at cost 0
 				const sp = ctx.spell, pp = state.players[pi];
@@ -5539,6 +5552,44 @@ function execEffects(state, pi, effects, target, source) {
 		} else if (e.type === 'arm-enemy-draw-punish') {
 			// Ashen Elemental: the opponent's draws next turn deal damage to them
 			for (const o of enemies) { state.players[o].drawPunishTurn = state.turnNumber + 1; state.players[o].drawPunishDamage = e.value || 2; }
+		} else if (e.type === 'summon-from-deck-affordable') {
+			// Dinner Performer: summon a random minion from your deck you can afford
+			const p = state.players[pi];
+			const avail = (p.mana?.cur || 0) + (p.mana?.bonus || 0);
+			const idxs = p.deck.map((id, i) => [id, i]).filter(([id]) => { const d = state.cardsById[id]; return d && d.type === 'creature' && !d.token && (d.cost || 0) <= avail; });
+			if (idxs.length) { const [id, i] = idxs[Math.floor(state.rng() * idxs.length)]; p.deck.splice(i, 1); summon(state, pi, state.cardsById[id]); }
+		} else if (e.type === 'enemy-minion-tax-next-turn') {
+			// Forensic Duster: the opponent's minions cost more on their next turn
+			for (const o of enemies) { state.players[o].enemyMinionTaxTurn = state.turnNumber + 1; state.players[o].enemyMinionTaxAmount = e.value || 1; }
+		} else if (e.type === 'shuffle-cards-into-enemy-deck') {
+			// Framester: shuffle N copies of a card into the opponent's deck
+			const foe = enemies[0];
+			if (foe != null && e.id) { const fp = state.players[foe]; for (let n = 0; n < (e.count || 1); n++) fp.deck.push(e.id); for (let i = fp.deck.length - 1; i > 0; i--) { const j = Math.floor(state.rng() * (i + 1)); [fp.deck[i], fp.deck[j]] = [fp.deck[j], fp.deck[i]]; } emit(state, { type: 'shuffle', player: foe }); }
+		} else if (e.type === 'shuffle-enemy-hand-card-choose') {
+			// Ghastly Gravedigger: if you control a Secret, shuffle a chosen card from the opponent's hand into their deck
+			if (e.requireSecret && !state.players[pi].secrets.length) continue;
+			execEffects(state, pi, [{ type: 'shuffle-enemy-hand-card' }], null, source);
+		} else if (e.type === 'reduce-highest-school-spell') {
+			// Shadowborn: reduce the Cost of the highest-Cost spell of a school in your hand
+			const p = state.players[pi];
+			let best = null;
+			for (const c of p.hand) { if (isSpellType(c) && (!e.school || schoolOf(c) === e.school)) { if (!best || (c.cost || 0) > (best.cost || 0)) best = c; } }
+			if (best) { best.cost = Math.max(0, (best.cost || 0) - (e.value || 3)); emit(state, { type: 'costChanged', uid: best.uid }); }
+		} else if (e.type === 'grant-next-recruit-buff') {
+			// Stewart the Steward: the next Silver Hand Recruit you summon gains +X/+X (and, if chain, this same Deathrattle)
+			state.players[pi].nextRecruitBuff = { attack: e.attack || 3, health: e.health || 3, deathrattle: e.chain ? [{ type: 'grant-next-recruit-buff', attack: e.attack || 3, health: e.health || 3, chain: true }] : null };
+		} else if (e.type === 'buff-weapon-or-draw-weapon') {
+			// Weapons Expert: if you have a weapon, give it +1/+1; otherwise draw a weapon
+			const p = state.players[pi];
+			if (p.weapon) { p.weapon.attack += e.attack || 1; p.weapon.durability += e.durability || 1; emit(state, { type: 'weaponDurability', player: pi, attack: p.weapon.attack, durability: p.weapon.durability }); }
+			else { const idx = p.deck.findIndex(id => state.cardsById[id]?.type === 'weapon'); if (idx >= 0 && p.hand.length < MAX_HAND) { const [id] = p.deck.splice(idx, 1); const wc = instantiate(state.cardsById[id], pi); wc.zone = 'hand'; p.hand.push(wc); emit(state, { type: 'draw', player: pi, card: wc }); } }
+		} else if (e.type === 'summon-random-basic-totem') {
+			// Party Favor Totem: summon N random basic Totems
+			const pool = ['sch_totem_healing', 'sch_totem_searing', 'sch_totem_stoneclaw', 'sch_totem_wrath'];
+			for (let n = 0; n < (e.count || 1); n++) { const id = pool[Math.floor(state.rng() * pool.length)]; if (state.cardsById[id]) summon(state, pi, state.cardsById[id]); }
+		} else if (e.type === 'become-copy-of-dead') {
+			// Creepy Painting: become a copy of a minion that died (runs via ongoing ctx.dead)
+			// handled in runSecretEffects; no-op here
 		} else if (e.type === 'bounce-to-deck-bottom') {
 			// Bootstrap Sunkeneer: put an enemy minion on the bottom of its owner's deck
 			const t = chosenCreature();
@@ -7685,6 +7736,7 @@ export function effectiveCost(state, pi, card) {
 	{ const sch = schoolOf(card); if (sch) { const r = p.board.filter(x => x.schoolCostReduce && x.schoolCostReduce.school === sch && !isDead(x)).reduce((s, x) => s + x.schoolCostReduce.amount, 0); if (r) c = Math.max(0, c - r); } } // Lady Anacondra: Nature spells
 	if (p.battlecryTaxNext > 0 && (card.keywords || []).includes('battlecry')) c += p.battlecryTaxNext; // Boompistol Bully
 	if (p.libramDiscount > 0 && /Libram/.test(card.name || '')) c = Math.max(0, c - p.libramDiscount); // Aldor Attendant/Truthseeker
+	if (card.type === 'creature' && p.enemyMinionTaxTurn === state.turnNumber && p.enemyMinionTaxAmount) c += p.enemyMinionTaxAmount; // Forensic Duster
 	return Math.max(0, c);
 }
 
