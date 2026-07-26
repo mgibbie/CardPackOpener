@@ -95400,6 +95400,525 @@
         "lifesteal"
       ],
       "description": "Lifesteal. Costs (0)."
+    },
+    {
+      "id": "widowbloom_seedsman",
+      "name": "Widowbloom Seedsman",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "druid",
+      "attack": 3,
+      "health": 2,
+      "rarity": "epic",
+      "set": "REVENDRETH",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Draw a Nature spell. Gain an empty Mana Crystal.",
+      "effects": [
+        {
+          "type": "tutor",
+          "cardType": "spell",
+          "school": "Nature",
+          "count": 1
+        },
+        {
+          "type": "gain-empty-mana-crystal",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "aralon",
+      "name": "Ara'lon",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "hunter",
+      "attack": 4,
+      "health": 5,
+      "rarity": "legendary",
+      "set": "REVENDRETH",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Summon one of each Dormant Wildseed.",
+      "effects": [
+        {
+          "type": "summon",
+          "count": 3,
+          "summonId": "rev_wildseed"
+        }
+      ]
+    },
+    {
+      "id": "death_blossom_whomper",
+      "name": "Death Blossom Whomper",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "druid",
+      "attack": 6,
+      "health": 5,
+      "rarity": "common",
+      "set": "REVENDRETH",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Draw a Deathrattle minion and gain its Deathrattle.",
+      "effects": [
+        {
+          "type": "tutor",
+          "cardType": "creature",
+          "requireKeyword": "deathrattle",
+          "gainDeathrattle": true,
+          "count": 1
+        }
+      ]
+    },
+    {
+      "id": "elitist_snob",
+      "name": "Elitist Snob",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "paladin",
+      "attack": 3,
+      "health": 4,
+      "rarity": "epic",
+      "set": "REVENDRETH",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: For each Paladin card in your hand, randomly gain Divine Shield, Lifesteal, Rush, or Taunt.",
+      "effects": [
+        {
+          "type": "gain-random-keyword-per-class-card",
+          "cardClass": "paladin",
+          "keywords": [
+            "divine_shield",
+            "lifesteal",
+            "rush",
+            "taunt"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "famished_fool",
+      "name": "Famished Fool",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "neutral",
+      "attack": 3,
+      "health": 5,
+      "rarity": "rare",
+      "set": "REVENDRETH",
+      "keywords": [
+        "battlecry"
+      ],
+      "infuse": {
+        "count": 4,
+        "id": "rev_famished_fool_infused"
+      },
+      "description": "Battlecry: Draw a card. Infuse (4): Draw 3 instead.",
+      "effects": [
+        {
+          "type": "draw",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "lady_darkvein",
+      "name": "Lady Darkvein",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "warlock",
+      "attack": 3,
+      "health": 6,
+      "rarity": "legendary",
+      "set": "REVENDRETH",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Summon two 2/1 Shades. Each gains a Deathrattle to cast your last Shadow spell.",
+      "effects": [
+        {
+          "type": "summon",
+          "count": 2,
+          "summonId": "rev_shade"
+        }
+      ]
+    },
+    {
+      "id": "mawsworn_bailiff",
+      "name": "Mawsworn Bailiff",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "warrior",
+      "attack": 4,
+      "health": 4,
+      "rarity": "common",
+      "set": "REVENDRETH",
+      "keywords": [
+        "taunt",
+        "battlecry"
+      ],
+      "description": "Taunt. Battlecry: If you have 4 or more Armor, gain +4/+4.",
+      "effects": [
+        {
+          "type": "buff-self-if-armor",
+          "armor": 4,
+          "attack": 4,
+          "health": 4
+        }
+      ]
+    },
+    {
+      "id": "necrolord_draka",
+      "name": "Necrolord Draka",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "rogue",
+      "attack": 3,
+      "health": 4,
+      "rarity": "legendary",
+      "set": "REVENDRETH",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Equip a 1/3 Dagger. (+1 Attack for each other card you played this turn, up to 10!)",
+      "effects": [
+        {
+          "type": "equip-per-cards-played",
+          "name": "Dagger",
+          "attack": 1,
+          "durability": 3,
+          "cap": 10
+        }
+      ]
+    },
+    {
+      "id": "shadehound",
+      "name": "Shadehound",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "hunter",
+      "attack": 6,
+      "health": 5,
+      "rarity": "rare",
+      "set": "REVENDRETH",
+      "tribe": "Beast",
+      "infuse": {
+        "count": 3,
+        "id": "rev_shadehound_infused"
+      },
+      "description": "Whenever this attacks, give your other Beasts +2/+2. Infuse (3 Beasts): Gain Rush.",
+      "ongoing": {
+        "on": "self-attacks",
+        "effects": [
+          {
+            "type": "buff-friendly-tribe",
+            "tribe": "Beast",
+            "attack": 2,
+            "health": 2,
+            "exceptSelf": true
+          }
+        ]
+      }
+    },
+    {
+      "id": "soul_seeker",
+      "name": "Soul Seeker",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "neutral",
+      "attack": 3,
+      "health": 3,
+      "rarity": "common",
+      "set": "REVENDRETH",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Swap this with a random minion from your opponent's deck.",
+      "effects": [
+        {
+          "type": "swap-with-enemy-deck-minion"
+        }
+      ]
+    },
+    {
+      "id": "steamcleaner",
+      "name": "Steamcleaner",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "neutral",
+      "attack": 5,
+      "health": 5,
+      "rarity": "rare",
+      "set": "REVENDRETH",
+      "tribe": "Mech",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Destroy ALL cards in both players' decks that didn't start there."
+    },
+    {
+      "id": "stoneborn_accuser",
+      "name": "Stoneborn Accuser",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "neutral",
+      "attack": 5,
+      "health": 5,
+      "rarity": "common",
+      "set": "REVENDRETH",
+      "infuse": {
+        "count": 5,
+        "id": "rev_stoneborn_accuser_infused"
+      },
+      "description": "Infuse (5): Gain \"Battlecry: Deal 5 damage.\""
+    },
+    {
+      "id": "decimator_olgra",
+      "name": "Decimator Olgra",
+      "type": "creature",
+      "cost": 6,
+      "cardClass": "warrior",
+      "attack": 3,
+      "health": 7,
+      "rarity": "legendary",
+      "set": "REVENDRETH",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Gain +1/+1 for each damaged minion, then attack all enemies.",
+      "effects": [
+        {
+          "type": "buff-self-per-damaged-then-attack-all",
+          "attack": 1,
+          "health": 1
+        }
+      ]
+    },
+    {
+      "id": "defense_attorney_nathanos",
+      "name": "Defense Attorney Nathanos",
+      "type": "creature",
+      "cost": 6,
+      "cardClass": "hunter",
+      "attack": 4,
+      "health": 4,
+      "rarity": "legendary",
+      "set": "REVENDRETH",
+      "tribe": "Undead",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Discover a friendly Deathrattle minion that died this game. Gain its Deathrattle and then trigger it.",
+      "effects": [
+        {
+          "type": "discover",
+          "fromDied": true,
+          "cardType": "creature",
+          "gainDeathrattle": true
+        }
+      ]
+    },
+    {
+      "id": "imp_king_rafaam",
+      "name": "Imp King Rafaam",
+      "type": "creature",
+      "cost": 6,
+      "cardClass": "warlock",
+      "attack": 6,
+      "health": 6,
+      "rarity": "legendary",
+      "set": "REVENDRETH",
+      "keywords": [
+        "battlecry"
+      ],
+      "infuse": {
+        "count": 5,
+        "id": "rev_imp_king_rafaam_infused"
+      },
+      "description": "Battlecry: Resurrect four friendly Imps. Infuse (5): Give your Imps +2/+2.",
+      "effects": [
+        {
+          "type": "summon-died-name",
+          "nameIncludes": "Imp",
+          "count": 4
+        }
+      ]
+    },
+    {
+      "id": "sylvanas_the_accused",
+      "name": "Sylvanas, the Accused",
+      "type": "creature",
+      "cost": 6,
+      "cardClass": "neutral",
+      "attack": 5,
+      "health": 5,
+      "rarity": "legendary",
+      "set": "REVENDRETH",
+      "tribe": "Undead",
+      "keywords": [
+        "battlecry"
+      ],
+      "infuse": {
+        "count": 7,
+        "id": "rev_sylvanas_the_accused_infused"
+      },
+      "description": "Battlecry: Destroy an enemy minion. Infuse (7): Take control of it instead.",
+      "effects": [
+        {
+          "type": "destroy",
+          "target": "enemy-creature"
+        }
+      ]
+    },
+    {
+      "id": "rev_shade",
+      "name": "Shade",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "warlock",
+      "attack": 2,
+      "health": 1,
+      "rarity": "common",
+      "set": "REVENDRETH",
+      "token": true,
+      "collectible": false,
+      "description": "A 2/1 Shade."
+    },
+    {
+      "id": "rev_famished_fool_infused",
+      "name": "Famished Fool",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "neutral",
+      "attack": 3,
+      "health": 5,
+      "rarity": "rare",
+      "set": "REVENDRETH",
+      "token": true,
+      "collectible": false,
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Draw 3 cards.",
+      "effects": [
+        {
+          "type": "draw",
+          "value": 3
+        }
+      ]
+    },
+    {
+      "id": "rev_stoneborn_accuser_infused",
+      "name": "Stoneborn Accuser",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "neutral",
+      "attack": 5,
+      "health": 5,
+      "rarity": "common",
+      "set": "REVENDRETH",
+      "token": true,
+      "collectible": false,
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Deal 5 damage.",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 5,
+          "target": "creature"
+        }
+      ]
+    },
+    {
+      "id": "rev_shadehound_infused",
+      "name": "Shadehound",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "hunter",
+      "attack": 6,
+      "health": 5,
+      "rarity": "rare",
+      "set": "REVENDRETH",
+      "tribe": "Beast",
+      "token": true,
+      "collectible": false,
+      "keywords": [
+        "rush"
+      ],
+      "description": "Rush. Whenever this attacks, give your other Beasts +2/+2.",
+      "ongoing": {
+        "on": "self-attacks",
+        "effects": [
+          {
+            "type": "buff-friendly-tribe",
+            "tribe": "Beast",
+            "attack": 2,
+            "health": 2,
+            "exceptSelf": true
+          }
+        ]
+      }
+    },
+    {
+      "id": "rev_imp_king_rafaam_infused",
+      "name": "Imp King Rafaam",
+      "type": "creature",
+      "cost": 6,
+      "cardClass": "warlock",
+      "attack": 6,
+      "health": 6,
+      "rarity": "legendary",
+      "set": "REVENDRETH",
+      "token": true,
+      "collectible": false,
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Resurrect four friendly Imps. Give your Imps +2/+2.",
+      "effects": [
+        {
+          "type": "summon-died-name",
+          "nameIncludes": "Imp",
+          "count": 4
+        },
+        {
+          "type": "buff-friendly-name",
+          "nameIncludes": "Imp",
+          "attack": 2,
+          "health": 2
+        }
+      ]
+    },
+    {
+      "id": "rev_sylvanas_the_accused_infused",
+      "name": "Sylvanas, the Accused",
+      "type": "creature",
+      "cost": 6,
+      "cardClass": "neutral",
+      "attack": 5,
+      "health": 5,
+      "rarity": "legendary",
+      "set": "REVENDRETH",
+      "tribe": "Undead",
+      "token": true,
+      "collectible": false,
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Take control of an enemy minion.",
+      "effects": [
+        {
+          "type": "mind-control",
+          "target": "enemy-creature"
+        }
+      ]
     }
   ]
 }

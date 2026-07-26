@@ -5611,6 +5611,47 @@ function execEffects(state, pi, effects, target, source) {
 		} else if (e.type === 'draw-both-until') {
 			// Sightless Magistrate: both players draw until they have N cards
 			for (let s2 = 0; s2 < state.players.length; s2++) { const pl = state.players[s2]; let guard = 0; while (pl.hand.length < (e.value || 5) && pl.hand.length < MAX_HAND && guard++ < 20) { const before = pl.hand.length; drawCards(state, s2, 1); if (pl.hand.length === before) break; } }
+		} else if (e.type === 'gain-empty-mana-crystal') {
+			// Widowbloom Seedsman: gain an empty Mana Crystal (max +1, current unchanged)
+			const p = state.players[pi];
+			if (p.mana) p.mana.max = (p.mana.max || 0) + (e.value || 1);
+		} else if (e.type === 'buff-friendly-tribe') {
+			// Shadehound: buff your other minions of a tribe
+			for (const c of state.players[pi].board) { if (isDead(c) || c.type === 'location') continue; if (e.exceptSelf && c === source) continue; if (e.tribe && !(c.tribe || '').includes(e.tribe)) continue; buffCreature(c, e.attack || 0, e.health || 0); }
+		} else if (e.type === 'buff-friendly-name') {
+			// Imp King Rafaam (Infused): buff your minions whose name contains a substring
+			for (const c of state.players[pi].board) { if (isDead(c) || c.type === 'location') continue; if (e.nameIncludes && !(c.name || '').includes(e.nameIncludes)) continue; buffCreature(c, e.attack || 0, e.health || 0); }
+		} else if (e.type === 'buff-self-if-armor') {
+			// Mawsworn Bailiff: if you have N+ Armor, gain +X/+X
+			if (source && (state.players[pi].armor || 0) >= (e.armor || 4)) buffCreature(source, e.attack || 0, e.health || 0);
+		} else if (e.type === 'gain-random-keyword-per-class-card') {
+			// Elitist Snob: for each card of a class in your hand, gain a random keyword
+			const kws = e.keywords || ['divine_shield', 'lifesteal', 'rush', 'taunt'];
+			const n = state.players[pi].hand.filter(c => c !== source && (c.cardClass || '').split('__').includes(e.cardClass)).length;
+			for (let i = 0; i < n && source; i++) { const k = kws[Math.floor(state.rng() * kws.length)]; if (!source.keywords.includes(k)) { source.keywords.push(k); if (k === KW.DIVINE_SHIELD) source.shield = true; } }
+			if (source) emit(state, { type: 'buff', uid: source.uid, attack: source.attack, hp: hp(source) });
+		} else if (e.type === 'equip-per-cards-played') {
+			// Necrolord Draka: equip a weapon whose Attack grows with other cards played this turn
+			const p = state.players[pi];
+			const bonus = Math.min(e.cap ?? 10, Math.max(0, (p.cardsPlayedThisTurn || 1) - 1));
+			execEffects(state, pi, [{ type: 'equip', name: e.name || 'Dagger', attack: (e.attack || 1) + bonus, durability: e.durability || 3 }], null, source);
+		} else if (e.type === 'summon-died-name') {
+			// Imp King Rafaam: resurrect friendly dead minions whose name contains a substring
+			const p = state.players[pi];
+			const pool = [...new Set(p.deathLogIds)].map(id => state.cardsById[id]).filter(d => d && d.type === 'creature' && (d.name || '').includes(e.nameIncludes || ''));
+			for (let i = 0; i < (e.count || 1) && pool.length; i++) summon(state, pi, pool[Math.floor(state.rng() * pool.length)]);
+		} else if (e.type === 'buff-self-per-damaged-then-attack-all') {
+			// Decimator Olgra: +1/+1 per damaged minion, then attack all enemies
+			if (source) {
+				let n = 0;
+				for (const pl of state.players) for (const c of pl.board) if (!isDead(c) && c.damage > 0 && c.type !== 'location') n++;
+				if (n) buffCreature(source, (e.attack || 1) * n, (e.health || 1) * n);
+				for (const o of enemies) { if (isDead(source)) break; for (const c of [...state.players[o].board]) { if (isDead(source)) break; if (!isDead(c) && c.type !== 'location' && c.dormantLeft <= 0) resolveCombat(state, pi, source.uid, { type: 'creature', uid: c.uid, player: o }); } if (!isDead(source)) resolveCombat(state, pi, source.uid, { type: 'hero', player: o }); }
+			}
+		} else if (e.type === 'swap-with-enemy-deck-minion') {
+			// Soul Seeker: swap this with a random minion from the opponent's deck
+			const foe = enemies[0];
+			if (source && foe != null) { const fp = state.players[foe]; const idxs = fp.deck.map((id, i) => [id, i]).filter(([id]) => state.cardsById[id]?.type === 'creature' && !state.cardsById[id].token); if (idxs.length) { const [id, i] = idxs[Math.floor(state.rng() * idxs.length)]; fp.deck.splice(i, 1); const p = state.players[pi]; p.board = p.board.filter(c => c !== source); if (state.cardsById[source.id]) fp.deck.push(source.id); source.zone = 'gone'; summon(state, pi, state.cardsById[id]); emit(state, { type: 'bounce', uid: source.uid, player: pi, name: source.name }); } }
 		} else if (e.type === 'become-copy-of-dead') {
 			// Creepy Painting: become a copy of a minion that died (runs via ongoing ctx.dead)
 			// handled in runSecretEffects; no-op here
