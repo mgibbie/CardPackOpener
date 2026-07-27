@@ -106254,6 +106254,419 @@
       "collectible": false,
       "description": "A useless Barrel clogging your deck.",
       "effects": []
+    },
+    {
+      "id": "unlucky_powderman",
+      "name": "Unlucky Powderman",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "warrior",
+      "attack": 2,
+      "health": 2,
+      "rarity": "rare",
+      "set": "WILD_WEST",
+      "tribe": "Undead",
+      "keywords": [
+        "taunt",
+        "deathrattle"
+      ],
+      "description": "Taunt. Deathrattle: Give Taunt minions in your hand and deck +1/+1.",
+      "deathrattle": [
+        {
+          "type": "buff-hand-keyword",
+          "keyword": "taunt",
+          "attack": 1,
+          "health": 1
+        }
+      ]
+    },
+    {
+      "id": "benevolent_banker",
+      "name": "Benevolent Banker",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "priest",
+      "attack": 2,
+      "health": 4,
+      "rarity": "epic",
+      "set": "WILD_WEST",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Discover a spell from your deck. Quickdraw: Enemy deck instead.",
+      "effects": [
+        {
+          "type": "discover",
+          "cardType": "spell",
+          "fromOwnDeck": true
+        }
+      ]
+    },
+    {
+      "id": "blindeye_sharpshooter",
+      "name": "Blindeye Sharpshooter",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "demonhunter",
+      "attack": 1,
+      "health": 3,
+      "rarity": "epic",
+      "set": "WILD_WEST",
+      "tribe": "Naga",
+      "description": "After you play a Naga, deal 2 damage to a random enemy and draw a spell.",
+      "ongoing": {
+        "on": "creature-played",
+        "if": {
+          "tribe": "Naga"
+        },
+        "effects": [
+          {
+            "type": "random-damage",
+            "value": 2,
+            "count": 1,
+            "pool": "enemies"
+          },
+          {
+            "type": "tutor",
+            "cardType": "spell",
+            "count": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "bounty_wrangler",
+      "name": "Bounty Wrangler",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "rogue",
+      "attack": 3,
+      "health": 4,
+      "rarity": "rare",
+      "set": "WILD_WEST",
+      "keywords": [
+        "combo"
+      ],
+      "description": "Quickdraw or Combo: Get a Coin.",
+      "combo": [
+        {
+          "type": "gain-coin",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "bovine_skeleton",
+      "name": "Bovine Skeleton",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "hunter",
+      "attack": 3,
+      "health": 3,
+      "rarity": "rare",
+      "set": "WILD_WEST",
+      "tribe": "Beast",
+      "keywords": [
+        "deathrattle"
+      ],
+      "description": "Deathrattle: If this has 4 or more Attack, summon a Bovine Skeleton.",
+      "deathrattle": [
+        {
+          "type": "conditional",
+          "if": {
+            "selfAttack": 4
+          },
+          "then": [
+            {
+              "type": "summon",
+              "count": 1,
+              "summonId": "bovine_skeleton"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "eroded_sediment",
+      "name": "Eroded Sediment",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "neutral",
+      "attack": 4,
+      "health": 3,
+      "rarity": "common",
+      "set": "WILD_WEST",
+      "tribe": "Elemental",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: If you played an Elemental last turn, Discover any Elemental from the past.",
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "elementalLastTurn": true
+          },
+          "then": [
+            {
+              "type": "discover",
+              "cardType": "creature",
+              "tribe": "Elemental"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "farm_hand",
+      "name": "Farm Hand",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "deathknight",
+      "attack": 4,
+      "health": 3,
+      "rarity": "common",
+      "set": "WILD_WEST",
+      "tribe": "Undead",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Discover an Undead. Quickdraw: It costs (2) less.",
+      "effects": [
+        {
+          "type": "discover",
+          "cardType": "creature",
+          "tribe": "Undead"
+        }
+      ]
+    },
+    {
+      "id": "gattlesnake",
+      "name": "Gattlesnake",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "neutral",
+      "attack": 1,
+      "health": 5,
+      "rarity": "epic",
+      "set": "WILD_WEST",
+      "tribe": "Beast",
+      "keywords": [
+        "deathrattle"
+      ],
+      "description": "At the end of your turn, load two bullets that deal 1 damage each. Deathrattle: Fire at random enemies!",
+      "ongoing": {
+        "on": "turn-end",
+        "effects": [
+          {
+            "type": "load-bullets",
+            "count": 2
+          }
+        ]
+      },
+      "deathrattle": [
+        {
+          "type": "fire-bullets",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "high_noon_duelist",
+      "name": "High Noon Duelist",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "neutral",
+      "attack": 4,
+      "health": 3,
+      "rarity": "common",
+      "set": "WILD_WEST",
+      "keywords": [
+        "deathrattle"
+      ],
+      "description": "Deathrattle: Both players DRAW! Destroy the card that costs less.",
+      "deathrattle": [
+        {
+          "type": "draw",
+          "value": 1,
+          "target": "all"
+        }
+      ]
+    },
+    {
+      "id": "holy_cowboy",
+      "name": "Holy Cowboy",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "paladin",
+      "attack": 4,
+      "health": 3,
+      "rarity": "common",
+      "set": "WILD_WEST",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Your next Holy spell costs (2) less.",
+      "effects": [
+        {
+          "type": "grant-next-school-discount",
+          "school": "Holy",
+          "value": 2
+        }
+      ]
+    },
+    {
+      "id": "iridescent_gyreworm",
+      "name": "Iridescent Gyreworm",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "neutral",
+      "attack": 4,
+      "health": 3,
+      "rarity": "epic",
+      "set": "WILD_WEST",
+      "tribe": "Elemental",
+      "keywords": [
+        "deathrattle"
+      ],
+      "description": "Deathrattle: Give each of your minions a random Bonus Effect.",
+      "deathrattle": [
+        {
+          "type": "grant-random-keyword-friendly-tribe"
+        }
+      ]
+    },
+    {
+      "id": "linedance_partner",
+      "name": "Linedance Partner",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "neutral",
+      "attack": 3,
+      "health": 2,
+      "rarity": "common",
+      "set": "WILD_WEST",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: If you're holding another 3-Cost card, summon a random 3-Cost minion.",
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "holdingCost": 3
+          },
+          "then": [
+            {
+              "type": "summon-random",
+              "cost": 3
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "minecart_cruiser",
+      "name": "Minecart Cruiser",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "shaman",
+      "attack": 4,
+      "health": 5,
+      "rarity": "rare",
+      "set": "WILD_WEST",
+      "tribe": "Elemental",
+      "overload": 2,
+      "keywords": [
+        "rush",
+        "battlecry"
+      ],
+      "description": "Rush, Overload: (2). Battlecry: If you played an Elemental last turn, don't Overload.",
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "elementalLastTurn": true
+          },
+          "then": [
+            {
+              "type": "clear-own-overload"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "pip_the_potent",
+      "name": "Pip the Potent",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "priest",
+      "attack": 3,
+      "health": 3,
+      "rarity": "legendary",
+      "set": "WILD_WEST",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Copy each 1-Cost card in your hand.",
+      "effects": [
+        {
+          "type": "copy-hand-cost",
+          "cost": 1
+        }
+      ]
+    },
+    {
+      "id": "silver_serpent",
+      "name": "Silver Serpent",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "hunter",
+      "attack": 2,
+      "health": 3,
+      "rarity": "common",
+      "set": "WILD_WEST",
+      "tribe": "Beast",
+      "keywords": [
+        "rush",
+        "poisonous"
+      ],
+      "description": "Rush, Poisonous. Quickdraw: Gain Immune this turn."
+    },
+    {
+      "id": "sir_finley_the_intrepid",
+      "name": "Sir Finley, the Intrepid",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "paladin",
+      "attack": 2,
+      "health": 3,
+      "rarity": "legendary",
+      "set": "WILD_WEST",
+      "tribe": "Murloc",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: If you've Excavated twice, transform all enemy minions into 1/1 Murlocs.",
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "excavatedTwice": true
+          },
+          "then": [
+            {
+              "type": "transform-all-enemies-into-token",
+              "id": "ww_murloc_11",
+              "name": "Murloc",
+              "tribe": "Murloc",
+              "attack": 1,
+              "health": 1
+            }
+          ]
+        }
+      ]
     }
   ]
 }

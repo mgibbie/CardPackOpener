@@ -5928,6 +5928,30 @@ function execEffects(state, pi, effects, target, source) {
 		} else if (e.type === 'destroy-self') {
 			// Incorporeal Corporal: destroy the source minion
 			if (source && !isDead(source)) { source.damage = source.maxHealth; source.shield = false; emit(state, { type: 'destroy', uid: source.uid }); sweepDeaths(state); }
+		} else if (e.type === 'grant-next-school-discount') {
+			// Holy Cowboy: your next spell of a school costs less
+			state.players[pi].nextSchoolDiscount = { school: e.school, amount: e.value || 2 };
+		} else if (e.type === 'copy-hand-cost') {
+			// Pip the Potent: add a copy of each card in your hand of a given Cost
+			const p = state.players[pi];
+			const targets = p.hand.filter(c => c !== source && (c.cost || 0) === (e.cost ?? 1) && state.cardsById[c.id]);
+			for (const c of targets) { if (p.hand.length >= MAX_HAND) break; const cp = instantiate(state.cardsById[c.id], pi); cp.zone = 'hand'; p.hand.push(cp); emit(state, { type: 'conjure', player: pi, card: cp, color: null }); }
+		} else if (e.type === 'transform-all-enemies-into-token') {
+			// Sir Finley: transform all enemy minions into fixed-stat tokens
+			for (const o of enemies) { const op = state.players[o]; for (let i = 0; i < op.board.length; i++) { const c = op.board[i]; if (isDead(c) || c.type === 'location') continue; const tok = instantiate({ id: e.id || 'token_murloc', name: e.name || 'Murloc', type: 'creature', cost: 1, token: true, tribe: e.tribe || 'Murloc', rarity: 'common', attack: e.attack || 1, health: e.health || 1, description: `A ${e.attack || 1}/${e.health || 1} token.` }, o); tok.zone = 'board'; tok.uid = c.uid; tok.sick = c.sick; op.board[i] = tok; c.zone = 'gone'; emit(state, { type: 'transformed', uid: c.uid, player: o, from: c.name, card: tok }); } } recomputeAuras(state);
+		} else if (e.type === 'buff-hand-keyword') {
+			// Unlucky Powderman: give minions in your hand with a keyword +X/+X (deck buff approximated to hand)
+			for (const c of state.players[pi].hand) if (c.type === 'creature' && (c.keywords || []).includes(e.keyword)) { c.attack += e.attack || 0; c.maxHealth += e.health || 0; emit(state, { type: 'buff', uid: c.uid, attack: c.attack, hp: hp(c) }); }
+		} else if (e.type === 'load-bullets') {
+			// Gattlesnake: load N bullets onto this minion (fired by its Deathrattle)
+			if (source) source.bullets = (source.bullets || 0) + (e.count || 2);
+		} else if (e.type === 'fire-bullets') {
+			// Gattlesnake Deathrattle: fire each loaded bullet at a random enemy
+			const n = (source && source.bullets) || 0;
+			if (n > 0) execEffects(state, pi, [{ type: 'random-damage', value: e.value || 1, count: n, pool: 'enemies' }], null, source);
+		} else if (e.type === 'clear-own-overload') {
+			// Minecart Cruiser: cancel this turn's Overload
+			state.players[pi].overloadPending = 0;
 		} else if (e.type === 'put-card-bottom-deck') {
 			// Disposal Assistant: put a specific card on the bottom of your deck (front of array = bottom)
 			const p = state.players[pi];
@@ -8545,6 +8569,7 @@ export function effectiveCost(state, pi, card) {
 	if (p.nextCardsDiscount && p.nextCardsDiscount.count > 0) c = Math.max(0, c - p.nextCardsDiscount.amount); // Scabbs Cutterbutter
 	if (p.nextChooseOneDiscount > 0 && card.choices) c = Math.max(0, c - p.nextChooseOneDiscount); // Pride Seeker
 	if (p.nextSpellDiscount > 0 && isSpellType(card)) c = Math.max(0, c - p.nextSpellDiscount); // Murkwater Scribe
+	if (p.nextSchoolDiscount && isSpellType(card) && schoolOf(card) === p.nextSchoolDiscount.school) c = Math.max(0, c - p.nextSchoolDiscount.amount); // Holy Cowboy: your next Holy spell costs less
 	if (p.nextTribeDiscount && p.nextTribeDiscount.count > 0 && card.type === 'creature' && (card.tribe || '').includes(p.nextTribeDiscount.tribe)) c = Math.max(0, c - p.nextTribeDiscount.amount); // Clownfish
 	if ((card.keywords || []).includes('outcast')) { const r = p.board.filter(x => x.outcastCostReduce && !isDead(x)).reduce((s, x) => s + x.outcastCostReduce, 0); if (r) c = Math.max(0, c - r); if (p.nextOutcastDiscount > 0) c = Math.max(0, c - p.nextOutcastDiscount); } // Line Hopper / Fierce Outsider
 	if (!card.fromDeck) { const r = p.board.filter(x => x.foreignCostReduce && !isDead(x)).reduce((s, x) => s + x.foreignCostReduce, 0); if (r) c = Math.max(1, c - r); } // Arcane Luminary: not below 1
@@ -8636,6 +8661,7 @@ export function playCard(state, pi, cardUid, target, choice, position, useAlt, k
 	if (card.combo && p.nextComboDiscount > 0) p.nextComboDiscount = 0; // Foxy Fraud discount is spent by the next Combo card
 	if (card.choices && p.nextChooseOneDiscount > 0) p.nextChooseOneDiscount = 0; // Pride Seeker discount is spent by the next Choose One card
 	if (isSpellType(card) && p.nextSpellDiscount > 0) p.nextSpellDiscount = 0; // Murkwater Scribe: spent by the next spell
+	if (isSpellType(card) && p.nextSchoolDiscount && schoolOf(card) === p.nextSchoolDiscount.school) p.nextSchoolDiscount = null; // Holy Cowboy: spent by the next matching spell
 	if (card.type === 'creature' && p.nextTribeDiscount && p.nextTribeDiscount.count > 0 && (card.tribe || '').includes(p.nextTribeDiscount.tribe)) { p.nextTribeDiscount.count -= 1; if (p.nextTribeDiscount.count <= 0) p.nextTribeDiscount = null; } // Clownfish
 	if (p.nextCardsDiscount && p.nextCardsDiscount.count > 0) { p.nextCardsDiscount.count -= 1; if (p.nextCardsDiscount.count <= 0) p.nextCardsDiscount = null; } // Scabbs: consumed per card
 	if (card.stiltReward) { p.heroTempAttack += card.stiltReward; emit(state, { type: 'heroAttack', player: pi, attack: heroAttackValue(p) }); card.stiltReward = 0; } // Stiltstepper
