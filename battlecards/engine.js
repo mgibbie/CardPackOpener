@@ -2938,6 +2938,12 @@ function runSecretEffects(state, pi, effects, ctx) {
 				if (m && !isDead(m) && m.type !== 'location') { m.attack = (m.attack || 0) * 2; m.maxHealth = (m.maxHealth || 0) * 2; emit(state, { type: 'buff', uid: m.uid, attack: m.attack, hp: hp(m) }); }
 				break;
 			}
+			case 'gain-summoned-stats': {
+				// Tras'tath, Soul Parasite: after you summon a Demon, gain its stats
+				const m = ctx.minion, s5 = ctx.self;
+				if (m && s5 && m !== s5 && !isDead(s5) && (!e.tribe || (m.tribe || '').includes(e.tribe))) { s5.attack += m.attack || 0; s5.maxHealth += hp(m) || 0; emit(state, { type: 'buff', uid: s5.uid, attack: s5.attack, hp: hp(s5) }); }
+				break;
+			}
 			case 'buff-damaged-minion': {
 				// Rioter: after a friendly minion survives damage, give it +N Attack
 				const m = ctx.damaged;
@@ -5247,6 +5253,13 @@ function execEffects(state, pi, effects, target, source) {
 		} else if (e.type === 'set-hand-minions-to-higher-stat') {
 			// Divine Augur: set the Attack and Health of every minion in your hand to the higher of the two
 			for (const c of state.players[pi].hand) if (c.type === 'creature') { const hi = Math.max(c.attack || 0, c.maxHealth || 0); c.attack = hi; c.maxHealth = hi; emit(state, { type: 'buff', uid: c.uid, attack: c.attack, hp: hp(c) }); }
+		} else if (e.type === 'destroy-others-draw-refresh') {
+			// Sawbones: destroy all your OTHER minions; draw a card and refresh a Mana Crystal for each
+			const p = state.players[pi];
+			let n = 0;
+			for (const c of [...p.board]) { if (c === source || isDead(c) || c.type === 'location') continue; c.damage = c.maxHealth; c.shield = false; emit(state, { type: 'destroy', uid: c.uid }); n++; }
+			sweepDeaths(state);
+			if (n > 0) { drawCards(state, pi, n); if (p.mana) { p.mana.cur = Math.min(p.mana.max, (p.mana.cur || 0) + n); emit(state, { type: 'mana', player: pi, cur: p.mana.cur, max: p.mana.max }); } }
 		} else if (e.type === 'gain-heal-bonus') {
 			// Cleansing Cleric: your healing effects restore N more Health this game
 			state.players[pi].healBonusGame = (state.players[pi].healBonusGame || 0) + (e.value || 2);
@@ -8273,6 +8286,7 @@ function execEffects(state, pi, effects, target, source) {
 					const card = instantiate(def, own);
 					card.zone = 'hand';
 					if (e.setCost != null) card.cost = e.setCost;
+					if (e.setStats != null && card.type === 'creature') { card.attack = e.setStats; card.maxHealth = e.setStats; } // Karov the Broken: 1/1 copies
 					if (e.costMod) card.cost = Math.max(0, (card.cost || 0) + e.costMod); // Flame Behemoth: cheaper
 					op.hand.push(card);
 					emit(state, { type: 'conjure', player: own, card, color: null });

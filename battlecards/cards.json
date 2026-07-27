@@ -122123,6 +122123,315 @@
           "target": "creature"
         }
       ]
+    },
+    {
+      "id": "karov_the_broken",
+      "name": "Karov the Broken",
+      "type": "creature",
+      "cost": 6,
+      "cardClass": "priest",
+      "attack": 6,
+      "health": 6,
+      "rarity": "legendary",
+      "set": "ESCAPEFROM_VIOLET_HOLD",
+      "keywords": [
+        "deathrattle"
+      ],
+      "description": "Deathrattle: Get three 1/1 copies of random Legendary minions. They cost (1).",
+      "deathrattle": [
+        {
+          "type": "conjure-random",
+          "cardType": "creature",
+          "rarity": "legendary",
+          "count": 3,
+          "setStats": 1,
+          "setCost": 1
+        }
+      ]
+    },
+    {
+      "id": "king_of_the_underbelly",
+      "name": "King of the Underbelly",
+      "type": "creature",
+      "cost": 6,
+      "cardClass": "hunter",
+      "attack": 6,
+      "health": 5,
+      "rarity": "legendary",
+      "set": "ESCAPEFROM_VIOLET_HOLD",
+      "tribe": "Beast",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "While building your deck, pick 3 contraband Beasts. Battlecry: Discover one at (3) less. (Approximated: Discover a Beast at -3.)",
+      "effects": [
+        {
+          "type": "discover",
+          "cardType": "creature",
+          "tribe": "Beast",
+          "costMod": -3
+        }
+      ]
+    },
+    {
+      "id": "mugzee",
+      "name": "Mug'Zee",
+      "type": "creature",
+      "cost": 6,
+      "cardClass": "shaman",
+      "attack": 6,
+      "health": 7,
+      "rarity": "legendary",
+      "set": "ESCAPEFROM_VIOLET_HOLD",
+      "description": "Start of Game: If your deck has no other minions, get Mug's Hero Power. If it has no spells, get Zee's! (Not modeled: Start-of-Game.)"
+    },
+    {
+      "id": "sawbones",
+      "name": "Sawbones",
+      "type": "creature",
+      "cost": 6,
+      "cardClass": "deathknight",
+      "attack": 6,
+      "health": 4,
+      "rarity": "epic",
+      "set": "ESCAPEFROM_VIOLET_HOLD",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Prepare. Battlecry: Destroy all your other minions. Draw a card and refresh a Mana for each one destroyed. (Not modeled: Prepare.)",
+      "effects": [
+        {
+          "type": "destroy-others-draw-refresh"
+        }
+      ]
+    },
+    {
+      "id": "trastath_soul_parasite",
+      "name": "Tras'tath, Soul Parasite",
+      "type": "creature",
+      "cost": 6,
+      "cardClass": "demonhunter",
+      "attack": 1,
+      "health": 1,
+      "rarity": "legendary",
+      "set": "ESCAPEFROM_VIOLET_HOLD",
+      "keywords": [
+        "rush"
+      ],
+      "description": "Prepare, Rush. After you summon a Demon, gain its stats. (Not modeled: Prepare.)",
+      "ongoing": {
+        "on": "summoned",
+        "effects": [
+          {
+            "type": "gain-summoned-stats",
+            "tribe": "Demon"
+          }
+        ]
+      }
+    },
+    {
+      "id": "vanessa_the_ringleader",
+      "name": "Vanessa the Ringleader",
+      "type": "creature",
+      "cost": 6,
+      "cardClass": "neutral",
+      "attack": 4,
+      "health": 4,
+      "rarity": "legendary",
+      "set": "ESCAPEFROM_VIOLET_HOLD",
+      "description": "Prepare. After you play a card, get a random Battlecry minion. It costs (2) less. (Not modeled: Prepare.)",
+      "ongoing": {
+        "on": "card-played",
+        "effects": [
+          {
+            "type": "conjure-random",
+            "cardType": "creature",
+            "requireKeyword": "battlecry",
+            "costMod": -2
+          }
+        ]
+      }
+    },
+    {
+      "id": "azalina_soulsever",
+      "name": "Azalina Soulsever",
+      "type": "creature",
+      "cost": 7,
+      "cardClass": "priest",
+      "attack": 7,
+      "health": 7,
+      "rarity": "legendary",
+      "set": "ESCAPEFROM_VIOLET_HOLD",
+      "tribe": "Undead",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Your deck is 20 cards, plus 20 copied from your enemy. Battlecry: Draw until your hand is full. (Not modeled: deckbuild gimmick.)",
+      "effects": [
+        {
+          "type": "draw-to",
+          "value": 15
+        }
+      ]
+    },
+    {
+      "id": "rampaging_hound",
+      "name": "Rampaging Hound",
+      "type": "creature",
+      "cost": 7,
+      "cardClass": "warrior",
+      "attack": 3,
+      "health": 12,
+      "rarity": "epic",
+      "set": "ESCAPEFROM_VIOLET_HOLD",
+      "tribe": "Beast",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Prepare. Battlecry: Force all enemy minions to attack this. (Approximated: they attack random targets.)",
+      "effects": [
+        {
+          "type": "force-all-enemies-attack"
+        }
+      ]
+    },
+    {
+      "id": "soothsayer",
+      "name": "Soothsayer",
+      "type": "creature",
+      "cost": 7,
+      "cardClass": "priest",
+      "attack": 6,
+      "health": 6,
+      "rarity": "rare",
+      "set": "ESCAPEFROM_VIOLET_HOLD",
+      "keywords": [
+        "taunt",
+        "deathrattle"
+      ],
+      "description": "Prepare, Taunt. Deathrattle: Restore 6 Health to your hero. Summon a random 6-Cost minion. (Not modeled: Prepare.)",
+      "deathrattle": [
+        {
+          "type": "heal",
+          "value": 6,
+          "target": "self"
+        },
+        {
+          "type": "summon-random",
+          "cost": 6
+        }
+      ]
+    },
+    {
+      "id": "the_living_plague",
+      "name": "The Living Plague",
+      "type": "creature",
+      "cost": 7,
+      "cardClass": "deathknight",
+      "attack": 7,
+      "health": 7,
+      "rarity": "legendary",
+      "set": "ESCAPEFROM_VIOLET_HOLD",
+      "tribe": "Undead",
+      "keywords": [
+        "charge"
+      ],
+      "description": "Charge. Instead of damaging heroes, this shuffles that many Blights into their deck that deal 2 damage when drawn. (Not modeled: damage conversion.)"
+    },
+    {
+      "id": "chainbreaker_hogger",
+      "name": "Chainbreaker Hogger",
+      "type": "creature",
+      "cost": 8,
+      "cardClass": "warrior",
+      "attack": 10,
+      "health": 10,
+      "rarity": "legendary",
+      "set": "ESCAPEFROM_VIOLET_HOLD",
+      "keywords": [
+        "taunt"
+      ],
+      "description": "Taunt. Start of Game: Duplicate all other Legendary cards in your deck. (Not modeled: Start-of-Game.)"
+    },
+    {
+      "id": "togwaggle_smuggler_king",
+      "name": "Togwaggle, Smuggler King",
+      "type": "creature",
+      "cost": 8,
+      "cardClass": "neutral",
+      "attack": 5,
+      "health": 5,
+      "rarity": "legendary",
+      "set": "ESCAPEFROM_VIOLET_HOLD",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Shuffle both players' hands together. (Not modeled: hand shuffle.)"
+    },
+    {
+      "id": "black_market_auctioneer",
+      "name": "Black Market Auctioneer",
+      "type": "creature",
+      "cost": 9,
+      "cardClass": "neutral",
+      "attack": 4,
+      "health": 4,
+      "rarity": "epic",
+      "set": "ESCAPEFROM_VIOLET_HOLD",
+      "description": "Prepare. Whenever you cast a spell, draw a card. (Not modeled: Prepare.)",
+      "ongoing": {
+        "on": "spell-played",
+        "effects": [
+          {
+            "type": "draw",
+            "value": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "captive_nathrezim",
+      "name": "Captive Nathrezim",
+      "type": "creature",
+      "cost": 10,
+      "cardClass": "demonhunter",
+      "attack": 6,
+      "health": 12,
+      "rarity": "epic",
+      "set": "ESCAPEFROM_VIOLET_HOLD",
+      "tribe": "Demon",
+      "keywords": [
+        "taunt"
+      ],
+      "costMod": {
+        "cardType": "creature",
+        "amount": 2,
+        "scope": "all"
+      },
+      "description": "Prepare, Taunt. ALL minions cost (2) more. (Not modeled: Prepare.)"
+    },
+    {
+      "id": "moragg",
+      "name": "Moragg",
+      "type": "creature",
+      "cost": 10,
+      "cardClass": "warlock",
+      "attack": 6,
+      "health": 5,
+      "rarity": "legendary",
+      "set": "ESCAPEFROM_VIOLET_HOLD",
+      "tribe": "Demon",
+      "keywords": [
+        "deathrattle"
+      ],
+      "description": "Prepare. Deathrattle: Summon a random Demon from your deck. (Not modeled: the chained \"Summon Moragg\" Deathrattle.)",
+      "deathrattle": [
+        {
+          "type": "summon-from-deck-tribe",
+          "tribe": "Demon",
+          "count": 1
+        }
+      ]
     }
   ]
 }
