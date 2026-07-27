@@ -109373,6 +109373,374 @@
           "value": 2
         }
       ]
+    },
+    {
+      "id": "conniving_conman",
+      "name": "Conniving Conman",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "rogue",
+      "attack": 4,
+      "health": 4,
+      "rarity": "rare",
+      "set": "ISLAND_VACATION",
+      "tribe": "Pirate",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Replay the last card you played from another class.",
+      "effects": [
+        {
+          "type": "replay-last-card"
+        }
+      ]
+    },
+    {
+      "id": "eliza_goreblade",
+      "name": "Eliza Goreblade",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "deathknight",
+      "attack": 4,
+      "health": 3,
+      "rarity": "legendary",
+      "set": "ISLAND_VACATION",
+      "tribe": "Pirate",
+      "keywords": [
+        "deathrattle"
+      ],
+      "description": "Deathrattle: For the rest of the game, your minions have +1 Attack.",
+      "deathrattle": [
+        {
+          "type": "emblem",
+          "name": "Eliza Goreblade",
+          "description": "Your minions have +1 Attack.",
+          "aura": {
+            "attack": 1
+          }
+        }
+      ]
+    },
+    {
+      "id": "griftah_trusted_vendor",
+      "name": "Griftah, Trusted Vendor",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "neutral",
+      "attack": 4,
+      "health": 5,
+      "rarity": "legendary",
+      "set": "ISLAND_VACATION",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Discover an amazing Amulet to give to both players. (The enemy's is a phony version!)",
+      "effects": [
+        {
+          "type": "discover",
+          "cardType": "spell"
+        }
+      ]
+    },
+    {
+      "id": "grillmaster",
+      "name": "Grillmaster",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "paladin",
+      "attack": 3,
+      "health": 4,
+      "rarity": "common",
+      "set": "ISLAND_VACATION",
+      "keywords": [
+        "battlecry",
+        "deathrattle"
+      ],
+      "description": "Battlecry: Draw your lowest Cost card. Deathrattle: Draw your highest Cost card.",
+      "effects": [
+        {
+          "type": "draw-lowest"
+        }
+      ],
+      "deathrattle": [
+        {
+          "type": "draw-highest"
+        }
+      ]
+    },
+    {
+      "id": "king_tide",
+      "name": "King Tide",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "mage",
+      "attack": 4,
+      "health": 4,
+      "rarity": "legendary",
+      "set": "ISLAND_VACATION",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Both players' spells cost (5) until the end of your next turn."
+    },
+    {
+      "id": "lamplighter",
+      "name": "Lamplighter",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "neutral",
+      "attack": 4,
+      "health": 3,
+      "rarity": "common",
+      "set": "ISLAND_VACATION",
+      "tribe": "Elemental",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Deal 1 damage (Improved by each turn in a row you've played an Elemental).",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 1,
+          "target": "any"
+        }
+      ]
+    },
+    {
+      "id": "lifeguard",
+      "name": "Lifeguard",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "paladin",
+      "attack": 2,
+      "health": 7,
+      "rarity": "rare",
+      "set": "ISLAND_VACATION",
+      "keywords": [
+        "taunt",
+        "battlecry"
+      ],
+      "description": "Taunt. Battlecry: The next spell you cast has Lifesteal.",
+      "effects": [
+        {
+          "type": "set-spells-lifesteal"
+        }
+      ]
+    },
+    {
+      "id": "narain_soothfancy",
+      "name": "Narain Soothfancy",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "priest",
+      "attack": 4,
+      "health": 4,
+      "rarity": "legendary",
+      "set": "ISLAND_VACATION",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Get two Fortunes that are copies of the top card of your deck.",
+      "effects": [
+        {
+          "type": "copy-deck-top-to-hand",
+          "count": 2
+        }
+      ]
+    },
+    {
+      "id": "number_cruncher",
+      "name": "Number Cruncher",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "druid",
+      "attack": 2,
+      "health": 1,
+      "rarity": "rare",
+      "set": "ISLAND_VACATION",
+      "tribe": "Beast",
+      "keywords": [
+        "rush",
+        "taunt"
+      ],
+      "description": "Rush, Taunt. Choose Thrice - Gain +2 Attack; or +2 Health.",
+      "choices": [
+        {
+          "text": "+6 Attack",
+          "effects": [
+            {
+              "type": "buff",
+              "attack": 6,
+              "target": "self"
+            }
+          ]
+        },
+        {
+          "text": "+6 Health",
+          "effects": [
+            {
+              "type": "buff",
+              "health": 6,
+              "target": "self"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "raylla_sand_sculptor",
+      "name": "Raylla, Sand Sculptor",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "mage",
+      "attack": 2,
+      "health": 6,
+      "rarity": "legendary",
+      "set": "ISLAND_VACATION",
+      "tribe": "Draenei",
+      "description": "Paladin Tourist. After you cast a spell, summon a random 2-Cost minion and give it Divine Shield.",
+      "ongoing": {
+        "on": "spell-played",
+        "effects": [
+          {
+            "type": "summon-random-cost-ds",
+            "cost": 2
+          }
+        ]
+      }
+    },
+    {
+      "id": "resort_valet",
+      "name": "Resort Valet",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "neutral",
+      "attack": 3,
+      "health": 5,
+      "rarity": "common",
+      "set": "ISLAND_VACATION",
+      "tribe": "Pirate",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Discover a card from the newest expansion.",
+      "effects": [
+        {
+          "type": "discover"
+        }
+      ]
+    },
+    {
+      "id": "sleepy_resident",
+      "name": "Sleepy Resident",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "neutral",
+      "attack": 3,
+      "health": 5,
+      "rarity": "common",
+      "set": "ISLAND_VACATION",
+      "keywords": [
+        "taunt",
+        "deathrattle"
+      ],
+      "description": "Taunt. Deathrattle: ALL other minions fall asleep.",
+      "deathrattle": [
+        {
+          "type": "freeze",
+          "target": "all-others"
+        }
+      ]
+    },
+    {
+      "id": "summoner_darkmarrow",
+      "name": "Summoner Darkmarrow",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "warlock",
+      "attack": 4,
+      "health": 4,
+      "rarity": "legendary",
+      "set": "ISLAND_VACATION",
+      "tribe": "Undead",
+      "description": "Death Knight Tourist. Your Deathrattles trigger twice. After you play a Deathrattle minion, destroy it."
+    },
+    {
+      "id": "treasure_hunter_eudora",
+      "name": "Treasure Hunter Eudora",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "rogue",
+      "attack": 4,
+      "health": 5,
+      "rarity": "legendary",
+      "set": "ISLAND_VACATION",
+      "tribe": "Pirate",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Go on a Sidequest to Discover amazing loot! Play 3 cards from other classes to complete it.",
+      "effects": [
+        {
+          "type": "discover"
+        }
+      ]
+    },
+    {
+      "id": "undercooked_calamari",
+      "name": "Undercooked Calamari",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "warrior",
+      "attack": 3,
+      "health": 4,
+      "rarity": "rare",
+      "set": "ISLAND_VACATION",
+      "tribe": "Beast",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Destroy an enemy minion with Attack less than or equal to this minion's.",
+      "effects": [
+        {
+          "type": "destroy",
+          "target": "enemy-creature",
+          "maxAttack": 3
+        }
+      ]
+    },
+    {
+      "id": "wave_pool_thrasher",
+      "name": "Wave Pool Thrasher",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "neutral",
+      "attack": 4,
+      "health": 5,
+      "rarity": "common",
+      "set": "ISLAND_VACATION",
+      "tribe": "Elemental",
+      "keywords": [
+        "battlecry",
+        "deathrattle"
+      ],
+      "description": "Battlecry: Give all other minions -1/-1. Deathrattle: Give all other minions +1/+1.",
+      "effects": [
+        {
+          "type": "buff",
+          "attack": -1,
+          "health": -1,
+          "target": "all-others"
+        }
+      ],
+      "deathrattle": [
+        {
+          "type": "buff",
+          "attack": 1,
+          "health": 1,
+          "target": "all-others"
+        }
+      ]
     }
   ]
 }

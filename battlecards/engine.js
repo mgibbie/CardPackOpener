@@ -5961,6 +5961,23 @@ function execEffects(state, pi, effects, target, source) {
 			const p = state.players[pi];
 			const pool = [...new Set(p.deck)].map(id => state.cardsById[id]).filter(d => d && d.type === 'creature' && !d.token);
 			for (let n = 0; n < (e.count || 4) && pool.length; n++) { if (p.board.filter(c => !isDead(c)).length >= 7) break; const def = JSON.parse(JSON.stringify(pool[Math.floor(state.rng() * pool.length)])); if (e.stats != null) { def.attack = e.stats; def.health = e.stats; } def.token = true; def.id = 'token_' + def.id; summon(state, pi, def); }
+		} else if (e.type === 'draw-lowest' || e.type === 'draw-highest') {
+			// Grillmaster: draw your lowest / highest Cost card
+			const p = state.players[pi];
+			if (p.deck.length && p.hand.length < MAX_HAND) { let idx = 0; for (let i = 1; i < p.deck.length; i++) { const ci = state.cardsById[p.deck[i]]?.cost || 0, cb = state.cardsById[p.deck[idx]]?.cost || 0; if (e.type === 'draw-lowest' ? ci < cb : ci > cb) idx = i; } const [id] = p.deck.splice(idx, 1); const card = instantiate(state.cardsById[id], pi); card.zone = 'hand'; card.fromDeck = true; p.hand.push(card); emit(state, { type: 'draw', player: pi, card }); }
+		} else if (e.type === 'replay-last-card') {
+			// Conniving Conman: replay the last card you played (approx: your most recent card)
+			const id = state.players[pi].lastCardPlayedId;
+			const def = id && state.cardsById[id];
+			if (def) { if (isSpellType(def)) execEffects(state, pi, JSON.parse(JSON.stringify(def.effects || [])), null, source); else if (def.type === 'creature') summon(state, pi, def); }
+		} else if (e.type === 'copy-deck-top-to-hand') {
+			// Narain Soothfancy: add N copies of the top card of your deck to your hand
+			const p = state.players[pi];
+			if (p.deck.length) { const id = p.deck[p.deck.length - 1]; const def = state.cardsById[id]; if (def) for (let n = 0; n < (e.count || 1) && p.hand.length < MAX_HAND; n++) { const cp = instantiate(def, pi); cp.zone = 'hand'; p.hand.push(cp); emit(state, { type: 'conjure', player: pi, card: cp, color: null }); } }
+		} else if (e.type === 'summon-random-cost-ds') {
+			// Raylla, Sand Sculptor: summon a random N-Cost minion and give it Divine Shield
+			const pool = Object.values(state.cardsById).filter(d => d.type === 'creature' && (d.cost || 0) === (e.cost ?? 2) && !d.token && d.collectible !== false && !d.companion && !d.commander && !(d.colors && d.colors.length));
+			if (pool.length) { const c = summon(state, pi, pool[Math.floor(state.rng() * pool.length)]); if (c && !c.keywords.includes(KW.DIVINE_SHIELD)) { c.keywords.push(KW.DIVINE_SHIELD); c.shield = true; } }
 		} else if (e.type === 'set-weapon-stats') {
 			// Swarthy Swordshiner: set your weapon's Attack and Durability
 			const w = state.players[pi].weapon;
