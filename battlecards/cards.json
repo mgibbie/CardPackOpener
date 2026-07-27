@@ -110406,14 +110406,27 @@
       "keywords": [
         "battlecry"
       ],
-      "description": "At the end of your turn, upgrade your Eruptions. Battlecry: Shuffle 5 of them into your deck. (Not modeled: Eruption upgrades.)",
+      "description": "At the end of your turn, upgrade your Eruptions. Battlecry: Shuffle 5 of them into your deck.",
       "effects": [
         {
-          "type": "shuffle-into-own-deck",
-          "id": "vac_eruption",
-          "count": 5
+          "type": "shuffle-ids-into-deck",
+          "ids": [
+            "eruption",
+            "eruption",
+            "eruption",
+            "eruption",
+            "eruption"
+          ]
         }
-      ]
+      ],
+      "ongoing": {
+        "on": "turn-end",
+        "effects": [
+          {
+            "type": "eruption-upgrade"
+          }
+        ]
+      }
     },
     {
       "id": "marin_the_manager",
@@ -110429,10 +110442,80 @@
       "keywords": [
         "battlecry"
       ],
-      "description": "Battlecry: Choose a fantastic treasure. Shuffle the other 3 into your deck. (Not modeled: treasures approximated by Discover.)",
+      "description": "Battlecry: Choose a fantastic treasure. Shuffle the other 3 into your deck.",
       "effects": [
         {
           "type": "discover"
+        }
+      ],
+      "choices": [
+        {
+          "text": "Golden Kobold: Taunt. Battlecry: Replace your hand with Legendary minions.",
+          "effects": [
+            {
+              "type": "conjure-id",
+              "id": "golden_kobold"
+            },
+            {
+              "type": "shuffle-ids-into-deck",
+              "ids": [
+                "wondrous_wand",
+                "tolins_goblet",
+                "zarogs_crown"
+              ]
+            }
+          ]
+        },
+        {
+          "text": "Wondrous Wand: Draw 3 cards. They cost (0).",
+          "effects": [
+            {
+              "type": "conjure-id",
+              "id": "wondrous_wand"
+            },
+            {
+              "type": "shuffle-ids-into-deck",
+              "ids": [
+                "golden_kobold",
+                "tolins_goblet",
+                "zarogs_crown"
+              ]
+            }
+          ]
+        },
+        {
+          "text": "Tolin's Goblet: Draw a card. Fill your hand with copies of it.",
+          "effects": [
+            {
+              "type": "conjure-id",
+              "id": "tolins_goblet"
+            },
+            {
+              "type": "shuffle-ids-into-deck",
+              "ids": [
+                "golden_kobold",
+                "wondrous_wand",
+                "zarogs_crown"
+              ]
+            }
+          ]
+        },
+        {
+          "text": "Zarog's Crown: Discover a Legendary minion. Summon two copies of it.",
+          "effects": [
+            {
+              "type": "conjure-id",
+              "id": "zarogs_crown"
+            },
+            {
+              "type": "shuffle-ids-into-deck",
+              "ids": [
+                "golden_kobold",
+                "wondrous_wand",
+                "tolins_goblet"
+              ]
+            }
+          ]
         }
       ]
     },
@@ -111095,13 +111178,14 @@
       "keywords": [
         "battlecry"
       ],
-      "description": "Battlecry: The next Draenei you play costs (2) less, but has Overload: (2). (Not modeled: Overload rider.)",
+      "description": "Battlecry: The next Draenei you play costs (2) less, but has Overload: (2).",
       "effects": [
         {
           "type": "set-tribe-discount",
           "tribe": "Draenei",
           "count": 1,
-          "value": 2
+          "value": 2,
+          "overload": 2
         }
       ]
     },
@@ -111941,19 +112025,27 @@
         "battlecry",
         "deathrattle"
       ],
-      "description": "Rush. Battlecry: Shuffle all 8 Crewmates into your deck. Deathrattle: Draw two Crewmates. (Approximated: 8 identical Crewmates; Deathrattle summons 2.)",
+      "description": "Rush. Battlecry: Shuffle all 8 Crewmates into your deck. Deathrattle: Draw two Crewmates.",
       "effects": [
         {
-          "type": "shuffle-into-own-deck",
-          "id": "gdb_crewmate",
-          "count": 8
+          "type": "shuffle-ids-into-deck",
+          "ids": [
+            "crewmate_engine",
+            "crewmate_tactical",
+            "crewmate_gunner",
+            "crewmate_helm",
+            "crewmate_recon",
+            "crewmate_research",
+            "crewmate_medical",
+            "crewmate_admin"
+          ]
         }
       ],
       "deathrattle": [
         {
-          "type": "summon",
-          "count": 2,
-          "summonId": "gdb_crewmate"
+          "type": "tutor",
+          "nameIncludes": "Crewmate",
+          "count": 2
         }
       ]
     },
@@ -112084,7 +112176,7 @@
       "rarity": "legendary",
       "set": "SPACE",
       "tribe": "Beast",
-      "description": "Each turn this is in your hand, gain two random Choose One choices. (Not modeled: in-hand growth.)"
+      "description": "Each turn this is in your hand, gain two random Choose One choices."
     },
     {
       "id": "unyielding_vindicator",
@@ -112172,12 +112264,13 @@
       "keywords": [
         "battlecry"
       ],
-      "description": "Battlecry: Discover a spell and reduce its Cost by (1). If you play it this turn, repeat this effect. (Not modeled: repeat.)",
+      "description": "Battlecry: Discover a spell and reduce its Cost by (1). If you play it this turn, repeat this effect.",
       "effects": [
         {
           "type": "discover",
           "cardType": "spell",
-          "costMod": -1
+          "costMod": -1,
+          "hataaru": true
         }
       ]
     },
@@ -112334,12 +112427,10 @@
       "keywords": [
         "battlecry"
       ],
-      "description": "Battlecry: Add two Stars to both sides of your hand. When they collide, deal 5 damage to all enemies. (Approximated: deal 5 to all enemies now.)",
+      "description": "Battlecry: Add two Stars to the ends of your hand. When they collide, deal 5 damage to all enemies.",
       "effects": [
         {
-          "type": "damage",
-          "value": 5,
-          "target": "enemies"
+          "type": "xortoth-stars"
         }
       ]
     },
@@ -112505,7 +112596,12 @@
       "keywords": [
         "battlecry"
       ],
-      "description": "Battlecry: Give all Elementals in your deck Fire Spell Damage +1. (Not modeled: deck Elemental buff.)"
+      "description": "Battlecry: Give all Elementals in your deck Spell Damage +1.",
+      "effects": [
+        {
+          "type": "saruun"
+        }
+      ]
     },
     {
       "id": "spore_empress_moldara",
@@ -112645,7 +112741,12 @@
       "keywords": [
         "battlecry"
       ],
-      "description": "Battlecry: Replace your deck with an endless portal of Demons. Each turn, they gain an additional +2/+2. (Not modeled: endless portal.)"
+      "description": "Battlecry: Replace your deck with an endless portal of Demons. Each turn, they gain an additional +2/+2.",
+      "effects": [
+        {
+          "type": "kiljaeden"
+        }
+      ]
     },
     {
       "id": "the_exodar",
@@ -112746,7 +112847,12 @@
         "taunt",
         "deathrattle"
       ],
-      "description": "Taunt. Deathrattle: Trigger the Battlecries and Deathrattles of all other Draenei you played this game. (Not modeled: Draenei replay log.)"
+      "description": "Taunt. Deathrattle: Trigger the Battlecries and Deathrattles of all other Draenei you played this game.",
+      "deathrattle": [
+        {
+          "type": "velen-exiled-replay"
+        }
+      ]
     },
     {
       "id": "grunty",
@@ -112826,7 +112932,8 @@
       "rarity": "legendary",
       "set": "SPACE",
       "tribe": "Elemental",
-      "description": "Your Battlecry minions cost (1), but immediately die after being played. (Not modeled: Battlecry-cost aura.)"
+      "description": "Your Battlecry minions cost (1), but immediately die after being played.",
+      "murmurAura": true
     },
     {
       "id": "wakener_of_souls",
@@ -113109,7 +113216,9 @@
       "health": 3,
       "rarity": "common",
       "set": "EMERALD_DREAM",
-      "description": "Starts Dormant. After you use your Hero Power, this awakens. (Not modeled: Dormant / Hero-Power wake.)"
+      "description": "Starts Dormant. After you use your Hero Power, this awakens.",
+      "dormant": 99,
+      "wakeOnHeroPower": true
     },
     {
       "id": "archdruid_of_thorns",
@@ -114653,7 +114762,7 @@
       "health": 6,
       "rarity": "rare",
       "set": "EMERALD_DREAM",
-      "description": "After you cast a Nature spell, summon a 2/2 Treant. (Not modeled: the Treant's spell-copy Deathrattle.)",
+      "description": "After you cast a Nature spell, summon a 2/2 Treant with \"Deathrattle: Add a copy of that spell to your hand.\"",
       "ongoing": {
         "on": "spell-played",
         "if": {
@@ -114661,9 +114770,7 @@
         },
         "effects": [
           {
-            "type": "summon",
-            "count": 1,
-            "summonId": "edr_treant_2_2"
+            "type": "grove-treant"
           }
         ]
       }
@@ -114959,12 +115066,11 @@
         "taunt",
         "deathrattle"
       ],
-      "description": "Taunt. Deathrattle: Split into 1/1 Beetles. At the start of your turn, reform with any remaining. (Approximated: summon 1/1 Beetles; reform not modeled.)",
+      "description": "Taunt. Deathrattle: Split into 1/1 Beetles. At the start of your turn, reform with any remaining.",
       "deathrattle": [
         {
-          "type": "summon",
-          "count": 7,
-          "summonId": "edr_beetle"
+          "type": "nythendra-split",
+          "count": 4
         }
       ]
     },
@@ -115125,15 +115231,20 @@
       "keywords": [
         "deathrattle"
       ],
-      "description": "At the end of your turn, eat a minion in your deck and gain its stats. Deathrattle: Add them to your hand. (Not modeled: Deathrattle add-to-hand.)",
+      "description": "At the end of your turn, eat a minion in your deck and gain its stats. Deathrattle: Add them to your hand.",
       "ongoing": {
         "on": "turn-end",
         "effects": [
           {
-            "type": "eat-own-deck-minion"
+            "type": "ancient-eat"
           }
         ]
-      }
+      },
+      "deathrattle": [
+        {
+          "type": "ancient-regurgitate"
+        }
+      ]
     },
     {
       "id": "magma_hound",
@@ -115149,15 +115260,12 @@
       "keywords": [
         "rush"
       ],
-      "description": "Rush. After this attacks a minion and survives, deal this minion's Attack damage split among all enemies. (Approximated: fires on any survived attack.)",
+      "description": "Rush. After this attacks a minion and survives, deal this minion's Attack damage split among all enemies.",
       "ongoing": {
         "on": "self-attacks-survives",
         "effects": [
           {
-            "type": "random-damage",
-            "countByAttack": true,
-            "value": 1,
-            "pool": "enemies"
+            "type": "magma-splash"
           }
         ]
       }
@@ -115238,10 +115346,10 @@
       "keywords": [
         "battlecry"
       ],
-      "description": "Battlecry: Cast the highest Cost spell from your hand as an Aura that lasts 3 turns. (Approximated: cast it now.)",
+      "description": "Battlecry: Cast the highest Cost spell from your hand as an Aura that lasts 3 turns.",
       "effects": [
         {
-          "type": "cast-highest-hand-spell"
+          "type": "ursol"
         }
       ]
     },
@@ -115327,7 +115435,12 @@
       "keywords": [
         "battlecry"
       ],
-      "description": "Battlecry: Start a three turn lunar cycle. When the Full Moon rises, your cards cost (1) this game. (Not modeled: lunar cycle.)"
+      "description": "Battlecry: Start a three turn lunar cycle. When the Full Moon rises, your cards cost (1) this game.",
+      "effects": [
+        {
+          "type": "aviana-cycle"
+        }
+      ]
     },
     {
       "id": "goldrinn",
@@ -115364,15 +115477,15 @@
         "battlecry",
         "deathrattle"
       ],
-      "description": "Battlecry: Attack ALL other minions. Deathrattle: Resurrect any this killed. (Approximated: Deathrattle resurrects minions that died this turn.)",
+      "description": "Battlecry: Attack ALL other minions. Deathrattle: Resurrect any this killed.",
       "effects": [
         {
-          "type": "attack-all-minions"
+          "type": "ursoc-rampage"
         }
       ],
       "deathrattle": [
         {
-          "type": "summon-all-died-this-turn"
+          "type": "ursoc-resurrect"
         }
       ]
     },
@@ -115475,15 +115588,14 @@
       "keywords": [
         "battlecry"
       ],
-      "description": "Immune to Fire spells. Battlecry: Cast 15 Mana worth of Fire spells at random enemies. (Approximated: 15 damage split among enemies.)",
+      "description": "Immune to Fire spells. Battlecry: Cast 15 Mana worth of Fire spells at random enemies.",
       "effects": [
         {
-          "type": "random-damage",
-          "value": 3,
-          "count": 5,
-          "pool": "enemies"
+          "type": "fyrakk-blaze",
+          "budget": 15
         }
-      ]
+      ],
+      "immuneToSchool": "Fire"
     },
     {
       "id": "omen",
@@ -115597,13 +115709,11 @@
       "keywords": [
         "deathrattle"
       ],
-      "description": "Deathrattle: Get a 1-Cost Holy spell that gives a minion +2 or -2 Health. (Approximated: a random 1-Cost Holy spell.)",
+      "description": "Deathrattle: Get a 1-Cost Holy spell that gives a minion +2 or -2 Health.",
       "deathrattle": [
         {
-          "type": "conjure-random",
-          "cardType": "spell",
-          "school": "Holy",
-          "cost": 1
+          "type": "conjure-id",
+          "id": "glade_tonic"
         }
       ]
     },
@@ -116317,7 +116427,13 @@
       "keywords": [
         "battlecry"
       ],
-      "description": "Battlecry: Destroy a friendly minion. Spit out the Bones of its Attack and Health into your hand. (Not modeled: Bones.)"
+      "description": "Battlecry: Destroy a friendly minion. Spit out the Bones of its Attack and Health into your hand.",
+      "effects": [
+        {
+          "type": "ooze-bones",
+          "target": "friendly-creature"
+        }
+      ]
     },
     {
       "id": "gorishi_tunneler",
@@ -116505,8 +116621,8 @@
       "health": 5,
       "rarity": "common",
       "set": "THE_LOST_CITY",
-      "dormant": 2,
-      "description": "Starts Dormant. While Dormant, gain +2/+2 at the start of your turn. (Approximated: awakens after 2 turns; 50%-awaken not modeled.)",
+      "dormant": 99,
+      "description": "Starts Dormant. While Dormant, gain +2/+2 at the start of your turn (50% chance to awaken).",
       "ongoing": {
         "on": "turn-start",
         "if": {
@@ -116519,7 +116635,8 @@
             "health": 2
           }
         ]
-      }
+      },
+      "ogreDorm": true
     },
     {
       "id": "primalfin_challenger",
@@ -116619,12 +116736,12 @@
       "keywords": [
         "deathrattle"
       ],
-      "description": "Deathrattle: Summon a slightly cracked Egg. (Approximated: a cracked Egg token; the 5-break hatch chain is not modeled.)",
+      "description": "Deathrattle: Summon a slightly cracked Egg. Break it 4 more times to hatch K'helos!",
       "deathrattle": [
         {
           "type": "summon",
           "count": 1,
-          "summonId": "tlc_cracked_egg"
+          "summonId": "khelos_egg_1"
         }
       ]
     },
@@ -116946,14 +117063,22 @@
       "keywords": [
         "battlecry"
       ],
-      "description": "While this is alive, you get a 2-Cost Holy spell that gives a minion +2/+2 and Divine Shield. (Approximated: Battlecry adds the spell once.)",
+      "description": "While this is alive, you get a 2-Cost Holy spell that gives a minion +2/+2 and Divine Shield.",
       "effects": [
         {
           "type": "add-card",
           "id": "tlc_ido_gift",
           "count": 1
         }
-      ]
+      ],
+      "ongoing": {
+        "on": "turn-end",
+        "effects": [
+          {
+            "type": "ido-blessing"
+          }
+        ]
+      }
     },
     {
       "id": "mechanized_magma",
@@ -116993,12 +117118,21 @@
         "battlecry",
         "combo"
       ],
-      "description": "Battlecry: Get a random weapon from another class. Combo: Give it +2 Attack. (Not modeled: Combo weapon-buff.)",
+      "description": "Battlecry: Get a random weapon from another class. Combo: Give it +2 Attack.",
       "effects": [
         {
           "type": "conjure-random",
           "cardType": "weapon",
           "cardClass": "other"
+        }
+      ],
+      "combo": [
+        {
+          "type": "conjure-random",
+          "cardType": "weapon",
+          "cardClass": "other",
+          "count": 1,
+          "buffAttack": 2
         }
       ]
     },
@@ -117958,7 +118092,15 @@
       "keywords": [
         "lifesteal"
       ],
-      "description": "Lifesteal. Whenever you heal an enemy, this attacks it. (Not modeled: attack-on-heal-enemy.)"
+      "description": "Lifesteal. Whenever you heal an enemy, this attacks it.",
+      "ongoing": {
+        "on": "healed",
+        "effects": [
+          {
+            "type": "attack-healed-enemy"
+          }
+        ]
+      }
     },
     {
       "id": "atlasaurus",
@@ -117997,7 +118139,12 @@
       "keywords": [
         "battlecry"
       ],
-      "description": "Battlecry: Put each minion in your hand into 0/1 Jars that cost (1). Break them to release the minions! (Not modeled: Jars.)"
+      "description": "Battlecry: Put each minion in your hand into 0/1 Jars that cost (1). Break them to release the minions!",
+      "effects": [
+        {
+          "type": "toru-jars"
+        }
+      ]
     },
     {
       "id": "high_cultist_herenn",
@@ -119365,8 +119512,12 @@
         "rush",
         "combo"
       ],
-      "description": "Rush. Combo: Overload for (2) to gain Immune this turn and Windfury. (Not modeled: Overload.)",
+      "description": "Rush. Combo: Overload for (2) to gain Immune this turn and Windfury.",
       "combo": [
+        {
+          "type": "add-overload",
+          "value": 2
+        },
         {
           "type": "grant-immune-turn",
           "target": "self"
@@ -120456,10 +120607,11 @@
       "keywords": [
         "battlecry"
       ],
-      "description": "Battlecry: Choose a card in your hand to transform into a Coin. (Approximated: gain a Coin.)",
+      "description": "Battlecry: Choose a card in your hand to transform into a Coin.",
       "effects": [
         {
-          "type": "gain-coin"
+          "type": "hand-pick",
+          "action": "coin"
         }
       ]
     },
@@ -120706,12 +120858,17 @@
         "battlecry",
         "deathrattle"
       ],
-      "description": "Battlecry: Herald. Deathrattle: Restore 3 Health to your hero. (Not modeled: Herald.)",
+      "description": "Battlecry: Herald. Deathrattle: Restore 3 Health to your hero.",
       "deathrattle": [
         {
           "type": "heal",
           "value": 3,
           "target": "self"
+        }
+      ],
+      "effects": [
+        {
+          "type": "herald"
         }
       ]
     },
@@ -120728,14 +120885,11 @@
       "keywords": [
         "battlecry"
       ],
-      "description": "Battlecry: Choose a card in your hand to shuffle into your deck. Draw a card. (Approximated: shuffle your lowest-Cost card, draw a card.)",
+      "description": "Battlecry: Choose a card in your hand to shuffle into your deck. Draw a card.",
       "effects": [
         {
-          "type": "shuffle-lowest-hand-into-deck"
-        },
-        {
-          "type": "draw",
-          "value": 1
+          "type": "hand-pick",
+          "action": "shuffle-draw"
         }
       ]
     },
@@ -120807,11 +120961,12 @@
       "keywords": [
         "battlecry"
       ],
-      "description": "Battlecry: Choose a spell in your hand to give Spell Damage +1. (Approximated: a random hand spell.)",
+      "description": "Battlecry: Choose a spell in your hand to give Spell Damage +1.",
       "effects": [
         {
-          "type": "grant-hand-school-spelldamage",
-          "random": true,
+          "type": "hand-pick",
+          "cardType": "spell",
+          "action": "spell-damage",
           "value": 1
         }
       ]
@@ -120829,12 +120984,12 @@
       "keywords": [
         "battlecry"
       ],
-      "description": "Battlecry: Choose a spell in your hand. Split it into two random spells of the same Cost. (Approximated: get 2 random spells.)",
+      "description": "Battlecry: Choose a spell in your hand. Split it into two random spells of the same Cost.",
       "effects": [
         {
-          "type": "conjure-random",
+          "type": "hand-pick",
           "cardType": "spell",
-          "count": 2
+          "action": "split"
         }
       ]
     },
@@ -120852,7 +121007,20 @@
         "battlecry",
         "deathrattle"
       ],
-      "description": "Battlecry: Choose a spell in your hand that costs (4) or less to absorb. Deathrattle: Cast it. (Not modeled: absorb/cast a chosen spell.)"
+      "description": "Battlecry: Choose a spell in your hand that costs (4) or less to absorb. Deathrattle: Cast it.",
+      "effects": [
+        {
+          "type": "hand-pick",
+          "cardType": "spell",
+          "maxCost": 4,
+          "action": "absorb"
+        }
+      ],
+      "deathrattle": [
+        {
+          "type": "cast-absorbed"
+        }
+      ]
     },
     {
       "id": "cultivating_sprite",
@@ -121758,7 +121926,17 @@
       "keywords": [
         "battlecry"
       ],
-      "description": "Battlecry: Herald. Reduce Deathwing's Cost. (Not modeled: Herald.)"
+      "description": "Battlecry: Herald. Reduce Deathwing's Cost by (2).",
+      "effects": [
+        {
+          "type": "herald"
+        },
+        {
+          "type": "reduce-id-cost",
+          "idIncludes": "deathwing",
+          "value": 2
+        }
+      ]
     },
     {
       "id": "vyranoth",
@@ -122978,7 +123156,13 @@
       "keywords": [
         "battlecry"
       ],
-      "description": "Battlecry: Choose a card in your hand. Transform it into a spell that costs (5) more. (Not modeled: hand transform.)"
+      "description": "Battlecry: Choose a card in your hand. Transform it into a spell that costs (5) more.",
+      "effects": [
+        {
+          "type": "hand-pick",
+          "action": "transform-spell-plus5"
+        }
+      ]
     },
     {
       "id": "breakout_architect",
@@ -123552,12 +123736,15 @@
       "keywords": [
         "battlecry"
       ],
-      "description": "Battlecry: Draw an Overload card. (Not modeled: Overload immunity this turn.)",
+      "description": "Battlecry: Draw an Overload card. Your Overload cards don't lock Mana this turn.",
       "effects": [
         {
           "type": "tutor",
           "overload": true,
           "count": 1
+        },
+        {
+          "type": "overload-free-turn"
         }
       ]
     },
@@ -124128,11 +124315,11 @@
       "keywords": [
         "battlecry"
       ],
-      "description": "Battlecry: Give an enemy minion -2 Attack. (Approximated: permanent, not until-your-next-turn.)",
+      "description": "Battlecry: Give an enemy minion -2 Attack until your next turn.",
       "effects": [
         {
-          "type": "buff",
-          "attack": -2,
+          "type": "debuff-until-your-next",
+          "value": 2,
           "target": "enemy-creature"
         }
       ]
@@ -124415,13 +124602,14 @@
       "keywords": [
         "battlecry"
       ],
-      "description": "Battlecry: Deal 3 damage to three different enemies. (Approximated: three random hits.)",
+      "description": "Battlecry: Deal 3 damage to three different enemies.",
       "effects": [
         {
           "type": "random-damage",
           "value": 3,
           "count": 3,
-          "pool": "enemies"
+          "pool": "enemies",
+          "distinct": true
         }
       ]
     },
@@ -124830,16 +125018,19 @@
       "keywords": [
         "battlecry"
       ],
-      "description": "After this or an adjacent minion attacks, get a Lightning Bolt. (Approximated: after this attacks.)",
+      "description": "After this or an adjacent minion attacks, get a Lightning Bolt.",
       "ongoing": {
-        "on": "self-attacks",
+        "on": "friendly-attacks",
         "effects": [
           {
             "type": "add-card",
             "id": "lightning_bolt",
             "count": 1
           }
-        ]
+        ],
+        "if": {
+          "adjacentSelf": true
+        }
       }
     },
     {
@@ -124857,10 +125048,13 @@
         "divine_shield",
         "deathrattle"
       ],
-      "description": "Taunt, Divine Shield. Deathrattle: Draw your highest Cost minion. (Approximated: highest Cost card.)",
+      "description": "Taunt, Divine Shield. Deathrattle: Draw your highest Cost minion.",
       "deathrattle": [
         {
-          "type": "draw-highest"
+          "type": "tutor",
+          "cardType": "creature",
+          "highest": true,
+          "count": 1
         }
       ]
     },
@@ -125096,7 +125290,7 @@
       "health": 2,
       "rarity": "legendary",
       "set": "DEMON_HUNTER_INITIATE",
-      "description": "After you play the left- or right-most card in your hand, deal 1 damage to all enemies. (Approximated: fires on Outcast-position plays.)",
+      "description": "After you play the left- or right-most card in your hand, deal 1 damage to all enemies.",
       "ongoing": {
         "on": "edge-card-played",
         "effects": [
@@ -125195,11 +125389,10 @@
       "keywords": [
         "battlecry"
       ],
-      "description": "Battlecry: Draw a card. It costs (1) less. (Approximated: permanent, not this-turn.)",
+      "description": "Battlecry: Draw a card. It costs (1) less this turn.",
       "effects": [
         {
-          "type": "draw-discount",
-          "count": 1,
+          "type": "draw-discount-turn",
           "value": 1
         }
       ]
@@ -125218,7 +125411,13 @@
       "keywords": [
         "battlecry"
       ],
-      "description": "Battlecry: Choose a card in your hand to set on fire. In 3 turns, discard it and summon a copy of the Phoenix. (Not modeled.)"
+      "description": "Battlecry: Choose a card in your hand to set on fire. In 3 turns, discard it and summon a copy of the Phoenix.",
+      "effects": [
+        {
+          "type": "hand-pick",
+          "action": "phoenix-brand"
+        }
+      ]
     },
     {
       "id": "runi_temporal_guardian",
@@ -125326,11 +125525,13 @@
       "keywords": [
         "battlecry"
       ],
-      "description": "Battlecry: Give a minion in your hand Attack equal to this minion's Attack. (Approximated: +3 Attack to a random hand minion.)",
+      "description": "Battlecry: Give a minion in your hand Attack equal to this minion's Attack.",
       "effects": [
         {
-          "type": "buff-random-hand",
-          "attack": 3
+          "type": "hand-pick",
+          "cardType": "creature",
+          "action": "attack-gift",
+          "value": 3
         }
       ]
     },
@@ -126556,6 +126757,454 @@
         ]
       },
       "description": "At the end of your turn, gain +1/+1.",
+      "token": true,
+      "rarity": "common"
+    },
+    {
+      "id": "nythendra_beetle",
+      "name": "Beetle",
+      "type": "creature",
+      "cost": 1,
+      "attack": 1,
+      "health": 1,
+      "tribe": "Beast",
+      "description": "",
+      "token": true,
+      "rarity": "common"
+    },
+    {
+      "id": "golden_kobold",
+      "name": "Golden Kobold",
+      "type": "creature",
+      "cost": 3,
+      "attack": 6,
+      "health": 6,
+      "rarity": "epic",
+      "keywords": [
+        "taunt",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "hand-legendary-replace"
+        }
+      ],
+      "description": "Taunt. Battlecry: Replace your hand with Legendary minions.",
+      "token": true
+    },
+    {
+      "id": "wondrous_wand",
+      "name": "Wondrous Wand",
+      "type": "sorcery",
+      "cost": 3,
+      "rarity": "epic",
+      "effects": [
+        {
+          "type": "draw-free",
+          "count": 3
+        }
+      ],
+      "description": "Draw 3 cards. They cost (0).",
+      "token": true
+    },
+    {
+      "id": "tolins_goblet",
+      "name": "Tolin's Goblet",
+      "type": "sorcery",
+      "cost": 3,
+      "rarity": "epic",
+      "effects": [
+        {
+          "type": "tolins"
+        }
+      ],
+      "description": "Draw a card. Fill your hand with copies of it.",
+      "token": true
+    },
+    {
+      "id": "zarogs_crown",
+      "name": "Zarog's Crown",
+      "type": "sorcery",
+      "cost": 3,
+      "rarity": "epic",
+      "effects": [
+        {
+          "type": "discover",
+          "cardType": "creature",
+          "rarity": "legendary",
+          "to": "board",
+          "summonTwice": true
+        }
+      ],
+      "description": "Discover a Legendary minion. Summon two copies of it.",
+      "token": true
+    },
+    {
+      "id": "crewmate_engine",
+      "name": "Engine Crewmate",
+      "type": "creature",
+      "cost": 4,
+      "attack": 4,
+      "health": 4,
+      "keywords": [
+        "divine_shield",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "crewmate-adjoin"
+        }
+      ],
+      "description": "Divine Shield. Battlecry: Summon every adjoining Crewmate.",
+      "token": true,
+      "rarity": "common"
+    },
+    {
+      "id": "crewmate_tactical",
+      "name": "Tactical Crewmate",
+      "type": "creature",
+      "cost": 4,
+      "attack": 4,
+      "health": 4,
+      "keywords": [
+        "taunt",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "crewmate-adjoin"
+        }
+      ],
+      "description": "Taunt. Battlecry: Summon every adjoining Crewmate.",
+      "token": true,
+      "rarity": "common"
+    },
+    {
+      "id": "crewmate_gunner",
+      "name": "Gunner Crewmate",
+      "type": "creature",
+      "cost": 4,
+      "attack": 4,
+      "health": 4,
+      "keywords": [
+        "rush",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "crewmate-adjoin"
+        }
+      ],
+      "description": "Rush. Battlecry: Summon every adjoining Crewmate.",
+      "token": true,
+      "rarity": "common"
+    },
+    {
+      "id": "crewmate_helm",
+      "name": "Helm Crewmate",
+      "type": "creature",
+      "cost": 4,
+      "attack": 4,
+      "health": 4,
+      "keywords": [
+        "windfury",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "crewmate-adjoin"
+        }
+      ],
+      "description": "Windfury. Battlecry: Summon every adjoining Crewmate.",
+      "token": true,
+      "rarity": "common"
+    },
+    {
+      "id": "crewmate_recon",
+      "name": "Recon Crewmate",
+      "type": "creature",
+      "cost": 4,
+      "attack": 4,
+      "health": 4,
+      "keywords": [
+        "elusive",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "crewmate-adjoin"
+        }
+      ],
+      "description": "Elusive. Battlecry: Summon every adjoining Crewmate.",
+      "token": true,
+      "rarity": "common"
+    },
+    {
+      "id": "crewmate_research",
+      "name": "Research Crewmate",
+      "type": "creature",
+      "cost": 4,
+      "attack": 4,
+      "health": 4,
+      "keywords": [
+        "poisonous",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "crewmate-adjoin"
+        }
+      ],
+      "description": "Poisonous. Battlecry: Summon every adjoining Crewmate.",
+      "token": true,
+      "rarity": "common"
+    },
+    {
+      "id": "crewmate_medical",
+      "name": "Medical Crewmate",
+      "type": "creature",
+      "cost": 4,
+      "attack": 4,
+      "health": 4,
+      "keywords": [
+        "lifesteal",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "crewmate-adjoin"
+        }
+      ],
+      "description": "Lifesteal. Battlecry: Summon every adjoining Crewmate.",
+      "token": true,
+      "rarity": "common"
+    },
+    {
+      "id": "crewmate_admin",
+      "name": "Admin Crewmate",
+      "type": "creature",
+      "cost": 4,
+      "attack": 4,
+      "health": 4,
+      "keywords": [
+        "reborn",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "crewmate-adjoin"
+        }
+      ],
+      "description": "Reborn. Battlecry: Summon every adjoining Crewmate.",
+      "token": true,
+      "rarity": "common"
+    },
+    {
+      "id": "toru_jar",
+      "name": "Jar",
+      "type": "creature",
+      "cost": 1,
+      "attack": 0,
+      "health": 1,
+      "keywords": [
+        "deathrattle"
+      ],
+      "deathrattle": [
+        {
+          "type": "jar-release"
+        }
+      ],
+      "description": "Deathrattle: Release the minion inside!",
+      "token": true,
+      "rarity": "common"
+    },
+    {
+      "id": "eruption",
+      "name": "Eruption",
+      "type": "sorcery",
+      "cost": 5,
+      "effects": [
+        {
+          "type": "eruption-blast"
+        }
+      ],
+      "description": "Deal 4 damage randomly split among all enemies. (Improves each turn Incindius lives!)",
+      "token": true,
+      "rarity": "common"
+    },
+    {
+      "id": "xortoth_star",
+      "name": "Star of Xortoth",
+      "type": "sorcery",
+      "cost": 1,
+      "effects": [
+        {
+          "type": "random-damage",
+          "value": 2,
+          "count": 1,
+          "pool": "enemies"
+        }
+      ],
+      "description": "Deal 2 damage to a random enemy. (When both Stars meet in your hand, they collide for 5 damage to all enemies!)",
+      "token": true,
+      "rarity": "common"
+    },
+    {
+      "id": "glade_tonic",
+      "name": "Glade Tonic",
+      "type": "sorcery",
+      "cost": 1,
+      "tribe": "Holy",
+      "choices": [
+        {
+          "text": "Give a minion +2 Health.",
+          "effects": [
+            {
+              "type": "buff",
+              "attack": 0,
+              "health": 2,
+              "target": "creature"
+            }
+          ]
+        },
+        {
+          "text": "Give a minion -2 Health.",
+          "effects": [
+            {
+              "type": "buff",
+              "attack": 0,
+              "health": -2,
+              "target": "creature"
+            }
+          ]
+        }
+      ],
+      "description": "Choose One - Give a minion +2 Health; or -2 Health.",
+      "token": true,
+      "rarity": "common"
+    },
+    {
+      "id": "khelos_hatched",
+      "name": "K'helos",
+      "type": "creature",
+      "cost": 8,
+      "attack": 10,
+      "health": 10,
+      "rarity": "legendary",
+      "keywords": [
+        "rush"
+      ],
+      "description": "Rush",
+      "token": true
+    },
+    {
+      "id": "khelos_egg_4",
+      "name": "Nearly Hatched Egg",
+      "type": "creature",
+      "cost": 1,
+      "attack": 0,
+      "health": 2,
+      "keywords": [
+        "taunt",
+        "deathrattle"
+      ],
+      "deathrattle": [
+        {
+          "type": "summon",
+          "count": 1,
+          "summonId": "khelos_hatched"
+        }
+      ],
+      "description": "Taunt. Deathrattle: The egg cracks further...",
+      "token": true,
+      "rarity": "common"
+    },
+    {
+      "id": "khelos_egg_3",
+      "name": "Cracking Egg",
+      "type": "creature",
+      "cost": 1,
+      "attack": 0,
+      "health": 2,
+      "keywords": [
+        "taunt",
+        "deathrattle"
+      ],
+      "deathrattle": [
+        {
+          "type": "summon",
+          "count": 1,
+          "summonId": "khelos_egg_4"
+        }
+      ],
+      "description": "Taunt. Deathrattle: The egg cracks further...",
+      "token": true,
+      "rarity": "common"
+    },
+    {
+      "id": "khelos_egg_2",
+      "name": "Fissured Egg",
+      "type": "creature",
+      "cost": 1,
+      "attack": 0,
+      "health": 2,
+      "keywords": [
+        "taunt",
+        "deathrattle"
+      ],
+      "deathrattle": [
+        {
+          "type": "summon",
+          "count": 1,
+          "summonId": "khelos_egg_3"
+        }
+      ],
+      "description": "Taunt. Deathrattle: The egg cracks further...",
+      "token": true,
+      "rarity": "common"
+    },
+    {
+      "id": "khelos_egg_1",
+      "name": "Slightly Cracked Egg",
+      "type": "creature",
+      "cost": 1,
+      "attack": 0,
+      "health": 2,
+      "keywords": [
+        "taunt",
+        "deathrattle"
+      ],
+      "deathrattle": [
+        {
+          "type": "summon",
+          "count": 1,
+          "summonId": "khelos_egg_2"
+        }
+      ],
+      "description": "Taunt. Deathrattle: The egg cracks further...",
+      "token": true,
+      "rarity": "common"
+    },
+    {
+      "id": "threshfleet_blessing",
+      "name": "Threshfleet Blessing",
+      "type": "sorcery",
+      "cost": 2,
+      "tribe": "Holy",
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 2,
+          "health": 2,
+          "target": "creature"
+        },
+        {
+          "type": "grant",
+          "keyword": "divine_shield",
+          "target": "creature"
+        }
+      ],
+      "description": "Give a minion +2/+2 and Divine Shield.",
       "token": true,
       "rarity": "common"
     }
