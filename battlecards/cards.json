@@ -107966,6 +107966,175 @@
           "type": "double-deck-minion-stats"
         }
       ]
+    },
+    {
+      "id": "boomboss_thogrun",
+      "name": "Boomboss Tho'grun",
+      "type": "creature",
+      "cost": 8,
+      "cardClass": "warrior",
+      "attack": 7,
+      "health": 7,
+      "rarity": "legendary",
+      "set": "WILD_WEST",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Shuffle 3 T.N.T. into your opponent's deck. When drawn, blow up a card in their hand, deck, and board.",
+      "effects": [
+        {
+          "type": "shuffle-cards-into-enemy-deck",
+          "id": "ww_tnt",
+          "count": 3
+        }
+      ]
+    },
+    {
+      "id": "reska_the_pit_boss",
+      "name": "Reska, the Pit Boss",
+      "type": "creature",
+      "cost": 20,
+      "cardClass": "deathknight",
+      "attack": 6,
+      "health": 3,
+      "rarity": "legendary",
+      "set": "WILD_WEST",
+      "tribe": "Undead",
+      "keywords": [
+        "rush",
+        "deathrattle"
+      ],
+      "selfCost": {
+        "per": "minions-died-game",
+        "amount": -1
+      },
+      "description": "Rush. Costs (1) less for each minion that died this game. Deathrattle: Take control of a random enemy minion.",
+      "deathrattle": [
+        {
+          "type": "mind-control-random"
+        }
+      ]
+    },
+    {
+      "id": "elise_badlands_savior",
+      "name": "Elise, Badlands Savior",
+      "type": "creature",
+      "cost": 8,
+      "cardClass": "priest",
+      "attack": 5,
+      "health": 5,
+      "rarity": "legendary",
+      "set": "WILD_WEST",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: If your deck started with no duplicates, summon 5/5 copies of 4 random minions in your deck.",
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "noDuplicates": true
+          },
+          "then": [
+            {
+              "type": "summon-deck-minions-setstats",
+              "count": 4,
+              "stats": 5
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "thunderbringer",
+      "name": "Thunderbringer",
+      "type": "creature",
+      "cost": 8,
+      "cardClass": "neutral",
+      "attack": 6,
+      "health": 6,
+      "rarity": "legendary",
+      "set": "WILD_WEST",
+      "tribe": "Elemental",
+      "keywords": [
+        "taunt",
+        "deathrattle"
+      ],
+      "description": "Taunt. Deathrattle: Summon an Elemental and Beast from your deck.",
+      "deathrattle": [
+        {
+          "type": "summon-from-deck-tribe",
+          "tribe": "Elemental",
+          "count": 1
+        },
+        {
+          "type": "summon-from-deck-tribe",
+          "tribe": "Beast",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "id": "rheastrasza",
+      "name": "Rheastrasza",
+      "type": "creature",
+      "cost": 8,
+      "cardClass": "druid",
+      "attack": 8,
+      "health": 8,
+      "rarity": "legendary",
+      "set": "WILD_WEST",
+      "tribe": "Dragon",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: If your deck started with no duplicates, summon the Purified Dragon Nest.",
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "noDuplicates": true
+          },
+          "then": [
+            {
+              "type": "summon",
+              "count": 1,
+              "summonId": "ww_dragon_nest"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "ww_tnt",
+      "name": "T.N.T.",
+      "type": "sorcery",
+      "cost": 1,
+      "cardClass": "warrior",
+      "rarity": "common",
+      "set": "WILD_WEST",
+      "token": true,
+      "collectible": false,
+      "description": "A stick of dynamite in your deck.",
+      "effects": []
+    },
+    {
+      "id": "ww_dragon_nest",
+      "name": "Purified Dragon Nest",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "druid",
+      "attack": 5,
+      "health": 5,
+      "rarity": "legendary",
+      "set": "WILD_WEST",
+      "tribe": "Dragon",
+      "token": true,
+      "collectible": false,
+      "keywords": [
+        "taunt"
+      ],
+      "description": "A 5/5 Taunt Dragon."
     }
   ]
 }

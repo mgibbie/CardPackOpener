@@ -1260,6 +1260,7 @@ function sweepDeaths(state) {
 			}
 			p.diedThisTurn++;
 			state.diedThisTurn = (state.diedThisTurn || 0) + 1;
+			state.minionsDiedGame = (state.minionsDiedGame || 0) + 1; // Reska, the Pit Boss
 			if (state.cardsById[c.id] && !c.token) {
 				p.diedThisTurnIds.push(c.id);
 				if (!p.deathLogIds.includes(c.id)) p.deathLogIds.push(c.id);
@@ -5930,6 +5931,11 @@ function execEffects(state, pi, effects, target, source) {
 		} else if (e.type === 'destroy-self') {
 			// Incorporeal Corporal: destroy the source minion
 			if (source && !isDead(source)) { source.damage = source.maxHealth; source.shield = false; emit(state, { type: 'destroy', uid: source.uid }); sweepDeaths(state); }
+		} else if (e.type === 'summon-deck-minions-setstats') {
+			// Elise, Badlands Savior: summon set-stat copies of N random minions in your deck
+			const p = state.players[pi];
+			const pool = [...new Set(p.deck)].map(id => state.cardsById[id]).filter(d => d && d.type === 'creature' && !d.token);
+			for (let n = 0; n < (e.count || 4) && pool.length; n++) { if (p.board.filter(c => !isDead(c)).length >= 7) break; const def = JSON.parse(JSON.stringify(pool[Math.floor(state.rng() * pool.length)])); if (e.stats != null) { def.attack = e.stats; def.health = e.stats; } def.token = true; def.id = 'token_' + def.id; summon(state, pi, def); }
 		} else if (e.type === 'grant-battlecries-twice') {
 			// Deepminer Brann: your Battlecries trigger twice for the rest of the game
 			state.players[pi].battlecriesTwice = true;
@@ -8578,6 +8584,8 @@ export function effectiveCost(state, pi, card) {
 			n = p.deck.length; // Fanottem: Cost equals the cards in your deck
 		} else if (card.selfCost.per === 'one-cost-played') {
 			n = p.oneCostPlayedGame || 0; // Thirsty Drifter: cheaper per 1-Cost card played
+		} else if (card.selfCost.per === 'minions-died-game') {
+			n = state.minionsDiedGame || 0; // Reska, the Pit Boss
 		}
 		c += card.selfCost.amount * n;
 	}
