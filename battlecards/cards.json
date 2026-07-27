@@ -11490,7 +11490,8 @@
       "type": "creature",
       "attack": 3,
       "health": 2,
-      "tribe": "Faerie Demon Beast"
+      "tribe": "Faerie Demon Beast",
+      "tradeable": true
     },
     {
       "id": "mistweaver_champion",
@@ -11956,7 +11957,8 @@
       "type": "creature",
       "attack": 6,
       "health": 5,
-      "tribe": "Plant Beast"
+      "tribe": "Plant Beast",
+      "tradeable": true
     },
     {
       "id": "mystical_tyrant_dragon",
@@ -41121,7 +41123,8 @@
           "type": "bounce",
           "target": "creature"
         }
-      ]
+      ],
+      "tradeable": true
     },
     {
       "id": "canary",
@@ -49893,7 +49896,8 @@
           "match": "Tradeable Snake Oil",
           "count": 1
         }
-      ]
+      ],
+      "tradeable": true
     },
     {
       "id": "shock_hopper",
@@ -89241,7 +89245,8 @@
           "health": 1,
           "per": "other-friendly"
         }
-      ]
+      ],
+      "tradeable": true
     },
     {
       "id": "two_faced_investor",
@@ -89519,7 +89524,8 @@
           "type": "recruit",
           "cardId": "persistent_peddler"
         }
-      ]
+      ],
+      "tradeable": true
     },
     {
       "id": "remote_controlled_golem",
@@ -89776,7 +89782,8 @@
           "attack": 2,
           "health": 2
         }
-      ]
+      ],
+      "tradeable": true
     },
     {
       "id": "the_rat_king",
@@ -94053,7 +94060,10 @@
             "type": "dredge"
           }
         ]
-      }
+      },
+      "colossal": [
+        "tsc_leviathan_claw"
+      ]
     },
     {
       "id": "wrathspine_enchanter",
@@ -94095,6 +94105,9 @@
         {
           "type": "destroy-all-enemies"
         }
+      ],
+      "colossal": [
+        "tsc_gigafin_maw"
       ]
     },
     {
@@ -94657,7 +94670,8 @@
       "keywords": [
         "battlecry"
       ],
-      "description": "Tradeable. Battlecry: Destroy an enemy location."
+      "description": "Tradeable. Battlecry: Destroy an enemy location.",
+      "tradeable": true
     },
     {
       "id": "dinner_performer",
@@ -97888,7 +97902,8 @@
           "type": "tax-enemy-spells",
           "value": 2
         }
-      ]
+      ],
+      "tradeable": true
     },
     {
       "id": "yelling_yodeler",
@@ -98501,7 +98516,8 @@
             }
           ]
         }
-      ]
+      ],
+      "tradeable": true
     },
     {
       "id": "dj_manastorm",
@@ -103982,7 +103998,8 @@
           "type": "refresh-mana",
           "value": 1
         }
-      ]
+      ],
+      "tradeable": true
     },
     {
       "id": "bargain_bin_buccaneer",
@@ -105580,7 +105597,8 @@
           "type": "summon-copy-of-self",
           "count": 1
         }
-      ]
+      ],
+      "tradeable": true
     },
     {
       "id": "wind_up_musician",
@@ -105602,7 +105620,8 @@
           "value": 1,
           "target": "enemy-creatures"
         }
-      ]
+      ],
+      "tradeable": true
     },
     {
       "id": "botface",
@@ -107268,7 +107287,8 @@
           "id": "ww_snake_oil",
           "count": 2
         }
-      ]
+      ],
+      "tradeable": true
     },
     {
       "id": "taethelan_bloodwatcher",
@@ -107781,7 +107801,8 @@
       "keywords": [
         "lifesteal"
       ],
-      "description": "Tradeable, Lifesteal. Quickdraw: Deal 6 damage."
+      "description": "Tradeable, Lifesteal. Quickdraw: Deal 6 damage.",
+      "tradeable": true
     },
     {
       "id": "thirsty_drifter",
@@ -108965,7 +108986,8 @@
         "taunt"
       ],
       "copyOnDraw": true,
-      "description": "Tradeable. Taunt. When you draw this, get a copy of it."
+      "description": "Tradeable. Taunt. When you draw this, get a copy of it.",
+      "tradeable": true
     },
     {
       "id": "mixologist",
@@ -109935,7 +109957,12 @@
       "keywords": [
         "battlecry"
       ],
-      "description": "Battlecry: Summon a copy of a friendly location. (Not modeled: locations.)"
+      "description": "Battlecry: Summon a copy of a friendly location.",
+      "effects": [
+        {
+          "type": "copy-friendly-location"
+        }
+      ]
     },
     {
       "id": "sunsapper_lynessa",
@@ -110007,7 +110034,13 @@
       "keywords": [
         "battlecry"
       ],
-      "description": "Battlecry: Summon 2 random locations. (Not modeled: locations.)"
+      "description": "Battlecry: Summon 2 random locations.",
+      "effects": [
+        {
+          "type": "summon-random-location",
+          "count": 2
+        }
+      ]
     },
     {
       "id": "hamm_the_hungry",
@@ -111970,7 +112003,8 @@
       "keywords": [
         "battlecry"
       ],
-      "description": "Tradeable. Battlecry: Destroy an enemy Starship or Starship Piece. (Not modeled: Starships / Tradeable.)"
+      "description": "Tradeable. Battlecry: Destroy an enemy Starship or Starship Piece.",
+      "tradeable": true
     },
     {
       "id": "gravitational_displacer",
@@ -115211,12 +115245,13 @@
       "keywords": [
         "battlecry"
       ],
-      "description": "Tradeable. Battlecry: Gain empty Mana Crystals until both players have the same Mana. (Not modeled: Tradeable.)",
+      "description": "Tradeable. Battlecry: Gain empty Mana Crystals until both players have the same Mana.",
       "effects": [
         {
           "type": "gain-mana-to-match"
         }
-      ]
+      ],
+      "tradeable": true
     },
     {
       "id": "curious_explorer",
@@ -116228,7 +116263,21 @@
       "keywords": [
         "battlecry"
       ],
-      "description": "Battlecry: If your deck started with 10 cards of different Costs, craft a custom location. (Not modeled: Locations / deck check.)"
+      "description": "Battlecry: If your deck has 10 cards of different Costs, Discover a location.",
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "deckCostsDistinct": 10
+          },
+          "then": [
+            {
+              "type": "discover",
+              "cardType": "location"
+            }
+          ]
+        }
+      ]
     },
     {
       "id": "tlc_cracked_egg",
@@ -120861,7 +120910,15 @@
       "rarity": "epic",
       "set": "CATACLYSM",
       "tribe": "Beast",
-      "description": "Colossal +99. Summon any leftover appendages when there is room. (Not modeled: Colossal.)"
+      "description": "Colossal +99. Summon any leftover appendages when there is room. (Board cap: 6 Bodies.)",
+      "colossal": [
+        "cata_magmaw_body",
+        "cata_magmaw_body",
+        "cata_magmaw_body",
+        "cata_magmaw_body",
+        "cata_magmaw_body",
+        "cata_magmaw_body"
+      ]
     },
     {
       "id": "maloriak",
@@ -122593,10 +122650,11 @@
       "keywords": [
         "battlecry"
       ],
-      "description": "Battlecry: Discover a location from the FUTURE! (Not modeled: locations \u2014 Discovers a card.)",
+      "description": "Battlecry: Discover a location from the FUTURE!",
       "effects": [
         {
-          "type": "discover"
+          "type": "discover",
+          "cardType": "location"
         }
       ]
     },
@@ -124304,6 +124362,76 @@
         "taunt"
       ],
       "description": "A 5/5 with Taunt."
+    },
+    {
+      "id": "tsc_leviathan_claw",
+      "name": "The Leviathan's Claw",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "rogue",
+      "attack": 4,
+      "health": 2,
+      "rarity": "common",
+      "set": "THE_SUNKEN_CITY",
+      "token": true,
+      "collectible": false,
+      "colossalOf": "The Leviathan",
+      "keywords": [
+        "rush",
+        "divine_shield"
+      ],
+      "description": "Rush, Divine Shield. After this attacks, draw a card.",
+      "ongoing": {
+        "on": "self-attacks",
+        "effects": [
+          {
+            "type": "draw",
+            "value": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "tsc_gigafin_maw",
+      "name": "Gigafin's Maw",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "warlock",
+      "attack": 4,
+      "health": 7,
+      "rarity": "common",
+      "set": "THE_SUNKEN_CITY",
+      "token": true,
+      "collectible": false,
+      "colossalOf": "Gigafin",
+      "keywords": [
+        "taunt"
+      ],
+      "description": "Taunt."
+    },
+    {
+      "id": "cata_magmaw_body",
+      "name": "Magmaw's Body",
+      "type": "creature",
+      "cost": 1,
+      "cardClass": "hunter",
+      "attack": 2,
+      "health": 1,
+      "rarity": "common",
+      "set": "CATACLYSM",
+      "token": true,
+      "collectible": false,
+      "colossalOf": "Magmaw",
+      "keywords": [
+        "deathrattle"
+      ],
+      "description": "Deathrattle: Give a random friendly minion +2 Attack.",
+      "deathrattle": [
+        {
+          "type": "buff-random-friendly",
+          "attack": 2
+        }
+      ]
     }
   ]
 }

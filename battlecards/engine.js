@@ -4547,6 +4547,7 @@ function execEffects(state, pi, effects, target, source) {
 			else if (e.if.overloaded) ok = (p.overloadPending || 0) > 0 || (p.overloadLockedThisTurn || 0) > 0; // Cumulo-Maximus
 			else if (e.if.heroPowerUpgraded) ok = !!p.heroPowerUpgraded; // Petal Picker (Imbue proxy)
 			else if (e.if.spellsThisTurn != null) ok = (p.spellsPlayedThisTurn || 0) >= e.if.spellsThisTurn; // Unstable Spellcaster (spell-damage-dealt approx)
+			else if (e.if.deckCostsDistinct != null) ok = new Set(p.deck.map(id => state.cardsById[id]?.cost || 0)).size >= e.if.deckCostsDistinct; // Elise the Navigator: 10 cards of different Costs
 			execEffects(state, pi, ok ? e.then : (e.else || []), target, source);
 		} else if (e.type === 'damage-then') {
 			// deal damage, then branch on whether the creature survived
@@ -5306,6 +5307,26 @@ function execEffects(state, pi, effects, target, source) {
 			const p = state.players[pi];
 			p.deckCostOverrides = p.deckCostOverrides || {};
 			for (let i = 0; i < (e.count || 5) && i < p.deck.length; i++) p.deckCostOverrides[p.deck[i]] = (e.value ?? 1);
+		} else if (e.type === 'summon-random-location') {
+			// Cruise Captain Lora: put N random locations into play
+			const pool = Object.values(state.cardsById).filter(d => d.type === 'location' && !d.token && d.collectible !== false);
+			const p = state.players[pi];
+			for (let n = 0; n < (e.count || 1) && pool.length; n++) {
+				const def = pool[Math.floor(state.rng() * pool.length)];
+				const loc = instantiate(def, pi); loc.zone = 'board';
+				p.board.push(loc);
+				emit(state, { type: 'locationPlayed', player: pi, card: loc });
+			}
+		} else if (e.type === 'copy-friendly-location') {
+			// Scrapbooking Student: summon a copy of a friendly location
+			const p = state.players[pi];
+			const locs = p.board.filter(c => c.type === 'location' && !isDead(c) && state.cardsById[c.id]);
+			if (locs.length) {
+				const src = locs[Math.floor(state.rng() * locs.length)];
+				const loc = instantiate(state.cardsById[src.id], pi); loc.zone = 'board';
+				p.board.push(loc);
+				emit(state, { type: 'locationPlayed', player: pi, card: loc });
+			}
 		} else if (e.type === 'reverse-deck') {
 			// Timeless Causality: reverse the order of your deck
 			state.players[pi].deck.reverse();
