@@ -44306,7 +44306,8 @@
       "static": {
         "type": "spell-damage",
         "value": 1
-      }
+      },
+      "prepare": true
     },
     {
       "id": "second_rate_bruiser",
@@ -122159,7 +122160,7 @@
       "keywords": [
         "battlecry"
       ],
-      "description": "Prepare. Battlecry: Give a friendly minion +2 Attack and Rush. (Not modeled: Prepare.)",
+      "description": "Prepare. Battlecry: Give a friendly minion +2 Attack and Rush.",
       "effects": [
         {
           "type": "buff",
@@ -122171,7 +122172,8 @@
           "keyword": "rush",
           "target": "friendly-creature"
         }
-      ]
+      ],
+      "prepare": true
     },
     {
       "id": "jail_blight",
@@ -122535,7 +122537,7 @@
       "keywords": [
         "combo"
       ],
-      "description": "Prepare. Combo: Gain +1/+1 for each other card played this turn. (Not modeled: Prepare.)",
+      "description": "Prepare. Combo: Gain +1/+1 for each other card played this turn.",
       "combo": [
         {
           "type": "buff-self-per",
@@ -122543,7 +122545,8 @@
           "attack": 1,
           "health": 1
         }
-      ]
+      ],
+      "prepare": true
     },
     {
       "id": "godfrey_the_betrayer",
@@ -122596,7 +122599,7 @@
       "keywords": [
         "battlecry"
       ],
-      "description": "Prepare. Battlecry: Give your other minions +1/+1. (Not modeled: Prepare.)",
+      "description": "Prepare. Battlecry: Give your other minions +1/+1.",
       "effects": [
         {
           "type": "buff",
@@ -122604,7 +122607,8 @@
           "health": 1,
           "target": "friendly-others"
         }
-      ]
+      ],
+      "prepare": true
     },
     {
       "id": "inspector_murloc_holmes",
@@ -122689,7 +122693,7 @@
       "keywords": [
         "battlecry"
       ],
-      "description": "Prepare. Battlecry: If you've cast a spell this turn, cast a random Mage Secret. (Not modeled: Prepare.)",
+      "description": "Prepare. Battlecry: If you've cast a spell this turn, cast a random Mage Secret.",
       "effects": [
         {
           "type": "conditional",
@@ -122703,7 +122707,8 @@
             }
           ]
         }
-      ]
+      ],
+      "prepare": true
     },
     {
       "id": "warptooth",
@@ -122802,7 +122807,9 @@
       "keywords": [
         "taunt"
       ],
-      "description": "Taunt. When you Prepare while holding this, reduce this card's Cost. (Not modeled: Prepare.)"
+      "description": "Taunt. When you Prepare while holding this, reduce this card's Cost by the same amount.",
+      "prepare": true,
+      "jailbirdReduce": true
     },
     {
       "id": "jailhouse_manastorm",
@@ -122864,13 +122871,14 @@
       "keywords": [
         "battlecry"
       ],
-      "description": "Prepare. Battlecry: Trigger a friendly minion's Deathrattle. (Not modeled: Prepare.)",
+      "description": "Prepare. Battlecry: Trigger a friendly minion's Deathrattle.",
       "effects": [
         {
           "type": "trigger-one-deathrattle",
           "target": "friendly-creature"
         }
-      ]
+      ],
+      "prepare": true
     },
     {
       "id": "aya_lotus_kingpin",
@@ -123019,12 +123027,13 @@
       "keywords": [
         "battlecry"
       ],
-      "description": "Prepare. Battlecry: Destroy all your other minions. Draw a card and refresh a Mana for each one destroyed. (Not modeled: Prepare.)",
+      "description": "Prepare. Battlecry: Destroy all your other minions. Draw a card and refresh a Mana for each one destroyed.",
       "effects": [
         {
           "type": "destroy-others-draw-refresh"
         }
-      ]
+      ],
+      "prepare": true
     },
     {
       "id": "trastath_soul_parasite",
@@ -123039,7 +123048,7 @@
       "keywords": [
         "rush"
       ],
-      "description": "Prepare, Rush. After you summon a Demon, gain its stats. (Not modeled: Prepare.)",
+      "description": "Prepare, Rush. After you summon a Demon, gain its stats.",
       "ongoing": {
         "on": "summoned",
         "effects": [
@@ -123048,7 +123057,8 @@
             "tribe": "Demon"
           }
         ]
-      }
+      },
+      "prepare": true
     },
     {
       "id": "vanessa_the_ringleader",
@@ -123060,7 +123070,7 @@
       "health": 4,
       "rarity": "legendary",
       "set": "ESCAPEFROM_VIOLET_HOLD",
-      "description": "Prepare. After you play a card, get a random Battlecry minion. It costs (2) less. (Not modeled: Prepare.)",
+      "description": "Prepare. After you play a card, get a random Battlecry minion. It costs (2) less.",
       "ongoing": {
         "on": "card-played",
         "effects": [
@@ -123071,7 +123081,8 @@
             "costMod": -2
           }
         ]
-      }
+      },
+      "prepare": true
     },
     {
       "id": "azalina_soulsever",
@@ -123109,12 +123120,13 @@
       "keywords": [
         "battlecry"
       ],
-      "description": "Prepare. Battlecry: Force all enemy minions to attack this. (Approximated: they attack random targets.)",
+      "description": "Prepare. Battlecry: Force all enemy minions to attack this.",
       "effects": [
         {
           "type": "force-all-enemies-attack"
         }
-      ]
+      ],
+      "prepare": true
     },
     {
       "id": "soothsayer",
@@ -123130,7 +123142,7 @@
         "taunt",
         "deathrattle"
       ],
-      "description": "Prepare, Taunt. Deathrattle: Restore 6 Health to your hero. Summon a random 6-Cost minion. (Not modeled: Prepare.)",
+      "description": "Prepare, Taunt. Deathrattle: Restore 6 Health to your hero. Summon a random 6-Cost minion.",
       "deathrattle": [
         {
           "type": "heal",
@@ -123141,7 +123153,8 @@
           "type": "summon-random",
           "cost": 6
         }
-      ]
+      ],
+      "prepare": true
     },
     {
       "id": "the_living_plague",
@@ -123205,7 +123218,7 @@
       "health": 4,
       "rarity": "epic",
       "set": "ESCAPEFROM_VIOLET_HOLD",
-      "description": "Prepare. Whenever you cast a spell, draw a card. (Not modeled: Prepare.)",
+      "description": "Prepare. Whenever you cast a spell, draw a card.",
       "ongoing": {
         "on": "spell-played",
         "effects": [
@@ -123214,7 +123227,8 @@
             "value": 1
           }
         ]
-      }
+      },
+      "prepare": true
     },
     {
       "id": "captive_nathrezim",
@@ -123235,7 +123249,8 @@
         "amount": 2,
         "scope": "all"
       },
-      "description": "Prepare, Taunt. ALL minions cost (2) more. (Not modeled: Prepare.)"
+      "description": "Prepare, Taunt. ALL minions cost (2) more.",
+      "prepare": true
     },
     {
       "id": "moragg",
@@ -123251,14 +123266,16 @@
       "keywords": [
         "deathrattle"
       ],
-      "description": "Prepare. Deathrattle: Summon a random Demon from your deck. (Not modeled: the chained \"Summon Moragg\" Deathrattle.)",
+      "description": "Prepare. Deathrattle: Summon a random Demon from your deck. Give it \"Deathrattle: Summon Moragg.\"",
       "deathrattle": [
         {
           "type": "summon-from-deck-tribe",
           "tribe": "Demon",
-          "count": 1
+          "count": 1,
+          "chainDeathrattleSummonId": "moragg"
         }
-      ]
+      ],
+      "prepare": true
     },
     {
       "id": "ships_chirurgeon",
@@ -124933,12 +124950,13 @@
       "keywords": [
         "battlecry"
       ],
-      "description": "Prepare. Battlecry: Spend all your Mana. Summon a random minion of that Cost. (Not modeled: Prepare.)",
+      "description": "Prepare. Battlecry: Spend all your Mana. Summon a random minion of that Cost.",
       "effects": [
         {
           "type": "spend-mana-summon-cost"
         }
-      ]
+      ],
+      "prepare": true
     },
     {
       "id": "sharp_eyed_lookout",

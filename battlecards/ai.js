@@ -381,5 +381,13 @@ export function step(state, pi = 1) {
 		}
 	}
 
+	// Prepare cards we can't afford: bank the leftover mana into a discount
+	for (const c of p.hand) {
+		if (c.prepare && E.canPrepare(state, pi, c)
+			&& E.effectiveCost(state, pi, c) > E.availableMana(p)) {
+			if (E.prepareCard(state, pi, c.uid)) return true;
+		}
+	}
+
 	return false; // nothing left to do
 }

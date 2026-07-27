@@ -305,6 +305,8 @@ function instantiate(def, controller) {
 		costZeroIfWeaponId: def.costZeroIfWeaponId || null, // Karazhan the Sanctum: free if wielding Atiesh
 		costReducePerPlayedName: def.costReducePerPlayedName ? { ...def.costReducePerPlayedName } : null, // Giant Rafaam
 		castTwice: !!def.castTwice, // Empowered Well of Eternity spells resolve twice
+		prepare: !!def.prepare, // JAIL: spend leftover mana to discount this card for a later turn
+		jailbirdReduce: !!def.jailbirdReduce, // Jailbird: cheaper whenever you Prepare while holding it
 		kindredCostReduce: def.kindredCostReduce || 0, // Pterrorwing Ravager / Windpeak Wyrm: costs less while Kindred is active
 		handDeathGrowth: !!def.handDeathGrowth, // Blood Herald: +1/+1 whenever a friendly minion dies while in hand
 		scaleOnEntry: def.scaleOnEntry ? { ...def.scaleOnEntry } : null, // Astral Automaton: +stats per prior copy entered this game
@@ -1034,6 +1036,34 @@ export function tradeCard(state, pi, uid) {
 	emit(state, { type: 'traded', player: pi, card });
 	fireOngoing(state, pi, 'traded', {});
 	drawCards(state, pi, 1);
+	return true;
+}
+
+// ---------- Prepare (Escape from Violet Hold) ----------
+// spend your remaining Mana to reduce the card's Cost by that much +1 (capped
+// at reaching 0); once per card, and it can't be played the turn you Prepare
+export function canPrepare(state, pi, card) {
+	if (state.over || state.current !== pi) return false;
+	const p = state.players[pi];
+	return !!card.prepare && !card._prepared && p.hand.includes(card) && (card.cost || 0) > 0;
+}
+
+export function prepareCard(state, pi, uid) {
+	const p = state.players[pi];
+	const card = p.hand.find(c => c.uid === uid);
+	if (!card || !canPrepare(state, pi, card)) return false;
+	const spend = Math.max(0, Math.min(availableMana(p), (card.cost || 0) - 1));
+	spendMana(p, spend);
+	const discount = spend + 1;
+	card.cost = Math.max(0, (card.cost || 0) - discount);
+	card._prepared = true;
+	card.lockedUntilTurn = state.turnNumber + 1; // Preparing: can't be played this turn
+	emit(state, { type: 'prepared', player: pi, uid: card.uid, name: card.name, discount });
+	// Jailbird: reduce its Cost by the same amount every time you Prepare while holding it
+	for (const c of p.hand) if (c.jailbirdReduce && c !== card && (c.cost || 0) > 0) {
+		c.cost = Math.max(0, (c.cost || 0) - discount);
+		emit(state, { type: 'costChange', player: pi, uid: c.uid, cost: c.cost });
+	}
 	return true;
 }
 
@@ -6242,6 +6272,10 @@ function execEffects(state, pi, effects, target, source) {
 				const [id] = p.deck.splice(idx, 1);
 				const c = summon(state, pi, state.cardsById[id]);
 				if (c && e.grant && !c.keywords.includes(e.grant)) { c.keywords.push(e.grant); if (e.grant === KW.DIVINE_SHIELD) c.shield = true; } // Possessed Animancer: Lifesteal
+				if (c && e.chainDeathrattleSummonId && state.cardsById[e.chainDeathrattleSummonId]) { // Moragg: "Deathrattle: Summon Moragg"
+					c.deathrattle = [...(c.deathrattle || []), { type: 'summon', count: 1, summonId: e.chainDeathrattleSummonId }];
+					if (!c.keywords.includes('deathrattle')) c.keywords.push('deathrattle');
+				}
 			}
 		} else if (e.type === 'summon-from-deck-weaker') {
 			// Meat Wagon: summon a creature from your deck with less Attack than this one

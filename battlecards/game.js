@@ -467,15 +467,29 @@ function openTradeMenu(card, ev) {
 		playFromHand(card, ev);
 	});
 	menu.appendChild(play);
-	const trade = document.createElement('button');
-	trade.innerHTML = `<span class="wm-cost">1</span>Trade — shuffle into your deck, draw a card`;
-	trade.disabled = !E.canTrade(state, HUMAN, card);
-	trade.addEventListener('pointerdown', e => {
-		e.stopPropagation();
-		hideWalkerMenu();
-		actTrade(card.uid);
-	});
-	menu.appendChild(trade);
+	if (card.tradeable) {
+		const trade = document.createElement('button');
+		trade.innerHTML = `<span class="wm-cost">1</span>Trade — shuffle into your deck, draw a card`;
+		trade.disabled = !E.canTrade(state, HUMAN, card);
+		trade.addEventListener('pointerdown', e => {
+			e.stopPropagation();
+			hideWalkerMenu();
+			actTrade(card.uid);
+		});
+		menu.appendChild(trade);
+	}
+	if (card.prepare) {
+		const prep = document.createElement('button');
+		const spend = Math.max(0, Math.min(E.availableMana(state.players[HUMAN]), (card.cost || 0) - 1));
+		prep.innerHTML = `<span class="wm-cost">${spend}</span>Prepare — costs (${spend + 1}) less, can't be played this turn`;
+		prep.disabled = !E.canPrepare(state, HUMAN, card);
+		prep.addEventListener('pointerdown', e => {
+			e.stopPropagation();
+			hideWalkerMenu();
+			actPrepare(card.uid);
+		});
+		menu.appendChild(prep);
+	}
 	showDecisionMenu();
 }
 
@@ -546,10 +560,10 @@ function releasePlay(c, ev) {
 	if (c.adventure && !c.adventureSpent
 		&& (E.canPlay(state, HUMAN, c) || E.canPlayAdventure(state, HUMAN, c))) { openAdventureMenu(c, ev); return; }
 	if (!E.canPlay(state, HUMAN, c)) {
-		if (c.tradeable && E.canTrade(state, HUMAN, c)) openTradeMenu(c, ev);
+		if ((c.tradeable && E.canTrade(state, HUMAN, c)) || (c.prepare && E.canPrepare(state, HUMAN, c))) openTradeMenu(c, ev);
 		return;
 	}
-	if (c.tradeable && E.canTrade(state, HUMAN, c)) { openTradeMenu(c, ev); return; }
+	if ((c.tradeable && E.canTrade(state, HUMAN, c)) || (c.prepare && E.canPrepare(state, HUMAN, c))) { openTradeMenu(c, ev); return; }
 	if (c.type === 'creature' || c.type === 'location') {
 		const pos = placementIndexAt(ev.clientX);
 		if (c.choices) { openChoiceMenu(c, ev, pos); return; }
@@ -2404,8 +2418,10 @@ function showInspect(card) {
 		} else if (playable) {
 			mkBtn('Play', e => playFromHand(card, e));
 			if (card.tradeable && E.canTrade(state, HUMAN, card)) mkBtn('Trade (pay 1)', () => actTrade(card.uid), 'trade');
-		} else if (card.tradeable && E.canTrade(state, HUMAN, card)) {
-			mkBtn('Trade (pay 1)', () => actTrade(card.uid), 'trade');
+			if (card.prepare && E.canPrepare(state, HUMAN, card)) mkBtn('Prepare (bank your mana)', () => actPrepare(card.uid), 'trade');
+		} else {
+			if (card.tradeable && E.canTrade(state, HUMAN, card)) mkBtn('Trade (pay 1)', () => actTrade(card.uid), 'trade');
+			if (card.prepare && E.canPrepare(state, HUMAN, card)) mkBtn('Prepare (bank your mana)', () => actPrepare(card.uid), 'trade');
 		}
 	}
 	// a held hero power gets a deliberate "Use" button, mirroring a hand card's Play
@@ -3415,6 +3431,7 @@ function applyGuestIntent(it) {
 			case 'attack': E.attack(state, P, it.attacker, it.target); break;
 			case 'land': E.buyLand(state, P, it.defId); break;
 			case 'trade': E.tradeCard(state, P, it.uid); break;
+			case 'prepare': E.prepareCard(state, P, it.uid); break;
 			case 'unmask': E.unmask(state, P, it.uid); break;
 			case 'coin': E.useCoin(state, P); break;
 			case 'endTurn': E.endTurn(state); break;
@@ -3623,6 +3640,11 @@ function actLand(defId) {
 function actTrade(uid) {
 	if (isGuest()) return guestApply(() => E.tradeCard(state, HUMAN, uid), { k: 'trade', uid });
 	E.tradeCard(state, HUMAN, uid); pump();
+	if (duel.on) publishDuel();
+}
+function actPrepare(uid) {
+	if (isGuest()) return guestApply(() => E.prepareCard(state, HUMAN, uid), { k: 'prepare', uid });
+	E.prepareCard(state, HUMAN, uid); pump();
 	if (duel.on) publishDuel();
 }
 function actUnmask(uid) {
