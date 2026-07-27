@@ -110101,7 +110101,16 @@
       "keywords": [
         "rush"
       ],
-      "description": "Rush. After this attacks, turn into a location. (Not modeled: location transform.)"
+      "description": "Rush. After this attacks, turn into a location.",
+      "ongoing": {
+        "on": "self-attacks",
+        "effects": [
+          {
+            "type": "become-location",
+            "id": "sanc_azel_loc"
+          }
+        ]
+      }
     },
     {
       "id": "scrapbooking_student",
@@ -110264,7 +110273,22 @@
       "keywords": [
         "battlecry"
       ],
-      "description": "Battlecry: If you've taken 8 damage on your turns, summon Ourobos. (Not modeled: damage-threshold summon.)"
+      "description": "Battlecry: If you've taken 8 damage on your turns, summon Ourobos.",
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "ownTurnDamageAtLeast": 8
+          },
+          "then": [
+            {
+              "type": "summon",
+              "count": 1,
+              "summonId": "ourobos"
+            }
+          ]
+        }
+      ]
     },
     {
       "id": "vac_dozing_dragonling",
@@ -110624,11 +110648,10 @@
       "keywords": [
         "battlecry"
       ],
-      "description": "Battlecry: Summon three minions from your deck that are from different expansions. (Not modeled: different-expansions constraint.)",
+      "description": "Battlecry: Summon three minions from your deck that are from different expansions.",
       "effects": [
         {
-          "type": "summon-random-from-deck",
-          "count": 3
+          "type": "dungar-travel"
         }
       ]
     },
@@ -111313,7 +111336,8 @@
       "rarity": "common",
       "set": "SPACE",
       "tribe": "Draenei",
-      "description": "Whenever another minion is Overhealed, give it that much extra Health. (Not modeled: overheal-reactive aura.)"
+      "description": "Whenever another minion is Overhealed, give it that much extra Health.",
+      "overhealReactive": true
     },
     {
       "id": "blasteroid",
@@ -112063,10 +112087,10 @@
       "keywords": [
         "battlecry"
       ],
-      "description": "Battlecry: Draw a card from your opponent's deck. If you don't play it this turn, put it back. (Not modeled: put-back.)",
+      "description": "Battlecry: Draw a card from your opponent's deck. If you don't play it this turn, put it back.",
       "effects": [
         {
-          "type": "copy-random-enemy-deck-card"
+          "type": "doommaiden-draw"
         }
       ]
     },
@@ -112302,7 +112326,12 @@
       "keywords": [
         "deathrattle"
       ],
-      "description": "Deathrattle: Open the Galaxy's Lens. It absorbs the power of the next spell you cast. (Not modeled: Galaxy's Lens.)"
+      "description": "Deathrattle: Open the Galaxy's Lens. It absorbs the next spell you cast and returns a copy to your hand.",
+      "deathrattle": [
+        {
+          "type": "galaxy-lens"
+        }
+      ]
     },
     {
       "id": "lunar_trailblazer",
@@ -113605,11 +113634,10 @@
       "keywords": [
         "battlecry"
       ],
-      "description": "Battlecry: Summon a copy of this. One secretly dies when it takes damage. (Not modeled: illusion death.)",
+      "description": "Battlecry: Summon a copy of this. One secretly dies when it takes damage.",
       "effects": [
         {
-          "type": "summon-copy-of-self",
-          "count": 1
+          "type": "illusion-copy"
         }
       ]
     },
@@ -113701,11 +113729,15 @@
       "keywords": [
         "battlecry"
       ],
-      "description": "Battlecry: Discover a 5-Cost card. Gain 1 Mana Crystal next turn only. (Not modeled: next-turn Mana.)",
+      "description": "Battlecry: Discover a 5-Cost card. Gain 1 Mana Crystal next turn only.",
       "effects": [
         {
           "type": "discover",
           "cost": 5
+        },
+        {
+          "type": "temp-crystal-next-turn",
+          "value": 1
         }
       ]
     },
@@ -113901,11 +113933,12 @@
       "keywords": [
         "battlecry"
       ],
-      "description": "Battlecry: Discover a spell. Choose to keep it or put it on top of your opponent's deck. (Not modeled: opponent-deck option.)",
+      "description": "Battlecry: Discover a spell. Choose to keep it or put it on top of your opponent's deck.",
       "effects": [
         {
           "type": "discover",
-          "cardType": "spell"
+          "cardType": "spell",
+          "qonzu": true
         }
       ]
     },
@@ -114076,19 +114109,21 @@
         "battlecry",
         "deathrattle"
       ],
-      "description": "Battlecry and Deathrattle: Summon a random Dormant Dreadseed. (Approximated: a Dreadseed token; Dormant not modeled.)",
+      "description": "Battlecry and Deathrattle: Summon a random Dormant Dreadseed.",
       "effects": [
         {
           "type": "summon",
           "count": 1,
-          "summonId": "edr_dreadseed"
+          "summonId": "edr_dreadseed",
+          "dormantTurns": 2
         }
       ],
       "deathrattle": [
         {
           "type": "summon",
           "count": 1,
-          "summonId": "edr_dreadseed"
+          "summonId": "edr_dreadseed",
+          "dormantTurns": 2
         }
       ]
     },
@@ -114126,9 +114161,14 @@
       "health": 6,
       "rarity": "epic",
       "set": "EMERALD_DREAM",
-      "description": "Battlecry: Transform all Neutral cards in your deck into random Druid ones. (Not modeled: deck transform.)",
+      "description": "Battlecry: Transform all Neutral cards in your deck into random Druid ones.",
       "keywords": [
         "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "transform-deck-neutrals"
+        }
       ]
     },
     {
@@ -114622,7 +114662,12 @@
       "keywords": [
         "battlecry"
       ],
-      "description": "Battlecry: Transform minions in your hand into random Demons. (They keep their original stats and Cost.) (Not modeled: hand transform.)"
+      "description": "Battlecry: Transform minions in your hand into random Demons. (They keep their original stats and Cost.)",
+      "effects": [
+        {
+          "type": "alarashi-demons"
+        }
+      ]
     },
     {
       "id": "ancient_of_yore",
@@ -118341,11 +118386,12 @@
       "keywords": [
         "deathrattle"
       ],
-      "description": "Deathrattle: Summon a random 2-Cost minion that is Dormant for 2 turns. (Not modeled: Dormant.)",
+      "description": "Deathrattle: Summon a random 2-Cost minion that is Dormant for 2 turns.",
       "deathrattle": [
         {
           "type": "summon-random",
-          "cost": 2
+          "cost": 2,
+          "dormantTurns": 2
         }
       ]
     },
@@ -118453,12 +118499,10 @@
       "keywords": [
         "battlecry"
       ],
-      "description": "Battlecry: Look at 2 random Secrets. Pick one to cast for yourself. The other casts for your opponent. (Approximated: install a random Secret.)",
+      "description": "Battlecry: Look at 2 random Secrets. Pick one to cast for yourself. The other casts for your opponent.",
       "effects": [
         {
-          "type": "discover",
-          "cardType": "secret",
-          "installSecret": true
+          "type": "enigma-secrets"
         }
       ]
     },
@@ -118476,7 +118520,18 @@
       "keywords": [
         "taunt"
       ],
-      "description": "Taunt. Whenever you would damage this with a Nature spell, it gains +2/+1 instead. (Not modeled: Nature-damage redirect.)"
+      "description": "Taunt. Whenever you would damage this with a Nature spell, it gains +2/+1 instead.",
+      "spellDamageRedirect": {
+        "school": "Nature",
+        "effects": [
+          {
+            "type": "buff",
+            "attack": 2,
+            "health": 1,
+            "target": "self"
+          }
+        ]
+      }
     },
     {
       "id": "hardlight_protector",
@@ -118581,7 +118636,12 @@
       "keywords": [
         "battlecry"
       ],
-      "description": "Battlecry: Replace your hand with your starting hand. Swap back at the end of your turn. (Not modeled: hand swap.)"
+      "description": "Battlecry: Replace your hand with your starting hand. Swap back at the end of your turn.",
+      "effects": [
+        {
+          "type": "fins-swap"
+        }
+      ]
     },
     {
       "id": "timeless_causality",
@@ -118980,12 +119040,10 @@
       "keywords": [
         "battlecry"
       ],
-      "description": "Battlecry: Get 3 random spells from the past. When you play ALL 3, get another Timelooper Toki. (Not modeled: play-all-3 payoff.)",
+      "description": "Battlecry: Get 3 random spells from the past. When you play ALL 3, get another Timelooper Toki.",
       "effects": [
         {
-          "type": "conjure-random",
-          "cardType": "spell",
-          "count": 3
+          "type": "toki-spells"
         }
       ]
     },
@@ -119164,7 +119222,7 @@
         "lifesteal",
         "battlecry"
       ],
-      "description": "Lifesteal. Battlecry: Cast a Shred of Time from your deck to gain +3/+3. (Approximated: gain +3/+3.)",
+      "description": "Lifesteal. Battlecry: Cast a Shred of Time from your deck to gain +3/+3.",
       "effects": [
         {
           "type": "buff",
@@ -119210,12 +119268,10 @@
         "taunt",
         "battlecry"
       ],
-      "description": "Taunt. Battlecry: Look at 3 cards. Guess which one is in your opponent's hand to gain +4 Health. (Approximated: gain +4 Health.)",
+      "description": "Taunt. Battlecry: Look at 3 cards. Guess which one is in your opponent's hand to gain +4 Health.",
       "effects": [
         {
-          "type": "buff",
-          "health": 4,
-          "target": "self"
+          "type": "forefather-guess"
         }
       ]
     },
@@ -119288,7 +119344,12 @@
       "keywords": [
         "battlecry"
       ],
-      "description": "Battlecry: Give your hero \"Deathrattle: Spend up to 20 Corpses to resurrect with that much Health.\" (Not modeled: hero Deathrattle / Corpses.)"
+      "description": "Battlecry: Give your hero \"Deathrattle: Spend up to 20 Corpses to resurrect with that much Health.\"",
+      "effects": [
+        {
+          "type": "hero-corpse-deathrattle"
+        }
+      ]
     },
     {
       "id": "king_maluk",
@@ -119444,12 +119505,16 @@
         "battlecry",
         "deathrattle"
       ],
-      "description": "Battlecry: Imprison an enemy minion. It goes Dormant for 10,000 turns. Deathrattle: Awaken it. (Not modeled: Deathrattle awaken.)",
+      "description": "Battlecry: Imprison an enemy minion. It goes Dormant for 10,000 turns. Deathrattle: Awaken it.",
       "effects": [
         {
-          "type": "make-dormant",
-          "target": "enemy-creature",
-          "value": 9999
+          "type": "imprison",
+          "target": "enemy-creature"
+        }
+      ],
+      "deathrattle": [
+        {
+          "type": "awaken-imprisoned"
         }
       ]
     },
@@ -119862,7 +119927,7 @@
         "rush",
         "battlecry"
       ],
-      "description": "Rush. Battlecry: Cast a Shred of Time from your deck to summon a copy of this. (Approximated: summon a copy.)",
+      "description": "Rush. Battlecry: Cast a Shred of Time from your deck to summon a copy of this.",
       "effects": [
         {
           "type": "summon-copy-of-self",
@@ -119903,7 +119968,17 @@
       "rarity": "common",
       "set": "TIME_TRAVEL",
       "tribe": "Elemental/Beast",
-      "description": "Whenever you would damage this with a Nature spell, summon a random 5-Cost minion instead. (Not modeled: Nature-damage redirect.)"
+      "description": "Whenever you would damage this with a Nature spell, summon a random 5-Cost minion instead.",
+      "spellDamageRedirect": {
+        "school": "Nature",
+        "effects": [
+          {
+            "type": "summon-random",
+            "cost": 5,
+            "count": 1
+          }
+        ]
+      }
     },
     {
       "id": "time_admral_hooktail",
@@ -119919,12 +119994,12 @@
       "keywords": [
         "battlecry"
       ],
-      "description": "Battlecry: Summon a 0/8 Chest for your opponent. (Not modeled: the Chest's Coins.)",
+      "description": "Battlecry: Summon a 0/8 Chest for your opponent. Breaking it pays out Coins.",
       "effects": [
         {
           "type": "summon",
           "count": 1,
-          "summonId": "time_chest",
+          "summonId": "hooktail_chest",
           "forEnemy": true
         }
       ]
@@ -120239,7 +120314,10 @@
       "health": 8,
       "rarity": "legendary",
       "set": "TIME_TRAVEL",
-      "description": "Your Battlecries, Deathrattles, Hero Power, and end of turn effects trigger twice. (Not modeled: double-trigger aura.)"
+      "description": "Your Battlecries, Deathrattles, and end of turn effects trigger twice.",
+      "battlecryDouble": true,
+      "rattleDouble": true,
+      "endTurnDouble": true
     },
     {
       "id": "conflux_crasher",
@@ -120466,7 +120544,7 @@
       "keywords": [
         "battlecry"
       ],
-      "description": "Battlecry: Fill your board with random Dragons. Fully heal your hero. Skip your next turn. (Not modeled: skip-turn.)",
+      "description": "Battlecry: Fill your board with random Dragons. Fully heal your hero. Skip your next turn.",
       "effects": [
         {
           "type": "summon-random",
@@ -120477,6 +120555,9 @@
           "type": "heal",
           "value": 30,
           "target": "self"
+        },
+        {
+          "type": "skip-own-next-turn"
         }
       ]
     },
@@ -120626,8 +120707,9 @@
       "rarity": "common",
       "set": "CATACLYSM",
       "tribe": "Beast",
-      "dormant": 2,
-      "description": "Starts Dormant. When your board is full, awaken. (Approximated: awakens after 2 turns.)"
+      "dormant": 99,
+      "description": "Starts Dormant. When your board is full, awaken.",
+      "wakeOnFullBoard": true
     },
     {
       "id": "carrier_whelp",
@@ -120664,7 +120746,8 @@
       "rarity": "common",
       "set": "CATACLYSM",
       "tribe": "Beast",
-      "description": "Whenever you spend your last Mana Crystal, gain +1/+1. (Not modeled: last-Mana trigger.)"
+      "description": "Whenever you spend your last Mana Crystal, gain +1/+1.",
+      "lastManaGrow": true
     },
     {
       "id": "twilight_egg",
@@ -120744,11 +120827,25 @@
       "keywords": [
         "battlecry"
       ],
-      "description": "Battlecry: Gain a temporary Mana Crystal. If you spent 4 Mana while holding this, it's permanent. (Approximated: gain a temporary Mana Crystal.)",
+      "description": "Battlecry: Gain a temporary Mana Crystal. If you spent 4 Mana while holding this, it's permanent.",
       "effects": [
         {
-          "type": "temp-mana",
-          "value": 1
+          "type": "conditional",
+          "if": {
+            "selfHeldMana": 4
+          },
+          "then": [
+            {
+              "type": "gain-empty-mana-crystal",
+              "value": 1
+            }
+          ],
+          "else": [
+            {
+              "type": "temp-crystal-next-turn",
+              "value": 1
+            }
+          ]
         }
       ]
     },
@@ -121267,12 +121364,41 @@
       "keywords": [
         "battlecry"
       ],
-      "description": "Battlecry: Get two 3/3 Whelps with Taunt. If you spent 8 Mana while holding this, summon them. (Approximated: summon two 3/3 Taunt Whelps.)",
+      "description": "Battlecry: Get two 3/3 Whelps with Taunt. If you spent 8 Mana while holding this, summon them.",
       "effects": [
         {
-          "type": "summon",
-          "count": 2,
-          "summonId": "cata_whelp_3_3"
+          "type": "conditional",
+          "if": {
+            "selfHeldMana": 8
+          },
+          "then": [
+            {
+              "type": "summon",
+              "count": 2,
+              "attack": 3,
+              "health": 3,
+              "name": "Whelp",
+              "grant": "taunt"
+            }
+          ],
+          "else": [
+            {
+              "type": "add-token",
+              "name": "Whelp",
+              "cost": 2,
+              "attack": 3,
+              "health": 3,
+              "tribe": "Dragon"
+            },
+            {
+              "type": "add-token",
+              "name": "Whelp",
+              "cost": 2,
+              "attack": 3,
+              "health": 3,
+              "tribe": "Dragon"
+            }
+          ]
         }
       ]
     },
@@ -121882,11 +122008,19 @@
         "taunt",
         "battlecry"
       ],
-      "description": "Taunt. Battlecry: If you didn't play a minion last turn, refresh 3 Mana Crystals. (Approximated: always refreshes.)",
+      "description": "Taunt. Battlecry: If you didn't play a minion last turn, refresh 3 Mana Crystals.",
       "effects": [
         {
-          "type": "refresh-mana",
-          "value": 3
+          "type": "conditional",
+          "if": {
+            "noMinionLastTurn": true
+          },
+          "then": [
+            {
+              "type": "refresh-mana",
+              "value": 3
+            }
+          ]
         }
       ]
     },
@@ -121968,12 +122102,10 @@
       "keywords": [
         "battlecry"
       ],
-      "description": "Battlecry: Set your remaining Health to 15. When you reach full Health, deal 15 damage to your opponent. (Not modeled: full-Health payoff.)",
+      "description": "Battlecry: Set your remaining Health to 15. When you reach full Health, deal 15 damage to your opponent.",
       "effects": [
         {
-          "type": "set-hero-health",
-          "value": 15,
-          "target": "self"
+          "type": "alex-guardian"
         }
       ]
     },
@@ -122028,18 +122160,10 @@
       "keywords": [
         "battlecry"
       ],
-      "description": "Battlecry: Your Dragons have Rush this game. (Not modeled: in-hand Dragon upgrade.)",
+      "description": "Battlecry: Your Dragons have Rush this game.",
       "effects": [
         {
-          "type": "emblem",
-          "name": "Ebyssian",
-          "description": "Your Dragons have Rush.",
-          "aura": {
-            "tribe": "Dragon",
-            "keywords": [
-              "rush"
-            ]
-          }
+          "type": "dragons-rush"
         }
       ]
     },
@@ -122121,13 +122245,30 @@
       "keywords": [
         "battlecry"
       ],
-      "description": "Battlecry: Fill your hand with random Dragons. If you spent 25 Mana while holding this, they cost (1). (Approximated: 6 random Dragons; 25-Mana rider not modeled.)",
+      "description": "Battlecry: Fill your hand with random Dragons. If you spent 25 Mana while holding this, they cost (1).",
       "effects": [
         {
-          "type": "conjure-random",
-          "cardType": "creature",
-          "tribe": "Dragon",
-          "count": 6
+          "type": "conditional",
+          "if": {
+            "selfHeldMana": 25
+          },
+          "then": [
+            {
+              "type": "conjure-random",
+              "cardType": "creature",
+              "tribe": "Dragon",
+              "fillHand": true,
+              "setCost": 1
+            }
+          ],
+          "else": [
+            {
+              "type": "conjure-random",
+              "cardType": "creature",
+              "tribe": "Dragon",
+              "fillHand": true
+            }
+          ]
         }
       ]
     },
@@ -122185,17 +122326,11 @@
       "keywords": [
         "battlecry"
       ],
-      "description": "Battlecry: Draw a card and reduce its Cost by (10). Repeat with excess Cost reduction. (Approximated: draw 2 cards at (0).)",
+      "description": "Battlecry: Draw a card and reduce its Cost by (10). Repeat with excess Cost reduction.",
       "effects": [
         {
-          "type": "draw-set-cost",
-          "value": 1,
-          "cost": 0
-        },
-        {
-          "type": "draw-set-cost",
-          "value": 1,
-          "cost": 0
+          "type": "morchok-draw",
+          "value": 10
         }
       ]
     },
@@ -122295,7 +122430,12 @@
       "keywords": [
         "deathrattle"
       ],
-      "description": "Deathrattle: You can say Sorry this game. (Not modeled: Sorry.)"
+      "description": "Deathrattle: You can say Sorry this game.",
+      "deathrattle": [
+        {
+          "type": "sorry"
+        }
+      ]
     },
     {
       "id": "picklock",
@@ -122310,11 +122450,10 @@
       "keywords": [
         "battlecry"
       ],
-      "description": "All numbers on this card equal your remaining Mana. Battlecry: Deal 1 damage to an enemy minion. (Not modeled: mana-scaling numbers.)",
+      "description": "All numbers on this card equal your remaining Mana. Battlecry: Deal that much damage to an enemy minion.",
       "effects": [
         {
-          "type": "damage",
-          "value": 1,
+          "type": "picklock",
           "target": "enemy-creature"
         }
       ]
@@ -122332,7 +122471,23 @@
       "keywords": [
         "deathrattle"
       ],
-      "description": "Deathrattle: If you had 4 other Captured Archmages die this game, cast 'Fireball' at a random enemy. (Not modeled: 4-copy condition.)"
+      "description": "Deathrattle: If you had 4 other Captured Archmages die this game, cast 'Fireball' at a random enemy.",
+      "deathrattle": [
+        {
+          "type": "conditional",
+          "if": {
+            "selfCopiesDiedAtLeast": 5
+          },
+          "then": [
+            {
+              "type": "random-damage",
+              "value": 6,
+              "count": 1,
+              "pool": "enemies"
+            }
+          ]
+        }
+      ]
     },
     {
       "id": "disguised_watchman",
@@ -122730,12 +122885,17 @@
         "battlecry",
         "deathrattle"
       ],
-      "description": "Battlecry: Copy all spells in your deck. Deathrattle: Draw one. (Approximated: Deathrattle draws a spell; copy-all not modeled.)",
+      "description": "Battlecry: Copy all spells in your deck. Deathrattle: Draw one.",
       "deathrattle": [
         {
           "type": "tutor",
           "cardType": "spell",
           "count": 1
+        }
+      ],
+      "effects": [
+        {
+          "type": "copy-deck-spells"
         }
       ]
     },
@@ -122774,13 +122934,10 @@
       "keywords": [
         "battlecry"
       ],
-      "description": "Battlecry: Reveal a spell in your deck. If it costs (5) or more, deal 5 damage split among enemy minions. (Approximated: always deals the split.)",
+      "description": "Battlecry: Reveal a spell in your deck. If it costs (5) or more, deal 5 damage split among enemy minions.",
       "effects": [
         {
-          "type": "random-damage",
-          "value": 1,
-          "count": 5,
-          "pool": "enemy-creatures"
+          "type": "spire-reveal"
         }
       ]
     },
@@ -123041,11 +123198,10 @@
         "lifesteal",
         "battlecry"
       ],
-      "description": "Lifesteal. Battlecry: Send your deck to the Void. At the start of your turns, get two cards from the Void. (Approximated: destroys your deck; turn-start gets 2 random cards.)",
+      "description": "Lifesteal. Battlecry: Send your deck to the Void. At the start of your turns, get two cards from the Void.",
       "effects": [
         {
-          "type": "mill-own-top",
-          "count": 60
+          "type": "irida-void"
         }
       ],
       "ongoing": {
@@ -123177,12 +123333,13 @@
       "keywords": [
         "battlecry"
       ],
-      "description": "Battlecry: Discover a spell that costs (5) or more. (Not modeled: casts-twice rider.)",
+      "description": "Battlecry: Discover a spell that costs (5) or more. It casts twice.",
       "effects": [
         {
           "type": "discover",
           "cardType": "spell",
-          "minCost": 5
+          "minCost": 5,
+          "grantCastTwice": true
         }
       ]
     },
@@ -123321,12 +123478,28 @@
       "keywords": [
         "battlecry"
       ],
-      "description": "Battlecry: Get a random spell that costs (5) or more. (Not modeled: no-spells-deck discount.)",
+      "description": "Battlecry: Get a random spell that costs (5) or more. If your deck has no spells, it costs (0).",
       "effects": [
         {
-          "type": "conjure-random",
-          "cardType": "spell",
-          "minCost": 5
+          "type": "conditional",
+          "if": {
+            "deckNoSpells": true
+          },
+          "then": [
+            {
+              "type": "conjure-random",
+              "cardType": "spell",
+              "minCost": 5,
+              "setCost": 0
+            }
+          ],
+          "else": [
+            {
+              "type": "conjure-random",
+              "cardType": "spell",
+              "minCost": 5
+            }
+          ]
         }
       ]
     },
@@ -123613,7 +123786,12 @@
       "keywords": [
         "battlecry"
       ],
-      "description": "Battlecry: Shuffle both players' hands together. (Not modeled: hand shuffle.)"
+      "description": "Battlecry: Shuffle both players' hands together.",
+      "effects": [
+        {
+          "type": "hand-mixer"
+        }
+      ]
     },
     {
       "id": "black_market_auctioneer",
@@ -124100,12 +124278,10 @@
       "keywords": [
         "battlecry"
       ],
-      "description": "Battlecry: Summon a 1/3 Voidwalker with Taunt. (Not modeled: repeat while opponent has more minions.)",
+      "description": "Battlecry: Summon a 1/3 Voidwalker with Taunt. Repeat while your opponent has more minions.",
       "effects": [
         {
-          "type": "summon",
-          "count": 1,
-          "summonId": "won_voidwalker"
+          "type": "voidwalker-envy"
         }
       ]
     },
@@ -124125,13 +124301,20 @@
       "keywords": [
         "battlecry"
       ],
-      "description": "Dormant for 2 turns. When this awakens, reduce the Cost of all Dragons in your hand by (4). (Approximated: the reduction applies on play.)",
+      "description": "Dormant for 2 turns. When this awakens, reduce the Cost of all Dragons in your hand by (4).",
       "effects": [
         {
           "type": "reduce-deck-tribe-cost",
           "tribe": "Dragon",
           "value": 4,
           "alsoHand": true
+        }
+      ],
+      "awaken": [
+        {
+          "type": "reduce-hand-tribe-cost",
+          "tribe": "Dragon",
+          "value": 4
         }
       ]
     },
@@ -124386,7 +124569,12 @@
       "keywords": [
         "battlecry"
       ],
-      "description": "Battlecry: Look at 3 cards in your deck. Choose one to put on top. (Not modeled: deck peek.)"
+      "description": "Battlecry: Look at 3 cards in your deck. Choose one to put on top.",
+      "effects": [
+        {
+          "type": "own-deck-top-pick"
+        }
+      ]
     },
     {
       "id": "vanessa_vancleef",
@@ -124535,10 +124723,10 @@
       "keywords": [
         "battlecry"
       ],
-      "description": "Battlecry: Destroy a random enemy Secret. (Approximated: destroys enemy Secrets.)",
+      "description": "Battlecry: Destroy a random enemy Secret.",
       "effects": [
         {
-          "type": "destroy-enemy-secrets"
+          "type": "destroy-random-secret"
         }
       ]
     },
@@ -124585,9 +124773,20 @@
       "set": "LEGACY",
       "tribe": "Demon",
       "keywords": [
-        "battlecry"
+        "battlecry",
+        "deathrattle"
       ],
-      "description": "Battlecry: Your opponent discards a minion. Deathrattle: Return it. (Not modeled: enemy discard/return.)"
+      "description": "Battlecry: Your opponent discards a minion. Deathrattle: Return it.",
+      "effects": [
+        {
+          "type": "jailer-discard"
+        }
+      ],
+      "deathrattle": [
+        {
+          "type": "jailer-return"
+        }
+      ]
     },
     {
       "id": "night_elf_huntress",
@@ -124680,14 +124879,15 @@
         "rush",
         "deathrattle"
       ],
-      "description": "Rush. Also damages minions next to whomever this attacks. Deathrattle: Deal 2 damage to all enemies. (Not modeled: cleave.)",
+      "description": "Rush. Also damages minions next to whomever this attacks. Deathrattle: Deal 2 damage to all enemies.",
       "deathrattle": [
         {
           "type": "damage",
           "value": 2,
           "target": "enemies"
         }
-      ]
+      ],
+      "cleave": true
     },
     {
       "id": "harth_stonebrew",
@@ -124880,17 +125080,10 @@
       "keywords": [
         "battlecry"
       ],
-      "description": "Battlecry: Destroy all other minions. Discard a card for each destroyed. (Approximated: discard 2.)",
+      "description": "Battlecry: Destroy all other minions. Discard a card for each destroyed.",
       "effects": [
         {
-          "type": "destroy-all",
-          "others": true
-        },
-        {
-          "type": "discard-random"
-        },
-        {
-          "type": "discard-random"
+          "type": "deathwing-wipe"
         }
       ]
     },
@@ -125214,7 +125407,7 @@
       "keywords": [
         "battlecry"
       ],
-      "description": "Battlecry: Destroy your hero and replace it with Lord Jaraxxus. (Approximated: set your Health to 15, equip a 3/8 Blood Fury, and gain the INFERNO! Hero Power.)",
+      "description": "Battlecry: Destroy your hero and replace it with Lord Jaraxxus.",
       "effects": [
         {
           "type": "set-hero-health",
@@ -125316,12 +125509,10 @@
       "keywords": [
         "battlecry"
       ],
-      "description": "Battlecry: Summon two random 1-Cost minions. (Not modeled: upgrades per friendly death.)",
+      "description": "Battlecry: Summon two random minions. (Their Cost grows with friendly deaths this game.)",
       "effects": [
         {
-          "type": "summon-random",
-          "cost": 1,
-          "count": 2
+          "type": "nethrandamus"
         }
       ]
     },
@@ -125339,12 +125530,12 @@
       "keywords": [
         "battlecry"
       ],
-      "description": "Battlecry: If you've played a Fire spell this turn, destroy a minion. (Approximated: a random enemy minion.)",
+      "description": "Battlecry: If you've played a Fire spell this turn, destroy a random enemy minion.",
       "effects": [
         {
           "type": "conditional",
           "if": {
-            "castSchoolThisTurn": "Fire"
+            "schoolCastThisTurn": "Fire"
           },
           "then": [
             {
@@ -127205,6 +127396,66 @@
         }
       ],
       "description": "Give a minion +2/+2 and Divine Shield.",
+      "token": true,
+      "rarity": "common"
+    },
+    {
+      "id": "sanc_azel_loc",
+      "name": "Sanc'Azel",
+      "type": "location",
+      "cost": 4,
+      "durability": 2,
+      "taps": [
+        {
+          "text": "Deal 2 damage to a random enemy.",
+          "effects": [
+            {
+              "type": "random-damage",
+              "value": 2,
+              "count": 1,
+              "pool": "enemies"
+            }
+          ]
+        }
+      ],
+      "description": "Location. Deal 2 damage to a random enemy.",
+      "token": true,
+      "rarity": "common"
+    },
+    {
+      "id": "ourobos",
+      "name": "Ourobos",
+      "type": "creature",
+      "cost": 8,
+      "attack": 8,
+      "health": 8,
+      "rarity": "legendary",
+      "keywords": [
+        "taunt",
+        "lifesteal"
+      ],
+      "tribe": "Dragon",
+      "description": "Taunt, Lifesteal",
+      "token": true
+    },
+    {
+      "id": "hooktail_chest",
+      "name": "Hooktail's Chest",
+      "type": "creature",
+      "cost": 2,
+      "attack": 0,
+      "health": 8,
+      "keywords": [
+        "taunt",
+        "deathrattle"
+      ],
+      "deathrattle": [
+        {
+          "type": "chest-coins",
+          "count": 3
+        }
+      ],
+      "description": "Taunt. Deathrattle: The enemy gets 3 Coins.",
       "token": true,
       "rarity": "common"
     }
