@@ -121765,6 +121765,364 @@
         "lifesteal"
       ],
       "description": "A 9/9 Demon with Taunt and Lifesteal."
+    },
+    {
+      "id": "hijacked_securitybot",
+      "name": "Hijacked Securitybot",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "shaman",
+      "attack": 3,
+      "health": 3,
+      "rarity": "common",
+      "set": "ESCAPEFROM_VIOLET_HOLD",
+      "tribe": "Elemental",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Prepare. Battlecry: Give your other minions +1/+1. (Not modeled: Prepare.)",
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 1,
+          "health": 1,
+          "target": "friendly-others"
+        }
+      ]
+    },
+    {
+      "id": "inspector_murloc_holmes",
+      "name": "Inspector Murloc Holmes",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "neutral",
+      "attack": 4,
+      "health": 5,
+      "rarity": "legendary",
+      "set": "ESCAPEFROM_VIOLET_HOLD",
+      "tribe": "Murloc",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Investigate a card in the enemy hand. If they play a card with that name next turn, get 3 Coins. (Not modeled: Investigate.)"
+    },
+    {
+      "id": "irida_sinseeker",
+      "name": "Irida Sinseeker",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "demonhunter",
+      "attack": 7,
+      "health": 5,
+      "rarity": "legendary",
+      "set": "ESCAPEFROM_VIOLET_HOLD",
+      "keywords": [
+        "lifesteal",
+        "battlecry"
+      ],
+      "description": "Lifesteal. Battlecry: Send your deck to the Void. At the start of your turns, get two cards from the Void. (Approximated: destroys your deck; turn-start gets 2 random cards.)",
+      "effects": [
+        {
+          "type": "mill-own-top",
+          "count": 60
+        }
+      ],
+      "ongoing": {
+        "on": "turn-start",
+        "effects": [
+          {
+            "type": "conjure-random",
+            "count": 2
+          }
+        ]
+      }
+    },
+    {
+      "id": "reckless_detective",
+      "name": "Reckless Detective",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "neutral",
+      "attack": 4,
+      "health": 4,
+      "rarity": "rare",
+      "set": "ESCAPEFROM_VIOLET_HOLD",
+      "keywords": [
+        "rush",
+        "deathrattle"
+      ],
+      "description": "Rush. Deathrattle: Get Detective's Clothes that give +4/+4 and Rush.",
+      "deathrattle": [
+        {
+          "type": "add-card",
+          "id": "jail_clothes",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "id": "tricksy_improviser",
+      "name": "Tricksy Improviser",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "mage",
+      "attack": 4,
+      "health": 4,
+      "rarity": "rare",
+      "set": "ESCAPEFROM_VIOLET_HOLD",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Prepare. Battlecry: If you've cast a spell this turn, cast a random Mage Secret. (Not modeled: Prepare.)",
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "spellsThisTurn": 1
+          },
+          "then": [
+            {
+              "type": "install-random-secrets",
+              "count": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "warptooth",
+      "name": "Warptooth",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "warrior",
+      "attack": 3,
+      "health": 3,
+      "rarity": "epic",
+      "set": "ESCAPEFROM_VIOLET_HOLD",
+      "tribe": "Beast",
+      "keywords": [
+        "charge"
+      ],
+      "description": "Charge. If three friendly characters take damage on one of your turns, summon this from hand or deck. (Not modeled: auto-summon.)"
+    },
+    {
+      "id": "blood_doctor_thalena",
+      "name": "Blood Doctor Thal'ena",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "deathknight",
+      "attack": 4,
+      "health": 5,
+      "rarity": "legendary",
+      "set": "ESCAPEFROM_VIOLET_HOLD",
+      "tribe": "Undead",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Get a second Hero Power that costs Corpses. (Not modeled: second Hero Power.)"
+    },
+    {
+      "id": "bootleg_alchemist",
+      "name": "Bootleg Alchemist",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "mage",
+      "attack": 3,
+      "health": 3,
+      "rarity": "rare",
+      "set": "ESCAPEFROM_VIOLET_HOLD",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Choose a card in your hand. Transform it into a spell that costs (5) more. (Not modeled: hand transform.)"
+    },
+    {
+      "id": "breakout_architect",
+      "name": "Breakout Architect",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "mage",
+      "attack": 4,
+      "health": 5,
+      "rarity": "rare",
+      "set": "ESCAPEFROM_VIOLET_HOLD",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Discover a spell that costs (5) or more. (Not modeled: casts-twice rider.)",
+      "effects": [
+        {
+          "type": "discover",
+          "cardType": "spell",
+          "minCost": 5
+        }
+      ]
+    },
+    {
+      "id": "commander_beatrix",
+      "name": "Commander Beatrix",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "paladin",
+      "attack": 5,
+      "health": 6,
+      "rarity": "legendary",
+      "set": "ESCAPEFROM_VIOLET_HOLD",
+      "keywords": [
+        "taunt"
+      ],
+      "description": "Taunt. While building your deck, pick a 2-Cost minion. Ten copies join your deck! (Not modeled: deckbuild gimmick.)"
+    },
+    {
+      "id": "jailbird",
+      "name": "Jailbird",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "neutral",
+      "attack": 3,
+      "health": 4,
+      "rarity": "common",
+      "set": "ESCAPEFROM_VIOLET_HOLD",
+      "keywords": [
+        "taunt"
+      ],
+      "description": "Taunt. When you Prepare while holding this, reduce this card's Cost. (Not modeled: Prepare.)"
+    },
+    {
+      "id": "jailhouse_manastorm",
+      "name": "Jailhouse Manastorm",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "mage",
+      "attack": 5,
+      "health": 5,
+      "rarity": "legendary",
+      "set": "ESCAPEFROM_VIOLET_HOLD",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "After you cast a spell, summon a random minion of the same Cost.",
+      "ongoing": {
+        "on": "spell-played",
+        "effects": [
+          {
+            "type": "summon-of-spell-cost"
+          }
+        ]
+      }
+    },
+    {
+      "id": "scarlet_recruiter",
+      "name": "Scarlet Recruiter",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "paladin",
+      "attack": 4,
+      "health": 4,
+      "rarity": "rare",
+      "set": "ESCAPEFROM_VIOLET_HOLD",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Summon two minions from your deck that cost (2) or less. Give them Rush.",
+      "effects": [
+        {
+          "type": "recruit",
+          "maxCost": 2,
+          "count": 2,
+          "grant": "rush"
+        }
+      ]
+    },
+    {
+      "id": "sewer_swimmer",
+      "name": "Sewer Swimmer",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "hunter",
+      "attack": 5,
+      "health": 4,
+      "rarity": "common",
+      "set": "ESCAPEFROM_VIOLET_HOLD",
+      "tribe": "Beast",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Prepare. Battlecry: Trigger a friendly minion's Deathrattle. (Not modeled: Prepare.)",
+      "effects": [
+        {
+          "type": "trigger-one-deathrattle",
+          "target": "friendly-creature"
+        }
+      ]
+    },
+    {
+      "id": "aya_lotus_kingpin",
+      "name": "Aya, Lotus Kingpin",
+      "type": "creature",
+      "cost": 6,
+      "cardClass": "rogue",
+      "attack": 6,
+      "health": 3,
+      "rarity": "legendary",
+      "set": "ESCAPEFROM_VIOLET_HOLD",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "You always go second. Battlecry: Pick an upgraded counterfeit to replace your Coins this game. Get two. (Approximated: get 2 Coins.)",
+      "effects": [
+        {
+          "type": "gain-coin",
+          "value": 2
+        }
+      ]
+    },
+    {
+      "id": "hexmarshal",
+      "name": "Hexmarshal",
+      "type": "creature",
+      "cost": 6,
+      "cardClass": "shaman",
+      "attack": 6,
+      "health": 6,
+      "rarity": "rare",
+      "set": "ESCAPEFROM_VIOLET_HOLD",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Get a random spell that costs (5) or more. (Not modeled: no-spells-deck discount.)",
+      "effects": [
+        {
+          "type": "conjure-random",
+          "cardType": "spell",
+          "minCost": 5
+        }
+      ]
+    },
+    {
+      "id": "jail_clothes",
+      "name": "Detective's Clothes",
+      "type": "sorcery",
+      "cost": 2,
+      "cardClass": "neutral",
+      "rarity": "common",
+      "set": "ESCAPEFROM_VIOLET_HOLD",
+      "token": true,
+      "collectible": false,
+      "description": "Give a minion +4/+4 and Rush.",
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 4,
+          "health": 4,
+          "target": "creature"
+        },
+        {
+          "type": "grant",
+          "keyword": "rush",
+          "target": "creature"
+        }
+      ]
     }
   ]
 }

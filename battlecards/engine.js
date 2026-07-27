@@ -2273,9 +2273,12 @@ function runSecretEffects(state, pi, effects, ctx) {
 					break;
 				}
 				case 'summon-of-spell-cost': {
-					// Spirit of the Tiger: after you cast a spell, summon a token with stats = its Cost
+					// Spirit of the Tiger (e.name set): summon a token with stats = the spell's Cost.
+					// Summoning Stone / Atiesh / Jailhouse Manastorm (no e.name): summon a RANDOM minion of that Cost.
+					// (These were two duplicate switch cases — the token variant shadowed the random one.)
 					const sp = ctx.spell || ctx.played;
-					if (sp) { const n = sp.cost || 0; summon(state, pi, { id: 'token_' + (e.name || 'tiger').toLowerCase(), name: e.name || 'Tiger', type: 'creature', cost: 0, token: true, tribe: e.tribe || null, rarity: 'common', attack: n, health: n, description: `A ${n}/${n} token.` }); }
+					if (sp && e.name) { const n = sp.cost || 0; summon(state, pi, { id: 'token_' + e.name.toLowerCase(), name: e.name, type: 'creature', cost: 0, token: true, tribe: e.tribe || null, rarity: 'common', attack: n, health: n, description: `A ${n}/${n} token.` }); }
+					else if (sp) execEffects(state, pi, [{ type: 'summon-random', cost: sp.cost || 0 }], null, ctx.self);
 					break;
 				}
 				case 'buff-drawn-if-tribe': {
@@ -8244,6 +8247,7 @@ function execEffects(state, pi, effects, target, source) {
 			if (e.requireKeyword) pool = pool.filter(d => (d.keywords || []).includes(e.requireKeyword)); // Whirlkick Master: a Combo card
 			if (e.cost != null) pool = pool.filter(d => (d.cost || 0) === e.cost); // Ravencaller / Tanglefur Mystic
 			if (e.maxCost != null) pool = pool.filter(d => (d.cost || 0) <= e.maxCost); // Carrier Whelp: a Dragon that costs (3) or less
+			if (e.minCost != null) pool = pool.filter(d => (d.cost || 0) >= e.minCost); // Hexmarshal: a spell that costs (5) or more
 			if (e.nameIncludes) pool = pool.filter(d => (d.name || '').includes(e.nameIncludes)); // Yrel: Librams
 			if (e.school) pool = pool.filter(d => schoolOf(d) === e.school); // Galactic Crusader: Holy spells
 			if (e.tribe) pool = pool.filter(d => (d.tribe || '').includes(e.tribe));
