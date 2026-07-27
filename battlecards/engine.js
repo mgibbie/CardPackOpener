@@ -3469,6 +3469,7 @@ function execEffects(state, pi, effects, target, source) {
 			}
 			if (e.perHandCard) hits = state.players[pi].hand.length; // Meteorologist
 			if (e.perHandSpell) hits = state.players[pi].hand.filter(c => isSpellType(c)).length; // Void Flayer
+			if (e.perManaCrystal) hits = state.players[pi].mana?.max || 0; // Trogg Gemtosser: one per Mana Crystal
 			for (let i = 0; i < hits; i++) {
 				const pool = [];
 				const pushBoard = side => { for (const c of state.players[side].board) if (!isDead(c) && c.type !== 'location' && !(e.exceptTribe && (c.tribe || '').includes(e.exceptTribe)) && !(e.exceptSource && c === source)) pool.push({ c }); };
@@ -5928,6 +5929,33 @@ function execEffects(state, pi, effects, target, source) {
 		} else if (e.type === 'destroy-self') {
 			// Incorporeal Corporal: destroy the source minion
 			if (source && !isDead(source)) { source.damage = source.maxHealth; source.shield = false; emit(state, { type: 'destroy', uid: source.uid }); sweepDeaths(state); }
+		} else if (e.type === 'roll-dice-discover') {
+			// Snake Eyes: roll two dice, Discover a card of each rolled Cost (doubles = an extra)
+			const r1 = 1 + Math.floor(state.rng() * 6), r2 = 1 + Math.floor(state.rng() * 6);
+			execEffects(state, pi, [{ type: 'discover', cost: r1 }, { type: 'discover', cost: r2 }], null, source);
+			if (r1 === r2) execEffects(state, pi, [{ type: 'discover', cost: r1 }], null, source);
+		} else if (e.type === 'shuffle-hand-redraw') {
+			// Gaslight Gatekeeper: shuffle your hand into your deck, then draw that many
+			const p = state.players[pi];
+			const n = p.hand.filter(c => c !== source).length;
+			for (const c of [...p.hand]) { if (c === source) continue; if (state.cardsById[c.id]) p.deck.push(c.id); }
+			p.hand = p.hand.filter(c => c === source);
+			for (let i = p.deck.length - 1; i > 0; i--) { const j = Math.floor(state.rng() * (i + 1)); [p.deck[i], p.deck[j]] = [p.deck[j], p.deck[i]]; }
+			emit(state, { type: 'shuffle', player: pi });
+			drawCards(state, pi, n);
+		} else if (e.type === 'grant-random-keywords-self') {
+			// Fossilized Kaleidosaur: gain N random keywords
+			const kws = e.keywords || ['taunt', 'divine_shield', 'rush', 'lifesteal', 'windfury', 'poisonous'];
+			for (let i = 0; i < (e.count || 1) && source; i++) { const k = kws[Math.floor(state.rng() * kws.length)]; if (!source.keywords.includes(k)) { source.keywords.push(k); if (k === KW.DIVINE_SHIELD) source.shield = true; } }
+			if (source) emit(state, { type: 'buff', uid: source.uid, attack: source.attack, hp: hp(source) });
+		} else if (e.type === 'excavate') {
+			// Excavate (approx): add a random Treasure spell to your hand
+			const p = state.players[pi];
+			if (p.hand.length < MAX_HAND && state.cardsById[e.id || 'ww_treasure']) { const cp = instantiate(state.cardsById[e.id || 'ww_treasure'], pi); cp.zone = 'hand'; p.hand.push(cp); emit(state, { type: 'conjure', player: pi, card: cp, color: null }); p.excavateCount = (p.excavateCount || 0) + 1; }
+		} else if (e.type === 'spend-corpses-heal') {
+			// Maw and Paw: spend N Corpses to restore Health to your hero
+			const p = state.players[pi];
+			if ((p.corpses || 0) >= (e.cost || 5)) { p.corpses -= (e.cost || 5); emit(state, { type: 'corpses', player: pi, corpses: p.corpses }); healHero(state, pi, e.value || 5); }
 		} else if (e.type === 'grant-next-school-discount') {
 			// Holy Cowboy: your next spell of a school costs less
 			state.players[pi].nextSchoolDiscount = { school: e.school, amount: e.value || 2 };

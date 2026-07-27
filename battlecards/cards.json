@@ -106667,6 +106667,463 @@
           ]
         }
       ]
+    },
+    {
+      "id": "sludge_on_wheels",
+      "name": "Sludge on Wheels",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "warlock",
+      "attack": 2,
+      "health": 5,
+      "rarity": "rare",
+      "set": "WILD_WEST",
+      "keywords": [
+        "rush"
+      ],
+      "description": "Rush. Whenever this takes damage, get a Barrel of Sludge and add one to the bottom of your deck.",
+      "ongoing": {
+        "on": "self-damaged",
+        "effects": [
+          {
+            "type": "add-card",
+            "id": "ww_barrel_of_sludge",
+            "count": 1
+          },
+          {
+            "type": "put-card-bottom-deck",
+            "id": "ww_barrel_of_sludge"
+          }
+        ]
+      }
+    },
+    {
+      "id": "snake_eyes",
+      "name": "Snake Eyes",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "demonhunter",
+      "attack": 2,
+      "health": 4,
+      "rarity": "legendary",
+      "set": "WILD_WEST",
+      "tribe": "Naga",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Roll two dice, then Discover two cards of those Costs. (Doubles get an extra Discover!)",
+      "effects": [
+        {
+          "type": "roll-dice-discover"
+        }
+      ]
+    },
+    {
+      "id": "spirit_of_the_badlands",
+      "name": "Spirit of the Badlands",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "paladin",
+      "attack": 3,
+      "health": 4,
+      "rarity": "legendary",
+      "set": "WILD_WEST",
+      "tribe": "Undead",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: If your deck started with no duplicates, get a permanent Mirage.",
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "noDuplicates": true
+          },
+          "then": [
+            {
+              "type": "add-card",
+              "id": "ww_mirage",
+              "count": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "trogg_gemtosser",
+      "name": "Trogg Gemtosser",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "druid",
+      "attack": 3,
+      "health": 2,
+      "rarity": "common",
+      "set": "WILD_WEST",
+      "keywords": [
+        "finale"
+      ],
+      "description": "Finale: Deal 1 damage to a random enemy for each of your Mana Crystals.",
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "finale": true
+          },
+          "then": [
+            {
+              "type": "random-damage",
+              "value": 1,
+              "perManaCrystal": true,
+              "pool": "enemies"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "azerite_chain_gang",
+      "name": "Azerite Chain Gang",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "neutral",
+      "attack": 2,
+      "health": 3,
+      "rarity": "rare",
+      "set": "WILD_WEST",
+      "keywords": [
+        "taunt",
+        "battlecry"
+      ],
+      "description": "Taunt. Battlecry and Quickdraw: Summon a copy of this.",
+      "effects": [
+        {
+          "type": "summon-copy-of-self",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "id": "dang_blasted_elemental",
+      "name": "Dang-Blasted Elemental",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "neutral",
+      "attack": 3,
+      "health": 3,
+      "rarity": "common",
+      "set": "WILD_WEST",
+      "tribe": "Elemental",
+      "keywords": [
+        "taunt",
+        "deathrattle"
+      ],
+      "description": "Taunt. Deathrattle: Deal 2 damage to all minions except friendly Elementals.",
+      "deathrattle": [
+        {
+          "type": "damage",
+          "value": 2,
+          "target": "all-creatures",
+          "exceptTribe": "Elemental"
+        }
+      ]
+    },
+    {
+      "id": "desert_nestmatron",
+      "name": "Desert Nestmatron",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "druid",
+      "attack": 3,
+      "health": 5,
+      "rarity": "rare",
+      "set": "WILD_WEST",
+      "tribe": "Dragon",
+      "keywords": [
+        "taunt",
+        "battlecry"
+      ],
+      "description": "Taunt. Battlecry: If you're holding a Dragon, refresh 4 Mana Crystals.",
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "holdingTribe": "Dragon"
+          },
+          "then": [
+            {
+              "type": "refresh-mana",
+              "value": 4
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "detonation_juggernaut",
+      "name": "Detonation Juggernaut",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "warrior",
+      "attack": 3,
+      "health": 4,
+      "rarity": "common",
+      "set": "WILD_WEST",
+      "tribe": "Mech",
+      "keywords": [
+        "taunt",
+        "battlecry"
+      ],
+      "description": "Taunt. Battlecry: Give Taunt minions in your hand +2/+2.",
+      "effects": [
+        {
+          "type": "buff-hand-keyword",
+          "keyword": "taunt",
+          "attack": 2,
+          "health": 2
+        }
+      ]
+    },
+    {
+      "id": "drilly_the_kid",
+      "name": "Drilly the Kid",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "rogue",
+      "attack": 4,
+      "health": 3,
+      "rarity": "legendary",
+      "set": "WILD_WEST",
+      "tribe": "Mech",
+      "keywords": [
+        "battlecry",
+        "deathrattle"
+      ],
+      "description": "Battlecry, Quickdraw, and Deathrattle: Excavate a treasure.",
+      "effects": [
+        {
+          "type": "excavate"
+        }
+      ],
+      "deathrattle": [
+        {
+          "type": "excavate"
+        }
+      ]
+    },
+    {
+      "id": "fossilized_kaleidosaur",
+      "name": "Fossilized Kaleidosaur",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "paladin",
+      "attack": 3,
+      "health": 4,
+      "rarity": "rare",
+      "set": "WILD_WEST",
+      "tribe": "Beast",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Gain two random Bonus Effects. Excavate a treasure.",
+      "effects": [
+        {
+          "type": "grant-random-keywords-self",
+          "count": 2
+        },
+        {
+          "type": "excavate"
+        }
+      ]
+    },
+    {
+      "id": "gaslight_gatekeeper",
+      "name": "Gaslight Gatekeeper",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "neutral",
+      "attack": 3,
+      "health": 4,
+      "rarity": "common",
+      "set": "WILD_WEST",
+      "tribe": "Undead",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Shuffle your hand into your deck, then draw that many cards.",
+      "effects": [
+        {
+          "type": "shuffle-hand-redraw"
+        }
+      ]
+    },
+    {
+      "id": "gloomstone_guardian",
+      "name": "Gloomstone Guardian",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "druid",
+      "attack": 6,
+      "health": 8,
+      "rarity": "rare",
+      "set": "WILD_WEST",
+      "tribe": "Elemental",
+      "keywords": [
+        "taunt"
+      ],
+      "description": "Taunt. Choose One - Discard 2 cards; or Destroy one of your Mana Crystals. Forge: Do NEITHER.",
+      "choices": [
+        {
+          "text": "Discard 2 cards",
+          "effects": [
+            {
+              "type": "discard-random",
+              "count": 2
+            }
+          ]
+        },
+        {
+          "text": "Destroy a Mana Crystal",
+          "effects": [
+            {
+              "type": "lose-max-mana",
+              "value": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "glowstone_gyreworm",
+      "name": "Glowstone Gyreworm",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "priest",
+      "attack": 4,
+      "health": 4,
+      "rarity": "rare",
+      "set": "WILD_WEST",
+      "tribe": "Elemental",
+      "keywords": [
+        "lifesteal",
+        "battlecry"
+      ],
+      "description": "Lifesteal. Quickdraw: Deal 5 damage. Forge: Change Quickdraw to Battlecry.",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 5,
+          "target": "any",
+          "lifesteal": true
+        }
+      ]
+    },
+    {
+      "id": "maw_and_paw",
+      "name": "Maw and Paw",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "deathknight",
+      "attack": 2,
+      "health": 8,
+      "rarity": "legendary",
+      "set": "WILD_WEST",
+      "tribe": "Undead",
+      "description": "At the end of your turn, gain 5 Corpses. At the start of your turn, spend 5 Corpses to give your hero +5 Health.",
+      "ongoings": [
+        {
+          "on": "turn-end",
+          "effects": [
+            {
+              "type": "gain-corpses",
+              "value": 5
+            }
+          ]
+        },
+        {
+          "on": "turn-start",
+          "effects": [
+            {
+              "type": "spend-corpses-heal",
+              "cost": 5,
+              "value": 5
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "ogre_gang_rider",
+      "name": "Ogre-Gang Rider",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "neutral",
+      "attack": 3,
+      "health": 6,
+      "rarity": "rare",
+      "set": "WILD_WEST",
+      "keywords": [
+        "rush"
+      ],
+      "description": "Rush. 50% chance to give your hero +3 Attack this turn instead of attacking."
+    },
+    {
+      "id": "overflow_surger",
+      "name": "Overflow Surger",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "mage",
+      "attack": 3,
+      "health": 2,
+      "rarity": "common",
+      "set": "WILD_WEST",
+      "tribe": "Elemental",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Summon a copy of this for each turn in a row you've played an Elemental.",
+      "effects": [
+        {
+          "type": "summon-copy-of-self",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "id": "ww_mirage",
+      "name": "Mirage",
+      "type": "sorcery",
+      "cost": 1,
+      "cardClass": "paladin",
+      "rarity": "common",
+      "set": "WILD_WEST",
+      "token": true,
+      "collectible": false,
+      "description": "Draw a card.",
+      "effects": [
+        {
+          "type": "draw",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "ww_treasure",
+      "name": "Excavated Treasure",
+      "type": "sorcery",
+      "cost": 2,
+      "cardClass": "neutral",
+      "rarity": "common",
+      "set": "WILD_WEST",
+      "token": true,
+      "collectible": false,
+      "description": "Deal 3 damage.",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 3,
+          "target": "any"
+        }
+      ]
     }
   ]
 }
