@@ -109941,7 +109941,18 @@
       "rarity": "epic",
       "set": "ISLAND_VACATION",
       "tribe": "Murloc",
-      "description": "After a minion is summoned for your opponent during your turn, Silence and destroy it. (Not modeled: trigger simplified.)"
+      "description": "After a minion is summoned for your opponent during your turn, Silence and destroy it.",
+      "ongoing": {
+        "on": "enemy-summoned",
+        "if": {
+          "yourTurn": true
+        },
+        "effects": [
+          {
+            "type": "silence-destroy-triggering"
+          }
+        ]
+      }
     },
     {
       "id": "carnivorous_cubicle",
@@ -110037,7 +110048,12 @@
       "keywords": [
         "battlecry"
       ],
-      "description": "Mage Tourist. Battlecry: In 3 turns, replay every spell you've cast between now and then. (Not modeled: delayed replay.)"
+      "description": "Mage Tourist. Battlecry: In 3 turns, replay every spell you've cast between now and then.",
+      "effects": [
+        {
+          "type": "vistah-arm"
+        }
+      ]
     },
     {
       "id": "ranger_gilly",
@@ -111253,13 +111269,11 @@
       "keywords": [
         "battlecry"
       ],
-      "description": "Battlecry: Destroy the top 3 cards of your deck. Any Fire spells or Elementals are drawn instead. (Approximated: draw an Elemental.)",
+      "description": "Battlecry: Destroy the top 3 cards of your deck. Any Fire spells or Elementals are drawn instead.",
       "effects": [
         {
-          "type": "tutor",
-          "cardType": "creature",
-          "tribe": "Elemental",
-          "count": 1
+          "type": "accretion-mill",
+          "count": 3
         }
       ]
     },
@@ -111480,7 +111494,15 @@
       "set": "SPACE",
       "tribe": "Beast",
       "dormant": 5,
-      "description": "Dormant for 5 turns. At the end of your turn, destroy the minion to the right of this to awaken 2 turns sooner. (Not modeled: awaken acceleration.)"
+      "description": "Dormant for 5 turns. At the end of your turn, destroy the minion to the right of this to awaken 2 turns sooner.",
+      "ongoing": {
+        "on": "turn-end",
+        "effects": [
+          {
+            "type": "gorm-consume"
+          }
+        ]
+      }
     },
     {
       "id": "hydralisk",
@@ -114680,13 +114702,13 @@
       "keywords": [
         "battlecry"
       ],
-      "description": "Battlecry: Give all minions in your hand +3/+3. They are destroyed in 3 turns. (Not modeled: destroyed in 3 turns.)",
+      "description": "Battlecry: Give all minions in your hand +3/+3. They are destroyed in 3 turns.",
       "effects": [
         {
-          "type": "buff-hand",
+          "type": "keeper-doom",
           "attack": 3,
           "health": 3,
-          "all": true
+          "turns": 3
         }
       ]
     },
@@ -115397,7 +115419,12 @@
       "keywords": [
         "battlecry"
       ],
-      "description": "Battlecry: The next card you play costs your OPPONENT'S Health instead of Mana (up to 10). (Not modeled: Health cost.)"
+      "description": "Battlecry: The next card you play costs your OPPONENT'S Health instead of Mana (up to 10).",
+      "effects": [
+        {
+          "type": "agamaggan-next"
+        }
+      ]
     },
     {
       "id": "forest_lord_cenarius",
@@ -115812,7 +115839,12 @@
       "keywords": [
         "battlecry"
       ],
-      "description": "Battlecry: Look at 3 cards in your enemy's deck. Pick one to put on top. (Not modeled: peek enemy deck.)"
+      "description": "Battlecry: Look at 3 cards in your enemy's deck. Pick one to put on top.",
+      "effects": [
+        {
+          "type": "eyes-in-the-sky"
+        }
+      ]
     },
     {
       "id": "firegill",
@@ -116046,15 +116078,14 @@
       "health": 2,
       "rarity": "rare",
       "set": "THE_LOST_CITY",
-      "description": "At the end of your turn, give +1/+1 to each friendly minion of a different type. (Approximated: +1/+1 to your other minions.)",
+      "description": "At the end of your turn, give +1/+1 to one friendly minion of each different type.",
       "ongoing": {
         "on": "turn-end",
         "effects": [
           {
-            "type": "buff",
+            "type": "buff-distinct-tribes",
             "attack": 1,
-            "health": 1,
-            "target": "friendly-others"
+            "health": 1
           }
         ]
       }
@@ -116525,10 +116556,10 @@
       "keywords": [
         "battlecry"
       ],
-      "description": "Battlecry: Destroy the top card of your deck. Discover a card of the same Rarity. (Approximated: Discover a card.)",
+      "description": "Battlecry: Destroy the top card of your deck. Discover a card of the same Rarity.",
       "effects": [
         {
-          "type": "discover"
+          "type": "relic-mine"
         }
       ]
     },
@@ -116746,12 +116777,13 @@
       "keywords": [
         "battlecry"
       ],
-      "description": "Battlecry: Deal 6 damage to an enemy minion with a minion type. (Approximated: any enemy minion.)",
+      "description": "Battlecry: Deal 6 damage to an enemy minion with a minion type.",
       "effects": [
         {
           "type": "damage",
           "value": 6,
-          "target": "enemy-creature"
+          "target": "enemy-creature",
+          "requireTargetTribe": true
         }
       ]
     },
@@ -116807,7 +116839,12 @@
       "keywords": [
         "battlecry"
       ],
-      "description": "Battlecry: Until the start of your next turn, the enemy hero can't be healed. (Not modeled: heal lock.)"
+      "description": "Battlecry: Until the start of your next turn, the enemy hero can't be healed.",
+      "effects": [
+        {
+          "type": "heal-lock-enemy"
+        }
+      ]
     },
     {
       "id": "dread_raptor",
@@ -117264,14 +117301,13 @@
       "keywords": [
         "rush"
       ],
-      "description": "Rush. After a friendly minion dies, spend 3 Corpses to gain Reborn. (Approximated: gains Reborn on the first friendly death; Corpse cost not modeled.)",
+      "description": "Rush. After a friendly minion dies, spend 3 Corpses to gain Reborn.",
       "ongoing": {
         "on": "friendly-creature-died",
-        "once": true,
         "effects": [
           {
-            "type": "grant-self",
-            "keyword": "reborn"
+            "type": "corpse-reborn",
+            "corpses": 3
           }
         ]
       }
@@ -117525,13 +117561,14 @@
         "taunt",
         "deathrattle"
       ],
-      "description": "Taunt. Deathrattle: Summon two random 3-Cost Beasts. (Not modeled: they attack random enemies.)",
+      "description": "Taunt. Deathrattle: Summon two random 3-Cost Beasts. They attack random enemies.",
       "deathrattle": [
         {
           "type": "summon-random",
-          "tribe": "Beast",
           "cost": 3,
-          "count": 2
+          "tribe": "Beast",
+          "count": 2,
+          "attackRandom": true
         }
       ]
     },
@@ -117805,13 +117842,19 @@
         "battlecry",
         "deathrattle"
       ],
-      "description": "Battlecry: Discover a Legendary Beast from any class to gain its stats. Deathrattle: Summon it. (Approximated: Discover a Legendary Beast.)",
+      "description": "Battlecry: Discover a Legendary Beast to gain its stats. Deathrattle: Summon it.",
       "effects": [
         {
           "type": "discover",
           "cardType": "creature",
           "tribe": "Beast",
-          "rarity": "legendary"
+          "rarity": "legendary",
+          "gainStats": true
+        }
+      ],
+      "deathrattle": [
+        {
+          "type": "summon-remembered"
         }
       ]
     },
@@ -117969,14 +118012,15 @@
       "keywords": [
         "battlecry"
       ],
-      "description": "Battlecry: Summon two Deathrattle minions from your deck. (Not modeled: they fight.)",
+      "description": "Battlecry: Summon two Deathrattle minions from your deck. They fight each other!",
       "effects": [
         {
           "type": "summon-from-deck-keyword",
           "keywords": [
             "deathrattle",
             "deathrattle"
-          ]
+          ],
+          "fight": true
         }
       ]
     },
@@ -118046,7 +118090,13 @@
       "keywords": [
         "battlecry"
       ],
-      "description": "Battlecry: Your minions cost (5) this game. (Not modeled: minion cost-set aura.)"
+      "description": "Battlecry: Your minions cost (5) this game.",
+      "effects": [
+        {
+          "type": "set-minion-costs",
+          "value": 5
+        }
+      ]
     },
     {
       "id": "seismopod",
@@ -118162,7 +118212,8 @@
       "health": 3,
       "rarity": "common",
       "set": "TIME_TRAVEL",
-      "description": "Your Hero Power costs (0) while your hand has 3 or less cards. (Not modeled: conditional Hero Power cost.)"
+      "description": "Your Hero Power costs (0) while your hand has 3 or less cards.",
+      "hpFreeHandMax": 3
     },
     {
       "id": "shapeshifter",
@@ -118193,11 +118244,11 @@
         "taunt",
         "battlecry"
       ],
-      "description": "Taunt. Battlecry: Restore Health to a character equal to this minion's Health. (Approximated: restore 4.)",
+      "description": "Taunt. Battlecry: Restore Health to a character equal to this minion's Health.",
       "effects": [
         {
-          "type": "heal",
-          "value": 4
+          "type": "heal-by-self-health",
+          "target": "any"
         }
       ]
     },
@@ -118320,12 +118371,17 @@
       "keywords": [
         "battlecry"
       ],
-      "description": "Battlecry: Discover 2 Beasts. Put them on the bottom of your deck with +5/+5. (Approximated: Discover a Beast.)",
+      "description": "Battlecry: Discover 2 Beasts. Put them on the bottom of your deck with +5/+5.",
       "effects": [
         {
           "type": "discover",
           "cardType": "creature",
-          "tribe": "Beast"
+          "tribe": "Beast",
+          "count": 2,
+          "toDeckBottomBuff": {
+            "attack": 5,
+            "health": 5
+          }
         }
       ]
     },
@@ -118482,7 +118538,17 @@
         "battlecry",
         "deathrattle"
       ],
-      "description": "Battlecry: Set the Cost of a random card in your hand to INFINITY! Deathrattle: Change it back. (Not modeled: infinity cost.)"
+      "description": "Battlecry: Set the Cost of a random card in your hand to INFINITY! Deathrattle: Change it back.",
+      "effects": [
+        {
+          "type": "infinity-cost"
+        }
+      ],
+      "deathrattle": [
+        {
+          "type": "infinity-restore"
+        }
+      ]
     },
     {
       "id": "brutish_endmaw",
@@ -118545,12 +118611,14 @@
       "keywords": [
         "battlecry"
       ],
-      "description": "Battlecry: Add a random 8-Cost minion to your hand. At the start of your turns, reduce its Cost by (1). (Not modeled: cost-reduction over time.)",
+      "description": "Battlecry: Add a random 8-Cost minion to your hand. At the start of your turns, reduce its Cost by (1).",
       "effects": [
         {
           "type": "conjure-random",
           "cardType": "creature",
-          "cost": 8
+          "cost": 8,
+          "count": 1,
+          "ticksDown": true
         }
       ]
     },
@@ -118707,12 +118775,10 @@
       "keywords": [
         "battlecry"
       ],
-      "description": "Fabled. Battlecry: Deal 2 damage to all enemies. If you've played Alleria or Vereesa, repeat for each. (Not modeled: Fabled / repeat.)",
+      "description": "Fabled. Battlecry: Deal 2 damage to all enemies. If you've played Alleria or Vereesa, repeat for each.",
       "effects": [
         {
-          "type": "damage",
-          "value": 2,
-          "target": "enemies"
+          "type": "sylvanas-volley"
         }
       ]
     },
@@ -118729,10 +118795,28 @@
       "keywords": [
         "battlecry"
       ],
-      "description": "Battlecry: Look at the right-most card in your opponent's hand. Either get a copy of it or increase its Cost by (2). (Approximated: copy a random enemy hand card.)",
+      "description": "Battlecry: Look at the right-most card in your opponent's hand. Either get a copy of it or increase its Cost by (2).",
       "effects": [
         {
           "type": "copy-random-enemy-hand"
+        }
+      ],
+      "choices": [
+        {
+          "text": "Get a copy of their right-most card.",
+          "effects": [
+            {
+              "type": "informant-copy"
+            }
+          ]
+        },
+        {
+          "text": "Increase its Cost by (2).",
+          "effects": [
+            {
+              "type": "informant-tax"
+            }
+          ]
         }
       ]
     },
@@ -118822,7 +118906,8 @@
       "rarity": "epic",
       "set": "TIME_TRAVEL",
       "tribe": "Undead",
-      "description": "You no longer draw a card at the start of your turn. (Not modeled: skip your draw.)"
+      "description": "You no longer draw a card at the start of your turn.",
+      "skipStartDraw": true
     },
     {
       "id": "cleansing_lightspawn",
@@ -119072,15 +119157,14 @@
       "keywords": [
         "battlecry"
       ],
-      "description": "Battlecry: Discard your hand. Get an Infinite Banana. (Approximated: discard hand, get a Banana.)",
+      "description": "Battlecry: Discard your hand. Get an Infinite Banana.",
       "effects": [
         {
           "type": "discard-all"
         },
         {
-          "type": "add-card",
-          "id": "banana",
-          "count": 1
+          "type": "conjure-id",
+          "id": "infinite_banana"
         }
       ]
     },
@@ -119189,12 +119273,12 @@
       "rarity": "common",
       "set": "TIME_TRAVEL",
       "tribe": "Pirate",
-      "description": "At the end of each player's turn, give them a Coin. (Approximated: a Coin at the end of your turn.)",
+      "description": "At the end of each player's turn, give them a Coin.",
       "ongoing": {
-        "on": "turn-end",
+        "on": "every-turn-end",
         "effects": [
           {
-            "type": "gain-coin"
+            "type": "coin-to-current"
           }
         ]
       }
@@ -119259,11 +119343,10 @@
         "reborn",
         "deathrattle"
       ],
-      "description": "Reborn. Deathrattle: Equip a 1/2 Dagger. If you already have a weapon equipped, give it +2 Attack instead. (Approximated: buff your weapon +2 Attack.)",
+      "description": "Reborn. Deathrattle: Equip a 1/2 Dagger. If you already have a weapon equipped, give it +2 Attack instead.",
       "deathrattle": [
         {
-          "type": "buff-weapon",
-          "attack": 2
+          "type": "dagger-or-buff"
         }
       ]
     },
@@ -119309,7 +119392,12 @@
       "keywords": [
         "battlecry"
       ],
-      "description": "Battlecry: Set the Cost of every card in both player's hands back to their original Costs. (Not modeled: cost reset.)"
+      "description": "Battlecry: Set the Cost of every card in both player's hands back to their original Costs.",
+      "effects": [
+        {
+          "type": "reset-hand-costs"
+        }
+      ]
     },
     {
       "id": "aeon_wizard",
@@ -119367,11 +119455,12 @@
       "keywords": [
         "battlecry"
       ],
-      "description": "Battlecry: Give your hero +3 Attack this turn, next turn, and the turn after. (Approximated: +3 Attack this turn.)",
+      "description": "Battlecry: Give your hero +3 Attack this turn, next turn, and the turn after.",
       "effects": [
         {
-          "type": "hero-attack",
-          "value": 3
+          "type": "hero-attack-multi-turn",
+          "value": 3,
+          "turns": 3
         }
       ]
     },
@@ -119765,11 +119854,10 @@
       "keywords": [
         "deathrattle"
       ],
-      "description": "Deathrattle: Draw another copy of cards you've played this game. (Approximated: draw 2 cards.)",
+      "description": "Deathrattle: Add another copy of every card you've played this game to your hand.",
       "deathrattle": [
         {
-          "type": "draw",
-          "value": 2
+          "type": "chromie-draw"
         }
       ]
     },
@@ -119787,7 +119875,12 @@
       "keywords": [
         "battlecry"
       ],
-      "description": "Battlecry: Destroy all minions that your opponent played last turn. (Not modeled: last-turn-played tracking.)"
+      "description": "Battlecry: Destroy all minions that your opponent played last turn.",
+      "effects": [
+        {
+          "type": "destroy-played-last-turn"
+        }
+      ]
     },
     {
       "id": "chronogor",
@@ -119803,13 +119896,10 @@
       "keywords": [
         "battlecry"
       ],
-      "description": "Battlecry: You draw your 2 highest Cost cards. Your opponent draws your 2 lowest Cost cards. (Approximated: draw your 2 highest.)",
+      "description": "Battlecry: You draw your 2 highest Cost cards. Your opponent draws your 2 lowest Cost cards.",
       "effects": [
         {
-          "type": "draw-highest"
-        },
-        {
-          "type": "draw-highest"
+          "type": "chronogor"
         }
       ]
     },
@@ -119920,13 +120010,11 @@
       "keywords": [
         "battlecry"
       ],
-      "description": "Battlecry: Set a friendly minion's Attack and Health to 8. It can't attack heroes this turn. (Not modeled: can't-attack-heroes.)",
+      "description": "Battlecry: Set a friendly minion's Attack and Health to 8. It can't attack heroes this turn.",
       "effects": [
         {
-          "type": "set-target-stats",
-          "target": "friendly-creature",
-          "attack": 8,
-          "health": 8
+          "type": "infinitize",
+          "target": "friendly-creature"
         }
       ]
     },
@@ -120090,10 +120178,10 @@
       "keywords": [
         "battlecry"
       ],
-      "description": "Battlecry: Deal 5 damage to an enemy minion. Draw cards equal to the excess damage. (Not modeled: excess-damage draw.)",
+      "description": "Battlecry: Deal 5 damage to an enemy minion. Draw cards equal to the excess damage.",
       "effects": [
         {
-          "type": "damage",
+          "type": "damage-excess-draw",
           "value": 5,
           "target": "enemy-creature"
         }
@@ -120439,12 +120527,12 @@
       "keywords": [
         "deathrattle"
       ],
-      "description": "Deathrattle: Summon a Whelp. (Not modeled: it grows each turn.)",
+      "description": "Deathrattle: Summon a Whelp that grows each turn.",
       "deathrattle": [
         {
           "type": "summon",
           "count": 1,
-          "summonId": "cata_whelp"
+          "summonId": "twilight_whelp_grow"
         }
       ]
     },
@@ -120462,12 +120550,10 @@
       "keywords": [
         "deathrattle"
       ],
-      "description": "Deathrattle: Get a 2-Cost spell that deals this minion's Attack damage. (Approximated: a Bolt dealing 3.)",
+      "description": "Deathrattle: Get a 2-Cost spell that deals this minion's Attack damage.",
       "deathrattle": [
         {
-          "type": "add-card",
-          "id": "cata_bolt",
-          "count": 1
+          "type": "blackwing-bolt"
         }
       ]
     },
@@ -120485,7 +120571,13 @@
         "rush",
         "deathrattle"
       ],
-      "description": "Rush. Deathrattle: Give your Silver Hand Recruits +1 Attack this game. (Not modeled: Silver Hand Recruits.)"
+      "description": "Rush. Deathrattle: Give your Silver Hand Recruits +1 Attack this game.",
+      "deathrattle": [
+        {
+          "type": "recruit-attack-boost",
+          "value": 1
+        }
+      ]
     },
     {
       "id": "felwood_treant",
@@ -120661,7 +120753,12 @@
       "keywords": [
         "battlecry"
       ],
-      "description": "Battlecry: Your next Murloc that costs (3) or less costs Health instead of Mana. (Not modeled: Health cost.)"
+      "description": "Battlecry: Your next Murloc that costs (3) or less costs Health instead of Mana.",
+      "effects": [
+        {
+          "type": "warloc-next"
+        }
+      ]
     },
     {
       "id": "cata_whelp",
@@ -126415,6 +126512,50 @@
         ]
       },
       "description": "Hero Power: Discover a card from your deck and draw it.",
+      "token": true,
+      "rarity": "common"
+    },
+    {
+      "id": "infinite_banana",
+      "name": "Infinite Banana",
+      "type": "sorcery",
+      "cost": 1,
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 1,
+          "health": 1,
+          "target": "creature"
+        },
+        {
+          "type": "conjure-id",
+          "id": "infinite_banana"
+        }
+      ],
+      "description": "Give a minion +1/+1. Get another Infinite Banana.",
+      "token": true,
+      "rarity": "common"
+    },
+    {
+      "id": "twilight_whelp_grow",
+      "name": "Twilight Whelp",
+      "type": "creature",
+      "cost": 1,
+      "attack": 1,
+      "health": 1,
+      "tribe": "Dragon",
+      "ongoing": {
+        "on": "turn-end",
+        "effects": [
+          {
+            "type": "buff",
+            "attack": 1,
+            "health": 1,
+            "target": "self"
+          }
+        ]
+      },
+      "description": "At the end of your turn, gain +1/+1.",
       "token": true,
       "rarity": "common"
     }
