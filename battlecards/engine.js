@@ -4910,8 +4910,8 @@ function execEffects(state, pi, effects, target, source) {
 		} else if (e.type === 'summon-random-died-game') {
 			// Psychopomp: summon a random friendly creature that died this game, optionally granting a keyword
 			const p = state.players[pi];
-			const pool = [...new Set(p.deathLogIds)].map(id => state.cardsById[id]).filter(d => d && d.type === 'creature' && (!e.requireKeyword || (d.keywords || []).includes(e.requireKeyword))); // Wakener of Souls: a Deathrattle minion
-			if (pool.length) { const c = summon(state, pi, pool[Math.floor(state.rng() * pool.length)]); if (c && e.grant && !c.keywords.includes(e.grant)) c.keywords.push(e.grant); }
+			const pool = [...new Set(p.deathLogIds)].map(id => state.cardsById[id]).filter(d => d && d.type === 'creature' && (!e.requireKeyword || (d.keywords || []).includes(e.requireKeyword)) && (e.maxCost == null || (d.cost || 0) <= e.maxCost) && (e.minCost == null || (d.cost || 0) >= e.minCost)); // Wakener of Souls / Ravenous Felhunter / Ferocious Felbat
+			if (pool.length) { const def = pool[Math.floor(state.rng() * pool.length)]; for (let n = 0; n < (e.count || 1); n++) { const c = summon(state, pi, def); if (c && e.grant && !c.keywords.includes(e.grant)) c.keywords.push(e.grant); } } // count 2 = resurrect + a copy
 		} else if (e.type === 'destroy-and-selfdamage-by-health') {
 			// Riftcleaver: destroy a creature; your hero takes damage equal to its Health
 			const t = chosenCreature();
@@ -6140,6 +6140,29 @@ function execEffects(state, pi, effects, target, source) {
 		} else if (e.type === 'refresh-friendly-attacks') {
 			// Exarch Akama: after this attacks, all OTHER friendly minions can attack again
 			for (const c of state.players[pi].board) { if (c === source || isDead(c) || c.type === 'location') continue; c.attacksUsed = 0; c.sick = false; }
+		} else if (e.type === 'resurrect-died-distinct-mincost') {
+			// Merithra: resurrect all different friendly minions that cost N or more
+			const p = state.players[pi];
+			const seen = new Set();
+			for (const id of (p.deathLogIds || [])) {
+				if (seen.has(id)) continue; seen.add(id);
+				const def = state.cardsById[id];
+				if (def && def.type === 'creature' && (def.cost || 0) >= (e.minCost || 8)) summon(state, pi, def);
+			}
+		} else if (e.type === 'copy-lowest-hand-tribe') {
+			// Tending Dragonkin: add a copy of the lowest-Cost minion of a tribe in your hand
+			const p = state.players[pi];
+			const pool = p.hand.filter(c => c !== source && c.type === 'creature' && (!e.tribe || (c.tribe || '').includes(e.tribe)));
+			if (pool.length && p.hand.length < MAX_HAND) {
+				let lo = pool[0]; for (const c of pool) if ((c.cost || 0) < (lo.cost || 0)) lo = c;
+				if (state.cardsById[lo.id]) { const cp = instantiate(state.cardsById[lo.id], pi); cp.zone = 'hand'; p.hand.push(cp); emit(state, { type: 'conjure', player: pi, card: cp, color: null }); }
+			}
+		} else if (e.type === 'reduce-hand-if-distinct-costs') {
+			// Zaqali Flamemancer: if every card in your hand has a different Cost, reduce their Costs
+			const p = state.players[pi];
+			const others = p.hand.filter(c => c !== source);
+			const costs = others.map(c => c.cost || 0);
+			if (others.length && new Set(costs).size === costs.length) { for (const c of others) c.cost = Math.max(0, (c.cost || 0) - (e.value || 2)); }
 		} else if (e.type === 'gain-deathrattles-died-this-turn') {
 			// Archdruid of Thorns: gain the Deathrattles of your minions that died this turn
 			if (source) {

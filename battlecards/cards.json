@@ -114092,6 +114092,421 @@
           "health": 4
         }
       ]
+    },
+    {
+      "id": "broll_bearmantle",
+      "name": "Broll Bearmantle",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "hunter",
+      "attack": 3,
+      "health": 5,
+      "rarity": "legendary",
+      "set": "EMERALD_DREAM",
+      "description": "After you cast a spell, summon a random Animal Companion.",
+      "ongoing": {
+        "on": "spell-played",
+        "effects": [
+          {
+            "type": "summon",
+            "count": 1,
+            "options": [
+              {
+                "name": "Huffer",
+                "attack": 4,
+                "health": 2,
+                "keywords": [
+                  "charge"
+                ]
+              },
+              {
+                "name": "Leokk",
+                "attack": 2,
+                "health": 4
+              },
+              {
+                "name": "Misha",
+                "attack": 4,
+                "health": 4,
+                "keywords": [
+                  "taunt"
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "frostburn_matriarch",
+      "name": "Frostburn Matriarch",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "deathknight",
+      "attack": 4,
+      "health": 4,
+      "rarity": "epic",
+      "set": "EMERALD_DREAM",
+      "tribe": "Dragon",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: If you're holding a minion with a Dark Gift, summon two 4/4 Dragons with Taunt. (Not modeled: Dark Gift.)"
+    },
+    {
+      "id": "grove_shaper",
+      "name": "Grove Shaper",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "druid",
+      "attack": 3,
+      "health": 6,
+      "rarity": "rare",
+      "set": "EMERALD_DREAM",
+      "description": "After you cast a Nature spell, summon a 2/2 Treant. (Not modeled: the Treant's spell-copy Deathrattle.)",
+      "ongoing": {
+        "on": "spell-played",
+        "if": {
+          "school": "Nature"
+        },
+        "effects": [
+          {
+            "type": "summon",
+            "count": 1,
+            "summonId": "edr_treant_2_2"
+          }
+        ]
+      }
+    },
+    {
+      "id": "hamuul_runetotem",
+      "name": "Hamuul Runetotem",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "druid",
+      "attack": 5,
+      "health": 6,
+      "rarity": "legendary",
+      "set": "EMERALD_DREAM",
+      "description": "Start of Game: If each spell in your deck is Nature, Imbue your Hero Power. Repeat every 3 spells you cast. (Approximated: Imbue every 3 spells; Start-of-Game not modeled.)",
+      "ongoing": {
+        "on": "spell-played",
+        "every": 3,
+        "effects": [
+          {
+            "type": "upgrade-hero-power"
+          }
+        ]
+      }
+    },
+    {
+      "id": "keeper_of_flame",
+      "name": "Keeper of Flame",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "warrior",
+      "attack": 5,
+      "health": 5,
+      "rarity": "rare",
+      "set": "EMERALD_DREAM",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Give all minions in your hand +3/+3. They are destroyed in 3 turns. (Not modeled: destroyed in 3 turns.)",
+      "effects": [
+        {
+          "type": "buff-hand",
+          "attack": 3,
+          "health": 3,
+          "all": true
+        }
+      ]
+    },
+    {
+      "id": "ravenous_felhunter",
+      "name": "Ravenous Felhunter",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "demonhunter",
+      "attack": 5,
+      "health": 3,
+      "rarity": "epic",
+      "set": "EMERALD_DREAM",
+      "tribe": "Demon",
+      "keywords": [
+        "deathrattle"
+      ],
+      "description": "Deathrattle: Resurrect a friendly Deathrattle minion that costs (4) or less. Summon a copy of it.",
+      "deathrattle": [
+        {
+          "type": "summon-random-died-game",
+          "requireKeyword": "deathrattle",
+          "maxCost": 4,
+          "count": 2
+        }
+      ]
+    },
+    {
+      "id": "tending_dragonkin",
+      "name": "Tending Dragonkin",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "hunter",
+      "attack": 5,
+      "health": 4,
+      "rarity": "common",
+      "set": "EMERALD_DREAM",
+      "tribe": "Dragon",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Copy the lowest Cost Beast in your hand.",
+      "effects": [
+        {
+          "type": "copy-lowest-hand-tribe",
+          "tribe": "Beast"
+        }
+      ]
+    },
+    {
+      "id": "tormented_dreadwing",
+      "name": "Tormented Dreadwing",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "neutral",
+      "attack": 5,
+      "health": 5,
+      "rarity": "epic",
+      "set": "EMERALD_DREAM",
+      "tribe": "Dragon",
+      "keywords": [
+        "deathrattle"
+      ],
+      "description": "Deathrattle: Draw 2 Dragons. Reduce their Costs by (1).",
+      "deathrattle": [
+        {
+          "type": "tutor",
+          "cardType": "creature",
+          "tribe": "Dragon",
+          "count": 2,
+          "costMod": -1
+        }
+      ]
+    },
+    {
+      "id": "verdant_dreamsaber",
+      "name": "Verdant Dreamsaber",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "hunter",
+      "attack": 4,
+      "health": 7,
+      "rarity": "common",
+      "set": "EMERALD_DREAM",
+      "tribe": "Beast",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: If this costs (3) or less, attack two random enemy minions. (Not modeled: cost-check attack.)"
+    },
+    {
+      "id": "wisprider",
+      "name": "Wisprider",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "mage",
+      "attack": 4,
+      "health": 4,
+      "rarity": "common",
+      "set": "EMERALD_DREAM",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Imbue your Hero Power, then trigger it. (Approximated: Imbue; trigger not modeled.)",
+      "effects": [
+        {
+          "type": "upgrade-hero-power"
+        }
+      ]
+    },
+    {
+      "id": "glowroot_lure",
+      "name": "Glowroot Lure",
+      "type": "creature",
+      "cost": 6,
+      "cardClass": "shaman",
+      "attack": 6,
+      "health": 6,
+      "rarity": "common",
+      "set": "EMERALD_DREAM",
+      "keywords": [
+        "taunt"
+      ],
+      "selfCost": {
+        "per": "hero-powers-game",
+        "amount": -1
+      },
+      "description": "Taunt. Costs (1) less for each time you used your Hero Power this game."
+    },
+    {
+      "id": "hideous_husk",
+      "name": "Hideous Husk",
+      "type": "creature",
+      "cost": 6,
+      "cardClass": "deathknight",
+      "attack": 3,
+      "health": 5,
+      "rarity": "epic",
+      "set": "EMERALD_DREAM",
+      "tribe": "Undead",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Your Leeches steal 1 more Health from their victims. Battlecry: Summon two 0/2 Leeches. (Not modeled: Leech boost.)",
+      "effects": [
+        {
+          "type": "summon",
+          "count": 2,
+          "summonId": "edr_leech"
+        }
+      ]
+    },
+    {
+      "id": "merithra",
+      "name": "Merithra",
+      "type": "creature",
+      "cost": 6,
+      "cardClass": "shaman",
+      "attack": 4,
+      "health": 4,
+      "rarity": "legendary",
+      "set": "EMERALD_DREAM",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Resurrect all different friendly minions that cost (8) or more.",
+      "effects": [
+        {
+          "type": "resurrect-died-distinct-mincost",
+          "minCost": 8
+        }
+      ]
+    },
+    {
+      "id": "zaqali_flamemancer",
+      "name": "Zaqali Flamemancer",
+      "type": "creature",
+      "cost": 6,
+      "cardClass": "neutral",
+      "attack": 4,
+      "health": 4,
+      "rarity": "epic",
+      "set": "EMERALD_DREAM",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: If every card in your hand is of a different Cost, reduce their Costs by (2).",
+      "effects": [
+        {
+          "type": "reduce-hand-if-distinct-costs",
+          "value": 2
+        }
+      ]
+    },
+    {
+      "id": "ferocious_felbat",
+      "name": "Ferocious Felbat",
+      "type": "creature",
+      "cost": 7,
+      "cardClass": "demonhunter",
+      "attack": 7,
+      "health": 5,
+      "rarity": "epic",
+      "set": "EMERALD_DREAM",
+      "tribe": "Demon",
+      "keywords": [
+        "deathrattle"
+      ],
+      "description": "Deathrattle: Resurrect a different friendly Deathrattle minion that costs (5) or more. Summon a copy of it.",
+      "deathrattle": [
+        {
+          "type": "summon-random-died-game",
+          "requireKeyword": "deathrattle",
+          "minCost": 5,
+          "count": 2
+        }
+      ]
+    },
+    {
+      "id": "nythendra",
+      "name": "Nythendra",
+      "type": "creature",
+      "cost": 7,
+      "cardClass": "deathknight",
+      "attack": 7,
+      "health": 7,
+      "rarity": "legendary",
+      "set": "EMERALD_DREAM",
+      "tribe": "Undead",
+      "keywords": [
+        "taunt",
+        "deathrattle"
+      ],
+      "description": "Taunt. Deathrattle: Split into 1/1 Beetles. At the start of your turn, reform with any remaining. (Approximated: summon 1/1 Beetles; reform not modeled.)",
+      "deathrattle": [
+        {
+          "type": "summon",
+          "count": 7,
+          "summonId": "edr_beetle"
+        }
+      ]
+    },
+    {
+      "id": "edr_treant_2_2",
+      "name": "Treant",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "druid",
+      "attack": 2,
+      "health": 2,
+      "rarity": "common",
+      "set": "EMERALD_DREAM",
+      "token": true,
+      "collectible": false,
+      "description": "A 2/2 Treant."
+    },
+    {
+      "id": "edr_leech",
+      "name": "Leech",
+      "type": "creature",
+      "cost": 1,
+      "cardClass": "deathknight",
+      "attack": 0,
+      "health": 2,
+      "rarity": "common",
+      "set": "EMERALD_DREAM",
+      "tribe": "Beast",
+      "token": true,
+      "collectible": false,
+      "keywords": [
+        "lifesteal"
+      ],
+      "description": "A 0/2 Leech with Lifesteal."
+    },
+    {
+      "id": "edr_beetle",
+      "name": "Beetle",
+      "type": "creature",
+      "cost": 1,
+      "cardClass": "deathknight",
+      "attack": 1,
+      "health": 1,
+      "rarity": "common",
+      "set": "EMERALD_DREAM",
+      "tribe": "Undead",
+      "token": true,
+      "collectible": false,
+      "description": "A 1/1 Beetle."
     }
   ]
 }
