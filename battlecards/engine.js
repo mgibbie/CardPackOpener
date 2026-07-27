@@ -6008,6 +6008,42 @@ function execEffects(state, pi, effects, target, source) {
 					break;
 				}
 			}
+		} else if (e.type === 'swap-hand-spell-costs') {
+			// Portalmancer Skyla: swap the Costs of the lowest- and highest-Cost spells in your hand
+			const p = state.players[pi];
+			const spells = p.hand.filter(c => isSpellType(c));
+			if (spells.length >= 2) {
+				let lo = spells[0], hi = spells[0];
+				for (const c of spells) { if ((c.cost || 0) < (lo.cost || 0)) lo = c; if ((c.cost || 0) > (hi.cost || 0)) hi = c; }
+				if (lo !== hi) { const tmp = lo.cost; lo.cost = hi.cost; hi.cost = tmp; }
+			}
+		} else if (e.type === 'shuffle-into-own-deck') {
+			// Incindius (approx): shuffle N copies of a token card into your deck (Eruption upgrades not modeled)
+			const p = state.players[pi];
+			if (e.id) { for (let n = 0; n < (e.count || 1); n++) p.deck.push(e.id); for (let i = p.deck.length - 1; i > 0; i--) { const j = Math.floor(state.rng() * (i + 1)); [p.deck[i], p.deck[j]] = [p.deck[j], p.deck[i]]; } emit(state, { type: 'shuffle', player: pi }); }
+		} else if (e.type === 'summon-random-from-deck') {
+			// Travelmaster Dungar (approx): summon N random minions from your deck ("different expansions" not enforced)
+			const p = state.players[pi];
+			for (let n = 0; n < (e.count || 1); n++) {
+				const idxs = p.deck.map((id, i) => ({ id, i })).filter(x => state.cardsById[x.id]?.type === 'creature');
+				if (!idxs.length) break;
+				const pick = idxs[Math.floor(state.rng() * idxs.length)];
+				p.deck.splice(pick.i, 1);
+				summon(state, pi, state.cardsById[pick.id]);
+			}
+		} else if (e.type === 'summon-enemy-beast-attack-all') {
+			// Snoozin' Zookeeper: summon an X/X Beast for the opponent that attacks all of their minions
+			for (const o of enemies) {
+				const beast = summon(state, o, { id: e.id || 'token_wild_beast', name: e.name || 'Beast', type: 'creature', cost: 0, token: true, tribe: 'Beast', rarity: 'common', attack: e.attack || 8, health: e.health || 8, keywords: [], description: `A ${e.attack || 8}/${e.health || 8} token.` });
+				if (!beast) continue;
+				beast.sick = false;
+				for (const victim of [...state.players[o].board]) {
+					if (isDead(beast)) break;
+					if (victim === beast || isDead(victim) || victim.type === 'location' || victim.dormantLeft > 0) continue;
+					resolveCombat(state, o, beast.uid, { type: 'creature', uid: victim.uid, player: o });
+				}
+				break; // one opponent (1v1)
+			}
 		} else if (e.type === 'set-weapon-stats') {
 			// Swarthy Swordshiner: set your weapon's Attack and Durability
 			const w = state.players[pi].weapon;
@@ -8321,7 +8357,9 @@ function execEffects(state, pi, effects, target, source) {
 				&& (e.rarity == null || d.rarity === e.rarity)
 				&& (e.requireKeyword == null || (d.keywords || []).includes(e.requireKeyword)) // Obsidian Revenant: Deathrattle minions
 				&& !d.companion && !d.commander && !d.token && d.collectible !== false && !(d.colors && d.colors.length));
-			for (let i = 0; i < (e.count || 1) && pool.length; i++) {
+			let howMany = e.count || 1;
+			if (e.countPer === 'schools-cast-game') howMany = (e.count || 1) + Object.keys(state.players[pi].schoolsCastGame || {}).length; // Razzle-Dazzler
+			for (let i = 0; i < howMany && pool.length; i++) {
 				const def = pool[Math.floor(state.rng() * pool.length)];
 				const owner = e.forEnemy && enemies.length
 					? enemies[Math.floor(state.rng() * enemies.length)] : pi;

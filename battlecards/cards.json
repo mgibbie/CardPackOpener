@@ -110105,6 +110105,270 @@
       "token": true,
       "collectible": false,
       "description": "A 2/3 Crocolisk."
+    },
+    {
+      "id": "portalmancer_skyla",
+      "name": "Portalmancer Skyla",
+      "type": "creature",
+      "cost": 6,
+      "cardClass": "mage",
+      "attack": 4,
+      "health": 5,
+      "rarity": "legendary",
+      "set": "ISLAND_VACATION",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Rogue Tourist. Battlecry: Swap the Costs of the lowest and highest Cost spells in your hand.",
+      "effects": [
+        {
+          "type": "swap-hand-spell-costs"
+        }
+      ]
+    },
+    {
+      "id": "spirit_peddler",
+      "name": "Spirit Peddler",
+      "type": "creature",
+      "cost": 6,
+      "cardClass": "demonhunter",
+      "attack": 6,
+      "health": 6,
+      "rarity": "rare",
+      "set": "ISLAND_VACATION",
+      "keywords": [
+        "rush",
+        "deathrattle"
+      ],
+      "description": "Rush. Deathrattle: Reduce the Cost of a random minion in your hand by (6).",
+      "deathrattle": [
+        {
+          "type": "reduce-random-hand-minion-cost",
+          "value": 6
+        }
+      ]
+    },
+    {
+      "id": "weapons_attendant",
+      "name": "Weapons Attendant",
+      "type": "creature",
+      "cost": 6,
+      "cardClass": "neutral",
+      "attack": 6,
+      "health": 4,
+      "rarity": "common",
+      "set": "ISLAND_VACATION",
+      "tribe": "Pirate",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: If you control another Pirate, equip a random weapon from your deck.",
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "controlOtherTribe": "Pirate"
+          },
+          "then": [
+            {
+              "type": "equip-weapon-from-deck"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "all_terrain_voidhound",
+      "name": "All Terrain Voidhound",
+      "type": "creature",
+      "cost": 7,
+      "cardClass": "demonhunter",
+      "attack": 5,
+      "health": 8,
+      "rarity": "epic",
+      "set": "ISLAND_VACATION",
+      "tribe": "Demon",
+      "description": "Whenever this attacks, give your hero +5 Attack this turn.",
+      "ongoing": {
+        "on": "self-attacks",
+        "effects": [
+          {
+            "type": "hero-attack",
+            "value": 5
+          }
+        ]
+      }
+    },
+    {
+      "id": "incindius",
+      "name": "Incindius",
+      "type": "creature",
+      "cost": 7,
+      "cardClass": "neutral",
+      "attack": 2,
+      "health": 10,
+      "rarity": "legendary",
+      "set": "ISLAND_VACATION",
+      "tribe": "Elemental",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "At the end of your turn, upgrade your Eruptions. Battlecry: Shuffle 5 of them into your deck. (Not modeled: Eruption upgrades.)",
+      "effects": [
+        {
+          "type": "shuffle-into-own-deck",
+          "id": "vac_eruption",
+          "count": 5
+        }
+      ]
+    },
+    {
+      "id": "marin_the_manager",
+      "name": "Marin the Manager",
+      "type": "creature",
+      "cost": 7,
+      "cardClass": "neutral",
+      "attack": 6,
+      "health": 6,
+      "rarity": "legendary",
+      "set": "ISLAND_VACATION",
+      "tribe": "Pirate",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Choose a fantastic treasure. Shuffle the other 3 into your deck. (Not modeled: treasures approximated by Discover.)",
+      "effects": [
+        {
+          "type": "discover"
+        }
+      ]
+    },
+    {
+      "id": "razzle_dazzler",
+      "name": "Razzle-Dazzler",
+      "type": "creature",
+      "cost": 7,
+      "cardClass": "shaman",
+      "attack": 4,
+      "health": 4,
+      "rarity": "epic",
+      "set": "ISLAND_VACATION",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Summon a random 5-Cost minion. Repeat for each spell school you've cast this game.",
+      "effects": [
+        {
+          "type": "summon-random",
+          "cost": 5,
+          "count": 1,
+          "countPer": "schools-cast-game"
+        }
+      ]
+    },
+    {
+      "id": "sasquawk",
+      "name": "Sasquawk",
+      "type": "creature",
+      "cost": 7,
+      "cardClass": "hunter",
+      "attack": 4,
+      "health": 5,
+      "rarity": "legendary",
+      "set": "ISLAND_VACATION",
+      "tribe": "Beast",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Repeat each card you played last turn. (Not modeled: last-turn replay.)"
+    },
+    {
+      "id": "snoozin_zookeeper",
+      "name": "Snoozin' Zookeeper",
+      "type": "creature",
+      "cost": 7,
+      "cardClass": "neutral",
+      "attack": 5,
+      "health": 8,
+      "rarity": "epic",
+      "set": "ISLAND_VACATION",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Summon an 8/8 Beast for your opponent. It attacks all of their minions.",
+      "effects": [
+        {
+          "type": "summon-enemy-beast-attack-all",
+          "attack": 8,
+          "health": 8
+        }
+      ]
+    },
+    {
+      "id": "muensterosity",
+      "name": "Muensterosity",
+      "type": "creature",
+      "cost": 9,
+      "cardClass": "warrior",
+      "attack": 6,
+      "health": 9,
+      "rarity": "epic",
+      "set": "ISLAND_VACATION",
+      "keywords": [
+        "taunt"
+      ],
+      "description": "Taunt. At the end of your turn, summon an Elemental with stats equal to this minion's.",
+      "ongoing": {
+        "on": "turn-end",
+        "effects": [
+          {
+            "type": "summon-with-source-stats",
+            "id": "token_muenster_elemental",
+            "name": "Elemental",
+            "tribe": "Elemental"
+          }
+        ]
+      }
+    },
+    {
+      "id": "travelmaster_dungar",
+      "name": "Travelmaster Dungar",
+      "type": "creature",
+      "cost": 10,
+      "cardClass": "neutral",
+      "attack": 3,
+      "health": 3,
+      "rarity": "legendary",
+      "set": "ISLAND_VACATION",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Summon three minions from your deck that are from different expansions. (Not modeled: different-expansions constraint.)",
+      "effects": [
+        {
+          "type": "summon-random-from-deck",
+          "count": 3
+        }
+      ]
+    },
+    {
+      "id": "vac_eruption",
+      "name": "Eruption",
+      "type": "sorcery",
+      "cost": 1,
+      "cardClass": "neutral",
+      "rarity": "common",
+      "set": "ISLAND_VACATION",
+      "token": true,
+      "collectible": false,
+      "description": "Deal 3 damage.",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 3,
+          "target": "any"
+        }
+      ]
     }
   ]
 }
