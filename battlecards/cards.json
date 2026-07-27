@@ -118755,6 +118755,382 @@
           "count": 1
         }
       ]
+    },
+    {
+      "id": "soldier_of_the_bronze",
+      "name": "Soldier of the Bronze",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "neutral",
+      "attack": 5,
+      "health": 3,
+      "rarity": "common",
+      "set": "TIME_TRAVEL",
+      "tribe": "Dragon",
+      "keywords": [
+        "taunt",
+        "battlecry"
+      ],
+      "description": "Taunt. Battlecry: Double this minion's Health.",
+      "effects": [
+        {
+          "type": "double-self-health"
+        }
+      ]
+    },
+    {
+      "id": "stormrook",
+      "name": "Stormrook",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "shaman",
+      "attack": 5,
+      "health": 5,
+      "rarity": "common",
+      "set": "TIME_TRAVEL",
+      "tribe": "Elemental",
+      "description": "Whenever you would damage this with a Nature spell, summon a random 5-Cost minion instead. (Not modeled: Nature-damage redirect.)"
+    },
+    {
+      "id": "time_admral_hooktail",
+      "name": "Time Adm'ral Hooktail",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "rogue",
+      "attack": 4,
+      "health": 6,
+      "rarity": "common",
+      "set": "TIME_TRAVEL",
+      "tribe": "Dragon",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Summon a 0/8 Chest for your opponent. (Not modeled: the Chest's Coins.)",
+      "effects": [
+        {
+          "type": "summon",
+          "count": 1,
+          "summonId": "time_chest",
+          "forEnemy": true
+        }
+      ]
+    },
+    {
+      "id": "triennium_rex",
+      "name": "Triennium Rex",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "hunter",
+      "attack": 5,
+      "health": 5,
+      "rarity": "epic",
+      "set": "TIME_TRAVEL",
+      "tribe": "Beast",
+      "keywords": [
+        "deathrattle"
+      ],
+      "description": "Kindred and Deathrattle: Get a random Deathrattle minion. It costs (2) less. (Kindred approximated: fires on play.)",
+      "effects": [
+        {
+          "type": "conjure-random",
+          "cardType": "creature",
+          "requireKeyword": "deathrattle",
+          "costMod": -2
+        }
+      ],
+      "deathrattle": [
+        {
+          "type": "conjure-random",
+          "cardType": "creature",
+          "requireKeyword": "deathrattle",
+          "costMod": -2
+        }
+      ]
+    },
+    {
+      "id": "unknown_voyager",
+      "name": "Unknown Voyager",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "neutral",
+      "attack": 4,
+      "health": 5,
+      "rarity": "common",
+      "set": "TIME_TRAVEL",
+      "description": "After this survives damage, transform into a random 7-Cost minion.",
+      "ongoing": {
+        "on": "self-damaged",
+        "survives": true,
+        "effects": [
+          {
+            "type": "transform-self-random-cost",
+            "cost": 7
+          }
+        ]
+      }
+    },
+    {
+      "id": "chromie",
+      "name": "Chromie",
+      "type": "creature",
+      "cost": 6,
+      "cardClass": "neutral",
+      "attack": 4,
+      "health": 6,
+      "rarity": "legendary",
+      "set": "TIME_TRAVEL",
+      "keywords": [
+        "deathrattle"
+      ],
+      "description": "Deathrattle: Draw another copy of cards you've played this game. (Approximated: draw 2 cards.)",
+      "deathrattle": [
+        {
+          "type": "draw",
+          "value": 2
+        }
+      ]
+    },
+    {
+      "id": "chrono_lord_epoch",
+      "name": "Chrono-Lord Epoch",
+      "type": "creature",
+      "cost": 6,
+      "cardClass": "warrior",
+      "attack": 7,
+      "health": 5,
+      "rarity": "legendary",
+      "set": "TIME_TRAVEL",
+      "tribe": "Dragon",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Destroy all minions that your opponent played last turn. (Not modeled: last-turn-played tracking.)"
+    },
+    {
+      "id": "chronogor",
+      "name": "Chronogor",
+      "type": "creature",
+      "cost": 6,
+      "cardClass": "warlock",
+      "attack": 6,
+      "health": 7,
+      "rarity": "epic",
+      "set": "TIME_TRAVEL",
+      "tribe": "Dragon",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: You draw your 2 highest Cost cards. Your opponent draws your 2 lowest Cost cards. (Approximated: draw your 2 highest.)",
+      "effects": [
+        {
+          "type": "draw-highest"
+        },
+        {
+          "type": "draw-highest"
+        }
+      ]
+    },
+    {
+      "id": "druid_of_regrowth",
+      "name": "Druid of Regrowth",
+      "type": "creature",
+      "cost": 6,
+      "cardClass": "druid",
+      "attack": 3,
+      "health": 5,
+      "rarity": "rare",
+      "set": "TIME_TRAVEL",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Rewind. Battlecry: Cast 2 random Nature spells. (Not modeled: Rewind.)",
+      "effects": [
+        {
+          "type": "cast-random-spell",
+          "count": 2,
+          "school": "Nature"
+        }
+      ]
+    },
+    {
+      "id": "epoch_stalker",
+      "name": "Epoch Stalker",
+      "type": "creature",
+      "cost": 6,
+      "cardClass": "hunter",
+      "attack": 3,
+      "health": 4,
+      "rarity": "common",
+      "set": "TIME_TRAVEL",
+      "tribe": "Beast",
+      "keywords": [
+        "rush",
+        "elusive",
+        "battlecry"
+      ],
+      "description": "Rush, Elusive. Battlecry: Summon a copy of this.",
+      "effects": [
+        {
+          "type": "summon-copy-of-self",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "id": "eternus",
+      "name": "Eternus",
+      "type": "creature",
+      "cost": 6,
+      "cardClass": "priest",
+      "attack": 6,
+      "health": 2,
+      "rarity": "legendary",
+      "set": "TIME_TRAVEL",
+      "tribe": "Dragon",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Take control of an enemy minion with this minion's Health or less.",
+      "effects": [
+        {
+          "type": "mind-control",
+          "target": "enemy-creature",
+          "maxHealth": 2
+        }
+      ]
+    },
+    {
+      "id": "krona_keeper_of_eons",
+      "name": "Krona, Keeper of Eons",
+      "type": "creature",
+      "cost": 6,
+      "cardClass": "druid",
+      "attack": 4,
+      "health": 7,
+      "rarity": "legendary",
+      "set": "TIME_TRAVEL",
+      "keywords": [
+        "taunt",
+        "battlecry"
+      ],
+      "description": "Taunt. Battlecry: Set the Costs of the bottom 5 cards of your deck to (1).",
+      "effects": [
+        {
+          "type": "set-deck-bottom-costs",
+          "count": 5,
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "pmm_infinitizer",
+      "name": "PMM Infinitizer",
+      "type": "creature",
+      "cost": 6,
+      "cardClass": "paladin",
+      "attack": 4,
+      "health": 4,
+      "rarity": "common",
+      "set": "TIME_TRAVEL",
+      "tribe": "Mech",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Set a friendly minion's Attack and Health to 8. It can't attack heroes this turn. (Not modeled: can't-attack-heroes.)",
+      "effects": [
+        {
+          "type": "set-target-stats",
+          "target": "friendly-creature",
+          "attack": 8,
+          "health": 8
+        }
+      ]
+    },
+    {
+      "id": "sentient_hourglass",
+      "name": "Sentient Hourglass",
+      "type": "creature",
+      "cost": 6,
+      "cardClass": "neutral",
+      "attack": 4,
+      "health": 9,
+      "rarity": "rare",
+      "set": "TIME_TRAVEL",
+      "tribe": "Elemental",
+      "keywords": [
+        "rush"
+      ],
+      "description": "Rush. After this minion survives damage, swap its stats.",
+      "ongoing": {
+        "on": "self-damaged",
+        "survives": true,
+        "effects": [
+          {
+            "type": "swap-self-stats"
+          }
+        ]
+      }
+    },
+    {
+      "id": "twilight_timereaver",
+      "name": "Twilight Timereaver",
+      "type": "creature",
+      "cost": 6,
+      "cardClass": "neutral",
+      "attack": 5,
+      "health": 5,
+      "rarity": "epic",
+      "set": "TIME_TRAVEL",
+      "tribe": "Dragon",
+      "description": "Choose One - Set the Attack of all other minions to 1; or Health to 1.",
+      "choices": [
+        {
+          "text": "Set Attack of all other minions to 1",
+          "effects": [
+            {
+              "type": "set-attack",
+              "target": "all-others",
+              "value": 1
+            }
+          ]
+        },
+        {
+          "text": "Set Health of all other minions to 1",
+          "effects": [
+            {
+              "type": "set-health",
+              "target": "all-others",
+              "value": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "chrono_lord_deios",
+      "name": "Chrono-Lord Deios",
+      "type": "creature",
+      "cost": 7,
+      "cardClass": "neutral",
+      "attack": 4,
+      "health": 8,
+      "rarity": "legendary",
+      "set": "TIME_TRAVEL",
+      "description": "Your Battlecries, Deathrattles, Hero Power, and end of turn effects trigger twice. (Not modeled: double-trigger aura.)"
+    },
+    {
+      "id": "time_chest",
+      "name": "Chest",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "neutral",
+      "attack": 0,
+      "health": 8,
+      "rarity": "common",
+      "set": "TIME_TRAVEL",
+      "token": true,
+      "collectible": false,
+      "description": "A 0/8 Chest."
     }
   ]
 }

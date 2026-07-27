@@ -4333,7 +4333,7 @@ function execEffects(state, pi, effects, target, source) {
 			let t = null;
 			if (e.type === 'mind-control') {
 				const c = chosenCreature();
-				if (c && c.controller !== pi && (e.maxAttack == null || c.attack <= e.maxAttack)) t = c;
+				if (c && c.controller !== pi && (e.maxAttack == null || c.attack <= e.maxAttack) && (e.maxHealth == null || hp(c) <= e.maxHealth)) t = c; // Eternus: Health or less
 			} else {
 				const pool = [];
 				for (const o of enemies) {
@@ -5215,6 +5215,17 @@ function execEffects(state, pi, effects, target, source) {
 		} else if (e.type === 'set-hand-minions-to-higher-stat') {
 			// Divine Augur: set the Attack and Health of every minion in your hand to the higher of the two
 			for (const c of state.players[pi].hand) if (c.type === 'creature') { const hi = Math.max(c.attack || 0, c.maxHealth || 0); c.attack = hi; c.maxHealth = hi; emit(state, { type: 'buff', uid: c.uid, attack: c.attack, hp: hp(c) }); }
+		} else if (e.type === 'double-self-health') {
+			// Soldier of the Bronze: double this minion's Health
+			if (source && !isDead(source)) { source.maxHealth = (source.maxHealth || 0) * 2; emit(state, { type: 'buff', uid: source.uid, attack: source.attack, hp: hp(source) }); }
+		} else if (e.type === 'swap-self-stats') {
+			// Sentient Hourglass: swap this minion's Attack and Health
+			if (source && !isDead(source)) { const a = source.attack || 0, h = hp(source); source.attack = h; source.maxHealth = a; source.damage = 0; source.tempHealth = 0; emit(state, { type: 'buff', uid: source.uid, attack: source.attack, hp: hp(source) }); }
+		} else if (e.type === 'set-deck-bottom-costs') {
+			// Krona, Keeper of Eons: set the Costs of the bottom N cards of your deck (front of array = bottom)
+			const p = state.players[pi];
+			p.deckCostOverrides = p.deckCostOverrides || {};
+			for (let i = 0; i < (e.count || 5) && i < p.deck.length; i++) p.deckCostOverrides[p.deck[i]] = (e.value ?? 1);
 		} else if (e.type === 'reverse-deck') {
 			// Timeless Causality: reverse the order of your deck
 			state.players[pi].deck.reverse();
@@ -7686,6 +7697,7 @@ function execEffects(state, pi, effects, target, source) {
 					&& !(d.colors && d.colors.length) && !d.choices && !d.xSpell && !d.counterSpell
 					&& (e.cardClass == null || (d.cardClass || 'neutral') === e.cardClass) // Solarian Prime: Mage spells
 					&& (e.cost == null || (d.cost || 0) === e.cost) // Enchanted Cauldron: same Cost
+					&& (e.school == null || schoolOf(d) === e.school) // Druid of Regrowth: Nature spells
 					&& (e.minCost == null || (d.cost || 0) >= e.minCost));
 				if (!pool.length) break;
 				const spell = instantiate(pool[Math.floor(state.rng() * pool.length)], pi);
