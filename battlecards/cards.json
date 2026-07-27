@@ -110369,6 +110369,387 @@
           "target": "any"
         }
       ]
+    },
+    {
+      "id": "astral_vigilant",
+      "name": "Astral Vigilant",
+      "type": "creature",
+      "cost": 1,
+      "cardClass": "neutral",
+      "attack": 1,
+      "health": 2,
+      "rarity": "common",
+      "set": "SPACE",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Get a copy of the last Draenei you played.",
+      "effects": [
+        {
+          "type": "copy-last-tribe-played",
+          "tribe": "Draenei"
+        }
+      ]
+    },
+    {
+      "id": "auchenai_death_speaker",
+      "name": "Auchenai Death-Speaker",
+      "type": "creature",
+      "cost": 1,
+      "cardClass": "deathknight",
+      "attack": 1,
+      "health": 3,
+      "rarity": "rare",
+      "set": "SPACE",
+      "tribe": "Draenei",
+      "description": "After another friendly minion is Reborn, summon a copy of it.",
+      "ongoing": {
+        "on": "minion-reborn",
+        "effects": [
+          {
+            "type": "summon-copy-of-triggering-minion"
+          }
+        ]
+      }
+    },
+    {
+      "id": "eldritch_being",
+      "name": "Eldritch Being",
+      "type": "creature",
+      "cost": 1,
+      "cardClass": "demonhunter",
+      "attack": 1,
+      "health": 3,
+      "rarity": "common",
+      "set": "SPACE",
+      "keywords": [
+        "outcast"
+      ],
+      "description": "Outcast and Spellburst: Shuffle your hand.",
+      "outcast": {
+        "effects": [
+          {
+            "type": "shuffle-hand-redraw"
+          }
+        ]
+      },
+      "ongoing": {
+        "on": "spell-played",
+        "once": true,
+        "effects": [
+          {
+            "type": "shuffle-hand-redraw"
+          }
+        ]
+      }
+    },
+    {
+      "id": "overzealous_healer",
+      "name": "Overzealous Healer",
+      "type": "creature",
+      "cost": 1,
+      "cardClass": "priest",
+      "attack": 3,
+      "health": 3,
+      "rarity": "common",
+      "set": "SPACE",
+      "tribe": "Draenei",
+      "keywords": [
+        "deathrattle"
+      ],
+      "description": "Deathrattle: Restore 6 Health to the enemy hero. Spellburst: Silence this minion.",
+      "deathrattle": [
+        {
+          "type": "heal",
+          "value": 6,
+          "target": "enemy-hero"
+        }
+      ],
+      "ongoing": {
+        "on": "spell-played",
+        "once": true,
+        "effects": [
+          {
+            "type": "silence",
+            "target": "self"
+          }
+        ]
+      }
+    },
+    {
+      "id": "rangari_scout",
+      "name": "Rangari Scout",
+      "type": "creature",
+      "cost": 1,
+      "cardClass": "hunter",
+      "attack": 1,
+      "health": 2,
+      "rarity": "common",
+      "set": "SPACE",
+      "tribe": "Draenei",
+      "description": "After you Discover a card, get a copy of it.",
+      "ongoing": {
+        "on": "card-discovered",
+        "effects": [
+          {
+            "type": "add-copy-of-discovered"
+          }
+        ]
+      }
+    },
+    {
+      "id": "scv",
+      "name": "SCV",
+      "type": "creature",
+      "cost": 1,
+      "cardClass": "neutral",
+      "attack": 1,
+      "health": 3,
+      "rarity": "common",
+      "set": "SPACE",
+      "tribe": "Mech",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Your next Starship launch costs (2) less. (Not modeled: Starships.)"
+    },
+    {
+      "id": "space_pirate",
+      "name": "Space Pirate",
+      "type": "creature",
+      "cost": 1,
+      "cardClass": "neutral",
+      "attack": 2,
+      "health": 1,
+      "rarity": "common",
+      "set": "SPACE",
+      "tribe": "Pirate",
+      "keywords": [
+        "deathrattle"
+      ],
+      "description": "Deathrattle: Your next weapon costs (1) less.",
+      "deathrattle": [
+        {
+          "type": "set-next-weapon-discount",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "spacerock_collector",
+      "name": "Spacerock Collector",
+      "type": "creature",
+      "cost": 1,
+      "cardClass": "rogue",
+      "attack": 2,
+      "health": 1,
+      "rarity": "common",
+      "set": "SPACE",
+      "tribe": "Draenei",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Your next Combo card costs (1) less.",
+      "effects": [
+        {
+          "type": "set-combo-discount",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "starlight_wanderer",
+      "name": "Starlight Wanderer",
+      "type": "creature",
+      "cost": 1,
+      "cardClass": "neutral",
+      "attack": 2,
+      "health": 1,
+      "rarity": "common",
+      "set": "SPACE",
+      "tribe": "Draenei",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: The next Draenei you play gains +2/+1.",
+      "effects": [
+        {
+          "type": "set-next-tribe-play-reward",
+          "tribe": "Draenei",
+          "attack": 2,
+          "health": 1,
+          "count": 1
+        }
+      ]
+    },
+    {
+      "id": "astrobiologist",
+      "name": "Astrobiologist",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "neutral",
+      "attack": 2,
+      "health": 2,
+      "rarity": "common",
+      "set": "SPACE",
+      "tribe": "Draenei",
+      "description": "Battlecry: At the start of your next turn, Discover a spell.",
+      "ongoing": {
+        "on": "turn-start",
+        "once": true,
+        "effects": [
+          {
+            "type": "discover",
+            "cardType": "spell"
+          }
+        ]
+      }
+    },
+    {
+      "id": "biopod",
+      "name": "Biopod",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "hunter",
+      "attack": 2,
+      "health": 2,
+      "rarity": "common",
+      "set": "SPACE",
+      "keywords": [
+        "deathrattle"
+      ],
+      "description": "Deathrattle: Deal damage equal to this minion's Attack to a random enemy. (Starship Piece.)",
+      "deathrattle": [
+        {
+          "type": "damage-random-enemy-by-attack"
+        }
+      ]
+    },
+    {
+      "id": "braingill",
+      "name": "Braingill",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "neutral",
+      "attack": 2,
+      "health": 1,
+      "rarity": "common",
+      "set": "SPACE",
+      "tribe": "Murloc",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Give your other Murlocs \"Deathrattle: Draw a card.\"",
+      "effects": [
+        {
+          "type": "grant-deathrattle",
+          "target": "friendly-others",
+          "tribe": "Murloc",
+          "effects": [
+            {
+              "type": "draw",
+              "value": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "crystal_welder",
+      "name": "Crystal Welder",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "neutral",
+      "attack": 2,
+      "health": 3,
+      "rarity": "common",
+      "set": "SPACE",
+      "keywords": [
+        "taunt"
+      ],
+      "description": "Taunt. Battlecry: If you're building a Starship, gain +2/+2. (Not modeled: Starships.)"
+    },
+    {
+      "id": "eredar_skulker",
+      "name": "Eredar Skulker",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "rogue",
+      "attack": 1,
+      "health": 3,
+      "rarity": "common",
+      "set": "SPACE",
+      "tribe": "Demon",
+      "keywords": [
+        "combo"
+      ],
+      "description": "Combo and Spellburst: Gain +2 Attack and Stealth.",
+      "combo": [
+        {
+          "type": "buff",
+          "attack": 2,
+          "target": "self"
+        },
+        {
+          "type": "grant",
+          "keyword": "stealth",
+          "target": "self"
+        }
+      ],
+      "ongoing": {
+        "on": "spell-played",
+        "once": true,
+        "effects": [
+          {
+            "type": "buff",
+            "attack": 2,
+            "target": "self"
+          },
+          {
+            "type": "grant",
+            "keyword": "stealth",
+            "target": "self"
+          }
+        ]
+      }
+    },
+    {
+      "id": "felfused_battery",
+      "name": "Felfused Battery",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "demonhunter",
+      "attack": 2,
+      "health": 3,
+      "rarity": "common",
+      "set": "SPACE",
+      "description": "After this attacks, give your other minions +1 Attack. (Starship Piece.)",
+      "ongoing": {
+        "on": "self-attacks",
+        "effects": [
+          {
+            "type": "buff",
+            "attack": 1,
+            "target": "all-others"
+          }
+        ]
+      }
+    },
+    {
+      "id": "foreboding_flame",
+      "name": "Foreboding Flame",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "warlock",
+      "attack": 2,
+      "health": 3,
+      "rarity": "common",
+      "set": "SPACE",
+      "tribe": "Elemental",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Demons that didn't start in your deck cost (1) less this game. (Not modeled: foreign-Demon discount.)"
     }
   ]
 }

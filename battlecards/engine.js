@@ -376,6 +376,9 @@ export function createGame(cardsById, rng = Math.random, playerDeckIds = null, p
 		nextChooseOneDiscount: 0, // Pride Seeker: your next Choose One card costs this much less
 		nextSpellDiscount: 0, // Murkwater Scribe: your next spell costs this much less
 		nextTribeDiscount: null, // Clownfish: {tribe, count, amount} for your next minions of a tribe
+		nextTribePlayReward: null, // The Great Dark Beyond Draenei: {tribe, count, attack, health, keyword, immediateAttack} for your next minions of a tribe you PLAY
+		nextWeaponDiscount: 0, // Space Pirate: your next weapon costs this much less
+		lastDraeneiId: null, // Astral Vigilant: the last Draenei you played
 		mana: { cur: 1, max: 1, bonus: 0 },
 		coins: 0,
 		diedThisTurn: 0,
@@ -1297,6 +1300,7 @@ function sweepDeaths(state) {
 				c.auraKeywords = [];
 				p.board.push(c);
 				emit(state, { type: 'reborn', uid: c.uid, player: pi, name: c.name });
+				fireOngoing(state, pi, 'minion-reborn', { minion: c }); // Auchenai Death-Speaker
 				continue; // no graveyard, no deathrattle
 			}
 			if (c.marked) drawCards(state, c.markedBy, 2);
@@ -2941,6 +2945,18 @@ function runSecretEffects(state, pi, effects, ctx) {
 				}
 				break;
 			}
+			case 'summon-copy-of-triggering-minion': {
+				// Auchenai Death-Speaker: after a friendly minion is Reborn, summon a copy of it
+				const m = ctx.minion;
+				if (m && state.cardsById[m.id]) summon(state, pi, state.cardsById[m.id]);
+				break;
+			}
+			case 'add-copy-of-discovered': {
+				// Rangari Scout: after you Discover a card, get a copy of it
+				const src = ctx.card, p = state.players[pi];
+				if (src && state.cardsById[src.id] && p.hand.length < MAX_HAND) { const cp = instantiate(state.cardsById[src.id], pi); cp.zone = 'hand'; p.hand.push(cp); emit(state, { type: 'conjure', player: pi, card: cp, color: null }); }
+				break;
+			}
 			default:
 				// pass the firing permanent through as `source` so self-scoped
 				// effects (temp-buff-self, gain-weapon-attack) still work
@@ -3486,6 +3502,7 @@ function execEffects(state, pi, effects, target, source) {
 		} else if (e.type === 'silence') {
 			if (e.target === 'enemy-creatures') { for (const o of enemies) for (const c of state.players[o].board) silenceCreature(state, c); }
 			else if (e.target === 'friendly-others') { for (const c of [...state.players[pi].board]) if (c !== source && !isDead(c)) silenceCreature(state, c); } // Wailing Soul
+			else if (e.target === 'self') { if (source && !isDead(source)) silenceCreature(state, source); } // Overzealous Healer (Spellburst)
 			else { const t = chosenCreature(); if (t) silenceCreature(state, t); }
 		} else if (e.type === 'random-damage') {
 			// count independent hits of `value` at random members of the pool;
@@ -4300,7 +4317,7 @@ function execEffects(state, pi, effects, target, source) {
 		} else if (e.type === 'grant-deathrattle') {
 			const targets = e.target === 'creature' ? [chosenCreature()].filter(Boolean)
 				: e.target === 'self' ? (source && source.zone === 'board' && !isDead(source) ? [source] : []) // Fatespinner
-				: e.target === 'friendly-others' ? state.players[pi].board.filter(c => c !== source && !isDead(c) && c.type !== 'location') // Rustsworn Cultist
+				: e.target === 'friendly-others' ? state.players[pi].board.filter(c => c !== source && !isDead(c) && c.type !== 'location' && (!e.tribe || (c.tribe || '').includes(e.tribe))) // Rustsworn Cultist / Braingill (tribe filter)
 				: state.players[pi].board.filter(c => !isDead(c));
 			for (const c of targets) {
 				c.deathrattle = (c.deathrattle || []).concat(JSON.parse(JSON.stringify(e.effects)));
@@ -6043,6 +6060,24 @@ function execEffects(state, pi, effects, target, source) {
 					resolveCombat(state, o, beast.uid, { type: 'creature', uid: victim.uid, player: o });
 				}
 				break; // one opponent (1v1)
+			}
+		} else if (e.type === 'set-next-tribe-play-reward') {
+			// The Great Dark Beyond Draenei: your next N minions of a tribe gain stats/keyword/immediate-attack when PLAYED
+			state.players[pi].nextTribePlayReward = { tribe: e.tribe || 'Draenei', count: e.count || 1, attack: e.attack || 0, health: e.health || 0, keyword: e.keyword || null, immediateAttack: !!e.immediateAttack };
+		} else if (e.type === 'copy-last-tribe-played') {
+			// Astral Vigilant: get a copy of the last Draenei you played
+			const p = state.players[pi];
+			const id = (e.tribe === 'Draenei' || !e.tribe) ? p.lastDraeneiId : null;
+			if (id && state.cardsById[id] && p.hand.length < MAX_HAND) { const cp = instantiate(state.cardsById[id], pi); cp.zone = 'hand'; p.hand.push(cp); emit(state, { type: 'conjure', player: pi, card: cp, color: null }); }
+		} else if (e.type === 'set-next-weapon-discount') {
+			// Space Pirate: your next weapon costs (N) less
+			state.players[pi].nextWeaponDiscount = (state.players[pi].nextWeaponDiscount || 0) + (e.value || 1);
+		} else if (e.type === 'damage-random-enemy-by-attack') {
+			// Biopod: deal damage equal to this minion's Attack to a random enemy
+			if (source) {
+				const amt = source.attack || 0;
+				const pool = []; for (const o of enemies) { for (const c of state.players[o].board) if (!isDead(c) && c.type !== 'location') pool.push({ o, c }); pool.push({ o, c: null }); }
+				if (amt > 0 && pool.length) { const pick = pool[Math.floor(state.rng() * pool.length)]; if (pick.c) damageCreature(state, pick.c, amt, source); else damageHero(state, pick.o, amt, pi); }
 			}
 		} else if (e.type === 'set-weapon-stats') {
 			// Swarthy Swordshiner: set your weapon's Attack and Durability
@@ -8786,6 +8821,7 @@ export function effectiveCost(state, pi, card) {
 	{ const sch = schoolOf(card); if (sch) { const r = p.board.filter(x => x.schoolCostReduce && x.schoolCostReduce.school === sch && !isDead(x)).reduce((s, x) => s + x.schoolCostReduce.amount, 0); if (r) c = Math.max(0, c - r); } } // Lady Anacondra: Nature spells
 	if (p.battlecryTaxNext > 0 && (card.keywords || []).includes('battlecry')) c += p.battlecryTaxNext; // Boompistol Bully
 	if (p.libramDiscount > 0 && /Libram/.test(card.name || '')) c = Math.max(0, c - p.libramDiscount); // Aldor Attendant/Truthseeker
+	if (p.nextWeaponDiscount > 0 && card.type === 'weapon') c = Math.max(0, c - p.nextWeaponDiscount); // Space Pirate
 	if (card.type === 'creature' && p.enemyMinionTaxTurn === state.turnNumber && p.enemyMinionTaxAmount) c += p.enemyMinionTaxAmount; // Forensic Duster
 	if (p.overloadDiscount > 0 && (card.overload || 0) > 0) c = Math.max(0, c - p.overloadDiscount); // Inzah
 	if (p.firstCardFreeEachTurn && (p.cardsPlayedThisTurn || 0) === 0) c = 0; // Bonelord Frostwhisper: first card each turn is free
@@ -8871,6 +8907,7 @@ export function playCard(state, pi, cardUid, target, choice, position, useAlt, k
 	if (card.combo && p.nextComboDiscount > 0) p.nextComboDiscount = 0; // Foxy Fraud discount is spent by the next Combo card
 	if (card.choices && p.nextChooseOneDiscount > 0) p.nextChooseOneDiscount = 0; // Pride Seeker discount is spent by the next Choose One card
 	if (isSpellType(card) && p.nextSpellDiscount > 0) p.nextSpellDiscount = 0; // Murkwater Scribe: spent by the next spell
+	if (card.type === 'weapon' && p.nextWeaponDiscount > 0) p.nextWeaponDiscount = 0; // Space Pirate: spent by the next weapon
 	if (isSpellType(card) && p.nextSchoolDiscount && schoolOf(card) === p.nextSchoolDiscount.school) p.nextSchoolDiscount = null; // Holy Cowboy: spent by the next matching spell
 	if (card.type === 'creature' && p.nextTribeDiscount && p.nextTribeDiscount.count > 0 && (card.tribe || '').includes(p.nextTribeDiscount.tribe)) { p.nextTribeDiscount.count -= 1; if (p.nextTribeDiscount.count <= 0) p.nextTribeDiscount = null; } // Clownfish
 	if (p.nextCardsDiscount && p.nextCardsDiscount.count > 0) { p.nextCardsDiscount.count -= 1; if (p.nextCardsDiscount.count <= 0) p.nextCardsDiscount = null; } // Scabbs: consumed per card
@@ -8957,6 +8994,15 @@ export function playCard(state, pi, cardUid, target, choice, position, useAlt, k
 		card.sick = true;
 		if (card.scaleOnEntry) { const n = p.enteredCountById?.[card.id] || 0; if (n > 0) { card.attack += (card.scaleOnEntry.attack || 0) * n; card.maxHealth += (card.scaleOnEntry.health || 0) * n; } } // Astral Automaton (played from hand)
 		if (p.nextMinionStats && p.nextMinionStats.count > 0) { card.attack = p.nextMinionStats.attack; card.maxHealth = p.nextMinionStats.health; card.damage = 0; p.nextMinionStats.count--; if (p.nextMinionStats.count <= 0) p.nextMinionStats = null; } // Hodir: set the next N minions to fixed stats
+		// "The next Draenei you play gains +X/+Y / a keyword / attacks immediately" (Starlight Wanderer, Stranded Spaceman, Expedition Sergeant)
+		let draeneiImmediateAttack = false;
+		if (p.nextTribePlayReward && p.nextTribePlayReward.count > 0 && (card.tribe || '').includes(p.nextTribePlayReward.tribe)) {
+			const r = p.nextTribePlayReward;
+			card.attack += r.attack || 0; card.maxHealth += r.health || 0;
+			if (r.keyword && !card.keywords.includes(r.keyword)) { card.keywords.push(r.keyword); if (r.keyword === KW.DIVINE_SHIELD) card.shield = true; }
+			if (r.immediateAttack) draeneiImmediateAttack = true;
+			r.count -= 1; if (r.count <= 0) p.nextTribePlayReward = null;
+		}
 		(p.enteredCountById = p.enteredCountById || {})[card.id] = (p.enteredCountById[card.id] || 0) + 1;
 		// position = insertion index (adjacency matters); default = right end
 		if (position == null || position >= p.board.length) p.board.push(card);
@@ -8976,6 +9022,12 @@ export function playCard(state, pi, cardUid, target, choice, position, useAlt, k
 			// opponents' ongoing reactions to you playing a creature (Holomancer / Harbinger Celestia)
 			if (p.board.includes(card) && !isDead(card)) for (const o of opponentsOf(state, pi)) fireOngoing(state, o, 'enemy-creature-played', { minion: card });
 			if (p.board.includes(card) && !isDead(card)) fireOngoing(state, pi, 'creature-played', { minion: card });
+				if ((card.tribe || '').includes('Draenei')) p.lastDraeneiId = card.id; // Astral Vigilant
+				if (draeneiImmediateAttack && p.board.includes(card) && !isDead(card)) { // Expedition Sergeant: the buffed Draenei attacks a random enemy at once
+					card.sick = false;
+					const foes = []; for (const o of opponentsOf(state, pi)) { for (const c of state.players[o].board) if (!isDead(c) && c.type !== 'location' && !c.stealthed && c.dormantLeft <= 0) foes.push({ type: 'creature', uid: c.uid, player: o }); foes.push({ type: 'hero', player: o }); }
+					if (foes.length && !isDead(card)) resolveCombat(state, pi, card.uid, foes[Math.floor(state.rng() * foes.length)]);
+				}
 				if ((card.keywords || []).includes('battlecry') || card.combo) fireOngoing(state, pi, 'battlecry-or-combo-played', { played: card }); // Field Contact
 				if (card._outcast) fireOngoing(state, pi, 'edge-card-played', { played: card }); // Razorglaive Sentinel
 			// Grand Lackey Erkh: after you play a Lackey
@@ -10111,6 +10163,7 @@ export function resolvePick(state, id) {
 		p.hand.push(card);
 		emit(state, { type: 'conjure', player: pend.player, card, color: null });
 		fireEmerge(state, pend.player, card);
+		if (!pend.noDiscoverTrigger) fireOngoing(state, pend.player, 'card-discovered', { card }); // Rangari Scout
 	}
 	return true;
 }
