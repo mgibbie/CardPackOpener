@@ -1542,6 +1542,7 @@ function recomputeAuras(state) {
 				if (!granted.has(k)) {
 					c.auraKeywords = c.auraKeywords.filter(x => x !== k);
 					c.keywords = c.keywords.filter(x => x !== k);
+					if (k === KW.STEALTH && !c.keywords.includes(KW.STEALTH)) c.stealthed = false; // Obsessive Fan: stealth lapses with its aura
 				}
 			}
 			for (const k of granted) {
@@ -3538,9 +3539,9 @@ function execEffects(state, pi, effects, target, source) {
 				if (!isDead(c) && c.colossalOf === source.name) c.partPower = (c.partPower || 2) + (e.amount || 1);
 			}
 		} else if (e.type === 'trigger-one-deathrattle') {
-			// fire a chosen friendly creature's Deathrattle without it dying
+			// fire a chosen friendly creature's Deathrattle without it dying (count = times)
 			const c = chosenCreature();
-			if (c && !isDead(c) && c.deathrattle) execEffects(state, pi, c.deathrattle, null, c);
+			if (c && !isDead(c) && c.deathrattle) for (let n = 0; n < (e.count || 1); n++) execEffects(state, pi, c.deathrattle, null, c);
 		} else if (e.type === 'buff-cthun') {
 			// buff your C'Thun wherever it is (hand/deck/board persist via the tracker)
 			const p = state.players[pi];
@@ -5760,6 +5761,35 @@ function execEffects(state, pi, effects, target, source) {
 			// Snakebite: gain +X/+X for each minion that died this turn
 			const n = state.diedThisTurn || 0;
 			if (source && n) buffCreature(source, (e.attack || 1) * n, (e.health || 1) * n);
+		} else if (e.type === 'buff-self-per-played-id') {
+			// Freebird: +X/+X for each other copy of this card you've played this game
+			// (playedCountById is incremented AFTER the battlecry, so it already counts only prior plays)
+			const n = source ? (state.players[pi].playedCountById?.[source.id] || 0) : 0;
+			if (source && n > 0) buffCreature(source, (e.attack || 1) * n, (e.health || 1) * n);
+		} else if (e.type === 'discard-weapon-draw') {
+			// Grimtotem Buzzkill: discard a weapon from your hand to draw N cards
+			const p = state.players[pi];
+			const w = p.hand.find(c => c.type === 'weapon');
+			if (w) { p.hand = p.hand.filter(c => c !== w); if (!w.token) p.discardLogIds.push(w.id); emit(state, { type: 'discard', player: pi, card: w }); drawCards(state, pi, e.value || 3); }
+		} else if (e.type === 'grant-stealth-while-alive') {
+			// Obsessive Fan: chosen minion has Stealth while the source is alive
+			const t = chosenCreature();
+			if (t && source) { source.aura = { targetUid: t.uid, keywords: [KW.STEALTH] }; recomputeAuras(state); }
+		} else if (e.type === 'bounce-self-set-cost') {
+			// Rhythmdancer Risa: return this to your hand and set its Cost
+			if (source && source.zone === 'board' && !isDead(source) && state.cardsById[source.id] && state.players[pi].hand.length < MAX_HAND) {
+				state.players[pi].board = state.players[pi].board.filter(c => c !== source);
+				const cp = instantiate(state.cardsById[source.id], pi); cp.zone = 'hand'; cp.cost = e.value ?? 1;
+				state.players[pi].hand.push(cp); source.zone = 'gone';
+				emit(state, { type: 'bounce', uid: source.uid, player: pi, name: source.name }); recomputeAuras(state);
+			}
+		} else if (e.type === 'corpse-gain-deathrattle') {
+			// Boneshredder: spend N Corpses to gain + trigger a random died friendly's Deathrattle
+			const p = state.players[pi];
+			if ((p.corpses || 0) >= (e.cost || 5)) {
+				const pool = [...new Set(p.deathLogIds)].map(id => state.cardsById[id]).filter(d => d && d.type === 'creature' && d.deathrattle && d.deathrattle.length);
+				if (pool.length && source) { p.corpses -= (e.cost || 5); emit(state, { type: 'corpses', player: pi, corpses: p.corpses }); const pick = pool[Math.floor(state.rng() * pool.length)]; source.deathrattle = [...(source.deathrattle || []), ...JSON.parse(JSON.stringify(pick.deathrattle))]; if (!source.keywords.includes('deathrattle')) source.keywords.push('deathrattle'); execEffects(state, pi, JSON.parse(JSON.stringify(pick.deathrattle)), null, source); }
+			}
 		} else if (e.type === 'buff-target-by-source-stats') {
 			// Outfit Tailor: give a friendly minion +Attack/+Health equal to this minion's stats
 			const t = chosenCreature();
@@ -8300,6 +8330,7 @@ export function playCard(state, pi, cardUid, target, choice, position, useAlt, k
 	p.lastCardCost = card.cost; // Rolling Stone: cost of the most recently played card
 	if (card.type === 'creature' && card.tribe) { p.tribesPlayedGame = p.tribesPlayedGame || new Set(); for (const tr of (card.tribe || '').split('/')) if (tr) p.tribesPlayedGame.add(tr); } // Power Slider
 	if ((card.keywords || []).includes('combo')) p.combosPlayedGame = (p.combosPlayedGame || 0) + 1; // Rhyme Spinner
+	(p.playedCountById = p.playedCountById || {})[card.id] = (p.playedCountById[card.id] || 0) + 1; // Freebird
 	// Sherazin, Corpse Flower: play 4 cards in a turn to revive the seed
 	if (p.cardsPlayedThisTurn >= 4) {
 		for (const seed of p.board.filter(c => c.id === 'sherazin_seed' && !isDead(c))) {
