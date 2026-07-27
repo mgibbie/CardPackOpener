@@ -545,6 +545,7 @@ export function drawCards(state, pi, count) {
 		if (card.type === 'creature' && p.deckTribeDiscount) { for (const tr in p.deckTribeDiscount) if ((card.tribe || '').includes(tr)) card.cost = Math.max(0, (card.cost || 0) - p.deckTribeDiscount[tr]); } // Frizz Kindleroost
 		if (p.deckKeywordDiscount) { for (const kw in p.deckKeywordDiscount) if ((card.keywords || []).includes(kw)) card.cost = Math.max(0, (card.cost || 0) - p.deckKeywordDiscount[kw]); } // Rotten Rodent: Deathrattle cards
 		if (p.deckSchoolSpellDamage && isSpellType(card)) { const sch = schoolOf(card); if (sch && p.deckSchoolSpellDamage[sch]) card.bonusSpellDamage = (card.bonusSpellDamage || 0) + p.deckSchoolSpellDamage[sch]; } // Halduron Brightwing: Arcane spells drawn from deck
+		if (p.deckDoubleStats && card.type === 'creature') { card.attack = (card.attack || 0) * 2; card.maxHealth = (card.maxHealth || 0) * 2; } // Lor'themar Theron: doubled deck minions
 		// C'Thun enters hand carrying every buff it collected while in your deck
 		if (card.id === 'c_thun') { card.attack = CTHUN_BASE + p.cthunAtk; card.maxHealth = CTHUN_BASE + p.cthunHp; if (p.cthunTaunt && !card.keywords.includes(KW.TAUNT)) card.keywords.push(KW.TAUNT); }
 		card.zone = 'hand';
@@ -1980,6 +1981,18 @@ function runSecretEffects(state, pi, effects, ctx) {
 				// Keeneye Spotter: set the hero-attacked minion's Health to N
 				const t = ctx.target;
 				if (t && t.type === 'creature' && !isDead(t)) { t.maxHealth = e.value ?? 1; t.damage = 0; t.tempHealth = 0; emit(state, { type: 'buff', uid: t.uid, attack: t.attack, hp: hp(t) }); }
+				break;
+			}
+			case 'summon-copy-of-killed': {
+				// Overlord Drakuru: resurrect the minion this just killed onto your side
+				const v = ctx.victim, def = v && state.cardsById[v.id];
+				if (def && !state.players[pi].eliminated) summon(state, pi, def);
+				break;
+			}
+			case 'damage-enemy-hero-by-amount': {
+				// Brutal Annihilan: deal the damage just survived to the enemy hero
+				const amt = ctx.amount || 0;
+				if (amt > 0) { for (const o of opponentsOf(state, pi)) damageHero(state, o, amt, pi); }
 				break;
 			}
 			case 'gain-dead-deathrattle': {
@@ -5445,9 +5458,9 @@ function execEffects(state, pi, effects, target, source) {
 			// Blistering Rot: summon a token with stats equal to the source minion
 			if (source) { const a = source.attack || 0, h = hp(source) || 1; const tok = summon(state, pi, { id: e.id || 'token_rot', name: e.name || 'Rot', type: 'creature', cost: 0, token: true, rarity: 'common', attack: a, health: h, description: `A ${a}/${h} token.` }); }
 		} else if (e.type === 'buff-random-friendly') {
-			// Dragonmaw Overseer: buff a random OTHER friendly minion
-			const pool = state.players[pi].board.filter(c => c !== source && !isDead(c) && c.type !== 'location');
-			if (pool.length) buffCreature(pool[Math.floor(state.rng() * pool.length)], e.attack || 0, e.health || 0);
+			// Dragonmaw Overseer: buff a random OTHER friendly minion (Invincible: tribe filter + keyword grant)
+			const pool = state.players[pi].board.filter(c => c !== source && !isDead(c) && c.type !== 'location' && (!e.tribe || (c.tribe || '').includes(e.tribe)));
+			if (pool.length) { const m = pool[Math.floor(state.rng() * pool.length)]; buffCreature(m, e.attack || 0, e.health || 0); if (e.grant && !m.keywords.includes(e.grant)) { m.keywords.push(e.grant); if (e.grant === KW.DIVINE_SHIELD) m.shield = true; } }
 		} else if (e.type === 'reduce-random-hand-cost') {
 			// Imprisoned Satyr: reduce the Cost of a random minion in your hand
 			// (tribe filter -> Fangbound Druid reduces a Beast; school -> Florist reduces a Nature spell)
@@ -5839,6 +5852,35 @@ function execEffects(state, pi, effects, target, source) {
 		} else if (e.type === 'summon-remembered') {
 			// Amorphous Slime (Deathrattle): summon a copy of the remembered discarded minion
 			if (source && source.rememberedId && state.cardsById[source.rememberedId]) summon(state, pi, state.cardsById[source.rememberedId]);
+		} else if (e.type === 'double-deck-minion-stats') {
+			// Lor'themar Theron: double the stats of all minions in your deck (applied as they're drawn)
+			state.players[pi].deckDoubleStats = true;
+		} else if (e.type === 'grant-parity-discount') {
+			// Thaddius: your odd/even-Cost cards cost less (swaps polarity each turn)
+			state.players[pi].parityDiscount = { parity: e.parity || 'odd', amount: e.value || 2 };
+		} else if (e.type === 'grant-free-minions') {
+			// Anub'Rekhan: your next N minions this turn cost Armor instead of Mana (approximated as free)
+			state.players[pi].freeMinionsCount = (state.players[pi].freeMinionsCount || 0) + (e.count || 3);
+			state.players[pi]._freeMinionGrantedThisPlay = true; // don't let the granting minion consume its own charge
+		} else if (e.type === 'spend-corpses-summon') {
+			// Boneguard Commander: raise up to N Corpses as tokens
+			const p = state.players[pi];
+			const n = Math.min(e.max || 6, p.corpses || 0);
+			if (n > 0 && state.cardsById[e.summonId]) { p.corpses -= n; emit(state, { type: 'corpses', player: pi, corpses: p.corpses }); for (let i = 0; i < n; i++) summon(state, pi, state.cardsById[e.summonId]); }
+		} else if (e.type === 'destroy-all-others-gain-corpses') {
+			// Soulstealer: destroy all other minions; gain 1 Corpse per enemy destroyed
+			let enemyDead = 0;
+			for (const pl of state.players) for (const c of [...pl.board]) { if (c === source || isDead(c) || c.type === 'location') continue; if (c.controller !== pi) enemyDead++; c.damage = c.maxHealth; c.shield = false; emit(state, { type: 'destroy', uid: c.uid }); }
+			state.players[pi].corpses = (state.players[pi].corpses || 0) + enemyDead;
+			emit(state, { type: 'corpses', player: pi, corpses: state.players[pi].corpses });
+			sweepDeaths(state);
+		} else if (e.type === 'draw-tribe-summon-copy') {
+			// Flesh Behemoth: draw a minion of a tribe and summon a copy of it
+			const p = state.players[pi];
+			const before = new Set(p.hand.map(c => c.uid));
+			execEffects(state, pi, [{ type: 'tutor', cardType: 'creature', tribe: e.tribe, count: 1 }], null, source);
+			const drawn = p.hand.find(c => !before.has(c.uid));
+			if (drawn && state.cardsById[drawn.id]) summon(state, pi, state.cardsById[drawn.id]);
 		} else if (e.type === 'destroy-friendly-tribe-buff-all') {
 			// Elder Nadox: destroy a chosen friendly minion; your minions gain its Attack
 			const t = chosenCreature();
@@ -7419,6 +7461,7 @@ function execEffects(state, pi, effects, target, source) {
 				const m = pool.splice(Math.floor(state.rng() * pool.length), 1)[0];
 				m.attack += e.attack || 0;
 				m.maxHealth += e.health || 0;
+				if (e.grant && !m.keywords.includes(e.grant)) { m.keywords.push(e.grant); if (e.grant === KW.DIVINE_SHIELD) m.shield = true; } // Invincible: +Taunt
 				emit(state, { type: 'buff', uid: m.uid, attack: m.attack, hp: hp(m) });
 			}
 		} else if (e.type === 'conjure-cost') {
@@ -8228,6 +8271,8 @@ export function effectiveCost(state, pi, card) {
 	if (p.overloadDiscount > 0 && (card.overload || 0) > 0) c = Math.max(0, c - p.overloadDiscount); // Inzah
 	if (p.firstCardFreeEachTurn && (p.cardsPlayedThisTurn || 0) === 0) c = 0; // Bonelord Frostwhisper: first card each turn is free
 	if (p.nextClassFree && card.type === 'creature' && (card.cardClass || '').split('__').includes(p.nextClassFree)) c = 0; // Blood Crusader (Health-cost approximated as free)
+	if (p.parityDiscount && (card.cost % 2) === (p.parityDiscount.parity === 'odd' ? 1 : 0)) c = Math.max(0, c - p.parityDiscount.amount); // Thaddius: odd/even-Cost cards cost less
+	if (p.freeMinionsCount > 0 && card.type === 'creature') c = 0; // Anub'Rekhan (Armor-cost approximated as free)
 	return Math.max(0, c);
 }
 
@@ -8546,6 +8591,8 @@ export function playCard(state, pi, cardUid, target, choice, position, useAlt, k
 	if (card.hauntSummon && state.cardsById[card.hauntSummon]) summon(state, pi, state.cardsById[card.hauntSummon]); // Haunting Nightmare: playing a haunted card summons a Soldier
 	if (p.nextClassFree && card.type === 'creature' && (card.cardClass || '').split('__').includes(p.nextClassFree) && !p._classFreeGrantedThisPlay) p.nextClassFree = null; // Blood Crusader: one-shot free minion consumed (not by the granting card)
 	p._classFreeGrantedThisPlay = false;
+	if (p.freeMinionsCount > 0 && card.type === 'creature' && !p._freeMinionGrantedThisPlay) p.freeMinionsCount--; // Anub'Rekhan: consume a free-minion charge
+	p._freeMinionGrantedThisPlay = false;
 	if ((card.keywords || []).includes('outcast') && p.nextOutcastDiscount && !p._outcastDiscountGrantedThisPlay) p.nextOutcastDiscount = 0; // Fierce Outsider: one-shot discount consumed (not by the card that granted it)
 	p._outcastDiscountGrantedThisPlay = false;
 	// Sherazin, Corpse Flower: play 4 cards in a turn to revive the seed
@@ -9121,7 +9168,7 @@ function resolveCombat(state, pi, attackerUid, target) {
 			const trigs = [];
 			if (attacker.ongoing?.on === 'self-kills-creature') trigs.push(attacker.ongoing);
 			if (attacker.ongoings) for (const o of attacker.ongoings) if (o.on === 'self-kills-creature') trigs.push(o);
-			for (const o of trigs) runSecretEffects(state, pi, o.effects, { self: attacker });
+			for (const o of trigs) runSecretEffects(state, pi, o.effects, { self: attacker, victim: defender });
 		}
 		// Knuckles: "after this attacks a minion" (fires even if it dies? HS: it survives to hit)
 		if (!isDead(attacker)) fireCreatureTrigger(state, attacker, 'self-attacks-creature', { victim: defender });
@@ -9974,6 +10021,8 @@ export function endTurn(state) {
 	np.drawsThisTurn = 0; // reset before the mandatory draw so it counts as the first
 	np.spellsPlayedThisTurn = 0; np.schoolsCastThisTurn = {}; np.firstBattlecryThisTurn = null; // Metamorfin / Bolner Hammerbeak
 	np.parityBlock = null; // Alara: a start-of-turn coin flip may block odd/even-cost plays
+		np.freeMinionsCount = 0; // Anub'Rekhan free minions last the turn
+		if (np.parityDiscount) np.parityDiscount.parity = np.parityDiscount.parity === 'odd' ? 'even' : 'odd'; // Thaddius polarity swap
 	np.planarRollsThisTurn = 0;
 	{ const r = activePlaneRule(state); if (r && r.kind === 'coin-parity') { np.parityBlock = state.rng() < 0.5 ? 'odd' : 'even'; emit(state, { type: 'coinParity', player: state.current, block: np.parityBlock }); } }
 	firePlaneTrigger(state, 'turn-start', state.current); // Oberaqua: mill at each turn's start

@@ -100949,6 +100949,379 @@
       "token": true,
       "collectible": false,
       "description": "A 6/6 Horseman."
+    },
+    {
+      "id": "sister_svalna",
+      "name": "Sister Svalna",
+      "type": "creature",
+      "cost": 6,
+      "cardClass": "priest",
+      "attack": 6,
+      "health": 6,
+      "rarity": "legendary",
+      "set": "RETURN_OF_THE_LICH_KING",
+      "tribe": "Undead",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Permanently add a Vision of Darkness to your hand.",
+      "effects": [
+        {
+          "type": "add-card",
+          "id": "rlk_vision_of_darkness",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "id": "anachronos",
+      "name": "Anachronos",
+      "type": "creature",
+      "cost": 7,
+      "cardClass": "paladin",
+      "attack": 8,
+      "health": 8,
+      "rarity": "legendary",
+      "set": "RETURN_OF_THE_LICH_KING",
+      "tribe": "Dragon",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Send all other minions 2 turns into the future."
+    },
+    {
+      "id": "darkhan_drathir",
+      "name": "Dar'Khan Drathir",
+      "type": "creature",
+      "cost": 7,
+      "cardClass": "warlock",
+      "attack": 6,
+      "health": 6,
+      "rarity": "legendary",
+      "set": "RETURN_OF_THE_LICH_KING",
+      "tribe": "Undead",
+      "keywords": [
+        "lifesteal"
+      ],
+      "description": "Lifesteal. At the end of your turn, deal 6 damage to the enemy hero.",
+      "ongoing": {
+        "on": "turn-end",
+        "effects": [
+          {
+            "type": "damage",
+            "value": 6,
+            "target": "enemy-hero"
+          }
+        ]
+      }
+    },
+    {
+      "id": "lorthemar_theron",
+      "name": "Lor'themar Theron",
+      "type": "creature",
+      "cost": 7,
+      "cardClass": "neutral",
+      "attack": 7,
+      "health": 7,
+      "rarity": "legendary",
+      "set": "RETURN_OF_THE_LICH_KING",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Double the stats of all minions in your deck.",
+      "effects": [
+        {
+          "type": "double-deck-minion-stats"
+        }
+      ]
+    },
+    {
+      "id": "underking",
+      "name": "Underking",
+      "type": "creature",
+      "cost": 7,
+      "cardClass": "druid",
+      "attack": 6,
+      "health": 6,
+      "rarity": "epic",
+      "set": "RETURN_OF_THE_LICH_KING",
+      "tribe": "Undead",
+      "keywords": [
+        "rush",
+        "battlecry",
+        "deathrattle"
+      ],
+      "description": "Rush. Battlecry and Deathrattle: Gain 6 Armor.",
+      "effects": [
+        {
+          "type": "armor",
+          "value": 6
+        }
+      ],
+      "deathrattle": [
+        {
+          "type": "armor",
+          "value": 6
+        }
+      ]
+    },
+    {
+      "id": "anub_rekhan",
+      "name": "Anub'Rekhan",
+      "type": "creature",
+      "cost": 8,
+      "cardClass": "druid",
+      "attack": 7,
+      "health": 7,
+      "rarity": "legendary",
+      "set": "RETURN_OF_THE_LICH_KING",
+      "tribe": "Undead",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Gain 5 Armor. Your next 3 minions this turn cost Armor instead of Mana.",
+      "effects": [
+        {
+          "type": "armor",
+          "value": 5
+        },
+        {
+          "type": "grant-free-minions",
+          "count": 3
+        }
+      ]
+    },
+    {
+      "id": "boneguard_commander",
+      "name": "Boneguard Commander",
+      "type": "creature",
+      "cost": 8,
+      "cardClass": "deathknight",
+      "attack": 8,
+      "health": 8,
+      "rarity": "rare",
+      "set": "RETURN_OF_THE_LICH_KING",
+      "tribe": "Undead",
+      "keywords": [
+        "taunt",
+        "battlecry"
+      ],
+      "description": "Taunt. Battlecry: Raise up to 6 Corpses as 1/3 Risen Footmen with Taunt.",
+      "effects": [
+        {
+          "type": "spend-corpses-summon",
+          "max": 6,
+          "summonId": "rlk_risen_footman"
+        }
+      ]
+    },
+    {
+      "id": "invincible",
+      "name": "Invincible",
+      "type": "creature",
+      "cost": 8,
+      "cardClass": "neutral",
+      "attack": 5,
+      "health": 5,
+      "rarity": "legendary",
+      "set": "RETURN_OF_THE_LICH_KING",
+      "tribe": "Undead",
+      "keywords": [
+        "reborn",
+        "battlecry",
+        "deathrattle"
+      ],
+      "description": "Reborn. Battlecry and Deathrattle: Give another random friendly Undead +5/+5 and Taunt.",
+      "effects": [
+        {
+          "type": "buff-random-friendly",
+          "tribe": "Undead",
+          "attack": 5,
+          "health": 5,
+          "grant": "taunt"
+        }
+      ],
+      "deathrattle": [
+        {
+          "type": "buff-random-friendly",
+          "tribe": "Undead",
+          "attack": 5,
+          "health": 5,
+          "grant": "taunt"
+        }
+      ]
+    },
+    {
+      "id": "soulstealer",
+      "name": "Soulstealer",
+      "type": "creature",
+      "cost": 8,
+      "cardClass": "deathknight",
+      "attack": 5,
+      "health": 5,
+      "rarity": "epic",
+      "set": "RETURN_OF_THE_LICH_KING",
+      "tribe": "Undead",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Destroy all other minions. Gain 1 Corpse for each enemy destroyed.",
+      "effects": [
+        {
+          "type": "destroy-all-others-gain-corpses"
+        }
+      ]
+    },
+    {
+      "id": "brutal_annihilan",
+      "name": "Brutal Annihilan",
+      "type": "creature",
+      "cost": 9,
+      "cardClass": "demonhunter",
+      "attack": 9,
+      "health": 9,
+      "rarity": "epic",
+      "set": "RETURN_OF_THE_LICH_KING",
+      "tribe": "Demon",
+      "keywords": [
+        "taunt",
+        "rush"
+      ],
+      "description": "Taunt, Rush. After this minion survives damage, deal that amount to the enemy hero.",
+      "ongoing": {
+        "on": "self-damaged",
+        "survives": true,
+        "effects": [
+          {
+            "type": "damage-enemy-hero-by-amount"
+          }
+        ]
+      }
+    },
+    {
+      "id": "flesh_behemoth",
+      "name": "Flesh Behemoth",
+      "type": "creature",
+      "cost": 9,
+      "cardClass": "neutral",
+      "attack": 4,
+      "health": 8,
+      "rarity": "rare",
+      "set": "RETURN_OF_THE_LICH_KING",
+      "tribe": "Undead",
+      "keywords": [
+        "taunt",
+        "deathrattle"
+      ],
+      "description": "Taunt. Deathrattle: Draw another Undead and summon a copy of it.",
+      "deathrattle": [
+        {
+          "type": "draw-tribe-summon-copy",
+          "tribe": "Undead"
+        }
+      ]
+    },
+    {
+      "id": "grand_magister_rommath",
+      "name": "Grand Magister Rommath",
+      "type": "creature",
+      "cost": 9,
+      "cardClass": "mage",
+      "attack": 5,
+      "health": 7,
+      "rarity": "legendary",
+      "set": "RETURN_OF_THE_LICH_KING",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Recast each spell you've cast this game that didn't start in your deck. (Once per game)"
+    },
+    {
+      "id": "overlord_drakuru",
+      "name": "Overlord Drakuru",
+      "type": "creature",
+      "cost": 9,
+      "cardClass": "shaman",
+      "attack": 6,
+      "health": 8,
+      "rarity": "legendary",
+      "set": "RETURN_OF_THE_LICH_KING",
+      "keywords": [
+        "rush",
+        "windfury"
+      ],
+      "description": "Rush, Windfury. After this attacks and kills a minion, resurrect it on your side.",
+      "ongoing": {
+        "on": "self-kills-creature",
+        "effects": [
+          {
+            "type": "summon-copy-of-killed"
+          }
+        ]
+      }
+    },
+    {
+      "id": "thaddius_monstrosity",
+      "name": "Thaddius, Monstrosity",
+      "type": "creature",
+      "cost": 10,
+      "cardClass": "neutral",
+      "attack": 11,
+      "health": 11,
+      "rarity": "legendary",
+      "set": "RETURN_OF_THE_LICH_KING",
+      "tribe": "Undead",
+      "keywords": [
+        "taunt",
+        "battlecry"
+      ],
+      "description": "Taunt. Your odd-Cost cards cost (2) less. (Swaps polarity each turn!)",
+      "effects": [
+        {
+          "type": "grant-parity-discount",
+          "parity": "odd",
+          "value": 2
+        }
+      ]
+    },
+    {
+      "id": "rlk_vision_of_darkness",
+      "name": "Vision of Darkness",
+      "type": "sorcery",
+      "cost": 2,
+      "cardClass": "priest",
+      "tribe": "Shadow",
+      "rarity": "common",
+      "set": "RETURN_OF_THE_LICH_KING",
+      "token": true,
+      "collectible": false,
+      "description": "Discover a Priest card.",
+      "effects": [
+        {
+          "type": "discover",
+          "cardClasses": [
+            "priest"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "rlk_risen_footman",
+      "name": "Risen Footman",
+      "type": "creature",
+      "cost": 1,
+      "cardClass": "deathknight",
+      "attack": 1,
+      "health": 3,
+      "rarity": "common",
+      "set": "RETURN_OF_THE_LICH_KING",
+      "tribe": "Undead",
+      "token": true,
+      "collectible": false,
+      "keywords": [
+        "taunt"
+      ],
+      "description": "Taunt."
     }
   ]
 }
