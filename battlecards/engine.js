@@ -659,6 +659,8 @@ const CHOSEN = {
 	'devour-enemy': { 'enemy-creature': 'enemy-creature', creature: 'creature' },
 	'throw-hand-minion': { 'enemy-creature': 'enemy-creature' },
 	'lock-minion-attack': { creature: 'creature', 'enemy-creature': 'enemy-creature' },
+	'buff-target-by-source-stats': { 'friendly-creature': 'friendly-creature' },
+	'grant-attack-while-alive': { creature: 'creature', 'friendly-creature': 'friendly-creature' },
 	fireworks: { 'friendly-creature': 'friendly-creature' },
 	'bounce-and-buff': { 'friendly-creature': 'friendly-creature' },
 	'copy-health': { 'friendly-creature': 'friendly-creature' },
@@ -1474,6 +1476,7 @@ function recomputeAuras(state) {
 				if (a.position === 'ends' && idx !== 0 && idx !== p.board.length - 1) continue;
 				if (a.tribe && !a.tribe.split('|').some(t => (c.tribe || '').includes(t))) continue;
 				if (a.name && c.name !== a.name) continue; // Warhorse Trainer's Recruits
+				if (a.targetUid != null && a.targetUid !== c.uid) continue; // Rowdy Fan: only the chosen minion
 				// Herald-scaled aura (Charged Hand of Al'Akir): +Attack grows with Heralds
 				aBonus += a.heraldScaled ? heraldMult(state.players[src.controller].heraldCount || 0) : (a.attack || 0);
 				hBonus += a.health || 0;
@@ -5757,6 +5760,52 @@ function execEffects(state, pi, effects, target, source) {
 			// Snakebite: gain +X/+X for each minion that died this turn
 			const n = state.diedThisTurn || 0;
 			if (source && n) buffCreature(source, (e.attack || 1) * n, (e.health || 1) * n);
+		} else if (e.type === 'buff-target-by-source-stats') {
+			// Outfit Tailor: give a friendly minion +Attack/+Health equal to this minion's stats
+			const t = chosenCreature();
+			if (t && source) buffCreature(t, source.attack || 0, hp(source) || 0);
+		} else if (e.type === 'buff-self-per-tribe-played') {
+			// Power Slider: +X/+X for each distinct minion type you've played this game
+			const n = state.players[pi].tribesPlayedGame ? state.players[pi].tribesPlayedGame.size : 0;
+			if (source && n) buffCreature(source, (e.attack || 1) * n, (e.health || 1) * n);
+		} else if (e.type === 'buff-self-per-combo-played') {
+			// Rhyme Spinner: +X/+X for each other Combo card you've played this game
+			const n = state.players[pi].combosPlayedGame || 0;
+			if (source && n) buffCreature(source, (e.attack || 1) * n, (e.health || 1) * n);
+		} else if (e.type === 'copy-enemy-deck-top') {
+			// Plagiarizarrr: add a copy of the top card of the opponent's deck to your hand
+			const foe = enemies[0], p = state.players[pi];
+			if (foe != null && state.players[foe].deck.length && p.hand.length < MAX_HAND) { const id = state.players[foe].deck[state.players[foe].deck.length - 1]; const def = state.cardsById[id]; if (def) { const cp = instantiate(def, pi); cp.zone = 'hand'; p.hand.push(cp); emit(state, { type: 'conjure', player: pi, card: cp, color: null }); } }
+		} else if (e.type === 'snapshot-hand-into-deck') {
+			// Photographer Fizzle: shuffle a copy of each card in your hand into your deck
+			const p = state.players[pi];
+			for (const c of p.hand) { if (c === source) continue; if (state.cardsById[c.id]) p.deck.push(c.id); }
+			for (let i = p.deck.length - 1; i > 0; i--) { const j = Math.floor(state.rng() * (i + 1)); [p.deck[i], p.deck[j]] = [p.deck[j], p.deck[i]]; }
+			emit(state, { type: 'shuffle', player: pi });
+		} else if (e.type === 'copy-hand-minions-distinct-tribe') {
+			// Rock Master Voone: add a copy of each minion of a different type in your hand
+			const p = state.players[pi];
+			const seen = new Set(); const toAdd = [];
+			for (const c of p.hand) { if (c === source || c.type !== 'creature') continue; const tr = (c.tribe || '').split('/')[0] || ('_' + c.id); if (seen.has(tr)) continue; seen.add(tr); toAdd.push(c.id); }
+			for (const id of toAdd) { if (p.hand.length >= MAX_HAND) break; const def = state.cardsById[id]; if (def) { const cp = instantiate(def, pi); cp.zone = 'hand'; p.hand.push(cp); emit(state, { type: 'conjure', player: pi, card: cp, color: null }); } }
+		} else if (e.type === 'grant-attack-while-alive') {
+			// Rowdy Fan: chosen minion has +N Attack while the source is alive
+			const t = chosenCreature();
+			if (t && source) { source.aura = { targetUid: t.uid, attack: e.attack || 4 }; recomputeAuras(state); }
+		} else if (e.type === 'grant-adjacent-keyword') {
+			// Candleraiser (Finale): give adjacent minions a keyword
+			if (source) { const board = state.players[pi].board; const i = board.indexOf(source); for (const j of [i - 1, i + 1]) { const nb = board[j]; if (nb && !isDead(nb) && nb.type !== 'location' && !nb.keywords.includes(e.keyword)) { nb.keywords.push(e.keyword); if (e.keyword === KW.DIVINE_SHIELD) nb.shield = true; emit(state, { type: 'buff', uid: nb.uid, attack: nb.attack, hp: hp(nb) }); } } }
+		} else if (e.type === 'become-copy-of-random-minion') {
+			// Cover Artist: transform into a set-stat copy of a random minion
+			const pool = Object.values(state.cardsById).filter(d => d.type === 'creature' && !d.token && d.collectible !== false && !d.companion && !d.commander && !(d.colors && d.colors.length) && d.id !== (source && source.id));
+			if (pool.length && source && source.zone === 'board' && !isDead(source)) { const base = pool[Math.floor(state.rng() * pool.length)]; const def = JSON.parse(JSON.stringify(base)); def.attack = e.stats ?? 3; def.health = e.stats ?? 3; def.token = true; def.id = 'token_' + base.id; const tok = instantiate(def, pi); tok.zone = 'board'; tok.sick = source.sick; const board = state.players[pi].board; board[board.indexOf(source)] = tok; source.zone = 'gone'; emit(state, { type: 'transformed', uid: source.uid, player: pi, from: source.name, card: tok }); recomputeAuras(state); }
+		} else if (e.type === 'fatigue-summon') {
+			// Crazed Conductor: take Fatigue damage, summon that many tokens
+			const p = state.players[pi];
+			const amt = (p.fatigue || 0) + 1;
+			p.fatigue = amt;
+			damageHero(state, pi, amt, pi);
+			for (let i = 0; i < amt; i++) summon(state, pi, { id: e.summonId || 'token_imp', name: e.name || 'Imp', type: 'creature', cost: 0, token: true, tribe: 'Demon', rarity: 'common', attack: e.tokenAttack || 3, health: e.tokenHealth || 3, description: `A ${e.tokenAttack || 3}/${e.tokenHealth || 3} Imp.` });
 		} else if (e.type === 'heal-friendlies-buff-per-overheal') {
 			// Dreamboat: restore N to all OTHER friendly minions; gain +1/+1 for each that Overhealed
 			const p = state.players[pi];
@@ -8202,6 +8251,7 @@ export function playCard(state, pi, cardUid, target, choice, position, useAlt, k
 		questTick(state, 'spell', pi);
 		p.spellsPlayedThisTurn++;
 		p.lastCardCost = card.cost; // Rolling Stone
+		if ((card.keywords || []).includes('combo')) p.combosPlayedGame = (p.combosPlayedGame || 0) + 1; // Rhyme Spinner
 		{ const sc = schoolOf(card); for (const hc of p.hand) { hc.spellsCastWhileHeld = (hc.spellsCastWhileHeld || 0) + 1; if (sc) (hc.schoolsWhileHeld = hc.schoolsWhileHeld || {})[sc] = true; (hc.spellsHeldIds = hc.spellsHeldIds || []).push(card.id); } } // Naga: Spellcoiler / Heralds / Commander Sivara
 		{ const sch = schoolOf(card); if (sch) { (p.schoolsCastThisTurn = p.schoolsCastThisTurn || {})[sch] = true; (p.schoolsCastGame = p.schoolsCastGame || {})[sch] = true; if (sch === 'Fel') (p.felSpellsGame = p.felSpellsGame || []).push(card.id); if (sch === 'Frost') p.frostSpellsGame = (p.frostSpellsGame || 0) + 1; } } // Metamorfin / Multicaster / Jace / Bearon
 		if ((card.cost || 0) >= 6) p.lastBigSpell = { id: card.id, target }; // Grey Sage Parrot
@@ -8248,6 +8298,8 @@ export function playCard(state, pi, cardUid, target, choice, position, useAlt, k
 	// counted AFTER resolution so Combo sees only cards played EARLIER this turn
 	p.cardsPlayedThisTurn++;
 	p.lastCardCost = card.cost; // Rolling Stone: cost of the most recently played card
+	if (card.type === 'creature' && card.tribe) { p.tribesPlayedGame = p.tribesPlayedGame || new Set(); for (const tr of (card.tribe || '').split('/')) if (tr) p.tribesPlayedGame.add(tr); } // Power Slider
+	if ((card.keywords || []).includes('combo')) p.combosPlayedGame = (p.combosPlayedGame || 0) + 1; // Rhyme Spinner
 	// Sherazin, Corpse Flower: play 4 cards in a turn to revive the seed
 	if (p.cardsPlayedThisTurn >= 4) {
 		for (const seed of p.board.filter(c => c.id === 'sherazin_seed' && !isDead(c))) {

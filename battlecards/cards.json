@@ -97241,6 +97241,405 @@
           }
         ]
       }
+    },
+    {
+      "id": "outfit_tailor",
+      "name": "Outfit Tailor",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "neutral",
+      "attack": 2,
+      "health": 2,
+      "rarity": "common",
+      "set": "BATTLE_OF_THE_BANDS",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Give a friendly minion Attack and Health equal to this minion's.",
+      "effects": [
+        {
+          "type": "buff-target-by-source-stats",
+          "target": "friendly-creature"
+        }
+      ]
+    },
+    {
+      "id": "paparazzi",
+      "name": "Paparazzi",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "neutral",
+      "attack": 3,
+      "health": 4,
+      "rarity": "common",
+      "set": "BATTLE_OF_THE_BANDS",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Discover a Legendary minion.",
+      "effects": [
+        {
+          "type": "discover",
+          "cardType": "creature",
+          "rarity": "legendary"
+        }
+      ]
+    },
+    {
+      "id": "photographer_fizzle",
+      "name": "Photographer Fizzle",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "neutral",
+      "attack": 3,
+      "health": 3,
+      "rarity": "legendary",
+      "set": "BATTLE_OF_THE_BANDS",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Take a Snapshot of your current hand and shuffle it into your deck. (Once per game)",
+      "effects": [
+        {
+          "type": "snapshot-hand-into-deck"
+        }
+      ]
+    },
+    {
+      "id": "plagiarizarrr",
+      "name": "Plagiarizarrr",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "priest",
+      "attack": 4,
+      "health": 3,
+      "rarity": "rare",
+      "set": "BATTLE_OF_THE_BANDS",
+      "tribe": "Pirate",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Get a copy of the top card of your opponent's deck.",
+      "effects": [
+        {
+          "type": "copy-enemy-deck-top"
+        }
+      ]
+    },
+    {
+      "id": "power_slider",
+      "name": "Power Slider",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "warrior",
+      "attack": 2,
+      "health": 3,
+      "rarity": "rare",
+      "set": "BATTLE_OF_THE_BANDS",
+      "keywords": [
+        "rush",
+        "battlecry"
+      ],
+      "description": "Rush. Battlecry: Gain +1/+1 for each minion of a different type you've played this game.",
+      "effects": [
+        {
+          "type": "buff-self-per-tribe-played",
+          "attack": 1,
+          "health": 1
+        }
+      ]
+    },
+    {
+      "id": "rhyme_spinner",
+      "name": "Rhyme Spinner",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "rogue",
+      "attack": 1,
+      "health": 3,
+      "rarity": "rare",
+      "set": "BATTLE_OF_THE_BANDS",
+      "keywords": [
+        "rush",
+        "combo"
+      ],
+      "description": "Rush. Combo: Gain +1/+1 for each other Combo card you've played this game.",
+      "combo": [
+        {
+          "type": "buff-self-per-combo-played",
+          "attack": 1,
+          "health": 1
+        }
+      ]
+    },
+    {
+      "id": "rock_master_voone",
+      "name": "Rock Master Voone",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "warrior",
+      "attack": 4,
+      "health": 3,
+      "rarity": "legendary",
+      "set": "BATTLE_OF_THE_BANDS",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Copy each minion of a different type in your hand.",
+      "effects": [
+        {
+          "type": "copy-hand-minions-distinct-tribe"
+        }
+      ]
+    },
+    {
+      "id": "rowdy_fan",
+      "name": "Rowdy Fan",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "neutral",
+      "attack": 1,
+      "health": 5,
+      "rarity": "common",
+      "set": "BATTLE_OF_THE_BANDS",
+      "tribe": "Quilboar",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Choose a minion. It has +4 Attack while this is alive.",
+      "effects": [
+        {
+          "type": "grant-attack-while-alive",
+          "target": "creature",
+          "attack": 4
+        }
+      ]
+    },
+    {
+      "id": "tough_crowd",
+      "name": "Tough Crowd",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "rogue",
+      "attack": 2,
+      "health": 1,
+      "rarity": "common",
+      "set": "BATTLE_OF_THE_BANDS",
+      "tribe": "Demon",
+      "keywords": [
+        "outcast"
+      ],
+      "description": "Outcast: Return a minion to its owner's hand.",
+      "outcast": {
+        "effects": [
+          {
+            "type": "bounce",
+            "target": "creature"
+          }
+        ]
+      }
+    },
+    {
+      "id": "worgen_roadie",
+      "name": "Worgen Roadie",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "neutral",
+      "attack": 3,
+      "health": 4,
+      "rarity": "rare",
+      "set": "BATTLE_OF_THE_BANDS",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Summon a 0/3 Instrument Case for your opponent. (Break it for a random weapon!)",
+      "effects": [
+        {
+          "type": "summon",
+          "count": 1,
+          "forEnemy": true,
+          "summonId": "fol_instrument_case"
+        }
+      ]
+    },
+    {
+      "id": "ambient_lightspawn",
+      "name": "Ambient Lightspawn",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "priest",
+      "attack": 3,
+      "health": 4,
+      "rarity": "common",
+      "set": "BATTLE_OF_THE_BANDS",
+      "tribe": "Elemental",
+      "description": "Finale and Overheal: Give another random friendly minion +2/+2.",
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "finale": true
+          },
+          "then": [
+            {
+              "type": "buff-random-friendly",
+              "attack": 2,
+              "health": 2
+            }
+          ]
+        }
+      ],
+      "overheal": [
+        {
+          "type": "buff-random-friendly",
+          "attack": 2,
+          "health": 2
+        }
+      ]
+    },
+    {
+      "id": "backstage_bouncer",
+      "name": "Backstage Bouncer",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "warrior",
+      "attack": 4,
+      "health": 5,
+      "rarity": "rare",
+      "set": "BATTLE_OF_THE_BANDS",
+      "tribe": "Beast",
+      "keywords": [
+        "taunt",
+        "battlecry"
+      ],
+      "description": "Taunt. Battlecry: Transform a friendly minion into a copy of this.",
+      "effects": [
+        {
+          "type": "transform-target-into-source",
+          "target": "friendly-creature"
+        }
+      ]
+    },
+    {
+      "id": "candleraiser",
+      "name": "Candleraiser",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "neutral",
+      "attack": 3,
+      "health": 3,
+      "rarity": "common",
+      "set": "BATTLE_OF_THE_BANDS",
+      "keywords": [
+        "divine_shield",
+        "finale"
+      ],
+      "description": "Divine Shield. Finale: Give adjacent minions Divine Shield.",
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "finale": true
+          },
+          "then": [
+            {
+              "type": "grant-adjacent-keyword",
+              "keyword": "divine_shield"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "cover_artist",
+      "name": "Cover Artist",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "neutral",
+      "attack": 3,
+      "health": 3,
+      "rarity": "epic",
+      "set": "BATTLE_OF_THE_BANDS",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Transform into a 3/3 copy of a minion.",
+      "effects": [
+        {
+          "type": "become-copy-of-random-minion",
+          "stats": 3
+        }
+      ]
+    },
+    {
+      "id": "crazed_conductor",
+      "name": "Crazed Conductor",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "warlock",
+      "attack": 3,
+      "health": 4,
+      "rarity": "epic",
+      "set": "BATTLE_OF_THE_BANDS",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Take Fatigue damage. Summon that many 3/3 Imps.",
+      "effects": [
+        {
+          "type": "fatigue-summon",
+          "name": "Imp",
+          "summonId": "token_imp",
+          "tokenAttack": 3,
+          "tokenHealth": 3
+        }
+      ]
+    },
+    {
+      "id": "etc_band_manager",
+      "name": "E.T.C., Band Manager",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "neutral",
+      "attack": 4,
+      "health": 4,
+      "rarity": "legendary",
+      "set": "BATTLE_OF_THE_BANDS",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "While building your deck, assemble a band of 3 cards. Battlecry: Discover one!",
+      "effects": [
+        {
+          "type": "discover",
+          "cardType": "creature"
+        }
+      ]
+    },
+    {
+      "id": "fol_instrument_case",
+      "name": "Instrument Case",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "neutral",
+      "attack": 0,
+      "health": 3,
+      "rarity": "common",
+      "set": "BATTLE_OF_THE_BANDS",
+      "token": true,
+      "collectible": false,
+      "keywords": [
+        "deathrattle"
+      ],
+      "description": "Deathrattle: Equip a random weapon.",
+      "deathrattle": [
+        {
+          "type": "equip",
+          "name": "Roadie Axe",
+          "attack": 3,
+          "durability": 2
+        }
+      ]
     }
   ]
 }
