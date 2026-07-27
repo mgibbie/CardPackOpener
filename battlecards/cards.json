@@ -102946,6 +102946,334 @@
         "health": 2
       },
       "description": "Gains +2/+2 for each other Earthen summoned this game."
+    },
+    {
+      "id": "unchained_gladiator",
+      "name": "Unchained Gladiator",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "mage",
+      "attack": 4,
+      "health": 4,
+      "rarity": "rare",
+      "set": "TITANS",
+      "tribe": "Elemental",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Draw a card. Repeat for each Elemental you played last turn.",
+      "effects": [
+        {
+          "type": "draw",
+          "valuePer": "elementals-last-turn",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "disciple_of_amitus",
+      "name": "Disciple of Amitus",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "paladin",
+      "attack": 4,
+      "health": 5,
+      "rarity": "epic",
+      "set": "TITANS",
+      "description": "At the end of your turn, summon a 2/2 Earthen that gains +2/+2 for each other Earthen you've summoned this game.",
+      "ongoing": {
+        "on": "turn-end",
+        "effects": [
+          {
+            "type": "summon",
+            "count": 1,
+            "summonId": "ttn_earthen"
+          }
+        ]
+      }
+    },
+    {
+      "id": "disguised_kthir",
+      "name": "Disguised K'thir",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "neutral",
+      "attack": 3,
+      "health": 3,
+      "rarity": "rare",
+      "set": "TITANS",
+      "description": "Each turn this is in your hand, transform into a random card in your opponent's deck."
+    },
+    {
+      "id": "eye_of_chaos",
+      "name": "Eye of Chaos",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "neutral",
+      "attack": 5,
+      "health": 4,
+      "rarity": "epic",
+      "set": "TITANS",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Get two 1/1 Chaotic Tendrils.",
+      "effects": [
+        {
+          "type": "add-card",
+          "id": "chaotic_tendril",
+          "count": 2
+        }
+      ]
+    },
+    {
+      "id": "jotun_the_eternal",
+      "name": "Jotun, the Eternal",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "demonhunter",
+      "attack": 4,
+      "health": 5,
+      "rarity": "legendary",
+      "set": "TITANS",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: For the rest of the game, cast a copy of the first spell you draw each turn at enemies."
+    },
+    {
+      "id": "tainted_remnant",
+      "name": "Tainted Remnant",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "mage",
+      "attack": 7,
+      "health": 4,
+      "rarity": "common",
+      "set": "TITANS",
+      "tribe": "Elemental",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: If you played an Elemental last turn, deal 7 damage randomly split between all enemies.",
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "elementalLastTurn": true
+          },
+          "then": [
+            {
+              "type": "random-damage",
+              "value": 1,
+              "count": 7,
+              "pool": "enemies"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "tram_operator",
+      "name": "Tram Operator",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "neutral",
+      "attack": 4,
+      "health": 4,
+      "rarity": "common",
+      "set": "TITANS",
+      "tribe": "Mech",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Draw a Mech. The next Mech you play costs (2) less.",
+      "effects": [
+        {
+          "type": "tutor",
+          "cardType": "creature",
+          "tribe": "Mech",
+          "count": 1
+        },
+        {
+          "type": "set-tribe-discount",
+          "tribe": "Mech",
+          "count": 1,
+          "value": 2
+        }
+      ]
+    },
+    {
+      "id": "xb_488_disposalbot",
+      "name": "XB-488 Disposalbot",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "neutral",
+      "attack": 3,
+      "health": 2,
+      "rarity": "common",
+      "set": "TITANS",
+      "tribe": "Mech",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Deal 5 damage randomly split among all enemy minions. Forge: Gain Lifesteal.",
+      "effects": [
+        {
+          "type": "random-damage",
+          "value": 1,
+          "count": 5,
+          "pool": "enemy-creatures"
+        }
+      ]
+    },
+    {
+      "id": "aggramar_the_avenger",
+      "name": "Aggramar, the Avenger",
+      "type": "creature",
+      "cost": 6,
+      "cardClass": "hunter",
+      "attack": 3,
+      "health": 7,
+      "rarity": "legendary",
+      "set": "TITANS",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Titan. Battlecry: Equip a 3/3 Taeshalach.",
+      "effects": [
+        {
+          "type": "equip",
+          "name": "Taeshalach",
+          "attack": 3,
+          "durability": 3
+        }
+      ]
+    },
+    {
+      "id": "chogall_twilight_chieftain",
+      "name": "Cho'gall, Twilight Chieftain",
+      "type": "creature",
+      "cost": 6,
+      "cardClass": "neutral",
+      "attack": 6,
+      "health": 7,
+      "rarity": "legendary",
+      "set": "TITANS",
+      "keywords": [
+        "taunt",
+        "lifesteal"
+      ],
+      "description": "Taunt, Lifesteal. Start of Game: 50% chance to corrupt the game with a random anomaly."
+    },
+    {
+      "id": "flame_behemoth",
+      "name": "Flame Behemoth",
+      "type": "creature",
+      "cost": 6,
+      "cardClass": "neutral",
+      "attack": 4,
+      "health": 5,
+      "rarity": "legendary",
+      "set": "TITANS",
+      "tribe": "Mech",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Get two random Magnetic Mechs. They cost (2) less.",
+      "effects": [
+        {
+          "type": "conjure-random",
+          "cardType": "creature",
+          "tribe": "Mech",
+          "requireKeyword": "magnetic",
+          "count": 2,
+          "costMod": -2
+        }
+      ]
+    },
+    {
+      "id": "khazgoroth",
+      "name": "Khaz'goroth",
+      "type": "creature",
+      "cost": 6,
+      "cardClass": "warrior",
+      "attack": 4,
+      "health": 5,
+      "rarity": "legendary",
+      "set": "TITANS",
+      "description": "Titan. After this uses an ability, gain Immune this turn and attack a random enemy minion."
+    },
+    {
+      "id": "loken_jailer_of_yogg_saron",
+      "name": "Loken, Jailer of Yogg-Saron",
+      "type": "creature",
+      "cost": 6,
+      "cardClass": "warlock",
+      "attack": 3,
+      "health": 3,
+      "rarity": "legendary",
+      "set": "TITANS",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Discover a minion from your deck. Summon a Tentacle with its stats and Taunt.",
+      "effects": [
+        {
+          "type": "summon-tentacle-from-deck"
+        }
+      ]
+    },
+    {
+      "id": "minotauren",
+      "name": "Minotauren",
+      "type": "creature",
+      "cost": 6,
+      "cardClass": "warrior",
+      "attack": 5,
+      "health": 5,
+      "rarity": "rare",
+      "set": "TITANS",
+      "keywords": [
+        "rush"
+      ],
+      "description": "Rush. Whenever this minion deals damage, gain that much Armor.",
+      "ongoing": {
+        "on": "self-deals-damage",
+        "effects": [
+          {
+            "type": "gain-armor-by-amount"
+          }
+        ]
+      }
+    },
+    {
+      "id": "norgannon",
+      "name": "Norgannon",
+      "type": "creature",
+      "cost": 6,
+      "cardClass": "mage",
+      "attack": 3,
+      "health": 8,
+      "rarity": "legendary",
+      "set": "TITANS",
+      "description": "Titan. After this uses an ability, double the power of the other abilities."
+    },
+    {
+      "id": "ra_den",
+      "name": "Ra-den",
+      "type": "creature",
+      "cost": 6,
+      "cardClass": "priest",
+      "attack": 5,
+      "health": 5,
+      "rarity": "legendary",
+      "set": "TITANS",
+      "keywords": [
+        "taunt",
+        "deathrattle"
+      ],
+      "description": "Taunt. Deathrattle: Summon each other minion you've played this game that did not start in your deck."
     }
   ]
 }

@@ -2985,6 +2985,7 @@ function execEffects(state, pi, effects, target, source) {
 		if (e.valuePer === 'hero-attack') return heroAttackValue(p);
 		if (e.valuePer === 'hero-attacks-game') return (e.value || 1) + (p.heroAttacksGame || 0); // Shockspitter: 1 + your hero attacks this game
 		if (e.valuePer === 'schools-cast-game') return (e.value || 1) + Object.keys(p.schoolsCastGame || {}).length; // Inquisitive Creation
+		if (e.valuePer === 'elementals-last-turn') return (e.value || 1) + (p.elementalsPlayedLastTurn || 0); // Unchained Gladiator: 1 + Elementals played last turn
 		if (e.valuePer === 'draws-this-turn') return (e.value || 1) * (p.drawsThisTurn || 0); // Mindbender
 		if (e.valuePer === 'damaged-friendly') {
 			let n = p.board.filter(c => !isDead(c) && c.damage > 0).length;
@@ -5857,6 +5858,11 @@ function execEffects(state, pi, effects, target, source) {
 		} else if (e.type === 'destroy-self') {
 			// Incorporeal Corporal: destroy the source minion
 			if (source && !isDead(source)) { source.damage = source.maxHealth; source.shield = false; emit(state, { type: 'destroy', uid: source.uid }); sweepDeaths(state); }
+		} else if (e.type === 'summon-tentacle-from-deck') {
+			// Loken: summon a Tentacle with the stats of a random minion in your deck (+ Taunt)
+			const p = state.players[pi];
+			const pool = [...new Set(p.deck)].map(id => state.cardsById[id]).filter(d => d && d.type === 'creature' && !d.token);
+			if (pool.length) { const pick = pool[Math.floor(state.rng() * pool.length)]; summon(state, pi, { id: 'ttn_tentacle', name: 'Tentacle', type: 'creature', cost: 0, token: true, rarity: 'common', attack: pick.attack || 0, health: pick.health || 1, keywords: ['taunt'], description: `A ${pick.attack}/${pick.health} Tentacle with Taunt.` }); }
 		} else if (e.type === 'destroy-enemy-plague-damage') {
 			// Tomb Traitor: destroy a Plague in the opponent's deck; if you do, deal V to all enemy minions
 			const foe = enemies[0];
@@ -7484,6 +7490,7 @@ function execEffects(state, pi, effects, target, source) {
 					const card = instantiate(def, own);
 					card.zone = 'hand';
 					if (e.setCost != null) card.cost = e.setCost;
+					if (e.costMod) card.cost = Math.max(0, (card.cost || 0) + e.costMod); // Flame Behemoth: cheaper
 					op.hand.push(card);
 					emit(state, { type: 'conjure', player: own, card, color: null });
 					fireEmerge(state, own, card);
@@ -8648,6 +8655,7 @@ export function playCard(state, pi, cardUid, target, choice, position, useAlt, k
 	p.lastCardCost = card.cost; // Rolling Stone: cost of the most recently played card
 	if (!card.token) p.lastCardPlayedId = card.id; // Fate Splitter: opponent's most recent card
 	if (card.type === 'creature' && card.tribe) { p.tribesPlayedGame = p.tribesPlayedGame || new Set(); for (const tr of (card.tribe || '').split('/')) if (tr) p.tribesPlayedGame.add(tr); } // Power Slider
+	if (card.type === 'creature' && (card.tribe || '').includes('Elemental')) p.elementalsPlayedThisTurn = (p.elementalsPlayedThisTurn || 0) + 1; // Unchained Gladiator
 	if ((card.keywords || []).includes('combo')) p.combosPlayedGame = (p.combosPlayedGame || 0) + 1; // Rhyme Spinner
 	(p.playedCountById = p.playedCountById || {})[card.id] = (p.playedCountById[card.id] || 0) + 1; // Freebird
 	if (card.hauntSummon && state.cardsById[card.hauntSummon]) summon(state, pi, state.cardsById[card.hauntSummon]); // Haunting Nightmare: playing a haunted card summons a Soldier
@@ -10151,7 +10159,7 @@ export function endTurn(state) {
 	}
 	emit(state, { type: 'turnStart', player: state.current, turnNumber: state.turnNumber });
 	// Un'Goro Elemental synergy: carry "played an Elemental" into this turn
-	{ const cp = state.players[state.current]; cp.elementalLastTurn = cp.elementalThisTurn; cp.elementalThisTurn = false; }
+	{ const cp = state.players[state.current]; cp.elementalLastTurn = cp.elementalThisTurn; cp.elementalThisTurn = false; cp.elementalsPlayedLastTurn = cp.elementalsPlayedThisTurn || 0; cp.elementalsPlayedThisTurn = 0; }
 	// in-hand "each turn" effects (Nerubian Prophet: cost -1; Shifter Zerus: transform)
 	const cur = state.players[state.current];
 	for (const c of cur.hand) {
