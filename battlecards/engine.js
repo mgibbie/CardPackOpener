@@ -5374,9 +5374,17 @@ function execEffects(state, pi, effects, target, source) {
 				if (!e.back) execEffects(state, pi, [{ type: 'give-enemy-card', id: 'kings_ransom' }], null, source);
 			}
 		} else if (e.type === 'destroy-enemy-deck') {
-			// Azari, the Devourer: destroy your opponent's deck
-			for (const o of enemies) state.players[o].deck = [];
+			// Azari, the Devourer: destroy your opponent's deck (Omen of the End: only the top N)
+			for (const o of enemies) { if (e.count != null) { for (let n = 0; n < e.count; n++) { const id = state.players[o].deck.pop(); if (!id) break; } } else state.players[o].deck = []; }
 			emit(state, { type: 'deckDestroyed' });
+		} else if (e.type === 'buff-self-per') {
+			// Clockwork Rager (turns taken) / Heir of Hereafter (damaged minions)
+			if (source && !isDead(source)) {
+				let n = 0;
+				if (e.per === 'turns-taken') n = Math.max(1, Math.ceil((state.turnNumber || 1) / 2));
+				else if (e.per === 'damaged-minions') { for (const pl of state.players) for (const c of pl.board) if (!isDead(c) && c.type !== 'location' && c.damage > 0) n++; }
+				if (n > 0) { source.attack += (e.attack || 0) * n; source.maxHealth += (e.health || 0) * n; emit(state, { type: 'buff', uid: source.uid, attack: source.attack, hp: hp(source) }); }
+			}
 		} else if (e.type === 'cast-remembered-on-self') {
 			// Lynessa Sunsorrow: recast every spell you cast on your creatures this game onto this one
 			const p = state.players[pi];

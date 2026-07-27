@@ -118391,6 +118391,370 @@
           "value": 9999
         }
       ]
+    },
+    {
+      "id": "troubled_double",
+      "name": "Troubled Double",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "rogue",
+      "attack": 3,
+      "health": 3,
+      "rarity": "common",
+      "set": "TIME_TRAVEL",
+      "keywords": [
+        "stealth",
+        "combo"
+      ],
+      "description": "Stealth. Combo: Summon a copy of this.",
+      "combo": [
+        {
+          "type": "summon-copy-of-self",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "id": "wicked_blightspawn",
+      "name": "Wicked Blightspawn",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "neutral",
+      "attack": 4,
+      "health": 3,
+      "rarity": "common",
+      "set": "TIME_TRAVEL",
+      "tribe": "Undead",
+      "keywords": [
+        "reborn",
+        "deathrattle"
+      ],
+      "description": "Reborn. Deathrattle: Equip a 1/2 Dagger. If you already have a weapon equipped, give it +2 Attack instead. (Approximated: buff your weapon +2 Attack.)",
+      "deathrattle": [
+        {
+          "type": "buff-weapon",
+          "attack": 2
+        }
+      ]
+    },
+    {
+      "id": "winged_aberration",
+      "name": "Winged Aberration",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "neutral",
+      "attack": 4,
+      "health": 4,
+      "rarity": "common",
+      "set": "TIME_TRAVEL",
+      "tribe": "Dragon",
+      "keywords": [
+        "rush",
+        "combo"
+      ],
+      "description": "Rush. Combo: Overload for (2) to gain Immune this turn and Windfury. (Not modeled: Overload.)",
+      "combo": [
+        {
+          "type": "grant-immune-turn",
+          "target": "self"
+        },
+        {
+          "type": "grant",
+          "keyword": "windfury",
+          "target": "self"
+        }
+      ]
+    },
+    {
+      "id": "wizened_truthseeker",
+      "name": "Wizened Truthseeker",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "neutral",
+      "attack": 4,
+      "health": 5,
+      "rarity": "rare",
+      "set": "TIME_TRAVEL",
+      "tribe": "Draenei",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Set the Cost of every card in both player's hands back to their original Costs. (Not modeled: cost reset.)"
+    },
+    {
+      "id": "aeon_wizard",
+      "name": "Aeon Wizard",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "neutral",
+      "attack": 3,
+      "health": 5,
+      "rarity": "common",
+      "set": "TIME_TRAVEL",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Rewind. Battlecry: Get 2 random spells from your class. (Not modeled: Rewind.)",
+      "effects": [
+        {
+          "type": "conjure-random",
+          "cardType": "spell",
+          "cardClass": "own",
+          "count": 2
+        }
+      ]
+    },
+    {
+      "id": "azure_queen_sindragosa",
+      "name": "Azure Queen Sindragosa",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "mage",
+      "attack": 2,
+      "health": 8,
+      "rarity": "legendary",
+      "set": "TIME_TRAVEL",
+      "tribe": "Dragon",
+      "description": "Fabled. If you control another Dragon, your Arcane spells cost (2) less. (Not modeled: conditional cost aura.)"
+    },
+    {
+      "id": "chronikar",
+      "name": "Chronikar",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "demonhunter",
+      "attack": 3,
+      "health": 5,
+      "rarity": "rare",
+      "set": "TIME_TRAVEL",
+      "tribe": "Dragon",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Give your hero +3 Attack this turn, next turn, and the turn after. (Approximated: +3 Attack this turn.)",
+      "effects": [
+        {
+          "type": "hero-attack",
+          "value": 3
+        }
+      ]
+    },
+    {
+      "id": "clockwork_rager",
+      "name": "Clockwork Rager",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "neutral",
+      "attack": 5,
+      "health": 1,
+      "rarity": "common",
+      "set": "TIME_TRAVEL",
+      "tribe": "Mech",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Gain +1 Health for each turn you've taken this game.",
+      "effects": [
+        {
+          "type": "buff-self-per",
+          "per": "turns-taken",
+          "health": 1
+        }
+      ]
+    },
+    {
+      "id": "doomsday_prepper",
+      "name": "Doomsday Prepper",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "demonhunter",
+      "attack": 5,
+      "health": 4,
+      "rarity": "common",
+      "set": "TIME_TRAVEL",
+      "keywords": [
+        "outcast"
+      ],
+      "description": "Outcast: Your hero is Immune until your next turn. (Not modeled: hero Immune.)",
+      "outcast": {
+        "effects": []
+      }
+    },
+    {
+      "id": "endangered_dodo",
+      "name": "Endangered Dodo",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "druid",
+      "attack": 5,
+      "health": 5,
+      "rarity": "common",
+      "set": "TIME_TRAVEL",
+      "tribe": "Beast",
+      "keywords": [
+        "taunt",
+        "battlecry"
+      ],
+      "description": "Taunt. Battlecry: If you have 10 or less Health, gain +5/+5 and summon a copy of this.",
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "maxHealthSelf": 10
+          },
+          "then": [
+            {
+              "type": "buff",
+              "attack": 5,
+              "health": 5,
+              "target": "self"
+            },
+            {
+              "type": "summon-copy-of-self",
+              "count": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "endtime_survivor",
+      "name": "Endtime Survivor",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "neutral",
+      "attack": 5,
+      "health": 6,
+      "rarity": "common",
+      "set": "TIME_TRAVEL",
+      "keywords": [
+        "taunt",
+        "battlecry"
+      ],
+      "description": "Taunt. Battlecry: If your hero took damage this turn, gain +3/+3.",
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "heroTookDamage": true
+          },
+          "then": [
+            {
+              "type": "buff",
+              "attack": 3,
+              "health": 3,
+              "target": "self"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "heir_of_hereafter",
+      "name": "Heir of Hereafter",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "warrior",
+      "attack": 2,
+      "health": 6,
+      "rarity": "common",
+      "set": "TIME_TRAVEL",
+      "tribe": "Dragon",
+      "keywords": [
+        "taunt",
+        "battlecry"
+      ],
+      "description": "Taunt. Battlecry: Gain +2/+2 for each damaged minion.",
+      "effects": [
+        {
+          "type": "buff-self-per",
+          "per": "damaged-minions",
+          "attack": 2,
+          "health": 2
+        }
+      ]
+    },
+    {
+      "id": "lady_azshara",
+      "name": "Lady Azshara",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "druid",
+      "attack": 5,
+      "health": 5,
+      "rarity": "legendary",
+      "set": "TIME_TRAVEL",
+      "description": "Fabled. Choose One - Empower Zin-Azshari; or The Well of Eternity. (Not modeled: Fabled / Choose One quest.)"
+    },
+    {
+      "id": "muradin_high_king",
+      "name": "Muradin, High King",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "shaman",
+      "attack": 3,
+      "health": 2,
+      "rarity": "legendary",
+      "set": "TIME_TRAVEL",
+      "keywords": [
+        "rush",
+        "battlecry",
+        "deathrattle"
+      ],
+      "description": "Fabled, Rush. Battlecry: Bring the High King's Hammer to ME! Deathrattle: Add it to your hand. (Not modeled: Fabled / the Hammer.)"
+    },
+    {
+      "id": "omen_of_the_end",
+      "name": "Omen of the End",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "neutral",
+      "attack": 5,
+      "health": 5,
+      "rarity": "epic",
+      "set": "TIME_TRAVEL",
+      "tribe": "Dragon",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: If your deck is empty, destroy the top 5 cards of the enemy deck.",
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "deckEmpty": true
+          },
+          "then": [
+            {
+              "type": "destroy-enemy-deck",
+              "count": 5
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "ruinous_velocidrake",
+      "name": "Ruinous Velocidrake",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "warlock",
+      "attack": 5,
+      "health": 5,
+      "rarity": "common",
+      "set": "TIME_TRAVEL",
+      "tribe": "Dragon",
+      "keywords": [
+        "rush",
+        "battlecry"
+      ],
+      "description": "Rush. Battlecry: Cast a Shred of Time from your deck to summon a copy of this. (Approximated: summon a copy.)",
+      "effects": [
+        {
+          "type": "summon-copy-of-self",
+          "count": 1
+        }
+      ]
     }
   ]
 }
