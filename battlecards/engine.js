@@ -3283,7 +3283,7 @@ function execEffects(state, pi, effects, target, source) {
 				if (e.requireHoldingSchool && !state.players[pi].hand.some(c => schoolOf(c) === e.requireHoldingSchool)) continue; // Defias Leper
 				if (e.requireHeroDamagedThisTurn && !state.players[pi].heroDamagedThisTurn) continue; // Shadowblade Slinger
 				if (e.requireHoldingSpellMinCost != null && !state.players[pi].hand.some(c => isSpellType(c) && (c.cost || 0) >= e.requireHoldingSpellMinCost)) continue; // Weaver of the Cycle
-				if (e.requireHeroPowerUpgraded && !state.players[pi].heroPowerUpgraded) continue; // Resplendent Dreamweaver (Imbued twice proxy)
+				if (e.requireHeroPowerUpgraded && !(state.players[pi].heroPowerUpgraded || (state.players[pi].imbueCount || 0) >= 2)) continue; // Resplendent Dreamweaver: Imbued twice
 				if (e.requireHeroHealthChanged && !state.players[pi].heroHealthChangedThisTurn) continue; // Liferender
 				if (e.requireWeaponEquipped && !state.players[pi].weapon) continue; // Fogsail Freebooter
 			// friendly Spell Damage boosts direct spell damage
@@ -4600,7 +4600,8 @@ function execEffects(state, pi, effects, target, source) {
 			else if (e.if.invokedTwice) ok = (p.invokeCount || 0) >= 2; // Descent of Dragons "Invoked twice"
 			else if (e.if.deckNoNeutral) ok = p.deck.length > 0 && p.deck.every(id => (state.cardsById[id]?.cardClass || 'neutral') !== 'neutral'); // Lightforged Zealot/Crusader
 			else if (e.if.overloaded) ok = (p.overloadPending || 0) > 0 || (p.overloadLockedThisTurn || 0) > 0; // Cumulo-Maximus
-			else if (e.if.heroPowerUpgraded) ok = !!p.heroPowerUpgraded; // Petal Picker (Imbue proxy)
+			else if (e.if.heroPowerUpgraded) ok = !!p.heroPowerUpgraded || (p.imbueCount || 0) >= 1; // legacy Imbue proxy
+			else if (e.if.imbuedAtLeast != null) ok = (p.imbueCount || 0) >= e.if.imbuedAtLeast || !!p.heroPowerUpgraded; // Petal Picker twice / Malorne 4x
 			else if (e.if.spellsThisTurn != null) ok = (p.spellsPlayedThisTurn || 0) >= e.if.spellsThisTurn; // Unstable Spellcaster (spell-damage-dealt approx)
 			else if (e.if.deckCostsDistinct != null) ok = new Set(p.deck.map(id => state.cardsById[id]?.cost || 0)).size >= e.if.deckCostsDistinct; // Elise the Navigator: 10 cards of different Costs
 			else if (e.if.selfDrawnThisTurn) ok = !!(source && source.drawnThisTurn); // Swiftdraw riders (Farm Hand / Benevolent Banker)
@@ -5364,6 +5365,63 @@ function execEffects(state, pi, effects, target, source) {
 			const p = state.players[pi];
 			p.deckCostOverrides = p.deckCostOverrides || {};
 			for (let i = 0; i < (e.count || 5) && i < p.deck.length; i++) p.deckCostOverrides[p.deck[i]] = (e.value ?? 1);
+		} else if (e.type === 'imbue') {
+			// Emerald Dream Imbue: upgrade your Hero Power to the class Blessing; each Imbue makes it stronger
+			const p = state.players[pi];
+			p.imbueCount = (p.imbueCount || 0) + 1;
+			const IMBUED = { druid: 'hp_blessing_golem', hunter: 'hp_blessing_wolf', mage: 'hp_blessing_wisp', priest: 'hp_blessing_moon', shaman: 'hp_blessing_wind', paladin: 'hp_blessing_dragon' };
+			const pid = IMBUED[p.heroClass];
+			const def = pid && state.cardsById[pid];
+			if (def) {
+				if (!p.heroPowers.some(hp0 => hp0.id === pid)) { const power = instantiate(def, pi); power.zone = 'heropower'; power.usedThisTurn = false; p.heroPowers = [power]; emit(state, { type: 'heroPowerGained', player: pi, card: power }); }
+			} else p.heroPowerUpgraded = true; // classless/off-class heroes keep the double-fire fallback
+			emit(state, { type: 'imbue', player: pi, count: p.imbueCount });
+		} else if (e.type === 'trigger-imbued-power') {
+			// Wisprider: "...then trigger it" — fire your imbued Blessing's effect immediately
+			const p = state.players[pi];
+			const hp0 = p.heroPowers.find(x => (x.id || '').startsWith('hp_blessing_'));
+			if (hp0 && hp0.power && hp0.power.effects) execEffects(state, pi, JSON.parse(JSON.stringify(hp0.power.effects)), null, source);
+		} else if (e.type === 'blessing-golem') {
+			// Druid: summon an N/N Plant Golem (N = Imbue count)
+			const n = Math.max(1, state.players[pi].imbueCount || 1);
+			summon(state, pi, { id: 'token_plant_golem', name: 'Plant Golem', type: 'creature', cost: 0, token: true, rarity: 'common', attack: n, health: n, description: `A ${n}/${n} Plant Golem.` });
+		} else if (e.type === 'blessing-wolf') {
+			// Hunter: a random Beast in your hand gets +N Attack and costs (N) less
+			const n = Math.max(1, state.players[pi].imbueCount || 1);
+			const pool = state.players[pi].hand.filter(c => c.type === 'creature' && (c.tribe || '').includes('Beast'));
+			if (pool.length) { const c = pool[Math.floor(state.rng() * pool.length)]; c.attack += n; c.cost = Math.max(0, (c.cost || 0) - n); emit(state, { type: 'buff', uid: c.uid, attack: c.attack, hp: hp(c) }); }
+		} else if (e.type === 'blessing-wisp') {
+			// Mage: summon a Wisp, deal N damage split among enemies
+			const n = Math.max(1, state.players[pi].imbueCount || 1);
+			if (state.cardsById['edr_wisp']) summon(state, pi, state.cardsById['edr_wisp']);
+			execEffects(state, pi, [{ type: 'random-damage', value: 1, count: n, pool: 'enemies' }], null, source);
+		} else if (e.type === 'blessing-moon') {
+			// Priest: get a random Priest card; it costs (N) less
+			const n = Math.max(1, state.players[pi].imbueCount || 1);
+			execEffects(state, pi, [{ type: 'conjure-random', cardClass: 'priest', costMod: -n }], null, source);
+		} else if (e.type === 'blessing-wind') {
+			// Shaman: transform a random friendly minion into one that costs (N) more
+			const n = Math.max(1, state.players[pi].imbueCount || 1);
+			const p = state.players[pi];
+			const pool2 = p.board.filter(c => !isDead(c) && c.type !== 'location' && !c.token);
+			if (pool2.length) {
+				const t = pool2[Math.floor(state.rng() * pool2.length)];
+				const targetCost = (t.cost || 0) + n;
+				const opts = Object.values(state.cardsById).filter(dd => dd.type === 'creature' && (dd.cost || 0) === targetCost && !dd.token && dd.collectible !== false && !dd.companion && !dd.commander && !(dd.colors && dd.colors.length));
+				if (opts.length) {
+					const nd = instantiate(opts[Math.floor(state.rng() * opts.length)], pi);
+					nd.zone = 'board'; nd.sick = t.sick;
+					const bi = p.board.indexOf(t);
+					if (bi >= 0) { p.board[bi] = nd; t.zone = 'gone'; emit(state, { type: 'transformed', uid: t.uid, player: pi, from: t.name, card: nd }); recomputeAuras(state); }
+				}
+			}
+		} else if (e.type === 'blessing-dragon') {
+			// Paladin: shuffle two Emerald Portals into your deck (they summon an Imbue-cost minion when drawn)
+			execEffects(state, pi, [{ type: 'shuffle-into-own-deck', id: 'edr_emerald_portal', count: 2 }], null, source);
+		} else if (e.type === 'portal-summon') {
+			// Emerald Portal (drawTrigger): summon a random minion costing your Imbue count
+			const n = Math.max(1, state.players[pi].imbueCount || 1);
+			execEffects(state, pi, [{ type: 'summon-random', cost: Math.min(n, 10) }], null, source);
 		} else if (e.type === 'grant-bonus-effect') {
 			// Bonus Effects: apply N random gifts to self (Mutating Lifeform / Ace Wayfinder) or a random friendly (Stranglevine)
 			const applied = [];

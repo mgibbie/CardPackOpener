@@ -112923,10 +112923,10 @@
       "keywords": [
         "battlecry"
       ],
-      "description": "Battlecry: Imbue your Hero Power. (Approximated: Justicar-style double Hero Power.)",
+      "description": "Battlecry: Imbue your Hero Power.",
       "effects": [
         {
-          "type": "upgrade-hero-power"
+          "type": "imbue"
         }
       ]
     },
@@ -112966,7 +112966,7 @@
       "keywords": [
         "battlecry"
       ],
-      "description": "Battlecry: Draw a Beast. Imbue your Hero Power. (Imbue approximated: double Hero Power.)",
+      "description": "Battlecry: Draw a Beast. Imbue your Hero Power.",
       "effects": [
         {
           "type": "tutor",
@@ -112975,7 +112975,7 @@
           "count": 1
         },
         {
-          "type": "upgrade-hero-power"
+          "type": "imbue"
         }
       ]
     },
@@ -113023,10 +113023,10 @@
         "lifesteal",
         "battlecry"
       ],
-      "description": "Lifesteal. Battlecry: Imbue your Hero Power. (Approximated: double Hero Power.)",
+      "description": "Lifesteal. Battlecry: Imbue your Hero Power.",
       "effects": [
         {
-          "type": "upgrade-hero-power"
+          "type": "imbue"
         }
       ]
     },
@@ -113067,7 +113067,7 @@
       "keywords": [
         "battlecry"
       ],
-      "description": "Battlecry: Get a Wisp. Imbue your Hero Power. (Imbue approximated: double Hero Power.)",
+      "description": "Battlecry: Get a Wisp. Imbue your Hero Power.",
       "effects": [
         {
           "type": "add-card",
@@ -113075,7 +113075,7 @@
           "count": 1
         },
         {
-          "type": "upgrade-hero-power"
+          "type": "imbue"
         }
       ]
     },
@@ -113358,15 +113358,15 @@
         "battlecry",
         "deathrattle"
       ],
-      "description": "Battlecry and Deathrattle: Imbue your Hero Power. (Approximated: double Hero Power.)",
+      "description": "Battlecry and Deathrattle: Imbue your Hero Power.",
       "effects": [
         {
-          "type": "upgrade-hero-power"
+          "type": "imbue"
         }
       ],
       "deathrattle": [
         {
-          "type": "upgrade-hero-power"
+          "type": "imbue"
         }
       ]
     },
@@ -113395,14 +113395,14 @@
       "keywords": [
         "battlecry"
       ],
-      "description": "Battlecry: Give all enemy minions -2 Attack until your next turn. Imbue your Hero Power. (Imbue approximated: double Hero Power.)",
+      "description": "Battlecry: Give all enemy minions -2 Attack until your next turn. Imbue your Hero Power.",
       "effects": [
         {
           "type": "debuff-enemies-attack-turn",
           "value": 2
         },
         {
-          "type": "upgrade-hero-power"
+          "type": "imbue"
         }
       ]
     },
@@ -113434,10 +113434,10 @@
       "keywords": [
         "battlecry"
       ],
-      "description": "Battlecry: Imbue your Hero Power. Reduce the Cost of a minion in your hand by (1). (Imbue approximated: double Hero Power.)",
+      "description": "Battlecry: Imbue your Hero Power. Reduce the Cost of a minion in your hand by (1).",
       "effects": [
         {
-          "type": "upgrade-hero-power"
+          "type": "imbue"
         },
         {
           "type": "reduce-random-hand-minion-cost",
@@ -113481,12 +113481,12 @@
       "keywords": [
         "battlecry"
       ],
-      "description": "Battlecry: If you've Imbued your Hero Power twice, draw 2 cards. (Approximated: fires after one Imbue.)",
+      "description": "Battlecry: If you've Imbued your Hero Power twice, draw 2 cards.",
       "effects": [
         {
           "type": "conditional",
           "if": {
-            "heroPowerUpgraded": true
+            "imbuedAtLeast": 2
           },
           "then": [
             {
@@ -113779,10 +113779,10 @@
         "divine_shield",
         "battlecry"
       ],
-      "description": "Taunt, Divine Shield. Battlecry: Imbue your Hero Power. (Approximated: double Hero Power.)",
+      "description": "Taunt, Divine Shield. Battlecry: Imbue your Hero Power.",
       "effects": [
         {
-          "type": "upgrade-hero-power"
+          "type": "imbue"
         }
       ]
     },
@@ -114049,7 +114049,7 @@
         "lifesteal",
         "battlecry"
       ],
-      "description": "Lifesteal. Battlecry: If you've Imbued your Hero Power twice, deal 4 damage to a minion. (Imbued-twice approximated.)",
+      "description": "Lifesteal. Battlecry: If you've Imbued your Hero Power twice, deal 4 damage to a minion.",
       "effects": [
         {
           "type": "damage",
@@ -114203,10 +114203,10 @@
         "rush",
         "deathrattle"
       ],
-      "description": "Rush. Deathrattle: Imbue your Hero Power. (Approximated: double Hero Power.)",
+      "description": "Rush. Deathrattle: Imbue your Hero Power.",
       "deathrattle": [
         {
-          "type": "upgrade-hero-power"
+          "type": "imbue"
         }
       ]
     },
@@ -114389,13 +114389,13 @@
       "health": 6,
       "rarity": "legendary",
       "set": "EMERALD_DREAM",
-      "description": "Start of Game: If each spell in your deck is Nature, Imbue your Hero Power. Repeat every 3 spells you cast. (Approximated: Imbue every 3 spells; Start-of-Game not modeled.)",
+      "description": "Imbue your Hero Power every 3 spells you cast. (Start-of-Game all-Nature check simplified to the repeat clause.)",
       "ongoing": {
         "on": "spell-played",
         "every": 3,
         "effects": [
           {
-            "type": "upgrade-hero-power"
+            "type": "imbue"
           }
         ]
       }
@@ -114523,10 +114523,13 @@
       "keywords": [
         "battlecry"
       ],
-      "description": "Battlecry: Imbue your Hero Power, then trigger it. (Approximated: Imbue; trigger not modeled.)",
+      "description": "Battlecry: Imbue your Hero Power, then trigger it.",
       "effects": [
         {
-          "type": "upgrade-hero-power"
+          "type": "imbue"
+        },
+        {
+          "type": "trigger-imbued-power"
         }
       ]
     },
@@ -114854,12 +114857,28 @@
       "keywords": [
         "battlecry"
       ],
-      "description": "Battlecry: Discover a Legendary Wild God. If you've Imbued your Hero Power 4 times, set its Cost to (1). (Approximated: Discover a Legendary minion.)",
+      "description": "Battlecry: Discover a Legendary minion. If you've Imbued your Hero Power 4 times, it costs (1).",
       "effects": [
         {
-          "type": "discover",
-          "cardType": "creature",
-          "rarity": "legendary"
+          "type": "conditional",
+          "if": {
+            "imbuedAtLeast": 4
+          },
+          "then": [
+            {
+              "type": "discover",
+              "cardType": "creature",
+              "rarity": "legendary",
+              "setCost": 1
+            }
+          ],
+          "else": [
+            {
+              "type": "discover",
+              "cardType": "creature",
+              "rarity": "legendary"
+            }
+          ]
         }
       ]
     },
@@ -115870,7 +115889,7 @@
       "keywords": [
         "deathrattle"
       ],
-      "description": "Deathrattle: Draw a spell. Kindred: Summon a copy of this. (Kindred approximated: fires on play.)",
+      "description": "Deathrattle: Draw a spell. Kindred: Summon a copy of this. (Kindred still pending.)",
       "effects": [
         {
           "type": "summon-copy-of-self",
@@ -124685,6 +124704,144 @@
         "taunt"
       ],
       "description": "Taunt."
+    },
+    {
+      "id": "hp_blessing_golem",
+      "name": "Blessing of the Golem",
+      "type": "heropower",
+      "cost": 2,
+      "cardClass": "druid",
+      "rarity": "common",
+      "set": "EMERALD_DREAM",
+      "token": true,
+      "collectible": false,
+      "description": "Hero Power: Summon an N/N Plant Golem (N = times Imbued).",
+      "power": {
+        "cost": 2,
+        "effects": [
+          {
+            "type": "blessing-golem"
+          }
+        ]
+      }
+    },
+    {
+      "id": "hp_blessing_wolf",
+      "name": "Blessing of the Wolf",
+      "type": "heropower",
+      "cost": 2,
+      "cardClass": "hunter",
+      "rarity": "common",
+      "set": "EMERALD_DREAM",
+      "token": true,
+      "collectible": false,
+      "description": "Hero Power: Give a random Beast in your hand +N Attack; it costs (N) less.",
+      "power": {
+        "cost": 2,
+        "effects": [
+          {
+            "type": "blessing-wolf"
+          }
+        ]
+      }
+    },
+    {
+      "id": "hp_blessing_wisp",
+      "name": "Blessing of the Wisp",
+      "type": "heropower",
+      "cost": 2,
+      "cardClass": "mage",
+      "rarity": "common",
+      "set": "EMERALD_DREAM",
+      "token": true,
+      "collectible": false,
+      "description": "Hero Power: Summon a Wisp. Deal N damage randomly split among all enemies.",
+      "power": {
+        "cost": 2,
+        "effects": [
+          {
+            "type": "blessing-wisp"
+          }
+        ]
+      }
+    },
+    {
+      "id": "hp_blessing_moon",
+      "name": "Blessing of the Moon",
+      "type": "heropower",
+      "cost": 2,
+      "cardClass": "priest",
+      "rarity": "common",
+      "set": "EMERALD_DREAM",
+      "token": true,
+      "collectible": false,
+      "description": "Hero Power: Get a random Priest card. It costs (N) less.",
+      "power": {
+        "cost": 2,
+        "effects": [
+          {
+            "type": "blessing-moon"
+          }
+        ]
+      }
+    },
+    {
+      "id": "hp_blessing_wind",
+      "name": "Blessing of the Wind",
+      "type": "heropower",
+      "cost": 2,
+      "cardClass": "shaman",
+      "rarity": "common",
+      "set": "EMERALD_DREAM",
+      "token": true,
+      "collectible": false,
+      "description": "Hero Power: Transform a random friendly minion into one that costs (N) more.",
+      "power": {
+        "cost": 2,
+        "effects": [
+          {
+            "type": "blessing-wind"
+          }
+        ]
+      }
+    },
+    {
+      "id": "hp_blessing_dragon",
+      "name": "Blessing of the Dragon",
+      "type": "heropower",
+      "cost": 1,
+      "cardClass": "paladin",
+      "rarity": "common",
+      "set": "EMERALD_DREAM",
+      "token": true,
+      "collectible": false,
+      "description": "Hero Power: Shuffle two Emerald Portals into your deck.",
+      "power": {
+        "cost": 1,
+        "effects": [
+          {
+            "type": "blessing-dragon"
+          }
+        ]
+      }
+    },
+    {
+      "id": "edr_emerald_portal",
+      "name": "Emerald Portal",
+      "type": "sorcery",
+      "cost": 2,
+      "cardClass": "paladin",
+      "rarity": "common",
+      "set": "EMERALD_DREAM",
+      "token": true,
+      "collectible": false,
+      "drawTrigger": true,
+      "description": "When drawn, summon a random minion costing your Imbue count.",
+      "onDraw": [
+        {
+          "type": "portal-summon"
+        }
+      ]
     }
   ]
 }
