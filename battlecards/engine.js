@@ -1961,6 +1961,15 @@ function runSecretEffects(state, pi, effects, ctx) {
 				}
 				break;
 			}
+			case 'gain-dead-deathrattle': {
+				// Devourer of Souls: gain the Deathrattle of a friendly minion that just died
+				const d2 = ctx.dead, s2 = ctx.self;
+				if (d2 && s2 && !isDead(s2) && d2.deathrattle && d2.deathrattle.length) {
+					s2.deathrattle = [...(s2.deathrattle || []), ...JSON.parse(JSON.stringify(d2.deathrattle))];
+					if (!s2.keywords.includes('deathrattle')) s2.keywords.push('deathrattle');
+				}
+				break;
+			}
 			case 'become-copy-of-dead': {
 				// Creepy Painting: transform into a copy of a minion that just died
 				const dead = ctx.dead, self = ctx.self;
@@ -2122,8 +2131,10 @@ function runSecretEffects(state, pi, effects, ctx) {
 					if (m && m !== ctx.self && (!e.tribe || (m.tribe || '').includes(e.tribe))
 						&& (!e.requireKeyword || (m.keywords || []).includes(e.requireKeyword))
 						&& (!e.ifName || m.name === e.ifName)
-						&& (e.maxHealth == null || hp(m) <= e.maxHealth)) {
+						&& (e.maxHealth == null || hp(m) <= e.maxHealth)
+						&& (!e.maxAttackSelf || (ctx.self && m.attack < ctx.self.attack))) { // Blood Matriarch Liadrin
 						if (e.grant && !m.keywords.includes(e.grant)) { m.keywords.push(e.grant); if (e.grant === KW.DIVINE_SHIELD) m.shield = true; } // Lothraxion
+						for (const g of e.grants || []) if (!m.keywords.includes(g)) { m.keywords.push(g); if (g === KW.DIVINE_SHIELD) m.shield = true; if (g === KW.STEALTH) m.stealthed = true; } // Liadrin: DS + Rush
 						m.attack += e.attack || 0; m.maxHealth += e.health || 0;
 						emit(state, { type: 'buff', uid: m.uid, attack: m.attack, hp: hp(m) });
 					}
@@ -4187,6 +4198,7 @@ function execEffects(state, pi, effects, target, source) {
 			else if (e.if.manathirst != null) ok = (p.mana.max || 0) >= e.if.manathirst; // mana crystals this turn, regardless of spend
 			else if (e.if.finale) ok = availableMana(p) === 0; // you spent all your mana playing this card
 			else if (e.if.lastCardCost != null) ok = (p.lastCardCost === e.if.lastCardCost); // Rolling Stone: the last card you played costs N
+			else if (e.if.friendlyUndeadDied) ok = (p.deathLogIds || []).some(id => (state.cardsById[id]?.tribe || '').includes('Undead')); // Bone Flinger (approx: a friendly Undead has died this game)
 			else if (e.if.noFriendlyDeaths) ok = (p.diedThisTurn || 0) === 0;
 			else if (e.if.friendlyDied) ok = (p.diedThisTurn || 0) > 0;       // Bone Flurry
 			else if (e.if.deckAtLeast != null) ok = p.deck.length >= e.if.deckAtLeast; // Crowd Control
@@ -5792,6 +5804,13 @@ function execEffects(state, pi, effects, target, source) {
 			execEffects(state, pi, [{ type: 'tutor', cardType: 'creature', tribe: 'Beast', count: 1 }], null, source);
 			const drawn = p.hand.find(c => !before.has(c.uid));
 			if (drawn && source && !isDead(source)) buffCreature(source, drawn.attack || 0, drawn.maxHealth || 0);
+		} else if (e.type === 'destroy-self') {
+			// Incorporeal Corporal: destroy the source minion
+			if (source && !isDead(source)) { source.damage = source.maxHealth; source.shield = false; emit(state, { type: 'destroy', uid: source.uid }); sweepDeaths(state); }
+		} else if (e.type === 'grant-next-outcast-discount') {
+			// Fierce Outsider (Outcast): your next Outcast card costs less
+			state.players[pi].nextOutcastDiscount = (state.players[pi].nextOutcastDiscount || 0) + (e.value || 1);
+			state.players[pi]._outcastDiscountGrantedThisPlay = true; // don't let the granting card consume its own discount
 		} else if (e.type === 'grant-overload-discount') {
 			// Inzah: for the rest of the game, your Overload cards cost less
 			state.players[pi].overloadDiscount = (state.players[pi].overloadDiscount || 0) + (e.value || 1);
@@ -7281,7 +7300,8 @@ function execEffects(state, pi, effects, target, source) {
 			// deathrattle path (Dark Cultist) — the secret executor has its own copy;
 			// count picks that many DISTINCT friendlies
 			const pool = state.players[pi].board.filter(c =>
-				!isDead(c) && c !== source && c.type !== 'location');
+				!isDead(c) && c !== source && c.type !== 'location'
+				&& (!e.tribe || (c.tribe || '').includes(e.tribe))); // Wailing Banshee: friendly Undead
 			for (let i = 0; i < (e.count || 1) && pool.length; i++) {
 				const m = pool.splice(Math.floor(state.rng() * pool.length), 1)[0];
 				m.attack += e.attack || 0;
@@ -8086,7 +8106,7 @@ export function effectiveCost(state, pi, card) {
 	if (p.nextChooseOneDiscount > 0 && card.choices) c = Math.max(0, c - p.nextChooseOneDiscount); // Pride Seeker
 	if (p.nextSpellDiscount > 0 && isSpellType(card)) c = Math.max(0, c - p.nextSpellDiscount); // Murkwater Scribe
 	if (p.nextTribeDiscount && p.nextTribeDiscount.count > 0 && card.type === 'creature' && (card.tribe || '').includes(p.nextTribeDiscount.tribe)) c = Math.max(0, c - p.nextTribeDiscount.amount); // Clownfish
-	if ((card.keywords || []).includes('outcast')) { const r = p.board.filter(x => x.outcastCostReduce && !isDead(x)).reduce((s, x) => s + x.outcastCostReduce, 0); if (r) c = Math.max(0, c - r); } // Line Hopper
+	if ((card.keywords || []).includes('outcast')) { const r = p.board.filter(x => x.outcastCostReduce && !isDead(x)).reduce((s, x) => s + x.outcastCostReduce, 0); if (r) c = Math.max(0, c - r); if (p.nextOutcastDiscount > 0) c = Math.max(0, c - p.nextOutcastDiscount); } // Line Hopper / Fierce Outsider
 	if (!card.fromDeck) { const r = p.board.filter(x => x.foreignCostReduce && !isDead(x)).reduce((s, x) => s + x.foreignCostReduce, 0); if (r) c = Math.max(1, c - r); } // Arcane Luminary: not below 1
 	{ const sch = schoolOf(card); if (sch) { const r = p.board.filter(x => x.schoolCostReduce && x.schoolCostReduce.school === sch && !isDead(x)).reduce((s, x) => s + x.schoolCostReduce.amount, 0); if (r) c = Math.max(0, c - r); } } // Lady Anacondra: Nature spells
 	if (p.battlecryTaxNext > 0 && (card.keywords || []).includes('battlecry')) c += p.battlecryTaxNext; // Boompistol Bully
@@ -8407,6 +8427,8 @@ export function playCard(state, pi, cardUid, target, choice, position, useAlt, k
 	if (card.type === 'creature' && card.tribe) { p.tribesPlayedGame = p.tribesPlayedGame || new Set(); for (const tr of (card.tribe || '').split('/')) if (tr) p.tribesPlayedGame.add(tr); } // Power Slider
 	if ((card.keywords || []).includes('combo')) p.combosPlayedGame = (p.combosPlayedGame || 0) + 1; // Rhyme Spinner
 	(p.playedCountById = p.playedCountById || {})[card.id] = (p.playedCountById[card.id] || 0) + 1; // Freebird
+	if ((card.keywords || []).includes('outcast') && p.nextOutcastDiscount && !p._outcastDiscountGrantedThisPlay) p.nextOutcastDiscount = 0; // Fierce Outsider: one-shot discount consumed (not by the card that granted it)
+	p._outcastDiscountGrantedThisPlay = false;
 	// Sherazin, Corpse Flower: play 4 cards in a turn to revive the seed
 	if (p.cardsPlayedThisTurn >= 4) {
 		for (const seed of p.board.filter(c => c.id === 'sherazin_seed' && !isDead(c))) {

@@ -98592,6 +98592,487 @@
         "amount": 1
       },
       "description": "Taunt, Lifesteal. This card's Cost is equal to the amount of cards in your deck."
+    },
+    {
+      "id": "arcane_wyrm",
+      "name": "Arcane Wyrm",
+      "type": "creature",
+      "cost": 1,
+      "cardClass": "mage",
+      "attack": 1,
+      "health": 2,
+      "rarity": "common",
+      "set": "RETURN_OF_THE_LICH_KING",
+      "tribe": "Dragon",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Add an Arcane Bolt to your hand.",
+      "effects": [
+        {
+          "type": "add-card",
+          "id": "rlk_arcane_bolt",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "id": "arms_dealer",
+      "name": "Arms Dealer",
+      "type": "creature",
+      "cost": 1,
+      "cardClass": "neutral",
+      "attack": 1,
+      "health": 2,
+      "rarity": "common",
+      "set": "RETURN_OF_THE_LICH_KING",
+      "tribe": "Undead",
+      "description": "After you summon an Undead, give it +1 Attack.",
+      "ongoing": {
+        "on": "summoned",
+        "effects": [
+          {
+            "type": "buff-summoned-if-tribe",
+            "tribe": "Undead",
+            "attack": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "crystalsmith_cultist",
+      "name": "Crystalsmith Cultist",
+      "type": "creature",
+      "cost": 1,
+      "cardClass": "priest",
+      "attack": 1,
+      "health": 2,
+      "rarity": "common",
+      "set": "RETURN_OF_THE_LICH_KING",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: If you're holding a Shadow spell, gain +1/+1.",
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "holdingSchool": "Shadow"
+          },
+          "then": [
+            {
+              "type": "buff",
+              "attack": 1,
+              "health": 1,
+              "target": "self"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "devourer_of_souls",
+      "name": "Devourer of Souls",
+      "type": "creature",
+      "cost": 1,
+      "cardClass": "warlock",
+      "attack": 1,
+      "health": 3,
+      "rarity": "legendary",
+      "set": "RETURN_OF_THE_LICH_KING",
+      "tribe": "Undead",
+      "description": "After a friendly minion dies, gain its Deathrattle.",
+      "ongoing": {
+        "on": "friendly-creature-died",
+        "effects": [
+          {
+            "type": "gain-dead-deathrattle"
+          }
+        ]
+      }
+    },
+    {
+      "id": "fierce_outsider",
+      "name": "Fierce Outsider",
+      "type": "creature",
+      "cost": 1,
+      "cardClass": "demonhunter",
+      "attack": 2,
+      "health": 1,
+      "rarity": "common",
+      "set": "RETURN_OF_THE_LICH_KING",
+      "keywords": [
+        "rush",
+        "outcast"
+      ],
+      "description": "Rush. Outcast: Your next Outcast card costs (1) less.",
+      "outcast": {
+        "effects": [
+          {
+            "type": "grant-next-outcast-discount",
+            "value": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "scourge_tamer",
+      "name": "Scourge Tamer",
+      "type": "creature",
+      "cost": 1,
+      "cardClass": "hunter",
+      "attack": 1,
+      "health": 2,
+      "rarity": "epic",
+      "set": "RETURN_OF_THE_LICH_KING",
+      "tribe": "Undead",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Craft a custom Zombeast.",
+      "effects": [
+        {
+          "type": "discover",
+          "cardType": "creature",
+          "tribe": "Beast"
+        }
+      ]
+    },
+    {
+      "id": "sunfury_champion",
+      "name": "Sunfury Champion",
+      "type": "creature",
+      "cost": 1,
+      "cardClass": "warrior",
+      "attack": 1,
+      "health": 3,
+      "rarity": "epic",
+      "set": "RETURN_OF_THE_LICH_KING",
+      "description": "After you cast a Fire spell, deal 1 damage to all minions.",
+      "ongoing": {
+        "on": "spell-played",
+        "if": {
+          "school": "Fire"
+        },
+        "effects": [
+          {
+            "type": "damage",
+            "value": 1,
+            "target": "all-creatures"
+          }
+        ]
+      }
+    },
+    {
+      "id": "trinket_tracker",
+      "name": "Trinket Tracker",
+      "type": "creature",
+      "cost": 1,
+      "cardClass": "hunter",
+      "attack": 1,
+      "health": 1,
+      "rarity": "common",
+      "set": "RETURN_OF_THE_LICH_KING",
+      "tribe": "Undead",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Draw a 1-Cost spell.",
+      "effects": [
+        {
+          "type": "tutor",
+          "cardType": "spell",
+          "cost": 1,
+          "count": 1
+        }
+      ]
+    },
+    {
+      "id": "wailing_banshee",
+      "name": "Wailing Banshee",
+      "type": "creature",
+      "cost": 1,
+      "cardClass": "neutral",
+      "attack": 2,
+      "health": 1,
+      "rarity": "rare",
+      "set": "RETURN_OF_THE_LICH_KING",
+      "tribe": "Undead",
+      "keywords": [
+        "deathrattle"
+      ],
+      "description": "Deathrattle: Give a random friendly Undead +2/+1.",
+      "deathrattle": [
+        {
+          "type": "buff-random-friendly",
+          "tribe": "Undead",
+          "attack": 2,
+          "health": 1
+        }
+      ]
+    },
+    {
+      "id": "astalor_bloodsworn",
+      "name": "Astalor Bloodsworn",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "neutral",
+      "attack": 2,
+      "health": 2,
+      "rarity": "legendary",
+      "set": "RETURN_OF_THE_LICH_KING",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Add Astalor, the Protector to your hand. Manathirst (5): Deal 2 damage.",
+      "effects": [
+        {
+          "type": "add-card",
+          "id": "rlk_astalor_protector",
+          "count": 1
+        },
+        {
+          "type": "conditional",
+          "if": {
+            "manathirst": 5
+          },
+          "target": "any",
+          "then": [
+            {
+              "type": "damage",
+              "value": 2,
+              "target": "any"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "blood_matriarch_liadrin",
+      "name": "Blood Matriarch Liadrin",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "paladin",
+      "attack": 3,
+      "health": 2,
+      "rarity": "legendary",
+      "set": "RETURN_OF_THE_LICH_KING",
+      "description": "After you summon a minion with less Attack than this, give it Divine Shield and Rush.",
+      "ongoing": {
+        "on": "summoned",
+        "effects": [
+          {
+            "type": "buff-summoned-if-tribe",
+            "maxAttackSelf": true,
+            "grants": [
+              "divine_shield",
+              "rush"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "bone_flinger",
+      "name": "Bone Flinger",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "neutral",
+      "attack": 2,
+      "health": 3,
+      "rarity": "common",
+      "set": "RETURN_OF_THE_LICH_KING",
+      "tribe": "Undead",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: If a friendly Undead died after your last turn, deal 2 damage.",
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "friendlyUndeadDied": true
+          },
+          "target": "any",
+          "then": [
+            {
+              "type": "damage",
+              "value": 2,
+              "target": "any"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "coroner",
+      "name": "Coroner",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "neutral",
+      "attack": 2,
+      "health": 2,
+      "rarity": "rare",
+      "set": "RETURN_OF_THE_LICH_KING",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Freeze an enemy minion. Manathirst (6): Silence it first.",
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "manathirst": 6
+          },
+          "target": "enemy-creature",
+          "then": [
+            {
+              "type": "silence",
+              "target": "enemy-creature"
+            }
+          ]
+        },
+        {
+          "type": "freeze",
+          "target": "enemy-creature"
+        }
+      ]
+    },
+    {
+      "id": "ghoulish_alchemist",
+      "name": "Ghoulish Alchemist",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "rogue",
+      "attack": 3,
+      "health": 2,
+      "rarity": "rare",
+      "set": "RETURN_OF_THE_LICH_KING",
+      "tribe": "Undead",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Your next Concoction costs (0)."
+    },
+    {
+      "id": "incorporeal_corporal",
+      "name": "Incorporeal Corporal",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "neutral",
+      "attack": 5,
+      "health": 5,
+      "rarity": "common",
+      "set": "RETURN_OF_THE_LICH_KING",
+      "tribe": "Undead",
+      "description": "After this minion attacks, destroy it.",
+      "ongoing": {
+        "on": "self-attacks",
+        "effects": [
+          {
+            "type": "destroy-self"
+          }
+        ]
+      }
+    },
+    {
+      "id": "magisters_apprentice",
+      "name": "Magister's Apprentice",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "mage",
+      "attack": 3,
+      "health": 2,
+      "rarity": "common",
+      "set": "RETURN_OF_THE_LICH_KING",
+      "schoolCostReduce": {
+        "school": "Arcane",
+        "amount": 1
+      },
+      "description": "Your Arcane spells cost (1) less."
+    },
+    {
+      "id": "rlk_arcane_bolt",
+      "name": "Arcane Bolt",
+      "type": "sorcery",
+      "cost": 1,
+      "cardClass": "mage",
+      "tribe": "Arcane",
+      "rarity": "common",
+      "set": "RETURN_OF_THE_LICH_KING",
+      "token": true,
+      "collectible": false,
+      "description": "Deal 2 damage.",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 2,
+          "target": "any"
+        }
+      ]
+    },
+    {
+      "id": "rlk_astalor_protector",
+      "name": "Astalor, the Protector",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "neutral",
+      "attack": 2,
+      "health": 5,
+      "rarity": "legendary",
+      "set": "RETURN_OF_THE_LICH_KING",
+      "tribe": "",
+      "token": true,
+      "collectible": false,
+      "keywords": [
+        "taunt",
+        "battlecry"
+      ],
+      "description": "Taunt. Battlecry: Add Astalor, the Flamewreath to your hand. Manathirst (5): Gain 15 Armor.",
+      "effects": [
+        {
+          "type": "add-card",
+          "id": "rlk_astalor_flamewreath",
+          "count": 1
+        },
+        {
+          "type": "conditional",
+          "if": {
+            "manathirst": 5
+          },
+          "then": [
+            {
+              "type": "armor",
+              "value": 15
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "rlk_astalor_flamewreath",
+      "name": "Astalor, the Flamewreath",
+      "type": "creature",
+      "cost": 8,
+      "cardClass": "neutral",
+      "attack": 5,
+      "health": 5,
+      "rarity": "legendary",
+      "set": "RETURN_OF_THE_LICH_KING",
+      "token": true,
+      "collectible": false,
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Deal 10 damage randomly split among all enemies.",
+      "effects": [
+        {
+          "type": "random-damage",
+          "value": 1,
+          "count": 10,
+          "pool": "enemies"
+        }
+      ]
     }
   ]
 }
