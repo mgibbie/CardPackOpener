@@ -2935,6 +2935,12 @@ function runSecretEffects(state, pi, effects, ctx) {
 				if (m && !isDead(m) && m.type !== 'location') { m.attack = (m.attack || 0) * 2; m.maxHealth = (m.maxHealth || 0) * 2; emit(state, { type: 'buff', uid: m.uid, attack: m.attack, hp: hp(m) }); }
 				break;
 			}
+			case 'summon-discarded-minion': {
+				// Maloriak: after you discard a minion, summon a copy of it
+				const c = ctx.card;
+				if (c && c.type === 'creature' && state.cardsById[c.id]) summon(state, pi, state.cardsById[c.id]);
+				break;
+			}
 			case 'cast-random-spell-of-played-cost': {
 				// Chaos Supplicant: after you cast a spell, cast a random spell of the same Cost (another-class restriction not modeled)
 				const spell = ctx.played;
@@ -3199,6 +3205,7 @@ function execEffects(state, pi, effects, target, source) {
 			let v = e.value === 'source-attack' ? (source?.attack || 0) : scaled(e); // Sergeant Sally
 			if (e.valueFromHeroDamage) v = state.players[pi].heroDamageTakenThisTurn || 0; // Shadowblade Slinger
 				if (e.valueFromSelfHealth && source) v = hp(source); // Cleansing Lightspawn: damage = this minion's Health
+				if (e.valueFromSelfAttack && source) v = source.attack || 0; // Ebonscale Scout: damage = this minion's Attack
 				if (e.altValueIfDrawn != null && source && source.drawnThisTurn) v = e.altValueIfDrawn; // Oil Rig Ambusher
 			if (source && (source.type === 'sorcery' || source.type === 'instant')) {
 				v += staticValue(state.players[pi], 'spell-damage') + (state.players[pi].nextSpellDamageBonus || 0) + (source.bonusSpellDamage || 0);
@@ -7644,10 +7651,17 @@ function execEffects(state, pi, effects, target, source) {
 			const pool = p.hand.filter(c => c.type === 'creature' && c.attack >= (e.minAttack || 0) && (e.maxCost == null || (c.cost || 0) <= e.maxCost) && (!e.requireKeyword || c.keywords.includes(e.requireKeyword)) && (!e.tribe || (c.tribe || '').includes(e.tribe))); // Coffin Crasher / Piloted Reaper / Oondasta
 			if (pool.length) { const c = pool[Math.floor(state.rng() * pool.length)]; p.hand = p.hand.filter(x => x !== c); c.zone = 'board'; p.board.push(c); emit(state, { type: 'summon', player: pi, card: c }); fireOngoing(state, pi, 'summoned', { minion: c }); growBlubberBaron(state, pi, c); recomputeAuras(state); }
 		} else if (e.type === 'destroy-deck-max-cost') {
-			// Hemet, Jungle Hunter: destroy all cards in your deck costing N or less
-			const p = state.players[pi];
-			p.deck = p.deck.filter(id => (state.cardsById[id]?.cost || 0) > (e.maxCost || 0));
+			// Hemet, Jungle Hunter: destroy all cards in your deck costing N or less (Warmaster Blackhorn: both decks)
+			const targets = e.bothPlayers ? state.players.map((_, i) => i) : [pi];
+			for (const idx of targets) { const pl = state.players[idx]; pl.deck = pl.deck.filter(id => (state.cardsById[id]?.cost || 0) > (e.maxCost || 0)); }
 			emit(state, { type: 'shuffledIntoDeck', player: pi, count: 0 });
+		} else if (e.type === 'bless-divine-shield') {
+			// Nozdormu, Bronze Aspect: give your minions Divine Shield; any that already had one gain +3/+3 instead
+			for (const c of state.players[pi].board) {
+				if (c === source || isDead(c) || c.type === 'location') continue;
+				if (c.keywords.includes(KW.DIVINE_SHIELD) && c.shield) buffCreature(c, e.attack ?? 3, e.health ?? 3);
+				else { if (!c.keywords.includes(KW.DIVINE_SHIELD)) c.keywords.push(KW.DIVINE_SHIELD); c.shield = true; emit(state, { type: 'buff', uid: c.uid, attack: c.attack, hp: hp(c) }); }
+			}
 		} else if (e.type === 'summon-random-discarded') {
 			// Cruel Dinomancer: summon a random creature you discarded this game
 			const p = state.players[pi];
@@ -9046,6 +9060,8 @@ export function effectiveCost(state, pi, card) {
 			n = state.minionsDiedGame || 0; // Reska, the Pit Boss
 		} else if (card.selfCost.per === 'cards-played') {
 			n = p.cardsPlayedThisTurn || 0; // Everburning Phoenix: cheaper per card played this turn
+		} else if (card.selfCost.per === 'last-card-cost') {
+			n = p.lastCardCost || 0; // Gronn Giant: reduced by the Cost of the last card you played
 		}
 		c += card.selfCost.amount * n;
 	}

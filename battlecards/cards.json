@@ -120542,6 +120542,475 @@
       "collectible": false,
       "description": "Does nothing.",
       "effects": []
+    },
+    {
+      "id": "bronze_redeemer",
+      "name": "Bronze Redeemer",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "paladin",
+      "attack": 3,
+      "health": 3,
+      "rarity": "common",
+      "set": "CATACLYSM",
+      "description": "At the end of your turn, summon a Dragon with stats equal to this minion's.",
+      "ongoing": {
+        "on": "turn-end",
+        "effects": [
+          {
+            "type": "summon-with-source-stats",
+            "id": "token_bronze_dragon",
+            "name": "Bronze Dragon",
+            "tribe": "Dragon"
+          }
+        ]
+      }
+    },
+    {
+      "id": "destructive_blaze",
+      "name": "Destructive Blaze",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "warrior",
+      "attack": 3,
+      "health": 3,
+      "rarity": "common",
+      "set": "CATACLYSM",
+      "tribe": "Elemental",
+      "keywords": [
+        "deathrattle"
+      ],
+      "description": "After this survives damage, summon a Destructive Blaze. Deathrattle: Deal 2 damage to a random enemy.",
+      "ongoing": {
+        "on": "self-damaged",
+        "survives": true,
+        "effects": [
+          {
+            "type": "summon-copy-of-self",
+            "count": 1
+          }
+        ]
+      },
+      "deathrattle": [
+        {
+          "type": "random-damage",
+          "value": 2,
+          "count": 1,
+          "pool": "enemies"
+        }
+      ]
+    },
+    {
+      "id": "iridescent_flitterwing",
+      "name": "Iridescent Flitterwing",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "druid",
+      "attack": 4,
+      "health": 5,
+      "rarity": "rare",
+      "set": "CATACLYSM",
+      "tribe": "Dragon",
+      "keywords": [
+        "elusive"
+      ],
+      "description": "Elusive. At the end of your turn, give your other minions +1/+1.",
+      "ongoing": {
+        "on": "turn-end",
+        "effects": [
+          {
+            "type": "buff",
+            "attack": 1,
+            "health": 1,
+            "target": "friendly-others"
+          }
+        ]
+      }
+    },
+    {
+      "id": "isorath",
+      "name": "Iso'rath",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "rogue",
+      "attack": 5,
+      "health": 3,
+      "rarity": "legendary",
+      "set": "CATACLYSM",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Devour 2 random cards from the opponent's hand, then go Dormant for 2 turns. Deathrattle: Return them. (Approximated: trap 2 enemy hand cards for a turn.)",
+      "effects": [
+        {
+          "type": "lock-enemy-hand-card",
+          "count": 2
+        }
+      ]
+    },
+    {
+      "id": "nozdormu_bronze_aspect",
+      "name": "Nozdormu, Bronze Aspect",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "paladin",
+      "attack": 4,
+      "health": 4,
+      "rarity": "legendary",
+      "set": "CATACLYSM",
+      "description": "At the end of your turn, give your minions Divine Shield. Any that already had one gain +3/+3 instead.",
+      "ongoing": {
+        "on": "turn-end",
+        "effects": [
+          {
+            "type": "bless-divine-shield",
+            "attack": 3,
+            "health": 3
+          }
+        ]
+      }
+    },
+    {
+      "id": "talya_earthstrider",
+      "name": "Talya Earthstrider",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "hunter",
+      "attack": 4,
+      "health": 6,
+      "rarity": "legendary",
+      "set": "CATACLYSM",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Your cards that summon Animal Companions summon 1 more this game. (Not modeled: Companion count boost.)"
+    },
+    {
+      "id": "wizened_wildspeaker",
+      "name": "Wizened Wildspeaker",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "druid",
+      "attack": 3,
+      "health": 7,
+      "rarity": "common",
+      "set": "CATACLYSM",
+      "keywords": [
+        "taunt",
+        "battlecry"
+      ],
+      "description": "Taunt. Battlecry: If you didn't play a minion last turn, refresh 3 Mana Crystals. (Approximated: always refreshes.)",
+      "effects": [
+        {
+          "type": "refresh-mana",
+          "value": 3
+        }
+      ]
+    },
+    {
+      "id": "ebonscale_scout",
+      "name": "Ebonscale Scout",
+      "type": "creature",
+      "cost": 6,
+      "cardClass": "hunter",
+      "attack": 4,
+      "health": 4,
+      "rarity": "common",
+      "set": "CATACLYSM",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Deal damage equal to this minion's Attack. (Not modeled: in-hand Dragon upgrade.)",
+      "effects": [
+        {
+          "type": "damage",
+          "valueFromSelfAttack": true,
+          "target": "any"
+        }
+      ]
+    },
+    {
+      "id": "ultraxion",
+      "name": "Ultraxion",
+      "type": "creature",
+      "cost": 6,
+      "cardClass": "neutral",
+      "attack": 6,
+      "health": 7,
+      "rarity": "legendary",
+      "set": "CATACLYSM",
+      "tribe": "Dragon",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Herald. Reduce Deathwing's Cost. (Not modeled: Herald.)"
+    },
+    {
+      "id": "vyranoth",
+      "name": "Vyranoth",
+      "type": "creature",
+      "cost": 6,
+      "cardClass": "neutral",
+      "attack": 6,
+      "health": 6,
+      "rarity": "legendary",
+      "set": "CATACLYSM",
+      "tribe": "Elemental",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: If the total Cost of your starting minions was 100, split 100 stats among minions in your deck. (Not modeled: 100-Cost condition.)"
+    },
+    {
+      "id": "alexstrasza_guardian_of_life",
+      "name": "Alexstrasza, Guardian of Life",
+      "type": "creature",
+      "cost": 7,
+      "cardClass": "priest",
+      "attack": 8,
+      "health": 8,
+      "rarity": "legendary",
+      "set": "CATACLYSM",
+      "tribe": "Dragon",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Set your remaining Health to 15. When you reach full Health, deal 15 damage to your opponent. (Not modeled: full-Health payoff.)",
+      "effects": [
+        {
+          "type": "set-hero-health",
+          "value": 15,
+          "target": "self"
+        }
+      ]
+    },
+    {
+      "id": "bashana_runetotem",
+      "name": "Bashana Runetotem",
+      "type": "creature",
+      "cost": 7,
+      "cardClass": "druid",
+      "attack": 4,
+      "health": 4,
+      "rarity": "legendary",
+      "set": "CATACLYSM",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Get three 2/2 Treants. Carve 12 Mana worth of Nature spells into them. (Approximated: three 2/2 Treants.)",
+      "effects": [
+        {
+          "type": "add-card",
+          "id": "cata_treant",
+          "count": 3
+        }
+      ]
+    },
+    {
+      "id": "commander_geddon",
+      "name": "Commander Geddon",
+      "type": "creature",
+      "cost": 7,
+      "cardClass": "warrior",
+      "attack": 7,
+      "health": 7,
+      "rarity": "legendary",
+      "set": "CATACLYSM",
+      "tribe": "Elemental",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Instead of drawing each turn, Discover a card from your deck at (3) less. (Not modeled: draw replacement.)"
+    },
+    {
+      "id": "ebyssian",
+      "name": "Ebyssian",
+      "type": "creature",
+      "cost": 7,
+      "cardClass": "hunter",
+      "attack": 6,
+      "health": 6,
+      "rarity": "legendary",
+      "set": "CATACLYSM",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Your Dragons have Rush this game. (Not modeled: in-hand Dragon upgrade.)",
+      "effects": [
+        {
+          "type": "emblem",
+          "name": "Ebyssian",
+          "description": "Your Dragons have Rush.",
+          "aura": {
+            "tribe": "Dragon",
+            "keywords": [
+              "rush"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "magmaw",
+      "name": "Magmaw",
+      "type": "creature",
+      "cost": 7,
+      "cardClass": "hunter",
+      "attack": 2,
+      "health": 12,
+      "rarity": "epic",
+      "set": "CATACLYSM",
+      "tribe": "Beast",
+      "description": "Colossal +99. Summon any leftover appendages when there is room. (Not modeled: Colossal.)"
+    },
+    {
+      "id": "maloriak",
+      "name": "Maloriak",
+      "type": "creature",
+      "cost": 7,
+      "cardClass": "warlock",
+      "attack": 7,
+      "health": 7,
+      "rarity": "legendary",
+      "set": "CATACLYSM",
+      "tribe": "Dragon",
+      "description": "After you discard a minion, summon a copy of it.",
+      "ongoing": {
+        "on": "card-discarded",
+        "effects": [
+          {
+            "type": "summon-discarded-minion"
+          }
+        ]
+      }
+    },
+    {
+      "id": "warmaster_blackhorn",
+      "name": "Warmaster Blackhorn",
+      "type": "creature",
+      "cost": 7,
+      "cardClass": "neutral",
+      "attack": 6,
+      "health": 6,
+      "rarity": "legendary",
+      "set": "CATACLYSM",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Destroy all cards that cost (2) or less in both players' decks.",
+      "effects": [
+        {
+          "type": "destroy-deck-max-cost",
+          "maxCost": 2,
+          "bothPlayers": true
+        }
+      ]
+    },
+    {
+      "id": "merithra_of_the_dream",
+      "name": "Merithra of the Dream",
+      "type": "creature",
+      "cost": 8,
+      "cardClass": "druid",
+      "attack": 4,
+      "health": 12,
+      "rarity": "legendary",
+      "set": "CATACLYSM",
+      "tribe": "Dragon",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Fill your hand with random Dragons. If you spent 25 Mana while holding this, they cost (1). (Approximated: 6 random Dragons; 25-Mana rider not modeled.)",
+      "effects": [
+        {
+          "type": "conjure-random",
+          "cardType": "creature",
+          "tribe": "Dragon",
+          "count": 6
+        }
+      ]
+    },
+    {
+      "id": "dread_leviathan",
+      "name": "Dread Leviathan",
+      "type": "creature",
+      "cost": 9,
+      "cardClass": "demonhunter",
+      "attack": 9,
+      "health": 6,
+      "rarity": "epic",
+      "set": "CATACLYSM",
+      "tribe": "Beast",
+      "keywords": [
+        "taunt",
+        "battlecry"
+      ],
+      "description": "Taunt. Battlecry: Choose an enemy minion to steal 3 Health from, three times. (Approximated: steal 9 from one enemy minion.)",
+      "effects": [
+        {
+          "type": "steal-health",
+          "value": 9,
+          "target": "enemy-creature"
+        }
+      ]
+    },
+    {
+      "id": "gronn_giant",
+      "name": "Gronn Giant",
+      "type": "creature",
+      "cost": 9,
+      "cardClass": "neutral",
+      "attack": 8,
+      "health": 8,
+      "rarity": "epic",
+      "set": "CATACLYSM",
+      "selfCost": {
+        "per": "last-card-cost",
+        "amount": -1
+      },
+      "description": "This minion's Cost is reduced by the Cost of the last card you played."
+    },
+    {
+      "id": "morchok",
+      "name": "Morchok",
+      "type": "creature",
+      "cost": 10,
+      "cardClass": "shaman",
+      "attack": 10,
+      "health": 10,
+      "rarity": "legendary",
+      "set": "CATACLYSM",
+      "tribe": "Elemental",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Draw a card and reduce its Cost by (10). Repeat with excess Cost reduction. (Approximated: draw 2 cards at (0).)",
+      "effects": [
+        {
+          "type": "draw-set-cost",
+          "value": 1,
+          "cost": 0
+        },
+        {
+          "type": "draw-set-cost",
+          "value": 1,
+          "cost": 0
+        }
+      ]
+    },
+    {
+      "id": "cata_treant",
+      "name": "Treant",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "druid",
+      "attack": 2,
+      "health": 2,
+      "rarity": "common",
+      "set": "CATACLYSM",
+      "token": true,
+      "collectible": false,
+      "description": "A 2/2 Treant."
     }
   ]
 }
