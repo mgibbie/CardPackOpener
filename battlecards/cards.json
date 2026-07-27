@@ -101322,6 +101322,382 @@
         "taunt"
       ],
       "description": "Taunt."
+    },
+    {
+      "id": "astral_automaton",
+      "name": "Astral Automaton",
+      "type": "creature",
+      "cost": 1,
+      "cardClass": "priest",
+      "attack": 1,
+      "health": 2,
+      "rarity": "rare",
+      "set": "TITANS",
+      "tribe": "Mech",
+      "scaleOnEntry": {
+        "attack": 1,
+        "health": 1
+      },
+      "description": "Has +1/+1 for each other Astral Automaton you've summoned this game."
+    },
+    {
+      "id": "chaotic_tendril",
+      "name": "Chaotic Tendril",
+      "type": "creature",
+      "cost": 1,
+      "cardClass": "neutral",
+      "attack": 1,
+      "health": 1,
+      "rarity": "common",
+      "set": "TITANS",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Cast a random 1-Cost spell. Improve your future Chaotic Tendrils.",
+      "effects": [
+        {
+          "type": "cast-random-spell",
+          "count": 1,
+          "cost": 1
+        }
+      ]
+    },
+    {
+      "id": "drone_deconstructor",
+      "name": "Drone Deconstructor",
+      "type": "creature",
+      "cost": 1,
+      "cardClass": "neutral",
+      "attack": 1,
+      "health": 2,
+      "rarity": "common",
+      "set": "TITANS",
+      "tribe": "Mech",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Get a 1/1 Magnetic Sparkbot with a random Bonus Effect.",
+      "effects": [
+        {
+          "type": "add-card",
+          "id": "ttn_sparkbot",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "id": "shadowtouched_kvaldir",
+      "name": "Shadowtouched Kvaldir",
+      "type": "creature",
+      "cost": 1,
+      "cardClass": "priest",
+      "attack": 1,
+      "health": 3,
+      "rarity": "rare",
+      "set": "TITANS",
+      "tribe": "Undead",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Your next healing effect deals damage instead.",
+      "effects": [
+        {
+          "type": "set-heal-harm"
+        }
+      ]
+    },
+    {
+      "id": "victorious_vrykul",
+      "name": "Victorious Vrykul",
+      "type": "creature",
+      "cost": 1,
+      "cardClass": "neutral",
+      "attack": 1,
+      "health": 2,
+      "rarity": "common",
+      "set": "TITANS",
+      "description": "After this attacks, get a 2/3 Val'kyr that costs (1).",
+      "ongoing": {
+        "on": "self-attacks",
+        "effects": [
+          {
+            "type": "add-card",
+            "id": "ttn_valkyr",
+            "count": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "x21_repairbot",
+      "name": "X-21 Repairbot",
+      "type": "creature",
+      "cost": 1,
+      "cardClass": "paladin",
+      "attack": 1,
+      "health": 3,
+      "rarity": "rare",
+      "set": "TITANS",
+      "tribe": "Mech",
+      "keywords": [
+        "deathrattle"
+      ],
+      "description": "Deathrattle: Return any Mechs Magnetized to this to your hand.",
+      "deathrattle": []
+    },
+    {
+      "id": "battleworn_faceless",
+      "name": "Battleworn Faceless",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "warrior",
+      "attack": 2,
+      "health": 2,
+      "rarity": "rare",
+      "set": "TITANS",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Transform into a copy of a damaged minion.",
+      "effects": [
+        {
+          "type": "become-copy-of-random-damaged"
+        }
+      ]
+    },
+    {
+      "id": "celestial_projectionist",
+      "name": "Celestial Projectionist",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "neutral",
+      "attack": 3,
+      "health": 2,
+      "rarity": "rare",
+      "set": "TITANS",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Choose a friendly minion. Add a Temporary copy of it to your hand.",
+      "effects": [
+        {
+          "type": "copy-to-hand",
+          "target": "friendly-creature"
+        }
+      ]
+    },
+    {
+      "id": "crystalline_statue",
+      "name": "Crystalline Statue",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "demonhunter",
+      "attack": 5,
+      "health": 4,
+      "rarity": "rare",
+      "set": "TITANS",
+      "tribe": "Elemental",
+      "keywords": [
+        "rush"
+      ],
+      "dormant": 2,
+      "description": "Rush. Starts Dormant. After you draw 4 cards, this awakens."
+    },
+    {
+      "id": "disciple_of_golganneth",
+      "name": "Disciple of Golganneth",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "shaman",
+      "attack": 2,
+      "health": 3,
+      "rarity": "common",
+      "set": "TITANS",
+      "description": "At the end of your turn, reduce the Cost of a random Overload card in your hand by (1).",
+      "ongoing": {
+        "on": "turn-end",
+        "effects": [
+          {
+            "type": "reduce-random-hand-cost",
+            "overload": true,
+            "value": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "distressed_kvaldir",
+      "name": "Distressed Kvaldir",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "deathknight",
+      "attack": 3,
+      "health": 2,
+      "rarity": "epic",
+      "set": "TITANS",
+      "tribe": "Undead",
+      "keywords": [
+        "deathrattle"
+      ],
+      "description": "Deathrattle: Shuffle two random Plagues into your opponent's deck.",
+      "deathrattle": [
+        {
+          "type": "shuffle-cards-into-enemy-deck",
+          "id": "ttn_plague",
+          "count": 2
+        }
+      ]
+    },
+    {
+      "id": "false_disciple",
+      "name": "False Disciple",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "priest",
+      "attack": 2,
+      "health": 2,
+      "rarity": "rare",
+      "set": "TITANS",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Discover a Legendary Priest minion from the past.",
+      "effects": [
+        {
+          "type": "discover",
+          "cardType": "creature",
+          "cardClasses": [
+            "priest"
+          ],
+          "rarity": "legendary"
+        }
+      ]
+    },
+    {
+      "id": "flame_revenant",
+      "name": "Flame Revenant",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "neutral",
+      "attack": 2,
+      "health": 3,
+      "rarity": "common",
+      "set": "TITANS",
+      "tribe": "Elemental",
+      "description": "After you summon an Elemental, give it +1/+1.",
+      "ongoing": {
+        "on": "summoned",
+        "effects": [
+          {
+            "type": "buff-summoned-if-tribe",
+            "tribe": "Elemental",
+            "attack": 1,
+            "health": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "invent_o_matic",
+      "name": "Invent-o-matic",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "neutral",
+      "attack": 2,
+      "health": 3,
+      "rarity": "common",
+      "set": "TITANS",
+      "tribe": "Mech",
+      "description": "Whenever you Magnetize a minion, give it +1/+1."
+    },
+    {
+      "id": "kajamite_creation",
+      "name": "Kaja'mite Creation",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "rogue",
+      "attack": 3,
+      "health": 2,
+      "rarity": "rare",
+      "set": "TITANS",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Discover a spell from another class that costs (3) or less.",
+      "effects": [
+        {
+          "type": "discover",
+          "cardType": "spell",
+          "maxCost": 3
+        }
+      ]
+    },
+    {
+      "id": "noble_minibot",
+      "name": "Noble Minibot",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "paladin",
+      "attack": 2,
+      "health": 3,
+      "rarity": "common",
+      "set": "TITANS",
+      "tribe": "Mech",
+      "magnetic": true,
+      "description": "Magnetic. After this attacks, give a random minion in your hand +1/+1.",
+      "ongoing": {
+        "on": "self-attacks",
+        "effects": [
+          {
+            "type": "buff-random-hand",
+            "attack": 1,
+            "health": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "ttn_valkyr",
+      "name": "Val'kyr",
+      "type": "creature",
+      "cost": 1,
+      "cardClass": "neutral",
+      "attack": 2,
+      "health": 3,
+      "rarity": "common",
+      "set": "TITANS",
+      "token": true,
+      "collectible": false,
+      "description": "A 2/3 token."
+    },
+    {
+      "id": "ttn_sparkbot",
+      "name": "Magnetic Sparkbot",
+      "type": "creature",
+      "cost": 1,
+      "cardClass": "neutral",
+      "attack": 1,
+      "health": 1,
+      "rarity": "common",
+      "set": "TITANS",
+      "tribe": "Mech",
+      "token": true,
+      "collectible": false,
+      "magnetic": true,
+      "description": "Magnetic."
+    },
+    {
+      "id": "ttn_plague",
+      "name": "Plague",
+      "type": "sorcery",
+      "cost": 0,
+      "cardClass": "deathknight",
+      "rarity": "common",
+      "set": "TITANS",
+      "token": true,
+      "collectible": false,
+      "description": "A useless Plague clogging your deck.",
+      "effects": []
     }
   ]
 }
