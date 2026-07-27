@@ -104935,6 +104935,399 @@
           }
         ]
       }
+    },
+    {
+      "id": "tabletop_roleplayer",
+      "name": "Tabletop Roleplayer",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "warlock",
+      "attack": 4,
+      "health": 3,
+      "rarity": "common",
+      "set": "WHIZBANGS_WORKSHOP",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Miniaturize. Battlecry: Give a friendly Demon +2 Attack and Immune this turn.",
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 2,
+          "target": "friendly-creature"
+        },
+        {
+          "type": "grant-immune-turn",
+          "target": "friendly-creature"
+        }
+      ]
+    },
+    {
+      "id": "triplewick_trickster",
+      "name": "Triplewick Trickster",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "mage",
+      "attack": 2,
+      "health": 3,
+      "rarity": "common",
+      "set": "WHIZBANGS_WORKSHOP",
+      "tribe": "Elemental",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Deal 2 damage to a random enemy, three times.",
+      "effects": [
+        {
+          "type": "random-damage",
+          "value": 2,
+          "count": 3,
+          "pool": "enemies"
+        }
+      ]
+    },
+    {
+      "id": "amateur_puppeteer",
+      "name": "Amateur Puppeteer",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "deathknight",
+      "attack": 2,
+      "health": 6,
+      "rarity": "rare",
+      "set": "WHIZBANGS_WORKSHOP",
+      "tribe": "Undead",
+      "keywords": [
+        "taunt",
+        "deathrattle"
+      ],
+      "description": "Miniaturize, Taunt. Deathrattle: Give Undead in your hand +2/+2.",
+      "deathrattle": [
+        {
+          "type": "buff-hand-tribe",
+          "tribe": "Undead",
+          "attack": 2,
+          "health": 2
+        }
+      ]
+    },
+    {
+      "id": "dr_stitchensew",
+      "name": "Dr. Stitchensew",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "deathknight",
+      "attack": 5,
+      "health": 4,
+      "rarity": "legendary",
+      "set": "WHIZBANGS_WORKSHOP",
+      "tribe": "Undead",
+      "keywords": [
+        "battlecry",
+        "deathrattle"
+      ],
+      "description": "Battlecry: Discover a 5, 3, and 1-Cost minion to stitch to this. Deathrattle: Summon the 5-Cost minion.",
+      "effects": [
+        {
+          "type": "discover",
+          "cardType": "creature",
+          "cost": 5
+        },
+        {
+          "type": "discover",
+          "cardType": "creature",
+          "cost": 3
+        },
+        {
+          "type": "discover",
+          "cardType": "creature",
+          "cost": 1
+        }
+      ],
+      "deathrattle": [
+        {
+          "type": "summon-random",
+          "cost": 5
+        }
+      ]
+    },
+    {
+      "id": "fireworker",
+      "name": "Fireworker",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "warrior",
+      "attack": 5,
+      "health": 5,
+      "rarity": "rare",
+      "set": "WHIZBANGS_WORKSHOP",
+      "tribe": "Mech",
+      "keywords": [
+        "deathrattle"
+      ],
+      "description": "Deathrattle: Summon two 1/1 Boom Bots. WARNING: Bots may explode.",
+      "deathrattle": [
+        {
+          "type": "summon",
+          "count": 2,
+          "summonId": "boom_bot"
+        }
+      ]
+    },
+    {
+      "id": "forgotten_animatronic",
+      "name": "Forgotten Animatronic",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "neutral",
+      "attack": 4,
+      "health": 6,
+      "rarity": "common",
+      "set": "WHIZBANGS_WORKSHOP",
+      "tribe": "Mech",
+      "description": "At the end of your turn, destroy a minion with less Attack than this.",
+      "ongoing": {
+        "on": "turn-end",
+        "effects": [
+          {
+            "type": "destroy-weaker-minion"
+          }
+        ]
+      }
+    },
+    {
+      "id": "game_master_nemsy",
+      "name": "Game Master Nemsy",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "warlock",
+      "attack": 3,
+      "health": 6,
+      "rarity": "legendary",
+      "set": "WHIZBANGS_WORKSHOP",
+      "keywords": [
+        "battlecry",
+        "deathrattle"
+      ],
+      "description": "Battlecry: Draw a Demon. Deathrattle: Swap places with it.",
+      "effects": [
+        {
+          "type": "tutor",
+          "cardType": "creature",
+          "tribe": "Demon",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "id": "nostalgic_clown",
+      "name": "Nostalgic Clown",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "neutral",
+      "attack": 6,
+      "health": 5,
+      "rarity": "epic",
+      "set": "WHIZBANGS_WORKSHOP",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Miniaturize. Battlecry: If you've played a higher Cost card while holding this, deal 4 damage.",
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "spellsCastWhileHeld": 1
+          },
+          "target": "any",
+          "then": [
+            {
+              "type": "damage",
+              "value": 4,
+              "target": "any"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "origami_frog",
+      "name": "Origami Frog",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "neutral",
+      "attack": 1,
+      "health": 4,
+      "rarity": "common",
+      "set": "WHIZBANGS_WORKSHOP",
+      "tribe": "Beast",
+      "keywords": [
+        "rush",
+        "battlecry"
+      ],
+      "description": "Rush. Battlecry: Swap Attack with another minion.",
+      "effects": [
+        {
+          "type": "swap-attack-with",
+          "target": "creature"
+        }
+      ]
+    },
+    {
+      "id": "product_9",
+      "name": "Product 9",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "hunter",
+      "attack": 4,
+      "health": 4,
+      "rarity": "legendary",
+      "set": "WHIZBANGS_WORKSHOP",
+      "tribe": "Beast",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Recast every friendly Secret that triggered this game.",
+      "effects": [
+        {
+          "type": "install-random-secrets",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "id": "puppetmaster_dorian",
+      "name": "Puppetmaster Dorian",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "neutral",
+      "attack": 2,
+      "health": 6,
+      "rarity": "legendary",
+      "set": "WHIZBANGS_WORKSHOP",
+      "description": "After you draw a minion, get a 1/1 copy of it that costs (1).",
+      "ongoing": {
+        "on": "card-drawn",
+        "effects": [
+          {
+            "type": "add-mini-copy-of-drawn",
+            "attack": 1,
+            "health": 1,
+            "cost": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "raza_the_resealed",
+      "name": "Raza the Resealed",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "priest",
+      "attack": 5,
+      "health": 5,
+      "rarity": "legendary",
+      "set": "WHIZBANGS_WORKSHOP",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Shuffle copies of 5 random friendly minions that died this game into your deck. They cost (0).",
+      "effects": [
+        {
+          "type": "shuffle-died-copies",
+          "count": 5
+        }
+      ]
+    },
+    {
+      "id": "sandbox_scoundrel",
+      "name": "Sandbox Scoundrel",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "rogue",
+      "attack": 4,
+      "health": 3,
+      "rarity": "rare",
+      "set": "WHIZBANGS_WORKSHOP",
+      "tribe": "Pirate",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Miniaturize. Battlecry: Your next card this turn costs (2) less.",
+      "effects": [
+        {
+          "type": "set-next-cards-discount",
+          "count": 1,
+          "value": 2
+        }
+      ]
+    },
+    {
+      "id": "shoplifter_goldbeard",
+      "name": "Shoplifter Goldbeard",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "rogue",
+      "attack": 5,
+      "health": 5,
+      "rarity": "legendary",
+      "set": "WHIZBANGS_WORKSHOP",
+      "tribe": "Pirate",
+      "description": "After you summon a Pirate, summon a copy of it that attacks a random enemy, then dies.",
+      "ongoing": {
+        "on": "summoned",
+        "if": {
+          "tribe": "Pirate"
+        },
+        "effects": [
+          {
+            "type": "summon-copy-attack-die"
+          }
+        ]
+      }
+    },
+    {
+      "id": "sky_mother_aviana",
+      "name": "Sky Mother Aviana",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "druid",
+      "attack": 5,
+      "health": 5,
+      "rarity": "legendary",
+      "set": "WHIZBANGS_WORKSHOP",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Shuffle 10 random Legendary minions into your deck. They cost (1).",
+      "effects": [
+        {
+          "type": "shuffle-random-legendaries",
+          "count": 10
+        }
+      ]
+    },
+    {
+      "id": "sleet_skater",
+      "name": "Sleet Skater",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "mage",
+      "attack": 3,
+      "health": 4,
+      "rarity": "rare",
+      "set": "WHIZBANGS_WORKSHOP",
+      "tribe": "Elemental",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Miniaturize. Battlecry: Freeze an enemy minion. Gain Armor equal to its Attack.",
+      "effects": [
+        {
+          "type": "freeze-gain-armor",
+          "target": "enemy-creature"
+        }
+      ]
     }
   ]
 }

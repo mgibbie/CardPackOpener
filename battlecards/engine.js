@@ -668,6 +668,8 @@ const CHOSEN = {
 	'grant-attack-while-alive': { creature: 'creature', 'friendly-creature': 'friendly-creature' },
 	'destroy-friendly-tribe-buff-all': { 'friendly-creature': 'friendly-creature' },
 	'destroy-friendly-remember': { 'friendly-creature': 'friendly-creature' },
+	'swap-attack-with': { creature: 'creature', 'friendly-creature': 'friendly-creature' },
+	'freeze-gain-armor': { 'enemy-creature': 'enemy-creature' },
 	'swap-enemy-with-deck': { 'enemy-creature': 'enemy-creature' },
 	fireworks: { 'friendly-creature': 'friendly-creature' },
 	'bounce-and-buff': { 'friendly-creature': 'friendly-creature' },
@@ -2727,6 +2729,31 @@ function runSecretEffects(state, pi, effects, ctx) {
 				if (sp && p.hand.length < MAX_HAND) {
 					const pool = Object.values(state.cardsById).filter(d => isSpellType(d) && !d.token && d.collectible !== false && !(d.colors && d.colors.length) && (d.cost || 0) === (sp.cost || 0));
 					if (pool.length) { const nc = instantiate(pool[Math.floor(state.rng() * pool.length)], pi); nc.zone = 'hand'; p.hand.push(nc); emit(state, { type: 'conjure', player: pi, card: nc, color: null }); }
+				}
+				break;
+			}
+			case 'add-mini-copy-of-drawn': {
+				// Puppetmaster Dorian: after you draw a minion, add a 1/1 copy of it that costs (1)
+				const d = ctx.card; const pp = state.players[pi];
+				if (d && (state.cardsById[d.id]?.type === 'creature') && pp.hand.length < MAX_HAND) {
+					const nc = instantiate(state.cardsById[d.id], pi); nc.zone = 'hand'; nc.attack = e.attack ?? 1; nc.maxHealth = e.health ?? 1; nc.cost = e.cost ?? 1; pp.hand.push(nc);
+					emit(state, { type: 'conjure', player: pi, card: nc, color: null });
+				}
+				break;
+			}
+			case 'summon-copy-attack-die': {
+				// Shoplifter Goldbeard: summon a copy of the just-summoned minion; it attacks a random enemy, then dies
+				const m = ctx.minion; const def = m && state.cardsById[m.id];
+				if (def && m !== ctx.self && !m._shoplifterCopy) {
+					const copy = summon(state, pi, def);
+					if (copy) {
+						copy._shoplifterCopy = true; // don't let the copy re-trigger Goldbeard
+						copy.sick = false;
+						const foes = [];
+						for (const o of opponentsOf(state, pi)) { for (const c of state.players[o].board) if (!isDead(c) && c.type !== 'location' && !c.stealthed && c.dormantLeft <= 0) foes.push({ type: 'creature', uid: c.uid, player: o }); foes.push({ type: 'hero', player: o }); }
+						if (foes.length && !isDead(copy)) resolveCombat(state, pi, copy.uid, foes[Math.floor(state.rng() * foes.length)]);
+						if (!isDead(copy)) { copy.damage = copy.maxHealth; copy.shield = false; emit(state, { type: 'destroy', uid: copy.uid }); sweepDeaths(state); }
+					}
 				}
 				break;
 			}
@@ -5895,6 +5922,31 @@ function execEffects(state, pi, effects, target, source) {
 		} else if (e.type === 'destroy-self') {
 			// Incorporeal Corporal: destroy the source minion
 			if (source && !isDead(source)) { source.damage = source.maxHealth; source.shield = false; emit(state, { type: 'destroy', uid: source.uid }); sweepDeaths(state); }
+		} else if (e.type === 'swap-attack-with') {
+			// Origami Frog: swap Attack with another minion
+			const t = chosenCreature();
+			if (t && source) { const a = source.attack; source.attack = t.attack; t.attack = a; emit(state, { type: 'buff', uid: source.uid, attack: source.attack, hp: hp(source) }); emit(state, { type: 'buff', uid: t.uid, attack: t.attack, hp: hp(t) }); }
+		} else if (e.type === 'destroy-weaker-minion') {
+			// Forgotten Animatronic: destroy a random minion with less Attack than this
+			if (source) { const pool = []; for (const pl of state.players) for (const c of pl.board) { if (c === source || isDead(c) || c.type === 'location') continue; if ((c.attack || 0) < (source.attack || 0)) pool.push(c); } if (pool.length) { const t = pool[Math.floor(state.rng() * pool.length)]; t.damage = t.maxHealth; t.shield = false; emit(state, { type: 'destroy', uid: t.uid }); sweepDeaths(state); } }
+		} else if (e.type === 'freeze-gain-armor') {
+			// Sleet Skater: freeze an enemy minion, gain Armor equal to its Attack
+			const t = chosenCreature();
+			if (t) { freezeCreature(state, t); gainArmor(state, pi, t.attack || 0); }
+		} else if (e.type === 'shuffle-died-copies') {
+			// Raza the Resealed: shuffle copies of N random died friendly minions into your deck, cost 0
+			const p = state.players[pi];
+			const pool = [...new Set(p.deathLogIds)].map(id => state.cardsById[id]).filter(d => d && d.type === 'creature' && !d.token);
+			for (let n = 0; n < (e.count || 5) && pool.length; n++) { const def = pool[Math.floor(state.rng() * pool.length)]; p.deck.push(def.id); }
+			for (let i = p.deck.length - 1; i > 0; i--) { const j = Math.floor(state.rng() * (i + 1)); [p.deck[i], p.deck[j]] = [p.deck[j], p.deck[i]]; }
+			emit(state, { type: 'shuffle', player: pi }); // NB: the (0)-cost reduction on the shuffled copies is not modeled per-copy
+		} else if (e.type === 'shuffle-random-legendaries') {
+			// Sky Mother Aviana: shuffle N random Legendary minions into your deck, cost (1)
+			const p = state.players[pi];
+			const pool = Object.values(state.cardsById).filter(d => d.type === 'creature' && d.rarity === 'legendary' && !d.token && d.collectible !== false && !(d.colors && d.colors.length));
+			for (let n = 0; n < (e.count || 10) && pool.length; n++) p.deck.push(pool[Math.floor(state.rng() * pool.length)].id);
+			for (let i = p.deck.length - 1; i > 0; i--) { const j = Math.floor(state.rng() * (i + 1)); [p.deck[i], p.deck[j]] = [p.deck[j], p.deck[i]]; }
+			emit(state, { type: 'shuffle', player: pi });
 		} else if (e.type === 'copy-random-deck-tribe') {
 			// Mystery Egg: add a copy of a random minion of a tribe in your deck to your hand
 			const p = state.players[pi];
