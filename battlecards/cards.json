@@ -108920,6 +108920,459 @@
           "count": 3
         }
       ]
+    },
+    {
+      "id": "job_shadower",
+      "name": "Job Shadower",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "priest",
+      "attack": 4,
+      "health": 3,
+      "rarity": "common",
+      "set": "ISLAND_VACATION",
+      "tribe": "Undead",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: If your hero took damage this turn, summon a copy of this.",
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "heroTookDamage": true
+          },
+          "then": [
+            {
+              "type": "summon-copy-of-self",
+              "count": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "line_cook",
+      "name": "Line Cook",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "warrior",
+      "attack": 2,
+      "health": 4,
+      "rarity": "common",
+      "set": "ISLAND_VACATION",
+      "keywords": [
+        "taunt"
+      ],
+      "copyOnDraw": true,
+      "description": "Tradeable. Taunt. When you draw this, get a copy of it."
+    },
+    {
+      "id": "mixologist",
+      "name": "Mixologist",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "neutral",
+      "attack": 2,
+      "health": 3,
+      "rarity": "epic",
+      "set": "ISLAND_VACATION",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Craft a custom 1-Cost Potion.",
+      "effects": [
+        {
+          "type": "add-card",
+          "id": "vac_potion",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "id": "overplanner",
+      "name": "Overplanner",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "neutral",
+      "attack": 3,
+      "health": 3,
+      "rarity": "common",
+      "set": "ISLAND_VACATION",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Choose three cards from your deck to put on top in that order.",
+      "effects": [
+        {
+          "type": "reorder-deck"
+        }
+      ]
+    },
+    {
+      "id": "robocaller",
+      "name": "Robocaller",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "rogue",
+      "attack": 3,
+      "health": 2,
+      "rarity": "rare",
+      "set": "ISLAND_VACATION",
+      "tribe": "Mech",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Draw an X, Y, and Z-Cost card. (Numbers dialed randomly each turn!)",
+      "effects": [
+        {
+          "type": "draw",
+          "value": 3
+        }
+      ]
+    },
+    {
+      "id": "sacrificial_imp",
+      "name": "Sacrificial Imp",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "warlock",
+      "attack": 1,
+      "health": 6,
+      "rarity": "rare",
+      "set": "ISLAND_VACATION",
+      "tribe": "Demon",
+      "keywords": [
+        "deathrattle"
+      ],
+      "description": "Deathrattle: If it's your turn, summon a 6/6 Imp with Taunt.",
+      "deathrattle": [
+        {
+          "type": "conditional",
+          "if": {
+            "enemyTurn": true
+          },
+          "then": [],
+          "else": [
+            {
+              "type": "summon",
+              "count": 1,
+              "summonId": "vac_imp_66"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "sailboat_captain",
+      "name": "Sailboat Captain",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "neutral",
+      "attack": 2,
+      "health": 4,
+      "rarity": "common",
+      "set": "ISLAND_VACATION",
+      "tribe": "Pirate",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Give a friendly Pirate Windfury.",
+      "effects": [
+        {
+          "type": "grant",
+          "keyword": "windfury",
+          "target": "friendly-creature"
+        }
+      ]
+    },
+    {
+      "id": "sea_shill",
+      "name": "Sea Shill",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "rogue",
+      "attack": 3,
+      "health": 2,
+      "rarity": "common",
+      "set": "ISLAND_VACATION",
+      "tribe": "Pirate",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: The next card you play from another class costs (2) less.",
+      "effects": [
+        {
+          "type": "set-next-cards-discount",
+          "count": 1,
+          "value": 2
+        }
+      ]
+    },
+    {
+      "id": "swarthy_swordshiner",
+      "name": "Swarthy Swordshiner",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "rogue",
+      "attack": 3,
+      "health": 3,
+      "rarity": "epic",
+      "set": "ISLAND_VACATION",
+      "tribe": "Pirate",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Set the Attack and Durability of your weapon to 3.",
+      "effects": [
+        {
+          "type": "set-weapon-stats",
+          "attack": 3,
+          "durability": 3
+        }
+      ]
+    },
+    {
+      "id": "terrible_chef",
+      "name": "Terrible Chef",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "neutral",
+      "attack": 2,
+      "health": 1,
+      "rarity": "common",
+      "set": "ISLAND_VACATION",
+      "tribe": "Undead",
+      "keywords": [
+        "battlecry",
+        "deathrattle"
+      ],
+      "description": "Battlecry: Summon a 0/2 Nerubian Egg. Deathrattle: Destroy it.",
+      "effects": [
+        {
+          "type": "summon",
+          "count": 1,
+          "summonId": "vac_nerubian_egg"
+        }
+      ],
+      "deathrattle": [
+        {
+          "type": "destroy-friendly-by-id",
+          "id": "vac_nerubian_egg"
+        }
+      ]
+    },
+    {
+      "id": "tortollan_traveler",
+      "name": "Tortollan Traveler",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "druid",
+      "attack": 1,
+      "health": 5,
+      "rarity": "common",
+      "set": "ISLAND_VACATION",
+      "keywords": [
+        "taunt",
+        "deathrattle"
+      ],
+      "description": "Taunt. Deathrattle: Draw another Taunt minion. Reduce its Cost by (2).",
+      "deathrattle": [
+        {
+          "type": "tutor",
+          "cardType": "creature",
+          "requireKeyword": "taunt",
+          "count": 1,
+          "costMod": -2
+        }
+      ]
+    },
+    {
+      "id": "turbulus",
+      "name": "Turbulus",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "shaman",
+      "attack": 3,
+      "health": 3,
+      "rarity": "legendary",
+      "set": "ISLAND_VACATION",
+      "tribe": "Elemental",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Hunter Tourist. Battlecry: Give +1/+1 to all other Battlecry minions in your hand, deck, and battlefield.",
+      "effects": [
+        {
+          "type": "buff-battlecry-minions",
+          "attack": 1,
+          "health": 1
+        }
+      ]
+    },
+    {
+      "id": "alloy_advisor",
+      "name": "Alloy Advisor",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "warrior",
+      "attack": 2,
+      "health": 6,
+      "rarity": "common",
+      "set": "ISLAND_VACATION",
+      "tribe": "Mech",
+      "keywords": [
+        "taunt"
+      ],
+      "description": "Taunt. Whenever this takes damage, gain 3 Armor.",
+      "ongoing": {
+        "on": "self-damaged",
+        "effects": [
+          {
+            "type": "armor",
+            "value": 3
+          }
+        ]
+      }
+    },
+    {
+      "id": "buttons",
+      "name": "Buttons",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "deathknight",
+      "attack": 4,
+      "health": 4,
+      "rarity": "legendary",
+      "set": "ISLAND_VACATION",
+      "tribe": "Undead",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Shaman Tourist. Battlecry: Draw a spell of each spell school.",
+      "effects": [
+        {
+          "type": "tutor",
+          "cardType": "spell",
+          "count": 2
+        }
+      ]
+    },
+    {
+      "id": "cabaret_headliner",
+      "name": "Cabaret Headliner",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "shaman",
+      "attack": 3,
+      "health": 3,
+      "rarity": "rare",
+      "set": "ISLAND_VACATION",
+      "tribe": "Naga",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Reduce the Cost of a spell of each school in your hand by (2).",
+      "effects": [
+        {
+          "type": "reduce-random-hand-cost",
+          "school": null,
+          "value": 2
+        }
+      ]
+    },
+    {
+      "id": "carry_on_grub",
+      "name": "Carry-On Grub",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "neutral",
+      "attack": 5,
+      "health": 4,
+      "rarity": "epic",
+      "set": "ISLAND_VACATION",
+      "tribe": "Beast",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Get a 1-Cost Suitcase. Pack the top 2 cards of your deck into it.",
+      "effects": [
+        {
+          "type": "add-card",
+          "id": "vac_suitcase",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "id": "vac_imp_66",
+      "name": "Imp",
+      "type": "creature",
+      "cost": 6,
+      "cardClass": "warlock",
+      "attack": 6,
+      "health": 6,
+      "rarity": "common",
+      "set": "ISLAND_VACATION",
+      "tribe": "Demon",
+      "token": true,
+      "collectible": false,
+      "keywords": [
+        "taunt"
+      ],
+      "description": "Taunt."
+    },
+    {
+      "id": "vac_nerubian_egg",
+      "name": "Nerubian Egg",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "neutral",
+      "attack": 0,
+      "health": 2,
+      "rarity": "common",
+      "set": "ISLAND_VACATION",
+      "tribe": "Undead",
+      "token": true,
+      "collectible": false,
+      "description": "A 0/2 Egg."
+    },
+    {
+      "id": "vac_potion",
+      "name": "Potion",
+      "type": "sorcery",
+      "cost": 1,
+      "cardClass": "neutral",
+      "rarity": "common",
+      "set": "ISLAND_VACATION",
+      "token": true,
+      "collectible": false,
+      "description": "Deal 2 damage.",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 2,
+          "target": "any"
+        }
+      ]
+    },
+    {
+      "id": "vac_suitcase",
+      "name": "Suitcase",
+      "type": "sorcery",
+      "cost": 1,
+      "cardClass": "neutral",
+      "rarity": "common",
+      "set": "ISLAND_VACATION",
+      "token": true,
+      "collectible": false,
+      "description": "Draw 2 cards.",
+      "effects": [
+        {
+          "type": "draw",
+          "value": 2
+        }
+      ]
     }
   ]
 }

@@ -5961,6 +5961,19 @@ function execEffects(state, pi, effects, target, source) {
 			const p = state.players[pi];
 			const pool = [...new Set(p.deck)].map(id => state.cardsById[id]).filter(d => d && d.type === 'creature' && !d.token);
 			for (let n = 0; n < (e.count || 4) && pool.length; n++) { if (p.board.filter(c => !isDead(c)).length >= 7) break; const def = JSON.parse(JSON.stringify(pool[Math.floor(state.rng() * pool.length)])); if (e.stats != null) { def.attack = e.stats; def.health = e.stats; } def.token = true; def.id = 'token_' + def.id; summon(state, pi, def); }
+		} else if (e.type === 'set-weapon-stats') {
+			// Swarthy Swordshiner: set your weapon's Attack and Durability
+			const w = state.players[pi].weapon;
+			if (w) { w.attack = e.attack ?? w.attack; w.durability = e.durability ?? w.durability; emit(state, { type: 'weaponDurability', player: pi, attack: w.attack, durability: w.durability }); }
+		} else if (e.type === 'buff-battlecry-minions') {
+			// Turbulus: give all OTHER Battlecry minions in hand and on board +X/+X
+			const p = state.players[pi];
+			for (const c of p.board) if (c !== source && !isDead(c) && c.type !== 'location' && (c.keywords || []).includes('battlecry')) buffCreature(c, e.attack || 1, e.health || 1);
+			for (const c of p.hand) if (c.type === 'creature' && (c.keywords || []).includes('battlecry')) { c.attack += e.attack || 1; c.maxHealth += e.health || 1; emit(state, { type: 'buff', uid: c.uid, attack: c.attack, hp: hp(c) }); }
+		} else if (e.type === 'destroy-friendly-by-id') {
+			// Terrible Chef: destroy a friendly minion of a given id (the Egg it summoned)
+			const t = state.players[pi].board.find(c => c.id === e.id && !isDead(c));
+			if (t) { t.damage = t.maxHealth; t.shield = false; emit(state, { type: 'destroy', uid: t.uid }); sweepDeaths(state); }
 		} else if (e.type === 'recast-own-last-spell') {
 			// Chatty Macaw: recast the last spell you cast (at a random enemy if it targets)
 			const last = state.players[pi].lastSpellPlayed;
