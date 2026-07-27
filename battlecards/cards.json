@@ -96413,6 +96413,411 @@
           "rarity": "legendary"
         }
       ]
+    },
+    {
+      "id": "air_guitarist",
+      "name": "Air Guitarist",
+      "type": "creature",
+      "cost": 1,
+      "cardClass": "neutral",
+      "attack": 1,
+      "health": 1,
+      "rarity": "common",
+      "set": "BATTLE_OF_THE_BANDS",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Give your weapon +1 Durability.",
+      "effects": [
+        {
+          "type": "buff-weapon",
+          "durability": 1
+        }
+      ]
+    },
+    {
+      "id": "annoying_fan",
+      "name": "Annoying Fan",
+      "type": "creature",
+      "cost": 1,
+      "cardClass": "neutral",
+      "attack": 1,
+      "health": 2,
+      "rarity": "common",
+      "set": "BATTLE_OF_THE_BANDS",
+      "tribe": "Mech",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Choose a minion. It can't attack while this is alive.",
+      "effects": [
+        {
+          "type": "lock-minion-attack",
+          "target": "creature"
+        }
+      ]
+    },
+    {
+      "id": "costumed_singer",
+      "name": "Costumed Singer",
+      "type": "creature",
+      "cost": 1,
+      "cardClass": "mage",
+      "attack": 1,
+      "health": 1,
+      "rarity": "common",
+      "set": "BATTLE_OF_THE_BANDS",
+      "description": "At the end of your turn, draw a Secret.",
+      "ongoing": {
+        "on": "turn-end",
+        "effects": [
+          {
+            "type": "tutor",
+            "cardType": "secret",
+            "count": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "crowd_surfer",
+      "name": "Crowd Surfer",
+      "type": "creature",
+      "cost": 1,
+      "cardClass": "neutral",
+      "attack": 1,
+      "health": 1,
+      "rarity": "epic",
+      "set": "BATTLE_OF_THE_BANDS",
+      "tribe": "Murloc",
+      "keywords": [
+        "deathrattle"
+      ],
+      "description": "Deathrattle: Give ANY other minion +1/+1 and this Deathrattle.",
+      "deathrattle": [
+        {
+          "type": "buff-random-other-grant-deathrattle",
+          "attack": 1,
+          "health": 1
+        }
+      ]
+    },
+    {
+      "id": "flowrider",
+      "name": "Flowrider",
+      "type": "creature",
+      "cost": 1,
+      "cardClass": "shaman",
+      "attack": 2,
+      "health": 1,
+      "rarity": "common",
+      "set": "BATTLE_OF_THE_BANDS",
+      "tribe": "Naga",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: If you're Overloaded, Discover a spell from your deck.",
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "overloaded": true
+          },
+          "then": [
+            {
+              "type": "discover",
+              "cardType": "spell",
+              "fromOwnDeck": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "free_spirit",
+      "name": "Free Spirit",
+      "type": "creature",
+      "cost": 1,
+      "cardClass": "druid",
+      "attack": 1,
+      "health": 2,
+      "rarity": "epic",
+      "set": "BATTLE_OF_THE_BANDS",
+      "tribe": "Beast",
+      "keywords": [
+        "battlecry",
+        "deathrattle"
+      ],
+      "description": "Battlecry and Deathrattle: Your Hero Power gains 1 more Armor this game.",
+      "effects": [
+        {
+          "type": "armor",
+          "value": 1
+        }
+      ],
+      "deathrattle": [
+        {
+          "type": "armor",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "peaceful_piper",
+      "name": "Peaceful Piper",
+      "type": "creature",
+      "cost": 1,
+      "cardClass": "druid",
+      "attack": 1,
+      "health": 1,
+      "rarity": "common",
+      "set": "BATTLE_OF_THE_BANDS",
+      "description": "Choose One - Draw a Beast; or Discover one.",
+      "choices": [
+        {
+          "text": "Draw a Beast",
+          "effects": [
+            {
+              "type": "tutor",
+              "cardType": "creature",
+              "tribe": "Beast",
+              "count": 1
+            }
+          ]
+        },
+        {
+          "text": "Discover a Beast",
+          "effects": [
+            {
+              "type": "discover",
+              "cardType": "creature",
+              "tribe": "Beast"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "razorfen_rockstar",
+      "name": "Razorfen Rockstar",
+      "type": "creature",
+      "cost": 1,
+      "cardClass": "warrior",
+      "attack": 1,
+      "health": 3,
+      "rarity": "common",
+      "set": "BATTLE_OF_THE_BANDS",
+      "tribe": "Quilboar",
+      "description": "After you gain Armor, gain 2 more.",
+      "ongoing": {
+        "on": "armor-gained",
+        "effects": [
+          {
+            "type": "gain-armor-no-trigger",
+            "value": 2
+          }
+        ]
+      }
+    },
+    {
+      "id": "saxophone_soloist",
+      "name": "Saxophone Soloist",
+      "type": "creature",
+      "cost": 1,
+      "cardClass": "shaman",
+      "attack": 1,
+      "health": 2,
+      "rarity": "epic",
+      "set": "BATTLE_OF_THE_BANDS",
+      "tribe": "Murloc",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: If you control no other minions, add a Saxophone Soloist to your hand.",
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "noOtherCreatures": true
+          },
+          "then": [
+            {
+              "type": "add-card",
+              "id": "saxophone_soloist",
+              "count": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "thornmantle_musician",
+      "name": "Thornmantle Musician",
+      "type": "creature",
+      "cost": 1,
+      "cardClass": "hunter",
+      "attack": 1,
+      "health": 3,
+      "rarity": "common",
+      "set": "BATTLE_OF_THE_BANDS",
+      "tribe": "Quilboar",
+      "keywords": [
+        "finale"
+      ],
+      "description": "Finale: The next Beast you summon gets +1/+1.",
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "finale": true
+          },
+          "then": [
+            {
+              "type": "buff-next-summon-tribe",
+              "tribe": "Beast",
+              "attack": 1,
+              "health": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "arrow_smith",
+      "name": "Arrow Smith",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "hunter",
+      "attack": 2,
+      "health": 3,
+      "rarity": "common",
+      "set": "BATTLE_OF_THE_BANDS",
+      "tribe": "Naga",
+      "description": "After you cast a spell, deal 1 damage to the lowest Health enemy.",
+      "ongoing": {
+        "on": "spell-played",
+        "effects": [
+          {
+            "type": "damage-lowest-enemy",
+            "value": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "audio_amplifier",
+      "name": "Audio Amplifier",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "neutral",
+      "attack": 2,
+      "health": 3,
+      "rarity": "epic",
+      "set": "BATTLE_OF_THE_BANDS",
+      "tribe": "Mech",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Set your maximum Mana and hand size to 11.",
+      "effects": [
+        {
+          "type": "set-own-max-mana",
+          "value": 11
+        }
+      ]
+    },
+    {
+      "id": "audio_medic",
+      "name": "Audio Medic",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "neutral",
+      "attack": 2,
+      "health": 3,
+      "rarity": "common",
+      "set": "BATTLE_OF_THE_BANDS",
+      "keywords": [
+        "rush",
+        "finale"
+      ],
+      "description": "Rush. Finale: Gain Lifesteal.",
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "finale": true
+          },
+          "then": [
+            {
+              "type": "grant-keyword-self",
+              "keyword": "lifesteal"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "audio_splitter",
+      "name": "Audio Splitter",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "mage",
+      "attack": 3,
+      "health": 2,
+      "rarity": "common",
+      "set": "BATTLE_OF_THE_BANDS",
+      "tribe": "Mech",
+      "keywords": [
+        "deathrattle"
+      ],
+      "description": "Deathrattle: Copy the highest Cost spell in your hand.",
+      "deathrattle": [
+        {
+          "type": "copy-highest-spell"
+        }
+      ]
+    },
+    {
+      "id": "baritone_imp",
+      "name": "Baritone Imp",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "warlock",
+      "attack": 2,
+      "health": 2,
+      "rarity": "common",
+      "set": "BATTLE_OF_THE_BANDS",
+      "tribe": "Demon",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Take Fatigue damage. Gain that much Attack and Health.",
+      "effects": [
+        {
+          "type": "fatigue-self-buff"
+        }
+      ]
+    },
+    {
+      "id": "disc_jockey",
+      "name": "Disc Jockey",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "rogue",
+      "attack": 4,
+      "health": 1,
+      "rarity": "common",
+      "set": "BATTLE_OF_THE_BANDS",
+      "tribe": "Mech",
+      "keywords": [
+        "combo"
+      ],
+      "description": "Combo: Add a random Combo card to your hand.",
+      "combo": [
+        {
+          "type": "add-random-combo-card"
+        }
+      ]
     }
   ]
 }

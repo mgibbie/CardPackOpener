@@ -658,6 +658,7 @@ const CHOSEN = {
 	'devour-target': { 'friendly-creature': 'friendly-creature' },
 	'devour-enemy': { 'enemy-creature': 'enemy-creature', creature: 'creature' },
 	'throw-hand-minion': { 'enemy-creature': 'enemy-creature' },
+	'lock-minion-attack': { creature: 'creature', 'enemy-creature': 'enemy-creature' },
 	fireworks: { 'friendly-creature': 'friendly-creature' },
 	'bounce-and-buff': { 'friendly-creature': 'friendly-creature' },
 	'copy-health': { 'friendly-creature': 'friendly-creature' },
@@ -1359,6 +1360,7 @@ function summon(state, pi, tokenDef) {
 	const c = instantiate(tokenDef, pi);
 	c.zone = 'board';
 	if (p.nextRecruitBuff && c.name === 'Silver Hand Recruit') { c.attack += p.nextRecruitBuff.attack || 0; c.maxHealth += p.nextRecruitBuff.health || 0; if (p.nextRecruitBuff.deathrattle) { c.deathrattle = (c.deathrattle || []).concat(JSON.parse(JSON.stringify(p.nextRecruitBuff.deathrattle))); if (!c.keywords.includes('deathrattle')) c.keywords.push('deathrattle'); } p.nextRecruitBuff = null; } // Stewart the Steward
+	if (p.nextTribeSummonBuff && (c.tribe || '').includes(p.nextTribeSummonBuff.tribe)) { c.attack += p.nextTribeSummonBuff.attack || 0; c.maxHealth += p.nextTribeSummonBuff.health || 0; p.nextTribeSummonBuff = null; } // Thornmantle Musician
 	p.board.push(c);
 	emit(state, { type: 'summon', player: pi, card: c });
 	questTick(state, 'summon', pi, 1, c);
@@ -5696,6 +5698,53 @@ function execEffects(state, pi, effects, target, source) {
 		} else if (e.type === 'equip-self-as-weapon') {
 			// Remornia (approx): after attacking, equip a weapon with this minion's Attack
 			if (source) execEffects(state, pi, [{ type: 'equip', name: e.name || 'Remornia', attack: source.attack || e.attack || 5, durability: e.durability || 1 }], null, source);
+		} else if (e.type === 'lock-minion-attack') {
+			// Annoying Fan: chosen minion can't attack while the source is alive
+			const t = chosenCreature();
+			if (t && source) { t.cantAttackWhile = source.uid; emit(state, { type: 'buff', uid: t.uid, attack: t.attack, hp: hp(t) }); }
+		} else if (e.type === 'damage-lowest-enemy') {
+			// Arrow Smith: deal damage to the lowest-Health enemy minion
+			let low = null;
+			for (const o of enemies) for (const c of state.players[o].board) { if (isDead(c) || c.type === 'location') continue; if (!low || hp(c) < hp(low)) low = c; }
+			if (low) damageCreature(state, low, e.value || 1, source);
+		} else if (e.type === 'set-own-max-mana') {
+			// Audio Amplifier: set your maximum Mana (hand-size cap approximated by MAX_HAND)
+			const p = state.players[pi];
+			if (p.mana) { p.mana.max = e.value || 11; p.mana.cur = Math.min(p.mana.cur, p.mana.max); emit(state, { type: 'manaGained', player: pi, amount: 0, mana: availableMana(p) }); }
+		} else if (e.type === 'copy-highest-spell') {
+			// Audio Splitter: add a copy of the highest-Cost spell in your hand
+			const p = state.players[pi];
+			let best = null;
+			for (const c of p.hand) if (isSpellType(c) && (!best || (c.cost || 0) > (best.cost || 0))) best = c;
+			if (best && p.hand.length < MAX_HAND && state.cardsById[best.id]) { const cp = instantiate(state.cardsById[best.id], pi); cp.zone = 'hand'; p.hand.push(cp); emit(state, { type: 'conjure', player: pi, card: cp, color: null }); }
+		} else if (e.type === 'fatigue-self-buff') {
+			// Baritone Imp: take Fatigue damage, gain that much Attack and Health
+			const p = state.players[pi];
+			const amt = (p.fatigue || 0) + 1;
+			p.fatigue = amt;
+			damageHero(state, pi, amt, pi);
+			if (source && !isDead(source)) buffCreature(source, amt, amt);
+		} else if (e.type === 'gain-armor-no-trigger') {
+			// Razorfen Rockstar payoff: add armor WITHOUT re-firing armor-gained (avoids self-loop)
+			const p = state.players[pi];
+			p.armor += e.value || 2;
+			p.armorGainedGame = (p.armorGainedGame || 0) + (e.value || 2);
+			emit(state, { type: 'armor', player: pi, amount: e.value || 2, armor: p.armor });
+		} else if (e.type === 'grant-keyword-self') {
+			// Audio Medic (Finale): the source minion gains a keyword
+			if (source && !isDead(source) && !source.keywords.includes(e.keyword)) { source.keywords.push(e.keyword); if (e.keyword === KW.DIVINE_SHIELD) source.shield = true; if (e.keyword === KW.STEALTH) source.stealthed = true; emit(state, { type: 'buff', uid: source.uid, attack: source.attack, hp: hp(source) }); }
+		} else if (e.type === 'buff-next-summon-tribe') {
+			// Thornmantle Musician (Finale): the next minion of a tribe you summon gets +X/+X
+			state.players[pi].nextTribeSummonBuff = { tribe: e.tribe, attack: e.attack || 1, health: e.health || 1 };
+		} else if (e.type === 'add-random-combo-card') {
+			// Disc Jockey (Combo): add a random card with Combo to your hand
+			const pool = Object.values(state.cardsById).filter(d => (d.keywords || []).includes('combo') && !d.token && d.collectible !== false && !(d.colors && d.colors.length));
+			const p = state.players[pi];
+			if (pool.length && p.hand.length < MAX_HAND) { const def = pool[Math.floor(state.rng() * pool.length)]; const cp = instantiate(def, pi); cp.zone = 'hand'; p.hand.push(cp); emit(state, { type: 'conjure', player: pi, card: cp, color: null }); }
+		} else if (e.type === 'buff-random-other-grant-deathrattle') {
+			// Crowd Surfer: give a random OTHER minion +X/+X and this same Deathrattle
+			const pool = state.players[pi].board.filter(c => c !== source && !isDead(c) && c.type !== 'location');
+			if (pool.length) { const t = pool[Math.floor(state.rng() * pool.length)]; buffCreature(t, e.attack || 1, e.health || 1); if (source && source.deathrattle && source.deathrattle.length) { t.deathrattle = [...(t.deathrattle || []), ...JSON.parse(JSON.stringify(source.deathrattle))]; if (!t.keywords.includes('deathrattle')) t.keywords.push('deathrattle'); } }
 		} else if (e.type === 'become-copy-of-dead') {
 			// Creepy Painting: become a copy of a minion that died (runs via ongoing ctx.dead)
 			// handled in runSecretEffects; no-op here
@@ -8539,6 +8588,7 @@ export function attackersFor(state, pi) {
 export function canAttackWith(state, pi, c) {
 	if (state.over || state.current !== pi || state.priority != null || state.stack.length || c.attack <= 0) return false;
 	if (c.frozen) return false;
+	if (c.cantAttackWhile != null && state.players.some(pl => pl.board.some(x => x.uid === c.cantAttackWhile && !isDead(x)))) return false; // Annoying Fan lock
 	if (c.dormantLeft > 0) return false; // still asleep
 	if (has(c, KW.PACIFIST) && c.attackAnywayTurn !== state.turnNumber) return false; // Argent Watchman: Inspire lets it attack this turn
 	if (state.plane) {
