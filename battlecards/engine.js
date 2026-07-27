@@ -552,6 +552,7 @@ export function drawCards(state, pi, count) {
 		if (card.type === 'creature' && p.deckTribeDiscount) { for (const tr in p.deckTribeDiscount) if ((card.tribe || '').includes(tr)) card.cost = Math.max(0, (card.cost || 0) - p.deckTribeDiscount[tr]); } // Frizz Kindleroost
 		if (p.deckKeywordDiscount) { for (const kw in p.deckKeywordDiscount) if ((card.keywords || []).includes(kw)) card.cost = Math.max(0, (card.cost || 0) - p.deckKeywordDiscount[kw]); } // Rotten Rodent: Deathrattle cards
 		if (p.deckSchoolSpellDamage && isSpellType(card)) { const sch = schoolOf(card); if (sch && p.deckSchoolSpellDamage[sch]) card.bonusSpellDamage = (card.bonusSpellDamage || 0) + p.deckSchoolSpellDamage[sch]; } // Halduron Brightwing: Arcane spells drawn from deck
+		if (p.deckSpellDamageAll && isSpellType(card)) card.bonusSpellDamage = (card.bonusSpellDamage || 0) + p.deckSpellDamageAll; // Archmage Kalec: all spells drawn
 		if (p.deckDoubleStats && card.type === 'creature') { card.attack = (card.attack || 0) * 2; card.maxHealth = (card.maxHealth || 0) * 2; } // Lor'themar Theron: doubled deck minions
 		// C'Thun enters hand carrying every buff it collected while in your deck
 		if (card.id === 'c_thun') { card.attack = CTHUN_BASE + p.cthunAtk; card.maxHealth = CTHUN_BASE + p.cthunHp; if (p.cthunTaunt && !card.keywords.includes(KW.TAUNT)) card.keywords.push(KW.TAUNT); }
@@ -2931,6 +2932,12 @@ function runSecretEffects(state, pi, effects, ctx) {
 				// Niri of the Crater: when you play a 1-Cost minion, double its stats
 				const m = ctx.minion;
 				if (m && !isDead(m) && m.type !== 'location') { m.attack = (m.attack || 0) * 2; m.maxHealth = (m.maxHealth || 0) * 2; emit(state, { type: 'buff', uid: m.uid, attack: m.attack, hp: hp(m) }); }
+				break;
+			}
+			case 'cast-random-spell-of-played-cost': {
+				// Chaos Supplicant: after you cast a spell, cast a random spell of the same Cost (another-class restriction not modeled)
+				const spell = ctx.played;
+				if (spell && !state._chaosLock) { state._chaosLock = true; try { execEffects(state, pi, [{ type: 'cast-random-spell', count: 1, cost: spell.cost || 0 }], null, ctx.self || null); } finally { state._chaosLock = false; } }
 				break;
 			}
 			case 'reduce-discovered-cost': {
@@ -6707,9 +6714,12 @@ function execEffects(state, pi, effects, target, source) {
 			p.deckKeywordDiscount = p.deckKeywordDiscount || {};
 			p.deckKeywordDiscount[e.keyword] = (p.deckKeywordDiscount[e.keyword] || 0) + (e.value || 1);
 		} else if (e.type === 'grant-hand-school-spelldamage') {
-			// Silvermoon Farstrider: give all spells of a school in your hand Spell Damage +N; Halduron: also deck
-			for (const c of state.players[pi].hand) if (isSpellType(c) && (!e.school || schoolOf(c) === e.school)) c.bonusSpellDamage = (c.bonusSpellDamage || 0) + (e.value || 1);
-			if (e.alsoDeck) { const p = state.players[pi]; p.deckSchoolSpellDamage = p.deckSchoolSpellDamage || {}; p.deckSchoolSpellDamage[e.school] = (p.deckSchoolSpellDamage[e.school] || 0) + (e.value || 1); }
+			// Silvermoon Farstrider: give all spells of a school in your hand Spell Damage +N; Halduron: also deck; Battlefield Blaster: one random; Archmage Kalec: all + all-deck
+			const p = state.players[pi];
+			if (e.random) { const pool = p.hand.filter(c => isSpellType(c) && (!e.school || schoolOf(c) === e.school)); if (pool.length) { const c = pool[Math.floor(state.rng() * pool.length)]; c.bonusSpellDamage = (c.bonusSpellDamage || 0) + (e.value || 1); } }
+			else for (const c of p.hand) if (isSpellType(c) && (!e.school || schoolOf(c) === e.school)) c.bonusSpellDamage = (c.bonusSpellDamage || 0) + (e.value || 1);
+			if (e.alsoDeck && e.school) { p.deckSchoolSpellDamage = p.deckSchoolSpellDamage || {}; p.deckSchoolSpellDamage[e.school] = (p.deckSchoolSpellDamage[e.school] || 0) + (e.value || 1); }
+			if (e.allDeck) p.deckSpellDamageAll = (p.deckSpellDamageAll || 0) + (e.value || 1); // Archmage Kalec
 		} else if (e.type === 'buff-played-grant-deathrattle') {
 			// Hawkstrider Rancher: buff a just-played minion and give it a Deathrattle (runs via creature-played ongoing)
 			// handled in runSecretEffects; no-op here
@@ -7172,7 +7182,7 @@ function execEffects(state, pi, effects, target, source) {
 		} else if (e.type === 'copy-random-hand-card') {
 			// Nobleman: create a copy of a random card in your hand (Cloud Serpent: of a tribe, e.g. "Elemental|Dragon")
 			const p = state.players[pi];
-			const pool = p.hand.filter(c => c !== source && state.cardsById[c.id] && (!e.tribe || e.tribe.split('|').some(tr => (c.tribe || '').includes(tr))));
+			const pool = p.hand.filter(c => c !== source && state.cardsById[c.id] && (!e.tribe || e.tribe.split('|').some(tr => (c.tribe || '').includes(tr))) && (!e.school || schoolOf(c) === e.school)); // Malevolent Mutant: a Fel spell
 			if (pool.length && p.hand.length < MAX_HAND) { const src = pool[Math.floor(state.rng() * pool.length)]; const nc = instantiate(state.cardsById[src.id], pi); nc.zone = 'hand'; p.hand.push(nc); emit(state, { type: 'conjure', player: pi, card: nc, color: null }); }
 		} else if (e.type === 'shuffle-copies-of-target') {
 			// Northshire Farmer: shuffle N stat-set copies of a chosen friendly into your deck

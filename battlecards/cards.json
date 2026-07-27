@@ -119783,6 +119783,377 @@
           "target": "any"
         }
       ]
+    },
+    {
+      "id": "battlefield_blaster",
+      "name": "Battlefield Blaster",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "neutral",
+      "attack": 3,
+      "health": 4,
+      "rarity": "common",
+      "set": "CATACLYSM",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Choose a spell in your hand to give Spell Damage +1. (Approximated: a random hand spell.)",
+      "effects": [
+        {
+          "type": "grant-hand-school-spelldamage",
+          "random": true,
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "conjuration_specialist",
+      "name": "Conjuration Specialist",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "mage",
+      "attack": 3,
+      "health": 4,
+      "rarity": "common",
+      "set": "CATACLYSM",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Choose a spell in your hand. Split it into two random spells of the same Cost. (Approximated: get 2 random spells.)",
+      "effects": [
+        {
+          "type": "conjure-random",
+          "cardType": "spell",
+          "count": 2
+        }
+      ]
+    },
+    {
+      "id": "crackling_cloudstrider",
+      "name": "Crackling Cloudstrider",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "shaman",
+      "attack": 4,
+      "health": 3,
+      "rarity": "common",
+      "set": "CATACLYSM",
+      "keywords": [
+        "battlecry",
+        "deathrattle"
+      ],
+      "description": "Battlecry: Choose a spell in your hand that costs (4) or less to absorb. Deathrattle: Cast it. (Not modeled: absorb/cast a chosen spell.)"
+    },
+    {
+      "id": "cultivating_sprite",
+      "name": "Cultivating Sprite",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "neutral",
+      "attack": 3,
+      "health": 3,
+      "rarity": "common",
+      "set": "CATACLYSM",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Get a 3-Cost Bulb that casts three random 1-Cost spells. It upgrades each turn. (Not modeled: upgrade.)",
+      "effects": [
+        {
+          "type": "add-card",
+          "id": "cata_bulb",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "id": "darkscale_broodmother",
+      "name": "Darkscale Broodmother",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "neutral",
+      "attack": 4,
+      "health": 3,
+      "rarity": "common",
+      "set": "CATACLYSM",
+      "tribe": "Dragon",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: If you're holding a Dragon, refresh 2 Mana Crystals.",
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "holdingTribe": "Dragon"
+          },
+          "then": [
+            {
+              "type": "refresh-mana",
+              "value": 2
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "faceless_replicator",
+      "name": "Faceless Replicator",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "neutral",
+      "attack": 3,
+      "health": 3,
+      "rarity": "rare",
+      "set": "CATACLYSM",
+      "keywords": [
+        "elusive",
+        "deathrattle"
+      ],
+      "description": "Elusive. Deathrattle: Transform the minion that killed this into a Faceless Replicator. (Not modeled: killer transform.)"
+    },
+    {
+      "id": "gemstone_hoarder",
+      "name": "Gemstone Hoarder",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "neutral",
+      "attack": 3,
+      "health": 4,
+      "rarity": "common",
+      "set": "CATACLYSM",
+      "keywords": [
+        "battlecry",
+        "deathrattle"
+      ],
+      "description": "Battlecry: Choose a card in your hand to discard. Deathrattle: Get it back. It costs (1) less. (Approximated: discard a random card.)",
+      "effects": [
+        {
+          "type": "discard-random"
+        }
+      ]
+    },
+    {
+      "id": "gruesome_nightmare",
+      "name": "Gruesome Nightmare",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "deathknight",
+      "attack": 3,
+      "health": 3,
+      "rarity": "common",
+      "set": "CATACLYSM",
+      "tribe": "Beast",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Give a minion in your hand or battlefield Attack equal to this minion's Attack. (Approximated: a random friendly minion +3 Attack.)",
+      "effects": [
+        {
+          "type": "buff-random-friendly",
+          "attack": 3
+        }
+      ]
+    },
+    {
+      "id": "ley_walker",
+      "name": "Ley Walker",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "mage",
+      "attack": 4,
+      "health": 2,
+      "rarity": "common",
+      "set": "CATACLYSM",
+      "keywords": [
+        "battlecry",
+        "deathrattle"
+      ],
+      "description": "Battlecry: Your Leylines cost (1) less this game. Deathrattle: Get a random Leyline. (Not modeled: Leylines.)"
+    },
+    {
+      "id": "malevolent_mutant",
+      "name": "Malevolent Mutant",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "demonhunter",
+      "attack": 3,
+      "health": 4,
+      "rarity": "common",
+      "set": "CATACLYSM",
+      "tribe": "Naga",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Choose a Fel spell in your hand. Get a copy of it. (Approximated: a random Fel spell.)",
+      "effects": [
+        {
+          "type": "copy-random-hand-card",
+          "school": "Fel"
+        }
+      ]
+    },
+    {
+      "id": "ocular_occultist",
+      "name": "Ocular Occultist",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "warlock",
+      "attack": 3,
+      "health": 6,
+      "rarity": "common",
+      "set": "CATACLYSM",
+      "tribe": "Demon",
+      "keywords": [
+        "taunt",
+        "battlecry"
+      ],
+      "description": "Taunt. Battlecry: Choose a card in your hand to discard. (Approximated: discard a random card.)",
+      "effects": [
+        {
+          "type": "discard-random"
+        }
+      ]
+    },
+    {
+      "id": "resilient_savior",
+      "name": "Resilient Savior",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "paladin",
+      "attack": 3,
+      "health": 1,
+      "rarity": "common",
+      "set": "CATACLYSM",
+      "tribe": "Draenei",
+      "keywords": [
+        "divine_shield"
+      ],
+      "description": "Divine Shield. After this loses Divine Shield, give your Silver Hand Recruits +1 Health this game. (Not modeled: Silver Hand Recruits.)"
+    },
+    {
+      "id": "tolvir_carver",
+      "name": "Tol'vir Carver",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "hunter",
+      "attack": 3,
+      "health": 2,
+      "rarity": "common",
+      "set": "CATACLYSM",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Choose a card in your hand. At the start of your turns, reduce its Cost by (1). (Approximated: reduce a random hand card by 1.)",
+      "effects": [
+        {
+          "type": "reduce-random-hand-cost",
+          "anyCard": true,
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "archmage_kalec",
+      "name": "Archmage Kalec",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "mage",
+      "attack": 4,
+      "health": 4,
+      "rarity": "rare",
+      "set": "CATACLYSM",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Give all spells in your hand and deck Spell Damage +1.",
+      "effects": [
+        {
+          "type": "grant-hand-school-spelldamage",
+          "value": 1,
+          "allDeck": true
+        }
+      ]
+    },
+    {
+      "id": "broodwatcher",
+      "name": "Broodwatcher",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "druid",
+      "attack": 4,
+      "health": 5,
+      "rarity": "common",
+      "set": "CATACLYSM",
+      "tribe": "Dragon",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Get two 3/3 Whelps with Taunt. If you spent 8 Mana while holding this, summon them. (Approximated: summon two 3/3 Taunt Whelps.)",
+      "effects": [
+        {
+          "type": "summon",
+          "count": 2,
+          "summonId": "cata_whelp_3_3"
+        }
+      ]
+    },
+    {
+      "id": "chaos_supplicant",
+      "name": "Chaos Supplicant",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "rogue",
+      "attack": 3,
+      "health": 5,
+      "rarity": "rare",
+      "set": "CATACLYSM",
+      "description": "After you cast a spell, cast a random spell of the same Cost from another class. (Not modeled: another-class restriction.)",
+      "ongoing": {
+        "on": "spell-played",
+        "effects": [
+          {
+            "type": "cast-random-spell-of-played-cost"
+          }
+        ]
+      }
+    },
+    {
+      "id": "cata_bulb",
+      "name": "Bulb",
+      "type": "sorcery",
+      "cost": 3,
+      "cardClass": "neutral",
+      "rarity": "common",
+      "set": "CATACLYSM",
+      "token": true,
+      "collectible": false,
+      "description": "Cast three random 1-Cost spells.",
+      "effects": [
+        {
+          "type": "cast-random-spell",
+          "count": 3,
+          "cost": 1
+        }
+      ]
+    },
+    {
+      "id": "cata_whelp_3_3",
+      "name": "Whelp",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "neutral",
+      "attack": 3,
+      "health": 3,
+      "rarity": "common",
+      "set": "CATACLYSM",
+      "tribe": "Dragon",
+      "token": true,
+      "collectible": false,
+      "keywords": [
+        "taunt"
+      ],
+      "description": "A 3/3 Whelp with Taunt."
     }
   ]
 }
