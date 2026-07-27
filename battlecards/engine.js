@@ -670,6 +670,7 @@ const CHOSEN = {
 	'destroy-friendly-remember': { 'friendly-creature': 'friendly-creature' },
 	'swap-attack-with': { creature: 'creature', 'friendly-creature': 'friendly-creature' },
 	'freeze-gain-armor': { 'enemy-creature': 'enemy-creature' },
+	'set-target-stats-from-source': { creature: 'creature', 'enemy-creature': 'enemy-creature' },
 	'swap-enemy-with-deck': { 'enemy-creature': 'enemy-creature' },
 	fireworks: { 'friendly-creature': 'friendly-creature' },
 	'bounce-and-buff': { 'friendly-creature': 'friendly-creature' },
@@ -1619,6 +1620,8 @@ function ongoingCondOk(state, pi, cond, ctx) {
 	if (cond.damageAmount != null && ctx.amount !== cond.damageAmount) return false; // Holotechnician: took exactly N damage
 	if (cond.heroHealed && ctx.healedHero == null) return false; // Screaming Banshee: your HERO gained Health
 	if (cond.minAttackSelf && !(subj && ctx.self && subj.attack > ctx.self.attack)) return false; // Observer of Myths: a minion with MORE Attack than this
+	if (cond.attackEqualsSelf && !(subj && ctx.self && subj.attack === ctx.self.attack)) return false; // The Replicator-inator: same Attack as this
+	if (cond.tribeSubj && !(subj && (subj.tribe || '').includes(cond.tribeSubj))) return false;
 	return true;
 }
 
@@ -4342,6 +4345,7 @@ function execEffects(state, pi, effects, target, source) {
 			else if (e.if.armorChangedThisTurn) ok = !!p.armorChangedThisTurn; // Stoneskin Armorer
 			else if (e.if.drawsThisTurnAtLeast != null) ok = (p.drawsThisTurn || 0) >= e.if.drawsThisTurnAtLeast; // Careless Mechanist
 			else if (e.if.corpsesAtLeast != null) ok = (p.corpses || 0) >= e.if.corpsesAtLeast; // Eulogizer
+			else if (e.if.dragonsPlayedGame != null) ok = (p.dragonsPlayedGame || 0) >= e.if.dragonsPlayedGame; // Timewinder Zarimi
 			else if (e.if.holdingSecret) ok = p.hand.some(c => c.secret); // Sparkjoy Cheat
 			else if (e.if.spellsGame != null) ok = (p.spellsPlayedTotal || 0) >= e.if.spellsGame; // Yogg-Saron, Master of Fate
 			else if (e.if.healedThisTurn) ok = !!p.healedThisTurn; // Cleric of An'she
@@ -5922,6 +5926,31 @@ function execEffects(state, pi, effects, target, source) {
 		} else if (e.type === 'destroy-self') {
 			// Incorporeal Corporal: destroy the source minion
 			if (source && !isDead(source)) { source.damage = source.maxHealth; source.shield = false; emit(state, { type: 'destroy', uid: source.uid }); sweepDeaths(state); }
+		} else if (e.type === 'extra-turn') {
+			// Timewinder Zarimi: take an extra turn after this one
+			state.forcedTurns = (state.forcedTurns && state.forcedTurns.length) ? [pi, ...state.forcedTurns] : [pi];
+		} else if (e.type === 'set-target-stats-from-source') {
+			// Toy Captain Tarim: set a minion's Attack and Health to this minion's
+			const t = chosenCreature();
+			if (t && source) { t.attack = source.attack || 0; t.maxHealth = hp(source) || 1; t.damage = 0; t.tempHealth = 0; emit(state, { type: 'buff', uid: t.uid, attack: t.attack, hp: hp(t) }); }
+		} else if (e.type === 'summon-from-deck-keyword') {
+			// Pipsi Painthoof: summon a random minion of each listed keyword from your deck
+			const p = state.players[pi];
+			for (const kw of e.keywords || []) { const idx = p.deck.findIndex(id => { const d = state.cardsById[id]; return d?.type === 'creature' && !d.token && (d.keywords || []).includes(kw); }); if (idx >= 0) { const [id] = p.deck.splice(idx, 1); summon(state, pi, state.cardsById[id]); } }
+		} else if (e.type === 'fill-board-random-cost') {
+			// Li'Na, Shop Manager: fill your board with random minions of a given Cost
+			const p = state.players[pi];
+			const cost = e.cost != null ? e.cost : 0;
+			const pool = Object.values(state.cardsById).filter(d => d.type === 'creature' && (d.cost || 0) === cost && !d.token && d.collectible !== false && !d.companion && !d.commander && !(d.colors && d.colors.length));
+			while (pool.length && p.board.filter(c => !isDead(c)).length < 7) summon(state, pi, pool[Math.floor(state.rng() * pool.length)]);
+		} else if (e.type === 'transform-others-into-drawn') {
+			// Colifero the Artist: draw a minion, transform all OTHER friendly minions into copies of it
+			const p = state.players[pi];
+			const before = new Set(p.hand.map(c => c.uid));
+			execEffects(state, pi, [{ type: 'tutor', cardType: 'creature', count: 1 }], null, source);
+			const drawn = p.hand.find(c => !before.has(c.uid));
+			const def = drawn && state.cardsById[drawn.id];
+			if (def) { for (let i = 0; i < p.board.length; i++) { const c = p.board[i]; if (c === source || isDead(c) || c.type === 'location') continue; const tok = instantiate(JSON.parse(JSON.stringify(def)), pi); tok.zone = 'board'; tok.uid = c.uid; tok.sick = c.sick; p.board[i] = tok; c.zone = 'gone'; emit(state, { type: 'transformed', uid: c.uid, player: pi, from: c.name, card: tok }); } recomputeAuras(state); }
 		} else if (e.type === 'swap-attack-with') {
 			// Origami Frog: swap Attack with another minion
 			const t = chosenCreature();
@@ -8815,6 +8844,7 @@ export function playCard(state, pi, cardUid, target, choice, position, useAlt, k
 	if (!card.token) p.lastCardPlayedId = card.id; // Fate Splitter: opponent's most recent card
 	if (card.type === 'creature' && card.tribe) { p.tribesPlayedGame = p.tribesPlayedGame || new Set(); for (const tr of (card.tribe || '').split('/')) if (tr) p.tribesPlayedGame.add(tr); } // Power Slider
 	if (card.type === 'creature' && (card.tribe || '').includes('Elemental')) p.elementalsPlayedThisTurn = (p.elementalsPlayedThisTurn || 0) + 1; // Unchained Gladiator
+	if (card.type === 'creature' && (card.tribe || '').includes('Dragon')) p.dragonsPlayedGame = (p.dragonsPlayedGame || 0) + 1; // Timewinder Zarimi
 	if ((card.keywords || []).includes('combo')) p.combosPlayedGame = (p.combosPlayedGame || 0) + 1; // Rhyme Spinner
 	(p.playedCountById = p.playedCountById || {})[card.id] = (p.playedCountById[card.id] || 0) + 1; // Freebird
 	if (card.hauntSummon && state.cardsById[card.hauntSummon]) summon(state, pi, state.cardsById[card.hauntSummon]); // Haunting Nightmare: playing a haunted card summons a Soldier

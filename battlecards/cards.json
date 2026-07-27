@@ -105328,6 +105328,377 @@
           "target": "enemy-creature"
         }
       ]
+    },
+    {
+      "id": "the_replicator_inator",
+      "name": "The Replicator-inator",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "neutral",
+      "attack": 5,
+      "health": 5,
+      "rarity": "legendary",
+      "set": "WHIZBANGS_WORKSHOP",
+      "tribe": "Mech",
+      "description": "After you play a minion with the same Attack as this, summon a copy of it.",
+      "ongoing": {
+        "on": "creature-played",
+        "if": {
+          "attackEqualsSelf": true
+        },
+        "effects": [
+          {
+            "type": "summon-copy-of-played"
+          }
+        ]
+      }
+    },
+    {
+      "id": "timewinder_zarimi",
+      "name": "Timewinder Zarimi",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "priest",
+      "attack": 4,
+      "health": 6,
+      "rarity": "legendary",
+      "set": "WHIZBANGS_WORKSHOP",
+      "tribe": "Dragon",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Once per game, if you've played 8 other Dragons, take an extra turn.",
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "dragonsPlayedGame": 8
+          },
+          "then": [
+            {
+              "type": "extra-turn"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "toy_captain_tarim",
+      "name": "Toy Captain Tarim",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "paladin",
+      "attack": 3,
+      "health": 7,
+      "rarity": "legendary",
+      "set": "WHIZBANGS_WORKSHOP",
+      "keywords": [
+        "taunt",
+        "battlecry"
+      ],
+      "description": "Miniaturize. Taunt. Battlecry: Set a minion's Attack and Health to this minion's.",
+      "effects": [
+        {
+          "type": "set-target-stats-from-source",
+          "target": "creature"
+        }
+      ]
+    },
+    {
+      "id": "window_shopper",
+      "name": "Window Shopper",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "demonhunter",
+      "attack": 6,
+      "health": 5,
+      "rarity": "epic",
+      "set": "WHIZBANGS_WORKSHOP",
+      "tribe": "Demon",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Miniaturize. Battlecry: Discover a Demon. Set its stats and Cost to this minion's.",
+      "effects": [
+        {
+          "type": "discover",
+          "cardType": "creature",
+          "tribe": "Demon",
+          "setAttack": 6,
+          "setHealth": 5,
+          "setCost": 5
+        }
+      ]
+    },
+    {
+      "id": "workshop_janitor",
+      "name": "Workshop Janitor",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "neutral",
+      "attack": 5,
+      "health": 5,
+      "rarity": "common",
+      "set": "WHIZBANGS_WORKSHOP",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: If you control a location, draw 2 cards."
+    },
+    {
+      "id": "lina_shop_manager",
+      "name": "Li'Na, Shop Manager",
+      "type": "creature",
+      "cost": 6,
+      "cardClass": "neutral",
+      "attack": 3,
+      "health": 3,
+      "rarity": "legendary",
+      "set": "WHIZBANGS_WORKSHOP",
+      "description": "Whenever you cast a spell, fill your board with random minions of that Cost.",
+      "ongoing": {
+        "on": "spell-played",
+        "effects": [
+          {
+            "type": "fill-board-random-cost"
+          }
+        ]
+      }
+    },
+    {
+      "id": "origami_dragon",
+      "name": "Origami Dragon",
+      "type": "creature",
+      "cost": 6,
+      "cardClass": "neutral",
+      "attack": 1,
+      "health": 1,
+      "rarity": "epic",
+      "set": "WHIZBANGS_WORKSHOP",
+      "tribe": "Dragon",
+      "keywords": [
+        "divine_shield",
+        "lifesteal",
+        "battlecry"
+      ],
+      "description": "Divine Shield, Lifesteal. Battlecry: Swap stats with another minion.",
+      "effects": [
+        {
+          "type": "swap-stats-with",
+          "target": "creature"
+        }
+      ]
+    },
+    {
+      "id": "puzzlemaster_khadgar",
+      "name": "Puzzlemaster Khadgar",
+      "type": "creature",
+      "cost": 6,
+      "cardClass": "mage",
+      "attack": 5,
+      "health": 5,
+      "rarity": "legendary",
+      "set": "WHIZBANGS_WORKSHOP",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Equip a 0/6 Wisdomball that casts helpful Mage spells!",
+      "effects": [
+        {
+          "type": "equip",
+          "name": "Wisdomball",
+          "attack": 0,
+          "durability": 6
+        }
+      ]
+    },
+    {
+      "id": "shudderblock",
+      "name": "Shudderblock",
+      "type": "creature",
+      "cost": 6,
+      "cardClass": "shaman",
+      "attack": 5,
+      "health": 5,
+      "rarity": "legendary",
+      "set": "WHIZBANGS_WORKSHOP",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Miniaturize. Battlecry: Your next Battlecry triggers 3 times, but can't damage the enemy hero."
+    },
+    {
+      "id": "toyrantus",
+      "name": "Toyrantus",
+      "type": "creature",
+      "cost": 6,
+      "cardClass": "druid",
+      "attack": 7,
+      "health": 7,
+      "rarity": "legendary",
+      "set": "WHIZBANGS_WORKSHOP",
+      "tribe": "Beast",
+      "keywords": [
+        "taunt",
+        "elusive",
+        "battlecry"
+      ],
+      "description": "Taunt, Elusive. Battlecry: If you have 10 Mana Crystals, gain +7/+7.",
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "manathirst": 10
+          },
+          "then": [
+            {
+              "type": "buff",
+              "attack": 7,
+              "health": 7,
+              "target": "self"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "wind_up_enforcer",
+      "name": "Wind-Up Enforcer",
+      "type": "creature",
+      "cost": 6,
+      "cardClass": "paladin",
+      "attack": 3,
+      "health": 5,
+      "rarity": "rare",
+      "set": "WHIZBANGS_WORKSHOP",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Tradeable. Battlecry: Summon 1 copy of this minion.",
+      "effects": [
+        {
+          "type": "summon-copy-of-self",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "id": "wind_up_musician",
+      "name": "Wind-Up Musician",
+      "type": "creature",
+      "cost": 6,
+      "cardClass": "neutral",
+      "attack": 5,
+      "health": 5,
+      "rarity": "rare",
+      "set": "WHIZBANGS_WORKSHOP",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Tradeable. Battlecry: Deal 1 damage to all enemy minions.",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 1,
+          "target": "enemy-creatures"
+        }
+      ]
+    },
+    {
+      "id": "botface",
+      "name": "Botface",
+      "type": "creature",
+      "cost": 7,
+      "cardClass": "warrior",
+      "attack": 4,
+      "health": 12,
+      "rarity": "legendary",
+      "set": "WHIZBANGS_WORKSHOP",
+      "tribe": "Mech",
+      "keywords": [
+        "taunt"
+      ],
+      "description": "Taunt. After this takes damage, get two random Minis.",
+      "ongoing": {
+        "on": "self-damaged",
+        "effects": [
+          {
+            "type": "conjure-random",
+            "cardType": "creature",
+            "count": 2
+          }
+        ]
+      }
+    },
+    {
+      "id": "pipsi_painthoof",
+      "name": "Pipsi Painthoof",
+      "type": "creature",
+      "cost": 7,
+      "cardClass": "paladin",
+      "attack": 4,
+      "health": 4,
+      "rarity": "legendary",
+      "set": "WHIZBANGS_WORKSHOP",
+      "keywords": [
+        "deathrattle"
+      ],
+      "description": "Deathrattle: Summon a random Divine Shield, Rush, and Taunt minion from your deck.",
+      "deathrattle": [
+        {
+          "type": "summon-from-deck-keyword",
+          "keywords": [
+            "divine_shield",
+            "rush",
+            "taunt"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "shining_sentinel",
+      "name": "Shining Sentinel",
+      "type": "creature",
+      "cost": 7,
+      "cardClass": "shaman",
+      "attack": 3,
+      "health": 7,
+      "rarity": "epic",
+      "set": "WHIZBANGS_WORKSHOP",
+      "tribe": "Elemental",
+      "keywords": [
+        "taunt",
+        "elusive",
+        "battlecry"
+      ],
+      "description": "Taunt, Elusive. Battlecry: Summon a copy of this.",
+      "effects": [
+        {
+          "type": "summon-copy-of-self",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "id": "colifero_the_artist",
+      "name": "Colifero the Artist",
+      "type": "creature",
+      "cost": 8,
+      "cardClass": "neutral",
+      "attack": 6,
+      "health": 5,
+      "rarity": "legendary",
+      "set": "WHIZBANGS_WORKSHOP",
+      "tribe": "Elemental",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Draw a minion. Transform all other friendly minions into copies of it.",
+      "effects": [
+        {
+          "type": "transform-others-into-drawn"
+        }
+      ]
     }
   ]
 }
