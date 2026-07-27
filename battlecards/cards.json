@@ -103274,6 +103274,435 @@
         "deathrattle"
       ],
       "description": "Taunt. Deathrattle: Summon each other minion you've played this game that did not start in your deck."
+    },
+    {
+      "id": "tyr",
+      "name": "Tyr",
+      "type": "creature",
+      "cost": 6,
+      "cardClass": "paladin",
+      "attack": 4,
+      "health": 5,
+      "rarity": "legendary",
+      "set": "TITANS",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Resurrect a 2, 3, and 4-Attack minion from your class.",
+      "effects": [
+        {
+          "type": "resurrect-by-attacks",
+          "attacks": [
+            2,
+            3,
+            4
+          ]
+        }
+      ]
+    },
+    {
+      "id": "amanthul",
+      "name": "Aman'Thul",
+      "type": "creature",
+      "cost": 7,
+      "cardClass": "priest",
+      "attack": 3,
+      "health": 10,
+      "rarity": "legendary",
+      "set": "TITANS",
+      "description": "Titan. After this uses an ability, Discover any Legendary minion from any class."
+    },
+    {
+      "id": "ancient_of_growth",
+      "name": "Ancient of Growth",
+      "type": "creature",
+      "cost": 7,
+      "cardClass": "druid",
+      "attack": 5,
+      "health": 5,
+      "rarity": "epic",
+      "set": "TITANS",
+      "description": "Choose One - Summon three 2/2 Treants; or Transform your Treants into 5/5 Ancients with Taunt.",
+      "choices": [
+        {
+          "text": "Summon three 2/2 Treants",
+          "effects": [
+            {
+              "type": "summon",
+              "count": 3,
+              "summonId": "ttn_treant"
+            }
+          ]
+        },
+        {
+          "text": "Ancients with Taunt",
+          "effects": [
+            {
+              "type": "buff",
+              "attack": 3,
+              "health": 3,
+              "target": "friendly-creatures"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "general_vezax",
+      "name": "General Vezax",
+      "type": "creature",
+      "cost": 7,
+      "cardClass": "warrior",
+      "attack": 7,
+      "health": 6,
+      "rarity": "legendary",
+      "set": "TITANS",
+      "keywords": [
+        "rush",
+        "battlecry",
+        "deathrattle"
+      ],
+      "description": "Rush. Battlecry: Gain 4 Armor. Deathrattle: Lose 4 Armor to resummon this.",
+      "effects": [
+        {
+          "type": "armor",
+          "value": 4
+        }
+      ],
+      "deathrattle": [
+        {
+          "type": "spend-armor-resummon",
+          "value": 4
+        }
+      ]
+    },
+    {
+      "id": "thorignir_drake",
+      "name": "Thorignir Drake",
+      "type": "creature",
+      "cost": 7,
+      "cardClass": "shaman",
+      "attack": 6,
+      "health": 6,
+      "rarity": "rare",
+      "set": "TITANS",
+      "tribe": "Dragon",
+      "keywords": [
+        "rush"
+      ],
+      "description": "Rush. Whenever this attacks, summon two 3/1 Whelps to attack the target first.",
+      "ongoing": {
+        "on": "self-attacks",
+        "effects": [
+          {
+            "type": "summon",
+            "count": 2,
+            "summonId": "ttn_whelp_31"
+          }
+        ]
+      }
+    },
+    {
+      "id": "freya_keeper_of_nature",
+      "name": "Freya, Keeper of Nature",
+      "type": "creature",
+      "cost": 8,
+      "cardClass": "druid",
+      "attack": 4,
+      "health": 6,
+      "rarity": "legendary",
+      "set": "TITANS",
+      "description": "Choose One - Duplicate your hand; or Summon copies of all other friendly minions.",
+      "choices": [
+        {
+          "text": "Duplicate your hand",
+          "effects": [
+            {
+              "type": "duplicate-hand"
+            }
+          ]
+        },
+        {
+          "text": "Summon copies of minions",
+          "effects": [
+            {
+              "type": "summon-copies-of-board"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "hodir_father_of_giants",
+      "name": "Hodir, Father of Giants",
+      "type": "creature",
+      "cost": 8,
+      "cardClass": "hunter",
+      "attack": 8,
+      "health": 8,
+      "rarity": "legendary",
+      "set": "TITANS",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Set the stats of the next three minions you play to 8/8.",
+      "effects": [
+        {
+          "type": "set-next-minion-stats",
+          "count": 3,
+          "attack": 8,
+          "health": 8
+        }
+      ]
+    },
+    {
+      "id": "kologarn",
+      "name": "Kologarn",
+      "type": "creature",
+      "cost": 8,
+      "cardClass": "neutral",
+      "attack": 6,
+      "health": 10,
+      "rarity": "legendary",
+      "set": "TITANS",
+      "keywords": [
+        "rush"
+      ],
+      "description": "Rush. Whenever this attacks a minion, put it in your hand. Deathrattle: Move any in your hand to your opponent's.",
+      "ongoing": {
+        "on": "self-attacks-creature",
+        "effects": [
+          {
+            "type": "steal-victim-to-hand"
+          }
+        ]
+      }
+    },
+    {
+      "id": "odyn_prime_designate",
+      "name": "Odyn, Prime Designate",
+      "type": "creature",
+      "cost": 8,
+      "cardClass": "warrior",
+      "attack": 8,
+      "health": 8,
+      "rarity": "legendary",
+      "set": "TITANS",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: For the rest of the game, after your hero gains Armor, they gain that much Attack for that turn.",
+      "effects": [
+        {
+          "type": "enable-odyn"
+        }
+      ]
+    },
+    {
+      "id": "shapeless_constellation",
+      "name": "Shapeless Constellation",
+      "type": "creature",
+      "cost": 8,
+      "cardClass": "priest",
+      "attack": 8,
+      "health": 8,
+      "rarity": "epic",
+      "set": "TITANS",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Transform into an 8/8 copy of a random minion in your hand.",
+      "effects": [
+        {
+          "type": "become-copy-of-random-hand-minion",
+          "stats": 8
+        }
+      ]
+    },
+    {
+      "id": "son_of_hodir",
+      "name": "Son of Hodir",
+      "type": "creature",
+      "cost": 8,
+      "cardClass": "neutral",
+      "attack": 8,
+      "health": 8,
+      "rarity": "epic",
+      "set": "TITANS",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Shuffle four 8/8 Giants into your deck that are summoned when drawn.",
+      "effects": [
+        {
+          "type": "shuffle-tokens-into-deck",
+          "ids": [
+            "ttn_giant_88",
+            "ttn_giant_88",
+            "ttn_giant_88",
+            "ttn_giant_88"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "storm_giant",
+      "name": "Storm Giant",
+      "type": "creature",
+      "cost": 8,
+      "cardClass": "neutral",
+      "attack": 8,
+      "health": 8,
+      "rarity": "epic",
+      "set": "TITANS",
+      "keywords": [
+        "taunt"
+      ],
+      "description": "Taunt. Forge: Costs (2) less. Can be Forged endlessly."
+    },
+    {
+      "id": "the_primus",
+      "name": "The Primus",
+      "type": "creature",
+      "cost": 8,
+      "cardClass": "deathknight",
+      "attack": 7,
+      "health": 9,
+      "rarity": "legendary",
+      "set": "TITANS",
+      "keywords": [
+        "taunt"
+      ],
+      "description": "Titan. After this uses an ability, Discover a card with that Rune."
+    },
+    {
+      "id": "sargeras_the_destroyer",
+      "name": "Sargeras, the Destroyer",
+      "type": "creature",
+      "cost": 9,
+      "cardClass": "warlock",
+      "attack": 6,
+      "health": 12,
+      "rarity": "legendary",
+      "set": "TITANS",
+      "tribe": "Demon",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Titan. Battlecry: Open a portal that summons two 3/2 Imps each turn.",
+      "ongoing": {
+        "on": "turn-end",
+        "effects": [
+          {
+            "type": "summon",
+            "count": 2,
+            "summonId": "ttn_imp_32"
+          }
+        ]
+      }
+    },
+    {
+      "id": "yogg_saron_unleashed",
+      "name": "Yogg-Saron, Unleashed",
+      "type": "creature",
+      "cost": 9,
+      "cardClass": "neutral",
+      "attack": 7,
+      "health": 5,
+      "rarity": "legendary",
+      "set": "TITANS",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Titan. After this uses an ability, cast two random spells.",
+      "effects": [
+        {
+          "type": "cast-random-spell",
+          "count": 2
+        }
+      ]
+    },
+    {
+      "id": "eonar_the_life_binder",
+      "name": "Eonar, the Life-Binder",
+      "type": "creature",
+      "cost": 10,
+      "cardClass": "druid",
+      "attack": 5,
+      "health": 7,
+      "rarity": "legendary",
+      "set": "TITANS",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Titan. After this uses an ability, summon a 5/5 Ancient with Taunt.",
+      "effects": [
+        {
+          "type": "summon",
+          "count": 1,
+          "summonId": "ttn_ancient_55"
+        }
+      ]
+    },
+    {
+      "id": "ttn_treant",
+      "name": "Treant",
+      "type": "creature",
+      "cost": 1,
+      "cardClass": "druid",
+      "attack": 2,
+      "health": 2,
+      "rarity": "common",
+      "set": "TITANS",
+      "token": true,
+      "collectible": false,
+      "description": "A 2/2 Treant."
+    },
+    {
+      "id": "ttn_whelp_31",
+      "name": "Whelp",
+      "type": "creature",
+      "cost": 1,
+      "cardClass": "shaman",
+      "attack": 3,
+      "health": 1,
+      "rarity": "common",
+      "set": "TITANS",
+      "tribe": "Dragon",
+      "token": true,
+      "collectible": false,
+      "description": "A 3/1 Whelp."
+    },
+    {
+      "id": "ttn_giant_88",
+      "name": "Giant",
+      "type": "creature",
+      "cost": 8,
+      "cardClass": "neutral",
+      "attack": 8,
+      "health": 8,
+      "rarity": "epic",
+      "set": "TITANS",
+      "token": true,
+      "collectible": false,
+      "description": "An 8/8 Giant."
+    },
+    {
+      "id": "ttn_ancient_55",
+      "name": "Ancient",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "druid",
+      "attack": 5,
+      "health": 5,
+      "rarity": "common",
+      "set": "TITANS",
+      "token": true,
+      "collectible": false,
+      "keywords": [
+        "taunt"
+      ],
+      "description": "A 5/5 Ancient with Taunt."
     }
   ]
 }

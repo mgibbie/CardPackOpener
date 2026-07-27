@@ -1102,6 +1102,7 @@ function damageHero(state, pi, amount, src = null, pierce = false) {
 function gainArmor(state, pi, amount) {
 	state.players[pi].armor += amount;
 	if (amount !== 0) state.players[pi].armorChangedThisTurn = true; // Stoneskin Armorer
+	if (amount > 0 && state.players[pi].odynActive) { state.players[pi].heroTempAttack += amount; emit(state, { type: 'heroAttack', player: pi, attack: heroAttackValue(state.players[pi]) }); } // Odyn: armor also grants Attack this turn
 	if (amount > 0) state.players[pi].armorGainedGame = (state.players[pi].armorGainedGame || 0) + amount; // Captain Galvangar
 	emit(state, { type: 'armor', player: pi, amount, armor: state.players[pi].armor });
 	fireOngoing(state, pi, 'armor-gained', {}); // Siege Engine
@@ -1987,6 +1988,17 @@ function runSecretEffects(state, pi, effects, ctx) {
 				// Keeneye Spotter: set the hero-attacked minion's Health to N
 				const t = ctx.target;
 				if (t && t.type === 'creature' && !isDead(t)) { t.maxHealth = e.value ?? 1; t.damage = 0; t.tempHealth = 0; emit(state, { type: 'buff', uid: t.uid, attack: t.attack, hp: hp(t) }); }
+				break;
+			}
+			case 'steal-victim-to-hand': {
+				// Kologarn: put the minion this attacked into your hand
+				const v = ctx.victim;
+				if (v && !isDead(v) && v.controller != null && state.cardsById[v.id] && state.players[pi].hand.length < MAX_HAND) {
+					const owner = state.players[v.controller];
+					owner.board = owner.board.filter(c => c !== v); v.zone = 'gone';
+					const cp = instantiate(state.cardsById[v.id], pi); cp.zone = 'hand'; state.players[pi].hand.push(cp);
+					emit(state, { type: 'bounce', uid: v.uid, player: pi, name: v.name }); recomputeAuras(state);
+				}
 				break;
 			}
 			case 'summon-copy-of-killed': {
@@ -5858,6 +5870,31 @@ function execEffects(state, pi, effects, target, source) {
 		} else if (e.type === 'destroy-self') {
 			// Incorporeal Corporal: destroy the source minion
 			if (source && !isDead(source)) { source.damage = source.maxHealth; source.shield = false; emit(state, { type: 'destroy', uid: source.uid }); sweepDeaths(state); }
+		} else if (e.type === 'resurrect-by-attacks') {
+			// Tyr: resurrect one died friendly minion of your class for each listed Attack value
+			const p = state.players[pi];
+			const cls = p.heroClass;
+			for (const atk of e.attacks || [2, 3, 4]) { const pool = [...new Set(p.deathLogIds)].map(id => state.cardsById[id]).filter(d => d && d.type === 'creature' && (d.attack || 0) === atk && (cls == null || (d.cardClass || 'neutral') === cls || (d.cardClass || 'neutral') === 'neutral')); if (pool.length) summon(state, pi, pool[Math.floor(state.rng() * pool.length)]); }
+		} else if (e.type === 'summon-copies-of-board') {
+			// Freya: summon a copy of each OTHER friendly minion
+			const p = state.players[pi];
+			const originals = p.board.filter(c => c !== source && !isDead(c) && c.type !== 'location');
+			for (const c of originals) { const def = state.cardsById[c.id]; if (def && p.board.filter(x => !isDead(x)).length < 7) summon(state, pi, def); }
+		} else if (e.type === 'become-copy-of-random-hand-minion') {
+			// Shapeless Constellation: transform into a set-stat copy of a random minion in your hand
+			const p = state.players[pi];
+			const pool = p.hand.filter(c => c.type === 'creature');
+			if (pool.length && source && source.zone === 'board' && !isDead(source)) { const pick = pool[Math.floor(state.rng() * pool.length)]; const base = state.cardsById[pick.id]; if (base) { const def = JSON.parse(JSON.stringify(base)); if (e.stats != null) { def.attack = e.stats; def.health = e.stats; } def.token = true; def.id = 'token_' + base.id; const tok = instantiate(def, pi); tok.zone = 'board'; tok.sick = source.sick; const board = p.board; board[board.indexOf(source)] = tok; source.zone = 'gone'; emit(state, { type: 'transformed', uid: source.uid, player: pi, from: source.name, card: tok }); recomputeAuras(state); } }
+		} else if (e.type === 'set-next-minion-stats') {
+			// Hodir: set the stats of your next N minions
+			state.players[pi].nextMinionStats = { count: e.count || 3, attack: e.attack || 8, health: e.health || 8 };
+		} else if (e.type === 'enable-odyn') {
+			// Odyn: for the rest of the game, gaining Armor also grants Attack this turn
+			state.players[pi].odynActive = true;
+		} else if (e.type === 'spend-armor-resummon') {
+			// General Vezax (Deathrattle): lose N Armor to resummon this
+			const p = state.players[pi];
+			if ((p.armor || 0) >= (e.value || 4) && source && state.cardsById[source.id]) { p.armor -= (e.value || 4); emit(state, { type: 'armor', player: pi, amount: -(e.value || 4), armor: p.armor }); summon(state, pi, state.cardsById[source.id]); }
 		} else if (e.type === 'summon-tentacle-from-deck') {
 			// Loken: summon a Tentacle with the stats of a random minion in your deck (+ Taunt)
 			const p = state.players[pi];
@@ -8501,6 +8538,7 @@ export function playCard(state, pi, cardUid, target, choice, position, useAlt, k
 		card.zone = 'board';
 		card.sick = true;
 		if (card.scaleOnEntry) { const n = p.enteredCountById?.[card.id] || 0; if (n > 0) { card.attack += (card.scaleOnEntry.attack || 0) * n; card.maxHealth += (card.scaleOnEntry.health || 0) * n; } } // Astral Automaton (played from hand)
+		if (p.nextMinionStats && p.nextMinionStats.count > 0) { card.attack = p.nextMinionStats.attack; card.maxHealth = p.nextMinionStats.health; card.damage = 0; p.nextMinionStats.count--; if (p.nextMinionStats.count <= 0) p.nextMinionStats = null; } // Hodir: set the next N minions to fixed stats
 		(p.enteredCountById = p.enteredCountById || {})[card.id] = (p.enteredCountById[card.id] || 0) + 1;
 		// position = insertion index (adjacency matters); default = right end
 		if (position == null || position >= p.board.length) p.board.push(card);
