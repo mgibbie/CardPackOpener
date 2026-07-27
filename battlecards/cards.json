@@ -51513,9 +51513,9 @@
       ],
       "deathrattle": [
         {
-          "type": "conjure-named",
-          "count": 1,
-          "match": "Rewind"
+          "type": "conjure-random",
+          "requireRewind": true,
+          "count": 1
         }
       ]
     },
@@ -118209,12 +118209,16 @@
       "keywords": [
         "battlecry"
       ],
-      "description": "Rewind. Battlecry: Both players discard a random card. (Not modeled: Rewind; discards your own only.)",
+      "description": "Rewind. Battlecry: Both players discard a random card.",
       "effects": [
         {
           "type": "discard-random"
+        },
+        {
+          "type": "discard-random-enemy"
         }
-      ]
+      ],
+      "rewind": 1
     },
     {
       "id": "circadiamancer",
@@ -118364,7 +118368,7 @@
       "keywords": [
         "battlecry"
       ],
-      "description": "Rewind. Battlecry: Draw a random minion. Give it +2/+2. (Not modeled: Rewind.)",
+      "description": "Rewind. Battlecry: Draw a random minion. Give it +2/+2.",
       "effects": [
         {
           "type": "tutor",
@@ -118375,7 +118379,8 @@
             "health": 2
           }
         }
-      ]
+      ],
+      "rewind": 1
     },
     {
       "id": "ranger_general_sylvanas",
@@ -118765,13 +118770,14 @@
       "keywords": [
         "battlecry"
       ],
-      "description": "Your Rewinds keep BOTH potential outcomes. Battlecry: Discover a Rewind card from any class. (Not modeled: Rewind.)",
+      "description": "Your Rewinds keep BOTH potential outcomes. Battlecry: Discover a Rewind card from any class.",
       "effects": [
         {
           "type": "discover",
-          "cardType": "creature"
+          "requireRewind": true
         }
-      ]
+      ],
+      "rewindDouble": true
     },
     {
       "id": "stadium_announcer",
@@ -118787,7 +118793,18 @@
       "keywords": [
         "battlecry"
       ],
-      "description": "Rewind. Battlecry: Both players equip a random weapon. Give yours +1/+1. (Not modeled: Rewind / equip.)"
+      "description": "Rewind. Battlecry: Both players equip a random weapon. Give yours +1/+1.",
+      "rewind": 1,
+      "effects": [
+        {
+          "type": "equip-random",
+          "eachPlayer": true,
+          "selfBuff": {
+            "attack": 1,
+            "durability": 1
+          }
+        }
+      ]
     },
     {
       "id": "talanji_of_the_graves",
@@ -118951,7 +118968,7 @@
       "keywords": [
         "battlecry"
       ],
-      "description": "Rewind. Battlecry: Get 2 random spells from your class. (Not modeled: Rewind.)",
+      "description": "Rewind. Battlecry: Get 2 random spells from your class.",
       "effects": [
         {
           "type": "conjure-random",
@@ -118959,7 +118976,8 @@
           "cardClass": "own",
           "count": 2
         }
-      ]
+      ],
+      "rewind": 1
     },
     {
       "id": "azure_queen_sindragosa",
@@ -119409,14 +119427,15 @@
       "keywords": [
         "battlecry"
       ],
-      "description": "Rewind. Battlecry: Cast 2 random Nature spells. (Not modeled: Rewind.)",
+      "description": "Rewind. Battlecry: Cast 2 random Nature spells.",
       "effects": [
         {
           "type": "cast-random-spell",
           "count": 2,
           "school": "Nature"
         }
-      ]
+      ],
+      "rewind": 1
     },
     {
       "id": "epoch_stalker",
@@ -119598,7 +119617,7 @@
       "keywords": [
         "battlecry"
       ],
-      "description": "Rewind. Battlecry: Deal 7 damage to a random enemy. (Not modeled: Rewind.)",
+      "description": "Rewind. Battlecry: Deal 7 damage to a random enemy.",
       "effects": [
         {
           "type": "random-damage",
@@ -119606,7 +119625,8 @@
           "count": 1,
           "pool": "enemies"
         }
-      ]
+      ],
+      "rewind": 1
     },
     {
       "id": "highborne_mentor",
@@ -119756,14 +119776,15 @@
       "keywords": [
         "battlecry"
       ],
-      "description": "Rewind, Rewind, Rewind. Battlecry: Summon 2 random Legendary minions. (Not modeled: Rewind.)",
+      "description": "Rewind, Rewind, Rewind. Battlecry: Summon 2 random Legendary minions.",
       "effects": [
         {
           "type": "summon-random",
           "rarity": "legendary",
           "count": 2
         }
-      ]
+      ],
+      "rewind": 3
     },
     {
       "id": "undefeated_champion",
@@ -123684,7 +123705,7 @@
       "keywords": [
         "battlecry"
       ],
-      "description": "Rewind. Battlecry: Discover a Beast with a Dark Gift. Kindred: It costs (1) less. (Rewind still pending.)",
+      "description": "Rewind. Battlecry: Discover a Beast with a Dark Gift. Kindred: It costs (1) less.",
       "effects": [
         {
           "type": "conditional",
@@ -123710,7 +123731,8 @@
           ]
         }
       ],
-      "kindredCard": true
+      "kindredCard": true,
+      "rewind": 1
     },
     {
       "id": "ymirjar_deathbringer",

@@ -297,6 +297,8 @@ function instantiate(def, controller) {
 		handTransform: def.handTransform || null, // Imposters/Shapeshifter: turn-start in-hand morph { cost?, grant?, spellDamage?, fromEnemyHand?, intoId?, ifHandParity? }
 		startOfGame: def.startOfGame || null, // Start of Game: effects run from the deck when the game begins
 		kindredCard: !!def.kindredCard, // Lost City: a card with a Kindred bonus (Torga tutors these)
+		rewind: def.rewind || 0, // TIME_TRAVEL Rewind: when played, a copy returns to your deck until N charges are spent
+		rewindDouble: !!def.rewindDouble, // Morchie: while on board, your Rewind battlecries fire twice
 		kindredCostReduce: def.kindredCostReduce || 0, // Pterrorwing Ravager / Windpeak Wyrm: costs less while Kindred is active
 		handDeathGrowth: !!def.handDeathGrowth, // Blood Herald: +1/+1 whenever a friendly minion dies while in hand
 		scaleOnEntry: def.scaleOnEntry ? { ...def.scaleOnEntry } : null, // Astral Automaton: +stats per prior copy entered this game
@@ -3157,6 +3159,11 @@ function runBattlecry(state, pi, card, target, choice) {
 	}
 	// Swiftdraw (HS Quickdraw): bonus effects when played the same turn it was drawn
 	if (card.swiftdraw && card.drawnThisTurn) execEffects(state, pi, JSON.parse(JSON.stringify(card.swiftdraw.effects || [])), target, card);
+	// Morchie: your Rewinds keep BOTH outcomes — Rewind battlecries fire twice
+	if (card.rewind > 0 && card.effects && !LEGACY_SCRIPTED.has(card.id)
+		&& p.board.some(c => c.rewindDouble && !isDead(c) && c !== card)) {
+		execEffects(state, pi, liveEffectsOf(state, pi, card, choice), target, card);
+	}
 	// Outcast: an extra battlecry when played from the edge of hand
 	if (card.outcast && card._outcast) { execEffects(state, pi, card.outcast.effects, target, card); fireOngoing(state, pi, 'outcast-played', { played: card }); } // Redeemed Pariah reacts
 	switch (card.id) {
@@ -8148,7 +8155,9 @@ function execEffects(state, pi, effects, target, source) {
 			for (const tp of who) {
 				if (!pool.length) break;
 				const wd = pool[Math.floor(state.rng() * pool.length)];
-				execEffects(state, tp, [{ type: 'equip', name: wd.name, attack: wd.attack, durability: wd.durability }], null, null);
+				const bA = (tp === pi && e.selfBuff) ? (e.selfBuff.attack || 0) : 0; // Stadium Announcer: yours gets +1/+1
+				const bD = (tp === pi && e.selfBuff) ? (e.selfBuff.durability || 0) : 0;
+				execEffects(state, tp, [{ type: 'equip', name: wd.name, attack: wd.attack + bA, durability: wd.durability + bD }], null, null);
 			}
 		} else if (e.type === 'steal-secret') {
 			// Kezan Mystic: take control of a random enemy Secret
@@ -8552,6 +8561,7 @@ function execEffects(state, pi, effects, target, source) {
 			if (e.school) pool = pool.filter(d => schoolOf(d) === e.school); // Galactic Crusader: Holy spells
 			if (e.tribe) pool = pool.filter(d => (d.tribe || '').includes(e.tribe));
 			if (e.rarity) pool = pool.filter(d => d.rarity === e.rarity); // Golden Monkey: Legendaries
+			if (e.requireRewind) pool = pool.filter(d => d.rewind > 0); // Time Machine: a random Rewind card
 			if (e.cardClass === 'enemy') {
 				const victim = enemyHero();
 				const cls = victim != null && state.players[victim].heroClass;
@@ -8747,6 +8757,7 @@ function execEffects(state, pi, effects, target, source) {
 				if (e.minCost != null && (d.cost || 0) < e.minCost) return false;
 				if (e.hasStatic && d.static?.type !== e.hasStatic) return false;
 				if (e.rarity && d.rarity !== e.rarity) return false; // Suspicious Usher / Legendary Invitation
+				if (e.requireRewind && !(d.rewind > 0)) return false; // Morchie: a Rewind card
 				if (e.requireKeyword && !(d.keywords || []).includes(e.requireKeyword)) return false;
 				if (e.cardClasses && !e.cardClasses.includes(d.cardClass || 'neutral')) return false; // Grimestreet Informant / Kabal Courier / Lotus Agents
 				return true;
@@ -9562,6 +9573,17 @@ export function playCard(state, pi, cardUid, target, choice, position, useAlt, k
 	}
 	emit(state, { type: 'play', player: pi, card, mana: availableMana(p) });
 	state.expanseEvents = (state.expanseEvents || 0) + 1; // The Ceaseless Expanse: a card was played
+	// Rewind (TIME_TRAVEL): a copy returns to your deck until the charges run out
+	// (charges tracked per card id — Mister Clocksworth's x3 = four total plays)
+	if (card.rewind > 0 && !card.token && state.cardsById[card.id]) {
+		const spent = (p.rewindSpent = p.rewindSpent || {});
+		if ((spent[card.id] || 0) < card.rewind) {
+			spent[card.id] = (spent[card.id] || 0) + 1;
+			p.deck.push(card.id);
+			for (let i = p.deck.length - 1; i > 0; i--) { const j = Math.floor(state.rng() * (i + 1)); [p.deck[i], p.deck[j]] = [p.deck[j], p.deck[i]]; }
+			emit(state, { type: 'rewind', player: pi, cardId: card.id, name: card.name, remaining: card.rewind - spent[card.id] });
+		}
+	}
 	// history for Tess Greymane (other-class cards) and Shudderwock (Battlecries)
 	if (card.cardClass && card.cardClass !== 'neutral' && card.cardClass !== p.heroClass && card.id !== 'tess_greymane') p.otherClassPlayedGame.push(card.id);
 	if ((card.keywords || []).includes('battlecry') && card.effects && card.id !== 'shudderwock') p.battlecriesPlayedGame.push(card.id);
