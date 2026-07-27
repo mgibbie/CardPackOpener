@@ -5810,7 +5810,7 @@ function execEffects(state, pi, effects, target, source) {
 			// Imp King Rafaam: resurrect friendly dead minions whose name contains a substring
 			const p = state.players[pi];
 			const pool = [...new Set(p.deathLogIds)].map(id => state.cardsById[id]).filter(d => d && d.type === 'creature' && (d.name || '').includes(e.nameIncludes || ''));
-			for (let i = 0; i < (e.count || 1) && pool.length; i++) summon(state, pi, pool[Math.floor(state.rng() * pool.length)]);
+			for (let i = 0; i < (e.count || 1) && pool.length; i++) { const nc = summon(state, pi, pool[Math.floor(state.rng() * pool.length)]); if (nc && e.grant && !nc.keywords.includes(e.grant)) { nc.keywords.push(e.grant); if (e.grant === KW.DIVINE_SHIELD) nc.shield = true; } } // Kingpin Pud: grant Windfury
 		} else if (e.type === 'buff-self-per-damaged-then-attack-all') {
 			// Decimator Olgra: +1/+1 per damaged minion, then attack all enemies
 			if (source) {
@@ -5930,6 +5930,19 @@ function execEffects(state, pi, effects, target, source) {
 		} else if (e.type === 'destroy-self') {
 			// Incorporeal Corporal: destroy the source minion
 			if (source && !isDead(source)) { source.damage = source.maxHealth; source.shield = false; emit(state, { type: 'destroy', uid: source.uid }); sweepDeaths(state); }
+		} else if (e.type === 'grant-battlecries-twice') {
+			// Deepminer Brann: your Battlecries trigger twice for the rest of the game
+			state.players[pi].battlecriesTwice = true;
+		} else if (e.type === 'brawl') {
+			// Badlands Brawler: destroy all minions except one random survivor (keep your own if e.favorSelf)
+			const all = [];
+			for (const pl of state.players) for (const c of pl.board) if (!isDead(c) && c.type !== 'location') all.push(c);
+			if (all.length > 1) { let survivor = null; if (e.favorSelf) { const mine = state.players[pi].board.filter(c => !isDead(c) && c.type !== 'location'); survivor = mine.length ? mine[Math.floor(state.rng() * mine.length)] : all[Math.floor(state.rng() * all.length)]; } else survivor = all[Math.floor(state.rng() * all.length)]; for (const c of all) { if (c === survivor) continue; c.damage = c.maxHealth; c.shield = false; emit(state, { type: 'destroy', uid: c.uid }); } sweepDeaths(state); }
+		} else if (e.type === 'summon-copy-per-hand-tribe') {
+			// Dragon Golem: summon a copy of this for each minion of a tribe in your hand
+			const n = state.players[pi].hand.filter(c => c.type === 'creature' && (c.tribe || '').includes(e.tribe)).length;
+			const def = source && state.cardsById[source.id];
+			if (def) for (let i = 0; i < n; i++) summon(state, pi, def);
 		} else if (e.type === 'buff-self-per-hand') {
 			// Lawful Longarm: gain +N Attack for each card in your hand
 			if (source) buffCreature(source, (e.attack || 1) * state.players[pi].hand.length, (e.health || 0) * state.players[pi].hand.length);
@@ -8181,13 +8194,16 @@ function execEffects(state, pi, effects, target, source) {
 			// Demon" / "a random 4-Cost minion" (exact cost) / Past Conflux's
 			// "a random Dragon that costs 5 or more".
 			// Steeldancer: costFromWeapon fixes the Cost to your weapon's Attack.
-			const exactCost = e.costFromWeapon ? (state.players[pi].weapon ? (state.players[pi].weapon.attack || 0) : 0) : e.cost;
+			const exactCost = e.costFromWeapon ? (state.players[pi].weapon ? (state.players[pi].weapon.attack || 0) : 0)
+				: e.costFromSelfAttack ? (source ? (source.attack || 0) : 0) // Spurfang: Cost = this minion's Attack
+				: e.cost;
 			const pool = Object.values(state.cardsById).filter(d =>
 				d.type === 'creature' && (e.maxCost == null || (d.cost || 0) <= e.maxCost)
 				&& (e.minCost == null || (d.cost || 0) >= e.minCost)
 				&& (exactCost == null || (d.cost || 0) === exactCost)
 				&& (e.tribe == null || (d.tribe || '').includes(e.tribe))
 				&& (e.rarity == null || d.rarity === e.rarity)
+				&& (e.requireKeyword == null || (d.keywords || []).includes(e.requireKeyword)) // Obsidian Revenant: Deathrattle minions
 				&& !d.companion && !d.commander && !d.token && d.collectible !== false && !(d.colors && d.colors.length));
 			for (let i = 0; i < (e.count || 1) && pool.length; i++) {
 				const def = pool[Math.floor(state.rng() * pool.length)];
@@ -8560,6 +8576,8 @@ export function effectiveCost(state, pi, card) {
 			n = p.artifacts.length; // Affinity for artifacts (Treasures/Clues/Food count)
 		} else if (card.selfCost.per === 'deck-size') {
 			n = p.deck.length; // Fanottem: Cost equals the cards in your deck
+		} else if (card.selfCost.per === 'one-cost-played') {
+			n = p.oneCostPlayedGame || 0; // Thirsty Drifter: cheaper per 1-Cost card played
 		}
 		c += card.selfCost.amount * n;
 	}
@@ -8940,6 +8958,7 @@ export function playCard(state, pi, cardUid, target, choice, position, useAlt, k
 	if (card.type === 'creature' && (card.tribe || '').includes('Elemental')) p.elementalsPlayedThisTurn = (p.elementalsPlayedThisTurn || 0) + 1; // Unchained Gladiator
 	if (card.type === 'creature' && (card.tribe || '').includes('Dragon')) p.dragonsPlayedGame = (p.dragonsPlayedGame || 0) + 1; // Timewinder Zarimi
 	if (card.type === 'creature' && !card.token) (p.playedMinionLog = p.playedMinionLog || []).push(card.id); // Joymancer Jepetto
+	if ((card.cost || 0) === 1) p.oneCostPlayedGame = (p.oneCostPlayedGame || 0) + 1; // Thirsty Drifter
 	if ((card.keywords || []).includes('combo')) p.combosPlayedGame = (p.combosPlayedGame || 0) + 1; // Rhyme Spinner
 	(p.playedCountById = p.playedCountById || {})[card.id] = (p.playedCountById[card.id] || 0) + 1; // Freebird
 	if (card.hauntSummon && state.cardsById[card.hauntSummon]) summon(state, pi, state.cardsById[card.hauntSummon]); // Haunting Nightmare: playing a haunted card summons a Soldier

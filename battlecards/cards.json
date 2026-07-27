@@ -107559,6 +107559,413 @@
         "rush"
       ],
       "description": "Rush."
+    },
+    {
+      "id": "spurfang",
+      "name": "Spurfang",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "hunter",
+      "attack": 2,
+      "health": 5,
+      "rarity": "legendary",
+      "set": "WILD_WEST",
+      "tribe": "Beast",
+      "keywords": [
+        "battlecry",
+        "deathrattle"
+      ],
+      "description": "Battlecry and Deathrattle: Summon a random Beast with Cost equal to this minion's Attack.",
+      "effects": [
+        {
+          "type": "summon-random",
+          "tribe": "Beast",
+          "costFromSelfAttack": true
+        }
+      ],
+      "deathrattle": [
+        {
+          "type": "summon-random",
+          "tribe": "Beast",
+          "costFromSelfAttack": true
+        }
+      ]
+    },
+    {
+      "id": "wishing_well",
+      "name": "Wishing Well",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "rogue",
+      "attack": 0,
+      "health": 7,
+      "rarity": "epic",
+      "set": "WILD_WEST",
+      "description": "After you play a Coin, get a random Legendary minion from another class and set its Cost to (1).",
+      "ongoing": {
+        "on": "card-played",
+        "if": {
+          "cardId": "coin"
+        },
+        "effects": [
+          {
+            "type": "conjure-random",
+            "cardType": "creature",
+            "cardClass": "other",
+            "rarity": "legendary",
+            "setCost": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "blast_tortoise",
+      "name": "Blast Tortoise",
+      "type": "creature",
+      "cost": 6,
+      "cardClass": "warrior",
+      "attack": 2,
+      "health": 7,
+      "rarity": "rare",
+      "set": "WILD_WEST",
+      "tribe": "Beast",
+      "keywords": [
+        "taunt",
+        "battlecry"
+      ],
+      "description": "Taunt. Battlecry: Deal damage to all enemy minions equal to this minion's Attack.",
+      "effects": [
+        {
+          "type": "damage-enemies-by-attack"
+        }
+      ]
+    },
+    {
+      "id": "blastmage_miner",
+      "name": "Blastmage Miner",
+      "type": "creature",
+      "cost": 6,
+      "cardClass": "mage",
+      "attack": 4,
+      "health": 4,
+      "rarity": "rare",
+      "set": "WILD_WEST",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Excavate a treasure. For each card in your hand, deal 1 damage to a random enemy.",
+      "effects": [
+        {
+          "type": "excavate"
+        },
+        {
+          "type": "random-damage",
+          "value": 1,
+          "perHandCard": true,
+          "pool": "enemies"
+        }
+      ]
+    },
+    {
+      "id": "deepminer_brann",
+      "name": "Deepminer Brann",
+      "type": "creature",
+      "cost": 6,
+      "cardClass": "warrior",
+      "attack": 2,
+      "health": 4,
+      "rarity": "legendary",
+      "set": "WILD_WEST",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: If your deck started with no duplicates, your Battlecries trigger twice for the rest of the game.",
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "noDuplicates": true
+          },
+          "then": [
+            {
+              "type": "grant-battlecries-twice"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "kingpin_pud",
+      "name": "Kingpin Pud",
+      "type": "creature",
+      "cost": 6,
+      "cardClass": "neutral",
+      "attack": 6,
+      "health": 7,
+      "rarity": "legendary",
+      "set": "WILD_WEST",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Resurrect your Ogre-Gang. Give them Windfury.",
+      "effects": [
+        {
+          "type": "summon-died-name",
+          "nameIncludes": "Ogre-Gang",
+          "count": 3,
+          "grant": "windfury"
+        }
+      ]
+    },
+    {
+      "id": "midnight_wolf",
+      "name": "Midnight Wolf",
+      "type": "creature",
+      "cost": 6,
+      "cardClass": "demonhunter",
+      "attack": 6,
+      "health": 6,
+      "rarity": "common",
+      "set": "WILD_WEST",
+      "tribe": "Beast",
+      "keywords": [
+        "rush",
+        "outcast"
+      ],
+      "description": "Rush. Outcast: Summon a copy of this.",
+      "outcast": {
+        "effects": [
+          {
+            "type": "summon-copy-of-self",
+            "count": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "obsidian_revenant",
+      "name": "Obsidian Revenant",
+      "type": "creature",
+      "cost": 6,
+      "cardClass": "hunter",
+      "attack": 4,
+      "health": 6,
+      "rarity": "common",
+      "set": "WILD_WEST",
+      "tribe": "Elemental",
+      "keywords": [
+        "taunt",
+        "deathrattle"
+      ],
+      "description": "Taunt. Deathrattle: Summon two random Deathrattle minions that cost (3) or less.",
+      "deathrattle": [
+        {
+          "type": "summon-random",
+          "requireKeyword": "deathrattle",
+          "maxCost": 3,
+          "count": 2
+        }
+      ]
+    },
+    {
+      "id": "sunspot_dragon",
+      "name": "Sunspot Dragon",
+      "type": "creature",
+      "cost": 6,
+      "cardClass": "neutral",
+      "attack": 6,
+      "health": 6,
+      "rarity": "common",
+      "set": "WILD_WEST",
+      "tribe": "Dragon",
+      "keywords": [
+        "lifesteal"
+      ],
+      "description": "Tradeable, Lifesteal. Quickdraw: Deal 6 damage."
+    },
+    {
+      "id": "thirsty_drifter",
+      "name": "Thirsty Drifter",
+      "type": "creature",
+      "cost": 6,
+      "cardClass": "priest",
+      "attack": 4,
+      "health": 6,
+      "rarity": "rare",
+      "set": "WILD_WEST",
+      "keywords": [
+        "taunt"
+      ],
+      "selfCost": {
+        "per": "one-cost-played",
+        "amount": -1
+      },
+      "description": "Taunt. Costs (1) less for each 1-Cost card you've played this game."
+    },
+    {
+      "id": "badlands_brawler",
+      "name": "Badlands Brawler",
+      "type": "creature",
+      "cost": 7,
+      "cardClass": "warrior",
+      "attack": 4,
+      "health": 4,
+      "rarity": "epic",
+      "set": "WILD_WEST",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Start a Brawl! If you've Excavated twice, this always wins.",
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "excavatedTwice": true
+          },
+          "then": [
+            {
+              "type": "brawl",
+              "favorSelf": true
+            }
+          ],
+          "else": [
+            {
+              "type": "brawl"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "dragon_golem",
+      "name": "Dragon Golem",
+      "type": "creature",
+      "cost": 7,
+      "cardClass": "druid",
+      "attack": 3,
+      "health": 4,
+      "rarity": "epic",
+      "set": "WILD_WEST",
+      "tribe": "Dragon",
+      "keywords": [
+        "taunt",
+        "battlecry"
+      ],
+      "description": "Taunt. Battlecry: Summon a copy of this for each Dragon in your hand.",
+      "effects": [
+        {
+          "type": "summon-copy-per-hand-tribe",
+          "tribe": "Dragon"
+        }
+      ]
+    },
+    {
+      "id": "harrowing_ox",
+      "name": "Harrowing Ox",
+      "type": "creature",
+      "cost": 7,
+      "cardClass": "deathknight",
+      "attack": 7,
+      "health": 7,
+      "rarity": "epic",
+      "set": "WILD_WEST",
+      "tribe": "Undead",
+      "keywords": [
+        "taunt",
+        "battlecry"
+      ],
+      "description": "Taunt. Battlecry: If you've Excavated twice, your next card this turn costs (7) less.",
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "excavatedTwice": true
+          },
+          "then": [
+            {
+              "type": "set-next-cards-discount",
+              "count": 1,
+              "value": 7
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "maruut_stonebinder",
+      "name": "Maruut Stonebinder",
+      "type": "creature",
+      "cost": 7,
+      "cardClass": "neutral",
+      "attack": 5,
+      "health": 6,
+      "rarity": "legendary",
+      "set": "WILD_WEST",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: If your deck started with no duplicates, Discover an Elemental to summon. Add the others to your hand.",
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "noDuplicates": true
+          },
+          "then": [
+            {
+              "type": "discover",
+              "cardType": "creature",
+              "tribe": "Elemental",
+              "to": "board"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "skarr_the_catastrophe",
+      "name": "Skarr, the Catastrophe",
+      "type": "creature",
+      "cost": 7,
+      "cardClass": "shaman",
+      "attack": 7,
+      "health": 7,
+      "rarity": "legendary",
+      "set": "WILD_WEST",
+      "tribe": "Elemental",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Deal 1 damage to all enemies (improved by each turn in a row you've played an Elemental).",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 1,
+          "target": "enemies"
+        }
+      ]
+    },
+    {
+      "id": "therazane",
+      "name": "Therazane",
+      "type": "creature",
+      "cost": 7,
+      "cardClass": "neutral",
+      "attack": 7,
+      "health": 5,
+      "rarity": "legendary",
+      "set": "WILD_WEST",
+      "tribe": "Elemental",
+      "keywords": [
+        "taunt",
+        "deathrattle"
+      ],
+      "description": "Taunt. Deathrattle: Double the stats of all Elementals in your hand and deck.",
+      "deathrattle": [
+        {
+          "type": "double-deck-minion-stats"
+        }
+      ]
     }
   ]
 }
