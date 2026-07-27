@@ -119119,6 +119119,315 @@
       "description": "Your Battlecries, Deathrattles, Hero Power, and end of turn effects trigger twice. (Not modeled: double-trigger aura.)"
     },
     {
+      "id": "conflux_crasher",
+      "name": "Conflux Crasher",
+      "type": "creature",
+      "cost": 7,
+      "cardClass": "neutral",
+      "attack": 7,
+      "health": 7,
+      "rarity": "common",
+      "set": "TIME_TRAVEL",
+      "tribe": "Dragon",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Rewind. Battlecry: Deal 7 damage to a random enemy. (Not modeled: Rewind.)",
+      "effects": [
+        {
+          "type": "random-damage",
+          "value": 7,
+          "count": 1,
+          "pool": "enemies"
+        }
+      ]
+    },
+    {
+      "id": "highborne_mentor",
+      "name": "Highborne Mentor",
+      "type": "creature",
+      "cost": 7,
+      "cardClass": "druid",
+      "attack": 6,
+      "health": 6,
+      "rarity": "rare",
+      "set": "TIME_TRAVEL",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Get a 2/2 Pupil. Discover a spell that costs (7) or more from the past to teach it. (Approximated: a Pupil + Discover a 7+ spell.)",
+      "effects": [
+        {
+          "type": "add-card",
+          "id": "time_pupil",
+          "count": 1
+        },
+        {
+          "type": "discover",
+          "cardType": "spell",
+          "minCost": 7
+        }
+      ]
+    },
+    {
+      "id": "logosh_blood_fighter",
+      "name": "Lo'Gosh, Blood Fighter",
+      "type": "creature",
+      "cost": 7,
+      "cardClass": "warrior",
+      "attack": 7,
+      "health": 7,
+      "rarity": "legendary",
+      "set": "TIME_TRAVEL",
+      "keywords": [
+        "rush",
+        "deathrattle"
+      ],
+      "description": "Fabled, Rush. Deathrattle: Summon a Blood Fighter from your hand. It gains +5/+5 and attacks a random enemy. (Approximated: summon a minion from your hand.)",
+      "deathrattle": [
+        {
+          "type": "summon-from-hand",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "id": "temporal_construct",
+      "name": "Temporal Construct",
+      "type": "creature",
+      "cost": 7,
+      "cardClass": "mage",
+      "attack": 5,
+      "health": 5,
+      "rarity": "rare",
+      "set": "TIME_TRAVEL",
+      "tribe": "Elemental",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Deal 5 damage to an enemy minion. Draw cards equal to the excess damage. (Not modeled: excess-damage draw.)",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 5,
+          "target": "enemy-creature"
+        }
+      ]
+    },
+    {
+      "id": "amber_warden",
+      "name": "Amber Warden",
+      "type": "creature",
+      "cost": 8,
+      "cardClass": "neutral",
+      "attack": 4,
+      "health": 12,
+      "rarity": "common",
+      "set": "TIME_TRAVEL",
+      "tribe": "Dragon",
+      "keywords": [
+        "taunt",
+        "deathrattle"
+      ],
+      "description": "Taunt. Deathrattle: Summon a random minion from the past.",
+      "deathrattle": [
+        {
+          "type": "summon-random"
+        }
+      ]
+    },
+    {
+      "id": "crumblecrusher",
+      "name": "Crumblecrusher",
+      "type": "creature",
+      "cost": 8,
+      "cardClass": "neutral",
+      "attack": 8,
+      "health": 6,
+      "rarity": "epic",
+      "set": "TIME_TRAVEL",
+      "tribe": "Dragon",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Destroy a random enemy minion, location, and weapon. (Not modeled: locations.)",
+      "effects": [
+        {
+          "type": "destroy-random"
+        },
+        {
+          "type": "destroy-weapon"
+        }
+      ]
+    },
+    {
+      "id": "gelbin_of_tomorrow",
+      "name": "Gelbin of Tomorrow",
+      "type": "creature",
+      "cost": 8,
+      "cardClass": "paladin",
+      "attack": 6,
+      "health": 6,
+      "rarity": "legendary",
+      "set": "TIME_TRAVEL",
+      "tribe": "Mech",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Fabled. Battlecry: Put one of each Aura from your deck into the battlefield. (Not modeled: Auras.)"
+    },
+    {
+      "id": "mister_clocksworth",
+      "name": "Mister Clocksworth",
+      "type": "creature",
+      "cost": 8,
+      "cardClass": "neutral",
+      "attack": 3,
+      "health": 3,
+      "rarity": "legendary",
+      "set": "TIME_TRAVEL",
+      "tribe": "Mech",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Rewind, Rewind, Rewind. Battlecry: Summon 2 random Legendary minions. (Not modeled: Rewind.)",
+      "effects": [
+        {
+          "type": "summon-random",
+          "rarity": "legendary",
+          "count": 2
+        }
+      ]
+    },
+    {
+      "id": "undefeated_champion",
+      "name": "Undefeated Champion",
+      "type": "creature",
+      "cost": 8,
+      "cardClass": "warrior",
+      "attack": 13,
+      "health": 13,
+      "rarity": "epic",
+      "set": "TIME_TRAVEL",
+      "keywords": [
+        "rush",
+        "battlecry"
+      ],
+      "description": "Rush. Battlecry: Fill your opponent's board with random 1-Cost minions.",
+      "effects": [
+        {
+          "type": "summon-random",
+          "cost": 1,
+          "count": 7,
+          "forEnemy": true
+        }
+      ]
+    },
+    {
+      "id": "endtime_murozond",
+      "name": "Endtime Murozond",
+      "type": "creature",
+      "cost": 9,
+      "cardClass": "neutral",
+      "attack": 4,
+      "health": 6,
+      "rarity": "legendary",
+      "set": "TIME_TRAVEL",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Fill your board with random Dragons. Fully heal your hero. Skip your next turn. (Not modeled: skip-turn.)",
+      "effects": [
+        {
+          "type": "summon-random",
+          "tribe": "Dragon",
+          "count": 7
+        },
+        {
+          "type": "heal",
+          "value": 30,
+          "target": "self"
+        }
+      ]
+    },
+    {
+      "id": "murozond_unbounded",
+      "name": "Murozond, Unbounded",
+      "type": "creature",
+      "cost": 9,
+      "cardClass": "neutral",
+      "attack": 8,
+      "health": 8,
+      "rarity": "legendary",
+      "set": "TIME_TRAVEL",
+      "tribe": "Dragon",
+      "description": "Battlecry: At the start of your next turn, set this minion's Attack to INFINITY! (Approximated: +9999 Attack next turn.)",
+      "ongoing": {
+        "on": "turn-start",
+        "once": true,
+        "effects": [
+          {
+            "type": "buff-self",
+            "attack": 9999
+          }
+        ]
+      }
+    },
+    {
+      "id": "medivh_the_hallowed",
+      "name": "Medivh the Hallowed",
+      "type": "creature",
+      "cost": 10,
+      "cardClass": "priest",
+      "attack": 7,
+      "health": 7,
+      "rarity": "legendary",
+      "set": "TIME_TRAVEL",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Fabled. Costs (0) if you control Karazhan. Battlecry: Silence and destroy all other minions. (Not modeled: Karazhan cost.)",
+      "effects": [
+        {
+          "type": "silence-all",
+          "exceptSource": true
+        },
+        {
+          "type": "destroy-all",
+          "others": true
+        }
+      ]
+    },
+    {
+      "id": "timethief_rafaam",
+      "name": "Timethief Rafaam",
+      "type": "creature",
+      "cost": 10,
+      "cardClass": "warlock",
+      "attack": 10,
+      "health": 10,
+      "rarity": "legendary",
+      "set": "TIME_TRAVEL",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Fabled+. Your deck size is 40, but has 10 Rafaams! Battlecry: If you played the rest, destroy the enemy hero. (Not modeled: 10-Rafaam win-con.)"
+    },
+    {
+      "id": "time_pupil",
+      "name": "Pupil",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "druid",
+      "attack": 2,
+      "health": 2,
+      "rarity": "common",
+      "set": "TIME_TRAVEL",
+      "token": true,
+      "collectible": false,
+      "description": "A 2/2 Pupil."
+    },
+    {
       "id": "time_chest",
       "name": "Chest",
       "type": "creature",
