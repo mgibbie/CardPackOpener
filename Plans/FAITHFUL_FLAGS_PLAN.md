@@ -1,3 +1,5 @@
+# FAITHFUL FLAGS — COMPLETE (2026-07-27). All 378 flags resolved; zero remain. See git history (P1-P10, 5 tail batches).
+
 # Faithful Flags Plan — upgrade all flagged approximations
 
 Goal: make the ~378 cards flagged "(Not modeled: X)" / "(Approximated: X)" fully
