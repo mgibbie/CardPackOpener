@@ -6101,7 +6101,7 @@ function execEffects(state, pi, effects, target, source) {
 			}
 		} else if (e.type === 'set-next-tribe-play-reward') {
 			// The Great Dark Beyond Draenei: your next N minions of a tribe gain stats/keyword/immediate-attack when PLAYED
-			state.players[pi].nextTribePlayReward = { tribe: e.tribe || 'Draenei', count: e.count || 1, attack: e.attack || 0, health: e.health || 0, keyword: e.keyword || null, immediateAttack: !!e.immediateAttack };
+			state.players[pi].nextTribePlayReward = { tribe: e.tribe || 'Draenei', count: e.count || 1, attack: e.attack || 0, health: e.health || 0, keyword: e.keyword || null, immediateAttack: !!e.immediateAttack, summonCopy: !!e.summonCopy, refreshManaByAttack: !!e.refreshManaByAttack, heroAttackByOwnAttack: !!e.heroAttackByOwnAttack };
 		} else if (e.type === 'copy-last-tribe-played') {
 			// Astral Vigilant: get a copy of the last Draenei you played
 			const p = state.players[pi];
@@ -6110,6 +6110,9 @@ function execEffects(state, pi, effects, target, source) {
 		} else if (e.type === 'set-next-weapon-discount') {
 			// Space Pirate: your next weapon costs (N) less
 			state.players[pi].nextWeaponDiscount = (state.players[pi].nextWeaponDiscount || 0) + (e.value || 1);
+		} else if (e.type === 'refresh-friendly-attacks') {
+			// Exarch Akama: after this attacks, all OTHER friendly minions can attack again
+			for (const c of state.players[pi].board) { if (c === source || isDead(c) || c.type === 'location') continue; c.attacksUsed = 0; c.sick = false; }
 		} else if (e.type === 'damage-random-enemy-by-attack') {
 			// Biopod: deal damage equal to this minion's Attack to a random enemy
 			// (count = independent hits; minionsOnly restricts to enemy minions — Felfire Thrusters)
@@ -7989,6 +7992,7 @@ function execEffects(state, pi, effects, target, source) {
 			if (e.minAttack != null) pool = pool.filter(d => (d.attack || 0) >= e.minAttack);
 			if (e.requireKeyword) pool = pool.filter(d => (d.keywords || []).includes(e.requireKeyword)); // Whirlkick Master: a Combo card
 			if (e.cost != null) pool = pool.filter(d => (d.cost || 0) === e.cost); // Ravencaller / Tanglefur Mystic
+			if (e.nameIncludes) pool = pool.filter(d => (d.name || '').includes(e.nameIncludes)); // Yrel: Librams
 			if (e.tribe) pool = pool.filter(d => (d.tribe || '').includes(e.tribe));
 			if (e.rarity) pool = pool.filter(d => d.rarity === e.rarity); // Golden Monkey: Legendaries
 			if (e.cardClass === 'enemy') {
@@ -9037,13 +9041,16 @@ export function playCard(state, pi, cardUid, target, choice, position, useAlt, k
 		card.sick = true;
 		if (card.scaleOnEntry) { const n = p.enteredCountById?.[card.id] || 0; if (n > 0) { card.attack += (card.scaleOnEntry.attack || 0) * n; card.maxHealth += (card.scaleOnEntry.health || 0) * n; } } // Astral Automaton (played from hand)
 		if (p.nextMinionStats && p.nextMinionStats.count > 0) { card.attack = p.nextMinionStats.attack; card.maxHealth = p.nextMinionStats.health; card.damage = 0; p.nextMinionStats.count--; if (p.nextMinionStats.count <= 0) p.nextMinionStats = null; } // Hodir: set the next N minions to fixed stats
-		// "The next Draenei you play gains +X/+Y / a keyword / attacks immediately" (Starlight Wanderer, Stranded Spaceman, Expedition Sergeant)
-		let draeneiImmediateAttack = false;
+		// "The next Draenei you play gains +X/+Y / a keyword / attacks immediately / summons a copy / etc." (Starlight Wanderer, Askara, Ingenious Artificer, Unyielding Vindicator, ...)
+		let draeneiImmediateAttack = false, draeneiSummonCopy = false, draeneiRefreshMana = false, draeneiHeroAttack = false;
 		if (p.nextTribePlayReward && p.nextTribePlayReward.count > 0 && (card.tribe || '').includes(p.nextTribePlayReward.tribe)) {
 			const r = p.nextTribePlayReward;
 			card.attack += r.attack || 0; card.maxHealth += r.health || 0;
 			if (r.keyword && !card.keywords.includes(r.keyword)) { card.keywords.push(r.keyword); if (r.keyword === KW.DIVINE_SHIELD) card.shield = true; }
 			if (r.immediateAttack) draeneiImmediateAttack = true;
+			if (r.summonCopy) draeneiSummonCopy = true;
+			if (r.refreshManaByAttack) draeneiRefreshMana = true;
+			if (r.heroAttackByOwnAttack) draeneiHeroAttack = true;
 			r.count -= 1; if (r.count <= 0) p.nextTribePlayReward = null;
 		}
 		(p.enteredCountById = p.enteredCountById || {})[card.id] = (p.enteredCountById[card.id] || 0) + 1;
@@ -9071,6 +9078,9 @@ export function playCard(state, pi, cardUid, target, choice, position, useAlt, k
 					const foes = []; for (const o of opponentsOf(state, pi)) { for (const c of state.players[o].board) if (!isDead(c) && c.type !== 'location' && !c.stealthed && c.dormantLeft <= 0) foes.push({ type: 'creature', uid: c.uid, player: o }); foes.push({ type: 'hero', player: o }); }
 					if (foes.length && !isDead(card)) resolveCombat(state, pi, card.uid, foes[Math.floor(state.rng() * foes.length)]);
 				}
+					if (draeneiRefreshMana && p.mana) { p.mana.cur = Math.min(p.mana.max, (p.mana.cur || 0) + (card.attack || 0)); emit(state, { type: 'manaGained', player: pi, amount: card.attack || 0, mana: availableMana(p) }); } // Ingenious Artificer
+					if (draeneiHeroAttack && (card.attack || 0) > 0) { p.heroTempAttack += card.attack; emit(state, { type: 'heroAttack', player: pi, attack: heroAttackValue(p) }); } // Unyielding Vindicator
+					if (draeneiSummonCopy && state.cardsById[card.id]) summon(state, pi, state.cardsById[card.id]); // Askara
 				if ((card.keywords || []).includes('battlecry') || card.combo) fireOngoing(state, pi, 'battlecry-or-combo-played', { played: card }); // Field Contact
 				if (card._outcast) fireOngoing(state, pi, 'edge-card-played', { played: card }); // Razorglaive Sentinel
 			// Grand Lackey Erkh: after you play a Lackey

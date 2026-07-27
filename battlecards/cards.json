@@ -111511,6 +111511,375 @@
         "divine_shield"
       ],
       "description": "Rush, Divine Shield. Battlecry: If this costs (0), gain +2/+2. (Not modeled: cost-0 buff.)"
+    },
+    {
+      "id": "yrel_beacon_of_hope",
+      "name": "Yrel, Beacon of Hope",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "paladin",
+      "attack": 3,
+      "health": 3,
+      "rarity": "legendary",
+      "set": "SPACE",
+      "tribe": "Draenei",
+      "keywords": [
+        "rush",
+        "deathrattle"
+      ],
+      "description": "Rush. Deathrattle: Get three different Librams from an older timeline! (Approximated: 3 random Paladin spells.)",
+      "deathrattle": [
+        {
+          "type": "conjure-random",
+          "cardType": "spell",
+          "cardClass": "paladin",
+          "count": 3
+        }
+      ]
+    },
+    {
+      "id": "ace_wayfinder",
+      "name": "Ace Wayfinder",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "neutral",
+      "attack": 4,
+      "health": 4,
+      "rarity": "legendary",
+      "set": "SPACE",
+      "tribe": "Draenei",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Gain two random Bonus Effects. The next Draenei you play gains them as well. (Not modeled: Bonus Effects.)"
+    },
+    {
+      "id": "arkonite_defense_crystal",
+      "name": "Arkonite Defense Crystal",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "neutral",
+      "attack": 3,
+      "health": 4,
+      "rarity": "common",
+      "set": "SPACE",
+      "keywords": [
+        "taunt",
+        "deathrattle"
+      ],
+      "description": "Taunt. Deathrattle: Gain 4 Armor. (Starship Piece.)",
+      "deathrattle": [
+        {
+          "type": "armor",
+          "value": 4
+        }
+      ]
+    },
+    {
+      "id": "askara",
+      "name": "Askara",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "priest",
+      "attack": 4,
+      "health": 4,
+      "rarity": "legendary",
+      "set": "SPACE",
+      "tribe": "Draenei",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: The next two Draenei you play summon a copy of themselves.",
+      "effects": [
+        {
+          "type": "set-next-tribe-play-reward",
+          "tribe": "Draenei",
+          "summonCopy": true,
+          "count": 2
+        }
+      ]
+    },
+    {
+      "id": "bolide_behemoth",
+      "name": "Bolide Behemoth",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "shaman",
+      "attack": 3,
+      "health": 6,
+      "rarity": "epic",
+      "set": "SPACE",
+      "tribe": "Elemental",
+      "description": "Battlecry: Your Asteroids deal 1 more damage this game. Spellburst: Shuffle 3 of them into your deck. (Not modeled: Asteroid damage boost.)",
+      "ongoing": {
+        "on": "spell-played",
+        "once": true,
+        "effects": [
+          {
+            "type": "shuffle-into-own-deck",
+            "id": "gdb_asteroid",
+            "count": 3
+          }
+        ]
+      }
+    },
+    {
+      "id": "dirdra_rebel_captain",
+      "name": "Dirdra, Rebel Captain",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "demonhunter",
+      "attack": 5,
+      "health": 4,
+      "rarity": "legendary",
+      "set": "SPACE",
+      "tribe": "Draenei",
+      "keywords": [
+        "rush",
+        "battlecry",
+        "deathrattle"
+      ],
+      "description": "Rush. Battlecry: Shuffle all 8 Crewmates into your deck. Deathrattle: Draw two Crewmates. (Approximated: 8 identical Crewmates; Deathrattle summons 2.)",
+      "effects": [
+        {
+          "type": "shuffle-into-own-deck",
+          "id": "gdb_crewmate",
+          "count": 8
+        }
+      ],
+      "deathrattle": [
+        {
+          "type": "summon",
+          "count": 2,
+          "summonId": "gdb_crewmate"
+        }
+      ]
+    },
+    {
+      "id": "doommaiden",
+      "name": "Doommaiden",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "neutral",
+      "attack": 4,
+      "health": 4,
+      "rarity": "epic",
+      "set": "SPACE",
+      "tribe": "Demon",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Draw a card from your opponent's deck. If you don't play it this turn, put it back. (Not modeled: put-back.)",
+      "effects": [
+        {
+          "type": "copy-random-enemy-deck-card"
+        }
+      ]
+    },
+    {
+      "id": "ingenious_artificer",
+      "name": "Ingenious Artificer",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "mage",
+      "attack": 4,
+      "health": 5,
+      "rarity": "rare",
+      "set": "SPACE",
+      "tribe": "Draenei",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: The next Draenei you play refreshes Mana Crystals equal to its Attack.",
+      "effects": [
+        {
+          "type": "set-next-tribe-play-reward",
+          "tribe": "Draenei",
+          "refreshManaByAttack": true,
+          "count": 1
+        }
+      ]
+    },
+    {
+      "id": "interstellar_wayfarer",
+      "name": "Interstellar Wayfarer",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "paladin",
+      "attack": 4,
+      "health": 2,
+      "rarity": "common",
+      "set": "SPACE",
+      "tribe": "Draenei",
+      "keywords": [
+        "divine_shield",
+        "battlecry",
+        "deathrattle"
+      ],
+      "description": "Divine Shield. Battlecry and Deathrattle: Reduce the Cost of your Librams by (1) this game.",
+      "effects": [
+        {
+          "type": "reduce-libram-cost",
+          "value": 1
+        }
+      ],
+      "deathrattle": [
+        {
+          "type": "reduce-libram-cost",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "lurker",
+      "name": "Lurker",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "demonhunter",
+      "attack": 2,
+      "health": 6,
+      "rarity": "common",
+      "set": "SPACE",
+      "description": "After a friendly minion attacks, deal 1 damage to a random enemy (or 2 if your minion is a Zerg). (Not modeled: Zerg bonus.)",
+      "ongoing": {
+        "on": "friendly-attacks",
+        "effects": [
+          {
+            "type": "random-damage",
+            "value": 1,
+            "count": 1,
+            "pool": "enemies"
+          }
+        ]
+      }
+    },
+    {
+      "id": "mystified_tocha",
+      "name": "Mystified To'cha",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "priest",
+      "attack": 4,
+      "health": 2,
+      "rarity": "legendary",
+      "set": "SPACE",
+      "description": "Battlecry: If the combined Health of both heroes is exactly 42, set your hero's Health to 42. (Not modeled: niche condition.)"
+    },
+    {
+      "id": "uluu_the_everdrifter",
+      "name": "Uluu, the Everdrifter",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "druid",
+      "attack": 5,
+      "health": 4,
+      "rarity": "legendary",
+      "set": "SPACE",
+      "tribe": "Beast",
+      "description": "Each turn this is in your hand, gain two random Choose One choices. (Not modeled: in-hand growth.)"
+    },
+    {
+      "id": "unyielding_vindicator",
+      "name": "Unyielding Vindicator",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "warrior",
+      "attack": 5,
+      "health": 4,
+      "rarity": "rare",
+      "set": "SPACE",
+      "tribe": "Draenei",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: The next Draenei you play gives your hero its Attack for that turn.",
+      "effects": [
+        {
+          "type": "set-next-tribe-play-reward",
+          "tribe": "Draenei",
+          "heroAttackByOwnAttack": true,
+          "count": 1
+        }
+      ]
+    },
+    {
+      "id": "yamato_cannon",
+      "name": "Yamato Cannon",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "warrior",
+      "attack": 3,
+      "health": 3,
+      "rarity": "rare",
+      "set": "SPACE",
+      "tribe": "Mech",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Starship Piece. Battlecry: Destroy a random enemy minion. (Not modeled: launch trigger.)",
+      "effects": [
+        {
+          "type": "destroy-random"
+        }
+      ]
+    },
+    {
+      "id": "exarch_akama",
+      "name": "Exarch Akama",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "warrior",
+      "attack": 3,
+      "health": 6,
+      "rarity": "legendary",
+      "set": "SPACE",
+      "tribe": "Draenei",
+      "description": "After this attacks, all other friendly minions can attack again (except Exarch Akama).",
+      "ongoing": {
+        "on": "self-attacks",
+        "effects": [
+          {
+            "type": "refresh-friendly-attacks"
+          }
+        ]
+      }
+    },
+    {
+      "id": "exarch_hataaru",
+      "name": "Exarch Hataaru",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "mage",
+      "attack": 5,
+      "health": 5,
+      "rarity": "legendary",
+      "set": "SPACE",
+      "tribe": "Draenei",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Discover a spell and reduce its Cost by (1). If you play it this turn, repeat this effect. (Not modeled: repeat.)",
+      "effects": [
+        {
+          "type": "discover",
+          "cardType": "spell",
+          "costMod": -1
+        }
+      ]
+    },
+    {
+      "id": "gdb_crewmate",
+      "name": "Crewmate",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "neutral",
+      "attack": 2,
+      "health": 2,
+      "rarity": "common",
+      "set": "SPACE",
+      "token": true,
+      "collectible": false,
+      "description": "A 2/2 Crewmate."
     }
   ]
 }
