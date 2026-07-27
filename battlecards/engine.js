@@ -5926,6 +5926,28 @@ function execEffects(state, pi, effects, target, source) {
 		} else if (e.type === 'destroy-self') {
 			// Incorporeal Corporal: destroy the source minion
 			if (source && !isDead(source)) { source.damage = source.maxHealth; source.shield = false; emit(state, { type: 'destroy', uid: source.uid }); sweepDeaths(state); }
+		} else if (e.type === 'return-weaker-to-deck') {
+			// King Plush: return all minions with less Attack than this to their owners' decks
+			if (source) { for (const pl of state.players) { for (const c of [...pl.board]) { if (c === source || isDead(c) || c.type === 'location') continue; if ((c.attack || 0) < (source.attack || 0) && state.cardsById[c.id]) { const owner = state.players[c.controller]; owner.board = owner.board.filter(x => x !== c); if (!c.token) owner.deck.push(c.id); c.zone = 'gone'; emit(state, { type: 'bounce', uid: c.uid, player: c.controller, name: c.name }); } } } recomputeAuras(state); }
+		} else if (e.type === 'summon-token-attack-random') {
+			// Factory Assemblybot: summon a token that immediately attacks a random enemy
+			const tok = summon(state, pi, state.cardsById[e.summonId] || { id: e.summonId || 'token_bot', name: e.name || 'Bot', type: 'creature', cost: 0, token: true, tribe: e.tribe || null, rarity: 'common', attack: e.attack || 6, health: e.health || 7 });
+			if (tok) { tok.sick = false; const foes = []; for (const o of enemies) { for (const c of state.players[o].board) if (!isDead(c) && c.type !== 'location' && !c.stealthed && c.dormantLeft <= 0) foes.push({ type: 'creature', uid: c.uid, player: o }); foes.push({ type: 'hero', player: o }); } if (foes.length && !isDead(tok)) resolveCombat(state, pi, tok.uid, foes[Math.floor(state.rng() * foes.length)]); }
+		} else if (e.type === 'resurrect-tribe-cost-attack') {
+			// Inventor Boom: resurrect N different friendly Mechs costing M+; they attack random enemies
+			const p = state.players[pi];
+			const pool = [...new Set(p.deathLogIds)].map(id => state.cardsById[id]).filter(d => d && d.type === 'creature' && (d.tribe || '').includes(e.tribe) && (d.cost || 0) >= (e.minCost || 0));
+			const picked = [];
+			for (let n = 0; n < (e.count || 2) && pool.length; n++) { const i = Math.floor(state.rng() * pool.length); const [def] = pool.splice(i, 1); const c = summon(state, pi, def); if (c) picked.push(c); }
+			for (const c of picked) { if (isDead(c)) continue; c.sick = false; const foes = []; for (const o of enemies) { for (const x of state.players[o].board) if (!isDead(x) && x.type !== 'location' && !x.stealthed && x.dormantLeft <= 0) foes.push({ type: 'creature', uid: x.uid, player: o }); foes.push({ type: 'hero', player: o }); } if (foes.length && !isDead(c)) resolveCombat(state, pi, c.uid, foes[Math.floor(state.rng() * foes.length)]); }
+		} else if (e.type === 'dormant-damage-enemies') {
+			// Magtheridon: while Dormant, deal N to all enemies at end of turn
+			if (source && source.dormantLeft > 0) { for (const o of enemies) { for (const c of [...state.players[o].board]) if (!isDead(c) && c.type !== 'location') damageCreature(state, c, e.value || 3, source); damageHero(state, o, e.value || 3, pi); } }
+		} else if (e.type === 'copy-played-with-stat') {
+			// Joymancer Jepetto: add copies of every minion you've played this game with 1 Attack or 1 Health
+			const p = state.players[pi];
+			const seen = new Set();
+			for (const id of p.playedMinionLog || []) { if (seen.has(id)) continue; seen.add(id); const def = state.cardsById[id]; if (def && def.type === 'creature' && ((def.attack || 0) === 1 || (def.health || 0) === 1) && p.hand.length < MAX_HAND) { const cp = instantiate(def, pi); cp.zone = 'hand'; p.hand.push(cp); emit(state, { type: 'conjure', player: pi, card: cp, color: null }); } }
 		} else if (e.type === 'extra-turn') {
 			// Timewinder Zarimi: take an extra turn after this one
 			state.forcedTurns = (state.forcedTurns && state.forcedTurns.length) ? [pi, ...state.forcedTurns] : [pi];
@@ -8845,6 +8867,7 @@ export function playCard(state, pi, cardUid, target, choice, position, useAlt, k
 	if (card.type === 'creature' && card.tribe) { p.tribesPlayedGame = p.tribesPlayedGame || new Set(); for (const tr of (card.tribe || '').split('/')) if (tr) p.tribesPlayedGame.add(tr); } // Power Slider
 	if (card.type === 'creature' && (card.tribe || '').includes('Elemental')) p.elementalsPlayedThisTurn = (p.elementalsPlayedThisTurn || 0) + 1; // Unchained Gladiator
 	if (card.type === 'creature' && (card.tribe || '').includes('Dragon')) p.dragonsPlayedGame = (p.dragonsPlayedGame || 0) + 1; // Timewinder Zarimi
+	if (card.type === 'creature' && !card.token) (p.playedMinionLog = p.playedMinionLog || []).push(card.id); // Joymancer Jepetto
 	if ((card.keywords || []).includes('combo')) p.combosPlayedGame = (p.combosPlayedGame || 0) + 1; // Rhyme Spinner
 	(p.playedCountById = p.playedCountById || {})[card.id] = (p.playedCountById[card.id] || 0) + 1; // Freebird
 	if (card.hauntSummon && state.cardsById[card.hauntSummon]) summon(state, pi, state.cardsById[card.hauntSummon]); // Haunting Nightmare: playing a haunted card summons a Soldier

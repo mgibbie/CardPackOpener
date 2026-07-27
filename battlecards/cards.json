@@ -105699,6 +105699,158 @@
           "type": "transform-others-into-drawn"
         }
       ]
+    },
+    {
+      "id": "safety_expert",
+      "name": "Safety Expert",
+      "type": "creature",
+      "cost": 10,
+      "cardClass": "warrior",
+      "attack": 8,
+      "health": 8,
+      "rarity": "rare",
+      "set": "WHIZBANGS_WORKSHOP",
+      "tribe": "Mech",
+      "keywords": [
+        "rush",
+        "deathrattle"
+      ],
+      "description": "Rush. Deathrattle: Shuffle three Bombs into your opponent's deck.",
+      "deathrattle": [
+        {
+          "type": "shuffle-bomb",
+          "count": 3
+        }
+      ]
+    },
+    {
+      "id": "king_plush",
+      "name": "King Plush",
+      "type": "creature",
+      "cost": 9,
+      "cardClass": "hunter",
+      "attack": 6,
+      "health": 6,
+      "rarity": "legendary",
+      "set": "WHIZBANGS_WORKSHOP",
+      "tribe": "Beast",
+      "keywords": [
+        "charge",
+        "battlecry"
+      ],
+      "description": "Charge. Battlecry: Return all minions with less Attack than this to their owner's decks.",
+      "effects": [
+        {
+          "type": "return-weaker-to-deck"
+        }
+      ]
+    },
+    {
+      "id": "factory_assemblybot",
+      "name": "Factory Assemblybot",
+      "type": "creature",
+      "cost": 10,
+      "cardClass": "neutral",
+      "attack": 6,
+      "health": 7,
+      "rarity": "epic",
+      "set": "WHIZBANGS_WORKSHOP",
+      "tribe": "Mech",
+      "description": "Miniaturize. At the end of your turn, summon a 6/7 Bot that attacks a random enemy.",
+      "ongoing": {
+        "on": "turn-end",
+        "effects": [
+          {
+            "type": "summon-token-attack-random",
+            "summonId": "wwb_bot_67",
+            "name": "Bot",
+            "tribe": "Mech",
+            "attack": 6,
+            "health": 7
+          }
+        ]
+      }
+    },
+    {
+      "id": "inventor_boom",
+      "name": "Inventor Boom",
+      "type": "creature",
+      "cost": 8,
+      "cardClass": "warrior",
+      "attack": 7,
+      "health": 7,
+      "rarity": "legendary",
+      "set": "WHIZBANGS_WORKSHOP",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Resurrect two different friendly Mechs that cost (5) or more. They attack random enemies.",
+      "effects": [
+        {
+          "type": "resurrect-tribe-cost-attack",
+          "tribe": "Mech",
+          "minCost": 5,
+          "count": 2
+        }
+      ]
+    },
+    {
+      "id": "magtheridon_unreleased",
+      "name": "Magtheridon, Unreleased",
+      "type": "creature",
+      "cost": 8,
+      "cardClass": "demonhunter",
+      "attack": 12,
+      "health": 12,
+      "rarity": "legendary",
+      "set": "WHIZBANGS_WORKSHOP",
+      "tribe": "Demon",
+      "dormant": 2,
+      "description": "Dormant for 2 turns. While Dormant, deal 3 damage to all enemies at the end of your turn.",
+      "ongoing": {
+        "on": "turn-end",
+        "effects": [
+          {
+            "type": "dormant-damage-enemies",
+            "value": 3
+          }
+        ]
+      }
+    },
+    {
+      "id": "joymancer_jepetto",
+      "name": "Joymancer Jepetto",
+      "type": "creature",
+      "cost": 8,
+      "cardClass": "neutral",
+      "attack": 6,
+      "health": 6,
+      "rarity": "legendary",
+      "set": "WHIZBANGS_WORKSHOP",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Get copies of every 1-Attack or 1-Health minion you've played this game.",
+      "effects": [
+        {
+          "type": "copy-played-with-stat"
+        }
+      ]
+    },
+    {
+      "id": "wwb_bot_67",
+      "name": "Bot",
+      "type": "creature",
+      "cost": 6,
+      "cardClass": "neutral",
+      "attack": 6,
+      "health": 7,
+      "rarity": "common",
+      "set": "WHIZBANGS_WORKSHOP",
+      "tribe": "Mech",
+      "token": true,
+      "collectible": false,
+      "description": "A 6/7 Bot."
     }
   ]
 }
