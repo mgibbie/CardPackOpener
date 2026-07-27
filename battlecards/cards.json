@@ -117154,6 +117154,201 @@
       "token": true,
       "collectible": false,
       "description": "A 2/1 Murloc."
+    },
+    {
+      "id": "wilted_shadow",
+      "name": "Wilted Shadow",
+      "type": "creature",
+      "cost": 7,
+      "cardClass": "priest",
+      "attack": 6,
+      "health": 7,
+      "rarity": "legendary",
+      "set": "THE_LOST_CITY",
+      "tribe": "Elemental",
+      "keywords": [
+        "lifesteal"
+      ],
+      "description": "Lifesteal. Whenever you heal an enemy, this attacks it. (Not modeled: attack-on-heal-enemy.)"
+    },
+    {
+      "id": "atlasaurus",
+      "name": "Atlasaurus",
+      "type": "creature",
+      "cost": 8,
+      "cardClass": "priest",
+      "attack": 5,
+      "health": 10,
+      "rarity": "common",
+      "set": "THE_LOST_CITY",
+      "tribe": "Beast",
+      "keywords": [
+        "taunt",
+        "deathrattle"
+      ],
+      "description": "Taunt. Deathrattle: Summon a random Taunt minion that costs (5) or more.",
+      "deathrattle": [
+        {
+          "type": "summon-random",
+          "requireKeyword": "taunt",
+          "minCost": 5
+        }
+      ]
+    },
+    {
+      "id": "entomologist_toru",
+      "name": "Entomologist Toru",
+      "type": "creature",
+      "cost": 8,
+      "cardClass": "demonhunter",
+      "attack": 7,
+      "health": 7,
+      "rarity": "legendary",
+      "set": "THE_LOST_CITY",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Put each minion in your hand into 0/1 Jars that cost (1). Break them to release the minions! (Not modeled: Jars.)"
+    },
+    {
+      "id": "high_cultist_herenn",
+      "name": "High Cultist Herenn",
+      "type": "creature",
+      "cost": 8,
+      "cardClass": "deathknight",
+      "attack": 8,
+      "health": 6,
+      "rarity": "legendary",
+      "set": "THE_LOST_CITY",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Summon two Deathrattle minions from your deck. (Not modeled: they fight.)",
+      "effects": [
+        {
+          "type": "summon-from-deck-keyword",
+          "keywords": [
+            "deathrattle",
+            "deathrattle"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "the_great_dracorex",
+      "name": "The Great Dracorex",
+      "type": "creature",
+      "cost": 8,
+      "cardClass": "warrior",
+      "attack": 5,
+      "health": 12,
+      "rarity": "legendary",
+      "set": "THE_LOST_CITY",
+      "tribe": "Beast",
+      "keywords": [
+        "rush"
+      ],
+      "description": "Rush. After this attacks an enemy minion, it damages ALL other enemy minions.",
+      "ongoing": {
+        "on": "self-attacks-creature",
+        "effects": [
+          {
+            "type": "cleave-enemies-by-attack"
+          }
+        ]
+      }
+    },
+    {
+      "id": "windpeak_wyrm",
+      "name": "Windpeak Wyrm",
+      "type": "creature",
+      "cost": 8,
+      "cardClass": "warrior",
+      "attack": 6,
+      "health": 6,
+      "rarity": "common",
+      "set": "THE_LOST_CITY",
+      "tribe": "Dragon",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Deal 5 damage and gain 5 Armor. Kindred: Costs (3) less. (Not modeled: Kindred cost.)",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 5,
+          "target": "any"
+        },
+        {
+          "type": "armor",
+          "value": 5
+        }
+      ]
+    },
+    {
+      "id": "loh_the_living_legend",
+      "name": "Loh, the Living Legend",
+      "type": "creature",
+      "cost": 9,
+      "cardClass": "druid",
+      "attack": 5,
+      "health": 5,
+      "rarity": "legendary",
+      "set": "THE_LOST_CITY",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Your minions cost (5) this game. (Not modeled: minion cost-set aura.)"
+    },
+    {
+      "id": "seismopod",
+      "name": "Seismopod",
+      "type": "creature",
+      "cost": 9,
+      "cardClass": "druid",
+      "attack": 9,
+      "health": 9,
+      "rarity": "epic",
+      "set": "THE_LOST_CITY",
+      "tribe": "Beast",
+      "keywords": [
+        "taunt",
+        "elusive",
+        "deathrattle"
+      ],
+      "description": "Taunt, Elusive. Deathrattle: Give all minions in your hand and deck +3/+3.",
+      "deathrattle": [
+        {
+          "type": "buff-zones",
+          "attack": 3,
+          "health": 3,
+          "skipBoard": true
+        }
+      ]
+    },
+    {
+      "id": "whirling_stormdrake",
+      "name": "Whirling Stormdrake",
+      "type": "creature",
+      "cost": 9,
+      "cardClass": "neutral",
+      "attack": 8,
+      "health": 8,
+      "rarity": "epic",
+      "set": "THE_LOST_CITY",
+      "tribe": "Elemental",
+      "keywords": [
+        "rush",
+        "windfury",
+        "battlecry"
+      ],
+      "description": "Rush, Windfury. Kindred: Gain Immune this turn. (Kindred approximated: fires on play.)",
+      "effects": [
+        {
+          "type": "grant-immune-turn",
+          "target": "self"
+        }
+      ]
     }
   ]
 }

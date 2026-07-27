@@ -2921,6 +2921,12 @@ function runSecretEffects(state, pi, effects, ctx) {
 				if (m && !isDead(m) && m.type !== 'location') damageCreature(state, m, e.value || 3, ctx.self || null);
 				break;
 			}
+			case 'cleave-enemies-by-attack': {
+				// The Great Dracorex: after it attacks an enemy minion, damage ALL other enemy minions by its Attack
+				const self = ctx.self, victim = ctx.victim;
+				if (self && !isDead(self)) { const amt = self.attack || 0; if (amt > 0) { for (const o of opponentsOf(state, pi)) for (const c of [...state.players[o].board]) if (!isDead(c) && c !== victim && c.type !== 'location') damageCreature(state, c, amt, self); sweepDeaths(state); } }
+				break;
+			}
 			case 'double-triggering-minion-stats': {
 				// Niri of the Crater: when you play a 1-Cost minion, double its stats
 				const m = ctx.minion;
