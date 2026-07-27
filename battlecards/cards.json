@@ -111152,6 +111152,365 @@
           "pool": "enemies"
         }
       ]
+    },
+    {
+      "id": "exarch_othaar",
+      "name": "Exarch Othaar",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "druid",
+      "attack": 3,
+      "health": 3,
+      "rarity": "legendary",
+      "set": "SPACE",
+      "tribe": "Draenei",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: If you're building a Starship, get 3 different Arcane spells and reduce their Costs by (2). (Not modeled: Starships.)"
+    },
+    {
+      "id": "expedition_sergeant",
+      "name": "Expedition Sergeant",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "warrior",
+      "attack": 3,
+      "health": 4,
+      "rarity": "common",
+      "set": "SPACE",
+      "tribe": "Draenei",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: The next Draenei you play immediately attacks a random enemy.",
+      "effects": [
+        {
+          "type": "set-next-tribe-play-reward",
+          "tribe": "Draenei",
+          "immediateAttack": true,
+          "count": 1
+        }
+      ]
+    },
+    {
+      "id": "felfire_thrusters",
+      "name": "Felfire Thrusters",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "warlock",
+      "attack": 2,
+      "health": 4,
+      "rarity": "common",
+      "set": "SPACE",
+      "description": "Spellburst: Deal this minion's Attack damage to 2 random enemy minions. (Starship Piece.)",
+      "ongoing": {
+        "on": "spell-played",
+        "once": true,
+        "effects": [
+          {
+            "type": "damage-random-enemy-by-attack",
+            "count": 2,
+            "minionsOnly": true
+          }
+        ]
+      }
+    },
+    {
+      "id": "gorm_the_worldeater",
+      "name": "Gorm the Worldeater",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "hunter",
+      "attack": 12,
+      "health": 12,
+      "rarity": "legendary",
+      "set": "SPACE",
+      "tribe": "Beast",
+      "dormant": 5,
+      "description": "Dormant for 5 turns. At the end of your turn, destroy the minion to the right of this to awaken 2 turns sooner. (Not modeled: awaken acceleration.)"
+    },
+    {
+      "id": "hydralisk",
+      "name": "Hydralisk",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "hunter",
+      "attack": 4,
+      "health": 2,
+      "rarity": "common",
+      "set": "SPACE",
+      "tribe": "Zerg",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Deal 2 damage to a random enemy. Repeat for each other Zerg minion you control.",
+      "effects": [
+        {
+          "type": "random-damage",
+          "value": 2,
+          "count": 1,
+          "perFriendlyTribe": "Zerg",
+          "excludeSourceTribe": true,
+          "pool": "enemies"
+        }
+      ]
+    },
+    {
+      "id": "infestor",
+      "name": "Infestor",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "deathknight",
+      "attack": 4,
+      "health": 2,
+      "rarity": "rare",
+      "set": "SPACE",
+      "tribe": "Zerg",
+      "keywords": [
+        "deathrattle"
+      ],
+      "description": "Deathrattle: Your Zerg minions have +1 Attack for the rest of the game.",
+      "deathrattle": [
+        {
+          "type": "emblem",
+          "name": "Infestor",
+          "description": "Your Zerg minions have +1 Attack.",
+          "aura": {
+            "tribe": "Zerg",
+            "attack": 1
+          }
+        }
+      ]
+    },
+    {
+      "id": "kara_dark_star",
+      "name": "K'ara, the Dark Star",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "warlock",
+      "attack": 3,
+      "health": 3,
+      "rarity": "legendary",
+      "set": "SPACE",
+      "description": "Spellburst: Steal 2 Health from a random enemy. (Shadow spells don't remove this Spellburst \u2014 not modeled.)",
+      "ongoing": {
+        "on": "spell-played",
+        "once": true,
+        "effects": [
+          {
+            "type": "steal-health",
+            "random": true,
+            "value": 2
+          }
+        ]
+      }
+    },
+    {
+      "id": "kure_light_beyond",
+      "name": "K'ure, the Light Beyond",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "priest",
+      "attack": 3,
+      "health": 3,
+      "rarity": "legendary",
+      "set": "SPACE",
+      "description": "Spellburst: Summon a random 3-Cost minion. (Holy spells don't remove this Spellburst \u2014 not modeled.)",
+      "ongoing": {
+        "on": "spell-played",
+        "once": true,
+        "effects": [
+          {
+            "type": "summon-random",
+            "cost": 3
+          }
+        ]
+      }
+    },
+    {
+      "id": "nexus_prince_shaffar",
+      "name": "Nexus-Prince Shaffar",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "neutral",
+      "attack": 3,
+      "health": 3,
+      "rarity": "legendary",
+      "set": "SPACE",
+      "description": "Spellburst: Give a minion in your hand +3/+3 and this Spellburst. (Not modeled: Spellburst propagation.)",
+      "ongoing": {
+        "on": "spell-played",
+        "once": true,
+        "effects": [
+          {
+            "type": "buff-random-hand",
+            "attack": 3,
+            "health": 3
+          }
+        ]
+      }
+    },
+    {
+      "id": "relentless_wrathguard",
+      "name": "Relentless Wrathguard",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "neutral",
+      "attack": 4,
+      "health": 2,
+      "rarity": "common",
+      "set": "SPACE",
+      "tribe": "Demon",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Deal 2 damage to an enemy minion. If it dies, Discover a Demon.",
+      "effects": [
+        {
+          "type": "damage-then",
+          "value": 2,
+          "target": "enemy-creature",
+          "ifDies": [
+            {
+              "type": "discover",
+              "tribe": "Demon"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "soulbound_spire",
+      "name": "Soulbound Spire",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "deathknight",
+      "attack": 2,
+      "health": 2,
+      "rarity": "common",
+      "set": "SPACE",
+      "keywords": [
+        "deathrattle"
+      ],
+      "description": "Deathrattle: Summon a minion with Cost equal to this minion's Attack (up to 10). (Starship Piece.)",
+      "deathrattle": [
+        {
+          "type": "summon-random",
+          "costFromSelfAttack": true
+        }
+      ]
+    },
+    {
+      "id": "specimen_claw",
+      "name": "Specimen Claw",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "hunter",
+      "attack": 2,
+      "health": 6,
+      "rarity": "common",
+      "set": "SPACE",
+      "description": "After your opponent plays a minion, attack it. (Starship Piece.)",
+      "ongoing": {
+        "on": "enemy-creature-played",
+        "effects": [
+          {
+            "type": "attack-played-minion"
+          }
+        ]
+      }
+    },
+    {
+      "id": "starlight_reactor",
+      "name": "Starlight Reactor",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "druid",
+      "attack": 3,
+      "health": 3,
+      "rarity": "common",
+      "set": "SPACE",
+      "description": "After you cast an Arcane spell, recast it (targets chosen randomly). (Starship Piece.)",
+      "ongoing": {
+        "on": "spell-played",
+        "if": {
+          "school": "Arcane"
+        },
+        "effects": [
+          {
+            "type": "recast-triggering-spell"
+          }
+        ]
+      }
+    },
+    {
+      "id": "talgath",
+      "name": "Talgath",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "rogue",
+      "attack": 3,
+      "health": 3,
+      "rarity": "legendary",
+      "set": "SPACE",
+      "tribe": "Demon",
+      "keywords": [
+        "combo"
+      ],
+      "description": "Undamaged enemy minions take double damage. Combo: Get a Backstab. (Not modeled: double-damage static.)",
+      "combo": [
+        {
+          "type": "add-card",
+          "id": "backstab",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "id": "ultraviolet_breaker",
+      "name": "Ultraviolet Breaker",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "shaman",
+      "attack": 3,
+      "health": 2,
+      "rarity": "rare",
+      "set": "SPACE",
+      "tribe": "Elemental",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Deal 3 damage to an enemy minion. Shuffle 3 Asteroids into your deck.",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 3,
+          "target": "enemy-creature"
+        },
+        {
+          "type": "shuffle-into-own-deck",
+          "id": "gdb_asteroid",
+          "count": 3
+        }
+      ]
+    },
+    {
+      "id": "void_ray",
+      "name": "Void Ray",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "neutral",
+      "attack": 3,
+      "health": 2,
+      "rarity": "common",
+      "set": "SPACE",
+      "tribe": "Mech",
+      "keywords": [
+        "rush",
+        "divine_shield"
+      ],
+      "description": "Rush, Divine Shield. Battlecry: If this costs (0), gain +2/+2. (Not modeled: cost-0 buff.)"
     }
   ]
 }

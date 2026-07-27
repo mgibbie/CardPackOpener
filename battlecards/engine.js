@@ -2963,6 +2963,16 @@ function runSecretEffects(state, pi, effects, ctx) {
 				if (spell) execEffects(state, pi, [{ type: 'conjure-random', cardType: 'creature', cost: spell.cost || 0, setCost: 0 }], null, ctx.self || null);
 				break;
 			}
+			case 'recast-triggering-spell': {
+				// Starlight Reactor: after you cast an Arcane spell, recast it (targets chosen randomly)
+				const spell = ctx.played;
+				if (spell && isSpellType(spell) && spell.effects) {
+					const foesM = []; for (const o of opponentsOf(state, pi)) for (const c of state.players[o].board) if (!isDead(c) && c.type !== 'location') foesM.push({ type: 'creature', uid: c.uid, player: o });
+					let tgt = null; if (foesM.length) tgt = foesM[Math.floor(state.rng() * foesM.length)]; else { const eh = opponentsOf(state, pi)[0]; if (eh != null) tgt = { type: 'hero', player: eh }; }
+					execEffects(state, pi, JSON.parse(JSON.stringify(spell.effects)), tgt, ctx.self || null);
+				}
+				break;
+			}
 			default:
 				// pass the firing permanent through as `source` so self-scoped
 				// effects (temp-buff-self, gain-weapon-attack) still work
@@ -3517,6 +3527,7 @@ function execEffects(state, pi, effects, target, source) {
 			if (e.countByAttack && source) hits = source.attack || 0; // Augmented Porcupine: split its Attack
 			if (e.perFriendlyTribe) {
 				hits += state.players[pi].board.filter(c => !isDead(c)
+					&& (e.excludeSourceTribe ? c !== source : true) // Hydralisk: "each OTHER Zerg"
 					&& (c.tribe || '').includes(e.perFriendlyTribe)).length;
 			}
 			if (e.perHandCard) hits = state.players[pi].hand.length; // Meteorologist
@@ -5704,7 +5715,8 @@ function execEffects(state, pi, effects, target, source) {
 			}
 		} else if (e.type === 'steal-health') {
 			// Herald of Shadows: steal Health from a minion (it loses Health, this gains it)
-			const t = chosenCreature();
+			let t = chosenCreature();
+			if (e.random) { const pool = enemies.flatMap(o => state.players[o].board.filter(c => !isDead(c) && c.type !== 'location')); t = pool.length ? pool[Math.floor(state.rng() * pool.length)] : null; } // K'ara, the Dark Star
 			if (t && source && !isDead(source)) { const amt = Math.min(e.value || 2, hp(t) - 1 >= 0 ? (e.value || 2) : 0); t.maxHealth = Math.max(1, t.maxHealth - (e.value || 2)); t.damage = Math.min(t.damage, t.maxHealth); buffCreature(source, 0, e.value || 2); emit(state, { type: 'buff', uid: t.uid, attack: t.attack, hp: hp(t) }); }
 		} else if (e.type === 'shuffle-lowest-hand-into-deck') {
 			// Safety Inspector: shuffle the lowest-Cost card from your hand into your deck
@@ -6100,10 +6112,15 @@ function execEffects(state, pi, effects, target, source) {
 			state.players[pi].nextWeaponDiscount = (state.players[pi].nextWeaponDiscount || 0) + (e.value || 1);
 		} else if (e.type === 'damage-random-enemy-by-attack') {
 			// Biopod: deal damage equal to this minion's Attack to a random enemy
+			// (count = independent hits; minionsOnly restricts to enemy minions — Felfire Thrusters)
 			if (source) {
 				const amt = source.attack || 0;
-				const pool = []; for (const o of enemies) { for (const c of state.players[o].board) if (!isDead(c) && c.type !== 'location') pool.push({ o, c }); pool.push({ o, c: null }); }
-				if (amt > 0 && pool.length) { const pick = pool[Math.floor(state.rng() * pool.length)]; if (pick.c) damageCreature(state, pick.c, amt, source); else damageHero(state, pick.o, amt, pi); }
+				for (let i = 0; i < (e.count || 1) && amt > 0; i++) {
+					const pool = []; for (const o of enemies) { for (const c of state.players[o].board) if (!isDead(c) && c.type !== 'location') pool.push({ o, c }); if (!e.minionsOnly) pool.push({ o, c: null }); }
+					if (!pool.length) break;
+					const pick = pool[Math.floor(state.rng() * pool.length)];
+					if (pick.c) damageCreature(state, pick.c, amt, source); else damageHero(state, pick.o, amt, pi);
+				}
 			}
 		} else if (e.type === 'set-weapon-stats') {
 			// Swarthy Swordshiner: set your weapon's Attack and Durability
