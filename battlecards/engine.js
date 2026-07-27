@@ -5184,6 +5184,24 @@ function execEffects(state, pi, effects, target, source) {
 				buffCreature(c, e.attack || 0, e.health || 0);
 				if (e.grant && !c.keywords.includes(e.grant)) { c.keywords.push(e.grant); if (e.grant === KW.DIVINE_SHIELD) c.shield = true; }
 			}
+		} else if (e.type === 'destroy-target-gain-stats') {
+			// Ravenous Devilsaur: destroy a minion; Kindred: gain its stats (Kindred approximated: always gains)
+			const t = chosenCreature();
+			if (t) { const a = t.attack || 0, h = hp(t); t.damage = t.maxHealth; t.shield = false; emit(state, { type: 'destroy', uid: t.uid }); sweepDeaths(state); if (source && !isDead(source)) { source.attack += a; source.maxHealth += h; emit(state, { type: 'buff', uid: source.uid, attack: source.attack, hp: hp(source) }); } }
+		} else if (e.type === 'summon-copies-of-damaged-rush') {
+			// Nablya, the Watcher: summon copies of your damaged minions, giving the copies Rush
+			const p = state.players[pi];
+			const dmgd = p.board.filter(c => c !== source && !isDead(c) && c.type !== 'location' && c.damage > 0 && state.cardsById[c.id]);
+			for (const c of dmgd) { const nc = summon(state, pi, state.cardsById[c.id]); if (nc && !nc.keywords.includes(KW.RUSH)) nc.keywords.push(KW.RUSH); }
+		} else if (e.type === 'trigger-died-deathrattles') {
+			// Endbringer Umbra: trigger the Deathrattles of N friendly minions that died this game
+			const p = state.players[pi];
+			let n = e.count || 5;
+			for (const id of [...p.deathLogIds].reverse()) {
+				if (n <= 0) break;
+				const def = state.cardsById[id];
+				if (def && def.deathrattle && def.deathrattle.length) { execEffects(state, pi, JSON.parse(JSON.stringify(def.deathrattle)), null, source); n--; }
+			}
 		} else if (e.type === 'mill-own-top') {
 			// Willful Watcher: destroy the top N cards of your deck
 			const p = state.players[pi];
@@ -7937,10 +7955,11 @@ function execEffects(state, pi, effects, target, source) {
 				[p.deck[k], p.deck[j]] = [p.deck[j], p.deck[k]];
 			}
 		} else if (e.type === 'destroy-strongest') {
-			// destroy the highest-Attack enemy creature
+			// destroy the highest-Attack enemy creature (Scalehide Kodo: `lowest` = lowest-Attack)
 			let best = null;
 			for (const o of enemies) for (const c of state.players[o].board) {
-				if (!isDead(c) && (!best || c.attack > best.attack)) best = c;
+				if (isDead(c) || c.type === 'location') continue;
+				if (!best || (e.lowest ? c.attack < best.attack : c.attack > best.attack)) best = c;
 			}
 			if (best) {
 				best.damage = best.maxHealth;

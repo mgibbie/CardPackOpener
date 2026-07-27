@@ -116727,6 +116727,433 @@
           "target": "any"
         }
       ]
+    },
+    {
+      "id": "slagclaw",
+      "name": "Slagclaw",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "shaman",
+      "attack": 3,
+      "health": 4,
+      "rarity": "common",
+      "set": "THE_LOST_CITY",
+      "tribe": "Elemental",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Summon two 2/1 Sizzling Cinders. Kindred: Trigger your Sizzling Cinders' Deathrattles. (Kindred not modeled.)",
+      "effects": [
+        {
+          "type": "summon",
+          "count": 2,
+          "summonId": "tlc_sizzling_cinder"
+        }
+      ]
+    },
+    {
+      "id": "stormbrewer",
+      "name": "Stormbrewer",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "neutral",
+      "attack": 3,
+      "health": 6,
+      "rarity": "common",
+      "set": "THE_LOST_CITY",
+      "tribe": "Elemental",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Whenever this attacks, deal 3 damage to the target first. Kindred: Gain Rush. (Approximated: gain Rush on play; pre-strike not modeled.)",
+      "effects": [
+        {
+          "type": "grant",
+          "keyword": "rush",
+          "target": "self"
+        }
+      ]
+    },
+    {
+      "id": "whispering_stone",
+      "name": "Whispering Stone",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "warlock",
+      "attack": 0,
+      "health": 8,
+      "rarity": "common",
+      "set": "THE_LOST_CITY",
+      "keywords": [
+        "taunt",
+        "deathrattle"
+      ],
+      "description": "Taunt. Deathrattle: Get 2 random Fel spells. They cost Health instead of Mana. (Not modeled: Health cost.)",
+      "deathrattle": [
+        {
+          "type": "conjure-random",
+          "cardType": "spell",
+          "school": "Fel",
+          "count": 2
+        }
+      ]
+    },
+    {
+      "id": "ankylodon",
+      "name": "Ankylodon",
+      "type": "creature",
+      "cost": 6,
+      "cardClass": "hunter",
+      "attack": 7,
+      "health": 5,
+      "rarity": "common",
+      "set": "THE_LOST_CITY",
+      "tribe": "Beast",
+      "keywords": [
+        "taunt",
+        "deathrattle"
+      ],
+      "description": "Taunt. Deathrattle: Summon two random 3-Cost Beasts. (Not modeled: they attack random enemies.)",
+      "deathrattle": [
+        {
+          "type": "summon-random",
+          "tribe": "Beast",
+          "cost": 3,
+          "count": 2
+        }
+      ]
+    },
+    {
+      "id": "bonechill_stegodon",
+      "name": "Bonechill Stegodon",
+      "type": "creature",
+      "cost": 6,
+      "cardClass": "deathknight",
+      "attack": 6,
+      "health": 3,
+      "rarity": "common",
+      "set": "THE_LOST_CITY",
+      "tribe": "Undead",
+      "keywords": [
+        "deathrattle"
+      ],
+      "description": "Deathrattle: Deal 6 damage to three random enemies.",
+      "deathrattle": [
+        {
+          "type": "random-damage",
+          "value": 6,
+          "count": 3,
+          "pool": "enemies"
+        }
+      ]
+    },
+    {
+      "id": "city_chief_esho",
+      "name": "City Chief Esho",
+      "type": "creature",
+      "cost": 6,
+      "cardClass": "neutral",
+      "attack": 5,
+      "health": 7,
+      "rarity": "legendary",
+      "set": "THE_LOST_CITY",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: If every minion in your deck shares a minion type, give your other minions +2/+2. (Approximated: buffs your other minions.)",
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 2,
+          "health": 2,
+          "target": "friendly-others"
+        }
+      ]
+    },
+    {
+      "id": "deathrot_maw",
+      "name": "Deathrot Maw",
+      "type": "creature",
+      "cost": 6,
+      "cardClass": "warlock",
+      "attack": 2,
+      "health": 8,
+      "rarity": "common",
+      "set": "THE_LOST_CITY",
+      "keywords": [
+        "taunt",
+        "deathrattle"
+      ],
+      "description": "Taunt. Deathrattle: Summon a random Fel Beast. (Approximated: a random Beast.)",
+      "deathrattle": [
+        {
+          "type": "summon-random",
+          "tribe": "Beast"
+        }
+      ]
+    },
+    {
+      "id": "diabolus_rex",
+      "name": "Diabolus Rex",
+      "type": "creature",
+      "cost": 6,
+      "cardClass": "demonhunter",
+      "attack": 6,
+      "health": 5,
+      "rarity": "epic",
+      "set": "THE_LOST_CITY",
+      "tribe": "Demon",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Kindred: Deal 6 damage to your opponent's left and right-most minions. (Kindred approximated: fires on play.)",
+      "effects": [
+        {
+          "type": "damage-flanks",
+          "value": 6
+        }
+      ]
+    },
+    {
+      "id": "nablya_the_watcher",
+      "name": "Nablya, the Watcher",
+      "type": "creature",
+      "cost": 6,
+      "cardClass": "warrior",
+      "attack": 5,
+      "health": 7,
+      "rarity": "legendary",
+      "set": "THE_LOST_CITY",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Summon copies of your damaged minions. Give the copies Rush.",
+      "effects": [
+        {
+          "type": "summon-copies-of-damaged-rush"
+        }
+      ]
+    },
+    {
+      "id": "opu_the_unseen",
+      "name": "Opu the Unseen",
+      "type": "creature",
+      "cost": 6,
+      "cardClass": "rogue",
+      "attack": 6,
+      "health": 4,
+      "rarity": "legendary",
+      "set": "THE_LOST_CITY",
+      "keywords": [
+        "stealth",
+        "battlecry",
+        "combo",
+        "deathrattle"
+      ],
+      "description": "Stealth. Battlecry, Combo, and Deathrattle: Cast 'Fan of Knives'.",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 1,
+          "target": "enemy-creatures"
+        },
+        {
+          "type": "draw",
+          "value": 1
+        }
+      ],
+      "combo": [
+        {
+          "type": "damage",
+          "value": 1,
+          "target": "enemy-creatures"
+        },
+        {
+          "type": "draw",
+          "value": 1
+        }
+      ],
+      "deathrattle": [
+        {
+          "type": "damage",
+          "value": 1,
+          "target": "enemy-creatures"
+        },
+        {
+          "type": "draw",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "pterrorwing_ravager",
+      "name": "Pterrorwing Ravager",
+      "type": "creature",
+      "cost": 6,
+      "cardClass": "hunter",
+      "attack": 7,
+      "health": 5,
+      "rarity": "common",
+      "set": "THE_LOST_CITY",
+      "tribe": "Beast",
+      "keywords": [
+        "rush"
+      ],
+      "description": "Rush. Kindred: Costs (2) less. (Not modeled: Kindred cost reduction.)"
+    },
+    {
+      "id": "scalehide_kodo",
+      "name": "Scalehide Kodo",
+      "type": "creature",
+      "cost": 6,
+      "cardClass": "neutral",
+      "attack": 3,
+      "health": 6,
+      "rarity": "common",
+      "set": "THE_LOST_CITY",
+      "tribe": "Beast",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Destroy the lowest Attack enemy minion. Kindred: The highest Attack instead. (Kindred not modeled: destroys the lowest.)",
+      "effects": [
+        {
+          "type": "destroy-strongest",
+          "lowest": true
+        }
+      ]
+    },
+    {
+      "id": "tyrannogill",
+      "name": "Tyrannogill",
+      "type": "creature",
+      "cost": 6,
+      "cardClass": "paladin",
+      "attack": 6,
+      "health": 3,
+      "rarity": "common",
+      "set": "THE_LOST_CITY",
+      "tribe": "Murloc",
+      "keywords": [
+        "rush",
+        "deathrattle"
+      ],
+      "description": "Rush. Deathrattle: Summon three 2/1 Murlocs. Give them each a random Bonus Effect. (Not modeled: Bonus Effects.)",
+      "deathrattle": [
+        {
+          "type": "summon",
+          "count": 3,
+          "summonId": "tlc_murloc_2_1"
+        }
+      ]
+    },
+    {
+      "id": "beast_speaker_taka",
+      "name": "Beast Speaker Taka",
+      "type": "creature",
+      "cost": 7,
+      "cardClass": "neutral",
+      "attack": 2,
+      "health": 2,
+      "rarity": "legendary",
+      "set": "THE_LOST_CITY",
+      "keywords": [
+        "battlecry",
+        "deathrattle"
+      ],
+      "description": "Battlecry: Discover a Legendary Beast from any class to gain its stats. Deathrattle: Summon it. (Approximated: Discover a Legendary Beast.)",
+      "effects": [
+        {
+          "type": "discover",
+          "cardType": "creature",
+          "tribe": "Beast",
+          "rarity": "legendary"
+        }
+      ]
+    },
+    {
+      "id": "endbringer_umbra",
+      "name": "Endbringer Umbra",
+      "type": "creature",
+      "cost": 7,
+      "cardClass": "neutral",
+      "attack": 6,
+      "health": 6,
+      "rarity": "legendary",
+      "set": "THE_LOST_CITY",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Trigger the Deathrattles of 5 friendly minions that died this game.",
+      "effects": [
+        {
+          "type": "trigger-died-deathrattles",
+          "count": 5
+        }
+      ]
+    },
+    {
+      "id": "ravenous_devilsaur",
+      "name": "Ravenous Devilsaur",
+      "type": "creature",
+      "cost": 7,
+      "cardClass": "neutral",
+      "attack": 3,
+      "health": 3,
+      "rarity": "common",
+      "set": "THE_LOST_CITY",
+      "tribe": "Beast",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Destroy a minion. Kindred: Gain its stats. (Kindred approximated: always gains its stats.)",
+      "effects": [
+        {
+          "type": "destroy-target-gain-stats",
+          "target": "creature"
+        }
+      ]
+    },
+    {
+      "id": "tlc_sizzling_cinder",
+      "name": "Sizzling Cinder",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "shaman",
+      "attack": 2,
+      "health": 1,
+      "rarity": "common",
+      "set": "THE_LOST_CITY",
+      "tribe": "Elemental",
+      "token": true,
+      "collectible": false,
+      "keywords": [
+        "deathrattle"
+      ],
+      "description": "Deathrattle: Deal 2 damage to a random enemy.",
+      "deathrattle": [
+        {
+          "type": "random-damage",
+          "value": 2,
+          "count": 1,
+          "pool": "enemies"
+        }
+      ]
+    },
+    {
+      "id": "tlc_murloc_2_1",
+      "name": "Murloc",
+      "type": "creature",
+      "cost": 1,
+      "cardClass": "neutral",
+      "attack": 2,
+      "health": 1,
+      "rarity": "common",
+      "set": "THE_LOST_CITY",
+      "tribe": "Murloc",
+      "token": true,
+      "collectible": false,
+      "description": "A 2/1 Murloc."
     }
   ]
 }
