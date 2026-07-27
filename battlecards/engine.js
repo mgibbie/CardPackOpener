@@ -656,6 +656,8 @@ const CHOSEN = {
 	'transform-into-token': { 'friendly-creature': 'friendly-creature', creature: 'creature' },
 	'mark-doomed': { creature: 'creature', 'enemy-creature': 'enemy-creature' },
 	'devour-target': { 'friendly-creature': 'friendly-creature' },
+	'devour-enemy': { 'enemy-creature': 'enemy-creature', creature: 'creature' },
+	'throw-hand-minion': { 'enemy-creature': 'enemy-creature' },
 	fireworks: { 'friendly-creature': 'friendly-creature' },
 	'bounce-and-buff': { 'friendly-creature': 'friendly-creature' },
 	'copy-health': { 'friendly-creature': 'friendly-creature' },
@@ -3636,6 +3638,7 @@ function execEffects(state, pi, effects, target, source) {
 			if (state.rng() < 0.5) execEffects(state, pi, e.effects, target, source);
 			else emit(state, { type: 'luckFail', player: pi });
 		} else if (e.type === 'add-card') {
+			if (e.requireDeckNoNeutral && state.players[pi].deck.some(id => (state.cardsById[id]?.cardClass || 'neutral') === 'neutral')) continue; // The Countess
 			const def = state.cardsById[e.id];
 			const targets = e.eachPlayer ? state.players.map((_, idx) => idx).filter(idx => !state.players[idx].eliminated)
 					: e.toEnemy ? opponentsOf(state, pi) : [pi]; // Mailbox Dancer gives the opponent a Coin
@@ -5652,6 +5655,47 @@ function execEffects(state, pi, effects, target, source) {
 			// Soul Seeker: swap this with a random minion from the opponent's deck
 			const foe = enemies[0];
 			if (source && foe != null) { const fp = state.players[foe]; const idxs = fp.deck.map((id, i) => [id, i]).filter(([id]) => state.cardsById[id]?.type === 'creature' && !state.cardsById[id].token); if (idxs.length) { const [id, i] = idxs[Math.floor(state.rng() * idxs.length)]; fp.deck.splice(i, 1); const p = state.players[pi]; p.board = p.board.filter(c => c !== source); if (state.cardsById[source.id]) fp.deck.push(source.id); source.zone = 'gone'; summon(state, pi, state.cardsById[id]); emit(state, { type: 'bounce', uid: source.uid, player: pi, name: source.name }); } }
+		} else if (e.type === 'devour-enemy') {
+			// Insatiable Devourer: destroy a chosen enemy minion and gain its stats (Infuse: neighbors too)
+			const t = chosenCreature();
+			if (t && t.controller !== pi && source && source.zone === 'board' && !isDead(source)) {
+				const victims = [t];
+				if (e.neighbors) { const b = state.players[t.controller].board; const i = b.indexOf(t); for (const j of [i - 1, i + 1]) { const nb = b[j]; if (nb && !isDead(nb) && nb.type !== 'location') victims.push(nb); } }
+				let a = 0, h2 = 0;
+				for (const v of victims) { a += v.attack; h2 += hp(v); v.damage = v.maxHealth; v.shield = false; emit(state, { type: 'destroy', uid: v.uid }); }
+				buffCreature(source, a, h2);
+			}
+		} else if (e.type === 'destroy-own-deck-gain-immune') {
+			// The Jailer: destroy your deck; this minion gains Immune
+			const p = state.players[pi];
+			p.deck = [];
+			if (source && !source.keywords.includes(KW.IMMUNE)) source.keywords.push(KW.IMMUNE);
+			emit(state, { type: 'shuffle', player: pi });
+		} else if (e.type === 'gain-random-keyword-per-enemy-minion') {
+			// Torghast Custodian: for each enemy minion, randomly gain a keyword
+			const kws = e.keywords || ['rush', 'divine_shield', 'windfury'];
+			let n = 0; for (const o of enemies) n += state.players[o].board.filter(c => !isDead(c) && c.type !== 'location').length;
+			for (let i = 0; i < n && source; i++) { const k = kws[Math.floor(state.rng() * kws.length)]; if (!source.keywords.includes(k)) { source.keywords.push(k); if (k === KW.DIVINE_SHIELD) source.shield = true; } }
+			if (source) emit(state, { type: 'buff', uid: source.uid, attack: source.attack, hp: hp(source) });
+		} else if (e.type === 'throw-hand-minion') {
+			// Party Crasher: throw a random minion from your hand at a chosen enemy (they trade damage)
+			const t = chosenCreature();
+			const p = state.players[pi];
+			const minionsInHand = p.hand.filter(c => c.type === 'creature');
+			if (t && minionsInHand.length) {
+				const m = minionsInHand[Math.floor(state.rng() * minionsInHand.length)];
+				p.hand = p.hand.filter(c => c !== m);
+				if (!m.token) p.discardLogIds.push(m.id);
+				damageCreature(state, t, m.attack || 0, null);
+				if (source && !isDead(source)) damageCreature(state, source, t.attack || 0, null);
+			}
+		} else if (e.type === 'swap-random-hand-cards') {
+			// Theotar (approx): swap a random card between each player's hand
+			const foe = enemies[0], p = state.players[pi];
+			if (foe != null) { const fp = state.players[foe]; const mine = p.hand.filter(c => c !== source); if (mine.length && fp.hand.length) { const mi = p.hand.indexOf(mine[Math.floor(state.rng() * mine.length)]); const fi = Math.floor(state.rng() * fp.hand.length); const myCard = p.hand[mi], foeCard = fp.hand[fi]; const toMe = instantiate(state.cardsById[foeCard.id] || foeCard, pi); toMe.zone = 'hand'; const toFoe = instantiate(state.cardsById[myCard.id] || myCard, foe); toFoe.zone = 'hand'; p.hand[mi] = toMe; fp.hand[fi] = toFoe; emit(state, { type: 'conjure', player: pi, card: toMe, color: null }); } }
+		} else if (e.type === 'equip-self-as-weapon') {
+			// Remornia (approx): after attacking, equip a weapon with this minion's Attack
+			if (source) execEffects(state, pi, [{ type: 'equip', name: e.name || 'Remornia', attack: source.attack || e.attack || 5, durability: e.durability || 1 }], null, source);
 		} else if (e.type === 'become-copy-of-dead') {
 			// Creepy Painting: become a copy of a minion that died (runs via ongoing ctx.dead)
 			// handled in runSecretEffects; no-op here
@@ -7131,6 +7175,7 @@ function execEffects(state, pi, effects, target, source) {
 				if (e.maxCost != null && (d.cost || 0) > e.maxCost) return false;
 				if (e.minCost != null && (d.cost || 0) < e.minCost) return false;
 				if (e.hasStatic && d.static?.type !== e.hasStatic) return false;
+				if (e.rarity && d.rarity !== e.rarity) return false; // Suspicious Usher / Legendary Invitation
 				if (e.requireKeyword && !(d.keywords || []).includes(e.requireKeyword)) return false;
 				if (e.cardClasses && !e.cardClasses.includes(d.cardClass || 'neutral')) return false; // Grimestreet Informant / Kabal Courier / Lotus Agents
 				return true;

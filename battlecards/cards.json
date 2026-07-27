@@ -95919,6 +95919,500 @@
           "target": "enemy-creature"
         }
       ]
+    },
+    {
+      "id": "theotar_the_mad_duke",
+      "name": "Theotar, the Mad Duke",
+      "type": "creature",
+      "cost": 6,
+      "cardClass": "neutral",
+      "attack": 4,
+      "health": 4,
+      "rarity": "legendary",
+      "set": "REVENDRETH",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Discover a card in each player's hand and swap them.",
+      "effects": [
+        {
+          "type": "swap-random-hand-cards"
+        }
+      ]
+    },
+    {
+      "id": "huntsman_altimor",
+      "name": "Huntsman Altimor",
+      "type": "creature",
+      "cost": 7,
+      "cardClass": "hunter",
+      "attack": 5,
+      "health": 4,
+      "rarity": "legendary",
+      "set": "REVENDRETH",
+      "keywords": [
+        "battlecry"
+      ],
+      "infuse": {
+        "count": 3,
+        "id": "rev_huntsman_altimor_infused"
+      },
+      "description": "Battlecry: Summon a Gargon Companion. Infuse: Summon another. And another!",
+      "effects": [
+        {
+          "type": "summon",
+          "count": 1,
+          "summonId": "rev_gargon"
+        }
+      ]
+    },
+    {
+      "id": "remornia_living_blade",
+      "name": "Remornia, Living Blade",
+      "type": "creature",
+      "cost": 7,
+      "cardClass": "warrior",
+      "attack": 5,
+      "health": 10,
+      "rarity": "legendary",
+      "set": "REVENDRETH",
+      "keywords": [
+        "rush"
+      ],
+      "description": "Rush. After this attacks, equip it.",
+      "ongoing": {
+        "on": "self-attacks",
+        "effects": [
+          {
+            "type": "equip-self-as-weapon",
+            "name": "Remornia",
+            "durability": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "sinfueled_golem",
+      "name": "Sinfueled Golem",
+      "type": "creature",
+      "cost": 7,
+      "cardClass": "neutral",
+      "attack": 2,
+      "health": 2,
+      "rarity": "epic",
+      "set": "REVENDRETH",
+      "infuse": {
+        "count": 3,
+        "id": "rev_sinfueled_golem_infused"
+      },
+      "description": "Infuse (3): Gain stats equal to the Attack of the minions that Infused this."
+    },
+    {
+      "id": "the_countess",
+      "name": "The Countess",
+      "type": "creature",
+      "cost": 7,
+      "cardClass": "paladin",
+      "attack": 7,
+      "health": 7,
+      "rarity": "legendary",
+      "set": "REVENDRETH",
+      "tribe": "Undead",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: If your deck has no Neutral cards, add 3 Legendary Invitations to your hand.",
+      "effects": [
+        {
+          "type": "add-card",
+          "id": "rev_legendary_invitation",
+          "count": 3,
+          "requireDeckNoNeutral": true
+        }
+      ]
+    },
+    {
+      "id": "topior_the_shrubbagazzor",
+      "name": "Topior the Shrubbagazzor",
+      "type": "creature",
+      "cost": 7,
+      "cardClass": "druid",
+      "attack": 5,
+      "health": 5,
+      "rarity": "legendary",
+      "set": "REVENDRETH",
+      "tribe": "Dragon",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: For the rest of the game, after you cast a Nature spell, summon a 3/3 Whelp with Rush.",
+      "effects": [
+        {
+          "type": "emblem",
+          "name": "Topior",
+          "description": "After you cast a Nature spell, summon a 3/3 Whelp with Rush.",
+          "ongoing": {
+            "on": "spell-played",
+            "if": {
+              "school": "Nature"
+            },
+            "effects": [
+              {
+                "type": "summon",
+                "count": 1,
+                "summonId": "rev_nature_whelp"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "artificer_xymox",
+      "name": "Artificer Xy'mox",
+      "type": "creature",
+      "cost": 8,
+      "cardClass": "demonhunter",
+      "attack": 8,
+      "health": 8,
+      "rarity": "legendary",
+      "set": "REVENDRETH",
+      "keywords": [
+        "battlecry"
+      ],
+      "infuse": {
+        "count": 5,
+        "id": "rev_artificer_xymox_infused"
+      },
+      "description": "Battlecry: Discover and cast a Relic. Infuse (5): Cast all three instead."
+    },
+    {
+      "id": "kelthuzad_the_inevitable",
+      "name": "Kel'Thuzad, the Inevitable",
+      "type": "creature",
+      "cost": 8,
+      "cardClass": "mage",
+      "attack": 6,
+      "health": 8,
+      "rarity": "legendary",
+      "set": "REVENDRETH",
+      "tribe": "Undead",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Resurrect your Volatile Skeletons. Any that can't fit on the battlefield instantly explode!",
+      "effects": [
+        {
+          "type": "summon-died-name",
+          "nameIncludes": "Skeleton",
+          "count": 5
+        }
+      ]
+    },
+    {
+      "id": "party_crasher",
+      "name": "Party Crasher",
+      "type": "creature",
+      "cost": 8,
+      "cardClass": "neutral",
+      "attack": 7,
+      "health": 9,
+      "rarity": "epic",
+      "set": "REVENDRETH",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Choose an enemy minion. Throw a random minion from your hand at it.",
+      "effects": [
+        {
+          "type": "throw-hand-minion",
+          "target": "enemy-creature"
+        }
+      ]
+    },
+    {
+      "id": "sesselie_of_the_fae_court",
+      "name": "Sesselie of the Fae Court",
+      "type": "creature",
+      "cost": 8,
+      "cardClass": "druid",
+      "attack": 8,
+      "health": 8,
+      "rarity": "legendary",
+      "set": "REVENDRETH",
+      "keywords": [
+        "taunt",
+        "deathrattle"
+      ],
+      "description": "Taunt. Deathrattle: Draw a minion. Reduce its Cost by (8).",
+      "deathrattle": [
+        {
+          "type": "tutor",
+          "cardType": "creature",
+          "count": 1,
+          "costMod": -8
+        }
+      ]
+    },
+    {
+      "id": "torghast_custodian",
+      "name": "Torghast Custodian",
+      "type": "creature",
+      "cost": 8,
+      "cardClass": "shaman",
+      "attack": 6,
+      "health": 10,
+      "rarity": "rare",
+      "set": "REVENDRETH",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: For each enemy minion, randomly gain Rush, Divine Shield, or Windfury.",
+      "effects": [
+        {
+          "type": "gain-random-keyword-per-enemy-minion",
+          "keywords": [
+            "rush",
+            "divine_shield",
+            "windfury"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "insatiable_devourer",
+      "name": "Insatiable Devourer",
+      "type": "creature",
+      "cost": 9,
+      "cardClass": "neutral",
+      "attack": 4,
+      "health": 4,
+      "rarity": "epic",
+      "set": "REVENDRETH",
+      "keywords": [
+        "battlecry"
+      ],
+      "infuse": {
+        "count": 5,
+        "id": "rev_insatiable_devourer_infused"
+      },
+      "description": "Battlecry: Devour an enemy minion and gain its stats. Infuse (5): And its neighbors.",
+      "effects": [
+        {
+          "type": "devour-enemy",
+          "target": "enemy-creature"
+        }
+      ]
+    },
+    {
+      "id": "sire_denathrius",
+      "name": "Sire Denathrius",
+      "type": "creature",
+      "cost": 10,
+      "cardClass": "neutral",
+      "attack": 10,
+      "health": 10,
+      "rarity": "legendary",
+      "set": "REVENDRETH",
+      "tribe": "Demon",
+      "keywords": [
+        "lifesteal",
+        "battlecry"
+      ],
+      "infuse": {
+        "count": 2,
+        "id": "rev_sire_denathrius_infused"
+      },
+      "description": "Lifesteal. Battlecry: Deal 5 damage amongst enemies. Endlessly Infuse (2): Deal 1 more.",
+      "effects": [
+        {
+          "type": "random-damage",
+          "value": 1,
+          "count": 5,
+          "pool": "enemies",
+          "lifesteal": true
+        }
+      ]
+    },
+    {
+      "id": "the_jailer",
+      "name": "The Jailer",
+      "type": "creature",
+      "cost": 10,
+      "cardClass": "neutral",
+      "attack": 10,
+      "health": 10,
+      "rarity": "legendary",
+      "set": "REVENDRETH",
+      "tribe": "Undead",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Destroy your deck. This minion gains Immune.",
+      "effects": [
+        {
+          "type": "destroy-own-deck-gain-immune"
+        }
+      ]
+    },
+    {
+      "id": "rev_gargon",
+      "name": "Gargon Companion",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "hunter",
+      "attack": 5,
+      "health": 3,
+      "rarity": "common",
+      "set": "REVENDRETH",
+      "tribe": "Beast",
+      "token": true,
+      "collectible": false,
+      "keywords": [
+        "rush"
+      ],
+      "description": "Rush."
+    },
+    {
+      "id": "rev_huntsman_altimor_infused",
+      "name": "Huntsman Altimor",
+      "type": "creature",
+      "cost": 7,
+      "cardClass": "hunter",
+      "attack": 5,
+      "health": 4,
+      "rarity": "legendary",
+      "set": "REVENDRETH",
+      "token": true,
+      "collectible": false,
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Summon two Gargon Companions.",
+      "effects": [
+        {
+          "type": "summon",
+          "count": 2,
+          "summonId": "rev_gargon"
+        }
+      ]
+    },
+    {
+      "id": "rev_nature_whelp",
+      "name": "Whelp",
+      "type": "creature",
+      "cost": 1,
+      "cardClass": "druid",
+      "attack": 3,
+      "health": 3,
+      "rarity": "common",
+      "set": "REVENDRETH",
+      "tribe": "Dragon",
+      "token": true,
+      "collectible": false,
+      "keywords": [
+        "rush"
+      ],
+      "description": "Rush."
+    },
+    {
+      "id": "rev_sinfueled_golem_infused",
+      "name": "Sinfueled Golem",
+      "type": "creature",
+      "cost": 7,
+      "cardClass": "neutral",
+      "attack": 8,
+      "health": 8,
+      "rarity": "epic",
+      "set": "REVENDRETH",
+      "token": true,
+      "collectible": false,
+      "description": "An 8/8 golem."
+    },
+    {
+      "id": "rev_artificer_xymox_infused",
+      "name": "Artificer Xy'mox",
+      "type": "creature",
+      "cost": 8,
+      "cardClass": "demonhunter",
+      "attack": 8,
+      "health": 8,
+      "rarity": "legendary",
+      "set": "REVENDRETH",
+      "token": true,
+      "collectible": false,
+      "description": "An 8/8."
+    },
+    {
+      "id": "rev_insatiable_devourer_infused",
+      "name": "Insatiable Devourer",
+      "type": "creature",
+      "cost": 9,
+      "cardClass": "neutral",
+      "attack": 4,
+      "health": 4,
+      "rarity": "epic",
+      "set": "REVENDRETH",
+      "token": true,
+      "collectible": false,
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Devour an enemy minion and its neighbors and gain their stats.",
+      "effects": [
+        {
+          "type": "devour-enemy",
+          "target": "enemy-creature",
+          "neighbors": true
+        }
+      ]
+    },
+    {
+      "id": "rev_sire_denathrius_infused",
+      "name": "Sire Denathrius",
+      "type": "creature",
+      "cost": 10,
+      "cardClass": "neutral",
+      "attack": 10,
+      "health": 10,
+      "rarity": "legendary",
+      "set": "REVENDRETH",
+      "tribe": "Demon",
+      "token": true,
+      "collectible": false,
+      "keywords": [
+        "lifesteal",
+        "battlecry"
+      ],
+      "description": "Lifesteal. Battlecry: Deal 6 damage amongst enemies.",
+      "effects": [
+        {
+          "type": "random-damage",
+          "value": 1,
+          "count": 6,
+          "pool": "enemies",
+          "lifesteal": true
+        }
+      ]
+    },
+    {
+      "id": "rev_legendary_invitation",
+      "name": "Legendary Invitation",
+      "type": "sorcery",
+      "cost": 3,
+      "cardClass": "paladin",
+      "rarity": "common",
+      "set": "REVENDRETH",
+      "token": true,
+      "collectible": false,
+      "description": "Discover a Legendary minion.",
+      "effects": [
+        {
+          "type": "discover",
+          "cardType": "creature",
+          "rarity": "legendary"
+        }
+      ]
     }
   ]
 }
