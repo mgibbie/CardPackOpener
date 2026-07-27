@@ -112221,6 +112221,290 @@
           "pool": "enemies"
         }
       ]
+    },
+    {
+      "id": "galactic_crusader",
+      "name": "Galactic Crusader",
+      "type": "creature",
+      "cost": 7,
+      "cardClass": "neutral",
+      "attack": 3,
+      "health": 9,
+      "rarity": "common",
+      "set": "SPACE",
+      "tribe": "Draenei",
+      "keywords": [
+        "taunt",
+        "deathrattle"
+      ],
+      "description": "Taunt. Deathrattle: Get two random Holy spells. They cost (3) less.",
+      "deathrattle": [
+        {
+          "type": "conjure-random",
+          "cardType": "spell",
+          "school": "Holy",
+          "count": 2,
+          "costMod": -3
+        }
+      ]
+    },
+    {
+      "id": "immortal",
+      "name": "Immortal",
+      "type": "creature",
+      "cost": 7,
+      "cardClass": "druid",
+      "attack": 5,
+      "health": 8,
+      "rarity": "epic",
+      "set": "SPACE",
+      "tribe": "Mech",
+      "keywords": [
+        "taunt",
+        "divine_shield",
+        "battlecry"
+      ],
+      "description": "Taunt, Divine Shield. Battlecry: Spend 4 Mana to double this minion's stats. (Not modeled: 4-Mana cost.)",
+      "effects": [
+        {
+          "type": "double-self-stats"
+        }
+      ]
+    },
+    {
+      "id": "kiljaeden",
+      "name": "Kil'jaeden",
+      "type": "creature",
+      "cost": 7,
+      "cardClass": "warlock",
+      "attack": 7,
+      "health": 7,
+      "rarity": "legendary",
+      "set": "SPACE",
+      "tribe": "Demon",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Replace your deck with an endless portal of Demons. Each turn, they gain an additional +2/+2. (Not modeled: endless portal.)"
+    },
+    {
+      "id": "the_exodar",
+      "name": "The Exodar",
+      "type": "creature",
+      "cost": 7,
+      "cardClass": "neutral",
+      "attack": 6,
+      "health": 8,
+      "rarity": "legendary",
+      "set": "SPACE",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: If you're building a Starship, launch it and choose a Protocol! (Not modeled: Starships.)"
+    },
+    {
+      "id": "velen_leader_of_the_exiled",
+      "name": "Velen, Leader of the Exiled",
+      "type": "creature",
+      "cost": 7,
+      "cardClass": "neutral",
+      "attack": 7,
+      "health": 7,
+      "rarity": "legendary",
+      "set": "SPACE",
+      "tribe": "Draenei",
+      "keywords": [
+        "taunt",
+        "deathrattle"
+      ],
+      "description": "Taunt. Deathrattle: Trigger the Battlecries and Deathrattles of all other Draenei you played this game. (Not modeled: Draenei replay log.)"
+    },
+    {
+      "id": "grunty",
+      "name": "Grunty",
+      "type": "creature",
+      "cost": 8,
+      "cardClass": "neutral",
+      "attack": 3,
+      "health": 4,
+      "rarity": "epic",
+      "set": "SPACE",
+      "tribe": "Murloc",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Summon four random Murlocs, then shoot them at enemy minions. (Approximated: summon 4 Murlocs; shooting not modeled.)",
+      "effects": [
+        {
+          "type": "summon-random",
+          "tribe": "Murloc",
+          "count": 4
+        }
+      ]
+    },
+    {
+      "id": "the_8_hands_from_beyond",
+      "name": "The 8 Hands From Beyond",
+      "type": "creature",
+      "cost": 8,
+      "cardClass": "deathknight",
+      "attack": 8,
+      "health": 8,
+      "rarity": "legendary",
+      "set": "SPACE",
+      "tribe": "Beast",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Destroy both players' decks EXCEPT the 8 highest Cost cards in each.",
+      "effects": [
+        {
+          "type": "mill-except-highest",
+          "count": 8
+        }
+      ]
+    },
+    {
+      "id": "thor",
+      "name": "Thor",
+      "type": "creature",
+      "cost": 8,
+      "cardClass": "warrior",
+      "attack": 8,
+      "health": 8,
+      "rarity": "epic",
+      "set": "SPACE",
+      "tribe": "Mech",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Deal 5 damage. (Not modeled: Starship transform.)",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 5,
+          "target": "any"
+        }
+      ]
+    },
+    {
+      "id": "murmur",
+      "name": "Murmur",
+      "type": "creature",
+      "cost": 9,
+      "cardClass": "shaman",
+      "attack": 6,
+      "health": 6,
+      "rarity": "legendary",
+      "set": "SPACE",
+      "tribe": "Elemental",
+      "description": "Your Battlecry minions cost (1), but immediately die after being played. (Not modeled: Battlecry-cost aura.)"
+    },
+    {
+      "id": "wakener_of_souls",
+      "name": "Wakener of Souls",
+      "type": "creature",
+      "cost": 10,
+      "cardClass": "deathknight",
+      "attack": 8,
+      "health": 7,
+      "rarity": "legendary",
+      "set": "SPACE",
+      "keywords": [
+        "taunt",
+        "reborn",
+        "deathrattle"
+      ],
+      "description": "Taunt, Reborn. Deathrattle: Resurrect a different friendly Deathrattle minion.",
+      "deathrattle": [
+        {
+          "type": "summon-random-died-game",
+          "requireKeyword": "deathrattle"
+        }
+      ]
+    },
+    {
+      "id": "colossus",
+      "name": "Colossus",
+      "type": "creature",
+      "cost": 12,
+      "cardClass": "mage",
+      "attack": 9,
+      "health": 4,
+      "rarity": "epic",
+      "set": "SPACE",
+      "tribe": "Mech",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Deal 1 damage to all enemies, twice. (Not modeled: Protoss improvement.)",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 1,
+          "target": "enemies"
+        },
+        {
+          "type": "damage",
+          "value": 1,
+          "target": "enemies"
+        }
+      ]
+    },
+    {
+      "id": "mothership",
+      "name": "Mothership",
+      "type": "creature",
+      "cost": 12,
+      "cardClass": "priest",
+      "attack": 10,
+      "health": 10,
+      "rarity": "legendary",
+      "set": "SPACE",
+      "tribe": "Mech",
+      "keywords": [
+        "taunt",
+        "battlecry",
+        "deathrattle"
+      ],
+      "description": "Taunt. Battlecry and Deathrattle: Get two random Protoss minions. (Approximated: 2 random Mechs.)",
+      "effects": [
+        {
+          "type": "conjure-random",
+          "cardType": "creature",
+          "tribe": "Mech",
+          "count": 2
+        }
+      ],
+      "deathrattle": [
+        {
+          "type": "conjure-random",
+          "cardType": "creature",
+          "tribe": "Mech",
+          "count": 2
+        }
+      ]
+    },
+    {
+      "id": "the_ceaseless_expanse",
+      "name": "The Ceaseless Expanse",
+      "type": "creature",
+      "cost": 100,
+      "cardClass": "neutral",
+      "attack": 10,
+      "health": 10,
+      "rarity": "legendary",
+      "set": "SPACE",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Costs (1) less for each time a card was drawn, played, or destroyed. Battlecry: Destroy all other minions.",
+      "effects": [
+        {
+          "type": "destroy-all",
+          "others": true
+        }
+      ]
     }
   ]
 }

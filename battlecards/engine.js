@@ -571,6 +571,7 @@ export function drawCards(state, pi, count) {
 		if (card.copyOnDraw && state.cardsById[card.id] && p.hand.length < MAX_HAND) { const cp = instantiate(state.cardsById[card.id], pi); cp.zone = 'hand'; p.hand.push(cp); emit(state, { type: 'conjure', player: pi, card: cp, color: null }); } // Encumbered Pack Mule
 		drawn++;
 		emit(state, { type: 'draw', player: pi, card });
+		state.expanseEvents = (state.expanseEvents || 0) + 1; // The Ceaseless Expanse: a card was drawn
 		questTick(state, 'draw', pi, 1, card);
 		// Ponder: fires on every card drawn after your first draw of the turn
 		p.drawsThisTurn = (p.drawsThisTurn || 0) + 1;
@@ -1266,6 +1267,7 @@ function sweepDeaths(state) {
 			p.diedThisTurn++;
 			state.diedThisTurn = (state.diedThisTurn || 0) + 1;
 			state.minionsDiedGame = (state.minionsDiedGame || 0) + 1; // Reska, the Pit Boss
+			state.expanseEvents = (state.expanseEvents || 0) + 1; // The Ceaseless Expanse: a card was destroyed
 			if (state.cardsById[c.id] && !c.token) {
 				p.diedThisTurnIds.push(c.id);
 				if (!p.deathLogIds.includes(c.id)) p.deathLogIds.push(c.id);
@@ -4896,7 +4898,7 @@ function execEffects(state, pi, effects, target, source) {
 		} else if (e.type === 'summon-random-died-game') {
 			// Psychopomp: summon a random friendly creature that died this game, optionally granting a keyword
 			const p = state.players[pi];
-			const pool = [...new Set(p.deathLogIds)].map(id => state.cardsById[id]).filter(d => d && d.type === 'creature');
+			const pool = [...new Set(p.deathLogIds)].map(id => state.cardsById[id]).filter(d => d && d.type === 'creature' && (!e.requireKeyword || (d.keywords || []).includes(e.requireKeyword))); // Wakener of Souls: a Deathrattle minion
 			if (pool.length) { const c = summon(state, pi, pool[Math.floor(state.rng() * pool.length)]); if (c && e.grant && !c.keywords.includes(e.grant)) c.keywords.push(e.grant); }
 		} else if (e.type === 'destroy-and-selfdamage-by-health') {
 			// Riftcleaver: destroy a creature; your hero takes damage equal to its Health
@@ -6115,6 +6117,20 @@ function execEffects(state, pi, effects, target, source) {
 		} else if (e.type === 'refresh-friendly-attacks') {
 			// Exarch Akama: after this attacks, all OTHER friendly minions can attack again
 			for (const c of state.players[pi].board) { if (c === source || isDead(c) || c.type === 'location') continue; c.attacksUsed = 0; c.sick = false; }
+		} else if (e.type === 'double-self-stats') {
+			// Immortal: double this minion's Attack and Health (the 4-Mana cost is not modeled)
+			if (source && !isDead(source)) { source.attack = (source.attack || 0) * 2; source.maxHealth = (source.maxHealth || 0) * 2; emit(state, { type: 'buff', uid: source.uid, attack: source.attack, hp: hp(source) }); }
+		} else if (e.type === 'mill-except-highest') {
+			// The 8 Hands From Beyond: destroy both players' decks except the N highest-Cost cards in each
+			for (let s2 = 0; s2 < state.players.length; s2++) {
+				const pl = state.players[s2];
+				const keep = [...pl.deck].sort((a, b) => (state.cardsById[b]?.cost || 0) - (state.cardsById[a]?.cost || 0)).slice(0, e.count || 8);
+				const keptCounts = {}; for (const id of keep) keptCounts[id] = (keptCounts[id] || 0) + 1;
+				const newDeck = [];
+				for (const id of pl.deck) { if ((keptCounts[id] || 0) > 0) { keptCounts[id]--; newDeck.push(id); } }
+				pl.deck = newDeck;
+				emit(state, { type: 'shuffle', player: s2 });
+			}
 		} else if (e.type === 'damage-random-enemy-by-attack') {
 			// Biopod: deal damage equal to this minion's Attack to a random enemy
 			// (count = independent hits; minionsOnly restricts to enemy minions — Felfire Thrusters)
@@ -7995,6 +8011,7 @@ function execEffects(state, pi, effects, target, source) {
 			if (e.requireKeyword) pool = pool.filter(d => (d.keywords || []).includes(e.requireKeyword)); // Whirlkick Master: a Combo card
 			if (e.cost != null) pool = pool.filter(d => (d.cost || 0) === e.cost); // Ravencaller / Tanglefur Mystic
 			if (e.nameIncludes) pool = pool.filter(d => (d.name || '').includes(e.nameIncludes)); // Yrel: Librams
+			if (e.school) pool = pool.filter(d => schoolOf(d) === e.school); // Galactic Crusader: Holy spells
 			if (e.tribe) pool = pool.filter(d => (d.tribe || '').includes(e.tribe));
 			if (e.rarity) pool = pool.filter(d => d.rarity === e.rarity); // Golden Monkey: Legendaries
 			if (e.cardClass === 'enemy') {
@@ -8870,6 +8887,7 @@ export function effectiveCost(state, pi, card) {
 	{ const sch = schoolOf(card); if (sch) { const r = p.board.filter(x => x.schoolCostReduce && x.schoolCostReduce.school === sch && !isDead(x)).reduce((s, x) => s + x.schoolCostReduce.amount, 0); if (r) c = Math.max(0, c - r); } } // Lady Anacondra: Nature spells
 	if (p.battlecryTaxNext > 0 && (card.keywords || []).includes('battlecry')) c += p.battlecryTaxNext; // Boompistol Bully
 	if (p.libramDiscount > 0 && /Libram/.test(card.name || '')) c = Math.max(0, c - p.libramDiscount); // Aldor Attendant/Truthseeker
+	if (card.id === 'the_ceaseless_expanse') c = Math.max(0, c - (state.expanseEvents || 0)); // costs (1) less per card drawn/played/destroyed this game
 	if (p.nextWeaponDiscount > 0 && card.type === 'weapon') c = Math.max(0, c - p.nextWeaponDiscount); // Space Pirate
 	if (card.type === 'creature' && p.enemyMinionTaxTurn === state.turnNumber && p.enemyMinionTaxAmount) c += p.enemyMinionTaxAmount; // Forensic Duster
 	if (p.overloadDiscount > 0 && (card.overload || 0) > 0) c = Math.max(0, c - p.overloadDiscount); // Inzah
@@ -8994,6 +9012,7 @@ export function playCard(state, pi, cardUid, target, choice, position, useAlt, k
 		fireOngoing(state, pi, 'overloaded-self', { amount: card.overload }); // Tunnel Trogg
 	}
 	emit(state, { type: 'play', player: pi, card, mana: availableMana(p) });
+	state.expanseEvents = (state.expanseEvents || 0) + 1; // The Ceaseless Expanse: a card was played
 	// history for Tess Greymane (other-class cards) and Shudderwock (Battlecries)
 	if (card.cardClass && card.cardClass !== 'neutral' && card.cardClass !== p.heroClass && card.id !== 'tess_greymane') p.otherClassPlayedGame.push(card.id);
 	if ((card.keywords || []).includes('battlecry') && card.effects && card.id !== 'shudderwock') p.battlecriesPlayedGame.push(card.id);
