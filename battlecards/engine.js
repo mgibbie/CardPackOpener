@@ -1031,8 +1031,8 @@ function damageCreature(state, target, amount, source) {
 			runSecretEffects(state, target.controller, o.effects, { self: target, damaged: target, amount });
 		}
 	}
-	for (let s2 = 0; s2 < state.players.length; s2++) fireOngoing(state, s2, 'creature-damaged', { damaged: target });
-	fireOngoing(state, target.controller, 'friendly-creature-damaged', { damaged: target });
+	for (let s2 = 0; s2 < state.players.length; s2++) fireOngoing(state, s2, 'creature-damaged', { damaged: target, amount });
+	fireOngoing(state, target.controller, 'friendly-creature-damaged', { damaged: target, amount });
 	return amount;
 }
 
@@ -1597,6 +1597,7 @@ function ongoingCondOk(state, pi, cond, ctx) {
 	if (cond.enemy && !(subj && subj.controller !== pi)) return false; // "an ENEMY creature ..."
 	if (cond.school && !(subj && schoolOf(subj) === cond.school)) return false; // "cast an Arcane spell"
 	if (cond.controlArtEnch && !(state.players[pi].artifacts.length || state.players[pi].enchantments.length)) return false; // "if you control an artifact or an enchantment"
+	if (cond.damageAmount != null && ctx.amount !== cond.damageAmount) return false; // Holotechnician: took exactly N damage
 	return true;
 }
 
@@ -1934,6 +1935,21 @@ function runSecretEffects(state, pi, effects, ctx) {
 	for (const e of effects || []) {
 		switch (e.type) {
 			case 'counter': ctx.countered = true; break;
+			case 'destroy-damaged-subject': {
+				// Holotechnician: destroy the minion that just took damage
+				const d = ctx.damaged;
+				if (d && !isDead(d) && d.type !== 'location') { d.damage = d.maxHealth; d.shield = false; emit(state, { type: 'destroy', uid: d.uid }); sweepDeaths(state); }
+				break;
+			}
+			case 'metrognome': {
+				// Metrognome: after playing a card of the tracked cost, draw one of the next cost, then increase
+				const self = ctx.self, played = ctx.played;
+				if (self && played && (played.cost || 0) === (self.metroCost || 0)) {
+					execEffects(state, pi, [{ type: 'tutor', cost: (self.metroCost || 0) + 1, count: 1 }], null, self);
+					self.metroCost = (self.metroCost || 0) + 1;
+				}
+				break;
+			}
 			case 'become-copy-of-dead': {
 				// Creepy Painting: transform into a copy of a minion that just died
 				const dead = ctx.dead, self = ctx.self;
@@ -2884,6 +2900,7 @@ function execEffects(state, pi, effects, target, source) {
 			for (let s2 = 0; s2 < state.players.length; s2++) fireOngoing(state, s2, 'healed', { healedCreature: c });
 		}
 		if (c.overheal && overflow > 0 && !isDead(c)) {
+			c._lastOverheal = overflow; // Heartthrob: remember the overflow for cost-scaled effects
 			execEffects(state, c.controller, c.overheal, null, c);
 		}
 	};
@@ -3069,6 +3086,8 @@ function execEffects(state, pi, effects, target, source) {
 				}
 			} else if (e.target === 'friendly-others') {
 				for (const c of state.players[pi].board) if (c !== source) buffCreature(c, e.attack, e.health);
+			} else if (e.target === 'self') {
+				if (source && !isDead(source)) buffCreature(source, e.attack, e.health); // Rolling Stone
 			} else if (e.target === 'all-others') {
 				// every player's board except the source itself (tribal blessings)
 				for (const pl of state.players) for (const c of pl.board) {
@@ -4156,6 +4175,7 @@ function execEffects(state, pi, effects, target, source) {
 			else if (e.if.excavatedTwice) ok = (p.excavateCount || 0) >= 2;
 			else if (e.if.manathirst != null) ok = (p.mana.max || 0) >= e.if.manathirst; // mana crystals this turn, regardless of spend
 			else if (e.if.finale) ok = availableMana(p) === 0; // you spent all your mana playing this card
+			else if (e.if.lastCardCost != null) ok = (p.lastCardCost === e.if.lastCardCost); // Rolling Stone: the last card you played costs N
 			else if (e.if.noFriendlyDeaths) ok = (p.diedThisTurn || 0) === 0;
 			else if (e.if.friendlyDied) ok = (p.diedThisTurn || 0) > 0;       // Bone Flurry
 			else if (e.if.deckAtLeast != null) ok = p.deck.length >= e.if.deckAtLeast; // Crowd Control
@@ -5733,6 +5753,28 @@ function execEffects(state, pi, effects, target, source) {
 		} else if (e.type === 'grant-keyword-self') {
 			// Audio Medic (Finale): the source minion gains a keyword
 			if (source && !isDead(source) && !source.keywords.includes(e.keyword)) { source.keywords.push(e.keyword); if (e.keyword === KW.DIVINE_SHIELD) source.shield = true; if (e.keyword === KW.STEALTH) source.stealthed = true; emit(state, { type: 'buff', uid: source.uid, attack: source.attack, hp: hp(source) }); }
+		} else if (e.type === 'buff-self-per-died-this-turn') {
+			// Snakebite: gain +X/+X for each minion that died this turn
+			const n = state.diedThisTurn || 0;
+			if (source && n) buffCreature(source, (e.attack || 1) * n, (e.health || 1) * n);
+		} else if (e.type === 'heal-friendlies-buff-per-overheal') {
+			// Dreamboat: restore N to all OTHER friendly minions; gain +1/+1 for each that Overhealed
+			const p = state.players[pi];
+			let over = 0;
+			for (const c of p.board) { if (c === source || isDead(c) || c.type === 'location') continue; if (c.damage < (e.value || 3)) over++; healCreature(c, e.value || 3); }
+			if (source && over) buffCreature(source, over, over);
+		} else if (e.type === 'summon-random-cost-overheal') {
+			// Heartthrob: summon a random minion with Cost equal to the amount Overhealed
+			const amt = (source && source._lastOverheal) || 0;
+			if (amt > 0) { const pool = Object.values(state.cardsById).filter(d => d.type === 'creature' && (d.cost || 0) === amt && !d.token && d.collectible !== false && !d.companion && !d.commander && !(d.colors && d.colors.length)); if (pool.length) summon(state, pi, pool[Math.floor(state.rng() * pool.length)]); }
+		} else if (e.type === 'force-all-enemies-attack') {
+			// Festival Security (Finale): force all enemy minions to attack this
+			if (source && !isDead(source)) { for (const o of enemies) { for (const c of [...state.players[o].board]) { if (isDead(source)) break; if (!isDead(c) && !c.frozen && c.attack > 0 && c.type !== 'location' && c.dormantLeft <= 0) resolveCombat(state, o, c.uid, { type: 'creature', uid: source.uid, player: source.controller }); } } }
+		} else if (e.type === 'discover-enemy-class-spell') {
+			// Hipster: Discover a spell from your opponent's class
+			const foe = enemies[0];
+			const cls = foe != null ? (state.players[foe].heroClass || state.players[foe].heroClasses?.[0] || 'mage') : 'mage';
+			execEffects(state, pi, [{ type: 'discover', cardType: 'spell', cardClasses: [cls] }], null, source);
 		} else if (e.type === 'buff-next-summon-tribe') {
 			// Thornmantle Musician (Finale): the next minion of a tribe you summon gets +X/+X
 			state.players[pi].nextTribeSummonBuff = { tribe: e.tribe, attack: e.attack || 1, health: e.health || 1 };
@@ -8159,6 +8201,7 @@ export function playCard(state, pi, cardUid, target, choice, position, useAlt, k
 	} else {
 		questTick(state, 'spell', pi);
 		p.spellsPlayedThisTurn++;
+		p.lastCardCost = card.cost; // Rolling Stone
 		{ const sc = schoolOf(card); for (const hc of p.hand) { hc.spellsCastWhileHeld = (hc.spellsCastWhileHeld || 0) + 1; if (sc) (hc.schoolsWhileHeld = hc.schoolsWhileHeld || {})[sc] = true; (hc.spellsHeldIds = hc.spellsHeldIds || []).push(card.id); } } // Naga: Spellcoiler / Heralds / Commander Sivara
 		{ const sch = schoolOf(card); if (sch) { (p.schoolsCastThisTurn = p.schoolsCastThisTurn || {})[sch] = true; (p.schoolsCastGame = p.schoolsCastGame || {})[sch] = true; if (sch === 'Fel') (p.felSpellsGame = p.felSpellsGame || []).push(card.id); if (sch === 'Frost') p.frostSpellsGame = (p.frostSpellsGame || 0) + 1; } } // Metamorfin / Multicaster / Jace / Bearon
 		if ((card.cost || 0) >= 6) p.lastBigSpell = { id: card.id, target }; // Grey Sage Parrot
@@ -8204,6 +8247,7 @@ export function playCard(state, pi, cardUid, target, choice, position, useAlt, k
 	questTick(state, 'play', pi, 1, card); // "Play N cards" quests
 	// counted AFTER resolution so Combo sees only cards played EARLIER this turn
 	p.cardsPlayedThisTurn++;
+	p.lastCardCost = card.cost; // Rolling Stone: cost of the most recently played card
 	// Sherazin, Corpse Flower: play 4 cards in a turn to revive the seed
 	if (p.cardsPlayedThisTurn >= 4) {
 		for (const seed of p.board.filter(c => c.id === 'sherazin_seed' && !isDead(c))) {

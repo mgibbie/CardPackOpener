@@ -96818,6 +96818,429 @@
           "type": "add-random-combo-card"
         }
       ]
+    },
+    {
+      "id": "dreamboat",
+      "name": "Dreamboat",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "priest",
+      "attack": 1,
+      "health": 2,
+      "rarity": "rare",
+      "set": "BATTLE_OF_THE_BANDS",
+      "tribe": "Naga",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Restore 3 Health to all other friendly minions. Gain +1/+1 for each one Overhealed.",
+      "effects": [
+        {
+          "type": "heal-friendlies-buff-per-overheal",
+          "value": 3
+        }
+      ]
+    },
+    {
+      "id": "fanboy",
+      "name": "Fanboy",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "priest",
+      "attack": 2,
+      "health": 2,
+      "rarity": "common",
+      "set": "BATTLE_OF_THE_BANDS",
+      "description": "Choose One - Give a friendly minion +2 Attack and Rush; or +2 Health and Lifesteal.",
+      "choices": [
+        {
+          "text": "+2 Attack and Rush",
+          "effects": [
+            {
+              "type": "buff",
+              "attack": 2,
+              "target": "creature"
+            },
+            {
+              "type": "grant",
+              "keyword": "rush",
+              "target": "creature"
+            }
+          ]
+        },
+        {
+          "text": "+2 Health and Lifesteal",
+          "effects": [
+            {
+              "type": "buff",
+              "health": 2,
+              "target": "creature"
+            },
+            {
+              "type": "grant",
+              "keyword": "lifesteal",
+              "target": "creature"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "groovy_cat",
+      "name": "Groovy Cat",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "druid",
+      "attack": 2,
+      "health": 1,
+      "rarity": "rare",
+      "set": "BATTLE_OF_THE_BANDS",
+      "tribe": "Beast",
+      "keywords": [
+        "battlecry",
+        "deathrattle"
+      ],
+      "description": "Battlecry and Deathrattle: Your Hero Power gives your hero 1 more Attack this game.",
+      "effects": [
+        {
+          "type": "hero-temp-attack",
+          "value": 1
+        }
+      ],
+      "deathrattle": [
+        {
+          "type": "hero-temp-attack",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "hipster",
+      "name": "Hipster",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "neutral",
+      "attack": 1,
+      "health": 3,
+      "rarity": "common",
+      "set": "BATTLE_OF_THE_BANDS",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Discover a spell from your opponent's class that isn't in their deck.",
+      "effects": [
+        {
+          "type": "discover-enemy-class-spell"
+        }
+      ]
+    },
+    {
+      "id": "jukebox_totem",
+      "name": "Jukebox Totem",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "paladin",
+      "attack": 0,
+      "health": 4,
+      "rarity": "common",
+      "set": "BATTLE_OF_THE_BANDS",
+      "tribe": "Totem",
+      "description": "At the end of your turn, summon a Silver Hand Recruit.",
+      "ongoing": {
+        "on": "turn-end",
+        "effects": [
+          {
+            "type": "summon",
+            "count": 1,
+            "summonId": "rev_silver_hand"
+          }
+        ]
+      }
+    },
+    {
+      "id": "one_hit_wonder",
+      "name": "One Hit Wonder",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "rogue",
+      "attack": 2,
+      "health": 1,
+      "rarity": "common",
+      "set": "BATTLE_OF_THE_BANDS",
+      "tribe": "Undead",
+      "keywords": [
+        "rush",
+        "combo"
+      ],
+      "description": "Rush. Combo: Gain Poisonous.",
+      "combo": [
+        {
+          "type": "grant-keyword-self",
+          "keyword": "poisonous"
+        }
+      ]
+    },
+    {
+      "id": "party_animal",
+      "name": "Party Animal",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "neutral",
+      "attack": 2,
+      "health": 3,
+      "rarity": "common",
+      "set": "BATTLE_OF_THE_BANDS",
+      "tribe": "Beast",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Give +1/+1 to each minion of a different type in your hand.",
+      "effects": [
+        {
+          "type": "buff-hand-minions",
+          "attack": 1,
+          "health": 1
+        }
+      ]
+    },
+    {
+      "id": "popular_pixie",
+      "name": "Popular Pixie",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "druid",
+      "attack": 2,
+      "health": 3,
+      "rarity": "common",
+      "set": "BATTLE_OF_THE_BANDS",
+      "description": "Choose One - Refresh your Hero Power; or Your next one costs (0).",
+      "choices": [
+        {
+          "text": "Refresh your Hero Power",
+          "effects": [
+            {
+              "type": "refresh-hero-power"
+            }
+          ]
+        },
+        {
+          "text": "Your next one costs (0)",
+          "effects": [
+            {
+              "type": "hero-power-discount",
+              "value": 10
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "rolling_stone",
+      "name": "Rolling Stone",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "neutral",
+      "attack": 2,
+      "health": 2,
+      "rarity": "common",
+      "set": "BATTLE_OF_THE_BANDS",
+      "tribe": "Elemental",
+      "keywords": [
+        "rush",
+        "battlecry"
+      ],
+      "description": "Rush. Battlecry: If the last card you played costs (1), gain +1/+1.",
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "lastCardCost": 1
+          },
+          "then": [
+            {
+              "type": "buff",
+              "attack": 1,
+              "health": 1,
+              "target": "self"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "snakebite",
+      "name": "Snakebite",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "demonhunter",
+      "attack": 1,
+      "health": 1,
+      "rarity": "rare",
+      "set": "BATTLE_OF_THE_BANDS",
+      "tribe": "Naga",
+      "keywords": [
+        "rush",
+        "battlecry"
+      ],
+      "description": "Rush. Battlecry: Gain +1/+1 for each minion that died this turn.",
+      "effects": [
+        {
+          "type": "buff-self-per-died-this-turn",
+          "attack": 1,
+          "health": 1
+        }
+      ]
+    },
+    {
+      "id": "cowbell_soloist",
+      "name": "Cowbell Soloist",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "neutral",
+      "attack": 4,
+      "health": 2,
+      "rarity": "common",
+      "set": "BATTLE_OF_THE_BANDS",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: If you control no other minions, deal 2 damage.",
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "noOtherCreatures": true
+          },
+          "then": [
+            {
+              "type": "damage",
+              "value": 2,
+              "target": "any"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "festival_security",
+      "name": "Festival Security",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "neutral",
+      "attack": 2,
+      "health": 5,
+      "rarity": "rare",
+      "set": "BATTLE_OF_THE_BANDS",
+      "keywords": [
+        "taunt",
+        "finale"
+      ],
+      "description": "Taunt. Finale: Force all enemy minions to attack this.",
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "finale": true
+          },
+          "then": [
+            {
+              "type": "force-all-enemies-attack"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "harmonica_soloist",
+      "name": "Harmonica Soloist",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "hunter",
+      "attack": 4,
+      "health": 2,
+      "rarity": "epic",
+      "set": "BATTLE_OF_THE_BANDS",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: If you control no other minions, Discover and cast a Secret.",
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "noOtherCreatures": true
+          },
+          "then": [
+            {
+              "type": "discover",
+              "cardType": "secret",
+              "installSecret": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "heartthrob",
+      "name": "Heartthrob",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "priest",
+      "attack": 2,
+      "health": 5,
+      "rarity": "epic",
+      "set": "BATTLE_OF_THE_BANDS",
+      "tribe": "Undead",
+      "overheal": [
+        {
+          "type": "summon-random-cost-overheal"
+        }
+      ],
+      "description": "Overheal: Summon a random minion with Cost equal to the amount Overhealed."
+    },
+    {
+      "id": "holotechnician",
+      "name": "Holotechnician",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "mage",
+      "attack": 3,
+      "health": 4,
+      "rarity": "epic",
+      "set": "BATTLE_OF_THE_BANDS",
+      "description": "After ANY minion takes exactly 1 damage, destroy it.",
+      "ongoing": {
+        "on": "creature-damaged",
+        "if": {
+          "damageAmount": 1
+        },
+        "effects": [
+          {
+            "type": "destroy-damaged-subject"
+          }
+        ]
+      }
+    },
+    {
+      "id": "metrognome",
+      "name": "Metrognome",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "neutral",
+      "attack": 2,
+      "health": 4,
+      "rarity": "rare",
+      "set": "BATTLE_OF_THE_BANDS",
+      "tribe": "Mech",
+      "description": "After you play a 0-Cost card, draw a 1-Cost card. (Then increase!)",
+      "ongoing": {
+        "on": "card-played",
+        "effects": [
+          {
+            "type": "metrognome"
+          }
+        ]
+      }
     }
   ]
 }
