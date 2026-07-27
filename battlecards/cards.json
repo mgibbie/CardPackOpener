@@ -109741,6 +109741,370 @@
           "target": "all-others"
         }
       ]
+    },
+    {
+      "id": "a_f_kay",
+      "name": "A. F. Kay",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "neutral",
+      "attack": 0,
+      "health": 5,
+      "rarity": "legendary",
+      "set": "ISLAND_VACATION",
+      "tribe": "Draenei",
+      "description": "At the end of your turn, give all other friendly minions that didn't attack +2/+2.",
+      "ongoing": {
+        "on": "turn-end",
+        "effects": [
+          {
+            "type": "buff-friendly-didnt-attack",
+            "attack": 2,
+            "health": 2
+          }
+        ]
+      }
+    },
+    {
+      "id": "bayfin_bodybuilder",
+      "name": "Bayfin Bodybuilder",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "neutral",
+      "attack": 4,
+      "health": 7,
+      "rarity": "epic",
+      "set": "ISLAND_VACATION",
+      "tribe": "Murloc",
+      "description": "After a minion is summoned for your opponent during your turn, Silence and destroy it. (Not modeled: trigger simplified.)"
+    },
+    {
+      "id": "carnivorous_cubicle",
+      "name": "Carnivorous Cubicle",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "neutral",
+      "attack": 4,
+      "health": 6,
+      "rarity": "epic",
+      "set": "ISLAND_VACATION",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Destroy a friendly minion. Summon a copy of it at the end of your turns.",
+      "effects": [
+        {
+          "type": "destroy-friendly-remember",
+          "target": "friendly-creature"
+        }
+      ],
+      "ongoing": {
+        "on": "turn-end",
+        "effects": [
+          {
+            "type": "summon-remembered"
+          }
+        ]
+      }
+    },
+    {
+      "id": "cash_cow",
+      "name": "Cash Cow",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "hunter",
+      "attack": 3,
+      "health": 7,
+      "rarity": "rare",
+      "set": "ISLAND_VACATION",
+      "tribe": "Beast",
+      "keywords": [
+        "taunt"
+      ],
+      "description": "Taunt. Whenever this takes damage, get a Coin.",
+      "ongoing": {
+        "on": "self-damaged",
+        "effects": [
+          {
+            "type": "gain-coin"
+          }
+        ]
+      }
+    },
+    {
+      "id": "dozing_dragon",
+      "name": "Dozing Dragon",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "druid",
+      "attack": 3,
+      "health": 5,
+      "rarity": "epic",
+      "set": "ISLAND_VACATION",
+      "tribe": "Dragon",
+      "dormant": 2,
+      "description": "Dormant for 2 turns. While Dormant, summon a 3/5 Dragon with Taunt at the end of your turn.",
+      "ongoing": {
+        "on": "turn-end",
+        "if": {
+          "dormantSelf": true
+        },
+        "effects": [
+          {
+            "type": "summon",
+            "count": 1,
+            "summonId": "vac_dozing_dragonling"
+          }
+        ]
+      }
+    },
+    {
+      "id": "mistah_vistah",
+      "name": "Mistah Vistah",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "druid",
+      "attack": 5,
+      "health": 5,
+      "rarity": "legendary",
+      "set": "ISLAND_VACATION",
+      "tribe": "Elemental",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Mage Tourist. Battlecry: In 3 turns, replay every spell you've cast between now and then. (Not modeled: delayed replay.)"
+    },
+    {
+      "id": "ranger_gilly",
+      "name": "Ranger Gilly",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "hunter",
+      "attack": 4,
+      "health": 6,
+      "rarity": "legendary",
+      "set": "ISLAND_VACATION",
+      "keywords": [
+        "deathrattle"
+      ],
+      "description": "Warrior Tourist. At the end of your turn, get a 2/3 Crocolisk. Deathrattle: Give all minions in your hand +2/+3.",
+      "ongoing": {
+        "on": "turn-end",
+        "effects": [
+          {
+            "type": "summon",
+            "count": 1,
+            "summonId": "vac_gilly_crocolisk"
+          }
+        ]
+      },
+      "deathrattle": [
+        {
+          "type": "buff-hand",
+          "attack": 2,
+          "health": 3,
+          "all": true
+        }
+      ]
+    },
+    {
+      "id": "sanc_azel",
+      "name": "Sanc'Azel",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "paladin",
+      "attack": 3,
+      "health": 8,
+      "rarity": "legendary",
+      "set": "ISLAND_VACATION",
+      "keywords": [
+        "rush"
+      ],
+      "description": "Rush. After this attacks, turn into a location. (Not modeled: location transform.)"
+    },
+    {
+      "id": "scrapbooking_student",
+      "name": "Scrapbooking Student",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "neutral",
+      "attack": 5,
+      "health": 5,
+      "rarity": "common",
+      "set": "ISLAND_VACATION",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Summon a copy of a friendly location. (Not modeled: locations.)"
+    },
+    {
+      "id": "sunsapper_lynessa",
+      "name": "Sunsapper Lynessa",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "paladin",
+      "attack": 2,
+      "health": 6,
+      "rarity": "legendary",
+      "set": "ISLAND_VACATION",
+      "tribe": "Naga",
+      "description": "Rogue Tourist. Your spells that cost (2) or less cast twice. (Not modeled: cheap-spell double-cast.)"
+    },
+    {
+      "id": "surfalopod",
+      "name": "Surfalopod",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "mage",
+      "attack": 4,
+      "health": 4,
+      "rarity": "rare",
+      "set": "ISLAND_VACATION",
+      "tribe": "Beast",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: The next spell you draw is Cast When Drawn.",
+      "effects": [
+        {
+          "type": "set-cast-when-drawn",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "twilight_medium",
+      "name": "Twilight Medium",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "priest",
+      "attack": 4,
+      "health": 5,
+      "rarity": "rare",
+      "set": "ISLAND_VACATION",
+      "keywords": [
+        "taunt",
+        "battlecry"
+      ],
+      "description": "Taunt. Battlecry: Set the Cost of the top card of your deck to (0).",
+      "effects": [
+        {
+          "type": "set-deck-top-cost",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "id": "cruise_captain_lora",
+      "name": "Cruise Captain Lora",
+      "type": "creature",
+      "cost": 6,
+      "cardClass": "druid",
+      "attack": 4,
+      "health": 5,
+      "rarity": "legendary",
+      "set": "ISLAND_VACATION",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Summon 2 random locations. (Not modeled: locations.)"
+    },
+    {
+      "id": "hamm_the_hungry",
+      "name": "Hamm, the Hungry",
+      "type": "creature",
+      "cost": 6,
+      "cardClass": "warrior",
+      "attack": 3,
+      "health": 3,
+      "rarity": "legendary",
+      "set": "ISLAND_VACATION",
+      "tribe": "Quilboar",
+      "keywords": [
+        "taunt"
+      ],
+      "description": "Druid Tourist. Taunt. At the end of your turn, eat a minion in the enemy's deck to gain +2/+2.",
+      "ongoing": {
+        "on": "turn-end",
+        "effects": [
+          {
+            "type": "eat-enemy-deck-minion",
+            "attack": 2,
+            "health": 2
+          }
+        ]
+      }
+    },
+    {
+      "id": "package_dealer",
+      "name": "Package Dealer",
+      "type": "creature",
+      "cost": 6,
+      "cardClass": "neutral",
+      "attack": 6,
+      "health": 7,
+      "rarity": "epic",
+      "set": "ISLAND_VACATION",
+      "description": "After you draw a card, 50% chance to draw another.",
+      "ongoing": {
+        "on": "card-drawn",
+        "effects": [
+          {
+            "type": "maybe-draw",
+            "chance": 0.5,
+            "value": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "party_planner_vona",
+      "name": "Party Planner Vona",
+      "type": "creature",
+      "cost": 6,
+      "cardClass": "warlock",
+      "attack": 4,
+      "health": 4,
+      "rarity": "legendary",
+      "set": "ISLAND_VACATION",
+      "tribe": "Demon",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: If you've taken 8 damage on your turns, summon Ourobos. (Not modeled: damage-threshold summon.)"
+    },
+    {
+      "id": "vac_dozing_dragonling",
+      "name": "Dragon",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "druid",
+      "attack": 3,
+      "health": 5,
+      "rarity": "common",
+      "set": "ISLAND_VACATION",
+      "tribe": "Dragon",
+      "token": true,
+      "collectible": false,
+      "keywords": [
+        "taunt"
+      ],
+      "description": "Taunt."
+    },
+    {
+      "id": "vac_gilly_crocolisk",
+      "name": "Crocolisk",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "hunter",
+      "attack": 2,
+      "health": 3,
+      "rarity": "common",
+      "set": "ISLAND_VACATION",
+      "tribe": "Beast",
+      "token": true,
+      "collectible": false,
+      "description": "A 2/3 Crocolisk."
     }
   ]
 }

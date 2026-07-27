@@ -539,6 +539,7 @@ export function drawCards(state, pi, count) {
 		const card = instantiate(state.cardsById[id], pi);
 		card.fromDeck = true; // drawn from your deck — Leyline Manipulator ignores these
 		card.drawnThisTurn = true; // Keli'dan the Breaker: "If drawn this turn"
+		if (p.deckCostOverrides && p.deckCostOverrides[id] != null) { card.cost = p.deckCostOverrides[id]; delete p.deckCostOverrides[id]; } // Twilight Medium: top card's Cost set to (0)
 		if (p.deckInnerFire && card.type === 'creature') card.attack = card.maxHealth; // Lady in White
 		if (card.type === 'creature' && p.drawBuff) { card.attack += p.drawBuff.attack || 0; card.maxHealth += p.drawBuff.health || 0; }
 		if (card.type === 'creature' && p.drawBuffTribe) { for (const tr in p.drawBuffTribe) if ((card.tribe || '').includes(tr)) { card.attack += p.drawBuffTribe[tr].attack || 0; card.maxHealth += p.drawBuffTribe[tr].health || 0; } } // Shan'do Wildclaw
@@ -1625,6 +1626,7 @@ function ongoingCondOk(state, pi, cond, ctx) {
 	if (cond.attackEqualsSelf && !(subj && ctx.self && subj.attack === ctx.self.attack)) return false; // The Replicator-inator: same Attack as this
 	if (cond.handMax != null && !(state.players[pi].hand.length <= cond.handMax)) return false; // Howdyfin: fewer than N cards in hand
 	if (cond.tribeSubj && !(subj && (subj.tribe || '').includes(cond.tribeSubj))) return false;
+	if (cond.dormantSelf && !(ctx.self && ctx.self.dormantLeft > 0)) return false; // Dozing Dragon: only while asleep
 	return true;
 }
 
@@ -5978,6 +5980,34 @@ function execEffects(state, pi, effects, target, source) {
 			// Raylla, Sand Sculptor: summon a random N-Cost minion and give it Divine Shield
 			const pool = Object.values(state.cardsById).filter(d => d.type === 'creature' && (d.cost || 0) === (e.cost ?? 2) && !d.token && d.collectible !== false && !d.companion && !d.commander && !(d.colors && d.colors.length));
 			if (pool.length) { const c = summon(state, pi, pool[Math.floor(state.rng() * pool.length)]); if (c && !c.keywords.includes(KW.DIVINE_SHIELD)) { c.keywords.push(KW.DIVINE_SHIELD); c.shield = true; } }
+		} else if (e.type === 'buff-friendly-didnt-attack') {
+			// A. F. Kay: at end of turn, buff friendly minions that didn't attack this turn
+			for (const c of state.players[pi].board) {
+				if (c === source || isDead(c) || c.type === 'location' || c.dormantLeft > 0) continue;
+				if ((c.attacksUsed || 0) !== 0) continue;
+				c.attack += (e.attack || 0); c.maxHealth += (e.health || 0);
+				emit(state, { type: 'buff', uid: c.uid, attack: e.attack || 0, health: e.health || 0 });
+			}
+		} else if (e.type === 'set-deck-top-cost') {
+			// Twilight Medium: set the Cost of the top card of your deck to a value
+			const p = state.players[pi];
+			if (p.deck.length) { p.deckCostOverrides = p.deckCostOverrides || {}; p.deckCostOverrides[p.deck[p.deck.length - 1]] = (e.value || 0); }
+		} else if (e.type === 'maybe-draw') {
+			// Package Dealer: chance to draw another card (fires on card-drawn)
+			if (state.rng() < (e.chance ?? 0.5)) drawCards(state, pi, e.value || 1);
+		} else if (e.type === 'eat-enemy-deck-minion') {
+			// Hamm, the Hungry: eat a random minion in the enemy's deck, gain its stats (or fixed)
+			if (source) {
+				for (const o of enemies) {
+					const idxs = state.players[o].deck.map((id, i) => ({ id, i })).filter(x => state.cardsById[x.id]?.type === 'creature');
+					if (!idxs.length) continue;
+					const pick = idxs[Math.floor(state.rng() * idxs.length)];
+					state.players[o].deck.splice(pick.i, 1);
+					source.attack += (e.attack || 2); source.maxHealth += (e.health || 2);
+					emit(state, { type: 'buff', uid: source.uid, attack: e.attack || 2, health: e.health || 2 });
+					break;
+				}
+			}
 		} else if (e.type === 'set-weapon-stats') {
 			// Swarthy Swordshiner: set your weapon's Attack and Durability
 			const w = state.players[pi].weapon;
