@@ -2935,6 +2935,12 @@ function runSecretEffects(state, pi, effects, ctx) {
 				if (m && !isDead(m) && m.type !== 'location') { m.attack = (m.attack || 0) * 2; m.maxHealth = (m.maxHealth || 0) * 2; emit(state, { type: 'buff', uid: m.uid, attack: m.attack, hp: hp(m) }); }
 				break;
 			}
+			case 'buff-damaged-minion': {
+				// Rioter: after a friendly minion survives damage, give it +N Attack
+				const m = ctx.damaged;
+				if (m && !isDead(m) && m !== ctx.self && m.type !== 'location') { m.attack += e.attack || 1; m.maxHealth += e.health || 0; emit(state, { type: 'buff', uid: m.uid, attack: m.attack, hp: hp(m) }); }
+				break;
+			}
 			case 'dormant-played-minion': {
 				// Warden Maiev: the just-played minion goes Dormant for N turns
 				const m = ctx.minion;
@@ -5421,6 +5427,7 @@ function execEffects(state, pi, effects, target, source) {
 				if (e.per === 'turns-taken') n = Math.max(1, Math.ceil((state.turnNumber || 1) / 2));
 				else if (e.per === 'damaged-minions') { for (const pl of state.players) for (const c of pl.board) if (!isDead(c) && c.type !== 'location' && c.damage > 0) n++; }
 				else if (e.per === 'discards-game') n = (state.players[pi].discardLogIds || []).length;
+				else if (e.per === 'cards-played') n = state.players[pi].cardsPlayedThisTurn || 0; // Defias Wannabe: each OTHER card played this turn (counter increments after the battlecry, so it already excludes this card)
 				if (n > 0) { source.attack += (e.attack || 0) * n; source.maxHealth += (e.health || 0) * n; emit(state, { type: 'buff', uid: source.uid, attack: source.attack, hp: hp(source) }); }
 			}
 		} else if (e.type === 'cast-remembered-on-self') {

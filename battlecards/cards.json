@@ -121387,6 +121387,384 @@
           "target": "own-hero"
         }
       ]
+    },
+    {
+      "id": "disguised_executioner",
+      "name": "Disguised Executioner",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "neutral",
+      "attack": 5,
+      "health": 4,
+      "rarity": "rare",
+      "set": "ESCAPEFROM_VIOLET_HOLD",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Can be played on either side. Battlecry: Destroy a random adjacent minion. (Approximated: a random enemy minion; either-side not modeled.)",
+      "effects": [
+        {
+          "type": "destroy-random"
+        }
+      ]
+    },
+    {
+      "id": "enthralled_shade",
+      "name": "Enthralled Shade",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "priest",
+      "attack": 4,
+      "health": 3,
+      "rarity": "common",
+      "set": "ESCAPEFROM_VIOLET_HOLD",
+      "tribe": "Undead",
+      "keywords": [
+        "deathrattle"
+      ],
+      "description": "Deathrattle: Reduce the Cost of cards in your hand that were copied from your opponent by (1). (Not modeled: copied-card tracking.)"
+    },
+    {
+      "id": "hellraiser",
+      "name": "Hellraiser",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "demonhunter",
+      "attack": 2,
+      "health": 2,
+      "rarity": "rare",
+      "set": "ESCAPEFROM_VIOLET_HOLD",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Discover a card in your deck. If it's empty, gain +4/+4 instead.",
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "deckEmpty": true
+          },
+          "then": [
+            {
+              "type": "buff",
+              "attack": 4,
+              "health": 4,
+              "target": "self"
+            }
+          ],
+          "else": [
+            {
+              "type": "discover",
+              "fromOwnDeck": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "imp_gang_stooge",
+      "name": "Imp Gang Stooge",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "warlock",
+      "attack": 2,
+      "health": 5,
+      "rarity": "common",
+      "set": "ESCAPEFROM_VIOLET_HOLD",
+      "tribe": "Demon",
+      "keywords": [
+        "taunt",
+        "deathrattle"
+      ],
+      "description": "Taunt. Deathrattle: Put a 9/9 Demon with Taunt and Lifesteal on the bottom of your deck.",
+      "deathrattle": [
+        {
+          "type": "put-card-bottom-deck",
+          "id": "jail_gang_boss"
+        }
+      ]
+    },
+    {
+      "id": "lotus_troublemaker",
+      "name": "Lotus Troublemaker",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "rogue",
+      "attack": 2,
+      "health": 2,
+      "rarity": "rare",
+      "set": "ESCAPEFROM_VIOLET_HOLD",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Deal 2 damage to a random enemy. (Not modeled: extra shots for Mana.)",
+      "effects": [
+        {
+          "type": "random-damage",
+          "value": 2,
+          "count": 1,
+          "pool": "enemies"
+        }
+      ]
+    },
+    {
+      "id": "r4t_c4tch3r",
+      "name": "R4T-C4TCH3R",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "hunter",
+      "attack": 4,
+      "health": 2,
+      "rarity": "rare",
+      "set": "ESCAPEFROM_VIOLET_HOLD",
+      "tribe": "Mech",
+      "keywords": [
+        "battlecry",
+        "deathrattle"
+      ],
+      "description": "Battlecry: Copy all spells in your deck. Deathrattle: Draw one. (Approximated: Deathrattle draws a spell; copy-all not modeled.)",
+      "deathrattle": [
+        {
+          "type": "tutor",
+          "cardType": "spell",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "id": "rioter",
+      "name": "Rioter",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "warrior",
+      "attack": 1,
+      "health": 6,
+      "rarity": "rare",
+      "set": "ESCAPEFROM_VIOLET_HOLD",
+      "description": "After a friendly minion survives damage, give it +1 Attack.",
+      "ongoing": {
+        "on": "friendly-creature-damaged",
+        "effects": [
+          {
+            "type": "buff-damaged-minion",
+            "attack": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "spire_security",
+      "name": "Spire Security",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "mage",
+      "attack": 3,
+      "health": 4,
+      "rarity": "common",
+      "set": "ESCAPEFROM_VIOLET_HOLD",
+      "tribe": "Elemental",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Reveal a spell in your deck. If it costs (5) or more, deal 5 damage split among enemy minions. (Approximated: always deals the split.)",
+      "effects": [
+        {
+          "type": "random-damage",
+          "value": 1,
+          "count": 5,
+          "pool": "enemy-creatures"
+        }
+      ]
+    },
+    {
+      "id": "spiteful_chef",
+      "name": "Spiteful Chef",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "druid",
+      "attack": 3,
+      "health": 2,
+      "rarity": "rare",
+      "set": "ESCAPEFROM_VIOLET_HOLD",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Summon a 2-Cost Taunt minion. If you have 10 or more Mana, summon a 6-Cost instead.",
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "manathirst": 10
+          },
+          "then": [
+            {
+              "type": "summon-random",
+              "cost": 6,
+              "requireKeyword": "taunt"
+            }
+          ],
+          "else": [
+            {
+              "type": "summon-random",
+              "cost": 2,
+              "requireKeyword": "taunt"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "vigilant_sentry",
+      "name": "Vigilant Sentry",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "paladin",
+      "attack": 2,
+      "health": 3,
+      "rarity": "rare",
+      "set": "ESCAPEFROM_VIOLET_HOLD",
+      "keywords": [
+        "taunt",
+        "battlecry"
+      ],
+      "description": "Taunt. Battlecry: If your deck has no Neutral cards, summon two Vigilant Sentries.",
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "deckNoNeutral": true
+          },
+          "then": [
+            {
+              "type": "summon-copy-of-self",
+              "count": 2
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "violet_punisher",
+      "name": "Violet Punisher",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "neutral",
+      "attack": 4,
+      "health": 3,
+      "rarity": "epic",
+      "set": "ESCAPEFROM_VIOLET_HOLD",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Choose an enemy minion. Steal its Bonus Effects and gain +1/+1 for each stolen. (Not modeled: Bonus Effects.)"
+    },
+    {
+      "id": "activated_golem",
+      "name": "Activated Golem",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "neutral",
+      "attack": 4,
+      "health": 5,
+      "rarity": "common",
+      "set": "ESCAPEFROM_VIOLET_HOLD",
+      "description": "At the end of each turn, gain Reborn.",
+      "ongoing": {
+        "on": "every-turn-end",
+        "effects": [
+          {
+            "type": "grant-self",
+            "keyword": "reborn"
+          }
+        ]
+      }
+    },
+    {
+      "id": "ancient_augur",
+      "name": "Ancient Augur",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "warlock",
+      "attack": 2,
+      "health": 6,
+      "rarity": "rare",
+      "set": "ESCAPEFROM_VIOLET_HOLD",
+      "keywords": [
+        "battlecry",
+        "deathrattle"
+      ],
+      "description": "Battlecry: Look at 3 cards in your opponent's hand and secretly choose one. Deathrattle: Discard it. (Not modeled: hand peek/discard.)"
+    },
+    {
+      "id": "dalaran_champion",
+      "name": "Dalaran Champion",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "paladin",
+      "attack": 3,
+      "health": 3,
+      "rarity": "rare",
+      "set": "ESCAPEFROM_VIOLET_HOLD",
+      "keywords": [
+        "divine_shield",
+        "taunt"
+      ],
+      "description": "Divine Shield, Taunt. Whenever this gains stats, gain an extra +1/+1. (Not modeled: stat-gain trigger.)"
+    },
+    {
+      "id": "defias_wannabe",
+      "name": "Defias Wannabe",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "rogue",
+      "attack": 2,
+      "health": 2,
+      "rarity": "common",
+      "set": "ESCAPEFROM_VIOLET_HOLD",
+      "keywords": [
+        "combo"
+      ],
+      "description": "Prepare. Combo: Gain +1/+1 for each other card played this turn. (Not modeled: Prepare.)",
+      "combo": [
+        {
+          "type": "buff-self-per",
+          "per": "cards-played",
+          "attack": 1,
+          "health": 1
+        }
+      ]
+    },
+    {
+      "id": "godfrey_the_betrayer",
+      "name": "Godfrey the Betrayer",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "warlock",
+      "attack": 5,
+      "health": 4,
+      "rarity": "legendary",
+      "set": "ESCAPEFROM_VIOLET_HOLD",
+      "tribe": "Undead",
+      "description": "Start of Game: Overdrawn cards return to your hand when you have space. They cost (1) less. (Not modeled: Start-of-Game.)"
+    },
+    {
+      "id": "jail_gang_boss",
+      "name": "Imp Gang Boss",
+      "type": "creature",
+      "cost": 9,
+      "cardClass": "warlock",
+      "attack": 9,
+      "health": 9,
+      "rarity": "common",
+      "set": "ESCAPEFROM_VIOLET_HOLD",
+      "tribe": "Demon",
+      "token": true,
+      "collectible": false,
+      "keywords": [
+        "taunt",
+        "lifesteal"
+      ],
+      "description": "A 9/9 Demon with Taunt and Lifesteal."
     }
   ]
 }
