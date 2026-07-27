@@ -111880,6 +111880,347 @@
       "token": true,
       "collectible": false,
       "description": "A 2/2 Crewmate."
+    },
+    {
+      "id": "farseer_nobundo",
+      "name": "Farseer Nobundo",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "shaman",
+      "attack": 6,
+      "health": 4,
+      "rarity": "legendary",
+      "set": "SPACE",
+      "tribe": "Draenei",
+      "keywords": [
+        "deathrattle"
+      ],
+      "description": "Deathrattle: Open the Galaxy's Lens. It absorbs the power of the next spell you cast. (Not modeled: Galaxy's Lens.)"
+    },
+    {
+      "id": "lunar_trailblazer",
+      "name": "Lunar Trailblazer",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "neutral",
+      "attack": 6,
+      "health": 4,
+      "rarity": "rare",
+      "set": "SPACE",
+      "tribe": "Draenei",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Set the Cost of a random spell in your hand to this minion's Cost.",
+      "effects": [
+        {
+          "type": "set-hand-spell-cost",
+          "random": true,
+          "fromSourceCost": true
+        }
+      ]
+    },
+    {
+      "id": "mutating_lifeform",
+      "name": "Mutating Lifeform",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "neutral",
+      "attack": 3,
+      "health": 8,
+      "rarity": "epic",
+      "set": "SPACE",
+      "tribe": "All",
+      "description": "After this survives damage, gain a random Bonus Effect. (Not modeled: Bonus Effects.)"
+    },
+    {
+      "id": "siege_tank",
+      "name": "Siege Tank",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "shaman",
+      "attack": 5,
+      "health": 5,
+      "rarity": "rare",
+      "set": "SPACE",
+      "tribe": "Mech",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Deal 10 damage to a random enemy minion. (Not modeled: Starship transform.)",
+      "effects": [
+        {
+          "type": "random-damage",
+          "value": 10,
+          "count": 1,
+          "pool": "enemy-creatures"
+        }
+      ]
+    },
+    {
+      "id": "star_vulpera",
+      "name": "Star Vulpera",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "neutral",
+      "attack": 4,
+      "health": 5,
+      "rarity": "common",
+      "set": "SPACE",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Tradeable. Battlecry: Destroy an enemy Starship or Starship Piece. (Not modeled: Starships / Tradeable.)"
+    },
+    {
+      "id": "gravitational_displacer",
+      "name": "The Gravitational Displacer",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "rogue",
+      "attack": 5,
+      "health": 4,
+      "rarity": "epic",
+      "set": "SPACE",
+      "description": "Starship Piece. When this is launched, summon a copy of the Starship. (Not modeled: Starships.)"
+    },
+    {
+      "id": "xortoth_breaker_of_stars",
+      "name": "Xor'toth, Breaker of Stars",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "demonhunter",
+      "attack": 5,
+      "health": 5,
+      "rarity": "legendary",
+      "set": "SPACE",
+      "tribe": "Demon",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Add two Stars to both sides of your hand. When they collide, deal 5 damage to all enemies. (Approximated: deal 5 to all enemies now.)",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 5,
+          "target": "enemies"
+        }
+      ]
+    },
+    {
+      "id": "archimonde",
+      "name": "Archimonde",
+      "type": "creature",
+      "cost": 6,
+      "cardClass": "warlock",
+      "attack": 6,
+      "health": 6,
+      "rarity": "legendary",
+      "set": "SPACE",
+      "tribe": "Demon",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Summon every Demon you played this game that didn't start in your deck. (Approximated: summon Demons that died this game.)",
+      "effects": [
+        {
+          "type": "summon-died-tribe",
+          "tribe": "Demon"
+        }
+      ]
+    },
+    {
+      "id": "arkwing_pilot",
+      "name": "Arkwing Pilot",
+      "type": "creature",
+      "cost": 6,
+      "cardClass": "mage",
+      "attack": 4,
+      "health": 3,
+      "rarity": "epic",
+      "set": "SPACE",
+      "tribe": "Draenei",
+      "description": "At the end of your turn, deal 3 damage to a random enemy. Spellburst: Summon an Arkwing Pilot.",
+      "ongoings": [
+        {
+          "on": "turn-end",
+          "effects": [
+            {
+              "type": "random-damage",
+              "value": 3,
+              "count": 1,
+              "pool": "enemies"
+            }
+          ]
+        },
+        {
+          "on": "spell-played",
+          "once": true,
+          "effects": [
+            {
+              "type": "summon-copy-of-self",
+              "count": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "dark_templar",
+      "name": "Dark Templar",
+      "type": "creature",
+      "cost": 6,
+      "cardClass": "rogue",
+      "attack": 5,
+      "health": 3,
+      "rarity": "rare",
+      "set": "SPACE",
+      "keywords": [
+        "stealth",
+        "battlecry"
+      ],
+      "description": "Stealth. Battlecry: Destroy an enemy minion. (Not modeled: Archon merge.)",
+      "effects": [
+        {
+          "type": "destroy",
+          "target": "enemy-creature"
+        }
+      ]
+    },
+    {
+      "id": "exarch_maladaar",
+      "name": "Exarch Maladaar",
+      "type": "creature",
+      "cost": 6,
+      "cardClass": "deathknight",
+      "attack": 5,
+      "health": 5,
+      "rarity": "legendary",
+      "set": "SPACE",
+      "tribe": "Draenei",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: The next card you play this turn costs Corpses instead of Mana. (Not modeled: Corpse cost.)"
+    },
+    {
+      "id": "high_templar",
+      "name": "High Templar",
+      "type": "creature",
+      "cost": 6,
+      "cardClass": "rogue",
+      "attack": 3,
+      "health": 5,
+      "rarity": "rare",
+      "set": "SPACE",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Deal 2 damage to all enemies. (Not modeled: Archon merge.)",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 2,
+          "target": "enemies"
+        }
+      ]
+    },
+    {
+      "id": "lumia",
+      "name": "Lumia",
+      "type": "creature",
+      "cost": 6,
+      "cardClass": "paladin",
+      "attack": 9,
+      "health": 9,
+      "rarity": "legendary",
+      "set": "SPACE",
+      "keywords": [
+        "lifesteal"
+      ],
+      "description": "Lifesteal. After a hero takes damage, they become Immune for the rest of the turn. (Not modeled: Immune-on-damage.)"
+    },
+    {
+      "id": "saruun",
+      "name": "Saruun",
+      "type": "creature",
+      "cost": 6,
+      "cardClass": "mage",
+      "attack": 7,
+      "health": 6,
+      "rarity": "legendary",
+      "set": "SPACE",
+      "tribe": "Elemental",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Give all Elementals in your deck Fire Spell Damage +1. (Not modeled: deck Elemental buff.)"
+    },
+    {
+      "id": "spore_empress_moldara",
+      "name": "Spore Empress Moldara",
+      "type": "creature",
+      "cost": 6,
+      "cardClass": "warrior",
+      "attack": 6,
+      "health": 7,
+      "rarity": "legendary",
+      "set": "SPACE",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Start of Game: Shuffle 7 Replicating Spores into your deck. Battlecry: Cast one. (Approximated: shuffle 7 Spores; Start of Game not modeled.)",
+      "effects": [
+        {
+          "type": "shuffle-into-own-deck",
+          "id": "gdb_spore",
+          "count": 7
+        }
+      ]
+    },
+    {
+      "id": "cosmonaut",
+      "name": "Cosmonaut",
+      "type": "creature",
+      "cost": 7,
+      "cardClass": "shaman",
+      "attack": 5,
+      "health": 5,
+      "rarity": "rare",
+      "set": "SPACE",
+      "tribe": "Draenei",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Discover a spell from your deck. Reduce its Cost by (5).",
+      "effects": [
+        {
+          "type": "discover",
+          "cardType": "spell",
+          "fromOwnDeck": true,
+          "costMod": -5
+        }
+      ]
+    },
+    {
+      "id": "gdb_spore",
+      "name": "Replicating Spore",
+      "type": "sorcery",
+      "cost": 1,
+      "cardClass": "warrior",
+      "rarity": "common",
+      "set": "SPACE",
+      "token": true,
+      "collectible": false,
+      "description": "Deal 3 damage to a random enemy.",
+      "effects": [
+        {
+          "type": "random-damage",
+          "value": 3,
+          "count": 1,
+          "pool": "enemies"
+        }
+      ]
     }
   ]
 }

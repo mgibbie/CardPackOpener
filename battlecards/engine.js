@@ -4876,8 +4876,10 @@ function execEffects(state, pi, effects, target, source) {
 				mp.deck.push(b); state.players[o].deck.push(a);
 			}
 		} else if (e.type === 'set-hand-spell-cost') {
-			// Naga Sand Witch: set the Cost of spells in your hand
-			for (const c of state.players[pi].hand) if (isSpellType(c)) c.cost = e.value ?? 5;
+			// Naga Sand Witch: set the Cost of spells in your hand; Lunar Trailblazer: one random spell -> this minion's Cost
+			const cost = e.fromSourceCost && source ? (source.cost || 0) : (e.value ?? 5);
+			if (e.random) { const pool = state.players[pi].hand.filter(c => isSpellType(c)); if (pool.length) pool[Math.floor(state.rng() * pool.length)].cost = cost; }
+			else for (const c of state.players[pi].hand) if (isSpellType(c)) c.cost = cost;
 		} else if (e.type === 'summon-cheapest-from-hand-each') {
 			// Blatant Decoy: each player summons the lowest-Cost creature from their hand
 			for (let s2 = 0; s2 < state.players.length; s2++) {
