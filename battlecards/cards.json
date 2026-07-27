@@ -108568,6 +108568,358 @@
           "target": "friendly-any"
         }
       ]
+    },
+    {
+      "id": "tidepool_pupil",
+      "name": "Tidepool Pupil",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "neutral",
+      "attack": 2,
+      "health": 2,
+      "rarity": "common",
+      "set": "ISLAND_VACATION",
+      "tribe": "Naga",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: If you've cast 3 spells while holding this, Discover one of them.",
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "spellsCastWhileHeld": 3
+          },
+          "then": [
+            {
+              "type": "discover",
+              "cardType": "spell"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "travel_agent",
+      "name": "Travel Agent",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "neutral",
+      "attack": 2,
+      "health": 2,
+      "rarity": "rare",
+      "set": "ISLAND_VACATION",
+      "tribe": "Pirate",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Discover a location from any class.",
+      "effects": [
+        {
+          "type": "discover",
+          "cardType": "spell"
+        }
+      ]
+    },
+    {
+      "id": "xb931_housekeeper",
+      "name": "XB-931 Housekeeper",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "neutral",
+      "attack": 2,
+      "health": 3,
+      "rarity": "common",
+      "set": "ISLAND_VACATION",
+      "tribe": "Mech",
+      "description": "After you use a location, gain 3 Armor."
+    },
+    {
+      "id": "bumbling_bellhop",
+      "name": "Bumbling Bellhop",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "neutral",
+      "attack": 3,
+      "health": 3,
+      "rarity": "rare",
+      "set": "ISLAND_VACATION",
+      "tribe": "Undead",
+      "keywords": [
+        "taunt",
+        "battlecry"
+      ],
+      "description": "Taunt. Battlecry: If you're holding a spell that costs (5) or more, summon a copy of this.",
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "holdingSpellMinCost": 5
+          },
+          "then": [
+            {
+              "type": "summon-copy-of-self",
+              "count": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "carefree_cookie",
+      "name": "Carefree Cookie",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "shaman",
+      "attack": 2,
+      "health": 2,
+      "rarity": "legendary",
+      "set": "ISLAND_VACATION",
+      "tribe": "Murloc",
+      "description": "Demon Hunter Tourist. After a friendly minion dies, summon a random minion that costs (1) more.",
+      "ongoing": {
+        "on": "friendly-creature-died",
+        "effects": [
+          {
+            "type": "summon-random-cost-from-dead",
+            "plus": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "carress_cabaret_star",
+      "name": "Carress, Cabaret Star",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "shaman",
+      "attack": 3,
+      "health": 3,
+      "rarity": "legendary",
+      "set": "ISLAND_VACATION",
+      "tribe": "Naga",
+      "description": "While in your hand, play two different spell schools to transform."
+    },
+    {
+      "id": "chatty_macaw",
+      "name": "Chatty Macaw",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "hunter",
+      "attack": 3,
+      "health": 3,
+      "rarity": "epic",
+      "set": "ISLAND_VACATION",
+      "tribe": "Beast",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Repeat the last spell you cast at an enemy (at a random enemy if possible).",
+      "effects": [
+        {
+          "type": "recast-own-last-spell"
+        }
+      ]
+    },
+    {
+      "id": "chillin_voljin",
+      "name": "Chillin' Vol'jin",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "priest",
+      "attack": 3,
+      "health": 3,
+      "rarity": "legendary",
+      "set": "ISLAND_VACATION",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Hunter Tourist. Battlecry: Choose 2 minions. Swap their stats.",
+      "effects": [
+        {
+          "type": "swap-stats-two",
+          "target": "creature"
+        }
+      ]
+    },
+    {
+      "id": "clumsy_steward",
+      "name": "Clumsy Steward",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "neutral",
+      "attack": 2,
+      "health": 4,
+      "rarity": "rare",
+      "set": "ISLAND_VACATION",
+      "description": "After ANY card is drawn, make it Temporary."
+    },
+    {
+      "id": "concierge",
+      "name": "Concierge",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "neutral",
+      "attack": 3,
+      "health": 4,
+      "rarity": "common",
+      "set": "ISLAND_VACATION",
+      "tribe": "Pirate",
+      "foreignCostReduce": 1,
+      "description": "Your cards from another class cost (1) less."
+    },
+    {
+      "id": "cryopractor",
+      "name": "Cryopractor",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "neutral",
+      "attack": 3,
+      "health": 3,
+      "rarity": "common",
+      "set": "ISLAND_VACATION",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Give a minion +3/+3 and Freeze it.",
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 3,
+          "health": 3,
+          "target": "creature"
+        },
+        {
+          "type": "freeze",
+          "target": "creature"
+        }
+      ]
+    },
+    {
+      "id": "customs_enforcer",
+      "name": "Customs Enforcer",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "neutral",
+      "attack": 2,
+      "health": 5,
+      "rarity": "rare",
+      "set": "ISLAND_VACATION",
+      "tribe": "Pirate",
+      "description": "Enemy cards that didn't start in their deck cost (2) more."
+    },
+    {
+      "id": "dreamplanner_zephrys",
+      "name": "Dreamplanner Zephrys",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "neutral",
+      "attack": 3,
+      "health": 2,
+      "rarity": "legendary",
+      "set": "ISLAND_VACATION",
+      "tribe": "Elemental",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Choose a Travel Tour to get two potentially perfect cards from it.",
+      "effects": [
+        {
+          "type": "conjure-random",
+          "count": 2
+        }
+      ]
+    },
+    {
+      "id": "frostbitten_freebooter",
+      "name": "Frostbitten Freebooter",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "deathknight",
+      "attack": 2,
+      "health": 2,
+      "rarity": "epic",
+      "set": "ISLAND_VACATION",
+      "tribe": "Undead",
+      "keywords": [
+        "deathrattle"
+      ],
+      "description": "Deathrattle: Freeze 3 random enemies. Any that were already Frozen take 5 damage instead.",
+      "deathrattle": [
+        {
+          "type": "freeze",
+          "target": "random-enemy",
+          "count": 3
+        }
+      ]
+    },
+    {
+      "id": "gorgonzormu",
+      "name": "Gorgonzormu",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "neutral",
+      "attack": 3,
+      "health": 3,
+      "rarity": "legendary",
+      "set": "ISLAND_VACATION",
+      "tribe": "Dragon",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Get a 2-Cost Cheese that summons three 1-Cost minions. It upgrades each turn.",
+      "effects": [
+        {
+          "type": "add-card",
+          "id": "vac_cheese",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "id": "hozen_roughhouser",
+      "name": "Hozen Roughhouser",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "neutral",
+      "attack": 2,
+      "health": 4,
+      "rarity": "common",
+      "set": "ISLAND_VACATION",
+      "tribe": "Pirate",
+      "description": "Whenever another friendly Pirate attacks, give it +1/+1.",
+      "ongoing": {
+        "on": "friendly-attacks",
+        "if": {
+          "tribe": "Pirate"
+        },
+        "effects": [
+          {
+            "type": "buff-attacker",
+            "attack": 1,
+            "health": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "vac_cheese",
+      "name": "Cheese",
+      "type": "sorcery",
+      "cost": 2,
+      "cardClass": "neutral",
+      "rarity": "common",
+      "set": "ISLAND_VACATION",
+      "token": true,
+      "collectible": false,
+      "description": "Summon three 1-Cost minions.",
+      "effects": [
+        {
+          "type": "summon-random",
+          "cost": 1,
+          "count": 3
+        }
+      ]
     }
   ]
 }

@@ -671,6 +671,7 @@ const CHOSEN = {
 	'swap-attack-with': { creature: 'creature', 'friendly-creature': 'friendly-creature' },
 	'freeze-gain-armor': { 'enemy-creature': 'enemy-creature' },
 	'set-target-stats-from-source': { creature: 'creature', 'enemy-creature': 'enemy-creature' },
+	'swap-stats-two': { creature: 'creature' },
 	'swap-enemy-with-deck': { 'enemy-creature': 'enemy-creature' },
 	fireworks: { 'friendly-creature': 'friendly-creature' },
 	'bounce-and-buff': { 'friendly-creature': 'friendly-creature' },
@@ -2025,6 +2026,18 @@ function runSecretEffects(state, pi, effects, ctx) {
 				// Brain Masseuse: deal the damage this minion just took to your own hero
 				const amt2 = ctx.amount || 0;
 				if (amt2 > 0) damageHero(state, pi, amt2, pi);
+				break;
+			}
+			case 'buff-attacker': {
+				// Hozen Roughhouser: buff the attacking minion (ctx.minion from friendly-attacks)
+				const m = ctx.minion;
+				if (m && m !== ctx.self && !isDead(m)) { m.attack += e.attack || 0; m.maxHealth += e.health || 0; emit(state, { type: 'buff', uid: m.uid, attack: m.attack, hp: hp(m) }); }
+				break;
+			}
+			case 'summon-random-cost-from-dead': {
+				// Carefree Cookie: summon a random minion costing N more than the friendly that just died
+				const dead = ctx.dead;
+				if (dead) { const want = (dead.cost || 0) + (e.plus || 1); const pool = Object.values(state.cardsById).filter(d => d.type === 'creature' && (d.cost || 0) === want && !d.token && d.collectible !== false && !d.companion && !d.commander && !(d.colors && d.colors.length)); if (pool.length) summon(state, pi, pool[Math.floor(state.rng() * pool.length)]); }
 				break;
 			}
 			case 'grant-keyword-played': {
@@ -5948,6 +5961,15 @@ function execEffects(state, pi, effects, target, source) {
 			const p = state.players[pi];
 			const pool = [...new Set(p.deck)].map(id => state.cardsById[id]).filter(d => d && d.type === 'creature' && !d.token);
 			for (let n = 0; n < (e.count || 4) && pool.length; n++) { if (p.board.filter(c => !isDead(c)).length >= 7) break; const def = JSON.parse(JSON.stringify(pool[Math.floor(state.rng() * pool.length)])); if (e.stats != null) { def.attack = e.stats; def.health = e.stats; } def.token = true; def.id = 'token_' + def.id; summon(state, pi, def); }
+		} else if (e.type === 'recast-own-last-spell') {
+			// Chatty Macaw: recast the last spell you cast (at a random enemy if it targets)
+			const last = state.players[pi].lastSpellPlayed;
+			const def = last && state.cardsById[last.id];
+			if (def && isSpellType(def)) { let tgt = last.target || null; const foesM = []; for (const o of enemies) for (const c of state.players[o].board) if (!isDead(c) && c.type !== 'location') foesM.push({ type: 'creature', uid: c.uid, player: o }); if (foesM.length) tgt = foesM[Math.floor(state.rng() * foesM.length)]; else { const eh = enemyHero(); if (eh != null) tgt = { type: 'hero', player: eh }; } execEffects(state, pi, JSON.parse(JSON.stringify(def.effects || [])), tgt, source); }
+		} else if (e.type === 'swap-stats-two') {
+			// Chillin' Vol'jin (approx): swap the stats of the chosen minion with a random OTHER minion
+			const t = chosenCreature();
+			if (t) { const pool = []; for (const pl of state.players) for (const c of pl.board) if (c !== t && !isDead(c) && c.type !== 'location') pool.push(c); if (pool.length) { const t2 = pool[Math.floor(state.rng() * pool.length)]; const a = t.attack, h2 = hp(t); t.attack = t2.attack; t.maxHealth = hp(t2); t.damage = 0; t2.attack = a; t2.maxHealth = h2; t2.damage = 0; emit(state, { type: 'buff', uid: t.uid, attack: t.attack, hp: hp(t) }); emit(state, { type: 'buff', uid: t2.uid, attack: t2.attack, hp: hp(t2) }); } }
 		} else if (e.type === 'put-highest-hand-on-top') {
 			// Envoy of Prosperity: put the highest-Cost card in your hand on top of your deck
 			const p = state.players[pi];
