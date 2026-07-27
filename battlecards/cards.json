@@ -102109,6 +102109,430 @@
           "target": "any"
         }
       ]
+    },
+    {
+      "id": "ravenous_kraken",
+      "name": "Ravenous Kraken",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "neutral",
+      "attack": 2,
+      "health": 5,
+      "rarity": "common",
+      "set": "TITANS",
+      "tribe": "Beast",
+      "keywords": [
+        "battlecry",
+        "deathrattle"
+      ],
+      "description": "Battlecry: Destroy a friendly minion. Deathrattle: Summon a copy of it.",
+      "effects": [
+        {
+          "type": "destroy-friendly-remember",
+          "target": "friendly-creature"
+        }
+      ],
+      "deathrattle": [
+        {
+          "type": "summon-remembered"
+        }
+      ]
+    },
+    {
+      "id": "razorscale",
+      "name": "Razorscale",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "neutral",
+      "attack": 2,
+      "health": 4,
+      "rarity": "epic",
+      "set": "TITANS",
+      "tribe": "Dragon",
+      "static": {
+        "type": "cost-floor",
+        "value": 2
+      },
+      "description": "Cards can't cost less than (2)."
+    },
+    {
+      "id": "relentless_worg",
+      "name": "Relentless Worg",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "neutral",
+      "attack": 2,
+      "health": 4,
+      "rarity": "common",
+      "set": "TITANS",
+      "tribe": "Beast",
+      "keywords": [
+        "rush"
+      ],
+      "description": "Rush. After this attacks and kills a minion, restore this to full Health.",
+      "ongoing": {
+        "on": "self-kills-creature",
+        "effects": [
+          {
+            "type": "heal-self-full"
+          }
+        ]
+      }
+    },
+    {
+      "id": "sharp_eyed_seeker",
+      "name": "Sharp-Eyed Seeker",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "neutral",
+      "attack": 3,
+      "health": 3,
+      "rarity": "common",
+      "set": "TITANS",
+      "tribe": "Beast",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: If there is a card in your deck that didn't start there, draw it.",
+      "effects": [
+        {
+          "type": "draw",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "sickly_grimewalker",
+      "name": "Sickly Grimewalker",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "deathknight",
+      "attack": 2,
+      "health": 4,
+      "rarity": "common",
+      "set": "TITANS",
+      "tribe": "Undead",
+      "description": "After you summon an Undead, give it Poisonous.",
+      "ongoing": {
+        "on": "summoned",
+        "effects": [
+          {
+            "type": "buff-summoned-if-tribe",
+            "tribe": "Undead",
+            "grant": "poisonous"
+          }
+        ]
+      }
+    },
+    {
+      "id": "soulburner_varia",
+      "name": "Soulburner Varia",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "priest",
+      "attack": 1,
+      "health": 5,
+      "rarity": "legendary",
+      "set": "TITANS",
+      "tribe": "Undead",
+      "description": "After a friendly Undead dies, deal 2 damage to the enemy hero and get a random Shadow Priest spell.",
+      "ongoing": {
+        "on": "friendly-creature-died",
+        "if": {
+          "tribe": "Undead"
+        },
+        "effects": [
+          {
+            "type": "damage",
+            "value": 2,
+            "target": "enemy-hero"
+          },
+          {
+            "type": "conjure-random",
+            "cardType": "spell",
+            "tribe": "Shadow"
+          }
+        ]
+      }
+    },
+    {
+      "id": "starlight_whelp",
+      "name": "Starlight Whelp",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "neutral",
+      "attack": 4,
+      "health": 3,
+      "rarity": "rare",
+      "set": "TITANS",
+      "tribe": "Dragon",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Get a random card from your starting hand.",
+      "effects": [
+        {
+          "type": "add-from-opening-hand",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "id": "steam_guardian",
+      "name": "Steam Guardian",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "warrior",
+      "attack": 3,
+      "health": 3,
+      "rarity": "common",
+      "set": "TITANS",
+      "tribe": "Elemental",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Draw a spell. Reduce the Cost of a random Fire spell in your hand by (1).",
+      "effects": [
+        {
+          "type": "tutor",
+          "cardType": "spell",
+          "count": 1
+        },
+        {
+          "type": "reduce-random-hand-cost",
+          "school": "Fire",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "student_of_the_stars",
+      "name": "Student of the Stars",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "priest",
+      "attack": 4,
+      "health": 3,
+      "rarity": "common",
+      "set": "TITANS",
+      "keywords": [
+        "deathrattle"
+      ],
+      "description": "Deathrattle: Shuffle a copy of this into your deck with permanent +3/+3.",
+      "deathrattle": [
+        {
+          "type": "shuffle-tokens-into-deck",
+          "ids": [
+            "ttn_student_buffed"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "thorim_stormlord",
+      "name": "Thorim, Stormlord",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "shaman",
+      "attack": 3,
+      "health": 4,
+      "rarity": "legendary",
+      "set": "TITANS",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Unlock your Overloaded Mana Crystals. Draw that many cards.",
+      "effects": [
+        {
+          "type": "unlock-overload-draw"
+        }
+      ]
+    },
+    {
+      "id": "alarmed_securitybot",
+      "name": "Alarmed Securitybot",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "paladin",
+      "attack": 4,
+      "health": 3,
+      "rarity": "rare",
+      "set": "TITANS",
+      "tribe": "Mech",
+      "keywords": [
+        "deathrattle"
+      ],
+      "description": "Deathrattle: Draw another minion. Set its Attack, Health, and Cost to 5.",
+      "deathrattle": [
+        {
+          "type": "tutor",
+          "cardType": "creature",
+          "count": 1,
+          "setAttack": 5,
+          "setHealth": 5,
+          "setCost": 5
+        }
+      ]
+    },
+    {
+      "id": "algalon_the_observer",
+      "name": "Algalon the Observer",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "neutral",
+      "attack": 4,
+      "health": 4,
+      "rarity": "legendary",
+      "set": "TITANS",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Replace your Hero Power with Algalon's Vision."
+    },
+    {
+      "id": "astral_serpent",
+      "name": "Astral Serpent",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "paladin",
+      "attack": 3,
+      "health": 3,
+      "rarity": "common",
+      "set": "TITANS",
+      "tribe": "Dragon",
+      "description": "At the end of your turn, if this didn't attack, draw 2 cards.",
+      "ongoing": {
+        "on": "turn-end",
+        "effects": [
+          {
+            "type": "draw-if-self-didnt-attack",
+            "value": 2
+          }
+        ]
+      }
+    },
+    {
+      "id": "champion_of_storms",
+      "name": "Champion of Storms",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "shaman",
+      "attack": 3,
+      "health": 5,
+      "rarity": "epic",
+      "set": "TITANS",
+      "tribe": "Elemental",
+      "description": "After you cast a Nature spell, summon a 4/2 Elemental. Forge: With Rush.",
+      "ongoing": {
+        "on": "spell-played",
+        "if": {
+          "school": "Nature"
+        },
+        "effects": [
+          {
+            "type": "summon",
+            "count": 1,
+            "summonId": "ttn_elemental_42"
+          }
+        ]
+      }
+    },
+    {
+      "id": "disciple_of_eonar",
+      "name": "Disciple of Eonar",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "druid",
+      "attack": 4,
+      "health": 4,
+      "rarity": "epic",
+      "set": "TITANS",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Your next Choose One card or power has both effects combined."
+    },
+    {
+      "id": "disciple_of_sargeras",
+      "name": "Disciple of Sargeras",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "warlock",
+      "attack": 3,
+      "health": 3,
+      "rarity": "rare",
+      "set": "TITANS",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Discard a spell to summon two 3/2 Imps. Forge: Give them +2 Health and Taunt.",
+      "effects": [
+        {
+          "type": "discard-spell-then",
+          "then": [
+            {
+              "type": "summon",
+              "count": 2,
+              "summonId": "ttn_imp_32"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "ttn_elemental_42",
+      "name": "Elemental",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "shaman",
+      "attack": 4,
+      "health": 2,
+      "rarity": "common",
+      "set": "TITANS",
+      "tribe": "Elemental",
+      "token": true,
+      "collectible": false,
+      "description": "A 4/2 Elemental."
+    },
+    {
+      "id": "ttn_imp_32",
+      "name": "Imp",
+      "type": "creature",
+      "cost": 1,
+      "cardClass": "warlock",
+      "attack": 3,
+      "health": 2,
+      "rarity": "common",
+      "set": "TITANS",
+      "tribe": "Demon",
+      "token": true,
+      "collectible": false,
+      "description": "A 3/2 Imp."
+    },
+    {
+      "id": "ttn_student_buffed",
+      "name": "Student of the Stars",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "priest",
+      "attack": 7,
+      "health": 6,
+      "rarity": "common",
+      "set": "TITANS",
+      "token": true,
+      "collectible": false,
+      "keywords": [
+        "deathrattle"
+      ],
+      "description": "Deathrattle: Shuffle a copy of this into your deck with permanent +3/+3.",
+      "deathrattle": [
+        {
+          "type": "shuffle-tokens-into-deck",
+          "ids": [
+            "ttn_student_buffed"
+          ]
+        }
+      ]
     }
   ]
 }

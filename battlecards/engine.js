@@ -666,6 +666,7 @@ const CHOSEN = {
 	'buff-target-by-source-stats': { 'friendly-creature': 'friendly-creature' },
 	'grant-attack-while-alive': { creature: 'creature', 'friendly-creature': 'friendly-creature' },
 	'destroy-friendly-tribe-buff-all': { 'friendly-creature': 'friendly-creature' },
+	'destroy-friendly-remember': { 'friendly-creature': 'friendly-creature' },
 	'swap-enemy-with-deck': { 'enemy-creature': 'enemy-creature' },
 	fireworks: { 'friendly-creature': 'friendly-creature' },
 	'bounce-and-buff': { 'friendly-creature': 'friendly-creature' },
@@ -5854,6 +5855,33 @@ function execEffects(state, pi, effects, target, source) {
 		} else if (e.type === 'destroy-self') {
 			// Incorporeal Corporal: destroy the source minion
 			if (source && !isDead(source)) { source.damage = source.maxHealth; source.shield = false; emit(state, { type: 'destroy', uid: source.uid }); sweepDeaths(state); }
+		} else if (e.type === 'destroy-friendly-remember') {
+			// Ravenous Kraken: destroy a chosen friendly minion and remember it for a Deathrattle summon
+			const t = chosenCreature();
+			if (t && t.controller === pi && source) { source.rememberedId = t.id; t.damage = t.maxHealth; t.shield = false; emit(state, { type: 'destroy', uid: t.uid }); sweepDeaths(state); }
+		} else if (e.type === 'heal-self-full') {
+			// Relentless Worg: restore the source to full Health
+			if (source && !isDead(source)) { source.damage = 0; source.tempHealth = 0; emit(state, { type: 'heal', targetType: 'creature', uid: source.uid, amount: 0, hp: hp(source) }); }
+		} else if (e.type === 'unlock-overload-draw') {
+			// Thorim: unlock your Overloaded Mana Crystals, draw that many cards
+			const p = state.players[pi];
+			const locked = (p.overloadPending || 0) + (p.overloadLockedThisTurn || 0);
+			p.overloadPending = 0; p.overloadLockedThisTurn = 0;
+			if (p.mana) { p.mana.cur = Math.min(p.mana.max, (p.mana.cur || 0) + locked); emit(state, { type: 'manaGained', player: pi, amount: locked, mana: availableMana(p) }); }
+			if (locked > 0) drawCards(state, pi, locked);
+		} else if (e.type === 'add-from-opening-hand') {
+			// Starlight Whelp: add a random card from your starting hand to your hand
+			const p = state.players[pi];
+			const pool = (p.openingHand || []).filter(id => state.cardsById[id]);
+			for (let n = 0; n < (e.count || 1) && pool.length && p.hand.length < MAX_HAND; n++) { const id = pool[Math.floor(state.rng() * pool.length)]; const cp = instantiate(state.cardsById[id], pi); cp.zone = 'hand'; p.hand.push(cp); emit(state, { type: 'conjure', player: pi, card: cp, color: null }); }
+		} else if (e.type === 'discard-spell-then') {
+			// Disciple of Sargeras: discard a random spell, and if you did, run `then`
+			const p = state.players[pi];
+			const pool = p.hand.filter(c => c !== source && isSpellType(c));
+			if (pool.length) { const c = pool[Math.floor(state.rng() * pool.length)]; p.hand = p.hand.filter(x => x !== c); if (!c.token) p.discardLogIds.push(c.id); emit(state, { type: 'discard', player: pi, card: c }); if (e.then) execEffects(state, pi, e.then, target, source); }
+		} else if (e.type === 'draw-if-self-didnt-attack') {
+			// Astral Serpent: at end of turn, if this didn't attack, draw N (runs via turn-end ongoing)
+			if (source && (source.attacksUsed || 0) === 0) drawCards(state, pi, e.value || 2);
 		} else if (e.type === 'discard-random-tribe-remember') {
 			// Amorphous Slime: discard a random minion of a tribe and remember it for a later summon
 			const p = state.players[pi];
@@ -8297,6 +8325,7 @@ export function effectiveCost(state, pi, card) {
 	if (p.nextClassFree && card.type === 'creature' && (card.cardClass || '').split('__').includes(p.nextClassFree)) c = 0; // Blood Crusader (Health-cost approximated as free)
 	if (p.parityDiscount && (card.cost % 2) === (p.parityDiscount.parity === 'odd' ? 1 : 0)) c = Math.max(0, c - p.parityDiscount.amount); // Thaddius: odd/even-Cost cards cost less
 	if (p.freeMinionsCount > 0 && card.type === 'creature') c = 0; // Anub'Rekhan (Armor-cost approximated as free)
+	{ let floor = 0; for (const src of p.board) if (src.static?.type === 'cost-floor' && !isDead(src)) floor = Math.max(floor, src.static.value || 2); if (floor && !p.freeMinionsCount && !(p.firstCardFreeEachTurn && (p.cardsPlayedThisTurn || 0) === 0)) c = Math.max(c, floor); } // Razorscale: cards can't cost less than N
 	return Math.max(0, c);
 }
 
