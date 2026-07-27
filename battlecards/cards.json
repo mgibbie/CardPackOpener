@@ -120154,6 +120154,394 @@
         "taunt"
       ],
       "description": "A 3/3 Whelp with Taunt."
+    },
+    {
+      "id": "chromatic_broodmother",
+      "name": "Chromatic Broodmother",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "deathknight",
+      "attack": 2,
+      "health": 5,
+      "rarity": "rare",
+      "set": "CATACLYSM",
+      "tribe": "Undead",
+      "keywords": [
+        "rush"
+      ],
+      "description": "Rush. Whenever this attacks, refresh Mana Crystals equal to this minion's Attack.",
+      "ongoing": {
+        "on": "self-attacks",
+        "effects": [
+          {
+            "type": "refresh-mana",
+            "valuePer": "self-attack"
+          }
+        ]
+      }
+    },
+    {
+      "id": "cleansing_cleric",
+      "name": "Cleansing Cleric",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "priest",
+      "attack": 4,
+      "health": 5,
+      "rarity": "rare",
+      "set": "CATACLYSM",
+      "tribe": "Draenei",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Your healing effects restore 2 more Health this game.",
+      "effects": [
+        {
+          "type": "gain-heal-bonus",
+          "value": 2
+        }
+      ]
+    },
+    {
+      "id": "duke_of_below",
+      "name": "Duke of Below",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "warlock",
+      "attack": 2,
+      "health": 2,
+      "rarity": "epic",
+      "set": "CATACLYSM",
+      "keywords": [
+        "rush",
+        "battlecry"
+      ],
+      "description": "Has +2/+2 for each card you've discarded this game. (Approximated: gains the bonus on play.)",
+      "effects": [
+        {
+          "type": "buff-self-per",
+          "per": "discards-game",
+          "attack": 2,
+          "health": 2
+        }
+      ]
+    },
+    {
+      "id": "genn_cursed_king",
+      "name": "Genn, Cursed King",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "neutral",
+      "attack": 5,
+      "health": 4,
+      "rarity": "legendary",
+      "set": "CATACLYSM",
+      "description": "While holding this, if the rest of your hand is all even or all odd, transform into the 6/5 Worgen King. (Not modeled: in-hand transform.)"
+    },
+    {
+      "id": "incensed_matriarch",
+      "name": "Incensed Matriarch",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "priest",
+      "attack": 3,
+      "health": 3,
+      "rarity": "common",
+      "set": "CATACLYSM",
+      "tribe": "Dragon",
+      "description": "At the end of your turn, if this is at full Health, gain +3 Health.",
+      "ongoing": {
+        "on": "turn-end",
+        "if": {
+          "selfFullHealth": true
+        },
+        "effects": [
+          {
+            "type": "buff-self",
+            "health": 3
+          }
+        ]
+      }
+    },
+    {
+      "id": "seeding_dragon",
+      "name": "Seeding Dragon",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "druid",
+      "attack": 4,
+      "health": 4,
+      "rarity": "common",
+      "set": "CATACLYSM",
+      "tribe": "Dragon",
+      "keywords": [
+        "taunt",
+        "deathrattle"
+      ],
+      "description": "Taunt. Deathrattle: Get a random Dragon. It costs (2) less.",
+      "deathrattle": [
+        {
+          "type": "conjure-random",
+          "cardType": "creature",
+          "tribe": "Dragon",
+          "costMod": -2
+        }
+      ]
+    },
+    {
+      "id": "spearheart_sentry",
+      "name": "Spearheart Sentry",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "paladin",
+      "attack": 3,
+      "health": 4,
+      "rarity": "common",
+      "set": "CATACLYSM",
+      "tribe": "Dragon",
+      "description": "At the end of your turn, get a random Holy spell. Reduce its Cost by (3).",
+      "ongoing": {
+        "on": "turn-end",
+        "effects": [
+          {
+            "type": "conjure-random",
+            "cardType": "spell",
+            "school": "Holy",
+            "costMod": -3
+          }
+        ]
+      }
+    },
+    {
+      "id": "spiritspeaker",
+      "name": "Spiritspeaker",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "hunter",
+      "attack": 2,
+      "health": 2,
+      "rarity": "common",
+      "set": "CATACLYSM",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Choose an Animal Companion to summon. (Approximated: a random Animal Companion.)",
+      "effects": [
+        {
+          "type": "summon",
+          "count": 1,
+          "options": [
+            {
+              "name": "Huffer",
+              "attack": 4,
+              "health": 2,
+              "keywords": [
+                "charge"
+              ]
+            },
+            {
+              "name": "Leokk",
+              "attack": 2,
+              "health": 4
+            },
+            {
+              "name": "Misha",
+              "attack": 4,
+              "health": 4,
+              "keywords": [
+                "taunt"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "stickybomb_saboteur",
+      "name": "Stickybomb Saboteur",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "neutral",
+      "attack": 4,
+      "health": 4,
+      "rarity": "epic",
+      "set": "CATACLYSM",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Give your opponent a 2-Cost Sabotage. Cards next to it cost (1) more. (Approximated: a dud card; adjacency tax not modeled.)",
+      "effects": [
+        {
+          "type": "give-enemy-card",
+          "id": "cata_sabotage"
+        }
+      ]
+    },
+    {
+      "id": "stormbinder",
+      "name": "Stormbinder",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "shaman",
+      "attack": 7,
+      "health": 7,
+      "rarity": "epic",
+      "set": "CATACLYSM",
+      "keywords": [
+        "deathrattle"
+      ],
+      "overload": 3,
+      "description": "Deathrattle: Unlock your Overloaded Mana Crystals. Overload: (3)",
+      "deathrattle": [
+        {
+          "type": "unlock-overload-draw"
+        }
+      ]
+    },
+    {
+      "id": "surge_needle",
+      "name": "Surge Needle",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "mage",
+      "attack": 3,
+      "health": 5,
+      "rarity": "rare",
+      "set": "CATACLYSM",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Your Leylines trigger an additional time this game. (Not modeled: Leylines.)"
+    },
+    {
+      "id": "unstable_spellcaster",
+      "name": "Unstable Spellcaster",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "mage",
+      "attack": 2,
+      "health": 5,
+      "rarity": "rare",
+      "set": "CATACLYSM",
+      "tribe": "Elemental",
+      "keywords": [
+        "battlecry"
+      ],
+      "static": {
+        "type": "spell-damage",
+        "value": 1
+      },
+      "description": "Spell Damage +1. Battlecry: If you dealt damage with a spell this turn, summon a copy of this. (Approximated: if you cast a spell this turn.)",
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "spellsThisTurn": 1
+          },
+          "then": [
+            {
+              "type": "summon-copy-of-self",
+              "count": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "victor_nefarius",
+      "name": "Victor Nefarius",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "deathknight",
+      "attack": 4,
+      "health": 4,
+      "rarity": "legendary",
+      "set": "CATACLYSM",
+      "tribe": "Undead",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Craft a custom Undead Dragon. If you're holding a Dragon, reduce its Cost by (3). (Approximated: get a random Undead minion.)",
+      "effects": [
+        {
+          "type": "conjure-random",
+          "cardType": "creature",
+          "tribe": "Undead"
+        }
+      ]
+    },
+    {
+      "id": "wasteland_vanguard",
+      "name": "Wasteland Vanguard",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "hunter",
+      "attack": 3,
+      "health": 3,
+      "rarity": "common",
+      "set": "CATACLYSM",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Deal 3 damage split among all enemies. If any die, deal 3 more. (Approximated: 6 split among enemies.)",
+      "effects": [
+        {
+          "type": "random-damage",
+          "value": 1,
+          "count": 6,
+          "pool": "enemies"
+        }
+      ]
+    },
+    {
+      "id": "air_support",
+      "name": "Air Support",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "shaman",
+      "attack": 5,
+      "health": 5,
+      "rarity": "common",
+      "set": "CATACLYSM",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Give a friendly minion Mega-Windfury. It can't attack heroes. (Approximated: Windfury.)",
+      "effects": [
+        {
+          "type": "grant",
+          "keyword": "windfury",
+          "target": "friendly-creature"
+        }
+      ]
+    },
+    {
+      "id": "arator_the_redeemer",
+      "name": "Arator the Redeemer",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "paladin",
+      "attack": 5,
+      "health": 6,
+      "rarity": "legendary",
+      "set": "CATACLYSM",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Double the stats of all friendly Silver Hand Recruits and give them Taunt. (Not modeled: Silver Hand Recruits.)"
+    },
+    {
+      "id": "cata_sabotage",
+      "name": "Sabotage",
+      "type": "sorcery",
+      "cost": 2,
+      "cardClass": "neutral",
+      "rarity": "common",
+      "set": "CATACLYSM",
+      "token": true,
+      "collectible": false,
+      "description": "Does nothing.",
+      "effects": []
     }
   ]
 }

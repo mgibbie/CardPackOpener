@@ -1636,6 +1636,7 @@ function ongoingCondOk(state, pi, cond, ctx) {
 	if (cond.tribeSubj && !(subj && (subj.tribe || '').includes(cond.tribeSubj))) return false;
 	if (cond.dormantSelf && !(ctx.self && ctx.self.dormantLeft > 0)) return false; // Dozing Dragon: only while asleep
 	if (cond.playedBefore && !(subj && (state.players[pi].playedCountById?.[subj.id] || 0) >= 1)) return false; // Twisted Webweaver: a minion you've already played
+	if (cond.selfFullHealth && !(ctx.self && ctx.self.damage === 0)) return false; // Incensed Matriarch: only at full Health
 	return true;
 }
 
@@ -3274,6 +3275,7 @@ function execEffects(state, pi, effects, target, source) {
 			if (lsBefore != null) healHero(state, pi, Math.max(0, totalHurt() - lsBefore));
 		} else if (e.type === 'heal') {
 			let v = e.value === "X" ? (source?.xValue || 0) : e.valueFromHandSize ? state.players[pi].hand.length : boost(e.value); // Spice Bread Baker
+			if (v > 0) v += state.players[pi].healBonusGame || 0; // Cleansing Cleric: your heals restore 2 more this game
 			if (state.hpDoubling) v *= 2; // Clockwork Automaton: double Hero Power healing
 			// Auchenai Soulpriest: your healing deals damage instead
 			const harm = staticValue(state.players[pi], 'heal-becomes-damage') > 0 || state.players[pi].healHarmThisTurn; // Auchenai Phantasm
@@ -3835,7 +3837,7 @@ function execEffects(state, pi, effects, target, source) {
 			if (source) { source.attack *= 2; emit(state, { type: 'buff', uid: source.uid, attack: source.attack, hp: hp(source) }); }
 		} else if (e.type === 'refresh-mana') {
 			const mp = state.players[pi].mana;
-			const n = e.valuePer === 'spells-this-turn' ? (state.players[pi].spellsPlayedThisTurn || 0) : e.value; // Priestess Valishj / Enduring Roach: refresh only N
+			const n = e.valuePer === 'spells-this-turn' ? (state.players[pi].spellsPlayedThisTurn || 0) : e.valuePer === 'self-attack' ? (source ? (source.attack || 0) : 0) : e.value; // Priestess Valishj / Enduring Roach / Chromatic Broodmother
 			mp.cur = n != null ? Math.min(mp.max, (mp.cur || 0) + n) : mp.max;
 			emit(state, { type: 'mana', player: pi, cur: mp.cur, max: mp.max });
 		} else if (e.type === 'invoke-galakrond') {
@@ -4503,6 +4505,7 @@ function execEffects(state, pi, effects, target, source) {
 			else if (e.if.deckNoNeutral) ok = p.deck.length > 0 && p.deck.every(id => (state.cardsById[id]?.cardClass || 'neutral') !== 'neutral'); // Lightforged Zealot/Crusader
 			else if (e.if.overloaded) ok = (p.overloadPending || 0) > 0 || (p.overloadLockedThisTurn || 0) > 0; // Cumulo-Maximus
 			else if (e.if.heroPowerUpgraded) ok = !!p.heroPowerUpgraded; // Petal Picker (Imbue proxy)
+			else if (e.if.spellsThisTurn != null) ok = (p.spellsPlayedThisTurn || 0) >= e.if.spellsThisTurn; // Unstable Spellcaster (spell-damage-dealt approx)
 			execEffects(state, pi, ok ? e.then : (e.else || []), target, source);
 		} else if (e.type === 'damage-then') {
 			// deal damage, then branch on whether the creature survived
@@ -5222,6 +5225,9 @@ function execEffects(state, pi, effects, target, source) {
 		} else if (e.type === 'set-hand-minions-to-higher-stat') {
 			// Divine Augur: set the Attack and Health of every minion in your hand to the higher of the two
 			for (const c of state.players[pi].hand) if (c.type === 'creature') { const hi = Math.max(c.attack || 0, c.maxHealth || 0); c.attack = hi; c.maxHealth = hi; emit(state, { type: 'buff', uid: c.uid, attack: c.attack, hp: hp(c) }); }
+		} else if (e.type === 'gain-heal-bonus') {
+			// Cleansing Cleric: your healing effects restore N more Health this game
+			state.players[pi].healBonusGame = (state.players[pi].healBonusGame || 0) + (e.value || 2);
 		} else if (e.type === 'double-self-health') {
 			// Soldier of the Bronze: double this minion's Health
 			if (source && !isDead(source)) { source.maxHealth = (source.maxHealth || 0) * 2; emit(state, { type: 'buff', uid: source.uid, attack: source.attack, hp: hp(source) }); }
@@ -5396,11 +5402,12 @@ function execEffects(state, pi, effects, target, source) {
 			for (const o of enemies) { if (e.count != null) { for (let n = 0; n < e.count; n++) { const id = state.players[o].deck.pop(); if (!id) break; } } else state.players[o].deck = []; }
 			emit(state, { type: 'deckDestroyed' });
 		} else if (e.type === 'buff-self-per') {
-			// Clockwork Rager (turns taken) / Heir of Hereafter (damaged minions)
+			// Clockwork Rager (turns taken) / Heir of Hereafter (damaged minions) / Duke of Below (discards)
 			if (source && !isDead(source)) {
 				let n = 0;
 				if (e.per === 'turns-taken') n = Math.max(1, Math.ceil((state.turnNumber || 1) / 2));
 				else if (e.per === 'damaged-minions') { for (const pl of state.players) for (const c of pl.board) if (!isDead(c) && c.type !== 'location' && c.damage > 0) n++; }
+				else if (e.per === 'discards-game') n = (state.players[pi].discardLogIds || []).length;
 				if (n > 0) { source.attack += (e.attack || 0) * n; source.maxHealth += (e.health || 0) * n; emit(state, { type: 'buff', uid: source.uid, attack: source.attack, hp: hp(source) }); }
 			}
 		} else if (e.type === 'cast-remembered-on-self') {
