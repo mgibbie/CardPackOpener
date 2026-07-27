@@ -2940,6 +2940,12 @@ function runSecretEffects(state, pi, effects, ctx) {
 				if (m && !isDead(m) && m.type !== 'location') { m.attack = (m.attack || 0) * 2; m.maxHealth = (m.maxHealth || 0) * 2; emit(state, { type: 'buff', uid: m.uid, attack: m.attack, hp: hp(m) }); }
 				break;
 			}
+			case 'attack-hero-target': {
+				// Illidari Inquisitor: after your hero attacks an enemy minion, this attacks it too
+				const t = ctx.target, s6 = ctx.self;
+				if (t && s6 && !isDead(t) && !isDead(s6) && s6.zone === 'board') { s6.sick = false; resolveCombat(state, s6.controller, s6.uid, { type: 'creature', uid: t.uid, player: t.controller }); }
+				break;
+			}
 			case 'gain-summoned-stats': {
 				// Tras'tath, Soul Parasite: after you summon a Demon, gain its stats
 				const m = ctx.minion, s5 = ctx.self;
@@ -3224,6 +3230,7 @@ function execEffects(state, pi, effects, target, source) {
 				if (e.requireHoldingSpellMinCost != null && !state.players[pi].hand.some(c => isSpellType(c) && (c.cost || 0) >= e.requireHoldingSpellMinCost)) continue; // Weaver of the Cycle
 				if (e.requireHeroPowerUpgraded && !state.players[pi].heroPowerUpgraded) continue; // Resplendent Dreamweaver (Imbued twice proxy)
 				if (e.requireHeroHealthChanged && !state.players[pi].heroHealthChangedThisTurn) continue; // Liferender
+				if (e.requireWeaponEquipped && !state.players[pi].weapon) continue; // Fogsail Freebooter
 			// friendly Spell Damage boosts direct spell damage
 			let v = e.value === 'source-attack' ? (source?.attack || 0) : scaled(e); // Sergeant Sally
 			if (e.valueFromHeroDamage) v = state.players[pi].heroDamageTakenThisTurn || 0; // Shadowblade Slinger
@@ -6335,6 +6342,12 @@ function execEffects(state, pi, effects, target, source) {
 		} else if (e.type === 'refresh-friendly-attacks') {
 			// Exarch Akama: after this attacks, all OTHER friendly minions can attack again
 			for (const c of state.players[pi].board) { if (c === source || isDead(c) || c.type === 'location') continue; c.attacksUsed = 0; c.sick = false; }
+		} else if (e.type === 'resurrect-highest-died') {
+			// Calia Menethil: resurrect your highest-Cost minion that died this game
+			const p = state.players[pi];
+			let best = null;
+			for (const id of [...new Set(p.deathLogIds)]) { const def = state.cardsById[id]; if (def && def.type === 'creature' && (!best || (def.cost || 0) > (best.cost || 0))) best = def; }
+			if (best) summon(state, pi, best);
 		} else if (e.type === 'resurrect-died-distinct-mincost') {
 			// Merithra: resurrect all different friendly minions that cost N or more
 			const p = state.players[pi];
@@ -8724,6 +8737,7 @@ function execEffects(state, pi, effects, target, source) {
 			// Steeldancer: costFromWeapon fixes the Cost to your weapon's Attack.
 			const exactCost = e.costFromWeapon ? (state.players[pi].weapon ? (state.players[pi].weapon.attack || 0) : 0)
 				: e.costFromSelfAttack ? (source ? (source.attack || 0) : 0) // Spurfang: Cost = this minion's Attack
+				: e.costFromSelfCost ? (source ? (source.cost || 0) : 0) // Ulfar's granted Deathrattle: Cost = this minion's Cost
 				: e.cost;
 			const pool = Object.values(state.cardsById).filter(d =>
 				d.type === 'creature' && (e.maxCost == null || (d.cost || 0) <= e.maxCost)

@@ -123623,6 +123623,282 @@
         "taunt"
       ],
       "description": "A 3/3 with Taunt."
+    },
+    {
+      "id": "fogsail_freebooter",
+      "name": "Fogsail Freebooter",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "neutral",
+      "attack": 2,
+      "health": 2,
+      "rarity": "common",
+      "set": "CORE",
+      "tribe": "Pirate",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: If you have a weapon equipped, deal 2 damage.",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 2,
+          "target": "any",
+          "requireWeaponEquipped": true
+        }
+      ]
+    },
+    {
+      "id": "hematurge",
+      "name": "Hematurge",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "deathknight",
+      "attack": 2,
+      "health": 3,
+      "rarity": "rare",
+      "set": "CORE",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Spend a Corpse to Discover a Blood Rune card. (Approximated: Discover a Death Knight card; Corpse cost not modeled.)",
+      "effects": [
+        {
+          "type": "conjure-random",
+          "cardClass": "deathknight"
+        }
+      ]
+    },
+    {
+      "id": "falric",
+      "name": "Falric",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "deathknight",
+      "attack": 2,
+      "health": 4,
+      "rarity": "legendary",
+      "set": "CORE",
+      "tribe": "Undead",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "You gain twice as many Corpses as normal. Battlecry: Draw a card. (Not modeled: Corpse doubling / Corpse-spender filter.)",
+      "effects": [
+        {
+          "type": "draw",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "overlord_runthak",
+      "name": "Overlord Runthak",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "neutral",
+      "attack": 3,
+      "health": 6,
+      "rarity": "legendary",
+      "set": "CORE",
+      "keywords": [
+        "rush"
+      ],
+      "description": "Rush. Whenever this attacks, give +1/+1 to all minions in your hand.",
+      "ongoing": {
+        "on": "self-attacks",
+        "effects": [
+          {
+            "type": "buff-hand",
+            "attack": 1,
+            "health": 1,
+            "all": true
+          }
+        ]
+      }
+    },
+    {
+      "id": "rehgar_earthfury",
+      "name": "Rehgar Earthfury",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "shaman",
+      "attack": 3,
+      "health": 5,
+      "rarity": "legendary",
+      "set": "CORE",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "After this or an adjacent minion attacks, get a Lightning Bolt. (Approximated: after this attacks.)",
+      "ongoing": {
+        "on": "self-attacks",
+        "effects": [
+          {
+            "type": "add-card",
+            "id": "lightning_bolt",
+            "count": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "taelan_fordring",
+      "name": "Taelan Fordring",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "neutral",
+      "attack": 3,
+      "health": 3,
+      "rarity": "legendary",
+      "set": "CORE",
+      "keywords": [
+        "taunt",
+        "divine_shield",
+        "deathrattle"
+      ],
+      "description": "Taunt, Divine Shield. Deathrattle: Draw your highest Cost minion. (Approximated: highest Cost card.)",
+      "deathrattle": [
+        {
+          "type": "draw-highest"
+        }
+      ]
+    },
+    {
+      "id": "wrathspike_brute",
+      "name": "Wrathspike Brute",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "demonhunter",
+      "attack": 3,
+      "health": 6,
+      "rarity": "epic",
+      "set": "CORE",
+      "tribe": "Demon",
+      "keywords": [
+        "taunt"
+      ],
+      "description": "Taunt. After this is attacked, deal 1 damage to all enemies.",
+      "ongoing": {
+        "on": "self-attacked",
+        "effects": [
+          {
+            "type": "damage",
+            "value": 1,
+            "target": "enemies"
+          }
+        ]
+      }
+    },
+    {
+      "id": "calia_menethil",
+      "name": "Calia Menethil",
+      "type": "creature",
+      "cost": 6,
+      "cardClass": "priest",
+      "attack": 4,
+      "health": 5,
+      "rarity": "legendary",
+      "set": "CORE",
+      "tribe": "Undead",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Resurrect your highest-Cost minion that died this game.",
+      "effects": [
+        {
+          "type": "resurrect-highest-died"
+        }
+      ]
+    },
+    {
+      "id": "ulfar",
+      "name": "Ulfar",
+      "type": "creature",
+      "cost": 6,
+      "cardClass": "druid",
+      "attack": 4,
+      "health": 3,
+      "rarity": "legendary",
+      "set": "CORE",
+      "tribe": "Beast",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Give your other minions \"Deathrattle: Summon a minion with this minion's Cost.\"",
+      "effects": [
+        {
+          "type": "grant-deathrattle",
+          "target": "friendly-others",
+          "effects": [
+            {
+              "type": "summon-random",
+              "costFromSelfCost": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "nozdormu_the_eternal",
+      "name": "Nozdormu the Eternal",
+      "type": "creature",
+      "cost": 7,
+      "cardClass": "neutral",
+      "attack": 8,
+      "health": 8,
+      "rarity": "legendary",
+      "set": "CORE",
+      "tribe": "Dragon",
+      "description": "Start of Game: If this is in BOTH players' decks, turns are only 15 seconds long. (Not modeled: turn timer.)"
+    },
+    {
+      "id": "illidari_inquisitor",
+      "name": "Illidari Inquisitor",
+      "type": "creature",
+      "cost": 8,
+      "cardClass": "demonhunter",
+      "attack": 8,
+      "health": 8,
+      "rarity": "rare",
+      "set": "CORE",
+      "tribe": "Demon",
+      "keywords": [
+        "rush"
+      ],
+      "description": "Rush. After your hero attacks an enemy, this attacks it too.",
+      "ongoing": {
+        "on": "hero-attacks-creature",
+        "effects": [
+          {
+            "type": "attack-hero-target"
+          }
+        ]
+      }
+    },
+    {
+      "id": "tichondrius",
+      "name": "Tichondrius",
+      "type": "creature",
+      "cost": 9,
+      "cardClass": "demonhunter",
+      "attack": 9,
+      "health": 8,
+      "rarity": "legendary",
+      "set": "CORE",
+      "tribe": "Demon",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Your hero is Immune. Battlecry: Your next Demon this turn costs (0). (Not modeled: hero Immune.)",
+      "effects": [
+        {
+          "type": "set-tribe-discount",
+          "tribe": "Demon",
+          "count": 1,
+          "value": 10
+        }
+      ]
     }
   ]
 }
