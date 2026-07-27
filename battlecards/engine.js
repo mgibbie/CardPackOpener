@@ -3149,6 +3149,7 @@ function execEffects(state, pi, effects, target, source) {
 				if (e.requireDeckAtMost != null && state.players[pi].deck.length > e.requireDeckAtMost) continue; // Blood Shard Bristleback
 				if (e.requireHoldingSchool && !state.players[pi].hand.some(c => schoolOf(c) === e.requireHoldingSchool)) continue; // Defias Leper
 				if (e.requireHeroDamagedThisTurn && !state.players[pi].heroDamagedThisTurn) continue; // Shadowblade Slinger
+				if (e.requireHoldingSpellMinCost != null && !state.players[pi].hand.some(c => isSpellType(c) && (c.cost || 0) >= e.requireHoldingSpellMinCost)) continue; // Weaver of the Cycle
 			// friendly Spell Damage boosts direct spell damage
 			let v = e.value === 'source-attack' ? (source?.attack || 0) : scaled(e); // Sergeant Sally
 			if (e.valueFromHeroDamage) v = state.players[pi].heroDamageTakenThisTurn || 0; // Shadowblade Slinger
@@ -3166,6 +3167,7 @@ function execEffects(state, pi, effects, target, source) {
 			switch (e.target) {
 				case 'enemy-hero': { const t = enemyHero(); if (t != null) damageHero(state, t, v, pi); break; }
 				case 'own-hero': damageHero(state, pi, v, pi); break;
+				case 'friendly-others': for (const c of [...state.players[pi].board]) { if (c === source || c.type === 'location') continue; damageCreature(state, c, v, null); } break; // Afflicted Devastator
 				case 'enemy-creatures': for (const o of enemies) for (const c of [...state.players[o].board]) { if (e.exceptTribe && (c.tribe || '').includes(e.exceptTribe)) continue; damageCreature(state, c, rollv(), null); } break;
 				case 'frozen-enemy-creatures': for (const o of enemies) for (const c of [...state.players[o].board]) { if (c.frozen) damageCreature(state, c, v, null); } break;
 				case 'all-creatures': for (const pl of state.players) for (const c of [...pl.board]) { if (e.exceptTribe && (c.tribe || '').includes(e.exceptTribe)) continue; if (e.requireKeyword && !c.keywords.includes(e.requireKeyword)) continue; if (e.exceptSelf && c === source) continue; damageCreature(state, c, v, null); } break;
@@ -4453,6 +4455,7 @@ function execEffects(state, pi, effects, target, source) {
 			else if (e.if.invokedTwice) ok = (p.invokeCount || 0) >= 2; // Descent of Dragons "Invoked twice"
 			else if (e.if.deckNoNeutral) ok = p.deck.length > 0 && p.deck.every(id => (state.cardsById[id]?.cardClass || 'neutral') !== 'neutral'); // Lightforged Zealot/Crusader
 			else if (e.if.overloaded) ok = (p.overloadPending || 0) > 0 || (p.overloadLockedThisTurn || 0) > 0; // Cumulo-Maximus
+			else if (e.if.heroPowerUpgraded) ok = !!p.heroPowerUpgraded; // Petal Picker (Imbue proxy)
 			execEffects(state, pi, ok ? e.then : (e.else || []), target, source);
 		} else if (e.type === 'damage-then') {
 			// deal damage, then branch on whether the creature survived
@@ -5142,6 +5145,11 @@ function execEffects(state, pi, effects, target, source) {
 		} else if (e.type === 'summon-random-hand-size') {
 			// Astromancer: summon a random creature costing exactly your hand size
 			execEffects(state, pi, [{ type: 'summon-random', cost: state.players[pi].hand.length }], target, source);
+		} else if (e.type === 'reduce-rightmost-hand-cost') {
+			// Nightmare Dragonkin: reduce the Cost of the right-most card in your hand
+			const p = state.players[pi];
+			const pool = p.hand.filter(c => c !== source);
+			if (pool.length) { const c = pool[pool.length - 1]; c.cost = Math.max(0, (c.cost || 0) - (e.value || 1)); }
 		} else if (e.type === 'reduce-random-hand-minion-cost') {
 			// Dreampetal Florist: cheapen a random creature in your hand
 			const p = state.players[pi];
@@ -8858,6 +8866,8 @@ export function effectiveCost(state, pi, card) {
 			n = p.oneCostPlayedGame || 0; // Thirsty Drifter: cheaper per 1-Cost card played
 		} else if (card.selfCost.per === 'minions-died-game') {
 			n = state.minionsDiedGame || 0; // Reska, the Pit Boss
+		} else if (card.selfCost.per === 'cards-played') {
+			n = p.cardsPlayedThisTurn || 0; // Everburning Phoenix: cheaper per card played this turn
 		}
 		c += card.selfCost.amount * n;
 	}

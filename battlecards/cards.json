@@ -113261,6 +113261,430 @@
       "token": true,
       "collectible": false,
       "description": "A 1/1 Wisp."
+    },
+    {
+      "id": "living_garden",
+      "name": "Living Garden",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "shaman",
+      "attack": 2,
+      "health": 4,
+      "rarity": "common",
+      "set": "EMERALD_DREAM",
+      "tribe": "Elemental",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Imbue your Hero Power. Reduce the Cost of a minion in your hand by (1). (Imbue approximated: double Hero Power.)",
+      "effects": [
+        {
+          "type": "upgrade-hero-power"
+        },
+        {
+          "type": "reduce-random-hand-minion-cost",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "nightmare_dragonkin",
+      "name": "Nightmare Dragonkin",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "demonhunter",
+      "attack": 4,
+      "health": 2,
+      "rarity": "common",
+      "set": "EMERALD_DREAM",
+      "tribe": "Dragon",
+      "keywords": [
+        "deathrattle"
+      ],
+      "description": "Deathrattle: Reduce the Cost of the right-most card in your hand by (2).",
+      "deathrattle": [
+        {
+          "type": "reduce-rightmost-hand-cost",
+          "value": 2
+        }
+      ]
+    },
+    {
+      "id": "petal_picker",
+      "name": "Petal Picker",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "neutral",
+      "attack": 2,
+      "health": 3,
+      "rarity": "common",
+      "set": "EMERALD_DREAM",
+      "tribe": "Draenei",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: If you've Imbued your Hero Power twice, draw 2 cards. (Approximated: fires after one Imbue.)",
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "heroPowerUpgraded": true
+          },
+          "then": [
+            {
+              "type": "draw",
+              "value": 2
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "qonzu",
+      "name": "Q'onzu",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "mage",
+      "attack": 3,
+      "health": 4,
+      "rarity": "legendary",
+      "set": "EMERALD_DREAM",
+      "tribe": "Beast",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Discover a spell. Choose to keep it or put it on top of your opponent's deck. (Not modeled: opponent-deck option.)",
+      "effects": [
+        {
+          "type": "discover",
+          "cardType": "spell"
+        }
+      ]
+    },
+    {
+      "id": "renferal_the_malignant",
+      "name": "Renferal, the Malignant",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "rogue",
+      "attack": 3,
+      "health": 3,
+      "rarity": "legendary",
+      "set": "EMERALD_DREAM",
+      "tribe": "Beast",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Trap 1 random card in your opponent's hand for a turn. (Not modeled: improve-per-play.)",
+      "effects": [
+        {
+          "type": "lock-enemy-hand-card",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "id": "tricky_satyr",
+      "name": "Tricky Satyr",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "rogue",
+      "attack": 4,
+      "health": 3,
+      "rarity": "common",
+      "set": "EMERALD_DREAM",
+      "tribe": "Demon",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Get a copy of the lowest Cost card in your opponent's hand. (Approximated: a random card.)",
+      "effects": [
+        {
+          "type": "copy-random-enemy-hand"
+        }
+      ]
+    },
+    {
+      "id": "weaver_of_the_cycle",
+      "name": "Weaver of the Cycle",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "priest",
+      "attack": 3,
+      "health": 3,
+      "rarity": "common",
+      "set": "EMERALD_DREAM",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: If you're holding a spell that costs (5) or more, deal 3 damage.",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 3,
+          "target": "any",
+          "requireHoldingSpellMinCost": 5
+        }
+      ]
+    },
+    {
+      "id": "afflicted_devastator",
+      "name": "Afflicted Devastator",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "warrior",
+      "attack": 6,
+      "health": 6,
+      "rarity": "common",
+      "set": "EMERALD_DREAM",
+      "tribe": "Dragon",
+      "keywords": [
+        "battlecry",
+        "deathrattle"
+      ],
+      "description": "Battlecry: Deal 3 damage to all other friendly minions. Deathrattle: Deal 3 damage to all enemy minions.",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 3,
+          "target": "friendly-others"
+        }
+      ],
+      "deathrattle": [
+        {
+          "type": "damage",
+          "value": 3,
+          "target": "enemy-creatures"
+        }
+      ]
+    },
+    {
+      "id": "curious_cumulus",
+      "name": "Curious Cumulus",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "neutral",
+      "attack": 3,
+      "health": 5,
+      "rarity": "common",
+      "set": "EMERALD_DREAM",
+      "tribe": "Elemental",
+      "description": "At the end of your turn, give your hero Divine Shield. (Not modeled: hero Divine Shield.)"
+    },
+    {
+      "id": "dragon_turtle",
+      "name": "Dragon Turtle",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "warrior",
+      "attack": 3,
+      "health": 6,
+      "rarity": "common",
+      "set": "EMERALD_DREAM",
+      "tribe": "Dragon",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: If you're holding a minion with a Dark Gift, give your hero +3 Attack this turn and 6 Armor. (Not modeled: Dark Gift.)"
+    },
+    {
+      "id": "dreadsoul_corrupter",
+      "name": "Dreadsoul Corrupter",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "demonhunter",
+      "attack": 4,
+      "health": 4,
+      "rarity": "epic",
+      "set": "EMERALD_DREAM",
+      "keywords": [
+        "battlecry",
+        "deathrattle"
+      ],
+      "description": "Battlecry and Deathrattle: Summon a random Dormant Dreadseed. (Approximated: a Dreadseed token; Dormant not modeled.)",
+      "effects": [
+        {
+          "type": "summon",
+          "count": 1,
+          "summonId": "edr_dreadseed"
+        }
+      ],
+      "deathrattle": [
+        {
+          "type": "summon",
+          "count": 1,
+          "summonId": "edr_dreadseed"
+        }
+      ]
+    },
+    {
+      "id": "dreamwarden",
+      "name": "Dreamwarden",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "paladin",
+      "attack": 3,
+      "health": 4,
+      "rarity": "rare",
+      "set": "EMERALD_DREAM",
+      "tribe": "Dragon",
+      "keywords": [
+        "taunt",
+        "battlecry"
+      ],
+      "description": "Taunt. Battlecry: If there is a card in your deck that didn't start there, draw it and gain +2/+2. (Approximated: draw a card and gain +2/+2.)",
+      "effects": [
+        {
+          "type": "draw",
+          "value": 1
+        },
+        {
+          "type": "buff",
+          "attack": 2,
+          "health": 2,
+          "target": "self"
+        }
+      ]
+    },
+    {
+      "id": "envoy_of_the_glade",
+      "name": "Envoy of the Glade",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "neutral",
+      "attack": 3,
+      "health": 6,
+      "rarity": "epic",
+      "set": "EMERALD_DREAM",
+      "description": "Battlecry: Transform all Neutral cards in your deck into random Druid ones. (Not modeled: deck transform.)",
+      "keywords": [
+        "battlecry"
+      ]
+    },
+    {
+      "id": "everburning_phoenix",
+      "name": "Everburning Phoenix",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "rogue",
+      "attack": 3,
+      "health": 2,
+      "rarity": "epic",
+      "set": "EMERALD_DREAM",
+      "tribe": "Elemental",
+      "keywords": [
+        "deathrattle"
+      ],
+      "selfCost": {
+        "per": "cards-played",
+        "amount": -1
+      },
+      "description": "Costs (1) less for each card you've played this turn. Deathrattle: At end of turn, get another Phoenix. (Approximated: get a Phoenix now.)",
+      "deathrattle": [
+        {
+          "type": "add-card",
+          "id": "everburning_phoenix",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "id": "flutterwing_guardian",
+      "name": "Flutterwing Guardian",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "neutral",
+      "attack": 4,
+      "health": 4,
+      "rarity": "common",
+      "set": "EMERALD_DREAM",
+      "keywords": [
+        "taunt",
+        "divine_shield",
+        "battlecry"
+      ],
+      "description": "Taunt, Divine Shield. Battlecry: Imbue your Hero Power. (Approximated: double Hero Power.)",
+      "effects": [
+        {
+          "type": "upgrade-hero-power"
+        }
+      ]
+    },
+    {
+      "id": "illusory_greenwing",
+      "name": "Illusory Greenwing",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "neutral",
+      "attack": 4,
+      "health": 5,
+      "rarity": "common",
+      "set": "EMERALD_DREAM",
+      "tribe": "Dragon",
+      "keywords": [
+        "taunt",
+        "deathrattle"
+      ],
+      "description": "Taunt. Deathrattle: Shuffle two 4/5 Dragons with Taunt into your deck. They're Summoned When Drawn.",
+      "deathrattle": [
+        {
+          "type": "shuffle-into-own-deck",
+          "id": "edr_greenwing_seed",
+          "count": 2
+        }
+      ]
+    },
+    {
+      "id": "edr_dreadseed",
+      "name": "Dreadseed",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "demonhunter",
+      "attack": 0,
+      "health": 4,
+      "rarity": "common",
+      "set": "EMERALD_DREAM",
+      "token": true,
+      "collectible": false,
+      "description": "A 0/4 Dreadseed."
+    },
+    {
+      "id": "edr_greenwing_body",
+      "name": "Illusory Greenwing",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "neutral",
+      "attack": 4,
+      "health": 5,
+      "rarity": "common",
+      "set": "EMERALD_DREAM",
+      "tribe": "Dragon",
+      "token": true,
+      "collectible": false,
+      "keywords": [
+        "taunt"
+      ],
+      "description": "A 4/5 Dragon with Taunt."
+    },
+    {
+      "id": "edr_greenwing_seed",
+      "name": "Illusory Greenwing",
+      "type": "sorcery",
+      "cost": 4,
+      "cardClass": "neutral",
+      "rarity": "common",
+      "set": "EMERALD_DREAM",
+      "token": true,
+      "collectible": false,
+      "drawTrigger": true,
+      "description": "Summoned When Drawn: summon a 4/5 Dragon with Taunt.",
+      "onDraw": [
+        {
+          "type": "summon",
+          "count": 1,
+          "summonId": "edr_greenwing_body"
+        }
+      ]
     }
   ]
 }
