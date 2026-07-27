@@ -98094,6 +98094,504 @@
       "token": true,
       "collectible": false,
       "description": "A 3/3 Bot."
+    },
+    {
+      "id": "inzah",
+      "name": "Inzah",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "shaman",
+      "attack": 5,
+      "health": 5,
+      "rarity": "legendary",
+      "set": "BATTLE_OF_THE_BANDS",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: For the rest of the game, your Overload cards cost (1) less.",
+      "effects": [
+        {
+          "type": "grant-overload-discount",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "kangor_dancing_king",
+      "name": "Kangor, Dancing King",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "paladin",
+      "attack": 3,
+      "health": 3,
+      "rarity": "legendary",
+      "set": "BATTLE_OF_THE_BANDS",
+      "keywords": [
+        "lifesteal",
+        "deathrattle"
+      ],
+      "description": "Lifesteal. Deathrattle: Swap this with a minion from your hand and give it Lifesteal.",
+      "deathrattle": [
+        {
+          "type": "summon-hand-minion-lifesteal"
+        }
+      ]
+    },
+    {
+      "id": "mc_blingtron",
+      "name": "MC Blingtron",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "rogue",
+      "attack": 5,
+      "health": 5,
+      "rarity": "legendary",
+      "set": "BATTLE_OF_THE_BANDS",
+      "tribe": "Mech",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Both players equip 1/2 Microphones. Your opponent's increases all damage they take by 1!",
+      "effects": [
+        {
+          "type": "equip-both-mics",
+          "name": "Microphone",
+          "attack": 1,
+          "durability": 2
+        }
+      ]
+    },
+    {
+      "id": "magatha_bane_of_music",
+      "name": "Magatha, Bane of Music",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "neutral",
+      "attack": 5,
+      "health": 5,
+      "rarity": "legendary",
+      "set": "BATTLE_OF_THE_BANDS",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Draw 5 cards. Give any spells drawn to your opponent.",
+      "effects": [
+        {
+          "type": "draw-give-spells-to-enemy",
+          "value": 5
+        }
+      ]
+    },
+    {
+      "id": "opera_soloist",
+      "name": "Opera Soloist",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "warlock",
+      "attack": 4,
+      "health": 6,
+      "rarity": "common",
+      "set": "BATTLE_OF_THE_BANDS",
+      "tribe": "Demon",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: If you control no other minions, deal 3 damage to all enemy minions.",
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "noOtherCreatures": true
+          },
+          "then": [
+            {
+              "type": "damage",
+              "value": 3,
+              "target": "enemy-creatures"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "rin_orchestrator_of_doom",
+      "name": "Rin, Orchestrator of Doom",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "warlock",
+      "attack": 3,
+      "health": 6,
+      "rarity": "legendary",
+      "set": "BATTLE_OF_THE_BANDS",
+      "keywords": [
+        "taunt",
+        "deathrattle"
+      ],
+      "description": "Taunt. Deathrattle: Both players draw 2 cards, discard 2 cards, and destroy the top 2 cards of their deck.",
+      "deathrattle": [
+        {
+          "type": "both-players-draw-discard-mill",
+          "value": 2
+        }
+      ]
+    },
+    {
+      "id": "screaming_banshee",
+      "name": "Screaming Banshee",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "deathknight",
+      "attack": 3,
+      "health": 6,
+      "rarity": "epic",
+      "set": "BATTLE_OF_THE_BANDS",
+      "tribe": "Undead",
+      "keywords": [
+        "lifesteal"
+      ],
+      "description": "Lifesteal. After your hero gains Health, summon a Soul with that much Attack and Health.",
+      "ongoing": {
+        "on": "healed",
+        "if": {
+          "heroHealed": true
+        },
+        "effects": [
+          {
+            "type": "summon-token-by-heal-amount",
+            "name": "Soul",
+            "summonId": "token_soul"
+          }
+        ]
+      }
+    },
+    {
+      "id": "summer_flowerchild",
+      "name": "Summer Flowerchild",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "druid",
+      "attack": 4,
+      "health": 5,
+      "rarity": "rare",
+      "set": "BATTLE_OF_THE_BANDS",
+      "keywords": [
+        "battlecry",
+        "finale"
+      ],
+      "description": "Battlecry: Draw two cards that cost (6) or more. Finale: They cost (1) less.",
+      "effects": [
+        {
+          "type": "tutor",
+          "cardType": null,
+          "minCost": 6,
+          "count": 2
+        },
+        {
+          "type": "conditional",
+          "if": {
+            "finale": true
+          },
+          "then": [
+            {
+              "type": "discount-hand-mincost",
+              "minCost": 6,
+              "value": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "doomkin",
+      "name": "Doomkin",
+      "type": "creature",
+      "cost": 6,
+      "cardClass": "druid",
+      "attack": 3,
+      "health": 4,
+      "rarity": "rare",
+      "set": "BATTLE_OF_THE_BANDS",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Take one of your opponent's empty Mana Crystals.",
+      "effects": [
+        {
+          "type": "steal-empty-mana-crystal"
+        }
+      ]
+    },
+    {
+      "id": "lead_dancer",
+      "name": "Lead Dancer",
+      "type": "creature",
+      "cost": 6,
+      "cardClass": "paladin",
+      "attack": 4,
+      "health": 2,
+      "rarity": "rare",
+      "set": "BATTLE_OF_THE_BANDS",
+      "keywords": [
+        "deathrattle"
+      ],
+      "description": "Deathrattle: Summon a minion from your deck with less Attack than this minion.",
+      "deathrattle": [
+        {
+          "type": "summon-from-deck-weaker"
+        }
+      ]
+    },
+    {
+      "id": "mister_mukla",
+      "name": "Mister Mukla",
+      "type": "creature",
+      "cost": 6,
+      "cardClass": "hunter",
+      "attack": 10,
+      "health": 10,
+      "rarity": "legendary",
+      "set": "BATTLE_OF_THE_BANDS",
+      "tribe": "Beast",
+      "keywords": [
+        "rush",
+        "battlecry"
+      ],
+      "description": "Rush. Battlecry: Fill your opponent's hand with Bananas.",
+      "effects": [
+        {
+          "type": "give-enemy-card",
+          "id": "banana",
+          "count": 10
+        }
+      ]
+    },
+    {
+      "id": "unpopular_has_been",
+      "name": "Unpopular Has-Been",
+      "type": "creature",
+      "cost": 6,
+      "cardClass": "neutral",
+      "attack": 5,
+      "health": 5,
+      "rarity": "epic",
+      "set": "BATTLE_OF_THE_BANDS",
+      "tribe": "Undead",
+      "keywords": [
+        "deathrattle"
+      ],
+      "description": "Deathrattle: Summon a random 5-Cost minion from the past.",
+      "deathrattle": [
+        {
+          "type": "summon-random",
+          "cost": 5
+        }
+      ]
+    },
+    {
+      "id": "zok_fogsnout",
+      "name": "Zok Fogsnout",
+      "type": "creature",
+      "cost": 6,
+      "cardClass": "druid",
+      "attack": 6,
+      "health": 6,
+      "rarity": "legendary",
+      "set": "BATTLE_OF_THE_BANDS",
+      "tribe": "Quilboar",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Summon two Quilboar with Taunt. (Improved by your hero Attack & Armor gained this turn!)",
+      "effects": [
+        {
+          "type": "summon-quilboar-scaled",
+          "count": 2,
+          "base": 1
+        }
+      ]
+    },
+    {
+      "id": "the_one_amalgam_band",
+      "name": "The One-Amalgam Band",
+      "type": "creature",
+      "cost": 7,
+      "cardClass": "neutral",
+      "attack": 6,
+      "health": 6,
+      "rarity": "legendary",
+      "set": "BATTLE_OF_THE_BANDS",
+      "tribe": "All",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Gain a random Bonus Effect for each minion of a different type you've played this game.",
+      "effects": [
+        {
+          "type": "gain-random-keywords-per-tribe-played",
+          "keywords": [
+            "taunt",
+            "divine_shield",
+            "rush",
+            "lifesteal",
+            "windfury",
+            "poisonous"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "tony_king_of_piracy",
+      "name": "Tony, King of Piracy",
+      "type": "creature",
+      "cost": 7,
+      "cardClass": "neutral",
+      "attack": 4,
+      "health": 6,
+      "rarity": "legendary",
+      "set": "BATTLE_OF_THE_BANDS",
+      "tribe": "Pirate",
+      "keywords": [
+        "battlecry",
+        "finale"
+      ],
+      "description": "Battlecry: Replace your deck with a copy of your opponent's. Finale: Draw a card.",
+      "effects": [
+        {
+          "type": "replace-deck-with-enemy-copy"
+        },
+        {
+          "type": "conditional",
+          "if": {
+            "finale": true
+          },
+          "then": [
+            {
+              "type": "draw",
+              "value": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "concert_promo_drake",
+      "name": "Concert Promo-Drake",
+      "type": "creature",
+      "cost": 8,
+      "cardClass": "neutral",
+      "attack": 8,
+      "health": 8,
+      "rarity": "common",
+      "set": "BATTLE_OF_THE_BANDS",
+      "tribe": "Dragon",
+      "keywords": [
+        "finale"
+      ],
+      "description": "Tradeable. Finale: Destroy an enemy minion.",
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "finale": true
+          },
+          "then": [
+            {
+              "type": "destroy",
+              "target": "enemy-creature"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "dj_manastorm",
+      "name": "DJ Manastorm",
+      "type": "creature",
+      "cost": 9,
+      "cardClass": "mage",
+      "attack": 8,
+      "health": 8,
+      "rarity": "legendary",
+      "set": "BATTLE_OF_THE_BANDS",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Set the Cost of spells in your hand to (0). After you cast one, the others cost (1) more.",
+      "effects": [
+        {
+          "type": "set-hand-spell-cost",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "id": "mish_mash_mosher",
+      "name": "Mish-Mash Mosher",
+      "type": "creature",
+      "cost": 8,
+      "cardClass": "neutral",
+      "attack": 3,
+      "health": 10,
+      "rarity": "rare",
+      "set": "BATTLE_OF_THE_BANDS",
+      "tribe": "Undead",
+      "keywords": [
+        "rush"
+      ],
+      "description": "Rush. After this attacks, gain +1 Attack and attack a random enemy minion.",
+      "ongoing": {
+        "on": "self-attacks",
+        "effects": [
+          {
+            "type": "buff-self-attack-random-enemy",
+            "attack": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "banjosaur",
+      "name": "Banjosaur",
+      "type": "creature",
+      "cost": 10,
+      "cardClass": "hunter",
+      "attack": 5,
+      "health": 6,
+      "rarity": "rare",
+      "set": "BATTLE_OF_THE_BANDS",
+      "tribe": "Beast",
+      "keywords": [
+        "rush"
+      ],
+      "description": "Rush. Whenever this attacks, draw a Beast and gain its stats.",
+      "ongoing": {
+        "on": "self-attacks",
+        "effects": [
+          {
+            "type": "draw-beast-gain-stats"
+          }
+        ]
+      }
+    },
+    {
+      "id": "fanottem_lord_of_the_opera",
+      "name": "Fanottem, Lord of the Opera",
+      "type": "creature",
+      "cost": 0,
+      "cardClass": "warlock",
+      "attack": 15,
+      "health": 15,
+      "rarity": "legendary",
+      "set": "BATTLE_OF_THE_BANDS",
+      "keywords": [
+        "taunt",
+        "lifesteal"
+      ],
+      "selfCost": {
+        "per": "deck-size",
+        "amount": 1
+      },
+      "description": "Taunt, Lifesteal. This card's Cost is equal to the amount of cards in your deck."
     }
   ]
 }

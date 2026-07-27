@@ -1602,6 +1602,7 @@ function ongoingCondOk(state, pi, cond, ctx) {
 	if (cond.school && !(subj && schoolOf(subj) === cond.school)) return false; // "cast an Arcane spell"
 	if (cond.controlArtEnch && !(state.players[pi].artifacts.length || state.players[pi].enchantments.length)) return false; // "if you control an artifact or an enchantment"
 	if (cond.damageAmount != null && ctx.amount !== cond.damageAmount) return false; // Holotechnician: took exactly N damage
+	if (cond.heroHealed && ctx.healedHero == null) return false; // Screaming Banshee: your HERO gained Health
 	return true;
 }
 
@@ -1943,6 +1944,12 @@ function runSecretEffects(state, pi, effects, ctx) {
 				// Holotechnician: destroy the minion that just took damage
 				const d = ctx.damaged;
 				if (d && !isDead(d) && d.type !== 'location') { d.damage = d.maxHealth; d.shield = false; emit(state, { type: 'destroy', uid: d.uid }); sweepDeaths(state); }
+				break;
+			}
+			case 'summon-token-by-heal-amount': {
+				// Screaming Banshee: summon a token with stats equal to the amount the hero just healed
+				const amt = ctx.amount || 0;
+				if (amt > 0) summon(state, pi, { id: e.summonId || 'token_soul', name: e.name || 'Soul', type: 'creature', cost: 0, token: true, rarity: 'common', attack: amt, health: amt, description: `A ${amt}/${amt} token.` });
 				break;
 			}
 			case 'metrognome': {
@@ -5766,6 +5773,72 @@ function execEffects(state, pi, effects, target, source) {
 			// (playedCountById is incremented AFTER the battlecry, so it already counts only prior plays)
 			const n = source ? (state.players[pi].playedCountById?.[source.id] || 0) : 0;
 			if (source && n > 0) buffCreature(source, (e.attack || 1) * n, (e.health || 1) * n);
+		} else if (e.type === 'buff-self-attack-random-enemy') {
+			// Mish-Mash Mosher: after attacking, gain +N Attack and attack a random enemy minion (guarded chain)
+			if (source && !isDead(source)) {
+				buffCreature(source, e.attack || 1, 0);
+				state._mmDepth = (state._mmDepth || 0) + 1;
+				if (state._mmDepth < 12) {
+					const pool = [];
+					for (const o of enemies) for (const c of state.players[o].board) if (!isDead(c) && c.type !== 'location' && !c.stealthed && c.dormantLeft <= 0) pool.push({ type: 'creature', uid: c.uid, player: o });
+					if (pool.length) resolveCombat(state, pi, source.uid, pool[Math.floor(state.rng() * pool.length)]);
+				}
+				state._mmDepth--;
+			}
+		} else if (e.type === 'draw-beast-gain-stats') {
+			// Banjosaur: draw a Beast and gain its stats
+			const p = state.players[pi];
+			const before = new Set(p.hand.map(c => c.uid));
+			execEffects(state, pi, [{ type: 'tutor', cardType: 'creature', tribe: 'Beast', count: 1 }], null, source);
+			const drawn = p.hand.find(c => !before.has(c.uid));
+			if (drawn && source && !isDead(source)) buffCreature(source, drawn.attack || 0, drawn.maxHealth || 0);
+		} else if (e.type === 'grant-overload-discount') {
+			// Inzah: for the rest of the game, your Overload cards cost less
+			state.players[pi].overloadDiscount = (state.players[pi].overloadDiscount || 0) + (e.value || 1);
+		} else if (e.type === 'summon-hand-minion-lifesteal') {
+			// Kangor (Deathrattle): summon a random minion from your hand and give it Lifesteal
+			const p = state.players[pi];
+			const pool = p.hand.filter(c => c.type === 'creature');
+			if (pool.length) { const c = pool[Math.floor(state.rng() * pool.length)]; p.hand = p.hand.filter(x => x !== c); c.zone = 'board'; if (!c.keywords.includes('lifesteal')) c.keywords.push('lifesteal'); p.board.push(c); emit(state, { type: 'summon', player: pi, card: c }); recomputeAuras(state); }
+		} else if (e.type === 'draw-give-spells-to-enemy') {
+			// Magatha: draw N cards; give any spells drawn to your opponent
+			const p = state.players[pi], foe = enemies[0];
+			const before = new Set(p.hand.map(c => c.uid));
+			drawCards(state, pi, e.value || 5);
+			if (foe != null) { const drawn = p.hand.filter(c => !before.has(c.uid) && isSpellType(c)); for (const c of drawn) { p.hand = p.hand.filter(x => x !== c); if (state.players[foe].hand.length < MAX_HAND) { const cp = instantiate(state.cardsById[c.id] || c, foe); cp.zone = 'hand'; state.players[foe].hand.push(cp); emit(state, { type: 'conjure', player: foe, card: cp, color: null }); } } }
+		} else if (e.type === 'both-players-draw-discard-mill') {
+			// Rin (Deathrattle): both players draw N, discard N, and destroy top N of deck
+			for (let s2 = 0; s2 < state.players.length; s2++) {
+				const pl = state.players[s2]; if (pl.eliminated) continue;
+				drawCards(state, s2, e.value || 2);
+				for (let i = 0; i < (e.value || 2) && pl.hand.length; i++) { const j = Math.floor(state.rng() * pl.hand.length); const [c] = pl.hand.splice(j, 1); toGraveyard(state, s2, c); emit(state, { type: 'discard', player: s2, card: c }); }
+				for (let i = 0; i < (e.value || 2); i++) pl.deck.pop();
+			}
+		} else if (e.type === 'discount-hand-mincost') {
+			// Summer Flowerchild (Finale): reduce the Cost of expensive cards in your hand
+			for (const c of state.players[pi].hand) if ((c.cost || 0) >= (e.minCost || 6)) c.cost = Math.max(0, (c.cost || 0) - (e.value || 1));
+		} else if (e.type === 'steal-empty-mana-crystal') {
+			// Doomkin: take one of your opponent's empty Mana Crystals
+			const foe = enemies[0], p = state.players[pi];
+			if (foe != null) { const fp = state.players[foe]; if ((fp.mana?.max || 0) > (fp.mana?.cur || 0) && p.mana) { fp.mana.max = Math.max(0, fp.mana.max - 1); p.mana.max = (p.mana.max || 0) + 1; emit(state, { type: 'manaGained', player: pi, amount: 0, mana: availableMana(p) }); } }
+		} else if (e.type === 'summon-quilboar-scaled') {
+			// Zok Fogsnout: summon two Taunt Quilboar scaled by your hero Attack (+ armor gained this turn approximated by hero attack)
+			const bonus = heroAttackValue(state.players[pi]);
+			for (let i = 0; i < (e.count || 2); i++) summon(state, pi, { id: 'token_quilboar', name: 'Quilboar', type: 'creature', cost: 0, token: true, tribe: 'Quilboar', rarity: 'common', attack: (e.base || 1) + bonus, health: (e.base || 1) + bonus, keywords: ['taunt'], description: `A ${(e.base || 1) + bonus}/${(e.base || 1) + bonus} Taunt Quilboar.` });
+		} else if (e.type === 'gain-random-keywords-per-tribe-played') {
+			// The One-Amalgam Band: gain a random keyword for each distinct minion type played this game
+			const kws = e.keywords || ['taunt', 'divine_shield', 'rush', 'lifesteal', 'windfury', 'poisonous'];
+			const n = state.players[pi].tribesPlayedGame ? state.players[pi].tribesPlayedGame.size : 0;
+			for (let i = 0; i < n && source; i++) { const k = kws[Math.floor(state.rng() * kws.length)]; if (!source.keywords.includes(k)) { source.keywords.push(k); if (k === KW.DIVINE_SHIELD) source.shield = true; } }
+			if (source) emit(state, { type: 'buff', uid: source.uid, attack: source.attack, hp: hp(source) });
+		} else if (e.type === 'equip-both-mics') {
+			// MC Blingtron: both players equip a 1/2 Microphone (damage-amp on the opponent's approximated/omitted)
+			execEffects(state, pi, [{ type: 'equip', name: e.name || 'Microphone', attack: e.attack || 1, durability: e.durability || 2 }], null, source);
+			for (const o of enemies) { const op = state.players[o]; if (op.eliminated) continue; if (op.weapon) breakWeapon(state, o, true); const w = instantiate({ id: 'token_microphone', name: e.name || 'Microphone', type: 'weapon', cost: 0, rarity: 'common', description: `A ${e.attack || 1}/${e.durability || 2} weapon.`, attack: e.attack || 1, durability: e.durability || 2 }, o); w.zone = 'weapon'; op.weapon = w; emit(state, { type: 'weaponEquip', player: o, card: w }); }
+		} else if (e.type === 'replace-deck-with-enemy-copy') {
+			// Tony, King of Piracy: replace your deck with a copy of your opponent's
+			const foe = enemies[0], p = state.players[pi];
+			if (foe != null) { p.deck = state.players[foe].deck.slice(); for (let i = p.deck.length - 1; i > 0; i--) { const j = Math.floor(state.rng() * (i + 1)); [p.deck[i], p.deck[j]] = [p.deck[j], p.deck[i]]; } emit(state, { type: 'shuffle', player: pi }); }
 		} else if (e.type === 'discard-weapon-draw') {
 			// Grimtotem Buzzkill: discard a weapon from your hand to draw N cards
 			const p = state.players[pi];
@@ -7965,6 +8038,8 @@ export function effectiveCost(state, pi, card) {
 			n = p.heroPowersUsedGame || 0; // Frost Giant
 		} else if (card.selfCost.per === 'artifacts') {
 			n = p.artifacts.length; // Affinity for artifacts (Treasures/Clues/Food count)
+		} else if (card.selfCost.per === 'deck-size') {
+			n = p.deck.length; // Fanottem: Cost equals the cards in your deck
 		}
 		c += card.selfCost.amount * n;
 	}
@@ -8017,6 +8092,7 @@ export function effectiveCost(state, pi, card) {
 	if (p.battlecryTaxNext > 0 && (card.keywords || []).includes('battlecry')) c += p.battlecryTaxNext; // Boompistol Bully
 	if (p.libramDiscount > 0 && /Libram/.test(card.name || '')) c = Math.max(0, c - p.libramDiscount); // Aldor Attendant/Truthseeker
 	if (card.type === 'creature' && p.enemyMinionTaxTurn === state.turnNumber && p.enemyMinionTaxAmount) c += p.enemyMinionTaxAmount; // Forensic Duster
+	if (p.overloadDiscount > 0 && (card.overload || 0) > 0) c = Math.max(0, c - p.overloadDiscount); // Inzah
 	return Math.max(0, c);
 }
 
