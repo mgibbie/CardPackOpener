@@ -3190,6 +3190,7 @@ function execEffects(state, pi, effects, target, source) {
 			// friendly Spell Damage boosts direct spell damage
 			let v = e.value === 'source-attack' ? (source?.attack || 0) : scaled(e); // Sergeant Sally
 			if (e.valueFromHeroDamage) v = state.players[pi].heroDamageTakenThisTurn || 0; // Shadowblade Slinger
+				if (e.valueFromSelfHealth && source) v = hp(source); // Cleansing Lightspawn: damage = this minion's Health
 				if (e.altValueIfDrawn != null && source && source.drawnThisTurn) v = e.altValueIfDrawn; // Oil Rig Ambusher
 			if (source && (source.type === 'sorcery' || source.type === 'instant')) {
 				v += staticValue(state.players[pi], 'spell-damage') + (state.players[pi].nextSpellDamageBonus || 0) + (source.bonusSpellDamage || 0);
@@ -5211,6 +5212,9 @@ function execEffects(state, pi, effects, target, source) {
 				const def = state.cardsById[id];
 				if (def && def.deathrattle && def.deathrattle.length) { execEffects(state, pi, JSON.parse(JSON.stringify(def.deathrattle)), null, source); n--; }
 			}
+		} else if (e.type === 'set-hand-minions-to-higher-stat') {
+			// Divine Augur: set the Attack and Health of every minion in your hand to the higher of the two
+			for (const c of state.players[pi].hand) if (c.type === 'creature') { const hi = Math.max(c.attack || 0, c.maxHealth || 0); c.attack = hi; c.maxHealth = hi; emit(state, { type: 'buff', uid: c.uid, attack: c.attack, hp: hp(c) }); }
 		} else if (e.type === 'reverse-deck') {
 			// Timeless Causality: reverse the order of your deck
 			state.players[pi].deck.reverse();

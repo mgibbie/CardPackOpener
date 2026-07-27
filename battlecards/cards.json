@@ -118048,6 +118048,349 @@
       "set": "TIME_TRAVEL",
       "tribe": "Undead",
       "description": "You no longer draw a card at the start of your turn. (Not modeled: skip your draw.)"
+    },
+    {
+      "id": "cleansing_lightspawn",
+      "name": "Cleansing Lightspawn",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "priest",
+      "attack": 2,
+      "health": 3,
+      "rarity": "common",
+      "set": "TIME_TRAVEL",
+      "tribe": "Elemental",
+      "keywords": [
+        "lifesteal",
+        "battlecry"
+      ],
+      "description": "Lifesteal. Battlecry: Deal damage to an enemy minion equal to this minion's Health.",
+      "effects": [
+        {
+          "type": "damage",
+          "valueFromSelfHealth": true,
+          "target": "enemy-creature"
+        }
+      ]
+    },
+    {
+      "id": "divine_augur",
+      "name": "Divine Augur",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "priest",
+      "attack": 4,
+      "health": 5,
+      "rarity": "rare",
+      "set": "TIME_TRAVEL",
+      "tribe": "Draenei",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Set the Attack and Health of every minion in your hand to the higher of the two stats.",
+      "effects": [
+        {
+          "type": "set-hand-minions-to-higher-stat"
+        }
+      ]
+    },
+    {
+      "id": "fading_memory",
+      "name": "Fading Memory",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "neutral",
+      "attack": 6,
+      "health": 3,
+      "rarity": "common",
+      "set": "TIME_TRAVEL",
+      "tribe": "Undead",
+      "keywords": [
+        "deathrattle"
+      ],
+      "description": "Deathrattle: Get a random 5-Cost minion from the past.",
+      "deathrattle": [
+        {
+          "type": "conjure-random",
+          "cardType": "creature",
+          "cost": 5
+        }
+      ]
+    },
+    {
+      "id": "farseer_wo",
+      "name": "Farseer Wo",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "shaman",
+      "attack": 2,
+      "health": 6,
+      "rarity": "legendary",
+      "set": "TIME_TRAVEL",
+      "keywords": [
+        "elusive"
+      ],
+      "description": "Elusive. After you cast a spell, Discover a Nature spell from the past.",
+      "ongoing": {
+        "on": "spell-played",
+        "effects": [
+          {
+            "type": "discover",
+            "cardType": "spell",
+            "school": "Nature"
+          }
+        ]
+      }
+    },
+    {
+      "id": "fatebreaker",
+      "name": "Fatebreaker",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "warlock",
+      "attack": 4,
+      "health": 4,
+      "rarity": "rare",
+      "set": "TIME_TRAVEL",
+      "tribe": "Dragon",
+      "keywords": [
+        "lifesteal",
+        "battlecry"
+      ],
+      "description": "Lifesteal. Battlecry: Cast a Shred of Time from your deck to gain +3/+3. (Approximated: gain +3/+3.)",
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 3,
+          "health": 3,
+          "target": "self"
+        }
+      ]
+    },
+    {
+      "id": "fragment_of_nothing",
+      "name": "Fragment of Nothing",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "neutral",
+      "attack": 3,
+      "health": 6,
+      "rarity": "common",
+      "set": "TIME_TRAVEL",
+      "tribe": "Elemental",
+      "description": "After you cast a spell on a minion, draw a card.",
+      "ongoing": {
+        "on": "spell-cast-on-creature",
+        "effects": [
+          {
+            "type": "draw",
+            "value": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "futuristic_forefather",
+      "name": "Futuristic Forefather",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "neutral",
+      "attack": 4,
+      "health": 4,
+      "rarity": "common",
+      "set": "TIME_TRAVEL",
+      "keywords": [
+        "taunt",
+        "battlecry"
+      ],
+      "description": "Taunt. Battlecry: Look at 3 cards. Guess which one is in your opponent's hand to gain +4 Health. (Approximated: gain +4 Health.)",
+      "effects": [
+        {
+          "type": "buff",
+          "health": 4,
+          "target": "self"
+        }
+      ]
+    },
+    {
+      "id": "garona_halforcen",
+      "name": "Garona Halforcen",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "rogue",
+      "attack": 5,
+      "health": 4,
+      "rarity": "legendary",
+      "set": "TIME_TRAVEL",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Fabled. Battlecry: If your opponent is holding King Llane, destroy him and cut their Health in half. (Not modeled: Fabled / King Llane.)"
+    },
+    {
+      "id": "hourglass_attendant",
+      "name": "Hourglass Attendant",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "neutral",
+      "attack": 2,
+      "health": 4,
+      "rarity": "common",
+      "set": "TIME_TRAVEL",
+      "keywords": [
+        "divine_shield"
+      ],
+      "description": "Divine Shield. At the end of your turn, give all minions in your hand +1/+1.",
+      "ongoing": {
+        "on": "turn-end",
+        "effects": [
+          {
+            "type": "buff-hand",
+            "attack": 1,
+            "health": 1,
+            "all": true
+          }
+        ]
+      }
+    },
+    {
+      "id": "husk_eternal_reaper",
+      "name": "Husk, Eternal Reaper",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "deathknight",
+      "attack": 5,
+      "health": 3,
+      "rarity": "legendary",
+      "set": "TIME_TRAVEL",
+      "tribe": "Undead",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Give your hero \"Deathrattle: Spend up to 20 Corpses to resurrect with that much Health.\" (Not modeled: hero Deathrattle / Corpses.)"
+    },
+    {
+      "id": "king_maluk",
+      "name": "King Maluk",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "hunter",
+      "attack": 5,
+      "health": 6,
+      "rarity": "legendary",
+      "set": "TIME_TRAVEL",
+      "tribe": "Beast",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Discard your hand. Get an Infinite Banana. (Approximated: discard hand, get a Banana.)",
+      "effects": [
+        {
+          "type": "discard-all"
+        },
+        {
+          "type": "add-card",
+          "id": "banana",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "id": "morchie",
+      "name": "Morchie",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "neutral",
+      "attack": 3,
+      "health": 6,
+      "rarity": "legendary",
+      "set": "TIME_TRAVEL",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Your Rewinds keep BOTH potential outcomes. Battlecry: Discover a Rewind card from any class. (Not modeled: Rewind.)",
+      "effects": [
+        {
+          "type": "discover",
+          "cardType": "creature"
+        }
+      ]
+    },
+    {
+      "id": "stadium_announcer",
+      "name": "Stadium Announcer",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "warrior",
+      "attack": 3,
+      "health": 3,
+      "rarity": "common",
+      "set": "TIME_TRAVEL",
+      "tribe": "Dragon",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Rewind. Battlecry: Both players equip a random weapon. Give yours +1/+1. (Not modeled: Rewind / equip.)"
+    },
+    {
+      "id": "talanji_of_the_graves",
+      "name": "Talanji of the Graves",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "deathknight",
+      "attack": 4,
+      "health": 5,
+      "rarity": "legendary",
+      "set": "TIME_TRAVEL",
+      "tribe": "Undead",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Fabled. Battlecry: Draw Bwonsamdi (or resurrect him if he has died). Choose a Boon to give him. (Not modeled: Fabled / Bwonsamdi.)"
+    },
+    {
+      "id": "time_skipper",
+      "name": "Time Skipper",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "neutral",
+      "attack": 3,
+      "health": 4,
+      "rarity": "common",
+      "set": "TIME_TRAVEL",
+      "tribe": "Pirate",
+      "description": "At the end of each player's turn, give them a Coin. (Approximated: a Coin at the end of your turn.)",
+      "ongoing": {
+        "on": "turn-end",
+        "effects": [
+          {
+            "type": "gain-coin"
+          }
+        ]
+      }
+    },
+    {
+      "id": "timeway_warden",
+      "name": "Timeway Warden",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "demonhunter",
+      "attack": 2,
+      "health": 6,
+      "rarity": "rare",
+      "set": "TIME_TRAVEL",
+      "keywords": [
+        "battlecry",
+        "deathrattle"
+      ],
+      "description": "Battlecry: Imprison an enemy minion. It goes Dormant for 10,000 turns. Deathrattle: Awaken it. (Not modeled: Deathrattle awaken.)",
+      "effects": [
+        {
+          "type": "make-dormant",
+          "target": "enemy-creature",
+          "value": 9999
+        }
+      ]
     }
   ]
 }
