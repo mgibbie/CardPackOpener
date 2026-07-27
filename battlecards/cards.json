@@ -30660,7 +30660,8 @@
         }
       ],
       "description": "Battlecry: Summon a 1/1 Zergling.",
-      "set": "hsx"
+      "set": "hsx",
+      "tribe": "Zerg"
     },
     {
       "id": "amphibious_elixir",
@@ -46542,7 +46543,8 @@
       "description": "At the end of your turn, get a Larva that transforms into random Zerg creatures.",
       "type": "creature",
       "attack": 2,
-      "health": 5
+      "health": 5,
+      "tribe": "Zerg"
     },
     {
       "id": "mutalisk",
@@ -46554,7 +46556,8 @@
       "description": "Also damages creatures next to whomever this attacks (& each other player if a neighbor is missing).",
       "type": "creature",
       "attack": 5,
-      "health": 2
+      "health": 2,
+      "tribe": "Zerg"
     },
     {
       "id": "spine_crawler",
@@ -46566,7 +46569,8 @@
       "description": "Taunt.\nCan't attack. Has +3 Attack if you control a location.",
       "type": "creature",
       "attack": 1,
-      "health": 6
+      "health": 6,
+      "tribe": "Zerg"
     },
     {
       "id": "lift_off",
@@ -46607,7 +46611,7 @@
       "type": "creature",
       "attack": 4,
       "health": 4,
-      "tribe": "Mech",
+      "tribe": "Mech/Terran",
       "launchTransform": "sc_hellbat",
       "aura": {
         "attack": 1,
@@ -48880,7 +48884,7 @@
       "type": "creature",
       "attack": 2,
       "health": 14,
-      "tribe": "Mech",
+      "tribe": "Mech/Protoss",
       "ongoing": {
         "on": "turn-end",
         "effects": [
@@ -110114,7 +110118,8 @@
       "rarity": "legendary",
       "set": "ISLAND_VACATION",
       "tribe": "Naga",
-      "description": "Rogue Tourist. Your spells that cost (2) or less cast twice. (Not modeled: cheap-spell double-cast.)"
+      "description": "Rogue Tourist. Your spells that cost (2) or less cast twice.",
+      "cheapSpellDouble": true
     },
     {
       "id": "surfalopod",
@@ -110452,7 +110457,12 @@
       "keywords": [
         "battlecry"
       ],
-      "description": "Battlecry: Repeat each card you played last turn. (Not modeled: last-turn replay.)"
+      "description": "Battlecry: Repeat each card you played last turn.",
+      "effects": [
+        {
+          "type": "replay-last-turn"
+        }
+      ]
     },
     {
       "id": "snoozin_zookeeper",
@@ -110679,7 +110689,7 @@
       "health": 3,
       "rarity": "common",
       "set": "SPACE",
-      "tribe": "Mech",
+      "tribe": "Mech/Terran",
       "keywords": [
         "battlecry"
       ],
@@ -110945,7 +110955,13 @@
       "keywords": [
         "battlecry"
       ],
-      "description": "Battlecry: Demons that didn't start in your deck cost (1) less this game. (Not modeled: foreign-Demon discount.)"
+      "description": "Battlecry: Demons that didn't start in your deck cost (1) less this game.",
+      "effects": [
+        {
+          "type": "foreign-demon-discount",
+          "value": 1
+        }
+      ]
     },
     {
       "id": "guiding_figure",
@@ -111005,7 +111021,7 @@
       "health": 3,
       "rarity": "common",
       "set": "SPACE",
-      "tribe": "Mech",
+      "tribe": "Mech/Terran",
       "keywords": [
         "battlecry"
       ],
@@ -111165,7 +111181,7 @@
       "health": 1,
       "rarity": "common",
       "set": "SPACE",
-      "tribe": "Mech",
+      "tribe": "Mech/Terran",
       "keywords": [
         "battlecry"
       ],
@@ -111342,10 +111358,11 @@
       "keywords": [
         "battlecry"
       ],
-      "description": "Battlecry: Replace your Hero Power with Tracking (Discover a card from your deck). (Approximated: Discover a card.)",
+      "description": "Battlecry: Replace your Hero Power with Tracking (Discover a card from your deck).",
       "effects": [
         {
-          "type": "discover"
+          "type": "set-hero-power",
+          "powerId": "hp_tracking"
         }
       ]
     },
@@ -111696,14 +111713,14 @@
       "keywords": [
         "combo"
       ],
-      "description": "Undamaged enemy minions take double damage. Combo: Get a Backstab. (Not modeled: double-damage static.)",
+      "description": "Undamaged enemy minions take double damage. Combo: Get a Backstab.",
       "combo": [
         {
-          "type": "add-card",
-          "id": "backstab",
-          "count": 1
+          "type": "conjure-id",
+          "id": "backstab"
         }
-      ]
+      ],
+      "undamagedFoesDouble": true
     },
     {
       "id": "ultraviolet_breaker",
@@ -111743,12 +111760,29 @@
       "health": 2,
       "rarity": "common",
       "set": "SPACE",
-      "tribe": "Mech",
+      "tribe": "Mech/Protoss",
       "keywords": [
         "rush",
-        "divine_shield"
+        "divine_shield",
+        "battlecry"
       ],
-      "description": "Rush, Divine Shield. Battlecry: If this costs (0), gain +2/+2. (Not modeled: cost-0 buff.)"
+      "description": "Rush, Divine Shield. Battlecry: If this costs (0), gain +2/+2.",
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "selfPaidZero": true
+          },
+          "then": [
+            {
+              "type": "buff",
+              "attack": 2,
+              "health": 2,
+              "target": "self"
+            }
+          ]
+        }
+      ]
     },
     {
       "id": "yrel_beacon_of_hope",
@@ -111986,18 +112020,16 @@
       "health": 6,
       "rarity": "common",
       "set": "SPACE",
-      "description": "After a friendly minion attacks, deal 1 damage to a random enemy (or 2 if your minion is a Zerg). (Not modeled: Zerg bonus.)",
+      "description": "After a friendly minion attacks, deal 1 damage to a random enemy (or 2 if your minion is a Zerg).",
       "ongoing": {
         "on": "friendly-attacks",
         "effects": [
           {
-            "type": "random-damage",
-            "value": 1,
-            "count": 1,
-            "pool": "enemies"
+            "type": "lurker-damage"
           }
         ]
-      }
+      },
+      "tribe": "Zerg"
     },
     {
       "id": "mystified_tocha",
@@ -112009,7 +112041,15 @@
       "health": 2,
       "rarity": "legendary",
       "set": "SPACE",
-      "description": "Battlecry: If the combined Health of both heroes is exactly 42, set your hero's Health to 42. (Not modeled: niche condition.)"
+      "description": "Battlecry: If the combined Health of both heroes is exactly 42, set your hero's Health to 42.",
+      "effects": [
+        {
+          "type": "tocha-42"
+        }
+      ],
+      "keywords": [
+        "battlecry"
+      ]
     },
     {
       "id": "uluu_the_everdrifter",
@@ -112058,7 +112098,7 @@
       "health": 3,
       "rarity": "rare",
       "set": "SPACE",
-      "tribe": "Mech",
+      "tribe": "Mech/Terran",
       "keywords": [
         "battlecry"
       ],
@@ -112204,7 +112244,7 @@
       "health": 5,
       "rarity": "rare",
       "set": "SPACE",
-      "tribe": "Mech",
+      "tribe": "Mech/Terran",
       "keywords": [
         "battlecry"
       ],
@@ -112295,11 +112335,10 @@
       "keywords": [
         "battlecry"
       ],
-      "description": "Battlecry: Summon every Demon you played this game that didn't start in your deck. (Approximated: summon Demons that died this game.)",
+      "description": "Battlecry: Summon every Demon you played this game that didn't start in your deck.",
       "effects": [
         {
-          "type": "summon-died-tribe",
-          "tribe": "Demon"
+          "type": "summon-played-foreign-demons"
         }
       ]
     },
@@ -112353,13 +112392,18 @@
         "stealth",
         "battlecry"
       ],
-      "description": "Stealth. Battlecry: Destroy an enemy minion. (Not modeled: Archon merge.)",
+      "description": "Stealth. Battlecry: Destroy an enemy minion. Play another Templar to merge into an Archon!",
       "effects": [
         {
           "type": "destroy",
           "target": "enemy-creature"
+        },
+        {
+          "type": "templar-merge",
+          "other": "high_templar"
         }
-      ]
+      ],
+      "tribe": "Protoss"
     },
     {
       "id": "exarch_maladaar",
@@ -112375,7 +112419,12 @@
       "keywords": [
         "battlecry"
       ],
-      "description": "Battlecry: The next card you play this turn costs Corpses instead of Mana. (Not modeled: Corpse cost.)"
+      "description": "Battlecry: The next card you play costs Corpses instead of Mana.",
+      "effects": [
+        {
+          "type": "corpse-next-card"
+        }
+      ]
     },
     {
       "id": "high_templar",
@@ -112390,14 +112439,19 @@
       "keywords": [
         "battlecry"
       ],
-      "description": "Battlecry: Deal 2 damage to all enemies. (Not modeled: Archon merge.)",
+      "description": "Battlecry: Deal 2 damage to all enemies. Play another Templar to merge into an Archon!",
       "effects": [
         {
           "type": "damage",
           "value": 2,
           "target": "enemies"
+        },
+        {
+          "type": "templar-merge",
+          "other": "dark_templar"
         }
-      ]
+      ],
+      "tribe": "Protoss"
     },
     {
       "id": "lumia",
@@ -112412,7 +112466,8 @@
       "keywords": [
         "lifesteal"
       ],
-      "description": "Lifesteal. After a hero takes damage, they become Immune for the rest of the turn. (Not modeled: Immune-on-damage.)"
+      "description": "Lifesteal. After a hero takes damage, they become Immune for the rest of the turn.",
+      "heroImmuneOnDamage": true
     },
     {
       "id": "saruun",
@@ -112540,16 +112595,17 @@
       "health": 8,
       "rarity": "epic",
       "set": "SPACE",
-      "tribe": "Mech",
+      "tribe": "Mech/Protoss",
       "keywords": [
         "taunt",
         "divine_shield",
         "battlecry"
       ],
-      "description": "Taunt, Divine Shield. Battlecry: Spend 4 Mana to double this minion's stats. (Not modeled: 4-Mana cost.)",
+      "description": "Taunt, Divine Shield. Battlecry: Spend 4 Mana to double this minion's stats.",
       "effects": [
         {
-          "type": "double-self-stats"
+          "type": "spend-mana-double-stats",
+          "value": 4
         }
       ]
     },
@@ -112680,16 +112736,14 @@
       "health": 4,
       "rarity": "epic",
       "set": "SPACE",
-      "tribe": "Murloc",
+      "tribe": "Murloc/Zerg",
       "keywords": [
         "battlecry"
       ],
-      "description": "Battlecry: Summon four random Murlocs, then shoot them at enemy minions. (Approximated: summon 4 Murlocs; shooting not modeled.)",
+      "description": "Battlecry: Summon four random Murlocs, then shoot them at random enemy minions.",
       "effects": [
         {
-          "type": "summon-random",
-          "tribe": "Murloc",
-          "count": 4
+          "type": "grunty"
         }
       ]
     },
@@ -112725,7 +112779,7 @@
       "health": 8,
       "rarity": "epic",
       "set": "SPACE",
-      "tribe": "Mech",
+      "tribe": "Mech/Terran",
       "keywords": [
         "battlecry"
       ],
@@ -112785,11 +112839,11 @@
       "health": 4,
       "rarity": "epic",
       "set": "SPACE",
-      "tribe": "Mech",
+      "tribe": "Mech/Protoss",
       "keywords": [
         "battlecry"
       ],
-      "description": "Battlecry: Deal 1 damage to all enemies, twice. (Not modeled: Protoss improvement.)",
+      "description": "Battlecry: Deal 1 damage to all enemies, twice.",
       "effects": [
         {
           "type": "damage",
@@ -112813,18 +112867,18 @@
       "health": 10,
       "rarity": "legendary",
       "set": "SPACE",
-      "tribe": "Mech",
+      "tribe": "Mech/Protoss",
       "keywords": [
         "taunt",
         "battlecry",
         "deathrattle"
       ],
-      "description": "Taunt. Battlecry and Deathrattle: Get two random Protoss minions. (Approximated: 2 random Mechs.)",
+      "description": "Taunt. Battlecry and Deathrattle: Get two random Protoss minions.",
       "effects": [
         {
           "type": "conjure-random",
           "cardType": "creature",
-          "tribe": "Mech",
+          "tribe": "Protoss",
           "count": 2
         }
       ],
@@ -112832,7 +112886,7 @@
         {
           "type": "conjure-random",
           "cardType": "creature",
-          "tribe": "Mech",
+          "tribe": "Protoss",
           "count": 2
         }
       ]
@@ -113439,13 +113493,14 @@
       "rarity": "common",
       "set": "EMERALD_DREAM",
       "tribe": "Undead",
-      "description": "After your opponent summons a minion, spend 2 Corpses to deal 3 damage to it. (Not modeled: Corpse cost; triggers on played minions.)",
+      "description": "After your opponent plays a minion, spend 2 Corpses to deal 3 damage to it.",
       "ongoing": {
         "on": "enemy-creature-played",
         "effects": [
           {
             "type": "damage-triggering-minion",
-            "value": 3
+            "value": 3,
+            "corpses": 2
           }
         ]
       }
@@ -113759,10 +113814,11 @@
       "keywords": [
         "battlecry"
       ],
-      "description": "Battlecry: Get a copy of the lowest Cost card in your opponent's hand. (Approximated: a random card.)",
+      "description": "Battlecry: Get a copy of the lowest Cost card in your opponent's hand.",
       "effects": [
         {
-          "type": "copy-random-enemy-hand"
+          "type": "copy-random-enemy-hand",
+          "lowest": true
         }
       ]
     },
@@ -113831,7 +113887,15 @@
       "rarity": "common",
       "set": "EMERALD_DREAM",
       "tribe": "Elemental",
-      "description": "At the end of your turn, give your hero Divine Shield. (Not modeled: hero Divine Shield.)"
+      "description": "At the end of your turn, give your hero Divine Shield.",
+      "ongoing": {
+        "on": "turn-end",
+        "effects": [
+          {
+            "type": "hero-shield"
+          }
+        ]
+      }
     },
     {
       "id": "dragon_turtle",
@@ -113912,17 +113976,12 @@
         "taunt",
         "battlecry"
       ],
-      "description": "Taunt. Battlecry: If there is a card in your deck that didn't start there, draw it and gain +2/+2. (Approximated: draw a card and gain +2/+2.)",
+      "description": "Taunt. Battlecry: If there is a card in your deck that didn't start there, draw it and gain +2/+2.",
       "effects": [
         {
-          "type": "draw",
-          "value": 1
-        },
-        {
-          "type": "buff",
+          "type": "draw-foreign",
           "attack": 2,
-          "health": 2,
-          "target": "self"
+          "health": 2
         }
       ]
     },
@@ -113959,12 +114018,11 @@
         "per": "cards-played",
         "amount": -1
       },
-      "description": "Costs (1) less for each card you've played this turn. Deathrattle: At end of turn, get another Phoenix. (Approximated: get a Phoenix now.)",
+      "description": "Costs (1) less for each card you've played this turn. Deathrattle: At the end of the turn, get another Phoenix.",
       "deathrattle": [
         {
-          "type": "add-card",
-          "id": "everburning_phoenix",
-          "count": 1
+          "type": "conjure-id-endturn",
+          "id": "everburning_phoenix"
         }
       ]
     },
@@ -114151,12 +114209,12 @@
       "health": 6,
       "rarity": "common",
       "set": "EMERALD_DREAM",
-      "description": "At the end of your turn, gain 1 Armor. (Not modeled: improved by Wisps.)",
+      "description": "At the end of your turn, gain 1 Armor. (Improved by Wisps you control!)",
       "ongoing": {
         "on": "turn-end",
         "effects": [
           {
-            "type": "armor",
+            "type": "armor-per-wisp",
             "value": 1
           }
         ]
@@ -114304,7 +114362,12 @@
       "keywords": [
         "battlecry"
       ],
-      "description": "Battlecry: If you're holding one of the same cards as your opponent, shuffle theirs into their deck. (Not modeled: hand-match check.)"
+      "description": "Battlecry: If you're holding one of the same cards as your opponent, shuffle theirs into their deck.",
+      "effects": [
+        {
+          "type": "hand-match-shuffle"
+        }
+      ]
     },
     {
       "id": "shadowflame_stalker",
@@ -114473,10 +114536,10 @@
       "keywords": [
         "battlecry"
       ],
-      "description": "Battlecry: Give +4/+4 to the top 3 minions in your deck. (Approximated: next 3 minions drawn.)",
+      "description": "Battlecry: Give +4/+4 to the top 3 minions in your deck.",
       "effects": [
         {
-          "type": "buff-next-drawn-minions",
+          "type": "buff-deck-top-minions",
           "count": 3,
           "attack": 4,
           "health": 4
@@ -114712,7 +114775,21 @@
       "keywords": [
         "battlecry"
       ],
-      "description": "Battlecry: If this costs (3) or less, attack two random enemy minions. (Not modeled: cost-check attack.)"
+      "description": "Battlecry: If this costs (3) or less, attack two random enemy minions.",
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "selfPaidMax": 3
+          },
+          "then": [
+            {
+              "type": "attack-random-enemies",
+              "count": 2
+            }
+          ]
+        }
+      ]
     },
     {
       "id": "wisprider",
@@ -114995,7 +115072,23 @@
       "keywords": [
         "battlecry"
       ],
-      "description": "Battlecry: If 20 friendly minions have died this game, deal 20 damage split among all enemies. (Not modeled: 20-death condition.)"
+      "description": "Battlecry: If 20 friendly minions have died this game, deal 20 damage split among all enemies.",
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "friendlyDeathsAtLeast": 20
+          },
+          "then": [
+            {
+              "type": "random-damage",
+              "value": 1,
+              "count": 20,
+              "pool": "enemies"
+            }
+          ]
+        }
+      ]
     },
     {
       "id": "hungering_ancient",
@@ -115146,38 +115239,32 @@
         "taunt",
         "battlecry"
       ],
-      "description": "Rush, Taunt. Battlecry: Choose to spend 10, 20, or 30 Corpses to gain that many stats. (Not modeled: Corpse cost.)",
+      "description": "Rush, Taunt. Battlecry: Choose to spend 10, 20, or 30 Corpses to gain that many stats.",
       "choices": [
         {
-          "text": "+10/+10",
+          "text": "Spend 10 Corpses: gain +10/+10.",
           "effects": [
             {
-              "type": "buff",
-              "attack": 10,
-              "health": 10,
-              "target": "self"
+              "type": "spend-corpses-stats",
+              "amount": 10
             }
           ]
         },
         {
-          "text": "+20/+20",
+          "text": "Spend 20 Corpses: gain +20/+20.",
           "effects": [
             {
-              "type": "buff",
-              "attack": 20,
-              "health": 20,
-              "target": "self"
+              "type": "spend-corpses-stats",
+              "amount": 20
             }
           ]
         },
         {
-          "text": "+30/+30",
+          "text": "Spend 30 Corpses: gain +30/+30.",
           "effects": [
             {
-              "type": "buff",
-              "attack": 30,
-              "health": 30,
-              "target": "self"
+              "type": "spend-corpses-stats",
+              "amount": 30
             }
           ]
         }
@@ -115234,7 +115321,11 @@
       "keywords": [
         "rush"
       ],
-      "description": "Rush. Friendly Beasts deal double damage. (Not modeled: double-damage aura.)"
+      "description": "Rush. Friendly Beasts deal double damage.",
+      "tribeDamageBoost": {
+        "tribe": "Beast",
+        "double": true
+      }
     },
     {
       "id": "ursoc",
@@ -115383,14 +115474,23 @@
         "windfury",
         "deathrattle"
       ],
-      "description": "Rush, Windfury. Deathrattle: Deal 1 damage to all enemies. (Not modeled: improves after attacks.)",
+      "description": "Rush, Windfury. Deathrattle: Deal 1 damage to all enemies. (Improves each time this attacks!)",
       "deathrattle": [
         {
-          "type": "damage",
+          "type": "damage-enemies-per-counter",
           "value": 1,
-          "target": "enemies"
+          "key": "_omenAtks"
         }
-      ]
+      ],
+      "ongoing": {
+        "on": "self-attacks",
+        "effects": [
+          {
+            "type": "grow-counter",
+            "key": "_omenAtks"
+          }
+        ]
+      }
     },
     {
       "id": "tortolla",
@@ -115493,12 +115593,13 @@
       "keywords": [
         "battlecry"
       ],
-      "description": "Battlecry: Discover a Legendary minion. Shuffle the other two into your deck. (Not modeled: shuffle-others.)",
+      "description": "Battlecry: Discover a Legendary minion. Shuffle the other two into your deck.",
       "effects": [
         {
           "type": "discover",
           "cardType": "creature",
-          "rarity": "legendary"
+          "rarity": "legendary",
+          "shuffleOthers": true
         }
       ]
     },
@@ -115514,13 +115615,18 @@
       "set": "THE_LOST_CITY",
       "tribe": "Beast",
       "keywords": [
-        "battlecry"
+        "battlecry",
+        "deathrattle"
       ],
-      "description": "Battlecry: Draw a card. Deathrattle: Discard it. (Not modeled: Deathrattle discard.)",
+      "description": "Battlecry: Draw a card. Deathrattle: Discard it.",
       "effects": [
         {
-          "type": "draw",
-          "value": 1
+          "type": "draw-remember"
+        }
+      ],
+      "deathrattle": [
+        {
+          "type": "discard-remembered"
         }
       ]
     },
@@ -115804,7 +115910,15 @@
       "keywords": [
         "battlecry"
       ],
-      "description": "Battlecry: If you played a Quest this game, deal 3 damage to an enemy minion. (Not modeled: Quests.)"
+      "description": "Battlecry: If you played a Quest this game, deal 3 damage to an enemy minion.",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 3,
+          "target": "enemy-creature",
+          "requireQuestPlayed": true
+        }
+      ]
     },
     {
       "id": "rockskipper",
@@ -115842,7 +115956,13 @@
       "keywords": [
         "battlecry"
       ],
-      "description": "Battlecry: Your next Temporary card costs (2) less. (Not modeled: Temporary.)"
+      "description": "Battlecry: Your next Temporary card costs (2) less.",
+      "effects": [
+        {
+          "type": "next-temp-discount",
+          "value": 2
+        }
+      ]
     },
     {
       "id": "tlc_plant",
@@ -116064,7 +116184,11 @@
       "health": 5,
       "rarity": "legendary",
       "set": "THE_LOST_CITY",
-      "description": "Your Elementals deal 1 extra damage. (Not modeled: Elemental damage aura.)"
+      "description": "Your Elementals deal 1 extra damage.",
+      "tribeDamageBoost": {
+        "tribe": "Elemental",
+        "amount": 1
+      }
     },
     {
       "id": "cloud_serpent",
@@ -116201,7 +116325,7 @@
       "rarity": "common",
       "set": "THE_LOST_CITY",
       "tribe": "Beast",
-      "description": "At the end of your turn, gain +1 Attack. (Not modeled: grows while in hand or deck.)",
+      "description": "At the end of your turn, gain +1 Attack (wherever this is).",
       "ongoing": {
         "on": "turn-end",
         "effects": [
@@ -116210,7 +116334,8 @@
             "attack": 1
           }
         ]
-      }
+      },
+      "handDeckGrowAttack": true
     },
     {
       "id": "hatchery_helper",
@@ -116420,16 +116545,10 @@
       "keywords": [
         "battlecry"
       ],
-      "description": "Battlecry: Reduce the Cost of adjacent cards in your hand by (1). (Approximated: 2 random cards.)",
+      "description": "Battlecry: Reduce the Cost of adjacent cards in your hand by (1).",
       "effects": [
         {
-          "type": "reduce-random-hand-cost",
-          "anyCard": true,
-          "value": 1
-        },
-        {
-          "type": "reduce-random-hand-cost",
-          "anyCard": true,
+          "type": "discount-adjacent",
           "value": 1
         }
       ]
@@ -118176,12 +118295,15 @@
         "divine_shield",
         "battlecry"
       ],
-      "description": "Divine Shield. Battlecry: Restore 3 Health to your hero and give them Divine Shield. (Not modeled: hero Divine Shield.)",
+      "description": "Divine Shield. Battlecry: Restore 3 Health to your hero and give them Divine Shield.",
       "effects": [
         {
           "type": "heal",
           "value": 3,
           "target": "self"
+        },
+        {
+          "type": "hero-shield"
         }
       ]
     },
@@ -119289,9 +119411,13 @@
       "keywords": [
         "outcast"
       ],
-      "description": "Outcast: Your hero is Immune until your next turn. (Not modeled: hero Immune.)",
+      "description": "Outcast: Your hero is Immune until your next turn.",
       "outcast": {
-        "effects": []
+        "effects": [
+          {
+            "type": "hero-immune-until-next"
+          }
+        ]
       }
     },
     {
@@ -124772,7 +124898,7 @@
       "keywords": [
         "battlecry"
       ],
-      "description": "Your hero is Immune. Battlecry: Your next Demon this turn costs (0). (Not modeled: hero Immune.)",
+      "description": "Your hero is Immune. Battlecry: Your next Demon this turn costs (0).",
       "effects": [
         {
           "type": "set-tribe-discount",
@@ -124780,7 +124906,8 @@
           "count": 1,
           "value": 10
         }
-      ]
+      ],
+      "heroImmuneAura": true
     },
     {
       "id": "lord_jaraxxus",
@@ -126243,6 +126370,53 @@
       ],
       "description": "Battlecry: Transform all minions that aren't Rafaam into 1/1 Sheep.",
       "token": true
+    },
+    {
+      "id": "sc_archon",
+      "name": "Archon",
+      "type": "creature",
+      "cost": 8,
+      "attack": 8,
+      "health": 8,
+      "rarity": "epic",
+      "ongoing": {
+        "on": "turn-end",
+        "effects": [
+          {
+            "type": "damage",
+            "value": 8,
+            "target": "enemy-hero"
+          },
+          {
+            "type": "damage",
+            "value": 2,
+            "target": "enemy-creatures"
+          }
+        ]
+      },
+      "description": "At the end of your turn, deal 8 damage to the enemy hero and 2 damage to their minions.",
+      "token": true
+    },
+    {
+      "id": "hp_tracking",
+      "name": "Tracking",
+      "type": "heropower",
+      "cost": 2,
+      "collectible": false,
+      "power": {
+        "cost": 2,
+        "effects": [
+          {
+            "type": "discover",
+            "fromOwnDeck": true,
+            "cardType": "any",
+            "drawPick": true
+          }
+        ]
+      },
+      "description": "Hero Power: Discover a card from your deck and draw it.",
+      "token": true,
+      "rarity": "common"
     }
   ]
 }
