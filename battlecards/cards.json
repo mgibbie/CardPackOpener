@@ -106071,13 +106071,29 @@
       "keywords": [
         "battlecry"
       ],
-      "description": "Battlecry: Deal 2 damage to a random enemy minion. Quickdraw: And one of its neighbors.",
+      "description": "Battlecry: Deal 2 damage to a random enemy minion. Quickdraw: And another. (Neighbor targeting approximated as a second random hit.)",
       "effects": [
         {
-          "type": "random-damage",
-          "value": 2,
-          "count": 1,
-          "pool": "enemy-creatures"
+          "type": "conditional",
+          "if": {
+            "selfDrawnThisTurn": true
+          },
+          "then": [
+            {
+              "type": "random-damage",
+              "value": 2,
+              "count": 2,
+              "pool": "enemy-creatures"
+            }
+          ],
+          "else": [
+            {
+              "type": "random-damage",
+              "value": 2,
+              "count": 1,
+              "pool": "enemy-creatures"
+            }
+          ]
         }
       ]
     },
@@ -106315,9 +106331,24 @@
       "description": "Battlecry: Discover a spell from your deck. Quickdraw: Enemy deck instead.",
       "effects": [
         {
-          "type": "discover",
-          "cardType": "spell",
-          "fromOwnDeck": true
+          "type": "conditional",
+          "if": {
+            "selfDrawnThisTurn": true
+          },
+          "then": [
+            {
+              "type": "discover",
+              "cardType": "spell",
+              "fromEnemyDeck": true
+            }
+          ],
+          "else": [
+            {
+              "type": "discover",
+              "cardType": "spell",
+              "fromOwnDeck": true
+            }
+          ]
         }
       ]
     },
@@ -106369,10 +106400,16 @@
       "description": "Quickdraw or Combo: Get a Coin.",
       "combo": [
         {
-          "type": "gain-coin",
-          "value": 1
+          "type": "gain-coin"
         }
-      ]
+      ],
+      "quickdraw": {
+        "effects": [
+          {
+            "type": "gain-coin"
+          }
+        ]
+      }
     },
     {
       "id": "bovine_skeleton",
@@ -106453,9 +106490,25 @@
       "description": "Battlecry: Discover an Undead. Quickdraw: It costs (2) less.",
       "effects": [
         {
-          "type": "discover",
-          "cardType": "creature",
-          "tribe": "Undead"
+          "type": "conditional",
+          "if": {
+            "selfDrawnThisTurn": true
+          },
+          "then": [
+            {
+              "type": "discover",
+              "cardType": "creature",
+              "tribe": "Undead",
+              "costMod": -2
+            }
+          ],
+          "else": [
+            {
+              "type": "discover",
+              "cardType": "creature",
+              "tribe": "Undead"
+            }
+          ]
         }
       ]
     },
@@ -106651,7 +106704,15 @@
         "rush",
         "poisonous"
       ],
-      "description": "Rush, Poisonous. Quickdraw: Gain Immune this turn."
+      "description": "Rush, Poisonous. Quickdraw: Gain Immune this turn.",
+      "quickdraw": {
+        "effects": [
+          {
+            "type": "grant-immune-turn",
+            "target": "self"
+          }
+        ]
+      }
     },
     {
       "id": "sir_finley_the_intrepid",
@@ -106819,7 +106880,15 @@
           "type": "summon-copy-of-self",
           "count": 1
         }
-      ]
+      ],
+      "quickdraw": {
+        "effects": [
+          {
+            "type": "summon-copy-of-self",
+            "count": 1
+          }
+        ]
+      }
     },
     {
       "id": "dang_blasted_elemental",
@@ -106927,7 +106996,14 @@
         {
           "type": "excavate"
         }
-      ]
+      ],
+      "quickdraw": {
+        "effects": [
+          {
+            "type": "excavate"
+          }
+        ]
+      }
     },
     {
       "id": "fossilized_kaleidosaur",
@@ -107026,15 +107102,18 @@
         "lifesteal",
         "battlecry"
       ],
-      "description": "Lifesteal. Quickdraw: Deal 5 damage. Forge: Change Quickdraw to Battlecry.",
-      "effects": [
-        {
-          "type": "damage",
-          "value": 5,
-          "target": "any",
-          "lifesteal": true
-        }
-      ]
+      "description": "Lifesteal. Quickdraw: Deal 5 damage. (Forge rider still pending.)",
+      "effects": [],
+      "quickdraw": {
+        "effects": [
+          {
+            "type": "damage",
+            "value": 5,
+            "target": "any",
+            "lifesteal": true
+          }
+        ]
+      }
     },
     {
       "id": "maw_and_paw",
@@ -107802,7 +107881,17 @@
         "lifesteal"
       ],
       "description": "Tradeable, Lifesteal. Quickdraw: Deal 6 damage.",
-      "tradeable": true
+      "tradeable": true,
+      "quickdraw": {
+        "effects": [
+          {
+            "type": "damage",
+            "value": 6,
+            "target": "any",
+            "lifesteal": true
+          }
+        ]
+      }
     },
     {
       "id": "thirsty_drifter",
@@ -110820,13 +110909,14 @@
       "keywords": [
         "battlecry"
       ],
-      "description": "Battlecry: Get 3 random Temporary Draenei. (Not modeled: Temporary \u2014 copies are permanent.)",
+      "description": "Battlecry: Get 3 random Temporary Draenei. (They vanish at the end of your turn.)",
       "effects": [
         {
           "type": "conjure-random",
           "cardType": "creature",
           "tribe": "Draenei",
-          "count": 3
+          "count": 3,
+          "makeTemporary": true
         }
       ]
     },
@@ -112203,8 +112293,16 @@
       "keywords": [
         "battlecry"
       ],
-      "description": "Start of Game: Shuffle 7 Replicating Spores into your deck. Battlecry: Cast one. (Approximated: shuffle 7 Spores; Start of Game not modeled.)",
+      "description": "Start of Game: Shuffle 7 Replicating Spores into your deck. Battlecry: Cast one (deal 3 damage to a random enemy).",
       "effects": [
+        {
+          "type": "random-damage",
+          "value": 3,
+          "count": 1,
+          "pool": "enemies"
+        }
+      ],
+      "startOfGame": [
         {
           "type": "shuffle-into-own-deck",
           "id": "gdb_spore",
@@ -114887,11 +114985,18 @@
       "keywords": [
         "battlecry"
       ],
-      "description": "Start of Game: Increase both players' maximum Mana by 5. Battlecry: Gain 3 Mana Crystals. (Not modeled: Start-of-Game.)",
+      "description": "Start of Game: Increase both players' maximum Mana by 5. Battlecry: Gain 3 Mana Crystals.",
       "effects": [
         {
           "type": "gain-empty-mana-crystal",
           "value": 3
+        }
+      ],
+      "startOfGame": [
+        {
+          "type": "gain-empty-mana-crystal",
+          "eachPlayer": true,
+          "value": 5
         }
       ]
     },
@@ -116055,13 +116160,14 @@
       "keywords": [
         "deathrattle"
       ],
-      "description": "Deathrattle: Get two random Temporary 2-Cost minions. (Not modeled: Temporary.)",
+      "description": "Deathrattle: Get two random Temporary 2-Cost minions. (They vanish at the end of your turn.)",
       "deathrattle": [
         {
           "type": "conjure-random",
           "cardType": "creature",
           "cost": 2,
-          "count": 2
+          "count": 2,
+          "makeTemporary": true
         }
       ]
     },
@@ -116837,13 +116943,14 @@
         "taunt",
         "deathrattle"
       ],
-      "description": "Taunt. Deathrattle: Get 2 random Fel spells. They cost Health instead of Mana. (Not modeled: Health cost.)",
+      "description": "Taunt. Deathrattle: Get 2 random Fel spells. They cost Health instead of Mana.",
       "deathrattle": [
         {
           "type": "conjure-random",
           "cardType": "spell",
           "school": "Fel",
-          "count": 2
+          "count": 2,
+          "altLife": true
         }
       ]
     },
@@ -117466,7 +117573,10 @@
       "health": 1,
       "rarity": "common",
       "set": "TIME_TRAVEL",
-      "description": "Each turn this is in your hand, transform into a random minion in your opponent's hand. (Not modeled: in-hand transform.)"
+      "description": "Each turn this is in your hand, transform into a random minion in your opponent's hand.",
+      "handTransform": {
+        "fromEnemyHand": true
+      }
     },
     {
       "id": "amber_priestess",
@@ -120285,7 +120395,12 @@
       "health": 4,
       "rarity": "legendary",
       "set": "CATACLYSM",
-      "description": "While holding this, if the rest of your hand is all even or all odd, transform into the 6/5 Worgen King. (Not modeled: in-hand transform.)"
+      "description": "While holding this, if the rest of your hand is all even or all odd, transform into the 6/5 Worgen King.",
+      "handTransform": {
+        "intoId": "won_worgen_king",
+        "ifHandParity": true,
+        "once": true
+      }
     },
     {
       "id": "incensed_matriarch",
@@ -121254,11 +121369,12 @@
       "keywords": [
         "battlecry"
       ],
-      "description": "Battlecry: Get a random playable spell. It is Temporary. (Not modeled: Temporary.)",
+      "description": "Battlecry: Get a random Temporary spell. (It vanishes at the end of your turn.)",
       "effects": [
         {
           "type": "conjure-random",
-          "cardType": "spell"
+          "cardType": "spell",
+          "makeTemporary": true
         }
       ]
     },
@@ -122408,7 +122524,13 @@
       "keywords": [
         "taunt"
       ],
-      "description": "Taunt. Start of Game: Duplicate all other Legendary cards in your deck. (Not modeled: Start-of-Game.)"
+      "description": "Taunt. Start of Game: Duplicate all other Legendary cards in your deck.",
+      "startOfGame": [
+        {
+          "type": "duplicate-deck-legendaries",
+          "exceptId": "chainbreaker_hogger"
+        }
+      ]
     },
     {
       "id": "togwaggle_smuggler_king",
@@ -122522,7 +122644,11 @@
       "health": 2,
       "rarity": "rare",
       "set": "WONDERS",
-      "description": "Each turn this is in your hand, transform it into a random 2-Cost minion with Spell Damage +1. (Not modeled: in-hand transform.)"
+      "description": "Each turn this is in your hand, transform it into a random 2-Cost minion that gains Spell Damage +1.",
+      "handTransform": {
+        "cost": 2,
+        "spellDamage": 1
+      }
     },
     {
       "id": "pebbly_page",
@@ -122634,7 +122760,11 @@
       "health": 3,
       "rarity": "rare",
       "set": "WONDERS",
-      "description": "Each turn this is in your hand, transform it into a random 3-Cost minion with Poisonous. (Not modeled: in-hand transform.)"
+      "description": "Each turn this is in your hand, transform it into a random 3-Cost minion that gains Poisonous.",
+      "handTransform": {
+        "cost": 3,
+        "grant": "poisonous"
+      }
     },
     {
       "id": "runi_time_explorer",
@@ -122838,7 +122968,11 @@
       "health": 4,
       "rarity": "rare",
       "set": "WONDERS",
-      "description": "Each turn this is in your hand, transform it into a random 4-Cost minion with Stealth. (Not modeled: in-hand transform.)"
+      "description": "Each turn this is in your hand, transform it into a random 4-Cost minion that gains Stealth.",
+      "handTransform": {
+        "cost": 4,
+        "grant": "stealth"
+      }
     },
     {
       "id": "the_scarab_lord",
@@ -124432,6 +124566,23 @@
           "attack": 2
         }
       ]
+    },
+    {
+      "id": "won_worgen_king",
+      "name": "The Worgen King",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "neutral",
+      "attack": 6,
+      "health": 5,
+      "rarity": "legendary",
+      "set": "CATACLYSM",
+      "token": true,
+      "collectible": false,
+      "keywords": [
+        "rush"
+      ],
+      "description": "Rush."
     }
   ]
 }

@@ -245,6 +245,10 @@ function instantiate(def, controller) {
 		keywords: [...(def.keywords || [])],
 		effects: def.effects || null,
 		outcast: def.outcast || null, // Ashes of Outland: extra battlecry/spell effect from hand's edge
+		quickdraw: def.quickdraw || null, // HS Quickdraw: { effects } fired with the battlecry if drawnThisTurn
+		temporary: !!def.temporary,   // Temporary: discarded from hand at the end of your turn
+		handTransform: def.handTransform || null, // Imposters/Shapeshifter: turn-start in-hand morph { cost?, grant?, spellDamage?, fromEnemyHand?, intoId?, ifHandParity? }
+		startOfGame: def.startOfGame || null, // Start of Game: effects run from the deck when the game begins
 		handDeathGrowth: !!def.handDeathGrowth, // Blood Herald: +1/+1 whenever a friendly minion dies while in hand
 		scaleOnEntry: def.scaleOnEntry ? { ...def.scaleOnEntry } : null, // Astral Automaton: +stats per prior copy entered this game
 		infuse: def.infuse ? { ...def.infuse } : null, // Castle Nathria Infuse: {count, id} -> transform after N friendly deaths in hand
@@ -483,6 +487,14 @@ export function createGame(cardsById, rng = Math.random, playerDeckIds = null, p
 	}
 	state.dealt = true; // opening hands are dealt; Emerge fires on draws/adds from here
 	for (const p of state.players) p.openingHand = p.hand.map(c => c.id); // Hex Lord Malacrass
+	// Start of Game: cards announce themselves from the deck (Chainbreaker Hogger, Ysera Emerald Aspect, ...)
+	for (let sg = 0; sg < n; sg++) {
+		const pl = state.players[sg];
+		for (const id of [...new Set([...pl.deck, ...pl.hand.map(c => c.id)])]) {
+			const def = state.cardsById[id];
+			if (def?.startOfGame) { emit(state, { type: 'startOfGame', player: sg, cardId: id, name: def.name }); execEffects(state, sg, JSON.parse(JSON.stringify(def.startOfGame)), null, null); }
+		}
+	}
 	emit(state, { type: 'turnStart', player: 0, turnNumber: 1 });
 	drawCards(state, 0, 1); // start-of-turn draw (BattleEngine.startPhase draws on turn 1 too)
 	return state;
@@ -790,8 +802,11 @@ export function targetSpec(state, pi, card, choice) {
 	// choose-one cards with no branch picked yet: the branch menu comes first
 	if (card.choices && choice == null) return null;
 	// generic: derive from the first effect that needs a chosen target
-	// (combo-aware: an active combo line replaces the base effects)
-	for (const e of liveEffectsOf(state, pi, card, choice) || []) {
+	// (combo-aware: an active combo line replaces the base effects;
+	//  Quickdraw effects join the scan when the card was drawn this turn)
+	const _specEffects = [...(liveEffectsOf(state, pi, card, choice) || []),
+		...((card.quickdraw && card.drawnThisTurn) ? (card.quickdraw.effects || []) : [])];
+	for (const e of _specEffects) {
 		let kind = CHOSEN[e.type]?.[e.target];
 		// "the enemy hero" is unambiguous in 1v1 but a choice with 3+ players;
 		// Joust likewise lets you pick which opponent to Joust against
@@ -3084,6 +3099,8 @@ function runBattlecry(state, pi, card, target, choice) {
 			execEffects(state, pi, liveEffectsOf(state, pi, card, choice), target, card);
 		}
 	}
+	// HS Quickdraw: bonus effects when played the same turn it was drawn
+	if (card.quickdraw && card.drawnThisTurn) execEffects(state, pi, JSON.parse(JSON.stringify(card.quickdraw.effects || [])), target, card);
 	// Outcast: an extra battlecry when played from the edge of hand
 	if (card.outcast && card._outcast) { execEffects(state, pi, card.outcast.effects, target, card); fireOngoing(state, pi, 'outcast-played', { played: card }); } // Redeemed Pariah reacts
 	switch (card.id) {
@@ -4548,6 +4565,7 @@ function execEffects(state, pi, effects, target, source) {
 			else if (e.if.heroPowerUpgraded) ok = !!p.heroPowerUpgraded; // Petal Picker (Imbue proxy)
 			else if (e.if.spellsThisTurn != null) ok = (p.spellsPlayedThisTurn || 0) >= e.if.spellsThisTurn; // Unstable Spellcaster (spell-damage-dealt approx)
 			else if (e.if.deckCostsDistinct != null) ok = new Set(p.deck.map(id => state.cardsById[id]?.cost || 0)).size >= e.if.deckCostsDistinct; // Elise the Navigator: 10 cards of different Costs
+			else if (e.if.selfDrawnThisTurn) ok = !!(source && source.drawnThisTurn); // HS Quickdraw riders (Farm Hand / Benevolent Banker)
 			execEffects(state, pi, ok ? e.then : (e.else || []), target, source);
 		} else if (e.type === 'damage-then') {
 			// deal damage, then branch on whether the creature survived
@@ -5307,6 +5325,12 @@ function execEffects(state, pi, effects, target, source) {
 			const p = state.players[pi];
 			p.deckCostOverrides = p.deckCostOverrides || {};
 			for (let i = 0; i < (e.count || 5) && i < p.deck.length; i++) p.deckCostOverrides[p.deck[i]] = (e.value ?? 1);
+		} else if (e.type === 'duplicate-deck-legendaries') {
+			// Chainbreaker Hogger (Start of Game): duplicate all OTHER Legendary cards in your deck
+			const p = state.players[pi];
+			const dupes = p.deck.filter(id => state.cardsById[id]?.rarity === 'legendary' && id !== e.exceptId);
+			for (const id of dupes) p.deck.push(id);
+			if (dupes.length) { for (let i = p.deck.length - 1; i > 0; i--) { const j = Math.floor(state.rng() * (i + 1)); [p.deck[i], p.deck[j]] = [p.deck[j], p.deck[i]]; } emit(state, { type: 'shuffle', player: pi }); }
 		} else if (e.type === 'summon-random-location') {
 			// Cruise Captain Lora: put N random locations into play
 			const pool = Object.values(state.cardsById).filter(d => d.type === 'location' && !d.token && d.collectible !== false);
@@ -8359,6 +8383,8 @@ function execEffects(state, pi, effects, target, source) {
 					if (e.setCost != null) card.cost = e.setCost;
 					if (e.setStats != null && card.type === 'creature') { card.attack = e.setStats; card.maxHealth = e.setStats; } // Karov the Broken: 1/1 copies
 					if (e.costMod) card.cost = Math.max(0, (card.cost || 0) + e.costMod); // Flame Behemoth: cheaper
+					if (e.makeTemporary) card.temporary = true; // Hologram Operator: Temporary copies vanish at end of turn
+					if (e.altLife) card.altCost = { life: card.cost || 0 }; // Whispering Stone: costs Health instead of Mana
 					op.hand.push(card);
 					emit(state, { type: 'conjure', player: own, card, color: null });
 					fireEmerge(state, own, card);
@@ -10928,6 +10954,9 @@ export function endTurn(state) {
 		c.tempControl = null;
 		recomputeAuras(state);
 	}
+	// Temporary cards vanish from hand at the end of your turn (Hologram Operator / Frantic Forger / Tunnel Terror)
+	const temps = p.hand.filter(c => c.temporary);
+	if (temps.length) { p.hand = p.hand.filter(c => !c.temporary); for (const c of temps) emit(state, { type: 'discard', player: state.current, card: c }); }
 	// unplayed Quickdrawn cards slip back into the deck
 	const qd = p.hand.filter(c => c.quickdrawn);
 	if (qd.length) {
@@ -11002,6 +11031,37 @@ export function endTurn(state) {
 		if (!pick) continue;
 		const morph = instantiate(pick, state.current);
 		morph.uid = c.uid; morph.zone = 'hand'; morph.chameleosTransform = true;
+		np.hand[np.hand.indexOf(c)] = morph;
+		emit(state, { type: 'conjure', player: state.current, card: morph, color: null });
+	}
+	// generalized in-hand turn transforms (Imposters / Shapeshifter / Genn, Cursed King)
+	for (const c of [...np.hand]) {
+		const ht = c.handTransform;
+		if (!ht) continue;
+		let pickDef = null;
+		if (ht.fromEnemyHand) { // Shapeshifter: a random minion in the opponent's hand
+			const foe = opponentsOf(state, state.current).find(o => state.players[o].hand.some(x => x.type === 'creature'));
+			if (foe == null) continue;
+			const pool = state.players[foe].hand.filter(x => x.type === 'creature' && state.cardsById[x.id]);
+			if (!pool.length) continue;
+			pickDef = state.cardsById[pool[Math.floor(state.rng() * pool.length)].id];
+		} else if (ht.intoId) { // Genn: transform into the Worgen King when the REST of the hand is all even or all odd
+			if (ht.ifHandParity) {
+				const rest = np.hand.filter(x => x !== c).map(x => (x.cost || 0) % 2);
+				if (!rest.length || !(rest.every(v => v === 0) || rest.every(v => v === 1))) continue;
+			}
+			pickDef = state.cardsById[ht.intoId];
+		} else { // Imposters: a random minion of a fixed Cost, plus a bonus
+			const pool = Object.values(state.cardsById).filter(d => d.type === 'creature' && (d.cost || 0) === (ht.cost || 0) && !d.token && d.collectible !== false && !d.companion && !d.commander && !(d.colors && d.colors.length));
+			if (!pool.length) continue;
+			pickDef = pool[Math.floor(state.rng() * pool.length)];
+		}
+		if (!pickDef) continue;
+		const morph = instantiate(pickDef, state.current);
+		morph.uid = c.uid; morph.zone = 'hand';
+		if (ht.grant && !morph.keywords.includes(ht.grant)) { morph.keywords.push(ht.grant); if (ht.grant === KW.DIVINE_SHIELD) morph.shield = true; }
+		if (ht.spellDamage) morph.static = { type: 'spell-damage', value: ht.spellDamage };
+		if (!ht.intoId && !ht.once) morph.handTransform = ht; // keeps morphing each turn (Genn's is one-way)
 		np.hand[np.hand.indexOf(c)] = morph;
 		emit(state, { type: 'conjure', player: state.current, card: morph, color: null });
 	}
