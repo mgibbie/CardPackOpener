@@ -102533,6 +102533,419 @@
           ]
         }
       ]
+    },
+    {
+      "id": "eredar_deceptor",
+      "name": "Eredar Deceptor",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "demonhunter",
+      "attack": 3,
+      "health": 5,
+      "rarity": "common",
+      "set": "TITANS",
+      "tribe": "Demon",
+      "description": "Whenever you draw a card, summon a 1/1 Demon with Rush.",
+      "ongoing": {
+        "on": "card-drawn",
+        "effects": [
+          {
+            "type": "summon",
+            "count": 1,
+            "summonId": "ttn_demon_11"
+          }
+        ]
+      }
+    },
+    {
+      "id": "helya",
+      "name": "Helya",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "deathknight",
+      "attack": 4,
+      "health": 4,
+      "rarity": "legendary",
+      "set": "TITANS",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Shuffle all three Plagues into your opponent's deck. Plagues they draw this game are unending.",
+      "effects": [
+        {
+          "type": "shuffle-cards-into-enemy-deck",
+          "id": "ttn_plague",
+          "count": 3
+        }
+      ]
+    },
+    {
+      "id": "ignis_the_eternal_flame",
+      "name": "Ignis, the Eternal Flame",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "neutral",
+      "attack": 2,
+      "health": 4,
+      "rarity": "legendary",
+      "set": "TITANS",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: If you've Forged a card this game, craft a custom weapon."
+    },
+    {
+      "id": "infested_watcher",
+      "name": "Infested Watcher",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "shaman",
+      "attack": 4,
+      "health": 4,
+      "rarity": "common",
+      "set": "TITANS",
+      "keywords": [
+        "taunt",
+        "deathrattle"
+      ],
+      "description": "Taunt. Deathrattle: Get two 1/1 Chaotic Tendrils.",
+      "deathrattle": [
+        {
+          "type": "add-card",
+          "id": "chaotic_tendril",
+          "count": 2
+        }
+      ]
+    },
+    {
+      "id": "inquisitive_creation",
+      "name": "Inquisitive Creation",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "mage",
+      "attack": 3,
+      "health": 4,
+      "rarity": "rare",
+      "set": "TITANS",
+      "tribe": "Mech",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Deal 1 damage to all enemy minions. (Improved by each spell school you've cast this game!)",
+      "effects": [
+        {
+          "type": "damage",
+          "valuePer": "schools-cast-game",
+          "value": 1,
+          "target": "enemy-creatures"
+        }
+      ]
+    },
+    {
+      "id": "lab_constructor",
+      "name": "Lab Constructor",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "rogue",
+      "attack": 3,
+      "health": 2,
+      "rarity": "epic",
+      "set": "TITANS",
+      "tribe": "Mech",
+      "description": "At the end of your turn, summon a copy of this. Forge: Gain Magnetic.",
+      "ongoing": {
+        "on": "turn-end",
+        "effects": [
+          {
+            "type": "summon-copy-of-self",
+            "count": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "mechagnome_guide",
+      "name": "Mechagnome Guide",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "neutral",
+      "attack": 3,
+      "health": 4,
+      "rarity": "common",
+      "set": "TITANS",
+      "tribe": "Mech",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Discover a spell. Forge: It costs (3) less.",
+      "effects": [
+        {
+          "type": "discover",
+          "cardType": "spell"
+        }
+      ]
+    },
+    {
+      "id": "mindbender",
+      "name": "Mindbender",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "demonhunter",
+      "attack": 4,
+      "health": 4,
+      "rarity": "common",
+      "set": "TITANS",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Deal 1 damage for each card you have drawn this turn.",
+      "effects": [
+        {
+          "type": "damage",
+          "valuePer": "draws-this-turn",
+          "value": 1,
+          "target": "any"
+        }
+      ]
+    },
+    {
+      "id": "prison_breaker",
+      "name": "Prison Breaker",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "neutral",
+      "attack": 4,
+      "health": 4,
+      "rarity": "rare",
+      "set": "TITANS",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: If you've cast 5 or more spells this game, deal 2 damage to all enemies.",
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "spellsGame": 5
+          },
+          "then": [
+            {
+              "type": "damage",
+              "value": 2,
+              "target": "enemies"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "runefueled_golem",
+      "name": "Runefueled Golem",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "neutral",
+      "attack": 4,
+      "health": 4,
+      "rarity": "rare",
+      "set": "TITANS",
+      "tribe": "Mech",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Discover a weapon from any class.",
+      "effects": [
+        {
+          "type": "discover",
+          "cardType": "weapon"
+        }
+      ]
+    },
+    {
+      "id": "saronite_tolvir",
+      "name": "Saronite Tol'vir",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "neutral",
+      "attack": 3,
+      "health": 5,
+      "rarity": "common",
+      "set": "TITANS",
+      "keywords": [
+        "taunt"
+      ],
+      "description": "Taunt. Whenever this is attacked, draw a card.",
+      "ongoing": {
+        "on": "self-attacked",
+        "effects": [
+          {
+            "type": "draw",
+            "value": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "stoneheart_king",
+      "name": "Stoneheart King",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "paladin",
+      "attack": 3,
+      "health": 2,
+      "rarity": "rare",
+      "set": "TITANS",
+      "keywords": [
+        "deathrattle"
+      ],
+      "description": "Deathrattle: Summon a 2/2 Earthen that gains +2/+2 for each other Earthen you've summoned this game.",
+      "deathrattle": [
+        {
+          "type": "summon",
+          "count": 1,
+          "summonId": "ttn_earthen"
+        }
+      ]
+    },
+    {
+      "id": "time_lost_protodrake",
+      "name": "Time-Lost Protodrake",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "neutral",
+      "attack": 4,
+      "health": 5,
+      "rarity": "common",
+      "set": "TITANS",
+      "tribe": "Dragon",
+      "keywords": [
+        "taunt"
+      ],
+      "description": "Taunt. When you draw this, add a random Dragon to your hand.",
+      "emerge": [
+        {
+          "type": "conjure-random",
+          "cardType": "creature",
+          "tribe": "Dragon"
+        }
+      ]
+    },
+    {
+      "id": "tiny_worldbreaker",
+      "name": "Tiny Worldbreaker",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "rogue",
+      "attack": 4,
+      "health": 4,
+      "rarity": "common",
+      "set": "TITANS",
+      "tribe": "Mech",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: If you control another Mech, deal 4 damage.",
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "controlTribeCount": {
+              "tribe": "Mech",
+              "count": 2
+            }
+          },
+          "target": "any",
+          "then": [
+            {
+              "type": "damage",
+              "value": 4,
+              "target": "any"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "tomb_traitor",
+      "name": "Tomb Traitor",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "deathknight",
+      "attack": 4,
+      "health": 3,
+      "rarity": "rare",
+      "set": "TITANS",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Destroy a Plague in your opponent's deck to deal 3 damage to all enemy minions.",
+      "effects": [
+        {
+          "type": "destroy-enemy-plague-damage",
+          "value": 3
+        }
+      ]
+    },
+    {
+      "id": "twisted_frostwing",
+      "name": "Twisted Frostwing",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "hunter",
+      "attack": 3,
+      "health": 3,
+      "rarity": "rare",
+      "set": "TITANS",
+      "tribe": "Beast",
+      "keywords": [
+        "rush",
+        "deathrattle"
+      ],
+      "description": "Rush. Deathrattle: Summon a Chimaera with stats equal to this minion's Attack.",
+      "deathrattle": [
+        {
+          "type": "summon-with-source-stats",
+          "id": "ttn_chimaera",
+          "name": "Chimaera",
+          "tribe": "Beast",
+          "squareAttack": true
+        }
+      ]
+    },
+    {
+      "id": "ttn_demon_11",
+      "name": "Demon",
+      "type": "creature",
+      "cost": 1,
+      "cardClass": "demonhunter",
+      "attack": 1,
+      "health": 1,
+      "rarity": "common",
+      "set": "TITANS",
+      "tribe": "Demon",
+      "token": true,
+      "collectible": false,
+      "keywords": [
+        "rush"
+      ],
+      "description": "Rush."
+    },
+    {
+      "id": "ttn_earthen",
+      "name": "Earthen",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "paladin",
+      "attack": 2,
+      "health": 2,
+      "rarity": "common",
+      "set": "TITANS",
+      "token": true,
+      "collectible": false,
+      "scaleOnEntry": {
+        "attack": 2,
+        "health": 2
+      },
+      "description": "Gains +2/+2 for each other Earthen summoned this game."
     }
   ]
 }

@@ -2984,6 +2984,8 @@ function execEffects(state, pi, effects, target, source) {
 		if (e.valuePer === 'cards-played') return (e.value || 1) * (p.cardsPlayedThisTurn || 0); // Shadow Sculptor
 		if (e.valuePer === 'hero-attack') return heroAttackValue(p);
 		if (e.valuePer === 'hero-attacks-game') return (e.value || 1) + (p.heroAttacksGame || 0); // Shockspitter: 1 + your hero attacks this game
+		if (e.valuePer === 'schools-cast-game') return (e.value || 1) + Object.keys(p.schoolsCastGame || {}).length; // Inquisitive Creation
+		if (e.valuePer === 'draws-this-turn') return (e.value || 1) * (p.drawsThisTurn || 0); // Mindbender
 		if (e.valuePer === 'damaged-friendly') {
 			let n = p.board.filter(c => !isDead(c) && c.damage > 0).length;
 			if (p.life < STARTING_LIFE) n++;
@@ -5465,7 +5467,7 @@ function execEffects(state, pi, effects, target, source) {
 			for (let i = 0; i < (e.count || 1) && pool.length; i++) { const nc = summon(state, pi, pool[Math.floor(state.rng() * pool.length)]); if (nc && e.grant && !nc.keywords.includes(e.grant)) { nc.keywords.push(e.grant); if (e.grant === KW.DIVINE_SHIELD) nc.shield = true; } } // Infantry Reanimator: grant Reborn
 		} else if (e.type === 'summon-with-source-stats') {
 			// Blistering Rot: summon a token with stats equal to the source minion
-			if (source) { const a = source.attack || 0, h = hp(source) || 1; const tok = summon(state, pi, { id: e.id || 'token_rot', name: e.name || 'Rot', type: 'creature', cost: 0, token: true, rarity: 'common', attack: a, health: h, description: `A ${a}/${h} token.` }); }
+			if (source) { const a = source.attack || 0, h = e.squareAttack ? (source.attack || 0) : (hp(source) || 1); const tok = summon(state, pi, { id: e.id || 'token_rot', name: e.name || 'Rot', type: 'creature', cost: 0, token: true, tribe: e.tribe || null, rarity: 'common', attack: a, health: Math.max(1, h), keywords: e.keywords || [], description: `A ${a}/${h} token.` }); }
 		} else if (e.type === 'buff-random-friendly') {
 			// Dragonmaw Overseer: buff a random OTHER friendly minion (Invincible: tribe filter + keyword grant)
 			const pool = state.players[pi].board.filter(c => c !== source && !isDead(c) && c.type !== 'location' && (!e.tribe || (c.tribe || '').includes(e.tribe)));
@@ -5855,6 +5857,10 @@ function execEffects(state, pi, effects, target, source) {
 		} else if (e.type === 'destroy-self') {
 			// Incorporeal Corporal: destroy the source minion
 			if (source && !isDead(source)) { source.damage = source.maxHealth; source.shield = false; emit(state, { type: 'destroy', uid: source.uid }); sweepDeaths(state); }
+		} else if (e.type === 'destroy-enemy-plague-damage') {
+			// Tomb Traitor: destroy a Plague in the opponent's deck; if you do, deal V to all enemy minions
+			const foe = enemies[0];
+			if (foe != null) { const fp = state.players[foe]; const idx = fp.deck.findIndex(id => (state.cardsById[id]?.name || '').includes('Plague')); if (idx >= 0) { fp.deck.splice(idx, 1); emit(state, { type: 'shuffle', player: foe }); for (const c of [...fp.board]) if (!isDead(c) && c.type !== 'location') damageCreature(state, c, e.value || 3, source); } }
 		} else if (e.type === 'destroy-friendly-remember') {
 			// Ravenous Kraken: destroy a chosen friendly minion and remember it for a Deathrattle summon
 			const t = chosenCreature();
@@ -9126,6 +9132,7 @@ export function attack(state, pi, attackerUid, target) {
 	// defender's secrets see the declared attack (may kill, bounce, or redirect)
 	const ctx = { attackerType: 'creature', attacker, attackerPlayer: pi, target, cancelled: false };
 	fireSecrets(state, target.player, 'enemy-attack', ctx);
+	if (target.type === 'creature') { const def0 = findCreature(state, target.uid); if (def0) fireCreatureTrigger(state, def0, 'self-attacked', { attacker }); } // Saronite Tol'vir: react to being attacked
 	if (ctx.cancelled || isDead(attacker) || !state.players[pi].board.includes(attacker)) {
 		sweepDeaths(state);
 		return true;
