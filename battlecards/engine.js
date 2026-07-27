@@ -2730,6 +2730,15 @@ function runSecretEffects(state, pi, effects, ctx) {
 				}
 				break;
 			}
+			case 'add-copy-of-played-minion-free': {
+				// Sonya Waterdancer: after you play a low-Cost minion, add a (0)-cost copy to hand
+				const m = ctx.minion; const pp = state.players[pi];
+				if (m && m !== ctx.self && m.type === 'creature' && (m.cost || 0) <= (e.maxCost ?? 1) && state.cardsById[m.id] && pp.hand.length < MAX_HAND) {
+					const nc = instantiate(state.cardsById[m.id], pi); nc.zone = 'hand'; nc.cost = 0; pp.hand.push(nc);
+					emit(state, { type: 'conjure', player: pi, card: nc, color: null });
+				}
+				break;
+			}
 			case 'add-copy-of-played-free': {
 				// Tamsin Roame: when you cast a qualifying spell, add a (0)-cost copy to hand
 				const sp = ctx.played; const p = state.players[pi];
@@ -5825,10 +5834,10 @@ function execEffects(state, pi, effects, target, source) {
 			const t = chosenCreature();
 			if (t && source) { t.cantAttackWhile = source.uid; emit(state, { type: 'buff', uid: t.uid, attack: t.attack, hp: hp(t) }); }
 		} else if (e.type === 'damage-lowest-enemy') {
-			// Arrow Smith: deal damage to the lowest-Health enemy minion
+			// Arrow Smith: deal damage to the lowest-Health enemy minion (Ball Hog: heals if source has Lifesteal)
 			let low = null;
 			for (const o of enemies) for (const c of state.players[o].board) { if (isDead(c) || c.type === 'location') continue; if (!low || hp(c) < hp(low)) low = c; }
-			if (low) damageCreature(state, low, e.value || 1, source);
+			if (low) { const dealt = damageCreature(state, low, e.value || 1, source); if (dealt > 0 && source && (source.keywords || []).includes(KW.LIFESTEAL)) healHero(state, pi, dealt); }
 		} else if (e.type === 'set-own-max-mana') {
 			// Audio Amplifier: set your maximum Mana (hand-size cap approximated by MAX_HAND)
 			const p = state.players[pi];
@@ -5886,6 +5895,15 @@ function execEffects(state, pi, effects, target, source) {
 		} else if (e.type === 'destroy-self') {
 			// Incorporeal Corporal: destroy the source minion
 			if (source && !isDead(source)) { source.damage = source.maxHealth; source.shield = false; emit(state, { type: 'destroy', uid: source.uid }); sweepDeaths(state); }
+		} else if (e.type === 'copy-random-deck-tribe') {
+			// Mystery Egg: add a copy of a random minion of a tribe in your deck to your hand
+			const p = state.players[pi];
+			const pool = [...new Set(p.deck)].map(id => state.cardsById[id]).filter(d => d && d.type === 'creature' && !d.token && (!e.tribe || (d.tribe || '').includes(e.tribe)));
+			if (pool.length && p.hand.length < MAX_HAND) { const def = pool[Math.floor(state.rng() * pool.length)]; const cp = instantiate(def, pi); cp.zone = 'hand'; if (e.costMod) cp.cost = Math.max(0, (cp.cost || 0) + e.costMod); p.hand.push(cp); emit(state, { type: 'conjure', player: pi, card: cp, color: null }); }
+		} else if (e.type === 'summon-copy-of-self-once-per-turn') {
+			// Lab Patron: summon a copy of this, but only once per turn (player-global to avoid chains)
+			const p = state.players[pi];
+			if (source && state.cardsById[source.id]) { const key = '_oncePerTurn_' + source.id; if (p[key] !== state.turnNumber) { p[key] = state.turnNumber; summon(state, pi, state.cardsById[source.id]); } }
 		} else if (e.type === 'reduce-hand-spells-cost') {
 			// Clearance Promoter: reduce the Cost of N spells in your hand
 			const p = state.players[pi];

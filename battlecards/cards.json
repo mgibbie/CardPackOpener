@@ -104544,6 +104544,397 @@
           "target": "any"
         }
       ]
+    },
+    {
+      "id": "trinket_artist",
+      "name": "Trinket Artist",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "paladin",
+      "attack": 2,
+      "health": 3,
+      "rarity": "rare",
+      "set": "WHIZBANGS_WORKSHOP",
+      "tribe": "Draenei",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Draw a Divine Shield minion and an Aura.",
+      "effects": [
+        {
+          "type": "tutor",
+          "cardType": "creature",
+          "requireKeyword": "divine_shield",
+          "count": 1
+        },
+        {
+          "type": "draw",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "watercolor_artist",
+      "name": "Watercolor Artist",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "mage",
+      "attack": 3,
+      "health": 3,
+      "rarity": "epic",
+      "set": "WHIZBANGS_WORKSHOP",
+      "tribe": "Elemental",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Draw a Frost spell. At the start of your turns, reduce its Cost by (1).",
+      "effects": [
+        {
+          "type": "tutor",
+          "cardType": "spell",
+          "school": "Frost",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "id": "ball_hog",
+      "name": "Ball Hog",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "demonhunter",
+      "attack": 3,
+      "health": 3,
+      "rarity": "common",
+      "set": "WHIZBANGS_WORKSHOP",
+      "tribe": "Quilboar",
+      "keywords": [
+        "lifesteal",
+        "battlecry",
+        "deathrattle"
+      ],
+      "description": "Lifesteal. Battlecry and Deathrattle: Deal 3 damage to the lowest Health enemy.",
+      "effects": [
+        {
+          "type": "damage-lowest-enemy",
+          "value": 3
+        }
+      ],
+      "deathrattle": [
+        {
+          "type": "damage-lowest-enemy",
+          "value": 3
+        }
+      ]
+    },
+    {
+      "id": "caricature_artist",
+      "name": "Caricature Artist",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "neutral",
+      "attack": 3,
+      "health": 4,
+      "rarity": "common",
+      "set": "WHIZBANGS_WORKSHOP",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Draw a minion that costs (5) or more. Give it a funny mustache!",
+      "effects": [
+        {
+          "type": "tutor",
+          "cardType": "creature",
+          "minCost": 5,
+          "count": 1,
+          "buff": {
+            "attack": 2,
+            "health": 2
+          }
+        }
+      ]
+    },
+    {
+      "id": "chalk_artist",
+      "name": "Chalk Artist",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "priest",
+      "attack": 4,
+      "health": 3,
+      "rarity": "epic",
+      "set": "WHIZBANGS_WORKSHOP",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Draw a minion. Transform it into a random Legendary one (keeping its original stats and Cost).",
+      "effects": [
+        {
+          "type": "tutor",
+          "cardType": "creature",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "id": "chia_drake",
+      "name": "Chia Drake",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "druid",
+      "attack": 3,
+      "health": 5,
+      "rarity": "rare",
+      "set": "WHIZBANGS_WORKSHOP",
+      "tribe": "Dragon",
+      "description": "Miniaturize. Choose One - Gain Spell Damage +1; or Draw a spell.",
+      "choices": [
+        {
+          "text": "Gain Spell Damage +1",
+          "effects": [
+            {
+              "type": "grant-spell-damage",
+              "target": "self",
+              "value": 1
+            }
+          ]
+        },
+        {
+          "text": "Draw a spell",
+          "effects": [
+            {
+              "type": "tutor",
+              "cardType": "spell",
+              "count": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "darkthorn_quilter",
+      "name": "Darkthorn Quilter",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "deathknight",
+      "attack": 2,
+      "health": 4,
+      "rarity": "common",
+      "set": "WHIZBANGS_WORKSHOP",
+      "tribe": "Undead",
+      "description": "At the end of your turn, deal this minion's Attack damage randomly split among enemies.",
+      "ongoing": {
+        "on": "turn-end",
+        "effects": [
+          {
+            "type": "random-damage",
+            "value": 1,
+            "countByAttack": true,
+            "pool": "enemies"
+          }
+        ]
+      }
+    },
+    {
+      "id": "gibbering_reject",
+      "name": "Gibbering Reject",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "demonhunter",
+      "attack": 3,
+      "health": 3,
+      "rarity": "rare",
+      "set": "WHIZBANGS_WORKSHOP",
+      "tribe": "Demon",
+      "description": "After your hero attacks, summon another Gibbering Reject.",
+      "ongoing": {
+        "on": "hero-attacks",
+        "effects": [
+          {
+            "type": "summon-copy-of-self",
+            "count": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "hagatha_the_fabled",
+      "name": "Hagatha the Fabled",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "shaman",
+      "attack": 4,
+      "health": 3,
+      "rarity": "legendary",
+      "set": "WHIZBANGS_WORKSHOP",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Draw 2 spells that cost (5) or more. Transform them into Slimes that cast the spells.",
+      "effects": [
+        {
+          "type": "tutor",
+          "cardType": "spell",
+          "minCost": 5,
+          "count": 2
+        }
+      ]
+    },
+    {
+      "id": "infernal",
+      "name": "INFERNAL!",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "warlock",
+      "attack": 6,
+      "health": 6,
+      "rarity": "rare",
+      "set": "WHIZBANGS_WORKSHOP",
+      "tribe": "Demon",
+      "keywords": [
+        "taunt",
+        "battlecry"
+      ],
+      "description": "Taunt. Battlecry: Set your hero's remaining Health to 15.",
+      "effects": [
+        {
+          "type": "set-hero-health",
+          "target": "self",
+          "value": 15
+        }
+      ]
+    },
+    {
+      "id": "lab_patron",
+      "name": "Lab Patron",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "warrior",
+      "attack": 3,
+      "health": 3,
+      "rarity": "rare",
+      "set": "WHIZBANGS_WORKSHOP",
+      "description": "Whenever you gain Armor, summon another Lab Patron (once per turn).",
+      "ongoing": {
+        "on": "armor-gained",
+        "effects": [
+          {
+            "type": "summon-copy-of-self-once-per-turn"
+          }
+        ]
+      }
+    },
+    {
+      "id": "mystery_egg",
+      "name": "Mystery Egg",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "hunter",
+      "attack": 0,
+      "health": 3,
+      "rarity": "epic",
+      "set": "WHIZBANGS_WORKSHOP",
+      "keywords": [
+        "deathrattle"
+      ],
+      "description": "Miniaturize. Deathrattle: Get a copy of a random Beast in your deck. It costs (3) less.",
+      "deathrattle": [
+        {
+          "type": "copy-random-deck-tribe",
+          "tribe": "Beast",
+          "costMod": -3
+        }
+      ]
+    },
+    {
+      "id": "nesting_golem",
+      "name": "Nesting Golem",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "neutral",
+      "attack": 4,
+      "health": 3,
+      "rarity": "common",
+      "set": "WHIZBANGS_WORKSHOP",
+      "tribe": "Undead",
+      "keywords": [
+        "deathrattle"
+      ],
+      "description": "Deathrattle: Resummon this with -1/-1.",
+      "deathrattle": [
+        {
+          "type": "resummon-self-diminished"
+        }
+      ]
+    },
+    {
+      "id": "origami_crane",
+      "name": "Origami Crane",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "neutral",
+      "attack": 4,
+      "health": 1,
+      "rarity": "rare",
+      "set": "WHIZBANGS_WORKSHOP",
+      "tribe": "Beast",
+      "keywords": [
+        "taunt",
+        "battlecry"
+      ],
+      "description": "Taunt. Battlecry: Swap Health with another minion.",
+      "effects": [
+        {
+          "type": "swap-health-with",
+          "target": "creature"
+        }
+      ]
+    },
+    {
+      "id": "sand_art_elemental",
+      "name": "Sand Art Elemental",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "shaman",
+      "attack": 4,
+      "health": 4,
+      "rarity": "common",
+      "set": "WHIZBANGS_WORKSHOP",
+      "tribe": "Elemental",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Miniaturize. Battlecry: Give your hero +1 Attack and Windfury this turn.",
+      "effects": [
+        {
+          "type": "hero-temp-attack",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "sonya_waterdancer",
+      "name": "Sonya Waterdancer",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "rogue",
+      "attack": 3,
+      "health": 3,
+      "rarity": "legendary",
+      "set": "WHIZBANGS_WORKSHOP",
+      "description": "After you play a 1-Cost minion, get a copy of it that costs (0).",
+      "ongoing": {
+        "on": "creature-played",
+        "if": {
+          "maxCost": 1
+        },
+        "effects": [
+          {
+            "type": "add-copy-of-played-minion-free",
+            "maxCost": 1
+          }
+        ]
+      }
     }
   ]
 }
