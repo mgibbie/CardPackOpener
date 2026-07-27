@@ -1970,7 +1970,7 @@
       "cardClass": "neutral",
       "cost": 6,
       "rarity": "legendary",
-      "tribe": "Beast",
+      "tribe": "Elemental/Beast",
       "type": "creature",
       "attack": 9,
       "health": 7,
@@ -2013,7 +2013,7 @@
       "attack": 9,
       "health": 5,
       "description": "A 9/5 creature.",
-      "tribe": "Beast"
+      "tribe": "Elemental/Beast"
     },
     {
       "id": "flamestrike",
@@ -8633,7 +8633,7 @@
       "type": "creature",
       "attack": 2,
       "health": 2,
-      "tribe": "Undead Draenei",
+      "tribe": "Undead/Draenei",
       "keywords": [
         "battlecry",
         "deathrattle"
@@ -9059,7 +9059,7 @@
       "type": "creature",
       "attack": 4,
       "health": 3,
-      "tribe": "Beast",
+      "tribe": "Undead/Beast",
       "keywords": [
         "elusive"
       ]
@@ -9127,7 +9127,7 @@
       "type": "creature",
       "attack": 4,
       "health": 6,
-      "tribe": "Undead Beast"
+      "tribe": "Undead/Beast"
     },
     {
       "id": "dispatch_kodo",
@@ -9829,7 +9829,7 @@
       "type": "creature",
       "attack": 2,
       "health": 1,
-      "tribe": "Elemental Beast",
+      "tribe": "Elemental/Beast",
       "keywords": [
         "rush"
       ]
@@ -10424,7 +10424,7 @@
       "type": "creature",
       "attack": 1,
       "health": 1,
-      "tribe": "Mech Beast",
+      "tribe": "Mech/Beast",
       "keywords": [
         "deathrattle"
       ],
@@ -10677,7 +10677,7 @@
       "type": "creature",
       "attack": 2,
       "health": 4,
-      "tribe": "Mech Demon"
+      "tribe": "Mech/Demon"
     },
     {
       "id": "naval_mine",
@@ -10873,7 +10873,7 @@
       "type": "creature",
       "attack": 1,
       "health": 2,
-      "tribe": "Mech Beast",
+      "tribe": "Mech/Beast",
       "keywords": [
         "battlecry"
       ],
@@ -11925,7 +11925,7 @@
       "type": "creature",
       "attack": 2,
       "health": 8,
-      "tribe": "Elemental Dragon",
+      "tribe": "Elemental/Dragon",
       "keywords": [
         "divine_shield",
         "taunt",
@@ -12581,7 +12581,7 @@
       "type": "creature",
       "attack": 5,
       "health": 5,
-      "tribe": "Elemental Naga"
+      "tribe": "Elemental/Naga"
     },
     {
       "id": "treetech_jungledrone",
@@ -21641,7 +21641,7 @@
       "cardClass": "shaman",
       "cost": 2,
       "rarity": "common",
-      "tribe": "Elemental",
+      "tribe": "Elemental/Murloc",
       "type": "creature",
       "attack": 1,
       "health": 2,
@@ -21701,7 +21701,7 @@
       "cardClass": "death_knight",
       "cost": 2,
       "rarity": "common",
-      "tribe": "Pirate",
+      "tribe": "Undead/Pirate",
       "type": "creature",
       "attack": 2,
       "health": 2,
@@ -22956,7 +22956,7 @@
       "cardClass": "rogue",
       "cost": 3,
       "rarity": "common",
-      "tribe": "Pirate",
+      "tribe": "Undead/Pirate",
       "type": "creature",
       "attack": 2,
       "health": 4,
@@ -23763,7 +23763,7 @@
       "cardClass": "neutral",
       "cost": 3,
       "rarity": "common",
-      "tribe": "Beast",
+      "tribe": "Elemental/Beast",
       "type": "creature",
       "attack": 7,
       "health": 2,
@@ -24192,7 +24192,7 @@
       "cardClass": "hunter",
       "cost": 3,
       "rarity": "common",
-      "tribe": "Mech",
+      "tribe": "Mech/Beast",
       "type": "creature",
       "attack": 3,
       "health": 3,
@@ -24643,7 +24643,7 @@
       "cardClass": "neutral",
       "cost": 4,
       "rarity": "common",
-      "tribe": "Elemental",
+      "tribe": "Elemental/Beast",
       "type": "creature",
       "attack": 3,
       "health": 5,
@@ -24659,7 +24659,7 @@
       "cardClass": "neutral",
       "cost": 4,
       "rarity": "common",
-      "tribe": "Elemental",
+      "tribe": "Elemental/Beast",
       "type": "creature",
       "attack": 3,
       "health": 4,
@@ -24921,7 +24921,7 @@
       "cardClass": "neutral",
       "cost": 4,
       "rarity": "common",
-      "tribe": "Pirate",
+      "tribe": "Naga/Pirate",
       "type": "creature",
       "attack": 5,
       "health": 4,
@@ -25181,7 +25181,7 @@
       "cardClass": "neutral",
       "cost": 4,
       "rarity": "common",
-      "tribe": "Mech",
+      "tribe": "Elemental/Mech",
       "type": "creature",
       "attack": 5,
       "health": 1,
@@ -25619,7 +25619,8 @@
         "rush"
       ],
       "description": "Divine Shield.\nRush.",
-      "set": "hsx"
+      "set": "hsx",
+      "tribe": "Undead/Beast"
     },
     {
       "id": "green_jelly",
@@ -25940,7 +25941,7 @@
       "cardClass": "neutral",
       "cost": 5,
       "rarity": "common",
-      "tribe": "Beast",
+      "tribe": "Undead/Beast",
       "type": "creature",
       "attack": 6,
       "health": 5,
@@ -26575,7 +26576,8 @@
         }
       ],
       "description": "Battlecry: Give a friendly creature +4/+4 & Taunt.",
-      "set": "hsx"
+      "set": "hsx",
+      "tribe": "Undead/Beast"
     },
     {
       "id": "captured_jormungar",
@@ -26981,7 +26983,7 @@
       "cardClass": "neutral",
       "cost": 8,
       "rarity": "common",
-      "tribe": "Demon",
+      "tribe": "Mech/Demon",
       "type": "creature",
       "attack": 8,
       "health": 8,
@@ -27120,7 +27122,7 @@
       "cardClass": "neutral",
       "cost": 9,
       "rarity": "common",
-      "tribe": "Mech",
+      "tribe": "Mech/Beast",
       "type": "creature",
       "attack": 9,
       "health": 7,
@@ -27415,7 +27417,7 @@
       "cardClass": "neutral",
       "cost": 1,
       "rarity": "common",
-      "tribe": "Murloc",
+      "tribe": "Undead/Murloc",
       "type": "creature",
       "attack": 1,
       "health": 1,
@@ -27512,7 +27514,7 @@
       "cardClass": "rogue",
       "cost": 1,
       "rarity": "common",
-      "tribe": "Pirate",
+      "tribe": "Undead/Pirate",
       "type": "creature",
       "attack": 1,
       "health": 3,
@@ -27561,7 +27563,7 @@
       "cardClass": "neutral",
       "cost": 1,
       "rarity": "common",
-      "tribe": "Murloc",
+      "tribe": "Undead/Murloc",
       "type": "creature",
       "attack": 1,
       "health": 1,
@@ -27848,7 +27850,7 @@
       "cardClass": "shaman",
       "cost": 2,
       "rarity": "common",
-      "tribe": "Murloc",
+      "tribe": "Undead/Murloc",
       "type": "creature",
       "attack": 2,
       "health": 2,
@@ -28563,7 +28565,7 @@
       "cardClass": "warrior",
       "cost": 3,
       "rarity": "common",
-      "tribe": "Pirate",
+      "tribe": "Mech/Pirate",
       "type": "creature",
       "attack": 4,
       "health": 3,
@@ -29726,7 +29728,7 @@
       "cardClass": "neutral",
       "cost": 6,
       "rarity": "common",
-      "tribe": "Mech",
+      "tribe": "Mech/Beast",
       "type": "creature",
       "attack": 5,
       "health": 12,
@@ -29972,7 +29974,7 @@
       "cardClass": "neutral",
       "cost": 8,
       "rarity": "common",
-      "tribe": "Dragon",
+      "tribe": "Undead/Dragon",
       "type": "creature",
       "attack": 8,
       "health": 8,
@@ -31395,7 +31397,7 @@
       "cardClass": "shaman",
       "cost": 3,
       "rarity": "legendary",
-      "tribe": "Murloc",
+      "tribe": "Murloc/Pirate",
       "type": "creature",
       "attack": 2,
       "health": 3,
@@ -33101,7 +33103,7 @@
       "cardClass": "neutral",
       "cost": 5,
       "rarity": "rare",
-      "tribe": "Dragon",
+      "tribe": "Elemental/Dragon",
       "type": "creature",
       "attack": 4,
       "health": 4,
@@ -33669,7 +33671,7 @@
       "cardClass": "neutral",
       "cost": 6,
       "rarity": "rare",
-      "tribe": "Mech",
+      "tribe": "Mech/Dragon",
       "type": "creature",
       "attack": 2,
       "health": 2,
@@ -33946,7 +33948,7 @@
       "cardClass": "neutral",
       "cost": 7,
       "rarity": "legendary",
-      "tribe": "Dragon",
+      "tribe": "Undead/Dragon",
       "type": "creature",
       "attack": 6,
       "health": 6,
@@ -34296,7 +34298,7 @@
       "cardClass": "warlock",
       "cost": 8,
       "rarity": "rare",
-      "tribe": "Beast",
+      "tribe": "Demon/Beast",
       "type": "creature",
       "attack": 6,
       "health": 12,
@@ -34554,7 +34556,7 @@
       "cardClass": "mage",
       "cost": 8,
       "rarity": "legendary",
-      "tribe": "Dragon",
+      "tribe": "Undead/Dragon",
       "type": "creature",
       "attack": 8,
       "health": 8,
@@ -35069,7 +35071,8 @@
         }
       ],
       "description": "Battlecry: Choose a friendly creature & gain a copy of its Deathrattle.",
-      "set": "hsx"
+      "set": "hsx",
+      "tribe": "Undead/Beast"
     },
     {
       "id": "mok_nathal_lion",
@@ -35469,7 +35472,7 @@
       "cardClass": "death_knight__demon_hunter",
       "cost": 7,
       "rarity": "common",
-      "tribe": "Demon",
+      "tribe": "Undead/Demon",
       "type": "creature",
       "attack": 5,
       "health": 4,
@@ -36107,7 +36110,7 @@
       "cardClass": "neutral",
       "cost": 6,
       "rarity": "rare",
-      "tribe": "Dragon",
+      "tribe": "Undead/Dragon",
       "type": "creature",
       "attack": 6,
       "health": 5,
@@ -36825,7 +36828,7 @@
       "cardClass": "rogue",
       "cost": 3,
       "rarity": "common",
-      "tribe": "Mech",
+      "tribe": "Mech/Beast",
       "type": "creature",
       "attack": 1,
       "health": 4,
@@ -39652,7 +39655,7 @@
       "cardClass": "shaman",
       "cost": 2,
       "rarity": "common",
-      "tribe": "Murloc",
+      "tribe": "Undead/Murloc",
       "echo": true,
       "type": "creature",
       "attack": 2,
@@ -39683,7 +39686,7 @@
       "cardClass": "mage__shaman",
       "cost": 2,
       "rarity": "common",
-      "tribe": "Elemental",
+      "tribe": "Elemental/Beast",
       "static": {
         "type": "spell-damage",
         "value": 2
@@ -39701,7 +39704,7 @@
       "cardClass": "warlock",
       "cost": 2,
       "rarity": "rare",
-      "tribe": "Demon",
+      "tribe": "Mech/Demon",
       "type": "creature",
       "attack": 3,
       "health": 3,
@@ -39834,7 +39837,7 @@
       "cardClass": "neutral",
       "cost": 3,
       "rarity": "common",
-      "tribe": "Beast",
+      "tribe": "Mech/Beast",
       "type": "creature",
       "attack": 3,
       "health": 12,
@@ -39888,7 +39891,7 @@
       "cardClass": "neutral",
       "cost": 3,
       "rarity": "legendary",
-      "tribe": "Mech",
+      "tribe": "Mech/Beast",
       "magnetic": true,
       "echo": true,
       "type": "creature",
@@ -39933,7 +39936,7 @@
       "cardClass": "hunter",
       "cost": 3,
       "rarity": "rare",
-      "tribe": "Mech",
+      "tribe": "Mech/Beast",
       "magnetic": true,
       "type": "creature",
       "attack": 2,
@@ -43981,7 +43984,7 @@
       "type": "creature",
       "attack": 8,
       "health": 8,
-      "tribe": "Mech"
+      "tribe": "Mech/Beast"
     },
     {
       "id": "whizbang_the_wonderful",
@@ -44082,7 +44085,7 @@
       "type": "creature",
       "attack": 3,
       "health": 2,
-      "tribe": "Demon",
+      "tribe": "Demon/Murloc",
       "keywords": [
         "battlecry"
       ],
@@ -44719,7 +44722,7 @@
       "type": "creature",
       "attack": 4,
       "health": 10,
-      "tribe": "Demon"
+      "tribe": "Demon/Beast"
     },
     {
       "id": "arcanologist",
@@ -44881,7 +44884,7 @@
       "type": "creature",
       "attack": 3,
       "health": 4,
-      "tribe": "Elemental"
+      "tribe": "Elemental/Beast"
     },
     {
       "id": "techysaurus",
@@ -44894,7 +44897,7 @@
       "type": "creature",
       "attack": 3,
       "health": 6,
-      "tribe": "Mech"
+      "tribe": "Mech/Beast"
     },
     {
       "id": "tortotem",
@@ -45207,7 +45210,7 @@
       "type": "creature",
       "attack": 4,
       "health": 6,
-      "tribe": "Beast"
+      "tribe": "Beast/Dragon"
     },
     {
       "id": "prescient_slitherdrake",
@@ -45903,7 +45906,7 @@
       "type": "creature",
       "attack": 2,
       "health": 6,
-      "tribe": "Undead",
+      "tribe": "Undead/Draenei",
       "keywords": [
         "taunt",
         "pacifist"
@@ -45933,7 +45936,7 @@
       "type": "creature",
       "attack": 3,
       "health": 4,
-      "tribe": "Undead"
+      "tribe": "Undead/Beast"
     },
     {
       "id": "remixed_totemcarver",
@@ -46149,7 +46152,7 @@
       "type": "creature",
       "attack": 5,
       "health": 5,
-      "tribe": "Elemental"
+      "tribe": "Elemental/Beast"
     },
     {
       "id": "gemstudded_golem",
@@ -46882,7 +46885,7 @@
       "type": "creature",
       "attack": 5,
       "health": 5,
-      "tribe": "Elemental"
+      "tribe": "Elemental/Beast"
     },
     {
       "id": "inkveil_ambusher",
@@ -47013,7 +47016,7 @@
       "type": "creature",
       "attack": 4,
       "health": 3,
-      "tribe": "Undead"
+      "tribe": "Undead/Beast"
     },
     {
       "id": "titanographer_osk",
@@ -47143,7 +47146,7 @@
       "type": "creature",
       "attack": 0,
       "health": 3,
-      "tribe": "Undead"
+      "tribe": "Undead/Beast"
     },
     {
       "id": "shirvallah_the_tiger",
@@ -47181,7 +47184,7 @@
       "type": "creature",
       "attack": 0,
       "health": 3,
-      "tribe": "Undead"
+      "tribe": "Undead/Beast"
     },
     {
       "id": "rabble_bouncer",
@@ -47627,7 +47630,7 @@
       "type": "creature",
       "attack": 3,
       "health": 4,
-      "tribe": "Mech"
+      "tribe": "Mech/Beast"
     },
     {
       "id": "imposing_anubisath",
@@ -47824,7 +47827,7 @@
       "type": "creature",
       "attack": 5,
       "health": 6,
-      "tribe": "Elemental",
+      "tribe": "Elemental/Beast",
       "keywords": [
         "battlecry"
       ],
@@ -47988,7 +47991,7 @@
       "type": "creature",
       "attack": 1,
       "health": 8,
-      "tribe": "Mech"
+      "tribe": "Mech/Beast"
     },
     {
       "id": "bouldering_buddy",
@@ -48052,7 +48055,7 @@
       "type": "creature",
       "attack": 16,
       "health": 16,
-      "tribe": "Elemental"
+      "tribe": "Elemental/Beast"
     },
     {
       "id": "antique_flinger",
@@ -48524,7 +48527,7 @@
       "type": "creature",
       "attack": 7,
       "health": 3,
-      "tribe": "Elemental",
+      "tribe": "Elemental/Beast",
       "keywords": [
         "deathrattle"
       ],
@@ -49341,7 +49344,7 @@
       "type": "creature",
       "attack": 2,
       "health": 2,
-      "tribe": "Undead",
+      "tribe": "Undead/Beast",
       "keywords": [
         "deathrattle"
       ],
@@ -49839,7 +49842,7 @@
       "type": "creature",
       "attack": 1,
       "health": 2,
-      "tribe": "Undead",
+      "tribe": "Undead/Beast",
       "keywords": [
         "battlecry"
       ],
@@ -49910,7 +49913,7 @@
       "type": "creature",
       "attack": 1,
       "health": 2,
-      "tribe": "Elemental",
+      "tribe": "Elemental/Beast",
       "keywords": [
         "battlecry"
       ],
@@ -51652,7 +51655,7 @@
       "type": "creature",
       "attack": 4,
       "health": 5,
-      "tribe": "Mech",
+      "tribe": "Mech/Demon",
       "keywords": [
         "taunt",
         "deathrattle"
@@ -51988,7 +51991,8 @@
             "type": "destroy-triggering"
           }
         ]
-      }
+      },
+      "tribe": "Undead/Dragon"
     },
     {
       "id": "token_colaques_shell",
@@ -52653,7 +52657,8 @@
         "token_onyxias_wing"
       ],
       "description": "Colossal +2. When your hero would lose Health on your turn, gain that much max Health instead.",
-      "healToMaxHealth": true
+      "healToMaxHealth": true,
+      "tribe": "Undead/Dragon"
     },
     {
       "id": "token_chos_arm",
@@ -52752,7 +52757,7 @@
       "type": "creature",
       "attack": 2,
       "health": 1,
-      "tribe": "Undead",
+      "tribe": "Undead/Mech",
       "keywords": [
         "deathrattle"
       ],
@@ -62407,7 +62412,7 @@
       "health": 3,
       "rarity": "rare",
       "set": "GVG",
-      "tribe": "Mech",
+      "tribe": "Mech/Beast",
       "keywords": [
         "battlecry"
       ],
@@ -62431,7 +62436,7 @@
       "health": 2,
       "rarity": "rare",
       "set": "GVG",
-      "tribe": "Mech",
+      "tribe": "Mech/Beast",
       "keywords": [
         "taunt",
         "battlecry"
@@ -62797,7 +62802,7 @@
       "health": 6,
       "rarity": "rare",
       "set": "GVG",
-      "tribe": "Beast",
+      "tribe": "Mech/Beast",
       "description": "Whenever this creature takes damage, add a Spare Part to your hand.",
       "ongoing": {
         "on": "self-damaged",
@@ -64076,7 +64081,7 @@
       "health": 4,
       "rarity": "rare",
       "set": "BRM",
-      "tribe": "Beast",
+      "tribe": "Elemental/Beast",
       "keywords": [
         "battlecry"
       ],
@@ -65654,7 +65659,7 @@
       "health": 4,
       "rarity": "common",
       "set": "LOE",
-      "tribe": "Mech",
+      "tribe": "Mech/Beast",
       "keywords": [
         "battlecry"
       ],
@@ -65771,7 +65776,7 @@
       "health": 8,
       "rarity": "common",
       "set": "LOE",
-      "tribe": "Beast",
+      "tribe": "Undead/Beast",
       "keywords": [
         "battlecry"
       ],
@@ -68618,7 +68623,7 @@
       "health": 1,
       "rarity": "legendary",
       "set": "GANGS",
-      "tribe": "Pirate",
+      "tribe": "Demon/Pirate",
       "keywords": [
         "charge"
       ],
@@ -69394,7 +69399,7 @@
       "health": 7,
       "rarity": "epic",
       "set": "UNGORO",
-      "tribe": "Beast",
+      "tribe": "Elemental/Beast",
       "keywords": [
         "charge",
         "battlecry"
@@ -69438,7 +69443,7 @@
       "health": 2,
       "rarity": "legendary",
       "set": "UNGORO",
-      "tribe": "Elemental",
+      "tribe": "Elemental/Beast",
       "keywords": [
         "deathrattle"
       ],
@@ -70001,7 +70006,8 @@
         {
           "type": "gain-weapon-stats"
         }
-      ]
+      ],
+      "tribe": "Undead/Pirate"
     },
     {
       "id": "grave_shambler",
@@ -70023,7 +70029,8 @@
             "health": 1
           }
         ]
-      }
+      },
+      "tribe": "Undead/Elemental"
     },
     {
       "id": "wicked_skeleton",
@@ -70597,7 +70604,8 @@
             "type": "damage-random-enemy-heal"
           }
         ]
-      }
+      },
+      "tribe": "Undead/Draenei"
     },
     {
       "id": "abominable_bowman",
@@ -73317,7 +73325,7 @@
       "health": 3,
       "rarity": "rare",
       "set": "GILNEAS",
-      "tribe": "Pirate",
+      "tribe": "Undead/Pirate",
       "keywords": [
         "rush",
         "deathrattle"
@@ -73756,7 +73764,7 @@
       "health": 1,
       "rarity": "rare",
       "set": "BOOMSDAY",
-      "tribe": "Mech",
+      "tribe": "Mech/Beast",
       "keywords": [
         "battlecry"
       ],
@@ -73783,7 +73791,7 @@
       "health": 1,
       "rarity": "common",
       "set": "BOOMSDAY",
-      "tribe": "Mech",
+      "tribe": "Mech/Beast",
       "keywords": [
         "deathrattle"
       ],
@@ -74056,7 +74064,7 @@
       "health": 4,
       "rarity": "common",
       "set": "BOOMSDAY",
-      "tribe": "Mech",
+      "tribe": "Mech/Beast",
       "keywords": [
         "battlecry"
       ],
@@ -74404,7 +74412,8 @@
           "distinct": true,
           "count": 5
         }
-      ]
+      ],
+      "tribe": "Mech/Beast"
     },
     {
       "id": "mechathun",
@@ -74648,7 +74657,7 @@
       "health": 4,
       "rarity": "epic",
       "set": "BOOMSDAY",
-      "tribe": "Beast",
+      "tribe": "Mech/Beast",
       "description": "Whenever you shuffle a card into a deck, shuffle in an extra copy."
     },
     {
@@ -75193,7 +75202,8 @@
             "health": 1
           }
         ]
-      }
+      },
+      "tribe": "Undead/Beast"
     },
     {
       "id": "spirit_of_the_lynx",
@@ -75225,7 +75235,8 @@
             "health": 1
           }
         ]
-      }
+      },
+      "tribe": "Undead/Beast"
     },
     {
       "id": "spirit_of_the_tiger",
@@ -75256,7 +75267,8 @@
             "tribe": "Beast"
           }
         ]
-      }
+      },
+      "tribe": "Undead/Beast"
     },
     {
       "id": "spirit_of_the_dead",
@@ -75404,7 +75416,8 @@
         {
           "type": "set-heal-harm"
         }
-      ]
+      ],
+      "tribe": "Undead/Draenei"
     },
     {
       "id": "soup_vendor",
@@ -75531,7 +75544,8 @@
             }
           ]
         }
-      ]
+      ],
+      "tribe": "Elemental/Beast"
     },
     {
       "id": "zandalari_templar",
@@ -75980,7 +75994,8 @@
             "value": 1
           }
         ]
-      }
+      },
+      "tribe": "Undead/Beast"
     },
     {
       "id": "spirit_of_the_dragonhawk",
@@ -76002,7 +76017,8 @@
           "type": "temp-stealth-self"
         }
       ],
-      "heroPowerAdjacent": true
+      "heroPowerAdjacent": true,
+      "tribe": "Undead/Beast"
     },
     {
       "id": "spirit_of_the_frog",
@@ -76032,7 +76048,8 @@
             "value": 1
           }
         ]
-      }
+      },
+      "tribe": "Undead/Beast"
     },
     {
       "id": "zentimo",
@@ -76586,7 +76603,7 @@
       "health": 2,
       "rarity": "common",
       "set": "DALARAN",
-      "tribe": "Mech",
+      "tribe": "Mech/Beast",
       "description": "Whenever this creature deals damage, gain that much Armor.",
       "ongoing": {
         "on": "self-deals-damage",
@@ -78098,7 +78115,7 @@
       "health": 2,
       "rarity": "epic",
       "set": "ULDUM",
-      "tribe": "Mech",
+      "tribe": "Undead/Mech",
       "keywords": [
         "reborn"
       ],
@@ -78629,7 +78646,7 @@
       "health": 5,
       "rarity": "epic",
       "set": "ULDUM",
-      "tribe": "Beast",
+      "tribe": "Undead/Beast",
       "description": "Whenever your hero takes damage on your turn, summon a random 3-Cost minion.",
       "ongoing": {
         "on": "own-hero-damaged",
@@ -79491,7 +79508,8 @@
           "type": "add-card",
           "id": "drg_arcane_missiles"
         }
-      ]
+      ],
+      "tribe": "Elemental/Beast"
     },
     {
       "id": "tasty_flyfish",
@@ -79581,7 +79599,7 @@
       "health": 3,
       "rarity": "common",
       "set": "DRAGONS",
-      "tribe": "Elemental",
+      "tribe": "Elemental/Beast",
       "keywords": [
         "battlecry"
       ],
@@ -79739,7 +79757,7 @@
       "health": 3,
       "rarity": "epic",
       "set": "DRAGONS",
-      "tribe": "Murloc",
+      "tribe": "Murloc/Dragon",
       "keywords": [
         "battlecry"
       ],
@@ -80883,7 +80901,8 @@
           "id": "drg_waxadred_candle",
           "count": 1
         }
-      ]
+      ],
+      "tribe": "Elemental/Dragon"
     },
     {
       "id": "bandersmosh",
@@ -82065,7 +82084,7 @@
       "health": 4,
       "rarity": "epic",
       "set": "BLACK_TEMPLE",
-      "tribe": "Beast",
+      "tribe": "Mech/Beast",
       "keywords": [
         "deathrattle"
       ],
@@ -83016,7 +83035,7 @@
       "health": 7,
       "rarity": "epic",
       "set": "BLACK_TEMPLE",
-      "tribe": "Beast",
+      "tribe": "Mech/Beast",
       "keywords": [
         "rush"
       ],
@@ -83042,7 +83061,7 @@
       "health": 9,
       "rarity": "epic",
       "set": "BLACK_TEMPLE",
-      "tribe": "Dragon",
+      "tribe": "Undead/Dragon",
       "keywords": [
         "taunt"
       ],
@@ -85577,7 +85596,7 @@
       "health": 6,
       "rarity": "rare",
       "set": "DARKMOON_FAIRE",
-      "tribe": "Elemental",
+      "tribe": "Elemental/Beast",
       "healBonusHealth": 2,
       "description": "Your healing effects also give affected minions +2 Health."
     },
@@ -85642,7 +85661,7 @@
       "health": 5,
       "rarity": "common",
       "set": "DARKMOON_FAIRE",
-      "tribe": "Mech",
+      "tribe": "Mech/Beast",
       "keywords": [
         "divine_shield"
       ],
@@ -87499,7 +87518,7 @@
       "health": 4,
       "rarity": "legendary",
       "set": "THE_BARRENS",
-      "tribe": "Quilboar",
+      "tribe": "Undead/Quilboar",
       "description": "After a friendly minion with Taunt dies, summon a new copy of it without Taunt.",
       "ongoing": {
         "on": "friendly-creature-died",
@@ -88418,7 +88437,7 @@
       "health": 2,
       "rarity": "common",
       "set": "STORMWIND",
-      "tribe": "Murloc",
+      "tribe": "Demon/Murloc",
       "keywords": [
         "taunt",
         "battlecry"
@@ -88949,7 +88968,7 @@
       "health": 2,
       "rarity": "common",
       "set": "STORMWIND",
-      "tribe": "Demon",
+      "tribe": "Demon/Pirate",
       "keywords": [
         "battlecry"
       ],
@@ -89605,7 +89624,7 @@
       "health": 5,
       "rarity": "common",
       "set": "STORMWIND",
-      "tribe": "Undead",
+      "tribe": "Undead/Beast",
       "description": "After you play a card with Overload, summon a 2/3 Spirit Wolf with Taunt.",
       "ongoing": {
         "on": "overload-card-played",
@@ -89684,7 +89703,7 @@
       "health": 2,
       "rarity": "common",
       "set": "STORMWIND",
-      "tribe": "Pirate",
+      "tribe": "Undead/Pirate",
       "keywords": [
         "battlecry"
       ],
@@ -91676,7 +91695,7 @@
       "health": 6,
       "rarity": "legendary",
       "set": "ALTERAC_VALLEY",
-      "tribe": "Elemental",
+      "tribe": "Elemental/Beast",
       "keywords": [
         "battlecry"
       ],
@@ -91927,7 +91946,7 @@
       "health": 1,
       "rarity": "common",
       "set": "THE_SUNKEN_CITY",
-      "tribe": "Mech",
+      "tribe": "Mech/Beast",
       "keywords": [
         "divine_shield",
         "battlecry"
@@ -92190,7 +92209,7 @@
       "health": 3,
       "rarity": "common",
       "set": "THE_SUNKEN_CITY",
-      "tribe": "Mech",
+      "tribe": "Mech/Beast",
       "keywords": [
         "battlecry"
       ],
@@ -92753,7 +92772,7 @@
       "health": 5,
       "rarity": "common",
       "set": "THE_SUNKEN_CITY",
-      "tribe": "Pirate",
+      "tribe": "Undead/Pirate",
       "description": "After your hero attacks, draw a Pirate.",
       "ongoing": {
         "on": "hero-attacks",
@@ -92955,7 +92974,7 @@
       "health": 3,
       "rarity": "common",
       "set": "THE_SUNKEN_CITY",
-      "tribe": "Mech",
+      "tribe": "Mech/Beast",
       "description": "After you summon a Mech, deal 3 damage randomly split among all enemies.",
       "ongoing": {
         "on": "summoned",
@@ -93030,7 +93049,7 @@
       "health": 4,
       "rarity": "legendary",
       "set": "THE_SUNKEN_CITY",
-      "tribe": "Elemental",
+      "tribe": "Elemental/Naga",
       "schoolCostReduce": {
         "school": "Nature",
         "amount": 1
@@ -93442,7 +93461,7 @@
       "health": 5,
       "rarity": "common",
       "set": "THE_SUNKEN_CITY",
-      "tribe": "Elemental",
+      "tribe": "Elemental/Beast",
       "keywords": [
         "taunt",
         "battlecry"
@@ -93694,7 +93713,7 @@
       "health": 4,
       "rarity": "epic",
       "set": "THE_SUNKEN_CITY",
-      "tribe": "Pirate",
+      "tribe": "Undead/Pirate",
       "description": "Combo: Put an enemy minion on the bottom of your opponent's deck.",
       "combo": [
         {
@@ -95158,7 +95177,7 @@
       "health": 4,
       "rarity": "common",
       "set": "REVENDRETH",
-      "tribe": "Murloc",
+      "tribe": "Undead/Murloc",
       "keywords": [
         "lifesteal"
       ],
@@ -96557,7 +96576,7 @@
       "health": 2,
       "rarity": "epic",
       "set": "BATTLE_OF_THE_BANDS",
-      "tribe": "Beast",
+      "tribe": "Undead/Beast",
       "keywords": [
         "battlecry",
         "deathrattle"
@@ -96822,7 +96841,7 @@
       "health": 1,
       "rarity": "common",
       "set": "BATTLE_OF_THE_BANDS",
-      "tribe": "Mech",
+      "tribe": "Mech/Beast",
       "keywords": [
         "combo"
       ],
@@ -96958,7 +96977,7 @@
       "health": 4,
       "rarity": "common",
       "set": "BATTLE_OF_THE_BANDS",
-      "tribe": "Totem",
+      "tribe": "Mech/Totem",
       "description": "At the end of your turn, summon a Silver Hand Recruit.",
       "ongoing": {
         "on": "turn-end",
@@ -99229,7 +99248,7 @@
       "health": 1,
       "rarity": "common",
       "set": "RETURN_OF_THE_LICH_KING",
-      "tribe": "Undead",
+      "tribe": "Undead/Beast",
       "keywords": [
         "battlecry"
       ],
@@ -99623,7 +99642,7 @@
       "health": 3,
       "rarity": "rare",
       "set": "RETURN_OF_THE_LICH_KING",
-      "tribe": "Elemental",
+      "tribe": "Elemental/Murloc",
       "keywords": [
         "battlecry"
       ],
@@ -99824,7 +99843,7 @@
       "health": 3,
       "rarity": "common",
       "set": "RETURN_OF_THE_LICH_KING",
-      "tribe": "Undead",
+      "tribe": "Undead/Naga",
       "keywords": [
         "battlecry"
       ],
@@ -100141,7 +100160,7 @@
       "health": 3,
       "rarity": "rare",
       "set": "RETURN_OF_THE_LICH_KING",
-      "tribe": "Elemental",
+      "tribe": "Elemental/Naga",
       "keywords": [
         "battlecry"
       ],
@@ -100250,7 +100269,7 @@
       "health": 5,
       "rarity": "rare",
       "set": "RETURN_OF_THE_LICH_KING",
-      "tribe": "Dragon",
+      "tribe": "Mech/Dragon",
       "keywords": [
         "rush",
         "battlecry"
@@ -100303,7 +100322,7 @@
       "health": 4,
       "rarity": "rare",
       "set": "RETURN_OF_THE_LICH_KING",
-      "tribe": "Undead",
+      "tribe": "Undead/Draenei",
       "keywords": [
         "deathrattle"
       ],
@@ -100507,7 +100526,7 @@
       "health": 4,
       "rarity": "legendary",
       "set": "RETURN_OF_THE_LICH_KING",
-      "tribe": "Elemental",
+      "tribe": "Elemental/Beast",
       "keywords": [
         "rush",
         "deathrattle"
@@ -100631,7 +100650,7 @@
       "health": 6,
       "rarity": "legendary",
       "set": "RETURN_OF_THE_LICH_KING",
-      "tribe": "Undead",
+      "tribe": "Undead/Murloc",
       "keywords": [
         "battlecry"
       ],
@@ -100806,7 +100825,7 @@
       "health": 6,
       "rarity": "common",
       "set": "RETURN_OF_THE_LICH_KING",
-      "tribe": "Undead",
+      "tribe": "Undead/Beast",
       "keywords": [
         "taunt",
         "battlecry"
@@ -100843,7 +100862,7 @@
       "health": 7,
       "rarity": "rare",
       "set": "RETURN_OF_THE_LICH_KING",
-      "tribe": "Demon",
+      "tribe": "Demon/Naga",
       "keywords": [
         "battlecry"
       ],
@@ -101141,7 +101160,7 @@
       "health": 5,
       "rarity": "legendary",
       "set": "RETURN_OF_THE_LICH_KING",
-      "tribe": "Undead",
+      "tribe": "Undead/Beast",
       "keywords": [
         "reborn",
         "battlecry",
@@ -101910,7 +101929,7 @@
       "health": 3,
       "rarity": "common",
       "set": "TITANS",
-      "tribe": "Mech",
+      "tribe": "Mech/Beast",
       "magnetic": true,
       "description": "Magnetic. Whenever this attacks, get a Coin.",
       "ongoing": {
@@ -102001,7 +102020,7 @@
       "health": 2,
       "rarity": "epic",
       "set": "TITANS",
-      "tribe": "Mech",
+      "tribe": "Mech/Beast",
       "magnetic": true,
       "keywords": [
         "deathrattle"
@@ -103934,7 +103953,7 @@
       "health": 2,
       "rarity": "common",
       "set": "WHIZBANGS_WORKSHOP",
-      "tribe": "Undead",
+      "tribe": "Undead/Mech",
       "keywords": [
         "taunt",
         "battlecry"
@@ -104380,7 +104399,7 @@
       "health": 2,
       "rarity": "common",
       "set": "WHIZBANGS_WORKSHOP",
-      "tribe": "Undead",
+      "tribe": "Undead/Beast",
       "keywords": [
         "rush"
       ],
@@ -104738,7 +104757,7 @@
       "health": 4,
       "rarity": "common",
       "set": "WHIZBANGS_WORKSHOP",
-      "tribe": "Undead",
+      "tribe": "Undead/Quilboar",
       "description": "At the end of your turn, deal this minion's Attack damage randomly split among enemies.",
       "ongoing": {
         "on": "turn-end",
@@ -105200,7 +105219,7 @@
       "health": 4,
       "rarity": "legendary",
       "set": "WHIZBANGS_WORKSHOP",
-      "tribe": "Beast",
+      "tribe": "Mech/Beast",
       "keywords": [
         "battlecry"
       ],
@@ -105823,7 +105842,7 @@
       "health": 12,
       "rarity": "legendary",
       "set": "WHIZBANGS_WORKSHOP",
-      "tribe": "Demon",
+      "tribe": "Mech/Demon",
       "dormant": 2,
       "description": "Dormant for 2 turns. While Dormant, deal 3 damage to all enemies at the end of your turn.",
       "ongoing": {
@@ -106421,7 +106440,7 @@
       "health": 3,
       "rarity": "rare",
       "set": "WILD_WEST",
-      "tribe": "Beast",
+      "tribe": "Undead/Beast",
       "keywords": [
         "deathrattle"
       ],
@@ -106808,7 +106827,7 @@
       "health": 4,
       "rarity": "legendary",
       "set": "WILD_WEST",
-      "tribe": "Undead",
+      "tribe": "Undead/Beast",
       "keywords": [
         "battlecry"
       ],
@@ -107015,7 +107034,7 @@
       "health": 4,
       "rarity": "rare",
       "set": "WILD_WEST",
-      "tribe": "Beast",
+      "tribe": "Undead/Beast",
       "keywords": [
         "battlecry"
       ],
@@ -107979,7 +107998,7 @@
       "health": 7,
       "rarity": "epic",
       "set": "WILD_WEST",
-      "tribe": "Undead",
+      "tribe": "Undead/Beast",
       "keywords": [
         "taunt",
         "battlecry"
@@ -108165,7 +108184,7 @@
       "health": 6,
       "rarity": "legendary",
       "set": "WILD_WEST",
-      "tribe": "Elemental",
+      "tribe": "Elemental/Beast",
       "keywords": [
         "taunt",
         "deathrattle"
@@ -108280,7 +108299,7 @@
       "health": 3,
       "rarity": "common",
       "set": "ISLAND_VACATION",
-      "tribe": "Undead",
+      "tribe": "Undead/Pirate",
       "description": "Whenever this minion takes damage, also deal that amount to your hero.",
       "ongoing": {
         "on": "self-damaged",
@@ -108329,7 +108348,7 @@
       "health": 1,
       "rarity": "legendary",
       "set": "ISLAND_VACATION",
-      "tribe": "Demon",
+      "tribe": "Demon/Pirate",
       "keywords": [
         "battlecry"
       ],
@@ -108358,7 +108377,7 @@
       "health": 2,
       "rarity": "common",
       "set": "ISLAND_VACATION",
-      "tribe": "Demon",
+      "tribe": "Demon/Pirate",
       "description": "After a friendly Pirate attacks, give your hero +1 Attack this turn.",
       "ongoing": {
         "on": "friendly-attacks",
@@ -108383,7 +108402,7 @@
       "health": 4,
       "rarity": "rare",
       "set": "ISLAND_VACATION",
-      "tribe": "Undead",
+      "tribe": "Undead/Pirate",
       "description": "Whenever you play a Deathrattle minion, give it Reborn.",
       "ongoing": {
         "on": "creature-played",
@@ -108472,7 +108491,7 @@
       "health": 2,
       "rarity": "common",
       "set": "ISLAND_VACATION",
-      "tribe": "Pirate",
+      "tribe": "Murloc/Pirate",
       "keywords": [
         "deathrattle"
       ],
@@ -108754,7 +108773,7 @@
       "health": 3,
       "rarity": "rare",
       "set": "ISLAND_VACATION",
-      "tribe": "Undead",
+      "tribe": "Undead/Pirate",
       "keywords": [
         "taunt",
         "battlecry"
@@ -108785,7 +108804,7 @@
       "health": 2,
       "rarity": "legendary",
       "set": "ISLAND_VACATION",
-      "tribe": "Murloc",
+      "tribe": "Murloc/Pirate",
       "description": "Demon Hunter Tourist. After a friendly minion dies, summon a random minion that costs (1) more.",
       "ongoing": {
         "on": "friendly-creature-died",
@@ -108820,7 +108839,7 @@
       "health": 3,
       "rarity": "epic",
       "set": "ISLAND_VACATION",
-      "tribe": "Beast",
+      "tribe": "Beast/Pirate",
       "keywords": [
         "battlecry"
       ],
@@ -108950,7 +108969,7 @@
       "health": 2,
       "rarity": "epic",
       "set": "ISLAND_VACATION",
-      "tribe": "Undead",
+      "tribe": "Undead/Pirate",
       "keywords": [
         "deathrattle"
       ],
@@ -109516,7 +109535,7 @@
       "health": 3,
       "rarity": "legendary",
       "set": "ISLAND_VACATION",
-      "tribe": "Pirate",
+      "tribe": "Undead/Pirate",
       "keywords": [
         "deathrattle"
       ],
@@ -113639,7 +113658,7 @@
       "health": 6,
       "rarity": "common",
       "set": "EMERALD_DREAM",
-      "tribe": "Dragon",
+      "tribe": "Beast/Dragon",
       "keywords": [
         "battlecry"
       ],
@@ -113747,7 +113766,7 @@
       "health": 2,
       "rarity": "epic",
       "set": "EMERALD_DREAM",
-      "tribe": "Elemental",
+      "tribe": "Elemental/Beast",
       "keywords": [
         "deathrattle"
       ],
@@ -114112,7 +114131,7 @@
       "health": 3,
       "rarity": "common",
       "set": "EMERALD_DREAM",
-      "tribe": "Elemental",
+      "tribe": "Elemental/Beast",
       "keywords": [
         "battlecry"
       ],
@@ -114220,7 +114239,7 @@
       "health": 5,
       "rarity": "legendary",
       "set": "EMERALD_DREAM",
-      "tribe": "Demon",
+      "tribe": "Demon/Beast",
       "keywords": [
         "battlecry"
       ],
@@ -114562,7 +114581,7 @@
       "health": 5,
       "rarity": "epic",
       "set": "EMERALD_DREAM",
-      "tribe": "Undead",
+      "tribe": "Undead/Beast",
       "keywords": [
         "battlecry"
       ],
@@ -114651,7 +114670,7 @@
       "health": 7,
       "rarity": "legendary",
       "set": "EMERALD_DREAM",
-      "tribe": "Undead",
+      "tribe": "Undead/Dragon",
       "keywords": [
         "taunt",
         "deathrattle"
@@ -114826,7 +114845,7 @@
       "health": 8,
       "rarity": "epic",
       "set": "EMERALD_DREAM",
-      "tribe": "Elemental",
+      "tribe": "Elemental/Beast",
       "keywords": [
         "rush"
       ],
@@ -114936,7 +114955,7 @@
       "health": 5,
       "rarity": "legendary",
       "set": "EMERALD_DREAM",
-      "tribe": "Elemental",
+      "tribe": "Elemental/Beast",
       "keywords": [
         "rush",
         "taunt",
@@ -115173,7 +115192,7 @@
       "health": 12,
       "rarity": "legendary",
       "set": "EMERALD_DREAM",
-      "tribe": "Demon",
+      "tribe": "Demon/Beast",
       "keywords": [
         "rush",
         "windfury",
@@ -115514,18 +115533,27 @@
       "health": 2,
       "rarity": "common",
       "set": "THE_LOST_CITY",
-      "tribe": "Elemental",
+      "tribe": "Elemental/Murloc",
       "keywords": [
         "battlecry"
       ],
-      "description": "Kindred: Give your other minions Rush. (Approximated: fires as a Battlecry; Kindred condition not modeled.)",
+      "description": "Kindred: Give your other minions Rush.",
       "effects": [
         {
-          "type": "grant",
-          "keyword": "rush",
-          "target": "friendly-others"
+          "type": "conditional",
+          "if": {
+            "kindredActive": true
+          },
+          "then": [
+            {
+              "type": "grant",
+              "keyword": "rush",
+              "target": "friendly-others"
+            }
+          ]
         }
-      ]
+      ],
+      "kindredCard": true
     },
     {
       "id": "holy_eggbearer",
@@ -115863,7 +115891,7 @@
       "health": 3,
       "rarity": "common",
       "set": "THE_LOST_CITY",
-      "tribe": "Elemental",
+      "tribe": "Elemental/Dragon",
       "keywords": [
         "battlecry"
       ],
@@ -115889,11 +115917,19 @@
       "keywords": [
         "deathrattle"
       ],
-      "description": "Deathrattle: Draw a spell. Kindred: Summon a copy of this. (Kindred still pending.)",
+      "description": "Deathrattle: Draw a spell. Kindred: Summon a copy of this.",
       "effects": [
         {
-          "type": "summon-copy-of-self",
-          "count": 1
+          "type": "conditional",
+          "if": {
+            "kindredActive": true
+          },
+          "then": [
+            {
+              "type": "summon-copy-of-self",
+              "count": 1
+            }
+          ]
         }
       ],
       "deathrattle": [
@@ -115902,7 +115938,8 @@
           "cardType": "spell",
           "count": 1
         }
-      ]
+      ],
+      "kindredCard": true
     },
     {
       "id": "costume_merchant",
@@ -116028,7 +116065,7 @@
       "keywords": [
         "battlecry"
       ],
-      "description": "Battlecry: Your next Murloc costs (1) less. Kindred: And gains Divine Shield. (Kindred approximated: fires on play.)",
+      "description": "Battlecry: Your next Murloc costs (1) less. Kindred: And gains Divine Shield.",
       "effects": [
         {
           "type": "set-tribe-discount",
@@ -116037,12 +116074,21 @@
           "value": 1
         },
         {
-          "type": "set-next-tribe-play-reward",
-          "tribe": "Murloc",
-          "keyword": "divine_shield",
-          "count": 1
+          "type": "conditional",
+          "if": {
+            "kindredActive": true
+          },
+          "then": [
+            {
+              "type": "set-next-tribe-play-reward",
+              "tribe": "Murloc",
+              "keyword": "divine_shield",
+              "count": 1
+            }
+          ]
         }
-      ]
+      ],
+      "kindredCard": true
     },
     {
       "id": "latorvian_armorer",
@@ -116148,7 +116194,13 @@
       "keywords": [
         "battlecry"
       ],
-      "description": "Battlecry: Your next Kindred triggers twice. (Not modeled: Kindred.)"
+      "description": "Battlecry: Your next Kindred triggers twice.",
+      "effects": [
+        {
+          "type": "set-next-kindred-twice"
+        }
+      ],
+      "kindredCard": true
     },
     {
       "id": "relic_miner",
@@ -116297,19 +116349,37 @@
       "health": 3,
       "rarity": "common",
       "set": "THE_LOST_CITY",
-      "tribe": "Elemental",
+      "tribe": "Elemental/Beast",
       "keywords": [
         "battlecry"
       ],
-      "description": "Battlecry: Draw a Fire spell. Kindred: Give it Spell Damage +2. (Not modeled: Kindred Spell Damage.)",
+      "description": "Battlecry: Draw a Fire spell. Kindred: Give it Spell Damage +2.",
       "effects": [
         {
-          "type": "tutor",
-          "cardType": "spell",
-          "school": "Fire",
-          "count": 1
+          "type": "conditional",
+          "if": {
+            "kindredActive": true
+          },
+          "then": [
+            {
+              "type": "tutor",
+              "cardType": "spell",
+              "school": "Fire",
+              "count": 1,
+              "spellDamage": 2
+            }
+          ],
+          "else": [
+            {
+              "type": "tutor",
+              "cardType": "spell",
+              "school": "Fire",
+              "count": 1
+            }
+          ]
         }
-      ]
+      ],
+      "kindredCard": true
     },
     {
       "id": "ancient_pterrordax",
@@ -116391,11 +116461,11 @@
       "health": 4,
       "rarity": "common",
       "set": "THE_LOST_CITY",
-      "tribe": "Elemental",
+      "tribe": "Elemental/Beast",
       "keywords": [
         "battlecry"
       ],
-      "description": "Battlecry: Deal 2 damage to two random enemy minions. Kindred: And Freeze them. (Kindred approximated: fires on play.)",
+      "description": "Battlecry: Deal 2 damage to two random enemy minions. Kindred: And Freeze them.",
       "effects": [
         {
           "type": "random-damage",
@@ -116404,11 +116474,20 @@
           "pool": "enemy-creatures"
         },
         {
-          "type": "freeze",
-          "target": "random-enemy",
-          "count": 2
+          "type": "conditional",
+          "if": {
+            "kindredActive": true
+          },
+          "then": [
+            {
+              "type": "freeze",
+              "target": "random-enemy",
+              "count": 2
+            }
+          ]
         }
-      ]
+      ],
+      "kindredCard": true
     },
     {
       "id": "crater_gator",
@@ -116436,20 +116515,39 @@
       "health": 4,
       "rarity": "common",
       "set": "THE_LOST_CITY",
-      "tribe": "Undead",
+      "tribe": "Undead/Beast",
       "keywords": [
         "battlecry"
       ],
-      "description": "Battlecry: Draw a Deathrattle minion that costs (3) or less. Kindred: It costs (0). (Not modeled: Kindred cost-0.)",
+      "description": "Battlecry: Draw a Deathrattle minion that costs (3) or less. Kindred: It costs (0).",
       "effects": [
         {
-          "type": "tutor",
-          "cardType": "creature",
-          "requireKeyword": "deathrattle",
-          "maxCost": 3,
-          "count": 1
+          "type": "conditional",
+          "if": {
+            "kindredActive": true
+          },
+          "then": [
+            {
+              "type": "tutor",
+              "cardType": "creature",
+              "requireKeyword": "deathrattle",
+              "maxCost": 3,
+              "count": 1,
+              "costMod": -10
+            }
+          ],
+          "else": [
+            {
+              "type": "tutor",
+              "cardType": "creature",
+              "requireKeyword": "deathrattle",
+              "maxCost": 3,
+              "count": 1
+            }
+          ]
         }
-      ]
+      ],
+      "kindredCard": true
     },
     {
       "id": "elise_the_navigator",
@@ -116526,7 +116624,7 @@
       "health": 5,
       "rarity": "rare",
       "set": "THE_LOST_CITY",
-      "tribe": "Elemental",
+      "tribe": "Elemental/Mech",
       "description": "Whenever you play a Fire spell, gain stats equal to its Cost.",
       "ongoing": {
         "on": "spell-played",
@@ -116602,14 +116700,23 @@
       "keywords": [
         "battlecry"
       ],
-      "description": "Kindred: Deal damage to an enemy minion equal to this minion's Attack. (Kindred approximated: fires on play; a random enemy minion.)",
+      "description": "Kindred: Deal damage to an enemy minion equal to this minion's Attack.",
       "effects": [
         {
-          "type": "damage-random-enemy-by-attack",
-          "count": 1,
-          "minionsOnly": true
+          "type": "conditional",
+          "if": {
+            "kindredActive": true
+          },
+          "then": [
+            {
+              "type": "damage-random-enemy-by-attack",
+              "count": 1,
+              "minionsOnly": true
+            }
+          ]
         }
-      ]
+      ],
+      "kindredCard": true
     },
     {
       "id": "razidir",
@@ -116621,16 +116728,30 @@
       "health": 7,
       "rarity": "epic",
       "set": "THE_LOST_CITY",
-      "tribe": "Demon",
+      "tribe": "Demon/Beast",
       "keywords": [
         "battlecry"
       ],
-      "description": "Battlecry: Discard a random card from your hand. Kindred: Your opponent's hand instead. (Kindred not modeled: discards your own.)",
+      "description": "Battlecry: Discard a random card from your hand. Kindred: Your opponent's hand instead.",
       "effects": [
         {
-          "type": "discard-random"
+          "type": "conditional",
+          "if": {
+            "kindredActive": true
+          },
+          "then": [
+            {
+              "type": "discard-random-enemy"
+            }
+          ],
+          "else": [
+            {
+              "type": "discard-random"
+            }
+          ]
         }
-      ]
+      ],
+      "kindredCard": true
     },
     {
       "id": "steamfin_thief",
@@ -116646,14 +116767,23 @@
       "keywords": [
         "battlecry"
       ],
-      "description": "Kindred: Summon two 1/1 Murlocs with Rush. (Kindred approximated: fires on play.)",
+      "description": "Kindred: Summon two 1/1 Murlocs with Rush.",
       "effects": [
         {
-          "type": "summon",
-          "count": 2,
-          "summonId": "tlc_murloc_rush"
+          "type": "conditional",
+          "if": {
+            "kindredActive": true
+          },
+          "then": [
+            {
+              "type": "summon",
+              "count": 2,
+              "summonId": "tlc_murloc_rush"
+            }
+          ]
         }
-      ]
+      ],
+      "kindredCard": true
     },
     {
       "id": "torga",
@@ -116665,17 +116795,17 @@
       "health": 7,
       "rarity": "legendary",
       "set": "THE_LOST_CITY",
-      "tribe": "Undead",
+      "tribe": "Undead/Beast",
       "keywords": [
         "battlecry"
       ],
-      "description": "Battlecry: Draw a Kindred card and another card that activates it. (Approximated: draw 2 cards.)",
+      "description": "Battlecry: Draw a Kindred card and another card that activates it.",
       "effects": [
         {
-          "type": "draw",
-          "value": 2
+          "type": "torga-draw"
         }
-      ]
+      ],
+      "kindredCard": true
     },
     {
       "id": "willful_watcher",
@@ -116773,13 +116903,22 @@
       "keywords": [
         "battlecry"
       ],
-      "description": "Kindred: Summon a copy of this. (Kindred approximated: fires on play.)",
+      "description": "Kindred: Summon a copy of this.",
       "effects": [
         {
-          "type": "summon-copy-of-self",
-          "count": 1
+          "type": "conditional",
+          "if": {
+            "kindredActive": true
+          },
+          "then": [
+            {
+              "type": "summon-copy-of-self",
+              "count": 1
+            }
+          ]
         }
-      ]
+      ],
+      "kindredCard": true
     },
     {
       "id": "gorishi_wasp",
@@ -116817,7 +116956,7 @@
       "health": 4,
       "rarity": "rare",
       "set": "THE_LOST_CITY",
-      "tribe": "Undead",
+      "tribe": "Undead/Beast",
       "keywords": [
         "rush"
       ],
@@ -116871,13 +117010,22 @@
         "rush",
         "battlecry"
       ],
-      "description": "Rush. Kindred: Give your hero +5 Attack this turn. (Kindred approximated: fires on play.)",
+      "description": "Rush. Kindred: Give your hero +5 Attack this turn.",
       "effects": [
         {
-          "type": "hero-attack",
-          "value": 5
+          "type": "conditional",
+          "if": {
+            "kindredActive": true
+          },
+          "then": [
+            {
+              "type": "hero-attack",
+              "value": 5
+            }
+          ]
         }
-      ]
+      ],
+      "kindredCard": true
     },
     {
       "id": "tlc_ido_gift",
@@ -116988,7 +117136,7 @@
       "health": 4,
       "rarity": "common",
       "set": "THE_LOST_CITY",
-      "tribe": "Elemental",
+      "tribe": "Elemental/Dragon",
       "keywords": [
         "battlecry"
       ],
@@ -117015,14 +117163,23 @@
       "keywords": [
         "battlecry"
       ],
-      "description": "Whenever this attacks, deal 3 damage to the target first. Kindred: Gain Rush. (Approximated: gain Rush on play; pre-strike not modeled.)",
+      "description": "Whenever this attacks, deal 3 damage to the target first. Kindred: Gain Rush. (Pre-strike still pending.)",
       "effects": [
         {
-          "type": "grant",
-          "keyword": "rush",
-          "target": "self"
+          "type": "conditional",
+          "if": {
+            "kindredActive": true
+          },
+          "then": [
+            {
+              "type": "grant",
+              "keyword": "rush",
+              "target": "self"
+            }
+          ]
         }
-      ]
+      ],
+      "kindredCard": true
     },
     {
       "id": "whispering_stone",
@@ -117084,7 +117241,7 @@
       "health": 3,
       "rarity": "common",
       "set": "THE_LOST_CITY",
-      "tribe": "Undead",
+      "tribe": "Undead/Beast",
       "keywords": [
         "deathrattle"
       ],
@@ -117111,13 +117268,20 @@
       "keywords": [
         "battlecry"
       ],
-      "description": "Battlecry: If every minion in your deck shares a minion type, give your other minions +2/+2. (Approximated: buffs your other minions.)",
+      "description": "Battlecry: If every minion in your deck shares a minion type, give your other minions +2/+2 (wherever they are).",
       "effects": [
         {
-          "type": "buff",
-          "attack": 2,
-          "health": 2,
-          "target": "friendly-others"
+          "type": "conditional",
+          "if": {
+            "deckSharesType": true
+          },
+          "then": [
+            {
+              "type": "buff-zones",
+              "attack": 2,
+              "health": 2
+            }
+          ]
         }
       ]
     },
@@ -117153,17 +117317,26 @@
       "health": 5,
       "rarity": "epic",
       "set": "THE_LOST_CITY",
-      "tribe": "Demon",
+      "tribe": "Demon/Beast",
       "keywords": [
         "battlecry"
       ],
-      "description": "Kindred: Deal 6 damage to your opponent's left and right-most minions. (Kindred approximated: fires on play.)",
+      "description": "Kindred: Deal 6 damage to your opponent's left and right-most minions.",
       "effects": [
         {
-          "type": "damage-flanks",
-          "value": 6
+          "type": "conditional",
+          "if": {
+            "kindredActive": true
+          },
+          "then": [
+            {
+              "type": "damage-flanks",
+              "value": 6
+            }
+          ]
         }
-      ]
+      ],
+      "kindredCard": true
     },
     {
       "id": "nablya_the_watcher",
@@ -117250,7 +117423,9 @@
       "keywords": [
         "rush"
       ],
-      "description": "Rush. Kindred: Costs (2) less. (Not modeled: Kindred cost reduction.)"
+      "description": "Rush. Kindred: Costs (2) less.",
+      "kindredCostReduce": 2,
+      "kindredCard": true
     },
     {
       "id": "scalehide_kodo",
@@ -117266,13 +117441,27 @@
       "keywords": [
         "battlecry"
       ],
-      "description": "Battlecry: Destroy the lowest Attack enemy minion. Kindred: The highest Attack instead. (Kindred not modeled: destroys the lowest.)",
+      "description": "Battlecry: Destroy the lowest Attack enemy minion. Kindred: The highest Attack instead.",
       "effects": [
         {
-          "type": "destroy-strongest",
-          "lowest": true
+          "type": "conditional",
+          "if": {
+            "kindredActive": true
+          },
+          "then": [
+            {
+              "type": "destroy-strongest"
+            }
+          ],
+          "else": [
+            {
+              "type": "destroy-strongest",
+              "lowest": true
+            }
+          ]
         }
-      ]
+      ],
+      "kindredCard": true
     },
     {
       "id": "tyrannogill",
@@ -117284,7 +117473,7 @@
       "health": 3,
       "rarity": "common",
       "set": "THE_LOST_CITY",
-      "tribe": "Murloc",
+      "tribe": "Murloc/Beast",
       "keywords": [
         "rush",
         "deathrattle"
@@ -117357,13 +117546,15 @@
       "keywords": [
         "battlecry"
       ],
-      "description": "Battlecry: Destroy a minion. Kindred: Gain its stats. (Kindred approximated: always gains its stats.)",
+      "description": "Battlecry: Destroy a minion. Kindred: Gain its stats.",
       "effects": [
         {
           "type": "destroy-target-gain-stats",
-          "target": "creature"
+          "target": "creature",
+          "requireKindredForStats": true
         }
-      ]
+      ],
+      "kindredCard": true
     },
     {
       "id": "tlc_sizzling_cinder",
@@ -117495,7 +117686,7 @@
       "health": 12,
       "rarity": "legendary",
       "set": "THE_LOST_CITY",
-      "tribe": "Beast",
+      "tribe": "Beast/Dragon",
       "keywords": [
         "rush"
       ],
@@ -117523,7 +117714,7 @@
       "keywords": [
         "battlecry"
       ],
-      "description": "Battlecry: Deal 5 damage and gain 5 Armor. Kindred: Costs (3) less. (Not modeled: Kindred cost.)",
+      "description": "Battlecry: Deal 5 damage and gain 5 Armor. Kindred: Costs (3) less.",
       "effects": [
         {
           "type": "damage",
@@ -117534,7 +117725,9 @@
           "type": "armor",
           "value": 5
         }
-      ]
+      ],
+      "kindredCostReduce": 3,
+      "kindredCard": true
     },
     {
       "id": "loh_the_living_legend",
@@ -117587,19 +117780,28 @@
       "health": 8,
       "rarity": "epic",
       "set": "THE_LOST_CITY",
-      "tribe": "Elemental",
+      "tribe": "Elemental/Dragon",
       "keywords": [
         "rush",
         "windfury",
         "battlecry"
       ],
-      "description": "Rush, Windfury. Kindred: Gain Immune this turn. (Kindred approximated: fires on play.)",
+      "description": "Rush, Windfury. Kindred: Gain Immune this turn.",
       "effects": [
         {
-          "type": "grant-immune-turn",
-          "target": "self"
+          "type": "conditional",
+          "if": {
+            "kindredActive": true
+          },
+          "then": [
+            {
+              "type": "grant-immune-turn",
+              "target": "self"
+            }
+          ]
         }
-      ]
+      ],
+      "kindredCard": true
     },
     {
       "id": "cryofrozen_champion",
@@ -119043,7 +119245,7 @@
       "health": 5,
       "rarity": "common",
       "set": "TIME_TRAVEL",
-      "tribe": "Elemental",
+      "tribe": "Elemental/Beast",
       "description": "Whenever you would damage this with a Nature spell, summon a random 5-Cost minion instead. (Not modeled: Nature-damage redirect.)"
     },
     {
@@ -119056,7 +119258,7 @@
       "health": 6,
       "rarity": "common",
       "set": "TIME_TRAVEL",
-      "tribe": "Dragon",
+      "tribe": "Dragon/Pirate",
       "keywords": [
         "battlecry"
       ],
@@ -119084,13 +119286,21 @@
       "keywords": [
         "deathrattle"
       ],
-      "description": "Kindred and Deathrattle: Get a random Deathrattle minion. It costs (2) less. (Kindred approximated: fires on play.)",
+      "description": "Kindred and Deathrattle: Get a random Deathrattle minion. It costs (2) less.",
       "effects": [
         {
-          "type": "conjure-random",
-          "cardType": "creature",
-          "requireKeyword": "deathrattle",
-          "costMod": -2
+          "type": "conditional",
+          "if": {
+            "kindredActive": true
+          },
+          "then": [
+            {
+              "type": "conjure-random",
+              "cardType": "creature",
+              "requireKeyword": "deathrattle",
+              "costMod": -2
+            }
+          ]
         }
       ],
       "deathrattle": [
@@ -119100,7 +119310,8 @@
           "requireKeyword": "deathrattle",
           "costMod": -2
         }
-      ]
+      ],
+      "kindredCard": true
     },
     {
       "id": "unknown_voyager",
@@ -119800,7 +120011,7 @@
       "health": 1,
       "rarity": "common",
       "set": "CATACLYSM",
-      "tribe": "Undead",
+      "tribe": "Undead/Dragon",
       "keywords": [
         "deathrattle"
       ],
@@ -120420,7 +120631,7 @@
       "health": 5,
       "rarity": "rare",
       "set": "CATACLYSM",
-      "tribe": "Undead",
+      "tribe": "Undead/Dragon",
       "keywords": [
         "rush"
       ],
@@ -121120,7 +121331,7 @@
       "health": 12,
       "rarity": "epic",
       "set": "CATACLYSM",
-      "tribe": "Beast",
+      "tribe": "Mech/Beast",
       "description": "Colossal +99. Summon any leftover appendages when there is room. (Board cap: 6 Bodies.)",
       "colossal": [
         "cata_magmaw_body",
@@ -122051,7 +122262,7 @@
       "health": 3,
       "rarity": "common",
       "set": "ESCAPEFROM_VIOLET_HOLD",
-      "tribe": "Elemental",
+      "tribe": "Elemental/Mech",
       "keywords": [
         "battlecry"
       ],
@@ -122724,7 +122935,7 @@
       "health": 2,
       "rarity": "common",
       "set": "WONDERS",
-      "tribe": "Dragon",
+      "tribe": "Dragon/Pirate",
       "description": "After you summon a minion, give it +1 Health.",
       "ongoing": {
         "on": "summoned",
@@ -123473,15 +123684,33 @@
       "keywords": [
         "battlecry"
       ],
-      "description": "Rewind. Battlecry: Discover a Beast with a Dark Gift. (Rewind and Kindred discount still pending.)",
+      "description": "Rewind. Battlecry: Discover a Beast with a Dark Gift. Kindred: It costs (1) less. (Rewind still pending.)",
       "effects": [
         {
-          "type": "discover",
-          "cardType": "creature",
-          "tribe": "Beast",
-          "darkGift": true
+          "type": "conditional",
+          "if": {
+            "kindredActive": true
+          },
+          "then": [
+            {
+              "type": "discover",
+              "cardType": "creature",
+              "tribe": "Beast",
+              "darkGift": true,
+              "costMod": -1
+            }
+          ],
+          "else": [
+            {
+              "type": "discover",
+              "cardType": "creature",
+              "tribe": "Beast",
+              "darkGift": true
+            }
+          ]
         }
-      ]
+      ],
+      "kindredCard": true
     },
     {
       "id": "ymirjar_deathbringer",
@@ -124402,7 +124631,7 @@
       "health": 5,
       "rarity": "rare",
       "set": "EVENT",
-      "tribe": "Elemental",
+      "tribe": "Elemental/Beast",
       "keywords": [
         "battlecry"
       ],

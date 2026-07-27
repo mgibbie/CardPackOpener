@@ -112,6 +112,22 @@ export const DARK_GIFTS = [
 	{ label: 'Costs (2) less', cost: -2, handOnly: true },
 	{ label: 'Deathrattle: draw a card', dr: [{ type: 'draw', value: 1 }] },
 ];
+// Lost City Kindred: active when you control ANOTHER minion sharing a minion type
+// with this card (slash-joined dual tribes; 'All' matches anything with a type).
+export function kindredActive(state, pi, source) {
+	if (!source) return false;
+	const mine = (source.tribe || '').split('/').filter(Boolean);
+	if (!mine.length) return false;
+	for (const c of state.players[pi].board) {
+		if (c === source || isDead(c) || c.type === 'location') continue;
+		const theirs = (c.tribe || '').split('/').filter(Boolean);
+		if (!theirs.length) continue;
+		if (mine.includes('All') || theirs.includes('All')) return true;
+		if (mine.some(t => theirs.includes(t))) return true;
+	}
+	return false;
+}
+
 export function applyGift(state, card, gift, opts = {}) {
 	// apply a Dark Gift / Bonus Effect to a hand card or board minion
 	if (!gift) { const pool = DARK_GIFTS.filter(g => !(g.handOnly && opts.board)); gift = pool[Math.floor(state.rng() * pool.length)]; }
@@ -280,6 +296,8 @@ function instantiate(def, controller) {
 		temporary: !!def.temporary,   // Temporary: discarded from hand at the end of your turn
 		handTransform: def.handTransform || null, // Imposters/Shapeshifter: turn-start in-hand morph { cost?, grant?, spellDamage?, fromEnemyHand?, intoId?, ifHandParity? }
 		startOfGame: def.startOfGame || null, // Start of Game: effects run from the deck when the game begins
+		kindredCard: !!def.kindredCard, // Lost City: a card with a Kindred bonus (Torga tutors these)
+		kindredCostReduce: def.kindredCostReduce || 0, // Pterrorwing Ravager / Windpeak Wyrm: costs less while Kindred is active
 		handDeathGrowth: !!def.handDeathGrowth, // Blood Herald: +1/+1 whenever a friendly minion dies while in hand
 		scaleOnEntry: def.scaleOnEntry ? { ...def.scaleOnEntry } : null, // Astral Automaton: +stats per prior copy entered this game
 		infuse: def.infuse ? { ...def.infuse } : null, // Castle Nathria Infuse: {count, id} -> transform after N friendly deaths in hand
@@ -4486,6 +4504,7 @@ function execEffects(state, pi, effects, target, source) {
 				const card = instantiate(state.cardsById[id], pi);
 				card.zone = 'hand';
 				if (e.buff) { card.attack += e.buff.attack || 0; card.maxHealth += e.buff.health || 0; } // Akali, the Rhino
+				if (e.spellDamage) card.bonusSpellDamage = (card.bonusSpellDamage || 0) + e.spellDamage; // Volcanic Thrasher (Kindred): the drawn spell gets Spell Damage +2
 				if (e.setAttack != null) card.attack = e.setAttack; // Jepetto Joybuzz: set to 1/1, cost 1
 				if (e.setHealth != null) card.maxHealth = e.setHealth;
 				if (e.setCost != null) card.cost = e.setCost;
@@ -4602,11 +4621,23 @@ function execEffects(state, pi, effects, target, source) {
 			else if (e.if.overloaded) ok = (p.overloadPending || 0) > 0 || (p.overloadLockedThisTurn || 0) > 0; // Cumulo-Maximus
 			else if (e.if.heroPowerUpgraded) ok = !!p.heroPowerUpgraded || (p.imbueCount || 0) >= 1; // legacy Imbue proxy
 			else if (e.if.imbuedAtLeast != null) ok = (p.imbueCount || 0) >= e.if.imbuedAtLeast || !!p.heroPowerUpgraded; // Petal Picker twice / Malorne 4x
+			else if (e.if.kindredActive) ok = kindredActive(state, pi, source); // Lost City Kindred: you control another minion sharing a type
+			else if (e.if.deckSharesType) { // City Chief Esho: every minion in your deck shares a minion type ('All' is a wildcard)
+				const lists = p.deck.filter(id => state.cardsById[id]?.type === 'creature')
+					.map(id => ((state.cardsById[id]?.tribe) || '').split('/').filter(Boolean));
+				if (!lists.length || lists.some(l => !l.length)) ok = false;
+				else {
+					const candidates = new Set(lists.flat().filter(t => t !== 'All'));
+					ok = lists.every(l => l.includes('All'))
+						|| [...candidates].some(t => lists.every(l => l.includes(t) || l.includes('All')));
+				}
+			}
 			else if (e.if.spellsThisTurn != null) ok = (p.spellsPlayedThisTurn || 0) >= e.if.spellsThisTurn; // Unstable Spellcaster (spell-damage-dealt approx)
 			else if (e.if.deckCostsDistinct != null) ok = new Set(p.deck.map(id => state.cardsById[id]?.cost || 0)).size >= e.if.deckCostsDistinct; // Elise the Navigator: 10 cards of different Costs
 			else if (e.if.selfDrawnThisTurn) ok = !!(source && source.drawnThisTurn); // Swiftdraw riders (Farm Hand / Benevolent Banker)
 			else if (e.if.holdingDarkGift) ok = p.hand.some(c => c._darkGift); // Frostburn Matriarch / Dragon Turtle
 			execEffects(state, pi, ok ? e.then : (e.else || []), target, source);
+			if (ok && e.if.kindredActive && p.nextKindredTwice) { p.nextKindredTwice = false; execEffects(state, pi, e.then, target, source); } // Primalfin Challenger: your next Kindred triggers twice
 		} else if (e.type === 'damage-then') {
 			// deal damage, then branch on whether the creature survived
 			let v = e.value;
@@ -5305,9 +5336,9 @@ function execEffects(state, pi, effects, target, source) {
 				if (e.grant && !c.keywords.includes(e.grant)) { c.keywords.push(e.grant); if (e.grant === KW.DIVINE_SHIELD) c.shield = true; }
 			}
 		} else if (e.type === 'destroy-target-gain-stats') {
-			// Ravenous Devilsaur: destroy a minion and gain its stats; Natalie Seline: healthOnly
+			// Ravenous Devilsaur: destroy a minion; Kindred: gain its stats (requireKindredForStats). Natalie Seline: healthOnly
 			const t = chosenCreature();
-			if (t) { const a = t.attack || 0, h = hp(t); t.damage = t.maxHealth; t.shield = false; emit(state, { type: 'destroy', uid: t.uid }); sweepDeaths(state); if (source && !isDead(source)) { if (!e.healthOnly) source.attack += a; source.maxHealth += h; emit(state, { type: 'buff', uid: source.uid, attack: source.attack, hp: hp(source) }); } }
+			if (t) { const a = t.attack || 0, h = hp(t); t.damage = t.maxHealth; t.shield = false; emit(state, { type: 'destroy', uid: t.uid }); sweepDeaths(state); const gains = !e.requireKindredForStats || kindredActive(state, pi, source); if (source && !isDead(source) && gains) { if (!e.healthOnly) source.attack += a; source.maxHealth += h; emit(state, { type: 'buff', uid: source.uid, attack: source.attack, hp: hp(source) }); } }
 		} else if (e.type === 'destroy-enemy-hand-deck-board') {
 			// Patchwerk: destroy a random minion in the opponent's hand, deck, and battlefield
 			for (const o of enemies) {
@@ -5365,6 +5396,32 @@ function execEffects(state, pi, effects, target, source) {
 			const p = state.players[pi];
 			p.deckCostOverrides = p.deckCostOverrides || {};
 			for (let i = 0; i < (e.count || 5) && i < p.deck.length; i++) p.deckCostOverrides[p.deck[i]] = (e.value ?? 1);
+		} else if (e.type === 'set-next-kindred-twice') {
+			// Primalfin Challenger
+			state.players[pi].nextKindredTwice = true;
+		} else if (e.type === 'discard-random-enemy') {
+			// Razidir (Kindred): your OPPONENT discards a random card
+			for (const o of enemies) {
+				const op = state.players[o];
+				if (!op.hand.length) continue;
+				const c = op.hand[Math.floor(state.rng() * op.hand.length)];
+				op.hand = op.hand.filter(x => x !== c);
+				if (!c.token) op.discardLogIds.push(c.id);
+				emit(state, { type: 'discard', player: o, card: c });
+				break;
+			}
+		} else if (e.type === 'torga-draw') {
+			// Torga: draw a Kindred card, then draw a minion that shares a type with it
+			const p = state.players[pi];
+			const ki = p.deck.findIndex(id => state.cardsById[id]?.kindredCard);
+			if (ki >= 0) {
+				const [id] = p.deck.splice(ki, 1);
+				const card = instantiate(state.cardsById[id], pi); card.zone = 'hand'; card.fromDeck = true; p.hand.push(card);
+				emit(state, { type: 'draw', player: pi, card });
+				const tribes = (card.tribe || '').split('/').filter(Boolean);
+				const ai = p.deck.findIndex(id2 => { const dd = state.cardsById[id2]; return dd?.type === 'creature' && id2 !== id && tribes.some(t => ((dd.tribe || '')).includes(t) || dd.tribe === 'All'); });
+				if (ai >= 0) { const [id2] = p.deck.splice(ai, 1); const c2 = instantiate(state.cardsById[id2], pi); c2.zone = 'hand'; c2.fromDeck = true; p.hand.push(c2); emit(state, { type: 'draw', player: pi, card: c2 }); }
+			}
 		} else if (e.type === 'imbue') {
 			// Emerald Dream Imbue: upgrade your Hero Power to the class Blessing; each Imbue makes it stronger
 			const p = state.players[pi];
@@ -9380,6 +9437,7 @@ export function effectiveCost(state, pi, card) {
 	if (p.libramDiscount > 0 && /Libram/.test(card.name || '')) c = Math.max(0, c - p.libramDiscount); // Aldor Attendant/Truthseeker
 	if (card.id === 'the_ceaseless_expanse') c = Math.max(0, c - (state.expanseEvents || 0)); // costs (1) less per card drawn/played/destroyed this game
 	if (p.nextWeaponDiscount > 0 && card.type === 'weapon') c = Math.max(0, c - p.nextWeaponDiscount); // Space Pirate
+	if (card.kindredCostReduce > 0 && kindredActive(state, pi, card)) c = Math.max(0, c - card.kindredCostReduce); // Pterrorwing / Windpeak: cheaper while a type-mate is in play
 	if (card.type === 'creature' && p.enemyMinionTaxTurn === state.turnNumber && p.enemyMinionTaxAmount) c += p.enemyMinionTaxAmount; // Forensic Duster
 	if (p.overloadDiscount > 0 && (card.overload || 0) > 0) c = Math.max(0, c - p.overloadDiscount); // Inzah
 	if (p.firstCardFreeEachTurn && (p.cardsPlayedThisTurn || 0) === 0) c = 0; // Bonelord Frostwhisper: first card each turn is free
