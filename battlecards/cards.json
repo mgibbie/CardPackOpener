@@ -117349,6 +117349,355 @@
           "target": "self"
         }
       ]
+    },
+    {
+      "id": "cryofrozen_champion",
+      "name": "Cryofrozen Champion",
+      "type": "creature",
+      "cost": 1,
+      "cardClass": "deathknight",
+      "attack": 2,
+      "health": 1,
+      "rarity": "common",
+      "set": "TIME_TRAVEL",
+      "keywords": [
+        "deathrattle"
+      ],
+      "description": "Deathrattle: Get a random Legendary minion. Reduce its Cost by (1).",
+      "deathrattle": [
+        {
+          "type": "conjure-random",
+          "cardType": "creature",
+          "rarity": "legendary",
+          "costMod": -1
+        }
+      ]
+    },
+    {
+      "id": "paltry_flutterwing",
+      "name": "Paltry Flutterwing",
+      "type": "creature",
+      "cost": 1,
+      "cardClass": "neutral",
+      "attack": 1,
+      "health": 1,
+      "rarity": "common",
+      "set": "TIME_TRAVEL",
+      "tribe": "Beast",
+      "keywords": [
+        "deathrattle"
+      ],
+      "description": "Deathrattle: Summon a random 2-Cost minion that is Dormant for 2 turns. (Not modeled: Dormant.)",
+      "deathrattle": [
+        {
+          "type": "summon-random",
+          "cost": 2
+        }
+      ]
+    },
+    {
+      "id": "queldorei_fletcher",
+      "name": "Quel'dorei Fletcher",
+      "type": "creature",
+      "cost": 1,
+      "cardClass": "hunter",
+      "attack": 1,
+      "health": 3,
+      "rarity": "common",
+      "set": "TIME_TRAVEL",
+      "description": "Your Hero Power costs (0) while your hand has 3 or less cards. (Not modeled: conditional Hero Power cost.)"
+    },
+    {
+      "id": "shapeshifter",
+      "name": "Shapeshifter",
+      "type": "creature",
+      "cost": 1,
+      "cardClass": "rogue",
+      "attack": 1,
+      "health": 1,
+      "rarity": "common",
+      "set": "TIME_TRAVEL",
+      "description": "Each turn this is in your hand, transform into a random minion in your opponent's hand. (Not modeled: in-hand transform.)"
+    },
+    {
+      "id": "amber_priestess",
+      "name": "Amber Priestess",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "priest",
+      "attack": 1,
+      "health": 4,
+      "rarity": "common",
+      "set": "TIME_TRAVEL",
+      "keywords": [
+        "taunt",
+        "battlecry"
+      ],
+      "description": "Taunt. Battlecry: Restore Health to a character equal to this minion's Health. (Approximated: restore 4.)",
+      "effects": [
+        {
+          "type": "heal",
+          "value": 4
+        }
+      ]
+    },
+    {
+      "id": "broxigar",
+      "name": "Broxigar",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "demonhunter",
+      "attack": 12,
+      "health": 12,
+      "rarity": "legendary",
+      "set": "TIME_TRAVEL",
+      "keywords": [
+        "charge"
+      ],
+      "description": "Fabled, Charge. Start of Game: Disappear. Kill all 4 Demons from Argus to reappear in hand. (Not modeled: Fabled / Start-of-Game.)"
+    },
+    {
+      "id": "dangerous_variant",
+      "name": "Dangerous Variant",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "neutral",
+      "attack": 1,
+      "health": 1,
+      "rarity": "common",
+      "set": "TIME_TRAVEL",
+      "description": "At the start of your turn, transform into a random 5-Cost minion.",
+      "ongoing": {
+        "on": "turn-start",
+        "effects": [
+          {
+            "type": "transform-self-random-cost",
+            "cost": 5
+          }
+        ]
+      }
+    },
+    {
+      "id": "faceless_enigma",
+      "name": "Faceless Enigma",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "mage",
+      "attack": 2,
+      "health": 2,
+      "rarity": "rare",
+      "set": "TIME_TRAVEL",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Look at 2 random Secrets. Pick one to cast for yourself. The other casts for your opponent. (Approximated: install a random Secret.)",
+      "effects": [
+        {
+          "type": "discover",
+          "cardType": "secret",
+          "installSecret": true
+        }
+      ]
+    },
+    {
+      "id": "flux_revenant",
+      "name": "Flux Revenant",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "shaman",
+      "attack": 1,
+      "health": 4,
+      "rarity": "common",
+      "set": "TIME_TRAVEL",
+      "tribe": "Elemental",
+      "keywords": [
+        "taunt"
+      ],
+      "description": "Taunt. Whenever you would damage this with a Nature spell, it gains +2/+1 instead. (Not modeled: Nature-damage redirect.)"
+    },
+    {
+      "id": "hardlight_protector",
+      "name": "Hardlight Protector",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "paladin",
+      "attack": 2,
+      "health": 1,
+      "rarity": "common",
+      "set": "TIME_TRAVEL",
+      "tribe": "Mech",
+      "keywords": [
+        "divine_shield",
+        "battlecry"
+      ],
+      "description": "Divine Shield. Battlecry: Restore 3 Health to your hero and give them Divine Shield. (Not modeled: hero Divine Shield.)",
+      "effects": [
+        {
+          "type": "heal",
+          "value": 3,
+          "target": "self"
+        }
+      ]
+    },
+    {
+      "id": "kaldorei_cultivator",
+      "name": "Kaldorei Cultivator",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "druid",
+      "attack": 2,
+      "health": 3,
+      "rarity": "common",
+      "set": "TIME_TRAVEL",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Discover 2 Beasts. Put them on the bottom of your deck with +5/+5. (Approximated: Discover a Beast.)",
+      "effects": [
+        {
+          "type": "discover",
+          "cardType": "creature",
+          "tribe": "Beast"
+        }
+      ]
+    },
+    {
+      "id": "primordial_overseer",
+      "name": "Primordial Overseer",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "shaman",
+      "attack": 2,
+      "health": 3,
+      "rarity": "common",
+      "set": "TIME_TRAVEL",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: If you've cast a Nature spell while holding this, gain +1/+1 and draw a card.",
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "schoolWhileHeld": "Nature"
+          },
+          "then": [
+            {
+              "type": "buff",
+              "attack": 1,
+              "health": 1,
+              "target": "self"
+            },
+            {
+              "type": "draw",
+              "value": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "the_fins_beyond_time",
+      "name": "The Fins Beyond Time",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "paladin",
+      "attack": 2,
+      "health": 3,
+      "rarity": "legendary",
+      "set": "TIME_TRAVEL",
+      "tribe": "Murloc",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Replace your hand with your starting hand. Swap back at the end of your turn. (Not modeled: hand swap.)"
+    },
+    {
+      "id": "timeless_causality",
+      "name": "Timeless Causality",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "neutral",
+      "attack": 3,
+      "health": 2,
+      "rarity": "common",
+      "set": "TIME_TRAVEL",
+      "tribe": "Elemental",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Reverse the order of your deck.",
+      "effects": [
+        {
+          "type": "reverse-deck"
+        }
+      ]
+    },
+    {
+      "id": "twilight_timehopper",
+      "name": "Twilight Timehopper",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "warlock",
+      "attack": 4,
+      "health": 4,
+      "rarity": "common",
+      "set": "TIME_TRAVEL",
+      "tribe": "Dragon",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Shuffle 2 Shreds of Time into your deck. When drawn, deal 3 damage to your hero.",
+      "effects": [
+        {
+          "type": "shuffle-into-own-deck",
+          "id": "time_shred",
+          "count": 2
+        }
+      ]
+    },
+    {
+      "id": "yesterloc",
+      "name": "Yesterloc",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "neutral",
+      "attack": 3,
+      "health": 1,
+      "rarity": "common",
+      "set": "TIME_TRAVEL",
+      "tribe": "Murloc",
+      "description": "At the end of your turn, give your other minions +1 Health.",
+      "ongoing": {
+        "on": "turn-end",
+        "effects": [
+          {
+            "type": "buff",
+            "health": 1,
+            "target": "friendly-others"
+          }
+        ]
+      }
+    },
+    {
+      "id": "time_shred",
+      "name": "Shred of Time",
+      "type": "sorcery",
+      "cost": 1,
+      "cardClass": "warlock",
+      "rarity": "common",
+      "set": "TIME_TRAVEL",
+      "token": true,
+      "collectible": false,
+      "drawTrigger": true,
+      "description": "When drawn, deal 3 damage to your hero.",
+      "onDraw": [
+        {
+          "type": "damage",
+          "value": 3,
+          "target": "own-hero"
+        }
+      ]
     }
   ]
 }

@@ -5208,6 +5208,10 @@ function execEffects(state, pi, effects, target, source) {
 				const def = state.cardsById[id];
 				if (def && def.deathrattle && def.deathrattle.length) { execEffects(state, pi, JSON.parse(JSON.stringify(def.deathrattle)), null, source); n--; }
 			}
+		} else if (e.type === 'reverse-deck') {
+			// Timeless Causality: reverse the order of your deck
+			state.players[pi].deck.reverse();
+			emit(state, { type: 'shuffle', player: pi });
 		} else if (e.type === 'mill-own-top') {
 			// Willful Watcher: destroy the top N cards of your deck
 			const p = state.players[pi];
