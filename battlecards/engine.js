@@ -175,6 +175,7 @@ function instantiate(def, controller) {
 		cheaperOnTribeDeath: def.cheaperOnTribeDeath || null, // Jumbo Imp: cheaper per friendly Demon that dies
 		dormantBattlecry: !!def.dormantBattlecry, // The Darkness: fire the Battlecry even though it enters Dormant
 		heroPowerDouble: !!def.heroPowerDouble, // Clockwork Automaton: double your Hero Power's damage and healing
+		heroPowerTwice: !!def.heroPowerTwice, // Sing-Along Buddy: your Hero Power triggers twice
 		deathrattleDiscount: def.deathrattleDiscount || 0, // Reckless Experimenter: your Deathrattle creatures cost this much less
 		overkill: def.overkill ? JSON.parse(JSON.stringify(def.overkill)) : null, // Rastakhan: excess-damage-on-attack trigger
 		heroPowerAdjacent: !!def.heroPowerAdjacent, // Spirit of the Dragonhawk
@@ -2019,6 +2020,21 @@ function runSecretEffects(state, pi, effects, ctx) {
 				if (d2 && s2 && !isDead(s2) && d2.deathrattle && d2.deathrattle.length) {
 					s2.deathrattle = [...(s2.deathrattle || []), ...JSON.parse(JSON.stringify(d2.deathrattle))];
 					if (!s2.keywords.includes('deathrattle')) s2.keywords.push('deathrattle');
+				}
+				break;
+			}
+			case 'become-copy-of-enemy-played': {
+				// Cosplay Contestant: transform into a set-stat copy of the minion the opponent just played
+				const m = ctx.minion, self = ctx.self, base = m && state.cardsById[m.id];
+				if (base && self && !isDead(self) && self.zone === 'board') {
+					const def = JSON.parse(JSON.stringify(base));
+					if (e.attack != null) def.attack = e.attack;
+					if (e.health != null) def.health = e.health;
+					if (e.stats != null) { def.attack = e.stats; def.health = e.stats; }
+					def.token = true; def.id = 'token_' + base.id;
+					const tok = instantiate(def, pi); tok.zone = 'board'; tok.sick = self.sick; tok.uid = self.uid;
+					const board = state.players[pi].board; const i = board.indexOf(self);
+					if (i >= 0) { board[i] = tok; self.zone = 'gone'; emit(state, { type: 'transformed', uid: self.uid, player: pi, from: self.name, card: tok }); recomputeAuras(state); }
 				}
 				break;
 			}
@@ -5870,6 +5886,30 @@ function execEffects(state, pi, effects, target, source) {
 		} else if (e.type === 'destroy-self') {
 			// Incorporeal Corporal: destroy the source minion
 			if (source && !isDead(source)) { source.damage = source.maxHealth; source.shield = false; emit(state, { type: 'destroy', uid: source.uid }); sweepDeaths(state); }
+		} else if (e.type === 'reduce-hand-spells-cost') {
+			// Clearance Promoter: reduce the Cost of N spells in your hand
+			const p = state.players[pi];
+			const pool = p.hand.filter(c => isSpellType(c));
+			for (let n = 0; n < (e.count || 2) && pool.length; n++) { const c = pool.splice(Math.floor(state.rng() * pool.length), 1)[0]; c.cost = Math.max(0, (c.cost || 0) - (e.value || 1)); }
+		} else if (e.type === 'add-random-junk') {
+			// Dust Bunny: add a random piece of junk to your hand
+			const junk = e.ids || ['coin', 'wwb_rock', 'banana', 'wwb_knife'];
+			const p = state.players[pi];
+			if (p.hand.length < MAX_HAND) { const id = junk[Math.floor(state.rng() * junk.length)]; if (state.cardsById[id]) { const cp = instantiate(state.cardsById[id], pi); cp.zone = 'hand'; p.hand.push(cp); emit(state, { type: 'conjure', player: pi, card: cp, color: null }); } }
+		} else if (e.type === 'attack-own-hero') {
+			// Malefic Rook: this minion attacks your own hero
+			if (source) damageHero(state, pi, source.attack || 0, pi);
+		} else if (e.type === 'install-random-secrets') {
+			// Observer of Mysteries: install N random Secrets
+			const pool = Object.values(state.cardsById).filter(d => d.secret && !d.token && d.collectible !== false && !state.players[pi].secrets.some(s => s.id === d.id));
+			for (let n = 0; n < (e.count || 2) && pool.length; n++) { const [def] = pool.splice(Math.floor(state.rng() * pool.length), 1); installSecret(state, pi, def.id); }
+		} else if (e.type === 'draw-school-copy') {
+			// Sketch Artist: draw a spell of a school, then add a copy to your hand
+			const p = state.players[pi];
+			const before = new Set(p.hand.map(c => c.uid));
+			execEffects(state, pi, [{ type: 'tutor', cardType: 'spell', school: e.school, count: 1 }], null, source);
+			const drawn = p.hand.find(c => !before.has(c.uid));
+			if (drawn && state.cardsById[drawn.id] && p.hand.length < MAX_HAND) { const cp = instantiate(state.cardsById[drawn.id], pi); cp.zone = 'hand'; p.hand.push(cp); emit(state, { type: 'conjure', player: pi, card: cp, color: null }); }
 		} else if (e.type === 'grant-random-keyword-friendly-tribe') {
 			// Painted Canvasaur: give each OTHER friendly minion of a tribe a random keyword
 			const kws = e.keywords || ['taunt', 'divine_shield', 'rush', 'lifesteal', 'windfury', 'poisonous'];
@@ -8982,7 +9022,7 @@ function resolveEntry(state, entry) {
 		state.hpResolver = pi; // Wilfred: cards drawn during a Hero Power cost 0
 			const enemyBefore = opponentsOf(state, pi).flatMap(o => state.players[o].board.filter(c => !isDead(c) && c.type !== 'location')); // Pyromaniac: detect Hero-Power kills
 		execEffects(state, pi, entry.effects, entry.target, entry.card);
-		if (state.players[pi].heroPowerUpgraded) execEffects(state, pi, entry.effects, entry.target, entry.card); // Justicar: fires twice
+		if (state.players[pi].heroPowerUpgraded || state.players[pi].board.some(c => c.heroPowerTwice && !isDead(c))) execEffects(state, pi, entry.effects, entry.target, entry.card); // Justicar / Sing-Along Buddy: fires twice
 		state.hpResolver = null;
 		state.hpDamageBonus = 0;
 		state.hpDoubling = false;

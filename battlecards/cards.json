@@ -104117,6 +104117,433 @@
           "target": "friendly-any"
         }
       ]
+    },
+    {
+      "id": "clearance_promoter",
+      "name": "Clearance Promoter",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "neutral",
+      "attack": 3,
+      "health": 2,
+      "rarity": "common",
+      "set": "WHIZBANGS_WORKSHOP",
+      "keywords": [
+        "deathrattle"
+      ],
+      "description": "Deathrattle: Reduce the Cost of two spells in your hand by (1).",
+      "deathrattle": [
+        {
+          "type": "reduce-hand-spells-cost",
+          "count": 2,
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "cosplay_contestant",
+      "name": "Cosplay Contestant",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "neutral",
+      "attack": 3,
+      "health": 4,
+      "rarity": "common",
+      "set": "WHIZBANGS_WORKSHOP",
+      "tribe": "Draenei",
+      "description": "After your opponent plays a minion, transform into a 3/4 copy of it.",
+      "ongoing": {
+        "on": "enemy-creature-played",
+        "effects": [
+          {
+            "type": "become-copy-of-enemy-played",
+            "attack": 3,
+            "health": 4
+          }
+        ]
+      }
+    },
+    {
+      "id": "darkmoon_magician",
+      "name": "Darkmoon Magician",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "mage",
+      "attack": 2,
+      "health": 4,
+      "rarity": "rare",
+      "set": "WHIZBANGS_WORKSHOP",
+      "keywords": [
+        "elusive"
+      ],
+      "description": "Elusive. After you cast a spell, cast a random spell that costs (1) more.",
+      "ongoing": {
+        "on": "spell-played",
+        "effects": [
+          {
+            "type": "cast-random-spell",
+            "count": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "dust_bunny",
+      "name": "Dust Bunny",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "rogue",
+      "attack": 3,
+      "health": 2,
+      "rarity": "rare",
+      "set": "WHIZBANGS_WORKSHOP",
+      "tribe": "Beast",
+      "keywords": [
+        "battlecry",
+        "deathrattle"
+      ],
+      "description": "Battlecry and Deathrattle: Add a random piece of junk to your hand (a Coin, Rock, Banana, or Knife).",
+      "effects": [
+        {
+          "type": "add-random-junk"
+        }
+      ],
+      "deathrattle": [
+        {
+          "type": "add-random-junk"
+        }
+      ]
+    },
+    {
+      "id": "floppy_hydra",
+      "name": "Floppy Hydra",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "neutral",
+      "attack": 2,
+      "health": 4,
+      "rarity": "rare",
+      "set": "WHIZBANGS_WORKSHOP",
+      "tribe": "Beast",
+      "keywords": [
+        "deathrattle"
+      ],
+      "description": "Deathrattle: Shuffle a copy of this into your deck with permanently doubled Attack and Health.",
+      "deathrattle": [
+        {
+          "type": "shuffle-tokens-into-deck",
+          "ids": [
+            "wwb_floppy_hydra_big"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "hemet_foam_marksman",
+      "name": "Hemet, Foam Marksman",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "hunter",
+      "attack": 3,
+      "health": 4,
+      "rarity": "legendary",
+      "set": "WHIZBANGS_WORKSHOP",
+      "description": "After a friendly Beast dies, get a random Legendary Beast from the past. It costs (2) less.",
+      "ongoing": {
+        "on": "friendly-creature-died",
+        "if": {
+          "tribe": "Beast"
+        },
+        "effects": [
+          {
+            "type": "conjure-random",
+            "cardType": "creature",
+            "tribe": "Beast",
+            "rarity": "legendary",
+            "costMod": -2
+          }
+        ]
+      }
+    },
+    {
+      "id": "malefic_rook",
+      "name": "Malefic Rook",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "warlock",
+      "attack": 5,
+      "health": 6,
+      "rarity": "epic",
+      "set": "WHIZBANGS_WORKSHOP",
+      "tribe": "Demon",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Attack YOUR hero.",
+      "effects": [
+        {
+          "type": "attack-own-hero"
+        }
+      ]
+    },
+    {
+      "id": "nostalgic_initiate",
+      "name": "Nostalgic Initiate",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "neutral",
+      "attack": 2,
+      "health": 3,
+      "rarity": "common",
+      "set": "WHIZBANGS_WORKSHOP",
+      "description": "Miniaturize. The first time you cast a spell, gain +2/+2.",
+      "ongoing": {
+        "on": "spell-played",
+        "once": true,
+        "effects": [
+          {
+            "type": "buff-self",
+            "attack": 2,
+            "health": 2
+          }
+        ]
+      }
+    },
+    {
+      "id": "observer_of_mysteries",
+      "name": "Observer of Mysteries",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "neutral",
+      "attack": 2,
+      "health": 2,
+      "rarity": "rare",
+      "set": "WHIZBANGS_WORKSHOP",
+      "tribe": "Demon",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Cast 2 random Secrets. At the start of your turn, destroy them.",
+      "effects": [
+        {
+          "type": "install-random-secrets",
+          "count": 2
+        }
+      ]
+    },
+    {
+      "id": "rainbow_seamstress",
+      "name": "Rainbow Seamstress",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "deathknight",
+      "attack": 3,
+      "health": 3,
+      "rarity": "epic",
+      "set": "WHIZBANGS_WORKSHOP",
+      "tribe": "Undead",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: If your deck started with a Blood, Frost, or Unholy card, gain Lifesteal, Reborn, or Rush respectively.",
+      "effects": [
+        {
+          "type": "grant-keyword-self",
+          "keyword": "lifesteal"
+        }
+      ]
+    },
+    {
+      "id": "rambunctious_stuffy",
+      "name": "Rambunctious Stuffy",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "deathknight",
+      "attack": 4,
+      "health": 2,
+      "rarity": "common",
+      "set": "WHIZBANGS_WORKSHOP",
+      "tribe": "Undead",
+      "keywords": [
+        "rush"
+      ],
+      "description": "Rush. After you cast a Frost spell, gain Reborn.",
+      "ongoing": {
+        "on": "spell-played",
+        "if": {
+          "school": "Frost"
+        },
+        "effects": [
+          {
+            "type": "grant-self",
+            "keyword": "reborn"
+          }
+        ]
+      }
+    },
+    {
+      "id": "rumble_enthusiast",
+      "name": "Rumble Enthusiast",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "neutral",
+      "attack": 2,
+      "health": 5,
+      "rarity": "common",
+      "set": "WHIZBANGS_WORKSHOP",
+      "description": "After you play the left- or right-most card in your hand, deal 1 damage to a random enemy.",
+      "ongoing": {
+        "on": "edge-card-played",
+        "effects": [
+          {
+            "type": "random-damage",
+            "value": 1,
+            "count": 1,
+            "pool": "enemies"
+          }
+        ]
+      }
+    },
+    {
+      "id": "sing_along_buddy",
+      "name": "Sing-Along Buddy",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "neutral",
+      "attack": 2,
+      "health": 4,
+      "rarity": "common",
+      "set": "WHIZBANGS_WORKSHOP",
+      "tribe": "Mech",
+      "heroPowerTwice": true,
+      "description": "Your Hero Power triggers twice."
+    },
+    {
+      "id": "sketch_artist",
+      "name": "Sketch Artist",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "warlock",
+      "attack": 3,
+      "health": 3,
+      "rarity": "rare",
+      "set": "WHIZBANGS_WORKSHOP",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Draw a Shadow spell. Get a Temporary copy of it.",
+      "effects": [
+        {
+          "type": "draw-school-copy",
+          "school": "Shadow"
+        }
+      ]
+    },
+    {
+      "id": "sweetened_snowflurry",
+      "name": "Sweetened Snowflurry",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "neutral",
+      "attack": 3,
+      "health": 3,
+      "rarity": "common",
+      "set": "WHIZBANGS_WORKSHOP",
+      "tribe": "Elemental",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Miniaturize. Battlecry: Get 2 random Temporary Frost spells.",
+      "effects": [
+        {
+          "type": "conjure-random",
+          "cardType": "spell",
+          "tribe": "Frost",
+          "count": 2
+        }
+      ]
+    },
+    {
+      "id": "toysnatching_geist",
+      "name": "Toysnatching Geist",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "deathknight",
+      "attack": 2,
+      "health": 1,
+      "rarity": "common",
+      "set": "WHIZBANGS_WORKSHOP",
+      "tribe": "Undead",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Gigantify. Battlecry: Discover an Undead. Reduce its Cost by this minion's Attack.",
+      "effects": [
+        {
+          "type": "discover",
+          "cardType": "creature",
+          "tribe": "Undead",
+          "costMod": -2
+        }
+      ]
+    },
+    {
+      "id": "wwb_floppy_hydra_big",
+      "name": "Floppy Hydra",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "neutral",
+      "attack": 4,
+      "health": 8,
+      "rarity": "rare",
+      "set": "WHIZBANGS_WORKSHOP",
+      "tribe": "Beast",
+      "token": true,
+      "collectible": false,
+      "keywords": [
+        "deathrattle"
+      ],
+      "description": "Deathrattle: Shuffle a copy of this into your deck with permanently doubled Attack and Health.",
+      "deathrattle": [
+        {
+          "type": "shuffle-tokens-into-deck",
+          "ids": [
+            "wwb_floppy_hydra_big"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "wwb_rock",
+      "name": "Rock",
+      "type": "sorcery",
+      "cost": 0,
+      "cardClass": "neutral",
+      "rarity": "common",
+      "set": "WHIZBANGS_WORKSHOP",
+      "token": true,
+      "collectible": false,
+      "description": "A useless Rock.",
+      "effects": []
+    },
+    {
+      "id": "wwb_knife",
+      "name": "Knife",
+      "type": "sorcery",
+      "cost": 0,
+      "cardClass": "neutral",
+      "rarity": "common",
+      "set": "WHIZBANGS_WORKSHOP",
+      "token": true,
+      "collectible": false,
+      "description": "Deal 1 damage.",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 1,
+          "target": "any"
+        }
+      ]
     }
   ]
 }
