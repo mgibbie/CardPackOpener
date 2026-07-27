@@ -122991,6 +122991,638 @@
         "taunt"
       ],
       "description": "A 1/3 Voidwalker with Taunt."
+    },
+    {
+      "id": "bloodsail_deckhand",
+      "name": "Bloodsail Deckhand",
+      "type": "creature",
+      "cost": 1,
+      "cardClass": "warrior",
+      "attack": 2,
+      "health": 1,
+      "rarity": "common",
+      "set": "LEGACY",
+      "tribe": "Pirate",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: The next weapon you play costs (1) less.",
+      "effects": [
+        {
+          "type": "set-next-weapon-discount",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "psychic_conjurer",
+      "name": "Psychic Conjurer",
+      "type": "creature",
+      "cost": 1,
+      "cardClass": "priest",
+      "attack": 1,
+      "health": 2,
+      "rarity": "common",
+      "set": "LEGACY",
+      "tribe": "Undead",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Copy a card in your opponent's deck and add it to your hand.",
+      "effects": [
+        {
+          "type": "copy-random-enemy-deck-card"
+        }
+      ]
+    },
+    {
+      "id": "scarlet_subjugator",
+      "name": "Scarlet Subjugator",
+      "type": "creature",
+      "cost": 1,
+      "cardClass": "priest",
+      "attack": 2,
+      "health": 1,
+      "rarity": "common",
+      "set": "LEGACY",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Give an enemy minion -2 Attack. (Approximated: permanent, not until-your-next-turn.)",
+      "effects": [
+        {
+          "type": "buff",
+          "attack": -2,
+          "target": "enemy-creature"
+        }
+      ]
+    },
+    {
+      "id": "korvas_bloodthorn",
+      "name": "Kor'vas Bloodthorn",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "demonhunter",
+      "attack": 2,
+      "health": 2,
+      "rarity": "legendary",
+      "set": "LEGACY",
+      "keywords": [
+        "charge",
+        "lifesteal"
+      ],
+      "description": "Charge, Lifesteal. After you play a card with Outcast, return this to your hand.",
+      "ongoing": {
+        "on": "outcast-played",
+        "effects": [
+          {
+            "type": "bounce-self-set-cost",
+            "value": 2
+          }
+        ]
+      }
+    },
+    {
+      "id": "selective_breeder",
+      "name": "Selective Breeder",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "hunter",
+      "attack": 1,
+      "health": 3,
+      "rarity": "common",
+      "set": "LEGACY",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Discover a copy of a Beast in your deck.",
+      "effects": [
+        {
+          "type": "discover",
+          "cardType": "creature",
+          "tribe": "Beast",
+          "fromOwnDeck": true
+        }
+      ]
+    },
+    {
+      "id": "sightless_watcher",
+      "name": "Sightless Watcher",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "demonhunter",
+      "attack": 3,
+      "health": 2,
+      "rarity": "common",
+      "set": "LEGACY",
+      "tribe": "Demon",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Look at 3 cards in your deck. Choose one to put on top. (Not modeled: deck peek.)"
+    },
+    {
+      "id": "vanessa_vancleef",
+      "name": "Vanessa VanCleef",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "rogue",
+      "attack": 2,
+      "health": 3,
+      "rarity": "legendary",
+      "set": "LEGACY",
+      "keywords": [
+        "combo"
+      ],
+      "description": "Combo: Add a copy of the last card your opponent played to your hand.",
+      "combo": [
+        {
+          "type": "copy-enemy-last-card"
+        }
+      ]
+    },
+    {
+      "id": "ganarg_glaivesmith",
+      "name": "Gan'arg Glaivesmith",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "demonhunter",
+      "attack": 3,
+      "health": 3,
+      "rarity": "common",
+      "set": "LEGACY",
+      "tribe": "Demon",
+      "keywords": [
+        "outcast"
+      ],
+      "description": "Outcast: Give your hero +3 Attack this turn.",
+      "outcast": {
+        "effects": [
+          {
+            "type": "hero-attack",
+            "value": 3
+          }
+        ]
+      }
+    },
+    {
+      "id": "raptor_herald",
+      "name": "Raptor Herald",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "neutral",
+      "attack": 4,
+      "health": 2,
+      "rarity": "common",
+      "set": "LEGACY",
+      "tribe": "Beast",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Rewind. Battlecry: Discover a Beast. (Not modeled: Rewind / Dark Gift / Kindred discount.)",
+      "effects": [
+        {
+          "type": "discover",
+          "cardType": "creature",
+          "tribe": "Beast"
+        }
+      ]
+    },
+    {
+      "id": "ymirjar_deathbringer",
+      "name": "Ymirjar Deathbringer",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "deathknight",
+      "attack": 4,
+      "health": 3,
+      "rarity": "common",
+      "set": "LEGACY",
+      "tribe": "Undead",
+      "keywords": [
+        "taunt",
+        "deathrattle"
+      ],
+      "description": "Taunt. Deathrattle: Summon a 3/3 Risen Ymirjar with Taunt. (Corpse cost not modeled.)",
+      "deathrattle": [
+        {
+          "type": "summon",
+          "count": 1,
+          "summonId": "leg_risen_ymirjar"
+        }
+      ]
+    },
+    {
+      "id": "plaguebringer",
+      "name": "Plaguebringer",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "rogue",
+      "attack": 3,
+      "health": 3,
+      "rarity": "common",
+      "set": "LEGACY",
+      "tribe": "Undead",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Give a friendly minion Poisonous.",
+      "effects": [
+        {
+          "type": "grant",
+          "keyword": "poisonous",
+          "target": "friendly-creature"
+        }
+      ]
+    },
+    {
+      "id": "si7_infiltrator",
+      "name": "SI:7 Infiltrator",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "neutral",
+      "attack": 5,
+      "health": 4,
+      "rarity": "rare",
+      "set": "LEGACY",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Destroy a random enemy Secret. (Approximated: destroys enemy Secrets.)",
+      "effects": [
+        {
+          "type": "destroy-enemy-secrets"
+        }
+      ]
+    },
+    {
+      "id": "aegwynn_the_guardian",
+      "name": "Aegwynn, the Guardian",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "mage",
+      "attack": 5,
+      "health": 5,
+      "rarity": "legendary",
+      "set": "LEGACY",
+      "static": {
+        "type": "spell-damage",
+        "value": 2
+      },
+      "description": "Spell Damage +2. Deathrattle: The next minion you draw inherits these powers. (Not modeled: inheritance.)"
+    },
+    {
+      "id": "elite_tauren_chieftain",
+      "name": "Elite Tauren Chieftain",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "neutral",
+      "attack": 5,
+      "health": 5,
+      "rarity": "legendary",
+      "set": "LEGACY",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Give both players the power to ROCK! (Not modeled: Power Chords.)"
+    },
+    {
+      "id": "felsoul_jailer",
+      "name": "Felsoul Jailer",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "warlock",
+      "attack": 4,
+      "health": 6,
+      "rarity": "epic",
+      "set": "LEGACY",
+      "tribe": "Demon",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Your opponent discards a minion. Deathrattle: Return it. (Not modeled: enemy discard/return.)"
+    },
+    {
+      "id": "night_elf_huntress",
+      "name": "Night Elf Huntress",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "neutral",
+      "attack": 3,
+      "health": 3,
+      "rarity": "common",
+      "set": "LEGACY",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Deal 3 damage to three different enemies. (Approximated: three random hits.)",
+      "effects": [
+        {
+          "type": "random-damage",
+          "value": 3,
+          "count": 3,
+          "pool": "enemies"
+        }
+      ]
+    },
+    {
+      "id": "bob_the_bartender",
+      "name": "Bob the Bartender",
+      "type": "creature",
+      "cost": 6,
+      "cardClass": "neutral",
+      "attack": 4,
+      "health": 5,
+      "rarity": "legendary",
+      "set": "LEGACY",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Choose an action from the Battlegrounds! (Not modeled.)"
+    },
+    {
+      "id": "gelbin_mekkatorque",
+      "name": "Gelbin Mekkatorque",
+      "type": "creature",
+      "cost": 6,
+      "cardClass": "neutral",
+      "attack": 6,
+      "health": 6,
+      "rarity": "legendary",
+      "set": "LEGACY",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Summon an AWESOME invention.",
+      "effects": [
+        {
+          "type": "summon",
+          "count": 1,
+          "options": [
+            {
+              "name": "Emboldener 3000",
+              "attack": 0,
+              "health": 4
+            },
+            {
+              "name": "Poultryizer",
+              "attack": 0,
+              "health": 3
+            },
+            {
+              "name": "Repair Bot",
+              "attack": 0,
+              "health": 3
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "gnomelia_safe_pilot",
+      "name": "Gnomelia, S.A.F.E. Pilot",
+      "type": "creature",
+      "cost": 6,
+      "cardClass": "neutral",
+      "attack": 4,
+      "health": 2,
+      "rarity": "legendary",
+      "set": "LEGACY",
+      "keywords": [
+        "rush",
+        "deathrattle"
+      ],
+      "description": "Rush. Also damages minions next to whomever this attacks. Deathrattle: Deal 2 damage to all enemies. (Not modeled: cleave.)",
+      "deathrattle": [
+        {
+          "type": "damage",
+          "value": 2,
+          "target": "enemies"
+        }
+      ]
+    },
+    {
+      "id": "harth_stonebrew",
+      "name": "Harth Stonebrew",
+      "type": "creature",
+      "cost": 6,
+      "cardClass": "neutral",
+      "attack": 5,
+      "health": 5,
+      "rarity": "legendary",
+      "set": "LEGACY",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Replace your hand with an iconic one from Hearthstone's past. (Approximated: 4 random cards.)",
+      "effects": [
+        {
+          "type": "discard-all"
+        },
+        {
+          "type": "conjure-random",
+          "count": 4
+        }
+      ]
+    },
+    {
+      "id": "high_inquisitor_whitemane",
+      "name": "High Inquisitor Whitemane",
+      "type": "creature",
+      "cost": 6,
+      "cardClass": "neutral",
+      "attack": 5,
+      "health": 7,
+      "rarity": "legendary",
+      "set": "LEGACY",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Summon all friendly minions that died this turn.",
+      "effects": [
+        {
+          "type": "summon-all-died-this-turn"
+        }
+      ]
+    },
+    {
+      "id": "natalie_seline",
+      "name": "Natalie Seline",
+      "type": "creature",
+      "cost": 7,
+      "cardClass": "priest",
+      "attack": 7,
+      "health": 1,
+      "rarity": "legendary",
+      "set": "LEGACY",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Destroy a minion and gain its Health.",
+      "effects": [
+        {
+          "type": "destroy-target-gain-stats",
+          "target": "creature",
+          "healthOnly": true
+        }
+      ]
+    },
+    {
+      "id": "patchwerk",
+      "name": "Patchwerk",
+      "type": "creature",
+      "cost": 7,
+      "cardClass": "deathknight",
+      "attack": 4,
+      "health": 6,
+      "rarity": "legendary",
+      "set": "LEGACY",
+      "tribe": "Undead",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Destroy a random minion in your opponent's hand, deck, and battlefield.",
+      "effects": [
+        {
+          "type": "destroy-enemy-hand-deck-board"
+        }
+      ]
+    },
+    {
+      "id": "alexstrasza_the_life_binder",
+      "name": "Alexstrasza the Life-Binder",
+      "type": "creature",
+      "cost": 9,
+      "cardClass": "neutral",
+      "attack": 8,
+      "health": 8,
+      "rarity": "legendary",
+      "set": "LEGACY",
+      "tribe": "Dragon",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Choose a character. If it's friendly, restore 8 Health. If it's an enemy, deal 8 damage.",
+      "effects": [
+        {
+          "type": "heal-or-harm-target",
+          "value": 8,
+          "target": "any"
+        }
+      ]
+    },
+    {
+      "id": "avatar_of_hearthstone",
+      "name": "Avatar of Hearthstone",
+      "type": "creature",
+      "cost": 9,
+      "cardClass": "neutral",
+      "attack": 5,
+      "health": 5,
+      "rarity": "legendary",
+      "set": "LEGACY",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Open a Standard Pack. Play all cards from it. (Approximated: get 5 random cards.)",
+      "effects": [
+        {
+          "type": "conjure-random",
+          "count": 5
+        }
+      ]
+    },
+    {
+      "id": "malygos_the_spellweaver",
+      "name": "Malygos the Spellweaver",
+      "type": "creature",
+      "cost": 9,
+      "cardClass": "neutral",
+      "attack": 4,
+      "health": 12,
+      "rarity": "legendary",
+      "set": "LEGACY",
+      "tribe": "Dragon",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Draw spells until your hand is full.",
+      "effects": [
+        {
+          "type": "tutor",
+          "cardType": "spell",
+          "count": 12
+        }
+      ]
+    },
+    {
+      "id": "ysera_the_dreamer",
+      "name": "Ysera the Dreamer",
+      "type": "creature",
+      "cost": 9,
+      "cardClass": "neutral",
+      "attack": 4,
+      "health": 12,
+      "rarity": "legendary",
+      "set": "LEGACY",
+      "tribe": "Dragon",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Add one of each Dream card to your hand. (Approximated: 5 random spells.)",
+      "effects": [
+        {
+          "type": "conjure-random",
+          "cardType": "spell",
+          "count": 5
+        }
+      ]
+    },
+    {
+      "id": "deathwing_the_destroyer",
+      "name": "Deathwing the Destroyer",
+      "type": "creature",
+      "cost": 10,
+      "cardClass": "neutral",
+      "attack": 12,
+      "health": 12,
+      "rarity": "legendary",
+      "set": "LEGACY",
+      "tribe": "Dragon",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Destroy all other minions. Discard a card for each destroyed. (Approximated: discard 2.)",
+      "effects": [
+        {
+          "type": "destroy-all",
+          "others": true
+        },
+        {
+          "type": "discard-random"
+        },
+        {
+          "type": "discard-random"
+        }
+      ]
+    },
+    {
+      "id": "leg_risen_ymirjar",
+      "name": "Risen Ymirjar",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "deathknight",
+      "attack": 3,
+      "health": 3,
+      "rarity": "common",
+      "set": "LEGACY",
+      "tribe": "Undead",
+      "token": true,
+      "collectible": false,
+      "keywords": [
+        "taunt"
+      ],
+      "description": "A 3/3 with Taunt."
     }
   ]
 }

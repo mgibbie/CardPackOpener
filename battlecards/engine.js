@@ -675,6 +675,8 @@ const CHOSEN = {
 	'grant-attack-while-alive': { creature: 'creature', 'friendly-creature': 'friendly-creature' },
 	'destroy-friendly-tribe-buff-all': { 'friendly-creature': 'friendly-creature' },
 	'destroy-friendly-remember': { 'friendly-creature': 'friendly-creature' },
+	'heal-or-harm-target': { any: 'any' },
+	'destroy-target-gain-stats': { creature: 'creature', 'enemy-creature': 'enemy-creature' },
 	'swap-attack-with': { creature: 'creature', 'friendly-creature': 'friendly-creature' },
 	'freeze-gain-armor': { 'enemy-creature': 'enemy-creature' },
 	'set-target-stats-from-source': { creature: 'creature', 'enemy-creature': 'enemy-creature' },
@@ -5234,9 +5236,28 @@ function execEffects(state, pi, effects, target, source) {
 				if (e.grant && !c.keywords.includes(e.grant)) { c.keywords.push(e.grant); if (e.grant === KW.DIVINE_SHIELD) c.shield = true; }
 			}
 		} else if (e.type === 'destroy-target-gain-stats') {
-			// Ravenous Devilsaur: destroy a minion; Kindred: gain its stats (Kindred approximated: always gains)
+			// Ravenous Devilsaur: destroy a minion and gain its stats; Natalie Seline: healthOnly
 			const t = chosenCreature();
-			if (t) { const a = t.attack || 0, h = hp(t); t.damage = t.maxHealth; t.shield = false; emit(state, { type: 'destroy', uid: t.uid }); sweepDeaths(state); if (source && !isDead(source)) { source.attack += a; source.maxHealth += h; emit(state, { type: 'buff', uid: source.uid, attack: source.attack, hp: hp(source) }); } }
+			if (t) { const a = t.attack || 0, h = hp(t); t.damage = t.maxHealth; t.shield = false; emit(state, { type: 'destroy', uid: t.uid }); sweepDeaths(state); if (source && !isDead(source)) { if (!e.healthOnly) source.attack += a; source.maxHealth += h; emit(state, { type: 'buff', uid: source.uid, attack: source.attack, hp: hp(source) }); } }
+		} else if (e.type === 'destroy-enemy-hand-deck-board') {
+			// Patchwerk: destroy a random minion in the opponent's hand, deck, and battlefield
+			for (const o of enemies) {
+				const op = state.players[o];
+				const handPool = op.hand.filter(c => c.type === 'creature');
+				if (handPool.length) { const c = handPool[Math.floor(state.rng() * handPool.length)]; op.hand = op.hand.filter(x => x !== c); emit(state, { type: 'discard', player: o, card: c }); }
+				const deckIdxs = op.deck.map((id, i) => ({ id, i })).filter(x => state.cardsById[x.id]?.type === 'creature');
+				if (deckIdxs.length) { const pick = deckIdxs[Math.floor(state.rng() * deckIdxs.length)]; op.deck.splice(pick.i, 1); }
+				const boardPool = op.board.filter(c => !isDead(c) && c.type !== 'location');
+				if (boardPool.length) { const c = boardPool[Math.floor(state.rng() * boardPool.length)]; c.damage = c.maxHealth; c.shield = false; emit(state, { type: 'destroy', uid: c.uid }); }
+				break;
+			}
+			sweepDeaths(state);
+		} else if (e.type === 'heal-or-harm-target') {
+			// Alexstrasza the Life-Binder: choose a character — restore N to a friendly, deal N to an enemy
+			const v = e.value || 8;
+			const t = chosenCreature();
+			if (t) { if (t.controller === pi) healCreature(t, v); else damageCreature(state, t, v, source); sweepDeaths(state); }
+			else if (target?.type === 'hero') { if (target.player === pi) healHero(state, pi, v); else damageHero(state, target.player, v, pi); }
 		} else if (e.type === 'summon-copies-of-damaged-rush') {
 			// Nablya, the Watcher: summon copies of your damaged minions, giving the copies Rush
 			const p = state.players[pi];
