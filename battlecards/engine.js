@@ -2957,6 +2957,12 @@ function runSecretEffects(state, pi, effects, ctx) {
 				if (src && state.cardsById[src.id] && p.hand.length < MAX_HAND) { const cp = instantiate(state.cardsById[src.id], pi); cp.zone = 'hand'; p.hand.push(cp); emit(state, { type: 'conjure', player: pi, card: cp, color: null }); }
 				break;
 			}
+			case 'conjure-minion-of-spell-cost': {
+				// Deep Space Curator (Spellburst): get a random minion of the cast spell's Cost, set its Cost to (0)
+				const spell = ctx.played;
+				if (spell) execEffects(state, pi, [{ type: 'conjure-random', cardType: 'creature', cost: spell.cost || 0, setCost: 0 }], null, ctx.self || null);
+				break;
+			}
 			default:
 				// pass the firing permanent through as `source` so self-scoped
 				// effects (temp-buff-self, gain-weapon-attack) still work
@@ -3717,9 +3723,16 @@ function execEffects(state, pi, effects, target, source) {
 				if (!isDead(c) && c.colossalOf === source.name) c.partPower = (c.partPower || 2) + (e.amount || 1);
 			}
 		} else if (e.type === 'trigger-one-deathrattle') {
-			// fire a chosen friendly creature's Deathrattle without it dying (count = times)
-			const c = chosenCreature();
+			// fire a chosen (or random) friendly creature's Deathrattle without it dying (count = times)
+			let c = chosenCreature();
+			if (e.random) { const pool = state.players[pi].board.filter(x => x !== source && !isDead(x) && x.deathrattle && x.deathrattle.length); c = pool.length ? pool[Math.floor(state.rng() * pool.length)] : null; } // Guiding Figure
 			if (c && !isDead(c) && c.deathrattle) for (let n = 0; n < (e.count || 1); n++) execEffects(state, pi, c.deathrattle, null, c);
+		} else if (e.type === 'buff-self-per-other-friendly') {
+			// Ultra-Capacitor: gain +X/+Y for each other friendly minion
+			if (source) {
+				const n = state.players[pi].board.filter(c => c !== source && !isDead(c) && c.type !== 'location').length;
+				if (n > 0) { source.attack += (e.attack || 1) * n; source.maxHealth += (e.health || 1) * n; emit(state, { type: 'buff', uid: source.uid, attack: source.attack, hp: hp(source) }); }
+			}
 		} else if (e.type === 'buff-cthun') {
 			// buff your C'Thun wherever it is (hand/deck/board persist via the tracker)
 			const p = state.players[pi];
@@ -6038,6 +6051,19 @@ function execEffects(state, pi, effects, target, source) {
 			// Incindius (approx): shuffle N copies of a token card into your deck (Eruption upgrades not modeled)
 			const p = state.players[pi];
 			if (e.id) { for (let n = 0; n < (e.count || 1); n++) p.deck.push(e.id); for (let i = p.deck.length - 1; i > 0; i--) { const j = Math.floor(state.rng() * (i + 1)); [p.deck[i], p.deck[j]] = [p.deck[j], p.deck[i]]; } emit(state, { type: 'shuffle', player: pi }); }
+		} else if (e.type === 'shuffle-random-spells-into-deck') {
+			// Blasteroid: shuffle N random spells (optionally of a school) into your deck; they cost less
+			const p = state.players[pi];
+			const pool = Object.values(state.cardsById).filter(d => isSpellType(d) && !d.token && d.collectible !== false && !(d.colors && d.colors.length) && (!e.school || schoolOf(d) === e.school));
+			if (pool.length) {
+				for (let n = 0; n < (e.count || 1); n++) {
+					const def = pool[Math.floor(state.rng() * pool.length)];
+					p.deck.push(def.id);
+					if (e.costMod) { p.deckCostOverrides = p.deckCostOverrides || {}; p.deckCostOverrides[def.id] = Math.max(0, (def.cost || 0) + e.costMod); }
+				}
+				for (let i = p.deck.length - 1; i > 0; i--) { const j = Math.floor(state.rng() * (i + 1)); [p.deck[i], p.deck[j]] = [p.deck[j], p.deck[i]]; }
+				emit(state, { type: 'shuffle', player: pi });
+			}
 		} else if (e.type === 'summon-random-from-deck') {
 			// Travelmaster Dungar (approx): summon N random minions from your deck ("different expansions" not enforced)
 			const p = state.players[pi];

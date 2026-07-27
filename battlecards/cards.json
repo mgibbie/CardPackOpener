@@ -110750,6 +110750,408 @@
         "battlecry"
       ],
       "description": "Battlecry: Demons that didn't start in your deck cost (1) less this game. (Not modeled: foreign-Demon discount.)"
+    },
+    {
+      "id": "guiding_figure",
+      "name": "Guiding Figure",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "deathknight",
+      "attack": 3,
+      "health": 2,
+      "rarity": "common",
+      "set": "SPACE",
+      "description": "Spellburst: Trigger a random friendly minion's Deathrattle. (Starship Piece.)",
+      "ongoing": {
+        "on": "spell-played",
+        "once": true,
+        "effects": [
+          {
+            "type": "trigger-one-deathrattle",
+            "random": true
+          }
+        ]
+      }
+    },
+    {
+      "id": "hologram_operator",
+      "name": "Hologram Operator",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "neutral",
+      "attack": 3,
+      "health": 2,
+      "rarity": "common",
+      "set": "SPACE",
+      "tribe": "Draenei",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Get 3 random Temporary Draenei. (Not modeled: Temporary \u2014 copies are permanent.)",
+      "effects": [
+        {
+          "type": "conjure-random",
+          "cardType": "creature",
+          "tribe": "Draenei",
+          "count": 3
+        }
+      ]
+    },
+    {
+      "id": "missile_pod",
+      "name": "Missile Pod",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "shaman",
+      "attack": 1,
+      "health": 3,
+      "rarity": "common",
+      "set": "SPACE",
+      "tribe": "Mech",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Starship Piece. Battlecry: Deal 1 damage to all enemies. (Not modeled: launch trigger.)",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 1,
+          "target": "enemies"
+        }
+      ]
+    },
+    {
+      "id": "moonstone_mauler",
+      "name": "Moonstone Mauler",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "neutral",
+      "attack": 2,
+      "health": 2,
+      "rarity": "common",
+      "set": "SPACE",
+      "tribe": "Elemental",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Shuffle 3 Asteroids into your deck that deal 2 damage to a random enemy when drawn.",
+      "effects": [
+        {
+          "type": "shuffle-into-own-deck",
+          "id": "gdb_asteroid",
+          "count": 3
+        }
+      ]
+    },
+    {
+      "id": "planetary_navigator",
+      "name": "Planetary Navigator",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "shaman",
+      "attack": 3,
+      "health": 2,
+      "rarity": "common",
+      "set": "SPACE",
+      "tribe": "Draenei",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: The next Draenei you play costs (2) less, but has Overload: (2). (Not modeled: Overload rider.)",
+      "effects": [
+        {
+          "type": "set-tribe-discount",
+          "tribe": "Draenei",
+          "count": 1,
+          "value": 2
+        }
+      ]
+    },
+    {
+      "id": "roach",
+      "name": "Roach",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "hunter",
+      "attack": 2,
+      "health": 2,
+      "rarity": "common",
+      "set": "SPACE",
+      "tribe": "Zerg",
+      "keywords": [
+        "battlecry"
+      ],
+      "copyOnDraw": true,
+      "description": "When you draw this, get a copy of it. Battlecry: If you control another Zerg minion, gain +1/+2.",
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "controlOtherTribe": "Zerg"
+          },
+          "then": [
+            {
+              "type": "buff",
+              "attack": 1,
+              "health": 2,
+              "target": "self"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "scrounging_shipwright",
+      "name": "Scrounging Shipwright",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "rogue",
+      "attack": 3,
+      "health": 2,
+      "rarity": "common",
+      "set": "SPACE",
+      "tribe": "Draenei",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Get a random Starship Piece from another class. (Approximated: Discover a card.)",
+      "effects": [
+        {
+          "type": "discover"
+        }
+      ]
+    },
+    {
+      "id": "stranded_spaceman",
+      "name": "Stranded Spaceman",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "neutral",
+      "attack": 2,
+      "health": 3,
+      "rarity": "common",
+      "set": "SPACE",
+      "tribe": "Draenei",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: The next Draenei you play gains +2 Health and Rush.",
+      "effects": [
+        {
+          "type": "set-next-tribe-play-reward",
+          "tribe": "Draenei",
+          "health": 2,
+          "keyword": "rush",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "id": "ultra_capacitor",
+      "name": "Ultra-Capacitor",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "paladin",
+      "attack": 1,
+      "health": 1,
+      "rarity": "common",
+      "set": "SPACE",
+      "tribe": "Mech",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Starship Piece. Battlecry: Gain +1/+1 for each other friendly minion. (Not modeled: launch trigger.)",
+      "effects": [
+        {
+          "type": "buff-self-per-other-friendly",
+          "attack": 1,
+          "health": 1
+        }
+      ]
+    },
+    {
+      "id": "anchorite",
+      "name": "Anchorite",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "priest",
+      "attack": 2,
+      "health": 4,
+      "rarity": "common",
+      "set": "SPACE",
+      "tribe": "Draenei",
+      "description": "Whenever another minion is Overhealed, give it that much extra Health. (Not modeled: overheal-reactive aura.)"
+    },
+    {
+      "id": "blasteroid",
+      "name": "Blasteroid",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "mage",
+      "attack": 3,
+      "health": 4,
+      "rarity": "common",
+      "set": "SPACE",
+      "tribe": "Elemental",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Shuffle 5 random Fire spells into your deck. They cost (2) less.",
+      "effects": [
+        {
+          "type": "shuffle-random-spells-into-deck",
+          "school": "Fire",
+          "count": 5,
+          "costMod": -2
+        }
+      ]
+    },
+    {
+      "id": "blazing_accretion",
+      "name": "Blazing Accretion",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "mage",
+      "attack": 3,
+      "health": 1,
+      "rarity": "common",
+      "set": "SPACE",
+      "tribe": "Elemental",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Destroy the top 3 cards of your deck. Any Fire spells or Elementals are drawn instead. (Approximated: draw an Elemental.)",
+      "effects": [
+        {
+          "type": "tutor",
+          "cardType": "creature",
+          "tribe": "Elemental",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "id": "crimson_commander",
+      "name": "Crimson Commander",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "neutral",
+      "attack": 4,
+      "health": 3,
+      "rarity": "rare",
+      "set": "SPACE",
+      "tribe": "Draenei",
+      "keywords": [
+        "battlecry",
+        "deathrattle"
+      ],
+      "description": "Battlecry and Deathrattle: Give all Draenei in your hand +2/+1.",
+      "effects": [
+        {
+          "type": "buff-hand-tribe",
+          "tribe": "Draenei",
+          "attack": 2,
+          "health": 1
+        }
+      ],
+      "deathrattle": [
+        {
+          "type": "buff-hand-tribe",
+          "tribe": "Draenei",
+          "attack": 2,
+          "health": 1
+        }
+      ]
+    },
+    {
+      "id": "deep_space_curator",
+      "name": "Deep Space Curator",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "neutral",
+      "attack": 2,
+      "health": 4,
+      "rarity": "rare",
+      "set": "SPACE",
+      "description": "Spellburst: Get a random minion of the spell's Cost. Set its Cost to (0).",
+      "ongoing": {
+        "on": "spell-played",
+        "once": true,
+        "effects": [
+          {
+            "type": "conjure-minion-of-spell-cost"
+          }
+        ]
+      }
+    },
+    {
+      "id": "ethereal_oracle",
+      "name": "Ethereal Oracle",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "neutral",
+      "attack": 2,
+      "health": 3,
+      "rarity": "common",
+      "set": "SPACE",
+      "static": {
+        "type": "spell-damage",
+        "value": 1
+      },
+      "description": "Spell Damage +1. Spellburst: Draw 2 spells.",
+      "ongoing": {
+        "on": "spell-played",
+        "once": true,
+        "effects": [
+          {
+            "type": "tutor",
+            "cardType": "spell",
+            "count": 2
+          }
+        ]
+      }
+    },
+    {
+      "id": "exarch_naielle",
+      "name": "Exarch Naielle",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "hunter",
+      "attack": 3,
+      "health": 4,
+      "rarity": "legendary",
+      "set": "SPACE",
+      "tribe": "Draenei",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Replace your Hero Power with Tracking (Discover a card from your deck). (Approximated: Discover a card.)",
+      "effects": [
+        {
+          "type": "discover"
+        }
+      ]
+    },
+    {
+      "id": "gdb_asteroid",
+      "name": "Asteroid",
+      "type": "sorcery",
+      "cost": 2,
+      "cardClass": "neutral",
+      "rarity": "common",
+      "set": "SPACE",
+      "token": true,
+      "collectible": false,
+      "drawTrigger": true,
+      "description": "When drawn, deal 2 damage to a random enemy.",
+      "onDraw": [
+        {
+          "type": "random-damage",
+          "value": 2,
+          "count": 1,
+          "pool": "enemies"
+        }
+      ]
     }
   ]
 }
