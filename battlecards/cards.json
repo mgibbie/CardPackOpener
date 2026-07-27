@@ -100480,6 +100480,475 @@
       "token": true,
       "collectible": false,
       "description": "A 3/2 Zombie."
+    },
+    {
+      "id": "thoribelore",
+      "name": "Thori'belore",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "warrior",
+      "attack": 4,
+      "health": 4,
+      "rarity": "legendary",
+      "set": "RETURN_OF_THE_LICH_KING",
+      "tribe": "Elemental",
+      "keywords": [
+        "rush",
+        "deathrattle"
+      ],
+      "description": "Rush. Deathrattle: Go Dormant. Cast a Fire spell to revive Thori'belore!",
+      "deathrattle": [
+        {
+          "type": "add-card",
+          "id": "thoribelore",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "id": "amorphous_slime",
+      "name": "Amorphous Slime",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "warlock",
+      "attack": 5,
+      "health": 3,
+      "rarity": "epic",
+      "set": "RETURN_OF_THE_LICH_KING",
+      "keywords": [
+        "battlecry",
+        "deathrattle"
+      ],
+      "description": "Battlecry: Discard a random Undead. Deathrattle: Summon a copy of it.",
+      "effects": [
+        {
+          "type": "discard-random-tribe-remember",
+          "tribe": "Undead"
+        }
+      ],
+      "deathrattle": [
+        {
+          "type": "summon-remembered"
+        }
+      ]
+    },
+    {
+      "id": "elder_nadox",
+      "name": "Elder Nadox",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "druid",
+      "attack": 5,
+      "health": 4,
+      "rarity": "legendary",
+      "set": "RETURN_OF_THE_LICH_KING",
+      "tribe": "Undead",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Destroy a friendly Undead. Your minions gain its Attack.",
+      "effects": [
+        {
+          "type": "destroy-friendly-tribe-buff-all",
+          "target": "friendly-creature"
+        }
+      ]
+    },
+    {
+      "id": "infantry_reanimator",
+      "name": "Infantry Reanimator",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "warlock",
+      "attack": 4,
+      "health": 4,
+      "rarity": "common",
+      "set": "RETURN_OF_THE_LICH_KING",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Resurrect a friendly Undead. Give it Reborn.",
+      "effects": [
+        {
+          "type": "summon-died-tribe",
+          "tribe": "Undead",
+          "count": 1,
+          "grant": "reborn"
+        }
+      ]
+    },
+    {
+      "id": "infectious_ghoul",
+      "name": "Infectious Ghoul",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "neutral",
+      "attack": 5,
+      "health": 4,
+      "rarity": "rare",
+      "set": "RETURN_OF_THE_LICH_KING",
+      "tribe": "Undead",
+      "keywords": [
+        "deathrattle"
+      ],
+      "description": "Deathrattle: Give a random friendly minion \"Deathrattle: Summon an Infectious Ghoul.\"",
+      "deathrattle": [
+        {
+          "type": "grant-deathrattle-random",
+          "effects": [
+            {
+              "type": "summon",
+              "count": 1,
+              "summonId": "infectious_ghoul"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "rotgill",
+      "name": "Rotgill",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "shaman",
+      "attack": 3,
+      "health": 6,
+      "rarity": "legendary",
+      "set": "RETURN_OF_THE_LICH_KING",
+      "tribe": "Undead",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Give your other minions \"Deathrattle: Give your minions +1/+1.\"",
+      "effects": [
+        {
+          "type": "grant-deathrattle",
+          "target": "friendly-others",
+          "effects": [
+            {
+              "type": "buff",
+              "attack": 1,
+              "health": 1,
+              "target": "friendly-creatures"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "savage_ymirjar",
+      "name": "Savage Ymirjar",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "warlock",
+      "attack": 7,
+      "health": 7,
+      "rarity": "rare",
+      "set": "RETURN_OF_THE_LICH_KING",
+      "tribe": "Undead",
+      "keywords": [
+        "rush",
+        "battlecry"
+      ],
+      "description": "Rush. Battlecry: Discard 2 cards.",
+      "effects": [
+        {
+          "type": "discard-random",
+          "count": 2
+        }
+      ]
+    },
+    {
+      "id": "tenacious_sanlayn",
+      "name": "Tenacious San'layn",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "neutral",
+      "attack": 4,
+      "health": 6,
+      "rarity": "rare",
+      "set": "RETURN_OF_THE_LICH_KING",
+      "tribe": "Undead",
+      "keywords": [
+        "lifesteal"
+      ],
+      "description": "Lifesteal. Whenever this attacks, deal 2 damage to the enemy hero.",
+      "ongoing": {
+        "on": "self-attacks",
+        "effects": [
+          {
+            "type": "damage",
+            "value": 2,
+            "target": "enemy-hero"
+          }
+        ]
+      }
+    },
+    {
+      "id": "the_purator",
+      "name": "The Purator",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "paladin",
+      "attack": 4,
+      "health": 6,
+      "rarity": "legendary",
+      "set": "RETURN_OF_THE_LICH_KING",
+      "tribe": "Mech",
+      "keywords": [
+        "taunt",
+        "battlecry"
+      ],
+      "description": "Taunt. Battlecry: If your deck has no Neutral cards, draw a minion of each minion type.",
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "deckNoNeutral": true
+          },
+          "then": [
+            {
+              "type": "tutor",
+              "cardType": "creature",
+              "count": 4,
+              "distinct": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "translocation_instructor",
+      "name": "Translocation Instructor",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "neutral",
+      "attack": 4,
+      "health": 4,
+      "rarity": "rare",
+      "set": "RETURN_OF_THE_LICH_KING",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Choose an enemy minion. Swap it with a random one in their deck.",
+      "effects": [
+        {
+          "type": "swap-enemy-with-deck",
+          "target": "enemy-creature"
+        }
+      ]
+    },
+    {
+      "id": "blood_crusader",
+      "name": "Blood Crusader",
+      "type": "creature",
+      "cost": 6,
+      "cardClass": "paladin",
+      "attack": 5,
+      "health": 5,
+      "rarity": "epic",
+      "set": "RETURN_OF_THE_LICH_KING",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Your next Paladin minion this turn costs Health instead of Mana.",
+      "effects": [
+        {
+          "type": "grant-next-class-free",
+          "cardClass": "paladin"
+        }
+      ]
+    },
+    {
+      "id": "bonelord_frostwhisper",
+      "name": "Bonelord Frostwhisper",
+      "type": "creature",
+      "cost": 6,
+      "cardClass": "neutral",
+      "attack": 6,
+      "health": 6,
+      "rarity": "legendary",
+      "set": "RETURN_OF_THE_LICH_KING",
+      "tribe": "Undead",
+      "keywords": [
+        "deathrattle"
+      ],
+      "description": "Deathrattle: For the rest of the game, your first card each turn costs (0). You die in 3 turns.",
+      "deathrattle": [
+        {
+          "type": "grant-first-card-free"
+        }
+      ]
+    },
+    {
+      "id": "death_beetle",
+      "name": "Death Beetle",
+      "type": "creature",
+      "cost": 6,
+      "cardClass": "druid",
+      "attack": 6,
+      "health": 6,
+      "rarity": "common",
+      "set": "RETURN_OF_THE_LICH_KING",
+      "tribe": "Undead",
+      "keywords": [
+        "taunt",
+        "battlecry"
+      ],
+      "description": "Taunt. Manathirst (11): Gain +4/+4 and Charge.",
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "manathirst": 11
+          },
+          "then": [
+            {
+              "type": "buff",
+              "attack": 4,
+              "health": 4,
+              "target": "self"
+            },
+            {
+              "type": "grant-keyword-self",
+              "keyword": "charge"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "felscale_evoker",
+      "name": "Felscale Evoker",
+      "type": "creature",
+      "cost": 6,
+      "cardClass": "demonhunter",
+      "attack": 5,
+      "health": 7,
+      "rarity": "rare",
+      "set": "RETURN_OF_THE_LICH_KING",
+      "tribe": "Demon",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: If you've cast three spells while holding this, summon a different Demon from your deck.",
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "spellsCastWhileHeld": 3
+          },
+          "then": [
+            {
+              "type": "summon-from-deck-tribe",
+              "tribe": "Demon",
+              "count": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "fleshshaper",
+      "name": "Fleshshaper",
+      "type": "creature",
+      "cost": 6,
+      "cardClass": "warrior",
+      "attack": 3,
+      "health": 8,
+      "rarity": "common",
+      "set": "RETURN_OF_THE_LICH_KING",
+      "tribe": "Undead",
+      "keywords": [
+        "taunt",
+        "battlecry"
+      ],
+      "description": "Taunt. Battlecry: If you have 5 or more Armor, summon a copy of this.",
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "armorAtLeast": 5
+          },
+          "then": [
+            {
+              "type": "summon-copy-of-self",
+              "count": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "rivendare_warrider",
+      "name": "Rivendare, Warrider",
+      "type": "creature",
+      "cost": 6,
+      "cardClass": "neutral",
+      "attack": 6,
+      "health": 6,
+      "rarity": "legendary",
+      "set": "RETURN_OF_THE_LICH_KING",
+      "tribe": "Undead",
+      "keywords": [
+        "deathrattle"
+      ],
+      "description": "Deathrattle: Shuffle the other 3 Horsemen into your deck.",
+      "deathrattle": [
+        {
+          "type": "shuffle-tokens-into-deck",
+          "ids": [
+            "rlk_horseman_blaumeux",
+            "rlk_horseman_korthazz",
+            "rlk_horseman_zeliek"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "rlk_horseman_blaumeux",
+      "name": "Lady Blaumeux",
+      "type": "creature",
+      "cost": 6,
+      "cardClass": "neutral",
+      "attack": 6,
+      "health": 6,
+      "rarity": "legendary",
+      "set": "RETURN_OF_THE_LICH_KING",
+      "tribe": "Undead",
+      "token": true,
+      "collectible": false,
+      "description": "A 6/6 Horseman."
+    },
+    {
+      "id": "rlk_horseman_korthazz",
+      "name": "Thane Korth'azz",
+      "type": "creature",
+      "cost": 6,
+      "cardClass": "neutral",
+      "attack": 6,
+      "health": 6,
+      "rarity": "legendary",
+      "set": "RETURN_OF_THE_LICH_KING",
+      "tribe": "Undead",
+      "token": true,
+      "collectible": false,
+      "description": "A 6/6 Horseman."
+    },
+    {
+      "id": "rlk_horseman_zeliek",
+      "name": "Sir Zeliek",
+      "type": "creature",
+      "cost": 6,
+      "cardClass": "neutral",
+      "attack": 6,
+      "health": 6,
+      "rarity": "legendary",
+      "set": "RETURN_OF_THE_LICH_KING",
+      "tribe": "Undead",
+      "token": true,
+      "collectible": false,
+      "description": "A 6/6 Horseman."
     }
   ]
 }

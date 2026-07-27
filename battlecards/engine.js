@@ -663,6 +663,8 @@ const CHOSEN = {
 	'lock-minion-attack': { creature: 'creature', 'enemy-creature': 'enemy-creature' },
 	'buff-target-by-source-stats': { 'friendly-creature': 'friendly-creature' },
 	'grant-attack-while-alive': { creature: 'creature', 'friendly-creature': 'friendly-creature' },
+	'destroy-friendly-tribe-buff-all': { 'friendly-creature': 'friendly-creature' },
+	'swap-enemy-with-deck': { 'enemy-creature': 'enemy-creature' },
 	fireworks: { 'friendly-creature': 'friendly-creature' },
 	'bounce-and-buff': { 'friendly-creature': 'friendly-creature' },
 	'copy-health': { 'friendly-creature': 'friendly-creature' },
@@ -4250,6 +4252,7 @@ function execEffects(state, pi, effects, target, source) {
 			else if (e.if.heroHealthChanged) ok = !!p.heroHealthChangedThisTurn; // Brittlebone Destroyer
 			else if (e.if.hasSpellDamage) ok = staticValue(p, 'spell-damage') > 0; // Sorcerous Substitute
 			else if (e.if.hasArmor) ok = (p.armor || 0) > 0; // Ironclad
+			else if (e.if.armorAtLeast != null) ok = (p.armor || 0) >= e.if.armorAtLeast; // Fleshshaper
 			else if (e.if.holdingSecret) ok = p.hand.some(c => c.secret); // Sparkjoy Cheat
 			else if (e.if.spellsGame != null) ok = (p.spellsPlayedTotal || 0) >= e.if.spellsGame; // Yogg-Saron, Master of Fate
 			else if (e.if.healedThisTurn) ok = !!p.healedThisTurn; // Cleric of An'she
@@ -5437,7 +5440,7 @@ function execEffects(state, pi, effects, target, source) {
 			// Kanrethad Prime: resummon friendly minions of a tribe that died this game
 			const p = state.players[pi];
 			const pool = [...new Set(p.deathLogIds)].map(id => state.cardsById[id]).filter(d => d && d.type === 'creature' && (d.tribe || '').includes(e.tribe));
-			for (let i = 0; i < (e.count || 1) && pool.length; i++) summon(state, pi, pool[Math.floor(state.rng() * pool.length)]);
+			for (let i = 0; i < (e.count || 1) && pool.length; i++) { const nc = summon(state, pi, pool[Math.floor(state.rng() * pool.length)]); if (nc && e.grant && !nc.keywords.includes(e.grant)) { nc.keywords.push(e.grant); if (e.grant === KW.DIVINE_SHIELD) nc.shield = true; } } // Infantry Reanimator: grant Reborn
 		} else if (e.type === 'summon-with-source-stats') {
 			// Blistering Rot: summon a token with stats equal to the source minion
 			if (source) { const a = source.attack || 0, h = hp(source) || 1; const tok = summon(state, pi, { id: e.id || 'token_rot', name: e.name || 'Rot', type: 'creature', cost: 0, token: true, rarity: 'common', attack: a, health: h, description: `A ${a}/${h} token.` }); }
@@ -5828,6 +5831,35 @@ function execEffects(state, pi, effects, target, source) {
 		} else if (e.type === 'destroy-self') {
 			// Incorporeal Corporal: destroy the source minion
 			if (source && !isDead(source)) { source.damage = source.maxHealth; source.shield = false; emit(state, { type: 'destroy', uid: source.uid }); sweepDeaths(state); }
+		} else if (e.type === 'discard-random-tribe-remember') {
+			// Amorphous Slime: discard a random minion of a tribe and remember it for a later summon
+			const p = state.players[pi];
+			const pool = p.hand.filter(c => c.type === 'creature' && (!e.tribe || (c.tribe || '').includes(e.tribe)));
+			if (pool.length && source) { const c = pool[Math.floor(state.rng() * pool.length)]; p.hand = p.hand.filter(x => x !== c); if (!c.token) p.discardLogIds.push(c.id); source.rememberedId = c.id; emit(state, { type: 'discard', player: pi, card: c }); }
+		} else if (e.type === 'summon-remembered') {
+			// Amorphous Slime (Deathrattle): summon a copy of the remembered discarded minion
+			if (source && source.rememberedId && state.cardsById[source.rememberedId]) summon(state, pi, state.cardsById[source.rememberedId]);
+		} else if (e.type === 'destroy-friendly-tribe-buff-all') {
+			// Elder Nadox: destroy a chosen friendly minion; your minions gain its Attack
+			const t = chosenCreature();
+			if (t && t.controller === pi) { const a = t.attack || 0; t.damage = t.maxHealth; t.shield = false; emit(state, { type: 'destroy', uid: t.uid }); for (const c of state.players[pi].board) if (c !== t && !isDead(c) && c.type !== 'location') buffCreature(c, a, 0); }
+		} else if (e.type === 'swap-enemy-with-deck') {
+			// Translocation Instructor: swap a chosen enemy minion with a random minion in their deck
+			const t = chosenCreature();
+			if (t && t.controller != null && t.controller !== pi) { const owner = state.players[t.controller]; const idxs = owner.deck.map((id, i) => [id, i]).filter(([id]) => state.cardsById[id]?.type === 'creature' && !state.cardsById[id].token); if (idxs.length) { const [id, di] = idxs[Math.floor(state.rng() * idxs.length)]; owner.deck.splice(di, 1); owner.board = owner.board.filter(c => c !== t); if (state.cardsById[t.id]) owner.deck.push(t.id); t.zone = 'gone'; summon(state, t.controller, state.cardsById[id]); emit(state, { type: 'bounce', uid: t.uid, player: t.controller, name: t.name }); recomputeAuras(state); } }
+		} else if (e.type === 'grant-first-card-free') {
+			// Bonelord Frostwhisper: for the rest of the game, your first card each turn costs (0)
+			state.players[pi].firstCardFreeEachTurn = true;
+		} else if (e.type === 'grant-next-class-free') {
+			// Blood Crusader: your next minion of a class this turn costs Health instead of Mana (approximated as free)
+			state.players[pi].nextClassFree = e.cardClass;
+			state.players[pi]._classFreeGrantedThisPlay = true; // don't let the granting card consume its own grant
+		} else if (e.type === 'shuffle-tokens-into-deck') {
+			// Rivendare: shuffle specific cards into your deck
+			const p = state.players[pi];
+			for (const id of e.ids || []) if (state.cardsById[id]) p.deck.push(id);
+			for (let i = p.deck.length - 1; i > 0; i--) { const j = Math.floor(state.rng() * (i + 1)); [p.deck[i], p.deck[j]] = [p.deck[j], p.deck[i]]; }
+			emit(state, { type: 'shuffle', player: pi });
 		} else if (e.type === 'spend-mana-summon') {
 			// Lost Exarch: spend all your remaining Mana, summon that many tokens
 			const p = state.players[pi];
@@ -8194,6 +8226,8 @@ export function effectiveCost(state, pi, card) {
 	if (p.libramDiscount > 0 && /Libram/.test(card.name || '')) c = Math.max(0, c - p.libramDiscount); // Aldor Attendant/Truthseeker
 	if (card.type === 'creature' && p.enemyMinionTaxTurn === state.turnNumber && p.enemyMinionTaxAmount) c += p.enemyMinionTaxAmount; // Forensic Duster
 	if (p.overloadDiscount > 0 && (card.overload || 0) > 0) c = Math.max(0, c - p.overloadDiscount); // Inzah
+	if (p.firstCardFreeEachTurn && (p.cardsPlayedThisTurn || 0) === 0) c = 0; // Bonelord Frostwhisper: first card each turn is free
+	if (p.nextClassFree && card.type === 'creature' && (card.cardClass || '').split('__').includes(p.nextClassFree)) c = 0; // Blood Crusader (Health-cost approximated as free)
 	return Math.max(0, c);
 }
 
@@ -8510,6 +8544,8 @@ export function playCard(state, pi, cardUid, target, choice, position, useAlt, k
 	if ((card.keywords || []).includes('combo')) p.combosPlayedGame = (p.combosPlayedGame || 0) + 1; // Rhyme Spinner
 	(p.playedCountById = p.playedCountById || {})[card.id] = (p.playedCountById[card.id] || 0) + 1; // Freebird
 	if (card.hauntSummon && state.cardsById[card.hauntSummon]) summon(state, pi, state.cardsById[card.hauntSummon]); // Haunting Nightmare: playing a haunted card summons a Soldier
+	if (p.nextClassFree && card.type === 'creature' && (card.cardClass || '').split('__').includes(p.nextClassFree) && !p._classFreeGrantedThisPlay) p.nextClassFree = null; // Blood Crusader: one-shot free minion consumed (not by the granting card)
+	p._classFreeGrantedThisPlay = false;
 	if ((card.keywords || []).includes('outcast') && p.nextOutcastDiscount && !p._outcastDiscountGrantedThisPlay) p.nextOutcastDiscount = 0; // Fierce Outsider: one-shot discount consumed (not by the card that granted it)
 	p._outcastDiscountGrantedThisPlay = false;
 	// Sherazin, Corpse Flower: play 4 cards in a turn to revive the seed
