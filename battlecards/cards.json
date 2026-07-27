@@ -103703,6 +103703,420 @@
         "taunt"
       ],
       "description": "A 5/5 Ancient with Taunt."
+    },
+    {
+      "id": "zilliax_deluxe_3000",
+      "name": "Zilliax Deluxe 3000",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "neutral",
+      "attack": 3,
+      "health": 4,
+      "rarity": "legendary",
+      "set": "WHIZBANGS_WORKSHOP",
+      "tribe": "Mech",
+      "keywords": [
+        "taunt",
+        "divine_shield",
+        "lifesteal",
+        "rush"
+      ],
+      "description": "A customizable modular Mech (default: Taunt, Divine Shield, Lifesteal, Rush)."
+    },
+    {
+      "id": "corridor_sleeper",
+      "name": "Corridor Sleeper",
+      "type": "creature",
+      "cost": 1,
+      "cardClass": "neutral",
+      "attack": 3,
+      "health": 5,
+      "rarity": "epic",
+      "set": "WHIZBANGS_WORKSHOP",
+      "tribe": "Beast",
+      "keywords": [
+        "rush"
+      ],
+      "dormant": 2,
+      "description": "Starts Dormant. After 7 minions die, awaken."
+    },
+    {
+      "id": "giftwrapped_whelp",
+      "name": "Giftwrapped Whelp",
+      "type": "creature",
+      "cost": 1,
+      "cardClass": "neutral",
+      "attack": 2,
+      "health": 1,
+      "rarity": "common",
+      "set": "WHIZBANGS_WORKSHOP",
+      "tribe": "Dragon",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: If you're holding a Dragon, give it and this minion +1/+1.",
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "holdingTribe": "Dragon"
+          },
+          "then": [
+            {
+              "type": "buff",
+              "attack": 1,
+              "health": 1,
+              "target": "self"
+            },
+            {
+              "type": "buff-random-hand-tribe",
+              "tribe": "Dragon",
+              "attack": 1,
+              "health": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "jade_display",
+      "name": "Jade Display",
+      "type": "creature",
+      "cost": 1,
+      "cardClass": "druid",
+      "attack": 1,
+      "health": 1,
+      "rarity": "epic",
+      "set": "WHIZBANGS_WORKSHOP",
+      "keywords": [
+        "deathrattle"
+      ],
+      "description": "Deathrattle: Your Jade Displays have +1/+1 this game. Shuffle 2 of them into your deck.",
+      "deathrattle": [
+        {
+          "type": "shuffle-tokens-into-deck",
+          "ids": [
+            "jade_display",
+            "jade_display"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "murloc_growfin",
+      "name": "Murloc Growfin",
+      "type": "creature",
+      "cost": 1,
+      "cardClass": "shaman",
+      "attack": 1,
+      "health": 1,
+      "rarity": "rare",
+      "set": "WHIZBANGS_WORKSHOP",
+      "tribe": "Murloc",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Gigantify. Battlecry: Summon a Tinyfin with Rush and stats equal to this minion's.",
+      "effects": [
+        {
+          "type": "summon-with-source-stats",
+          "id": "wwb_tinyfin",
+          "name": "Tinyfin",
+          "tribe": "Murloc",
+          "keywords": [
+            "rush"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "treasure_distributor",
+      "name": "Treasure Distributor",
+      "type": "creature",
+      "cost": 1,
+      "cardClass": "neutral",
+      "attack": 1,
+      "health": 2,
+      "rarity": "common",
+      "set": "WHIZBANGS_WORKSHOP",
+      "tribe": "Pirate",
+      "description": "After you summon a Pirate, give it +1 Attack.",
+      "ongoing": {
+        "on": "summoned",
+        "effects": [
+          {
+            "type": "buff-summoned-if-tribe",
+            "tribe": "Pirate",
+            "attack": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "painted_canvasaur",
+      "name": "Painted Canvasaur",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "hunter",
+      "attack": 3,
+      "health": 2,
+      "rarity": "rare",
+      "set": "WHIZBANGS_WORKSHOP",
+      "tribe": "Beast",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Give each other friendly Beast a random Bonus Effect.",
+      "effects": [
+        {
+          "type": "grant-random-keyword-friendly-tribe",
+          "tribe": "Beast"
+        }
+      ]
+    },
+    {
+      "id": "papercraft_angel",
+      "name": "Papercraft Angel",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "priest",
+      "attack": 2,
+      "health": 3,
+      "rarity": "common",
+      "set": "WHIZBANGS_WORKSHOP",
+      "heroPowerCostSet": 0,
+      "description": "Your Hero Power costs (0)."
+    },
+    {
+      "id": "pro_gamer",
+      "name": "Pro Gamer",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "neutral",
+      "attack": 2,
+      "health": 3,
+      "rarity": "epic",
+      "set": "WHIZBANGS_WORKSHOP",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Challenge your opponent to a game of Rock-Paper-Scissors! The winner draws 2 cards.",
+      "effects": [
+        {
+          "type": "coin-flip-draw",
+          "value": 2
+        }
+      ]
+    },
+    {
+      "id": "shambling_zombietank",
+      "name": "Shambling Zombietank",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "deathknight",
+      "attack": 3,
+      "health": 2,
+      "rarity": "common",
+      "set": "WHIZBANGS_WORKSHOP",
+      "tribe": "Undead",
+      "keywords": [
+        "taunt",
+        "battlecry"
+      ],
+      "description": "Taunt. Battlecry: Spend 5 Corpses to summon a copy of this.",
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "corpsesAtLeast": 5
+          },
+          "then": [
+            {
+              "type": "spend-corpses-summon-self",
+              "cost": 5
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "toy_boat",
+      "name": "Toy Boat",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "rogue",
+      "attack": 2,
+      "health": 3,
+      "rarity": "common",
+      "set": "WHIZBANGS_WORKSHOP",
+      "description": "After you summon a Pirate, draw a card.",
+      "ongoing": {
+        "on": "summoned",
+        "if": {
+          "tribe": "Pirate"
+        },
+        "effects": [
+          {
+            "type": "draw",
+            "value": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "wind_up_sapling",
+      "name": "Wind-Up Sapling",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "druid",
+      "attack": 2,
+      "health": 1,
+      "rarity": "rare",
+      "set": "WHIZBANGS_WORKSHOP",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Tradeable. Battlecry: Refresh 1 Mana Crystal.",
+      "effects": [
+        {
+          "type": "refresh-mana",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "bargain_bin_buccaneer",
+      "name": "Bargain Bin Buccaneer",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "rogue",
+      "attack": 3,
+      "health": 2,
+      "rarity": "common",
+      "set": "WHIZBANGS_WORKSHOP",
+      "tribe": "Pirate",
+      "keywords": [
+        "rush",
+        "combo"
+      ],
+      "description": "Rush. Combo: Summon a copy of this.",
+      "combo": [
+        {
+          "type": "summon-copy-of-self",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "id": "cardboard_golem",
+      "name": "Cardboard Golem",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "paladin",
+      "attack": 3,
+      "health": 3,
+      "rarity": "epic",
+      "set": "WHIZBANGS_WORKSHOP",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Increase the duration of Auras in your hand, deck, and battlefield by 1."
+    },
+    {
+      "id": "careless_crafter",
+      "name": "Careless Crafter",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "priest",
+      "attack": 3,
+      "health": 3,
+      "rarity": "common",
+      "set": "WHIZBANGS_WORKSHOP",
+      "keywords": [
+        "deathrattle"
+      ],
+      "description": "Deathrattle: Get two 0-Cost Bandages that restore 3 Health.",
+      "deathrattle": [
+        {
+          "type": "add-card",
+          "id": "wwb_bandage",
+          "count": 2
+        }
+      ]
+    },
+    {
+      "id": "cicigi",
+      "name": "Ci'Cigi",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "demonhunter",
+      "attack": 4,
+      "health": 4,
+      "rarity": "legendary",
+      "set": "WHIZBANGS_WORKSHOP",
+      "keywords": [
+        "battlecry",
+        "outcast",
+        "deathrattle"
+      ],
+      "description": "Battlecry, Outcast, and Deathrattle: Get a random first-edition Demon Hunter card.",
+      "effects": [
+        {
+          "type": "conjure-random",
+          "cardClass": "demonhunter"
+        }
+      ],
+      "outcast": {
+        "effects": [
+          {
+            "type": "conjure-random",
+            "cardClass": "demonhunter"
+          }
+        ]
+      },
+      "deathrattle": [
+        {
+          "type": "conjure-random",
+          "cardClass": "demonhunter"
+        }
+      ]
+    },
+    {
+      "id": "wwb_tinyfin",
+      "name": "Tinyfin",
+      "type": "creature",
+      "cost": 0,
+      "cardClass": "shaman",
+      "attack": 1,
+      "health": 1,
+      "rarity": "common",
+      "set": "WHIZBANGS_WORKSHOP",
+      "tribe": "Murloc",
+      "token": true,
+      "collectible": false,
+      "keywords": [
+        "rush"
+      ],
+      "description": "Rush."
+    },
+    {
+      "id": "wwb_bandage",
+      "name": "Bandage",
+      "type": "sorcery",
+      "cost": 0,
+      "cardClass": "priest",
+      "rarity": "common",
+      "set": "WHIZBANGS_WORKSHOP",
+      "token": true,
+      "collectible": false,
+      "description": "Restore 3 Health.",
+      "effects": [
+        {
+          "type": "heal",
+          "value": 3,
+          "target": "friendly-any"
+        }
+      ]
     }
   ]
 }

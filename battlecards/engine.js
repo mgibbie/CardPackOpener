@@ -5870,6 +5870,17 @@ function execEffects(state, pi, effects, target, source) {
 		} else if (e.type === 'destroy-self') {
 			// Incorporeal Corporal: destroy the source minion
 			if (source && !isDead(source)) { source.damage = source.maxHealth; source.shield = false; emit(state, { type: 'destroy', uid: source.uid }); sweepDeaths(state); }
+		} else if (e.type === 'grant-random-keyword-friendly-tribe') {
+			// Painted Canvasaur: give each OTHER friendly minion of a tribe a random keyword
+			const kws = e.keywords || ['taunt', 'divine_shield', 'rush', 'lifesteal', 'windfury', 'poisonous'];
+			for (const c of state.players[pi].board) { if (c === source || isDead(c) || c.type === 'location') continue; if (e.tribe && !(c.tribe || '').includes(e.tribe)) continue; const k = kws[Math.floor(state.rng() * kws.length)]; if (!c.keywords.includes(k)) { c.keywords.push(k); if (k === KW.DIVINE_SHIELD) c.shield = true; } emit(state, { type: 'buff', uid: c.uid, attack: c.attack, hp: hp(c) }); }
+		} else if (e.type === 'spend-corpses-summon-self') {
+			// Shambling Zombietank: spend N Corpses to summon a copy of this
+			const p = state.players[pi];
+			if ((p.corpses || 0) >= (e.cost || 5) && source && state.cardsById[source.id]) { p.corpses -= (e.cost || 5); emit(state, { type: 'corpses', player: pi, corpses: p.corpses }); summon(state, pi, state.cardsById[source.id]); }
+		} else if (e.type === 'coin-flip-draw') {
+			// Pro Gamer: 50% chance to draw N (Rock-Paper-Scissors approximated)
+			if (state.rng() < 0.5) drawCards(state, pi, e.value || 2);
 		} else if (e.type === 'resurrect-by-attacks') {
 			// Tyr: resurrect one died friendly minion of your class for each listed Attack value
 			const p = state.players[pi];
