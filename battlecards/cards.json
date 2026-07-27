@@ -118094,7 +118094,12 @@
       "keywords": [
         "charge"
       ],
-      "description": "Fabled, Charge. Start of Game: Disappear. Kill all 4 Demons from Argus to reappear in hand. (Not modeled: Fabled / Start-of-Game.)"
+      "description": "Fabled, Charge. Start of Game: Disappear. Kill all 4 Demons from Argus to reappear in hand.",
+      "startOfGame": [
+        {
+          "type": "argus-start"
+        }
+      ]
     },
     {
       "id": "dangerous_variant",
@@ -118645,7 +118650,8 @@
       "keywords": [
         "rush"
       ],
-      "description": "Dormant for 5 turns. Rush. After you play a card from the newest expansion, awaken 1 turn sooner. (Not modeled: awaken acceleration.)"
+      "description": "Dormant for 5 turns. Rush. After you play a card from the newest expansion, awaken 1 turn sooner.",
+      "awakenOnSetPlay": "TIME_TRAVEL"
     },
     {
       "id": "chronicle_keeper",
@@ -118871,7 +118877,21 @@
       "keywords": [
         "battlecry"
       ],
-      "description": "Fabled. Battlecry: If your opponent is holding King Llane, destroy him and cut their Health in half. (Not modeled: Fabled / King Llane.)"
+      "description": "Fabled. Start of Game: King Llane hides in the enemy's deck. Battlecry: If your opponent is holding King Llane, destroy him and cut their Health in half.",
+      "startOfGame": [
+        {
+          "type": "shuffle-ids-into-deck",
+          "ids": [
+            "king_llane"
+          ],
+          "forEnemy": true
+        }
+      ],
+      "effects": [
+        {
+          "type": "garona-llane"
+        }
+      ]
     },
     {
       "id": "hourglass_attendant",
@@ -119004,7 +119024,36 @@
       "keywords": [
         "battlecry"
       ],
-      "description": "Fabled. Battlecry: Draw Bwonsamdi (or resurrect him if he has died). Choose a Boon to give him. (Not modeled: Fabled / Bwonsamdi.)"
+      "description": "Fabled. Battlecry: Draw Bwonsamdi (or resurrect him if he has died). Choose a Boon to give him.",
+      "choices": [
+        {
+          "text": "Boon of Power: give Bwonsamdi Taunt permanently. His summons cost (2) more.",
+          "effects": [
+            {
+              "type": "talanji",
+              "boon": "taunt"
+            }
+          ]
+        },
+        {
+          "text": "Boon of Longevity: give Bwonsamdi Lifesteal permanently. His summons cost (2) more.",
+          "effects": [
+            {
+              "type": "talanji",
+              "boon": "lifesteal"
+            }
+          ]
+        },
+        {
+          "text": "Boon of Speed: give Bwonsamdi Rush permanently. His summons cost (2) more.",
+          "effects": [
+            {
+              "type": "talanji",
+              "boon": "rush"
+            }
+          ]
+        }
+      ]
     },
     {
       "id": "time_skipper",
@@ -119174,7 +119223,12 @@
       "rarity": "legendary",
       "set": "TIME_TRAVEL",
       "tribe": "Dragon",
-      "description": "Fabled. If you control another Dragon, your Arcane spells cost (2) less. (Not modeled: conditional cost aura.)"
+      "description": "Fabled. If you control another Dragon, your Arcane spells cost (2) less.",
+      "spellSchoolDiscount": {
+        "school": "Arcane",
+        "value": 2,
+        "requireOtherTribe": "Dragon"
+      }
     },
     {
       "id": "chronikar",
@@ -119343,7 +119397,29 @@
       "health": 5,
       "rarity": "legendary",
       "set": "TIME_TRAVEL",
-      "description": "Fabled. Choose One - Empower Zin-Azshari; or The Well of Eternity. (Not modeled: Fabled / Choose One quest.)"
+      "description": "Fabled. Choose One - Empower Zin-Azshari; or The Well of Eternity.",
+      "choices": [
+        {
+          "text": "Empower Zin-Azshari: put it into the battlefield. (The Well is destroyed!)",
+          "effects": [
+            {
+              "type": "summon",
+              "count": 1,
+              "summonId": "zin_azshari"
+            }
+          ]
+        },
+        {
+          "text": "Empower The Well of Eternity: put it into the battlefield. (Zin-Azshari is destroyed!)",
+          "effects": [
+            {
+              "type": "summon",
+              "count": 1,
+              "summonId": "well_of_eternity"
+            }
+          ]
+        }
+      ]
     },
     {
       "id": "muradin_high_king",
@@ -119360,7 +119436,19 @@
         "battlecry",
         "deathrattle"
       ],
-      "description": "Fabled, Rush. Battlecry: Bring the High King's Hammer to ME! Deathrattle: Add it to your hand. (Not modeled: Fabled / the Hammer.)"
+      "description": "Fabled, Rush. Battlecry: Equip the High King's Hammer. Deathrattle: Add it to your hand.",
+      "effects": [
+        {
+          "type": "equip-id",
+          "id": "high_kings_hammer"
+        }
+      ],
+      "deathrattle": [
+        {
+          "type": "conjure-id",
+          "id": "high_kings_hammer"
+        }
+      ]
     },
     {
       "id": "omen_of_the_end",
@@ -119853,11 +119941,11 @@
         "rush",
         "deathrattle"
       ],
-      "description": "Fabled, Rush. Deathrattle: Summon a Blood Fighter from your hand. It gains +5/+5 and attacks a random enemy. (Approximated: summon a minion from your hand.)",
+      "description": "Fabled, Rush. Deathrattle: Summon a Blood Fighter from your hand. It gains +5/+5 and attacks a random enemy.",
       "deathrattle": [
         {
-          "type": "summon-from-hand",
-          "count": 1
+          "type": "blood-fighter-summon",
+          "mode": "attack"
         }
       ]
     },
@@ -119944,7 +120032,12 @@
       "keywords": [
         "battlecry"
       ],
-      "description": "Fabled. Battlecry: Put one of each Aura from your deck into the battlefield. (Not modeled: Auras.)"
+      "description": "Fabled. Battlecry: Put one of each Aura into the battlefield. (Each lasts 3 turns.)",
+      "effects": [
+        {
+          "type": "gelbin-auras"
+        }
+      ]
     },
     {
       "id": "mister_clocksworth",
@@ -120057,17 +120150,18 @@
       "keywords": [
         "battlecry"
       ],
-      "description": "Fabled. Costs (0) if you control Karazhan. Battlecry: Silence and destroy all other minions. (Not modeled: Karazhan cost.)",
+      "description": "Fabled. Costs (0) if you control Karazhan. Battlecry: Silence and destroy all other minions.",
       "effects": [
         {
-          "type": "silence-all",
-          "exceptSource": true
+          "type": "silence",
+          "target": "all-others"
         },
         {
           "type": "destroy-all",
           "others": true
         }
-      ]
+      ],
+      "costZeroIfBoardId": "karazhan_the_sanctum"
     },
     {
       "id": "timethief_rafaam",
@@ -120082,7 +120176,28 @@
       "keywords": [
         "battlecry"
       ],
-      "description": "Fabled+. Your deck size is 40, but has 10 Rafaams! Battlecry: If you played the rest, destroy the enemy hero. (Not modeled: 10-Rafaam win-con.)"
+      "description": "Fabled+. Start of Game: Shuffle 9 other Rafaams into your deck. Battlecry: If you played the rest, destroy the enemy hero.",
+      "startOfGame": [
+        {
+          "type": "shuffle-ids-into-deck",
+          "ids": [
+            "tiny_rafaam",
+            "green_rafaam",
+            "explorer_rafaam",
+            "warchief_rafaam",
+            "mindflayer_rfaam",
+            "calamitous_rafaam",
+            "giant_rafaam",
+            "murloc_rafaam",
+            "archmage_rafaam"
+          ]
+        }
+      ],
+      "effects": [
+        {
+          "type": "rafaam-wincon"
+        }
+      ]
     },
     {
       "id": "time_pupil",
@@ -122024,7 +122139,12 @@
       "health": 3,
       "rarity": "legendary",
       "set": "ESCAPEFROM_VIOLET_HOLD",
-      "description": "Start of Game: If your deck only has cards that cost (3) or less, set your Mana to 10 after five turns! (Not modeled: Start-of-Game.)"
+      "description": "Start of Game: If your deck only has cards that cost (3) or less, set your Mana to 10 after five turns!",
+      "startOfGame": [
+        {
+          "type": "nethrek-check"
+        }
+      ]
     },
     {
       "id": "defias_smuggler",
@@ -122436,7 +122556,12 @@
       "rarity": "legendary",
       "set": "ESCAPEFROM_VIOLET_HOLD",
       "tribe": "Undead",
-      "description": "Start of Game: Overdrawn cards return to your hand when you have space. They cost (1) less. (Not modeled: Start-of-Game.)"
+      "description": "Start of Game: Overdrawn cards return to your hand when you have space. They cost (1) less.",
+      "startOfGame": [
+        {
+          "type": "godfrey-start"
+        }
+      ]
     },
     {
       "id": "jail_gang_boss",
@@ -122874,7 +122999,12 @@
       "health": 7,
       "rarity": "legendary",
       "set": "ESCAPEFROM_VIOLET_HOLD",
-      "description": "Start of Game: If your deck has no other minions, get Mug's Hero Power. If it has no spells, get Zee's! (Not modeled: Start-of-Game.)"
+      "description": "Start of Game: If your deck has no other minions, get Mug's Hero Power. If it has no spells, get Zee's!",
+      "startOfGame": [
+        {
+          "type": "mugzee-check"
+        }
+      ]
     },
     {
       "id": "sawbones",
@@ -124580,7 +124710,12 @@
       "rarity": "legendary",
       "set": "CORE",
       "tribe": "Dragon",
-      "description": "Start of Game: If this is in BOTH players' decks, turns are only 15 seconds long. (Not modeled: turn timer.)"
+      "description": "Start of Game: If this is in BOTH players' decks, turns are only 15 seconds long.",
+      "startOfGame": [
+        {
+          "type": "short-turns"
+        }
+      ]
     },
     {
       "id": "illidari_inquisitor",
@@ -125487,6 +125622,609 @@
         }
       ],
       "description": "Battlecry: Deal 5 damage. Repeat at a random enemy for each Starship you've launched this game."
+    },
+    {
+      "id": "first_portal_to_argus",
+      "name": "First Portal to Argus",
+      "type": "sorcery",
+      "cost": 0,
+      "effects": [
+        {
+          "type": "summon",
+          "count": 1,
+          "summonId": "fleeing_urzul",
+          "forEnemy": true
+        }
+      ],
+      "description": "Summon a 1/1 Demon for your opponent. When it dies, draw a card and shuffle the next Portal into your deck.",
+      "token": true,
+      "rarity": "common"
+    },
+    {
+      "id": "fleeing_urzul",
+      "name": "Fleeing Ur'zul",
+      "type": "creature",
+      "cost": 1,
+      "attack": 1,
+      "health": 1,
+      "tribe": "Demon",
+      "keywords": [
+        "deathrattle"
+      ],
+      "deathrattle": [
+        {
+          "type": "argus-next",
+          "portal": "second_portal_to_argus"
+        }
+      ],
+      "description": "Deathrattle: Your opponent draws a card and shuffles the next Portal into their deck.",
+      "token": true,
+      "rarity": "common"
+    },
+    {
+      "id": "second_portal_to_argus",
+      "name": "Second Portal to Argus",
+      "type": "sorcery",
+      "cost": 0,
+      "effects": [
+        {
+          "type": "summon",
+          "count": 1,
+          "summonId": "fleeing_incubus",
+          "forEnemy": true
+        }
+      ],
+      "description": "Summon a 2/1 Demon for your opponent. When it dies, draw a card and shuffle the next Portal into your deck.",
+      "token": true,
+      "rarity": "common"
+    },
+    {
+      "id": "fleeing_incubus",
+      "name": "Fleeing Incubus",
+      "type": "creature",
+      "cost": 1,
+      "attack": 2,
+      "health": 1,
+      "tribe": "Demon",
+      "keywords": [
+        "deathrattle"
+      ],
+      "deathrattle": [
+        {
+          "type": "argus-next",
+          "portal": "third_portal_to_argus"
+        }
+      ],
+      "description": "Deathrattle: Your opponent draws a card and shuffles the next Portal into their deck.",
+      "token": true,
+      "rarity": "common"
+    },
+    {
+      "id": "third_portal_to_argus",
+      "name": "Third Portal to Argus",
+      "type": "sorcery",
+      "cost": 0,
+      "effects": [
+        {
+          "type": "summon",
+          "count": 1,
+          "summonId": "fleeing_wrathguard",
+          "forEnemy": true
+        }
+      ],
+      "description": "Summon a 3/1 Demon for your opponent. When it dies, draw a card and shuffle the next Portal into your deck.",
+      "token": true,
+      "rarity": "common"
+    },
+    {
+      "id": "fleeing_wrathguard",
+      "name": "Fleeing Wrathguard",
+      "type": "creature",
+      "cost": 1,
+      "attack": 3,
+      "health": 1,
+      "tribe": "Demon",
+      "keywords": [
+        "deathrattle"
+      ],
+      "deathrattle": [
+        {
+          "type": "argus-next",
+          "portal": "final_portal_to_argus"
+        }
+      ],
+      "description": "Deathrattle: Your opponent draws a card and shuffles the next Portal into their deck.",
+      "token": true,
+      "rarity": "common"
+    },
+    {
+      "id": "final_portal_to_argus",
+      "name": "Final Portal to Argus",
+      "type": "sorcery",
+      "cost": 0,
+      "effects": [
+        {
+          "type": "summon",
+          "count": 1,
+          "summonId": "fleeing_terrorguard",
+          "forEnemy": true
+        }
+      ],
+      "description": "Summon a 4/1 Demon for your opponent. When it dies, Broxigar reappears in your hand.",
+      "token": true,
+      "rarity": "common"
+    },
+    {
+      "id": "fleeing_terrorguard",
+      "name": "Fleeing Terrorguard",
+      "type": "creature",
+      "cost": 1,
+      "attack": 4,
+      "health": 1,
+      "tribe": "Demon",
+      "keywords": [
+        "deathrattle"
+      ],
+      "deathrattle": [
+        {
+          "type": "argus-final"
+        }
+      ],
+      "description": "Deathrattle: Broxigar reappears in your opponent's hand.",
+      "token": true,
+      "rarity": "common"
+    },
+    {
+      "id": "king_llane",
+      "name": "King Llane",
+      "type": "creature",
+      "cost": 3,
+      "attack": 3,
+      "health": 3,
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "draw",
+          "count": 1
+        },
+        {
+          "type": "shuffle-self-into-deck"
+        }
+      ],
+      "description": "Hides from Garona in your deck. Battlecry: Draw a card. Shuffle this back into your deck.",
+      "token": true,
+      "rarity": "common"
+    },
+    {
+      "id": "time_bwonsamdi",
+      "name": "Bwonsamdi",
+      "type": "creature",
+      "cost": 6,
+      "attack": 6,
+      "health": 6,
+      "rarity": "legendary",
+      "keywords": [
+        "deathrattle"
+      ],
+      "deathrattle": [
+        {
+          "type": "bwonsamdi-summon"
+        }
+      ],
+      "description": "Deathrattle: Summon a random 4-Cost minion. (Any Boons given to Bwonsamdi carry over.)",
+      "token": true
+    },
+    {
+      "id": "zin_azshari",
+      "name": "Zin-Azshari",
+      "type": "location",
+      "cost": 4,
+      "durability": 3,
+      "taps": [
+        {
+          "text": "Summon a copy of a friendly minion with its stats doubled.",
+          "effects": [
+            {
+              "type": "zin-copy"
+            }
+          ]
+        }
+      ],
+      "description": "Location. Summon a copy of a friendly minion with its stats doubled.",
+      "token": true,
+      "rarity": "common"
+    },
+    {
+      "id": "well_of_eternity",
+      "name": "The Well of Eternity",
+      "type": "location",
+      "cost": 4,
+      "durability": 3,
+      "taps": [
+        {
+          "text": "Fill your hand with random Temporary spells. They cast twice.",
+          "effects": [
+            {
+              "type": "conjure-random",
+              "cardType": "spell",
+              "makeTemporary": true,
+              "fillHand": true,
+              "castTwice": true
+            }
+          ]
+        }
+      ],
+      "description": "Location. Fill your hand with random Temporary spells. They cast twice.",
+      "token": true,
+      "rarity": "common"
+    },
+    {
+      "id": "high_kings_hammer",
+      "name": "High King's Hammer",
+      "type": "weapon",
+      "cost": 6,
+      "attack": 3,
+      "durability": 4,
+      "keywords": [
+        "windfury",
+        "deathrattle"
+      ],
+      "deathrattle": [
+        {
+          "type": "hammer-grow-return"
+        }
+      ],
+      "description": "Windfury. Deathrattle: Shuffle this into your deck with +2 Attack permanently.",
+      "token": true,
+      "rarity": "common"
+    },
+    {
+      "id": "broll_blood_fighter",
+      "name": "Broll, Blood Fighter",
+      "type": "creature",
+      "cost": 7,
+      "attack": 7,
+      "health": 7,
+      "rarity": "legendary",
+      "keywords": [
+        "taunt",
+        "deathrattle"
+      ],
+      "deathrattle": [
+        {
+          "type": "blood-fighter-summon",
+          "mode": "taunt"
+        }
+      ],
+      "description": "Taunt. Deathrattle: Summon a Blood Fighter from your hand. Give it +5/+5 and Taunt.",
+      "token": true
+    },
+    {
+      "id": "valeera_blood_fighter",
+      "name": "Valeera, Blood Fighter",
+      "type": "creature",
+      "cost": 7,
+      "attack": 7,
+      "health": 7,
+      "rarity": "legendary",
+      "keywords": [
+        "elusive",
+        "deathrattle"
+      ],
+      "deathrattle": [
+        {
+          "type": "blood-fighter-summon",
+          "mode": "elusive"
+        }
+      ],
+      "description": "Elusive. Deathrattle: Summon a Blood Fighter from your hand. Give it +5/+5 and Elusive.",
+      "token": true
+    },
+    {
+      "id": "gnomish_aura",
+      "name": "Gnomish Aura",
+      "type": "enchantment",
+      "cost": 4,
+      "ongoing": {
+        "on": "turn-end",
+        "effects": [
+          {
+            "type": "heal",
+            "value": 4,
+            "target": "friendly-characters"
+          }
+        ]
+      },
+      "description": "At the end of your turn, restore 4 Health to all your characters. Lasts 3 turns.",
+      "token": true,
+      "rarity": "common"
+    },
+    {
+      "id": "mekkatorques_aura",
+      "name": "Mekkatorque's Aura",
+      "type": "enchantment",
+      "cost": 5,
+      "ongoing": {
+        "on": "turn-end",
+        "effects": [
+          {
+            "type": "buff-random-friendly",
+            "attack": 4,
+            "health": 4,
+            "grant": "divine_shield"
+          }
+        ]
+      },
+      "description": "At the end of your turn, give a random friendly minion +4/+4 and Divine Shield. Lasts 3 turns.",
+      "token": true,
+      "rarity": "common"
+    },
+    {
+      "id": "atiesh_the_greatstaff",
+      "name": "Atiesh the Greatstaff",
+      "type": "weapon",
+      "cost": 10,
+      "attack": 1,
+      "durability": 3,
+      "rarity": "legendary",
+      "costZeroIfBoardId": "medivh_the_hallowed",
+      "static": {
+        "type": "double-spell"
+      },
+      "description": "Costs (0) if you control Medivh. Double the damage and healing of your spells.",
+      "token": true
+    },
+    {
+      "id": "karazhan_the_sanctum",
+      "name": "Karazhan the Sanctum",
+      "type": "location",
+      "cost": 10,
+      "durability": 2,
+      "rarity": "legendary",
+      "costZeroIfWeaponId": "atiesh_the_greatstaff",
+      "taps": [
+        {
+          "text": "Summon two random 8-Cost minions.",
+          "effects": [
+            {
+              "type": "summon-random",
+              "cost": 8,
+              "count": 2
+            }
+          ]
+        }
+      ],
+      "description": "Costs (0) if you're wielding Atiesh. Summon two random 8-Cost minions.",
+      "token": true
+    },
+    {
+      "id": "time_sheep",
+      "name": "Sheep",
+      "type": "creature",
+      "cost": 1,
+      "attack": 1,
+      "health": 1,
+      "tribe": "Beast",
+      "description": "",
+      "token": true,
+      "rarity": "common"
+    },
+    {
+      "id": "tiny_rafaam",
+      "name": "Tiny Rafaam",
+      "type": "creature",
+      "cost": 1,
+      "attack": 1,
+      "health": 1,
+      "rarity": "legendary",
+      "keywords": [
+        "battlecry",
+        "deathrattle"
+      ],
+      "effects": [
+        {
+          "type": "tutor",
+          "nameIncludes": "Rafaam",
+          "count": 1
+        }
+      ],
+      "deathrattle": [
+        {
+          "type": "tutor",
+          "nameIncludes": "Rafaam",
+          "count": 1
+        }
+      ],
+      "description": "Battlecry and Deathrattle: Draw a Rafaam.",
+      "token": true
+    },
+    {
+      "id": "green_rafaam",
+      "name": "Green Rafaam",
+      "type": "creature",
+      "cost": 2,
+      "attack": 2,
+      "health": 2,
+      "rarity": "legendary",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "buff-zones",
+          "nameIncludes": "Rafaam",
+          "attack": 2,
+          "health": 2
+        }
+      ],
+      "description": "Battlecry: Give other Rafaams in your hand and battlefield +2/+2.",
+      "token": true
+    },
+    {
+      "id": "explorer_rafaam",
+      "name": "Explorer Rafaam",
+      "type": "creature",
+      "cost": 4,
+      "attack": 4,
+      "health": 4,
+      "rarity": "legendary",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "tutor",
+          "nameIncludes": "Rafaam",
+          "count": 1
+        }
+      ],
+      "description": "Battlecry: Draw a Rafaam from your deck.",
+      "token": true
+    },
+    {
+      "id": "warchief_rafaam",
+      "name": "Warchief Rafaam",
+      "type": "creature",
+      "cost": 5,
+      "attack": 5,
+      "health": 5,
+      "rarity": "legendary",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "armor",
+          "value": 5
+        },
+        {
+          "type": "conditional",
+          "if": {
+            "holdingNameIncludes": "Rafaam"
+          },
+          "then": [
+            {
+              "type": "armor",
+              "value": 5
+            }
+          ]
+        }
+      ],
+      "description": "Battlecry: Gain 5 Armor. If you're holding another Rafaam, gain 5 more.",
+      "token": true
+    },
+    {
+      "id": "mindflayer_rfaam",
+      "name": "Mindflayer R'faam",
+      "type": "creature",
+      "cost": 7,
+      "attack": 7,
+      "health": 7,
+      "rarity": "legendary",
+      "keywords": [
+        "taunt",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "holdingNameIncludes": "faam"
+          },
+          "then": [
+            {
+              "type": "summon-copy-of-self",
+              "count": 1
+            }
+          ]
+        }
+      ],
+      "description": "Taunt. Battlecry: If you're holding another Rafaam, summon a copy of this.",
+      "token": true
+    },
+    {
+      "id": "calamitous_rafaam",
+      "name": "Calamitous Rafaam",
+      "type": "creature",
+      "cost": 6,
+      "attack": 6,
+      "health": 6,
+      "rarity": "legendary",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "damage-all-except-name",
+          "substr": "faam",
+          "value": 6
+        }
+      ],
+      "description": "Battlecry: Deal 6 damage to all minions that aren't Rafaam.",
+      "token": true
+    },
+    {
+      "id": "giant_rafaam",
+      "name": "Giant Rafaam",
+      "type": "creature",
+      "cost": 8,
+      "attack": 8,
+      "health": 8,
+      "rarity": "legendary",
+      "keywords": [
+        "rush"
+      ],
+      "costReducePerPlayedName": {
+        "substr": "faam",
+        "value": 1
+      },
+      "description": "Rush. Costs (1) less for each Rafaam you've played this game.",
+      "token": true
+    },
+    {
+      "id": "murloc_rafaam",
+      "name": "Murloc Rafaam",
+      "type": "creature",
+      "cost": 3,
+      "attack": 3,
+      "health": 3,
+      "tribe": "Murloc",
+      "rarity": "legendary",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "next-name-discount",
+          "substr": "faam",
+          "value": 3
+        }
+      ],
+      "description": "Battlecry: The next Rafaam you play costs (3) less.",
+      "token": true
+    },
+    {
+      "id": "archmage_rafaam",
+      "name": "Archmage Rafaam",
+      "type": "creature",
+      "cost": 9,
+      "attack": 9,
+      "health": 9,
+      "rarity": "legendary",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "transform-all-except-name",
+          "substr": "faam",
+          "tokenId": "time_sheep"
+        }
+      ],
+      "description": "Battlecry: Transform all minions that aren't Rafaam into 1/1 Sheep.",
+      "token": true
     }
   ]
 }
