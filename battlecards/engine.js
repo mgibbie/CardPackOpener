@@ -545,6 +545,7 @@ export function drawCards(state, pi, count) {
 		if (p.deckCostOverrides && p.deckCostOverrides[id] != null) { card.cost = p.deckCostOverrides[id]; delete p.deckCostOverrides[id]; } // Twilight Medium: top card's Cost set to (0)
 		if (p.deckInnerFire && card.type === 'creature') card.attack = card.maxHealth; // Lady in White
 		if (card.type === 'creature' && p.drawBuff) { card.attack += p.drawBuff.attack || 0; card.maxHealth += p.drawBuff.health || 0; }
+		if (card.type === 'creature' && p.drawBuffMinions && p.drawBuffMinions.count > 0) { card.attack += p.drawBuffMinions.attack || 0; card.maxHealth += p.drawBuffMinions.health || 0; p.drawBuffMinions.count--; if (p.drawBuffMinions.count <= 0) p.drawBuffMinions = null; } // Beanstalk Brute
 		if (card.type === 'creature' && p.drawBuffTribe) { for (const tr in p.drawBuffTribe) if ((card.tribe || '').includes(tr)) { card.attack += p.drawBuffTribe[tr].attack || 0; card.maxHealth += p.drawBuffTribe[tr].health || 0; } } // Shan'do Wildclaw
 		if (p.corruptDeckDiscount && (card.corrupt || card.corruptGrow)) card.cost = Math.max(0, (card.cost || 0) - p.corruptDeckDiscount); // Dark Inquisitor Xanesh
 		if (p.deckMinionDiscount && card.type === 'creature') card.cost = Math.max(0, (card.cost || 0) - p.deckMinionDiscount); // Vanndar / Cera'thine
@@ -3150,6 +3151,7 @@ function execEffects(state, pi, effects, target, source) {
 				if (e.requireHoldingSchool && !state.players[pi].hand.some(c => schoolOf(c) === e.requireHoldingSchool)) continue; // Defias Leper
 				if (e.requireHeroDamagedThisTurn && !state.players[pi].heroDamagedThisTurn) continue; // Shadowblade Slinger
 				if (e.requireHoldingSpellMinCost != null && !state.players[pi].hand.some(c => isSpellType(c) && (c.cost || 0) >= e.requireHoldingSpellMinCost)) continue; // Weaver of the Cycle
+				if (e.requireHeroPowerUpgraded && !state.players[pi].heroPowerUpgraded) continue; // Resplendent Dreamweaver (Imbued twice proxy)
 			// friendly Spell Damage boosts direct spell damage
 			let v = e.value === 'source-attack' ? (source?.attack || 0) : scaled(e); // Sergeant Sally
 			if (e.valueFromHeroDamage) v = state.players[pi].heroDamageTakenThisTurn || 0; // Shadowblade Slinger
@@ -7251,6 +7253,10 @@ function execEffects(state, pi, effects, target, source) {
 			for (const c of p.hand) if (c.type === 'creature' && (c.tribe || '').includes(e.tribe)) { c.attack += e.attack || 0; c.maxHealth += e.health || 0; }
 			p.drawBuffTribe = p.drawBuffTribe || {};
 			p.drawBuffTribe[e.tribe] = { attack: (p.drawBuffTribe[e.tribe]?.attack || 0) + (e.attack || 0), health: (p.drawBuffTribe[e.tribe]?.health || 0) + (e.health || 0) };
+		} else if (e.type === 'buff-next-drawn-minions') {
+			// Beanstalk Brute (approx "top N minions in deck"): buff the next N minions you draw
+			const p = state.players[pi];
+			p.drawBuffMinions = { count: e.count || 3, attack: e.attack || 0, health: e.health || 0 };
 		} else if (e.type === 'buff-deck-tribe') {
 			// Shan'do Wildclaw: give a tribe in your deck +X/+X (applied as they're drawn)
 			const p = state.players[pi];

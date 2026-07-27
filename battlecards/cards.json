@@ -113685,6 +113685,413 @@
           "summonId": "edr_greenwing_body"
         }
       ]
+    },
+    {
+      "id": "inferno_herald",
+      "name": "Inferno Herald",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "mage",
+      "attack": 3,
+      "health": 6,
+      "rarity": "rare",
+      "set": "EMERALD_DREAM",
+      "tribe": "Elemental",
+      "description": "After you cast a Fire spell, get a random Elemental and reduce its Cost by (3).",
+      "ongoing": {
+        "on": "spell-played",
+        "if": {
+          "school": "Fire"
+        },
+        "effects": [
+          {
+            "type": "conjure-random",
+            "cardType": "creature",
+            "tribe": "Elemental",
+            "count": 1,
+            "costMod": -3
+          }
+        ]
+      }
+    },
+    {
+      "id": "lightmender",
+      "name": "Lightmender",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "paladin",
+      "attack": 3,
+      "health": 3,
+      "rarity": "common",
+      "set": "EMERALD_DREAM",
+      "keywords": [
+        "taunt"
+      ],
+      "description": "Taunt. Choose One - +3 Attack and Divine Shield; or +3 Health and Lifesteal.",
+      "choices": [
+        {
+          "text": "+3 Attack and Divine Shield",
+          "effects": [
+            {
+              "type": "buff",
+              "attack": 3,
+              "target": "self"
+            },
+            {
+              "type": "grant",
+              "keyword": "divine_shield",
+              "target": "self"
+            }
+          ]
+        },
+        {
+          "text": "+3 Health and Lifesteal",
+          "effects": [
+            {
+              "type": "buff",
+              "health": 3,
+              "target": "self"
+            },
+            {
+              "type": "grant",
+              "keyword": "lifesteal",
+              "target": "self"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "merry_moonkin",
+      "name": "Merry Moonkin",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "mage",
+      "attack": 3,
+      "health": 6,
+      "rarity": "common",
+      "set": "EMERALD_DREAM",
+      "description": "At the end of your turn, gain 1 Armor. (Not modeled: improved by Wisps.)",
+      "ongoing": {
+        "on": "turn-end",
+        "effects": [
+          {
+            "type": "armor",
+            "value": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "mythical_runebear",
+      "name": "Mythical Runebear",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "hunter",
+      "attack": 3,
+      "health": 4,
+      "rarity": "common",
+      "set": "EMERALD_DREAM",
+      "tribe": "Beast",
+      "keywords": [
+        "taunt",
+        "battlecry"
+      ],
+      "description": "Taunt. Battlecry: If this has 4 or more Attack, summon a copy of this.",
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "selfAttack": 4
+          },
+          "then": [
+            {
+              "type": "summon-copy-of-self",
+              "count": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "nightmare_lord_xavius",
+      "name": "Nightmare Lord Xavius",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "neutral",
+      "attack": 4,
+      "health": 4,
+      "rarity": "legendary",
+      "set": "EMERALD_DREAM",
+      "tribe": "Demon",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Discover a minion from your deck. Give it a Dark Gift. (Not modeled: Dark Gift.)",
+      "effects": [
+        {
+          "type": "discover",
+          "cardType": "creature",
+          "fromOwnDeck": true
+        }
+      ]
+    },
+    {
+      "id": "overgrown_horror",
+      "name": "Overgrown Horror",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "warlock",
+      "attack": 3,
+      "health": 5,
+      "rarity": "common",
+      "set": "EMERALD_DREAM",
+      "keywords": [
+        "taunt",
+        "battlecry"
+      ],
+      "description": "Taunt. Battlecry: Reduce the Cost of minions in your hand with Dark Gifts by (2). (Not modeled: Dark Gift.)"
+    },
+    {
+      "id": "resplendent_dreamweaver",
+      "name": "Resplendent Dreamweaver",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "neutral",
+      "attack": 4,
+      "health": 4,
+      "rarity": "rare",
+      "set": "EMERALD_DREAM",
+      "keywords": [
+        "lifesteal",
+        "battlecry"
+      ],
+      "description": "Lifesteal. Battlecry: If you've Imbued your Hero Power twice, deal 4 damage to a minion. (Imbued-twice approximated.)",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 4,
+          "target": "creature",
+          "requireHeroPowerUpgraded": true
+        }
+      ]
+    },
+    {
+      "id": "scorchreaver",
+      "name": "Scorchreaver",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "demonhunter",
+      "attack": 4,
+      "health": 4,
+      "rarity": "rare",
+      "set": "EMERALD_DREAM",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Discover a Fel spell. Reduce the Cost of Fel spells in your hand by (1).",
+      "effects": [
+        {
+          "type": "discover",
+          "cardType": "spell",
+          "school": "Fel"
+        },
+        {
+          "type": "reduce-hand-school-cost",
+          "school": "Fel",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "shadowcloaked_assailant",
+      "name": "Shadowcloaked Assailant",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "rogue",
+      "attack": 3,
+      "health": 5,
+      "rarity": "epic",
+      "set": "EMERALD_DREAM",
+      "tribe": "Demon",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: If you're holding one of the same cards as your opponent, shuffle theirs into their deck. (Not modeled: hand-match check.)"
+    },
+    {
+      "id": "shadowflame_stalker",
+      "name": "Shadowflame Stalker",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "warlock",
+      "attack": 4,
+      "health": 3,
+      "rarity": "common",
+      "set": "EMERALD_DREAM",
+      "tribe": "Elemental",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Discover a Demon with a Dark Gift. Get a copy of it. (Not modeled: Dark Gift / copy.)",
+      "effects": [
+        {
+          "type": "discover",
+          "cardType": "creature",
+          "tribe": "Demon"
+        }
+      ]
+    },
+    {
+      "id": "tindral_sageswift",
+      "name": "Tindral Sageswift",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "neutral",
+      "attack": 4,
+      "health": 3,
+      "rarity": "legendary",
+      "set": "EMERALD_DREAM",
+      "keywords": [
+        "deathrattle"
+      ],
+      "description": "Deathrattle: Deal 1 damage to all enemies. If it's your opponent's turn, deal 4 damage instead.",
+      "deathrattle": [
+        {
+          "type": "conditional",
+          "if": {
+            "enemyTurn": true
+          },
+          "then": [
+            {
+              "type": "damage",
+              "value": 4,
+              "target": "enemies"
+            }
+          ],
+          "else": [
+            {
+              "type": "damage",
+              "value": 1,
+              "target": "enemies"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "treacherous_tormentor",
+      "name": "Treacherous Tormentor",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "neutral",
+      "attack": 5,
+      "health": 4,
+      "rarity": "common",
+      "set": "EMERALD_DREAM",
+      "tribe": "Demon",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Discover a Legendary minion with a Dark Gift. (Not modeled: Dark Gift.)",
+      "effects": [
+        {
+          "type": "discover",
+          "cardType": "creature",
+          "rarity": "legendary"
+        }
+      ]
+    },
+    {
+      "id": "umbraclaw",
+      "name": "Umbraclaw",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "hunter",
+      "attack": 5,
+      "health": 2,
+      "rarity": "rare",
+      "set": "EMERALD_DREAM",
+      "tribe": "Beast",
+      "keywords": [
+        "rush",
+        "deathrattle"
+      ],
+      "description": "Rush. Deathrattle: Imbue your Hero Power. (Approximated: double Hero Power.)",
+      "deathrattle": [
+        {
+          "type": "upgrade-hero-power"
+        }
+      ]
+    },
+    {
+      "id": "alarashi",
+      "name": "Alara'shi",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "demonhunter",
+      "attack": 5,
+      "health": 5,
+      "rarity": "legendary",
+      "set": "EMERALD_DREAM",
+      "tribe": "Demon",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Transform minions in your hand into random Demons. (They keep their original stats and Cost.) (Not modeled: hand transform.)"
+    },
+    {
+      "id": "ancient_of_yore",
+      "name": "Ancient of Yore",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "neutral",
+      "attack": 5,
+      "health": 5,
+      "rarity": "epic",
+      "set": "EMERALD_DREAM",
+      "dormant": 2,
+      "description": "Dormant for 2 turns. While Dormant, gain 3 Armor and draw a card at the end of your turn.",
+      "ongoing": {
+        "on": "turn-end",
+        "if": {
+          "dormantSelf": true
+        },
+        "effects": [
+          {
+            "type": "armor",
+            "value": 3
+          },
+          {
+            "type": "draw",
+            "value": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "beanstalk_brute",
+      "name": "Beanstalk Brute",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "shaman",
+      "attack": 4,
+      "health": 4,
+      "rarity": "common",
+      "set": "EMERALD_DREAM",
+      "tribe": "Elemental",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Give +4/+4 to the top 3 minions in your deck. (Approximated: next 3 minions drawn.)",
+      "effects": [
+        {
+          "type": "buff-next-drawn-minions",
+          "count": 3,
+          "attack": 4,
+          "health": 4
+        }
+      ]
     }
   ]
 }
