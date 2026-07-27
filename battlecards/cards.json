@@ -112505,6 +112505,372 @@
           "others": true
         }
       ]
+    },
+    {
+      "id": "charred_chameleon",
+      "name": "Charred Chameleon",
+      "type": "creature",
+      "cost": 1,
+      "cardClass": "druid",
+      "attack": 1,
+      "health": 2,
+      "rarity": "common",
+      "set": "EMERALD_DREAM",
+      "tribe": "Beast",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: If you've used your Hero Power this turn, give a friendly minion +1/+2 and Rush.",
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "heroPowerUsed": true
+          },
+          "then": [
+            {
+              "type": "buff-random-friendly",
+              "attack": 1,
+              "health": 2,
+              "grant": "rush"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "critter_caretaker",
+      "name": "Critter Caretaker",
+      "type": "creature",
+      "cost": 1,
+      "cardClass": "neutral",
+      "attack": 2,
+      "health": 2,
+      "rarity": "common",
+      "set": "EMERALD_DREAM",
+      "description": "At the end of your turn, restore 3 Health to both heroes.",
+      "ongoing": {
+        "on": "turn-end",
+        "effects": [
+          {
+            "type": "heal",
+            "value": 3,
+            "target": "all-heroes"
+          }
+        ]
+      }
+    },
+    {
+      "id": "darkrider",
+      "name": "Darkrider",
+      "type": "creature",
+      "cost": 1,
+      "cardClass": "warrior",
+      "attack": 1,
+      "health": 1,
+      "rarity": "common",
+      "set": "EMERALD_DREAM",
+      "tribe": "Demon",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: If you're holding a Dragon, Discover a Dragon with a Dark Gift. (Not modeled: Dark Gift.)",
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "holdingTribe": "Dragon"
+          },
+          "then": [
+            {
+              "type": "discover",
+              "cardType": "creature",
+              "tribe": "Dragon"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "dreambound_raptor",
+      "name": "Dreambound Raptor",
+      "type": "creature",
+      "cost": 1,
+      "cardClass": "neutral",
+      "attack": 2,
+      "health": 1,
+      "rarity": "common",
+      "set": "EMERALD_DREAM",
+      "tribe": "Beast",
+      "description": "After you play a minion, give it a random Bonus Effect. (Not modeled: Bonus Effects.)"
+    },
+    {
+      "id": "monstrous_mosquito",
+      "name": "Monstrous Mosquito",
+      "type": "creature",
+      "cost": 1,
+      "cardClass": "deathknight",
+      "attack": 1,
+      "health": 2,
+      "rarity": "common",
+      "set": "EMERALD_DREAM",
+      "tribe": "Beast",
+      "description": "At the end of your turn, give your other minions +1 Attack.",
+      "ongoing": {
+        "on": "turn-end",
+        "effects": [
+          {
+            "type": "buff",
+            "attack": 1,
+            "target": "friendly-others"
+          }
+        ]
+      }
+    },
+    {
+      "id": "plucky_podling",
+      "name": "Plucky Podling",
+      "type": "creature",
+      "cost": 1,
+      "cardClass": "shaman",
+      "attack": 1,
+      "health": 2,
+      "rarity": "common",
+      "set": "EMERALD_DREAM",
+      "description": "If this would transform into a minion, it transforms into one that costs (2) more. (Not modeled: transform interception.)"
+    },
+    {
+      "id": "rotheart_dryad",
+      "name": "Rotheart Dryad",
+      "type": "creature",
+      "cost": 1,
+      "cardClass": "warlock",
+      "attack": 1,
+      "health": 1,
+      "rarity": "common",
+      "set": "EMERALD_DREAM",
+      "keywords": [
+        "deathrattle"
+      ],
+      "description": "Deathrattle: Draw a minion that costs (7) or more.",
+      "deathrattle": [
+        {
+          "type": "tutor",
+          "cardType": "creature",
+          "minCost": 7,
+          "count": 1
+        }
+      ]
+    },
+    {
+      "id": "slumbering_sprite",
+      "name": "Slumbering Sprite",
+      "type": "creature",
+      "cost": 1,
+      "cardClass": "neutral",
+      "attack": 3,
+      "health": 3,
+      "rarity": "common",
+      "set": "EMERALD_DREAM",
+      "description": "Starts Dormant. After you use your Hero Power, this awakens. (Not modeled: Dormant / Hero-Power wake.)"
+    },
+    {
+      "id": "archdruid_of_thorns",
+      "name": "Archdruid of Thorns",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "warlock",
+      "attack": 3,
+      "health": 2,
+      "rarity": "epic",
+      "set": "EMERALD_DREAM",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Gain the Deathrattles of your minions that died this turn.",
+      "effects": [
+        {
+          "type": "gain-deathrattles-died-this-turn"
+        }
+      ]
+    },
+    {
+      "id": "ashleaf_pixie",
+      "name": "Ashleaf Pixie",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "paladin",
+      "attack": 3,
+      "health": 2,
+      "rarity": "common",
+      "set": "EMERALD_DREAM",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: If you're holding a spell that costs (5) or more, gain Divine Shield and Lifesteal.",
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "holdingSpellMinCost": 5
+          },
+          "then": [
+            {
+              "type": "grant",
+              "keyword": "divine_shield",
+              "target": "self"
+            },
+            {
+              "type": "grant",
+              "keyword": "lifesteal",
+              "target": "self"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "barkshield_sentinel",
+      "name": "Barkshield Sentinel",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "neutral",
+      "attack": 2,
+      "health": 2,
+      "rarity": "common",
+      "set": "EMERALD_DREAM",
+      "keywords": [
+        "taunt"
+      ],
+      "description": "Taunt. After you use your Hero Power, gain +2 Health.",
+      "ongoing": {
+        "on": "hero-power-used",
+        "effects": [
+          {
+            "type": "buff-self",
+            "health": 2
+          }
+        ]
+      }
+    },
+    {
+      "id": "bitterbloom_knight",
+      "name": "Bitterbloom Knight",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "neutral",
+      "attack": 2,
+      "health": 3,
+      "rarity": "common",
+      "set": "EMERALD_DREAM",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Imbue your Hero Power. (Approximated: Justicar-style double Hero Power.)",
+      "effects": [
+        {
+          "type": "upgrade-hero-power"
+        }
+      ]
+    },
+    {
+      "id": "creature_of_madness",
+      "name": "Creature of Madness",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "neutral",
+      "attack": 1,
+      "health": 1,
+      "rarity": "common",
+      "set": "EMERALD_DREAM",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Discover a 3-Cost minion with a Dark Gift. (Not modeled: Dark Gift.)",
+      "effects": [
+        {
+          "type": "discover",
+          "cardType": "creature",
+          "cost": 3
+        }
+      ]
+    },
+    {
+      "id": "exotic_houndmaster",
+      "name": "Exotic Houndmaster",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "hunter",
+      "attack": 2,
+      "health": 2,
+      "rarity": "common",
+      "set": "EMERALD_DREAM",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Draw a Beast. Imbue your Hero Power. (Imbue approximated: double Hero Power.)",
+      "effects": [
+        {
+          "type": "tutor",
+          "cardType": "creature",
+          "tribe": "Beast",
+          "count": 1
+        },
+        {
+          "type": "upgrade-hero-power"
+        }
+      ]
+    },
+    {
+      "id": "felfire_blaze",
+      "name": "Felfire Blaze",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "demonhunter",
+      "attack": 2,
+      "health": 3,
+      "rarity": "common",
+      "set": "EMERALD_DREAM",
+      "tribe": "Elemental",
+      "description": "After you cast a Fel spell, destroy this and deal 2 damage to all enemies.",
+      "ongoing": {
+        "on": "spell-played",
+        "if": {
+          "school": "Fel"
+        },
+        "effects": [
+          {
+            "type": "damage",
+            "value": 2,
+            "target": "enemies"
+          },
+          {
+            "type": "destroy-self"
+          }
+        ]
+      }
+    },
+    {
+      "id": "lunarwing_messenger",
+      "name": "Lunarwing Messenger",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "priest",
+      "attack": 3,
+      "health": 2,
+      "rarity": "common",
+      "set": "EMERALD_DREAM",
+      "tribe": "Beast",
+      "keywords": [
+        "lifesteal",
+        "battlecry"
+      ],
+      "description": "Lifesteal. Battlecry: Imbue your Hero Power. (Approximated: double Hero Power.)",
+      "effects": [
+        {
+          "type": "upgrade-hero-power"
+        }
+      ]
     }
   ]
 }

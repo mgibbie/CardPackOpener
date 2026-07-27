@@ -6117,6 +6117,16 @@ function execEffects(state, pi, effects, target, source) {
 		} else if (e.type === 'refresh-friendly-attacks') {
 			// Exarch Akama: after this attacks, all OTHER friendly minions can attack again
 			for (const c of state.players[pi].board) { if (c === source || isDead(c) || c.type === 'location') continue; c.attacksUsed = 0; c.sick = false; }
+		} else if (e.type === 'gain-deathrattles-died-this-turn') {
+			// Archdruid of Thorns: gain the Deathrattles of your minions that died this turn
+			if (source) {
+				const p = state.players[pi];
+				for (const id of (p.diedThisTurnIds || [])) {
+					const def = state.cardsById[id];
+					if (def && def.deathrattle && def.deathrattle.length) { source.deathrattle = [...(source.deathrattle || []), ...JSON.parse(JSON.stringify(def.deathrattle))]; }
+				}
+				if (source.deathrattle && source.deathrattle.length && !source.keywords.includes('deathrattle')) source.keywords.push('deathrattle');
+			}
 		} else if (e.type === 'double-self-stats') {
 			// Immortal: double this minion's Attack and Health (the 4-Mana cost is not modeled)
 			if (source && !isDead(source)) { source.attack = (source.attack || 0) * 2; source.maxHealth = (source.maxHealth || 0) * 2; emit(state, { type: 'buff', uid: source.uid, attack: source.attack, hp: hp(source) }); }
