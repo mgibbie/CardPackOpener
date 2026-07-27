@@ -101698,6 +101698,417 @@
       "collectible": false,
       "description": "A useless Plague clogging your deck.",
       "effects": []
+    },
+    {
+      "id": "observer_of_myths",
+      "name": "Observer of Myths",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "hunter",
+      "attack": 1,
+      "health": 4,
+      "rarity": "rare",
+      "set": "TITANS",
+      "description": "After you summon a minion with more Attack than this, give all friendly minions +1 Attack.",
+      "ongoing": {
+        "on": "summoned",
+        "if": {
+          "minAttackSelf": true
+        },
+        "effects": [
+          {
+            "type": "buff",
+            "attack": 1,
+            "target": "friendly-creatures"
+          }
+        ]
+      }
+    },
+    {
+      "id": "saronite_shambler",
+      "name": "Saronite Shambler",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "demonhunter",
+      "attack": 2,
+      "health": 3,
+      "rarity": "rare",
+      "set": "TITANS",
+      "tribe": "Elemental",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: If you've cast 5 or more spells this game, give your hero +4 Attack this turn.",
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "spellsGame": 5
+          },
+          "then": [
+            {
+              "type": "hero-temp-attack",
+              "value": 4
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "stoneskin_armorer",
+      "name": "Stoneskin Armorer",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "warrior",
+      "attack": 2,
+      "health": 2,
+      "rarity": "rare",
+      "set": "TITANS",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: If your Armor changed this turn, draw 2 cards.",
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "armorChangedThisTurn": true
+          },
+          "then": [
+            {
+              "type": "draw",
+              "value": 2
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "watcher_of_the_sun",
+      "name": "Watcher of the Sun",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "neutral",
+      "attack": 2,
+      "health": 3,
+      "rarity": "common",
+      "set": "TITANS",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Get a random Holy spell. Forge: Also restore 6 Health to your hero.",
+      "effects": [
+        {
+          "type": "conjure-random",
+          "cardType": "spell",
+          "tribe": "Holy"
+        }
+      ]
+    },
+    {
+      "id": "careless_mechanist",
+      "name": "Careless Mechanist",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "neutral",
+      "attack": 4,
+      "health": 5,
+      "rarity": "common",
+      "set": "TITANS",
+      "description": "After you draw your second card in a turn, destroy this.",
+      "ongoing": {
+        "on": "card-drawn",
+        "if": {
+          "drawsThisTurnAtLeast": 2
+        },
+        "effects": [
+          {
+            "type": "destroy-self"
+          }
+        ]
+      }
+    },
+    {
+      "id": "conservator_nymph",
+      "name": "Conservator Nymph",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "druid",
+      "attack": 3,
+      "health": 4,
+      "rarity": "rare",
+      "set": "TITANS",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Transform a friendly Treant into a 5/5 Ancient with Taunt.",
+      "effects": [
+        {
+          "type": "transform-into-token",
+          "target": "friendly-creature",
+          "name": "Ancient",
+          "attack": 5,
+          "health": 5,
+          "keywords": [
+            "taunt"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "contaminated_lasher",
+      "name": "Contaminated Lasher",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "druid",
+      "attack": 3,
+      "health": 3,
+      "rarity": "rare",
+      "set": "TITANS",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: If you've cast 5 or more spells this game, refresh 4 Mana Crystals.",
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "spellsGame": 5
+          },
+          "then": [
+            {
+              "type": "refresh-mana",
+              "value": 4
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "coppertail_snoop",
+      "name": "Coppertail Snoop",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "rogue",
+      "attack": 4,
+      "health": 3,
+      "rarity": "common",
+      "set": "TITANS",
+      "tribe": "Mech",
+      "magnetic": true,
+      "description": "Magnetic. Whenever this attacks, get a Coin.",
+      "ongoing": {
+        "on": "self-attacks",
+        "effects": [
+          {
+            "type": "gain-coin",
+            "value": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "cyclopian_crusher",
+      "name": "Cyclopian Crusher",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "neutral",
+      "attack": 3,
+      "health": 3,
+      "rarity": "common",
+      "set": "TITANS",
+      "keywords": [
+        "rush"
+      ],
+      "description": "Rush. Forge: Gain +3/+2."
+    },
+    {
+      "id": "eulogizer",
+      "name": "Eulogizer",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "deathknight",
+      "attack": 3,
+      "health": 3,
+      "rarity": "common",
+      "set": "TITANS",
+      "tribe": "Undead",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Spend 3 Corpses to deal 3 damage. Forge: Gain them instead.",
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "corpsesAtLeast": 3
+          },
+          "target": "any",
+          "then": [
+            {
+              "type": "spend-corpses-damage",
+              "cost": 3,
+              "value": 3,
+              "target": "any"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "fate_splitter",
+      "name": "Fate Splitter",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "neutral",
+      "attack": 3,
+      "health": 3,
+      "rarity": "epic",
+      "set": "TITANS",
+      "keywords": [
+        "deathrattle"
+      ],
+      "description": "Deathrattle: Get a copy of the last card your opponent played.",
+      "deathrattle": [
+        {
+          "type": "copy-enemy-last-card"
+        }
+      ]
+    },
+    {
+      "id": "mecha_leaper",
+      "name": "Mecha-Leaper",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "neutral",
+      "attack": 2,
+      "health": 2,
+      "rarity": "epic",
+      "set": "TITANS",
+      "tribe": "Mech",
+      "magnetic": true,
+      "keywords": [
+        "deathrattle"
+      ],
+      "description": "Magnetic. Deathrattle: Give a friendly Mech +2/+2 and this Deathrattle.",
+      "deathrattle": [
+        {
+          "type": "buff-random-other-grant-deathrattle",
+          "tribe": "Mech",
+          "attack": 2,
+          "health": 2
+        }
+      ]
+    },
+    {
+      "id": "meddlesome_servant",
+      "name": "Meddlesome Servant",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "mage",
+      "attack": 3,
+      "health": 4,
+      "rarity": "rare",
+      "set": "TITANS",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: If you've cast 5 or more spells this game, draw 2 cards.",
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "spellsGame": 5
+          },
+          "then": [
+            {
+              "type": "draw",
+              "value": 2
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "melted_maker",
+      "name": "Melted Maker",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "neutral",
+      "attack": 3,
+      "health": 3,
+      "rarity": "common",
+      "set": "TITANS",
+      "tribe": "Elemental",
+      "description": "After you Forge a card, get a copy of it."
+    },
+    {
+      "id": "mimiron_the_mastermind",
+      "name": "Mimiron, the Mastermind",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "rogue",
+      "attack": 2,
+      "health": 5,
+      "rarity": "legendary",
+      "set": "TITANS",
+      "tribe": "Mech",
+      "description": "After you play a Mech, get a random one of Mimiron's Gadgets.",
+      "ongoing": {
+        "on": "creature-played",
+        "if": {
+          "tribe": "Mech"
+        },
+        "effects": [
+          {
+            "type": "add-card",
+            "id": "ttn_gadget",
+            "count": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "muscle_o_tron",
+      "name": "Muscle-o-Tron",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "paladin",
+      "attack": 2,
+      "health": 4,
+      "rarity": "common",
+      "set": "TITANS",
+      "tribe": "Mech",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Give all minions in your hand +1/+1. Forge: +2/+2 instead.",
+      "effects": [
+        {
+          "type": "buff-hand-minions",
+          "attack": 1,
+          "health": 1
+        }
+      ]
+    },
+    {
+      "id": "ttn_gadget",
+      "name": "Mimiron's Gadget",
+      "type": "sorcery",
+      "cost": 1,
+      "cardClass": "rogue",
+      "rarity": "common",
+      "set": "TITANS",
+      "token": true,
+      "collectible": false,
+      "description": "Deal 2 damage.",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 2,
+          "target": "any"
+        }
+      ]
     }
   ]
 }

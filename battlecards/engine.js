@@ -1100,6 +1100,7 @@ function damageHero(state, pi, amount, src = null, pierce = false) {
 
 function gainArmor(state, pi, amount) {
 	state.players[pi].armor += amount;
+	if (amount !== 0) state.players[pi].armorChangedThisTurn = true; // Stoneskin Armorer
 	if (amount > 0) state.players[pi].armorGainedGame = (state.players[pi].armorGainedGame || 0) + amount; // Captain Galvangar
 	emit(state, { type: 'armor', player: pi, amount, armor: state.players[pi].armor });
 	fireOngoing(state, pi, 'armor-gained', {}); // Siege Engine
@@ -1612,6 +1613,7 @@ function ongoingCondOk(state, pi, cond, ctx) {
 	if (cond.controlArtEnch && !(state.players[pi].artifacts.length || state.players[pi].enchantments.length)) return false; // "if you control an artifact or an enchantment"
 	if (cond.damageAmount != null && ctx.amount !== cond.damageAmount) return false; // Holotechnician: took exactly N damage
 	if (cond.heroHealed && ctx.healedHero == null) return false; // Screaming Banshee: your HERO gained Health
+	if (cond.minAttackSelf && !(subj && ctx.self && subj.attack > ctx.self.attack)) return false; // Observer of Myths: a minion with MORE Attack than this
 	return true;
 }
 
@@ -4269,6 +4271,9 @@ function execEffects(state, pi, effects, target, source) {
 			else if (e.if.hasSpellDamage) ok = staticValue(p, 'spell-damage') > 0; // Sorcerous Substitute
 			else if (e.if.hasArmor) ok = (p.armor || 0) > 0; // Ironclad
 			else if (e.if.armorAtLeast != null) ok = (p.armor || 0) >= e.if.armorAtLeast; // Fleshshaper
+			else if (e.if.armorChangedThisTurn) ok = !!p.armorChangedThisTurn; // Stoneskin Armorer
+			else if (e.if.drawsThisTurnAtLeast != null) ok = (p.drawsThisTurn || 0) >= e.if.drawsThisTurnAtLeast; // Careless Mechanist
+			else if (e.if.corpsesAtLeast != null) ok = (p.corpses || 0) >= e.if.corpsesAtLeast; // Eulogizer
 			else if (e.if.holdingSecret) ok = p.hand.some(c => c.secret); // Sparkjoy Cheat
 			else if (e.if.spellsGame != null) ok = (p.spellsPlayedTotal || 0) >= e.if.spellsGame; // Yogg-Saron, Master of Fate
 			else if (e.if.healedThisTurn) ok = !!p.healedThisTurn; // Cleric of An'she
@@ -5867,6 +5872,10 @@ function execEffects(state, pi, effects, target, source) {
 			// Anub'Rekhan: your next N minions this turn cost Armor instead of Mana (approximated as free)
 			state.players[pi].freeMinionsCount = (state.players[pi].freeMinionsCount || 0) + (e.count || 3);
 			state.players[pi]._freeMinionGrantedThisPlay = true; // don't let the granting minion consume its own charge
+		} else if (e.type === 'spend-corpses-damage') {
+			// Eulogizer: spend N Corpses to deal V damage to a target
+			const p = state.players[pi];
+			if ((p.corpses || 0) >= (e.cost || 3)) { p.corpses -= (e.cost || 3); emit(state, { type: 'corpses', player: pi, corpses: p.corpses }); const t = chosenCreature(); if (t) damageCreature(state, t, e.value || 3, source); else if (target?.type === 'hero') damageHero(state, target.player, e.value || 3, pi); else { const eh = enemyHero(); if (eh != null) damageHero(state, eh, e.value || 3, pi); } }
 		} else if (e.type === 'spend-corpses-summon') {
 			// Boneguard Commander: raise up to N Corpses as tokens
 			const p = state.players[pi];
@@ -6119,9 +6128,14 @@ function execEffects(state, pi, effects, target, source) {
 			const pool = Object.values(state.cardsById).filter(d => (d.keywords || []).includes('combo') && !d.token && d.collectible !== false && !(d.colors && d.colors.length));
 			const p = state.players[pi];
 			if (pool.length && p.hand.length < MAX_HAND) { const def = pool[Math.floor(state.rng() * pool.length)]; const cp = instantiate(def, pi); cp.zone = 'hand'; p.hand.push(cp); emit(state, { type: 'conjure', player: pi, card: cp, color: null }); }
+		} else if (e.type === 'copy-enemy-last-card') {
+			// Fate Splitter: add a copy of the last card the opponent played to your hand
+			const foe = enemies[0], p = state.players[pi];
+			const id = foe != null ? state.players[foe].lastCardPlayedId : null;
+			if (id && state.cardsById[id] && p.hand.length < MAX_HAND) { const cp = instantiate(state.cardsById[id], pi); cp.zone = 'hand'; p.hand.push(cp); emit(state, { type: 'conjure', player: pi, card: cp, color: null }); }
 		} else if (e.type === 'buff-random-other-grant-deathrattle') {
-			// Crowd Surfer: give a random OTHER minion +X/+X and this same Deathrattle
-			const pool = state.players[pi].board.filter(c => c !== source && !isDead(c) && c.type !== 'location');
+			// Crowd Surfer / Mecha-Leaper: give a random OTHER minion (optional tribe) +X/+X and this same Deathrattle
+			const pool = state.players[pi].board.filter(c => c !== source && !isDead(c) && c.type !== 'location' && (!e.tribe || (c.tribe || '').includes(e.tribe)));
 			if (pool.length) { const t = pool[Math.floor(state.rng() * pool.length)]; buffCreature(t, e.attack || 1, e.health || 1); if (source && source.deathrattle && source.deathrattle.length) { t.deathrattle = [...(t.deathrattle || []), ...JSON.parse(JSON.stringify(source.deathrattle))]; if (!t.keywords.includes('deathrattle')) t.keywords.push('deathrattle'); } }
 		} else if (e.type === 'become-copy-of-dead') {
 			// Creepy Painting: become a copy of a minion that died (runs via ongoing ctx.dead)
@@ -8597,6 +8611,7 @@ export function playCard(state, pi, cardUid, target, choice, position, useAlt, k
 	// counted AFTER resolution so Combo sees only cards played EARLIER this turn
 	p.cardsPlayedThisTurn++;
 	p.lastCardCost = card.cost; // Rolling Stone: cost of the most recently played card
+	if (!card.token) p.lastCardPlayedId = card.id; // Fate Splitter: opponent's most recent card
 	if (card.type === 'creature' && card.tribe) { p.tribesPlayedGame = p.tribesPlayedGame || new Set(); for (const tr of (card.tribe || '').split('/')) if (tr) p.tribesPlayedGame.add(tr); } // Power Slider
 	if ((card.keywords || []).includes('combo')) p.combosPlayedGame = (p.combosPlayedGame || 0) + 1; // Rhyme Spinner
 	(p.playedCountById = p.playedCountById || {})[card.id] = (p.playedCountById[card.id] || 0) + 1; // Freebird
@@ -10034,6 +10049,7 @@ export function endTurn(state) {
 	np.spellsPlayedThisTurn = 0; np.schoolsCastThisTurn = {}; np.firstBattlecryThisTurn = null; // Metamorfin / Bolner Hammerbeak
 	np.parityBlock = null; // Alara: a start-of-turn coin flip may block odd/even-cost plays
 		np.freeMinionsCount = 0; // Anub'Rekhan free minions last the turn
+		np.armorChangedThisTurn = false; // Stoneskin Armorer
 		if (np.parityDiscount) np.parityDiscount.parity = np.parityDiscount.parity === 'odd' ? 'even' : 'odd'; // Thaddius polarity swap
 	np.planarRollsThisTurn = 0;
 	{ const r = activePlaneRule(state); if (r && r.kind === 'coin-parity') { np.parityBlock = state.rng() < 0.5 ? 'odd' : 'even'; emit(state, { type: 'coinParity', player: state.current, block: np.parityBlock }); } }
