@@ -299,6 +299,7 @@ function instantiate(def, controller) {
 		kindredCard: !!def.kindredCard, // Lost City: a card with a Kindred bonus (Torga tutors these)
 		rewind: def.rewind || 0, // TIME_TRAVEL Rewind: when played, a copy returns to your deck until N charges are spent
 		rewindDouble: !!def.rewindDouble, // Morchie: while on board, your Rewind battlecries fire twice
+		starshipPiece: !!def.starshipPiece, // GDB: joins your Starship under construction when it dies
 		kindredCostReduce: def.kindredCostReduce || 0, // Pterrorwing Ravager / Windpeak Wyrm: costs less while Kindred is active
 		handDeathGrowth: !!def.handDeathGrowth, // Blood Herald: +1/+1 whenever a friendly minion dies while in hand
 		scaleOnEntry: def.scaleOnEntry ? { ...def.scaleOnEntry } : null, // Astral Automaton: +stats per prior copy entered this game
@@ -1378,6 +1379,18 @@ function sweepDeaths(state) {
 			}
 			if (c.marked) drawCards(state, c.markedBy, 2);
 			runDeathrattle(state, pi, c);
+			// Starship Piece: a dead piece joins your Starship under construction;
+			// the first piece puts a Launch Starship (5) in your hand
+			if (c.starshipPiece && !p.eliminated && state.cardsById[c.id]) {
+				(p.starshipPieces = p.starshipPieces || []).push(c.id);
+				emit(state, { type: 'starshipPiece', player: pi, name: c.name, count: p.starshipPieces.length });
+				if (state.cardsById['gdb_launch_starship'] && p.hand.length < MAX_HAND
+					&& !p.hand.some(h => h.id === 'gdb_launch_starship')) {
+					const ls = instantiate(state.cardsById['gdb_launch_starship'], pi);
+					ls.zone = 'hand'; p.hand.push(ls);
+					emit(state, { type: 'conjure', player: pi, card: ls, color: null });
+				}
+			}
 			// Oblivion Ring leaves play: the creature it exiled returns (fresh)
 			if (c.oringExiled) {
 				const oe = c.oringExiled; c.oringExiled = null;
@@ -3710,6 +3723,7 @@ function execEffects(state, pi, effects, target, source) {
 			if (e.perHandCard) hits = state.players[pi].hand.length; // Meteorologist
 			if (e.perHandSpell) hits = state.players[pi].hand.filter(c => isSpellType(c)).length; // Void Flayer
 			if (e.perManaCrystal) hits = state.players[pi].mana?.max || 0; // Trogg Gemtosser: one per Mana Crystal
+			if (e.countStat) hits = state.players[pi][e.countStat] || 0; // Thor, Explosive Payload: once per Starship launched
 			for (let i = 0; i < hits; i++) {
 				const pool = [];
 				const pushBoard = side => { for (const c of state.players[side].board) if (!isDead(c) && c.type !== 'location' && !(e.exceptTribe && (c.tribe || '').includes(e.exceptTribe)) && !(e.exceptSource && c === source)) pool.push({ c }); };
@@ -3728,7 +3742,12 @@ function execEffects(state, pi, effects, target, source) {
 				const pick = pool[Math.floor(state.rng() * pool.length)];
 				const rdv = e.heraldScaled ? hm() : e.value;
 				if (pick.hero != null) damageHero(state, pick.hero, rdv, pi);
-				else damageCreature(state, pick.c, rdv, null);
+				else {
+					// Siege Tank, Deployed: excess damage hits the enemy hero
+					const rem = Math.max(0, pick.c.maxHealth - pick.c.damage);
+					damageCreature(state, pick.c, rdv, null);
+					if (e.excessToHero && !pick.c.shield && rdv > rem) damageHero(state, pick.c.controller, rdv - rem, pi);
+				}
 			}
 			if (lsBefore != null) healHero(state, pi, Math.max(0, totalHurt() - lsBefore));
 		} else if (e.type === 'summon') {
@@ -4629,6 +4648,7 @@ function execEffects(state, pi, effects, target, source) {
 			else if (e.if.heroPowerUpgraded) ok = !!p.heroPowerUpgraded || (p.imbueCount || 0) >= 1; // legacy Imbue proxy
 			else if (e.if.imbuedAtLeast != null) ok = (p.imbueCount || 0) >= e.if.imbuedAtLeast || !!p.heroPowerUpgraded; // Petal Picker twice / Malorne 4x
 			else if (e.if.kindredActive) ok = kindredActive(state, pi, source); // Lost City Kindred: you control another minion sharing a type
+			else if (e.if.buildingStarship != null) ok = ((p.starshipPieces || []).length > 0) === !!e.if.buildingStarship; // Crystal Welder / Exarch Othaar / The Exodar
 			else if (e.if.deckSharesType) { // City Chief Esho: every minion in your deck shares a minion type ('All' is a wildcard)
 				const lists = p.deck.filter(id => state.cardsById[id]?.type === 'creature')
 					.map(id => ((state.cardsById[id]?.tribe) || '').split('/').filter(Boolean));
@@ -5403,6 +5423,83 @@ function execEffects(state, pi, effects, target, source) {
 			const p = state.players[pi];
 			p.deckCostOverrides = p.deckCostOverrides || {};
 			for (let i = 0; i < (e.count || 5) && i < p.deck.length; i++) p.deckCostOverrides[p.deck[i]] = (e.value ?? 1);
+		} else if (e.type === 'launch-starship') {
+			// GDB: summon The Starship with the combined stats, keywords, deathrattles
+			// and ongoing triggers of every assembled piece, then fire each piece's
+			// launch effects. e.bonus = an Exodar Protocol rider baked into the ship.
+			const p = state.players[pi];
+			const pieceDefs = (p.starshipPieces || []).map(id => state.cardsById[id]).filter(Boolean);
+			if (pieceDefs.length && state.cardsById['gdb_the_starship']) {
+				let atk = 0, hpv = 0; const kws = new Set(); let dr = []; const ongs = []; const names = [];
+				for (const d of pieceDefs) {
+					atk += d.attack || 0; hpv += d.health || 0;
+					for (const k of d.keywords || []) if (k !== 'battlecry' && k !== 'deathrattle') kws.add(k);
+					if (d.deathrattle) dr = dr.concat(JSON.parse(JSON.stringify(d.deathrattle)));
+					if (d.ongoing) ongs.push(JSON.parse(JSON.stringify(d.ongoing)));
+					names.push(d.name);
+				}
+				if (e.bonus) { atk += e.bonus.attack || 0; hpv += e.bonus.health || 0; for (const k of e.bonus.keywords || []) kws.add(k); }
+				const ship = summon(state, pi, {
+					...state.cardsById['gdb_the_starship'],
+					attack: Math.max(1, atk), health: Math.max(1, hpv), keywords: [...kws],
+					description: 'Launched Starship: ' + names.join(', ') + '.',
+				});
+				if (ship) {
+					if (dr.length) { ship.deathrattle = dr; if (!ship.keywords.includes('deathrattle')) ship.keywords.push('deathrattle'); }
+					if (ongs.length) ship.ongoings = ongs;
+					p.starshipPieces = [];
+					p.starshipsLaunched = (p.starshipsLaunched || 0) + 1;
+					emit(state, { type: 'starshipLaunch', player: pi, uid: ship.uid, name: ship.name, pieces: names });
+					for (const d of pieceDefs) if (d.launch) execEffects(state, pi, JSON.parse(JSON.stringify(d.launch)), null, ship);
+					// Hellion / Siege Tank / Thor: transform wherever they are once you've launched
+					for (let hi = 0; hi < p.hand.length; hi++) {
+						const hd = state.cardsById[p.hand[hi].id];
+						if (hd && hd.launchTransform && state.cardsById[hd.launchTransform]) {
+							const ni = instantiate(state.cardsById[hd.launchTransform], pi);
+							ni.zone = 'hand'; p.hand[hi] = ni;
+							emit(state, { type: 'transformed', player: pi, uid: ni.uid, name: ni.name });
+						}
+					}
+					p.deck = p.deck.map(id => {
+						const dd = state.cardsById[id];
+						return (dd && dd.launchTransform && state.cardsById[dd.launchTransform]) ? dd.launchTransform : id;
+					});
+					recomputeAuras(state);
+				}
+			}
+		} else if (e.type === 'launch-discount') {
+			// SCV / Concussive Shells / Salvage the Bunker: your next launch costs less
+			const p = state.players[pi];
+			p.nextLaunchDiscount = (p.nextLaunchDiscount || 0) + (e.value || 0);
+		} else if (e.type === 'summon-starship-copy') {
+			// Gravitational Displacer, when launched: summon a copy of the Starship
+			if (source && state.cardsById['gdb_the_starship']) {
+				const cp = summon(state, pi, {
+					...state.cardsById['gdb_the_starship'],
+					attack: source.attack, health: source.maxHealth,
+					keywords: source.keywords.filter(k => k !== 'deathrattle'),
+					description: source.description,
+				});
+				if (cp) {
+					if (source.deathrattle) { cp.deathrattle = JSON.parse(JSON.stringify(source.deathrattle)); if (!cp.keywords.includes('deathrattle')) cp.keywords.push('deathrattle'); }
+					if (source.ongoings) cp.ongoings = JSON.parse(JSON.stringify(source.ongoings));
+				}
+			}
+		} else if (e.type === 'ship-random-gifts') {
+			// Raven (Lift Off piece), when launched: the ship gains random Bonus Effects
+			if (source) for (let gi = 0; gi < (e.count || 1); gi++) applyGift(state, source, undefined, { board: true });
+		} else if (e.type === 'destroy-starship') {
+			// Star Vulpera: destroy a random enemy Starship or Starship Piece
+			const pool = [];
+			for (const o of enemies) for (const c of state.players[o].board) {
+				if (!isDead(c) && (c.starshipPiece || c.id === 'gdb_the_starship')) pool.push(c);
+			}
+			if (pool.length) {
+				const t = pool[Math.floor(state.rng() * pool.length)];
+				t.damage = t.maxHealth;
+				t.shield = false;
+				emit(state, { type: 'destroy', uid: t.uid });
+			}
 		} else if (e.type === 'set-next-kindred-twice') {
 			// Primalfin Challenger
 			state.players[pi].nextKindredTwice = true;
@@ -8562,6 +8659,7 @@ function execEffects(state, pi, effects, target, source) {
 			if (e.tribe) pool = pool.filter(d => (d.tribe || '').includes(e.tribe));
 			if (e.rarity) pool = pool.filter(d => d.rarity === e.rarity); // Golden Monkey: Legendaries
 			if (e.requireRewind) pool = pool.filter(d => d.rewind > 0); // Time Machine: a random Rewind card
+			if (e.requireStarshipPiece) pool = pool.filter(d => d.starshipPiece); // Scrounging Shipwright
 			if (e.cardClass === 'enemy') {
 				const victim = enemyHero();
 				const cls = victim != null && state.players[victim].heroClass;
@@ -9004,7 +9102,7 @@ function execEffects(state, pi, effects, target, source) {
 				: e.costFromSelfAttack ? (source ? (source.attack || 0) : 0) // Spurfang: Cost = this minion's Attack
 				: e.costFromSelfCost ? (source ? (source.cost || 0) : 0) // Ulfar's granted Deathrattle: Cost = this minion's Cost
 				: e.cost;
-			const pool = Object.values(state.cardsById).filter(d =>
+			const pool = e.ids ? e.ids.map(id => state.cardsById[id]).filter(Boolean) : Object.values(state.cardsById).filter(d =>
 				d.type === 'creature' && (e.maxCost == null || (d.cost || 0) <= e.maxCost)
 				&& (e.minCost == null || (d.cost || 0) >= e.minCost)
 				&& (exactCost == null || (d.cost || 0) === exactCost)
@@ -9449,6 +9547,8 @@ export function effectiveCost(state, pi, card) {
 	if (card.id === 'the_ceaseless_expanse') c = Math.max(0, c - (state.expanseEvents || 0)); // costs (1) less per card drawn/played/destroyed this game
 	if (p.nextWeaponDiscount > 0 && card.type === 'weapon') c = Math.max(0, c - p.nextWeaponDiscount); // Space Pirate
 	if (card.kindredCostReduce > 0 && kindredActive(state, pi, card)) c = Math.max(0, c - card.kindredCostReduce); // Pterrorwing / Windpeak: cheaper while a type-mate is in play
+	if (card.id === 'gdb_launch_starship' && p.nextLaunchDiscount > 0) c = Math.max(0, c - p.nextLaunchDiscount); // SCV: your next launch costs less
+	if (isSpellType(card) && (p.spellsPlayedThisTurn || 0) === 0) c = Math.max(0, c - staticValue(p, 'first-spell-discount')); // Sha'tari Cloakfield
 	if (card.type === 'creature' && p.enemyMinionTaxTurn === state.turnNumber && p.enemyMinionTaxAmount) c += p.enemyMinionTaxAmount; // Forensic Duster
 	if (p.overloadDiscount > 0 && (card.overload || 0) > 0) c = Math.max(0, c - p.overloadDiscount); // Inzah
 	if (p.firstCardFreeEachTurn && (p.cardsPlayedThisTurn || 0) === 0) c = 0; // Bonelord Frostwhisper: first card each turn is free
@@ -9535,6 +9635,7 @@ export function playCard(state, pi, cardUid, target, choice, position, useAlt, k
 	if (card.choices && p.nextChooseOneDiscount > 0) p.nextChooseOneDiscount = 0; // Pride Seeker discount is spent by the next Choose One card
 	if (isSpellType(card) && p.nextSpellDiscount > 0) p.nextSpellDiscount = 0; // Murkwater Scribe: spent by the next spell
 	if (card.type === 'weapon' && p.nextWeaponDiscount > 0) p.nextWeaponDiscount = 0; // Space Pirate: spent by the next weapon
+	if (card.id === 'gdb_launch_starship' && p.nextLaunchDiscount > 0) p.nextLaunchDiscount = 0; // SCV: spent by the launch
 	if (isSpellType(card) && p.nextSchoolDiscount && schoolOf(card) === p.nextSchoolDiscount.school) p.nextSchoolDiscount = null; // Holy Cowboy: spent by the next matching spell
 	if (card.type === 'creature' && p.nextTribeDiscount && p.nextTribeDiscount.count > 0 && (card.tribe || '').includes(p.nextTribeDiscount.tribe)) { p.nextTribeDiscount.count -= 1; if (p.nextTribeDiscount.count <= 0) p.nextTribeDiscount = null; } // Clownfish
 	if (p.nextCardsDiscount && p.nextCardsDiscount.count > 0) { p.nextCardsDiscount.count -= 1; if (p.nextCardsDiscount.count <= 0) p.nextCardsDiscount = null; } // Scabbs: consumed per card

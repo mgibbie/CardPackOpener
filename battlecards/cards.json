@@ -45343,7 +45343,11 @@
       "description": "Divine Shield Starship Piece",
       "type": "creature",
       "attack": 2,
-      "health": 2
+      "health": 2,
+      "starshipPiece": true,
+      "keywords": [
+        "divine_shield"
+      ]
     },
     {
       "id": "sha_tari_cloakfield",
@@ -45355,7 +45359,15 @@
       "description": "Elusive.\nYour first spell each turn costs (1) less. Starship Piece",
       "type": "creature",
       "attack": 1,
-      "health": 4
+      "health": 4,
+      "starshipPiece": true,
+      "keywords": [
+        "elusive"
+      ],
+      "static": {
+        "type": "first-spell-discount",
+        "value": 1
+      }
     },
     {
       "id": "shattershard_turret",
@@ -45367,7 +45379,12 @@
       "description": "Rush, Windfury Starship Piece",
       "type": "creature",
       "attack": 2,
-      "health": 4
+      "health": 4,
+      "starshipPiece": true,
+      "keywords": [
+        "rush",
+        "windfury"
+      ]
     },
     {
       "id": "heart_of_the_legion",
@@ -45379,7 +45396,11 @@
       "description": "Lifesteal Starship Piece",
       "type": "creature",
       "attack": 3,
-      "health": 2
+      "health": 2,
+      "starshipPiece": true,
+      "keywords": [
+        "lifesteal"
+      ]
     },
     {
       "id": "hostile_invader",
@@ -46562,11 +46583,15 @@
           "count": 2
         },
         {
-          "type": "summon",
+          "type": "summon-random",
           "count": 1,
-          "attack": 2,
-          "health": 1,
-          "name": "Starship Piece with an effect when launched"
+          "ids": [
+            "sc_viking",
+            "sc_liberator",
+            "sc_raven",
+            "sc_banshee",
+            "sc_medivac"
+          ]
         }
       ]
     },
@@ -46577,11 +46602,16 @@
       "cost": 4,
       "rarity": "rare",
       "set": "hs",
-      "description": "Your other creatures have +1 Attack. (Transforms if you launched a Starship this game.)",
+      "description": "Your other minions have +1 Attack. (Transforms into Hellbat once you launch a Starship.)",
       "type": "creature",
       "attack": 4,
       "health": 4,
-      "tribe": "Mech"
+      "tribe": "Mech",
+      "launchTransform": "sc_hellbat",
+      "aura": {
+        "attack": 1,
+        "others": true
+      }
     },
     {
       "id": "chrono_boost",
@@ -110652,7 +110682,13 @@
       "keywords": [
         "battlecry"
       ],
-      "description": "Battlecry: Your next Starship launch costs (2) less. (Not modeled: Starships.)"
+      "description": "Battlecry: Your next Starship launch costs (2) less.",
+      "effects": [
+        {
+          "type": "launch-discount",
+          "value": 2
+        }
+      ]
     },
     {
       "id": "space_pirate",
@@ -110764,7 +110800,8 @@
         {
           "type": "damage-random-enemy-by-attack"
         }
-      ]
+      ],
+      "starshipPiece": true
     },
     {
       "id": "braingill",
@@ -110806,9 +110843,25 @@
       "rarity": "common",
       "set": "SPACE",
       "keywords": [
-        "taunt"
+        "taunt",
+        "battlecry"
       ],
-      "description": "Taunt. Battlecry: If you're building a Starship, gain +2/+2. (Not modeled: Starships.)"
+      "description": "Taunt. Battlecry: If you're building a Starship, gain +2/+2.",
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "buildingStarship": true
+          },
+          "then": [
+            {
+              "type": "buff-self",
+              "attack": 2,
+              "health": 2
+            }
+          ]
+        }
+      ]
     },
     {
       "id": "eredar_skulker",
@@ -110874,7 +110927,8 @@
             "target": "all-others"
           }
         ]
-      }
+      },
+      "starshipPiece": true
     },
     {
       "id": "foreboding_flame",
@@ -110912,7 +110966,8 @@
             "random": true
           }
         ]
-      }
+      },
+      "starshipPiece": true
     },
     {
       "id": "hologram_operator",
@@ -110953,8 +111008,16 @@
       "keywords": [
         "battlecry"
       ],
-      "description": "Starship Piece. Battlecry: Deal 1 damage to all enemies. (Not modeled: launch trigger.)",
+      "description": "Starship Piece. Battlecry: Deal 1 damage to all enemies. Also triggers on launch.",
       "effects": [
+        {
+          "type": "damage",
+          "value": 1,
+          "target": "enemies"
+        }
+      ],
+      "starshipPiece": true,
+      "launch": [
         {
           "type": "damage",
           "value": 1,
@@ -111056,10 +111119,13 @@
       "keywords": [
         "battlecry"
       ],
-      "description": "Battlecry: Get a random Starship Piece from another class. (Approximated: Discover a card.)",
+      "description": "Battlecry: Get a random Starship Piece from another class.",
       "effects": [
         {
-          "type": "discover"
+          "type": "conjure-random",
+          "requireStarshipPiece": true,
+          "cardClass": "other",
+          "count": 1
         }
       ]
     },
@@ -111102,8 +111168,16 @@
       "keywords": [
         "battlecry"
       ],
-      "description": "Starship Piece. Battlecry: Gain +1/+1 for each other friendly minion. (Not modeled: launch trigger.)",
+      "description": "Starship Piece. Battlecry: Gain +1/+1 for each other friendly minion. Also triggers on launch.",
       "effects": [
+        {
+          "type": "buff-self-per-other-friendly",
+          "attack": 1,
+          "health": 1
+        }
+      ],
+      "starshipPiece": true,
+      "launch": [
         {
           "type": "buff-self-per-other-friendly",
           "attack": 1,
@@ -111309,7 +111383,24 @@
       "keywords": [
         "battlecry"
       ],
-      "description": "Battlecry: If you're building a Starship, get 3 different Arcane spells and reduce their Costs by (2). (Not modeled: Starships.)"
+      "description": "Battlecry: If you're building a Starship, get 3 different Arcane spells and reduce their Costs by (2).",
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "buildingStarship": true
+          },
+          "then": [
+            {
+              "type": "conjure-random",
+              "cardType": "spell",
+              "school": "Arcane",
+              "count": 3,
+              "costMod": -2
+            }
+          ]
+        }
+      ]
     },
     {
       "id": "expedition_sergeant",
@@ -111356,7 +111447,8 @@
             "minionsOnly": true
           }
         ]
-      }
+      },
+      "starshipPiece": true
     },
     {
       "id": "gorm_the_worldeater",
@@ -111541,7 +111633,8 @@
           "type": "summon-random",
           "costFromSelfAttack": true
         }
-      ]
+      ],
+      "starshipPiece": true
     },
     {
       "id": "specimen_claw",
@@ -111561,7 +111654,8 @@
             "type": "attack-played-minion"
           }
         ]
-      }
+      },
+      "starshipPiece": true
     },
     {
       "id": "starlight_reactor",
@@ -111584,7 +111678,8 @@
             "type": "recast-triggering-spell"
           }
         ]
-      }
+      },
+      "starshipPiece": true
     },
     {
       "id": "talgath",
@@ -111722,7 +111817,8 @@
           "type": "armor",
           "value": 4
         }
-      ]
+      ],
+      "starshipPiece": true
     },
     {
       "id": "askara",
@@ -111965,8 +112061,14 @@
       "keywords": [
         "battlecry"
       ],
-      "description": "Starship Piece. Battlecry: Destroy a random enemy minion. (Not modeled: launch trigger.)",
+      "description": "Starship Piece. Battlecry: Destroy a random enemy minion. Also triggers on launch.",
       "effects": [
+        {
+          "type": "destroy-random"
+        }
+      ],
+      "starshipPiece": true,
+      "launch": [
         {
           "type": "destroy-random"
         }
@@ -112105,7 +112207,7 @@
       "keywords": [
         "battlecry"
       ],
-      "description": "Battlecry: Deal 10 damage to a random enemy minion. (Not modeled: Starship transform.)",
+      "description": "Battlecry: Deal 10 damage to a random enemy minion. (Transforms into Siege Tank, Deployed once you launch a Starship.)",
       "effects": [
         {
           "type": "random-damage",
@@ -112113,7 +112215,8 @@
           "count": 1,
           "pool": "enemy-creatures"
         }
-      ]
+      ],
+      "launchTransform": "sc_siege_tank_deployed"
     },
     {
       "id": "star_vulpera",
@@ -112129,7 +112232,12 @@
         "battlecry"
       ],
       "description": "Tradeable. Battlecry: Destroy an enemy Starship or Starship Piece.",
-      "tradeable": true
+      "tradeable": true,
+      "effects": [
+        {
+          "type": "destroy-starship"
+        }
+      ]
     },
     {
       "id": "gravitational_displacer",
@@ -112141,7 +112249,13 @@
       "health": 4,
       "rarity": "epic",
       "set": "SPACE",
-      "description": "Starship Piece. When this is launched, summon a copy of the Starship. (Not modeled: Starships.)"
+      "description": "Starship Piece. When this is launched, summon a copy of the Starship.",
+      "starshipPiece": true,
+      "launch": [
+        {
+          "type": "summon-starship-copy"
+        }
+      ]
     },
     {
       "id": "xortoth_breaker_of_stars",
@@ -112467,7 +112581,76 @@
       "keywords": [
         "battlecry"
       ],
-      "description": "Battlecry: If you're building a Starship, launch it and choose a Protocol! (Not modeled: Starships.)"
+      "description": "Battlecry: If you're building a Starship, launch it for free and choose a Protocol!",
+      "choices": [
+        {
+          "text": "Assault Protocol: launch with +3 Attack, Rush and Windfury.",
+          "effects": [
+            {
+              "type": "conditional",
+              "if": {
+                "buildingStarship": true
+              },
+              "then": [
+                {
+                  "type": "launch-starship",
+                  "bonus": {
+                    "attack": 3,
+                    "keywords": [
+                      "rush",
+                      "windfury"
+                    ]
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "text": "Defense Protocol: launch with Taunt and Divine Shield.",
+          "effects": [
+            {
+              "type": "conditional",
+              "if": {
+                "buildingStarship": true
+              },
+              "then": [
+                {
+                  "type": "launch-starship",
+                  "bonus": {
+                    "keywords": [
+                      "taunt",
+                      "divine_shield"
+                    ]
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "text": "Salvation Protocol: launch with +5 Health and Lifesteal.",
+          "effects": [
+            {
+              "type": "conditional",
+              "if": {
+                "buildingStarship": true
+              },
+              "then": [
+                {
+                  "type": "launch-starship",
+                  "bonus": {
+                    "health": 5,
+                    "keywords": [
+                      "lifesteal"
+                    ]
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      ]
     },
     {
       "id": "velen_leader_of_the_exiled",
@@ -112545,14 +112728,15 @@
       "keywords": [
         "battlecry"
       ],
-      "description": "Battlecry: Deal 5 damage. (Not modeled: Starship transform.)",
+      "description": "Battlecry: Deal 5 damage. (Transforms into Thor, Explosive Payload once you launch a Starship.)",
       "effects": [
         {
           "type": "damage",
           "value": 5,
           "target": "any"
         }
-      ]
+      ],
+      "launchTransform": "sc_thor_payload"
     },
     {
       "id": "murmur",
@@ -125093,6 +125277,216 @@
           "type": "portal-summon"
         }
       ]
+    },
+    {
+      "id": "gdb_the_starship",
+      "name": "The Starship",
+      "type": "creature",
+      "token": true,
+      "cost": 5,
+      "attack": 1,
+      "health": 1,
+      "tribe": "Mech",
+      "rarity": "legendary",
+      "description": "Has the combined stats and effects of all assembled Starship Pieces."
+    },
+    {
+      "id": "gdb_launch_starship",
+      "name": "Launch Starship",
+      "type": "sorcery",
+      "token": true,
+      "cost": 5,
+      "rarity": "common",
+      "effects": [
+        {
+          "type": "launch-starship"
+        }
+      ],
+      "description": "Launch your Starship."
+    },
+    {
+      "id": "sc_marine",
+      "name": "Marine",
+      "type": "creature",
+      "token": true,
+      "cost": 2,
+      "attack": 2,
+      "health": 2,
+      "keywords": [
+        "taunt"
+      ],
+      "rarity": "common",
+      "description": "Taunt"
+    },
+    {
+      "id": "sc_viking",
+      "name": "Viking",
+      "type": "creature",
+      "token": true,
+      "cost": 1,
+      "attack": 2,
+      "health": 1,
+      "tribe": "Mech",
+      "rarity": "common",
+      "starshipPiece": true,
+      "launch": [
+        {
+          "type": "armor",
+          "value": 5
+        }
+      ],
+      "description": "Starship Piece. When this is launched, gain 5 Armor."
+    },
+    {
+      "id": "sc_liberator",
+      "name": "Liberator",
+      "type": "creature",
+      "token": true,
+      "cost": 1,
+      "attack": 2,
+      "health": 1,
+      "tribe": "Mech",
+      "rarity": "common",
+      "starshipPiece": true,
+      "launch": [
+        {
+          "type": "damage",
+          "value": 2,
+          "target": "enemy-creatures"
+        }
+      ],
+      "description": "Starship Piece. When this is launched, deal 2 damage to all enemy minions."
+    },
+    {
+      "id": "sc_raven",
+      "name": "Raven",
+      "type": "creature",
+      "token": true,
+      "cost": 1,
+      "attack": 2,
+      "health": 1,
+      "tribe": "Mech",
+      "rarity": "common",
+      "starshipPiece": true,
+      "launch": [
+        {
+          "type": "ship-random-gifts",
+          "count": 2
+        }
+      ],
+      "description": "Starship Piece. When this is launched, gain 2 random Bonus Effects."
+    },
+    {
+      "id": "sc_banshee",
+      "name": "Banshee",
+      "type": "creature",
+      "token": true,
+      "cost": 1,
+      "attack": 2,
+      "health": 1,
+      "tribe": "Mech",
+      "rarity": "common",
+      "starshipPiece": true,
+      "launch": [
+        {
+          "type": "random-damage",
+          "value": 3,
+          "count": 1,
+          "pool": "enemies"
+        }
+      ],
+      "description": "Starship Piece. When this is launched, deal 3 damage to a random enemy."
+    },
+    {
+      "id": "sc_medivac",
+      "name": "Medivac",
+      "type": "creature",
+      "token": true,
+      "cost": 1,
+      "attack": 2,
+      "health": 1,
+      "tribe": "Mech",
+      "rarity": "common",
+      "starshipPiece": true,
+      "launch": [
+        {
+          "type": "summon",
+          "count": 2,
+          "summonId": "sc_marine"
+        }
+      ],
+      "description": "Starship Piece. When this is launched, summon two 2/2 Marines with Taunt."
+    },
+    {
+      "id": "sc_hellbat",
+      "name": "Hellbat",
+      "type": "creature",
+      "token": true,
+      "cost": 4,
+      "attack": 4,
+      "health": 4,
+      "tribe": "Mech",
+      "rarity": "rare",
+      "aura": {
+        "attack": 2,
+        "others": true,
+        "keywords": [
+          "rush"
+        ]
+      },
+      "description": "Your other minions have +2 Attack and Rush."
+    },
+    {
+      "id": "sc_siege_tank_deployed",
+      "name": "Siege Tank, Deployed",
+      "type": "creature",
+      "token": true,
+      "cost": 5,
+      "attack": 5,
+      "health": 5,
+      "tribe": "Mech",
+      "rarity": "rare",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "random-damage",
+          "value": 10,
+          "count": 1,
+          "pool": "enemy-creatures",
+          "excessToHero": true
+        }
+      ],
+      "description": "Battlecry: Deal 10 damage to a random enemy minion. Excess damage hits the enemy hero."
+    },
+    {
+      "id": "sc_thor_payload",
+      "name": "Thor, Explosive Payload",
+      "type": "creature",
+      "token": true,
+      "cost": 8,
+      "attack": 8,
+      "health": 8,
+      "tribe": "Mech",
+      "rarity": "legendary",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "damage",
+          "value": 5,
+          "target": "any"
+        },
+        {
+          "type": "random-damage",
+          "value": 5,
+          "pool": "enemies",
+          "countStat": "starshipsLaunched"
+        }
+      ],
+      "description": "Battlecry: Deal 5 damage. Repeat at a random enemy for each Starship you've launched this game."
     }
   ]
 }
