@@ -1621,6 +1621,7 @@ function ongoingCondOk(state, pi, cond, ctx) {
 	if (cond.heroHealed && ctx.healedHero == null) return false; // Screaming Banshee: your HERO gained Health
 	if (cond.minAttackSelf && !(subj && ctx.self && subj.attack > ctx.self.attack)) return false; // Observer of Myths: a minion with MORE Attack than this
 	if (cond.attackEqualsSelf && !(subj && ctx.self && subj.attack === ctx.self.attack)) return false; // The Replicator-inator: same Attack as this
+	if (cond.handMax != null && !(state.players[pi].hand.length <= cond.handMax)) return false; // Howdyfin: fewer than N cards in hand
 	if (cond.tribeSubj && !(subj && (subj.tribe || '').includes(cond.tribeSubj))) return false;
 	return true;
 }
@@ -4346,6 +4347,7 @@ function execEffects(state, pi, effects, target, source) {
 			else if (e.if.drawsThisTurnAtLeast != null) ok = (p.drawsThisTurn || 0) >= e.if.drawsThisTurnAtLeast; // Careless Mechanist
 			else if (e.if.corpsesAtLeast != null) ok = (p.corpses || 0) >= e.if.corpsesAtLeast; // Eulogizer
 			else if (e.if.dragonsPlayedGame != null) ok = (p.dragonsPlayedGame || 0) >= e.if.dragonsPlayedGame; // Timewinder Zarimi
+			else if (e.if.holdingCost != null) ok = p.hand.some(c => c !== source && (c.cost || 0) === e.if.holdingCost); // Greedy Partner: holding another N-Cost card
 			else if (e.if.holdingSecret) ok = p.hand.some(c => c.secret); // Sparkjoy Cheat
 			else if (e.if.spellsGame != null) ok = (p.spellsPlayedTotal || 0) >= e.if.spellsGame; // Yogg-Saron, Master of Fate
 			else if (e.if.healedThisTurn) ok = !!p.healedThisTurn; // Cleric of An'she
@@ -5926,6 +5928,14 @@ function execEffects(state, pi, effects, target, source) {
 		} else if (e.type === 'destroy-self') {
 			// Incorporeal Corporal: destroy the source minion
 			if (source && !isDead(source)) { source.damage = source.maxHealth; source.shield = false; emit(state, { type: 'destroy', uid: source.uid }); sweepDeaths(state); }
+		} else if (e.type === 'put-card-bottom-deck') {
+			// Disposal Assistant: put a specific card on the bottom of your deck (front of array = bottom)
+			const p = state.players[pi];
+			if (e.id && state.cardsById[e.id]) p.deck.unshift(e.id);
+		} else if (e.type === 'gain-weapon-stats') {
+			// Shadestone Skulker: gain your weapon's stats (approx: buff self by the weapon's Attack)
+			const w = state.players[pi].weapon;
+			if (w && source) buffCreature(source, w.attack || 0, w.durability || 0);
 		} else if (e.type === 'return-weaker-to-deck') {
 			// King Plush: return all minions with less Attack than this to their owners' decks
 			if (source) { for (const pl of state.players) { for (const c of [...pl.board]) { if (c === source || isDead(c) || c.type === 'location') continue; if ((c.attack || 0) < (source.attack || 0) && state.cardsById[c.id]) { const owner = state.players[c.controller]; owner.board = owner.board.filter(x => x !== c); if (!c.token) owner.deck.push(c.id); c.zone = 'gone'; emit(state, { type: 'bounce', uid: c.uid, player: c.controller, name: c.name }); } } } recomputeAuras(state); }

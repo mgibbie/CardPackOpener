@@ -105851,6 +105851,409 @@
       "token": true,
       "collectible": false,
       "description": "A 6/7 Bot."
+    },
+    {
+      "id": "shadestone_skulker",
+      "name": "Shadestone Skulker",
+      "type": "creature",
+      "cost": 1,
+      "cardClass": "demonhunter",
+      "attack": 1,
+      "health": 1,
+      "rarity": "rare",
+      "set": "WILD_WEST",
+      "tribe": "Elemental",
+      "keywords": [
+        "rush",
+        "battlecry"
+      ],
+      "description": "Rush. Battlecry: Take your weapon and gain its stats. Deathrattle: Give it back.",
+      "effects": [
+        {
+          "type": "gain-weapon-stats"
+        }
+      ]
+    },
+    {
+      "id": "tram_mechanic",
+      "name": "Tram Mechanic",
+      "type": "creature",
+      "cost": 1,
+      "cardClass": "neutral",
+      "attack": 2,
+      "health": 1,
+      "rarity": "common",
+      "set": "WILD_WEST",
+      "keywords": [
+        "deathrattle"
+      ],
+      "description": "Deathrattle: Get a Barrel of Sludge. TOXIC WASTE: Handle with care.",
+      "deathrattle": [
+        {
+          "type": "add-card",
+          "id": "ww_barrel_of_sludge",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "id": "bartend_o_bot",
+      "name": "Bartend-O-Bot",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "demonhunter",
+      "attack": 3,
+      "health": 1,
+      "rarity": "epic",
+      "set": "WILD_WEST",
+      "tribe": "Mech",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Draw an Outcast card and slide it to the left side of your hand.",
+      "effects": [
+        {
+          "type": "tutor",
+          "cardType": null,
+          "requireKeyword": "outcast",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "id": "cactus_cutter",
+      "name": "Cactus Cutter",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "shaman",
+      "attack": 2,
+      "health": 2,
+      "rarity": "common",
+      "set": "WILD_WEST",
+      "tribe": "Murloc",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Draw a spell. If you cast it this turn, gain +1/+2 and Taunt.",
+      "effects": [
+        {
+          "type": "tutor",
+          "cardType": "spell",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "id": "disposal_assistant",
+      "name": "Disposal Assistant",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "warlock",
+      "attack": 3,
+      "health": 2,
+      "rarity": "common",
+      "set": "WILD_WEST",
+      "keywords": [
+        "battlecry",
+        "deathrattle"
+      ],
+      "description": "Battlecry and Deathrattle: Put a Barrel of Sludge on the bottom of your deck.",
+      "effects": [
+        {
+          "type": "put-card-bottom-deck",
+          "id": "ww_barrel_of_sludge"
+        }
+      ],
+      "deathrattle": [
+        {
+          "type": "put-card-bottom-deck",
+          "id": "ww_barrel_of_sludge"
+        }
+      ]
+    },
+    {
+      "id": "dryscale_deputy",
+      "name": "Dryscale Deputy",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "neutral",
+      "attack": 2,
+      "health": 2,
+      "rarity": "common",
+      "set": "WILD_WEST",
+      "tribe": "Naga",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: The next time you draw a spell, get a copy of it."
+    },
+    {
+      "id": "flint_firearm",
+      "name": "Flint Firearm",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "neutral",
+      "attack": 2,
+      "health": 3,
+      "rarity": "legendary",
+      "set": "WILD_WEST",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Get a random Quickdraw card. If you play it this turn, repeat this.",
+      "effects": [
+        {
+          "type": "conjure-random",
+          "cardType": null,
+          "requireKeyword": "quickdraw"
+        }
+      ]
+    },
+    {
+      "id": "greedy_partner",
+      "name": "Greedy Partner",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "neutral",
+      "attack": 2,
+      "health": 3,
+      "rarity": "common",
+      "set": "WILD_WEST",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: If you're holding another 2-Cost card, get a Coin.",
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "holdingCost": 2
+          },
+          "then": [
+            {
+              "type": "gain-coin",
+              "value": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "horseshoe_slinger",
+      "name": "Horseshoe Slinger",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "neutral",
+      "attack": 1,
+      "health": 1,
+      "rarity": "common",
+      "set": "WILD_WEST",
+      "tribe": "Mech",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Deal 2 damage to a random enemy minion. Quickdraw: And one of its neighbors.",
+      "effects": [
+        {
+          "type": "random-damage",
+          "value": 2,
+          "count": 1,
+          "pool": "enemy-creatures"
+        }
+      ]
+    },
+    {
+      "id": "howdyfin",
+      "name": "Howdyfin",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "neutral",
+      "attack": 2,
+      "health": 3,
+      "rarity": "epic",
+      "set": "WILD_WEST",
+      "tribe": "Murloc",
+      "description": "Whenever your hand has less than 3 cards in it, get a random Murloc.",
+      "ongoing": {
+        "on": "turn-end",
+        "if": {
+          "handMax": 2
+        },
+        "effects": [
+          {
+            "type": "conjure-random",
+            "cardType": "creature",
+            "tribe": "Murloc"
+          }
+        ]
+      }
+    },
+    {
+      "id": "messenger_buzzard",
+      "name": "Messenger Buzzard",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "hunter",
+      "attack": 1,
+      "health": 2,
+      "rarity": "common",
+      "set": "WILD_WEST",
+      "tribe": "Beast",
+      "keywords": [
+        "deathrattle"
+      ],
+      "description": "Deathrattle: Draw a Beast. Give minions in your hand +1/+1.",
+      "deathrattle": [
+        {
+          "type": "tutor",
+          "cardType": "creature",
+          "tribe": "Beast",
+          "count": 1
+        },
+        {
+          "type": "buff-hand-minions",
+          "attack": 1,
+          "health": 1
+        }
+      ]
+    },
+    {
+      "id": "parched_desperado",
+      "name": "Parched Desperado",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "demonhunter",
+      "attack": 3,
+      "health": 2,
+      "rarity": "rare",
+      "set": "WILD_WEST",
+      "tribe": "Naga",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: If you've cast a spell while holding this, give your hero +3 Attack this turn.",
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "spellsCastWhileHeld": 1
+          },
+          "then": [
+            {
+              "type": "hero-temp-attack",
+              "value": 3
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "pile_of_bones",
+      "name": "Pile of Bones",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "deathknight",
+      "attack": 2,
+      "health": 1,
+      "rarity": "rare",
+      "set": "WILD_WEST",
+      "tribe": "Undead",
+      "keywords": [
+        "deathrattle"
+      ],
+      "description": "Deathrattle: The next time you Excavate, resummon this.",
+      "deathrattle": []
+    },
+    {
+      "id": "saloon_brewmaster",
+      "name": "Saloon Brewmaster",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "neutral",
+      "attack": 2,
+      "health": 2,
+      "rarity": "common",
+      "set": "WILD_WEST",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Return a friendly minion to your hand. Give it +2/+2.",
+      "effects": [
+        {
+          "type": "bounce-and-buff",
+          "target": "friendly-creature",
+          "attack": 2,
+          "health": 2
+        }
+      ]
+    },
+    {
+      "id": "shale_spider",
+      "name": "Shale Spider",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "neutral",
+      "attack": 3,
+      "health": 2,
+      "rarity": "rare",
+      "set": "WILD_WEST",
+      "tribe": "Elemental",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: If you played an Elemental last turn, draw a card.",
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "elementalLastTurn": true
+          },
+          "then": [
+            {
+              "type": "draw",
+              "value": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "trapdoor_spider",
+      "name": "Trapdoor Spider",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "neutral",
+      "attack": 1,
+      "health": 2,
+      "rarity": "common",
+      "set": "WILD_WEST",
+      "tribe": "Beast",
+      "keywords": [
+        "stealth",
+        "poisonous"
+      ],
+      "description": "Stealth, Poisonous. After your opponent plays a minion, attack it.",
+      "ongoing": {
+        "on": "enemy-creature-played",
+        "effects": [
+          {
+            "type": "attack-played-minion"
+          }
+        ]
+      }
+    },
+    {
+      "id": "ww_barrel_of_sludge",
+      "name": "Barrel of Sludge",
+      "type": "sorcery",
+      "cost": 4,
+      "cardClass": "neutral",
+      "rarity": "common",
+      "set": "WILD_WEST",
+      "token": true,
+      "collectible": false,
+      "description": "A useless Barrel clogging your deck.",
+      "effects": []
     }
   ]
 }
