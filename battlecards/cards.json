@@ -123899,6 +123899,63 @@
           "value": 10
         }
       ]
+    },
+    {
+      "id": "lord_jaraxxus",
+      "name": "Lord Jaraxxus",
+      "type": "creature",
+      "cost": 9,
+      "cardClass": "warlock",
+      "attack": 3,
+      "health": 15,
+      "rarity": "legendary",
+      "set": "VANILLA",
+      "tribe": "Demon",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Destroy your hero and replace it with Lord Jaraxxus. (Approximated: set your Health to 15, equip a 3/8 Blood Fury, and gain the INFERNO! Hero Power.)",
+      "effects": [
+        {
+          "type": "set-hero-health",
+          "value": 15,
+          "target": "self"
+        },
+        {
+          "type": "equip",
+          "name": "Blood Fury",
+          "attack": 3,
+          "durability": 8
+        },
+        {
+          "type": "set-hero-power",
+          "powerId": "van_inferno"
+        }
+      ]
+    },
+    {
+      "id": "van_inferno",
+      "name": "INFERNO!",
+      "type": "heropower",
+      "cost": 2,
+      "cardClass": "warlock",
+      "rarity": "common",
+      "set": "VANILLA",
+      "token": true,
+      "collectible": false,
+      "description": "Hero Power: Summon a 6/6 Infernal.",
+      "power": {
+        "cost": 2,
+        "effects": [
+          {
+            "type": "summon",
+            "count": 1,
+            "attack": 6,
+            "health": 6,
+            "name": "Infernal"
+          }
+        ]
+      }
     }
   ]
 }
