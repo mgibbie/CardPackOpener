@@ -117698,6 +117698,356 @@
           "target": "own-hero"
         }
       ]
+    },
+    {
+      "id": "acolyte_of_infinity",
+      "name": "Acolyte of Infinity",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "warlock",
+      "attack": 5,
+      "health": 5,
+      "rarity": "epic",
+      "set": "TIME_TRAVEL",
+      "tribe": "Dragon",
+      "keywords": [
+        "battlecry",
+        "deathrattle"
+      ],
+      "description": "Battlecry: Set the Cost of a random card in your hand to INFINITY! Deathrattle: Change it back. (Not modeled: infinity cost.)"
+    },
+    {
+      "id": "brutish_endmaw",
+      "name": "Brutish Endmaw",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "neutral",
+      "attack": 3,
+      "health": 3,
+      "rarity": "common",
+      "set": "TIME_TRAVEL",
+      "tribe": "Beast",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Discover a 1-Cost minion with a Dark Gift. (Not modeled: Dark Gift.)",
+      "effects": [
+        {
+          "type": "discover",
+          "cardType": "creature",
+          "cost": 1
+        }
+      ]
+    },
+    {
+      "id": "bygone_doomspeaker",
+      "name": "Bygone Doomspeaker",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "warlock",
+      "attack": 3,
+      "health": 3,
+      "rarity": "common",
+      "set": "TIME_TRAVEL",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Rewind. Battlecry: Both players discard a random card. (Not modeled: Rewind; discards your own only.)",
+      "effects": [
+        {
+          "type": "discard-random"
+        }
+      ]
+    },
+    {
+      "id": "circadiamancer",
+      "name": "Circadiamancer",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "neutral",
+      "attack": 2,
+      "health": 2,
+      "rarity": "common",
+      "set": "TIME_TRAVEL",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Add a random 8-Cost minion to your hand. At the start of your turns, reduce its Cost by (1). (Not modeled: cost-reduction over time.)",
+      "effects": [
+        {
+          "type": "conjure-random",
+          "cardType": "creature",
+          "cost": 8
+        }
+      ]
+    },
+    {
+      "id": "dimensional_weaponsmith",
+      "name": "Dimensional Weaponsmith",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "warrior",
+      "attack": 2,
+      "health": 5,
+      "rarity": "common",
+      "set": "TIME_TRAVEL",
+      "tribe": "Dragon",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Give all minions and weapons in your hand +2 Attack.",
+      "effects": [
+        {
+          "type": "buff-hand",
+          "attack": 2,
+          "all": true
+        },
+        {
+          "type": "buff-hand",
+          "attack": 2,
+          "cardType": "weapon"
+        }
+      ]
+    },
+    {
+      "id": "disciple_of_the_dove",
+      "name": "Disciple of the Dove",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "priest",
+      "attack": 2,
+      "health": 2,
+      "rarity": "common",
+      "set": "TIME_TRAVEL",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Draw a minion. Give minions in your hand +2 Health.",
+      "effects": [
+        {
+          "type": "tutor",
+          "cardType": "creature",
+          "count": 1
+        },
+        {
+          "type": "buff-hand",
+          "health": 2,
+          "all": true
+        }
+      ]
+    },
+    {
+      "id": "enduring_roach",
+      "name": "Enduring Roach",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "neutral",
+      "attack": 3,
+      "health": 4,
+      "rarity": "common",
+      "set": "TIME_TRAVEL",
+      "description": "After you use your Hero Power, refresh 2 Mana Crystals.",
+      "ongoing": {
+        "on": "hero-power-used",
+        "effects": [
+          {
+            "type": "refresh-mana",
+            "value": 2
+          }
+        ]
+      }
+    },
+    {
+      "id": "liferender",
+      "name": "Liferender",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "deathknight",
+      "attack": 3,
+      "health": 4,
+      "rarity": "rare",
+      "set": "TIME_TRAVEL",
+      "tribe": "Undead",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: If your hero's Health changed this turn, deal 6 damage to an enemy minion.",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 6,
+          "target": "enemy-creature",
+          "requireHeroHealthChanged": true
+        }
+      ]
+    },
+    {
+      "id": "misplaced_pyromancer",
+      "name": "Misplaced Pyromancer",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "neutral",
+      "attack": 4,
+      "health": 3,
+      "rarity": "common",
+      "set": "TIME_TRAVEL",
+      "description": "Whenever you Shatter a card, deal 2 damage to all enemy minions. (Not modeled: Shatter.)"
+    },
+    {
+      "id": "portal_vanguard",
+      "name": "Portal Vanguard",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "neutral",
+      "attack": 2,
+      "health": 2,
+      "rarity": "common",
+      "set": "TIME_TRAVEL",
+      "tribe": "Dragon",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Rewind. Battlecry: Draw a random minion. Give it +2/+2. (Not modeled: Rewind.)",
+      "effects": [
+        {
+          "type": "tutor",
+          "cardType": "creature",
+          "count": 1,
+          "buff": {
+            "attack": 2,
+            "health": 2
+          }
+        }
+      ]
+    },
+    {
+      "id": "ranger_general_sylvanas",
+      "name": "Ranger General Sylvanas",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "hunter",
+      "attack": 2,
+      "health": 4,
+      "rarity": "legendary",
+      "set": "TIME_TRAVEL",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Fabled. Battlecry: Deal 2 damage to all enemies. If you've played Alleria or Vereesa, repeat for each. (Not modeled: Fabled / repeat.)",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 2,
+          "target": "enemies"
+        }
+      ]
+    },
+    {
+      "id": "royal_informant",
+      "name": "Royal Informant",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "rogue",
+      "attack": 2,
+      "health": 4,
+      "rarity": "common",
+      "set": "TIME_TRAVEL",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Look at the right-most card in your opponent's hand. Either get a copy of it or increase its Cost by (2). (Approximated: copy a random enemy hand card.)",
+      "effects": [
+        {
+          "type": "copy-random-enemy-hand"
+        }
+      ]
+    },
+    {
+      "id": "timelooper_toki",
+      "name": "Timelooper Toki",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "mage",
+      "attack": 3,
+      "health": 3,
+      "rarity": "legendary",
+      "set": "TIME_TRAVEL",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Get 3 random spells from the past. When you play ALL 3, get another Timelooper Toki. (Not modeled: play-all-3 payoff.)",
+      "effects": [
+        {
+          "type": "conjure-random",
+          "cardType": "spell",
+          "count": 3
+        }
+      ]
+    },
+    {
+      "id": "timelord_nozdormu",
+      "name": "Timelord Nozdormu",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "neutral",
+      "attack": 8,
+      "health": 8,
+      "rarity": "legendary",
+      "set": "TIME_TRAVEL",
+      "tribe": "Dragon",
+      "dormant": 5,
+      "keywords": [
+        "rush"
+      ],
+      "description": "Dormant for 5 turns. Rush. After you play a card from the newest expansion, awaken 1 turn sooner. (Not modeled: awaken acceleration.)"
+    },
+    {
+      "id": "chronicle_keeper",
+      "name": "Chronicle Keeper",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "neutral",
+      "attack": 3,
+      "health": 6,
+      "rarity": "common",
+      "set": "TIME_TRAVEL",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: If you're holding a Dragon, gain Taunt and Divine Shield.",
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "holdingTribe": "Dragon"
+          },
+          "then": [
+            {
+              "type": "grant",
+              "keyword": "taunt",
+              "target": "self"
+            },
+            {
+              "type": "grant",
+              "keyword": "divine_shield",
+              "target": "self"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "chronochiller",
+      "name": "Chronochiller",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "deathknight",
+      "attack": 8,
+      "health": 7,
+      "rarity": "epic",
+      "set": "TIME_TRAVEL",
+      "tribe": "Undead",
+      "description": "You no longer draw a card at the start of your turn. (Not modeled: skip your draw.)"
     }
   ]
 }

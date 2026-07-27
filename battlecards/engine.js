@@ -3186,6 +3186,7 @@ function execEffects(state, pi, effects, target, source) {
 				if (e.requireHeroDamagedThisTurn && !state.players[pi].heroDamagedThisTurn) continue; // Shadowblade Slinger
 				if (e.requireHoldingSpellMinCost != null && !state.players[pi].hand.some(c => isSpellType(c) && (c.cost || 0) >= e.requireHoldingSpellMinCost)) continue; // Weaver of the Cycle
 				if (e.requireHeroPowerUpgraded && !state.players[pi].heroPowerUpgraded) continue; // Resplendent Dreamweaver (Imbued twice proxy)
+				if (e.requireHeroHealthChanged && !state.players[pi].heroHealthChangedThisTurn) continue; // Liferender
 			// friendly Spell Damage boosts direct spell damage
 			let v = e.value === 'source-attack' ? (source?.attack || 0) : scaled(e); // Sergeant Sally
 			if (e.valueFromHeroDamage) v = state.players[pi].heroDamageTakenThisTurn || 0; // Shadowblade Slinger
@@ -3825,7 +3826,9 @@ function execEffects(state, pi, effects, target, source) {
 		} else if (e.type === 'double-attack-self') {
 			if (source) { source.attack *= 2; emit(state, { type: 'buff', uid: source.uid, attack: source.attack, hp: hp(source) }); }
 		} else if (e.type === 'refresh-mana') {
-			const mp = state.players[pi].mana; mp.cur = mp.max;
+			const mp = state.players[pi].mana;
+			const n = e.valuePer === 'spells-this-turn' ? (state.players[pi].spellsPlayedThisTurn || 0) : e.value; // Priestess Valishj / Enduring Roach: refresh only N
+			mp.cur = n != null ? Math.min(mp.max, (mp.cur || 0) + n) : mp.max;
 			emit(state, { type: 'mana', player: pi, cur: mp.cur, max: mp.max });
 		} else if (e.type === 'invoke-galakrond') {
 			// Invoke Galakrond: power up your Galakrond (base -> upgraded at 2 -> maxed at 4)
