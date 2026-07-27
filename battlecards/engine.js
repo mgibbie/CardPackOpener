@@ -2021,9 +2021,12 @@ function runSecretEffects(state, pi, effects, ctx) {
 				break;
 			}
 			case 'summon-copy-of-killed': {
-				// Overlord Drakuru: resurrect the minion this just killed onto your side
+				// Overlord Drakuru: resurrect the minion this just killed onto your side; Primal Sabretooth: to hand
 				const v = ctx.victim, def = v && state.cardsById[v.id];
-				if (def && !state.players[pi].eliminated) summon(state, pi, def);
+				if (def && !state.players[pi].eliminated) {
+					if (e.toHand) { const p = state.players[pi]; if (p.hand.length < MAX_HAND) { const cp = instantiate(def, pi); cp.zone = 'hand'; p.hand.push(cp); emit(state, { type: 'conjure', player: pi, card: cp, color: null }); } }
+					else summon(state, pi, def);
+				}
 				break;
 			}
 			case 'damage-enemy-hero-by-amount': {
@@ -5181,6 +5184,11 @@ function execEffects(state, pi, effects, target, source) {
 				buffCreature(c, e.attack || 0, e.health || 0);
 				if (e.grant && !c.keywords.includes(e.grant)) { c.keywords.push(e.grant); if (e.grant === KW.DIVINE_SHIELD) c.shield = true; }
 			}
+		} else if (e.type === 'mill-own-top') {
+			// Willful Watcher: destroy the top N cards of your deck
+			const p = state.players[pi];
+			for (let n = 0; n < (e.count || 1) && p.deck.length; n++) { const id = p.deck.pop(); if (id && state.cardsById[id] && !state.cardsById[id].token) p.discardLogIds.push(id); }
+			emit(state, { type: 'shuffle', player: pi });
 		} else if (e.type === 'reduce-random-enemy-hand-cost') {
 			// Curious Explorer: reduce the Cost of a random minion in your opponent's hand
 			for (const o of enemies) {
@@ -5557,7 +5565,8 @@ function execEffects(state, pi, effects, target, source) {
 				const idx = p.deck.findIndex(id => { const def = state.cardsById[id]; return def?.type === 'creature' && !def.token && (!e.tribe || (def.tribe || '').includes(e.tribe)); });
 				if (idx < 0) break;
 				const [id] = p.deck.splice(idx, 1);
-				summon(state, pi, state.cardsById[id]);
+				const c = summon(state, pi, state.cardsById[id]);
+				if (c && e.grant && !c.keywords.includes(e.grant)) { c.keywords.push(e.grant); if (e.grant === KW.DIVINE_SHIELD) c.shield = true; } // Possessed Animancer: Lifesteal
 			}
 		} else if (e.type === 'summon-from-deck-weaker') {
 			// Meat Wagon: summon a creature from your deck with less Attack than this one

@@ -116243,6 +116243,490 @@
       "token": true,
       "collectible": false,
       "description": "A 0/3 Egg."
+    },
+    {
+      "id": "ido_of_the_threshfleet",
+      "name": "Ido of the Threshfleet",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "paladin",
+      "attack": 2,
+      "health": 7,
+      "rarity": "legendary",
+      "set": "THE_LOST_CITY",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "While this is alive, you get a 2-Cost Holy spell that gives a minion +2/+2 and Divine Shield. (Approximated: Battlecry adds the spell once.)",
+      "effects": [
+        {
+          "type": "add-card",
+          "id": "tlc_ido_gift",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "id": "mechanized_magma",
+      "name": "Mechanized Magma",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "shaman",
+      "attack": 2,
+      "health": 5,
+      "rarity": "rare",
+      "set": "THE_LOST_CITY",
+      "tribe": "Elemental",
+      "description": "Whenever you play a Fire spell, gain stats equal to its Cost.",
+      "ongoing": {
+        "on": "spell-played",
+        "if": {
+          "school": "Fire"
+        },
+        "effects": [
+          {
+            "type": "buff-self-by-spell-cost"
+          }
+        ]
+      }
+    },
+    {
+      "id": "neferset_weaponsmith",
+      "name": "Neferset Weaponsmith",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "rogue",
+      "attack": 5,
+      "health": 4,
+      "rarity": "common",
+      "set": "THE_LOST_CITY",
+      "keywords": [
+        "battlecry",
+        "combo"
+      ],
+      "description": "Battlecry: Get a random weapon from another class. Combo: Give it +2 Attack. (Not modeled: Combo weapon-buff.)",
+      "effects": [
+        {
+          "type": "conjure-random",
+          "cardType": "weapon",
+          "cardClass": "other"
+        }
+      ]
+    },
+    {
+      "id": "primal_sabretooth",
+      "name": "Primal Sabretooth",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "neutral",
+      "attack": 5,
+      "health": 3,
+      "rarity": "rare",
+      "set": "THE_LOST_CITY",
+      "tribe": "Beast",
+      "keywords": [
+        "stealth"
+      ],
+      "description": "Stealth. After this attacks and kills a minion, get a copy of it.",
+      "ongoing": {
+        "on": "self-kills-creature",
+        "effects": [
+          {
+            "type": "summon-copy-of-killed",
+            "toHand": true
+          }
+        ]
+      }
+    },
+    {
+      "id": "ravasaur_matriarch",
+      "name": "Ravasaur Matriarch",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "hunter",
+      "attack": 5,
+      "health": 4,
+      "rarity": "common",
+      "set": "THE_LOST_CITY",
+      "tribe": "Beast",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Kindred: Deal damage to an enemy minion equal to this minion's Attack. (Kindred approximated: fires on play; a random enemy minion.)",
+      "effects": [
+        {
+          "type": "damage-random-enemy-by-attack",
+          "count": 1,
+          "minionsOnly": true
+        }
+      ]
+    },
+    {
+      "id": "razidir",
+      "name": "Razidir",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "warlock",
+      "attack": 7,
+      "health": 7,
+      "rarity": "epic",
+      "set": "THE_LOST_CITY",
+      "tribe": "Demon",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Discard a random card from your hand. Kindred: Your opponent's hand instead. (Kindred not modeled: discards your own.)",
+      "effects": [
+        {
+          "type": "discard-random"
+        }
+      ]
+    },
+    {
+      "id": "steamfin_thief",
+      "name": "Steamfin Thief",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "neutral",
+      "attack": 4,
+      "health": 3,
+      "rarity": "common",
+      "set": "THE_LOST_CITY",
+      "tribe": "Murloc",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Kindred: Summon two 1/1 Murlocs with Rush. (Kindred approximated: fires on play.)",
+      "effects": [
+        {
+          "type": "summon",
+          "count": 2,
+          "summonId": "tlc_murloc_rush"
+        }
+      ]
+    },
+    {
+      "id": "torga",
+      "name": "Torga",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "neutral",
+      "attack": 2,
+      "health": 7,
+      "rarity": "legendary",
+      "set": "THE_LOST_CITY",
+      "tribe": "Undead",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Draw a Kindred card and another card that activates it. (Approximated: draw 2 cards.)",
+      "effects": [
+        {
+          "type": "draw",
+          "value": 2
+        }
+      ]
+    },
+    {
+      "id": "willful_watcher",
+      "name": "Willful Watcher",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "neutral",
+      "attack": 4,
+      "health": 7,
+      "rarity": "common",
+      "set": "THE_LOST_CITY",
+      "keywords": [
+        "taunt",
+        "deathrattle"
+      ],
+      "description": "Taunt. Deathrattle: Destroy the top 3 cards of your deck.",
+      "deathrattle": [
+        {
+          "type": "mill-own-top",
+          "count": 3
+        }
+      ]
+    },
+    {
+      "id": "windswept_pageturner",
+      "name": "Windswept Pageturner",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "mage",
+      "attack": 4,
+      "health": 5,
+      "rarity": "rare",
+      "set": "THE_LOST_CITY",
+      "tribe": "Elemental",
+      "description": "After you summon an Elemental, deal 3 damage to a random enemy.",
+      "ongoing": {
+        "on": "summoned",
+        "effects": [
+          {
+            "type": "if-summoned-tribe-then",
+            "tribe": "Elemental",
+            "then": [
+              {
+                "type": "random-damage",
+                "value": 3,
+                "count": 1,
+                "pool": "enemies"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "blob_of_tar",
+      "name": "Blob of Tar",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "neutral",
+      "attack": 4,
+      "health": 4,
+      "rarity": "common",
+      "set": "THE_LOST_CITY",
+      "tribe": "Elemental",
+      "keywords": [
+        "poisonous",
+        "taunt",
+        "deathrattle"
+      ],
+      "description": "Poisonous, Taunt. Deathrattle: Summon a 2/2 Blob with Poisonous and a 2/2 Blob with Taunt.",
+      "deathrattle": [
+        {
+          "type": "summon",
+          "count": 1,
+          "summonId": "tlc_blob_poison"
+        },
+        {
+          "type": "summon",
+          "count": 1,
+          "summonId": "tlc_blob_taunt"
+        }
+      ]
+    },
+    {
+      "id": "crater_experiment",
+      "name": "Crater Experiment",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "neutral",
+      "attack": 3,
+      "health": 4,
+      "rarity": "epic",
+      "set": "THE_LOST_CITY",
+      "tribe": "All",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Kindred: Summon a copy of this. (Kindred approximated: fires on play.)",
+      "effects": [
+        {
+          "type": "summon-copy-of-self",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "id": "gorishi_wasp",
+      "name": "Gorishi Wasp",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "demonhunter",
+      "attack": 2,
+      "health": 7,
+      "rarity": "epic",
+      "set": "THE_LOST_CITY",
+      "tribe": "Beast",
+      "keywords": [
+        "rush"
+      ],
+      "description": "Rush. Whenever this takes damage, get a 1-Cost Gorishi Stinger.",
+      "ongoing": {
+        "on": "self-damaged",
+        "effects": [
+          {
+            "type": "add-card",
+            "id": "tlc_gorishi_stinger",
+            "count": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "hollow_direhorn",
+      "name": "Hollow Direhorn",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "deathknight",
+      "attack": 5,
+      "health": 4,
+      "rarity": "rare",
+      "set": "THE_LOST_CITY",
+      "tribe": "Undead",
+      "keywords": [
+        "rush"
+      ],
+      "description": "Rush. After a friendly minion dies, spend 3 Corpses to gain Reborn. (Approximated: gains Reborn on the first friendly death; Corpse cost not modeled.)",
+      "ongoing": {
+        "on": "friendly-creature-died",
+        "once": true,
+        "effects": [
+          {
+            "type": "grant-self",
+            "keyword": "reborn"
+          }
+        ]
+      }
+    },
+    {
+      "id": "possessed_animancer",
+      "name": "Possessed Animancer",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "warlock",
+      "attack": 2,
+      "health": 2,
+      "rarity": "rare",
+      "set": "THE_LOST_CITY",
+      "keywords": [
+        "deathrattle"
+      ],
+      "description": "Deathrattle: Summon a random Beast from your deck. Give it Lifesteal.",
+      "deathrattle": [
+        {
+          "type": "summon-from-deck-tribe",
+          "tribe": "Beast",
+          "count": 1,
+          "grant": "lifesteal"
+        }
+      ]
+    },
+    {
+      "id": "silithid_queen",
+      "name": "Silithid Queen",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "demonhunter",
+      "attack": 5,
+      "health": 2,
+      "rarity": "legendary",
+      "set": "THE_LOST_CITY",
+      "tribe": "Beast",
+      "keywords": [
+        "rush",
+        "battlecry"
+      ],
+      "description": "Rush. Kindred: Give your hero +5 Attack this turn. (Kindred approximated: fires on play.)",
+      "effects": [
+        {
+          "type": "hero-attack",
+          "value": 5
+        }
+      ]
+    },
+    {
+      "id": "tlc_ido_gift",
+      "name": "Threshfleet Gift",
+      "type": "sorcery",
+      "cost": 2,
+      "cardClass": "paladin",
+      "rarity": "common",
+      "set": "THE_LOST_CITY",
+      "tribe": "Holy",
+      "token": true,
+      "collectible": false,
+      "description": "Give a minion +2/+2 and Divine Shield.",
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 2,
+          "health": 2,
+          "target": "creature"
+        },
+        {
+          "type": "grant",
+          "keyword": "divine_shield",
+          "target": "creature"
+        }
+      ]
+    },
+    {
+      "id": "tlc_murloc_rush",
+      "name": "Murloc",
+      "type": "creature",
+      "cost": 1,
+      "cardClass": "neutral",
+      "attack": 1,
+      "health": 1,
+      "rarity": "common",
+      "set": "THE_LOST_CITY",
+      "tribe": "Murloc",
+      "token": true,
+      "collectible": false,
+      "keywords": [
+        "rush"
+      ],
+      "description": "A 1/1 Murloc with Rush."
+    },
+    {
+      "id": "tlc_blob_poison",
+      "name": "Blob",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "neutral",
+      "attack": 2,
+      "health": 2,
+      "rarity": "common",
+      "set": "THE_LOST_CITY",
+      "tribe": "Elemental",
+      "token": true,
+      "collectible": false,
+      "keywords": [
+        "poisonous"
+      ],
+      "description": "A 2/2 Blob with Poisonous."
+    },
+    {
+      "id": "tlc_blob_taunt",
+      "name": "Blob",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "neutral",
+      "attack": 2,
+      "health": 2,
+      "rarity": "common",
+      "set": "THE_LOST_CITY",
+      "tribe": "Elemental",
+      "token": true,
+      "collectible": false,
+      "keywords": [
+        "taunt"
+      ],
+      "description": "A 2/2 Blob with Taunt."
+    },
+    {
+      "id": "tlc_gorishi_stinger",
+      "name": "Gorishi Stinger",
+      "type": "sorcery",
+      "cost": 1,
+      "cardClass": "demonhunter",
+      "rarity": "common",
+      "set": "THE_LOST_CITY",
+      "token": true,
+      "collectible": false,
+      "description": "Deal 1 damage.",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 1,
+          "target": "any"
+        }
+      ]
     }
   ]
 }
