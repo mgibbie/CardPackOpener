@@ -115843,6 +115843,406 @@
           ]
         }
       ]
+    },
+    {
+      "id": "niri_of_the_crater",
+      "name": "Niri of the Crater",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "hunter",
+      "attack": 2,
+      "health": 5,
+      "rarity": "legendary",
+      "set": "THE_LOST_CITY",
+      "description": "Whenever you play a 1-Cost minion, double its stats. Whenever you cast a 1-Cost spell, cast it twice.",
+      "ongoings": [
+        {
+          "on": "creature-played",
+          "if": {
+            "spellCost": 1
+          },
+          "effects": [
+            {
+              "type": "double-triggering-minion-stats"
+            }
+          ]
+        },
+        {
+          "on": "spell-played",
+          "if": {
+            "spellCost": 1
+          },
+          "effects": [
+            {
+              "type": "recast-triggering-spell"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "petrified_ogre",
+      "name": "Petrified Ogre",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "neutral",
+      "attack": 5,
+      "health": 5,
+      "rarity": "common",
+      "set": "THE_LOST_CITY",
+      "dormant": 2,
+      "description": "Starts Dormant. While Dormant, gain +2/+2 at the start of your turn. (Approximated: awakens after 2 turns; 50%-awaken not modeled.)",
+      "ongoing": {
+        "on": "turn-start",
+        "if": {
+          "dormantSelf": true
+        },
+        "effects": [
+          {
+            "type": "buff-self",
+            "attack": 2,
+            "health": 2
+          }
+        ]
+      }
+    },
+    {
+      "id": "primalfin_challenger",
+      "name": "Primalfin Challenger",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "neutral",
+      "attack": 3,
+      "health": 2,
+      "rarity": "common",
+      "set": "THE_LOST_CITY",
+      "tribe": "Murloc",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Your next Kindred triggers twice. (Not modeled: Kindred.)"
+    },
+    {
+      "id": "relic_miner",
+      "name": "Relic Miner",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "neutral",
+      "attack": 3,
+      "health": 3,
+      "rarity": "common",
+      "set": "THE_LOST_CITY",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Destroy the top card of your deck. Discover a card of the same Rarity. (Approximated: Discover a card.)",
+      "effects": [
+        {
+          "type": "discover"
+        }
+      ]
+    },
+    {
+      "id": "skittish_saucier",
+      "name": "Skittish Saucier",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "demonhunter",
+      "attack": 4,
+      "health": 2,
+      "rarity": "common",
+      "set": "THE_LOST_CITY",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Reduce the Cost of adjacent cards in your hand by (1). (Approximated: 2 random cards.)",
+      "effects": [
+        {
+          "type": "reduce-random-hand-cost",
+          "anyCard": true,
+          "value": 1
+        },
+        {
+          "type": "reduce-random-hand-cost",
+          "anyCard": true,
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "stranglevine",
+      "name": "Stranglevine",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "neutral",
+      "attack": 3,
+      "health": 2,
+      "rarity": "common",
+      "set": "THE_LOST_CITY",
+      "keywords": [
+        "deathrattle"
+      ],
+      "description": "Deathrattle: Give a random friendly minion a random Bonus Effect and this Deathrattle. (Not modeled: Bonus Effects.)"
+    },
+    {
+      "id": "the_egg_of_khelos",
+      "name": "The Egg of Khelos",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "neutral",
+      "attack": 0,
+      "health": 3,
+      "rarity": "epic",
+      "set": "THE_LOST_CITY",
+      "keywords": [
+        "deathrattle"
+      ],
+      "description": "Deathrattle: Summon a slightly cracked Egg. (Approximated: a cracked Egg token; the 5-break hatch chain is not modeled.)",
+      "deathrattle": [
+        {
+          "type": "summon",
+          "count": 1,
+          "summonId": "tlc_cracked_egg"
+        }
+      ]
+    },
+    {
+      "id": "tunnel_terror",
+      "name": "Tunnel Terror",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "warlock",
+      "attack": 4,
+      "health": 3,
+      "rarity": "common",
+      "set": "THE_LOST_CITY",
+      "tribe": "Beast",
+      "keywords": [
+        "deathrattle"
+      ],
+      "description": "Deathrattle: Get two random Temporary 2-Cost minions. (Not modeled: Temporary.)",
+      "deathrattle": [
+        {
+          "type": "conjure-random",
+          "cardType": "creature",
+          "cost": 2,
+          "count": 2
+        }
+      ]
+    },
+    {
+      "id": "vault_breaker",
+      "name": "Vault Breaker",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "mage",
+      "attack": 2,
+      "health": 4,
+      "rarity": "rare",
+      "set": "THE_LOST_CITY",
+      "description": "After you Discover a card, reduce its Cost by (1).",
+      "ongoing": {
+        "on": "card-discovered",
+        "effects": [
+          {
+            "type": "reduce-discovered-cost",
+            "value": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "volcanic_thrasher",
+      "name": "Volcanic Thrasher",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "shaman",
+      "attack": 2,
+      "health": 3,
+      "rarity": "common",
+      "set": "THE_LOST_CITY",
+      "tribe": "Elemental",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Draw a Fire spell. Kindred: Give it Spell Damage +2. (Not modeled: Kindred Spell Damage.)",
+      "effects": [
+        {
+          "type": "tutor",
+          "cardType": "spell",
+          "school": "Fire",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "id": "ancient_pterrordax",
+      "name": "Ancient Pterrordax",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "neutral",
+      "attack": 4,
+      "health": 4,
+      "rarity": "common",
+      "set": "THE_LOST_CITY",
+      "tribe": "Beast",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Choose to gain Stealth until your next turn, Elusive, or Windfury.",
+      "choices": [
+        {
+          "text": "Stealth",
+          "effects": [
+            {
+              "type": "grant",
+              "keyword": "stealth",
+              "target": "self"
+            }
+          ]
+        },
+        {
+          "text": "Elusive",
+          "effects": [
+            {
+              "type": "grant",
+              "keyword": "elusive",
+              "target": "self"
+            }
+          ]
+        },
+        {
+          "text": "Windfury",
+          "effects": [
+            {
+              "type": "grant",
+              "keyword": "windfury",
+              "target": "self"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "bugsquasher",
+      "name": "Bugsquasher",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "demonhunter",
+      "attack": 5,
+      "health": 3,
+      "rarity": "common",
+      "set": "THE_LOST_CITY",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Deal 6 damage to an enemy minion with a minion type. (Approximated: any enemy minion.)",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 6,
+          "target": "enemy-creature"
+        }
+      ]
+    },
+    {
+      "id": "chillspine_stegodon",
+      "name": "Chillspine Stegodon",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "shaman",
+      "attack": 3,
+      "health": 4,
+      "rarity": "common",
+      "set": "THE_LOST_CITY",
+      "tribe": "Elemental",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Deal 2 damage to two random enemy minions. Kindred: And Freeze them. (Kindred approximated: fires on play.)",
+      "effects": [
+        {
+          "type": "random-damage",
+          "value": 2,
+          "count": 2,
+          "pool": "enemy-creatures"
+        },
+        {
+          "type": "freeze",
+          "target": "random-enemy",
+          "count": 2
+        }
+      ]
+    },
+    {
+      "id": "crater_gator",
+      "name": "Crater Gator",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "neutral",
+      "attack": 5,
+      "health": 4,
+      "rarity": "common",
+      "set": "THE_LOST_CITY",
+      "tribe": "Beast",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Until the start of your next turn, the enemy hero can't be healed. (Not modeled: heal lock.)"
+    },
+    {
+      "id": "dread_raptor",
+      "name": "Dread Raptor",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "deathknight",
+      "attack": 3,
+      "health": 4,
+      "rarity": "common",
+      "set": "THE_LOST_CITY",
+      "tribe": "Undead",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Draw a Deathrattle minion that costs (3) or less. Kindred: It costs (0). (Not modeled: Kindred cost-0.)",
+      "effects": [
+        {
+          "type": "tutor",
+          "cardType": "creature",
+          "requireKeyword": "deathrattle",
+          "maxCost": 3,
+          "count": 1
+        }
+      ]
+    },
+    {
+      "id": "elise_the_navigator",
+      "name": "Elise the Navigator",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "neutral",
+      "attack": 3,
+      "health": 5,
+      "rarity": "legendary",
+      "set": "THE_LOST_CITY",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: If your deck started with 10 cards of different Costs, craft a custom location. (Not modeled: Locations / deck check.)"
+    },
+    {
+      "id": "tlc_cracked_egg",
+      "name": "Cracked Egg",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "neutral",
+      "attack": 0,
+      "health": 3,
+      "rarity": "common",
+      "set": "THE_LOST_CITY",
+      "token": true,
+      "collectible": false,
+      "description": "A 0/3 Egg."
     }
   ]
 }

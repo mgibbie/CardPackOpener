@@ -2918,6 +2918,18 @@ function runSecretEffects(state, pi, effects, ctx) {
 				if (m && !isDead(m) && m.type !== 'location') damageCreature(state, m, e.value || 3, ctx.self || null);
 				break;
 			}
+			case 'double-triggering-minion-stats': {
+				// Niri of the Crater: when you play a 1-Cost minion, double its stats
+				const m = ctx.minion;
+				if (m && !isDead(m) && m.type !== 'location') { m.attack = (m.attack || 0) * 2; m.maxHealth = (m.maxHealth || 0) * 2; emit(state, { type: 'buff', uid: m.uid, attack: m.attack, hp: hp(m) }); }
+				break;
+			}
+			case 'reduce-discovered-cost': {
+				// Vault Breaker: after you Discover a card, reduce its Cost
+				const c = ctx.card;
+				if (c) c.cost = Math.max(0, (c.cost || 0) - (e.value || 1));
+				break;
+			}
 			case 'set-attacker-health-from-source': {
 				// Archaios: when another friendly minion attacks, set its Health equal to this minion's Health
 				const m = ctx.minion, s4 = ctx.self;
