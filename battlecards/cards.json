@@ -122432,6 +122432,565 @@
           "count": 1
         }
       ]
+    },
+    {
+      "id": "ships_chirurgeon",
+      "name": "Ship's Chirurgeon",
+      "type": "creature",
+      "cost": 1,
+      "cardClass": "priest",
+      "attack": 1,
+      "health": 2,
+      "rarity": "common",
+      "set": "WONDERS",
+      "tribe": "Dragon",
+      "description": "After you summon a minion, give it +1 Health.",
+      "ongoing": {
+        "on": "summoned",
+        "effects": [
+          {
+            "type": "buff-summoned-if-tribe",
+            "health": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "black_morass_imposter",
+      "name": "Black Morass Imposter",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "mage",
+      "attack": 2,
+      "health": 2,
+      "rarity": "rare",
+      "set": "WONDERS",
+      "description": "Each turn this is in your hand, transform it into a random 2-Cost minion with Spell Damage +1. (Not modeled: in-hand transform.)"
+    },
+    {
+      "id": "pebbly_page",
+      "name": "Pebbly Page",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "shaman",
+      "attack": 2,
+      "health": 1,
+      "rarity": "common",
+      "set": "WONDERS",
+      "tribe": "Elemental",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Draw an Overload card. (Not modeled: Overload immunity this turn.)",
+      "effects": [
+        {
+          "type": "tutor",
+          "overload": true,
+          "count": 1
+        }
+      ]
+    },
+    {
+      "id": "rat_sensei",
+      "name": "Rat Sensei",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "druid",
+      "attack": 2,
+      "health": 2,
+      "rarity": "common",
+      "set": "WONDERS",
+      "tribe": "Beast",
+      "keywords": [
+        "battlecry",
+        "deathrattle"
+      ],
+      "description": "Battlecry and Deathrattle: Add two 1/1 Turtles with Taunt to your hand.",
+      "effects": [
+        {
+          "type": "add-card",
+          "id": "won_turtle",
+          "count": 2
+        }
+      ],
+      "deathrattle": [
+        {
+          "type": "add-card",
+          "id": "won_turtle",
+          "count": 2
+        }
+      ]
+    },
+    {
+      "id": "shark_puncher",
+      "name": "Shark Puncher",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "neutral",
+      "attack": 2,
+      "health": 2,
+      "rarity": "common",
+      "set": "WONDERS",
+      "tribe": "Pirate",
+      "keywords": [
+        "deathrattle"
+      ],
+      "description": "Deathrattle: Give a random friendly Pirate +2/+2.",
+      "deathrattle": [
+        {
+          "type": "buff-random-friendly",
+          "attack": 2,
+          "health": 2,
+          "tribe": "Pirate"
+        }
+      ]
+    },
+    {
+      "id": "time_lost_raptor",
+      "name": "Time-Lost Raptor",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "hunter",
+      "attack": 1,
+      "health": 1,
+      "rarity": "rare",
+      "set": "WONDERS",
+      "tribe": "Beast",
+      "keywords": [
+        "echo",
+        "battlecry"
+      ],
+      "description": "Echo. Battlecry: Adapt your Time-Lost Raptors. (Approximated: Adapt this one.)",
+      "effects": [
+        {
+          "type": "adapt"
+        }
+      ]
+    },
+    {
+      "id": "durnholde_imposter",
+      "name": "Durnholde Imposter",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "hunter",
+      "attack": 3,
+      "health": 3,
+      "rarity": "rare",
+      "set": "WONDERS",
+      "description": "Each turn this is in your hand, transform it into a random 3-Cost minion with Poisonous. (Not modeled: in-hand transform.)"
+    },
+    {
+      "id": "runi_time_explorer",
+      "name": "Runi, Time Explorer",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "paladin",
+      "attack": 3,
+      "health": 4,
+      "rarity": "legendary",
+      "set": "WONDERS",
+      "tribe": "Draenei",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Discover a location from the FUTURE! (Not modeled: locations \u2014 Discovers a card.)",
+      "effects": [
+        {
+          "type": "discover"
+        }
+      ]
+    },
+    {
+      "id": "timeline_accelerator",
+      "name": "Timeline Accelerator",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "neutral",
+      "attack": 2,
+      "health": 2,
+      "rarity": "common",
+      "set": "WONDERS",
+      "tribe": "Mech",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Draw a Mech. It costs (2) less.",
+      "effects": [
+        {
+          "type": "tutor",
+          "cardType": "creature",
+          "tribe": "Mech",
+          "count": 1,
+          "costMod": -2
+        }
+      ]
+    },
+    {
+      "id": "bronze_dragonknight",
+      "name": "Bronze Dragonknight",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "paladin",
+      "attack": 3,
+      "health": 5,
+      "rarity": "common",
+      "set": "WONDERS",
+      "tribe": "Dragon",
+      "keywords": [
+        "taunt",
+        "battlecry"
+      ],
+      "description": "Taunt. Battlecry: If this has 5 or more Attack, summon a copy of this.",
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "selfAttack": 5
+          },
+          "then": [
+            {
+              "type": "summon-copy-of-self",
+              "count": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "eyestalk_of_cthun",
+      "name": "Eyestalk of C'Thun",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "neutral",
+      "attack": 1,
+      "health": 1,
+      "rarity": "rare",
+      "set": "WONDERS",
+      "keywords": [
+        "taunt",
+        "lifesteal"
+      ],
+      "description": "Taunt, Lifesteal. Whenever your C'Thun gains Attack or Health, this does too. (Not modeled: C'Thun link.)"
+    },
+    {
+      "id": "future_emissary",
+      "name": "Future Emissary",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "neutral",
+      "attack": 4,
+      "health": 4,
+      "rarity": "rare",
+      "set": "WONDERS",
+      "tribe": "Dragon",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Reduce the Cost of all Dragons in your hand by (1). Give them +1/+1. (Cost reduction also applies to Dragons drawn later.)",
+      "effects": [
+        {
+          "type": "buff-hand-tribe",
+          "tribe": "Dragon",
+          "attack": 1,
+          "health": 1
+        },
+        {
+          "type": "reduce-deck-tribe-cost",
+          "tribe": "Dragon",
+          "value": 1,
+          "alsoHand": true
+        }
+      ]
+    },
+    {
+      "id": "infinite_amalgam",
+      "name": "Infinite Amalgam",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "neutral",
+      "attack": 2,
+      "health": 4,
+      "rarity": "epic",
+      "set": "WONDERS",
+      "tribe": "All",
+      "description": "Inspire, Frenzy, Spellburst, Honorable Kill, and Overkill: Summon a random 1-Cost minion. (Approximated: Inspire/Frenzy/Spellburst modeled; Honorable Kill/Overkill flagged.)",
+      "ongoings": [
+        {
+          "on": "hero-power-used",
+          "effects": [
+            {
+              "type": "summon-random",
+              "cost": 1
+            }
+          ]
+        },
+        {
+          "on": "self-damaged",
+          "once": true,
+          "survives": true,
+          "effects": [
+            {
+              "type": "summon-random",
+              "cost": 1
+            }
+          ]
+        },
+        {
+          "on": "spell-played",
+          "once": true,
+          "effects": [
+            {
+              "type": "summon-random",
+              "cost": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "ivory_rook",
+      "name": "Ivory Rook",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "warrior",
+      "attack": 4,
+      "health": 3,
+      "rarity": "rare",
+      "set": "WONDERS",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Discover a Taunt minion. Gain Armor equal to its Cost.",
+      "effects": [
+        {
+          "type": "discover",
+          "cardType": "creature",
+          "requireKeyword": "taunt",
+          "armorByCost": true
+        }
+      ]
+    },
+    {
+      "id": "mount_hyjal_imposter",
+      "name": "Mount Hyjal Imposter",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "rogue",
+      "attack": 4,
+      "health": 4,
+      "rarity": "rare",
+      "set": "WONDERS",
+      "description": "Each turn this is in your hand, transform it into a random 4-Cost minion with Stealth. (Not modeled: in-hand transform.)"
+    },
+    {
+      "id": "the_scarab_lord",
+      "name": "The Scarab Lord",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "rogue",
+      "attack": 3,
+      "health": 3,
+      "rarity": "legendary",
+      "set": "WONDERS",
+      "tribe": "Undead",
+      "keywords": [
+        "battlecry",
+        "combo"
+      ],
+      "description": "Battlecry: Summon a 0/1 Gong for your opponent. Combo: Gain Rush.",
+      "effects": [
+        {
+          "type": "summon",
+          "count": 1,
+          "summonId": "won_gong",
+          "forEnemy": true
+        }
+      ],
+      "combo": [
+        {
+          "type": "summon",
+          "count": 1,
+          "summonId": "won_gong",
+          "forEnemy": true
+        },
+        {
+          "type": "grant",
+          "keyword": "rush",
+          "target": "self"
+        }
+      ]
+    },
+    {
+      "id": "witch_of_the_arch_thief",
+      "name": "Witch of the Arch-Thief",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "warlock",
+      "attack": 2,
+      "health": 4,
+      "rarity": "rare",
+      "set": "WONDERS",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Summon a 1/3 Voidwalker with Taunt. (Not modeled: repeat while opponent has more minions.)",
+      "effects": [
+        {
+          "type": "summon",
+          "count": 1,
+          "summonId": "won_voidwalker"
+        }
+      ]
+    },
+    {
+      "id": "soridormi",
+      "name": "Soridormi",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "neutral",
+      "attack": 8,
+      "health": 8,
+      "rarity": "legendary",
+      "set": "WONDERS",
+      "tribe": "Dragon",
+      "dormant": 2,
+      "dormantBattlecry": true,
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Dormant for 2 turns. When this awakens, reduce the Cost of all Dragons in your hand by (4). (Approximated: the reduction applies on play.)",
+      "effects": [
+        {
+          "type": "reduce-deck-tribe-cost",
+          "tribe": "Dragon",
+          "value": 4,
+          "alsoHand": true
+        }
+      ]
+    },
+    {
+      "id": "chromie_timehopper",
+      "name": "Chromie, Timehopper",
+      "type": "creature",
+      "cost": 6,
+      "cardClass": "mage",
+      "attack": 4,
+      "health": 4,
+      "rarity": "legendary",
+      "set": "WONDERS",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Visit a Historical Epoch. Shuffle the others into your deck. (Not modeled: Epochs \u2014 Discovers a card.)",
+      "effects": [
+        {
+          "type": "discover"
+        }
+      ]
+    },
+    {
+      "id": "valstann_staghelm",
+      "name": "Valstann Staghelm",
+      "type": "creature",
+      "cost": 6,
+      "cardClass": "neutral",
+      "attack": 3,
+      "health": 6,
+      "rarity": "legendary",
+      "set": "WONDERS",
+      "keywords": [
+        "deathrattle"
+      ],
+      "description": "Deathrattle: Summon a Taunt minion from your deck.",
+      "deathrattle": [
+        {
+          "type": "summon-from-deck-keyword",
+          "keywords": [
+            "taunt"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "murozond_thief_of_time",
+      "name": "Murozond, Thief of Time",
+      "type": "creature",
+      "cost": 7,
+      "cardClass": "priest",
+      "attack": 6,
+      "health": 6,
+      "rarity": "legendary",
+      "set": "WONDERS",
+      "tribe": "Dragon",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: If your deck has no duplicates, Discover a Dragon. (Not modeled: cost-damage rider.)",
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "noDuplicates": true
+          },
+          "then": [
+            {
+              "type": "discover",
+              "cardType": "creature",
+              "tribe": "Dragon"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "won_turtle",
+      "name": "Turtle",
+      "type": "creature",
+      "cost": 1,
+      "cardClass": "druid",
+      "attack": 1,
+      "health": 1,
+      "rarity": "common",
+      "set": "WONDERS",
+      "tribe": "Beast",
+      "token": true,
+      "collectible": false,
+      "keywords": [
+        "taunt"
+      ],
+      "description": "A 1/1 Turtle with Taunt."
+    },
+    {
+      "id": "won_gong",
+      "name": "Gong",
+      "type": "creature",
+      "cost": 1,
+      "cardClass": "neutral",
+      "attack": 0,
+      "health": 1,
+      "rarity": "common",
+      "set": "WONDERS",
+      "token": true,
+      "collectible": false,
+      "description": "A 0/1 Gong."
+    },
+    {
+      "id": "won_voidwalker",
+      "name": "Voidwalker",
+      "type": "creature",
+      "cost": 1,
+      "cardClass": "warlock",
+      "attack": 1,
+      "health": 3,
+      "rarity": "common",
+      "set": "WONDERS",
+      "tribe": "Demon",
+      "token": true,
+      "collectible": false,
+      "keywords": [
+        "taunt"
+      ],
+      "description": "A 1/3 Voidwalker with Taunt."
     }
   ]
 }

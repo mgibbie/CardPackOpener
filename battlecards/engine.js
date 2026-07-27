@@ -4408,6 +4408,7 @@ function execEffects(state, pi, effects, target, source) {
 					if (e.maxCost != null && (def.cost || 0) > e.maxCost) continue;
 					if (e.minCost != null && (def.cost || 0) < e.minCost) continue; if (e.cardType === 'secret' && !def.secret) continue; if (e.distinct && drawnIds.has(p.deck[j])) continue; if (e.health != null && (def.health || 0) !== e.health) continue; if (e.attack != null && (def.attack || 0) !== e.attack) continue; if (e.cost != null && (def.cost || 0) !== e.cost) continue; // Tol'vir Warden/Storm Chaser/Subject 9/Salhet's Pride/Holy Eggbearer
 					if (e.requireKeyword && !(def.keywords || []).includes(e.requireKeyword)) continue;
+					if (e.overload && !((def.overload || 0) > 0)) continue; // Pebbly Page: an Overload card
 					idxs.push(j);
 				}
 				if (!idxs.length) break;
@@ -8471,7 +8472,7 @@ function execEffects(state, pi, effects, target, source) {
 					ids.push(pool.splice(Math.floor(state.rng() * pool.length), 1)[0].id);
 				}
 				if (!ids.length) break;
-				state.pickQueue.push({ player: pi, ids, grant: e.grant || null, buff: e.buff || null, to: e.to || null, costMod: e.costMod || null, healByCost: e.healByCost || false, installSecret: e.installSecret || false, castRandom: e.castRandom || false, damageSelfByCost: e.damageSelfByCost || false, gainDeathrattleUid: e.gainDeathrattle && source ? source.uid : null, setAttack: e.setAttack ?? null, setHealth: e.setHealth ?? null, setCost: e.setCost ?? null });
+				state.pickQueue.push({ player: pi, ids, grant: e.grant || null, buff: e.buff || null, to: e.to || null, costMod: e.costMod || null, healByCost: e.healByCost || false, armorByCost: e.armorByCost || false, installSecret: e.installSecret || false, castRandom: e.castRandom || false, damageSelfByCost: e.damageSelfByCost || false, gainDeathrattleUid: e.gainDeathrattle && source ? source.uid : null, setAttack: e.setAttack ?? null, setHealth: e.setHealth ?? null, setCost: e.setCost ?? null });
 				emit(state, { type: 'pickStart', player: pi, count: ids.length });
 			}
 		} else if (e.type === 'loot') {
@@ -10308,10 +10309,12 @@ function applyAdapt(state, t) {
 function queueAdapt(state, pi, targets) {
 	if (!targets.length) return;
 	const options = [];
-	while (options.length < 3) {
+	let guard = 0;
+	while (options.length < 3 && guard++ < 60) {
 		const r = Math.floor(state.rng() * ADAPT_TABLE.length);
 		if (!options.includes(r)) options.push(r);
 	}
+	while (options.length < 3) options.push((options[options.length - 1] + 1) % ADAPT_TABLE.length); // degenerate rng fallback: fill with distinct neighbors
 	state.pickQueue.push({ player: pi, mode: 'adapt', ids: options.map(String),
 		adaptUids: targets.map(c => c.uid), title: 'Adapt' });
 	emit(state, { type: 'adaptOffer', player: pi, options, uids: targets.map(c => c.uid) });
@@ -10488,6 +10491,7 @@ export function resolvePick(state, id) {
 			if (pend.setCost != null) card.cost = pend.setCost;
 			if (pend.costMod) card.cost = Math.max(0, (card.cost || 0) + pend.costMod); // Museum Curator: costs (1) less
 		if (pend.healByCost) healHero(state, pend.player, card.cost || 0); // Ivory Knight: restore Health = its Cost
+		if (pend.armorByCost) gainArmor(state, pend.player, card.cost || 0); // Ivory Rook: gain Armor = its Cost
 		if (pend.damageSelfByCost) damageHero(state, pend.player, card.cost || 0, pend.player); // Chittering Tunneler
 			if (pend.gainDeathrattleUid != null && def.deathrattle) { // Myra Rotspring: also gain its Deathrattle
 				const src = findCreature(state, pend.gainDeathrattleUid);
