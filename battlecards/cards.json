@@ -324,7 +324,7 @@
       "cardClass": "bounty_hunter",
       "cost": 1,
       "rarity": "legendary",
-      "description": "Quest: Quickdraw 9 cards.\nReward: Deal 9 damage to all enemies.",
+      "description": "Quest: Swiftdraw 9 cards.\nReward: Deal 9 damage to all enemies.",
       "keywords": [
         "quest"
       ]
@@ -418,7 +418,7 @@
       "cardClass": "bounty_hunter",
       "cost": 4,
       "rarity": "legendary",
-      "description": "Battlecry: Quickdraw 8.",
+      "description": "Battlecry: Swiftdraw 8.",
       "attack": 2,
       "health": 2,
       "tribe": "Beast Ranger",
@@ -433,7 +433,7 @@
       "cardClass": "bounty_hunter",
       "cost": 1,
       "rarity": "common",
-      "description": "Inspire: Quickdraw 2.",
+      "description": "Inspire: Swiftdraw 2.",
       "attack": 1,
       "health": 2,
       "tribe": "Pirate"
@@ -11094,7 +11094,7 @@
       "cost": 2,
       "rarity": "legendary",
       "set": "paper",
-      "description": "Your Quickdraw cards cost 1 less. Rush & Swift.",
+      "description": "Your Swiftdraw cards cost 1 less. Rush & Swift.",
       "type": "creature",
       "attack": 1,
       "health": 2,
@@ -13290,7 +13290,7 @@
       "cost": 4,
       "rarity": "common",
       "set": "paper",
-      "description": "Connect: Quickdraw 2.",
+      "description": "Connect: Swiftdraw 2.",
       "type": "creature",
       "attack": 3,
       "health": 5,
@@ -13386,7 +13386,7 @@
       "cost": 3,
       "rarity": "legendary",
       "set": "paper",
-      "description": "Battlecry: Gaze 3 & Quickdraw 3.",
+      "description": "Battlecry: Gaze 3 & Swiftdraw 3.",
       "type": "creature",
       "attack": 3,
       "health": 2,
@@ -18805,7 +18805,7 @@
       "cost": 2,
       "rarity": "common",
       "set": "paper",
-      "description": "Equip Hero Swing: Draw a card.\nDeathrattle: Quickdraw 2.",
+      "description": "Equip Hero Swing: Draw a card.\nDeathrattle: Swiftdraw 2.",
       "type": "weapon",
       "attack": 1,
       "durability": 2,
@@ -42288,7 +42288,7 @@
       "cost": 5,
       "rarity": "common",
       "set": "paper",
-      "description": "Battlecry: Quickdraw 3. Windfury.\nDeathrattle: Luck: Excavate.",
+      "description": "Battlecry: Swiftdraw 3. Windfury.\nDeathrattle: Luck: Excavate.",
       "type": "creature",
       "attack": 2,
       "health": 6,
@@ -42376,7 +42376,7 @@
       "cost": 9,
       "rarity": "epic",
       "set": "paper",
-      "description": "Battlecry: Quickdraw 3. Rush, Trample, Divine Shield & Taunt.\nDeathrattle: Excavate.",
+      "description": "Battlecry: Swiftdraw 3. Rush, Trample, Divine Shield & Taunt.\nDeathrattle: Excavate.",
       "type": "creature",
       "attack": 4,
       "health": 16,
@@ -106019,7 +106019,7 @@
       "keywords": [
         "battlecry"
       ],
-      "description": "Battlecry: Get a random Quickdraw card. If you play it this turn, repeat this.",
+      "description": "Battlecry: Get a random Swiftdraw card. If you play it this turn, repeat this.",
       "effects": [
         {
           "type": "conjure-random",
@@ -106071,7 +106071,7 @@
       "keywords": [
         "battlecry"
       ],
-      "description": "Battlecry: Deal 2 damage to a random enemy minion. Quickdraw: And another. (Neighbor targeting approximated as a second random hit.)",
+      "description": "Battlecry: Deal 2 damage to a random enemy minion. Swiftdraw: And another. (Neighbor targeting approximated as a second random hit.)",
       "effects": [
         {
           "type": "conditional",
@@ -106328,7 +106328,7 @@
       "keywords": [
         "battlecry"
       ],
-      "description": "Battlecry: Discover a spell from your deck. Quickdraw: Enemy deck instead.",
+      "description": "Battlecry: Discover a spell from your deck. Swiftdraw: Enemy deck instead.",
       "effects": [
         {
           "type": "conditional",
@@ -106397,13 +106397,13 @@
       "keywords": [
         "combo"
       ],
-      "description": "Quickdraw or Combo: Get a Coin.",
+      "description": "Swiftdraw or Combo: Get a Coin.",
       "combo": [
         {
           "type": "gain-coin"
         }
       ],
-      "quickdraw": {
+      "swiftdraw": {
         "effects": [
           {
             "type": "gain-coin"
@@ -106487,7 +106487,7 @@
       "keywords": [
         "battlecry"
       ],
-      "description": "Battlecry: Discover an Undead. Quickdraw: It costs (2) less.",
+      "description": "Battlecry: Discover an Undead. Swiftdraw: It costs (2) less.",
       "effects": [
         {
           "type": "conditional",
@@ -106704,8 +106704,8 @@
         "rush",
         "poisonous"
       ],
-      "description": "Rush, Poisonous. Quickdraw: Gain Immune this turn.",
-      "quickdraw": {
+      "description": "Rush, Poisonous. Swiftdraw: Gain Immune this turn.",
+      "swiftdraw": {
         "effects": [
           {
             "type": "grant-immune-turn",
@@ -106874,14 +106874,14 @@
         "taunt",
         "battlecry"
       ],
-      "description": "Taunt. Battlecry and Quickdraw: Summon a copy of this.",
+      "description": "Taunt. Battlecry and Swiftdraw: Summon a copy of this.",
       "effects": [
         {
           "type": "summon-copy-of-self",
           "count": 1
         }
       ],
-      "quickdraw": {
+      "swiftdraw": {
         "effects": [
           {
             "type": "summon-copy-of-self",
@@ -106986,7 +106986,7 @@
         "battlecry",
         "deathrattle"
       ],
-      "description": "Battlecry, Quickdraw, and Deathrattle: Excavate a treasure.",
+      "description": "Battlecry, Swiftdraw, and Deathrattle: Excavate a treasure.",
       "effects": [
         {
           "type": "excavate"
@@ -106997,7 +106997,7 @@
           "type": "excavate"
         }
       ],
-      "quickdraw": {
+      "swiftdraw": {
         "effects": [
           {
             "type": "excavate"
@@ -107102,9 +107102,9 @@
         "lifesteal",
         "battlecry"
       ],
-      "description": "Lifesteal. Quickdraw: Deal 5 damage. (Forge rider still pending.)",
+      "description": "Lifesteal. Swiftdraw: Deal 5 damage. (Forge rider still pending.)",
       "effects": [],
-      "quickdraw": {
+      "swiftdraw": {
         "effects": [
           {
             "type": "damage",
@@ -107880,9 +107880,9 @@
       "keywords": [
         "lifesteal"
       ],
-      "description": "Tradeable, Lifesteal. Quickdraw: Deal 6 damage.",
+      "description": "Tradeable, Lifesteal. Swiftdraw: Deal 6 damage.",
       "tradeable": true,
-      "quickdraw": {
+      "swiftdraw": {
         "effects": [
           {
             "type": "damage",
@@ -111674,7 +111674,14 @@
       "keywords": [
         "battlecry"
       ],
-      "description": "Battlecry: Gain two random Bonus Effects. The next Draenei you play gains them as well. (Not modeled: Bonus Effects.)"
+      "description": "Battlecry: Gain two random Bonus Effects. The next Draenei you play gains them as well.",
+      "effects": [
+        {
+          "type": "grant-bonus-effect",
+          "count": 2,
+          "rewardNextTribe": "Draenei"
+        }
+      ]
     },
     {
       "id": "arkonite_defense_crystal",
@@ -112054,7 +112061,16 @@
       "rarity": "epic",
       "set": "SPACE",
       "tribe": "All",
-      "description": "After this survives damage, gain a random Bonus Effect. (Not modeled: Bonus Effects.)"
+      "description": "After this survives damage, gain a random Bonus Effect.",
+      "ongoing": {
+        "on": "self-damaged",
+        "survives": true,
+        "effects": [
+          {
+            "type": "grant-bonus-effect"
+          }
+        ]
+      }
     },
     {
       "id": "siege_tank",
@@ -112706,7 +112722,7 @@
       "keywords": [
         "battlecry"
       ],
-      "description": "Battlecry: If you're holding a Dragon, Discover a Dragon with a Dark Gift. (Not modeled: Dark Gift.)",
+      "description": "Battlecry: If you're holding a Dragon, Discover a Dragon with a Dark Gift.",
       "effects": [
         {
           "type": "conditional",
@@ -112717,7 +112733,8 @@
             {
               "type": "discover",
               "cardType": "creature",
-              "tribe": "Dragon"
+              "tribe": "Dragon",
+              "darkGift": true
             }
           ]
         }
@@ -112734,7 +112751,15 @@
       "rarity": "common",
       "set": "EMERALD_DREAM",
       "tribe": "Beast",
-      "description": "After you play a minion, give it a random Bonus Effect. (Not modeled: Bonus Effects.)"
+      "description": "After you play a minion, give it a random Bonus Effect.",
+      "ongoing": {
+        "on": "creature-played",
+        "effects": [
+          {
+            "type": "bonus-effect-played-minion"
+          }
+        ]
+      }
     },
     {
       "id": "monstrous_mosquito",
@@ -112918,12 +112943,13 @@
       "keywords": [
         "battlecry"
       ],
-      "description": "Battlecry: Discover a 3-Cost minion with a Dark Gift. (Not modeled: Dark Gift.)",
+      "description": "Battlecry: Discover a 3-Cost minion with a Dark Gift.",
       "effects": [
         {
           "type": "discover",
           "cardType": "creature",
-          "cost": 3
+          "cost": 3,
+          "darkGift": true
         }
       ]
     },
@@ -113617,7 +113643,25 @@
       "keywords": [
         "battlecry"
       ],
-      "description": "Battlecry: If you're holding a minion with a Dark Gift, give your hero +3 Attack this turn and 6 Armor. (Not modeled: Dark Gift.)"
+      "description": "Battlecry: If you're holding a minion with a Dark Gift, give your hero +3 Attack this turn and 6 Armor.",
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "holdingDarkGift": true
+          },
+          "then": [
+            {
+              "type": "hero-attack",
+              "value": 3
+            },
+            {
+              "type": "armor",
+              "value": 6
+            }
+          ]
+        }
+      ]
     },
     {
       "id": "dreadsoul_corrupter",
@@ -113959,12 +114003,13 @@
       "keywords": [
         "battlecry"
       ],
-      "description": "Battlecry: Discover a minion from your deck. Give it a Dark Gift. (Not modeled: Dark Gift.)",
+      "description": "Battlecry: Discover a minion from your deck. Give it a Dark Gift.",
       "effects": [
         {
           "type": "discover",
           "cardType": "creature",
-          "fromOwnDeck": true
+          "fromOwnDeck": true,
+          "darkGift": true
         }
       ]
     },
@@ -113982,7 +114027,13 @@
         "taunt",
         "battlecry"
       ],
-      "description": "Taunt. Battlecry: Reduce the Cost of minions in your hand with Dark Gifts by (2). (Not modeled: Dark Gift.)"
+      "description": "Taunt. Battlecry: Reduce the Cost of minions in your hand with Dark Gifts by (2).",
+      "effects": [
+        {
+          "type": "reduce-hand-darkgift-cost",
+          "value": 2
+        }
+      ]
     },
     {
       "id": "resplendent_dreamweaver",
@@ -114065,12 +114116,14 @@
       "keywords": [
         "battlecry"
       ],
-      "description": "Battlecry: Discover a Demon with a Dark Gift. Get a copy of it. (Not modeled: Dark Gift / copy.)",
+      "description": "Battlecry: Discover a Demon with a Dark Gift. Get a copy of it.",
       "effects": [
         {
           "type": "discover",
           "cardType": "creature",
-          "tribe": "Demon"
+          "tribe": "Demon",
+          "darkGift": true,
+          "duplicate": true
         }
       ]
     },
@@ -114125,12 +114178,13 @@
       "keywords": [
         "battlecry"
       ],
-      "description": "Battlecry: Discover a Legendary minion with a Dark Gift. (Not modeled: Dark Gift.)",
+      "description": "Battlecry: Discover a Legendary minion with a Dark Gift.",
       "effects": [
         {
           "type": "discover",
           "cardType": "creature",
-          "rarity": "legendary"
+          "rarity": "legendary",
+          "darkGift": true
         }
       ]
     },
@@ -114283,7 +114337,22 @@
       "keywords": [
         "battlecry"
       ],
-      "description": "Battlecry: If you're holding a minion with a Dark Gift, summon two 4/4 Dragons with Taunt. (Not modeled: Dark Gift.)"
+      "description": "Battlecry: If you're holding a minion with a Dark Gift, summon two 4/4 Dragons with Taunt.",
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "holdingDarkGift": true
+          },
+          "then": [
+            {
+              "type": "summon",
+              "count": 2,
+              "summonId": "fir_taunt_dragon"
+            }
+          ]
+        }
+      ]
     },
     {
       "id": "grove_shaper",
@@ -116122,7 +116191,14 @@
       "keywords": [
         "deathrattle"
       ],
-      "description": "Deathrattle: Give a random friendly minion a random Bonus Effect and this Deathrattle. (Not modeled: Bonus Effects.)"
+      "description": "Deathrattle: Give a random friendly minion a random Bonus Effect and this Deathrattle.",
+      "deathrattle": [
+        {
+          "type": "grant-bonus-effect",
+          "target": "random-friendly",
+          "propagateDeathrattle": true
+        }
+      ]
     },
     {
       "id": "the_egg_of_khelos",
@@ -117194,10 +117270,10 @@
         "rush",
         "deathrattle"
       ],
-      "description": "Rush. Deathrattle: Summon three 2/1 Murlocs. Give them each a random Bonus Effect. (Not modeled: Bonus Effects.)",
+      "description": "Rush. Deathrattle: Summon three 2/1 Murlocs. Give them each a random Bonus Effect.",
       "deathrattle": [
         {
-          "type": "summon",
+          "type": "summon-with-gifts",
           "count": 3,
           "summonId": "tlc_murloc_2_1"
         }
@@ -117889,12 +117965,13 @@
       "keywords": [
         "battlecry"
       ],
-      "description": "Battlecry: Discover a 1-Cost minion with a Dark Gift. (Not modeled: Dark Gift.)",
+      "description": "Battlecry: Discover a 1-Cost minion with a Dark Gift.",
       "effects": [
         {
           "type": "discover",
           "cardType": "creature",
-          "cost": 1
+          "cost": 1,
+          "darkGift": true
         }
       ]
     },
@@ -121829,7 +121906,13 @@
       "keywords": [
         "battlecry"
       ],
-      "description": "Battlecry: Choose an enemy minion. Steal its Bonus Effects and gain +1/+1 for each stolen. (Not modeled: Bonus Effects.)"
+      "description": "Battlecry: Choose an enemy minion. Steal its bonus keywords and gain +1/+1 for each stolen.",
+      "effects": [
+        {
+          "type": "steal-bonus-keywords",
+          "target": "enemy-creature"
+        }
+      ]
     },
     {
       "id": "activated_golem",
@@ -123371,12 +123454,13 @@
       "keywords": [
         "battlecry"
       ],
-      "description": "Rewind. Battlecry: Discover a Beast. (Not modeled: Rewind / Dark Gift / Kindred discount.)",
+      "description": "Rewind. Battlecry: Discover a Beast with a Dark Gift. (Rewind and Kindred discount still pending.)",
       "effects": [
         {
           "type": "discover",
           "cardType": "creature",
-          "tribe": "Beast"
+          "tribe": "Beast",
+          "darkGift": true
         }
       ]
     },
@@ -124583,6 +124667,24 @@
         "rush"
       ],
       "description": "Rush."
+    },
+    {
+      "id": "fir_taunt_dragon",
+      "name": "Nightmare Dragon",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "deathknight",
+      "attack": 4,
+      "health": 4,
+      "rarity": "common",
+      "set": "EMERALD_DREAM",
+      "tribe": "Dragon",
+      "token": true,
+      "collectible": false,
+      "keywords": [
+        "taunt"
+      ],
+      "description": "Taunt."
     }
   ]
 }

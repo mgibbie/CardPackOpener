@@ -98,6 +98,37 @@ export const BOOST_TABLES = {
 };
 
 // Adapt d10 (paper glossary; Stealth is permanent here rather than one-turn)
+// Dark Gifts (Emerald Dream) / Bonus Effects (Lost City, Great Dark Beyond): a random
+// bonus riding on a card. One shared curated pool; cost reduction only applies in hand.
+export const DARK_GIFTS = [
+	{ label: '+3/+3', attack: 3, health: 3 },
+	{ label: 'Rush', kw: 'rush' },
+	{ label: 'Taunt', kw: 'taunt' },
+	{ label: 'Divine Shield', kw: 'divine_shield' },
+	{ label: 'Lifesteal', kw: 'lifesteal' },
+	{ label: 'Poisonous', kw: 'poisonous' },
+	{ label: 'Windfury', kw: 'windfury' },
+	{ label: 'Stealth', kw: 'stealth' },
+	{ label: 'Costs (2) less', cost: -2, handOnly: true },
+	{ label: 'Deathrattle: draw a card', dr: [{ type: 'draw', value: 1 }] },
+];
+export function applyGift(state, card, gift, opts = {}) {
+	// apply a Dark Gift / Bonus Effect to a hand card or board minion
+	if (!gift) { const pool = DARK_GIFTS.filter(g => !(g.handOnly && opts.board)); gift = pool[Math.floor(state.rng() * pool.length)]; }
+	if (gift.attack) card.attack = (card.attack || 0) + gift.attack;
+	if (gift.health) card.maxHealth = (card.maxHealth || 0) + gift.health;
+	if (gift.kw && !(card.keywords || []).includes(gift.kw)) {
+		(card.keywords = card.keywords || []).push(gift.kw);
+		if (gift.kw === 'divine_shield') card.shield = true;
+		if (gift.kw === 'stealth' && opts.board) card.stealthed = true;
+	}
+	if (gift.cost && !opts.board) card.cost = Math.max(0, (card.cost || 0) + gift.cost);
+	if (gift.dr) { card.deathrattle = [...(card.deathrattle || []), ...JSON.parse(JSON.stringify(gift.dr))]; if (!(card.keywords || []).includes('deathrattle')) (card.keywords = card.keywords || []).push('deathrattle'); }
+	card._darkGift = gift.label;
+	card.description = (card.description || '') + ' [Gift: ' + gift.label + ']';
+	return gift;
+}
+
 export const ADAPT_TABLE = [
 	{ label: 'Divine Shield', keyword: 'divine_shield' },
 	{ label: '+3 Attack', attack: 3, health: 0 },
@@ -245,7 +276,7 @@ function instantiate(def, controller) {
 		keywords: [...(def.keywords || [])],
 		effects: def.effects || null,
 		outcast: def.outcast || null, // Ashes of Outland: extra battlecry/spell effect from hand's edge
-		quickdraw: def.quickdraw || null, // HS Quickdraw: { effects } fired with the battlecry if drawnThisTurn
+		swiftdraw: def.swiftdraw || null, // HS Quickdraw (renamed 'swiftdraw' to avoid the paper-rules quickdraw effect): { effects } fired with the battlecry if drawnThisTurn
 		temporary: !!def.temporary,   // Temporary: discarded from hand at the end of your turn
 		handTransform: def.handTransform || null, // Imposters/Shapeshifter: turn-start in-hand morph { cost?, grant?, spellDamage?, fromEnemyHand?, intoId?, ifHandParity? }
 		startOfGame: def.startOfGame || null, // Start of Game: effects run from the deck when the game begins
@@ -689,6 +720,7 @@ const CHOSEN = {
 	'destroy-friendly-remember': { 'friendly-creature': 'friendly-creature' },
 	'heal-or-harm-target': { any: 'any' },
 	'destroy-target-gain-stats': { creature: 'creature', 'enemy-creature': 'enemy-creature' },
+	'steal-bonus-keywords': { 'enemy-creature': 'enemy-creature' },
 	'swap-attack-with': { creature: 'creature', 'friendly-creature': 'friendly-creature' },
 	'freeze-gain-armor': { 'enemy-creature': 'enemy-creature' },
 	'set-target-stats-from-source': { creature: 'creature', 'enemy-creature': 'enemy-creature' },
@@ -803,9 +835,9 @@ export function targetSpec(state, pi, card, choice) {
 	if (card.choices && choice == null) return null;
 	// generic: derive from the first effect that needs a chosen target
 	// (combo-aware: an active combo line replaces the base effects;
-	//  Quickdraw effects join the scan when the card was drawn this turn)
+	//  Swiftdraw effects join the scan when the card was drawn this turn)
 	const _specEffects = [...(liveEffectsOf(state, pi, card, choice) || []),
-		...((card.quickdraw && card.drawnThisTurn) ? (card.quickdraw.effects || []) : [])];
+		...((card.swiftdraw && card.drawnThisTurn) ? (card.swiftdraw.effects || []) : [])];
 	for (const e of _specEffects) {
 		let kind = CHOSEN[e.type]?.[e.target];
 		// "the enemy hero" is unambiguous in 1v1 but a choice with 3+ players;
@@ -2973,6 +3005,12 @@ function runSecretEffects(state, pi, effects, ctx) {
 				if (m && !isDead(m) && m !== ctx.self && m.type !== 'location') { m.attack += e.attack || 1; m.maxHealth += e.health || 0; emit(state, { type: 'buff', uid: m.uid, attack: m.attack, hp: hp(m) }); }
 				break;
 			}
+			case 'bonus-effect-played-minion': {
+				// Dreambound Raptor: after you play a minion, give it a random Bonus Effect
+				const m = ctx.minion;
+				if (m && m !== ctx.self && !isDead(m) && m.type === 'creature') { applyGift(state, m, null, { board: true }); emit(state, { type: 'buff', uid: m.uid, attack: m.attack, hp: hp(m) }); }
+				break;
+			}
 			case 'dormant-played-minion': {
 				// Warden Maiev: the just-played minion goes Dormant for N turns
 				const m = ctx.minion;
@@ -3099,8 +3137,8 @@ function runBattlecry(state, pi, card, target, choice) {
 			execEffects(state, pi, liveEffectsOf(state, pi, card, choice), target, card);
 		}
 	}
-	// HS Quickdraw: bonus effects when played the same turn it was drawn
-	if (card.quickdraw && card.drawnThisTurn) execEffects(state, pi, JSON.parse(JSON.stringify(card.quickdraw.effects || [])), target, card);
+	// Swiftdraw (HS Quickdraw): bonus effects when played the same turn it was drawn
+	if (card.swiftdraw && card.drawnThisTurn) execEffects(state, pi, JSON.parse(JSON.stringify(card.swiftdraw.effects || [])), target, card);
 	// Outcast: an extra battlecry when played from the edge of hand
 	if (card.outcast && card._outcast) { execEffects(state, pi, card.outcast.effects, target, card); fireOngoing(state, pi, 'outcast-played', { played: card }); } // Redeemed Pariah reacts
 	switch (card.id) {
@@ -4565,7 +4603,8 @@ function execEffects(state, pi, effects, target, source) {
 			else if (e.if.heroPowerUpgraded) ok = !!p.heroPowerUpgraded; // Petal Picker (Imbue proxy)
 			else if (e.if.spellsThisTurn != null) ok = (p.spellsPlayedThisTurn || 0) >= e.if.spellsThisTurn; // Unstable Spellcaster (spell-damage-dealt approx)
 			else if (e.if.deckCostsDistinct != null) ok = new Set(p.deck.map(id => state.cardsById[id]?.cost || 0)).size >= e.if.deckCostsDistinct; // Elise the Navigator: 10 cards of different Costs
-			else if (e.if.selfDrawnThisTurn) ok = !!(source && source.drawnThisTurn); // HS Quickdraw riders (Farm Hand / Benevolent Banker)
+			else if (e.if.selfDrawnThisTurn) ok = !!(source && source.drawnThisTurn); // Swiftdraw riders (Farm Hand / Benevolent Banker)
+			else if (e.if.holdingDarkGift) ok = p.hand.some(c => c._darkGift); // Frostburn Matriarch / Dragon Turtle
 			execEffects(state, pi, ok ? e.then : (e.else || []), target, source);
 		} else if (e.type === 'damage-then') {
 			// deal damage, then branch on whether the creature survived
@@ -5325,6 +5364,44 @@ function execEffects(state, pi, effects, target, source) {
 			const p = state.players[pi];
 			p.deckCostOverrides = p.deckCostOverrides || {};
 			for (let i = 0; i < (e.count || 5) && i < p.deck.length; i++) p.deckCostOverrides[p.deck[i]] = (e.value ?? 1);
+		} else if (e.type === 'grant-bonus-effect') {
+			// Bonus Effects: apply N random gifts to self (Mutating Lifeform / Ace Wayfinder) or a random friendly (Stranglevine)
+			const applied = [];
+			for (let n = 0; n < (e.count || 1); n++) {
+				let t = null;
+				if (e.target === 'random-friendly') { const pool = state.players[pi].board.filter(c => c !== source && !isDead(c) && c.type !== 'location'); t = pool.length ? pool[Math.floor(state.rng() * pool.length)] : null; }
+				else t = (source && source.zone === 'board' && !isDead(source)) ? source : null;
+				if (!t) break;
+				applied.push(applyGift(state, t, null, { board: true }));
+				if (e.propagateDeathrattle && source && source.deathrattle && t !== source) { t.deathrattle = [...(t.deathrattle || []), ...JSON.parse(JSON.stringify(source.deathrattle))]; if (!t.keywords.includes('deathrattle')) t.keywords.push('deathrattle'); } // Stranglevine chains
+				emit(state, { type: 'buff', uid: t.uid, attack: t.attack, hp: hp(t) });
+			}
+			if (e.rewardNextTribe && applied.length) state.players[pi].nextTribePlayReward = { tribe: e.rewardNextTribe, count: 1, attack: 0, health: 0, keyword: null, giftLabels: applied.map(g => g.label) }; // Ace Wayfinder: the next Draenei gains them too
+		} else if (e.type === 'reduce-hand-darkgift-cost') {
+			// Overgrown Horror: reduce the Cost of minions in your hand with Dark Gifts
+			for (const c of state.players[pi].hand) if (c._darkGift && c.type === 'creature') c.cost = Math.max(0, (c.cost || 0) - (e.value || 2));
+		} else if (e.type === 'steal-bonus-keywords') {
+			// Violet Punisher: strip a chosen enemy minion's bonus keywords, gain them + +1/+1 per stolen
+			const t = chosenCreature();
+			if (t && source && !isDead(source)) {
+				const stealable = ['rush', 'taunt', 'divine_shield', 'lifesteal', 'poisonous', 'windfury', 'stealth'];
+				let n = 0;
+				for (const kw of stealable) {
+					if (!t.keywords.includes(kw)) continue;
+					t.keywords = t.keywords.filter(k => k !== kw);
+					if (kw === 'divine_shield') t.shield = false;
+					if (kw === 'stealth') t.stealthed = false;
+					if (!source.keywords.includes(kw)) { source.keywords.push(kw); if (kw === 'divine_shield') source.shield = true; if (kw === 'stealth') source.stealthed = true; }
+					n++;
+				}
+				if (n > 0) { buffCreature(source, n, n); emit(state, { type: 'buff', uid: t.uid, attack: t.attack, hp: hp(t) }); }
+			}
+		} else if (e.type === 'summon-with-gifts') {
+			// Tyrannogill: summon N tokens, each with its own random Bonus Effect
+			for (let n = 0; n < (e.count || 1); n++) {
+				const c = state.cardsById[e.summonId] ? summon(state, pi, state.cardsById[e.summonId]) : null;
+				if (c) applyGift(state, c, null, { board: true });
+			}
 		} else if (e.type === 'duplicate-deck-legendaries') {
 			// Chainbreaker Hogger (Start of Game): duplicate all OTHER Legendary cards in your deck
 			const p = state.players[pi];
@@ -8568,7 +8645,7 @@ function execEffects(state, pi, effects, target, source) {
 					ids.push(pool.splice(Math.floor(state.rng() * pool.length), 1)[0].id);
 				}
 				if (!ids.length) break;
-				state.pickQueue.push({ player: pi, ids, grant: e.grant || null, buff: e.buff || null, to: e.to || null, costMod: e.costMod || null, healByCost: e.healByCost || false, armorByCost: e.armorByCost || false, installSecret: e.installSecret || false, castRandom: e.castRandom || false, damageSelfByCost: e.damageSelfByCost || false, gainDeathrattleUid: e.gainDeathrattle && source ? source.uid : null, setAttack: e.setAttack ?? null, setHealth: e.setHealth ?? null, setCost: e.setCost ?? null });
+				state.pickQueue.push({ player: pi, ids, grant: e.grant || null, buff: e.buff || null, to: e.to || null, costMod: e.costMod || null, healByCost: e.healByCost || false, armorByCost: e.armorByCost || false, installSecret: e.installSecret || false, castRandom: e.castRandom || false, damageSelfByCost: e.damageSelfByCost || false, gainDeathrattleUid: e.gainDeathrattle && source ? source.uid : null, setAttack: e.setAttack ?? null, setHealth: e.setHealth ?? null, setCost: e.setCost ?? null, darkGift: e.darkGift || false, duplicate: e.duplicate || false });
 				emit(state, { type: 'pickStart', player: pi, count: ids.length });
 			}
 		} else if (e.type === 'loot') {
@@ -9424,6 +9501,7 @@ export function playCard(state, pi, cardUid, target, choice, position, useAlt, k
 			const r = p.nextTribePlayReward;
 			card.attack += r.attack || 0; card.maxHealth += r.health || 0;
 			if (r.keyword && !card.keywords.includes(r.keyword)) { card.keywords.push(r.keyword); if (r.keyword === KW.DIVINE_SHIELD) card.shield = true; }
+			if (r.giftLabels) for (const gl of r.giftLabels) { const g = DARK_GIFTS.find(x => x.label === gl); if (g) applyGift(state, card, g, { board: true }); } // Ace Wayfinder: same Bonus Effects
 			if (r.immediateAttack) draeneiImmediateAttack = true;
 			if (r.summonCopy) draeneiSummonCopy = true;
 			if (r.refreshManaByAttack) draeneiRefreshMana = true;
@@ -10594,8 +10672,17 @@ export function resolvePick(state, id) {
 				const src = findCreature(state, pend.gainDeathrattleUid);
 				if (src && !isDead(src)) { src.deathrattle = [...(src.deathrattle || []), ...JSON.parse(JSON.stringify(def.deathrattle))]; if (!src.keywords.includes('deathrattle')) src.keywords.push('deathrattle'); }
 			}
+		let appliedGift = null;
+		if (pend.darkGift) appliedGift = applyGift(state, card); // Emerald Dream: the discovered card carries a Dark Gift
 		p.hand.push(card);
 		emit(state, { type: 'conjure', player: pend.player, card, color: null });
+		if (pend.duplicate && p.hand.length < MAX_HAND) { // Shadowflame Stalker: "Get a copy of it" (same gift)
+			const copy = instantiate(def, pend.player); copy.zone = 'hand';
+			if (pend.costMod) copy.cost = Math.max(0, (copy.cost || 0) + pend.costMod);
+			if (appliedGift) applyGift(state, copy, appliedGift);
+			p.hand.push(copy);
+			emit(state, { type: 'conjure', player: pend.player, card: copy, color: null });
+		}
 		fireEmerge(state, pend.player, card);
 		if (!pend.noDiscoverTrigger) fireOngoing(state, pend.player, 'card-discovered', { card }); // Rangari Scout
 	}
