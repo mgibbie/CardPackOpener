@@ -115450,6 +115450,399 @@
           "target": "any"
         }
       ]
+    },
+    {
+      "id": "stonecarver",
+      "name": "Stonecarver",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "warrior",
+      "attack": 1,
+      "health": 4,
+      "rarity": "common",
+      "set": "THE_LOST_CITY",
+      "description": "At the end of your turn, give another friendly damaged minion +2/+2.",
+      "ongoing": {
+        "on": "turn-end",
+        "effects": [
+          {
+            "type": "buff-random-friendly",
+            "attack": 2,
+            "health": 2,
+            "requireDamaged": true,
+            "excludeSelf": true
+          }
+        ]
+      }
+    },
+    {
+      "id": "tortollan_storyteller",
+      "name": "Tortollan Storyteller",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "neutral",
+      "attack": 1,
+      "health": 2,
+      "rarity": "rare",
+      "set": "THE_LOST_CITY",
+      "description": "At the end of your turn, give +1/+1 to each friendly minion of a different type. (Approximated: +1/+1 to your other minions.)",
+      "ongoing": {
+        "on": "turn-end",
+        "effects": [
+          {
+            "type": "buff",
+            "attack": 1,
+            "health": 1,
+            "target": "friendly-others"
+          }
+        ]
+      }
+    },
+    {
+      "id": "violet_treasuregill",
+      "name": "Violet Treasuregill",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "paladin",
+      "attack": 1,
+      "health": 2,
+      "rarity": "rare",
+      "set": "THE_LOST_CITY",
+      "tribe": "Murloc",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Cast a random spell from your deck that costs (2) or less.",
+      "effects": [
+        {
+          "type": "cast-spell-from-deck",
+          "maxCost": 2
+        }
+      ]
+    },
+    {
+      "id": "ancient_stegodon",
+      "name": "Ancient Stegodon",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "neutral",
+      "attack": 1,
+      "health": 5,
+      "rarity": "common",
+      "set": "THE_LOST_CITY",
+      "tribe": "Beast",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Choose to gain Taunt, Poisonous, or +1/+1.",
+      "choices": [
+        {
+          "text": "Taunt",
+          "effects": [
+            {
+              "type": "grant",
+              "keyword": "taunt",
+              "target": "self"
+            }
+          ]
+        },
+        {
+          "text": "Poisonous",
+          "effects": [
+            {
+              "type": "grant",
+              "keyword": "poisonous",
+              "target": "self"
+            }
+          ]
+        },
+        {
+          "text": "+1/+1",
+          "effects": [
+            {
+              "type": "buff",
+              "attack": 1,
+              "health": 1,
+              "target": "self"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "archaios",
+      "name": "Archaios",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "priest",
+      "attack": 1,
+      "health": 6,
+      "rarity": "legendary",
+      "set": "THE_LOST_CITY",
+      "tribe": "Beast",
+      "description": "Whenever another friendly minion attacks, set its Health equal to this minion's Health.",
+      "ongoing": {
+        "on": "friendly-attacks",
+        "effects": [
+          {
+            "type": "set-attacker-health-from-source"
+          }
+        ]
+      }
+    },
+    {
+      "id": "barricade_basher",
+      "name": "Barricade Basher",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "warrior",
+      "attack": 4,
+      "health": 3,
+      "rarity": "rare",
+      "set": "THE_LOST_CITY",
+      "tribe": "Beast",
+      "description": "Whenever you gain Armor, gain +2/+2 and attack a random enemy minion.",
+      "ongoing": {
+        "on": "armor-gained",
+        "effects": [
+          {
+            "type": "buff-self-attack-random-enemy",
+            "attack": 2,
+            "health": 2
+          }
+        ]
+      }
+    },
+    {
+      "id": "bralma_searstone",
+      "name": "Bralma Searstone",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "shaman",
+      "attack": 1,
+      "health": 5,
+      "rarity": "legendary",
+      "set": "THE_LOST_CITY",
+      "description": "Your Elementals deal 1 extra damage. (Not modeled: Elemental damage aura.)"
+    },
+    {
+      "id": "cloud_serpent",
+      "name": "Cloud Serpent",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "neutral",
+      "attack": 3,
+      "health": 3,
+      "rarity": "common",
+      "set": "THE_LOST_CITY",
+      "tribe": "Elemental",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Get a copy of another Elemental or Dragon in your hand.",
+      "effects": [
+        {
+          "type": "copy-random-hand-card",
+          "tribe": "Elemental|Dragon"
+        }
+      ]
+    },
+    {
+      "id": "conjured_bookkeeper",
+      "name": "Conjured Bookkeeper",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "mage",
+      "attack": 2,
+      "health": 2,
+      "rarity": "common",
+      "set": "THE_LOST_CITY",
+      "tribe": "Elemental",
+      "keywords": [
+        "deathrattle"
+      ],
+      "description": "Deathrattle: Draw a spell. Kindred: Summon a copy of this. (Kindred approximated: fires on play.)",
+      "effects": [
+        {
+          "type": "summon-copy-of-self",
+          "count": 1
+        }
+      ],
+      "deathrattle": [
+        {
+          "type": "tutor",
+          "cardType": "spell",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "id": "costume_merchant",
+      "name": "Costume Merchant",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "rogue",
+      "attack": 2,
+      "health": 4,
+      "rarity": "common",
+      "set": "THE_LOST_CITY",
+      "keywords": [
+        "battlecry",
+        "combo"
+      ],
+      "description": "Battlecry: Get a random Mask from another class. Combo: It costs (2) less. (Approximated: a random other-class spell.)",
+      "effects": [
+        {
+          "type": "conjure-random",
+          "cardType": "spell",
+          "cardClass": "other"
+        }
+      ]
+    },
+    {
+      "id": "dissolving_ooze",
+      "name": "Dissolving Ooze",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "neutral",
+      "attack": 3,
+      "health": 3,
+      "rarity": "common",
+      "set": "THE_LOST_CITY",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Destroy a friendly minion. Spit out the Bones of its Attack and Health into your hand. (Not modeled: Bones.)"
+    },
+    {
+      "id": "gorishi_tunneler",
+      "name": "Gorishi Tunneler",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "demonhunter",
+      "attack": 2,
+      "health": 4,
+      "rarity": "common",
+      "set": "THE_LOST_CITY",
+      "tribe": "Beast",
+      "keywords": [
+        "stealth"
+      ],
+      "description": "Stealth. After this attacks, deal 2 damage to the enemy hero.",
+      "ongoing": {
+        "on": "self-attacks",
+        "effects": [
+          {
+            "type": "damage",
+            "value": 2,
+            "target": "enemy-hero"
+          }
+        ]
+      }
+    },
+    {
+      "id": "grazing_stegodon",
+      "name": "Grazing Stegodon",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "hunter",
+      "attack": 0,
+      "health": 5,
+      "rarity": "common",
+      "set": "THE_LOST_CITY",
+      "tribe": "Beast",
+      "description": "At the end of your turn, gain +1 Attack. (Not modeled: grows while in hand or deck.)",
+      "ongoing": {
+        "on": "turn-end",
+        "effects": [
+          {
+            "type": "buff-self",
+            "attack": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "hatchery_helper",
+      "name": "Hatchery Helper",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "druid",
+      "attack": 2,
+      "health": 3,
+      "rarity": "common",
+      "set": "THE_LOST_CITY",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Give your other minions with 2 or less Attack +1/+1 and Taunt.",
+      "effects": [
+        {
+          "type": "buff-friendly-others-filtered",
+          "maxAttack": 2,
+          "attack": 1,
+          "health": 1,
+          "grant": "taunt"
+        }
+      ]
+    },
+    {
+      "id": "hot_spring_glider",
+      "name": "Hot Spring Glider",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "paladin",
+      "attack": 2,
+      "health": 4,
+      "rarity": "common",
+      "set": "THE_LOST_CITY",
+      "tribe": "Murloc",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Your next Murloc costs (1) less. Kindred: And gains Divine Shield. (Kindred approximated: fires on play.)",
+      "effects": [
+        {
+          "type": "set-tribe-discount",
+          "tribe": "Murloc",
+          "count": 1,
+          "value": 1
+        },
+        {
+          "type": "set-next-tribe-play-reward",
+          "tribe": "Murloc",
+          "keyword": "divine_shield",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "id": "latorvian_armorer",
+      "name": "Latorvian Armorer",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "warrior",
+      "attack": 3,
+      "health": 3,
+      "rarity": "common",
+      "set": "THE_LOST_CITY",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Deal 2 damage to an enemy minion. If it dies, gain 5 Armor.",
+      "effects": [
+        {
+          "type": "damage-then",
+          "value": 2,
+          "target": "enemy-creature",
+          "ifDies": [
+            {
+              "type": "armor",
+              "value": 5
+            }
+          ]
+        }
+      ]
     }
   ]
 }

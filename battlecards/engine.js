@@ -2527,6 +2527,7 @@ function runSecretEffects(state, pi, effects, ctx) {
 			case 'buff-random-friendly': {
 				const pool = state.players[pi].board.filter(c => !isDead(c)
 					&& (!e.excludeSelf || c !== ctx.self)
+						&& (!e.requireDamaged || c.damage > 0) // Stonecarver: only a damaged minion
 					&& (!e.tribe || (c.tribe || '').includes(e.tribe)));
 				if (pool.length) {
 					const m = pool[Math.floor(state.rng() * pool.length)];
@@ -2915,6 +2916,12 @@ function runSecretEffects(state, pi, effects, ctx) {
 				// Corpse Flower: deal N damage to the minion that was just summoned/played (Corpse cost not modeled)
 				const m = ctx.minion;
 				if (m && !isDead(m) && m.type !== 'location') damageCreature(state, m, e.value || 3, ctx.self || null);
+				break;
+			}
+			case 'set-attacker-health-from-source': {
+				// Archaios: when another friendly minion attacks, set its Health equal to this minion's Health
+				const m = ctx.minion, s4 = ctx.self;
+				if (m && s4 && !isDead(m) && !isDead(s4) && m !== s4 && m.type !== 'location') { m.maxHealth = hp(s4); m.damage = 0; m.tempHealth = 0; emit(state, { type: 'buff', uid: m.uid, attack: m.attack, hp: hp(m) }); }
 				break;
 			}
 			case 'buff-self-by-dead-attack': {
@@ -5154,6 +5161,14 @@ function execEffects(state, pi, effects, target, source) {
 		} else if (e.type === 'summon-random-hand-size') {
 			// Astromancer: summon a random creature costing exactly your hand size
 			execEffects(state, pi, [{ type: 'summon-random', cost: state.players[pi].hand.length }], target, source);
+		} else if (e.type === 'buff-friendly-others-filtered') {
+			// Hatchery Helper: buff your OTHER minions matching an Attack filter, optionally grant a keyword
+			for (const c of state.players[pi].board) {
+				if (c === source || isDead(c) || c.type === 'location') continue;
+				if (e.maxAttack != null && (c.attack || 0) > e.maxAttack) continue;
+				buffCreature(c, e.attack || 0, e.health || 0);
+				if (e.grant && !c.keywords.includes(e.grant)) { c.keywords.push(e.grant); if (e.grant === KW.DIVINE_SHIELD) c.shield = true; }
+			}
 		} else if (e.type === 'reduce-random-enemy-hand-cost') {
 			// Curious Explorer: reduce the Cost of a random minion in your opponent's hand
 			for (const o of enemies) {
@@ -5652,8 +5667,8 @@ function execEffects(state, pi, effects, target, source) {
 			// Blistering Rot: summon a token with stats equal to the source minion
 			if (source) { const a = source.attack || 0, h = e.squareAttack ? (source.attack || 0) : (hp(source) || 1); const tok = summon(state, pi, { id: e.id || 'token_rot', name: e.name || 'Rot', type: 'creature', cost: 0, token: true, tribe: e.tribe || null, rarity: 'common', attack: a, health: Math.max(1, h), keywords: e.keywords || [], description: `A ${a}/${h} token.` }); }
 		} else if (e.type === 'buff-random-friendly') {
-			// Dragonmaw Overseer: buff a random OTHER friendly minion (Invincible: tribe filter + keyword grant)
-			const pool = state.players[pi].board.filter(c => c !== source && !isDead(c) && c.type !== 'location' && (!e.tribe || (c.tribe || '').includes(e.tribe)));
+			// Dragonmaw Overseer: buff a random OTHER friendly minion (Invincible: tribe filter + keyword grant; Stonecarver: only damaged)
+			const pool = state.players[pi].board.filter(c => c !== source && !isDead(c) && c.type !== 'location' && (!e.tribe || (c.tribe || '').includes(e.tribe)) && (!e.requireDamaged || c.damage > 0));
 			if (pool.length) { const m = pool[Math.floor(state.rng() * pool.length)]; buffCreature(m, e.attack || 0, e.health || 0); if (e.grant && !m.keywords.includes(e.grant)) { m.keywords.push(e.grant); if (e.grant === KW.DIVINE_SHIELD) m.shield = true; } }
 		} else if (e.type === 'reduce-random-hand-cost') {
 			// Imprisoned Satyr: reduce the Cost of a random minion in your hand
@@ -6026,9 +6041,9 @@ function execEffects(state, pi, effects, target, source) {
 			const n = source ? (state.players[pi].playedCountById?.[source.id] || 0) : 0;
 			if (source && n > 0) buffCreature(source, (e.attack || 1) * n, (e.health || 1) * n);
 		} else if (e.type === 'buff-self-attack-random-enemy') {
-			// Mish-Mash Mosher: after attacking, gain +N Attack and attack a random enemy minion (guarded chain)
+			// Mish-Mash Mosher / Barricade Basher: gain +N Attack (and Health) and attack a random enemy minion (guarded chain)
 			if (source && !isDead(source)) {
-				buffCreature(source, e.attack || 1, 0);
+				buffCreature(source, e.attack || 1, e.health || 0);
 				state._mmDepth = (state._mmDepth || 0) + 1;
 				if (state._mmDepth < 12) {
 					const pool = [];
@@ -7080,9 +7095,9 @@ function execEffects(state, pi, effects, target, source) {
 			for (const o of enemies) { const board = state.players[o].board.filter(c => !isDead(c) && c.type !== 'location'); const targets = [...new Set([board[0], board[board.length - 1]])].filter(Boolean); for (const t of targets) damageCreature(state, t, e.value || 2, source); }
 			sweepDeaths(state);
 		} else if (e.type === 'copy-random-hand-card') {
-			// Nobleman: create a copy of a random card in your hand
+			// Nobleman: create a copy of a random card in your hand (Cloud Serpent: of a tribe, e.g. "Elemental|Dragon")
 			const p = state.players[pi];
-			const pool = p.hand.filter(c => c !== source && state.cardsById[c.id]);
+			const pool = p.hand.filter(c => c !== source && state.cardsById[c.id] && (!e.tribe || e.tribe.split('|').some(tr => (c.tribe || '').includes(tr))));
 			if (pool.length && p.hand.length < MAX_HAND) { const src = pool[Math.floor(state.rng() * pool.length)]; const nc = instantiate(state.cardsById[src.id], pi); nc.zone = 'hand'; p.hand.push(nc); emit(state, { type: 'conjure', player: pi, card: nc, color: null }); }
 		} else if (e.type === 'shuffle-copies-of-target') {
 			// Northshire Farmer: shuffle N stat-set copies of a chosen friendly into your deck
@@ -7344,7 +7359,7 @@ function execEffects(state, pi, effects, target, source) {
 		} else if (e.type === 'cast-spell-from-deck') {
 			// High Abbess Alura (Spellburst): cast a random spell from your deck (targets source if possible)
 			const p = state.players[pi];
-			const idxs = p.deck.map((id, i) => [id, i]).filter(([id]) => { const d = state.cardsById[id]; return d && isSpellType(d); });
+			const idxs = p.deck.map((id, i) => [id, i]).filter(([id]) => { const d = state.cardsById[id]; return d && isSpellType(d) && (e.maxCost == null || (d.cost || 0) <= e.maxCost); }); // Violet Treasuregill: 2 or less
 			if (idxs.length) {
 				const [id, di] = idxs[Math.floor(state.rng() * idxs.length)];
 				p.deck.splice(di, 1);
