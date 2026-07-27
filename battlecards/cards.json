@@ -100066,6 +100066,420 @@
       "token": true,
       "collectible": false,
       "description": "A 1/1 Hawkstrider."
+    },
+    {
+      "id": "unliving_champion",
+      "name": "Unliving Champion",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "shaman",
+      "attack": 3,
+      "health": 2,
+      "rarity": "common",
+      "set": "RETURN_OF_THE_LICH_KING",
+      "tribe": "Undead",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: If a friendly Undead died after your last turn, summon two 3/2 Zombies.",
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "friendlyUndeadDied": true
+          },
+          "then": [
+            {
+              "type": "summon",
+              "count": 2,
+              "summonId": "rlk_zombie_32"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "walking_dead",
+      "name": "Walking Dead",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "warlock",
+      "attack": 2,
+      "health": 5,
+      "rarity": "common",
+      "set": "RETURN_OF_THE_LICH_KING",
+      "tribe": "Undead",
+      "keywords": [
+        "taunt"
+      ],
+      "summonOnDiscard": true,
+      "description": "Taunt. If you discard this minion, summon it."
+    },
+    {
+      "id": "whirlweaver",
+      "name": "Whirlweaver",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "mage",
+      "attack": 4,
+      "health": 3,
+      "rarity": "rare",
+      "set": "RETURN_OF_THE_LICH_KING",
+      "tribe": "Elemental",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: If you've cast a spell last turn, Discover an Elemental.",
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "castSpellLastTurn": true
+          },
+          "then": [
+            {
+              "type": "discover",
+              "cardType": "creature",
+              "tribe": "Elemental"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "bonecaller",
+      "name": "Bonecaller",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "priest",
+      "attack": 2,
+      "health": 5,
+      "rarity": "rare",
+      "set": "RETURN_OF_THE_LICH_KING",
+      "keywords": [
+        "taunt",
+        "deathrattle"
+      ],
+      "description": "Taunt. Deathrattle: Resurrect a friendly Undead that died this game.",
+      "deathrattle": [
+        {
+          "type": "summon-died-tribe",
+          "tribe": "Undead",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "id": "daring_drake",
+      "name": "Daring Drake",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "paladin",
+      "attack": 4,
+      "health": 4,
+      "rarity": "common",
+      "set": "RETURN_OF_THE_LICH_KING",
+      "tribe": "Dragon",
+      "keywords": [
+        "rush",
+        "battlecry"
+      ],
+      "description": "Rush. Battlecry: If you're holding a Dragon, gain +1/+1.",
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "holdingTribe": "Dragon"
+          },
+          "then": [
+            {
+              "type": "buff",
+              "attack": 1,
+              "health": 1,
+              "target": "self"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "felerin_the_forgotten",
+      "name": "Felerin, the Forgotten",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "demonhunter",
+      "attack": 3,
+      "health": 3,
+      "rarity": "legendary",
+      "set": "RETURN_OF_THE_LICH_KING",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Add a random Outcast card to the left and right sides of your hand. They cost (2) less.",
+      "effects": [
+        {
+          "type": "add-random-outcast-card",
+          "count": 2,
+          "costMod": -2
+        }
+      ]
+    },
+    {
+      "id": "goldwing",
+      "name": "Goldwing",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "paladin",
+      "attack": 3,
+      "health": 5,
+      "rarity": "rare",
+      "set": "RETURN_OF_THE_LICH_KING",
+      "tribe": "Dragon",
+      "keywords": [
+        "rush",
+        "battlecry"
+      ],
+      "description": "Rush. Battlecry: If you're holding a Mech, gain Windfury.",
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "holdingTribe": "Mech"
+          },
+          "then": [
+            {
+              "type": "grant-keyword-self",
+              "keyword": "windfury"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "high_cultist_basaleph",
+      "name": "High Cultist Basaleph",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "priest",
+      "attack": 3,
+      "health": 5,
+      "rarity": "legendary",
+      "set": "RETURN_OF_THE_LICH_KING",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Resurrect all friendly Undead that died after your last turn.",
+      "effects": [
+        {
+          "type": "summon-died-tribe",
+          "tribe": "Undead",
+          "count": 5
+        }
+      ]
+    },
+    {
+      "id": "lost_exarch",
+      "name": "Lost Exarch",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "neutral",
+      "attack": 5,
+      "health": 4,
+      "rarity": "rare",
+      "set": "RETURN_OF_THE_LICH_KING",
+      "tribe": "Undead",
+      "keywords": [
+        "deathrattle"
+      ],
+      "description": "Deathrattle: Spend all your Mana. Summon that many 2/2 Zombies with Rush.",
+      "deathrattle": [
+        {
+          "type": "spend-mana-summon",
+          "summonId": "rlk_zombie_rush"
+        }
+      ]
+    },
+    {
+      "id": "noxious_infiltrator",
+      "name": "Noxious Infiltrator",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "rogue",
+      "attack": 2,
+      "health": 5,
+      "rarity": "rare",
+      "set": "RETURN_OF_THE_LICH_KING",
+      "keywords": [
+        "poisonous",
+        "battlecry"
+      ],
+      "description": "Poisonous. Battlecry: If a friendly Undead died after your last turn, deal 1 damage to a minion.",
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "friendlyUndeadDied": true
+          },
+          "target": "creature",
+          "then": [
+            {
+              "type": "damage",
+              "value": 1,
+              "target": "creature"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "plaguespreader",
+      "name": "Plaguespreader",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "neutral",
+      "attack": 4,
+      "health": 4,
+      "rarity": "epic",
+      "set": "RETURN_OF_THE_LICH_KING",
+      "tribe": "Undead",
+      "keywords": [
+        "deathrattle"
+      ],
+      "description": "Deathrattle: Transform a random minion in your opponent's hand into a Plaguespreader.",
+      "deathrattle": [
+        {
+          "type": "transform-random-enemy-hand-minion",
+          "id": "plaguespreader"
+        }
+      ]
+    },
+    {
+      "id": "rotting_necromancer",
+      "name": "Rotting Necromancer",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "priest",
+      "attack": 5,
+      "health": 4,
+      "rarity": "common",
+      "set": "RETURN_OF_THE_LICH_KING",
+      "tribe": "Undead",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Dredge. If it's an Undead, deal 5 damage to the enemy hero.",
+      "effects": [
+        {
+          "type": "dredge",
+          "value": 3
+        }
+      ]
+    },
+    {
+      "id": "sanctum_spellbender",
+      "name": "Sanctum Spellbender",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "neutral",
+      "attack": 3,
+      "health": 6,
+      "rarity": "epic",
+      "set": "RETURN_OF_THE_LICH_KING",
+      "description": "Whenever your opponent targets another minion with a spell, redirect it to this."
+    },
+    {
+      "id": "scourge_illusionist",
+      "name": "Scourge Illusionist",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "rogue",
+      "attack": 4,
+      "health": 4,
+      "rarity": "epic",
+      "set": "RETURN_OF_THE_LICH_KING",
+      "tribe": "Undead",
+      "keywords": [
+        "deathrattle"
+      ],
+      "description": "Deathrattle: Add a 4/4 copy of another Deathrattle minion in your deck to your hand. It costs (4) less.",
+      "deathrattle": [
+        {
+          "type": "copy-deck-deathrattle-minion",
+          "setStats": 4,
+          "costMod": -4
+        }
+      ]
+    },
+    {
+      "id": "shockspitter",
+      "name": "Shockspitter",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "hunter",
+      "attack": 3,
+      "health": 3,
+      "rarity": "common",
+      "set": "RETURN_OF_THE_LICH_KING",
+      "tribe": "Beast",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Deal 1 damage. (Improved by your hero attacks this game!)",
+      "effects": [
+        {
+          "type": "damage",
+          "valuePer": "hero-attacks-game",
+          "value": 1,
+          "target": "any"
+        }
+      ]
+    },
+    {
+      "id": "silvermoon_armorer",
+      "name": "Silvermoon Armorer",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "neutral",
+      "attack": 4,
+      "health": 4,
+      "rarity": "common",
+      "set": "RETURN_OF_THE_LICH_KING",
+      "keywords": [
+        "rush",
+        "battlecry"
+      ],
+      "description": "Rush. Manathirst (7): Gain +2/+2.",
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "manathirst": 7
+          },
+          "then": [
+            {
+              "type": "buff",
+              "attack": 2,
+              "health": 2,
+              "target": "self"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "rlk_zombie_32",
+      "name": "Zombie",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "neutral",
+      "attack": 3,
+      "health": 2,
+      "rarity": "common",
+      "set": "RETURN_OF_THE_LICH_KING",
+      "tribe": "Undead",
+      "token": true,
+      "collectible": false,
+      "description": "A 3/2 Zombie."
     }
   ]
 }

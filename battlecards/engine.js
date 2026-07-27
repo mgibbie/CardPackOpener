@@ -2962,6 +2962,7 @@ function execEffects(state, pi, effects, target, source) {
 		if (e.valuePer === 'armor') return (e.value || 1) * p.armor;
 		if (e.valuePer === 'cards-played') return (e.value || 1) * (p.cardsPlayedThisTurn || 0); // Shadow Sculptor
 		if (e.valuePer === 'hero-attack') return heroAttackValue(p);
+		if (e.valuePer === 'hero-attacks-game') return (e.value || 1) + (p.heroAttacksGame || 0); // Shockspitter: 1 + your hero attacks this game
 		if (e.valuePer === 'damaged-friendly') {
 			let n = p.board.filter(c => !isDead(c) && c.damage > 0).length;
 			if (p.life < STARTING_LIFE) n++;
@@ -5827,6 +5828,21 @@ function execEffects(state, pi, effects, target, source) {
 		} else if (e.type === 'destroy-self') {
 			// Incorporeal Corporal: destroy the source minion
 			if (source && !isDead(source)) { source.damage = source.maxHealth; source.shield = false; emit(state, { type: 'destroy', uid: source.uid }); sweepDeaths(state); }
+		} else if (e.type === 'spend-mana-summon') {
+			// Lost Exarch: spend all your remaining Mana, summon that many tokens
+			const p = state.players[pi];
+			const n = availableMana(p);
+			p.mana.cur = 0; p.mana.bonus = 0;
+			for (let i = 0; i < n; i++) { if (state.cardsById[e.summonId]) summon(state, pi, state.cardsById[e.summonId]); }
+		} else if (e.type === 'transform-random-enemy-hand-minion') {
+			// Plaguespreader: transform a random minion in the opponent's hand into a copy of a card
+			const foe = enemies[0];
+			if (foe != null && state.cardsById[e.id]) { const fp = state.players[foe]; const pool = fp.hand.filter(c => c.type === 'creature'); if (pool.length) { const victim = pool[Math.floor(state.rng() * pool.length)]; const i = fp.hand.indexOf(victim); const nc = instantiate(state.cardsById[e.id], foe); nc.zone = 'hand'; fp.hand[i] = nc; emit(state, { type: 'transformed', uid: victim.uid, player: foe, from: victim.name, card: nc }); } }
+		} else if (e.type === 'copy-deck-deathrattle-minion') {
+			// Scourge Illusionist: add a set-stat copy of another Deathrattle minion in your deck to your hand
+			const p = state.players[pi];
+			const pool = [...new Set(p.deck)].map(id => state.cardsById[id]).filter(d => d && d.type === 'creature' && (d.keywords || []).includes('deathrattle') && !d.token && d.id !== (source && source.id));
+			if (pool.length && p.hand.length < MAX_HAND) { const def = pool[Math.floor(state.rng() * pool.length)]; const cp = instantiate(def, pi); cp.zone = 'hand'; if (e.setStats != null) { cp.attack = e.setStats; cp.maxHealth = e.setStats; } if (e.costMod) cp.cost = Math.max(0, (cp.cost || 0) + e.costMod); p.hand.push(cp); emit(state, { type: 'conjure', player: pi, card: cp, color: null }); }
 		} else if (e.type === 'grant-tribe-summon-buff') {
 			// Timewarden: until end of your next turn, minions of a tribe you summon gain keywords
 			state.players[pi].tribeSummonBuff = { tribe: e.tribe, keywords: e.keywords || [], untilTurn: state.turnNumber + 2 };
@@ -5855,10 +5871,10 @@ function execEffects(state, pi, effects, target, source) {
 			const foe = enemies[0], p = state.players[pi];
 			if (foe != null && state.players[foe].deck.length && p.hand.length < MAX_HAND) { const id = state.players[foe].deck[Math.floor(state.rng() * state.players[foe].deck.length)]; const def = state.cardsById[id]; if (def) { const cp = instantiate(def, pi); cp.zone = 'hand'; p.hand.push(cp); emit(state, { type: 'conjure', player: pi, card: cp, color: null }); } }
 		} else if (e.type === 'add-random-outcast-card') {
-			// Wretched Exile: add a random Outcast card to your hand
+			// Wretched Exile: add a random Outcast card to your hand (Felerin: count + costMod)
 			const pool = Object.values(state.cardsById).filter(d => (d.keywords || []).includes('outcast') && !d.token && d.collectible !== false && !(d.colors && d.colors.length));
 			const p = state.players[pi];
-			if (pool.length && p.hand.length < MAX_HAND) { const cp = instantiate(pool[Math.floor(state.rng() * pool.length)], pi); cp.zone = 'hand'; p.hand.push(cp); emit(state, { type: 'conjure', player: pi, card: cp, color: null }); }
+			for (let n = 0; n < (e.count || 1) && pool.length && p.hand.length < MAX_HAND; n++) { const cp = instantiate(pool[Math.floor(state.rng() * pool.length)], pi); cp.zone = 'hand'; if (e.costMod) cp.cost = Math.max(0, (cp.cost || 0) + e.costMod); p.hand.push(cp); emit(state, { type: 'conjure', player: pi, card: cp, color: null }); }
 		} else if (e.type === 'cast-enemy-last-spell') {
 			// Asvedon: cast a copy of the last spell your opponent played
 			const foe = enemies[0];
@@ -9124,6 +9140,7 @@ export function heroAttack(state, pi, target) {
 	if (!legal.some(t => t.type === target.type && t.uid === target.uid && t.player === target.player)) return false;
 	const p = state.players[pi];
 	p.heroAttacksUsed++;
+	p.heroAttacksGame = (p.heroAttacksGame || 0) + 1; // Shockspitter
 	emit(state, { type: 'heroAttack', player: pi, target });
 	questTick(state, 'hero-attack', pi);
 
