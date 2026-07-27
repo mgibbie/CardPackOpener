@@ -3436,7 +3436,9 @@ function execEffects(state, pi, effects, target, source) {
 				if (e.then) execEffects(state, pi, e.then, target, source);
 			}
 		} else if (e.type === 'destroy-random') {
-			for (let n = 0; n < (e.count || 1); n++) {
+			let times = e.count || 1;
+			if (e.countPerHoldingTribe) times += state.players[pi].hand.filter(c => (c.tribe || '').includes(e.countPerHoldingTribe)).length; // Disciple of Demise: repeat per held Dragon
+			for (let n = 0; n < times; n++) {
 				const pool = [];
 				for (const o of enemies) for (const c of state.players[o].board) {
 					if (!isDead(c) && (e.maxAttack == null || c.attack <= e.maxAttack)) pool.push(c);
@@ -4102,6 +4104,7 @@ function execEffects(state, pi, effects, target, source) {
 				else if (e.per === 'spells-this-turn') n = state.players[pi].spellsPlayedThisTurn || 0; // Queensguard
 				else if (e.per === 'hand-cards') n = state.players[pi].hand.length;
 				else if (e.per === 'hand-spells') n = state.players[pi].hand.filter(c => isSpellType(c)).length; // Brainstormer
+				else if (e.per === 'hand-school') n = state.players[pi].hand.filter(c => isSpellType(c) && schoolOf(c) === e.school).length; // Ymirjar Frostbreaker: Frost spells in hand
 				else if (e.per === 'pogos-played') n = state.players[pi].pogoCount || 0; // Pogo-Hopper
 				else if (e.per === 'hero-damage-taken') n = state.players[pi].heroDamageTakenThisTurn || 0; // Nethersoul Buster
 				else if (e.per === 'enemy-hand') n = opponentsOf(state, pi).reduce((s, o) => s + state.players[o].hand.length, 0); // Fire Hawk
@@ -6763,6 +6766,17 @@ function execEffects(state, pi, effects, target, source) {
 			for (const id of e.ids || []) if (state.cardsById[id]) p.deck.push(id);
 			for (let i = p.deck.length - 1; i > 0; i--) { const j = Math.floor(state.rng() * (i + 1)); [p.deck[i], p.deck[j]] = [p.deck[j], p.deck[i]]; }
 			emit(state, { type: 'shuffle', player: pi });
+		} else if (e.type === 'spend-mana-summon-cost') {
+			// Commissary Crook: spend all your Mana, summon a random minion of that Cost
+			const p = state.players[pi];
+			const n = availableMana(p);
+			p.mana.cur = 0; p.mana.bonus = 0;
+			emit(state, { type: 'mana', player: pi, cur: 0, max: p.mana.max });
+			if (n > 0) execEffects(state, pi, [{ type: 'summon-random', cost: n }], target, source);
+		} else if (e.type === 'buff-random-hand') {
+			// Vicious Bloodworm (battlecry path — the ongoing path lives in runSecretEffects): buff a random creature in your hand
+			const pool2 = state.players[pi].hand.filter(c => c.type === 'creature');
+			if (pool2.length) { const c = pool2[Math.floor(state.rng() * pool2.length)]; c.attack += e.attack || 0; c.maxHealth += e.health || 0; emit(state, { type: 'buff', uid: c.uid, attack: c.attack, hp: hp(c) }); }
 		} else if (e.type === 'spend-mana-summon') {
 			// Lost Exarch: spend all your remaining Mana, summon that many tokens
 			const p = state.players[pi];
@@ -7145,10 +7159,11 @@ function execEffects(state, pi, effects, target, source) {
 			const drawn = p.hand.find(c => !before.has(c.uid));
 			if (drawn) drawn.cost = 0;
 		} else if (e.type === 'copy-hand-school-spell') {
-			// Grave Defiler: get a copy of a Fel spell in your hand
+			// Grave Defiler: get a copy of a Fel spell in your hand (Lady Deathwhisper: `all` copies every match)
 			const p = state.players[pi];
 			const pool = p.hand.filter(c => schoolOf(c) === e.school);
-			if (pool.length && p.hand.length < MAX_HAND) { const src = pool[Math.floor(state.rng() * pool.length)]; const nc = instantiate(state.cardsById[src.id] || src, pi); nc.zone = 'hand'; p.hand.push(nc); emit(state, { type: 'conjure', player: pi, card: nc, color: null }); }
+			const picks = e.all ? [...pool] : (pool.length ? [pool[Math.floor(state.rng() * pool.length)]] : []);
+			for (const src of picks) { if (p.hand.length >= MAX_HAND) break; const nc = instantiate(state.cardsById[src.id] || src, pi); nc.zone = 'hand'; p.hand.push(nc); emit(state, { type: 'conjure', player: pi, card: nc, color: null }); }
 		} else if (e.type === 'reduce-highest-hand-spell') {
 			// Shivering Sorceress: reduce the Cost of the highest-Cost spell in your hand
 			let best = null; for (const c of state.players[pi].hand) if (isSpellType(c) && (!best || (c.cost || 0) > (best.cost || 0))) best = c;

@@ -123956,6 +123956,354 @@
           }
         ]
       }
+    },
+    {
+      "id": "urzul_horror",
+      "name": "Ur'zul Horror",
+      "type": "creature",
+      "cost": 1,
+      "cardClass": "demonhunter",
+      "attack": 2,
+      "health": 1,
+      "rarity": "common",
+      "set": "DEMON_HUNTER_INITIATE",
+      "tribe": "Demon",
+      "keywords": [
+        "deathrattle"
+      ],
+      "description": "Deathrattle: Add a 2/1 Lost Soul to your hand.",
+      "deathrattle": [
+        {
+          "type": "add-card",
+          "id": "dhi_lost_soul",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "id": "altruis_the_outcast",
+      "name": "Altruis the Outcast",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "demonhunter",
+      "attack": 4,
+      "health": 2,
+      "rarity": "legendary",
+      "set": "DEMON_HUNTER_INITIATE",
+      "description": "After you play the left- or right-most card in your hand, deal 1 damage to all enemies. (Approximated: fires on Outcast-position plays.)",
+      "ongoing": {
+        "on": "edge-card-played",
+        "effects": [
+          {
+            "type": "damage",
+            "value": 1,
+            "target": "enemies"
+          }
+        ]
+      }
+    },
+    {
+      "id": "nethrandamus",
+      "name": "Nethrandamus",
+      "type": "creature",
+      "cost": 9,
+      "cardClass": "demonhunter",
+      "attack": 8,
+      "health": 8,
+      "rarity": "legendary",
+      "set": "DEMON_HUNTER_INITIATE",
+      "tribe": "Dragon",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Summon two random 1-Cost minions. (Not modeled: upgrades per friendly death.)",
+      "effects": [
+        {
+          "type": "summon-random",
+          "cost": 1,
+          "count": 2
+        }
+      ]
+    },
+    {
+      "id": "baleful_blazer",
+      "name": "Baleful Blazer",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "warrior",
+      "attack": 4,
+      "health": 3,
+      "rarity": "rare",
+      "set": "EVENT",
+      "tribe": "Elemental",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: If you've played a Fire spell this turn, destroy a minion. (Approximated: a random enemy minion.)",
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "castSchoolThisTurn": "Fire"
+          },
+          "then": [
+            {
+              "type": "destroy-random"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "commissary_crook",
+      "name": "Commissary Crook",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "druid",
+      "attack": 4,
+      "health": 3,
+      "rarity": "rare",
+      "set": "EVENT",
+      "tribe": "Undead",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Prepare. Battlecry: Spend all your Mana. Summon a random minion of that Cost. (Not modeled: Prepare.)",
+      "effects": [
+        {
+          "type": "spend-mana-summon-cost"
+        }
+      ]
+    },
+    {
+      "id": "sharp_eyed_lookout",
+      "name": "Sharp-Eyed Lookout",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "neutral",
+      "attack": 2,
+      "health": 3,
+      "rarity": "common",
+      "set": "EVENT",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Draw a card. It costs (1) less. (Approximated: permanent, not this-turn.)",
+      "effects": [
+        {
+          "type": "draw-discount",
+          "count": 1,
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "destructive_phoenix",
+      "name": "Destructive Phoenix",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "warlock",
+      "attack": 5,
+      "health": 5,
+      "rarity": "rare",
+      "set": "EVENT",
+      "tribe": "Elemental",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Choose a card in your hand to set on fire. In 3 turns, discard it and summon a copy of the Phoenix. (Not modeled.)"
+    },
+    {
+      "id": "runi_temporal_guardian",
+      "name": "Runi, Temporal Guardian",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "paladin",
+      "attack": 5,
+      "health": 5,
+      "rarity": "legendary",
+      "set": "EVENT",
+      "tribe": "Draenei",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Send all minions in your hand 2 turns into the future. They return with +5/+5. (Approximated: hand minions gain +5/+5 now.)",
+      "effects": [
+        {
+          "type": "buff-hand",
+          "attack": 5,
+          "health": 5,
+          "all": true
+        }
+      ]
+    },
+    {
+      "id": "primordial_lord",
+      "name": "Primordial Lord",
+      "type": "creature",
+      "cost": 6,
+      "cardClass": "neutral",
+      "attack": 7,
+      "health": 6,
+      "rarity": "epic",
+      "set": "EVENT",
+      "tribe": "Elemental",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Get a random Colossal minion from the past. (Approximated: a random 5+ Cost minion; Colossal not modeled.)",
+      "effects": [
+        {
+          "type": "conjure-random",
+          "cardType": "creature",
+          "minCost": 5
+        }
+      ]
+    },
+    {
+      "id": "disciple_of_demise",
+      "name": "Disciple of Demise",
+      "type": "creature",
+      "cost": 8,
+      "cardClass": "neutral",
+      "attack": 8,
+      "health": 8,
+      "rarity": "epic",
+      "set": "EVENT",
+      "tribe": "Dragon",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Randomly destroy another minion. Repeat for each Dragon you're holding. (Destroys random enemy minions.)",
+      "effects": [
+        {
+          "type": "destroy-random",
+          "countPerHoldingTribe": "Dragon"
+        }
+      ]
+    },
+    {
+      "id": "ymirjar_frostbreaker",
+      "name": "Ymirjar Frostbreaker",
+      "type": "creature",
+      "cost": 1,
+      "cardClass": "deathknight",
+      "attack": 1,
+      "health": 2,
+      "rarity": "common",
+      "set": "PATH_OF_ARTHAS",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Gain +1 Attack for each Frost spell in your hand.",
+      "effects": [
+        {
+          "type": "buff-self",
+          "per": "hand-school",
+          "school": "Frost",
+          "attack": 1
+        }
+      ]
+    },
+    {
+      "id": "vicious_bloodworm",
+      "name": "Vicious Bloodworm",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "deathknight",
+      "attack": 3,
+      "health": 2,
+      "rarity": "rare",
+      "set": "PATH_OF_ARTHAS",
+      "tribe": "Beast",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Give a minion in your hand Attack equal to this minion's Attack. (Approximated: +3 Attack to a random hand minion.)",
+      "effects": [
+        {
+          "type": "buff-random-hand",
+          "attack": 3
+        }
+      ]
+    },
+    {
+      "id": "lady_deathwhisper",
+      "name": "Lady Deathwhisper",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "deathknight",
+      "attack": 4,
+      "health": 3,
+      "rarity": "legendary",
+      "set": "PATH_OF_ARTHAS",
+      "tribe": "Undead",
+      "keywords": [
+        "deathrattle"
+      ],
+      "description": "Deathrattle: Copy all Frost spells in your hand.",
+      "deathrattle": [
+        {
+          "type": "copy-hand-school-spell",
+          "school": "Frost",
+          "all": true
+        }
+      ]
+    },
+    {
+      "id": "corpse_bride",
+      "name": "Corpse Bride",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "deathknight",
+      "attack": 4,
+      "health": 4,
+      "rarity": "rare",
+      "set": "PATH_OF_ARTHAS",
+      "tribe": "Undead",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Summon a Risen Groom with Taunt. (Approximated: a 5/5; Corpse spending not modeled.)",
+      "effects": [
+        {
+          "type": "summon",
+          "count": 1,
+          "summonId": "poa_risen_groom"
+        }
+      ]
+    },
+    {
+      "id": "dhi_lost_soul",
+      "name": "Lost Soul",
+      "type": "creature",
+      "cost": 1,
+      "cardClass": "demonhunter",
+      "attack": 2,
+      "health": 1,
+      "rarity": "common",
+      "set": "DEMON_HUNTER_INITIATE",
+      "token": true,
+      "collectible": false,
+      "description": "A 2/1 Lost Soul."
+    },
+    {
+      "id": "poa_risen_groom",
+      "name": "Risen Groom",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "deathknight",
+      "attack": 5,
+      "health": 5,
+      "rarity": "common",
+      "set": "PATH_OF_ARTHAS",
+      "tribe": "Undead",
+      "token": true,
+      "collectible": false,
+      "keywords": [
+        "taunt"
+      ],
+      "description": "A 5/5 with Taunt."
     }
   ]
 }
