@@ -119440,6 +119440,349 @@
       "token": true,
       "collectible": false,
       "description": "A 0/8 Chest."
+    },
+    {
+      "id": "agent_of_the_old_ones",
+      "name": "Agent of the Old Ones",
+      "type": "creature",
+      "cost": 1,
+      "cardClass": "rogue",
+      "attack": 2,
+      "health": 1,
+      "rarity": "common",
+      "set": "CATACLYSM",
+      "tribe": "Demon",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Choose a card in your hand to transform into a Coin. (Approximated: gain a Coin.)",
+      "effects": [
+        {
+          "type": "gain-coin"
+        }
+      ]
+    },
+    {
+      "id": "ash_worm",
+      "name": "Ash Worm",
+      "type": "creature",
+      "cost": 1,
+      "cardClass": "druid",
+      "attack": 6,
+      "health": 6,
+      "rarity": "common",
+      "set": "CATACLYSM",
+      "tribe": "Beast",
+      "dormant": 2,
+      "description": "Starts Dormant. When your board is full, awaken. (Approximated: awakens after 2 turns.)"
+    },
+    {
+      "id": "carrier_whelp",
+      "name": "Carrier Whelp",
+      "type": "creature",
+      "cost": 1,
+      "cardClass": "neutral",
+      "attack": 1,
+      "health": 2,
+      "rarity": "common",
+      "set": "CATACLYSM",
+      "tribe": "Dragon",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Get a random Dragon that costs (3) or less.",
+      "effects": [
+        {
+          "type": "conjure-random",
+          "cardType": "creature",
+          "tribe": "Dragon",
+          "maxCost": 3
+        }
+      ]
+    },
+    {
+      "id": "crystalspine_cub",
+      "name": "Crystalspine Cub",
+      "type": "creature",
+      "cost": 1,
+      "cardClass": "druid",
+      "attack": 1,
+      "health": 1,
+      "rarity": "common",
+      "set": "CATACLYSM",
+      "tribe": "Beast",
+      "description": "Whenever you spend your last Mana Crystal, gain +1/+1. (Not modeled: last-Mana trigger.)"
+    },
+    {
+      "id": "twilight_egg",
+      "name": "Twilight Egg",
+      "type": "creature",
+      "cost": 1,
+      "cardClass": "neutral",
+      "attack": 0,
+      "health": 2,
+      "rarity": "common",
+      "set": "CATACLYSM",
+      "keywords": [
+        "deathrattle"
+      ],
+      "description": "Deathrattle: Summon a Whelp. (Not modeled: it grows each turn.)",
+      "deathrattle": [
+        {
+          "type": "summon",
+          "count": 1,
+          "summonId": "cata_whelp"
+        }
+      ]
+    },
+    {
+      "id": "blackwing_experiment",
+      "name": "Blackwing Experiment",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "deathknight",
+      "attack": 3,
+      "health": 1,
+      "rarity": "common",
+      "set": "CATACLYSM",
+      "tribe": "Undead",
+      "keywords": [
+        "deathrattle"
+      ],
+      "description": "Deathrattle: Get a 2-Cost spell that deals this minion's Attack damage. (Approximated: a Bolt dealing 3.)",
+      "deathrattle": [
+        {
+          "type": "add-card",
+          "id": "cata_bolt",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "id": "brash_battlemaster",
+      "name": "Brash Battlemaster",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "paladin",
+      "attack": 2,
+      "health": 1,
+      "rarity": "common",
+      "set": "CATACLYSM",
+      "keywords": [
+        "rush",
+        "deathrattle"
+      ],
+      "description": "Rush. Deathrattle: Give your Silver Hand Recruits +1 Attack this game. (Not modeled: Silver Hand Recruits.)"
+    },
+    {
+      "id": "felwood_treant",
+      "name": "Felwood Treant",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "druid",
+      "attack": 2,
+      "health": 2,
+      "rarity": "common",
+      "set": "CATACLYSM",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Gain a temporary Mana Crystal. If you spent 4 Mana while holding this, it's permanent. (Approximated: gain a temporary Mana Crystal.)",
+      "effects": [
+        {
+          "type": "temp-mana",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "frostbitten_imp",
+      "name": "Frostbitten Imp",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "neutral",
+      "attack": 5,
+      "health": 3,
+      "rarity": "common",
+      "set": "CATACLYSM",
+      "tribe": "Demon",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Freeze this.",
+      "effects": [
+        {
+          "type": "freeze",
+          "target": "self"
+        }
+      ]
+    },
+    {
+      "id": "migrating_elekk",
+      "name": "Migrating Elekk",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "hunter",
+      "attack": 2,
+      "health": 3,
+      "rarity": "common",
+      "set": "CATACLYSM",
+      "tribe": "Beast",
+      "keywords": [
+        "taunt",
+        "battlecry"
+      ],
+      "description": "Taunt. Battlecry: Replace your future Animal Companions with random Beasts that cost (1) more. (Not modeled: Animal Companion replacement.)"
+    },
+    {
+      "id": "mystic_runesaber",
+      "name": "Mystic Runesaber",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "mage",
+      "attack": 2,
+      "health": 3,
+      "rarity": "common",
+      "set": "CATACLYSM",
+      "tribe": "Beast",
+      "keywords": [
+        "elusive",
+        "battlecry"
+      ],
+      "description": "Elusive. Battlecry: Increase the effects of your Leylines by 1 this game. (Not modeled: Leylines.)"
+    },
+    {
+      "id": "raincaller",
+      "name": "Raincaller",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "mage",
+      "attack": 1,
+      "health": 4,
+      "rarity": "common",
+      "set": "CATACLYSM",
+      "tribe": "Elemental",
+      "description": "The first time you deal damage with a spell each turn, gain +2 Attack. (Not modeled: spell-damage trigger.)"
+    },
+    {
+      "id": "shadowed_informant",
+      "name": "Shadowed Informant",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "neutral",
+      "attack": 2,
+      "health": 2,
+      "rarity": "common",
+      "set": "CATACLYSM",
+      "tribe": "Dragon",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Discover a spell from your class. (Not modeled: class-swap each turn.)",
+      "effects": [
+        {
+          "type": "discover",
+          "cardType": "spell",
+          "cardClass": "own"
+        }
+      ]
+    },
+    {
+      "id": "shadowsworn_disciple",
+      "name": "Shadowsworn Disciple",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "warlock",
+      "attack": 2,
+      "health": 1,
+      "rarity": "common",
+      "set": "CATACLYSM",
+      "keywords": [
+        "battlecry",
+        "deathrattle"
+      ],
+      "description": "Battlecry: Herald. Deathrattle: Restore 3 Health to your hero. (Not modeled: Herald.)",
+      "deathrattle": [
+        {
+          "type": "heal",
+          "value": 3,
+          "target": "self"
+        }
+      ]
+    },
+    {
+      "id": "sheltered_survivor",
+      "name": "Sheltered Survivor",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "neutral",
+      "attack": 2,
+      "health": 3,
+      "rarity": "common",
+      "set": "CATACLYSM",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Choose a card in your hand to shuffle into your deck. Draw a card. (Approximated: shuffle your lowest-Cost card, draw a card.)",
+      "effects": [
+        {
+          "type": "shuffle-lowest-hand-into-deck"
+        },
+        {
+          "type": "draw",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "warloc",
+      "name": "War'loc",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "neutral",
+      "attack": 1,
+      "health": 1,
+      "rarity": "common",
+      "set": "CATACLYSM",
+      "tribe": "Murloc",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Your next Murloc that costs (3) or less costs Health instead of Mana. (Not modeled: Health cost.)"
+    },
+    {
+      "id": "cata_whelp",
+      "name": "Whelp",
+      "type": "creature",
+      "cost": 1,
+      "cardClass": "neutral",
+      "attack": 1,
+      "health": 1,
+      "rarity": "common",
+      "set": "CATACLYSM",
+      "tribe": "Dragon",
+      "token": true,
+      "collectible": false,
+      "description": "A 1/1 Whelp."
+    },
+    {
+      "id": "cata_bolt",
+      "name": "Bolt",
+      "type": "sorcery",
+      "cost": 2,
+      "cardClass": "deathknight",
+      "rarity": "common",
+      "set": "CATACLYSM",
+      "token": true,
+      "collectible": false,
+      "description": "Deal 3 damage.",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 3,
+          "target": "any"
+        }
+      ]
     }
   ]
 }

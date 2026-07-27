@@ -8199,6 +8199,7 @@ function execEffects(state, pi, effects, target, source) {
 			if (e.minAttack != null) pool = pool.filter(d => (d.attack || 0) >= e.minAttack);
 			if (e.requireKeyword) pool = pool.filter(d => (d.keywords || []).includes(e.requireKeyword)); // Whirlkick Master: a Combo card
 			if (e.cost != null) pool = pool.filter(d => (d.cost || 0) === e.cost); // Ravencaller / Tanglefur Mystic
+			if (e.maxCost != null) pool = pool.filter(d => (d.cost || 0) <= e.maxCost); // Carrier Whelp: a Dragon that costs (3) or less
 			if (e.nameIncludes) pool = pool.filter(d => (d.name || '').includes(e.nameIncludes)); // Yrel: Librams
 			if (e.school) pool = pool.filter(d => schoolOf(d) === e.school); // Galactic Crusader: Holy spells
 			if (e.tribe) pool = pool.filter(d => (d.tribe || '').includes(e.tribe));
