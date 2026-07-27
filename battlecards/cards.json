@@ -112871,6 +112871,396 @@
           "type": "upgrade-hero-power"
         }
       ]
+    },
+    {
+      "id": "petal_peddler",
+      "name": "Petal Peddler",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "neutral",
+      "attack": 1,
+      "health": 4,
+      "rarity": "common",
+      "set": "EMERALD_DREAM",
+      "tribe": "Dragon",
+      "description": "At the end of your turn, give another random friendly Dragon +1/+1.",
+      "ongoing": {
+        "on": "turn-end",
+        "effects": [
+          {
+            "type": "buff-random-friendly",
+            "attack": 1,
+            "health": 1,
+            "tribe": "Dragon"
+          }
+        ]
+      }
+    },
+    {
+      "id": "spirit_gatherer",
+      "name": "Spirit Gatherer",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "mage",
+      "attack": 2,
+      "health": 1,
+      "rarity": "common",
+      "set": "EMERALD_DREAM",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Get a Wisp. Imbue your Hero Power. (Imbue approximated: double Hero Power.)",
+      "effects": [
+        {
+          "type": "add-card",
+          "id": "edr_wisp",
+          "count": 1
+        },
+        {
+          "type": "upgrade-hero-power"
+        }
+      ]
+    },
+    {
+      "id": "spirit_of_the_kaldorei",
+      "name": "Spirit of the Kaldorei",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "priest",
+      "attack": 1,
+      "health": 3,
+      "rarity": "common",
+      "set": "EMERALD_DREAM",
+      "tribe": "Undead",
+      "keywords": [
+        "taunt",
+        "lifesteal",
+        "battlecry"
+      ],
+      "description": "Taunt, Lifesteal. Battlecry: If you used your Hero Power this turn, gain +3/+3.",
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "heroPowerUsed": true
+          },
+          "then": [
+            {
+              "type": "buff",
+              "attack": 3,
+              "health": 3,
+              "target": "self"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "tranquil_treant",
+      "name": "Tranquil Treant",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "neutral",
+      "attack": 2,
+      "health": 2,
+      "rarity": "common",
+      "set": "EMERALD_DREAM",
+      "keywords": [
+        "deathrattle"
+      ],
+      "description": "Deathrattle: Both players gain an empty Mana Crystal.",
+      "deathrattle": [
+        {
+          "type": "gain-empty-mana-crystal",
+          "eachPlayer": true
+        }
+      ]
+    },
+    {
+      "id": "twisted_treant",
+      "name": "Twisted Treant",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "neutral",
+      "attack": 2,
+      "health": 2,
+      "rarity": "common",
+      "set": "EMERALD_DREAM",
+      "keywords": [
+        "deathrattle"
+      ],
+      "description": "Deathrattle: Give a random minion in each player's hand -2 Attack.",
+      "deathrattle": [
+        {
+          "type": "debuff-random-hand-each",
+          "attack": -2
+        }
+      ]
+    },
+    {
+      "id": "twisted_webweaver",
+      "name": "Twisted Webweaver",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "rogue",
+      "attack": 2,
+      "health": 3,
+      "rarity": "rare",
+      "set": "EMERALD_DREAM",
+      "tribe": "Beast",
+      "description": "Whenever you play another minion you've already played, draw a card.",
+      "ongoing": {
+        "on": "creature-played",
+        "if": {
+          "playedBefore": true
+        },
+        "effects": [
+          {
+            "type": "draw",
+            "value": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "animated_moonwell",
+      "name": "Animated Moonwell",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "neutral",
+      "attack": 1,
+      "health": 4,
+      "rarity": "rare",
+      "set": "EMERALD_DREAM",
+      "tribe": "Elemental",
+      "description": "After you cast a spell, gain Attack equal to its Cost.",
+      "ongoing": {
+        "on": "spell-played",
+        "effects": [
+          {
+            "type": "buff-self-by-spell-cost",
+            "attackOnly": true
+          }
+        ]
+      }
+    },
+    {
+      "id": "bloodthistle_illusionist",
+      "name": "Bloodthistle Illusionist",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "neutral",
+      "attack": 2,
+      "health": 4,
+      "rarity": "common",
+      "set": "EMERALD_DREAM",
+      "tribe": "Demon",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Summon a copy of this. One secretly dies when it takes damage. (Not modeled: illusion death.)",
+      "effects": [
+        {
+          "type": "summon-copy-of-self",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "id": "corpse_flower",
+      "name": "Corpse Flower",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "deathknight",
+      "attack": 0,
+      "health": 5,
+      "rarity": "common",
+      "set": "EMERALD_DREAM",
+      "tribe": "Undead",
+      "description": "After your opponent summons a minion, spend 2 Corpses to deal 3 damage to it. (Not modeled: Corpse cost; triggers on played minions.)",
+      "ongoing": {
+        "on": "enemy-creature-played",
+        "effects": [
+          {
+            "type": "damage-triggering-minion",
+            "value": 3
+          }
+        ]
+      }
+    },
+    {
+      "id": "dreambound_disciple",
+      "name": "Dreambound Disciple",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "druid",
+      "attack": 3,
+      "health": 3,
+      "rarity": "rare",
+      "set": "EMERALD_DREAM",
+      "keywords": [
+        "battlecry",
+        "deathrattle"
+      ],
+      "description": "Battlecry and Deathrattle: Your next Hero Power costs (0).",
+      "effects": [
+        {
+          "type": "hero-power-discount",
+          "value": 10
+        }
+      ],
+      "deathrattle": [
+        {
+          "type": "hero-power-discount",
+          "value": 10
+        }
+      ]
+    },
+    {
+      "id": "emberroot_destroyer",
+      "name": "Emberroot Destroyer",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "warlock",
+      "attack": 3,
+      "health": 3,
+      "rarity": "rare",
+      "set": "EMERALD_DREAM",
+      "description": "Whenever your hero takes damage on your turn, deal 3 damage to a random enemy minion.",
+      "ongoing": {
+        "on": "own-hero-damaged",
+        "effects": [
+          {
+            "type": "random-damage",
+            "value": 3,
+            "count": 1,
+            "pool": "enemy-creatures"
+          }
+        ]
+      }
+    },
+    {
+      "id": "emberscarred_whelp",
+      "name": "Emberscarred Whelp",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "shaman",
+      "attack": 3,
+      "health": 2,
+      "rarity": "common",
+      "set": "EMERALD_DREAM",
+      "tribe": "Dragon",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Discover a 5-Cost card. Gain 1 Mana Crystal next turn only. (Not modeled: next-turn Mana.)",
+      "effects": [
+        {
+          "type": "discover",
+          "cost": 5
+        }
+      ]
+    },
+    {
+      "id": "fae_trickster",
+      "name": "Fae Trickster",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "neutral",
+      "attack": 2,
+      "health": 4,
+      "rarity": "common",
+      "set": "EMERALD_DREAM",
+      "tribe": "Dragon",
+      "keywords": [
+        "deathrattle"
+      ],
+      "description": "Deathrattle: Draw a spell that costs (5) or more.",
+      "deathrattle": [
+        {
+          "type": "tutor",
+          "cardType": "spell",
+          "minCost": 5,
+          "count": 1
+        }
+      ]
+    },
+    {
+      "id": "goldpetal_drake",
+      "name": "Goldpetal Drake",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "paladin",
+      "attack": 3,
+      "health": 4,
+      "rarity": "common",
+      "set": "EMERALD_DREAM",
+      "tribe": "Dragon",
+      "keywords": [
+        "battlecry",
+        "deathrattle"
+      ],
+      "description": "Battlecry and Deathrattle: Imbue your Hero Power. (Approximated: double Hero Power.)",
+      "effects": [
+        {
+          "type": "upgrade-hero-power"
+        }
+      ],
+      "deathrattle": [
+        {
+          "type": "upgrade-hero-power"
+        }
+      ]
+    },
+    {
+      "id": "harbinger_of_the_blighted",
+      "name": "Harbinger of the Blighted",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "rogue",
+      "attack": 2,
+      "health": 3,
+      "rarity": "epic",
+      "set": "EMERALD_DREAM",
+      "description": "Whenever this enters your hand from the battlefield, summon two random 2-Cost minions. (Not modeled: return-to-hand trigger.)"
+    },
+    {
+      "id": "kaldorei_priestess",
+      "name": "Kaldorei Priestess",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "priest",
+      "attack": 3,
+      "health": 3,
+      "rarity": "rare",
+      "set": "EMERALD_DREAM",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Give all enemy minions -2 Attack until your next turn. Imbue your Hero Power. (Imbue approximated: double Hero Power.)",
+      "effects": [
+        {
+          "type": "debuff-enemies-attack-turn",
+          "value": 2
+        },
+        {
+          "type": "upgrade-hero-power"
+        }
+      ]
+    },
+    {
+      "id": "edr_wisp",
+      "name": "Wisp",
+      "type": "creature",
+      "cost": 0,
+      "cardClass": "neutral",
+      "attack": 1,
+      "health": 1,
+      "rarity": "common",
+      "set": "EMERALD_DREAM",
+      "token": true,
+      "collectible": false,
+      "description": "A 1/1 Wisp."
     }
   ]
 }

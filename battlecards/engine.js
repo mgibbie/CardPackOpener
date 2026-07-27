@@ -1633,6 +1633,7 @@ function ongoingCondOk(state, pi, cond, ctx) {
 	if (cond.handMax != null && !(state.players[pi].hand.length <= cond.handMax)) return false; // Howdyfin: fewer than N cards in hand
 	if (cond.tribeSubj && !(subj && (subj.tribe || '').includes(cond.tribeSubj))) return false;
 	if (cond.dormantSelf && !(ctx.self && ctx.self.dormantLeft > 0)) return false; // Dozing Dragon: only while asleep
+	if (cond.playedBefore && !(subj && (state.players[pi].playedCountById?.[subj.id] || 0) >= 1)) return false; // Twisted Webweaver: a minion you've already played
 	return true;
 }
 
@@ -2904,9 +2905,15 @@ function runSecretEffects(state, pi, effects, ctx) {
 				break;
 			}
 			case 'buff-self-by-spell-cost': {
-				// Speaker Gidra (Spellburst): gain Attack and Health equal to the spell's Cost
+				// Speaker Gidra (Spellburst): gain Attack and Health equal to the spell's Cost; Animated Moonwell: Attack only
 				const cost = ctx.played ? (ctx.played.cost || 0) : 0;
-				if (ctx.self && !isDead(ctx.self) && cost > 0) execEffects(state, pi, [{ type: 'buff-self', attack: cost, health: cost }], null, ctx.self);
+				if (ctx.self && !isDead(ctx.self) && cost > 0) execEffects(state, pi, [{ type: 'buff-self', attack: cost, health: e.attackOnly ? 0 : cost }], null, ctx.self);
+				break;
+			}
+			case 'damage-triggering-minion': {
+				// Corpse Flower: deal N damage to the minion that was just summoned/played (Corpse cost not modeled)
+				const m = ctx.minion;
+				if (m && !isDead(m) && m.type !== 'location') damageCreature(state, m, e.value || 3, ctx.self || null);
 				break;
 			}
 			case 'gandling': {
@@ -5857,9 +5864,15 @@ function execEffects(state, pi, effects, target, source) {
 			// Sightless Magistrate: both players draw until they have N cards
 			for (let s2 = 0; s2 < state.players.length; s2++) { const pl = state.players[s2]; let guard = 0; while (pl.hand.length < (e.value || 5) && pl.hand.length < MAX_HAND && guard++ < 20) { const before = pl.hand.length; drawCards(state, s2, 1); if (pl.hand.length === before) break; } }
 		} else if (e.type === 'gain-empty-mana-crystal') {
-			// Widowbloom Seedsman: gain an empty Mana Crystal (max +1, current unchanged)
-			const p = state.players[pi];
-			if (p.mana) p.mana.max = (p.mana.max || 0) + (e.value || 1);
+			// Widowbloom Seedsman: gain an empty Mana Crystal (max +1, current unchanged); Tranquil Treant: both players
+			const targets = e.eachPlayer ? state.players.map((_, i) => i) : [pi];
+			for (const idx of targets) { const pl = state.players[idx]; if (pl.mana && !pl.eliminated) pl.mana.max = (pl.mana.max || 0) + (e.value || 1); }
+		} else if (e.type === 'debuff-random-hand-each') {
+			// Twisted Treant: give a random minion in each player's hand -N Attack
+			for (let s2 = 0; s2 < state.players.length; s2++) {
+				const pool = state.players[s2].hand.filter(c => c.type === 'creature');
+				if (pool.length) { const c = pool[Math.floor(state.rng() * pool.length)]; c.attack = Math.max(0, (c.attack || 0) + (e.attack || -2)); emit(state, { type: 'buff', uid: c.uid, attack: c.attack, hp: hp(c) }); }
+			}
 		} else if (e.type === 'buff-friendly-tribe') {
 			// Shadehound: buff your other minions of a tribe
 			for (const c of state.players[pi].board) { if (isDead(c) || c.type === 'location') continue; if (e.exceptSelf && c === source) continue; if (e.tribe && !(c.tribe || '').includes(e.tribe)) continue; buffCreature(c, e.attack || 0, e.health || 0); }
