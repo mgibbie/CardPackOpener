@@ -4337,7 +4337,7 @@ function execEffects(state, pi, effects, target, source) {
 						: (e.cardType && def.type !== e.cardType)) continue;
 					if (e.school && schoolOf(def) !== e.school) continue; // Twilight Deceptor
 					if (e.maxCost != null && (def.cost || 0) > e.maxCost) continue;
-					if (e.minCost != null && (def.cost || 0) < e.minCost) continue; if (e.cardType === 'secret' && !def.secret) continue; if (e.distinct && drawnIds.has(p.deck[j])) continue; if (e.health != null && (def.health || 0) !== e.health) continue; if (e.cost != null && (def.cost || 0) !== e.cost) continue; // Tol'vir Warden/Storm Chaser/Subject 9/Salhet's Pride
+					if (e.minCost != null && (def.cost || 0) < e.minCost) continue; if (e.cardType === 'secret' && !def.secret) continue; if (e.distinct && drawnIds.has(p.deck[j])) continue; if (e.health != null && (def.health || 0) !== e.health) continue; if (e.attack != null && (def.attack || 0) !== e.attack) continue; if (e.cost != null && (def.cost || 0) !== e.cost) continue; // Tol'vir Warden/Storm Chaser/Subject 9/Salhet's Pride/Holy Eggbearer
 					if (e.requireKeyword && !(def.keywords || []).includes(e.requireKeyword)) continue;
 					idxs.push(j);
 				}
@@ -5154,6 +5154,19 @@ function execEffects(state, pi, effects, target, source) {
 		} else if (e.type === 'summon-random-hand-size') {
 			// Astromancer: summon a random creature costing exactly your hand size
 			execEffects(state, pi, [{ type: 'summon-random', cost: state.players[pi].hand.length }], target, source);
+		} else if (e.type === 'reduce-random-enemy-hand-cost') {
+			// Curious Explorer: reduce the Cost of a random minion in your opponent's hand
+			for (const o of enemies) {
+				const pool = state.players[o].hand.filter(c => c.type === 'creature' && (c.cost || 0) > 0);
+				if (pool.length) { const c = pool[Math.floor(state.rng() * pool.length)]; c.cost = Math.max(0, (c.cost || 0) - (e.value || 2)); }
+				break;
+			}
+		} else if (e.type === 'gain-mana-to-match') {
+			// Crystal Tender: gain empty Mana Crystals until you match the opponent's maximum Mana
+			const p = state.players[pi];
+			let target = p.mana ? p.mana.max : 0;
+			for (const o of enemies) { const om = state.players[o].mana ? state.players[o].mana.max : 0; if (om > target) target = om; }
+			if (p.mana && target > p.mana.max) p.mana.max = target;
 		} else if (e.type === 'reduce-rightmost-hand-cost') {
 			// Nightmare Dragonkin: reduce the Cost of the right-most card in your hand
 			const p = state.players[pi];
@@ -8279,12 +8292,13 @@ function execEffects(state, pi, effects, target, source) {
 			const ownDeckDefs = () => [...new Set(state.players[pi].deck)].map(id => state.cardsById[id]).filter(d => d && !d.token && (e.cardType === 'spell' ? isSpellType(d) : d.type === 'creature')); // Stitched Tracker / Tortollan Pilgrim
 			const enemyHandDefs = () => { const foe = enemies[0]; return foe == null ? [] : state.players[foe].hand.map(c => state.cardsById[c.id] || c).filter(d => d && !d.token); }; // Madame Lazul
 			const diedDefs = () => [...new Set(state.players[pi].deathLogIds)].map(id => state.cardsById[id]).filter(d => d && d.type === 'creature'); // Body Wrapper
+			const discoverCost = e.costFromMana ? availableMana(state.players[pi]) : e.cost; // Scrappy Scavenger: Cost = your remaining Mana
 			const discoverPool = () => (e.fromEnemyDeck ? enemyDeckDefs() : e.fromEnemyHand ? enemyHandDefs() : e.fromDied ? diedDefs() : e.fromOwnDeck ? ownDeckDefs() : Object.values(state.cardsById)).filter(d => {
 				if (d.type === 'land' || d.token || d.collectible === false || d.companion || d.commander) return false;
 				if (d.colors && d.colors.length) return false;
 				if (e.cardType === 'spell' ? !isSpellType(d) : (e.cardType && d.type !== e.cardType)) return false;
 				if (e.tribe && !(d.tribe || '').includes(e.tribe)) return false;
-				if (e.cost != null && (d.cost || 0) !== e.cost) return false;
+				if (discoverCost != null && (d.cost || 0) !== discoverCost) return false;
 				if (e.maxCost != null && (d.cost || 0) > e.maxCost) return false;
 				if (e.minCost != null && (d.cost || 0) < e.minCost) return false;
 				if (e.hasStatic && d.static?.type !== e.hasStatic) return false;

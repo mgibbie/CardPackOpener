@@ -115025,6 +115025,431 @@
         "taunt"
       ],
       "description": "A 5/5 Ancient with Taunt."
+    },
+    {
+      "id": "glade_ecologist",
+      "name": "Glade Ecologist",
+      "type": "creature",
+      "cost": 1,
+      "cardClass": "priest",
+      "attack": 2,
+      "health": 1,
+      "rarity": "common",
+      "set": "THE_LOST_CITY",
+      "keywords": [
+        "deathrattle"
+      ],
+      "description": "Deathrattle: Get a 1-Cost Holy spell that gives a minion +2 or -2 Health. (Approximated: a random 1-Cost Holy spell.)",
+      "deathrattle": [
+        {
+          "type": "conjure-random",
+          "cardType": "spell",
+          "school": "Holy",
+          "cost": 1
+        }
+      ]
+    },
+    {
+      "id": "merchant_of_legend",
+      "name": "Merchant of Legend",
+      "type": "creature",
+      "cost": 1,
+      "cardClass": "rogue",
+      "attack": 1,
+      "health": 2,
+      "rarity": "rare",
+      "set": "THE_LOST_CITY",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Discover a Legendary minion. Shuffle the other two into your deck. (Not modeled: shuffle-others.)",
+      "effects": [
+        {
+          "type": "discover",
+          "cardType": "creature",
+          "rarity": "legendary"
+        }
+      ]
+    },
+    {
+      "id": "platysaur",
+      "name": "Platysaur",
+      "type": "creature",
+      "cost": 1,
+      "cardClass": "neutral",
+      "attack": 1,
+      "health": 2,
+      "rarity": "common",
+      "set": "THE_LOST_CITY",
+      "tribe": "Beast",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Draw a card. Deathrattle: Discard it. (Not modeled: Deathrattle discard.)",
+      "effects": [
+        {
+          "type": "draw",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "raptor_nest_nurse",
+      "name": "Raptor-Nest Nurse",
+      "type": "creature",
+      "cost": 1,
+      "cardClass": "hunter",
+      "attack": 1,
+      "health": 1,
+      "rarity": "common",
+      "set": "THE_LOST_CITY",
+      "keywords": [
+        "battlecry",
+        "deathrattle"
+      ],
+      "description": "Battlecry: Get a random 1-Cost minion. Deathrattle: Get a random 1-Cost spell.",
+      "effects": [
+        {
+          "type": "conjure-random",
+          "cardType": "creature",
+          "cost": 1
+        }
+      ],
+      "deathrattle": [
+        {
+          "type": "conjure-random",
+          "cardType": "spell",
+          "cost": 1
+        }
+      ]
+    },
+    {
+      "id": "scrappy_scavenger",
+      "name": "Scrappy Scavenger",
+      "type": "creature",
+      "cost": 1,
+      "cardClass": "mage",
+      "attack": 1,
+      "health": 1,
+      "rarity": "rare",
+      "set": "THE_LOST_CITY",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Discover a card with Cost equal to your remaining Mana Crystals.",
+      "effects": [
+        {
+          "type": "discover",
+          "costFromMana": true
+        }
+      ]
+    },
+    {
+      "id": "ancient_raptor",
+      "name": "Ancient Raptor",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "neutral",
+      "attack": 2,
+      "health": 1,
+      "rarity": "common",
+      "set": "THE_LOST_CITY",
+      "tribe": "Beast",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Choose to gain +3 Attack, Divine Shield, or \"Deathrattle: Summon two 1/1 Plants.\"",
+      "choices": [
+        {
+          "text": "+3 Attack",
+          "effects": [
+            {
+              "type": "buff",
+              "attack": 3,
+              "target": "self"
+            }
+          ]
+        },
+        {
+          "text": "Divine Shield",
+          "effects": [
+            {
+              "type": "grant",
+              "keyword": "divine_shield",
+              "target": "self"
+            }
+          ]
+        },
+        {
+          "text": "Deathrattle: Summon two 1/1 Plants",
+          "effects": [
+            {
+              "type": "grant-deathrattle",
+              "target": "self",
+              "effects": [
+                {
+                  "type": "summon",
+                  "count": 2,
+                  "summonId": "tlc_plant"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "crystal_tender",
+      "name": "Crystal Tender",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "neutral",
+      "attack": 2,
+      "health": 2,
+      "rarity": "common",
+      "set": "THE_LOST_CITY",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Tradeable. Battlecry: Gain empty Mana Crystals until both players have the same Mana. (Not modeled: Tradeable.)",
+      "effects": [
+        {
+          "type": "gain-mana-to-match"
+        }
+      ]
+    },
+    {
+      "id": "curious_explorer",
+      "name": "Curious Explorer",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "neutral",
+      "attack": 3,
+      "health": 5,
+      "rarity": "common",
+      "set": "THE_LOST_CITY",
+      "keywords": [
+        "deathrattle"
+      ],
+      "description": "Deathrattle: Reduce the Cost of a minion in your opponent's hand by (2).",
+      "deathrattle": [
+        {
+          "type": "reduce-random-enemy-hand-cost",
+          "value": 2
+        }
+      ]
+    },
+    {
+      "id": "dinositter",
+      "name": "Dinositter",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "hunter",
+      "attack": 2,
+      "health": 3,
+      "rarity": "common",
+      "set": "THE_LOST_CITY",
+      "description": "At the end of your turn, reduce the Cost of a random Beast in your hand by (1).",
+      "ongoing": {
+        "on": "turn-end",
+        "effects": [
+          {
+            "type": "reduce-random-hand-cost",
+            "tribe": "Beast",
+            "value": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "eyes_in_the_sky",
+      "name": "Eyes in the Sky",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "rogue",
+      "attack": 2,
+      "health": 1,
+      "rarity": "common",
+      "set": "THE_LOST_CITY",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Look at 3 cards in your enemy's deck. Pick one to put on top. (Not modeled: peek enemy deck.)"
+    },
+    {
+      "id": "firegill",
+      "name": "Firegill",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "paladin",
+      "attack": 3,
+      "health": 2,
+      "rarity": "common",
+      "set": "THE_LOST_CITY",
+      "tribe": "Elemental",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Kindred: Give your other minions Rush. (Approximated: fires as a Battlecry; Kindred condition not modeled.)",
+      "effects": [
+        {
+          "type": "grant",
+          "keyword": "rush",
+          "target": "friendly-others"
+        }
+      ]
+    },
+    {
+      "id": "holy_eggbearer",
+      "name": "Holy Eggbearer",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "neutral",
+      "attack": 1,
+      "health": 2,
+      "rarity": "common",
+      "set": "THE_LOST_CITY",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Draw a 0-Attack minion.",
+      "effects": [
+        {
+          "type": "tutor",
+          "cardType": "creature",
+          "attack": 0,
+          "count": 1
+        }
+      ]
+    },
+    {
+      "id": "longneck_egg",
+      "name": "Longneck Egg",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "druid",
+      "attack": 0,
+      "health": 2,
+      "rarity": "common",
+      "set": "THE_LOST_CITY",
+      "keywords": [
+        "deathrattle"
+      ],
+      "description": "Deathrattle: Summon a 3/3 Beast. Give your minions +1/+1.",
+      "deathrattle": [
+        {
+          "type": "summon",
+          "count": 1,
+          "summonId": "tlc_longneck_beast"
+        },
+        {
+          "type": "buff",
+          "attack": 1,
+          "health": 1,
+          "target": "friendly-creatures"
+        }
+      ]
+    },
+    {
+      "id": "questing_assistant",
+      "name": "Questing Assistant",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "neutral",
+      "attack": 3,
+      "health": 2,
+      "rarity": "common",
+      "set": "THE_LOST_CITY",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: If you played a Quest this game, deal 3 damage to an enemy minion. (Not modeled: Quests.)"
+    },
+    {
+      "id": "rockskipper",
+      "name": "Rockskipper",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "neutral",
+      "attack": 1,
+      "health": 3,
+      "rarity": "common",
+      "set": "THE_LOST_CITY",
+      "tribe": "Murloc",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Get a 1-Cost Rock that deals 3 damage.",
+      "effects": [
+        {
+          "type": "add-card",
+          "id": "tlc_rock",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "id": "spelunker",
+      "name": "Spelunker",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "warlock",
+      "attack": 2,
+      "health": 3,
+      "rarity": "common",
+      "set": "THE_LOST_CITY",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Your next Temporary card costs (2) less. (Not modeled: Temporary.)"
+    },
+    {
+      "id": "tlc_plant",
+      "name": "Plant",
+      "type": "creature",
+      "cost": 1,
+      "cardClass": "neutral",
+      "attack": 1,
+      "health": 1,
+      "rarity": "common",
+      "set": "THE_LOST_CITY",
+      "token": true,
+      "collectible": false,
+      "description": "A 1/1 Plant."
+    },
+    {
+      "id": "tlc_longneck_beast",
+      "name": "Longneck",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "druid",
+      "attack": 3,
+      "health": 3,
+      "rarity": "common",
+      "set": "THE_LOST_CITY",
+      "tribe": "Beast",
+      "token": true,
+      "collectible": false,
+      "description": "A 3/3 Beast."
+    },
+    {
+      "id": "tlc_rock",
+      "name": "Rock",
+      "type": "sorcery",
+      "cost": 1,
+      "cardClass": "neutral",
+      "rarity": "common",
+      "set": "THE_LOST_CITY",
+      "token": true,
+      "collectible": false,
+      "description": "Deal 3 damage.",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 3,
+          "target": "any"
+        }
+      ]
     }
   ]
 }
