@@ -2935,6 +2935,12 @@ function runSecretEffects(state, pi, effects, ctx) {
 				if (m && !isDead(m) && m.type !== 'location') { m.attack = (m.attack || 0) * 2; m.maxHealth = (m.maxHealth || 0) * 2; emit(state, { type: 'buff', uid: m.uid, attack: m.attack, hp: hp(m) }); }
 				break;
 			}
+			case 'dormant-played-minion': {
+				// Warden Maiev: the just-played minion goes Dormant for N turns
+				const m = ctx.minion;
+				if (m && m !== ctx.self && !isDead(m) && m.type === 'creature') { m.dormantLeft = e.value || 1; emit(state, { type: 'dormant', player: m.controller, uid: m.uid, turns: m.dormantLeft }); }
+				break;
+			}
 			case 'summon-discarded-minion': {
 				// Maloriak: after you discard a minion, summon a copy of it
 				const c = ctx.card;

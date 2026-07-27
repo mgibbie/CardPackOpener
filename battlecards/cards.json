@@ -121011,6 +121011,382 @@
       "token": true,
       "collectible": false,
       "description": "A 2/2 Treant."
+    },
+    {
+      "id": "black_market_overseer",
+      "name": "Black Market Overseer",
+      "type": "creature",
+      "cost": 1,
+      "cardClass": "hunter",
+      "attack": 1,
+      "health": 3,
+      "rarity": "common",
+      "set": "ESCAPEFROM_VIOLET_HOLD",
+      "description": "Whenever you play a Deathrattle minion, give it Rush.",
+      "ongoing": {
+        "on": "creature-played",
+        "if": {
+          "keyword": "deathrattle"
+        },
+        "effects": [
+          {
+            "type": "grant-keyword-played",
+            "keyword": "rush"
+          }
+        ]
+      }
+    },
+    {
+      "id": "disguised_doctor",
+      "name": "Disguised Doctor",
+      "type": "creature",
+      "cost": 1,
+      "cardClass": "deathknight",
+      "attack": 5,
+      "health": 1,
+      "rarity": "rare",
+      "set": "ESCAPEFROM_VIOLET_HOLD",
+      "keywords": [
+        "deathrattle"
+      ],
+      "description": "Can be played on either side. Deathrattle: Shuffle 4 Blights into your deck that deal 2 damage when drawn. (Not modeled: either-side play.)",
+      "deathrattle": [
+        {
+          "type": "shuffle-into-own-deck",
+          "id": "jail_blight",
+          "count": 4
+        }
+      ]
+    },
+    {
+      "id": "gallagio_goon",
+      "name": "Gallagio Goon",
+      "type": "creature",
+      "cost": 1,
+      "cardClass": "shaman",
+      "attack": 1,
+      "health": 3,
+      "rarity": "common",
+      "set": "ESCAPEFROM_VIOLET_HOLD",
+      "tribe": "Elemental",
+      "description": "After you play a Battlecry minion, give it +1/+1.",
+      "ongoing": {
+        "on": "battlecry-minion-played",
+        "effects": [
+          {
+            "type": "buff-played-grant-deathrattle",
+            "attack": 1,
+            "health": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "gullible_guard",
+      "name": "Gullible Guard",
+      "type": "creature",
+      "cost": 1,
+      "cardClass": "neutral",
+      "attack": 1,
+      "health": 3,
+      "rarity": "common",
+      "set": "ESCAPEFROM_VIOLET_HOLD",
+      "keywords": [
+        "deathrattle"
+      ],
+      "description": "Deathrattle: You can say Sorry this game. (Not modeled: Sorry.)"
+    },
+    {
+      "id": "picklock",
+      "name": "Picklock",
+      "type": "creature",
+      "cost": 1,
+      "cardClass": "rogue",
+      "attack": 1,
+      "health": 1,
+      "rarity": "rare",
+      "set": "ESCAPEFROM_VIOLET_HOLD",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "All numbers on this card equal your remaining Mana. Battlecry: Deal 1 damage to an enemy minion. (Not modeled: mana-scaling numbers.)",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 1,
+          "target": "enemy-creature"
+        }
+      ]
+    },
+    {
+      "id": "captured_archmage",
+      "name": "Captured Archmage",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "neutral",
+      "attack": 3,
+      "health": 2,
+      "rarity": "common",
+      "set": "ESCAPEFROM_VIOLET_HOLD",
+      "keywords": [
+        "deathrattle"
+      ],
+      "description": "Deathrattle: If you had 4 other Captured Archmages die this game, cast 'Fireball' at a random enemy. (Not modeled: 4-copy condition.)"
+    },
+    {
+      "id": "disguised_watchman",
+      "name": "Disguised Watchman",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "warrior",
+      "attack": 2,
+      "health": 4,
+      "rarity": "rare",
+      "set": "ESCAPEFROM_VIOLET_HOLD",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Can be played on either side. Battlecry: Deal 1 damage to all other friendly minions, twice. (Not modeled: either-side play.)",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 1,
+          "target": "friendly-others"
+        },
+        {
+          "type": "damage",
+          "value": 1,
+          "target": "friendly-others"
+        }
+      ]
+    },
+    {
+      "id": "escape_artist",
+      "name": "Escape Artist",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "neutral",
+      "attack": 4,
+      "health": 4,
+      "rarity": "epic",
+      "set": "ESCAPEFROM_VIOLET_HOLD",
+      "description": "After this attacks and survives, draw a card and escape the game!",
+      "ongoing": {
+        "on": "self-attacks-survives",
+        "effects": [
+          {
+            "type": "draw",
+            "value": 1
+          },
+          {
+            "type": "destroy-self"
+          }
+        ]
+      }
+    },
+    {
+      "id": "frantic_forger",
+      "name": "Frantic Forger",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "neutral",
+      "attack": 2,
+      "health": 2,
+      "rarity": "common",
+      "set": "ESCAPEFROM_VIOLET_HOLD",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Get a random playable spell. It is Temporary. (Not modeled: Temporary.)",
+      "effects": [
+        {
+          "type": "conjure-random",
+          "cardType": "spell"
+        }
+      ]
+    },
+    {
+      "id": "guard_dog",
+      "name": "Guard Dog",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "hunter",
+      "attack": 3,
+      "health": 1,
+      "rarity": "common",
+      "set": "ESCAPEFROM_VIOLET_HOLD",
+      "tribe": "Beast",
+      "keywords": [
+        "deathrattle"
+      ],
+      "description": "Deathrattle: Summon a random 1-Cost Deathrattle minion.",
+      "deathrattle": [
+        {
+          "type": "summon-random",
+          "cost": 1,
+          "requireKeyword": "deathrattle"
+        }
+      ]
+    },
+    {
+      "id": "mind_sweeper",
+      "name": "Mind Sweeper",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "priest",
+      "attack": 2,
+      "health": 3,
+      "rarity": "common",
+      "set": "ESCAPEFROM_VIOLET_HOLD",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: If you played a copy of an opponent's card while holding this, deal 2 damage to all enemy minions. (Not modeled: copied-card tracking.)"
+    },
+    {
+      "id": "p1ck_p0k3t",
+      "name": "P1CK-P0K3T",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "neutral",
+      "attack": 2,
+      "health": 3,
+      "rarity": "common",
+      "set": "ESCAPEFROM_VIOLET_HOLD",
+      "tribe": "Mech",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: If your deck has 25 or more cards, draw a card.",
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "deckAtLeast": 25
+          },
+          "then": [
+            {
+              "type": "draw",
+              "value": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "scarlet_bruiser",
+      "name": "Scarlet Bruiser",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "paladin",
+      "attack": 2,
+      "health": 2,
+      "rarity": "common",
+      "set": "ESCAPEFROM_VIOLET_HOLD",
+      "keywords": [
+        "deathrattle"
+      ],
+      "description": "Deathrattle: If your deck has no Neutral cards, get a random Paladin card. It costs (2) less.",
+      "deathrattle": [
+        {
+          "type": "conditional",
+          "if": {
+            "deckNoNeutral": true
+          },
+          "then": [
+            {
+              "type": "conjure-random",
+              "cardClass": "paladin",
+              "costMod": -2
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "warden_maiev",
+      "name": "Warden Maiev",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "neutral",
+      "attack": 1,
+      "health": 4,
+      "rarity": "legendary",
+      "set": "ESCAPEFROM_VIOLET_HOLD",
+      "description": "After you play a minion, give it +3/+3 and make it go Dormant for 1 turn.",
+      "ongoing": {
+        "on": "creature-played",
+        "effects": [
+          {
+            "type": "buff-played-grant-deathrattle",
+            "attack": 3,
+            "health": 3
+          },
+          {
+            "type": "dormant-played-minion",
+            "value": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "chef_nethrek",
+      "name": "Chef Neth'rek",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "druid",
+      "attack": 3,
+      "health": 3,
+      "rarity": "legendary",
+      "set": "ESCAPEFROM_VIOLET_HOLD",
+      "description": "Start of Game: If your deck only has cards that cost (3) or less, set your Mana to 10 after five turns! (Not modeled: Start-of-Game.)"
+    },
+    {
+      "id": "defias_smuggler",
+      "name": "Defias Smuggler",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "neutral",
+      "attack": 2,
+      "health": 3,
+      "rarity": "common",
+      "set": "ESCAPEFROM_VIOLET_HOLD",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Prepare. Battlecry: Give a friendly minion +2 Attack and Rush. (Not modeled: Prepare.)",
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 2,
+          "target": "friendly-creature"
+        },
+        {
+          "type": "grant",
+          "keyword": "rush",
+          "target": "friendly-creature"
+        }
+      ]
+    },
+    {
+      "id": "jail_blight",
+      "name": "Blight",
+      "type": "sorcery",
+      "cost": 1,
+      "cardClass": "deathknight",
+      "rarity": "common",
+      "set": "ESCAPEFROM_VIOLET_HOLD",
+      "token": true,
+      "collectible": false,
+      "drawTrigger": true,
+      "description": "When drawn, deal 2 damage to your hero.",
+      "onDraw": [
+        {
+          "type": "damage",
+          "value": 2,
+          "target": "own-hero"
+        }
+      ]
     }
   ]
 }
