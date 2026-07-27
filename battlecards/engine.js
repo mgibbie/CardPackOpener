@@ -544,6 +544,7 @@ export function drawCards(state, pi, count) {
 		if (p.deckMinionDiscount && card.type === 'creature') card.cost = Math.max(0, (card.cost || 0) - p.deckMinionDiscount); // Vanndar / Cera'thine
 		if (card.type === 'creature' && p.deckTribeDiscount) { for (const tr in p.deckTribeDiscount) if ((card.tribe || '').includes(tr)) card.cost = Math.max(0, (card.cost || 0) - p.deckTribeDiscount[tr]); } // Frizz Kindleroost
 		if (p.deckKeywordDiscount) { for (const kw in p.deckKeywordDiscount) if ((card.keywords || []).includes(kw)) card.cost = Math.max(0, (card.cost || 0) - p.deckKeywordDiscount[kw]); } // Rotten Rodent: Deathrattle cards
+		if (p.deckSchoolSpellDamage && isSpellType(card)) { const sch = schoolOf(card); if (sch && p.deckSchoolSpellDamage[sch]) card.bonusSpellDamage = (card.bonusSpellDamage || 0) + p.deckSchoolSpellDamage[sch]; } // Halduron Brightwing: Arcane spells drawn from deck
 		// C'Thun enters hand carrying every buff it collected while in your deck
 		if (card.id === 'c_thun') { card.attack = CTHUN_BASE + p.cthunAtk; card.maxHealth = CTHUN_BASE + p.cthunHp; if (p.cthunTaunt && !card.keywords.includes(KW.TAUNT)) card.keywords.push(KW.TAUNT); }
 		card.zone = 'hand';
@@ -1364,6 +1365,7 @@ function summon(state, pi, tokenDef) {
 	c.zone = 'board';
 	if (p.nextRecruitBuff && c.name === 'Silver Hand Recruit') { c.attack += p.nextRecruitBuff.attack || 0; c.maxHealth += p.nextRecruitBuff.health || 0; if (p.nextRecruitBuff.deathrattle) { c.deathrattle = (c.deathrattle || []).concat(JSON.parse(JSON.stringify(p.nextRecruitBuff.deathrattle))); if (!c.keywords.includes('deathrattle')) c.keywords.push('deathrattle'); } p.nextRecruitBuff = null; } // Stewart the Steward
 	if (p.nextTribeSummonBuff && (c.tribe || '').includes(p.nextTribeSummonBuff.tribe)) { c.attack += p.nextTribeSummonBuff.attack || 0; c.maxHealth += p.nextTribeSummonBuff.health || 0; p.nextTribeSummonBuff = null; } // Thornmantle Musician
+	if (p.tribeSummonBuff && state.turnNumber < p.tribeSummonBuff.untilTurn && (c.tribe || '').includes(p.tribeSummonBuff.tribe)) { for (const k of p.tribeSummonBuff.keywords) if (!c.keywords.includes(k)) { c.keywords.push(k); if (k === KW.DIVINE_SHIELD) c.shield = true; } } // Timewarden: Dragons gain Taunt + Divine Shield
 	p.board.push(c);
 	emit(state, { type: 'summon', player: pi, card: c });
 	questTick(state, 'summon', pi, 1, c);
@@ -1960,6 +1962,22 @@ function runSecretEffects(state, pi, effects, ctx) {
 					execEffects(state, pi, [{ type: 'tutor', cost: (self.metroCost || 0) + 1, count: 1 }], null, self);
 					self.metroCost = (self.metroCost || 0) + 1;
 				}
+				break;
+			}
+			case 'buff-played-grant-deathrattle': {
+				// Hawkstrider Rancher: buff the just-played minion +X/+X and give it a Deathrattle
+				const m = ctx.minion;
+				if (m && m !== ctx.self && !isDead(m) && m.type === 'creature') {
+					m.attack += e.attack || 1; m.maxHealth += e.health || 1;
+					if (e.deathrattle) { m.deathrattle = (m.deathrattle || []).concat(JSON.parse(JSON.stringify(e.deathrattle))); if (!m.keywords.includes('deathrattle')) m.keywords.push('deathrattle'); }
+					emit(state, { type: 'buff', uid: m.uid, attack: m.attack, hp: hp(m) });
+				}
+				break;
+			}
+			case 'set-attacked-health': {
+				// Keeneye Spotter: set the hero-attacked minion's Health to N
+				const t = ctx.target;
+				if (t && t.type === 'creature' && !isDead(t)) { t.maxHealth = e.value ?? 1; t.damage = 0; t.tempHealth = 0; emit(state, { type: 'buff', uid: t.uid, attack: t.attack, hp: hp(t) }); }
 				break;
 			}
 			case 'gain-dead-deathrattle': {
@@ -3058,6 +3076,7 @@ function execEffects(state, pi, effects, target, source) {
 			else if (e.target === 'all-creatures') { for (const pl of state.players) for (const c of [...pl.board]) mend(c); }
 			else if (e.target === 'friendly-creatures') { for (const c of [...state.players[pi].board]) mend(c); }
 			else if (e.target === 'friendly-all') { mendHero(pi); for (const c of [...state.players[pi].board]) mend(c); }
+			else if (e.target === 'friendly-characters') { mendHero(pi); for (const c of [...state.players[pi].board]) mend(c); } // Sunfury Clergy: hero + all friendly minions
 			else if (e.target === 'random-damaged-friendly') {
 				// Black Blood's Body: restore a random damaged friendly character
 				const pool = [...state.players[pi].board.filter(c => !isDead(c) && c.damage > 0)];
@@ -5808,14 +5827,29 @@ function execEffects(state, pi, effects, target, source) {
 		} else if (e.type === 'destroy-self') {
 			// Incorporeal Corporal: destroy the source minion
 			if (source && !isDead(source)) { source.damage = source.maxHealth; source.shield = false; emit(state, { type: 'destroy', uid: source.uid }); sweepDeaths(state); }
+		} else if (e.type === 'grant-tribe-summon-buff') {
+			// Timewarden: until end of your next turn, minions of a tribe you summon gain keywords
+			state.players[pi].tribeSummonBuff = { tribe: e.tribe, keywords: e.keywords || [], untilTurn: state.turnNumber + 2 };
+		} else if (e.type === 'haunt-hand-card') {
+			// Haunting Nightmare: mark a random card in your hand; playing it summons a token
+			const p = state.players[pi];
+			const pool = p.hand.filter(c => c !== source && !c.hauntSummon);
+			if (pool.length) pool[Math.floor(state.rng() * pool.length)].hauntSummon = e.summonId || 'rlk_soldier';
 		} else if (e.type === 'reduce-deck-keyword-cost') {
 			// Rotten Rodent: cards with a keyword drawn from your deck cost less
 			const p = state.players[pi];
 			p.deckKeywordDiscount = p.deckKeywordDiscount || {};
 			p.deckKeywordDiscount[e.keyword] = (p.deckKeywordDiscount[e.keyword] || 0) + (e.value || 1);
 		} else if (e.type === 'grant-hand-school-spelldamage') {
-			// Silvermoon Farstrider: give all spells of a school in your hand Spell Damage +N
+			// Silvermoon Farstrider: give all spells of a school in your hand Spell Damage +N; Halduron: also deck
 			for (const c of state.players[pi].hand) if (isSpellType(c) && (!e.school || schoolOf(c) === e.school)) c.bonusSpellDamage = (c.bonusSpellDamage || 0) + (e.value || 1);
+			if (e.alsoDeck) { const p = state.players[pi]; p.deckSchoolSpellDamage = p.deckSchoolSpellDamage || {}; p.deckSchoolSpellDamage[e.school] = (p.deckSchoolSpellDamage[e.school] || 0) + (e.value || 1); }
+		} else if (e.type === 'buff-played-grant-deathrattle') {
+			// Hawkstrider Rancher: buff a just-played minion and give it a Deathrattle (runs via creature-played ongoing)
+			// handled in runSecretEffects; no-op here
+		} else if (e.type === 'set-attacked-health') {
+			// Keeneye Spotter: set the attacked minion's Health (runs via hero-attacks-creature ongoing)
+			// handled in runSecretEffects; no-op here
 		} else if (e.type === 'copy-random-enemy-deck-card') {
 			// Mind Eater: add a copy of a random card from the opponent's deck to your hand
 			const foe = enemies[0], p = state.players[pi];
@@ -8459,6 +8493,7 @@ export function playCard(state, pi, cardUid, target, choice, position, useAlt, k
 	if (card.type === 'creature' && card.tribe) { p.tribesPlayedGame = p.tribesPlayedGame || new Set(); for (const tr of (card.tribe || '').split('/')) if (tr) p.tribesPlayedGame.add(tr); } // Power Slider
 	if ((card.keywords || []).includes('combo')) p.combosPlayedGame = (p.combosPlayedGame || 0) + 1; // Rhyme Spinner
 	(p.playedCountById = p.playedCountById || {})[card.id] = (p.playedCountById[card.id] || 0) + 1; // Freebird
+	if (card.hauntSummon && state.cardsById[card.hauntSummon]) summon(state, pi, state.cardsById[card.hauntSummon]); // Haunting Nightmare: playing a haunted card summons a Soldier
 	if ((card.keywords || []).includes('outcast') && p.nextOutcastDiscount && !p._outcastDiscountGrantedThisPlay) p.nextOutcastDiscount = 0; // Fierce Outsider: one-shot discount consumed (not by the card that granted it)
 	p._outcastDiscountGrantedThisPlay = false;
 	// Sherazin, Corpse Flower: play 4 cards in a turn to revive the seed
@@ -9147,6 +9182,7 @@ export function heroAttack(state, pi, target) {
 		}
 	}
 	fireOngoing(state, pi, 'hero-attacks', {}); // Hench-Clan Thug: minion reacts to your hero attacking
+	if (hitCreature) fireOngoing(state, pi, 'hero-attacks-creature', { target: findCreature(state, target.uid), damaged: findCreature(state, target.uid) }); // Keeneye Spotter
 	if (killed) {
 		fireOngoing(state, pi, 'hero-kills-minion', {}); // Spirit of the Raptor
 		if (p.heroAttacksUsed > 0 && p.board.some(c => c.id === 'gonk_the_raptor' && !isDead(c))) p.heroAttacksUsed--; // Gonk: may attack again

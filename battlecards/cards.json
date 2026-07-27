@@ -99558,6 +99558,514 @@
           "target": "any"
         }
       ]
+    },
+    {
+      "id": "drakkari_embalmer",
+      "name": "Drakkari Embalmer",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "neutral",
+      "attack": 3,
+      "health": 4,
+      "rarity": "common",
+      "set": "RETURN_OF_THE_LICH_KING",
+      "tribe": "Undead",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Give a friendly Undead Reborn.",
+      "effects": [
+        {
+          "type": "grant",
+          "keyword": "reborn",
+          "target": "friendly-creature"
+        }
+      ]
+    },
+    {
+      "id": "energy_shaper",
+      "name": "Energy Shaper",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "mage",
+      "attack": 3,
+      "health": 4,
+      "rarity": "epic",
+      "set": "RETURN_OF_THE_LICH_KING",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Transform all spells in your hand into ones that cost (3) more. (They keep their original Cost.)"
+    },
+    {
+      "id": "frostfin_chomper",
+      "name": "Frostfin Chomper",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "shaman",
+      "attack": 2,
+      "health": 3,
+      "rarity": "rare",
+      "set": "RETURN_OF_THE_LICH_KING",
+      "tribe": "Elemental",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: If you played an Elemental last turn, summon three 1/1 Murlocs.",
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "elementalLastTurn": true
+          },
+          "then": [
+            {
+              "type": "summon",
+              "count": 3,
+              "summonId": "rlk_murloc"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "halduron_brightwing",
+      "name": "Halduron Brightwing",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "hunter",
+      "attack": 3,
+      "health": 4,
+      "rarity": "legendary",
+      "set": "RETURN_OF_THE_LICH_KING",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Give all Arcane spells in your hand and deck Spell Damage +1.",
+      "effects": [
+        {
+          "type": "grant-hand-school-spelldamage",
+          "school": "Arcane",
+          "value": 1,
+          "alsoDeck": true
+        }
+      ]
+    },
+    {
+      "id": "haunting_nightmare",
+      "name": "Haunting Nightmare",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "priest",
+      "attack": 4,
+      "health": 3,
+      "rarity": "epic",
+      "set": "RETURN_OF_THE_LICH_KING",
+      "tribe": "Undead",
+      "keywords": [
+        "deathrattle"
+      ],
+      "description": "Deathrattle: Haunt a card in your hand. When you play it, summon a 4/3 Soldier.",
+      "deathrattle": [
+        {
+          "type": "haunt-hand-card",
+          "summonId": "rlk_soldier"
+        }
+      ]
+    },
+    {
+      "id": "hawkstrider_rancher",
+      "name": "Hawkstrider Rancher",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "neutral",
+      "attack": 2,
+      "health": 5,
+      "rarity": "epic",
+      "set": "RETURN_OF_THE_LICH_KING",
+      "description": "Whenever you play a minion, give it +1/+1 and \"Deathrattle: Summon a 1/1 Hawkstrider.\"",
+      "ongoing": {
+        "on": "creature-played",
+        "effects": [
+          {
+            "type": "buff-played-grant-deathrattle",
+            "attack": 1,
+            "health": 1,
+            "deathrattle": [
+              {
+                "type": "summon",
+                "count": 1,
+                "summonId": "rlk_hawkstrider"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "keeneye_spotter",
+      "name": "Keeneye Spotter",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "hunter",
+      "attack": 3,
+      "health": 4,
+      "rarity": "common",
+      "set": "RETURN_OF_THE_LICH_KING",
+      "description": "Whenever your hero attacks a minion, set its Health to 1.",
+      "ongoing": {
+        "on": "hero-attacks-creature",
+        "effects": [
+          {
+            "type": "set-attacked-health",
+            "value": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "knight_of_the_dead",
+      "name": "Knight of the Dead",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "paladin",
+      "attack": 5,
+      "health": 5,
+      "rarity": "common",
+      "set": "RETURN_OF_THE_LICH_KING",
+      "tribe": "Undead",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Deal 5 damage to your hero. Manathirst (7): Restore 5 Health to your hero instead.",
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "manathirst": 7
+          },
+          "then": [
+            {
+              "type": "heal",
+              "value": 5,
+              "target": "self"
+            }
+          ],
+          "else": [
+            {
+              "type": "damage",
+              "value": 5,
+              "target": "own-hero"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "nerubian_vizier",
+      "name": "Nerubian Vizier",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "neutral",
+      "attack": 2,
+      "health": 4,
+      "rarity": "common",
+      "set": "RETURN_OF_THE_LICH_KING",
+      "tribe": "Undead",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Discover a spell. If a friendly Undead died after your last turn, it costs (2) less.",
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "friendlyUndeadDied": true
+          },
+          "then": [
+            {
+              "type": "discover",
+              "cardType": "spell",
+              "costMod": -2
+            }
+          ],
+          "else": [
+            {
+              "type": "discover",
+              "cardType": "spell"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "rimescale_siren",
+      "name": "Rimescale Siren",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "deathknight",
+      "attack": 2,
+      "health": 3,
+      "rarity": "common",
+      "set": "RETURN_OF_THE_LICH_KING",
+      "tribe": "Undead",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: If you've cast three spells while holding this, Freeze 3 random enemy minions.",
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "spellsCastWhileHeld": 3
+          },
+          "then": [
+            {
+              "type": "freeze",
+              "target": "random-enemy",
+              "count": 3
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "scourge_rager",
+      "name": "Scourge Rager",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "neutral",
+      "attack": 5,
+      "health": 4,
+      "rarity": "common",
+      "set": "RETURN_OF_THE_LICH_KING",
+      "tribe": "Undead",
+      "keywords": [
+        "reborn",
+        "battlecry"
+      ],
+      "description": "Reborn. Battlecry: Die.",
+      "effects": [
+        {
+          "type": "destroy-self"
+        }
+      ]
+    },
+    {
+      "id": "silvermoon_arcanist",
+      "name": "Silvermoon Arcanist",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "neutral",
+      "attack": 2,
+      "health": 2,
+      "rarity": "common",
+      "set": "RETURN_OF_THE_LICH_KING",
+      "keywords": [
+        "battlecry"
+      ],
+      "static": {
+        "type": "spell-damage",
+        "value": 2
+      },
+      "description": "Spell Damage +2. Battlecry: Your spells can't target heroes this turn."
+    },
+    {
+      "id": "silvermoon_sentinel",
+      "name": "Silvermoon Sentinel",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "neutral",
+      "attack": 2,
+      "health": 5,
+      "rarity": "common",
+      "set": "RETURN_OF_THE_LICH_KING",
+      "keywords": [
+        "taunt",
+        "battlecry"
+      ],
+      "description": "Taunt. Manathirst (8): Gain +2/+2 and Divine Shield.",
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "manathirst": 8
+          },
+          "then": [
+            {
+              "type": "buff",
+              "attack": 2,
+              "health": 2,
+              "target": "self"
+            },
+            {
+              "type": "grant-keyword-self",
+              "keyword": "divine_shield"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "stitched_creation",
+      "name": "Stitched Creation",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "rogue",
+      "attack": 1,
+      "health": 1,
+      "rarity": "rare",
+      "set": "RETURN_OF_THE_LICH_KING",
+      "tribe": "Undead",
+      "keywords": [
+        "combo"
+      ],
+      "description": "Combo: Gain +2/+2. Infuse (4): Gain +3/+3. Manathirst (10): Gain +4/+4.",
+      "combo": [
+        {
+          "type": "buff",
+          "attack": 2,
+          "health": 2,
+          "target": "self"
+        },
+        {
+          "type": "conditional",
+          "if": {
+            "manathirst": 10
+          },
+          "then": [
+            {
+              "type": "buff",
+              "attack": 4,
+              "health": 4,
+              "target": "self"
+            }
+          ]
+        }
+      ],
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "manathirst": 10
+          },
+          "then": [
+            {
+              "type": "buff",
+              "attack": 4,
+              "health": 4,
+              "target": "self"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "sunfury_clergy",
+      "name": "Sunfury Clergy",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "neutral",
+      "attack": 2,
+      "health": 4,
+      "rarity": "common",
+      "set": "RETURN_OF_THE_LICH_KING",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Restore 3 Health to all friendly characters. Manathirst (6): Restore 6 Health instead.",
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "manathirst": 6
+          },
+          "then": [
+            {
+              "type": "heal",
+              "value": 6,
+              "target": "friendly-characters"
+            }
+          ],
+          "else": [
+            {
+              "type": "heal",
+              "value": 3,
+              "target": "friendly-characters"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "timewarden",
+      "name": "Timewarden",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "paladin",
+      "attack": 3,
+      "health": 4,
+      "rarity": "epic",
+      "set": "RETURN_OF_THE_LICH_KING",
+      "tribe": "Dragon",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Until the end of your next turn, Dragons you summon gain Taunt and Divine Shield.",
+      "effects": [
+        {
+          "type": "grant-tribe-summon-buff",
+          "tribe": "Dragon",
+          "keywords": [
+            "taunt",
+            "divine_shield"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "rlk_murloc",
+      "name": "Murloc",
+      "type": "creature",
+      "cost": 1,
+      "cardClass": "neutral",
+      "attack": 1,
+      "health": 1,
+      "rarity": "common",
+      "set": "RETURN_OF_THE_LICH_KING",
+      "tribe": "Murloc",
+      "token": true,
+      "collectible": false,
+      "description": "A 1/1 Murloc."
+    },
+    {
+      "id": "rlk_soldier",
+      "name": "Soldier",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "neutral",
+      "attack": 4,
+      "health": 3,
+      "rarity": "common",
+      "set": "RETURN_OF_THE_LICH_KING",
+      "token": true,
+      "collectible": false,
+      "description": "A 4/3 Soldier."
+    },
+    {
+      "id": "rlk_hawkstrider",
+      "name": "Hawkstrider",
+      "type": "creature",
+      "cost": 1,
+      "cardClass": "neutral",
+      "attack": 1,
+      "health": 1,
+      "rarity": "common",
+      "set": "RETURN_OF_THE_LICH_KING",
+      "tribe": "Beast",
+      "token": true,
+      "collectible": false,
+      "description": "A 1/1 Hawkstrider."
     }
   ]
 }
