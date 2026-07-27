@@ -2518,6 +2518,7 @@ function runSecretEffects(state, pi, effects, ctx) {
 				if (m && !isDead(m) && !m.keywords.includes(e.keyword)) {
 					m.keywords.push(e.keyword);
 					if (e.keyword === KW.STEALTH) m.stealthed = true;
+					if (e.keyword === KW.DIVINE_SHIELD) m.shield = true; // Ogre-Gang Ace
 					emit(state, { type: 'buff', uid: m.uid, attack: m.attack, hp: hp(m) });
 				}
 				break;
@@ -3830,7 +3831,7 @@ function execEffects(state, pi, effects, target, source) {
 			// Devour: burn the top N cards of an opponent's deck (target 'all' = everyone,
 			// 'self' = your own deck — Tickatus)
 			if (e.target === 'all') { for (let s2 = 0; s2 < state.players.length; s2++) for (let i = 0; i < (e.value || 1); i++) state.players[s2].deck.pop(); }
-			else if (e.target === 'self') { for (let i = 0; i < (e.value || 1); i++) state.players[pi].deck.pop(); }
+			else if (e.target === 'self') { for (let i = 0; i < (e.value || 1); i++) e.bottom ? state.players[pi].deck.shift() : state.players[pi].deck.pop(); } // Waste Remover: bottom of own deck
 			else { const victim = enemyHero(); if (victim != null) { for (let i = 0; i < (e.value || 1); i++) state.players[victim].deck.pop(); } }
 		} else if (e.type === 'discard-random') {
 			const p = state.players[pi];
@@ -5929,6 +5930,13 @@ function execEffects(state, pi, effects, target, source) {
 		} else if (e.type === 'destroy-self') {
 			// Incorporeal Corporal: destroy the source minion
 			if (source && !isDead(source)) { source.damage = source.maxHealth; source.shield = false; emit(state, { type: 'destroy', uid: source.uid }); sweepDeaths(state); }
+		} else if (e.type === 'buff-self-per-hand') {
+			// Lawful Longarm: gain +N Attack for each card in your hand
+			if (source) buffCreature(source, (e.attack || 1) * state.players[pi].hand.length, (e.health || 0) * state.players[pi].hand.length);
+		} else if (e.type === 'damage-enemy-hand-minions') {
+			// Gunslinger Kurtrus: fire N shots of V damage at random minions in the opponent's hand
+			const foe = enemies[0];
+			if (foe != null) { const fp = state.players[foe]; for (let n = 0; n < (e.count || 6); n++) { const pool = fp.hand.filter(c => c.type === 'creature'); if (!pool.length) break; const c = pool[Math.floor(state.rng() * pool.length)]; c.maxHealth = (c.maxHealth || 1) - (e.value || 2); if ((c.maxHealth || 0) <= 0) { fp.hand = fp.hand.filter(x => x !== c); emit(state, { type: 'discard', player: foe, card: c }); } } }
 		} else if (e.type === 'roll-dice-discover') {
 			// Snake Eyes: roll two dice, Discover a card of each rolled Cost (doubles = an extra)
 			const r1 = 1 + Math.floor(state.rng() * 6), r2 = 1 + Math.floor(state.rng() * 6);

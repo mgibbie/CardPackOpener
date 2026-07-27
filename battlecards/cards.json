@@ -107124,6 +107124,441 @@
           "target": "any"
         }
       ]
+    },
+    {
+      "id": "popgar_the_putrid",
+      "name": "Pop'gar the Putrid",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "warlock",
+      "attack": 2,
+      "health": 6,
+      "rarity": "legendary",
+      "set": "WILD_WEST",
+      "keywords": [
+        "battlecry"
+      ],
+      "schoolCostReduce": {
+        "school": "Fel",
+        "amount": 2
+      },
+      "description": "Your Fel spells cost (2) less and have Lifesteal. Battlecry: Get two Barrels of Sludge.",
+      "effects": [
+        {
+          "type": "add-card",
+          "id": "ww_barrel_of_sludge",
+          "count": 2
+        }
+      ]
+    },
+    {
+      "id": "reliquary_researcher",
+      "name": "Reliquary Researcher",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "mage",
+      "attack": 3,
+      "health": 5,
+      "rarity": "epic",
+      "set": "WILD_WEST",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: If you've Excavated twice, cast two random Mage Secrets.",
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "excavatedTwice": true
+          },
+          "then": [
+            {
+              "type": "install-random-secrets",
+              "count": 2
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "rowdy_partner",
+      "name": "Rowdy Partner",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "neutral",
+      "attack": 4,
+      "health": 3,
+      "rarity": "common",
+      "set": "WILD_WEST",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: If you're holding another 4-Cost card, deal 4 damage.",
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "holdingCost": 4
+          },
+          "target": "any",
+          "then": [
+            {
+              "type": "damage",
+              "value": 4,
+              "target": "any"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "sheriff_barrelbrim",
+      "name": "Sheriff Barrelbrim",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "neutral",
+      "attack": 4,
+      "health": 4,
+      "rarity": "legendary",
+      "set": "WILD_WEST",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: If you have 20 or less Health, open the Badlands Jail."
+    },
+    {
+      "id": "skeleton_crew",
+      "name": "Skeleton Crew",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "deathknight",
+      "attack": 3,
+      "health": 3,
+      "rarity": "rare",
+      "set": "WILD_WEST",
+      "tribe": "Undead",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Excavate a treasure. It costs (0).",
+      "effects": [
+        {
+          "type": "excavate"
+        }
+      ]
+    },
+    {
+      "id": "snake_oil_seller",
+      "name": "Snake Oil Seller",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "neutral",
+      "attack": 4,
+      "health": 5,
+      "rarity": "rare",
+      "set": "WILD_WEST",
+      "tribe": "Naga",
+      "keywords": [
+        "deathrattle"
+      ],
+      "description": "Deathrattle: Shuffle 2 Tradeable Snake Oils into your opponent's deck.",
+      "deathrattle": [
+        {
+          "type": "shuffle-cards-into-enemy-deck",
+          "id": "ww_snake_oil",
+          "count": 2
+        }
+      ]
+    },
+    {
+      "id": "taethelan_bloodwatcher",
+      "name": "Tae'thelan Bloodwatcher",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "mage",
+      "attack": 2,
+      "health": 5,
+      "rarity": "legendary",
+      "set": "WILD_WEST",
+      "foreignCostReduce": 4,
+      "description": "Cards that didn't start in your deck cost (4) less (but not less than 1)."
+    },
+    {
+      "id": "theldurin_the_lost",
+      "name": "Theldurin the Lost",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "hunter",
+      "attack": 3,
+      "health": 4,
+      "rarity": "legendary",
+      "set": "WILD_WEST",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: If your deck started with no duplicates, gain Immune this turn and attack all enemies.",
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "noDuplicates": true
+          },
+          "then": [
+            {
+              "type": "grant-immune-turn",
+              "target": "self"
+            },
+            {
+              "type": "buff-self-per-damaged-then-attack-all",
+              "attack": 0,
+              "health": 0
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "waste_remover",
+      "name": "Waste Remover",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "warlock",
+      "attack": 7,
+      "health": 7,
+      "rarity": "common",
+      "set": "WILD_WEST",
+      "tribe": "Demon",
+      "description": "At the end of your turn, destroy the bottom 3 cards of your deck.",
+      "ongoing": {
+        "on": "turn-end",
+        "effects": [
+          {
+            "type": "mill",
+            "target": "self",
+            "value": 3,
+            "bottom": true
+          }
+        ]
+      }
+    },
+    {
+      "id": "cattle_rustler",
+      "name": "Cattle Rustler",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "neutral",
+      "attack": 3,
+      "health": 4,
+      "rarity": "epic",
+      "set": "WILD_WEST",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Draw a Beast. It costs (3) less.",
+      "effects": [
+        {
+          "type": "tutor",
+          "cardType": "creature",
+          "tribe": "Beast",
+          "count": 1,
+          "costMod": -3
+        }
+      ]
+    },
+    {
+      "id": "doctor_hollidae",
+      "name": "Doctor Holli'dae",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "shaman",
+      "attack": 4,
+      "health": 5,
+      "rarity": "legendary",
+      "set": "WILD_WEST",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: If your deck started with no duplicates, equip the Staff of the Nine Frogs.",
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "noDuplicates": true
+          },
+          "then": [
+            {
+              "type": "equip",
+              "name": "Staff of the Nine Frogs",
+              "attack": 4,
+              "durability": 2
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "gunslinger_kurtrus",
+      "name": "Gunslinger Kurtrus",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "demonhunter",
+      "attack": 4,
+      "health": 6,
+      "rarity": "legendary",
+      "set": "WILD_WEST",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: If your deck started with no duplicates, fire six 2 damage shots at minions in the enemy's hand.",
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "noDuplicates": true
+          },
+          "then": [
+            {
+              "type": "damage-enemy-hand-minions",
+              "count": 6,
+              "value": 2
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "lawful_longarm",
+      "name": "Lawful Longarm",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "paladin",
+      "attack": 1,
+      "health": 5,
+      "rarity": "common",
+      "set": "WILD_WEST",
+      "tribe": "Draenei",
+      "keywords": [
+        "rush",
+        "lifesteal",
+        "battlecry"
+      ],
+      "description": "Rush, Lifesteal. Battlecry: Gain +1 Attack for each card in your hand.",
+      "effects": [
+        {
+          "type": "buff-self-per-hand",
+          "attack": 1
+        }
+      ]
+    },
+    {
+      "id": "living_prairie",
+      "name": "Living Prairie",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "shaman",
+      "attack": 5,
+      "health": 4,
+      "rarity": "common",
+      "set": "WILD_WEST",
+      "tribe": "Elemental",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: If you played an Elemental last turn, summon two 3/3 Cows with Rush.",
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "elementalLastTurn": true
+          },
+          "then": [
+            {
+              "type": "summon",
+              "count": 2,
+              "summonId": "ww_cow_33"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "mesadune_the_fractured",
+      "name": "Mes'Adune the Fractured",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "mage",
+      "attack": 6,
+      "health": 5,
+      "rarity": "legendary",
+      "set": "WILD_WEST",
+      "tribe": "Elemental",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Draw an Elemental. Split it into two halves.",
+      "effects": [
+        {
+          "type": "tutor",
+          "cardType": "creature",
+          "tribe": "Elemental",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "id": "ogre_gang_ace",
+      "name": "Ogre-Gang Ace",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "neutral",
+      "attack": 5,
+      "health": 4,
+      "rarity": "epic",
+      "set": "WILD_WEST",
+      "keywords": [
+        "rush"
+      ],
+      "description": "Rush. Whenever this attacks, gain Divine Shield. (50% chance to gain Lifesteal instead.)",
+      "ongoing": {
+        "on": "self-attacks",
+        "effects": [
+          {
+            "type": "grant-self",
+            "keyword": "divine_shield"
+          }
+        ]
+      }
+    },
+    {
+      "id": "ww_snake_oil",
+      "name": "Snake Oil",
+      "type": "sorcery",
+      "cost": 1,
+      "cardClass": "neutral",
+      "rarity": "common",
+      "set": "WILD_WEST",
+      "token": true,
+      "collectible": false,
+      "description": "A slippery Snake Oil.",
+      "effects": []
+    },
+    {
+      "id": "ww_cow_33",
+      "name": "Cow",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "shaman",
+      "attack": 3,
+      "health": 3,
+      "rarity": "common",
+      "set": "WILD_WEST",
+      "tribe": "Beast",
+      "token": true,
+      "collectible": false,
+      "keywords": [
+        "rush"
+      ],
+      "description": "Rush."
     }
   ]
 }
