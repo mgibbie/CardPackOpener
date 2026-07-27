@@ -108135,6 +108135,439 @@
         "taunt"
       ],
       "description": "A 5/5 Taunt Dragon."
+    },
+    {
+      "id": "adaptive_amalgam",
+      "name": "Adaptive Amalgam",
+      "type": "creature",
+      "cost": 1,
+      "cardClass": "neutral",
+      "attack": 1,
+      "health": 2,
+      "rarity": "epic",
+      "set": "ISLAND_VACATION",
+      "tribe": "All",
+      "keywords": [
+        "deathrattle"
+      ],
+      "description": "This has all minion types. Deathrattle: Shuffle this into your deck. It keeps any enchantments.",
+      "deathrattle": [
+        {
+          "type": "shuffle-tokens-into-deck",
+          "ids": [
+            "adaptive_amalgam"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "brain_masseuse",
+      "name": "Brain Masseuse",
+      "type": "creature",
+      "cost": 1,
+      "cardClass": "priest",
+      "attack": 2,
+      "health": 3,
+      "rarity": "common",
+      "set": "ISLAND_VACATION",
+      "tribe": "Undead",
+      "description": "Whenever this minion takes damage, also deal that amount to your hero.",
+      "ongoing": {
+        "on": "self-damaged",
+        "effects": [
+          {
+            "type": "damage-own-hero-by-amount"
+          }
+        ]
+      }
+    },
+    {
+      "id": "party_fiend",
+      "name": "Party Fiend",
+      "type": "creature",
+      "cost": 1,
+      "cardClass": "warlock",
+      "attack": 1,
+      "health": 1,
+      "rarity": "common",
+      "set": "ISLAND_VACATION",
+      "tribe": "Demon",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Summon two 1/1 Felbeasts. Deal 3 damage to your hero.",
+      "effects": [
+        {
+          "type": "summon",
+          "count": 2,
+          "summonId": "vac_felbeast"
+        },
+        {
+          "type": "damage",
+          "value": 3,
+          "target": "own-hero"
+        }
+      ]
+    },
+    {
+      "id": "patches_the_pilot",
+      "name": "Patches the Pilot",
+      "type": "creature",
+      "cost": 1,
+      "cardClass": "demonhunter",
+      "attack": 1,
+      "health": 1,
+      "rarity": "legendary",
+      "set": "ISLAND_VACATION",
+      "tribe": "Demon",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Shuffle six Parachutes into your deck that summon a 1/1 Pirate with Charge when drawn.",
+      "effects": [
+        {
+          "type": "shuffle-tokens-into-deck",
+          "ids": [
+            "vac_parachute",
+            "vac_parachute",
+            "vac_parachute",
+            "vac_parachute",
+            "vac_parachute",
+            "vac_parachute"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "adrenaline_fiend",
+      "name": "Adrenaline Fiend",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "demonhunter",
+      "attack": 2,
+      "health": 2,
+      "rarity": "common",
+      "set": "ISLAND_VACATION",
+      "tribe": "Demon",
+      "description": "After a friendly Pirate attacks, give your hero +1 Attack this turn.",
+      "ongoing": {
+        "on": "friendly-attacks",
+        "if": {
+          "tribe": "Pirate"
+        },
+        "effects": [
+          {
+            "type": "hero-temp-attack",
+            "value": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "brittlebone_buccaneer",
+      "name": "Brittlebone Buccaneer",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "deathknight",
+      "attack": 1,
+      "health": 4,
+      "rarity": "rare",
+      "set": "ISLAND_VACATION",
+      "tribe": "Undead",
+      "description": "Whenever you play a Deathrattle minion, give it Reborn.",
+      "ongoing": {
+        "on": "creature-played",
+        "if": {
+          "keyword": "deathrattle"
+        },
+        "effects": [
+          {
+            "type": "grant-keyword-played",
+            "keyword": "reborn"
+          }
+        ]
+      }
+    },
+    {
+      "id": "busy_peon",
+      "name": "Busy Peon",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "neutral",
+      "attack": 2,
+      "health": 3,
+      "rarity": "common",
+      "set": "ISLAND_VACATION",
+      "keywords": [
+        "deathrattle"
+      ],
+      "description": "Deathrattle: Your next location costs (2) less.",
+      "deathrattle": []
+    },
+    {
+      "id": "busy_bot",
+      "name": "Busy-Bot",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "paladin",
+      "attack": 3,
+      "health": 2,
+      "rarity": "common",
+      "set": "ISLAND_VACATION",
+      "tribe": "Mech",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Give your 1-Attack minions +1/+1.",
+      "effects": [
+        {
+          "type": "buff-friendly-attack-filter",
+          "attackEquals": 1,
+          "attack": 1,
+          "health": 1
+        }
+      ]
+    },
+    {
+      "id": "coconut_cannoneer",
+      "name": "Coconut Cannoneer",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "neutral",
+      "attack": 1,
+      "health": 4,
+      "rarity": "common",
+      "set": "ISLAND_VACATION",
+      "tribe": "Pirate",
+      "description": "After an adjacent minion attacks, deal 1 damage to a random enemy.",
+      "ongoing": {
+        "on": "friendly-attacks",
+        "effects": [
+          {
+            "type": "random-damage",
+            "value": 1,
+            "count": 1,
+            "pool": "enemies"
+          }
+        ]
+      }
+    },
+    {
+      "id": "drink_server",
+      "name": "Drink Server",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "neutral",
+      "attack": 2,
+      "health": 2,
+      "rarity": "common",
+      "set": "ISLAND_VACATION",
+      "tribe": "Pirate",
+      "keywords": [
+        "deathrattle"
+      ],
+      "description": "Deathrattle: Get a random Drink spell. (It has 3 uses!)",
+      "deathrattle": [
+        {
+          "type": "add-card",
+          "id": "vac_drink",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "id": "envoy_of_prosperity",
+      "name": "Envoy of Prosperity",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "priest",
+      "attack": 4,
+      "health": 4,
+      "rarity": "rare",
+      "set": "ISLAND_VACATION",
+      "tribe": "Draenei",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Put the highest Cost card in your hand on top of your deck.",
+      "effects": [
+        {
+          "type": "put-highest-hand-on-top"
+        }
+      ]
+    },
+    {
+      "id": "fearless_flamejuggler",
+      "name": "Fearless Flamejuggler",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "warlock",
+      "attack": 1,
+      "health": 1,
+      "rarity": "common",
+      "set": "ISLAND_VACATION",
+      "tribe": "Demon",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Gain stats equal to the damage your hero has taken this turn.",
+      "effects": [
+        {
+          "type": "buff-self-by-hero-damage"
+        }
+      ]
+    },
+    {
+      "id": "imployee_of_the_month",
+      "name": "Imployee of the Month",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "warlock",
+      "attack": 3,
+      "health": 2,
+      "rarity": "common",
+      "set": "ISLAND_VACATION",
+      "tribe": "Demon",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Give a friendly minion Lifesteal.",
+      "effects": [
+        {
+          "type": "grant",
+          "keyword": "lifesteal",
+          "target": "friendly-creature"
+        }
+      ]
+    },
+    {
+      "id": "maestra_mask_merchant",
+      "name": "Maestra, Mask Merchant",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "rogue",
+      "attack": 3,
+      "health": 2,
+      "rarity": "legendary",
+      "set": "ISLAND_VACATION",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Warlock Tourist. Battlecry: Discover a Hero card from the past (from another class).",
+      "effects": [
+        {
+          "type": "conjure-random",
+          "cardType": "creature",
+          "cardClass": "other",
+          "rarity": "legendary"
+        }
+      ]
+    },
+    {
+      "id": "pet_parrot",
+      "name": "Pet Parrot",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "hunter",
+      "attack": 1,
+      "health": 1,
+      "rarity": "common",
+      "set": "ISLAND_VACATION",
+      "tribe": "Beast",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Repeat the last 1-Cost card you played.",
+      "effects": [
+        {
+          "type": "repeat-last-cost-card",
+          "cost": 1
+        }
+      ]
+    },
+    {
+      "id": "service_ace",
+      "name": "Service Ace",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "paladin",
+      "attack": 2,
+      "health": 3,
+      "rarity": "epic",
+      "set": "ISLAND_VACATION",
+      "description": "After this minion gains Attack, reduce the Cost of the highest Cost card in your hand by (1)."
+    },
+    {
+      "id": "vac_felbeast",
+      "name": "Felbeast",
+      "type": "creature",
+      "cost": 1,
+      "cardClass": "warlock",
+      "attack": 1,
+      "health": 1,
+      "rarity": "common",
+      "set": "ISLAND_VACATION",
+      "tribe": "Demon",
+      "token": true,
+      "collectible": false,
+      "description": "A 1/1 Felbeast."
+    },
+    {
+      "id": "vac_pirate_charge",
+      "name": "Pirate",
+      "type": "creature",
+      "cost": 1,
+      "cardClass": "neutral",
+      "attack": 1,
+      "health": 1,
+      "rarity": "common",
+      "set": "ISLAND_VACATION",
+      "tribe": "Pirate",
+      "token": true,
+      "collectible": false,
+      "keywords": [
+        "charge"
+      ],
+      "description": "Charge."
+    },
+    {
+      "id": "vac_parachute",
+      "name": "Parachute",
+      "type": "sorcery",
+      "cost": 0,
+      "cardClass": "demonhunter",
+      "rarity": "common",
+      "set": "ISLAND_VACATION",
+      "token": true,
+      "collectible": false,
+      "drawTrigger": true,
+      "onDraw": [
+        {
+          "type": "summon",
+          "count": 1,
+          "summonId": "vac_pirate_charge"
+        }
+      ],
+      "description": "When drawn, summon a 1/1 Pirate with Charge."
+    },
+    {
+      "id": "vac_drink",
+      "name": "Tropical Drink",
+      "type": "sorcery",
+      "cost": 1,
+      "cardClass": "neutral",
+      "rarity": "common",
+      "set": "ISLAND_VACATION",
+      "token": true,
+      "collectible": false,
+      "description": "Restore 4 Health.",
+      "effects": [
+        {
+          "type": "heal",
+          "value": 4,
+          "target": "friendly-any"
+        }
+      ]
     }
   ]
 }

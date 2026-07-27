@@ -2021,6 +2021,18 @@ function runSecretEffects(state, pi, effects, ctx) {
 				if (amt > 0) { for (const o of opponentsOf(state, pi)) damageHero(state, o, amt, pi); }
 				break;
 			}
+			case 'damage-own-hero-by-amount': {
+				// Brain Masseuse: deal the damage this minion just took to your own hero
+				const amt2 = ctx.amount || 0;
+				if (amt2 > 0) damageHero(state, pi, amt2, pi);
+				break;
+			}
+			case 'grant-keyword-played': {
+				// Brittlebone Buccaneer: give the just-played minion a keyword
+				const m = ctx.minion;
+				if (m && m !== ctx.self && m.type === 'creature' && !isDead(m) && !m.keywords.includes(e.keyword)) { m.keywords.push(e.keyword); if (e.keyword === KW.DIVINE_SHIELD) m.shield = true; emit(state, { type: 'buff', uid: m.uid, attack: m.attack, hp: hp(m) }); }
+				break;
+			}
 			case 'gain-dead-deathrattle': {
 				// Devourer of Souls: gain the Deathrattle of a friendly minion that just died
 				const d2 = ctx.dead, s2 = ctx.self;
@@ -5936,6 +5948,22 @@ function execEffects(state, pi, effects, target, source) {
 			const p = state.players[pi];
 			const pool = [...new Set(p.deck)].map(id => state.cardsById[id]).filter(d => d && d.type === 'creature' && !d.token);
 			for (let n = 0; n < (e.count || 4) && pool.length; n++) { if (p.board.filter(c => !isDead(c)).length >= 7) break; const def = JSON.parse(JSON.stringify(pool[Math.floor(state.rng() * pool.length)])); if (e.stats != null) { def.attack = e.stats; def.health = e.stats; } def.token = true; def.id = 'token_' + def.id; summon(state, pi, def); }
+		} else if (e.type === 'put-highest-hand-on-top') {
+			// Envoy of Prosperity: put the highest-Cost card in your hand on top of your deck
+			const p = state.players[pi];
+			const pool = p.hand.filter(c => c !== source && state.cardsById[c.id]);
+			if (pool.length) { let best = pool[0]; for (const c of pool) if ((c.cost || 0) > (best.cost || 0)) best = c; p.hand = p.hand.filter(c => c !== best); p.deck.push(best.id); } // top of deck = end of array
+		} else if (e.type === 'buff-friendly-attack-filter') {
+			// Busy-Bot: give your minions with N Attack +X/+X
+			for (const c of state.players[pi].board) if (c !== source && !isDead(c) && c.type !== 'location' && (c.attack || 0) === (e.attackEquals ?? 1)) buffCreature(c, e.attack || 1, e.health || 1);
+		} else if (e.type === 'buff-self-by-hero-damage') {
+			// Fearless Flamejuggler: gain stats equal to the damage your hero took this turn
+			const n = state.players[pi].heroDamageTakenThisTurn || 0;
+			if (source && n > 0) buffCreature(source, n, n);
+		} else if (e.type === 'repeat-last-cost-card') {
+			// Pet Parrot: recast the last card of a given Cost you played
+			const last = state.players[pi].lastCardOfCost && state.players[pi].lastCardOfCost[e.cost ?? 1];
+			if (last && state.cardsById[last.id]) { const def = state.cardsById[last.id]; if (isSpellType(def)) execEffects(state, pi, JSON.parse(JSON.stringify(def.effects || [])), last.target || null, source); else if (def.type === 'creature') summon(state, pi, def); }
 		} else if (e.type === 'grant-battlecries-twice') {
 			// Deepminer Brann: your Battlecries trigger twice for the rest of the game
 			state.players[pi].battlecriesTwice = true;
@@ -8967,6 +8995,7 @@ export function playCard(state, pi, cardUid, target, choice, position, useAlt, k
 	if (card.type === 'creature' && (card.tribe || '').includes('Dragon')) p.dragonsPlayedGame = (p.dragonsPlayedGame || 0) + 1; // Timewinder Zarimi
 	if (card.type === 'creature' && !card.token) (p.playedMinionLog = p.playedMinionLog || []).push(card.id); // Joymancer Jepetto
 	if ((card.cost || 0) === 1) p.oneCostPlayedGame = (p.oneCostPlayedGame || 0) + 1; // Thirsty Drifter
+	if (!card.token) (p.lastCardOfCost = p.lastCardOfCost || {})[card.cost || 0] = { id: card.id }; // Pet Parrot
 	if ((card.keywords || []).includes('combo')) p.combosPlayedGame = (p.combosPlayedGame || 0) + 1; // Rhyme Spinner
 	(p.playedCountById = p.playedCountById || {})[card.id] = (p.playedCountById[card.id] || 0) + 1; // Freebird
 	if (card.hauntSummon && state.cardsById[card.hauntSummon]) summon(state, pi, state.cardsById[card.hauntSummon]); // Haunting Nightmare: playing a haunted card summons a Soldier
