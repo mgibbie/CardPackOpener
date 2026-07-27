@@ -2917,6 +2917,12 @@ function runSecretEffects(state, pi, effects, ctx) {
 				if (m && !isDead(m) && m.type !== 'location') damageCreature(state, m, e.value || 3, ctx.self || null);
 				break;
 			}
+			case 'buff-self-by-dead-attack': {
+				// Scavenging Flytrap: after a minion dies, gain its Attack
+				const d3 = ctx.dead, s3 = ctx.self;
+				if (d3 && s3 && !isDead(s3) && (d3.attack || 0) > 0) { s3.attack += d3.attack; emit(state, { type: 'buff', uid: s3.uid, attack: s3.attack, hp: hp(s3) }); }
+				break;
+			}
 			case 'gandling': {
 				// Disciplinarian Gandling: destroy the just-played minion, summon a 4/4 Failed Student
 				const m = ctx.minion;
@@ -5128,6 +5134,7 @@ function execEffects(state, pi, effects, target, source) {
 			state.players[pi].nextSpellDamageBonus = (state.players[pi].nextSpellDamageBonus || 0) + (e.value || 2); // Celestial Emissary
 		} else if (e.type === 'set-next-spell-double') {
 			state.players[pi].nextSpellDoubleCast = true; // Electra Stormsurge
+			if (e.count) state.players[pi].nextSpellDoubleCount = (state.players[pi].nextSpellDoubleCount || 0) + e.count; // Tyrande: next 3 spells
 		} else if (e.type === 'set-spells-lifesteal') {
 			state.players[pi].spellsLifestealThisTurn = true; // Omega Mind
 		} else if (e.type === 'fireworks') {
@@ -6064,6 +6071,19 @@ function execEffects(state, pi, effects, target, source) {
 		} else if (e.type === 'maybe-draw') {
 			// Package Dealer: chance to draw another card (fires on card-drawn)
 			if (state.rng() < (e.chance ?? 0.5)) drawCards(state, pi, e.value || 1);
+		} else if (e.type === 'eat-own-deck-minion') {
+			// Hungering Ancient: eat a random minion in your OWN deck and gain its stats (Deathrattle add-to-hand not modeled)
+			if (source) {
+				const p = state.players[pi];
+				const idxs = p.deck.map((id, i) => ({ id, i })).filter(x => state.cardsById[x.id]?.type === 'creature');
+				if (idxs.length) {
+					const pick = idxs[Math.floor(state.rng() * idxs.length)];
+					const def = state.cardsById[pick.id];
+					p.deck.splice(pick.i, 1);
+					source.attack += (def.attack || 0); source.maxHealth += (def.health || 0);
+					emit(state, { type: 'buff', uid: source.uid, attack: source.attack, hp: hp(source) });
+				}
+			}
 		} else if (e.type === 'eat-enemy-deck-minion') {
 			// Hamm, the Hungry: eat a random minion in the enemy's deck, gain its stats (or fixed)
 			if (source) {
@@ -6597,6 +6617,10 @@ function execEffects(state, pi, effects, target, source) {
 			// Mind Eater: add a copy of a random card from the opponent's deck to your hand
 			const foe = enemies[0], p = state.players[pi];
 			if (foe != null && state.players[foe].deck.length && p.hand.length < MAX_HAND) { const id = state.players[foe].deck[Math.floor(state.rng() * state.players[foe].deck.length)]; const def = state.cardsById[id]; if (def) { const cp = instantiate(def, pi); cp.zone = 'hand'; p.hand.push(cp); emit(state, { type: 'conjure', player: pi, card: cp, color: null }); } }
+		} else if (e.type === 'fill-hand-enemy-deck') {
+			// Ashamane: fill your hand with copies of cards from your opponent's deck (cheaper)
+			const foe = enemies[0], p = state.players[pi];
+			if (foe != null) { let guard = 20; while (p.hand.length < MAX_HAND && state.players[foe].deck.length && guard-- > 0) { const id = state.players[foe].deck[Math.floor(state.rng() * state.players[foe].deck.length)]; const def = state.cardsById[id]; if (!def) continue; const cp = instantiate(def, pi); cp.zone = 'hand'; if (e.costMod) cp.cost = Math.max(0, (cp.cost || 0) + e.costMod); p.hand.push(cp); emit(state, { type: 'conjure', player: pi, card: cp, color: null }); } }
 		} else if (e.type === 'add-random-outcast-card') {
 			// Wretched Exile: add a random Outcast card to your hand (Felerin: count + costMod)
 			const pool = Object.values(state.cardsById).filter(d => (d.keywords || []).includes('outcast') && !d.token && d.collectible !== false && !(d.colors && d.colors.length));
@@ -8520,6 +8544,7 @@ function execEffects(state, pi, effects, target, source) {
 				&& !d.companion && !d.commander && !d.token && d.collectible !== false && !(d.colors && d.colors.length));
 			let howMany = e.count || 1;
 			if (e.countPer === 'schools-cast-game') howMany = (e.count || 1) + Object.keys(state.players[pi].schoolsCastGame || {}).length; // Razzle-Dazzler
+			if (e.countPer === 'self-deaths') howMany = source ? Math.max(1, (state.players[pi].diedCountById?.[source.id] || 0)) : 1; // Ysondre: one Dragon per time it has died
 			for (let i = 0; i < howMany && pool.length; i++) {
 				const def = pool[Math.floor(state.rng() * pool.length)];
 				const owner = e.forEnemy && enemies.length
@@ -9366,7 +9391,8 @@ function resolveStackedSpell(state, entry) {
 		}
 		// Electra Stormsurge: your next spell this turn casts twice
 		if (state.players[pi].nextSpellDoubleCast && !state.recasting) {
-			state.players[pi].nextSpellDoubleCast = false;
+			if (state.players[pi].nextSpellDoubleCount > 0) { state.players[pi].nextSpellDoubleCount--; if (state.players[pi].nextSpellDoubleCount <= 0) state.players[pi].nextSpellDoubleCast = false; } // Tyrande: consume one of N charges
+			else state.players[pi].nextSpellDoubleCast = false;
 			state.recasting = true;
 			runSpell(state, pi, card, ctx.target, choice);
 			state.recasting = false;
@@ -10564,7 +10590,7 @@ export function endTurn(state) {
 	p.heroPowerTaxNext = 0; // Saboteur's Hero Power tax only lasts this turn
 	p.nextMurlocFree = false; p.nextSecretCost = null; // Seadevil Stinger / Kabal Lackey are "this turn"
 	p.nextBattlecryDouble = false; // Murmuring Elemental only lasts this turn
-	p.nextSpellDamageBonus = 0; p.nextSpellDoubleCast = false; p.spellsLifestealThisTurn = false; // Boomsday next-spell riders are "this turn"
+	p.nextSpellDamageBonus = 0; p.nextSpellDoubleCast = false; p.nextSpellDoubleCount = 0; p.spellsLifestealThisTurn = false; // Boomsday next-spell riders are "this turn"
 	p.healHarmThisTurn = false; // Auchenai Phantasm only lasts this turn
 	p.heroPowerDamageNext = 0; // Daring Fire-Eater only lasts this turn
 	for (const pl of state.players) for (const c of pl.board) if (c.turnAtkDebuff) { c.attack += c.turnAtkDebuff; c.turnAtkDebuff = 0; emit(state, { type: 'buff', uid: c.uid, attack: c.attack, hp: hp(c) }); } // Quicksand Elemental restores
