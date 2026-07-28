@@ -1053,3 +1053,57 @@ register('counter-stack', ({ state, pi, target, source, enemies, scaled, hm, pic
 			const top = [...state.stack].reverse().find(en => en.kind === 'spell' && !en.countered);
 			if (top) counterStackEntry(state, top, 'graveyard');
 });
+
+// ---------- dup retirement (PR 22): the four double-branch types ----------
+// Each had TWO chain branches (first-wins); the winners move here verbatim
+// and both branches are deleted. One shadowed variant was a real card bug
+// (Echoing Ooze exact copies) and is revived behind e.exact.
+
+register('double-attack-self', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => {
+	// LIVE first-wins semantics kept: plain double, any zone (works from hand).
+	// Retired dead twin: a guarded buffCreature rewrite (doubleBuffs/statGain
+	// riders would have applied) that never executed.
+			if (source) { source.attack *= 2; emit(state, { type: 'buff', uid: source.uid, attack: source.attack, hp: hp(source) }); }
+});
+
+register('summon-self-copy', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => {
+	// exact:true — the retired second branch's semantics, previously SHADOWED:
+	// a copy carrying the source's CURRENT stats/keywords (Echoing Ooze says
+	// "an exact copy"; hand-buffed stats now carry over). End-of-turn timing
+	// remains approximated as immediate, unchanged.
+	if (e.exact) {
+				// Echoing Ooze: a copy carrying this creature's CURRENT stats/keywords
+				if (source) summon(state, pi, { id: source.id, name: source.name, type: 'creature',
+					cost: source.cost || 0, rarity: source.rarity || 'common', token: true, tribe: source.tribe || '',
+					attack: source.attack, health: source.maxHealth, keywords: [...(source.keywords || [])],
+					description: source.description || '' });
+		return;
+	}
+			// Saronite Chain Gang / Doppelgangster: fresh copies of the played minion
+			const def = source && state.cardsById[source.id];
+			if (def) for (let i = 0; i < (e.count || 1); i++) summon(state, pi, def);
+});
+
+register('gain-weapon-stats', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => {
+	// LIVE semantics kept (board+alive guard); the dead twin was identical
+	// minus the guard.
+			// Phantom Freebooter: gain +Attack/+Health equal to your weapon's stats
+			if (source && source.zone === 'board' && !isDead(source)) {
+				const w = state.players[pi].weapon;
+				if (w) buffCreature(source, w.attack || 0, w.durability || 0);
+			}
+});
+
+register('destroy-self', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => {
+	// LIVE semantics kept (ifAlone option; sweep deferred to the caller like
+	// every other chain effect). The dead twin swept immediately.
+			// Anima Golem: destroy the source (optionally only if it's your only creature)
+			if (source && source.zone === 'board' && !isDead(source)) {
+				const alone = state.players[pi].board.filter(c => c !== source && !isDead(c) && c.type !== 'location').length === 0;
+				if (!e.ifAlone || alone) {
+					source.damage = source.maxHealth;
+					source.shield = false;
+					emit(state, { type: 'destroy', uid: source.uid });
+				}
+			}
+});

@@ -3359,8 +3359,6 @@ export function execEffects(state, pi, effects, target, source) {
 			for (const o of enemies) bombs += state.players[o].deck.filter(id => id === 'bomb').length;
 			const def = state.cardsById['boom_bot'];
 			if (def) for (let n = 0; n < bombs * (e.per || 1); n++) summon(state, pi, def);
-		} else if (e.type === 'double-attack-self') {
-			if (source) { source.attack *= 2; emit(state, { type: 'buff', uid: source.uid, attack: source.attack, hp: hp(source) }); }
 		} else if (e.type === 'refresh-mana') {
 			const mp = state.players[pi].mana;
 			const n = e.valuePer === 'spells-this-turn' ? (state.players[pi].spellsPlayedThisTurn || 0) : e.valuePer === 'self-attack' ? (source ? (source.attack || 0) : 0) : e.value; // Priestess Valishj / Enduring Roach / Chromatic Broodmother
@@ -3401,10 +3399,6 @@ export function execEffects(state, pi, effects, target, source) {
 					resolveCombat(state, a.controller, a.uid, { type: 'creature', uid: magnet.uid, player: magnet.controller });
 				}
 			}
-		} else if (e.type === 'summon-self-copy') {
-			// Saronite Chain Gang / Doppelgangster: fresh copies of the played minion
-			const def = source && state.cardsById[source.id];
-			if (def) for (let i = 0; i < (e.count || 1); i++) summon(state, pi, def);
 		} else if (e.type === 'summon-from-hand') {
 			// Voidcaller: a random qualifying creature jumps from hand to board.
 			// count>1 pulls that many (Beastmaster Leoroxx: 3 Beasts from hand)
@@ -3601,12 +3595,6 @@ export function execEffects(state, pi, effects, target, source) {
 				t.static.value = (t.static.value || 0) + (e.value || 1);
 				emit(state, { type: 'buff', uid: t.uid, attack: t.attack, hp: hp(t) });
 			}
-		} else if (e.type === 'gain-weapon-stats') {
-			// Phantom Freebooter: gain +Attack/+Health equal to your weapon's stats
-			if (source && source.zone === 'board' && !isDead(source)) {
-				const w = state.players[pi].weapon;
-				if (w) buffCreature(source, w.attack || 0, w.durability || 0);
-			}
 		} else if (e.type === 'destroy-random-each') {
 			// Void Crusher: destroy a random creature on each player's board
 			for (const pl of state.players) {
@@ -3628,16 +3616,6 @@ export function execEffects(state, pi, effects, target, source) {
 			}
 		} else if (e.type === 'damage-self') {
 			if (source && source.zone === 'board' && !isDead(source)) damageCreature(state, source, e.value, null);
-		} else if (e.type === 'destroy-self') {
-			// Anima Golem: destroy the source (optionally only if it's your only creature)
-			if (source && source.zone === 'board' && !isDead(source)) {
-				const alone = state.players[pi].board.filter(c => c !== source && !isDead(c) && c.type !== 'location').length === 0;
-				if (!e.ifAlone || alone) {
-					source.damage = source.maxHealth;
-					source.shield = false;
-					emit(state, { type: 'destroy', uid: source.uid });
-				}
-			}
 		} else if (e.type === 'pay-or-sacrifice') {
 			// "sacrifice this unless you pay N": pay from leftover mana if able, else destroy the source
 			const pp = state.players[pi];
@@ -3651,12 +3629,6 @@ export function execEffects(state, pi, effects, target, source) {
 					emit(state, { type: 'destroy', uid: source.uid });
 				}
 			}
-		} else if (e.type === 'summon-self-copy') {
-			// Echoing Ooze: a copy carrying this creature's CURRENT stats/keywords
-			if (source) summon(state, pi, { id: source.id, name: source.name, type: 'creature',
-				cost: source.cost || 0, rarity: source.rarity || 'common', token: true, tribe: source.tribe || '',
-				attack: source.attack, health: source.maxHealth, keywords: [...(source.keywords || [])],
-				description: source.description || '' });
 		} else if (e.type === 'deploy-secret-from-deck') {
 			// Mad Scientist: one Secret. Mysterious Challenger (all): one of each.
 			const p = state.players[pi];
@@ -7064,9 +7036,6 @@ export function execEffects(state, pi, effects, target, source) {
 			execEffects(state, pi, [{ type: 'tutor', cardType: 'creature', tribe: 'Beast', count: 1 }], null, source);
 			const drawn = p.hand.find(c => !before.has(c.uid));
 			if (drawn && source && !isDead(source)) buffCreature(source, drawn.attack || 0, drawn.maxHealth || 0);
-		} else if (e.type === 'destroy-self') {
-			// Incorporeal Corporal: destroy the source minion
-			if (source && !isDead(source)) { source.damage = source.maxHealth; source.shield = false; emit(state, { type: 'destroy', uid: source.uid }); sweepDeaths(state); }
 		} else if (e.type === 'summon-deck-minions-setstats') {
 			// Elise, Badlands Savior: summon set-stat copies of N random minions in your deck
 			const p = state.players[pi];
@@ -7342,10 +7311,6 @@ export function execEffects(state, pi, effects, target, source) {
 			// Gattlesnake Deathrattle: fire each loaded bullet at a random enemy
 			const n = (source && source.bullets) || 0;
 			if (n > 0) execEffects(state, pi, [{ type: 'random-damage', value: e.value || 1, count: n, pool: 'enemies' }], null, source);
-		} else if (e.type === 'gain-weapon-stats') {
-			// Shadestone Skulker: gain your weapon's stats (approx: buff self by the weapon's Attack)
-			const w = state.players[pi].weapon;
-			if (w && source) buffCreature(source, w.attack || 0, w.durability || 0);
 		} else if (e.type === 'return-weaker-to-deck') {
 			// King Plush: return all minions with less Attack than this to their owners' decks
 			if (source) { for (const pl of state.players) { for (const c of [...pl.board]) { if (c === source || isDead(c) || c.type === 'location') continue; if ((c.attack || 0) < (source.attack || 0) && state.cardsById[c.id]) { const owner = state.players[c.controller]; owner.board = owner.board.filter(x => x !== c); if (!c.token) owner.deck.push(c.id); c.zone = 'gone'; emit(state, { type: 'bounce', uid: c.uid, player: c.controller, name: c.name }); } } } recomputeAuras(state); }
@@ -8578,9 +8543,6 @@ export function execEffects(state, pi, effects, target, source) {
 				emit(state, { type: 'buff', uid: source.uid, attack: source.attack, hp: hp(source) });
 				emit(state, { type: 'buff', uid: t.uid, attack: t.attack, hp: hp(t) });
 			}
-		} else if (e.type === 'double-attack-self') {
-			// Gahz'rilla: double this creature's Attack
-			if (source && source.zone === 'board' && !isDead(source)) buffCreature(source, source.attack, 0);
 		} else if (e.type === 'grant-random-others') {
 			// Enhance-o Mechano: each other friendly creature gains a random keyword
 			const kws = e.keywords || ['windfury', 'taunt', 'divine_shield'];
