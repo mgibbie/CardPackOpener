@@ -18,7 +18,7 @@ repository reality:
    `rand.shuffle(arr)`, `rand.int(n)`) so the 368 call sites stop repeating the
    `pool[Math.floor(state.rng() * pool.length)]` idiom, plus a `SeededRandomSource`
    for tests/replays. Low priority; the idiom is verbose but not buggy.
-4. **`effects/handlers/` is the long game** — with 935+ branch bodies, full
+4. **`effects/handlers/` is the long game** — with 940+ branch bodies, full
    registry migration is a multi-month background task. The registry itself plus a
    pilot batch is Phase 7; the rest moves opportunistically (see 06).
 5. **`turns/PriorityManager`** exists implicitly (stack/priority/passers) and is the

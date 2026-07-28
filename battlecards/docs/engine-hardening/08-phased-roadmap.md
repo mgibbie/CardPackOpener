@@ -108,7 +108,7 @@ Every phase: land behind the compat facade, suite must stay green
 - Risk: managed per-batch. Completion criterion per batch: census delta + green suite.
 
 ## What should explicitly NOT be refactored yet
-- The 935-branch chain as a whole (registry migrates it incrementally).
+- The 942-branch chain as a whole (registry migrates it incrementally).
 - `resolvePick`'s flag accretion (late Phase 10 — needs its own test net first).
 - The renderer/animation queue and game.js structure (out of scope).
 - Class picks/loadouts/companions/commander flows (Micatro-adjacent, low churn, untested — characterize before touching).

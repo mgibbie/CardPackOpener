@@ -26,13 +26,16 @@ The engine is therefore *already* fully synchronous and fully seedable. This is 
 single biggest asset for the hardening phase.
 
 The single biggest liability is `execEffects` — **one function spanning lines
-~3,554–11,215 (≈7,660 lines)** containing **935 `else if (e.type === '...')` branches**.
-A second dispatcher, `runSecretEffects` (used by triggers/secrets/ongoing effects),
-is a `switch` with **187 `case` labels** whose `default:` falls through to
-`execEffects`. Several effect types are implemented in **both** dispatchers with
-subtly different feature support (a documented source of past bugs), and the switch
-currently contains **4 duplicated case labels** where only the first can ever run:
-`'fortify'`, `'gain-armor-by-amount'`, `'summon-copy-of-played'`, `'summon-of-spell-cost'`.
+~3,554–11,215 (≈7,660 lines)** containing **942 dispatch branches over 927 distinct
+effect types** (measured by `tests/tools/effect-census.mjs`). A second dispatcher,
+`runSecretEffects` (triggers/secrets/ongoing effects), is a `switch` with **141
+cases / 138 distinct types** whose `default:` falls through to `execEffects`.
+**11 effect types are implemented in both dispatchers** (drift risk; a documented
+source of past bugs), the switch has **3 duplicated case labels** (dead second
+bodies: `summon-of-spell-cost`, `summon-copy-of-played`, `gain-armor-by-amount`)
+and the chain has **14 duplicated unguarded branches** whose later copy is dead
+code (`equip-id`, `summon-remembered`, `buff-random-friendly`, `mill`, `excavate`,
+`refresh-mana`, …) — run the census tool for the authoritative list.
 
 ## Subsystem line map (measured)
 
@@ -46,9 +49,9 @@ currently contains **4 duplicated case labels** where only the first can ever ru
 | Death: `sweepDeaths` (death bookkeeping, reborn, corpses, per-death riders) | 1,480–1,630 |
 | `summon` + `recomputeAuras` (delta-tracked aura engine) | 1,633–1,920 |
 | Triggers: `fireOngoing`, `fireCreatureTrigger`, `ongoingCondOk`, secrets | 1,922–2,280 |
-| `runSecretEffects` (trigger-side effect switch, 187 cases) | 2,244–3,460 |
+| `runSecretEffects` (trigger-side effect switch, 141 cases) | 2,244–3,460 |
 | `runBattlecry` / `runDeathrattle` (incl. per-card-id switch, LEGACY_SCRIPTED) | 3,461–3,554 |
-| **`execEffects` — the 935-branch effect dispatcher** | 3,554–11,215 |
+| **`execEffects` — the 942-branch effect dispatcher** | 3,554–11,215 |
 | `runSpell`, `effectiveCost` (~60 stacked cost modifiers), `playCard` | 11,215–12,370 |
 | Combat: `resolveCombat`, `attack`, `attackTargets`, hero attacks | 12,376–13,300 |
 | `endTurn` (cleanup riders) + turn-switch (turn-start riders) + `takeEvents` | 13,312–13,814 |
