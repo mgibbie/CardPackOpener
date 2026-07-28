@@ -18,7 +18,9 @@
 import {
 	emit, instantiate, MAX_HAND, endTurn, gainTokenCard, execEffects, summon,
 	installSecret, addCoin, damageHero, hp, availableMana, isDead,
+	opponentsOf, freezeCreature, STARTING_LIFE,
 } from '../../engine.js';
+import { damageCreature, healHero } from '../damage.js';
 import { gainArmor } from '../damage.js';
 import { drawCards } from '../zones.js';
 
@@ -570,4 +572,247 @@ register('discount-hand', ({ state, pi, target, source, enemies, scaled, hm, pic
 register('heal-full', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => {
 			const t = e.target === 'self' ? source : chosenCreature(); // Stoneskin Gargoyle: restore self
 			if (t && t.damage > 0) healCreature(t, t.damage);
+});
+
+// ---------- batch 4 (PR 20): 43 more (146 total) ----------
+
+register('mark-doomed', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => {
+			// Voodoo Doll: remember a chosen creature; destroy it when this dies
+			const t = chosenCreature();
+			if (t && source) source.doomedUid = t.uid;
+});
+
+register('grant-double-turns', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => {
+			// Temporus: your opponent takes two turns, then you take two turns
+			const o = enemies[0];
+			if (o != null) state.forcedTurns = [o, o, pi, pi];
+});
+
+register('set-next-cards-discount', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => {
+			// Scabbs Cutterbutter: your next N cards this turn cost less
+			state.players[pi].nextCardsDiscount = { count: e.count || 2, amount: e.value || 2 };
+});
+
+register('set-next-spell-discount', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => {
+			// Murkwater Scribe: your next spell costs less
+			state.players[pi].nextSpellDiscount = (state.players[pi].nextSpellDiscount || 0) + (e.value || 1);
+});
+
+register('gain-mana', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => {
+			state.players[pi].mana.bonus += e.value;
+			emit(state, { type: 'manaGained', player: pi, amount: e.value, mana: availableMana(state.players[pi]) });
+});
+
+register('set-next-draw-discount', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => {
+			// SI:7 Skulker: the next card you draw costs less
+			state.players[pi].nextDrawDiscount = (state.players[pi].nextDrawDiscount || 0) + (e.value || 1);
+});
+
+register('gain-armor-by-attack', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => {
+			// Scrap Golem: gain Armor equal to this minion's Attack
+			const amt = source ? (source.attack || 0) : 0;
+			if (amt > 0) gainArmor(state, pi, amt);
+});
+
+register('set-next-weapon-discount', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => {
+			// Space Pirate: your next weapon costs (N) less
+			state.players[pi].nextWeaponDiscount = (state.players[pi].nextWeaponDiscount || 0) + (e.value || 1);
+});
+
+register('damage-target-by-attack', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => {
+			// Aeon Reaver: deal damage to a minion equal to its own Attack
+			const t = chosenCreature();
+			if (t) damageCreature(state, t, t.attack || 0, source);
+});
+
+register('hero-temp-attack', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => {
+			const hta = e.heraldScaled ? hm() : e.value;
+			state.players[pi].heroTempAttack += hta;
+			emit(state, { type: 'heroBuffed', player: pi, amount: hta });
+});
+
+register('conjure-id-endturn', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => {
+			// Everburning Phoenix: get another copy at the end of the turn
+			const p = state.players[pi];
+			(p.endTurnConjure = p.endTurnConjure || []).push(e.id);
+});
+
+register('mark-summon-copy', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => {
+			// Mindflayer Kaahrj: remember a chosen creature; Deathrattle summons a copy
+			const t = chosenCreature();
+			if (t && source) source.copyVictimId = t.id;
+});
+
+register('set-next-minion-stats', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => {
+			// Hodir: set the stats of your next N minions
+			state.players[pi].nextMinionStats = { count: e.count || 3, attack: e.attack || 8, health: e.health || 8 };
+});
+
+register('set-combo-discount', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => {
+			// Foxy Fraud: your next Combo card this turn costs less
+			state.players[pi].nextComboDiscount = (state.players[pi].nextComboDiscount || 0) + (e.value || 2);
+});
+
+register('set-cast-when-drawn', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => {
+			// Sheldras Moontree: the next N spells you draw are Cast When Drawn
+			state.players[pi].castWhenDrawn = (state.players[pi].castWhenDrawn || 0) + (e.value || 3);
+});
+
+register('put-on-bottom', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => {
+			// Azsharan Scavenger: put a card on the bottom of your deck (front of the array)
+			for (let i = 0; i < (e.count || 1); i++) state.players[pi].deck.unshift(e.id);
+});
+
+register('set-choose-one-discount', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => {
+			// Pride Seeker: your next Choose One card costs less
+			state.players[pi].nextChooseOneDiscount = (state.players[pi].nextChooseOneDiscount || 0) + (e.value || 2);
+});
+
+register('random-effects', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => {
+			// d4-roll hero powers: run one random option
+			const opt = e.options[Math.floor(state.rng() * e.options.length)];
+			execEffects(state, pi, opt, target, source);
+});
+
+register('grant-parity-discount', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => {
+			// Thaddius: your odd/even-Cost cards cost less (swaps polarity each turn)
+			state.players[pi].parityDiscount = { parity: e.parity || 'odd', amount: e.value || 2 };
+});
+
+register('grant-overload-discount', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => {
+			// Inzah: for the rest of the game, your Overload cards cost less
+			state.players[pi].overloadDiscount = (state.players[pi].overloadDiscount || 0) + (e.value || 1);
+});
+
+register('gain-heal-bonus', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => {
+			// Cleansing Cleric: your healing effects restore N more Health this game
+			state.players[pi].healBonusGame = (state.players[pi].healBonusGame || 0) + (e.value || 2);
+});
+
+register('attack-equals-health', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => {
+			const t = chosenCreature();
+			if (t) {
+				t.attack = hp(t);
+				t.tempAttack = 0;
+				emit(state, { type: 'buff', uid: t.uid, attack: t.attack, hp: hp(t) });
+			}
+});
+
+register('reduce-libram-cost', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => {
+			// Aldor Attendant / Aldor Truthseeker: your Librams cost less this game
+			state.players[pi].libramDiscount = (state.players[pi].libramDiscount || 0) + (e.value || 1);
+});
+
+register('hero-power-discount', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => {
+			// Fencing Coach: your next Hero Power this turn costs less
+			state.players[pi].heroPowerDiscountNext = (state.players[pi].heroPowerDiscountNext || 0) + (e.value || 0);
+});
+
+register('set-next-hero-power-damage', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => {
+			// Daring Fire-Eater: your next Hero Power this turn deals more
+			state.players[pi].heroPowerDamageNext = (state.players[pi].heroPowerDamageNext || 0) + (e.value || 2);
+});
+
+register('saruun', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => {
+			// Saruun: Elementals in your deck gain Spell Damage +1 when drawn
+			const p = state.players[pi];
+			p.deckElementalSpellDamage = (p.deckElementalSpellDamage || 0) + 1;
+});
+
+register('buff-self-if-armor', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => {
+			// Mawsworn Bailiff: if you have N+ Armor, gain +X/+X
+			if (source && (state.players[pi].armor || 0) >= (e.armor || 4)) buffCreature(source, e.attack || 0, e.health || 0);
+});
+
+register('heal-lock-enemy', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => {
+			// Crater Gator: the enemy hero can't be healed until your next turn
+			for (const o of enemies) state.players[o].healLockUntilTurn = state.turnNumber + state.players.length;
+});
+
+register('heal-hero-full', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => {
+			// Reno Jackson: restore your hero to full
+			const p = state.players[pi];
+			const full = p.maxLife ?? STARTING_LIFE;
+			if (p.life < full) healHero(state, pi, full - p.life);
+});
+
+register('tax-enemy-spells', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => {
+			// Loatheb: each opponent's spells cost more on their next turn
+			for (const o of enemies) state.players[o].spellTaxNext = (state.players[o].spellTaxNext || 0) + (e.value || 0);
+});
+
+register('draw-if-self-didnt-attack', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => {
+			// Astral Serpent: at end of turn, if this didn't attack, draw N (runs via turn-end ongoing)
+			if (source && (source.attacksUsed || 0) === 0) drawCards(state, pi, e.value || 2);
+});
+
+register('freeze-gain-armor', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => {
+			// Sleet Skater: freeze an enemy minion, gain Armor equal to its Attack
+			const t = chosenCreature();
+			if (t) { freezeCreature(state, t); gainArmor(state, pi, t.attack || 0); }
+});
+
+register('launch-discount', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => {
+			// SCV / Concussive Shells / Salvage the Bunker: your next launch costs less
+			const p = state.players[pi];
+			p.nextLaunchDiscount = (p.nextLaunchDiscount || 0) + (e.value || 0);
+});
+
+register('tax-enemy-hero-power', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => {
+			// Saboteur: each opponent's Hero Power costs more next turn
+			for (const o of enemies) state.players[o].heroPowerTaxNext = (state.players[o].heroPowerTaxNext || 0) + (e.value || 0);
+});
+
+register('buff-self-per-died-this-turn', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => {
+			// Snakebite: gain +X/+X for each minion that died this turn
+			const n = state.diedThisTurn || 0;
+			if (source && n) buffCreature(source, (e.attack || 1) * n, (e.health || 1) * n);
+});
+
+register('luck', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => {
+			// coin flip: heads runs the effects, tails fizzles
+			if (state.rng() < 0.5) execEffects(state, pi, e.effects, target, source);
+			else emit(state, { type: 'luckFail', player: pi });
+});
+
+register('skip-own-next-turn', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => {
+			// Endtime Murozond: the opponent takes your next turn
+			const foes = opponentsOf(state, pi);
+			if (foes.length) state.forcedTurns = [...(state.forcedTurns || []), foes[0], foes[0]];
+});
+
+register('tax-enemy-battlecry', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => {
+			// Boompistol Bully: enemy Battlecry cards cost more next turn
+			for (const o of enemies) state.players[o].battlecryTaxNext = (state.players[o].battlecryTaxNext || 0) + (e.value || 5);
+});
+
+register('buff-hand-minions', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => {
+			// Alliance Bannerman: give minions in your hand +X/+X
+			for (const c of state.players[pi].hand) if (c.type === 'creature') { c.attack += e.attack || 0; c.maxHealth += e.health || 0; }
+});
+
+register('gain-weapon-attack', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => {
+			const w = state.players[pi].weapon;
+			if (w && source) {
+				source.attack += w.attack;
+				emit(state, { type: 'buff', uid: source.uid, attack: source.attack, hp: hp(source) });
+			}
+});
+
+register('draw-then', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => {
+			// draw N; run `then` only if a card was actually drawn ("if you do")
+			const n = drawCards(state, pi, scaled(e));
+			if (n > 0 && e.then) execEffects(state, pi, e.then, target, source);
+});
+
+register('put-card-bottom-deck', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => {
+			// Disposal Assistant: put a specific card on the bottom of your deck (front of array = bottom)
+			const p = state.players[pi];
+			if (e.id && state.cardsById[e.id]) p.deck.unshift(e.id);
+});
+
+register('draw-per-schools', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => {
+			// Multicaster: draw a card for each different spell school cast this game
+			const n = Object.keys(state.players[pi].schoolsCastGame || {}).length;
+			if (n > 0) drawCards(state, pi, n);
 });
