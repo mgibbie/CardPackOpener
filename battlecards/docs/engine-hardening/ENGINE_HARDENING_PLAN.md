@@ -13,12 +13,16 @@ through a de-facto command API (`can*` / action / `resolve*` triads). A
 (14/14 suites), covering the highest-churn ~40% of the engine.
 
 The liabilities are concentration and duplication, not architecture: one
-7,660-line effect dispatcher with 935 branches; a second 187-case trigger-side
+7,660-line effect dispatcher with 942 branches over 927 effect types; a second 141-case trigger-side
 dispatcher that partially duplicates it (with known drift bugs and **four dead
 duplicate case labels today**); serialization owned by the UI as two hand-written
 allow-lists that silently drop ~15 engine fields on the duel guest; ~27 direct
-state mutations from game.js; and zero test coverage of stack/priority, lands,
-equipment, and the multiplayer apply path.
+state mutations from game.js; and (before this PR) zero test coverage of
+stack/priority and vanilla combat — both now characterized (33 assertions).
+The census tool also proves: 11 twin-implemented effect types, 3 dead duplicate
+switch cases, 14 dead duplicate chain branches, and zero card-data effect types
+without a handler. Lands, equipment, and the multiplayer apply path remain
+untested.
 
 ## Highest-risk areas
 
@@ -58,7 +62,7 @@ types.
 
 ## Explicitly not refactored yet
 
-The 935-branch chain wholesale; `resolvePick`'s ~20 accreted mode flags; the
+The 942-branch chain wholesale; `resolvePick`'s ~20 accreted mode flags; the
 renderer/animation queue and game.js layout; class-pick/companion/commander flows;
 and any renaming of card ids, effect-type strings, or event-type strings — all
 three are load-bearing data contracts.

@@ -3,13 +3,14 @@
 ## Measured shape
 
 - **`execEffects(state, pi, effects, target, source)`** — lines ~3,554–11,215.
-  **935 `else if (e.type === '…')` branches** in one if-chain, inside one function
-  whose prelude defines shared closures every branch uses: `enemies`, `boost`
-  (Velen doubling), `chosenCreature()`, `mend`, `buffCreature`, `rollv`,
+  **942 dispatch branches / 927 distinct effect types** (per
+  `tests/tools/effect-census.mjs` — run it for current numbers), inside one
+  function whose prelude defines shared closures every branch uses: `enemies`,
+  `boost` (Velen doubling), `chosenCreature()`, `mend`, `buffCreature`, `rollv`,
   `schoolImmune`, lifesteal bookkeeping (`lsBefore/totalHurt`).
-- **`runSecretEffects(state, pi, effects, ctx)`** — a `switch` with **187 case
-  labels** for trigger-context effects (needs `ctx.self/ctx.minion/…`), whose
-  `default:` delegates to `execEffects`. **Dispatch rule: the switch wins.**
+- **`runSecretEffects(state, pi, effects, ctx)`** — a `switch` with **141 cases /
+  138 distinct types** for trigger-context effects (needs `ctx.self/ctx.minion/…`),
+  whose `default:` delegates to `execEffects`. **Dispatch rule: the switch wins.**
 - **`runDeathrattle`/`runBattlecry`/`runSpell`** each carry a per-card-id `switch`
   for `LEGACY_SCRIPTED` cards (pre-data-driven imports), plus generic paths.
 - **175 emitted event types**; ~40 inline card-id checks sprinkled through generic
@@ -19,12 +20,12 @@
 
 | Question | Finding |
 |---|---|
-| Effect type count | ~935 in execEffects + 187 switch cases; real distinct-type count is lower (shared/overlapping); an exact census script is a Phase 0 deliverable (`tests/tools/effect-census.mjs`) |
+| Effect type count | **1,054 distinct handled types** (927 chain + 138 switch, 11 overlapping); 1,042 types appear in card data; **zero data types lack a handler** (verified); 12 handler types are unused by data (composed-effect-only or dead — review list in census output) |
 | Generic vs card-specific | Majority are generic-with-options (`e.count/value/target/tribe/…`); a long tail are single-card verbs named after their card (`'kiljaeden'`, `'nythendra-split'`, `'talanji'`, `'gorm-consume'`, `'picklock'`) — *these are fine*: a named handler per legendary is clearer than a mega-generic |
 | Card-ID branches inside generic systems | The problem cases are id checks in shared paths, not named effects: `gdb_launch_starship` in effectiveCost/consumption, `high_kings_hammer` bonus in equip/conjure, `sprite_bulb`/`uluu` turn-start scans, `warptooth`/`nythendra_beetle` id scans. Registry migration should convert these to instance/def *fields*, the established better pattern (cf. `murmurAura`, `killerTransform`) |
 | Duplicated targeting logic | `chosenCreature()` centralizes chosen targets, but AoE loops re-implement pool building ~30×; `random-damage` pool builder vs `attack-random-enemies` vs `grunty` etc. — candidates for `targeting.pools()` helpers |
-| Twin implementations | **The #1 correctness hazard.** Effects implemented in BOTH `runSecretEffects` and `execEffects` with drifting option support. Historical bugs: `buff-random-friendly` existed in *three* places, one missing `grant` (fixed during P8); `buff-random-hand` existed only in the secret path (fixed earlier). A diff-audit of the 187 switch cases vs same-named chain branches is a Phase 1 diagnostic script |
-| Duplicate case labels (dead code) | `fortify`, `gain-armor-by-amount`, `summon-copy-of-played`, `summon-of-spell-cost` each appear twice in switches — second body unreachable. Requires per-label archaeology: pin current (first-wins) behavior in a characterization test, then decide |
+| Twin implementations | **The #1 correctness hazard.** 11 types live in BOTH dispatchers (census list): `armor`, `become-copy-of-dead`, `buff-played-grant-deathrattle`, `buff-random-friendly`, `buff-random-hand`, `buff-self`, `damage-self`, `set-attack`, `set-attacked-health`, `set-health`, `swap-with-hand`. Historical bugs: `buff-random-friendly` existed in three places, one missing `grant` (fixed during P8). Diff-audit each pair during Phase 1 |
+| Duplicate handlers (dead code) | Census (function-scoped, dispatch-position-only): **3 dup switch cases** (`summon-of-spell-cost`, `summon-copy-of-played`, `gain-armor-by-amount`) + **14 dup unguarded chain branches** (`attack-random-enemy`, `double-attack-self`, `refresh-mana`, `summon-self-copy`, `summon-deck-copy`, `mill`, `gain-weapon-stats`, `destroy-self`, `summon-remembered`, `equip-id`, `give-enemy-card`, `shuffle-random-legendaries`, `buff-random-friendly`, `excavate`) — first-wins; later bodies dead. Notably `equip-id`/`summon-remembered` were re-added in recent phases over import-era branches: the passing suites pin whichever body actually runs. Per-label archaeology before any 'fix' |
 | Choice/continuation logic | No async — continuations are **queue objects** (`pickQueue/scryQueue/askQueue/discardQueue/sacQueue/dredgeQueue`) resolved by `resolve*` calls. `resolvePick` has accreted ~20 mode/option flags on the pend object (search `pend.` in that fn) — it is effectively a second dispatcher and should become per-mode handlers during Phase 7/late |
 | Renderer/UI calls from effects | **None.** Effects only `emit()` data events. Clean. |
 | Mutate-while-iterating | Defended via `[...arr]` copies in most death/board loops; live-`p.hand` iteration exists in ~10 branches (hand-buff loops that also push). Fuzz target, not known-broken |
@@ -57,7 +58,7 @@ Dispatch-order rule during migration (behavior-preserving):
 // inside the existing loop, before the legacy if-chain:
 const h = registry.get(e.type);          // returns undefined if unmigrated
 if (h) { h(ctx, e); continue; }
-// … legacy 935-branch chain unchanged below …
+// … legacy 942-branch chain unchanged below …
 ```
 Plus dev-mode: if neither registry nor chain handled the type → log/throw
 "unknown effect type" (Invariant I15).
