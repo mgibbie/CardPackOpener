@@ -100,13 +100,17 @@ function walk(node, underEffectKey) {
 }
 walk(cards.cards, false);
 
-const handled = new Set([...chainTypes, ...switchTypes]);
+// registry-migrated types (PR 13+): registered in engine/effects/registry.js
+const regSrc = readFileSync(new URL('../../engine/effects/registry.js', import.meta.url), 'utf8');
+const registryTypes = new Set([...regSrc.matchAll(/register\('([^']+)'/g)].map(m => m[1]));
+const handled = new Set([...chainTypes, ...switchTypes, ...registryTypes]);
 const unhandled = [...dataTypes.keys()].filter(t => !handled.has(t)).sort();
 const unusedHandlers = [...handled].filter(t => !dataTypes.has(t)).sort();
 
 const report = {
 	chainBranches: chainHits.length,
 	chainDistinctTypes: chainTypes.size,
+	registryTypes: registryTypes.size,
 	switchCases: switchHits.length,
 	switchDistinctTypes: switchTypes.size,
 	totalDistinctHandledTypes: handled.size,

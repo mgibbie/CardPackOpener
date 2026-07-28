@@ -47,6 +47,8 @@ import { targetSpec, legalTargets, equipTargets, attackTargets } from './engine/
 import { drawCards, toGraveyard, bouncePermanent } from './engine/zones.js';
 import { damageCreature, damageHero, gainArmor, healHero } from './engine/damage.js';
 import { isDead, sweepDeaths, runDeathrattle } from './engine/death.js';
+import { getEffectHandler } from './engine/effects/registry.js';
+
 export { isDead, sweepDeaths };
 
 export { damageHero };
@@ -1713,7 +1715,6 @@ export function runSecretEffects(state, pi, effects, ctx) {
 				break;
 			}
 			case 'prevent': ctx.prevented = true; break;
-			case 'armor': gainArmor(state, pi, e.value); break;
 			case 'grant-played-if-cost': {
 					// Toxmonger: give the creature you just played a keyword if it costs N;
 					// Magic Carpet also pumps it (+Attack) and grants Rush
@@ -2934,6 +2935,10 @@ export function execEffects(state, pi, effects, target, source) {
 			s + pl.board.reduce((b, c) => b + c.damage, 0) - pl.life - pl.armor, 0);
 		const spellLS = source && (source.type === 'sorcery' || source.type === 'instant') && state.players[pi].spellsLifestealThisTurn; // Omega Mind
 			const lsBefore = (e.type === 'damage' || e.type === 'random-damage') && (e.lifesteal || spellLS) ? totalHurt() : null;
+		// registry-migrated types resolve here; everything else falls through
+		// to the legacy chain (docs/06 dispatch-order rule)
+		const _h = getEffectHandler(e.type);
+		if (_h) { _h({ state, pi, target, source, enemies, scaled }, e); continue; }
 		if (e.type === 'damage') {
 			if (e.requireElementalLastTurn && !state.players[pi].elementalLastTurn) continue; // Gyreworm
 				if (e.requireControlOtherTribe && !state.players[pi].board.some(c => c !== source && !isDead(c) && (c.tribe || '').includes(e.requireControlOtherTribe))) continue; // South Coast Chieftain
@@ -3076,9 +3081,6 @@ export function execEffects(state, pi, effects, target, source) {
 				else if (target?.type === 'hero') mendHero(target.player);
 				else mendHero(pi);
 			}
-		} else if (e.type === 'draw') {
-			if (e.target === 'all') { for (let s2 = 0; s2 < state.players.length; s2++) if (!state.players[s2].eliminated) drawCards(state, s2, scaled(e)); }
-			else drawCards(state, pi, scaled(e));
 		} else if (e.type === 'draw-then') {
 			// draw N; run `then` only if a card was actually drawn ("if you do")
 			const n = drawCards(state, pi, scaled(e));
@@ -3749,9 +3751,6 @@ export function execEffects(state, pi, effects, target, source) {
 		} else if (e.type === 'grant-static') {
 			const t = chosenCreature();
 			if (t) t.static = { ...e.static };
-		} else if (e.type === 'armor') {
-			if (e.target === 'all-heroes') { for (let s2 = 0; s2 < state.players.length; s2++) if (!state.players[s2].eliminated) gainArmor(state, s2, e.value); } // Armor Vendor
-			else gainArmor(state, pi, e.value);
 		} else if (e.type === 'install-secret') {
 			installSecret(state, pi, e.id);
 		} else if (e.type === 'discount-hand') {
@@ -6272,11 +6271,6 @@ export function execEffects(state, pi, effects, target, source) {
 				source.attack += e.amount || 0; source.maxHealth += e.amount || 0;
 				emit(state, { type: 'buff', uid: source.uid, attack: source.attack, hp: hp(source) });
 			}
-		} else if (e.type === 'hero-shield') {
-			state.players[pi].heroShield = true; // Curious Cumulus / Hardlight Protector
-			emit(state, { type: 'heroShield', player: pi });
-		} else if (e.type === 'hero-immune-until-next') {
-			state.players[pi].heroImmuneUntilTurn = state.turnNumber + state.players.length; // Doomsday Prepper
 		} else if (e.type === 'draw-remember') {
 			// Platysaur: draw a card and remember it for the Deathrattle discard
 			const p = state.players[pi];
@@ -6444,17 +6438,6 @@ export function execEffects(state, pi, effects, target, source) {
 			p.hammerBonus = (p.hammerBonus || 0) + 2;
 			p.deck.push('high_kings_hammer');
 			for (let i = p.deck.length - 1; i > 0; i--) { const j = Math.floor(state.rng() * (i + 1)); [p.deck[i], p.deck[j]] = [p.deck[j], p.deck[i]]; }
-		} else if (e.type === 'conjure-id') {
-			// put a specific card (token ids allowed) into your hand (forEnemy: theirs)
-			const p = e.forEnemy && enemies.length ? state.players[enemies[0]] : state.players[pi];
-			const tpi = e.forEnemy && enemies.length ? enemies[0] : pi;
-			const def = state.cardsById[e.id];
-			if (def && p.hand.length < MAX_HAND) {
-				const card = instantiate(def, tpi);
-				if (e.id === 'high_kings_hammer' && p.hammerBonus) card.attack += p.hammerBonus;
-				card.zone = 'hand'; p.hand.push(card);
-				emit(state, { type: 'conjure', player: tpi, card, color: null });
-			}
 		} else if (e.type === 'blood-fighter-summon') {
 			// Lo'Gosh trio: summon a Blood Fighter from your hand with +5/+5 and a rider
 			const p = state.players[pi];
@@ -6528,12 +6511,6 @@ export function execEffects(state, pi, effects, target, source) {
 			if (nine.every(id => (p.playedCountById?.[id] || 0) >= 1)) {
 				for (const o of enemies) damageHero(state, o, 9999, pi);
 			}
-		} else if (e.type === 'shuffle-ids-into-deck') {
-			// forEnemy: they hide in an opponent's deck instead (King Llane fleeing Garona)
-			const tp = e.forEnemy && enemies.length ? enemies[0] : pi;
-			const dp = state.players[tp];
-			for (const id of e.ids || []) if (state.cardsById[id]) dp.deck.push(id);
-			for (let i = dp.deck.length - 1; i > 0; i--) { const j = Math.floor(state.rng() * (i + 1)); [dp.deck[i], dp.deck[j]] = [dp.deck[j], dp.deck[i]]; }
 		} else if (e.type === 'nethrek-check') {
 			// Chef Neth'rek, Start of Game: an all-(3)-or-less deck surges to 10 Mana on turn five
 			const p = state.players[pi];
