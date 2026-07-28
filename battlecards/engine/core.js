@@ -2846,12 +2846,6 @@ export function execEffects(state, pi, effects, target, source) {
 			const drawn = dp.hand.filter(c => !before.has(c.uid));
 			if (drawn.length >= (e.value || 1) && (!e.allType || drawn.every(c => c.type === e.allType)) && e.then)
 				execEffects(state, pi, e.then, target, source);
-		} else if (e.type === 'may') {
-			// optional "you may …": defer a yes/no to the controller. The UI (or AI)
-			// resolves it via resolveAsk, running `then` on yes / `else` on no.
-			state.askQueue.push({ player: pi, prompt: e.prompt || '', yes: e.yes || 'Yes', no: e.no || 'No',
-				then: e.then || [], else: e.else || [] });
-			emit(state, { type: 'askStart', player: pi, prompt: e.prompt || '' });
 		} else if (e.type === 'buff') {
 			if (e.target === 'friendly-creatures') {
 				for (const c of state.players[pi].board) {
@@ -3499,15 +3493,6 @@ export function execEffects(state, pi, effects, target, source) {
 					emit(state, { type: 'heroBuffed', player: target.player, amount: e.attack || 0 });
 				}
 			}
-		} else if (e.type === 'bolster') {
-			// +N/+N to your creature with the least health (MTG-style default)
-			const pool = state.players[pi].board.filter(c => !isDead(c));
-			if (pool.length) {
-				const t = pool.reduce((a, b) => hp(b) < hp(a) ? b : a);
-				t.attack += e.value;
-				t.maxHealth += e.value;
-				emit(state, { type: 'buff', uid: t.uid, attack: t.attack, hp: hp(t) });
-			}
 		} else if (e.type === 'adapt') {
 			// paper rule: roll a d10 three times (reroll dupes); the controller
 			// picks ONE of the three, applied to the adapting creature(s)
@@ -3556,12 +3541,6 @@ export function execEffects(state, pi, effects, target, source) {
 				if (!t.static || t.static.type !== 'spell-damage') t.static = { type: 'spell-damage', value: 0 };
 				t.static.value = (t.static.value || 0) + (e.value || 1);
 				emit(state, { type: 'buff', uid: t.uid, attack: t.attack, hp: hp(t) });
-			}
-		} else if (e.type === 'destroy-random-each') {
-			// Void Crusher: destroy a random creature on each player's board
-			for (const pl of state.players) {
-				const pool = pl.board.filter(c => !isDead(c) && c.type !== 'location');
-				if (pool.length) { const t = pool[Math.floor(state.rng() * pool.length)]; t.damage = t.maxHealth; t.shield = false; emit(state, { type: 'destroy', uid: t.uid }); }
 			}
 		} else if (e.type === 'copy-enemy-hero-power') {
 			// Sideshow Spelleater: copy a random opponent's Hero Power
@@ -3970,16 +3949,6 @@ export function execEffects(state, pi, effects, target, source) {
 			if (n > 0 && source && source.zone === 'board' && !isDead(source)) {
 				buffCreature(source, (e.attack || 0) * n, (e.health || 0) * n);
 			}
-		} else if (e.type === 'resummon-source') {
-			// Ancestral Spirit's granted deathrattle: the fallen returns
-			if (source) {
-				const def = state.cardsById[source.id];
-				summon(state, pi, def || {
-					id: source.id, name: source.name, type: 'creature', cost: 0,
-					rarity: source.rarity || 'common', description: source.description || '',
-					attack: source.attack, health: source.maxHealth,
-				});
-			}
 		} else if (e.type === 'heal-random-friendly') {
 			// Lightwell: mend a random damaged friendly character
 			const p = state.players[pi];
@@ -4043,10 +4012,6 @@ export function execEffects(state, pi, effects, target, source) {
 				wp.mana.max = Math.min(MAX_BASE_MANA, wp.mana.max + (e.value || 1));
 				emit(state, { type: 'manaGained', player: who, amount: 0, mana: availableMana(wp) });
 			}
-		} else if (e.type === 'lose-max-mana') {
-			// Revenant Rascal: target 'all' destroys a Mana Crystal for each player
-			const victims = e.target === 'all' ? state.players.map((_, i) => i).filter(i => !state.players[i].eliminated) : [pi];
-			for (const vi of victims) { const vp = state.players[vi]; vp.mana.max = Math.max(0, vp.mana.max - (e.value || 1)); vp.mana.cur = Math.min(vp.mana.cur, vp.mana.max); }
 		} else if (e.type === 'recruit') {
 			// Kobolds Recruit: summon a random matching creature straight from your deck
 			const p = state.players[pi];
@@ -4151,10 +4116,6 @@ export function execEffects(state, pi, effects, target, source) {
 			let their = null;
 			if (o != null) { const b = state.players[o].hand.length; drawCards(state, o, 1); their = state.players[o].hand.length > b ? state.players[o].hand[state.players[o].hand.length - 1] : null; }
 			if (my && their) { const t = my.cost; my.cost = their.cost; their.cost = t; }
-		} else if (e.type === 'chromatic-egg') {
-			// Chromatic Egg: remember a random Dragon; Deathrattle hatches it
-			const pool = Object.values(state.cardsById).filter(d => d.type === 'creature' && (d.tribe || '').includes('Dragon') && !d.token && d.collectible !== false && !(d.colors && d.colors.length));
-			if (pool.length && source) source.hatchId = pool[Math.floor(state.rng() * pool.length)].id;
 		} else if (e.type === 'destroy-all-copies') {
 			// Flik Skyshiv: destroy a chosen creature and every copy of it, everywhere
 			const t = chosenCreature();
@@ -4258,11 +4219,6 @@ export function execEffects(state, pi, effects, target, source) {
 				const cp = instantiate(def, pi); cp.zone = 'hand'; pp.hand.push(cp);
 				emit(state, { type: 'conjure', player: pi, card: cp, color: null });
 			}
-		} else if (e.type === 'sacrifice-selves-summon') {
-			// Mogu Cultist: destroy all copies of this creature, summon a token
-			const pp = state.players[pi];
-			for (const c of [...pp.board]) if (c.id === source.id && !isDead(c)) { c.damage = c.maxHealth; c.shield = false; emit(state, { type: 'destroy', uid: c.uid }); }
-			if (e.summonId && state.cardsById[e.summonId]) summon(state, pi, state.cardsById[e.summonId]);
 		} else if (e.type === 'debuff-enemies-attack-turn') {
 			// Quicksand Elemental: all enemy creatures lose Attack until your turn ends
 			for (const o of enemies) for (const c of state.players[o].board) {
@@ -4308,11 +4264,6 @@ export function execEffects(state, pi, effects, target, source) {
 					damageCreature(state, c, e.value || 5, source);
 				}
 			}
-		} else if (e.type === 'heal-adjacent-full') {
-			// Neferset Ritualist: restore the creatures flanking this one to full Health
-			const board = state.players[pi].board;
-			const idx = board.indexOf(source);
-			for (const nb of [board[idx - 1], board[idx + 1]]) if (nb && !isDead(nb) && nb.damage > 0) { nb.damage = 0; emit(state, { type: 'heal', targetType: 'creature', uid: nb.uid, amount: 0, hp: hp(nb) }); }
 		} else if (e.type === 'copy-hand-random-tribe') {
 			// Ramkahen Wildtamer: copy a random creature of a tribe in your hand
 			const p = state.players[pi];
@@ -4508,13 +4459,6 @@ export function execEffects(state, pi, effects, target, source) {
 				if (!c.keywords.includes('taunt')) c.keywords.push('taunt');
 				emit(state, { type: 'buff', uid: c.uid, attack: c.attack, hp: hp(c) });
 			}
-		} else if (e.type === 'murozond-thief') {
-			// Murozond, Thief of Time: no-duplicates deck -> Discover a Dragon that nukes
-			const p = state.players[pi];
-			const ids = p.deck.filter(id => state.cardsById[id]);
-			if (new Set(ids).size === ids.length && ids.length > 0) {
-				execEffects(state, pi, [{ type: 'discover', cardType: 'creature', tribe: 'Dragon', damageAllByCost: true }], null, source);
-			}
 		} else if (e.type === 'gem-return') {
 			// Gemstone Hoarder's Deathrattle: the stashed card returns at (1) less
 			const p = state.players[pi];
@@ -4684,15 +4628,6 @@ export function execEffects(state, pi, effects, target, source) {
 				state.pickQueue.push({ player: pi, ids, holmes: true });
 				emit(state, { type: 'pickStart', player: pi, count: ids.length });
 			}
-		} else if (e.type === 'thalena-power') {
-			// Blood Doctor Thalena: a second, Corpse-costed Hero Power
-			const p = state.players[pi];
-			const def = state.cardsById['hp_blood_tap'];
-			if (def) {
-				const power = instantiate(def, pi); power.zone = 'heropower'; power.usedThisTurn = false;
-				p.heroPowers.push(power);
-				emit(state, { type: 'heroPowerGained', player: pi, card: power });
-			}
 		} else if (e.type === 'beatrix') {
 			// Commander Beatrix: ten copies of a 2-Cost minion join your deck
 			const p = state.players[pi];
@@ -4709,12 +4644,6 @@ export function execEffects(state, pi, effects, target, source) {
 			const pool = Object.values(state.cardsById).filter(dd => dd.type === 'creature' && (dd.tribe || '').includes('Beast') && !dd.token && dd.collectible !== false && !(dd.colors && dd.colors.length));
 			p.contraband = [];
 			for (let n = 0; n < 3 && pool.length; n++) p.contraband.push(pool.splice(Math.floor(state.rng() * pool.length), 1)[0].id);
-		} else if (e.type === 'underbelly-discover') {
-			const p = state.players[pi];
-			if (p.contraband && p.contraband.length) {
-				state.pickQueue.push({ player: pi, ids: [...p.contraband], costMod: -3 });
-				emit(state, { type: 'pickStart', player: pi, count: p.contraband.length });
-			} else execEffects(state, pi, [{ type: 'discover', cardType: 'creature', tribe: 'Beast', costMod: -3 }], null, source);
 		} else if (e.type === 'azalina-deck') {
 			// Azalina: 20 of yours + 20 copied from the enemy's start
 			const p = state.players[pi];
@@ -5233,15 +5162,6 @@ export function execEffects(state, pi, effects, target, source) {
 				}
 				break;
 			}
-		} else if (e.type === 'damage-excess-draw') {
-			// Temporal Construct: deal N to a minion, draw a card per excess damage
-			const t = chosenCreature();
-			if (t) {
-				const rem = Math.max(0, t.maxHealth - t.damage);
-				const dealt = damageCreature(state, t, e.value || 5, source);
-				const excess = Math.max(0, (e.value || 5) - rem);
-				if (excess > 0 && dealt > 0) drawCards(state, pi, excess);
-			}
 		} else if (e.type === 'informant-copy') {
 			// Royal Informant: copy the right-most card in the opponent's hand
 			const foe = enemies[0], p = state.players[pi];
@@ -5263,11 +5183,6 @@ export function execEffects(state, pi, effects, target, source) {
 				buffCreature(c, e.attack || 1, e.health || 1);
 				emit(state, { type: 'buff', uid: c.uid, attack: c.attack, hp: hp(c) });
 			}
-		} else if (e.type === 'sylvanas-volley') {
-			// Ranger-General Sylvanas: 2 damage to all enemies, repeated per Windrunner played
-			const p = state.players[pi];
-			const extra = ['alleria_windrunner', 'vereesa_windrunner'].reduce((s, id) => s + (p.playedCountById?.[id] || 0), 0);
-			for (let n = 0; n < 1 + extra; n++) execEffects(state, pi, [{ type: 'damage', value: 2, target: 'enemies' }], null, source);
 		} else if (e.type === 'accretion-mill') {
 			// Blazing Accretion: destroy your top 3 cards; Fire spells and Elementals are drawn instead
 			const p = state.players[pi];
@@ -5304,17 +5219,6 @@ export function execEffects(state, pi, effects, target, source) {
 				c.zone = 'hand'; p.hand.push(c);
 				emit(state, { type: 'conjure', player: pi, card: c, color: null });
 			}
-		} else if (e.type === 'recruit-attack-boost') {
-			// Brash Battlemaster: your Silver Hand Recruits get +N Attack this game
-			const p = state.players[pi];
-			p.recruitAttackBonus = (p.recruitAttackBonus || 0) + (e.value || 1);
-			for (const c of p.board) if (c.name === 'Silver Hand Recruit' && !isDead(c)) { c.attack += e.value || 1; emit(state, { type: 'buff', uid: c.uid, attack: c.attack, hp: hp(c) }); }
-		} else if (e.type === 'summon-remembered') {
-			// Beast Speaker Taka (_takaId) / Amorphous Slime, Ravenous Kraken,
-			// Carnivorous Cubicle (rememberedId): summon the remembered card.
-			// (Merged: the _takaId-only branch shadowed the rememberedId branch.)
-			const rid = source && (source._takaId || source.rememberedId);
-			if (rid && state.cardsById[rid]) summon(state, pi, state.cardsById[rid]);
 		} else if (e.type === 'attack-random-enemies') {
 			// Verdant Dreamsaber: attack N random enemy minions (mutual damage)
 			if (source && !isDead(source)) for (let n = 0; n < (e.count || 1); n++) {
@@ -5407,18 +5311,6 @@ export function execEffects(state, pi, effects, target, source) {
 				const dd = state.cardsById[p.deck[i]];
 				if (dd && dd.type === 'creature') { (p.deckIdBuffs = p.deckIdBuffs || []).push({ id: p.deck[i], attack: e.attack || 0, health: e.health || 0 }); found++; }
 			}
-		} else if (e.type === 'discount-adjacent') {
-			// Skittish Saucier: cards adjacent in hand (at play time) cost less
-			const p = state.players[pi];
-			const hi = source ? source._handIndex : -1;
-			if (hi >= 0) for (const c of [p.hand[hi - 1], p.hand[hi]]) {
-				if (c && (c.cost || 0) > 0) { c.cost = Math.max(0, c.cost - (e.value || 1)); emit(state, { type: 'costChange', player: pi, uid: c.uid, cost: c.cost }); }
-			}
-		} else if (e.type === 'argus-start') {
-			// Broxigar, Start of Game: he disappears; the First Portal takes his deck slot
-			const p = state.players[pi];
-			const bi = p.deck.indexOf('broxigar');
-			if (bi >= 0) { p.deck.splice(bi, 1); p.deck.push('first_portal_to_argus'); for (let i = p.deck.length - 1; i > 0; i--) { const j = Math.floor(state.rng() * (i + 1)); [p.deck[i], p.deck[j]] = [p.deck[j], p.deck[i]]; } }
 		} else if (e.type === 'argus-next') {
 			// a Fleeing Demon died (pi = its controller): Broxigar's owner (the enemy)
 			// draws a card and gets the next Portal shuffled into their deck
@@ -5743,31 +5635,6 @@ export function execEffects(state, pi, effects, target, source) {
 				p.board.push(loc);
 				emit(state, { type: 'locationPlayed', player: pi, card: loc });
 			}
-		} else if (e.type === 'reduce-random-enemy-hand-cost') {
-			// Curious Explorer: reduce the Cost of a random minion in your opponent's hand
-			for (const o of enemies) {
-				const pool = state.players[o].hand.filter(c => c.type === 'creature' && (c.cost || 0) > 0);
-				if (pool.length) { const c = pool[Math.floor(state.rng() * pool.length)]; c.cost = Math.max(0, (c.cost || 0) - (e.value || 2)); }
-				break;
-			}
-		} else if (e.type === 'gain-mana-to-match') {
-			// Crystal Tender: gain empty Mana Crystals until you match the opponent's maximum Mana
-			const p = state.players[pi];
-			let target = p.mana ? p.mana.max : 0;
-			for (const o of enemies) { const om = state.players[o].mana ? state.players[o].mana.max : 0; if (om > target) target = om; }
-			if (p.mana && target > p.mana.max) p.mana.max = target;
-		} else if (e.type === 'shuffle-remembered-into-deck') {
-			// Test Subject: shuffle every spell cast on this creature into your deck
-			const p = state.players[pi];
-			for (const id of (source?.rememberedSpells || [])) { if (state.cardsById[id]) p.deck.push(id); }
-			for (let i = p.deck.length - 1; i > 0; i--) { const j = Math.floor(state.rng() * (i + 1)); [p.deck[i], p.deck[j]] = [p.deck[j], p.deck[i]]; }
-		} else if (e.type === 'temp-stealth-self') {
-			// Coppertail Imposter: gain Stealth until your next turn
-			if (source && source.zone === 'board' && !isDead(source)) {
-				source.tempStealth = true; source.stealthed = true;
-				if (!source.keywords.includes(KW.STEALTH)) source.keywords.push(KW.STEALTH);
-				emit(state, { type: 'buff', uid: source.uid, attack: source.attack, hp: hp(source) });
-			}
 		} else if (e.type === 'copy-enemy-hand') {
 			// Azalina Soulthief: replace your hand with a copy of an opponent's
 			const o = enemies[0];
@@ -5815,21 +5682,6 @@ export function execEffects(state, pi, effects, target, source) {
 			const p = state.players[pi];
 			const legends = Object.values(state.cardsById).filter(d => d.type === 'creature' && d.rarity === 'legendary' && !d.token && d.collectible !== false && !d.companion && !d.commander && !(d.colors && d.colors.length));
 			if (legends.length) p.deck = p.deck.map(id => ((state.cardsById[id]?.cost || 0) === (e.cost ?? 1)) ? legends[Math.floor(state.rng() * legends.length)].id : id);
-		} else if (e.type === 'devour-target') {
-			// Ratcatcher: destroy a chosen friendly creature, gain its Attack and Health
-			const t = chosenCreature();
-			if (t && source && source.zone === 'board' && !isDead(source) && t !== source) {
-				const a = t.attack, h2 = hp(t);
-				t.damage = t.maxHealth; t.shield = false; emit(state, { type: 'destroy', uid: t.uid });
-				buffCreature(source, a, h2);
-			}
-		} else if (e.type === 'random-buff-others') {
-			// Mad Hatter: toss N +1/+1 hats onto random OTHER creatures (may stack)
-			for (let i = 0; i < (e.count || 1); i++) {
-				const pool = state.players[pi].board.filter(c => c !== source && !isDead(c) && c.type !== 'location');
-				if (!pool.length) break;
-				buffCreature(pool[Math.floor(state.rng() * pool.length)], e.attack || 1, e.health || 1);
-			}
 		} else if (e.type === 'destroy-own-totems-buff') {
 			// Totem Cruncher: destroy your Totems, gain +2/+2 for each
 			const p = state.players[pi];
@@ -6195,12 +6047,6 @@ export function execEffects(state, pi, effects, target, source) {
 				source.maxHealth = Math.max(hp(source), hiH); source.damage = 0;
 				emit(state, { type: 'buff', uid: source.uid, attack: source.attack, hp: hp(source) });
 			}
-		} else if (e.type === 'shuffle-soul-fragments') {
-			// Spirit Jailer / etc: shuffle N Soul Fragments into your deck
-			const p = state.players[pi];
-			for (let n = 0; n < (e.count || 2); n++) p.deck.push('sch_soul_fragment');
-			for (let i = p.deck.length - 1; i > 0; i--) { const j = Math.floor(state.rng() * (i + 1)); [p.deck[i], p.deck[j]] = [p.deck[j], p.deck[i]]; }
-			emit(state, { type: 'shuffle', player: pi });
 		} else if (e.type === 'destroy-fragment-then-damage') {
 			// Shadowlight Scholar: destroy a Soul Fragment in your deck to deal damage
 			const p = state.players[pi];
@@ -6311,23 +6157,11 @@ export function execEffects(state, pi, effects, target, source) {
 			if (e.requireSecret && !state.players[pi].secrets.length) continue;
 			const def = source && state.cardsById[source.id];
 			if (def) for (let n = 0; n < (e.count || 1); n++) summon(state, pi, def);
-		} else if (e.type === 'cast-secret-from-deck') {
-			// Private Eye: install N Secrets from your deck (Combo casts 2)
-			const p = state.players[pi];
-			for (let n = 0; n < (e.count || 1); n++) {
-				const idx = p.deck.findIndex(id => state.cardsById[id]?.secret && !p.secrets.some(s => s.id === id));
-				if (idx < 0) break;
-				const [id] = p.deck.splice(idx, 1);
-				installSecret(state, pi, id);
-			}
 		} else if (e.type === 'copy-random-enemy-hand') {
 			// Incriminating Psychic: copy N random cards from the opponent's hand into yours
 			// (Tricky Satyr: `lowest` copies their cheapest card instead)
 			const foe = enemies[0], p = state.players[pi];
 			if (foe != null) { const src = state.players[foe].hand.slice(); for (let n = 0; n < (e.count || 1) && src.length && p.hand.length < MAX_HAND; n++) { const i = e.lowest ? src.reduce((bi, c, ci) => ((c.cost || 0) < (src[bi].cost || 0) ? ci : bi), 0) : Math.floor(state.rng() * src.length); const [ec] = src.splice(i, 1); const def = state.cardsById[ec.id] || ec; const card = instantiate(def, pi); card.zone = 'hand'; card._copiedFromEnemy = true; p.hand.push(card); emit(state, { type: 'conjure', player: pi, card, color: null }); } }
-		} else if (e.type === 'draw-both-until') {
-			// Sightless Magistrate: both players draw until they have N cards
-			for (let s2 = 0; s2 < state.players.length; s2++) { const pl = state.players[s2]; let guard = 0; while (pl.hand.length < (e.value || 5) && pl.hand.length < MAX_HAND && guard++ < 20) { const before = pl.hand.length; drawCards(state, s2, 1); if (pl.hand.length === before) break; } }
 		} else if (e.type === 'debuff-random-hand-each') {
 			// Twisted Treant: give a random minion in each player's hand -N Attack
 			for (let s2 = 0; s2 < state.players.length; s2++) {
@@ -6346,11 +6180,6 @@ export function execEffects(state, pi, effects, target, source) {
 			const n = state.players[pi].hand.filter(c => c !== source && (c.cardClass || '').split('__').includes(e.cardClass)).length;
 			for (let i = 0; i < n && source; i++) { const k = kws[Math.floor(state.rng() * kws.length)]; if (!source.keywords.includes(k)) { source.keywords.push(k); if (k === KW.DIVINE_SHIELD) source.shield = true; } }
 			if (source) emit(state, { type: 'buff', uid: source.uid, attack: source.attack, hp: hp(source) });
-		} else if (e.type === 'equip-per-cards-played') {
-			// Necrolord Draka: equip a weapon whose Attack grows with other cards played this turn
-			const p = state.players[pi];
-			const bonus = Math.min(e.cap ?? 10, Math.max(0, (p.cardsPlayedThisTurn || 1) - 1));
-			execEffects(state, pi, [{ type: 'equip', name: e.name || 'Dagger', attack: (e.attack || 1) + bonus, durability: e.durability || 3 }], null, source);
 		} else if (e.type === 'summon-died-name') {
 			// Imp King Rafaam: resurrect friendly dead minions whose name contains a substring
 			const p = state.players[pi];
@@ -6411,9 +6240,6 @@ export function execEffects(state, pi, effects, target, source) {
 			let best = null;
 			for (const c of p.hand) if (isSpellType(c) && (!best || (c.cost || 0) > (best.cost || 0))) best = c;
 			if (best && p.hand.length < MAX_HAND && state.cardsById[best.id]) { const cp = instantiate(state.cardsById[best.id], pi); cp.zone = 'hand'; p.hand.push(cp); emit(state, { type: 'conjure', player: pi, card: cp, color: null }); }
-		} else if (e.type === 'grant-keyword-self') {
-			// Audio Medic (Finale): the source minion gains a keyword
-			if (source && !isDead(source) && !source.keywords.includes(e.keyword)) { source.keywords.push(e.keyword); if (e.keyword === KW.DIVINE_SHIELD) source.shield = true; if (e.keyword === KW.STEALTH) source.stealthed = true; emit(state, { type: 'buff', uid: source.uid, attack: source.attack, hp: hp(source) }); }
 		} else if (e.type === 'buff-self-attack-random-enemy') {
 			// Mish-Mash Mosher / Barricade Basher: gain +N Attack (and Health) and attack a random enemy minion (guarded chain)
 			if (source && !isDead(source)) {
@@ -6442,11 +6268,6 @@ export function execEffects(state, pi, effects, target, source) {
 			// Grillmaster: draw your lowest / highest Cost card
 			const p = state.players[pi];
 			if (p.deck.length && p.hand.length < MAX_HAND) { let idx = 0; for (let i = 1; i < p.deck.length; i++) { const ci = state.cardsById[p.deck[i]]?.cost || 0, cb = state.cardsById[p.deck[idx]]?.cost || 0; if (e.type === 'draw-lowest' ? ci < cb : ci > cb) idx = i; } const [id] = p.deck.splice(idx, 1); const card = instantiate(state.cardsById[id], pi); card.zone = 'hand'; card.fromDeck = true; p.hand.push(card); emit(state, { type: 'draw', player: pi, card }); }
-		} else if (e.type === 'replay-last-card') {
-			// Conniving Conman: replay the last card you played (approx: your most recent card)
-			const id = state.players[pi].lastCardPlayedId;
-			const def = id && state.cardsById[id];
-			if (def) { if (isSpellType(def)) execEffects(state, pi, JSON.parse(JSON.stringify(def.effects || [])), null, source); else if (def.type === 'creature') summon(state, pi, def); }
 		} else if (e.type === 'copy-deck-top-to-hand') {
 			// Narain Soothfancy: add N copies of the top card of your deck to your hand
 			const p = state.players[pi];
@@ -6566,12 +6387,6 @@ export function execEffects(state, pi, effects, target, source) {
 				let lo = pool[0]; for (const c of pool) if ((c.cost || 0) < (lo.cost || 0)) lo = c;
 				if (state.cardsById[lo.id]) { const cp = instantiate(state.cardsById[lo.id], pi); cp.zone = 'hand'; p.hand.push(cp); emit(state, { type: 'conjure', player: pi, card: cp, color: null }); }
 			}
-		} else if (e.type === 'reduce-hand-if-distinct-costs') {
-			// Zaqali Flamemancer: if every card in your hand has a different Cost, reduce their Costs
-			const p = state.players[pi];
-			const others = p.hand.filter(c => c !== source);
-			const costs = others.map(c => c.cost || 0);
-			if (others.length && new Set(costs).size === costs.length) { for (const c of others) c.cost = Math.max(0, (c.cost || 0) - (e.value || 2)); }
 		} else if (e.type === 'gain-deathrattles-died-this-turn') {
 			// Archdruid of Thorns: gain the Deathrattles of your minions that died this turn
 			if (source) {
@@ -6637,11 +6452,6 @@ export function execEffects(state, pi, effects, target, source) {
 			// Gunslinger Kurtrus: fire N shots of V damage at random minions in the opponent's hand
 			const foe = enemies[0];
 			if (foe != null) { const fp = state.players[foe]; for (let n = 0; n < (e.count || 6); n++) { const pool = fp.hand.filter(c => c.type === 'creature'); if (!pool.length) break; const c = pool[Math.floor(state.rng() * pool.length)]; c.maxHealth = (c.maxHealth || 1) - (e.value || 2); if ((c.maxHealth || 0) <= 0) { fp.hand = fp.hand.filter(x => x !== c); emit(state, { type: 'discard', player: foe, card: c }); } } }
-		} else if (e.type === 'roll-dice-discover') {
-			// Snake Eyes: roll two dice, Discover a card of each rolled Cost (doubles = an extra)
-			const r1 = 1 + Math.floor(state.rng() * 6), r2 = 1 + Math.floor(state.rng() * 6);
-			execEffects(state, pi, [{ type: 'discover', cost: r1 }, { type: 'discover', cost: r2 }], null, source);
-			if (r1 === r2) execEffects(state, pi, [{ type: 'discover', cost: r1 }], null, source);
 		} else if (e.type === 'shuffle-hand-redraw') {
 			// Gaslight Gatekeeper: shuffle your hand into your deck, then draw that many
 			const p = state.players[pi];
@@ -6815,20 +6625,10 @@ export function execEffects(state, pi, effects, target, source) {
 			execEffects(state, pi, [{ type: 'tutor', cardType: 'creature', tribe: e.tribe, count: 1 }], null, source);
 			const drawn = p.hand.find(c => !before.has(c.uid));
 			if (drawn && state.cardsById[drawn.id]) summon(state, pi, state.cardsById[drawn.id]);
-		} else if (e.type === 'destroy-friendly-tribe-buff-all') {
-			// Elder Nadox: destroy a chosen friendly minion; your minions gain its Attack
-			const t = chosenCreature();
-			if (t && t.controller === pi) { const a = t.attack || 0; t.damage = t.maxHealth; t.shield = false; emit(state, { type: 'destroy', uid: t.uid }); for (const c of state.players[pi].board) if (c !== t && !isDead(c) && c.type !== 'location') buffCreature(c, a, 0); }
 		} else if (e.type === 'swap-enemy-with-deck') {
 			// Translocation Instructor: swap a chosen enemy minion with a random minion in their deck
 			const t = chosenCreature();
 			if (t && t.controller != null && t.controller !== pi) { const owner = state.players[t.controller]; const idxs = owner.deck.map((id, i) => [id, i]).filter(([id]) => state.cardsById[id]?.type === 'creature' && !state.cardsById[id].token); if (idxs.length) { const [id, di] = idxs[Math.floor(state.rng() * idxs.length)]; owner.deck.splice(di, 1); owner.board = owner.board.filter(c => c !== t); if (state.cardsById[t.id]) owner.deck.push(t.id); t.zone = 'gone'; summon(state, t.controller, state.cardsById[id]); emit(state, { type: 'bounce', uid: t.uid, player: t.controller, name: t.name }); recomputeAuras(state); } }
-		} else if (e.type === 'shuffle-tokens-into-deck') {
-			// Rivendare: shuffle specific cards into your deck
-			const p = state.players[pi];
-			for (const id of e.ids || []) if (state.cardsById[id]) p.deck.push(id);
-			for (let i = p.deck.length - 1; i > 0; i--) { const j = Math.floor(state.rng() * (i + 1)); [p.deck[i], p.deck[j]] = [p.deck[j], p.deck[i]]; }
-			emit(state, { type: 'shuffle', player: pi });
 		} else if (e.type === 'buff-random-hand') {
 			// Vicious Bloodworm (battlecry path — the ongoing path lives in runSecretEffects): buff a random creature in your hand
 			const pool2 = state.players[pi].hand.filter(c => c.type === 'creature');
@@ -6909,10 +6709,6 @@ export function execEffects(state, pi, effects, target, source) {
 			// MC Blingtron: both players equip a 1/2 Microphone (damage-amp on the opponent's approximated/omitted)
 			execEffects(state, pi, [{ type: 'equip', name: e.name || 'Microphone', attack: e.attack || 1, durability: e.durability || 2 }], null, source);
 			for (const o of enemies) { const op = state.players[o]; if (op.eliminated) continue; if (op.weapon) breakWeapon(state, o, true); const w = instantiate({ id: 'token_microphone', name: e.name || 'Microphone', type: 'weapon', cost: 0, rarity: 'common', description: `A ${e.attack || 1}/${e.durability || 2} weapon.`, attack: e.attack || 1, durability: e.durability || 2 }, o); w.zone = 'weapon'; op.weapon = w; emit(state, { type: 'weaponEquip', player: o, card: w }); }
-		} else if (e.type === 'replace-deck-with-enemy-copy') {
-			// Tony, King of Piracy: replace your deck with a copy of your opponent's
-			const foe = enemies[0], p = state.players[pi];
-			if (foe != null) { p.deck = state.players[foe].deck.slice(); for (let i = p.deck.length - 1; i > 0; i--) { const j = Math.floor(state.rng() * (i + 1)); [p.deck[i], p.deck[j]] = [p.deck[j], p.deck[i]]; } emit(state, { type: 'shuffle', player: pi }); }
 		} else if (e.type === 'bounce-self-set-cost') {
 			// Rhythmdancer Risa: return this to your hand and set its Cost
 			if (source && source.zone === 'board' && !isDead(source) && state.cardsById[source.id] && state.players[pi].hand.length < MAX_HAND) {
@@ -7080,13 +6876,6 @@ export function execEffects(state, pi, effects, target, source) {
 				t.damage = t.maxHealth; t.shield = false; emit(state, { type: 'destroy', uid: t.uid }); sweepDeaths(state);
 				execEffects(state, pi, [{ type: 'recruit', cost }], null, source);
 			}
-		} else if (e.type === 'draw-spell-cheap') {
-			// Stonehearth Vindicator: draw a spell costing (maxCost) or less; it costs (0) this turn
-			const p = state.players[pi];
-			const before = new Set(p.hand.map(c => c.uid));
-			execEffects(state, pi, [{ type: 'tutor', cardType: 'spell', maxCost: e.maxCost ?? 3, count: 1 }], target, source);
-			const drawn = p.hand.find(c => !before.has(c.uid));
-			if (drawn) drawn.cost = 0;
 		} else if (e.type === 'copy-hand-school-spell') {
 			// Grave Defiler: get a copy of a Fel spell in your hand (Lady Deathwhisper: `all` copies every match)
 			const p = state.players[pi];
@@ -7161,13 +6950,6 @@ export function execEffects(state, pi, effects, target, source) {
 			if (def && def.effects && source && source.zone === 'board' && !isDead(source)) {
 				execEffects(state, pi, JSON.parse(JSON.stringify(def.effects)), { type: 'creature', uid: source.uid, player: pi }, source);
 			}
-		} else if (e.type === 'draw-spell-armor') {
-			// Deepwater Evoker: draw a spell, gain Armor equal to its Cost
-			const p = state.players[pi];
-			const before = new Set(p.hand.map(c => c.uid));
-			execEffects(state, pi, [{ type: 'tutor', cardType: 'spell', count: 1 }], target, source);
-			const drawn = p.hand.find(c => !before.has(c.uid));
-			if (drawn) gainArmor(state, pi, drawn.cost || 0);
 		} else if (e.type === 'draw-spell-selfdamage') {
 			// Hullbreaker: draw a spell, your hero takes damage equal to its Cost
 			const p = state.players[pi];
@@ -7175,15 +6957,6 @@ export function execEffects(state, pi, effects, target, source) {
 			execEffects(state, pi, [{ type: 'tutor', cardType: 'spell', count: 1 }], target, source);
 			const drawn = p.hand.find(c => !before.has(c.uid));
 			if (drawn && (drawn.cost || 0) > 0) damageHero(state, pi, drawn.cost || 0, pi);
-		} else if (e.type === 'copy-last-deathrattle-died') {
-			// Monstrous Parrot: add a copy of the last friendly Deathrattle minion that died
-			const p = state.players[pi];
-			const id = p.lastDeathrattleDied;
-			if (id && state.cardsById[id] && p.hand.length < MAX_HAND) { const nc = instantiate(state.cardsById[id], pi); nc.zone = 'hand'; p.hand.push(nc); emit(state, { type: 'conjure', player: pi, card: nc, color: null }); }
-		} else if (e.type === 'damage-flanks') {
-			// Crow's Nest Lookout: deal damage to the left- and right-most enemy minions
-			for (const o of enemies) { const board = state.players[o].board.filter(c => !isDead(c) && c.type !== 'location'); const targets = [...new Set([board[0], board[board.length - 1]])].filter(Boolean); for (const t of targets) damageCreature(state, t, e.value || 2, source); }
-			sweepDeaths(state);
 		} else if (e.type === 'copy-random-hand-card') {
 			// Nobleman: create a copy of a random card in your hand (Cloud Serpent: of a tribe, e.g. "Elemental|Dragon")
 			const p = state.players[pi];
@@ -7252,11 +7025,6 @@ export function execEffects(state, pi, effects, target, source) {
 			// Varden Dawngrasp: freeze all enemy minions; already-frozen ones take damage instead
 			for (const o of enemies) for (const c of [...state.players[o].board]) { if (isDead(c) || c.type === 'location') continue; if (c.frozen) damageCreature(state, c, e.value || 4, source); else freezeCreature(state, c); }
 			sweepDeaths(state);
-		} else if (e.type === 'secrets-to-soldiers') {
-			// Cannonmaster Smythe: transform your Secrets into 3/3 Soldiers
-			const p = state.players[pi];
-			const n = p.secrets.length; p.secrets = [];
-			for (let i = 0; i < n; i++) summon(state, pi, { id: e.summonId || 'bar_soldier', name: e.name || 'Soldier', type: 'creature', cost: 3, token: true, rarity: 'common', attack: 3, health: 3, description: 'A 3/3 Soldier.' });
 		} else if (e.type === 'attack-flanks') {
 			// Kurtrus Ashfallen: attack the left- and right-most enemy minions
 			if (source && !isDead(source)) {
@@ -7415,11 +7183,6 @@ export function execEffects(state, pi, effects, target, source) {
 			// Star Student Stelina (Outcast): shuffle a random card from opponent's hand into their deck
 			const foe = enemies[0];
 			if (foe != null) { const fp = state.players[foe]; if (fp.hand.length) { const i = Math.floor(state.rng() * fp.hand.length); const [c] = fp.hand.splice(i, 1); fp.deck.push(c.id); for (let k = fp.deck.length - 1; k > 0; k--) { const j = Math.floor(state.rng() * (k + 1)); [fp.deck[k], fp.deck[j]] = [fp.deck[j], fp.deck[k]]; } emit(state, { type: 'shuffle', player: foe }); } }
-		} else if (e.type === 'summon-all-died-this-turn') {
-			// Headmaster Kel'Thuzad (Spellburst): summon the minions destroyed this turn to your side
-			const gathered = [];
-			for (let s2 = 0; s2 < state.players.length; s2++) { gathered.push(...state.players[s2].diedThisTurnIds); state.players[s2].diedThisTurnIds = []; }
-			for (const id of gathered) { const def = state.cardsById[id]; if (def) summon(state, pi, def); }
 		} else if (e.type === 'transform-adjacent-costplus') {
 			// Bogstrok Clacker: transform each neighbor into a random minion costing (1) more
 			if (source) {
@@ -7443,11 +7206,6 @@ export function execEffects(state, pi, effects, target, source) {
 			const others = state.players[pi].board.filter(c => c !== source && !isDead(c) && c.type !== 'location');
 			if (source) source.rememberedMinions = others.map(c => ({ id: c.id, name: c.name, tribe: c.tribe || null, attack: c.attack || 0, health: hp(c) }));
 			for (const c of others) { c.damage = c.maxHealth; c.shield = false; emit(state, { type: 'destroy', uid: c.uid }); }
-			sweepDeaths(state);
-		} else if (e.type === 'damage-stealth-on-kill') {
-			// Burrowing Scorpid: deal damage; if it kills, gain Stealth
-			const t = chosenCreature();
-			if (t) { const before = isDead(t); damageCreature(state, t, e.value || 2, source); if (!before && isDead(t) && source && !isDead(source) && !source.keywords.includes(KW.STEALTH)) { source.keywords.push(KW.STEALTH); source.stealthed = true; } }
 			sweepDeaths(state);
 		} else if (e.type === 'transform-neighbor-into-copy-self') {
 			// Replicat-o-tron: at end of turn, turn a neighbor into a copy of this
@@ -7541,10 +7299,6 @@ export function execEffects(state, pi, effects, target, source) {
 				if (def && !def.token) { const c = instantiate(def, pi); c.zone = 'graveyard'; p.graveyard.push(c); }
 				emit(state, { type: 'mill', player: pi });
 			}
-		} else if (e.type === 'return-remembered-spells') {
-			// Primalfin Champion: return the spells cast on it to your hand
-			const p = state.players[pi];
-			for (const id of (source?.rememberedSpells || [])) { if (p.hand.length >= MAX_HAND) break; const def = state.cardsById[id]; if (def) { const c = instantiate(def, pi); c.zone = 'hand'; p.hand.push(c); emit(state, { type: 'conjure', player: pi, card: c, color: null }); } }
 		} else if (e.type === 'random-invocation') {
 			// Kalimos, Primal Lord: cast a random Elemental Invocation
 			const inv = Math.floor(state.rng() * 4);
@@ -7575,11 +7329,6 @@ export function execEffects(state, pi, effects, target, source) {
 				const pool = state.players[pi].board.filter(c => !isDead(c) && c !== source && (c.tribe || '').includes(tribe));
 				if (pool.length) { const t = pool[Math.floor(state.rng() * pool.length)]; t.attack += e.attack || 0; t.maxHealth += e.health || 0; emit(state, { type: 'buff', uid: t.uid, attack: t.attack, hp: hp(t) }); }
 			}
-		} else if (e.type === 'spend-all-mana-buff') {
-			// Forbidden Ancient: spend all your Mana, gain +1/+1 per Mana spent
-			const p = state.players[pi];
-			const n = availableMana(p);
-			if (n > 0) { spendMana(p, n); if (source && !isDead(source)) { source.attack += (e.attack || 1) * n; source.maxHealth += (e.health || 1) * n; emit(state, { type: 'buff', uid: source.uid, attack: source.attack, hp: hp(source) }); } }
 		} else if (e.type === 'copy-from-enemy-deck') {
 			// Shifting Shade: copy a random card from an opponent's deck into your hand
 			const p = state.players[pi];
@@ -7806,16 +7555,6 @@ export function execEffects(state, pi, effects, target, source) {
 					emit(state, { type: 'draw', player: pi, card });
 				}
 				if (e.then) execEffects(state, pi, e.then, target, source);
-			}
-		} else if (e.type === 'return-self-to-hand') {
-			// "Deathrattle: Return this to your hand" — a fresh copy comes back
-			const p = state.players[pi];
-			const def = source && state.cardsById[source.id];
-			if (def && !p.eliminated && p.hand.length < MAX_HAND) {
-				const card = instantiate(def, pi);
-				card.zone = 'hand';
-				p.hand.push(card);
-				emit(state, { type: 'conjure', player: pi, card, color: null });
 			}
 		} else if (e.type === 'shuffle-into-deck') {
 			// Raptor/Direhorn Hatchling: shuffle a token into your deck; Weasel
@@ -8334,15 +8073,6 @@ export function execEffects(state, pi, effects, target, source) {
 				source.zone = 'gone';
 				emit(state, { type: 'transformed', uid: source.uid, player: source.controller, from: source.name, card: clone });
 				recomputeAuras(state);
-			}
-		} else if (e.type === 'spend-corpses-up-to') {
-			// "Spend up to N Corpses / all of your Corpses, X for each spent"
-			const p = state.players[pi];
-			const n = Math.min(e.max ?? Infinity, p.corpses);
-			if (n > 0) {
-				p.corpses -= n;
-				emit(state, { type: 'corpses', player: pi, corpses: p.corpses });
-				for (let i = 0; i < n; i++) execEffects(state, pi, e.effects, target, source);
 			}
 		} else if (e.type === 'spend-corpses-while') {
 			// Corpse Explosion: pay 1 and repeat while any creature survives
