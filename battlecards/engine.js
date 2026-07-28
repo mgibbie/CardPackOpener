@@ -42,6 +42,9 @@ export const MAX_BASE_MANA = 12;
 export const MAX_HAND = 15;
 export const MAX_SECRETS = 5;
 export const MAX_PLAYERS = 8;
+import { effectiveCost, heroPowerCost, discountIndex } from './engine/cost.js';
+export { effectiveCost, heroPowerCost };
+
 export const STARTING_LIFE = 40;
 // capped zone sizes on the player board (the creature row is unlimited)
 export const MAX_LANDS = 5;
@@ -1362,7 +1365,7 @@ function healHero(state, pi, amount) {
 	}
 }
 
-function isDead(c) {
+export function isDead(c) {
 	if (c.type === 'location') return c.doomed || c.durability <= 0;
 	// Immune: lethal damage and "destroy" effects don't kill it — only
 	// a sacrifice does (which sets c.sacrificed).
@@ -1956,7 +1959,7 @@ function fireOngoing(state, pi, when, ctx = {}) {
 }
 
 // sum of a static passive across a player's permanent rows
-function staticValue(p, type) {
+export function staticValue(p, type) {
 	let v = 0;
 	for (const card of [...p.enchantments, ...p.artifacts, ...p.emblems, ...p.board, ...(p.weapon ? [p.weapon] : [])]) {
 		if (card.static?.type === type) v += card.static.value || 1;
@@ -11306,25 +11309,16 @@ export function schoolOf(card) {
 }
 
 // ---------- cost modifiers ----------
-const isSpellType = card => card.type === 'sorcery' || card.type === 'instant' || card.type === 'secret' || card.type === 'trap';
-const costTypeMatches = (card, t) => t === 'all'
-	|| (t === 'spell' ? isSpellType(card)
-		: t === 'noncreature' ? (card.type !== 'creature' && card.type !== 'land') // Thalia
-		: card.type === t);
+export const isSpellType = card => card.type === 'sorcery' || card.type === 'instant' || card.type === 'secret' || card.type === 'trap';
 
-// a live one-shot discount usable on this card right now, or -1
-function discountIndex(state, p, card) {
-	return (p.costDiscounts || []).findIndex(d =>
-		(!d.thisTurn || d.turn === state.turnNumber)
-		&& costTypeMatches(card, d.cardType)
-		&& (!d.tribe || (card.tribe || '').includes(d.tribe)));
-}
+
+
 
 // what the card actually costs after self-scaling printed costs (Giants),
 // board cost auras (Sorcerer's Apprentice / Mana Wraith), one-shot riders
 // (Preparation / Far Sight-style live on card.cost itself), and Millhouse
 // the active arena plane's continuous static rule (or null)
-function activePlaneRule(state) {
+export function activePlaneRule(state) {
 	const pd = state.plane ? state.cardsById[state.plane] : null;
 	return pd && pd.staticRule ? pd.staticRule : null;
 }
@@ -11354,134 +11348,7 @@ function applyPlaneOnCreaturePlayed(state, pi, card) {
 	emit(state, { type: 'buff', uid: card.uid, attack: card.attack, hp: hp(card) });
 }
 
-export function effectiveCost(state, pi, card) {
-	const p = state.players[pi];
-	let c = card.cost;
-	if (card.selfCost) {
-		let n = 0;
-		if (card.selfCost.per === 'other-creatures') {
-			for (const pl of state.players) n += pl.board.filter(x => !isDead(x) && x !== card).length;
-		} else if (card.selfCost.per === 'hand-others') {
-			n = Math.max(0, p.hand.length - (p.hand.includes(card) ? 1 : 0));
-		} else if (card.selfCost.per === 'own-damage') {
-			n = Math.max(0, STARTING_LIFE - p.life);
-		} else if (card.selfCost.per === 'weapon-attack') {
-			n = p.weapon ? p.weapon.attack : 0;
-		} else if (card.selfCost.per === 'deaths-this-turn') {
-			n = state.diedThisTurn || 0;
-		} else if (card.selfCost.per === 'spells-this-game') {
-			n = p.spellsPlayedTotal || 0;
-		} else if (card.selfCost.per === 'si7-played') {
-			n = p.si7PlayedGame || 0; // SI:7 Assassin
-		} else if (card.selfCost.per === 'board-power') {
-			n = p.board.reduce((s, x) => isDead(x) ? s : s + (x.attack || 0), 0); // Ghalta
-		} else if (card.selfCost.per === 'hero-powers-game') {
-			n = p.heroPowersUsedGame || 0; // Frost Giant
-		} else if (card.selfCost.per === 'artifacts') {
-			n = p.artifacts.length; // Affinity for artifacts (Treasures/Clues/Food count)
-		} else if (card.selfCost.per === 'deck-size') {
-			n = p.deck.length; // Fanottem: Cost equals the cards in your deck
-		} else if (card.selfCost.per === 'one-cost-played') {
-			n = p.oneCostPlayedGame || 0; // Thirsty Drifter: cheaper per 1-Cost card played
-		} else if (card.selfCost.per === 'minions-died-game') {
-			n = state.minionsDiedGame || 0; // Reska, the Pit Boss
-		} else if (card.selfCost.per === 'cards-played') {
-			n = p.cardsPlayedThisTurn || 0; // Everburning Phoenix: cheaper per card played this turn
-		} else if (card.selfCost.per === 'last-card-cost') {
-			n = p.lastCardCost || 0; // Gronn Giant: reduced by the Cost of the last card you played
-		}
-		c += card.selfCost.amount * n;
-	}
-	for (const pl of state.players) {
-		for (const src of [...pl.board, ...pl.enchantments, ...pl.artifacts, ...pl.emblems]) {
-			const m = src.costMod;
-			if (!m || (src.zone === 'board' && isDead(src))) continue;
-			if (m.scope === 'enemies' ? pl === p : (m.scope !== 'all' && pl !== p)) continue;
-			if (!costTypeMatches(card, m.cardType)) continue;
-			if (m.tribe && !(card.tribe || '').includes(m.tribe)) continue;
-			if (m.minCost != null && card.cost < m.minCost) continue;
-			if (m.firstEachTurn && (m.cardType === 'spell'
-				? p.spellsPlayedThisTurn : p.creaturesPlayedThisTurn) > 0) continue;
-			if (m.setCost != null) { c = m.setCost; continue; } // Naga Sea Witch: your cards cost N
-			const before = c;
-			c += m.amount;
-			// "but not less than (1)": the reduction stops at the floor
-			if (m.floor != null) c = Math.max(Math.min(before, m.floor), c);
-		}
-	}
-	const di = discountIndex(state, p, card);
-	if (di >= 0) {
-		const d = p.costDiscounts[di];
-		c = d.setZero ? 0 : c + d.amount;
-	}
-	// arena plane cost rule: Zendikar (enchant -1), Alkabah (4-cost spells -> 0)
-	const planeR = activePlaneRule(state);
-	if (planeR && planeR.kind === 'cost' && costTypeMatches(card, planeR.cardType)
-		&& (planeR.cost == null || card.cost === planeR.cost)) {
-		c = planeR.setZero ? 0 : c + (planeR.amount || 0);
-	}
-	if (p.freeSpellsThisTurn && isSpellType(card)) c = 0;
-	if (p.spellsCostOneThisTurn && isSpellType(card)) c = Math.min(c, 1); // Ysiel Windsinger
-	if (p.nextMurlocFree && card.type === 'creature' && (card.tribe || '').includes('Murloc')) c = 0; // Seadevil Stinger (Health-cost approximated as free)
-	if (p.nextSecretCost != null && card.secret) c = Math.min(c, p.nextSecretCost); // Kabal Lackey
-	// Reckless Experimenter: your Deathrattle creatures cost less
-	if (card.type === 'creature' && (card.keywords || []).includes('deathrattle')) {
-		const disc = p.board.reduce((s, x) => (!isDead(x) && x.deathrattleDiscount) ? s + x.deathrattleDiscount : s, 0);
-		if (disc) c = Math.max(0, c - disc);
-	}
-	if (p.spellTaxNext > 0 && isSpellType(card)) c += p.spellTaxNext; // Loatheb
-	if (p.nextComboDiscount > 0 && card.combo) c = Math.max(0, c - p.nextComboDiscount); // Foxy Fraud
-	if (p.nextCardsDiscount && p.nextCardsDiscount.count > 0) c = Math.max(0, c - p.nextCardsDiscount.amount); // Scabbs Cutterbutter
-	if (p.nextChooseOneDiscount > 0 && card.choices) c = Math.max(0, c - p.nextChooseOneDiscount); // Pride Seeker
-	if (p.nextSpellDiscount > 0 && isSpellType(card)) c = Math.max(0, c - p.nextSpellDiscount); // Murkwater Scribe
-	if (p.nextSchoolDiscount && isSpellType(card) && schoolOf(card) === p.nextSchoolDiscount.school) c = Math.max(0, c - p.nextSchoolDiscount.amount); // Holy Cowboy: your next Holy spell costs less
-	if (p.nextTribeDiscount && p.nextTribeDiscount.count > 0 && card.type === 'creature' && (card.tribe || '').includes(p.nextTribeDiscount.tribe)) c = Math.max(0, c - p.nextTribeDiscount.amount); // Clownfish
-	if ((card.keywords || []).includes('outcast')) { const r = p.board.filter(x => x.outcastCostReduce && !isDead(x)).reduce((s, x) => s + x.outcastCostReduce, 0); if (r) c = Math.max(0, c - r); if (p.nextOutcastDiscount > 0) c = Math.max(0, c - p.nextOutcastDiscount); } // Line Hopper / Fierce Outsider
-	if (!card.fromDeck) { const r = p.board.filter(x => x.foreignCostReduce && !isDead(x)).reduce((s, x) => s + x.foreignCostReduce, 0); if (r) c = Math.max(1, c - r); } // Arcane Luminary: not below 1
-	{ const sch = schoolOf(card); if (sch) { const r = p.board.filter(x => x.schoolCostReduce && x.schoolCostReduce.school === sch && !isDead(x)).reduce((s, x) => s + x.schoolCostReduce.amount, 0); if (r) c = Math.max(0, c - r); } } // Lady Anacondra: Nature spells
-	if (p.battlecryTaxNext > 0 && (card.keywords || []).includes('battlecry')) c += p.battlecryTaxNext; // Boompistol Bully
-	if (p.libramDiscount > 0 && /Libram/.test(card.name || '')) c = Math.max(0, c - p.libramDiscount); // Aldor Attendant/Truthseeker
-	if (card.id === 'the_ceaseless_expanse') c = Math.max(0, c - (state.expanseEvents || 0)); // costs (1) less per card drawn/played/destroyed this game
-	if (p.nextWeaponDiscount > 0 && card.type === 'weapon') c = Math.max(0, c - p.nextWeaponDiscount); // Space Pirate
-	if (card.kindredCostReduce > 0 && kindredActive(state, pi, card)) c = Math.max(0, c - card.kindredCostReduce); // Pterrorwing / Windpeak: cheaper while a type-mate is in play
-	if (card.id === 'gdb_launch_starship' && p.nextLaunchDiscount > 0) c = Math.max(0, c - p.nextLaunchDiscount); // SCV: your next launch costs less
-	if (isSpellType(card) && (p.spellsPlayedThisTurn || 0) === 0) c = Math.max(0, c - staticValue(p, 'first-spell-discount')); // Sha'tari Cloakfield
-	if (card.costZeroIfBoardId && p.board.some(b => b.id === card.costZeroIfBoardId && !isDead(b))) return 0; // Medivh / Atiesh
-	if (card.costZeroIfWeaponId && p.weapon && p.weapon.id === card.costZeroIfWeaponId) return 0; // Karazhan
-	// Azure Queen Sindragosa: a board minion discounts spells of a school while a type-mate stands
-	if (isSpellType(card)) for (const m of p.board) {
-		const sd = m.spellSchoolDiscount;
-		if (sd && !isDead(m) && schoolOf(state.cardsById[card.id] || card) === sd.school
-			&& (!sd.requireOtherTribe || p.board.some(o => o !== m && !isDead(o) && (o.tribe || '').includes(sd.requireOtherTribe)))) {
-			c = Math.max(0, c - (sd.value || 0));
-		}
-	}
-	if (card.costReducePerPlayedName) { // Giant Rafaam: (1) less per Rafaam played this game
-		const n = Object.entries(p.playedCountById || {}).reduce((s, [id, k]) =>
-			s + (((state.cardsById[id]?.name) || '').includes(card.costReducePerPlayedName.substr) ? k : 0), 0);
-		c = Math.max(0, c - (card.costReducePerPlayedName.value || 1) * n);
-	}
-	if (p.nextNameDiscount && (card.name || '').includes(p.nextNameDiscount.substr)) c = Math.max(0, c - p.nextNameDiscount.value); // Murloc Rafaam
-	if (p.mugMagic && card.type === 'creature' && (p.creaturesPlayedThisTurn || 0) === 0) c = Math.max(0, c - 2); // Mug's Magic: first minion each turn
-	if (card.temporary && p.nextTempDiscount > 0) c = Math.max(0, c - p.nextTempDiscount); // Spelunker
-	if (p.leylineDiscount > 0 && (card.name || '').includes('Leyline')) c = Math.max(0, c - p.leylineDiscount); // Ley Walker
-	{ const shi = p.hand.indexOf(card); if (shi >= 0 && ((p.hand[shi - 1] && p.hand[shi - 1].id === 'sabotage_dud') || (p.hand[shi + 1] && p.hand[shi + 1].id === 'sabotage_dud'))) c += 1; } // Stickybomb Saboteur
-	if (p.foreignDemonDiscount > 0 && (card.tribe || '').includes('Demon') && p.startingDeckIds && !p.startingDeckIds.includes(card.id)) c = Math.max(0, c - p.foreignDemonDiscount); // Foreboding Flame
-	if (p.minionCostSet != null && card.type === 'creature') c = p.minionCostSet; // Loh the Living Legend
-	if (p.allCardsCostOne) c = 1; // Aviana's Full Moon
-	if (card.type === 'creature' && (card.keywords || []).includes('battlecry') && p.board.some(m => m.murmurAura && !isDead(m))) c = 1; // Murmur
-	if (p.agamagganNext) return 0; // Agamaggan: the opponent pays in Health
-	if (p.warlocNext && (card.tribe || '').includes('Murloc') && (card.cost || 0) <= 3) return 0; // Warloc: paid in your Health
-	if (p.nextCardCorpses && (p.corpses || 0) >= c) return 0; // Exarch Maladaar: the next card costs Corpses instead
-	if (card.type === 'creature' && p.enemyMinionTaxTurn === state.turnNumber && p.enemyMinionTaxAmount) c += p.enemyMinionTaxAmount; // Forensic Duster
-	if (p.overloadDiscount > 0 && (card.overload || 0) > 0) c = Math.max(0, c - p.overloadDiscount); // Inzah
-	if (p.firstCardFreeEachTurn && (p.cardsPlayedThisTurn || 0) === 0) c = 0; // Bonelord Frostwhisper: first card each turn is free
-	if (p.nextClassFree && card.type === 'creature' && (card.cardClass || '').split('__').includes(p.nextClassFree)) c = 0; // Blood Crusader (Health-cost approximated as free)
-	if (p.parityDiscount && (card.cost % 2) === (p.parityDiscount.parity === 'odd' ? 1 : 0)) c = Math.max(0, c - p.parityDiscount.amount); // Thaddius: odd/even-Cost cards cost less
-	if (p.freeMinionsCount > 0 && card.type === 'creature') c = 0; // Anub'Rekhan (Armor-cost approximated as free)
-	{ let floor = 0; for (const src of p.board) if (src.static?.type === 'cost-floor' && !isDead(src)) floor = Math.max(floor, src.static.value || 2); if (floor && !p.freeMinionsCount && !(p.firstCardFreeEachTurn && (p.cardsPlayedThisTurn || 0) === 0)) c = Math.max(c, floor); } // Razorscale: cards can't cost less than N
-	return Math.max(0, c);
-}
+
 
 // ---------- public actions ----------
 export function canPlay(state, pi, card) {
@@ -13244,17 +13111,7 @@ export function heroPowerSpec(state, pi, card, choice) {
 
 // a Hero Power's live cost after board/one-shot modifiers (Maiden of the Lake
 // sets it to 1, Saboteur taxes it, Fencing Coach discounts the next use)
-export function heroPowerCost(state, pi, card) {
-	const p = state.players[pi];
-	if (p.heroPowerFreeGame) return 0; // Raza the Chained
-	let c = card.power.cost;
-	const set = p.board.filter(x => x.heroPowerCostSet != null && !isDead(x)).map(x => x.heroPowerCostSet);
-	if (set.length) c = Math.min(c, ...set); // Maiden of the Lake
-	c += (p.heroPowerTaxNext || 0) - (p.heroPowerDiscountNext || 0);
-	c -= p.board.filter(x => x.heroPowerCostReduce && !isDead(x)).reduce((s, x) => s + x.heroPowerCostReduce, 0); // Felfire Deadeye
-	if (p.board.some(x => x.hpFreeHandMax != null && !isDead(x) && p.hand.length <= x.hpFreeHandMax)) return 0; // Quel'dorei Fletcher
-	return Math.max(0, c);
-}
+
 
 export function canUseHeroPower(state, pi, card, choice) {
 	if (state.over || !(state.current === pi && state.priority == null && state.stack.length === 0)) return false;

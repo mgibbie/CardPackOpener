@@ -55,6 +55,7 @@ const FIELD_DEFAULTS = {
 	ponderLock: false,
 	drawTrigLock: false,
 	enemyDrawLock: false,
+	emergeLock: false,
 };
 
 const defaultFor = key => {
