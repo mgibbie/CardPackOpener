@@ -16,6 +16,7 @@ import fs from 'fs';
 import * as E from '../../engine.js';
 import { validateGameState } from '../../engine/validate.js';
 import { seededRng } from '../../engine/rng.js';
+import { dispatch, replayActions, shrinkTrace } from '../../engine/actionlog.js';
 
 const raw = JSON.parse(fs.readFileSync(new URL('../../cards.json', import.meta.url)));
 const byId = {}; for (const c of raw.cards) byId[c.id] = c;
@@ -27,25 +28,33 @@ const arg = (name, dflt) => {
 const GAMES = arg('games', 8);
 const MAX_ACTIONS = arg('actions', 300);
 const BASE_SEED = arg('seed', 20260728);
+const SPLIT = process.argv.includes('--split'); // game rng separate from driver rng -> traces replay + shrink
 const MAX_PER_TURN = 25;
 
 function playOneGame(seed) {
 	// engine/rng.js seededRng has the SAME mulberry32 core this file used to
 	// carry privately — recorded finding seeds replay the identical games
-	const rng = seededRng(seed);
+	// LEGACY (default): ONE stream shared by game and driver - recorded finding
+	// seeds (420484, 9419695, ...) replay their exact original games this way.
+	// --split: the game gets its own stream, so the recorded action trace
+	// replays into an identical game via replayActions (and can be shrunk).
+	const rngGame = seededRng(seed);
+	const rng = SPLIT ? seededRng((seed ^ 0x5bf03635) >>> 0) : rngGame;
 	const pick = arr => arr[Math.floor(rng() * arr.length)];
 	const trace = [];
-	const act = (desc, fn) => {
+	const actions = []; // full structured action log (engine/actionlog.js records)
+	const act = (desc, action) => {
 		trace.push(desc);
 		if (trace.length > 25) trace.shift();
-		return fn();
+		actions.push(action);
+		return dispatch(state, action);
 	};
-	const state = E.createGame(byId, rng, null, 2);
+	const state = E.createGame(byId, rngGame, null, 2);
 	// strict dev mode: unknown effect types throw; runaway compositions trip a budget
 	state.debug = { strictEffects: true, effectBudget: 4000 };
 
-	let actions = 0, perTurn = 0, lastTurn = state.turnNumber;
-	while (!state.over && actions < MAX_ACTIONS) {
+	let steps = 0, perTurn = 0, lastTurn = state.turnNumber;
+	while (!state.over && steps < MAX_ACTIONS) {
 		state._fxCount = 0; // effect budget is per-action
 		if (state.turnNumber !== lastTurn) { lastTurn = state.turnNumber; perTurn = 0; }
 		const pi = state.current;
@@ -54,17 +63,17 @@ function playOneGame(seed) {
 
 		try {
 			// 1. pending modal decisions always come first (they block the game)
-			if (state.pickQueue.length) did = act(`pick`, () => E.resolvePick(state, pick(state.pickQueue[0].ids)));
-			else if (state.askQueue.length) did = act(`ask`, () => E.resolveAsk(state, rng() < 0.5));
-			else if (state.scryQueue.length) did = act(`scry`, () => E.resolveScry(state, []));
-			else if (state.dredgeQueue.length) did = act(`dredge`, () => E.resolveDredge(state, pick(state.dredgeQueue[0].ids)));
+			if (state.pickQueue.length) did = act(`pick`, { k: 'pick', id: pick(state.pickQueue[0].ids) });
+			else if (state.askQueue.length) did = act(`ask`, { k: 'ask', yes: rng() < 0.5 });
+			else if (state.scryQueue.length) did = act(`scry`, { k: 'scry', ids: [] });
+			else if (state.dredgeQueue.length) did = act(`dredge`, { k: 'dredge', id: pick(state.dredgeQueue[0].ids) });
 			else if (state.discardQueue.length) {
 				const q = state.discardQueue[0];
 				const hand = state.players[q.player].hand;
 				const uids = [...hand].sort(() => rng() - 0.5).slice(0, q.count).map(c => c.uid);
-				did = act(`discard x${q.count}`, () => E.resolveDiscard(state, uids));
+				did = act(`discard x${q.count}`, { k: 'discard', uids });
 			}
-			else if (state.sacQueue.length) did = act(`sac`, () => E.resolveSac(state, undefined)); // engine falls back to pool[0]
+			else if (state.sacQueue.length) did = act(`sac`, { k: 'sac' }); // engine falls back to pool[0]
 			// 2. an open priority window: usually pass, sometimes respond
 			else if (state.priority != null) {
 				const rp = state.priority;
@@ -74,9 +83,9 @@ function playOneGame(seed) {
 					const spec = E.targetSpec(state, rp, c);
 					let tgt = null;
 					if (spec) { const legal = E.legalTargets(state, rp, spec); if (spec.required && !legal.length) tgt = null; else tgt = legal.length ? pick(legal) : null; }
-					did = act(`respond ${c.id}`, () => E.resolveResponse(state, rp, c.uid, tgt, null));
+					did = act(`respond ${c.id}`, { k: 'respond', pi: rp, uid: c.uid, target: tgt });
 				} else {
-					did = act('pass', () => E.resolveResponse(state, rp, null));
+					did = act('pass', { k: 'pass', pi: rp });
 				}
 			}
 			// 3. normal turn actions
@@ -94,20 +103,20 @@ function playOneGame(seed) {
 								if (spec.required && !legal.length) return false;
 								tgt = legal.length ? pick(legal) : null;
 							}
-							return act(`play ${c.id}${choice != null ? ` c${choice}` : ''}`, () => E.playCard(state, pi, c.uid, tgt, choice, 0));
+							return act(`play ${c.id}${choice != null ? ` c${choice}` : ''}`, { k: 'play', pi, uid: c.uid, target: tgt, choice });
 						});
 					}
 					for (const c of E.attackersFor(state, pi)) {
 						candidates.push(() => {
 							const ts = E.attackTargets(state, pi, c);
 							if (!ts.length) return false;
-							return act(`attack ${c.id}`, () => E.attack(state, pi, c.uid, pick(ts)));
+							return act(`attack ${c.id}`, { k: 'attack', pi, uid: c.uid, target: pick(ts) });
 						});
 					}
 					if (E.canHeroAttack(state, pi)) candidates.push(() => {
 						const ts = E.heroAttackTargets(state, pi);
 						if (!ts.length) return false;
-						return act('heroAttack', () => E.heroAttack(state, pi, pick(ts)));
+						return act('heroAttack', { k: 'heroAttack', pi, target: pick(ts) });
 					});
 					for (const hpw of p.heroPowers) {
 						if (!E.canUseHeroPower(state, pi, hpw)) continue;
@@ -119,31 +128,31 @@ function playOneGame(seed) {
 								if (spec.required && !legal.length) return false;
 								tgt = legal.length ? pick(legal) : null;
 							}
-							return act(`heroPower ${hpw.id}`, () => E.useHeroPower(state, pi, hpw.uid, tgt, null));
+							return act(`heroPower ${hpw.id}`, { k: 'power', pi, uid: hpw.uid, target: tgt });
 						});
 					}
 					for (const c of p.hand) {
-						if (c.tradeable && E.canTrade(state, pi, c) && rng() < 0.3) candidates.push(() => act(`trade ${c.id}`, () => E.tradeCard(state, pi, c.uid)));
-						if (c.prepare && E.canPrepare(state, pi, c) && rng() < 0.3) candidates.push(() => act(`prepare ${c.id}`, () => E.prepareCard(state, pi, c.uid)));
+						if (c.tradeable && E.canTrade(state, pi, c) && rng() < 0.3) candidates.push(() => act(`trade ${c.id}`, { k: 'trade', pi, uid: c.uid }));
+						if (c.prepare && E.canPrepare(state, pi, c) && rng() < 0.3) candidates.push(() => act(`prepare ${c.id}`, { k: 'prepare', pi, uid: c.uid }));
 					}
 				}
 				// end turn: always possible; more likely as the turn drags on
 				const endBias = candidates.length === 0 || rng() < 0.12 + perTurn / (MAX_PER_TURN * 1.4);
-				if (endBias) did = act('endTurn', () => { E.endTurn(state); return true; });
+				if (endBias) did = act('endTurn', { k: 'endTurn' });
 				else {
 					const c = pick(candidates);
 					did = c();
-					if (did === false) did = act('endTurn*', () => { E.endTurn(state); return true; });
+					if (did === false) did = act('endTurn*', { k: 'endTurn' });
 				}
 				perTurn++;
 			}
 		} catch (e) {
-			return { seed, actions, error: `threw: ${e.message}\n${e.stack?.split('\n')[1] || ''}`, trace };
+			return { seed, actions: steps, log: actions, error: `threw: ${e.message}\n${e.stack?.split('\n')[1] || ''}`, trace };
 		}
 
-		actions++;
+		steps++;
 		const v = validateGameState(state);
-		if (v.length) return { seed, actions, error: `invariant violations: ${v.join(' | ')}`, trace };
+		if (v.length) return { seed, actions: steps, log: actions, error: `invariant violations: ${v.join(' | ')}`, trace };
 		// Degenerate-growth stop: exponential summon cards (e.g. lab_constructor,
 		// "at end of turn summon a copy of this") double every turn, and the engine
 		// has no board cap BY DESIGN (see docs/10-risk-register). A 4000+ board is
@@ -153,10 +162,10 @@ function playOneGame(seed) {
 		if (did === false) {
 			// a legality-checked action was rejected by the engine — that mismatch
 			// between can*/spec and the action fn is itself a finding
-			return { seed, actions, error: `legal-looking action rejected: ${trace[trace.length - 1]}`, trace };
+			return { seed, actions: steps, log: actions, error: `legal-looking action rejected: ${trace[trace.length - 1]}`, trace };
 		}
 	}
-	return { seed, actions, error: null, digest: digest(state) };
+	return { seed, actions: steps, error: null, digest: digest(state) };
 }
 
 // determinism digest: gameplay-relevant summary, no uids or event noise
@@ -180,8 +189,18 @@ for (let g = 0; g < GAMES; g++) {
 	const seed = BASE_SEED + g * 7919;
 	const r = playOneGame(seed);
 	totalActions += r.actions;
+	let shrunk = '';
+	if (r.error && SPLIT && r.log) {
+		// minimal repro via engine/actionlog.js: replay must reproduce, then ddmin
+		const sig = r.error.slice(0, 30);
+		const fails = cand => (replayActions(byId, seed, cand).error || '').slice(0, 30) === sig;
+		if (fails(r.log)) {
+			const min = shrinkTrace(r.log, fails);
+			shrunk = `\n  shrunk repro (${min.length}/${r.log.length} actions): ${JSON.stringify(min)}`;
+		} else shrunk = `\n  (trace did not replay-reproduce - investigate nondeterminism)`;
+	}
 	ok(`game seed=${seed} clean (${r.actions} actions)`, r.error === null,
-		r.error ? `\n  ${r.error}\n  trace tail: ${r.trace?.join(' → ')}` : '');
+		r.error ? `\n  ${r.error}\n  trace tail: ${r.trace?.join(' → ')}${shrunk}` : '');
 }
 // determinism: same seed twice ⇒ identical digest
 {
