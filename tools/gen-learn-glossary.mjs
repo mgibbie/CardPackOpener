@@ -40,7 +40,7 @@ for (const e of entries) {
 html += '</dl>';
 
 const page = readFileSync('learnmagepunk/index.html', 'utf8');
+if (!/<dl class="kw-grid">[\s\S]*?<\/dl>/.test(page)) { console.error('glossary block not found'); process.exit(1); }
 const out = page.replace(/<dl class="kw-grid">[\s\S]*?<\/dl>/, html);
-if (out === page) { console.error('glossary block not found/unchanged'); process.exit(1); }
-writeFileSync('learnmagepunk/index.html', out);
-console.log(`glossary: ${entries.length} keywords, ${entries.filter(e => live.has(e.slug)).length} linked to the wiki`);
+if (out !== page) writeFileSync('learnmagepunk/index.html', out);
+console.log(`glossary: ${entries.length} keywords, ${entries.filter(e => live.has(e.slug)).length} linked to the wiki${out === page ? ' (already current)' : ''}`);

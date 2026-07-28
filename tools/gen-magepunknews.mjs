@@ -37,13 +37,19 @@ const log = git('log', '--first-parent', '--reverse', '--format=%H%x1f%cs%x1f%s%
 const entries = [];
 let prevCards = null;
 
-for (const c of log) {
+for (let c of log) {
 	let files;
 	try { files = git('show', '--first-parent', '--name-only', '--format=', c.sha).split('\n').filter(Boolean); }
 	catch { continue; }
 	const gameFiles = files.filter(f => GAME_FILES.test(f));
 	if (!gameFiles.length) continue;
-	if (/^Merge pull request/.test(c.subject)) continue;
+	// PR merge commits carry the PR title as the first body line — use it, so
+	// work merged via PRs (and any cards it added) still lands in the feed
+	if (/^Merge pull request/.test(c.subject)) {
+		const prTitle = c.body.split('\n')[0].trim();
+		if (!prTitle) continue;
+		c = { ...c, subject: prTitle, body: c.body.split('\n').slice(1).join('\n').trim() };
+	}
 
 	let added = [];
 	if (gameFiles.includes('battlecards/cards.json')) {
