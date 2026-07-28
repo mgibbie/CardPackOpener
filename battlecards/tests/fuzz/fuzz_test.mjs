@@ -15,6 +15,7 @@
 import fs from 'fs';
 import * as E from '../../engine.js';
 import { validateGameState } from '../../engine/validate.js';
+import { seededRng } from '../../engine/rng.js';
 
 const raw = JSON.parse(fs.readFileSync(new URL('../../cards.json', import.meta.url)));
 const byId = {}; for (const c of raw.cards) byId[c.id] = c;
@@ -28,19 +29,10 @@ const MAX_ACTIONS = arg('actions', 300);
 const BASE_SEED = arg('seed', 20260728);
 const MAX_PER_TURN = 25;
 
-// mulberry32 — tiny seeded PRNG, plenty for fuzzing
-function mulberry32(seed) {
-	let a = seed >>> 0;
-	return function () {
-		a |= 0; a = (a + 0x6D2B79F5) | 0;
-		let t = Math.imul(a ^ (a >>> 15), 1 | a);
-		t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
-		return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-	};
-}
-
 function playOneGame(seed) {
-	const rng = mulberry32(seed);
+	// engine/rng.js seededRng has the SAME mulberry32 core this file used to
+	// carry privately — recorded finding seeds replay the identical games
+	const rng = seededRng(seed);
 	const pick = arr => arr[Math.floor(rng() * arr.length)];
 	const trace = [];
 	const act = (desc, fn) => {
