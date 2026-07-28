@@ -15,7 +15,7 @@
 // hero-immune-until-next, shuffle-ids-into-deck — moved from the chain
 // verbatim, chain branches (and the switch's simpler `armor` twin, which
 // silently lacked the all-heroes variant) deleted.
-import { emit, instantiate, MAX_HAND, endTurn, gainTokenCard } from '../../engine.js';
+import { emit, instantiate, MAX_HAND, endTurn, gainTokenCard, execEffects, summon } from '../../engine.js';
 import { gainArmor } from '../damage.js';
 import { drawCards } from '../zones.js';
 
@@ -218,4 +218,142 @@ register('set-deck-inner-fire', ({ state, pi, target, source, enemies, scaled },
 register('arm-copycat', ({ state, pi, target, source, enemies, scaled }, e) => {
 			// Copycat: arm to copy the next card the opponent plays
 			for (const o of enemies) state.players[o].copycatFor = pi;
+});
+
+// ---------- batch 2 (PR 18): the remaining 24 zero-risk chain branches ----------
+
+register('set-next-battlecry-double', ({ state, pi, target, source, enemies, scaled }, e) => {
+			// Murmuring Elemental: arm the next Battlecry this turn to fire twice
+			state.players[pi].nextBattlecryDouble = true;
+});
+
+register('free-enemy-spells', ({ state, pi, target, source, enemies, scaled }, e) => {
+			for (const o of enemies) state.players[o].freeSpellsNextTurn = true;
+			emit(state, { type: 'freeSpells', player: pi });
+});
+
+register('grant-battlecries-twice', ({ state, pi, target, source, enemies, scaled }, e) => {
+			// Deepminer Brann: your Battlecries trigger twice for the rest of the game
+			state.players[pi].battlecriesTwice = true;
+});
+
+register('aegwynn-pass', ({ state, pi, target, source, enemies, scaled }, e) => {
+			// Aegwynn: the next minion you draw inherits Spell Damage +2 and this Deathrattle
+			state.players[pi].aegwynnPending = true;
+});
+
+register('grant-hero-elusive', ({ state, pi, target, source, enemies, scaled }, e) => {
+			// Spellward Jeweler: your hero can't be targeted until your next turn
+			state.players[pi].heroElusiveUntil = state.turnNumber + 2;
+});
+
+register('double-deck-minion-stats', ({ state, pi, target, source, enemies, scaled }, e) => {
+			// Lor'themar Theron: double the stats of all minions in your deck (applied as they're drawn)
+			state.players[pi].deckDoubleStats = true;
+});
+
+register('grant-first-card-free', ({ state, pi, target, source, enemies, scaled }, e) => {
+			// Bonelord Frostwhisper: for the rest of the game, your first card each turn costs (0)
+			state.players[pi].firstCardFreeEachTurn = true;
+});
+
+register('reverse-deck', ({ state, pi, target, source, enemies, scaled }, e) => {
+			// Timeless Causality: reverse the order of your deck
+			state.players[pi].deck.reverse();
+			emit(state, { type: 'shuffle', player: pi });
+});
+
+register('inc-pogo', ({ state, pi, target, source, enemies, scaled }, e) => {
+			// Pogo-Hopper: track how many you've played so the next gains more
+			state.players[pi].pogoCount = (state.players[pi].pogoCount || 0) + 1;
+});
+
+register('sorry', ({ state, pi, target, source, enemies, scaled }, e) => {
+			state.players[pi].canSaySorry = true; // Gullible Guard: it's an emote, but it's YOURS
+			emit(state, { type: 'sorryUnlocked', player: pi });
+});
+
+register('refresh-hero-power', ({ state, pi, target, source, enemies, scaled }, e) => {
+			// Auctionmaster Beardo: your Hero Power can be used again this turn
+			for (const hp of state.players[pi].heroPowers) hp.usedThisTurn = false;
+});
+
+register('extra-turn', ({ state, pi, target, source, enemies, scaled }, e) => {
+			// Timewinder Zarimi: take an extra turn after this one
+			state.forcedTurns = (state.forcedTurns && state.forcedTurns.length) ? [pi, ...state.forcedTurns] : [pi];
+});
+
+register('summon-random-hand-size', ({ state, pi, target, source, enemies, scaled }, e) => {
+			// Astromancer: summon a random creature costing exactly your hand size
+			execEffects(state, pi, [{ type: 'summon-random', cost: state.players[pi].hand.length }], target, source);
+});
+
+register('aviana-cycle', ({ state, pi, target, source, enemies, scaled }, e) => {
+			// Aviana: three of your turns from now, the Full Moon rises
+			state.players[pi].avianaAt = state.turnNumber + 3 * state.players.length;
+			emit(state, { type: 'lunarCycle', player: pi });
+});
+
+register('asteroid-blast', ({ state, pi, target, source, enemies, scaled }, e) => {
+			// Asteroid: 2 damage to a random enemy, plus any Bolide boosts
+			execEffects(state, pi, [{ type: 'random-damage', value: 2 + (state.players[pi].asteroidBoost || 0), count: 1, pool: 'enemies' }], null, source);
+});
+
+register('blessing-dragon', ({ state, pi, target, source, enemies, scaled }, e) => {
+			// Paladin: shuffle two Emerald Portals into your deck (they summon an Imbue-cost minion when drawn)
+			execEffects(state, pi, [{ type: 'shuffle-into-own-deck', id: 'edr_emerald_portal', count: 2 }], null, source);
+});
+
+register('clear-graveyards', ({ state, pi, target, source, enemies, scaled }, e) => {
+			// Farewell: exile every card in every graveyard
+			for (const pl of state.players) { for (const c of pl.graveyard) { c.zone = 'exile'; pl.exile.push(c); } pl.graveyard = []; }
+			emit(state, { type: 'graveyardsCleared', player: pi });
+});
+
+register('devastation', ({ state, pi, target, source, enemies, scaled }, e) => {
+			// Kronx Dragonhoof: approximate Galakrond's Devastation (deal 5 to all enemies)
+			execEffects(state, pi, [{ type: 'damage', value: 5, target: 'enemy-creatures' }, { type: 'damage', value: 5, target: 'enemy-heroes' }], target, source);
+});
+
+register('lotus-shots', ({ state, pi, target, source, enemies, scaled }, e) => {
+			// Lotus Troublemaker: one shot, plus one per 2 Mana spent while held
+			const shots = 1 + Math.floor(((source && source._manaWhileHeld) || 0) / 2);
+			execEffects(state, pi, [{ type: 'random-damage', value: 2, count: shots, pool: 'enemies' }], null, source);
+});
+
+register('invoke-galakrond', ({ state, pi, target, source, enemies, scaled }, e) => {
+			// Invoke Galakrond: power up your Galakrond (base -> upgraded at 2 -> maxed at 4)
+			state.players[pi].galakrondInvokes = (state.players[pi].galakrondInvokes || 0) + 1;
+			emit(state, { type: 'invokeGalakrond', player: pi, count: state.players[pi].galakrondInvokes });
+});
+
+register('hedra', ({ state, pi, target, source, enemies, scaled }, e) => {
+			// Hedra the Heretic: for each spell cast while holding this, summon a minion of that Cost
+			for (const id of (source && source.spellsHeldIds) || []) {
+				const cost = state.cardsById[id]?.cost || 0;
+				execEffects(state, pi, [{ type: 'summon-random', cost }], null, source);
+			}
+});
+
+register('discover-enemy-class-spell', ({ state, pi, target, source, enemies, scaled }, e) => {
+			// Hipster: Discover a spell from your opponent's class
+			const foe = enemies[0];
+			const cls = foe != null ? (state.players[foe].heroClass || state.players[foe].heroClasses?.[0] || 'mage') : 'mage';
+			execEffects(state, pi, [{ type: 'discover', cardType: 'spell', cardClasses: [cls] }], null, source);
+});
+
+register('informant-discover', ({ state, pi, target, source, enemies, scaled }, e) => {
+			// Shadowed Informant: a spell from a (random) class each time
+			const classes = ['mage', 'priest', 'rogue', 'druid', 'warlock', 'shaman', 'paladin', 'warrior', 'hunter'];
+			execEffects(state, pi, [{ type: 'discover', cardType: 'spell', cardClasses: [classes[Math.floor(state.rng() * classes.length)]] }], null, source);
+});
+
+register('resummon-remembered-buffed', ({ state, pi, target, source, enemies, scaled }, e) => {
+			// Teron Gorefiend deathrattle: resummon the remembered minions with +1/+1
+			for (const m of (source && source.rememberedMinions) || []) {
+				const base = state.cardsById[m.id];
+				const def = base ? JSON.parse(JSON.stringify(base)) : { id: 'token_' + (m.name || 'minion').toLowerCase().replace(/\W+/g, '_'), name: m.name, type: 'creature', cost: 0, token: true, rarity: 'common', tribe: m.tribe };
+				def.attack = (m.attack || 0) + 1; def.health = (m.health || 0) + 1;
+				summon(state, pi, def);
+			}
 });
