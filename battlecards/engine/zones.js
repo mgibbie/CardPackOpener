@@ -90,6 +90,10 @@ export function drawCards(state, pi, count) {
 			if (p.eliminated || state.over) break;
 			continue;
 		}
+		// A defless id (a dynamic token_* minted by become-copy effects that some
+		// deck-return effect pushed by id) EVAPORATES instead of crashing the draw:
+		// tokens cease to exist when they leave play, decks included.
+		if (!state.cardsById[id]) { i--; continue; }
 		// No burn on overdraw: hand may exceed MAX_HAND during your turn and is
 		// trimmed back down at end of turn (MTG-style cleanup discard).
 		const card = instantiate(state.cardsById[id], pi);

@@ -2001,7 +2001,7 @@ export function playCard(state, pi, cardUid, target, choice, position, useAlt, k
 	p.cardsPlayedThisTurn++;
 	p.lastCardCost = card.cost; // Rolling Stone: cost of the most recently played card
 	if (!card.token) p.lastCardPlayedId = card.id; // Fate Splitter: opponent's most recent card
-	if (card.type === 'creature' && card.tribe) { p.tribesPlayedGame = p.tribesPlayedGame || new Set(); for (const tr of (card.tribe || '').split('/')) if (tr) p.tribesPlayedGame.add(tr); } // Power Slider
+	if (card.type === 'creature' && card.tribe) { p.tribesPlayedGame = p.tribesPlayedGame || {}; for (const tr of (card.tribe || '').split('/')) if (tr) p.tribesPlayedGame[tr] = true; } // Power Slider (plain object, NOT a Set — must survive snapshot JSON)
 	if (card.type === 'creature' && (card.tribe || '').includes('Elemental')) p.elementalsPlayedThisTurn = (p.elementalsPlayedThisTurn || 0) + 1; // Unchained Gladiator
 	if (card.type === 'creature' && (card.tribe || '').includes('Dragon')) p.dragonsPlayedGame = (p.dragonsPlayedGame || 0) + 1; // Timewinder Zarimi
 	if (card.type === 'creature' && !card.token) (p.playedMinionLog = p.playedMinionLog || []).push(card.id); // Joymancer Jepetto
@@ -2124,6 +2124,12 @@ function canCastInResponse(state, pi, card) {
 	if (card.type !== 'instant') return false;
 	const p = state.players[pi];
 	if (availableMana(p) < effectiveCost(state, pi, card) && !(card.altCost && canPayAlt(state, pi, card))) return false;
+	// hand-lock restrictions apply at instant speed too — canPlay enforces them
+	// at resolve time, so offering here without them made responseOptions lie
+	// (fuzz finding: Thaddius-style parityBlock rejected an offered response)
+	if (card.lockedUntilTurn && state.turnNumber < card.lockedUntilTurn) return false;
+	{ const pb = p.parityBlock; if (pb && ((card.cost % 2 === 1 ? 'odd' : 'even') === pb)) return false; }
+	if (card.addCost && !canPayAddCost(state, pi, card)) return false;
 	if (card.counterSpell) return !!topMatchingSpell(state, card); // a legal spell to counter (respects type/MV restriction)
 	const spec = targetSpec(state, pi, card);
 	if (spec && spec.required && legalTargets(state, pi, spec).length === 0) return false;
