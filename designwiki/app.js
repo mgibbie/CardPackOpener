@@ -322,6 +322,9 @@ function systemBucket(c) {
     return '__generic__';
   }
   if (cols.includes('C')) return '__generic__';
+  // any OTHER uncollectible (summon/conjure tokens, corrupted forms, boss
+  // cards, ...) sorts under Generic instead of masquerading as a class card
+  if (CardArt && CardArt.isUncollectible(c)) return '__generic__';
   return null; // an ordinary collectible card — stays under its class
 }
 
@@ -409,6 +412,12 @@ async function cardDetail(id) {
   else if (c.type === 'planeswalker') stats.push((c.loyalty ?? 0) + ' loyalty');
   const kws = CardKw.keywordsFor(c);
   const artCanvas = CardArt.drawArt(c); artCanvas.className = 'wiki-art-solo';
+  // generated-card relations: what this card creates, and what creates it
+  const byId = {}; for (const x of cards) byId[x.id] = x;
+  const cardLink = gid => h('a', { class: 'tag-chip', href: '#/card/' + gid },
+    (byId[gid].name || gid) + ' (' + (byId[gid].cost ?? 0) + (byId[gid].type === 'creature' ? ' · ' + (byId[gid].attack ?? '?') + '/' + (byId[gid].health ?? '?') : '') + ')');
+  const generates = CardArt.generatedCardIds(c, byId);
+  const createdBy = CardArt.createdByIds(c.id, byId);
   content.replaceChildren(
     h('div', { class: 'card-page' },
       h('div', { class: 'card-page-face' }, face),
@@ -422,7 +431,14 @@ async function cardDetail(id) {
         // definition of every keyword on the card, each linking to its own page
         kws.length ? h('h2', null, 'Keywords') : null,
         kws.length ? h('div', { class: 'kw-defs' }, kws.map(k =>
-          h('div', { class: 'kw-def' }, kwChip(k.label), h('span', { class: 'kw-text' }, k.text)))) : null)),
+          h('div', { class: 'kw-def' }, kwChip(k.label), h('span', { class: 'kw-text' }, k.text)))) : null,
+        // every specific card this one generates (tokens, corrupted forms,
+        // appendages, equipped weapons, shuffled cards, ...), each a link
+        generates.length ? h('h2', null, 'Generates') : null,
+        generates.length ? h('div', { class: 'card-tags' }, generates.map(cardLink)) : null,
+        // and the reverse: which cards create THIS one
+        createdBy.length ? h('h2', null, 'Created by') : null,
+        createdBy.length ? h('div', { class: 'card-tags' }, createdBy.map(cardLink)) : null)),
     // the card's illustration on its own, no frame
     h('div', { class: 'card-art-section' }, h('h2', null, 'Art'), artCanvas),
     h('p', null, h('a', { href: '#/cards' }, '← Card Gallery')));

@@ -36,7 +36,7 @@ function modifierLinesHtml(card) {
 // test-realm mode (?mp=1 + account token): dungeon runs use the account's
 // edited starter decks, and finishing a run — win or lose — earns a pack
 const MP_ON = MPX.mpMode();
-import { CARD_W, CARD_H, CARD_D, makeFaceTexture, makeBackTexture, classNameOf, classColorOf, drawCardFace, makeTokenTexture, TOKEN_W, TOKEN_H, drawHeroPortrait, drawPowerOrb, artListeners } from './cardart.js';
+import { CARD_W, CARD_H, CARD_D, makeFaceTexture, makeBackTexture, classNameOf, classColorOf, drawCardFace, makeTokenTexture, TOKEN_W, TOKEN_H, drawHeroPortrait, drawPowerOrb, artListeners, generatedCardIds } from './cardart.js';
 
 // the player index this client controls. Solo/host = 0; a live-duel guest = 1.
 // The board reorients so HUMAN always sits at the bottom facing the camera.
@@ -1164,7 +1164,7 @@ function updateHud() {
 	if (!state) return;
 	if (spectateMode) { updateHudSpectate(); return; }
 	// the pinned inspect closes itself once its card leaves play entirely
-	if (inspectUid != null && !cardOf(inspectUid)) hideInspect();
+	if (inspectUid != null && typeof inspectUid !== 'string' && !cardOf(inspectUid)) hideInspect(); // string uids = generated-card previews, not board cards
 	const me = state.players[HUMAN];
 	$('my-life').textContent = me.life + (me.armor ? `+${me.armor}` : '');
 	$('my-mana').textContent = `${E.availableMana(me)}/${me.mana.max}`;
@@ -2394,6 +2394,28 @@ function showInspect(card) {
 	box.appendChild(drawCardFace({ ...card, health: card.maxHealth }, inspectFaceOpts(card))); // art + rules + stats
 	const kw = modifierLinesHtml(card) + keywordLinesHtml(card);
 	if (kw) { const d = document.createElement('div'); d.className = 'ins-kw'; d.innerHTML = kw; box.appendChild(d); }
+	// every specific card this one generates (tokens, corrupted forms, equips,
+	// shuffled cards, ...) — tap one to inspect it
+	const gen = state ? generatedCardIds(card, state.cardsById) : [];
+	if (gen.length) {
+		const d = document.createElement('div');
+		d.className = 'ins-kw';
+		const head = document.createElement('div'); head.className = 'tt-kw'; head.innerHTML = '<b>Creates</b>'; d.appendChild(head);
+		for (const gid of gen) {
+			const def = state.cardsById[gid];
+			const line = document.createElement('div');
+			line.className = 'tt-kw';
+			const statBits = def.type === 'creature' ? ` ${def.attack ?? '?'}/${def.health ?? '?'}` : def.type === 'weapon' ? ` ${def.attack ?? '?'}/${def.durability ?? '?'}` : '';
+			line.innerHTML = `<b>${def.name || gid}</b> — (${def.cost ?? 0})${statBits} ${def.type}`;
+			line.style.cursor = 'pointer';
+			line.addEventListener('pointerdown', e => {
+				e.stopPropagation();
+				showInspect({ ...def, uid: 'preview_' + gid, zone: 'preview', controller: card.controller, maxHealth: def.health, keywords: def.keywords || [], damage: 0 });
+			});
+			d.appendChild(line);
+		}
+		box.appendChild(d);
+	}
 	// action buttons — a choose-one / adventure / tradeable card can't be resolved by
 	// dragging alone, so offer the decision here (drag still works for everything)
 	const yourTurn = state && state.current === HUMAN && !state.over;

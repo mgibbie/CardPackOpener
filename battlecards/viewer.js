@@ -1,8 +1,8 @@
 // viewer.js — the collection browser: a paginated, filterable card book.
 // Card faces come from the shared procedural renderer; rules text appears in
 // a hover tooltip, and rules-cards carry a CSS-animated iridescent gem.
-import { drawCardFace, classNameOf, canonClass, artListeners, preloadArt, showsRarity } from './cardart.js?v=20260720';
-import { keywordsFor, richHtml } from './keywords.js?v=20260720';
+import { drawCardFace, classNameOf, canonClass, artListeners, preloadArt, showsRarity } from './cardart.js?v=20260729';
+import { keywordsFor, richHtml } from './keywords.js?v=20260729';
 
 // cache-busting: this module's own ?v=… (from viewer.html) is reused for the
 // cards.json fetch so a version bump refreshes code and data together
@@ -72,6 +72,9 @@ function systemBucket(c) {
 		return '__generic__';
 	}
 	if (cols.includes('C')) return '__generic__';
+	// any OTHER uncollectible (summon/conjure tokens, corrupted forms, boss
+	// cards, ...) sorts under Generic instead of masquerading as a class card
+	if (isUncollectible(c)) return '__generic__';
 	return null;
 }
 

@@ -79,6 +79,34 @@ export function isUncollectible(card) {
 	if (canonClass(card.cardClass) === 'magepunk') return true; // paper conjured (Blood Gem, Advanced Lands)
 	return false;
 }
+// ---------- generated-card relations ----------
+// Which OTHER cards does this card create? Scanned from its definition:
+// every id-bearing effect field (summons, conjures, shuffles, equips,
+// transforms, Colossal appendages, Corrupt forms, hero-power grants, ...).
+// Used by the in-game inspect, the gallery, and the wiki card pages.
+const GENERATES_KEYS = new Set(['id', 'ids', 'summonId', 'intoId', 'into',
+	'tokenId', 'cardId', 'powerId', 'portal', 'launchTransform', 'corrupt', 'colossal']);
+export function generatedCardIds(card, byId) {
+	const out = new Set();
+	const walk = (v, key) => {
+		if (Array.isArray(v)) { for (const x of v) walk(x, key); return; }
+		if (v && typeof v === 'object') { for (const [k, x] of Object.entries(v)) walk(x, k); return; }
+		if (typeof v === 'string' && GENERATES_KEYS.has(key) && v !== card.id && byId[v]) out.add(v);
+	};
+	for (const [k, v] of Object.entries(card)) if (k !== 'id') walk(v, k);
+	return [...out];
+}
+// reverse index: cardId -> ids of every card that generates it (built once)
+let _createdBy = null;
+export function createdByIds(cardId, byId) {
+	if (!_createdBy) {
+		_createdBy = {};
+		for (const c of Object.values(byId)) {
+			for (const g of generatedCardIds(c, byId)) (_createdBy[g] = _createdBy[g] || []).push(c.id);
+		}
+	}
+	return _createdBy[cardId] || [];
+}
 // most uncollectible cards have no meaningful rarity, but excavate rewards
 // (the Azerite class legendaries etc.) keep their rarity gem + label
 export function showsRarity(card) {
