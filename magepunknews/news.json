@@ -1,6 +1,246 @@
 {
-	"generated": "2026-07-27",
+	"generated": "2026-07-28",
 	"entries": [
+		{
+			"sha": "cbfd31e",
+			"date": "2026-07-28",
+			"kind": "patch",
+			"title": "Battlecards organization: uncollectible sorting, generated-card listings, full art coverage",
+			"body": "1. UNCOLLECTIBLE SORTING (gallery + wiki): 386 non-collectible cards\n   (summon/conjure tokens, corrupted forms, boss cards, ...) were falling\n   through both systemBucket() copies and masquerading as class cards. Both\n   viewer.js and designwiki/app.js now fall back to isUncollectible ->\n   the Generic bucket before defaulting to a class. Zero leaks remain.\n\n2. GENERATED-CARD LISTINGS (in game + wiki): new shared extractor in\n   cardart.js — generatedCardIds(card, byId) scans a card's definition for\n   every id-bearing effect field (summons, conjures, shuffles, equips,\n   transforms, Colossal appendages, Corrupt forms, hero-power grants, ...)\n   and createdByIds() gives the reverse. 345 cards get listings.\n   - Wiki card pages: new \"Generates\" section (linked chips to each\n     created card's page) + \"Created by\" backlinks on token pages.\n   - In-game inspect: new \"Creates\" block under the keyword lines — tap a\n     generated card's name to inspect its full face (preview instances use\n     string uids so the pinned-inspect auto-close ignores them).\n\n3. FULL ART COVERAGE: 311 cards had no art (310 missing from the index +\n   time_pupil indexed but fileless). All filled:\n   - 238 exact Hearthstone name matches -> art.hearthstonejson 256x\n   - ~50 fuzzy HS matches (tokens with prefixed ids)\n   - the rest via Scryfall art_crop, with hand-picked fitting cards for\n     the customs (starships -> spacecraft, Khelos eggs -> three distinct\n     MTG eggs, the three Leylines -> three real MTG Leylines, Bear Cub,\n     Jar of Eyeballs, ...) and substring-accident fixes (inCUBation\n     Druid, saBOTender, Druid of the COWl, JARad all replaced)\n   - time_pupil corrected to its TIME-set art (Highborne Pupil TIME_704t)\n   - art/index.json resynced to the files on disk (4 orphaned location\n     arts like boomtown_claim are now indexed and display)\n   Final: 5,664 art entries, 0 of 5,607 cards without art.\n\nCache-busts: ?v=20260729 on viewer.html/viewer.js imports and the wiki's\nstyle/app tags so deployed clients pick up the new code + art index.\n\nVerification: syntax on every touched file; 40/40 engine suites still\ngreen (no engine changes).",
+			"cards": []
+		},
+		{
+			"sha": "432fbba",
+			"date": "2026-07-28",
+			"kind": "patch",
+			"title": "Hardening PR41: fuzzer hero classes + headless browser-path smoke — 3 new bugs found & fixed",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "a3f269f",
+			"date": "2026-07-28",
+			"kind": "patch",
+			"title": "Hardening PR40: housekeeping — themed handler files + executors in effects/ (docs/05 tree complete)",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "cf58cbd",
+			"date": "2026-07-28",
+			"kind": "patch",
+			"title": "Hardening PR39: twin unification — 10 dual-registered types resolved",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "d0c6f70",
+			"date": "2026-07-28",
+			"kind": "patch",
+			"title": "Hardening PR38: endgame II — the trigger switch is RETIRED; both legacy dispatchers empty",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "078fa72",
+			"date": "2026-07-28",
+			"kind": "patch",
+			"title": "Hardening PR37: endgame I — the effect chain is RETIRED (927 registry types)",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "8b2117d",
+			"date": "2026-07-28",
+			"kind": "patch",
+			"title": "Hardening PR36: final mechanical batch — 32 branches (806 types); movable pool EMPTY",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "e5d641c",
+			"date": "2026-07-28",
+			"kind": "patch",
+			"title": "Hardening PR35: registry batch 18 — 45 more types (774 total)",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "3889fbc",
+			"date": "2026-07-28",
+			"kind": "patch",
+			"title": "Hardening PR34: registry batch 17 — 45 more types (729 total)",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "d05e9bb",
+			"date": "2026-07-28",
+			"kind": "patch",
+			"title": "Hardening PR33: registry batch 16 — 45 types (684 total); zero dead chain dupes remain",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "387a186",
+			"date": "2026-07-28",
+			"kind": "patch",
+			"title": "Hardening PR32: registry batch 15 — 45 more types (639 total)",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "86ca294",
+			"date": "2026-07-28",
+			"kind": "patch",
+			"title": "Hardening PR31: registry batch 14 — 45 more types (594 total)",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "29f6bc2",
+			"date": "2026-07-28",
+			"kind": "patch",
+			"title": "Hardening PR30: registry batch 13 — 45 types (549 total); core.js under 10k lines",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "cee73f1",
+			"date": "2026-07-28",
+			"kind": "patch",
+			"title": "Hardening PR29: registry batch 12 — 45 types incl. 3 dup retirements (504 total)",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "ab00a3c",
+			"date": "2026-07-28",
+			"kind": "patch",
+			"title": "Hardening PR28: registry batch 11 — 45 types; REAL tiered Excavate revived (27 cards)",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "7034a72",
+			"date": "2026-07-28",
+			"kind": "patch",
+			"title": "Hardening PR27: registry batch 10 — 45 more types (414 total)",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "d9b34c8",
+			"date": "2026-07-28",
+			"kind": "patch",
+			"title": "Hardening PR26: registry batch 9 — 45 more types (369 total)",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "dac0358",
+			"date": "2026-07-28",
+			"kind": "patch",
+			"title": "Hardening PR25: registry batch 8 — 45 more types (324 total)",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "8cab1a7",
+			"date": "2026-07-28",
+			"kind": "patch",
+			"title": "Hardening PR24: registry batch 7 — 45 more types (279 total)",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "ca85cdd",
+			"date": "2026-07-28",
+			"kind": "patch",
+			"title": "Hardening PR23: registry batch 6 — 44 more types (234 total)",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "bf2d17e",
+			"date": "2026-07-28",
+			"kind": "patch",
+			"title": "Hardening PR22: dup retirement — four double-branch types, one shadowed-card fix (Echoing Ooze)",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "748e8cb",
+			"date": "2026-07-28",
+			"kind": "patch",
+			"title": "Hardening PR21: registry batch 5 — 40 more types (186 total)",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "6359774",
+			"date": "2026-07-28",
+			"kind": "patch",
+			"title": "Hardening PR20: registry batch 4 — 43 more types (146 total)",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "ca16ec8",
+			"date": "2026-07-28",
+			"kind": "patch",
+			"title": "Hardening PR19: registry batch 3 — ctx-threaded helpers unlock the chain (103 types total)",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "5420219",
+			"date": "2026-07-28",
+			"kind": "patch",
+			"title": "Hardening PR18: registry batch 2 — remaining 24 zero-risk chain branches (60 types total)",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "cbab3f6",
+			"date": "2026-07-28",
+			"kind": "patch",
+			"title": "Hardening PR17: registry batch 1 — 30 chain branches migrated and deleted",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "12b6560",
+			"date": "2026-07-28",
+			"kind": "patch",
+			"title": "Hardening PR16: action log, replay dispatcher, fuzz trace shrinker",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "b00914d",
+			"date": "2026-07-28",
+			"kind": "patch",
+			"title": "Hardening PR15: engine facade flip + narrow setup APIs (game.js direct writes retired)",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "858eac6",
+			"date": "2026-07-28",
+			"kind": "patch",
+			"title": "Hardening PR14: extract trigger pipeline + auras (order-characterized, digest-verified)",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "dae6b80",
+			"date": "2026-07-28",
+			"kind": "patch",
+			"title": "Hardening stack roll-up: PRs 3–13 (validator, fuzzer, snapshots, extractions, effect registry)",
+			"body": "",
+			"cards": []
+		},
 		{
 			"sha": "7cad52f",
 			"date": "2026-07-27",
