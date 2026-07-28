@@ -18,7 +18,7 @@ const ok = (l, c, extra) => { if (c) pass++; else { fail++; console.log('FAIL:',
 
 // --- registry contract ---
 {
-	ok('six pilot types registered', registeredTypes().length === 6 && !!getEffectHandler('armor') && !!getEffectHandler('shuffle-ids-into-deck'));
+	ok('pilot + batch types registered (36 after batch 1)', registeredTypes().length === 36 && !!getEffectHandler('armor') && !!getEffectHandler('investigate'));
 	ok('unmigrated types miss (chain still owns them)', getEffectHandler('damage') === undefined);
 	let threw = null;
 	try { (await import('../../engine/effects/registry.js')).register('armor', () => {}); } catch (e) { threw = e.message; }
@@ -119,6 +119,25 @@ const ok = (l, c, extra) => { if (c) pass++; else { fail++; console.log('FAIL:',
 	ok('shuffle-ids: two copies into own deck', state.players[0].deck.filter(id => id === 't_seed').length === 2);
 	E.playCard(state, 0, state.players[0].hand.find(c => c.id === 't_infest').uid, null, null, 0);
 	ok('shuffle-ids forEnemy: into the enemy deck', state.players[1].deck.filter(id => id === 't_seed').length === 1);
+}
+// --- batch 1 spot-checks: three migrated types through real plays ---
+{
+	const { state } = new Scenario(byId)
+		.def('t_iceblock', { type: 'sorcery', cost: 0, effects: [{ type: 'hero-immune' }] })
+		.def('t_shout', { type: 'sorcery', cost: 0, effects: [{ type: 'commanding-shout' }] })
+		.def('t_prep', { type: 'sorcery', cost: 0, effects: [{ type: 'spells-cost-one' }] })
+		.def('t_big', { type: 'sorcery', cost: 7, effects: [{ type: 'armor', value: 1 }] })
+		.def('t_frail', { type: 'creature', cost: 1, attack: 0, health: 1 })
+		.mana(0, 10).board(0, ['t_frail']).hand(0, ['t_iceblock', 't_shout', 't_prep', 't_big'])
+		.run();
+	const p = state.players[0];
+	E.playCard(state, 0, p.hand.find(c => c.id === 't_iceblock').uid, null, null, 0);
+	E.damageHero(state, 0, 9, 1);
+	ok('batch: hero-immune blocks damage this turn', p.life === 40);
+	E.playCard(state, 0, p.hand.find(c => c.id === 't_shout').uid, null, null, 0);
+	ok('batch: commanding-shout arms the survive-turn floor', p.minionsSurviveTurn === state.turnNumber);
+	E.playCard(state, 0, p.hand.find(c => c.id === 't_prep').uid, null, null, 0);
+	ok('batch: spells-cost-one caps spell costs', E.effectiveCost(state, 0, p.hand.find(c => c.id === 't_big')) === 1);
 }
 // --- strict mode: registry miss + chain miss still throws ---
 {
