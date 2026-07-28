@@ -63815,7 +63815,7 @@
         "once": true,
         "effects": [
           {
-            "type": "summon-self-copy"
+            "type": "summon-self-copy", "exact": true
           }
         ]
       }
