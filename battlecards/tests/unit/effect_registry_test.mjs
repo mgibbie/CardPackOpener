@@ -18,7 +18,7 @@ const ok = (l, c, extra) => { if (c) pass++; else { fail++; console.log('FAIL:',
 
 // --- registry contract ---
 {
-	ok('pilot + batch types registered (594 after batch 14)', registeredTypes().length === 594 && !!getEffectHandler('armor') && !!getEffectHandler('investigate'));
+	ok('pilot + batch types registered (639 after batch 15)', registeredTypes().length === 639 && !!getEffectHandler('armor') && !!getEffectHandler('investigate'));
 	ok('unmigrated types miss (chain still owns them)', getEffectHandler('damage') === undefined);
 	let threw = null;
 	try { (await import('../../engine/effects/registry.js')).register('armor', () => {}); } catch (e) { threw = e.message; }
