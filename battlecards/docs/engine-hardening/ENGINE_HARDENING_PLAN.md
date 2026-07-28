@@ -19,9 +19,11 @@ duplicate case labels today**); serialization owned by the UI as two hand-writte
 allow-lists that silently drop ~15 engine fields on the duel guest; ~27 direct
 state mutations from game.js; and (before this PR) zero test coverage of
 stack/priority and vanilla combat — both now characterized (33 assertions).
-The census tool also proves: 11 twin-implemented effect types, 3 dead duplicate
-switch cases, 14 dead duplicate chain branches, and zero card-data effect types
-without a handler. Lands, equipment, and the multiplayer apply path remain
+The census + twin-audit tools proved: 11 twin-implemented effect types, and
+17 duplicate handlers of which FOUR were live card-breaking shadows (7 cards
+silently broken — now fixed, regression-tested); 13 benign dead duplicates
+remain for cleanup. Zero card-data effect types lack a handler, now enforced
+in dev/test by strict-effects mode. Lands, equipment, and the multiplayer apply path remain
 untested.
 
 ## Highest-risk areas

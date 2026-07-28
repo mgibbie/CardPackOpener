@@ -3183,19 +3183,12 @@ function pickClasses() {
 // A player in a run/battle broadcasts a lean board snapshot (no card DB, no rng)
 // every ~1.2s; friends poll it and render read-only. cardsById is re-attached
 // locally on the watcher side since every client already has the full card DB.
+// One authoritative snapshot shape for spectators and duels (engine/serialize.js,
+// schemaVersion-stamped). Additive over the old allow-list: same fields plus the
+// previously-dropped lazily-created state (forcedTurns, expanseEvents, dealt, …),
+// so old ingesters keep working and resumed/spectated games stop losing state.
 function snapshotState() {
-	if (!state) return null;
-	return {
-		players: state.players,
-		current: state.current,
-		turnNumber: state.turnNumber,
-		over: state.over,
-		winner: state.winner,
-		classPicks: state.classPicks || null,
-		playerCount: state.players.length,
-		// pending decisions so a watcher can see the Discover/scry options being weighed
-		scryQueue: state.scryQueue || [], discardQueue: state.discardQueue || [], pickQueue: state.pickQueue || [], dredgeQueue: state.dredgeQueue || [], askQueue: state.askQueue || [], sacQueue: state.sacQueue || [], stack: state.stack || [], priority: state.priority ?? null, passers: state.passers || [], priorityNext: state.priorityNext || 0,
-	};
+	return E.toSnapshot(state);
 }
 
 let publishSeq = 0;
@@ -3241,12 +3234,10 @@ function startSpectate(cardsById) {
 		if (data.seq === spectateSeq) return; // nothing new
 		spectateSeq = data.seq;
 		const snap = data.snapshot;
-		// re-attach the local card DB + a live rng; carry the pending decisions so
-		// the watcher can see the Discover/scry options while they're being weighed
-		state = {
-			...snap, cardsById, rng: Math.random, events: [],
-			scryQueue: snap.scryQueue || [], discardQueue: snap.discardQueue || [], pickQueue: snap.pickQueue || [], dredgeQueue: snap.dredgeQueue || [], askQueue: snap.askQueue || [], sacQueue: snap.sacQueue || [], stack: snap.stack || [], priority: snap.priority ?? null, passers: snap.passers || [], priorityNext: snap.priorityNext || 0,
-		};
+		// migrate (v0 publishers still supported) + re-attach card DB/rng; unlike
+		// the old spread-rebuild, this keeps every engine field the host sent
+		state = E.fromSnapshot(snap, cardsById);
+		E.ensureUidsAbove(E.maxSnapshotUid(snap)); // never mint uids that collide with ingested ones
 		if (snap.playerCount !== spectatePanelsFor) {
 			playerCount = snap.playerCount;
 			frameCamera();
@@ -3344,11 +3335,11 @@ async function startDuelHost(cardsById) {
 			return;
 		}
 		if (prev && prev.snapshot) {
-			const snap = prev.snapshot;
-			state = {
-				...snap, cardsById, rng: Math.random, events: [],
-				scryQueue: snap.scryQueue || [], discardQueue: snap.discardQueue || [], pickQueue: snap.pickQueue || [], dredgeQueue: snap.dredgeQueue || [], askQueue: snap.askQueue || [], sacQueue: snap.sacQueue || [], stack: snap.stack || [], priority: snap.priority ?? null, passers: snap.passers || [], priorityNext: snap.priorityNext || 0,
-			};
+			// migrate + reattach: the resumed host gets back every engine field it
+			// published (the old spread-rebuild silently defaulted the lazily-created
+			// ones — forcedTurns, expanseEvents, dealt, …)
+			state = E.fromSnapshot(prev.snapshot, cardsById);
+			E.ensureUidsAbove(E.maxSnapshotUid(prev.snapshot)); // resumed instances must not collide with new deals
 			duelPubSeq = prev.seq || 0; // continue the sequence so the guest sees fresh
 			resumed = true;
 		}
@@ -3480,10 +3471,13 @@ function startDuelGuest(cardsById) {
 			duel.hold = 0;
 			const snap = data.snapshot;
 			try {
-				state = {
-					...snap, cardsById, rng: Math.random, events: [],
-					scryQueue: snap.scryQueue || [], discardQueue: snap.discardQueue || [], pickQueue: snap.pickQueue || [], dredgeQueue: snap.dredgeQueue || [], askQueue: snap.askQueue || [], sacQueue: snap.sacQueue || [], stack: snap.stack || [], priority: snap.priority ?? null, passers: snap.passers || [], priorityNext: snap.priorityNext || 0,
-				};
+				// migrate + reattach: the guest's optimistic engine now simulates on the
+				// COMPLETE host state (the old spread-rebuild dropped the lazily-created
+				// fields, so guest-side predictions ran on a subtly different game)
+				state = E.fromSnapshot(snap, cardsById);
+				// the guest's own instantiate calls (optimistic plays) must never mint
+				// uids that collide with host-minted ones on the ingested board
+				E.ensureUidsAbove(E.maxSnapshotUid(snap));
 				if (state.players.length !== panelsFor) {
 					playerCount = state.players.length;
 					frameCamera(); buildPanels(); buildSlotMarkers();
@@ -3562,15 +3556,10 @@ function startDebugOverlay() {
 }
 
 let duelPubSeq = 0, duelPubStarted = false;
+// Same authoritative snapshot as spectate (see snapshotState) — the two
+// hand-maintained allow-lists this replaced had already drifted by construction.
 function snapshotForDuel() {
-	if (!state) return null;
-	return {
-		players: state.players, current: state.current, turnNumber: state.turnNumber,
-		over: state.over, winner: state.winner, classPicks: state.classPicks || null,
-		playerCount: state.players.length,
-		// carry pending decisions so the guest can resolve their own scry/loot/discover
-		scryQueue: state.scryQueue || [], discardQueue: state.discardQueue || [], pickQueue: state.pickQueue || [], dredgeQueue: state.dredgeQueue || [], askQueue: state.askQueue || [], sacQueue: state.sacQueue || [], stack: state.stack || [], priority: state.priority ?? null, passers: state.passers || [], priorityNext: state.priorityNext || 0,
-	};
+	return E.toSnapshot(state);
 }
 function publishDuel() {
 	const cm = duel.config;

@@ -33,9 +33,14 @@ cases / 138 distinct types** whose `default:` falls through to `execEffects`.
 **11 effect types are implemented in both dispatchers** (drift risk; a documented
 source of past bugs), the switch has **3 duplicated case labels** (dead second
 bodies: `summon-of-spell-cost`, `summon-copy-of-played`, `gain-armor-by-amount`)
-and the chain has **14 duplicated unguarded branches** whose later copy is dead
-code (`equip-id`, `summon-remembered`, `buff-random-friendly`, `mill`, `excavate`,
-`refresh-mana`, …) — run the census tool for the authoritative list.
+and the chain has duplicated unguarded branches whose later copy is dead code —
+run `tests/tools/effect-census.mjs` for the authoritative list and
+`tests/tools/twin-audit.mjs` for body-level diffs. **Four of these duplicates
+were live card-breaking shadows** (summon-remembered, summon-copy-of-played,
+summon-deck-copy, buff-random-friendly) — found by the audit, fixed with
+regression tests in `tests/regression/shadowed_handlers_test.mjs`; the
+remaining 2 switch + 11 chain duplicates are verified-benign dead code
+(first copy is a semantic superset), pinned where behavior-relevant.
 
 ## Subsystem line map (measured)
 

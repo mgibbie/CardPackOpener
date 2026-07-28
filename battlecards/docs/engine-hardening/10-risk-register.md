@@ -18,3 +18,23 @@
 | Card-specific exceptions missed during extraction (~40 inline id checks, LEGACY_SCRIPTED, per-id switches) | Med | Med | Census script also greps `.id === '` count per module; suite covers most of these ids already (ff6–ff10e) | Inventory in 01/06; move id checks WITH their host function; convert to fields only as separate PRs | Revert |
 | game.js direct-mutation sites breaking when player shape moves (27 sites: treasures, ingest, setup) | Med | Med | grep-based CI check + dungeon smoke test (treasure application) | Phase 9 narrow APIs; until then, never rename the fields those sites touch (life, maxLife, hand, board, lands, heroClass) | Revert |
 | Dungeon RUN_KEY save breakage | Low | Med (player-visible run loss) | Fixture test with a captured v0 run blob | Card ids/treasure keys frozen (constraint 6); loader already try/catch-null | Old key name retained |
+
+## Realized findings (fuzz + strict mode, PR 3–4)
+
+The rows above predicted three classes of defect that the fuzzer then actually found:
+
+1. **Discount overcharge** (PR 3, fuzz seed 420484): playCard recomputed effective cost after
+   one-shot discounts were consumed → `mana.cur = -1`. Fixed with a captured `playedCost`;
+   pinned by `tests/regression/discount_overcharge_test.mjs`.
+2. **Shoplifter Goldbeard trigger recursion** (PR 4, fuzz seed 9419695): the
+   `summon-copy-attack-die` handler marked its copy `_shoplifterCopy` only after `summon()`
+   returned, but `summon()` fires `'summoned'` internally → the handler re-triggered on its own
+   unmarked copy → stack overflow. Fixed with a re-entrancy latch on the trigger holder; the
+   effect budget now also counts `runSecretEffects` entries so future trigger-side loops trip
+   the budget instead of the JS stack. Pinned by `tests/regression/goldbeard_recursion_test.mjs`.
+3. **Unbounded board growth is real but is NOT a loop bug** (fuzz seed 1984285): exponential
+   summon cards (`lab_constructor`, "at end of turn summon a copy of this") legitimately reach
+   4,800+ minions because `summon()` has no board cap — a design decision this project does not
+   change (card-balance constraint). The fuzz driver ends such games cleanly at board > 300
+   rather than reporting a false trigger-loop finding. If a board cap is ever wanted, it is a
+   gameplay/balance decision for the owner, not a hardening PR.
