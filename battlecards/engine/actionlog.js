@@ -53,8 +53,8 @@ export function dispatch(state, a) {
 // per-action envelope (strict debug mode, budget reset, validator sweep) so
 // a failure reproduces the same way it was found. Returns
 // { state, failedAt, error } — error null on a clean run.
-export function replayActions(byId, gameSeed, actions, { strict = true, validate = true, players = 2 } = {}) {
-	const state = createGame(byId, seededRng(gameSeed), null, players);
+export function replayActions(byId, gameSeed, actions, { strict = true, validate = true, players = 2, classPicks = null } = {}) {
+	const state = createGame(byId, seededRng(gameSeed), null, players, classPicks);
 	if (strict) state.debug = { strictEffects: true, effectBudget: 4000 };
 	for (let i = 0; i < actions.length; i++) {
 		if (state.over) break;

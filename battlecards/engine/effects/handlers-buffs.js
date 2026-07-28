@@ -267,7 +267,7 @@ register('reduce-deck-keyword-cost', ({ state, pi, target, source, enemies, scal
 
 register('buff-self-per-tribe-played', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => {
 			// Power Slider: +X/+X for each distinct minion type you've played this game
-			const n = state.players[pi].tribesPlayedGame ? state.players[pi].tribesPlayedGame.size : 0;
+			const n = state.players[pi].tribesPlayedGame ? Object.keys(state.players[pi].tribesPlayedGame).length : 0;
 			if (source && n) buffCreature(source, (e.attack || 1) * n, (e.health || 1) * n);
 });
 
@@ -740,7 +740,7 @@ register('gain-random-keyword-per-class-card', ({ state, pi, target, source, ene
 register('gain-random-keywords-per-tribe-played', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => { {
 			// The One-Amalgam Band: gain a random keyword for each distinct minion type played this game
 			const kws = e.keywords || ['taunt', 'divine_shield', 'rush', 'lifesteal', 'windfury', 'poisonous'];
-			const n = state.players[pi].tribesPlayedGame ? state.players[pi].tribesPlayedGame.size : 0;
+			const n = state.players[pi].tribesPlayedGame ? Object.keys(state.players[pi].tribesPlayedGame).length : 0;
 			for (let i = 0; i < n && source; i++) { const k = kws[Math.floor(state.rng() * kws.length)]; if (!source.keywords.includes(k)) { source.keywords.push(k); if (k === KW.DIVINE_SHIELD) source.shield = true; } }
 			if (source) emit(state, { type: 'buff', uid: source.uid, attack: source.attack, hp: hp(source) });
 } });

@@ -81,5 +81,13 @@ export function validateGameState(state) {
 			else if (pp.eliminated) errs.push('priority player is eliminated');
 		}
 	}
+	// I19: no Sets/Maps in serialized state — they JSON.stringify to {} and
+	// crash or silently lose data after a duel/spectate snapshot round-trip
+	// (found live: tribesPlayedGame was a Set; guests crashed post-ingest)
+	for (let pi = 0; pi < state.players.length; pi++) {
+		for (const [k, v] of Object.entries(state.players[pi])) {
+			if (v instanceof Set || v instanceof Map) errs.push(`p${pi}.${k} is a ${v.constructor.name} — not snapshot-safe`);
+		}
+	}
 	return errs;
 }

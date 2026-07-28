@@ -20,6 +20,13 @@ import { dispatch, replayActions, shrinkTrace } from '../../engine/actionlog.js'
 
 const raw = JSON.parse(fs.readFileSync(new URL('../../cards.json', import.meta.url)));
 const byId = {}; for (const c of raw.cards) byId[c.id] = c;
+const CLASSES = JSON.parse(fs.readFileSync(new URL('../../classes.json', import.meta.url))).classes;
+// split mode plays WITH hero classes (powers, passives): picks derive from the
+// game seed via a dedicated stream so replayActions can re-derive them
+export const pickClasses = seed => {
+	const r = seededRng((seed ^ 0xc1a55) >>> 0);
+	return [CLASSES[Math.floor(r() * CLASSES.length)], CLASSES[Math.floor(r() * CLASSES.length)]];
+};
 
 const arg = (name, dflt) => {
 	const a = process.argv.find(x => x.startsWith(`--${name}=`));
@@ -49,7 +56,8 @@ function playOneGame(seed) {
 		actions.push(action);
 		return dispatch(state, action);
 	};
-	const state = E.createGame(byId, rngGame, null, 2);
+	const classPicks = SPLIT ? pickClasses(seed) : null; // legacy seeds predate classes — keep their games identical
+	const state = E.createGame(byId, rngGame, null, 2, classPicks);
 	// strict dev mode: unknown effect types throw; runaway compositions trip a budget
 	state.debug = { strictEffects: true, effectBudget: 4000 };
 
@@ -193,7 +201,7 @@ for (let g = 0; g < GAMES; g++) {
 	if (r.error && SPLIT && r.log) {
 		// minimal repro via engine/actionlog.js: replay must reproduce, then ddmin
 		const sig = r.error.slice(0, 30);
-		const fails = cand => (replayActions(byId, seed, cand).error || '').slice(0, 30) === sig;
+		const fails = cand => (replayActions(byId, seed, cand, { classPicks: pickClasses(seed) }).error || '').slice(0, 30) === sig;
 		if (fails(r.log)) {
 			const min = shrinkTrace(r.log, fails);
 			shrunk = `\n  shrunk repro (${min.length}/${r.log.length} actions): ${JSON.stringify(min)}`;
