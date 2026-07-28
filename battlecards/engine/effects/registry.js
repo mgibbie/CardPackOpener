@@ -18,7 +18,8 @@
 import {
 	emit, instantiate, MAX_HAND, endTurn, gainTokenCard, execEffects, summon,
 	installSecret, addCoin, damageHero, hp, availableMana, isDead,
-	opponentsOf, freezeCreature, STARTING_LIFE,
+	opponentsOf, freezeCreature, STARTING_LIFE, KW,
+	applyGift, schoolOf, recomputeAuras, sweepDeaths, counterStackEntry,
 } from '../../engine.js';
 import { damageCreature, healHero } from '../damage.js';
 import { gainArmor } from '../damage.js';
@@ -815,4 +816,240 @@ register('draw-per-schools', ({ state, pi, target, source, enemies, scaled, hm, 
 			// Multicaster: draw a card for each different spell school cast this game
 			const n = Object.keys(state.players[pi].schoolsCastGame || {}).length;
 			if (n > 0) drawCards(state, pi, n);
+});
+
+// ---------- batch 5 (PR 21): 40 more (186 total) ----------
+
+register('dragons-rush', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => {
+			state.players[pi].dragonsRush = true; // Ebyssian
+			for (const c of state.players[pi].board) if ((c.tribe || '').includes('Dragon') && !c.keywords.includes('rush')) c.keywords.push('rush');
+});
+
+register('ship-random-gifts', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => {
+			// Raven (Lift Off piece), when launched: the ship gains random Bonus Effects
+			if (source) for (let gi = 0; gi < (e.count || 1); gi++) applyGift(state, source, undefined, { board: true });
+});
+
+register('buff-hand-double', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => {
+			// Emeriss: double Attack and Health of all creatures in your hand
+			for (const c of state.players[pi].hand) if (c.type === 'creature') { c.attack += c.attack; c.maxHealth += c.maxHealth; }
+});
+
+register('reduce-hand-school-cost', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => {
+			// Cariel Roame: reduce the Cost of a spell school in your hand
+			for (const c of state.players[pi].hand) if (schoolOf(c) === e.school) c.cost = Math.max(0, (c.cost || 0) - (e.value || 1));
+});
+
+register('buff-target-by-source-stats', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => {
+			// Outfit Tailor: give a friendly minion +Attack/+Health equal to this minion's stats
+			const t = chosenCreature();
+			if (t && source) buffCreature(t, source.attack || 0, hp(source) || 0);
+});
+
+register('buff-next-summon-tribe', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => {
+			// Thornmantle Musician (Finale): the next minion of a tribe you summon gets +X/+X
+			state.players[pi].nextTribeSummonBuff = { tribe: e.tribe, attack: e.attack || 1, health: e.health || 1 };
+});
+
+register('damage-self-per-enemy-hand', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => {
+			// Witchwood Grizzly: lose 1 Health for each card in your opponent's hand
+			const n = enemies.reduce((s, o) => s + state.players[o].hand.length, 0);
+			if (n > 0) damageHero(state, pi, n, pi);
+});
+
+register('buff-self-by-hero-damage', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => {
+			// Fearless Flamejuggler: gain stats equal to the damage your hero took this turn
+			const n = state.players[pi].heroDamageTakenThisTurn || 0;
+			if (source && n > 0) buffCreature(source, n, n);
+});
+
+register('buff-self-per-hand', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => {
+			// Lawful Longarm: gain +N Attack for each card in your hand
+			if (source) buffCreature(source, (e.attack || 1) * state.players[pi].hand.length, (e.health || 0) * state.players[pi].hand.length);
+});
+
+register('irida-void', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => {
+			// Irida: the deck departs to the Void
+			const p = state.players[pi];
+			p.voidPile = [...p.deck];
+			p.deck = [];
+			emit(state, { type: 'voidOpened', player: pi, count: p.voidPile.length });
+});
+
+register('double-health', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => {
+			const t = e.target === 'self' ? source : chosenCreature(); // Faceless Lurker: this minion
+			if (t) { t.maxHealth += hp(t); emit(state, { type: 'buff', uid: t.uid, attack: t.attack, hp: hp(t) }); }
+});
+
+register('grant-attack-while-alive', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => {
+			// Rowdy Fan: chosen minion has +N Attack while the source is alive
+			const t = chosenCreature();
+			if (t && source) { source.aura = { targetUid: t.uid, attack: e.attack || 4 }; recomputeAuras(state); }
+});
+
+register('kiljaeden', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => {
+			// Kil'jaeden: your deck becomes an endless portal of ever-growing Demons
+			const p = state.players[pi];
+			p.kiljaeden = { bonus: 0 };
+			p.deck = [];
+			emit(state, { type: 'kiljaeden', player: pi });
+});
+
+register('set-next-spell-double', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => {
+			state.players[pi].nextSpellDoubleCast = true; // Electra Stormsurge
+			if (e.count) state.players[pi].nextSpellDoubleCount = (state.players[pi].nextSpellDoubleCount || 0) + e.count; // Tyrande: next 3 spells
+});
+
+register('grant-tribe-summon-buff', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => {
+			// Timewarden: until end of your next turn, minions of a tribe you summon gain keywords
+			state.players[pi].tribeSummonBuff = { tribe: e.tribe, keywords: e.keywords || [], untilTurn: state.turnNumber + 2 };
+});
+
+register('trigger-deathrattles', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => {
+			// Ragnaros: fire your creatures' Deathrattles without them dying
+			for (const c of [...state.players[pi].board]) {
+				if (!isDead(c) && c.deathrattle) execEffects(state, pi, c.deathrattle, null, c);
+			}
+});
+
+register('arm-enemy-draw-punish', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => {
+			// Ashen Elemental: the opponent's draws next turn deal damage to them
+			for (const o of enemies) { state.players[o].drawPunishTurn = state.turnNumber + 1; state.players[o].drawPunishDamage = e.value || 2; }
+});
+
+register('grant-stealth-while-alive', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => {
+			// Obsessive Fan: chosen minion has Stealth while the source is alive
+			const t = chosenCreature();
+			if (t && source) { source.aura = { targetUid: t.uid, keywords: [KW.STEALTH] }; recomputeAuras(state); }
+});
+
+register('discount-hand-tribe', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => {
+			// Fire Plume Harbinger: reduce the Cost of a tribe's cards in your hand
+			for (const c of state.players[pi].hand) if ((c.tribe || '').includes(e.tribe)) c.cost = Math.max(0, (c.cost || 0) - (e.value || 1));
+});
+
+register('grant-self-endturn-summon-copy', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => {
+			// Partner in Crime: at end of your turn, summon a copy of this minion (one-shot)
+			if (source) source.ongoing = { on: 'turn-end', once: true, effects: [{ type: 'summon-copy-of-self', count: e.count || 1 }] };
+});
+
+register('buff-self-per-combo-played', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => {
+			// Rhyme Spinner: +X/+X for each other Combo card you've played this game
+			const n = state.players[pi].combosPlayedGame || 0;
+			if (source && n) buffCreature(source, (e.attack || 1) * n, (e.health || 1) * n);
+});
+
+register('buff-next-drawn-minions', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => {
+			// Beanstalk Brute (approx "top N minions in deck"): buff the next N minions you draw
+			const p = state.players[pi];
+			p.drawBuffMinions = { count: e.count || 3, attack: e.attack || 0, health: e.health || 0 };
+});
+
+register('grant-honorable-kill', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => {
+			// Wing Commander Mulverick: give your minions an Honorable Kill effect
+			for (const c of state.players[pi].board) if (!isDead(c) && c.type !== 'location') c.honorableKill = JSON.parse(JSON.stringify(e.effects));
+});
+
+register('boost-parts-power', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => {
+			// Xhilag: raise the damage of all its Stalks
+			if (source) for (const c of state.players[pi].board) {
+				if (!isDead(c) && c.colossalOf === source.name) c.partPower = (c.partPower || 2) + (e.amount || 1);
+			}
+});
+
+register('reduce-hand-darkgift-cost', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => {
+			// Overgrown Horror: reduce the Cost of minions in your hand with Dark Gifts
+			for (const c of state.players[pi].hand) if (c._darkGift && c.type === 'creature') c.cost = Math.max(0, (c.cost || 0) - (e.value || 2));
+});
+
+register('discount-hand-mincost', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => {
+			// Summer Flowerchild (Finale): reduce the Cost of expensive cards in your hand
+			for (const c of state.players[pi].hand) if ((c.cost || 0) >= (e.minCost || 6)) c.cost = Math.max(0, (c.cost || 0) - (e.value || 1));
+});
+
+register('make-dormant', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => {
+			// Maiev Shadowsong: send a chosen minion Dormant
+			const t = chosenCreature();
+			if (t) { t.dormantLeft = e.value || 2; emit(state, { type: 'dormant', player: t.controller, uid: t.uid, turns: t.dormantLeft }); }
+});
+
+register('grant-colossal-parts', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => {
+			// Hydralodon: give your appendages of this Colossal a keyword
+			for (const c of state.players[pi].board) {
+				if (c.colossalOf === source?.name && !c.keywords.includes(e.keyword)) c.keywords.push(e.keyword);
+			}
+});
+
+register('eruption-blast', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => {
+			// Eruption: 4 damage randomly split, +1 per upgrade
+			const p = state.players[pi];
+			execEffects(state, pi, [{ type: 'random-damage', value: 1, count: 4 + (p.eruptionBonus || 0), pool: 'enemies' }], null, source);
+});
+
+register('enemy-minion-tax-next-turn', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => {
+			// Forensic Duster: the opponent's minions cost more on their next turn
+			for (const o of enemies) { state.players[o].enemyMinionTaxTurn = state.turnNumber + 1; state.players[o].enemyMinionTaxAmount = e.value || 1; }
+});
+
+register('vistah-arm', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => {
+			// Mistah Vistah: replay every spell cast between now and 3 of your turns from now
+			const p = state.players[pi];
+			p.vistahAt = state.turnNumber + 3 * state.players.length;
+			p.vistahSpells = p.vistahSpells || [];
+});
+
+register('discount-foreign-hand', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => {
+			// Leyline Manipulator: cheaper for cards that didn't start in your deck
+			const p = state.players[pi];
+			for (const c of p.hand) if (!c.fromDeck && c !== source) c.cost = Math.max(0, (c.cost || 0) - (e.value || 2));
+});
+
+register('spend-corpses', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => {
+			const p = state.players[pi];
+			if (p.corpses >= e.value) {
+				p.corpses -= e.value;
+				emit(state, { type: 'corpses', player: pi, corpses: p.corpses });
+				execEffects(state, pi, e.effects, target, source);
+			}
+});
+
+register('blessing-moon', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => {
+			// Priest: get a random Priest card; it costs (N) less
+			const n = Math.max(1, state.players[pi].imbueCount || 1);
+			execEffects(state, pi, [{ type: 'conjure-random', cardClass: 'priest', costMod: -n }], null, source);
+});
+
+register('nethrek-check', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => {
+			// Chef Neth'rek, Start of Game: an all-(3)-or-less deck surges to 10 Mana on turn five
+			const p = state.players[pi];
+			if (p.deck.length && p.deck.every(id => (state.cardsById[id]?.cost || 0) <= 3)) p.manaSurgeIn = 5;
+});
+
+register('set-tribe-discount', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => {
+			// Clownfish: your next N minions of a tribe cost less
+			state.players[pi].nextTribeDiscount = { tribe: e.tribe, count: e.count || 2, amount: e.value || 2, overload: e.overload || 0 }; // Planetary Navigator adds Overload
+});
+
+register('alex-guardian', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => {
+			// Alexstrasza, Guardian of Life: Health to 15; full Health unleashes 15
+			const p = state.players[pi];
+			p.life = Math.min(p.life, 15);
+			p.alexPayoff = true;
+			emit(state, { type: 'life', player: pi, life: p.life });
+});
+
+register('double-self-health', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => {
+			// Soldier of the Bronze: double this minion's Health
+			if (source && !isDead(source)) { source.maxHealth = (source.maxHealth || 0) * 2; emit(state, { type: 'buff', uid: source.uid, attack: source.attack, hp: hp(source) }); }
+});
+
+register('store-deck-card', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => {
+			// Enthusiastic Banker: move a card from your deck onto this minion's stash
+			if (source && state.players[pi].deck.length) { const id = state.players[pi].deck.pop(); (source.storedCards = source.storedCards || []).push(id); }
+});
+
+register('counter-stack', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => {
+			// Cryptic Command's counter mode: counter the topmost spell now on the stack
+			const top = [...state.stack].reverse().find(en => en.kind === 'spell' && !en.countered);
+			if (top) counterStackEntry(state, top, 'graveyard');
 });
