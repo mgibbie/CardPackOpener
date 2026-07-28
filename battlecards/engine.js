@@ -11555,17 +11555,22 @@ export function playCard(state, pi, cardUid, target, choice, position, useAlt, k
 	}
 	if (ward) payWard(state, pi, target);
 	card._kicked = false;
-	if (kicked && card.kicker && availableMana(p) >= effectiveCost(state, pi, card) + card.kicker.cost) {
+	// pay the price QUOTED at declare time (playedCost, captured before the
+	// one-shot discount consumption above). Recomputing effectiveCost here
+	// re-charged the undiscounted price after the discount flags were cleared —
+	// overcharging every "next X costs less" play and driving mana negative
+	// when the player had exact mana (fuzz finding, seed 420484).
+	if (kicked && card.kicker && availableMana(p) >= playedCost + card.kicker.cost) {
 		card._kicked = true; // paid the base cost + the kicker
-		spendMana(p, effectiveCost(state, pi, card) + card.kicker.cost);
-	} else if (card.altCost && canPayAlt(state, pi, card) && (useAlt || availableMana(p) < effectiveCost(state, pi, card))) {
+		spendMana(p, playedCost + card.kicker.cost);
+	} else if (card.altCost && canPayAlt(state, pi, card) && (useAlt || availableMana(p) < playedCost)) {
 		payAlt(state, pi, card); // paid the alternative cost instead of mana (chosen, or forced when mana is short)
 	} else if (card.xSpell) {
 		// X-spells drink every remaining point; X = what's left after the base cost
-		card.xValue = Math.max(0, availableMana(p) - effectiveCost(state, pi, card));
+		card.xValue = Math.max(0, availableMana(p) - playedCost);
 		spendMana(p, availableMana(p));
 	} else {
-		spendMana(p, effectiveCost(state, pi, card));
+		spendMana(p, playedCost);
 	}
 	// a matching one-shot discount is spent by this play
 	const usedDiscount = discountIndex(state, p, card);
