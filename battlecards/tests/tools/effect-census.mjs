@@ -12,7 +12,7 @@
 // Usage:  node battlecards/tests/tools/effect-census.mjs [--json]
 import { readFileSync } from 'fs';
 
-const src = readFileSync(new URL('../../engine.js', import.meta.url), 'utf8');
+const src = readFileSync(new URL('../../engine/core.js', import.meta.url), 'utf8');
 const cards = JSON.parse(readFileSync(new URL('../../cards.json', import.meta.url), 'utf8'));
 const lines = src.split('\n');
 

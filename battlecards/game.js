@@ -3354,10 +3354,8 @@ async function startDuelHost(cardsById) {
 		state = E.createGame(cardsById, Math.random, cm.hostDeck ? [...cm.hostDeck] : null, 2, picks, loadouts);
 		state.classPicks = picks;
 		// give the guest their own deck + a fresh opening hand and the coin
-		const g = state.players[1];
 		if (cm.guestDeck?.length) {
-			g.deck = shuffleIds([...cm.guestDeck]);
-			g.hand = [];
+			E.resetDeckAndHand(state, 1, cm.guestDeck);
 			E.drawCards(state, 1, 4);
 			E.addCoin(state, 1); // the 2nd player starts with The Coin (as a card)
 		}
@@ -3757,15 +3755,14 @@ function bootEncounter(cardsById, bossId, clsId, deckIds, passives, level) {
 	// a one-off ?boss= fight keeps the boss's designed health.
 	const bp = state.players[1];
 	const runHP = level ? 15 + (level - 1) * 5 : null;
-	bp.life = runHP ?? boss.health;
-	bp.maxLife = bp.life;
-	if (runHP != null) { state.players[HUMAN].life = runHP; state.players[HUMAN].maxLife = runHP; }
-	bp.deck = [...boss.deck].sort(() => Math.random() - 0.5);
-	bp.hand = [];
+	const bossHP = runHP ?? boss.health;
+	E.applyHeroMods(state, 1, { life: bossHP, maxLife: bossHP });
+	if (runHP != null) E.applyHeroMods(state, HUMAN, { life: runHP, maxLife: runHP });
+	E.resetDeckAndHand(state, 1, boss.deck);
 	E.drawCards(state, 1, 4);
-	if (boss.passive === 'battlecries-twice' || boss.passive === 'both-twice') bp.battlecriesTwice = true;
-	if (boss.passive === 'deathrattles-twice' || boss.passive === 'both-twice') bp.deathrattlesTwice = true;
-	for (const p of state.players) { p.companion = null; p.command = []; }
+	if (boss.passive === 'battlecries-twice' || boss.passive === 'both-twice') E.applyHeroMods(state, 1, { battlecriesTwice: true });
+	if (boss.passive === 'deathrattles-twice' || boss.passive === 'both-twice') E.applyHeroMods(state, 1, { deathrattlesTwice: true });
+	E.stripLoadouts(state);
 	applyTreasures(passives || []);
 	log(`${level ? `Dungeon level ${level}` : 'Dungeon Run'} — ${boss.name} (${bp.life} HP): "${boss.flavor}"`);
 	if (boss.power) log(`Boss power — ${boss.power.name} (${boss.power.cost}): ${boss.power.text}`);
@@ -3776,17 +3773,15 @@ function bootEncounter(cardsById, bossId, clsId, deckIds, passives, level) {
 
 // run passives, applied at the start of every fight
 function applyTreasures(ids) {
-	const p = state.players[HUMAN];
-	let n = 0;
-	const emblem = (id, fields) => p.emblems.push({
-		uid: 'treasure_' + (n++), id, name: Dungeon.TREASURES[id].name,
-		type: 'emblem', zone: 'emblem', controller: HUMAN, keywords: [],
+	const p = state.players[HUMAN]; // read-only here — writes go through E.* setup APIs
+	const emblem = (id, fields) => E.grantEmblem(state, HUMAN, {
+		id, name: Dungeon.TREASURES[id].name,
 		description: Dungeon.TREASURES[id].text, ...fields,
 	});
 	for (const t of ids) {
 		switch (t) {
-			case 'potion_of_vitality': p.life *= 2; p.maxLife = p.life; break;
-			case 'crystal_gem': p.mana.cur += 1; p.mana.max += 1; break;
+			case 'potion_of_vitality': E.applyHeroMods(state, HUMAN, { life: p.life * 2, maxLife: p.life * 2 }); break;
+			case 'crystal_gem': E.addManaCrystal(state, HUMAN); break;
 			case 'small_backpacks': E.drawCards(state, HUMAN, 2); break;
 			case 'captured_flag': emblem(t, { aura: { attack: 1, health: 1 } }); break;
 			case 'khadgars_scrying_orb': emblem(t, { costMod: { cardType: 'spell', amount: -1, scope: 'own' } }); break;
@@ -3803,13 +3798,11 @@ function applyTreasures(ids) {
 				}
 				break;
 			}
-			case 'totem_of_the_dead': p.deathrattlesTwice = true; break;
-			case 'battle_totem': p.battlecriesTwice = true; break;
-			case 'justicars_ring': {
-				const power = classPowerOf(HUMAN);
-				if (power) power.power.cost = Math.min(power.power.cost, 1);
-				break;
-			}
+			case 'totem_of_the_dead': E.applyHeroMods(state, HUMAN, { deathrattlesTwice: true }); break;
+			case 'battle_totem': E.applyHeroMods(state, HUMAN, { battlecriesTwice: true }); break;
+			// caps every hero-power slot; at dungeon boot the human's only slot IS
+			// the class power the old classPowerOf() targeted
+			case 'justicars_ring': E.capHeroPowerCost(state, HUMAN, 1); break;
 		}
 	}
 }

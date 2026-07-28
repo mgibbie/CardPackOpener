@@ -16,7 +16,7 @@
 // Usage: node battlecards/tests/tools/twin-audit.mjs [--json] [--show=<type>]
 import { readFileSync } from 'fs';
 
-const src = readFileSync(new URL('../../engine.js', import.meta.url), 'utf8');
+const src = readFileSync(new URL('../../engine/core.js', import.meta.url), 'utf8');
 const lines = src.split('\n');
 
 function fnRange(name) {
