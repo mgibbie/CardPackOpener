@@ -1215,7 +1215,9 @@ function updateHud() {
 	$('concede').style.display = dungeonRunMode && !state.over ? '' : 'none';
 	const myTurn = state.current === HUMAN && !state.over;
 	$('end-turn').disabled = !myTurn;
-	$('end-turn').textContent = myTurn ? 'End Turn' : `${nameOf(state.current)}'s Turn…`;
+	$('end-turn').textContent = state.over ? 'Game Over'
+		: myTurn ? 'End Turn'
+		: state.current === HUMAN ? 'Your Turn…' : `${nameOf(state.current)}'s Turn…`;
 	$('hint').textContent = pending
 		? `Choose ${pending.spec.why} for ${pending.card.name} (right-click to cancel)`
 		: (selectedAttacker === 'HERO' ? 'Choose a target for your hero attack (right-click to cancel)'
@@ -2308,7 +2310,10 @@ function cardOf(uid) {
 // hover tooltip: rules text lives here now, not on the card face
 function updateTooltip(ev) {
 	const tip = $('tooltip');
-	const card = cardOf(hoverUid);
+	// the class-power orb on your own 3D panel has no card uid of its own —
+	// resolve it to the power card so hovering the orb reads the power
+	const card = cardOf(hoverUid)
+		|| (hoverUid === 'heropanel' && state && heroPanelOrbHit(pickHeroPanelUV(ev)) ? classPowerOf(HUMAN) : null);
 	// never reveal hidden information: enemy hands and face-down traps stay secret
 	const hidden = card && card.controller !== HUMAN && (card.zone === 'hand' || card.zone === 'trap');
 	if (!card || hidden) { tip.style.display = 'none'; return; }
@@ -2324,8 +2329,10 @@ function updateTooltip(ev) {
 		tip.style.top = `${Math.min(ev.clientY + 14, innerHeight - tip.offsetHeight - 12)}px`;
 		return;
 	}
-	const typeLine = `${card.cost ?? 0} MANA · ` + classNameOf(card.cardClass).toUpperCase() + ' · ' + (card.tribe ? card.tribe + ' ' : '') + card.type.toUpperCase()
-		+ ' · ' + (card.rarity || 'common').toUpperCase();
+	const typeLine = card.type === 'heropower'
+		? `HERO POWER · COSTS (${card.power?.cost ?? 0}) · ` + classNameOf(card.cardClass).toUpperCase()
+		: `${card.cost ?? 0} MANA · ` + classNameOf(card.cardClass).toUpperCase() + ' · ' + (card.tribe ? card.tribe + ' ' : '') + card.type.toUpperCase()
+			+ ' · ' + (card.rarity || 'common').toUpperCase();
 	let extra = '';
 	if (card.type === 'planeswalker') extra = `<div class="tt-sub">Loyalty ${card.loyalty}</div>`;
 	if (card.type === 'quest' && card.quest) extra = `<div class="tt-sub">Progress ${card.progress || 0} / ${card.quest.goal.count}</div>`;
@@ -2629,9 +2636,10 @@ renderer.domElement.addEventListener('pointerdown', ev => {
 	// hero (arm an attack, or pick yourself as a spell/attack target via panelClick)
 	if (uid === 'heropanel') {
 		const power = classPowerOf(HUMAN);
-		if (heroPanelOrbHit(pickHeroPanelUV(ev)) && !pending && !selectedAttacker && power && E.canUseHeroPower(state, HUMAN, power)) {
-			// don't fire on press — arm it: a quick release uses the power, but a
-			// press-and-hold previews it instead (see startLongPress + pointerup)
+		if (heroPanelOrbHit(pickHeroPanelUV(ev)) && !pending && !selectedAttacker && power) {
+			// don't fire on press — arm it: a quick release uses the power (or, when
+			// it can't be used right now, opens its reader so the orb is always
+			// inspectable); a press-and-hold previews it instead (see startLongPress)
 			heroPress = { power };
 		} else {
 			panelClick(HUMAN);
@@ -2936,9 +2944,14 @@ addEventListener('pointerup', ev => {
 	if (heroPress) {
 		const power = heroPress.power;
 		heroPress = null;
-		if (ev.button === 0 && !longPressFired && state && !state.over && state.current === HUMAN) {
+		if (ev.button === 0 && !longPressFired && state) {
 			const dist = Math.hypot(ev.clientX - lastDownX, ev.clientY - lastDownY);
-			if (dist < 14) activateHeroPower(power, ev); // deliberate tap → use; hold/drag → no-op
+			// deliberate tap → use; when it can't be used (off turn, no mana, spent)
+			// the tap reads it instead; hold/drag → no-op (the hold already previewed)
+			if (dist < 14) {
+				if (!state.over && state.current === HUMAN && E.canUseHeroPower(state, HUMAN, power)) activateHeroPower(power, ev);
+				else showInspect(power);
+			}
 		}
 		return;
 	}

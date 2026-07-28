@@ -352,6 +352,28 @@
       "cost": 2,
       "rarity": "legendary",
       "description": "Battlecry: Choose one — Destroy target creature with cost 4 or less; or Add a copy of target creature with cost 2 or less to your hand.",
+      "choices": [
+        {
+          "text": "Destroy target creature with cost 4 or less.",
+          "effects": [
+            {
+              "type": "destroy",
+              "target": "creature",
+              "maxCost": 4
+            }
+          ]
+        },
+        {
+          "text": "Add a copy of target creature with cost 2 or less to your hand.",
+          "effects": [
+            {
+              "type": "copy-to-hand",
+              "target": "creature",
+              "maxCost": 2
+            }
+          ]
+        }
+      ],
       "attack": 2,
       "health": 2,
       "tribe": "Human Ranger",
