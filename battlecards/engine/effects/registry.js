@@ -9139,20 +9139,6 @@ register('destroy-all-others-gain-corpses', ({ state, pi, target, source, enemie
 	} while (false); // top-level `continue` = skip this effect (chain semantics)
 });
 
-register('buff-played-grant-deathrattle', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => {
-	do {
-			// Hawkstrider Rancher: buff a just-played minion and give it a Deathrattle (runs via creature-played ongoing)
-			// handled in runSecretEffects; no-op here
-	} while (false); // top-level `continue` = skip this effect (chain semantics)
-});
-
-register('set-attacked-health', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => {
-	do {
-			// Keeneye Spotter: set the attacked minion's Health (runs via hero-attacks-creature ongoing)
-			// handled in runSecretEffects; no-op here
-	} while (false); // top-level `continue` = skip this effect (chain semantics)
-});
-
 register('fill-hand-enemy-deck', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => {
 	do {
 			// Ashamane: fill your hand with copies of cards from your opponent's deck (cheaper)
@@ -9216,13 +9202,6 @@ register('heal-friendlies-buff-per-overheal', ({ state, pi, target, source, enem
 			let over = 0;
 			for (const c of p.board) { if (c === source || isDead(c) || c.type === 'location') continue; if (c.damage < (e.value || 3)) over++; healCreature(c, e.value || 3); }
 			if (source && over) buffCreature(source, over, over);
-	} while (false); // top-level `continue` = skip this effect (chain semantics)
-});
-
-register('become-copy-of-dead', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => {
-	do {
-			// Creepy Painting: become a copy of a minion that died (runs via ongoing ctx.dead)
-			// handled in runSecretEffects; no-op here
 	} while (false); // top-level `continue` = skip this effect (chain semantics)
 });
 
@@ -10096,7 +10075,6 @@ const _t_buff_random_hand_on_death = (state, pi, e, ctx, triggering) => {
 	} while (false); // `break` ends this effect, exactly like the old case break
 };
 registerTrigger('buff-random-hand-on-death', _t_buff_random_hand_on_death);
-registerTrigger('buff-random-hand', _t_buff_random_hand_on_death); // shared multi-label case
 
 registerTrigger('shuffle-cheap-copy-of-dead', (state, pi, e, ctx, triggering) => {
 	do { {
@@ -10354,6 +10332,7 @@ registerTrigger('freeze-attacker', (state, pi, e, ctx, triggering) => {
 	} while (false); // `break` ends this effect, exactly like the old case break
 });
 
+// TWIN KEPT (PR 39): subject differs: trigger = the triggering minion; effects = chosen target / all-* — both needed
 registerTrigger('set-attack', (state, pi, e, ctx, triggering) => {
 	do { {
 				const m = triggering();
@@ -10449,6 +10428,7 @@ registerTrigger('cho-copy', (state, pi, e, ctx, triggering) => {
 	} while (false); // `break` ends this effect, exactly like the old case break
 });
 
+// TWIN KEPT (PR 39): different cards: trigger = Alarm-o-Bot (self swaps, same instance back); effects = Vol'jin (chosen target, fresh copy)
 registerTrigger('swap-with-hand', (state, pi, e, ctx, triggering) => {
 	do { {
 				// Alarm-o-Bot trades places with a random creature in hand
@@ -10487,6 +10467,7 @@ registerTrigger('grant-minion', (state, pi, e, ctx, triggering) => {
 	} while (false); // `break` ends this effect, exactly like the old case break
 });
 
+// TWIN KEPT (PR 39): divergent details kept: trigger includes self unless excludeSelf + sets stealthed; effects always excludes source + count support
 registerTrigger('buff-random-friendly', (state, pi, e, ctx, triggering) => {
 	do { {
 				const pool = state.players[pi].board.filter(c => !isDead(c)
@@ -10536,6 +10517,7 @@ registerTrigger('grant-self', (state, pi, e, ctx, triggering) => {
 	} while (false); // `break` ends this effect, exactly like the old case break
 });
 
+// TWIN KEPT (PR 39): trigger = plain += (no buffCreature riders); effects = buffCreature (doubleBuffs/statGainBonus) + per-scaling — riders differ by design
 registerTrigger('buff-self', (state, pi, e, ctx, triggering) => {
 	do { {
 				const m = ctx.self;
@@ -10670,15 +10652,7 @@ registerTrigger('copy-drawn', (state, pi, e, ctx, triggering) => {
 	} while (false); // `break` ends this effect, exactly like the old case break
 });
 
-registerTrigger('damage-self', (state, pi, e, ctx, triggering) => {
-	do { {
-				const m = ctx.self;
-				if (m && !isDead(m)) damageCreature(state, m, e.value, null);
-				break;
-			}
-	} while (false); // `break` ends this effect, exactly like the old case break
-});
-
+// TWIN KEPT (PR 39): subject differs: trigger = the triggering minion; effects = chosen target / all-* — both needed
 registerTrigger('set-health', (state, pi, e, ctx, triggering) => {
 	do { {
 				const m = triggering();

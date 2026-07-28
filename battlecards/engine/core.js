@@ -1480,7 +1480,9 @@ export function execEffects(state, pi, effects, target, source) {
 			if (_h({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) === ABORT) return;
 			continue;
 		}
-		if (state.debug && state.debug.strictEffects && e.type) {
+		if (state.debug && state.debug.strictEffects && e.type && !getTriggerHandler(e.type)) {
+			// (trigger-only types are KNOWN types — reached here they no-op, as their
+			// old explicit effects-side stubs did)
 			// dev-mode only (state.debug is never set in production): an effect
 			// type that NOTHING handled. In prod this is a silent no-op — here it
 			// is loud, so data typos and unregistered types can't hide.
