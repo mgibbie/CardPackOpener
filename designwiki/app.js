@@ -414,7 +414,7 @@ async function cardDetail(id) {
   const artCanvas = CardArt.drawArt(c); artCanvas.className = 'wiki-art-solo';
   // generated-card relations: what this card creates, and what creates it
   const byId = {}; for (const x of cards) byId[x.id] = x;
-  const cardLink = gid => h('a', { class: 'tag-chip', href: '#/card/' + gid },
+  const cardLink = gid => h('a', { class: 'tag-chip', href: '#/cards/' + gid },
     (byId[gid].name || gid) + ' (' + (byId[gid].cost ?? 0) + (byId[gid].type === 'creature' ? ' · ' + (byId[gid].attack ?? '?') + '/' + (byId[gid].health ?? '?') : '') + ')');
   const generates = CardArt.generatedCardIds(c, byId);
   const createdBy = CardArt.createdByIds(c.id, byId);
