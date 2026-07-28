@@ -13852,3 +13852,16 @@ export function takeEvents(state) {
 	state.events = [];
 	return evs;
 }
+
+// A process that ingests state minted elsewhere (duel guest, spectator, a
+// restored snapshot) must lift the uid counter past the ingested uids before
+// instantiating anything new, or fresh instances can collide with restored
+// ones. Pair with serialize.js maxSnapshotUid().
+export function ensureUidsAbove(n) {
+	if (n >= nextUid) nextUid = n + 1;
+}
+
+// Facade re-exports (docs/engine-hardening/05: engine.js will become a thin
+// shim over engine/ modules; extractions surface here so callers keep their
+// single `import * as E from './engine.js'` line).
+export { SCHEMA_VERSION, toSnapshot, fromSnapshot, migrate, normalize, maxSnapshotUid } from './engine/serialize.js';

@@ -3183,19 +3183,12 @@ function pickClasses() {
 // A player in a run/battle broadcasts a lean board snapshot (no card DB, no rng)
 // every ~1.2s; friends poll it and render read-only. cardsById is re-attached
 // locally on the watcher side since every client already has the full card DB.
+// One authoritative snapshot shape for spectators and duels (engine/serialize.js,
+// schemaVersion-stamped). Additive over the old allow-list: same fields plus the
+// previously-dropped lazily-created state (forcedTurns, expanseEvents, dealt, …),
+// so old ingesters keep working and resumed/spectated games stop losing state.
 function snapshotState() {
-	if (!state) return null;
-	return {
-		players: state.players,
-		current: state.current,
-		turnNumber: state.turnNumber,
-		over: state.over,
-		winner: state.winner,
-		classPicks: state.classPicks || null,
-		playerCount: state.players.length,
-		// pending decisions so a watcher can see the Discover/scry options being weighed
-		scryQueue: state.scryQueue || [], discardQueue: state.discardQueue || [], pickQueue: state.pickQueue || [], dredgeQueue: state.dredgeQueue || [], askQueue: state.askQueue || [], sacQueue: state.sacQueue || [], stack: state.stack || [], priority: state.priority ?? null, passers: state.passers || [], priorityNext: state.priorityNext || 0,
-	};
+	return E.toSnapshot(state);
 }
 
 let publishSeq = 0;
@@ -3562,15 +3555,10 @@ function startDebugOverlay() {
 }
 
 let duelPubSeq = 0, duelPubStarted = false;
+// Same authoritative snapshot as spectate (see snapshotState) — the two
+// hand-maintained allow-lists this replaced had already drifted by construction.
 function snapshotForDuel() {
-	if (!state) return null;
-	return {
-		players: state.players, current: state.current, turnNumber: state.turnNumber,
-		over: state.over, winner: state.winner, classPicks: state.classPicks || null,
-		playerCount: state.players.length,
-		// carry pending decisions so the guest can resolve their own scry/loot/discover
-		scryQueue: state.scryQueue || [], discardQueue: state.discardQueue || [], pickQueue: state.pickQueue || [], dredgeQueue: state.dredgeQueue || [], askQueue: state.askQueue || [], sacQueue: state.sacQueue || [], stack: state.stack || [], priority: state.priority ?? null, passers: state.passers || [], priorityNext: state.priorityNext || 0,
-	};
+	return E.toSnapshot(state);
 }
 function publishDuel() {
 	const cm = duel.config;
