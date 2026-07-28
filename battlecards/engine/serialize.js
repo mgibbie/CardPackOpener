@@ -92,11 +92,28 @@ export function toSnapshot(state) {
 // Bring an older snapshot up to the current schema. v0 (no schemaVersion) is
 // what the old allow-list publishers send: fill their dropped fields with the
 // engine defaults the spread-rebuild ingest accidentally produced.
+// NOTE: nested card objects are fixed up IN PLACE — callers pass snapshots
+// fresh from JSON.parse (wire) or fs.read (fixtures), never live state.
 export function migrate(snap) {
 	const out = { ...snap };
 	for (const key of Object.keys(FIELD_DEFAULTS)) {
 		if (out[key] === undefined) out[key] = defaultFor(key);
 	}
+	// pre-uid publishers stored the Faceless Replicator killer as an object ref,
+	// which JSON.stringify DUPLICATED into the victim (docs/07 hazard list) —
+	// convert to the uid form the engine reads now, applied at any version
+	// (a v1 publisher on a pre-uid engine build still emits the object form)
+	const fixLastDamager = v => {
+		if (Array.isArray(v)) { for (const x of v) fixLastDamager(x); return; }
+		if (v && typeof v === 'object') {
+			if (v._lastDamager && typeof v._lastDamager === 'object') {
+				if (v._lastDamagerUid == null) v._lastDamagerUid = v._lastDamager.uid;
+				delete v._lastDamager;
+			}
+			for (const k of Object.keys(v)) fixLastDamager(v[k]);
+		}
+	};
+	fixLastDamager(out.players);
 	out.schemaVersion = SCHEMA_VERSION;
 	return out;
 }

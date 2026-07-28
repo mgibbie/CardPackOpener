@@ -1205,7 +1205,7 @@ function damageCreature(state, target, amount, source) {
 		return 0;
 	}
 	target.damage += amount;
-	if (source && source.type === 'creature') target._lastDamager = source; // Faceless Replicator
+	if (source && source.type === 'creature') target._lastDamagerUid = source.uid; // Faceless Replicator (uid, not ref — refs duplicate on snapshot round-trip)
 	warptoothCheck(state, target.controller);
 	if (target.damage === target.maxHealth) state.exactKills = (state.exactKills || 0) + 1;
 	if (source) {
@@ -1536,10 +1536,13 @@ function sweepDeaths(state) {
 			}
 			if (c.marked) drawCards(state, c.markedBy, 2);
 			runDeathrattle(state, pi, c);
-			// Faceless Replicator: whoever killed it takes its shape
-			if (c.killerTransform && c._lastDamager && !isDead(c._lastDamager) && state.cardsById[c.id]) {
-				const k = c._lastDamager;
-				const kb = state.players[k.controller]?.board;
+			// Faceless Replicator: whoever killed it takes its shape. The killer is
+			// tracked by uid (identity survives snapshot round-trips); a stale uid
+			// simply resolves to nothing, like the old dead-ref guards did.
+			if (c.killerTransform && c._lastDamagerUid != null && state.cardsById[c.id]) {
+				let k = null;
+				for (const pl of state.players) { const hit = pl.board.find(m => m.uid === c._lastDamagerUid); if (hit) { k = hit; break; } }
+				const kb = k && !isDead(k) ? state.players[k.controller]?.board : null;
 				if (kb && kb.includes(k)) {
 					const rep = instantiate(state.cardsById[c.id], k.controller);
 					rep.zone = 'board'; rep.sick = k.sick;
