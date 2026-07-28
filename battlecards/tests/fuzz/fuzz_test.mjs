@@ -49,9 +49,12 @@ function playOneGame(seed) {
 		return fn();
 	};
 	const state = E.createGame(byId, rng, null, 2);
+	// strict dev mode: unknown effect types throw; runaway compositions trip a budget
+	state.debug = { strictEffects: true, effectBudget: 4000 };
 
 	let actions = 0, perTurn = 0, lastTurn = state.turnNumber;
 	while (!state.over && actions < MAX_ACTIONS) {
+		state._fxCount = 0; // effect budget is per-action
 		if (state.turnNumber !== lastTurn) { lastTurn = state.turnNumber; perTurn = 0; }
 		const pi = state.current;
 		const p = state.players[pi];
@@ -149,6 +152,12 @@ function playOneGame(seed) {
 		actions++;
 		const v = validateGameState(state);
 		if (v.length) return { seed, actions, error: `invariant violations: ${v.join(' | ')}`, trace };
+		// Degenerate-growth stop: exponential summon cards (e.g. lab_constructor,
+		// "at end of turn summon a copy of this") double every turn, and the engine
+		// has no board cap BY DESIGN (see docs/10-risk-register). A 4000+ board is
+		// legitimate play that would trip the per-action effect budget — end the
+		// game cleanly rather than report a false trigger-loop finding.
+		if (state.players.some(pl => pl.board.length > 300)) break;
 		if (did === false) {
 			// a legality-checked action was rejected by the engine — that mismatch
 			// between can*/spec and the action fn is itself a finding

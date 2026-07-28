@@ -2242,6 +2242,13 @@ function fireSecrets(state, pi, trigger, ctx) {
 }
 
 function runSecretEffects(state, pi, effects, ctx) {
+	// dev-mode effect budget (see execEffects): trigger-side loops recurse via
+	// runSecretEffects→summon→fireOngoing WITHOUT touching execEffects (the
+	// Goldbeard recursion, fuzz seed 9419695), so the tripwire counts here too
+	if (state.debug && state.debug.effectBudget && ++state._fxCount > state.debug.effectBudget) {
+		state._fxCount = 0;
+		throw new Error(`effect budget exceeded (${state.debug.effectBudget} effect calls in one action) — possible trigger loop`);
+	}
 	const triggering = () => {
 		const m = ctx.minion || (ctx.attackerType === 'creature' ? ctx.attacker : null);
 		return m && !isDead(m) ? m : null;
@@ -2644,9 +2651,20 @@ function runSecretEffects(state, pi, effects, ctx) {
 					break;
 				}
 				case 'summon-copy-of-played': {
-					// Ixlid, Fungal Lord: summon a copy of the creature you just played
+					// Ixlid, Fungal Lord: summon a copy of the creature you just played.
+					// Playmaker (e.health set): the copy arrives with N Health remaining.
+					// (Merged: this branch shadowed Playmaker's health-rider duplicate.)
 					const m = ctx.minion;
-					if (m && m !== ctx.self) { const def = state.cardsById[m.id]; if (def) summon(state, pi, def); }
+					if (m && m !== ctx.self) {
+						const def = state.cardsById[m.id];
+						if (def) {
+							const c = summon(state, pi, def);
+							if (c && e.health != null) {
+								c.damage = Math.max(0, (c.maxHealth || 1) - e.health);
+								emit(state, { type: 'damage', targetType: 'creature', uid: c.uid, amount: 0, hp: hp(c) });
+							}
+						}
+					}
 					break;
 				}
 				case 'add-copy-of-dead': {
@@ -3068,10 +3086,15 @@ function runSecretEffects(state, pi, effects, ctx) {
 				break;
 			}
 			case 'summon-copy-attack-die': {
-				// Shoplifter Goldbeard: summon a copy of the just-summoned minion; it attacks a random enemy, then dies
+				// Shoplifter Goldbeard: summon a copy of the just-summoned minion; it attacks a random enemy, then dies.
+				// Re-entrancy latch: summon() fires 'summoned' INTERNALLY, so the copy
+				// used to re-trigger this handler before `_shoplifterCopy` could be set —
+				// infinite recursion (fuzz seed 9419695). The latch closes the window.
 				const m = ctx.minion; const def = m && state.cardsById[m.id];
-				if (def && m !== ctx.self && !m._shoplifterCopy) {
+				if (def && m !== ctx.self && !m._shoplifterCopy && !ctx.self._shoplifting) {
+					ctx.self._shoplifting = true;
 					const copy = summon(state, pi, def);
+					ctx.self._shoplifting = false;
 					if (copy) {
 						copy._shoplifterCopy = true; // don't let the copy re-trigger Goldbeard
 						copy.sick = false;
@@ -3403,12 +3426,8 @@ function runSecretEffects(state, pi, effects, ctx) {
 				if (ctx.victim && !isDead(ctx.victim)) silenceCreature(state, ctx.victim);
 				break;
 			}
-			case 'summon-copy-of-played': {
-				// Playmaker: summon a copy of the just-played minion with N Health remaining
-				const m = ctx.minion; const base = m && state.cardsById[m.id];
-				if (base) { const c = summon(state, pi, JSON.parse(JSON.stringify(base))); if (c && e.health != null) { c.damage = Math.max(0, (c.maxHealth || 1) - e.health); emit(state, { type: 'damage', targetType: 'creature', uid: c.uid, amount: 0, hp: hp(c) }); } }
-				break;
-			}
+			// ('summon-copy-of-played' is handled earlier in this switch — Playmaker's
+			// health rider was merged there after this duplicate was shadowed.)
 			case 'transform-victim-into': {
 				// Infectious Sporeling: turn the minion this just damaged into a copy of `id`
 				const v = ctx.victim; const base = state.cardsById[e.id];
@@ -3552,6 +3571,13 @@ function runDeathrattle(state, pi, card) {
 // `target` is the player's chosen target (or null); AoE targets need no choice.
 // `source` is the card whose effect is running (used by gain-weapon-attack).
 function execEffects(state, pi, effects, target, source) {
+	// dev-mode effect budget (state.debug is never set in production): each
+	// execEffects call counts against a per-action budget the caller resets —
+	// a cheap runaway-composition tripwire (loops manifest as huge call counts)
+	if (state.debug && state.debug.effectBudget && ++state._fxCount > state.debug.effectBudget) {
+		state._fxCount = 0;
+		throw new Error(`effect budget exceeded (${state.debug.effectBudget} execEffects calls in one action) — possible effect loop`);
+	}
 	const enemies = opponentsOf(state, pi);
 	// current Herald multiplier for `heraldScaled` effects (Colossal appendages)
 	const hm = () => heraldMult(state.players[pi].heraldCount || 0);
@@ -4388,8 +4414,10 @@ function execEffects(state, pi, effects, target, source) {
 				recomputeAuras(state);
 			}
 		} else if (e.type === 'summon-deck-copy') {
-			// Barnes: summon a copy of a random creature in YOUR deck
-			// (original stays); attack/health override forces token stats
+			// Barnes: summon a copy of a random creature in YOUR deck (original
+			// stays); attack/health override forces token stats. The Boom Reaver
+			// (e.grant): the copy gains a keyword. (Merged: this branch shadowed
+			// the grant-carrying duplicate.)
 			const p = state.players[pi];
 			const ids = p.deck.filter(id => state.cardsById[id]?.type === 'creature');
 			if (ids.length) {
@@ -4399,6 +4427,11 @@ function execEffects(state, pi, effects, target, source) {
 					c.attack = e.attack + c.auraAttack;
 					c.maxHealth = e.health + c.auraHealth;
 					c.damage = 0;
+				}
+				if (c && e.grant && !c.keywords.includes(e.grant)) {
+					c.keywords.push(e.grant);
+					if (e.grant === KW.DIVINE_SHIELD) c.shield = true;
+					if (e.grant === KW.STEALTH) c.stealthed = true;
 				}
 			}
 		} else if (e.type === 'random-effects') {
@@ -5557,11 +5590,8 @@ function execEffects(state, pi, effects, target, source) {
 				const def = state.cardsById[c.id]; if (!def) continue;
 				const cp = instantiate(def, pi); cp.zone = 'hand'; p.hand.push(cp); emit(state, { type: 'conjure', player: pi, card: cp, color: null });
 			}
-		} else if (e.type === 'summon-deck-copy') {
-			// The Boom Reaver: summon a copy of a random creature in your deck (kept in deck), grant a keyword
-			const p = state.players[pi];
-			const pool = [...new Set(p.deck)].map(id => state.cardsById[id]).filter(d => d && d.type === 'creature' && !d.token);
-			if (pool.length) { const c = summon(state, pi, pool[Math.floor(state.rng() * pool.length)]); if (c && e.grant && !c.keywords.includes(e.grant)) c.keywords.push(e.grant); }
+		// ('summon-deck-copy' is handled earlier in the chain — The Boom Reaver's
+		// grant option was merged there after this duplicate was shadowed.)
 		} else if (e.type === 'add-lackey') {
 			// Rise of Shadows: add a random Lackey to your hand
 			const lackeys = ['lackey_ethereal', 'lackey_faceless', 'lackey_goblin', 'lackey_kobold', 'lackey_witchy'];
@@ -6898,8 +6928,11 @@ function execEffects(state, pi, effects, target, source) {
 			p.recruitAttackBonus = (p.recruitAttackBonus || 0) + (e.value || 1);
 			for (const c of p.board) if (c.name === 'Silver Hand Recruit' && !isDead(c)) { c.attack += e.value || 1; emit(state, { type: 'buff', uid: c.uid, attack: c.attack, hp: hp(c) }); }
 		} else if (e.type === 'summon-remembered') {
-			// Beast Speaker Taka: summon the Beast the Battlecry chose
-			if (source && source._takaId && state.cardsById[source._takaId]) summon(state, pi, state.cardsById[source._takaId]);
+			// Beast Speaker Taka (_takaId) / Amorphous Slime, Ravenous Kraken,
+			// Carnivorous Cubicle (rememberedId): summon the remembered card.
+			// (Merged: the _takaId-only branch shadowed the rememberedId branch.)
+			const rid = source && (source._takaId || source.rememberedId);
+			if (rid && state.cardsById[rid]) summon(state, pi, state.cardsById[rid]);
 		} else if (e.type === 'damage-enemies-per-counter') {
 			// Omen's Deathrattle: 1 damage to all enemies, +1 per attack it made
 			const v = (e.value || 1) + ((source && source[e.key || '_grew']) || 0);
@@ -7983,9 +8016,16 @@ function execEffects(state, pi, effects, target, source) {
 			// Blistering Rot: summon a token with stats equal to the source minion
 			if (source) { const a = source.attack || 0, h = e.squareAttack ? (source.attack || 0) : (hp(source) || 1); const tok = summon(state, pi, { id: e.id || 'token_rot', name: e.name || 'Rot', type: 'creature', cost: 0, token: true, tribe: e.tribe || null, rarity: 'common', attack: a, health: Math.max(1, h), keywords: e.keywords || [], description: `A ${a}/${h} token.` }); }
 		} else if (e.type === 'buff-random-friendly') {
-			// Dragonmaw Overseer: buff a random OTHER friendly minion (Invincible: tribe filter + keyword grant; Stonecarver: only damaged)
+			// Dragonmaw Overseer: buff a random OTHER friendly minion (Invincible:
+			// tribe filter + keyword grant; Stonecarver: only damaged; Menagerie
+			// Mug/Jug + Eager Underling: `count` picks that many DISTINCT minions).
+			// (Merged: this branch shadowed the count-carrying duplicate.)
 			const pool = state.players[pi].board.filter(c => c !== source && !isDead(c) && c.type !== 'location' && (!e.tribe || (c.tribe || '').includes(e.tribe)) && (!e.requireDamaged || c.damage > 0));
-			if (pool.length) { const m = pool[Math.floor(state.rng() * pool.length)]; buffCreature(m, e.attack || 0, e.health || 0); if (e.grant && !m.keywords.includes(e.grant)) { m.keywords.push(e.grant); if (e.grant === KW.DIVINE_SHIELD) m.shield = true; } }
+			for (let n = 0; n < (e.count || 1) && pool.length; n++) {
+				const m = pool.splice(Math.floor(state.rng() * pool.length), 1)[0];
+				buffCreature(m, e.attack || 0, e.health || 0);
+				if (e.grant && !m.keywords.includes(e.grant)) { m.keywords.push(e.grant); if (e.grant === KW.DIVINE_SHIELD) m.shield = true; }
+			}
 		} else if (e.type === 'reduce-random-hand-cost') {
 			// Imprisoned Satyr: reduce the Cost of a random minion in your hand
 			// (tribe filter -> Fangbound Druid reduces a Beast; school -> Florist reduces a Nature spell)
@@ -8875,9 +8915,9 @@ function execEffects(state, pi, effects, target, source) {
 			const p = state.players[pi];
 			const pool = p.hand.filter(c => c.type === 'creature' && (!e.tribe || (c.tribe || '').includes(e.tribe)));
 			if (pool.length && source) { const c = pool[Math.floor(state.rng() * pool.length)]; p.hand = p.hand.filter(x => x !== c); if (!c.token) p.discardLogIds.push(c.id); source.rememberedId = c.id; emit(state, { type: 'discard', player: pi, card: c }); }
-		} else if (e.type === 'summon-remembered') {
-			// Amorphous Slime (Deathrattle): summon a copy of the remembered discarded minion
-			if (source && source.rememberedId && state.cardsById[source.rememberedId]) summon(state, pi, state.cardsById[source.rememberedId]);
+		// ('summon-remembered' is handled earlier in the chain — the rememberedId
+		// variant that lived here was merged into that branch after the duplicate
+		// shadowed it; see tests/tools/twin-audit.mjs)
 		} else if (e.type === 'double-deck-minion-stats') {
 			// Lor'themar Theron: double the stats of all minions in your deck (applied as they're drawn)
 			state.players[pi].deckDoubleStats = true;
@@ -10547,19 +10587,9 @@ function execEffects(state, pi, effects, target, source) {
 					emit(state, { type: 'conjure', player: victim, card, color: null });
 				}
 			}
-		} else if (e.type === 'buff-random-friendly') {
-			// deathrattle path (Dark Cultist) — the secret executor has its own copy;
-			// count picks that many DISTINCT friendlies
-			const pool = state.players[pi].board.filter(c =>
-				!isDead(c) && c !== source && c.type !== 'location'
-				&& (!e.tribe || (c.tribe || '').includes(e.tribe))); // Wailing Banshee: friendly Undead
-			for (let i = 0; i < (e.count || 1) && pool.length; i++) {
-				const m = pool.splice(Math.floor(state.rng() * pool.length), 1)[0];
-				m.attack += e.attack || 0;
-				m.maxHealth += e.health || 0;
-				if (e.grant && !m.keywords.includes(e.grant)) { m.keywords.push(e.grant); if (e.grant === KW.DIVINE_SHIELD) m.shield = true; } // Invincible: +Taunt
-				emit(state, { type: 'buff', uid: m.uid, attack: m.attack, hp: hp(m) });
-			}
+		// ('buff-random-friendly' is handled earlier in the chain — the `count`
+		// loop was merged there after this duplicate was shadowed. The secret
+		// executor keeps its own trigger-side copy; see twin-audit.mjs.)
 		} else if (e.type === 'conjure-cost') {
 			// Discover-a-cost approximation: a random card of that cost
 			const p = state.players[pi];
@@ -11103,6 +11133,11 @@ function execEffects(state, pi, effects, target, source) {
 			p.weapon = w;
 			emit(state, { type: 'weaponEquip', player: pi, card: w });
 			fireOngoing(state, pi, 'weapon-equipped');
+		} else if (state.debug && state.debug.strictEffects && e.type) {
+			// dev-mode only (state.debug is never set in production): an effect
+			// type that NOTHING handled. In prod this is a silent no-op — here it
+			// is loud, so data typos and unregistered types can't hide.
+			throw new Error(`unknown effect type: '${e.type}'`);
 		}
 	}
 	// heals/set-health may have cleared damage: enrage bonuses retract here

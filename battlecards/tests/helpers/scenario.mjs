@@ -21,7 +21,9 @@ import * as E from '../../engine.js';
 
 export class Scenario {
 	constructor(byId, opts = {}) {
-		this.byId = Object.create(byId);           // local defs never pollute the shared DB
+		this.byId = { ...byId };                   // shallow copy: local defs never pollute the
+		                                           // shared DB, and Object.values() pools (discover,
+		                                           // conjure-random) still see the full card set
 		this.rng = opts.rng || (() => 0.4);
 		this.playerCount = 2;
 		this.keepDealtHands = false;
