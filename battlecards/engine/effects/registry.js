@@ -25,6 +25,7 @@ import {
 	spendMana, breakWeapon, resolveCombat, addCardToHand, syncCthun, degradeWeapon,
 	runBattlecry, kindredActive, firePonder,
 	applyRollEntry, targetSpec, legalTargets, runSpell,
+	fireEmerge, staticValue,
 	EXCAVATE_TIERS, EXCAVATE_LEGENDARIES, ALL_AZERITE_LEGENDARIES,
 } from '../../engine.js';
 import { damageCreature, healHero } from '../damage.js';
@@ -5652,4 +5653,546 @@ register('mimiron-assemble', ({ state, pi, target, source, enemies, scaled, hm, 
 				summon(state, pi, { id: 'token_v07tr0n', name: 'V-07-TR-0N', type: 'creature', cost: 0, rarity: 'legendary',
 					token: true, tribe: 'Mech', attack: 7, health: 8, keywords: ['charge', 'windfury'], description: 'A 7/8 Mech with Charge and Windfury.' });
 			}
+} });
+
+// ---------- batch 17 (PR 34): 45 more (729 total) ----------
+
+register('copy-summon', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => { {
+			// Crimson Expanse: summon a copy of the chosen creature at its
+			// CURRENT stats, optionally entering Dormant
+			const t = chosenCreature();
+			if (t) {
+				const copy = summon(state, pi, {
+					id: t.id, name: t.name, type: 'creature', cost: t.cost, rarity: t.rarity,
+					description: t.description, attack: t.attack, health: hp(t),
+					keywords: t.keywords.filter(k => !t.auraKeywords.includes(k)),
+					tribe: t.tribe, deathrattle: t.deathrattle,
+				});
+				if (copy && e.dormant) {
+					copy.dormantLeft = e.dormant;
+					emit(state, { type: 'dormant', player: pi, uid: copy.uid, turns: e.dormant });
+				}
+			}
+} });
+
+register('planeshift', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => { {
+			// shift the arena to a random different plane: old plane departs, new arrives
+			const pool = Object.values(state.cardsById).filter(d => d.type === 'plane' && d.id !== state.plane);
+			if (pool.length) {
+				const old = state.plane, oldDef = old ? state.cardsById[old] : null;
+				if (oldDef && oldDef.departure) execEffects(state, pi, oldDef.departure, null, null);
+				const next = pool[Math.floor(state.rng() * pool.length)];
+				state.plane = next.id;
+				emit(state, { type: 'planeshifted', player: pi, from: old, to: next.id, name: next.name });
+				if (next.arrival) execEffects(state, pi, next.arrival, null, null);
+			}
+} });
+
+register('copy-random-hand-card', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => { {
+			// Nobleman: create a copy of a random card in your hand (Cloud Serpent: of a tribe, e.g. "Elemental|Dragon")
+			const p = state.players[pi];
+			const pool = p.hand.filter(c => c !== source && state.cardsById[c.id] && (!e.tribe || e.tribe.split('|').some(tr => (c.tribe || '').includes(tr))) && (!e.school || schoolOf(c) === e.school)); // Malevolent Mutant: a Fel spell
+			if (pool.length && p.hand.length < MAX_HAND) { const src = pool[Math.floor(state.rng() * pool.length)]; const nc = instantiate(state.cardsById[src.id], pi); nc.zone = 'hand'; p.hand.push(nc); emit(state, { type: 'conjure', player: pi, card: nc, color: null }); }
+} });
+
+register('buff-all-tribe', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => { {
+			// Grand Totem Eys'or: +X/+X to a tribe in hand, deck and battlefield
+			const p = state.players[pi];
+			for (const c of p.board) if (c !== source && !isDead(c) && c.type !== 'location' && (c.tribe || '').includes(e.tribe)) buffCreature(c, e.attack || 0, e.health || 0);
+			for (const c of p.hand) if (c.type === 'creature' && (c.tribe || '').includes(e.tribe)) { c.attack += e.attack || 0; c.maxHealth += e.health || 0; }
+			p.drawBuffTribe = p.drawBuffTribe || {};
+			p.drawBuffTribe[e.tribe] = { attack: (p.drawBuffTribe[e.tribe]?.attack || 0) + (e.attack || 0), health: (p.drawBuffTribe[e.tribe]?.health || 0) + (e.health || 0) };
+} });
+
+register('copy-to-all-zones', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => { {
+			// Sathrovarr: add a copy of a chosen friendly creature to hand, deck, and board
+			const t = chosenCreature();
+			const p = state.players[pi];
+			if (t && state.cardsById[t.id]) {
+				if (p.hand.length < MAX_HAND) { const c = instantiate(state.cardsById[t.id], pi); c.zone = 'hand'; p.hand.push(c); emit(state, { type: 'conjure', player: pi, card: c, color: null }); }
+				p.deck.push(t.id); for (let i = p.deck.length - 1; i > 0; i--) { const j = Math.floor(state.rng() * (i + 1)); [p.deck[i], p.deck[j]] = [p.deck[j], p.deck[i]]; }
+				if (p.board.filter(c => !isDead(c)).length < 7) summon(state, pi, state.cardsById[t.id]);
+			}
+} });
+
+register('swap-stats-two', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => { {
+			// Chillin' Vol'jin (approx): swap the stats of the chosen minion with a random OTHER minion
+			const t = chosenCreature();
+			if (t) { const pool = []; for (const pl of state.players) for (const c of pl.board) if (c !== t && !isDead(c) && c.type !== 'location') pool.push(c); if (pool.length) { const t2 = pool[Math.floor(state.rng() * pool.length)]; const a = t.attack, h2 = hp(t); t.attack = t2.attack; t.maxHealth = hp(t2); t.damage = 0; t2.attack = a; t2.maxHealth = h2; t2.damage = 0; emit(state, { type: 'buff', uid: t.uid, attack: t.attack, hp: hp(t) }); emit(state, { type: 'buff', uid: t2.uid, attack: t2.attack, hp: hp(t2) }); } }
+} });
+
+register('summon-from-deck-suicide', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => { {
+			// Maxima Blastenheimer: summon a minion from your deck; it attacks the enemy hero, then dies
+			const p = state.players[pi];
+			const idxs = p.deck.map((id, i) => [id, i]).filter(([id]) => state.cardsById[id]?.type === 'creature');
+			if (idxs.length) {
+				const [id, di] = idxs[Math.floor(state.rng() * idxs.length)];
+				p.deck.splice(di, 1);
+				const c = summon(state, pi, state.cardsById[id]);
+				if (c) { const foe = enemies[0]; if (foe != null) resolveCombat(state, pi, c.uid, { type: 'hero', player: foe }); if (!isDead(c)) { c.damage = c.maxHealth; emit(state, { type: 'destroy', uid: c.uid }); sweepDeaths(state); } }
+			}
+} });
+
+register('replace-spells-random', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => { {
+			// Lilian Voss: replace every spell in your hand with a random spell
+			const p = state.players[pi];
+			const n = p.hand.filter(c => isSpellType(c)).length;
+			p.hand = p.hand.filter(c => !isSpellType(c));
+			const pool = Object.values(state.cardsById).filter(d => isSpellType(d) && !d.token && d.collectible !== false && !(d.colors && d.colors.length));
+			for (let i = 0; i < n && p.hand.length < MAX_HAND && pool.length; i++) {
+				const rd = pool[Math.floor(state.rng() * pool.length)];
+				const c = instantiate(rd, pi); c.zone = 'hand'; p.hand.push(c);
+				emit(state, { type: 'conjure', player: pi, card: c, color: null });
+			}
+} });
+
+register('draw-foreign', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => { {
+			// Dreamwarden: draw a deck card that didn't start there, then grow
+			const p = state.players[pi];
+			const idx = p.deck.findIndex(id => !(p.startingDeckIds || []).includes(id));
+			if (idx >= 0 && p.hand.length < MAX_HAND) {
+				const [id] = p.deck.splice(idx, 1);
+				const card = instantiate(state.cardsById[id], pi);
+				card.zone = 'hand'; card.fromDeck = true; p.hand.push(card);
+				emit(state, { type: 'draw', player: pi, card });
+				if (source && !isDead(source)) { source.attack += e.attack || 0; source.maxHealth += e.health || 0; emit(state, { type: 'buff', uid: source.uid, attack: source.attack, hp: hp(source) }); }
+			}
+} });
+
+register('voidwalker-envy', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => { {
+			// Witch of the Arch-Thief: keep summoning while the enemy is ahead on minions
+			const p = state.players[pi];
+			let guard = 8;
+			const enemyCount = () => Math.max(0, ...enemies.map(o => state.players[o].board.filter(c => !isDead(c) && c.type !== 'location').length));
+			const mine = () => p.board.filter(c => !isDead(c) && c.type !== 'location').length;
+			do {
+				summon(state, pi, { id: 'token_voidwalker', name: 'Voidwalker', type: 'creature', cost: 1, attack: 1, health: 3, tribe: 'Demon', rarity: 'common', token: true, keywords: ['taunt'], description: 'Taunt' });
+			} while (guard-- > 0 && enemyCount() > mine() && mine() < 7);
+} });
+
+register('beatrix', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => { {
+			// Commander Beatrix: ten copies of a 2-Cost minion join your deck
+			const p = state.players[pi];
+			const pool = Object.values(state.cardsById).filter(dd => dd.type === 'creature' && (dd.cost || 0) === 2 && !dd.token && dd.collectible !== false && !(dd.colors && dd.colors.length));
+			if (pool.length) {
+				const def = pool[Math.floor(state.rng() * pool.length)];
+				for (let n = 0; n < 10; n++) p.deck.push(def.id);
+				for (let i = p.deck.length - 1; i > 0; i--) { const j = Math.floor(state.rng() * (i + 1)); [p.deck[i], p.deck[j]] = [p.deck[j], p.deck[i]]; }
+				emit(state, { type: 'beatrixPick', player: pi, name: def.name });
+			}
+} });
+
+register('ivus', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => { {
+			// Ivus, the Forest Lord: spend the rest of your Mana; per crystal, a random bonus
+			const p = state.players[pi];
+			let n = availableMana(p);
+			p.mana.cur = Math.max(0, p.mana.cur - n); p.mana.bonus = 0;
+			for (let i = 0; i < n && source && !isDead(source); i++) {
+				const roll = Math.floor(state.rng() * 4);
+				if (roll === 0) buffCreature(source, 2, 2);
+				else { const kw = ['rush', 'divine_shield', 'taunt'][roll - 1]; if (!source.keywords.includes(kw)) { source.keywords.push(kw); if (kw === 'divine_shield') source.shield = true; } }
+			}
+			emit(state, { type: 'buff', uid: source.uid, attack: source.attack, hp: hp(source) });
+} });
+
+register('toki-spells', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => { {
+			// Timelooper Toki: 3 random spells; play all 3 for another Toki
+			const p = state.players[pi];
+			const pool = Object.values(state.cardsById).filter(dd => isSpellType(dd) && !dd.token && dd.collectible !== false && !(dd.colors && dd.colors.length));
+			const group = source ? source.uid : Math.floor(state.rng() * 1e9);
+			for (let i = 0; i < 3 && pool.length && p.hand.length < MAX_HAND; i++) {
+				const def = pool.splice(Math.floor(state.rng() * pool.length), 1)[0];
+				const c = instantiate(def, pi); c.zone = 'hand'; c._tokiGroup = group;
+				p.hand.push(c);
+				emit(state, { type: 'conjure', player: pi, card: c, color: null });
+			}
+} });
+
+register('damage-chain-neighbors', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => { {
+			// The Lurker Below: deal damage to an enemy minion; if it dies, hit a neighbor, repeat
+			let t = chosenCreature();
+			let guard = 12;
+			while (t && !isDead(t) && guard-- > 0) {
+				const owner = state.players[t.controller];
+				const idx = owner.board.indexOf(t);
+				damageCreature(state, t, e.value || 3, source);
+				if (!isDead(t)) break;
+				// pick a living neighbor of the one that just died
+				const neighbors = [owner.board[idx - 1], owner.board[idx + 1]].filter(c => c && !isDead(c) && c.type !== 'location');
+				t = neighbors.length ? neighbors[Math.floor(state.rng() * neighbors.length)] : null;
+			}
+			sweepDeaths(state);
+} });
+
+register('transform-deck-tribe', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => { {
+			// Lady Prestor: transform minions in your deck into random `tribe` (keep Cost)
+			const p = state.players[pi];
+			const pool = Object.values(state.cardsById).filter(d => d.type === 'creature' && (d.tribe || '').includes(e.tribe) && !d.token && d.collectible !== false && !d.companion && !d.commander && !(d.colors && d.colors.length));
+			if (pool.length) p.deck = p.deck.map(id => { const d = state.cardsById[id]; if (!d || d.type !== 'creature') return id; const cands = pool.filter(x => (x.cost || 0) === (d.cost || 0)); return cands.length ? cands[Math.floor(state.rng() * cands.length)].id : pool[Math.floor(state.rng() * pool.length)].id; });
+} });
+
+register('destroy-weapon', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => { {
+			// hit the chosen enemy's weapon if they have one, else any armed enemy
+			const armed = enemies.filter(o => state.players[o].weapon);
+			const chosen = target?.type === 'hero' && target.player !== pi ? target.player : null;
+			const victim = (chosen != null && state.players[chosen].weapon) ? chosen
+				: armed.length ? armed[Math.floor(state.rng() * armed.length)] : null;
+			if (victim != null) {
+				if (e.gainArmorEqAttack) gainArmor(state, pi, state.players[victim].weapon.attack || 0); // Gluttonous Ooze
+				if (e.drawDurability) drawCards(state, pi, state.players[victim].weapon.durability);
+				breakWeapon(state, victim, true);
+			}
+} });
+
+register('vyranoth', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => { {
+			// Vyranoth: a 100-Cost starting-minion deck splits 100 stats into it
+			const p = state.players[pi];
+			const total = (p.startingDeckIds || []).reduce((s2, id) => { const dd = state.cardsById[id]; return s2 + ((dd && dd.type === 'creature') ? (dd.cost || 0) : 0); }, 0);
+			if (total === 100) {
+				const minions = p.deck.filter(id => state.cardsById[id]?.type === 'creature');
+				for (let n = 0; n < 25 && minions.length; n++) {
+					const id = minions[Math.floor(state.rng() * minions.length)];
+					(p.deckIdBuffs = p.deckIdBuffs || []).push({ id, attack: 2, health: 2 });
+				}
+				emit(state, { type: 'vyranothSplit', player: pi });
+			}
+} });
+
+register('enemy-summon-from-hand-and-damage', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => { {
+			// Wild Bloodstinger: pull a creature from the opponent's hand into play, then hit it
+			const o = enemies[0];
+			if (o != null) {
+				const op = state.players[o];
+				const pool = op.hand.filter(c => c.type === 'creature');
+				if (pool.length && op.board.filter(c => !isDead(c)).length < 7) {
+					const c = pool[Math.floor(state.rng() * pool.length)];
+					op.hand = op.hand.filter(x => x !== c);
+					c.zone = 'board'; c.sick = true; op.board.push(c);
+					emit(state, { type: 'summon', player: o, card: c }); fireOngoing(state, o, 'summoned', { minion: c }); recomputeAuras(state);
+					damageCreature(state, c, e.value || 5, source);
+				}
+			}
+} });
+
+register('buff-self-attack-random-enemy', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => { {
+			// Mish-Mash Mosher / Barricade Basher: gain +N Attack (and Health) and attack a random enemy minion (guarded chain)
+			if (source && !isDead(source)) {
+				buffCreature(source, e.attack || 1, e.health || 0);
+				state._mmDepth = (state._mmDepth || 0) + 1;
+				if (state._mmDepth < 12) {
+					const pool = [];
+					for (const o of enemies) for (const c of state.players[o].board) if (!isDead(c) && c.type !== 'location' && !c.stealthed && c.dormantLeft <= 0) pool.push({ type: 'creature', uid: c.uid, player: o });
+					if (pool.length) resolveCombat(state, pi, source.uid, pool[Math.floor(state.rng() * pool.length)]);
+				}
+				state._mmDepth--;
+			}
+} });
+
+register('steal-health', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => { {
+			// Herald of Shadows: steal Health from a minion (it loses Health, this gains it)
+			let t = chosenCreature();
+			if (e.random) { const pool = enemies.flatMap(o => state.players[o].board.filter(c => !isDead(c) && c.type !== 'location')); t = pool.length ? pool[Math.floor(state.rng() * pool.length)] : null; } // K'ara, the Dark Star
+			if (t && source && !isDead(source)) { const amt = Math.min(e.value || 2, hp(t) - 1 >= 0 ? (e.value || 2) : 0); t.maxHealth = Math.max(1, t.maxHealth - (e.value || 2)); t.damage = Math.min(t.damage, t.maxHealth); buffCreature(source, 0, e.value || 2); emit(state, { type: 'buff', uid: t.uid, attack: t.attack, hp: hp(t) }); }
+} });
+
+register('summon-starship-copy', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => { {
+			// Gravitational Displacer, when launched: summon a copy of the Starship
+			if (source && state.cardsById['gdb_the_starship']) {
+				const cp = summon(state, pi, {
+					...state.cardsById['gdb_the_starship'],
+					attack: source.attack, health: source.maxHealth,
+					keywords: source.keywords.filter(k => k !== 'deathrattle'),
+					description: source.description,
+				});
+				if (cp) {
+					if (source.deathrattle) { cp.deathrattle = JSON.parse(JSON.stringify(source.deathrattle)); if (!cp.keywords.includes('deathrattle')) cp.keywords.push('deathrattle'); }
+					if (source.ongoings) cp.ongoings = JSON.parse(JSON.stringify(source.ongoings));
+				}
+			}
+} });
+
+register('shuffle-died-copies', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => { {
+			// Raza the Resealed: shuffle copies of N random died friendly minions into your deck, cost 0
+			const p = state.players[pi];
+			const pool = [...new Set(p.deathLogIds)].map(id => state.cardsById[id]).filter(d => d && d.type === 'creature' && !d.token);
+			for (let n = 0; n < (e.count || 5) && pool.length; n++) { const def = pool[Math.floor(state.rng() * pool.length)]; p.deck.push(def.id); }
+			for (let i = p.deck.length - 1; i > 0; i--) { const j = Math.floor(state.rng() * (i + 1)); [p.deck[i], p.deck[j]] = [p.deck[j], p.deck[i]]; }
+			emit(state, { type: 'shuffle', player: pi }); // NB: the (0)-cost reduction on the shuffled copies is not modeled per-copy
+} });
+
+register('recast-own-last-spell', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => { {
+			// Chatty Macaw: recast the last spell you cast (at a random enemy if it targets)
+			const last = state.players[pi].lastSpellPlayed;
+			const def = last && state.cardsById[last.id];
+			if (def && isSpellType(def)) { let tgt = last.target || null; const foesM = []; for (const o of enemies) for (const c of state.players[o].board) if (!isDead(c) && c.type !== 'location') foesM.push({ type: 'creature', uid: c.uid, player: o }); if (foesM.length) tgt = foesM[Math.floor(state.rng() * foesM.length)]; else { const eh = enemyHero(); if (eh != null) tgt = { type: 'hero', player: eh }; } execEffects(state, pi, JSON.parse(JSON.stringify(def.effects || [])), tgt, source); }
+} });
+
+register('devour-enemy', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => { {
+			// Insatiable Devourer: destroy a chosen enemy minion and gain its stats (Infuse: neighbors too)
+			const t = chosenCreature();
+			if (t && t.controller !== pi && source && source.zone === 'board' && !isDead(source)) {
+				const victims = [t];
+				if (e.neighbors) { const b = state.players[t.controller].board; const i = b.indexOf(t); for (const j of [i - 1, i + 1]) { const nb = b[j]; if (nb && !isDead(nb) && nb.type !== 'location') victims.push(nb); } }
+				let a = 0, h2 = 0;
+				for (const v of victims) { a += v.attack; h2 += hp(v); v.damage = v.maxHealth; v.shield = false; emit(state, { type: 'destroy', uid: v.uid }); }
+				buffCreature(source, a, h2);
+			}
+} });
+
+register('gy-return', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => { {
+			// graveyard recursion: pick a fallen card back to hand or battlefield
+			const p = state.players[pi];
+			const pool = p.graveyard.filter(c => {
+				const d = state.cardsById[c.id];
+				return d && !d.token && d.collectible !== false && (!e.cardType || d.type === e.cardType)
+					&& (e.maxCost == null || (d.cost || 0) <= e.maxCost)
+					&& (!e.tribe || (d.tribe || '').includes(e.tribe));
+			});
+			const ids = [...new Set(pool.map(c => c.id))];
+			if (ids.length) {
+				state.pickQueue.push({ player: pi, ids: ids.slice(0, 8), mode: 'gy',
+					to: e.to || 'hand', title: 'Return from the graveyard' });
+				emit(state, { type: 'pickStart', player: pi });
+			}
+} });
+
+register('fyrakk-blaze', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => { {
+			// Fyrakk: cast N Mana worth of random Fire spells
+			let budget = e.budget || 15;
+			const pool = Object.values(state.cardsById).filter(d => isSpellType(d) && schoolOf(d) === 'Fire' && !d.token && d.collectible !== false && !(d.colors && d.colors.length) && d.effects);
+			let guard = 30;
+			while (budget > 0 && guard-- > 0) {
+				const affordable = pool.filter(d => (d.cost || 0) <= budget && (d.cost || 0) > 0);
+				if (!affordable.length) break;
+				const def = affordable[Math.floor(state.rng() * affordable.length)];
+				budget -= def.cost || 1;
+				execEffects(state, pi, JSON.parse(JSON.stringify(def.effects)), null, null);
+				if (state.over) return;
+			}
+} });
+
+register('swap-with-enemy-deck-minion', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => { {
+			// Soul Seeker: swap this with a random minion from the opponent's deck
+			const foe = enemies[0];
+			if (source && foe != null) { const fp = state.players[foe]; const idxs = fp.deck.map((id, i) => [id, i]).filter(([id]) => state.cardsById[id]?.type === 'creature' && !state.cardsById[id].token); if (idxs.length) { const [id, i] = idxs[Math.floor(state.rng() * idxs.length)]; fp.deck.splice(i, 1); const p = state.players[pi]; p.board = p.board.filter(c => c !== source); if (state.cardsById[source.id]) fp.deck.push(source.id); source.zone = 'gone'; summon(state, pi, state.cardsById[id]); emit(state, { type: 'bounce', uid: source.uid, player: pi, name: source.name }); } }
+} });
+
+register('grant-deathrattle', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => { {
+			const targets = e.target === 'creature' ? [chosenCreature()].filter(Boolean)
+				: e.target === 'self' ? (source && source.zone === 'board' && !isDead(source) ? [source] : []) // Fatespinner
+				: e.target === 'friendly-others' ? state.players[pi].board.filter(c => c !== source && !isDead(c) && c.type !== 'location' && (!e.tribe || (c.tribe || '').includes(e.tribe))) // Rustsworn Cultist / Braingill (tribe filter)
+				: state.players[pi].board.filter(c => !isDead(c));
+			for (const c of targets) {
+				c.deathrattle = (c.deathrattle || []).concat(JSON.parse(JSON.stringify(e.effects)));
+				if (!c.keywords.includes('deathrattle')) c.keywords.push('deathrattle');
+			}
+} });
+
+register('gain-deathrattles-from-died', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => { {
+			// Da Undatakah: gain the Deathrattles of N friendly creatures that died this game
+			const p = state.players[pi];
+			const pool = [...new Set(p.deathLogIds)].map(id => state.cardsById[id]).filter(d => d && d.type === 'creature' && d.deathrattle && d.deathrattle.length);
+			for (let i = 0; i < (e.count || 3) && pool.length && source; i++) {
+				const def = pool.splice(Math.floor(state.rng() * pool.length), 1)[0];
+				source.deathrattle = [...(source.deathrattle || []), ...JSON.parse(JSON.stringify(def.deathrattle))];
+			}
+			if (source && source.deathrattle && source.deathrattle.length && !source.keywords.includes('deathrattle')) source.keywords.push('deathrattle');
+} });
+
+register('buff-self-per-damaged-then-attack-all', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => { {
+			// Decimator Olgra: +1/+1 per damaged minion, then attack all enemies
+			if (source) {
+				let n = 0;
+				for (const pl of state.players) for (const c of pl.board) if (!isDead(c) && c.damage > 0 && c.type !== 'location') n++;
+				if (n) buffCreature(source, (e.attack || 1) * n, (e.health || 1) * n);
+				for (const o of enemies) { if (isDead(source)) break; for (const c of [...state.players[o].board]) { if (isDead(source)) break; if (!isDead(c) && c.type !== 'location' && c.dormantLeft <= 0) resolveCombat(state, pi, source.uid, { type: 'creature', uid: c.uid, player: o }); } if (!isDead(source)) resolveCombat(state, pi, source.uid, { type: 'hero', player: o }); }
+			}
+} });
+
+register('become-friendly-tribe-copy', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => { {
+			// Shan'do Wildclaw: transform into a copy of a random friendly minion of a tribe
+			if (source) {
+				const pool = state.players[pi].board.filter(c => c !== source && !isDead(c) && (c.tribe || '').includes(e.tribe));
+				if (pool.length) {
+					const base = state.cardsById[pool[Math.floor(state.rng() * pool.length)].id];
+					if (base) { const tok = instantiate(JSON.parse(JSON.stringify(base)), pi); tok.zone = 'board'; tok.sick = source.sick; const board = state.players[pi].board; board[board.indexOf(source)] = tok; source.zone = 'gone'; emit(state, { type: 'transformed', uid: source.uid, player: pi, from: source.name, card: tok }); recomputeAuras(state); }
+				}
+			}
+} });
+
+register('cast-enemy-random-spell', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => { {
+			// Unseen Saboteur: an opponent casts a random spell from their hand at random targets
+			const o = enemies[0];
+			if (o != null) {
+				const op = state.players[o];
+				const spells = op.hand.filter(c => isSpellType(c));
+				if (spells.length) {
+					const sp = spells[Math.floor(state.rng() * spells.length)];
+					op.hand = op.hand.filter(c => c !== sp);
+					const spec = targetSpec(state, o, sp, null);
+					let tgt = null;
+					if (spec) { const legal = legalTargets(state, o, spec); if (legal.length) tgt = legal[Math.floor(state.rng() * legal.length)]; }
+					if (!spec || tgt || !spec.required) { runSpell(state, o, sp, tgt, null); sweepDeaths(state); }
+				}
+			}
+} });
+
+register('cast-highest-hand-spell', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => { {
+			// Clumsy Courier: cast the highest-Cost spell from your hand (random target)
+			const p = state.players[pi];
+			let best = null; for (const c of p.hand) if (isSpellType(c) && (!e.school || schoolOf(c) === e.school) && (!best || (c.cost || 0) > (best.cost || 0))) best = c; // e.school -> Felwalker
+			if (best) { p.hand = p.hand.filter(c => c !== best); const spec = targetSpec(state, pi, best, null); let tgt = null; if (spec) { const legal = legalTargets(state, pi, spec); tgt = legal.length ? legal[Math.floor(state.rng() * legal.length)] : null; } emit(state, { type: 'conjure', player: pi, card: best, color: null }); runSpell(state, pi, best, tgt, null); sweepDeaths(state); }
+} });
+
+register('damage-random-enemy-by-attack', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => { {
+			// Biopod: deal damage equal to this minion's Attack to a random enemy
+			// (count = independent hits; minionsOnly restricts to enemy minions — Felfire Thrusters)
+			if (source) {
+				const amt = source.attack || 0;
+				for (let i = 0; i < (e.count || 1) && amt > 0; i++) {
+					const pool = []; for (const o of enemies) { for (const c of state.players[o].board) if (!isDead(c) && c.type !== 'location') pool.push({ o, c }); if (!e.minionsOnly) pool.push({ o, c: null }); }
+					if (!pool.length) break;
+					const pick = pool[Math.floor(state.rng() * pool.length)];
+					if (pick.c) damageCreature(state, pick.c, amt, source); else damageHero(state, pick.o, amt, pi);
+				}
+			}
+} });
+
+register('discard-random-tribe-remember', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => { {
+			// Amorphous Slime: discard a random minion of a tribe and remember it for a later summon
+			const p = state.players[pi];
+			const pool = p.hand.filter(c => c.type === 'creature' && (!e.tribe || (c.tribe || '').includes(e.tribe)));
+			if (pool.length && source) { const c = pool[Math.floor(state.rng() * pool.length)]; p.hand = p.hand.filter(x => x !== c); if (!c.token) p.discardLogIds.push(c.id); source.rememberedId = c.id; emit(state, { type: 'discard', player: pi, card: c }); }
+		// ('summon-remembered' is handled earlier in the chain — the rememberedId
+		// variant that lived here was merged into that branch after the duplicate
+		// shadowed it; see tests/tools/twin-audit.mjs)
+} });
+
+register('open-pack-play', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => { {
+			// Avatar of Hearthstone: open a pack and PLAY everything in it
+			const pool = Object.values(state.cardsById).filter(dd => (dd.type === 'creature' || isSpellType(dd)) && !dd.token && dd.collectible !== false && !(dd.colors && dd.colors.length));
+			const legendaries = pool.filter(dd => dd.rarity === 'legendary');
+			for (let n = 0; n < 5; n++) {
+				const src = n === 0 && legendaries.length ? legendaries : pool;
+				const def = src[Math.floor(state.rng() * src.length)];
+				if (!def) break;
+				if (def.type === 'creature') summon(state, pi, def);
+				else if (def.effects) execEffects(state, pi, JSON.parse(JSON.stringify(def.effects)), null, null);
+				if (state.over) return;
+			}
+} });
+
+register('damage-then', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => { {
+			// deal damage, then branch on whether the creature survived
+			let v = e.value;
+			if (source && (source.type === 'sorcery' || source.type === 'instant')) {
+				v += staticValue(state.players[pi], 'spell-damage') + (state.players[pi].nextSpellDamageBonus || 0) + (source.bonusSpellDamage || 0);
+			}
+			const t = chosenCreature();
+			if (t) {
+				damageCreature(state, t, v, null);
+				const branch = isDead(t) ? e.ifDies : e.ifSurvives;
+				if (branch) execEffects(state, pi, branch, target, source);
+			} else if (target?.type === 'hero') {
+				damageHero(state, target.player, v, pi);
+				if (e.ifSurvives) execEffects(state, pi, e.ifSurvives, target, source); // heroes survive
+			}
+} });
+
+register('vectus', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => { {
+			// Vectus: summon two 1/1 Whelps, each gains a Deathrattle from a minion that died this game
+			const drPool = [...new Set(state.players[pi].deathLogIds)].map(id => state.cardsById[id]).filter(d => d && d.deathrattle && d.deathrattle.length);
+			for (let n = 0; n < 2; n++) {
+				const c = summon(state, pi, { id: 'sch_whelp', name: 'Whelp', type: 'creature', cost: 1, token: true, rarity: 'common', tribe: 'Dragon', attack: 1, health: 1, description: 'A 1/1 Whelp.' });
+				if (c && drPool.length) { const d = drPool[Math.floor(state.rng() * drPool.length)]; c.deathrattle = JSON.parse(JSON.stringify(d.deathrattle)); if (!c.keywords.includes('deathrattle')) c.keywords.push('deathrattle'); }
+			}
+} });
+
+register('conjure-by-attack', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => { {
+			// Al'Akir: get e.count creatures whose Cost equals this creature's Attack
+			const pcost = source ? source.attack : 0;
+			const pp = state.players[pi];
+			const pool = Object.values(state.cardsById).filter(d => d.type === 'creature'
+				&& (d.cost || 0) === pcost && !d.token && d.collectible !== false && !d.companion && !d.commander && !(d.colors && d.colors.length));
+			for (let n = 0; n < (e.count || 1) && pool.length; n++) {
+				const def = pool[Math.floor(state.rng() * pool.length)];
+				const card = instantiate(def, pi); card.zone = 'hand';
+				if (e.costTo != null) card.cost = e.costTo;
+				pp.hand.push(card); emit(state, { type: 'conjure', player: pi, card, color: null });
+			}
+} });
+
+register('conjure-cost', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => { {
+			// Discover-a-cost approximation: a random card of that cost
+			const p = state.players[pi];
+			const ccCost = e.heraldScaled ? hm() : e.cost;
+			const pool = Object.values(state.cardsById).filter(d =>
+				(d.cost || 0) === ccCost && d.type !== 'land' && !d.token && d.collectible !== false
+				&& !d.companion && !d.commander && !(d.colors && d.colors.length));
+			if (pool.length && p.hand.length < MAX_HAND) {
+				const card = instantiate(pool[Math.floor(state.rng() * pool.length)], pi);
+				card.zone = 'hand';
+				if (e.setCost != null) card.cost = e.setCost;
+				p.hand.push(card);
+				emit(state, { type: 'conjure', player: pi, card, color: null });
+				fireEmerge(state, pi, card);
+			}
+} });
+
+register('copy-to-deck', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => { {
+			// Manic Soulcaster: shuffle a copy of a chosen friendly creature into your deck
+			const t = chosenCreature();
+			const p = state.players[pi];
+			if (t && state.cardsById[t.id]) {
+				const elekk = p.board.filter(c => c.id === 'augmented_elekk' && !isDead(c)).length; // Augmented Elekk: an extra copy per shuffle
+				const total = (e.count || 1) * (1 + elekk);
+				for (let n = 0; n < total; n++) p.deck.push(t.id);
+				for (let i = p.deck.length - 1; i > 0; i--) { const j = Math.floor(state.rng() * (i + 1)); [p.deck[i], p.deck[j]] = [p.deck[j], p.deck[i]]; }
+				emit(state, { type: 'shuffledIntoDeck', player: pi, cardId: t.id }); fireOngoing(state, pi, 'card-shuffled', { cardId: t.id });
+			}
+} });
+
+register('crumble', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => { {
+			// Crumblecrusher: a random enemy minion, location, and weapon all crumble
+			for (const o of enemies) {
+				const op = state.players[o];
+				const minions = op.board.filter(c => c.type === 'creature' && !isDead(c));
+				if (minions.length) { const t = minions[Math.floor(state.rng() * minions.length)]; t.damage = t.maxHealth; t.shield = false; emit(state, { type: 'destroy', uid: t.uid }); }
+				const locs = op.board.filter(c => c.type === 'location');
+				if (locs.length) { const l = locs[Math.floor(state.rng() * locs.length)]; op.board = op.board.filter(x => x !== l); emit(state, { type: 'destroy', uid: l.uid }); }
+				if (op.weapon) breakWeapon(state, o, true);
+				break;
+			}
+			sweepDeaths(state);
+} });
+
+register('accretion-mill', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => { {
+			// Blazing Accretion: destroy your top 3 cards; Fire spells and Elementals are drawn instead
+			const p = state.players[pi];
+			for (let n = 0; n < (e.count || 3) && p.deck.length; n++) {
+				const id = p.deck.pop();
+				const def = state.cardsById[id];
+				const keep = def && (((def.tribe || '').includes('Elemental')) || (isSpellType(def) && schoolOf(def) === 'Fire'));
+				if (keep && p.hand.length < MAX_HAND) {
+					const c = instantiate(def, pi); c.zone = 'hand'; c.fromDeck = true; p.hand.push(c);
+					emit(state, { type: 'draw', player: pi, card: c });
+				} else if (def) {
+					toGraveyard(state, pi, instantiate(def, pi));
+					emit(state, { type: 'milled', player: pi, name: def.name });
+				}
+			}
+} });
+
+register('silence', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => { {
+			if (e.target === 'all-others') { for (const pl of state.players) for (const c of [...pl.board]) if (c !== source && !isDead(c) && c.type === 'creature') silenceCreature(state, c); } // Medivh the Hallowed
+			else if (e.target === 'enemy-creatures') { for (const o of enemies) for (const c of state.players[o].board) silenceCreature(state, c); }
+			else if (e.target === 'friendly-others') { for (const c of [...state.players[pi].board]) if (c !== source && !isDead(c)) silenceCreature(state, c); } // Wailing Soul
+			else if (e.target === 'self') { if (source && !isDead(source)) silenceCreature(state, source); } // Overzealous Healer (Spellburst)
+			else { const t = chosenCreature(); if (t) silenceCreature(state, t); }
+} });
+
+register('swap-random-hand-cards', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => { {
+			// Theotar (approx): swap a random card between each player's hand
+			const foe = enemies[0], p = state.players[pi];
+			if (foe != null) { const fp = state.players[foe]; const mine = p.hand.filter(c => c !== source); if (mine.length && fp.hand.length) { const mi = p.hand.indexOf(mine[Math.floor(state.rng() * mine.length)]); const fi = Math.floor(state.rng() * fp.hand.length); const myCard = p.hand[mi], foeCard = fp.hand[fi]; const toMe = instantiate(state.cardsById[foeCard.id] || foeCard, pi); toMe.zone = 'hand'; const toFoe = instantiate(state.cardsById[myCard.id] || myCard, foe); toFoe.zone = 'hand'; p.hand[mi] = toMe; fp.hand[fi] = toFoe; emit(state, { type: 'conjure', player: pi, card: toMe, color: null }); } }
 } });
