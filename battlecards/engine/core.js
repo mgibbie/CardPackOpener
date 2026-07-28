@@ -3046,6 +3046,14 @@ export function resolvePick(state, id) {
 		emit(state, { type: 'enemyDeckTopSet', player: pend.player, name: def ? def.name : chosen });
 		return true;
 	}
+	// Ritual of Life / Cactus Construct: ALSO summon an X/Y copy of the pick
+	// (the pick itself continues to the hand via the default path below)
+	if (pend.summonCopy && def && def.type === 'creature') {
+		const cd = JSON.parse(JSON.stringify(def));
+		if (pend.summonCopy.attack != null) cd.attack = pend.summonCopy.attack;
+		if (pend.summonCopy.health != null) cd.health = pend.summonCopy.health;
+		summon(state, pend.player, cd);
+	}
 	// Kaldorei Cultivator: the pick goes to the BOTTOM of your deck carrying a buff
 	if (pend.toDeckBottomBuff) {
 		if (def) {

@@ -1316,6 +1316,13 @@ register('tutor', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, 
 				if (e.spellDamage) card.bonusSpellDamage = (card.bonusSpellDamage || 0) + e.spellDamage; // Volcanic Thrasher (Kindred): the drawn spell gets Spell Damage +2
 				if (e.setAttack != null) card.attack = e.setAttack; // Jepetto Joybuzz: set to 1/1, cost 1
 				if (e.setHealth != null) card.maxHealth = e.setHealth;
+				if (e.summonCopy) { // Searing Reflection: also summon an X/Y copy of the draw
+					const cd = JSON.parse(JSON.stringify(state.cardsById[id]));
+					if (e.summonCopy.attack != null) cd.attack = e.summonCopy.attack;
+					if (e.summonCopy.health != null) cd.health = e.summonCopy.health;
+					const cpy = summon(state, pi, cd);
+					if (cpy && e.summonCopy.grant && !cpy.keywords.includes(e.summonCopy.grant)) { cpy.keywords.push(e.summonCopy.grant); if (e.summonCopy.grant === KW.DIVINE_SHIELD) cpy.shield = true; }
+				}
 				if (e.setCost != null) card.cost = e.setCost;
 				if (e.costMod) card.cost = Math.max(0, (card.cost || 0) + e.costMod); // Vashj Prime: reduce drawn spells' Cost
 				if (e.gainDeathrattle && source && card.deathrattle && card.deathrattle.length) { source.deathrattle = [...(source.deathrattle || []), ...JSON.parse(JSON.stringify(card.deathrattle))]; if (!source.keywords.includes('deathrattle')) source.keywords.push('deathrattle'); } // Necrium Apothecary

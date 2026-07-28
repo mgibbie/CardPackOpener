@@ -331,7 +331,17 @@ register('summon-copies-of-board', ({ state, pi, target, source, enemies, scaled
 			// Freya: summon a copy of each OTHER friendly minion
 			const p = state.players[pi];
 			const originals = p.board.filter(c => c !== source && !isDead(c) && c.type !== 'location');
-			for (const c of originals) { const def = state.cardsById[c.id]; if (def && p.board.filter(x => !isDead(x)).length < 7) summon(state, pi, def); }
+			for (const c of originals) {
+				const def = state.cardsById[c.id];
+				if (!def || p.board.filter(x => !isDead(x)).length >= 7) continue;
+				let d2 = def;
+				if (e.attack != null || e.health != null) { // Herald Volazj: 1/1 copies
+					d2 = JSON.parse(JSON.stringify(def));
+					if (e.attack != null) d2.attack = e.attack;
+					if (e.health != null) d2.health = e.health;
+				}
+				summon(state, pi, d2);
+			}
 });
 
 
@@ -739,7 +749,8 @@ register('summon-deck-minions-setstats', ({ state, pi, target, source, enemies, 
 			// Elise, Badlands Savior: summon set-stat copies of N random minions in your deck
 			const p = state.players[pi];
 			const pool = [...new Set(p.deck)].map(id => state.cardsById[id]).filter(d => d && d.type === 'creature' && !d.token);
-			for (let n = 0; n < (e.count || 4) && pool.length; n++) { if (p.board.filter(c => !isDead(c)).length >= 7) break; const def = JSON.parse(JSON.stringify(pool[Math.floor(state.rng() * pool.length)])); if (e.stats != null) { def.attack = e.stats; def.health = e.stats; } def.token = true; def.id = 'token_' + def.id; summon(state, pi, def); }
+			// e.each (Zerek's Cloning Gallery): one copy of EVERY distinct deck creature
+			for (let n = 0; n < (e.each ? pool.length : (e.count || 4)) && pool.length; n++) { if (p.board.filter(c => !isDead(c)).length >= 7) break; const def = JSON.parse(JSON.stringify(e.each ? pool[n] : pool[Math.floor(state.rng() * pool.length)])); if (e.stats != null) { def.attack = e.stats; def.health = e.stats; } def.token = true; def.id = 'token_' + def.id; summon(state, pi, def); }
 } });
 
 
@@ -781,7 +792,7 @@ register('copy-summon', ({ state, pi, target, source, enemies, scaled, hm, pickE
 			if (t) {
 				const copy = summon(state, pi, {
 					id: t.id, name: t.name, type: 'creature', cost: t.cost, rarity: t.rarity,
-					description: t.description, attack: t.attack, health: hp(t),
+					description: t.description, attack: e.attack ?? t.attack, health: e.health ?? hp(t), // e.attack/health: set-stat copies (Mirage Caller 1/1, PW: Replicate 5/5)
 					keywords: t.keywords.filter(k => !t.auraKeywords.includes(k)),
 					tribe: t.tribe, deathrattle: t.deathrattle,
 				});
@@ -1410,3 +1421,17 @@ register('resurrect-per-tribe', ({ state, pi, target, source, enemies, scaled, h
 	} while (false); // top-level `continue` = skip this effect (chain semantics)
 });
 
+register('summon-hand-copy', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => { {
+	// Kobold Illusionist / Posse Possession: summon an X/Y copy of a random
+	// creature in a hand (fromEnemy: a random opponent's)
+	const owner = e.fromEnemy && enemies.length ? enemies[Math.floor(state.rng() * enemies.length)] : pi;
+	const pool = state.players[owner].hand.filter(c => c.type === 'creature');
+	if (pool.length) {
+		const src2 = pool[Math.floor(state.rng() * pool.length)];
+		const base = state.cardsById[src2.id];
+		const cd = base ? JSON.parse(JSON.stringify(base)) : { id: src2.id, name: src2.name, type: 'creature', cost: src2.cost || 0, rarity: 'common', attack: src2.attack, health: src2.maxHealth, keywords: [...(src2.keywords || [])], description: src2.description || '' };
+		if (e.attack != null) cd.attack = e.attack;
+		if (e.health != null) cd.health = e.health;
+		summon(state, pi, cd);
+	}
+} });
