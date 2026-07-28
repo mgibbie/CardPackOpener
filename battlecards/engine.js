@@ -48,6 +48,11 @@ import { drawCards, toGraveyard, bouncePermanent } from './engine/zones.js';
 import { damageCreature, damageHero, gainArmor, healHero } from './engine/damage.js';
 import { isDead, sweepDeaths, runDeathrattle } from './engine/death.js';
 import { getEffectHandler } from './engine/effects/registry.js';
+import { fireOngoing, fireCreatureTrigger, ongoingCondOk, fireSecrets, fireSecretsAll } from './engine/triggers.js';
+export { fireOngoing, fireSecrets };
+import { recomputeAuras, staticValue } from './engine/auras.js';
+export { recomputeAuras, staticValue };
+
 
 export { isDead, sweepDeaths };
 
@@ -1033,7 +1038,17 @@ function summonColossalParts(state, pi, card) {
 
 // Herald scale: x1 for your 1st-2nd Herald, x2 for the 3rd-4th, x4 from the 5th on.
 // Herald-scaled appendages read this live, so more Heralds grow them.
-function heraldMult(count) { return count < 2 ? 1 : count < 4 ? 2 : 4; }
+export function heraldMult(count) { return count < 2 ? 1 : count < 4 ? 2 : 4; }
+
+// Blubber Baron: grows in hand whenever you summon a Battlecry creature
+function growBlubberBaron(state, pi, summoned) {
+	if (!summoned?.keywords?.includes('battlecry')) return;
+	for (const h of state.players[pi].hand) if (h.id === 'blubber_baron') {
+		h.attack += 1; h.maxHealth += 1;
+		emit(state, { type: 'buff', uid: h.uid, attack: h.attack, hp: hp(h) });
+	}
+}
+
 
 // C'Thun: its buffs are tracked on the player and persist "wherever it is". Any
 // C'Thun instance in hand or on board is kept in sync with the 6/6 base + tracker.
@@ -1053,227 +1068,11 @@ function syncCthun(state, pi) {
 // "Your (other) <tribe> have +X/+Y" — bonuses are recomputed whenever the
 // board changes and applied as deltas so base stats and buffs are untouched.
 // Losing an aura clamps damage so it can never kill the creature.
-export function recomputeAuras(state) {
-	// global auras ("ALL other Murlocs...") radiate across every board
-	const globalSources = [];
-	for (const gp of state.players) {
-		for (const src of gp.board) {
-			if (src.aura?.global && !isDead(src)) globalSources.push(src);
-		}
-	}
-	for (const p of state.players) {
-		const sources = [...p.board, ...p.enchantments, ...p.emblems, ...p.artifacts]
-			.filter(c => c.aura && !c.aura.global && !(c.zone === 'board' && isDead(c)));
-		p.board.forEach((c, idx) => {
-			if (c.type === 'location') return; // auras don't touch locations
-			if (c.dormantLeft > 0) return;     // nor dormant sleepers
-			let aBonus = 0, hBonus = 0;
-			const granted = new Set();
-			for (const src of [...sources, ...globalSources]) {
-				const a = src.aura;
-				if (a.others && src === c) continue;
-				if (a.adjacent) {
-					const si = p.board.indexOf(src);
-					if (si < 0 || Math.abs(si - idx) !== 1) continue;
-				}
-				if (a.position === 'ends' && idx !== 0 && idx !== p.board.length - 1) continue;
-				if (a.tribe && !a.tribe.split('|').some(t => (c.tribe || '').includes(t))) continue;
-				if (a.name && c.name !== a.name) continue; // Warhorse Trainer's Recruits
-				if (a.targetUid != null && a.targetUid !== c.uid) continue; // Rowdy Fan: only the chosen minion
-				// Herald-scaled aura (Charged Hand of Al'Akir): +Attack grows with Heralds
-				aBonus += a.heraldScaled ? heraldMult(state.players[src.controller].heraldCount || 0) : (a.attack || 0);
-				hBonus += a.health || 0;
-				for (const k of a.keywords || []) granted.add(k);
-			}
-			// Equipment attached to this creature contributes its bonuses. It's its
-			// own permanent — it survives the creature (detaches) and can be moved,
-			// so its buff is applied here (recomputed), never baked into base stats.
-			for (const eq of p.artifacts) {
-				if (eq.equip && eq.attachedTo === c.uid) {
-					aBonus += eq.equip.attack || 0;
-					hBonus += eq.equip.health || 0;
-					for (const k of eq.equip.keywords || []) granted.add(k);
-				}
-			}
-			// Enrage: a self-aura that only applies while the creature is damaged
-			if (c.enrage && c.damage > 0 && !isDead(c)) {
-				aBonus += c.enrage.attack || 0;
-				hBonus += c.enrage.health || 0;
-				for (const k of c.enrage.keywords || []) granted.add(k);
-			}
-			// "+N Attack during your opponent's turn"
-			if (c.offTurnAttack && state.current !== c.controller) {
-				aBonus += c.offTurnAttack;
-			}
-			// Duke of Below: +2/+2 for each card discarded this game (live)
-			if (c.discardScale) {
-				const nDisc = (p.discardLogIds || []).length;
-				aBonus += 2 * nDisc; hBonus += 2 * nDisc;
-			}
-			// Old Murk-Eye: +N Attack per other <tribe> anywhere in play
-			if (c.selfScale) {
-				let n = 0;
-				for (const gp of state.players) {
-					n += gp.board.filter(x => x !== c && !isDead(x)
-						&& (x.tribe || '').includes(c.selfScale.tribe)).length;
-				}
-				aBonus += (c.selfScale.attack || 0) * n;
-			}
-			// Southsea Deckhand: keyword held only while a condition stands
-			if (c.condKeyword && (c.condKeyword.while !== 'weapon' || p.weapon)) {
-				granted.add(c.condKeyword.keyword);
-			}
-			// "+N Attack while you have a weapon equipped"
-			if (c.condAttack && (c.condAttack.while !== 'weapon' || p.weapon)) {
-				aBonus += c.condAttack.attack || 0;
-			}
-			// active plane's continuous creature aura (Krosa +2/+2, Hippogyia -5/-0,
-			// Sokenzan +1/+1 & Rush): applies to every creature in play
-			const planeAura = activePlaneRule(state);
-			if (planeAura && planeAura.kind === 'aura') {
-				aBonus += planeAura.attack || 0;
-				hBonus += planeAura.health || 0;
-				for (const k of planeAura.keywords || []) granted.add(k);
-			}
-			const dA = aBonus - c.auraAttack, dH = hBonus - c.auraHealth;
-			if (dA || dH) {
-				c.attack = Math.max(0, c.attack + dA);
-				c.maxHealth += dH;
-				c.auraAttack = aBonus;
-				c.auraHealth = hBonus;
-				if (dH < 0 && c.damage >= c.maxHealth) c.damage = Math.max(0, c.maxHealth - 1);
-				emit(state, { type: 'buff', uid: c.uid, attack: c.attack, hp: hp(c) });
-			}
-			// keyword grants: retract tracked grants that lapsed, add new ones
-			// (never touching keywords the creature owns natively)
-			for (const k of [...c.auraKeywords]) {
-				if (!granted.has(k)) {
-					c.auraKeywords = c.auraKeywords.filter(x => x !== k);
-					c.keywords = c.keywords.filter(x => x !== k);
-					if (k === KW.STEALTH && !c.keywords.includes(KW.STEALTH)) c.stealthed = false; // Obsessive Fan: stealth lapses with its aura
-				}
-			}
-			for (const k of granted) {
-				if (c.keywords.includes(k)) continue;
-				c.keywords.push(k);
-				c.auraKeywords.push(k);
-				// Cloak of Invisibility: aura-granted stealth also hides the body
-				if (k === KW.STEALTH) c.stealthed = true;
-			}
-			// Lightspawn: attack tracks current health after everything else
-			if (c.statRule === 'attack-equals-health' && c.attack !== hp(c)) {
-				c.attack = hp(c);
-				emit(state, { type: 'buff', uid: c.uid, attack: c.attack, hp: hp(c) });
-			}
-		});
-	}
-}
 
-// Blubber Baron: grows in hand whenever you summon a Battlecry creature
-function growBlubberBaron(state, pi, summoned) {
-	if (!summoned?.keywords?.includes('battlecry')) return;
-	for (const h of state.players[pi].hand) if (h.id === 'blubber_baron') {
-		h.attack += 1; h.maxHealth += 1;
-		emit(state, { type: 'buff', uid: h.uid, attack: h.attack, hp: hp(h) });
-	}
-}
 
-// fire a single creature's own ongoing triggers by name (combat reactions:
-// self-attacks-survives, self-deals-damage, …); ctx.self is the creature
-function fireCreatureTrigger(state, c, when, extra = {}) {
-	if (!c || isDead(c)) return;
-	const trigs = [];
-	if (c.ongoing?.on === when) trigs.push(c.ongoing);
-	if (c.ongoings) for (const o of c.ongoings) if (o.on === when) trigs.push(o);
-	for (const o of trigs) runSecretEffects(state, c.controller, o.effects, { self: c, ...extra });
-}
 
-// condition on an ongoing trigger, judged against the event's subject card
-// (the summoned/played/dead/damaged creature) or the owner's own state
-function ongoingCondOk(state, pi, cond, ctx) {
-	const subj = ctx.minion || ctx.played || ctx.dead || ctx.damaged || ctx.frozen || null;
-	if (cond.maxAttack != null && !(subj && subj.attack <= cond.maxAttack)) return false;
-	if (cond.tribe && !(subj && (subj.tribe || '').includes(cond.tribe))) return false;
-	if (cond.overload && !(subj && subj.overload > 0)) return false;
-	if (cond.cardType && !(subj && subj.type === cond.cardType)) return false;
-	if (cond.keyword && !(subj && (subj.keywords || []).includes(cond.keyword))) return false; // Undertaker: a Deathrattle minion
-	if (cond.maxHealthSubj != null && !(subj && hp(subj) <= cond.maxHealthSubj)) return false; // Steward of Darkshire: a 1-Health minion
-	if (cond.spellCost != null && !(subj && (subj.cost || 0) === cond.spellCost)) return false; // Gazlowe: a 1-Cost spell
-	if (cond.maxCost != null && !(subj && (subj.cost || 0) <= cond.maxCost)) return false; // Oracle of Elune: a minion that costs (2) or less
-	if (cond.controlSecret && !state.players[pi].secrets.length) return false;
-	if (cond.creature && !ctx.healedCreature) return false; // "whenever a MINION is healed"
-	if (cond.nontoken && (!subj || (subj.id || '').startsWith('token_'))) return false;
-	if (cond.yourTurn && state.current !== pi) return false; // Bayfin Bodybuilder: only during your turn
-	if (cond.enemySubj && !(subj && subj.controller !== pi)) return false; // ...and only enemy minions
-	if (cond.adjacentSelf) { // Rehgar: this or an adjacent minion
-		const b = state.players[pi].board;
-		const si = ctx.self ? b.indexOf(ctx.self) : -1;
-		const ai = subj ? b.indexOf(subj) : -1;
-		if (!(subj === ctx.self || (si >= 0 && ai >= 0 && Math.abs(si - ai) === 1))) return false;
-	}
-	if (cond.cardId && !(subj && subj.id === cond.cardId)) return false; // Food sacrifices
-	if (cond.self && ctx.damaged !== ctx.self) return false; // "whenever THIS takes damage"
-	if (cond.selfTarget && ctx.targetCreature !== ctx.self) return false; // Stormwind Avenger: a spell cast on THIS minion
-	if (cond.enemy && !(subj && subj.controller !== pi)) return false; // "an ENEMY creature ..."
-	if (cond.school && !(subj && schoolOf(subj) === cond.school)) return false; // "cast an Arcane spell"
-	if (cond.controlArtEnch && !(state.players[pi].artifacts.length || state.players[pi].enchantments.length)) return false; // "if you control an artifact or an enchantment"
-	if (cond.damageAmount != null && ctx.amount !== cond.damageAmount) return false; // Holotechnician: took exactly N damage
-	if (cond.heroHealed && ctx.healedHero == null) return false; // Screaming Banshee: your HERO gained Health
-	if (cond.minAttackSelf && !(subj && ctx.self && subj.attack > ctx.self.attack)) return false; // Observer of Myths: a minion with MORE Attack than this
-	if (cond.attackEqualsSelf && !(subj && ctx.self && subj.attack === ctx.self.attack)) return false; // The Replicator-inator: same Attack as this
-	if (cond.handMax != null && !(state.players[pi].hand.length <= cond.handMax)) return false; // Howdyfin: fewer than N cards in hand
-	if (cond.tribeSubj && !(subj && (subj.tribe || '').includes(cond.tribeSubj))) return false;
-	if (cond.dormantSelf && !(ctx.self && ctx.self.dormantLeft > 0)) return false; // Dozing Dragon: only while asleep
-	if (cond.playedBefore && !(subj && (state.players[pi].playedCountById?.[subj.id] || 0) >= 1)) return false; // Twisted Webweaver: a minion you've already played
-	if (cond.selfFullHealth && !(ctx.self && ctx.self.damage === 0)) return false; // Incensed Matriarch: only at full Health
-	return true;
-}
 
-// ---------- ongoing permanents (enchantments, artifacts, emblems, creatures) ----------
-// persistent triggers: fire every time, card stays in play. Board creatures
-// with an `ongoing` field participate too (whenever-/at- style minions);
-// each firing card sees itself as ctx.self so effects can target it.
-export function fireOngoing(state, pi, when, ctx = {}) {
-	const p = state.players[pi];
-	if (state.over || p.eliminated) return;
-	const hasTrig = c => c && (c.ongoing || (c.ongoings && c.ongoings.length));
-	const sources = [...p.enchantments, ...p.artifacts, ...p.emblems, ...p.board.filter(hasTrig),
-		...(hasTrig(p.weapon) ? [p.weapon] : [])]; // Eaglehorn/Sword of Justice
-	for (const card of sources) {
-		if (state.over) break;
-		if (card === ctx.minion) continue; // a card doesn't trigger on its own arrival
-		if (card.zone === 'board' && isDead(card)) continue;
-		// a card may carry one `ongoing` plus any number of combined `ongoings`
-		const trigs = [];
-		if (card.ongoing) trigs.push(card.ongoing);
-		if (card.ongoings) for (const t of card.ongoings) trigs.push(t);
-		for (const trig of trigs) {
-			if (!trig || trig.spent || trig.on !== when) continue;
-			// conditional triggers ("Whenever you summon a Beast...") gate before counters
-			if (trig.if && !ongoingCondOk(state, pi, trig.if, { ...ctx, self: card })) continue;
-			// Avenge-style triggers need N occurrences (once); Morbid-style `every`
-			// triggers fire on every Nth occurrence, repeating
-			if (trig.need || trig.every) {
-				trig.trigCount = (trig.trigCount || 0) + 1;
-				if (trig.trigCount < (trig.need || trig.every)) continue;
-				if (trig.every) trig.trigCount = 0;
-			}
-			emit(state, { type: 'ongoingTriggered', player: pi, card });
-			const fx = trig.effects;
-			if (trig.once) { if (trig === card.ongoing) card.ongoing = null; else trig.spent = true; } // one-shots
-			runSecretEffects(state, pi, fx, { ...ctx, self: card });
-		}
-	}
-}
 
-// sum of a static passive across a player's permanent rows
-export function staticValue(p, type) {
-	let v = 0;
-	for (const card of [...p.enchantments, ...p.artifacts, ...p.emblems, ...p.board, ...(p.weapon ? [p.weapon] : [])]) {
-		if (card.static?.type === type) v += card.static.value || 1;
-	}
-	return v;
-}
 
 // ---------- quests ----------
 // goal kinds counted for the acting player only, except 'death' which every
@@ -1507,53 +1306,7 @@ function degradeWeapon(state, pi) {
 	if (w.durability <= 0) breakWeapon(state, pi, false);
 }
 
-// ---------- secrets ----------
-// A secret card carries { trigger, condition?, effects } in def.secret.
-// Triggers: 'enemy-attack' (ctx: attackerType/attacker/attackerPlayer/target/cancelled),
-// 'enemy-minion-played' (ctx: minion), 'enemy-spell-cast' (ctx: spell/countered),
-// 'hero-takes-damage' (ctx: amount/fatal/prevented). Secrets never fire on their
-// owner's own turn, and each fires once then leaves play.
-function secretMatches(sec, ctx) {
-	const c = sec.condition || {};
-	if (!!c.fatal !== !!ctx.fatal) return false;
-	if (c.targetHero && ctx.target?.type !== 'hero') return false;
-	if (c.targetCreature && ctx.target?.type !== 'creature') return false;
-	if (c.attackerCreature && ctx.attackerType !== 'creature') return false;
-	return true;
-}
 
-// fire the matching secrets of every player except the actor
-function fireSecretsAll(state, actorPi, trigger, ctx) {
-	for (let i = 0; i < state.players.length; i++) {
-		if (i !== actorPi) fireSecrets(state, i, trigger, ctx);
-	}
-}
-
-// secrets and traps share the trigger system; traps sit face-down on the
-// table (public count, hidden identity) while secrets are fully hidden
-export function fireSecrets(state, pi, trigger, ctx) {
-	const p = state.players[pi];
-	if (state.over || state.current === pi || p.eliminated) return;
-	for (const card of [...p.secrets, ...p.traps]) {
-		if (state.over) break;
-		const sec = card.secret || card.trap;
-		if (!sec || sec.trigger !== trigger || !secretMatches(sec, ctx)) continue;
-		if (card.type === 'trap') {
-			p.traps = p.traps.filter(t => t !== card);
-			toGraveyard(state, pi, card);
-			emit(state, { type: 'trapSprung', player: pi, card });
-			// paper Eaglehorn counts traps too
-			for (let s2 = 0; s2 < state.players.length; s2++) fireOngoing(state, s2, 'secret-revealed', {});
-		} else {
-			p.secrets = p.secrets.filter(s => s !== card);
-			toGraveyard(state, pi, card);
-			emit(state, { type: 'secretRevealed', player: pi, card });
-			// Eaglehorn Bow-style triggers watch every reveal
-			for (let s2 = 0; s2 < state.players.length; s2++) fireOngoing(state, s2, 'secret-revealed', {});
-		}
-		runSecretEffects(state, pi, sec.effects, ctx);
-	}
-}
 
 export function runSecretEffects(state, pi, effects, ctx) {
 	// dev-mode effect budget (see execEffects): trigger-side loops recurse via
