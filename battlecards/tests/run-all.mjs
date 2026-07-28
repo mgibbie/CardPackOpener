@@ -8,7 +8,7 @@ import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 
 const here = dirname(fileURLToPath(import.meta.url));
-const dirs = ['characterization'];
+const dirs = ['characterization', 'unit', 'regression', 'fuzz'];
 let suites = 0, failed = 0;
 
 for (const d of dirs) {
