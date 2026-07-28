@@ -15,7 +15,10 @@
 // hero-immune-until-next, shuffle-ids-into-deck — moved from the chain
 // verbatim, chain branches (and the switch's simpler `armor` twin, which
 // silently lacked the all-heroes variant) deleted.
-import { emit, instantiate, MAX_HAND, endTurn, gainTokenCard, execEffects, summon } from '../../engine.js';
+import {
+	emit, instantiate, MAX_HAND, endTurn, gainTokenCard, execEffects, summon,
+	installSecret, addCoin, damageHero, hp, availableMana, isDead,
+} from '../../engine.js';
 import { gainArmor } from '../damage.js';
 import { drawCards } from '../zones.js';
 
@@ -356,4 +359,215 @@ register('resummon-remembered-buffed', ({ state, pi, target, source, enemies, sc
 				def.attack = (m.attack || 0) + 1; def.health = (m.health || 0) + 1;
 				summon(state, pi, def);
 			}
+});
+
+// ---------- batch 3 (PR 19): 43 branches unlocked by ctx-threaded helpers ----------
+// The handler ctx now carries execEffects' prelude closures (hm, pickEnemy,
+// enemyHero, chosenCreature, healCreature, buffCreature, boost), so bodies
+// that use them move verbatim like everything else.
+
+register('install-secret', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => {
+			installSecret(state, pi, e.id);
+});
+
+register('gain-coin', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => {
+			for (let n = 0; n < (e.value || 1); n++) addCoin(state, pi);
+});
+
+register('grant-static', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => {
+			const t = chosenCreature();
+			if (t) t.static = { ...e.static };
+});
+
+register('temp-immune', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => {
+			const t = chosenCreature();
+			if (t) t.immuneTurn = state.turnNumber;
+});
+
+register('grant-medic', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => {
+			const t = chosenCreature();
+			if (t) t.medic = (t.medic || 0) + e.value;
+});
+
+register('draw-enemy', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => {
+			const t = enemyHero();
+			if (t != null) drawCards(state, t, e.value || 1);
+});
+
+register('next-secret-cost', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => {
+			state.players[pi].nextSecretCost = e.value != null ? e.value : 1; // Kabal Lackey
+});
+
+register('grant-ongoing', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => {
+			const t = chosenCreature();
+			if (t) t.ongoing = JSON.parse(JSON.stringify(e.ongoing));
+});
+
+register('eruption-upgrade', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => {
+			const p = state.players[pi];
+			p.eruptionBonus = (p.eruptionBonus || 0) + 1; // Incindius
+});
+
+register('set-max-hand-draw', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => {
+			// Valdris Felgorge: draw cards (our hand cap is already generous)
+			drawCards(state, pi, e.draw || 4);
+});
+
+register('hatch-egg', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => {
+			if (source?.hatchId && state.cardsById[source.hatchId]) summon(state, pi, state.cardsById[source.hatchId]);
+});
+
+register('leyline-discount', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => {
+			state.players[pi].leylineDiscount = (state.players[pi].leylineDiscount || 0) + (e.value || 1); // Ley Walker
+});
+
+register('leyline-boost', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => {
+			state.players[pi].leylineBoost = (state.players[pi].leylineBoost || 0) + (e.value || 1); // Mystic Runesaber
+});
+
+register('asteroid-boost', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => {
+			state.players[pi].asteroidBoost = (state.players[pi].asteroidBoost || 0) + (e.value || 1); // Bolide Behemoth
+});
+
+register('set-minion-costs', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => {
+			// Loh the Living Legend: your minions cost (N) this game
+			state.players[pi].minionCostSet = e.value ?? 5;
+});
+
+register('next-temp-discount', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => {
+			state.players[pi].nextTempDiscount = (state.players[pi].nextTempDiscount || 0) + (e.value || 2); // Spelunker
+});
+
+register('enemy-draw', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => {
+			// Southsea Scoundrel: the opponent also draws
+			for (const o of enemies) drawCards(state, o, e.value || 1);
+});
+
+register('attack-own-hero', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => {
+			// Malefic Rook: this minion attacks your own hero
+			if (source) damageHero(state, pi, source.attack || 0, pi);
+});
+
+register('add-overload', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => {
+			state.players[pi].overloadPending = (state.players[pi].overloadPending || 0) + (e.value || 1); // Winged Aberration
+});
+
+register('temp-crystal-next-turn', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => {
+			state.players[pi].tempCrystalNext = (state.players[pi].tempCrystalNext || 0) + (e.value || 1); // Emberscarred Whelp
+});
+
+register('jar-release', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => {
+			if (source && source._heldId && state.cardsById[source._heldId]) summon(state, pi, state.cardsById[source._heldId]);
+});
+
+register('godfrey-start', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => {
+			// Godfrey the Betrayer: end-of-turn overflow discards come back cheaper
+			state.players[pi].godfreyReturn = true;
+});
+
+register('enable-attack-self', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => {
+			// Argent Watchman: may attack this turn despite Can't Attack
+			if (source) source.attackAnywayTurn = state.turnNumber;
+});
+
+register('summon-marked-copy', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => {
+			if (source?.copyVictimId && state.cardsById[source.copyVictimId]) summon(state, pi, state.cardsById[source.copyVictimId]);
+});
+
+register('corrupt', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => {
+			// dies at the start of the caster's next turn (Corruption)
+			const t = chosenCreature();
+			if (t) t.corruptedBy = pi;
+});
+
+register('gain-corpses', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => {
+			state.players[pi].corpses += e.value;
+			emit(state, { type: 'corpses', player: pi, corpses: state.players[pi].corpses });
+});
+
+register('foreign-demon-discount', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => {
+			const p = state.players[pi];
+			p.foreignDemonDiscount = (p.foreignDemonDiscount || 0) + (e.value || 1); // Foreboding Flame
+});
+
+register('cant-attack-heroes-turn', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => {
+			// Charged Devilsaur: this creature can't attack heroes this turn
+			if (source) source.noHeroAttackTurn = state.turnNumber;
+});
+
+register('set-next-spell-damage', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => {
+			state.players[pi].nextSpellDamageBonus = (state.players[pi].nextSpellDamageBonus || 0) + (e.value || 2); // Celestial Emissary
+});
+
+register('doom', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => {
+			// dies at the end of this turn (Power Overwhelming)
+			const t = chosenCreature();
+			if (t) t.doomTurn = state.turnNumber;
+});
+
+register('draw-all', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => {
+			for (let s2 = 0; s2 < state.players.length; s2++) {
+				if (!state.players[s2].eliminated) drawCards(state, s2, e.value);
+			}
+});
+
+register('coin-flip-draw', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => {
+			// Pro Gamer: 50% chance to draw N (Rock-Paper-Scissors approximated)
+			if (state.rng() < 0.5) drawCards(state, pi, e.value || 2);
+});
+
+register('ursoc-resurrect', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => {
+			if (source && source._ursocKills) for (const id of source._ursocKills) if (state.cardsById[id]) summon(state, pi, state.cardsById[id]);
+});
+
+register('set-self-hp-cost', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => {
+			// Genn Greymane: your Hero Power costs (1) (a board aura via heroPowerCostSet)
+			if (source) source.heroPowerCostSet = e.value ?? 1;
+});
+
+register('double-attack', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => {
+			const t = chosenCreature();
+			if (t) { t.attack += t.attack; emit(state, { type: 'buff', uid: t.uid, attack: t.attack, hp: hp(t) }); }
+});
+
+register('temp-mana', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => {
+			const pp = state.players[pi];
+			pp.mana.bonus += e.value || 1;
+			emit(state, { type: 'coin', player: pi, mana: availableMana(pp) });
+});
+
+register('grant-next-school-discount', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => {
+			// Holy Cowboy: your next spell of a school costs less
+			state.players[pi].nextSchoolDiscount = { school: e.school, amount: e.value || 2 };
+});
+
+register('draw-until-full', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => {
+			const p = state.players[pi];
+			let guard = 20;
+			while (p.hand.length < MAX_HAND && p.deck.length && guard-- > 0) drawCards(state, pi, 1);
+});
+
+register('next-name-discount', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => {
+			// Murloc Rafaam: the next card matching a name costs less
+			state.players[pi].nextNameDiscount = { substr: e.substr, value: e.value || 0 };
+});
+
+register('maybe-draw', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => {
+			// Package Dealer: chance to draw another card (fires on card-drawn)
+			if (state.rng() < (e.chance ?? 0.5)) drawCards(state, pi, e.value || 1);
+});
+
+register('load-bullets', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => {
+			// Gattlesnake: load N bullets onto this minion (fired by its Deathrattle)
+			if (source) source.bullets = (source.bullets || 0) + (e.count || 2);
+});
+
+register('discount-hand', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => {
+			// Hunter's Call: cards in hand permanently cost (N) less
+			for (const c of state.players[pi].hand) c.cost = Math.max(0, c.cost - (e.value || 1));
+});
+
+register('heal-full', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => {
+			const t = e.target === 'self' ? source : chosenCreature(); // Stoneskin Gargoyle: restore self
+			if (t && t.damage > 0) healCreature(t, t.damage);
 });
