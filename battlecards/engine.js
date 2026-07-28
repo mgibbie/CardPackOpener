@@ -44,6 +44,9 @@ export const MAX_SECRETS = 5;
 export const MAX_PLAYERS = 8;
 import { effectiveCost, heroPowerCost, discountIndex } from './engine/cost.js';
 import { targetSpec, legalTargets, equipTargets, attackTargets } from './engine/targeting.js';
+import { drawCards, toGraveyard, bouncePermanent } from './engine/zones.js';
+export { drawCards };
+
 export { targetSpec, legalTargets, equipTargets, attackTargets };
 
 export { effectiveCost, heroPowerCost };
@@ -180,7 +183,7 @@ const LEGACY_SCRIPTED = new Set([
 let nextUid = 1;
 
 // ---------- card instances ----------
-function instantiate(def, controller) {
+export function instantiate(def, controller) {
 	const card = {
 		uid: nextUid++,
 		id: def.id,
@@ -595,142 +598,16 @@ export function createGame(cardsById, rng = Math.random, playerDeckIds = null, p
 	return state;
 }
 
-function emit(state, ev) {
+export function emit(state, ev) {
 	state.events.push(ev);
 }
 
 // ---------- zones ----------
-export function drawCards(state, pi, count) {
-	const p = state.players[pi];
-	let drawn = 0; // cards that actually reached hand (not fatigue/burn/bomb) — for "if you do"
-	for (let i = 0; i < count; i++) {
-		if (p.deck.length === 0 && p.graveyard.length > 0) {
-			// reshuffle graveyard ids into deck (per BattleEngine.startPhase);
-			// summoned tokens have no card def and can't be redrawn; token
-			// CARDS (Bananas, Blood Tokens) cease to exist like MTG tokens
-			p.deck = p.graveyard.map(c => c.id).filter(id => state.cardsById[id] && !state.cardsById[id].token);
-			p.graveyard = [];
-			for (let k = p.deck.length - 1; k > 0; k--) {
-				const j = Math.floor(state.rng() * (k + 1));
-				[p.deck[k], p.deck[j]] = [p.deck[j], p.deck[k]];
-			}
-			if (p.deck.length) emit(state, { type: 'reshuffle', player: pi });
-		}
-		const id = p.deck.pop();
-		if (!id && p.kiljaeden) {
-			// Kil'jaeden: the portal never runs dry — a growing random Demon instead
-			const pool = Object.values(state.cardsById).filter(dd => dd.type === 'creature' && (dd.tribe || '').includes('Demon') && !dd.token && dd.collectible !== false && !(dd.colors && dd.colors.length));
-			if (pool.length) {
-				const def = pool[Math.floor(state.rng() * pool.length)];
-				const card = instantiate(def, pi);
-				card.attack += p.kiljaeden.bonus; card.maxHealth += p.kiljaeden.bonus;
-				card.zone = 'hand'; card.fromDeck = true; card.drawnThisTurn = true;
-				p.hand.push(card);
-				emit(state, { type: 'draw', player: pi, card });
-			}
-			continue;
-		}
-		if (!id) {
-			// nothing to reshuffle either: truly out of cards — fatigue
-			p.fatigue++;
-			emit(state, { type: 'fatigue', player: pi, amount: p.fatigue });
-			damageHero(state, pi, p.fatigue, pi);
-			checkGameOver(state);
-			if (p.eliminated || state.over) break;
-			continue;
-		}
-		// Bomb / Mine: an enemy shuffled it in — it explodes on draw
-		if (id === 'bomb' || id === 'mine') {
-			emit(state, { type: 'bombDetonated', player: pi });
-			damageHero(state, pi, id === 'mine' ? 10 : 5, pi); // Iron Juggernaut's Mine hits for 10
-			checkGameOver(state);
-			if (p.eliminated || state.over) break;
-			continue;
-		}
-		// draw-trigger tokens (Fal'dorei Ambush, The Darkness's Candle): fire an
-		// effect on draw and are consumed instead of entering the hand
-		const trigDef = state.cardsById[id];
-		if (trigDef && trigDef.drawTrigger) {
-			emit(state, { type: 'drawTrigger', player: pi, cardId: id, name: trigDef.name });
-			execEffects(state, pi, trigDef.onDraw || [], null, null);
-			checkGameOver(state);
-			if (p.eliminated || state.over) break;
-			continue;
-		}
-		// No burn on overdraw: hand may exceed MAX_HAND during your turn and is
-		// trimmed back down at end of turn (MTG-style cleanup discard).
-		const card = instantiate(state.cardsById[id], pi);
-		card.fromDeck = true; // drawn from your deck — Leyline Manipulator ignores these
-		card.drawnThisTurn = true; // Keli'dan the Breaker: "If drawn this turn"
-		if (p.deckCostOverrides && p.deckCostOverrides[id] != null) { card.cost = p.deckCostOverrides[id]; delete p.deckCostOverrides[id]; } // Twilight Medium: top card's Cost set to (0)
-		if (p.deckInnerFire && card.type === 'creature') card.attack = card.maxHealth; // Lady in White
-		if (card.type === 'creature' && p.drawBuff) { card.attack += p.drawBuff.attack || 0; card.maxHealth += p.drawBuff.health || 0; }
-		if (card.type === 'creature' && p.drawBuffMinions && p.drawBuffMinions.count > 0) { card.attack += p.drawBuffMinions.attack || 0; card.maxHealth += p.drawBuffMinions.health || 0; p.drawBuffMinions.count--; if (p.drawBuffMinions.count <= 0) p.drawBuffMinions = null; } // (legacy next-drawn buff)
-		if (p.deckIdBuffs && p.deckIdBuffs.length) { const bi = p.deckIdBuffs.findIndex(b => b.id === id); if (bi >= 0) { const b = p.deckIdBuffs.splice(bi, 1)[0]; card.attack += b.attack || 0; card.maxHealth += b.health || 0; } } // Beanstalk Brute: specific deck cards carry buffs
-		if (card.handDeckGrowAttack && p.defGrowth && p.defGrowth[id]) card.attack += p.defGrowth[id]; // Grazing Stegodon: grew while in your deck
-		if (p.deckElementalSpellDamage && card.type === 'creature' && (card.tribe || '').includes('Elemental')) { // Saruun
-			if (!card.static || card.static.type !== 'spell-damage') card.static = { type: 'spell-damage', value: 0 };
-			card.static.value += p.deckElementalSpellDamage;
-		}
-		if (p.aegwynnPending && card.type === 'creature') { // Aegwynn: the powers pass on
-			p.aegwynnPending = false;
-			if (!card.static || card.static.type !== 'spell-damage') card.static = { type: 'spell-damage', value: 0 };
-			card.static.value += 2;
-			card.deathrattle = [...(card.deathrattle || []), { type: 'aegwynn-pass' }];
-			if (!card.keywords.includes('deathrattle')) card.keywords.push('deathrattle');
-		}
-		if (card.type === 'creature' && p.drawBuffTribe) { for (const tr in p.drawBuffTribe) if ((card.tribe || '').includes(tr)) { card.attack += p.drawBuffTribe[tr].attack || 0; card.maxHealth += p.drawBuffTribe[tr].health || 0; } } // Shan'do Wildclaw
-		if (p.corruptDeckDiscount && (card.corrupt || card.corruptGrow)) card.cost = Math.max(0, (card.cost || 0) - p.corruptDeckDiscount); // Dark Inquisitor Xanesh
-		if (p.deckMinionDiscount && card.type === 'creature') card.cost = Math.max(0, (card.cost || 0) - p.deckMinionDiscount); // Vanndar / Cera'thine
-		if (card.type === 'creature' && p.deckTribeDiscount) { for (const tr in p.deckTribeDiscount) if ((card.tribe || '').includes(tr)) card.cost = Math.max(0, (card.cost || 0) - p.deckTribeDiscount[tr]); } // Frizz Kindleroost
-		if (p.deckKeywordDiscount) { for (const kw in p.deckKeywordDiscount) if ((card.keywords || []).includes(kw)) card.cost = Math.max(0, (card.cost || 0) - p.deckKeywordDiscount[kw]); } // Rotten Rodent: Deathrattle cards
-		if (p.deckSchoolSpellDamage && isSpellType(card)) { const sch = schoolOf(card); if (sch && p.deckSchoolSpellDamage[sch]) card.bonusSpellDamage = (card.bonusSpellDamage || 0) + p.deckSchoolSpellDamage[sch]; } // Halduron Brightwing: Arcane spells drawn from deck
-		if (p.deckSpellDamageAll && isSpellType(card)) card.bonusSpellDamage = (card.bonusSpellDamage || 0) + p.deckSpellDamageAll; // Archmage Kalec: all spells drawn
-		if (p.deckDoubleStats && card.type === 'creature') { card.attack = (card.attack || 0) * 2; card.maxHealth = (card.maxHealth || 0) * 2; } // Lor'themar Theron: doubled deck minions
-		// C'Thun enters hand carrying every buff it collected while in your deck
-		if (card.id === 'c_thun') { card.attack = CTHUN_BASE + p.cthunAtk; card.maxHealth = CTHUN_BASE + p.cthunHp; if (p.cthunTaunt && !card.keywords.includes(KW.TAUNT)) card.keywords.push(KW.TAUNT); }
-		card.zone = 'hand';
-		if (state.hpResolver === pi && staticValue(p, 'hero-power-draw-zero') > 0) card.cost = 0; // Wilfred Fizzlebang
-		if (!p.stealerUsedThisTurn && p.board.some(x => x.id === 'stealer_of_souls' && !isDead(x))) { card.cost = 0; p.stealerUsedThisTurn = true; } // Stealer of Souls (Health-cost approximated as free)
-		if (p.nextDrawDiscount > 0) { card.cost = Math.max(0, (card.cost || 0) - p.nextDrawDiscount); p.nextDrawDiscount = 0; } // SI:7 Skulker
-		if (p.drawPunishTurn === state.turnNumber && p.drawPunishDamage > 0) damageHero(state, pi, p.drawPunishDamage, null); // Ashen Elemental
-		if (p.castWhenDrawn > 0 && isSpellType(card) && !card.counterSpell && !card.xSpell) { // Sheldras Moontree
-			p.castWhenDrawn -= 1;
-			const spec = targetSpec(state, pi, card, null); let tgt = null;
-			if (spec) { const legal = legalTargets(state, pi, spec); tgt = legal.length ? legal[Math.floor(state.rng() * legal.length)] : null; if (spec.required && !tgt) { p.hand.push(card); drawn++; continue; } }
-			emit(state, { type: 'conjure', player: pi, card, color: null });
-			runSpell(state, pi, card, tgt, card.choices ? 0 : null); sweepDeaths(state);
-			drawn++; continue;
-		}
-		p.hand.push(card);
-		if (card.copyOnDraw && state.cardsById[card.id] && p.hand.length < MAX_HAND) { const cp = instantiate(state.cardsById[card.id], pi); cp.zone = 'hand'; p.hand.push(cp); emit(state, { type: 'conjure', player: pi, card: cp, color: null }); } // Encumbered Pack Mule
-		drawn++;
-		emit(state, { type: 'draw', player: pi, card });
-		state.expanseEvents = (state.expanseEvents || 0) + 1; // The Ceaseless Expanse: a card was drawn
-		questTick(state, 'draw', pi, 1, card);
-		// Ponder: fires on every card drawn after your first draw of the turn
-		p.drawsThisTurn = (p.drawsThisTurn || 0) + 1;
-		if (p.drawsThisTurn > 1) firePonder(state, pi, { drawn: card });
-		fireEmerge(state, pi, card);
-		// Chromaggus: "whenever you draw a card…" (guard against re-entrant copies)
-		if (state.dealt && !state.drawTrigLock) {
-			state.drawTrigLock = true;
-			try { fireOngoing(state, pi, 'card-drawn', { card }); }
-			finally { state.drawTrigLock = false; }
-		}
-		// opponents may react to your draw (Smothering Tithe: pay {2} or I get a Treasure)
-		if (state.dealt && !state.enemyDrawLock) {
-			state.enemyDrawLock = true;
-			try { for (let s2 = 0; s2 < state.players.length; s2++) if (s2 !== pi && !state.players[s2].eliminated) fireOngoing(state, s2, 'enemy-draws', { drawer: pi, card }); }
-			finally { state.enemyDrawLock = false; }
-		}
-	}
-	return drawn;
-}
+
 
 // Ponder triggers on extra draws / scry / dredge / gaze. A re-entrancy lock
 // stops a Ponder effect that itself draws or scries from re-triggering Ponder.
-function firePonder(state, pi, ctx = {}) {
+export function firePonder(state, pi, ctx = {}) {
 	if (state.ponderLock) return;
 	state.ponderLock = true;
 	try { fireOngoing(state, pi, 'ponder', ctx); }
@@ -739,25 +616,14 @@ function firePonder(state, pi, ctx = {}) {
 
 // Emerge: a card's effect that fires the moment it is drawn or added to a hand
 // (from hand, not the board). The lock guards against an Emerge that draws more.
-function fireEmerge(state, pi, card) {
+export function fireEmerge(state, pi, card) {
 	if (!state.dealt || state.emergeLock || !(card && card.emerge && card.emerge.length)) return;
 	state.emergeLock = true;
 	try { execEffects(state, pi, card.emerge, null, card); }
 	finally { state.emergeLock = false; }
 }
 
-function toGraveyard(state, pi, card) {
-	// Tokens (summoned creatures, Blood/Clue/Food/Treasure, etc.) are exiled
-	// instead of hitting the graveyard — MTG-style, they leave no corpse and
-	// can't be referenced, reanimated, or reshuffled from the grave. Coins are
-	// NOT tokens, so they fall through to the graveyard and can reshuffle.
-	if (card.token || (card.tribe || '').split(/\s+/).includes('Token')) {
-		card.zone = 'exile';
-		state.players[pi].exile.push(card);
-		return;
-	}
-	state.players[pi].graveyard.push(card);
-}
+
 
 // ---------- mana ----------
 export function availableMana(p) {
@@ -1038,7 +904,7 @@ function damageCreature(state, target, amount, source) {
 
 // `src` is the player index responsible for the damage (for reflect secrets);
 // `pierce` skips armor entirely (paper Piercing keyword)
-function damageHero(state, pi, amount, src = null, pierce = false) {
+export function damageHero(state, pi, amount, src = null, pierce = false) {
 	if (amount <= 0) return 0;
 	const p = state.players[pi];
 	// Arisen Onyxia: on your turn, Health you would lose becomes max Health instead
@@ -1259,7 +1125,7 @@ export function equip(state, pi, equipUid, creatureUid) {
 	return true;
 }
 
-function sweepDeaths(state) {
+export function sweepDeaths(state) {
 	for (let pi = 0; pi < state.players.length; pi++) {
 		const p = state.players[pi];
 		const dead = p.board.filter(isDead);
@@ -1382,7 +1248,7 @@ function sweepDeaths(state) {
 }
 
 // fallen players are eliminated (their slice clears); last one standing wins
-function checkGameOver(state) {
+export function checkGameOver(state) {
 	if (state.over) return;
 	state.players.forEach((p, i) => {
 		if (p.eliminated || p.life > 0) return;
@@ -1455,29 +1321,7 @@ function findPermanent(state, uid) {
 	return null;
 }
 // return any permanent to its owner's hand (Cryptic Command's bounce mode, etc.)
-function bouncePermanent(state, ownerPi, card, costMod = 0) {
-	const owner = state.players[ownerPi];
-	owner.board = owner.board.filter(c => c !== card);
-	owner.artifacts = owner.artifacts.filter(c => c !== card);
-	owner.enchantments = owner.enchantments.filter(c => c !== card);
-	owner.planeswalkers = owner.planeswalkers.filter(c => c !== card);
-	for (const pl of state.players) for (const eq of pl.artifacts) if (eq.equip && eq.attachedTo === card.uid) eq.attachedTo = null;
-	if (!card.token) { // tokens cease to exist when they leave play
-		const def = state.cardsById[card.id];
-		if (def && owner.hand.length < MAX_HAND) {
-			const c = instantiate(def, ownerPi);
-			c.zone = 'hand';
-			c.cost = Math.max(0, (def.cost || 0) + costMod);
-			owner.hand.push(c);
-		}
-	}
-	emit(state, { type: 'bounce', uid: card.uid, player: ownerPi, name: card.name });
-	// Harbinger of the Blighted: returning to hand from play summons reinforcements
-	if (!card.token && state.cardsById[card.id]?.bounceTrigger) {
-		execEffects(state, ownerPi, JSON.parse(JSON.stringify(state.cardsById[card.id].bounceTrigger)), null, null);
-	}
-	recomputeAuras(state);
-}
+
 
 // return a blinked creature as a fresh permanent and retrigger its Battlecry
 // (guarded against runaway blink chains, e.g. two Felidar Guardians)
@@ -1508,7 +1352,7 @@ function heraldMult(count) { return count < 2 ? 1 : count < 4 ? 2 : 4; }
 
 // C'Thun: its buffs are tracked on the player and persist "wherever it is". Any
 // C'Thun instance in hand or on board is kept in sync with the 6/6 base + tracker.
-const CTHUN_BASE = 6;
+export const CTHUN_BASE = 6;
 function syncCthun(state, pi) {
 	const p = state.players[pi];
 	for (const c of [...p.hand, ...p.board]) {
@@ -1524,7 +1368,7 @@ function syncCthun(state, pi) {
 // "Your (other) <tribe> have +X/+Y" — bonuses are recomputed whenever the
 // board changes and applied as deltas so base stats and buffs are untouched.
 // Losing an aura clamps damage so it can never kill the creature.
-function recomputeAuras(state) {
+export function recomputeAuras(state) {
 	// global auras ("ALL other Murlocs...") radiate across every board
 	const globalSources = [];
 	for (const gp of state.players) {
@@ -1704,7 +1548,7 @@ function ongoingCondOk(state, pi, cond, ctx) {
 // persistent triggers: fire every time, card stays in play. Board creatures
 // with an `ongoing` field participate too (whenever-/at- style minions);
 // each firing card sees itself as ctx.self so effects can target it.
-function fireOngoing(state, pi, when, ctx = {}) {
+export function fireOngoing(state, pi, when, ctx = {}) {
 	const p = state.players[pi];
 	if (state.over || p.eliminated) return;
 	const hasTrig = c => c && (c.ongoing || (c.ongoings && c.ongoings.length));
@@ -1751,7 +1595,7 @@ export function staticValue(p, type) {
 // quest holder counts no matter whose creature fell
 const ANY_ACTOR_GOALS = new Set(['death']);
 
-function questTick(state, kind, actorPi, amount = 1, ctxCard = null) {
+export function questTick(state, kind, actorPi, amount = 1, ctxCard = null) {
 	for (let pi = 0; pi < state.players.length; pi++) {
 		const p = state.players[pi];
 		if (p.eliminated || !p.quests.length) continue;
@@ -3355,7 +3199,7 @@ function runDeathrattle(state, pi, card) {
 // generic effect executor shared by spells, battlecries, and deathrattles.
 // `target` is the player's chosen target (or null); AoE targets need no choice.
 // `source` is the card whose effect is running (used by gain-weapon-attack).
-function execEffects(state, pi, effects, target, source) {
+export function execEffects(state, pi, effects, target, source) {
 	// dev-mode effect budget (state.debug is never set in production): each
 	// execEffects call counts against a per-action budget the caller resets —
 	// a cheap runaway-composition tripwire (loops manifest as huge call counts)
@@ -11032,7 +10876,7 @@ export function resolveSac(state, uid) {
 	return true;
 }
 
-function runSpell(state, pi, card, target, choice) {
+export function runSpell(state, pi, card, target, choice) {
 	// Farseer Nobundo's Galaxy Lens: the next spell is absorbed — a copy returns to hand
 	if (state.players[pi].galaxyLens && state.cardsById[card.id] && !card.token) {
 		state.players[pi].galaxyLens = false;
