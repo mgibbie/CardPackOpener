@@ -128199,7 +128199,7 @@
       "rarity": "legendary",
       "set": "DALARAN_HEIST",
       "token": true,
-      "description": "Give a minion Charge, Windfury, Divine Shield, Lifesteal, Poisonous, Taunt, and Stealth.",
+      "description": "Give a creature Charge, Windfury, Divine Shield, Lifesteal, Poisonous, Taunt, & Stealth.",
       "treasure": true,
       "effects": [
         {
@@ -128273,7 +128273,7 @@
       "rarity": "legendary",
       "set": "DALARAN_HEIST",
       "token": true,
-      "description": "Summon King Mukla with Immune and Elusive.",
+      "description": "Summon King Mukla with Immune & Elusive.",
       "treasure": true,
       "effects": [
         {
@@ -128296,7 +128296,7 @@
       "rarity": "legendary",
       "set": "DALARAN_HEIST",
       "token": true,
-      "description": "At the end of your turn, summon a copy of this minion.",
+      "description": "At the end of your turn, summon a copy of this creature.",
       "treasure": true,
       "attack": 3,
       "health": 3,
@@ -128320,7 +128320,7 @@
       "rarity": "legendary",
       "set": "DALARAN_HEIST",
       "token": true,
-      "description": "Take control of all enemy minions.",
+      "description": "Take control of all enemy creatures.",
       "treasure": true,
       "effects": [
         {
@@ -128385,7 +128385,7 @@
       "rarity": "legendary",
       "set": "DALARAN_HEIST",
       "token": true,
-      "description": "Taunt. Battlecry: Replace ALL your other cards with random Legendary minions.",
+      "description": "Taunt. Battlecry: Replace ALL your other cards with random Legendary creatures.",
       "treasure": true,
       "attack": 7,
       "health": 7,
@@ -128408,7 +128408,7 @@
       "rarity": "legendary",
       "set": "DALARAN_HEIST",
       "token": true,
-      "description": "Discover a Legendary minion. Summon five copies of it.",
+      "description": "Discover a Legendary creature. Summon five copies of it.",
       "treasure": true,
       "effects": [
         {
@@ -128452,7 +128452,7 @@
       "rarity": "legendary",
       "set": "DALARAN_HEIST",
       "token": true,
-      "description": "Battlecry: Deal 4 damage to all enemy minions. Deathrattle: Shuffle this into your deck.",
+      "description": "Battlecry: Deal 4 damage to all enemy creatures. Deathrattle: Shuffle this into your deck.",
       "treasure": true,
       "attack": 4,
       "health": 4,
@@ -128483,7 +128483,7 @@
       "rarity": "legendary",
       "set": "DALARAN_HEIST",
       "token": true,
-      "description": "Deal 3 damage to all enemy minions. Add a second Candle to your hand.",
+      "description": "Deal 3 damage to all enemy creatures. Add a second Candle to your hand.",
       "treasure": true,
       "effects": [
         {
@@ -128506,7 +128506,7 @@
       "rarity": "legendary",
       "set": "DALARAN_HEIST",
       "token": true,
-      "description": "Deal 3 damage to all enemy minions. Add a third Candle to your hand.",
+      "description": "Deal 3 damage to all enemy creatures. Add a third Candle to your hand.",
       "effects": [
         {
           "type": "damage",
@@ -128528,7 +128528,7 @@
       "rarity": "legendary",
       "set": "DALARAN_HEIST",
       "token": true,
-      "description": "Deal 3 damage to all enemy minions.",
+      "description": "Deal 3 damage to all enemy creatures.",
       "effects": [
         {
           "type": "damage",
@@ -128644,7 +128644,7 @@
       "rarity": "legendary",
       "set": "DALARAN_HEIST",
       "token": true,
-      "description": "Deathrattle: Summon all minions killed by this weapon.",
+      "description": "Deathrattle: Summon all creatures killed by this weapon.",
       "treasure": true,
       "attack": 6,
       "durability": 3,
@@ -128667,7 +128667,7 @@
       "rarity": "legendary",
       "set": "DALARAN_HEIST",
       "token": true,
-      "description": "Echo. Transform your minions into random Legendary minions.",
+      "description": "Echo. Transform your creatures into random Legendary creatures.",
       "treasure": true,
       "echo": true,
       "keywords": [
@@ -128688,7 +128688,7 @@
       "rarity": "legendary",
       "set": "DALARAN_HEIST",
       "token": true,
-      "description": "Choose a friendly minion. Replace all minions in your deck with copies of it.",
+      "description": "Choose a friendly creature. Replace all creatures in your deck with copies of it.",
       "treasure": true,
       "effects": [
         {
@@ -128706,7 +128706,7 @@
       "rarity": "legendary",
       "set": "DALARAN_HEIST",
       "token": true,
-      "description": "Fill your board with annoying minions.",
+      "description": "Fill your board with annoying creatures.",
       "treasure": true,
       "effects": [
         {
@@ -128759,7 +128759,7 @@
       "rarity": "legendary",
       "set": "DALARAN_HEIST",
       "token": true,
-      "description": "Destroy ALL minions. Do it again at the start of your next turn.",
+      "description": "Destroy ALL creatures. Do it again at the start of your next turn.",
       "treasure": true,
       "effects": [
         {
@@ -128784,7 +128784,7 @@
       "rarity": "legendary",
       "set": "DALARAN_HEIST",
       "token": true,
-      "description": "Give a friendly minion +2/+2. Summon two copies of it.",
+      "description": "Give a friendly creature +2/+2. Summon two copies of it.",
       "treasure": true,
       "effects": [
         {
@@ -128826,7 +128826,7 @@
       "rarity": "legendary",
       "set": "DALARAN_HEIST",
       "token": true,
-      "description": "Give all minions in your deck +3/+3.",
+      "description": "Give all creatures in your deck +3/+3.",
       "treasure": true,
       "effects": [
         {
@@ -128845,7 +128845,7 @@
       "rarity": "legendary",
       "set": "DALARAN_HEIST",
       "token": true,
-      "description": "Stealth. After this minion attacks a hero, steal a card from your opponent's hand.",
+      "description": "Stealth. After this creature attacks a hero, steal a card from your opponent's hand.",
       "treasure": true,
       "attack": 2,
       "health": 5,
@@ -128896,7 +128896,7 @@
       "rarity": "basic",
       "set": "DALARAN_HEIST",
       "token": true,
-      "description": "Hero Power (2): Restore a minion to full Health.",
+      "description": "Hero Power (2): Restore a creature to full Health.",
       "power": {
         "cost": 2,
         "effects": [
@@ -128916,7 +128916,7 @@
       "rarity": "basic",
       "set": "DALARAN_HEIST",
       "token": true,
-      "description": "Hero Power (2): Give a minion +1/+1.",
+      "description": "Hero Power (2): Give a creature +1/+1.",
       "power": {
         "cost": 2,
         "effects": [
@@ -128938,7 +128938,7 @@
       "rarity": "basic",
       "set": "DALARAN_HEIST",
       "token": true,
-      "description": "Hero Power (2): Give a minion +2 Attack this turn.",
+      "description": "Hero Power (2): Give a creature +2 Attack this turn.",
       "power": {
         "cost": 2,
         "effects": [
@@ -128979,7 +128979,7 @@
       "rarity": "common",
       "set": "DALARAN_HEIST",
       "token": true,
-      "description": "Each turn this is in your hand, transform into a random 1-cost minion.",
+      "description": "Each turn this is in your hand, transform into a random 1-cost creature.",
       "attack": 1,
       "health": 1,
       "tribe": "Beast",
@@ -129019,7 +129019,7 @@
       "rarity": "basic",
       "set": "DALARAN_HEIST",
       "token": true,
-      "description": "Hero Power (2): Freeze a minion. If it's already Frozen, deal 2 damage to it.",
+      "description": "Hero Power (2): Freeze a creature. If it's already Frozen, deal 2 damage to it.",
       "power": {
         "cost": 2,
         "effects": [
@@ -129061,7 +129061,7 @@
       "rarity": "basic",
       "set": "DALARAN_HEIST",
       "token": true,
-      "description": "Hero Power (2): Give a friendly minion Divine Shield.",
+      "description": "Hero Power (2): Give a friendly creature Divine Shield.",
       "power": {
         "cost": 2,
         "effects": [
@@ -129082,7 +129082,7 @@
       "rarity": "basic",
       "set": "DALARAN_HEIST",
       "token": true,
-      "description": "Hero Power (2): Swap a minion's Attack and Health.",
+      "description": "Hero Power (2): Swap a creature's Attack & Health.",
       "power": {
         "cost": 2,
         "effects": [
@@ -129102,7 +129102,7 @@
       "rarity": "basic",
       "set": "DALARAN_HEIST",
       "token": true,
-      "description": "Hero Power (1): Give a minion -2 Attack until your next turn.",
+      "description": "Hero Power (1): Give a creature -2 Attack until your next turn.",
       "power": {
         "cost": 1,
         "effects": [
@@ -129144,7 +129144,7 @@
       "rarity": "basic",
       "set": "DALARAN_HEIST",
       "token": true,
-      "description": "Hero Power (2): Deal 2 damage to an undamaged minion.",
+      "description": "Hero Power (2): Deal 2 damage to an undamaged creature.",
       "power": {
         "cost": 2,
         "effects": [
@@ -129165,7 +129165,7 @@
       "rarity": "basic",
       "set": "DALARAN_HEIST",
       "token": true,
-      "description": "Hero Power (2): Transform a friendly minion into one that costs (1) more.",
+      "description": "Hero Power (2): Transform a friendly creature into one that costs (1) more.",
       "power": {
         "cost": 2,
         "effects": [
@@ -129266,7 +129266,7 @@
       "rarity": "basic",
       "set": "DALARAN_HEIST",
       "token": true,
-      "description": "Hero Power (2): Deal 1 damage to a minion and give it +2 Attack.",
+      "description": "Hero Power (2): Deal 1 damage to a creature & give it +2 Attack.",
       "power": {
         "cost": 2,
         "effects": [
@@ -129337,7 +129337,7 @@
       "set": "DALARAN_HEIST",
       "token": true,
       "passive": true,
-      "description": "Passive. After a friendly minion dies, gain 2 Armor."
+      "description": "Passive. After a friendly creature dies, gain 2 Armor."
     },
     {
       "id": "dala_rocket_backpacks",
@@ -129349,7 +129349,7 @@
       "set": "DALARAN_HEIST",
       "token": true,
       "passive": true,
-      "description": "Passive. Your minions have Rush."
+      "description": "Passive. Your creatures have Rush."
     },
     {
       "id": "dala_emerald_goggles",
@@ -129397,7 +129397,7 @@
       "set": "DALARAN_HEIST",
       "token": true,
       "passive": true,
-      "description": "Passive. At the start of the game, equip a random weapon and give it +1/+1."
+      "description": "Passive. At the start of the game, equip a random weapon & give it +1/+1."
     },
     {
       "id": "dala_a_princes_ring",
@@ -129469,7 +129469,7 @@
       "set": "DALARAN_HEIST",
       "token": true,
       "passive": true,
-      "description": "Passive. At the start of your turn, give a random minion in your hand +1/+1."
+      "description": "Passive. At the start of your turn, give a random creature in your hand +1/+1."
     },
     {
       "id": "dala_the_hand_of_rafaam",
@@ -129493,7 +129493,7 @@
       "set": "DALARAN_HEIST",
       "token": true,
       "passive": true,
-      "description": "Passive. After you play a minion, shuffle two copies of it into your deck. They cost (1)."
+      "description": "Passive. After you play a creature, shuffle two copies of it into your deck. They cost (1)."
     },
     {
       "id": "dala_elixir_of_vim",
