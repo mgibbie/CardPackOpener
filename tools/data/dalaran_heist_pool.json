@@ -1,0 +1,6313 @@
+{
+ "heroes": [
+  {
+   "id": "DALA_Barkeye",
+   "name": "Ol' Barkeye",
+   "type": "HERO",
+   "cost": null,
+   "text": "",
+   "cardClass": "HUNTER",
+   "mechanics": [],
+   "health": 15,
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_Chu",
+   "name": "Mr. Chu",
+   "type": "HERO",
+   "cost": null,
+   "text": "",
+   "cardClass": "WARRIOR",
+   "mechanics": [],
+   "health": 15,
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_Eudora",
+   "name": "Captain Eudora",
+   "type": "HERO",
+   "cost": null,
+   "text": "",
+   "cardClass": "ROGUE",
+   "mechanics": [],
+   "health": 15,
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_George",
+   "name": "George the Fallen",
+   "type": "HERO",
+   "cost": null,
+   "text": "",
+   "cardClass": "PALADIN",
+   "mechanics": [],
+   "health": 15,
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_Kriziki",
+   "name": "Kriziki",
+   "type": "HERO",
+   "cost": null,
+   "text": "",
+   "cardClass": "PRIEST",
+   "mechanics": [],
+   "health": 15,
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_Rakanishu",
+   "name": "Rakanishu",
+   "type": "HERO",
+   "cost": null,
+   "text": "",
+   "cardClass": "MAGE",
+   "mechanics": [],
+   "health": 15,
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_Squeamlish",
+   "name": "Squeamlish",
+   "type": "HERO",
+   "cost": null,
+   "text": "",
+   "cardClass": "DRUID",
+   "mechanics": [],
+   "health": 15,
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_Tekahn",
+   "name": "Tekahn",
+   "type": "HERO",
+   "cost": null,
+   "text": "",
+   "cardClass": "WARLOCK",
+   "mechanics": [],
+   "health": 15,
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_Vessina",
+   "name": "Vessina",
+   "type": "HERO",
+   "cost": null,
+   "text": "",
+   "cardClass": "SHAMAN",
+   "mechanics": [],
+   "health": 15,
+   "inBattlecards": true
+  }
+ ],
+ "classHeroPowers": [
+  {
+   "id": "DALA_Druid_HP1",
+   "name": "Lifebloom",
+   "type": "HERO_POWER",
+   "cost": 2,
+   "text": "Restore a minion to full Health.",
+   "cardClass": "DRUID",
+   "mechanics": [],
+   "inBattlecards": true
+  },
+  {
+   "id": "DALA_Druid_HP2",
+   "name": "Touch of Bark",
+   "type": "HERO_POWER",
+   "cost": 2,
+   "text": "Give a minion +1/+1.",
+   "cardClass": "DRUID",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_Hunter_HP1",
+   "name": "Opportunist",
+   "type": "HERO_POWER",
+   "cost": 2,
+   "text": "Give a minion +2 Attack this turn.",
+   "cardClass": "HUNTER",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_Hunter_HP2",
+   "name": "Pet Training",
+   "type": "HERO_POWER",
+   "cost": 1,
+   "text": "Add a 1/1 Shifting Chameleon to your hand.",
+   "cardClass": "HUNTER",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_Hunter_HP2t",
+   "name": "Shifting Chameleon",
+   "type": "MINION",
+   "cost": 1,
+   "text": "[x]Each turn this is in your hand, transform into a random 1-cost minion.",
+   "cardClass": "HUNTER",
+   "mechanics": [],
+   "attack": 1,
+   "health": 1,
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_Mage_HP1",
+   "name": "Burning Wit",
+   "type": "HERO_POWER",
+   "cost": 1,
+   "text": "Reduce the Cost of a random card in your hand by (2).",
+   "cardClass": "MAGE",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_Mage_HP2",
+   "name": "Frostburn",
+   "type": "HERO_POWER",
+   "cost": 2,
+   "text": "<b>Freeze</b> a character. If it's already <b>Frozen</b>, deal $2 damage.",
+   "cardClass": "MAGE",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_Paladin_HP1",
+   "name": "Backup",
+   "type": "HERO_POWER",
+   "cost": 2,
+   "text": "Add three 1/1 Silver Hand Recruits to your hand.",
+   "cardClass": "PALADIN",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_Paladin_HP2",
+   "name": "Boon of Light",
+   "type": "HERO_POWER",
+   "cost": 2,
+   "text": "Give a friendly minion <b>Divine Shield</b>.",
+   "cardClass": "PALADIN",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_Priest_HP1",
+   "name": "Distort",
+   "type": "HERO_POWER",
+   "cost": 2,
+   "text": "Swap a minion's Attack and Health.",
+   "cardClass": "PRIEST",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_Priest_HP2",
+   "name": "Soothe",
+   "type": "HERO_POWER",
+   "cost": 1,
+   "text": "Give a minion -2 Attack until your next turn.",
+   "cardClass": "PRIEST",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_Rogue_HP1",
+   "name": "Yoink!",
+   "type": "HERO_POWER",
+   "cost": 2,
+   "text": "[x]Add a random card to your hand <i>(from another class).</i>",
+   "cardClass": "ROGUE",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_Rogue_HP2",
+   "name": "Cut-less",
+   "type": "HERO_POWER",
+   "cost": 2,
+   "text": "Deal $2 damage to an undamaged minion.",
+   "cardClass": "ROGUE",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_Shaman_HP1",
+   "name": "Evolution",
+   "type": "HERO_POWER",
+   "cost": 2,
+   "text": "Transform a friendly minion into one that costs (1) more.",
+   "cardClass": "SHAMAN",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_Shaman_HP2",
+   "name": "Refresh",
+   "type": "HERO_POWER",
+   "cost": 1,
+   "text": "Draw a card. <b>Overload:</b> (1)",
+   "cardClass": "SHAMAN",
+   "mechanics": [
+    "OVERLOAD"
+   ],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_Warlock_HP1",
+   "name": "Pain Split",
+   "type": "HERO_POWER",
+   "cost": 2,
+   "text": "Take $2 damage. Deal $2 damage.",
+   "cardClass": "WARLOCK",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_Warlock_HP2",
+   "name": "The Pact",
+   "type": "HERO_POWER",
+   "cost": 2,
+   "text": "Take $2 damage. Summon a 2/2 Imp.",
+   "cardClass": "WARLOCK",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_Warlock_HP2t",
+   "name": "Devious Imp",
+   "type": "MINION",
+   "cost": 2,
+   "text": "",
+   "cardClass": "WARLOCK",
+   "mechanics": [],
+   "attack": 2,
+   "health": 2,
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_Warrior_HP1",
+   "name": "Invigorating Brew",
+   "type": "HERO_POWER",
+   "cost": 2,
+   "text": "Deal $1 damage to a minion and give it +2 Attack.",
+   "cardClass": "WARRIOR",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_Warrior_HP2",
+   "name": "Undermine",
+   "type": "HERO_POWER",
+   "cost": 2,
+   "text": "Shuffle two Explosives into your opponent's deck.",
+   "cardClass": "WARRIOR",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_Warrior_HP2t",
+   "name": "Improvised Explosive",
+   "type": "SPELL",
+   "cost": 2,
+   "text": "<b>Casts When Drawn</b> Take 3 damage.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [
+    "ImmuneToSpellpower"
+   ],
+   "inBattlecards": false
+  }
+ ],
+ "treasuresActive": [
+  {
+   "id": "DALA_700",
+   "name": "Continuum Collider",
+   "type": "SPELL",
+   "cost": 4,
+   "text": "Take an extra turn. Your opponent takes an extra turn after.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_701",
+   "name": "The Box",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "Each turn this is in your hand, transform it into a random treasure.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_702",
+   "name": "Gnomish Army Knife",
+   "type": "SPELL",
+   "cost": 5,
+   "text": "[x]Give a minion <b>Charge</b>, <b>Windfury</b>, <b>Divine Shield</b>, <b>Lifesteal</b>, <b>Poisonous</b>, <b>Taunt</b>, and <b>Stealth</b>.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_703",
+   "name": "The Muscle",
+   "type": "MINION",
+   "cost": 4,
+   "text": "<b>Battlecry:</b> Add three random cards to your hand. They cost (0).",
+   "cardClass": "NEUTRAL",
+   "mechanics": [
+    "BATTLECRY"
+   ],
+   "attack": 4,
+   "health": 5,
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_704",
+   "name": "Super Simian Sphere",
+   "type": "SPELL",
+   "cost": 5,
+   "text": "[x]Summon King Mukla with <b>Immune</b> and <b>Elusive</b>.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_705",
+   "name": "Grimmer Patron",
+   "type": "MINION",
+   "cost": 3,
+   "text": "At the end of your turn, summon a copy of this minion.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [
+    "TRIGGER_VISUAL"
+   ],
+   "attack": 3,
+   "health": 3,
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_706",
+   "name": "EVIL Propaganda",
+   "type": "SPELL",
+   "cost": 10,
+   "text": "Take control of all enemy minions.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_707",
+   "name": "Loyal Henchman",
+   "type": "MINION",
+   "cost": 1,
+   "text": "[x]<b>Start of Game:</b> Draw this. <b>Taunt</b>. Each turn this is in your hand, gain +1/+1.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [
+    "START_OF_GAME_KEYWORD",
+    "TAUNT"
+   ],
+   "attack": 1,
+   "health": 1,
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_708",
+   "name": "Untold Splendor",
+   "type": "SPELL",
+   "cost": 1,
+   "text": "Shuffle 5 random treasures into your deck.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_709",
+   "name": "Golden Candle",
+   "type": "MINION",
+   "cost": 4,
+   "text": "<b>Taunt</b>. <b>Battlecry:</b> Replace ALL other cards with random Legendary minions.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [
+    "BATTLECRY",
+    "TAUNT"
+   ],
+   "attack": 7,
+   "health": 7,
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_711",
+   "name": "Dreamgrove Ring",
+   "type": "SPELL",
+   "cost": 9,
+   "text": "<b>Discover</b> a <b>Legendary</b> minion. Summon five copies of it.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [
+    "DISCOVER"
+   ],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_712",
+   "name": "Orb of the Untold",
+   "type": "SPELL",
+   "cost": 4,
+   "text": "Deal $20 damage split between all enemies.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [
+    "ImmuneToSpellpower"
+   ],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_713",
+   "name": "Elder Taggawag",
+   "type": "MINION",
+   "cost": 3,
+   "text": "[x]<b>Battlecry:</b> Deal 4 damage to all enemy minions. <b>Deathrattle:</b> Shuffle this into your deck.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [
+    "BATTLECRY",
+    "DEATHRATTLE"
+   ],
+   "attack": 4,
+   "health": 4,
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_714",
+   "name": "THE... Candles?",
+   "type": "SPELL",
+   "cost": 3,
+   "text": "<b>Twinspell.</b> <b>Twinspell.</b> <b>Twinspell.</b> Deal $3 damage to all enemy minions.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [
+    "TWINSPELL"
+   ],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_714a",
+   "name": "THE... Candles?",
+   "type": "SPELL",
+   "cost": 3,
+   "text": "<b>Twinspell.</b> <b>Twinspell.</b> Deal $3 damage to all enemy minions.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [
+    "TWINSPELL"
+   ],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_714b",
+   "name": "THE... Candles?",
+   "type": "SPELL",
+   "cost": 3,
+   "text": "<b>Twinspell.</b> Deal $3 damage to all enemy minions.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [
+    "TWINSPELL"
+   ],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_714c",
+   "name": "THE... Candles?",
+   "type": "SPELL",
+   "cost": 3,
+   "text": "Deal $3 damage to all enemy minions.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_715",
+   "name": "Overpowered",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "After you play a card this turn, replay it <i>(targets chosen randomly)</i>.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_716",
+   "name": "Fly-By",
+   "type": "SPELL",
+   "cost": 5,
+   "text": "[x]Shuffle a Kadoom Bot into your opponent's deck. When drawn, it explodes for 50 damage.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_716t",
+   "name": "Kadoom Bot",
+   "type": "SPELL",
+   "cost": 1,
+   "text": "<b>Casts When Drawn</b> You take 50 damage.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [
+    "ImmuneToSpellpower"
+   ],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_717",
+   "name": "Case Study",
+   "type": "SPELL",
+   "cost": 1,
+   "text": "<b>Discover</b> a <b>Quest</b> <b>Reward</b>.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [
+    "DISCOVER"
+   ],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_718",
+   "name": "Elistra the Immortal",
+   "type": "MINION",
+   "cost": 3,
+   "text": "<b>Battlecry:</b> Recast all spells you've cast on this minion this run.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [
+    "BATTLECRY"
+   ],
+   "attack": 1,
+   "health": 1,
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_719",
+   "name": "Soulreaper's Scythe",
+   "type": "WEAPON",
+   "cost": 5,
+   "text": "<b>Deathrattle:</b> Summon all minions killed by this weapon this run.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [
+    "DEATHRATTLE"
+   ],
+   "attack": 6,
+   "durability": 0,
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_720",
+   "name": "Swampqueen's Call",
+   "type": "SPELL",
+   "cost": 2,
+   "text": "Transform your minions into random <b>Legendary</b> minions. Repeatable this turn.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_721",
+   "name": "Duplatransmogrifier",
+   "type": "SPELL",
+   "cost": 4,
+   "text": "Choose a friendly minion. Replace all minions in your Adventure deck with copies of it.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_722",
+   "name": "Annoy-o Horn",
+   "type": "SPELL",
+   "cost": 7,
+   "text": "Fill your board with annoying minions.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_723",
+   "name": "Hyperblaster",
+   "type": "WEAPON",
+   "cost": 3,
+   "text": "<b>Poisonous</b>. Your hero is <b>Immune</b> while attacking.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [
+    "POISONOUS"
+   ],
+   "attack": 1,
+   "durability": 0,
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_724",
+   "name": "Big Boomba",
+   "type": "SPELL",
+   "cost": 2,
+   "text": "Destroy ALL minions. Do it again at the start of your next turn.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_724d",
+   "name": "Big Boomba Dummy Effects",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "Holds an effect for Big Boomba Player Enchantment (DALA 724e)",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_725",
+   "name": "Banana Split",
+   "type": "SPELL",
+   "cost": 2,
+   "text": "Give a friendly minion +2/+2. Summon two copies of it.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_726",
+   "name": "Master Scheme",
+   "type": "SPELL",
+   "cost": 3,
+   "text": "[x]Deal $1 damage. Draw 1 card. Gain 1 Armor. Summon 1 <b>Boom |4(Bot, Bots)</b>. <i>(Upgrades each turn!)</i>",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_727",
+   "name": "Sow the Seeds",
+   "type": "SPELL",
+   "cost": 5,
+   "text": "Give all minions in your deck +3/+3.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_728d",
+   "name": "Recycling Dummy Effects",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "Holds an effect for Recycling Player Enchantment (DALA 728e)",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_729",
+   "name": "Dagwik Stickytoe",
+   "type": "MINION",
+   "cost": 3,
+   "text": "[x]<b>Stealth</b> After this minion attacks a hero, steal a card from    your opponent's hand.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [
+    "STEALTH",
+    "TRIGGER_VISUAL"
+   ],
+   "attack": 2,
+   "health": 5,
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_730",
+   "name": "Murgatha",
+   "type": "MINION",
+   "cost": 3,
+   "text": "Whenever you play a card, <b>Overload</b> one of your opponent's Mana Crystals.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [
+    "TRIGGER_VISUAL"
+   ],
+   "attack": 3,
+   "health": 6,
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_740ts",
+   "name": "Wondrous Wisdomball Copy Cards Tokenspell",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "Chance to give you 2 - 5 extra copies of a card.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_740ts2",
+   "name": "Wondrous Wisdomball Empty Hand Tokenspell",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "Chance to give you 5 random cards.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_740ts3",
+   "name": "Wondrous Wisdomball Free Minions Tokenspell",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "Chance to give you 3 random minions.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_740ts4",
+   "name": "Wondrous Wisdomball Random Legendary Tokenspell",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "Transform a minion into a random <b>Legendary</b> minion.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_740ts5",
+   "name": "Wondrous Wisdomball Summon Taunts Tokenspell",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "Summon 3 random <b>Taunt</b> minions.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_744d",
+   "name": "Hagatha's Embrace Dummy Effects",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "Holds an effect for Hagatha's Embrace Player Enchantment (DALA 744e)",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_746d",
+   "name": "Elixir of Vigor Dummy",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "Holds and effect for Elixir of Vigor Player Enchantment (DALA 746e)",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  }
+ ],
+ "treasuresPassive": [
+  {
+   "id": "DALA_728",
+   "name": "Recycling",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "<b>Passive</b> After a friendly minion dies, gain 2 armor.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [
+    "DUNGEON_PASSIVE_BUFF"
+   ],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_731",
+   "name": "Rocket Backpacks",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "<b>Passive</b> Your minions have <b>Rush</b>.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [
+    "DUNGEON_PASSIVE_BUFF"
+   ],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_733",
+   "name": "Emerald Goggles",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "<b>Passive</b> The left-most card in your hand costs (2) less.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [
+    "DUNGEON_PASSIVE_BUFF"
+   ],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_735",
+   "name": "Robes of Gaudiness",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "<b>Passive</b> Your cards cost half, but you can only play two cards each turn.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [
+    "DUNGEON_PASSIVE_BUFF"
+   ],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_736",
+   "name": "Stargazing",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "<b>Passive</b> You can use your Hero Power twice each turn. It costs (1) less.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [
+    "DUNGEON_PASSIVE_BUFF"
+   ],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_737",
+   "name": "Resourcefulness",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "<b>Passive</b> At the start of the game, equip a random weapon. Give it +1/+1.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [
+    "DUNGEON_PASSIVE_BUFF"
+   ],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_738",
+   "name": "A Prince's Ring",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "<b>Passive</b> Replace your starting Hero Power with a random Death Knight one.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [
+    "DUNGEON_PASSIVE_BUFF"
+   ],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_739",
+   "name": "Book of Wonders",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "<b>Passive</b> At the start of the game, shuffle 10 'Scrolls of Wonder' into your deck.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [
+    "DUNGEON_PASSIVE_BUFF"
+   ],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_740",
+   "name": "Wondrous Wisdomball",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "<b>Passive</b> Occasionally gives helpful advice.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [
+    "DUNGEON_PASSIVE_BUFF"
+   ],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_741",
+   "name": "Togwaggle's Dice",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "<b>Passive</b> At the end of your turn, randomize the cost of all cards in your hand.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [
+    "DUNGEON_PASSIVE_BUFF"
+   ],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_743",
+   "name": "Dr. Boom's Remote",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "<b>Passive</b> At the start of the game, summon three 1/1 Boom Bots.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [
+    "DUNGEON_PASSIVE_BUFF"
+   ],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_744",
+   "name": "Hagatha's Embrace",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "<b>Passive</b> At the start of your turn, give a random minion in your hand +1/+1.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [
+    "DUNGEON_PASSIVE_BUFF"
+   ],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_745",
+   "name": "The Hand of Rafaam",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "<b>Passive</b> At the start of the game, give your opponent two 'Cursed!' cards.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [
+    "DUNGEON_PASSIVE_BUFF"
+   ],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_746",
+   "name": "Elixir of Vigor",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "<b>Passive</b> After you play a minion, shuffle two copies of it into your deck. They cost (1).",
+   "cardClass": "NEUTRAL",
+   "mechanics": [
+    "DUNGEON_PASSIVE_BUFF"
+   ],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_747",
+   "name": "Elixir of Vim",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "<b>Passive</b> You draw an additional two cards each turn. You are <b>Immune</b> to <b>Fatigue</b>.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [
+    "DUNGEON_PASSIVE_BUFF"
+   ],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_748",
+   "name": "Elixir of Vile",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "<b>Passive</b> Your spells cost Health instead of Mana.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [
+    "DUNGEON_PASSIVE_BUFF"
+   ],
+   "inBattlecards": false
+  }
+ ],
+ "twists": [
+  {
+   "id": "DALA_800",
+   "name": "Random Mage Deck",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "Start the run with a deck of random cards.",
+   "cardClass": "MAGE",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_801",
+   "name": "Random Druid Deck",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "Start the run with a deck of random cards.",
+   "cardClass": "DRUID",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_802",
+   "name": "Random Hunter Deck",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "Start the run with a deck of random cards.",
+   "cardClass": "HUNTER",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_803",
+   "name": "Random Paladin Deck",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "Start the run with a deck of random cards.",
+   "cardClass": "PALADIN",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_804",
+   "name": "Random Priest Deck",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "Start the run with a deck of random cards.",
+   "cardClass": "PRIEST",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_805",
+   "name": "Random Rogue Deck",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "Start the run with a deck of random cards.",
+   "cardClass": "ROGUE",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_806",
+   "name": "Random Shaman Deck",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "Start the run with a deck of random cards.",
+   "cardClass": "SHAMAN",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_807",
+   "name": "Random Warlock Deck",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "Start the run with a deck of random cards.",
+   "cardClass": "WARLOCK",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_808",
+   "name": "Random Warrior Deck",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "Start the run with a deck of random cards.",
+   "cardClass": "WARRIOR",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_829",
+   "name": "Twist - The Coffers",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "Your opponent starts the game with a 'Cache of Cash.'",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_829t",
+   "name": "Cache of Cash",
+   "type": "MINION",
+   "cost": 1,
+   "text": "<b>Deathrattle:</b> Give each player two Coins.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [
+    "DEATHRATTLE"
+   ],
+   "attack": 0,
+   "health": 3,
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_830",
+   "name": "Twist - The Finale",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "This run has four additional powerful bosses.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_831",
+   "name": "Twist - The Stench",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "All minions' Attack and Health are swapped.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_832",
+   "name": "Twist - The Prisons",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "Both players start the game with a 'Violet Prison.'",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_832t",
+   "name": "Violet Prison",
+   "type": "MINION",
+   "cost": 0,
+   "text": "",
+   "cardClass": "NEUTRAL",
+   "mechanics": [
+    "TRIGGER_VISUAL",
+    "UNTOUCHABLE"
+   ],
+   "attack": 0,
+   "health": 0,
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_833",
+   "name": "Twist - The Carts",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "Both players can only have four minions.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_833t",
+   "name": "Fruit Cart",
+   "type": "MINION",
+   "cost": 1,
+   "text": "",
+   "cardClass": "NEUTRAL",
+   "mechanics": [
+    "UNTOUCHABLE"
+   ],
+   "attack": 0,
+   "health": 1,
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_833t2",
+   "name": "Fish Cart",
+   "type": "MINION",
+   "cost": 1,
+   "text": "",
+   "cardClass": "NEUTRAL",
+   "mechanics": [
+    "UNTOUCHABLE"
+   ],
+   "attack": 0,
+   "health": 1,
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_833t3",
+   "name": "Meat Cart",
+   "type": "MINION",
+   "cost": 1,
+   "text": "",
+   "cardClass": "NEUTRAL",
+   "mechanics": [
+    "UNTOUCHABLE"
+   ],
+   "attack": 0,
+   "health": 1,
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_833t4",
+   "name": "Dessert Cart",
+   "type": "MINION",
+   "cost": 1,
+   "text": "",
+   "cardClass": "NEUTRAL",
+   "mechanics": [
+    "UNTOUCHABLE"
+   ],
+   "attack": 0,
+   "health": 1,
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_850",
+   "name": "Anomaly - Arcane",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "All spells cost (2) less.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_851",
+   "name": "Anomaly - Summons",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "After a spell is played, a minion of the same cost is summoned.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_852",
+   "name": "Anomaly - Crying",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "All <b>Battlecries</b> trigger twice.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_853",
+   "name": "Anomaly - Rattling",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "All <b>Deathrattles</b> trigger twice.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_854",
+   "name": "Anomaly - Nesting",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "After a minion is played, it gains \"<b>Deathrattle:</b> Summon a 1/1 copy of this minion.\"",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_855",
+   "name": "Anomaly - Refreshing",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "At the end of each player's turn, that player draws until they have 5 cards.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_856",
+   "name": "Anomaly - Wild Magic",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "All spells cast an additional time. <i>(targets chosen randomly)</i>",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_857",
+   "name": "Anomaly - Glittering",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "After a player plays a card that costs (8) or more, that player adds a Treasure to their hand.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_858",
+   "name": "Anomaly - Fishy",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "Murlocs occasionally join the battle.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_859",
+   "name": "Anomaly - Gorged",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "Both players start the game with two extra cards and Mana Crystals.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_860",
+   "name": "Anomaly - Dragon Soul",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "After a player casts 3 spells in a turn, that player summons a 5/5 Dragon.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_861",
+   "name": "Anomaly - Ogreish",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "All minions have a 50% chance to attack the wrong enemy.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_862",
+   "name": "Anomaly - Reductive",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "At the end of each player's turn, reduce the cost of cards in their hand by (1).",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_863",
+   "name": "Anomaly - Hallucinating",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "Both players start the game with 10 'Hallucinations' in their deck.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_864",
+   "name": "Anomaly - Growing",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "Minions gain +1/+1 at the end of their owner's turn.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_865",
+   "name": "Anomaly - Explosive",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "After a minion is summoned, it gains \"<b>Deathrattle</b>: Deal 1 damage to all minions.\"",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_866",
+   "name": "Anomaly - Rejuvenating",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "[x]At the start of each player's turn, that player restores 2 Health to their hero.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_867",
+   "name": "Anomaly - Infused",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "After a minion is summoned, it gains <b>Taunt</b>, <b>Divine Shield</b>, <b>Rush</b>, or <b>Windfury</b> at random.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  }
+ ],
+ "tavernSpells": [
+  {
+   "id": "DALA_901",
+   "name": "Recruit",
+   "type": "SPELL",
+   "cost": 1,
+   "text": "Choose an enemy minion. Add it to your Adventure Deck.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": true
+  },
+  {
+   "id": "DALA_902",
+   "name": "Dismiss",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "Choose a friendly minion. Remove it from your Adventure Deck.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_903",
+   "name": "Take a Chance",
+   "type": "SPELL",
+   "cost": 1,
+   "text": "Reduce the cost of a random card in your Adventure Deck to (0).",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_904",
+   "name": "Good Food",
+   "type": "SPELL",
+   "cost": 1,
+   "text": "Increase your starting Health by 5.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_905",
+   "name": "Right Hand Man",
+   "type": "SPELL",
+   "cost": 1,
+   "text": "Choose a friendly minion. It always starts in your hand.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_906",
+   "name": "Round of Drinks",
+   "type": "SPELL",
+   "cost": 1,
+   "text": "[x]Add all enemy minions to your Adventure Deck. They gain +1/+1 for this run.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_907",
+   "name": "Recruit a Veteran",
+   "type": "SPELL",
+   "cost": 1,
+   "text": "<b>Discover</b> a <b>Legendary</b> minion. Add it to your Adventure Deck.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [
+    "DISCOVER"
+   ],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_908",
+   "name": "Tell a Story",
+   "type": "SPELL",
+   "cost": 1,
+   "text": "Give a friendly minion +2/+2 for this run.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_909",
+   "name": "You're All Fired!",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "Remove all friendly minions in play from your Adventure Deck.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_910",
+   "name": "The Gang's All Here!",
+   "type": "SPELL",
+   "cost": 1,
+   "text": "Choose a friendly minion. Add three new copies of it to your Adventure Deck.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_911",
+   "name": "Kindle",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "Look at four spells from your Adventure Deck. Choose one to remove.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_912",
+   "name": "Brood",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "Fill the tavern with new minions.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_913",
+   "name": "Tall Tales",
+   "type": "SPELL",
+   "cost": 1,
+   "text": "[x]Choose a friendly minion. It gains +4/+4 but costs (2) more for this run.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_914",
+   "name": "The Upper Hand",
+   "type": "SPELL",
+   "cost": 1,
+   "text": "Look at four spells from your deck. Reduce the cost of one by (3) for this run.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  }
+ ],
+ "twistDeckCards": [
+  {
+   "id": "DALA_501",
+   "name": "Cheerful Spirit",
+   "type": "MINION",
+   "cost": 2,
+   "text": "Whenever you draw a spell, add a copy of it to your deck.",
+   "cardClass": "MAGE",
+   "mechanics": [
+    "TRIGGER_VISUAL"
+   ],
+   "attack": 2,
+   "health": 4,
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_502",
+   "name": "Infuriated Banker",
+   "type": "MINION",
+   "cost": 2,
+   "text": "Whenever a Coin is played, gain +1/+1.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [
+    "TRIGGER_VISUAL"
+   ],
+   "attack": 1,
+   "health": 1,
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_503",
+   "name": "Kirin Tor Guard",
+   "type": "MINION",
+   "cost": 2,
+   "text": "Has +1 Attack for each other friendly Kirin Tor Guard.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "attack": 1,
+   "health": 4,
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_504",
+   "name": "Kirin Tor Elemental",
+   "type": "MINION",
+   "cost": 2,
+   "text": "Your spells cast an additional time.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "attack": 2,
+   "health": 3,
+   "inBattlecards": false
+  }
+ ],
+ "draftBuckets": [
+  {
+   "id": "DALA_Druid_01",
+   "name": "Swarm",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "",
+   "cardClass": "DRUID",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_Druid_02",
+   "name": "Recovery",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "",
+   "cardClass": "DRUID",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_Druid_03",
+   "name": "Choices, Choices",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "",
+   "cardClass": "DRUID",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_Druid_04",
+   "name": "All Bark",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "",
+   "cardClass": "DRUID",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_Druid_05",
+   "name": "Nature's Wrath",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "",
+   "cardClass": "DRUID",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_Druid_06",
+   "name": "Feral Bite",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "",
+   "cardClass": "DRUID",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_Druid_07",
+   "name": "Nurture and Grow",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "",
+   "cardClass": "DRUID",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_Druid_08",
+   "name": "Roar!",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "",
+   "cardClass": "DRUID",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_Druid_09",
+   "name": "Protectors",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "",
+   "cardClass": "DRUID",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_Druid_10",
+   "name": "Beasts and Buffs",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "",
+   "cardClass": "DRUID",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_Druid_11",
+   "name": "Big Friends",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "",
+   "cardClass": "DRUID",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_Druid_12",
+   "name": "Legends",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "",
+   "cardClass": "DRUID",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_Hunter_01",
+   "name": "Spells",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "",
+   "cardClass": "HUNTER",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_Hunter_02",
+   "name": "Secretive",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "",
+   "cardClass": "HUNTER",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_Hunter_03",
+   "name": "Deathrattle",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "",
+   "cardClass": "HUNTER",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_Hunter_04",
+   "name": "Technological",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "",
+   "cardClass": "HUNTER",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_Hunter_05",
+   "name": "Big Beasts",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "",
+   "cardClass": "HUNTER",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_Hunter_06",
+   "name": "Tiny Trouble",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "",
+   "cardClass": "HUNTER",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_Hunter_07",
+   "name": "Empowering",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "",
+   "cardClass": "HUNTER",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_Hunter_08",
+   "name": "Aggression",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "",
+   "cardClass": "HUNTER",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_Hunter_09",
+   "name": "Overwhelm",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "",
+   "cardClass": "HUNTER",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_Hunter_10",
+   "name": "Professional",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "",
+   "cardClass": "HUNTER",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_Hunter_11",
+   "name": "Battlecry",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "",
+   "cardClass": "HUNTER",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_Hunter_12",
+   "name": "Legends",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "",
+   "cardClass": "HUNTER",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_Mage_01",
+   "name": "Multi-Cast",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "",
+   "cardClass": "MAGE",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_Mage_02",
+   "name": "Coldsnap",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "",
+   "cardClass": "MAGE",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_Mage_03",
+   "name": "Summoning",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "",
+   "cardClass": "MAGE",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_Mage_04",
+   "name": "Powered Up",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "",
+   "cardClass": "MAGE",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_Mage_05",
+   "name": "Go Big",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "",
+   "cardClass": "MAGE",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_Mage_06",
+   "name": "BURN!",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "",
+   "cardClass": "MAGE",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_Mage_07",
+   "name": "Elements",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "",
+   "cardClass": "MAGE",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_Mage_08",
+   "name": "Technology",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "",
+   "cardClass": "MAGE",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_Mage_09",
+   "name": "Fate's Hand",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "",
+   "cardClass": "MAGE",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_Mage_10",
+   "name": "Trade Secrets",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "",
+   "cardClass": "MAGE",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_Mage_11",
+   "name": "Inspired",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "",
+   "cardClass": "MAGE",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_Mage_12",
+   "name": "Legends",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "",
+   "cardClass": "MAGE",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_Paladin_01",
+   "name": "Secret Whispers",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "",
+   "cardClass": "PALADIN",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_Paladin_02",
+   "name": "Small Army",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "",
+   "cardClass": "PALADIN",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_Paladin_03",
+   "name": "Dragons",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "",
+   "cardClass": "PALADIN",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_Paladin_04",
+   "name": "Holy Infusions",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "",
+   "cardClass": "PALADIN",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_Paladin_05",
+   "name": "Healing Hands",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "",
+   "cardClass": "PALADIN",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_Paladin_06",
+   "name": "Handbuff",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "",
+   "cardClass": "PALADIN",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_Paladin_07",
+   "name": "Murglgglgl",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "",
+   "cardClass": "PALADIN",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_Paladin_08",
+   "name": "Robotic",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "",
+   "cardClass": "PALADIN",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_Paladin_09",
+   "name": "The Silver Hand",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "",
+   "cardClass": "PALADIN",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_Paladin_10",
+   "name": "Protectors",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "",
+   "cardClass": "PALADIN",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_Paladin_11",
+   "name": "Judgment",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "",
+   "cardClass": "PALADIN",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_Paladin_12",
+   "name": "Legends",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "",
+   "cardClass": "PALADIN",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_Priest_01",
+   "name": "Curatives",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "",
+   "cardClass": "PRIEST",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_Priest_02",
+   "name": "Afterlife",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "",
+   "cardClass": "PRIEST",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_Priest_03",
+   "name": "From the Graves",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "",
+   "cardClass": "PRIEST",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_Priest_04",
+   "name": "Shadows",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "",
+   "cardClass": "PRIEST",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_Priest_05",
+   "name": "What's Mind is Mine",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "",
+   "cardClass": "PRIEST",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_Priest_06",
+   "name": "Old God",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "",
+   "cardClass": "PRIEST",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_Priest_07",
+   "name": "Pint-Sized",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "",
+   "cardClass": "PRIEST",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_Priest_08",
+   "name": "Dragonfire",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "",
+   "cardClass": "PRIEST",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_Priest_09",
+   "name": "Twisted",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "",
+   "cardClass": "PRIEST",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_Priest_10",
+   "name": "Strength Within",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "",
+   "cardClass": "PRIEST",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_Priest_11",
+   "name": "Miracles",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "",
+   "cardClass": "PRIEST",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_Priest_12",
+   "name": "Legends",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "",
+   "cardClass": "PRIEST",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_Rogue_01",
+   "name": "Combo",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "",
+   "cardClass": "ROGUE",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_Rogue_02",
+   "name": "Thief",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "",
+   "cardClass": "ROGUE",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_Rogue_03",
+   "name": "Trickery",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "",
+   "cardClass": "ROGUE",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_Rogue_04",
+   "name": "Kingslayer",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "",
+   "cardClass": "ROGUE",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_Rogue_05",
+   "name": "Deathrattle",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "",
+   "cardClass": "ROGUE",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_Rogue_06",
+   "name": "Cogs and Gears",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "",
+   "cardClass": "ROGUE",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_Rogue_07",
+   "name": "Scallywags",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "",
+   "cardClass": "ROGUE",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_Rogue_08",
+   "name": "Cutthroat",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "",
+   "cardClass": "ROGUE",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_Rogue_09",
+   "name": "Draw!",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "",
+   "cardClass": "ROGUE",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_Rogue_10",
+   "name": "Battlecry",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "",
+   "cardClass": "ROGUE",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_Rogue_11",
+   "name": "Spellslinger",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "",
+   "cardClass": "ROGUE",
+   "mechanics": [],
+   "inBattlecards": true
+  },
+  {
+   "id": "DALA_Rogue_12",
+   "name": "Legends",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "",
+   "cardClass": "ROGUE",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_Shaman_01",
+   "name": "Flood",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "",
+   "cardClass": "SHAMAN",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_Shaman_02",
+   "name": "Spirits",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "",
+   "cardClass": "SHAMAN",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_Shaman_03",
+   "name": "Fishy",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "",
+   "cardClass": "SHAMAN",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_Shaman_04",
+   "name": "Overload",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "",
+   "cardClass": "SHAMAN",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_Shaman_05",
+   "name": "Big Shaman",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "",
+   "cardClass": "SHAMAN",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_Shaman_06",
+   "name": "Elemental Wrath",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "",
+   "cardClass": "SHAMAN",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_Shaman_07",
+   "name": "Battlecry",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "",
+   "cardClass": "SHAMAN",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_Shaman_08",
+   "name": "Sssspells",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "",
+   "cardClass": "SHAMAN",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_Shaman_09",
+   "name": "Carvings",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "",
+   "cardClass": "SHAMAN",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_Shaman_10",
+   "name": "Regeneration",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "",
+   "cardClass": "SHAMAN",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_Shaman_11",
+   "name": "Shifting Scales",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "",
+   "cardClass": "SHAMAN",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_Shaman_12",
+   "name": "Legends",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "",
+   "cardClass": "SHAMAN",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_Warlock_01",
+   "name": "Big Demons",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "",
+   "cardClass": "WARLOCK",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_Warlock_02",
+   "name": "Swarming",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "",
+   "cardClass": "WARLOCK",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_Warlock_03",
+   "name": "Draw",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "",
+   "cardClass": "WARLOCK",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_Warlock_04",
+   "name": "Sacrifice",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "",
+   "cardClass": "WARLOCK",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_Warlock_05",
+   "name": "Pain",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "",
+   "cardClass": "WARLOCK",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_Warlock_06",
+   "name": "Discard",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "",
+   "cardClass": "WARLOCK",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_Warlock_07",
+   "name": "In Control",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "",
+   "cardClass": "WARLOCK",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_Warlock_08",
+   "name": "Destruction",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "",
+   "cardClass": "WARLOCK",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_Warlock_09",
+   "name": "Lil' Demons",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "",
+   "cardClass": "WARLOCK",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_Warlock_10",
+   "name": "Empowering",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "",
+   "cardClass": "WARLOCK",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_Warlock_11",
+   "name": "Curatives",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "",
+   "cardClass": "WARLOCK",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_Warlock_12",
+   "name": "Legend",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "",
+   "cardClass": "WARLOCK",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_Warrior_01",
+   "name": "Mercenaries",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "",
+   "cardClass": "WARRIOR",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_Warrior_02",
+   "name": "Damaged",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "",
+   "cardClass": "WARRIOR",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_Warrior_03",
+   "name": "Big Minions",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "",
+   "cardClass": "WARRIOR",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_Warrior_04",
+   "name": "Bombs Away!",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "",
+   "cardClass": "WARRIOR",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_Warrior_05",
+   "name": "Rush",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "",
+   "cardClass": "WARRIOR",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_Warrior_06",
+   "name": "Iron and Steel",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "",
+   "cardClass": "WARRIOR",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_Warrior_07",
+   "name": "Dragon",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "",
+   "cardClass": "WARRIOR",
+   "mechanics": [],
+   "inBattlecards": true
+  },
+  {
+   "id": "DALA_Warrior_08",
+   "name": "Armored Up",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "",
+   "cardClass": "WARRIOR",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_Warrior_09",
+   "name": "Arsenal",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "",
+   "cardClass": "WARRIOR",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_Warrior_10",
+   "name": "All Might",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "",
+   "cardClass": "WARRIOR",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_Warrior_11",
+   "name": "Taunt",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "",
+   "cardClass": "WARRIOR",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_Warrior_12",
+   "name": "Legends",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "",
+   "cardClass": "WARRIOR",
+   "mechanics": [],
+   "inBattlecards": false
+  }
+ ],
+ "bossHeroes": [
+  {
+   "id": "DALA_BOSS_01h",
+   "name": "Chomper",
+   "type": "HERO",
+   "cost": null,
+   "text": "<i>Chomper survives the sewers by snacking on smaller minions.</i>",
+   "cardClass": "HUNTER",
+   "mechanics": [],
+   "health": 10,
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_BOSS_02h",
+   "name": "Awilo, Cooking Trainer",
+   "type": "HERO",
+   "cost": null,
+   "text": "<i>This chef is cooking up some REALLY healthy food.</i>",
+   "cardClass": "WARRIOR",
+   "mechanics": [],
+   "health": 30,
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_BOSS_03h",
+   "name": "The Great Akazamzarak",
+   "type": "HERO",
+   "cost": null,
+   "text": "<i>It's not real magic. He's got cards tucked into his sleeve.</i>",
+   "cardClass": "MAGE",
+   "mechanics": [
+    "TRIGGER_VISUAL"
+   ],
+   "health": 10,
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_BOSS_04h",
+   "name": "Kaye Toogie",
+   "type": "HERO",
+   "cost": null,
+   "text": "<i>Step 1: Open portal. Step 2: Minions fight. Step 3: ...Victory?</i>",
+   "cardClass": "WARLOCK",
+   "mechanics": [],
+   "health": 30,
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_BOSS_05h",
+   "name": "The Amazing \"Bonepaw\"",
+   "type": "HERO",
+   "cost": null,
+   "text": "<i>What's amazing is how far he's gotten copying other people's spells.</i>",
+   "cardClass": "MAGE",
+   "mechanics": [],
+   "health": 30,
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_BOSS_06dk",
+   "name": "\"Scourgelord\" Dazzik",
+   "type": "HERO",
+   "cost": 8,
+   "text": "<b>Battlecry</b>: Equip a 4/3 Shadowmourne that also damages adjacent minions.",
+   "cardClass": "WARRIOR",
+   "mechanics": [
+    "BATTLECRY"
+   ],
+   "health": 30,
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_BOSS_06h",
+   "name": "Dazzik \"Hellscream\"",
+   "type": "HERO",
+   "cost": null,
+   "text": "<i>Something about the Warchief seems a little... off.</i>",
+   "cardClass": "WARRIOR",
+   "mechanics": [
+    "TRIGGER_VISUAL"
+   ],
+   "health": 30,
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_BOSS_07h",
+   "name": "Flight Master Belnaara",
+   "type": "HERO",
+   "cost": null,
+   "text": "<i>When it comes to Fight or Flight, Belnaara chooses both.</i>",
+   "cardClass": "HUNTER",
+   "mechanics": [],
+   "health": 30,
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_BOSS_08h",
+   "name": "Applebough",
+   "type": "HERO",
+   "cost": null,
+   "text": "<i>This old tree is full of knowledge to drop.</i>",
+   "cardClass": "DRUID",
+   "mechanics": [],
+   "health": 30,
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_BOSS_09h",
+   "name": "Archivist Oshi",
+   "type": "HERO",
+   "cost": null,
+   "text": "<i>Those who forget history are doomed to resummon it.</i>",
+   "cardClass": "PRIEST",
+   "mechanics": [],
+   "health": 30,
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_BOSS_10h",
+   "name": "Mo Eniwhiskers",
+   "type": "HERO",
+   "cost": null,
+   "text": "<i>Mo's money creates Mo's problems.</i>",
+   "cardClass": "ROGUE",
+   "mechanics": [],
+   "health": 30,
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_BOSS_11h",
+   "name": "Noz Timbertail",
+   "type": "HERO",
+   "cost": null,
+   "text": "<i>This kobold pirate has elevated sneak attacks to an art form.</i>",
+   "cardClass": "ROGUE",
+   "mechanics": [],
+   "health": 30,
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_BOSS_12h",
+   "name": "Cravitz Lorent",
+   "type": "HERO",
+   "cost": null,
+   "text": "<i>Your battle with this romance novelist won't have a happy ending.</i>",
+   "cardClass": "WARLOCK",
+   "mechanics": [],
+   "health": 30,
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_BOSS_13h",
+   "name": "Albin Eastoft",
+   "type": "HERO",
+   "cost": null,
+   "text": "<i>Friend? Foe? He's on a beastial rampage, he's not particular.</i>",
+   "cardClass": "ROGUE",
+   "mechanics": [],
+   "health": 30,
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_BOSS_14h",
+   "name": "Tierra Blythe",
+   "type": "HERO",
+   "cost": null,
+   "text": "<i>Be sure to tip your wait staff! (Or else.)</i>",
+   "cardClass": "WARRIOR",
+   "mechanics": [],
+   "health": 30,
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_BOSS_15h",
+   "name": "Moon Priestess Nici",
+   "type": "HERO",
+   "cost": null,
+   "text": "<i>Time heals all wounds. But if you're in a hurry, call Nici!</i>",
+   "cardClass": "PRIEST",
+   "mechanics": [],
+   "health": 30,
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_BOSS_16h",
+   "name": "Alchemist Wendy",
+   "type": "HERO",
+   "cost": null,
+   "text": "<i>This alchemist mixes up decks, attempting to create golden cards.</i>",
+   "cardClass": "MAGE",
+   "mechanics": [],
+   "health": 30,
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_BOSS_17h",
+   "name": "Tala Stonerage",
+   "type": "HERO",
+   "cost": null,
+   "text": "<i>Druids walk many paths. Tala walks them all.</i>",
+   "cardClass": "DRUID",
+   "mechanics": [],
+   "health": 30,
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_BOSS_18h",
+   "name": "Disidra Stormglory",
+   "type": "HERO",
+   "cost": null,
+   "text": "<i>Terribly tenacious. Truly thaumaturgic. Totally totemic.</i>",
+   "cardClass": "SHAMAN",
+   "mechanics": [],
+   "health": 30,
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_BOSS_19h",
+   "name": "Linzi Redgrin",
+   "type": "HERO",
+   "cost": null,
+   "text": "<i>This teeny-tiny rogue dishes out some big big hurt.</i>",
+   "cardClass": "ROGUE",
+   "mechanics": [],
+   "health": 10,
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_BOSS_20h",
+   "name": "Vas'no",
+   "type": "HERO",
+   "cost": null,
+   "text": "<i>This troll water shaman is into undertows and overloads.</i>",
+   "cardClass": "SHAMAN",
+   "mechanics": [],
+   "health": 30,
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_BOSS_21h",
+   "name": "Whirt the All-Knowing",
+   "type": "HERO",
+   "cost": null,
+   "text": "<i>What's the secret to knowing all secrets? It's a secret.</i>",
+   "cardClass": "MAGE",
+   "mechanics": [],
+   "health": 30,
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_BOSS_22h",
+   "name": "Bookmaster Bae Chao",
+   "type": "HERO",
+   "cost": null,
+   "text": "<i>Quiet, please.</i>",
+   "cardClass": "PRIEST",
+   "mechanics": [],
+   "health": 30,
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_BOSS_23h",
+   "name": "Sharky McFin",
+   "type": "HERO",
+   "cost": null,
+   "text": "<i>This McShark feeds on the McWeak.</i>",
+   "cardClass": "DRUID",
+   "mechanics": [],
+   "health": 30,
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_BOSS_24h",
+   "name": "Ranger Ar'ha",
+   "type": "HERO",
+   "cost": null,
+   "text": "<i>Battlecry havoc, and let slip the Alleycats of war!</i>",
+   "cardClass": "HUNTER",
+   "mechanics": [],
+   "health": 30,
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_BOSS_25h",
+   "name": "Jepetto Joybuzz",
+   "type": "HERO",
+   "cost": null,
+   "text": "<i>Some assembly required.</i>",
+   "cardClass": "HUNTER",
+   "mechanics": [],
+   "health": 30,
+   "inBattlecards": true
+  },
+  {
+   "id": "DALA_BOSS_26h",
+   "name": "Dalaran Fountain Golem",
+   "type": "HERO",
+   "cost": null,
+   "text": "<i>Ice cold this fountain flows frostin' up foes with lyrical ice floes.</i>",
+   "cardClass": "SHAMAN",
+   "mechanics": [],
+   "health": 30,
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_BOSS_27h",
+   "name": "Rasil Fireborne",
+   "type": "HERO",
+   "cost": null,
+   "text": "<i>Some say art is subjective. Rasil prefers destructive.</i>",
+   "cardClass": "PALADIN",
+   "mechanics": [],
+   "health": 30,
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_BOSS_28h",
+   "name": "Xur'ios",
+   "type": "HERO",
+   "cost": null,
+   "text": "<i>Master of spellcasting. [x]Lousy at spell-aiming.</i>",
+   "cardClass": "MAGE",
+   "mechanics": [],
+   "health": 30,
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_BOSS_29h",
+   "name": "Mama Diggs",
+   "type": "HERO",
+   "cost": null,
+   "text": "<i>She's always digging into her deck for elementals.</i>",
+   "cardClass": "SHAMAN",
+   "mechanics": [],
+   "health": 40,
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_BOSS_30h",
+   "name": "The Rat King",
+   "type": "HERO",
+   "cost": null,
+   "text": "<i>There must always be a rat king.</i>",
+   "cardClass": "DRUID",
+   "mechanics": [],
+   "health": 10,
+   "inBattlecards": true
+  },
+  {
+   "id": "DALA_BOSS_31h",
+   "name": "Timothy Jones",
+   "type": "HERO",
+   "cost": null,
+   "text": "<i>Timothy has never dusted a golden. Not even once!</i>",
+   "cardClass": "PALADIN",
+   "mechanics": [],
+   "health": 30,
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_BOSS_32h",
+   "name": "Kizi Copperclip",
+   "type": "HERO",
+   "cost": null,
+   "text": "<i>A skilled stylist, but get on her bad side and she's a bit snippy.</i>",
+   "cardClass": "WARRIOR",
+   "mechanics": [],
+   "health": 10,
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_BOSS_33h",
+   "name": "Gold Elemental",
+   "type": "HERO",
+   "cost": null,
+   "text": "<i>Something has gone awry at the bottom of the wishing well.</i>",
+   "cardClass": "WARLOCK",
+   "mechanics": [],
+   "health": 40,
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_BOSS_34h",
+   "name": "Carousel Gryphon",
+   "type": "HERO",
+   "cost": null,
+   "text": "<i>Round and round your minions go...</i>",
+   "cardClass": "DRUID",
+   "mechanics": [],
+   "health": 30,
+   "inBattlecards": true
+  },
+  {
+   "id": "DALA_BOSS_35h",
+   "name": "Soothsayer Zoie",
+   "type": "HERO",
+   "cost": null,
+   "text": "<i>This healer will fight for her city. Break out the sooths!</i>",
+   "cardClass": "PRIEST",
+   "mechanics": [],
+   "health": 30,
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_BOSS_36h",
+   "name": "Draemus",
+   "type": "HERO",
+   "cost": null,
+   "text": "<i>Importer of rare and exotic pets. Many of them dangerous.</i>",
+   "cardClass": "HUNTER",
+   "mechanics": [],
+   "health": 30,
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_BOSS_37h",
+   "name": "Ol' Toomba",
+   "type": "HERO",
+   "cost": null,
+   "text": "<i>His hunt for treasure consumed his life... and maybe yours too.</i>",
+   "cardClass": "ROGUE",
+   "mechanics": [],
+   "health": 30,
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_BOSS_38h",
+   "name": "Tipsi Wobblerune",
+   "type": "HERO",
+   "cost": null,
+   "text": "<i>She's a portable portal party!</i>",
+   "cardClass": "MAGE",
+   "mechanics": [],
+   "health": 30,
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_BOSS_39h",
+   "name": "Aki the Brilliant",
+   "type": "HERO",
+   "cost": null,
+   "text": "<i>Handbuffing isn't particularly brilliant but the name stuck.</i>",
+   "cardClass": "PALADIN",
+   "mechanics": [],
+   "health": 30,
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_BOSS_40h",
+   "name": "Oxana Demonslay",
+   "type": "HERO",
+   "cost": null,
+   "text": "<i>Slaying demons is her profession, but beating you is her passion.</i>",
+   "cardClass": "WARLOCK",
+   "mechanics": [],
+   "health": 30,
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_BOSS_41h",
+   "name": "Ungan Oddkind",
+   "type": "HERO",
+   "cost": null,
+   "text": "<i>He conjures up animals. And insults. And insulting animals.</i>",
+   "cardClass": "HUNTER",
+   "mechanics": [],
+   "health": 30,
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_BOSS_42h",
+   "name": "P.O.G.O.",
+   "type": "HERO",
+   "cost": null,
+   "text": "<i>This bionic bouncing machine has gone completely rogue!</i>",
+   "cardClass": "ROGUE",
+   "mechanics": [],
+   "health": 30,
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_BOSS_43h",
+   "name": "Magistrix Norroa",
+   "type": "HERO",
+   "cost": null,
+   "text": "<i>There's no time to read her card text. Go, go, GO!</i>",
+   "cardClass": "MAGE",
+   "mechanics": [],
+   "health": 30,
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_BOSS_44h",
+   "name": "Erekem",
+   "type": "HERO",
+   "cost": null,
+   "text": "<i>This Arakkoa can see the future... and he's stacking the deck.</i>",
+   "cardClass": "SHAMAN",
+   "mechanics": [],
+   "health": 30,
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_BOSS_45h",
+   "name": "Moragg",
+   "type": "HERO",
+   "cost": null,
+   "text": "<i>\"Prisoner #54293. Indefinite suspension. Avoid eye contact.\"</i>",
+   "cardClass": "WARLOCK",
+   "mechanics": [],
+   "health": 30,
+   "inBattlecards": true
+  },
+  {
+   "id": "DALA_BOSS_46h",
+   "name": "Ichoron",
+   "type": "HERO",
+   "cost": null,
+   "text": "<i>This elemental is double the trouble and triple the bubble.</i>",
+   "cardClass": "MAGE",
+   "mechanics": [],
+   "health": 30,
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_BOSS_47h",
+   "name": "Lavanthor",
+   "type": "HERO",
+   "cost": null,
+   "text": "<i>\"What's in your mouth Lavanthor? Spit it out! Bad core hound!\"</i>",
+   "cardClass": "WARRIOR",
+   "mechanics": [],
+   "health": 30,
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_BOSS_48h",
+   "name": "Zuramat the Obliterator",
+   "type": "HERO",
+   "cost": null,
+   "text": "<i>Imprisoned because the Kirin Tor mostly frowns on obliterations.</i>",
+   "cardClass": "WARLOCK",
+   "mechanics": [],
+   "health": 30,
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_BOSS_49h",
+   "name": "Cyanigosa",
+   "type": "HERO",
+   "cost": null,
+   "text": "<i>This master of chaotic magic was the chosen agent of Malygos.</i>",
+   "cardClass": "MAGE",
+   "mechanics": [],
+   "health": 30,
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_BOSS_50h",
+   "name": "Nozari",
+   "type": "HERO",
+   "cost": null,
+   "text": "<i>When time travel fails, bronze dragons often resort to random sand.</i>",
+   "cardClass": "PALADIN",
+   "mechanics": [],
+   "health": 30,
+   "inBattlecards": true
+  },
+  {
+   "id": "DALA_BOSS_51h",
+   "name": "Millificent Manastorm",
+   "type": "HERO",
+   "cost": null,
+   "text": "<i>Dread spouse of Millhouse, whom she'd like to have a word with.</i>",
+   "cardClass": "WARRIOR",
+   "mechanics": [
+    "TRIGGER_VISUAL"
+   ],
+   "health": 30,
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_BOSS_52h",
+   "name": "Lieutenant Sinclari",
+   "type": "HERO",
+   "cost": null,
+   "text": "<i>She told them the Hold needed more security. She told them!</i>",
+   "cardClass": "MAGE",
+   "mechanics": [],
+   "health": 30,
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_BOSS_53h",
+   "name": "Dancin' Deryl",
+   "type": "HERO",
+   "cost": null,
+   "text": "<i>Can't stop, won't stop, the boogie woogie!</i>",
+   "cardClass": "SHAMAN",
+   "mechanics": [],
+   "health": 30,
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_BOSS_54h",
+   "name": "Locksmith Zibb",
+   "type": "HERO",
+   "cost": null,
+   "text": "<i>Mages in Dalaran rely on Zibb's skills to lock up their spells.</i>",
+   "cardClass": "SHAMAN",
+   "mechanics": [],
+   "health": 30,
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_BOSS_55h",
+   "name": "Captain Hannigan",
+   "type": "HERO",
+   "cost": null,
+   "text": "<i>Guards! GUARDS!!</i>",
+   "cardClass": "WARRIOR",
+   "mechanics": [],
+   "health": 30,
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_BOSS_56h",
+   "name": "Queen Wagtoggle",
+   "type": "HERO",
+   "cost": null,
+   "text": "<i>The kobold Queen is ALSO robbing the bank. And your minions.</i>",
+   "cardClass": "ROGUE",
+   "mechanics": [],
+   "health": 30,
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_BOSS_57h",
+   "name": "Trade Prince Gallywix",
+   "type": "HERO",
+   "cost": null,
+   "text": "<i>The goblin Prince has rigged the market. Against you.</i>",
+   "cardClass": "ROGUE",
+   "mechanics": [],
+   "health": 30,
+   "inBattlecards": true
+  },
+  {
+   "id": "DALA_BOSS_58h",
+   "name": "Boommaster Flark",
+   "type": "HERO",
+   "cost": null,
+   "text": "<i>Former Boom protégé, Flark has a blast messing with minions.</i>",
+   "cardClass": "HUNTER",
+   "mechanics": [],
+   "health": 30,
+   "inBattlecards": true
+  },
+  {
+   "id": "DALA_BOSS_59h",
+   "name": "Madam Goya",
+   "type": "HERO",
+   "cost": null,
+   "text": "<i>\"Extortion\" is such an ugly word. Goya prefers \"Licensing Fees.\"</i>",
+   "cardClass": "ROGUE",
+   "mechanics": [],
+   "health": 30,
+   "inBattlecards": true
+  },
+  {
+   "id": "DALA_BOSS_60h",
+   "name": "Archmage Khadgar",
+   "type": "HERO",
+   "cost": null,
+   "text": "<i>Ingenuous. Inscrutable. Indefatigable. In... your... way.</i>",
+   "cardClass": "MAGE",
+   "mechanics": [],
+   "health": 30,
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_BOSS_61h",
+   "name": "Sael'orn",
+   "type": "HERO",
+   "cost": null,
+   "text": "<i>Traps prey like a spider... toys with them like a demon.</i>",
+   "cardClass": "WARLOCK",
+   "mechanics": [],
+   "health": 30,
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_BOSS_62h",
+   "name": "Haro Setting-Sun",
+   "type": "HERO",
+   "cost": null,
+   "text": "<i>With one hoof in the shadows, weakness is his strength.</i>",
+   "cardClass": "PRIEST",
+   "mechanics": [],
+   "health": 30,
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_BOSS_63h",
+   "name": "Dagg Cruelmight",
+   "type": "HERO",
+   "cost": null,
+   "text": "<i>You never kick a man when he's down. Unless you're Dagg.</i>",
+   "cardClass": "WARRIOR",
+   "mechanics": [],
+   "health": 30,
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_BOSS_64h",
+   "name": "Banker Biggs",
+   "type": "HERO",
+   "cost": null,
+   "text": "<i>His minions are compound-interesting.</i>",
+   "cardClass": "WARRIOR",
+   "mechanics": [],
+   "health": 30,
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_BOSS_65h",
+   "name": "Valdera Highborne",
+   "type": "HERO",
+   "cost": null,
+   "text": "<i>His smile is disarming, but his fancy armor is the real threat.</i>",
+   "cardClass": "PALADIN",
+   "mechanics": [],
+   "health": 30,
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_BOSS_66h",
+   "name": "Marei Loom",
+   "type": "HERO",
+   "cost": null,
+   "text": "<i>She'll exploit your finances, but she won't finance your exploits.</i>",
+   "cardClass": "WARLOCK",
+   "mechanics": [],
+   "health": 10,
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_BOSS_67h",
+   "name": "Archmage Vargoth",
+   "type": "HERO",
+   "cost": null,
+   "text": "<i>Trapped for years in Outland, Vargoth found new sources of magic.</i>",
+   "cardClass": "MAGE",
+   "mechanics": [],
+   "health": 30,
+   "inBattlecards": true
+  },
+  {
+   "id": "DALA_BOSS_68h",
+   "name": "Lilayell Suntear",
+   "type": "HERO",
+   "cost": null,
+   "text": "<i>She makes the instability of the universe work for her.</i>",
+   "cardClass": "MAGE",
+   "mechanics": [],
+   "health": 30,
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_BOSS_69h",
+   "name": "Archmage Kalec",
+   "type": "HERO",
+   "cost": null,
+   "text": "<i>It's just a matter of time before he's the next Malygos.</i>",
+   "cardClass": "MAGE",
+   "mechanics": [],
+   "health": 30,
+   "inBattlecards": true
+  },
+  {
+   "id": "DALA_BOSS_70h",
+   "name": "Sky Captain Smiggs",
+   "type": "HERO",
+   "cost": null,
+   "text": "<i>The only thing bigger than his moustache is his broadside.</i>",
+   "cardClass": "HUNTER",
+   "mechanics": [],
+   "health": 30,
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_BOSS_71h",
+   "name": "Anarii Duskgrove",
+   "type": "HERO",
+   "cost": null,
+   "text": "<i>This druid speaks for the trees, and they have nothing nice to say.</i>",
+   "cardClass": "DRUID",
+   "mechanics": [],
+   "health": 30,
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_BOSS_72h",
+   "name": "Kazamon Steelskin",
+   "type": "HERO",
+   "cost": null,
+   "text": "<i>To say he's reckless is an understatement. Zero recks are given.</i>",
+   "cardClass": "WARLOCK",
+   "mechanics": [],
+   "health": 30,
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_BOSS_73h",
+   "name": "Hesutu Stonewind",
+   "type": "HERO",
+   "cost": null,
+   "text": "<i>This shaman has a way of whipping his minions into a frenzy.</i>",
+   "cardClass": "SHAMAN",
+   "mechanics": [],
+   "health": 30,
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_BOSS_74h",
+   "name": "Kara Stamper",
+   "type": "HERO",
+   "cost": null,
+   "text": "<i>She would sell a soul for more minions. Not hers, of course.</i>",
+   "cardClass": "WARLOCK",
+   "mechanics": [],
+   "health": 30,
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_BOSS_75h",
+   "name": "Commander Bolan",
+   "type": "HERO",
+   "cost": null,
+   "text": "<i>Be careful, he's got an enormous exclamation point over his head.</i>",
+   "cardClass": "PALADIN",
+   "mechanics": [],
+   "health": 30,
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_BOSS_98h",
+   "name": "Bartendotron",
+   "type": "HERO",
+   "cost": null,
+   "text": "<i>Sometimes you want to go where everybody knows your deck.</i>",
+   "cardClass": "PALADIN",
+   "mechanics": [],
+   "health": 40,
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_BOSS_99h",
+   "name": "Bartender Bob",
+   "type": "HERO",
+   "cost": null,
+   "text": "<i>Sometimes you want to go where everybody knows your deck.</i>",
+   "cardClass": "PALADIN",
+   "mechanics": [],
+   "health": 40,
+   "inBattlecards": false
+  }
+ ],
+ "bossPowers": [
+  {
+   "id": "DALA_BOSS_01p",
+   "name": "Chomp",
+   "type": "HERO_POWER",
+   "cost": 2,
+   "text": "<b>Lifesteal</b> Deal 1 damage to a minion.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [
+    "LIFESTEAL"
+   ],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_BOSS_01px",
+   "name": "Chomp",
+   "type": "HERO_POWER",
+   "cost": 3,
+   "text": "<b>Lifesteal</b> Deal 2 damage to a minion.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [
+    "LIFESTEAL"
+   ],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_BOSS_02p",
+   "name": "The Feast",
+   "type": "HERO_POWER",
+   "cost": 0,
+   "text": "[x]<b>Passive</b> After you cast a spell, restore #3 Health to your hero.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [
+    "TRIGGER_VISUAL"
+   ],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_BOSS_02px",
+   "name": "The Feast",
+   "type": "HERO_POWER",
+   "cost": 0,
+   "text": "[x]<b>Passive</b> After you cast a spell, restore #5 Health to your hero.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [
+    "TRIGGER_VISUAL"
+   ],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_BOSS_03p",
+   "name": "Prestidigitation",
+   "type": "HERO_POWER",
+   "cost": 1,
+   "text": "Add a random magical feat to your hand.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_BOSS_03px",
+   "name": "Prestidigitation",
+   "type": "HERO_POWER",
+   "cost": 0,
+   "text": "Add a random magical feat to your hand.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [
+    "AI_MUST_PLAY"
+   ],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_BOSS_04p",
+   "name": "Open Wormhole",
+   "type": "HERO_POWER",
+   "cost": 2,
+   "text": "Both players summon a minion from their deck. They fight.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_BOSS_05p",
+   "name": "Mana Echoes",
+   "type": "HERO_POWER",
+   "cost": 2,
+   "text": "Cast a random spell that was cast this game <i>(targets chosen randomly)</i>.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_BOSS_06p",
+   "name": "\"Armor Up\"",
+   "type": "HERO_POWER",
+   "cost": 2,
+   "text": "<b>Hero Power</b> Gain $d2 Armor.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_BOSS_06px",
+   "name": "\"Tank Up!\"",
+   "type": "HERO_POWER",
+   "cost": 2,
+   "text": "<b>Hero Power</b> Gain $d4 Armor.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_BOSS_07p",
+   "name": "Take Flight!",
+   "type": "HERO_POWER",
+   "cost": 0,
+   "text": "[x]<b>Passive</b> After taking 15 damage, Belnaara will take flight. <i>(15 damage remaining)</i>",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_BOSS_07p2",
+   "name": "Flying!",
+   "type": "HERO_POWER",
+   "cost": 0,
+   "text": "[x]<b>Passive</b> Belnaara will land in 2 turns. <i>(2 turns remaining)</i>",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_BOSS_08p",
+   "name": "Apple Toss",
+   "type": "HERO_POWER",
+   "cost": 2,
+   "text": "Deal $1 damage to the lowest Health enemy. If it dies, repeat this.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_BOSS_08px",
+   "name": "Apple Toss",
+   "type": "HERO_POWER",
+   "cost": 3,
+   "text": "Deal $2 damage to the lowest Health enemy. If it dies, repeat this.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_BOSS_09p",
+   "name": "Repeat History",
+   "type": "HERO_POWER",
+   "cost": 2,
+   "text": "Summon a random friendly minion that died this turn.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_BOSS_09px",
+   "name": "Repeat History",
+   "type": "HERO_POWER",
+   "cost": 2,
+   "text": "Summon a random friendly minion that died this game.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_BOSS_10p",
+   "name": "Street Smarts",
+   "type": "HERO_POWER",
+   "cost": 0,
+   "text": "<b>Passive</b> Whenever you play a Coin, draw a card.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [
+    "TRIGGER_VISUAL"
+   ],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_BOSS_10px",
+   "name": "Street Smarts",
+   "type": "HERO_POWER",
+   "cost": 0,
+   "text": "[x]<b>Passive</b> Whenever a player plays a Coin, draw a card.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [
+    "TRIGGER_VISUAL"
+   ],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_BOSS_11p",
+   "name": "Backstabber",
+   "type": "HERO_POWER",
+   "cost": 0,
+   "text": "[x]<b>Passive</b> Whenever a <b>Stealthed</b> minion is summoned, give it +1 Attack.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [
+    "TRIGGER_VISUAL"
+   ],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_BOSS_11px",
+   "name": "Backstabber",
+   "type": "HERO_POWER",
+   "cost": 0,
+   "text": "[x]<b>Passive</b> Whenever a <b>Stealthed</b> minion is summoned, give it +2 Attack.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [
+    "TRIGGER_VISUAL"
+   ],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_BOSS_12p",
+   "name": "Forbidden Love",
+   "type": "HERO_POWER",
+   "cost": 3,
+   "text": "Destroy a random minion for each player.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_BOSS_12px",
+   "name": "Forbidden Love",
+   "type": "HERO_POWER",
+   "cost": 2,
+   "text": "Destroy a random minion for each player.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_BOSS_13p",
+   "name": "Slice and Dice",
+   "type": "HERO_POWER",
+   "cost": 2,
+   "text": "Deal $1-$3 damage to three random minions.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_BOSS_14p",
+   "name": "Order Up!",
+   "type": "HERO_POWER",
+   "cost": 2,
+   "text": "Summon a 2/2 Kind Waitress.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_BOSS_14px",
+   "name": "Order Up!",
+   "type": "HERO_POWER",
+   "cost": 2,
+   "text": "Summon two 2/2 Kind Waitresses.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_BOSS_15p",
+   "name": "Blessing of Elune",
+   "type": "HERO_POWER",
+   "cost": 0,
+   "text": "<b>Passive</b> All healing is doubled.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_BOSS_16p",
+   "name": "Equivalent Exchange",
+   "type": "HERO_POWER",
+   "cost": 1,
+   "text": "Swap a random card in each player's hand.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [
+    "AI_MUST_PLAY"
+   ],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_BOSS_16px",
+   "name": "Equivalent Exchange",
+   "type": "HERO_POWER",
+   "cost": 0,
+   "text": "Swap a random card in each player's hand.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [
+    "AI_MUST_PLAY"
+   ],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_BOSS_17p",
+   "name": "Twin Paths",
+   "type": "HERO_POWER",
+   "cost": 0,
+   "text": "[x]<b>Passive</b> Your <b>Choose One</b> cards and powers have both effects combined.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [
+    "AURA"
+   ],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_BOSS_18p",
+   "name": "Totemic Summons",
+   "type": "HERO_POWER",
+   "cost": 2,
+   "text": "Summon ANY random Totem.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [
+    "AI_MUST_PLAY"
+   ],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_BOSS_18px",
+   "name": "Totemic Summons",
+   "type": "HERO_POWER",
+   "cost": 1,
+   "text": "Summon ANY random Totem.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [
+    "AI_MUST_PLAY"
+   ],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_BOSS_19p",
+   "name": "Lil' Eviscerate",
+   "type": "HERO_POWER",
+   "cost": 2,
+   "text": "Deal 1 damage <b>Combo:</b> 2 instead.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [
+    "COMBO"
+   ],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_BOSS_19px",
+   "name": "Lil' Eviscerate",
+   "type": "HERO_POWER",
+   "cost": 1,
+   "text": "Deal 1 damage <b>Combo:</b> 2 instead.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [
+    "COMBO"
+   ],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_BOSS_20p",
+   "name": "Stormswell",
+   "type": "HERO_POWER",
+   "cost": 0,
+   "text": "<b>Passive</b> Your spells with <b>Overload</b> cast twice.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_BOSS_20px",
+   "name": "Stormswell",
+   "type": "HERO_POWER",
+   "cost": 0,
+   "text": "<b>Passive</b> Your spells with <b>Overload</b> cast thrice.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_BOSS_21p",
+   "name": "Prediction",
+   "type": "HERO_POWER",
+   "cost": 1,
+   "text": "Put a random class <b>Secret</b> into the battlefield.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_BOSS_22p",
+   "name": "Shhh!",
+   "type": "HERO_POWER",
+   "cost": 3,
+   "text": "<b>Silence</b> ALL minions.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_BOSS_22px",
+   "name": "Shhh!",
+   "type": "HERO_POWER",
+   "cost": 0,
+   "text": "[x]<b>Passive</b>. After a minion is summoned, <b>Silence</b> it.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_BOSS_23p",
+   "name": "Sharkbite",
+   "type": "HERO_POWER",
+   "cost": 2,
+   "text": "Destroy a random damaged minion.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_BOSS_23px",
+   "name": "Sharkbite",
+   "type": "HERO_POWER",
+   "cost": 2,
+   "text": "Destroy a random damaged enemy minion.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_BOSS_24p",
+   "name": "Ar'ha's Call",
+   "type": "HERO_POWER",
+   "cost": 2,
+   "text": "Your next <b>Battlecry</b> triggers an additional time.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_BOSS_24px",
+   "name": "Ar'ha's Call",
+   "type": "HERO_POWER",
+   "cost": 0,
+   "text": "Your next <b>Battlecry</b> triggers an additional time.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [
+    "AI_MUST_PLAY"
+   ],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_BOSS_25p",
+   "name": "Assembly",
+   "type": "HERO_POWER",
+   "cost": 0,
+   "text": "[x]<b>Passive</b> After a player draws a minion, they summon a 1/1 copy of it.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [
+    "TRIGGER_VISUAL"
+   ],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_BOSS_25px",
+   "name": "Assembly",
+   "type": "HERO_POWER",
+   "cost": 0,
+   "text": "[x]<b>Passive </b> After you draw a minion, summon a 1/1 copy of it.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [
+    "TRIGGER_VISUAL"
+   ],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_BOSS_26p",
+   "name": "Cold Water",
+   "type": "HERO_POWER",
+   "cost": 0,
+   "text": "[x]<b>Passive</b> <b>Freeze</b> the first minion that attacks you each turn.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_BOSS_26px",
+   "name": "Cold Water",
+   "type": "HERO_POWER",
+   "cost": 0,
+   "text": "<b>Passive</b> After a minion attacks you, <b>Freeze</b> it.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_BOSS_27p",
+   "name": "Masterpiece!",
+   "type": "HERO_POWER",
+   "cost": 0,
+   "text": "[x]Spend all your Mana. Summon a random minion that costs that much.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_BOSS_28p",
+   "name": "Scroll Savvy",
+   "type": "HERO_POWER",
+   "cost": 0,
+   "text": "<b>Passive</b> Spells cost (0) the turn they are drawn.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_BOSS_29p",
+   "name": "Excavate",
+   "type": "HERO_POWER",
+   "cost": 1,
+   "text": "Deal 2 damage to a friendly Elemental. Find out what's inside.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_BOSS_30p",
+   "name": "A Tale of Kings",
+   "type": "HERO_POWER",
+   "cost": 3,
+   "text": "Summon an Underbelly Rat.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_BOSS_31p",
+   "name": "Bling it On!",
+   "type": "HERO_POWER",
+   "cost": 2,
+   "text": "Make a minion Golden. If it's already Golden, give it +4/+4.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_BOSS_31px",
+   "name": "Bling it On!",
+   "type": "HERO_POWER",
+   "cost": 2,
+   "text": "Make a minion Golden. If it's already Golden, give it +8/+8.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_BOSS_32p",
+   "name": "Makeover",
+   "type": "HERO_POWER",
+   "cost": 1,
+   "text": "Give a friendly minion a random haircut.",
+   "cardClass": "ROGUE",
+   "mechanics": [
+    "AI_MUST_PLAY"
+   ],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_BOSS_33p",
+   "name": "Made of Coins",
+   "type": "HERO_POWER",
+   "cost": 0,
+   "text": "<b>Passive</b> Whenever you take damage, add a Coin to your hand.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_BOSS_34p",
+   "name": "Merry Go Round",
+   "type": "HERO_POWER",
+   "cost": 0,
+   "text": "[x]<b>Passive</b> At the end of your turn, merrily rotate all minions around the board.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [
+    "TRIGGER_VISUAL"
+   ],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_BOSS_35p",
+   "name": "Healing Hands",
+   "type": "HERO_POWER",
+   "cost": 0,
+   "text": "[x]<b>Passive</b> At the start of your turn, restore #2 Health to all friendly minions.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [
+    "TRIGGER_VISUAL"
+   ],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_BOSS_35px",
+   "name": "Healing Hands",
+   "type": "HERO_POWER",
+   "cost": 0,
+   "text": "[x]<b>Passive</b> At the start of your turn, restore all friendly minions to full Health.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [
+    "TRIGGER_VISUAL"
+   ],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_BOSS_36p",
+   "name": "Import \"Pet\"",
+   "type": "HERO_POWER",
+   "cost": 2,
+   "text": "Craft a custom Exotic Pet.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_BOSS_36px",
+   "name": "Import \"Pet\"",
+   "type": "HERO_POWER",
+   "cost": 1,
+   "text": "Craft a custom Exotic Pet.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_BOSS_37p",
+   "name": "Tales of Fortune",
+   "type": "HERO_POWER",
+   "cost": 2,
+   "text": "Shuffle a random old Treasure into your deck.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_BOSS_37px",
+   "name": "Tales of Fortune",
+   "type": "HERO_POWER",
+   "cost": 1,
+   "text": "Shuffle three random old Treasure into your deck.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_BOSS_38p",
+   "name": "Portal Party",
+   "type": "HERO_POWER",
+   "cost": 2,
+   "text": "Add a random Portal to your hand.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_BOSS_38px",
+   "name": "Portal Party",
+   "type": "HERO_POWER",
+   "cost": 1,
+   "text": "Add a random Portal to your hand.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_BOSS_39p",
+   "name": "For The Light!",
+   "type": "HERO_POWER",
+   "cost": 2,
+   "text": "Give all minions in your hand +1/+1.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [
+    "AI_MUST_PLAY"
+   ],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_BOSS_40p",
+   "name": "Immolation Aura",
+   "type": "HERO_POWER",
+   "cost": 0,
+   "text": "[x]<b>Passive</b> After a minion attacks you, deal 2 damage to it.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": true
+  },
+  {
+   "id": "DALA_BOSS_40px",
+   "name": "Immolation Aura",
+   "type": "HERO_POWER",
+   "cost": 0,
+   "text": "[x]<b>Passive</b> After a minion attacks you, deal 3 damage to it.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": true
+  },
+  {
+   "id": "DALA_BOSS_41p",
+   "name": "Summon Companion",
+   "type": "HERO_POWER",
+   "cost": 4,
+   "text": "Summon a random Animal Companion.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_BOSS_41px",
+   "name": "Summon Companions",
+   "type": "HERO_POWER",
+   "cost": 5,
+   "text": "Summon two random Animal Companions.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_BOSS_42p",
+   "name": "Pogoshuffle",
+   "type": "HERO_POWER",
+   "cost": 2,
+   "text": "Choose a minion. Shuffle 3 copies of it into your deck.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_BOSS_42px",
+   "name": "Pogoshuffle",
+   "type": "HERO_POWER",
+   "cost": 2,
+   "text": "Choose a minion. Shuffle 3 copies of it into your deck. Draw a card.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_BOSS_43p",
+   "name": "Kaironomaly",
+   "type": "HERO_POWER",
+   "cost": 0,
+   "text": "[x]<b>Passive</b> Your opponent has 25 seconds to take their turn.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_BOSS_44p",
+   "name": "Dark Tidings",
+   "type": "HERO_POWER",
+   "cost": 1,
+   "text": "Reveal a minion from your deck. Give it +2/+2 and put it on top.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_BOSS_44px",
+   "name": "Dark Tidings",
+   "type": "HERO_POWER",
+   "cost": 1,
+   "text": "Reveal a minion from your deck. Give it +4/+4 and put it on top.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_BOSS_45p",
+   "name": "Ray of Suffering",
+   "type": "HERO_POWER",
+   "cost": 3,
+   "text": "[x]Deal 1 damage to the enemy hero. <i>(increases each use)</i>",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_BOSS_45px",
+   "name": "Ray of Suffering",
+   "type": "HERO_POWER",
+   "cost": 2,
+   "text": "[x]Deal 1 damage to the enemy hero. <i>(increases each use)</i>",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_BOSS_46p",
+   "name": "Protective Bubble",
+   "type": "HERO_POWER",
+   "cost": 1,
+   "text": "Give a friendly minion <b>Divine Shield</b>.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_BOSS_46px",
+   "name": "Protective Bubble",
+   "type": "HERO_POWER",
+   "cost": 1,
+   "text": "Give all your minions <b>Divine Shield</b>.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [
+    "AI_MUST_PLAY"
+   ],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_BOSS_47p",
+   "name": "Lava Belch",
+   "type": "HERO_POWER",
+   "cost": 1,
+   "text": "Summon a 0/3 Molten Rock.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_BOSS_47px",
+   "name": "Lava Belch",
+   "type": "HERO_POWER",
+   "cost": 0,
+   "text": "Summon a 0/3 Molten Rock.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [
+    "AI_MUST_PLAY"
+   ],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_BOSS_48p",
+   "name": "To The Void",
+   "type": "HERO_POWER",
+   "cost": 2,
+   "text": "Banish a minion to the Void.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_BOSS_49p",
+   "name": "Uncontrollable Energy",
+   "type": "HERO_POWER",
+   "cost": 0,
+   "text": "[x]<b>Passive</b> After you cast a spell, deal $1 damage to all enemies.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [
+    "TRIGGER_VISUAL"
+   ],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_BOSS_49px",
+   "name": "Uncontrollable Energy",
+   "type": "HERO_POWER",
+   "cost": 0,
+   "text": "[x]<b>Passive</b> After you cast a spell, deal $2 damage to all enemies.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [
+    "TRIGGER_VISUAL"
+   ],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_BOSS_50p",
+   "name": "Sand Breath",
+   "type": "HERO_POWER",
+   "cost": 2,
+   "text": "Deal $2 damage to a random enemy.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [
+    "AI_MUST_PLAY"
+   ],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_BOSS_50px",
+   "name": "Sand Breath",
+   "type": "HERO_POWER",
+   "cost": 1,
+   "text": "Deal $4 damage to a random enemy.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [
+    "AI_MUST_PLAY"
+   ],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_BOSS_51p",
+   "name": "Tinker",
+   "type": "HERO_POWER",
+   "cost": 2,
+   "text": "Summon a 0/4 Squirrel Bomb.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_BOSS_52p",
+   "name": "Hold the Gates!",
+   "type": "HERO_POWER",
+   "cost": 2,
+   "text": "Give a minion +2 Health and <b>Taunt</b>.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_BOSS_52px",
+   "name": "Hold the Gates!",
+   "type": "HERO_POWER",
+   "cost": 2,
+   "text": "Give a minion +4 Health and <b>Taunt</b>.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_BOSS_53p",
+   "name": "Boogie Woogie",
+   "type": "HERO_POWER",
+   "cost": 3,
+   "text": "Give a friendly minion \"<b>Deathrattle:</b> Resummon  this minion.\"",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_BOSS_53px",
+   "name": "Boogie Woogie",
+   "type": "HERO_POWER",
+   "cost": 2,
+   "text": "Give a friendly minion \"<b>Deathrattle:</b> Resummon  this minion.\"",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_BOSS_54p",
+   "name": "Spell Lock",
+   "type": "HERO_POWER",
+   "cost": 0,
+   "text": "<b>Passive</b> Spells <b>Overload</b> for their Cost.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [
+    "TRIGGER_VISUAL"
+   ],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_BOSS_55p",
+   "name": "Raise the Alarm",
+   "type": "HERO_POWER",
+   "cost": 2,
+   "text": "Summon a 1/4 Kirin Tor Guard.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [
+    "AI_MUST_PLAY"
+   ],
+   "inBattlecards": true
+  },
+  {
+   "id": "DALA_BOSS_55px",
+   "name": "Raise the Alarm",
+   "type": "HERO_POWER",
+   "cost": 1,
+   "text": "Summon a 1/4 Kirin Tor Guard.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [
+    "AI_MUST_PLAY"
+   ],
+   "inBattlecards": true
+  },
+  {
+   "id": "DALA_BOSS_56p",
+   "name": "Bribery",
+   "type": "HERO_POWER",
+   "cost": 3,
+   "text": "[x]Summon a minion from your opponent's deck. When it dies, give it back.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_BOSS_57p",
+   "name": "Greed is Good",
+   "type": "HERO_POWER",
+   "cost": 0,
+   "text": "<b>Passive</b> Buy a copy of the first card your opponent plays each turn for a Coin.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [
+    "TRIGGER_VISUAL"
+   ],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_BOSS_58p",
+   "name": "Blast Powder",
+   "type": "HERO_POWER",
+   "cost": 2,
+   "text": "Coat a minion in Blast Powder. When it takes damage, destroy it.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_BOSS_59p",
+   "name": "Blackmail",
+   "type": "HERO_POWER",
+   "cost": 2,
+   "text": "Replace a random card in your opponent's hand with an 'Extortion.'",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_BOSS_59px",
+   "name": "Blackmail",
+   "type": "HERO_POWER",
+   "cost": 0,
+   "text": "Replace a random card in your opponent's hand with an 'Extortion.'",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_BOSS_60p",
+   "name": "Summon Elemental",
+   "type": "HERO_POWER",
+   "cost": 3,
+   "text": "[x]Summon a 2/3 Elemental. It copies your spells.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_BOSS_60px",
+   "name": "Summon Elemental",
+   "type": "HERO_POWER",
+   "cost": 2,
+   "text": "[x]Summon a 2/3 Elemental. It copies your spells.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_BOSS_61p",
+   "name": "Web Grab",
+   "type": "HERO_POWER",
+   "cost": 0,
+   "text": "Your opponent summons a minion from their hand.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_BOSS_62p",
+   "name": "Darken",
+   "type": "HERO_POWER",
+   "cost": 2,
+   "text": "Give all minions -2 Attack until your next turn.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_BOSS_62px",
+   "name": "Darken",
+   "type": "HERO_POWER",
+   "cost": 0,
+   "text": "<b>Passive</b> Your opponent's minions have -1 Attack.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_BOSS_63p",
+   "name": "Bully",
+   "type": "HERO_POWER",
+   "cost": 2,
+   "text": "Deal $2 damage to a damaged minion.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_BOSS_63px",
+   "name": "Bully",
+   "type": "HERO_POWER",
+   "cost": 2,
+   "text": "Deal $4 damage to a damaged minion.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_BOSS_64p",
+   "name": "Invest!",
+   "type": "HERO_POWER",
+   "cost": 4,
+   "text": "Return a friendly minion to your hand. Give it +4/+4.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_BOSS_64px",
+   "name": "Invest!",
+   "type": "HERO_POWER",
+   "cost": 2,
+   "text": "Return a friendly minion to your hand, then give it +4/+4 and copy it.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_BOSS_65p",
+   "name": "Impervious",
+   "type": "HERO_POWER",
+   "cost": 0,
+   "text": "[x]<b>Passive</b> Your hero can only take up to 3 damage at a time.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [
+    "TRIGGER_VISUAL"
+   ],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_BOSS_66p",
+   "name": "Next...",
+   "type": "HERO_POWER",
+   "cost": 0,
+   "text": "Swap the left-most card in each player's hand with one in their deck.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [
+    "AI_MUST_PLAY"
+   ],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_BOSS_67p",
+   "name": "Arcane Runes",
+   "type": "HERO_POWER",
+   "cost": 0,
+   "text": "Add a random Arcane spell to your hand.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_BOSS_68p",
+   "name": "Mini Portal",
+   "type": "HERO_POWER",
+   "cost": 0,
+   "text": "<b>Passive</b> After you cast a spell, summon a random 1-Cost minion.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [
+    "TRIGGER_VISUAL"
+   ],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_BOSS_68px",
+   "name": "Mega Portal",
+   "type": "HERO_POWER",
+   "cost": 0,
+   "text": "<b>Passive</b> After you cast a spell, summon a random minion of the same Cost.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [
+    "TRIGGER_VISUAL"
+   ],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_BOSS_69p",
+   "name": "Dragonwrath",
+   "type": "HERO_POWER",
+   "cost": 2,
+   "text": "Give your hero <b>Spell Damage +1</b>. <i>(+0 currently)</i>",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_BOSS_69px",
+   "name": "Dragonwrath",
+   "type": "HERO_POWER",
+   "cost": 1,
+   "text": "Give your hero <b>Spell Damage +1</b>. <i>(+0 currently)</i>",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_BOSS_70p",
+   "name": "Bombardment",
+   "type": "HERO_POWER",
+   "cost": 2,
+   "text": "Deal $2 damage to all minions. Takes 2 turns to reload.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_BOSS_70px",
+   "name": "Bombardment",
+   "type": "HERO_POWER",
+   "cost": 2,
+   "text": "Deal $3 damage to all enemy minions. Takes 2 turns to reload.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_BOSS_71p",
+   "name": "Summon Protectors",
+   "type": "HERO_POWER",
+   "cost": 2,
+   "text": "Summon a 2/2 Treant with <b>Taunt</b>.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_BOSS_71px",
+   "name": "Summon Protectors",
+   "type": "HERO_POWER",
+   "cost": 3,
+   "text": "Summon two 2/2 Treants with <b>Taunt</b>.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_BOSS_72p",
+   "name": "Steelskin",
+   "type": "HERO_POWER",
+   "cost": 0,
+   "text": "<b>Passive</b> You can't damage yourself.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [
+    "TRIGGER_VISUAL"
+   ],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_BOSS_73p",
+   "name": "Earthmother's Rage",
+   "type": "HERO_POWER",
+   "cost": 2,
+   "text": "Give a friendly minion <b>Windfury</b>.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_BOSS_73px",
+   "name": "Earthmother's Rage",
+   "type": "HERO_POWER",
+   "cost": 2,
+   "text": "Give a friendly minion <b>Mega-Windfury</b>.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_BOSS_74p",
+   "name": "Soul Weave",
+   "type": "HERO_POWER",
+   "cost": 3,
+   "text": "Discard a card. Summon a random minion of the same Cost.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_BOSS_74px",
+   "name": "Soul Weave",
+   "type": "HERO_POWER",
+   "cost": 0,
+   "text": "Discard a card. Summon a random minion of the same Cost.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_BOSS_75p",
+   "name": "A Quest!",
+   "type": "HERO_POWER",
+   "cost": 0,
+   "text": "Give your opponent a Quest!",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  }
+ ],
+ "bossCards": [
+  {
+   "id": "DALA_BOSS_03t",
+   "name": "Reductomara",
+   "type": "SPELL",
+   "cost": 1,
+   "text": "Reduce the cost of all spells in both player's hand and deck by (1).",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_BOSS_03t2",
+   "name": "Bunnifitronus",
+   "type": "SPELL",
+   "cost": 1,
+   "text": "Transform a random minion into a random critter.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_BOSS_03t3",
+   "name": "Presto Legendaro",
+   "type": "SPELL",
+   "cost": 1,
+   "text": "Give each player a random Golden <b>Legendary</b> minion.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_BOSS_03t4",
+   "name": "Yoggers Poggers",
+   "type": "SPELL",
+   "cost": 1,
+   "text": "Shuffle three Scrolls of Wonder into each player's deck.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_BOSS_14t",
+   "name": "\"Kind\" Waitress",
+   "type": "MINION",
+   "cost": 2,
+   "text": "[x]Enemies attacking this have a 50% chance to attack someone else.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [
+    "TRIGGER_VISUAL"
+   ],
+   "attack": 2,
+   "health": 2,
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_BOSS_25t",
+   "name": "Hoard of Toys",
+   "type": "SPELL",
+   "cost": 4,
+   "text": "Summon 1/1 copies of five random minions.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_BOSS_30t",
+   "name": "Underbelly Rat",
+   "type": "MINION",
+   "cost": 3,
+   "text": "When your hero dies, the eldest Underbelly Rat replaces your hero.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "attack": 10,
+   "health": 1,
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_BOSS_36t",
+   "name": "Exotic Pet",
+   "type": "MINION",
+   "cost": 1,
+   "text": "",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "attack": 1,
+   "health": 1,
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_BOSS_38t",
+   "name": "PARTY PORTAL!",
+   "type": "SPELL",
+   "cost": 4,
+   "text": "Summon a random Partygoer.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_BOSS_47t",
+   "name": "Molten Rock",
+   "type": "MINION",
+   "cost": 1,
+   "text": "At the end of your turn, deal 1 damage to all characters.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [
+    "TRIGGER_VISUAL"
+   ],
+   "attack": 0,
+   "health": 3,
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_BOSS_48t",
+   "name": "Void Shift",
+   "type": "SPELL",
+   "cost": 3,
+   "text": "Destroy all minions. Summon all minions from the Void.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_BOSS_51t",
+   "name": "Elementium Squirrel Bomb",
+   "type": "MINION",
+   "cost": 2,
+   "text": "At the start of your turn, destroy this and deal 2 damage to all enemies.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [
+    "TRIGGER_VISUAL"
+   ],
+   "attack": 0,
+   "health": 4,
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_BOSS_51t2",
+   "name": "Thorium Chicken",
+   "type": "MINION",
+   "cost": 3,
+   "text": "After your opponent plays a card, deal 3 damage to their hero.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [
+    "TRIGGER_VISUAL"
+   ],
+   "attack": 5,
+   "health": 1,
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_BOSS_56t",
+   "name": "Rival Accomplice",
+   "type": "MINION",
+   "cost": 3,
+   "text": "",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "attack": 4,
+   "health": 4,
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_BOSS_58t",
+   "name": "The Wire",
+   "type": "MINION",
+   "cost": 3,
+   "text": "While wires are touching, take 5 damage at the start of your turn.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [
+    "UNTOUCHABLE"
+   ],
+   "attack": 3,
+   "health": 3,
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_BOSS_58t2",
+   "name": "The Other Wire",
+   "type": "MINION",
+   "cost": 3,
+   "text": "While wires are touching, take 5 damage at the start of your turn.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [
+    "UNTOUCHABLE"
+   ],
+   "attack": 3,
+   "health": 3,
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_BOSS_59t",
+   "name": "Lotus Bruiser",
+   "type": "MINION",
+   "cost": 3,
+   "text": "Whenever an 'Extortion' is played, gain +2/+2.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [
+    "TRIGGER_VISUAL"
+   ],
+   "attack": 2,
+   "health": 3,
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_BOSS_59t2",
+   "name": "Fruit Slasher",
+   "type": "MINION",
+   "cost": 4,
+   "text": "<b>Battlecry:</b> Deal 4 damage to an enemy. <b>Combo:</b> And 1 damage to all other enemies.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [
+    "BATTLECRY",
+    "COMBO"
+   ],
+   "attack": 4,
+   "health": 2,
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_BOSS_59t3",
+   "name": "Extortion",
+   "type": "SPELL",
+   "cost": 2,
+   "text": "Return your '{0}' to your hand.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_BOSS_61t",
+   "name": "Phase Spider",
+   "type": "MINION",
+   "cost": 3,
+   "text": "<b>Immune</b>. <b>Can't Attack</b> while a minion is opposite of this.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "attack": 3,
+   "health": 3,
+   "inBattlecards": false
+  }
+ ],
+ "enchantments": [
+  {
+   "id": "DALA_502e",
+   "name": "Rich",
+   "type": "ENCHANTMENT",
+   "cost": null,
+   "text": "Increased stats.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_701e",
+   "name": "Sifting",
+   "type": "ENCHANTMENT",
+   "cost": null,
+   "text": "Transforming into random treasures.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_702e",
+   "name": "Tooled Up!",
+   "type": "ENCHANTMENT",
+   "cost": null,
+   "text": "Granted <b>Charge</b>, <b>Windfury</b>, <b>Divine Shield</b>, <b>Lifesteal</b>, <b>Poisonous</b>, <b>Taunt</b>, and <b>Stealth</b>.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_707e",
+   "name": "Scheming",
+   "type": "ENCHANTMENT",
+   "cost": null,
+   "text": "Increased stats.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_715e",
+   "name": "Overpowered",
+   "type": "ENCHANTMENT",
+   "cost": null,
+   "text": "",
+   "cardClass": "NEUTRAL",
+   "mechanics": [
+    "TAG_ONE_TURN_EFFECT"
+   ],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_723e",
+   "name": "Hyperblaster Enchantment",
+   "type": "ENCHANTMENT",
+   "cost": null,
+   "text": "<b>Immune</b> while attacking.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_724e",
+   "name": "Big Boomba Player Enchantment",
+   "type": "ENCHANTMENT",
+   "cost": null,
+   "text": "At the start of your turn, destroy all minions.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_725e",
+   "name": "Glowing Green",
+   "type": "ENCHANTMENT",
+   "cost": null,
+   "text": "+2/+2.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_727e",
+   "name": "Seeds Sown",
+   "type": "ENCHANTMENT",
+   "cost": null,
+   "text": "+3/+3.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_728e",
+   "name": "Recycling Player Enchantment",
+   "type": "ENCHANTMENT",
+   "cost": null,
+   "text": "",
+   "cardClass": "NEUTRAL",
+   "mechanics": [
+    "TRIGGER_VISUAL"
+   ],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_731e",
+   "name": "Rocket Backpacks Player Enchantment",
+   "type": "ENCHANTMENT",
+   "cost": null,
+   "text": "",
+   "cardClass": "NEUTRAL",
+   "mechanics": [
+    "AURA"
+   ],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_731e2",
+   "name": "Rocket Backpack",
+   "type": "ENCHANTMENT",
+   "cost": null,
+   "text": "Has <b>Rush</b>.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_733e",
+   "name": "Emerald Goggles Player Enchantment",
+   "type": "ENCHANTMENT",
+   "cost": null,
+   "text": "",
+   "cardClass": "NEUTRAL",
+   "mechanics": [
+    "AURA"
+   ],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_733e2",
+   "name": "Emerald Goggles",
+   "type": "ENCHANTMENT",
+   "cost": null,
+   "text": "Cost reduced by (2).",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_735e",
+   "name": "Robes of Gaudiness Player Enchantment",
+   "type": "ENCHANTMENT",
+   "cost": null,
+   "text": "Your cards cost half, but you can only play two cards each turn.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [
+    "AURA"
+   ],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_735e2",
+   "name": "Robes of Gaudiness",
+   "type": "ENCHANTMENT",
+   "cost": null,
+   "text": "Costs half.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_735e3",
+   "name": "Too Gaudy",
+   "type": "ENCHANTMENT",
+   "cost": null,
+   "text": "Can't play cards this turn.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_736e",
+   "name": "Stargazing Player Enchant",
+   "type": "ENCHANTMENT",
+   "cost": null,
+   "text": "",
+   "cardClass": "NEUTRAL",
+   "mechanics": [
+    "AURA"
+   ],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_737e",
+   "name": "E.V.I.L. Upgrade",
+   "type": "ENCHANTMENT",
+   "cost": null,
+   "text": "+1 Attack and +1 Durability.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_738e",
+   "name": "A Prince's Ring Enchantment",
+   "type": "ENCHANTMENT",
+   "cost": null,
+   "text": "",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_740e",
+   "name": "Wondrous Wisdomball Player Enchantment",
+   "type": "ENCHANTMENT",
+   "cost": null,
+   "text": "",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_740e2",
+   "name": "Wondrous Wisdomball Ice Block",
+   "type": "ENCHANTMENT",
+   "cost": null,
+   "text": "",
+   "cardClass": "NEUTRAL",
+   "mechanics": [
+    "TAG_ONE_TURN_EFFECT"
+   ],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_740e3",
+   "name": "Wondrous Wisdomball Extra Spellcast",
+   "type": "ENCHANTMENT",
+   "cost": null,
+   "text": "",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_741e",
+   "name": "Togwaggle's Dice Player Enchantment",
+   "type": "ENCHANTMENT",
+   "cost": null,
+   "text": "At the end of your turn, randomize the cost of all cards in your hand.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_741e2",
+   "name": "Roll the Dice",
+   "type": "ENCHANTMENT",
+   "cost": null,
+   "text": "Cost manipulated by Togwaggle's Dice.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_743e",
+   "name": "Sleepy",
+   "type": "ENCHANTMENT",
+   "cost": null,
+   "text": "",
+   "cardClass": "NEUTRAL",
+   "mechanics": [
+    "CANT_BE_SILENCED",
+    "ENCHANTMENT_INVISIBLE"
+   ],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_744e",
+   "name": "Hagatha's Embrace Player Enchantment",
+   "type": "ENCHANTMENT",
+   "cost": null,
+   "text": "At the start of your turn, give a random minion in your hand +1/+1.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_744e2",
+   "name": "Hagatha's Embrace",
+   "type": "ENCHANTMENT",
+   "cost": null,
+   "text": "+1/+1.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_746e",
+   "name": "Elixir of Vigor Player Enchantment",
+   "type": "ENCHANTMENT",
+   "cost": null,
+   "text": "After you play a minion, shuffle two copies of it into your deck. They cost (1).",
+   "cardClass": "NEUTRAL",
+   "mechanics": [
+    "TRIGGER_VISUAL"
+   ],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_747e",
+   "name": "Elixir of Vim Player Enchantment",
+   "type": "ENCHANTMENT",
+   "cost": null,
+   "text": "Draw 2 additional cards each turn.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_748e",
+   "name": "Elixir of Vile Player Enchantment",
+   "type": "ENCHANTMENT",
+   "cost": null,
+   "text": "Your spells cost Health instead of Mana.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_831e",
+   "name": "Undesirable Stench Player Enchantment",
+   "type": "ENCHANTMENT",
+   "cost": null,
+   "text": "All minions' Attack and Health are swapped.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_831e2",
+   "name": "Stinky",
+   "type": "ENCHANTMENT",
+   "cost": null,
+   "text": "Attack and Health are swapped.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_850e",
+   "name": "Anomaly - Arcane Player Enchantment",
+   "type": "ENCHANTMENT",
+   "cost": null,
+   "text": "All spells cost (2) less.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_851e",
+   "name": "Anomaly - Summons Player Enchantment",
+   "type": "ENCHANTMENT",
+   "cost": null,
+   "text": "After a spell is played, a minion of the same cost is summoned.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_852e",
+   "name": "Anomaly - Crying Player Enchantment",
+   "type": "ENCHANTMENT",
+   "cost": null,
+   "text": "All <b>Battlecries</b> trigger twice.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_853e",
+   "name": "Anomaly - Rattling Player Enchantment",
+   "type": "ENCHANTMENT",
+   "cost": null,
+   "text": "All <b>Deathrattles</b> trigger twice.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_854e",
+   "name": "Anomaly - Nesting Player Enchantment",
+   "type": "ENCHANTMENT",
+   "cost": null,
+   "text": "After a minion is played, it gains \"<b>Deathrattle:</b> Summon a 1/1 copy of this minion.\"",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_854e2",
+   "name": "Nested",
+   "type": "ENCHANTMENT",
+   "cost": null,
+   "text": "Granted \"<b>Deathrattle:</b> Summon a 1/1 copy of this minion.\"",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_854e3",
+   "name": "Popped Out",
+   "type": "ENCHANTMENT",
+   "cost": null,
+   "text": "1/1.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_855e",
+   "name": "Anomaly - Refreshing Player Enchantment",
+   "type": "ENCHANTMENT",
+   "cost": null,
+   "text": "At the end of each player's turn, that player draws until they have 5 cards.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [
+    "TRIGGER_VISUAL"
+   ],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_856e",
+   "name": "Anomaly - Wild Magic Player Enchantment",
+   "type": "ENCHANTMENT",
+   "cost": null,
+   "text": "All spells cast an additional time. <i>(targets chosen randomly)</i>",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_857e",
+   "name": "Anomaly - Glittering Player Enchantment",
+   "type": "ENCHANTMENT",
+   "cost": null,
+   "text": "After a player plays a card that costs (8) or more, that player adds a Treasure to their hand.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_858e",
+   "name": "Anomaly - Fishy Player Enchantment",
+   "type": "ENCHANTMENT",
+   "cost": null,
+   "text": "Murlocs occasionally join the battle.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_860e",
+   "name": "Anomaly - Dragon Soul Player Enchantment",
+   "type": "ENCHANTMENT",
+   "cost": null,
+   "text": "After a player casts 3 spells in a turn, that player summons a 5/5 Dragon.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_861e",
+   "name": "Anomaly - Ogreish Player Enchantment",
+   "type": "ENCHANTMENT",
+   "cost": null,
+   "text": "All minions have a 50% chance to attack the wrong enemy.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_861e2",
+   "name": "Ogreish",
+   "type": "ENCHANTMENT",
+   "cost": null,
+   "text": "50% chance to attack the wrong enemy",
+   "cardClass": "NEUTRAL",
+   "mechanics": [
+    "FORGETFUL",
+    "TRIGGER_VISUAL"
+   ],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_862e",
+   "name": "Anomaly - Reductive Player Enchantment",
+   "type": "ENCHANTMENT",
+   "cost": null,
+   "text": "At the end of each player's turn, reduce the cost of cards in their hand by (1).",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_864e",
+   "name": "Anomaly - Growing Player Enchantment",
+   "type": "ENCHANTMENT",
+   "cost": null,
+   "text": "Minions gain +1/+1 at the end of their owner's turn.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_864e2",
+   "name": "Growth Anomaly",
+   "type": "ENCHANTMENT",
+   "cost": null,
+   "text": "Increased stats.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_865e",
+   "name": "Anomaly - Explosive Player Enchantment",
+   "type": "ENCHANTMENT",
+   "cost": null,
+   "text": "After a minion is summoned, it gains \"<b>Deathrattle</b>: Deal 1 damage to all minions.\"",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_865e2",
+   "name": "Explosive",
+   "type": "ENCHANTMENT",
+   "cost": null,
+   "text": "Granted '<b>Deathrattle</b>: Deal 1 damage to all minions.'",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_866e",
+   "name": "Anomaly - Rejuvenating Player Enchantment",
+   "type": "ENCHANTMENT",
+   "cost": null,
+   "text": "[x]At the start of each player's turn, that player restores 2 Health to their hero.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_867e",
+   "name": "Anomaly - Infused Player Enchantment",
+   "type": "ENCHANTMENT",
+   "cost": null,
+   "text": "After a minion is summoned, it gains <b>Taunt</b>, <b>Divine Shield</b>, <b>Rush</b>, or <b>Windfury</b> at random.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_903e",
+   "name": "Lucky!",
+   "type": "ENCHANTMENT",
+   "cost": null,
+   "text": "Costs (0).",
+   "cardClass": "NEUTRAL",
+   "mechanics": [
+    "CANT_BE_SILENCED"
+   ],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_905e",
+   "name": "Right Hand Man",
+   "type": "ENCHANTMENT",
+   "cost": null,
+   "text": "Always starts in your hand.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [
+    "CANT_BE_SILENCED"
+   ],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_906e",
+   "name": "Merriment",
+   "type": "ENCHANTMENT",
+   "cost": null,
+   "text": "+1/+1.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [
+    "CANT_BE_SILENCED"
+   ],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_908e",
+   "name": "Stories Told",
+   "type": "ENCHANTMENT",
+   "cost": null,
+   "text": "+2/+2.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [
+    "CANT_BE_SILENCED"
+   ],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_913e",
+   "name": "Gossip",
+   "type": "ENCHANTMENT",
+   "cost": 1,
+   "text": "+4/+4 and costs (2) more.",
+   "cardClass": null,
+   "mechanics": [
+    "CANT_BE_SILENCED"
+   ],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_914e",
+   "name": "The Upper Hand",
+   "type": "ENCHANTMENT",
+   "cost": null,
+   "text": "Costs (3) less.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [
+    "CANT_BE_SILENCED"
+   ],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_BOSS_03e",
+   "name": "Reductomara'd",
+   "type": "ENCHANTMENT",
+   "cost": null,
+   "text": "Costs (1) less.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_BOSS_03t3e",
+   "name": "Presto Legendaro Marker",
+   "type": "ENCHANTMENT",
+   "cost": null,
+   "text": "",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_BOSS_07e",
+   "name": "Flying!",
+   "type": "ENCHANTMENT",
+   "cost": null,
+   "text": "Belnaara is <b>Immune</b> for now.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_BOSS_11e",
+   "name": "Backstabby",
+   "type": "ENCHANTMENT",
+   "cost": null,
+   "text": "+1 Attack.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_BOSS_11ex",
+   "name": "Backstabby",
+   "type": "ENCHANTMENT",
+   "cost": null,
+   "text": "+2 Attack.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_BOSS_16e",
+   "name": "Equivalent Exchange Marker",
+   "type": "ENCHANTMENT",
+   "cost": null,
+   "text": "",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_BOSS_22ex",
+   "name": "Shushed",
+   "type": "ENCHANTMENT",
+   "cost": null,
+   "text": "<b><b>Silence</b>d</b>.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_BOSS_24e",
+   "name": "Ar'ha's Call Player Enchantment",
+   "type": "ENCHANTMENT",
+   "cost": null,
+   "text": "Triggers additional <b>Battlecries.</b>",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_BOSS_25e",
+   "name": "Toyification",
+   "type": "ENCHANTMENT",
+   "cost": null,
+   "text": "Stats changed to 1/1.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_BOSS_28e",
+   "name": "Savvy",
+   "type": "ENCHANTMENT",
+   "cost": null,
+   "text": "Costs (0) this turn.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [
+    "TAG_ONE_TURN_EFFECT"
+   ],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_BOSS_31e",
+   "name": "Blinged Out!",
+   "type": "ENCHANTMENT",
+   "cost": null,
+   "text": "Has +4/+4. This minion is STUNNING!",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_BOSS_31ex",
+   "name": "Blinged Out!",
+   "type": "ENCHANTMENT",
+   "cost": null,
+   "text": "Has +8/+8. This minion is GORGEOUS!",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_BOSS_32e1",
+   "name": "Nondescript Fade",
+   "type": "ENCHANTMENT",
+   "cost": null,
+   "text": "Has <b>Stealth</b>",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_BOSS_32e2",
+   "name": "Intrusive Pompadour",
+   "type": "ENCHANTMENT",
+   "cost": null,
+   "text": "Has <b>Taunt</b>.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_BOSS_32e3",
+   "name": "Incredible Quiff",
+   "type": "ENCHANTMENT",
+   "cost": null,
+   "text": "+2 Health",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_BOSS_32e4",
+   "name": "Aggressive Mohawk",
+   "type": "ENCHANTMENT",
+   "cost": null,
+   "text": "+2 Attack",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_BOSS_39e",
+   "name": "Light-imbued",
+   "type": "ENCHANTMENT",
+   "cost": null,
+   "text": "Has +1/+1.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_BOSS_44e",
+   "name": "Forseen",
+   "type": "ENCHANTMENT",
+   "cost": null,
+   "text": "+2/+2.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_BOSS_44ex",
+   "name": "Forseen",
+   "type": "ENCHANTMENT",
+   "cost": null,
+   "text": "+4/+4.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_BOSS_48e",
+   "name": "Voided",
+   "type": "ENCHANTMENT",
+   "cost": null,
+   "text": "In the Void.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_BOSS_52e",
+   "name": "Hold Fast!",
+   "type": "ENCHANTMENT",
+   "cost": null,
+   "text": "+2 Health and <b>Taunt</b>.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_BOSS_52ex",
+   "name": "Hold Fast!",
+   "type": "ENCHANTMENT",
+   "cost": null,
+   "text": "+4 Health and <b>Taunt</b>.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_BOSS_53e",
+   "name": "Boogie Beyond",
+   "type": "ENCHANTMENT",
+   "cost": null,
+   "text": "Granted \"<b>Deathrattle:</b> Resummon this minion.\"",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_BOSS_56e",
+   "name": "Bribed",
+   "type": "ENCHANTMENT",
+   "cost": null,
+   "text": "<b>Deathrattle:</b> Return this to your opponent's hand.",
+   "cardClass": null,
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_BOSS_57e",
+   "name": "Tracking Coin Played Enchantment",
+   "type": "ENCHANTMENT",
+   "cost": null,
+   "text": "",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_BOSS_58e",
+   "name": "Blast Powder",
+   "type": "ENCHANTMENT",
+   "cost": null,
+   "text": "If this minion takes damage, it will be destroyed.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_BOSS_58e2",
+   "name": "Wire Watcher Player Enchantment",
+   "type": "ENCHANTMENT",
+   "cost": null,
+   "text": "",
+   "cardClass": null,
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_BOSS_59e",
+   "name": "Payday",
+   "type": "ENCHANTMENT",
+   "cost": null,
+   "text": "Increased stats.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_BOSS_62e",
+   "name": "Darkened",
+   "type": "ENCHANTMENT",
+   "cost": null,
+   "text": "-2 Attack until next turn",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_BOSS_62ex",
+   "name": "Darkened",
+   "type": "ENCHANTMENT",
+   "cost": null,
+   "text": "-1 Attack",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_BOSS_64e",
+   "name": "Capital Gains",
+   "type": "ENCHANTMENT",
+   "cost": null,
+   "text": "+4/+4.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_BOSS_70e",
+   "name": "Bombardment Recharge Player Enchantment",
+   "type": "ENCHANTMENT",
+   "cost": null,
+   "text": "Disables Hero Power while reloading.",
+   "cardClass": null,
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_BOSS_73e",
+   "name": "Earthmother's Rancor",
+   "type": "ENCHANTMENT",
+   "cost": null,
+   "text": "<b>Windfury</b>",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_BOSS_73ex",
+   "name": "Earthmother's Rancor",
+   "type": "ENCHANTMENT",
+   "cost": null,
+   "text": "<b>Mega-Windfury</b>",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_BOSS_75e1",
+   "name": "Bear Liver Quest",
+   "type": "ENCHANTMENT",
+   "cost": null,
+   "text": "",
+   "cardClass": "NEUTRAL",
+   "mechanics": [
+    "CANT_BE_SILENCED",
+    "ENCHANTMENT_INVISIBLE"
+   ],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_BOSS_75e2",
+   "name": "Murloc Quest",
+   "type": "ENCHANTMENT",
+   "cost": null,
+   "text": "",
+   "cardClass": "NEUTRAL",
+   "mechanics": [
+    "CANT_BE_SILENCED",
+    "ENCHANTMENT_INVISIBLE"
+   ],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_BOSS_75e3",
+   "name": "Turtle Escort Quest",
+   "type": "ENCHANTMENT",
+   "cost": null,
+   "text": "",
+   "cardClass": "NEUTRAL",
+   "mechanics": [
+    "CANT_BE_SILENCED",
+    "ENCHANTMENT_INVISIBLE"
+   ],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_BOSS_75e4",
+   "name": "Herbalist Quest",
+   "type": "ENCHANTMENT",
+   "cost": null,
+   "text": "",
+   "cardClass": "NEUTRAL",
+   "mechanics": [
+    "CANT_BE_SILENCED",
+    "ENCHANTMENT_INVISIBLE"
+   ],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_BOSS_75e5",
+   "name": "Hogger Quest",
+   "type": "ENCHANTMENT",
+   "cost": null,
+   "text": "",
+   "cardClass": "NEUTRAL",
+   "mechanics": [
+    "CANT_BE_SILENCED",
+    "ENCHANTMENT_INVISIBLE"
+   ],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_Druid_HP2e",
+   "name": "Barky",
+   "type": "ENCHANTMENT",
+   "cost": null,
+   "text": "+1/+1.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_Druid_HPe",
+   "name": "Druid Hero Power Watcher",
+   "type": "ENCHANTMENT",
+   "cost": null,
+   "text": "",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_Hunter_HP1e",
+   "name": "Opportunist",
+   "type": "ENCHANTMENT",
+   "cost": null,
+   "text": "+2 Attack this turn.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [
+    "TAG_ONE_TURN_EFFECT"
+   ],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_Hunter_HP2e",
+   "name": "Shifting",
+   "type": "ENCHANTMENT",
+   "cost": null,
+   "text": "Transforming into a random 1-cost minion.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_Hunter_HPe",
+   "name": "Hunter Hero Power Watcher",
+   "type": "ENCHANTMENT",
+   "cost": null,
+   "text": "",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_Mage_HP1e",
+   "name": "Witty",
+   "type": "ENCHANTMENT",
+   "cost": null,
+   "text": "Costs (2) less.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_Mage_HPe",
+   "name": "Mage Hero Power Watcher",
+   "type": "ENCHANTMENT",
+   "cost": null,
+   "text": "",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_Paladin_HPe",
+   "name": "Paladin Hero Power Watcher",
+   "type": "ENCHANTMENT",
+   "cost": null,
+   "text": "",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_Priest_HP1e",
+   "name": "Distorted",
+   "type": "ENCHANTMENT",
+   "cost": null,
+   "text": "Attack and Health have been swapped by Distort.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_Priest_HP2e",
+   "name": "Soothed",
+   "type": "ENCHANTMENT",
+   "cost": null,
+   "text": "-2 Attack until your next turn.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_Priest_HPe",
+   "name": "Priest Hero Power Watcher",
+   "type": "ENCHANTMENT",
+   "cost": null,
+   "text": "",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_Rogue_HPe",
+   "name": "Rogue Hero Power Watcher",
+   "type": "ENCHANTMENT",
+   "cost": null,
+   "text": "",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_Shaman_HPe",
+   "name": "Shaman Hero Power Watcher",
+   "type": "ENCHANTMENT",
+   "cost": null,
+   "text": "",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_Warlock_HPe",
+   "name": "Warlock Hero Power Watcher",
+   "type": "ENCHANTMENT",
+   "cost": null,
+   "text": "",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_Warrior_HP1e",
+   "name": "Invigorated",
+   "type": "ENCHANTMENT",
+   "cost": null,
+   "text": "+2 Attack.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "DALA_Warrior_HPe",
+   "name": "Warrior Hero Power Watcher",
+   "type": "ENCHANTMENT",
+   "cost": null,
+   "text": "",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  }
+ ],
+ "other": []
+}
