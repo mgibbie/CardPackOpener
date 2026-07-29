@@ -279,6 +279,12 @@ function loadHeist() {
   if (!heistPromise) heistPromise = import('../battlecards/heist.js' + CB);
   return heistPromise;
 }
+// Tombs of Terror data (Explorers, chapters, bosses, passives + buildBossDeck)
+let tombsPromise = null;
+function loadTombs() {
+  if (!tombsPromise) tombsPromise = import('../battlecards/tombs.js' + CB);
+  return tombsPromise;
+}
 // build (once) an index: keyword slug -> { label, text, cards: [] } across the pool
 function keywordIndex(cards) {
   if (kwIndex) return kwIndex;
@@ -729,6 +735,115 @@ async function heistTreasuresView() {
     h('div', { class: 'kw-defs' }, ...anomalies));
 }
 
+// ---------- Tombs of Terror ----------
+// a round portrait for a tombs explorer/boss (art id = tombs_<id>), or a
+// lettered placeholder when the image is missing
+function tombsPortrait(id, size = 96) {
+  return h('img', {
+    src: '../battlecards/art/tombs_' + id + '.jpg' + CB, alt: id,
+    style: `width:${size}px;height:${size}px;border-radius:50%;object-fit:cover;border:2px solid #7a6a3a;`,
+    onerror: e => e.target.remove(),
+  });
+}
+// overview: the four Explorers, then the four chapters with their boss rosters
+async function tombsView() {
+  content.replaceChildren(h('p', { class: 'muted' }, 'Loading tombs…'));
+  let T, classes;
+  try { [T, classes] = await Promise.all([loadTombs(), loadClasses()]); }
+  catch (e) { return content.replaceChildren(h('h1', null, 'Tombs of Terror'), h('p', { class: 'muted' }, 'Could not load the tombs data.')); }
+  const clsName = id => (classes.find(c => c.id === id)?.name) || titleCase(id);
+  const explorerCards = T.EXPLORERS.map(ex => h('a', {
+    class: 'wiki-card', href: '#/tombs/explorer/' + ex.id, title: ex.flavor,
+    style: 'display:flex;flex-direction:column;align-items:center;gap:6px;width:120px;text-decoration:none;',
+  },
+    tombsPortrait(ex.id, 88),
+    h('div', { style: 'font-weight:bold;text-align:center;font-size:13px;' }, ex.name),
+    h('div', { class: 'muted', style: 'font-size:11.5px;' }, clsName(ex.heroClass))));
+  const chapters = T.CHAPTERS.map(c => h('div', null,
+    h('h2', null, c.name, ' ', h('span', { class: 'num' }, `(Plague Lord: ${T.BOSSES[c.final].name})`)),
+    h('div', { class: 'card-tags' },
+      [...c.pool, c.final].map(bid => h('a', {
+        class: 'tag-chip ' + (bid === c.final ? 'school' : 'tribe'), href: '#/tombs/boss/' + bid,
+      }, T.BOSSES[bid].name + ` · ${T.BOSSES[bid].health}`)))));
+  content.replaceChildren(
+    h('h1', null, 'Tombs of Terror'),
+    h('p', { class: 'muted' }, 'Pick an Explorer and a hero power, then delve one of four chapters — an eight-boss climb with card drafts, passive boons, and active treasures between fights. Your life scales as you go deeper; each chapter ends with a fixed Plague Lord.'),
+    h('p', null, h('a', { href: '#/tombs/treasures' }, 'Treasures & passives →')),
+    h('h2', null, 'Explorers ', h('span', { class: 'num' }, `(${T.EXPLORERS.length})`)),
+    h('div', { class: 'card-grid', style: 'gap:14px;' }, ...explorerCards),
+    h('h2', null, 'The Chapters'),
+    ...chapters);
+}
+// one Explorer: portrait, class, its three hero-power options, and starter deck
+async function tombsExplorerView(explorerId) {
+  content.replaceChildren(h('p', { class: 'muted' }, 'Loading explorer…'));
+  let T, D, classes, cards;
+  try { [T, D, classes, cards] = await Promise.all([loadTombs(), loadDungeon(), loadClasses(), loadCards(), loadCardart()]); }
+  catch (e) { return content.replaceChildren(h('h1', null, 'Explorer'), h('p', { class: 'muted' }, 'Could not load the tombs data.')); }
+  const ex = T.EXPLORERS.find(x => x.id === explorerId);
+  if (!ex) return content.replaceChildren(h('h1', null, 'Unknown explorer'), h('p', null, h('a', { href: '#/tombs' }, '← Tombs of Terror')));
+  const byId = {}; for (const c of cards) byId[c.id] = c;
+  const cls = classes.find(c => c.id === ex.heroClass);
+  // the three hero-power options: class default + the Explorer's ulda_ alternates
+  const alts = (T.EXPLORER_POWERS[ex.heroClass] || []).map(id => byId[id]).filter(c => c && c.power);
+  const powers = [cls?.power ? { name: cls.power.name, cost: cls.power.cost, text: cls.power.text } : null,
+    ...alts.map(c => ({ name: c.name, cost: c.power.cost, text: (c.description || '').replace(/^Hero Power \(\d+\): /, '') }))].filter(Boolean);
+  const deckIds = D.STARTER_DECKS[ex.heroClass] || [];
+  content.replaceChildren(
+    h('div', { style: 'display:flex;align-items:center;gap:16px;flex-wrap:wrap;' },
+      tombsPortrait(ex.id, 110),
+      h('div', null, h('h1', { style: 'margin:0;' }, ex.name),
+        h('div', { class: 'card-page-meta' }, cls?.name || titleCase(ex.heroClass)),
+        h('p', { class: 'muted', style: 'margin:4px 0 0;' }, ex.flavor))),
+    h('p', null, h('a', { href: '#/tombs' }, '← Tombs of Terror')),
+    h('h2', null, 'Hero Powers ', h('span', { class: 'num' }, '(choose one at the start of a run)')),
+    h('div', { class: 'kw-defs' }, powers.map(p => powerBlock(p))),
+    h('h2', null, 'Starter Deck ', h('span', { class: 'num' }, `(${deckIds.length} cards)`)),
+    await deckGrid(deckIds, byId));
+}
+// one boss: portrait, chapter, HP, hero power, and its themed decklist
+async function tombsBossView(bossId) {
+  content.replaceChildren(h('p', { class: 'muted' }, 'Loading boss…'));
+  let T, cards;
+  try { [T, cards] = await Promise.all([loadTombs(), loadCards(), loadCardart()]); }
+  catch (e) { return content.replaceChildren(h('h1', null, 'Boss'), h('p', { class: 'muted' }, 'Could not load the tombs data.')); }
+  const b = T.BOSSES[bossId];
+  if (!b) return content.replaceChildren(h('h1', null, 'Unknown boss'), h('p', null, h('a', { href: '#/tombs' }, '← Tombs of Terror')));
+  const byId = {}; for (const c of cards) byId[c.id] = c;
+  const chapter = T.CHAPTERS.find(c => c.pool.includes(bossId) || c.final === bossId);
+  const isFinal = chapter && chapter.final === bossId;
+  const deck = T.buildBossDeck(byId, b.theme);
+  content.replaceChildren(
+    h('div', { style: 'display:flex;align-items:center;gap:16px;flex-wrap:wrap;' },
+      tombsPortrait(bossId, 110),
+      h('div', null, h('h1', { style: 'margin:0;' }, b.name),
+        h('div', { class: 'card-page-meta' },
+          (chapter ? chapter.name : 'Tombs') + (isFinal ? ' · Plague Lord' : '') + ` · ${b.health} HP`))),
+    h('p', null, h('a', { href: '#/tombs' }, '← Tombs of Terror')),
+    h('h2', null, 'Hero Power'),
+    powerBlock(b.power),
+    h('h2', null, 'Deck ', h('span', { class: 'num' }, `(themed · ${deck.length} cards)`)),
+    h('p', { class: 'muted', style: 'font-size:12.5px;margin-top:-4px;' }, 'Built from the boss’s theme at fight time; a representative list is shown.'),
+    await deckGrid(deck, byId));
+}
+// the treasure catalogue: active treasures (cards) + passive boons
+async function tombsTreasuresView() {
+  content.replaceChildren(h('p', { class: 'muted' }, 'Loading treasures…'));
+  let cards;
+  try { [, cards] = await Promise.all([loadTombs(), loadCards(), loadCardart()]); }
+  catch (e) { return content.replaceChildren(h('h1', null, 'Tombs Treasures'), h('p', { class: 'muted' }, 'Could not load the tombs data.')); }
+  const active = cards.filter(c => c.treasure && c.set === 'TOMBS_OF_TERROR').map(c => c.id);
+  const passiveCards = cards.filter(c => c.passive && c.set === 'TOMBS_OF_TERROR').map(c => c.id);
+  const byId = {}; for (const c of cards) byId[c.id] = c;
+  content.replaceChildren(
+    h('h1', null, 'Tombs Treasures'),
+    h('p', null, h('a', { href: '#/tombs' }, '← Tombs of Terror')),
+    h('h2', null, 'Active Treasures ', h('span', { class: 'num' }, `(${active.length} — one joins your deck after fights 3 & 7)`)),
+    await deckGrid(active, byId),
+    h('h2', null, 'Passive Treasures ', h('span', { class: 'num' }, `(${passiveCards.length} — one chosen after fights 1 & 5)`)),
+    await deckGrid(passiveCards, byId));
+}
+
 // Battlecards design-work backlog: every card name held without a working
 // design, plus undefined keywords. Data from designwiki/data/battlecards.json
 // (regenerate with tools/gen_battlecards_design.py — self-contained).
@@ -867,6 +982,12 @@ function route() {
     if (id === 'boss' && parts[2]) return heistBossView(parts[2]);
     if (id === 'treasures') return heistTreasuresView();
     return heistView();
+  }
+  if (section === 'tombs') {
+    if (id === 'explorer' && parts[2]) return tombsExplorerView(parts[2]);
+    if (id === 'boss' && parts[2]) return tombsBossView(parts[2]);
+    if (id === 'treasures') return tombsTreasuresView();
+    return tombsView();
   }
   if (section === 'keyword') return cardSubsetView('keyword', id);
   if (section === 'tribe') return cardSubsetView('tribe', id);
