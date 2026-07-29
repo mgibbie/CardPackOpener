@@ -1465,7 +1465,7 @@ const _h_draw_lowest = ({ state, pi, target, source, enemies, scaled, hm, pickEn
 	do {
 			// Grillmaster: draw your lowest / highest Cost card
 			const p = state.players[pi];
-			if (p.deck.length && p.hand.length < MAX_HAND) { let idx = 0; for (let i = 1; i < p.deck.length; i++) { const ci = state.cardsById[p.deck[i]]?.cost || 0, cb = state.cardsById[p.deck[idx]]?.cost || 0; if (e.type === 'draw-lowest' ? ci < cb : ci > cb) idx = i; } const [id] = p.deck.splice(idx, 1); const card = instantiate(state.cardsById[id], pi); card.zone = 'hand'; card.fromDeck = true; p.hand.push(card); emit(state, { type: 'draw', player: pi, card }); }
+			if (p.deck.length && p.hand.length < MAX_HAND) { let idx = 0; for (let i = 1; i < p.deck.length; i++) { const ci = state.cardsById[p.deck[i]]?.cost || 0, cb = state.cardsById[p.deck[idx]]?.cost || 0; if (e.type === 'draw-lowest' ? ci < cb : ci > cb) idx = i; } const [id] = p.deck.splice(idx, 1); if (state.cardsById[id]) { const card = instantiate(state.cardsById[id], pi); card.zone = 'hand'; card.fromDeck = true; p.hand.push(card); emit(state, { type: 'draw', player: pi, card }); } }
 	} while (false); // top-level `continue` = skip this effect (chain semantics)
 };
 register('draw-lowest', _h_draw_lowest);

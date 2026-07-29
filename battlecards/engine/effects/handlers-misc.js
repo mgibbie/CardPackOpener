@@ -1859,7 +1859,7 @@ register('chronogor', ({ state, pi, target, source, enemies, scaled, hm, pickEne
 				let hi = 0;
 				for (let i = 1; i < p.deck.length; i++) if ((state.cardsById[p.deck[i]]?.cost || 0) > (state.cardsById[p.deck[hi]]?.cost || 0)) hi = i;
 				const [id] = p.deck.splice(hi, 1);
-				if (p.hand.length < MAX_HAND) { const c = instantiate(state.cardsById[id], pi); c.zone = 'hand'; p.hand.push(c); emit(state, { type: 'draw', player: pi, card: c }); }
+				if (p.hand.length < MAX_HAND && state.cardsById[id]) { const c = instantiate(state.cardsById[id], pi); c.zone = 'hand'; p.hand.push(c); emit(state, { type: 'draw', player: pi, card: c }); }
 			}
 			for (const o of enemies) {
 				for (let k = 0; k < 2; k++) {
@@ -1868,7 +1868,7 @@ register('chronogor', ({ state, pi, target, source, enemies, scaled, hm, pickEne
 					for (let i = 1; i < p.deck.length; i++) if ((state.cardsById[p.deck[i]]?.cost || 0) < (state.cardsById[p.deck[lo]]?.cost || 0)) lo = i;
 					const [id] = p.deck.splice(lo, 1);
 					const op = state.players[o];
-					if (op.hand.length < MAX_HAND) { const c = instantiate(state.cardsById[id], o); c.zone = 'hand'; op.hand.push(c); emit(state, { type: 'conjure', player: o, card: c, color: null }); }
+					if (op.hand.length < MAX_HAND && state.cardsById[id]) { const c = instantiate(state.cardsById[id], o); c.zone = 'hand'; op.hand.push(c); emit(state, { type: 'conjure', player: o, card: c, color: null }); }
 				}
 				break;
 			}
