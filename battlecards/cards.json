@@ -130406,6 +130406,198 @@
           }
         ]
       }
+    },
+    {
+      "id": "ulda_maxwell_mighty_steed",
+      "name": "Maxwell, Mighty Steed",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "neutral",
+      "rarity": "legendary",
+      "set": "TOMBS_OF_TERROR",
+      "token": true,
+      "treasure": true,
+      "description": "Rush, Reborn. Has +2 Attack for each other creature on the battlefield.",
+      "attack": 3,
+      "health": 5,
+      "tribe": "Beast",
+      "keywords": [
+        "rush",
+        "reborn"
+      ],
+      "selfScale": {
+        "attack": 2
+      }
+    },
+    {
+      "id": "ulda_rakanishu",
+      "name": "Rakanishu",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "neutral",
+      "rarity": "legendary",
+      "set": "TOMBS_OF_TERROR",
+      "token": true,
+      "treasure": true,
+      "description": "Battlecry: For the rest of the game, your Lackeys are 4/4.",
+      "attack": 4,
+      "health": 4,
+      "tribe": "Elemental",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "set-lackey-buff",
+          "value": 4
+        }
+      ]
+    },
+    {
+      "id": "ulda_servant_of_siamat",
+      "name": "Servant of Siamat",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "neutral",
+      "rarity": "legendary",
+      "set": "TOMBS_OF_TERROR",
+      "token": true,
+      "treasure": true,
+      "description": "Taunt, Divine Shield.",
+      "attack": 1,
+      "health": 4,
+      "keywords": [
+        "taunt",
+        "divine_shield"
+      ]
+    },
+    {
+      "id": "ulda_murkys_battle_horn",
+      "name": "Murky's Battle Horn",
+      "type": "sorcery",
+      "cost": 7,
+      "cardClass": "neutral",
+      "rarity": "legendary",
+      "set": "TOMBS_OF_TERROR",
+      "token": true,
+      "treasure": true,
+      "description": "Summon 7 Murlocs & give them Rush. At the start of your next turn, do it again.",
+      "effects": [
+        {
+          "type": "summon",
+          "count": 7,
+          "attack": 1,
+          "health": 1,
+          "name": "Murloc",
+          "tribe": "Murloc",
+          "keywords": [
+            "rush"
+          ]
+        },
+        {
+          "type": "delay-to-turn-start",
+          "effects": [
+            {
+              "type": "summon",
+              "count": 7,
+              "attack": 1,
+              "health": 1,
+              "name": "Murloc",
+              "tribe": "Murloc",
+              "keywords": [
+                "rush"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "ulda_bauble_of_beetles",
+      "name": "Bauble of Beetles",
+      "type": "sorcery",
+      "cost": 4,
+      "cardClass": "neutral",
+      "rarity": "legendary",
+      "set": "TOMBS_OF_TERROR",
+      "token": true,
+      "treasure": true,
+      "description": "Resurrect 4 friendly creatures that died this game. Give them Reborn.",
+      "effects": [
+        {
+          "type": "resurrect-highest-died",
+          "count": 4,
+          "grant": "reborn"
+        }
+      ]
+    },
+    {
+      "id": "ulda_flex_plosion",
+      "name": "Flex-plosion",
+      "type": "sorcery",
+      "cost": 7,
+      "cardClass": "neutral",
+      "rarity": "legendary",
+      "set": "TOMBS_OF_TERROR",
+      "token": true,
+      "treasure": true,
+      "description": "Destroy 3 random enemy creatures.",
+      "effects": [
+        {
+          "type": "destroy-random",
+          "count": 3
+        }
+      ]
+    },
+    {
+      "id": "ulda_phaoris_blade",
+      "name": "Phaoris' Blade",
+      "type": "weapon",
+      "cost": 5,
+      "cardClass": "neutral",
+      "rarity": "legendary",
+      "set": "TOMBS_OF_TERROR",
+      "token": true,
+      "treasure": true,
+      "description": "Windfury. After your hero attacks & kills a creature, this gains +2/+1.",
+      "attack": 1,
+      "durability": 2,
+      "keywords": [
+        "windfury"
+      ],
+      "ongoing": {
+        "on": "hero-kills-creature",
+        "effects": [
+          {
+            "type": "buff-weapon",
+            "attack": 2,
+            "durability": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "ulda_canopic_jars",
+      "name": "Canopic Jars",
+      "type": "sorcery",
+      "cost": 3,
+      "cardClass": "neutral",
+      "rarity": "legendary",
+      "set": "TOMBS_OF_TERROR",
+      "token": true,
+      "treasure": true,
+      "description": "Give your creatures \"Deathrattle: Summon a random Legendary creature.\"",
+      "effects": [
+        {
+          "type": "grant-deathrattle",
+          "effects": [
+            {
+              "type": "summon-random",
+              "rarity": "legendary"
+            }
+          ]
+        }
+      ]
     }
   ]
 }

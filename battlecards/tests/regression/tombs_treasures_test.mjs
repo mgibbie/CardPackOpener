@@ -219,5 +219,78 @@ ok('batch-1 treasures marked treasure+token', raw.cards.filter(c => c.set === 'T
 	E.playCard(state, 0, state.players[0].hand[0].uid, { type: 'creature', uid: state.players[0].board[0].uid, player: 0 });
 	ok("Brann's Epic Egg: summoned King Krush", state.players[0].board.some(c => c.id === 'king_krush'));
 }
+
+// ---- batch 3 ----
+// Maxwell: +2 Attack per OTHER creature on the battlefield
+{
+	const { state } = new Scenario(byId)
+		.def('t_o', { type: 'creature', cost: 1, attack: 1, health: 1 })
+		.mana(0, 20).board(0, ['ulda_maxwell_mighty_steed', 't_o', 't_o']).board(1, ['t_o']).run();
+	E.recomputeAuras(state); // Scenario board placement doesn't recompute; a real summon does
+	const max = state.players[0].board.find(c => c.id === 'ulda_maxwell_mighty_steed');
+	// 3 other creatures on the battlefield (2 friendly + 1 enemy) -> +6 -> 9 attack
+	ok('Maxwell: +2 per other creature (3 -> 3+6 = 9)', max.attack === 9, max.attack);
+}
+// Rakanishu: sets the lackey buff for the rest of the game
+{
+	const { state } = new Scenario(byId).mana(0, 20).hand(0, ['ulda_rakanishu']).play(0, 'ulda_rakanishu').run();
+	ok('Rakanishu: lackeyBuff set to 4', state.players[0].lackeyBuff === 4, state.players[0].lackeyBuff);
+}
+// Servant of Siamat: a Taunt + Divine Shield body
+{
+	const { state } = new Scenario(byId).mana(0, 20).board(0, ['ulda_servant_of_siamat']).run();
+	const c = state.players[0].board[0];
+	ok('Servant of Siamat: Taunt + Divine Shield', c.keywords.includes('taunt') && c.keywords.includes('divine_shield'));
+}
+// Murky's Battle Horn: 7 Rush Murlocs now, 7 more at the start of next turn
+{
+	const { state } = new Scenario(byId).mana(0, 20).hand(0, ["ulda_murkys_battle_horn"]).play(0, 'ulda_murkys_battle_horn').run();
+	ok("Murky's Battle Horn: 7 Rush Murlocs", state.players[0].board.filter(c => c.name === 'Murloc' && c.keywords.includes('rush')).length === 7);
+	state.current = 0;
+	E.endTurn(state); E.endTurn(state); // back to my turn start -> repeat (capped by board ceiling)
+	ok("Murky's Battle Horn: repeated next turn", state.players[0].board.filter(c => c.name === 'Murloc').length > 7);
+}
+// Bauble of Beetles: resurrect dead friendlies with Reborn
+{
+	const { state } = new Scenario(byId)
+		.def('t_big', { type: 'creature', cost: 6, attack: 6, health: 6 })
+		.def('t_kill', { type: 'sorcery', cost: 0, effects: [{ type: 'damage', value: 9, target: 'creature' }] })
+		.mana(0, 20).board(0, ['t_big']).hand(0, ['t_kill', 'ulda_bauble_of_beetles']).run();
+	E.playCard(state, 0, state.players[0].hand.find(c => c.id === 't_kill').uid, { type: 'creature', uid: state.players[0].board[0].uid, player: 0 });
+	E.playCard(state, 0, state.players[0].hand.find(c => c.id === 'ulda_bauble_of_beetles').uid, null);
+	const rez = state.players[0].board.filter(c => c.id === 't_big');
+	ok('Bauble of Beetles: resurrected with Reborn', rez.length >= 1 && rez.every(c => c.keywords.includes('reborn')));
+}
+// Flex-plosion: destroy 3 random enemy creatures
+{
+	const { state } = new Scenario(byId)
+		.def('t_e', { type: 'creature', cost: 2, attack: 2, health: 2 })
+		.mana(0, 20).board(1, ['t_e', 't_e', 't_e', 't_e']).hand(0, ['ulda_flex_plosion'])
+		.play(0, 'ulda_flex_plosion').run();
+	ok('Flex-plosion: destroyed 3 (1 left)', state.players[1].board.length === 1, state.players[1].board.length);
+}
+// Phaoris' Blade: gains +2/+1 after killing a creature
+{
+	const { state } = new Scenario(byId)
+		.def('t_prey', { type: 'creature', cost: 1, attack: 0, health: 1 })
+		.mana(0, 20).board(1, ['t_prey']).hand(0, ["ulda_phaoris_blade"]).run();
+	E.playCard(state, 0, state.players[0].hand[0].uid, null);
+	const before = state.players[0].weapon.attack;
+	E.heroAttack(state, 0, { type: 'creature', uid: state.players[1].board[0].uid, player: 1 });
+	ok("Phaoris' Blade: +2 attack after a kill", state.players[0].weapon && state.players[0].weapon.attack === before + 2, state.players[0].weapon?.attack);
+}
+// Canopic Jars: your creatures gain a summon-a-Legendary deathrattle
+{
+	const { state } = new Scenario(byId)
+		.def('t_c', { type: 'creature', cost: 2, attack: 2, health: 2 })
+		.def('t_kill', { type: 'sorcery', cost: 0, effects: [{ type: 'damage', value: 9, target: 'creature' }] })
+		.mana(0, 20).board(0, ['t_c']).hand(0, ['ulda_canopic_jars', 't_kill'])
+		.play(0, 'ulda_canopic_jars').run();
+	const c = state.players[0].board[0];
+	ok('Canopic Jars: granted a Deathrattle', c.keywords.includes('deathrattle') && (c.deathrattle || []).some(e => e.type === 'summon-random'));
+	E.playCard(state, 0, state.players[0].hand.find(x => x.id === 't_kill').uid, { type: 'creature', uid: c.uid, player: 0 });
+	const legend = state.players[0].board.find(x => byId[x.id]?.rarity === 'legendary');
+	ok('Canopic Jars: DR summoned a Legendary', !!legend);
+}
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);
