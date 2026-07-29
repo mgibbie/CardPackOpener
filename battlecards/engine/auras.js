@@ -9,8 +9,8 @@ export function recomputeAuras(state) {
 	// global auras ("ALL other Murlocs...") radiate across every board
 	const globalSources = [];
 	for (const gp of state.players) {
-		for (const src of gp.board) {
-			if (src.aura?.global && !isDead(src)) globalSources.push(src);
+		for (const src of [...gp.board, ...gp.emblems]) {
+			if (src.aura?.global && !(src.zone === 'board' && isDead(src))) globalSources.push(src); // emblems have no health — don't death-check them
 		}
 	}
 	for (const p of state.players) {
@@ -24,6 +24,9 @@ export function recomputeAuras(state) {
 			for (const src of [...sources, ...globalSources]) {
 				const a = src.aura;
 				if (a.others && src === c) continue;
+				if (a.scope === 'enemies' && src.controller === c.controller) continue; // Band of Scarabs
+				if (a.scope === 'friendly' && src.controller !== c.controller) continue;
+				if (a.maxCost != null && (c.cost || 0) > a.maxCost) continue; // Band of Bees: cheap creatures only
 				if (a.adjacent) {
 					const si = p.board.indexOf(src);
 					if (si < 0 || Math.abs(si - idx) !== 1) continue;

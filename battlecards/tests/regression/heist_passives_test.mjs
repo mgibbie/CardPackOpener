@@ -11,7 +11,7 @@ let pass = 0, fail = 0;
 const ok = (l, c, extra) => { if (c) pass++; else { fail++; console.log('FAIL:', l, extra ?? ''); } };
 
 ok('16 passives defined', Object.keys(PASSIVES).length === 16, Object.keys(PASSIVES).length);
-ok('16 passive display cards imported', raw.cards.filter(c => c.passive).length === 16);
+ok('16 Heist passive display cards imported', raw.cards.filter(c => c.passive && c.set === 'DALARAN_HEIST').length === 16);
 
 // Recycling: armor per friendly death
 {

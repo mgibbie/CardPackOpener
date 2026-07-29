@@ -1987,6 +1987,7 @@ export function playCard(state, pi, cardUid, target, choice, position, useAlt, k
 		questTick(state, 'spell', pi);
 		p.spellsPlayedThisTurn++;
 		if (state.anomaly === 'dragon_soul' && p.spellsPlayedThisTurn === 3) summon(state, pi, { id: 'token_soul_dragon', name: 'Dragon', type: 'creature', cost: 0, rarity: 'common', token: true, attack: 5, health: 5, tribe: 'Dragon', description: 'A 5/5 Dragon.' }); // Anomaly - Dragon Soul
+		if (p.crookAndFlail) execEffects(state, pi, [{ type: 'summon-random-from-deck' }], null, null); // Crook and Flail: a spell pulls a creature from your deck
 		if (p.vistahAt != null && state.cardsById[card.id] && !card.token) (p.vistahSpells = p.vistahSpells || []).push(card.id); // Mistah Vistah logs the window
 		if (card._hataaruTurn === state.turnNumber) { card._hataaruTurn = null; execEffects(state, pi, [{ type: 'discover', cardType: 'spell', costMod: -1, hataaru: true }], null, null); } // Exarch Hataaru repeats
 		if (card._tokiGroup != null) { // Timelooper Toki: play all 3 for another Toki
@@ -2074,6 +2075,14 @@ export function playCard(state, pi, cardUid, target, choice, position, useAlt, k
 			emit(state, { type: 'transformed', uid: seed.uid, player: pi, from: 'Sherazin, Seed', card: rev });
 		}
 	}
+	// Tombs of Terror passives that react to playing a card
+	if (p.mummyMagic && card.type === 'creature' && (card.keywords || []).includes('deathrattle') && p._mummyTurn !== state.turnNumber && !isDead(card) && card.zone === 'board') {
+		p._mummyTurn = state.turnNumber;
+		if (!card.keywords.includes('reborn')) { card.keywords.push('reborn'); emit(state, { type: 'buff', uid: card.uid, attack: card.attack, hp: hp(card) }); }
+	}
+	if (p.disksOfLegend && card.type === 'creature' && card.rarity === 'legendary' && state.cardsById[card.id]) summon(state, pi, state.cardsById[card.id]); // Disks of Legend
+	if (p.darklightTorch && (card.cost || 0) % 2 === 0) { for (const hpw of p.heroPowers) hpw.usedThisTurn = false; p.heroPowerDiscountNext = (p.heroPowerDiscountNext || 0) + 10; } // Darklight Torch: even-Cost refreshes the power at (0)
+	if (p.alchemistStone && (card.cost || 0) % 2 === 1) for (const c of p.hand) { if ((c.cost || 0) > 0) { c.cost = Math.max(0, c.cost - 1); emit(state, { type: 'costChange', player: pi, uid: c.uid, cost: c.cost }); } } // Alchemist's Stone: odd-Cost discounts your hand
 	// Overpowered: replay a copy of each card played this turn (random targets)
 	if (p.overpoweredTurn === state.turnNumber && !state._opLock && card.id !== 'dala_overpowered' && state.cardsById[card.id]) {
 		state._opLock = true;
@@ -3249,6 +3258,7 @@ export function resolvePick(state, id) {
 		if (pend.darkGift) appliedGift = applyGift(state, card); // Emerald Dream: the discovered card carries a Dark Gift
 		p.hand.push(card);
 		emit(state, { type: 'conjure', player: pend.player, card, color: null });
+		if (p.luckySpade && def) for (let _n = 0; _n < 2 && p.hand.length < MAX_HAND; _n++) { const lc = instantiate(def, pend.player); lc.zone = 'hand'; lc.cost = Math.max(0, (lc.cost || 0) - 2); p.hand.push(lc); emit(state, { type: 'conjure', player: pend.player, card: lc, color: null }); } // Lucky Spade
 		if (pend.duplicate && p.hand.length < MAX_HAND) { // Shadowflame Stalker: "Get a copy of it" (same gift)
 			const copy = instantiate(def, pend.player); copy.zone = 'hand';
 			if (pend.costMod) copy.cost = Math.max(0, (copy.cost || 0) + pend.costMod);
@@ -3561,6 +3571,8 @@ export function endTurn(state) {
 	}
 	if (state.anomaly === 'growing') for (const c of p.board) { if (!isDead(c) && c.type !== 'location') { c.attack += 1; c.maxHealth += 1; emit(state, { type: 'buff', uid: c.uid, attack: c.attack, hp: hp(c) }); } } // Anomaly - Growing
 	if (state.anomaly === 'reductive') for (const c of p.hand) { if ((c.cost || 0) > 0) { c.cost = Math.max(0, c.cost - 1); emit(state, { type: 'costChange', player: pi, uid: c.uid, cost: c.cost }); } } // Anomaly - Reductive
+	if (p.everChangingElixir && p.board.some(c => !isDead(c) && c.type !== 'location')) execEffects(state, pi, [{ type: 'transform', random: true, randomCost: true, costDelta: 1 }], null, null); // Ever-Changing Elixir
+	for (const em of p.emblems) if (em.id === 'tomb_scroll_of_nonsense' && em.static && em.static.value > 0) { em.static.value--; } // Scroll of Nonsense decays each turn
 	fireOngoing(state, pi, 'turn-end');
 	if (p.board.some(c => c.endTurnDouble && !isDead(c))) fireOngoing(state, pi, 'turn-end'); // Chrono-Lord Deios
 	// Poison: each Poisoned creature you control takes 2 damage at the end of
@@ -3733,6 +3745,7 @@ export function endTurn(state) {
 		do { next = (next + 1) % state.players.length; }
 		while (state.players[next].eliminated && next !== state.current);
 	}
+	{ let _g = state.players.length * 4; while ((state.players[next].skipTurns || 0) > 0 && _g-- > 0) { state.players[next].skipTurns--; const _s = next; do { next = (next + 1) % state.players.length; } while (state.players[next].eliminated && next !== _s); if (next === _s) break; } } // Disks of Swiftness
 	state.current = next;
 	state.turnNumber++;
 	const np = state.players[state.current];

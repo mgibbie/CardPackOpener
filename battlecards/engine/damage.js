@@ -116,6 +116,12 @@ export function damageHero(state, pi, amount, src = null, pierce = false) {
 	if (p.heroImmuneUntilTurn != null && state.turnNumber < p.heroImmuneUntilTurn) return 0; // Doomsday Prepper: Immune until your next turn
 	if (p.board.some(c => c.heroImmuneAura && !isDead(c))) return 0; // Mal'Ganis: your hero is Immune
 	if (p.heroShield) { p.heroShield = false; emit(state, { type: 'heroShieldPop', player: pi }); return 0; } // Curious Cumulus: hero Divine Shield
+	if (p.primordialBulwark && amount >= (p.life + (p.armor || 0))) { // Primordial Bulwark: block lethal once, blast target opponent
+		p.primordialBulwark = false;
+		emit(state, { type: 'heroShieldPop', player: pi });
+		for (const o of opponentsOf(state, pi)) { damageHero(state, o, 20, pi); break; }
+		return 0;
+	}
 	// Bolf Ramshield: the hero's damage is taken by this creature instead
 	const bolf = p.board.find(c => c.redirectHeroDamage && !isDead(c));
 	if (bolf) { damageCreature(state, bolf, amount, null); return 0; }
