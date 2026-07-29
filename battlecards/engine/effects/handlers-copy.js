@@ -579,6 +579,7 @@ register('copy-to-hand', ({ state, pi, target, source, enemies, scaled, hm, pick
 			// optionally with overridden stats/cost (1/1 copy that costs 1)
 			const t = chosenCreature();
 			const p = state.players[pi];
+			for (let _n = 0; _n < (e.count || 1); _n++)
 			if (t && p.hand.length < MAX_HAND && !p.eliminated) {
 				const def = state.cardsById[t.id];
 				const copy = def ? instantiate(def, pi) : instantiate({

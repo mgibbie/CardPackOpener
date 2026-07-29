@@ -66,8 +66,8 @@ export function recomputeAuras(state) {
 			if (c.selfScale) {
 				let n = 0;
 				for (const gp of state.players) {
-					n += gp.board.filter(x => x !== c && !isDead(x)
-						&& (x.tribe || '').includes(c.selfScale.tribe)).length;
+					n += gp.board.filter(x => x !== c && !isDead(x) && x.type !== 'location'
+						&& (!c.selfScale.tribe || (x.tribe || '').includes(c.selfScale.tribe))).length;
 				}
 				aBonus += (c.selfScale.attack || 0) * n;
 			}

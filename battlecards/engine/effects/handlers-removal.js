@@ -363,7 +363,7 @@ register('devour-target', ({ state, pi, target, source, enemies, scaled, hm, pic
 			// Ratcatcher: destroy a chosen friendly creature, gain its Attack and Health
 			const t = chosenCreature();
 			if (t && source && source.zone === 'board' && !isDead(source) && t !== source) {
-				const a = t.attack, h2 = hp(t);
+				const _m = e.double ? 2 : 1; const a = t.attack * _m, h2 = hp(t) * _m; // Crusty the Crustacean: gain DOUBLE
 				t.damage = t.maxHealth; t.shield = false; emit(state, { type: 'destroy', uid: t.uid });
 				buffCreature(source, a, h2);
 			}

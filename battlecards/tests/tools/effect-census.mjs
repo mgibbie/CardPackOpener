@@ -102,7 +102,7 @@ walk(cards.cards, false);
 
 // registry-migrated types (PR 13+): registered in engine/effects/registry.js
 const regDir = new URL('../../engine/effects/', import.meta.url);
-const regSrc = ['registry.js', 'exec.js', 'index.js', 'handlers-triggers.js', 'handlers-removal.js', 'handlers-summon.js', 'handlers-buffs.js', 'handlers-deck.js', 'handlers-cost.js', 'handlers-copy.js', 'handlers-hero.js', 'handlers-misc.js', 'handlers-heist.js'].map(f => { try { return readFileSync(new URL(f, regDir), 'utf8'); } catch { return ''; } }).join(String.fromCharCode(10));
+const regSrc = ['registry.js', 'exec.js', 'index.js', 'handlers-triggers.js', 'handlers-removal.js', 'handlers-summon.js', 'handlers-buffs.js', 'handlers-deck.js', 'handlers-cost.js', 'handlers-copy.js', 'handlers-hero.js', 'handlers-misc.js', 'handlers-heist.js', 'handlers-tombs.js'].map(f => { try { return readFileSync(new URL(f, regDir), 'utf8'); } catch { return ''; } }).join(String.fromCharCode(10));
 const registryTypes = new Set([...regSrc.matchAll(/register(?:Trigger)?\('([^']+)'/g)].map(m => m[1]));
 const handled = new Set([...chainTypes, ...switchTypes, ...registryTypes]);
 const unhandled = [...dataTypes.keys()].filter(t => !handled.has(t)).sort();

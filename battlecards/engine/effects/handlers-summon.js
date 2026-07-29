@@ -413,9 +413,11 @@ register('enemy-summon-from-deck', ({ state, pi, target, source, enemies, scaled
 register('resurrect-highest-died', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => {
 			// Calia Menethil: resurrect your highest-Cost minion that died this game
 			const p = state.players[pi];
-			let best = null;
-			for (const id of [...new Set(p.deathLogIds)]) { const def = state.cardsById[id]; if (def && def.type === 'creature' && (!best || (def.cost || 0) > (best.cost || 0))) best = def; }
-			if (best) summon(state, pi, best);
+			const _pool = [...new Set(p.deathLogIds)].map(id => state.cardsById[id]).filter(d => d && d.type === 'creature').sort((x, y) => (y.cost || 0) - (x.cost || 0));
+			for (let _k = 0; _k < (e.count || 1) && _pool.length; _k++) {
+				const c2 = summon(state, pi, _pool[Math.min(_k, _pool.length - 1)]);
+				if (c2 && e.grant && !c2.keywords.includes(e.grant)) { c2.keywords.push(e.grant); if (e.grant === 'divine_shield') c2.shield = true; }
+			}
 });
 
 

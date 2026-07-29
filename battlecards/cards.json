@@ -130211,6 +130211,201 @@
       "keywords": [
         "lifesteal"
       ]
+    },
+    {
+      "id": "ulda_book_of_the_dead",
+      "name": "Book of the Dead",
+      "type": "sorcery",
+      "cost": 12,
+      "cardClass": "neutral",
+      "rarity": "legendary",
+      "set": "TOMBS_OF_TERROR",
+      "token": true,
+      "treasure": true,
+      "description": "Deal 7 damage to all enemies. Costs (1) less for each creature that's died this game.",
+      "selfCost": {
+        "per": "minions-died-game",
+        "amount": -1
+      },
+      "effects": [
+        {
+          "type": "damage",
+          "value": 7,
+          "target": "enemies"
+        }
+      ]
+    },
+    {
+      "id": "ulda_gnomebliterator",
+      "name": "Gnomebliterator",
+      "type": "sorcery",
+      "cost": 2,
+      "cardClass": "neutral",
+      "rarity": "legendary",
+      "set": "TOMBS_OF_TERROR",
+      "token": true,
+      "treasure": true,
+      "description": "Deal 10 damage.",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 10,
+          "target": "any"
+        }
+      ]
+    },
+    {
+      "id": "ulda_starseekers_tools",
+      "name": "Starseeker's Tools",
+      "type": "sorcery",
+      "cost": 2,
+      "cardClass": "neutral",
+      "rarity": "legendary",
+      "set": "TOMBS_OF_TERROR",
+      "token": true,
+      "treasure": true,
+      "description": "Discover a creature & a spell. They cost (2) less.",
+      "effects": [
+        {
+          "type": "discover",
+          "pick": 3,
+          "cardType": "creature",
+          "costMod": -2
+        },
+        {
+          "type": "discover",
+          "pick": 3,
+          "cardType": "spell",
+          "costMod": -2
+        }
+      ]
+    },
+    {
+      "id": "ulda_stone_fox_statue",
+      "name": "Stone Fox Statue",
+      "type": "sorcery",
+      "cost": 5,
+      "cardClass": "neutral",
+      "rarity": "legendary",
+      "set": "TOMBS_OF_TERROR",
+      "token": true,
+      "treasure": true,
+      "description": "Choose a creature & add 2 copies of it to your hand that cost (0).",
+      "effects": [
+        {
+          "type": "copy-to-hand",
+          "target": "creature",
+          "count": 2,
+          "setCost": 0
+        }
+      ]
+    },
+    {
+      "id": "ulda_staff_of_renewal",
+      "name": "Staff of Renewal",
+      "type": "sorcery",
+      "cost": 7,
+      "cardClass": "neutral",
+      "rarity": "legendary",
+      "set": "TOMBS_OF_TERROR",
+      "token": true,
+      "treasure": true,
+      "description": "Resurrect 7 friendly creatures with the highest Cost. Give them Taunt.",
+      "effects": [
+        {
+          "type": "resurrect-highest-died",
+          "count": 7,
+          "grant": "taunt"
+        }
+      ]
+    },
+    {
+      "id": "ulda_titan_forged_grapnel",
+      "name": "Titan-Forged Grapnel",
+      "type": "sorcery",
+      "cost": 3,
+      "cardClass": "neutral",
+      "rarity": "legendary",
+      "set": "TOMBS_OF_TERROR",
+      "token": true,
+      "treasure": true,
+      "description": "Destroy 2 random enemy creatures. Gain Armor equal to their combined Attack.",
+      "effects": [
+        {
+          "type": "destroy-random-gain-armor",
+          "count": 2
+        }
+      ]
+    },
+    {
+      "id": "ulda_ancient_reflections",
+      "name": "Ancient Reflections",
+      "type": "sorcery",
+      "cost": 5,
+      "cardClass": "neutral",
+      "rarity": "legendary",
+      "set": "TOMBS_OF_TERROR",
+      "token": true,
+      "treasure": true,
+      "description": "Choose a creature. Fill your board with 1/1 copies of it.",
+      "effects": [
+        {
+          "type": "fill-board-copies-of-target",
+          "target": "creature",
+          "attack": 1,
+          "health": 1
+        }
+      ]
+    },
+    {
+      "id": "ulda_crusty_the_crustacean",
+      "name": "Crusty the Crustacean",
+      "type": "creature",
+      "cost": 1,
+      "cardClass": "neutral",
+      "rarity": "legendary",
+      "set": "TOMBS_OF_TERROR",
+      "token": true,
+      "treasure": true,
+      "description": "Battlecry: Destroy a creature. Gain double its Attack & Health.",
+      "attack": 3,
+      "health": 4,
+      "tribe": "Beast",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "devour-target",
+          "target": "creature",
+          "double": true
+        }
+      ]
+    },
+    {
+      "id": "ulda_branns_epic_egg",
+      "name": "Brann's Epic Egg",
+      "type": "creature",
+      "cost": 6,
+      "cardClass": "neutral",
+      "rarity": "legendary",
+      "set": "TOMBS_OF_TERROR",
+      "token": true,
+      "treasure": true,
+      "description": "After this takes damage, summon King Krush.",
+      "attack": 0,
+      "health": 5,
+      "ongoing": {
+        "on": "self-damaged",
+        "once": true,
+        "effects": [
+          {
+            "type": "summon",
+            "count": 1,
+            "summonId": "king_krush"
+          }
+        ]
+      }
     }
   ]
 }

@@ -129,5 +129,95 @@ ok('batch-1 treasures marked treasure+token', raw.cards.filter(c => c.set === 'T
 	E.heroAttack(state, 0, { type: 'hero', player: 1 });
 	ok('Truesilver Lance: Lifesteal healed the hero', state.players[0].life === 25, state.players[0].life);
 }
+
+// ---- batch 2 ----
+// Book of the Dead: costs 1 less per creature died; deals 7 to all enemies
+{
+	const { state } = new Scenario(byId).mana(0, 20).hand(0, ['ulda_book_of_the_dead']).run();
+	state.minionsDiedGame = 5;
+	const card = state.players[0].hand[0];
+	ok('Book of the Dead: 12 - 5 = 7 cost', E.effectiveCost(state, 0, card) === 7, E.effectiveCost(state, 0, card));
+	const foeLife = state.players[1].life;
+	E.playCard(state, 0, card.uid, null);
+	ok('Book of the Dead: 7 to the enemy hero', state.players[1].life === foeLife - 7, state.players[1].life);
+}
+// Gnomebliterator: 10 to any target
+{
+	const { state } = new Scenario(byId)
+		.def('t_wall', { type: 'creature', cost: 5, attack: 0, health: 12 })
+		.mana(0, 20).board(1, ['t_wall']).hand(0, ['ulda_gnomebliterator'])
+		.play(0, 'ulda_gnomebliterator', { targetBoard: [1, 0] }).run();
+	ok('Gnomebliterator: 10 damage', state.players[1].board[0].damage === 10, state.players[1].board[0].damage);
+}
+// Starseeker's Tools: two discovers (creature + spell), both at -2 cost
+{
+	const { state } = new Scenario(byId).mana(0, 20).hand(0, ["ulda_starseekers_tools"]).play(0, 'ulda_starseekers_tools').run();
+	ok("Starseeker's Tools: both discovers queued", state.pickQueue.length === 2);
+	const picked1 = state.pickQueue[0].ids[0];
+	E.resolvePick(state, picked1);
+	const c1 = state.players[0].hand.find(c => c.id === picked1);
+	ok("Starseeker's Tools: a creature discover at -2", byId[picked1]?.type === 'creature' && c1 && c1.cost === Math.max(0, byId[picked1].cost - 2));
+	const picked2 = state.pickQueue[0].ids[0];
+	E.resolvePick(state, picked2);
+	const c2 = state.players[0].hand.find(c => c.id === picked2);
+	ok("Starseeker's Tools: a spell discover at -2", ['sorcery', 'instant'].includes(byId[picked2]?.type) && c2 && c2.cost === Math.max(0, byId[picked2].cost - 2));
+}
+// Stone Fox Statue: two 0-cost copies of a chosen creature
+{
+	const { state } = new Scenario(byId)
+		.def('t_big', { type: 'creature', cost: 7, attack: 7, health: 7 })
+		.mana(0, 20).board(1, ['t_big']).hand(0, ['ulda_stone_fox_statue'])
+		.play(0, 'ulda_stone_fox_statue', { targetBoard: [1, 0] }).run();
+	const copies = state.players[0].hand.filter(c => c.id === 't_big');
+	ok('Stone Fox Statue: 2 copies at cost 0', copies.length === 2 && copies.every(c => c.cost === 0));
+}
+// Staff of Renewal: resurrect the highest-cost dead friendlies with Taunt
+{
+	const { state } = new Scenario(byId)
+		.def('t_big', { type: 'creature', cost: 6, attack: 6, health: 6 })
+		.def('t_kill', { type: 'sorcery', cost: 0, effects: [{ type: 'damage', value: 9, target: 'creature' }] })
+		.mana(0, 20).board(0, ['t_big']).hand(0, ['t_kill', 'ulda_staff_of_renewal']).run();
+	E.playCard(state, 0, state.players[0].hand.find(c => c.id === 't_kill').uid, { type: 'creature', uid: state.players[0].board[0].uid, player: 0 });
+	E.playCard(state, 0, state.players[0].hand.find(c => c.id === 'ulda_staff_of_renewal').uid, null);
+	const rez = state.players[0].board.filter(c => c.id === 't_big');
+	ok('Staff of Renewal: resurrected the dead creature with Taunt', rez.length >= 1 && rez.every(c => c.keywords.includes('taunt')));
+}
+// Titan-Forged Grapnel: destroy 2 random enemies, gain armor = their attack
+{
+	const { state } = new Scenario(byId)
+		.def('t_a', { type: 'creature', cost: 3, attack: 3, health: 3 })
+		.def('t_b', { type: 'creature', cost: 4, attack: 4, health: 4 })
+		.mana(0, 20).board(1, ['t_a', 't_b']).hand(0, ['ulda_titan_forged_grapnel'])
+		.play(0, 'ulda_titan_forged_grapnel').run();
+	ok('Titan-Forged Grapnel: both enemies destroyed', state.players[1].board.length === 0);
+	ok('Titan-Forged Grapnel: gained 7 Armor (3+4)', state.players[0].armor === 7, state.players[0].armor);
+}
+// Ancient Reflections: fill the board with 1/1 copies of a chosen creature
+{
+	const { state } = new Scenario(byId)
+		.def('t_c', { type: 'creature', cost: 5, attack: 5, health: 5, keywords: ['taunt'] })
+		.mana(0, 20).board(0, ['t_c']).hand(0, ['ulda_ancient_reflections'])
+		.play(0, 'ulda_ancient_reflections', { targetBoard: [0, 0] }).run();
+	const copies = state.players[0].board.filter(c => c.id === 't_c' && c.attack === 1);
+	ok('Ancient Reflections: board filled with 1/1 copies', state.players[0].board.length === 7 && copies.length >= 6);
+}
+// Crusty the Crustacean: destroy a creature, gain double its stats
+{
+	const { state } = new Scenario(byId)
+		.def('t_prey', { type: 'creature', cost: 4, attack: 3, health: 4 })
+		.mana(0, 20).board(1, ['t_prey']).hand(0, ['ulda_crusty_the_crustacean'])
+		.play(0, 'ulda_crusty_the_crustacean', { targetBoard: [1, 0] }).run();
+	const crusty = state.players[0].board.find(c => c.id === 'ulda_crusty_the_crustacean');
+	ok('Crusty: destroyed the prey', !state.players[1].board.some(c => c.id === 't_prey'));
+	ok('Crusty: gained double (3/4 -> +6/+8 = 9/12)', crusty && crusty.attack === 9 && E.hp(crusty) === 12, crusty && `${crusty.attack}/${E.hp(crusty)}`);
+}
+// Brann's Epic Egg: takes damage -> summons King Krush (once)
+{
+	const { state } = new Scenario(byId)
+		.def('t_ping', { type: 'sorcery', cost: 0, effects: [{ type: 'damage', value: 1, target: 'creature' }] })
+		.mana(0, 20).board(0, ['ulda_branns_epic_egg']).hand(0, ['t_ping']).run();
+	E.playCard(state, 0, state.players[0].hand[0].uid, { type: 'creature', uid: state.players[0].board[0].uid, player: 0 });
+	ok("Brann's Epic Egg: summoned King Krush", state.players[0].board.some(c => c.id === 'king_krush'));
+}
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);
