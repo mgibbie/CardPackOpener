@@ -3771,8 +3771,9 @@ async function start() {
 			const heroId = await pickHeroOverlay();
 			const hero = Heist.HEROES.find(h => h.id === heroId);
 			const powerId = await pickPowerOverlay(hero);
+			const anomaly = await pickAnomalyOverlay();
 			run = {
-				active: true, heroId, powerId, wing, level: 1,
+				active: true, heroId, powerId, wing, level: 1, anomaly,
 				deck: [...Dungeon.STARTER_DECKS[hero.heroClass]],
 				passives: [], bossId: heistBossFor(wing, 1),
 			};
@@ -4147,8 +4148,9 @@ function resumeHeistOverlay(run) {
 	return new Promise(resolve => {
 		const hero = Heist.HEROES.find(h => h.id === run.heroId);
 		const wing = Heist.WINGS.find(w => w.id === run.wing);
+		const anom = run.anomaly && Heist.ANOMALIES[run.anomaly] ? ` · Anomaly: ${Heist.ANOMALIES[run.anomaly].name}` : '';
 		const el = dungeonOverlay('HEIST IN PROGRESS',
-			`${hero?.name || run.heroId} is ${run.level}/8 deep into ${wing?.name || run.wing} (${run.deck.length} cards).`);
+			`${hero?.name || run.heroId} is ${run.level}/8 deep into ${wing?.name || run.wing} (${run.deck.length} cards)${anom}.`);
 		el.appendChild(overlayButton(`Continue fight ${run.level}`, () => { hideDungeonOverlay(); resolve(true); }));
 		el.appendChild(overlayButton('Abandon — plan a new heist', () => { hideDungeonOverlay(); resolve(false); }));
 	});
@@ -4211,6 +4213,29 @@ function pickPowerOverlay(hero) {
 		el.appendChild(row);
 	});
 }
+// optional run modifier: a symmetric anomaly that applies to every fight
+function pickAnomalyOverlay() {
+	return new Promise(resolve => {
+		const el = dungeonOverlay('ANOMALY?', 'The magic of Dalaran is unstable. Take on a run-wide twist for an extra challenge, or run clean.');
+		const row = document.createElement('div');
+		row.style.cssText = 'display:flex;flex-wrap:wrap;justify-content:center;gap:14px;';
+		const keys = Object.keys(Heist.ANOMALIES);
+		const offered = [];
+		while (offered.length < 3 && keys.length) offered.push(keys.splice(Math.floor(Math.random() * keys.length), 1)[0]);
+		for (const key of offered) {
+			const a = Heist.ANOMALIES[key];
+			const box = document.createElement('div');
+			box.style.cssText = 'background:#1c1830;border:1px solid #6a4a9a;border-radius:10px;padding:14px;max-width:200px;';
+			box.innerHTML = `<div style="font-weight:bold;margin-bottom:4px;">Anomaly · ${a.name}</div>`
+				+ `<div style="font-size:12.5px;opacity:0.85;margin-bottom:8px;">${a.text}</div>`;
+			box.appendChild(overlayButton('Embrace it', () => { hideDungeonOverlay(); resolve(key); }));
+			row.appendChild(box);
+		}
+		el.appendChild(row);
+		el.appendChild(document.createElement('br'));
+		el.appendChild(overlayButton('No anomaly — standard run', () => { hideDungeonOverlay(); resolve(null); }));
+	});
+}
 let heistCardsById = null; // set at boot so overlays can read card defs pre-state
 function heistAltPowers(heroClass) {
 	return Object.values(heistCardsById || {}).filter(d =>
@@ -4256,6 +4281,7 @@ function bootHeistEncounter(cardsById, run) {
 	E.stripLoadouts(state);
 	for (const id of run.passives) Heist.applyPassive(state, HUMAN, id);
 	Heist.applyRunMods(state, HUMAN, run); // tavern deck edits (buffs, opening hand)
+	if (run.anomaly && Heist.ANOMALIES[run.anomaly]) { Heist.applyAnomaly(state, run.anomaly); log(`Anomaly — ${Heist.ANOMALIES[run.anomaly].name}: ${Heist.ANOMALIES[run.anomaly].text}`); }
 	log(`Heist fight ${run.level}/8 — ${boss.name} (${bp.life} HP).`);
 	log(`Boss power — ${boss.power.name} (${boss.power.cost}): ${boss.power.text}`);
 	log(`You are ${hero.name} with a ${run.deck.length}-card heist deck.`);

@@ -305,3 +305,45 @@ export function applyRunMods(state, pi, run) {
 		(p.deckCostPersist = p.deckCostPersist || {})[id] = Math.max(0, base + delta);
 	}
 }
+
+// ---------- anomalies (run modifiers) ----------
+// A symmetric, run-wide rule applied to BOTH players at every fight. Ones
+// with a `boot` do their setup at boot; the rest are driven by engine hooks
+// reading state.anomaly (summon / spell / turn-start / turn-end).
+export const ANOMALIES = {
+	arcane: {
+		name: 'Arcane', text: 'All spells cost (2) less.',
+		boot: (state) => { for (let pi = 0; pi < state.players.length; pi++) {
+			const em = E.instantiate({ id: 'anomaly_arcane', name: 'Anomaly - Arcane', type: 'emblem', cost: 0, rarity: 'basic', description: 'Spells cost (2) less.', costMod: { cardType: 'spell', amount: -2 } }, pi);
+			em.zone = 'emblem'; state.players[pi].emblems.push(em);
+		} },
+	},
+	crying: {
+		name: 'Crying', text: 'All Battlecries trigger twice.',
+		boot: (state) => { for (let pi = 0; pi < state.players.length; pi++) E.applyHeroMods(state, pi, { battlecriesTwice: true }); },
+	},
+	rattling: {
+		name: 'Rattling', text: 'All Deathrattles trigger twice.',
+		boot: (state) => { for (let pi = 0; pi < state.players.length; pi++) E.applyHeroMods(state, pi, { deathrattlesTwice: true }); },
+	},
+	gorged: {
+		name: 'Gorged', text: 'Both players start with two extra cards and Mana Crystals.',
+		boot: (state) => { for (let pi = 0; pi < state.players.length; pi++) { E.drawCards(state, pi, 2); E.addManaCrystal(state, pi, 2); } },
+	},
+	growing: { name: 'Growing', text: "Minions gain +1/+1 at the end of their owner's turn." },
+	rejuvenating: { name: 'Rejuvenating', text: 'At the start of your turn, restore 2 Health to your hero.' },
+	reductive: { name: 'Reductive', text: 'At the end of your turn, reduce the Cost of cards in your hand by (1).' },
+	dragon_soul: { name: 'Dragon Soul', text: 'After you cast 3 spells in a turn, summon a 5/5 Dragon.' },
+	infused: { name: 'Infused', text: 'Summoned minions gain Taunt, Divine Shield, Rush, or Windfury at random.' },
+	explosive: { name: 'Explosive', text: 'Summoned minions gain "Deathrattle: Deal 1 damage to all minions."' },
+	nesting: { name: 'Nesting', text: 'Summoned minions gain "Deathrattle: Summon a 1/1 copy of this minion."' },
+};
+
+export function applyAnomaly(state, id) {
+	const a = ANOMALIES[id];
+	if (!a) return false;
+	state.anomaly = id;
+	if (a.boot) a.boot(state);
+	E.emit(state, { type: 'heistAnomaly', id, name: a.name });
+	return true;
+}

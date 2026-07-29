@@ -38,6 +38,7 @@ const FIELD_DEFAULTS = {
 	askQueue: () => [], sacQueue: () => [], dredgeQueue: () => [],
 	stack: () => [], priority: null, passers: () => [], priorityNext: 0,
 	plane: null,
+	anomaly: null,
 	pendingReturns: () => [],
 	// — the silent-loss list (dropped by the old allow-lists) —
 	forcedTurns: () => [],  // Temporus / extra-turn chains

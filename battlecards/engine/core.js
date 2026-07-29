@@ -553,6 +553,7 @@ export function createGame(cardsById, rng = Math.random, playerDeckIds = null, p
 		passers: [],     // players who have passed priority since the last stack change
 		priorityNext: 0, // where the next priority scan begins
 		plane: null,    // the active MTG plane (shared arena state; null until first Planeshift)
+		anomaly: null,  // Dalaran Heist anomaly id: a symmetric run-wide rule (engine/heist.js)
 	};
 	if (playerDeck) state.players[0].deck = playerDeck;
 
@@ -994,6 +995,11 @@ export function summon(state, pi, tokenDef) {
 	if (p.tribeSummonBuff && state.turnNumber < p.tribeSummonBuff.untilTurn && (c.tribe || '').includes(p.tribeSummonBuff.tribe)) { for (const k of p.tribeSummonBuff.keywords) if (!c.keywords.includes(k)) { c.keywords.push(k); if (k === KW.DIVINE_SHIELD) c.shield = true; } } // Timewarden: Dragons gain Taunt + Divine Shield
 	if (c.scaleOnEntry) { const n = p.enteredCountById?.[c.id] || 0; if (n > 0) { c.attack += (c.scaleOnEntry.attack || 0) * n; c.maxHealth += (c.scaleOnEntry.health || 0) * n; } } // Astral Automaton: +1/+1 per other summoned this game
 	(p.enteredCountById = p.enteredCountById || {})[c.id] = (p.enteredCountById[c.id] || 0) + 1;
+	if (state.anomaly && c.type !== 'location') { // Dalaran Heist anomalies, applied symmetrically to every summon
+		if (state.anomaly === 'infused') { const ks = [KW.TAUNT, KW.DIVINE_SHIELD, KW.RUSH, KW.WINDFURY]; const k = ks[Math.floor(state.rng() * ks.length)]; if (!c.keywords.includes(k)) { c.keywords.push(k); if (k === KW.DIVINE_SHIELD) c.shield = true; } }
+		else if (state.anomaly === 'explosive') { c.deathrattle = (c.deathrattle || []).concat([{ type: 'damage', value: 1, target: 'all-creatures' }]); if (!c.keywords.includes(KW.DEATHRATTLE)) c.keywords.push(KW.DEATHRATTLE); }
+		else if (state.anomaly === 'nesting') { c.deathrattle = (c.deathrattle || []).concat([{ type: 'summon', count: 1, attack: 1, health: 1, name: c.name }]); if (!c.keywords.includes(KW.DEATHRATTLE)) c.keywords.push(KW.DEATHRATTLE); }
+	}
 	p.board.push(c);
 	emit(state, { type: 'summon', player: pi, card: c });
 	questTick(state, 'summon', pi, 1, c);
@@ -1949,6 +1955,7 @@ export function playCard(state, pi, cardUid, target, choice, position, useAlt, k
 	} else {
 		questTick(state, 'spell', pi);
 		p.spellsPlayedThisTurn++;
+		if (state.anomaly === 'dragon_soul' && p.spellsPlayedThisTurn === 3) summon(state, pi, { id: 'token_soul_dragon', name: 'Dragon', type: 'creature', cost: 0, rarity: 'common', token: true, attack: 5, health: 5, tribe: 'Dragon', description: 'A 5/5 Dragon.' }); // Anomaly - Dragon Soul
 		if (p.vistahAt != null && state.cardsById[card.id] && !card.token) (p.vistahSpells = p.vistahSpells || []).push(card.id); // Mistah Vistah logs the window
 		if (card._hataaruTurn === state.turnNumber) { card._hataaruTurn = null; execEffects(state, pi, [{ type: 'discover', cardType: 'spell', costMod: -1, hataaru: true }], null, null); } // Exarch Hataaru repeats
 		if (card._tokiGroup != null) { // Timelooper Toki: play all 3 for another Toki
@@ -3518,6 +3525,8 @@ export function endTurn(state) {
 			summon(state, pi, { ...state.cardsById['acidspitter'] });
 		}
 	}
+	if (state.anomaly === 'growing') for (const c of p.board) { if (!isDead(c) && c.type !== 'location') { c.attack += 1; c.maxHealth += 1; emit(state, { type: 'buff', uid: c.uid, attack: c.attack, hp: hp(c) }); } } // Anomaly - Growing
+	if (state.anomaly === 'reductive') for (const c of p.hand) { if ((c.cost || 0) > 0) { c.cost = Math.max(0, c.cost - 1); emit(state, { type: 'costChange', player: pi, uid: c.uid, cost: c.cost }); } } // Anomaly - Reductive
 	fireOngoing(state, pi, 'turn-end');
 	if (p.board.some(c => c.endTurnDouble && !isDead(c))) fireOngoing(state, pi, 'turn-end'); // Chrono-Lord Deios
 	// Poison: each Poisoned creature you control takes 2 damage at the end of
@@ -3961,6 +3970,7 @@ export function endTurn(state) {
 		c.abilityUsedThisTurn = false;
 	}
 	emit(state, { type: 'turnStart', player: state.current, turnNumber: state.turnNumber });
+	if (state.anomaly === 'rejuvenating') healHero(state, state.current, 2); // Anomaly - Rejuvenating
 	// Un'Goro Elemental synergy: carry "played an Elemental" into this turn
 	{ const cp = state.players[state.current]; cp.elementalLastTurn = cp.elementalThisTurn; cp.elementalThisTurn = false; cp.elementalsPlayedLastTurn = cp.elementalsPlayedThisTurn || 0; cp.elementalsPlayedThisTurn = 0; }
 	// in-hand "each turn" effects (Nerubian Prophet: cost -1; Shifter Zerus: transform)

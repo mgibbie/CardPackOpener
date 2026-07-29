@@ -716,13 +716,19 @@ async function heistTreasuresView() {
   const passives = Object.entries(H.PASSIVES).map(([id, p]) => h('div', { class: 'kw-def' },
     h('span', { class: 'tag-chip school' }, p.name),
     h('span', { class: 'kw-text' }, p.text)));
+  const anomalies = Object.entries(H.ANOMALIES || {}).map(([id, a]) => h('div', { class: 'kw-def' },
+    h('span', { class: 'tag-chip tribe' }, a.name),
+    h('span', { class: 'kw-text' }, a.text)));
   content.replaceChildren(
     h('h1', null, 'Heist Treasures'),
     h('p', null, h('a', { href: '#/heist' }, '← Dalaran Heist')),
     h('h2', null, 'Active Treasures ', h('span', { class: 'num' }, `(${active.length} — one joins your deck after fights 3 & 7)`)),
     await deckGrid(active, byId),
     h('h2', null, 'Passive Treasures ', h('span', { class: 'num' }, `(${passives.length} — one chosen after fights 1 & 5)`)),
-    h('div', { class: 'kw-defs' }, ...passives));
+    h('div', { class: 'kw-defs' }, ...passives),
+    h('h2', null, 'Anomalies ', h('span', { class: 'num' }, `(${anomalies.length} — an optional run-wide twist, chosen at the start)`)),
+    h('p', { class: 'muted', style: 'font-size:12.5px;margin-top:-4px;' }, 'A symmetric rule that warps every fight — it hits you and every boss alike.'),
+    h('div', { class: 'kw-defs' }, ...anomalies));
 }
 
 // Battlecards design-work backlog: every card name held without a working
