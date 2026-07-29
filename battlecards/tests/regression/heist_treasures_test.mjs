@@ -291,5 +291,16 @@ const usePower = (state, pi, id, target = null) => {
 	usePower(state, 0, 'dala_evolution', { type: 'creature', uid: state.players[0].board[0].uid, player: 0 });
 	ok('Evolution: transformed into something else', state.players[0].board.length === 1 && state.players[0].board[0].id !== 't_ev', state.players[0].board[0]?.id);
 }
+{
+	// Evolution off the top: no creature costs (cost+1) — must fizzle, not crash
+	const { state } = new Scenario(byId)
+		.def('t_huge', { type: 'creature', cost: 200, attack: 9, health: 9 }) // nothing costs 201
+		.mana(0, 20).board(0, ['t_huge']).run();
+	let threw = false;
+	try { usePower(state, 0, 'dala_evolution', { type: 'creature', uid: state.players[0].board[0].uid, player: 0 }); }
+	catch (e) { threw = true; }
+	ok('Evolution off the top: fizzles cleanly (no crash, minion unchanged)',
+		!threw && state.players[0].board.length === 1 && state.players[0].board[0].id === 't_huge');
+}
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);

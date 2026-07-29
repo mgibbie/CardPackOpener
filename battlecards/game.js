@@ -4246,14 +4246,16 @@ function bootHeistEncounter(cardsById, run) {
 		state.players[HUMAN].heroPowers = [pw];
 	}
 	// boss surgery: themed deck, boss HP; the player's life scales with depth
+	// (+5 per Good Food tavern boon banked this run)
 	const bp = state.players[1];
-	const runHP = 15 + (run.level - 1) * 5;
+	const runHP = 15 + (run.level - 1) * 5 + (run.bonusHealth || 0);
 	E.applyHeroMods(state, 1, { life: boss.health, maxLife: boss.health });
 	E.applyHeroMods(state, HUMAN, { life: runHP, maxLife: runHP });
 	E.resetDeckAndHand(state, 1, Heist.buildBossDeck(cardsById, boss.theme));
 	E.drawCards(state, 1, 4);
 	E.stripLoadouts(state);
 	for (const id of run.passives) Heist.applyPassive(state, HUMAN, id);
+	Heist.applyRunMods(state, HUMAN, run); // tavern deck edits (buffs, opening hand)
 	log(`Heist fight ${run.level}/8 — ${boss.name} (${bp.life} HP).`);
 	log(`Boss power — ${boss.power.name} (${boss.power.cost}): ${boss.power.text}`);
 	log(`You are ${hero.name} with a ${run.deck.length}-card heist deck.`);
@@ -4352,8 +4354,69 @@ function afterHeistBucket(run, nextLevel) {
 		}
 		el.appendChild(row);
 	} else {
-		advanceHeist(run, nextLevel);
+		heistTavern(run, nextLevel); // fights 2, 4, 6: stop by the Bar
 	}
+}
+
+// the Bar: 3 random tavern actions (or leave). Actions that target a card
+// open a picker; the rest apply and advance.
+function heistTavern(run, nextLevel) {
+	const el = dungeonOverlay('THE BAR', 'The bartender slides you a few options. Take one, or move on.');
+	const keys = Object.keys(Heist.TAVERN);
+	const offered = [];
+	while (offered.length < 3 && keys.length) {
+		offered.push(keys.splice(Math.floor(Math.random() * keys.length), 1)[0]);
+	}
+	const row = document.createElement('div');
+	row.style.cssText = 'display:flex;flex-wrap:wrap;justify-content:center;gap:14px;';
+	for (const key of offered) {
+		const act = Heist.TAVERN[key];
+		const box = document.createElement('div');
+		box.style.cssText = 'background:#1c1830;border:1px solid #6a5a9a;border-radius:10px;padding:16px;max-width:200px;';
+		box.innerHTML = `<div style="font-weight:bold;margin-bottom:6px;">${act.name}</div>`
+			+ `<div style="font-size:13px;opacity:0.85;margin-bottom:8px;">${act.text}</div>`;
+		box.appendChild(overlayButton('Choose', () => {
+			if (act.pick) heistTavernPick(run, key, nextLevel);
+			else { act.apply(run); saveHeist(run); advanceHeist(run, nextLevel); }
+		}));
+		row.appendChild(box);
+	}
+	el.appendChild(row);
+	el.appendChild(document.createElement('br'));
+	el.appendChild(overlayButton('Leave the Bar', () => advanceHeist(run, nextLevel)));
+}
+
+// the card-picker for a tavern action that targets a minion
+function heistTavernPick(run, key, nextLevel) {
+	const act = Heist.TAVERN[key];
+	let defs;
+	if (act.pick === 'legendary') {
+		const pool = Object.values(state.cardsById).filter(d => d.type === 'creature'
+			&& d.rarity === 'legendary' && !d.token && d.collectible !== false
+			&& !d.companion && !d.commander && !(d.colors && d.colors.length));
+		defs = [];
+		while (defs.length < 3 && pool.length) defs.push(pool.splice(Math.floor(Math.random() * pool.length), 1)[0]);
+	} else { // deck-creature: the distinct minions already in the run deck
+		const seen = new Set();
+		defs = run.deck.map(id => state.cardsById[id])
+			.filter(d => d && d.type === 'creature' && !seen.has(d.id) && seen.add(d.id));
+	}
+	if (!defs.length) { act.apply(run, null); saveHeist(run); advanceHeist(run, nextLevel); return; }
+	const el = dungeonOverlay(act.name.toUpperCase(), act.text);
+	const row = document.createElement('div');
+	row.style.cssText = 'display:flex;flex-wrap:wrap;justify-content:center;gap:12px;max-height:70vh;overflow:auto;';
+	for (const d of defs) {
+		const box = document.createElement('div');
+		box.style.cssText = 'display:flex;flex-direction:column;align-items:center;';
+		box.appendChild(miniFace(d));
+		box.appendChild(overlayButton('Pick', () => {
+			act.apply(run, d.id);
+			saveHeist(run);
+			advanceHeist(run, nextLevel);
+		}));
+		row.appendChild(box);
+	}
+	el.appendChild(row);
 }
 
 function advanceHeist(run, nextLevel) {

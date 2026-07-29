@@ -688,8 +688,9 @@ register('transform', ({ state, pi, target, source, enemies, scaled, hm, pickEne
 					if (pool.length) {
 						const rd = pool[Math.floor(state.rng() * pool.length)];
 						opt = { name: rd.name, attack: rd.attack, health: rd.health, keywords: rd.keywords || [] };
-					}
+					} else opt = null; // nothing of the wanted Cost exists (e.g. Evolution off the top): fizzle
 				}
+				if (opt && opt.name != null) {
 				const tok = instantiate({
 					id: 'token_' + opt.name.toLowerCase().replace(/[^a-z0-9]+/g, '_'),
 					name: opt.name, type: 'creature', cost: 0, rarity: 'common', token: true,
@@ -704,6 +705,7 @@ register('transform', ({ state, pi, target, source, enemies, scaled, hm, pickEne
 				t.zone = 'gone';
 				emit(state, { type: 'transformed', uid: t.uid, player: t.controller, from: t.name, card: tok });
 				recomputeAuras(state);
+				}
 			}
 } });
 

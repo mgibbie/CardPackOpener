@@ -239,3 +239,69 @@ export function buildBossDeck(cardsById, theme = {}, size = 30) {
 	for (const d of pool) deck.push(d.id, d.id);
 	return deck.slice(0, size);
 }
+
+// ---------- the tavern (the Bar): between-fight deck edits ----------
+// Each action mutates the run object (its persistent Adventure Deck + run
+// fields). `pick` names what the UI must offer: 'deck-creature' (a minion
+// already in the deck) or 'legendary' (a Discover from the Legendary pool).
+export const TAVERN = {
+	good_food: {
+		name: 'Good Food', text: 'Increase your Health by 5 for the rest of the heist.',
+		apply: (run) => { run.bonusHealth = (run.bonusHealth || 0) + 5; },
+	},
+	dismiss: {
+		name: 'Dismiss', pick: 'deck-creature', text: 'Remove a minion from your deck.',
+		apply: (run, id) => { const i = run.deck.indexOf(id); if (i >= 0) run.deck.splice(i, 1); },
+	},
+	gang: {
+		name: "The Gang's All Here!", pick: 'deck-creature', text: 'Add three copies of a minion to your deck.',
+		apply: (run, id) => { run.deck.push(id, id, id); },
+	},
+	veteran: {
+		name: 'Recruit a Veteran', pick: 'legendary', text: 'Add a Legendary minion to your deck.',
+		apply: (run, id) => { run.deck.push(id); },
+	},
+	tell_a_story: {
+		name: 'Tell a Story', pick: 'deck-creature', text: 'Give a minion in your deck +2/+2 for the heist.',
+		apply: (run, id) => { (run.deckBuffs = run.deckBuffs || []).push({ id, attack: 2, health: 2, cost: 0 }); },
+	},
+	tall_tales: {
+		name: 'Tall Tales', pick: 'deck-creature', text: 'Give a minion +4/+4, but it costs (2) more for the heist.',
+		apply: (run, id) => { (run.deckBuffs = run.deckBuffs || []).push({ id, attack: 4, health: 4, cost: 2 }); },
+	},
+	right_hand_man: {
+		name: 'Right Hand Man', pick: 'deck-creature', text: 'A minion always starts in your opening hand.',
+		apply: (run, id) => { (run.openingHand = run.openingHand || []).push(id); },
+	},
+};
+
+// apply the run's persistent deck modifications to a freshly-booted game,
+// AFTER the opening hand has been dealt. bonusHealth is handled by the boot
+// (folded into the run life total); this covers opening-hand guarantees and
+// the per-card stat/cost buffs (hand copies now, deck copies on draw).
+export function applyRunMods(state, pi, run) {
+	const p = state.players[pi];
+	// Right Hand Man: pull the named cards from the deck into the opening hand
+	for (const id of run.openingHand || []) {
+		if (p.hand.some(c => c.id === id)) continue; // already drawn
+		const di = p.deck.indexOf(id);
+		if (di < 0 || p.hand.length >= 10 || !state.cardsById[id]) continue;
+		p.deck.splice(di, 1);
+		const inst = E.instantiate(state.cardsById[id], pi);
+		inst.zone = 'hand'; inst.fromDeck = true;
+		p.hand.push(inst);
+	}
+	// persistent buffs: stat buffs on hand copies + one deckIdBuffs entry per
+	// remaining deck copy; cost deltas via deckCostPersist (set base + delta)
+	const costDelta = {};
+	for (const b of run.deckBuffs || []) {
+		for (const c of p.hand) if (c.id === b.id) { c.attack += b.attack || 0; c.maxHealth += b.health || 0; c.cost = Math.max(0, c.cost + (b.cost || 0)); }
+		const copies = p.deck.filter(id => id === b.id).length;
+		for (let k = 0; k < copies; k++) (p.deckIdBuffs = p.deckIdBuffs || []).push({ id: b.id, attack: b.attack || 0, health: b.health || 0 });
+		if (b.cost) costDelta[b.id] = (costDelta[b.id] || 0) + b.cost;
+	}
+	for (const [id, delta] of Object.entries(costDelta)) {
+		const base = state.cardsById[id]?.cost || 0;
+		(p.deckCostPersist = p.deckCostPersist || {})[id] = Math.max(0, base + delta);
+	}
+}
