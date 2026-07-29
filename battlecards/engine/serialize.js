@@ -52,6 +52,7 @@ const FIELD_DEFAULTS = {
 	hpDoubling: false,
 	dealt: true,            // a mid-game snapshot is always past the opening deal
 	blinkDepth: 0,
+	summonDepth: 0,         // runaway-summon recursion guard (0 between actions)
 	recasting: false,       // transient locks; false between actions
 	ponderLock: false,
 	drawTrigLock: false,

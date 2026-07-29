@@ -71,6 +71,14 @@ export const MAX_LANDS = 5;
 export const MAX_TRAPS = 3;
 export const MAX_QUESTS = 3;
 export const MAX_HERO_POWERS = 3;
+// caps nested "on summon → summon…" recursion (Umbra deathrattle chains,
+// self-copying Pirates); real summon chains never nest anywhere near this deep
+export const MAX_SUMMON_DEPTH = 40;
+// hard ceiling on live creatures per board — the Creatures row is otherwise
+// uncapped, but a runaway summon chain (Umbra + self-summoning deathrattles)
+// can fan out exponentially and exhaust memory. Far above any real board
+// (HS caps at 7; our fill-board cards top out around there).
+export const MAX_BOARD = 40;
 // paper rules: develop a land by paying 3 mana and giving each opponent a coin
 export const LAND_COST = 3;
 
@@ -981,6 +989,10 @@ export function checkGameOver(state) {
 export function summon(state, pi, tokenDef) {
 	const p = state.players[pi];
 	if (p.eliminated) return null;
+	// board ceiling: refuse once the row is saturated, so a runaway summon
+	// chain can't fan out into an out-of-memory blowup (callers that loop on
+	// summon() already break on null)
+	if (p.board.filter(x => !isDead(x) && x.type !== 'location').length >= MAX_BOARD) return null;
 	const c = instantiate(tokenDef, pi);
 	c.zone = 'board';
 	if (p.nextRecruitBuff && c.name === 'Silver Hand Recruit') { c.attack += p.nextRecruitBuff.attack || 0; c.maxHealth += p.nextRecruitBuff.health || 0; if (p.nextRecruitBuff.deathrattle) { c.deathrattle = (c.deathrattle || []).concat(JSON.parse(JSON.stringify(p.nextRecruitBuff.deathrattle))); if (!c.keywords.includes('deathrattle')) c.keywords.push('deathrattle'); } p.nextRecruitBuff = null; } // Stewart the Steward
@@ -1003,13 +1015,27 @@ export function summon(state, pi, tokenDef) {
 	p.board.push(c);
 	emit(state, { type: 'summon', player: pi, card: c });
 	questTick(state, 'summon', pi, 1, c);
-	summonColossalParts(state, pi, c);
-	fireOngoing(state, pi, 'summoned', { minion: c });
-	for (const o of opponentsOf(state, pi)) fireOngoing(state, o, 'enemy-summoned', { minion: c }); // Bayfin Bodybuilder
-	growBlubberBaron(state, pi, c);
-	recomputeAuras(state);
-	// "When summoned" effects (Colossal appendages) fire after it lands
-	if (c.onSummon) execEffects(state, pi, c.onSummon, null, c);
+	// Runaway-summon guard: "when you summon a creature, summon…" triggers can
+	// recurse without bound — e.g. Spiritsinger Umbra fires a summoned minion's
+	// summon-deathrattle, or a self-copying Pirate (Shoplifter Goldbeard). Past
+	// a sane nesting depth the minion still enters play, but its on-summon
+	// triggers are skipped so the chain terminates instead of overflowing.
+	if ((state.summonDepth || 0) < MAX_SUMMON_DEPTH) {
+		state.summonDepth = (state.summonDepth || 0) + 1;
+		try {
+			summonColossalParts(state, pi, c);
+			fireOngoing(state, pi, 'summoned', { minion: c });
+			for (const o of opponentsOf(state, pi)) fireOngoing(state, o, 'enemy-summoned', { minion: c }); // Bayfin Bodybuilder
+			growBlubberBaron(state, pi, c);
+			recomputeAuras(state);
+			// "When summoned" effects (Colossal appendages) fire after it lands
+			if (c.onSummon) execEffects(state, pi, c.onSummon, null, c);
+		} finally {
+			state.summonDepth--;
+		}
+	} else {
+		recomputeAuras(state);
+	}
 	return c;
 }
 
