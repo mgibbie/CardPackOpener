@@ -489,11 +489,11 @@ function startItems() {
 	return items;
 }
 const cardsItems = () => MP_ON
-	? ['GALLERY', 'DECK BUILDER', 'PACKS', 'DUNGEON RUN', 'CHALLENGE FRIEND', 'BACK']
-	: ['GALLERY', 'DECK BUILDER', 'PACKS', 'DUNGEON RUN', 'BACK'];
+	? ['GALLERY', 'DECK BUILDER', 'PACKS', 'DUNGEON RUN', 'DALARAN HEIST', 'CHALLENGE FRIEND', 'BACK']
+	: ['GALLERY', 'DECK BUILDER', 'PACKS', 'DUNGEON RUN', 'DALARAN HEIST', 'BACK'];
 const CARD_URLS = {
 	'GALLERY': 'viewer.html', 'DECK BUILDER': 'deck.html',
-	'PACKS': 'packs.html', 'DUNGEON RUN': '?dungeon=1',
+	'PACKS': 'packs.html', 'DUNGEON RUN': '?dungeon=1', 'DALARAN HEIST': '?heist=1',
 };
 function openCardPage(label) {
 	const q = MP_ON ? (label === 'DUNGEON RUN' ? '&mp=1' : '?mp=1') : '';
