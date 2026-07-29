@@ -130792,6 +130792,148 @@
           }
         ]
       }
+    },
+    {
+      "id": "ulda_giant_locust",
+      "name": "Giant Locust",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "neutral",
+      "rarity": "common",
+      "set": "TOMBS_OF_TERROR",
+      "token": true,
+      "attack": 2,
+      "health": 2,
+      "tribe": "Beast",
+      "keywords": [
+        "rush"
+      ],
+      "description": "Rush."
+    },
+    {
+      "id": "ulda_amakir_the_light",
+      "name": "Amakir the Light",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "neutral",
+      "rarity": "legendary",
+      "set": "TOMBS_OF_TERROR",
+      "token": true,
+      "treasure": true,
+      "description": "After this creature attacks, add 2 random spells to your hand. They cost (0).",
+      "attack": 3,
+      "health": 6,
+      "ongoing": {
+        "on": "self-attacks",
+        "effects": [
+          {
+            "type": "conjure-random",
+            "cardType": "spell",
+            "count": 2,
+            "setCost": 0
+          }
+        ]
+      }
+    },
+    {
+      "id": "ulda_sand_trap",
+      "name": "Sand Trap",
+      "type": "sorcery",
+      "cost": 0,
+      "cardClass": "neutral",
+      "rarity": "legendary",
+      "set": "TOMBS_OF_TERROR",
+      "token": true,
+      "treasure": true,
+      "description": "Casts When Drawn: Remove the top 2 cards of your deck.",
+      "drawTrigger": true,
+      "onDraw": [
+        {
+          "type": "mill",
+          "target": "self",
+          "value": 2
+        }
+      ]
+    },
+    {
+      "id": "ulda_locuuuusts",
+      "name": "LOCUUUUSTS!!!",
+      "type": "sorcery",
+      "cost": 3,
+      "cardClass": "neutral",
+      "rarity": "legendary",
+      "set": "TOMBS_OF_TERROR",
+      "token": true,
+      "treasure": true,
+      "description": "Fill your board with 2/2 Locusts with Rush.",
+      "effects": [
+        {
+          "type": "summon",
+          "count": 7,
+          "summonId": "ulda_giant_locust"
+        }
+      ]
+    },
+    {
+      "id": "ulda_jr_excavator",
+      "name": "Jr. Excavator",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "neutral",
+      "rarity": "legendary",
+      "set": "TOMBS_OF_TERROR",
+      "token": true,
+      "treasure": true,
+      "description": "Battlecry: Draw 3 cards.",
+      "attack": 2,
+      "health": 5,
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "draw",
+          "value": 3
+        }
+      ]
+    },
+    {
+      "id": "ulda_sr_excavator",
+      "name": "Sr. Excavator",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "neutral",
+      "rarity": "legendary",
+      "set": "TOMBS_OF_TERROR",
+      "token": true,
+      "treasure": true,
+      "description": "Battlecry: Draw 3 cards.",
+      "attack": 3,
+      "health": 6,
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "draw",
+          "value": 3
+        }
+      ]
+    },
+    {
+      "id": "ulda_lei_flamepaw",
+      "name": "Lei Flamepaw",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "neutral",
+      "rarity": "legendary",
+      "set": "TOMBS_OF_TERROR",
+      "token": true,
+      "treasure": true,
+      "description": "After you cast a spell, cast it again.",
+      "attack": 2,
+      "health": 6,
+      "spellEcho": true
     }
   ]
 }

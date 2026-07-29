@@ -375,5 +375,61 @@ const usePower = (state, pi, id, target = null) => {
 	usePower(state, 0, 'ulda_uldum_treasure_cache');
 	ok('Uldum Treasure Cache: a Treasure in hand', state.players[0].hand.some(c => byId[c.id]?.treasure));
 }
+
+// ---- batch 5 ----
+// Amakir the Light: after it attacks, add 2 cost-0 spells
+{
+	const { state } = new Scenario(byId).mana(0, 20).board(0, ['ulda_amakir_the_light']).run();
+	const am = state.players[0].board[0]; am.sick = false; state.current = 0;
+	E.attack(state, 0, am.uid, { type: 'hero', player: 1 });
+	const spells = state.players[0].hand.filter(c => byId[c.id] && ['sorcery', 'instant'].includes(byId[c.id].type) && c.cost === 0);
+	ok('Amakir: 2 cost-0 spells after attacking', spells.length === 2, state.players[0].hand.length);
+}
+// Sand Trap: casts when drawn, mills the top 2 of your own deck
+{
+	const { state } = new Scenario(byId)
+		.def('t_a', { type: 'creature', cost: 1, attack: 1, health: 1 })
+		.def('t_b', { type: 'creature', cost: 1, attack: 1, health: 1 })
+		.def('t_c', { type: 'creature', cost: 1, attack: 1, health: 1 })
+		.mana(0, 20).deck(0, ['t_a', 't_b', 't_c']).run();
+	// draw Sand Trap: it should mill 2 more off the top and consume itself
+	state.players[0].deck.push('ulda_sand_trap');
+	const before = state.players[0].deck.length;
+	E.drawCards(state, 0, 1);
+	ok('Sand Trap: consumed on draw + milled 2', state.players[0].deck.length === before - 3 && !state.players[0].hand.some(c => c.id === 'ulda_sand_trap'), state.players[0].deck.length);
+}
+// LOCUUUUSTS!!!: fill the board with 2/2 Rush Locusts
+{
+	const { state } = new Scenario(byId).mana(0, 20).hand(0, ['ulda_locuuuusts']).play(0, 'ulda_locuuuusts').run();
+	const locusts = state.players[0].board.filter(c => c.id === 'ulda_giant_locust');
+	ok('LOCUUUUSTS: 7 Rush Locusts', locusts.length === 7 && locusts.every(l => l.attack === 2 && l.keywords.includes('rush')));
+}
+// Jr. Excavator: draw 3
+{
+	const { state } = new Scenario(byId)
+		.def('t_x', { type: 'creature', cost: 1, attack: 1, health: 1 })
+		.mana(0, 20).deck(0, ['t_x', 't_x', 't_x', 't_x']).hand(0, ['ulda_jr_excavator']).run();
+	const before = state.players[0].hand.length - 1;
+	E.playCard(state, 0, state.players[0].hand.find(c => c.id === 'ulda_jr_excavator').uid, null);
+	ok('Jr. Excavator: drew 3', state.players[0].hand.filter(c => c.id === 't_x').length === 3);
+}
+// Lei Flamepaw: your spells cast an extra time while it's alive
+{
+	const { state } = new Scenario(byId)
+		.def('t_bolt', { type: 'sorcery', cost: 1, effects: [{ type: 'damage', value: 2, target: 'enemy-hero' }] })
+		.mana(0, 20).board(0, ['ulda_lei_flamepaw']).hand(0, ['t_bolt']).run();
+	const foeLife = state.players[1].life;
+	E.playCard(state, 0, state.players[0].hand.find(c => c.id === 't_bolt').uid, null);
+	ok('Lei Flamepaw: a 2-damage bolt hit for 4 (cast twice)', state.players[1].life === foeLife - 4, foeLife - state.players[1].life);
+}
+// ...and without Lei, the same bolt casts once
+{
+	const { state } = new Scenario(byId)
+		.def('t_bolt', { type: 'sorcery', cost: 1, effects: [{ type: 'damage', value: 2, target: 'enemy-hero' }] })
+		.mana(0, 20).hand(0, ['t_bolt']).run();
+	const foeLife = state.players[1].life;
+	E.playCard(state, 0, state.players[0].hand[0].uid, null);
+	ok('No Lei: the bolt casts once (2 damage)', state.players[1].life === foeLife - 2);
+}
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);

@@ -342,6 +342,7 @@ export function instantiate(def, controller) {
 		undamagedFoesDouble: !!def.undamagedFoesDouble, // Talgath: undamaged enemy minions take double damage
 		heroImmuneOnDamage: !!def.heroImmuneOnDamage, // Lumia: a damaged hero becomes Immune for the turn
 		cheapSpellDouble: !!def.cheapSpellDouble, // Sunsapper Lynessa: your (2)-or-less spells cast twice
+		spellEcho: !!def.spellEcho, // Lei Flamepaw: while alive, your spells cast an extra time
 		handDeckGrowAttack: !!def.handDeckGrowAttack, // Grazing Stegodon: grows at end of turn wherever it is
 		skipStartDraw: !!def.skipStartDraw, // Chronochiller: no start-of-turn draw
 		hpFreeHandMax: def.hpFreeHandMax ?? null, // Quel'dorei Fletcher: Hero Power free at small hands
@@ -1532,6 +1533,10 @@ export function runSpell(state, pi, card, target, choice) {
 	if (card.castTwice) execEffects(state, pi, liveEffectsOf(state, pi, card, choice), target, card); // Empowered Well of Eternity
 	// Sunsapper Lynessa: your spells that cost (2) or less cast twice
 	else if ((card.cost || 0) <= 2 && state.players[pi].board.some(c => c.cheapSpellDouble && !isDead(c))) {
+		execEffects(state, pi, liveEffectsOf(state, pi, card, choice), target, card);
+	}
+	// Lei Flamepaw: while it's on your board, your spells cast an extra time
+	else if (state.players[pi].board.some(c => c.spellEcho && !isDead(c))) {
 		execEffects(state, pi, liveEffectsOf(state, pi, card, choice), target, card);
 	}
 	// Outcast: extra spell effects when cast from the edge of hand
