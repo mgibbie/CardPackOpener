@@ -2450,6 +2450,17 @@ register('steal-secret', ({ state, pi, target, source, enemies, scaled, hm, pick
 const _h_mind_control = ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => {
 	do {
 			// steal an enemy creature (chosen, or random from a qualifying enemy)
+			if (e.all) { // EVIL Propaganda: take control of ALL enemy minions
+				for (const o of enemies) for (const c of [...state.players[o].board]) {
+					if (isDead(c) || c.type === 'location') continue;
+					state.players[o].board = state.players[o].board.filter(x => x !== c);
+					c.controller = pi; c.sick = true;
+					state.players[pi].board.push(c);
+					emit(state, { type: 'mindControl', uid: c.uid, player: pi, name: c.name });
+				}
+				recomputeAuras(state);
+				continue;
+			}
 			let t = null;
 			if (e.type === 'mind-control') {
 				const c = chosenCreature();

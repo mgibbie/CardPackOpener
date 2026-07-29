@@ -366,6 +366,9 @@ export function instantiate(def, controller) {
 		heroPowerCostReduce: def.heroPowerCostReduce || 0, // Felfire Deadeye: your Hero Power costs this much less
 		outcastCostReduce: def.outcastCostReduce || 0, // Line Hopper: your Outcast cards cost this much less
 		quickdrawCostReduce: def.quickdrawCostReduce || 0, // Captain Eberhart: your Quickdraw cards cost this much less
+		schemeGrow: !!def.schemeGrow, // Master Scheme: its N grows each turn held
+		handGrow: def.handGrow || null, // Loyal Henchman: {attack, health} gained each turn held
+		reaper: !!def.reaper, // Soulreaper's Scythe: logs kill ids on the weapon instance
 		healBonusHealth: def.healBonusHealth || 0, // Lightsteed: your heals also give the minion +Health
 		foreignCostReduce: def.foreignCostReduce || 0, // Arcane Luminary: cards that didn't start in your deck cost less
 		schoolCostReduce: def.schoolCostReduce ? { ...def.schoolCostReduce } : null, // Lady Anacondra: {school, amount}
@@ -2025,6 +2028,23 @@ export function playCard(state, pi, cardUid, target, choice, position, useAlt, k
 			emit(state, { type: 'transformed', uid: seed.uid, player: pi, from: 'Sherazin, Seed', card: rev });
 		}
 	}
+	// Overpowered: replay a copy of each card played this turn (random targets)
+	if (p.overpoweredTurn === state.turnNumber && !state._opLock && card.id !== 'dala_overpowered' && state.cardsById[card.id]) {
+		state._opLock = true;
+		try {
+			const d = state.cardsById[card.id];
+			if (d.type === 'creature') {
+				const c2 = summon(state, pi, d);
+				if (c2 && d.effects && (d.keywords || []).includes('battlecry')) execEffects(state, pi, JSON.parse(JSON.stringify(d.effects)), null, c2);
+			} else if (isSpellType(d) && !d.choices && !d.xSpell && !d.counterSpell) {
+				const spell = instantiate(d, pi);
+				const spec = targetSpec(state, pi, spell, null);
+				let tgt = null, fizzle = false;
+				if (spec) { const legal = legalTargets(state, pi, spec); if (legal.length) tgt = legal[Math.floor(state.rng() * legal.length)]; else if (spec.required) fizzle = true; }
+				if (!fizzle) { emit(state, { type: 'conjure', player: pi, card: spell, color: null }); runSpell(state, pi, spell, tgt, null); }
+			}
+		} finally { state._opLock = false; }
+	}
 	sweepDeaths(state);
 	return true;
 }
@@ -2689,6 +2709,7 @@ export function heroAttack(state, pi, target) {
 				if (has(defender, KW.LIFESTEAL) && counter > 0) healHero(state, defender.controller, counter);
 			}
 			killed = isDead(defender);
+			if (w && w.reaper && killed) (w._reaped = w._reaped || []).push(defender.id); // Soulreaper's Scythe remembers its kills
 			// Honorable Kill on weapons: an EXACT lethal swing
 			if (w && w.honorableKill && killed && defender.damage === defender.maxHealth) {
 				emit(state, { type: 'honorableKill', player: pi });
@@ -3050,10 +3071,13 @@ export function resolvePick(state, id) {
 	// Ritual of Life / Cactus Construct: ALSO summon an X/Y copy of the pick
 	// (the pick itself continues to the hand via the default path below)
 	if (pend.summonCopy && def && def.type === 'creature') {
-		const cd = JSON.parse(JSON.stringify(def));
-		if (pend.summonCopy.attack != null) cd.attack = pend.summonCopy.attack;
-		if (pend.summonCopy.health != null) cd.health = pend.summonCopy.health;
-		summon(state, pend.player, cd);
+		for (let n = 0; n < (pend.summonCopy.count || 1); n++) {
+			const cd = JSON.parse(JSON.stringify(def));
+			if (pend.summonCopy.attack != null) cd.attack = pend.summonCopy.attack;
+			if (pend.summonCopy.health != null) cd.health = pend.summonCopy.health;
+			summon(state, pend.player, cd);
+		}
+		if (pend.summonCopy.noHand) return true; // Dreamgrove Ring: only the copies materialize
 	}
 	// Kaldorei Cultivator: the pick goes to the BOTTOM of your deck carrying a buff
 	if (pend.toDeckBottomBuff) {
@@ -3748,6 +3772,8 @@ export function endTurn(state) {
 	}
 	// Circadiamancer: conjured cards that tick down each of your turns
 	for (const c of np.hand) if (c._ticksDown && (c.cost || 0) > 0) { c.cost--; emit(state, { type: 'costChange', player: state.current, uid: c.uid, cost: c.cost }); }
+	for (const c of np.hand) if (c.handGrow) { c.attack += c.handGrow.attack || 0; c.maxHealth += c.handGrow.health || 0; } // Loyal Henchman grows while held
+	for (const c of np.hand) if (c.schemeGrow) c._schemeLevel = (c._schemeLevel || 1) + 1; // Master Scheme upgrades each turn
 	// Mistah Vistah: the delayed spell replay comes due
 	if (np.vistahAt != null && state.turnNumber >= np.vistahAt) {
 		const ids = np.vistahSpells || [];
@@ -3809,6 +3835,13 @@ export function endTurn(state) {
 				if (!rest.length || !(rest.every(v => v === 0) || rest.every(v => v === 1))) continue;
 			}
 			pickDef = state.cardsById[ht.intoId];
+		} else if (ht.intoRandom) { // The Box: a random treasure; Shifting Chameleon: a random 1-cost minion
+			const r = ht.intoRandom;
+			const pool = Object.values(state.cardsById).filter(d => r.treasure
+				? (d.treasure && d.id !== c.id)
+				: (d.type === (r.cardType || 'creature') && (r.cost == null || (d.cost || 0) === r.cost) && !d.token && d.collectible !== false && !(d.colors && d.colors.length)));
+			if (!pool.length) continue;
+			pickDef = pool[Math.floor(state.rng() * pool.length)];
 		} else { // Imposters: a random minion of a fixed Cost, plus a bonus
 			const pool = Object.values(state.cardsById).filter(d => d.type === 'creature' && (d.cost || 0) === (ht.cost || 0) && !d.token && d.collectible !== false && !d.companion && !d.commander && !(d.colors && d.colors.length));
 			if (!pool.length) continue;
@@ -3822,6 +3855,11 @@ export function endTurn(state) {
 		if (!ht.intoId && !ht.once) morph.handTransform = ht; // keeps morphing each turn (Genn's is one-way)
 		np.hand[np.hand.indexOf(c)] = morph;
 		emit(state, { type: 'conjure', player: state.current, card: morph, color: null });
+	}
+	// delayed turn-start effects (Big Boomba round two)
+	if (np.turnStartEffects && np.turnStartEffects.length) {
+		const q = np.turnStartEffects; np.turnStartEffects = [];
+		for (const fx of q) { execEffects(state, state.current, fx, null, null); sweepDeaths(state); }
 	}
 	state.diedThisTurn = 0; // global "died this turn" (Volcanic Drake discounts)
 	np.heroAttacksUsed = 0;

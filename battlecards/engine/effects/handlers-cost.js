@@ -115,7 +115,8 @@ register('set-minion-costs', ({ state, pi, target, source, enemies, scaled, hm, 
 
 
 register('add-overload', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => {
-			state.players[pi].overloadPending = (state.players[pi].overloadPending || 0) + (e.value || 1); // Winged Aberration
+			const _otp = e.forEnemy && enemies.length ? enemies[Math.floor(state.rng() * enemies.length)] : pi; // Murgatha overloads the enemy
+			state.players[_otp].overloadPending = (state.players[_otp].overloadPending || 0) + (e.value || 1); // Winged Aberration
 });
 
 

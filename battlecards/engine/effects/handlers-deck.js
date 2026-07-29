@@ -1301,6 +1301,7 @@ register('tutor', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, 
 					if (e.requireKeyword && !(def.keywords || []).includes(e.requireKeyword)) continue;
 					if (e.overload && !((def.overload || 0) > 0)) continue; // Pebbly Page: an Overload card
 					if (e.nameIncludes && !(def.name || '').includes(e.nameIncludes)) continue; // Tiny Rafaam: draw a Rafaam
+					if (e.id && p.deck[j] !== e.id) continue; // Loyal Henchman: draw THIS card
 					idxs.push(j);
 				}
 				if (!idxs.length) break;

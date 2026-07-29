@@ -76,6 +76,8 @@ const CHOSEN = {
 	'copy-to-all-zones': { 'friendly-creature': 'friendly-creature' },
 	destroy: { creature: 'creature', 'enemy-creature': 'enemy-creature', 'friendly-creature': 'friendly-creature' },
 	'copy-to-hand': { creature: 'creature', 'enemy-creature': 'enemy-creature', 'friendly-creature': 'friendly-creature' },
+	frostburn: { creature: 'creature' },
+	'deck-minions-become-copies': { 'friendly-creature': 'friendly-creature' },
 	'copy-summon': { creature: 'creature', 'friendly-creature': 'friendly-creature' },
 	'summon-with-stats': { 'friendly-creature': 'friendly-creature' },
 	exile: { creature: 'creature', 'enemy-creature': 'enemy-creature' },

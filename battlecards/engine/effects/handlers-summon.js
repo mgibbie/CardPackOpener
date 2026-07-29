@@ -789,7 +789,7 @@ register('copy-summon', ({ state, pi, target, source, enemies, scaled, hm, pickE
 			// Crimson Expanse: summon a copy of the chosen creature at its
 			// CURRENT stats, optionally entering Dormant
 			const t = chosenCreature();
-			if (t) {
+			if (t) for (let _n = 0; _n < (e.count || 1); _n++) { // Banana Split: two copies
 				const copy = summon(state, pi, {
 					id: t.id, name: t.name, type: 'creature', cost: t.cost, rarity: t.rarity,
 					description: t.description, attack: e.attack ?? t.attack, health: e.health ?? hp(t), // e.attack/health: set-stat copies (Mirage Caller 1/1, PW: Replicate 5/5)
@@ -1160,7 +1160,11 @@ register('summon', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy,
 				const opt = e.options ? e.options[Math.floor(state.rng() * e.options.length)] : e;
 				// summonId: instantiate a real card def so it keeps its own ongoing —
 				// e.g. Gibberling's Spellburst summons another Gibberling that snowballs
-				if (opt.summonId && state.cardsById[opt.summonId]) { summon(state, ownerIdx, state.cardsById[opt.summonId]); return; }
+				if (opt.summonId && state.cardsById[opt.summonId]) {
+					const sc = summon(state, ownerIdx, state.cardsById[opt.summonId]);
+					if (sc && e.grant) for (const k of e.grant) { if (!sc.keywords.includes(k)) sc.keywords.push(k); if (k === KW.DIVINE_SHIELD) sc.shield = true; } // Super Simian Sphere: Mukla with Immune+Elusive
+					return;
+				}
 				// randomKeywords: each token rolls its own bonus (Bucket of Soldiers)
 				const kws = [...(opt.keywords || [])];
 				if (e.randomKeywords?.length) kws.push(e.randomKeywords[Math.floor(state.rng() * e.randomKeywords.length)]);

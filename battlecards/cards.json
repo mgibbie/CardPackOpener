@@ -128154,6 +128154,1178 @@
       "description": "Get a random huge minion. It costs (2) less.",
       "token": true,
       "rarity": "common"
+    },
+    {
+      "id": "dala_continuum_collider",
+      "name": "Continuum Collider",
+      "type": "sorcery",
+      "cost": 4,
+      "cardClass": "neutral",
+      "rarity": "legendary",
+      "set": "DALARAN_HEIST",
+      "token": true,
+      "description": "Take an extra turn. Your opponent takes an extra turn after.",
+      "treasure": true,
+      "effects": [
+        {
+          "type": "extra-turns"
+        }
+      ]
+    },
+    {
+      "id": "dala_the_box",
+      "name": "The Box",
+      "type": "sorcery",
+      "cost": 0,
+      "cardClass": "neutral",
+      "rarity": "legendary",
+      "set": "DALARAN_HEIST",
+      "token": true,
+      "description": "Each turn this is in your hand, transform it into a random treasure.",
+      "treasure": true,
+      "effects": [],
+      "handTransform": {
+        "intoRandom": {
+          "treasure": true
+        }
+      }
+    },
+    {
+      "id": "dala_gnomish_army_knife",
+      "name": "Gnomish Army Knife",
+      "type": "sorcery",
+      "cost": 5,
+      "cardClass": "neutral",
+      "rarity": "legendary",
+      "set": "DALARAN_HEIST",
+      "token": true,
+      "description": "Give a minion Charge, Windfury, Divine Shield, Lifesteal, Poisonous, Taunt, and Stealth.",
+      "treasure": true,
+      "effects": [
+        {
+          "type": "grant",
+          "keyword": "charge",
+          "target": "creature"
+        },
+        {
+          "type": "grant",
+          "keyword": "windfury",
+          "target": "creature"
+        },
+        {
+          "type": "grant",
+          "keyword": "divine_shield",
+          "target": "creature"
+        },
+        {
+          "type": "grant",
+          "keyword": "lifesteal",
+          "target": "creature"
+        },
+        {
+          "type": "grant",
+          "keyword": "poisonous",
+          "target": "creature"
+        },
+        {
+          "type": "grant",
+          "keyword": "taunt",
+          "target": "creature"
+        },
+        {
+          "type": "grant",
+          "keyword": "stealth",
+          "target": "creature"
+        }
+      ]
+    },
+    {
+      "id": "dala_the_muscle",
+      "name": "The Muscle",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "neutral",
+      "rarity": "legendary",
+      "set": "DALARAN_HEIST",
+      "token": true,
+      "description": "Battlecry: Add three random cards to your hand. They cost (0).",
+      "treasure": true,
+      "attack": 4,
+      "health": 5,
+      "tribe": "Human",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "conjure-random",
+          "count": 3,
+          "setCost": 0
+        }
+      ]
+    },
+    {
+      "id": "dala_super_simian_sphere",
+      "name": "Super Simian Sphere",
+      "type": "sorcery",
+      "cost": 5,
+      "cardClass": "neutral",
+      "rarity": "legendary",
+      "set": "DALARAN_HEIST",
+      "token": true,
+      "description": "Summon King Mukla with Immune and Elusive.",
+      "treasure": true,
+      "effects": [
+        {
+          "type": "summon",
+          "count": 1,
+          "summonId": "king_mukla",
+          "grant": [
+            "immune",
+            "elusive"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "dala_grimmer_patron",
+      "name": "Grimmer Patron",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "neutral",
+      "rarity": "legendary",
+      "set": "DALARAN_HEIST",
+      "token": true,
+      "description": "At the end of your turn, summon a copy of this minion.",
+      "treasure": true,
+      "attack": 3,
+      "health": 3,
+      "tribe": "Human",
+      "ongoing": {
+        "on": "turn-end",
+        "effects": [
+          {
+            "type": "summon-copy-of-self",
+            "count": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "dala_evil_propaganda",
+      "name": "EVIL Propaganda",
+      "type": "sorcery",
+      "cost": 10,
+      "cardClass": "neutral",
+      "rarity": "legendary",
+      "set": "DALARAN_HEIST",
+      "token": true,
+      "description": "Take control of all enemy minions.",
+      "treasure": true,
+      "effects": [
+        {
+          "type": "mind-control",
+          "all": true
+        }
+      ]
+    },
+    {
+      "id": "dala_loyal_henchman",
+      "name": "Loyal Henchman",
+      "type": "creature",
+      "cost": 1,
+      "cardClass": "neutral",
+      "rarity": "legendary",
+      "set": "DALARAN_HEIST",
+      "token": true,
+      "description": "Start of Game: Draw this. Taunt. Each turn this is in your hand, gain +1/+1.",
+      "treasure": true,
+      "attack": 1,
+      "health": 1,
+      "tribe": "Human",
+      "keywords": [
+        "taunt"
+      ],
+      "startOfGame": [
+        {
+          "type": "tutor",
+          "id": "dala_loyal_henchman",
+          "count": 1
+        }
+      ],
+      "handGrow": {
+        "attack": 1,
+        "health": 1
+      }
+    },
+    {
+      "id": "dala_untold_splendor",
+      "name": "Untold Splendor",
+      "type": "sorcery",
+      "cost": 1,
+      "cardClass": "neutral",
+      "rarity": "legendary",
+      "set": "DALARAN_HEIST",
+      "token": true,
+      "description": "Shuffle 5 random treasures into your deck.",
+      "treasure": true,
+      "effects": [
+        {
+          "type": "shuffle-random-treasures",
+          "count": 5
+        }
+      ]
+    },
+    {
+      "id": "dala_golden_candle",
+      "name": "Golden Candle",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "neutral",
+      "rarity": "legendary",
+      "set": "DALARAN_HEIST",
+      "token": true,
+      "description": "Taunt. Battlecry: Replace ALL your other cards with random Legendary minions.",
+      "treasure": true,
+      "attack": 7,
+      "health": 7,
+      "keywords": [
+        "taunt",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "replace-all-cards-random-legendaries"
+        }
+      ]
+    },
+    {
+      "id": "dala_dreamgrove_ring",
+      "name": "Dreamgrove Ring",
+      "type": "sorcery",
+      "cost": 9,
+      "cardClass": "neutral",
+      "rarity": "legendary",
+      "set": "DALARAN_HEIST",
+      "token": true,
+      "description": "Discover a Legendary minion. Summon five copies of it.",
+      "treasure": true,
+      "effects": [
+        {
+          "type": "discover",
+          "pick": 3,
+          "cardType": "creature",
+          "rarity": "legendary",
+          "summonCopy": {
+            "count": 5,
+            "noHand": true
+          }
+        }
+      ]
+    },
+    {
+      "id": "dala_orb_of_the_untold",
+      "name": "Orb of the Untold",
+      "type": "sorcery",
+      "cost": 4,
+      "cardClass": "neutral",
+      "rarity": "legendary",
+      "set": "DALARAN_HEIST",
+      "token": true,
+      "description": "Deal 20 damage split between all enemies.",
+      "treasure": true,
+      "effects": [
+        {
+          "type": "random-damage",
+          "value": 1,
+          "count": 20,
+          "pool": "enemies"
+        }
+      ]
+    },
+    {
+      "id": "dala_elder_taggawag",
+      "name": "Elder Taggawag",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "neutral",
+      "rarity": "legendary",
+      "set": "DALARAN_HEIST",
+      "token": true,
+      "description": "Battlecry: Deal 4 damage to all enemy minions. Deathrattle: Shuffle this into your deck.",
+      "treasure": true,
+      "attack": 4,
+      "health": 4,
+      "tribe": "Troll",
+      "keywords": [
+        "battlecry",
+        "deathrattle"
+      ],
+      "effects": [
+        {
+          "type": "damage",
+          "value": 4,
+          "target": "enemy-creatures"
+        }
+      ],
+      "deathrattle": [
+        {
+          "type": "shuffle-self-into-deck"
+        }
+      ]
+    },
+    {
+      "id": "dala_the_candles",
+      "name": "THE... Candles?",
+      "type": "sorcery",
+      "cost": 3,
+      "cardClass": "neutral",
+      "rarity": "legendary",
+      "set": "DALARAN_HEIST",
+      "token": true,
+      "description": "Deal 3 damage to all enemy minions. Add a second Candle to your hand.",
+      "treasure": true,
+      "effects": [
+        {
+          "type": "damage",
+          "value": 3,
+          "target": "enemy-creatures"
+        },
+        {
+          "type": "add-card",
+          "id": "dala_the_candles_b"
+        }
+      ]
+    },
+    {
+      "id": "dala_the_candles_b",
+      "name": "THE... Candles?",
+      "type": "sorcery",
+      "cost": 3,
+      "cardClass": "neutral",
+      "rarity": "legendary",
+      "set": "DALARAN_HEIST",
+      "token": true,
+      "description": "Deal 3 damage to all enemy minions. Add a third Candle to your hand.",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 3,
+          "target": "enemy-creatures"
+        },
+        {
+          "type": "add-card",
+          "id": "dala_the_candles_c"
+        }
+      ]
+    },
+    {
+      "id": "dala_the_candles_c",
+      "name": "THE... Candles?",
+      "type": "sorcery",
+      "cost": 3,
+      "cardClass": "neutral",
+      "rarity": "legendary",
+      "set": "DALARAN_HEIST",
+      "token": true,
+      "description": "Deal 3 damage to all enemy minions.",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 3,
+          "target": "enemy-creatures"
+        }
+      ]
+    },
+    {
+      "id": "dala_overpowered",
+      "name": "Overpowered",
+      "type": "sorcery",
+      "cost": 0,
+      "cardClass": "neutral",
+      "rarity": "legendary",
+      "set": "DALARAN_HEIST",
+      "token": true,
+      "description": "After you play a card this turn, replay a copy of it (targets chosen randomly).",
+      "treasure": true,
+      "effects": [
+        {
+          "type": "overpowered"
+        }
+      ]
+    },
+    {
+      "id": "dala_fly_by",
+      "name": "Fly-By",
+      "type": "sorcery",
+      "cost": 5,
+      "cardClass": "neutral",
+      "rarity": "legendary",
+      "set": "DALARAN_HEIST",
+      "token": true,
+      "description": "Shuffle a Kadoom Bot into your opponent's deck. When drawn, it explodes for 50 damage.",
+      "treasure": true,
+      "effects": [
+        {
+          "type": "shuffle-ids-into-deck",
+          "ids": [
+            "dala_kadoom_bot"
+          ],
+          "forEnemy": true
+        }
+      ]
+    },
+    {
+      "id": "dala_kadoom_bot",
+      "name": "Kadoom Bot",
+      "type": "sorcery",
+      "cost": 1,
+      "cardClass": "neutral",
+      "rarity": "common",
+      "set": "DALARAN_HEIST",
+      "token": true,
+      "description": "Casts When Drawn: You take 50 damage.",
+      "drawTrigger": true,
+      "onDraw": [
+        {
+          "type": "damage",
+          "value": 50,
+          "target": "own-hero"
+        }
+      ]
+    },
+    {
+      "id": "dala_case_study",
+      "name": "Case Study",
+      "type": "sorcery",
+      "cost": 1,
+      "cardClass": "neutral",
+      "rarity": "legendary",
+      "set": "DALARAN_HEIST",
+      "token": true,
+      "description": "Discover a Quest.",
+      "treasure": true,
+      "effects": [
+        {
+          "type": "discover",
+          "pick": 3,
+          "cardType": "quest"
+        }
+      ]
+    },
+    {
+      "id": "dala_elistra_the_immortal",
+      "name": "Elistra the Immortal",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "neutral",
+      "rarity": "legendary",
+      "set": "DALARAN_HEIST",
+      "token": true,
+      "description": "Battlecry: Recast all spells you've played this game (targets chosen randomly).",
+      "treasure": true,
+      "attack": 1,
+      "health": 1,
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "recast-spells-played"
+        }
+      ]
+    },
+    {
+      "id": "dala_soulreapers_scythe",
+      "name": "Soulreaper's Scythe",
+      "type": "weapon",
+      "cost": 5,
+      "cardClass": "neutral",
+      "rarity": "legendary",
+      "set": "DALARAN_HEIST",
+      "token": true,
+      "description": "Deathrattle: Summon all minions killed by this weapon.",
+      "treasure": true,
+      "attack": 6,
+      "durability": 3,
+      "keywords": [
+        "deathrattle"
+      ],
+      "reaper": true,
+      "deathrattle": [
+        {
+          "type": "summon-reaped"
+        }
+      ]
+    },
+    {
+      "id": "dala_swampqueens_call",
+      "name": "Swampqueen's Call",
+      "type": "sorcery",
+      "cost": 2,
+      "cardClass": "neutral",
+      "rarity": "legendary",
+      "set": "DALARAN_HEIST",
+      "token": true,
+      "description": "Echo. Transform your minions into random Legendary minions.",
+      "treasure": true,
+      "echo": true,
+      "keywords": [
+        "echo"
+      ],
+      "effects": [
+        {
+          "type": "transform-board-random-legendaries"
+        }
+      ]
+    },
+    {
+      "id": "dala_duplatransmogrifier",
+      "name": "Duplatransmogrifier",
+      "type": "sorcery",
+      "cost": 4,
+      "cardClass": "neutral",
+      "rarity": "legendary",
+      "set": "DALARAN_HEIST",
+      "token": true,
+      "description": "Choose a friendly minion. Replace all minions in your deck with copies of it.",
+      "treasure": true,
+      "effects": [
+        {
+          "type": "deck-minions-become-copies",
+          "target": "friendly-creature"
+        }
+      ]
+    },
+    {
+      "id": "dala_annoy_o_horn",
+      "name": "Annoy-o Horn",
+      "type": "sorcery",
+      "cost": 7,
+      "cardClass": "neutral",
+      "rarity": "legendary",
+      "set": "DALARAN_HEIST",
+      "token": true,
+      "description": "Fill your board with annoying minions.",
+      "treasure": true,
+      "effects": [
+        {
+          "type": "summon",
+          "count": 7,
+          "options": [
+            {
+              "summonId": "annoy_o_tron"
+            },
+            {
+              "summonId": "psych_o_tron"
+            },
+            {
+              "summonId": "mecharoo"
+            },
+            {
+              "summonId": "annoy_o_module"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "dala_hyperblaster",
+      "name": "Hyperblaster",
+      "type": "weapon",
+      "cost": 3,
+      "cardClass": "neutral",
+      "rarity": "legendary",
+      "set": "DALARAN_HEIST",
+      "token": true,
+      "description": "Poisonous. Your hero takes no counterattack damage while attacking.",
+      "treasure": true,
+      "attack": 1,
+      "durability": 3,
+      "keywords": [
+        "poisonous"
+      ],
+      "static": {
+        "type": "immune-attacking",
+        "value": 1
+      }
+    },
+    {
+      "id": "dala_big_boomba",
+      "name": "Big Boomba",
+      "type": "sorcery",
+      "cost": 2,
+      "cardClass": "neutral",
+      "rarity": "legendary",
+      "set": "DALARAN_HEIST",
+      "token": true,
+      "description": "Destroy ALL minions. Do it again at the start of your next turn.",
+      "treasure": true,
+      "effects": [
+        {
+          "type": "destroy-all"
+        },
+        {
+          "type": "delay-to-turn-start",
+          "effects": [
+            {
+              "type": "destroy-all"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "dala_banana_split",
+      "name": "Banana Split",
+      "type": "sorcery",
+      "cost": 2,
+      "cardClass": "neutral",
+      "rarity": "legendary",
+      "set": "DALARAN_HEIST",
+      "token": true,
+      "description": "Give a friendly minion +2/+2. Summon two copies of it.",
+      "treasure": true,
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 2,
+          "health": 2,
+          "target": "friendly-creature"
+        },
+        {
+          "type": "copy-summon",
+          "count": 2
+        }
+      ]
+    },
+    {
+      "id": "dala_master_scheme",
+      "name": "Master Scheme",
+      "type": "sorcery",
+      "cost": 3,
+      "cardClass": "neutral",
+      "rarity": "legendary",
+      "set": "DALARAN_HEIST",
+      "token": true,
+      "description": "Deal 1 damage. Draw 1 card. Gain 1 Armor. Summon 1 Boom Bot. (Upgrades each turn held!)",
+      "treasure": true,
+      "schemeGrow": true,
+      "effects": [
+        {
+          "type": "master-scheme"
+        }
+      ]
+    },
+    {
+      "id": "dala_sow_the_seeds",
+      "name": "Sow the Seeds",
+      "type": "sorcery",
+      "cost": 5,
+      "cardClass": "neutral",
+      "rarity": "legendary",
+      "set": "DALARAN_HEIST",
+      "token": true,
+      "description": "Give all minions in your deck +3/+3.",
+      "treasure": true,
+      "effects": [
+        {
+          "type": "buff-deck-minions",
+          "attack": 3,
+          "health": 3
+        }
+      ]
+    },
+    {
+      "id": "dala_dagwik_stickytoe",
+      "name": "Dagwik Stickytoe",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "neutral",
+      "rarity": "legendary",
+      "set": "DALARAN_HEIST",
+      "token": true,
+      "description": "Stealth. After this minion attacks a hero, steal a card from your opponent's hand.",
+      "treasure": true,
+      "attack": 2,
+      "health": 5,
+      "tribe": "Kobold",
+      "keywords": [
+        "stealth"
+      ],
+      "ongoing": {
+        "on": "self-attacks-hero",
+        "effects": [
+          {
+            "type": "steal-random-hand-card"
+          }
+        ]
+      }
+    },
+    {
+      "id": "dala_murgatha",
+      "name": "Murgatha",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "neutral",
+      "rarity": "legendary",
+      "set": "DALARAN_HEIST",
+      "token": true,
+      "description": "Whenever you play a card, Overload one of your opponent's Mana Crystals.",
+      "treasure": true,
+      "attack": 3,
+      "health": 6,
+      "tribe": "Murloc",
+      "ongoing": {
+        "on": "card-played",
+        "effects": [
+          {
+            "type": "add-overload",
+            "value": 1,
+            "forEnemy": true
+          }
+        ]
+      }
+    },
+    {
+      "id": "dala_lifebloom",
+      "name": "Lifebloom",
+      "type": "heropower",
+      "cost": 0,
+      "cardClass": "druid",
+      "rarity": "basic",
+      "set": "DALARAN_HEIST",
+      "token": true,
+      "description": "Hero Power (2): Restore a minion to full Health.",
+      "power": {
+        "cost": 2,
+        "effects": [
+          {
+            "type": "heal-full",
+            "target": "creature"
+          }
+        ]
+      }
+    },
+    {
+      "id": "dala_touch_of_bark",
+      "name": "Touch of Bark",
+      "type": "heropower",
+      "cost": 0,
+      "cardClass": "druid",
+      "rarity": "basic",
+      "set": "DALARAN_HEIST",
+      "token": true,
+      "description": "Hero Power (2): Give a minion +1/+1.",
+      "power": {
+        "cost": 2,
+        "effects": [
+          {
+            "type": "buff",
+            "attack": 1,
+            "health": 1,
+            "target": "creature"
+          }
+        ]
+      }
+    },
+    {
+      "id": "dala_opportunist",
+      "name": "Opportunist",
+      "type": "heropower",
+      "cost": 0,
+      "cardClass": "hunter",
+      "rarity": "basic",
+      "set": "DALARAN_HEIST",
+      "token": true,
+      "description": "Hero Power (2): Give a minion +2 Attack this turn.",
+      "power": {
+        "cost": 2,
+        "effects": [
+          {
+            "type": "temp-buff",
+            "attack": 2,
+            "target": "creature"
+          }
+        ]
+      }
+    },
+    {
+      "id": "dala_pet_training",
+      "name": "Pet Training",
+      "type": "heropower",
+      "cost": 0,
+      "cardClass": "hunter",
+      "rarity": "basic",
+      "set": "DALARAN_HEIST",
+      "token": true,
+      "description": "Hero Power (1): Add a 1/1 Shifting Chameleon to your hand.",
+      "power": {
+        "cost": 1,
+        "effects": [
+          {
+            "type": "add-card",
+            "id": "dala_shifting_chameleon"
+          }
+        ]
+      }
+    },
+    {
+      "id": "dala_shifting_chameleon",
+      "name": "Shifting Chameleon",
+      "type": "creature",
+      "cost": 1,
+      "cardClass": "neutral",
+      "rarity": "common",
+      "set": "DALARAN_HEIST",
+      "token": true,
+      "description": "Each turn this is in your hand, transform into a random 1-cost minion.",
+      "attack": 1,
+      "health": 1,
+      "tribe": "Beast",
+      "handTransform": {
+        "intoRandom": {
+          "cost": 1,
+          "cardType": "creature"
+        }
+      }
+    },
+    {
+      "id": "dala_burning_wit",
+      "name": "Burning Wit",
+      "type": "heropower",
+      "cost": 0,
+      "cardClass": "mage",
+      "rarity": "basic",
+      "set": "DALARAN_HEIST",
+      "token": true,
+      "description": "Hero Power (1): Reduce the Cost of a random card in your hand by (2).",
+      "power": {
+        "cost": 1,
+        "effects": [
+          {
+            "type": "reduce-random-hand-cost",
+            "value": 2
+          }
+        ]
+      }
+    },
+    {
+      "id": "dala_frostburn",
+      "name": "Frostburn",
+      "type": "heropower",
+      "cost": 0,
+      "cardClass": "mage",
+      "rarity": "basic",
+      "set": "DALARAN_HEIST",
+      "token": true,
+      "description": "Hero Power (2): Freeze a minion. If it's already Frozen, deal 2 damage to it.",
+      "power": {
+        "cost": 2,
+        "effects": [
+          {
+            "type": "frostburn",
+            "value": 2,
+            "target": "creature"
+          }
+        ]
+      }
+    },
+    {
+      "id": "dala_backup",
+      "name": "Backup!",
+      "type": "heropower",
+      "cost": 0,
+      "cardClass": "paladin",
+      "rarity": "basic",
+      "set": "DALARAN_HEIST",
+      "token": true,
+      "description": "Hero Power (2): Add three 1/1 Silver Hand Recruits to your hand.",
+      "power": {
+        "cost": 2,
+        "effects": [
+          {
+            "type": "add-card",
+            "id": "silver_hand_recruit",
+            "count": 3
+          }
+        ]
+      }
+    },
+    {
+      "id": "dala_boon_of_light",
+      "name": "Boon of Light",
+      "type": "heropower",
+      "cost": 0,
+      "cardClass": "paladin",
+      "rarity": "basic",
+      "set": "DALARAN_HEIST",
+      "token": true,
+      "description": "Hero Power (2): Give a friendly minion Divine Shield.",
+      "power": {
+        "cost": 2,
+        "effects": [
+          {
+            "type": "grant",
+            "keyword": "divine_shield",
+            "target": "friendly-creature"
+          }
+        ]
+      }
+    },
+    {
+      "id": "dala_distort",
+      "name": "Distort",
+      "type": "heropower",
+      "cost": 0,
+      "cardClass": "priest",
+      "rarity": "basic",
+      "set": "DALARAN_HEIST",
+      "token": true,
+      "description": "Hero Power (2): Swap a minion's Attack and Health.",
+      "power": {
+        "cost": 2,
+        "effects": [
+          {
+            "type": "swap-stats",
+            "target": "creature"
+          }
+        ]
+      }
+    },
+    {
+      "id": "dala_soothe",
+      "name": "Soothe",
+      "type": "heropower",
+      "cost": 0,
+      "cardClass": "priest",
+      "rarity": "basic",
+      "set": "DALARAN_HEIST",
+      "token": true,
+      "description": "Hero Power (1): Give a minion -2 Attack until your next turn.",
+      "power": {
+        "cost": 1,
+        "effects": [
+          {
+            "type": "debuff-until-your-next",
+            "value": 2,
+            "target": "creature"
+          }
+        ]
+      }
+    },
+    {
+      "id": "dala_yoink",
+      "name": "Yoink!",
+      "type": "heropower",
+      "cost": 0,
+      "cardClass": "rogue",
+      "rarity": "basic",
+      "set": "DALARAN_HEIST",
+      "token": true,
+      "description": "Hero Power (2): Add a random card from another class to your hand.",
+      "power": {
+        "cost": 2,
+        "effects": [
+          {
+            "type": "conjure-random",
+            "cardClass": "other",
+            "count": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "dala_cut_less",
+      "name": "Cut-less",
+      "type": "heropower",
+      "cost": 0,
+      "cardClass": "rogue",
+      "rarity": "basic",
+      "set": "DALARAN_HEIST",
+      "token": true,
+      "description": "Hero Power (2): Deal 2 damage to an undamaged minion.",
+      "power": {
+        "cost": 2,
+        "effects": [
+          {
+            "type": "damage",
+            "value": 2,
+            "target": "undamaged-creature"
+          }
+        ]
+      }
+    },
+    {
+      "id": "dala_evolution",
+      "name": "Evolution",
+      "type": "heropower",
+      "cost": 0,
+      "cardClass": "shaman",
+      "rarity": "basic",
+      "set": "DALARAN_HEIST",
+      "token": true,
+      "description": "Hero Power (2): Transform a friendly minion into one that costs (1) more.",
+      "power": {
+        "cost": 2,
+        "effects": [
+          {
+            "type": "transform",
+            "randomCost": true,
+            "costDelta": 1,
+            "target": "friendly-creature"
+          }
+        ]
+      }
+    },
+    {
+      "id": "dala_refresh",
+      "name": "Refresh",
+      "type": "heropower",
+      "cost": 0,
+      "cardClass": "shaman",
+      "rarity": "basic",
+      "set": "DALARAN_HEIST",
+      "token": true,
+      "description": "Hero Power (1): Draw a card. Overload: (1)",
+      "power": {
+        "cost": 1,
+        "effects": [
+          {
+            "type": "draw",
+            "value": 1
+          },
+          {
+            "type": "add-overload",
+            "value": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "dala_pain_split",
+      "name": "Pain Split",
+      "type": "heropower",
+      "cost": 0,
+      "cardClass": "warlock",
+      "rarity": "basic",
+      "set": "DALARAN_HEIST",
+      "token": true,
+      "description": "Hero Power (2): Take 2 damage. Deal 2 damage.",
+      "power": {
+        "cost": 2,
+        "effects": [
+          {
+            "type": "damage",
+            "value": 2,
+            "target": "own-hero"
+          },
+          {
+            "type": "damage",
+            "value": 2,
+            "target": "any"
+          }
+        ]
+      }
+    },
+    {
+      "id": "dala_the_pact",
+      "name": "The Pact",
+      "type": "heropower",
+      "cost": 0,
+      "cardClass": "warlock",
+      "rarity": "basic",
+      "set": "DALARAN_HEIST",
+      "token": true,
+      "description": "Hero Power (2): Take 2 damage. Summon a 2/2 Imp.",
+      "power": {
+        "cost": 2,
+        "effects": [
+          {
+            "type": "damage",
+            "value": 2,
+            "target": "own-hero"
+          },
+          {
+            "type": "summon",
+            "count": 1,
+            "attack": 2,
+            "health": 2,
+            "name": "Devious Imp",
+            "tribe": "Demon"
+          }
+        ]
+      }
+    },
+    {
+      "id": "dala_invigorating_brew",
+      "name": "Invigorating Brew",
+      "type": "heropower",
+      "cost": 0,
+      "cardClass": "warrior",
+      "rarity": "basic",
+      "set": "DALARAN_HEIST",
+      "token": true,
+      "description": "Hero Power (2): Deal 1 damage to a minion and give it +2 Attack.",
+      "power": {
+        "cost": 2,
+        "effects": [
+          {
+            "type": "damage",
+            "value": 1,
+            "target": "creature"
+          },
+          {
+            "type": "buff",
+            "attack": 2,
+            "health": 0,
+            "target": "creature"
+          }
+        ]
+      }
+    },
+    {
+      "id": "dala_undermine",
+      "name": "Undermine",
+      "type": "heropower",
+      "cost": 0,
+      "cardClass": "warrior",
+      "rarity": "basic",
+      "set": "DALARAN_HEIST",
+      "token": true,
+      "description": "Hero Power (2): Shuffle two Improvised Explosives into your opponent's deck.",
+      "power": {
+        "cost": 2,
+        "effects": [
+          {
+            "type": "shuffle-ids-into-deck",
+            "ids": [
+              "dala_improvised_explosive",
+              "dala_improvised_explosive"
+            ],
+            "forEnemy": true
+          }
+        ]
+      }
+    },
+    {
+      "id": "dala_improvised_explosive",
+      "name": "Improvised Explosive",
+      "type": "sorcery",
+      "cost": 2,
+      "cardClass": "neutral",
+      "rarity": "common",
+      "set": "DALARAN_HEIST",
+      "token": true,
+      "description": "Casts When Drawn: You take 3 damage.",
+      "drawTrigger": true,
+      "onDraw": [
+        {
+          "type": "damage",
+          "value": 3,
+          "target": "own-hero"
+        }
+      ]
     }
   ]
 }

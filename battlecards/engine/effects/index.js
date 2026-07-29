@@ -11,3 +11,4 @@ import './handlers-cost.js';
 import './handlers-copy.js';
 import './handlers-hero.js';
 import './handlers-misc.js';
+import './handlers-heist.js';
