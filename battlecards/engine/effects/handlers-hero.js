@@ -403,7 +403,7 @@ register('equip-random', ({ state, pi, target, source, enemies, scaled, hm, pick
 				const wd = pool[Math.floor(state.rng() * pool.length)];
 				const bA = (tp === pi && e.selfBuff) ? (e.selfBuff.attack || 0) : 0; // Stadium Announcer: yours gets +1/+1
 				const bD = (tp === pi && e.selfBuff) ? (e.selfBuff.durability || 0) : 0;
-				execEffects(state, tp, [{ type: 'equip', name: wd.name, attack: wd.attack + bA, durability: wd.durability + bD }], null, null);
+				execEffects(state, tp, [{ type: 'equip', name: wd.name, attack: wd.attack + bA, durability: e.setDurability != null ? e.setDurability : wd.durability + bD }], null, null);
 			}
 } });
 

@@ -129553,6 +129553,300 @@
       "curseDamage": 2,
       "description": "While this is in your hand, take 2 damage at the start of your turn. Play it to be rid of it.",
       "effects": []
+    },
+    {
+      "id": "ulda_amateur_mage",
+      "name": "Amateur Mage",
+      "type": "heropower",
+      "cost": 0,
+      "cardClass": "mage",
+      "rarity": "basic",
+      "set": "TOMBS_OF_TERROR",
+      "token": true,
+      "description": "Hero Power (2): Deal 1 damage. Combo: Deal 2 damage instead.",
+      "power": {
+        "cost": 2,
+        "effects": [
+          {
+            "type": "damage",
+            "value": 1,
+            "target": "any"
+          }
+        ],
+        "combo": [
+          {
+            "type": "damage",
+            "value": 2,
+            "target": "any"
+          }
+        ]
+      }
+    },
+    {
+      "id": "ulda_relicologist",
+      "name": "Relicologist",
+      "type": "heropower",
+      "cost": 0,
+      "cardClass": "mage",
+      "rarity": "basic",
+      "set": "TOMBS_OF_TERROR",
+      "token": true,
+      "description": "Hero Power (0): Your next spell this turn has Spell Damage +2.",
+      "power": {
+        "cost": 0,
+        "effects": [
+          {
+            "type": "set-next-spell-damage",
+            "value": 2
+          }
+        ]
+      }
+    },
+    {
+      "id": "ulda_arcane_craftiness",
+      "name": "Arcane Craftiness",
+      "type": "heropower",
+      "cost": 0,
+      "cardClass": "mage",
+      "rarity": "basic",
+      "set": "TOMBS_OF_TERROR",
+      "token": true,
+      "description": "Hero Power (2): Fire two missiles at random enemies that each deal 1 damage.",
+      "power": {
+        "cost": 2,
+        "effects": [
+          {
+            "type": "random-damage",
+            "value": 1,
+            "count": 2,
+            "pool": "enemies"
+          }
+        ]
+      }
+    },
+    {
+      "id": "ulda_elises_might",
+      "name": "Elise's Might",
+      "type": "heropower",
+      "cost": 0,
+      "cardClass": "druid",
+      "rarity": "basic",
+      "set": "TOMBS_OF_TERROR",
+      "token": true,
+      "description": "Hero Power (2): Choose One — +2 Attack this turn; or Gain 2 Armor.",
+      "power": {
+        "cost": 2,
+        "choices": [
+          {
+            "text": "+2 Attack this turn.",
+            "effects": [
+              {
+                "type": "hero-attack-multi-turn",
+                "value": 2,
+                "turns": 1
+              }
+            ]
+          },
+          {
+            "text": "Gain 2 Armor.",
+            "effects": [
+              {
+                "type": "armor",
+                "value": 2
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "ulda_druidic_teaching",
+      "name": "Druidic Teaching",
+      "type": "heropower",
+      "cost": 0,
+      "cardClass": "druid",
+      "rarity": "basic",
+      "set": "TOMBS_OF_TERROR",
+      "token": true,
+      "description": "Hero Power (2): Restore 2 Health to a character.",
+      "power": {
+        "cost": 2,
+        "effects": [
+          {
+            "type": "heal",
+            "value": 2,
+            "target": "any"
+          }
+        ]
+      }
+    },
+    {
+      "id": "ulda_starseeker",
+      "name": "Starseeker",
+      "type": "heropower",
+      "cost": 0,
+      "cardClass": "druid",
+      "rarity": "basic",
+      "set": "TOMBS_OF_TERROR",
+      "token": true,
+      "description": "Hero Power (0): Add a Moonfire to your hand.",
+      "power": {
+        "cost": 0,
+        "effects": [
+          {
+            "type": "add-card",
+            "id": "moonfire"
+          }
+        ]
+      }
+    },
+    {
+      "id": "ulda_new_recruits",
+      "name": "New \"Recruits\"",
+      "type": "heropower",
+      "cost": 0,
+      "cardClass": "paladin",
+      "rarity": "basic",
+      "set": "TOMBS_OF_TERROR",
+      "token": true,
+      "description": "Hero Power (2): Summon a 2/2 Amalgam with all creature types.",
+      "power": {
+        "cost": 2,
+        "effects": [
+          {
+            "type": "summon",
+            "count": 1,
+            "attack": 2,
+            "health": 2,
+            "name": "Amalgam",
+            "tribe": "All"
+          }
+        ]
+      }
+    },
+    {
+      "id": "ulda_bubble_blower",
+      "name": "Bubble Blower",
+      "type": "heropower",
+      "cost": 0,
+      "cardClass": "paladin",
+      "rarity": "basic",
+      "set": "TOMBS_OF_TERROR",
+      "token": true,
+      "description": "Hero Power (1): Discover a Shaman or Paladin Battlecry creature. Overload: (1)",
+      "power": {
+        "cost": 1,
+        "effects": [
+          {
+            "type": "discover",
+            "pick": 3,
+            "cardType": "creature",
+            "requireKeyword": "battlecry",
+            "cardClasses": [
+              "shaman",
+              "paladin"
+            ]
+          },
+          {
+            "type": "add-overload",
+            "value": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "ulda_power_up",
+      "name": "Power Up!",
+      "type": "heropower",
+      "cost": 0,
+      "cardClass": "paladin",
+      "rarity": "basic",
+      "set": "TOMBS_OF_TERROR",
+      "token": true,
+      "description": "Hero Power (2): Give a creature Divine Shield & Windfury.",
+      "power": {
+        "cost": 2,
+        "effects": [
+          {
+            "type": "grant",
+            "keyword": "divine_shield",
+            "target": "creature"
+          },
+          {
+            "type": "grant",
+            "keyword": "windfury",
+            "target": "creature"
+          }
+        ]
+      }
+    },
+    {
+      "id": "ulda_spread_shot",
+      "name": "Spread Shot",
+      "type": "heropower",
+      "cost": 0,
+      "cardClass": "hunter",
+      "rarity": "basic",
+      "set": "TOMBS_OF_TERROR",
+      "token": true,
+      "description": "Hero Power (2): Deal 1 damage to all enemies, then 1 more to target opponent.",
+      "power": {
+        "cost": 2,
+        "effects": [
+          {
+            "type": "damage",
+            "value": 1,
+            "target": "enemies"
+          },
+          {
+            "type": "damage",
+            "value": 1,
+            "target": "enemy-hero"
+          }
+        ]
+      }
+    },
+    {
+      "id": "ulda_well_equipped",
+      "name": "Well Equipped",
+      "type": "heropower",
+      "cost": 0,
+      "cardClass": "hunter",
+      "rarity": "basic",
+      "set": "TOMBS_OF_TERROR",
+      "token": true,
+      "description": "Hero Power (2): Equip a random weapon & set its Durability to 1.",
+      "power": {
+        "cost": 2,
+        "effects": [
+          {
+            "type": "equip-random",
+            "setDurability": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "ulda_dino_tracking",
+      "name": "Dino Tracking",
+      "type": "heropower",
+      "cost": 0,
+      "cardClass": "hunter",
+      "rarity": "basic",
+      "set": "TOMBS_OF_TERROR",
+      "token": true,
+      "description": "Hero Power (2): Discover a card from your deck.",
+      "power": {
+        "cost": 2,
+        "effects": [
+          {
+            "type": "discover",
+            "pick": 3,
+            "fromOwnDeck": true,
+            "cardType": "any"
+          }
+        ]
+      }
     }
   ]
 }

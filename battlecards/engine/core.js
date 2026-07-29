@@ -3361,7 +3361,9 @@ export function powerEffectsOf(card, choice) {
 // Steamwheedle Sniper: your Hero Power can also target minions — broaden any
 // enemy-hero damage in the power's effects to "any" target
 function heroPowerEffects(state, pi, card, choice) {
-	let effects = powerEffectsOf(card, choice);
+	// Combo hero powers (Reno's Amateur Mage): the boosted line when a card
+	// was already played this turn
+	let effects = (card.power?.combo && comboActive(state, pi)) ? card.power.combo : powerEffectsOf(card, choice);
 	if (state.players[pi].board.some(c => c.heroPowerHitsMinions && !isDead(c))) {
 		effects = effects.map(e => e.type === 'damage' && (e.target === 'enemy-hero' || e.target == null) ? { ...e, target: 'any' } : e);
 	}
