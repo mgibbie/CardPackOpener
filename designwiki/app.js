@@ -273,6 +273,12 @@ function loadClasses() {
   if (!classesPromise) classesPromise = fetch('../battlecards/classes.json' + CB).then(r => r.json()).then(d => d.classes || []);
   return classesPromise;
 }
+// Dalaran Heist data (heroes, wings, bosses, passives + buildBossDeck)
+let heistPromise = null;
+function loadHeist() {
+  if (!heistPromise) heistPromise = import('../battlecards/heist.js' + CB);
+  return heistPromise;
+}
 // build (once) an index: keyword slug -> { label, text, cards: [] } across the pool
 function keywordIndex(cards) {
   if (kwIndex) return kwIndex;
@@ -607,6 +613,118 @@ async function dungeonBossView(bossId) {
     await deckGrid(b.deck || [], byId));
 }
 
+// ---------- Dalaran Heist ----------
+// a round portrait for a heist hero/boss (art id = heist_<id>), or a
+// lettered placeholder when the image is missing
+function heistPortrait(id, size = 96) {
+  const img = h('img', {
+    src: '../battlecards/art/heist_' + id + '.jpg' + CB, alt: id,
+    style: `width:${size}px;height:${size}px;border-radius:50%;object-fit:cover;border:2px solid #5a4f7a;`,
+    onerror: e => e.target.remove(),
+  });
+  return img;
+}
+// overview: the nine heroes, then the five wings with their boss rosters
+async function heistView() {
+  content.replaceChildren(h('p', { class: 'muted' }, 'Loading heist…'));
+  let H, classes;
+  try { [H, classes] = await Promise.all([loadHeist(), loadClasses()]); }
+  catch (e) { return content.replaceChildren(h('h1', null, 'Dalaran Heist'), h('p', { class: 'muted' }, 'Could not load the heist data.')); }
+  const clsName = id => (classes.find(c => c.id === id)?.name) || titleCase(id);
+  const heroCards = H.HEROES.map(hero => h('a', {
+    class: 'wiki-card', href: '#/heist/hero/' + hero.id, title: hero.flavor,
+    style: 'display:flex;flex-direction:column;align-items:center;gap:6px;width:120px;text-decoration:none;',
+  },
+    heistPortrait(hero.id, 88),
+    h('div', { style: 'font-weight:bold;text-align:center;font-size:13px;' }, hero.name),
+    h('div', { class: 'muted', style: 'font-size:11.5px;' }, clsName(hero.heroClass))));
+  const wings = H.WINGS.map(w => h('div', null,
+    h('h2', null, w.name, ' ', h('span', { class: 'num' }, `(final: ${H.BOSSES[w.final].name})`)),
+    h('div', { class: 'card-tags' },
+      [...w.pool, w.final].map(bid => h('a', {
+        class: 'tag-chip ' + (bid === w.final ? 'school' : 'tribe'), href: '#/heist/boss/' + bid,
+      }, H.BOSSES[bid].name + ` · ${H.BOSSES[bid].health}`)))));
+  content.replaceChildren(
+    h('h1', null, 'Dalaran Heist'),
+    h('p', { class: 'muted' }, 'Pick a hero and a hero power, then rob one of five chapters — an eight-boss climb with card drafts, passive boons, and active treasures between fights. Your life scales as you go deeper; the final boss of each wing is fixed.'),
+    h('p', null, h('a', { href: '#/heist/treasures' }, 'Treasures & passives →')),
+    h('h2', null, 'Heroes ', h('span', { class: 'num' }, `(${H.HEROES.length})`)),
+    h('div', { class: 'card-grid', style: 'gap:14px;' }, ...heroCards),
+    h('h2', null, 'The Wings'),
+    ...wings);
+}
+// one hero: portrait, class, its three hero-power options, and starter deck
+async function heistHeroView(heroId) {
+  content.replaceChildren(h('p', { class: 'muted' }, 'Loading hero…'));
+  let H, D, classes, cards;
+  try { [H, D, classes, cards] = await Promise.all([loadHeist(), loadDungeon(), loadClasses(), loadCards(), loadCardart()]); }
+  catch (e) { return content.replaceChildren(h('h1', null, 'Hero'), h('p', { class: 'muted' }, 'Could not load the heist data.')); }
+  const hero = H.HEROES.find(x => x.id === heroId);
+  if (!hero) return content.replaceChildren(h('h1', null, 'Unknown hero'), h('p', null, h('a', { href: '#/heist' }, '← Dalaran Heist')));
+  const byId = {}; for (const c of cards) byId[c.id] = c;
+  const cls = classes.find(c => c.id === hero.heroClass);
+  // the three hero-power options: class default + the two dala_ alternates
+  const alts = cards.filter(c => c.set === 'DALARAN_HEIST' && c.type === 'heropower' && c.cardClass === hero.heroClass);
+  const powers = [cls?.power ? { name: cls.power.name, cost: cls.power.cost, text: cls.power.text } : null,
+    ...alts.map(c => ({ name: c.name, cost: c.power.cost, text: (c.description || '').replace(/^Hero Power \(\d+\): /, '') }))].filter(Boolean);
+  const deckIds = D.STARTER_DECKS[hero.heroClass] || [];
+  content.replaceChildren(
+    h('div', { style: 'display:flex;align-items:center;gap:16px;flex-wrap:wrap;' },
+      heistPortrait(hero.id, 110),
+      h('div', null, h('h1', { style: 'margin:0;' }, hero.name),
+        h('div', { class: 'card-page-meta' }, cls?.name || titleCase(hero.heroClass)),
+        h('p', { class: 'muted', style: 'margin:4px 0 0;' }, hero.flavor))),
+    h('p', null, h('a', { href: '#/heist' }, '← Dalaran Heist')),
+    h('h2', null, 'Hero Powers ', h('span', { class: 'num' }, '(choose one at the start of a run)')),
+    h('div', { class: 'kw-defs' }, powers.map(p => powerBlock(p))),
+    h('h2', null, 'Starter Deck ', h('span', { class: 'num' }, `(${deckIds.length} cards)`)),
+    await deckGrid(deckIds, byId));
+}
+// one boss: portrait, wing, HP, hero power, and its themed decklist
+async function heistBossView(bossId) {
+  content.replaceChildren(h('p', { class: 'muted' }, 'Loading boss…'));
+  let H, cards;
+  try { [H, cards] = await Promise.all([loadHeist(), loadCards(), loadCardart()]); }
+  catch (e) { return content.replaceChildren(h('h1', null, 'Boss'), h('p', { class: 'muted' }, 'Could not load the heist data.')); }
+  const b = H.BOSSES[bossId];
+  if (!b) return content.replaceChildren(h('h1', null, 'Unknown boss'), h('p', null, h('a', { href: '#/heist' }, '← Dalaran Heist')));
+  const byId = {}; for (const c of cards) byId[c.id] = c;
+  const wing = H.WINGS.find(w => w.pool.includes(bossId) || w.final === bossId);
+  const isFinal = wing && wing.final === bossId;
+  const deck = H.buildBossDeck(byId, b.theme);
+  content.replaceChildren(
+    h('div', { style: 'display:flex;align-items:center;gap:16px;flex-wrap:wrap;' },
+      heistPortrait(bossId, 110),
+      h('div', null, h('h1', { style: 'margin:0;' }, b.name),
+        h('div', { class: 'card-page-meta' },
+          (wing ? wing.name : 'Heist') + (isFinal ? ' · Final Boss' : '') + ` · ${b.health} HP`))),
+    h('p', null, h('a', { href: '#/heist' }, '← Dalaran Heist')),
+    h('h2', null, 'Hero Power'),
+    powerBlock(b.power),
+    h('h2', null, 'Deck ', h('span', { class: 'num' }, `(themed · ${deck.length} cards)`)),
+    h('p', { class: 'muted', style: 'font-size:12.5px;margin-top:-4px;' }, 'Built from the boss’s theme at fight time; a representative list is shown.'),
+    await deckGrid(deck, byId));
+}
+// the treasure catalogue: active treasures (cards) + passive boons
+async function heistTreasuresView() {
+  content.replaceChildren(h('p', { class: 'muted' }, 'Loading treasures…'));
+  let H, cards;
+  try { [H, cards] = await Promise.all([loadHeist(), loadCards(), loadCardart()]); }
+  catch (e) { return content.replaceChildren(h('h1', null, 'Heist Treasures'), h('p', { class: 'muted' }, 'Could not load the heist data.')); }
+  const active = cards.filter(c => c.treasure).map(c => c.id);
+  const byId = {}; for (const c of cards) byId[c.id] = c;
+  const passives = Object.entries(H.PASSIVES).map(([id, p]) => h('div', { class: 'kw-def' },
+    h('span', { class: 'tag-chip school' }, p.name),
+    h('span', { class: 'kw-text' }, p.text)));
+  content.replaceChildren(
+    h('h1', null, 'Heist Treasures'),
+    h('p', null, h('a', { href: '#/heist' }, '← Dalaran Heist')),
+    h('h2', null, 'Active Treasures ', h('span', { class: 'num' }, `(${active.length} — one joins your deck after fights 3 & 7)`)),
+    await deckGrid(active, byId),
+    h('h2', null, 'Passive Treasures ', h('span', { class: 'num' }, `(${passives.length} — one chosen after fights 1 & 5)`)),
+    h('div', { class: 'kw-defs' }, ...passives));
+}
+
 // Battlecards design-work backlog: every card name held without a working
 // design, plus undefined keywords. Data from designwiki/data/battlecards.json
 // (regenerate with tools/gen_battlecards_design.py — self-contained).
@@ -739,6 +857,12 @@ function route() {
     if (id === 'deck' && parts[2]) return dungeonDeckView(parts[2]);
     if (id === 'boss' && parts[2]) return dungeonBossView(parts[2]);
     return dungeonView();
+  }
+  if (section === 'heist') {
+    if (id === 'hero' && parts[2]) return heistHeroView(parts[2]);
+    if (id === 'boss' && parts[2]) return heistBossView(parts[2]);
+    if (id === 'treasures') return heistTreasuresView();
+    return heistView();
   }
   if (section === 'keyword') return cardSubsetView('keyword', id);
   if (section === 'tribe') return cardSubsetView('tribe', id);
