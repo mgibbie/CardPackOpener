@@ -2698,6 +2698,7 @@ export function heroAttack(state, pi, target) {
 	let hitCreature = false, killed = false;
 	if (target.type === 'hero') {
 		damageHero(state, target.player, atk, pi);
+		if (w && has(w, KW.LIFESTEAL) && atk > 0) healHero(state, pi, atk); // Lifesteal weapons heal on face attacks too
 	} else if (target.type === 'walker') {
 		const pw = findWalker(state, target.uid);
 		if (pw) damageWalker(state, pw, atk);

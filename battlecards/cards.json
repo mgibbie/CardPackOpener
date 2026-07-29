@@ -129847,6 +129847,370 @@
           }
         ]
       }
+    },
+    {
+      "id": "ulda_ancient_snake",
+      "name": "Ancient Snake",
+      "type": "creature",
+      "cost": 1,
+      "cardClass": "neutral",
+      "rarity": "common",
+      "set": "TOMBS_OF_TERROR",
+      "token": true,
+      "description": "Rush, Poisonous, Reborn.",
+      "attack": 1,
+      "health": 1,
+      "tribe": "Beast",
+      "keywords": [
+        "rush",
+        "poisonous",
+        "reborn"
+      ]
+    },
+    {
+      "id": "ulda_staff_of_scales",
+      "name": "Staff of Scales",
+      "type": "sorcery",
+      "cost": 5,
+      "cardClass": "neutral",
+      "rarity": "legendary",
+      "set": "TOMBS_OF_TERROR",
+      "token": true,
+      "treasure": true,
+      "description": "Summon three 1/1 Snakes with Rush, Poisonous & Reborn.",
+      "effects": [
+        {
+          "type": "summon",
+          "count": 3,
+          "summonId": "ulda_ancient_snake"
+        }
+      ]
+    },
+    {
+      "id": "ulda_jr_scout",
+      "name": "Jr. Scout",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "neutral",
+      "rarity": "legendary",
+      "set": "TOMBS_OF_TERROR",
+      "token": true,
+      "treasure": true,
+      "description": "Charge, Windfury. At the end of your turn, deal 4 damage to a random enemy creature.",
+      "attack": 4,
+      "health": 4,
+      "keywords": [
+        "charge",
+        "windfury"
+      ],
+      "ongoing": {
+        "on": "turn-end",
+        "effects": [
+          {
+            "type": "random-damage",
+            "value": 4,
+            "count": 1,
+            "pool": "enemy-creatures"
+          }
+        ]
+      }
+    },
+    {
+      "id": "ulda_sr_scout",
+      "name": "Sr. Scout",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "neutral",
+      "rarity": "legendary",
+      "set": "TOMBS_OF_TERROR",
+      "token": true,
+      "treasure": true,
+      "description": "Charge, Windfury. At the end of your turn, deal 6 damage to a random enemy creature.",
+      "attack": 6,
+      "health": 6,
+      "keywords": [
+        "charge",
+        "windfury"
+      ],
+      "ongoing": {
+        "on": "turn-end",
+        "effects": [
+          {
+            "type": "random-damage",
+            "value": 6,
+            "count": 1,
+            "pool": "enemy-creatures"
+          }
+        ]
+      }
+    },
+    {
+      "id": "ulda_sanctum_golem",
+      "name": "Sanctum Golem",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "neutral",
+      "rarity": "legendary",
+      "set": "TOMBS_OF_TERROR",
+      "token": true,
+      "treasure": true,
+      "description": "Can't Attack.",
+      "attack": 6,
+      "health": 6,
+      "keywords": [
+        "pacifist"
+      ]
+    },
+    {
+      "id": "ulda_enflamed_golem",
+      "name": "Enflamed Golem",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "neutral",
+      "rarity": "legendary",
+      "set": "TOMBS_OF_TERROR",
+      "token": true,
+      "treasure": true,
+      "description": "Deathrattle: Deal 3 damage to all creatures & summon a Sanctum Golem.",
+      "attack": 6,
+      "health": 6,
+      "keywords": [
+        "deathrattle"
+      ],
+      "deathrattle": [
+        {
+          "type": "damage",
+          "value": 3,
+          "target": "all-creatures"
+        },
+        {
+          "type": "summon",
+          "count": 1,
+          "summonId": "ulda_sanctum_golem"
+        }
+      ]
+    },
+    {
+      "id": "ulda_runaway_gyrocopter",
+      "name": "Runaway Gyrocopter",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "neutral",
+      "rarity": "legendary",
+      "set": "TOMBS_OF_TERROR",
+      "token": true,
+      "treasure": true,
+      "description": "Rush. Deathrattle: Deal 5 damage to all enemy creatures, then shuffle this into your deck.",
+      "attack": 5,
+      "health": 1,
+      "keywords": [
+        "rush",
+        "deathrattle"
+      ],
+      "deathrattle": [
+        {
+          "type": "damage",
+          "value": 5,
+          "target": "enemy-creatures"
+        },
+        {
+          "type": "shuffle-self-into-deck"
+        }
+      ]
+    },
+    {
+      "id": "ulda_crawling_claw",
+      "name": "Crawling Claw",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "neutral",
+      "rarity": "legendary",
+      "set": "TOMBS_OF_TERROR",
+      "token": true,
+      "treasure": true,
+      "description": "Rush, Reborn. Deathrattle: Steal a card from target opponent's hand.",
+      "attack": 2,
+      "health": 4,
+      "tribe": "Undead",
+      "keywords": [
+        "rush",
+        "reborn",
+        "deathrattle"
+      ],
+      "deathrattle": [
+        {
+          "type": "steal-random-hand-card"
+        }
+      ]
+    },
+    {
+      "id": "ulda_renos_crafty_lasso",
+      "name": "Reno's Crafty Lasso",
+      "type": "weapon",
+      "cost": 2,
+      "cardClass": "neutral",
+      "rarity": "legendary",
+      "set": "TOMBS_OF_TERROR",
+      "token": true,
+      "treasure": true,
+      "description": "After your hero attacks, steal a card from target opponent's hand.",
+      "attack": 3,
+      "durability": 2,
+      "ongoing": {
+        "on": "hero-attacked",
+        "effects": [
+          {
+            "type": "steal-random-hand-card"
+          }
+        ]
+      }
+    },
+    {
+      "id": "ulda_renos_lucky_hat",
+      "name": "Reno's Lucky Hat",
+      "type": "sorcery",
+      "cost": 1,
+      "cardClass": "neutral",
+      "rarity": "legendary",
+      "set": "TOMBS_OF_TERROR",
+      "token": true,
+      "treasure": true,
+      "description": "Give a creature +2/+2 & Spell Damage +2.",
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 2,
+          "health": 2,
+          "target": "creature"
+        },
+        {
+          "type": "grant-spell-damage",
+          "value": 2,
+          "target": "creature"
+        }
+      ]
+    },
+    {
+      "id": "ulda_elises_machete",
+      "name": "Elise's Machete",
+      "type": "weapon",
+      "cost": 3,
+      "cardClass": "neutral",
+      "rarity": "legendary",
+      "set": "TOMBS_OF_TERROR",
+      "token": true,
+      "treasure": true,
+      "description": "After your hero attacks, summon two 2/2 Treants with Rush.",
+      "attack": 3,
+      "durability": 2,
+      "ongoing": {
+        "on": "hero-attacked",
+        "effects": [
+          {
+            "type": "summon",
+            "count": 2,
+            "attack": 2,
+            "health": 2,
+            "name": "Treant",
+            "keywords": [
+              "rush"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "ulda_ol_faithful",
+      "name": "Ol' Faithful",
+      "type": "weapon",
+      "cost": 3,
+      "cardClass": "neutral",
+      "rarity": "legendary",
+      "set": "TOMBS_OF_TERROR",
+      "token": true,
+      "treasure": true,
+      "description": "After your hero attacks, deal 1 damage to all enemies.",
+      "attack": 4,
+      "durability": 3,
+      "ongoing": {
+        "on": "hero-attacked",
+        "effects": [
+          {
+            "type": "damage",
+            "value": 1,
+            "target": "enemies"
+          }
+        ]
+      }
+    },
+    {
+      "id": "ulda_karl_the_lost",
+      "name": "Karl the Lost",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "neutral",
+      "rarity": "legendary",
+      "set": "TOMBS_OF_TERROR",
+      "token": true,
+      "treasure": true,
+      "description": "Battlecry: Summon six 1/1 Silver Hand Recruits & give all your creatures Taunt.",
+      "attack": 6,
+      "health": 6,
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "summon",
+          "count": 6,
+          "summonId": "silver_hand_recruit"
+        },
+        {
+          "type": "grant",
+          "keyword": "taunt",
+          "target": "friendly-creatures"
+        }
+      ]
+    },
+    {
+      "id": "ulda_finleys_pith_helmet",
+      "name": "Finley's Pith Helmet",
+      "type": "sorcery",
+      "cost": 2,
+      "cardClass": "neutral",
+      "rarity": "legendary",
+      "set": "TOMBS_OF_TERROR",
+      "token": true,
+      "treasure": true,
+      "description": "Give all your creatures +2 Health. Shuffle this card into your deck.",
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 0,
+          "health": 2,
+          "target": "friendly-creatures"
+        },
+        {
+          "type": "shuffle-self-into-deck"
+        }
+      ]
+    },
+    {
+      "id": "ulda_truesilver_lance",
+      "name": "Truesilver Lance",
+      "type": "weapon",
+      "cost": 3,
+      "cardClass": "neutral",
+      "rarity": "legendary",
+      "set": "TOMBS_OF_TERROR",
+      "token": true,
+      "treasure": true,
+      "description": "Lifesteal.",
+      "attack": 5,
+      "durability": 2,
+      "keywords": [
+        "lifesteal"
+      ]
     }
   ]
 }
