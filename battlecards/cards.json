@@ -131126,6 +131126,335 @@
       "token": true,
       "passive": true,
       "description": "Passive. After you draw a spell, reduce its Cost to (0) this turn."
+    },
+    {
+      "id": "ulda_scales_of_justice",
+      "name": "Scales of Justice",
+      "type": "sorcery",
+      "cost": 4,
+      "cardClass": "neutral",
+      "rarity": "legendary",
+      "set": "TOMBS_OF_TERROR",
+      "token": true,
+      "treasure": true,
+      "description": "Transform all creatures into 1/1 Murlocs. Fill your hand with random Murlocs.",
+      "effects": [
+        {
+          "type": "transform-all-into-token",
+          "name": "Murloc",
+          "attack": 1,
+          "health": 1,
+          "tribe": "Murloc"
+        },
+        {
+          "type": "conjure-random",
+          "cardType": "creature",
+          "tribe": "Murloc",
+          "count": 3
+        }
+      ]
+    },
+    {
+      "id": "ulda_advanced_targeting_monocle",
+      "name": "Advanced Targeting Monocle",
+      "type": "sorcery",
+      "cost": 5,
+      "cardClass": "neutral",
+      "rarity": "legendary",
+      "set": "TOMBS_OF_TERROR",
+      "token": true,
+      "treasure": true,
+      "description": "Cast a copy of all spells in your deck (targets chosen randomly).",
+      "effects": [
+        {
+          "type": "cast-deck-spells"
+        }
+      ]
+    },
+    {
+      "id": "ulda_mystical_mirage",
+      "name": "Mystical Mirage",
+      "type": "sorcery",
+      "cost": 0,
+      "cardClass": "neutral",
+      "rarity": "legendary",
+      "set": "TOMBS_OF_TERROR",
+      "token": true,
+      "treasure": true,
+      "description": "Refresh your Mana Crystals & draw 3 cards this turn.",
+      "effects": [
+        {
+          "type": "refresh-mana"
+        },
+        {
+          "type": "draw",
+          "value": 3
+        }
+      ]
+    },
+    {
+      "id": "ulda_bobs_bouncer",
+      "name": "Bob's Bouncer",
+      "type": "sorcery",
+      "cost": 4,
+      "cardClass": "neutral",
+      "rarity": "legendary",
+      "set": "TOMBS_OF_TERROR",
+      "token": true,
+      "treasure": true,
+      "description": "Destroy all creatures but one (chosen at random).",
+      "effects": [
+        {
+          "type": "brawl"
+        }
+      ]
+    },
+    {
+      "id": "ulda_zephyrs_lamp",
+      "name": "Zephrys's Lamp",
+      "type": "sorcery",
+      "cost": 0,
+      "cardClass": "neutral",
+      "rarity": "legendary",
+      "set": "TOMBS_OF_TERROR",
+      "token": true,
+      "treasure": true,
+      "description": "Discover the perfect card.",
+      "effects": [
+        {
+          "type": "discover",
+          "pick": 3,
+          "cardType": "any"
+        }
+      ]
+    },
+    {
+      "id": "ulda_sack_of_lamps",
+      "name": "Sack of Lamps",
+      "type": "sorcery",
+      "cost": 0,
+      "cardClass": "neutral",
+      "rarity": "legendary",
+      "set": "TOMBS_OF_TERROR",
+      "token": true,
+      "treasure": true,
+      "description": "Fill your hand with Zephrys's Lamps.",
+      "effects": [
+        {
+          "type": "add-card",
+          "id": "ulda_zephyrs_lamp",
+          "count": 3
+        }
+      ]
+    },
+    {
+      "id": "ulda_academic_research",
+      "name": "Academic Research",
+      "type": "sorcery",
+      "cost": 0,
+      "cardClass": "neutral",
+      "rarity": "legendary",
+      "set": "TOMBS_OF_TERROR",
+      "token": true,
+      "treasure": true,
+      "description": "Gain a Mana Crystal.",
+      "effects": [
+        {
+          "type": "add-mana-crystal",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "ulda_tracking_device",
+      "name": "Tracking Device",
+      "type": "sorcery",
+      "cost": 1,
+      "cardClass": "neutral",
+      "rarity": "legendary",
+      "set": "TOMBS_OF_TERROR",
+      "token": true,
+      "treasure": true,
+      "description": "Draw 4 cards.",
+      "effects": [
+        {
+          "type": "draw",
+          "value": 4
+        }
+      ]
+    },
+    {
+      "id": "ulda_pack_mule",
+      "name": "Pack Mule",
+      "type": "sorcery",
+      "cost": 1,
+      "cardClass": "neutral",
+      "rarity": "legendary",
+      "set": "TOMBS_OF_TERROR",
+      "token": true,
+      "treasure": true,
+      "description": "Reduce the Cost of the cards in your deck by (1).",
+      "effects": [
+        {
+          "type": "reduce-deck-cost",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "ulda_upgraded_pack_mule",
+      "name": "Upgraded Pack Mule",
+      "type": "sorcery",
+      "cost": 2,
+      "cardClass": "neutral",
+      "rarity": "legendary",
+      "set": "TOMBS_OF_TERROR",
+      "token": true,
+      "treasure": true,
+      "description": "Reduce the Cost of all cards in your deck by (1).",
+      "effects": [
+        {
+          "type": "reduce-deck-cost",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "ulda_do_the_math",
+      "name": "Do the Math",
+      "type": "sorcery",
+      "cost": 2,
+      "cardClass": "neutral",
+      "rarity": "legendary",
+      "set": "TOMBS_OF_TERROR",
+      "token": true,
+      "treasure": true,
+      "description": "Remove all cards from your deck that cost (2) or less.",
+      "effects": [
+        {
+          "type": "remove-cheap-deck",
+          "value": 2
+        }
+      ]
+    },
+    {
+      "id": "ulda_study_break",
+      "name": "Study Break",
+      "type": "sorcery",
+      "cost": 1,
+      "cardClass": "neutral",
+      "rarity": "legendary",
+      "set": "TOMBS_OF_TERROR",
+      "token": true,
+      "treasure": true,
+      "description": "Discover a spell.",
+      "effects": [
+        {
+          "type": "discover",
+          "pick": 3,
+          "cardType": "spell"
+        }
+      ]
+    },
+    {
+      "id": "ulda_friendly_smith",
+      "name": "Friendly Smith",
+      "type": "sorcery",
+      "cost": 1,
+      "cardClass": "neutral",
+      "rarity": "legendary",
+      "set": "TOMBS_OF_TERROR",
+      "token": true,
+      "treasure": true,
+      "description": "Discover a weapon from any class.",
+      "effects": [
+        {
+          "type": "discover",
+          "pick": 3,
+          "cardType": "weapon"
+        }
+      ]
+    },
+    {
+      "id": "ulda_fast_food",
+      "name": "Fast Food",
+      "type": "sorcery",
+      "cost": 1,
+      "cardClass": "neutral",
+      "rarity": "legendary",
+      "set": "TOMBS_OF_TERROR",
+      "token": true,
+      "treasure": true,
+      "description": "Shuffle all enemy creatures into your deck.",
+      "effects": [
+        {
+          "type": "shuffle-enemy-board-into-deck"
+        }
+      ]
+    },
+    {
+      "id": "ulda_party_of_four",
+      "name": "Party of Four",
+      "type": "sorcery",
+      "cost": 0,
+      "cardClass": "neutral",
+      "rarity": "legendary",
+      "set": "TOMBS_OF_TERROR",
+      "token": true,
+      "treasure": true,
+      "description": "Discover a creature.",
+      "effects": [
+        {
+          "type": "discover",
+          "pick": 3,
+          "cardType": "creature"
+        }
+      ]
+    },
+    {
+      "id": "ulda_map_of_uldum",
+      "name": "Map of Uldum",
+      "type": "sorcery",
+      "cost": 0,
+      "cardClass": "neutral",
+      "rarity": "legendary",
+      "set": "TOMBS_OF_TERROR",
+      "token": true,
+      "treasure": true,
+      "description": "Discover a card & gain a Mana Crystal.",
+      "effects": [
+        {
+          "type": "discover",
+          "pick": 3,
+          "cardType": "any"
+        },
+        {
+          "type": "add-mana-crystal",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "ulda_tea_time",
+      "name": "Tea Time",
+      "type": "sorcery",
+      "cost": 2,
+      "cardClass": "neutral",
+      "rarity": "legendary",
+      "set": "TOMBS_OF_TERROR",
+      "token": true,
+      "treasure": true,
+      "description": "Gain 4 Mana Crystals & draw 2 cards.",
+      "effects": [
+        {
+          "type": "add-mana-crystal",
+          "value": 4
+        },
+        {
+          "type": "draw",
+          "value": 2
+        }
+      ]
     }
   ]
 }

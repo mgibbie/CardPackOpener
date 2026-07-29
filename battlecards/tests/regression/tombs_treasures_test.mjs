@@ -431,5 +431,86 @@ const usePower = (state, pi, id, target = null) => {
 	E.playCard(state, 0, state.players[0].hand[0].uid, null);
 	ok('No Lei: the bolt casts once (2 damage)', state.players[1].life === foeLife - 2);
 }
+
+// ---- final batch ----
+// Scales of Justice: transform all creatures into 1/1 Murlocs + hand Murlocs
+{
+	const { state } = new Scenario(byId)
+		.def('t_a', { type: 'creature', cost: 5, attack: 5, health: 5 })
+		.def('t_b', { type: 'creature', cost: 6, attack: 6, health: 6 })
+		.mana(0, 20).board(0, ['t_a']).board(1, ['t_b']).hand(0, ['ulda_scales_of_justice'])
+		.play(0, 'ulda_scales_of_justice').run();
+	ok('Scales of Justice: both boards are 1/1 Murlocs', state.players[0].board[0].attack === 1 && state.players[1].board[0].attack === 1
+		&& (state.players[0].board[0].tribe || '').includes('Murloc'));
+	ok('Scales of Justice: hand filled with Murlocs', state.players[0].hand.some(c => (byId[c.id]?.tribe || '').includes('Murloc')));
+}
+// Advanced Targeting Monocle: cast a copy of each deck spell
+{
+	const { state } = new Scenario(byId)
+		.def('t_bolt', { type: 'sorcery', cost: 1, effects: [{ type: 'damage', value: 2, target: 'enemy-hero' }] })
+		.mana(0, 20).deck(0, ['t_bolt', 't_bolt']).hand(0, ['ulda_advanced_targeting_monocle'])
+		.play(0, 'ulda_advanced_targeting_monocle').run();
+	ok('Advanced Targeting Monocle: 2 deck bolts cast (4 to face)', state.players[1].life === 40 - 4, 40 - state.players[1].life);
+}
+// Mystical Mirage: refresh mana + draw 3
+{
+	const { state } = new Scenario(byId)
+		.def('t_x', { type: 'creature', cost: 1, attack: 1, health: 1 })
+		.mana(0, 5).deck(0, ['t_x', 't_x', 't_x', 't_x']).hand(0, ['ulda_mystical_mirage']).run();
+	const before = state.players[0].hand.length - 1;
+	E.playCard(state, 0, state.players[0].hand[0].uid, null);
+	ok('Mystical Mirage: mana refreshed', E.availableMana(state.players[0]) === state.players[0].mana.max);
+	ok('Mystical Mirage: drew 3', state.players[0].hand.filter(c => c.id === 't_x').length === 3);
+}
+// Pack Mule: every deck card costs 1 less
+{
+	const { state } = new Scenario(byId)
+		.def('t_c', { type: 'creature', cost: 5, attack: 5, health: 5 })
+		.mana(0, 20).deck(0, ['t_c']).hand(0, ['ulda_pack_mule']).play(0, 'ulda_pack_mule').run();
+	E.drawCards(state, 0, 1);
+	ok('Pack Mule: drawn deck card costs 4', state.players[0].hand.find(c => c.id === 't_c').cost === 4);
+}
+// Do the Math: remove all deck cards costing 2 or less
+{
+	const { state } = new Scenario(byId)
+		.def('t_cheap', { type: 'creature', cost: 2, attack: 2, health: 2 })
+		.def('t_big', { type: 'creature', cost: 5, attack: 5, health: 5 })
+		.mana(0, 20).deck(0, ['t_cheap', 't_cheap', 't_big']).hand(0, ['ulda_do_the_math'])
+		.play(0, 'ulda_do_the_math').run();
+	ok('Do the Math: only the big card remains', state.players[0].deck.length === 1 && state.players[0].deck[0] === 't_big');
+}
+// Academic Research / Tea Time: gain Mana Crystals
+{
+	const { state } = new Scenario(byId).mana(0, 3).hand(0, ['ulda_academic_research']).run();
+	const before = state.players[0].mana.max;
+	E.playCard(state, 0, state.players[0].hand[0].uid, null);
+	ok('Academic Research: +1 Mana Crystal', state.players[0].mana.max === before + 1, state.players[0].mana.max);
+}
+{
+	const { state } = new Scenario(byId)
+		.def('t_x', { type: 'creature', cost: 1, attack: 1, health: 1 })
+		.mana(0, 4).deck(0, ['t_x', 't_x']).hand(0, ['ulda_tea_time']).run();
+	const before = state.players[0].mana.max, h = state.players[0].hand.length - 1;
+	E.playCard(state, 0, state.players[0].hand[0].uid, null);
+	ok('Tea Time: +4 Mana Crystals & drew 2', state.players[0].mana.max === before + 4 && state.players[0].hand.filter(c => c.id === 't_x').length === 2);
+}
+// Fast Food: shuffle enemy creatures into your deck
+{
+	const { state } = new Scenario(byId)
+		.def('t_e', { type: 'creature', cost: 2, attack: 2, health: 2 })
+		.mana(0, 20).board(1, ['t_e', 't_e']).hand(0, ['ulda_fast_food']).play(0, 'ulda_fast_food').run();
+	ok('Fast Food: enemies moved to your deck', state.players[1].board.length === 0 && state.players[0].deck.filter(id => id === 't_e').length === 2);
+}
+// Sack of Lamps: fill hand with Zephrys's Lamps
+{
+	const { state } = new Scenario(byId).mana(0, 20).hand(0, ['ulda_sack_of_lamps']).play(0, 'ulda_sack_of_lamps').run();
+	ok("Sack of Lamps: 3 Zephrys's Lamps in hand", state.players[0].hand.filter(c => c.id === 'ulda_zephyrs_lamp').length === 3);
+}
+// Study Break: discover a spell
+{
+	const { state } = new Scenario(byId).mana(0, 20).hand(0, ['ulda_study_break']).play(0, 'ulda_study_break').run();
+	ok('Study Break: a spell discover is pending', state.pickQueue.length === 1 && state.pickQueue[0].ids.every(id => ['sorcery', 'instant'].includes(byId[id]?.type)));
+}
+ok('final batch: all remaining treasures imported', raw.cards.filter(c => c.set === 'TOMBS_OF_TERROR' && c.treasure).length >= 60);
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);
