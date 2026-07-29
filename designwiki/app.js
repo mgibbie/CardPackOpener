@@ -263,6 +263,16 @@ function loadCardart() {
   ]).then(([a, k]) => { CardArt = a; CardKw = k; });
   return cardartPromise;
 }
+// dungeon-run data (starter decks + boss ladder) and the class registry
+let dungeonPromise = null, classesPromise = null;
+function loadDungeon() {
+  if (!dungeonPromise) dungeonPromise = import('../battlecards/dungeon.js' + CB);
+  return dungeonPromise;
+}
+function loadClasses() {
+  if (!classesPromise) classesPromise = fetch('../battlecards/classes.json' + CB).then(r => r.json()).then(d => d.classes || []);
+  return classesPromise;
+}
 // build (once) an index: keyword slug -> { label, text, cards: [] } across the pool
 function keywordIndex(cards) {
   if (kwIndex) return kwIndex;
@@ -488,6 +498,115 @@ async function cardSubsetView(kind, slug) {
   renderMore();
 }
 
+// ---------- Dungeon Run ----------
+// a hero-power blurb block shared by boss and starter-deck pages
+function powerBlock(power) {
+  if (!power) return h('p', { class: 'muted' }, 'No hero power.');
+  return h('div', { class: 'kw-def' },
+    h('span', { class: 'tag-chip type' }, `${power.name} (${power.cost ?? 0})`),
+    h('span', { class: 'kw-text' }, power.text || ''));
+}
+// a decklist rendered as in-game faces; duplicate ids collapse to one tile
+// with a ×N badge. Unknown ids (not in cards.json) degrade to a text chip.
+async function deckGrid(ids, byId) {
+  const counts = new Map();
+  for (const id of ids) counts.set(id, (counts.get(id) || 0) + 1);
+  const uniq = [...counts.keys()].map(id => byId[id] || null);
+  await CardArt.preloadArt(uniq.filter(Boolean).map(c => c.id));
+  const grid = h('div', { class: 'card-grid' });
+  const entries = [...counts.entries()]
+    .sort((a, b) => ((byId[a[0]]?.cost || 0) - (byId[b[0]]?.cost || 0)) || a[0].localeCompare(b[0]));
+  for (const [id, n] of entries) {
+    const c = byId[id];
+    if (!c) { grid.append(h('span', { class: 'chip' }, id + (n > 1 ? ` ×${n}` : ''))); continue; }
+    const tile = cardTile(c);
+    if (n > 1) tile.append(h('span', {
+      class: 'num',
+      style: 'position:absolute;right:4px;bottom:4px;background:rgba(10,8,20,0.85);border-radius:6px;padding:1px 6px;font-weight:bold;',
+    }, '×' + n));
+    tile.style.position = 'relative';
+    grid.append(tile);
+  }
+  return grid;
+}
+// overview: every starter deck, and the boss ladder grouped into its
+// level pools (which pool = when in the run you can encounter the boss)
+async function dungeonView() {
+  content.replaceChildren(h('p', { class: 'muted' }, 'Loading dungeon…'));
+  let D, classes;
+  try { [D, classes] = await Promise.all([loadDungeon(), loadClasses()]); }
+  catch (e) { return content.replaceChildren(h('h1', null, 'Dungeon Run'), h('p', { class: 'muted' }, 'Could not load the dungeon data.')); }
+  const clsName = id => (classes.find(c => c.id === id)?.name) || titleCase(id);
+  const deckLinks = Object.keys(D.STARTER_DECKS).map(id =>
+    h('a', { class: 'tag-chip type', href: '#/dungeon/deck/' + id }, clsName(id)));
+  const byLevel = new Map();
+  for (const [bid, b] of Object.entries(D.BOSSES)) {
+    if (!byLevel.has(b.level)) byLevel.set(b.level, []);
+    byLevel.get(b.level).push([bid, b]);
+  }
+  const pools = [...byLevel.keys()].sort((a, b) => a - b).map(lv => {
+    const bosses = byLevel.get(lv);
+    return h('div', null,
+      h('h2', null, `Level ${lv} pool `, h('span', { class: 'num' }, `(${bosses[0][1].health} HP)`)),
+      h('div', { class: 'kw-defs' }, bosses.map(([bid, b]) =>
+        h('div', { class: 'kw-def' },
+          h('a', { class: 'tag-chip tribe', href: '#/dungeon/boss/' + bid }, b.name),
+          h('span', { class: 'kw-text' }, b.flavor || '')))));
+  });
+  content.replaceChildren(
+    h('h1', null, 'Dungeon Run'),
+    h('p', { class: 'muted' }, 'Pick a class, fight the eight-boss ladder, draft as you go. One of each pool\'s bosses is rolled per run — a boss\'s pool is when you can meet it.'),
+    h('h2', null, 'Starter Decks ', h('span', { class: 'num' }, `(${deckLinks.length})`)),
+    h('div', { class: 'card-tags' }, deckLinks),
+    ...pools);
+}
+// one class's starting deck: the class hero power + its 10 cards
+async function dungeonDeckView(classId) {
+  content.replaceChildren(h('p', { class: 'muted' }, 'Loading deck…'));
+  let D, classes, cards;
+  try { [D, classes, cards] = await Promise.all([loadDungeon(), loadClasses(), loadCards(), loadCardart()]); }
+  catch (e) { return content.replaceChildren(h('h1', null, 'Starter Deck'), h('p', { class: 'muted' }, 'Could not load the dungeon data.')); }
+  const ids = D.STARTER_DECKS[classId];
+  if (!ids) return content.replaceChildren(h('h1', null, 'Unknown class'), h('p', null, h('a', { href: '#/dungeon' }, '← Dungeon Run')));
+  const byId = {}; for (const c of cards) byId[c.id] = c;
+  const cls = classes.find(c => c.id === classId);
+  content.replaceChildren(
+    h('h1', null, (cls?.name || titleCase(classId)) + ' Starter Deck'),
+    h('p', null, h('a', { href: '#/dungeon' }, '← Dungeon Run')),
+    h('h2', null, 'Hero Power'),
+    powerBlock(cls?.power),
+    h('h2', null, `Deck `, h('span', { class: 'num' }, `(${ids.length} cards)`)),
+    await deckGrid(ids, byId));
+}
+// one boss: pool, health, flavor, hero power, and its full decklist
+async function dungeonBossView(bossId) {
+  content.replaceChildren(h('p', { class: 'muted' }, 'Loading boss…'));
+  let D, cards;
+  try { [D, cards] = await Promise.all([loadDungeon(), loadCards(), loadCardart()]); }
+  catch (e) { return content.replaceChildren(h('h1', null, 'Boss'), h('p', { class: 'muted' }, 'Could not load the dungeon data.')); }
+  const b = D.BOSSES[bossId];
+  if (!b) return content.replaceChildren(h('h1', null, 'Unknown boss'), h('p', null, h('a', { href: '#/dungeon' }, '← Dungeon Run')));
+  const byId = {}; for (const c of cards) byId[c.id] = c;
+  // a few bosses have an always-on passive instead of an activated power
+  const PASSIVES = {
+    'battlecries-twice': 'Battlecries trigger twice.',
+    'deathrattles-twice': 'Deathrattles trigger twice.',
+    'both-twice': 'Battlecries and Deathrattles trigger twice.',
+  };
+  content.replaceChildren(
+    h('h1', null, b.name),
+    h('div', { class: 'card-page-meta' }, `Level ${b.level} pool · ${b.health} HP`),
+    b.flavor ? h('p', { class: 'muted' }, b.flavor) : null,
+    h('p', null, h('a', { href: '#/dungeon' }, '← Dungeon Run')),
+    h('h2', null, b.passive ? 'Passive' : 'Hero Power'),
+    b.passive
+      ? h('div', { class: 'kw-def' }, h('span', { class: 'tag-chip school' }, 'Passive'),
+          h('span', { class: 'kw-text' }, PASSIVES[b.passive] || titleCase(b.passive)))
+      : powerBlock(b.power),
+    h('h2', null, 'Decklist ', h('span', { class: 'num' }, `(${(b.deck || []).length} cards)`)),
+    await deckGrid(b.deck || [], byId));
+}
+
 // Battlecards design-work backlog: every card name held without a working
 // design, plus undefined keywords. Data from designwiki/data/battlecards.json
 // (regenerate with tools/gen_battlecards_design.py — self-contained).
@@ -616,6 +735,11 @@ function route() {
   if (section === 'unlearned') return unlearnedView();
   if (section === 'region') return regionView(id);
   if (section === 'cards') return id ? cardDetail(id) : cardGalleryView();
+  if (section === 'dungeon') {
+    if (id === 'deck' && parts[2]) return dungeonDeckView(parts[2]);
+    if (id === 'boss' && parts[2]) return dungeonBossView(parts[2]);
+    return dungeonView();
+  }
   if (section === 'keyword') return cardSubsetView('keyword', id);
   if (section === 'tribe') return cardSubsetView('tribe', id);
   if (section === 'school') return cardSubsetView('school', id);
