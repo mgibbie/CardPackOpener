@@ -320,14 +320,28 @@
     {
       "id": "westward_prosperity",
       "name": "Westward Prosperity",
-      "type": "sorcery",
+      "type": "quest",
       "cardClass": "bounty_hunter",
       "cost": 1,
       "rarity": "legendary",
-      "description": "Quest: Swiftdraw 9 cards.\nReward: Deal 9 damage to all enemies.",
+      "description": "Quest: Quickdraw 9 cards.\nReward: Deal 9 damage to all enemies.",
       "keywords": [
-        "quest"
-      ]
+        "quest",
+        "quickdraw"
+      ],
+      "quest": {
+        "goal": {
+          "type": "quickdraw",
+          "count": 9
+        },
+        "reward": [
+          {
+            "type": "damage",
+            "value": 9,
+            "target": "enemies"
+          }
+        ]
+      }
     },
     {
       "id": "tumbleweed_tactician",
@@ -440,12 +454,19 @@
       "cardClass": "bounty_hunter",
       "cost": 4,
       "rarity": "legendary",
-      "description": "Battlecry: Swiftdraw 8.",
+      "description": "Battlecry: Quickdraw 8.",
       "attack": 2,
       "health": 2,
       "tribe": "Beast Ranger",
       "keywords": [
-        "battlecry"
+        "battlecry",
+        "quickdraw"
+      ],
+      "effects": [
+        {
+          "type": "quickdraw",
+          "value": 8
+        }
       ]
     },
     {
@@ -455,10 +476,22 @@
       "cardClass": "bounty_hunter",
       "cost": 1,
       "rarity": "common",
-      "description": "Inspire: Swiftdraw 2.",
+      "description": "Inspire: Quickdraw 2.",
       "attack": 1,
       "health": 2,
-      "tribe": "Pirate"
+      "tribe": "Pirate",
+      "keywords": [
+        "quickdraw"
+      ],
+      "ongoing": {
+        "on": "hero-power-used",
+        "effects": [
+          {
+            "type": "quickdraw",
+            "value": 2
+          }
+        ]
+      }
     },
     {
       "id": "harried_herdsman",
@@ -11116,7 +11149,7 @@
       "cost": 2,
       "rarity": "legendary",
       "set": "paper",
-      "description": "Your Swiftdraw cards cost 1 less. Rush & Swift.",
+      "description": "Your Quickdraw cards cost 1 less. Rush & Swift.",
       "type": "creature",
       "attack": 1,
       "health": 2,
@@ -11124,7 +11157,8 @@
       "keywords": [
         "rush",
         "first_strike"
-      ]
+      ],
+      "quickdrawCostReduce": 1
     },
     {
       "id": "bumblecrab",
@@ -13312,7 +13346,7 @@
       "cost": 4,
       "rarity": "common",
       "set": "paper",
-      "description": "Connect: Swiftdraw 2.",
+      "description": "Connect: Quickdraw 2.",
       "type": "creature",
       "attack": 3,
       "health": 5,
@@ -13325,7 +13359,10 @@
             "value": 2
           }
         ]
-      }
+      },
+      "keywords": [
+        "quickdraw"
+      ]
     },
     {
       "id": "alpine_alpha",
@@ -13408,13 +13445,14 @@
       "cost": 3,
       "rarity": "legendary",
       "set": "paper",
-      "description": "Battlecry: Gaze 3 & Swiftdraw 3.",
+      "description": "Battlecry: Gaze 3 & Quickdraw 3.",
       "type": "creature",
       "attack": 3,
       "health": 2,
       "tribe": "Dragon",
       "keywords": [
-        "battlecry"
+        "battlecry",
+        "quickdraw"
       ],
       "effects": [
         {
@@ -18851,7 +18889,7 @@
       "cost": 2,
       "rarity": "common",
       "set": "paper",
-      "description": "Equip Hero Swing: Draw a card.\nDeathrattle: Swiftdraw 2.",
+      "description": "Equip Hero Swing: Draw a card.\nDeathrattle: Quickdraw 2.",
       "type": "weapon",
       "attack": 1,
       "durability": 2,
@@ -18869,6 +18907,9 @@
           "type": "quickdraw",
           "value": 2
         }
+      ],
+      "keywords": [
+        "quickdraw"
       ]
     },
     {
@@ -42338,7 +42379,7 @@
       "cost": 5,
       "rarity": "common",
       "set": "paper",
-      "description": "Battlecry: Swiftdraw 3. Windfury.\nDeathrattle: Luck: Excavate.",
+      "description": "Battlecry: Quickdraw 3. Windfury.\nDeathrattle: Luck: Excavate.",
       "type": "creature",
       "attack": 2,
       "health": 6,
@@ -42346,7 +42387,8 @@
       "keywords": [
         "battlecry",
         "windfury",
-        "deathrattle"
+        "deathrattle",
+        "quickdraw"
       ],
       "effects": [
         {
@@ -42426,7 +42468,7 @@
       "cost": 9,
       "rarity": "epic",
       "set": "paper",
-      "description": "Battlecry: Swiftdraw 3. Rush, Trample, Divine Shield & Taunt.\nDeathrattle: Excavate.",
+      "description": "Battlecry: Quickdraw 3. Rush, Trample, Divine Shield & Taunt.\nDeathrattle: Excavate.",
       "type": "creature",
       "attack": 4,
       "health": 16,
@@ -42437,7 +42479,8 @@
         "trample",
         "divine_shield",
         "taunt",
-        "deathrattle"
+        "deathrattle",
+        "quickdraw"
       ],
       "effects": [
         {
@@ -106097,16 +106140,26 @@
       "rarity": "legendary",
       "set": "WILD_WEST",
       "keywords": [
-        "battlecry"
+        "battlecry",
+        "miracle"
       ],
-      "description": "Battlecry: Get a random Swiftdraw card. If you play it this turn, repeat this.",
+      "description": "Battlecry: Get a random Miracle card. Miracle: Repeat this.",
       "effects": [
         {
           "type": "conjure-random",
           "cardType": null,
-          "requireKeyword": "quickdraw"
+          "requireKeyword": "miracle"
         }
-      ]
+      ],
+      "miracle": {
+        "effects": [
+          {
+            "type": "conjure-random",
+            "cardType": null,
+            "requireKeyword": "miracle"
+          }
+        ]
+      }
     },
     {
       "id": "greedy_partner",
@@ -106149,9 +106202,10 @@
       "set": "WILD_WEST",
       "tribe": "Mech",
       "keywords": [
-        "battlecry"
+        "battlecry",
+        "miracle"
       ],
-      "description": "Battlecry: Deal 2 damage to a random enemy minion. Swiftdraw: And another. (Neighbor targeting approximated as a second random hit.)",
+      "description": "Battlecry: Deal 2 damage to a random enemy minion. Miracle: And another. (Neighbor targeting approximated as a second random hit.)",
       "effects": [
         {
           "type": "conditional",
@@ -106406,9 +106460,10 @@
       "rarity": "epic",
       "set": "WILD_WEST",
       "keywords": [
-        "battlecry"
+        "battlecry",
+        "miracle"
       ],
-      "description": "Battlecry: Discover a spell from your deck. Swiftdraw: Enemy deck instead.",
+      "description": "Battlecry: Discover a spell from your deck. Miracle: Enemy deck instead.",
       "effects": [
         {
           "type": "conditional",
@@ -106475,15 +106530,16 @@
       "rarity": "rare",
       "set": "WILD_WEST",
       "keywords": [
-        "combo"
+        "combo",
+        "miracle"
       ],
-      "description": "Swiftdraw or Combo: Get a Coin.",
+      "description": "Miracle or Combo: Get a Coin.",
       "combo": [
         {
           "type": "gain-coin"
         }
       ],
-      "swiftdraw": {
+      "miracle": {
         "effects": [
           {
             "type": "gain-coin"
@@ -106565,9 +106621,10 @@
       "set": "WILD_WEST",
       "tribe": "Undead",
       "keywords": [
-        "battlecry"
+        "battlecry",
+        "miracle"
       ],
-      "description": "Battlecry: Discover an Undead. Swiftdraw: It costs (2) less.",
+      "description": "Battlecry: Discover an Undead. Miracle: It costs (2) less.",
       "effects": [
         {
           "type": "conditional",
@@ -106782,10 +106839,11 @@
       "tribe": "Beast",
       "keywords": [
         "rush",
-        "poisonous"
+        "poisonous",
+        "miracle"
       ],
-      "description": "Rush, Poisonous. Swiftdraw: Gain Immune this turn.",
-      "swiftdraw": {
+      "description": "Rush, Poisonous. Miracle: Gain Immune this turn.",
+      "miracle": {
         "effects": [
           {
             "type": "grant-immune-turn",
@@ -106952,16 +107010,17 @@
       "set": "WILD_WEST",
       "keywords": [
         "taunt",
-        "battlecry"
+        "battlecry",
+        "miracle"
       ],
-      "description": "Taunt. Battlecry and Swiftdraw: Summon a copy of this.",
+      "description": "Taunt. Battlecry and Miracle: Summon a copy of this.",
       "effects": [
         {
           "type": "summon-copy-of-self",
           "count": 1
         }
       ],
-      "swiftdraw": {
+      "miracle": {
         "effects": [
           {
             "type": "summon-copy-of-self",
@@ -107064,9 +107123,10 @@
       "tribe": "Mech",
       "keywords": [
         "battlecry",
-        "deathrattle"
+        "deathrattle",
+        "miracle"
       ],
-      "description": "Battlecry, Swiftdraw, and Deathrattle: Excavate a treasure.",
+      "description": "Battlecry, Miracle, and Deathrattle: Excavate a treasure.",
       "effects": [
         {
           "type": "excavate"
@@ -107077,7 +107137,7 @@
           "type": "excavate"
         }
       ],
-      "swiftdraw": {
+      "miracle": {
         "effects": [
           {
             "type": "excavate"
@@ -107180,11 +107240,12 @@
       "tribe": "Elemental",
       "keywords": [
         "lifesteal",
-        "battlecry"
+        "battlecry",
+        "miracle"
       ],
-      "description": "Lifesteal. Swiftdraw: Deal 5 damage. (Forge rider still pending.)",
+      "description": "Lifesteal. Miracle: Deal 5 damage. (Forge rider still pending.)",
       "effects": [],
-      "swiftdraw": {
+      "miracle": {
         "effects": [
           {
             "type": "damage",
@@ -107958,11 +108019,12 @@
       "set": "WILD_WEST",
       "tribe": "Dragon",
       "keywords": [
-        "lifesteal"
+        "lifesteal",
+        "miracle"
       ],
-      "description": "Tradeable, Lifesteal. Swiftdraw: Deal 6 damage.",
+      "description": "Tradeable, Lifesteal. Miracle: Deal 6 damage.",
       "tradeable": true,
-      "swiftdraw": {
+      "miracle": {
         "effects": [
           {
             "type": "damage",

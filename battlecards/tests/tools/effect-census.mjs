@@ -89,7 +89,7 @@ function walk(node, underEffectKey) {
 		dataTypes.set(node.type, (dataTypes.get(node.type) || 0) + 1);
 	}
 	for (const [k, v] of Object.entries(node)) {
-		if (k === 'ongoing' || k === 'ongoings' || k === 'swiftdraw' || k === 'outcast' ||
+		if (k === 'ongoing' || k === 'ongoings' || k === 'miracle' || k === 'outcast' ||
 			k === 'power' || k === 'adventure' || k === 'sac' || k === 'kicker' ||
 			k === 'choices' || k === 'taps' || k === 'quest' || k === 'spellDamageRedirect') {
 			walk(v, false);                     // containers holding an `effects` array inside

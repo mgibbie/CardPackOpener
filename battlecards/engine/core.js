@@ -181,10 +181,10 @@ export const ADAPT_TABLE = [
 	{ label: 'Poisonous', keyword: 'poisonous' },
 ];
 
-// Cards whose mechanics aren't implemented yet (quests, quickdraw, inspire,
-// weapon enchants) — excluded from generated decks; creatures among them would
-// still function as vanilla bodies if added manually.
-export const UNPLAYABLE = new Set(['silencer', 'westward_prosperity']);
+// Cards whose mechanics aren't implemented yet — excluded from generated
+// decks; creatures among them would still function as vanilla bodies if
+// added manually.
+export const UNPLAYABLE = new Set(['silencer']);
 
 // legacy hand-scripted cards: their effects arrays are handled by the scripted
 // switch below, so the generic executor must not double-run them
@@ -315,7 +315,7 @@ export function instantiate(def, controller) {
 		keywords: [...(def.keywords || [])],
 		effects: def.effects || null,
 		outcast: def.outcast || null, // Ashes of Outland: extra battlecry/spell effect from hand's edge
-		swiftdraw: def.swiftdraw || null, // HS Quickdraw (renamed 'swiftdraw' to avoid the paper-rules quickdraw effect): { effects } fired with the battlecry if drawnThisTurn
+		miracle: def.miracle || null, // Miracle (HS Quickdraw): { effects } fired with the battlecry if drawnThisTurn
 		temporary: !!def.temporary,   // Temporary: discarded from hand at the end of your turn
 		handTransform: def.handTransform || null, // Imposters/Shapeshifter: turn-start in-hand morph { cost?, grant?, spellDamage?, fromEnemyHand?, intoId?, ifHandParity? }
 		startOfGame: def.startOfGame || null, // Start of Game: effects run from the deck when the game begins
@@ -365,6 +365,7 @@ export function instantiate(def, controller) {
 		infuseCounter: 0,
 		heroPowerCostReduce: def.heroPowerCostReduce || 0, // Felfire Deadeye: your Hero Power costs this much less
 		outcastCostReduce: def.outcastCostReduce || 0, // Line Hopper: your Outcast cards cost this much less
+		quickdrawCostReduce: def.quickdrawCostReduce || 0, // Captain Eberhart: your Quickdraw cards cost this much less
 		healBonusHealth: def.healBonusHealth || 0, // Lightsteed: your heals also give the minion +Health
 		foreignCostReduce: def.foreignCostReduce || 0, // Arcane Luminary: cards that didn't start in your deck cost less
 		schoolCostReduce: def.schoolCostReduce ? { ...def.schoolCostReduce } : null, // Lady Anacondra: {school, amount}
@@ -1329,8 +1330,8 @@ export function runBattlecry(state, pi, card, target, choice) {
 			execEffects(state, pi, liveEffectsOf(state, pi, card, choice), target, card);
 		}
 	}
-	// Swiftdraw (HS Quickdraw): bonus effects when played the same turn it was drawn
-	if (card.swiftdraw && card.drawnThisTurn) execEffects(state, pi, JSON.parse(JSON.stringify(card.swiftdraw.effects || [])), target, card);
+	// Miracle (HS Quickdraw): bonus effects when played the same turn it was drawn
+	if (card.miracle && card.drawnThisTurn) execEffects(state, pi, JSON.parse(JSON.stringify(card.miracle.effects || [])), target, card);
 	// Morchie: your Rewinds keep BOTH outcomes — Rewind battlecries fire twice
 	if (card.rewind > 0 && card.effects && !LEGACY_SCRIPTED.has(card.id)
 		&& p.board.some(c => c.rewindDouble && !isDead(c) && c !== card)) {

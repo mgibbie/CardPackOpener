@@ -3,7 +3,7 @@
 // CHOSEN / targetSpec / legalTargets / equipTargets / attackTargets moved
 // VERBATIM from engine.js (move-only extraction). CHOSEN maps effect type ->
 // allowed e.target values -> target kind; targetSpec derives a card's target
-// requirement from its live effects (combo/kicker/swiftdraw-aware);
+// requirement from its live effects (combo/kicker/miracle-aware);
 // legalTargets enumerates the board under stealth/elusive/dormant rules;
 // attackTargets applies taunt walls, piercing, rush, and the Ghostly Prison
 // hero-attack tax gate.
@@ -150,9 +150,9 @@ export function targetSpec(state, pi, card, choice) {
 	if (card.choices && choice == null) return null;
 	// generic: derive from the first effect that needs a chosen target
 	// (combo-aware: an active combo line replaces the base effects;
-	//  Swiftdraw effects join the scan when the card was drawn this turn)
+	//  Miracle effects join the scan when the card was drawn this turn)
 	const _specEffects = [...(liveEffectsOf(state, pi, card, choice) || []),
-		...((card.swiftdraw && card.drawnThisTurn) ? (card.swiftdraw.effects || []) : [])];
+		...((card.miracle && card.drawnThisTurn) ? (card.miracle.effects || []) : [])];
 	for (const e of _specEffects) {
 		let kind = CHOSEN[e.type]?.[e.target];
 		// "the enemy hero" is unambiguous in 1v1 but a choice with 3+ players;

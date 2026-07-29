@@ -111,6 +111,11 @@ export function migrate(snap) {
 				if (v._lastDamagerUid == null) v._lastDamagerUid = v._lastDamager.uid;
 				delete v._lastDamager;
 			}
+			// pre-rename publishers called the Miracle field 'swiftdraw'
+			if (v.swiftdraw !== undefined) {
+				if (v.miracle === undefined) v.miracle = v.swiftdraw;
+				delete v.swiftdraw;
+			}
 			for (const k of Object.keys(v)) fixLastDamager(v[k]);
 		}
 	};
