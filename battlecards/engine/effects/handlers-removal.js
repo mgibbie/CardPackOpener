@@ -138,9 +138,16 @@ register('destroy-marked', ({ state, pi, target, source, enemies, scaled, hm, pi
 
 
 register('repeat-last-battlecry', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => {
-			// Brilliant Macaw: replay the last Battlecry you played
+			// Brilliant Macaw: replay the last Battlecry you played. Re-entry
+			// guarded — a second Macaw's "last Battlecry" is another Macaw's
+			// repeat, which would recurse without bound (stack overflow).
+			if (state._macawLock) return;
 			const lb = state.players[pi].lastBattlecryThisGame;
-			if (lb && lb.effects) execEffects(state, pi, JSON.parse(JSON.stringify(lb.effects)), lb.target || null, source);
+			if (lb && lb.effects) {
+				state._macawLock = true;
+				try { execEffects(state, pi, JSON.parse(JSON.stringify(lb.effects)), lb.target || null, source); }
+				finally { state._macawLock = false; }
+			}
 });
 
 
