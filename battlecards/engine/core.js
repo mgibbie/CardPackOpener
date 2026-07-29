@@ -235,7 +235,8 @@ export function instantiate(def, controller) {
 		quest: def.quest || null,   // quest: { goal: { type, count }, reward }
 		ongoing: def.ongoing || null, // permanent trigger: { on, effects }
 		static: def.static ? { ...def.static } : null,   // permanent passive (e.g. reduce-hero-damage)
-		heroImmuneAura: def.heroImmuneAura || false,     // Mal'Ganis: your hero is Immune while this lives
+		heroImmuneAura: def.heroImmuneAura || false,     // Mal'Ganis / Aegis of Death: your hero is Immune while this lives
+		loseDurabilityEachTurn: !!def.loseDurabilityEachTurn, // Aegis of Death: a weapon that bleeds durability every turn
 		heroPowerCostSet: def.heroPowerCostSet ?? null,  // Maiden of the Lake: your Hero Power costs this
 		redirectHeroDamage: def.redirectHeroDamage || false, // Bolf Ramshield: takes your hero's damage
 		costReducePerTurn: def.costReducePerTurn || false,   // Nerubian Prophet: -1 cost each turn in hand
@@ -1818,7 +1819,7 @@ export function playCard(state, pi, cardUid, target, choice, position, useAlt, k
 	}
 	// one-shot "next X" discounts are spent when the matching card is played
 	if (card.type === 'creature' && (card.tribe || '').includes('Murloc')) p.nextMurlocFree = false;
-	if (card.secret) { p.nextSecretCost = null; fireOngoing(state, pi, 'secret-played', { secret: card }); } // Professor Putricide
+	if (card.secret) { p.nextSecretCost = null; p.secretsThisGame = (p.secretsThisGame || 0) + 1; fireOngoing(state, pi, 'secret-played', { secret: card }); } // Professor Putricide / Tomb Diver counts secrets
 	// Un'Goro Elemental synergy: track that you played an Elemental this turn
 	if (card.type === 'creature' && (card.tribe || '').includes('Elemental')) { p.elementalThisTurn = true; p.elementalsPlayedGame = (p.elementalsPlayedGame || 0) + 1; }
 
@@ -2785,6 +2786,9 @@ export function heroAttack(state, pi, target) {
 	}
 	fireOngoing(state, pi, 'hero-attacks', {}); // Hench-Clan Thug: minion reacts to your hero attacking
 	if (hitCreature) fireOngoing(state, pi, 'hero-attacks-creature', { target: findCreature(state, target.uid), damaged: findCreature(state, target.uid) }); // Keeneye Spotter
+	// a single fire (fireOngoing-only, so weapon ongoings don't double-fire) for
+	// "hero attacks a minion and it survives" — Kodo Hide Whip
+	if (hitCreature && !killed) { const surv = findCreature(state, target.uid); if (surv && !isDead(surv)) fireOngoing(state, pi, 'hero-attacks-survivor', { target: surv, damaged: surv }); }
 	if (killed) {
 		fireOngoing(state, pi, 'hero-kills-minion', {}); // Spirit of the Raptor
 		if (p.heroAttacksUsed > 0 && p.board.some(c => c.id === 'gonk_the_raptor' && !isDead(c))) p.heroAttacksUsed--; // Gonk: may attack again
@@ -4000,6 +4004,9 @@ export function endTurn(state) {
 	}
 	for (const hpw of np.heroPowers) { hpw.usedThisTurn = false; hpw._uses = 0; }
 	for (const pw of np.planeswalkers) pw.usedThisTurn = false;
+	// Aegis of Death: a weapon that bleeds a durability every turn (and blows up
+	// on the owner when it finally breaks — its deathrattle)
+	if (np.weapon && np.weapon.loseDurabilityEachTurn) degradeWeapon(state, state.current);
 	for (const c of np.board) {
 		if (c.dormantLeft > 0) {
 			// sleepers tick down at their owner's turn start; waking leaves them

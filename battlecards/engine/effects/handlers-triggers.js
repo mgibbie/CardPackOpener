@@ -278,6 +278,48 @@ registerTrigger('prevent', (state, pi, e, ctx, triggering) => {
 });
 
 
+registerTrigger('add-targeting-spell-copies', (state, pi, e, ctx, triggering) => {
+	do { {
+				// Jr./Sr. Navigator: whenever a spell targets this minion, add N
+				// copies of that spell to your hand
+				const sp = ctx.played, pp = state.players[pi], def = sp && state.cardsById[sp.id];
+				if (def) {
+					for (let n = 0; n < (e.count || 2) && pp.hand.length < MAX_HAND; n++) {
+						const cp = instantiate(def, pi); cp.zone = 'hand';
+						pp.hand.push(cp);
+						emit(state, { type: 'conjure', player: pi, card: cp, color: null });
+					}
+				}
+				break;
+			}
+	} while (false); // `break` ends this effect, exactly like the old case break
+});
+
+
+registerTrigger('bounce-attacked-survivor-to-hand', (state, pi, e, ctx, triggering) => {
+	do { {
+				// Kodo Hide Whip: after your hero attacks a minion and it survives,
+				// put that minion in your hand (as its base card)
+				const c = ctx.target, pp = state.players[pi];
+				if (c && !isDead(c) && c.type !== 'location' && pp.hand.length < MAX_HAND) {
+					const owner = state.players[c.controller];
+					owner.board = owner.board.filter(x => x !== c);
+					c.zone = 'gone';
+					const def = state.cardsById[c.id];
+					if (def) {
+						const cp = instantiate(def, pi); cp.zone = 'hand';
+						pp.hand.push(cp);
+						emit(state, { type: 'conjure', player: pi, card: cp, color: null });
+					}
+					emit(state, { type: 'bounce', uid: c.uid });
+					recomputeAuras(state);
+				}
+				break;
+			}
+	} while (false); // `break` ends this effect, exactly like the old case break
+});
+
+
 registerTrigger('grant-played-if-cost', (state, pi, e, ctx, triggering) => {
 	do { {
 					// Toxmonger: give the creature you just played a keyword if it costs N;

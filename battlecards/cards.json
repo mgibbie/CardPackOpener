@@ -131455,6 +131455,223 @@
           "value": 2
         }
       ]
+    },
+    {
+      "id": "ulda_jr_navigator",
+      "name": "Jr. Navigator",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "neutral",
+      "rarity": "legendary",
+      "set": "TOMBS_OF_TERROR",
+      "token": true,
+      "treasure": true,
+      "description": "Whenever you target this creature with a spell, add 2 copies of the spell to your hand.",
+      "attack": 1,
+      "health": 5,
+      "tribe": "",
+      "keywords": [],
+      "ongoing": {
+        "on": "spell-cast-on-creature",
+        "if": {
+          "selfTarget": true
+        },
+        "effects": [
+          {
+            "type": "add-targeting-spell-copies",
+            "count": 2
+          }
+        ]
+      }
+    },
+    {
+      "id": "ulda_sr_navigator",
+      "name": "Sr. Navigator",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "neutral",
+      "rarity": "legendary",
+      "set": "TOMBS_OF_TERROR",
+      "token": true,
+      "treasure": true,
+      "description": "Whenever you target this creature with a spell, add 2 copies of the spell to your hand.",
+      "attack": 2,
+      "health": 10,
+      "tribe": "",
+      "keywords": [],
+      "ongoing": {
+        "on": "spell-cast-on-creature",
+        "if": {
+          "selfTarget": true
+        },
+        "effects": [
+          {
+            "type": "add-targeting-spell-copies",
+            "count": 2
+          }
+        ]
+      }
+    },
+    {
+      "id": "ulda_jr_tomb_diver",
+      "name": "Jr. Tomb Diver",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "neutral",
+      "rarity": "legendary",
+      "set": "TOMBS_OF_TERROR",
+      "token": true,
+      "treasure": true,
+      "description": "Battlecry: If you played 6 Secrets this game, your Hero Power becomes 'Discover a Treasure'.",
+      "attack": 5,
+      "health": 5,
+      "tribe": "",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "secretsThisGame": 6
+          },
+          "then": [
+            {
+              "type": "set-hero-power",
+              "powerId": "ulda_uldum_treasure_cache"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "ulda_sr_tomb_diver",
+      "name": "Sr. Tomb Diver",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "neutral",
+      "rarity": "legendary",
+      "set": "TOMBS_OF_TERROR",
+      "token": true,
+      "treasure": true,
+      "description": "Battlecry: If you played 3 Secrets this game, your Hero Power becomes 'Discover a Treasure'.",
+      "attack": 7,
+      "health": 7,
+      "tribe": "",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "secretsThisGame": 3
+          },
+          "then": [
+            {
+              "type": "set-hero-power",
+              "powerId": "ulda_uldum_treasure_cache"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "ulda_aegis_of_death",
+      "name": "Aegis of Death",
+      "type": "weapon",
+      "cost": 1,
+      "cardClass": "neutral",
+      "rarity": "legendary",
+      "set": "TOMBS_OF_TERROR",
+      "token": true,
+      "treasure": true,
+      "description": "Your hero is Immune. Each turn, lose 1 Durability. Deathrattle: Deal 100 damage to your hero.",
+      "attack": 0,
+      "durability": 3,
+      "heroImmuneAura": true,
+      "loseDurabilityEachTurn": true,
+      "deathrattle": [
+        {
+          "type": "damage",
+          "value": 100,
+          "target": "own-hero"
+        }
+      ]
+    },
+    {
+      "id": "ulda_kodo_hide_whip",
+      "name": "Kodo Hide Whip",
+      "type": "weapon",
+      "cost": 2,
+      "cardClass": "neutral",
+      "rarity": "legendary",
+      "set": "TOMBS_OF_TERROR",
+      "token": true,
+      "treasure": true,
+      "description": "After your hero attacks a creature & it survives, put that creature in your hand.",
+      "attack": 2,
+      "durability": 2,
+      "ongoing": {
+        "on": "hero-attacks-survivor",
+        "effects": [
+          {
+            "type": "bounce-attacked-survivor-to-hand"
+          }
+        ]
+      }
+    },
+    {
+      "id": "ulda_explorer_retraining",
+      "name": "Explorer Retraining",
+      "type": "sorcery",
+      "cost": 1,
+      "cardClass": "neutral",
+      "rarity": "legendary",
+      "set": "TOMBS_OF_TERROR",
+      "token": true,
+      "treasure": true,
+      "description": "Discover a new Hero Power.",
+      "effects": [
+        {
+          "type": "discover",
+          "heroPower": true
+        }
+      ]
+    },
+    {
+      "id": "ulda_stolen_titan_secrets",
+      "name": "Stolen Titan Secrets",
+      "type": "sorcery",
+      "cost": 1,
+      "cardClass": "neutral",
+      "rarity": "legendary",
+      "set": "TOMBS_OF_TERROR",
+      "token": true,
+      "treasure": true,
+      "description": "Copy target opponent's Hero Power.",
+      "effects": [
+        {
+          "type": "copy-enemy-hero-power"
+        }
+      ]
+    },
+    {
+      "id": "ulda_house_special",
+      "name": "House Special",
+      "type": "sorcery",
+      "cost": 4,
+      "cardClass": "neutral",
+      "rarity": "legendary",
+      "set": "TOMBS_OF_TERROR",
+      "token": true,
+      "treasure": true,
+      "description": "Replace your deck with one of Bob's Bombastic Decks.",
+      "effects": [
+        {
+          "type": "replace-deck-bobs"
+        }
+      ]
     }
   ]
 }

@@ -65,6 +65,30 @@ register('add-mana-crystal', ({ state, pi, target, source, enemies, scaled, hm, 
 	addManaCrystal(state, pi, e.value || 1);
 } });
 
+register('replace-deck-bobs', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => { {
+	// House Special: replace your deck with one of "Bob's Bombastic Decks" — a
+	// random themed package of cheap creatures (2 copies of each of the ~10
+	// cheapest matches), a faithful in-battle stand-in for swapping the run's
+	// Adventure Deck
+	const THEMES = [{ tribe: 'Beast' }, { tribe: 'Mech' }, { tribe: 'Murloc' }, { tribe: 'Elemental' }, { tribe: 'Dragon' }, { cardClass: 'neutral' }];
+	const theme = THEMES[Math.floor(state.rng() * THEMES.length)];
+	const ok = d => d.type === 'creature' && !d.token && d.collectible !== false && !d.companion && !d.commander
+		&& !(d.colors && d.colors.length) && (d.cost || 0) <= 6
+		&& (!theme.tribe || (d.tribe || '').includes(theme.tribe))
+		&& (!theme.cardClass || (d.cardClass || 'neutral') === theme.cardClass);
+	let pool = Object.values(state.cardsById).filter(ok);
+	pool.sort((a, b) => (a.cost || 0) - (b.cost || 0) || a.id.localeCompare(b.id));
+	pool = pool.slice(0, 10);
+	const deck = [];
+	for (const d of pool) deck.push(d.id, d.id);
+	if (deck.length) {
+		const p = state.players[pi];
+		p.deck = deck.slice(0, 20);
+		for (let i = p.deck.length - 1; i > 0; i--) { const j = Math.floor(state.rng() * (i + 1)); [p.deck[i], p.deck[j]] = [p.deck[j], p.deck[i]]; }
+		emit(state, { type: 'shuffle', player: pi });
+	}
+} });
+
 register('add-random-treasure', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => { {
 	// Flo Slatebrand / Uldum Treasure Cache: add N random Treasure cards to
 	// your hand

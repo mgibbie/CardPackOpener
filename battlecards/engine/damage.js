@@ -114,7 +114,7 @@ export function damageHero(state, pi, amount, src = null, pierce = false) {
 	}
 	if (p.heroImmuneTurn === state.turnNumber) return 0; // "can't take damage this turn"
 	if (p.heroImmuneUntilTurn != null && state.turnNumber < p.heroImmuneUntilTurn) return 0; // Doomsday Prepper: Immune until your next turn
-	if (p.board.some(c => c.heroImmuneAura && !isDead(c))) return 0; // Mal'Ganis: your hero is Immune
+	if ((p.weapon && p.weapon.heroImmuneAura) || p.board.some(c => c.heroImmuneAura && !isDead(c))) return 0; // Mal'Ganis / Aegis of Death: your hero is Immune
 	if (p.heroShield) { p.heroShield = false; emit(state, { type: 'heroShieldPop', player: pi }); return 0; } // Curious Cumulus: hero Divine Shield
 	if (p.primordialBulwark && amount >= (p.life + (p.armor || 0))) { // Primordial Bulwark: block lethal once, blast target opponent
 		p.primordialBulwark = false;
