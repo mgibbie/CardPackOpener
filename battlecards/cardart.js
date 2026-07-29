@@ -64,6 +64,7 @@ export function classColorOf(cls) {
 // than the neutral class brown (White reads as a pale ivory/silver frame).
 const COLOR_BODY = { W: '#ece7d4', U: '#356fb8', B: '#3c3742', R: '#b23a2c', G: '#3f8038' };
 export function bodyColorOf(card) {
+	if (card && card.passive) return '#7a5a1e'; // passive treasures wear a gold treasure frame
 	const cols = (card && card.colors) || [];
 	for (const k of ['W', 'U', 'B', 'R', 'G']) if (COLOR_BODY[k] && cols.includes(k)) return COLOR_BODY[k];
 	return classColorOf(card && card.cardClass);
@@ -709,6 +710,35 @@ export function drawCardFace(card, opts = {}) {
 		drawRulesText(ctx, richTokens((card.description || '').trim()), rbX + 16, rbY + 12, rbW - 32, rbH - 22);
 	}
 
+	if (card.passive) {
+		// passive treasures have no mana cost — a gold "PASSIVE" ribbon across
+		// the top marks them instead of the blue cost gem
+		const rt = 30, rb = 82, label = 'PASSIVE';
+		ctx.beginPath();
+		ctx.moveTo(96, rt + 14);
+		ctx.quadraticCurveTo(W / 2, rt - 12, W - 96, rt + 14);
+		ctx.lineTo(W - 96, rb - 6);
+		ctx.quadraticCurveTo(W / 2, rb + 16, 96, rb - 6);
+		ctx.closePath();
+		const rg = ctx.createLinearGradient(0, rt, 0, rb);
+		rg.addColorStop(0, '#f0d27a');
+		rg.addColorStop(1, '#9a6a1e');
+		ctx.fillStyle = rg;
+		ctx.fill();
+		ctx.strokeStyle = 'rgba(0,0,0,0.7)';
+		ctx.lineWidth = 4;
+		ctx.stroke();
+		ctx.font = 'bold 34px Georgia';
+		ctx.textAlign = 'center';
+		ctx.textBaseline = 'middle';
+		ctx.lineWidth = 5;
+		ctx.strokeStyle = '#3a2a08';
+		ctx.strokeText(label, W / 2, rt + 26);
+		ctx.fillStyle = '#3a2a08';
+		ctx.fillText(label, W / 2, rt + 26);
+		ctx.textAlign = 'left';
+		ctx.textBaseline = 'alphabetic';
+	} else {
 	// mana cost gem — TOP RIGHT now (drawn late so it sits over the frame)
 	const mgx = W - 64, mgy = 64;
 	const mg = ctx.createRadialGradient(mgx - 12, mgy - 14, 6, mgx, mgy, 54);
@@ -732,6 +762,7 @@ export function drawCardFace(card, opts = {}) {
 	ctx.fillText(String(card.cost ?? ''), mgx, mgy + 4);
 	ctx.textAlign = 'left';
 	ctx.textBaseline = 'alphabetic';
+	}
 
 	// owned-copies badge — TOP LEFT (gallery passes opts.count)
 	if (opts.count != null) {

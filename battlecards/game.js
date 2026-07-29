@@ -4350,10 +4350,11 @@ function afterHeistBucket(run, nextLevel) {
 		row.style.cssText = 'display:flex;flex-wrap:wrap;justify-content:center;gap:14px;';
 		for (let i = 0; i < 3 && options.length; i++) {
 			const t = options.splice(Math.floor(Math.random() * options.length), 1)[0];
+			const def = state.cardsById['dala_' + t];
 			const box = document.createElement('div');
-			box.style.cssText = 'background:#1c1830;border:1px solid #8a6f3a;border-radius:10px;padding:16px;max-width:190px;';
-			box.innerHTML = `<div style="font-weight:bold;margin-bottom:6px;">${Heist.PASSIVES[t].name}</div>`
-				+ `<div style="font-size:13px;opacity:0.85;margin-bottom:8px;">${Heist.PASSIVES[t].text}</div>`;
+			box.style.cssText = 'display:flex;flex-direction:column;align-items:center;gap:6px;';
+			if (def) box.appendChild(miniFace(def));
+			else box.innerHTML = `<div style="font-weight:bold;">${Heist.PASSIVES[t].name}</div><div style="font-size:13px;opacity:0.85;max-width:190px;">${Heist.PASSIVES[t].text}</div>`;
 			box.appendChild(overlayButton('Take it', () => {
 				run.passives.push(t);
 				advanceHeist(run, nextLevel);

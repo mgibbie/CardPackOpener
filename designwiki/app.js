@@ -712,10 +712,8 @@ async function heistTreasuresView() {
   try { [H, cards] = await Promise.all([loadHeist(), loadCards(), loadCardart()]); }
   catch (e) { return content.replaceChildren(h('h1', null, 'Heist Treasures'), h('p', { class: 'muted' }, 'Could not load the heist data.')); }
   const active = cards.filter(c => c.treasure).map(c => c.id);
+  const passiveCards = cards.filter(c => c.passive).map(c => c.id);
   const byId = {}; for (const c of cards) byId[c.id] = c;
-  const passives = Object.entries(H.PASSIVES).map(([id, p]) => h('div', { class: 'kw-def' },
-    h('span', { class: 'tag-chip school' }, p.name),
-    h('span', { class: 'kw-text' }, p.text)));
   const anomalies = Object.entries(H.ANOMALIES || {}).map(([id, a]) => h('div', { class: 'kw-def' },
     h('span', { class: 'tag-chip tribe' }, a.name),
     h('span', { class: 'kw-text' }, a.text)));
@@ -724,8 +722,8 @@ async function heistTreasuresView() {
     h('p', null, h('a', { href: '#/heist' }, '← Dalaran Heist')),
     h('h2', null, 'Active Treasures ', h('span', { class: 'num' }, `(${active.length} — one joins your deck after fights 3 & 7)`)),
     await deckGrid(active, byId),
-    h('h2', null, 'Passive Treasures ', h('span', { class: 'num' }, `(${passives.length} — one chosen after fights 1 & 5)`)),
-    h('div', { class: 'kw-defs' }, ...passives),
+    h('h2', null, 'Passive Treasures ', h('span', { class: 'num' }, `(${passiveCards.length} — one chosen after fights 1 & 5)`)),
+    await deckGrid(passiveCards, byId),
     h('h2', null, 'Anomalies ', h('span', { class: 'num' }, `(${anomalies.length} — an optional run-wide twist, chosen at the start)`)),
     h('p', { class: 'muted', style: 'font-size:12.5px;margin-top:-4px;' }, 'A symmetric rule that warps every fight — it hits you and every boss alike.'),
     h('div', { class: 'kw-defs' }, ...anomalies));
