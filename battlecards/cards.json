@@ -129326,6 +129326,233 @@
           "target": "own-hero"
         }
       ]
+    },
+    {
+      "id": "dala_recycling",
+      "name": "Recycling",
+      "type": "sorcery",
+      "cost": 0,
+      "cardClass": "neutral",
+      "rarity": "legendary",
+      "set": "DALARAN_HEIST",
+      "token": true,
+      "passive": true,
+      "description": "Passive. After a friendly minion dies, gain 2 Armor."
+    },
+    {
+      "id": "dala_rocket_backpacks",
+      "name": "Rocket Backpacks",
+      "type": "sorcery",
+      "cost": 0,
+      "cardClass": "neutral",
+      "rarity": "legendary",
+      "set": "DALARAN_HEIST",
+      "token": true,
+      "passive": true,
+      "description": "Passive. Your minions have Rush."
+    },
+    {
+      "id": "dala_emerald_goggles",
+      "name": "Emerald Goggles",
+      "type": "sorcery",
+      "cost": 0,
+      "cardClass": "neutral",
+      "rarity": "legendary",
+      "set": "DALARAN_HEIST",
+      "token": true,
+      "passive": true,
+      "description": "Passive. The left-most card in your hand costs (2) less."
+    },
+    {
+      "id": "dala_robes_of_gaudiness",
+      "name": "Robes of Gaudiness",
+      "type": "sorcery",
+      "cost": 0,
+      "cardClass": "neutral",
+      "rarity": "legendary",
+      "set": "DALARAN_HEIST",
+      "token": true,
+      "passive": true,
+      "description": "Passive. Your cards cost half, but you can only play two cards each turn."
+    },
+    {
+      "id": "dala_stargazing",
+      "name": "Stargazing",
+      "type": "sorcery",
+      "cost": 0,
+      "cardClass": "neutral",
+      "rarity": "legendary",
+      "set": "DALARAN_HEIST",
+      "token": true,
+      "passive": true,
+      "description": "Passive. You can use your Hero Power twice each turn. It costs (1) less."
+    },
+    {
+      "id": "dala_resourcefulness",
+      "name": "Resourcefulness",
+      "type": "sorcery",
+      "cost": 0,
+      "cardClass": "neutral",
+      "rarity": "legendary",
+      "set": "DALARAN_HEIST",
+      "token": true,
+      "passive": true,
+      "description": "Passive. At the start of the game, equip a random weapon and give it +1/+1."
+    },
+    {
+      "id": "dala_a_princes_ring",
+      "name": "A Prince's Ring",
+      "type": "sorcery",
+      "cost": 0,
+      "cardClass": "neutral",
+      "rarity": "legendary",
+      "set": "DALARAN_HEIST",
+      "token": true,
+      "passive": true,
+      "description": "Passive. Replace your starting Hero Power with a random one."
+    },
+    {
+      "id": "dala_book_of_wonders",
+      "name": "Book of Wonders",
+      "type": "sorcery",
+      "cost": 0,
+      "cardClass": "neutral",
+      "rarity": "legendary",
+      "set": "DALARAN_HEIST",
+      "token": true,
+      "passive": true,
+      "description": "Passive. At the start of the game, shuffle 10 Scrolls of Wonder into your deck."
+    },
+    {
+      "id": "dala_wondrous_wisdomball",
+      "name": "Wondrous Wisdomball",
+      "type": "sorcery",
+      "cost": 0,
+      "cardClass": "neutral",
+      "rarity": "legendary",
+      "set": "DALARAN_HEIST",
+      "token": true,
+      "passive": true,
+      "description": "Passive. Occasionally gives helpful advice."
+    },
+    {
+      "id": "dala_togwaggles_dice",
+      "name": "Togwaggle's Dice",
+      "type": "sorcery",
+      "cost": 0,
+      "cardClass": "neutral",
+      "rarity": "legendary",
+      "set": "DALARAN_HEIST",
+      "token": true,
+      "passive": true,
+      "description": "Passive. At the end of your turn, randomize the Cost of all cards in your hand."
+    },
+    {
+      "id": "dala_dr_booms_remote",
+      "name": "Dr. Boom's Remote",
+      "type": "sorcery",
+      "cost": 0,
+      "cardClass": "neutral",
+      "rarity": "legendary",
+      "set": "DALARAN_HEIST",
+      "token": true,
+      "passive": true,
+      "description": "Passive. At the start of the game, summon three 1/1 Boom Bots."
+    },
+    {
+      "id": "dala_hagathas_embrace",
+      "name": "Hagatha's Embrace",
+      "type": "sorcery",
+      "cost": 0,
+      "cardClass": "neutral",
+      "rarity": "legendary",
+      "set": "DALARAN_HEIST",
+      "token": true,
+      "passive": true,
+      "description": "Passive. At the start of your turn, give a random minion in your hand +1/+1."
+    },
+    {
+      "id": "dala_the_hand_of_rafaam",
+      "name": "The Hand of Rafaam",
+      "type": "sorcery",
+      "cost": 0,
+      "cardClass": "neutral",
+      "rarity": "legendary",
+      "set": "DALARAN_HEIST",
+      "token": true,
+      "passive": true,
+      "description": "Passive. At the start of the game, give your opponent two Cursed! cards."
+    },
+    {
+      "id": "dala_elixir_of_vigor",
+      "name": "Elixir of Vigor",
+      "type": "sorcery",
+      "cost": 0,
+      "cardClass": "neutral",
+      "rarity": "legendary",
+      "set": "DALARAN_HEIST",
+      "token": true,
+      "passive": true,
+      "description": "Passive. After you play a minion, shuffle two copies of it into your deck. They cost (1)."
+    },
+    {
+      "id": "dala_elixir_of_vim",
+      "name": "Elixir of Vim",
+      "type": "sorcery",
+      "cost": 0,
+      "cardClass": "neutral",
+      "rarity": "legendary",
+      "set": "DALARAN_HEIST",
+      "token": true,
+      "passive": true,
+      "description": "Passive. You draw an additional two cards each turn. You are Immune to Fatigue."
+    },
+    {
+      "id": "dala_elixir_of_vile",
+      "name": "Elixir of Vile",
+      "type": "sorcery",
+      "cost": 0,
+      "cardClass": "neutral",
+      "rarity": "legendary",
+      "set": "DALARAN_HEIST",
+      "token": true,
+      "passive": true,
+      "description": "Passive. Your spells cost Health instead of Mana."
+    },
+    {
+      "id": "dala_scroll_of_wonder",
+      "name": "Scroll of Wonder",
+      "type": "sorcery",
+      "cost": 1,
+      "cardClass": "neutral",
+      "rarity": "common",
+      "set": "DALARAN_HEIST",
+      "token": true,
+      "drawTrigger": true,
+      "description": "Casts When Drawn: Cast a random spell. Draw a card.",
+      "onDraw": [
+        {
+          "type": "cast-random-spell",
+          "count": 1
+        },
+        {
+          "type": "draw",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "dala_cursed",
+      "name": "Cursed!",
+      "type": "sorcery",
+      "cost": 2,
+      "cardClass": "neutral",
+      "rarity": "common",
+      "set": "DALARAN_HEIST",
+      "token": true,
+      "curseDamage": 2,
+      "description": "While this is in your hand, take 2 damage at the start of your turn. Play it to be rid of it.",
+      "effects": []
     }
   ]
 }

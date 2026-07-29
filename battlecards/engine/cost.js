@@ -145,6 +145,9 @@ export function effectiveCost(state, pi, card) {
 	if (p.minionCostSet != null && card.type === 'creature') c = p.minionCostSet; // Loh the Living Legend
 	if (p.allCardsCostOne) c = 1; // Aviana's Full Moon
 	if (card.type === 'creature' && (card.keywords || []).includes('battlecry') && p.board.some(m => m.murmurAura && !isDead(m))) c = 1; // Murmur
+	if (p.leftmostDiscount && p.hand.length && p.hand[0] === card) c = Math.max(0, c - p.leftmostDiscount); // Emerald Goggles: the left-most hand card
+	if (p.robesHalf) c = Math.ceil(c / 2); // Robes of Gaudiness: cards cost half
+	if (p.spellsCostHealth && isSpellType(card)) return 0; // Elixir of Vile: paid in Health at play time
 	if (p.agamagganNext) return 0; // Agamaggan: the opponent pays in Health
 	if (p.warlocNext && (card.tribe || '').includes('Murloc') && (card.cost || 0) <= 3) return 0; // Warloc: paid in your Health
 	if (p.nextCardCorpses && (p.corpses || 0) >= c) return 0; // Exarch Maladaar: the next card costs Corpses instead
@@ -167,5 +170,6 @@ export function heroPowerCost(state, pi, card) {
 	c += (p.heroPowerTaxNext || 0) - (p.heroPowerDiscountNext || 0);
 	c -= p.board.filter(x => x.heroPowerCostReduce && !isDead(x)).reduce((s, x) => s + x.heroPowerCostReduce, 0); // Felfire Deadeye
 	if (p.board.some(x => x.hpFreeHandMax != null && !isDead(x) && p.hand.length <= x.hpFreeHandMax)) return 0; // Quel'dorei Fletcher
+	if (p.stargazing) c -= 1; // Stargazing: Hero Power costs (1) less
 	return Math.max(0, c);
 }

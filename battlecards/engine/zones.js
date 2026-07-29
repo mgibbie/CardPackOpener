@@ -65,6 +65,7 @@ export function drawCards(state, pi, count) {
 		}
 		if (!id) {
 			// nothing to reshuffle either: truly out of cards — fatigue
+			if (p.noFatigue) continue; // Elixir of Vim: Immune to Fatigue
 			p.fatigue++;
 			emit(state, { type: 'fatigue', player: pi, amount: p.fatigue });
 			damageHero(state, pi, p.fatigue, pi);
@@ -100,6 +101,7 @@ export function drawCards(state, pi, count) {
 		card.fromDeck = true; // drawn from your deck — Leyline Manipulator ignores these
 		card.drawnThisTurn = true; // Keli'dan the Breaker: "If drawn this turn"
 		if (p.deckCostOverrides && p.deckCostOverrides[id] != null) { card.cost = p.deckCostOverrides[id]; delete p.deckCostOverrides[id]; } // Twilight Medium: top card's Cost set to (0)
+		if (p.deckCostPersist && p.deckCostPersist[id] != null) card.cost = p.deckCostPersist[id]; // Elixir of Vigor: the copies cost (1)
 		if (p.deckInnerFire && card.type === 'creature') card.attack = card.maxHealth; // Lady in White
 		if (card.type === 'creature' && p.drawBuff) { card.attack += p.drawBuff.attack || 0; card.maxHealth += p.drawBuff.health || 0; }
 		if (card.type === 'creature' && p.drawBuffMinions && p.drawBuffMinions.count > 0) { card.attack += p.drawBuffMinions.attack || 0; card.maxHealth += p.drawBuffMinions.health || 0; p.drawBuffMinions.count--; if (p.drawBuffMinions.count <= 0) p.drawBuffMinions = null; } // (legacy next-drawn buff)

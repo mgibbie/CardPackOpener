@@ -18,7 +18,7 @@ const usePower = (state, pi, id, target = null) => {
 // every imported heist card is uncollectible and its data types have handlers (census covers that)
 {
 	const heist = raw.cards.filter(c => c.set === 'DALARAN_HEIST');
-	ok('52 heist cards imported, all tokens', heist.length === 52 && heist.every(c => c.token), heist.length);
+	ok('70 heist cards imported (52 phase-1 + 16 passives + 2 tokens), all tokens', heist.length === 70 && heist.every(c => c.token), heist.length);
 	ok('29 marked as treasures (chain/bomb tokens excluded)', heist.filter(c => c.treasure).length === 29, heist.filter(c => c.treasure).length);
 }
 // extra-turns: me, me, them, them

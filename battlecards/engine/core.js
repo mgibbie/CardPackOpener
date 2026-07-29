@@ -369,6 +369,7 @@ export function instantiate(def, controller) {
 		schemeGrow: !!def.schemeGrow, // Master Scheme: its N grows each turn held
 		handGrow: def.handGrow || null, // Loyal Henchman: {attack, health} gained each turn held
 		reaper: !!def.reaper, // Soulreaper's Scythe: logs kill ids on the weapon instance
+		curseDamage: def.curseDamage || 0, // Cursed!: burns its holder at the start of their turn
 		healBonusHealth: def.healBonusHealth || 0, // Lightsteed: your heals also give the minion +Health
 		foreignCostReduce: def.foreignCostReduce || 0, // Arcane Luminary: cards that didn't start in your deck cost less
 		schoolCostReduce: def.schoolCostReduce ? { ...def.schoolCostReduce } : null, // Lady Anacondra: {school, amount}
@@ -1589,6 +1590,7 @@ export function canPlay(state, pi, card) {
 	if (card.type === 'instant') { if (!hasPriority(state, pi)) return false; }
 	else if (!(state.current === pi && state.priority == null && state.stack.length === 0)) return false;
 	if (availableMana(state.players[pi]) < effectiveCost(state, pi, card) && !(card.altCost && canPayAlt(state, pi, card))) return false;
+	if (state.players[pi].robesTwoCards && card.type !== 'instant' && (state.players[pi].cardsPlayedThisTurn || 0) >= 2) return false; // Robes of Gaudiness: only two cards a turn
 	{ const pb = state.players[pi].parityBlock; if (pb && ((card.cost % 2 === 1 ? 'odd' : 'even') === pb)) return false; }
 	if (card.type === 'secret') {
 		const p = state.players[pi];
@@ -1660,6 +1662,7 @@ export function playCard(state, pi, cardUid, target, choice, position, useAlt, k
 	if (card.temporary && p.nextTempDiscount > 0) p.nextTempDiscount = 0; // Spelunker: spent by the next Temporary card
 	if (p.nextCardCorpses) { p.corpses = Math.max(0, p.corpses - (card.cost || 0)); p.nextCardCorpses = false; emit(state, { type: 'corpses', player: pi, corpses: p.corpses }); } // Exarch Maladaar: paid in Corpses
 	if (p.agamagganNext) { p.agamagganNext = false; for (const o of opponentsOf(state, pi)) { damageHero(state, o, Math.min(10, card.cost || 0), pi, true); break; } } // Agamaggan: the opponent's Health pays
+	if (p.spellsCostHealth && isSpellType(card)) damageHero(state, pi, card.cost || 0, pi, true); // Elixir of Vile: spells cost Health
 	if (p.warlocNext && (card.tribe || '').includes('Murloc') && (card.cost || 0) <= 3) { p.warlocNext = false; damageHero(state, pi, card.cost || 0, pi, true); } // Warloc: your Health pays
 	if (card.combo && p.nextComboDiscount > 0) p.nextComboDiscount = 0; // Foxy Fraud discount is spent by the next Combo card
 	if (card.choices && p.nextChooseOneDiscount > 0) p.nextChooseOneDiscount = 0; // Pride Seeker discount is spent by the next Choose One card
@@ -2013,6 +2016,11 @@ export function playCard(state, pi, cardUid, target, choice, position, useAlt, k
 	if (!card.token) (p.lastCardOfCost = p.lastCardOfCost || {})[card.cost || 0] = { id: card.id }; // Pet Parrot
 	if ((card.keywords || []).includes('combo')) p.combosPlayedGame = (p.combosPlayedGame || 0) + 1; // Rhyme Spinner
 	(p.playedCountById = p.playedCountById || {})[card.id] = (p.playedCountById[card.id] || 0) + 1; // Freebird
+	if (p.vigorShuffle && card.type === 'creature' && state.cardsById[card.id] && !card.token) { // Elixir of Vigor: two (1)-cost copies join the deck
+		for (let vk = 0; vk < 2; vk++) p.deck.push(card.id);
+		(p.deckCostPersist = p.deckCostPersist || {})[card.id] = 1;
+		for (let vi = p.deck.length - 1; vi > 0; vi--) { const vj = Math.floor(state.rng() * (vi + 1)); [p.deck[vi], p.deck[vj]] = [p.deck[vj], p.deck[vi]]; }
+	}
 	if (card.hauntSummon && state.cardsById[card.hauntSummon]) summon(state, pi, state.cardsById[card.hauntSummon]); // Haunting Nightmare: playing a haunted card summons a Soldier
 	if (p.nextClassFree && card.type === 'creature' && (card.cardClass || '').split('__').includes(p.nextClassFree) && !p._classFreeGrantedThisPlay) p.nextClassFree = null; // Blood Crusader: one-shot free minion consumed (not by the granting card)
 	p._classFreeGrantedThisPlay = false;
@@ -3366,7 +3374,7 @@ export function heroPowerSpec(state, pi, card, choice) {
 export function canUseHeroPower(state, pi, card, choice) {
 	if (state.over || !(state.current === pi && state.priority == null && state.stack.length === 0)) return false;
 	const p = state.players[pi];
-	if (!p.heroPowers.includes(card) || card.usedThisTurn) return false;
+	if (!p.heroPowers.includes(card) || (card.usedThisTurn && !(p.stargazing && (card._uses || 0) < 2))) return false; // Stargazing: twice a turn
 	if (card.power && card.power.corpseCost != null) { if ((p.corpses || 0) < card.power.corpseCost) return false; } // Thalena's Blood Tap
 	else if (availableMana(p) < heroPowerCost(state, pi, card)) return false;
 	const spec = heroPowerSpec(state, pi, card, choice);
@@ -3388,6 +3396,7 @@ export function useHeroPower(state, pi, cardUid, target, choice) {
 	p.heroPowersUsedGame = (p.heroPowersUsedGame || 0) + 1; // Frost Giant
 	for (const c of p.board) if (c.wakeOnHeroPower && c.dormantLeft > 0) { c.dormantLeft = 0; emit(state, { type: 'dormant', player: pi, uid: c.uid, turns: 0 }); } // Slumbering Sprite
 	card.usedThisTurn = true;
+	card._uses = (card._uses || 0) + 1;
 	emit(state, { type: 'heroPowerUsed', player: pi, card, mana: availableMana(p) });
 	stackAction(state, pi, { kind: 'heropower', card, effects: heroPowerEffects(state, pi, card, choice), target });
 	return true;
@@ -3573,6 +3582,7 @@ export function endTurn(state) {
 	// Temporary cards vanish from hand at the end of your turn (Hologram Operator / Frantic Forger / Tunnel Terror)
 	const temps = p.hand.filter(c => c.temporary);
 	if (temps.length) { p.hand = p.hand.filter(c => !c.temporary); for (const c of temps) emit(state, { type: 'discard', player: state.current, card: c }); }
+	if (p.togwaggleDice) for (const c of p.hand) { c.cost = Math.floor(state.rng() * 11); emit(state, { type: 'costChange', player: pi, uid: c.uid, cost: c.cost }); } // Togwaggle's Dice
 	// unplayed Quickdrawn cards slip back into the deck
 	const qd = p.hand.filter(c => c.quickdrawn);
 	if (qd.length) {
@@ -3774,6 +3784,7 @@ export function endTurn(state) {
 	for (const c of np.hand) if (c._ticksDown && (c.cost || 0) > 0) { c.cost--; emit(state, { type: 'costChange', player: state.current, uid: c.uid, cost: c.cost }); }
 	for (const c of np.hand) if (c.handGrow) { c.attack += c.handGrow.attack || 0; c.maxHealth += c.handGrow.health || 0; } // Loyal Henchman grows while held
 	for (const c of np.hand) if (c.schemeGrow) c._schemeLevel = (c._schemeLevel || 1) + 1; // Master Scheme upgrades each turn
+	for (const c of [...np.hand]) if (c.curseDamage) damageHero(state, state.current, c.curseDamage, state.current); // Cursed! burns its holder
 	// Mistah Vistah: the delayed spell replay comes due
 	if (np.vistahAt != null && state.turnNumber >= np.vistahAt) {
 		const ids = np.vistahSpells || [];
@@ -3856,6 +3867,20 @@ export function endTurn(state) {
 		np.hand[np.hand.indexOf(c)] = morph;
 		emit(state, { type: 'conjure', player: state.current, card: morph, color: null });
 	}
+	// Hagatha's Embrace: a random minion in hand gains +1/+1 each turn
+	if (np.hagathaEmbrace) {
+		const hpool = np.hand.filter(c => c.type === 'creature');
+		if (hpool.length) { const hc = hpool[Math.floor(state.rng() * hpool.length)]; hc.attack += 1; hc.maxHealth += 1; }
+	}
+	// Wondrous Wisdomball: occasionally gives helpful advice
+	if (np.wisdomball && state.rng() < 0.25) {
+		const advice = [
+			[{ type: 'conjure-random', count: 2 }],
+			[{ type: 'conjure-random', cardType: 'creature', count: 3 }],
+			[{ type: 'summon-random', cost: 4 }],
+		];
+		execEffects(state, state.current, advice[Math.floor(state.rng() * advice.length)], null, null);
+	}
 	// delayed turn-start effects (Big Boomba round two)
 	if (np.turnStartEffects && np.turnStartEffects.length) {
 		const q = np.turnStartEffects; np.turnStartEffects = [];
@@ -3917,7 +3942,7 @@ export function endTurn(state) {
 			else l.tapped = false;
 		}
 	}
-	for (const hpw of np.heroPowers) hpw.usedThisTurn = false;
+	for (const hpw of np.heroPowers) { hpw.usedThisTurn = false; hpw._uses = 0; }
 	for (const pw of np.planeswalkers) pw.usedThisTurn = false;
 	for (const c of np.board) {
 		if (c.dormantLeft > 0) {
@@ -3967,6 +3992,7 @@ export function endTurn(state) {
 		} else if (!cp.board.some(c => c.skipStartDraw && !isDead(c))) {
 			drawCards(state, state.current, 1);
 		}
+		if (cp.extraTurnDraw) drawCards(state, state.current, cp.extraTurnDraw); // Elixir of Vim
 	}
 }
 

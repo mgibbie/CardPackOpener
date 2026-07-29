@@ -40,6 +40,7 @@ export function sweepDeaths(state) {
 			}
 			p.diedThisTurn++;
 			p.friendlyDeaths = (p.friendlyDeaths || 0) + 1; // Aessina: lifetime friendly deaths (tokens included)
+			if (p.armorPerFriendlyDeath) { p.armor += p.armorPerFriendlyDeath; emit(state, { type: 'armor', player: c.controller, armor: p.armor }); } // Recycling
 			state.diedThisTurn = (state.diedThisTurn || 0) + 1;
 			state.minionsDiedGame = (state.minionsDiedGame || 0) + 1; // Reska, the Pit Boss
 			state.expanseEvents = (state.expanseEvents || 0) + 1; // The Ceaseless Expanse: a card was destroyed
