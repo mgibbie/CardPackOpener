@@ -1,0 +1,6384 @@
+{
+ "explorers": [
+  {
+   "id": "ULDA_Brann",
+   "name": "Brann Bronzebeard",
+   "type": "HERO",
+   "cost": null,
+   "text": "[x]Riding on a dinosaur and looking for a fight, Brann's ready to finish this.",
+   "cardClass": "HUNTER",
+   "mechanics": [],
+   "health": 15,
+   "inBattlecards": true
+  },
+  {
+   "id": "ULDA_Elise",
+   "name": "Elise Starseeker",
+   "type": "HERO",
+   "cost": null,
+   "text": "[x]Whether she needs magic or a trusty machete, Elise is ready to save Uldum.",
+   "cardClass": "DRUID",
+   "mechanics": [],
+   "health": 15,
+   "inBattlecards": true
+  },
+  {
+   "id": "ULDA_Finley",
+   "name": "Sir Finley",
+   "type": "HERO",
+   "cost": null,
+   "text": "[x]Sir Finley rides into battle, ready to dispense justice against his final foe.",
+   "cardClass": "PALADIN",
+   "mechanics": [],
+   "health": 15,
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_Reno",
+   "name": "Reno Jackson",
+   "type": "HERO",
+   "cost": null,
+   "text": "[x]With a bag full of treasures and a well-styled mustache, Reno is ready to take Tekahn down!",
+   "cardClass": "MAGE",
+   "mechanics": [],
+   "health": 15,
+   "inBattlecards": true
+  }
+ ],
+ "explorerPowers": [
+  {
+   "id": "ULDA_Brann_HP1",
+   "name": "Spread Shot",
+   "type": "HERO_POWER",
+   "cost": 2,
+   "text": "[x]Deal $1 damage, then deal $1 damage to the enemy hero.",
+   "cardClass": "HUNTER",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_Brann_HP2",
+   "name": "Well Equipped",
+   "type": "HERO_POWER",
+   "cost": 2,
+   "text": "Equip a random weapon and set its Durability to 1.",
+   "cardClass": "WARRIOR",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_Brann_HP3",
+   "name": "Dino Tracking",
+   "type": "HERO_POWER",
+   "cost": 2,
+   "text": "<b>Passive</b> At the start of your turn, <b>Discover</b> which card you draw.",
+   "cardClass": "HUNTER",
+   "mechanics": [
+    "TRIGGER_VISUAL"
+   ],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_Elise_HP1",
+   "name": "Elise's Might",
+   "type": "HERO_POWER",
+   "cost": 2,
+   "text": "<b>Choose One -</b> +$a2 Attack this turn; or Gain $d2 Armor.",
+   "cardClass": "DRUID",
+   "mechanics": [
+    "CHOOSE_ONE"
+   ],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_Elise_HP1a",
+   "name": "Defensive Posture",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "+$d2 Armor.",
+   "cardClass": "DRUID",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_Elise_HP1b",
+   "name": "Offensive Posture",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "+$a2 Attack.",
+   "cardClass": "DRUID",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_Elise_HP2",
+   "name": "Druidic Teaching",
+   "type": "HERO_POWER",
+   "cost": 2,
+   "text": "[x]Restore #2 Health to a character. If it's at full Health, draw a card.",
+   "cardClass": "DRUID",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_Elise_HP3",
+   "name": "Starseeker",
+   "type": "HERO_POWER",
+   "cost": 0,
+   "text": "[x]<b>Passive</b>. After you cast 2 spells in a turn, add a Moonfire to your hand.",
+   "cardClass": "DRUID",
+   "mechanics": [
+    "TRIGGER_VISUAL"
+   ],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_Finley_HP1",
+   "name": "New \"Recruits\"",
+   "type": "HERO_POWER",
+   "cost": 2,
+   "text": "Summon a 2/2 Amalgam with all minion types.",
+   "cardClass": "PALADIN",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_Finley_HP1t",
+   "name": "Amalgam Explorer",
+   "type": "MINION",
+   "cost": 1,
+   "text": "<i>This has all minion types.</i>",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "attack": 2,
+   "health": 2,
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_Finley_HP2",
+   "name": "Bubble Blower",
+   "type": "HERO_POWER",
+   "cost": 1,
+   "text": "<b>Discover</b> a Shaman or Paladin <b>Battlecry</b> minion. <b>Overload:</b> (1).",
+   "cardClass": "SHAMAN",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_Finley_HP3",
+   "name": "Power Up!",
+   "type": "HERO_POWER",
+   "cost": 2,
+   "text": "Give a minion <b>Divine Shield</b> & <b>Windfury</b>.",
+   "cardClass": "PALADIN",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_Reno_HP1",
+   "name": "Amateur Mage",
+   "type": "HERO_POWER",
+   "cost": 2,
+   "text": "Deal $1 damage. <b>Combo:</b> Deal $2 damage instead.",
+   "cardClass": "ROGUE",
+   "mechanics": [
+    "COMBO"
+   ],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_Reno_HP2",
+   "name": "\"Relicologist\"",
+   "type": "HERO_POWER",
+   "cost": 0,
+   "text": "Your next spell this turn has <b>Spell Damage +2</b>.",
+   "cardClass": "MAGE",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_Reno_HP3",
+   "name": "Arcane Craftiness",
+   "type": "HERO_POWER",
+   "cost": 2,
+   "text": "[x]Fire two missiles at random enemies that each deal $1 damage. If any minion dies, repeat this.",
+   "cardClass": "MAGE",
+   "mechanics": [],
+   "inBattlecards": false
+  }
+ ],
+ "sharedHeroPower": [
+  {
+   "id": "ULDA_039",
+   "name": "Uldum Treasure Cache",
+   "type": "HERO_POWER",
+   "cost": 2,
+   "text": "<b>Discover</b> a Treasure.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  }
+ ],
+ "treasuresActive": [
+  {
+   "id": "ULDA_001",
+   "name": "Amakir the Light",
+   "type": "MINION",
+   "cost": 3,
+   "text": "After this minion attacks, add 2 random healing spells to your hand. They cost (0).",
+   "cardClass": "NEUTRAL",
+   "mechanics": [
+    "TRIGGER_VISUAL"
+   ],
+   "attack": 3,
+   "health": 6,
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_002",
+   "name": "Flo Slatebrand",
+   "type": "MINION",
+   "cost": 2,
+   "text": "<b>Battlecry and Deathrattle:</b> Add a random Treasure to your hand.",
+   "cardClass": "WARRIOR",
+   "mechanics": [
+    "BATTLECRY",
+    "DEATHRATTLE"
+   ],
+   "attack": 4,
+   "health": 4,
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_003",
+   "name": "Addarah",
+   "type": "MINION",
+   "cost": 3,
+   "text": "<b>Battlecry:</b> Shuffle all enemy minions into your deck.",
+   "cardClass": "PRIEST",
+   "mechanics": [],
+   "attack": 3,
+   "health": 6,
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_004",
+   "name": "Canopic Jars",
+   "type": "SPELL",
+   "cost": 3,
+   "text": "[x]Give your minions \"<b>Deathrattle:</b> Summon a random <b>Legendary</b> minion.\"",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_006",
+   "name": "Book of the Dead",
+   "type": "SPELL",
+   "cost": 12,
+   "text": "Deal $7 damage to all enemies. Costs (1) less for each minion that's died this game.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_008",
+   "name": "Staff of Scales",
+   "type": "SPELL",
+   "cost": 5,
+   "text": "Summon three 1/1 Snakes with <b>Rush</b>, <b>Poisonous</b> and <b>Reborn</b>.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_008t",
+   "name": "Ancient Snake",
+   "type": "MINION",
+   "cost": 1,
+   "text": "<b>Rush</b> <b>Poisonous</b> <b>Reborn</b>",
+   "cardClass": "NEUTRAL",
+   "mechanics": [
+    "POISONOUS",
+    "REBORN",
+    "RUSH"
+   ],
+   "attack": 1,
+   "health": 1,
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_010",
+   "name": "Scales of Justice",
+   "type": "SPELL",
+   "cost": 4,
+   "text": "Transform all minions into 1/1 Murlocs. Fill your hand with random Murlocs that cost (0).",
+   "cardClass": "SHAMAN",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_012",
+   "name": "Stone Fox Statue",
+   "type": "SPELL",
+   "cost": 5,
+   "text": "Choose a minion and add 2 copies of it to your hand that cost (0).",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_013",
+   "name": "Zephrys's Lamp",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "[x]<b>Start of Game</b>: Draw this. Wish for the perfect card.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [
+    "START_OF_GAME_KEYWORD"
+   ],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_014d",
+   "name": "Disks of Legend Dummy",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "Dummy Hook Up ULDA 035e",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_015",
+   "name": "Jr. Scout",
+   "type": "MINION",
+   "cost": 3,
+   "text": "[x]<b>Charge</b>. <b>Windfury</b>. At the end of your turn, deal 4 damage to a random enemy minion.",
+   "cardClass": "SHAMAN",
+   "mechanics": [
+    "CHARGE",
+    "TRIGGER_VISUAL",
+    "WINDFURY"
+   ],
+   "attack": 4,
+   "health": 4,
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_016",
+   "name": "Jr. Tomb Diver",
+   "type": "MINION",
+   "cost": 4,
+   "text": "[x]<b>Battlecry:</b> If you played 6 Secrets this game, your Hero Power becomes '<b>Discover</b> a Treasure'.",
+   "cardClass": "MAGE",
+   "mechanics": [],
+   "attack": 5,
+   "health": 5,
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_017",
+   "name": "Jr. Navigator",
+   "type": "MINION",
+   "cost": 3,
+   "text": "[x]Whenever you target this minion with a spell, add 2 copies of the spell to your hand.",
+   "cardClass": "PRIEST",
+   "mechanics": [
+    "TRIGGER_VISUAL"
+   ],
+   "attack": 1,
+   "health": 5,
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_018",
+   "name": "Jr. Excavator",
+   "type": "MINION",
+   "cost": 4,
+   "text": "<b>Battlecry:</b> Draw 3 cards. Any minions you draw cost (2) less.",
+   "cardClass": "HUNTER",
+   "mechanics": [],
+   "attack": 2,
+   "health": 5,
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_019",
+   "name": "Pack Mule",
+   "type": "SPELL",
+   "cost": 1,
+   "text": "Reduce the Cost of your 10 starter cards by (1).",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_020",
+   "name": "Sr. Scout",
+   "type": "MINION",
+   "cost": 3,
+   "text": "[x]<b>Charge</b>. <b>Windfury</b>. At the end of your turn, deal 6 damage to a random enemy minion.",
+   "cardClass": "SHAMAN",
+   "mechanics": [
+    "CHARGE",
+    "TRIGGER_VISUAL",
+    "WINDFURY"
+   ],
+   "attack": 6,
+   "health": 6,
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_021",
+   "name": "Sr. Tomb Diver",
+   "type": "MINION",
+   "cost": 4,
+   "text": "[x]<b>Battlecry:</b> If you played 3 Secrets this game, your Hero Power becomes '<b>Discover</b> a Treasure'.",
+   "cardClass": "MAGE",
+   "mechanics": [],
+   "attack": 7,
+   "health": 7,
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_022",
+   "name": "Sr. Navigator",
+   "type": "MINION",
+   "cost": 3,
+   "text": "[x]Whenever you target this minion with a spell, add 2 copies of the spell to your hand.",
+   "cardClass": "PRIEST",
+   "mechanics": [
+    "TRIGGER_VISUAL"
+   ],
+   "attack": 2,
+   "health": 10,
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_023",
+   "name": "Sr. Excavator",
+   "type": "MINION",
+   "cost": 4,
+   "text": "<b>Battlecry:</b> Draw 3 cards. Any minions you draw cost (5) less.",
+   "cardClass": "HUNTER",
+   "mechanics": [],
+   "attack": 3,
+   "health": 6,
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_024",
+   "name": "Upgraded Pack Mule",
+   "type": "SPELL",
+   "cost": 2,
+   "text": "Reduce the Cost of all cards in your deck by (1).",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_026",
+   "name": "Servant of Siamat",
+   "type": "MINION",
+   "cost": 2,
+   "text": "",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "attack": 1,
+   "health": 4,
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_030",
+   "name": "Sand Trap",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "<b>Casts When Drawn</b> Remove the top 2 cards of your deck.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_031",
+   "name": "Sanctum Golem",
+   "type": "MINION",
+   "cost": 4,
+   "text": "Can't Attack.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [
+    "CANT_ATTACK"
+   ],
+   "attack": 6,
+   "health": 6,
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_032",
+   "name": "Enflamed Golem",
+   "type": "MINION",
+   "cost": 4,
+   "text": "<b>Deathrattle:</b> Deal 3 damage to all minions and summon a Sanctum Golem.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [
+    "DEATHRATTLE"
+   ],
+   "attack": 6,
+   "health": 6,
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_033",
+   "name": "Rakanishu",
+   "type": "MINION",
+   "cost": 2,
+   "text": "<b>Battlecry:</b> For the rest of the game, your <b>Lackeys</b> are 4/4.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [
+    "BATTLECRY"
+   ],
+   "attack": 4,
+   "health": 4,
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_034",
+   "name": "Runaway Gyrocopter",
+   "type": "MINION",
+   "cost": 5,
+   "text": "<b>Rush</b>. <b>Deathrattle:</b> Deal 5 damage to all enemy minions, then shuffle this into your deck.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [
+    "DEATHRATTLE",
+    "RUSH"
+   ],
+   "attack": 5,
+   "health": 1,
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_035",
+   "name": "Mystical Mirage",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "<b>Twinspell</b> Refresh your Mana Crystals and get a new hand this turn.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [
+    "TWINSPELL"
+   ],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_035d",
+   "name": "Mirage Dummy",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "Dummy Hook Up ULDA 035e",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_035ts",
+   "name": "Mystical Mirage",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "Refresh your Mana Crystals and get a new hand this turn.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_036",
+   "name": "LOCUUUUSTS!!!",
+   "type": "SPELL",
+   "cost": 3,
+   "text": "<b>Twinspell</b>. Choose an enemy. Fill your board with 2/2 Locusts that attack it.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [
+    "TWINSPELL"
+   ],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_036t",
+   "name": "Giant Locust",
+   "type": "MINION",
+   "cost": 2,
+   "text": "",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "attack": 2,
+   "health": 2,
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_036ts",
+   "name": "LOCUUUUSTS!!!",
+   "type": "SPELL",
+   "cost": 3,
+   "text": "Choose an enemy. Fill your board with 2/2 Locusts that attack it.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_038",
+   "name": "Explorer Retraining",
+   "type": "SPELL",
+   "cost": 1,
+   "text": "Choose a new starting Hero Power.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_040",
+   "name": "Sack of Lamps",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "<b>Start of Game:</b> Draw this. Fill your hand with Zephrys's Lamps.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [
+    "START_OF_GAME_KEYWORD"
+   ],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_041",
+   "name": "Staff of Ammunae",
+   "type": "SPELL",
+   "cost": 4,
+   "text": "<b>Twinspell</b>. Your minions have <b>Windfury</b> and <b>Immune</b> this turn.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [
+    "TWINSPELL"
+   ],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_041ts",
+   "name": "Staff of Ammunae",
+   "type": "SPELL",
+   "cost": 4,
+   "text": "Your minions have <b>Windfury</b> and <b>Immune</b> this turn.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_043",
+   "name": "Phaoris' Blade",
+   "type": "WEAPON",
+   "cost": 5,
+   "text": "<b>Windfury</b>. After your hero attacks and kills a minion, this gains +2/+1.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [
+    "TRIGGER_VISUAL"
+   ],
+   "attack": 1,
+   "durability": 0,
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_044",
+   "name": "Blade of the Burning Sun",
+   "type": "WEAPON",
+   "cost": 4,
+   "text": "<b>Battlecry:</b> Give all minions in your deck +2 Attack. <b>Deathrattle:</b> Return this to your hand.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "attack": 4,
+   "durability": 0,
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_045t",
+   "name": "Primordial Bulwark",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "[x]<b>Secret:</b> Block fatal damage and deal $20 damage to the enemy hero <i>(can trigger on your turn)</i>.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_110",
+   "name": "Crawling Claw",
+   "type": "MINION",
+   "cost": 3,
+   "text": "[x]<b>Rush</b>. <b>Reborn</b>. <b>Deathrattle:</b> Steal a card from your opponent's hand.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [
+    "DEATHRATTLE",
+    "REBORN",
+    "RUSH"
+   ],
+   "attack": 2,
+   "health": 4,
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_111",
+   "name": "Hearthstone",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "[x]<b>Start of Game:</b> Draw this. Escape to the Tavern and remove this from your Adventure deck.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [
+    "START_OF_GAME_KEYWORD"
+   ],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_112",
+   "name": "Bob's Bouncer",
+   "type": "SPELL",
+   "cost": 4,
+   "text": "[x]Choose a minion and then cast 'Brawl.' If that minion survives, fill your board with copies of it.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_113",
+   "name": "Crusty the Crustacean",
+   "type": "MINION",
+   "cost": 1,
+   "text": "<b>Battlecry:</b> Destroy a minion. Gain double its Attack and Health.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [
+    "BATTLECRY"
+   ],
+   "attack": 3,
+   "health": 4,
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_114",
+   "name": "Aegis of Death",
+   "type": "WEAPON",
+   "cost": 1,
+   "text": "[x]Your hero is <b>Immune</b>. Each turn, lose 1 Durabilty. <b>Deathrattle:</b> Deal 100 damage to your hero.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [
+    "DEATHRATTLE"
+   ],
+   "attack": 0,
+   "durability": 0,
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_115",
+   "name": "\"Gnomebliterator\"",
+   "type": "SPELL",
+   "cost": 2,
+   "text": "Deal $10 damage. Also deal $10 damage to the <b>Plague Lord</b> when you fight it.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_118",
+   "name": "Flex-plosion",
+   "type": "SPELL",
+   "cost": 7,
+   "text": "Blow up half your opponent's stuff.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [
+    "ImmuneToSpellpower"
+   ],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_201",
+   "name": "Reno's Crafty Lasso",
+   "type": "WEAPON",
+   "cost": 2,
+   "text": "After your hero attacks, steal a card from your opponent's hand.",
+   "cardClass": "ROGUE",
+   "mechanics": [
+    "TRIGGER_VISUAL"
+   ],
+   "attack": 3,
+   "durability": 0,
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_202",
+   "name": "Kodo Hide Whip",
+   "type": "WEAPON",
+   "cost": 2,
+   "text": "After your hero attacks a minion and it survives, put that minion in your hand.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [
+    "TRIGGER_VISUAL"
+   ],
+   "attack": 2,
+   "durability": 0,
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_203",
+   "name": "Reno's Lucky Hat",
+   "type": "SPELL",
+   "cost": 1,
+   "text": "Give a minion +2/+2 and <b>Spell Damage +2</b>.",
+   "cardClass": "ROGUE",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_204",
+   "name": "Reno's Magical Torch",
+   "type": "SPELL",
+   "cost": 2,
+   "text": "Deal $4 damage. <b>Combo:</b> Shuffle a copy of this card into your deck that deals 2 more damage.",
+   "cardClass": "ROGUE",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_205d",
+   "name": "Lucky Spade Dummy",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "Dummy Hook Up ULDA 035e",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_206",
+   "name": "Lei Flamepaw",
+   "type": "MINION",
+   "cost": 2,
+   "text": "After you cast a spell, cast it again <i>(on the same target)</i>.",
+   "cardClass": "MAGE",
+   "mechanics": [
+    "TRIGGER_VISUAL"
+   ],
+   "attack": 2,
+   "health": 6,
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_207",
+   "name": "The Gatling Wand",
+   "type": "SPELL",
+   "cost": 5,
+   "text": "[x]Deal $3 damage split randomly among all enemies <i>(improves for each spell you've cast this game)</i>.",
+   "cardClass": "MAGE",
+   "mechanics": [
+    "ImmuneToSpellpower"
+   ],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_301",
+   "name": "Map of Uldum",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "<b>Discover</b> a card and gain a Mana Crystal for each <b>Boss</b> you've defeated this run.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_302",
+   "name": "Academic Research",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "[x]<b>Start of Game:</b> Draw this. Gain 1 Mana Crystal. <i>(Upgrades each time a friendly minion dies)</i>.",
+   "cardClass": "DRUID",
+   "mechanics": [
+    "START_OF_GAME_KEYWORD"
+   ],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_303",
+   "name": "Starseeker's Tools",
+   "type": "SPELL",
+   "cost": 2,
+   "text": "<b>Discover</b> a minion and a spell. They cost (2) less.",
+   "cardClass": "DRUID",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_304",
+   "name": "Staff of Renewal",
+   "type": "SPELL",
+   "cost": 7,
+   "text": "Resurrect 7 friendly minions with the highest Cost. Give them <b>Taunt</b>.",
+   "cardClass": "PRIEST",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_305",
+   "name": "Elise's Machete",
+   "type": "WEAPON",
+   "cost": 3,
+   "text": "[x]After your hero attacks, summon two 2/2 Treants. Give them <b>Rush</b>.",
+   "cardClass": "DRUID",
+   "mechanics": [
+    "TRIGGER_VISUAL"
+   ],
+   "attack": 3,
+   "durability": 0,
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_306",
+   "name": "Stolen Titan Secrets",
+   "type": "SPELL",
+   "cost": 1,
+   "text": "Copy the <b>Boss's</b> Hero Power for the rest of this run.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_307",
+   "name": "Bauble of Beetles",
+   "type": "SPELL",
+   "cost": 4,
+   "text": "[x]<b>Twinspell</b>. Resurrect the first 4 friendly minions that died this game. Give them <b>Reborn</b>.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [
+    "TWINSPELL"
+   ],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_307ts",
+   "name": "Bauble of Beetles",
+   "type": "SPELL",
+   "cost": 4,
+   "text": "[x]Resurrect the first 4 friendly minions that died this game. Give them <b>Reborn</b>.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_401",
+   "name": "Ol' Faithful",
+   "type": "WEAPON",
+   "cost": 3,
+   "text": "After your hero attacks, deal 1 damage to all enemies.",
+   "cardClass": "WARRIOR",
+   "mechanics": [
+    "TRIGGER_VISUAL"
+   ],
+   "attack": 4,
+   "durability": 0,
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_402",
+   "name": "Brann's Saddle",
+   "type": "SPELL",
+   "cost": 2,
+   "text": "Give a friendly Beast +3/+3 and \"<b>Deathrattle:</b> Give Brann's Saddle to another friendly Beast.\"",
+   "cardClass": "HUNTER",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_402d",
+   "name": "Brann's Saddle Dummy Effect",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_403",
+   "name": "Ancient Reflections",
+   "type": "SPELL",
+   "cost": 5,
+   "text": "Choose a minion. Fill your board with 1/1 copies of it.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_404",
+   "name": "Titan-Forged Grapnel",
+   "type": "SPELL",
+   "cost": 3,
+   "text": "Destroy 2 random enemy minions. Gain Armor equal to their combined attack.",
+   "cardClass": "WARRIOR",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_405",
+   "name": "Brann's Epic Egg",
+   "type": "MINION",
+   "cost": 6,
+   "text": "After this takes damage, summon King Krush.",
+   "cardClass": "HUNTER",
+   "mechanics": [
+    "TRIGGER_VISUAL"
+   ],
+   "attack": 0,
+   "health": 5,
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_406",
+   "name": "Murky's Battle Horn",
+   "type": "SPELL",
+   "cost": 7,
+   "text": "Summon 7 Murlocs and give them <b>Rush</b>. At the start of your next turn, do it again.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_406d",
+   "name": "Murky's Dummy Horn",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_407",
+   "name": "Tracking Device",
+   "type": "SPELL",
+   "cost": 1,
+   "text": "[x]<b>Start of Game</b>: Draw this. Draw a 2, 3, 4, and 5-Cost card from your deck.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [
+    "START_OF_GAME_KEYWORD"
+   ],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_501",
+   "name": "Maxwell, Mighty Steed",
+   "type": "MINION",
+   "cost": 3,
+   "text": "<b>Rush</b>. <b>Reborn</b>. Has +2 Attack for each other minion on the battlefield.",
+   "cardClass": "PALADIN",
+   "mechanics": [
+    "REBORN",
+    "RUSH"
+   ],
+   "attack": 3,
+   "health": 5,
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_502",
+   "name": "Finley's Pith Helmet",
+   "type": "SPELL",
+   "cost": 2,
+   "text": "Give all friendly minions +2 Health. Shuffle this card into your deck.",
+   "cardClass": "PALADIN",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_503",
+   "name": "Advanced Targeting Monocle",
+   "type": "SPELL",
+   "cost": 5,
+   "text": "Cast a copy of all spells in your deck <i>(targets chosen randomly)</i>.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_504",
+   "name": "Tea Time",
+   "type": "SPELL",
+   "cost": 2,
+   "text": "Gain 4 Mana Crystals and draw 2 extra cards <b>for the next boss only</b>.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_505",
+   "name": "Truesilver Lance",
+   "type": "WEAPON",
+   "cost": 3,
+   "text": "<b>Lifesteal</b> After you <b>Overload</b>, gain +2 Durability.",
+   "cardClass": "SHAMAN",
+   "mechanics": [
+    "LIFESTEAL",
+    "TRIGGER_VISUAL"
+   ],
+   "attack": 5,
+   "durability": 0,
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_507",
+   "name": "Karl the Lost",
+   "type": "MINION",
+   "cost": 5,
+   "text": "[x]<b>Battlecry:</b> Summon six 1/1 Silver Hand Recruits and give all friendly minions <b>Taunt</b> and <b>Divine Shield</b>.",
+   "cardClass": "PALADIN",
+   "mechanics": [
+    "BATTLECRY"
+   ],
+   "attack": 6,
+   "health": 6,
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_601",
+   "name": "Hiring Replacements",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "[x]Choose a friendly minion. <b>Discover</b> a minion to replace it in your Adventure Deck.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_602",
+   "name": "Study Break",
+   "type": "SPELL",
+   "cost": 1,
+   "text": "<b>Discover</b> a spell. Add it to your Adventure deck. It always starts in your hand.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_603",
+   "name": "Friendly Smith",
+   "type": "SPELL",
+   "cost": 1,
+   "text": "[x]<b>Discover</b> a weapon from any class. Add it to your Adventure Deck with +2/+2.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_604",
+   "name": "Party of Four",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "<b>Discover</b> a minion. Replace enemy minions with minions of that type.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_605",
+   "name": "Fast Food",
+   "type": "SPELL",
+   "cost": 1,
+   "text": "Add all enemy minions to your Adventure Deck. They cost (1) less.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_606",
+   "name": "Work, Work!",
+   "type": "SPELL",
+   "cost": 2,
+   "text": "[x]Remove a friendly minion from your Adventure Deck. Give adjacent minions +2/+2.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_607",
+   "name": "House Special",
+   "type": "SPELL",
+   "cost": 4,
+   "text": "Replace your Adventure Deck with one of Bob's Bombastic Decks.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_608",
+   "name": "Do the Math",
+   "type": "SPELL",
+   "cost": 2,
+   "text": "Remove all cards from your Adventure deck that cost (2) or less.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  }
+ ],
+ "treasuresPassive": [
+  {
+   "id": "ULDA_005",
+   "name": "Mummy Magic",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "After you play your first <b>Deathrattle</b> minion each turn, give it <b>Reborn</b>.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [
+    "DUNGEON_PASSIVE_BUFF"
+   ],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_007",
+   "name": "Crook and Flail",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "<b>Passive</b> After you cast a spell, put a minion from your deck into the battlefield.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [
+    "DUNGEON_PASSIVE_BUFF"
+   ],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_009",
+   "name": "Unlocked Potential",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "<b>Passive</b> At the start of the game, set the Attack of each of your minions equal to its Health.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [
+    "DUNGEON_PASSIVE_BUFF"
+   ],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_011",
+   "name": "VIP Membership",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "<b>Passive</b> Taverns you visit are upgraded!",
+   "cardClass": "NEUTRAL",
+   "mechanics": [
+    "DUNGEON_PASSIVE_BUFF"
+   ],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_014",
+   "name": "Disks of Legend",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "<b>Passive</b> After you play a Legendary minion, summon a copy of it.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [
+    "DUNGEON_PASSIVE_BUFF"
+   ],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_042",
+   "name": "Darklight Torch",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "<b>Passive</b> After you play an even-Cost card, refresh your hero power. It costs (0) this turn.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [
+    "DUNGEON_PASSIVE_BUFF"
+   ],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_045",
+   "name": "Primordial Bulwark",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "<b>Passive</b> Block lethal damage and deal $20 damage to the enemy hero <i>(once per game)</i>.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [
+    "DUNGEON_PASSIVE_BUFF"
+   ],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_046",
+   "name": "Band of Bees",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "<b>Passive</b> Your minions that cost (2) or less have <b>Poisonous</b>.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [
+    "DUNGEON_PASSIVE_BUFF"
+   ],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_101",
+   "name": "Band of Scarabs",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "<b>Passive</b> Enemy minions have -1 Attack.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [
+    "DUNGEON_PASSIVE_BUFF"
+   ],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_102",
+   "name": "Disks of Swiftness",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "<b>Passive</b> Your opponent must pass their first 2 turns.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [
+    "DUNGEON_PASSIVE_BUFF"
+   ],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_103",
+   "name": "Alchemist's Stone",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "<b>Passive</b> After you play an odd-Cost card, reduce the Cost of cards in your hand by (1).",
+   "cardClass": "NEUTRAL",
+   "mechanics": [
+    "DUNGEON_PASSIVE_BUFF"
+   ],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_116",
+   "name": "Ever-Changing Elixir",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "<b>Passive</b> At the end of your turn, transform a friendly minion into one that costs (1) more.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [
+    "DUNGEON_PASSIVE_BUFF"
+   ],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_117",
+   "name": "Scroll of Nonsense",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "<b>Passive</b> <b>Spell Damage +10</b>. At the end of your turn, this loses 1 <b>Spell Damage</b>.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [
+    "DUNGEON_PASSIVE_BUFF"
+   ],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_205",
+   "name": "Lucky Spade",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "<b>Passive</b> After you <b>Discover</b> a card, add 2 copies of it to your hand. They all cost (2) less.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [
+    "DUNGEON_PASSIVE_BUFF"
+   ],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_208",
+   "name": "Titanic Ring",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "<b>Passive</b> Your minions have +1 Health and <b>Taunt</b>.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [
+    "DUNGEON_PASSIVE_BUFF"
+   ],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_508",
+   "name": "Robes of Diminishing",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "<b>Passive</b> After you draw a spell, reduce its Cost to (0) this turn.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [
+    "DUNGEON_PASSIVE_BUFF"
+   ],
+   "inBattlecards": false
+  }
+ ],
+ "anomalies": [
+  {
+   "id": "ULDA_702",
+   "name": "Anomaly - Loot-Filled",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "After a minion is played, it gives the opposing player a Coin.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_702d",
+   "name": "Loot-Filled Dummy",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "Dummy Hook Up ULDA 702e",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_705",
+   "name": "Anomaly - Booms Away",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "Each time a minion dies, shuffle a bomb into its owner's deck. When drawn, it explodes for 5 damage.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_705d",
+   "name": "Boommaster Dummy",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "Dummy Hook Up ULDA 705e",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_706",
+   "name": "Anomaly - No-Face",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "Heroes are <b>Immune</b> while they control minions.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_707",
+   "name": "Anomaly - Eternal Army",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "After a minion dies, shuffle a copy of it into its owner's deck.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_707d",
+   "name": "Eternal Army Dummy",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "Dummy Hook Up ULDA 707e",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_708",
+   "name": "Anomaly - Dizzying Blows",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "After a hero is damaged, randomize the Cost of all cards in that player's hand.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_708d",
+   "name": "Dizzying Blows Dummy",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "Dummy Hook Up ULDA 708e",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_709",
+   "name": "Anomaly - Angelic Presence",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "Minions' Attack is <b>ALWAYS</b> equal to their Health.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_710",
+   "name": "Anomaly - CHARGE!",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "All minions have <b>Charge</b>.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_711",
+   "name": "Anomaly - Relentless",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "All minions have <b>Windfury</b>.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_712",
+   "name": "Anomaly - Holograms",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "After a minion is played, summon a 1/1 copy of it for the opposing side.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_712d",
+   "name": "Holograms Dummy",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "Dummy Hook Up ULDA 712e",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_713",
+   "name": "Anomaly - Whirling Winds",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "At the start of every turn, deal 1 damage to all minions.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_713d",
+   "name": "Whirling Winds Dummy",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "Dummy Hook Up ULDA 713e",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_714",
+   "name": "Anomaly - In the Face",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "Heroes take double damage.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_715",
+   "name": "Anomaly - Bountiful",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "Both players start with 9 cards in their hand.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_719",
+   "name": "Anomaly - Marin's Return",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "Both players start with a Treasure Chest. [x]<i>(Break it for awesome loot!)</i>",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_720",
+   "name": "Anomaly - Battle Scars",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "Start with 100 Health. You don't heal between fights.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_721",
+   "name": "Anomaly - Aleatory",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "At the start of the game, shuffle both decks together and give half to each player.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_721d",
+   "name": "Aleatory Dummy",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "Dummy Hook Up ULDA 721e",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_724",
+   "name": "Anomaly - Spellshields",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "After a player casts a spell, they gain 2 Armor.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_724d",
+   "name": "Spellshields Dummy",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "Dummy Hook Up ULDA 035e",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_729",
+   "name": "Anomaly - Multiclassing",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "Loot can be from any class.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  }
+ ],
+ "plagues": [
+  {
+   "id": "ULDA_801",
+   "name": "Twist - Plague of Murlocs",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "Murlocs have invaded each deck!",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_801d",
+   "name": "Twist - Plague of Murlocs Dummy",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "Holds and effect for ULDA 801e",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_801t",
+   "name": "Surprise! Murlocs!",
+   "type": "SPELL",
+   "cost": 1,
+   "text": "<b>Casts When Drawn</b> Summon a random amount of Murlocs.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_802",
+   "name": "Twist - Plague of Madness",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "[x]At the end of each player's turn, their right-most minion attacks a random enemy.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_803",
+   "name": "Twist - Plague of Wrath",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "After a minion takes damage, it gains +1 Attack.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_803d",
+   "name": "Retaliation Dummy",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "Dummy Hook Up ULDA 035e",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_804",
+   "name": "Twist - Plague of Death",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "Both players start the game with an 'Eternal Tomb.'",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_804t",
+   "name": "Eternal Tomb",
+   "type": "MINION",
+   "cost": 0,
+   "text": "When 3 friendly minions die, summon a random minion.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [
+    "TRIGGER_VISUAL",
+    "UNTOUCHABLE"
+   ],
+   "attack": 0,
+   "health": 0,
+   "inBattlecards": false
+  }
+ ],
+ "randomDecks": [
+  {
+   "id": "ULDA_900",
+   "name": "Elise Random Deck",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "Start the run with a deck of random cards.",
+   "cardClass": "DRUID",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_901",
+   "name": "Reno Random Deck",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "Start the run with a deck of random cards.",
+   "cardClass": "MAGE",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_902",
+   "name": "Finley Random Deck",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "Start the run with a deck of random cards.",
+   "cardClass": "PALADIN",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_903",
+   "name": "Brann Random Deck",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "Start the run with a deck of random cards.",
+   "cardClass": "HUNTER",
+   "mechanics": [],
+   "inBattlecards": false
+  }
+ ],
+ "tavernSpells": [
+  {
+   "id": "ULDA_911",
+   "name": "Kindle",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "Look at four spells from your Adventure Deck. Choose one to remove.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_912",
+   "name": "Recruit",
+   "type": "SPELL",
+   "cost": 1,
+   "text": "Choose an enemy minion. Add it to your Adventure Deck.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": true
+  }
+ ],
+ "draftBuckets": [
+  {
+   "id": "ULDA_Brann_01",
+   "name": "Wee Minions",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "",
+   "cardClass": "HUNTER",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_Brann_02",
+   "name": "Swarming Beasts",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "",
+   "cardClass": "HUNTER",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_Brann_03",
+   "name": "Big Beasties",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "",
+   "cardClass": "HUNTER",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_Brann_04",
+   "name": "Legendary",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "",
+   "cardClass": "HUNTER",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_Brann_05",
+   "name": "Dragons",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "",
+   "cardClass": "HUNTER",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_Brann_06",
+   "name": "Protectors",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "",
+   "cardClass": "HUNTER",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_Brann_07",
+   "name": "Rust Buckets",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "",
+   "cardClass": "HUNTER",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_Brann_08",
+   "name": "Deathrattle",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "",
+   "cardClass": "HUNTER",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_Brann_09",
+   "name": "Combat Ready",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "",
+   "cardClass": "HUNTER",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_Brann_10",
+   "name": "Pain Gains",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "",
+   "cardClass": "HUNTER",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_Brann_11",
+   "name": "Keep Swingin'",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "",
+   "cardClass": "HUNTER",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_Brann_12",
+   "name": "Armor Up!",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "",
+   "cardClass": "HUNTER",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_Brann_13",
+   "name": "Direct Hit",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "",
+   "cardClass": "HUNTER",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_Brann_14",
+   "name": "Take 'Em Down",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "",
+   "cardClass": "HUNTER",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_Brann_15",
+   "name": "Callin' Fer Help",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "",
+   "cardClass": "HUNTER",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_Brann_16",
+   "name": "Pump It Up!",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "",
+   "cardClass": "HUNTER",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_Brann_17",
+   "name": "Draw",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "",
+   "cardClass": "HUNTER",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_Brann_18",
+   "name": "Bombs Away!",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "",
+   "cardClass": "HUNTER",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_Brann_19",
+   "name": "Tricky Traps",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "",
+   "cardClass": "HUNTER",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_Brann_20",
+   "name": "Discover",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "",
+   "cardClass": "HUNTER",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_Brann_21",
+   "name": "Dino Tamin'",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "",
+   "cardClass": "HUNTER",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_Brann_22",
+   "name": "Dire Rush",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "",
+   "cardClass": "HUNTER",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_Elise_01",
+   "name": "Old God",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "",
+   "cardClass": "DRUID",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_Elise_02",
+   "name": "Big Minions",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "",
+   "cardClass": "DRUID",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_Elise_03",
+   "name": "Resurrection",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "",
+   "cardClass": "DRUID",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_Elise_04",
+   "name": "Embrace the Beyond",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "",
+   "cardClass": "DRUID",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_Elise_05",
+   "name": "Dragons!",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "",
+   "cardClass": "DRUID",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_Elise_06",
+   "name": "Copy Minions",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "",
+   "cardClass": "DRUID",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_Elise_07",
+   "name": "Miniature Army",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "",
+   "cardClass": "DRUID",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_Elise_08",
+   "name": "Let's Taunt",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "",
+   "cardClass": "DRUID",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_Elise_09",
+   "name": "Legends",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "",
+   "cardClass": "DRUID",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_Elise_10",
+   "name": "Silence Yourself",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "",
+   "cardClass": "DRUID",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_Elise_11",
+   "name": "Buff",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "",
+   "cardClass": "DRUID",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_Elise_12",
+   "name": "Inspiring Minions",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "",
+   "cardClass": "DRUID",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_Elise_13",
+   "name": "Spell Generation",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "",
+   "cardClass": "DRUID",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_Elise_14",
+   "name": "Card Draw",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "",
+   "cardClass": "DRUID",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_Elise_15",
+   "name": "Mana",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "",
+   "cardClass": "DRUID",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_Elise_16",
+   "name": "Discovery",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "",
+   "cardClass": "DRUID",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_Elise_17",
+   "name": "Choose the Outcome",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "",
+   "cardClass": "DRUID",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_Elise_18",
+   "name": "Big Spell Damage",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "",
+   "cardClass": "DRUID",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_Elise_19",
+   "name": "Auchenai's Touch",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "",
+   "cardClass": "DRUID",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_Elise_20",
+   "name": "Life Bringing",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "",
+   "cardClass": "DRUID",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_Elise_22",
+   "name": "Removal",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "",
+   "cardClass": "DRUID",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_Elise_23",
+   "name": "Plaguebringer",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "",
+   "cardClass": "DRUID",
+   "mechanics": [],
+   "inBattlecards": true
+  },
+  {
+   "id": "ULDA_Finley_01",
+   "name": "Feeble Squires",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "",
+   "cardClass": "PALADIN",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_Finley_02",
+   "name": "Family Tree",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "",
+   "cardClass": "PALADIN",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_Finley_03",
+   "name": "Small Army",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "",
+   "cardClass": "PALADIN",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_Finley_04",
+   "name": "Dead or Alive",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "",
+   "cardClass": "PALADIN",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_Finley_05",
+   "name": "Mighty Champions",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "",
+   "cardClass": "PALADIN",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_Finley_06",
+   "name": "Legends",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "",
+   "cardClass": "PALADIN",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_Finley_07",
+   "name": "Protectors",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "",
+   "cardClass": "PALADIN",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_Finley_08",
+   "name": "Harness the Elements",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "",
+   "cardClass": "PALADIN",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_Finley_09",
+   "name": "March of the Mechs",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "",
+   "cardClass": "PALADIN",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_Finley_10",
+   "name": "Divine Shield",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "",
+   "cardClass": "PALADIN",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_Finley_11",
+   "name": "Healing",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "",
+   "cardClass": "PALADIN",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_Finley_12",
+   "name": "Sharing Strength",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "",
+   "cardClass": "PALADIN",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_Finley_13",
+   "name": "Superior Subjugation",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "",
+   "cardClass": "PALADIN",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_Finley_14",
+   "name": "Noble Weaponry",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "",
+   "cardClass": "PALADIN",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_Finley_15",
+   "name": "Strike at Thee",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "",
+   "cardClass": "PALADIN",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_Finley_16",
+   "name": "Big Bad Spells",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "",
+   "cardClass": "PALADIN",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_Finley_17",
+   "name": "Overloaded",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "",
+   "cardClass": "PALADIN",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_Finley_18",
+   "name": "Mutual Destruction",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "",
+   "cardClass": "PALADIN",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_Finley_19",
+   "name": "Draw",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "",
+   "cardClass": "PALADIN",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_Finley_20",
+   "name": "Discovery",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "",
+   "cardClass": "PALADIN",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_Finley_21",
+   "name": "Battlecry",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "",
+   "cardClass": "PALADIN",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_Finley_22",
+   "name": "Transformations",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "",
+   "cardClass": "PALADIN",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_Reno_01",
+   "name": "Mighty Minions",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "",
+   "cardClass": "MAGE",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_Reno_02",
+   "name": "Deathrattle",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "",
+   "cardClass": "MAGE",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_Reno_03",
+   "name": "Battlecries",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "",
+   "cardClass": "MAGE",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_Reno_04",
+   "name": "Elements",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "",
+   "cardClass": "MAGE",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_Reno_05",
+   "name": "Mechs",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "",
+   "cardClass": "MAGE",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_Reno_06",
+   "name": "Pirates",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "",
+   "cardClass": "MAGE",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_Reno_07",
+   "name": "Heroically Empowered",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "",
+   "cardClass": "MAGE",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_Reno_08",
+   "name": "Summoning Frenzy",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "",
+   "cardClass": "MAGE",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_Reno_09",
+   "name": "Old God",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "",
+   "cardClass": "MAGE",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_Reno_10",
+   "name": "Big Spells",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "",
+   "cardClass": "MAGE",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_Reno_11",
+   "name": "Kingsbane",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "",
+   "cardClass": "MAGE",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_Reno_12",
+   "name": "Multiple Enemies",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "",
+   "cardClass": "MAGE",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_Reno_13",
+   "name": "Spell Damage",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "",
+   "cardClass": "MAGE",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_Reno_14",
+   "name": "Slinging Spells",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "",
+   "cardClass": "MAGE",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_Reno_15",
+   "name": "Spell Lovers",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "",
+   "cardClass": "MAGE",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_Reno_16",
+   "name": "Shuffle and Draw",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "",
+   "cardClass": "MAGE",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_Reno_17",
+   "name": "Spell Searching",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "",
+   "cardClass": "MAGE",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_Reno_18",
+   "name": "Discover",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "",
+   "cardClass": "MAGE",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_Reno_19",
+   "name": "Honor Among Thieves",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "",
+   "cardClass": "MAGE",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_Reno_20",
+   "name": "Secrets",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "",
+   "cardClass": "MAGE",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_Reno_21",
+   "name": "Safety Measures",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "",
+   "cardClass": "MAGE",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_Reno_22",
+   "name": "Combo",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "",
+   "cardClass": "MAGE",
+   "mechanics": [],
+   "inBattlecards": false
+  }
+ ],
+ "bossHeroes": [
+  {
+   "id": "ULDA_BOSS_01h",
+   "name": "Waste Wanderer Cardish",
+   "type": "HERO",
+   "cost": null,
+   "text": "<i>Even if he bombs, he's having a blast freelancing for E.V.I.L.</i>",
+   "cardClass": "HUNTER",
+   "mechanics": [],
+   "health": 10,
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_BOSS_02h",
+   "name": "Dark Ritualist Zafarr",
+   "type": "HERO",
+   "cost": null,
+   "text": "<i>Likes his rituals like he likes his coffee: Dark. [x]And twice-brewed.</i>",
+   "cardClass": "PRIEST",
+   "mechanics": [],
+   "health": 10,
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_BOSS_03h",
+   "name": "Vera Ridley",
+   "type": "HERO",
+   "cost": null,
+   "text": "<i>Her lackeys aren't lacking when it comes to workplace benefits.</i>",
+   "cardClass": "WARRIOR",
+   "mechanics": [],
+   "health": 10,
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_BOSS_04h",
+   "name": "Nash the Greatworm",
+   "type": "HERO",
+   "cost": null,
+   "text": "<i>Rumor has it this is merely the other end of Gnosh the Greatworm.</i>",
+   "cardClass": "HUNTER",
+   "mechanics": [],
+   "health": 10,
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_BOSS_05h",
+   "name": "Glack the Scorpid",
+   "type": "HERO",
+   "cost": null,
+   "text": "<i>Elise's journal entry for Glack simply says, \"Don't get stung\".</i>",
+   "cardClass": "HUNTER",
+   "mechanics": [],
+   "health": 10,
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_BOSS_06h",
+   "name": "Mister Chu",
+   "type": "HERO",
+   "cost": null,
+   "text": "<i>Chu bravely volunteered to \"guard\" this [x]treasure-filled tomb.</i>",
+   "cardClass": "WARRIOR",
+   "mechanics": [],
+   "health": 10,
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_BOSS_07h",
+   "name": "Squeamlish",
+   "type": "HERO",
+   "cost": null,
+   "text": "<i>She's mastered more terrifying forms. Like squirrel. And mushroom.</i>",
+   "cardClass": "DRUID",
+   "mechanics": [],
+   "health": 10,
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_BOSS_08h",
+   "name": "Sinkhole",
+   "type": "HERO",
+   "cost": null,
+   "text": "<i>The best way to avoid a sinkhole is to - oh, too late.</i>",
+   "cardClass": "HUNTER",
+   "mechanics": [],
+   "health": 10,
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_BOSS_09h",
+   "name": "Demolisher 3V-11",
+   "type": "HERO",
+   "cost": null,
+   "text": "<i>Rafaam got a great deal on one of these at a Horde surplus auction.</i>",
+   "cardClass": "WARRIOR",
+   "mechanics": [],
+   "health": 10,
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_BOSS_10h",
+   "name": "Terraviss",
+   "type": "HERO",
+   "cost": null,
+   "text": "<i>Slithering into the tombs to snake a few spells and weapons.</i>",
+   "cardClass": "ROGUE",
+   "mechanics": [],
+   "health": 10,
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_BOSS_11h",
+   "name": "R.O.B.O.L.D.",
+   "type": "HERO",
+   "cost": null,
+   "text": "<i>They rebuilt the Kobold Barbarian. Faster. Stronger. Flamier.</i>",
+   "cardClass": "MAGE",
+   "mechanics": [],
+   "health": 10,
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_BOSS_12h",
+   "name": "Pyramad",
+   "type": "HERO",
+   "cost": null,
+   "text": "<i>Earth. Air. Fire. Water... Pyramid.</i>",
+   "cardClass": "SHAMAN",
+   "mechanics": [],
+   "health": 10,
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_BOSS_13h",
+   "name": "Snakeflinger Scalesnout",
+   "type": "HERO",
+   "cost": null,
+   "text": "<i>Snakes with pointed snouts are venomous. And the best ammo.</i>",
+   "cardClass": "HUNTER",
+   "mechanics": [],
+   "health": 10,
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_BOSS_14h",
+   "name": "Sword Dancer Sirinell",
+   "type": "HERO",
+   "cost": null,
+   "text": "<i>It is said that sethrak sword dancers are the bane of kings.</i>",
+   "cardClass": "ROGUE",
+   "mechanics": [],
+   "health": 10,
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_BOSS_15h",
+   "name": "Lt. Herring",
+   "type": "HERO",
+   "cost": null,
+   "text": "<i>Leads the dreaded E.V.I.L. Puffertroopers, AKA \"The Flying Fish.\"</i>",
+   "cardClass": "SHAMAN",
+   "mechanics": [],
+   "health": 10,
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_BOSS_16h",
+   "name": "Battrund",
+   "type": "HERO",
+   "cost": null,
+   "text": "<i>Not all of Battrund's minions are mummies. Some got a bad wrap.</i>",
+   "cardClass": "WARRIOR",
+   "mechanics": [],
+   "health": 10,
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_BOSS_17h",
+   "name": "Ichabod the Cursed",
+   "type": "HERO",
+   "cost": null,
+   "text": "<i>These gnomes are cursed! And you, too, will curse them.</i>",
+   "cardClass": "ROGUE",
+   "mechanics": [],
+   "health": 10,
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_BOSS_18h",
+   "name": "Twizzleflux",
+   "type": "HERO",
+   "cost": null,
+   "text": "<i>Twizzleflux is spreading the very curse that maligned him.</i>",
+   "cardClass": "WARLOCK",
+   "mechanics": [],
+   "health": 10,
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_BOSS_19h",
+   "name": "Sothis",
+   "type": "HERO",
+   "cost": null,
+   "text": "<i>This terrible titan watcher has his own personal army.</i>",
+   "cardClass": "WARRIOR",
+   "mechanics": [],
+   "health": 10,
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_BOSS_20h",
+   "name": "Kham",
+   "type": "HERO",
+   "cost": null,
+   "text": "<i>Now you see him, now you don't, now you're impaled.</i>",
+   "cardClass": "ROGUE",
+   "mechanics": [],
+   "health": 10,
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_BOSS_21h",
+   "name": "Illidara Sunsdawn",
+   "type": "HERO",
+   "cost": null,
+   "text": "<i>The Reliquary is here, and their discoveries are bad news for you.</i>",
+   "cardClass": "PALADIN",
+   "mechanics": [],
+   "health": 10,
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_BOSS_22h",
+   "name": "Colossus of the Sun",
+   "type": "HERO",
+   "cost": null,
+   "text": "<i>This titan colossus abhors all weakness.</i>",
+   "cardClass": "WARRIOR",
+   "mechanics": [],
+   "health": 10,
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_BOSS_23h",
+   "name": "Skarik",
+   "type": "HERO",
+   "cost": null,
+   "text": "<i>This king cobra is also the King of Beasts.</i>",
+   "cardClass": "DRUID",
+   "mechanics": [],
+   "health": 10,
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_BOSS_24h",
+   "name": "Suspicious Palm Tree",
+   "type": "HERO",
+   "cost": null,
+   "text": "<i>This oasis would've been welcome if Hagatha hadn't gotten here first.</i>",
+   "cardClass": "DRUID",
+   "mechanics": [],
+   "health": 10,
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_BOSS_25h",
+   "name": "Beetle Herder Zenda",
+   "type": "HERO",
+   "cost": null,
+   "text": "<i>Beetle stampedes are terrifying. It's the rumble[x] of those teeny-tiny feet.</i>",
+   "cardClass": "DRUID",
+   "mechanics": [],
+   "health": 10,
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_BOSS_26h",
+   "name": "Thudd Lockspring",
+   "type": "HERO",
+   "cost": null,
+   "text": "<i>Is it really a magical \"wand\" when it's got a trigger and full auto?</i>",
+   "cardClass": "MAGE",
+   "mechanics": [],
+   "health": 10,
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_BOSS_27h",
+   "name": "Ol' Toomba",
+   "type": "HERO",
+   "cost": null,
+   "text": "<i>Ol' Toomba the treasure hunter isn't above copying homework.</i>",
+   "cardClass": "ROGUE",
+   "mechanics": [],
+   "health": 10,
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_BOSS_28h",
+   "name": "Sazin",
+   "type": "HERO",
+   "cost": null,
+   "text": "<i>With sand and fury the hot winds blow. Where did your minions go?</i>",
+   "cardClass": "SHAMAN",
+   "mechanics": [],
+   "health": 10,
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_BOSS_29h",
+   "name": "Ozara",
+   "type": "HERO",
+   "cost": null,
+   "text": "<i>Ozara of the sands believes that the Dust Devil is in the details.</i>",
+   "cardClass": "SHAMAN",
+   "mechanics": [],
+   "health": 10,
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_BOSS_30h",
+   "name": "Ermavar",
+   "type": "HERO",
+   "cost": null,
+   "text": "<i>The first of her name, Ermavar is revered as the waker of flame.</i>",
+   "cardClass": "MAGE",
+   "mechanics": [],
+   "health": 10,
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_BOSS_31h",
+   "name": "Pillager Drasar",
+   "type": "HERO",
+   "cost": null,
+   "text": "<i>Drasar generously shares stolen treasures with her minions.</i>",
+   "cardClass": "SHAMAN",
+   "mechanics": [],
+   "health": 10,
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_BOSS_32h",
+   "name": "Edra",
+   "type": "HERO",
+   "cost": null,
+   "text": "<i>The ancient lifewardens guard this sacred space with their life(steal).</i>",
+   "cardClass": "DRUID",
+   "mechanics": [],
+   "health": 10,
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_BOSS_33h",
+   "name": "Runaway Ruby",
+   "type": "HERO",
+   "cost": null,
+   "text": "[x]<i>Gnomes put tank treads on a submarine for desert use. Because gnomes.</i>",
+   "cardClass": "WARRIOR",
+   "mechanics": [],
+   "health": 10,
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_BOSS_34h",
+   "name": "Dovo Fastfuse",
+   "type": "HERO",
+   "cost": null,
+   "text": "<i>Dovo's excavation methods put the \"boom\" in \"tomb\".</i>",
+   "cardClass": "WARRIOR",
+   "mechanics": [],
+   "health": 10,
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_BOSS_35h",
+   "name": "Earthrager Ptah",
+   "type": "HERO",
+   "cost": null,
+   "text": "<i>Avoid meeting Ptah's gaze. Or standing next to anyone who does.</i>",
+   "cardClass": "SHAMAN",
+   "mechanics": [],
+   "health": 10,
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_BOSS_36h",
+   "name": "Kasa Softspeaker",
+   "type": "HERO",
+   "cost": null,
+   "text": "<i>The Plague of Madness has not been kind to [x]once-gentle Kasa.</i>",
+   "cardClass": "WARRIOR",
+   "mechanics": [],
+   "health": 10,
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_BOSS_37h",
+   "name": "Xatma, Plague Lord of Death",
+   "type": "HERO",
+   "cost": null,
+   "text": "<i>The third plague rests in [x]final breath: You face the ancient Lord of Death!</i>",
+   "cardClass": "PRIEST",
+   "mechanics": [],
+   "health": 300,
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_BOSS_37h2",
+   "name": "Xatma, Plague Lord of Death",
+   "type": "HERO",
+   "cost": null,
+   "text": "<i>The third plague rests in [x]final breath: You face the ancient Lord of Death!</i>",
+   "cardClass": "PRIEST",
+   "mechanics": [],
+   "health": 200,
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_BOSS_37h3",
+   "name": "Xatma, Plague Lord of Death",
+   "type": "HERO",
+   "cost": null,
+   "text": "<i>The third plague rests in [x]final breath: You face the ancient Lord of Death!</i>",
+   "cardClass": "PRIEST",
+   "mechanics": [],
+   "health": 100,
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_BOSS_38h",
+   "name": "K'zrath, Plague Lord of Madness",
+   "type": "HERO",
+   "cost": null,
+   "text": "<i>The second plague is in the brain: Among these [x]dunes, Madness reigns.</i>",
+   "cardClass": "ROGUE",
+   "mechanics": [],
+   "health": 300,
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_BOSS_38h2",
+   "name": "K'zrath, Plague Lord of Madness",
+   "type": "HERO",
+   "cost": null,
+   "text": "<i>The second plague is in the brain: Among these [x]dunes, Madness reigns.</i>",
+   "cardClass": "ROGUE",
+   "mechanics": [],
+   "health": 200,
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_BOSS_38h3",
+   "name": "K'zrath, Plague Lord of Madness",
+   "type": "HERO",
+   "cost": null,
+   "text": "<i>The second plague is in the brain: Among these [x]dunes, Madness reigns.</i>",
+   "cardClass": "ROGUE",
+   "mechanics": [],
+   "health": 100,
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_BOSS_39h",
+   "name": "Vesh, Plague Lord of Murlocs",
+   "type": "HERO",
+   "cost": null,
+   "text": "<i>[x]The first plague is a finful pox: Beware, beware the Lord of 'Locs.</i>",
+   "cardClass": "SHAMAN",
+   "mechanics": [],
+   "health": 300,
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_BOSS_39h2",
+   "name": "Vesh, Plague Lord of Murlocs",
+   "type": "HERO",
+   "cost": null,
+   "text": "<i>[x]The first plague is a finful pox: Beware, beware the Lord of 'Locs.</i>",
+   "cardClass": "SHAMAN",
+   "mechanics": [],
+   "health": 200,
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_BOSS_39h3",
+   "name": "Vesh, Plague Lord of Murlocs",
+   "type": "HERO",
+   "cost": null,
+   "text": "<i>[x]The first plague is a finful pox: Beware, beware the Lord of 'Locs.</i>",
+   "cardClass": "SHAMAN",
+   "mechanics": [],
+   "health": 100,
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_BOSS_40h",
+   "name": "Icarax, Plague Lord of Wrath",
+   "type": "HERO",
+   "cost": null,
+   "text": "<i>The fourth plague roots within the heart: Wrath tears friend and foe apart.</i>",
+   "cardClass": "WARRIOR",
+   "mechanics": [],
+   "health": 300,
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_BOSS_40h2",
+   "name": "Icarax, Plague Lord of Wrath",
+   "type": "HERO",
+   "cost": null,
+   "text": "<i>The fourth plague roots within the heart: Wrath tears friend and foe apart.</i>",
+   "cardClass": "WARRIOR",
+   "mechanics": [],
+   "health": 200,
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_BOSS_40h3",
+   "name": "Icarax, Plague Lord of Wrath",
+   "type": "HERO",
+   "cost": null,
+   "text": "<i>The fourth plague roots within the heart: Wrath tears friend and foe apart.</i>",
+   "cardClass": "WARRIOR",
+   "mechanics": [],
+   "health": 100,
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_BOSS_41h",
+   "name": "Alda Petrik",
+   "type": "HERO",
+   "cost": null,
+   "text": "<i>Alda's learned some tricks. Like sit. Stay. Loot. Summon beasts.</i>",
+   "cardClass": "HUNTER",
+   "mechanics": [],
+   "health": 10,
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_BOSS_42h",
+   "name": "Sandshaper Rhogi",
+   "type": "HERO",
+   "cost": null,
+   "text": "<i>Rhogi is a sand conjurer. He copies minions. And makes a mean castle.</i>",
+   "cardClass": "SHAMAN",
+   "mechanics": [],
+   "health": 10,
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_BOSS_43h",
+   "name": "Jolene Knottley",
+   "type": "HERO",
+   "cost": null,
+   "text": "<i>Jolene's writing is absolute madness. Her grammar is worse.</i>",
+   "cardClass": "WARLOCK",
+   "mechanics": [],
+   "health": 10,
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_BOSS_44h",
+   "name": "Trap Room",
+   "type": "HERO",
+   "cost": null,
+   "text": "<i>Reno is especially good at detecting traps. With his face.</i>",
+   "cardClass": "HUNTER",
+   "mechanics": [],
+   "health": 10,
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_BOSS_45h",
+   "name": "Belloc Brightblade",
+   "type": "HERO",
+   "cost": null,
+   "text": "<i>This smarmy leader of the Reliquary is a thief of the highest order.</i>",
+   "cardClass": "PALADIN",
+   "mechanics": [],
+   "health": 10,
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_BOSS_46h",
+   "name": "Wildtooth",
+   "type": "HERO",
+   "cost": null,
+   "text": "<i>\"Sand sharks aren't real\" according to a [x]half-eaten journal.</i>",
+   "cardClass": "HUNTER",
+   "mechanics": [],
+   "health": 10,
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_BOSS_47h",
+   "name": "Totally Normal Jar",
+   "type": "HERO",
+   "cost": null,
+   "text": "<i>You should be wary when treasures walk right up to you.</i>",
+   "cardClass": "WARLOCK",
+   "mechanics": [],
+   "health": 10,
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_BOSS_48h",
+   "name": "Ilza Grimdrum",
+   "type": "HERO",
+   "cost": null,
+   "text": "<i>Ilza is an arena champion known as [x]'The Cruel Dueler.'</i>",
+   "cardClass": "WARRIOR",
+   "mechanics": [],
+   "health": 10,
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_BOSS_49h",
+   "name": "Craz",
+   "type": "HERO",
+   "cost": null,
+   "text": "<i>This belong to Craz! Go away, or Craz will bring his tiny friends!</i>",
+   "cardClass": "WARLOCK",
+   "mechanics": [],
+   "health": 10,
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_BOSS_50h",
+   "name": "Ol' Barkeye",
+   "type": "HERO",
+   "cost": null,
+   "text": "<i>Frustrated with just a rifle, Ol' Barkeye has taken up the blade.</i>",
+   "cardClass": "HUNTER",
+   "mechanics": [],
+   "health": 10,
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_BOSS_51h",
+   "name": "Kasmut",
+   "type": "HERO",
+   "cost": null,
+   "text": "<i>This anubisath over-achiever prefers to [x]re-raise the extra dead.</i>",
+   "cardClass": "PRIEST",
+   "mechanics": [],
+   "health": 10,
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_BOSS_52h",
+   "name": "Lich Baz'hial",
+   "type": "HERO",
+   "cost": null,
+   "text": "<i>Baz'hial has cheated death. She also cheats at cards.</i>",
+   "cardClass": "MAGE",
+   "mechanics": [],
+   "health": 10,
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_BOSS_53h",
+   "name": "Taskmaster Maru",
+   "type": "HERO",
+   "cost": null,
+   "text": "<i>This agent of E.V.I.L. is never lacking for lackeys.</i>",
+   "cardClass": "ROGUE",
+   "mechanics": [],
+   "health": 10,
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_BOSS_54h",
+   "name": "Janak",
+   "type": "HERO",
+   "cost": null,
+   "text": "<i>This scheming hozen heads up E.V.I.L.'s desert cavalry.</i>",
+   "cardClass": "WARRIOR",
+   "mechanics": [],
+   "health": 10,
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_BOSS_55h",
+   "name": "Water-Toting Murlocs",
+   "type": "HERO",
+   "cost": null,
+   "text": "<i>Years of experience tell you not to ignore this terrible threat.</i>",
+   "cardClass": "SHAMAN",
+   "mechanics": [],
+   "health": 10,
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_BOSS_56h",
+   "name": "Sand Puffer Frog",
+   "type": "HERO",
+   "cost": null,
+   "text": "<i>One puff's enough to bluff a minion's stuff.</i>",
+   "cardClass": "HUNTER",
+   "mechanics": [],
+   "health": 10,
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_BOSS_57h",
+   "name": "Winged Guardian",
+   "type": "HERO",
+   "cost": null,
+   "text": "<i>This great beast's roar bolsters allies and terrifies its foes.</i>",
+   "cardClass": "PALADIN",
+   "mechanics": [],
+   "health": 10,
+   "inBattlecards": true
+  },
+  {
+   "id": "ULDA_BOSS_58h",
+   "name": "Jythiros of Questions",
+   "type": "HERO",
+   "cost": null,
+   "text": "<i>[x]A riddle... within a mystery...in an enigma... with a funny head.</i>",
+   "cardClass": "PRIEST",
+   "mechanics": [],
+   "health": 10,
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_BOSS_59h",
+   "name": "Dire Bat",
+   "type": "HERO",
+   "cost": null,
+   "text": "<i>They wouldn't be a problem if you just stopped feeding them.</i>",
+   "cardClass": "HUNTER",
+   "mechanics": [],
+   "health": 10,
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_BOSS_60h",
+   "name": "Zaraam",
+   "type": "HERO",
+   "cost": null,
+   "text": "<i>Zaraam grows in strength the more his minions suffer.</i>",
+   "cardClass": "WARLOCK",
+   "mechanics": [],
+   "health": 10,
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_BOSS_61h",
+   "name": "Kyriss",
+   "type": "HERO",
+   "cost": null,
+   "text": "<i>Line up all your minions. It'll be hilarious.</i>",
+   "cardClass": "WARRIOR",
+   "mechanics": [],
+   "health": 10,
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_BOSS_62h",
+   "name": "A Beautiful Oasis",
+   "type": "HERO",
+   "cost": null,
+   "text": "<i>Merciful shade. Fresh cool water. A perfectly [x]balanced meta. Is it real?</i>",
+   "cardClass": "HUNTER",
+   "mechanics": [],
+   "health": 30,
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_BOSS_63h",
+   "name": "Vessina",
+   "type": "HERO",
+   "cost": null,
+   "text": "<i>If impatience is an E.V.I.L. virtue, Vessina must be a saint.</i>",
+   "cardClass": "SHAMAN",
+   "mechanics": [],
+   "health": 10,
+   "inBattlecards": true
+  },
+  {
+   "id": "ULDA_BOSS_65h",
+   "name": "Thrud",
+   "type": "HERO",
+   "cost": null,
+   "text": "<i>And some people think rogues need to be sneaky.</i>",
+   "cardClass": "ROGUE",
+   "mechanics": [],
+   "health": 10,
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_BOSS_66h",
+   "name": "Siamat",
+   "type": "HERO",
+   "cost": null,
+   "text": "[x]<i>The South Winds (usually) bring exactly what Siamat wanted.</i>",
+   "cardClass": "SHAMAN",
+   "mechanics": [],
+   "health": 10,
+   "inBattlecards": true
+  },
+  {
+   "id": "ULDA_BOSS_67h",
+   "name": "Tekahn, Plague Lord of Flame",
+   "type": "HERO",
+   "cost": null,
+   "text": "<i>The fifth plague, Tekhan laid claim: behold the mighty Lord of Flame!</i>",
+   "cardClass": "WARLOCK",
+   "mechanics": [],
+   "health": 300,
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_BOSS_68h",
+   "name": "Weaponized Wasp",
+   "type": "HERO",
+   "cost": null,
+   "text": "<i>Unlike bees, wasps can keep stinging you. With a laser.</i>",
+   "cardClass": "DRUID",
+   "mechanics": [],
+   "health": 10,
+   "inBattlecards": true
+  },
+  {
+   "id": "ULDA_BOSS_69h",
+   "name": "Isiset",
+   "type": "HERO",
+   "cost": null,
+   "text": "<i>In the deft hands of the Mistress of Magic, any spell can be a <b>Twinspell</b>.</i>",
+   "cardClass": "MAGE",
+   "mechanics": [],
+   "health": 10,
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_BOSS_70h",
+   "name": "Rajh",
+   "type": "HERO",
+   "cost": null,
+   "text": "<i>The mighty Lord of the Sun shines brightest when casting spells.</i>",
+   "cardClass": "MAGE",
+   "mechanics": [],
+   "health": 10,
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_BOSS_71h",
+   "name": "Ammunae",
+   "type": "HERO",
+   "cost": null,
+   "text": "<i>Every party needs a healer. And nobody partied like the titans.</i>",
+   "cardClass": "DRUID",
+   "mechanics": [],
+   "health": 10,
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_BOSS_72h",
+   "name": "Setesh",
+   "type": "HERO",
+   "cost": null,
+   "text": "[x]<i>Setesh curses minions... Without even getting to know them first.</i>",
+   "cardClass": "PRIEST",
+   "mechanics": [],
+   "health": 10,
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_BOSS_73h",
+   "name": "General Husam",
+   "type": "HERO",
+   "cost": null,
+   "text": "<i>Those who serve under General Husam are in a rush to leave.</i>",
+   "cardClass": "WARRIOR",
+   "mechanics": [],
+   "health": 10,
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_BOSS_74h",
+   "name": "High Prophet Barim",
+   "type": "HERO",
+   "cost": null,
+   "text": "<i>Barim “prophets” from the misfortune of others.</i>",
+   "cardClass": "PRIEST",
+   "mechanics": [],
+   "health": 10,
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_BOSS_75h",
+   "name": "Avozu",
+   "type": "HERO",
+   "cost": null,
+   "text": "<i>Avozu the Hunter will stop at nothing until his prey is subdued.</i>",
+   "cardClass": "HUNTER",
+   "mechanics": [],
+   "health": 10,
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_BOSS_76h",
+   "name": "Tarkus",
+   "type": "HERO",
+   "cost": null,
+   "text": "<i>Violence begets violence. Tarkus begets a whole lot.</i>",
+   "cardClass": "PALADIN",
+   "mechanics": [],
+   "health": 10,
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_BOSS_77h",
+   "name": "Gorebite",
+   "type": "HERO",
+   "cost": null,
+   "text": "<i>If it opens its mouth, you should run. Double-time.</i>",
+   "cardClass": "DRUID",
+   "mechanics": [],
+   "health": 10,
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_BOSS_78h",
+   "name": "Octosari",
+   "type": "HERO",
+   "cost": null,
+   "text": "<i>His favorite number is 7. Disrupt its perfection at your own peril!</i>",
+   "cardClass": "DRUID",
+   "mechanics": [],
+   "health": 10,
+   "inBattlecards": true
+  },
+  {
+   "id": "ULDA_BOSS_79h",
+   "name": "Armadillobot",
+   "type": "HERO",
+   "cost": null,
+   "text": "<i>Is it insane to let a critter pilot a mech? Dr. Boom thinks not.</i>",
+   "cardClass": "WARRIOR",
+   "mechanics": [],
+   "health": 10,
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_BOSS_99h",
+   "name": "Bazaar Bob",
+   "type": "HERO",
+   "cost": null,
+   "text": "[x]<i>The friendliest face you could hope to meet in a plague-ridden desert.</i>",
+   "cardClass": "PALADIN",
+   "mechanics": [],
+   "health": 40,
+   "inBattlecards": false
+  }
+ ],
+ "bossPowers": [
+  {
+   "id": "ULDA_BOSS_01p",
+   "name": "Boom Bullets",
+   "type": "HERO_POWER",
+   "cost": 2,
+   "text": "[x]Summon a 0/2 Goblin Bomb. Give all other Goblin Bombs +1 Attack.",
+   "cardClass": "HUNTER",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_BOSS_01px",
+   "name": "Boom Bullets",
+   "type": "HERO_POWER",
+   "cost": 2,
+   "text": "[x]Summon a 0/2 Goblin Bomb. Give all other Goblin Bombs +2 Attack.",
+   "cardClass": "HUNTER",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_BOSS_02p",
+   "name": "Mummy Ritual",
+   "type": "HERO_POWER",
+   "cost": 3,
+   "text": "Resurrect a <b>Reborn</b> minion with 1 Health.",
+   "cardClass": "PRIEST",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_BOSS_02px",
+   "name": "Mummy Ritual",
+   "type": "HERO_POWER",
+   "cost": 2,
+   "text": "Resurrect a <b>Reborn</b> minion with 1 Health.",
+   "cardClass": "PRIEST",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_BOSS_03p",
+   "name": "E.V.I.L. Promotion",
+   "type": "HERO_POWER",
+   "cost": 2,
+   "text": "[x]<b>Passive</b> After you play a <b>Lackey</b>, give it +1/+1 <i>(upgrades each time you play a <b>Lackey</b>)</i>.",
+   "cardClass": "WARRIOR",
+   "mechanics": [
+    "TRIGGER_VISUAL"
+   ],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_BOSS_04p",
+   "name": "Belch",
+   "type": "HERO_POWER",
+   "cost": 3,
+   "text": "[x]Summon a minion that died this game.",
+   "cardClass": "HUNTER",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_BOSS_04px",
+   "name": "Belch",
+   "type": "HERO_POWER",
+   "cost": 1,
+   "text": "[x]Summon a minion that died this game.",
+   "cardClass": "HUNTER",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_BOSS_05p",
+   "name": "Venomous Stinger",
+   "type": "HERO_POWER",
+   "cost": 2,
+   "text": "[x]Sting a minion. When it takes damage, destroy it.",
+   "cardClass": "HUNTER",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_BOSS_06p",
+   "name": "\"Confiscated\" Goods",
+   "type": "HERO_POWER",
+   "cost": 0,
+   "text": "[x]<b>Passive</b> After you attack and kill a minion, equip a random weapon.",
+   "cardClass": "WARLOCK",
+   "mechanics": [
+    "TRIGGER_VISUAL"
+   ],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_BOSS_07p",
+   "name": "Druid of the Rat",
+   "type": "HERO_POWER",
+   "cost": 2,
+   "text": "[x]Give your minions +1/+1.",
+   "cardClass": "DRUID",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_BOSS_08p",
+   "name": "Sand Surge",
+   "type": "HERO_POWER",
+   "cost": 1,
+   "text": "[x]Shuffle a Sand Trap into your opponent's deck that swallows cards when drawn.",
+   "cardClass": "HUNTER",
+   "mechanics": [
+    "AI_MUST_PLAY"
+   ],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_BOSS_08px",
+   "name": "Sand Surge",
+   "type": "HERO_POWER",
+   "cost": 0,
+   "text": "[x]Shuffle a Sand Trap into your opponent's deck that swallows cards when drawn.",
+   "cardClass": "HUNTER",
+   "mechanics": [
+    "AI_MUST_PLAY"
+   ],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_BOSS_09p",
+   "name": "Armor Repairs",
+   "type": "HERO_POWER",
+   "cost": 2,
+   "text": "[x]Gain 2 Armor. If you have less than 10 Armor, gain 4 Armor instead.",
+   "cardClass": "WARRIOR",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_BOSS_10p",
+   "name": "Well Equipped",
+   "type": "HERO_POWER",
+   "cost": 2,
+   "text": "[x]Put a random Rogue Spell or Weapon into your hand.",
+   "cardClass": "ROGUE",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_BOSS_11p",
+   "name": "Unstable Weaponry",
+   "type": "HERO_POWER",
+   "cost": 0,
+   "text": "[x]<b>Passive</b> After you summon a Mech, deal 2 damage to a random enemy.",
+   "cardClass": "MAGE",
+   "mechanics": [
+    "TRIGGER_VISUAL"
+   ],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_BOSS_12p",
+   "name": "Brick by Brick",
+   "type": "HERO_POWER",
+   "cost": 3,
+   "text": "[x]<b>Discover</b> an Elemental. It costs (2) less.",
+   "cardClass": "SHAMAN",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_BOSS_12px",
+   "name": "Brick by Brick",
+   "type": "HERO_POWER",
+   "cost": 1,
+   "text": "[x]<b>Discover</b> an Elemental. It costs (2) less.",
+   "cardClass": "SHAMAN",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_BOSS_13p",
+   "name": "Snakeshot",
+   "type": "HERO_POWER",
+   "cost": 2,
+   "text": "[x]Summon a 1/1 Snake and give it <b>Poisonous</b>.",
+   "cardClass": "HUNTER",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_BOSS_14p",
+   "name": "Sword Dance",
+   "type": "HERO_POWER",
+   "cost": 0,
+   "text": "[x]<b>Passive</b> After your weapon is destroyed, shuffle it back into your deck. It keeps any enchantments.",
+   "cardClass": "ROGUE",
+   "mechanics": [
+    "TRIGGER_VISUAL"
+   ],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_BOSS_15p",
+   "name": "Puffertrooper",
+   "type": "HERO_POWER",
+   "cost": 2,
+   "text": "[x]Give your Murlocs <b>Rush</b>.",
+   "cardClass": "SHAMAN",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_BOSS_15px",
+   "name": "Puffertrooper",
+   "type": "HERO_POWER",
+   "cost": 1,
+   "text": "[x]Give your Murlocs <b>Rush</b>.",
+   "cardClass": "SHAMAN",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_BOSS_16p",
+   "name": "Under Wraps",
+   "type": "HERO_POWER",
+   "cost": 0,
+   "text": "[x]<b>Passive</b> After you play a minion, give it <b>Reborn</b>.",
+   "cardClass": "WARRIOR",
+   "mechanics": [
+    "TRIGGER_VISUAL"
+   ],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_BOSS_17p",
+   "name": "Spreading the Curse",
+   "type": "HERO_POWER",
+   "cost": 2,
+   "text": "[x]Summon a Leper Gnome and give it <b>Rush</b>.",
+   "cardClass": "ROGUE",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_BOSS_17px",
+   "name": "Spreading the Curse",
+   "type": "HERO_POWER",
+   "cost": 1,
+   "text": "[x]Summon a Leper Gnome and give it <b>Rush</b>.",
+   "cardClass": "ROGUE",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_BOSS_18p",
+   "name": "Plagued Horde",
+   "type": "HERO_POWER",
+   "cost": 2,
+   "text": "[x]Give a minion \"<b>Deathrattle:</b> Deal 2 damage to the enemy hero.\"",
+   "cardClass": "WARLOCK",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_BOSS_18px",
+   "name": "Plagued Horde",
+   "type": "HERO_POWER",
+   "cost": 0,
+   "text": "[x]Give a minion \"<b>Deathrattle:</b> Deal 2 damage to the enemy hero.\"",
+   "cardClass": "WARLOCK",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_BOSS_19p",
+   "name": "Titan Ritual",
+   "type": "HERO_POWER",
+   "cost": 2,
+   "text": "[x]Summon two 1/1 Mogu Cultists.",
+   "cardClass": "WARRIOR",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_BOSS_19px",
+   "name": "Titan Ritual",
+   "type": "HERO_POWER",
+   "cost": 1,
+   "text": "[x]Summon two 1/1 Mogu Cultists.",
+   "cardClass": "WARRIOR",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_BOSS_20p",
+   "name": "Spectral Swordsman",
+   "type": "HERO_POWER",
+   "cost": 0,
+   "text": "[x]<b>Passive</b> Your hero is <b><b>Stealth</b>ed</b> while you have a weapon equipped.",
+   "cardClass": "ROGUE",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_BOSS_21p",
+   "name": "Staking A Claim",
+   "type": "HERO_POWER",
+   "cost": 0,
+   "text": "[x]<b>Passive</b> Whenever a <b>Discover</b> card is played, all minions gain +1/+1.",
+   "cardClass": "PALADIN",
+   "mechanics": [
+    "TRIGGER_VISUAL"
+   ],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_BOSS_22p",
+   "name": "Power of Wrath",
+   "type": "HERO_POWER",
+   "cost": 0,
+   "text": "[x]Deal 1 damage to all damaged minions.",
+   "cardClass": "WARRIOR",
+   "mechanics": [
+    "AI_MUST_PLAY"
+   ],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_BOSS_22px",
+   "name": "Power of Wrath",
+   "type": "HERO_POWER",
+   "cost": 0,
+   "text": "[x]Deal 2 damage to all damaged minions.",
+   "cardClass": "WARRIOR",
+   "mechanics": [
+    "AI_MUST_PLAY"
+   ],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_BOSS_23p",
+   "name": "Hatching Time",
+   "type": "HERO_POWER",
+   "cost": 2,
+   "text": "[x]Reduce the Cost of Beasts in your hand by (1).",
+   "cardClass": "DRUID",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_BOSS_24p",
+   "name": "Corrupted Oasis",
+   "type": "HERO_POWER",
+   "cost": 2,
+   "text": "[x]Add two 2/2 Treants to your hand.",
+   "cardClass": "DRUID",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_BOSS_24px",
+   "name": "Corrupted Oasis",
+   "type": "HERO_POWER",
+   "cost": 0,
+   "text": "[x]Add two 2/2 Treants to your hand.",
+   "cardClass": "DRUID",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_BOSS_25p",
+   "name": "Beetle Stampede",
+   "type": "HERO_POWER",
+   "cost": 2,
+   "text": "[x]Summon a Plated Beetle.",
+   "cardClass": "DRUID",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_BOSS_26p",
+   "name": "Gatling Wand",
+   "type": "HERO_POWER",
+   "cost": 2,
+   "text": "[x]Deal 2 damage split among enemy minions.",
+   "cardClass": "MAGE",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_BOSS_27p",
+   "name": "\"Retired\" Treasure Hunter",
+   "type": "HERO_POWER",
+   "cost": 2,
+   "text": "[x]Copy a card from your opponent's hand and add it to your hand.",
+   "cardClass": "ROGUE",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_BOSS_27px",
+   "name": "\"Retired\" Treasure Hunter",
+   "type": "HERO_POWER",
+   "cost": 2,
+   "text": "[x]Copy a card from your opponent's hand and add it to your hand. It costs (2) less.",
+   "cardClass": "ROGUE",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_BOSS_28p",
+   "name": "Mighty Windstorm",
+   "type": "HERO_POWER",
+   "cost": 0,
+   "text": "[x]Each player swaps a minion from their hand with one on their battlefield.",
+   "cardClass": "SHAMAN",
+   "mechanics": [
+    "AI_MUST_PLAY"
+   ],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_BOSS_29p",
+   "name": "Mother of Sand",
+   "type": "HERO_POWER",
+   "cost": 0,
+   "text": "[x]<b>Passive</b> After you <b>Overload</b>, summon a Dust Devil.",
+   "cardClass": "SHAMAN",
+   "mechanics": [
+    "TRIGGER_VISUAL"
+   ],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_BOSS_30p",
+   "name": "Fireshaper",
+   "type": "HERO_POWER",
+   "cost": 0,
+   "text": "[x]<b>Passive</b> After you cast a spell, deal $2 damage randomly split among all enemies.",
+   "cardClass": "MAGE",
+   "mechanics": [
+    "TRIGGER_VISUAL",
+    "ImmuneToSpellpower"
+   ],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_BOSS_31p",
+   "name": "Pillaged Relics",
+   "type": "HERO_POWER",
+   "cost": 2,
+   "text": "[x]Choose a minion. Give it +1/+1, <b>Divine Shield</b> or <b>Taunt</b> at random.",
+   "cardClass": "SHAMAN",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_BOSS_31px",
+   "name": "Pillaged Relics",
+   "type": "HERO_POWER",
+   "cost": 1,
+   "text": "[x]Choose a minion. Give it +1/+1, <b>Divine Shield</b> or <b>Taunt</b> at random.",
+   "cardClass": "SHAMAN",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_BOSS_32p",
+   "name": "Whispering Sentinel",
+   "type": "HERO_POWER",
+   "cost": 1,
+   "text": "[x]Summon a 1/1 Wisp. Give it <b>Lifesteal</b>.",
+   "cardClass": "DRUID",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_BOSS_33p",
+   "name": "Out of Control",
+   "type": "HERO_POWER",
+   "cost": 1,
+   "text": "[x]Deal 1 damage to the Center-most minions.",
+   "cardClass": "WARRIOR",
+   "mechanics": [
+    "AI_MUST_PLAY"
+   ],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_BOSS_34p",
+   "name": "Tomb Boomin'",
+   "type": "HERO_POWER",
+   "cost": 2,
+   "text": "[x]Deal 4 damage split randomly between all characters.",
+   "cardClass": "WARRIOR",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_BOSS_35p",
+   "name": "Vengeful Construct",
+   "type": "HERO_POWER",
+   "cost": 3,
+   "text": "[x]Choose a minion with 2 or less Health. Destroy it and its neighbors.",
+   "cardClass": "SHAMAN",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_BOSS_36p",
+   "name": "Madness Incarnate",
+   "type": "HERO_POWER",
+   "cost": 1,
+   "text": "[x]Gain +1 Attack this turn and attack 3 different random enemy minions.",
+   "cardClass": "WARRIOR",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_BOSS_36px",
+   "name": "Madness Incarnate",
+   "type": "HERO_POWER",
+   "cost": 1,
+   "text": "[x]Gain +3 Attack this turn and attack 3 different random enemy minions.",
+   "cardClass": "WARRIOR",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_BOSS_37p1",
+   "name": "Foreboding Fate",
+   "type": "HERO_POWER",
+   "cost": 0,
+   "text": "[x]Trigger a friendly minion's <b>Deathrattle</b>.",
+   "cardClass": "PRIEST",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_BOSS_37p2",
+   "name": "Death's Embrace",
+   "type": "HERO_POWER",
+   "cost": 0,
+   "text": "[x]<b>Passive</b> The first minion for each player that dies in a turn has <b>Reborn</b>.",
+   "cardClass": "PRIEST",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_BOSS_37p3",
+   "name": "Death's Gaze",
+   "type": "HERO_POWER",
+   "cost": 1,
+   "text": "[x]Deal 1 damage to all minions. If any die, add an Untimely Demise to your hand.",
+   "cardClass": "PRIEST",
+   "mechanics": [
+    "AI_MUST_PLAY"
+   ],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_BOSS_37px3",
+   "name": "Death's Gaze",
+   "type": "HERO_POWER",
+   "cost": 0,
+   "text": "[x]Deal 1 damage to all minions. If any die, add an Untimely Demise to your hand.",
+   "cardClass": "PRIEST",
+   "mechanics": [
+    "AI_MUST_PLAY"
+   ],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_BOSS_38p1",
+   "name": "Evoke Panic",
+   "type": "HERO_POWER",
+   "cost": 0,
+   "text": "[x]Force the minion with the lowest Health to attack one of its neighbors.",
+   "cardClass": "ROGUE",
+   "mechanics": [
+    "AI_MUST_PLAY"
+   ],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_BOSS_38p2",
+   "name": "Systematic Betrayal",
+   "type": "HERO_POWER",
+   "cost": 0,
+   "text": "[x]Rotate all minions counter- clockwise. Minions that switch sides gain +1/+1.",
+   "cardClass": "ROGUE",
+   "mechanics": [
+    "AI_MUST_PLAY"
+   ],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_BOSS_38p3",
+   "name": "Murmurs of Mortality",
+   "type": "HERO_POWER",
+   "cost": 2,
+   "text": "[x]<b>Passive</b> After a friendly minion dies, bring an enemy minion to 1 Health.",
+   "cardClass": "ROGUE",
+   "mechanics": [
+    "TRIGGER_VISUAL"
+   ],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_BOSS_38px1",
+   "name": "Evoke Panic",
+   "type": "HERO_POWER",
+   "cost": 0,
+   "text": "[x]Force an enemy minion with the lowest Health to attack one of its neighbors.",
+   "cardClass": "ROGUE",
+   "mechanics": [
+    "AI_MUST_PLAY"
+   ],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_BOSS_38px3",
+   "name": "Murmurs of Mortality",
+   "type": "HERO_POWER",
+   "cost": 0,
+   "text": "[x]<b>Passive</b> After a friendly minion dies, destroy a random enemy minion.",
+   "cardClass": "ROGUE",
+   "mechanics": [
+    "TRIGGER_VISUAL"
+   ],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_BOSS_39p1",
+   "name": "Made of Murlocs",
+   "type": "HERO_POWER",
+   "cost": 0,
+   "text": "[x]<b>Passive</b> You are <b>Immune</b>. After a Murloc dies, lose 3 Health.",
+   "cardClass": "SHAMAN",
+   "mechanics": [
+    "TRIGGER_VISUAL"
+   ],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_BOSS_39p2",
+   "name": "Ashes Anew",
+   "type": "HERO_POWER",
+   "cost": 0,
+   "text": "[x]Destroy a friendly Murloc to summon a Scaly Golem.",
+   "cardClass": "SHAMAN",
+   "mechanics": [
+    "AI_MUST_PLAY"
+   ],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_BOSS_39p3",
+   "name": "Mur-nado",
+   "type": "HERO_POWER",
+   "cost": 15,
+   "text": "[x]Shuffle all minions into your deck. After a Murloc dies, reduce this Cost by (1).",
+   "cardClass": "SHAMAN",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_BOSS_39px2",
+   "name": "Ashes Anew",
+   "type": "HERO_POWER",
+   "cost": 0,
+   "text": "[x]Destroy a Murloc to summon a Scaly Golem.",
+   "cardClass": "SHAMAN",
+   "mechanics": [
+    "AI_MUST_PLAY"
+   ],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_BOSS_39px3",
+   "name": "Mur-nado",
+   "type": "HERO_POWER",
+   "cost": 10,
+   "text": "[x]Shuffle all minions into your deck. After a Murloc dies, reduce this Cost by (1).",
+   "cardClass": "SHAMAN",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_BOSS_40p1",
+   "name": "Commanding Scream",
+   "type": "HERO_POWER",
+   "cost": 1,
+   "text": "[x]Your minions can't be reduced below 1 Health this turn.",
+   "cardClass": "WARRIOR",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_BOSS_40p2",
+   "name": "Wrath Smash",
+   "type": "HERO_POWER",
+   "cost": 2,
+   "text": "[x]Destroy a damaged minion. Costs (1) more for each damaged minion.",
+   "cardClass": "WARRIOR",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_BOSS_40p3",
+   "name": "Hand of Defiance",
+   "type": "HERO_POWER",
+   "cost": 0,
+   "text": "[x]Swap the Attack and Health of a minion.",
+   "cardClass": "WARRIOR",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_BOSS_40px2",
+   "name": "Wrath Smash",
+   "type": "HERO_POWER",
+   "cost": 0,
+   "text": "[x]Destroy a damaged minion. Costs (1) more for each damaged minion.",
+   "cardClass": "WARRIOR",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_BOSS_41p",
+   "name": "Running Wild",
+   "type": "HERO_POWER",
+   "cost": 2,
+   "text": "[x]Draw a minion from your deck. If it’s a Beast, add another copy to your hand.",
+   "cardClass": "HUNTER",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_BOSS_41px",
+   "name": "Running Wild",
+   "type": "HERO_POWER",
+   "cost": 1,
+   "text": "[x]Draw a minion from your deck. If it’s a Beast, add another copy to your hand.",
+   "cardClass": "HUNTER",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_BOSS_42p",
+   "name": "Sand Shapin'",
+   "type": "HERO_POWER",
+   "cost": 3,
+   "text": "[x]Shuffle a copy of an enemy minion into your deck. Summon it when drawn.",
+   "cardClass": "SHAMAN",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_BOSS_42px",
+   "name": "Sand Shapin'",
+   "type": "HERO_POWER",
+   "cost": 1,
+   "text": "[x]Shuffle a copy of an enemy minion into your deck. Summon it when drawn.",
+   "cardClass": "SHAMAN",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_BOSS_43p",
+   "name": "Spoil the Ending",
+   "type": "HERO_POWER",
+   "cost": 2,
+   "text": "[x]Copy a spell in your opponent's hand. It costs (2) less.",
+   "cardClass": "WARLOCK",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_BOSS_43px",
+   "name": "Spoil the Ending",
+   "type": "HERO_POWER",
+   "cost": 0,
+   "text": "[x]Copy a spell in your opponent's hand. It costs (2) less.",
+   "cardClass": "WARLOCK",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_BOSS_44p",
+   "name": "Tricks and Traps",
+   "type": "HERO_POWER",
+   "cost": 2,
+   "text": "[x]Play a random <b>Secret</b> from your hand or deck.",
+   "cardClass": "HUNTER",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_BOSS_44px",
+   "name": "Tricks and Traps",
+   "type": "HERO_POWER",
+   "cost": 1,
+   "text": "[x]Play a random <b>Secret</b> from your hand or deck.",
+   "cardClass": "HUNTER",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_BOSS_45p",
+   "name": "Reliquary's Relics",
+   "type": "HERO_POWER",
+   "cost": 0,
+   "text": "[x]<b>Passive</b> After your opponent casts a spell, put a copy of it into your hand.",
+   "cardClass": "PALADIN",
+   "mechanics": [
+    "TRIGGER_VISUAL"
+   ],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_BOSS_46p",
+   "name": "Maw of the Desert",
+   "type": "HERO_POWER",
+   "cost": 0,
+   "text": "[x]Destroy the minion with the lowest Health.",
+   "cardClass": "HUNTER",
+   "mechanics": [
+    "AI_MUST_PLAY"
+   ],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_BOSS_47p",
+   "name": "What's in the Jar?",
+   "type": "HERO_POWER",
+   "cost": 2,
+   "text": "[x]Choose a minion. Summon a 1/1 copy of it.",
+   "cardClass": "WARLOCK",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_BOSS_48p",
+   "name": "Arena Expert",
+   "type": "HERO_POWER",
+   "cost": 0,
+   "text": "[x]Summon a minion from each players deck. They fight.",
+   "cardClass": "WARRIOR",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_BOSS_49p",
+   "name": "Demon Emissary",
+   "type": "HERO_POWER",
+   "cost": 2,
+   "text": "[x]Summon a random Demon that costs (3) or less.",
+   "cardClass": "WARLOCK",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_BOSS_49px",
+   "name": "Demon Emissary",
+   "type": "HERO_POWER",
+   "cost": 2,
+   "text": "[x]Summon a random Demon that costs (5) or less.",
+   "cardClass": "WARLOCK",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_BOSS_50p",
+   "name": "Desert Warfare",
+   "type": "HERO_POWER",
+   "cost": 0,
+   "text": "[x]<b>Passive</b> After your hero attacks, add a random Hunter card to your hand.",
+   "cardClass": "HUNTER",
+   "mechanics": [
+    "TRIGGER_VISUAL"
+   ],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_BOSS_51p",
+   "name": "Tol'vir Necromancy",
+   "type": "HERO_POWER",
+   "cost": 0,
+   "text": "[x]<b>Passive</b> After a minion is <b>Reborn</b>, restore its Health to full.",
+   "cardClass": "PRIEST",
+   "mechanics": [
+    "TRIGGER_VISUAL"
+   ],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_BOSS_52p1",
+   "name": "Lich's Phylactery",
+   "type": "HERO_POWER",
+   "cost": 0,
+   "text": "[x]Restore $20 Health to your hero. Reduce by 1 for every friendly minion that dies.",
+   "cardClass": "MAGE",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_BOSS_52p2",
+   "name": "Broken Phylactery",
+   "type": "HERO_POWER",
+   "cost": 0,
+   "text": "[x]<b>Passive</b> You take double damage from Fatigue.",
+   "cardClass": "MAGE",
+   "mechanics": [
+    "TRIGGER_VISUAL"
+   ],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_BOSS_53p",
+   "name": "E.V.I.L. Conscription",
+   "type": "HERO_POWER",
+   "cost": 1,
+   "text": "[x]Add a random <b>Lackey</b> to your hand.",
+   "cardClass": "ROGUE",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_BOSS_53px",
+   "name": "E.V.I.L. Conscription",
+   "type": "HERO_POWER",
+   "cost": 0,
+   "text": "[x]Add a random <b>Lackey</b> to your hand.",
+   "cardClass": "ROGUE",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_BOSS_54p",
+   "name": "Cavalry of E.V.I.L.",
+   "type": "HERO_POWER",
+   "cost": 1,
+   "text": "[x]Deal 1 damage to a minion and give it <b>Charge</b>.",
+   "cardClass": "WARRIOR",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_BOSS_55p",
+   "name": "Fish Food",
+   "type": "HERO_POWER",
+   "cost": 1,
+   "text": "[x]Restore #2 Health to all Murlocs.",
+   "cardClass": "SHAMAN",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_BOSS_56p",
+   "name": "Sandy Surprise",
+   "type": "HERO_POWER",
+   "cost": 0,
+   "text": "[x]<b>Passive</b> After you play a 1-Cost minion, give it <b>Stealth</b>.",
+   "cardClass": "HUNTER",
+   "mechanics": [
+    "TRIGGER_VISUAL"
+   ],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_BOSS_57p",
+   "name": "Titan's Beast",
+   "type": "HERO_POWER",
+   "cost": 2,
+   "text": "[x]Set a minion's Attack and Health to 3.",
+   "cardClass": "PALADIN",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_BOSS_57px",
+   "name": "Titan's Beast",
+   "type": "HERO_POWER",
+   "cost": 0,
+   "text": "[x]Set a minion's Attack and Health to 3.",
+   "cardClass": "PALADIN",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_BOSS_58p",
+   "name": "Riddle of the Sphinx",
+   "type": "HERO_POWER",
+   "cost": 0,
+   "text": "[x]<b>Passive</b> Guess which card the <b>Boss</b> will play to banish it.",
+   "cardClass": "PRIEST",
+   "mechanics": [
+    "TRIGGER_VISUAL"
+   ],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_BOSS_59p",
+   "name": "Food Chain",
+   "type": "HERO_POWER",
+   "cost": 2,
+   "text": "Deal 2 damage to a minion. If it dies, restore 5 Health to your Hero.",
+   "cardClass": "HUNTER",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_BOSS_59px",
+   "name": "Food Chain",
+   "type": "HERO_POWER",
+   "cost": 1,
+   "text": "Deal 2 damage to a minion. If it dies, restore 5 Health to your Hero.",
+   "cardClass": "HUNTER",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_BOSS_60p",
+   "name": "Forbidden Power",
+   "type": "HERO_POWER",
+   "cost": 4,
+   "text": "[x]Deal $1 damage to a random enemy <i>(upgrades whenever a friendly minion dies)</i>.",
+   "cardClass": "WARLOCK",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_BOSS_60px",
+   "name": "Forbidden Power",
+   "type": "HERO_POWER",
+   "cost": 2,
+   "text": "[x]Deal $1 damage to a random enemy <i>(upgrades whenever a friendly minion dies)</i>.",
+   "cardClass": "WARLOCK",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_BOSS_61p",
+   "name": "Chain Lightning",
+   "type": "HERO_POWER",
+   "cost": 4,
+   "text": "[x]Deal $1 damage to a minion. Jumps to an adjacent minion until one dies.",
+   "cardClass": "WARRIOR",
+   "mechanics": [],
+   "inBattlecards": true
+  },
+  {
+   "id": "ULDA_BOSS_61px",
+   "name": "Chain Lightning",
+   "type": "HERO_POWER",
+   "cost": 2,
+   "text": "[x]Deal $1 damage to a minion. Jumps to an adjacent minion until one dies.",
+   "cardClass": "WARRIOR",
+   "mechanics": [],
+   "inBattlecards": true
+  },
+  {
+   "id": "ULDA_BOSS_62p",
+   "name": "Mirage",
+   "type": "HERO_POWER",
+   "cost": 0,
+   "text": "[x]Give your opponent an illusion card. If played, they discard a random card.",
+   "cardClass": "DRUID",
+   "mechanics": [
+    "AI_MUST_PLAY"
+   ],
+   "inBattlecards": true
+  },
+  {
+   "id": "ULDA_BOSS_63p",
+   "name": "Plaguebringer",
+   "type": "HERO_POWER",
+   "cost": 0,
+   "text": "[x]<b>Passive</b> Your spells <b>Overload</b>: (1) but cost (2) less.",
+   "cardClass": "SHAMAN",
+   "mechanics": [
+    "TRIGGER_VISUAL"
+   ],
+   "inBattlecards": true
+  },
+  {
+   "id": "ULDA_BOSS_65p",
+   "name": "Ogre-Sized Thief",
+   "type": "HERO_POWER",
+   "cost": 3,
+   "text": "[x]Steal a card from your opponent's deck and put it into your hand.",
+   "cardClass": "ROGUE",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_BOSS_65px",
+   "name": "Ogre-Sized Thief",
+   "type": "HERO_POWER",
+   "cost": 1,
+   "text": "[x]Steal a card from your opponent's deck and put it into your hand.",
+   "cardClass": "ROGUE",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_BOSS_66p",
+   "name": "Masterful Djinn",
+   "type": "HERO_POWER",
+   "cost": 2,
+   "text": "[x]Summon a 1/4 servant with <b>Taunt</b>, <b>Rush</b>, <b>Windfury</b>, or <b>Divine Shield</b> <i>(at random)</i>.",
+   "cardClass": "SHAMAN",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_BOSS_66px",
+   "name": "Lord of the South Wind",
+   "type": "HERO_POWER",
+   "cost": 2,
+   "text": "[x]Summon a 1/4 servant. Give it <b>Taunt</b>, <b>Windfury</b>, <b>Rush</b> and <b>Divine Shield</b>.",
+   "cardClass": "SHAMAN",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_BOSS_67p1",
+   "name": "Awaken the Flame",
+   "type": "HERO_POWER",
+   "cost": 2,
+   "text": "[x]Imbue a Sanctum Golem with the power of fire.",
+   "cardClass": "WARLOCK",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_BOSS_67p2",
+   "name": "Curse of Flame",
+   "type": "HERO_POWER",
+   "cost": 2,
+   "text": "[x]Choose an enemy minion. If it lives until your next turn, deal 5 damage to all characters.",
+   "cardClass": "WARLOCK",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_BOSS_67p3",
+   "name": "Soul Pyre",
+   "type": "HERO_POWER",
+   "cost": 2,
+   "text": "[x]<b>Passive</b> After a player plays a card, they take damage equal to its Cost.",
+   "cardClass": "WARLOCK",
+   "mechanics": [
+    "TRIGGER_VISUAL",
+    "ImmuneToSpellpower"
+   ],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_BOSS_68p",
+   "name": "\"Upgraded\" Fauna",
+   "type": "HERO_POWER",
+   "cost": 2,
+   "text": "[x]Deal 1 damage to an enemy minion for each Beast you control.",
+   "cardClass": "DRUID",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_BOSS_69p",
+   "name": "Mistress of Magic",
+   "type": "HERO_POWER",
+   "cost": 0,
+   "text": "[x]<b>Passive</b> Whenever a player casts their first spell, add a copy to their hand.",
+   "cardClass": "MAGE",
+   "mechanics": [
+    "TRIGGER_VISUAL"
+   ],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_BOSS_70p",
+   "name": "Lord of the Sun",
+   "type": "HERO_POWER",
+   "cost": 1,
+   "text": "[x]Gain <b>Spell Damage +3</b> this turn.",
+   "cardClass": "MAGE",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_BOSS_70px",
+   "name": "Lord of the Sun",
+   "type": "HERO_POWER",
+   "cost": 0,
+   "text": "[x]Gain <b>Spell Damage +3</b> this turn.",
+   "cardClass": "MAGE",
+   "mechanics": [
+    "AI_MUST_PLAY"
+   ],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_BOSS_71p",
+   "name": "Lord of Life",
+   "type": "HERO_POWER",
+   "cost": 2,
+   "text": "[x]Restore a minion's Health to full.",
+   "cardClass": "DRUID",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_BOSS_71px",
+   "name": "Lord of Life",
+   "type": "HERO_POWER",
+   "cost": 1,
+   "text": "[x]Restore a minion's Health to full.",
+   "cardClass": "DRUID",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_BOSS_72p",
+   "name": "Lord of Destruction",
+   "type": "HERO_POWER",
+   "cost": 0,
+   "text": "[x]Curse a random enemy minion to damage its owner each turn.",
+   "cardClass": "PRIEST",
+   "mechanics": [
+    "AI_MUST_PLAY"
+   ],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_BOSS_73p",
+   "name": "Shockwave",
+   "type": "HERO_POWER",
+   "cost": 0,
+   "text": "[x]<b>Passive</b> All your minions have <b>Rush</b>.",
+   "cardClass": "WARRIOR",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_BOSS_74p",
+   "name": "Burst of Light",
+   "type": "HERO_POWER",
+   "cost": 3,
+   "text": "[x]<b>Lifesteal</b>. Deal $1 damage to all enemy minions.",
+   "cardClass": "PRIEST",
+   "mechanics": [
+    "LIFESTEAL"
+   ],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_BOSS_74px",
+   "name": "Burst of Light",
+   "type": "HERO_POWER",
+   "cost": 1,
+   "text": "[x]<b>Lifesteal</b>. Deal $1 damage to all enemy minions.",
+   "cardClass": "PRIEST",
+   "mechanics": [
+    "LIFESTEAL"
+   ],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_BOSS_75p",
+   "name": "Hunt the Weak",
+   "type": "HERO_POWER",
+   "cost": 2,
+   "text": "[x]Deal $1 damage to a minion and gain 1 bonus damage. If it dies, lose all bonus damage.",
+   "cardClass": "HUNTER",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_BOSS_75px",
+   "name": "Hunt the Weak",
+   "type": "HERO_POWER",
+   "cost": 1,
+   "text": "[x]Deal $2 damage to a minion and gain 2 bonus damage. If it dies, lose all bonus damage.",
+   "cardClass": "HUNTER",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_BOSS_76p",
+   "name": "Noble Champion",
+   "type": "HERO_POWER",
+   "cost": 4,
+   "text": "[x]Deal damage to a random enemy minion equal to its Attack.",
+   "cardClass": "PALADIN",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_BOSS_76px",
+   "name": "Noble Champion",
+   "type": "HERO_POWER",
+   "cost": 1,
+   "text": "[x]Deal damage to a random enemy minion equal to its Attack.",
+   "cardClass": "PALADIN",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_BOSS_77p",
+   "name": "Snapping Jaw",
+   "type": "HERO_POWER",
+   "cost": 2,
+   "text": "[x]Double your hero's Attack this turn.",
+   "cardClass": "DRUID",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_BOSS_77px",
+   "name": "Snapping Jaw",
+   "type": "HERO_POWER",
+   "cost": 0,
+   "text": "[x]Double your hero's Attack this turn.",
+   "cardClass": "DRUID",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_BOSS_78p",
+   "name": "Massive Tentacles",
+   "type": "HERO_POWER",
+   "cost": 0,
+   "text": "[x]If there are 8 or more minions on the battlefield, destroy them all.",
+   "cardClass": "DRUID",
+   "mechanics": [
+    "AI_MUST_PLAY"
+   ],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_BOSS_79p",
+   "name": "Mech \"Pilot\"",
+   "type": "HERO_POWER",
+   "cost": 1,
+   "text": "[x]Give a Mech +2 Attack this turn and force it to attack a random enemy minion.",
+   "cardClass": "WARRIOR",
+   "mechanics": [],
+   "inBattlecards": false
+  }
+ ],
+ "bossCards": [
+  {
+   "id": "ULDA_BOSS_37t",
+   "name": "Untimely Demise",
+   "type": "SPELL",
+   "cost": 3,
+   "text": "Deal $3 damage to all enemies.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [
+    "AI_MUST_PLAY"
+   ],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_BOSS_39m",
+   "name": "Scaly Golem",
+   "type": "MINION",
+   "cost": 1,
+   "text": "<b>Taunt</b> <b>Deathrattle:</b> Give all Murlocs +1/+1.",
+   "cardClass": "SHAMAN",
+   "mechanics": [
+    "DEATHRATTLE",
+    "TAUNT"
+   ],
+   "attack": 0,
+   "health": 4,
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_BOSS_42d",
+   "name": "Sand Shapin Dummy",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "Dummy Hook Up ULDA 035e",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_BOSS_67d",
+   "name": "Tekhan Shuffle Dummy",
+   "type": "SPELL",
+   "cost": 0,
+   "text": "",
+   "cardClass": "WARLOCK",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_BOSS_67t",
+   "name": "The Final Plague?!",
+   "type": "SPELL",
+   "cost": 10,
+   "text": "<i>Resummon that which was long dead.</i>",
+   "cardClass": "WARLOCK",
+   "mechanics": [],
+   "inBattlecards": false
+  }
+ ],
+ "enchantments": [
+  {
+   "id": "ULDA_004e",
+   "name": "Canopic Jars",
+   "type": "ENCHANTMENT",
+   "cost": null,
+   "text": "<b>Deathrattle:</b> Summon a random <b>Legendary</b> minion.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_005e",
+   "name": "Mummy Magic Player Enchantment",
+   "type": "ENCHANTMENT",
+   "cost": null,
+   "text": "",
+   "cardClass": "NEUTRAL",
+   "mechanics": [
+    "DUNGEON_PASSIVE_BUFF",
+    "TRIGGER_VISUAL"
+   ],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_007e2",
+   "name": "Crook and Flail Player Enchantment",
+   "type": "ENCHANTMENT",
+   "cost": null,
+   "text": "",
+   "cardClass": "NEUTRAL",
+   "mechanics": [
+    "DUNGEON_PASSIVE_BUFF",
+    "TRIGGER_VISUAL"
+   ],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_009e",
+   "name": "Unlocked Potential",
+   "type": "ENCHANTMENT",
+   "cost": null,
+   "text": "Has Attack equal to its Health.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_014e",
+   "name": "Disks of Legend Player Enchantment",
+   "type": "ENCHANTMENT",
+   "cost": null,
+   "text": "",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_018e",
+   "name": "Excavated",
+   "type": "ENCHANTMENT",
+   "cost": null,
+   "text": "Costs (2) less.",
+   "cardClass": "HUNTER",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_019e",
+   "name": "Unencumbered",
+   "type": "ENCHANTMENT",
+   "cost": 1,
+   "text": "Costs (1) less.",
+   "cardClass": null,
+   "mechanics": [
+    "CANT_BE_SILENCED"
+   ],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_023e",
+   "name": "Very Excavated",
+   "type": "ENCHANTMENT",
+   "cost": null,
+   "text": "Costs (5) less.",
+   "cardClass": "HUNTER",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_024e",
+   "name": "Unencumbered",
+   "type": "ENCHANTMENT",
+   "cost": null,
+   "text": "Costs (1) less.",
+   "cardClass": null,
+   "mechanics": [
+    "CANT_BE_SILENCED"
+   ],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_035e",
+   "name": "Mirage Player Enchant",
+   "type": "ENCHANTMENT",
+   "cost": null,
+   "text": "",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_041e",
+   "name": "Royal Fervor",
+   "type": "ENCHANTMENT",
+   "cost": 4,
+   "text": "<b>Windfury</b> and <b>Immune</b> this turn.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [
+    "TAG_ONE_TURN_EFFECT"
+   ],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_041e2",
+   "name": "Royal Fervor",
+   "type": "ENCHANTMENT",
+   "cost": null,
+   "text": "Your minions have <b>Windfury</b> and <b>Immune</b> this turn.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [
+    "TAG_ONE_TURN_EFFECT"
+   ],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_042e",
+   "name": "Darklight Torch Player Enchantment",
+   "type": "ENCHANTMENT",
+   "cost": null,
+   "text": "",
+   "cardClass": "NEUTRAL",
+   "mechanics": [
+    "DUNGEON_PASSIVE_BUFF",
+    "TRIGGER_VISUAL"
+   ],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_042e2",
+   "name": "Darklight Torch",
+   "type": "ENCHANTMENT",
+   "cost": null,
+   "text": "",
+   "cardClass": "NEUTRAL",
+   "mechanics": [
+    "DUNGEON_PASSIVE_BUFF"
+   ],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_043e",
+   "name": "Phaoris' Fury",
+   "type": "ENCHANTMENT",
+   "cost": null,
+   "text": "Increased stats.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_044e",
+   "name": "Sun's Flames",
+   "type": "ENCHANTMENT",
+   "cost": null,
+   "text": "Increased attack.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_046e",
+   "name": "Band of Bees Player Enchantment",
+   "type": "ENCHANTMENT",
+   "cost": null,
+   "text": "",
+   "cardClass": "NEUTRAL",
+   "mechanics": [
+    "AURA",
+    "DUNGEON_PASSIVE_BUFF"
+   ],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_046e2",
+   "name": "Band of Bees",
+   "type": "ENCHANTMENT",
+   "cost": null,
+   "text": "<b>Poisonous</b>.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [
+    "CANT_BE_SILENCED",
+    "DUNGEON_PASSIVE_BUFF",
+    "POISONOUS"
+   ],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_101e",
+   "name": "Band of Scarabs Player Enchantment",
+   "type": "ENCHANTMENT",
+   "cost": null,
+   "text": "",
+   "cardClass": "NEUTRAL",
+   "mechanics": [
+    "AURA",
+    "DUNGEON_PASSIVE_BUFF"
+   ],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_101e2",
+   "name": "Band of Scarabs",
+   "type": "ENCHANTMENT",
+   "cost": null,
+   "text": "-1 Attack.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [
+    "CANT_BE_SILENCED"
+   ],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_102e",
+   "name": "Platinum Disks Player Enchantment",
+   "type": "ENCHANTMENT",
+   "cost": null,
+   "text": "",
+   "cardClass": "NEUTRAL",
+   "mechanics": [
+    "DUNGEON_PASSIVE_BUFF"
+   ],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_103e",
+   "name": "Alchemist's Stone Player Enchantment",
+   "type": "ENCHANTMENT",
+   "cost": null,
+   "text": "",
+   "cardClass": "NEUTRAL",
+   "mechanics": [
+    "DUNGEON_PASSIVE_BUFF",
+    "TRIGGER_VISUAL"
+   ],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_103e2",
+   "name": "Alchemy's First Law",
+   "type": "ENCHANTMENT",
+   "cost": null,
+   "text": "Costs (1) less.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_113e",
+   "name": "Om Nom Nom",
+   "type": "ENCHANTMENT",
+   "cost": null,
+   "text": "Increased stats.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_116e",
+   "name": "Ever-Changing Player Enchantment",
+   "type": "ENCHANTMENT",
+   "cost": null,
+   "text": "",
+   "cardClass": "NEUTRAL",
+   "mechanics": [
+    "DUNGEON_PASSIVE_BUFF"
+   ],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_117e",
+   "name": "Scroll Player Enchantment",
+   "type": "ENCHANTMENT",
+   "cost": null,
+   "text": "",
+   "cardClass": "NEUTRAL",
+   "mechanics": [
+    "DUNGEON_PASSIVE_BUFF"
+   ],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_203e",
+   "name": "Reno's Lucky Hat",
+   "type": "ENCHANTMENT",
+   "cost": null,
+   "text": "+2/+2 and <b>Spell Damage +2</b>.",
+   "cardClass": "ROGUE",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_205e",
+   "name": "Lucky Spade Player Enchantment",
+   "type": "ENCHANTMENT",
+   "cost": null,
+   "text": "",
+   "cardClass": "NEUTRAL",
+   "mechanics": [
+    "DUNGEON_PASSIVE_BUFF",
+    "TRIGGER_VISUAL"
+   ],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_208e",
+   "name": "Titanic Ring Player Enchantment",
+   "type": "ENCHANTMENT",
+   "cost": null,
+   "text": "",
+   "cardClass": "NEUTRAL",
+   "mechanics": [
+    "AURA",
+    "DUNGEON_PASSIVE_BUFF"
+   ],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_208e2",
+   "name": "Titanic Ring",
+   "type": "ENCHANTMENT",
+   "cost": null,
+   "text": "+1 Health and <b>Taunt</b>.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [
+    "CANT_BE_SILENCED",
+    "DUNGEON_PASSIVE_BUFF"
+   ],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_208e3",
+   "name": "Titanic Ring",
+   "type": "ENCHANTMENT",
+   "cost": null,
+   "text": "+1 Health and <b>Taunt</b>.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [
+    "AURA",
+    "CANT_BE_SILENCED",
+    "DUNGEON_PASSIVE_BUFF"
+   ],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_302e",
+   "name": "Elise's Discovery",
+   "type": "ENCHANTMENT",
+   "cost": null,
+   "text": "+5/+5 and <b>Lifesteal</b>.",
+   "cardClass": "DRUID",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_303e",
+   "name": "Planned",
+   "type": "ENCHANTMENT",
+   "cost": null,
+   "text": "Costs (2) less.",
+   "cardClass": "DRUID",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_402e",
+   "name": "Saddled Up!",
+   "type": "ENCHANTMENT",
+   "cost": null,
+   "text": "+3/+3. <b>Deathrattle:</b> Give Brann's Saddle to another friendly Beast.",
+   "cardClass": "HUNTER",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_403e",
+   "name": "Titan Hologram",
+   "type": "ENCHANTMENT",
+   "cost": null,
+   "text": "1/1.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_406e",
+   "name": "To Mrrgl!",
+   "type": "ENCHANTMENT",
+   "cost": null,
+   "text": "<b>Rush</b>",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_406e2",
+   "name": "Murky's Battle Horn Player Enchantment",
+   "type": "ENCHANTMENT",
+   "cost": null,
+   "text": "",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_502e",
+   "name": "Desert Explorer",
+   "type": "ENCHANTMENT",
+   "cost": null,
+   "text": "+2 Health",
+   "cardClass": "PALADIN",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_505e",
+   "name": "Mighty!",
+   "type": "ENCHANTMENT",
+   "cost": null,
+   "text": "Increased Durability.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_508e",
+   "name": "Fleeting Knowledge Player Enchantment",
+   "type": "ENCHANTMENT",
+   "cost": null,
+   "text": "",
+   "cardClass": "NEUTRAL",
+   "mechanics": [
+    "DUNGEON_PASSIVE_BUFF"
+   ],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_508e2",
+   "name": "Fleeting Knowledge",
+   "type": "ENCHANTMENT",
+   "cost": null,
+   "text": "",
+   "cardClass": "NEUTRAL",
+   "mechanics": [
+    "DUNGEON_PASSIVE_BUFF",
+    "TAG_ONE_TURN_EFFECT"
+   ],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_603e",
+   "name": "Friendly Upgrade",
+   "type": "ENCHANTMENT",
+   "cost": null,
+   "text": "+2/+2.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [
+    "CANT_BE_SILENCED"
+   ],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_605e",
+   "name": "Satiated",
+   "type": "ENCHANTMENT",
+   "cost": null,
+   "text": "Costs (1) less.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [
+    "CANT_BE_SILENCED"
+   ],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_606e",
+   "name": "Work, Work!",
+   "type": "ENCHANTMENT",
+   "cost": null,
+   "text": "+2/+2.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [
+    "CANT_BE_SILENCED"
+   ],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_701e2",
+   "name": "Hosting Murloc",
+   "type": "ENCHANTMENT",
+   "cost": null,
+   "text": "Has <b>Deathrattle:</b> Summon a random Murloc.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_702e",
+   "name": "Anomaly - Loot-Filled Player Enchantment",
+   "type": "ENCHANTMENT",
+   "cost": null,
+   "text": "",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_703e2",
+   "name": "Possessive Spirit",
+   "type": "ENCHANTMENT",
+   "cost": null,
+   "text": "Has '<b>Deathrattle:</b> Take control of a random enemy minion.'",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_705e",
+   "name": "Anomaly - Booms Away Player Enchantment",
+   "type": "ENCHANTMENT",
+   "cost": null,
+   "text": "",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_706e",
+   "name": "Anomaly - No-Face Player Enchantment",
+   "type": "ENCHANTMENT",
+   "cost": null,
+   "text": "",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_707e",
+   "name": "Anomaly - Eternal Army Player Enchantment",
+   "type": "ENCHANTMENT",
+   "cost": null,
+   "text": "",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_708e",
+   "name": "Anomaly - Dizzying Blows Player Enchantment",
+   "type": "ENCHANTMENT",
+   "cost": null,
+   "text": "",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_708e2",
+   "name": "Dizzying Blows Card Enchantment",
+   "type": "ENCHANTMENT",
+   "cost": null,
+   "text": "Cost Randomized.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_709e",
+   "name": "Anomaly - Angelic Presence Player Enchantment",
+   "type": "ENCHANTMENT",
+   "cost": null,
+   "text": "",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_709e2",
+   "name": "Angelic Presence",
+   "type": "ENCHANTMENT",
+   "cost": null,
+   "text": "Attack is always equal to Health.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_710e",
+   "name": "Anomaly - CHARGE! Player Enchantment",
+   "type": "ENCHANTMENT",
+   "cost": null,
+   "text": "",
+   "cardClass": "NEUTRAL",
+   "mechanics": [
+    "AURA"
+   ],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_710e2",
+   "name": "Charge!!!",
+   "type": "ENCHANTMENT",
+   "cost": null,
+   "text": "Anomaly - CHARGE! is granting your Minions <b>Charge</b>.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [
+    "CHARGE"
+   ],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_711e",
+   "name": "Anomaly - Relentless Player Enchantment",
+   "type": "ENCHANTMENT",
+   "cost": null,
+   "text": "",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_711e2",
+   "name": "Windfurious",
+   "type": "ENCHANTMENT",
+   "cost": null,
+   "text": "Has <b>Windfury</b>.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_712e",
+   "name": "Anomaly - Holograms Player Enchantment",
+   "type": "ENCHANTMENT",
+   "cost": null,
+   "text": "",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_713e",
+   "name": "Anomaly - Whirling Winds Player Enchantment",
+   "type": "ENCHANTMENT",
+   "cost": null,
+   "text": "",
+   "cardClass": "NEUTRAL",
+   "mechanics": [
+    "TRIGGER_VISUAL"
+   ],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_714e",
+   "name": "Anomaly - In the Face Player Enchantment",
+   "type": "ENCHANTMENT",
+   "cost": null,
+   "text": "",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_724e",
+   "name": "Anomaly - Spellshields Player Enchantment",
+   "type": "ENCHANTMENT",
+   "cost": null,
+   "text": "",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_801e",
+   "name": "Murloc Twist Player Enchantment",
+   "type": "ENCHANTMENT",
+   "cost": null,
+   "text": "",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_802e",
+   "name": "Madness Twist Player Enchant",
+   "type": "ENCHANTMENT",
+   "cost": null,
+   "text": "",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_803e",
+   "name": "Wrath Twist Player Enchantment",
+   "type": "ENCHANTMENT",
+   "cost": null,
+   "text": "",
+   "cardClass": "NEUTRAL",
+   "mechanics": [
+    "TRIGGER_VISUAL"
+   ],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_803e2",
+   "name": "Rage",
+   "type": "ENCHANTMENT",
+   "cost": null,
+   "text": "This minion has increased Attack.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_999e",
+   "name": "AI Play Control",
+   "type": "ENCHANTMENT",
+   "cost": null,
+   "text": "",
+   "cardClass": "NEUTRAL",
+   "mechanics": [
+    "ENCHANTMENT_INVISIBLE"
+   ],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_BOSS_01e",
+   "name": "Power of the Boom",
+   "type": "ENCHANTMENT",
+   "cost": null,
+   "text": "+1 Attack",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_BOSS_01ex",
+   "name": "Power of the Boom",
+   "type": "ENCHANTMENT",
+   "cost": null,
+   "text": "+2 Attack",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_BOSS_03e",
+   "name": "E.V.I.L. Promotion",
+   "type": "ENCHANTMENT",
+   "cost": null,
+   "text": "Increased Stats.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_BOSS_05e",
+   "name": "Venomous Stinger",
+   "type": "ENCHANTMENT",
+   "cost": null,
+   "text": "If this minion takes damage, it will be destroyed.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_BOSS_07e",
+   "name": "Essense of the Rat",
+   "type": "ENCHANTMENT",
+   "cost": null,
+   "text": "+1/+1.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_BOSS_12e",
+   "name": "Bricked",
+   "type": "ENCHANTMENT",
+   "cost": null,
+   "text": "Costs 2 less.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_BOSS_13e",
+   "name": "Incredibly Deadly",
+   "type": "ENCHANTMENT",
+   "cost": null,
+   "text": "Has <b>Poisonous</b>.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_BOSS_14e",
+   "name": "Weapon Shuffle Tracker",
+   "type": "ENCHANTMENT",
+   "cost": null,
+   "text": "",
+   "cardClass": "NEUTRAL",
+   "mechanics": [
+    "ENCHANTMENT_INVISIBLE"
+   ],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_BOSS_15e",
+   "name": "Puffer Rush",
+   "type": "ENCHANTMENT",
+   "cost": null,
+   "text": "Puffertrooper is granting your Murlocs <b>Rush</b>.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [
+    "RUSH"
+   ],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_BOSS_16e",
+   "name": "Wrapped Up",
+   "type": "ENCHANTMENT",
+   "cost": null,
+   "text": "Give a minion <b>Reborn</b>.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_BOSS_17e",
+   "name": "The Cursed",
+   "type": "ENCHANTMENT",
+   "cost": null,
+   "text": "Give a minion <b>Rush</b>",
+   "cardClass": "NEUTRAL",
+   "mechanics": [
+    "RUSH"
+   ],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_BOSS_18e",
+   "name": "The Plagued",
+   "type": "ENCHANTMENT",
+   "cost": null,
+   "text": "<b>Deathrattle:</b> Deal 2 damage to the enemy hero.",
+   "cardClass": "WARLOCK",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_BOSS_21e",
+   "name": "Struck Claim",
+   "type": "ENCHANTMENT",
+   "cost": null,
+   "text": "+1/+1.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_BOSS_23e",
+   "name": "Hatching",
+   "type": "ENCHANTMENT",
+   "cost": null,
+   "text": "Costs 1 less.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_BOSS_27e",
+   "name": "Discounted Loot",
+   "type": "ENCHANTMENT",
+   "cost": null,
+   "text": "Costs (2) less.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_BOSS_31e1",
+   "name": "Necklace of Power",
+   "type": "ENCHANTMENT",
+   "cost": null,
+   "text": "Has +1/+1",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_BOSS_36e",
+   "name": "Madness",
+   "type": "ENCHANTMENT",
+   "cost": null,
+   "text": "+1 Attack this turn.",
+   "cardClass": "WARRIOR",
+   "mechanics": [
+    "TAG_ONE_TURN_EFFECT"
+   ],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_BOSS_36ex",
+   "name": "Madness",
+   "type": "ENCHANTMENT",
+   "cost": null,
+   "text": "+3 Attack this turn.",
+   "cardClass": "WARRIOR",
+   "mechanics": [
+    "TAG_ONE_TURN_EFFECT"
+   ],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_BOSS_38p2e1",
+   "name": "Chosen Betrayer",
+   "type": "ENCHANTMENT",
+   "cost": null,
+   "text": "+1/+1.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_BOSS_38p2e2",
+   "name": "Was Enemy Minion Marker",
+   "type": "ENCHANTMENT",
+   "cost": null,
+   "text": "",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_BOSS_38p2e3",
+   "name": "Was Allied Minion Marker",
+   "type": "ENCHANTMENT",
+   "cost": null,
+   "text": "",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_BOSS_39me",
+   "name": "Earthen Enchantment",
+   "type": "ENCHANTMENT",
+   "cost": null,
+   "text": "+1/+1",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_BOSS_40p1e1",
+   "name": "Commanding Scream",
+   "type": "ENCHANTMENT",
+   "cost": null,
+   "text": "Can't be reduced below 1 Health this turn.",
+   "cardClass": "WARRIOR",
+   "mechanics": [
+    "TAG_ONE_TURN_EFFECT"
+   ],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_BOSS_40p3e",
+   "name": "Hand of Defiance",
+   "type": "ENCHANTMENT",
+   "cost": null,
+   "text": "Swapped Attack and Health.",
+   "cardClass": "WARRIOR",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_BOSS_42e",
+   "name": "Sand Rush",
+   "type": "ENCHANTMENT",
+   "cost": null,
+   "text": "Summon when Drawn.",
+   "cardClass": "SHAMAN",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_BOSS_42e2",
+   "name": "Sand Rush Player Enchantment",
+   "type": "ENCHANTMENT",
+   "cost": null,
+   "text": "Summon when Drawn.",
+   "cardClass": "SHAMAN",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_BOSS_42e3",
+   "name": "Sandy Speed",
+   "type": "ENCHANTMENT",
+   "cost": null,
+   "text": "Has <b>Rush</b>.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_BOSS_43e1",
+   "name": "Spoiled",
+   "type": "ENCHANTMENT",
+   "cost": null,
+   "text": "Costs 2 less.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_BOSS_47e",
+   "name": "Minion in a Jar",
+   "type": "ENCHANTMENT",
+   "cost": null,
+   "text": "Stats set to 1/1.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_BOSS_54e",
+   "name": "E.V.I.L. Charge",
+   "type": "ENCHANTMENT",
+   "cost": null,
+   "text": "Has <b>Charge</b>.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_BOSS_56e",
+   "name": "Shrouded in Sand",
+   "type": "ENCHANTMENT",
+   "cost": 1,
+   "text": "<b>Stealth</b>",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_BOSS_57e",
+   "name": "Titanic Fortitude",
+   "type": "ENCHANTMENT",
+   "cost": null,
+   "text": "Stats set to 3/3.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_BOSS_58e",
+   "name": "Spell Power Remover",
+   "type": "ENCHANTMENT",
+   "cost": null,
+   "text": "Increased Spell Damage.",
+   "cardClass": "MAGE",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_BOSS_67e2",
+   "name": "Tekahn Swap Hero Enchantment",
+   "type": "ENCHANTMENT",
+   "cost": null,
+   "text": "",
+   "cardClass": "WARLOCK",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_BOSS_67e3",
+   "name": "Tekahn Treasure Pity Timer",
+   "type": "ENCHANTMENT",
+   "cost": null,
+   "text": "",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_BOSS_67p2e",
+   "name": "Curse of Flame",
+   "type": "ENCHANTMENT",
+   "cost": null,
+   "text": "On Tekahn's turn, deal 5 damage to all characters.",
+   "cardClass": "WARLOCK",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_BOSS_70e",
+   "name": "Sunshine",
+   "type": "ENCHANTMENT",
+   "cost": null,
+   "text": "You have <b>Spell Damage +3</b> this turn.",
+   "cardClass": "HUNTER",
+   "mechanics": [
+    "TAG_ONE_TURN_EFFECT"
+   ],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_BOSS_71e",
+   "name": "Cost + 1 This Turn Only",
+   "type": "ENCHANTMENT",
+   "cost": null,
+   "text": "Costs (1) more.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [
+    "ENCHANTMENT_INVISIBLE"
+   ],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_BOSS_72e",
+   "name": "Cursed!",
+   "type": "ENCHANTMENT",
+   "cost": null,
+   "text": "Deal 2 damage to your hero at the end of your turn.",
+   "cardClass": "WARLOCK",
+   "mechanics": [],
+   "inBattlecards": true
+  },
+  {
+   "id": "ULDA_BOSS_72ex",
+   "name": "Cursed!",
+   "type": "ENCHANTMENT",
+   "cost": null,
+   "text": "Deal 4 damage to your hero at the end of your turn.",
+   "cardClass": "WARLOCK",
+   "mechanics": [],
+   "inBattlecards": true
+  },
+  {
+   "id": "ULDA_BOSS_73e",
+   "name": "Sonic Boom",
+   "type": "ENCHANTMENT",
+   "cost": null,
+   "text": "Has <b>Rush</b>.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_BOSS_77e",
+   "name": "Strong Jaw",
+   "type": "ENCHANTMENT",
+   "cost": null,
+   "text": "Doubled Attack.",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_BOSS_79e",
+   "name": "Auto Piloted",
+   "type": "ENCHANTMENT",
+   "cost": null,
+   "text": "+2 Attack this turn.",
+   "cardClass": "DRUID",
+   "mechanics": [
+    "TAG_ONE_TURN_EFFECT"
+   ],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_Brann_HPe",
+   "name": "Brann Hero Power Watcher",
+   "type": "ENCHANTMENT",
+   "cost": null,
+   "text": "",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_Brann_PDWatcher",
+   "name": "Brann Plague Damage Watcher",
+   "type": "ENCHANTMENT",
+   "cost": null,
+   "text": "",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_Elise_HPe",
+   "name": "Elise Hero Power Watcher",
+   "type": "ENCHANTMENT",
+   "cost": null,
+   "text": "",
+   "cardClass": "NEUTRAL",
+   "mechanics": [
+    "TRIGGER_VISUAL"
+   ],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_Elise_PDWatcher",
+   "name": "Elise Plague Damage Watcher",
+   "type": "ENCHANTMENT",
+   "cost": null,
+   "text": "",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_Finley_HP3e",
+   "name": "Embiggend",
+   "type": "ENCHANTMENT",
+   "cost": null,
+   "text": "+1/+1.",
+   "cardClass": "PALADIN",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_Finley_HPe",
+   "name": "Finley Hero Power Watcher",
+   "type": "ENCHANTMENT",
+   "cost": null,
+   "text": "",
+   "cardClass": "NEUTRAL",
+   "mechanics": [
+    "TRIGGER_VISUAL"
+   ],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_Finley_PDWatcher",
+   "name": "Finley Plague Damage Watcher",
+   "type": "ENCHANTMENT",
+   "cost": null,
+   "text": "",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_Reno_HP2e",
+   "name": "Relic Power",
+   "type": "ENCHANTMENT",
+   "cost": null,
+   "text": "You have <b>Spell Damage +2</b> for your next spell this turn.",
+   "cardClass": "MAGE",
+   "mechanics": [
+    "TAG_ONE_TURN_EFFECT"
+   ],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_Reno_HPe",
+   "name": "Reno Hero Power Watcher",
+   "type": "ENCHANTMENT",
+   "cost": null,
+   "text": "",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  },
+  {
+   "id": "ULDA_Reno_PDWatcher",
+   "name": "Reno Plague Damage Watcher",
+   "type": "ENCHANTMENT",
+   "cost": null,
+   "text": "",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "inBattlecards": false
+  }
+ ],
+ "other": [
+  {
+   "id": "ULDA_Explorers",
+   "name": "Saviors of Uldum",
+   "type": "HERO",
+   "cost": null,
+   "text": "",
+   "cardClass": "NEUTRAL",
+   "mechanics": [],
+   "health": 200,
+   "inBattlecards": false
+  }
+ ]
+}
