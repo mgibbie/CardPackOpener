@@ -130598,6 +130598,200 @@
           ]
         }
       ]
+    },
+    {
+      "id": "ulda_flo_slatebrand",
+      "name": "Flo Slatebrand",
+      "type": "creature",
+      "cost": 2,
+      "cardClass": "neutral",
+      "rarity": "legendary",
+      "set": "TOMBS_OF_TERROR",
+      "token": true,
+      "treasure": true,
+      "description": "Battlecry & Deathrattle: Add a random Treasure to your hand.",
+      "attack": 4,
+      "health": 4,
+      "keywords": [
+        "battlecry",
+        "deathrattle"
+      ],
+      "effects": [
+        {
+          "type": "add-random-treasure",
+          "count": 1
+        }
+      ],
+      "deathrattle": [
+        {
+          "type": "add-random-treasure",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "id": "ulda_addarah",
+      "name": "Addarah",
+      "type": "creature",
+      "cost": 3,
+      "cardClass": "neutral",
+      "rarity": "legendary",
+      "set": "TOMBS_OF_TERROR",
+      "token": true,
+      "treasure": true,
+      "description": "Battlecry: Shuffle all enemy creatures into your deck.",
+      "attack": 3,
+      "health": 6,
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "shuffle-enemy-board-into-deck"
+        }
+      ]
+    },
+    {
+      "id": "ulda_the_gatling_wand",
+      "name": "The Gatling Wand",
+      "type": "sorcery",
+      "cost": 5,
+      "cardClass": "neutral",
+      "rarity": "legendary",
+      "set": "TOMBS_OF_TERROR",
+      "token": true,
+      "treasure": true,
+      "description": "Deal 3 damage split randomly among all enemies.",
+      "effects": [
+        {
+          "type": "random-damage",
+          "value": 1,
+          "count": 3,
+          "pool": "enemies"
+        }
+      ]
+    },
+    {
+      "id": "ulda_branns_saddle",
+      "name": "Brann's Saddle",
+      "type": "sorcery",
+      "cost": 2,
+      "cardClass": "neutral",
+      "rarity": "legendary",
+      "set": "TOMBS_OF_TERROR",
+      "token": true,
+      "treasure": true,
+      "description": "Give a friendly creature +3/+3.",
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 3,
+          "health": 3,
+          "target": "friendly-creature"
+        }
+      ]
+    },
+    {
+      "id": "ulda_renos_magical_torch",
+      "name": "Reno's Magical Torch",
+      "type": "sorcery",
+      "cost": 2,
+      "cardClass": "neutral",
+      "rarity": "legendary",
+      "set": "TOMBS_OF_TERROR",
+      "token": true,
+      "treasure": true,
+      "description": "Deal 4 damage. Combo: Also shuffle a copy of this into your deck.",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 4,
+          "target": "any"
+        }
+      ],
+      "combo": [
+        {
+          "type": "damage",
+          "value": 4,
+          "target": "any"
+        },
+        {
+          "type": "shuffle-self-into-deck"
+        }
+      ]
+    },
+    {
+      "id": "ulda_staff_of_ammunae",
+      "name": "Staff of Ammunae",
+      "type": "sorcery",
+      "cost": 4,
+      "cardClass": "neutral",
+      "rarity": "legendary",
+      "set": "TOMBS_OF_TERROR",
+      "token": true,
+      "treasure": true,
+      "description": "Give your creatures Windfury & Immune this turn.",
+      "effects": [
+        {
+          "type": "grant",
+          "keyword": "windfury",
+          "target": "friendly-creatures"
+        },
+        {
+          "type": "grant-immune-turn",
+          "target": "friendly-creatures"
+        }
+      ]
+    },
+    {
+      "id": "ulda_blade_of_the_burning_sun",
+      "name": "Blade of the Burning Sun",
+      "type": "weapon",
+      "cost": 4,
+      "cardClass": "neutral",
+      "rarity": "legendary",
+      "set": "TOMBS_OF_TERROR",
+      "token": true,
+      "treasure": true,
+      "description": "Battlecry: Give all creatures in your deck +2 Attack. Deathrattle: Return this to your hand.",
+      "attack": 4,
+      "durability": 2,
+      "keywords": [
+        "battlecry",
+        "deathrattle"
+      ],
+      "effects": [
+        {
+          "type": "buff-deck-minions",
+          "attack": 2,
+          "health": 0
+        }
+      ],
+      "deathrattle": [
+        {
+          "type": "return-weapon-to-hand"
+        }
+      ]
+    },
+    {
+      "id": "ulda_uldum_treasure_cache",
+      "name": "Uldum Treasure Cache",
+      "type": "heropower",
+      "cost": 0,
+      "cardClass": "neutral",
+      "rarity": "basic",
+      "set": "TOMBS_OF_TERROR",
+      "token": true,
+      "description": "Hero Power (2): Add a random Treasure to your hand.",
+      "power": {
+        "cost": 2,
+        "effects": [
+          {
+            "type": "add-random-treasure",
+            "count": 1
+          }
+        ]
+      }
     }
   ]
 }

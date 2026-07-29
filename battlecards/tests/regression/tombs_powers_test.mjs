@@ -15,7 +15,7 @@ const usePower = (state, pi, id, target = null, choice) => {
 	return E.useHeroPower(state, pi, card.uid, target, choice);
 };
 
-ok('12 Explorer powers imported', raw.cards.filter(c => c.set === 'TOMBS_OF_TERROR' && c.type === 'heropower').length === 12);
+ok('12 Explorer powers + the shared Treasure Cache imported', raw.cards.filter(c => c.set === 'TOMBS_OF_TERROR' && c.type === 'heropower').length === 13);
 
 // Reno: Amateur Mage — 1 damage; Combo (a card played this turn) — 2
 {

@@ -539,8 +539,11 @@ register('draw-beast-gain-stats', ({ state, pi, target, source, enemies, scaled,
 
 register('grant-immune-turn', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => { {
 			// Ashtongue Slayer: give a minion Immune until end of turn (target 'self' = source, Kurtrus Outcast)
-			const t = e.target === 'self' ? (source && source.zone === 'board' && !isDead(source) ? source : null) : chosenCreature();
-			if (t) { if (!t.keywords.includes(KW.IMMUNE)) t.keywords.push(KW.IMMUNE); t.immuneTurnClear = true; emit(state, { type: 'buff', uid: t.uid, attack: t.attack, hp: hp(t) }); }
+			// Staff of Ammunae: target 'friendly-creatures' grants your whole board Immune this turn
+			const ts = e.target === 'friendly-creatures' ? state.players[pi].board.filter(c => !isDead(c) && c.type !== 'location')
+				: e.target === 'self' ? (source && source.zone === 'board' && !isDead(source) ? [source] : [])
+				: [chosenCreature()].filter(Boolean);
+			for (const t of ts) { if (!t.keywords.includes(KW.IMMUNE)) t.keywords.push(KW.IMMUNE); t.immuneTurnClear = true; emit(state, { type: 'buff', uid: t.uid, attack: t.attack, hp: hp(t) }); }
 } });
 
 

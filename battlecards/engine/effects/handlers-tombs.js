@@ -3,8 +3,49 @@
 import { register } from './registry.js';
 import {
 	emit, instantiate, hp, isDead, opponentsOf, summon, recomputeAuras, sweepDeaths,
+	MAX_HAND, breakWeapon,
 } from '../../engine.js';
 import { gainArmor } from '../damage.js';
+
+register('add-random-treasure', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => { {
+	// Flo Slatebrand / Uldum Treasure Cache: add N random Treasure cards to
+	// your hand
+	const p = state.players[pi];
+	const pool = Object.values(state.cardsById).filter(d => d.treasure);
+	for (let n = 0; n < (e.count || 1) && pool.length && p.hand.length < MAX_HAND; n++) {
+		const d = pool[Math.floor(state.rng() * pool.length)];
+		const c = instantiate(d, pi); c.zone = 'hand';
+		p.hand.push(c);
+		emit(state, { type: 'conjure', player: pi, card: c, color: null });
+	}
+} });
+
+register('shuffle-enemy-board-into-deck', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => { {
+	// Addarah: shuffle every enemy creature into YOUR deck
+	const p = state.players[pi];
+	for (const o of enemies) {
+		const op = state.players[o];
+		for (const c of [...op.board]) {
+			if (isDead(c) || c.type === 'location') continue;
+			op.board = op.board.filter(x => x !== c);
+			c.zone = 'gone';
+			p.deck.push(c.id);
+		}
+	}
+	for (let i = p.deck.length - 1; i > 0; i--) { const j = Math.floor(state.rng() * (i + 1)); [p.deck[i], p.deck[j]] = [p.deck[j], p.deck[i]]; }
+	emit(state, { type: 'shuffle', player: pi });
+	recomputeAuras(state);
+} });
+
+register('return-weapon-to-hand', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => { {
+	// Blade of the Burning Sun deathrattle: the weapon card returns to hand
+	const p = state.players[pi];
+	if (source && state.cardsById[source.id] && p.hand.length < MAX_HAND) {
+		const c = instantiate(state.cardsById[source.id], pi); c.zone = 'hand';
+		p.hand.push(c);
+		emit(state, { type: 'conjure', player: pi, card: c, color: null });
+	}
+} });
 
 register('destroy-random-gain-armor', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => { {
 	// Titan-Forged Grapnel: destroy N random enemy creatures, gain Armor

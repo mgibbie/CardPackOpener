@@ -292,5 +292,88 @@ ok('batch-1 treasures marked treasure+token', raw.cards.filter(c => c.set === 'T
 	const legend = state.players[0].board.find(x => byId[x.id]?.rarity === 'legendary');
 	ok('Canopic Jars: DR summoned a Legendary', !!legend);
 }
+
+// ---- batch 4 ----
+const usePower = (state, pi, id, target = null) => {
+	const card = Object.assign(E.instantiate(byId[id], pi), { zone: 'heropower', usedThisTurn: false });
+	state.players[pi].heroPowers.push(card);
+	return E.useHeroPower(state, pi, card.uid, target);
+};
+// Flo Slatebrand: Battlecry AND Deathrattle add a random Treasure
+{
+	const { state } = new Scenario(byId)
+		.def('t_kill', { type: 'sorcery', cost: 0, effects: [{ type: 'damage', value: 9, target: 'creature' }] })
+		.mana(0, 20).hand(0, ['ulda_flo_slatebrand', 't_kill']).play(0, 'ulda_flo_slatebrand').run();
+	ok('Flo: Battlecry added a Treasure', state.players[0].hand.some(c => byId[c.id]?.treasure));
+	const before = state.players[0].hand.filter(c => byId[c.id]?.treasure).length;
+	E.playCard(state, 0, state.players[0].hand.find(c => c.id === 't_kill').uid, { type: 'creature', uid: state.players[0].board[0].uid, player: 0 });
+	ok('Flo: Deathrattle added another Treasure', state.players[0].hand.filter(c => byId[c.id]?.treasure).length > before);
+}
+// Addarah: shuffle all enemy creatures into your deck
+{
+	const { state } = new Scenario(byId)
+		.def('t_e', { type: 'creature', cost: 2, attack: 2, health: 2 })
+		.mana(0, 20).board(1, ['t_e', 't_e']).hand(0, ['ulda_addarah']).play(0, 'ulda_addarah').run();
+	ok('Addarah: enemy board cleared', state.players[1].board.length === 0);
+	ok('Addarah: two enemy creatures now in your deck', state.players[0].deck.filter(id => id === 't_e').length === 2);
+}
+// The Gatling Wand: 3 total damage among enemies
+{
+	const { state } = new Scenario(byId)
+		.def('t_wall', { type: 'creature', cost: 5, attack: 0, health: 20 })
+		.mana(0, 20).board(1, ['t_wall']).hand(0, ['ulda_the_gatling_wand']).play(0, 'ulda_the_gatling_wand').run();
+	const dealt = state.players[1].board[0].damage + (40 - state.players[1].life);
+	ok('Gatling Wand: 3 damage split', dealt === 3, dealt);
+}
+// Brann's Saddle: +3/+3 to a friendly creature
+{
+	const { state } = new Scenario(byId)
+		.def('t_c', { type: 'creature', cost: 2, attack: 2, health: 2 })
+		.mana(0, 20).board(0, ['t_c']).hand(0, ["ulda_branns_saddle"])
+		.play(0, 'ulda_branns_saddle', { targetBoard: [0, 0] }).run();
+	const c = state.players[0].board[0];
+	ok("Brann's Saddle: +3/+3", c.attack === 5 && E.hp(c) === 5);
+}
+// Reno's Magical Torch: 4 damage; Combo also shuffles a copy back
+{
+	const { state } = new Scenario(byId)
+		.def('t_free', { type: 'sorcery', cost: 0, effects: [{ type: 'armor', value: 1 }] })
+		.def('t_wall', { type: 'creature', cost: 5, attack: 0, health: 20 })
+		.mana(0, 20).board(1, ['t_wall']).hand(0, ['t_free', 'ulda_renos_magical_torch']).run();
+	E.playCard(state, 0, state.players[0].hand.find(c => c.id === 't_free').uid, null); // enables Combo
+	E.playCard(state, 0, state.players[0].hand.find(c => c.id === 'ulda_renos_magical_torch').uid, { type: 'creature', uid: state.players[1].board[0].uid, player: 0 });
+	ok("Reno's Magical Torch: 4 damage", state.players[1].board[0].damage === 4, state.players[1].board[0].damage);
+	ok("Reno's Magical Torch: Combo shuffled a copy into the deck", state.players[0].deck.includes('ulda_renos_magical_torch'));
+}
+// Staff of Ammunae: Windfury + Immune to your whole board this turn
+{
+	const { state } = new Scenario(byId)
+		.def('t_a', { type: 'creature', cost: 2, attack: 2, health: 2 })
+		.def('t_b', { type: 'creature', cost: 3, attack: 3, health: 3 })
+		.mana(0, 20).board(0, ['t_a', 't_b']).hand(0, ["ulda_staff_of_ammunae"])
+		.play(0, 'ulda_staff_of_ammunae').run();
+	ok('Staff of Ammunae: whole board has Windfury + Immune',
+		state.players[0].board.every(c => c.keywords.includes('windfury') && c.keywords.includes('immune')));
+}
+// Blade of the Burning Sun: deck +2 Attack on play; returns to hand on break
+{
+	const { state } = new Scenario(byId)
+		.def('t_m', { type: 'creature', cost: 3, attack: 3, health: 3 })
+		.mana(0, 20).deck(0, ['t_m']).hand(0, ['ulda_blade_of_the_burning_sun']).run();
+	E.playCard(state, 0, state.players[0].hand[0].uid, null);
+	E.drawCards(state, 0, 1);
+	const drawn = state.players[0].hand.find(c => c.id === 't_m');
+	ok('Blade of the Burning Sun: deck creature drawn at +2 Attack', drawn && drawn.attack === 5, drawn && drawn.attack);
+	// break the weapon -> deathrattle returns it to hand
+	state.players[0].weapon.durability = 1;
+	E.degradeWeapon(state, 0);
+	ok('Blade of the Burning Sun: returned to hand on break', state.players[0].hand.some(c => c.id === 'ulda_blade_of_the_burning_sun'));
+}
+// Uldum Treasure Cache (shared power): add a random Treasure
+{
+	const { state } = new Scenario(byId).mana(0, 20).run();
+	usePower(state, 0, 'ulda_uldum_treasure_cache');
+	ok('Uldum Treasure Cache: a Treasure in hand', state.players[0].hand.some(c => byId[c.id]?.treasure));
+}
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);
