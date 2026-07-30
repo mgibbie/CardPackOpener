@@ -228,7 +228,7 @@
       "id": "wild_growth",
       "name": "Wild Growth",
       "type": "sorcery",
-      "cardClass": "naturalist",
+      "cardClass": "druid",
       "cost": 2,
       "rarity": "common",
       "description": "Summon two 1/1 Animal tokens."
@@ -70343,7 +70343,7 @@
       "name": "Mirror Image",
       "type": "sorcery",
       "cost": 1,
-      "token": true,
+      "token": false,
       "rarity": "common",
       "set": "ICECROWN",
       "description": "Summon two 0/2 creatures with Taunt.",
