@@ -225,6 +225,11 @@ function drawPiece(p, x, y) {
 	ctx.fillStyle = side === WHITE ? 'rgba(90,160,240,0.22)' : 'rgba(240,90,90,0.22)';
 	ctx.fillRect(x + 3, y + 3, CELL - 6, CELL - 6);
 	if (p.pokemon) drawSprite(p.pokemon, x, y, CELL, side);
+	else { // the King carries no Pokémon — draw a clear crown so its square isn't empty
+		ctx.font = 'bold 46px serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+		ctx.fillStyle = side === WHITE ? '#f0d878' : '#d89838';
+		ctx.fillText(side === WHITE ? '♔' : '♚', x + CELL / 2, y + CELL / 2 + 3);
+	}
 	// piece-type glyph badge (top-left)
 	ctx.font = 'bold 18px serif'; ctx.textAlign = 'left'; ctx.textBaseline = 'top';
 	ctx.fillStyle = side === WHITE ? '#12305a' : '#5a1212';
