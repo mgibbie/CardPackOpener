@@ -116,7 +116,7 @@ ok('all 4 batch-2 hero-power cards present + well-formed', HP_IDS2.every(id => {
 }
 
 // ---------------- passives (duels.js) ----------------
-ok('PASSIVES has the 58 entries', Object.keys(D.PASSIVES).length === 58 && ['oops_all_spells', 'heavy_armor', 'sunstriders_crown', 'ring_of_haste', 'grommashs_armguards'].every(k => D.PASSIVES[k]));
+ok('PASSIVES has the 62 entries', Object.keys(D.PASSIVES).length === 62 && ['open_the_doorways', 'orb_of_revelation', 'arcane_flux', 'divine_illumination'].every(k => D.PASSIVES[k]));
 ok('HEROES lists 11 signature heroes with class', D.HEROES.length === 11 && D.HEROES.every(h => h.id && h.name && h.heroClass), D.HEROES.length);
 ok('applyPassive returns false for an unknown id', D.applyPassive({ players: [{}] }, 0, 'nope') === false);
 
@@ -565,6 +565,41 @@ const kill = (state, pi, uid) => { const c = state.players[pi].board.find(x => x
 	D.applyPassive(state, 0, 'grommashs_armguards');
 	const w = state.players[0].hand.find(c => c.id === 't_w');
 	ok("Grommash's Armguards: weapon drawn & (1) cheaper", w && E.effectiveCost(state, 0, w) === 2, w && E.effectiveCost(state, 0, w));
+}
+// Open the Doorways: first Discover each turn -> a second copy of the pick
+{
+	const { state } = new Scenario(byId).run();
+	D.applyPassive(state, 0, 'open_the_doorways');
+	E.execEffects(state, 0, [{ type: 'discover', cardType: 'creature' }], null, null);
+	const ids = state.pickQueue[0].ids;
+	E.resolvePick(state, ids[0]);
+	ok('Open the Doorways: two copies of the discovered card', state.players[0].hand.filter(c => c.id === ids[0]).length === 2, state.players[0].hand.map(c => c.id));
+}
+// Orb of Revelation: first Discover each turn -> hand spells (1) cheaper
+{
+	const { state } = new Scenario(byId).def('t_sp', { type: 'sorcery', cost: 4, effects: [] }).hand(0, ['t_sp']).run();
+	D.applyPassive(state, 0, 'orb_of_revelation');
+	E.execEffects(state, 0, [{ type: 'discover', cardType: 'creature' }], null, null);
+	E.resolvePick(state, state.pickQueue[0].ids[0]);
+	ok('Orb of Revelation: the hand spell now costs (3)', state.players[0].hand.find(c => c.id === 't_sp').cost === 3, state.players[0].hand.find(c => c.id === 't_sp').cost);
+}
+// Arcane Flux: first Arcane spell queues a Discover
+{
+	const { state } = new Scenario(byId).def('t_arc', { type: 'sorcery', cost: 0, tribe: 'Arcane', effects: [] }).mana(0, 10).hand(0, ['t_arc']).run();
+	state.players[0].heroClass = 'mage';
+	D.applyPassive(state, 0, 'arcane_flux');
+	const before = state.pickQueue.length;
+	E.playCard(state, 0, state.players[0].hand[0].uid, null, null, 0);
+	ok('Arcane Flux: an Arcane spell queues a Discover', state.pickQueue.length === before + 1, [before, state.pickQueue.length]);
+}
+// Divine Illumination: first Holy spell queues a Discover
+{
+	const { state } = new Scenario(byId).def('t_holy', { type: 'sorcery', cost: 0, tribe: 'Holy', effects: [] }).mana(0, 10).hand(0, ['t_holy']).run();
+	state.players[0].heroClass = 'priest';
+	D.applyPassive(state, 0, 'divine_illumination');
+	const before = state.pickQueue.length;
+	E.playCard(state, 0, state.players[0].hand[0].uid, null, null, 0);
+	ok('Divine Illumination: a Holy spell queues a Discover', state.pickQueue.length === before + 1, [before, state.pickQueue.length]);
 }
 
 // ---------------- boss ladder ----------------

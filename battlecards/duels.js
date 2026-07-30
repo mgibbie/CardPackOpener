@@ -255,6 +255,23 @@ export const PASSIVES = {
 		name: "Grommash's Armguards", text: 'At the start of the game, draw a weapon. Your weapons cost (1) less.',
 		apply: (state, pi) => { const p = state.players[pi]; p.grommash = true; const wi = p.deck.findIndex(id => state.cardsById[id] && state.cardsById[id].type === 'weapon'); if (wi >= 0) { const [wid] = p.deck.splice(wi, 1); E.execEffects(state, pi, [{ type: 'conjure-id', id: wid }], null, null); } },
 	},
+	// --- discover ---
+	open_the_doorways: {
+		name: 'Open the Doorways', text: 'After your first Discover in a turn, get another copy of that card.',
+		apply: (state, pi) => { state.players[pi].openDoorways = true; },
+	},
+	orb_of_revelation: {
+		name: 'Orb of Revelation', text: 'After your first Discover in a turn, reduce the Cost of spells in your hand by (1).',
+		apply: (state, pi) => { state.players[pi].orbRevelation = true; },
+	},
+	arcane_flux: {
+		name: 'Arcane Flux', text: 'After you cast your first Arcane spell in a turn, Discover a card from your class.',
+		apply: (state, pi) => { state.players[pi].arcaneFlux = true; },
+	},
+	divine_illumination: {
+		name: 'Divine Illumination', text: 'After you cast your first Holy spell in a turn, Discover a card from your class.',
+		apply: (state, pi) => { state.players[pi].divineIllumination = true; },
+	},
 };
 
 export function applyPassive(state, pi, id) {
