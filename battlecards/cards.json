@@ -132538,6 +132538,236 @@
           "health": 2
         }
       ]
+    },
+    {
+      "id": "duelshp_send_in_the_scout",
+      "name": "Send in the Scout",
+      "type": "heropower",
+      "cost": 2,
+      "cardClass": "neutral",
+      "rarity": "common",
+      "set": "DUELS",
+      "power": {
+        "cost": 2,
+        "effects": [
+          {
+            "type": "summon",
+            "count": 1,
+            "attack": 2,
+            "health": 2,
+            "name": "SI:7 Scout"
+          }
+        ]
+      },
+      "description": "Hero Power (2): Summon a 2/2 SI:7 Scout."
+    },
+    {
+      "id": "duelshp_blood_parasite",
+      "name": "Blood Parasite",
+      "type": "heropower",
+      "cost": 2,
+      "cardClass": "death_knight",
+      "rarity": "common",
+      "set": "DUELS",
+      "power": {
+        "cost": 2,
+        "effects": [
+          {
+            "type": "summon",
+            "count": 1,
+            "attack": 2,
+            "health": 1,
+            "name": "Bloodworm",
+            "keywords": [
+              "lifesteal"
+            ]
+          }
+        ]
+      },
+      "description": "Hero Power (2): Summon a 2/1 Bloodworm with Lifesteal."
+    },
+    {
+      "id": "duelshp_primal_power",
+      "name": "Primal Power",
+      "type": "heropower",
+      "cost": 3,
+      "cardClass": "warrior",
+      "rarity": "common",
+      "set": "DUELS",
+      "power": {
+        "cost": 3,
+        "effects": [
+          {
+            "type": "damage",
+            "value": 3,
+            "target": "own-hero"
+          },
+          {
+            "type": "hero-attack",
+            "value": 3
+          },
+          {
+            "type": "armor",
+            "value": 3
+          }
+        ]
+      },
+      "description": "Hero Power (3): Take 3 damage. Gain +3 Attack this turn. Gain 3 Armor."
+    },
+    {
+      "id": "duelshp_uber_primal_power",
+      "name": "Uber Primal Power",
+      "type": "heropower",
+      "cost": 3,
+      "cardClass": "warrior",
+      "rarity": "common",
+      "set": "DUELS",
+      "power": {
+        "cost": 3,
+        "effects": [
+          {
+            "type": "hero-attack",
+            "value": 3
+          },
+          {
+            "type": "armor",
+            "value": 3
+          }
+        ]
+      },
+      "description": "Hero Power (3): Gain +3 Attack this turn. Gain 3 Armor."
+    },
+    {
+      "id": "duelshp_survival_training",
+      "name": "Survival Training",
+      "type": "heropower",
+      "cost": 2,
+      "cardClass": "hunter",
+      "rarity": "common",
+      "set": "DUELS",
+      "power": {
+        "cost": 2,
+        "effects": [
+          {
+            "type": "damage",
+            "value": 2,
+            "target": "enemy-hero"
+          },
+          {
+            "type": "buff-random-friendly",
+            "attack": 1,
+            "health": 0
+          }
+        ]
+      },
+      "description": "Hero Power (2): Deal 2 damage to target opponent, then give a random friendly creature +1 Attack."
+    },
+    {
+      "id": "duelshp_modest_aspirations",
+      "name": "Modest Aspirations",
+      "type": "heropower",
+      "cost": 2,
+      "cardClass": "paladin",
+      "rarity": "common",
+      "set": "DUELS",
+      "power": {
+        "cost": 2,
+        "effects": [
+          {
+            "type": "set-target-stats",
+            "attack": 3,
+            "health": 3
+          }
+        ]
+      },
+      "description": "Hero Power (2): Set a creature's Attack & Health to 3."
+    },
+    {
+      "id": "duelshp_from_golden_light",
+      "name": "From Golden Light",
+      "type": "heropower",
+      "cost": 2,
+      "cardClass": "paladin",
+      "rarity": "common",
+      "set": "DUELS",
+      "power": {
+        "cost": 2,
+        "effects": [
+          {
+            "type": "resurrect-highest-died",
+            "count": 1
+          }
+        ]
+      },
+      "description": "Hero Power (2): Resurrect a friendly creature."
+    },
+    {
+      "id": "duelshp_harvest_time",
+      "name": "Harvest Time!",
+      "type": "heropower",
+      "cost": 3,
+      "cardClass": "druid",
+      "rarity": "common",
+      "set": "DUELS",
+      "power": {
+        "cost": 3,
+        "effects": [
+          {
+            "type": "destroy",
+            "target": "creature"
+          },
+          {
+            "type": "summon",
+            "count": 2,
+            "attack": 1,
+            "health": 1,
+            "name": "Sapling"
+          }
+        ]
+      },
+      "description": "Hero Power (3): Destroy a creature, then summon two 1/1 Saplings."
+    },
+    {
+      "id": "duelshp_shadow_mend",
+      "name": "Shadow Mend",
+      "type": "heropower",
+      "cost": 2,
+      "cardClass": "priest",
+      "rarity": "common",
+      "set": "DUELS",
+      "power": {
+        "cost": 2,
+        "effects": [
+          {
+            "type": "heal",
+            "value": 2,
+            "target": "any"
+          }
+        ]
+      },
+      "description": "Hero Power (2): Restore 2 Health to a character."
+    },
+    {
+      "id": "duelshp_call_of_madness",
+      "name": "Call of Madness",
+      "type": "heropower",
+      "cost": 2,
+      "cardClass": "priest",
+      "rarity": "common",
+      "set": "DUELS",
+      "power": {
+        "cost": 2,
+        "effects": [
+          {
+            "type": "summon",
+            "count": 1,
+            "attack": 0,
+            "health": 2,
+            "name": "Voidfiend"
+          }
+        ]
+      },
+      "description": "Hero Power (2): Summon a 0/2 Voidfiend."
     }
   ]
 }
