@@ -116,7 +116,7 @@ ok('all 4 batch-2 hero-power cards present + well-formed', HP_IDS2.every(id => {
 }
 
 // ---------------- passives (duels.js) ----------------
-ok('PASSIVES has the 14 entries', Object.keys(D.PASSIVES).length === 14 && ['robe_of_the_apprentice', 'small_backpacks', 'small_pouches', 'band_of_bees', 'emerald_goggles', 'rhonins_scrying_orb', 'rocket_backpacks', 'special_delivery', 'shadowcasting_101', 'rally_the_troops', 'lunar_band', 'ring_of_refreshment', 'staff_of_pain', 'mending_pools'].every(k => D.PASSIVES[k]));
+ok('PASSIVES has the 18 entries', Object.keys(D.PASSIVES).length === 18 && ['robe_of_the_apprentice', 'small_backpacks', 'small_pouches', 'band_of_bees', 'emerald_goggles', 'rhonins_scrying_orb', 'rocket_backpacks', 'special_delivery', 'shadowcasting_101', 'rally_the_troops', 'lunar_band', 'ring_of_refreshment', 'staff_of_pain', 'mending_pools', 'iron_roots', 'spreading_saplings', 'guardian_light', 'firekeepers_idol'].every(k => D.PASSIVES[k]));
 ok('HEROES lists 11 signature heroes with class', D.HEROES.length === 11 && D.HEROES.every(h => h.id && h.name && h.heroClass), D.HEROES.length);
 ok('applyPassive returns false for an unknown id', D.applyPassive({ players: [{}] }, 0, 'nope') === false);
 
@@ -227,6 +227,39 @@ ok('applyPassive returns false for an unknown id', D.applyPassive({ players: [{}
 	const afterFirst = state.players[0].life;
 	E.playCard(state, 0, state.players[0].hand.find(c => c.id === 't_nat').uid, null, null, 0);
 	ok('Mending Pools: first Nature spell heals 2, second does not', afterFirst === 22 && state.players[0].life === 22, [afterFirst, state.players[0].life]);
+}
+// Iron Roots: a Nature spell buffs a random friendly +1/+1 & Taunt
+{
+	const { state } = new Scenario(byId).def('t_nat', { type: 'sorcery', cost: 0, tribe: 'Nature', effects: [] }).def('t_m', { type: 'creature', cost: 2, attack: 2, health: 2 }).board(0, ['t_m']).mana(0, 10).hand(0, ['t_nat']).run();
+	D.applyPassive(state, 0, 'iron_roots');
+	E.playCard(state, 0, state.players[0].hand[0].uid, null, null, 0);
+	const m = state.players[0].board.find(c => c.id === 't_m');
+	ok('Iron Roots: friendly gains +1/+1 & Taunt', m.attack === 3 && E.hp(m) === 3 && m.keywords.includes('taunt'), [m.attack, E.hp(m), m.keywords]);
+}
+// Spreading Saplings: a Nature spell summons a 1/1 Sapling
+{
+	const { state } = new Scenario(byId).def('t_nat', { type: 'sorcery', cost: 0, tribe: 'Nature', effects: [] }).mana(0, 10).hand(0, ['t_nat']).run();
+	D.applyPassive(state, 0, 'spreading_saplings');
+	E.playCard(state, 0, state.players[0].hand[0].uid, null, null, 0);
+	const sap = state.players[0].board.filter(c => c.name === 'Sapling');
+	ok('Spreading Saplings: a 1/1 Sapling appears', sap.length === 1 && sap[0].attack === 1 && E.hp(sap[0]) === 1, sap.length);
+}
+// Guardian Light: a Holy spell summons a Cost/Cost Ancient Guardian
+{
+	const { state } = new Scenario(byId).def('t_holy', { type: 'sorcery', cost: 4, tribe: 'Holy', effects: [] }).mana(0, 10).hand(0, ['t_holy']).run();
+	D.applyPassive(state, 0, 'guardian_light');
+	E.playCard(state, 0, state.players[0].hand[0].uid, null, null, 0);
+	const g = state.players[0].board.find(c => c.name === 'Ancient Guardian');
+	ok('Guardian Light: a 4/4 Ancient Guardian (Cost 4)', g && g.attack === 4 && E.hp(g) === 4, g && [g.attack, E.hp(g)]);
+}
+// Firekeeper's Idol: a Fire spell summons a 1/2 & adds one to hand
+{
+	const { state } = new Scenario(byId).def('t_fire', { type: 'sorcery', cost: 0, tribe: 'Fire', effects: [] }).mana(0, 10).hand(0, ['t_fire']).run();
+	D.applyPassive(state, 0, 'firekeepers_idol');
+	E.playCard(state, 0, state.players[0].hand[0].uid, null, null, 0);
+	const onBoard = state.players[0].board.filter(c => c.name === 'Flame Elemental');
+	const inHand = state.players[0].hand.filter(c => c.name === 'Flame Elemental');
+	ok("Firekeeper's Idol: 1/2 on board + one in hand", onBoard.length === 1 && onBoard[0].attack === 1 && E.hp(onBoard[0]) === 2 && inHand.length === 1, [onBoard.length, inHand.length]);
 }
 
 // ---------------- boss ladder ----------------

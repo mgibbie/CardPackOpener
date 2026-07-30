@@ -2114,6 +2114,16 @@ export function playCard(state, pi, cardUid, target, choice, position, useAlt, k
 	if (p.ringOfRefreshment && isSpellType(card)) { for (const hpw of p.heroPowers) hpw.usedThisTurn = false; } // Ring of Refreshment: a spell refreshes your Hero Power
 	if (p.staffOfPain && isSpellType(card) && schoolOf(card) === 'Shadow') execEffects(state, pi, [{ type: 'damage', value: 2, target: 'all-heroes' }], null, null); // Staff of Pain: a Shadow spell hurts every hero
 	if (p.mendingPools && isSpellType(card) && schoolOf(card) === 'Nature' && p._mendingTurn !== state.turnNumber) { p._mendingTurn = state.turnNumber; execEffects(state, pi, [{ type: 'heal', value: 2, target: 'friendly-characters' }], null, null); } // Mending Pools: your first Nature spell each turn heals your side
+	if (p.ironRoots && isSpellType(card) && schoolOf(card) === 'Nature') execEffects(state, pi, [{ type: 'buff-random-friendly', attack: 1, health: 1, grant: 'taunt' }], null, null); // Iron Roots: a Nature spell buffs a random friendly +1/+1 & Taunt
+	if (p.spreadingSaplings && isSpellType(card) && schoolOf(card) === 'Nature') execEffects(state, pi, [{ type: 'summon', count: 1, attack: 1, health: 1, name: 'Sapling' }], null, null); // Spreading Saplings: a Nature spell summons a 1/1 Sapling
+	if (p.guardianLight && isSpellType(card) && schoolOf(card) === 'Holy' && (card.cost || 0) > 0) execEffects(state, pi, [{ type: 'summon', count: 1, attack: card.cost, health: card.cost, name: 'Ancient Guardian' }], null, null); // Guardian Light: a Holy spell summons a Cost/Cost Guardian
+	if (p.firekeepersIdol && isSpellType(card) && schoolOf(card) === 'Fire') { // Firekeeper's Idol: a Fire spell summons a 1/2 Flame Elemental & hands you one
+		execEffects(state, pi, [{ type: 'summon', count: 1, attack: 1, health: 2, name: 'Flame Elemental', tribe: 'Elemental' }], null, null);
+		if (p.hand.length < MAX_HAND) {
+			const fe = instantiate({ id: 'token_flame_elemental', name: 'Flame Elemental', type: 'creature', cost: 2, rarity: 'common', token: true, tribe: 'Elemental', attack: 1, health: 2, description: 'A 1/2 Flame Elemental.' }, pi);
+			fe.zone = 'hand'; p.hand.push(fe); emit(state, { type: 'conjure', player: pi, card: fe, color: null }); fireEmerge(state, pi, fe);
+		}
+	}
 	// Overpowered: replay a copy of each card played this turn (random targets)
 	if (p.overpoweredTurn === state.turnNumber && !state._opLock && card.id !== 'dala_overpowered' && state.cardsById[card.id]) {
 		state._opLock = true;

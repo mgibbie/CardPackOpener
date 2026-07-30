@@ -72,6 +72,22 @@ export const PASSIVES = {
 		name: 'Mending Pools', text: 'After you cast your first Nature spell in a turn, restore 2 Health to all friendly characters.',
 		apply: (state, pi) => { state.players[pi].mendingPools = true; },
 	},
+	iron_roots: {
+		name: 'Iron Roots', text: 'After you cast a Nature spell, give a random friendly creature +1/+1 & Taunt.',
+		apply: (state, pi) => { state.players[pi].ironRoots = true; },
+	},
+	spreading_saplings: {
+		name: 'Spreading Saplings', text: 'After you cast a Nature spell, summon a 1/1 Sapling.',
+		apply: (state, pi) => { state.players[pi].spreadingSaplings = true; },
+	},
+	guardian_light: {
+		name: 'Guardian Light', text: 'After you cast a Holy spell, summon an Ancient Guardian with stats equal to its Cost.',
+		apply: (state, pi) => { state.players[pi].guardianLight = true; },
+	},
+	firekeepers_idol: {
+		name: "Firekeeper's Idol", text: 'After you cast a Fire spell, summon a 1/2 Flame Elemental & add one to your hand.',
+		apply: (state, pi) => { state.players[pi].firekeepersIdol = true; },
+	},
 };
 
 export function applyPassive(state, pi, id) {
