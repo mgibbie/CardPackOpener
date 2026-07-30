@@ -131,5 +131,37 @@ ok('all 7 batch-2 treasures present + tagged', IDS2.every(id => byId[id] && byId
 	ok('Stroke of Midnight: has Echo', byId['duels_stroke_of_midnight'].echo === true);
 }
 
+// ---------------- batch 3 ----------------
+const IDS3 = ['duels_elemental_learning', 'duels_hunters_insight', 'duels_deadly_weapons_101', 'duels_invoke_the_void'];
+ok('all 4 batch-3 treasures present + tagged', IDS3.every(id => byId[id] && byId[id].treasure && byId[id].set === 'DUELS'), IDS3.filter(id => !byId[id]));
+
+// Elemental Learning: 3 random Elementals to hand
+{
+	const { state } = new Scenario(byId).mana(0, 10).hand(0, ['duels_elemental_learning']).play(0, 'duels_elemental_learning').run();
+	const els = state.players[0].hand.filter(c => (c.tribe || '').includes('Elemental'));
+	ok('Elemental Learning: 3 Elementals added to hand', els.length === 3, state.players[0].hand.map(c => c.tribe));
+}
+// Hunter's Insight: hand cards cost (1) less
+{
+	const { state } = new Scenario(byId).def('t_c', { type: 'creature', cost: 5, attack: 3, health: 3 })
+		.mana(0, 10).hand(0, ['duels_hunters_insight', 't_c', 't_c']).play(0, 'duels_hunters_insight').run();
+	ok("Hunter's Insight: reduces hand costs by 1", state.players[0].hand.filter(c => c.id === 't_c').every(c => c.cost === 4), state.players[0].hand.filter(c => c.id === 't_c').map(c => c.cost));
+}
+// Deadly Weapons 101: weapon +2/+2
+{
+	const { state } = new Scenario(byId).mana(0, 10).hand(0, ['duels_deadly_weapons_101'])
+		.do((s) => { s.players[0].weapon = { id: 'w', name: 'Axe', type: 'weapon', attack: 2, durability: 2, keywords: [] }; })
+		.play(0, 'duels_deadly_weapons_101').run();
+	const w = state.players[0].weapon;
+	ok('Deadly Weapons 101: weapon +2/+2', w && w.attack === 4 && w.durability === 4, w && `${w.attack}/${w.durability}`);
+}
+// Invoke the Void: two 7/7 + Overload
+{
+	const { state } = new Scenario(byId).mana(0, 10).hand(0, ['duels_invoke_the_void']).play(0, 'duels_invoke_the_void').run();
+	const ff = state.players[0].board.filter(c => c.name === 'Flamewreathed Faceless');
+	ok('Invoke the Void: two 7/7 Flamewreathed Faceless', ff.length === 2 && ff.every(c => c.attack === 7 && E.hp(c) === 7), ff.length);
+	ok('Invoke the Void: Overloads 4', (state.players[0].overloadPending || 0) === 4, state.players[0].overloadPending);
+}
+
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);

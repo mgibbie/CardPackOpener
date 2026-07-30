@@ -2882,7 +2882,7 @@
       "cardClass": "SHAMAN",
       "mechanics": [],
       "rarity": null,
-      "inBattlecards": false
+      "inBattlecards": true
     },
     {
       "id": "PVPDR_AV_Neutralt8t2",
@@ -2893,7 +2893,7 @@
       "cardClass": "SHAMAN",
       "mechanics": [],
       "rarity": null,
-      "inBattlecards": false
+      "inBattlecards": true
     },
     {
       "id": "PVPDR_AV_Neutralt8t3",
@@ -2904,7 +2904,7 @@
       "cardClass": "SHAMAN",
       "mechanics": [],
       "rarity": null,
-      "inBattlecards": false
+      "inBattlecards": true
     },
     {
       "id": "PVPDR_AV_Neutralt8t4",
@@ -2915,7 +2915,7 @@
       "cardClass": "SHAMAN",
       "mechanics": [],
       "rarity": null,
-      "inBattlecards": false
+      "inBattlecards": true
     },
     {
       "id": "PVPDR_AV_Neutralt9",
@@ -5842,7 +5842,7 @@
         "SILENCE"
       ],
       "rarity": null,
-      "inBattlecards": false
+      "inBattlecards": true
     },
     {
       "id": "PVPDR_SCH_Active11",
@@ -5853,7 +5853,7 @@
       "cardClass": "NEUTRAL",
       "mechanics": [],
       "rarity": null,
-      "inBattlecards": false
+      "inBattlecards": true
     },
     {
       "id": "PVPDR_SCH_Active14",
@@ -5864,7 +5864,7 @@
       "cardClass": "NEUTRAL",
       "mechanics": [],
       "rarity": null,
-      "inBattlecards": false
+      "inBattlecards": true
     },
     {
       "id": "PVPDR_SCH_Active17",
@@ -5952,7 +5952,7 @@
       "cardClass": "NEUTRAL",
       "mechanics": [],
       "rarity": null,
-      "inBattlecards": false
+      "inBattlecards": true
     },
     {
       "id": "PVPDR_SCH_Active30",
@@ -5963,7 +5963,7 @@
       "cardClass": "NEUTRAL",
       "mechanics": [],
       "rarity": null,
-      "inBattlecards": false
+      "inBattlecards": true
     },
     {
       "id": "PVPDR_SCH_Active31",
@@ -5996,7 +5996,7 @@
       "cardClass": "NEUTRAL",
       "mechanics": [],
       "rarity": null,
-      "inBattlecards": false
+      "inBattlecards": true
     },
     {
       "id": "PVPDR_SCH_Active35",
@@ -6029,7 +6029,7 @@
       "cardClass": "NEUTRAL",
       "mechanics": [],
       "rarity": null,
-      "inBattlecards": false
+      "inBattlecards": true
     },
     {
       "id": "PVPDR_SCH_Active38",
@@ -6176,7 +6176,7 @@
       "cardClass": "NEUTRAL",
       "mechanics": [],
       "rarity": null,
-      "inBattlecards": false
+      "inBattlecards": true
     },
     {
       "id": "PVPDR_SCH_Active58",
@@ -6198,7 +6198,7 @@
       "cardClass": "NEUTRAL",
       "mechanics": [],
       "rarity": null,
-      "inBattlecards": false
+      "inBattlecards": true
     },
     {
       "id": "PVPDR_SCH_Active61",
@@ -6211,7 +6211,7 @@
         "FREEZE"
       ],
       "rarity": null,
-      "inBattlecards": false
+      "inBattlecards": true
     },
     {
       "id": "PVPDR_SCH_ComingSoon",
@@ -6659,7 +6659,7 @@
       "cardClass": "DRUID",
       "mechanics": [],
       "rarity": null,
-      "inBattlecards": false
+      "inBattlecards": true
     },
     {
       "id": "PVPDR_Titans_BucketList",
@@ -6705,7 +6705,7 @@
         "ECHO"
       ],
       "rarity": null,
-      "inBattlecards": false
+      "inBattlecards": true
     },
     {
       "id": "PVPDR_Toki_T6",
@@ -6771,7 +6771,7 @@
       "cardClass": "NEUTRAL",
       "mechanics": [],
       "rarity": null,
-      "inBattlecards": false
+      "inBattlecards": true
     },
     {
       "id": "PVPDR_YOP_Active02",
@@ -6782,7 +6782,7 @@
       "cardClass": "NEUTRAL",
       "mechanics": [],
       "rarity": null,
-      "inBattlecards": false
+      "inBattlecards": true
     },
     {
       "id": "PVPDR_YOP_DemonHuntert1",
@@ -6815,7 +6815,7 @@
       "cardClass": "NEUTRAL",
       "mechanics": [],
       "rarity": null,
-      "inBattlecards": false
+      "inBattlecards": true
     },
     {
       "id": "PVPDR_YOP_PaladinT3",

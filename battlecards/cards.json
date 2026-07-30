@@ -132060,6 +132060,89 @@
         }
       ],
       "echo": true
+    },
+    {
+      "id": "duels_elemental_learning",
+      "name": "Elemental Learning",
+      "type": "sorcery",
+      "cost": 3,
+      "cardClass": "mage",
+      "rarity": "legendary",
+      "set": "DUELS",
+      "token": true,
+      "treasure": true,
+      "description": "Add three random Elementals to your hand.",
+      "effects": [
+        {
+          "type": "conjure-random",
+          "cardType": "creature",
+          "tribe": "Elemental",
+          "count": 3
+        }
+      ]
+    },
+    {
+      "id": "duels_hunters_insight",
+      "name": "Hunter's Insight",
+      "type": "sorcery",
+      "cost": 1,
+      "cardClass": "neutral",
+      "rarity": "legendary",
+      "set": "DUELS",
+      "token": true,
+      "treasure": true,
+      "description": "Reduce the Cost of all cards in your hand by (1).",
+      "effects": [
+        {
+          "type": "discount-hand",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "duels_deadly_weapons_101",
+      "name": "Deadly Weapons 101",
+      "type": "sorcery",
+      "cost": 3,
+      "cardClass": "rogue",
+      "rarity": "legendary",
+      "set": "DUELS",
+      "token": true,
+      "treasure": true,
+      "description": "Give your weapon +2/+2.",
+      "effects": [
+        {
+          "type": "buff-weapon",
+          "attack": 2,
+          "durability": 2
+        }
+      ]
+    },
+    {
+      "id": "duels_invoke_the_void",
+      "name": "Invoke the Void",
+      "type": "sorcery",
+      "cost": 6,
+      "cardClass": "shaman",
+      "rarity": "legendary",
+      "set": "DUELS",
+      "token": true,
+      "treasure": true,
+      "description": "Summon two 7/7 Flamewreathed Faceless. Overload (4).",
+      "effects": [
+        {
+          "type": "summon",
+          "count": 2,
+          "attack": 7,
+          "health": 7,
+          "name": "Flamewreathed Faceless",
+          "tribe": "Elemental"
+        },
+        {
+          "type": "add-overload",
+          "value": 4
+        }
+      ]
     }
   ]
 }
