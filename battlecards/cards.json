@@ -131672,6 +131672,267 @@
           "type": "replace-deck-bobs"
         }
       ]
+    },
+    {
+      "id": "duels_earth_invocation",
+      "name": "Earth Invocation",
+      "type": "sorcery",
+      "cost": 0,
+      "cardClass": "shaman",
+      "rarity": "legendary",
+      "set": "DUELS",
+      "token": true,
+      "treasure": true,
+      "description": "Summon two 2/3 Elementals with Taunt.",
+      "effects": [
+        {
+          "type": "summon",
+          "count": 2,
+          "attack": 2,
+          "health": 3,
+          "name": "Elemental",
+          "tribe": "Elemental",
+          "keywords": [
+            "taunt"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "duels_fire_invocation",
+      "name": "Fire Invocation",
+      "type": "sorcery",
+      "cost": 0,
+      "cardClass": "shaman",
+      "rarity": "legendary",
+      "set": "DUELS",
+      "token": true,
+      "treasure": true,
+      "description": "Deal 6 damage to the enemy hero.",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 6,
+          "target": "enemy-hero"
+        }
+      ]
+    },
+    {
+      "id": "duels_lightning_invocation",
+      "name": "Lightning Invocation",
+      "type": "sorcery",
+      "cost": 0,
+      "cardClass": "shaman",
+      "rarity": "legendary",
+      "set": "DUELS",
+      "token": true,
+      "treasure": true,
+      "description": "Deal 2 damage to all enemy creatures.",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 2,
+          "target": "enemy-creatures"
+        }
+      ]
+    },
+    {
+      "id": "duels_cursed_curio",
+      "name": "Cursed Curio",
+      "type": "sorcery",
+      "cost": 3,
+      "cardClass": "neutral",
+      "rarity": "legendary",
+      "set": "DUELS",
+      "token": true,
+      "treasure": true,
+      "description": "Summon three 3/3 Ghosts with Lifesteal.",
+      "effects": [
+        {
+          "type": "summon",
+          "count": 3,
+          "attack": 3,
+          "health": 3,
+          "name": "Ghost",
+          "keywords": [
+            "lifesteal"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "duels_blood_moon",
+      "name": "Blood Moon",
+      "type": "sorcery",
+      "cost": 3,
+      "cardClass": "neutral",
+      "rarity": "legendary",
+      "set": "DUELS",
+      "token": true,
+      "treasure": true,
+      "description": "Give your creatures +1/+1 & Lifesteal.",
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 1,
+          "health": 1,
+          "target": "friendly-creatures"
+        },
+        {
+          "type": "grant",
+          "keyword": "lifesteal",
+          "target": "friendly-creatures"
+        }
+      ]
+    },
+    {
+      "id": "duels_veterans_militia_horn",
+      "name": "Veteran's Militia Horn",
+      "type": "sorcery",
+      "cost": 3,
+      "cardClass": "neutral",
+      "rarity": "legendary",
+      "set": "DUELS",
+      "token": true,
+      "treasure": true,
+      "description": "Give your creatures +4/+4, Taunt, & Divine Shield.",
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 4,
+          "health": 4,
+          "target": "friendly-creatures"
+        },
+        {
+          "type": "grant",
+          "keyword": "taunt",
+          "target": "friendly-creatures"
+        },
+        {
+          "type": "grant",
+          "keyword": "divine_shield",
+          "target": "friendly-creatures"
+        }
+      ]
+    },
+    {
+      "id": "duels_supercharge",
+      "name": "Supercharge",
+      "type": "sorcery",
+      "cost": 0,
+      "cardClass": "neutral",
+      "rarity": "legendary",
+      "set": "DUELS",
+      "token": true,
+      "treasure": true,
+      "description": "Give your creatures +2 Health.",
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 0,
+          "health": 2,
+          "target": "friendly-creatures"
+        }
+      ]
+    },
+    {
+      "id": "duels_mage_armor",
+      "name": "Mage Armor",
+      "type": "sorcery",
+      "cost": 3,
+      "cardClass": "neutral",
+      "rarity": "legendary",
+      "set": "DUELS",
+      "token": true,
+      "treasure": true,
+      "description": "Gain 10 Armor.",
+      "effects": [
+        {
+          "type": "armor",
+          "value": 10
+        }
+      ]
+    },
+    {
+      "id": "duels_pure_cold",
+      "name": "Pure Cold",
+      "type": "sorcery",
+      "cost": 5,
+      "cardClass": "neutral",
+      "rarity": "legendary",
+      "set": "DUELS",
+      "token": true,
+      "treasure": true,
+      "description": "Deal 8 damage to the enemy hero.",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 8,
+          "target": "enemy-hero"
+        }
+      ]
+    },
+    {
+      "id": "duels_hefty_sack_of_coins",
+      "name": "Hefty Sack of Coins",
+      "type": "sorcery",
+      "cost": 3,
+      "cardClass": "neutral",
+      "rarity": "legendary",
+      "set": "DUELS",
+      "token": true,
+      "treasure": true,
+      "description": "Summon a random 3, 6, & 9-Cost creature.",
+      "effects": [
+        {
+          "type": "summon-random",
+          "cost": 3
+        },
+        {
+          "type": "summon-random",
+          "cost": 6
+        },
+        {
+          "type": "summon-random",
+          "cost": 9
+        }
+      ]
+    },
+    {
+      "id": "duels_astral_portal",
+      "name": "Astral Portal",
+      "type": "sorcery",
+      "cost": 4,
+      "cardClass": "neutral",
+      "rarity": "legendary",
+      "set": "DUELS",
+      "token": true,
+      "treasure": true,
+      "description": "Summon a random Legendary creature.",
+      "effects": [
+        {
+          "type": "summon-random",
+          "rarity": "legendary"
+        }
+      ]
+    },
+    {
+      "id": "duels_bag_of_coins",
+      "name": "Bag of Coins",
+      "type": "sorcery",
+      "cost": 0,
+      "cardClass": "neutral",
+      "rarity": "legendary",
+      "set": "DUELS",
+      "token": true,
+      "treasure": true,
+      "description": "Add 3 Coins to your hand.",
+      "effects": [
+        {
+          "type": "gain-coin",
+          "value": 3
+        }
+      ]
     }
   ]
 }
