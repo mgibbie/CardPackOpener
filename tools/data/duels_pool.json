@@ -2751,7 +2751,7 @@
       "cardClass": "DRUID",
       "mechanics": [],
       "rarity": null,
-      "inBattlecards": false
+      "inBattlecards": true
     },
     {
       "id": "PVPDR_AV_Neutralt12",
@@ -4096,7 +4096,7 @@
       "cardClass": "WARRIOR",
       "mechanics": [],
       "rarity": null,
-      "inBattlecards": false
+      "inBattlecards": true
     },
     {
       "id": "PVPDR_Darius_T1",
@@ -5930,7 +5930,7 @@
       "cardClass": "NEUTRAL",
       "mechanics": [],
       "rarity": null,
-      "inBattlecards": false
+      "inBattlecards": true
     },
     {
       "id": "PVPDR_SCH_Active28s1",
@@ -5974,7 +5974,7 @@
       "cardClass": "NEUTRAL",
       "mechanics": [],
       "rarity": null,
-      "inBattlecards": false
+      "inBattlecards": true
     },
     {
       "id": "PVPDR_SCH_Active31s1",
@@ -6007,7 +6007,7 @@
       "cardClass": "NEUTRAL",
       "mechanics": [],
       "rarity": null,
-      "inBattlecards": false
+      "inBattlecards": true
     },
     {
       "id": "PVPDR_SCH_Active35s1",
@@ -6040,7 +6040,7 @@
       "cardClass": "NEUTRAL",
       "mechanics": [],
       "rarity": null,
-      "inBattlecards": false
+      "inBattlecards": true
     },
     {
       "id": "PVPDR_SCH_Active39",
@@ -6051,7 +6051,7 @@
       "cardClass": "NEUTRAL",
       "mechanics": [],
       "rarity": null,
-      "inBattlecards": false
+      "inBattlecards": true
     },
     {
       "id": "PVPDR_SCH_Active39s1",
@@ -6288,7 +6288,7 @@
       "cardClass": "DEMONHUNTER",
       "mechanics": [],
       "rarity": null,
-      "inBattlecards": false
+      "inBattlecards": true
     },
     {
       "id": "PVPDR_SCH_Druidp3s1",
@@ -10308,7 +10308,7 @@
         "TRIGGER_VISUAL"
       ],
       "rarity": null,
-      "inBattlecards": false
+      "inBattlecards": true
     },
     {
       "id": "PVPDR_SCH_Druidp3s1e1",

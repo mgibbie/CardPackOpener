@@ -601,6 +601,20 @@ register('set-target-stats', ({ state, pi, target, source, enemies, scaled, hm, 
 } });
 
 
+register('set-stats', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => { {
+			// Humble Blessings: set every friendly creature's Attack & Health to a
+			// fixed value. (The "for the rest of the game" clause — future creatures —
+			// is not modeled; this sets the board as it stands.)
+			const board = e.target === 'friendly-creatures' ? state.players[pi].board : [];
+			for (const c of board) {
+				if (isDead(c) || c.type === 'location') continue;
+				if (e.attack != null) c.attack = e.attack;
+				if (e.health != null) { c.maxHealth = e.health; c.damage = 0; c.tempHealth = 0; }
+				emit(state, { type: 'buff', uid: c.uid, attack: c.attack, hp: hp(c) });
+			}
+} });
+
+
 register('draw-minion-buff', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => { {
 			// Claw Machine: draw a minion and give it +X/+X
 			const p = state.players[pi];

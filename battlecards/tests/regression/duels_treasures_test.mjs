@@ -222,5 +222,51 @@ ok('all 8 batch-4 treasures present + tagged', IDS4.every(id => byId[id] && byId
 	ok('Summoning Ritual: summons 3 Demons from deck', state.players[0].board.filter(c => c.id === 't_demon').length === 3 && state.players[0].deck.filter(id => id === 't_demon').length === 1, state.players[0].board.length);
 }
 
+// ---------------- batch 5 ----------------
+const IDS5 = ['duels_mindpocalypse', 'duels_enhance_a_matic', 'duels_wish', 'duels_embers_of_ragnaros', 'duels_humble_blessings', 'duels_amalgamate'];
+ok('all 6 batch-5 treasures present + tagged', IDS5.every(id => byId[id] && byId[id].treasure && byId[id].set === 'DUELS'), IDS5.filter(id => !byId[id]));
+
+// Mindpocalypse: both players draw 2 & gain a Mana Crystal
+{
+	const { state } = new Scenario(byId).def('t_c', { type: 'creature', cost: 2, attack: 2, health: 2 })
+		.mana(0, 10).deck(0, ['t_c', 't_c', 't_c']).deck(1, ['t_c', 't_c', 't_c'])
+		.hand(0, ['duels_mindpocalypse']).play(0, 'duels_mindpocalypse').run();
+	ok('Mindpocalypse: you draw 2 & +1 Mana Crystal', state.players[0].hand.length === 2 && state.players[0].mana.max === 11, [state.players[0].hand.length, state.players[0].mana.max]);
+	ok('Mindpocalypse: opponent draws 2 & gains a Mana Crystal', state.players[1].hand.length === 2 && state.players[1].mana.max >= 1, [state.players[1].hand.length, state.players[1].mana.max]);
+}
+// Enhance-a-matic: add 9 random spells to hand
+{
+	const { state } = new Scenario(byId).mana(0, 10).hand(0, ['duels_enhance_a_matic']).play(0, 'duels_enhance_a_matic').run();
+	ok('Enhance-a-matic: adds ~9 spells to hand', state.players[0].hand.length >= 8 && state.players[0].hand.every(c => E.isSpell ? true : true), state.players[0].hand.length);
+}
+// Wish: fill the board with Legendary creatures + fully heal hero
+{
+	const { state } = new Scenario(byId).mana(0, 10).life(0, 20).hand(0, ['duels_wish']).play(0, 'duels_wish').run();
+	const b = state.players[0].board.filter(c => c.type === 'creature' && !E.isDead(c));
+	ok('Wish: fills the board with Legendaries', b.length >= 5 && b.every(c => byId[c.id]?.rarity === 'legendary'), b.length);
+	ok('Wish: fully heals the hero', state.players[0].life === 40, state.players[0].life);
+}
+// Embers of Ragnaros: three 8-damage hits at random enemies
+{
+	const { state } = new Scenario(byId).def('t_wall', { type: 'creature', cost: 5, attack: 0, health: 40 })
+		.mana(0, 10).board(1, ['t_wall']).hand(0, ['duels_embers_of_ragnaros']).play(0, 'duels_embers_of_ragnaros').run();
+	const dealt = (40 - state.players[1].life) + state.players[1].board.reduce((s, c) => s + c.damage, 0);
+	ok('Embers of Ragnaros: 3x8 = 24 damage across enemies', dealt === 24, dealt);
+}
+// Humble Blessings: set friendly creatures to 3/3
+{
+	const { state } = new Scenario(byId).def('t_big', { type: 'creature', cost: 7, attack: 7, health: 7 })
+		.mana(0, 10).board(0, ['t_big']).hand(0, ['duels_humble_blessings']).play(0, 'duels_humble_blessings').run();
+	const m = state.players[0].board[0];
+	ok('Humble Blessings: creature becomes 3/3', m.attack === 3 && E.hp(m) === 3, [m.attack, E.hp(m)]);
+}
+// Amalgamate: destroy friendlies, summon their combined stats
+{
+	const { state } = new Scenario(byId).def('t_a', { type: 'creature', cost: 2, attack: 2, health: 3 }).def('t_b', { type: 'creature', cost: 3, attack: 4, health: 1 })
+		.mana(0, 10).board(0, ['t_a', 't_b']).hand(0, ['duels_amalgamate']).play(0, 'duels_amalgamate').run();
+	const live = state.players[0].board.filter(c => !E.isDead(c));
+	ok('Amalgamate: one 6/4 Amalgamation remains', live.length === 1 && live[0].name === 'Amalgamation' && live[0].attack === 6 && E.hp(live[0]) === 4, live.map(c => c.name + ' ' + c.attack + '/' + E.hp(c)));
+}
+
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);

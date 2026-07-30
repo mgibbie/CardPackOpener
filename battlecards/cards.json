@@ -132300,6 +132300,128 @@
           "count": 3
         }
       ]
+    },
+    {
+      "id": "duels_mindpocalypse",
+      "name": "Mindpocalypse",
+      "type": "sorcery",
+      "cost": 0,
+      "cardClass": "neutral",
+      "rarity": "legendary",
+      "set": "DUELS",
+      "token": true,
+      "treasure": true,
+      "description": "Both players draw 2 cards & gain a Mana Crystal.",
+      "effects": [
+        {
+          "type": "draw",
+          "value": 2,
+          "target": "all"
+        },
+        {
+          "type": "add-mana-crystal",
+          "value": 1,
+          "target": "all"
+        }
+      ]
+    },
+    {
+      "id": "duels_enhance_a_matic",
+      "name": "Enhance-a-matic",
+      "type": "sorcery",
+      "cost": 1,
+      "cardClass": "neutral",
+      "rarity": "legendary",
+      "set": "DUELS",
+      "token": true,
+      "treasure": true,
+      "description": "Add 9 random spells to your hand.",
+      "effects": [
+        {
+          "type": "conjure-random",
+          "cardType": "spell",
+          "count": 9
+        }
+      ]
+    },
+    {
+      "id": "duels_wish",
+      "name": "Wish",
+      "type": "sorcery",
+      "cost": 10,
+      "cardClass": "neutral",
+      "rarity": "legendary",
+      "set": "DUELS",
+      "token": true,
+      "treasure": true,
+      "description": "Fill your board with Legendary creatures. Fully heal your hero.",
+      "effects": [
+        {
+          "type": "summon-random",
+          "rarity": "legendary",
+          "count": 7
+        },
+        {
+          "type": "heal-hero-full"
+        }
+      ]
+    },
+    {
+      "id": "duels_embers_of_ragnaros",
+      "name": "Embers of Ragnaros",
+      "type": "sorcery",
+      "cost": 10,
+      "cardClass": "neutral",
+      "rarity": "legendary",
+      "set": "DUELS",
+      "token": true,
+      "treasure": true,
+      "description": "Shoot three fireballs at random enemies that deal 8 damage each.",
+      "effects": [
+        {
+          "type": "random-damage",
+          "pool": "enemies",
+          "value": 8,
+          "count": 3
+        }
+      ]
+    },
+    {
+      "id": "duels_humble_blessings",
+      "name": "Humble Blessings",
+      "type": "sorcery",
+      "cost": 5,
+      "cardClass": "paladin",
+      "rarity": "legendary",
+      "set": "DUELS",
+      "token": true,
+      "treasure": true,
+      "description": "Change the Attack & Health of all your creatures to 3 for the rest of the game.",
+      "effects": [
+        {
+          "type": "set-stats",
+          "target": "friendly-creatures",
+          "attack": 3,
+          "health": 3
+        }
+      ]
+    },
+    {
+      "id": "duels_amalgamate",
+      "name": "Amalgamate",
+      "type": "sorcery",
+      "cost": 0,
+      "cardClass": "neutral",
+      "rarity": "legendary",
+      "set": "DUELS",
+      "token": true,
+      "treasure": true,
+      "description": "Destroy all friendly creatures. Summon an Amalgamation with their combined Attack & Health.",
+      "effects": [
+        {
+          "type": "amalgamate"
+        }
+      ]
     }
   ]
 }

@@ -1456,3 +1456,21 @@ register('summon-from-deck', ({ state, pi, target, source, enemies, scaled, hm, 
 		if (def) summon(state, pi, def);
 	}
 } });
+
+
+register('amalgamate', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => { {
+	// Amalgamate: destroy all your creatures, then summon one creature with their
+	// combined Attack and Health.
+	const p = state.players[pi];
+	const living = p.board.filter(c => !isDead(c) && c.type !== 'location');
+	let atk = 0, health = 0;
+	for (const c of living) { atk += c.attack || 0; health += hp(c); }
+	for (const c of living) { c.damage = c.maxHealth; c.shield = false; emit(state, { type: 'destroy', uid: c.uid }); }
+	sweepDeaths(state);
+	if (health <= 0) return;
+	summon(state, pi, {
+		id: 'token_amalgamation', name: 'Amalgamation', type: 'creature', cost: 0,
+		rarity: 'legendary', token: true, description: `A ${atk}/${health} Amalgamation.`,
+		attack: atk, health,
+	});
+} });

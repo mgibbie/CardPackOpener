@@ -61,8 +61,10 @@ register('remove-cheap-deck', ({ state, pi, target, source, enemies, scaled, hm,
 } });
 
 register('add-mana-crystal', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => { {
-	// Academic Research / Tea Time: gain permanent Mana Crystals
-	addManaCrystal(state, pi, e.value || 1);
+	// Academic Research / Tea Time: gain permanent Mana Crystals.
+	// target:'all' — every hero gains them (Mindpocalypse).
+	if (e.target === 'all') { for (let s = 0; s < state.players.length; s++) if (!state.players[s].eliminated) addManaCrystal(state, s, e.value || 1); }
+	else addManaCrystal(state, pi, e.value || 1);
 } });
 
 register('replace-deck-bobs', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => { {
