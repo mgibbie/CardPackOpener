@@ -82,5 +82,54 @@ ok('all 12 batch-1 treasures present + tagged', IDS.every(id => byId[id] && byId
 	ok('Bag of Coins: 3 Coins in hand', state.players[0].hand.filter(c => c.id === 'coin').length === 3, state.players[0].hand.map(c => c.id));
 }
 
+// ---------------- batch 2 ----------------
+const IDS2 = ['duels_necrotic_poison', 'duels_devouring_hunger', 'duels_wand_of_disintegration', 'duels_will_of_the_warden', 'duels_water_invocation', 'duels_bag_of_stuffing', 'duels_stroke_of_midnight'];
+ok('all 7 batch-2 treasures present + tagged', IDS2.every(id => byId[id] && byId[id].treasure && byId[id].set === 'DUELS'), IDS2.filter(id => !byId[id]));
+
+// Necrotic Poison: destroy a targeted creature
+{
+	const { state } = new Scenario(byId).def('t_m', { type: 'creature', cost: 5, attack: 4, health: 7 })
+		.mana(0, 10).board(1, ['t_m']).hand(0, ['duels_necrotic_poison'])
+		.play(0, 'duels_necrotic_poison', { targetBoard: [1, 't_m'] }).run();
+	ok('Necrotic Poison: destroys the targeted creature', state.players[1].board.filter(c => !E.isDead(c)).length === 0);
+}
+// Devouring Hunger: destroy all creatures
+{
+	const { state } = new Scenario(byId).def('t_m', { type: 'creature', cost: 3, attack: 2, health: 4 })
+		.mana(0, 10).board(0, ['t_m']).board(1, ['t_m', 't_m']).hand(0, ['duels_devouring_hunger']).play(0, 'duels_devouring_hunger').run();
+	ok('Devouring Hunger: wipes the whole board', [...state.players[0].board, ...state.players[1].board].every(c => E.isDead(c)));
+}
+// Wand of Disintegration: silence + destroy all enemy creatures
+{
+	const { state } = new Scenario(byId).def('t_m', { type: 'creature', cost: 3, attack: 2, health: 4 })
+		.mana(0, 10).board(0, ['t_m']).board(1, ['t_m', 't_m']).hand(0, ['duels_wand_of_disintegration']).play(0, 'duels_wand_of_disintegration').run();
+	ok('Wand of Disintegration: clears only enemy creatures', state.players[1].board.filter(c => !E.isDead(c)).length === 0 && state.players[0].board.filter(c => !E.isDead(c)).length === 1);
+}
+// Will of the Warden: refresh mana — after paying its 3 cost, mana is back to full
+{
+	const { state } = new Scenario(byId).mana(0, 10).hand(0, ['duels_will_of_the_warden']).play(0, 'duels_will_of_the_warden').run();
+	ok('Will of the Warden: refreshes mana to max after paying its cost', E.availableMana(state.players[0]) === 10, E.availableMana(state.players[0]));
+}
+// Water Invocation: restore 6 to friendly characters
+{
+	const { state } = new Scenario(byId).def('t_m', { type: 'creature', cost: 3, attack: 2, health: 10, damage: 6 })
+		.mana(0, 10).life(0, 20).board(0, ['t_m']).hand(0, ['duels_water_invocation']).play(0, 'duels_water_invocation').run();
+	ok('Water Invocation: heals friendly creature', state.players[0].board[0].damage === 0, state.players[0].board[0].damage);
+	ok('Water Invocation: heals friendly hero', state.players[0].life === 26, state.players[0].life);
+}
+// Bag of Stuffing: draw until hand full (Battlecards hand cap)
+{
+	const { state } = new Scenario(byId).mana(0, 10).hand(0, ['duels_bag_of_stuffing'])
+		.do((s) => { for (let i = 0; i < 24; i++) s.players[0].deck.push('coin'); }).play(0, 'duels_bag_of_stuffing').run();
+	ok('Bag of Stuffing: fills the hand', state.players[0].hand.length >= 12 && state.players[0].deck.length > 0, state.players[0].hand.length);
+}
+// Stroke of Midnight: destroy a random enemy creature + Echo flag
+{
+	const { state } = new Scenario(byId).def('t_m', { type: 'creature', cost: 3, attack: 2, health: 4 })
+		.mana(0, 10).board(1, ['t_m', 't_m']).hand(0, ['duels_stroke_of_midnight']).play(0, 'duels_stroke_of_midnight').run();
+	ok('Stroke of Midnight: destroys one random enemy creature', state.players[1].board.filter(c => !E.isDead(c)).length === 1);
+	ok('Stroke of Midnight: has Echo', byId['duels_stroke_of_midnight'].echo === true);
+}
+
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);

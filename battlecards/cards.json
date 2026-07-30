@@ -131933,6 +131933,133 @@
           "value": 3
         }
       ]
+    },
+    {
+      "id": "duels_necrotic_poison",
+      "name": "Necrotic Poison",
+      "type": "sorcery",
+      "cost": 2,
+      "cardClass": "neutral",
+      "rarity": "legendary",
+      "set": "DUELS",
+      "token": true,
+      "treasure": true,
+      "description": "Destroy a creature.",
+      "effects": [
+        {
+          "type": "destroy",
+          "target": "creature"
+        }
+      ]
+    },
+    {
+      "id": "duels_devouring_hunger",
+      "name": "Devouring Hunger",
+      "type": "sorcery",
+      "cost": 0,
+      "cardClass": "neutral",
+      "rarity": "legendary",
+      "set": "DUELS",
+      "token": true,
+      "treasure": true,
+      "description": "Destroy all creatures.",
+      "effects": [
+        {
+          "type": "destroy-all"
+        }
+      ]
+    },
+    {
+      "id": "duels_wand_of_disintegration",
+      "name": "Wand of Disintegration",
+      "type": "sorcery",
+      "cost": 5,
+      "cardClass": "neutral",
+      "rarity": "legendary",
+      "set": "DUELS",
+      "token": true,
+      "treasure": true,
+      "description": "Silence & destroy all enemy creatures.",
+      "effects": [
+        {
+          "type": "silence",
+          "target": "enemy-creatures"
+        },
+        {
+          "type": "destroy-all-enemies"
+        }
+      ]
+    },
+    {
+      "id": "duels_will_of_the_warden",
+      "name": "Will of the Warden",
+      "type": "sorcery",
+      "cost": 3,
+      "cardClass": "druid",
+      "rarity": "legendary",
+      "set": "DUELS",
+      "token": true,
+      "treasure": true,
+      "description": "Refresh your Mana Crystals.",
+      "effects": [
+        {
+          "type": "refresh-mana"
+        }
+      ]
+    },
+    {
+      "id": "duels_water_invocation",
+      "name": "Water Invocation",
+      "type": "sorcery",
+      "cost": 0,
+      "cardClass": "shaman",
+      "rarity": "legendary",
+      "set": "DUELS",
+      "token": true,
+      "treasure": true,
+      "description": "Restore 6 Health to all friendly characters.",
+      "effects": [
+        {
+          "type": "heal",
+          "value": 6,
+          "target": "friendly-characters"
+        }
+      ]
+    },
+    {
+      "id": "duels_bag_of_stuffing",
+      "name": "Bag of Stuffing",
+      "type": "sorcery",
+      "cost": 4,
+      "cardClass": "neutral",
+      "rarity": "legendary",
+      "set": "DUELS",
+      "token": true,
+      "treasure": true,
+      "description": "Draw cards until your hand is full.",
+      "effects": [
+        {
+          "type": "draw-until-full"
+        }
+      ]
+    },
+    {
+      "id": "duels_stroke_of_midnight",
+      "name": "Stroke of Midnight",
+      "type": "sorcery",
+      "cost": 2,
+      "cardClass": "neutral",
+      "rarity": "legendary",
+      "set": "DUELS",
+      "token": true,
+      "treasure": true,
+      "description": "Echo. Destroy a random enemy creature.",
+      "effects": [
+        {
+          "type": "destroy-random"
+        }
+      ],
+      "echo": true
     }
   ]
 }
