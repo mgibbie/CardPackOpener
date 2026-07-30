@@ -3749,6 +3749,8 @@ async function start() {
 	if (!location.search && !menuChosen) {
 		const mode = await mainMenu();
 		if (mode === 'dungeon') { location.href = '?dungeon=1'; return; }
+		if (mode === 'heist') { location.href = '?heist=1'; return; }
+		if (mode === 'tombs') { location.href = '?tombs=1'; return; }
 		menuChosen = true;
 	}
 	if (dungeonRunMode) {
@@ -4029,8 +4031,12 @@ function mainMenu() {
 		};
 		col.appendChild(big('TEST BATTLE', 'the battle table — 2 to 8 players, your deck or the demo deck',
 			() => { hideDungeonOverlay(); resolve('battle'); }));
-		col.appendChild(big('DUNGEON RUN', 'eight bosses, card buckets, and treasures — pick a class and descend',
+		col.appendChild(big('OG DUNGEON RUN', 'eight bosses, card buckets, and treasures — pick a class and descend',
 			() => resolve('dungeon')));
+		col.appendChild(big('DALARAN HEIST', 'nine heroes, five chapters — an eight-boss climb with anomalies & treasures',
+			() => resolve('heist')));
+		col.appendChild(big('TOMBS OF TERROR', 'four Explorers, four chapters — delve to a Plague Lord for treasures & passives',
+			() => resolve('tombs')));
 		el.appendChild(col);
 	});
 }
