@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+	<title>Pair of Pears — Meandering Meadow</title>
+	<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><text y='14' font-size='14'>🍐</text></svg>">
+	<style>
+		html, body { margin: 0; height: 100%; background: #0e1410; color: #e8e0d0; font-family: system-ui, sans-serif; overflow: hidden; touch-action: none; -webkit-user-select: none; user-select: none; }
+		#wrap { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; }
+		#game { image-rendering: pixelated; background: #6bb04d; max-width: 100%; max-height: 100%; box-shadow: 0 6px 40px rgba(0,0,0,.6); border-radius: 6px; }
+		/* on-screen touch controls (usable by mouse too; keyboard also works) */
+		#pad { position: fixed; inset: 0; pointer-events: none; }
+		.ctl { position: absolute; pointer-events: auto; display: flex; align-items: center; justify-content: center;
+			background: rgba(30,26,45,.55); color: #f2ecdd; border: 1px solid rgba(255,255,255,.25); border-radius: 50%;
+			font-weight: 700; font-size: 22px; touch-action: none; }
+		.ctl.active { background: rgba(120,180,90,.75); }
+		.dpad .ctl { width: 56px; height: 56px; border-radius: 12px; }
+		.dpad { position: absolute; left: 18px; bottom: 22px; width: 180px; height: 180px; }
+		.dpad [data-btn="up"]    { left: 62px; top: 0; }
+		.dpad [data-btn="down"]  { left: 62px; top: 124px; }
+		.dpad [data-btn="left"]  { left: 0; top: 62px; }
+		.dpad [data-btn="right"] { left: 124px; top: 62px; }
+		.ab { position: absolute; right: 22px; bottom: 30px; width: 170px; height: 120px; }
+		.ab .ctl { width: 66px; height: 66px; font-size: 26px; }
+		.ab [data-btn="b"] { left: 0; top: 40px; }
+		.ab [data-btn="a"] { right: 0; top: 0; }
+		@media (min-width: 900px) and (pointer: fine) { #pad { opacity: .35; } }
+	</style>
+</head>
+<body>
+	<div id="wrap"><canvas id="game" width="800" height="600"></canvas></div>
+	<div id="pad">
+		<div class="dpad">
+			<div class="ctl" data-btn="up">▲</div>
+			<div class="ctl" data-btn="left">◀</div>
+			<div class="ctl" data-btn="right">▶</div>
+			<div class="ctl" data-btn="down">▼</div>
+		</div>
+		<div class="ab">
+			<div class="ctl" data-btn="b">B</div>
+			<div class="ctl" data-btn="a">A</div>
+		</div>
+	</div>
+	<script type="module" src="./js/main.js"></script>
+</body>
+</html>
