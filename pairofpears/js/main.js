@@ -125,4 +125,4 @@ function drawGameCursor() { const c = G.cursor; ctx.strokeStyle = '#fff'; ctx.li
 })();
 
 // debug hook for headless testing
-window.__pears = { G, act: handleAct, back: handleBack, state: () => G.state };
+window.__pears = { G, act: handleAct, back: handleBack, state: () => G.state, pear };
