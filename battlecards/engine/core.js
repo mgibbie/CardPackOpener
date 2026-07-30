@@ -2117,6 +2117,7 @@ export function playCard(state, pi, cardUid, target, choice, position, useAlt, k
 	if (p.ironRoots && isSpellType(card) && schoolOf(card) === 'Nature') execEffects(state, pi, [{ type: 'buff-random-friendly', attack: 1, health: 1, grant: 'taunt' }], null, null); // Iron Roots: a Nature spell buffs a random friendly +1/+1 & Taunt
 	if (p.spreadingSaplings && isSpellType(card) && schoolOf(card) === 'Nature') execEffects(state, pi, [{ type: 'summon', count: 1, attack: 1, health: 1, name: 'Sapling' }], null, null); // Spreading Saplings: a Nature spell summons a 1/1 Sapling
 	if (p.guardianLight && isSpellType(card) && schoolOf(card) === 'Holy' && (card.cost || 0) > 0) execEffects(state, pi, [{ type: 'summon', count: 1, attack: card.cost, health: card.cost, name: 'Ancient Guardian' }], null, null); // Guardian Light: a Holy spell summons a Cost/Cost Guardian
+	if (p.invigoratingLight && isSpellType(card) && schoolOf(card) === 'Holy') execEffects(state, pi, [{ type: 'buff', attack: 0, health: 1, target: 'friendly-creatures' }], null, null); // Invigorating Light: a Holy spell gives your creatures +1 Health
 	if (p.firekeepersIdol && isSpellType(card) && schoolOf(card) === 'Fire') { // Firekeeper's Idol: a Fire spell summons a 1/2 Flame Elemental & hands you one
 		execEffects(state, pi, [{ type: 'summon', count: 1, attack: 1, health: 2, name: 'Flame Elemental', tribe: 'Elemental' }], null, null);
 		if (p.hand.length < MAX_HAND) {

@@ -88,6 +88,18 @@ export const PASSIVES = {
 		name: "Firekeeper's Idol", text: 'After you cast a Fire spell, summon a 1/2 Flame Elemental & add one to your hand.',
 		apply: (state, pi) => { state.players[pi].firekeepersIdol = true; },
 	},
+	invigorating_light: {
+		name: 'Invigorating Light', text: 'Whenever you cast a Holy spell, give your creatures +1 Health.',
+		apply: (state, pi) => { state.players[pi].invigoratingLight = true; },
+	},
+	robes_of_shrinking: {
+		name: 'Robes of Shrinking', text: 'After you draw a spell, reduce its Cost by (1).',
+		apply: (state, pi) => { state.players[pi].robesOfShrinking = true; },
+	},
+	bronze_signet: {
+		name: 'Bronze Signet', text: 'Whenever you draw a creature, add a copy of it to your hand.',
+		apply: (state, pi) => { state.players[pi].bronzeSignet = true; },
+	},
 };
 
 export function applyPassive(state, pi, id) {

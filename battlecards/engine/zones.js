@@ -104,6 +104,7 @@ export function drawCards(state, pi, count) {
 		if (p.deckCostPersist && p.deckCostPersist[id] != null) card.cost = p.deckCostPersist[id]; // Elixir of Vigor: the copies cost (1)
 		if (p.deckInnerFire && card.type === 'creature') card.attack = card.maxHealth; // Lady in White
 		if (p.robesOfDiminishing && isSpellType(card)) { card.cost = 0; emit(state, { type: 'costChange', player: pi, uid: card.uid, cost: 0 }); } // Robes of Diminishing
+		if (p.robesOfShrinking && isSpellType(card)) { card.cost = Math.max(0, (card.cost || 0) - 1); emit(state, { type: 'costChange', player: pi, uid: card.uid, cost: card.cost }); } // Robes of Shrinking (Duels): drawn spells cost (1) less
 		if (card.type === 'creature' && p.drawBuff) { card.attack += p.drawBuff.attack || 0; card.maxHealth += p.drawBuff.health || 0; }
 		if (card.type === 'creature' && p.drawBuffMinions && p.drawBuffMinions.count > 0) { card.attack += p.drawBuffMinions.attack || 0; card.maxHealth += p.drawBuffMinions.health || 0; p.drawBuffMinions.count--; if (p.drawBuffMinions.count <= 0) p.drawBuffMinions = null; } // (legacy next-drawn buff)
 		if (p.deckIdBuffs && p.deckIdBuffs.length) { const bi = p.deckIdBuffs.findIndex(b => b.id === id); if (bi >= 0) { const b = p.deckIdBuffs.splice(bi, 1)[0]; card.attack += b.attack || 0; card.maxHealth += b.health || 0; } } // Beanstalk Brute: specific deck cards carry buffs
@@ -144,6 +145,7 @@ export function drawCards(state, pi, count) {
 		}
 		p.hand.push(card);
 		if (card.copyOnDraw && state.cardsById[card.id] && p.hand.length < MAX_HAND) { const cp = instantiate(state.cardsById[card.id], pi); cp.zone = 'hand'; p.hand.push(cp); emit(state, { type: 'conjure', player: pi, card: cp, color: null }); } // Encumbered Pack Mule
+		if (p.bronzeSignet && card.type === 'creature' && state.cardsById[card.id] && p.hand.length < MAX_HAND) { const cp = instantiate(state.cardsById[card.id], pi); cp.zone = 'hand'; p.hand.push(cp); emit(state, { type: 'conjure', player: pi, card: cp, color: null }); } // Bronze Signet (Duels): drawing a creature adds a copy to your hand
 		drawn++;
 		emit(state, { type: 'draw', player: pi, card });
 		state.expanseEvents = (state.expanseEvents || 0) + 1; // The Ceaseless Expanse: a card was drawn

@@ -116,7 +116,7 @@ ok('all 4 batch-2 hero-power cards present + well-formed', HP_IDS2.every(id => {
 }
 
 // ---------------- passives (duels.js) ----------------
-ok('PASSIVES has the 18 entries', Object.keys(D.PASSIVES).length === 18 && ['robe_of_the_apprentice', 'small_backpacks', 'small_pouches', 'band_of_bees', 'emerald_goggles', 'rhonins_scrying_orb', 'rocket_backpacks', 'special_delivery', 'shadowcasting_101', 'rally_the_troops', 'lunar_band', 'ring_of_refreshment', 'staff_of_pain', 'mending_pools', 'iron_roots', 'spreading_saplings', 'guardian_light', 'firekeepers_idol'].every(k => D.PASSIVES[k]));
+ok('PASSIVES has the 21 entries', Object.keys(D.PASSIVES).length === 21 && ['robe_of_the_apprentice', 'small_backpacks', 'small_pouches', 'band_of_bees', 'emerald_goggles', 'rhonins_scrying_orb', 'rocket_backpacks', 'special_delivery', 'shadowcasting_101', 'rally_the_troops', 'lunar_band', 'ring_of_refreshment', 'staff_of_pain', 'mending_pools', 'iron_roots', 'spreading_saplings', 'guardian_light', 'firekeepers_idol', 'invigorating_light', 'robes_of_shrinking', 'bronze_signet'].every(k => D.PASSIVES[k]));
 ok('HEROES lists 11 signature heroes with class', D.HEROES.length === 11 && D.HEROES.every(h => h.id && h.name && h.heroClass), D.HEROES.length);
 ok('applyPassive returns false for an unknown id', D.applyPassive({ players: [{}] }, 0, 'nope') === false);
 
@@ -260,6 +260,29 @@ ok('applyPassive returns false for an unknown id', D.applyPassive({ players: [{}
 	const onBoard = state.players[0].board.filter(c => c.name === 'Flame Elemental');
 	const inHand = state.players[0].hand.filter(c => c.name === 'Flame Elemental');
 	ok("Firekeeper's Idol: 1/2 on board + one in hand", onBoard.length === 1 && onBoard[0].attack === 1 && E.hp(onBoard[0]) === 2 && inHand.length === 1, [onBoard.length, inHand.length]);
+}
+// Invigorating Light: a Holy spell gives your creatures +1 Health
+{
+	const { state } = new Scenario(byId).def('t_holy', { type: 'sorcery', cost: 0, tribe: 'Holy', effects: [] }).def('t_m', { type: 'creature', cost: 2, attack: 2, health: 2 }).board(0, ['t_m']).mana(0, 10).hand(0, ['t_holy']).run();
+	D.applyPassive(state, 0, 'invigorating_light');
+	E.playCard(state, 0, state.players[0].hand[0].uid, null, null, 0);
+	const m = state.players[0].board.find(c => c.id === 't_m');
+	ok('Invigorating Light: creature gains +1 Health', m.attack === 2 && E.hp(m) === 3, [m.attack, E.hp(m)]);
+}
+// Robes of Shrinking: a drawn spell costs (1) less
+{
+	const { state } = new Scenario(byId).def('t_sp', { type: 'sorcery', cost: 4, effects: [] }).deck(0, ['t_sp']).run();
+	D.applyPassive(state, 0, 'robes_of_shrinking');
+	E.execEffects(state, 0, [{ type: 'draw', value: 1 }], null, null);
+	const drawn = state.players[0].hand.find(c => c.id === 't_sp');
+	ok('Robes of Shrinking: drawn spell costs (1) less', drawn && drawn.cost === 3, drawn && drawn.cost);
+}
+// Bronze Signet: drawing a creature adds a copy to hand
+{
+	const { state } = new Scenario(byId).def('t_c', { type: 'creature', cost: 3, attack: 3, health: 3 }).deck(0, ['t_c']).run();
+	D.applyPassive(state, 0, 'bronze_signet');
+	E.execEffects(state, 0, [{ type: 'draw', value: 1 }], null, null);
+	ok('Bronze Signet: a copy joins your hand', state.players[0].hand.filter(c => c.id === 't_c').length === 2, state.players[0].hand.filter(c => c.id === 't_c').length);
 }
 
 // ---------------- boss ladder ----------------
