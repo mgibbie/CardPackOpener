@@ -116,7 +116,7 @@ ok('all 4 batch-2 hero-power cards present + well-formed', HP_IDS2.every(id => {
 }
 
 // ---------------- passives (duels.js) ----------------
-ok('PASSIVES has the 78 entries', Object.keys(D.PASSIVES).length === 78 && ['flames_of_the_kirin_tor', 'corrupted_felstone', 'coil_casting', 'plaguebringer', 'legendary_loot', 'mysterious_tome'].every(k => D.PASSIVES[k]));
+ok('PASSIVES has the 81 entries', Object.keys(D.PASSIVES).length === 81 && ['blood_shields', 'ghouls_rush_in', 'cold_feet_pact'].every(k => D.PASSIVES[k]));
 ok('HEROES lists 11 signature heroes with class', D.HEROES.length === 11 && D.HEROES.every(h => h.id && h.name && h.heroClass), D.HEROES.length);
 ok('applyPassive returns false for an unknown id', D.applyPassive({ players: [{}] }, 0, 'nope') === false);
 
@@ -716,6 +716,34 @@ const kill = (state, pi, uid) => { const c = state.players[pi].board.find(x => x
 	const before = state.players[0].secrets.length;
 	D.applyPassive(state, 0, 'mysterious_tome');
 	ok('Mysterious Tome: two Secrets in play', state.players[0].secrets.length === before + 2, [before, state.players[0].secrets.length]);
+}
+// Blood Shields: the first Corpse spend each turn heals 2
+{
+	const { state } = new Scenario(byId).run();
+	state.players[0].corpses = 5; state.players[0].life = 20;
+	D.applyPassive(state, 0, 'blood_shields');
+	E.spendCorpses(state, 0, 1);
+	const afterFirst = state.players[0].life;
+	E.spendCorpses(state, 0, 1); // second spend same turn -> no heal
+	ok('Blood Shields: +2 Health on first spend only', afterFirst === 22 && state.players[0].life === 22 && state.players[0].corpses === 3, [afterFirst, state.players[0].life, state.players[0].corpses]);
+}
+// Ghouls Rush In: the first Corpse spend each turn summons a 2/2 Rush Ghoul
+{
+	const { state } = new Scenario(byId).run();
+	state.players[0].corpses = 5;
+	D.applyPassive(state, 0, 'ghouls_rush_in');
+	E.spendCorpses(state, 0, 2);
+	const g = state.players[0].board.filter(c => c.name === 'Risen Ghoul');
+	ok('Ghouls Rush In: a 2/2 Rush Ghoul', g.length === 1 && g[0].attack === 2 && E.hp(g[0]) === 2 && g[0].keywords.includes('rush') && state.players[0].corpses === 3, [g.length, state.players[0].corpses]);
+}
+// Cold Feet Pact: end of turn summons a Risen Groom = half Corpses
+{
+	const { state } = new Scenario(byId).run();
+	state.players[0].corpses = 6;
+	D.applyPassive(state, 0, 'cold_feet_pact');
+	E.endTurn(state);
+	const gr = state.players[0].board.filter(c => c.name === 'Risen Groom');
+	ok('Cold Feet Pact: a 3/3 Risen Groom (half of 6 Corpses)', gr.length === 1 && gr[0].attack === 3 && E.hp(gr[0]) === 3, gr.length);
 }
 
 // ---------------- boss ladder ----------------

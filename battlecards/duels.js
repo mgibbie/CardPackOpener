@@ -339,6 +339,19 @@ export const PASSIVES = {
 		name: 'Mysterious Tome', text: 'At the start of the game, play 2 random Secrets.',
 		apply: (state, pi) => { const pool = Object.values(state.cardsById).filter(d => d.type === 'secret' && d.secret); for (let i = 0; i < 2 && pool.length; i++) { const idx = Math.floor(state.rng() * pool.length); const sec = pool.splice(idx, 1)[0]; E.installSecret(state, pi, sec.id); } },
 	},
+	// --- Corpse economy (spend chokepoint = engine spendCorpses) ---
+	blood_shields: {
+		name: 'Blood Shields', text: 'After the first time you spend a Corpse in a turn, gain 2 Health.',
+		apply: (state, pi) => { state.players[pi].bloodShields = true; },
+	},
+	ghouls_rush_in: {
+		name: 'Ghouls Rush In', text: 'After the first time you spend a Corpse in a turn, summon a 2/2 Risen Ghoul with Rush.',
+		apply: (state, pi) => { state.players[pi].ghoulsRushIn = true; },
+	},
+	cold_feet_pact: {
+		name: 'Cold Feet Pact', text: 'At the end of your turn, summon a Risen Groom with stats equal to half your Corpse total.',
+		apply: (state, pi) => { state.players[pi].coldFeetPact = true; },
+	},
 };
 
 export function applyPassive(state, pi, id) {

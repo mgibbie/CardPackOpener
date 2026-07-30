@@ -2,6 +2,7 @@
 // Handler bodies are the verbatim registry migrations (PRs 13–39); this file
 // only re-homes them. Imported for its registration side effects by index.js.
 import { register, registerTrigger, ABORT } from './registry.js';
+import { spendCorpses } from '../../engine.js';
 // engine/effects/registry.js — the effect-handler registry (docs/06, PR 13).
 //
 // Dispatch-order rule (behavior-preserving migration): inside execEffects'
@@ -263,7 +264,7 @@ register('discount-foreign-hand', ({ state, pi, target, source, enemies, scaled,
 register('spend-corpses', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => {
 			const p = state.players[pi];
 			if (p.corpses >= e.value) {
-				p.corpses -= e.value;
+				spendCorpses(state, pi, e.value);
 				emit(state, { type: 'corpses', player: pi, corpses: p.corpses });
 				execEffects(state, pi, e.effects, target, source);
 			}
@@ -294,7 +295,7 @@ register('reduce-rightmost-hand-cost', ({ state, pi, target, source, enemies, sc
 register('spend-corpses-heal', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => {
 			// Maw and Paw: spend N Corpses to restore Health to your hero
 			const p = state.players[pi];
-			if ((p.corpses || 0) >= (e.cost || 5)) { p.corpses -= (e.cost || 5); emit(state, { type: 'corpses', player: pi, corpses: p.corpses }); healHero(state, pi, e.value || 5); }
+			if ((p.corpses || 0) >= (e.cost || 5)) { spendCorpses(state, pi, (e.cost || 5)); emit(state, { type: 'corpses', player: pi, corpses: p.corpses }); healHero(state, pi, e.value || 5); }
 });
 
 
@@ -428,7 +429,7 @@ register('spend-corpses-up-to', ({ state, pi, target, source, enemies, scaled, h
 			const p = state.players[pi];
 			const n = Math.min(e.max ?? Infinity, p.corpses);
 			if (n > 0) {
-				p.corpses -= n;
+				spendCorpses(state, pi, n);
 				emit(state, { type: 'corpses', player: pi, corpses: p.corpses });
 				for (let i = 0; i < n; i++) execEffects(state, pi, e.effects, target, source);
 			}
@@ -571,7 +572,7 @@ register('spend-corpses-while', ({ state, pi, target, source, enemies, scaled, h
 			let guard = 100;
 			const anyAlive = () => state.players.some(pl => pl.board.some(c => !isDead(c)));
 			while (p.corpses >= (e.value || 1) && anyAlive() && guard-- > 0) {
-				p.corpses -= e.value || 1;
+				spendCorpses(state, pi, e.value || 1);
 				emit(state, { type: 'corpses', player: pi, corpses: p.corpses });
 				execEffects(state, pi, e.effects, target, source);
 				sweepDeaths(state);
@@ -602,7 +603,7 @@ register('corpse-bride', ({ state, pi, target, source, enemies, scaled, hm, pick
 			// Corpse Bride: the Groom grows +1/+1 per Corpse spent (up to 5)
 			const p = state.players[pi];
 			const spend = Math.min(5, p.corpses || 0);
-			p.corpses -= spend;
+			spendCorpses(state, pi, spend);
 			emit(state, { type: 'corpses', player: pi, corpses: p.corpses });
 			const g = summon(state, pi, { id: 'token_risen_groom', name: 'Risen Groom', type: 'creature', cost: 5, attack: 5, health: 5, tribe: 'Undead', rarity: 'common', token: true, keywords: ['taunt'], description: 'Taunt' });
 			if (g && spend) { g.attack += spend; g.maxHealth += spend; emit(state, { type: 'buff', uid: g.uid, attack: g.attack, hp: hp(g) }); }

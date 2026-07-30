@@ -1334,6 +1334,18 @@ export function activateAbility(state, pi, cardUid, i, target) {
 }
 
 // ---------- weapons ----------
+export function spendCorpses(state, pi, n) {
+	if (!(n > 0)) return;
+	const p = state.players[pi];
+	p.corpses = Math.max(0, (p.corpses || 0) - n);
+	// Duels: "the first time you spend a Corpse in a turn"
+	if (p._corpseSpentTurn !== state.turnNumber) {
+		p._corpseSpentTurn = state.turnNumber;
+		if (p.bloodShields) healHero(state, pi, 2); // Blood Shields
+		if (p.ghoulsRushIn) summon(state, pi, { id: 'token_risen_ghoul', name: 'Risen Ghoul', type: 'creature', cost: 0, rarity: 'common', token: true, attack: 2, health: 2, keywords: ['rush'], description: 'A 2/2 Risen Ghoul with Rush.' }); // Ghouls Rush In
+	}
+}
+
 export function breakWeapon(state, pi, destroyed) {
 	const p = state.players[pi];
 	if (!p.weapon) return;
@@ -1707,7 +1719,7 @@ export function playCard(state, pi, cardUid, target, choice, position, useAlt, k
 	card._handIndex = p.hand.findIndex(x => x.uid === cardUid); // Skittish Saucier: adjacency in hand
 	card._handEdge = card._handIndex === 0 || card._handIndex === p.hand.length - 1; // Altruis: left/right-most plays
 	if (card.temporary && p.nextTempDiscount > 0) p.nextTempDiscount = 0; // Spelunker: spent by the next Temporary card
-	if (p.nextCardCorpses) { p.corpses = Math.max(0, p.corpses - (card.cost || 0)); p.nextCardCorpses = false; emit(state, { type: 'corpses', player: pi, corpses: p.corpses }); } // Exarch Maladaar: paid in Corpses
+	if (p.nextCardCorpses) { spendCorpses(state, pi, card.cost || 0); p.nextCardCorpses = false; emit(state, { type: 'corpses', player: pi, corpses: p.corpses }); } // Exarch Maladaar: paid in Corpses
 	if (p.agamagganNext) { p.agamagganNext = false; for (const o of opponentsOf(state, pi)) { damageHero(state, o, Math.min(10, card.cost || 0), pi, true); break; } } // Agamaggan: the opponent's Health pays
 	if (p.spellsCostHealth && isSpellType(card)) damageHero(state, pi, card.cost || 0, pi, true); // Elixir of Vile: spells cost Health
 	if (p.warlocNext && (card.tribe || '').includes('Murloc') && (card.cost || 0) <= 3) { p.warlocNext = false; damageHero(state, pi, card.cost || 0, pi, true); } // Warloc: your Health pays
@@ -3521,7 +3533,7 @@ export function useHeroPower(state, pi, cardUid, target, choice) {
 	const ward = wardOf(state, pi, target);
 	if (ward?.mana && availableMana(p) < cost + ward.mana) return false;
 	if (ward) payWard(state, pi, target);
-	if (card.power && card.power.corpseCost != null) { p.corpses -= card.power.corpseCost; emit(state, { type: 'corpses', player: pi, corpses: p.corpses }); } // Blood Tap pays in Corpses
+	if (card.power && card.power.corpseCost != null) { spendCorpses(state, pi, card.power.corpseCost); emit(state, { type: 'corpses', player: pi, corpses: p.corpses }); } // Blood Tap pays in Corpses
 	spendMana(p, cost);
 	p.heroPowerDiscountNext = 0; // Fencing Coach's discount is one-shot
 	p.heroPowersUsedGame = (p.heroPowersUsedGame || 0) + 1; // Frost Giant
@@ -3655,6 +3667,7 @@ export function endTurn(state) {
 	if (p.duelsEverChanging && p.board.some(c => !isDead(c) && c.type !== 'location')) execEffects(state, pi, [{ type: 'transform', random: true, randomCost: true, costDelta: 2 }], null, null); // Ever-Changing Elixir (Duels): transform into one costing (2) more
 	if (p.glacialDownpour && p._frostCastTurn === state.turnNumber) execEffects(state, pi, [{ type: 'summon', count: 1, attack: 2, health: 3, name: 'Water Elemental', tribe: 'Elemental' }], null, null); // Glacial Downpour: cast Frost this turn -> a 2/3 Water Elemental
 	if (p.flameWaves && p._fireCastTurn === state.turnNumber && p._fireCastCount > 0) execEffects(state, pi, [{ type: 'damage', value: 2 * p._fireCastCount, target: 'enemy-creatures' }], null, null); // Flame Waves: 2 to all enemy creatures per Fire spell cast this turn
+	if (p.coldFeetPact) { const cg = Math.floor((p.corpses || 0) / 2); if (cg > 0) execEffects(state, pi, [{ type: 'summon', count: 1, attack: cg, health: cg, name: 'Risen Groom' }], null, null); } // Cold Feet Pact (Duels): a Risen Groom with stats = half your Corpses
 	for (const em of p.emblems) if (em.id === 'tomb_scroll_of_nonsense' && em.static && em.static.value > 0) { em.static.value--; } // Scroll of Nonsense decays each turn
 	fireOngoing(state, pi, 'turn-end');
 	if (p.board.some(c => c.endTurnDouble && !isDead(c))) fireOngoing(state, pi, 'turn-end'); // Chrono-Lord Deios

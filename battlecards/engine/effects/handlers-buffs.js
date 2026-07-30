@@ -2,6 +2,7 @@
 // Handler bodies are the verbatim registry migrations (PRs 13–39); this file
 // only re-homes them. Imported for its registration side effects by index.js.
 import { register, registerTrigger, ABORT } from './registry.js';
+import { spendCorpses } from '../../engine.js';
 // engine/effects/registry.js — the effect-handler registry (docs/06, PR 13).
 //
 // Dispatch-order rule (behavior-preserving migration): inside execEffects'
@@ -585,7 +586,7 @@ register('spend-corpses-stats', ({ state, pi, target, source, enemies, scaled, h
 			// Volcoross: spend N Corpses to gain +N/+N
 			const p = state.players[pi];
 			if (source && !isDead(source) && (p.corpses || 0) >= (e.amount || 0)) {
-				p.corpses -= e.amount || 0;
+				spendCorpses(state, pi, e.amount || 0);
 				emit(state, { type: 'corpses', player: pi, corpses: p.corpses });
 				source.attack += e.amount || 0; source.maxHealth += e.amount || 0;
 				emit(state, { type: 'buff', uid: source.uid, attack: source.attack, hp: hp(source) });

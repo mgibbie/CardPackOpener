@@ -12,7 +12,7 @@
 import {
 	emit, hp, has, isDead, isSpellType, schoolOf, staticValue, recomputeAuras,
 	fireOngoing, fireSecrets, runSecretEffects, questTick, summon, opponentsOf,
-	heroAttackValue, KW, STARTING_LIFE,
+	heroAttackValue, KW, STARTING_LIFE, spendCorpses,
 } from '../engine.js';
 
 export function damageCreature(state, target, amount, source) {
@@ -139,7 +139,7 @@ export function damageHero(state, pi, amount, src = null, pierce = false) {
 		p.life = Math.max(0, p.life - amount);
 		p.heroDamagedThisTurn = true; p.heroHealthChangedThisTurn = true; p.heroDamageTakenThisTurn = (p.heroDamageTakenThisTurn || 0) + amount; // Duskbat / Nethersoul Buster / Brittlebone Destroyer
 		if (state.current === pi) p.ownTurnsDamage = (p.ownTurnsDamage || 0) + amount; // Party Planner Vona
-		if (p.life <= 0 && p.heroDeathrattleCorpses && (p.corpses || 0) > 0) { const spend = Math.min(20, p.corpses); p.corpses -= spend; p.life = spend; p.heroDeathrattleCorpses = false; emit(state, { type: 'heroDeathrattle', player: pi, life: p.life }); } // Husk, Eternal Reaper
+		if (p.life <= 0 && p.heroDeathrattleCorpses && (p.corpses || 0) > 0) { const spend = Math.min(20, p.corpses); spendCorpses(state, pi, spend); p.life = spend; p.heroDeathrattleCorpses = false; emit(state, { type: 'heroDeathrattle', player: pi, life: p.life }); } // Husk, Eternal Reaper
 		emit(state, { type: 'damage', targetType: 'hero', player: pi, amount, life: p.life });
 		fireSecrets(state, pi, 'hero-takes-damage', { fatal: false, amount, src });
 		questTick(state, 'damage-taken', pi, amount);
@@ -160,7 +160,7 @@ export function damageHero(state, pi, amount, src = null, pierce = false) {
 	p.life = Math.max(0, p.life - toLife);
 	if (toLife > 0 && state.current === pi) p.ownTurnsDamage = (p.ownTurnsDamage || 0) + toLife; // Party Planner Vona
 	if (toLife > 0) warptoothCheck(state, pi);
-	if (p.life <= 0 && p.heroDeathrattleCorpses && (p.corpses || 0) > 0) { const spend = Math.min(20, p.corpses); p.corpses -= spend; p.life = spend; p.heroDeathrattleCorpses = false; emit(state, { type: 'heroDeathrattle', player: pi, life: p.life }); } // Husk, Eternal Reaper
+	if (p.life <= 0 && p.heroDeathrattleCorpses && (p.corpses || 0) > 0) { const spend = Math.min(20, p.corpses); spendCorpses(state, pi, spend); p.life = spend; p.heroDeathrattleCorpses = false; emit(state, { type: 'heroDeathrattle', player: pi, life: p.life }); } // Husk, Eternal Reaper
 	if (toLife > 0) { p.heroDamagedThisTurn = true; p.heroHealthChangedThisTurn = true; p.heroDamageTakenThisTurn = (p.heroDamageTakenThisTurn || 0) + toLife; } // Duskbat / Nethersoul Buster / Brittlebone Destroyer
 	if (toLife > 0 && src != null && src !== pi && state.players[src]) state.players[src].damageToEnemyHeroThisTurn = (state.players[src].damageToEnemyHeroThisTurn || 0) + toLife; // Crooked Cook
 	emit(state, { type: 'damage', targetType: 'hero', player: pi, amount, life: p.life });

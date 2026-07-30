@@ -2,6 +2,7 @@
 // Handler bodies are the verbatim registry migrations (PRs 13–39); this file
 // only re-homes them. Imported for its registration side effects by index.js.
 import { register, registerTrigger, ABORT } from './registry.js';
+import { spendCorpses } from '../../engine.js';
 // engine/effects/registry.js — the effect-handler registry (docs/06, PR 13).
 //
 // Dispatch-order rule (behavior-preserving migration): inside execEffects'
@@ -1554,7 +1555,7 @@ registerTrigger('damage-triggering-minion', (state, pi, e, ctx, triggering) => {
 				if (e.corpses) {
 					const p2 = state.players[pi];
 					if ((p2.corpses || 0) < e.corpses) break;
-					if (m && !isDead(m) && m.type !== 'location') { p2.corpses -= e.corpses; emit(state, { type: 'corpses', player: pi, corpses: p2.corpses }); }
+					if (m && !isDead(m) && m.type !== 'location') { spendCorpses(state, pi, e.corpses); emit(state, { type: 'corpses', player: pi, corpses: p2.corpses }); }
 					else break;
 				}
 				if (m && !isDead(m) && m.type !== 'location') damageCreature(state, m, e.value || 3, ctx.self || null);
@@ -1710,7 +1711,7 @@ registerTrigger('corpse-reborn', (state, pi, e, ctx, triggering) => {
 				const p2 = state.players[pi];
 				const self = ctx.self;
 				if (self && !isDead(self) && !has(self, KW.REBORN) && (p2.corpses || 0) >= (e.corpses || 3)) {
-					p2.corpses -= e.corpses || 3;
+					spendCorpses(state, pi, e.corpses || 3);
 					emit(state, { type: 'corpses', player: pi, corpses: p2.corpses });
 					self.keywords.push(KW.REBORN);
 					emit(state, { type: 'buff', uid: self.uid, attack: self.attack, hp: hp(self) });

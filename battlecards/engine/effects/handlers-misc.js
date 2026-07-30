@@ -2,6 +2,7 @@
 // Handler bodies are the verbatim registry migrations (PRs 13–39); this file
 // only re-homes them. Imported for its registration side effects by index.js.
 import { register, registerTrigger, ABORT } from './registry.js';
+import { spendCorpses } from '../../engine.js';
 // engine/effects/registry.js — the effect-handler registry (docs/06, PR 13).
 //
 // Dispatch-order rule (behavior-preserving migration): inside execEffects'
@@ -512,7 +513,7 @@ register('hematurge', ({ state, pi, target, source, enemies, scaled, hm, pickEne
 			// Hematurge: spend a Corpse to Discover a Death Knight card
 			const p = state.players[pi];
 			if ((p.corpses || 0) >= 1) {
-				p.corpses -= 1;
+				spendCorpses(state, pi, 1);
 				emit(state, { type: 'corpses', player: pi, corpses: p.corpses });
 				execEffects(state, pi, [{ type: 'discover', cardClasses: ['deathknight'] }], null, source);
 			}

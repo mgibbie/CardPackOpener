@@ -2,6 +2,7 @@
 // Handler bodies are the verbatim registry migrations (PRs 13–39); this file
 // only re-homes them. Imported for its registration side effects by index.js.
 import { register, registerTrigger, ABORT } from './registry.js';
+import { spendCorpses } from '../../engine.js';
 // engine/effects/registry.js — the effect-handler registry (docs/06, PR 13).
 //
 // Dispatch-order rule (behavior-preserving migration): inside execEffects'
@@ -316,7 +317,7 @@ register('summon-random-basic-totem', ({ state, pi, target, source, enemies, sca
 register('spend-corpses-summon-self', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => {
 			// Shambling Zombietank: spend N Corpses to summon a copy of this
 			const p = state.players[pi];
-			if ((p.corpses || 0) >= (e.cost || 5) && source && state.cardsById[source.id]) { p.corpses -= (e.cost || 5); emit(state, { type: 'corpses', player: pi, corpses: p.corpses }); summon(state, pi, state.cardsById[source.id]); }
+			if ((p.corpses || 0) >= (e.cost || 5) && source && state.cardsById[source.id]) { spendCorpses(state, pi, (e.cost || 5)); emit(state, { type: 'corpses', player: pi, corpses: p.corpses }); summon(state, pi, state.cardsById[source.id]); }
 });
 
 
@@ -396,7 +397,7 @@ register('spend-corpses-summon', ({ state, pi, target, source, enemies, scaled, 
 			// Boneguard Commander: raise up to N Corpses as tokens
 			const p = state.players[pi];
 			const n = Math.min(e.max || 6, p.corpses || 0);
-			if (n > 0 && state.cardsById[e.summonId]) { p.corpses -= n; emit(state, { type: 'corpses', player: pi, corpses: p.corpses }); for (let i = 0; i < n; i++) summon(state, pi, state.cardsById[e.summonId]); }
+			if (n > 0 && state.cardsById[e.summonId]) { spendCorpses(state, pi, n); emit(state, { type: 'corpses', player: pi, corpses: p.corpses }); for (let i = 0; i < n; i++) summon(state, pi, state.cardsById[e.summonId]); }
 });
 
 
