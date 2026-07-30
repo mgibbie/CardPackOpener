@@ -100,6 +100,14 @@ export const PASSIVES = {
 		name: 'Bronze Signet', text: 'Whenever you draw a creature, add a copy of it to your hand.',
 		apply: (state, pi) => { state.players[pi].bronzeSignet = true; },
 	},
+	glacial_downpour: {
+		name: 'Glacial Downpour', text: "At the end of your turn, summon a 2/3 Water Elemental if you've cast a Frost spell this turn.",
+		apply: (state, pi) => { state.players[pi].glacialDownpour = true; },
+	},
+	flame_waves: {
+		name: 'Flame Waves', text: "At the end of your turn, deal 2 damage to all enemy creatures for each Fire spell you've cast this turn.",
+		apply: (state, pi) => { state.players[pi].flameWaves = true; },
+	},
 };
 
 export function applyPassive(state, pi, id) {

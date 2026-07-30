@@ -116,7 +116,7 @@ ok('all 4 batch-2 hero-power cards present + well-formed', HP_IDS2.every(id => {
 }
 
 // ---------------- passives (duels.js) ----------------
-ok('PASSIVES has the 21 entries', Object.keys(D.PASSIVES).length === 21 && ['robe_of_the_apprentice', 'small_backpacks', 'small_pouches', 'band_of_bees', 'emerald_goggles', 'rhonins_scrying_orb', 'rocket_backpacks', 'special_delivery', 'shadowcasting_101', 'rally_the_troops', 'lunar_band', 'ring_of_refreshment', 'staff_of_pain', 'mending_pools', 'iron_roots', 'spreading_saplings', 'guardian_light', 'firekeepers_idol', 'invigorating_light', 'robes_of_shrinking', 'bronze_signet'].every(k => D.PASSIVES[k]));
+ok('PASSIVES has the 23 entries', Object.keys(D.PASSIVES).length === 23 && ['robe_of_the_apprentice', 'small_backpacks', 'small_pouches', 'band_of_bees', 'emerald_goggles', 'rhonins_scrying_orb', 'rocket_backpacks', 'special_delivery', 'shadowcasting_101', 'rally_the_troops', 'lunar_band', 'ring_of_refreshment', 'staff_of_pain', 'mending_pools', 'iron_roots', 'spreading_saplings', 'guardian_light', 'firekeepers_idol', 'invigorating_light', 'robes_of_shrinking', 'bronze_signet', 'glacial_downpour', 'flame_waves'].every(k => D.PASSIVES[k]));
 ok('HEROES lists 11 signature heroes with class', D.HEROES.length === 11 && D.HEROES.every(h => h.id && h.name && h.heroClass), D.HEROES.length);
 ok('applyPassive returns false for an unknown id', D.applyPassive({ players: [{}] }, 0, 'nope') === false);
 
@@ -283,6 +283,32 @@ ok('applyPassive returns false for an unknown id', D.applyPassive({ players: [{}
 	D.applyPassive(state, 0, 'bronze_signet');
 	E.execEffects(state, 0, [{ type: 'draw', value: 1 }], null, null);
 	ok('Bronze Signet: a copy joins your hand', state.players[0].hand.filter(c => c.id === 't_c').length === 2, state.players[0].hand.filter(c => c.id === 't_c').length);
+}
+// Glacial Downpour: casting Frost this turn summons a 2/3 Water Elemental at end of turn
+{
+	const { state } = new Scenario(byId).def('t_frost', { type: 'sorcery', cost: 0, tribe: 'Frost', effects: [] }).mana(0, 10).hand(0, ['t_frost']).run();
+	D.applyPassive(state, 0, 'glacial_downpour');
+	E.playCard(state, 0, state.players[0].hand[0].uid, null, null, 0);
+	E.endTurn(state);
+	const we = state.players[0].board.filter(c => c.name === 'Water Elemental');
+	ok('Glacial Downpour: a 2/3 Water Elemental at end of turn', we.length === 1 && we[0].attack === 2 && E.hp(we[0]) === 3, we.length);
+}
+// Glacial Downpour: no Frost spell -> no Water Elemental
+{
+	const { state } = new Scenario(byId).def('t_plain', { type: 'sorcery', cost: 0, effects: [] }).mana(0, 10).hand(0, ['t_plain']).run();
+	D.applyPassive(state, 0, 'glacial_downpour');
+	E.playCard(state, 0, state.players[0].hand[0].uid, null, null, 0);
+	E.endTurn(state);
+	ok('Glacial Downpour: no Frost cast -> nothing summoned', state.players[0].board.filter(c => c.name === 'Water Elemental').length === 0);
+}
+// Flame Waves: 2 damage to all enemy creatures per Fire spell cast this turn
+{
+	const { state } = new Scenario(byId).def('t_fire', { type: 'sorcery', cost: 0, tribe: 'Fire', effects: [] }).def('t_wall', { type: 'creature', cost: 5, attack: 0, health: 12 }).board(1, ['t_wall', 't_wall']).mana(0, 10).hand(0, ['t_fire', 't_fire']).run();
+	D.applyPassive(state, 0, 'flame_waves');
+	E.playCard(state, 0, state.players[0].hand.find(c => c.id === 't_fire').uid, null, null, 0);
+	E.playCard(state, 0, state.players[0].hand.find(c => c.id === 't_fire').uid, null, null, 0);
+	E.endTurn(state);
+	ok('Flame Waves: 2x(2 Fire spells) = 4 to each enemy creature', state.players[1].board.filter(c => c.id === 't_wall').every(c => c.damage === 4), state.players[1].board.map(c => c.damage));
 }
 
 // ---------------- boss ladder ----------------

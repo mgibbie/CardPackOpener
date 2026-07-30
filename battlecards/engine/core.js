@@ -2118,6 +2118,8 @@ export function playCard(state, pi, cardUid, target, choice, position, useAlt, k
 	if (p.spreadingSaplings && isSpellType(card) && schoolOf(card) === 'Nature') execEffects(state, pi, [{ type: 'summon', count: 1, attack: 1, health: 1, name: 'Sapling' }], null, null); // Spreading Saplings: a Nature spell summons a 1/1 Sapling
 	if (p.guardianLight && isSpellType(card) && schoolOf(card) === 'Holy' && (card.cost || 0) > 0) execEffects(state, pi, [{ type: 'summon', count: 1, attack: card.cost, health: card.cost, name: 'Ancient Guardian' }], null, null); // Guardian Light: a Holy spell summons a Cost/Cost Guardian
 	if (p.invigoratingLight && isSpellType(card) && schoolOf(card) === 'Holy') execEffects(state, pi, [{ type: 'buff', attack: 0, health: 1, target: 'friendly-creatures' }], null, null); // Invigorating Light: a Holy spell gives your creatures +1 Health
+	if (p.glacialDownpour && isSpellType(card) && schoolOf(card) === 'Frost') p._frostCastTurn = state.turnNumber; // track for Glacial Downpour (end of turn)
+	if (p.flameWaves && isSpellType(card) && schoolOf(card) === 'Fire') { if (p._fireCastTurn !== state.turnNumber) { p._fireCastTurn = state.turnNumber; p._fireCastCount = 0; } p._fireCastCount++; } // track for Flame Waves (end of turn)
 	if (p.firekeepersIdol && isSpellType(card) && schoolOf(card) === 'Fire') { // Firekeeper's Idol: a Fire spell summons a 1/2 Flame Elemental & hands you one
 		execEffects(state, pi, [{ type: 'summon', count: 1, attack: 1, health: 2, name: 'Flame Elemental', tribe: 'Elemental' }], null, null);
 		if (p.hand.length < MAX_HAND) {
@@ -3617,6 +3619,8 @@ export function endTurn(state) {
 	if (state.anomaly === 'growing') for (const c of p.board) { if (!isDead(c) && c.type !== 'location') { c.attack += 1; c.maxHealth += 1; emit(state, { type: 'buff', uid: c.uid, attack: c.attack, hp: hp(c) }); } } // Anomaly - Growing
 	if (state.anomaly === 'reductive') for (const c of p.hand) { if ((c.cost || 0) > 0) { c.cost = Math.max(0, c.cost - 1); emit(state, { type: 'costChange', player: pi, uid: c.uid, cost: c.cost }); } } // Anomaly - Reductive
 	if (p.everChangingElixir && p.board.some(c => !isDead(c) && c.type !== 'location')) execEffects(state, pi, [{ type: 'transform', random: true, randomCost: true, costDelta: 1 }], null, null); // Ever-Changing Elixir
+	if (p.glacialDownpour && p._frostCastTurn === state.turnNumber) execEffects(state, pi, [{ type: 'summon', count: 1, attack: 2, health: 3, name: 'Water Elemental', tribe: 'Elemental' }], null, null); // Glacial Downpour: cast Frost this turn -> a 2/3 Water Elemental
+	if (p.flameWaves && p._fireCastTurn === state.turnNumber && p._fireCastCount > 0) execEffects(state, pi, [{ type: 'damage', value: 2 * p._fireCastCount, target: 'enemy-creatures' }], null, null); // Flame Waves: 2 to all enemy creatures per Fire spell cast this turn
 	for (const em of p.emblems) if (em.id === 'tomb_scroll_of_nonsense' && em.static && em.static.value > 0) { em.static.value--; } // Scroll of Nonsense decays each turn
 	fireOngoing(state, pi, 'turn-end');
 	if (p.board.some(c => c.endTurnDouble && !isDead(c))) fireOngoing(state, pi, 'turn-end'); // Chrono-Lord Deios
