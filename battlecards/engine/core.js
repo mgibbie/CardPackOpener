@@ -2118,6 +2118,12 @@ export function playCard(state, pi, cardUid, target, choice, position, useAlt, k
 		p._lunarTurn = state.turnNumber; // Lunar Band: your first Deathrattle creature triggers its effect (and lives)
 		runDeathrattle(state, pi, card);
 	}
+	// Duels passives that react to playing a creature
+	if (p.ringPhaseshifting && card.type === 'creature' && card.rarity === 'legendary') execEffects(state, pi, [{ type: 'conjure-random', cardType: 'creature', rarity: 'legendary', count: 1 }], null, null); // Ring of Phaseshifting: a Legendary adds a random Legendary to hand
+	if (p.inspiringPresence && card.type === 'creature' && card.rarity === 'legendary') { const pool = p.hand.filter(c => (c.cost || 0) > 0); if (pool.length) { const hc = pool[Math.floor(state.rng() * pool.length)]; hc.cost = Math.max(0, hc.cost - 2); emit(state, { type: 'costChange', player: pi, uid: hc.uid, cost: hc.cost }); } } // Inspiring Presence: a Legendary cheapens a random hand card by (2)
+	if (p.sandySurprise && card.type === 'creature' && (card.cost || 0) <= 3 && !isDead(card) && card.zone === 'board' && !card.keywords.includes('stealth')) { card.keywords.push('stealth'); card.stealthed = true; emit(state, { type: 'buff', uid: card.uid, attack: card.attack, hp: hp(card) }); } // Sandy Surprise: a (3)-or-less creature gains Stealth
+	if (p.floorIsLava && card.type === 'creature' && p._floorTurn !== state.turnNumber && !isDead(card) && card.zone === 'board') { p._floorTurn = state.turnNumber; card.attack += 2; emit(state, { type: 'buff', uid: card.uid, attack: card.attack, hp: hp(card) }); damageCreature(state, card, 1, null); } // The Floor is Lava: first creature -> +2 Attack & 1 damage
+	if (p.righteousReserves && card.type === 'creature' && (card.keywords || []).includes('divine_shield') && p._righteousTurn !== state.turnNumber) { p._righteousTurn = state.turnNumber; execEffects(state, pi, [{ type: 'buff-random-friendly', attack: 0, health: 0, grant: 'divine_shield' }], null, null); } // Righteous Reserves: first Divine Shield creature -> a random friendly gains Divine Shield
 	// Duels passives that react to casting a spell
 	if (p.ringOfRefreshment && isSpellType(card)) { for (const hpw of p.heroPowers) hpw.usedThisTurn = false; } // Ring of Refreshment: a spell refreshes your Hero Power
 	if (p.staffOfPain && isSpellType(card) && schoolOf(card) === 'Shadow') execEffects(state, pi, [{ type: 'damage', value: 2, target: 'all-heroes' }], null, null); // Staff of Pain: a Shadow spell hurts every hero

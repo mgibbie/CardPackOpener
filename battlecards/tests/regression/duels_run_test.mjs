@@ -116,7 +116,7 @@ ok('all 4 batch-2 hero-power cards present + well-formed', HP_IDS2.every(id => {
 }
 
 // ---------------- passives (duels.js) ----------------
-ok('PASSIVES has the 36 entries', Object.keys(D.PASSIVES).length === 36 && ['recycling', 'disks_of_legend', 'elixir_of_vigor', 'manastorm', 'starving', 'dragonblood', 'from_the_swamp', 'cadaver_collector', 'conduit_of_the_storms', 'crystal_gem', 'party_replacement'].every(k => D.PASSIVES[k]));
+ok('PASSIVES has the 41 entries', Object.keys(D.PASSIVES).length === 41 && ['ring_of_phaseshifting', 'inspiring_presence', 'sandy_surprise', 'the_floor_is_lava', 'righteous_reserves'].every(k => D.PASSIVES[k]));
 ok('HEROES lists 11 signature heroes with class', D.HEROES.length === 11 && D.HEROES.every(h => h.id && h.name && h.heroClass), D.HEROES.length);
 ok('applyPassive returns false for an unknown id', D.applyPassive({ players: [{}] }, 0, 'nope') === false);
 
@@ -394,6 +394,41 @@ const kill = (state, pi, uid) => { const c = state.players[pi].board.find(x => x
 	D.applyPassive(state, 0, 'crystal_gem');
 	E.endTurn(state); E.endTurn(state); // player 0's turn start #1 under the gem
 	ok('Crystal Gem: banks an extra crystal (used counter advances)', state.players[0]._cgUsed === 1 && state.players[0].mana.max >= 2, [state.players[0]._cgUsed, state.players[0].mana.max]);
+}
+// Sandy Surprise: a (3)-or-less creature gains Stealth
+{
+	const { state } = new Scenario(byId).def('t_c', { type: 'creature', cost: 2, attack: 2, health: 2 }).def('t_big', { type: 'creature', cost: 6, attack: 6, health: 6 }).mana(0, 10).hand(0, ['t_c', 't_big']).run();
+	D.applyPassive(state, 0, 'sandy_surprise');
+	E.playCard(state, 0, state.players[0].hand.find(c => c.id === 't_c').uid, null, null, 0);
+	E.playCard(state, 0, state.players[0].hand.find(c => c.id === 't_big').uid, null, null, 0);
+	const small = state.players[0].board.find(c => c.id === 't_c');
+	const big = state.players[0].board.find(c => c.id === 't_big');
+	ok('Sandy Surprise: cheap creature Stealthed, big one not', small.keywords.includes('stealth') && !big.keywords.includes('stealth'), [small.keywords, big.keywords]);
+}
+// The Floor is Lava: first creature each turn gets +2 Attack & 1 damage
+{
+	const { state } = new Scenario(byId).def('t_c', { type: 'creature', cost: 2, attack: 2, health: 4 }).mana(0, 10).hand(0, ['t_c']).run();
+	D.applyPassive(state, 0, 'the_floor_is_lava');
+	E.playCard(state, 0, state.players[0].hand[0].uid, null, null, 0);
+	const m = state.players[0].board.find(c => c.id === 't_c');
+	ok('The Floor is Lava: +2 Attack & took 1 damage', m.attack === 4 && m.damage === 1, [m.attack, m.damage]);
+}
+// Righteous Reserves: first Divine Shield creature gives a random friendly Divine Shield
+{
+	const { state } = new Scenario(byId).def('t_ds', { type: 'creature', cost: 2, attack: 2, health: 2, keywords: ['divine_shield'] }).def('t_plain', { type: 'creature', cost: 1, attack: 1, health: 3 }).board(0, ['t_plain']).mana(0, 10).hand(0, ['t_ds']).run();
+	D.applyPassive(state, 0, 'righteous_reserves');
+	state.rng = () => 0.99; // force the "random friendly" to the last board creature (t_plain)
+	E.playCard(state, 0, state.players[0].hand[0].uid, null, null, 0);
+	const plain = state.players[0].board.find(c => c.id === 't_plain');
+	ok('Righteous Reserves: a friendly gains Divine Shield', plain.keywords.includes('divine_shield') || plain.shield === true, [plain.keywords, plain.shield]);
+}
+// Inspiring Presence: a Legendary cheapens a random hand card by (2)
+{
+	const { state } = new Scenario(byId).def('t_leg', { type: 'creature', cost: 5, attack: 5, health: 5, rarity: 'legendary' }).def('t_hand', { type: 'creature', cost: 6, attack: 6, health: 6 }).mana(0, 10).hand(0, ['t_leg', 't_hand']).run();
+	D.applyPassive(state, 0, 'inspiring_presence');
+	E.playCard(state, 0, state.players[0].hand.find(c => c.id === 't_leg').uid, null, null, 0);
+	const hc = state.players[0].hand.find(c => c.id === 't_hand');
+	ok('Inspiring Presence: hand card costs (2) less', hc && hc.cost === 4, hc && hc.cost);
 }
 
 // ---------------- boss ladder ----------------

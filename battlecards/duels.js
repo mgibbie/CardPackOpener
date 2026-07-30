@@ -163,6 +163,27 @@ export const PASSIVES = {
 		name: 'Party Replacement', text: 'At the start of your turn, summon a 2/2 Adventurer with a random bonus keyword.',
 		apply: (state, pi) => { state.players[pi].partyReplacement = true; },
 	},
+	// --- play-a-creature triggers ---
+	ring_of_phaseshifting: {
+		name: 'Ring of Phaseshifting', text: 'After you play a Legendary creature, add a random Legendary creature to your hand.',
+		apply: (state, pi) => { state.players[pi].ringPhaseshifting = true; },
+	},
+	inspiring_presence: {
+		name: 'Inspiring Presence', text: 'After you play a Legendary creature, reduce the Cost of a random card in your hand by (2).',
+		apply: (state, pi) => { state.players[pi].inspiringPresence = true; },
+	},
+	sandy_surprise: {
+		name: 'Sandy Surprise', text: 'After you play a creature that costs (3) or less, give it Stealth.',
+		apply: (state, pi) => { state.players[pi].sandySurprise = true; },
+	},
+	the_floor_is_lava: {
+		name: 'The Floor is Lava', text: 'After you play your first creature each turn, deal 1 damage to it & give it +2 Attack.',
+		apply: (state, pi) => { state.players[pi].floorIsLava = true; },
+	},
+	righteous_reserves: {
+		name: 'Righteous Reserves', text: 'After you play your first Divine Shield creature each turn, give a random friendly creature Divine Shield.',
+		apply: (state, pi) => { state.players[pi].righteousReserves = true; },
+	},
 };
 
 export function applyPassive(state, pi, id) {
