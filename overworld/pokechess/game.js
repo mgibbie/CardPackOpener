@@ -226,9 +226,11 @@ function drawPiece(p, x, y) {
 	ctx.fillRect(x + 3, y + 3, CELL - 6, CELL - 6);
 	if (p.pokemon) drawSprite(p.pokemon, x, y, CELL, side);
 	else { // the King carries no Pokémon — draw a clear crown so its square isn't empty
-		ctx.font = 'bold 46px serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-		ctx.fillStyle = side === WHITE ? '#f0d878' : '#d89838';
-		ctx.fillText(side === WHITE ? '♔' : '♚', x + CELL / 2, y + CELL / 2 + 3);
+		const kx = x + CELL / 2, ky = y + CELL / 2 + 3, glyph = side === WHITE ? '♔' : '♚';
+		ctx.font = 'bold 46px serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.lineWidth = 3;
+		if (side === WHITE) { ctx.fillStyle = '#f0d878'; ctx.strokeStyle = '#6e5210'; } // gold crown, white side
+		else { ctx.fillStyle = '#241f30'; ctx.strokeStyle = '#cfc6e6'; }               // dark crown, black side
+		ctx.strokeText(glyph, kx, ky); ctx.fillText(glyph, kx, ky);
 	}
 	// piece-type glyph badge (top-left)
 	ctx.font = 'bold 18px serif'; ctx.textAlign = 'left'; ctx.textBaseline = 'top';
@@ -305,6 +307,8 @@ canvas.addEventListener('click', e => {
 	if (r) { cursorR = r; cursorC = c; trySelect(r, c); }
 });
 addEventListener('keydown', e => {
+	// stop the browser from scrolling the page on the keys the game uses
+	if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', ' ', 'z', 'x', 'Enter'].includes(e.key)) e.preventDefault();
 	if (phase === 'battle') { battle.key(e.key); return; } // the battle owns input during a clash
 	if (e.key === 'Escape') { leave(); return; }
 	if (phase === 'gameover') { if (e.key === 'z' || e.key === 'Enter') boot(); return; }
