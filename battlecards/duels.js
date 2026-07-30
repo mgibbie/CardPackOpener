@@ -222,6 +222,18 @@ export const PASSIVES = {
 		name: 'Meek Mastery', text: 'Your Neutral creatures have +1/+1 and cost (1) less, but not less than (2).',
 		apply: (state, pi) => { state.players[pi].meekMastery = true; emblem(state, pi, 'duels_meek_mastery', 'Meek Mastery', 'Your Neutral creatures have +1/+1.', { aura: { attack: 1, health: 1, cardClass: 'neutral' } }); },
 	},
+	sticky_fingers: {
+		name: 'Sticky Fingers', text: "Cards that didn't start in your deck cost (1) less, but not less than (1).",
+		apply: (state, pi) => { state.players[pi].stickyFingers = true; },
+	},
+	hold_the_line: {
+		name: 'Hold the Line', text: "Your Taunt creatures have +3 Attack during your opponent's turn.",
+		apply: (state, pi) => { state.players[pi].holdTheLine = true; for (const c of state.players[pi].board) if ((c.keywords || []).includes('taunt')) c.offTurnAttack = Math.max(c.offTurnAttack || 0, 3); },
+	},
+	scattered_caltrops: {
+		name: 'Scattered Caltrops', text: 'After your opponent plays their first creature each turn, deal 1 damage to it.',
+		apply: (state, pi) => { state.players[pi].scatteredCaltrops = true; },
+	},
 };
 
 export function applyPassive(state, pi, id) {

@@ -116,7 +116,7 @@ ok('all 4 batch-2 hero-power cards present + well-formed', HP_IDS2.every(id => {
 }
 
 // ---------------- passives (duels.js) ----------------
-ok('PASSIVES has the 50 entries', Object.keys(D.PASSIVES).length === 50 && ['endurance_training', 'all_together_now', 'dragon_affinity', 'greedy_gains', 'meek_mastery'].every(k => D.PASSIVES[k]));
+ok('PASSIVES has the 53 entries', Object.keys(D.PASSIVES).length === 53 && ['sticky_fingers', 'hold_the_line', 'scattered_caltrops'].every(k => D.PASSIVES[k]));
 ok('HEROES lists 11 signature heroes with class', D.HEROES.length === 11 && D.HEROES.every(h => h.id && h.name && h.heroClass), D.HEROES.length);
 ok('applyPassive returns false for an unknown id', D.applyPassive({ players: [{}] }, 0, 'nope') === false);
 
@@ -499,6 +499,34 @@ const kill = (state, pi, uid) => { const c = state.players[pi].board.find(x => x
 	const mage = state.players[0].board.find(c => c.id === 't_mage');
 	ok('Meek Mastery: Neutral +1/+1, non-Neutral unchanged', neu.attack === 3 && E.hp(neu) === 3 && mage.attack === 2 && E.hp(mage) === 2, [neu.attack, mage.attack]);
 	ok('Meek Mastery: Neutral hand card (1) cheaper', E.effectiveCost(state, 0, state.players[0].hand[0]) === 3);
+}
+// Sticky Fingers: cards not from your starting deck cost (1) less
+{
+	const { state } = new Scenario(byId).def('t_x', { type: 'creature', cost: 4, attack: 3, health: 3 }).hand(0, ['t_x']).run();
+	state.players[0].startingDeckIds = ['something_else'];
+	D.applyPassive(state, 0, 'sticky_fingers');
+	ok('Sticky Fingers: non-deck card (1) cheaper', E.effectiveCost(state, 0, state.players[0].hand[0]) === 3);
+}
+// Hold the Line: Taunt creatures gain +3 Attack on the opponent's turn
+{
+	const { state } = new Scenario(byId).def('t_t', { type: 'creature', cost: 3, attack: 2, health: 4, keywords: ['taunt'] }).mana(0, 10).hand(0, ['t_t']).run();
+	D.applyPassive(state, 0, 'hold_the_line');
+	E.playCard(state, 0, state.players[0].hand[0].uid, null, null, 0);
+	const m = state.players[0].board.find(c => c.id === 't_t');
+	state.current = 0; E.recomputeAuras(state);
+	const onYourTurn = m.attack;
+	state.current = 1; E.recomputeAuras(state);
+	ok('Hold the Line: +3 Attack on opponent turn only', onYourTurn === 2 && m.attack === 5, [onYourTurn, m.attack]);
+}
+// Scattered Caltrops: the opponent's first creature each turn takes 1
+{
+	const { state } = new Scenario(byId).def('t_c', { type: 'creature', cost: 1, attack: 2, health: 3 }).mana(1, 10).hand(1, ['t_c', 't_c']).run();
+	D.applyPassive(state, 0, 'scattered_caltrops');
+	state.current = 1;
+	E.playCard(state, 1, state.players[1].hand.find(c => c.id === 't_c').uid, null, null, 1);
+	const first = state.players[1].board.find(c => c.id === 't_c');
+	E.playCard(state, 1, state.players[1].hand.find(c => c.id === 't_c').uid, null, null, 1);
+	ok('Scattered Caltrops: first enemy creature took 1', first.damage === 1 && state.players[1].board.filter(c => c.damage === 1).length === 1, state.players[1].board.map(c => c.damage));
 }
 
 // ---------------- boss ladder ----------------
