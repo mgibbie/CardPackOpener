@@ -116,7 +116,7 @@ ok('all 4 batch-2 hero-power cards present + well-formed', HP_IDS2.every(id => {
 }
 
 // ---------------- passives (duels.js) ----------------
-ok('PASSIVES has the 23 entries', Object.keys(D.PASSIVES).length === 23 && ['robe_of_the_apprentice', 'small_backpacks', 'small_pouches', 'band_of_bees', 'emerald_goggles', 'rhonins_scrying_orb', 'rocket_backpacks', 'special_delivery', 'shadowcasting_101', 'rally_the_troops', 'lunar_band', 'ring_of_refreshment', 'staff_of_pain', 'mending_pools', 'iron_roots', 'spreading_saplings', 'guardian_light', 'firekeepers_idol', 'invigorating_light', 'robes_of_shrinking', 'bronze_signet', 'glacial_downpour', 'flame_waves'].every(k => D.PASSIVES[k]));
+ok('PASSIVES has the 25 entries', Object.keys(D.PASSIVES).length === 25 && ['robe_of_the_apprentice', 'small_backpacks', 'small_pouches', 'band_of_bees', 'emerald_goggles', 'rhonins_scrying_orb', 'rocket_backpacks', 'special_delivery', 'shadowcasting_101', 'rally_the_troops', 'lunar_band', 'ring_of_refreshment', 'staff_of_pain', 'mending_pools', 'iron_roots', 'spreading_saplings', 'guardian_light', 'firekeepers_idol', 'invigorating_light', 'robes_of_shrinking', 'bronze_signet', 'glacial_downpour', 'flame_waves', 'arctic_armor', 'ring_of_black_ice'].every(k => D.PASSIVES[k]));
 ok('HEROES lists 11 signature heroes with class', D.HEROES.length === 11 && D.HEROES.every(h => h.id && h.name && h.heroClass), D.HEROES.length);
 ok('applyPassive returns false for an unknown id', D.applyPassive({ players: [{}] }, 0, 'nope') === false);
 
@@ -309,6 +309,23 @@ ok('applyPassive returns false for an unknown id', D.applyPassive({ players: [{}
 	E.playCard(state, 0, state.players[0].hand.find(c => c.id === 't_fire').uid, null, null, 0);
 	E.endTurn(state);
 	ok('Flame Waves: 2x(2 Fire spells) = 4 to each enemy creature', state.players[1].board.filter(c => c.id === 't_wall').every(c => c.damage === 4), state.players[1].board.map(c => c.damage));
+}
+// Arctic Armor: the first enemy you Freeze each turn grants 2 Armor
+{
+	const { state } = new Scenario(byId).def('t_e', { type: 'creature', cost: 3, attack: 2, health: 3 }).board(1, ['t_e', 't_e']).run();
+	D.applyPassive(state, 0, 'arctic_armor');
+	E.freezeCreature(state, state.players[1].board[0]);
+	const after1 = state.players[0].armor;
+	E.freezeCreature(state, state.players[1].board[1]);
+	ok('Arctic Armor: first freeze grants 2 Armor, second grants none', after1 === 2 && state.players[0].armor === 2, [after1, state.players[0].armor]);
+}
+// Ring of Black Ice: a Frozen creature adds a (2)-cheaper copy to your hand
+{
+	const { state } = new Scenario(byId).def('t_e', { type: 'creature', cost: 5, attack: 4, health: 4 }).board(1, ['t_e']).run();
+	D.applyPassive(state, 0, 'ring_of_black_ice');
+	E.freezeCreature(state, state.players[1].board[0]);
+	const cp = state.players[0].hand.find(c => c.id === 't_e');
+	ok('Ring of Black Ice: a (2)-cheaper copy joins your hand', cp && cp.cost === 3, cp && cp.cost);
 }
 
 // ---------------- boss ladder ----------------

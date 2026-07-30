@@ -108,6 +108,14 @@ export const PASSIVES = {
 		name: 'Flame Waves', text: "At the end of your turn, deal 2 damage to all enemy creatures for each Fire spell you've cast this turn.",
 		apply: (state, pi) => { state.players[pi].flameWaves = true; },
 	},
+	arctic_armor: {
+		name: 'Arctic Armor', text: 'After the first time you Freeze an enemy each turn, gain 2 Armor.',
+		apply: (state, pi) => { state.players[pi].arcticArmor = true; },
+	},
+	ring_of_black_ice: {
+		name: 'Ring of Black Ice', text: 'Whenever a creature is Frozen, add a copy of it to your hand. It costs (2) less.',
+		apply: (state, pi) => { state.players[pi].ringOfBlackIce = true; },
+	},
 };
 
 export function applyPassive(state, pi, id) {

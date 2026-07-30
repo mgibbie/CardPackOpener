@@ -859,6 +859,14 @@ export function freezeCreature(state, c) {
 	// let each player's triggers react ("After an enemy creature is Frozen...")
 	if (!wasFrozen) for (let s = 0; s < state.players.length; s++) {
 		fireOngoing(state, s, 'creature-frozen', { frozen: c, byEnemy: c.controller !== s });
+		const sp = state.players[s];
+		// Arctic Armor (Duels): the first enemy you Freeze each turn gives you 2 Armor
+		if (sp.arcticArmor && c.controller !== s && sp._arcticTurn !== state.turnNumber) { sp._arcticTurn = state.turnNumber; gainArmor(state, s, 2); }
+		// Ring of Black Ice (Duels): a Frozen creature adds a (2)-cheaper copy to your hand
+		if (sp.ringOfBlackIce && state.cardsById[c.id] && sp.hand.length < MAX_HAND) {
+			const cp = instantiate(state.cardsById[c.id], s); cp.zone = 'hand'; cp.cost = Math.max(0, (cp.cost || 0) - 2);
+			sp.hand.push(cp); emit(state, { type: 'conjure', player: s, card: cp, color: null });
+		}
 	}
 }
 
