@@ -116,7 +116,7 @@ ok('all 4 batch-2 hero-power cards present + well-formed', HP_IDS2.every(id => {
 }
 
 // ---------------- passives (duels.js) ----------------
-ok('PASSIVES has the 45 entries', Object.keys(D.PASSIVES).length === 45 && ['fireshaper', 'arcanite_crystal', 'wither_the_weak', 'unstable_magic'].every(k => D.PASSIVES[k]));
+ok('PASSIVES has the 50 entries', Object.keys(D.PASSIVES).length === 50 && ['endurance_training', 'all_together_now', 'dragon_affinity', 'greedy_gains', 'meek_mastery'].every(k => D.PASSIVES[k]));
 ok('HEROES lists 11 signature heroes with class', D.HEROES.length === 11 && D.HEROES.every(h => h.id && h.name && h.heroClass), D.HEROES.length);
 ok('applyPassive returns false for an unknown id', D.applyPassive({ players: [{}] }, 0, 'nope') === false);
 
@@ -461,6 +461,44 @@ const kill = (state, pi, uid) => { const c = state.players[pi].board.find(x => x
 	E.playCard(state, 0, state.players[0].hand[0].uid, null, null, 0);
 	const sheep = state.players[1].board.filter(c => c.name === 'Sheep' && !E.isDead(c));
 	ok('Unstable Magic: enemy becomes a 1/1 Sheep', sheep.length === 1 && sheep[0].attack === 1 && E.hp(sheep[0]) === 1 && !state.players[1].board.some(c => c.id === 't_e' && !E.isDead(c)), sheep.length);
+}
+// Endurance Training: Taunt creatures cost (2) less
+{
+	const { state } = new Scenario(byId).def('t_t', { type: 'creature', cost: 4, attack: 3, health: 5, keywords: ['taunt'] }).def('t_n', { type: 'creature', cost: 4, attack: 4, health: 4 }).hand(0, ['t_t', 't_n']).run();
+	D.applyPassive(state, 0, 'endurance_training');
+	ok('Endurance Training: Taunt -2, non-Taunt unchanged', E.effectiveCost(state, 0, state.players[0].hand.find(c => c.id === 't_t')) === 2 && E.effectiveCost(state, 0, state.players[0].hand.find(c => c.id === 't_n')) === 4);
+}
+// All Together Now: Battlecry cards cost (1) less, floor (2)
+{
+	const { state } = new Scenario(byId).def('t_bc', { type: 'creature', cost: 4, attack: 2, health: 2, keywords: ['battlecry'] }).def('t_low', { type: 'creature', cost: 2, attack: 2, health: 2, keywords: ['battlecry'] }).hand(0, ['t_bc', 't_low']).run();
+	D.applyPassive(state, 0, 'all_together_now');
+	ok('All Together Now: -1 but floored at (2)', E.effectiveCost(state, 0, state.players[0].hand.find(c => c.id === 't_bc')) === 3 && E.effectiveCost(state, 0, state.players[0].hand.find(c => c.id === 't_low')) === 2);
+}
+// Dragon Affinity: the first Dragon each turn costs (1) less
+{
+	const { state } = new Scenario(byId).def('t_drag', { type: 'creature', cost: 5, attack: 5, health: 5, tribe: 'Dragon' }).hand(0, ['t_drag']).run();
+	D.applyPassive(state, 0, 'dragon_affinity');
+	const before = E.effectiveCost(state, 0, state.players[0].hand[0]);
+	state.players[0].creaturesPlayedThisTurn = 1; // no longer the first
+	const after = E.effectiveCost(state, 0, state.players[0].hand[0]);
+	ok('Dragon Affinity: first Dragon (4), later full (5)', before === 4 && after === 5, [before, after]);
+}
+// Greedy Gains: +2/+2 on board, +2 cost in hand
+{
+	const { state } = new Scenario(byId).def('t_m', { type: 'creature', cost: 3, attack: 2, health: 2 }).board(0, ['t_m']).hand(0, ['t_m']).run();
+	D.applyPassive(state, 0, 'greedy_gains');
+	const b = state.players[0].board.find(c => c.id === 't_m');
+	ok('Greedy Gains: board +2/+2', b.attack === 4 && E.hp(b) === 4, [b.attack, E.hp(b)]);
+	ok('Greedy Gains: hand +2 Cost', E.effectiveCost(state, 0, state.players[0].hand[0]) === 5);
+}
+// Meek Mastery: Neutral creatures +1/+1 & (1) cheaper; other classes untouched
+{
+	const { state } = new Scenario(byId).def('t_neu', { type: 'creature', cost: 4, attack: 2, health: 2, cardClass: 'neutral' }).def('t_mage', { type: 'creature', cost: 4, attack: 2, health: 2, cardClass: 'mage' }).board(0, ['t_neu', 't_mage']).hand(0, ['t_neu']).run();
+	D.applyPassive(state, 0, 'meek_mastery');
+	const neu = state.players[0].board.find(c => c.id === 't_neu');
+	const mage = state.players[0].board.find(c => c.id === 't_mage');
+	ok('Meek Mastery: Neutral +1/+1, non-Neutral unchanged', neu.attack === 3 && E.hp(neu) === 3 && mage.attack === 2 && E.hp(mage) === 2, [neu.attack, mage.attack]);
+	ok('Meek Mastery: Neutral hand card (1) cheaper', E.effectiveCost(state, 0, state.players[0].hand[0]) === 3);
 }
 
 // ---------------- boss ladder ----------------

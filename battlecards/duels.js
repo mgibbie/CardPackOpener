@@ -201,6 +201,27 @@ export const PASSIVES = {
 		name: 'Unstable Magic', text: 'After you cast an Arcane spell, transform a random enemy creature into a 1/1 Sheep.',
 		apply: (state, pi) => { state.players[pi].unstableMagic = true; },
 	},
+	// --- cost auras ---
+	endurance_training: {
+		name: 'Endurance Training', text: 'Your Taunt creatures cost (2) less, but not less than (1).',
+		apply: (state, pi) => { state.players[pi].enduranceTraining = true; },
+	},
+	all_together_now: {
+		name: 'All Together Now', text: 'Your Battlecry cards cost (1) less, but not less than (2).',
+		apply: (state, pi) => { state.players[pi].allTogetherNow = true; },
+	},
+	dragon_affinity: {
+		name: 'Dragon Affinity', text: 'The first Dragon you play each turn costs (1) less.',
+		apply: (state, pi) => { state.players[pi].dragonAffinity = true; },
+	},
+	greedy_gains: {
+		name: 'Greedy Gains', text: 'Your creatures have +2/+2 but cost (2) more, up to (10).',
+		apply: (state, pi) => { state.players[pi].greedyGains = true; emblem(state, pi, 'duels_greedy_gains', 'Greedy Gains', 'Your creatures have +2/+2.', { aura: { attack: 2, health: 2 } }); },
+	},
+	meek_mastery: {
+		name: 'Meek Mastery', text: 'Your Neutral creatures have +1/+1 and cost (1) less, but not less than (2).',
+		apply: (state, pi) => { state.players[pi].meekMastery = true; emblem(state, pi, 'duels_meek_mastery', 'Meek Mastery', 'Your Neutral creatures have +1/+1.', { aura: { attack: 1, health: 1, cardClass: 'neutral' } }); },
+	},
 };
 
 export function applyPassive(state, pi, id) {

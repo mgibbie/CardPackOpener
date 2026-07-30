@@ -145,6 +145,11 @@ export function effectiveCost(state, pi, card) {
 	if (p.minionCostSet != null && card.type === 'creature') c = p.minionCostSet; // Loh the Living Legend
 	if (p.allCardsCostOne) c = 1; // Aviana's Full Moon
 	if (card.type === 'creature' && (card.keywords || []).includes('battlecry') && p.board.some(m => m.murmurAura && !isDead(m))) c = 1; // Murmur
+	if (p.enduranceTraining && card.type === 'creature' && (card.keywords || []).includes('taunt')) c = Math.max(1, c - 2); // Endurance Training (Duels): Taunt creatures cost (2) less
+	if (p.allTogetherNow && (card.keywords || []).includes('battlecry')) c = Math.max(2, c - 1); // All Together Now (Duels): Battlecry cards cost (1) less
+	if (p.greedyGains && card.type === 'creature') c = Math.min(10, c + 2); // Greedy Gains (Duels): creatures cost (2) more
+	if (p.meekMastery && card.type === 'creature' && (card.cardClass || 'neutral') === 'neutral') c = Math.max(2, c - 1); // Meek Mastery (Duels): Neutral creatures cost (1) less
+	if (p.dragonAffinity && card.type === 'creature' && (card.tribe || '').includes('Dragon') && (p.creaturesPlayedThisTurn || 0) === 0) c = Math.max(0, c - 1); // Dragon Affinity (Duels): first Dragon each turn costs (1) less
 	if (p.leftmostDiscount && p.hand.length && p.hand[0] === card) c = Math.max(0, c - p.leftmostDiscount); // Emerald Goggles: the left-most hand card
 	if (p.robesHalf) c = Math.ceil(c / 2); // Robes of Gaudiness: cards cost half
 	if (p.spellsCostHealth && isSpellType(card)) return 0; // Elixir of Vile: paid in Health at play time

@@ -33,6 +33,7 @@ export function recomputeAuras(state) {
 				}
 				if (a.position === 'ends' && idx !== 0 && idx !== p.board.length - 1) continue;
 				if (a.tribe && !a.tribe.split('|').some(t => (c.tribe || '').includes(t))) continue;
+				if (a.cardClass && (c.cardClass || 'neutral') !== a.cardClass) continue; // Meek Mastery: Neutral creatures only
 				if (a.name && c.name !== a.name) continue; // Warhorse Trainer's Recruits
 				if (a.targetUid != null && a.targetUid !== c.uid) continue; // Rowdy Fan: only the chosen minion
 				// Herald-scaled aura (Charged Hand of Al'Akir): +Attack grows with Heralds
