@@ -40,6 +40,14 @@ export const PASSIVES = {
 		name: "Rhonin's Scrying Orb", text: 'The first spell you cast each turn costs (1) less.',
 		apply: (state, pi) => emblem(state, pi, 'duels_rhonins_scrying_orb', "Rhonin's Scrying Orb", 'Your first spell each turn costs (1) less.', { static: { type: 'first-spell-discount', value: 1 } }),
 	},
+	rocket_backpacks: {
+		name: 'Rocket Backpacks', text: 'The first creature you play each turn has Rush.',
+		apply: (state, pi) => { state.players[pi].rocketBackpacks = true; },
+	},
+	special_delivery: {
+		name: 'Special Delivery', text: 'After you play your first Rush creature in a turn, summon a copy of it with 1 Health.',
+		apply: (state, pi) => { state.players[pi].specialDelivery = true; },
+	},
 };
 
 export function applyPassive(state, pi, id) {

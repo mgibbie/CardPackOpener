@@ -116,7 +116,7 @@ ok('all 4 batch-2 hero-power cards present + well-formed', HP_IDS2.every(id => {
 }
 
 // ---------------- passives (duels.js) ----------------
-ok('PASSIVES has the 6 entries', Object.keys(D.PASSIVES).length === 6 && ['robe_of_the_apprentice', 'small_backpacks', 'small_pouches', 'band_of_bees', 'emerald_goggles', 'rhonins_scrying_orb'].every(k => D.PASSIVES[k]));
+ok('PASSIVES has the 8 entries', Object.keys(D.PASSIVES).length === 8 && ['robe_of_the_apprentice', 'small_backpacks', 'small_pouches', 'band_of_bees', 'emerald_goggles', 'rhonins_scrying_orb', 'rocket_backpacks', 'special_delivery'].every(k => D.PASSIVES[k]));
 ok('HEROES lists 11 signature heroes with class', D.HEROES.length === 11 && D.HEROES.every(h => h.id && h.name && h.heroClass), D.HEROES.length);
 ok('applyPassive returns false for an unknown id', D.applyPassive({ players: [{}] }, 0, 'nope') === false);
 
@@ -160,6 +160,24 @@ ok('applyPassive returns false for an unknown id', D.applyPassive({ players: [{}
 	D.applyPassive(state, 0, 'rhonins_scrying_orb');
 	const after = E.effectiveCost(state, 0, state.players[0].hand[0]);
 	ok("Rhonin's Scrying Orb: first spell costs (1) less", before === 4 && after === 3, [before, after]);
+}
+// Rocket Backpacks: the first creature played each turn gains Rush (the second does not)
+{
+	const { state } = new Scenario(byId).def('t_a', { type: 'creature', cost: 1, attack: 2, health: 2 }).def('t_b', { type: 'creature', cost: 1, attack: 2, health: 2 }).mana(0, 10).hand(0, ['t_a', 't_b']).run();
+	D.applyPassive(state, 0, 'rocket_backpacks');
+	E.playCard(state, 0, state.players[0].hand.find(c => c.id === 't_a').uid, null, null, 0);
+	E.playCard(state, 0, state.players[0].hand.find(c => c.id === 't_b').uid, null, null, 0);
+	const a = state.players[0].board.find(c => c.id === 't_a');
+	const b = state.players[0].board.find(c => c.id === 't_b');
+	ok('Rocket Backpacks: first creature has Rush, second does not', a.keywords.includes('rush') && !b.keywords.includes('rush'), [a.keywords, b.keywords]);
+}
+// Special Delivery: first Rush creature summons a 1-Health copy
+{
+	const { state } = new Scenario(byId).def('t_r', { type: 'creature', cost: 2, attack: 3, health: 4, keywords: ['rush'] }).mana(0, 10).hand(0, ['t_r']).run();
+	D.applyPassive(state, 0, 'special_delivery');
+	E.playCard(state, 0, state.players[0].hand[0].uid, null, null, 0);
+	const copies = state.players[0].board.filter(c => c.id === 't_r' && !E.isDead(c));
+	ok('Special Delivery: a 1-Health copy joins the board', copies.length === 2 && copies.some(c => E.hp(c) === 1) && copies.some(c => E.hp(c) === 4), copies.map(c => c.attack + '/' + E.hp(c)));
 }
 
 // ---------------- boss ladder ----------------

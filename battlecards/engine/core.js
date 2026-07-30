@@ -2084,6 +2084,16 @@ export function playCard(state, pi, cardUid, target, choice, position, useAlt, k
 	if (p.disksOfLegend && card.type === 'creature' && card.rarity === 'legendary' && state.cardsById[card.id]) summon(state, pi, state.cardsById[card.id]); // Disks of Legend
 	if (p.darklightTorch && (card.cost || 0) % 2 === 0) { for (const hpw of p.heroPowers) hpw.usedThisTurn = false; p.heroPowerDiscountNext = (p.heroPowerDiscountNext || 0) + 10; } // Darklight Torch: even-Cost refreshes the power at (0)
 	if (p.alchemistStone && (card.cost || 0) % 2 === 1) for (const c of p.hand) { if ((c.cost || 0) > 0) { c.cost = Math.max(0, c.cost - 1); emit(state, { type: 'costChange', player: pi, uid: c.uid, cost: c.cost }); } } // Alchemist's Stone: odd-Cost discounts your hand
+	// Duels passives that react to the first creature you play each turn
+	if (p.rocketBackpacks && card.type === 'creature' && p._rocketTurn !== state.turnNumber && !isDead(card) && card.zone === 'board') {
+		p._rocketTurn = state.turnNumber; // Rocket Backpacks: your first creature each turn gains Rush
+		if (!card.keywords.includes('rush')) { card.keywords.push('rush'); emit(state, { type: 'buff', uid: card.uid, attack: card.attack, hp: hp(card) }); }
+	}
+	if (p.specialDelivery && card.type === 'creature' && (card.keywords || []).includes('rush') && p._specialTurn !== state.turnNumber && state.cardsById[card.id]) {
+		p._specialTurn = state.turnNumber; // Special Delivery: your first Rush creature summons a 1-Health copy
+		const copy = JSON.parse(JSON.stringify(state.cardsById[card.id])); copy.health = 1;
+		summon(state, pi, copy);
+	}
 	// Overpowered: replay a copy of each card played this turn (random targets)
 	if (p.overpoweredTurn === state.turnNumber && !state._opLock && card.id !== 'dala_overpowered' && state.cardsById[card.id]) {
 		state._opLock = true;
