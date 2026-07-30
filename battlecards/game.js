@@ -10,7 +10,7 @@ import * as Tombs from './tombs.js';
 import * as Duels from './duels.js';
 import * as MPX from './mpmode.js';
 import * as Chat from './chat.js';
-import { keywordsFor, keywordLabel, richHtml } from './keywords.js';
+import { keywordsFor, keywordLabel, richHtml, runePipsHtml } from './keywords.js';
 
 // small "what does this keyword do" lines shown beneath a card's rules text
 function keywordLinesHtml(card) {
@@ -2370,7 +2370,7 @@ function updateTooltip(ev) {
 	if (card.paralyzed) extra += `<div class="tt-sub">⚡ Paralyzed — its attacks fail 50% of the time</div>`;
 	if (card.frozen) extra += `<div class="tt-sub">❄ Frozen — can't attack next turn</div>`;
 	tip.innerHTML = `<div class="tt-name">${card.name}</div><div class="tt-type">${typeLine}</div>`
-		+ `<div class="tt-desc">${richHtml(card.description || '')}</div>` + extra
+		+ `<div class="tt-desc">${runePipsHtml(card.runes)}${richHtml(card.description || '')}</div>` + extra
 		+ modifierLinesHtml(card) + keywordLinesHtml(card);
 	tip.style.display = 'block';
 	tip.style.left = `${Math.min(ev.clientX + 18, innerWidth - 290)}px`;

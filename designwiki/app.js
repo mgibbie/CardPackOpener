@@ -455,6 +455,7 @@ async function cardDetail(id) {
         // clickable type + tribe/school tags
         h('div', { class: 'card-tags' }, cardTypeChip(c.type), tribesOf(c).map(t => tribeChip(c, t))),
         h('div', { class: 'card-page-stats' }, stats.join('  ·  ')),
+        CardKw.runeCount(c.runes) ? h('div', { class: 'card-page-runes', style: 'margin:6px 0;', html: CardKw.runePipsHtml(c.runes) + '<span style="opacity:0.7;font-size:12.5px;vertical-align:2px;">Runes required</span>' }) : null,
         c.description ? h('div', { class: 'card-page-rules', html: CardKw.richHtml(c.description) }) : h('div', { class: 'card-page-rules muted' }, 'No rules text.'),
         // definition of every keyword on the card, each linking to its own page
         kws.length ? h('h2', null, 'Keywords') : null,

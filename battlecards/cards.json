@@ -8713,14 +8713,19 @@
       "cost": 3,
       "rarity": "rare",
       "set": "paper",
-      "description": "( Runes: (R) (R) ) Taunt. If you've gained Life this turn, this card costs Life instead of Mana.",
+      "description": "Taunt. If you've gained Life this turn, this card costs Life instead of Mana.",
       "type": "creature",
       "attack": 3,
       "health": 4,
       "tribe": "Undead Knight",
       "keywords": [
         "taunt"
-      ]
+      ],
+      "runes": {
+        "blood": 2,
+        "frost": 0,
+        "unholy": 0
+      }
     },
     {
       "id": "gnome_muncher",
@@ -8729,7 +8734,7 @@
       "cost": 6,
       "rarity": "common",
       "set": "paper",
-      "description": "( Runes: (R) ) Taunt. Lifesteal. At the end of your turn, attack the lowest health creature you don't control.",
+      "description": "Taunt. Lifesteal. At the end of your turn, attack the lowest health creature you don't control.",
       "type": "creature",
       "attack": 5,
       "health": 6,
@@ -8737,7 +8742,12 @@
       "keywords": [
         "taunt",
         "lifesteal"
-      ]
+      ],
+      "runes": {
+        "blood": 1,
+        "frost": 0,
+        "unholy": 0
+      }
     },
     {
       "id": "remorseless_winter",
@@ -8746,7 +8756,7 @@
       "cost": 4,
       "rarity": "common",
       "set": "paper",
-      "description": "( Runes: (U) ) Deal 2 damage to all enemies. Draw a card.",
+      "description": "Deal 2 damage to all enemies. Draw a card.",
       "type": "sorcery",
       "tribe": "Frost",
       "effects": [
@@ -8759,7 +8769,12 @@
           "type": "draw",
           "value": 1
         }
-      ]
+      ],
+      "runes": {
+        "blood": 0,
+        "frost": 1,
+        "unholy": 0
+      }
     },
     {
       "id": "thassarian",
@@ -8768,7 +8783,7 @@
       "cost": 4,
       "rarity": "legendary",
       "set": "paper",
-      "description": "( Runes: (U) ) Reborn. Battlecry & Deathrattle: Deal 2 damage to any target.",
+      "description": "Reborn. Battlecry & Deathrattle: Deal 2 damage to any target.",
       "type": "creature",
       "attack": 3,
       "health": 3,
@@ -8791,7 +8806,12 @@
           "value": 2,
           "target": "any"
         }
-      ]
+      ],
+      "runes": {
+        "blood": 0,
+        "frost": 1,
+        "unholy": 0
+      }
     },
     {
       "id": "ashtongue_battlelord",
@@ -12800,7 +12820,7 @@
       "cost": 1,
       "rarity": "common",
       "set": "paper",
-      "description": "( Runes: (U) ) Equip Hero After your Hero attacks a creature, target player loses 2 Life.",
+      "description": "Equip Hero After your Hero attacks a creature, target player loses 2 Life.",
       "type": "weapon",
       "attack": 2,
       "durability": 2,
@@ -12813,6 +12833,11 @@
             "target": "enemy-heroes"
           }
         ]
+      },
+      "runes": {
+        "blood": 0,
+        "frost": 1,
+        "unholy": 0
       }
     },
     {
@@ -12822,7 +12847,7 @@
       "cost": 3,
       "rarity": "common",
       "set": "paper",
-      "description": "( Runes: (R) ) Equip Hero After your Hero attacks & kills a creature, gain 2 Corpses.",
+      "description": "Equip Hero After your Hero attacks & kills a creature, gain 2 Corpses.",
       "type": "weapon",
       "attack": 3,
       "durability": 2,
@@ -12834,6 +12859,11 @@
             "value": 2
           }
         ]
+      },
+      "runes": {
+        "blood": 1,
+        "frost": 0,
+        "unholy": 0
       }
     },
     {
@@ -17353,7 +17383,7 @@
       "cost": 3,
       "rarity": "common",
       "set": "paper",
-      "description": "( Runes: (U) ) After a friendly Undead dies, draw a card.",
+      "description": "After a friendly Undead dies, draw a card.",
       "type": "creature",
       "attack": 3,
       "health": 4,
@@ -17369,6 +17399,11 @@
         "if": {
           "tribe": "Undead"
         }
+      },
+      "runes": {
+        "blood": 0,
+        "frost": 1,
+        "unholy": 0
       }
     },
     {
@@ -17378,7 +17413,7 @@
       "cost": 7,
       "rarity": "legendary",
       "set": "paper",
-      "description": "( Runes: (R) (R) (R) ) Battlecry: You gain an emblem that says \"At the end of your turn, each opponent loses 3 Life\".",
+      "description": "Battlecry: You gain an emblem that says \"At the end of your turn, each opponent loses 3 Life\".",
       "type": "creature",
       "attack": 7,
       "health": 7,
@@ -17402,7 +17437,12 @@
             ]
           }
         }
-      ]
+      ],
+      "runes": {
+        "blood": 3,
+        "frost": 0,
+        "unholy": 0
+      }
     },
     {
       "id": "anti_magic_shell",
@@ -17411,7 +17451,7 @@
       "cost": 3,
       "rarity": "rare",
       "set": "paper",
-      "description": "( Runes: (G) ) Each creature you control gains +1/+1 & Elusive.",
+      "description": "Each creature you control gains +1/+1 & Elusive.",
       "type": "instant",
       "tribe": "Shadow",
       "effects": [
@@ -17426,7 +17466,12 @@
           "keyword": "elusive",
           "target": "friendly-creatures"
         }
-      ]
+      ],
+      "runes": {
+        "blood": 0,
+        "frost": 0,
+        "unholy": 1
+      }
     },
     {
       "id": "asphyxiate",
@@ -17435,14 +17480,19 @@
       "cost": 3,
       "rarity": "common",
       "set": "paper",
-      "description": "( Runes: (R) (R) ) Destroy the highest Attack creature you don't control.",
+      "description": "Destroy the highest Attack creature you don't control.",
       "type": "instant",
       "tribe": "Shadow",
       "effects": [
         {
           "type": "destroy-strongest"
         }
-      ]
+      ],
+      "runes": {
+        "blood": 2,
+        "frost": 0,
+        "unholy": 0
+      }
     },
     {
       "id": "corrupted_ashbringer",
@@ -17451,13 +17501,18 @@
       "cost": 6,
       "rarity": "common",
       "set": "paper",
-      "description": "( Runes: (R) (R) ) Equip Hero Lifesteal.",
+      "description": "Equip Hero Lifesteal.",
       "type": "weapon",
       "attack": 5,
       "durability": 2,
       "keywords": [
         "lifesteal"
-      ]
+      ],
+      "runes": {
+        "blood": 2,
+        "frost": 0,
+        "unholy": 0
+      }
     },
     {
       "id": "deathbringer_saurfang",
@@ -17466,7 +17521,7 @@
       "cost": 4,
       "rarity": "legendary",
       "set": "paper",
-      "description": "( Runes: (R) (R) ) Taunt, Elite, Sadist, Sanguine.\nDeathrattle: Return this to your hand.",
+      "description": "Taunt, Elite, Sadist, Sanguine.\nDeathrattle: Return this to your hand.",
       "type": "creature",
       "attack": 3,
       "health": 5,
@@ -17478,7 +17533,12 @@
         {
           "type": "return-self-to-hand"
         }
-      ]
+      ],
+      "runes": {
+        "blood": 2,
+        "frost": 0,
+        "unholy": 0
+      }
     },
     {
       "id": "deathchiller",
@@ -17487,7 +17547,7 @@
       "cost": 2,
       "rarity": "rare",
       "set": "paper",
-      "description": "( Runes: (U) (U) ) Whenever you cast a spell, deal 2 damage to any target.",
+      "description": "Whenever you cast a spell, deal 2 damage to any target.",
       "type": "creature",
       "attack": 2,
       "health": 3,
@@ -17501,6 +17561,11 @@
             "target": "any"
           }
         ]
+      },
+      "runes": {
+        "blood": 0,
+        "frost": 2,
+        "unholy": 0
       }
     },
     {
@@ -17510,7 +17575,7 @@
       "cost": 7,
       "rarity": "epic",
       "set": "paper",
-      "description": "( Runes: (U)(U)(U) ) Deal 5 damage to any target. Freeze all creatures you don't control. Create a 5/5 Undead Dragon creature token.",
+      "description": "Deal 5 damage to any target. Freeze all creatures you don't control. Create a 5/5 Undead Dragon creature token.",
       "type": "sorcery",
       "tribe": "Frost",
       "effects": [
@@ -17530,7 +17595,12 @@
           "health": 5,
           "name": "Undead Dragon"
         }
-      ]
+      ],
+      "runes": {
+        "blood": 0,
+        "frost": 3,
+        "unholy": 0
+      }
     },
     {
       "id": "glacial_advance",
@@ -17539,7 +17609,7 @@
       "cost": 3,
       "rarity": "common",
       "set": "paper",
-      "description": "Deal 4 damage to any target. Your next spell this turn costs 1 less. ( Runes: (U) )",
+      "description": "Deal 4 damage to any target. Your next spell this turn costs 1 less.",
       "type": "sorcery",
       "tribe": "Frost",
       "effects": [
@@ -17554,7 +17624,12 @@
           "amount": -1,
           "thisTurn": true
         }
-      ]
+      ],
+      "runes": {
+        "blood": 0,
+        "frost": 1,
+        "unholy": 0
+      }
     },
     {
       "id": "graveyard_shift",
@@ -17563,7 +17638,7 @@
       "cost": 3,
       "rarity": "rare",
       "set": "paper",
-      "description": "( Runes: (G) ) Create 2 1/1 Undead token creatures with Reborn.",
+      "description": "Create 2 1/1 Undead token creatures with Reborn.",
       "type": "instant",
       "tribe": "Shadow",
       "effects": [
@@ -17577,7 +17652,12 @@
             "reborn"
           ]
         }
-      ]
+      ],
+      "runes": {
+        "blood": 0,
+        "frost": 0,
+        "unholy": 1
+      }
     },
     {
       "id": "harbinger_of_winter",
@@ -17586,7 +17666,7 @@
       "cost": 2,
       "rarity": "common",
       "set": "paper",
-      "description": "( Runes: (U) (U) ) Deathrattle: Draw a Frost Spell.",
+      "description": "Deathrattle: Draw a Frost Spell.",
       "type": "creature",
       "attack": 2,
       "health": 2,
@@ -17601,7 +17681,12 @@
           "tribe": "Frost",
           "count": 1
         }
-      ]
+      ],
+      "runes": {
+        "blood": 0,
+        "frost": 1,
+        "unholy": 0
+      }
     },
     {
       "id": "horn_of_winter",
@@ -17610,7 +17695,7 @@
       "cost": 1,
       "rarity": "common",
       "set": "paper",
-      "description": "( Runes: (U) (U) ) Refresh 2 Mana Crystals.",
+      "description": "Refresh 2 Mana Crystals.",
       "type": "instant",
       "tribe": "Frost",
       "effects": [
@@ -17618,7 +17703,12 @@
           "type": "gain-mana",
           "value": 2
         }
-      ]
+      ],
+      "runes": {
+        "blood": 0,
+        "frost": 2,
+        "unholy": 0
+      }
     },
     {
       "id": "icy_touch",
@@ -17649,7 +17739,7 @@
       "cost": 1,
       "rarity": "rare",
       "set": "paper",
-      "description": "( Runes: (R) ) Battlecry: Deal 2 damage to any target & lose 3 Life.",
+      "description": "Battlecry: Deal 2 damage to any target & lose 3 Life.",
       "type": "creature",
       "attack": 1,
       "health": 2,
@@ -17668,7 +17758,12 @@
           "value": 3,
           "target": "own-hero"
         }
-      ]
+      ],
+      "runes": {
+        "blood": 1,
+        "frost": 0,
+        "unholy": 0
+      }
     },
     {
       "id": "obliterate",
@@ -17677,7 +17772,7 @@
       "cost": 2,
       "rarity": "epic",
       "set": "paper",
-      "description": "( Runes: (R) ) Destroy target creature & lose 3 Life.",
+      "description": "Destroy target creature & lose 3 Life.",
       "type": "sorcery",
       "effects": [
         {
@@ -17689,7 +17784,12 @@
           "value": 3,
           "target": "own-hero"
         }
-      ]
+      ],
+      "runes": {
+        "blood": 1,
+        "frost": 0,
+        "unholy": 0
+      }
     },
     {
       "id": "meat_grinder",
@@ -17698,7 +17798,7 @@
       "cost": 3,
       "rarity": "epic",
       "set": "paper",
-      "description": "( Runes: (G) ) Battlecry: Mill 4 Cards & gain 4 Corpses.",
+      "description": "Battlecry: Mill 4 Cards & gain 4 Corpses.",
       "type": "creature",
       "attack": 3,
       "health": 4,
@@ -17715,7 +17815,12 @@
           "type": "gain-corpses",
           "value": 4
         }
-      ]
+      ],
+      "runes": {
+        "blood": 0,
+        "frost": 0,
+        "unholy": 1
+      }
     },
     {
       "id": "overseer_frigidara",
@@ -17724,7 +17829,7 @@
       "cost": 6,
       "rarity": "legendary",
       "set": "paper",
-      "description": "( Runes: (U) (U) ) Battlecry: Draw 2 spells. Spell Damage +2.",
+      "description": "Battlecry: Draw 2 spells. Spell Damage +2.",
       "type": "creature",
       "attack": 3,
       "health": 6,
@@ -17742,7 +17847,12 @@
           "cardType": "spell",
           "count": 2
         }
-      ]
+      ],
+      "runes": {
+        "blood": 0,
+        "frost": 2,
+        "unholy": 0
+      }
     },
     {
       "id": "abyssal_depths",
@@ -18798,14 +18908,19 @@
       "cost": 4,
       "rarity": "common",
       "set": "paper",
-      "description": "( Runes: (R)(U) ) Equip Hero Lifesteal & Freeze.",
+      "description": "Equip Hero Lifesteal & Freeze.",
       "type": "weapon",
       "attack": 3,
       "durability": 3,
       "keywords": [
         "lifesteal",
         "freezer"
-      ]
+      ],
+      "runes": {
+        "blood": 1,
+        "frost": 1,
+        "unholy": 0
+      }
     },
     {
       "id": "elementium_geode",
@@ -18919,7 +19034,7 @@
       "cost": 2,
       "rarity": "rare",
       "set": "paper",
-      "description": "( Runes: (G) ) Battlecry: Spend a Corpse to gain +1/+2.",
+      "description": "Battlecry: Spend a Corpse to gain +1/+2.",
       "type": "creature",
       "attack": 2,
       "health": 2,
@@ -18939,7 +19054,12 @@
             }
           ]
         }
-      ]
+      ],
+      "runes": {
+        "blood": 0,
+        "frost": 0,
+        "unholy": 1
+      }
     },
     {
       "id": "corpse_explosion",
@@ -18948,7 +19068,7 @@
       "cost": 5,
       "rarity": "rare",
       "set": "paper",
-      "description": "( Runes: (R) (R) ) Spend a Corpse to deal 1 damage to all creatures, if any survive repeat this.",
+      "description": "Spend a Corpse to deal 1 damage to all creatures, if any survive repeat this.",
       "type": "sorcery",
       "tribe": "Shadow",
       "effects": [
@@ -18963,7 +19083,12 @@
             }
           ]
         }
-      ]
+      ],
+      "runes": {
+        "blood": 2,
+        "frost": 0,
+        "unholy": 0
+      }
     },
     {
       "id": "defrost",
@@ -18972,7 +19097,7 @@
       "cost": 2,
       "rarity": "rare",
       "set": "paper",
-      "description": "( Runes: (U) ) Draw a card. Spend 2 Corpses to draw another.",
+      "description": "Draw a card. Spend 2 Corpses to draw another.",
       "type": "instant",
       "tribe": "Frost",
       "effects": [
@@ -18990,7 +19115,12 @@
             }
           ]
         }
-      ]
+      ],
+      "runes": {
+        "blood": 0,
+        "frost": 1,
+        "unholy": 0
+      }
     },
     {
       "id": "grave_strength",
@@ -18999,7 +19129,7 @@
       "cost": 4,
       "rarity": "epic",
       "set": "paper",
-      "description": "( Runes: (G)(G)(G) ) Creatures you control gain +1 Attack. Spend 5 Corpses to give them +3 Attack instead.",
+      "description": "Creatures you control gain +1 Attack. Spend 5 Corpses to give them +3 Attack instead.",
       "type": "sorcery",
       "tribe": "Shadow",
       "effects": [
@@ -19021,7 +19151,12 @@
             }
           ]
         }
-      ]
+      ],
+      "runes": {
+        "blood": 0,
+        "frost": 0,
+        "unholy": 3
+      }
     },
     {
       "id": "heart_strike",
@@ -19030,7 +19165,7 @@
       "cost": 1,
       "rarity": "common",
       "set": "paper",
-      "description": "( Runes: (R) ) Deal 3 damage to target creature, if that damage kills it, gain a Corpse.",
+      "description": "Deal 3 damage to target creature, if that damage kills it, gain a Corpse.",
       "type": "instant",
       "effects": [
         {
@@ -19044,7 +19179,12 @@
             }
           ]
         }
-      ]
+      ],
+      "runes": {
+        "blood": 1,
+        "frost": 0,
+        "unholy": 0
+      }
     },
     {
       "id": "plague_strike",
@@ -19053,7 +19193,7 @@
       "cost": 1,
       "rarity": "common",
       "set": "paper",
-      "description": "( Runes: (G) ) Deal 3 damage to target creature, if that damage kills it, Create a 2/2 Undead creature token with Rush.",
+      "description": "Deal 3 damage to target creature, if that damage kills it, Create a 2/2 Undead creature token with Rush.",
       "type": "instant",
       "tribe": "Shadow",
       "effects": [
@@ -19074,7 +19214,12 @@
             }
           ]
         }
-      ]
+      ],
+      "runes": {
+        "blood": 0,
+        "frost": 0,
+        "unholy": 1
+      }
     },
     {
       "id": "tomb_guardians",
@@ -19083,7 +19228,7 @@
       "cost": 4,
       "rarity": "rare",
       "set": "paper",
-      "description": "( Runes: (G)(G) ) Create two 2/2 Undead creature tokens, spend 4 Corpses to give them Reborn.",
+      "description": "Create two 2/2 Undead creature tokens, spend 4 Corpses to give them Reborn.",
       "type": "sorcery",
       "tribe": "Shadow",
       "effects": [
@@ -19105,7 +19250,12 @@
             }
           ]
         }
-      ]
+      ],
+      "runes": {
+        "blood": 0,
+        "frost": 0,
+        "unholy": 2
+      }
     },
     {
       "id": "vampiric_blood",
@@ -19114,7 +19264,7 @@
       "cost": 2,
       "rarity": "rare",
       "set": "paper",
-      "description": "( Runes: (R) (R) (R) ) Gain 5 Life, spend 3 Corpses to gain another 5 Life & draw a card.",
+      "description": "Gain 5 Life, spend 3 Corpses to gain another 5 Life & draw a card.",
       "type": "instant",
       "effects": [
         {
@@ -19137,7 +19287,12 @@
             }
           ]
         }
-      ]
+      ],
+      "runes": {
+        "blood": 3,
+        "frost": 0,
+        "unholy": 0
+      }
     },
     {
       "id": "climactic_necrotic_explosion",
@@ -19146,7 +19301,7 @@
       "cost": 10,
       "rarity": "legendary",
       "set": "paper",
-      "description": "( Runes: (R) (U) (G) ) Deal 7 damage to any target. Create four 4/4 Spirit creature tokens. Spend all of your Corpses & gain 1 Life for each Corpse spent this way.",
+      "description": "Deal 7 damage to any target. Create four 4/4 Spirit creature tokens. Spend all of your Corpses & gain 1 Life for each Corpse spent this way.",
       "type": "sorcery",
       "effects": [
         {
@@ -19171,7 +19326,12 @@
             }
           ]
         }
-      ]
+      ],
+      "runes": {
+        "blood": 1,
+        "frost": 1,
+        "unholy": 1
+      }
     },
     {
       "id": "lord_marrowgar",
@@ -19180,7 +19340,7 @@
       "cost": 8,
       "rarity": "legendary",
       "set": "paper",
-      "description": "( Runes: (G) (G) (G) ) Battlecry: Spend all of your Corpses, Create a 1/1 Undead Golem creature token with Rush for each Corpse spent this way.",
+      "description": "Battlecry: Spend all of your Corpses, Create a 1/1 Undead Golem creature token with Rush for each Corpse spent this way.",
       "type": "creature",
       "attack": 9,
       "health": 7,
@@ -19204,7 +19364,12 @@
             }
           ]
         }
-      ]
+      ],
+      "runes": {
+        "blood": 0,
+        "frost": 0,
+        "unholy": 3
+      }
     },
     {
       "id": "marrow_manipulator",
@@ -19213,7 +19378,7 @@
       "cost": 6,
       "rarity": "rare",
       "set": "paper",
-      "description": "( Runes: (U) (U) (U) ) Battlecry: Spend up to 5 Corpses, deal 2 damage to any target for each Corpse spent this way.",
+      "description": "Battlecry: Spend up to 5 Corpses, deal 2 damage to any target for each Corpse spent this way.",
       "type": "creature",
       "attack": 5,
       "health": 5,
@@ -19233,7 +19398,12 @@
             }
           ]
         }
-      ]
+      ],
+      "runes": {
+        "blood": 0,
+        "frost": 2,
+        "unholy": 0
+      }
     },
     {
       "id": "might_of_menethil",
@@ -19242,7 +19412,7 @@
       "cost": 4,
       "rarity": "epic",
       "set": "paper",
-      "description": "( Runes: (U) (U) ) Equip Hero Battlecry: Spend up to 3 Corpses. Freeze that many creatures.",
+      "description": "Equip Hero Battlecry: Spend up to 3 Corpses. Freeze that many creatures.",
       "type": "weapon",
       "attack": 4,
       "durability": 2,
@@ -19256,7 +19426,12 @@
             }
           ]
         }
-      ]
+      ],
+      "runes": {
+        "blood": 0,
+        "frost": 2,
+        "unholy": 0
+      }
     },
     {
       "id": "battlefield_necromancer",
@@ -19265,7 +19440,7 @@
       "cost": 2,
       "rarity": "common",
       "set": "paper",
-      "description": "( Runes: (G)(G) ) At the end of your turn, spend a Corpse to Create a 1/3 \"Risen Footman\" Undead creature token with Taunt.",
+      "description": "At the end of your turn, spend a Corpse to Create a 1/3 \"Risen Footman\" Undead creature token with Taunt.",
       "type": "creature",
       "attack": 2,
       "health": 2,
@@ -19290,6 +19465,11 @@
             ]
           }
         ]
+      },
+      "runes": {
+        "blood": 0,
+        "frost": 0,
+        "unholy": 2
       }
     },
     {
@@ -19444,7 +19624,7 @@
       "cost": 3,
       "rarity": "rare",
       "set": "paper",
-      "description": "( Runes: (R) ) Battlecry: Spend 2 Corpses to give target creature +2 Attack & Sanguine.",
+      "description": "Battlecry: Spend 2 Corpses to give target creature +2 Attack & Sanguine.",
       "type": "creature",
       "attack": 2,
       "health": 5,
@@ -19470,7 +19650,12 @@
             }
           ]
         }
-      ]
+      ],
+      "runes": {
+        "blood": 1,
+        "frost": 0,
+        "unholy": 0
+      }
     },
     {
       "id": "malignant_horror",
@@ -42501,7 +42686,7 @@
       "cost": 20,
       "rarity": "legendary",
       "set": "paper",
-      "description": "Rush & Trample. Costs 1 less for each creature in your graveyard.\nDeathrattle: Excavate twice & Loot twice. ( Runes: (R) (G) )",
+      "description": "Rush & Trample. Costs 1 less for each creature in your graveyard.\nDeathrattle: Excavate twice & Loot twice.",
       "type": "creature",
       "attack": 8,
       "health": 3,
@@ -42522,7 +42707,12 @@
           "type": "loot",
           "value": 2
         }
-      ]
+      ],
+      "runes": {
+        "blood": 1,
+        "frost": 0,
+        "unholy": 1
+      }
     },
     {
       "id": "dalaran_kaleidosaur",
@@ -42662,7 +42852,7 @@
       "cost": 2,
       "rarity": "common",
       "set": "paper",
-      "description": "( Runes: (U) ) Battlecry: Deal 2 damage to any target.\nFinale: Deal 2 damage to all enemies instead.",
+      "description": "Battlecry: Deal 2 damage to any target.\nFinale: Deal 2 damage to all enemies instead.",
       "type": "creature",
       "attack": 2,
       "health": 1,
@@ -42691,7 +42881,12 @@
             }
           ]
         }
-      ]
+      ],
+      "runes": {
+        "blood": 0,
+        "frost": 1,
+        "unholy": 0
+      }
     },
     {
       "id": "the_forgotten_one",

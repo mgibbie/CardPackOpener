@@ -764,6 +764,28 @@ export function drawCardFace(card, opts = {}) {
 	ctx.textBaseline = 'alphabetic';
 	}
 
+	// Death Knight runes — HS-style coloured gems down the top-left edge
+	if (card.runes && (card.runes.blood || card.runes.frost || card.runes.unholy)) {
+		const RUNE = { blood: ['#e04a3a', '#7a1e12'], frost: ['#5cc0ee', '#256f9c'], unholy: ['#6cd86c', '#2f7d2f'] };
+		const rx = 58, sz = 30;
+		let ry = opts.count != null ? 168 : 118; // sit below the count badge when the gallery shows one
+		for (const k of ['blood', 'frost', 'unholy']) {
+			for (let i = 0; i < (card.runes[k] || 0); i++) {
+				ctx.save();
+				ctx.translate(rx, ry);
+				ctx.rotate(Math.PI / 4);
+				const g = ctx.createLinearGradient(-sz / 2, -sz / 2, sz / 2, sz / 2);
+				g.addColorStop(0, RUNE[k][0]); g.addColorStop(1, RUNE[k][1]);
+				ctx.fillStyle = g;
+				roundRect(ctx, -sz / 2, -sz / 2, sz, sz, 6); ctx.fill();
+				ctx.lineWidth = 3; ctx.strokeStyle = 'rgba(0,0,0,0.7)';
+				roundRect(ctx, -sz / 2, -sz / 2, sz, sz, 6); ctx.stroke();
+				ctx.restore();
+				ry += sz + 9;
+			}
+		}
+	}
+
 	// owned-copies badge — TOP LEFT (gallery passes opts.count)
 	if (opts.count != null) {
 		const bx = 64, by = 64;

@@ -179,6 +179,26 @@ export function pipHtml(tok) {
 	const cls = tok.key === 'N' ? 'ms-' + tok.label : (MS_CLASS[tok.key] || 'ms-c');
 	return `<i class="ms ${cls} ms-cost" style="font-size:15px;vertical-align:-2px;margin:0 1px;"></i>`;
 }
+// ---------- Death Knight runes (Blood / Frost / Unholy) ----------
+// Structured on cards as { blood, frost, unholy } counts. Rendered HS-style as
+// small coloured rune gems — NOT the MTG mana pips (those stay for real WUBRG).
+export const RUNE_COLORS = {
+	blood: { bg: '#d0392b', ring: '#7a1e12', label: 'Blood' },
+	frost: { bg: '#49b0e0', ring: '#256f9c', label: 'Frost' },
+	unholy: { bg: '#5cc85c', ring: '#2f7d2f', label: 'Unholy' },
+};
+export const runeCount = runes => runes ? (runes.blood || 0) + (runes.frost || 0) + (runes.unholy || 0) : 0;
+// inline HS-style rune gems for HTML tooltips / detail panes
+export function runePipsHtml(runes) {
+	if (!runeCount(runes)) return '';
+	const pips = [];
+	for (const k of ['blood', 'frost', 'unholy']) {
+		const c = RUNE_COLORS[k];
+		for (let i = 0; i < (runes[k] || 0); i++) pips.push(`<span title="${c.label} Rune" style="display:inline-block;width:11px;height:11px;margin:0 1px;border-radius:2px;transform:rotate(45deg);background:${c.bg};border:1.5px solid ${c.ring};vertical-align:-1px;"></span>`);
+	}
+	return `<span class="dk-runes" style="margin-right:6px;white-space:nowrap;">${pips.join('')}</span>`;
+}
+
 const PUNCT = /^[,.;:!?)%]/;
 // rules text as HTML with keyword <b> and inline symbol pips
 export function richHtml(text) {
