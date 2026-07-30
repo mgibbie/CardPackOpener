@@ -163,5 +163,64 @@ ok('all 4 batch-3 treasures present + tagged', IDS3.every(id => byId[id] && byId
 	ok('Invoke the Void: Overloads 4', (state.players[0].overloadPending || 0) === 4, state.players[0].overloadPending);
 }
 
+// ---------------- batch 4 ----------------
+const IDS4 = ['duels_gift_of_the_heart', 'duels_spyglass', 'duels_creepy_curio', 'duels_coin_pouch', 'duels_old_militia_horn', 'duels_surly_mob', 'duels_collectors_ire', 'duels_summoning_ritual'];
+ok('all 8 batch-4 treasures present + tagged', IDS4.every(id => byId[id] && byId[id].treasure && byId[id].set === 'DUELS'), IDS4.filter(id => !byId[id]));
+
+// Gift of the Heart: +3 empty Mana Crystals
+{
+	const { state } = new Scenario(byId).mana(0, 5).hand(0, ['duels_gift_of_the_heart']).play(0, 'duels_gift_of_the_heart').run();
+	ok('Gift of the Heart: +3 max Mana Crystals', state.players[0].mana.max === 8, state.players[0].mana.max);
+}
+// Spyglass: copy a random card from the opponent's hand
+{
+	const { state } = new Scenario(byId).def('t_c', { type: 'creature', cost: 3, attack: 3, health: 3 })
+		.mana(0, 10).hand(0, ['duels_spyglass']).hand(1, ['t_c']).play(0, 'duels_spyglass').run();
+	ok('Spyglass: copies an enemy hand card into yours', state.players[0].hand.some(c => c.id === 't_c'));
+}
+// Creepy Curio: three 1/1 Ghosts
+{
+	const { state } = new Scenario(byId).mana(0, 10).hand(0, ['duels_creepy_curio']).play(0, 'duels_creepy_curio').run();
+	const g = state.players[0].board.filter(c => c.name === 'Ghost');
+	ok('Creepy Curio: three 1/1 Ghosts', g.length === 3 && g.every(c => c.attack === 1 && E.hp(c) === 1), g.length);
+}
+// Coin Pouch: a random 3-Cost creature
+{
+	const { state } = new Scenario(byId).mana(0, 10).hand(0, ['duels_coin_pouch']).play(0, 'duels_coin_pouch').run();
+	const b = state.players[0].board.filter(c => c.type === 'creature');
+	ok('Coin Pouch: summons a 3-Cost creature', b.length === 1 && (byId[b[0].id]?.cost === 3), b.map(c => c.id + ':' + byId[c.id]?.cost));
+}
+// Old Militia Horn: +1/+1 and Taunt
+{
+	const { state } = new Scenario(byId).def('t_m', { type: 'creature', cost: 2, attack: 2, health: 2 })
+		.mana(0, 10).board(0, ['t_m']).hand(0, ['duels_old_militia_horn']).play(0, 'duels_old_militia_horn').run();
+	const m = state.players[0].board[0];
+	ok('Old Militia Horn: +1/+1 & Taunt', m.attack === 3 && E.hp(m) === 3 && m.keywords.includes('taunt'));
+}
+// Surly Mob: destroy a random enemy creature
+{
+	const { state } = new Scenario(byId).def('t_m', { type: 'creature', cost: 3, attack: 2, health: 4 })
+		.mana(0, 10).board(1, ['t_m', 't_m']).hand(0, ['duels_surly_mob']).play(0, 'duels_surly_mob').run();
+	ok('Surly Mob: destroys one random enemy creature', state.players[1].board.filter(c => !E.isDead(c)).length === 1);
+}
+// Collector's Ire: summon a Mech, Pirate, and Dragon from your deck
+{
+	const { state } = new Scenario(byId)
+		.def('t_mech', { type: 'creature', cost: 2, attack: 2, health: 2, tribe: 'Mech' })
+		.def('t_pir', { type: 'creature', cost: 2, attack: 2, health: 2, tribe: 'Pirate' })
+		.def('t_drag', { type: 'creature', cost: 2, attack: 2, health: 2, tribe: 'Dragon' })
+		.def('t_plain', { type: 'creature', cost: 2, attack: 2, health: 2 })
+		.mana(0, 10).deck(0, ['t_mech', 't_pir', 't_drag', 't_plain']).hand(0, ['duels_collectors_ire']).play(0, 'duels_collectors_ire').run();
+	const b = state.players[0].board.map(c => c.id);
+	ok("Collector's Ire: summons the Mech/Pirate/Dragon from deck", ['t_mech', 't_pir', 't_drag'].every(id => b.includes(id)) && !b.includes('t_plain'), b);
+	ok("Collector's Ire: pulls them out of the deck", !state.players[0].deck.some(id => ['t_mech', 't_pir', 't_drag'].includes(id)) && state.players[0].deck.includes('t_plain'), state.players[0].deck);
+}
+// Summoning Ritual: summon 3 Demons from your deck
+{
+	const { state } = new Scenario(byId).def('t_demon', { type: 'creature', cost: 3, attack: 3, health: 3, tribe: 'Demon' })
+		.mana(0, 10).deck(0, ['t_demon', 't_demon', 't_demon', 't_demon']).hand(0, ['duels_summoning_ritual']).play(0, 'duels_summoning_ritual').run();
+	ok('Summoning Ritual: summons 3 Demons from deck', state.players[0].board.filter(c => c.id === 't_demon').length === 3 && state.players[0].deck.filter(id => id === 't_demon').length === 1, state.players[0].board.length);
+}
+
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);

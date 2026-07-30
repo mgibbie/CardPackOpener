@@ -2696,7 +2696,7 @@
       "cardClass": "MAGE",
       "mechanics": [],
       "rarity": null,
-      "inBattlecards": false
+      "inBattlecards": true
     },
     {
       "id": "PVPDR_AV_Neutralp3s1",
@@ -4072,7 +4072,7 @@
         "OVERLOAD"
       ],
       "rarity": null,
-      "inBattlecards": false
+      "inBattlecards": true
     },
     {
       "id": "PVPDR_DMF_Warlockt3",
@@ -5875,7 +5875,7 @@
       "cardClass": "NEUTRAL",
       "mechanics": [],
       "rarity": null,
-      "inBattlecards": false
+      "inBattlecards": true
     },
     {
       "id": "PVPDR_SCH_Active19",
@@ -6404,7 +6404,7 @@
         "COMBO"
       ],
       "rarity": null,
-      "inBattlecards": false
+      "inBattlecards": true
     },
     {
       "id": "PVPDR_SCH_Shamant2e1",

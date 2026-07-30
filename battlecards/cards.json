@@ -132143,6 +132143,163 @@
           "value": 4
         }
       ]
+    },
+    {
+      "id": "duels_gift_of_the_heart",
+      "name": "Gift of the Heart",
+      "type": "sorcery",
+      "cost": 5,
+      "cardClass": "druid",
+      "rarity": "legendary",
+      "set": "DUELS",
+      "token": true,
+      "treasure": true,
+      "description": "Gain 3 empty Mana Crystals.",
+      "effects": [
+        {
+          "type": "add-mana-crystal",
+          "value": 3
+        }
+      ]
+    },
+    {
+      "id": "duels_spyglass",
+      "name": "Spyglass",
+      "type": "sorcery",
+      "cost": 1,
+      "cardClass": "neutral",
+      "rarity": "legendary",
+      "set": "DUELS",
+      "token": true,
+      "treasure": true,
+      "description": "Put a copy of a random card in your opponent's hand into yours.",
+      "effects": [
+        {
+          "type": "copy-random-enemy-hand"
+        }
+      ]
+    },
+    {
+      "id": "duels_creepy_curio",
+      "name": "Creepy Curio",
+      "type": "sorcery",
+      "cost": 3,
+      "cardClass": "neutral",
+      "rarity": "legendary",
+      "set": "DUELS",
+      "token": true,
+      "treasure": true,
+      "description": "Summon three 1/1 Ghosts.",
+      "effects": [
+        {
+          "type": "summon",
+          "count": 3,
+          "attack": 1,
+          "health": 1,
+          "name": "Ghost"
+        }
+      ]
+    },
+    {
+      "id": "duels_coin_pouch",
+      "name": "Coin Pouch",
+      "type": "sorcery",
+      "cost": 3,
+      "cardClass": "neutral",
+      "rarity": "legendary",
+      "set": "DUELS",
+      "token": true,
+      "treasure": true,
+      "description": "Summon a random 3-Cost creature.",
+      "effects": [
+        {
+          "type": "summon-random",
+          "cost": 3
+        }
+      ]
+    },
+    {
+      "id": "duels_old_militia_horn",
+      "name": "Old Militia Horn",
+      "type": "sorcery",
+      "cost": 3,
+      "cardClass": "neutral",
+      "rarity": "legendary",
+      "set": "DUELS",
+      "token": true,
+      "treasure": true,
+      "description": "Give your creatures +1/+1 & Taunt.",
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 1,
+          "health": 1,
+          "target": "friendly-creatures"
+        },
+        {
+          "type": "grant",
+          "keyword": "taunt",
+          "target": "friendly-creatures"
+        }
+      ]
+    },
+    {
+      "id": "duels_surly_mob",
+      "name": "Surly Mob",
+      "type": "sorcery",
+      "cost": 3,
+      "cardClass": "neutral",
+      "rarity": "legendary",
+      "set": "DUELS",
+      "token": true,
+      "treasure": true,
+      "description": "Destroy a random enemy creature.",
+      "effects": [
+        {
+          "type": "destroy-random"
+        }
+      ]
+    },
+    {
+      "id": "duels_collectors_ire",
+      "name": "Collector's Ire",
+      "type": "sorcery",
+      "cost": 6,
+      "cardClass": "warrior",
+      "rarity": "legendary",
+      "set": "DUELS",
+      "token": true,
+      "treasure": true,
+      "description": "Summon a Mech, Pirate, & Dragon from your deck.",
+      "effects": [
+        {
+          "type": "summon-from-deck",
+          "tribes": [
+            "Mech",
+            "Pirate",
+            "Dragon"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "duels_summoning_ritual",
+      "name": "Summoning Ritual",
+      "type": "sorcery",
+      "cost": 5,
+      "cardClass": "demon_hunter",
+      "rarity": "legendary",
+      "set": "DUELS",
+      "token": true,
+      "treasure": true,
+      "description": "Summon 3 Demons from your deck.",
+      "effects": [
+        {
+          "type": "summon-from-deck",
+          "tribe": "Demon",
+          "count": 3
+        }
+      ]
     }
   ]
 }

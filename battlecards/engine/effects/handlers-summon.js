@@ -1441,3 +1441,18 @@ register('summon-hand-copy', ({ state, pi, target, source, enemies, scaled, hm, 
 		summon(state, pi, cd);
 	}
 } });
+
+register('summon-from-deck', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => { {
+	// Duels: pull creatures out of your deck and summon them. `tribes` = a list
+	// of tribes to summon one each (Collector's Ire: Mech/Pirate/Dragon), or
+	// `tribe` + `count` (Summoning Ritual: 3 Demons). null tribe = any creature.
+	const p = state.players[pi];
+	const wanted = e.tribes ? [...e.tribes] : Array(e.count || 1).fill(e.tribe || null);
+	for (const tribe of wanted) {
+		const idx = p.deck.findIndex(id => { const d = state.cardsById[id]; return d && d.type === 'creature' && (!tribe || (d.tribe || '').includes(tribe)); });
+		if (idx < 0) continue;
+		const [cid] = p.deck.splice(idx, 1);
+		const def = state.cardsById[cid];
+		if (def) summon(state, pi, def);
+	}
+} });
