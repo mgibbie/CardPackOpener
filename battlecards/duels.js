@@ -150,6 +150,19 @@ export const PASSIVES = {
 		name: 'Cadaver Collector', text: 'After the first time you gain a Corpse in a turn, gain 1 additional Corpse.',
 		apply: (state, pi) => { state.players[pi].cadaverCollector = true; },
 	},
+	// --- start of turn ---
+	conduit_of_the_storms: {
+		name: 'Conduit of the Storms', text: 'At the start of your turn, if you are Overloaded, gain +2 Attack this turn.',
+		apply: (state, pi) => { state.players[pi].conduitStorms = true; },
+	},
+	crystal_gem: {
+		name: 'Crystal Gem', text: 'On your first two turns, you have 1 extra Mana Crystal.',
+		apply: (state, pi) => { state.players[pi].crystalGem = true; },
+	},
+	party_replacement: {
+		name: 'Party Replacement', text: 'At the start of your turn, summon a 2/2 Adventurer with a random bonus keyword.',
+		apply: (state, pi) => { state.players[pi].partyReplacement = true; },
+	},
 };
 
 export function applyPassive(state, pi, id) {

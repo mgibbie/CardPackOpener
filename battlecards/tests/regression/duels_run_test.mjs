@@ -116,7 +116,7 @@ ok('all 4 batch-2 hero-power cards present + well-formed', HP_IDS2.every(id => {
 }
 
 // ---------------- passives (duels.js) ----------------
-ok('PASSIVES has the 33 entries', Object.keys(D.PASSIVES).length === 33 && ['recycling', 'disks_of_legend', 'elixir_of_vigor', 'manastorm', 'starving', 'dragonblood', 'from_the_swamp', 'cadaver_collector'].every(k => D.PASSIVES[k]));
+ok('PASSIVES has the 36 entries', Object.keys(D.PASSIVES).length === 36 && ['recycling', 'disks_of_legend', 'elixir_of_vigor', 'manastorm', 'starving', 'dragonblood', 'from_the_swamp', 'cadaver_collector', 'conduit_of_the_storms', 'crystal_gem', 'party_replacement'].every(k => D.PASSIVES[k]));
 ok('HEROES lists 11 signature heroes with class', D.HEROES.length === 11 && D.HEROES.every(h => h.id && h.name && h.heroClass), D.HEROES.length);
 ok('applyPassive returns false for an unknown id', D.applyPassive({ players: [{}] }, 0, 'nope') === false);
 
@@ -371,6 +371,29 @@ const kill = (state, pi, uid) => { const c = state.players[pi].board.find(x => x
 	const before = state.players[0].corpses || 0;
 	kill(state, 0, state.players[0].board[0].uid);
 	ok('Cadaver Collector: +2 Corpses (1 base + 1 extra) on first death', (state.players[0].corpses || 0) === before + 2, [before, state.players[0].corpses]);
+}
+// Party Replacement: a 2/2 Adventurer at the start of your turn
+{
+	const { state } = new Scenario(byId).run();
+	D.applyPassive(state, 0, 'party_replacement');
+	E.endTurn(state); E.endTurn(state); // back to player 0's turn start
+	const adv = state.players[0].board.filter(c => c.name === 'Adventurer');
+	ok('Party Replacement: a 2/2 Adventurer', adv.length === 1 && adv[0].attack === 2 && E.hp(adv[0]) === 2 && adv[0].keywords.length >= 1, adv.length);
+}
+// Conduit of the Storms: Overloaded at your turn start -> +2 Attack
+{
+	const { state } = new Scenario(byId).run();
+	D.applyPassive(state, 0, 'conduit_of_the_storms');
+	state.players[0].overloadPending = 2; // will lock at player 0's next turn start
+	E.endTurn(state); E.endTurn(state);
+	ok('Conduit of the Storms: +2 hero Attack while Overloaded', state.players[0].heroTempAttack === 2, state.players[0].heroTempAttack);
+}
+// Crystal Gem: an extra Mana Crystal on your first two turns
+{
+	const { state } = new Scenario(byId).run();
+	D.applyPassive(state, 0, 'crystal_gem');
+	E.endTurn(state); E.endTurn(state); // player 0's turn start #1 under the gem
+	ok('Crystal Gem: banks an extra crystal (used counter advances)', state.players[0]._cgUsed === 1 && state.players[0].mana.max >= 2, [state.players[0]._cgUsed, state.players[0].mana.max]);
 }
 
 // ---------------- boss ladder ----------------

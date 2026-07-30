@@ -4028,6 +4028,10 @@ export function endTurn(state) {
 		np.overloadLockedThisTurn = np.overloadPending; // Eternal Sentinel can give these back
 		np.overloadPending = 0;
 	}
+	// Duels start-of-turn passives
+	if (np.conduitStorms && np.overloadLockedThisTurn > 0) { np.heroTempAttack += 2; emit(state, { type: 'heroAttack', player: state.current, attack: (np.heroAttack || 0) + np.heroTempAttack }); } // Conduit of the Storms: Overloaded -> +2 Attack this turn
+	if (np.crystalGem) { np._cgUsed = np._cgUsed || 0; if (np._cgUsed < 2) { np._cgUsed++; np.mana.max = Math.min(MAX_BASE_MANA, np.mana.max + 1); np.mana.cur = Math.min(np.mana.max, np.mana.cur + 1); } } // Crystal Gem: +1 Mana Crystal on your first two turns
+	if (np.partyReplacement) { const PKW = ['taunt', 'rush', 'divine_shield', 'lifesteal']; execEffects(state, state.current, [{ type: 'summon', count: 1, attack: 2, health: 2, name: 'Adventurer', keywords: [PKW[Math.floor(state.rng() * PKW.length)]] }], null, null); } // Party Replacement: a 2/2 Adventurer with a random bonus
 	// Conceal's stealth wears off at the owner's next turn
 	for (const c of np.board) {
 		if (c.tempStealth) {
