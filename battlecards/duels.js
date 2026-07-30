@@ -84,3 +84,57 @@ export const HERO_POWERS = {
 	demon_hunter: ['duelshp_illidari_strike', 'duelshp_infernal_strike'],
 	mage: ['ulda_relicologist', 'ulda_arcane_craftiness', 'ulda_amateur_mage'],
 };
+
+// ---------- the boss ladder ----------
+// Duels pits you against the rest of the hero roster. Two rounds of rivals,
+// each ending in a fixed final (Diablo, then Uber Diablo). Boss powers are
+// translated onto existing engine effects (dungeon/heist/tombs policy); the
+// player heroes above are excluded so you never duel a mirror of yourself.
+// `hsId` is the PVPDR hero id (for portraits); `theme` drives buildBossDeck.
+export const BOSSES = {
+	cafeteria_bob: { name: 'Cafeteria Bob', health: 20, hsId: 'PVPDR_Hero_Bob', power: { name: 'Lunch Rush', cost: 2, text: 'Summon a 2/2 Cafeteria Regular.', effects: [{ type: 'summon', count: 1, attack: 2, health: 2, name: 'Cafeteria Regular' }] }, theme: { cardClass: 'paladin' } },
+	brann_bronzebeard: { name: 'Brann Bronzebeard', health: 20, hsId: 'PVPDR_Hero_Brann', power: { name: 'Double Time', cost: 2, text: 'Give a random friendly creature +1/+1.', effects: [{ type: 'buff-random-friendly', attack: 1, health: 1 }] }, theme: { tribe: 'Beast' } },
+	darius_crowley: { name: 'Darius Crowley', health: 25, hsId: 'PVPDR_Hero_Darius', power: { name: 'Reload', cost: 2, text: 'Gain 2 Armor.', effects: [{ type: 'armor', value: 2 }] }, theme: { cardClass: 'warrior' } },
+	drekthar: { name: "Drek'Thar", health: 20, hsId: 'PVPDR_Hero_DrekTharv3', power: { name: 'Command the Elements', cost: 2, text: 'Summon a random creature that costs (1).', effects: [{ type: 'summon-random', cost: 1 }] }, theme: { cardClass: 'shaman' } },
+	elise_starseeker: { name: 'Elise Starseeker', health: 20, hsId: 'PVPDR_Hero_Elise', power: { name: 'Pack Leader', cost: 2, text: 'Give your creatures +1/+1.', effects: [{ type: 'buff', attack: 1, health: 1, target: 'friendly-creatures' }] }, theme: { cardClass: 'druid' } },
+	sir_finley: { name: 'Sir Finley', health: 20, hsId: 'PVPDR_Hero_Finley', power: { name: 'Tidecaller', cost: 2, text: 'Summon a 1/1 Murloc.', effects: [{ type: 'summon', count: 1, attack: 1, health: 1, name: 'Murloc', tribe: 'Murloc' }] }, theme: { tribe: 'Murloc' } },
+	headless_horseman: { name: 'Headless Horseman', health: 20, hsId: 'PVPDR_Hero_HeadlessHorseman', power: { name: 'Pumpkin Peal', cost: 2, text: 'Deal 1 damage to all enemy creatures.', effects: [{ type: 'damage', value: 1, target: 'enemy-creatures' }] }, theme: { cardClass: 'neutral' } },
+	diablo: { name: 'Diablo', health: 40, hsId: 'PVPDR_Hero_Diablo', power: { name: 'Fire Stomp', cost: 3, text: 'Deal 2 damage to all enemy creatures.', effects: [{ type: 'damage', value: 2, target: 'enemy-creatures' }] }, theme: { tribe: 'Demon' } },
+	// ---- round 2 ----
+	headmaster_kelthuzad: { name: "Headmaster Kel'Thuzad", health: 25, hsId: 'PVPDR_Hero_KelThuzad', power: { name: 'Roll Call', cost: 3, text: 'Summon a creature that died this game.', effects: [{ type: 'resurrect-highest-died', count: 1 }] }, theme: { cardClass: 'neutral' } },
+	kulzon: { name: 'Kulzon, Castmaster', health: 25, hsId: 'PVPDR_Hero_Kulzon', power: { name: 'Overblast', cost: 2, text: 'Deal 2 damage to target opponent.', effects: [{ type: 'damage', value: 2, target: 'enemy-hero' }] }, theme: { cardClass: 'mage' } },
+	reno_jackson: { name: 'Reno Jackson', health: 30, hsId: 'PVPDR_Hero_Reno', power: { name: 'Sound the Bells!', cost: 2, text: 'Restore 3 Health to your hero.', effects: [{ type: 'heal', value: 3, target: 'self' }] }, theme: { cardClass: 'mage' } },
+	scarlet_leafdancer: { name: 'Scarlet Leafdancer', health: 25, hsId: 'PVPDR_Hero_Scarlet', power: { name: 'Raise Dead', cost: 2, text: 'Summon a 2/1 Ghoul with Lifesteal.', effects: [{ type: 'summon', count: 1, attack: 2, health: 1, name: 'Ghoul', keywords: ['lifesteal'] }] }, theme: { cardClass: 'death_knight' } },
+	vanndar_stormpike: { name: 'Vanndar Stormpike', health: 25, hsId: 'PVPDR_Hero_Vanndar', power: { name: 'Charge!', cost: 2, text: 'Give your creatures Rush.', effects: [{ type: 'grant', keyword: 'rush', target: 'friendly-creatures' }] }, theme: { cardClass: 'neutral' } },
+	uber_diablo: { name: 'Uber Diablo', health: 60, hsId: 'PVPDR_GUEST_Diablot6h1', power: { name: 'Realm of Terror', cost: 3, text: 'Deal 3 damage to all enemy creatures & summon a 6/6 Terror.', effects: [{ type: 'damage', value: 3, target: 'enemy-creatures' }, { type: 'summon', count: 1, attack: 6, health: 6, name: 'Terror of Sanctuary', tribe: 'Demon' }] }, theme: { tribe: 'Demon' }, final: true },
+};
+
+// two rounds of rivals; each `pool` rolls in order, capped by the fixed `final`.
+export const ROUNDS = [
+	{ id: 'contenders', name: 'The Contenders', final: 'diablo',
+		pool: ['cafeteria_bob', 'brann_bronzebeard', 'darius_crowley', 'drekthar', 'elise_starseeker', 'sir_finley', 'headless_horseman'] },
+	{ id: 'championship', name: 'The Championship', final: 'uber_diablo',
+		pool: ['headmaster_kelthuzad', 'kulzon', 'reno_jackson', 'scarlet_leafdancer', 'vanndar_stormpike'] },
+];
+
+// deterministic themed boss deck — identical policy to heist.js/tombs.js:
+// 2x the cheapest theme matches, neutral padding, sliced to `size`.
+export function buildBossDeck(cardsById, theme = {}, size = 30) {
+	const ok = d => d.type === 'creature' && !d.token && d.collectible !== false
+		&& !d.companion && !d.commander && !(d.colors && d.colors.length)
+		&& (d.cost || 0) <= (theme.maxCost || 7)
+		&& (!theme.tribe || (d.tribe || '').includes(theme.tribe))
+		&& (!theme.cardClass || (d.cardClass || 'neutral') === theme.cardClass);
+	let pool = Object.values(cardsById).filter(ok);
+	pool.sort((a, b) => (a.cost || 0) - (b.cost || 0) || a.id.localeCompare(b.id));
+	pool = pool.slice(0, Math.ceil(size / 2));
+	if (pool.length < size / 2) {
+		const pad = Object.values(cardsById)
+			.filter(d => d.type === 'creature' && !d.token && d.collectible !== false && !d.companion && !d.commander && !(d.colors && d.colors.length) && (d.cost || 0) <= 4 && (d.cardClass || 'neutral') === 'neutral')
+			.sort((a, b) => (a.cost || 0) - (b.cost || 0) || a.id.localeCompare(b.id));
+		for (const d of pad) { if (pool.length >= size / 2) break; if (!pool.includes(d)) pool.push(d); }
+	}
+	const deck = [];
+	for (const d of pool) deck.push(d.id, d.id);
+	return deck.slice(0, size);
+}

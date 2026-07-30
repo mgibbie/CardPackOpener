@@ -3,6 +3,7 @@
 import fs from 'fs';
 import * as E from '../../engine.js';
 import * as D from '../../duels.js';
+import { getEffectHandler } from '../../engine/effects/registry.js';
 import { Scenario } from '../helpers/scenario.mjs';
 
 const raw = JSON.parse(fs.readFileSync(new URL('../../cards.json', import.meta.url)));
@@ -159,6 +160,44 @@ ok('applyPassive returns false for an unknown id', D.applyPassive({ players: [{}
 	D.applyPassive(state, 0, 'rhonins_scrying_orb');
 	const after = E.effectiveCost(state, 0, state.players[0].hand[0]);
 	ok("Rhonin's Scrying Orb: first spell costs (1) less", before === 4 && after === 3, [before, after]);
+}
+
+// ---------------- boss ladder ----------------
+{
+	const keys = Object.keys(D.BOSSES);
+	ok('BOSSES: 13 rivals + a final', keys.length === 14 && D.BOSSES.uber_diablo && D.BOSSES.uber_diablo.final === true, keys.length);
+	// every boss is well-formed and its power resolves through the registry
+	const badPower = keys.filter(k => {
+		const b = D.BOSSES[k];
+		return !(b.name && b.health > 0 && b.hsId && b.power && Array.isArray(b.power.effects) && b.power.effects.length
+			&& b.power.effects.every(e => getEffectHandler(e.type) || e.type === 'damage'));
+	});
+	ok('every boss power uses registered effects', badPower.length === 0, badPower);
+	// ROUNDS reference only real bosses; finals are marked/exist
+	const refs = D.ROUNDS.flatMap(r => [...r.pool, r.final]);
+	ok('ROUNDS reference only real bosses', refs.every(id => D.BOSSES[id]), refs.filter(id => !D.BOSSES[id]));
+	ok('every boss appears in exactly one round path', new Set(refs).size === keys.length, [new Set(refs).size, keys.length]);
+}
+// fire a couple of boss powers (as player 0, through the real engine)
+{
+	// Diablo: 2 to all enemy creatures
+	const s = new Scenario(byId).def('t_v', { type: 'creature', cost: 2, attack: 2, health: 2 })
+		.def('t_pw', { type: 'sorcery', cost: 0, effects: JSON.parse(JSON.stringify(D.BOSSES.diablo.power.effects)) })
+		.board(1, ['t_v', 't_v']).mana(0, 10).hand(0, ['t_pw']).play(0, 't_pw').run();
+	ok('Diablo Fire Stomp: enemy creatures take 2', s.state.players[1].board.every(c => c.damage === 2), s.state.players[1].board.map(c => c.damage));
+}
+{
+	// Uber Diablo: 3 to enemy creatures + a 6/6 Terror on your side
+	const s = new Scenario(byId).def('t_pw', { type: 'sorcery', cost: 0, effects: JSON.parse(JSON.stringify(D.BOSSES.uber_diablo.power.effects)) })
+		.mana(0, 10).hand(0, ['t_pw']).play(0, 't_pw').run();
+	const terror = s.state.players[0].board.filter(c => c.name === 'Terror of Sanctuary');
+	ok('Uber Diablo Realm of Terror: a 6/6 Terror', terror.length === 1 && terror[0].attack === 6 && E.hp(terror[0]) === 6, terror.length);
+}
+// buildBossDeck: deterministic, right size, valid ids
+{
+	const deck = D.buildBossDeck(byId, D.BOSSES.diablo.theme, 30);
+	const deck2 = D.buildBossDeck(byId, D.BOSSES.diablo.theme, 30);
+	ok('buildBossDeck: 30 valid card ids, deterministic', deck.length === 30 && deck.every(id => byId[id] && byId[id].type === 'creature') && JSON.stringify(deck) === JSON.stringify(deck2), deck.length);
 }
 
 console.log(`\n${pass} passed, ${fail} failed`);
