@@ -272,6 +272,23 @@ export const PASSIVES = {
 		name: 'Divine Illumination', text: 'After you cast your first Holy spell in a turn, Discover a card from your class.',
 		apply: (state, pi) => { state.players[pi].divineIllumination = true; },
 	},
+	// --- attack / weapon / death / play-discover ---
+	potion_of_sparking: {
+		name: 'Potion of Sparking', text: 'After a friendly Rush creature attacks an enemy creature, deal 1 damage to a random adjacent enemy creature.',
+		apply: (state, pi) => { state.players[pi].potionSparking = true; },
+	},
+	pillage_the_fallen: {
+		name: 'Pillage the Fallen', text: 'Whenever your weapon is destroyed, equip a random weapon of the same Cost. Give it +1 Attack.',
+		apply: (state, pi) => { state.players[pi].pillageFallen = true; },
+	},
+	mulch_madness: {
+		name: 'Mulch Madness', text: 'Whenever a Neutral creature dies on your turn, gain 1 Mana Crystal for that turn only.',
+		apply: (state, pi) => { state.players[pi].mulchMadness = true; },
+	},
+	staking_a_claim: {
+		name: 'Staking A Claim', text: 'After you play your first Discover card in a turn, all friendly creatures gain +1 Attack.',
+		apply: (state, pi) => { state.players[pi].stakingClaim = true; },
+	},
 };
 
 export function applyPassive(state, pi, id) {

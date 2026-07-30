@@ -116,7 +116,7 @@ ok('all 4 batch-2 hero-power cards present + well-formed', HP_IDS2.every(id => {
 }
 
 // ---------------- passives (duels.js) ----------------
-ok('PASSIVES has the 62 entries', Object.keys(D.PASSIVES).length === 62 && ['open_the_doorways', 'orb_of_revelation', 'arcane_flux', 'divine_illumination'].every(k => D.PASSIVES[k]));
+ok('PASSIVES has the 66 entries', Object.keys(D.PASSIVES).length === 66 && ['potion_of_sparking', 'pillage_the_fallen', 'mulch_madness', 'staking_a_claim'].every(k => D.PASSIVES[k]));
 ok('HEROES lists 11 signature heroes with class', D.HEROES.length === 11 && D.HEROES.every(h => h.id && h.name && h.heroClass), D.HEROES.length);
 ok('applyPassive returns false for an unknown id', D.applyPassive({ players: [{}] }, 0, 'nope') === false);
 
@@ -600,6 +600,37 @@ const kill = (state, pi, uid) => { const c = state.players[pi].board.find(x => x
 	const before = state.pickQueue.length;
 	E.playCard(state, 0, state.players[0].hand[0].uid, null, null, 0);
 	ok('Divine Illumination: a Holy spell queues a Discover', state.pickQueue.length === before + 1, [before, state.pickQueue.length]);
+}
+// Mulch Madness: a Neutral death on your turn grants 1 temporary Mana
+{
+	const { state } = new Scenario(byId).def('t_n', { type: 'creature', cost: 2, attack: 2, health: 1, cardClass: 'neutral' }).board(0, ['t_n']).mana(0, 5).run();
+	D.applyPassive(state, 0, 'mulch_madness');
+	kill(state, 0, state.players[0].board[0].uid);
+	ok('Mulch Madness: +1 Mana this turn', state.players[0].mana.cur === 6, state.players[0].mana.cur);
+}
+// Staking A Claim: first Discover card played buffs friendly creatures +1 Attack
+{
+	const { state } = new Scenario(byId).def('t_disc', { type: 'sorcery', cost: 0, effects: [{ type: 'discover', cardType: 'creature' }] }).def('t_m', { type: 'creature', cost: 2, attack: 2, health: 2 }).board(0, ['t_m']).mana(0, 10).hand(0, ['t_disc']).run();
+	D.applyPassive(state, 0, 'staking_a_claim');
+	E.playCard(state, 0, state.players[0].hand[0].uid, null, null, 0);
+	ok('Staking A Claim: friendly +1 Attack', state.players[0].board.find(c => c.id === 't_m').attack === 3, state.players[0].board.find(c => c.id === 't_m').attack);
+}
+// Potion of Sparking: a friendly Rush attack zaps an adjacent enemy
+{
+	const { state } = new Scenario(byId).def('t_r', { type: 'creature', cost: 3, attack: 3, health: 3, keywords: ['rush'] }).def('t_d', { type: 'creature', cost: 3, attack: 2, health: 6 }).def('t_a', { type: 'creature', cost: 3, attack: 2, health: 6 }).board(0, ['t_r']).board(1, ['t_d', 't_a']).run();
+	D.applyPassive(state, 0, 'potion_of_sparking');
+	const atk = state.players[0].board[0]; atk.sick = false; atk.attacksUsed = 0;
+	E.resolveCombat(state, 0, atk.uid, { type: 'creature', uid: state.players[1].board.find(c => c.id === 't_d').uid, player: 1 });
+	const adj = state.players[1].board.find(c => c.id === 't_a');
+	ok('Potion of Sparking: the adjacent enemy took 1', adj.damage === 1, adj.damage);
+}
+// Pillage the Fallen: a destroyed weapon is replaced by a same-Cost weapon (+1 Attack)
+{
+	const { state } = new Scenario(byId).run();
+	D.applyPassive(state, 0, 'pillage_the_fallen');
+	state.players[0].weapon = { id: 'tmp_weapon', name: 'Scrap Blade', type: 'weapon', cost: 3, attack: 2, durability: 2, zone: 'weapon', keywords: [], damage: 0 };
+	E.breakWeapon(state, 0, true);
+	ok('Pillage the Fallen: a replacement weapon is equipped', state.players[0].weapon != null && state.players[0].weapon.id !== 'tmp_weapon', state.players[0].weapon && state.players[0].weapon.name);
 }
 
 // ---------------- boss ladder ----------------

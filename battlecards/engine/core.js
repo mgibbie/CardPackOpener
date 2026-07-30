@@ -1344,6 +1344,7 @@ export function breakWeapon(state, pi, destroyed) {
 	if (w.deathrattle) execEffects(state, pi, w.deathrattle, null, w); // Quick Pick
 	recomputeAuras(state); // Southsea Deckhand loses conditional Charge
 	fireOngoing(state, pi, 'weapon-destroyed', {}); // Grave Shambler
+	if (p.pillageFallen) { const wpool = Object.values(state.cardsById).filter(d => d.type === 'weapon' && (d.cost || 0) === (w.cost || 0) && !d.token && d.collectible !== false && !(d.colors && d.colors.length) && d.id !== w.id); if (wpool.length) { const nw = wpool[Math.floor(state.rng() * wpool.length)]; execEffects(state, pi, [{ type: 'equip', name: nw.name, attack: (nw.attack || 0) + 1, durability: nw.durability || 1 }], null, null); } } // Pillage the Fallen (Duels)
 }
 
 export function degradeWeapon(state, pi) {
@@ -2127,6 +2128,7 @@ export function playCard(state, pi, cardUid, target, choice, position, useAlt, k
 	if (p.floorIsLava && card.type === 'creature' && p._floorTurn !== state.turnNumber && !isDead(card) && card.zone === 'board') { p._floorTurn = state.turnNumber; card.attack += 2; emit(state, { type: 'buff', uid: card.uid, attack: card.attack, hp: hp(card) }); damageCreature(state, card, 1, null); } // The Floor is Lava: first creature -> +2 Attack & 1 damage
 	if (p.righteousReserves && card.type === 'creature' && (card.keywords || []).includes('divine_shield') && p._righteousTurn !== state.turnNumber) { p._righteousTurn = state.turnNumber; execEffects(state, pi, [{ type: 'buff-random-friendly', attack: 0, health: 0, grant: 'divine_shield' }], null, null); } // Righteous Reserves: first Divine Shield creature -> a random friendly gains Divine Shield
 	if (p.holdTheLine && card.type === 'creature' && (card.keywords || []).includes('taunt') && !isDead(card) && card.zone === 'board') card.offTurnAttack = Math.max(card.offTurnAttack || 0, 3); // Hold the Line: Taunt creatures +3 Attack on the opponent's turn
+	if (p.stakingClaim && p._stakingTurn !== state.turnNumber && (() => { const d = state.cardsById[card.id]; return d && (d.effects || []).some(e => e.type === 'discover'); })()) { p._stakingTurn = state.turnNumber; execEffects(state, pi, [{ type: 'buff', attack: 1, health: 0, target: 'friendly-creatures' }], null, null); } // Staking A Claim (Duels): first Discover card -> friendly creatures +1 Attack
 	// Duels passives that react to casting a spell
 	if (p.ringOfRefreshment && isSpellType(card)) { for (const hpw of p.heroPowers) hpw.usedThisTurn = false; } // Ring of Refreshment: a spell refreshes your Hero Power
 	if (p.staffOfPain && isSpellType(card) && schoolOf(card) === 'Shadow') execEffects(state, pi, [{ type: 'damage', value: 2, target: 'all-heroes' }], null, null); // Staff of Pain: a Shadow spell hurts every hero
@@ -2744,6 +2746,8 @@ export function resolveCombat(state, pi, attackerUid, target) {
 		// Alley Armorsmith: "whenever this deals damage" — either combatant that dealt any
 		if (attacker.attack > 0) fireCreatureTrigger(state, attacker, 'self-deals-damage', { amount: attacker.attack, victim: defender });
 		if (defBefore > 0 && !isDead(defender)) fireCreatureTrigger(state, defender, 'self-deals-damage', { amount: defBefore, victim: attacker });
+		// Potion of Sparking (Duels): a friendly Rush creature attacking a creature zaps an adjacent enemy
+		if (state.players[pi].potionSparking && (attacker.keywords || []).includes('rush') && target.type === 'creature') { const dp = state.players[defender.controller]; const di = dp.board.indexOf(defender); const nbrs = [dp.board[di - 1], dp.board[di + 1]].filter(x => x && !isDead(x) && x.type === 'creature'); if (nbrs.length) damageCreature(state, nbrs[Math.floor(state.rng() * nbrs.length)], 1, null); }
 	}
 	sweepDeaths(state);
 }
