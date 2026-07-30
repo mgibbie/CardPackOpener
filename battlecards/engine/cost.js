@@ -155,6 +155,7 @@ export function effectiveCost(state, pi, card) {
 	if (p.sunstridersCrown && isSpellType(card) && (((p.spellsPlayedThisTurn || 0) + 1) % 3 === 0)) c = 1; // Sunstrider's Crown (Duels): every third spell each turn costs (1)
 	if (p.ringOfHaste && card.type === 'creature' && (((p.creaturesPlayedThisTurn || 0) + 1) % 3 === 0)) c = 1; // Ring of Haste (Duels): every third creature each turn costs (1)
 	if (p.grommash && card.type === 'weapon') c = Math.max(0, c - 1); // Grommash's Armguards (Duels): your weapons cost (1) less
+	if (p.plaguebringer && isSpellType(card)) c = Math.max(1, c - 2); // Plaguebringer (Duels): your spells cost (2) less
 	if (p.leftmostDiscount && p.hand.length && p.hand[0] === card) c = Math.max(0, c - p.leftmostDiscount); // Emerald Goggles: the left-most hand card
 	if (p.robesHalf) c = Math.ceil(c / 2); // Robes of Gaudiness: cards cost half
 	if (p.spellsCostHealth && isSpellType(card)) return 0; // Elixir of Vile: paid in Health at play time

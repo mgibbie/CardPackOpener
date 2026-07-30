@@ -116,7 +116,7 @@ ok('all 4 batch-2 hero-power cards present + well-formed', HP_IDS2.every(id => {
 }
 
 // ---------------- passives (duels.js) ----------------
-ok('PASSIVES has the 72 entries', Object.keys(D.PASSIVES).length === 72 && ['kindling_flame', 'bitter_cold', 'natural_force', 'battle_stance', 'hagathas_embrace', 'ever_changing_elixir'].every(k => D.PASSIVES[k]));
+ok('PASSIVES has the 78 entries', Object.keys(D.PASSIVES).length === 78 && ['flames_of_the_kirin_tor', 'corrupted_felstone', 'coil_casting', 'plaguebringer', 'legendary_loot', 'mysterious_tome'].every(k => D.PASSIVES[k]));
 ok('HEROES lists 11 signature heroes with class', D.HEROES.length === 11 && D.HEROES.every(h => h.id && h.name && h.heroClass), D.HEROES.length);
 ok('applyPassive returns false for an unknown id', D.applyPassive({ players: [{}] }, 0, 'nope') === false);
 
@@ -677,6 +677,45 @@ const kill = (state, pi, uid) => { const c = state.players[pi].board.find(x => x
 	E.endTurn(state);
 	const b = state.players[0].board.filter(c => !E.isDead(c));
 	ok('Ever-Changing Elixir: the creature was transformed', b.length === 1 && b[0].id !== 't_c' && b[0].token === true, b.map(c => c.id));
+}
+// Corrupted Felstone: a Fel spell buffs the end creatures in hand +2/+1
+{
+	const { state } = new Scenario(byId).def('t_fel', { type: 'sorcery', cost: 0, tribe: 'Fel', effects: [] }).def('t_l', { type: 'creature', cost: 2, attack: 2, health: 2 }).def('t_r', { type: 'creature', cost: 2, attack: 3, health: 3 }).def('t_mid', { type: 'creature', cost: 2, attack: 1, health: 1 }).mana(0, 10).hand(0, ['t_l', 't_mid', 't_r', 't_fel']).run();
+	D.applyPassive(state, 0, 'corrupted_felstone');
+	E.playCard(state, 0, state.players[0].hand.find(c => c.id === 't_fel').uid, null, null, 0);
+	const l = state.players[0].hand.find(c => c.id === 't_l'); const r = state.players[0].hand.find(c => c.id === 't_r'); const mid = state.players[0].hand.find(c => c.id === 't_mid');
+	ok('Corrupted Felstone: ends +2/+1, middle unchanged', l.attack === 4 && l.maxHealth === 3 && r.attack === 5 && r.maxHealth === 4 && mid.attack === 1, [l.attack, r.attack, mid.attack]);
+}
+// Coil Casting: first Naga each turn adds a random 1-Cost spell
+{
+	const { state } = new Scenario(byId).def('t_naga', { type: 'creature', cost: 2, attack: 2, health: 2, tribe: 'Naga' }).mana(0, 10).hand(0, ['t_naga']).run();
+	D.applyPassive(state, 0, 'coil_casting');
+	E.playCard(state, 0, state.players[0].hand[0].uid, null, null, 0);
+	const spells = state.players[0].hand.filter(c => E.isSpellType ? E.isSpellType(c) : (c.type === 'sorcery' || c.type === 'instant'));
+	ok('Coil Casting: a 1-Cost spell was added', spells.length === 1 && (byId[spells[0].id]?.cost === 1), spells.map(c => c.id));
+}
+// Plaguebringer: spells cost (2) less & Overload (1)
+{
+	const { state } = new Scenario(byId).def('t_sp', { type: 'sorcery', cost: 5, effects: [] }).mana(0, 10).hand(0, ['t_sp']).run();
+	D.applyPassive(state, 0, 'plaguebringer');
+	const cost = E.effectiveCost(state, 0, state.players[0].hand[0]);
+	E.playCard(state, 0, state.players[0].hand[0].uid, null, null, 0);
+	ok('Plaguebringer: spell costs (3) & queues Overload (1)', cost === 3 && state.players[0].overloadPending === 1, [cost, state.players[0].overloadPending]);
+}
+// Legendary Loot: first turn queues a weapon Discover
+{
+	const { state } = new Scenario(byId).run();
+	D.applyPassive(state, 0, 'legendary_loot');
+	const before = state.pickQueue.length;
+	E.endTurn(state); E.endTurn(state); // player 0's turn start
+	ok('Legendary Loot: a Discover is queued on your turn', state.pickQueue.length === before + 1 && state.players[0]._legLootUsed === true, [before, state.pickQueue.length]);
+}
+// Mysterious Tome: 2 Secrets installed at the start
+{
+	const { state } = new Scenario(byId).run();
+	const before = state.players[0].secrets.length;
+	D.applyPassive(state, 0, 'mysterious_tome');
+	ok('Mysterious Tome: two Secrets in play', state.players[0].secrets.length === before + 2, [before, state.players[0].secrets.length]);
 }
 
 // ---------------- boss ladder ----------------

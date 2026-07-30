@@ -314,6 +314,31 @@ export const PASSIVES = {
 		name: 'Ever-Changing Elixir', text: 'At the end of your turn, transform a friendly creature into one that costs (2) more.',
 		apply: (state, pi) => { state.players[pi].duelsEverChanging = true; },
 	},
+	// --- final reachable batch ---
+	flames_of_the_kirin_tor: {
+		name: 'Flames of the Kirin Tor', text: 'After you cast your first Fire spell in a turn, add a random Fire spell from your class to your hand.',
+		apply: (state, pi) => { state.players[pi].flamesKirinTor = true; },
+	},
+	corrupted_felstone: {
+		name: 'Corrupted Felstone', text: 'After you cast a Fel spell, give the left- and right-most creatures in your hand +2/+1.',
+		apply: (state, pi) => { state.players[pi].corruptedFelstone = true; },
+	},
+	coil_casting: {
+		name: 'Coil Casting', text: 'After you play your first Naga each turn, add a random 1-Cost spell to your hand.',
+		apply: (state, pi) => { state.players[pi].coilCasting = true; },
+	},
+	plaguebringer: {
+		name: 'Plaguebringer', text: 'Your spells Overload (1) and cost (2) less, but not less than (1).',
+		apply: (state, pi) => { state.players[pi].plaguebringer = true; },
+	},
+	legendary_loot: {
+		name: 'Legendary Loot', text: 'On your first turn, Discover a Legendary weapon.',
+		apply: (state, pi) => { state.players[pi].legendaryLoot = true; },
+	},
+	mysterious_tome: {
+		name: 'Mysterious Tome', text: 'At the start of the game, play 2 random Secrets.',
+		apply: (state, pi) => { const pool = Object.values(state.cardsById).filter(d => d.type === 'secret' && d.secret); for (let i = 0; i < 2 && pool.length; i++) { const idx = Math.floor(state.rng() * pool.length); const sec = pool.splice(idx, 1)[0]; E.installSecret(state, pi, sec.id); } },
+	},
 };
 
 export function applyPassive(state, pi, id) {
