@@ -54,8 +54,10 @@ export function damageCreature(state, target, amount, source) {
 		if (target.shieldLossRecruits) { const sp2 = state.players[target.controller]; sp2.recruitHealthBonus = (sp2.recruitHealthBonus || 0) + 1; for (const rc of sp2.board) if (rc.name === 'Silver Hand Recruit' && !isDead(rc)) { rc.maxHealth += 1; } } // Resilient Savior
 		emit(state, { type: 'shieldPop', uid: target.uid });
 		fireOngoing(state, target.controller, 'friendly-divine-shield-lost', {}); // Bolvar, Fireblood
+		if (state.players[target.controller].avengingArmaments && !isDead(target)) { target.attack += 2; target.maxHealth += 1; emit(state, { type: 'buff', uid: target.uid, attack: target.attack, hp: hp(target) }); } // Avenging Armaments (Duels): losing Divine Shield -> +2/+1
 		return 0;
 	}
+	if (target.frozen && amount > 0) { for (let fsi = 0; fsi < state.players.length; fsi++) if (fsi !== target.controller && state.players[fsi].freezeSolid) { amount += 2; break; } } // Freeze Solid (Duels): +2 damage to Frozen enemies
 	target.damage += amount;
 	if (source && source.type === 'creature') target._lastDamagerUid = source.uid; // Faceless Replicator (uid, not ref — refs duplicate on snapshot round-trip)
 	warptoothCheck(state, target.controller);

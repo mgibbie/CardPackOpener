@@ -28,6 +28,7 @@ export function sweepDeaths(state) {
 		const p = state.players[pi];
 		const dead = p.board.filter(isDead);
 		if (!dead.length) continue;
+		if (p.cannibalism) for (const dc of dead) { const ci = p.board.indexOf(dc); for (const nb of [p.board[ci - 1], p.board[ci + 1]]) if (nb && !isDead(nb) && nb.type !== 'location') { nb.attack = (nb.attack || 0) + 1; emit(state, { type: 'buff', uid: nb.uid, attack: nb.attack, hp: hp(nb) }); } } // Cannibalism (Duels): a death buffs its neighbors +1 Attack
 		p.board = p.board.filter(c => !isDead(c));
 		for (const c of dead) {
 			if (c.type === 'location') {
@@ -45,6 +46,8 @@ export function sweepDeaths(state) {
 			if (p.starving && (c.tribe || '').includes('Beast') && p._starvingTurn !== state.turnNumber) { p._starvingTurn = state.turnNumber; drawCards(state, pi, 1); } // Starving: first Beast death -> draw
 			{ const cur = state.players[state.current]; if (cur && cur.mulchMadness && (state.cardsById[c.id]?.cardClass || 'neutral') === 'neutral' && cur.mana) { cur.mana.cur = Math.min((cur.mana.max || 10) + 5, (cur.mana.cur || 0) + 1); emit(state, { type: 'mana', player: state.current, cur: cur.mana.cur, max: cur.mana.max }); } } // Mulch Madness (Duels): a Neutral death on your turn -> +1 Mana this turn
 			if (p.dragonblood && (c.tribe || '').includes('Dragon') && p._dragonbloodTurn !== state.turnNumber) { p._dragonbloodTurn = state.turnNumber; for (const hc of p.hand) if (hc.type === 'creature') { hc.attack = (hc.attack || 0) + 1; hc.maxHealth = (hc.maxHealth || 0) + 1; emit(state, { type: 'buff', uid: hc.uid, attack: hc.attack, hp: hp(hc) }); } } // Dragonblood: first Dragon death -> hand creatures +1/+1
+			if (p.deathlyDeath && !state._deathlyLock && (c.keywords || []).includes('deathrattle')) { state._deathlyLock = true; try { const dcand = p.board.filter(x => !isDead(x) && x.type !== 'location' && (x.keywords || []).includes('deathrattle') && x.deathrattle); if (dcand.length) runDeathrattle(state, pi, dcand[Math.floor(state.rng() * dcand.length)]); } finally { state._deathlyLock = false; } } // Deathly Death (Duels): a Deathrattle death triggers another friendly Deathrattle
+			if (p.allShallServe && (c.tribe || '').includes('Demon') && p._allShallTurn !== state.turnNumber) { p._allShallTurn = state.turnNumber; let ai = -1; for (let k = p.deck.length - 1; k >= 0; k--) if (state.cardsById[p.deck[k]] && state.cardsById[p.deck[k]].type === 'creature') { ai = k; break; } if (ai >= 0 && p.hand.length < MAX_HAND) { const [acid] = p.deck.splice(ai, 1); const ainst = instantiate(state.cardsById[acid], pi); ainst.zone = 'hand'; ainst.attack = (ainst.attack || 0) + 1; p.hand.push(ainst); emit(state, { type: 'draw', player: pi, card: ainst }); } } // All Shall Serve (Duels): first Demon death -> draw a creature +1 Attack
 			// From the Swamp: the first enemy to die each turn raises a 1/1 for each opponent that owns it
 			for (let s = 0; s < state.players.length; s++) { const sp = state.players[s]; if (sp.fromTheSwamp && s !== pi && !sp.eliminated && sp._swampTurn !== state.turnNumber) { sp._swampTurn = state.turnNumber; summon(state, s, { id: 'token_bloated_zombie', name: 'Bloated Zombie', type: 'creature', cost: 0, rarity: 'common', token: true, attack: 1, health: 1, description: 'A 1/1 Bloated Zombie.' }); } }
 			state.diedThisTurn = (state.diedThisTurn || 0) + 1;

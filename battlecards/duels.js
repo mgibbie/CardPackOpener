@@ -398,6 +398,27 @@ export const PASSIVES = {
 		name: 'Be Our Guest', text: 'At the start of the game, shuffle 3 Legendary Invitations into your deck.',
 		apply: (state, pi) => { E.execEffects(state, pi, [{ type: 'shuffle-ids-into-deck', ids: ['legendary_invitation', 'legendary_invitation', 'legendary_invitation'] }], null, null); },
 	},
+	// --- complex one-offs ---
+	deathly_death: {
+		name: 'Deathly Death!', text: 'After a friendly Deathrattle creature dies, trigger the Deathrattle of a friendly creature.',
+		apply: (state, pi) => { state.players[pi].deathlyDeath = true; },
+	},
+	cannibalism: {
+		name: 'Cannibalism', text: 'Whenever a friendly creature dies, give adjacent creatures +1 Attack.',
+		apply: (state, pi) => { state.players[pi].cannibalism = true; },
+	},
+	all_shall_serve: {
+		name: 'All Shall Serve', text: 'After the first time a friendly Demon dies in a turn, draw a creature from your deck & give it +1 Attack.',
+		apply: (state, pi) => { state.players[pi].allShallServe = true; },
+	},
+	freeze_solid: {
+		name: 'Freeze Solid', text: 'Whenever damage is dealt to a Frozen enemy, deal 2 more.',
+		apply: (state, pi) => { state.players[pi].freezeSolid = true; },
+	},
+	avenging_armaments: {
+		name: 'Avenging Armaments', text: 'After a friendly creature loses its Divine Shield, give it +2/+1.',
+		apply: (state, pi) => { state.players[pi].avengingArmaments = true; },
+	},
 };
 
 export function applyPassive(state, pi, id) {

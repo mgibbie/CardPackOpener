@@ -116,7 +116,7 @@ ok('all 4 batch-2 hero-power cards present + well-formed', HP_IDS2.every(id => {
 }
 
 // ---------------- passives (duels.js) ----------------
-ok('PASSIVES has the 92 entries', Object.keys(D.PASSIVES).length === 92 && ['imp_credible_trousers', 'draconic_dream', 'cloak_of_emerald_dreams', 'runic_helm', 'unholy_gift', 'be_our_guest'].every(k => D.PASSIVES[k]));
+ok('PASSIVES has the 97 entries', Object.keys(D.PASSIVES).length === 97 && ['deathly_death', 'cannibalism', 'all_shall_serve', 'freeze_solid', 'avenging_armaments'].every(k => D.PASSIVES[k]));
 // authored token cards exist
 ok('authored token cards present', ['fel_rift', 'legendary_invitation', 'dream_portal', 'dream', 'nightmare', 'laughing_sister', 'emerald_drake', 'lk_frost_strike', 'lk_doom_pact', 'lk_soul_reaper'].every(id => byId[id] && byId[id].token && byId[id].collectible === false), null);
 ok('HEROES lists 11 signature heroes with class', D.HEROES.length === 11 && D.HEROES.every(h => h.id && h.name && h.heroClass), D.HEROES.length);
@@ -836,6 +836,45 @@ const kill = (state, pi, uid) => { const c = state.players[pi].board.find(x => x
 	E.execEffects(state, 0, [{ type: 'draw', value: 1 }], null, null);
 	const drag = state.players[0].board.filter(c => (c.tribe || '').includes('Dragon') && !E.isDead(c));
 	ok('Dream Portal: drawing it summons a Dragon (and it evaporates)', drag.length === 1 && !state.players[0].hand.some(c => c.id === 'dream_portal'), drag.length);
+}
+// Cannibalism: a death buffs its neighbors +1 Attack
+{
+	const { state } = new Scenario(byId).def('t_a', { type: 'creature', cost: 1, attack: 2, health: 3 }).def('t_mid', { type: 'creature', cost: 1, attack: 2, health: 1 }).def('t_b', { type: 'creature', cost: 1, attack: 2, health: 3 }).board(0, ['t_a', 't_mid', 't_b']).run();
+	D.applyPassive(state, 0, 'cannibalism');
+	kill(state, 0, state.players[0].board.find(c => c.id === 't_mid').uid);
+	const a = state.players[0].board.find(c => c.id === 't_a'); const b = state.players[0].board.find(c => c.id === 't_b');
+	ok('Cannibalism: both neighbors +1 Attack', a.attack === 3 && b.attack === 3, [a.attack, b.attack]);
+}
+// Deathly Death!: a Deathrattle death triggers another friendly Deathrattle
+{
+	const { state } = new Scenario(byId).def('t_dr1', { type: 'creature', cost: 2, attack: 2, health: 1, keywords: ['deathrattle'], deathrattle: [{ type: 'damage', value: 1, target: 'enemy-hero' }] }).def('t_dr2', { type: 'creature', cost: 3, attack: 2, health: 4, keywords: ['deathrattle'], deathrattle: [{ type: 'damage', value: 3, target: 'enemy-hero' }] }).board(0, ['t_dr1', 't_dr2']).run();
+	D.applyPassive(state, 0, 'deathly_death');
+	kill(state, 0, state.players[0].board.find(c => c.id === 't_dr1').uid);
+	ok('Deathly Death!: own (1) + a triggered (3) hit the enemy hero', state.players[1].life === 36, state.players[1].life);
+}
+// All Shall Serve: first Demon death draws a creature with +1 Attack
+{
+	const { state } = new Scenario(byId).def('t_demon', { type: 'creature', cost: 2, attack: 2, health: 1, tribe: 'Demon' }).def('t_deck', { type: 'creature', cost: 3, attack: 2, health: 2 }).board(0, ['t_demon']).deck(0, ['t_deck']).run();
+	D.applyPassive(state, 0, 'all_shall_serve');
+	kill(state, 0, state.players[0].board.find(c => c.id === 't_demon').uid);
+	const drawn = state.players[0].hand.find(c => c.id === 't_deck');
+	ok('All Shall Serve: drew the creature with +1 Attack', drawn && drawn.attack === 3, drawn && drawn.attack);
+}
+// Freeze Solid: damage to a Frozen enemy deals 2 more
+{
+	const { state } = new Scenario(byId).def('t_e', { type: 'creature', cost: 3, attack: 2, health: 10 }).board(1, ['t_e']).mana(0, 10).run();
+	D.applyPassive(state, 0, 'freeze_solid');
+	E.freezeCreature(state, state.players[1].board[0]);
+	E.execEffects(state, 0, [{ type: 'damage', value: 2, target: 'enemy-creatures' }], null, null);
+	ok('Freeze Solid: 2 + 2 = 4 to the Frozen enemy', state.players[1].board[0].damage === 4, state.players[1].board[0].damage);
+}
+// Avenging Armaments: losing Divine Shield grants +2/+1
+{
+	const { state } = new Scenario(byId).def('t_ds', { type: 'creature', cost: 2, attack: 2, health: 3, keywords: ['divine_shield'] }).board(0, ['t_ds']).run();
+	D.applyPassive(state, 0, 'avenging_armaments');
+	E.execEffects(state, 0, [{ type: 'damage', value: 1, target: 'own-creatures' }], null, null); // pops the shield
+	const m = state.players[0].board.find(c => c.id === 't_ds');
+	ok('Avenging Armaments: +2/+1 after the shield pops', m.attack === 4 && E.hp(m) === 4 && !m.shield, [m.attack, E.hp(m), m.shield]);
 }
 
 // ---------------- boss ladder ----------------
