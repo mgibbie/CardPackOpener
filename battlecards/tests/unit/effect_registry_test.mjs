@@ -18,7 +18,7 @@ const ok = (l, c, extra) => { if (c) pass++; else { fail++; console.log('FAIL:',
 
 // --- registry contract ---
 {
-	ok('pilot + batch types registered (952 after the Duels set-stats + amalgamate handlers)', registeredTypes().length === 952 && !!getEffectHandler('armor') && !!getEffectHandler('investigate'));
+	ok('pilot + batch types registered (955 after the Duels transform-all/destroy-summon-copy/destroy-summon-tokens-by-health handlers)', registeredTypes().length === 955 && !!getEffectHandler('armor') && !!getEffectHandler('investigate'));
 	ok('unknown types miss (the chain is fully retired — nothing else answers)', getEffectHandler('damage') !== undefined && getEffectHandler('no-such-type') === undefined);
 	let threw = null;
 	try { (await import('../../engine/effects/registry.js')).register('armor', () => {}); } catch (e) { threw = e.message; }

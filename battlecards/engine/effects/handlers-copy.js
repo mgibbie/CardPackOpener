@@ -711,6 +711,34 @@ register('transform', ({ state, pi, target, source, enemies, scaled, hm, pickEne
 } });
 
 
+register('transform-all', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => { {
+			// Puzzle Box: transform every creature into a random one costing (N) more.
+			const targets = [];
+			for (const pl of state.players) for (const c of pl.board) if (!isDead(c) && c.type === 'creature') targets.push(c);
+			for (const t of targets) {
+				if (isDead(t)) continue;
+				const want = (t.cost || 0) + (e.costDelta || 0);
+				const pool = Object.values(state.cardsById).filter(d => d.type === 'creature'
+					&& (d.cost || 0) === want && !d.token && d.collectible !== false
+					&& !d.companion && !d.commander && !(d.colors && d.colors.length) && d.id !== t.id);
+				if (!pool.length) continue; // nothing of the wanted Cost exists: this one fizzles
+				const rd = pool[Math.floor(state.rng() * pool.length)];
+				const tok = instantiate({
+					id: 'token_' + rd.name.toLowerCase().replace(/[^a-z0-9]+/g, '_'),
+					name: rd.name, type: 'creature', cost: 0, rarity: 'common', token: true,
+					description: `A ${rd.attack}/${rd.health} ${rd.name}.`,
+					attack: rd.attack, health: rd.health, keywords: rd.keywords || [],
+				}, t.controller);
+				tok.zone = 'board'; tok.sick = t.sick;
+				const board = state.players[t.controller].board;
+				board[board.indexOf(t)] = tok;
+				t.zone = 'gone';
+				emit(state, { type: 'transformed', uid: t.uid, player: t.controller, from: t.name, card: tok });
+			}
+			recomputeAuras(state);
+} });
+
+
 register('transform-copy', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => { {
 			// Faceless-style: the source becomes a copy of the chosen creature
 			const t = chosenCreature();

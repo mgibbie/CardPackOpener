@@ -6097,7 +6097,7 @@
       "cardClass": "NEUTRAL",
       "mechanics": [],
       "rarity": null,
-      "inBattlecards": false
+      "inBattlecards": true
     },
     {
       "id": "PVPDR_SCH_Active49",
@@ -6154,7 +6154,7 @@
       "cardClass": "NEUTRAL",
       "mechanics": [],
       "rarity": null,
-      "inBattlecards": false
+      "inBattlecards": true
     },
     {
       "id": "PVPDR_SCH_Active56",
@@ -6165,7 +6165,7 @@
       "cardClass": "NEUTRAL",
       "mechanics": [],
       "rarity": null,
-      "inBattlecards": false
+      "inBattlecards": true
     },
     {
       "id": "PVPDR_SCH_Active57",
@@ -6187,7 +6187,7 @@
       "cardClass": "NEUTRAL",
       "mechanics": [],
       "rarity": null,
-      "inBattlecards": false
+      "inBattlecards": true
     },
     {
       "id": "PVPDR_SCH_Active60",
@@ -6692,7 +6692,7 @@
       "cardClass": "NEUTRAL",
       "mechanics": [],
       "rarity": null,
-      "inBattlecards": false
+      "inBattlecards": true
     },
     {
       "id": "PVPDR_Toki_T3",
@@ -6826,7 +6826,7 @@
       "cardClass": "PALADIN",
       "mechanics": [],
       "rarity": null,
-      "inBattlecards": false
+      "inBattlecards": true
     },
     {
       "id": "PVPDR_YOP_PriestT1",

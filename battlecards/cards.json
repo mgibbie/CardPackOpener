@@ -132422,6 +132422,122 @@
           "type": "amalgamate"
         }
       ]
+    },
+    {
+      "id": "duels_safe_harbor",
+      "name": "Safe Harbor",
+      "type": "sorcery",
+      "cost": 5,
+      "cardClass": "neutral",
+      "rarity": "legendary",
+      "set": "DUELS",
+      "token": true,
+      "treasure": true,
+      "description": "Choose a creature & put it into your hand. It costs (0).",
+      "effects": [
+        {
+          "type": "bounce",
+          "setCost": 0
+        }
+      ]
+    },
+    {
+      "id": "duels_scourge_strike",
+      "name": "Scourge Strike",
+      "type": "sorcery",
+      "cost": 3,
+      "cardClass": "death_knight",
+      "rarity": "legendary",
+      "set": "DUELS",
+      "token": true,
+      "treasure": true,
+      "description": "Destroy target enemy creature & draw a card.",
+      "effects": [
+        {
+          "type": "destroy",
+          "target": "creature"
+        },
+        {
+          "type": "draw",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "duels_gift_of_the_legion",
+      "name": "Gift of the Legion",
+      "type": "sorcery",
+      "cost": 3,
+      "cardClass": "demon_hunter",
+      "rarity": "legendary",
+      "set": "DUELS",
+      "token": true,
+      "treasure": true,
+      "description": "Gain +1 Attack for each creature that died this turn.",
+      "effects": [
+        {
+          "type": "hero-attack",
+          "valueFromDeaths": true
+        }
+      ]
+    },
+    {
+      "id": "duels_puzzle_box",
+      "name": "Puzzle Box",
+      "type": "sorcery",
+      "cost": 3,
+      "cardClass": "neutral",
+      "rarity": "legendary",
+      "set": "DUELS",
+      "token": true,
+      "treasure": true,
+      "description": "Transform all creatures into random ones that cost (3) more.",
+      "effects": [
+        {
+          "type": "transform-all",
+          "costDelta": 3
+        }
+      ]
+    },
+    {
+      "id": "duels_holy_book",
+      "name": "Holy Book",
+      "type": "sorcery",
+      "cost": 8,
+      "cardClass": "neutral",
+      "rarity": "legendary",
+      "set": "DUELS",
+      "token": true,
+      "treasure": true,
+      "description": "Silence & destroy a creature. Summon a 10/10 copy of it.",
+      "effects": [
+        {
+          "type": "destroy-summon-copy",
+          "attack": 10,
+          "health": 10
+        }
+      ]
+    },
+    {
+      "id": "duels_shadow_word_void",
+      "name": "Shadow Word: Void",
+      "type": "sorcery",
+      "cost": 4,
+      "cardClass": "priest",
+      "rarity": "legendary",
+      "set": "DUELS",
+      "token": true,
+      "treasure": true,
+      "description": "Destroy a creature & summon 0/2 Voidfiends equal to half its Health, rounded up.",
+      "effects": [
+        {
+          "type": "destroy-summon-tokens-by-health",
+          "per": 2,
+          "tokenName": "Voidfiend",
+          "attack": 0,
+          "health": 2
+        }
+      ]
     }
   ]
 }

@@ -1474,3 +1474,38 @@ register('amalgamate', ({ state, pi, target, source, enemies, scaled, hm, pickEn
 		attack: atk, health,
 	});
 } });
+
+
+register('destroy-summon-copy', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => { {
+	// Holy Book: silence & destroy a creature, then summon a fixed-stat copy of it
+	// under your control (silence first so it can't Deathrattle on the way out).
+	const t = chosenCreature();
+	if (!t) return;
+	const def = state.cardsById[t.id];
+	silenceCreature(state, t);
+	t.damage = t.maxHealth; t.shield = false; emit(state, { type: 'destroy', uid: t.uid });
+	sweepDeaths(state);
+	const c = summon(state, pi, def || { id: t.id, name: t.name, type: 'creature', cost: t.cost || 0, rarity: 'common', description: t.name, attack: t.attack || 0, health: hp(t) || 1 });
+	if (c) {
+		if (e.attack != null) c.attack = e.attack;
+		if (e.health != null) { c.maxHealth = e.health; c.damage = 0; c.tempHealth = 0; }
+		emit(state, { type: 'buff', uid: c.uid, attack: c.attack, hp: hp(c) });
+	}
+} });
+
+
+register('destroy-summon-tokens-by-health', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => { {
+	// Shadow Word: Void — destroy a creature, then summon tokens equal to a
+	// fraction of its Health (rounded up). Voidfiend = 0/2, per = 2.
+	const t = chosenCreature();
+	if (!t) return;
+	const n = Math.max(0, Math.ceil(hp(t) / (e.per || 2)));
+	t.damage = t.maxHealth; t.shield = false; emit(state, { type: 'destroy', uid: t.uid });
+	sweepDeaths(state);
+	const name = e.tokenName || 'Voidfiend';
+	for (let i = 0; i < n; i++) summon(state, pi, {
+		id: 'token_' + name.toLowerCase().replace(/[^a-z0-9]+/g, '_'), name, type: 'creature', cost: 0,
+		rarity: 'common', token: true, description: `A ${e.attack || 0}/${e.health || 2} ${name}.`,
+		attack: e.attack || 0, health: e.health || 2,
+	});
+} });

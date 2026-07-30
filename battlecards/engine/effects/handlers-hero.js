@@ -204,10 +204,12 @@ register('set-life-to-armor', ({ state, pi, target, source, enemies, scaled, hm,
 
 
 register('hero-attack', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => {
-			// give your hero +N Attack this turn (Soulshard Lapidary)
-			state.players[pi].heroTempAttack += e.value || 0;
+			// give your hero +N Attack this turn (Soulshard Lapidary).
+			// valueFromDeaths: +1 per creature that died this turn (Gift of the Legion).
+			const v = e.valueFromDeaths ? (state.diedThisTurn || 0) : (e.value || 0);
+			state.players[pi].heroTempAttack += v;
 			emit(state, { type: 'heroAttack', player: pi, attack: heroAttackValue(state.players[pi]) });
-			if ((e.value || 0) > 0) fireOngoing(state, pi, 'hero-gained-attack', {}); // Wickerclaw
+			if (v > 0) fireOngoing(state, pi, 'hero-gained-attack', {}); // Wickerclaw
 });
 
 

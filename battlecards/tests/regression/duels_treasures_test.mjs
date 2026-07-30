@@ -268,5 +268,51 @@ ok('all 6 batch-5 treasures present + tagged', IDS5.every(id => byId[id] && byId
 	ok('Amalgamate: one 6/4 Amalgamation remains', live.length === 1 && live[0].name === 'Amalgamation' && live[0].attack === 6 && E.hp(live[0]) === 4, live.map(c => c.name + ' ' + c.attack + '/' + E.hp(c)));
 }
 
+// ---------------- batch 6 ----------------
+const IDS6 = ['duels_safe_harbor', 'duels_scourge_strike', 'duels_gift_of_the_legion', 'duels_puzzle_box', 'duels_holy_book', 'duels_shadow_word_void'];
+ok('all 6 batch-6 treasures present + tagged', IDS6.every(id => byId[id] && byId[id].treasure && byId[id].set === 'DUELS'), IDS6.filter(id => !byId[id]));
+
+// Safe Harbor: return a creature to hand, costing 0
+{
+	const { state } = new Scenario(byId).def('t_c', { type: 'creature', cost: 5, attack: 4, health: 4 })
+		.mana(0, 10).board(0, ['t_c']).hand(0, ['duels_safe_harbor']).play(0, 'duels_safe_harbor', { targetBoard: [0, 0] }).run();
+	const inHand = state.players[0].hand.find(c => c.id === 't_c');
+	ok('Safe Harbor: creature returns to hand at cost 0', !state.players[0].board.some(c => c.id === 't_c') && inHand && inHand.cost === 0, inHand && inHand.cost);
+}
+// Scourge Strike: destroy target enemy creature & draw
+{
+	const { state } = new Scenario(byId).def('t_c', { type: 'creature', cost: 3, attack: 2, health: 4 })
+		.mana(0, 10).deck(0, ['t_c']).board(1, ['t_c']).hand(0, ['duels_scourge_strike']).play(0, 'duels_scourge_strike', { targetBoard: [1, 0] }).run();
+	ok('Scourge Strike: destroys the enemy creature & draws', state.players[1].board.filter(c => !E.isDead(c)).length === 0 && state.players[0].hand.length === 1, [state.players[1].board.filter(c => !E.isDead(c)).length, state.players[0].hand.length]);
+}
+// Gift of the Legion: +Attack per creature that died this turn
+{
+	const { state } = new Scenario(byId).mana(0, 10).hand(0, ['duels_gift_of_the_legion']).run();
+	state.diedThisTurn = 3;
+	E.playCard(state, 0, state.players[0].hand.find(c => c.id === 'duels_gift_of_the_legion').uid, null, null, 0);
+	ok('Gift of the Legion: hero gains +Attack per death', state.players[0].heroTempAttack === 3, state.players[0].heroTempAttack);
+}
+// Puzzle Box: transform all creatures into pricier ones
+{
+	const { state } = new Scenario(byId).def('t_c', { type: 'creature', cost: 2, attack: 2, health: 2 })
+		.mana(0, 10).board(0, ['t_c']).hand(0, ['duels_puzzle_box']).play(0, 'duels_puzzle_box').run();
+	const b = state.players[0].board.filter(c => !E.isDead(c));
+	ok('Puzzle Box: the creature is transformed', b.length === 1 && b[0].id !== 't_c' && b[0].token === true, b.map(c => c.id));
+}
+// Holy Book: silence & destroy, summon a 10/10 copy
+{
+	const { state } = new Scenario(byId).def('t_bruiser', { name: 'Bruiser', type: 'creature', cost: 4, attack: 3, health: 4 })
+		.mana(0, 10).board(1, ['t_bruiser']).hand(0, ['duels_holy_book']).play(0, 'duels_holy_book', { targetBoard: [1, 0] }).run();
+	const mine = state.players[0].board.filter(c => !E.isDead(c));
+	ok('Holy Book: destroys target, you get a 10/10 copy', state.players[1].board.filter(c => !E.isDead(c)).length === 0 && mine.length === 1 && mine[0].id === 't_bruiser' && mine[0].attack === 10 && E.hp(mine[0]) === 10, mine.map(c => c.id + ' ' + c.attack + '/' + E.hp(c)));
+}
+// Shadow Word: Void — destroy a creature, summon 0/2 Voidfiends = ceil(Health/2)
+{
+	const { state } = new Scenario(byId).def('t_big', { type: 'creature', cost: 5, attack: 4, health: 5 })
+		.mana(0, 10).board(1, ['t_big']).hand(0, ['duels_shadow_word_void']).play(0, 'duels_shadow_word_void', { targetBoard: [1, 0] }).run();
+	const vf = state.players[0].board.filter(c => c.name === 'Voidfiend' && !E.isDead(c));
+	ok('Shadow Word: Void: three 0/2 Voidfiends from a 5-Health creature', state.players[1].board.filter(c => !E.isDead(c)).length === 0 && vf.length === 3 && vf.every(c => c.attack === 0 && E.hp(c) === 2), vf.length);
+}
+
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);
