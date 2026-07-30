@@ -83,6 +83,8 @@ export const HERO_POWERS = {
 	rogue: ['duelshp_vile_concoction', 'duelshp_roguish_maneuvers'],
 	demon_hunter: ['duelshp_illidari_strike', 'duelshp_infernal_strike'],
 	mage: ['ulda_relicologist', 'ulda_arcane_craftiness', 'ulda_amateur_mage'],
+	shaman: ['duelshp_totemic_power'],
+	warlock: ['duelshp_demon_blood'],
 };
 
 // ---------- the boss ladder ----------

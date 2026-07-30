@@ -7,6 +7,7 @@ import * as Col from './collection.js';
 import * as Dungeon from './dungeon.js';
 import * as Heist from './heist.js';
 import * as Tombs from './tombs.js';
+import * as Duels from './duels.js';
 import * as MPX from './mpmode.js';
 import * as Chat from './chat.js';
 import { keywordsFor, keywordLabel, richHtml } from './keywords.js';
@@ -59,9 +60,11 @@ const heistRunMode = !dungeonRunMode && new URLSearchParams(location.search).has
 let heistBossName = null; // the current heist/tombs boss display name
 const TOMBS_KEY = 'magepunk_tombs_v1';
 const tombsRunMode = !dungeonRunMode && !heistRunMode && new URLSearchParams(location.search).has('tombs');
+const DUELS_KEY = 'magepunk_duels_v1';
+const duelsRunMode = !dungeonRunMode && !heistRunMode && !tombsRunMode && new URLSearchParams(location.search).has('duels');
 let dungeonBossId = (id => Dungeon.BOSSES[id] ? id : null)(
 	new URLSearchParams(location.search).get('boss'));
-if (dungeonBossId || dungeonRunMode || heistRunMode || tombsRunMode) playerCount = 2;
+if (dungeonBossId || dungeonRunMode || heistRunMode || tombsRunMode || duelsRunMode) playerCount = 2;
 
 // ?spectate=<friend> (MP only): render a friend's live dungeon-run/battle board
 // read-only from the snapshots they publish — no input, no AI.
@@ -83,6 +86,9 @@ const clearHeist = () => localStorage.removeItem(HEIST_KEY);
 const loadTombs = () => { try { return JSON.parse(localStorage.getItem(TOMBS_KEY)); } catch (e) { return null; } };
 const saveTombs = run => localStorage.setItem(TOMBS_KEY, JSON.stringify(run));
 const clearTombs = () => localStorage.removeItem(TOMBS_KEY);
+const loadDuels = () => { try { return JSON.parse(localStorage.getItem(DUELS_KEY)); } catch (e) { return null; } };
+const saveDuels = run => localStorage.setItem(DUELS_KEY, JSON.stringify(run));
+const clearDuels = () => localStorage.removeItem(DUELS_KEY);
 
 const nameOf = pi => pi === HUMAN ? 'You'
 	: duel.on ? (pi === 0 ? (duel.config?.host || 'Host') : (duel.config?.guest || 'Guest'))
@@ -931,7 +937,7 @@ function panelEl(pi) { return pi === HUMAN ? $('my-panel') : foePanelEls.get(pi)
 function classPowerOf(pi) {
 	const p = state.players[pi];
 	return p.heroPowers.find(c => c.id === (p.heroClass || '') + '_power')
-		|| ((heistRunMode || tombsRunMode) && pi === HUMAN ? p.heroPowers[0] : null) || null; // heist/tombs alt powers live in slot 0
+		|| ((heistRunMode || tombsRunMode || duelsRunMode) && pi === HUMAN ? p.heroPowers[0] : null) || null; // heist/tombs/duels alt powers live in slot 0
 }
 
 function activateHeroPower(card, ev) {
@@ -1227,7 +1233,7 @@ function updateHud() {
 	$('planeswalk-btn').style.display = pwOk ? '' : 'none';
 	if (pwOk) { const rc = E.planarRollCost(state, HUMAN); $('planeswalk-btn').textContent = rc > 0 ? `Planeswalk (${rc})` : 'Planeswalk'; }
 	// dungeon runs can be conceded mid-fight — a conceded run never pays a pack
-	$('concede').style.display = (dungeonRunMode || heistRunMode || tombsRunMode) && !state.over ? '' : 'none';
+	$('concede').style.display = (dungeonRunMode || heistRunMode || tombsRunMode || duelsRunMode) && !state.over ? '' : 'none';
 	const myTurn = state.current === HUMAN && !state.over;
 	$('end-turn').disabled = !myTurn;
 	$('end-turn').textContent = state.over ? 'Game Over'
@@ -2244,6 +2250,9 @@ function nextEvent() {
 			} else if (tombsRunMode) {
 				const run = loadTombs();
 				if (run?.active) setTimeout(() => won ? tombsVictory(run) : tombsDefeat(run), 1200);
+			} else if (duelsRunMode) {
+				const run = loadDuels();
+				if (run?.active) setTimeout(() => won ? duelsVictory(run) : duelsDefeat(run), 1200);
 			} else {
 				$('restart').style.display = '';
 			}
@@ -3059,11 +3068,11 @@ $('restart').addEventListener('click', () => start());
 
 // conceding forfeits the run outright: no defeat payout, no pack
 $('concede').addEventListener('click', () => {
-	if ((!dungeonRunMode && !heistRunMode && !tombsRunMode) || !state || state.over) return;
-	const run = tombsRunMode ? loadTombs() : heistRunMode ? loadHeist() : loadRun();
+	if ((!dungeonRunMode && !heistRunMode && !tombsRunMode && !duelsRunMode) || !state || state.over) return;
+	const run = duelsRunMode ? loadDuels() : tombsRunMode ? loadTombs() : heistRunMode ? loadHeist() : loadRun();
 	const el = dungeonOverlay('CONCEDE?', 'Walking away ends the run. A conceded run never pays a pack.');
 	el.appendChild(overlayButton('Concede the run', () => {
-		if (tombsRunMode) clearTombs(); else if (heistRunMode) clearHeist(); else clearRun();
+		if (duelsRunMode) clearDuels(); else if (tombsRunMode) clearTombs(); else if (heistRunMode) clearHeist(); else clearRun();
 		state.over = true; // freezes play without firing the defeat payout path
 		const done = dungeonOverlay('RUN CONCEDED',
 			`You walked away at level ${run?.level ?? 1}. No pack this time.`);
@@ -3751,6 +3760,7 @@ async function start() {
 		if (mode === 'dungeon') { location.href = '?dungeon=1'; return; }
 		if (mode === 'heist') { location.href = '?heist=1'; return; }
 		if (mode === 'tombs') { location.href = '?tombs=1'; return; }
+		if (mode === 'duels') { location.href = '?duels=1'; return; }
 		menuChosen = true;
 	}
 	if (dungeonRunMode) {
@@ -3811,6 +3821,25 @@ async function start() {
 			saveTombs(run);
 		}
 		bootTombsEncounter(cardsById, run);
+	} else if (duelsRunMode) {
+		duelsCardsById = cardsById; // pre-state overlays need the card defs
+		let run = loadDuels();
+		if (run && run.active && !(await resumeDuelsOverlay(run))) {
+			clearDuels();
+			run = null;
+		}
+		if (!run || !run.active) {
+			const heroId = await pickDuelsHeroOverlay();
+			const hero = Duels.HEROES.find(h => h.id === heroId);
+			const powerId = await pickDuelsPowerOverlay(hero);
+			run = {
+				active: true, heroId, powerId, level: 1,
+				deck: [...Dungeon.STARTER_DECKS[hero.heroClass]],
+				passives: [], bossId: duelsBossFor(1),
+			};
+			saveDuels(run);
+		}
+		bootDuelsEncounter(cardsById, run);
 	} else if (dungeonBossId) {
 		// one-off encounter: ?class= if it has a starter deck, else saved, else mage
 		const wanted = new URLSearchParams(location.search).get('class');
@@ -4037,6 +4066,8 @@ function mainMenu() {
 			() => resolve('heist')));
 		col.appendChild(big('TOMBS OF TERROR', 'four Explorers, four chapters — delve to a Plague Lord for treasures & passives',
 			() => resolve('tombs')));
+		col.appendChild(big('DUELS', 'eleven heroes climb a twelve-boss ladder of rivals to Uber Diablo — hero powers, passives & treasures',
+			() => resolve('duels')));
 		el.appendChild(col);
 	});
 }
@@ -4731,6 +4762,216 @@ function tombsDefeat(run) {
 	clearTombs();
 	mpRunReward(el, 'loss');
 	el.appendChild(overlayButton('New Expedition', () => location.reload()));
+}
+
+// ---------- Duels run ----------
+// A twelve-fight ladder: rounds 1 & 5 & 9 grant a passive, 3 & 7 & 11 add an
+// active DUELS treasure, and every win drafts a bucket. Fights 6 and 12 are the
+// fixed finals (Diablo, then Uber Diablo).
+let duelsCardsById = null; // set at boot so overlays can read card defs pre-state
+
+function resumeDuelsOverlay(run) {
+	return new Promise(resolve => {
+		const hero = Duels.HEROES.find(h => h.id === run.heroId);
+		const el = dungeonOverlay('DUEL IN PROGRESS',
+			`${hero?.name || run.heroId} is ${run.level}/12 up the ladder (${run.deck.length} cards).`);
+		el.appendChild(overlayButton(`Continue fight ${run.level}`, () => { hideDungeonOverlay(); resolve(true); }));
+		el.appendChild(overlayButton('Abandon — start a new run', () => { hideDungeonOverlay(); resolve(false); }));
+	});
+}
+
+function pickDuelsHeroOverlay() {
+	return new Promise(resolve => {
+		const el = dungeonOverlay('PICK YOUR HERO', 'The Duels roster steps up.');
+		const row = document.createElement('div');
+		row.style.cssText = 'display:flex;flex-wrap:wrap;justify-content:center;gap:12px;max-width:840px;';
+		for (const h of Duels.HEROES) {
+			const cls = classRegistry.find(c => c.id === h.heroClass);
+			const box = document.createElement('div');
+			box.style.cssText = 'background:#1c1830;border:1px solid #8a6f3a;border-radius:10px;padding:12px;max-width:180px;';
+			box.innerHTML = `<div style="font-weight:bold;">${h.name}</div>`
+				+ `<div style="font-size:12px;color:#e8c37a;margin-bottom:4px;">${cls?.name || h.heroClass}</div>`
+				+ `<div style="font-size:12px;opacity:0.8;margin-bottom:8px;">${h.flavor}</div>`;
+			box.appendChild(overlayButton('Choose', () => { hideDungeonOverlay(); resolve(h.id); }));
+			row.appendChild(box);
+		}
+		el.appendChild(row);
+	});
+}
+
+// hero-power choice: the class default plus the hero's class Duels/ulda_ powers
+function pickDuelsPowerOverlay(hero) {
+	return new Promise(resolve => {
+		const el = dungeonOverlay('CHOOSE YOUR HERO POWER', `${hero.name} lines up a few tricks.`);
+		const row = document.createElement('div');
+		row.style.cssText = 'display:flex;flex-wrap:wrap;justify-content:center;gap:14px;';
+		const cls = classRegistry.find(c => c.id === hero.heroClass);
+		const options = [];
+		if (cls?.power) options.push({ id: null, name: cls.power.name, cost: cls.power.cost, text: cls.power.text });
+		for (const id of Duels.HERO_POWERS[hero.heroClass] || []) {
+			const d = duelsCardsById[id];
+			if (d && d.power) options.push({ id, name: d.name, cost: d.power.cost, text: (d.description || '').replace(/^Hero Power \(\d+\): /, '') });
+		}
+		for (const o of options) {
+			const box = document.createElement('div');
+			box.style.cssText = 'background:#1c1830;border:1px solid #8a6f3a;border-radius:10px;padding:14px;max-width:200px;';
+			box.innerHTML = `<div style="font-weight:bold;margin-bottom:4px;">${o.name} (${o.cost})</div>`
+				+ `<div style="font-size:12.5px;opacity:0.85;margin-bottom:8px;">${o.text}</div>`;
+			box.appendChild(overlayButton('Take it', () => { hideDungeonOverlay(); resolve(o.id); }));
+			row.appendChild(box);
+		}
+		el.appendChild(row);
+	});
+}
+
+// fight 6 = Diablo, fight 12 = Uber Diablo; the rest roll from that round's pool
+function duelsBossFor(level) {
+	if (level >= 12) return 'uber_diablo';
+	if (level === 6) return 'diablo';
+	const pool = level < 6 ? Duels.ROUNDS[0].pool : Duels.ROUNDS[1].pool;
+	return pool[Math.floor(Math.random() * pool.length)];
+}
+
+function bootDuelsEncounter(cardsById, run) {
+	duelsCardsById = cardsById;
+	const hero = Duels.HEROES.find(h => h.id === run.heroId);
+	const boss = Duels.BOSSES[run.bossId];
+	heistBossName = boss.name; // shared boss-name slot for nameOf()
+	const clsPick = classRegistry.find(c => c.id === hero.heroClass)
+		|| { id: hero.heroClass, name: hero.name, power: null };
+	const bossPick = { id: run.bossId, name: boss.name, power: boss.power };
+	const picks = [clsPick, bossPick];
+	state = E.createGame(cardsById, Math.random, [...run.deck], 2, picks);
+	state.classPicks = picks;
+	// chosen alternate hero power replaces the class slot
+	if (run.powerId && cardsById[run.powerId]) {
+		const pw = E.instantiate(cardsById[run.powerId], HUMAN);
+		pw.zone = 'heropower'; pw.usedThisTurn = false;
+		state.players[HUMAN].heroPowers = [pw];
+	}
+	// boss surgery: themed deck & the boss's designed HP; the player's life
+	// scales with the climb (15 at fight 1, +5 per fight)
+	const bp = state.players[1];
+	const runHP = 15 + (run.level - 1) * 5;
+	E.applyHeroMods(state, 1, { life: boss.health, maxLife: boss.health });
+	E.applyHeroMods(state, HUMAN, { life: runHP, maxLife: runHP });
+	E.resetDeckAndHand(state, 1, Duels.buildBossDeck(cardsById, boss.theme));
+	E.drawCards(state, 1, 4);
+	E.stripLoadouts(state);
+	for (const id of run.passives) Duels.applyPassive(state, HUMAN, id);
+	log(`Duels fight ${run.level}/12 — ${boss.name} (${bp.life} HP).`);
+	log(`Boss power — ${boss.power.name} (${boss.power.cost}): ${boss.power.text}`);
+	log(`You are ${hero.name} with a ${run.deck.length}-card deck.`);
+	for (const id of run.passives) log(`Passive — ${Duels.PASSIVES[id].name}: ${Duels.PASSIVES[id].text}`);
+}
+
+function duelsVictory(run) {
+	const hero = Duels.HEROES.find(h => h.id === run.heroId);
+	const nextLevel = run.level + 1;
+	if (run.level >= 12) {
+		const el = dungeonOverlay('LADDER CLEARED!', `Uber Diablo falls — you top the Duels ladder as ${hero.name} with ${run.deck.length} cards.`);
+		Col.earnGold(1000);
+		mpRunReward(el, 'win');
+		el.appendChild(overlayButton('New Run (+1000 gold banked)', () => { clearDuels(); location.reload(); }));
+		clearDuels();
+		return;
+	}
+	// draft a bucket: 3 themes, 3 random cards each, all three join the deck
+	const el = dungeonOverlay(`FIGHT ${run.level} WON`, 'Choose a bucket — all three cards join your deck.');
+	const buckets = [...(Dungeon.BUCKETS[hero.heroClass] || [])];
+	const offered = [];
+	while (offered.length < 3 && buckets.length) {
+		offered.push(buckets.splice(Math.floor(Math.random() * buckets.length), 1)[0]);
+	}
+	const cardsOf = bucket => {
+		let ids = bucket.cards;
+		if (ids === 'class-all') {
+			ids = Object.values(state.cardsById).filter(d =>
+				d.cardClass === hero.heroClass && !d.token && !d.companion && !d.commander
+				&& d.type !== 'land' && d.type !== 'heropower' && !(d.colors && d.colors.length))
+				.map(d => d.id);
+		}
+		const picks = [];
+		const pool = [...ids];
+		while (picks.length < 3 && pool.length) {
+			picks.push(pool.splice(Math.floor(Math.random() * pool.length), 1)[0]);
+		}
+		return picks.map(id => state.cardsById[id]);
+	};
+	const row = document.createElement('div');
+	row.style.cssText = 'display:flex;flex-wrap:wrap;justify-content:center;gap:14px;';
+	for (const bucket of offered) {
+		const picks = cardsOf(bucket);
+		const box = document.createElement('div');
+		box.style.cssText = 'background:#1c1830;border:1px solid #8a6f3a;border-radius:10px;padding:12px;max-width:330px;';
+		box.innerHTML = `<div style="font-weight:bold;margin-bottom:8px;letter-spacing:1px;">${bucket.name}</div>`;
+		for (const d of picks) box.appendChild(miniFace(d));
+		box.appendChild(document.createElement('br'));
+		box.appendChild(overlayButton('Take these', () => {
+			run.deck.push(...picks.map(d => d.id));
+			afterDuelsBucket(run, nextLevel);
+		}));
+		row.appendChild(box);
+	}
+	el.appendChild(row);
+}
+
+// fights 1/5/9 grant a passive; 3/7/11 add an active DUELS treasure; else press on
+function afterDuelsBucket(run, nextLevel) {
+	if (run.level === 1 || run.level === 5 || run.level === 9) {
+		const el = dungeonOverlay('PASSIVE TREASURE!', 'Choose a boon for the rest of the run.');
+		const options = Object.keys(Duels.PASSIVES).filter(t => !run.passives.includes(t));
+		const row = document.createElement('div');
+		row.style.cssText = 'display:flex;flex-wrap:wrap;justify-content:center;gap:14px;';
+		for (let i = 0; i < 3 && options.length; i++) {
+			const t = options.splice(Math.floor(Math.random() * options.length), 1)[0];
+			const box = document.createElement('div');
+			box.style.cssText = 'display:flex;flex-direction:column;align-items:center;gap:6px;';
+			box.innerHTML = `<div style="font-weight:bold;">${Duels.PASSIVES[t].name}</div><div style="font-size:13px;opacity:0.85;max-width:190px;">${Duels.PASSIVES[t].text}</div>`;
+			box.appendChild(overlayButton('Take it', () => {
+				run.passives.push(t);
+				advanceDuels(run, nextLevel);
+			}));
+			row.appendChild(box);
+		}
+		el.appendChild(row);
+	} else if (run.level === 3 || run.level === 7 || run.level === 11) {
+		const el = dungeonOverlay('TREASURE!', 'One of these joins your deck.');
+		const options = Object.values(state.cardsById).filter(d => d.treasure && d.set === 'DUELS' && !run.deck.includes(d.id));
+		const row = document.createElement('div');
+		row.style.cssText = 'display:flex;flex-wrap:wrap;justify-content:center;gap:14px;';
+		for (let i = 0; i < 3 && options.length; i++) {
+			const d = options.splice(Math.floor(Math.random() * options.length), 1)[0];
+			const box = document.createElement('div');
+			box.style.cssText = 'background:#1c1830;border:1px solid #8a6f3a;border-radius:10px;padding:12px;';
+			box.appendChild(miniFace(d));
+			box.appendChild(document.createElement('br'));
+			box.appendChild(overlayButton('Take it', () => {
+				run.deck.push(d.id);
+				advanceDuels(run, nextLevel);
+			}));
+			row.appendChild(box);
+		}
+		el.appendChild(row);
+	} else {
+		advanceDuels(run, nextLevel);
+	}
+}
+
+function advanceDuels(run, nextLevel) {
+	run.level = nextLevel;
+	run.bossId = duelsBossFor(nextLevel);
+	saveDuels(run);
+	const boss = Duels.BOSSES[run.bossId];
+	const el = dungeonOverlay(`FIGHT ${nextLevel}/12`, `Next: ${boss.name} (${boss.health} HP)${boss.final ? ' — the final!' : ''}`);
+	el.appendChild(overlayButton('Fight!', () => location.reload()));
+}
+
+function duelsDefeat(run) {
+	const el = dungeonOverlay('RUN ENDED', `${Duels.BOSSES[run.bossId].name} ends your climb at fight ${run.level}.`);
+	clearDuels();
+	mpRunReward(el, 'loss');
+	el.appendChild(overlayButton('New Run', () => location.reload()));
 }
 
 start();

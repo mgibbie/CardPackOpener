@@ -132853,6 +132853,52 @@
         ]
       },
       "description": "Hero Power (1): Gain +1 Attack this turn."
+    },
+    {
+      "id": "duelshp_totemic_power",
+      "name": "Totemic Power",
+      "type": "heropower",
+      "cost": 2,
+      "cardClass": "shaman",
+      "rarity": "common",
+      "set": "DUELS",
+      "power": {
+        "cost": 2,
+        "effects": [
+          {
+            "type": "summon",
+            "count": 1,
+            "attack": 0,
+            "health": 2,
+            "name": "Totem",
+            "keywords": [
+              "taunt"
+            ]
+          }
+        ]
+      },
+      "description": "Hero Power (2): Summon a 0/2 Totem with Taunt."
+    },
+    {
+      "id": "duelshp_demon_blood",
+      "name": "Demon Blood",
+      "type": "heropower",
+      "cost": 1,
+      "cardClass": "warlock",
+      "rarity": "common",
+      "set": "DUELS",
+      "power": {
+        "cost": 1,
+        "effects": [
+          {
+            "type": "buff-hand-tribe",
+            "tribe": "Demon",
+            "attack": 3,
+            "health": 2
+          }
+        ]
+      },
+      "description": "Hero Power (1): Give the Demons in your hand +3/+2."
     }
   ]
 }
