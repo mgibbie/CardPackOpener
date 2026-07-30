@@ -6,6 +6,7 @@ import { Battle } from './battle.js';
 import { Trainers } from './trainers.js';
 import { Dialog } from './dialog.js';
 import { Services } from './services.js';
+import { Arcade } from './arcade.js';
 import * as Bag from './bag.js';
 import { getJSON } from './engine.js';
 import { loadParty, saveParty, healParty, leadMon, addCaught, createStarter } from './party.js';
@@ -53,6 +54,7 @@ const battle = new Battle();
 const trainers = new Trainers(world, player);
 const dialog = new Dialog();
 const services = new Services(world);
+const arcade = new Arcade(world);
 const evolution = new Evolution();
 const items = new Items(world);
 const pvp = new Pvp();
@@ -70,7 +72,7 @@ const STARTERS = [
 ];
 const starterMenu = { open: false, row: 0, col: 0, sprites: {} };
 const urlPinnedMap = new URLSearchParams(location.search).has('map');
-player.blocked = (tx, ty) => npcs.npcBlocks(tx, ty) || trainers.occupied(tx, ty) || services.blocks(tx, ty) || items.occupied(tx, ty);
+player.blocked = (tx, ty) => npcs.npcBlocks(tx, ty) || trainers.occupied(tx, ty) || services.blocks(tx, ty) || arcade.blocks(tx, ty) || items.occupied(tx, ty);
 
 // Strength: shove a boulder one tile ahead if a party mon can use Strength and
 // the destination is clear. Returns true when the boulder actually moved.
@@ -188,6 +190,18 @@ function interact() {
 	if (svc === 'pc') { pcMenu.open = true; pcMenu.side = 0; pcMenu.idx = 0; return; }
 	if (svc === 'shop') { shopMenu.open = true; shopMenu.idx = 0; shopMenu.mode = 'buy'; shopMenu.flash = null; return; }
 	if (svc === 'ferry') { ferryMenu.open = true; ferryMenu.idx = 0; return; }
+	// arcade boxes: Route 1 launches PokéChess; Pallet Town's is a placeholder
+	const arc = arcade.kindAt(fx, fy);
+	if (arc === 'pokechess') {
+		dialog.open('Do you want to play\nPOKéCHESS?', (k) => {
+			if (k !== 'x') { saveParty(party); savePos(); location.href = 'pokechess.html' + (MP_ON ? '?mp=1' : ''); }
+		});
+		return;
+	}
+	if (arc === 'pears') {
+		dialog.open('Do you want to play a\nPAIR OF PEARS?', (k) => { if (k !== 'x') dialog.open('Coming soon!'); });
+		return;
+	}
 	// water's edge: SURF carries you across (used from the party menu)
 	if (!player.surfing && world.isSurfable(fx, fy)) {
 		dialog.open('The water is a deep blue...\n\nSURF would carry you across.');
@@ -1160,6 +1174,7 @@ async function refreshMapContent(label) {
 	await trainers.loadForMap();
 	npcs.list = npcs.list.filter(n => !trainers.list.some(t => t.ev === n.ev));
 	services.loadForMap();
+	arcade.loadForMap();
 	items.loadForMap();
 	await loadMapScripts(world.current.name);
 	hud.textContent = world.current.map.name || label;
@@ -1962,6 +1977,7 @@ function tick(now) {
 	ctx.clearRect(0, 0, VIEW_W, VIEW_H);
 	world.drawLayer(ctx, 'bottom', camX, camY);
 	services.draw(ctx, camX, camY);
+	arcade.draw(ctx, camX, camY);
 	items.draw(ctx, camX, camY);
 	drawLegendary(ctx, camX, camY);
 	// sprites in y order so overlaps stack correctly
@@ -3182,6 +3198,7 @@ function drawFriendGhosts(ctx, camX, camY) {
 	await battle.init();
 	await trainers.init();
 	await services.init();
+	await arcade.init();
 	await items.init();
 	signTexts = await getJSON('data/sign_texts.json').catch(() => ({}));
 	trainerTeams = await getJSON('data/trainer_teams.json').catch(() => ({}));
@@ -3216,6 +3233,7 @@ function drawFriendGhosts(ctx, camX, camY) {
 	await trainers.loadForMap();
 	npcs.list = npcs.list.filter(n => !trainers.list.some(t => t.ev === n.ev));
 	services.loadForMap();
+	arcade.loadForMap();
 	items.loadForMap();
 	await loadMapScripts(world.current.name);
 	hud.textContent = world.current.map.name || startMap;

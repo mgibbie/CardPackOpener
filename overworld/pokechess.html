@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>PokéChess</title>
+	<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><text y='14' font-size='14'>♟️</text></svg>">
+
+	<style>
+		html, body { margin: 0; height: 100%; background: #14101f; color: #e8e0d0; font-family: system-ui, sans-serif; }
+		#wrap { min-height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; padding: 16px; box-sizing: border-box; }
+		#board { max-width: 100%; height: auto; image-rendering: pixelated; border-radius: 10px; box-shadow: 0 8px 40px rgba(0,0,0,0.6); background: #1a1626; }
+		#bar { display: flex; gap: 10px; align-items: center; }
+		button { background: #2a2440; color: #e8e0d0; border: 1px solid #6a5f8a; border-radius: 8px; padding: 8px 16px; cursor: pointer; font-size: 14px; }
+		button:hover { background: #3a3258; }
+		h1 { font-size: 18px; letter-spacing: 2px; margin: 0; opacity: 0.85; }
+		.hint { font-size: 12px; opacity: 0.6; text-align: center; max-width: 640px; }
+	</style>
+</head>
+<body>
+	<div id="wrap">
+		<h1>POKéCHESS</h1>
+		<canvas id="board"></canvas>
+		<div id="bar"><button id="leave">← Back to overworld</button></div>
+		<div class="hint">Click a piece, then click a highlighted square. Each piece type is one of your Pokémon; capturing an enemy piece triggers a battle — win and you take the square, lose and your attacker is defeated.</div>
+	</div>
+	<script type="module" src="./pokechess/game.js"></script>
+</body>
+</html>
