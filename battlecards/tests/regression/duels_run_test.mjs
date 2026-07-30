@@ -116,7 +116,7 @@ ok('all 4 batch-2 hero-power cards present + well-formed', HP_IDS2.every(id => {
 }
 
 // ---------------- passives (duels.js) ----------------
-ok('PASSIVES has the 81 entries', Object.keys(D.PASSIVES).length === 81 && ['blood_shields', 'ghouls_rush_in', 'cold_feet_pact'].every(k => D.PASSIVES[k]));
+ok('PASSIVES has the 86 entries', Object.keys(D.PASSIVES).length === 86 && ['forgotten_depths', 'location_location_location', 'beckoning_bicorn', 'cookies_ladle', 'optimized_polarity'].every(k => D.PASSIVES[k]));
 ok('HEROES lists 11 signature heroes with class', D.HEROES.length === 11 && D.HEROES.every(h => h.id && h.name && h.heroClass), D.HEROES.length);
 ok('applyPassive returns false for an unknown id', D.applyPassive({ players: [{}] }, 0, 'nope') === false);
 
@@ -744,6 +744,44 @@ const kill = (state, pi, uid) => { const c = state.players[pi].board.find(x => x
 	E.endTurn(state);
 	const gr = state.players[0].board.filter(c => c.name === 'Risen Groom');
 	ok('Cold Feet Pact: a 3/3 Risen Groom (half of 6 Corpses)', gr.length === 1 && gr[0].attack === 3 && E.hp(gr[0]) === 3, gr.length);
+}
+// Forgotten Depths: 2 Colossal at the bottom of your deck, (3) cheaper
+{
+	const { state } = new Scenario(byId).deck(0, []).run();
+	D.applyPassive(state, 0, 'forgotten_depths');
+	const bottom2 = state.players[0].deck.slice(0, 2);
+	ok('Forgotten Depths: 2 Colossal added, discounted', bottom2.length === 2 && bottom2.every(id => byId[id]?.colossal) && bottom2.every(id => state.players[0].deckCostPersist[id] === Math.max(0, (byId[id].cost || 0) - 3)), bottom2);
+}
+// Location, Location, Location!: start with a class location in play
+{
+	const { state } = new Scenario(byId).run();
+	state.players[0].heroClass = 'mage';
+	D.applyPassive(state, 0, 'location_location_location');
+	const loc = state.players[0].board.find(c => c.type === 'location');
+	ok('Location x3: a mage location is in play', loc && loc.cardClass === 'mage', loc && loc.id);
+}
+// Beckoning Bicorn: first Pirate adds Patches to your deck
+{
+	const { state } = new Scenario(byId).def('t_pirate', { type: 'creature', cost: 2, attack: 2, health: 2, tribe: 'Pirate' }).mana(0, 10).hand(0, ['t_pirate']).run();
+	D.applyPassive(state, 0, 'beckoning_bicorn');
+	E.playCard(state, 0, state.players[0].hand[0].uid, null, null, 0);
+	ok('Beckoning Bicorn: Patches shuffled into deck', state.players[0].deck.includes('patches_the_pirate'));
+}
+// Cookie's Ladle: first Murloc adds a Murloc
+{
+	const { state } = new Scenario(byId).def('t_murloc', { type: 'creature', cost: 2, attack: 2, health: 2, tribe: 'Murloc' }).mana(0, 10).hand(0, ['t_murloc']).run();
+	D.applyPassive(state, 0, 'cookies_ladle');
+	E.playCard(state, 0, state.players[0].hand[0].uid, null, null, 0);
+	const m = state.players[0].hand.filter(c => (byId[c.id]?.tribe || '').includes('Murloc'));
+	ok("Cookie's Ladle: a Murloc joined your hand", m.length === 1, m.map(c => c.id));
+}
+// Optimized Polarity: first Mech adds a (1) Mech
+{
+	const { state } = new Scenario(byId).def('t_mech', { type: 'creature', cost: 2, attack: 2, health: 2, tribe: 'Mech' }).mana(0, 10).hand(0, ['t_mech']).run();
+	D.applyPassive(state, 0, 'optimized_polarity');
+	E.playCard(state, 0, state.players[0].hand[0].uid, null, null, 0);
+	const mech = state.players[0].hand.filter(c => (byId[c.id]?.tribe || '').includes('Mech') && byId[c.id]?.cost === 1);
+	ok('Optimized Polarity: a (1) Mech joined your hand', mech.length === 1, mech.map(c => c.id));
 }
 
 // ---------------- boss ladder ----------------

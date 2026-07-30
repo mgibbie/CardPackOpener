@@ -352,6 +352,27 @@ export const PASSIVES = {
 		name: 'Cold Feet Pact', text: 'At the end of your turn, summon a Risen Groom with stats equal to half your Corpse total.',
 		apply: (state, pi) => { state.players[pi].coldFeetPact = true; },
 	},
+	// --- reuse of existing pools (colossal / locations / Patches / tribes) ---
+	forgotten_depths: {
+		name: 'Forgotten Depths', text: 'At the start of the game, put 2 Colossal creatures on the bottom of your deck. They cost (3) less.',
+		apply: (state, pi) => { const p = state.players[pi]; const col = Object.values(state.cardsById).filter(d => d.colossal && d.type === 'creature' && !d.token); for (let i = 0; i < 2 && col.length; i++) { const c = col[Math.floor(state.rng() * col.length)]; p.deck.unshift(c.id); (p.deckCostPersist = p.deckCostPersist || {})[c.id] = Math.max(0, (c.cost || 0) - 3); } },
+	},
+	location_location_location: {
+		name: 'Location, Location, Location!', text: 'Start the game with a location from your class in play.',
+		apply: (state, pi) => { const p = state.players[pi]; const cls = p.heroClass || 'neutral'; const locs = Object.values(state.cardsById).filter(d => d.type === 'location' && (d.cardClass || 'neutral') === cls); const pool = locs.length ? locs : Object.values(state.cardsById).filter(d => d.type === 'location'); if (pool.length) { const loc = pool[Math.floor(state.rng() * pool.length)]; const inst = E.instantiate(loc, pi); inst.zone = 'board'; p.board.push(inst); E.recomputeAuras(state); } },
+	},
+	beckoning_bicorn: {
+		name: 'Beckoning Bicorn', text: 'After you play your first Pirate each turn, add a Patches the Pirate to your deck.',
+		apply: (state, pi) => { state.players[pi].beckoningBicorn = true; },
+	},
+	cookies_ladle: {
+		name: "Cookie's Ladle", text: 'After you play your first Murloc each turn, draw a Murloc.',
+		apply: (state, pi) => { state.players[pi].cookiesLadle = true; },
+	},
+	optimized_polarity: {
+		name: 'Optimized Polarity', text: 'After you play your first Mech each turn, add a random (1) Mana Mech to your hand.',
+		apply: (state, pi) => { state.players[pi].optimizedPolarity = true; },
+	},
 };
 
 export function applyPassive(state, pi, id) {
