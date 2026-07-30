@@ -427,6 +427,26 @@ export const PASSIVES = {
 		name: 'Expedited Burial', text: 'At the start of the game, change each Deathrattle creature in your hand & deck into a 1/1 that costs (1).',
 		apply: (state, pi) => { const p = state.players[pi]; p.expeditedBurial = true; for (const c of p.hand) if (c.type === 'creature' && (c.keywords || []).includes('deathrattle')) { c.attack = 1; c.maxHealth = 1; c.damage = 0; c.tempHealth = 0; c.cost = 1; } },
 	},
+	brittle_bones: {
+		name: 'Brittle Bones', text: 'After you cast a spell that kills an enemy, summon a 2/2 Volatile Skeleton.',
+		apply: (state, pi) => { state.players[pi].brittleBones = true; },
+	},
+	eerie_stone: {
+		name: 'Eerie Stone', text: 'After you destroy an enemy creature with a Shadow spell, add a copy of that creature to your hand.',
+		apply: (state, pi) => { state.players[pi].eerieStone = true; },
+	},
+	mantle_of_ignition: {
+		name: 'Mantle of Ignition', text: 'Whenever you target a creature with a spell, cast it again on its neighbors.',
+		apply: (state, pi) => { state.players[pi].mantleIgnition = true; },
+	},
+	edge_of_dredge: {
+		name: 'Edge of Dredge', text: 'After the first time you Dredge each turn, draw a card.',
+		apply: (state, pi) => { state.players[pi].edgeOfDredge = true; },
+	},
+	dragonbone_ritual: {
+		name: 'Dragonbone Ritual', text: 'After you play a Dragon, give it "Deathrattle: Go dormant. Revive in two turns."',
+		apply: (state, pi) => { state.players[pi].dragonboneRitual = true; },
+	},
 };
 
 export function applyPassive(state, pi, id) {

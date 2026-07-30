@@ -116,7 +116,7 @@ ok('all 4 batch-2 hero-power cards present + well-formed', HP_IDS2.every(id => {
 }
 
 // ---------------- passives (duels.js) ----------------
-ok('PASSIVES has the 99 entries', Object.keys(D.PASSIVES).length === 99 && ['expedited_burial'].every(k => D.PASSIVES[k]));
+ok('PASSIVES has the 104 entries (complete)', Object.keys(D.PASSIVES).length === 104 && ['brittle_bones', 'eerie_stone', 'mantle_of_ignition', 'edge_of_dredge', 'dragonbone_ritual'].every(k => D.PASSIVES[k]));
 // authored token cards exist
 ok('authored token cards present', ['fel_rift', 'legendary_invitation', 'dream_portal', 'dream', 'nightmare', 'laughing_sister', 'emerald_drake', 'lk_frost_strike', 'lk_doom_pact', 'lk_soul_reaper'].every(id => byId[id] && byId[id].token && byId[id].collectible === false), null);
 ok('HEROES lists 11 signature heroes with class', D.HEROES.length === 11 && D.HEROES.every(h => h.id && h.name && h.heroClass), D.HEROES.length);
@@ -884,6 +884,52 @@ const kill = (state, pi, uid) => { const c = state.players[pi].board.find(x => x
 	const afterCast = state.players[1].life; // 37
 	E.endTurn(state); // recasts the bolt -> another 3 (player 1 has a deck, so no fatigue)
 	ok('Idols of Elune: the bolt is recast at end of turn', afterCast === 37 && state.players[1].life === 34, [afterCast, state.players[1].life]);
+}
+// Brittle Bones: a spell that kills an enemy summons a 2/2 Volatile Skeleton
+{
+	const { state } = new Scenario(byId).def('t_bolt', { type: 'sorcery', cost: 0, effects: [{ type: 'damage', value: 5, target: 'enemy-creatures' }] }).def('t_e', { type: 'creature', cost: 2, attack: 2, health: 3 }).board(1, ['t_e']).mana(0, 10).hand(0, ['t_bolt']).run();
+	D.applyPassive(state, 0, 'brittle_bones');
+	E.playCard(state, 0, state.players[0].hand[0].uid, null, null, 0);
+	const sk = state.players[0].board.filter(c => c.name === 'Volatile Skeleton');
+	ok('Brittle Bones: a 2/2 Skeleton after a killing spell', sk.length === 1 && sk[0].attack === 2 && E.hp(sk[0]) === 2, sk.length);
+}
+// Eerie Stone: a Shadow spell that kills an enemy adds a copy to your hand
+{
+	const { state } = new Scenario(byId).def('t_shadowbolt', { type: 'sorcery', cost: 0, tribe: 'Shadow', effects: [{ type: 'damage', value: 5, target: 'enemy-creatures' }] }).def('t_e', { type: 'creature', cost: 3, attack: 2, health: 3 }).board(1, ['t_e']).mana(0, 10).hand(0, ['t_shadowbolt']).run();
+	D.applyPassive(state, 0, 'eerie_stone');
+	E.playCard(state, 0, state.players[0].hand[0].uid, null, null, 0);
+	ok('Eerie Stone: a copy of the slain enemy in hand', state.players[0].hand.some(c => c.id === 't_e'), state.players[0].hand.map(c => c.id));
+}
+// Mantle of Ignition: a targeted spell re-casts on the target's neighbors
+{
+	const { state } = new Scenario(byId).def('t_zap', { type: 'sorcery', cost: 0, effects: [{ type: 'damage', value: 2, target: 'creature' }] }).def('t_c', { type: 'creature', cost: 2, attack: 1, health: 5 }).board(1, ['t_c', 't_c', 't_c']).mana(0, 10).hand(0, ['t_zap']).run();
+	D.applyPassive(state, 0, 'mantle_of_ignition');
+	const mid = state.players[1].board[1];
+	E.playCard(state, 0, state.players[0].hand[0].uid, { type: 'creature', uid: mid.uid, player: 1 }, null, 0);
+	// middle took 2 (direct), both neighbors took 2 (Mantle re-cast)
+	ok('Mantle of Ignition: target + both neighbors take 2', state.players[1].board.every(c => c.damage === 2), state.players[1].board.map(c => c.damage));
+}
+// Edge of Dredge: the first Dredge each turn draws a card
+{
+	const { state } = new Scenario(byId).def('t_a', { type: 'creature', cost: 1, attack: 1, health: 1 }).def('t_b', { type: 'creature', cost: 2, attack: 2, health: 2 }).deck(0, ['t_a', 't_b', 't_a', 't_b']).run();
+	D.applyPassive(state, 0, 'edge_of_dredge');
+	const before = state.players[0].hand.length;
+	E.execEffects(state, 0, [{ type: 'dredge' }], null, null); // queues a Dredge pick
+	E.resolveDredge(state, state.dredgeQueue[0].ids[0]);
+	ok('Edge of Dredge: a card was drawn after the Dredge', state.players[0].hand.length === before + 1, [before, state.players[0].hand.length]);
+}
+// Dragonbone Ritual: a played Dragon returns dormant and revives in 2 turns
+{
+	const { state } = new Scenario(byId).def('t_drag', { type: 'creature', cost: 4, attack: 4, health: 4, tribe: 'Dragon' }).def('t_fill', { type: 'creature', cost: 1, attack: 1, health: 1 }).deck(1, ['t_fill', 't_fill', 't_fill', 't_fill']).deck(0, ['t_fill', 't_fill', 't_fill', 't_fill']).mana(0, 10).hand(0, ['t_drag']).run();
+	D.applyPassive(state, 0, 'dragonbone_ritual');
+	E.playCard(state, 0, state.players[0].hand[0].uid, null, null, 0);
+	kill(state, 0, state.players[0].board.find(c => c.id === 't_drag').uid);
+	const dormant = state.players[0].board.find(c => c.id === 't_drag');
+	const wasDormant = dormant && dormant.dormantLeft > 0 && dormant.reviveTimer === 2;
+	E.endTurn(state); E.endTurn(state); // one owner turn-start: reviveTimer 2 -> 1
+	E.endTurn(state); E.endTurn(state); // second: 1 -> 0, wakes
+	const revived = state.players[0].board.find(c => c.id === 't_drag');
+	ok('Dragonbone Ritual: the Dragon returns dormant, then wakes', wasDormant && revived && revived.dormantLeft === 0 && !E.isDead(revived), [wasDormant, revived && revived.dormantLeft]);
 }
 // Expedited Burial: Deathrattle creatures in hand & deck become 1/1 costing (1)
 {

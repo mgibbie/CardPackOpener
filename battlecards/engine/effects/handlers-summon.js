@@ -1477,6 +1477,15 @@ register('amalgamate', ({ state, pi, target, source, enemies, scaled, hm, pickEn
 } });
 
 
+register('dragonbone-revive', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => { {
+	// Dragonbone Ritual: the dying Dragon returns dormant and revives in 2 turns
+	// (reviveTimer ticks down at the owner's turn start; 0 wakes it).
+	if (!source || !state.cardsById[source.id]) return;
+	const c = summon(state, pi, state.cardsById[source.id]);
+	if (c) { c.dormantLeft = 99; c.reviveTimer = 2; emit(state, { type: 'dormant', player: pi, uid: c.uid, turns: 2 }); }
+} });
+
+
 register('destroy-summon-copy', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => { {
 	// Holy Book: silence & destroy a creature, then summon a fixed-stat copy of it
 	// under your control (silence first so it can't Deathrattle on the way out).
