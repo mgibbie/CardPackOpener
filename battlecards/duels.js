@@ -184,6 +184,23 @@ export const PASSIVES = {
 		name: 'Righteous Reserves', text: 'After you play your first Divine Shield creature each turn, give a random friendly creature Divine Shield.',
 		apply: (state, pi) => { state.players[pi].righteousReserves = true; },
 	},
+	// --- more spell-cast reactions ---
+	fireshaper: {
+		name: 'Fireshaper', text: 'After you cast a spell, deal 1 damage to a random enemy.',
+		apply: (state, pi) => { state.players[pi].fireshaper = true; },
+	},
+	arcanite_crystal: {
+		name: 'Arcanite Crystal', text: 'After you cast an Arcane spell, reduce the Cost of a card in your hand by (1).',
+		apply: (state, pi) => { state.players[pi].arcaniteCrystal = true; },
+	},
+	wither_the_weak: {
+		name: 'Wither the Weak', text: 'After you cast your first Fel spell in a turn, deal 1 damage to the lowest-Health enemy.',
+		apply: (state, pi) => { state.players[pi].witherWeak = true; },
+	},
+	unstable_magic: {
+		name: 'Unstable Magic', text: 'After you cast an Arcane spell, transform a random enemy creature into a 1/1 Sheep.',
+		apply: (state, pi) => { state.players[pi].unstableMagic = true; },
+	},
 };
 
 export function applyPassive(state, pi, id) {

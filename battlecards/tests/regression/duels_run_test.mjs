@@ -116,7 +116,7 @@ ok('all 4 batch-2 hero-power cards present + well-formed', HP_IDS2.every(id => {
 }
 
 // ---------------- passives (duels.js) ----------------
-ok('PASSIVES has the 41 entries', Object.keys(D.PASSIVES).length === 41 && ['ring_of_phaseshifting', 'inspiring_presence', 'sandy_surprise', 'the_floor_is_lava', 'righteous_reserves'].every(k => D.PASSIVES[k]));
+ok('PASSIVES has the 45 entries', Object.keys(D.PASSIVES).length === 45 && ['fireshaper', 'arcanite_crystal', 'wither_the_weak', 'unstable_magic'].every(k => D.PASSIVES[k]));
 ok('HEROES lists 11 signature heroes with class', D.HEROES.length === 11 && D.HEROES.every(h => h.id && h.name && h.heroClass), D.HEROES.length);
 ok('applyPassive returns false for an unknown id', D.applyPassive({ players: [{}] }, 0, 'nope') === false);
 
@@ -429,6 +429,38 @@ const kill = (state, pi, uid) => { const c = state.players[pi].board.find(x => x
 	E.playCard(state, 0, state.players[0].hand.find(c => c.id === 't_leg').uid, null, null, 0);
 	const hc = state.players[0].hand.find(c => c.id === 't_hand');
 	ok('Inspiring Presence: hand card costs (2) less', hc && hc.cost === 4, hc && hc.cost);
+}
+// Fireshaper: a spell deals 1 to a random enemy creature
+{
+	const { state } = new Scenario(byId).def('t_sp', { type: 'sorcery', cost: 0, effects: [] }).def('t_wall', { type: 'creature', cost: 5, attack: 0, health: 10 }).board(1, ['t_wall']).mana(0, 10).hand(0, ['t_sp']).run();
+	D.applyPassive(state, 0, 'fireshaper');
+	E.playCard(state, 0, state.players[0].hand[0].uid, null, null, 0);
+	ok('Fireshaper: 1 damage to the enemy', state.players[1].board[0].damage === 1 || state.players[1].life === 39, [state.players[1].board[0].damage, state.players[1].life]);
+}
+// Arcanite Crystal: an Arcane spell cheapens a random hand card by (1)
+{
+	const { state } = new Scenario(byId).def('t_arc', { type: 'sorcery', cost: 0, tribe: 'Arcane', effects: [] }).def('t_h', { type: 'creature', cost: 5, attack: 5, health: 5 }).mana(0, 10).hand(0, ['t_arc', 't_h']).run();
+	D.applyPassive(state, 0, 'arcanite_crystal');
+	E.playCard(state, 0, state.players[0].hand.find(c => c.id === 't_arc').uid, null, null, 0);
+	const h = state.players[0].hand.find(c => c.id === 't_h');
+	ok('Arcanite Crystal: hand card costs (1) less', h && h.cost === 4, h && h.cost);
+}
+// Wither the Weak: first Fel spell hits the lowest-Health enemy creature
+{
+	const { state } = new Scenario(byId).def('t_fel', { type: 'sorcery', cost: 0, tribe: 'Fel', effects: [] }).def('t_big', { type: 'creature', cost: 5, attack: 2, health: 8 }).def('t_small', { type: 'creature', cost: 1, attack: 1, health: 2 }).board(1, ['t_big', 't_small']).mana(0, 10).hand(0, ['t_fel']).run();
+	D.applyPassive(state, 0, 'wither_the_weak');
+	E.playCard(state, 0, state.players[0].hand[0].uid, null, null, 0);
+	const small = state.players[1].board.find(c => c.id === 't_small');
+	const big = state.players[1].board.find(c => c.id === 't_big');
+	ok('Wither the Weak: the lowest-Health enemy takes 1', small.damage === 1 && big.damage === 0, [small.damage, big.damage]);
+}
+// Unstable Magic: an Arcane spell Sheeps a random enemy creature
+{
+	const { state } = new Scenario(byId).def('t_arc', { type: 'sorcery', cost: 0, tribe: 'Arcane', effects: [] }).def('t_e', { type: 'creature', cost: 6, attack: 6, health: 6 }).board(1, ['t_e']).mana(0, 10).hand(0, ['t_arc']).run();
+	D.applyPassive(state, 0, 'unstable_magic');
+	E.playCard(state, 0, state.players[0].hand[0].uid, null, null, 0);
+	const sheep = state.players[1].board.filter(c => c.name === 'Sheep' && !E.isDead(c));
+	ok('Unstable Magic: enemy becomes a 1/1 Sheep', sheep.length === 1 && sheep[0].attack === 1 && E.hp(sheep[0]) === 1 && !state.players[1].board.some(c => c.id === 't_e' && !E.isDead(c)), sheep.length);
 }
 
 // ---------------- boss ladder ----------------
