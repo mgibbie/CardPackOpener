@@ -55,17 +55,17 @@ export function applyPassive(state, pi, id) {
 // class powers imported into cards.json (duelshp_*); HERO_POWERS lists what is
 // wired so far (expanded as more powers are imported).
 export const HEROES = [
-	{ id: 'mozaki', name: 'Mozaki, Master Duelist', heroClass: 'mage', flavor: 'Every spell she casts sharpens the next.' },
-	{ id: 'slate', name: 'Professor Slate', heroClass: 'hunter', flavor: 'A chemist who solves every problem with the right toxin.' },
-	{ id: 'turalyon', name: 'Turalyon, the Tenured', heroClass: 'paladin', flavor: 'The Lightbringer, now grading on a curve.' },
-	{ id: 'omu', name: 'Forest Warden Omu', heroClass: 'druid', flavor: 'Mana comes and goes; the forest endures.' },
-	{ id: 'lilian', name: 'Infiltrator Lilian', heroClass: 'rogue', flavor: 'She was never here, and she already left with your deck.' },
-	{ id: 'illucia', name: 'Mindrender Illucia', heroClass: 'priest', flavor: 'She will play your hand better than you would.' },
-	{ id: 'willow', name: 'Archwitch Willow', heroClass: 'warlock', flavor: 'Imps for every occasion, and every occasion is now.' },
-	{ id: 'fireheart', name: 'Instructor Fireheart', heroClass: 'shaman', flavor: 'Invoke, invoke, invoke — the elements are listening.' },
-	{ id: 'rattlegore', name: 'Rattlegore', heroClass: 'warrior', flavor: 'Bone by bone, he simply reassembles.' },
-	{ id: 'stelina', name: 'Star Student Stelina', heroClass: 'demon_hunter', flavor: 'Top of her class in disappearing acts.' },
-	{ id: 'sai', name: 'Sai Shadestorm', heroClass: 'death_knight', flavor: 'The corpses keep the ledger; she keeps the corpses.' },
+	{ id: 'mozaki', name: 'Mozaki, Master Duelist', heroClass: 'mage', hsId: 'PVPDR_Hero_Mozaki', flavor: 'Every spell she casts sharpens the next.' },
+	{ id: 'slate', name: 'Professor Slate', heroClass: 'hunter', hsId: 'PVPDR_Hero_Slate', flavor: 'A chemist who solves every problem with the right toxin.' },
+	{ id: 'turalyon', name: 'Turalyon, the Tenured', heroClass: 'paladin', hsId: 'PVPDR_Hero_Turalyon', flavor: 'The Lightbringer, now grading on a curve.' },
+	{ id: 'omu', name: 'Forest Warden Omu', heroClass: 'druid', hsId: 'PVPDR_Hero_Omu', flavor: 'Mana comes and goes; the forest endures.' },
+	{ id: 'lilian', name: 'Infiltrator Lilian', heroClass: 'rogue', hsId: 'PVPDR_Hero_Lilian', flavor: 'She was never here, and she already left with your deck.' },
+	{ id: 'illucia', name: 'Mindrender Illucia', heroClass: 'priest', hsId: 'PVPDR_Hero_Illucia', flavor: 'She will play your hand better than you would.' },
+	{ id: 'willow', name: 'Archwitch Willow', heroClass: 'warlock', hsId: 'PVPDR_Hero_Willow', flavor: 'Imps for every occasion, and every occasion is now.' },
+	{ id: 'fireheart', name: 'Instructor Fireheart', heroClass: 'shaman', hsId: 'PVPDR_Hero_Fireheart', flavor: 'Invoke, invoke, invoke — the elements are listening.' },
+	{ id: 'rattlegore', name: 'Rattlegore', heroClass: 'warrior', hsId: 'PVPDR_Hero_Rattlegore', flavor: 'Bone by bone, he simply reassembles.' },
+	{ id: 'stelina', name: 'Star Student Stelina', heroClass: 'demon_hunter', hsId: 'PVPDR_Hero_Stelina', flavor: 'Top of her class in disappearing acts.' },
+	{ id: 'sai', name: 'Sai Shadestorm', heroClass: 'death_knight', hsId: 'PVPDR_Hero_Sai', flavor: 'The corpses keep the ledger; she keeps the corpses.' },
 ];
 
 // class -> imported hero-power ids (cards.json, type 'heropower'). Grows batch
