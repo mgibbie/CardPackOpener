@@ -285,6 +285,12 @@ function loadTombs() {
   if (!tombsPromise) tombsPromise = import('../battlecards/tombs.js' + CB);
   return tombsPromise;
 }
+// Duels data (heroes, boss ladder, passives, hero-power map + buildBossDeck)
+let duelsPromise = null;
+function loadDuels() {
+  if (!duelsPromise) duelsPromise = import('../battlecards/duels.js' + CB);
+  return duelsPromise;
+}
 // build (once) an index: keyword slug -> { label, text, cards: [] } across the pool
 function keywordIndex(cards) {
   if (kwIndex) return kwIndex;
@@ -844,6 +850,117 @@ async function tombsTreasuresView() {
     await deckGrid(passiveCards, byId));
 }
 
+// ---------- Duels ----------
+// a round portrait for a duels hero/boss (art id = duels_<id>), or nothing
+// when the image is missing
+function duelsPortrait(id, size = 96) {
+  return h('img', {
+    src: '../battlecards/art/duels_' + id + '.jpg' + CB, alt: id,
+    style: `width:${size}px;height:${size}px;border-radius:50%;object-fit:cover;border:2px solid #7a6a3a;`,
+    onerror: e => e.target.remove(),
+  });
+}
+// overview: the eleven heroes, then the two rounds with their boss rosters
+async function duelsView() {
+  content.replaceChildren(h('p', { class: 'muted' }, 'Loading duels...'));
+  let Du, classes;
+  try { [Du, classes] = await Promise.all([loadDuels(), loadClasses()]); }
+  catch (e) { return content.replaceChildren(h('h1', null, 'Duels'), h('p', { class: 'muted' }, 'Could not load the duels data.')); }
+  const clsName = id => (classes.find(c => c.id === id)?.name) || titleCase(id);
+  const heroCards = Du.HEROES.map(hero => h('a', {
+    class: 'wiki-card', href: '#/duels/hero/' + hero.id, title: hero.flavor,
+    style: 'display:flex;flex-direction:column;align-items:center;gap:6px;width:120px;text-decoration:none;',
+  },
+    duelsPortrait(hero.id, 88),
+    h('div', { style: 'font-weight:bold;text-align:center;font-size:13px;' }, hero.name),
+    h('div', { class: 'muted', style: 'font-size:11.5px;' }, clsName(hero.heroClass))));
+  const rounds = Du.ROUNDS.map(r => h('div', null,
+    h('h2', null, r.name, ' ', h('span', { class: 'num' }, `(Final: ${Du.BOSSES[r.final].name})`)),
+    h('div', { class: 'card-tags' },
+      [...r.pool, r.final].map(bid => h('a', {
+        class: 'tag-chip ' + (bid === r.final ? 'school' : 'tribe'), href: '#/duels/boss/' + bid,
+      }, Du.BOSSES[bid].name + ` · ${Du.BOSSES[bid].health}`)))));
+  content.replaceChildren(
+    h('h1', null, 'Duels'),
+    h('p', { class: 'muted' }, 'Pick a hero and a hero power, then climb a twelve-fight ladder of rival heroes - card drafts, passive boons, and active treasures between fights. Your life scales as you climb; fights 6 and 12 are the fixed finals, Diablo then Uber Diablo.'),
+    h('p', null, h('a', { href: '#/duels/treasures' }, 'Treasures & passives →')),
+    h('h2', null, 'Heroes ', h('span', { class: 'num' }, `(${Du.HEROES.length})`)),
+    h('div', { class: 'card-grid', style: 'gap:14px;' }, ...heroCards),
+    h('h2', null, 'The Ladder'),
+    ...rounds);
+}
+// one hero: portrait, class, its hero-power options, and starter deck
+async function duelsHeroView(heroId) {
+  content.replaceChildren(h('p', { class: 'muted' }, 'Loading hero...'));
+  let Du, D, classes, cards;
+  try { [Du, D, classes, cards] = await Promise.all([loadDuels(), loadDungeon(), loadClasses(), loadCards(), loadCardart()]); }
+  catch (e) { return content.replaceChildren(h('h1', null, 'Hero'), h('p', { class: 'muted' }, 'Could not load the duels data.')); }
+  const hero = Du.HEROES.find(x => x.id === heroId);
+  if (!hero) return content.replaceChildren(h('h1', null, 'Unknown hero'), h('p', null, h('a', { href: '#/duels' }, '← Duels')));
+  const byId = {}; for (const c of cards) byId[c.id] = c;
+  const cls = classes.find(c => c.id === hero.heroClass);
+  const alts = (Du.HERO_POWERS[hero.heroClass] || []).map(id => byId[id]).filter(c => c && c.power);
+  const powers = [cls?.power ? { name: cls.power.name, cost: cls.power.cost, text: cls.power.text } : null,
+    ...alts.map(c => ({ name: c.name, cost: c.power.cost, text: (c.description || '').replace(/^Hero Power \(\d+\): /, '') }))].filter(Boolean);
+  const deckIds = D.STARTER_DECKS[hero.heroClass] || [];
+  content.replaceChildren(
+    h('div', { style: 'display:flex;align-items:center;gap:16px;flex-wrap:wrap;' },
+      duelsPortrait(hero.id, 110),
+      h('div', null, h('h1', { style: 'margin:0;' }, hero.name),
+        h('div', { class: 'card-page-meta' }, cls?.name || titleCase(hero.heroClass)),
+        h('p', { class: 'muted', style: 'margin:4px 0 0;' }, hero.flavor))),
+    h('p', null, h('a', { href: '#/duels' }, '← Duels')),
+    h('h2', null, 'Hero Powers ', h('span', { class: 'num' }, '(choose one at the start of a run)')),
+    h('div', { class: 'kw-defs' }, powers.map(p => powerBlock(p))),
+    h('h2', null, 'Starter Deck ', h('span', { class: 'num' }, `(${deckIds.length} cards)`)),
+    await deckGrid(deckIds, byId));
+}
+// one boss: portrait, round, HP, hero power, and its themed decklist
+async function duelsBossView(bossId) {
+  content.replaceChildren(h('p', { class: 'muted' }, 'Loading boss...'));
+  let Du, cards;
+  try { [Du, cards] = await Promise.all([loadDuels(), loadCards(), loadCardart()]); }
+  catch (e) { return content.replaceChildren(h('h1', null, 'Boss'), h('p', { class: 'muted' }, 'Could not load the duels data.')); }
+  const b = Du.BOSSES[bossId];
+  if (!b) return content.replaceChildren(h('h1', null, 'Unknown boss'), h('p', null, h('a', { href: '#/duels' }, '← Duels')));
+  const byId = {}; for (const c of cards) byId[c.id] = c;
+  const round = Du.ROUNDS.find(r => r.pool.includes(bossId) || r.final === bossId);
+  const isFinal = !!b.final;
+  const deck = Du.buildBossDeck(byId, b.theme);
+  content.replaceChildren(
+    h('div', { style: 'display:flex;align-items:center;gap:16px;flex-wrap:wrap;' },
+      duelsPortrait(bossId, 110),
+      h('div', null, h('h1', { style: 'margin:0;' }, b.name),
+        h('div', { class: 'card-page-meta' },
+          (round ? round.name : 'Duels') + (isFinal ? ' · Final' : '') + ` · ${b.health} HP`))),
+    h('p', null, h('a', { href: '#/duels' }, '← Duels')),
+    h('h2', null, 'Hero Power'),
+    powerBlock(b.power),
+    h('h2', null, 'Deck ', h('span', { class: 'num' }, `(themed · ${deck.length} cards)`)),
+    h('p', { class: 'muted', style: 'font-size:12.5px;margin-top:-4px;' }, 'Built from the boss theme at fight time; a representative list is shown.'),
+    await deckGrid(deck, byId));
+}
+// the treasure catalogue: active treasures (cards) + passive boons (data-only)
+async function duelsTreasuresView() {
+  content.replaceChildren(h('p', { class: 'muted' }, 'Loading treasures...'));
+  let Du, cards;
+  try { [Du, cards] = await Promise.all([loadDuels(), loadCards(), loadCardart()]); }
+  catch (e) { return content.replaceChildren(h('h1', null, 'Duels Treasures'), h('p', { class: 'muted' }, 'Could not load the duels data.')); }
+  const active = cards.filter(c => c.treasure && c.set === 'DUELS').map(c => c.id);
+  const byId = {}; for (const c of cards) byId[c.id] = c;
+  const passiveKeys = Object.keys(Du.PASSIVES);
+  const passiveBlocks = passiveKeys.map(k => h('div', { class: 'kw-def' },
+    h('span', { class: 'tag-chip type' }, Du.PASSIVES[k].name),
+    h('span', { class: 'kw-text' }, Du.PASSIVES[k].text)));
+  content.replaceChildren(
+    h('h1', null, 'Duels Treasures'),
+    h('p', null, h('a', { href: '#/duels' }, '← Duels')),
+    h('h2', null, 'Active Treasures ', h('span', { class: 'num' }, `(${active.length} - one joins your deck after fights 3, 7 & 11)`)),
+    await deckGrid(active, byId),
+    h('h2', null, 'Passive Treasures ', h('span', { class: 'num' }, `(${passiveKeys.length} - one chosen after fights 1, 5 & 9)`)),
+    h('div', { class: 'kw-defs' }, passiveBlocks));
+}
+
 // Battlecards design-work backlog: every card name held without a working
 // design, plus undefined keywords. Data from designwiki/data/battlecards.json
 // (regenerate with tools/gen_battlecards_design.py — self-contained).
@@ -988,6 +1105,12 @@ function route() {
     if (id === 'boss' && parts[2]) return tombsBossView(parts[2]);
     if (id === 'treasures') return tombsTreasuresView();
     return tombsView();
+  }
+  if (section === 'duels') {
+    if (id === 'hero' && parts[2]) return duelsHeroView(parts[2]);
+    if (id === 'boss' && parts[2]) return duelsBossView(parts[2]);
+    if (id === 'treasures') return duelsTreasuresView();
+    return duelsView();
   }
   if (section === 'keyword') return cardSubsetView('keyword', id);
   if (section === 'tribe') return cardSubsetView('tribe', id);
