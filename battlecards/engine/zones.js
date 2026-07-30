@@ -103,6 +103,7 @@ export function drawCards(state, pi, count) {
 		if (p.deckCostOverrides && p.deckCostOverrides[id] != null) { card.cost = p.deckCostOverrides[id]; delete p.deckCostOverrides[id]; } // Twilight Medium: top card's Cost set to (0)
 		if (p.deckCostPersist && p.deckCostPersist[id] != null) card.cost = p.deckCostPersist[id]; // Elixir of Vigor: the copies cost (1)
 		if (p.deckInnerFire && card.type === 'creature') card.attack = card.maxHealth; // Lady in White
+		if (p.expeditedBurial && card.type === 'creature' && (card.keywords || []).includes('deathrattle')) { card.attack = 1; card.maxHealth = 1; card.cost = 1; } // Expedited Burial (Duels): drawn Deathrattle creatures are 1/1 that cost (1)
 		if (p.robesOfDiminishing && isSpellType(card)) { card.cost = 0; emit(state, { type: 'costChange', player: pi, uid: card.uid, cost: 0 }); } // Robes of Diminishing
 		if (p.robesOfShrinking && isSpellType(card)) { card.cost = Math.max(0, (card.cost || 0) - 1); emit(state, { type: 'costChange', player: pi, uid: card.uid, cost: card.cost }); } // Robes of Shrinking (Duels): drawn spells cost (1) less
 		if (card.type === 'creature' && p.drawBuff) { card.attack += p.drawBuff.attack || 0; card.maxHealth += p.drawBuff.health || 0; }

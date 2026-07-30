@@ -116,7 +116,7 @@ ok('all 4 batch-2 hero-power cards present + well-formed', HP_IDS2.every(id => {
 }
 
 // ---------------- passives (duels.js) ----------------
-ok('PASSIVES has the 98 entries', Object.keys(D.PASSIVES).length === 98 && ['idols_of_elune'].every(k => D.PASSIVES[k]));
+ok('PASSIVES has the 99 entries', Object.keys(D.PASSIVES).length === 99 && ['expedited_burial'].every(k => D.PASSIVES[k]));
 // authored token cards exist
 ok('authored token cards present', ['fel_rift', 'legendary_invitation', 'dream_portal', 'dream', 'nightmare', 'laughing_sister', 'emerald_drake', 'lk_frost_strike', 'lk_doom_pact', 'lk_soul_reaper'].every(id => byId[id] && byId[id].token && byId[id].collectible === false), null);
 ok('HEROES lists 11 signature heroes with class', D.HEROES.length === 11 && D.HEROES.every(h => h.id && h.name && h.heroClass), D.HEROES.length);
@@ -884,6 +884,15 @@ const kill = (state, pi, uid) => { const c = state.players[pi].board.find(x => x
 	const afterCast = state.players[1].life; // 37
 	E.endTurn(state); // recasts the bolt -> another 3 (player 1 has a deck, so no fatigue)
 	ok('Idols of Elune: the bolt is recast at end of turn', afterCast === 37 && state.players[1].life === 34, [afterCast, state.players[1].life]);
+}
+// Expedited Burial: Deathrattle creatures in hand & deck become 1/1 costing (1)
+{
+	const { state } = new Scenario(byId).def('t_dr', { type: 'creature', cost: 6, attack: 5, health: 5, keywords: ['deathrattle'], deathrattle: [{ type: 'damage', value: 1, target: 'enemy-hero' }] }).def('t_plain', { type: 'creature', cost: 4, attack: 4, health: 4 }).hand(0, ['t_dr', 't_plain']).deck(0, ['t_dr']).run();
+	D.applyPassive(state, 0, 'expedited_burial');
+	const h = state.players[0].hand.find(c => c.id === 't_dr'); const plain = state.players[0].hand.find(c => c.id === 't_plain');
+	E.execEffects(state, 0, [{ type: 'draw', value: 1 }], null, null); // draw the deck copy -> mutated on draw
+	const drawn = state.players[0].hand.filter(c => c.id === 't_dr' && c !== h)[0];
+	ok('Expedited Burial: hand & drawn Deathrattle creatures are 1/1 cost (1), plain untouched', h.attack === 1 && E.hp(h) === 1 && h.cost === 1 && plain.attack === 4 && drawn && drawn.attack === 1 && E.hp(drawn) === 1 && drawn.cost === 1, [h.attack, h.cost, drawn && drawn.attack]);
 }
 
 // ---------------- boss ladder ----------------

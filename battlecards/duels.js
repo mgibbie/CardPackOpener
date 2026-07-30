@@ -423,6 +423,10 @@ export const PASSIVES = {
 		name: 'Idols of Elune', text: "At the end of your turn, cast a spell you've cast this turn (targets are random).",
 		apply: (state, pi) => { state.players[pi].idolsOfElune = true; },
 	},
+	expedited_burial: {
+		name: 'Expedited Burial', text: 'At the start of the game, change each Deathrattle creature in your hand & deck into a 1/1 that costs (1).',
+		apply: (state, pi) => { const p = state.players[pi]; p.expeditedBurial = true; for (const c of p.hand) if (c.type === 'creature' && (c.keywords || []).includes('deathrattle')) { c.attack = 1; c.maxHealth = 1; c.damage = 0; c.tempHealth = 0; c.cost = 1; } },
+	},
 };
 
 export function applyPassive(state, pi, id) {
