@@ -3648,6 +3648,7 @@ export function endTurn(state) {
 	if (state.anomaly === 'growing') for (const c of p.board) { if (!isDead(c) && c.type !== 'location') { c.attack += 1; c.maxHealth += 1; emit(state, { type: 'buff', uid: c.uid, attack: c.attack, hp: hp(c) }); } } // Anomaly - Growing
 	if (state.anomaly === 'reductive') for (const c of p.hand) { if ((c.cost || 0) > 0) { c.cost = Math.max(0, c.cost - 1); emit(state, { type: 'costChange', player: pi, uid: c.uid, cost: c.cost }); } } // Anomaly - Reductive
 	if (p.everChangingElixir && p.board.some(c => !isDead(c) && c.type !== 'location')) execEffects(state, pi, [{ type: 'transform', random: true, randomCost: true, costDelta: 1 }], null, null); // Ever-Changing Elixir
+	if (p.duelsEverChanging && p.board.some(c => !isDead(c) && c.type !== 'location')) execEffects(state, pi, [{ type: 'transform', random: true, randomCost: true, costDelta: 2 }], null, null); // Ever-Changing Elixir (Duels): transform into one costing (2) more
 	if (p.glacialDownpour && p._frostCastTurn === state.turnNumber) execEffects(state, pi, [{ type: 'summon', count: 1, attack: 2, health: 3, name: 'Water Elemental', tribe: 'Elemental' }], null, null); // Glacial Downpour: cast Frost this turn -> a 2/3 Water Elemental
 	if (p.flameWaves && p._fireCastTurn === state.turnNumber && p._fireCastCount > 0) execEffects(state, pi, [{ type: 'damage', value: 2 * p._fireCastCount, target: 'enemy-creatures' }], null, null); // Flame Waves: 2 to all enemy creatures per Fire spell cast this turn
 	for (const em of p.emblems) if (em.id === 'tomb_scroll_of_nonsense' && em.static && em.static.value > 0) { em.static.value--; } // Scroll of Nonsense decays each turn
@@ -4053,6 +4054,8 @@ export function endTurn(state) {
 	if (np.conduitStorms && np.overloadLockedThisTurn > 0) { np.heroTempAttack += 2; emit(state, { type: 'heroAttack', player: state.current, attack: (np.heroAttack || 0) + np.heroTempAttack }); } // Conduit of the Storms: Overloaded -> +2 Attack this turn
 	if (np.crystalGem) { np._cgUsed = np._cgUsed || 0; if (np._cgUsed < 2) { np._cgUsed++; np.mana.max = Math.min(MAX_BASE_MANA, np.mana.max + 1); np.mana.cur = Math.min(np.mana.max, np.mana.cur + 1); } } // Crystal Gem: +1 Mana Crystal on your first two turns
 	if (np.partyReplacement) { const PKW = ['taunt', 'rush', 'divine_shield', 'lifesteal']; execEffects(state, state.current, [{ type: 'summon', count: 1, attack: 2, health: 2, name: 'Adventurer', keywords: [PKW[Math.floor(state.rng() * PKW.length)]] }], null, null); } // Party Replacement: a 2/2 Adventurer with a random bonus
+	if (np.battleStance) { np.heroTempAttack += 2; emit(state, { type: 'heroAttack', player: state.current, attack: (np.heroAttack || 0) + np.heroTempAttack }); } // Battle Stance (Duels): +2 hero Attack on your turn
+	if (np.duelsHagatha) { for (let _hg = 0; _hg < 2; _hg++) { const hgp = np.hand.filter(c => c.type === 'creature'); if (hgp.length) { const hgc = hgp[Math.floor(state.rng() * hgp.length)]; hgc.attack += 1; hgc.maxHealth += 1; emit(state, { type: 'buff', uid: hgc.uid, attack: hgc.attack, hp: hp(hgc) }); } } } // Hagatha's Embrace (Duels): two random hand creatures +1/+1
 	// Conceal's stealth wears off at the owner's next turn
 	for (const c of np.board) {
 		if (c.tempStealth) {

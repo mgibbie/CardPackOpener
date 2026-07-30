@@ -289,6 +289,31 @@ export const PASSIVES = {
 		name: 'Staking A Claim', text: 'After you play your first Discover card in a turn, all friendly creatures gain +1 Attack.',
 		apply: (state, pi) => { state.players[pi].stakingClaim = true; },
 	},
+	// --- per-school Spell Damage + misc turn hooks ---
+	kindling_flame: {
+		name: 'Kindling Flame', text: 'Fire Spell Damage +1.',
+		apply: (state, pi) => { const p = state.players[pi]; p.schoolSpellDmg = p.schoolSpellDmg || {}; p.schoolSpellDmg.Fire = (p.schoolSpellDmg.Fire || 0) + 1; },
+	},
+	bitter_cold: {
+		name: 'Bitter Cold', text: 'Frost Spell Damage +1.',
+		apply: (state, pi) => { const p = state.players[pi]; p.schoolSpellDmg = p.schoolSpellDmg || {}; p.schoolSpellDmg.Frost = (p.schoolSpellDmg.Frost || 0) + 1; },
+	},
+	natural_force: {
+		name: 'Natural Force', text: 'Nature Spell Damage +1.',
+		apply: (state, pi) => { const p = state.players[pi]; p.schoolSpellDmg = p.schoolSpellDmg || {}; p.schoolSpellDmg.Nature = (p.schoolSpellDmg.Nature || 0) + 1; },
+	},
+	battle_stance: {
+		name: 'Battle Stance', text: 'Your hero has +2 Attack on your turn.',
+		apply: (state, pi) => { state.players[pi].battleStance = true; },
+	},
+	hagathas_embrace: {
+		name: "Hagatha's Embrace", text: 'At the start of your turn, give two random creatures in your hand +1/+1.',
+		apply: (state, pi) => { state.players[pi].duelsHagatha = true; },
+	},
+	ever_changing_elixir: {
+		name: 'Ever-Changing Elixir', text: 'At the end of your turn, transform a friendly creature into one that costs (2) more.',
+		apply: (state, pi) => { state.players[pi].duelsEverChanging = true; },
+	},
 };
 
 export function applyPassive(state, pi, id) {

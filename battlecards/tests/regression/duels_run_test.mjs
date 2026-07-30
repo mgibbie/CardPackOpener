@@ -116,7 +116,7 @@ ok('all 4 batch-2 hero-power cards present + well-formed', HP_IDS2.every(id => {
 }
 
 // ---------------- passives (duels.js) ----------------
-ok('PASSIVES has the 66 entries', Object.keys(D.PASSIVES).length === 66 && ['potion_of_sparking', 'pillage_the_fallen', 'mulch_madness', 'staking_a_claim'].every(k => D.PASSIVES[k]));
+ok('PASSIVES has the 72 entries', Object.keys(D.PASSIVES).length === 72 && ['kindling_flame', 'bitter_cold', 'natural_force', 'battle_stance', 'hagathas_embrace', 'ever_changing_elixir'].every(k => D.PASSIVES[k]));
 ok('HEROES lists 11 signature heroes with class', D.HEROES.length === 11 && D.HEROES.every(h => h.id && h.name && h.heroClass), D.HEROES.length);
 ok('applyPassive returns false for an unknown id', D.applyPassive({ players: [{}] }, 0, 'nope') === false);
 
@@ -631,6 +631,52 @@ const kill = (state, pi, uid) => { const c = state.players[pi].board.find(x => x
 	state.players[0].weapon = { id: 'tmp_weapon', name: 'Scrap Blade', type: 'weapon', cost: 3, attack: 2, durability: 2, zone: 'weapon', keywords: [], damage: 0 };
 	E.breakWeapon(state, 0, true);
 	ok('Pillage the Fallen: a replacement weapon is equipped', state.players[0].weapon != null && state.players[0].weapon.id !== 'tmp_weapon', state.players[0].weapon && state.players[0].weapon.name);
+}
+// Kindling Flame: Fire Spell Damage +1 (only Fire)
+{
+	const { state } = new Scenario(byId).def('t_fire', { type: 'sorcery', cost: 0, tribe: 'Fire', effects: [{ type: 'damage', value: 3, target: 'enemy-hero' }] }).def('t_frost', { type: 'sorcery', cost: 0, tribe: 'Frost', effects: [{ type: 'damage', value: 3, target: 'enemy-hero' }] }).mana(0, 10).hand(0, ['t_frost', 't_fire']).run();
+	D.applyPassive(state, 0, 'kindling_flame');
+	E.playCard(state, 0, state.players[0].hand.find(c => c.id === 't_frost').uid, null, null, 0); // no bonus
+	const afterFrost = state.players[1].life;
+	E.playCard(state, 0, state.players[0].hand.find(c => c.id === 't_fire').uid, null, null, 0); // +1
+	ok('Kindling Flame: Fire +1, Frost unaffected', afterFrost === 37 && state.players[1].life === 33, [afterFrost, state.players[1].life]);
+}
+// Bitter Cold: Frost Spell Damage +1
+{
+	const { state } = new Scenario(byId).def('t_frost', { type: 'sorcery', cost: 0, tribe: 'Frost', effects: [{ type: 'damage', value: 2, target: 'enemy-hero' }] }).mana(0, 10).hand(0, ['t_frost']).run();
+	D.applyPassive(state, 0, 'bitter_cold');
+	E.playCard(state, 0, state.players[0].hand[0].uid, null, null, 0);
+	ok('Bitter Cold: Frost spell deals +1', state.players[1].life === 37, state.players[1].life);
+}
+// Natural Force: Nature Spell Damage +1
+{
+	const { state } = new Scenario(byId).def('t_nat', { type: 'sorcery', cost: 0, tribe: 'Nature', effects: [{ type: 'damage', value: 2, target: 'enemy-hero' }] }).mana(0, 10).hand(0, ['t_nat']).run();
+	D.applyPassive(state, 0, 'natural_force');
+	E.playCard(state, 0, state.players[0].hand[0].uid, null, null, 0);
+	ok('Natural Force: Nature spell deals +1', state.players[1].life === 37, state.players[1].life);
+}
+// Battle Stance: +2 hero Attack on your turn
+{
+	const { state } = new Scenario(byId).run();
+	D.applyPassive(state, 0, 'battle_stance');
+	E.endTurn(state); E.endTurn(state);
+	ok('Battle Stance: +2 hero Attack at your turn start', state.players[0].heroTempAttack === 2, state.players[0].heroTempAttack);
+}
+// Hagatha's Embrace (Duels): two random hand creatures +1/+1
+{
+	const { state } = new Scenario(byId).def('t_h', { type: 'creature', cost: 2, attack: 2, health: 2 }).hand(0, ['t_h']).run();
+	D.applyPassive(state, 0, 'hagathas_embrace');
+	E.endTurn(state); E.endTurn(state);
+	const h = state.players[0].hand.find(c => c.id === 't_h');
+	ok("Hagatha's Embrace: the lone hand creature got both +1/+1s", h.attack === 4 && h.maxHealth === 4, [h.attack, h.maxHealth]);
+}
+// Ever-Changing Elixir (Duels): end of turn transforms a friendly into a pricier one
+{
+	const { state } = new Scenario(byId).def('t_c', { type: 'creature', cost: 2, attack: 2, health: 2 }).board(0, ['t_c']).run();
+	D.applyPassive(state, 0, 'ever_changing_elixir');
+	E.endTurn(state);
+	const b = state.players[0].board.filter(c => !E.isDead(c));
+	ok('Ever-Changing Elixir: the creature was transformed', b.length === 1 && b[0].id !== 't_c' && b[0].token === true, b.map(c => c.id));
 }
 
 // ---------------- boss ladder ----------------

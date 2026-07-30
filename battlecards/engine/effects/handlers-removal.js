@@ -1140,6 +1140,7 @@ register('damage-then', ({ state, pi, target, source, enemies, scaled, hm, pickE
 			let v = e.value;
 			if (source && (source.type === 'sorcery' || source.type === 'instant')) {
 				v += staticValue(state.players[pi], 'spell-damage') + (state.players[pi].nextSpellDamageBonus || 0) + (source.bonusSpellDamage || 0);
+				const sd = state.players[pi].schoolSpellDmg; if (sd) { const sch = schoolOf(source); if (sch && sd[sch]) v += sd[sch]; } // Duels: per-school Spell Damage (Kindling Flame / Bitter Cold / Natural Force)
 			}
 			const t = chosenCreature();
 			if (t) {
@@ -1334,6 +1335,7 @@ register('damage', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy,
 				if (e.altValueIfDrawn != null && source && source.drawnThisTurn) v = e.altValueIfDrawn; // Oil Rig Ambusher
 			if (source && (source.type === 'sorcery' || source.type === 'instant')) {
 				v += staticValue(state.players[pi], 'spell-damage') + (state.players[pi].nextSpellDamageBonus || 0) + (source.bonusSpellDamage || 0);
+				const sd = state.players[pi].schoolSpellDmg; if (sd) { const sch = schoolOf(source); if (sch && sd[sch]) v += sd[sch]; } // Duels: per-school Spell Damage (Kindling Flame / Bitter Cold / Natural Force)
 			}
 			if (state.hpDamageBonus) v += state.hpDamageBonus; // Fallen Hero: your Hero Power deals extra
 			if (state.hpDoubling) v *= 2; // Clockwork Automaton: double Hero Power damage
