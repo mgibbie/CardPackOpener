@@ -1,36 +1,16 @@
 // game.js — PokéChess scene for the web. Chess where each piece type is a
-// Pokémon from your party; a non-king capture resolves as a quick auto-battle
-// (attacker survives -> capture; defender survives -> attacker is lost). Player
-// is White (bottom); the ported minimax AI plays Black.
+// Pokémon from your party; a non-king capture is resolved by a REAL turn-based
+// battle (the overworld battle engine) — attacker survives -> capture, defender
+// survives -> attacker is lost. Player is White (bottom); the ported minimax AI
+// plays Black.
 import { ChessBoard, WHITE, BLACK, PAWN, KNIGHT, BISHOP, ROOK, QUEEN, KING } from './board.js';
 import { getBestMove } from './ai.js';
+import { Battle, buildMon } from '../battle.js';
+
+const battle = new Battle();
 
 const PARTY_KEY = 'magepunk_party_v1';
 const PIECE_GLYPH = { [PAWN]: '♟', [KNIGHT]: '♞', [BISHOP]: '♝', [ROOK]: '♜', [QUEEN]: '♛', [KING]: '♚' };
-const TYPE_COLOR = { Normal: '#9099a1', Fire: '#ff9d55', Water: '#4d90d5', Electric: '#f4d23c', Grass: '#63bc5a', Ice: '#73cec0', Fighting: '#ce4069', Poison: '#ab6ac8', Ground: '#d97845', Flying: '#8fa8dd', Psychic: '#f97176', Bug: '#90c12c', Rock: '#c7b78b', Ghost: '#5269ac', Dragon: '#0b6dc3', Dark: '#5a5366', Steel: '#5a8ea1', Fairy: '#ec8fe6' };
-
-// standard type chart — only multipliers != 1 listed (attacker -> {defender: mult})
-const CHART = {
-	Normal: { Rock: .5, Ghost: 0, Steel: .5 },
-	Fire: { Fire: .5, Water: .5, Grass: 2, Ice: 2, Bug: 2, Rock: .5, Dragon: .5, Steel: 2 },
-	Water: { Fire: 2, Water: .5, Grass: .5, Ground: 2, Rock: 2, Dragon: .5 },
-	Electric: { Water: 2, Electric: .5, Grass: .5, Ground: 0, Flying: 2, Dragon: .5 },
-	Grass: { Fire: .5, Water: 2, Grass: .5, Poison: .5, Ground: 2, Flying: .5, Bug: .5, Rock: 2, Dragon: .5, Steel: .5 },
-	Ice: { Fire: .5, Water: .5, Grass: 2, Ice: .5, Ground: 2, Flying: 2, Dragon: 2, Steel: .5 },
-	Fighting: { Normal: 2, Ice: 2, Poison: .5, Flying: .5, Psychic: .5, Bug: .5, Rock: 2, Ghost: 0, Dark: 2, Steel: 2, Fairy: .5 },
-	Poison: { Grass: 2, Poison: .5, Ground: .5, Rock: .5, Ghost: .5, Steel: 0, Fairy: 2 },
-	Ground: { Fire: 2, Electric: 2, Grass: .5, Poison: 2, Flying: 0, Bug: .5, Rock: 2, Steel: 2 },
-	Flying: { Electric: .5, Grass: 2, Fighting: 2, Bug: 2, Rock: .5, Steel: .5 },
-	Psychic: { Fighting: 2, Poison: 2, Psychic: .5, Dark: 0, Steel: .5 },
-	Bug: { Fire: .5, Grass: 2, Fighting: .5, Poison: .5, Flying: .5, Psychic: 2, Ghost: .5, Dark: 2, Steel: .5, Fairy: .5 },
-	Rock: { Fire: 2, Ice: 2, Fighting: .5, Ground: .5, Flying: 2, Bug: 2, Steel: .5 },
-	Ghost: { Normal: 0, Psychic: 2, Ghost: 2, Dark: .5 },
-	Dragon: { Dragon: 2, Steel: .5, Fairy: 0 },
-	Dark: { Fighting: .5, Psychic: 2, Ghost: 2, Dark: .5, Fairy: .5 },
-	Steel: { Fire: .5, Water: .5, Electric: .5, Ice: 2, Rock: 2, Steel: .5, Fairy: 2 },
-	Fairy: { Fire: .5, Fighting: 2, Poison: .5, Dragon: 2, Dark: 2, Steel: .5 },
-};
-const typeMult = (atkType, defTypes) => defTypes.reduce((m, d) => m * ((CHART[atkType] || {})[d] ?? 1), 1);
 
 // ---------- data ----------
 let speciesDB = null;
@@ -43,75 +23,61 @@ const calcStat = (base, iv, level, isHP) => isHP
 	? Math.floor((2 * base + iv) * level / 100) + level + 10
 	: Math.floor((2 * base + iv) * level / 100) + 5;
 
-// build a lightweight mon (sprite + stats + types) from a species id
-function monFromSpecies(speciesId, level) {
-	const sp = speciesDB[speciesId];
-	if (!sp) return null;
-	const b = sp.baseStats;
-	const iv = () => 16;
-	const stats = { hp: calcStat(b.hp || 50, iv(), level, true), atk: calcStat(b.atk || 50, iv(), level), def: calcStat(b.def || 50, iv(), level), spa: calcStat(b.spa || 50, iv(), level), spd: calcStat(b.spd || 50, iv(), level), spe: calcStat(b.spe || 50, iv(), level) };
-	return { speciesId, name: (sp.name || speciesId).toUpperCase(), level, types: [...sp.types], stats, maxHP: stats.hp, curHP: stats.hp, sprite: sp.sprite, num: sp.num };
-}
-// normalize a party mon (from localStorage) into the pokechess shape, cloned so HP is per-piece
-function monFromParty(m) {
-	const sp = speciesDB[m.speciesId];
-	const sprite = m.sprite || (sp && sp.sprite);
-	const types = m.types || (sp ? sp.types : ['Normal']);
-	const stats = m.stats || (sp ? monFromSpecies(m.speciesId, m.level || 50).stats : { hp: 100, atk: 80, def: 80, spa: 80, spd: 80, spe: 80 });
-	const maxHP = m.maxHP || stats.hp;
-	return { speciesId: m.speciesId, name: (m.name || m.speciesId).toUpperCase(), level: m.level || 50, types: [...types], stats: { ...stats }, maxHP, curHP: maxHP, sprite, num: m.num || (sp && sp.num) };
-}
-
-function randomSpeciesIds(n, level) {
+// a valid, sprited, real species id at random (for padding + the AI army)
+function randomSpeciesId() {
 	const keys = Object.keys(speciesDB).filter(k => speciesDB[k].baseStats && speciesDB[k].sprite && (speciesDB[k].num || 0) > 0);
-	const out = [];
-	for (let i = 0; i < n; i++) out.push(keys[Math.floor(Math.random() * keys.length)]);
-	return out.map(id => monFromSpecies(id, level));
+	return keys[Math.floor(Math.random() * keys.length)];
 }
+const avgLevel = srcs => (!srcs || !srcs.length) ? 50 : Math.max(5, Math.round(srcs.reduce((s, m) => s + (m.level || 50), 0) / srcs.length));
 
-// assign one mon per piece type (queen/rook/bishop/knight/pawn); king has none
-function assignPieces(mons) {
-	const pool = mons.slice();
-	while (pool.length < 5) pool.push(randomSpeciesIds(1, avgLevel(mons))[0]);
+// choose the 5 species (one per piece type: queen/rook/bishop/knight/pawn) from
+// a set of source {speciesId, level} pairs, padded with random species
+function pieceTypes(sources, lvl) {
+	const pool = sources.slice();
+	while (pool.length < 5) pool.push({ speciesId: randomSpeciesId(), level: lvl });
 	for (let i = pool.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [pool[i], pool[j]] = [pool[j], pool[i]]; }
-	const [q, r, b, n, p] = pool;
-	const clone = m => ({ ...m, stats: { ...m.stats }, types: [...m.types], curHP: m.maxHP });
-	const a = {};
-	a.queen = { pokemon: clone(q) };
-	a.rook1 = { pokemon: clone(r) }; a.rook2 = { pokemon: clone(r) };
-	a.bishop1 = { pokemon: clone(b) }; a.bishop2 = { pokemon: clone(b) };
-	a.knight1 = { pokemon: clone(n) }; a.knight2 = { pokemon: clone(n) };
-	for (let i = 1; i <= 8; i++) a['pawn' + i] = { pokemon: clone(p) };
-	a.king = { pokemon: null };
+	return pool.slice(0, 5);
+}
+// build a FRESH full battle mon per piece (independent HP + moves), keyed by type
+function assign(types) {
+	const [q, r, b, n, p] = types;
+	const mk = t => ({ pokemon: buildMon(t.speciesId, t.level, battle.data) });
+	const a = { queen: mk(q), rook1: mk(r), rook2: mk(r), bishop1: mk(b), bishop2: mk(b), knight1: mk(n), knight2: mk(n), king: { pokemon: null } };
+	for (let i = 1; i <= 8; i++) a['pawn' + i] = mk(p);
 	return a;
 }
-const avgLevel = mons => (!mons || !mons.length) ? 50 : Math.max(5, Math.round(mons.reduce((s, m) => s + (m.level || 50), 0) / mons.length));
 
-// ---------- capture battle (v1: quick auto-resolve damage exchange) ----------
-// returns 'attacker' | 'defender'; mutates curHP of both mons so damage persists
-function resolveBattle(attacker, defender) {
-	const dmg = (A, D) => {
-		const atkType = A.types[0];
-		const physical = A.stats.atk >= A.stats.spa;
-		const atkStat = physical ? A.stats.atk : A.stats.spa;
-		const defStat = physical ? D.stats.def : D.stats.spd;
-		const stab = A.types.includes(atkType) ? 1.5 : 1;
-		const tm = Math.max(...A.types.map(t => typeMult(t, D.types)), typeMult(atkType, D.types));
-		const base = Math.floor(((2 * A.level / 5 + 2) * 60 * atkStat / Math.max(1, defStat)) / 50) + 2;
-		const rand = 0.85 + Math.random() * 0.15;
-		return Math.max(1, Math.floor(base * stab * tm * rand));
-	};
-	// speed order; ties -> attacker first
-	let first = attacker, second = defender;
-	if (defender.stats.spe > attacker.stats.spe) { first = defender; second = attacker; }
-	for (let turn = 0; turn < 40; turn++) {
-		second.curHP -= dmg(first, second);
-		if (second.curHP <= 0) { second.curHP = 0; return first === attacker ? 'attacker' : 'defender'; }
-		first.curHP -= dmg(second, first);
-		if (first.curHP <= 0) { first.curHP = 0; return second === attacker ? 'attacker' : 'defender'; }
+// ---------- capture battle: a real 1v1 in the overworld battle engine ----------
+// The player always controls the WHITE piece's Pokémon (attacking or defending);
+// the AI's move plays out as a battle the player fights. HP persists on the
+// survivor (the AI's evaluation devalues battle-worn pieces).
+function startCaptureBattle(move, attacker, defender) {
+	pending = { move, attacker, defender };
+	phase = 'battle';
+	const playerMon = attacker.side === WHITE ? attacker.pokemon : defender.pokemon;
+	const foeMon = attacker.side === WHITE ? defender.pokemon : attacker.pokemon;
+	if (playerMon.curHP <= 0) playerMon.curHP = playerMon.maxHP; // a fainted piece rallies to defend/attack
+	if (foeMon.curHP <= 0) foeMon.curHP = foeMon.maxHP;
+	battle.startTrainer([playerMon], [foeMon], { displayName: 'Rival', money: 0 }, result => onBattleEnd(result));
+}
+function onBattleEnd(result) {
+	const playerWon = result === 'victory';
+	const attackerIsPlayer = pending.attacker.side === WHITE;
+	const attackerWon = attackerIsPlayer ? playerWon : !playerWon;
+	const { move } = pending;
+	if (attackerWon) { board.makeMove(move); message = 'Capture!'; }
+	else {
+		// the defender held: remove the attacker, hand the turn over manually
+		const ar = move.fromRow, ac = move.fromCol;
+		const lost = board.board[ar][ac];
+		board.board[ar][ac] = null;
+		if (lost) board.capturedPieces[lost.side === WHITE ? BLACK : WHITE].push(lost);
+		board.turn = board.turn === WHITE ? BLACK : WHITE;
+		board.checkGameOver();
+		message = 'Capture failed!';
 	}
-	// timeout: higher remaining HP% wins
-	return (attacker.curHP / attacker.maxHP) >= (defender.curHP / defender.maxHP) ? 'attacker' : 'defender';
+	pending = null;
+	afterMove(true);
 }
 
 // ============================================================================
@@ -128,26 +94,25 @@ let phase = 'loading'; // loading, player, ai, battle, gameover
 let cursorR = 2, cursorC = 4, selR = null, selC = null, validMoves = null;
 let message = 'Your move.';
 let aiTimer = 0;
-let battleAnim = null; // { attacker, defender, atkPos, defPos, move, result, t }
-let pending = null;
+let pending = null; // { move, attacker, defender } during a capture battle
 
 const BX = x => PAD + (x - 1) * CELL;                 // col 1..8 -> pixel left
 const BY = r => PAD + (8 - r) * CELL;                 // row 1..8 -> pixel top (row 8 top)
 const pxToCell = (mx, my) => { const c = Math.floor((mx - PAD) / CELL) + 1; const r = 8 - Math.floor((my - PAD) / CELL); return (r >= 1 && r <= 8 && c >= 1 && c <= 8) ? [r, c] : [null, null]; };
 
+let booted = false;
 async function boot() {
-	speciesDB = await fetch('data/species_battle.json').then(r => r.json());
+	if (!booted) { await battle.init(); booted = true; } // loads species/moves/abilities into battle.data
+	speciesDB = battle.data.species;
 	let party = [];
 	try { party = JSON.parse(localStorage.getItem(PARTY_KEY)) || []; } catch (e) { party = []; }
-	const playerMons = (party.length ? party : randomSpeciesIds(6, 50)).map(m => m.speciesId ? monFromParty(m) : m).filter(Boolean);
-	const lvl = avgLevel(playerMons);
-	const aiMons = randomSpeciesIds(6, lvl);
+	const sources = party.filter(m => m && m.speciesId && speciesDB[m.speciesId]).map(m => ({ speciesId: m.speciesId, level: m.level || 50 }));
+	const lvl = avgLevel(sources);
 
 	board = new ChessBoard();
-	board.setupFromAssignments(assignPieces(playerMons), assignPieces(aiMons));
+	board.setupFromAssignments(assign(pieceTypes(sources, lvl)), assign(pieceTypes([], lvl)));
 	phase = 'player';
 	message = 'Your move — capture a piece to battle!';
-	requestAnimationFrame(loop);
 }
 
 // ---------- input ----------
@@ -171,10 +136,7 @@ function doMove(move) {
 		const attacker = board.getPiece(move.fromRow, move.fromCol);
 		const defender = board.getDefender(move);
 		if (attacker && attacker.pokemon && defender && defender.pokemon) {
-			const result = resolveBattle(attacker.pokemon, defender.pokemon);
-			pending = { move, attacker, defender, result };
-			battleAnim = { attacker: attacker.pokemon, defender: defender.pokemon, playerAttacking: attacker.side === WHITE, result, t: 0 };
-			phase = 'battle';
+			startCaptureBattle(move, attacker, defender);
 			return;
 		}
 	}
@@ -184,23 +146,6 @@ function doMove(move) {
 function applyMove(move) {
 	board.makeMove(move);
 	afterMove();
-}
-
-function finishBattle() {
-	const { move, attacker, result } = pending;
-	if (result === 'attacker') { board.makeMove(move); message = 'Capture!'; }
-	else {
-		// defender held: remove the attacker, switch turn manually
-		const ar = move.fromRow, ac = move.fromCol;
-		const lost = board.board[ar][ac];
-		board.board[ar][ac] = null;
-		if (lost) board.capturedPieces[lost.side === WHITE ? BLACK : WHITE].push(lost);
-		board.turn = board.turn === WHITE ? BLACK : WHITE;
-		board.checkGameOver();
-		message = 'Capture failed!';
-	}
-	pending = null; battleAnim = null;
-	afterMove(true);
 }
 
 function afterMove(keepMsg) {
@@ -213,16 +158,14 @@ function afterMove(keepMsg) {
 let last = 0;
 function loop(ts) {
 	const dt = Math.min(0.05, (ts - last) / 1000 || 0); last = ts;
+	if (!board) { requestAnimationFrame(loop); return; } // still booting
+	if (phase === 'battle') { battle.update(dt); draw(); requestAnimationFrame(loop); return; }
 	if (phase === 'ai' && board.turn === BLACK) {
 		aiTimer -= dt;
 		if (aiTimer <= 0) {
 			const mv = getBestMove(board, 3);
 			if (mv) doMove(mv); else { phase = 'gameover'; board.gameOver = true; }
 		}
-	}
-	if (phase === 'battle' && battleAnim) {
-		battleAnim.t += dt;
-		if (battleAnim.t >= 1.6) finishBattle();
 	}
 	draw();
 	requestAnimationFrame(loop);
@@ -242,6 +185,7 @@ function drawSprite(mon, x, y, size, side) {
 }
 
 function draw() {
+	if (phase === 'battle' && battle.blocking) { ctx.fillStyle = '#000'; ctx.fillRect(0, 0, W, H); battle.draw(ctx, W, H); return; }
 	ctx.fillStyle = '#1a1626'; ctx.fillRect(0, 0, W, H);
 	// board squares
 	for (let r = 1; r <= 8; r++) for (let c = 1; c <= 8; c++) {
@@ -266,14 +210,12 @@ function draw() {
 	if (board) for (let r = 1; r <= 8; r++) for (let c = 1; c <= 8; c++) {
 		const p = board.board[r][c];
 		if (!p) continue;
-		if (battleAnim && pending && ((r === pending.move.fromRow && c === pending.move.fromCol))) continue; // attacker drawn in overlay
 		drawPiece(p, BX(c), BY(r));
 	}
 	// cursor
 	if (phase === 'player') { ctx.strokeStyle = '#f8d84a'; ctx.lineWidth = 3; ctx.strokeRect(BX(cursorC) + 2, BY(cursorR) + 2, CELL - 4, CELL - 4); }
 
 	drawPanel();
-	if (phase === 'battle' && battleAnim) drawBattle();
 	if (phase === 'gameover') drawGameOver();
 }
 
@@ -318,44 +260,6 @@ function drawPanel() {
 	ctx.fillText('Esc / back — leave', px + (PANEL - PAD) / 2, PAD + BOARD - 20);
 }
 
-function drawBattle() {
-	const b = battleAnim;
-	ctx.fillStyle = 'rgba(10,8,20,0.82)'; ctx.fillRect(0, 0, W, H);
-	const cx = W / 2, cy = H / 2;
-	ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-	ctx.fillStyle = '#f8d84a'; ctx.font = 'bold 26px system-ui, sans-serif';
-	ctx.fillText('BATTLE!', cx, cy - 130);
-	// two combatants clash toward center
-	const push = Math.min(1, b.t / 0.5) * 60;
-	drawBig(b.attacker, cx - 150 + push, cy - 20, b.playerAttacking ? WHITE : BLACK);
-	drawBig(b.defender, cx + 150 - push, cy - 20, b.playerAttacking ? BLACK : WHITE);
-	ctx.fillStyle = '#e8e0d0'; ctx.font = 'bold 20px system-ui, sans-serif';
-	ctx.fillText('VS', cx, cy - 20);
-	if (b.t > 1.0) {
-		const youWon = (b.result === 'attacker') === b.playerAttacking;
-		ctx.fillStyle = youWon ? '#63e08a' : '#e06868';
-		ctx.font = 'bold 22px system-ui, sans-serif';
-		ctx.fillText(youWon ? 'You win the clash!' : 'Your piece was beaten!', cx, cy + 110);
-	}
-}
-function drawBig(mon, x, y, side) {
-	const im = mon.sprite ? loadImg('data/pokemon/' + mon.sprite) : null;
-	ctx.textAlign = 'center';
-	if (im && im.complete && im.naturalWidth) {
-		const s = 120 / Math.max(im.naturalWidth, im.naturalHeight);
-		const w = im.naturalWidth * s, h = im.naturalHeight * s;
-		ctx.save();
-		if (side === BLACK) { ctx.translate(x, y); ctx.scale(-1, 1); ctx.drawImage(im, -w / 2, -h / 2, w, h); ctx.restore(); }
-		else { ctx.drawImage(im, x - w / 2, y - h / 2, w, h); ctx.restore(); }
-	}
-	ctx.fillStyle = '#e8e0d0'; ctx.font = '13px system-ui, sans-serif';
-	ctx.fillText(`${mon.name}  Lv${mon.level}`, x, y + 72);
-	// mini hp bar
-	const ratio = Math.max(0, mon.curHP / mon.maxHP);
-	ctx.fillStyle = '#000'; ctx.fillRect(x - 45, y + 82, 90, 6);
-	ctx.fillStyle = ratio > 0.5 ? '#63bc5a' : ratio > 0.2 ? '#f4d23c' : '#e05050';
-	ctx.fillRect(x - 45, y + 82, 90 * ratio, 6);
-}
 
 function drawGameOver() {
 	ctx.fillStyle = 'rgba(10,8,20,0.85)'; ctx.fillRect(0, 0, W, H);
@@ -380,21 +284,23 @@ function wrapText(text, x, y, maxW, lh) {
 }
 
 // ---------- events ----------
+const toCanvas = e => { const rect = canvas.getBoundingClientRect(); return [(e.clientX - rect.left) * (W / rect.width), (e.clientY - rect.top) * (H / rect.height)]; };
 canvas.addEventListener('mousemove', e => {
-	const rect = canvas.getBoundingClientRect();
-	const mx = (e.clientX - rect.left) * (W / rect.width), my = (e.clientY - rect.top) * (H / rect.height);
+	const [mx, my] = toCanvas(e);
+	if (phase === 'battle') { battle.hover(mx, my); return; }
 	const [r, c] = pxToCell(mx, my);
 	if (r) { cursorR = r; cursorC = c; }
 });
 canvas.addEventListener('click', e => {
+	const [mx, my] = toCanvas(e);
+	if (phase === 'battle') { battle.tap(mx, my); return; }
 	if (phase === 'gameover') { boot(); return; }
 	if (phase !== 'player') return;
-	const rect = canvas.getBoundingClientRect();
-	const mx = (e.clientX - rect.left) * (W / rect.width), my = (e.clientY - rect.top) * (H / rect.height);
 	const [r, c] = pxToCell(mx, my);
 	if (r) { cursorR = r; cursorC = c; trySelect(r, c); }
 });
 addEventListener('keydown', e => {
+	if (phase === 'battle') { battle.key(e.key); return; } // the battle owns input during a clash
 	if (e.key === 'Escape') { leave(); return; }
 	if (phase === 'gameover') { if (e.key === 'z' || e.key === 'Enter') boot(); return; }
 	if (phase !== 'player') return;
@@ -413,6 +319,7 @@ function leave() {
 document.getElementById('leave')?.addEventListener('click', leave);
 
 // expose a tiny debug hook for headless testing
-window.__pokechess = { get phase() { return phase; }, get board() { return board; }, boot, trySelect, getState: () => ({ phase, turn: board && board.turn, over: board && board.gameOver }) };
+window.__pokechess = { get phase() { return phase; }, get board() { return board; }, get battle() { return battle; }, boot, trySelect, doMove, getState: () => ({ phase, turn: board && board.turn, over: board && board.gameOver }) };
 
 boot();
+requestAnimationFrame(loop);
