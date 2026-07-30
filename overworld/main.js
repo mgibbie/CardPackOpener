@@ -199,7 +199,9 @@ function interact() {
 		return;
 	}
 	if (arc === 'pears') {
-		dialog.open('Do you want to play a\nPAIR OF PEARS?', (k) => { if (k !== 'x') dialog.open('Coming soon!'); });
+		dialog.open('Do you want to play a\nPAIR OF PEARS?', (k) => {
+			if (k !== 'x') { saveParty(party); savePos(); location.href = '/pairofpears/'; }
+		});
 		return;
 	}
 	// water's edge: SURF carries you across (used from the party menu)
