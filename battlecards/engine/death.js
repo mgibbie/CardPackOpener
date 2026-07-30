@@ -41,6 +41,11 @@ export function sweepDeaths(state) {
 			p.diedThisTurn++;
 			p.friendlyDeaths = (p.friendlyDeaths || 0) + 1; // Aessina: lifetime friendly deaths (tokens included)
 			if (p.armorPerFriendlyDeath) { p.armor += p.armorPerFriendlyDeath; emit(state, { type: 'armor', player: c.controller, armor: p.armor }); } // Recycling
+			// Duels friendly-death passives (first of their kind each turn)
+			if (p.starving && (c.tribe || '').includes('Beast') && p._starvingTurn !== state.turnNumber) { p._starvingTurn = state.turnNumber; drawCards(state, pi, 1); } // Starving: first Beast death -> draw
+			if (p.dragonblood && (c.tribe || '').includes('Dragon') && p._dragonbloodTurn !== state.turnNumber) { p._dragonbloodTurn = state.turnNumber; for (const hc of p.hand) if (hc.type === 'creature') { hc.attack = (hc.attack || 0) + 1; hc.maxHealth = (hc.maxHealth || 0) + 1; emit(state, { type: 'buff', uid: hc.uid, attack: hc.attack, hp: hp(hc) }); } } // Dragonblood: first Dragon death -> hand creatures +1/+1
+			// From the Swamp: the first enemy to die each turn raises a 1/1 for each opponent that owns it
+			for (let s = 0; s < state.players.length; s++) { const sp = state.players[s]; if (sp.fromTheSwamp && s !== pi && !sp.eliminated && sp._swampTurn !== state.turnNumber) { sp._swampTurn = state.turnNumber; summon(state, s, { id: 'token_bloated_zombie', name: 'Bloated Zombie', type: 'creature', cost: 0, rarity: 'common', token: true, attack: 1, health: 1, description: 'A 1/1 Bloated Zombie.' }); } }
 			state.diedThisTurn = (state.diedThisTurn || 0) + 1;
 			state.minionsDiedGame = (state.minionsDiedGame || 0) + 1; // Reska, the Pit Boss
 			state.expanseEvents = (state.expanseEvents || 0) + 1; // The Ceaseless Expanse: a card was destroyed
@@ -63,6 +68,7 @@ export function sweepDeaths(state) {
 			// only Death Knights get a UI indicator — others track it hidden)
 			if (!p.eliminated) {
 				p.corpses += p.corpseDouble ? 2 : 1; // Falric doubles the harvest
+				if (p.cadaverCollector && p._cadaverTurn !== state.turnNumber) { p._cadaverTurn = state.turnNumber; p.corpses += 1; } // Cadaver Collector: first Corpse each turn banks an extra
 				emit(state, { type: 'corpses', player: pi, corpses: p.corpses });
 			}
 			// reborn: the first death returns it at 1 health, reborn spent

@@ -116,6 +116,40 @@ export const PASSIVES = {
 		name: 'Ring of Black Ice', text: 'Whenever a creature is Frozen, add a copy of it to your hand. It costs (2) less.',
 		apply: (state, pi) => { state.players[pi].ringOfBlackIce = true; },
 	},
+	// --- reuse of shared Heist/Tombs engine flags ---
+	recycling: {
+		name: 'Recycling', text: 'After a friendly creature dies, gain 1 Armor.',
+		apply: (state, pi) => { state.players[pi].armorPerFriendlyDeath = (state.players[pi].armorPerFriendlyDeath || 0) + 1; },
+	},
+	disks_of_legend: {
+		name: 'Disks of Legend', text: 'After you play a Legendary creature, summon a copy of it.',
+		apply: (state, pi) => { state.players[pi].disksOfLegend = true; },
+	},
+	elixir_of_vigor: {
+		name: 'Elixir of Vigor', text: 'After you play a creature, shuffle two copies of it into your deck. They cost (1).',
+		apply: (state, pi) => { state.players[pi].vigorShuffle = true; },
+	},
+	manastorm: {
+		name: 'Manastorm', text: 'Start with 10 Mana Crystals.',
+		apply: (state, pi) => { const m = state.players[pi].mana; if (m) { m.max = 10; m.cur = 10; } },
+	},
+	// --- death / corpse triggers ---
+	starving: {
+		name: 'Starving', text: 'After the first time a friendly Beast dies in your turn, draw a card.',
+		apply: (state, pi) => { state.players[pi].starving = true; },
+	},
+	dragonblood: {
+		name: 'Dragonblood', text: 'After the first time a friendly Dragon dies each turn, give creatures in your hand +1/+1.',
+		apply: (state, pi) => { state.players[pi].dragonblood = true; },
+	},
+	from_the_swamp: {
+		name: 'From the Swamp', text: 'After the first enemy dies each turn, raise a 1/1 Bloated Zombie.',
+		apply: (state, pi) => { state.players[pi].fromTheSwamp = true; },
+	},
+	cadaver_collector: {
+		name: 'Cadaver Collector', text: 'After the first time you gain a Corpse in a turn, gain 1 additional Corpse.',
+		apply: (state, pi) => { state.players[pi].cadaverCollector = true; },
+	},
 };
 
 export function applyPassive(state, pi, id) {

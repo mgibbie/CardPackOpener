@@ -116,7 +116,7 @@ ok('all 4 batch-2 hero-power cards present + well-formed', HP_IDS2.every(id => {
 }
 
 // ---------------- passives (duels.js) ----------------
-ok('PASSIVES has the 25 entries', Object.keys(D.PASSIVES).length === 25 && ['robe_of_the_apprentice', 'small_backpacks', 'small_pouches', 'band_of_bees', 'emerald_goggles', 'rhonins_scrying_orb', 'rocket_backpacks', 'special_delivery', 'shadowcasting_101', 'rally_the_troops', 'lunar_band', 'ring_of_refreshment', 'staff_of_pain', 'mending_pools', 'iron_roots', 'spreading_saplings', 'guardian_light', 'firekeepers_idol', 'invigorating_light', 'robes_of_shrinking', 'bronze_signet', 'glacial_downpour', 'flame_waves', 'arctic_armor', 'ring_of_black_ice'].every(k => D.PASSIVES[k]));
+ok('PASSIVES has the 33 entries', Object.keys(D.PASSIVES).length === 33 && ['recycling', 'disks_of_legend', 'elixir_of_vigor', 'manastorm', 'starving', 'dragonblood', 'from_the_swamp', 'cadaver_collector'].every(k => D.PASSIVES[k]));
 ok('HEROES lists 11 signature heroes with class', D.HEROES.length === 11 && D.HEROES.every(h => h.id && h.name && h.heroClass), D.HEROES.length);
 ok('applyPassive returns false for an unknown id', D.applyPassive({ players: [{}] }, 0, 'nope') === false);
 
@@ -326,6 +326,51 @@ ok('applyPassive returns false for an unknown id', D.applyPassive({ players: [{}
 	E.freezeCreature(state, state.players[1].board[0]);
 	const cp = state.players[0].hand.find(c => c.id === 't_e');
 	ok('Ring of Black Ice: a (2)-cheaper copy joins your hand', cp && cp.cost === 3, cp && cp.cost);
+}
+const kill = (state, pi, uid) => { const c = state.players[pi].board.find(x => x.uid === uid); c.damage = c.maxHealth; c.shield = false; E.sweepDeaths(state); };
+// Manastorm: start with 10 Mana Crystals
+{
+	const { state } = new Scenario(byId).mana(0, 3).run();
+	D.applyPassive(state, 0, 'manastorm');
+	ok('Manastorm: 10 Mana Crystals', state.players[0].mana.max === 10 && state.players[0].mana.cur === 10, [state.players[0].mana.max, state.players[0].mana.cur]);
+}
+// Recycling: a friendly death grants 1 Armor
+{
+	const { state } = new Scenario(byId).def('t_m', { type: 'creature', cost: 1, attack: 2, health: 1 }).board(0, ['t_m']).run();
+	D.applyPassive(state, 0, 'recycling');
+	kill(state, 0, state.players[0].board[0].uid);
+	ok('Recycling: +1 Armor on friendly death', state.players[0].armor === 1, state.players[0].armor);
+}
+// Starving: first friendly Beast death each turn draws a card
+{
+	const { state } = new Scenario(byId).def('t_beast', { type: 'creature', cost: 1, attack: 2, health: 1, tribe: 'Beast' }).def('t_d', { type: 'creature', cost: 1, attack: 1, health: 1 }).deck(0, ['t_d']).board(0, ['t_beast']).run();
+	D.applyPassive(state, 0, 'starving');
+	kill(state, 0, state.players[0].board[0].uid);
+	ok('Starving: drew a card on Beast death', state.players[0].hand.filter(c => c.id === 't_d').length === 1);
+}
+// Dragonblood: first friendly Dragon death each turn buffs hand creatures +1/+1
+{
+	const { state } = new Scenario(byId).def('t_drag', { type: 'creature', cost: 1, attack: 2, health: 1, tribe: 'Dragon' }).def('t_h', { type: 'creature', cost: 2, attack: 2, health: 2 }).board(0, ['t_drag']).hand(0, ['t_h']).run();
+	D.applyPassive(state, 0, 'dragonblood');
+	kill(state, 0, state.players[0].board.find(c => c.id === 't_drag').uid);
+	const h = state.players[0].hand.find(c => c.id === 't_h');
+	ok('Dragonblood: hand creature +1/+1', h.attack === 3 && E.hp(h) === 3, [h.attack, E.hp(h)]);
+}
+// From the Swamp: first enemy death each turn raises a 1/1 Bloated Zombie for you
+{
+	const { state } = new Scenario(byId).def('t_e', { type: 'creature', cost: 1, attack: 2, health: 1 }).board(1, ['t_e']).run();
+	D.applyPassive(state, 0, 'from_the_swamp');
+	kill(state, 1, state.players[1].board[0].uid);
+	const z = state.players[0].board.filter(c => c.name === 'Bloated Zombie');
+	ok('From the Swamp: a 1/1 Bloated Zombie on enemy death', z.length === 1 && z[0].attack === 1 && E.hp(z[0]) === 1, z.length);
+}
+// Cadaver Collector: first Corpse gained each turn banks an extra
+{
+	const { state } = new Scenario(byId).def('t_m', { type: 'creature', cost: 1, attack: 2, health: 1 }).board(0, ['t_m']).run();
+	D.applyPassive(state, 0, 'cadaver_collector');
+	const before = state.players[0].corpses || 0;
+	kill(state, 0, state.players[0].board[0].uid);
+	ok('Cadaver Collector: +2 Corpses (1 base + 1 extra) on first death', (state.players[0].corpses || 0) === before + 2, [before, state.players[0].corpses]);
 }
 
 // ---------------- boss ladder ----------------
