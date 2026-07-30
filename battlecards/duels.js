@@ -419,6 +419,10 @@ export const PASSIVES = {
 		name: 'Avenging Armaments', text: 'After a friendly creature loses its Divine Shield, give it +2/+1.',
 		apply: (state, pi) => { state.players[pi].avengingArmaments = true; },
 	},
+	idols_of_elune: {
+		name: 'Idols of Elune', text: "At the end of your turn, cast a spell you've cast this turn (targets are random).",
+		apply: (state, pi) => { state.players[pi].idolsOfElune = true; },
+	},
 };
 
 export function applyPassive(state, pi, id) {

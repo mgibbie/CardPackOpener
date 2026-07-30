@@ -116,7 +116,7 @@ ok('all 4 batch-2 hero-power cards present + well-formed', HP_IDS2.every(id => {
 }
 
 // ---------------- passives (duels.js) ----------------
-ok('PASSIVES has the 97 entries', Object.keys(D.PASSIVES).length === 97 && ['deathly_death', 'cannibalism', 'all_shall_serve', 'freeze_solid', 'avenging_armaments'].every(k => D.PASSIVES[k]));
+ok('PASSIVES has the 98 entries', Object.keys(D.PASSIVES).length === 98 && ['idols_of_elune'].every(k => D.PASSIVES[k]));
 // authored token cards exist
 ok('authored token cards present', ['fel_rift', 'legendary_invitation', 'dream_portal', 'dream', 'nightmare', 'laughing_sister', 'emerald_drake', 'lk_frost_strike', 'lk_doom_pact', 'lk_soul_reaper'].every(id => byId[id] && byId[id].token && byId[id].collectible === false), null);
 ok('HEROES lists 11 signature heroes with class', D.HEROES.length === 11 && D.HEROES.every(h => h.id && h.name && h.heroClass), D.HEROES.length);
@@ -875,6 +875,15 @@ const kill = (state, pi, uid) => { const c = state.players[pi].board.find(x => x
 	E.execEffects(state, 0, [{ type: 'damage', value: 1, target: 'own-creatures' }], null, null); // pops the shield
 	const m = state.players[0].board.find(c => c.id === 't_ds');
 	ok('Avenging Armaments: +2/+1 after the shield pops', m.attack === 4 && E.hp(m) === 4 && !m.shield, [m.attack, E.hp(m), m.shield]);
+}
+// Idols of Elune: end of turn recasts a spell you cast this turn
+{
+	const { state } = new Scenario(byId).def('t_bolt', { type: 'sorcery', cost: 0, effects: [{ type: 'damage', value: 3, target: 'enemy-hero' }] }).def('t_fill', { type: 'creature', cost: 1, attack: 1, health: 1 }).deck(1, ['t_fill', 't_fill']).mana(0, 10).hand(0, ['t_bolt']).run();
+	D.applyPassive(state, 0, 'idols_of_elune');
+	E.playCard(state, 0, state.players[0].hand[0].uid, null, null, 0); // 3 to enemy face
+	const afterCast = state.players[1].life; // 37
+	E.endTurn(state); // recasts the bolt -> another 3 (player 1 has a deck, so no fatigue)
+	ok('Idols of Elune: the bolt is recast at end of turn', afterCast === 37 && state.players[1].life === 34, [afterCast, state.players[1].life]);
 }
 
 // ---------------- boss ladder ----------------

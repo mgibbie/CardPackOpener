@@ -2409,7 +2409,8 @@ register('cast-random-spell', ({ state, pi, target, source, enemies, scaled, hm,
 			// Servant of Yogg-Saron / Yogg-Saron: cast random spells with random targets
 			const times = e.perSpellsCast ? (state.players[pi].spellsPlayedTotal || 0) : (e.count || 1);
 			for (let n = 0; n < times && !state.over; n++) {
-				const pool = Object.values(state.cardsById).filter(d => isSpellType(d) && !d.token && d.collectible !== false
+				const pool = e.ids ? e.ids.map(id => state.cardsById[id]).filter(d => d && isSpellType(d)) // Idols of Elune: a spell you've cast this turn
+					: Object.values(state.cardsById).filter(d => isSpellType(d) && !d.token && d.collectible !== false
 					&& !(d.colors && d.colors.length) && !d.choices && !d.xSpell && !d.counterSpell
 					&& (e.cardClass == null || (d.cardClass || 'neutral') === e.cardClass) // Solarian Prime: Mage spells
 				&& (!e.otherClass || ((d.cardClass || 'neutral') !== 'neutral' && !(d.cardClass || '').split('__').includes(state.players[pi].heroClass || ''))) // Chaos Supplicant

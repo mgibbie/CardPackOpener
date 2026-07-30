@@ -2149,6 +2149,7 @@ export function playCard(state, pi, cardUid, target, choice, position, useAlt, k
 	if (p.plaguebringer && isSpellType(card)) { p.overloadPending = (p.overloadPending || 0) + 1; emit(state, { type: 'overload', player: pi, amount: 1 }); } // Plaguebringer: your spells Overload (1)
 	// Duels passives that react to casting a spell
 	if (p.ringOfRefreshment && isSpellType(card)) { for (const hpw of p.heroPowers) hpw.usedThisTurn = false; } // Ring of Refreshment: a spell refreshes your Hero Power
+	if (p.idolsOfElune && isSpellType(card)) { if (p._idolsTurn !== state.turnNumber) { p._idolsTurn = state.turnNumber; p._idolsSpells = []; } p._idolsSpells.push(card.id); } // Idols of Elune: remember spells cast this turn
 	if (p.staffOfPain && isSpellType(card) && schoolOf(card) === 'Shadow') execEffects(state, pi, [{ type: 'damage', value: 2, target: 'all-heroes' }], null, null); // Staff of Pain: a Shadow spell hurts every hero
 	if (p.mendingPools && isSpellType(card) && schoolOf(card) === 'Nature' && p._mendingTurn !== state.turnNumber) { p._mendingTurn = state.turnNumber; execEffects(state, pi, [{ type: 'heal', value: 2, target: 'friendly-characters' }], null, null); } // Mending Pools: your first Nature spell each turn heals your side
 	if (p.ironRoots && isSpellType(card) && schoolOf(card) === 'Nature') execEffects(state, pi, [{ type: 'buff-random-friendly', attack: 1, health: 1, grant: 'taunt' }], null, null); // Iron Roots: a Nature spell buffs a random friendly +1/+1 & Taunt
@@ -3675,6 +3676,7 @@ export function endTurn(state) {
 	if (p.coldFeetPact) { const cg = Math.floor((p.corpses || 0) / 2); if (cg > 0) execEffects(state, pi, [{ type: 'summon', count: 1, attack: cg, health: cg, name: 'Risen Groom' }], null, null); } // Cold Feet Pact (Duels): a Risen Groom with stats = half your Corpses
 	if (p.cloakEmeraldDreams) { const dpool = ['dream', 'nightmare', 'laughing_sister', 'emerald_drake', 'ysera_awakens']; execEffects(state, pi, [{ type: 'conjure-id', id: dpool[Math.floor(state.rng() * dpool.length)] }], null, null); } // Cloak of Emerald Dreams: end of turn -> a Dream card
 	if (p.runicHelm) { const lk = ['lk_death_coil', 'lk_frost_strike', 'lk_army_of_the_dead', 'lk_doom_pact', 'lk_soul_reaper', 'obliterate', 'anti_magic_shell']; execEffects(state, pi, [{ type: 'conjure-id', id: lk[Math.floor(state.rng() * lk.length)] }], null, null); } // Runic Helm: end of turn -> a Lich King card
+	if (p.idolsOfElune && p._idolsTurn === state.turnNumber && p._idolsSpells && p._idolsSpells.length) execEffects(state, pi, [{ type: 'cast-random-spell', ids: p._idolsSpells, count: 1 }], null, null); // Idols of Elune: recast a spell you cast this turn
 	for (const em of p.emblems) if (em.id === 'tomb_scroll_of_nonsense' && em.static && em.static.value > 0) { em.static.value--; } // Scroll of Nonsense decays each turn
 	fireOngoing(state, pi, 'turn-end');
 	if (p.board.some(c => c.endTurnDouble && !isDead(c))) fireOngoing(state, pi, 'turn-end'); // Chrono-Lord Deios
