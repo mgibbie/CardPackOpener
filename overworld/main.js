@@ -253,6 +253,7 @@ function ghostAt(tx, ty) {
 	return null;
 }
 const cardsMenu = { open: false, idx: 0 };
+const runMenu = { open: false, idx: 0 };
 const dexMenu = { open: false, idx: 0, detail: false, list: null };
 const trainerCard = { open: false };
 const townMap = { open: false, region: 0, idx: 0 };
@@ -489,12 +490,13 @@ function startItems() {
 	return items;
 }
 const cardsItems = () => MP_ON
-	? ['GALLERY', 'DECK BUILDER', 'PACKS', 'DUNGEON RUN', 'DALARAN HEIST', 'TOMBS OF TERROR', 'CHALLENGE FRIEND', 'BACK']
-	: ['GALLERY', 'DECK BUILDER', 'PACKS', 'DUNGEON RUN', 'DALARAN HEIST', 'TOMBS OF TERROR', 'BACK'];
+	? ['GALLERY', 'DECK BUILDER', 'PACKS', 'DUNGEON RUN', 'CHALLENGE FRIEND', 'BACK']
+	: ['GALLERY', 'DECK BUILDER', 'PACKS', 'DUNGEON RUN', 'BACK'];
+// DUNGEON RUN opens a submenu of the three run modes
+const runModeItems = () => ['OG DUNGEON RUN', 'DALARAN HEIST', 'TOMBS OF TERROR', 'BACK'];
 const CARD_URLS = {
-	'GALLERY': 'viewer.html', 'DECK BUILDER': 'deck.html',
-	'PACKS': 'packs.html', 'DUNGEON RUN': '?dungeon=1', 'DALARAN HEIST': '?heist=1',
-	'TOMBS OF TERROR': '?tombs=1',
+	'GALLERY': 'viewer.html', 'DECK BUILDER': 'deck.html', 'PACKS': 'packs.html',
+	'OG DUNGEON RUN': '?dungeon=1', 'DALARAN HEIST': '?heist=1', 'TOMBS OF TERROR': '?tombs=1',
 };
 function openCardPage(label) {
 	const q = MP_ON ? (label === 'DUNGEON RUN' ? '&mp=1' : '?mp=1') : '';
@@ -645,6 +647,21 @@ function cardsKey(k) {
 		const it = items[cardsMenu.idx];
 		if (it === 'BACK') { cardsMenu.open = false; startMenu.open = true; return; }
 		if (it === 'CHALLENGE FRIEND') { cardsMenu.open = false; openFriends('card'); return; }
+		if (it === 'DUNGEON RUN') { cardsMenu.open = false; runMenu.open = true; runMenu.idx = 0; return; }
+		saveParty(party); savePos();
+		openCardPage(it);
+	}
+}
+
+// the run-mode submenu: OG Dungeon Run / Dalaran Heist / Tombs of Terror
+function runKey(k) {
+	const items = runModeItems();
+	if (k === 'ArrowUp') runMenu.idx = (runMenu.idx + items.length - 1) % items.length;
+	if (k === 'ArrowDown') runMenu.idx = (runMenu.idx + 1) % items.length;
+	if (k === 'x' || k === 'Escape') { runMenu.open = false; cardsMenu.open = true; return; }
+	if (k === 'z') {
+		const it = items[runMenu.idx];
+		if (it === 'BACK') { runMenu.open = false; cardsMenu.open = true; return; }
 		saveParty(party); savePos();
 		openCardPage(it);
 	}
@@ -1003,6 +1020,7 @@ function pressKey(k) {
 	if (deckSelect.open) { deckSelectKey(k); return; }
 	if (startMenu.open) { startKey(k); return; }
 	if (cardsMenu.open) { cardsKey(k); return; }
+	if (runMenu.open) { runKey(k); return; }
 	if (friendsMenu.open) { friendsKey(k); return; }
 	if (ferryMenu.open) { ferryKey(k); return; }
 	if (shopMenu.open) { shopKey(k); return; }
@@ -1055,7 +1073,7 @@ function pressKey(k) {
 // any menu that consumes direction presses instead of walking
 const menuBlocking = () => starterMenu.open || dialog.blocking || evolution.blocking || cutscene.blocking
 	|| battle.blocking || pvp.blocking || shopMenu.open || bagMenu.open || pcMenu.open || partyMenu.open || ferryMenu.open
-	|| trade.open || trade.open || startMenu.open || playerMenu.open || deckSelect.open || cardsMenu.open || friendsMenu.open || dexMenu.open || trainerCard.open || townMap.open
+	|| trade.open || trade.open || startMenu.open || playerMenu.open || deckSelect.open || cardsMenu.open || runMenu.open || friendsMenu.open || dexMenu.open || trainerCard.open || townMap.open
 	|| daycareMenu.open || nameRater.open || moveShop.open || optionsMenu.open;
 
 addEventListener('keydown', e => {
@@ -1982,6 +2000,7 @@ function tick(now) {
 		else if (deckSelect.open) drawDeckSelect(SW, SH);
 		else if (startMenu.open) drawStartMenu(SW, SH);
 		else if (cardsMenu.open) drawCardsMenu(SW, SH);
+		else if (runMenu.open) drawRunMenu(SW, SH);
 		else if (friendsMenu.open) drawFriendsMenu(SW, SH);
 		if (!evolution.blocking) dialog.drawHi(sctx, SW, SH);
 	}
@@ -2638,6 +2657,9 @@ function drawStartMenu(W, H) {
 function drawCardsMenu(W, H) {
 	drawVertical(W, H, H / 480, 'CARDS', 'Your collection, decks, packs, and battles.', cardsItems(), cardsMenu.idx, 'cards');
 }
+function drawRunMenu(W, H) {
+	drawVertical(W, H, H / 480, 'DUNGEON RUN', 'Pick a run mode.', runModeItems(), runMenu.idx, 'run');
+}
 function drawFriendsMenu(W, H) {
 	const u = H / 480;
 	const sub = friendsChallenge.mode ? 'Choose a friend to challenge.'
@@ -2694,6 +2716,7 @@ function menuTap(id) {
 	if (kind === 'player') { playerMenu.idx = +a; pressKey('z'); return; }
 	if (kind === 'deck') { deckSelect.idx = +a; pressKey('z'); return; }
 	if (kind === 'cards') { cardsMenu.idx = +a; pressKey('z'); return; }
+	if (kind === 'run') { runMenu.idx = +a; pressKey('z'); return; }
 	if (kind === 'friend') { friendsMenu.idx = +a; pressKey('z'); return; }
 	if (kind === 'dex') { dexMenu.idx = +a; pressKey('z'); return; }
 	if (kind === 'summary-lead') {
@@ -2712,7 +2735,7 @@ function menuTap(id) {
 	if (kind === 'msrel') { moveShop.idx = +a; pressKey('z'); return; }
 	if (kind === 'opt') { optionsMenu.idx = +a; Settings.cycle(OPTION_KEYS[+a], 1); return; }
 }
-const anyMenuOpen = () => partyMenu.open || shopMenu.open || bagMenu.open || pcMenu.open || starterMenu.open || ferryMenu.open || startMenu.open || playerMenu.open || deckSelect.open || cardsMenu.open || friendsMenu.open || dexMenu.open || trainerCard.open || townMap.open || daycareMenu.open || nameRater.open || moveShop.open || optionsMenu.open;
+const anyMenuOpen = () => partyMenu.open || shopMenu.open || bagMenu.open || pcMenu.open || starterMenu.open || ferryMenu.open || startMenu.open || playerMenu.open || deckSelect.open || cardsMenu.open || runMenu.open || friendsMenu.open || dexMenu.open || trainerCard.open || townMap.open || daycareMenu.open || nameRater.open || moveShop.open || optionsMenu.open;
 
 // ---------- live PvP battles ----------
 // build a self-contained party snapshot the PvP engine can resolve without
@@ -3232,7 +3255,7 @@ function drawFriendGhosts(ctx, camX, camY) {
 		checkRejoin();
 	}
 	window.__ow = { world, player, warpTo, moveToMap, npcs, encounters, battle, trainers, dialog, evolution, items, get party() { return party; }, get menuUi() { return menuUi; }, menuTap, pumpPlayer, freezeLoop, startWildBattle, interact,
-		get startMenu() { return startMenu; }, get cardsMenu() { return cardsMenu; }, get friendsMenu() { return friendsMenu; },
+		get startMenu() { return startMenu; }, get cardsMenu() { return cardsMenu; }, get runMenu() { return runMenu; }, get friendsMenu() { return friendsMenu; },
 		get friends() { return friends; }, get visiting() { return visiting; }, refreshFriends, visitWorld, leaveVisit, heartbeat, pollPresence, get ghosts() { return ghosts; }, MP_ON,
 		get pvp() { return pvp; }, pvpParty, sendChallenge, enterMatch, pollChallenges, get pending() { return pendingChallengeTo; },
 		Dex, get dexMenu() { return dexMenu; }, get trainerCard() { return trainerCard; }, get partyMenu() { return partyMenu; }, get shopMenu() { return shopMenu; }, get bagMenu() { return bagMenu; }, Bag,
