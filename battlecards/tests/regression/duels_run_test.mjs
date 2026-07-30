@@ -116,7 +116,7 @@ ok('all 4 batch-2 hero-power cards present + well-formed', HP_IDS2.every(id => {
 }
 
 // ---------------- passives (duels.js) ----------------
-ok('PASSIVES has the 8 entries', Object.keys(D.PASSIVES).length === 8 && ['robe_of_the_apprentice', 'small_backpacks', 'small_pouches', 'band_of_bees', 'emerald_goggles', 'rhonins_scrying_orb', 'rocket_backpacks', 'special_delivery'].every(k => D.PASSIVES[k]));
+ok('PASSIVES has the 11 entries', Object.keys(D.PASSIVES).length === 11 && ['robe_of_the_apprentice', 'small_backpacks', 'small_pouches', 'band_of_bees', 'emerald_goggles', 'rhonins_scrying_orb', 'rocket_backpacks', 'special_delivery', 'shadowcasting_101', 'rally_the_troops', 'lunar_band'].every(k => D.PASSIVES[k]));
 ok('HEROES lists 11 signature heroes with class', D.HEROES.length === 11 && D.HEROES.every(h => h.id && h.name && h.heroClass), D.HEROES.length);
 ok('applyPassive returns false for an unknown id', D.applyPassive({ players: [{}] }, 0, 'nope') === false);
 
@@ -178,6 +178,29 @@ ok('applyPassive returns false for an unknown id', D.applyPassive({ players: [{}
 	E.playCard(state, 0, state.players[0].hand[0].uid, null, null, 0);
 	const copies = state.players[0].board.filter(c => c.id === 't_r' && !E.isDead(c));
 	ok('Special Delivery: a 1-Health copy joins the board', copies.length === 2 && copies.some(c => E.hp(c) === 1) && copies.some(c => E.hp(c) === 4), copies.map(c => c.attack + '/' + E.hp(c)));
+}
+// Shadowcasting 101: first creature adds a 1/1 copy (cost 1) to hand
+{
+	const { state } = new Scenario(byId).def('t_c', { type: 'creature', cost: 5, attack: 6, health: 6 }).mana(0, 10).hand(0, ['t_c']).run();
+	D.applyPassive(state, 0, 'shadowcasting_101');
+	E.playCard(state, 0, state.players[0].hand[0].uid, null, null, 0);
+	const copy = state.players[0].hand.find(c => c.id === 't_c');
+	ok('Shadowcasting 101: a 1/1 cost-1 copy in hand', state.players[0].hand.length === 1 && copy && copy.attack === 1 && E.hp(copy) === 1 && copy.cost === 1, copy && [copy.attack, E.hp(copy), copy.cost]);
+}
+// Rally the Troops: first Battlecry card draws a card
+{
+	const { state } = new Scenario(byId).def('t_bc', { type: 'creature', cost: 2, attack: 2, health: 2, keywords: ['battlecry'] }).def('t_d', { type: 'creature', cost: 1, attack: 1, health: 1 }).deck(0, ['t_d']).mana(0, 10).hand(0, ['t_bc']).run();
+	D.applyPassive(state, 0, 'rally_the_troops');
+	E.playCard(state, 0, state.players[0].hand.find(c => c.id === 't_bc').uid, null, null, 0);
+	ok('Rally the Troops: drew a card after the Battlecry', state.players[0].hand.length === 1 && state.players[0].hand[0].id === 't_d', [state.players[0].hand.length, state.players[0].deck.length]);
+}
+// Lunar Band: first Deathrattle creature triggers its effect (and survives)
+{
+	const { state } = new Scenario(byId).def('t_dr', { type: 'creature', cost: 3, attack: 2, health: 3, keywords: ['deathrattle'], deathrattle: [{ type: 'damage', value: 3, target: 'enemy-hero' }] }).mana(0, 10).hand(0, ['t_dr']).run();
+	D.applyPassive(state, 0, 'lunar_band');
+	E.playCard(state, 0, state.players[0].hand[0].uid, null, null, 0);
+	const dr = state.players[0].board.find(c => c.id === 't_dr');
+	ok('Lunar Band: deathrattle fired & the creature lives', state.players[1].life === 37 && dr && !E.isDead(dr), [state.players[1].life, dr && E.hp(dr)]);
 }
 
 // ---------------- boss ladder ----------------

@@ -48,6 +48,18 @@ export const PASSIVES = {
 		name: 'Special Delivery', text: 'After you play your first Rush creature in a turn, summon a copy of it with 1 Health.',
 		apply: (state, pi) => { state.players[pi].specialDelivery = true; },
 	},
+	shadowcasting_101: {
+		name: 'Shadowcasting 101', text: 'After you play your first creature each turn, add a 1/1 copy of it to your hand. It costs (1).',
+		apply: (state, pi) => { state.players[pi].shadowcasting = true; },
+	},
+	rally_the_troops: {
+		name: 'Rally the Troops', text: 'After you play your first Battlecry card in a turn, draw a card.',
+		apply: (state, pi) => { state.players[pi].rallyTheTroops = true; },
+	},
+	lunar_band: {
+		name: 'Lunar Band', text: 'The first Deathrattle creature you play each turn triggers its effect.',
+		apply: (state, pi) => { state.players[pi].lunarBand = true; },
+	},
 };
 
 export function applyPassive(state, pi, id) {

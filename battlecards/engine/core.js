@@ -2094,6 +2094,22 @@ export function playCard(state, pi, cardUid, target, choice, position, useAlt, k
 		const copy = JSON.parse(JSON.stringify(state.cardsById[card.id])); copy.health = 1;
 		summon(state, pi, copy);
 	}
+	if (p.shadowcasting && card.type === 'creature' && p._shadowTurn !== state.turnNumber && state.cardsById[card.id] && p.hand.length < MAX_HAND) {
+		p._shadowTurn = state.turnNumber; // Shadowcasting 101: add a 1/1 copy of your first creature to hand (costs 1)
+		const cd = JSON.parse(JSON.stringify(state.cardsById[card.id])); cd.attack = 1; cd.health = 1; cd.cost = 1; cd.token = true;
+		const copy = instantiate(cd, pi); copy.zone = 'hand'; copy.cost = 1;
+		p.hand.push(copy);
+		emit(state, { type: 'conjure', player: pi, card: copy, color: null });
+		fireEmerge(state, pi, copy);
+	}
+	if (p.rallyTheTroops && (card.keywords || []).includes('battlecry') && p._rallyTurn !== state.turnNumber) {
+		p._rallyTurn = state.turnNumber; // Rally the Troops: draw after your first Battlecry card each turn
+		drawCards(state, pi, 1);
+	}
+	if (p.lunarBand && card.type === 'creature' && (card.keywords || []).includes('deathrattle') && p._lunarTurn !== state.turnNumber && !isDead(card) && card.zone === 'board') {
+		p._lunarTurn = state.turnNumber; // Lunar Band: your first Deathrattle creature triggers its effect (and lives)
+		runDeathrattle(state, pi, card);
+	}
 	// Overpowered: replay a copy of each card played this turn (random targets)
 	if (p.overpoweredTurn === state.turnNumber && !state._opLock && card.id !== 'dala_overpowered' && state.cardsById[card.id]) {
 		state._opLock = true;
