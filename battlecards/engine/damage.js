@@ -127,6 +127,7 @@ export function damageHero(state, pi, amount, src = null, pierce = false) {
 	if (bolf) { damageCreature(state, bolf, amount, null); return 0; }
 	// static hero-damage reduction (Lucky Horseshoe)
 	amount = Math.max(0, amount - staticValue(p, 'reduce-hero-damage'));
+	if (p.heavyArmor && amount > 1) amount = 1; // Heavy Armor (Duels): you can only take 1 damage at a time
 	if (amount <= 0) return 0;
 	if (pierce) {
 		// bypass armor: fatal check + damage go straight to life

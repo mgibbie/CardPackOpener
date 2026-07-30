@@ -151,6 +151,10 @@ export function effectiveCost(state, pi, card) {
 	if (p.meekMastery && card.type === 'creature' && (card.cardClass || 'neutral') === 'neutral') c = Math.max(2, c - 1); // Meek Mastery (Duels): Neutral creatures cost (1) less
 	if (p.dragonAffinity && card.type === 'creature' && (card.tribe || '').includes('Dragon') && (p.creaturesPlayedThisTurn || 0) === 0) c = Math.max(0, c - 1); // Dragon Affinity (Duels): first Dragon each turn costs (1) less
 	if (p.stickyFingers && p.startingDeckIds && !p.startingDeckIds.includes(card.id) && (card.cost || 0) > 0) c = Math.max(1, c - 1); // Sticky Fingers (Duels): cards that didn't start in your deck cost (1) less
+	if (p.oopsAllSpells && isSpellType(card)) c = Math.max(0, c - 1); // Oops, All Spells! (Duels): your spells cost (1) less
+	if (p.sunstridersCrown && isSpellType(card) && (((p.spellsPlayedThisTurn || 0) + 1) % 3 === 0)) c = 1; // Sunstrider's Crown (Duels): every third spell each turn costs (1)
+	if (p.ringOfHaste && card.type === 'creature' && (((p.creaturesPlayedThisTurn || 0) + 1) % 3 === 0)) c = 1; // Ring of Haste (Duels): every third creature each turn costs (1)
+	if (p.grommash && card.type === 'weapon') c = Math.max(0, c - 1); // Grommash's Armguards (Duels): your weapons cost (1) less
 	if (p.leftmostDiscount && p.hand.length && p.hand[0] === card) c = Math.max(0, c - p.leftmostDiscount); // Emerald Goggles: the left-most hand card
 	if (p.robesHalf) c = Math.ceil(c / 2); // Robes of Gaudiness: cards cost half
 	if (p.spellsCostHealth && isSpellType(card)) return 0; // Elixir of Vile: paid in Health at play time

@@ -116,7 +116,7 @@ ok('all 4 batch-2 hero-power cards present + well-formed', HP_IDS2.every(id => {
 }
 
 // ---------------- passives (duels.js) ----------------
-ok('PASSIVES has the 53 entries', Object.keys(D.PASSIVES).length === 53 && ['sticky_fingers', 'hold_the_line', 'scattered_caltrops'].every(k => D.PASSIVES[k]));
+ok('PASSIVES has the 58 entries', Object.keys(D.PASSIVES).length === 58 && ['oops_all_spells', 'heavy_armor', 'sunstriders_crown', 'ring_of_haste', 'grommashs_armguards'].every(k => D.PASSIVES[k]));
 ok('HEROES lists 11 signature heroes with class', D.HEROES.length === 11 && D.HEROES.every(h => h.id && h.name && h.heroClass), D.HEROES.length);
 ok('applyPassive returns false for an unknown id', D.applyPassive({ players: [{}] }, 0, 'nope') === false);
 
@@ -527,6 +527,44 @@ const kill = (state, pi, uid) => { const c = state.players[pi].board.find(x => x
 	const first = state.players[1].board.find(c => c.id === 't_c');
 	E.playCard(state, 1, state.players[1].hand.find(c => c.id === 't_c').uid, null, null, 1);
 	ok('Scattered Caltrops: first enemy creature took 1', first.damage === 1 && state.players[1].board.filter(c => c.damage === 1).length === 1, state.players[1].board.map(c => c.damage));
+}
+// Oops, All Spells!: deck loses creatures & spells cost (1) less
+{
+	const { state } = new Scenario(byId).def('t_c', { type: 'creature', cost: 2, attack: 2, health: 2 }).def('t_sp', { type: 'sorcery', cost: 3, effects: [] }).deck(0, ['t_c', 't_c', 't_sp']).hand(0, ['t_sp']).run();
+	D.applyPassive(state, 0, 'oops_all_spells');
+	ok('Oops, All Spells!: no creatures in deck, spell (1) cheaper', !state.players[0].deck.some(id => id === 't_c') && state.players[0].deck.includes('t_sp') && E.effectiveCost(state, 0, state.players[0].hand[0]) === 2, state.players[0].deck);
+}
+// Heavy Armor: Health set to 10, damage capped at 1
+{
+	const { state } = new Scenario(byId).mana(0, 10).run();
+	D.applyPassive(state, 0, 'heavy_armor');
+	const life0 = state.players[0].life;
+	E.execEffects(state, 0, [{ type: 'damage', value: 5, target: 'own-hero' }], null, null);
+	ok('Heavy Armor: 10 Health, big hit reduced to 1', life0 === 10 && state.players[0].life === 9, [life0, state.players[0].life]);
+}
+// Sunstrider's Crown: the third spell each turn costs (1)
+{
+	const { state } = new Scenario(byId).def('t_sp', { type: 'sorcery', cost: 5, effects: [] }).hand(0, ['t_sp']).run();
+	D.applyPassive(state, 0, 'sunstriders_crown');
+	state.players[0].spellsPlayedThisTurn = 0;
+	const first = E.effectiveCost(state, 0, state.players[0].hand[0]);
+	state.players[0].spellsPlayedThisTurn = 2; // next is the 3rd
+	const third = E.effectiveCost(state, 0, state.players[0].hand[0]);
+	ok("Sunstrider's Crown: 1st full (5), 3rd costs (1)", first === 5 && third === 1, [first, third]);
+}
+// Ring of Haste: the third creature each turn costs (1)
+{
+	const { state } = new Scenario(byId).def('t_c', { type: 'creature', cost: 5, attack: 5, health: 5 }).hand(0, ['t_c']).run();
+	D.applyPassive(state, 0, 'ring_of_haste');
+	state.players[0].creaturesPlayedThisTurn = 2; // next is the 3rd
+	ok('Ring of Haste: third creature costs (1)', E.effectiveCost(state, 0, state.players[0].hand[0]) === 1);
+}
+// Grommash's Armguards: draw a weapon; weapons cost (1) less
+{
+	const { state } = new Scenario(byId).def('t_w', { type: 'weapon', cost: 3, attack: 3, durability: 2 }).deck(0, ['t_w']).run();
+	D.applyPassive(state, 0, 'grommashs_armguards');
+	const w = state.players[0].hand.find(c => c.id === 't_w');
+	ok("Grommash's Armguards: weapon drawn & (1) cheaper", w && E.effectiveCost(state, 0, w) === 2, w && E.effectiveCost(state, 0, w));
 }
 
 // ---------------- boss ladder ----------------

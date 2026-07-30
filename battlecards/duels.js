@@ -234,6 +234,27 @@ export const PASSIVES = {
 		name: 'Scattered Caltrops', text: 'After your opponent plays their first creature each turn, deal 1 damage to it.',
 		apply: (state, pi) => { state.players[pi].scatteredCaltrops = true; },
 	},
+	// --- start of game / more cost ---
+	oops_all_spells: {
+		name: 'Oops, All Spells!', text: 'At the start of the game, destroy all creatures in your deck. Your spells cost (1) less.',
+		apply: (state, pi) => { const p = state.players[pi]; p.oopsAllSpells = true; p.deck = p.deck.filter(id => { const d = state.cardsById[id]; return d && d.type !== 'creature'; }); },
+	},
+	heavy_armor: {
+		name: 'Heavy Armor', text: 'At the start of the game, set your Health to 10. You can only take 1 damage at a time.',
+		apply: (state, pi) => { const p = state.players[pi]; p.heavyArmor = true; p.life = Math.min(p.life, 10); },
+	},
+	sunstriders_crown: {
+		name: "Sunstrider's Crown", text: 'Every third spell you cast each turn costs (1).',
+		apply: (state, pi) => { state.players[pi].sunstridersCrown = true; },
+	},
+	ring_of_haste: {
+		name: 'Ring of Haste', text: 'Every third creature you play each turn costs (1).',
+		apply: (state, pi) => { state.players[pi].ringOfHaste = true; },
+	},
+	grommashs_armguards: {
+		name: "Grommash's Armguards", text: 'At the start of the game, draw a weapon. Your weapons cost (1) less.',
+		apply: (state, pi) => { const p = state.players[pi]; p.grommash = true; const wi = p.deck.findIndex(id => state.cardsById[id] && state.cardsById[id].type === 'weapon'); if (wi >= 0) { const [wid] = p.deck.splice(wi, 1); E.execEffects(state, pi, [{ type: 'conjure-id', id: wid }], null, null); } },
+	},
 };
 
 export function applyPassive(state, pi, id) {
