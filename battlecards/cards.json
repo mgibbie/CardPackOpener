@@ -133094,6 +133094,188 @@
         ]
       },
       "description": "Hero Power (1): Give the Demons in your hand +3/+2."
+    },
+    {
+      "id": "fel_rift",
+      "name": "Fel Rift",
+      "type": "sorcery",
+      "cost": 0,
+      "rarity": "common",
+      "set": "DUELS",
+      "token": true,
+      "collectible": false,
+      "description": "Casts When Drawn: Add a Demon to your hand.",
+      "cardClass": "demon_hunter",
+      "drawTrigger": true,
+      "onDraw": [
+        {
+          "type": "conjure-random",
+          "cardType": "creature",
+          "tribe": "Demon",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "id": "legendary_invitation",
+      "name": "Legendary Invitation",
+      "type": "sorcery",
+      "cost": 0,
+      "rarity": "common",
+      "set": "DUELS",
+      "token": true,
+      "collectible": false,
+      "description": "Casts When Drawn: Add a random Legendary creature to your hand.",
+      "drawTrigger": true,
+      "onDraw": [
+        {
+          "type": "conjure-random",
+          "cardType": "creature",
+          "rarity": "legendary",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "id": "dream_portal",
+      "name": "Dream Portal",
+      "type": "sorcery",
+      "cost": 0,
+      "rarity": "common",
+      "set": "DUELS",
+      "token": true,
+      "collectible": false,
+      "description": "Casts When Drawn: Summon a random Dragon.",
+      "drawTrigger": true,
+      "onDraw": [
+        {
+          "type": "summon-random",
+          "tribe": "Dragon"
+        }
+      ]
+    },
+    {
+      "id": "dream",
+      "name": "Dream",
+      "type": "sorcery",
+      "cost": 0,
+      "rarity": "common",
+      "set": "DUELS",
+      "token": true,
+      "collectible": false,
+      "description": "Return a creature to its owner's hand.",
+      "effects": [
+        {
+          "type": "bounce"
+        }
+      ]
+    },
+    {
+      "id": "nightmare",
+      "name": "Nightmare",
+      "type": "sorcery",
+      "cost": 0,
+      "rarity": "common",
+      "set": "DUELS",
+      "token": true,
+      "collectible": false,
+      "description": "Give a creature +5/+5.",
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 5,
+          "health": 5,
+          "target": "creature"
+        }
+      ]
+    },
+    {
+      "id": "laughing_sister",
+      "name": "Laughing Sister",
+      "type": "creature",
+      "cost": 3,
+      "rarity": "common",
+      "set": "DUELS",
+      "token": true,
+      "collectible": false,
+      "description": "Elusive.",
+      "attack": 3,
+      "health": 5,
+      "keywords": [
+        "elusive"
+      ]
+    },
+    {
+      "id": "emerald_drake",
+      "name": "Emerald Drake",
+      "type": "creature",
+      "cost": 4,
+      "rarity": "common",
+      "set": "DUELS",
+      "token": true,
+      "collectible": false,
+      "description": "A 7/6 Dragon.",
+      "attack": 7,
+      "health": 6,
+      "tribe": "Dragon"
+    },
+    {
+      "id": "lk_frost_strike",
+      "name": "Frost Strike",
+      "type": "sorcery",
+      "cost": 3,
+      "rarity": "common",
+      "set": "DUELS",
+      "token": true,
+      "collectible": false,
+      "description": "Deal 4 damage.",
+      "cardClass": "death_knight",
+      "tribe": "Frost",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 4,
+          "target": "any"
+        }
+      ]
+    },
+    {
+      "id": "lk_doom_pact",
+      "name": "Doom Pact",
+      "type": "sorcery",
+      "cost": 5,
+      "rarity": "common",
+      "set": "DUELS",
+      "token": true,
+      "collectible": false,
+      "description": "Destroy all creatures.",
+      "cardClass": "death_knight",
+      "tribe": "Fel",
+      "effects": [
+        {
+          "type": "destroy-all"
+        }
+      ]
+    },
+    {
+      "id": "lk_soul_reaper",
+      "name": "Soul Reaper",
+      "type": "sorcery",
+      "cost": 4,
+      "rarity": "common",
+      "set": "DUELS",
+      "token": true,
+      "collectible": false,
+      "description": "Deal 3 damage to a creature.",
+      "cardClass": "death_knight",
+      "tribe": "Shadow",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 3,
+          "target": "creature"
+        }
+      ]
     }
   ]
 }

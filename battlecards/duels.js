@@ -373,6 +373,31 @@ export const PASSIVES = {
 		name: 'Optimized Polarity', text: 'After you play your first Mech each turn, add a random (1) Mana Mech to your hand.',
 		apply: (state, pi) => { state.players[pi].optimizedPolarity = true; },
 	},
+	// --- authored token cards (Fel Rift / Dream / Lich King / Invitation) ---
+	imp_credible_trousers: {
+		name: 'Imp-credible Trousers', text: 'After you cast your first Fel spell in a turn, shuffle 2 Fel Rifts into your deck. Draw a card.',
+		apply: (state, pi) => { state.players[pi].impTrousers = true; },
+	},
+	draconic_dream: {
+		name: 'Draconic Dream', text: 'After you play a Dragon, shuffle a Dream Portal into your deck that summons a Dragon when drawn.',
+		apply: (state, pi) => { state.players[pi].draconicDream = true; },
+	},
+	cloak_of_emerald_dreams: {
+		name: 'Cloak of Emerald Dreams', text: 'At the end of your turn, add a Dream Card to your hand.',
+		apply: (state, pi) => { state.players[pi].cloakEmeraldDreams = true; },
+	},
+	runic_helm: {
+		name: 'Runic Helm', text: 'At the end of your turn, add a random Lich King card to your hand.',
+		apply: (state, pi) => { state.players[pi].runicHelm = true; },
+	},
+	unholy_gift: {
+		name: 'Unholy Gift', text: 'At the start of the game, shuffle 8 Lich King cards into your deck.',
+		apply: (state, pi) => { const lk = ['lk_death_coil', 'lk_frost_strike', 'lk_army_of_the_dead', 'lk_doom_pact', 'lk_soul_reaper', 'obliterate', 'anti_magic_shell'].filter(id => state.cardsById[id]); if (!lk.length) return; const ids = Array.from({ length: 8 }, () => lk[Math.floor(state.rng() * lk.length)]); E.execEffects(state, pi, [{ type: 'shuffle-ids-into-deck', ids }], null, null); },
+	},
+	be_our_guest: {
+		name: 'Be Our Guest', text: 'At the start of the game, shuffle 3 Legendary Invitations into your deck.',
+		apply: (state, pi) => { E.execEffects(state, pi, [{ type: 'shuffle-ids-into-deck', ids: ['legendary_invitation', 'legendary_invitation', 'legendary_invitation'] }], null, null); },
+	},
 };
 
 export function applyPassive(state, pi, id) {

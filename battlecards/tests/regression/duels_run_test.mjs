@@ -116,7 +116,9 @@ ok('all 4 batch-2 hero-power cards present + well-formed', HP_IDS2.every(id => {
 }
 
 // ---------------- passives (duels.js) ----------------
-ok('PASSIVES has the 86 entries', Object.keys(D.PASSIVES).length === 86 && ['forgotten_depths', 'location_location_location', 'beckoning_bicorn', 'cookies_ladle', 'optimized_polarity'].every(k => D.PASSIVES[k]));
+ok('PASSIVES has the 92 entries', Object.keys(D.PASSIVES).length === 92 && ['imp_credible_trousers', 'draconic_dream', 'cloak_of_emerald_dreams', 'runic_helm', 'unholy_gift', 'be_our_guest'].every(k => D.PASSIVES[k]));
+// authored token cards exist
+ok('authored token cards present', ['fel_rift', 'legendary_invitation', 'dream_portal', 'dream', 'nightmare', 'laughing_sister', 'emerald_drake', 'lk_frost_strike', 'lk_doom_pact', 'lk_soul_reaper'].every(id => byId[id] && byId[id].token && byId[id].collectible === false), null);
 ok('HEROES lists 11 signature heroes with class', D.HEROES.length === 11 && D.HEROES.every(h => h.id && h.name && h.heroClass), D.HEROES.length);
 ok('applyPassive returns false for an unknown id', D.applyPassive({ players: [{}] }, 0, 'nope') === false);
 
@@ -782,6 +784,58 @@ const kill = (state, pi, uid) => { const c = state.players[pi].board.find(x => x
 	E.playCard(state, 0, state.players[0].hand[0].uid, null, null, 0);
 	const mech = state.players[0].hand.filter(c => (byId[c.id]?.tribe || '').includes('Mech') && byId[c.id]?.cost === 1);
 	ok('Optimized Polarity: a (1) Mech joined your hand', mech.length === 1, mech.map(c => c.id));
+}
+// Imp-credible Trousers: first Fel spell shuffles 2 Fel Rifts + draws
+// (empty deck -> the draw pulls a Fel Rift, which self-casts to conjure a Demon)
+{
+	const { state } = new Scenario(byId).def('t_fel', { type: 'sorcery', cost: 0, tribe: 'Fel', effects: [] }).deck(0, []).mana(0, 10).hand(0, ['t_fel']).run();
+	D.applyPassive(state, 0, 'imp_credible_trousers');
+	E.playCard(state, 0, state.players[0].hand[0].uid, null, null, 0);
+	const demonInHand = state.players[0].hand.some(c => (byId[c.id]?.tribe || '').includes('Demon'));
+	ok('Imp-credible Trousers: 2 Fel Rifts shuffled, one drawn -> a Demon', state.players[0].deck.filter(id => id === 'fel_rift').length === 1 && demonInHand, [state.players[0].deck, state.players[0].hand.map(c => c.id)]);
+}
+// Draconic Dream: playing a Dragon shuffles a Dream Portal into your deck
+{
+	const { state } = new Scenario(byId).def('t_drag', { type: 'creature', cost: 2, attack: 2, health: 2, tribe: 'Dragon' }).mana(0, 10).hand(0, ['t_drag']).run();
+	D.applyPassive(state, 0, 'draconic_dream');
+	E.playCard(state, 0, state.players[0].hand[0].uid, null, null, 0);
+	ok('Draconic Dream: a Dream Portal is in the deck', state.players[0].deck.includes('dream_portal'));
+}
+// Cloak of Emerald Dreams: end of turn adds a Dream card
+{
+	const { state } = new Scenario(byId).run();
+	D.applyPassive(state, 0, 'cloak_of_emerald_dreams');
+	E.endTurn(state); E.endTurn(state);
+	const dreamIds = ['dream', 'nightmare', 'laughing_sister', 'emerald_drake', 'ysera_awakens'];
+	ok('Cloak of Emerald Dreams: a Dream card in hand', state.players[0].hand.some(c => dreamIds.includes(c.id)), state.players[0].hand.map(c => c.id));
+}
+// Runic Helm: end of turn adds a Lich King card
+{
+	const { state } = new Scenario(byId).run();
+	D.applyPassive(state, 0, 'runic_helm');
+	E.endTurn(state); E.endTurn(state);
+	const lkIds = ['lk_death_coil', 'lk_frost_strike', 'lk_army_of_the_dead', 'lk_doom_pact', 'lk_soul_reaper', 'obliterate', 'anti_magic_shell'];
+	ok('Runic Helm: a Lich King card in hand', state.players[0].hand.some(c => lkIds.includes(c.id)), state.players[0].hand.map(c => c.id));
+}
+// Unholy Gift: 8 Lich King cards shuffled into your deck
+{
+	const { state } = new Scenario(byId).deck(0, []).run();
+	D.applyPassive(state, 0, 'unholy_gift');
+	const lkIds = ['lk_death_coil', 'lk_frost_strike', 'lk_army_of_the_dead', 'lk_doom_pact', 'lk_soul_reaper', 'obliterate', 'anti_magic_shell'];
+	ok('Unholy Gift: 8 Lich King cards in deck', state.players[0].deck.filter(id => lkIds.includes(id)).length === 8, state.players[0].deck.length);
+}
+// Be Our Guest: 3 Legendary Invitations shuffled into your deck
+{
+	const { state } = new Scenario(byId).deck(0, []).run();
+	D.applyPassive(state, 0, 'be_our_guest');
+	ok('Be Our Guest: 3 Legendary Invitations in deck', state.players[0].deck.filter(id => id === 'legendary_invitation').length === 3, state.players[0].deck);
+}
+// authored draw-trigger tokens fire: Dream Portal summons a Dragon on draw
+{
+	const { state } = new Scenario(byId).deck(0, ['dream_portal']).run();
+	E.execEffects(state, 0, [{ type: 'draw', value: 1 }], null, null);
+	const drag = state.players[0].board.filter(c => (c.tribe || '').includes('Dragon') && !E.isDead(c));
+	ok('Dream Portal: drawing it summons a Dragon (and it evaporates)', drag.length === 1 && !state.players[0].hand.some(c => c.id === 'dream_portal'), drag.length);
 }
 
 // ---------------- boss ladder ----------------
