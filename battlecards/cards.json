@@ -132768,6 +132768,91 @@
         ]
       },
       "description": "Hero Power (2): Summon a 0/2 Voidfiend."
+    },
+    {
+      "id": "duelshp_vile_concoction",
+      "name": "Vile Concoction",
+      "type": "heropower",
+      "cost": 2,
+      "cardClass": "rogue",
+      "rarity": "common",
+      "set": "DUELS",
+      "power": {
+        "cost": 2,
+        "effects": [
+          {
+            "type": "grant",
+            "keyword": "poisonous",
+            "target": "creature"
+          }
+        ]
+      },
+      "description": "Hero Power (2): Give a creature Poisonous."
+    },
+    {
+      "id": "duelshp_roguish_maneuvers",
+      "name": "Roguish Maneuvers",
+      "type": "heropower",
+      "cost": 2,
+      "cardClass": "rogue",
+      "rarity": "common",
+      "set": "DUELS",
+      "power": {
+        "cost": 2,
+        "effects": [
+          {
+            "type": "equip",
+            "name": "Dagger",
+            "attack": 1,
+            "durability": 2
+          }
+        ]
+      },
+      "description": "Hero Power (2): Equip a 1/2 Dagger."
+    },
+    {
+      "id": "duelshp_illidari_strike",
+      "name": "Illidari Strike",
+      "type": "heropower",
+      "cost": 2,
+      "cardClass": "demon_hunter",
+      "rarity": "common",
+      "set": "DUELS",
+      "power": {
+        "cost": 2,
+        "effects": [
+          {
+            "type": "summon",
+            "count": 2,
+            "attack": 1,
+            "health": 1,
+            "name": "Illidari",
+            "keywords": [
+              "rush"
+            ]
+          }
+        ]
+      },
+      "description": "Hero Power (2): Summon two 1/1 Illidari with Rush."
+    },
+    {
+      "id": "duelshp_infernal_strike",
+      "name": "Infernal Strike",
+      "type": "heropower",
+      "cost": 1,
+      "cardClass": "demon_hunter",
+      "rarity": "common",
+      "set": "DUELS",
+      "power": {
+        "cost": 1,
+        "effects": [
+          {
+            "type": "hero-attack",
+            "value": 1
+          }
+        ]
+      },
+      "description": "Hero Power (1): Gain +1 Attack this turn."
     }
   ]
 }

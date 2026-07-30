@@ -36,6 +36,10 @@ export const PASSIVES = {
 		name: 'Emerald Goggles', text: 'The left-most card in your hand costs (2) less.',
 		apply: (state, pi) => { state.players[pi].leftmostDiscount = 2; },
 	},
+	rhonins_scrying_orb: {
+		name: "Rhonin's Scrying Orb", text: 'The first spell you cast each turn costs (1) less.',
+		apply: (state, pi) => emblem(state, pi, 'duels_rhonins_scrying_orb', "Rhonin's Scrying Orb", 'Your first spell each turn costs (1) less.', { static: { type: 'first-spell-discount', value: 1 } }),
+	},
 };
 
 export function applyPassive(state, pi, id) {
@@ -66,12 +70,17 @@ export const HEROES = [
 
 // class -> imported hero-power ids (cards.json, type 'heropower'). Grows batch
 // by batch; a hero's picker rolls from its class list plus the neutral powers.
+// Duels shares its League-of-Explorers powers with Tombs, so several class
+// lists reference the existing ulda_* hero-power cards rather than re-importing.
 export const HERO_POWERS = {
-	neutral: ['duelshp_send_in_the_scout'],
+	neutral: ['duelshp_send_in_the_scout', 'ulda_uldum_treasure_cache'],
 	warrior: ['duelshp_primal_power', 'duelshp_uber_primal_power'],
-	hunter: ['duelshp_survival_training'],
-	paladin: ['duelshp_modest_aspirations', 'duelshp_from_golden_light', 'ulda_new_recruits'],
-	druid: ['duelshp_harvest_time'],
+	hunter: ['duelshp_survival_training', 'ulda_spread_shot', 'ulda_dino_tracking', 'ulda_well_equipped'],
+	paladin: ['duelshp_modest_aspirations', 'duelshp_from_golden_light', 'ulda_new_recruits', 'ulda_bubble_blower', 'ulda_power_up'],
+	druid: ['duelshp_harvest_time', 'ulda_elises_might', 'ulda_druidic_teaching', 'ulda_starseeker'],
 	priest: ['duelshp_shadow_mend', 'duelshp_call_of_madness'],
 	death_knight: ['duelshp_blood_parasite'],
+	rogue: ['duelshp_vile_concoction', 'duelshp_roguish_maneuvers'],
+	demon_hunter: ['duelshp_illidari_strike', 'duelshp_infernal_strike'],
+	mage: ['ulda_relicologist', 'ulda_arcane_craftiness', 'ulda_amateur_mage'],
 };

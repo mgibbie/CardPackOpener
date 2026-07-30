@@ -85,9 +85,37 @@ const firePower = (id, opts = {}) => {
 	const vf = state.players[0].board.filter(c => c.name === 'Voidfiend');
 	ok('Call of Madness: 0/2 Voidfiend', vf.length === 1 && vf[0].attack === 0 && E.hp(vf[0]) === 2, vf.length);
 }
+// --- hero powers batch 2 ---
+const HP_IDS2 = ['duelshp_vile_concoction', 'duelshp_roguish_maneuvers', 'duelshp_illidari_strike', 'duelshp_infernal_strike'];
+ok('all 4 batch-2 hero-power cards present + well-formed', HP_IDS2.every(id => {
+	const c = byId[id];
+	return c && c.type === 'heropower' && c.set === 'DUELS' && c.power && Array.isArray(c.power.effects) && c.power.effects.length && c.power.cost === c.cost;
+}), HP_IDS2.filter(id => !byId[id]));
+// Vile Concoction: grant Poisonous
+{
+	const state = firePower('duelshp_vile_concoction', { setup: s => s.def('t_m', { type: 'creature', cost: 2, attack: 2, health: 2 }).board(0, ['t_m']), play: { targetBoard: [0, 0] } });
+	ok('Vile Concoction: creature gains Poisonous', state.players[0].board[0].keywords.includes('poisonous'));
+}
+// Roguish Maneuvers: equip a 1/2 Dagger
+{
+	const state = firePower('duelshp_roguish_maneuvers');
+	const w = state.players[0].weapon;
+	ok('Roguish Maneuvers: 1/2 Dagger equipped', w && w.name === 'Dagger' && w.attack === 1 && w.durability === 2, w && [w.attack, w.durability]);
+}
+// Illidari Strike: two 1/1 Illidari with Rush
+{
+	const state = firePower('duelshp_illidari_strike');
+	const il = state.players[0].board.filter(c => c.name === 'Illidari');
+	ok('Illidari Strike: two 1/1 Rush Illidari', il.length === 2 && il.every(c => c.attack === 1 && E.hp(c) === 1 && c.keywords.includes('rush')), il.length);
+}
+// Infernal Strike: +1 hero Attack
+{
+	const state = firePower('duelshp_infernal_strike');
+	ok('Infernal Strike: hero +1 Attack this turn', state.players[0].heroTempAttack === 1, state.players[0].heroTempAttack);
+}
 
 // ---------------- passives (duels.js) ----------------
-ok('PASSIVES has the 5 batch-1 entries', Object.keys(D.PASSIVES).length === 5 && ['robe_of_the_apprentice', 'small_backpacks', 'small_pouches', 'band_of_bees', 'emerald_goggles'].every(k => D.PASSIVES[k]));
+ok('PASSIVES has the 6 entries', Object.keys(D.PASSIVES).length === 6 && ['robe_of_the_apprentice', 'small_backpacks', 'small_pouches', 'band_of_bees', 'emerald_goggles', 'rhonins_scrying_orb'].every(k => D.PASSIVES[k]));
 ok('HEROES lists 11 signature heroes with class', D.HEROES.length === 11 && D.HEROES.every(h => h.id && h.name && h.heroClass), D.HEROES.length);
 ok('applyPassive returns false for an unknown id', D.applyPassive({ players: [{}] }, 0, 'nope') === false);
 
@@ -123,6 +151,14 @@ ok('applyPassive returns false for an unknown id', D.applyPassive({ players: [{}
 	const { state } = new Scenario(byId).run();
 	D.applyPassive(state, 0, 'emerald_goggles');
 	ok('Emerald Goggles: leftmostDiscount = 2', state.players[0].leftmostDiscount === 2, state.players[0].leftmostDiscount);
+}
+// Rhonin's Scrying Orb: first spell each turn costs (1) less
+{
+	const { state } = new Scenario(byId).def('t_spell', { type: 'sorcery', cost: 4, effects: [] }).hand(0, ['t_spell']).run();
+	const before = E.effectiveCost(state, 0, state.players[0].hand[0]);
+	D.applyPassive(state, 0, 'rhonins_scrying_orb');
+	const after = E.effectiveCost(state, 0, state.players[0].hand[0]);
+	ok("Rhonin's Scrying Orb: first spell costs (1) less", before === 4 && after === 3, [before, after]);
 }
 
 console.log(`\n${pass} passed, ${fail} failed`);
