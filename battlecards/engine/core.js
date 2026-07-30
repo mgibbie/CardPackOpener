@@ -2110,6 +2110,10 @@ export function playCard(state, pi, cardUid, target, choice, position, useAlt, k
 		p._lunarTurn = state.turnNumber; // Lunar Band: your first Deathrattle creature triggers its effect (and lives)
 		runDeathrattle(state, pi, card);
 	}
+	// Duels passives that react to casting a spell
+	if (p.ringOfRefreshment && isSpellType(card)) { for (const hpw of p.heroPowers) hpw.usedThisTurn = false; } // Ring of Refreshment: a spell refreshes your Hero Power
+	if (p.staffOfPain && isSpellType(card) && schoolOf(card) === 'Shadow') execEffects(state, pi, [{ type: 'damage', value: 2, target: 'all-heroes' }], null, null); // Staff of Pain: a Shadow spell hurts every hero
+	if (p.mendingPools && isSpellType(card) && schoolOf(card) === 'Nature' && p._mendingTurn !== state.turnNumber) { p._mendingTurn = state.turnNumber; execEffects(state, pi, [{ type: 'heal', value: 2, target: 'friendly-characters' }], null, null); } // Mending Pools: your first Nature spell each turn heals your side
 	// Overpowered: replay a copy of each card played this turn (random targets)
 	if (p.overpoweredTurn === state.turnNumber && !state._opLock && card.id !== 'dala_overpowered' && state.cardsById[card.id]) {
 		state._opLock = true;

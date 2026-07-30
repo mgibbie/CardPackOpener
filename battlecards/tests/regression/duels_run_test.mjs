@@ -116,7 +116,7 @@ ok('all 4 batch-2 hero-power cards present + well-formed', HP_IDS2.every(id => {
 }
 
 // ---------------- passives (duels.js) ----------------
-ok('PASSIVES has the 11 entries', Object.keys(D.PASSIVES).length === 11 && ['robe_of_the_apprentice', 'small_backpacks', 'small_pouches', 'band_of_bees', 'emerald_goggles', 'rhonins_scrying_orb', 'rocket_backpacks', 'special_delivery', 'shadowcasting_101', 'rally_the_troops', 'lunar_band'].every(k => D.PASSIVES[k]));
+ok('PASSIVES has the 14 entries', Object.keys(D.PASSIVES).length === 14 && ['robe_of_the_apprentice', 'small_backpacks', 'small_pouches', 'band_of_bees', 'emerald_goggles', 'rhonins_scrying_orb', 'rocket_backpacks', 'special_delivery', 'shadowcasting_101', 'rally_the_troops', 'lunar_band', 'ring_of_refreshment', 'staff_of_pain', 'mending_pools'].every(k => D.PASSIVES[k]));
 ok('HEROES lists 11 signature heroes with class', D.HEROES.length === 11 && D.HEROES.every(h => h.id && h.name && h.heroClass), D.HEROES.length);
 ok('applyPassive returns false for an unknown id', D.applyPassive({ players: [{}] }, 0, 'nope') === false);
 
@@ -201,6 +201,32 @@ ok('applyPassive returns false for an unknown id', D.applyPassive({ players: [{}
 	E.playCard(state, 0, state.players[0].hand[0].uid, null, null, 0);
 	const dr = state.players[0].board.find(c => c.id === 't_dr');
 	ok('Lunar Band: deathrattle fired & the creature lives', state.players[1].life === 37 && dr && !E.isDead(dr), [state.players[1].life, dr && E.hp(dr)]);
+}
+// Ring of Refreshment: casting a spell refreshes the Hero Power
+{
+	const { state } = new Scenario(byId).def('t_sp', { type: 'sorcery', cost: 0, effects: [] }).mana(0, 10).hand(0, ['t_sp']).run();
+	state.players[0].heroPowers = [{ usedThisTurn: true }];
+	D.applyPassive(state, 0, 'ring_of_refreshment');
+	E.playCard(state, 0, state.players[0].hand[0].uid, null, null, 0);
+	ok('Ring of Refreshment: Hero Power refreshed after a spell', state.players[0].heroPowers[0].usedThisTurn === false);
+}
+// Staff of Pain: a Shadow spell deals 2 to each hero
+{
+	const { state } = new Scenario(byId).def('t_shadow', { type: 'sorcery', cost: 0, tribe: 'Shadow', effects: [] }).def('t_plain', { type: 'sorcery', cost: 0, effects: [] }).mana(0, 10).hand(0, ['t_shadow', 't_plain']).run();
+	D.applyPassive(state, 0, 'staff_of_pain');
+	E.playCard(state, 0, state.players[0].hand.find(c => c.id === 't_plain').uid, null, null, 0); // non-Shadow: no effect
+	const afterPlain = [state.players[0].life, state.players[1].life];
+	E.playCard(state, 0, state.players[0].hand.find(c => c.id === 't_shadow').uid, null, null, 0);
+	ok('Staff of Pain: only the Shadow spell hits both heroes for 2', afterPlain[0] === 40 && afterPlain[1] === 40 && state.players[0].life === 38 && state.players[1].life === 38, [afterPlain, state.players[0].life, state.players[1].life]);
+}
+// Mending Pools: first Nature spell each turn heals your side (first-only)
+{
+	const { state } = new Scenario(byId).def('t_nat', { type: 'sorcery', cost: 0, tribe: 'Nature', effects: [] }).mana(0, 10).life(0, 20).hand(0, ['t_nat', 't_nat']).run();
+	D.applyPassive(state, 0, 'mending_pools');
+	E.playCard(state, 0, state.players[0].hand[0].uid, null, null, 0);
+	const afterFirst = state.players[0].life;
+	E.playCard(state, 0, state.players[0].hand.find(c => c.id === 't_nat').uid, null, null, 0);
+	ok('Mending Pools: first Nature spell heals 2, second does not', afterFirst === 22 && state.players[0].life === 22, [afterFirst, state.players[0].life]);
 }
 
 // ---------------- boss ladder ----------------

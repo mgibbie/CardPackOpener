@@ -60,6 +60,18 @@ export const PASSIVES = {
 		name: 'Lunar Band', text: 'The first Deathrattle creature you play each turn triggers its effect.',
 		apply: (state, pi) => { state.players[pi].lunarBand = true; },
 	},
+	ring_of_refreshment: {
+		name: 'Ring of Refreshment', text: 'After you cast a spell, refresh your Hero Power.',
+		apply: (state, pi) => { state.players[pi].ringOfRefreshment = true; },
+	},
+	staff_of_pain: {
+		name: 'Staff of Pain', text: 'After you cast a Shadow spell, deal 2 damage to each hero.',
+		apply: (state, pi) => { state.players[pi].staffOfPain = true; },
+	},
+	mending_pools: {
+		name: 'Mending Pools', text: 'After you cast your first Nature spell in a turn, restore 2 Health to all friendly characters.',
+		apply: (state, pi) => { state.players[pi].mendingPools = true; },
+	},
 };
 
 export function applyPassive(state, pi, id) {
