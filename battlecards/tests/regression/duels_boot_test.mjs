@@ -1,11 +1,10 @@
-// duels_boot_test.mjs — the ?duels=1 run scaffolding (game.js data layer). The
-// overlays are DOM-bound, but the boss ladder, boot surgery, power swap, and
-// passive/reward wiring are plain data — replicated here and exercised against
-// a real game (mirrors tombs_run_test.mjs).
+// duels_boot_test.mjs — the ?duels=1 run scaffolding (game.js data layer),
+// new HS-Duels model: a 10-card arena draft, generated enemies at parity, and
+// a win/loss run. Overlays are DOM-bound; the boot surgery + loot wiring are
+// plain data, replicated here and exercised against a real game.
 import fs from 'fs';
 import * as E from '../../engine.js';
 import * as Du from '../../duels.js';
-import * as D from '../../dungeon.js';
 import { validateGameState } from '../../engine/validate.js';
 import { seededRng } from '../../engine/rng.js';
 
@@ -14,95 +13,74 @@ const cardsById = {}; for (const c of raw.cards) cardsById[c.id] = c;
 let pass = 0, fail = 0;
 const ok = (l, c, extra) => { if (c) pass++; else { fail++; console.log('FAIL:', l, extra ?? ''); } };
 
-// ---- replica of game.js duelsBossFor (6 = Diablo, 12 = Uber Diablo, else pool)
-function duelsBossFor(level, rng) {
-	if (level >= 12) return 'uber_diablo';
-	if (level === 6) return 'diablo';
-	const pool = level < 6 ? Du.ROUNDS[0].pool : Du.ROUNDS[1].pool;
-	return pool[Math.floor(rng() * pool.length)];
-}
-
-// the 12-fight ladder resolves to real bosses; finals land only at 6 and 12
-{
-	const rng = seededRng(7);
-	let ladderOk = true, finalsOk = true;
-	for (let lvl = 1; lvl <= 12; lvl++) {
-		const bid = duelsBossFor(lvl, rng);
-		if (!Du.BOSSES[bid]) ladderOk = false;
-		if (lvl === 6 && bid !== 'diablo') finalsOk = false;
-		if (lvl === 12 && !(bid === 'uber_diablo' && Du.BOSSES[bid].final)) finalsOk = false;
-		if (lvl !== 6 && lvl !== 12 && (bid === 'diablo' || bid === 'uber_diablo')) finalsOk = false;
-	}
-	ok('12-fight ladder: every fight resolves to a real boss', ladderOk);
-	ok('finals land only at fight 6 (Diablo) & 12 (Uber Diablo)', finalsOk);
-}
-
-// each hero has a starter deck, bucket set, and resolvable class hero powers
+// each playable hero drafts a real 10-card deck and has resolvable class powers
 for (const hero of Du.HEROES) {
-	ok(`${hero.id}: starter deck present`, (D.STARTER_DECKS[hero.heroClass] || []).length >= 10);
-	ok(`${hero.id}: bucket set present`, (D.BUCKETS[hero.heroClass] || []).length >= 3);
+	ok(`${hero.id}: draft pool has enough cards`, Du.draftPool(cardsById, hero.heroClass).length >= 10);
+	const deck = Du.autoDraftDeck(cardsById, hero.heroClass, seededRng(hero.id.length + 3), 10);
+	ok(`${hero.id}: drafts 10 valid cards`, deck.length === 10 && deck.every(id => cardsById[id]));
 	const powers = Du.HERO_POWERS[hero.heroClass] || [];
-	ok(`${hero.id}: class powers all resolve to heropower cards`, powers.length >= 1
+	ok(`${hero.id}: class powers resolve to heropower cards`, powers.length >= 1
 		&& powers.every(id => cardsById[id] && cardsById[id].type === 'heropower' && cardsById[id].power), powers.filter(id => !cardsById[id]));
 }
 
-// ---- replica of game.js bootDuelsEncounter: full boot for a real fight
-function bootDuelsRun(run) {
-	const hero = Du.HEROES.find(h => h.id === run.heroId);
-	const boss = Du.BOSSES[run.bossId];
-	const clsPick = { id: hero.heroClass, name: hero.heroClass, power: null };
-	const bossPick = { id: run.bossId, name: boss.name, power: boss.power };
-	const state = E.createGame(cardsById, seededRng(run.level * 13 + 1), [...run.deck], 2, [clsPick, bossPick]);
-	if (run.powerId && cardsById[run.powerId]) {
-		const pw = E.instantiate(cardsById[run.powerId], 0);
+// ---- replica of game.js bootDuelsEncounter (new model): player draft +
+// generated enemy at parity, passives applied to both sides, equal footing
+function bootDuelsRun(heroId, games, powerId, playerPassives, rng) {
+	const hero = Du.HEROES.find(h => h.id === heroId);
+	const deck = Du.autoDraftDeck(cardsById, hero.heroClass, rng, 10);
+	const rival = Du.RIVALS[Math.floor(rng() * Du.RIVALS.length)];
+	const enemy = Du.generateEnemy(cardsById, rival.heroClass, games, rng);
+	const playerCls = { id: hero.heroClass, name: hero.heroClass, power: null };
+	const enemyCls = { id: enemy.heroClass, name: enemy.heroClass, power: null };
+	const state = E.createGame(cardsById, rng, [...deck], 2, [playerCls, enemyCls]);
+	if (powerId && cardsById[powerId]) {
+		const pw = E.instantiate(cardsById[powerId], 0);
 		pw.zone = 'heropower'; pw.usedThisTurn = false;
 		state.players[0].heroPowers = [pw];
 	}
-	const runHP = 15 + (run.level - 1) * 5;
-	E.applyHeroMods(state, 1, { life: boss.health, maxLife: boss.health });
-	E.applyHeroMods(state, 0, { life: runHP, maxLife: runHP });
-	E.resetDeckAndHand(state, 1, Du.buildBossDeck(cardsById, boss.theme));
+	E.resetDeckAndHand(state, 1, [...enemy.deck]);
 	E.drawCards(state, 1, 4);
 	E.stripLoadouts(state);
-	for (const id of run.passives) Du.applyPassive(state, 0, id);
-	return { state, runHP, boss };
+	for (const id of playerPassives) Du.applyPassive(state, 0, id);
+	for (const id of enemy.passives) Du.applyPassive(state, 1, id);
+	return { state, deck, enemy };
 }
 
-// boot & play a couple of turns for every hero across: fight 1 (fresh), a mid
-// fight with a chosen alt power + passives, and the Uber Diablo final
-const rng = seededRng(11);
+// boot & play a couple of turns for every hero across early / mid / deep runs
 const somePassives = ['band_of_bees', 'rhonins_scrying_orb'];
 for (const hero of Du.HEROES) {
 	const altPower = (Du.HERO_POWERS[hero.heroClass] || [])[0] || null;
 	const scenarios = [
-		{ level: 1, bossId: duelsBossFor(1, rng), powerId: null, passives: [] },
-		{ level: 5, bossId: duelsBossFor(5, rng), powerId: altPower, passives: somePassives },
-		{ level: 12, bossId: 'uber_diablo', powerId: altPower, passives: somePassives },
+		{ games: 0, powerId: null, passives: [] },
+		{ games: 5, powerId: altPower, passives: somePassives },
+		{ games: 11, powerId: altPower, passives: somePassives },
 	];
 	for (const sc of scenarios) {
-		const run = { heroId: hero.id, deck: [...D.STARTER_DECKS[hero.heroClass]], ...sc };
+		const rng = seededRng((hero.id.length + 1) * 31 + sc.games);
 		try {
-			const { state, runHP, boss } = bootDuelsRun(run);
-			if (state.players[0].maxLife !== runHP || state.players[1].maxLife !== boss.health) {
-				fail++; console.log('FAIL hp:', hero.id, sc.level, state.players[0].maxLife, state.players[1].maxLife); continue;
+			const { state, deck, enemy } = bootDuelsRun(hero.id, sc.games, sc.powerId, sc.passives, rng);
+			// parity: the enemy carries the same power budget the player has by now
+			const loot = Du.enemyLoot(sc.games);
+			if (enemy.deck.length !== 10 + 3 * loot.buckets + loot.treasures) {
+				fail++; console.log('FAIL parity:', hero.id, sc.games, enemy.deck.length); continue;
 			}
 			if (sc.powerId && state.players[0].heroPowers[0]?.id !== sc.powerId) {
 				fail++; console.log('FAIL power swap:', hero.id, sc.powerId); continue;
 			}
-			// the boss fires its power, then a couple of turns pass; state stays legal
+			// enemy fires its power, a couple of turns pass; state stays legal
 			const pw = state.players[1].heroPowers[0];
 			state.current = 1;
 			if (pw) E.useHeroPower(state, 1, pw.uid, null);
 			state.current = 0;
 			E.endTurn(state); E.endTurn(state);
 			const errs = validateGameState(state);
-			if (errs.length) { fail++; console.log('FAIL validate:', hero.id, sc.level, errs.slice(0, 2)); continue; }
+			if (errs.length) { fail++; console.log('FAIL validate:', hero.id, sc.games, errs.slice(0, 2)); continue; }
 			pass++;
-		} catch (err) { fail++; console.log('FAIL boot:', hero.id, sc.level, String(err).slice(0, 140)); }
+		} catch (err) { fail++; console.log('FAIL boot:', hero.id, sc.games, String(err).slice(0, 140)); }
 	}
 }
 
-// the between-fight treasure reward pool exists (active DUELS treasures)
+// the between-game treasure reward pool exists (active DUELS treasures)
 const treasurePool = Object.values(cardsById).filter(d => d.treasure && d.set === 'DUELS');
 ok('DUELS treasure reward pool is populated (>= 30)', treasurePool.length >= 30, treasurePool.length);
 

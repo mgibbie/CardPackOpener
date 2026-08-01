@@ -3832,11 +3832,8 @@ async function start() {
 			const heroId = await pickDuelsHeroOverlay();
 			const hero = Duels.HEROES.find(h => h.id === heroId);
 			const powerId = await pickDuelsPowerOverlay(hero);
-			run = {
-				active: true, heroId, powerId, level: 1,
-				deck: [...Dungeon.STARTER_DECKS[hero.heroClass]],
-				passives: [], bossId: duelsBossFor(1),
-			};
+			const deck = await pickDuelsDraftOverlay(hero.heroClass);
+			run = { active: true, heroId, powerId, deck, passives: [], wins: 0, losses: 0, enemy: genDuelsEnemy(cardsById, 0) };
 			saveDuels(run);
 		}
 		bootDuelsEncounter(cardsById, run);
@@ -4774,9 +4771,9 @@ function resumeDuelsOverlay(run) {
 	return new Promise(resolve => {
 		const hero = Duels.HEROES.find(h => h.id === run.heroId);
 		const el = dungeonOverlay('DUEL IN PROGRESS',
-			`${hero?.name || run.heroId} is ${run.level}/12 up the ladder (${run.deck.length} cards).`);
-		el.appendChild(overlayButton(`Continue fight ${run.level}`, () => { hideDungeonOverlay(); resolve(true); }));
-		el.appendChild(overlayButton('Abandon — start a new run', () => { hideDungeonOverlay(); resolve(false); }));
+			`${hero?.name || run.heroId} - ${run.wins || 0} wins / ${run.losses || 0} losses, ${run.deck.length} cards. Reach 12 wins before 3 losses.`);
+		el.appendChild(overlayButton('Continue the run', () => { hideDungeonOverlay(); resolve(true); }));
+		el.appendChild(overlayButton('Abandon - start a new run', () => { hideDungeonOverlay(); resolve(false); }));
 	});
 }
 
@@ -4824,23 +4821,47 @@ function pickDuelsPowerOverlay(hero) {
 	});
 }
 
-// fight 6 = Diablo, fight 12 = Uber Diablo; the rest roll from that round's pool
-function duelsBossFor(level) {
-	if (level >= 12) return 'uber_diablo';
-	if (level === 6) return 'diablo';
-	const pool = level < 6 ? Duels.ROUNDS[0].pool : Duels.ROUNDS[1].pool;
-	return pool[Math.floor(Math.random() * pool.length)];
+// 10-card arena draft: ten sequential "pick 1 of 3" from your class + Neutral
+function pickDuelsDraftOverlay(heroClass) {
+	return new Promise(resolve => {
+		const pool = Duels.draftPool(duelsCardsById, heroClass);
+		const deck = [];
+		const step = () => {
+			if (deck.length >= 10 || !pool.length) { hideDungeonOverlay(); resolve(deck); return; }
+			const opts = Duels.draftOptions(pool, Math.random, 3);
+			if (!opts.length) { hideDungeonOverlay(); resolve(deck); return; }
+			const el = dungeonOverlay(`DRAFT YOUR DECK - ${deck.length + 1}/10`, 'Pick a card. Ten picks build your starting deck.');
+			const row = document.createElement('div');
+			row.style.cssText = 'display:flex;flex-wrap:wrap;justify-content:center;gap:14px;';
+			for (const d of opts) {
+				const box = document.createElement('div');
+				box.style.cssText = 'display:flex;flex-direction:column;align-items:center;gap:6px;';
+				box.appendChild(miniFace(d));
+				box.appendChild(overlayButton('Pick', () => { deck.push(d.id); step(); }));
+				row.appendChild(box);
+			}
+			el.appendChild(row);
+		};
+		step();
+	});
+}
+
+// roll a fresh opponent kept at exact power parity with the player: a random
+// rival identity + a generated deck/passives scaled to games already played
+function genDuelsEnemy(cardsById, games) {
+	const rival = Duels.RIVALS[Math.floor(Math.random() * Duels.RIVALS.length)];
+	const gen = Duels.generateEnemy(cardsById, rival.heroClass, games, Math.random);
+	return { name: rival.name, heroClass: rival.heroClass, hsId: rival.hsId, deck: gen.deck, passives: gen.passives };
 }
 
 function bootDuelsEncounter(cardsById, run) {
 	duelsCardsById = cardsById;
 	const hero = Duels.HEROES.find(h => h.id === run.heroId);
-	const boss = Duels.BOSSES[run.bossId];
-	heistBossName = boss.name; // shared boss-name slot for nameOf()
-	const clsPick = classRegistry.find(c => c.id === hero.heroClass)
-		|| { id: hero.heroClass, name: hero.name, power: null };
-	const bossPick = { id: run.bossId, name: boss.name, power: boss.power };
-	const picks = [clsPick, bossPick];
+	const enemy = run.enemy || (run.enemy = genDuelsEnemy(cardsById, (run.wins || 0) + (run.losses || 0)));
+	heistBossName = enemy.name; // shared enemy-name slot for nameOf()
+	const playerCls = classRegistry.find(c => c.id === hero.heroClass) || { id: hero.heroClass, name: hero.name, power: null };
+	const enemyCls = classRegistry.find(c => c.id === enemy.heroClass) || { id: enemy.heroClass, name: enemy.name, power: null };
+	const picks = [playerCls, enemyCls];
 	state = E.createGame(cardsById, Math.random, [...run.deck], 2, picks);
 	state.classPicks = picks;
 	// chosen alternate hero power replaces the class slot
@@ -4849,76 +4870,53 @@ function bootDuelsEncounter(cardsById, run) {
 		pw.zone = 'heropower'; pw.usedThisTurn = false;
 		state.players[HUMAN].heroPowers = [pw];
 	}
-	// boss surgery: themed deck & the boss's designed HP; the player's life
-	// scales with the climb (15 at fight 1, +5 per fight)
-	const bp = state.players[1];
-	const runHP = 15 + (run.level - 1) * 5;
-	E.applyHeroMods(state, 1, { life: boss.health, maxLife: boss.health });
-	E.applyHeroMods(state, HUMAN, { life: runHP, maxLife: runHP });
-	E.resetDeckAndHand(state, 1, Duels.buildBossDeck(cardsById, boss.theme));
+	// both sides share the same generated-deck / loot budget - equal footing (no HP scaling)
+	E.resetDeckAndHand(state, 1, [...enemy.deck]);
 	E.drawCards(state, 1, 4);
 	E.stripLoadouts(state);
 	for (const id of run.passives) Duels.applyPassive(state, HUMAN, id);
-	log(`Duels fight ${run.level}/12 — ${boss.name} (${bp.life} HP).`);
-	log(`Boss power — ${boss.power.name} (${boss.power.cost}): ${boss.power.text}`);
-	log(`You are ${hero.name} with a ${run.deck.length}-card deck.`);
-	for (const id of run.passives) log(`Passive — ${Duels.PASSIVES[id].name}: ${Duels.PASSIVES[id].text}`);
+	for (const id of enemy.passives || []) Duels.applyPassive(state, 1, id);
+	log(`Duels - ${run.wins || 0} wins / ${run.losses || 0} losses. Facing ${enemy.name} (${enemyCls.name || enemy.heroClass}).`);
+	log(`You are ${hero.name} with a ${run.deck.length}-card deck; ${enemy.name} drafted ${enemy.deck.length}.`);
+	for (const id of run.passives) log(`Your passive - ${Duels.PASSIVES[id].name}: ${Duels.PASSIVES[id].text}`);
 }
 
-function duelsVictory(run) {
+function duelsVictory(run) { afterDuelsGame(run, true); }
+function duelsDefeat(run) { afterDuelsGame(run, false); }
+
+// one game resolved: bank the result, end the run at 12 wins / 3 losses, else loot
+function afterDuelsGame(run, won) {
+	if (won) run.wins = (run.wins || 0) + 1; else run.losses = (run.losses || 0) + 1;
+	saveDuels(run);
+	if (run.wins >= Duels.WINS_TO_CLEAR) { duelsRunComplete(run); return; }
+	if (run.losses >= Duels.LOSSES_TO_END) { duelsRunOver(run); return; }
+	duelsLoot(run, won);
+}
+
+// loot after every game: choose 1 of 3 HS-Duels buckets (3 cards each)
+function duelsLoot(run, won) {
 	const hero = Duels.HEROES.find(h => h.id === run.heroId);
-	const nextLevel = run.level + 1;
-	if (run.level >= 12) {
-		const el = dungeonOverlay('LADDER CLEARED!', `Uber Diablo falls — you top the Duels ladder as ${hero.name} with ${run.deck.length} cards.`);
-		Col.earnGold(1000);
-		mpRunReward(el, 'win');
-		el.appendChild(overlayButton('New Run (+1000 gold banked)', () => { clearDuels(); location.reload(); }));
-		clearDuels();
-		return;
-	}
-	// draft a bucket: 3 themes, 3 random cards each, all three join the deck
-	const el = dungeonOverlay(`FIGHT ${run.level} WON`, 'Choose a bucket — all three cards join your deck.');
-	const buckets = [...(Dungeon.BUCKETS[hero.heroClass] || [])];
-	const offered = [];
-	while (offered.length < 3 && buckets.length) {
-		offered.push(buckets.splice(Math.floor(Math.random() * buckets.length), 1)[0]);
-	}
-	const cardsOf = bucket => {
-		let ids = bucket.cards;
-		if (ids === 'class-all') {
-			ids = Object.values(state.cardsById).filter(d =>
-				d.cardClass === hero.heroClass && !d.token && !d.companion && !d.commander
-				&& d.type !== 'land' && d.type !== 'heropower' && !(d.colors && d.colors.length))
-				.map(d => d.id);
-		}
-		const picks = [];
-		const pool = [...ids];
-		while (picks.length < 3 && pool.length) {
-			picks.push(pool.splice(Math.floor(Math.random() * pool.length), 1)[0]);
-		}
-		return picks.map(id => state.cardsById[id]);
-	};
+	const el = dungeonOverlay(won ? `WIN - ${run.wins}/12` : `LOSS - ${run.losses}/3`, 'Choose a loot bucket - all 3 cards join your deck.');
+	const offered = Duels.offerBuckets(duelsCardsById, hero.heroClass, Math.random, 3);
 	const row = document.createElement('div');
 	row.style.cssText = 'display:flex;flex-wrap:wrap;justify-content:center;gap:14px;';
 	for (const bucket of offered) {
-		const picks = cardsOf(bucket);
+		const ids = Duels.rollBucket(duelsCardsById, hero.heroClass, bucket, Math.random, 3);
 		const box = document.createElement('div');
 		box.style.cssText = 'background:#1c1830;border:1px solid #8a6f3a;border-radius:10px;padding:12px;max-width:330px;';
 		box.innerHTML = `<div style="font-weight:bold;margin-bottom:8px;letter-spacing:1px;">${bucket.name}</div>`;
-		for (const d of picks) box.appendChild(miniFace(d));
+		for (const id of ids) if (state.cardsById[id]) box.appendChild(miniFace(state.cardsById[id]));
 		box.appendChild(document.createElement('br'));
-		box.appendChild(overlayButton('Take these', () => {
-			run.deck.push(...picks.map(d => d.id));
-			afterDuelsBucket(run, nextLevel);
-		}));
+		box.appendChild(overlayButton('Take these', () => { run.deck.push(...ids); afterDuelsLootBucket(run); }));
 		row.appendChild(box);
 	}
 	el.appendChild(row);
 }
 
-// fights 1/5/9 grant a passive; 3/7/11 add an active DUELS treasure; else press on
-function afterDuelsBucket(run, nextLevel) {
-	if (run.level === 1 || run.level === 5 || run.level === 9) {
+// games 1/5/9 also grant a passive; 3/7/11 a treasure card; then the next fight
+function afterDuelsLootBucket(run) {
+	const games = (run.wins || 0) + (run.losses || 0);
+	if (Duels.PASSIVE_GAMES.includes(games)) {
 		const el = dungeonOverlay('PASSIVE TREASURE!', 'Choose a boon for the rest of the run.');
 		const options = Object.keys(Duels.PASSIVES).filter(t => !run.passives.includes(t));
 		const row = document.createElement('div');
@@ -4926,16 +4924,13 @@ function afterDuelsBucket(run, nextLevel) {
 		for (let i = 0; i < 3 && options.length; i++) {
 			const t = options.splice(Math.floor(Math.random() * options.length), 1)[0];
 			const box = document.createElement('div');
-			box.style.cssText = 'display:flex;flex-direction:column;align-items:center;gap:6px;';
-			box.innerHTML = `<div style="font-weight:bold;">${Duels.PASSIVES[t].name}</div><div style="font-size:13px;opacity:0.85;max-width:190px;">${Duels.PASSIVES[t].text}</div>`;
-			box.appendChild(overlayButton('Take it', () => {
-				run.passives.push(t);
-				advanceDuels(run, nextLevel);
-			}));
+			box.style.cssText = 'display:flex;flex-direction:column;align-items:center;gap:6px;max-width:200px;';
+			box.innerHTML = `<div style="font-weight:bold;">${Duels.PASSIVES[t].name}</div><div style="font-size:13px;opacity:0.85;">${Duels.PASSIVES[t].text}</div>`;
+			box.appendChild(overlayButton('Take it', () => { run.passives.push(t); advanceDuels(run); }));
 			row.appendChild(box);
 		}
 		el.appendChild(row);
-	} else if (run.level === 3 || run.level === 7 || run.level === 11) {
+	} else if (Duels.TREASURE_GAMES.includes(games)) {
 		const el = dungeonOverlay('TREASURE!', 'One of these joins your deck.');
 		const options = Object.values(state.cardsById).filter(d => d.treasure && d.set === 'DUELS' && !run.deck.includes(d.id));
 		const row = document.createElement('div');
@@ -4946,29 +4941,33 @@ function afterDuelsBucket(run, nextLevel) {
 			box.style.cssText = 'background:#1c1830;border:1px solid #8a6f3a;border-radius:10px;padding:12px;';
 			box.appendChild(miniFace(d));
 			box.appendChild(document.createElement('br'));
-			box.appendChild(overlayButton('Take it', () => {
-				run.deck.push(d.id);
-				advanceDuels(run, nextLevel);
-			}));
+			box.appendChild(overlayButton('Take it', () => { run.deck.push(d.id); advanceDuels(run); }));
 			row.appendChild(box);
 		}
 		el.appendChild(row);
-	} else {
-		advanceDuels(run, nextLevel);
-	}
+	} else advanceDuels(run);
 }
 
-function advanceDuels(run, nextLevel) {
-	run.level = nextLevel;
-	run.bossId = duelsBossFor(nextLevel);
+function advanceDuels(run) {
+	const games = (run.wins || 0) + (run.losses || 0);
+	run.enemy = genDuelsEnemy(state.cardsById, games); // next opponent, scaled to this depth
 	saveDuels(run);
-	const boss = Duels.BOSSES[run.bossId];
-	const el = dungeonOverlay(`FIGHT ${nextLevel}/12`, `Next: ${boss.name} (${boss.health} HP)${boss.final ? ' — the final!' : ''}`);
+	const el = dungeonOverlay(`NEXT: ${run.enemy.name}`, `${run.wins || 0} wins / ${run.losses || 0} losses - your deck is ${run.deck.length} cards.`);
 	el.appendChild(overlayButton('Fight!', () => location.reload()));
 }
 
-function duelsDefeat(run) {
-	const el = dungeonOverlay('RUN ENDED', `${Duels.BOSSES[run.bossId].name} ends your climb at fight ${run.level}.`);
+function duelsRunComplete(run) {
+	const hero = Duels.HEROES.find(h => h.id === run.heroId);
+	const el = dungeonOverlay('12 WINS - RUN CLEARED!', `${hero.name} takes 12 wins with a ${run.deck.length}-card deck.`);
+	Col.earnGold(1000);
+	mpRunReward(el, 'win');
+	clearDuels();
+	el.appendChild(overlayButton('New Run (+1000 gold banked)', () => location.reload()));
+}
+
+function duelsRunOver(run) {
+	const hero = Duels.HEROES.find(h => h.id === run.heroId);
+	const el = dungeonOverlay('3 LOSSES - RUN OVER', `${hero.name} bows out at ${run.wins || 0} wins.`);
 	clearDuels();
 	mpRunReward(el, 'loss');
 	el.appendChild(overlayButton('New Run', () => location.reload()));
