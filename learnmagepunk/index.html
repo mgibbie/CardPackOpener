@@ -71,6 +71,10 @@
 			padding-bottom: 8px; border-bottom: 1px solid var(--border);
 		}
 		section h3 { color: var(--violet); font-size: 1.08rem; margin: 26px 0 6px; }
+		section h4 {
+			color: var(--gold); font-size: 0.98rem; margin: 20px 0 4px;
+			padding-left: 10px; border-left: 3px solid var(--border);
+		}
 		.lede { color: var(--muted); margin-top: 4px; }
 
 		.panel {
@@ -377,18 +381,39 @@
 		<h3>Battle (vs AI)</h3>
 		<p>2&ndash;8 player free-for-all against AI opponents. Rewards: <b>win +100 gold</b>, draw +50, loss +25.</p>
 
-		<h3>Duels</h3>
-		<p>Draft a deck from scratch and run it until you win big or bust out. Pick one of <b>11 heroes</b>, choose a hero power from your class's options, then <b>draft 10 cards</b> &mdash; three choices at a time, from your class's cards plus neutrals.</p>
+		<h3>Solo runs</h3>
+		<p>Four single-player campaigns. They share a shape &mdash; start with a small deck, fight a series of opponents, and grow the deck with loot between fights &mdash; but each twists it differently. In all four, <b>conceding forfeits the run and pays nothing</b>.</p>
+
+		<div class="table-scroll"><table>
+			<tr><th>Run</th><th>Shape</th><th>Its twist</th><th>Clear pays</th></tr>
+			<tr><td><b>Dungeon Run</b></td><td>8-level boss ladder</td><td>The original. Fixed class starter deck; Treasures on odd levels.</td><td>+500 gold</td></tr>
+			<tr><td><b>Dalaran Heist</b></td><td>5 wings &times; 8 fights</td><td><b>Anomalies</b> and <b>The Bar</b> &mdash; see below.</td><td>+750 gold</td></tr>
+			<tr><td><b>Tombs of Terror</b></td><td>4 chapters &times; 8 fights</td><td>Ends on a <b>60 HP Plague Lord</b>; tomb-only treasures.</td><td>+750 gold</td></tr>
+			<tr><td><b>Duels</b></td><td>Play to 12 wins or 3 losses</td><td><b>Draft</b> your deck; enemies match your power exactly.</td><td>+1000 gold</td></tr>
+		</table></div>
+
+		<h4>Dungeon Run</h4>
+		<p>Pick a class, take its fixed <b>10-card starter deck</b>, and climb an <b>8-level boss ladder</b>. Your life scales with depth &mdash; <b>15 HP at level 1, +5 per level</b>. After each win, choose 1 of 3 themed card buckets (all 3 cards join your deck); after every odd level, also pick 1 of 3 <b>Treasures</b> &mdash; permanent run passives like <i>double your starting Health</i> or <i>your spells cost (1) less</i>.</p>
+
+		<h4>Dalaran Heist</h4>
+		<p>Break into one of <b>5 wings</b> of Dalaran with one of <b>9 guild heroes</b>, each offering a choice of hero powers. Eight fights, ending on the wing's boss &mdash; Banker Biggs, Cyanigosa, Trade Prince Gallywix, Madam Goya or Archmage Khadgar. Life scales the same way (15 HP, +5 per fight).</p>
 		<ul>
-			<li><b>The run ends at 12 wins or 3 losses.</b> Clearing pays <b>+1000 gold</b>, the biggest purse in the game.</li>
-			<li><b>Loot after every game &mdash; win or lose.</b> You're offered <b>3 themed buckets</b> (Dragons, Murlocs, Big Bruisers, Lowbies, Deathrattles, Taunt Up&hellip; 17 in all); take one and all <b>3 of its cards</b> join your deck.</li>
-			<li>After games <b>1, 5 and 9</b> you also pick a <b>Passive</b> (1 of 3, from over 100), and after games <b>3, 7 and 11</b> a <b>Treasure</b> card (1 of 3). A full clear ends with a 52-card monster deck.</li>
-			<li><b>No health scaling</b> &mdash; both heroes start at the usual 40 Life. Instead your opponent is <b>generated at exactly your power level</b>: a random rival who has drafted 10 cards and taken the same number of buckets, passives and treasures you have.</li>
-			<li><b>Conceding</b> ends the run and pays nothing.</li>
+			<li><b>Anomalies:</b> before the run you may take one of 3 offered run-wide rules that bend the whole heist for <i>both</i> players &mdash; spells cost 2 less, Battlecries trigger twice, Deathrattles trigger twice, and more. Or decline for a standard run.</li>
+			<li><b>The Bar:</b> after fights 2, 4 and 6 you visit the tavern and take one action &mdash; <i>Good Food</i> (+5 Health for the rest of the run), <i>Dismiss</i> (cut a creature), <i>The Gang's All Here!</i> (3 more copies of a creature), <i>Recruit a Veteran</i> (discover a Legendary), <i>Tell a Story</i> (+2/+2 permanently), <i>Tall Tales</i> (+4/+4 but costs 2 more), or <i>Right Hand Man</i> (a creature always starts in your opening hand).</li>
+			<li><b>Passives</b> after fights 1 and 5, <b>Treasures</b> after 3 and 7.</li>
 		</ul>
 
-		<h3>Dungeon Run</h3>
-		<p>The original run mode. Pick a class, take its fixed <b>10-card starter deck</b>, and climb an <b>8-level boss ladder</b>. In a run, you and the boss share a scaling life total &mdash; <b>15 HP at level 1, +5 per level</b>. After each win, choose 1 of 3 themed card buckets (all 3 cards join your deck); after every odd level, also pick 1 of 3 <b>Treasures</b> &mdash; permanent run passives like <i>double your starting Health</i> or <i>your spells cost (1) less</i>. Clearing level 8 pays <b>+500 gold</b>.</p>
+		<h4>Tombs of Terror</h4>
+		<p>Delve one of <b>4 tomb chapters</b> as one of the <b>4 League Explorers</b> &mdash; Reno Jackson, Elise Starseeker, Brann Bronzebeard or Sir Finley &mdash; each with four hero powers to choose from. Eight fights, ending on that chapter's <b>Plague Lord</b> at a hefty <b>60 HP</b>: Vesh (Murlocs), Xatma (Death), K'zrath (Madness) or Icarax (Wrath). Life scales 15 HP, +5 per fight; there's no tavern step, so fights 2, 4 and 6 just press on. <b>Passives</b> land after fights 1 and 5, <b>Treasures</b> after 3 and 7 &mdash; drawn only from the tomb's own treasure pool.</p>
+
+		<h4>Duels</h4>
+		<p>Draft a deck from scratch and run it until you win big or bust out. Pick one of <b>11 heroes</b>, choose a hero power, then <b>draft 10 cards</b> &mdash; three choices at a time, from your class's cards plus neutrals.</p>
+		<ul>
+			<li><b>The run ends at 12 wins or 3 losses.</b></li>
+			<li><b>Loot after every game &mdash; win or lose.</b> You're offered <b>3 themed buckets</b> (Dragons, Murlocs, Big Bruisers, Lowbies, Deathrattles, Taunt Up&hellip; 17 in all); take one and all <b>3 of its cards</b> join your deck.</li>
+			<li>After games <b>1, 5 and 9</b> you also pick a <b>Passive</b> (1 of 3, from over 100), and after games <b>3, 7 and 11</b> a <b>Treasure</b> card. A full clear ends with a 52-card monster deck.</li>
+			<li><b>No health scaling</b> here &mdash; both heroes start at the usual 40 Life. Instead each opponent is <b>generated at exactly your power level</b>: a random rival who has drafted 10 cards and taken the same number of buckets, passives and treasures you have.</li>
+		</ul>
 
 		<h3>Live PvP &amp; spectating</h3>
 		<p>Challenge a friend to a real-time match, or spectate a friend's board as they play, through the <a href="/magepunktest/">test realm</a> account system.</p>
