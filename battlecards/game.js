@@ -3832,8 +3832,9 @@ async function start() {
 			const heroId = await pickDuelsHeroOverlay();
 			const hero = Duels.HEROES.find(h => h.id === heroId);
 			const powerId = await pickDuelsPowerOverlay(hero);
+			const anomaly = await pickAnomalyOverlay();
 			const deck = await pickDuelsDraftOverlay(hero.heroClass);
-			run = { active: true, heroId, powerId, deck, passives: [], wins: 0, losses: 0, enemy: genDuelsEnemy(cardsById, 0) };
+			run = { active: true, heroId, powerId, anomaly, deck, passives: [], wins: 0, losses: 0, enemy: genDuelsEnemy(cardsById, 0) };
 			saveDuels(run);
 		}
 		bootDuelsEncounter(cardsById, run);
@@ -4770,8 +4771,9 @@ let duelsCardsById = null; // set at boot so overlays can read card defs pre-sta
 function resumeDuelsOverlay(run) {
 	return new Promise(resolve => {
 		const hero = Duels.HEROES.find(h => h.id === run.heroId);
+		const anom = run.anomaly && Heist.ANOMALIES[run.anomaly] ? ` · Anomaly: ${Heist.ANOMALIES[run.anomaly].name}` : '';
 		const el = dungeonOverlay('DUEL IN PROGRESS',
-			`${hero?.name || run.heroId} - ${run.wins || 0} wins / ${run.losses || 0} losses, ${run.deck.length} cards. Reach 12 wins before 3 losses.`);
+			`${hero?.name || run.heroId} - ${run.wins || 0} wins / ${run.losses || 0} losses, ${run.deck.length} cards${anom}. Reach 12 wins before 3 losses.`);
 		el.appendChild(overlayButton('Continue the run', () => { hideDungeonOverlay(); resolve(true); }));
 		el.appendChild(overlayButton('Abandon - start a new run', () => { hideDungeonOverlay(); resolve(false); }));
 	});
@@ -4876,6 +4878,8 @@ function bootDuelsEncounter(cardsById, run) {
 	E.stripLoadouts(state);
 	for (const id of run.passives) Duels.applyPassive(state, HUMAN, id);
 	for (const id of enemy.passives || []) Duels.applyPassive(state, 1, id);
+	// optional run modifier: a symmetric anomaly warps every game (shared with Heist)
+	if (run.anomaly && Heist.ANOMALIES[run.anomaly]) { Heist.applyAnomaly(state, run.anomaly); log(`Anomaly - ${Heist.ANOMALIES[run.anomaly].name}: ${Heist.ANOMALIES[run.anomaly].text}`); }
 	log(`Duels - ${run.wins || 0} wins / ${run.losses || 0} losses. Facing ${enemy.name} (${enemyCls.name || enemy.heroClass}).`);
 	log(`You are ${hero.name} with a ${run.deck.length}-card deck; ${enemy.name} drafted ${enemy.deck.length}.`);
 	for (const id of run.passives) log(`Your passive - ${Duels.PASSIVES[id].name}: ${Duels.PASSIVES[id].text}`);

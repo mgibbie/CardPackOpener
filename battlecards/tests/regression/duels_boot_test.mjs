@@ -5,6 +5,7 @@
 import fs from 'fs';
 import * as E from '../../engine.js';
 import * as Du from '../../duels.js';
+import * as Heist from '../../heist.js';
 import { validateGameState } from '../../engine/validate.js';
 import { seededRng } from '../../engine/rng.js';
 
@@ -78,6 +79,21 @@ for (const hero of Du.HEROES) {
 			pass++;
 		} catch (err) { fail++; console.log('FAIL boot:', hero.id, sc.games, String(err).slice(0, 140)); }
 	}
+}
+
+// optional anomaly modifier (shared with Heist) can be enabled on a Duels run
+ok('anomaly picker offers the Heist anomaly set', Object.keys(Heist.ANOMALIES).length >= 8);
+for (const anomId of ['growing', 'arcane', 'infused', 'gorged', 'rattling']) {
+	const rng = seededRng(anomId.length * 5 + 1);
+	try {
+		const { state } = bootDuelsRun('mozaki', 3, null, ['band_of_bees'], rng);
+		Heist.applyAnomaly(state, anomId); // game.js does this in bootDuelsEncounter
+		const set = state.anomaly === anomId;
+		state.current = 1; const pw = state.players[1].heroPowers[0]; if (pw) E.useHeroPower(state, 1, pw.uid, null);
+		state.current = 0; E.endTurn(state); E.endTurn(state);
+		const errs = validateGameState(state);
+		ok(`anomaly ${anomId}: applied & the game stays legal`, set && !errs.length, errs.slice(0, 2));
+	} catch (err) { fail++; console.log('FAIL anomaly:', anomId, String(err).slice(0, 120)); }
 }
 
 // the between-game treasure reward pool exists (active DUELS treasures)
