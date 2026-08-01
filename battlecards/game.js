@@ -3833,7 +3833,7 @@ async function start() {
 			const hero = Duels.HEROES.find(h => h.id === heroId);
 			const powerId = await pickDuelsPowerOverlay(hero);
 			const anomaly = await pickAnomalyOverlay();
-			const deck = await pickDuelsDraftOverlay(hero.heroClass);
+			const deck = await pickDuelsDraftOverlay(Duels.classesOf(hero));
 			run = { active: true, heroId, powerId, anomaly, deck, passives: [], wins: 0, losses: 0, enemy: genDuelsEnemy(cardsById, 0) };
 			saveDuels(run);
 		}
@@ -4785,11 +4785,11 @@ function pickDuelsHeroOverlay() {
 		const row = document.createElement('div');
 		row.style.cssText = 'display:flex;flex-wrap:wrap;justify-content:center;gap:12px;max-width:840px;';
 		for (const h of Duels.HEROES) {
-			const cls = classRegistry.find(c => c.id === h.heroClass);
+			const clsLabel = Duels.classesOf(h).map(c => (classRegistry.find(x => x.id === c)?.name) || c).join(' / ');
 			const box = document.createElement('div');
 			box.style.cssText = 'background:#1c1830;border:1px solid #8a6f3a;border-radius:10px;padding:12px;max-width:180px;';
 			box.innerHTML = `<div style="font-weight:bold;">${h.name}</div>`
-				+ `<div style="font-size:12px;color:#e8c37a;margin-bottom:4px;">${cls?.name || h.heroClass}</div>`
+				+ `<div style="font-size:12px;color:#e8c37a;margin-bottom:4px;">${clsLabel}</div>`
 				+ `<div style="font-size:12px;opacity:0.8;margin-bottom:8px;">${h.flavor}</div>`;
 			box.appendChild(overlayButton('Choose', () => { hideDungeonOverlay(); resolve(h.id); }));
 			row.appendChild(box);
@@ -4804,12 +4804,14 @@ function pickDuelsPowerOverlay(hero) {
 		const el = dungeonOverlay('CHOOSE YOUR HERO POWER', `${hero.name} lines up a few tricks.`);
 		const row = document.createElement('div');
 		row.style.cssText = 'display:flex;flex-wrap:wrap;justify-content:center;gap:14px;';
-		const cls = classRegistry.find(c => c.id === hero.heroClass);
+		const heroClasses = Duels.classesOf(hero);
 		const options = [];
-		if (cls?.power) options.push({ id: null, name: cls.power.name, cost: cls.power.cost, text: cls.power.text });
-		for (const id of Duels.HERO_POWERS[hero.heroClass] || []) {
+		const powSeen = new Set();
+		const primaryCls = classRegistry.find(c => c.id === heroClasses[0]);
+		if (primaryCls?.power) options.push({ id: null, name: primaryCls.power.name, cost: primaryCls.power.cost, text: primaryCls.power.text });
+		for (const cl of heroClasses) for (const id of Duels.HERO_POWERS[cl] || []) {
 			const d = duelsCardsById[id];
-			if (d && d.power) options.push({ id, name: d.name, cost: d.power.cost, text: (d.description || '').replace(/^Hero Power \(\d+\): /, '') });
+			if (d && d.power && !powSeen.has(id)) { powSeen.add(id); options.push({ id, name: d.name, cost: d.power.cost, text: (d.description || '').replace(/^Hero Power \(\d+\): /, '') }); }
 		}
 		for (const o of options) {
 			const box = document.createElement('div');
@@ -4901,11 +4903,11 @@ function afterDuelsGame(run, won) {
 function duelsLoot(run, won) {
 	const hero = Duels.HEROES.find(h => h.id === run.heroId);
 	const el = dungeonOverlay(won ? `WIN - ${run.wins}/12` : `LOSS - ${run.losses}/3`, 'Choose a loot bucket - all 3 cards join your deck.');
-	const offered = Duels.offerBuckets(duelsCardsById, hero.heroClass, Math.random, 3);
+	const offered = Duels.offerBuckets(duelsCardsById, Duels.classesOf(hero), Math.random, 3);
 	const row = document.createElement('div');
 	row.style.cssText = 'display:flex;flex-wrap:wrap;justify-content:center;gap:14px;';
 	for (const bucket of offered) {
-		const ids = Duels.rollBucket(duelsCardsById, hero.heroClass, bucket, Math.random, 3);
+		const ids = Duels.rollBucket(duelsCardsById, Duels.classesOf(hero), bucket, Math.random, 3);
 		const box = document.createElement('div');
 		box.style.cssText = 'background:#1c1830;border:1px solid #8a6f3a;border-radius:10px;padding:12px;max-width:330px;';
 		box.innerHTML = `<div style="font-weight:bold;margin-bottom:8px;letter-spacing:1px;">${bucket.name}</div>`;

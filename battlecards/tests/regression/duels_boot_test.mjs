@@ -14,12 +14,13 @@ const cardsById = {}; for (const c of raw.cards) cardsById[c.id] = c;
 let pass = 0, fail = 0;
 const ok = (l, c, extra) => { if (c) pass++; else { fail++; console.log('FAIL:', l, extra ?? ''); } };
 
-// each playable hero drafts a real 10-card deck and has resolvable class powers
+// each playable hero drafts a real 10-card deck (from its class(es)) and has powers
 for (const hero of Du.HEROES) {
-	ok(`${hero.id}: draft pool has enough cards`, Du.draftPool(cardsById, hero.heroClass).length >= 10);
-	const deck = Du.autoDraftDeck(cardsById, hero.heroClass, seededRng(hero.id.length + 3), 10);
+	const classes = Du.classesOf(hero);
+	ok(`${hero.id}: draft pool has enough cards`, Du.draftPool(cardsById, classes).length >= 10);
+	const deck = Du.autoDraftDeck(cardsById, classes, seededRng(hero.id.length + 3), 10);
 	ok(`${hero.id}: drafts 10 valid cards`, deck.length === 10 && deck.every(id => cardsById[id]));
-	const powers = Du.HERO_POWERS[hero.heroClass] || [];
+	const powers = classes.flatMap(cl => Du.HERO_POWERS[cl] || []);
 	ok(`${hero.id}: class powers resolve to heropower cards`, powers.length >= 1
 		&& powers.every(id => cardsById[id] && cardsById[id].type === 'heropower' && cardsById[id].power), powers.filter(id => !cardsById[id]));
 }
@@ -28,11 +29,11 @@ for (const hero of Du.HEROES) {
 // generated enemy at parity, passives applied to both sides, equal footing
 function bootDuelsRun(heroId, games, powerId, playerPassives, rng) {
 	const hero = Du.HEROES.find(h => h.id === heroId);
-	const deck = Du.autoDraftDeck(cardsById, hero.heroClass, rng, 10);
+	const deck = Du.autoDraftDeck(cardsById, Du.classesOf(hero), rng, 10);
 	const rival = Du.RIVALS[Math.floor(rng() * Du.RIVALS.length)];
 	const enemy = Du.generateEnemy(cardsById, rival.heroClass, games, rng);
 	const playerCls = { id: hero.heroClass, name: hero.heroClass, power: null };
-	const enemyCls = { id: enemy.heroClass, name: enemy.heroClass, power: null };
+	const enemyCls = { id: rival.heroClass, name: rival.heroClass, power: null };
 	const state = E.createGame(cardsById, rng, [...deck], 2, [playerCls, enemyCls]);
 	if (powerId && cardsById[powerId]) {
 		const pw = E.instantiate(cardsById[powerId], 0);

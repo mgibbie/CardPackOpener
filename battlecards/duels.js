@@ -473,6 +473,7 @@ export const HEROES = [
 	{ id: 'rattlegore', name: 'Rattlegore', heroClass: 'warrior', hsId: 'PVPDR_Hero_Rattlegore', flavor: 'Bone by bone, he simply reassembles.' },
 	{ id: 'stelina', name: 'Star Student Stelina', heroClass: 'demon_hunter', hsId: 'PVPDR_Hero_Stelina', flavor: 'Top of her class in disappearing acts.' },
 	{ id: 'sai', name: 'Sai Shadestorm', heroClass: 'death_knight', hsId: 'PVPDR_Hero_Sai', flavor: 'The corpses keep the ledger; she keeps the corpses.' },
+	{ id: 'diablo', name: 'Diablo', heroClass: 'warrior', classes: ['warrior', 'warlock'], hsId: 'PVPDR_Hero_Diablo', flavor: 'The Lord of Terror \u2014 a dual-class fusion of Warrior steel and Warlock demons.' },
 ];
 
 // class -> imported hero-power ids (cards.json, type 'heropower'). Grows batch
@@ -557,18 +558,23 @@ const DRAFT_TYPES = new Set(['creature', 'weapon', 'sorcery', 'instant']);
 const RARITY_WEIGHT = { basic: 100, common: 100, rare: 34, epic: 14, legendary: 6 };
 const cardWeight = d => RARITY_WEIGHT[d.rarity] || 40;
 
-// a card is draftable for a class if it's a real, collectible, non-token card of
-// that class or Neutral (no MTG-colored cards, no locations/hero powers/emblems)
-function draftable(d, cls) {
+// normalize a hero's class(es): a single class string or an array (dual-class)
+const asClasses = x => Array.isArray(x) ? x : (x ? [x] : []);
+export const classesOf = hero => hero && (hero.classes && hero.classes.length ? hero.classes : (hero.heroClass ? [hero.heroClass] : []));
+
+// a card is draftable for a set of classes if it's a real, collectible, non-token
+// card of one of those classes or Neutral (no MTG-colored / location / power cards)
+function draftable(d, classes) {
 	if (!d || d.token || d.collectible === false || d.companion || d.commander) return false;
 	if (d.colors && d.colors.length) return false;
 	if (!DRAFT_TYPES.has(d.type)) return false;
 	const dc = d.cardClass || 'neutral';
-	return dc === cls || dc === 'neutral';
+	return dc === 'neutral' || classes.includes(dc);
 }
 
-export function draftPool(cardsById, heroClass) {
-	return Object.values(cardsById).filter(d => draftable(d, heroClass));
+export function draftPool(cardsById, classes) {
+	const cls = asClasses(classes);
+	return Object.values(cardsById).filter(d => draftable(d, cls));
 }
 
 // pick N distinct cards from a pool, rarity-weighted (arena feel)
@@ -587,8 +593,8 @@ export function draftOptions(pool, rng, n = 3) {
 
 // a full auto-drafted deck (for generated enemies / previews): `size` picks,
 // the AI takes a rarity-weighted random of each trio
-export function autoDraftDeck(cardsById, heroClass, rng, size = 10) {
-	const pool = draftPool(cardsById, heroClass);
+export function autoDraftDeck(cardsById, classes, rng, size = 10) {
+	const pool = draftPool(cardsById, classes);
 	const deck = [];
 	for (let i = 0; i < size && pool.length; i++) {
 		const opts = draftOptions(pool, rng, 3);
@@ -598,37 +604,151 @@ export function autoDraftDeck(cardsById, heroClass, rng, size = 10) {
 	return deck;
 }
 
-// HS Duels loot buckets: each is a theme filter that rolls 3 matching cards
+// ---- HS Duels loot buckets ----
+// small filter helpers shared by the bucket definitions
+const isSpell = d => d.type === 'sorcery' || d.type === 'instant';
+const kw = (d, k) => (d.keywords || []).includes(k);
+const eff = (d, t) => (d.effects || []).some(e => e.type === t);
+const trib = (d, t) => (d.tribe || '').includes(t);
+const school = (d, sc) => isSpell(d) && (d.tribe || '') === sc;
+const descHas = (d, sub) => (d.description || '').toLowerCase().includes(sub);
+
+// generic Neutral theme buckets, offered to every class
 export const DUELS_BUCKETS = [
-	{ id: 'beasts', name: 'Beasts', match: d => d.type === 'creature' && (d.tribe || '').includes('Beast') },
-	{ id: 'dragons', name: 'Dragons', match: d => d.type === 'creature' && (d.tribe || '').includes('Dragon') },
-	{ id: 'mechs', name: 'Mechs', match: d => d.type === 'creature' && (d.tribe || '').includes('Mech') },
-	{ id: 'murlocs', name: 'Murlocs', match: d => d.type === 'creature' && (d.tribe || '').includes('Murloc') },
-	{ id: 'elementals', name: 'Elementals', match: d => d.type === 'creature' && (d.tribe || '').includes('Elemental') },
-	{ id: 'pirates', name: 'Pirates', match: d => d.type === 'creature' && (d.tribe || '').includes('Pirate') },
-	{ id: 'naga', name: 'Naga', match: d => d.type === 'creature' && (d.tribe || '').includes('Naga') },
-	{ id: 'demons', name: 'Demons', match: d => d.type === 'creature' && (d.tribe || '').includes('Demon') },
-	{ id: 'undead', name: 'Undead', match: d => d.type === 'creature' && (d.tribe || '').includes('Undead') },
+	{ id: 'beasts', name: 'Beasts', match: d => d.type === 'creature' && trib(d, 'Beast') },
+	{ id: 'dragons', name: 'Dragons', match: d => d.type === 'creature' && trib(d, 'Dragon') },
+	{ id: 'mechs', name: 'Mechs', match: d => d.type === 'creature' && trib(d, 'Mech') },
+	{ id: 'murlocs', name: 'Murlocs', match: d => d.type === 'creature' && trib(d, 'Murloc') },
+	{ id: 'elementals', name: 'Elementals', match: d => d.type === 'creature' && trib(d, 'Elemental') },
+	{ id: 'pirates', name: 'Pirates', match: d => d.type === 'creature' && trib(d, 'Pirate') },
+	{ id: 'naga', name: 'Naga', match: d => d.type === 'creature' && trib(d, 'Naga') },
+	{ id: 'demons', name: 'Demons', match: d => d.type === 'creature' && trib(d, 'Demon') },
+	{ id: 'undead', name: 'Undead', match: d => d.type === 'creature' && trib(d, 'Undead') },
 	{ id: 'menagerie', name: 'Menagerie', match: d => d.type === 'creature' && (d.tribe || '').length > 0 },
 	{ id: 'big_bruisers', name: 'Big Bruisers', match: d => d.type === 'creature' && (d.cost || 0) >= 6 },
 	{ id: 'lowbies', name: 'Lowbies', match: d => d.type === 'creature' && (d.cost || 0) <= 2 },
-	{ id: 'big_spells', name: 'Big Spells', match: d => (d.type === 'sorcery' || d.type === 'instant') && (d.cost || 0) >= 5 },
-	{ id: 'spellcraft', name: 'Spellcraft', match: d => d.type === 'sorcery' || d.type === 'instant' },
-	{ id: 'deathrattle', name: 'Deathrattles', match: d => (d.keywords || []).includes('deathrattle') },
-	{ id: 'taunt', name: 'Taunt Up', match: d => (d.keywords || []).includes('taunt') },
-	{ id: 'divine_shield', name: 'Shields Up', match: d => (d.keywords || []).includes('divine_shield') },
+	{ id: 'big_spells', name: 'Big Spells', match: d => isSpell(d) && (d.cost || 0) >= 5 },
+	{ id: 'spellcraft', name: 'Spellcraft', match: d => isSpell(d) },
+	{ id: 'deathrattle', name: 'Deathrattles', match: d => kw(d, 'deathrattle') },
+	{ id: 'taunt', name: 'Taunt Up', match: d => kw(d, 'taunt') },
+	{ id: 'divine_shield', name: 'Shields Up', match: d => kw(d, 'divine_shield') },
 ];
 
+// the real HS Duels signature buckets per class. In HS the 3 cards per bucket are
+// resolved server-side (not in the client data), so each named bucket maps to a
+// best-effort filter over the class pool (a few archetype names are approximate).
+export const CLASS_BUCKETS = {
+	warrior: [
+		{ id: 'w_arsenal', name: 'Arsenal', match: d => d.type === 'weapon' },
+		{ id: 'w_taunt', name: 'Taunt', match: d => kw(d, 'taunt') },
+		{ id: 'w_enrage', name: 'Enrage', match: d => !!d.enrage },
+		{ id: 'w_all_might', name: 'All Might', match: d => d.type === 'creature' && (d.attack || 0) >= 5 },
+		{ id: 'w_clobber', name: "Clobber 'Em!", match: d => isSpell(d) && eff(d, 'damage') },
+		{ id: 'w_iron', name: 'Iron and Steel', match: d => d.type === 'weapon' || eff(d, 'armor') },
+	],
+	rogue: [
+		{ id: 'r_combos', name: 'Combos', match: d => kw(d, 'combo') || descHas(d, 'combo') },
+		{ id: 'r_deathrattle', name: 'Deathrattle', match: d => kw(d, 'deathrattle') },
+		{ id: 'r_light_fingers', name: 'Light Fingers', match: d => isSpell(d) && (d.cost || 0) <= 2 },
+		{ id: 'r_shadow_agents', name: 'Shadow Agents', match: d => d.type === 'creature' && kw(d, 'stealth') },
+		{ id: 'r_swift', name: 'Swift Strikes', match: d => kw(d, 'rush') || kw(d, 'charge') },
+		{ id: 'r_thieves', name: "Thieves' Tools", match: d => d.type === 'weapon' || descHas(d, 'discover') },
+	],
+	mage: [
+		{ id: 'm_enigmas', name: 'Enigmas', match: d => d.type === 'secret' || !!d.secret },
+		{ id: 'm_frost', name: 'Frost', match: d => school(d, 'Frost') },
+		{ id: 'm_more_spells', name: 'More Spells!', match: d => isSpell(d) },
+		{ id: 'm_arcane', name: 'Arcane Anomalies', match: d => school(d, 'Arcane') },
+		{ id: 'm_fire', name: 'Flaring Fire', match: d => school(d, 'Fire') },
+	],
+	paladin: [
+		{ id: 'p_blessings', name: 'Blessings', match: d => isSpell(d) && (eff(d, 'buff') || eff(d, 'grant')) },
+		{ id: 'p_silver_hand', name: 'The Silver Hand', match: d => d.type === 'creature' && (d.cost || 0) <= 1 },
+		{ id: 'p_divine_engines', name: 'Divine Engines', match: d => trib(d, 'Mech') },
+		{ id: 'p_holy_warriors', name: 'Holy Warriors', match: d => (d.type === 'creature' && kw(d, 'divine_shield')) || school(d, 'Holy') },
+		{ id: 'p_secret_whispers', name: 'Secret Whispers', match: d => d.type === 'secret' || !!d.secret },
+		{ id: 'p_veterans', name: 'Veterans', match: d => d.type === 'creature' && (d.cost || 0) >= 5 },
+		{ id: 'p_caretaking', name: 'Caretaking', match: d => eff(d, 'heal') },
+		{ id: 'p_dragons', name: 'Dragons', match: d => trib(d, 'Dragon') },
+	],
+	priest: [
+		{ id: 'pr_curatives', name: 'Curatives', match: d => eff(d, 'heal') },
+		{ id: 'pr_shadows', name: 'Shadows', match: d => school(d, 'Shadow') },
+		{ id: 'pr_silence', name: 'Silence', match: d => eff(d, 'silence') || kw(d, 'silence') },
+		{ id: 'pr_summoning', name: 'Summoning', match: d => eff(d, 'summon') || eff(d, 'summon-random') },
+		{ id: 'pr_visions', name: 'Visions', match: d => eff(d, 'draw') || descHas(d, 'discover') },
+		{ id: 'pr_dragons', name: 'Dragons', match: d => trib(d, 'Dragon') },
+		{ id: 'pr_divine_duty', name: 'Divine Duty', match: d => school(d, 'Holy') || kw(d, 'divine_shield') },
+	],
+	shaman: [
+		{ id: 's_overloaded', name: 'Overloaded!', match: d => (d.overload || 0) > 0 || eff(d, 'add-overload') },
+		{ id: 's_totems', name: 'Totems', match: d => trib(d, 'Totem') },
+		{ id: 's_elemental', name: 'Elemental Assault', match: d => trib(d, 'Elemental') },
+		{ id: 's_spells', name: 'Spells Unleashed', match: d => isSpell(d) },
+		{ id: 's_from_deep', name: 'From the Deep', match: d => trib(d, 'Naga') },
+		{ id: 's_frost', name: 'Fractured Frost', match: d => school(d, 'Frost') },
+		{ id: 's_nature', name: 'Nascent Nature', match: d => school(d, 'Nature') },
+	],
+	warlock: [
+		{ id: 'wl_demons', name: 'Demons', match: d => trib(d, 'Demon') },
+		{ id: 'wl_discard', name: 'Discard', match: d => descHas(d, 'discard') },
+		{ id: 'wl_soul', name: 'Soul Exploits', match: d => kw(d, 'lifesteal') },
+		{ id: 'wl_swarming', name: 'Swarming', match: d => d.type === 'creature' && (d.cost || 0) <= 2 },
+		{ id: 'wl_pain', name: 'Pain', match: d => descHas(d, 'your hero') },
+		{ id: 'wl_chum', name: 'Chum Bucket', match: d => trib(d, 'Murloc') },
+	],
+	hunter: [
+		{ id: 'h_beasts', name: 'Beasts', match: d => trib(d, 'Beast') },
+		{ id: 'h_deathly', name: 'Deathly Minions', match: d => kw(d, 'deathrattle') },
+		{ id: 'h_little_bites', name: 'Little Bites', match: d => trib(d, 'Beast') && (d.cost || 0) <= 3 },
+		{ id: 'h_traps', name: 'Traps and Trappers', match: d => d.type === 'secret' || !!d.secret },
+		{ id: 'h_rush', name: 'The Best Defense', match: d => kw(d, 'rush') },
+	],
+	druid: [
+		{ id: 'd_balance', name: 'Balance', match: d => !!d.choices || school(d, 'Nature') },
+		{ id: 'd_beasts', name: 'Beasts', match: d => trib(d, 'Beast') },
+		{ id: 'd_deathly_beasts', name: 'Deathly Beasts', match: d => trib(d, 'Beast') && kw(d, 'deathrattle') },
+		{ id: 'd_feral', name: 'Feral', match: d => d.type === 'creature' && (d.attack || 0) >= 5 },
+		{ id: 'd_mana_growth', name: 'Mana Growth', match: d => eff(d, 'add-mana-crystal') || eff(d, 'refresh-mana') || descHas(d, 'mana crystal') },
+		{ id: 'd_natural_defense', name: 'Natural Defense', match: d => kw(d, 'taunt') },
+		{ id: 'd_naga', name: "Down Where It's Wetter", match: d => trib(d, 'Naga') },
+	],
+	demon_hunter: [
+		{ id: 'dh_fearless', name: 'Fearless', match: d => kw(d, 'rush') || kw(d, 'charge') },
+		{ id: 'dh_naga', name: 'Nasty Nagas', match: d => trib(d, 'Naga') },
+		{ id: 'dh_weapons', name: 'Whirling Weapons', match: d => d.type === 'weapon' },
+		{ id: 'dh_soul', name: 'Soul Strategy', match: d => kw(d, 'lifesteal') },
+		{ id: 'dh_taunt', name: 'No Retreat!', match: d => kw(d, 'taunt') },
+		{ id: 'dh_deathrattle', name: 'Razerrattle', match: d => kw(d, 'deathrattle') },
+		{ id: 'dh_demons', name: 'Demon Hunting', match: d => trib(d, 'Demon') },
+	],
+	death_knight: [
+		{ id: 'dk_undead', name: 'Undead', match: d => trib(d, 'Undead') },
+		{ id: 'dk_deathrattle', name: 'Deathrattle', match: d => kw(d, 'deathrattle') },
+		{ id: 'dk_corpses', name: 'Corpse Harvest', match: d => descHas(d, 'corpse') },
+		{ id: 'dk_frost', name: 'Frost', match: d => school(d, 'Frost') },
+		{ id: 'dk_shadow', name: 'Shadow', match: d => school(d, 'Shadow') },
+	],
+};
+
+// every bucket a hero can be offered: the generic themes + its class signatures
+export function bucketsFor(classes) {
+	const cls = asClasses(classes);
+	const out = [...DUELS_BUCKETS], seen = new Set(out.map(b => b.id));
+	for (const c of cls) for (const b of (CLASS_BUCKETS[c] || [])) if (!seen.has(b.id)) { seen.add(b.id); out.push(b); }
+	return out;
+}
+
 // roll 3 cards for a bucket from the hero's pool (rarity-weighted)
-export function rollBucket(cardsById, heroClass, bucket, rng, n = 3) {
-	const pool = draftPool(cardsById, heroClass).filter(d => bucket.match(d));
+export function rollBucket(cardsById, classes, bucket, rng, n = 3) {
+	const pool = draftPool(cardsById, classes).filter(d => bucket.match(d));
 	return draftOptions(pool, rng, n).map(c => c.id);
 }
 
-// offer `count` distinct buckets that actually have >= 3 matches for this class
-export function offerBuckets(cardsById, heroClass, rng, count = 3) {
-	const pool = draftPool(cardsById, heroClass);
-	const usable = DUELS_BUCKETS.filter(b => pool.filter(d => b.match(d)).length >= 3);
+// offer `count` distinct buckets that actually have >= 3 matches in this hero's pool
+export function offerBuckets(cardsById, classes, rng, count = 3) {
+	const pool = draftPool(cardsById, classes);
+	const usable = bucketsFor(classes).filter(b => pool.filter(d => b.match(d)).length >= 3);
 	const out = [], avail = [...usable];
 	while (out.length < count && avail.length) out.push(avail.splice(Math.floor(rng() * avail.length), 1)[0]);
 	return out;
@@ -653,19 +773,19 @@ export function enemyLoot(games) {
 
 // build a full generated enemy at exact parity: a 10-card draft + `games` buckets
 // + the matching passive/treasure counts, all scaled to how deep the run is
-export function generateEnemy(cardsById, heroClass, games, rng) {
-	const deck = autoDraftDeck(cardsById, heroClass, rng, 10);
+export function generateEnemy(cardsById, classes, games, rng) {
+	const deck = autoDraftDeck(cardsById, classes, rng, 10);
 	const loot = enemyLoot(games);
 	for (let b = 0; b < loot.buckets; b++) {
-		const bk = offerBuckets(cardsById, heroClass, rng, 1)[0];
-		if (bk) deck.push(...rollBucket(cardsById, heroClass, bk, rng, 3));
+		const bk = offerBuckets(cardsById, classes, rng, 1)[0];
+		if (bk) deck.push(...rollBucket(cardsById, classes, bk, rng, 3));
 	}
 	const treasurePool = Object.values(cardsById).filter(d => d.treasure && d.set === 'DUELS');
 	for (let t = 0; t < loot.treasures && treasurePool.length; t++) deck.push(treasurePool[Math.floor(rng() * treasurePool.length)].id);
 	const passiveKeys = Object.keys(PASSIVES);
 	const passives = [];
 	for (let pk = 0; pk < loot.passives && passiveKeys.length; pk++) passives.push(passiveKeys[Math.floor(rng() * passiveKeys.length)]);
-	return { heroClass, deck, passives, loot };
+	return { classes: asClasses(classes), deck, passives, loot };
 }
 // the enemy identities a run rolls (rival heroes, for name/portrait/class flavor)
 export const RIVALS = [

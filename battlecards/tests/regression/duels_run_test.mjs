@@ -120,7 +120,7 @@ ok('all 4 batch-2 hero-power cards present + well-formed', HP_IDS2.every(id => {
 ok('PASSIVES has the 104 entries (complete)', Object.keys(D.PASSIVES).length === 104 && ['brittle_bones', 'eerie_stone', 'mantle_of_ignition', 'edge_of_dredge', 'dragonbone_ritual'].every(k => D.PASSIVES[k]));
 // authored token cards exist
 ok('authored token cards present', ['fel_rift', 'legendary_invitation', 'dream_portal', 'dream', 'nightmare', 'laughing_sister', 'emerald_drake', 'lk_frost_strike', 'lk_doom_pact', 'lk_soul_reaper'].every(id => byId[id] && byId[id].token && byId[id].collectible === false), null);
-ok('HEROES lists 11 signature heroes with class', D.HEROES.length === 11 && D.HEROES.every(h => h.id && h.name && h.heroClass), D.HEROES.length);
+ok('HEROES lists 12 playable heroes (11 signature + Diablo) with class', D.HEROES.length === 12 && D.HEROES.every(h => h.id && h.name && h.heroClass), D.HEROES.length);
 ok('applyPassive returns false for an unknown id', D.applyPassive({ players: [{}] }, 0, 'nope') === false);
 
 // Robe of the Apprentice: Spell Damage +1 emblem
@@ -1022,6 +1022,30 @@ const kill = (state, pi, uid) => { const c = state.players[pi].board.find(x => x
 // RIVALS roster: valid identities with real classes + portrait ids
 ok('RIVALS: enemy identities with class + hsId', D.RIVALS.length >= 8 && D.RIVALS.every(r => r.id && r.name && r.heroClass && r.hsId), D.RIVALS.length);
 ok('run end constants', D.WINS_TO_CLEAR === 12 && D.LOSSES_TO_END === 3);
+
+// dual-class heroes: Diablo is playable and drafts from both classes
+{
+	const diablo = D.HEROES.find(h => h.id === 'diablo');
+	ok('Diablo is a playable dual-class hero (Warrior + Warlock)', diablo && D.classesOf(diablo).join(',') === 'warrior,warlock', diablo && D.classesOf(diablo));
+	ok('dual-class draft pool spans both classes', D.draftPool(byId, D.classesOf(diablo)).length > D.draftPool(byId, 'warrior').length);
+	ok('classesOf falls back to heroClass for single-class heroes', D.classesOf(D.HEROES.find(h => h.id === 'mozaki')).join() === 'mage');
+}
+// per-class signature buckets (the real HS Duels class bucket names)
+{
+	ok('CLASS_BUCKETS covers all 11 classes with named signatures', Object.keys(D.CLASS_BUCKETS).length === 11
+		&& D.CLASS_BUCKETS.paladin.some(b => b.name === 'Blessings') && D.CLASS_BUCKETS.rogue.some(b => b.name === 'Combos')
+		&& D.CLASS_BUCKETS.warrior.some(b => b.name === 'Arsenal') && D.CLASS_BUCKETS.warlock.some(b => b.name === 'Demons'));
+	const palB = D.bucketsFor('paladin');
+	ok('bucketsFor(paladin): generic themes + Paladin signatures', palB.length > D.DUELS_BUCKETS.length && palB.some(b => b.id === 'p_blessings'));
+	const diaB = D.bucketsFor(['warrior', 'warlock']);
+	ok('bucketsFor(dual): merges both class signatures', diaB.some(b => b.id === 'w_arsenal') && diaB.some(b => b.id === 'wl_demons'));
+	const arsenal = D.CLASS_BUCKETS.warrior.find(b => b.id === 'w_arsenal');
+	const rolled = D.rollBucket(byId, 'warrior', arsenal, seededRng(9), 3);
+	ok('rollBucket Arsenal: weapons only', rolled.length >= 1 && rolled.every(id => byId[id]?.type === 'weapon'), rolled);
+	// a generated enemy for a dual-class hero draws from the combined pool
+	const en = D.generateEnemy(byId, ['warrior', 'warlock'], 3, seededRng(21));
+	ok('generateEnemy(dual): valid deck at parity', en.deck.length === 10 + 3 * 3 + 1 && en.deck.every(id => byId[id]), en.deck.length);
+}
 
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);
