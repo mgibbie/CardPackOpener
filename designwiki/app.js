@@ -874,9 +874,9 @@ async function duelsView() {
   },
     duelsPortrait(hero.id, 88),
     h('div', { style: 'font-weight:bold;text-align:center;font-size:13px;' }, hero.name),
-    h('div', { class: 'muted', style: 'font-size:11.5px;' }, clsName(hero.heroClass))));
+    h('div', { class: 'muted', style: 'font-size:11.5px;' }, Du.classesOf(hero).map(clsName).join(' / '))));
   const bucketChips = (Du.DUELS_BUCKETS || []).map(b => h('span', { class: 'tag-chip type' }, b.name));
-  const rivalChips = (Du.RIVALS || []).map(r => h('span', { class: 'tag-chip tribe' }, r.name + ' · ' + clsName(r.heroClass)));
+  const rivalChips = (Du.RIVALS || []).map(r => h('span', { class: 'tag-chip tribe' }, r.name + ' · ' + Du.classesOf(r).map(clsName).join(' / ')));
   content.replaceChildren(
     h('h1', null, 'Duels'),
     h('p', { class: 'muted' }, 'Pick a hero and a hero power, then draft a 10-card deck arena-style — ten times you pick one card of three, from your class + Neutral pool (rarity-weighted, so Legendaries are rare). Then play on until 12 wins or 3 losses. After every game you add a loot bucket (3 cards), plus a passive treasure at games 1/5/9 and an active treasure at 3/7/11. Every opponent is generated at the same power budget you have — a 10-card draft plus the same buckets, passives, and treasures — so the fights stay fair as you climb.'),
@@ -897,22 +897,32 @@ async function duelsHeroView(heroId) {
   const hero = Du.HEROES.find(x => x.id === heroId);
   if (!hero) return content.replaceChildren(h('h1', null, 'Unknown hero'), h('p', null, h('a', { href: '#/duels' }, '← Duels')));
   const byId = {}; for (const c of cards) byId[c.id] = c;
-  const cls = classes.find(c => c.id === hero.heroClass);
-  const alts = (Du.HERO_POWERS[hero.heroClass] || []).map(id => byId[id]).filter(c => c && c.power);
-  const powers = [cls?.power ? { name: cls.power.name, cost: cls.power.cost, text: cls.power.text } : null,
-    ...alts.map(c => ({ name: c.name, cost: c.power.cost, text: (c.description || '').replace(/^Hero Power \(\d+\): /, '') }))].filter(Boolean);
-  const poolSize = (typeof Du.draftPool === 'function') ? Du.draftPool(byId, hero.heroClass).length : 0;
+  const clsName = id => (classes.find(c => c.id === id)?.name) || titleCase(id);
+  const heroClasses = Du.classesOf(hero);
+  const clsLabel = heroClasses.map(id => clsName(id)).join(' / ');
+  const primaryCls = classes.find(c => c.id === heroClasses[0]);
+  // mirror the game's picker: primary class default power + every class's alt powers (deduped)
+  const seen = new Set();
+  const altCards = heroClasses.flatMap(cl => (Du.HERO_POWERS[cl] || [])).map(id => byId[id])
+    .filter(c => c && c.power && !seen.has(c.id) && seen.add(c.id));
+  const powers = [primaryCls?.power ? { name: primaryCls.power.name, cost: primaryCls.power.cost, text: primaryCls.power.text } : null,
+    ...altCards.map(c => ({ name: c.name, cost: c.power.cost, text: (c.description || '').replace(/^Hero Power \(\d+\): /, '') }))].filter(Boolean);
+  const poolSize = (typeof Du.draftPool === 'function') ? Du.draftPool(byId, heroClasses).length : 0;
+  const isDual = heroClasses.length > 1;
+  const sigCount = (typeof Du.bucketsFor === 'function') ? Du.bucketsFor(heroClasses).length - (Du.DUELS_BUCKETS || []).length : 0;
   content.replaceChildren(
     h('div', { style: 'display:flex;align-items:center;gap:16px;flex-wrap:wrap;' },
       duelsPortrait(hero.id, 110),
       h('div', null, h('h1', { style: 'margin:0;' }, hero.name),
-        h('div', { class: 'card-page-meta' }, cls?.name || titleCase(hero.heroClass)),
+        h('div', { class: 'card-page-meta' }, clsLabel + (isDual ? ' · dual-class' : '')),
         h('p', { class: 'muted', style: 'margin:4px 0 0;' }, hero.flavor))),
     h('p', null, h('a', { href: '#/duels' }, '← Duels')),
     h('h2', null, 'Hero Powers ', h('span', { class: 'num' }, '(choose one at the start of a run)')),
     h('div', { class: 'kw-defs' }, powers.map(p => powerBlock(p))),
     h('h2', null, 'Deck ', h('span', { class: 'num' }, '(10-card arena draft)')),
-    h('p', { class: 'muted' }, `No fixed starter deck — you draft ten cards, one of three each pick, from this hero's ${poolSize}-card ${cls?.name || titleCase(hero.heroClass)} + Neutral pool. Loot buckets and treasures grow it from there.`));
+    h('p', { class: 'muted' }, `No fixed starter deck — you draft ten cards, one of three each pick, from this hero's ${poolSize}-card ${clsLabel} + Neutral pool. Loot buckets and treasures grow it from there.`
+      + (isDual ? ` As a dual-class hero, ${hero.name} draws cards, hero powers, and signature loot buckets from both classes.` : '')
+      + (sigCount > 0 ? ` Loot rolls include ${sigCount} ${clsLabel} signature buckets on top of the shared themes.` : '')));
 }
 // the treasure catalogue: active treasures (cards) + passive boons (data-only)
 async function duelsTreasuresView() {

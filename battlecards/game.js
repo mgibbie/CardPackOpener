@@ -4854,7 +4854,7 @@ function pickDuelsDraftOverlay(heroClass) {
 // rival identity + a generated deck/passives scaled to games already played
 function genDuelsEnemy(cardsById, games) {
 	const rival = Duels.RIVALS[Math.floor(Math.random() * Duels.RIVALS.length)];
-	const gen = Duels.generateEnemy(cardsById, rival.heroClass, games, Math.random);
+	const gen = Duels.generateEnemy(cardsById, Duels.classesOf(rival), games, Math.random);
 	return { name: rival.name, heroClass: rival.heroClass, hsId: rival.hsId, deck: gen.deck, passives: gen.passives };
 }
 

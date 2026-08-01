@@ -473,6 +473,11 @@ export const HEROES = [
 	{ id: 'rattlegore', name: 'Rattlegore', heroClass: 'warrior', hsId: 'PVPDR_Hero_Rattlegore', flavor: 'Bone by bone, he simply reassembles.' },
 	{ id: 'stelina', name: 'Star Student Stelina', heroClass: 'demon_hunter', hsId: 'PVPDR_Hero_Stelina', flavor: 'Top of her class in disappearing acts.' },
 	{ id: 'sai', name: 'Sai Shadestorm', heroClass: 'death_knight', hsId: 'PVPDR_Hero_Sai', flavor: 'The corpses keep the ledger; she keeps the corpses.' },
+	// Dual-class heroes \u2014 each drafts and buckets from both of its classes (+ Neutral)
+	{ id: 'brann', name: 'Brann Bronzebeard', heroClass: 'hunter', classes: ['hunter', 'warrior'], hsId: 'PVPDR_Hero_Brann', flavor: 'The League\u2019s finest \u2014 a Hunter\u2019s traps married to a Warrior\u2019s grit.' },
+	{ id: 'elise', name: 'Elise Starseeker', heroClass: 'druid', classes: ['druid', 'priest'], hsId: 'PVPDR_Hero_Elise', flavor: 'Every map wanders somewhere \u2014 between Druid groves and Priest shrines.' },
+	{ id: 'finley', name: 'Sir Finley', heroClass: 'paladin', classes: ['paladin', 'shaman'], hsId: 'PVPDR_Hero_Finley', flavor: 'A murloc gentleman explorer \u2014 equal parts Paladin honor and Shaman spirit.' },
+	{ id: 'reno', name: 'Reno Jackson', heroClass: 'mage', classes: ['mage', 'rogue'], hsId: 'PVPDR_Hero_Reno', flavor: 'The luckiest man in Azeroth \u2014 a Mage\u2019s tricks in a Rogue\u2019s fingers.' },
 	{ id: 'diablo', name: 'Diablo', heroClass: 'warrior', classes: ['warrior', 'warlock'], hsId: 'PVPDR_Hero_Diablo', flavor: 'The Lord of Terror \u2014 a dual-class fusion of Warrior steel and Warlock demons.' },
 ];
 
@@ -790,14 +795,14 @@ export function generateEnemy(cardsById, classes, games, rng) {
 // the enemy identities a run rolls (rival heroes, for name/portrait/class flavor)
 export const RIVALS = [
 	{ id: 'cafeteria_bob', name: 'Cafeteria Bob', heroClass: 'paladin', hsId: 'PVPDR_Hero_Bob' },
-	{ id: 'brann', name: 'Brann Bronzebeard', heroClass: 'hunter', hsId: 'PVPDR_Hero_Brann' },
+	{ id: 'brann', name: 'Brann Bronzebeard', heroClass: 'hunter', classes: ['hunter', 'warrior'], hsId: 'PVPDR_Hero_Brann' },
 	{ id: 'darius', name: 'Darius Crowley', heroClass: 'warrior', hsId: 'PVPDR_Hero_Darius' },
 	{ id: 'drekthar', name: "Drek'Thar", heroClass: 'shaman', hsId: 'PVPDR_Hero_DrekTharv3' },
-	{ id: 'elise', name: 'Elise Starseeker', heroClass: 'druid', hsId: 'PVPDR_Hero_Elise' },
-	{ id: 'finley', name: 'Sir Finley', heroClass: 'paladin', hsId: 'PVPDR_Hero_Finley' },
+	{ id: 'elise', name: 'Elise Starseeker', heroClass: 'druid', classes: ['druid', 'priest'], hsId: 'PVPDR_Hero_Elise' },
+	{ id: 'finley', name: 'Sir Finley', heroClass: 'paladin', classes: ['paladin', 'shaman'], hsId: 'PVPDR_Hero_Finley' },
 	{ id: 'kelthuzad', name: "Headmaster Kel'Thuzad", heroClass: 'mage', hsId: 'PVPDR_Hero_KelThuzad' },
 	{ id: 'kulzon', name: 'Kulzon, Castmaster', heroClass: 'mage', hsId: 'PVPDR_Hero_Kulzon' },
-	{ id: 'reno', name: 'Reno Jackson', heroClass: 'mage', hsId: 'PVPDR_Hero_Reno' },
+	{ id: 'reno', name: 'Reno Jackson', heroClass: 'mage', classes: ['mage', 'rogue'], hsId: 'PVPDR_Hero_Reno' },
 	{ id: 'scarlet', name: 'Scarlet Leafdancer', heroClass: 'death_knight', hsId: 'PVPDR_Hero_Scarlet' },
-	{ id: 'diablo', name: 'Diablo', heroClass: 'warrior', hsId: 'PVPDR_Hero_Diablo' },
+	{ id: 'diablo', name: 'Diablo', heroClass: 'warrior', classes: ['warrior', 'warlock'], hsId: 'PVPDR_Hero_Diablo' },
 ];

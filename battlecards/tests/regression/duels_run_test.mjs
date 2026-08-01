@@ -120,7 +120,7 @@ ok('all 4 batch-2 hero-power cards present + well-formed', HP_IDS2.every(id => {
 ok('PASSIVES has the 104 entries (complete)', Object.keys(D.PASSIVES).length === 104 && ['brittle_bones', 'eerie_stone', 'mantle_of_ignition', 'edge_of_dredge', 'dragonbone_ritual'].every(k => D.PASSIVES[k]));
 // authored token cards exist
 ok('authored token cards present', ['fel_rift', 'legendary_invitation', 'dream_portal', 'dream', 'nightmare', 'laughing_sister', 'emerald_drake', 'lk_frost_strike', 'lk_doom_pact', 'lk_soul_reaper'].every(id => byId[id] && byId[id].token && byId[id].collectible === false), null);
-ok('HEROES lists 12 playable heroes (11 signature + Diablo) with class', D.HEROES.length === 12 && D.HEROES.every(h => h.id && h.name && h.heroClass), D.HEROES.length);
+ok('HEROES lists 16 playable heroes (11 signature + 5 dual-class) with class', D.HEROES.length === 16 && D.HEROES.every(h => h.id && h.name && h.heroClass), D.HEROES.length);
 ok('applyPassive returns false for an unknown id', D.applyPassive({ players: [{}] }, 0, 'nope') === false);
 
 // Robe of the Apprentice: Spell Damage +1 emblem
@@ -1023,12 +1023,20 @@ const kill = (state, pi, uid) => { const c = state.players[pi].board.find(x => x
 ok('RIVALS: enemy identities with class + hsId', D.RIVALS.length >= 8 && D.RIVALS.every(r => r.id && r.name && r.heroClass && r.hsId), D.RIVALS.length);
 ok('run end constants', D.WINS_TO_CLEAR === 12 && D.LOSSES_TO_END === 3);
 
-// dual-class heroes: Diablo is playable and drafts from both classes
+// dual-class heroes: all five HS Duels dual-class heroes are playable, and each
+// drafts from both of its classes (matching Blizzard's `classes` field)
 {
-	const diablo = D.HEROES.find(h => h.id === 'diablo');
-	ok('Diablo is a playable dual-class hero (Warrior + Warlock)', diablo && D.classesOf(diablo).join(',') === 'warrior,warlock', diablo && D.classesOf(diablo));
-	ok('dual-class draft pool spans both classes', D.draftPool(byId, D.classesOf(diablo)).length > D.draftPool(byId, 'warrior').length);
+	const DUAL = { brann: 'hunter,warrior', elise: 'druid,priest', finley: 'paladin,shaman', reno: 'mage,rogue', diablo: 'warrior,warlock' };
+	for (const [id, cls] of Object.entries(DUAL)) {
+		const h = D.HEROES.find(x => x.id === id);
+		ok(`${id} is a playable dual-class hero (${cls})`, h && D.classesOf(h).join(',') === cls, h && D.classesOf(h));
+		const [a] = cls.split(',');
+		ok(`${id} draft pool spans both classes`, D.draftPool(byId, D.classesOf(h)).length > D.draftPool(byId, a).length);
+	}
 	ok('classesOf falls back to heroClass for single-class heroes', D.classesOf(D.HEROES.find(h => h.id === 'mozaki')).join() === 'mage');
+	// dual-class rivals generate enemies from both classes too
+	const rivReno = D.RIVALS.find(r => r.id === 'reno');
+	ok('dual-class rival exposes both classes', D.classesOf(rivReno).join(',') === 'mage,rogue', D.classesOf(rivReno));
 }
 // per-class signature buckets (the real HS Duels class bucket names)
 {
