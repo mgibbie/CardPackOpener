@@ -120,7 +120,7 @@ ok('all 4 batch-2 hero-power cards present + well-formed', HP_IDS2.every(id => {
 ok('PASSIVES has the 104 entries (complete)', Object.keys(D.PASSIVES).length === 104 && ['brittle_bones', 'eerie_stone', 'mantle_of_ignition', 'edge_of_dredge', 'dragonbone_ritual'].every(k => D.PASSIVES[k]));
 // authored token cards exist
 ok('authored token cards present', ['fel_rift', 'legendary_invitation', 'dream_portal', 'dream', 'nightmare', 'laughing_sister', 'emerald_drake', 'lk_frost_strike', 'lk_doom_pact', 'lk_soul_reaper'].every(id => byId[id] && byId[id].token && byId[id].collectible === false), null);
-ok('HEROES lists 16 playable heroes (11 signature + 5 dual-class) with class', D.HEROES.length === 16 && D.HEROES.every(h => h.id && h.name && h.heroClass), D.HEROES.length);
+ok('HEROES lists 18 playable heroes (11 signature + 5 dual-class + 2 choose-class) with class', D.HEROES.length === 18 && D.HEROES.every(h => h.id && h.name && h.heroClass), D.HEROES.length);
 ok('applyPassive returns false for an unknown id', D.applyPassive({ players: [{}] }, 0, 'nope') === false);
 
 // Robe of the Apprentice: Spell Damage +1 emblem
@@ -1037,6 +1037,23 @@ ok('run end constants', D.WINS_TO_CLEAR === 12 && D.LOSSES_TO_END === 3);
 	// dual-class rivals generate enemies from both classes too
 	const rivReno = D.RIVALS.find(r => r.id === 'reno');
 	ok('dual-class rival exposes both classes', D.classesOf(rivReno).join(',') === 'mage,rogue', D.classesOf(rivReno));
+}
+// choose-your-class heroes (Drek'Thar / Vanndar): pick ONE of five single classes
+{
+	const dt = D.HEROES.find(h => h.id === 'drekthar');
+	const vn = D.HEROES.find(h => h.id === 'vanndar');
+	ok("Drek'Thar offers the 5 Horde classes", dt && D.classChoicesOf(dt).join(',') === 'druid,mage,shaman,warlock,warrior', dt && D.classChoicesOf(dt));
+	ok('Vanndar offers the 5 Alliance classes', vn && D.classChoicesOf(vn).join(',') === 'demon_hunter,hunter,paladin,priest,rogue', vn && D.classChoicesOf(vn));
+	ok('together the two generals span all 10 non-DK classes', new Set([...D.classChoicesOf(dt), ...D.classChoicesOf(vn)]).size === 10);
+	ok('normal + dual-class heroes have no class choices', D.classChoicesOf(D.HEROES.find(h => h.id === 'mozaki')) === null && D.classChoicesOf(D.HEROES.find(h => h.id === 'diablo')) === null);
+	// un-chosen general defaults to a single class — draft never unions all five
+	ok("un-chosen Drek'Thar is single-class (no accidental 5-class union)", D.classesOf(dt).length === 1);
+	// choosing a class = single-class play: each choice drafts/powers/buckets that class alone
+	for (const cl of D.classChoicesOf(dt).concat(D.classChoicesOf(vn))) {
+		const eff = { ...dt, heroClass: cl, classes: [cl] };
+		ok(`chosen ${cl}: draft pool equals that single class`, D.draftPool(byId, D.classesOf(eff)).length === D.draftPool(byId, cl).length);
+		ok(`chosen ${cl}: powers + signature buckets resolve`, (D.HERO_POWERS[cl] || []).length >= 1 && D.bucketsFor([cl]).length > D.DUELS_BUCKETS.length);
+	}
 }
 // per-class signature buckets (the real HS Duels class bucket names)
 {

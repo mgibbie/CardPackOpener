@@ -3830,11 +3830,17 @@ async function start() {
 		}
 		if (!run || !run.active) {
 			const heroId = await pickDuelsHeroOverlay();
-			const hero = Duels.HEROES.find(h => h.id === heroId);
+			let hero = Duels.HEROES.find(h => h.id === heroId);
+			// Drek'Thar / Vanndar: pick one of the general's classes, then play as it
+			let classChoice = null;
+			if (Duels.classChoicesOf(hero)) {
+				classChoice = await pickDuelsClassOverlay(hero);
+				hero = { ...hero, heroClass: classChoice, classes: [classChoice] };
+			}
 			const powerId = await pickDuelsPowerOverlay(hero);
 			const anomaly = await pickAnomalyOverlay();
 			const deck = await pickDuelsDraftOverlay(Duels.classesOf(hero));
-			run = { active: true, heroId, powerId, anomaly, deck, passives: [], wins: 0, losses: 0, enemy: genDuelsEnemy(cardsById, 0) };
+			run = { active: true, heroId, classChoice, powerId, anomaly, deck, passives: [], wins: 0, losses: 0, enemy: genDuelsEnemy(cardsById, 0) };
 			saveDuels(run);
 		}
 		bootDuelsEncounter(cardsById, run);
@@ -4770,12 +4776,40 @@ let duelsCardsById = null; // set at boot so overlays can read card defs pre-sta
 
 function resumeDuelsOverlay(run) {
 	return new Promise(resolve => {
-		const hero = Duels.HEROES.find(h => h.id === run.heroId);
+		const hero = duelsEffectiveHero(run);
+		const clsLabel = run.classChoice ? ` (${(classRegistry.find(x => x.id === run.classChoice) || {}).name || run.classChoice})` : '';
 		const anom = run.anomaly && Heist.ANOMALIES[run.anomaly] ? ` · Anomaly: ${Heist.ANOMALIES[run.anomaly].name}` : '';
 		const el = dungeonOverlay('DUEL IN PROGRESS',
-			`${hero?.name || run.heroId} - ${run.wins || 0} wins / ${run.losses || 0} losses, ${run.deck.length} cards${anom}. Reach 12 wins before 3 losses.`);
+			`${hero?.name || run.heroId}${clsLabel} - ${run.wins || 0} wins / ${run.losses || 0} losses, ${run.deck.length} cards${anom}. Reach 12 wins before 3 losses.`);
 		el.appendChild(overlayButton('Continue the run', () => { hideDungeonOverlay(); resolve(true); }));
 		el.appendChild(overlayButton('Abandon - start a new run', () => { hideDungeonOverlay(); resolve(false); }));
+	});
+}
+
+// resolve the run's hero, applying a Drek'Thar/Vanndar class choice when present
+function duelsEffectiveHero(run) {
+	const hero = Duels.HEROES.find(h => h.id === run.heroId);
+	if (hero && Duels.classChoicesOf(hero) && run.classChoice) {
+		return { ...hero, heroClass: run.classChoice, classes: [run.classChoice] };
+	}
+	return hero;
+}
+
+// Drek'Thar / Vanndar: choose one of the general's five classes to play as
+function pickDuelsClassOverlay(hero) {
+	return new Promise(resolve => {
+		const el = dungeonOverlay('CHOOSE YOUR CLASS', `${hero.name} can lead any of these classes \u2014 pick one.`);
+		const row = document.createElement('div');
+		row.style.cssText = 'display:flex;flex-wrap:wrap;justify-content:center;gap:12px;max-width:720px;';
+		for (const cl of Duels.classChoicesOf(hero)) {
+			const c = classRegistry.find(x => x.id === cl);
+			const box = document.createElement('div');
+			box.style.cssText = 'background:#1c1830;border:1px solid #8a6f3a;border-radius:10px;padding:12px;max-width:150px;text-align:center;';
+			box.innerHTML = `<div style="font-weight:bold;margin-bottom:6px;">${(c && c.name) || cl}</div>`;
+			box.appendChild(overlayButton('Play this', () => { hideDungeonOverlay(); resolve(cl); }));
+			row.appendChild(box);
+		}
+		el.appendChild(row);
 	});
 }
 
@@ -4860,7 +4894,7 @@ function genDuelsEnemy(cardsById, games) {
 
 function bootDuelsEncounter(cardsById, run) {
 	duelsCardsById = cardsById;
-	const hero = Duels.HEROES.find(h => h.id === run.heroId);
+	const hero = duelsEffectiveHero(run);
 	const enemy = run.enemy || (run.enemy = genDuelsEnemy(cardsById, (run.wins || 0) + (run.losses || 0)));
 	heistBossName = enemy.name; // shared enemy-name slot for nameOf()
 	const playerCls = classRegistry.find(c => c.id === hero.heroClass) || { id: hero.heroClass, name: hero.name, power: null };
@@ -4901,7 +4935,7 @@ function afterDuelsGame(run, won) {
 
 // loot after every game: choose 1 of 3 HS-Duels buckets (3 cards each)
 function duelsLoot(run, won) {
-	const hero = Duels.HEROES.find(h => h.id === run.heroId);
+	const hero = duelsEffectiveHero(run);
 	const el = dungeonOverlay(won ? `WIN - ${run.wins}/12` : `LOSS - ${run.losses}/3`, 'Choose a loot bucket - all 3 cards join your deck.');
 	const offered = Duels.offerBuckets(duelsCardsById, Duels.classesOf(hero), Math.random, 3);
 	const row = document.createElement('div');

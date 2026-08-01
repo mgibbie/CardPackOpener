@@ -479,7 +479,15 @@ export const HEROES = [
 	{ id: 'finley', name: 'Sir Finley', heroClass: 'paladin', classes: ['paladin', 'shaman'], hsId: 'PVPDR_Hero_Finley', flavor: 'A murloc gentleman explorer \u2014 equal parts Paladin honor and Shaman spirit.' },
 	{ id: 'reno', name: 'Reno Jackson', heroClass: 'mage', classes: ['mage', 'rogue'], hsId: 'PVPDR_Hero_Reno', flavor: 'The luckiest man in Azeroth \u2014 a Mage\u2019s tricks in a Rogue\u2019s fingers.' },
 	{ id: 'diablo', name: 'Diablo', heroClass: 'warrior', classes: ['warrior', 'warlock'], hsId: 'PVPDR_Hero_Diablo', flavor: 'The Lord of Terror \u2014 a dual-class fusion of Warrior steel and Warlock demons.' },
+	// Choose-your-class heroes \u2014 pick ONE of the general's classes at the start; you
+	// then play as a normal single-class hero of that class (its powers, pool & buckets)
+	{ id: 'drekthar', name: "Drek'Thar", heroClass: 'shaman', classChoices: ['druid', 'mage', 'shaman', 'warlock', 'warrior'], hsId: 'PVPDR_Hero_DrekThar', flavor: 'The Frostwolf general marshals the Horde \u2014 command any of five classes.' },
+	{ id: 'vanndar', name: 'Vanndar Stormpike', heroClass: 'paladin', classChoices: ['demon_hunter', 'hunter', 'paladin', 'priest', 'rogue'], hsId: 'PVPDR_Hero_Vanndar', flavor: 'The Stormpike general rallies the Alliance \u2014 command any of five classes.' },
 ];
+
+// choose-your-class heroes (Drek'Thar / Vanndar) expose a set of single classes to
+// pick from; a normal hero returns null. `classesOf` still yields the default class.
+export const classChoicesOf = hero => (hero && Array.isArray(hero.classChoices) && hero.classChoices.length) ? hero.classChoices : null;
 
 // class -> imported hero-power ids (cards.json, type 'heropower'). Grows batch
 // by batch; a hero's picker rolls from its class list plus the neutral powers.

@@ -874,7 +874,9 @@ async function duelsView() {
   },
     duelsPortrait(hero.id, 88),
     h('div', { style: 'font-weight:bold;text-align:center;font-size:13px;' }, hero.name),
-    h('div', { class: 'muted', style: 'font-size:11.5px;' }, Du.classesOf(hero).map(clsName).join(' / '))));
+    h('div', { class: 'muted', style: 'font-size:11.5px;' }, Du.classChoicesOf(hero)
+      ? `choose 1 of ${Du.classChoicesOf(hero).length} classes`
+      : Du.classesOf(hero).map(clsName).join(' / '))));
   const bucketChips = (Du.DUELS_BUCKETS || []).map(b => h('span', { class: 'tag-chip type' }, b.name));
   const rivalChips = (Du.RIVALS || []).map(r => h('span', { class: 'tag-chip tribe' }, r.name + ' · ' + Du.classesOf(r).map(clsName).join(' / ')));
   content.replaceChildren(
@@ -898,6 +900,20 @@ async function duelsHeroView(heroId) {
   if (!hero) return content.replaceChildren(h('h1', null, 'Unknown hero'), h('p', null, h('a', { href: '#/duels' }, '← Duels')));
   const byId = {}; for (const c of cards) byId[c.id] = c;
   const clsName = id => (classes.find(c => c.id === id)?.name) || titleCase(id);
+  // Drek'Thar / Vanndar: a choose-your-class hero — show the five class choices
+  const choices = Du.classChoicesOf(hero);
+  if (choices) {
+    return content.replaceChildren(
+      h('div', { style: 'display:flex;align-items:center;gap:16px;flex-wrap:wrap;' },
+        duelsPortrait(hero.id, 110),
+        h('div', null, h('h1', { style: 'margin:0;' }, hero.name),
+          h('div', { class: 'card-page-meta' }, `choose-your-class · ${choices.length} classes`),
+          h('p', { class: 'muted', style: 'margin:4px 0 0;' }, hero.flavor))),
+      h('p', null, h('a', { href: '#/duels' }, '← Duels')),
+      h('h2', null, 'Choose Your Class ', h('span', { class: 'num' }, '(pick one at the start of a run)')),
+      h('p', { class: 'muted' }, `${hero.name} is a choose-your-class hero: at the start of a run you pick one of these classes, then play as a normal single-class hero of that class — its hero powers, its class + Neutral draft pool, and its signature loot buckets.`),
+      h('div', { class: 'card-tags' }, ...choices.map(id => h('span', { class: 'tag-chip tribe' }, clsName(id)))));
+  }
   const heroClasses = Du.classesOf(hero);
   const clsLabel = heroClasses.map(id => clsName(id)).join(' / ');
   const primaryCls = classes.find(c => c.id === heroClasses[0]);

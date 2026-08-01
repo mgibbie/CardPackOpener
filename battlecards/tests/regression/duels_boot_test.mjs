@@ -27,8 +27,10 @@ for (const hero of Du.HEROES) {
 
 // ---- replica of game.js bootDuelsEncounter (new model): player draft +
 // generated enemy at parity, passives applied to both sides, equal footing
-function bootDuelsRun(heroId, games, powerId, playerPassives, rng) {
-	const hero = Du.HEROES.find(h => h.id === heroId);
+function bootDuelsRun(heroId, games, powerId, playerPassives, rng, classChoice) {
+	let hero = Du.HEROES.find(h => h.id === heroId);
+	// Drek'Thar / Vanndar: play as the chosen single class
+	if (Du.classChoicesOf(hero) && classChoice) hero = { ...hero, heroClass: classChoice, classes: [classChoice] };
 	const deck = Du.autoDraftDeck(cardsById, Du.classesOf(hero), rng, 10);
 	const rival = Du.RIVALS[Math.floor(rng() * Du.RIVALS.length)];
 	const enemy = Du.generateEnemy(cardsById, rival.heroClass, games, rng);
@@ -80,6 +82,18 @@ for (const hero of Du.HEROES) {
 			pass++;
 		} catch (err) { fail++; console.log('FAIL boot:', hero.id, sc.games, String(err).slice(0, 140)); }
 	}
+}
+
+// choose-your-class heroes boot & play as their chosen single class
+for (const [heroId, cl] of [['drekthar', 'mage'], ['drekthar', 'warrior'], ['vanndar', 'rogue'], ['vanndar', 'priest']]) {
+	const rng = seededRng(heroId.length * 7 + cl.length + 2);
+	try {
+		const { state, deck } = bootDuelsRun(heroId, 3, null, [], rng, cl);
+		const errs = validateGameState(state);
+		const playerClsId = state.classPicks?.[0]?.id ?? state.players[0]?.classId;
+		ok(`${heroId} as ${cl}: boots a legal 10+ card game as the chosen class`,
+			deck.length === 10 && !errs.length && (playerClsId === cl || playerClsId == null), [playerClsId, errs.slice(0, 1)]);
+	} catch (err) { fail++; console.log('FAIL choose-class:', heroId, cl, String(err).slice(0, 120)); }
 }
 
 // optional anomaly modifier (shared with Heist) can be enabled on a Duels run
