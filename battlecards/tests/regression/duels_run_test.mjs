@@ -4,6 +4,7 @@ import fs from 'fs';
 import * as E from '../../engine.js';
 import * as D from '../../duels.js';
 import { getEffectHandler } from '../../engine/effects/registry.js';
+import { seededRng } from '../../engine/rng.js';
 import { Scenario } from '../helpers/scenario.mjs';
 
 const raw = JSON.parse(fs.readFileSync(new URL('../../cards.json', import.meta.url)));
@@ -978,6 +979,49 @@ const kill = (state, pi, uid) => { const c = state.players[pi].board.find(x => x
 	const deck2 = D.buildBossDeck(byId, D.BOSSES.diablo.theme, 30);
 	ok('buildBossDeck: 30 valid card ids, deterministic', deck.length === 30 && deck.every(id => byId[id] && byId[id].type === 'creature') && JSON.stringify(deck) === JSON.stringify(deck2), deck.length);
 }
+
+// ---------------- HS Duels: arena draft + buckets + generated enemies ----------------
+{
+	const pool = D.draftPool(byId, 'mage');
+	ok('draftPool: mage or neutral, real draftable cards only', pool.length > 30 && pool.every(d => {
+		const dc = d.cardClass || 'neutral';
+		return (dc === 'mage' || dc === 'neutral') && !d.token && d.collectible !== false && ['creature', 'weapon', 'sorcery', 'instant'].includes(d.type) && !(d.colors && d.colors.length);
+	}), pool.length);
+}
+// arena draft: 10 picks, all valid mage/neutral cards
+{
+	const deck = D.autoDraftDeck(byId, 'mage', seededRng(3), 10);
+	ok('autoDraftDeck: 10 valid cards', deck.length === 10 && deck.every(id => byId[id] && (['mage', 'neutral'].includes(byId[id].cardClass || 'neutral'))), deck.length);
+}
+// buckets roll 3 matching cards; offerBuckets returns 3 usable distinct
+{
+	const beasts = D.DUELS_BUCKETS.find(b => b.id === 'beasts');
+	const rolled = D.rollBucket(byId, 'hunter', beasts, seededRng(4), 3);
+	ok('rollBucket Beasts: 3 Beast creatures', rolled.length === 3 && rolled.every(id => (byId[id]?.tribe || '').includes('Beast')), rolled);
+	const offered = D.offerBuckets(byId, 'hunter', seededRng(5), 3);
+	ok('offerBuckets: 3 distinct usable buckets', offered.length === 3 && new Set(offered.map(b => b.id)).size === 3, offered.map(b => b.id));
+}
+// loot cadence parity math
+{
+	const g = games => D.enemyLoot(games);
+	ok('enemyLoot cadence: buckets/passives/treasures by games played',
+		g(0).buckets === 0 && g(1).passives === 1 && g(1).treasures === 0 && g(3).treasures === 1 && g(5).passives === 2 && g(9).passives === 3 && g(11).treasures === 3 && g(11).buckets === 11,
+		[g(1), g(11)]);
+}
+// generated enemy is at exact parity: 10 draft + 3/bucket + treasures, right passive count
+{
+	for (const games of [0, 3, 7, 11]) {
+		const en = D.generateEnemy(byId, 'warlock', games, seededRng(games * 7 + 1));
+		const loot = D.enemyLoot(games);
+		const expectDeck = 10 + 3 * loot.buckets + loot.treasures;
+		ok(`generateEnemy @${games} games: deck ${expectDeck}, ${loot.passives} passives, all ids valid`,
+			en.deck.length === expectDeck && en.passives.length === loot.passives && en.deck.every(id => byId[id]) && en.passives.every(k => D.PASSIVES[k]),
+			[en.deck.length, expectDeck, en.passives.length]);
+	}
+}
+// RIVALS roster: valid identities with real classes + portrait ids
+ok('RIVALS: enemy identities with class + hsId', D.RIVALS.length >= 8 && D.RIVALS.every(r => r.id && r.name && r.heroClass && r.hsId), D.RIVALS.length);
+ok('run end constants', D.WINS_TO_CLEAR === 12 && D.LOSSES_TO_END === 3);
 
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);

@@ -547,3 +547,137 @@ export function buildBossDeck(cardsById, theme = {}, size = 30) {
 	for (const d of pool) deck.push(d.id, d.id);
 	return deck.slice(0, size);
 }
+
+// ---------- HS Duels: arena draft, loot buckets, generated enemies ----------
+// Faithful-ish Duels loot: a 10-card arena-style draft (pick 1 of 3, rarity-
+// weighted), tribe/archetype buckets, and dynamically generated opponents kept
+// at exact power parity with the player.
+
+const DRAFT_TYPES = new Set(['creature', 'weapon', 'sorcery', 'instant']);
+const RARITY_WEIGHT = { basic: 100, common: 100, rare: 34, epic: 14, legendary: 6 };
+const cardWeight = d => RARITY_WEIGHT[d.rarity] || 40;
+
+// a card is draftable for a class if it's a real, collectible, non-token card of
+// that class or Neutral (no MTG-colored cards, no locations/hero powers/emblems)
+function draftable(d, cls) {
+	if (!d || d.token || d.collectible === false || d.companion || d.commander) return false;
+	if (d.colors && d.colors.length) return false;
+	if (!DRAFT_TYPES.has(d.type)) return false;
+	const dc = d.cardClass || 'neutral';
+	return dc === cls || dc === 'neutral';
+}
+
+export function draftPool(cardsById, heroClass) {
+	return Object.values(cardsById).filter(d => draftable(d, heroClass));
+}
+
+// pick N distinct cards from a pool, rarity-weighted (arena feel)
+export function draftOptions(pool, rng, n = 3) {
+	const out = [], seen = new Set();
+	let guard = 400;
+	const total0 = pool.reduce((s, d) => s + cardWeight(d), 0);
+	while (out.length < n && guard-- > 0 && seen.size < pool.length) {
+		let r = rng() * total0, pick = null;
+		for (const d of pool) { r -= cardWeight(d); if (r <= 0) { pick = d; break; } }
+		if (!pick) pick = pool[pool.length - 1];
+		if (pick && !seen.has(pick.id)) { seen.add(pick.id); out.push(pick); }
+	}
+	return out;
+}
+
+// a full auto-drafted deck (for generated enemies / previews): `size` picks,
+// the AI takes a rarity-weighted random of each trio
+export function autoDraftDeck(cardsById, heroClass, rng, size = 10) {
+	const pool = draftPool(cardsById, heroClass);
+	const deck = [];
+	for (let i = 0; i < size && pool.length; i++) {
+		const opts = draftOptions(pool, rng, 3);
+		if (!opts.length) break;
+		deck.push(opts[Math.floor(rng() * opts.length)].id);
+	}
+	return deck;
+}
+
+// HS Duels loot buckets: each is a theme filter that rolls 3 matching cards
+export const DUELS_BUCKETS = [
+	{ id: 'beasts', name: 'Beasts', match: d => d.type === 'creature' && (d.tribe || '').includes('Beast') },
+	{ id: 'dragons', name: 'Dragons', match: d => d.type === 'creature' && (d.tribe || '').includes('Dragon') },
+	{ id: 'mechs', name: 'Mechs', match: d => d.type === 'creature' && (d.tribe || '').includes('Mech') },
+	{ id: 'murlocs', name: 'Murlocs', match: d => d.type === 'creature' && (d.tribe || '').includes('Murloc') },
+	{ id: 'elementals', name: 'Elementals', match: d => d.type === 'creature' && (d.tribe || '').includes('Elemental') },
+	{ id: 'pirates', name: 'Pirates', match: d => d.type === 'creature' && (d.tribe || '').includes('Pirate') },
+	{ id: 'naga', name: 'Naga', match: d => d.type === 'creature' && (d.tribe || '').includes('Naga') },
+	{ id: 'demons', name: 'Demons', match: d => d.type === 'creature' && (d.tribe || '').includes('Demon') },
+	{ id: 'undead', name: 'Undead', match: d => d.type === 'creature' && (d.tribe || '').includes('Undead') },
+	{ id: 'menagerie', name: 'Menagerie', match: d => d.type === 'creature' && (d.tribe || '').length > 0 },
+	{ id: 'big_bruisers', name: 'Big Bruisers', match: d => d.type === 'creature' && (d.cost || 0) >= 6 },
+	{ id: 'lowbies', name: 'Lowbies', match: d => d.type === 'creature' && (d.cost || 0) <= 2 },
+	{ id: 'big_spells', name: 'Big Spells', match: d => (d.type === 'sorcery' || d.type === 'instant') && (d.cost || 0) >= 5 },
+	{ id: 'spellcraft', name: 'Spellcraft', match: d => d.type === 'sorcery' || d.type === 'instant' },
+	{ id: 'deathrattle', name: 'Deathrattles', match: d => (d.keywords || []).includes('deathrattle') },
+	{ id: 'taunt', name: 'Taunt Up', match: d => (d.keywords || []).includes('taunt') },
+	{ id: 'divine_shield', name: 'Shields Up', match: d => (d.keywords || []).includes('divine_shield') },
+];
+
+// roll 3 cards for a bucket from the hero's pool (rarity-weighted)
+export function rollBucket(cardsById, heroClass, bucket, rng, n = 3) {
+	const pool = draftPool(cardsById, heroClass).filter(d => bucket.match(d));
+	return draftOptions(pool, rng, n).map(c => c.id);
+}
+
+// offer `count` distinct buckets that actually have >= 3 matches for this class
+export function offerBuckets(cardsById, heroClass, rng, count = 3) {
+	const pool = draftPool(cardsById, heroClass);
+	const usable = DUELS_BUCKETS.filter(b => pool.filter(d => b.match(d)).length >= 3);
+	const out = [], avail = [...usable];
+	while (out.length < count && avail.length) out.push(avail.splice(Math.floor(rng() * avail.length), 1)[0]);
+	return out;
+}
+
+// the loot cadence (shared by player + enemy so parity is exact): 1 bucket per
+// game, a passive after games 1/5/9, a treasure after games 3/7/11
+export const PASSIVE_GAMES = [1, 5, 9];
+export const TREASURE_GAMES = [3, 7, 11];
+export const WINS_TO_CLEAR = 12;
+export const LOSSES_TO_END = 3;
+
+// what an enemy at `games` completed games should carry to match the player
+export function enemyLoot(games) {
+	const g = Math.max(0, games);
+	return {
+		buckets: g,
+		passives: PASSIVE_GAMES.filter(x => x <= g).length,
+		treasures: TREASURE_GAMES.filter(x => x <= g).length,
+	};
+}
+
+// build a full generated enemy at exact parity: a 10-card draft + `games` buckets
+// + the matching passive/treasure counts, all scaled to how deep the run is
+export function generateEnemy(cardsById, heroClass, games, rng) {
+	const deck = autoDraftDeck(cardsById, heroClass, rng, 10);
+	const loot = enemyLoot(games);
+	for (let b = 0; b < loot.buckets; b++) {
+		const bk = offerBuckets(cardsById, heroClass, rng, 1)[0];
+		if (bk) deck.push(...rollBucket(cardsById, heroClass, bk, rng, 3));
+	}
+	const treasurePool = Object.values(cardsById).filter(d => d.treasure && d.set === 'DUELS');
+	for (let t = 0; t < loot.treasures && treasurePool.length; t++) deck.push(treasurePool[Math.floor(rng() * treasurePool.length)].id);
+	const passiveKeys = Object.keys(PASSIVES);
+	const passives = [];
+	for (let pk = 0; pk < loot.passives && passiveKeys.length; pk++) passives.push(passiveKeys[Math.floor(rng() * passiveKeys.length)]);
+	return { heroClass, deck, passives, loot };
+}
+// the enemy identities a run rolls (rival heroes, for name/portrait/class flavor)
+export const RIVALS = [
+	{ id: 'cafeteria_bob', name: 'Cafeteria Bob', heroClass: 'paladin', hsId: 'PVPDR_Hero_Bob' },
+	{ id: 'brann', name: 'Brann Bronzebeard', heroClass: 'hunter', hsId: 'PVPDR_Hero_Brann' },
+	{ id: 'darius', name: 'Darius Crowley', heroClass: 'warrior', hsId: 'PVPDR_Hero_Darius' },
+	{ id: 'drekthar', name: "Drek'Thar", heroClass: 'shaman', hsId: 'PVPDR_Hero_DrekTharv3' },
+	{ id: 'elise', name: 'Elise Starseeker', heroClass: 'druid', hsId: 'PVPDR_Hero_Elise' },
+	{ id: 'finley', name: 'Sir Finley', heroClass: 'paladin', hsId: 'PVPDR_Hero_Finley' },
+	{ id: 'kelthuzad', name: "Headmaster Kel'Thuzad", heroClass: 'mage', hsId: 'PVPDR_Hero_KelThuzad' },
+	{ id: 'kulzon', name: 'Kulzon, Castmaster', heroClass: 'mage', hsId: 'PVPDR_Hero_Kulzon' },
+	{ id: 'reno', name: 'Reno Jackson', heroClass: 'mage', hsId: 'PVPDR_Hero_Reno' },
+	{ id: 'scarlet', name: 'Scarlet Leafdancer', heroClass: 'death_knight', hsId: 'PVPDR_Hero_Scarlet' },
+	{ id: 'diablo', name: 'Diablo', heroClass: 'warrior', hsId: 'PVPDR_Hero_Diablo' },
+];
