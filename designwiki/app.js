@@ -285,7 +285,7 @@ function loadTombs() {
   if (!tombsPromise) tombsPromise = import('../battlecards/tombs.js' + CB);
   return tombsPromise;
 }
-// Duels data (heroes, boss ladder, passives, hero-power map + buildBossDeck)
+// Duels data (heroes, passives, hero-power map, arena draft + loot buckets + rivals)
 let duelsPromise = null;
 function loadDuels() {
   if (!duelsPromise) duelsPromise = import('../battlecards/duels.js' + CB);
@@ -875,26 +875,24 @@ async function duelsView() {
     duelsPortrait(hero.id, 88),
     h('div', { style: 'font-weight:bold;text-align:center;font-size:13px;' }, hero.name),
     h('div', { class: 'muted', style: 'font-size:11.5px;' }, clsName(hero.heroClass))));
-  const rounds = Du.ROUNDS.map(r => h('div', null,
-    h('h2', null, r.name, ' ', h('span', { class: 'num' }, `(Final: ${Du.BOSSES[r.final].name})`)),
-    h('div', { class: 'card-tags' },
-      [...r.pool, r.final].map(bid => h('a', {
-        class: 'tag-chip ' + (bid === r.final ? 'school' : 'tribe'), href: '#/duels/boss/' + bid,
-      }, Du.BOSSES[bid].name + ` · ${Du.BOSSES[bid].health}`)))));
+  const bucketChips = (Du.DUELS_BUCKETS || []).map(b => h('span', { class: 'tag-chip type' }, b.name));
+  const rivalChips = (Du.RIVALS || []).map(r => h('span', { class: 'tag-chip tribe' }, r.name + ' · ' + clsName(r.heroClass)));
   content.replaceChildren(
     h('h1', null, 'Duels'),
-    h('p', { class: 'muted' }, 'Pick a hero and a hero power, then climb a twelve-fight ladder of rival heroes - card drafts, passive boons, and active treasures between fights. Your life scales as you climb; fights 6 and 12 are the fixed finals, Diablo then Uber Diablo.'),
+    h('p', { class: 'muted' }, 'Pick a hero and a hero power, then draft a 10-card deck arena-style — ten times you pick one card of three, from your class + Neutral pool (rarity-weighted, so Legendaries are rare). Then play on until 12 wins or 3 losses. After every game you add a loot bucket (3 cards), plus a passive treasure at games 1/5/9 and an active treasure at 3/7/11. Every opponent is generated at the same power budget you have — a 10-card draft plus the same buckets, passives, and treasures — so the fights stay fair as you climb.'),
     h('p', null, h('a', { href: '#/duels/treasures' }, 'Treasures & passives →')),
-    h('h2', null, 'Heroes ', h('span', { class: 'num' }, `(${Du.HEROES.length})`)),
+    h('h2', null, 'Heroes ', h('span', { class: 'num' }, `(${Du.HEROES.length} — pick one)`)),
     h('div', { class: 'card-grid', style: 'gap:14px;' }, ...heroCards),
-    h('h2', null, 'The Ladder'),
-    ...rounds);
+    h('h2', null, 'Loot Buckets ', h('span', { class: 'num' }, `(${(Du.DUELS_BUCKETS || []).length} — each rolls 3 matching cards)`)),
+    h('div', { class: 'card-tags' }, ...bucketChips),
+    h('h2', null, 'Rivals ', h('span', { class: 'num' }, '(the identities generated opponents wear)')),
+    h('div', { class: 'card-tags' }, ...rivalChips));
 }
-// one hero: portrait, class, its hero-power options, and starter deck
+// one hero: portrait, class, its hero-power options, and how its deck is drafted
 async function duelsHeroView(heroId) {
   content.replaceChildren(h('p', { class: 'muted' }, 'Loading hero...'));
-  let Du, D, classes, cards;
-  try { [Du, D, classes, cards] = await Promise.all([loadDuels(), loadDungeon(), loadClasses(), loadCards(), loadCardart()]); }
+  let Du, classes, cards;
+  try { [Du, classes, cards] = await Promise.all([loadDuels(), loadClasses(), loadCards(), loadCardart()]); }
   catch (e) { return content.replaceChildren(h('h1', null, 'Hero'), h('p', { class: 'muted' }, 'Could not load the duels data.')); }
   const hero = Du.HEROES.find(x => x.id === heroId);
   if (!hero) return content.replaceChildren(h('h1', null, 'Unknown hero'), h('p', null, h('a', { href: '#/duels' }, '← Duels')));
@@ -903,7 +901,7 @@ async function duelsHeroView(heroId) {
   const alts = (Du.HERO_POWERS[hero.heroClass] || []).map(id => byId[id]).filter(c => c && c.power);
   const powers = [cls?.power ? { name: cls.power.name, cost: cls.power.cost, text: cls.power.text } : null,
     ...alts.map(c => ({ name: c.name, cost: c.power.cost, text: (c.description || '').replace(/^Hero Power \(\d+\): /, '') }))].filter(Boolean);
-  const deckIds = D.STARTER_DECKS[hero.heroClass] || [];
+  const poolSize = (typeof Du.draftPool === 'function') ? Du.draftPool(byId, hero.heroClass).length : 0;
   content.replaceChildren(
     h('div', { style: 'display:flex;align-items:center;gap:16px;flex-wrap:wrap;' },
       duelsPortrait(hero.id, 110),
@@ -913,33 +911,8 @@ async function duelsHeroView(heroId) {
     h('p', null, h('a', { href: '#/duels' }, '← Duels')),
     h('h2', null, 'Hero Powers ', h('span', { class: 'num' }, '(choose one at the start of a run)')),
     h('div', { class: 'kw-defs' }, powers.map(p => powerBlock(p))),
-    h('h2', null, 'Starter Deck ', h('span', { class: 'num' }, `(${deckIds.length} cards)`)),
-    await deckGrid(deckIds, byId));
-}
-// one boss: portrait, round, HP, hero power, and its themed decklist
-async function duelsBossView(bossId) {
-  content.replaceChildren(h('p', { class: 'muted' }, 'Loading boss...'));
-  let Du, cards;
-  try { [Du, cards] = await Promise.all([loadDuels(), loadCards(), loadCardart()]); }
-  catch (e) { return content.replaceChildren(h('h1', null, 'Boss'), h('p', { class: 'muted' }, 'Could not load the duels data.')); }
-  const b = Du.BOSSES[bossId];
-  if (!b) return content.replaceChildren(h('h1', null, 'Unknown boss'), h('p', null, h('a', { href: '#/duels' }, '← Duels')));
-  const byId = {}; for (const c of cards) byId[c.id] = c;
-  const round = Du.ROUNDS.find(r => r.pool.includes(bossId) || r.final === bossId);
-  const isFinal = !!b.final;
-  const deck = Du.buildBossDeck(byId, b.theme);
-  content.replaceChildren(
-    h('div', { style: 'display:flex;align-items:center;gap:16px;flex-wrap:wrap;' },
-      duelsPortrait(bossId, 110),
-      h('div', null, h('h1', { style: 'margin:0;' }, b.name),
-        h('div', { class: 'card-page-meta' },
-          (round ? round.name : 'Duels') + (isFinal ? ' · Final' : '') + ` · ${b.health} HP`))),
-    h('p', null, h('a', { href: '#/duels' }, '← Duels')),
-    h('h2', null, 'Hero Power'),
-    powerBlock(b.power),
-    h('h2', null, 'Deck ', h('span', { class: 'num' }, `(themed · ${deck.length} cards)`)),
-    h('p', { class: 'muted', style: 'font-size:12.5px;margin-top:-4px;' }, 'Built from the boss theme at fight time; a representative list is shown.'),
-    await deckGrid(deck, byId));
+    h('h2', null, 'Deck ', h('span', { class: 'num' }, '(10-card arena draft)')),
+    h('p', { class: 'muted' }, `No fixed starter deck — you draft ten cards, one of three each pick, from this hero's ${poolSize}-card ${cls?.name || titleCase(hero.heroClass)} + Neutral pool. Loot buckets and treasures grow it from there.`));
 }
 // the treasure catalogue: active treasures (cards) + passive boons (data-only)
 async function duelsTreasuresView() {
@@ -1109,7 +1082,6 @@ function route() {
   }
   if (section === 'duels') {
     if (id === 'hero' && parts[2]) return duelsHeroView(parts[2]);
-    if (id === 'boss' && parts[2]) return duelsBossView(parts[2]);
     if (id === 'treasures') return duelsTreasuresView();
     return duelsView();
   }
