@@ -1,6 +1,625 @@
 {
-	"generated": "2026-07-28",
+	"generated": "2026-08-01",
 	"entries": [
+		{
+			"sha": "df2f383",
+			"date": "2026-07-31",
+			"kind": "patch",
+			"title": "Duels rework part 2: arena draft + generated enemies + win/loss run (game.js)",
+			"body": "Rewrote the ?duels=1 run to the new model:\n- pickDuelsDraftOverlay: a 10-card arena draft (ten \"pick 1 of 3\", rarity-\n  weighted) replaces the fixed starter deck\n- genDuelsEnemy / bootDuelsEncounter: opponents are generated at exact power\n  parity (10-card draft + games buckets + matching passive/treasure counts,\n  via Duels.generateEnemy) instead of fixed boss decks; both sides equal HP,\n  enemy passives applied to it\n- run tracks wins/losses; loot (a real HS-Duels bucket, offerBuckets/rollBucket)\n  after every game, plus a passive at games 1/5/9 and a treasure at 3/7/11\n- run ends at 12 wins or 3 losses (duelsRunComplete / duelsRunOver)\nDropped the Dungeon-Run buckets and the fixed boss ladder from the run path\n(BOSSES/ROUNDS kept only for the wiki). Boot test rewritten for the new model;\nheadless-verified the real flow drafts 10 and boots. battery 61/61; fuzz clean.",
+			"cards": []
+		},
+		{
+			"sha": "08c8405",
+			"date": "2026-07-30",
+			"kind": "patch",
+			"title": "Duels passives: the final 5 — pool COMPLETE at 104/104 (backlog pass 18)",
+			"body": "Brittle Bones & Eerie Stone (playCard snapshots the enemy board before the\nspell resolves; the reaction detects which enemies died and, for Brittle,\nsummons a 2/2 Skeleton / for Eerie, copies a Shadow-slain enemy to hand),\nMantle of Ignition (snapshots the spell target's neighbors, re-runs the\nspell's effects on each), Edge of Dredge (first Dredge each turn -> draw, in\nresolveDredge), and Dragonbone Ritual — a real new mechanic: a played Dragon\ngains a dragonbone-revive Deathrattle (new registered effect, 955->956) that\nreturns it dormant with a reviveTimer, ticked down at the owner's turn start\nuntil it wakes. All flag-gated; core paths (playCard/resolveDredge/turn-start)\nso registry 22, boot 69, battery 61/61, split+legacy fuzz all clean.\nDuels PASSIVES now 104/104 — every one implemented. duels_run_test 131.",
+			"cards": []
+		},
+		{
+			"sha": "96e6f10",
+			"date": "2026-07-30",
+			"kind": "patch",
+			"title": "Duels passives: Expedited Burial (backlog pass 17)",
+			"body": "Deathrattle creatures become 1/1 costing (1): apply mutates the ones already\nin hand; a zones.js drawCards hook (beside deckInnerFire) mutates each one as\nit's drawn from the deck. Flag-gated; fuzz clean. Duels PASSIVES now 99.\nduels_run_test 126; battery 61/61.",
+			"cards": []
+		},
+		{
+			"sha": "0ad1e7f",
+			"date": "2026-07-30",
+			"kind": "patch",
+			"title": "Duels passives: Idols of Elune (backlog pass 16)",
+			"body": "Added an `ids` option to the cast-random-spell handler (cast from a given list\ninstead of the whole pool). Idols of Elune tracks the spell ids you cast each\nturn (p._idolsSpells, reset per turn) and at end of turn recasts a random one\nwith random targets. Flag-gated; fuzz clean. Duels PASSIVES now 98.\nduels_run_test 125; battery 61/61.",
+			"cards": []
+		},
+		{
+			"sha": "70ff441",
+			"date": "2026-07-30",
+			"kind": "patch",
+			"title": "Duels passives: 5 complex one-offs (backlog pass 15)",
+			"body": "Deathly Death! (a Deathrattle death triggers another friendly Deathrattle, via\na recursion lock), Cannibalism (a death buffs its board neighbors +1 Attack,\ncaptured before the board is filtered), All Shall Serve (first Demon death ->\ndraw a creature from deck with +1 Attack) in death.js; Freeze Solid (damage to\na Frozen enemy deals 2 more, in damageCreature) and Avenging Armaments (losing\nDivine Shield -> +2/+1, at the shield-pop site) in damage.js. Flag-gated;\ndeath.js/damage.js are core paths so split+legacy fuzz verified clean. Duels\nPASSIVES now 97. duels_run_test 124; boot 69; battery 61/61.",
+			"cards": []
+		},
+		{
+			"sha": "f998236",
+			"date": "2026-07-30",
+			"kind": "patch",
+			"title": "Duels passives: authored token cards (backlog pass 14)",
+			"body": "Authored 10 token cards (token:true, collectible:false so they never pollute\ndeckbuilding/gallery/conjure-random): Fel Rift & Legendary Invitation & Dream\nPortal (draw-trigger Casts-When-Drawn), the Dream cards (Dream/Nightmare/\nLaughing Sister/Emerald Drake, completing Ysera's pool), and the Lich King\npool (Frost Strike/Doom Pact/Soul Reaper; Death Coil/Army of the Dead/\nObliterate/Anti-Magic Shell already existed). Wired 6 passives: Imp-credible\nTrousers (Fel Rifts), Draconic Dream (Dream Portal), Cloak of Emerald Dreams\n(a Dream card), Runic Helm (a Lich King card), Unholy Gift (8 Lich King),\nBe Our Guest (3 Invitations). Fuzz clean (tokens excluded from random pools).\nDuels PASSIVES now 92. duels_run_test 119; boot 69; battery 61/61.",
+			"cards": []
+		},
+		{
+			"sha": "1dc7986",
+			"date": "2026-07-30",
+			"kind": "patch",
+			"title": "Duels passives: reuse existing pools (backlog pass 13)",
+			"body": "Five passives that need no new cards — the pool already has 23 Colossal\ncreatures, 30 class locations, and Patches: Forgotten Depths (2 Colossal to\ndeck bottom, 3 cheaper), Location Location Location (a class location in play\nat start), Beckoning Bicorn (first Pirate -> Patches into deck), Cookie's\nLadle (first Murloc -> a Murloc), Optimized Polarity (first Mech -> a random\n(1) Mech). Flag-gated; fuzz clean. Duels PASSIVES now 86. duels_run_test 111.",
+			"cards": []
+		},
+		{
+			"sha": "87d996f",
+			"date": "2026-07-30",
+			"kind": "patch",
+			"title": "Duels passives: Corpse economy — spend chokepoint + 3 passives (backlog pass 12)",
+			"body": "New engine chokepoint spendCorpses(state, pi, n): consolidates all 15 scattered\np.corpses -= sites (core/damage/handlers-cost/buffs/misc/removal/summon/triggers)\ninto one helper that floors at 0 (a no-op given each site's existing guard) and\nfires the \"first Corpse spend each turn\" hook. Unlocks Blood Shields (+2 Health)\nand Ghouls Rush In (2/2 Rush Ghoul); plus Cold Feet Pact (end of turn, a Risen\nGroom sized at half your Corpses, needs no spend hook). Existing gameplay\nunchanged: 61/61 incl. the ff/damage-rider/death-sweep DK characterization\nsuites; split+legacy fuzz clean. Duels PASSIVES now 81. duels_run_test 106.",
+			"cards": []
+		},
+		{
+			"sha": "808ded2",
+			"date": "2026-07-30",
+			"kind": "patch",
+			"title": "Duels passives: final reachable batch (backlog pass 11)",
+			"body": "Flames of the Kirin Tor (first Fire spell -> a class Fire spell via\nconjure-random), Corrupted Felstone (Fel spell -> the end creatures in hand\n+2/+1), Coil Casting (first Naga -> a random 1-Cost spell), Plaguebringer\n(spells cost 2 less + Overload 1), Legendary Loot (first turn -> Discover a\nLegendary weapon), Mysterious Tome (install 2 random Secrets at game start).\nReuses conjure-random / discover / installSecret; flag-gated; fuzz clean.\nDuels PASSIVES now 78. duels_run_test 103; boot 69; battery 61/61.",
+			"cards": []
+		},
+		{
+			"sha": "ab270a2",
+			"date": "2026-07-30",
+			"kind": "patch",
+			"title": "Duels passives: per-school Spell Damage feature + turn hooks (backlog pass 10)",
+			"body": "New engine feature: per-school Spell Damage. The damage + random-damage\nhandlers now add p.schoolSpellDmg[schoolOf(source)] when the source is a\nspell, unlocking Kindling Flame (Fire+1), Bitter Cold (Frost+1), Natural\nForce (Nature+1). Plus Battle Stance (+2 hero Attack on your turn), Hagatha's\nEmbrace (two random hand creatures +1/+1 at turn start), Ever-Changing Elixir\n(end of turn transform a friendly into one costing 2 more). Flag-gated;\nhandlers-removal is heavily exercised so split+legacy fuzz verified clean.\nDuels PASSIVES now 72. duels_run_test 98; battery 61/61.",
+			"cards": []
+		},
+		{
+			"sha": "3f0c90b",
+			"date": "2026-07-30",
+			"kind": "patch",
+			"title": "Duels passives: attack/weapon/death/play-discover cluster (backlog pass 9)",
+			"body": "Potion of Sparking (friendly Rush attacks a creature -> 1 to a random adjacent\nenemy, in resolveCombat), Pillage the Fallen (weapon destroyed -> equip a\nrandom same-Cost weapon +1 Attack, in breakWeapon), Mulch Madness (Neutral\ndeath on your turn -> +1 temporary Mana, in sweepDeaths), Staking A Claim\n(first Discover card played -> friendly creatures +1 Attack, detects a\ndiscover effect on the played card). Flag-gated; core.js/death.js critical ->\nfuzz clean. Duels PASSIVES now 66. duels_run_test 92; boot 69; battery 61/61.",
+			"cards": []
+		},
+		{
+			"sha": "a53e067",
+			"date": "2026-07-30",
+			"kind": "patch",
+			"title": "Duels passives: discover cluster (backlog pass 8)",
+			"body": "Discover-completion hooks (beside Lucky Spade): Open the Doorways (first\nDiscover each turn -> a second copy of the pick) and Orb of Revelation (first\nDiscover -> hand spells cost 1 less). Spell-initiated discovers in the\nspell-cast block: Arcane Flux (first Arcane -> Discover from your class) and\nDivine Illumination (first Holy -> Discover). Tested via the discover harness:\nexecEffects([{type:'discover'}]) then E.resolvePick(state, pickQueue[0].ids[0]).\nFlag-gated; fuzz clean. Duels PASSIVES now 62. duels_run_test 88; battery 61/61.",
+			"cards": []
+		},
+		{
+			"sha": "5a31fe4",
+			"date": "2026-07-30",
+			"kind": "patch",
+			"title": "Duels passives: start-of-game + cost cluster (backlog pass 7)",
+			"body": "Oops, All Spells! (destroy deck creatures at start, spells cost 1 less), Heavy\nArmor (set Health to 10 + cap hero damage at 1 via damage.js, beside the\nreduce-hero-damage static), Sunstrider's Crown (every 3rd spell each turn\ncosts 1), Ring of Haste (every 3rd creature costs 1), Grommash's Armguards\n(draw a weapon from deck + weapons cost 1 less). Cost hooks in cost.js;\nflag-gated; damage.js/cost.js are core paths -> fuzz clean. Duels PASSIVES now\n58. duels_run_test 84; battery 61/61.",
+			"cards": []
+		},
+		{
+			"sha": "46a85a8",
+			"date": "2026-07-30",
+			"kind": "patch",
+			"title": "Duels passives: Sticky Fingers / Hold the Line / Scattered Caltrops (pass 6)",
+			"body": "Sticky Fingers (cards not in your starting deck cost 1 less, effectiveCost via\np.startingDeckIds), Hold the Line (Taunt creatures +3 Attack on opponent's\nturn, reusing the engine's offTurnAttack aura mechanism, set on play), and\nScattered Caltrops (opponent's first creature each turn takes 1, hooked into\nthe creature-played block beside Swamp King Dred). Flag-gated; fuzz clean.\nDuels PASSIVES now 53. duels_run_test 79; battery 61/61.",
+			"cards": []
+		},
+		{
+			"sha": "6d49f32",
+			"date": "2026-07-30",
+			"kind": "patch",
+			"title": "Duels passives: cost-aura cluster (backlog pass 5)",
+			"body": "effectiveCost hooks: Endurance Training (Taunt creatures -2, floor 1), All\nTogether Now (Battlecry cards -1, floor 2), Dragon Affinity (first Dragon each\nturn -1), Greedy Gains (creatures +2 cost, cap 10), Meek Mastery (Neutral\ncreatures -1, floor 2). Stat halves via emblem auras: Greedy Gains +2/+2 all;\nMeek Mastery +1/+1 Neutral-only, enabled by a new aura cardClass filter in\nauras.js (no existing aura sets it). Flag-gated; cost.js/auras.js are core\npaths so split+legacy fuzz verified clean. Duels PASSIVES now 50.\nduels_run_test 76; battery 61/61.",
+			"cards": []
+		},
+		{
+			"sha": "bbfb32e",
+			"date": "2026-07-30",
+			"kind": "patch",
+			"title": "Duels passives: more spell-cast reactions (backlog pass 4)",
+			"body": "Fireshaper (any spell -> 1 to a random enemy), Arcanite Crystal (Arcane ->\ncheapen a random hand card by 1), Wither the Weak (first Fel spell -> 1 to the\nlowest-Health enemy, hero fallback), Unstable Magic (Arcane -> transform a\nrandom enemy creature into a 1/1 Sheep). School-gated via schoolOf();\nflag-gated; fuzz clean. Duels PASSIVES now 45. duels_run_test 69; battery\n61/61.",
+			"cards": []
+		},
+		{
+			"sha": "8c6d870",
+			"date": "2026-07-30",
+			"kind": "patch",
+			"title": "Duels passives: play-a-creature cluster (backlog pass 3)",
+			"body": "Five more on the post-play reaction block: Ring of Phaseshifting (Legendary ->\nconjure a random Legendary), Inspiring Presence (Legendary -> cheapen a random\nhand card by 2), Sandy Surprise ((3)-or-less creature -> Stealth), The Floor is\nLava (first creature -> +2 Attack & 1 damage), Righteous Reserves (first\nDivine Shield creature -> a random friendly gains Divine Shield). Flag-gated;\nfuzz clean. Duels PASSIVES now 41. duels_run_test 65; battery 61/61.",
+			"cards": []
+		},
+		{
+			"sha": "8bb11ac",
+			"date": "2026-07-30",
+			"kind": "patch",
+			"title": "Duels passives: start-of-turn cluster (backlog pass 2)",
+			"body": "New start-of-turn hook (core.js, beside hagathaEmbrace / after overload is\napplied): Conduit of the Storms (Overloaded -> +2 hero Attack this turn, reads\nnp.overloadLockedThisTurn), Crystal Gem (+1 Mana Crystal on your first two\nturns, _cgUsed counter), Party Replacement (summon a 2/2 Adventurer with a\nrandom bonus keyword). Flag-gated; fuzz clean. Duels PASSIVES now 36.\nduels_run_test 61; boot 69; battery 61/61.",
+			"cards": []
+		},
+		{
+			"sha": "8560eaf",
+			"date": "2026-07-30",
+			"kind": "patch",
+			"title": "Duels passives: death/corpse cluster + reuse-flag wins (backlog pass 1)",
+			"body": "New death-trigger hooks in death.js sweepDeaths: Starving (first friendly\nBeast death -> draw), Dragonblood (first friendly Dragon death -> hand +1/+1),\nFrom the Swamp (first enemy death -> a 1/1 Bloated Zombie), Cadaver Collector\n(first Corpse gained each turn -> +1 Corpse; engine already banks Corpses on\nevery friendly death). Plus reuse of existing shared flags: Recycling\n(armorPerFriendlyDeath), Disks of Legend (disksOfLegend), Elixir of Vigor\n(vigorShuffle), Manastorm (mana.max=10). All flag-gated; death.js is critical\npath so split+legacy fuzz verified clean. Duels PASSIVES now 33.\nduels_run_test 58; boot 69; battery 61/61.",
+			"cards": []
+		},
+		{
+			"sha": "0e66dab",
+			"date": "2026-07-30",
+			"kind": "patch",
+			"title": "DK runes: real Hearthstone Blood/Frost/Unholy pips, drop the MTG symbols",
+			"body": "Death Knight rune requirements were baked into descriptions as MTG mana\nsymbols ( Runes: (R) (R) ) and rendered via the MTG Mana font. Now:\n- structured runes {blood,frost,unholy} on all 39 DK cards (from HS runeCost),\n  MTG-symbol text stripped from their descriptions\n- keywords.js RUNE_COLORS + runePipsHtml + runeCount: HS-style coloured rune\n  gems (Blood crimson, Frost blue, Unholy green), NOT the mana pips (those\n  stay for real WUBRG cards)\n- cardart.js draws rune diamonds down the card face's top-left edge\n- game.js tooltip + designwiki card page show the rune pips\nBattery 61/61; headless-verified all three rune colours render on face + detail.",
+			"cards": []
+		},
+		{
+			"sha": "ba32d84",
+			"date": "2026-07-30",
+			"kind": "patch",
+			"title": "Duels passives: freeze-event hook (Arctic Armor, Ring of Black Ice)",
+			"body": "Hooked freezeCreature's new-freeze branch (where 'creature-frozen' triggers\nfire): Arctic Armor (first enemy you Freeze each turn -> 2 Armor, via\ngainArmor + per-turn stamp) and Ring of Black Ice (a Frozen creature -> a\n(2)-cheaper copy in your hand). Attribution: a freeze credits every player who\nis that creature's opponent. Flag-gated; normal games & fuzz untouched. Duels\nPASSIVES now 25. duels_run_test 52; boot 69; battery 61/61; split+legacy fuzz\nclean.",
+			"cards": []
+		},
+		{
+			"sha": "c6aca94",
+			"date": "2026-07-30",
+			"kind": "patch",
+			"title": "Duels passives: end-of-turn Frost/Fire cluster (Glacial Downpour, Flame Waves)",
+			"body": "New end-of-turn hook (core.js, beside everChangingElixir) plus per-turn\nschool-cast tracking in the spell-cast block: Glacial Downpour (cast a Frost\nspell this turn -> summon a 2/3 Water Elemental at end of turn) and Flame\nWaves (2 damage to all enemy creatures per Fire spell cast this turn).\nTracking (_frostCastTurn stamp, _fireCastTurn/_fireCastCount) is flag-gated,\nso normal games & fuzz untouched. Duels PASSIVES now 23. duels_run_test 50\n(incl. a negative case); boot 69; battery 61/61; split+legacy fuzz clean.",
+			"cards": []
+		},
+		{
+			"sha": "1486628",
+			"date": "2026-07-30",
+			"kind": "patch",
+			"title": "Duels passives: draw-reaction hook + Invigorating Light",
+			"body": "New draw-reaction cluster in zones.js drawCards (beside robesOfDiminishing /\ncopyOnDraw): Robes of Shrinking (a drawn spell costs (1) less) and Bronze\nSignet (drawing a creature adds a copy to hand). Plus Invigorating Light on\nthe spell-cast block (a Holy spell gives your creatures +1 Health). All\nflag-gated; normal games & fuzz untouched. Duels PASSIVES now 21.\nduels_run_test 47; boot 69; battery 61/61; split+legacy fuzz clean.",
+			"cards": []
+		},
+		{
+			"sha": "bd036e8",
+			"date": "2026-07-30",
+			"kind": "patch",
+			"title": "Duels passives: 4 school-payoff spell reactions",
+			"body": "Iron Roots (Nature -> random friendly +1/+1 & Taunt), Spreading Saplings\n(Nature -> a 1/1 Sapling), Guardian Light (Holy -> an Ancient Guardian with\nstats = the spell's Cost), Firekeeper's Idol (Fire -> a 1/2 Flame Elemental\non board + one to hand). All on the spell-cast reaction block, school-gated\nvia schoolOf(), reusing execEffects handlers (buff-random-friendly, summon)\nplus the instantiate-to-hand pattern for Firekeeper. Flag-gated; normal games\n& fuzz untouched. Duels PASSIVES now 18. duels_run_test 44; boot 69; battery\n61/61; split+legacy fuzz clean.",
+			"cards": []
+		},
+		{
+			"sha": "93d9563",
+			"date": "2026-07-30",
+			"kind": "patch",
+			"title": "Duels passives: spell-cast reactions (Ring of Refreshment/Staff of Pain/Mending Pools)",
+			"body": "New spell-cast cluster in the same post-play reaction block (spells flow\nthrough it too): Ring of Refreshment (a spell refreshes your Hero Power),\nStaff of Pain (a Shadow spell deals 2 to each hero), Mending Pools (your\nfirst Nature spell each turn restores 2 to all friendly characters). School\ngating via schoolOf(); effects reuse execEffects (all-heroes damage,\nfriendly-characters heal). Flag-gated so normal games/fuzz untouched. Duels\nPASSIVES now 14. duels_run_test 40; boot 69; battery 61/61; split+legacy fuzz\nclean.",
+			"cards": []
+		},
+		{
+			"sha": "cecc08d",
+			"date": "2026-07-30",
+			"kind": "patch",
+			"title": "Duels passives: 3 more on the first-creature hook (Shadowcasting/Rally/Lunar Band)",
+			"body": "Extends the per-turn play-reaction hook with three more Duels passives:\nShadowcasting 101 (first creature -> a 1/1 cost-1 copy of it in hand),\nRally the Troops (first Battlecry card -> draw a card), and Lunar Band\n(first Deathrattle creature triggers its effect while staying on board, via\nrunDeathrattle). Each gated on its own flag + turn-stamp, so untouched games\nand fuzz are unaffected. Duels PASSIVES now 11. duels_run_test 37; boot 69;\nbattery 61/61; split+legacy fuzz clean.",
+			"cards": []
+		},
+		{
+			"sha": "10a813a",
+			"date": "2026-07-30",
+			"kind": "patch",
+			"title": "Duels passives: first-creature-each-turn hook + Rocket Backpacks/Special Delivery",
+			"body": "New engine hook in the post-play reaction block (core.js, beside mummyMagic/\ndisksOfLegend): the first creature you play each turn can trigger a passive,\nguarded by a per-passive turn-stamp. Wires two Duels passives — Rocket\nBackpacks (that creature gains Rush) and Special Delivery (if it has Rush,\nsummon a 1-Health copy). Both gated on player flags only Duels passives set,\nso normal games and fuzz are untouched. Duels PASSIVES now 8. duels_run_test\n34 asserts; boot 69; battery 61/61; split+legacy fuzz clean.",
+			"cards": []
+		},
+		{
+			"sha": "3d00b27",
+			"date": "2026-07-30",
+			"kind": "cards",
+			"title": "Duels run mode phase 4: ?duels=1 fully wired + playable",
+			"body": "game.js now boots the Duels run end-to-end, mirroring the heist/tombs\nscaffolding: DUELS_KEY localStorage (load/save/clear), duelsRunMode flag,\nmode-flag dispatch at concede/victory/defeat/hero-power-slot, a DUELS main-menu\nbutton, and the full run-function set — resumeDuelsOverlay, pickDuelsHero /\npickDuelsPower overlays, duelsBossFor (12-fight ladder, finals Diablo@6 &\nUber Diablo@12), bootDuelsEncounter (boss surgery + power swap + passives),\nduelsVictory (bucket draft, passive@1/5/9, DUELS treasure@3/7/11, +1000 gold\nclear), advanceDuels, duelsDefeat. Added shaman/warlock hero powers (Totemic\nPower, Demon Blood) so every class has an alt power. New duels_boot_test\nreplicates the boot path + plays real fights for all 11 heroes (fresh/mid/\nfinal), validating state each time. duels_boot_test 69 asserts; battery\n61/61; split+legacy fuzz clean.",
+			"cards": [
+				{
+					"id": "duelshp_totemic_power",
+					"name": "Totemic Power",
+					"type": "heropower",
+					"class": "shaman",
+					"rarity": "common",
+					"cost": 2
+				},
+				{
+					"id": "duelshp_demon_blood",
+					"name": "Demon Blood",
+					"type": "heropower",
+					"class": "warlock",
+					"rarity": "common",
+					"cost": 1
+				}
+			]
+		},
+		{
+			"sha": "24f61c6",
+			"date": "2026-07-30",
+			"kind": "cards",
+			"title": "Duels run mode phase 2: 4 more hero powers + Rhonin's Scrying Orb + power map",
+			"body": "cards.json: 4 hero-power cards (Vile Concoction grant-poisonous, Roguish\nManeuvers equip 1/2 Dagger, Illidari Strike two 1/1 Rush, Infernal Strike +1\nhero Attack). duels.js: Rhonin's Scrying Orb passive (reuses the existing\nfirst-spell-discount static hook — no new engine code) and HERO_POWERS now\ncovers all 11 classes, referencing the shared ulda_* League-of-Explorers\npowers Duels inherits (spread_shot, dino_tracking, well_equipped,\nrelicologist, arcane_craftiness, amateur_mage, elises_might, druidic_teaching,\nstarseeker, bubble_blower, power_up, uldum_treasure_cache). 14 Duels hero\npowers imported. duels_run_test 25 asserts; battery 60/60; fuzz clean.",
+			"cards": [
+				{
+					"id": "duelshp_vile_concoction",
+					"name": "Vile Concoction",
+					"type": "heropower",
+					"class": "rogue",
+					"rarity": "common",
+					"cost": 2
+				},
+				{
+					"id": "duelshp_roguish_maneuvers",
+					"name": "Roguish Maneuvers",
+					"type": "heropower",
+					"class": "rogue",
+					"rarity": "common",
+					"cost": 2
+				},
+				{
+					"id": "duelshp_illidari_strike",
+					"name": "Illidari Strike",
+					"type": "heropower",
+					"class": "demon_hunter",
+					"rarity": "common",
+					"cost": 2
+				},
+				{
+					"id": "duelshp_infernal_strike",
+					"name": "Infernal Strike",
+					"type": "heropower",
+					"class": "demon_hunter",
+					"rarity": "common",
+					"cost": 1
+				}
+			]
+		},
+		{
+			"sha": "2d16983",
+			"date": "2026-07-30",
+			"kind": "cards",
+			"title": "Duels run mode phase 1: duels.js (passives + heroes) + 10 hero powers",
+			"body": "Start of the Duels run module, mirroring tombs.js/heist.js. duels.js: 5\nreuse-only passive treasures (Robe of the Apprentice spell-damage emblem,\nSmall Backpacks/Pouches start draws, Band of Bees poisonous aura, Emerald\nGoggles leftmost discount) + applyPassive; 11 signature heroes (one per\nclass) + a HERO_POWERS class map. cards.json: 10 hero-power cards (type\nheropower, duelshp_*) translated onto existing effects — Send in the Scout,\nBlood Parasite, Primal/Uber Primal Power, Survival Training, Modest\nAspirations, From Golden Light, Harvest Time!, Shadow Mend, Call of Madness;\npaladin also reuses the shared ulda_new_recruits. No new engine handlers.\nNew suite duels_run_test 19 asserts; battery 60/60; split+legacy fuzz clean.",
+			"cards": [
+				{
+					"id": "duelshp_send_in_the_scout",
+					"name": "Send in the Scout",
+					"type": "heropower",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 2
+				},
+				{
+					"id": "duelshp_blood_parasite",
+					"name": "Blood Parasite",
+					"type": "heropower",
+					"class": "death_knight",
+					"rarity": "common",
+					"cost": 2
+				},
+				{
+					"id": "duelshp_primal_power",
+					"name": "Primal Power",
+					"type": "heropower",
+					"class": "warrior",
+					"rarity": "common",
+					"cost": 3
+				},
+				{
+					"id": "duelshp_uber_primal_power",
+					"name": "Uber Primal Power",
+					"type": "heropower",
+					"class": "warrior",
+					"rarity": "common",
+					"cost": 3
+				},
+				{
+					"id": "duelshp_survival_training",
+					"name": "Survival Training",
+					"type": "heropower",
+					"class": "hunter",
+					"rarity": "common",
+					"cost": 2
+				},
+				{
+					"id": "duelshp_modest_aspirations",
+					"name": "Modest Aspirations",
+					"type": "heropower",
+					"class": "paladin",
+					"rarity": "common",
+					"cost": 2
+				},
+				{
+					"id": "duelshp_from_golden_light",
+					"name": "From Golden Light",
+					"type": "heropower",
+					"class": "paladin",
+					"rarity": "common",
+					"cost": 2
+				},
+				{
+					"id": "duelshp_harvest_time",
+					"name": "Harvest Time!",
+					"type": "heropower",
+					"class": "druid",
+					"rarity": "common",
+					"cost": 3
+				},
+				{
+					"id": "duelshp_shadow_mend",
+					"name": "Shadow Mend",
+					"type": "heropower",
+					"class": "priest",
+					"rarity": "common",
+					"cost": 2
+				},
+				{
+					"id": "duelshp_call_of_madness",
+					"name": "Call of Madness",
+					"type": "heropower",
+					"class": "priest",
+					"rarity": "common",
+					"cost": 2
+				}
+			]
+		},
+		{
+			"sha": "8a94680",
+			"date": "2026-07-30",
+			"kind": "patch",
+			"title": "Duels import batch 6: 6 treasures + 3 transform/destroy-summon handlers",
+			"body": "Three new engine effects (registry 952->955): transform-all (Puzzle Box —\nevery creature becomes a random one costing N more), destroy-summon-copy\n(Holy Book — silence+destroy a creature, summon a fixed-stat copy),\ndestroy-summon-tokens-by-health (Shadow Word: Void — destroy, summon tokens =\nhalf its Health). Plus 3 reuse: Safe Harbor (bounce setCost:0), Scourge\nStrike (destroy+draw, Corpse dropped), Gift of the Legion (extended\nhero-attack with valueFromDeaths). 43 Duels actives now imported. Test 55\nasserts; battery 59/59; split+legacy fuzz clean.",
+			"cards": []
+		},
+		{
+			"sha": "f42a6d1",
+			"date": "2026-07-30",
+			"kind": "patch",
+			"title": "Duels import batch 5: 6 treasures + set-stats/amalgamate handlers",
+			"body": "Two new engine effects (registry 950->952): set-stats (set friendly\ncreatures to fixed Attack/Health — Humble Blessings) and amalgamate (destroy\nyour creatures, summon one with their combined stats — Amalgamate). Plus 4\npure-reuse cards after discovering existing handlers fit: Mindpocalypse\n(draw+add-mana-crystal, extended add-mana-crystal to honor target:'all'),\nEnhance-a-matic (conjure-random spells), Wish (summon-random legendary +\nheal-hero-full), Embers of Ragnaros (random-damage pool:'enemies'). 37 Duels\nactives now imported. Test 48 asserts; battery 59/59; split+legacy fuzz clean.",
+			"cards": []
+		},
+		{
+			"sha": "de81b86",
+			"date": "2026-07-30",
+			"kind": "patch",
+			"title": "Duels import batch 4: 8 treasures + summon-from-deck handler",
+			"body": "New engine effect summon-from-deck (registry 949->950): pull creatures out\nof your deck by tribe list or tribe+count and summon them — Collector's Ire\n(Mech/Pirate/Dragon) and Summoning Ritual (3 Demons). Plus 6 more reusing\nexisting effects (upgrade/Allied riders dropped): Gift of the Heart\n(add-mana-crystal), Spyglass (copy-random-enemy-hand), Creepy Curio (summon\nGhosts), Coin Pouch (summon-random cost), Old Militia Horn (buff+grant\nTaunt), Surly Mob (destroy-random). 31 Duels actives now imported. Test 39\nasserts; battery 59/59; split+legacy fuzz clean.",
+			"cards": []
+		},
+		{
+			"sha": "32bddb5",
+			"date": "2026-07-30",
+			"kind": "patch",
+			"title": "Duels import batch 3: 4 more active treasures + manifest refresh",
+			"body": "Elemental Learning (conjure-random Elementals), Hunter's Insight\n(discount-hand), Deadly Weapons 101 (buff-weapon), Invoke the Void\n(summon + overload) — all reuse existing handlers (conditional/combo riders\ndropped for faithful-lite). Re-ran extract_duels.py so duels_pool.json's\ninBattlecards flags reflect batches 1-3 (40 actives now present).\n\nNote: the trivially-reusable active-treasure seam is ~exhausted (23 imported;\n~80 real actives remain, most needing new handlers for novel Duels mechanics).\nTest now 29 asserts; battery 59/59.",
+			"cards": []
+		},
+		{
+			"sha": "02bd490",
+			"date": "2026-07-30",
+			"kind": "patch",
+			"title": "Duels import batch 2: 7 more active treasures (existing effects)",
+			"body": "Necrotic Poison (destroy target), Devouring Hunger (destroy-all), Wand of\nDisintegration (silence + destroy all enemy), Will of the Warden\n(refresh-mana), Water Invocation (heal friendly-characters), Bag of\nStuffing (draw-until-full), Stroke of Midnight (destroy-random + Echo). All\nreuse registered handlers; skipped cards already in the pool (e.g.\nTitan-Forged Grapnel, Banana Split). Test now 23 asserts; battery 59/59.",
+			"cards": []
+		},
+		{
+			"sha": "7922b84",
+			"date": "2026-07-30",
+			"kind": "patch",
+			"title": "Duels import batch 1: 12 active treasures (existing effects)",
+			"body": "First batch of Hearthstone Duels active treasures into Battlecards, set\nDUELS, ids duels_<name>, token+treasure (like the Tombs treasures). All 12\nmap to already-registered engine effects — no new handlers:\nEarth/Fire/Lightning Invocation (summon/damage), Cursed Curio (summon\nlifesteal), Blood Moon / Veteran's Militia Horn / Supercharge (board buffs),\nMage Armor (armor), Pure Cold (burn), Hefty Sack of Coins / Astral Portal\n(summon-random by cost/rarity), Bag of Coins (gain-coin). New\nduels_treasures_test.mjs (13 asserts). Battery 59/59, fuzz clean.",
+			"cards": []
+		},
+		{
+			"sha": "704c138",
+			"date": "2026-07-30",
+			"kind": "patch",
+			"title": "Battlecards 3D menu: offer all three run modes",
+			"body": "The direct battlecards/ entry (Battlecards 3D on the site) only listed\nTEST BATTLE and DUNGEON RUN. Add DALARAN HEIST and TOMBS OF TERROR to the\nmain menu, each navigating to its ?heist=1 / ?tombs=1 boot, and rename the\noriginal to OG DUNGEON RUN to match the overworld naming. Verified headless:\nthe menu shows all four options and each mode routes to the right entry.",
+			"cards": []
+		},
+		{
+			"sha": "20a7a91",
+			"date": "2026-07-29",
+			"kind": "patch",
+			"title": "Fix wrong cards in Dungeon/Heist/Tombs decks & buckets",
+			"body": "Audit of every enemy decklist + player bucket across the three run modes\nfound no unresolved/undraftable cards, but 5 Hearthstone ids had been\noverwritten by the MTG (WUBRG) import, so decks/buckets were serving the\nwrong cards, plus one boss power was a silent no-op:\n\n- Elder Brandlemar's \"Dampen Magic\" installed `counterspell` as a Secret,\n  but that id is now an MTG instant with no secret behavior -> installed\n  nothing. Now installs `castblock` (a real counter Secret).\n- azure_drake (now a vanilla MTG 2/4) -> bone_drake / hungry_dragon in the\n  8 dragon decks/buckets that drafted it.\n- counterspell (bucket) -> mana_bind; naturalize -> wrath; lightning_bolt\n  -> stormcrack/frost_shock; air_elemental -> earth_elemental (shaman\n  starter + shaman buckets).\n- bear_trap (retagged to bounty_hunter) leaked into 2 hunter buckets ->\n  snake_trap / pack_tactics.\n- wild_growth carried the orphan class \"naturalist\" (not a real class) ->\n  druid. mirror_image was a sorcery mislabeled token:true (nothing summons\n  it) -> token:false so it drafts cleanly.\n\nColored cards, tokens, and heropower-type cards were all verified castable\nin these colorless modes, so nothing here was a crash/dead-card — just the\nwrong or no-op card. New mode_decks_buckets_test.mjs (272 asserts) locks\nevery invariant: all deck/bucket ids resolve, none colored/land/token,\nboss install-secret powers target real Secrets, every playable class has\nbuckets. Battery 58/58, split+legacy fuzz clean.",
+			"cards": []
+		},
+		{
+			"sha": "0cd047d",
+			"date": "2026-07-29",
+			"kind": "patch",
+			"title": "Tombs of Terror: the deferred run-only/ctx-heavy treasures (9)",
+			"body": "Builds the last parked treasures, mostly by reusing existing effects:\n- Jr./Sr. Navigator: new trigger `add-targeting-spell-copies` on the\n  existing `spell-cast-on-creature`/selfTarget hook — a spell targeting\n  it adds 2 copies to hand (your spells only).\n- Jr./Sr. Tomb Diver: `conditional {secretsThisGame}` (new if-key +\n  a secretsThisGame counter at the secret-played site) -> `set-hero-power`\n  to the shared Discover-a-Treasure power.\n- Aegis of Death: weapon grants hero Immune (damage.js checks the weapon\n  too), bleeds 1 durability each turn (new turn-start tick +\n  loseDurabilityEachTurn passthrough in instantiate), and its existing\n  weapon deathrattle deals 100 to your own hero on break.\n- Kodo Hide Whip: new single-fire `hero-attacks-survivor` event (no\n  weapon double-fire) + trigger `bounce-attacked-survivor-to-hand`.\n- Explorer Retraining -> `discover heroPower`; Stolen Titan Secrets ->\n  `copy-enemy-hero-power`; House Special -> new `replace-deck-bobs`.\n\nRegistry 948->949 (one effect handler; triggers aren't counted). New\n21-assert regression suite (57/57 battery, split+legacy fuzz clean, so\ndeterminism intact — every hook gates on a new field/event). Art fetched\nfor all 9. Skipped only Hearthstone (its entire function is Tavern-escape;\nTombs has no Tavern) and \"Work Work\" (not in the ULDA pool).",
+			"cards": []
+		},
+		{
+			"sha": "b4bc719",
+			"date": "2026-07-29",
+			"kind": "patch",
+			"title": "Tombs of Terror phase 6: the ?tombs=1 run in game.js",
+			"body": "Mirrors the Dalaran Heist run scaffolding: chapter/Explorer/hero-power\npicks, an 8-fight ladder (7 pool minibosses + the chapter's Plague Lord\nfinal) with depth-scaled life, bucket drafts, and passive/active-treasure\nrewards between fights. Adds the overworld TOMBS OF TERROR menu entry and\na headless run-scaffolding test (70 asserts) covering the boss ladder,\nboot surgery, alt-power swap, and passive wiring for every\nchapter x explorer x scenario.",
+			"cards": []
+		},
+		{
+			"sha": "c3908db",
+			"date": "2026-07-29",
+			"kind": "patch",
+			"title": "Tombs of Terror phase 3f: final active treasures batch (17) — treasure layer complete",
+			"body": "The remaining in-battle + Start-of-Game + Adventure-Deck treasures, with the\nrun-layer deck edits approximated onto the in-game deck:\n- Scales of Justice: transform every creature into a 1/1 Murloc + hand Murlocs\n- Advanced Targeting Monocle: cast a copy of every spell in your deck\n- Mystical Mirage: refresh Mana + draw 3\n- Bob's Bouncer: Brawl\n- Zephrys's Lamp (+ Sack of Lamps): Discover the perfect card\n- Academic Research / Tea Time: gain Mana Crystals (+draw)\n- Tracking Device: draw 4\n- Pack Mule / Upgraded Pack Mule: your deck costs 1 less\n- Do the Math: remove cost-2-or-less cards from your deck\n- Study Break / Friendly Smith / Party of Four: Discover a spell/weapon/creature\n- Fast Food: shuffle enemy creatures into your deck\n- Map of Uldum: Discover a card + a Mana Crystal\n\nEngine: 5 new handlers in handlers-tombs.js (transform-all-into-token,\ncast-deck-spells, reduce-deck-cost, remove-cheap-deck, add-mana-crystal;\nregistry 943->948).\n\nDeferred to phase 6 (genuinely run-only — no meaningful in-battle form):\nExplorer Retraining, Stolen Titan Secrets, House Special, Hearthstone,\nWork Work; plus a few needing ctx plumbing (Jr/Sr Navigator spell-target\ntrigger, Jr/Sr Tomb Diver secret-count power-swap, Aegis of Death, Kodo\nHide Whip).\n\nArt fetched for all 17. Tests: 11 more assertions (76 total in\ntombs_treasures_test). 55/55 suites green; census 0 unhandled; fuzz clean\nboth modes. ~62 active treasures now imported.",
+			"cards": []
+		},
+		{
+			"sha": "4a5e00c",
+			"date": "2026-07-29",
+			"kind": "patch",
+			"title": "Engine: fix instantiate-undefined crash on defless deck ids (Chronogor, draw-lowest)",
+			"body": "Some effects mint a dynamic token_* id (become-copy / transform) that has no\ncardsById entry, and a shuffle/bounce can drop that phantom id into a deck.\nDeck-reading effects that pick by cost then instantiate the picked id crashed\non it — a defless id sorts as cost 0, so it's exactly what the \"lowest cost\"\npicks land on: instantiate(undefined) -> \"Cannot read properties of undefined\n(reading 'id')\". Found by the fuzz.\n\nThe draw pipeline already evaporates defless ids; these direct-splice sites\ndidn't. Guarded the two vulnerable cost-pick sites so a defless pick is\nskipped (the phantom just evaporates, matching draw):\n- chronogor (handlers-misc.js): both the \"you draw highest\" and \"enemy draws\n  lowest\" instantiate calls\n- draw-lowest / draw-highest (handlers-deck.js)\nThe other deck-read-instantiate sites already filter by a def property\n(?.type === 'weapon' / 'creature', d && isSpellType), so a defless id can\nnever be selected there.\n\nTransparent to normal play (defless deck ids never arise deterministically):\ndigests unchanged, 53/53 suites green. New tests/regression/\ndefless_deck_id_test.mjs (5 assertions). The failing fuzz seeds (1097214,\n313233) now pass; the sweep is clean except the two separately-tracked\npre-existing issues (legacy determinism seed 8888, heap-OOM seed 51015).",
+			"cards": []
+		},
+		{
+			"sha": "fcbd20b",
+			"date": "2026-07-29",
+			"kind": "patch",
+			"title": "Engine: fix Brilliant Macaw (repeat-last-battlecry) stack overflow",
+			"body": "repeat-last-battlecry replays your last Battlecry's effects. Play two\nBrilliant Macaws back to back and the second one's \"last Battlecry\" is the\nfirst Macaw's repeat — replaying it re-invokes repeat-last-battlecry, which\nreplays it again, recursing without bound (Maximum call stack size\nexceeded, found by the fuzz).\n\nFix: a re-entry lock (state._macawLock, mirroring the engine's existing\n_chaosLock / _opLock) — while a repeat is replaying, a nested\nrepeat-last-battlecry is skipped. A Macaw repeating a real Battlecry still\nworks (one level); a Macaw repeating another Macaw's repeat now no-ops\ninstead of overflowing.\n\nTransparent to normal play: seeded digests unchanged (53/53 suites). New\ntests/regression/macaw_recursion_test.mjs (4 assertions: the normal single\nrepeat, two-Macaw non-overflow, board placement, lock reset). The failing\nfuzz seed (legacy 313233) now passes; a broad sweep dropped from the two\noverflows to none.\n\nNOTE: an unrelated pre-existing bug remains on some legacy seeds — an\nundefined card def reaching instantiate() (core.js:211), a distinct crash\nclass (not a recursion). Present before this fix; left for a follow-up.",
+			"cards": []
+		},
+		{
+			"sha": "a448b45",
+			"date": "2026-07-29",
+			"kind": "patch",
+			"title": "Tombs of Terror phase 4: all 16 passive treasures via tombs.js applyPassive",
+			"body": "New battlecards/tombs.js (mirrors heist.js): PASSIVES table + applyPassive.\nThe run boot will call it; each passive works now:\n- Unlocked Potential (deckInnerFire — drawn creatures get Attack = Health)\n- Titanic Ring (emblem aura +1 Health & Taunt)\n- Band of Bees (emblem aura: cost-2-or-less creatures get Poisonous)\n- Band of Scarabs (global enemy-scope emblem aura: enemy creatures -1 Attack)\n- Scroll of Nonsense (Spell Damage +10 emblem that decays 1/turn)\n- Disks of Swiftness (opponent skips their first 2 turns)\n- Mummy Magic (first Deathrattle creature each turn gains Reborn)\n- Disks of Legend (playing a Legendary summons a copy)\n- Darklight Torch (even-Cost card refreshes your Hero Power at 0)\n- Alchemist's Stone (odd-Cost card discounts your hand by 1)\n- Crook and Flail (casting a spell pulls a creature from your deck)\n- Ever-Changing Elixir (end of turn: transform a friendly creature +1 Cost)\n- Robes of Diminishing (drawn spells cost 0)\n- Lucky Spade (after a Discover, add 2 copies at -2 Cost)\n- Primordial Bulwark (block one lethal hit, blast target opponent for 20)\n- VIP Membership (run cosmetic flag)\n\nEngine: aura system extended — global sources now include emblems (with the\ndeath-check limited to board creatures, since emblems have no health), plus\naura `scope` (enemies/friendly) and `maxCost` filters. New hooks on playCard,\nspell-played, endTurn, drawCards, damageHero, resolvePick, and the turn-\nadvance skip loop — all gated on per-player flags, inert when unset.\n\n16 passive display cards + art. Suite tombs_passives_test.mjs (24 asserts).\n52/52 suites green; census 0 unhandled; fuzz clean (the split run; the one\nfailing legacy seed is a pre-existing repeat-last-battlecry recursion,\nconfirmed identical on baseline, unrelated to the passives).",
+			"cards": []
+		},
+		{
+			"sha": "795f268",
+			"date": "2026-07-29",
+			"kind": "patch",
+			"title": "Tombs of Terror phase 3e: active treasures batch 5 (6) + Lei Flamepaw spell-echo",
+			"body": "- Amakir the Light (3) 3/6: after it attacks, add 2 cost-0 spells\n  (self-attacks ongoing + conjure-random)\n- Sand Trap (0): Casts When Drawn, mills the top 2 of your own deck\n- LOCUUUUSTS!!! (3): fill your board with 2/2 Rush Locusts (+ Giant Locust token)\n- Jr. Excavator (4) 2/5 / Sr. Excavator (4) 3/6: Battlecry draw 3\n- Lei Flamepaw (2) 2/6: while it's on your board, your spells cast an extra\n  time — new `spellEcho` board flag (instantiate + runSpell, mirroring the\n  existing cheapSpellDouble path). Behind a board flag, so digests unchanged.\n\nReuses existing effects for the rest (mill target:self, self-attacks\nongoing, conjure setCost, draw). The two Excavators drop their\ndraw-discount rider (no engine support yet); the drop is noted in text.\n\nArt fetched for all 7, cropped. Tests: 6 more assertions (63 total in\ntombs_treasures_test, incl. a with/without-Lei double-cast check). 51/51\nsuites green; census 0 unhandled; fuzz clean both modes. 45 active\ntreasures done. Still deferred: Kodo Hide Whip (bounce attacked survivor\nneeds weapon-ongoing target ctx).",
+			"cards": []
+		},
+		{
+			"sha": "9191b25",
+			"date": "2026-07-29",
+			"kind": "patch",
+			"title": "Tombs of Terror phase 3d: active treasures batch 4 (7) + shared Treasure Cache power",
+			"body": "- Flo Slatebrand (2) 4/4: Battlecry & Deathrattle add a random Treasure\n- Addarah (3) 3/6: Battlecry shuffle all enemy creatures into your deck\n- The Gatling Wand (5): 3 damage split among enemies\n- Brann's Saddle (2): +3/+3 to a friendly creature\n- Reno's Magical Torch (2): Deal 4; Combo also shuffles a copy into your deck\n- Staff of Ammunae (4): your whole board gets Windfury & Immune this turn\n- Blade of the Burning Sun (4) 4/0: Battlecry gives your deck +2 Attack,\n  Deathrattle returns the weapon to your hand\n- Uldum Treasure Cache: the shared Explorer hero power (add a random Treasure)\n\nEngine: 3 new handlers in handlers-tombs.js (add-random-treasure,\nshuffle-enemy-board-into-deck, return-weapon-to-hand; registry 940->943),\nplus grant-immune-turn now accepts target 'friendly-creatures' (whole board).\n\nDeferred to a later batch (need deeper ctx plumbing): Kodo Hide Whip\n(bounce the attacked survivor), Lei Flamepaw (spells cast twice while\nalive), Amakir the Light (conjure on attack).\n\nArt fetched for all 8, cropped. Tests: 12 more assertions (57 total in\ntombs_treasures_test). 51/51 suites green; census 0 unhandled; fuzz clean\nboth modes.",
+			"cards": []
+		},
+		{
+			"sha": "3cc87af",
+			"date": "2026-07-29",
+			"kind": "patch",
+			"title": "Tombs of Terror phase 3c: active treasures batch 3 (8) — all reuse existing effects",
+			"body": "No new handlers this batch — everything maps onto effects already in the\nengine (incl. the batch-2 extensions):\n- Maxwell, Mighty Steed (3) 3/5: Rush, Reborn, +2 Attack per other creature\n  (selfScale with no tribe = counts all, from the batch-2 aura change)\n- Rakanishu (2) 4/4: Battlecry sets your Lackeys to 4/4 (set-lackey-buff)\n- Servant of Siamat (2) 1/4: Taunt + Divine Shield\n- Murky's Battle Horn (7): seven Rush Murlocs now, seven more next turn\n  (delay-to-turn-start, reused from the Heist's Big Boomba)\n- Bauble of Beetles (4): resurrect 4 dead friendlies with Reborn\n  (resurrect count+grant, batch-2 extension)\n- Flex-plosion (7): destroy 3 random enemy creatures\n- Phaoris' Blade (5): Windfury weapon, +2/+1 after it kills a creature\n  (buff-weapon on the hero-kills-creature ongoing — single-fire, no double)\n- Canopic Jars (3): give your creatures \"Deathrattle: Summon a random\n  Legendary creature\" (grant-deathrattle to all friendly + summon-random)\n\nArt fetched for all 8, white-bar cropped. Tests: 10 more assertions in\ntombs_treasures_test.mjs (45 total). 51/51 suites green; census 0\nunhandled; split-fuzz clean.",
+			"cards": []
+		},
+		{
+			"sha": "3898732",
+			"date": "2026-07-29",
+			"kind": "patch",
+			"title": "Engine: fix runaway summon recursion (stack overflow) with depth + board guards",
+			"body": "The fuzz's \"Maximum call stack size exceeded\" in summon() was a genuine\nunbounded recursion: summon() fires fireOngoing('summoned'), and Spiritsinger\nUmbra's 'summoned' trigger runs the summoned creature's deathrattle — so a\ncreature whose deathrattle summons (a self-summoning token, a self-copying\nPirate like Shoplifter Goldbeard) recurses summon → deathrattle → summon …\nwithout bound.\n\nTwo guards, both needed:\n- MAX_SUMMON_DEPTH (40): a per-nesting-level counter (state.summonDepth);\n  past it the creature still enters play but its on-summon triggers are\n  skipped, so infinite NESTING terminates.\n- MAX_BOARD (40): a hard live-creature ceiling; summon() no-ops when the row\n  is saturated. Without this the depth guard alone would let a branching\n  deathrattle (summon 2 copies) fan out exponentially into an out-of-memory\n  blowup. Callers that loop on summon() already break on null. 40 is ~5x any\n  real board (HS caps at 7).\n\nTransparent to normal play: the seeded digest suites are unchanged (51/51),\nand the specific failing fuzz seed (split 909090) now passes, as does a\nbroad split-fuzz sweep. New tests/regression/summon_recursion_test.mjs (6\nassertions) deterministically reproduces both the self-summon and branching\nchains via Umbra and confirms they terminate.\n\nNOTE: a SEPARATE pre-existing runaway remains on legacy-mode fuzz seed 51015\n(JavaScript heap OOM, not a stack overflow, not board-driven — confirmed\nidentical on the pre-change baseline). Distinct from this summon recursion;\nleft for a follow-up.",
+			"cards": []
+		},
+		{
+			"sha": "505839f",
+			"date": "2026-07-29",
+			"kind": "patch",
+			"title": "Tombs of Terror phase 3b: active treasures batch 2 (9) + engine extensions",
+			"body": "Second batch of active treasures:\n- Book of the Dead (12): 7 to all enemies, costs 1 less per creature died\n  this game (selfCost minions-died-game)\n- Gnomebliterator (2): Deal 10 damage\n- Starseeker's Tools (2): Discover a creature & a spell, both cost 2 less\n- Stone Fox Statue (5): two 0-cost copies of a chosen creature\n- Staff of Renewal (7): resurrect the 7 highest-cost dead friendlies w/ Taunt\n- Titan-Forged Grapnel (3): destroy 2 random enemies, gain Armor = their Attack\n- Ancient Reflections (5): fill your board with 1/1 copies of a chosen creature\n- Crusty the Crustacean (1) 3/4: Battlecry destroy a creature, gain double\n  its stats\n- Brann's Epic Egg (6) 0/5: after it takes damage, summon King Krush (once)\n\nEngine: new handlers-tombs.js (destroy-random-gain-armor,\nfill-board-copies-of-target; registry 938->940). Extensions: copy-to-hand\n`count`; devour-target `double` + any-creature target; resurrect-highest-died\n`count`+`grant`; selfScale aura with no tribe counts all other creatures\n(future Maxwell). census scan list + targeting CHOSEN updated.\n\nArt fetched for all 9, white-bar cropped. Tests: 14 more assertions in\ntombs_treasures_test.mjs (35 total). 50/50 suites green; census 0\nunhandled. NOTE: split-fuzz seed 909090 hits a pre-existing nondeterministic\nstack overflow in summon (a deathrattle/summon chain, umbra-doubled) —\nconfirmed identical on the pre-change baseline, not from this batch.",
+			"cards": []
+		},
+		{
+			"sha": "365bc74",
+			"date": "2026-07-29",
+			"kind": "patch",
+			"title": "Tombs of Terror phase 3a: active treasures batch 1 (14) + weapon Lifesteal fix",
+			"body": "First batch of in-battle active treasures, all mapping to existing effects:\n- Staff of Scales (+ Ancient Snake token): three 1/1 Rush/Poisonous/Reborn\n- Jr. Scout / Sr. Scout: Charge+Windfury, end-of-turn 4/6 to a random enemy\n- Sanctum Golem: 6/6 Can't Attack (pacifist); Enflamed Golem: DR nukes all\n  creatures for 3 & summons a Sanctum Golem\n- Runaway Gyrocopter: DR 5 to enemy creatures then shuffles itself back\n- Crawling Claw: Rush/Reborn, DR steals a card (fires on its final death,\n  per this engine's Reborn-skips-first-deathrattle rule)\n- Reno's Crafty Lasso / Elise's Machete / Ol' Faithful: after-attack weapons\n  (steal a card / summon two Rush Treants / 1 to all enemies)\n- Reno's Lucky Hat: +2/+2 & Spell Damage +2; Karl the Lost: six Recruits +\n  Taunt; Finley's Pith Helmet: +2 Health to your board, reshuffles;\n  Truesilver Lance: 5-attack Lifesteal weapon\n\nTwo fixes found while wiring these:\n- The treasure weapons store durability 0 in the HS dump (persistent\n  treasures) — gave them sensible durability so the hero can actually swing.\n- Weapon ongoings on 'hero-attacks' double-fire (the explicit heroAttack\n  block AND fireOngoing both hit the weapon) — switched them to\n  'hero-attacked' (fireOngoing-only). And a real engine gap: weapon\n  Lifesteal healed on creature hits but not face attacks — now it heals on\n  both (matches HS + the creature branch).\n\nArt fetched for all 15 (ULDA_ ids), white-bar cropped. Tests:\ntests/regression/tombs_treasures_test.mjs (21 assertions). 50/50 suites\ngreen; census 0 unhandled; fuzz 120 split + 100 legacy clean.",
+			"cards": []
+		},
+		{
+			"sha": "3a00a20",
+			"date": "2026-07-29",
+			"kind": "patch",
+			"title": "Tombs of Terror phase 2: the 12 Explorer hero powers, effects wired",
+			"body": "The four dual-class Explorers each get their three selectable hero powers\nas heropower cards in cards.json, all functional:\n- Reno (Mage): Amateur Mage (1 dmg, Combo: 2), Relicologist (next spell\n  +2 Spell Damage), Arcane Craftiness (two 1-dmg missiles at enemies)\n- Elise (Druid): Elise's Might (Choose One: +2 Attack this turn / +2\n  Armor), Druidic Teaching (Restore 2 to a character), Starseeker (add a\n  Moonfire)\n- Finley (Paladin): New \"Recruits\" (2/2 all-types Amalgam), Bubble Blower\n  (Discover a Shaman/Paladin Battlecry creature, Overload 1), Power Up!\n  (Divine Shield & Windfury to a creature)\n- Brann (Hunter): Spread Shot (1 to all enemies, +1 more to target\n  opponent), Well Equipped (random weapon at Durability 1), Dino Tracking\n  (Discover a card from your deck)\n\nEngine: heroPowerEffects now honors a power's `combo` line when Combo is\nactive (Amateur Mage), and equip-random gained a setDurability override\n(Well Equipped). Two passive HS powers (Dino Tracking, Starseeker) are\nfaithful active approximations, matching how the Heist handled passives.\n\nLanguage already in house style (creatures, &, target opponent). Art\nfetched for all 12 (ULDA_<Explorer>_HPn), white-bar cropped. Tests:\ntests/regression/tombs_powers_test.mjs (19 assertions, each power fired\nthrough useHeroPower incl. the Combo path and both Elise branches).\n49/49 suites green; census 0 unhandled; fuzz clean.",
+			"cards": []
+		},
+		{
+			"sha": "17e7054",
+			"date": "2026-07-29",
+			"kind": "patch",
+			"title": "Dalaran Heist: clean card language to the game's house style",
+			"body": "Match the new Heist cards to the game's conventions:\n- \"minion(s)\" -> \"creature(s)\" (creatures, not minions)\n- \" and \" -> \" & \" (Swap a creature's Attack & Health; Deal 1 damage to\n  a creature & give it +2 Attack; Immune & Elusive; etc.)\n- \"the enemy hero\" -> \"target opponent\" (Moragg's Ray of Suffering) so the\n  wording is correct in >2-player games — the underlying effect target\n  stays 'enemy-hero', which targeting.js already resolves to a chosen\n  opponent when there are multiple\n\nApplied to cards.json DALARAN_HEIST descriptions (34) and heist.js `text:`\nfields — boss powers, passives, anomalies, tavern (52) — plus the Rocket\nBackpacks emblem description. Effect target keys and hero flavor prose are\nleft untouched. Cache-bust -> ?v=20260806; 48/48 suites green.",
+			"cards": []
+		},
+		{
+			"sha": "dd16a7c",
+			"date": "2026-07-29",
+			"kind": "patch",
+			"title": "Dalaran Heist: render passive treasures as actual cards (gold PASSIVE frame)",
+			"body": "The 16 passive-treasure display cards existed in cards.json with art but\nonly rendered as plain text boxes (in-game passive pick) and text chips\n(wiki) — unlike the active treasures, which show as full card faces.\n\nNow they render as real cards:\n- cardart.js drawCardFace: cards with `passive:true` get a gold treasure\n  body (bodyColorOf) and a \"PASSIVE\" ribbon across the top in place of the\n  blue mana-cost gem (they have no cost).\n- game.js: the passive-pick overlay (after fights 1 & 5) shows each option\n  as its card face (miniFace) with a Take-it button, matching the active-\n  treasure pick.\n- designwiki: the Heist treasures page renders passives via deckGrid (card\n  faces) instead of kw-def text chips.\n\nCache-bust -> ?v=20260805. 48/48 suites green; verified the 16 passive\nfaces render (gold frame, PASSIVE ribbon, real art + rules) in Chrome.",
+			"cards": []
+		},
+		{
+			"sha": "93a0aae",
+			"date": "2026-07-29",
+			"kind": "patch",
+			"title": "Dalaran Heist phase 7: anomalies (optional run-wide twists)",
+			"body": "An anomaly is a symmetric rule chosen at run start that warps every fight\nof the run — it hits you and every boss alike (HS Anomaly mode). 11 of\nthem in heist.js ANOMALIES + applyAnomaly(state, id):\n- Arcane: all spells cost (2) less (costMod emblem on both players)\n- Crying / Rattling: all Battlecries / Deathrattles trigger twice\n- Gorged: both players start +2 cards & +2 Mana Crystals\n- Growing: minions gain +1/+1 at the end of their owner's turn\n- Rejuvenating: restore 2 to your hero at the start of your turn\n- Reductive: hand costs -1 at the end of your turn\n- Dragon Soul: your 3rd spell in a turn summons a 5/5 Dragon\n- Infused: summoned minions gain a random keyword\n- Explosive / Nesting: summoned minions gain a board-nuke / self-copy\n  Deathrattle\n\nEngine: new `state.anomaly` field (createGame literal + serialize\nFIELD_DEFAULTS so snapshots round-trip) drives four symmetric hooks —\nsummon (Infused/Explosive/Nesting grants), spell-played (Dragon Soul),\nturn-end (Growing/Reductive), turn-start (Rejuvenating). Boot-applied\nanomalies (Arcane/Crying/Rattling/Gorged) set up via applyAnomaly's boot\nloop over both players. All hooks are inert when state.anomaly is null.\n\nRun flow: an ANOMALY? overlay after the hero-power pick offers 3 random\nanomalies or \"standard run\"; the choice persists in run.anomaly, is\nre-applied every fight at boot (logged), and shows on the resume overlay.\nWiki treasures page gains an Anomalies section (cache-bust 20260804).\n\nTests: tests/regression/heist_anomalies_test.mjs (18 asserts — every\nanomaly's effect through real games). 48/48 suites green; census clean;\nfuzz 120 split + 100 legacy clean; verified in headless Chrome (an\nExplosive run booting + 4 turns of deathrattle chains, no console errors).",
+			"cards": []
+		},
+		{
+			"sha": "573450f",
+			"date": "2026-07-29",
+			"kind": "patch",
+			"title": "Dalaran Heist phase 6: the tavern (Bar) between-fight deck edits + transform crash fix",
+			"body": "The Bar now appears after fights 2, 4 & 6 (complementing the passive picks\nafter 1 & 5 and treasure cards after 3 & 7). It offers 3 of 7 random\ndeck-editing actions in heist.js TAVERN, or leave:\n- Good Food: +5 Health for the rest of the run (folded into the boot life)\n- Dismiss: remove a minion from your deck (thin it)\n- The Gang's All Here!: add three copies of a chosen minion\n- Recruit a Veteran: Discover a Legendary, add it to your deck\n- Tell a Story: a chosen minion gets +2/+2 for the run\n- Tall Tales: +4/+4 but costs (2) more for the run\n- Right Hand Man: a chosen minion always starts in your opening hand\n\nThese mutate the persistent run (deck array + bonusHealth / deckBuffs /\nopeningHand fields). New Heist.applyRunMods bakes the buffs and opening-\nhand guarantees into each freshly-booted fight: hand copies buffed\ndirectly, deck copies via deckIdBuffs on draw, cost deltas via\ndeckCostPersist. Card-targeting actions open a mini-face picker.\n\nTRANSFORM CRASH FIX (found by the fuzz via dala_evolution): the `transform`\nhandler's randomCost path left `opt` as the effect object when no creature\nof the wanted Cost existed, then dereferenced opt.name — crash. Now it\nfizzles cleanly (Evolution off an un-toppable minion does nothing, as in\nHS). Latent since the randomCost handler shipped; also protects\nRecombobulator / Master of Evolution / Plucky Podling.\n\nTests: tests/regression/heist_tavern_test.mjs (15 asserts: every action's\nmutation + applyRunMods hand/deck buff + cost + opening-hand) and an\nEvolution-fizzle assertion in heist_treasures_test.mjs. 47/47 suites\ngreen; census clean; split fuzz clean (the one failing legacy seed is\npre-existing nondeterminism, confirmed on the pre-change baseline).\nVerified in headless Chrome: a run carrying Good Food + Tell a Story +\nRight Hand Man boots at 30 life with the guaranteed card in hand, no\nconsole errors.",
+			"cards": []
+		},
+		{
+			"sha": "12dbe71",
+			"date": "2026-07-29",
+			"kind": "patch",
+			"title": "Dalaran Heist phase 4: the run is playable — ?heist=1 mode in game.js",
+			"body": "Full run loop, mirroring the proven Dungeon Run machinery:\n- Boot: wing pick (5 chapters w/ final-boss preview) -> hero pick (9\n  specialists) -> hero-power pick (class default or the two alternates;\n  an alternate replaces the class slot at boot and the orb resolves via\n  the classPowerOf fallback) -> fight 1.\n- Fights: heistBossFor rolls the wing pool by difficulty band (sorted by\n  boss health), fight 8 is the wing's fixed final. Boss gets its themed\n  buildBossDeck + designed HP; player life scales 15 + 5/fight; saved\n  passives re-apply via Heist.applyPassive each fight.\n- Between fights: card bucket draft after every win (reuses the class\n  bucket pools), a passive-treasure pick after fights 1 & 5, an active\n  treasure card into the deck after fights 3 & 7.\n- Run persistence in magepunk_heist_v1 with resume/abandon overlay;\n  concede + game-over routing are run-mode aware; clearing pays 750 gold\n  (+MP pack when in the test realm).\n- Overworld Battlecards menu gains a DALARAN HEIST entry (?heist=1).\n\nVerified in headless Chrome end to end: wing/hero/power click-through,\nalternate power saved (dala_burning_wit), fight 1/8 vs Chomper booted at\nthe right life totals, boss power logged, no console errors. 46/46 node\nsuites stay green.",
+			"cards": []
+		},
+		{
+			"sha": "f5e0bba",
+			"date": "2026-07-29",
+			"kind": "patch",
+			"title": "Dalaran Heist phase 2: all 16 passive treasures, live via heist.js applyPassive",
+			"body": "New battlecards/heist.js module: PASSIVES table + applyPassive(state, pi, id)\n— run logic will call this at game boot; each passive is fully functional now:\n\n- Recycling (armorPerFriendlyDeath hook in death.js)\n- Rocket Backpacks (Rush emblem aura)\n- Emerald Goggles (leftmostDiscount in effectiveCost)\n- Robes of Gaudiness (robesHalf ceil-half costs + robesTwoCards canPlay gate)\n- Stargazing (hero power twice a turn via per-power _uses counter + costs 1 less)\n- Resourcefulness (boot equip-random +1/+1)\n- A Prince's Ring (random dala_ hero power replaces the class power)\n- Book of Wonders (10 Scrolls of Wonder; drawTrigger casts a random spell + draws)\n- Wondrous Wisdomball (25% chance of random advice at turn start)\n- Togwaggle's Dice (end-of-turn hand cost randomizer)\n- Dr. Boom's Remote (3 Boom Bots at boot)\n- Hagatha's Embrace (random hand minion +1/+1 each turn)\n- The Hand of Rafaam (2 Cursed! cards; new curseDamage hand-burn tick,\n  playable to remove)\n- Elixir of Vigor (vigorShuffle playCard hook + deckCostPersist (1) copies)\n- Elixir of Vim (extraTurnDraw 2 + noFatigue guard in the draw pipeline)\n- Elixir of Vile (spells cost Health: effectiveCost 0 + Health payment,\n  Agamaggan pattern)\n\n18 new cards.json entries: 16 passive display cards (passive:true, for the\nrun picker + wiki + art) + Scroll of Wonder + Cursed! tokens. Art fetched\nfor all 18 (Scroll uses LOOT_106t — DALA_739t has no art), bar-cropped.\n\nTests: tests/regression/heist_passives_test.mjs (28 assertions, every\npassive exercised through real games). 45/45 suites green; census 0\nunhandled; fuzz 120 split + 80 legacy clean.",
+			"cards": []
+		},
+		{
+			"sha": "2213778",
+			"date": "2026-07-29",
+			"kind": "patch",
+			"title": "Dalaran Heist phase 1: 52 cards imported — 29 treasures + 18 alt hero powers, all effects wired",
+			"body": "Active treasures (29 + chain/bomb tokens), every one with real machinery:\nContinuum Collider (new extra-turns via forcedTurns), The Box + Shifting\nChameleon (new handTransform.intoRandom morphs: random treasure /\n1-cost minion), Gnomish Army Knife, The Muscle, Super Simian Sphere\n(summonId grant rider: Mukla with Immune+Elusive), Grimmer Patron, EVIL\nPropaganda (mind-control gains all:true), Loyal Henchman (startOfGame\ntutor-by-id + new handGrow in-hand growth), Untold Splendor + The Box\npool (cards carry treasure:true), Golden Candle, Dreamgrove Ring\n(discover summonCopy gains count+noHand), Orb of the Untold, Elder\nTaggawag, the THE... Candles? Twinspell chain, Overpowered (playCard\nreplay hook, random targets), Fly-By/Kadoom Bot (50 on draw), Case\nStudy, Elistra (recast-spells-played, chaos-locked), Soulreaper's\nScythe (weapon kill log + summon-reaped deathrattle), Swampqueen's\nCall (Echo + real-def legendary transform), Duplatransmogrifier,\nAnnoy-o Horn, Hyperblaster (immune-attacking + weapon Poisonous),\nBig Boomba (new delay-to-turn-start queue), Banana Split (copy-summon\ncount), Master Scheme (schemeGrow hand tick), Sow the Seeds\n(deckIdBuffs), Dagwik Stickytoe (self-attacks-hero steal), Murgatha\n(add-overload forEnemy).\n\n18 alternate class hero powers (2 per class) as heropower cards with\npower effects: Lifebloom/Touch of Bark, Opportunist/Pet Training,\nBurning Wit/Frostburn (new freeze-or-damage), Backup!/Boon of Light,\nDistort/Soothe, Yoink!/Cut-less, Evolution/Refresh, Pain Split/The\nPact, Invigorating Brew/Undermine (+Improvised Explosive).\n\nEngine: 13 new handlers in engine/effects/handlers-heist.js (registry\n925 -> 938), census file list + registry count test updated. Art: all\n52 fetched from HearthstoneJSON at their DALA_ ids, white-bar cropped.\n\nTests: tests/regression/heist_treasures_test.mjs (46 assertions\ncovering every treasure mechanic + power). 44/44 suites green; census\n0 unhandled; identifier audit clean; fuzz 150 split + 100 legacy clean.",
+			"cards": []
+		},
+		{
+			"sha": "a021dbd",
+			"date": "2026-07-29",
+			"kind": "patch",
+			"title": "split \"Swiftdraw\" into Miracle (HS Quickdraw) and Quickdraw (OG temporary draw)",
+			"body": "One name was covering two unrelated mechanics. Now:\n\nMIRACLE (HS Quickdraw: bonus effect when played the turn you drew it) —\nthe 10 WILD_WEST imports. Engine field swiftdraw -> miracle (instantiate,\nbattlecry exec, targeting scan, census walker, snapshot migrate() shim for\npre-rename publishers), keyword glossary entry + 'miracle' tag on all 10\nso Flint Firearm's \"get a random Miracle card\" conjure pool (previously\nEMPTY - silent no-op) actually finds them; Flint also gained its real\n\"Miracle: Repeat this\" rider.\n\nQUICKDRAW (OG Magepunk: Quickdraw N = draw N; unplayed cards shuffle back\ninto your deck at end of turn) — the 9 paper/original cards, descriptions\nrestored to the OG keyword (glossary already documented it). Also wired\nthe ones that were pure text with no effects:\n- Officer Octo: Battlecry: Quickdraw 8\n- Landlocked Privateer: Inspire via the hero-power-used ongoing\n- Westward Prosperity: real quest (goal quickdraw 9 -> 9 damage to all\n  enemies), removed from UNPLAYABLE\n- Captain Eberhart: new quickdrawCostReduce aura in cost.js (\"Your\n  Quickdraw cards cost 1 less\"), keyed on the new 'quickdraw' keyword tag\nVerdant Smilodon's \"Connect:\" trigger remains unimplemented (no Connect\nmechanic exists in the engine) — text corrected, effect still pending.\n\nTests: tests/regression/swiftdraw_split_test.mjs (19 assertions: Miracle\nfires only when drawn-this-turn, Chain Gang 3-vs-2 bodies, Flint pool,\nOcto/Privateer/Eberhart/quest, played-quickdrawn-stays + return-to-deck).\n43/43 suites green; census 0 unhandled; fuzz 150 split + 100 legacy clean.\nCache-bust -> ?v=20260801.",
+			"cards": []
+		},
+		{
+			"sha": "7dcf84c",
+			"date": "2026-07-28",
+			"kind": "patch",
+			"title": "playtest fixes — Lone Ranger battlecry, hero-power readability, \"You's Turn\"",
+			"body": "Three reports from a phone playtest of dungeon runs:\n\n- The Lone Ranger had rules text but NO effects — the choose-one battlecry\n  silently did nothing. Wired both branches with existing machinery:\n  destroy target creature (maxCost 4) / copy-to-hand (maxCost 2).\n  New suite: tests/regression/lone_ranger_test.mjs (6 assertions, incl.\n  cost-gate on legal targets).\n\n- The class hero-power orb was unreadable: hover showed no tooltip (the 3D\n  panel orb has no card uid, so updateTooltip resolved nothing), and on\n  touch a tap either fired it or did nothing. Now hovering the orb shows\n  the power's tooltip (HERO POWER · COSTS (N) header), and a tap while the\n  power can't be used (off turn / no mana / spent) opens its reader\n  instead of no-oping. Press-and-hold preview unchanged.\n\n- The end-turn button read \"You's Turn…\" when a game ended on your own\n  turn (nameOf(HUMAN) = \"You\" + possessive). It now shows \"Game Over\"\n  once the game ends, with a \"Your Turn…\" guard on the possessive path.\n\nVerification: 42/42 suites green; effect census clean.",
+			"cards": []
+		},
+		{
+			"sha": "9f9f0af",
+			"date": "2026-07-28",
+			"kind": "patch",
+			"title": "real Orca/Otter tokens + art for all 231 inline tokens + 11 copy-cards fixed",
+			"body": "Started from one report (Flipper Friends' Orca had no art) and pulled the\nwhole thread:\n\n1. FLIPPER FRIENDS: inline name-only summons became real token cards\n   (tsc_orca 6/6 Taunt, tsc_otter 1/1 Rush) with their actual HS art\n   (TSC_650t / TSC_650t4), wired via summonId — so they also show art,\n   sort under Generic, and appear on Flipper Friends' Generates listing.\n\n2. EVERY INLINE TOKEN: a census found 231 inline-summon tokens with the\n   same no-art problem (they mint token_<name> ids). All sourced — 126 via\n   Hearthstone (exact + cleaned-name matches: \"Sheep that's Dormant for 2\n   turns\" -> HS Sheep), the rest via Scryfall type/name searches with\n   hand-picked fits and substring-accident fixes. Only the 7 \"copy of ...\"\n   phrase tokens remain procedural — deliberately, because:\n\n3. ELEVEN BROKEN COPY-CARDS: those phrases exposed real HS cards whose\n   copy mechanics were imported as literal vanilla tokens (Mirage Caller\n   summoned a 1/1 token NAMED \"copy of it\"). All now use real machinery:\n   - copy-summon gained e.attack/e.health set-stat overrides\n     (mirage_caller 1/1, power_word_replicate 5/5, gift_of_luminance DS+1/1)\n   - summon-copies-of-board gained stat overrides (herald_volazj 1/1s)\n   - summon-deck-minions-setstats gained e.each — every distinct deck\n     creature (zerek_s_cloning_gallery 1/1s)\n   - tutor gained a summonCopy rider (searing_reflection: draw + 8/8 DS copy)\n   - discover gained a summonCopy pend option resolved in resolvePick\n     (ritual_of_life 2/3, cactus_construct 1/2 — pick still goes to hand)\n   - NEW summon-hand-copy handler (kobold_illusionist 1/1 from own hand;\n     posse_possession 4/4 from the enemy hand)\n   - masked_reveler: data-only rewire onto the Barnes handler (2/2 deck copy)\n\nTests: tests/regression/copy_cards_revival_test.mjs (14 assertions) covers\nboth Flipper choices and all 11 revived cards end to end.\n\nCache-bust -> ?v=20260730. Verification: 41/41 suites green (815\nassertions); identifier audit clean; census 0 unhandled; deep fuzz 200\nsplit + 150 legacy games clean.",
+			"cards": []
+		},
 		{
 			"sha": "cbfd31e",
 			"date": "2026-07-28",
