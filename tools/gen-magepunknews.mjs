@@ -15,8 +15,10 @@ import { writeFileSync } from 'fs';
 
 const git = (...args) => execFileSync('git', args, { maxBuffer: 1 << 28, encoding: 'utf8', stdio: ['pipe', 'pipe', 'ignore'] });
 
-// battlecards files that count as gameplay for patch notes (not art/UI chrome)
-const GAME_FILES = /^battlecards\/(engine|keywords|game|ai|deck|packs|collection|dungeon|cards\.json|classes\.json)/;
+// battlecards files that count as gameplay for patch notes (not art/UI chrome).
+// Includes every run mode's data layer — duels/heist/tombs work often lands in
+// those files alone, and used to be missed entirely.
+const GAME_FILES = /^battlecards\/(engine|keywords|game|ai|deck|packs|collection|dungeon|duels|heist|tombs|mpmode|cards\.json|classes\.json)/;
 
 const cardsAt = sha => {
 	try {
