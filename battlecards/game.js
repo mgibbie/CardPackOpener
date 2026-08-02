@@ -209,6 +209,9 @@ function formFor(card) {
 }
 
 function faceMaterialFor(card) {
+	// enemy hand cards are hidden information: always show the card back, whatever
+	// the camera angle or game mode (never the real face)
+	if (card.zone === 'hand' && card.controller !== HUMAN) return new THREE.MeshStandardMaterial({ map: makeBackTexture(), roughness: 0.5 });
 	// disguised creatures render anonymously: neutral art seed, no identity
 	const shown = card.disguised
 		? { ...card, id: 'disguised', name: 'Disguised', description: '', cardClass: 'neutral' }
@@ -247,7 +250,7 @@ function faceSig(card) {
 		: card.type === 'quest' ? `p${card.progress || 0}`
 		: card.type === 'planeswalker' ? `l${card.loyalty}`
 		: '';
-	return `${formFor(card)}|${card.cost}|${s}`;
+	return `${formFor(card)}|${card.cost}|${s}|${card.zone === 'hand' && card.controller !== HUMAN ? 'HID' : ''}`;
 }
 
 function buildBody(card, form, faceMat) {
@@ -320,6 +323,7 @@ function removeEntity(uid) {
 const FLAT = new THREE.Euler(-Math.PI / 2, 0, 0);     // face up on the table
 const FACEDOWN = new THREE.Euler(Math.PI / 2, 0, 0);  // back up (set traps)
 const LAND_Z = 3.05, LAND_SPREAD = 1.15;              // slice-local land row (kept above the hero panel)
+const CREATURE_Z = 1.15;                              // creature row, pulled forward so it clears the land slots
 const TRAP_Z = 4.9, TRAP_X = 2.55, TRAP_SPREAD = 1.2; // slice-local trap row
 
 // The land row is the only zone with furniture when empty: 5 slot outlines
@@ -869,13 +873,13 @@ function layoutTargets() {
 		// creature row (unlimited: compress spacing inside the slice arc).
 		// Tokens always face the HUMAN so enemy stats read right-side-up.
 		const bn = p.board.length;
-		const rowWidth = playerCount <= 2 ? 10.5 : TAU * (off + 2.0) / playerCount * 0.9;
+		const rowWidth = playerCount <= 2 ? 10.5 : TAU * (off + CREATURE_Z) / playerCount * 0.9;
 		p.board.forEach((card, i) => {
 			const ent = entityFor(card);
 			seen.add(card.uid);
 			const spread = Math.min(2.35, rowWidth / Math.max(bn, 1));
 			const x = (i - (bn - 1) / 2) * spread;
-			ent.target.pos = toWorld(x, 0.06 + i * 0.002, off + 2.0, pi);
+			ent.target.pos = toWorld(x, 0.06 + i * 0.002, off + CREATURE_Z, pi);
 			// tapped locations turn sideways like tapped lands
 			ent.target.quat = sliceQuat(card.type === 'location' && card.tapped
 				? new THREE.Euler(-Math.PI / 2, 0, -Math.PI / 2) : FLAT, HUMAN);
