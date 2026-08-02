@@ -33,7 +33,11 @@ function bootDuelsRun(heroId, games, powerId, playerPassives, rng, classChoice) 
 	if (Du.classChoicesOf(hero) && classChoice) hero = { ...hero, heroClass: classChoice, classes: [classChoice] };
 	const deck = Du.autoDraftDeck(cardsById, Du.classesOf(hero), rng, 10);
 	const rival = Du.RIVALS[Math.floor(rng() * Du.RIVALS.length)];
-	const enemy = Du.generateEnemy(cardsById, rival.heroClass, games, rng);
+	const rivalClasses = Du.classesOf(rival);
+	const enemy = Du.generateEnemy(cardsById, rivalClasses, games, rng);
+	// mirror genDuelsEnemy: the enemy also rolls a hero power (class default = null, or an alt)
+	const altPowers = rivalClasses.flatMap(cl => Du.HERO_POWERS[cl] || []).filter(id => cardsById[id] && cardsById[id].power);
+	const enemyPowerId = [null, ...altPowers][Math.floor(rng() * (altPowers.length + 1))];
 	const playerCls = { id: hero.heroClass, name: hero.heroClass, power: null };
 	const enemyCls = { id: rival.heroClass, name: rival.heroClass, power: null };
 	const state = E.createGame(cardsById, rng, [...deck], 2, [playerCls, enemyCls]);
@@ -45,13 +49,19 @@ function bootDuelsRun(heroId, games, powerId, playerPassives, rng, classChoice) 
 	E.resetDeckAndHand(state, 1, [...enemy.deck]);
 	E.drawCards(state, 1, 4);
 	E.stripLoadouts(state);
+	if (enemyPowerId && cardsById[enemyPowerId]) {
+		const epw = E.instantiate(cardsById[enemyPowerId], 1);
+		epw.zone = 'heropower'; epw.usedThisTurn = false;
+		state.players[1].heroPowers = [epw];
+	}
 	for (const id of playerPassives) Du.applyPassive(state, 0, id);
 	for (const id of enemy.passives) Du.applyPassive(state, 1, id);
-	return { state, deck, enemy };
+	return { state, deck, enemy, enemyPowerId };
 }
 
 // boot & play a couple of turns for every hero across early / mid / deep runs
 const somePassives = ['band_of_bees', 'rhonins_scrying_orb'];
+let enemyPowered = 0, enemyPoweredFired = 0;
 for (const hero of Du.HEROES) {
 	const altPower = (Du.HERO_POWERS[hero.heroClass] || [])[0] || null;
 	const scenarios = [
@@ -62,7 +72,7 @@ for (const hero of Du.HEROES) {
 	for (const sc of scenarios) {
 		const rng = seededRng((hero.id.length + 1) * 31 + sc.games);
 		try {
-			const { state, deck, enemy } = bootDuelsRun(hero.id, sc.games, sc.powerId, sc.passives, rng);
+			const { state, deck, enemy, enemyPowerId } = bootDuelsRun(hero.id, sc.games, sc.powerId, sc.passives, rng);
 			// parity: the enemy carries the same power budget the player has by now
 			const loot = Du.enemyLoot(sc.games);
 			if (enemy.deck.length !== 10 + 3 * loot.buckets + loot.treasures) {
@@ -70,6 +80,11 @@ for (const hero of Du.HEROES) {
 			}
 			if (sc.powerId && state.players[0].heroPowers[0]?.id !== sc.powerId) {
 				fail++; console.log('FAIL power swap:', hero.id, sc.powerId); continue;
+			}
+			// parity: when the enemy rolled an alt hero power, it's equipped on player 1
+			if (enemyPowerId) {
+				enemyPowered++;
+				if (state.players[1].heroPowers[0]?.id === enemyPowerId) enemyPoweredFired++;
 			}
 			// enemy fires its power, a couple of turns pass; state stays legal
 			const pw = state.players[1].heroPowers[0];
@@ -83,6 +98,9 @@ for (const hero of Du.HEROES) {
 		} catch (err) { fail++; console.log('FAIL boot:', hero.id, sc.games, String(err).slice(0, 140)); }
 	}
 }
+// the enemy-hero-power parity path is actually exercised, and every rolled power equipped & fired legally
+ok('enemy hero-power parity: some enemies rolled an alt power', enemyPowered > 0, enemyPowered);
+ok('enemy hero-power parity: every rolled power was equipped on the enemy', enemyPowered === enemyPoweredFired, [enemyPowered, enemyPoweredFired]);
 
 // choose-your-class heroes boot & play as their chosen single class
 for (const [heroId, cl] of [['drekthar', 'mage'], ['drekthar', 'warrior'], ['vanndar', 'rogue'], ['vanndar', 'priest']]) {

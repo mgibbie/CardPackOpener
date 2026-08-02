@@ -3838,7 +3838,7 @@ async function start() {
 				hero = { ...hero, heroClass: classChoice, classes: [classChoice] };
 			}
 			const powerId = await pickDuelsPowerOverlay(hero);
-			const anomaly = await pickAnomalyOverlay();
+			const anomaly = await pickAnomalyOverlay('The rules of the Duel bend. Take on a run-wide twist for an extra challenge, or duel clean.');
 			const deck = await pickDuelsDraftOverlay(Duels.classesOf(hero));
 			run = { active: true, heroId, classChoice, powerId, anomaly, deck, passives: [], wins: 0, losses: 0, enemy: genDuelsEnemy(cardsById, 0) };
 			saveDuels(run);
@@ -4284,9 +4284,9 @@ function pickPowerOverlay(hero) {
 	});
 }
 // optional run modifier: a symmetric anomaly that applies to every fight
-function pickAnomalyOverlay() {
+function pickAnomalyOverlay(flavor) {
 	return new Promise(resolve => {
-		const el = dungeonOverlay('ANOMALY?', 'The magic of Dalaran is unstable. Take on a run-wide twist for an extra challenge, or run clean.');
+		const el = dungeonOverlay('ANOMALY?', flavor || 'The magic of Dalaran is unstable. Take on a run-wide twist for an extra challenge, or run clean.');
 		const row = document.createElement('div');
 		row.style.cssText = 'display:flex;flex-wrap:wrap;justify-content:center;gap:14px;';
 		const keys = Object.keys(Heist.ANOMALIES);
@@ -4886,10 +4886,17 @@ function pickDuelsDraftOverlay(heroClass) {
 
 // roll a fresh opponent kept at exact power parity with the player: a random
 // rival identity + a generated deck/passives scaled to games already played
-function genDuelsEnemy(cardsById, games) {
-	const rival = Duels.RIVALS[Math.floor(Math.random() * Duels.RIVALS.length)];
-	const gen = Duels.generateEnemy(cardsById, Duels.classesOf(rival), games, Math.random);
-	return { name: rival.name, heroClass: rival.heroClass, hsId: rival.hsId, deck: gen.deck, passives: gen.passives };
+function genDuelsEnemy(cardsById, games, avoidId) {
+	let roster = Duels.RIVALS;
+	if (avoidId && roster.length > 1) roster = roster.filter(r => r.id !== avoidId); // no back-to-back repeats
+	const rival = roster[Math.floor(Math.random() * roster.length)];
+	const classes = Duels.classesOf(rival);
+	const gen = Duels.generateEnemy(cardsById, classes, games, Math.random);
+	// parity: the enemy also carries a hero power - its class default (null) or a random alt from its Duels pool
+	const altPowers = classes.flatMap(cl => Duels.HERO_POWERS[cl] || []).filter(id => cardsById[id] && cardsById[id].power);
+	const powerChoices = [null, ...altPowers];
+	const powerId = powerChoices[Math.floor(Math.random() * powerChoices.length)];
+	return { id: rival.id, name: rival.name, heroClass: rival.heroClass, hsId: rival.hsId, deck: gen.deck, passives: gen.passives, powerId };
 }
 
 function bootDuelsEncounter(cardsById, run) {
@@ -4907,6 +4914,12 @@ function bootDuelsEncounter(cardsById, run) {
 		const pw = E.instantiate(cardsById[run.powerId], HUMAN);
 		pw.zone = 'heropower'; pw.usedThisTurn = false;
 		state.players[HUMAN].heroPowers = [pw];
+	}
+	// parity: the enemy fires its own hero power too - default class power, or a rolled alt
+	if (enemy.powerId && cardsById[enemy.powerId]) {
+		const epw = E.instantiate(cardsById[enemy.powerId], 1);
+		epw.zone = 'heropower'; epw.usedThisTurn = false;
+		state.players[1].heroPowers = [epw];
 	}
 	// both sides share the same generated-deck / loot budget - equal footing (no HP scaling)
 	E.resetDeckAndHand(state, 1, [...enemy.deck]);
@@ -4990,7 +5003,7 @@ function afterDuelsLootBucket(run) {
 
 function advanceDuels(run) {
 	const games = (run.wins || 0) + (run.losses || 0);
-	run.enemy = genDuelsEnemy(state.cardsById, games); // next opponent, scaled to this depth
+	run.enemy = genDuelsEnemy(state.cardsById, games, run.enemy && run.enemy.id); // next opponent (avoid immediate repeat)
 	saveDuels(run);
 	const el = dungeonOverlay(`NEXT: ${run.enemy.name}`, `${run.wins || 0} wins / ${run.losses || 0} losses - your deck is ${run.deck.length} cards.`);
 	el.appendChild(overlayButton('Fight!', () => location.reload()));
