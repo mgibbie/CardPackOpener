@@ -970,6 +970,7 @@ register('buff', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, e
 			} else if (e.target === 'all-creatures') {
 				for (const pl of state.players) for (const c of pl.board) {
 					if (e.exceptTribe && (c.tribe || '').includes(e.exceptTribe)) continue;
+					if (e.tribe && !(c.tribe || '').includes(e.tribe)) continue; // optional include filter (e.g. Demon / Spirit)
 					buffCreature(c, e.attack, e.health);
 				}
 			} else if (e.target === 'friendly-others') {
@@ -1004,11 +1005,12 @@ register('buff', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, e
 register('grant', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => {
 	do {
 			const grantTo = e.target === 'friendly-creatures' ? state.players[pi].board
+				: e.target === 'all-creatures' ? state.players.flatMap(pl => pl.board) // both boards (Windswept Heresy)
 				: e.target === 'friendly-others' ? state.players[pi].board.filter(c => c !== source) // Camouflaged Dirigible
 				: e.target === 'self' ? (source && source.zone === 'board' && !isDead(source) ? [source] : [])
 				: [chosenCreature()].filter(Boolean);
 			// tribe-restricted grants never fall back to a random creature
-			if (!grantTo.length && e.target !== 'friendly-creatures' && e.target !== 'friendly-others' && e.target !== 'self' && !e.tribe) {
+			if (!grantTo.length && e.target !== 'friendly-creatures' && e.target !== 'friendly-others' && e.target !== 'self' && e.target !== 'all-creatures' && !e.tribe) {
 				// triggered grants without a chosen target bless a random friendly
 				const pool = state.players[pi].board.filter(c => !isDead(c));
 				if (pool.length) grantTo.push(pool[Math.floor(state.rng() * pool.length)]);

@@ -133276,6 +133276,33 @@
           "target": "creature"
         }
       ]
+    },
+    {
+      "id": "windswept_heresy",
+      "name": "Windswept Heresy",
+      "cardClass": "neutral",
+      "cost": 4,
+      "rarity": "uncommon",
+      "set": "paper",
+      "description": "Flip a coin. Heads: each creature gains Windfury. Tails: each Demon or Spirit gains +2/+2 & Lifesteal.",
+      "type": "sorcery",
+      "tribe": "Fel",
+      "effects": [
+        {
+          "type": "random-effects",
+          "options": [
+            [
+              { "type": "grant", "keyword": "windfury", "target": "all-creatures" }
+            ],
+            [
+              { "type": "buff", "target": "all-creatures", "tribe": "Demon", "attack": 2, "health": 2 },
+              { "type": "buff", "target": "all-creatures", "tribe": "Spirit", "attack": 2, "health": 2 },
+              { "type": "grant", "keyword": "lifesteal", "target": "all-creatures", "ifTribe": "Demon" },
+              { "type": "grant", "keyword": "lifesteal", "target": "all-creatures", "ifTribe": "Spirit" }
+            ]
+          ]
+        }
+      ]
     }
   ]
 }
