@@ -4085,7 +4085,7 @@ function mainMenu() {
 			() => resolve('heist')));
 		col.appendChild(big('TOMBS OF TERROR', 'four Explorers, four chapters — delve to a Plague Lord for treasures & passives',
 			() => resolve('tombs')));
-		col.appendChild(big('DUELS', 'eleven heroes climb a twelve-boss ladder of rivals to Uber Diablo — hero powers, passives & treasures',
+		col.appendChild(big('DUELS', 'eleven heroes — draft a deck, then run it to 12 wins or 3 losses against rivals at your power',
 			() => resolve('duels')));
 		el.appendChild(col);
 	});
@@ -4784,9 +4784,10 @@ function tombsDefeat(run) {
 }
 
 // ---------- Duels run ----------
-// A twelve-fight ladder: rounds 1 & 5 & 9 grant a passive, 3 & 7 & 11 add an
-// active DUELS treasure, and every win drafts a bucket. Fights 6 and 12 are the
-// fixed finals (Diablo, then Uber Diablo).
+// An arena-draft run: draft 10 cards, then play until 12 wins or 3 losses.
+// Every game (win or loss) loots a bucket; games 1 & 5 & 9 grant a passive and
+// 3 & 7 & 11 add an active DUELS treasure. Opponents aren't a fixed ladder —
+// each is generated from a random rival at exactly the player's loot budget.
 let duelsCardsById = null; // set at boot so overlays can read card defs pre-state
 
 function resumeDuelsOverlay(run) {

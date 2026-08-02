@@ -1,7 +1,8 @@
 // Hearthstone Duels run data: passive treasures + the playable heroes. Active
 // treasures (set DUELS) and hero powers (type 'heropower', id duelshp_*) live
-// in cards.json. Boss ladder + run logic land in later phases. Mirrors the
-// tombs.js / heist.js structure.
+// in cards.json. The run itself is an arena draft plus loot buckets and
+// power-matched generated opponents (see the draft/bucket section below); the
+// run loop lives in game.js. Mirrors the tombs.js / heist.js structure.
 import * as E from './engine.js';
 
 const emblem = (state, pi, id, name, text, extra) => {
