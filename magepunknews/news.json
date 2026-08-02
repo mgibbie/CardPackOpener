@@ -1,12 +1,201 @@
 {
-	"generated": "2026-08-01",
+	"generated": "2026-08-02",
 	"entries": [
+		{
+			"sha": "8a2bea9",
+			"date": "2026-08-02",
+			"kind": "patch",
+			"title": "Duels: menu and comments describe the shipped arena-draft run",
+			"body": "The landing-menu tile still advertised 'eleven heroes climb a\ntwelve-boss ladder of rivals to Uber Diablo' and the game.js/duels.js\nsection comments described the same deleted design. Duels is an arena\ndraft played to 12 wins or 3 losses against power-matched generated\nrivals — no ladder, no fixed finals. Text only; no behavior change.",
+			"cards": []
+		},
+		{
+			"sha": "27029a6",
+			"date": "2026-08-02",
+			"kind": "cards",
+			"title": "Add 5 cards + fix a latent once-ongoing determinism bug",
+			"body": "New paper cards (all data-only except one shared condition):\n- Rothga, Bonded Engulfer (4, legendary Phyrexian Beast, 4/4): Battlecry reveal\n  a Phyrexian -> next Beast this turn +4/+4 (conditional holdingTribe ->\n  set-next-tribe-play-reward); Trample.\n- Magmatic Scorchwing (5, Dragon, 4/4): Battlecry, if you control a Mountain and\n  no other lands, deal 3 to any target; Firebreathing & Windfury. Needed one new\n  `conditional` predicate `onlyLandName` (control only lands of a given name);\n  the targeted damage flows through the conditional's `target: any`.\n- Blightwing Whelp (3, Phyrexian Demon, 2/2): Poisonous & Windfury.\n- Feywild Prankster (4, Faerie Rogue, 1/4): Battlecry Choose One - swap a\n  creature's Attack & Health, or deal 3 to a creature & give it +3 Attack.\n- Underbridge Warlock (5, Ogre Warlock, 5/4): Deathtouch; turn-end ongoing deals\n  5 to each opponent hero (enemy-heroes).\n\nEngine fix (surfaced by the new cards reshuffling fuzz seed 9419695): the\nsingular `ongoing` was copied BY REFERENCE in instantiate() while the plural\n`ongoings` was deep-cloned. A `once`/`need`/`every` trigger (e.g. Warsong\nEnvoy's Frenzy, Outfitted Jouster's Frenzy) set its spent/trigCount on the\nSHARED card def, leaking to every other instance and across games in one\nprocess — a determinism failure. instantiate() now clones `ongoing` too.\n\nTests: 15-assertion batch covering all five cards; a dedicated ongoing-clone\nisolation test (two Warsong Envoys each Frenzy independently; same card fires\nidentically in a fresh game). Full battery green (67/67 -> now 69 suites) +\nfuzz clean incl. the previously-failing pinned seed; headless-verified all five\nrender with art & are collectible.",
+			"cards": [
+				{
+					"id": "rothga_bonded_engulfer",
+					"name": "Rothga, Bonded Engulfer",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "legendary",
+					"cost": 4
+				},
+				{
+					"id": "magmatic_scorchwing",
+					"name": "Magmatic Scorchwing",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "uncommon",
+					"cost": 5
+				},
+				{
+					"id": "feywild_prankster",
+					"name": "Feywild Prankster",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "rare",
+					"cost": 4
+				}
+			]
+		},
+		{
+			"sha": "70130b8",
+			"date": "2026-08-02",
+			"kind": "cards",
+			"title": "Add cards: Outfitted Jouster & Heir to Dragonfire (Jewel Mine Overseer already existed)",
+			"body": "Jewel Mine Overseer (Battlecry: Scry 5 / Deathrattle: Excavate) was already in\nthe pool with art — verified it works (death digs up fools_azerite).\n\nOutfitted Jouster (paper, 4, Human Knight, 2/2):\n  Battlecry: Draw an Equipment or Hero Weapon. Frenzy: Return an Equipment or\n  Hero Weapon from your graveyard to your hand.\n  - Battlecry reuses `tutor` with a new `equipOrWeapon` filter (weapon, or an\n    artifact carrying equip).\n  - Frenzy uses the engine's self-damaged/once/survives ongoing + a NEW\n    `return-from-graveyard` handler (registry 956->957) that pulls a matching\n    card from the graveyard to hand.\n\nHeir to Dragonfire (paper, 2, Human Warlock, 2/2):\n  Firebreathing. {3}: reveal a Dragon from your hand -> gain +3/+3 & Divine\n  Shield, once per game.\n  - Firebreathing keyword grants its repeatable +Attack ability as usual; the\n    {3} ability is a custom activated ability.\n  - Activated abilities gained `requireTribeInHand` (gate on a Dragon in hand,\n    so the mana is never wasted) and `oncePerGame` (a per-ability used-ever\n    marker) in canActivate/activateAbility; effects are buff-self + grant\n    divine_shield on self.\n\nTests (9): Jouster tutors the Equipment on Battlecry; Frenzy returns a Weapon\nfrom the graveyard once (a second hit does nothing); Heir can't fire the {3}\nwithout a Dragon in hand, gains +3/+3 & Divine Shield with one (Dragon stays),\nand is locked out afterwards. Registry test bumped to 957. Full battery green\n(66/66) + fuzz clean; headless-verified all three render with art & are\ncollectible.",
+			"cards": [
+				{
+					"id": "outfitted_jouster",
+					"name": "Outfitted Jouster",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "rare",
+					"cost": 4
+				},
+				{
+					"id": "heir_to_dragonfire",
+					"name": "Heir to Dragonfire",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "rare",
+					"cost": 2
+				}
+			]
+		},
+		{
+			"sha": "405bd06",
+			"date": "2026-08-02",
+			"kind": "patch",
+			"title": "Fix: mouse-hover card tooltips in overlays on touch-primary devices",
+			"body": "The overlay mini-face tooltip (packs, the Duels loot buckets & 10-card draft,\ntreasures, etc.) is wired by attachTip, which chose hover vs long-press from\nthe global `TOUCH = matchMedia('(pointer: coarse)').matches`. On a hybrid /\ntouchscreen laptop that flag is true, so the mouse-hover branch was never\nattached and hovering a bucket card showed nothing.\n\nattachTip now attaches both handler sets and gates them on the event's\npointerType instead of the global flag: a mouse/pen hover always pops the\nrules tooltip, while touch keeps the long-press (350ms) reveal — so it works\non every device, not just pointer:fine ones.\n\nVerified headless on the Duels draft (same miniFace path as the loot buckets):\na mouse pointerenter shows the tooltip with the card's name; a touch\npointerenter does not (long-press only). Full battery still green (65/65).",
+			"cards": []
+		},
+		{
+			"sha": "024efcf",
+			"date": "2026-08-02",
+			"kind": "patch",
+			"title": "AI: use {T} artifact abilities (taps Detective's Satchel in runs)",
+			"body": "Adds an artifact-tap step to the enemy AI's action loop, right after it cashes\nin field tokens: for each of its artifacts with a tapAbility, if canTapArtifact\npasses (its per-turn condition is met and it's untapped), the AI taps it,\npicking a random legal target when the ability needs one. Since the AI already\nsacrifices Clues when its hand is short, it now naturally sacrifices a Clue and\nthen taps Detective's Satchel for a 1/1 Mech with Taunt.\n\ncanTapArtifact gates on the condition, so the AI never wastes a tap; tapping\nsets tapped=true, so it fires at most once per turn and can't loop.\n\nTest (5): the AI plays the satchel, sacrifices a Clue, and taps it to create a\n1/1 Mech with Taunt, leaving the satchel tapped. Full battery green (65/65) +\nfuzz clean (the fuzz harness drives the AI).",
+			"cards": []
+		},
+		{
+			"sha": "050f176",
+			"date": "2026-08-02",
+			"kind": "patch",
+			"title": "Engine+UI: real \"tap this artifact\" ({T}) interaction; Detective's Satchel uses it",
+			"body": "Adds a first-class activated tap ability for permanent artifacts, then makes\nDetective's Satchel use it instead of the earlier auto-trigger adaptation.\n\nEngine (core.js):\n- instantiate carries `def.tapAbility = { effects, text, condition? }`.\n- canTapArtifact / tapArtifact / tapArtifactSpec: tap a {T} artifact on your\n  turn (once — it taps), optionally gated by a per-turn condition; targeted\n  abilities derive a spec like land taps do.\n- sacrificeToken records `p.sacrificedThisTurn[id]++`, powering the\n  condition `{ sacrificedThisTurn: 'clue_token' }` (\"sacrificed a Clue this turn\").\n- turn start untaps {T} artifacts and resets the per-turn sacrifice tracker.\n  (Serialization already carries player/card fields by reference, so tapped /\n  tapAbility / sacrificedThisTurn persist for free.)\n\nUI (game.js):\n- click a {T} artifact to tap it (no-target resolves immediately; a targeted\n  one opens a 'tapart' pending pick).\n- tappable {T} artifacts glow green like other usable permanents; a tapped one\n  turns sideways like a tapped land.\n\nCard: Detective's Satchel drops the `ongoing` adaptation for a real `tapAbility`\n(condition: sacrificed a Clue this turn -> summon a 1/1 Mech with Taunt) and its\ntext is back to the faithful \"{T}: If you've sacrificed a Clue this turn...\".\n\nTest (12): can't tap before a Clue is sacrificed; after sacrificing, tap makes a\n1/1 Mech with Taunt; it's then tapped (a second Clue sac makes no extra Mech);\nit untaps next turn and the tracker resets. Full battery green (64/64) + fuzz\nclean; verified the tap lifecycle in-browser and the render loop (highlight +\ntapped rotation) over live tappable/tapped artifacts with zero page errors.",
+			"cards": []
+		},
+		{
+			"sha": "f7bec25",
+			"date": "2026-08-02",
+			"kind": "cards",
+			"title": "Add card: Detective's Satchel (paper, Artifact, 4)",
+			"body": "Battlecry: Investigate twice. {T}: If you've sacrificed a Clue this turn,\ncreate a 1/1 Mech with Taunt.\n\nPure data — reuses existing mechanics:\n- Top half: an artifact's `effects` run on play (the engine's \"permanent\n  battlecry\"), so two `investigate` effects make two Clue tokens.\n- Bottom half: the `{T}` tap is adapted to an automatic `ongoing` trigger on\n  `token-sacrificed` (the engine/UI has no way to tap an artifact), gated with\n  `if: { cardId: clue_token }`, summoning a 1/1 Mech with Taunt. fireOngoing\n  scans p.artifacts and is fired per-player by sacrificeToken, so it only\n  triggers for the satchel's controller. It fires on each Clue you sacrifice.\n\nTest (10): Investigate twice -> 2 Clues; sacrificing a Clue -> a 1/1 Mech\nwith Taunt; a second Clue -> a second Mech; an opponent's Clue sac makes no\nMech for the owner (controller-scoped). Art cropped from the Card Creator\nscan. Full battery green (64/64) + fuzz clean; headless-verified the face\nrenders with art and the card is collectible.",
+			"cards": [
+				{
+					"id": "detectives_satchel",
+					"name": "Detective's Satchel",
+					"type": "artifact",
+					"class": "neutral",
+					"rarity": "uncommon",
+					"cost": 4
+				}
+			]
+		},
+		{
+			"sha": "1ddca1e",
+			"date": "2026-08-02",
+			"kind": "cards",
+			"title": "Add card: Holy Avenger (paper, Artifact — Equipment, 3)",
+			"body": "Equipped creature has +3/+3 & Taunt. Equip (1). Pure data — reuses the\nengine's existing MTG equipment system: the artifact enters the p.artifacts\nzone on play, equip() attaches it to a creature (attachedTo), and auras grant\nequip.attack/health/keywords while attached.\n\nThe requested behaviour — when the equipped creature dies the equipment\nreturns to the artifacts section so it can be re-equipped — is already how\nthe engine works (death.js clears attachedTo, leaving the equipment in play).\nThe test proves the full lifecycle: play -> equip (+3/+3 & Taunt) -> holder\ndies (detaches, stays in artifacts) -> re-equip onto a fresh creature.\n\nArt cropped from the Card Creator scan -> art/holy_avenger.jpg + index.\nFull battery green (63/63) + fuzz clean; headless-verified the face renders\nwith art and the card is collectible.",
+			"cards": [
+				{
+					"id": "holy_avenger",
+					"name": "Holy Avenger",
+					"type": "artifact",
+					"class": "neutral",
+					"rarity": "uncommon",
+					"cost": 3
+				}
+			]
+		},
+		{
+			"sha": "0be46df",
+			"date": "2026-08-02",
+			"kind": "cards",
+			"title": "Add card: Windswept Heresy (paper, Fel sorcery, 4)",
+			"body": "Flip a coin — Heads: each creature gains Windfury. Tails: each Demon or\nSpirit gains +2/+2 & Lifesteal. Modeled with the existing `random-effects`\nhandler (two options = a 50/50 coin flip); the branches hit both boards.\n\nTwo small engine additions to reach every creature (no new handlers, no\nregistry bump):\n- grant: new `all-creatures` target (both boards), reusing the existing\n  `ifTribe` filter for the Demon/Spirit lifesteal grant; excluded from the\n  empty-target random-bless fallback.\n- buff: the existing `all-creatures` branch gains an optional include-`tribe`\n  filter (previously only `exceptTribe`) for the Demon/Spirit +2/+2. No card\n  set all-creatures+tribe before, so existing behavior is unchanged.\n\nArt cropped from the Card Creator scan -> art/windswept_heresy.jpg + index.\nTest covers both coin branches (all-boards Windfury; Demon/Spirit +2/+2 &\nLifesteal with non-tribe creatures untouched) and an end-to-end cast. Full\nbattery green (62/62) + fuzz clean; headless-verified the face renders with\nart and the card is collectible.",
+			"cards": [
+				{
+					"id": "windswept_heresy",
+					"name": "Windswept Heresy",
+					"type": "sorcery",
+					"class": "neutral",
+					"rarity": "uncommon",
+					"cost": 4
+				}
+			]
+		},
+		{
+			"sha": "8663a32",
+			"date": "2026-08-02",
+			"kind": "patch",
+			"title": "Duels: low-hanging polish — enemy hero-power parity, flavor, no repeats, cleanup",
+			"body": "Four small fixes to the Duels run:\n\n1. Enemy hero-power parity. You pick an alternate Duels hero power, but the\n   generated enemy only ever used its vanilla class default — a gap against\n   the \"exact parity\" goal. genDuelsEnemy now rolls the enemy a power too\n   (class default = null, or a random alt from its class Duels pool),\n   applied to player 1 at boot alongside its deck/passives/treasures.\n\n2. Anomaly flavor. During a Duels run the anomaly prompt said \"The magic of\n   Dalaran is unstable\" (shared with the Heist). pickAnomalyOverlay now\n   takes an optional flavor; Duels passes \"The rules of the Duel bend…\".\n\n3. No back-to-back rival. genDuelsEnemy takes an avoidId and the enemy now\n   carries its rival `id`; advanceDuels passes the current enemy's id so you\n   never face the same opponent twice in a row.\n\n4. Dead code. Removed the unused BOSSES / ROUNDS / buildBossDeck boss-ladder\n   (leftover from the pre-rework model; unreferenced by game & wiki) and its\n   test block + now-unused getEffectHandler import.\n\nTests: boot test mirrors the enemy-power roll and asserts the parity path is\nexercised & every rolled power is equipped/fired legally (121); run test\ndrops the boss-ladder block (177). Full battery green (61/61) + fuzz clean;\nheadless-verified the new anomaly text and the enemy receiving a hero power.",
+			"cards": []
+		},
+		{
+			"sha": "d90286f",
+			"date": "2026-08-01",
+			"kind": "patch",
+			"title": "Duels: implement Drek'Thar & Vanndar as choose-your-class heroes",
+			"body": "The two Alterac Valley generals are Duels \"wildcard\" heroes: Blizzard's\ndata ships them as a NEUTRAL base plus 5 per-class variants (PVPDR_Hero_\nDrekTharvN / VanndarvN). The mechanic isn't dual-class — you pick ONE of\nthe general's classes at the start, then play as a normal single-class\nhero of that class (its powers, draft pool & signature buckets), wearing\nthe general's portrait.\n\n  Drek'Thar (Horde)     Druid / Mage / Shaman / Warlock / Warrior\n  Vanndar   (Alliance)  Demon Hunter / Hunter / Paladin / Priest / Rogue\n  Together: all 10 non-DK classes.\n\nduels.js: add both heroes with a `classChoices` array (no `classes`, so\nclassesOf still yields a single default and drafting never unions all\nfive) + `classChoicesOf(hero)` helper. game.js: a new CHOOSE YOUR CLASS\nstep (pickDuelsClassOverlay) fires after the hero pick when the hero has\nclassChoices; the chosen class is stored on run.classChoice and resolved\neverywhere via duelsEffectiveHero(run) — so the power picker, 10-card\ndraft, loot buckets, and in-game class identity all use the chosen class.\nResume overlay shows the chosen class. Fetched both general portraits.\n\nWiki: overview cards read \"choose 1 of 5 classes\"; the hero page shows a\nchoose-your-class body listing the five class chips. app.js ?v bump.\n\nTests: classChoicesOf + both rosters + all-10-class span + single-class\n(no-union) draft/powers/buckets per choice (run test 184); boot test\nplays choose-class runs as the chosen class (119). Full battery green\n(61/61) + fuzz clean; headless-verified game (Drek'Thar→class picker→Mage\npowers) and wiki.",
+			"cards": []
+		},
+		{
+			"sha": "c81a5ac",
+			"date": "2026-08-01",
+			"kind": "patch",
+			"title": "Duels: make all 5 HS dual-class heroes playable (Brann/Elise/Finley/Reno)",
+			"body": "Blizzard's PVPDR hero data has a `classes` field marking five dual-class\nDuels heroes; only Diablo was playable. Add the other four as playable\nheroes drawing from both classes + Neutral:\n  Brann Bronzebeard  Hunter / Warrior\n  Elise Starseeker   Druid / Priest\n  Sir Finley         Paladin / Shaman\n  Reno Jackson       Mage / Rogue\n  Diablo             Warrior / Warlock (already shipped)\n\nTheir draft pool, hero-power picker, and signature loot buckets all span\nboth classes. Tag the matching RIVALS with `classes` too, and route\ngenDuelsEnemy through classesOf(rival) so a dual-class opponent is\ngenerated from both classes (not just the primary skin).\n\nWiki: the Duels views are now dual-class aware — overview cards and rival\nchips show \"Hunter / Warrior\", and the hero page shows the merged class\nlabel (\"· dual-class\"), both classes' hero powers, the combined draft-pool\nsize, and a note on the class signature buckets. Bump app.js?v to refresh.\n\nTests: all five dual-class heroes asserted (classes + wider draft pool),\ndual-class rival exposes both classes; HEROES is now 16. Full battery\ngreen (61/61) + fuzz clean; headless-verified in-game (Reno's picker\nmerges Mage + Rogue powers) and in the wiki.",
+			"cards": []
+		},
+		{
+			"sha": "bba6878",
+			"date": "2026-08-01",
+			"kind": "patch",
+			"title": "Duels: real per-class signature buckets + playable dual-class heroes (Diablo)",
+			"body": "Build the actual HS Duels per-class bucket set (CLASS_BUCKETS: 11 classes,\n5-9 signature themes each — Arsenal/Enrage for Warrior, Combos/Deathrattle\nfor Rogue, Blessings/Divine Engines for Paladin, Demons/Curses for Warlock,\netc.) as filter predicates over each class's pool, since HS keeps bucket\ncontents server-side. offerBuckets now draws from bucketsFor(classes) =\ngeneric Neutral themes + the union of each hero class's signatures.\n\nMake heroes dual-class-aware: classesOf(hero) normalizes classes[]/heroClass,\nand draftPool/autoDraftDeck/rollBucket/offerBuckets/generateEnemy all union\nevery class + Neutral. Add Diablo as a proper playable Warrior+Warlock hero\n(not just a Warrior enemy skin) — his draft pool spans both classes and his\nhero-power picker offers Warrior's default + Warrior & Warlock alt powers.\n\ngame.js routes classesOf(hero) through the draft, hero-card class label\n(\"Warrior / Warlock\"), the hero-power picker (iterates all hero classes),\nand loot buckets.\n\nTests: dual-class draft pool, CLASS_BUCKETS coverage, bucketsFor union,\nArsenal weapons-only roll, dual-class enemy parity; boot test drafts from\nclassesOf and drops the removed enemy.heroClass field. Full battery green\n(61/61) + fuzz clean; headless-verified Diablo selectable with merged powers.",
+			"cards": []
+		},
+		{
+			"sha": "1b4303d",
+			"date": "2026-08-01",
+			"kind": "patch",
+			"title": "Duels: optional anomaly modifier (shared with Heist)",
+			"body": "The ?duels=1 run now offers an anomaly at start (pickAnomalyOverlay - the same\nsymmetric run-wide twists as Dalaran Heist: Arcane, Growing, Infused, Gorged,\nRattling, etc., or none). Stored on the run and applied to every game via\nHeist.applyAnomaly in bootDuelsEncounter; resume overlay shows the active\nanomaly. Boot test covers 5 anomalies (applied + game stays legal);\nheadless-verified the real flow picks an anomaly and boots with state.anomaly\nset. battery 61/61; fuzz clean.",
+			"cards": []
+		},
 		{
 			"sha": "df2f383",
 			"date": "2026-07-31",
 			"kind": "patch",
 			"title": "Duels rework part 2: arena draft + generated enemies + win/loss run (game.js)",
 			"body": "Rewrote the ?duels=1 run to the new model:\n- pickDuelsDraftOverlay: a 10-card arena draft (ten \"pick 1 of 3\", rarity-\n  weighted) replaces the fixed starter deck\n- genDuelsEnemy / bootDuelsEncounter: opponents are generated at exact power\n  parity (10-card draft + games buckets + matching passive/treasure counts,\n  via Duels.generateEnemy) instead of fixed boss decks; both sides equal HP,\n  enemy passives applied to it\n- run tracks wins/losses; loot (a real HS-Duels bucket, offerBuckets/rollBucket)\n  after every game, plus a passive at games 1/5/9 and a treasure at 3/7/11\n- run ends at 12 wins or 3 losses (duelsRunComplete / duelsRunOver)\nDropped the Dungeon-Run buckets and the fixed boss ladder from the run path\n(BOSSES/ROUNDS kept only for the wiki). Boot test rewritten for the new model;\nheadless-verified the real flow drafts 10 and boots. battery 61/61; fuzz clean.",
+			"cards": []
+		},
+		{
+			"sha": "9ab2d58",
+			"date": "2026-07-31",
+			"kind": "patch",
+			"title": "Duels rework part 1: arena draft, HS buckets, generated enemies (data layer)",
+			"body": "duels.js gains the HS-Duels loot core (pure, tested): draftPool (class+neutral\ndraftable cards), rarity-weighted draftOptions/autoDraftDeck (10-card arena\ndraft), DUELS_BUCKETS (17 real theme/archetype buckets: tribes, Menagerie, Big\nSpells/Bruisers, Lowbies, Deathrattle/Taunt/Divine Shield...), rollBucket/\nofferBuckets, and the parity system: PASSIVE_GAMES [1,5,9] / TREASURE_GAMES\n[3,7,11], WINS_TO_CLEAR 12 / LOSSES_TO_END 3, enemyLoot(games), and\ngenerateEnemy() building an opponent at exact power parity (10 draft + games\nbuckets + matching passive/treasure counts). RIVALS = the enemy identity\nroster. Replaces the OG Dungeon-Run buckets (game.js wiring lands next).\nduels_run_test 142; battery 61/61; fuzz clean.",
 			"cards": []
 		},
 		{
@@ -218,6 +407,14 @@
 			"cards": []
 		},
 		{
+			"sha": "38a90a2",
+			"date": "2026-07-30",
+			"kind": "patch",
+			"title": "Duels portraits: 23 hero/boss art + hsId on HEROES",
+			"body": "Fetched hero & boss portraits from the HearthstoneJSON art CDN (512x) into\nbattlecards/art/duels_<id>.jpg, keyed by our run ids — the wiki and in-game\nboss art now fill in. Added hsId (PVPDR portrait id) to duels.js HEROES for\nprovenance. 23/25 pulled; Kel'Thuzad uses the classic FP1_013 art. Cafeteria\nBob & Kulzon are Duels-original heroes with no CDN art, so they stay\ngracefully blank (onerror removes the img). Verified with the headless Edge\nwiki smoke: all six routes render clean, the fetched portraits load 200, only\nBob/Kulzon 404. Duels tests 32+69; battery 61/61.",
+			"cards": []
+		},
+		{
 			"sha": "3d00b27",
 			"date": "2026-07-30",
 			"kind": "cards",
@@ -241,6 +438,14 @@
 					"cost": 1
 				}
 			]
+		},
+		{
+			"sha": "ad02b08",
+			"date": "2026-07-30",
+			"kind": "patch",
+			"title": "Duels run mode phase 3: boss ladder (14 bosses, 2 rounds, buildBossDeck)",
+			"body": "duels.js BOSSES: the rival hero roster (Cafeteria Bob, Brann, Darius,\nDrek'Thar, Elise, Finley, Headless Horseman, Kel'Thuzad, Kulzon, Reno,\nScarlet, Vanndar) climbing to fixed finals Diablo then Uber Diablo (60 HP).\nPlayer heroes excluded so you never duel a mirror. Boss powers translated\nonto existing engine effects; hsId = PVPDR portrait id; theme drives the\ndeterministic buildBossDeck (same policy as heist/tombs). ROUNDS: two rounds,\neach pool capped by its final. Test asserts every boss power resolves through\nthe registry, fires Diablo/Uber Diablo, checks ROUNDS coverage + deck\ndeterminism. duels_run_test 32 asserts; battery 60/60; fuzz clean.",
+			"cards": []
 		},
 		{
 			"sha": "24f61c6",
@@ -461,6 +666,14 @@
 			"cards": []
 		},
 		{
+			"sha": "8917225",
+			"date": "2026-07-29",
+			"kind": "patch",
+			"title": "Tombs of Terror phase 5: tombs.js run data — Explorers, chapters, all bosses",
+			"body": "tombs.js gained the run's structural data (mirrors heist.js):\n- EXPLORERS: the four League of Explorers (Reno/Mage, Elise/Druid,\n  Brann/Hunter, Finley/Paladin) + EXPLORER_POWERS mapping each class to its\n  three alternate hero powers already in cards.json.\n- CHAPTERS: four chapters, each a pool of minibosses ending in one of the\n  four Plague Lords — The Lost City (Vesh, Murlocs), Khartut's Tomb (Xatma,\n  Death), Halls of Origination (K'zrath, Madness), The Inner Sanctum\n  (Icarax, Wrath).\n- BOSSES: 36 bosses (32 minibosses + 4 Plague Lords), health scaled for the\n  run, hero powers translated onto existing engine effects, hsId kept for\n  portrait art, and a `theme` per boss. The Plague Lords carry their\n  signature mechanic (Plague of Murlocs/Death/Madness/Wrath) and a\n  plagueLord flag.\n- buildBossDeck: the same deterministic themed-deck builder as heist.js.\n\nTests: tombs_bosses_test.mjs boots a REAL game against all 36 bosses\n(themed deck, power installed via createGame, fired through useHeroPower,\ntwo full turns, state validated) + structural checks (40 assertions).\n55/55 suites green.",
+			"cards": []
+		},
+		{
 			"sha": "4a5e00c",
 			"date": "2026-07-29",
 			"kind": "patch",
@@ -578,6 +791,14 @@
 			"kind": "patch",
 			"title": "Dalaran Heist phase 4: the run is playable — ?heist=1 mode in game.js",
 			"body": "Full run loop, mirroring the proven Dungeon Run machinery:\n- Boot: wing pick (5 chapters w/ final-boss preview) -> hero pick (9\n  specialists) -> hero-power pick (class default or the two alternates;\n  an alternate replaces the class slot at boot and the orb resolves via\n  the classPowerOf fallback) -> fight 1.\n- Fights: heistBossFor rolls the wing pool by difficulty band (sorted by\n  boss health), fight 8 is the wing's fixed final. Boss gets its themed\n  buildBossDeck + designed HP; player life scales 15 + 5/fight; saved\n  passives re-apply via Heist.applyPassive each fight.\n- Between fights: card bucket draft after every win (reuses the class\n  bucket pools), a passive-treasure pick after fights 1 & 5, an active\n  treasure card into the deck after fights 3 & 7.\n- Run persistence in magepunk_heist_v1 with resume/abandon overlay;\n  concede + game-over routing are run-mode aware; clearing pays 750 gold\n  (+MP pack when in the test realm).\n- Overworld Battlecards menu gains a DALARAN HEIST entry (?heist=1).\n\nVerified in headless Chrome end to end: wing/hero/power click-through,\nalternate power saved (dala_burning_wit), fight 1/8 vs Chomper booted at\nthe right life totals, boss power logged, no console errors. 46/46 node\nsuites stay green.",
+			"cards": []
+		},
+		{
+			"sha": "d3e8ec8",
+			"date": "2026-07-29",
+			"kind": "patch",
+			"title": "Dalaran Heist phase 3: 9 heroes, 5 wings, all 75 bosses in heist.js",
+			"body": "- HEROES: the nine Heist heroes (one per class, flavor text); each pairs\n  with its class power + the two dala_ alternate powers from phase 1.\n- WINGS: five themed 8-fight ladders with fixed finals — The Dalaran Bank\n  (Banker Biggs), The Violet Hold (Cyanigosa), Streets of Dalaran (Trade\n  Prince Gallywix), The Underbelly (Madam Goya), Kirin Tor Citadel\n  (Archmage Khadgar). Every one of the 75 DALA_BOSS heroes is placed.\n- BOSSES: health from the HS data (10 = early pushover, 40 = elite),\n  hero powers translated onto existing engine effects (passives become\n  actives where needed, same policy as dungeon.js), hsId kept for boss\n  portrait art later, and a `theme` per boss.\n- buildBossDeck(cardsById, theme): deterministic 30-card themed decks\n  (2x the 15 cheapest class/tribe matches, neutral fallback padding).\n\nTests: tests/regression/heist_bosses_test.mjs — boots a REAL game against\nall 75 bosses (themed deck, power installed via createGame classPicks,\npower fired through useHeroPower, two full turns, state validated) plus\nstructural checks (78 assertions). 46/46 suites green; fuzz clean.",
 			"cards": []
 		},
 		{
