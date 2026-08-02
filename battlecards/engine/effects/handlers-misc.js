@@ -2066,6 +2066,7 @@ register('conditional', ({ state, pi, target, source, enemies, scaled, hm, pickE
 			else if (e.if.selfDrawnThisTurn) ok = !!(source && source.drawnThisTurn); // Swiftdraw riders (Farm Hand / Benevolent Banker)
 			else if (e.if.holdingDarkGift) ok = p.hand.some(c => c._darkGift); // Frostburn Matriarch / Dragon Turtle
 			else if (e.if.secretsThisGame != null) ok = (p.secretsThisGame || 0) >= e.if.secretsThisGame; // Tomb Diver: played N Secrets this game
+			else if (e.if.onlyLandName) ok = p.lands.length > 0 && p.lands.every(l => (l.name || '').includes(e.if.onlyLandName)); // Magmatic Scorchwing: control only Mountains
 			execEffects(state, pi, ok ? e.then : (e.else || []), target, source);
 			if (ok && e.if.kindredActive && p.nextKindredTwice) { p.nextKindredTwice = false; execEffects(state, pi, e.then, target, source); } // Primalfin Challenger: your next Kindred triggers twice
 } });

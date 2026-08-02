@@ -233,7 +233,7 @@ export function instantiate(def, controller) {
 		power: def.power || null,   // hero power: { cost, effects }
 		armor: def.armor || 0,      // Armor granted when a hero card is played
 		quest: def.quest || null,   // quest: { goal: { type, count }, reward }
-		ongoing: def.ongoing || null, // permanent trigger: { on, effects }
+		ongoing: def.ongoing ? JSON.parse(JSON.stringify(def.ongoing)) : null, // permanent trigger { on, effects }; CLONED so per-instance spent/trigCount (once/need/every) never leak to the shared def or across games
 		static: def.static ? { ...def.static } : null,   // permanent passive (e.g. reduce-hero-damage)
 		heroImmuneAura: def.heroImmuneAura || false,     // Mal'Ganis / Aegis of Death: your hero is Immune while this lives
 		loseDurabilityEachTurn: !!def.loseDurabilityEachTurn, // Aegis of Death: a weapon that bleeds durability every turn
