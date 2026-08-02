@@ -133321,6 +133321,43 @@
         ]
       },
       "description": "Equipped creature has +3/+3 & Taunt.\nEquip (1)."
+    },
+    {
+      "id": "detectives_satchel",
+      "name": "Detective's Satchel",
+      "type": "artifact",
+      "cardClass": "neutral",
+      "cost": 4,
+      "rarity": "uncommon",
+      "set": "paper",
+      "effects": [
+        {
+          "type": "investigate"
+        },
+        {
+          "type": "investigate"
+        }
+      ],
+      "ongoing": {
+        "on": "token-sacrificed",
+        "if": {
+          "cardId": "clue_token"
+        },
+        "effects": [
+          {
+            "type": "summon",
+            "count": 1,
+            "attack": 1,
+            "health": 1,
+            "name": "Mech",
+            "tribe": "Mech",
+            "keywords": [
+              "taunt"
+            ]
+          }
+        ]
+      },
+      "description": "Battlecry: Investigate twice.\nAfter you sacrifice a Clue, create a 1/1 Mech with Taunt."
     }
   ]
 }
