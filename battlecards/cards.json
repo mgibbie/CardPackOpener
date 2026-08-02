@@ -133358,6 +133358,76 @@
         ],
         "text": "If you've sacrificed a Clue this turn, create a 1/1 Mech with Taunt."
       }
+    },
+    {
+      "id": "outfitted_jouster",
+      "name": "Outfitted Jouster",
+      "type": "creature",
+      "cardClass": "neutral",
+      "cost": 4,
+      "rarity": "rare",
+      "set": "paper",
+      "tribe": "Human Knight",
+      "attack": 2,
+      "health": 2,
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "tutor",
+          "equipOrWeapon": true,
+          "count": 1
+        }
+      ],
+      "ongoing": {
+        "on": "self-damaged",
+        "once": true,
+        "survives": true,
+        "effects": [
+          {
+            "type": "return-from-graveyard",
+            "equipOrWeapon": true
+          }
+        ]
+      },
+      "description": "Battlecry: Draw an Equipment or Hero Weapon.\nFrenzy: Return an Equipment or Hero Weapon from your graveyard to your hand."
+    },
+    {
+      "id": "heir_to_dragonfire",
+      "name": "Heir to Dragonfire",
+      "type": "creature",
+      "cardClass": "neutral",
+      "cost": 2,
+      "rarity": "rare",
+      "set": "paper",
+      "tribe": "Human Warlock",
+      "attack": 2,
+      "health": 2,
+      "keywords": [
+        "firebreathing"
+      ],
+      "activated": [
+        {
+          "cost": 3,
+          "requireTribeInHand": "Dragon",
+          "oncePerGame": true,
+          "effects": [
+            {
+              "type": "buff-self",
+              "attack": 3,
+              "health": 3
+            },
+            {
+              "type": "grant",
+              "keyword": "divine_shield",
+              "target": "self"
+            }
+          ],
+          "text": "Reveal a Dragon from your hand: gain +3/+3 & Divine Shield. Once per game."
+        }
+      ],
+      "description": "Firebreathing.\n{3}: Reveal a Dragon from your hand to gain +3/+3 & Divine Shield. You may activate this only once."
     }
   ]
 }

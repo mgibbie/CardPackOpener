@@ -1323,6 +1323,8 @@ export function canActivate(state, pi, card, i) {
 	if (a.discardRandom && p.hand.length === 0) return false;
 	if (a.payLife && p.life <= a.payLife) return false;
 	if (a.sacCost && !p.board.some(c => c.type === 'creature' && !isDead(c) && (!a.sacCost.tribe || (c.tribe || '').includes(a.sacCost.tribe)))) return false;
+	if (a.requireTribeInHand && !p.hand.some(c => (c.tribe || '').includes(a.requireTribeInHand))) return false; // Heir to Dragonfire: reveal a Dragon
+	if (a.oncePerGame && (card._onceAbilities || []).includes(i)) return false; // "activate only once"
 	const spec = abilitySpec(state, pi, card, i);
 	if (spec && spec.required && legalTargets(state, pi, spec).length === 0) return false;
 	return true;
@@ -1344,6 +1346,7 @@ export function activateAbility(state, pi, cardUid, i, target) {
 	if (ward) payWard(state, pi, target);
 	spendMana(p, a.cost || 0);
 	if (!a.repeatable) card.abilityUsedThisTurn = true;
+	if (a.oncePerGame) (card._onceAbilities = card._onceAbilities || []).push(i);
 	if (a.payLife) { p.life -= a.payLife; emit(state, { type: 'damage', targetType: 'hero', player: pi, amount: a.payLife, life: p.life }); }
 	if (a.discardRandom && p.hand.length) {
 		const c = p.hand[Math.floor(state.rng() * p.hand.length)];

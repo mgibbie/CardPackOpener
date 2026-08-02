@@ -1281,6 +1281,22 @@ register('discard-lowest', ({ state, pi, target, source, enemies, scaled, hm, pi
 } });
 
 
+register('return-from-graveyard', ({ state, pi }, e) => {
+	// return a card from your graveyard to your hand (Outfitted Jouster: an Equipment or Hero Weapon)
+	const p = state.players[pi];
+	if (p.hand.length >= MAX_HAND) return;
+	const match = c => e.equipOrWeapon
+		? (c.type === 'weapon' || (c.type === 'artifact' && c.equip))
+		: (!e.cardType || c.type === e.cardType);
+	const pool = p.graveyard.filter(match);
+	if (!pool.length) return;
+	const c = pool[Math.floor(state.rng() * pool.length)];
+	const gi = p.graveyard.indexOf(c); if (gi >= 0) p.graveyard.splice(gi, 1);
+	const nc = instantiate(state.cardsById[c.id] || c, pi); nc.zone = 'hand'; p.hand.push(nc);
+	emit(state, { type: 'conjure', player: pi, card: nc, color: null });
+});
+
+
 register('tutor', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => {
 	do {
 			// pull matching cards out of your deck into your hand
@@ -1299,6 +1315,7 @@ register('tutor', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, 
 					if (e.maxCost != null && (def.cost || 0) > e.maxCost) continue;
 					if (e.minCost != null && (def.cost || 0) < e.minCost) continue; if (e.cardType === 'secret' && !def.secret) continue; if (e.distinct && drawnIds.has(p.deck[j])) continue; if (e.health != null && (def.health || 0) !== e.health) continue; if (e.attack != null && (def.attack || 0) !== e.attack) continue; if (e.cost != null && (def.cost || 0) !== e.cost) continue; // Tol'vir Warden/Storm Chaser/Subject 9/Salhet's Pride/Holy Eggbearer
 					if (e.requireKeyword && !(def.keywords || []).includes(e.requireKeyword)) continue;
+					if (e.equipOrWeapon && !(def.type === 'weapon' || (def.type === 'artifact' && def.equip))) continue; // Outfitted Jouster
 					if (e.overload && !((def.overload || 0) > 0)) continue; // Pebbly Page: an Overload card
 					if (e.nameIncludes && !(def.name || '').includes(e.nameIncludes)) continue; // Tiny Rafaam: draw a Rafaam
 					if (e.id && p.deck[j] !== e.id) continue; // Loyal Henchman: draw THIS card
