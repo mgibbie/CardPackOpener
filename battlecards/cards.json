@@ -133338,10 +133338,10 @@
           "type": "investigate"
         }
       ],
-      "ongoing": {
-        "on": "token-sacrificed",
-        "if": {
-          "cardId": "clue_token"
+      "description": "Battlecry: Investigate twice.\n{T}: If you've sacrificed a Clue this turn, create a 1/1 Mech with Taunt.",
+      "tapAbility": {
+        "condition": {
+          "sacrificedThisTurn": "clue_token"
         },
         "effects": [
           {
@@ -133355,9 +133355,9 @@
               "taunt"
             ]
           }
-        ]
-      },
-      "description": "Battlecry: Investigate twice.\nAfter you sacrifice a Clue, create a 1/1 Mech with Taunt."
+        ],
+        "text": "If you've sacrificed a Clue this turn, create a 1/1 Mech with Taunt."
+      }
     }
   ]
 }

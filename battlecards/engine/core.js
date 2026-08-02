@@ -278,6 +278,7 @@ export function instantiate(def, controller) {
 		dormantLeft: def.dormant || 0, // turns asleep: untouchable until it wakes
 		awaken: def.awaken || null,    // effects fired when dormancy ends
 		activated: def.activated || null, // creature abilities: [{cost, sacrifice, effects, text}]
+		tapAbility: def.tapAbility || null, // artifact {T} ability: { effects, text, condition? }
 		abilityUsedThisTurn: false,   // creatures never tap: abilities are once/turn
 		xSpell: !!def.xSpell,         // spends all remaining mana; X = the excess
 		attachments: [],              // names of auras enchanting this creature
@@ -832,6 +833,8 @@ export function sacrificeToken(state, pi, uid) {
 	const card = p.artifacts.find(c => c.uid === uid);
 	if (!card || !canSacrifice(state, pi, card)) return false;
 	spendMana(p, card.sac.cost || 0);
+	p.sacrificedThisTurn = p.sacrificedThisTurn || {};
+	p.sacrificedThisTurn[card.id] = (p.sacrificedThisTurn[card.id] || 0) + 1; // enables "if you've sacrificed a Clue this turn"
 	p.artifacts = p.artifacts.filter(c => c !== card);
 	emit(state, { type: 'tokenSacrificed', player: pi, card });
 	fireOngoing(state, pi, 'token-sacrificed', { played: card }); // "whenever you sacrifice a Food"
@@ -1266,6 +1269,40 @@ export function tapLand(state, pi, cardUid, tapIndex, target) {
 		}
 	}
 	stackAction(state, pi, { kind: 'landtap', card, effects: t.effects, target });
+	return true;
+}
+
+// ---------- artifact tap abilities ----------
+// def.tapAbility = { effects, text, condition? }: an activated {T} ability on a
+// permanent artifact. It taps (untapping at the owner's next turn start) and runs
+// its effects, optionally gated by a per-turn condition (e.g. sacrificed a Clue).
+function tapArtifactCondOk(state, pi, cond) {
+	if (!cond) return true;
+	const p = state.players[pi];
+	if (cond.sacrificedThisTurn) return ((p.sacrificedThisTurn || {})[cond.sacrificedThisTurn] || 0) > 0;
+	return true;
+}
+export function tapArtifactSpec(state, pi, cardUid) {
+	const card = state.players[pi].artifacts.find(a => a.uid === cardUid);
+	if (!card || !card.tapAbility) return null;
+	return targetSpec(state, pi, { id: card.id, type: 'sorcery', effects: card.tapAbility.effects });
+}
+export function canTapArtifact(state, pi, cardUid) {
+	if (state.over || state.current !== pi) return false;
+	const card = state.players[pi].artifacts.find(a => a.uid === cardUid);
+	if (!card || !card.tapAbility || card.tapped) return false;
+	if (!tapArtifactCondOk(state, pi, card.tapAbility.condition)) return false;
+	const spec = tapArtifactSpec(state, pi, cardUid);
+	if (spec && spec.required && legalTargets(state, pi, spec).length === 0) return false;
+	return true;
+}
+export function tapArtifact(state, pi, cardUid, target = null) {
+	if (!canTapArtifact(state, pi, cardUid)) return false;
+	const card = state.players[pi].artifacts.find(a => a.uid === cardUid);
+	card.tapped = true;
+	emit(state, { type: 'artifactTapped', player: pi, card, text: card.tapAbility.text });
+	execEffects(state, pi, JSON.parse(JSON.stringify(card.tapAbility.effects)), target, card);
+	sweepDeaths(state);
 	return true;
 }
 
@@ -4118,7 +4155,9 @@ export function endTurn(state) {
 			if (l.tapStone) l.tapStone = false;
 			else l.tapped = false;
 		}
+		for (const a of np.artifacts) if (a.tapAbility) a.tapped = false; // {T}-ability artifacts untap each turn
 	}
+	np.sacrificedThisTurn = {}; // reset "sacrificed a Clue this turn"
 	for (const hpw of np.heroPowers) { hpw.usedThisTurn = false; hpw._uses = 0; }
 	for (const pw of np.planeswalkers) pw.usedThisTurn = false;
 	// Aegis of Death: a weapon that bleeds a durability every turn (and blows up

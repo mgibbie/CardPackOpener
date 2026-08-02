@@ -863,7 +863,7 @@ function layoutTargets() {
 			const ent = entityFor(card);
 			seen.add(card.uid);
 			ent.target.pos = toWorld(3.55 + i * rowSpread(p.artifacts.length), 0.05, off + 2.7, pi);
-			ent.target.quat = sliceQuat(FLAT, pi);
+			ent.target.quat = sliceQuat(card.tapped && card.tapAbility ? new THREE.Euler(-Math.PI / 2, 0, -Math.PI / 2) : FLAT, pi);
 			ent.target.scale = 0.42;
 		});
 		// creature row (unlimited: compress spacing inside the slice arc).
@@ -2747,6 +2747,15 @@ renderer.domElement.addEventListener('pointerdown', ev => {
 			E.sacrificeToken(state, HUMAN, card.uid);
 			pump();
 		}
+	} else if (card.zone === 'artifact' && card.controller === HUMAN && card.tapAbility) {
+		// click an artifact with a {T} ability to tap it (targeted ones pick a target)
+		if (E.canTapArtifact(state, HUMAN, card.uid)) {
+			const spec = E.tapArtifactSpec(state, HUMAN, card.uid);
+			if (spec && spec.required) {
+				const targets = E.legalTargets(state, HUMAN, spec);
+				if (targets.length) { pending = { card, spec, targets, mode: 'tapart' }; updateHud(); }
+			} else { E.tapArtifact(state, HUMAN, card.uid, null); pump(); }
+		}
 	} else if (card.zone === 'planeswalker' && card.controller === HUMAN) {
 		// click your planeswalker to pick an ability
 		if (E.canUseWalker(state, HUMAN, card)) openWalkerMenu(card, ev);
@@ -2806,6 +2815,7 @@ function commitPending(t) {
 	else if (pending.mode === 'equip') E.equip(state, HUMAN, pending.card.uid, t.uid);
 	else if (pending.mode === 'walker') E.useWalker(state, HUMAN, pending.card.uid, pending.ability, t);
 	else if (pending.mode === 'tap') E.tapLand(state, HUMAN, pending.card.uid, pending.tapIndex, t);
+	else if (pending.mode === 'tapart') E.tapArtifact(state, HUMAN, pending.card.uid, t);
 	else if (pending.mode === 'respond') { E.resolveResponse(state, HUMAN, { ...pending.action, target: t || null }); }
 	else if (pending.mode === 'adventure') E.playAdventure(state, HUMAN, pending.card.uid, t, pending.choice);
 	else E.playCard(state, HUMAN, pending.card.uid, t, pending.choice, pending.position, pending.useAlt, pending.kicked);
@@ -3122,8 +3132,9 @@ function updateRings() {
 			else if (c.zone === 'planeswalker' && c.controller === HUMAN && E.canUseWalker(state, HUMAN, c)) color = '#57e389';
 			else if ((c.zone === 'companion' || c.zone === 'command') && c.controller === HUMAN && E.canPlay(state, HUMAN, c)) color = '#57e389';
 			else if (c.zone === 'land' && c.controller === HUMAN && E.canTapLand(state, HUMAN, c)) color = '#57e389';
+			else if (c.zone === 'artifact' && c.controller === HUMAN && c.tapAbility && E.canTapArtifact(state, HUMAN, c.uid)) color = '#57e389';
 		}
-		if (color && (c.zone === 'board' || c.zone === 'heropower' || c.zone === 'planeswalker' || c.zone === 'companion' || c.zone === 'command' || c.zone === 'land')) {
+		if (color && (c.zone === 'board' || c.zone === 'heropower' || c.zone === 'planeswalker' || c.zone === 'companion' || c.zone === 'command' || c.zone === 'land' || c.zone === 'artifact')) {
 			ent.ring.visible = true;
 			ent.ring.material.color.set(color);
 			ent.ring.scale.setScalar(c.zone === 'board' ? 1 : c.zone === 'planeswalker' ? 0.72 : 0.62);
