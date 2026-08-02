@@ -171,6 +171,19 @@ export function step(state, pi = 1) {
 		if (worth && E.sacrificeToken(state, pi, t.uid)) return true;
 	}
 
+	// -1e. tap {T} artifacts whose ability is armed (e.g. Detective's Satchel after a Clue sac)
+	for (const a of [...p.artifacts]) {
+		if (!a.tapAbility || !E.canTapArtifact(state, pi, a.uid)) continue;
+		const spec = E.tapArtifactSpec(state, pi, a.uid);
+		let target = null;
+		if (spec && spec.required) {
+			const legal = E.legalTargets(state, pi, spec);
+			if (!legal.length) continue;
+			target = legal[Math.floor(Math.random() * legal.length)];
+		}
+		if (E.tapArtifact(state, pi, a.uid, target)) return true;
+	}
+
 	// -1b. unmask disguised creatures worth their cost
 	for (const c of p.board) {
 		if (c.disguised && E.canUnmask(state, pi, c)
