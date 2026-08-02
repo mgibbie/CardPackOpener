@@ -4020,23 +4020,27 @@ function hideMiniTip() { if (miniTip) miniTip.style.display = 'none'; }
 // rules; `el._tipFired` records that a long-press showed the tip, so a
 // tappable element can suppress its click when the gesture was a hold
 function attachTip(el, def) {
-	if (TOUCH) {
-		let t = null;
-		el.addEventListener('pointerdown', ev => {
-			clearTimeout(t);
-			el._tipFired = false;
-			const x = ev.clientX, y = ev.clientY;
-			t = setTimeout(() => { el._tipFired = true; showMiniTip(def, x, y); }, 350);
-		});
-		const cancel = () => clearTimeout(t);
-		el.addEventListener('pointerup', cancel);
-		el.addEventListener('pointercancel', cancel);
-		el.addEventListener('pointerleave', cancel);
-	} else {
-		el.addEventListener('pointerenter', ev => showMiniTip(def, ev.clientX, ev.clientY));
-		el.addEventListener('pointermove', ev => showMiniTip(def, ev.clientX, ev.clientY));
-		el.addEventListener('pointerleave', hideMiniTip);
-	}
+	// Mouse/pen: hovering shows the tip. Gated on the event's pointerType (not the
+	// global TOUCH flag) so a mouse still gets hover tips on hybrid / touch-primary
+	// devices where (pointer: coarse) matches (e.g. touchscreen laptops).
+	const hoverShow = ev => { if (ev.pointerType !== 'touch') showMiniTip(def, ev.clientX, ev.clientY); };
+	el.addEventListener('pointerenter', hoverShow);
+	el.addEventListener('pointermove', hoverShow);
+	el.addEventListener('pointerleave', ev => { if (ev.pointerType !== 'touch') hideMiniTip(); });
+	// Touch: a long-press reveals the tip (touch has no hover); _tipFired lets a
+	// tappable element suppress its click when the gesture was a hold.
+	let t = null;
+	el.addEventListener('pointerdown', ev => {
+		if (ev.pointerType !== 'touch') return;
+		clearTimeout(t);
+		el._tipFired = false;
+		const x = ev.clientX, y = ev.clientY;
+		t = setTimeout(() => { el._tipFired = true; showMiniTip(def, x, y); }, 350);
+	});
+	const cancel = () => clearTimeout(t);
+	el.addEventListener('pointerup', cancel);
+	el.addEventListener('pointercancel', cancel);
+	el.addEventListener('pointerleave', cancel);
 }
 
 function miniFace(def) {
