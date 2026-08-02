@@ -133303,6 +133303,24 @@
           ]
         }
       ]
+    },
+    {
+      "id": "holy_avenger",
+      "name": "Holy Avenger",
+      "type": "artifact",
+      "cardClass": "neutral",
+      "cost": 3,
+      "rarity": "uncommon",
+      "set": "paper",
+      "equip": {
+        "cost": 1,
+        "attack": 3,
+        "health": 3,
+        "keywords": [
+          "taunt"
+        ]
+      },
+      "description": "Equipped creature has +3/+3 & Taunt.\nEquip (1)."
     }
   ]
 }
