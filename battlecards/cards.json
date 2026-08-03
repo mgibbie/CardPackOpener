@@ -90246,7 +90246,17 @@
       "health": 4,
       "rarity": "epic",
       "set": "STORMWIND",
-      "dormant": 2,
+      "dormant": 99,
+      "ongoing": {
+        "on": "card-played",
+        "need": 3,
+        "once": true,
+        "effects": [
+          {
+            "type": "awaken-self"
+          }
+        ]
+      },
       "description": "Starts Dormant. After you play 3 cards, this awakens."
     },
     {
@@ -93412,7 +93422,16 @@
       "keywords": [
         "rush"
       ],
-      "dormant": 2,
+      "dormant": 99,
+      "ongoing": {
+        "on": "spell-played",
+        "effects": [
+          {
+            "type": "accrue-mana-awaken",
+            "threshold": 5
+          }
+        ]
+      },
       "description": "Rush. Starts Dormant. After you have cast 5 Mana worth of spells, awaken."
     },
     {
@@ -103012,7 +103031,17 @@
       "keywords": [
         "rush"
       ],
-      "dormant": 2,
+      "dormant": 99,
+      "ongoing": {
+        "on": "card-drawn",
+        "need": 4,
+        "once": true,
+        "effects": [
+          {
+            "type": "awaken-self"
+          }
+        ]
+      },
       "description": "Rush. Starts Dormant. After you draw 4 cards, this awakens."
     },
     {

@@ -258,6 +258,45 @@ registerTrigger('copy-spell', (state, pi, e, ctx, triggering) => {
 });
 
 
+// condition-awaken sleepers (Stockades Prisoner / Crystalline Statue / Dozing
+// Kelpkeeper): they start dormant with a big dormant:N fallback and wake early
+// when their action counter fills. Waking mirrors the turn-tick awaken path
+// (drowsy for the turn, fire the `awaken` effects).
+function wakeDormantSelf(state, pi, c) {
+	if (!c || c.dormantLeft <= 0) return;
+	c.dormantLeft = 0;
+	c.sick = true;
+	emit(state, { type: 'awaken', player: pi, uid: c.uid, name: c.name });
+	if (c.awaken) execEffects(state, pi, c.awaken, null, c);
+	recomputeAuras(state);
+}
+
+registerTrigger('awaken-self', (state, pi, e, ctx, triggering) => {
+	do { {
+				// Stockades Prisoner (after you play 3 cards) / Crystalline Statue
+				// (after you draw 4) — the ongoing's need:N counter gates the count,
+				// this just wakes the sleeper once it fills.
+				wakeDormantSelf(state, pi, ctx.self);
+				break;
+			}
+	} while (false); // `break` ends this effect, exactly like the old case break
+});
+
+
+registerTrigger('accrue-mana-awaken', (state, pi, e, ctx, triggering) => {
+	do { {
+				// Dozing Kelpkeeper: after you have cast N Mana worth of spells,
+				// awaken. Accrue the played spell's Cost on the sleeper instance.
+				const c = ctx.self;
+				if (!c || c.dormantLeft <= 0) break;
+				c._manaAccrued = (c._manaAccrued || 0) + (ctx.played?.cost || 0);
+				if (c._manaAccrued >= (e.threshold || 5)) wakeDormantSelf(state, pi, c);
+				break;
+			}
+	} while (false); // `break` ends this effect, exactly like the old case break
+});
+
+
 registerTrigger('buff-magnetized', (state, pi, e, ctx, triggering) => {
 	do { {
 				// Invent-o-Matic: whenever you Magnetize a minion, give IT +N/+N
