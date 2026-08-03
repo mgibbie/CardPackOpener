@@ -9511,7 +9511,13 @@
       "type": "creature",
       "attack": 2,
       "health": 3,
-      "tribe": "Elf Citizen"
+      "tribe": "Elf Citizen",
+      "costMod": {
+        "scope": "friendly",
+        "cardType": "secret",
+        "firstEachTurn": true,
+        "setCost": 1
+      }
     },
     {
       "id": "kirin_tor_tricaster",
@@ -44181,7 +44187,14 @@
       "type": "creature",
       "attack": 2,
       "health": 3,
-      "tribe": "Quilboar"
+      "tribe": "Quilboar",
+      "costMod": {
+        "scope": "friendly",
+        "cardType": "creature",
+        "keyword": "taunt",
+        "firstEachTurn": true,
+        "amount": -2
+      }
     },
     {
       "id": "whirling_combatant",
@@ -44425,7 +44438,13 @@
       "description": "Every third spell you cast each turn costs (1).",
       "type": "creature",
       "attack": 4,
-      "health": 7
+      "health": 7,
+      "costMod": {
+        "scope": "friendly",
+        "cardType": "spell",
+        "everyN": 3,
+        "setCost": 1
+      }
     },
     {
       "id": "glaivebound_adept",
@@ -45074,7 +45093,13 @@
       "description": "Every third creature you play each turn costs (0).",
       "type": "creature",
       "attack": 4,
-      "health": 7
+      "health": 7,
+      "costMod": {
+        "scope": "friendly",
+        "cardType": "creature",
+        "everyN": 3,
+        "setCost": 0
+      }
     },
     {
       "id": "flustered_librarian",
@@ -45601,7 +45626,14 @@
       "description": "Your first Dragon each turn costs (1).",
       "type": "creature",
       "attack": 7,
-      "health": 7
+      "health": 7,
+      "costMod": {
+        "scope": "friendly",
+        "cardType": "creature",
+        "tribe": "Dragon",
+        "firstEachTurn": true,
+        "setCost": 1
+      }
     },
     {
       "id": "time_twisted_seer",
@@ -46131,7 +46163,13 @@
       "description": "On each player's turn, the first card played costs (0).",
       "type": "creature",
       "attack": 3,
-      "health": 7
+      "health": 7,
+      "costMod": {
+        "scope": "all",
+        "cardType": "all",
+        "firstEachTurn": true,
+        "setCost": 0
+      }
     },
     {
       "id": "goblin_blastmage",
@@ -48733,7 +48771,13 @@
       "description": "Your first spell each turn costs (2) less.",
       "type": "creature",
       "attack": 3,
-      "health": 4
+      "health": 4,
+      "costMod": {
+        "scope": "friendly",
+        "cardType": "spell",
+        "firstEachTurn": true,
+        "amount": -2
+      }
     },
     {
       "id": "seaside_giant",

@@ -143,8 +143,17 @@ export function effectiveCost(state, pi, card) {
 			if (m.tribe && !(card.tribe || '').includes(m.tribe)) continue;
 			if (m.keyword && !(card.keywords || []).includes(m.keyword)) continue; // Nerub'ar Weblord: Battlecry creatures cost more
 			if (m.minCost != null && card.cost < m.minCost) continue;
-			if (m.firstEachTurn && (m.cardType === 'spell'
-				? p.spellsPlayedThisTurn : p.creaturesPlayedThisTurn) > 0) continue;
+			// "the first <X> you play each turn": skip once a card matching this aura's
+			// filter (type + tribe + keyword) has already been played this turn.
+			if (m.firstEachTurn) {
+				const already = (p.cardsPlayedThisTurnIds || []).some(id => { const d = state.cardsById[id]; return d && costTypeMatches(d, m.cardType) && (!m.tribe || (d.tribe || '').includes(m.tribe)) && (!m.keyword || (d.keywords || []).includes(m.keyword)); });
+				if (already) continue;
+			}
+			// "every Nth <X> you play each turn": only the Nth (3rd, 6th, ...) is affected
+			if (m.everyN) {
+				const matched = (p.cardsPlayedThisTurnIds || []).filter(id => { const d = state.cardsById[id]; return d && costTypeMatches(d, m.cardType) && (!m.tribe || (d.tribe || '').includes(m.tribe)) && (!m.keyword || (d.keywords || []).includes(m.keyword)); }).length;
+				if ((matched + 1) % m.everyN !== 0) continue; // Kael'thas: only the 3rd cast is cheap
+			}
 			if (m.setCost != null) { c = m.setCost; continue; } // Naga Sea Witch: your cards cost N
 			const before = c;
 			c += m.amount;
