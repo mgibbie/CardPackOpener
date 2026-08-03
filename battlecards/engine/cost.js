@@ -12,7 +12,7 @@
 // cycle when engine.js becomes a pure re-export shim).
 import {
 	isDead, staticValue, activePlaneRule, isSpellType, schoolOf, kindredActive,
-	STARTING_LIFE,
+	STARTING_LIFE, MAX_HAND,
 } from '../engine.js';
 
 const costTypeMatches = (card, t) => t === 'all'
@@ -86,6 +86,31 @@ export function effectiveCost(state, pi, card) {
 			n = p.board.filter(x => !isDead(x) && x.type === 'creature' && (x.tribe || '').split('/').filter(Boolean).some(t => counts[t] === 1)).length; // Tent Trasher: friendly minions with a unique type
 		}
 		c += card.selfCost.amount * n;
+	}
+	// conditional self-cost: "Costs (N) [less] if/while <condition>"
+	if (card.selfCostIf) {
+		const s = card.selfCostIf;
+		const anyCreature = () => state.players.some(pl => pl.board.some(x => !isDead(x) && x.type === 'creature'));
+		const enemyCreatures = () => { let k = 0; for (let i = 0; i < state.players.length; i++) if (i !== pi) k += state.players[i].board.filter(x => !isDead(x) && x.type === 'creature').length; return k; };
+		const heroAtk = (p.weapon ? p.weapon.attack : 0) + (p.heroTempAttack || 0);
+		let met;
+		switch (s.cond) {
+			case 'hero-attack-ge': met = heroAtk >= s.threshold; break;
+			case 'big-spell-turn': met = !!p.castBigSpellThisTurn; break;
+			case 'life-le': met = p.life <= s.threshold; break;
+			case 'deck-le': met = p.deck.length <= s.threshold; break;
+			case 'enemy-creatures-ge': met = enemyCreatures() >= s.threshold; break;
+			case 'healed-this-turn': met = !!p.healedThisTurn; break;
+			case 'holding-tribe': met = p.hand.some(x => x !== card && (x.tribe || '').includes(s.tribe)); break;
+			case 'no-creatures': met = !anyCreature(); break;
+			case 'hand-full': met = p.hand.length >= MAX_HAND; break;
+			case 'dormant-creature': met = state.players.some(pl => pl.board.some(x => !isDead(x) && x.dormantLeft > 0)); break;
+			case 'frozen-character': met = state.players.some(pl => pl.board.some(x => !isDead(x) && x.frozen)); break;
+			case 'mana-ge': met = (p.mana?.max || 0) >= s.threshold; break;
+			case 'schools-turn': met = (s.schools || []).every(sch => (p.schoolsCastThisTurn || {})[sch]); break;
+			default: met = false;
+		}
+		if (met) { if (s.setCost != null) c = s.setCost; else if (s.amount != null) c += s.amount; }
 	}
 	for (const pl of state.players) {
 		for (const src of [...pl.board, ...pl.enchantments, ...pl.artifacts, ...pl.emblems]) {

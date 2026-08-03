@@ -274,6 +274,7 @@ export function instantiate(def, controller) {
 		chameleosTransform: !!def.chameleosTransform, // Chameleos: morph into an enemy hand card each turn
 		bandersmoshTransform: !!def.bandersmoshTransform, // Bandersmosh: morph into a 5/5 Legendary each turn
 		selfCost: def.selfCost || null, // self-scaling printed cost: { per, amount }
+		selfCostIf: def.selfCostIf || null, // conditional printed cost: { cond, setCost?, amount? }
 		enrage: def.enrage || null,   // while damaged: { attack?, health?, keywords?, weaponAttack? }
 		combo: def.combo || null,     // effects used instead when a card was played earlier this turn
 		tradeable: !!def.tradeable,   // pay 1: shuffle back into the deck, draw a card
@@ -2132,6 +2133,7 @@ export function playCard(state, pi, cardUid, target, choice, position, useAlt, k
 			}
 		}
 		p.lastCardCost = card.cost; // Rolling Stone
+		if (isSpellType(card) && (card.cost || 0) >= 5) p.castBigSpellThisTurn = true; // Arcane Tyrant / Anubisath Defender: "cast a spell that costs (5) or more this turn"
 		if ((card.keywords || []).includes('combo')) p.combosPlayedGame = (p.combosPlayedGame || 0) + 1; // Rhyme Spinner
 		{ const sc = schoolOf(card); for (const hc of p.hand) { hc.spellsCastWhileHeld = (hc.spellsCastWhileHeld || 0) + 1; if (sc) (hc.schoolsWhileHeld = hc.schoolsWhileHeld || {})[sc] = true; (hc.spellsHeldIds = hc.spellsHeldIds || []).push(card.id); } } // Naga: Spellcoiler / Heralds / Commander Sivara
 		{ const sch = schoolOf(card); if (sch) { (p.schoolsCastThisTurn = p.schoolsCastThisTurn || {})[sch] = true; (p.schoolsCastGame = p.schoolsCastGame || {})[sch] = true; if (sch === 'Fel') (p.felSpellsGame = p.felSpellsGame || []).push(card.id); if (sch === 'Frost') p.frostSpellsGame = (p.frostSpellsGame || 0) + 1; } } // Metamorfin / Multicaster / Jace / Bearon
@@ -4188,7 +4190,7 @@ export function endTurn(state) {
 	np.creaturesPlayedThisTurn = 0;
 	np.cardsPlayedThisTurn = 0;
 	np.drawsThisTurn = 0; // reset before the mandatory draw so it counts as the first
-	np.spellsPlayedThisTurn = 0; np.schoolsCastThisTurn = {}; np.firstBattlecryThisTurn = null; // Metamorfin / Bolner Hammerbeak
+	np.spellsPlayedThisTurn = 0; np.schoolsCastThisTurn = {}; np.firstBattlecryThisTurn = null; np.castBigSpellThisTurn = false; // Metamorfin / Bolner Hammerbeak / Arcane Tyrant
 	np.parityBlock = null; // Alara: a start-of-turn coin flip may block odd/even-cost plays
 		np.freeMinionsCount = 0; // Anub'Rekhan free minions last the turn
 		np.armorChangedThisTurn = false; // Stoneskin Armorer

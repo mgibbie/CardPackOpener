@@ -8841,7 +8841,12 @@
       "type": "creature",
       "attack": 6,
       "health": 6,
-      "tribe": "Shivarra Demon Warrior"
+      "tribe": "Shivarra Demon Warrior",
+      "selfCostIf": {
+        "cond": "hero-attack-ge",
+        "threshold": 6,
+        "setCost": 1
+      }
     },
     {
       "id": "chaos_nova",
@@ -9014,7 +9019,11 @@
       "tribe": "Undead Beast Sorcerer",
       "keywords": [
         "taunt"
-      ]
+      ],
+      "selfCostIf": {
+        "cond": "big-spell-turn",
+        "setCost": 0
+      }
     },
     {
       "id": "colaque",
@@ -44000,7 +44009,12 @@
       "type": "creature",
       "attack": 8,
       "health": 8,
-      "tribe": "Elemental"
+      "tribe": "Elemental",
+      "selfCostIf": {
+        "cond": "life-le",
+        "threshold": 15,
+        "amount": -5
+      }
     },
     {
       "id": "ur_zul_giant",
@@ -44233,7 +44247,12 @@
       "description": "Taunt Costs (1) while your deck has 10 or fewer cards.",
       "type": "creature",
       "attack": 6,
-      "health": 6
+      "health": 6,
+      "selfCostIf": {
+        "cond": "deck-le",
+        "threshold": 10,
+        "setCost": 1
+      }
     },
     {
       "id": "necromechanic",
@@ -44662,7 +44681,12 @@
       "description": "Taunt Costs (2) less if your opponent has at least three creatures.",
       "type": "creature",
       "attack": 4,
-      "health": 5
+      "health": 5,
+      "selfCostIf": {
+        "cond": "enemy-creatures-ge",
+        "threshold": 3,
+        "amount": -2
+      }
     },
     {
       "id": "mayor_noggenfogger",
@@ -44845,7 +44869,11 @@
       "type": "creature",
       "attack": 3,
       "health": 3,
-      "tribe": "Undead"
+      "tribe": "Undead",
+      "selfCostIf": {
+        "cond": "healed-this-turn",
+        "setCost": 0
+      }
     },
     {
       "id": "blood_queen_lana_thel",
@@ -45583,7 +45611,12 @@
       "type": "creature",
       "attack": 5,
       "health": 8,
-      "tribe": "Dragon"
+      "tribe": "Dragon",
+      "selfCostIf": {
+        "cond": "holding-tribe",
+        "tribe": "Dragon",
+        "amount": -3
+      }
     },
     {
       "id": "void_virtuoso",
@@ -46228,7 +46261,11 @@
       "type": "creature",
       "attack": 5,
       "health": 3,
-      "tribe": "Undead"
+      "tribe": "Undead",
+      "selfCostIf": {
+        "cond": "no-creatures",
+        "setCost": 2
+      }
     },
     {
       "id": "rat_burglar",
@@ -46519,7 +46556,11 @@
       "type": "creature",
       "attack": 4,
       "health": 4,
-      "tribe": "Elemental"
+      "tribe": "Elemental",
+      "selfCostIf": {
+        "cond": "big-spell-turn",
+        "setCost": 0
+      }
     },
     {
       "id": "toothy_chest",
@@ -47237,7 +47278,11 @@
       "type": "creature",
       "attack": 8,
       "health": 6,
-      "tribe": "Demon"
+      "tribe": "Demon",
+      "selfCostIf": {
+        "cond": "hand-full",
+        "setCost": 1
+      }
     },
     {
       "id": "investment_opportunity",
@@ -47366,7 +47411,11 @@
       "type": "creature",
       "attack": 7,
       "health": 9,
-      "tribe": "Beast"
+      "tribe": "Beast",
+      "selfCostIf": {
+        "cond": "dormant-creature",
+        "amount": -4
+      }
     },
     {
       "id": "devious_coyote",
@@ -47493,7 +47542,15 @@
       "tribe": "Naga",
       "keywords": [
         "lifesteal"
-      ]
+      ],
+      "selfCostIf": {
+        "cond": "schools-turn",
+        "schools": [
+          "Holy",
+          "Shadow"
+        ],
+        "setCost": 1
+      }
     },
     {
       "id": "staff_of_the_endbringer",
@@ -48594,7 +48651,11 @@
       "type": "creature",
       "attack": 4,
       "health": 4,
-      "tribe": "Undead"
+      "tribe": "Undead",
+      "selfCostIf": {
+        "cond": "frozen-character",
+        "setCost": 1
+      }
     },
     {
       "id": "marooned_archmage",
@@ -48682,7 +48743,12 @@
       "type": "creature",
       "attack": 6,
       "health": 7,
-      "tribe": "Elemental"
+      "tribe": "Elemental",
+      "selfCostIf": {
+        "cond": "mana-ge",
+        "threshold": 10,
+        "setCost": 1
+      }
     },
     {
       "id": "water_moccasin",
