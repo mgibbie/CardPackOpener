@@ -258,6 +258,26 @@ registerTrigger('copy-spell', (state, pi, e, ctx, triggering) => {
 });
 
 
+registerTrigger('even-target-stats', (state, pi, e, ctx, triggering) => {
+	do { {
+				// Pelagos: after you cast a spell on a friendly minion, set its Attack
+				// and Health to the higher of the two. hp() reads current Health
+				// (maxHealth − damage); we lift both to that peak and clear damage.
+				const c = ctx.targetCreature;
+				if (c && !isDead(c) && c.type !== 'location') {
+					const peak = Math.max(c.attack || 0, hp(c));
+					c.attack = peak;
+					c.maxHealth = peak;
+					c.damage = 0;
+					emit(state, { type: 'buff', uid: c.uid, attack: c.attack, hp: hp(c) });
+					recomputeAuras(state);
+				}
+				break;
+			}
+	} while (false); // `break` ends this effect, exactly like the old case break
+});
+
+
 registerTrigger('return-played-spell', (state, pi, e, ctx, triggering) => {
 	do { {
 				// Diligent Notetaker (Spellburst): return the just-cast spell to hand

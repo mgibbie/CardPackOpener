@@ -96321,6 +96321,17 @@
       "health": 6,
       "rarity": "legendary",
       "set": "REVENDRETH",
+      "ongoing": {
+        "on": "spell-cast-on-creature",
+        "if": {
+          "friendlyTarget": true
+        },
+        "effects": [
+          {
+            "type": "even-target-stats"
+          }
+        ]
+      },
       "description": "After you cast a spell on a friendly minion, set its Attack and Health to the higher of the two."
     },
     {
@@ -110713,6 +110724,15 @@
       "rarity": "common",
       "set": "ISLAND_VACATION",
       "tribe": "Mech",
+      "ongoing": {
+        "on": "location-used",
+        "effects": [
+          {
+            "type": "armor",
+            "value": 3
+          }
+        ]
+      },
       "description": "After you use a location, gain 3 Armor."
     },
     {

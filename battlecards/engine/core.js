@@ -1299,6 +1299,7 @@ export function tapLand(state, pi, cardUid, tapIndex, target) {
 		state.players[pi].locationsUsedGame = (state.players[pi].locationsUsedGame || 0) + 1; // Seaside Giant
 		card.durability -= 1;
 		emit(state, { type: 'locationDurability', player: pi, uid: card.uid, durability: card.durability });
+		fireOngoing(state, pi, 'location-used', { played: card }); // XB-931 Housekeeper
 		if (card.durability <= 0) {
 			card.doomed = true; // routes through the normal death sweep
 		}

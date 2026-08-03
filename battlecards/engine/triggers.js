@@ -61,6 +61,7 @@ export function ongoingCondOk(state, pi, cond, ctx) {
 	if (cond.dormantSelf && !(ctx.self && ctx.self.dormantLeft > 0)) return false; // Dozing Dragon: only while asleep
 	if (cond.playedBefore && !(subj && (state.players[pi].playedCountById?.[subj.id] || 0) >= 1)) return false; // Twisted Webweaver: a minion you've already played
 	if (cond.selfFullHealth && !(ctx.self && ctx.self.damage === 0)) return false; // Incensed Matriarch: only at full Health
+	if (cond.friendlyTarget && !(ctx.targetCreature && ctx.targetCreature.controller === pi)) return false; // Pelagos: a spell cast on a FRIENDLY minion
 	return true;
 }
 
