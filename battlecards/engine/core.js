@@ -295,7 +295,9 @@ export function instantiate(def, controller) {
 		echoGhost: false,
 		dormantLeft: def.dormant || 0, // turns asleep: untouchable until it wakes
 		awaken: def.awaken || null,    // effects fired when dormancy ends
-		activated: def.activated || null, // creature abilities: [{cost, sacrifice, effects, text}]
+		activated: def.activated ? JSON.parse(JSON.stringify(def.activated)) : null, // creature abilities: [{cost, sacrifice, effects, text}] — deep-cloned so Titan power-doubling can't leak across instances
+		titan: def.titan || false, // Titan: can't attack until all 3 abilities used; abilities are its `activated` list (oncePerGame each, one/turn)
+		titanPassive: def.titanPassive ? JSON.parse(JSON.stringify(def.titanPassive)) : null, // "After this uses an ability, ..."
 		tapAbility: def.tapAbility || null, // artifact {T} ability: { effects, text, condition? }
 		abilityUsedThisTurn: false,   // creatures never tap: abilities are once/turn
 		xSpell: !!def.xSpell,         // spends all remaining mana; X = the excess
@@ -1390,7 +1392,42 @@ export function activateAbility(state, pi, cardUid, i, target) {
 		return true;
 	}
 	stackAction(state, pi, { kind: 'ability', card, effects: a.effects, target });
+	if (card.titan) fireTitanPassive(state, pi, card, i); // Titan passives: "After this uses an ability, ..."
 	return true;
+}
+
+// Titan "After this uses an ability, ..." passives. Fires once per ability use;
+// the used ability index is already in card._onceAbilities by now.
+function doubleAbilityPower(ab) {
+	const walk = arr => { for (const e of arr || []) { if (typeof e.value === 'number') e.value *= 2; if (typeof e.attack === 'number') e.attack *= 2; if (typeof e.health === 'number') e.health *= 2; walk(e.then); walk(e.else); walk(e.effects); walk(e.ifDies); } };
+	walk(ab.effects);
+	ab.text = (ab.text || '') + ' (doubled)';
+}
+export function fireTitanPassive(state, pi, card, usedIndex) {
+	const pas = card.titanPassive;
+	if (!pas) return;
+	if (pas.type === 'double-other-abilities') { // Norgannon
+		const used = new Set(card._onceAbilities || []);
+		(card.activated || []).forEach((ab, idx) => { if (!used.has(idx)) doubleAbilityPower(ab); });
+		emit(state, { type: 'titanPassive', player: pi, card, text: 'Doubled the power of the other abilities' });
+		return;
+	}
+	if (pas.type === 'repeat-on-random-friendly') { // V-07-TR-0N Prime
+		const others = state.players[pi].board.filter(c => c !== card && !isDead(c) && c.type === 'creature');
+		if (others.length) {
+			const tgt = others[Math.floor(state.rng() * others.length)];
+			emit(state, { type: 'titanPassive', player: pi, card, text: 'Repeats on ' + tgt.name });
+			execEffects(state, pi, JSON.parse(JSON.stringify(card.activated[usedIndex].effects)), null, tgt);
+			sweepDeaths(state);
+		}
+		return;
+	}
+	if (pas.type === 'after-ability-effects') { // Khaz'goroth / Aman'Thul / The Primus / Eonar / Yogg-Saron
+		emit(state, { type: 'titanPassive', player: pi, card, text: pas.text || 'Titan passive' });
+		execEffects(state, pi, JSON.parse(JSON.stringify(pas.effects)), null, card);
+		sweepDeaths(state);
+		return;
+	}
 }
 
 // ---------- weapons ----------
@@ -2649,6 +2686,7 @@ export function attackersFor(state, pi) {
 export function canAttackWith(state, pi, c) {
 	if (state.over || state.current !== pi || state.priority != null || state.stack.length || c.attack <= 0) return false;
 	if (c.frozen) return false;
+	if (c.titan && (c._onceAbilities || []).length < (c.activated || []).length) return false; // Titan: can't attack until all 3 abilities are used
 	if (c.cantAttackWhile != null && state.players.some(pl => pl.board.some(x => x.uid === c.cantAttackWhile && !isDead(x)))) return false; // Annoying Fan lock
 	if (c.dormantLeft > 0) return false; // still asleep
 	if (has(c, KW.PACIFIST) && c.attackAnywayTurn !== state.turnNumber) return false; // Argent Watchman: Inspire lets it attack this turn

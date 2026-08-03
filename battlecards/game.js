@@ -2549,7 +2549,9 @@ function showDecisionMenu() {
 // activated creature abilities: pick Attack or one of the card's abilities
 function openAbilityMenu(card, ev) {
 	const menu = $('walker-menu');
-	menu.innerHTML = `<div class="wm-title">${card.name}</div>`;
+	// Titan: present the abilities as a Discover-style pick — already-used (and
+	// this-turn-locked) abilities are removed from the list, not just disabled.
+	menu.innerHTML = `<div class="wm-title">${card.name}${card.titan ? ' — choose a Titan ability' : ''}</div>`;
 	if (E.canAttackWith(state, HUMAN, card)) {
 		const atk = document.createElement('button');
 		atk.innerHTML = `<span class="wm-cost">⚔</span>Attack`;
@@ -2562,8 +2564,9 @@ function openAbilityMenu(card, ev) {
 		menu.appendChild(atk);
 	}
 	card.activated.forEach((a, i) => {
+		if (card.titan && !E.canActivate(state, HUMAN, card, i)) return; // Titan pick: drop used / this-turn-locked abilities
 		const btn = document.createElement('button');
-		btn.innerHTML = `<span class="wm-cost">${a.cost || 0}${a.sacrifice ? ' 💀' : ''}</span>${a.text}`;
+		btn.innerHTML = `<span class="wm-cost">${card.titan ? '✦' : (a.cost || 0)}${a.sacrifice ? ' 💀' : ''}</span>${a.name ? `<b>${a.name}</b> — ` : ''}${a.text}`;
 		btn.disabled = !E.canActivate(state, HUMAN, card, i);
 		btn.addEventListener('pointerdown', e => {
 			e.stopPropagation();
@@ -2736,7 +2739,9 @@ renderer.domElement.addEventListener('pointerdown', ev => {
 		showInspect(card); // read it on the left; the click also does its normal action
 		if (card.type === 'location') { if (E.canTapLand(state, HUMAN, card)) openTapMenu(card, ev); return; }
 		if (card.disguised && E.canUnmask(state, HUMAN, card)) { openUnmaskMenu(card, ev); return; }
-		if (card.activated?.length) { openAbilityMenu(card, ev); return; }
+		// A Titan whose abilities are all spent (or all locked this turn) skips the
+		// pick and falls through to attacking; other activated minions always show the menu.
+		if (card.activated?.length && !(card.titan && !card.activated.some((a, i) => E.canActivate(state, HUMAN, card, i)))) { openAbilityMenu(card, ev); return; }
 		if (E.canAttackWith(state, HUMAN, card)) { selectedAttacker = card.uid; updateHud(); }
 	} else if (card.zone === 'heropower' && card.controller === HUMAN) {
 		// click an installed hero power to activate it

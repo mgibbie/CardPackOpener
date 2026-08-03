@@ -47950,11 +47950,74 @@
       "cost": 6,
       "rarity": "legendary",
       "set": "hs",
-      "description": "T1T4N This creature's abilities repeat on another random friendly creature.",
+      "description": "T1T4N. This minion's abilities repeat on another random friendly minion.",
       "type": "creature",
       "attack": 3,
       "health": 5,
-      "tribe": "Mech"
+      "tribe": "Titan/Mech",
+      "titan": true,
+      "titanPassive": {
+        "type": "repeat-on-random-friendly"
+      },
+      "activated": [
+        {
+          "name": "Attach the Cannons!",
+          "text": "Gain +2/+1. Deal 4 damage to a random enemy.",
+          "oncePerGame": true,
+          "sorcerySpeed": true,
+          "cost": 0,
+          "effects": [
+            {
+              "type": "buff-self",
+              "attack": 2,
+              "health": 1
+            },
+            {
+              "type": "random-damage",
+              "value": 4,
+              "count": 1,
+              "pool": "enemies"
+            }
+          ]
+        },
+        {
+          "name": "Full Power!",
+          "text": "Gain +1/+2. Draw a card.",
+          "oncePerGame": true,
+          "sorcerySpeed": true,
+          "cost": 0,
+          "effects": [
+            {
+              "type": "buff-self",
+              "attack": 1,
+              "health": 2
+            },
+            {
+              "type": "draw",
+              "value": 1
+            }
+          ]
+        },
+        {
+          "name": "Maximize Defenses!",
+          "text": "Gain +3 Health and Elusive.",
+          "oncePerGame": true,
+          "sorcerySpeed": true,
+          "cost": 0,
+          "effects": [
+            {
+              "type": "buff-self",
+              "attack": 0,
+              "health": 3
+            },
+            {
+              "type": "grant",
+              "keyword": "elusive",
+              "target": "self"
+            }
+          ]
+        }
+      ]
     },
     {
       "id": "golganneth_the_thunderer",
@@ -103676,6 +103739,105 @@
       }
     },
     {
+      "id": "token_chaotic_tendril",
+      "name": "Chaotic Tendril",
+      "type": "creature",
+      "cardClass": "neutral",
+      "cost": 1,
+      "rarity": "common",
+      "set": "hs",
+      "token": true,
+      "collectible": false,
+      "attack": 1,
+      "health": 1,
+      "description": "A 1/1 Chaotic Tendril."
+    },
+    {
+      "id": "khazgoroth",
+      "name": "Khaz'goroth",
+      "type": "creature",
+      "cardClass": "warrior",
+      "cost": 6,
+      "rarity": "legendary",
+      "set": "hs",
+      "attack": 4,
+      "health": 5,
+      "tribe": "Titan",
+      "titan": true,
+      "description": "Titan. After this uses an ability, gain Immune this turn and attack a random enemy minion.",
+      "titanPassive": {
+        "type": "after-ability-effects",
+        "text": "Gain Immune this turn and attack a random enemy minion.",
+        "effects": [
+          {
+            "type": "grant-immune-turn",
+            "target": "self"
+          },
+          {
+            "type": "attack-random-enemy",
+            "count": 1
+          }
+        ]
+      },
+      "activated": [
+        {
+          "name": "Titanforge",
+          "text": "Gain +2/+2. Draw a weapon.",
+          "oncePerGame": true,
+          "sorcerySpeed": true,
+          "cost": 0,
+          "effects": [
+            {
+              "type": "buff-self",
+              "attack": 2,
+              "health": 2
+            },
+            {
+              "type": "tutor",
+              "cardType": "weapon",
+              "count": 1
+            }
+          ]
+        },
+        {
+          "name": "Tempering",
+          "text": "Gain +5 Attack. Give your hero +5 Attack this turn.",
+          "oncePerGame": true,
+          "sorcerySpeed": true,
+          "cost": 0,
+          "effects": [
+            {
+              "type": "buff-self",
+              "attack": 5,
+              "health": 0
+            },
+            {
+              "type": "hero-temp-attack",
+              "value": 5
+            }
+          ]
+        },
+        {
+          "name": "Heart of Flame",
+          "text": "Gain +5 Health. Give your hero 5 Armor.",
+          "oncePerGame": true,
+          "sorcerySpeed": true,
+          "cost": 0,
+          "effects": [
+            {
+              "type": "buff-self",
+              "attack": 0,
+              "health": 5
+            },
+            {
+              "type": "armor",
+              "value": 5
+            }
+          ]
+        }
+      ]
+    },
+    {
       "id": "norgannon",
       "name": "Norgannon",
       "type": "creature",
@@ -103685,7 +103847,54 @@
       "health": 8,
       "rarity": "legendary",
       "set": "TITANS",
-      "description": "Titan. After this uses an ability, double the power of the other abilities."
+      "description": "Titan. After this uses an ability, double the power of the other abilities.",
+      "tribe": "Titan",
+      "titan": true,
+      "titanPassive": {
+        "type": "double-other-abilities"
+      },
+      "activated": [
+        {
+          "name": "Progenitor's Power",
+          "text": "Deal 5 damage.",
+          "oncePerGame": true,
+          "sorcerySpeed": true,
+          "cost": 0,
+          "effects": [
+            {
+              "type": "damage",
+              "value": 5,
+              "target": "any"
+            }
+          ]
+        },
+        {
+          "name": "Ancient Knowledge",
+          "text": "Enemy cards cost (1) more next turn.",
+          "oncePerGame": true,
+          "sorcerySpeed": true,
+          "cost": 0,
+          "effects": [
+            {
+              "type": "enemy-cards-cost-more",
+              "value": 1
+            }
+          ]
+        },
+        {
+          "name": "Unlimited Potential",
+          "text": "Cast 1 random Mage Secret.",
+          "oncePerGame": true,
+          "sorcerySpeed": true,
+          "cost": 0,
+          "effects": [
+            {
+              "type": "install-random-secret",
+              "cardClass": "mage"
+            }
+          ]
+        }
+      ]
     },
     {
       "id": "ra_den",
@@ -104048,6 +104257,58 @@
           "type": "cast-random-spell",
           "count": 2
         }
+      ],
+      "tribe": "Titan",
+      "titan": true,
+      "titanPassive": {
+        "type": "after-ability-effects",
+        "text": "Cast two random spells.",
+        "effects": [
+          {
+            "type": "cast-random-spell",
+            "count": 2
+          }
+        ]
+      },
+      "activated": [
+        {
+          "name": "Reign of Chaos",
+          "text": "Take control of an enemy minion.",
+          "oncePerGame": true,
+          "sorcerySpeed": true,
+          "cost": 0,
+          "effects": [
+            {
+              "type": "mind-control",
+              "target": "enemy-creature"
+            }
+          ]
+        },
+        {
+          "name": "Induce Insanity",
+          "text": "Force each enemy minion to attack a random enemy minion.",
+          "oncePerGame": true,
+          "sorcerySpeed": true,
+          "cost": 0,
+          "effects": [
+            {
+              "type": "force-all-enemies-attack"
+            }
+          ]
+        },
+        {
+          "name": "Tentacle Swarm",
+          "text": "Fill your hand with 1/1 Chaotic Tendrils.",
+          "oncePerGame": true,
+          "sorcerySpeed": true,
+          "cost": 0,
+          "effects": [
+            {
+              "type": "fill-hand-token",
+              "id": "token_chaotic_tendril"
+            }
+          ]
+        }
       ]
     },
     {
@@ -104069,6 +104330,62 @@
           "type": "summon",
           "count": 1,
           "summonId": "ttn_ancient_55"
+        }
+      ],
+      "tribe": "Titan",
+      "titan": true,
+      "titanPassive": {
+        "type": "after-ability-effects",
+        "text": "Summon a 5/5 Ancient with Taunt.",
+        "effects": [
+          {
+            "type": "summon",
+            "count": 1,
+            "attack": 5,
+            "health": 5,
+            "name": "Ancient",
+            "keywords": [
+              "taunt"
+            ]
+          }
+        ]
+      },
+      "activated": [
+        {
+          "name": "Spontaneous Growth",
+          "text": "Draw cards until your hand is full.",
+          "oncePerGame": true,
+          "sorcerySpeed": true,
+          "cost": 0,
+          "effects": [
+            {
+              "type": "draw-until-full"
+            }
+          ]
+        },
+        {
+          "name": "Bountiful Harvest",
+          "text": "Restore your hero to full Health.",
+          "oncePerGame": true,
+          "sorcerySpeed": true,
+          "cost": 0,
+          "effects": [
+            {
+              "type": "heal-hero-full"
+            }
+          ]
+        },
+        {
+          "name": "Flourish",
+          "text": "Refresh your Mana Crystals.",
+          "oncePerGame": true,
+          "sorcerySpeed": true,
+          "cost": 0,
+          "effects": [
+            {
+              "type": "refresh-mana"
+            }
+          ]
         }
       ]
     },

@@ -253,6 +253,11 @@ register('enemy-minion-tax-next-turn', ({ state, pi, target, source, enemies, sc
 			for (const o of enemies) { state.players[o].enemyMinionTaxTurn = state.turnNumber + 1; state.players[o].enemyMinionTaxAmount = e.value || 1; }
 });
 
+register('enemy-cards-cost-more', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => {
+			// Norgannon (Ancient Knowledge): ALL the opponent's cards cost more next turn
+			for (const o of enemies) { state.players[o].enemyCardTaxTurn = state.turnNumber + 1; state.players[o].enemyCardTaxAmount = e.value || 1; }
+});
+
 
 register('discount-foreign-hand', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => {
 			// Leyline Manipulator: cheaper for cards that didn't start in your deck

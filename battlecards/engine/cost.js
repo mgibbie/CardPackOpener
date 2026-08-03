@@ -163,6 +163,7 @@ export function effectiveCost(state, pi, card) {
 	if (p.warlocNext && (card.tribe || '').includes('Murloc') && (card.cost || 0) <= 3) return 0; // Warloc: paid in your Health
 	if (p.nextCardCorpses && (p.corpses || 0) >= c) return 0; // Exarch Maladaar: the next card costs Corpses instead
 	if (card.type === 'creature' && p.enemyMinionTaxTurn === state.turnNumber && p.enemyMinionTaxAmount) c += p.enemyMinionTaxAmount; // Forensic Duster
+	if (p.enemyCardTaxTurn === state.turnNumber && p.enemyCardTaxAmount) c += p.enemyCardTaxAmount; // Norgannon (Ancient Knowledge): ALL enemy cards cost more next turn
 	if (p.overloadDiscount > 0 && (card.overload || 0) > 0) c = Math.max(0, c - p.overloadDiscount); // Inzah
 	if (p.firstCardFreeEachTurn && (p.cardsPlayedThisTurn || 0) === 0) c = 0; // Bonelord Frostwhisper: first card each turn is free
 	if (p.nextClassFree && card.type === 'creature' && (card.cardClass || '').split('__').includes(p.nextClassFree)) c = 0; // Blood Crusader (Health-cost approximated as free)
