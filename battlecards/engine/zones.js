@@ -16,7 +16,7 @@ import {
 	emit, instantiate, damageHero, checkGameOver, execEffects, runSpell,
 	sweepDeaths, questTick, fireOngoing, firePonder, fireEmerge,
 	recomputeAuras, staticValue, isDead, isSpellType, schoolOf, targetSpec,
-	legalTargets, MAX_HAND, KW, CTHUN_BASE,
+	legalTargets, MAX_HAND, KW, CTHUN_BASE, applyGift, DARK_GIFTS,
 } from '../engine.js';
 
 // remove one copy of `id` from the deck (any position); returns true if found
@@ -131,6 +131,8 @@ export function drawCards(state, pi, count) {
 		if (p.deckDoubleStats && card.type === 'creature') { card.attack = (card.attack || 0) * 2; card.maxHealth = (card.maxHealth || 0) * 2; } // Lor'themar Theron: doubled deck minions
 		// C'Thun enters hand carrying every buff it collected while in your deck
 		if (card.id === 'c_thun') { card.attack = CTHUN_BASE + p.cthunAtk; card.maxHealth = CTHUN_BASE + p.cthunHp; if (p.cthunTaunt && !card.keywords.includes(KW.TAUNT)) card.keywords.push(KW.TAUNT); }
+		// Wallow, the Wretched: replay every Dark Gift given to your minions while it sat in your deck
+		if (card.accrueDarkGifts && p.darkGiftLog && p.darkGiftLog.length) for (const gl of p.darkGiftLog) { const g = DARK_GIFTS.find(x => x.label === gl); if (g) applyGift(state, card, g, { noLog: true }); }
 		card.zone = 'hand';
 		if (state.hpResolver === pi && staticValue(p, 'hero-power-draw-zero') > 0) card.cost = 0; // Wilfred Fizzlebang
 		if (!p.stealerUsedThisTurn && p.board.some(x => x.id === 'stealer_of_souls' && !isDead(x))) { card.cost = 0; p.stealerUsedThisTurn = true; } // Stealer of Souls (Health-cost approximated as free)

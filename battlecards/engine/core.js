@@ -173,6 +173,18 @@ export function applyGift(state, card, gift, opts = {}) {
 	if (gift.dr) { card.deathrattle = [...(card.deathrattle || []), ...JSON.parse(JSON.stringify(gift.dr))]; if (!(card.keywords || []).includes('deathrattle')) (card.keywords = card.keywords || []).push('deathrattle'); }
 	card._darkGift = gift.label;
 	card.description = (card.description || '') + ' [Gift: ' + gift.label + ']';
+	// Wallow, the Wretched: while in your hand/deck, gains a copy of every Dark
+	// Gift given to your minions. Log it on the owner and mirror onto any held
+	// Wallow now; decked copies replay the log when drawn (see zones.js).
+	if (!opts.noLog) {
+		let owner = -1;
+		for (let i = 0; i < state.players.length; i++) { const pl = state.players[i]; if (pl.board.includes(card) || pl.hand.includes(card)) { owner = i; break; } }
+		if (owner >= 0) {
+			const pl = state.players[owner];
+			(pl.darkGiftLog = pl.darkGiftLog || []).push(gift.label);
+			for (const hc of pl.hand) if (hc !== card && hc.accrueDarkGifts) applyGift(state, hc, gift, { noLog: true });
+		}
+	}
 	return gift;
 }
 
@@ -274,6 +286,10 @@ export function instantiate(def, controller) {
 		magnetic: !!def.magnetic,     // may merge onto a friendly Mech instead of playing
 		inHandSwap: !!def.inHandSwap, // "each turn this is in your hand, swap its Attack & Health"
 		inHandCopyLastPlayed: def.inHandCopyLastPlayed || null, // Floop/Mirrex: a hand card that IS a copy of the last creature played
+		accrueDarkGifts: def.accrueDarkGifts || false, // Wallow: copies every Dark Gift given to your minions while held/decked
+		bonusEffectSwap: def.bonusEffectSwap ? JSON.parse(JSON.stringify(def.bonusEffectSwap)) : null, // Twisted Monstrosity: alternates between two Bonus Effects each turn in hand
+		swapStatsEndOfTurn: def.swapStatsEndOfTurn || false, // Stalwart Avenger: swap Attack/Health at end of each turn
+		immuneWhileAttacking: def.immuneWhileAttacking || false, // Stalwart Avenger: Immune during its own attacks
 		echo: !!def.echo,             // leaves a ghost copy in hand until end of turn
 		miniaturize: !!def.miniaturize, // playing it hands you a 1/1 Mini copy for 1
 		echoGhost: false,
@@ -2733,6 +2749,8 @@ export function resolveCombat(state, pi, attackerUid, target) {
 	else if (target.type === 'walker') { if (!findWalker(state, target.uid)) { sweepDeaths(state); return; } }
 	// Oxmorg: the active plane doubles all combat damage
 	const cmult = (activePlaneRule(state)?.kind === 'double-damage') ? 2 : 1;
+	// Stalwart Avenger: Immune while attacking — takes no retaliation this swing
+	if (attacker.immuneWhileAttacking) attacker._attackingImmune = true;
 	if (target.type === 'hero' && attacker.blightsInstead) {
 		// The Living Plague: the strike shuffles Blights instead of dealing damage
 		const tp2 = state.players[target.player];
@@ -2830,6 +2848,7 @@ export function resolveCombat(state, pi, attackerUid, target) {
 		// Potion of Sparking (Duels): a friendly Rush creature attacking a creature zaps an adjacent enemy
 		if (state.players[pi].potionSparking && (attacker.keywords || []).includes('rush') && target.type === 'creature') { const dp = state.players[defender.controller]; const di = dp.board.indexOf(defender); const nbrs = [dp.board[di - 1], dp.board[di + 1]].filter(x => x && !isDead(x) && x.type === 'creature'); if (nbrs.length) damageCreature(state, nbrs[Math.floor(state.rng() * nbrs.length)], 1, null); }
 	}
+	if (attacker && attacker._attackingImmune) attacker._attackingImmune = false; // Stalwart Avenger: immunity lapses once the swing resolves
 	sweepDeaths(state);
 }
 
@@ -3747,6 +3766,13 @@ export function endTurn(state) {
 	}
 	// Gruul-style triggers tick at the end of EVERY player's turn
 	for (let s2 = 0; s2 < state.players.length; s2++) fireOngoing(state, s2, 'every-turn-end', {});
+	// Stalwart Avenger: at the end of EACH turn, swap its Attack and current Health
+	for (let s2 = 0; s2 < state.players.length; s2++) for (const c of state.players[s2].board) {
+		if (!c.swapStatsEndOfTurn || isDead(c) || c.type !== 'creature') continue;
+		const curHp = hp(c), curAtk = c.attack || 0;
+		c.attack = curHp; c.maxHealth = curAtk; c.damage = 0;
+		emit(state, { type: 'buff', uid: c.uid, attack: c.attack, hp: hp(c) });
+	}
 	// Medic N: patch up the board neighbors at end of turn
 	for (const c of p.board) {
 		if (!c.medic || isDead(c)) continue;
@@ -4180,6 +4206,18 @@ export function endTurn(state) {
 	np.sacrificedThisTurn = {}; // reset "sacrificed a Clue this turn"
 	for (const c of np.board) if (c.immuneTurnsLeft > 0 && --c.immuneTurnsLeft <= 0) { c.keywords = c.keywords.filter(k => k !== KW.IMMUNE); emit(state, { type: 'buff', uid: c.uid, attack: c.attack, hp: hp(c) }); } // multi-turn Immune (Blacksmith's Skill) wears off
 	for (const c of np.hand) if (c.inHandSwap) { const a = c.attack; c.attack = c.maxHealth; c.maxHealth = a; emit(state, { type: 'buff', uid: c.uid, attack: c.attack, hp: hp(c) }); } // in-hand: swap Attack & Health each turn
+	// Twisted Monstrosity: each turn in hand, alternate between two random Bonus Effects
+	for (const c of np.hand) if (c.bonusEffectSwap) {
+		if (!c._bonusPair) {
+			const pool = DARK_GIFTS.filter(g => !g.handOnly && !g.dr); // pure stat/keyword Bonus Effects
+			const i = Math.floor(state.rng() * pool.length); let j = Math.floor(state.rng() * (pool.length - 1)); if (j >= i) j++;
+			c._bonusPair = [pool[i], pool[j]]; c._bonusActive = 0;
+			c._twBase = { attack: c.attack, health: c.maxHealth, kw: [...(c.keywords || [])], desc: c.description || '' };
+		} else c._bonusActive = c._bonusActive ? 0 : 1; // swap which effect is live
+		c.attack = c._twBase.attack; c.maxHealth = c._twBase.health; c.keywords = [...c._twBase.kw]; c.description = c._twBase.desc; c.shield = c._twBase.kw.includes('divine_shield');
+		applyGift(state, c, c._bonusPair[c._bonusActive], { noLog: true });
+		emit(state, { type: 'buff', uid: c.uid, attack: c.attack, hp: hp(c) });
+	}
 	for (const hpw of np.heroPowers) { hpw.usedThisTurn = false; hpw._uses = 0; }
 	for (const pw of np.planeswalkers) pw.usedThisTurn = false;
 	// Aegis of Death: a weapon that bleeds a durability every turn (and blows up

@@ -44500,11 +44500,16 @@
       "cost": 5,
       "rarity": "rare",
       "set": "hs",
-      "description": "{0}, {1} Each turn this is in your hand, swap between two random Bonus Effects.",
+      "description": "Elusive, Taunt. Each turn this is in your hand, swap between two random Bonus Effects.",
       "type": "creature",
       "attack": 6,
       "health": 5,
-      "tribe": "Beast"
+      "tribe": "Beast",
+      "keywords": [
+        "elusive",
+        "taunt"
+      ],
+      "bonusEffectSwap": true
     },
     {
       "id": "selfless_protector",
@@ -45454,7 +45459,9 @@
       "description": "While this is in your hand or deck, it gains a copy of every Dark Gift given to your creatures.",
       "type": "creature",
       "attack": 6,
-      "health": 6
+      "health": 6,
+      "tribe": "Ancient",
+      "accrueDarkGifts": true
     },
     {
       "id": "daydreaming_pixie",
@@ -45764,7 +45771,9 @@
       "type": "creature",
       "attack": 7,
       "health": 2,
-      "tribe": "Draenei"
+      "tribe": "Draenei",
+      "swapStatsEndOfTurn": true,
+      "immuneWhileAttacking": true
     },
     {
       "id": "eredar_brute",

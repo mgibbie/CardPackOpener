@@ -43,6 +43,7 @@ export function damageCreature(state, target, amount, source) {
 	}
 	if (state.hpResolver != null && state.players[state.hpResolver]) state.players[state.hpResolver].hpDamageGame = (state.players[state.hpResolver].hpDamageGame || 0) + amount; // Jan'alai
 	if (has(target, KW.IMMUNE)) return 0; // Immune: prevents all damage
+	if (target._attackingImmune) return 0; // Stalwart Avenger: Immune while attacking (only during its own swing)
 	if (target.immuneTurn === state.turnNumber) return 0; // temporary Immune (Bestial Wrath / Stablemaster)
 	if (target.immuneToSchool && source && isSpellType(source) && schoolOf(source) === target.immuneToSchool) return 0; // Fyrakk: immune to Fire spells
 	if (target.illusion) { target.illusion = false; target.shield = false; target.damage = target.maxHealth; emit(state, { type: 'illusionShattered', uid: target.uid }); return 0; } // Bloodthistle Illusionist
