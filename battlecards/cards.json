@@ -109218,7 +109218,32 @@
       "rarity": "legendary",
       "set": "ISLAND_VACATION",
       "tribe": "Naga",
-      "description": "While in your hand, play two different spell schools to transform."
+      "description": "While in your hand, play two different spell schools to transform.",
+      "handTransformOnTwoSchools": {
+        "forms": [
+          "carress_form_draw2_face6",
+          "carress_form_draw2_freeze3",
+          "carress_form_draw2_buff",
+          "carress_form_draw2_heal6",
+          "carress_form_draw2_destroy2",
+          "carress_form_draw2_aoe2",
+          "carress_form_face6_freeze3",
+          "carress_form_face6_buff",
+          "carress_form_face6_heal6",
+          "carress_form_face6_destroy2",
+          "carress_form_face6_aoe2",
+          "carress_form_freeze3_buff",
+          "carress_form_freeze3_heal6",
+          "carress_form_freeze3_destroy2",
+          "carress_form_freeze3_aoe2",
+          "carress_form_buff_heal6",
+          "carress_form_buff_destroy2",
+          "carress_form_buff_aoe2",
+          "carress_form_heal6_destroy2",
+          "carress_form_heal6_aoe2",
+          "carress_form_destroy2_aoe2"
+        ]
+      }
     },
     {
       "id": "chatty_macaw",
@@ -133741,6 +133766,657 @@
         }
       ],
       "description": "Battlecry: Gain 8 Armor."
+    },
+    {
+      "id": "carress_form_draw2_face6",
+      "name": "Carress, Cabaret Star",
+      "type": "creature",
+      "cardClass": "shaman",
+      "cost": 3,
+      "rarity": "rare",
+      "set": "ISLAND_VACATION",
+      "tribe": "Naga",
+      "attack": 3,
+      "health": 3,
+      "collectible": false,
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "draw",
+          "value": 2
+        },
+        {
+          "type": "damage",
+          "value": 6,
+          "target": "enemy-hero"
+        }
+      ],
+      "description": "Battlecry: Draw 2 cards. Deal 6 damage to the enemy hero."
+    },
+    {
+      "id": "carress_form_draw2_freeze3",
+      "name": "Carress, Cabaret Star",
+      "type": "creature",
+      "cardClass": "shaman",
+      "cost": 3,
+      "rarity": "rare",
+      "set": "ISLAND_VACATION",
+      "tribe": "Naga",
+      "attack": 3,
+      "health": 3,
+      "collectible": false,
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "draw",
+          "value": 2
+        },
+        {
+          "type": "freeze-random"
+        },
+        {
+          "type": "freeze-random"
+        },
+        {
+          "type": "freeze-random"
+        }
+      ],
+      "description": "Battlecry: Draw 2 cards. Freeze 3 random enemy creatures."
+    },
+    {
+      "id": "carress_form_draw2_buff",
+      "name": "Carress, Cabaret Star",
+      "type": "creature",
+      "cardClass": "shaman",
+      "cost": 3,
+      "rarity": "rare",
+      "set": "ISLAND_VACATION",
+      "tribe": "Naga",
+      "attack": 3,
+      "health": 3,
+      "collectible": false,
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "draw",
+          "value": 2
+        },
+        {
+          "type": "buff-self",
+          "attack": 2,
+          "health": 2
+        },
+        {
+          "type": "grant",
+          "keyword": "taunt",
+          "target": "self"
+        }
+      ],
+      "description": "Battlecry: Draw 2 cards. Gain +2/+2 & Taunt."
+    },
+    {
+      "id": "carress_form_draw2_heal6",
+      "name": "Carress, Cabaret Star",
+      "type": "creature",
+      "cardClass": "shaman",
+      "cost": 3,
+      "rarity": "rare",
+      "set": "ISLAND_VACATION",
+      "tribe": "Naga",
+      "attack": 3,
+      "health": 3,
+      "collectible": false,
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "draw",
+          "value": 2
+        },
+        {
+          "type": "heal",
+          "value": 6,
+          "target": "self"
+        }
+      ],
+      "description": "Battlecry: Draw 2 cards. Restore 6 Health to your hero."
+    },
+    {
+      "id": "carress_form_draw2_destroy2",
+      "name": "Carress, Cabaret Star",
+      "type": "creature",
+      "cardClass": "shaman",
+      "cost": 3,
+      "rarity": "rare",
+      "set": "ISLAND_VACATION",
+      "tribe": "Naga",
+      "attack": 3,
+      "health": 3,
+      "collectible": false,
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "draw",
+          "value": 2
+        },
+        {
+          "type": "destroy-random",
+          "count": 2
+        }
+      ],
+      "description": "Battlecry: Draw 2 cards. Destroy 2 random enemy creatures."
+    },
+    {
+      "id": "carress_form_draw2_aoe2",
+      "name": "Carress, Cabaret Star",
+      "type": "creature",
+      "cardClass": "shaman",
+      "cost": 3,
+      "rarity": "rare",
+      "set": "ISLAND_VACATION",
+      "tribe": "Naga",
+      "attack": 3,
+      "health": 3,
+      "collectible": false,
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "draw",
+          "value": 2
+        },
+        {
+          "type": "damage",
+          "value": 2,
+          "target": "enemy-creatures"
+        }
+      ],
+      "description": "Battlecry: Draw 2 cards. Deal 2 damage to all enemy creatures."
+    },
+    {
+      "id": "carress_form_face6_freeze3",
+      "name": "Carress, Cabaret Star",
+      "type": "creature",
+      "cardClass": "shaman",
+      "cost": 3,
+      "rarity": "rare",
+      "set": "ISLAND_VACATION",
+      "tribe": "Naga",
+      "attack": 3,
+      "health": 3,
+      "collectible": false,
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "damage",
+          "value": 6,
+          "target": "enemy-hero"
+        },
+        {
+          "type": "freeze-random"
+        },
+        {
+          "type": "freeze-random"
+        },
+        {
+          "type": "freeze-random"
+        }
+      ],
+      "description": "Battlecry: Deal 6 damage to the enemy hero. Freeze 3 random enemy creatures."
+    },
+    {
+      "id": "carress_form_face6_buff",
+      "name": "Carress, Cabaret Star",
+      "type": "creature",
+      "cardClass": "shaman",
+      "cost": 3,
+      "rarity": "rare",
+      "set": "ISLAND_VACATION",
+      "tribe": "Naga",
+      "attack": 3,
+      "health": 3,
+      "collectible": false,
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "damage",
+          "value": 6,
+          "target": "enemy-hero"
+        },
+        {
+          "type": "buff-self",
+          "attack": 2,
+          "health": 2
+        },
+        {
+          "type": "grant",
+          "keyword": "taunt",
+          "target": "self"
+        }
+      ],
+      "description": "Battlecry: Deal 6 damage to the enemy hero. Gain +2/+2 & Taunt."
+    },
+    {
+      "id": "carress_form_face6_heal6",
+      "name": "Carress, Cabaret Star",
+      "type": "creature",
+      "cardClass": "shaman",
+      "cost": 3,
+      "rarity": "rare",
+      "set": "ISLAND_VACATION",
+      "tribe": "Naga",
+      "attack": 3,
+      "health": 3,
+      "collectible": false,
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "damage",
+          "value": 6,
+          "target": "enemy-hero"
+        },
+        {
+          "type": "heal",
+          "value": 6,
+          "target": "self"
+        }
+      ],
+      "description": "Battlecry: Deal 6 damage to the enemy hero. Restore 6 Health to your hero."
+    },
+    {
+      "id": "carress_form_face6_destroy2",
+      "name": "Carress, Cabaret Star",
+      "type": "creature",
+      "cardClass": "shaman",
+      "cost": 3,
+      "rarity": "rare",
+      "set": "ISLAND_VACATION",
+      "tribe": "Naga",
+      "attack": 3,
+      "health": 3,
+      "collectible": false,
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "damage",
+          "value": 6,
+          "target": "enemy-hero"
+        },
+        {
+          "type": "destroy-random",
+          "count": 2
+        }
+      ],
+      "description": "Battlecry: Deal 6 damage to the enemy hero. Destroy 2 random enemy creatures."
+    },
+    {
+      "id": "carress_form_face6_aoe2",
+      "name": "Carress, Cabaret Star",
+      "type": "creature",
+      "cardClass": "shaman",
+      "cost": 3,
+      "rarity": "rare",
+      "set": "ISLAND_VACATION",
+      "tribe": "Naga",
+      "attack": 3,
+      "health": 3,
+      "collectible": false,
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "damage",
+          "value": 6,
+          "target": "enemy-hero"
+        },
+        {
+          "type": "damage",
+          "value": 2,
+          "target": "enemy-creatures"
+        }
+      ],
+      "description": "Battlecry: Deal 6 damage to the enemy hero. Deal 2 damage to all enemy creatures."
+    },
+    {
+      "id": "carress_form_freeze3_buff",
+      "name": "Carress, Cabaret Star",
+      "type": "creature",
+      "cardClass": "shaman",
+      "cost": 3,
+      "rarity": "rare",
+      "set": "ISLAND_VACATION",
+      "tribe": "Naga",
+      "attack": 3,
+      "health": 3,
+      "collectible": false,
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "freeze-random"
+        },
+        {
+          "type": "freeze-random"
+        },
+        {
+          "type": "freeze-random"
+        },
+        {
+          "type": "buff-self",
+          "attack": 2,
+          "health": 2
+        },
+        {
+          "type": "grant",
+          "keyword": "taunt",
+          "target": "self"
+        }
+      ],
+      "description": "Battlecry: Freeze 3 random enemy creatures. Gain +2/+2 & Taunt."
+    },
+    {
+      "id": "carress_form_freeze3_heal6",
+      "name": "Carress, Cabaret Star",
+      "type": "creature",
+      "cardClass": "shaman",
+      "cost": 3,
+      "rarity": "rare",
+      "set": "ISLAND_VACATION",
+      "tribe": "Naga",
+      "attack": 3,
+      "health": 3,
+      "collectible": false,
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "freeze-random"
+        },
+        {
+          "type": "freeze-random"
+        },
+        {
+          "type": "freeze-random"
+        },
+        {
+          "type": "heal",
+          "value": 6,
+          "target": "self"
+        }
+      ],
+      "description": "Battlecry: Freeze 3 random enemy creatures. Restore 6 Health to your hero."
+    },
+    {
+      "id": "carress_form_freeze3_destroy2",
+      "name": "Carress, Cabaret Star",
+      "type": "creature",
+      "cardClass": "shaman",
+      "cost": 3,
+      "rarity": "rare",
+      "set": "ISLAND_VACATION",
+      "tribe": "Naga",
+      "attack": 3,
+      "health": 3,
+      "collectible": false,
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "freeze-random"
+        },
+        {
+          "type": "freeze-random"
+        },
+        {
+          "type": "freeze-random"
+        },
+        {
+          "type": "destroy-random",
+          "count": 2
+        }
+      ],
+      "description": "Battlecry: Freeze 3 random enemy creatures. Destroy 2 random enemy creatures."
+    },
+    {
+      "id": "carress_form_freeze3_aoe2",
+      "name": "Carress, Cabaret Star",
+      "type": "creature",
+      "cardClass": "shaman",
+      "cost": 3,
+      "rarity": "rare",
+      "set": "ISLAND_VACATION",
+      "tribe": "Naga",
+      "attack": 3,
+      "health": 3,
+      "collectible": false,
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "freeze-random"
+        },
+        {
+          "type": "freeze-random"
+        },
+        {
+          "type": "freeze-random"
+        },
+        {
+          "type": "damage",
+          "value": 2,
+          "target": "enemy-creatures"
+        }
+      ],
+      "description": "Battlecry: Freeze 3 random enemy creatures. Deal 2 damage to all enemy creatures."
+    },
+    {
+      "id": "carress_form_buff_heal6",
+      "name": "Carress, Cabaret Star",
+      "type": "creature",
+      "cardClass": "shaman",
+      "cost": 3,
+      "rarity": "rare",
+      "set": "ISLAND_VACATION",
+      "tribe": "Naga",
+      "attack": 3,
+      "health": 3,
+      "collectible": false,
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "buff-self",
+          "attack": 2,
+          "health": 2
+        },
+        {
+          "type": "grant",
+          "keyword": "taunt",
+          "target": "self"
+        },
+        {
+          "type": "heal",
+          "value": 6,
+          "target": "self"
+        }
+      ],
+      "description": "Battlecry: Gain +2/+2 & Taunt. Restore 6 Health to your hero."
+    },
+    {
+      "id": "carress_form_buff_destroy2",
+      "name": "Carress, Cabaret Star",
+      "type": "creature",
+      "cardClass": "shaman",
+      "cost": 3,
+      "rarity": "rare",
+      "set": "ISLAND_VACATION",
+      "tribe": "Naga",
+      "attack": 3,
+      "health": 3,
+      "collectible": false,
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "buff-self",
+          "attack": 2,
+          "health": 2
+        },
+        {
+          "type": "grant",
+          "keyword": "taunt",
+          "target": "self"
+        },
+        {
+          "type": "destroy-random",
+          "count": 2
+        }
+      ],
+      "description": "Battlecry: Gain +2/+2 & Taunt. Destroy 2 random enemy creatures."
+    },
+    {
+      "id": "carress_form_buff_aoe2",
+      "name": "Carress, Cabaret Star",
+      "type": "creature",
+      "cardClass": "shaman",
+      "cost": 3,
+      "rarity": "rare",
+      "set": "ISLAND_VACATION",
+      "tribe": "Naga",
+      "attack": 3,
+      "health": 3,
+      "collectible": false,
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "buff-self",
+          "attack": 2,
+          "health": 2
+        },
+        {
+          "type": "grant",
+          "keyword": "taunt",
+          "target": "self"
+        },
+        {
+          "type": "damage",
+          "value": 2,
+          "target": "enemy-creatures"
+        }
+      ],
+      "description": "Battlecry: Gain +2/+2 & Taunt. Deal 2 damage to all enemy creatures."
+    },
+    {
+      "id": "carress_form_heal6_destroy2",
+      "name": "Carress, Cabaret Star",
+      "type": "creature",
+      "cardClass": "shaman",
+      "cost": 3,
+      "rarity": "rare",
+      "set": "ISLAND_VACATION",
+      "tribe": "Naga",
+      "attack": 3,
+      "health": 3,
+      "collectible": false,
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "heal",
+          "value": 6,
+          "target": "self"
+        },
+        {
+          "type": "destroy-random",
+          "count": 2
+        }
+      ],
+      "description": "Battlecry: Restore 6 Health to your hero. Destroy 2 random enemy creatures."
+    },
+    {
+      "id": "carress_form_heal6_aoe2",
+      "name": "Carress, Cabaret Star",
+      "type": "creature",
+      "cardClass": "shaman",
+      "cost": 3,
+      "rarity": "rare",
+      "set": "ISLAND_VACATION",
+      "tribe": "Naga",
+      "attack": 3,
+      "health": 3,
+      "collectible": false,
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "heal",
+          "value": 6,
+          "target": "self"
+        },
+        {
+          "type": "damage",
+          "value": 2,
+          "target": "enemy-creatures"
+        }
+      ],
+      "description": "Battlecry: Restore 6 Health to your hero. Deal 2 damage to all enemy creatures."
+    },
+    {
+      "id": "carress_form_destroy2_aoe2",
+      "name": "Carress, Cabaret Star",
+      "type": "creature",
+      "cardClass": "shaman",
+      "cost": 3,
+      "rarity": "rare",
+      "set": "ISLAND_VACATION",
+      "tribe": "Naga",
+      "attack": 3,
+      "health": 3,
+      "collectible": false,
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "destroy-random",
+          "count": 2
+        },
+        {
+          "type": "damage",
+          "value": 2,
+          "target": "enemy-creatures"
+        }
+      ],
+      "description": "Battlecry: Destroy 2 random enemy creatures. Deal 2 damage to all enemy creatures."
     }
   ]
 }
