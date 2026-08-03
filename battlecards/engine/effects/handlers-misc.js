@@ -1460,7 +1460,9 @@ register('force-attack', ({ state, pi, target, source, enemies, scaled, hm, pick
 			if (magnet && !isDead(magnet)) {
 				const pool = enemies.flatMap(o => state.players[o].board.filter(c =>
 					!isDead(c) && !c.frozen && c.attack > 0));
-				if (pool.length) {
+				if (e.all) { // Mythical Terror: force ALL enemy creatures to attack the source
+					for (const a of pool) { if (isDead(magnet) || isDead(a)) continue; resolveCombat(state, a.controller, a.uid, { type: 'creature', uid: magnet.uid, player: magnet.controller }); }
+				} else if (pool.length) {
 					const a = pool[Math.floor(state.rng() * pool.length)];
 					resolveCombat(state, a.controller, a.uid, { type: 'creature', uid: magnet.uid, player: magnet.controller });
 				}

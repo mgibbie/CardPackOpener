@@ -587,6 +587,13 @@ register('swap-decks', ({ state, pi, target, source, enemies, scaled, hm, pickEn
 } });
 
 
+register('put-spell-on-enemy-deck-top', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => {
+	// Merch Seller: put a random spell on top of the opponent's deck
+	const foe = enemies[0]; if (foe == null) return;
+	const pool = Object.values(state.cardsById).filter(d => isSpellType(d) && !d.token && d.collectible !== false && !(d.colors && d.colors.length) && !d.choices);
+	if (pool.length) { state.players[foe].deck.push(pool[Math.floor(state.rng() * pool.length)].id); emit(state, { type: 'shuffle', player: foe }); }
+});
+
 register('enemy-discard', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => { {
 			// each opponent discards at random
 			const dn = e.count === 'X' ? (source?.xValue || 0) : (e.count || 1);
@@ -723,7 +730,7 @@ register('copy-from-enemy-deck', ({ state, pi, target, source, enemies, scaled, 
 register('copy-random-enemy-deck-card', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => { {
 			// Mind Eater: add a copy of a random card from the opponent's deck to your hand
 			const foe = enemies[0], p = state.players[pi];
-			if (foe != null && state.players[foe].deck.length && p.hand.length < MAX_HAND) { const id = state.players[foe].deck[Math.floor(state.rng() * state.players[foe].deck.length)]; const def = state.cardsById[id]; if (def) { const cp = instantiate(def, pi); cp.zone = 'hand'; p.hand.push(cp); emit(state, { type: 'conjure', player: pi, card: cp, color: null }); } }
+			if (foe != null && state.players[foe].deck.length && p.hand.length < MAX_HAND) { const src = e.spellOnly ? state.players[foe].deck.filter(id => isSpellType(state.cardsById[id] || {})) : state.players[foe].deck; if (!src.length) return; const id = src[Math.floor(state.rng() * src.length)]; const def = state.cardsById[id]; if (def) { const cp = instantiate(def, pi); cp.zone = 'hand'; p.hand.push(cp); emit(state, { type: 'conjure', player: pi, card: cp, color: null }); } } // Soothsayer's Caravan: a spell from the opponent's deck
 } });
 
 

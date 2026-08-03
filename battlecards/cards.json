@@ -44196,7 +44196,16 @@
       "description": "At the start of your turn, copy a spell from your opponent's deck to your hand.",
       "type": "creature",
       "attack": 1,
-      "health": 3
+      "health": 3,
+      "ongoing": {
+        "on": "turn-start",
+        "effects": [
+          {
+            "type": "copy-random-enemy-deck-card",
+            "spellOnly": true
+          }
+        ]
+      }
     },
     {
       "id": "apothecary_helbrim",
@@ -44929,7 +44938,15 @@
       "type": "creature",
       "attack": 3,
       "health": 5,
-      "tribe": "Naga"
+      "tribe": "Naga",
+      "ongoing": {
+        "on": "turn-end",
+        "effects": [
+          {
+            "type": "put-spell-on-enemy-deck-top"
+          }
+        ]
+      }
     },
     {
       "id": "clockwork_giant",
@@ -45236,7 +45253,19 @@
       "type": "creature",
       "attack": 4,
       "health": 10,
-      "tribe": "Demon/Beast"
+      "tribe": "Demon/Beast",
+      "keywords": [
+        "lifesteal"
+      ],
+      "ongoing": {
+        "on": "turn-end",
+        "effects": [
+          {
+            "type": "force-attack",
+            "all": true
+          }
+        ]
+      }
     },
     {
       "id": "arcanologist",
@@ -47497,7 +47526,17 @@
       "type": "creature",
       "attack": 10,
       "health": 10,
-      "tribe": "Demon"
+      "tribe": "Demon",
+      "ongoing": {
+        "on": "turn-end",
+        "effects": [
+          {
+            "type": "steal-stats-all-enemies",
+            "attack": 1,
+            "health": 1
+          }
+        ]
+      }
     },
     {
       "id": "vulpera_toxinblade",

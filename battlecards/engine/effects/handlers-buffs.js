@@ -538,6 +538,21 @@ register('draw-beast-gain-stats', ({ state, pi, target, source, enemies, scaled,
 } });
 
 
+register('steal-stats-all-enemies', ({ state, pi, source, enemies }, e) => {
+	// Ancient Void Hound: steal 1 Attack & Health from all enemy minions
+	const da = e.attack || 1, dh = e.health || 1;
+	let stolen = 0;
+	for (const o of enemies) for (const c of [...state.players[o].board]) {
+		if (isDead(c) || c.type === 'location') continue;
+		c.attack = Math.max(0, (c.attack || 0) - da);
+		c.maxHealth = Math.max(0, (c.maxHealth || 0) - dh);
+		emit(state, { type: 'buff', uid: c.uid, attack: c.attack, hp: hp(c) });
+		stolen++;
+	}
+	if (source && !isDead(source) && stolen) { source.attack += da * stolen; source.maxHealth += dh * stolen; emit(state, { type: 'buff', uid: source.uid, attack: source.attack, hp: hp(source) }); }
+	sweepDeaths(state);
+});
+
 register('grant-immune-turn', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => { {
 			// Ashtongue Slayer: give a minion Immune until end of turn (target 'self' = source, Kurtrus Outcast)
 			// Staff of Ammunae: target 'friendly-creatures' grants your whole board Immune this turn
