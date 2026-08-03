@@ -108629,8 +108629,7 @@
           "id": "ww_snake_oil",
           "count": 2
         }
-      ],
-      "tradeable": true
+      ]
     },
     {
       "id": "taethelan_bloodwatcher",
@@ -108902,7 +108901,8 @@
       "token": true,
       "collectible": false,
       "description": "A slippery Snake Oil.",
-      "effects": []
+      "effects": [],
+      "tradeable": true
     },
     {
       "id": "ww_cow_33",
