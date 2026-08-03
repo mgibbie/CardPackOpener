@@ -27,6 +27,9 @@ export function recomputeAuras(state) {
 				if (a.scope === 'enemies' && src.controller === c.controller) continue; // Band of Scarabs
 				if (a.scope === 'friendly' && src.controller !== c.controller) continue;
 				if (a.maxCost != null && (c.cost || 0) > a.maxCost) continue; // Band of Bees: cheap creatures only
+				if (a.divineShield && !c.shield) continue; // Funkfin: only creatures that currently HAVE Divine Shield (drops when it pops)
+				if (a.notName && c.name === a.notName) continue; // Red Herring: your NON-Red Herring creatures
+				if (a.whileOverloaded && !((state.players[src.controller].overloadLockedThisTurn || 0) > 0)) continue; // Vessina: only while you're Overloaded
 				if (a.adjacent) {
 					const si = p.board.indexOf(src);
 					if (si < 0 || Math.abs(si - idx) !== 1) continue;

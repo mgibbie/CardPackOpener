@@ -45220,7 +45220,16 @@
       "type": "creature",
       "attack": 3,
       "health": 12,
-      "tribe": "Beast"
+      "tribe": "Beast",
+      "keywords": [
+        "taunt"
+      ],
+      "aura": {
+        "notName": "Red Herring",
+        "keywords": [
+          "stealth"
+        ]
+      }
     },
     {
       "id": "prince_renathal",
@@ -46023,7 +46032,15 @@
       "type": "creature",
       "attack": 2,
       "health": 2,
-      "tribe": "Murloc"
+      "tribe": "Murloc",
+      "keywords": [
+        "divine_shield"
+      ],
+      "aura": {
+        "divineShield": true,
+        "attack": 2,
+        "health": 0
+      }
     },
     {
       "id": "siegebreaker",
@@ -49145,7 +49162,13 @@
       "description": "While you're Overloaded, your other creatures have +2 Attack.",
       "type": "creature",
       "attack": 2,
-      "health": 6
+      "health": 6,
+      "aura": {
+        "others": true,
+        "whileOverloaded": true,
+        "attack": 2,
+        "health": 0
+      }
     },
     {
       "id": "sunstruck_henchman",
