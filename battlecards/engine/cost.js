@@ -84,6 +84,20 @@ export function effectiveCost(state, pi, card) {
 		} else if (card.selfCost.per === 'unique-tribes') {
 			const counts = {}; for (const x of p.board) if (!isDead(x) && x.type === 'creature') for (const t of (x.tribe || '').split('/').filter(Boolean)) counts[t] = (counts[t] || 0) + 1;
 			n = p.board.filter(x => !isDead(x) && x.type === 'creature' && (x.tribe || '').split('/').filter(Boolean).some(t => counts[t] === 1)).length; // Tent Trasher: friendly minions with a unique type
+		} else if (card.selfCost.per === 'friendly-deaths-game') {
+			n = p.friendlyDeaths || 0; // Ur'zul Giant
+		} else if (card.selfCost.per === 'damage-opp-turn') {
+			n = p.damageToEnemyHeroThisTurn || 0; // Frenzied Felwing
+		} else if (card.selfCost.per === 'spells-while-held') {
+			n = card.spellsCastWhileHeld || 0; // Mantle Shaper
+		} else if (card.selfCost.per === 'totems-summoned-game') {
+			n = p.totemsSummonedGame || 0; // Thing from Below / Gigantotem
+		} else if (card.selfCost.per === 'overloaded-game') {
+			n = p.overloadedGame || 0; // Snowfury Giant / Haywire Hornswog
+		} else if (card.selfCost.per === 'corpses-spent-game') {
+			n = p.corpsesSpentGame || 0; // Stitched Giant
+		} else if (card.selfCost.per === 'cards-drawn-game') {
+			n = p.cardsDrawnGame || 0; // Playhouse Giant
 		}
 		c += card.selfCost.amount * n;
 	}

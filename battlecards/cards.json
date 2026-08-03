@@ -12704,7 +12704,11 @@
       "type": "creature",
       "attack": 5,
       "health": 5,
-      "tribe": "Elemental/Naga"
+      "tribe": "Elemental/Naga",
+      "selfCost": {
+        "per": "spells-while-held",
+        "amount": -1
+      }
     },
     {
       "id": "treetech_jungledrone",
@@ -43984,7 +43988,11 @@
       "description": "Costs (1) less for each card you've played this turn.",
       "type": "creature",
       "attack": 3,
-      "health": 3
+      "health": 3,
+      "selfCost": {
+        "per": "cards-played",
+        "amount": -1
+      }
     },
     {
       "id": "stormpike_marshal",
@@ -44027,7 +44035,11 @@
       "type": "creature",
       "attack": 8,
       "health": 8,
-      "tribe": "Demon"
+      "tribe": "Demon",
+      "selfCost": {
+        "per": "friendly-deaths-game",
+        "amount": -1
+      }
     },
     {
       "id": "frostsaber_matriarch",
@@ -44843,7 +44855,11 @@
       "type": "creature",
       "attack": 8,
       "health": 8,
-      "tribe": "Elemental"
+      "tribe": "Elemental",
+      "selfCost": {
+        "per": "overloaded-game",
+        "amount": -1
+      }
     },
     {
       "id": "runeforge_haunter",
@@ -44941,7 +44957,11 @@
       "description": "Rush.\nCosts (1) less for each card you've played this turn.",
       "type": "creature",
       "attack": 4,
-      "health": 4
+      "health": 4,
+      "selfCost": {
+        "per": "cards-played",
+        "amount": -1
+      }
     },
     {
       "id": "afterlife_attendant",
@@ -44978,7 +44998,11 @@
       "description": "Taunt Costs (1) less for each Totem you've summoned this game.",
       "type": "creature",
       "attack": 5,
-      "health": 5
+      "health": 5,
+      "selfCost": {
+        "per": "totems-summoned-game",
+        "amount": -1
+      }
     },
     {
       "id": "hammer_of_twilight",
@@ -45061,7 +45085,11 @@
       "type": "creature",
       "attack": 8,
       "health": 8,
-      "tribe": "Totem"
+      "tribe": "Totem",
+      "selfCost": {
+        "per": "totems-summoned-game",
+        "amount": -1
+      }
     },
     {
       "id": "crazed_wretch",
@@ -45598,7 +45626,11 @@
       "type": "creature",
       "attack": 4,
       "health": 6,
-      "tribe": "Beast/Dragon"
+      "tribe": "Beast/Dragon",
+      "selfCost": {
+        "per": "overloaded-game",
+        "amount": -1
+      }
     },
     {
       "id": "prescient_slitherdrake",
@@ -46495,7 +46527,11 @@
       "type": "creature",
       "attack": 8,
       "health": 8,
-      "tribe": "Undead"
+      "tribe": "Undead",
+      "selfCost": {
+        "per": "corpses-spent-game",
+        "amount": -1
+      }
     },
     {
       "id": "jungle_moonkin",
@@ -47593,7 +47629,11 @@
       "type": "creature",
       "attack": 8,
       "health": 8,
-      "tribe": "Mech"
+      "tribe": "Mech",
+      "selfCost": {
+        "per": "cards-drawn-game",
+        "amount": -1
+      }
     },
     {
       "id": "splendiferous_whizbang",
@@ -48904,7 +48944,11 @@
       "type": "creature",
       "attack": 3,
       "health": 3,
-      "tribe": "Demon"
+      "tribe": "Demon",
+      "selfCost": {
+        "per": "damage-opp-turn",
+        "amount": -1
+      }
     },
     {
       "id": "aerosoilizer",

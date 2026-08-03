@@ -1046,6 +1046,7 @@ export function summon(state, pi, tokenDef) {
 	if (p.legionInvasion && (c.tribe || '').includes('Demon')) { c.maxHealth += 2; if (!c.keywords.includes(KW.TAUNT)) c.keywords.push(KW.TAUNT); } // Sargeras (Legion Invasion): future Demons have +2 Health and Taunt
 	if (c.scaleOnEntry) { const n = p.enteredCountById?.[c.id] || 0; if (n > 0) { c.attack += (c.scaleOnEntry.attack || 0) * n; c.maxHealth += (c.scaleOnEntry.health || 0) * n; } } // Astral Automaton: +1/+1 per other summoned this game
 	(p.enteredCountById = p.enteredCountById || {})[c.id] = (p.enteredCountById[c.id] || 0) + 1;
+	if ((c.tribe || '').includes('Totem')) p.totemsSummonedGame = (p.totemsSummonedGame || 0) + 1; // Thing from Below / Gigantotem: Totems summoned this game
 	if (state.anomaly && c.type !== 'location') { // Dalaran Heist anomalies, applied symmetrically to every summon
 		if (state.anomaly === 'infused') { const ks = [KW.TAUNT, KW.DIVINE_SHIELD, KW.RUSH, KW.WINDFURY]; const k = ks[Math.floor(state.rng() * ks.length)]; if (!c.keywords.includes(k)) { c.keywords.push(k); if (k === KW.DIVINE_SHIELD) c.shield = true; } }
 		else if (state.anomaly === 'explosive') { c.deathrattle = (c.deathrattle || []).concat([{ type: 'damage', value: 1, target: 'all-creatures' }]); if (!c.keywords.includes(KW.DEATHRATTLE)) c.keywords.push(KW.DEATHRATTLE); }
@@ -1438,6 +1439,7 @@ export function fireTitanPassive(state, pi, card, usedIndex) {
 export function spendCorpses(state, pi, n) {
 	if (!(n > 0)) return;
 	const p = state.players[pi];
+	p.corpsesSpentGame = (p.corpsesSpentGame || 0) + Math.min(n, p.corpses || 0); // Stitched Giant: Corpses spent this game
 	p.corpses = Math.max(0, (p.corpses || 0) - n);
 	// Duels: "the first time you spend a Corpse in a turn"
 	if (p._corpseSpentTurn !== state.turnNumber) {
@@ -4211,6 +4213,7 @@ export function endTurn(state) {
 		np.mana.cur = Math.max(0, np.mana.cur - np.overloadPending);
 		emit(state, { type: 'overloaded', player: state.current, amount: np.overloadPending });
 		np.overloadLockedThisTurn = np.overloadPending; // Eternal Sentinel can give these back
+		np.overloadedGame = (np.overloadedGame || 0) + np.overloadPending; // Snowfury Giant / Haywire Hornswog: crystals Overloaded this game
 		np.overloadPending = 0;
 	}
 	// Duels start-of-turn passives
