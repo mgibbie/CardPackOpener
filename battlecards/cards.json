@@ -56494,12 +56494,13 @@
       "cardClass": "neutral",
       "rarity": "common",
       "set": "wubrg",
-      "description": "Summon two 1/1 Soldiers.",
+      "description": "Create two 1/1 Soldier creature tokens.",
       "effects": [
         {
           "type": "summon",
           "count": 2,
           "name": "Soldier",
+          "tribe": "Soldier",
           "attack": 1,
           "health": 1
         }
