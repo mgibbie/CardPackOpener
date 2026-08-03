@@ -275,6 +275,7 @@ export function instantiate(def, controller) {
 		bandersmoshTransform: !!def.bandersmoshTransform, // Bandersmosh: morph into a 5/5 Legendary each turn
 		selfCost: def.selfCost || null, // self-scaling printed cost: { per, amount }
 		selfCostIf: def.selfCostIf || null, // conditional printed cost: { cond, setCost?, amount? }
+		tracksAdjacentPlayed: def.tracksAdjacentPlayed || false, // Red Giant: counts hand-neighbors played while it's held
 		enrage: def.enrage || null,   // while damaged: { attack?, health?, keywords?, weaponAttack? }
 		combo: def.combo || null,     // effects used instead when a card was played earlier this turn
 		tradeable: !!def.tradeable,   // pay 1: shuffle back into the deck, draw a card
@@ -656,6 +657,8 @@ export function createGame(cardsById, rng = Math.random, playerDeckIds = null, p
 
 export function emit(state, ev) {
 	state.events.push(ev);
+	// Abyssal Bassist: every weapon-equip path emits this — count them in one place
+	if (ev.type === 'weaponEquip' && state.players && state.players[ev.player]) state.players[ev.player].weaponsEquippedGame = (state.players[ev.player].weaponsEquippedGame || 0) + 1;
 }
 
 // ---------- zones ----------
@@ -1839,6 +1842,7 @@ export function playCard(state, pi, cardUid, target, choice, position, useAlt, k
 	card._paidCost = playedCost; // Void Ray / Verdant Dreamsaber: "if this costs (0)/(3) or less"
 	card._handIndex = p.hand.findIndex(x => x.uid === cardUid); // Skittish Saucier: adjacency in hand
 	card._handEdge = card._handIndex === 0 || card._handIndex === p.hand.length - 1; // Altruis: left/right-most plays
+	for (const hc of p.hand) if (hc.tracksAdjacentPlayed && hc !== card && Math.abs(p.hand.indexOf(hc) - card._handIndex) === 1) hc.adjacentPlayedWhileHeld = (hc.adjacentPlayedWhileHeld || 0) + 1; // Red Giant: adjacent cards played while it's in hand
 	if (card.temporary && p.nextTempDiscount > 0) p.nextTempDiscount = 0; // Spelunker: spent by the next Temporary card
 	if (p.nextCardCorpses) { spendCorpses(state, pi, card.cost || 0); p.nextCardCorpses = false; emit(state, { type: 'corpses', player: pi, corpses: p.corpses }); } // Exarch Maladaar: paid in Corpses
 	if (p.agamagganNext) { p.agamagganNext = false; for (const o of opponentsOf(state, pi)) { damageHero(state, o, Math.min(10, card.cost || 0), pi, true); break; } } // Agamaggan: the opponent's Health pays

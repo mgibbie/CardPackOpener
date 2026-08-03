@@ -445,7 +445,11 @@
       "tribe": "Human Ranger",
       "keywords": [
         "taunt"
-      ]
+      ],
+      "selfCost": {
+        "per": "coins-in-graveyard",
+        "amount": -1
+      }
     },
     {
       "id": "officer_octo",
@@ -11389,7 +11393,18 @@
       "type": "creature",
       "attack": 2,
       "health": 3,
-      "tribe": "Pandaren Ninja"
+      "tribe": "Pandaren Ninja",
+      "keywords": [
+        "poisonous",
+        "rush",
+        "firebreathing"
+      ],
+      "costMod": {
+        "scope": "friendly",
+        "cardType": "all",
+        "keyword": "bushido",
+        "amount": -1
+      }
     },
     {
       "id": "ethereal_escort",
@@ -46015,7 +46030,12 @@
       "type": "creature",
       "attack": 8,
       "health": 8,
-      "tribe": "Elemental"
+      "tribe": "Elemental",
+      "tracksAdjacentPlayed": true,
+      "selfCost": {
+        "per": "adjacent-played-held",
+        "amount": -1
+      }
     },
     {
       "id": "perplexing_anomaly",
@@ -46542,7 +46562,11 @@
       "type": "creature",
       "attack": 4,
       "health": 7,
-      "tribe": "Demon"
+      "tribe": "Demon",
+      "selfCost": {
+        "per": "weapons-equipped-game",
+        "amount": -2
+      }
     },
     {
       "id": "blood_treant",
@@ -47696,7 +47720,11 @@
       "description": "Rush Costs (1) less for each time you've shuffled cards into your deck.",
       "type": "creature",
       "attack": 5,
-      "health": 5
+      "health": 5,
+      "selfCost": {
+        "per": "shuffles-into-deck-game",
+        "amount": -1
+      }
     },
     {
       "id": "gladesong_siren",
@@ -48196,7 +48224,11 @@
       "keywords": [
         "rush",
         "reborn"
-      ]
+      ],
+      "selfCost": {
+        "per": "plagues-into-enemy-game",
+        "amount": -1
+      }
     },
     {
       "id": "imprisoned_horror",
@@ -49293,7 +49325,18 @@
       "type": "creature",
       "attack": 4,
       "health": 2,
-      "tribe": "Faerie Druid"
+      "tribe": "Faerie Druid",
+      "costMod": {
+        "scope": "friendly",
+        "cardType": "spell",
+        "keywordAny": [
+          "adventure"
+        ],
+        "schoolAny": [
+          "Nature"
+        ],
+        "amount": -1
+      }
     },
     {
       "id": "mothwood_direcat",

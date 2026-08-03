@@ -126,6 +126,16 @@ export function effectiveCost(state, pi, card) {
 			n = p.elementalTurnStreak || 0; // Azerite Giant
 		} else if (card.selfCost.per === 'locations-used-game') {
 			n = p.locationsUsedGame || 0; // Seaside Giant
+		} else if (card.selfCost.per === 'coins-in-graveyard') {
+			n = (p.graveyard || []).filter(x => /\bcoin\b/i.test(((state.cardsById[x.id] || x).name) || '')).length; // Paid-Off Patrolman
+		} else if (card.selfCost.per === 'plagues-into-enemy-game') {
+			n = p.plaguesIntoEnemyGame || 0; // Chained Guardian
+		} else if (card.selfCost.per === 'weapons-equipped-game') {
+			n = p.weaponsEquippedGame || 0; // Abyssal Bassist
+		} else if (card.selfCost.per === 'shuffles-into-deck-game') {
+			n = p.shufflesIntoDeckGame || 0; // Underbrush Tracker
+		} else if (card.selfCost.per === 'adjacent-played-held') {
+			n = card.adjacentPlayedWhileHeld || 0; // Red Giant
 		}
 		c += card.selfCost.amount * n;
 	}
@@ -163,6 +173,7 @@ export function effectiveCost(state, pi, card) {
 			if (m.tribe && !(card.tribe || '').includes(m.tribe)) continue;
 			if (m.keyword && !(card.keywords || []).includes(m.keyword)) continue; // Nerub'ar Weblord: Battlecry creatures cost more
 			if (m.foreignOnly && card.fromDeck) continue; // Customs Enforcer: cards that didn't start in their deck
+			if (m.keywordAny || m.schoolAny) { const kwOk = (m.keywordAny || []).some(k => (card.keywords || []).includes(k)); const schOk = (m.schoolAny || []).some(s => schoolOf(card) === s); if (!kwOk && !schOk) continue; } // Eldraine Sprite: Adventure OR Nature spells
 			if (m.minCost != null && card.cost < m.minCost) continue;
 			// "the first <X> you play each turn": skip once a card matching this aura's
 			// filter (type + tribe + keyword) has already been played this turn.

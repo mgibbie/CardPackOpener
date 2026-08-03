@@ -533,7 +533,7 @@ register('put-highest-hand-on-top', ({ state, pi, target, source, enemies, scale
 register('shuffle-into-own-deck', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => { {
 			// Incindius (approx): shuffle N copies of a token card into your deck (Eruption upgrades not modeled)
 			const p = state.players[pi];
-			if (e.id) { for (let n = 0; n < (e.count || 1); n++) p.deck.push(e.id); for (let i = p.deck.length - 1; i > 0; i--) { const j = Math.floor(state.rng() * (i + 1)); [p.deck[i], p.deck[j]] = [p.deck[j], p.deck[i]]; } emit(state, { type: 'shuffle', player: pi }); }
+			if (e.id) { for (let n = 0; n < (e.count || 1); n++) p.deck.push(e.id); for (let i = p.deck.length - 1; i > 0; i--) { const j = Math.floor(state.rng() * (i + 1)); [p.deck[i], p.deck[j]] = [p.deck[j], p.deck[i]]; } emit(state, { type: 'shuffle', player: pi }); p.shufflesIntoDeckGame = (p.shufflesIntoDeckGame || 0) + 1; } // Underbrush Tracker
 } });
 
 
@@ -547,7 +547,7 @@ register('shuffle-copies-of-target', ({ state, pi, target, source, enemies, scal
 register('shuffle-cards-into-enemy-deck', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => { {
 			// Framester: shuffle N copies of a card into the opponent's deck
 			const foe = enemies[0];
-			if (foe != null && e.id) { const fp = state.players[foe]; for (let n = 0; n < (e.count || 1); n++) fp.deck.push(e.id); for (let i = fp.deck.length - 1; i > 0; i--) { const j = Math.floor(state.rng() * (i + 1)); [fp.deck[i], fp.deck[j]] = [fp.deck[j], fp.deck[i]]; } emit(state, { type: 'shuffle', player: foe }); }
+			if (foe != null && e.id) { const fp = state.players[foe]; for (let n = 0; n < (e.count || 1); n++) fp.deck.push(e.id); for (let i = fp.deck.length - 1; i > 0; i--) { const j = Math.floor(state.rng() * (i + 1)); [fp.deck[i], fp.deck[j]] = [fp.deck[j], fp.deck[i]]; } emit(state, { type: 'shuffle', player: foe }); if (/Plague/i.test(state.cardsById[e.id]?.name || '')) state.players[pi].plaguesIntoEnemyGame = (state.players[pi].plaguesIntoEnemyGame || 0) + (e.count || 1); } // Chained Guardian: Plagues shuffled into the enemy deck this game
 } });
 
 
@@ -789,6 +789,7 @@ register('shuffle-self-into-deck', ({ state, pi, target, source, enemies, scaled
 					const j = Math.floor(state.rng() * (i + 1));
 					[p.deck[i], p.deck[j]] = [p.deck[j], p.deck[i]];
 				}
+				p.shufflesIntoDeckGame = (p.shufflesIntoDeckGame || 0) + 1; // Underbrush Tracker
 				emit(state, { type: 'shuffledIntoDeck', player: pi, cardId: source.id }); fireOngoing(state, pi, 'card-shuffled', { cardId: source.id });
 			}
 } });
@@ -814,7 +815,7 @@ register('shuffle-hand-card-into-deck', ({ state, pi, target, source, enemies, s
 			// Bibliomite: shuffle a card from your hand into your deck (random, drawing a card)
 			const p = state.players[pi];
 			const pool = p.hand.filter(c => c !== source && state.cardsById[c.id] && !c.token);
-			if (pool.length) { const c = pool[Math.floor(state.rng() * pool.length)]; p.hand = p.hand.filter(x => x !== c); p.deck.push(c.id); for (let i = p.deck.length - 1; i > 0; i--) { const j = Math.floor(state.rng() * (i + 1)); [p.deck[i], p.deck[j]] = [p.deck[j], p.deck[i]]; } if (e.draw) drawCards(state, pi, 1); }
+			if (pool.length) { const c = pool[Math.floor(state.rng() * pool.length)]; p.hand = p.hand.filter(x => x !== c); p.deck.push(c.id); for (let i = p.deck.length - 1; i > 0; i--) { const j = Math.floor(state.rng() * (i + 1)); [p.deck[i], p.deck[j]] = [p.deck[j], p.deck[i]]; } p.shufflesIntoDeckGame = (p.shufflesIntoDeckGame || 0) + 1; if (e.draw) drawCards(state, pi, 1); } // Underbrush Tracker
 } });
 
 
