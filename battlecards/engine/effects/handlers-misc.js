@@ -2418,7 +2418,8 @@ register('cast-random-spell', ({ state, pi, target, source, enemies, scaled, hm,
 				&& (!e.otherClass || ((d.cardClass || 'neutral') !== 'neutral' && !(d.cardClass || '').split('__').includes(state.players[pi].heroClass || ''))) // Chaos Supplicant
 					&& (e.cost == null || (d.cost || 0) === e.cost) // Enchanted Cauldron: same Cost
 					&& (e.school == null || schoolOf(d) === e.school) // Druid of Regrowth: Nature spells
-					&& (e.minCost == null || (d.cost || 0) >= e.minCost));
+					&& (e.minCost == null || (d.cost || 0) >= e.minCost)
+					&& (e.maxCost == null || (d.cost || 0) <= e.maxCost)); // Trick Totem: a spell that costs (3) or less
 				if (!pool.length) break;
 				const spell = instantiate(pool[Math.floor(state.rng() * pool.length)], pi);
 				const spec = targetSpec(state, pi, spell, null);

@@ -44859,7 +44859,16 @@
       "type": "creature",
       "attack": 6,
       "health": 8,
-      "tribe": "Undead"
+      "tribe": "Undead",
+      "ongoing": {
+        "on": "turn-end",
+        "effects": [
+          {
+            "type": "resurrect-tribe",
+            "tribe": "Undead"
+          }
+        ]
+      }
     },
     {
       "id": "redscale_dragontamer",
@@ -46866,7 +46875,15 @@
       "description": "At the end of your turn, cast a spell from your deck (targets chosen randomly).",
       "type": "creature",
       "attack": 4,
-      "health": 7
+      "health": 7,
+      "ongoing": {
+        "on": "turn-end",
+        "effects": [
+          {
+            "type": "cast-spell-from-deck"
+          }
+        ]
+      }
     },
     {
       "id": "dragonhatcher",
@@ -46878,7 +46895,17 @@
       "description": "At the end of your turn, Recruit a Dragon.",
       "type": "creature",
       "attack": 2,
-      "health": 4
+      "health": 4,
+      "ongoing": {
+        "on": "turn-end",
+        "effects": [
+          {
+            "type": "recruit",
+            "tribe": "Dragon",
+            "count": 1
+          }
+        ]
+      }
     },
     {
       "id": "snuggle_teddy",
@@ -46959,7 +46986,16 @@
       "description": "At the end of your turn, put a creature from your deck into the battlefield.",
       "type": "creature",
       "attack": 10,
-      "health": 10
+      "health": 10,
+      "ongoing": {
+        "on": "turn-end",
+        "effects": [
+          {
+            "type": "summon-from-deck",
+            "count": 1
+          }
+        ]
+      }
     },
     {
       "id": "corrupted_seer",
@@ -47449,7 +47485,17 @@
       "type": "creature",
       "attack": 0,
       "health": 3,
-      "tribe": "Totem"
+      "tribe": "Totem",
+      "ongoing": {
+        "on": "turn-end",
+        "effects": [
+          {
+            "type": "cast-random-spell",
+            "count": 1,
+            "maxCost": 3
+          }
+        ]
+      }
     },
     {
       "id": "ace_hunter_kreen",

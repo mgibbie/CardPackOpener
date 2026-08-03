@@ -1419,6 +1419,13 @@ register('resurrect-tribe-cost-attack', ({ state, pi, target, source, enemies, s
 });
 
 
+register('resurrect-tribe', ({ state, pi }, e) => {
+	// Catrina Muerte: resurrect one random friendly dead minion of a tribe
+	const p = state.players[pi];
+	const pool = [...new Set(p.deathLogIds)].map(id => state.cardsById[id]).filter(d => d && d.type === 'creature' && !d.token && (d.tribe || '').includes(e.tribe));
+	if (pool.length) summon(state, pi, pool[Math.floor(state.rng() * pool.length)]);
+});
+
 register('resurrect-per-tribe', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => {
 	do {
 			// N'Zoth, God of the Deep: resurrect one friendly dead minion of each tribe
