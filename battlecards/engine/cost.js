@@ -73,6 +73,7 @@ export function effectiveCost(state, pi, card) {
 			if (m.scope === 'enemies' ? pl === p : (m.scope !== 'all' && pl !== p)) continue;
 			if (!costTypeMatches(card, m.cardType)) continue;
 			if (m.tribe && !(card.tribe || '').includes(m.tribe)) continue;
+			if (m.keyword && !(card.keywords || []).includes(m.keyword)) continue; // Nerub'ar Weblord: Battlecry creatures cost more
 			if (m.minCost != null && card.cost < m.minCost) continue;
 			if (m.firstEachTurn && (m.cardType === 'spell'
 				? p.spellsPlayedThisTurn : p.creaturesPlayedThisTurn) > 0) continue;

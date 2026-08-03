@@ -9166,7 +9166,12 @@
       "type": "creature",
       "attack": 3,
       "health": 4,
-      "tribe": "Human Hunter"
+      "tribe": "Human Hunter",
+      "costMod": {
+        "scope": "friendly",
+        "cardType": "secret",
+        "setCost": 0
+      }
     },
     {
       "id": "cobra_shot",
@@ -9432,7 +9437,12 @@
       "type": "creature",
       "attack": 3,
       "health": 2,
-      "tribe": "Undead Gnome Mage"
+      "tribe": "Undead Gnome Mage",
+      "costMod": {
+        "scope": "enemies",
+        "cardType": "spell",
+        "amount": 1
+      }
     },
     {
       "id": "flame_lance",
@@ -9493,6 +9503,11 @@
       "static": {
         "type": "spell-damage",
         "value": 3
+      },
+      "costMod": {
+        "scope": "friendly",
+        "cardType": "spell",
+        "amount": 1
       }
     },
     {
@@ -9896,7 +9911,12 @@
       "type": "creature",
       "attack": 2,
       "health": 3,
-      "tribe": "Beast"
+      "tribe": "Beast",
+      "costMod": {
+        "scope": "friendly",
+        "cardType": "creature",
+        "amount": 2
+      }
     },
     {
       "id": "emerald_skytalon",
@@ -10702,7 +10722,12 @@
       "type": "creature",
       "attack": 2,
       "health": 2,
-      "tribe": "Spirit Elemental"
+      "tribe": "Spirit Elemental",
+      "costMod": {
+        "scope": "all",
+        "cardType": "creature",
+        "amount": 1
+      }
     },
     {
       "id": "mechwarper",
@@ -10793,7 +10818,13 @@
       "type": "creature",
       "attack": 1,
       "health": 4,
-      "tribe": "Beast"
+      "tribe": "Beast",
+      "costMod": {
+        "scope": "all",
+        "cardType": "creature",
+        "keyword": "battlecry",
+        "amount": 2
+      }
     },
     {
       "id": "oasis_thrasher",
@@ -11087,7 +11118,12 @@
       "type": "creature",
       "attack": 3,
       "health": 1,
-      "tribe": "Beast"
+      "tribe": "Beast",
+      "costMod": {
+        "scope": "friendly",
+        "cardType": "artifact",
+        "amount": -1
+      }
     },
     {
       "id": "syr_joshua_syr_saxon",
@@ -11359,7 +11395,12 @@
       "keywords": [
         "divine_shield",
         "windfury"
-      ]
+      ],
+      "costMod": {
+        "scope": "friendly",
+        "cardType": "enchantment",
+        "amount": 1
+      }
     },
     {
       "id": "grey_slender_loris",
