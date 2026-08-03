@@ -807,8 +807,11 @@ function layoutTargets() {
 			ent.target.scale = 0.42;
 		});
 		// hero powers mirror the trap row on the left; quests sit outside them.
-		// The CLASS power lives in the hero panel as an orb, not on the table.
-		p.heroPowers.filter(c => c.id !== (p.heroClass || '') + '_power').forEach((card, i) => {
+		// The CLASS power (or a run-mode alt-power in slot 0) lives in the hero
+		// panel as an orb, not on the table — for every player, so an opponent's
+		// Duels/Heist/Tombs power doesn't render as a loose card on the field.
+		const orbPow = classPowerOf(pi);
+		p.heroPowers.filter(c => c !== orbPow && c.id !== (p.heroClass || '') + '_power').forEach((card, i) => {
 			const ent = entityFor(card);
 			seen.add(card.uid);
 			ent.target.pos = toWorld(-(TRAP_X + (i - 1) * TRAP_SPREAD), 0.05, off + TRAP_Z, pi);
@@ -941,7 +944,7 @@ function panelEl(pi) { return pi === HUMAN ? $('my-panel') : foePanelEls.get(pi)
 function classPowerOf(pi) {
 	const p = state.players[pi];
 	return p.heroPowers.find(c => c.id === (p.heroClass || '') + '_power')
-		|| ((heistRunMode || tombsRunMode || duelsRunMode) && pi === HUMAN ? p.heroPowers[0] : null) || null; // heist/tombs/duels alt powers live in slot 0
+		|| ((heistRunMode || tombsRunMode || duelsRunMode) ? p.heroPowers[0] : null) || null; // heist/tombs/duels alt powers live in slot 0 (for EVERY player — opponents included, so their orb renders instead of leaking onto the table)
 }
 
 function activateHeroPower(card, ev) {
