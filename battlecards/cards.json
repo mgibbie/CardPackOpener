@@ -50333,9 +50333,7 @@
         {
           "type": "summon",
           "count": 1,
-          "attack": 0,
-          "health": 7,
-          "name": "Doomsayer that destroys ALL creatures at the start of your turn"
+          "summonId": "doomsayer"
         }
       ]
     },
