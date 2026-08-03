@@ -682,6 +682,16 @@ register('refresh-friendly-attacks', ({ state, pi, target, source, enemies, scal
 	} while (false); // top-level `continue` = skip this effect (chain semantics)
 });
 
+register('refresh-self-attack', ({ state, pi, source }, e) => {
+	// Giant Sand Worm: "it may attack again" — grant this minion another attack this turn
+	if (source && !isDead(source) && source.zone === 'board') { source.attacksUsed = Math.max(0, (source.attacksUsed || 0) - (e.value || 1)); emit(state, { type: 'buff', uid: source.uid, attack: source.attack, hp: hp(source) }); }
+});
+
+register('refresh-hero-attack', ({ state, pi }, e) => {
+	// Gonk, the Raptor: your hero may attack again
+	const p = state.players[pi]; p.heroAttacksUsed = Math.max(0, (p.heroAttacksUsed || 0) - (e.value || 1));
+});
+
 
 register('readd-corrupted-free', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => {
 	do {

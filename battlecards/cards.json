@@ -68179,7 +68179,15 @@
       "set": "OG",
       "tribe": "Beast",
       "description": "Whenever this attacks and kills a creature, it may attack again.",
-      "attackAgainOnKill": true
+      "attackAgainOnKill": true,
+      "ongoing": {
+        "on": "self-kills-creature",
+        "effects": [
+          {
+            "type": "refresh-self-attack"
+          }
+        ]
+      }
     },
     {
       "id": "shifter_zerus",
@@ -71066,7 +71074,15 @@
       "rarity": "legendary",
       "set": "UNGORO",
       "tribe": "Beast",
-      "description": "After your opponent plays a creature, attack it."
+      "description": "After your opponent plays a creature, attack it.",
+      "ongoing": {
+        "on": "enemy-creature-played",
+        "effects": [
+          {
+            "type": "attack-played-minion"
+          }
+        ]
+      }
     },
     {
       "id": "primalfin_champion",
@@ -77721,7 +77737,15 @@
       "health": 6,
       "rarity": "legendary",
       "set": "TROLL",
-      "description": "After your hero attacks and kills a creature, it may attack again."
+      "description": "After your hero attacks and kills a creature, it may attack again.",
+      "ongoing": {
+        "on": "hero-kills-minion",
+        "effects": [
+          {
+            "type": "refresh-hero-attack"
+          }
+        ]
+      }
     },
     {
       "id": "janalai_the_dragonhawk",
