@@ -18,7 +18,7 @@ const ok = (l, c, extra) => { if (c) pass++; else { fail++; console.log('FAIL:',
 
 // --- registry contract ---
 {
-	ok('pilot + batch types registered (966 after the lose-random-stat handler)', registeredTypes().length === 966 && !!getEffectHandler('armor') && !!getEffectHandler('lose-random-stat'));
+	ok('pilot + batch types registered (967 after the conjure-from-pool handler)', registeredTypes().length === 967 && !!getEffectHandler('armor') && !!getEffectHandler('conjure-from-pool'));
 	ok('unknown types miss (the chain is fully retired — nothing else answers)', getEffectHandler('damage') !== undefined && getEffectHandler('no-such-type') === undefined);
 	let threw = null;
 	try { (await import('../../engine/effects/registry.js')).register('armor', () => {}); } catch (e) { threw = e.message; }

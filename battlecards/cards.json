@@ -11860,7 +11860,30 @@
       "type": "creature",
       "attack": 5,
       "health": 4,
-      "tribe": "Demon Spirit"
+      "tribe": "Demon Spirit",
+      "keywords": [
+        "poisonous",
+        "taunt",
+        "trample"
+      ],
+      "ongoing": {
+        "on": "turn-start",
+        "effects": [
+          {
+            "type": "conditional",
+            "if": {
+              "controlTribe": "Devil|Ogre|Horror"
+            },
+            "then": [],
+            "else": [
+              {
+                "type": "discard-random",
+                "count": 1
+              }
+            ]
+          }
+        ]
+      }
     },
     {
       "id": "scragnoth",
@@ -45300,7 +45323,23 @@
       "type": "creature",
       "attack": 4,
       "health": 12,
-      "tribe": "Dragon"
+      "tribe": "Dragon",
+      "ongoing": {
+        "on": "turn-end",
+        "effects": [
+          {
+            "type": "conjure-from-pool",
+            "ids": [
+              "dream",
+              "nightmare",
+              "laughing_sister",
+              "emerald_drake",
+              "ysera_awakens"
+            ],
+            "count": 2
+          }
+        ]
+      }
     },
     {
       "id": "onyxia_the_broodmother",
@@ -45485,7 +45524,17 @@
       "type": "creature",
       "attack": 0,
       "health": 3,
-      "tribe": "Totem"
+      "tribe": "Totem",
+      "ongoing": {
+        "on": "turn-end",
+        "effects": [
+          {
+            "type": "conjure-random",
+            "cardType": "creature",
+            "multiTribe": true
+          }
+        ]
+      }
     },
     {
       "id": "optimistic_ogre",

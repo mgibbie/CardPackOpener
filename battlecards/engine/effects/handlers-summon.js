@@ -254,6 +254,15 @@ register('summon-if-control', ({ state, pi, target, source, enemies, scaled, hm,
 });
 
 
+register('conjure-from-pool', ({ state, pi }, e) => {
+			// Ysera: add N random cards chosen from a fixed id pool to your hand (Dream cards)
+			const p = state.players[pi];
+			for (let n = 0; n < (e.count || 1) && p.hand.length < MAX_HAND && (e.ids || []).length; n++) {
+				const def = state.cardsById[e.ids[Math.floor(state.rng() * e.ids.length)]];
+				if (def) { const c = instantiate(def, pi); c.zone = 'hand'; p.hand.push(c); emit(state, { type: 'conjure', player: pi, card: c, color: null }); }
+			}
+});
+
 register('fill-hand-token', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => {
 			// Halazzi, the Lynx: fill your hand with a token
 			const p = state.players[pi];

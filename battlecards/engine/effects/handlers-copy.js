@@ -856,6 +856,7 @@ register('conjure-random', ({ state, pi, target, source, enemies, scaled, hm, pi
 			if (e.minCost != null) pool = pool.filter(d => (d.cost || 0) >= e.minCost); // Hexmarshal: a spell that costs (5) or more
 			if (e.nameIncludes) pool = pool.filter(d => (d.name || '').includes(e.nameIncludes)); // Yrel: Librams
 			if (e.school) pool = pool.filter(d => schoolOf(d) === e.school); // Galactic Crusader: Holy spells
+			if (e.multiTribe) pool = pool.filter(d => d.type === 'creature' && (d.tribe || '').split('/').filter(Boolean).length >= 2); // Tortotem: a creature with multiple creature types
 			if (e.tribe) pool = pool.filter(d => (d.tribe || '').includes(e.tribe));
 			if (e.rarity) pool = pool.filter(d => d.rarity === e.rarity); // Golden Monkey: Legendaries
 			if (e.requireRewind) pool = pool.filter(d => d.rewind > 0); // Time Machine: a random Rewind card
