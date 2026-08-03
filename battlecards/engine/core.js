@@ -1999,6 +1999,7 @@ export function playCard(state, pi, cardUid, target, choice, position, useAlt, k
 		p.minionsPlayedGame = (p.minionsPlayedGame || 0) + 1; // Zee's Might
 		emit(state, { type: 'magnetized', player: pi, uid: t.uid, name: card.name,
 			attack: t.attack, hp: hp(t) });
+		fireOngoing(state, pi, 'magnetized', { minion: t }); // Invent-o-Matic
 		recomputeAuras(state);
 	} else if (card.type === 'creature') {
 		card.zone = 'board';

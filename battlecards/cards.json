@@ -96657,6 +96657,23 @@
       "health": 5,
       "rarity": "legendary",
       "set": "REVENDRETH",
+      "ongoing": {
+        "on": "secret-revealed",
+        "if": {
+          "friendlySecret": true
+        },
+        "effects": [
+          {
+            "type": "install-random-secret",
+            "cardClass": "mage"
+          },
+          {
+            "type": "buff-self",
+            "attack": 2,
+            "health": 2
+          }
+        ]
+      },
       "description": "After a friendly Secret is revealed, cast a different Mage Secret and gain +2/+2."
     },
     {
@@ -103103,6 +103120,16 @@
       "rarity": "common",
       "set": "TITANS",
       "tribe": "Mech",
+      "ongoing": {
+        "on": "magnetized",
+        "effects": [
+          {
+            "type": "buff-magnetized",
+            "attack": 1,
+            "health": 1
+          }
+        ]
+      },
       "description": "Whenever you Magnetize a minion, give it +1/+1."
     },
     {
@@ -110878,6 +110905,14 @@
       "health": 4,
       "rarity": "rare",
       "set": "ISLAND_VACATION",
+      "ongoing": {
+        "on": "card-drawn",
+        "effects": [
+          {
+            "type": "make-drawn-temporary"
+          }
+        ]
+      },
       "description": "After ANY card is drawn, make it Temporary."
     },
     {

@@ -258,6 +258,34 @@ registerTrigger('copy-spell', (state, pi, e, ctx, triggering) => {
 });
 
 
+registerTrigger('buff-magnetized', (state, pi, e, ctx, triggering) => {
+	do { {
+				// Invent-o-Matic: whenever you Magnetize a minion, give IT +N/+N
+				const c = ctx.minion;
+				if (c && !isDead(c) && c.type !== 'location') {
+					c.attack = (c.attack || 0) + (e.attack || 1);
+					c.maxHealth = (c.maxHealth || 0) + (e.health || 1);
+					emit(state, { type: 'buff', uid: c.uid, attack: c.attack, hp: hp(c) });
+					recomputeAuras(state);
+				}
+				break;
+			}
+	} while (false); // `break` ends this effect, exactly like the old case break
+});
+
+
+registerTrigger('make-drawn-temporary', (state, pi, e, ctx, triggering) => {
+	do { {
+				// Clumsy Steward: after you draw a card, make it Temporary (discarded
+				// from hand at the end of your turn)
+				const c = ctx.card;
+				if (c) { c.temporary = true; emit(state, { type: 'temporary', player: pi, uid: c.uid, name: c.name }); }
+				break;
+			}
+	} while (false); // `break` ends this effect, exactly like the old case break
+});
+
+
 registerTrigger('even-target-stats', (state, pi, e, ctx, triggering) => {
 	do { {
 				// Pelagos: after you cast a spell on a friendly minion, set its Attack

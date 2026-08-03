@@ -62,6 +62,7 @@ export function ongoingCondOk(state, pi, cond, ctx) {
 	if (cond.playedBefore && !(subj && (state.players[pi].playedCountById?.[subj.id] || 0) >= 1)) return false; // Twisted Webweaver: a minion you've already played
 	if (cond.selfFullHealth && !(ctx.self && ctx.self.damage === 0)) return false; // Incensed Matriarch: only at full Health
 	if (cond.friendlyTarget && !(ctx.targetCreature && ctx.targetCreature.controller === pi)) return false; // Pelagos: a spell cast on a FRIENDLY minion
+	if (cond.friendlySecret && ctx.secretOwner !== pi) return false; // Orion, Mansion Manager: one of YOUR Secrets revealed
 	return true;
 }
 
@@ -138,13 +139,13 @@ export function fireSecrets(state, pi, trigger, ctx) {
 			toGraveyard(state, pi, card);
 			emit(state, { type: 'trapSprung', player: pi, card });
 			// paper Eaglehorn counts traps too
-			for (let s2 = 0; s2 < state.players.length; s2++) fireOngoing(state, s2, 'secret-revealed', {});
+			for (let s2 = 0; s2 < state.players.length; s2++) fireOngoing(state, s2, 'secret-revealed', { secretOwner: pi });
 		} else {
 			p.secrets = p.secrets.filter(s => s !== card);
 			toGraveyard(state, pi, card);
 			emit(state, { type: 'secretRevealed', player: pi, card });
 			// Eaglehorn Bow-style triggers watch every reveal
-			for (let s2 = 0; s2 < state.players.length; s2++) fireOngoing(state, s2, 'secret-revealed', {});
+			for (let s2 = 0; s2 < state.players.length; s2++) fireOngoing(state, s2, 'secret-revealed', { secretOwner: pi });
 		}
 		runSecretEffects(state, pi, sec.effects, ctx);
 	}
