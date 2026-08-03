@@ -46645,7 +46645,15 @@
       "description": "At the end of your turn, steal all cards that entered your opponent's hand during your turn.",
       "type": "creature",
       "attack": 2,
-      "health": 6
+      "health": 6,
+      "ongoing": {
+        "on": "turn-end",
+        "effects": [
+          {
+            "type": "steal-entered-hand"
+          }
+        ]
+      }
     },
     {
       "id": "scrappy_defender",
@@ -46703,7 +46711,15 @@
       "type": "creature",
       "attack": 0,
       "health": 3,
-      "tribe": "Mech"
+      "tribe": "Mech",
+      "ongoing": {
+        "on": "turn-start",
+        "effects": [
+          {
+            "type": "swap-self-with-enemy-hand"
+          }
+        ]
+      }
     },
     {
       "id": "specter_of_despair",
@@ -47443,6 +47459,23 @@
       "health": 3
     },
     {
+      "id": "larva",
+      "name": "Larva",
+      "type": "creature",
+      "cardClass": "neutral",
+      "cost": 1,
+      "rarity": "common",
+      "set": "hs",
+      "token": true,
+      "collectible": false,
+      "attack": 1,
+      "health": 1,
+      "tribe": "Zerg",
+      "transformInHand": true,
+      "transformInHandTribe": "Zerg",
+      "description": "Transforms into a random Zerg minion each turn while in your hand."
+    },
+    {
       "id": "hive_queen",
       "name": "Hive Queen",
       "cardClass": "death_knight__hunter__warlock__demon_hunter",
@@ -47453,7 +47486,16 @@
       "type": "creature",
       "attack": 2,
       "health": 5,
-      "tribe": "Zerg"
+      "tribe": "Zerg",
+      "ongoing": {
+        "on": "turn-end",
+        "effects": [
+          {
+            "type": "conjure-id",
+            "id": "larva"
+          }
+        ]
+      }
     },
     {
       "id": "mutalisk",

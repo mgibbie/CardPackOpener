@@ -1193,6 +1193,35 @@ register('torga-draw', ({ state, pi, target, source, enemies, scaled, hm, pickEn
 } });
 
 
+register('steal-entered-hand', ({ state, pi, enemies }, e) => {
+	// Rat Burglar: steal every card that entered an opponent's hand during your turn
+	const p = state.players[pi];
+	for (const o of enemies) {
+		const op = state.players[o];
+		for (const c of op.hand.filter(x => x._enteredTurn === state.turnNumber)) {
+			if (p.hand.length >= MAX_HAND) break;
+			op.hand = op.hand.filter(x => x !== c);
+			c.controller = pi; c.zone = 'hand';
+			p.hand.push(c);
+			emit(state, { type: 'conjure', player: pi, card: c, color: null });
+		}
+	}
+});
+
+register('swap-self-with-enemy-hand', ({ state, pi, source, enemies }, e) => {
+	// Alarm-o-Matic: swap this creature with a random creature in the opponent's hand
+	if (!source || isDead(source)) return;
+	const p = state.players[pi], foe = enemies[0]; if (foe == null) return;
+	const fp = state.players[foe];
+	const creatures = fp.hand.filter(c => c.type === 'creature');
+	if (!creatures.length) return;
+	const pick = creatures[Math.floor(state.rng() * creatures.length)];
+	p.board = p.board.filter(c => c !== source);
+	source.zone = 'hand'; source.controller = foe; fp.hand = fp.hand.filter(c => c !== pick); fp.hand.push(source);
+	emit(state, { type: 'conjure', player: foe, card: source, color: null });
+	summon(state, pi, state.cardsById[pick.id] || pick);
+});
+
 register('play-deck-top', ({ state, pi, source }, e) => {
 	// Ohn'ahra: play the top N cards from your deck (creatures summon, spells cast
 	// with a random legal target; other types are set aside).

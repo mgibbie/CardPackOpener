@@ -253,6 +253,7 @@ export function instantiate(def, controller) {
 		redirectHeroDamage: def.redirectHeroDamage || false, // Bolf Ramshield: takes your hero's damage
 		costReducePerTurn: def.costReducePerTurn || false,   // Nerubian Prophet: -1 cost each turn in hand
 		transformInHand: def.transformInHand || false,       // Shifter Zerus: transforms each turn in hand
+		transformInHandTribe: def.transformInHandTribe || null, // Hive Queen's Larva: only into a given tribe (Zerg)
 		summonOnDiscard: def.summonOnDiscard || false,       // Silverware Golem: summon it when discarded
 		returnBuffedOnDiscard: def.returnBuffedOnDiscard || false, // Clutchmother Zavas: +2/+2 and return
 		heroPowerHitsMinions: def.heroPowerHitsMinions || false, // Steamwheedle Sniper: Hero Power can target minions
@@ -659,6 +660,8 @@ export function emit(state, ev) {
 	state.events.push(ev);
 	// Abyssal Bassist: every weapon-equip path emits this — count them in one place
 	if (ev.type === 'weaponEquip' && state.players && state.players[ev.player]) state.players[ev.player].weaponsEquippedGame = (state.players[ev.player].weaponsEquippedGame || 0) + 1;
+	// Rat Burglar: stamp cards as they enter a hand, so we know which entered this turn
+	if ((ev.type === 'draw' || ev.type === 'conjure') && ev.card) ev.card._enteredTurn = state.turnNumber;
 }
 
 // ---------- zones ----------
@@ -4319,7 +4322,8 @@ export function endTurn(state) {
 		if (c.costReducePerTurn) c.cost = Math.max(0, (c.cost || 0) - 1);
 		if (c.transformInHand) {
 			const pool = Object.values(state.cardsById).filter(d => d.type === 'creature'
-				&& !d.token && d.collectible !== false && !d.companion && !d.commander && !(d.colors && d.colors.length));
+				&& !d.token && d.collectible !== false && !d.companion && !d.commander && !(d.colors && d.colors.length)
+				&& (!c.transformInHandTribe || (d.tribe || '').includes(c.transformInHandTribe))); // Hive Queen's Larva: a random Zerg
 			if (pool.length) { const rd = pool[Math.floor(state.rng() * pool.length)];
 				c.id = rd.id; c.name = rd.name; c.attack = rd.attack || 0; c.maxHealth = rd.health || 0;
 				c.cost = rd.cost || 0; c.keywords = [...(rd.keywords || [])]; c.tribe = rd.tribe;
