@@ -9556,7 +9556,12 @@
       "type": "creature",
       "attack": 2,
       "health": 4,
-      "tribe": "Mech"
+      "tribe": "Mech",
+      "keywords": [
+        "divine_shield",
+        "taunt"
+      ],
+      "magnetic": true
     },
     {
       "id": "argent_protector",
@@ -12644,7 +12649,11 @@
       "type": "creature",
       "attack": 3,
       "health": 1,
-      "tribe": "Mech"
+      "tribe": "Mech",
+      "keywords": [
+        "reborn"
+      ],
+      "magnetic": true
     },
     {
       "id": "mantle_shaper",
@@ -45856,7 +45865,10 @@
       "description": "Stealth Each turn this is in your hand, swap its Attack & Health.",
       "type": "creature",
       "attack": 2,
-      "health": 5
+      "health": 5,
+      "keywords": [
+        "stealth"
+      ]
     },
     {
       "id": "pumpkin_peasant",
@@ -45868,7 +45880,10 @@
       "description": "Lifesteal Each turn this is in your hand, swap its Attack & Health.",
       "type": "creature",
       "attack": 2,
-      "health": 4
+      "health": 4,
+      "keywords": [
+        "lifesteal"
+      ]
     },
     {
       "id": "gilnean_royal_guard",
@@ -45880,7 +45895,11 @@
       "description": "Divine Shield, Rush Each turn this is in your hand, swap its Attack & Health.",
       "type": "creature",
       "attack": 3,
-      "health": 8
+      "health": 8,
+      "keywords": [
+        "divine_shield",
+        "rush"
+      ]
     },
     {
       "id": "swift_messenger",
@@ -45892,7 +45911,10 @@
       "description": "Rush Each turn this is in your hand, swap its Attack & Health.",
       "type": "creature",
       "attack": 2,
-      "health": 6
+      "health": 6,
+      "keywords": [
+        "rush"
+      ]
     },
     {
       "id": "spellshifter",
@@ -46730,7 +46752,10 @@
       "type": "creature",
       "attack": 5,
       "health": 5,
-      "tribe": "Demon"
+      "tribe": "Demon",
+      "keywords": [
+        "rush"
+      ]
     },
     {
       "id": "vexallus",
@@ -46939,7 +46964,11 @@
       "description": "Divine Shield, Taunt Costs (1) less for each spell you've cast on friendly characters this game.",
       "type": "creature",
       "attack": 4,
-      "health": 5
+      "health": 5,
+      "keywords": [
+        "divine_shield",
+        "taunt"
+      ]
     },
     {
       "id": "flesh_giant",
@@ -47385,7 +47414,10 @@
       "type": "creature",
       "attack": 4,
       "health": 7,
-      "tribe": "Naga"
+      "tribe": "Naga",
+      "keywords": [
+        "lifesteal"
+      ]
     },
     {
       "id": "staff_of_the_endbringer",
@@ -47825,7 +47857,11 @@
       "description": "Magnetic, Rush Can Magnetize to Mechs & Beasts.",
       "type": "creature",
       "attack": 3,
-      "health": 1
+      "health": 1,
+      "keywords": [
+        "rush"
+      ],
+      "magnetic": true
     },
     {
       "id": "chained_guardian",
@@ -47837,7 +47873,11 @@
       "description": "Rush, Reborn Costs (1) less for each Plague shuffled into the enemy deck this game.",
       "type": "creature",
       "attack": 8,
-      "health": 5
+      "health": 5,
+      "keywords": [
+        "rush",
+        "reborn"
+      ]
     },
     {
       "id": "imprisoned_horror",
@@ -47924,7 +47964,10 @@
       "description": "Titan Taunt. Your creatures can't take more than 2 damage at a time.",
       "type": "creature",
       "attack": 1,
-      "health": 8
+      "health": 8,
+      "keywords": [
+        "taunt"
+      ]
     },
     {
       "id": "argus_the_emerald_star",
@@ -47949,7 +47992,8 @@
       "type": "creature",
       "attack": 3,
       "health": 4,
-      "tribe": "Mech/Beast"
+      "tribe": "Mech/Beast",
+      "magnetic": true
     },
     {
       "id": "imposing_anubisath",
@@ -48112,7 +48156,10 @@
       "description": "Taunt At the start of your turn, shuffle this creature into your deck.",
       "type": "creature",
       "attack": 3,
-      "health": 10
+      "health": 10,
+      "keywords": [
+        "taunt"
+      ]
     },
     {
       "id": "pterrordax_hatchling",
@@ -48374,7 +48421,11 @@
       "type": "creature",
       "attack": 16,
       "health": 16,
-      "tribe": "Elemental/Beast"
+      "tribe": "Elemental/Beast",
+      "keywords": [
+        "rush",
+        "taunt"
+      ]
     },
     {
       "id": "antique_flinger",
