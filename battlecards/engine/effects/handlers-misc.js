@@ -301,9 +301,19 @@ register('set-next-spell-double', ({ state, pi, target, source, enemies, scaled,
 
 
 register('make-dormant', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => {
-			// Maiev Shadowsong: send a chosen minion Dormant
-			const t = chosenCreature();
-			if (t) { t.dormantLeft = e.value || 2; emit(state, { type: 'dormant', player: t.controller, uid: t.uid, turns: t.dormantLeft }); }
+			// Maiev Shadowsong: send a chosen minion Dormant. Sunstruck Henchman:
+			// target 'self' with a `chance` (50% to fall asleep each turn).
+			if (e.chance != null && state.rng() >= e.chance) return;
+			const t = e.target === 'self' ? source : chosenCreature();
+			if (t && !isDead(t)) { t.dormantLeft = e.value || 2; emit(state, { type: 'dormant', player: t.controller, uid: t.uid, turns: t.dormantLeft }); }
+});
+
+register('lose-random-stat', ({ state, pi, source }, e) => {
+			// Static Waveform: lose 1 Attack or Health (chosen randomly)
+			if (!source || isDead(source)) return;
+			if (state.rng() < 0.5) source.attack = Math.max(0, (source.attack || 0) - (e.value || 1));
+			else source.maxHealth = Math.max(1, (source.maxHealth || 0) - (e.value || 1));
+			emit(state, { type: 'buff', uid: source.uid, attack: source.attack, hp: hp(source) });
 });
 
 
@@ -2413,7 +2423,8 @@ register('cast-random-spell', ({ state, pi, target, source, enemies, scaled, hm,
 			// Servant of Yogg-Saron / Yogg-Saron: cast random spells with random targets
 			const times = e.perSpellsCast ? (state.players[pi].spellsPlayedTotal || 0) : (e.count || 1);
 			for (let n = 0; n < times && !state.over; n++) {
-				const pool = e.ids ? e.ids.map(id => state.cardsById[id]).filter(d => d && isSpellType(d)) // Idols of Elune: a spell you've cast this turn
+				const fromIds = e.castThisTurn ? (state.players[pi].cardsPlayedThisTurnIds || []) : e.ids; // Archmage Vargoth / Creature of the Sacred Cave: a spell you've cast this turn
+				const pool = fromIds ? fromIds.map(id => state.cardsById[id]).filter(d => d && isSpellType(d) && (e.school == null || schoolOf(d) === e.school))
 					: Object.values(state.cardsById).filter(d => isSpellType(d) && !d.token && d.collectible !== false
 					&& !(d.colors && d.colors.length) && !d.choices && !d.xSpell && !d.counterSpell
 					&& (e.cardClass == null || (d.cardClass || 'neutral') === e.cardClass) // Solarian Prime: Mage spells

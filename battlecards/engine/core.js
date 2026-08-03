@@ -4331,6 +4331,7 @@ export function endTurn(state) {
 	// Nat, the Darkfisher: an opponent's turn began — their controllers' triggers fire
 	for (const o of opponentsOf(state, state.current)) fireOngoing(state, o, 'enemy-turn-start', { drawer: state.current });
 	fireOngoing(state, state.current, 'turn-start');
+	for (let s2 = 0; s2 < state.players.length; s2++) fireOngoing(state, s2, 'every-turn-start', {}); // Static Waveform: at the start of EACH turn
 	sweepDeaths(state);
 	if (state.over) return;
 	// Chronochiller: you no longer draw at the start of your turn

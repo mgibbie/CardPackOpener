@@ -45362,7 +45362,17 @@
       "description": "At the end of your turn, cast a spell you've cast this turn (targets are random).",
       "type": "creature",
       "attack": 2,
-      "health": 6
+      "health": 6,
+      "ongoing": {
+        "on": "turn-end",
+        "effects": [
+          {
+            "type": "cast-random-spell",
+            "castThisTurn": true,
+            "count": 1
+          }
+        ]
+      }
     },
     {
       "id": "mysterious_blade",
@@ -45893,7 +45903,16 @@
       "type": "creature",
       "attack": 5,
       "health": 6,
-      "tribe": "Elemental"
+      "tribe": "Elemental",
+      "ongoing": {
+        "on": "every-turn-start",
+        "effects": [
+          {
+            "type": "lose-random-stat",
+            "value": 1
+          }
+        ]
+      }
     },
     {
       "id": "funkfin",
@@ -47875,7 +47894,18 @@
       "type": "creature",
       "attack": 2,
       "health": 5,
-      "tribe": "Beast"
+      "tribe": "Beast",
+      "ongoing": {
+        "on": "turn-end",
+        "effects": [
+          {
+            "type": "cast-random-spell",
+            "castThisTurn": true,
+            "school": "Holy",
+            "count": 1
+          }
+        ]
+      }
     },
     {
       "id": "reanimated_pterrordax",
@@ -48930,7 +48960,18 @@
       "description": "At the start of your turn, this has a 50% chance to fall asleep.",
       "type": "creature",
       "attack": 6,
-      "health": 5
+      "health": 5,
+      "ongoing": {
+        "on": "turn-start",
+        "effects": [
+          {
+            "type": "make-dormant",
+            "target": "self",
+            "chance": 0.5,
+            "value": 1
+          }
+        ]
+      }
     },
     {
       "id": "earthquake",
