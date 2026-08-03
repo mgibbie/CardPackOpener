@@ -44376,7 +44376,12 @@
       "type": "creature",
       "attack": 8,
       "health": 8,
-      "tribe": "Mech/Beast"
+      "tribe": "Mech/Beast",
+      "selfCost": {
+        "per": "tribe-died-game",
+        "tribe": "Treant",
+        "amount": -1
+      }
     },
     {
       "id": "whizbang_the_wonderful",
@@ -47189,7 +47194,11 @@
       "keywords": [
         "divine_shield",
         "taunt"
-      ]
+      ],
+      "selfCost": {
+        "per": "spells-on-friendly-game",
+        "amount": -1
+      }
     },
     {
       "id": "flesh_giant",
@@ -110340,7 +110349,13 @@
       "rarity": "rare",
       "set": "ISLAND_VACATION",
       "tribe": "Pirate",
-      "description": "Enemy cards that didn't start in their deck cost (2) more."
+      "description": "Enemy cards that didn't start in their deck cost (2) more.",
+      "costMod": {
+        "scope": "enemies",
+        "cardType": "all",
+        "foreignOnly": true,
+        "amount": 2
+      }
     },
     {
       "id": "dreamplanner_zephrys",

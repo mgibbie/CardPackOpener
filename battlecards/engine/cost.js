@@ -114,6 +114,10 @@ export function effectiveCost(state, pi, card) {
 			n = p.outcastPlayedGame || 0; // Vengeful Walloper
 		} else if (card.selfCost.per === 'secrets-played-game') {
 			n = p.secretsPlayedGame || 0; // Kabal Crystal Runner
+		} else if (card.selfCost.per === 'tribe-died-game') {
+			n = (p.tribeDiedGame || {})[card.selfCost.tribe] || 0; // Mulchmuncher
+		} else if (card.selfCost.per === 'spells-on-friendly-game') {
+			n = (p.spellsOnFriendly || []).length; // Devout Pupil
 		}
 		c += card.selfCost.amount * n;
 	}
@@ -150,6 +154,7 @@ export function effectiveCost(state, pi, card) {
 			if (!costTypeMatches(card, m.cardType)) continue;
 			if (m.tribe && !(card.tribe || '').includes(m.tribe)) continue;
 			if (m.keyword && !(card.keywords || []).includes(m.keyword)) continue; // Nerub'ar Weblord: Battlecry creatures cost more
+			if (m.foreignOnly && card.fromDeck) continue; // Customs Enforcer: cards that didn't start in their deck
 			if (m.minCost != null && card.cost < m.minCost) continue;
 			// "the first <X> you play each turn": skip once a card matching this aura's
 			// filter (type + tribe + keyword) has already been played this turn.
