@@ -9046,7 +9046,11 @@
       "tribe": "Undead Beast",
       "keywords": [
         "taunt"
-      ]
+      ],
+      "selfCost": {
+        "per": "armor",
+        "amount": -1
+      }
     },
     {
       "id": "enchanted_raven",
@@ -9407,7 +9411,11 @@
       "type": "creature",
       "attack": 6,
       "health": 6,
-      "tribe": "Worgen Wizard"
+      "tribe": "Worgen Wizard",
+      "selfCost": {
+        "per": "secrets-controlled",
+        "amount": -3
+      }
     },
     {
       "id": "cosmic_anomaly",
@@ -9473,7 +9481,11 @@
       "type": "creature",
       "attack": 5,
       "health": 5,
-      "tribe": "Goblin Sorcerer"
+      "tribe": "Goblin Sorcerer",
+      "selfCost": {
+        "per": "frozen-enemies",
+        "amount": -2
+      }
     },
     {
       "id": "game_master",
@@ -12412,7 +12424,12 @@
       "type": "creature",
       "attack": 8,
       "health": 8,
-      "tribe": "Human Wizard Citizen"
+      "tribe": "Human Wizard Citizen",
+      "selfCost": {
+        "per": "tribe-controlled",
+        "tribe": "Beast",
+        "amount": -1
+      }
     },
     {
       "id": "escaping_trogg",
@@ -12589,7 +12606,12 @@
         "rush",
         "lifesteal",
         "taunt"
-      ]
+      ],
+      "selfCost": {
+        "per": "tribe-in-graveyard",
+        "tribe": "Dragon",
+        "amount": -1
+      }
     },
     {
       "id": "fye_sunrise_guardian",
@@ -12613,7 +12635,12 @@
         "rush",
         "lifesteal",
         "taunt"
-      ]
+      ],
+      "selfCost": {
+        "per": "tribe-in-graveyard",
+        "tribe": "Dragon",
+        "amount": -1
+      }
     },
     {
       "id": "ashbringer",
@@ -43851,7 +43878,12 @@
       "type": "creature",
       "attack": 4,
       "health": 6,
-      "tribe": "Pirate"
+      "tribe": "Pirate",
+      "selfCost": {
+        "per": "tribe-controlled",
+        "tribe": "Pirate",
+        "amount": -1
+      }
     },
     {
       "id": "mogor_s_champion",
@@ -44332,7 +44364,11 @@
       "description": "Rush Costs (1) less for each damaged creature.",
       "type": "creature",
       "attack": 6,
-      "health": 8
+      "health": 8,
+      "selfCost": {
+        "per": "damaged-creatures",
+        "amount": -1
+      }
     },
     {
       "id": "kael_thas_sunstrider",
@@ -44766,7 +44802,11 @@
       "type": "creature",
       "attack": 8,
       "health": 8,
-      "tribe": "Mech"
+      "tribe": "Mech",
+      "selfCost": {
+        "per": "enemy-hand-size",
+        "amount": -1
+      }
     },
     {
       "id": "snowfury_giant",
@@ -45297,7 +45337,11 @@
       "type": "creature",
       "attack": 5,
       "health": 5,
-      "tribe": "Dragon"
+      "tribe": "Dragon",
+      "selfCost": {
+        "per": "unique-tribes",
+        "amount": -1
+      }
     },
     {
       "id": "circus_amalgam",
@@ -45788,7 +45832,11 @@
       "type": "creature",
       "attack": 5,
       "health": 6,
-      "tribe": "Demon"
+      "tribe": "Demon",
+      "selfCost": {
+        "per": "enemy-creatures",
+        "amount": -1
+      }
     },
     {
       "id": "red_giant",
@@ -47575,7 +47623,11 @@
       "description": "Taunt Costs (1) less for each enemy creature.",
       "type": "creature",
       "attack": 2,
-      "health": 7
+      "health": 7,
+      "selfCost": {
+        "per": "enemy-creatures",
+        "amount": -1
+      }
     },
     {
       "id": "mosh_ogg_announcer",
@@ -48323,7 +48375,11 @@
       "description": "Rush.\nCosts (1) less for each creature on the battlefield.",
       "type": "creature",
       "attack": 3,
-      "health": 4
+      "health": 4,
+      "selfCost": {
+        "per": "all-creatures",
+        "amount": -1
+      }
     },
     {
       "id": "weaponized_wasp",

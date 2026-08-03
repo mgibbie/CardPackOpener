@@ -63,6 +63,27 @@ export function effectiveCost(state, pi, card) {
 			n = p.cardsPlayedThisTurn || 0; // Everburning Phoenix: cheaper per card played this turn
 		} else if (card.selfCost.per === 'last-card-cost') {
 			n = p.lastCardCost || 0; // Gronn Giant: reduced by the Cost of the last card you played
+		} else if (card.selfCost.per === 'armor') {
+			n = p.armor || 0; // Crypt Keeper
+		} else if (card.selfCost.per === 'secrets-controlled') {
+			n = (p.secrets || []).length; // Contract Conjurer
+		} else if (card.selfCost.per === 'frozen-enemies') {
+			for (let s = 0; s < state.players.length; s++) if (s !== pi) n += state.players[s].board.filter(x => !isDead(x) && x.frozen).length; // Floecaster
+		} else if (card.selfCost.per === 'tribe-controlled') {
+			n = p.board.filter(x => !isDead(x) && x.type === 'creature' && (x.tribe || '').includes(card.selfCost.tribe)).length; // Curious Outsider / Skycap'n Kragg
+		} else if (card.selfCost.per === 'enemy-creatures') {
+			for (let s = 0; s < state.players.length; s++) if (s !== pi) n += state.players[s].board.filter(x => !isDead(x) && x.type === 'creature').length; // Eredar Brute / Rabble Bouncer
+		} else if (card.selfCost.per === 'damaged-creatures') {
+			for (const pl of state.players) n += pl.board.filter(x => !isDead(x) && x.type === 'creature' && x.damage > 0).length; // Bloodboil Brute
+		} else if (card.selfCost.per === 'enemy-hand-size') {
+			for (let s = 0; s < state.players.length; s++) if (s !== pi) n += state.players[s].hand.length; // Clockwork Giant
+		} else if (card.selfCost.per === 'all-creatures') {
+			for (const pl of state.players) n += pl.board.filter(x => !isDead(x) && x.type === 'creature').length; // Mogu Fleshshaper
+		} else if (card.selfCost.per === 'tribe-in-graveyard') {
+			n = (p.graveyard || []).filter(x => ((state.cardsById[x.id] || x).tribe || '').includes(card.selfCost.tribe)).length; // Fye, the Setting Sun
+		} else if (card.selfCost.per === 'unique-tribes') {
+			const counts = {}; for (const x of p.board) if (!isDead(x) && x.type === 'creature') for (const t of (x.tribe || '').split('/').filter(Boolean)) counts[t] = (counts[t] || 0) + 1;
+			n = p.board.filter(x => !isDead(x) && x.type === 'creature' && (x.tribe || '').split('/').filter(Boolean).some(t => counts[t] === 1)).length; // Tent Trasher: friendly minions with a unique type
 		}
 		c += card.selfCost.amount * n;
 	}
