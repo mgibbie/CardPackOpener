@@ -8725,6 +8725,11 @@
         "blood": 2,
         "frost": 0,
         "unholy": 0
+      },
+      "altCost": {
+        "label": "Life",
+        "life": 3,
+        "forcedIf": "healed-this-turn"
       }
     },
     {
@@ -46516,7 +46521,12 @@
       "description": "Costs Health instead of Mana.",
       "type": "creature",
       "attack": 2,
-      "health": 2
+      "health": 2,
+      "altCost": {
+        "label": "Health",
+        "life": 5,
+        "forced": true
+      }
     },
     {
       "id": "remixed_musician",
@@ -47607,7 +47617,12 @@
       "type": "creature",
       "attack": 4,
       "health": 3,
-      "tribe": "Undead/Beast"
+      "tribe": "Undead/Beast",
+      "altCost": {
+        "label": "Corpses",
+        "corpses": 5,
+        "forced": true
+      }
     },
     {
       "id": "titanographer_osk",

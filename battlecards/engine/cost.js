@@ -250,6 +250,7 @@ export function effectiveCost(state, pi, card) {
 	if (p.leftmostDiscount && p.hand.length && p.hand[0] === card) c = Math.max(0, c - p.leftmostDiscount); // Emerald Goggles: the left-most hand card
 	if (p.robesHalf) c = Math.ceil(c / 2); // Robes of Gaudiness: cards cost half
 	if (p.spellsCostHealth && isSpellType(card)) return 0; // Elixir of Vile: paid in Health at play time
+	if (card.altCost && (card.altCost.forced || (card.altCost.forcedIf === 'healed-this-turn' && p.healedThisTurn))) return 0; // Blood Treant / Reanimated Pterrordax / Death Metal Knight: Costs Health/Corpses instead of Mana
 	if (p.agamagganNext) return 0; // Agamaggan: the opponent pays in Health
 	if (p.warlocNext && (card.tribe || '').includes('Murloc') && (card.cost || 0) <= 3) return 0; // Warloc: paid in your Health
 	if (p.nextCardCorpses && (p.corpses || 0) >= c) return 0; // Exarch Maladaar: the next card costs Corpses instead

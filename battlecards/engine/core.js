@@ -1552,14 +1552,25 @@ export function canPayAlt(state, pi, card) {
 		if (a.require.land && !p.lands.some(l => (l.colors || []).includes(a.require.land))) return false;
 		if (a.require.notYourTurn && state.current === pi) return false;
 	}
+	if (a.forcedIf === 'healed-this-turn' && !p.healedThisTurn) return false; // Death Metal Knight: only a Life cost once you've gained Life this turn
 	if (a.life && p.life <= a.life) return false; // won't pay life you can't survive
+	if (a.corpses && (p.corpses || 0) < a.corpses) return false; // Reanimated Pterrordax: Costs Corpses instead of Mana
 	if (a.sacrificeLand && landsOfColor(p, a.sacrificeLand.color).length < a.sacrificeLand.count) return false;
 	if (a.exileFromHand && p.hand.filter(c => c !== card && (c.colors || []).includes(a.exileFromHand.color)).length < a.exileFromHand.count) return false;
 	return true;
 }
+// "Costs Health/Corpses INSTEAD of Mana" — pay the alt no matter what (never
+// mana). forcedIf gates it on a condition (Death Metal Knight: gained Life this turn).
+export function altForced(state, pi, card) {
+	const a = card.altCost; if (!a) return false;
+	if (a.forced) return true;
+	if (a.forcedIf === 'healed-this-turn') return !!state.players[pi].healedThisTurn;
+	return false;
+}
 function payAlt(state, pi, card) {
 	const a = card.altCost, p = state.players[pi];
 	if (a.life) { p.life -= a.life; emit(state, { type: 'lifePaid', player: pi, amount: a.life, life: p.life }); }
+	if (a.corpses) { spendCorpses(state, pi, a.corpses); emit(state, { type: 'corpses', player: pi, corpses: p.corpses }); }
 	if (a.sacrificeLand) for (let k = 0; k < a.sacrificeLand.count; k++) {
 		const idx = p.lands.findIndex(l => (l.colors || []).includes(a.sacrificeLand.color));
 		if (idx >= 0) { const [land] = p.lands.splice(idx, 1); emit(state, { type: 'landSacrificed', player: pi, card: land }); }
@@ -1753,6 +1764,7 @@ export function canPlay(state, pi, card) {
 	if (card.type === 'instant') { if (!hasPriority(state, pi)) return false; }
 	else if (!(state.current === pi && state.priority == null && state.stack.length === 0)) return false;
 	if (availableMana(state.players[pi]) < effectiveCost(state, pi, card) && !(card.altCost && canPayAlt(state, pi, card))) return false;
+	if (altForced(state, pi, card) && !canPayAlt(state, pi, card)) return false; // "Costs Health/Corpses instead of Mana": you must be able to pay it
 	if (state.players[pi].robesTwoCards && card.type !== 'instant' && (state.players[pi].cardsPlayedThisTurn || 0) >= 2) return false; // Robes of Gaudiness: only two cards a turn
 	{ const pb = state.players[pi].parityBlock; if (pb && ((card.cost % 2 === 1 ? 'odd' : 'even') === pb)) return false; }
 	if (card.type === 'secret') {
@@ -1870,8 +1882,8 @@ export function playCard(state, pi, cardUid, target, choice, position, useAlt, k
 	if (kicked && card.kicker && availableMana(p) >= playedCost + card.kicker.cost) {
 		card._kicked = true; // paid the base cost + the kicker
 		spendMana(p, playedCost + card.kicker.cost);
-	} else if (card.altCost && canPayAlt(state, pi, card) && (useAlt || availableMana(p) < playedCost)) {
-		payAlt(state, pi, card); // paid the alternative cost instead of mana (chosen, or forced when mana is short)
+	} else if (card.altCost && canPayAlt(state, pi, card) && (useAlt || availableMana(p) < playedCost || altForced(state, pi, card))) {
+		payAlt(state, pi, card); // paid the alternative cost instead of mana (chosen, forced when mana is short, or "instead of Mana" cards)
 	} else if (card.xSpell) {
 		// X-spells drink every remaining point; X = what's left after the base cost
 		card.xValue = Math.max(0, availableMana(p) - playedCost);
