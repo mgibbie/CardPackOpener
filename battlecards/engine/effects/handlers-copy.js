@@ -343,6 +343,22 @@ register('copy-hand-school-spell', ({ state, pi, target, source, enemies, scaled
 } });
 
 
+register('transform-lowest-hand-spell', ({ state, pi }, e) => {
+	// Primordial Acolyte: transform the lowest-Cost spell in your hand into a random spell that costs (delta) more
+	const p = state.players[pi];
+	const spells = p.hand.filter(c => isSpellType(c));
+	if (!spells.length) return;
+	const lowest = spells.reduce((m, c) => ((c.cost || 0) < (m.cost || 0) ? c : m), spells[0]);
+	const targetCost = (lowest.cost || 0) + (e.delta || 1);
+	const pool = Object.values(state.cardsById).filter(d => isSpellType(d) && !d.token && d.collectible !== false && !(d.colors && d.colors.length) && !d.choices && (d.cost || 0) === targetCost);
+	if (pool.length) {
+		const morph = instantiate(pool[Math.floor(state.rng() * pool.length)], pi);
+		morph.uid = lowest.uid; morph.zone = 'hand';
+		p.hand[p.hand.indexOf(lowest)] = morph;
+		emit(state, { type: 'conjure', player: pi, card: morph, color: null });
+	}
+});
+
 register('transform-random-enemy-hand-minion', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => { {
 			// Plaguespreader: transform a random minion in the opponent's hand into a copy of a card
 			const foe = enemies[0];

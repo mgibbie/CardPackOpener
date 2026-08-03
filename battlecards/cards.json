@@ -11798,7 +11798,16 @@
       "tribe": "Mandran Sorcerer",
       "keywords": [
         "divine_shield"
-      ]
+      ],
+      "ongoing": {
+        "on": "turn-end",
+        "effects": [
+          {
+            "type": "transform-lowest-hand-spell",
+            "delta": 1
+          }
+        ]
+      }
     },
     {
       "id": "marek_devious_divebomber",
@@ -47173,6 +47182,20 @@
       ]
     },
     {
+      "id": "the_ancient_one",
+      "name": "The Ancient One",
+      "type": "creature",
+      "cardClass": "neutral",
+      "cost": 12,
+      "rarity": "legendary",
+      "set": "hs",
+      "token": true,
+      "collectible": false,
+      "attack": 30,
+      "health": 30,
+      "description": "The two become one."
+    },
+    {
       "id": "blood_of_the_ancient_one",
       "name": "Blood of The Ancient One",
       "cardClass": "neutral",
@@ -47182,7 +47205,16 @@
       "description": "If you control two of these at the end of your turn, merge them into 'The Ancient One'.",
       "type": "creature",
       "attack": 9,
-      "health": 9
+      "health": 9,
+      "ongoing": {
+        "on": "turn-end",
+        "effects": [
+          {
+            "type": "merge-if-two",
+            "id": "the_ancient_one"
+          }
+        ]
+      }
     },
     {
       "id": "validated_doomsayer",

@@ -254,6 +254,19 @@ register('summon-if-control', ({ state, pi, target, source, enemies, scaled, hm,
 });
 
 
+register('merge-if-two', ({ state, pi, source }, e) => {
+			// Blood of the Ancient One: if you control two of these at end of turn, merge into a big token
+			if (!source || isDead(source)) return;
+			const p = state.players[pi];
+			const copies = p.board.filter(c => c.id === source.id && !isDead(c));
+			if (copies.length >= 2) {
+				p.board = p.board.filter(c => c !== copies[0] && c !== copies[1]);
+				copies[0].zone = copies[1].zone = 'gone';
+				const def = state.cardsById[e.id];
+				if (def) summon(state, pi, def);
+			}
+});
+
 register('conjure-from-pool', ({ state, pi }, e) => {
 			// Ysera: add N random cards chosen from a fixed id pool to your hand (Dream cards)
 			const p = state.players[pi];
