@@ -11362,19 +11362,6 @@
       ]
     },
     {
-      "id": "blightwing_whelp",
-      "name": "Blightwing Whelp",
-      "cardClass": "neutral",
-      "cost": 3,
-      "rarity": "uncommon",
-      "set": "paper",
-      "description": "Poisonous & Windfury.",
-      "type": "creature",
-      "attack": 2,
-      "health": 2,
-      "tribe": "Phyrexian Demon"
-    },
-    {
       "id": "grey_slender_loris",
       "name": "Grey Slender Loris",
       "cardClass": "neutral",
@@ -11801,32 +11788,6 @@
       "attack": 3,
       "health": 5,
       "tribe": "Pandaren Samurai"
-    },
-    {
-      "id": "underbridge_warlock",
-      "name": "Underbridge Warlock",
-      "cardClass": "neutral",
-      "cost": 5,
-      "rarity": "epic",
-      "set": "paper",
-      "description": "Deathtouch.\nAt the end of your turn, each opponent loses 5 Life.",
-      "type": "creature",
-      "attack": 5,
-      "health": 4,
-      "tribe": "Ogre Warlock",
-      "keywords": [
-        "deathtouch"
-      ],
-      "ongoing": {
-        "on": "turn-end",
-        "effects": [
-          {
-            "type": "damage",
-            "value": 5,
-            "target": "enemy-heroes"
-          }
-        ]
-      }
     },
     {
       "id": "patient_zero",

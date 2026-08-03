@@ -65,6 +65,7 @@ function autoplay(state, rng, actions) {
 	// applyTreasures, one of each kind the switch handles via the setup APIs
 	const p = state.players[0];
 	E.applyHeroMods(state, 0, { life: p.life * 2, maxLife: p.life * 2 }); // potion_of_vitality
+	const manaBefore = p.mana.max; // createGame may seed a start-of-game mana ramp from the boss's random default deck — assert the delta, not a fixed total
 	E.addManaCrystal(state, 0);                                          // crystal_gem
 	E.drawCards(state, 0, 2);                                            // small_backpacks
 	E.grantEmblem(state, 0, { id: 'captured_flag', name: Dungeon.TREASURES.captured_flag.name, description: Dungeon.TREASURES.captured_flag.text, aura: { attack: 1, health: 1 } });
@@ -72,7 +73,7 @@ function autoplay(state, rng, actions) {
 	E.applyHeroMods(state, 0, { deathrattlesTwice: true });              // totem_of_the_dead
 	E.capHeroPowerCost(state, 0, 1);                                     // justicars_ring
 	ok('dungeon boot: vitals + passives + treasures applied', state.players[1].life === runHP
-		&& p.life === runHP * 2 && p.mana.max === 2 && p.emblems.length === 2
+		&& p.life === runHP * 2 && p.mana.max === manaBefore + 1 && p.emblems.length === 2
 		&& p.heroPowers.every(h => h.power.cost <= 1) && p.deathrattlesTwice === true);
 	ok('dungeon boot: validator clean', validateGameState(state).length === 0, validateGameState(state).join(' | '));
 	ok('dungeon boot: spell-damage treasure counts', E.staticValue(p, 'spell-damage') === 3);
