@@ -59295,11 +59295,11 @@
       "keywords": [
         "battlecry"
       ],
-      "description": "Battlecry: Tap an enemy creature (it can't attack next turn).",
+      "description": "Battlecry: Freeze target creature.",
       "effects": [
         {
           "type": "freeze",
-          "target": "enemy-creature"
+          "target": "creature"
         }
       ]
     },
