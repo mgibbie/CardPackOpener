@@ -1193,6 +1193,38 @@ register('torga-draw', ({ state, pi, target, source, enemies, scaled, hm, pickEn
 } });
 
 
+register('play-deck-top', ({ state, pi, source }, e) => {
+	// Ohn'ahra: play the top N cards from your deck (creatures summon, spells cast
+	// with a random legal target; other types are set aside).
+	const p = state.players[pi];
+	for (let n = 0; n < (e.count || 3) && !state.over; n++) {
+		const id = p.deck.pop(); if (!id) break;
+		const def = state.cardsById[id]; if (!def) { n--; continue; }
+		if (def.type === 'creature') { summon(state, pi, def); }
+		else if (isSpellType(def)) {
+			const spell = instantiate(def, pi);
+			const spec = targetSpec(state, pi, spell, null);
+			let tgt = null; if (spec) { const legal = legalTargets(state, pi, spec); tgt = legal.length ? legal[Math.floor(state.rng() * legal.length)] : null; }
+			emit(state, { type: 'conjure', player: pi, card: spell, color: null });
+			runSpell(state, pi, spell, tgt, null);
+		}
+		sweepDeaths(state);
+	}
+});
+
+register('each-draws-spell', ({ state }, e) => {
+	// Subterfuge Swindler: each player draws a spell (from their own deck)
+	for (let s = 0; s < state.players.length; s++) {
+		const p = state.players[s]; if (p.eliminated || p.hand.length >= MAX_HAND) continue;
+		const idxs = p.deck.map((id, i) => [id, i]).filter(([id]) => { const d = state.cardsById[id]; return d && isSpellType(d); });
+		if (!idxs.length) continue;
+		const [id, di] = idxs[Math.floor(state.rng() * idxs.length)];
+		p.deck.splice(di, 1);
+		const c = instantiate(state.cardsById[id], s); c.zone = 'hand'; c.fromDeck = true; p.hand.push(c);
+		emit(state, { type: 'draw', player: s, card: c });
+	}
+});
+
 register('cast-spell-from-deck', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => { {
 			// High Abbess Alura (Spellburst): cast a random spell from your deck (targets source if possible)
 			const p = state.players[pi];

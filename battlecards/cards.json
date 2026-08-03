@@ -13831,7 +13831,15 @@
           "type": "plunder",
           "value": 1
         }
-      ]
+      ],
+      "ongoing": {
+        "on": "turn-end",
+        "effects": [
+          {
+            "type": "each-draws-spell"
+          }
+        ]
+      }
     },
     {
       "id": "ancestral_healing",
@@ -45740,7 +45748,16 @@
       "type": "creature",
       "attack": 5,
       "health": 11,
-      "tribe": "Beast"
+      "tribe": "Beast",
+      "ongoing": {
+        "on": "turn-end",
+        "effects": [
+          {
+            "type": "play-deck-top",
+            "count": 3
+          }
+        ]
+      }
     },
     {
       "id": "toreth_the_unbreaking",
