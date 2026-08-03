@@ -3812,10 +3812,7 @@ export function endTurn(state) {
 	// end-of-turn triggers
 	for (const c of [...p.board]) {
 		if (c.id === 'ancient_treant') healHero(state, pi, 2);
-		if (c.id === 'acidspitter_nest') {
-			summon(state, pi, { ...state.cardsById['acidspitter'] });
-			summon(state, pi, { ...state.cardsById['acidspitter'] });
-		}
+		// acidspitter_nest migrated to a data-driven turn-end ongoing (Group D)
 	}
 	if (state.anomaly === 'growing') for (const c of p.board) { if (!isDead(c) && c.type !== 'location') { c.attack += 1; c.maxHealth += 1; emit(state, { type: 'buff', uid: c.uid, attack: c.attack, hp: hp(c) }); } } // Anomaly - Growing
 	if (state.anomaly === 'reductive') for (const c of p.hand) { if ((c.cost || 0) > 0) { c.cost = Math.max(0, c.cost - 1); emit(state, { type: 'costChange', player: pi, uid: c.uid, cost: c.cost }); } } // Anomaly - Reductive

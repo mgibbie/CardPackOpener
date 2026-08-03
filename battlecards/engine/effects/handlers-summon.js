@@ -726,6 +726,7 @@ register('add-token', ({ state, pi, target, source, enemies, scaled, hm, pickEne
 					attack: e.attack, health: e.health, tribe: e.tribe || null, token: true, keywords: e.keywords || [],
 				}, pi);
 				card.zone = 'hand';
+				if (e.withGift) applyGift(state, card, null, {}); // Voronei Recruiter: a Crewmate with a random Bonus Effect
 				p.hand.push(card);
 				emit(state, { type: 'conjure', player: pi, card, color: null });
 			}
