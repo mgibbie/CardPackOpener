@@ -47556,7 +47556,11 @@
       "type": "creature",
       "attack": 5,
       "health": 3,
-      "tribe": "Beast"
+      "tribe": "Beast",
+      "selfCost": {
+        "per": "opp-life-loss-instances",
+        "amount": -1
+      }
     },
     {
       "id": "quantum_destabilizer",
@@ -48787,7 +48791,11 @@
       "type": "creature",
       "attack": 5,
       "health": 5,
-      "tribe": "Undead"
+      "tribe": "Undead",
+      "selfCost": {
+        "per": "own-turn-damage-instances",
+        "amount": -1
+      }
     },
     {
       "id": "snow_shredder",
@@ -48834,7 +48842,11 @@
       "description": "Costs (2) less for each time you've used a location this game.",
       "type": "creature",
       "attack": 8,
-      "health": 8
+      "health": 8,
+      "selfCost": {
+        "per": "locations-used-game",
+        "amount": -2
+      }
     },
     {
       "id": "dread_deserter",
@@ -48929,7 +48941,11 @@
       "type": "creature",
       "attack": 8,
       "health": 8,
-      "tribe": "Elemental"
+      "tribe": "Elemental",
+      "selfCost": {
+        "per": "elemental-turn-streak",
+        "amount": -1
+      }
     },
     {
       "id": "velarok_windblade",

@@ -143,6 +143,8 @@ export function damageHero(state, pi, amount, src = null, pierce = false) {
 		p.life = Math.max(0, p.life - amount);
 		p.heroDamagedThisTurn = true; p.heroHealthChangedThisTurn = true; p.heroDamageTakenThisTurn = (p.heroDamageTakenThisTurn || 0) + amount; // Duskbat / Nethersoul Buster / Brittlebone Destroyer
 		if (state.current === pi) p.ownTurnsDamage = (p.ownTurnsDamage || 0) + amount; // Party Planner Vona
+		if (state.current === pi) p.heroDmgInstancesOwnTurn = (p.heroDmgInstancesOwnTurn || 0) + 1; // Sauna Regular: times your hero took damage on your turn
+		for (const o of opponentsOf(state, pi)) state.players[o].oppLifeLossInstancesThisTurn = (state.players[o].oppLifeLossInstancesThisTurn || 0) + 1; // Devious Coyote: times an opponent lost life this turn
 		if (p.life <= 0 && p.heroDeathrattleCorpses && (p.corpses || 0) > 0) { const spend = Math.min(20, p.corpses); spendCorpses(state, pi, spend); p.life = spend; p.heroDeathrattleCorpses = false; emit(state, { type: 'heroDeathrattle', player: pi, life: p.life }); } // Husk, Eternal Reaper
 		emit(state, { type: 'damage', targetType: 'hero', player: pi, amount, life: p.life });
 		fireSecrets(state, pi, 'hero-takes-damage', { fatal: false, amount, src });
@@ -163,6 +165,8 @@ export function damageHero(state, pi, amount, src = null, pierce = false) {
 	const toLife = amount - absorbed;
 	p.life = Math.max(0, p.life - toLife);
 	if (toLife > 0 && state.current === pi) p.ownTurnsDamage = (p.ownTurnsDamage || 0) + toLife; // Party Planner Vona
+	if (toLife > 0 && state.current === pi) p.heroDmgInstancesOwnTurn = (p.heroDmgInstancesOwnTurn || 0) + 1; // Sauna Regular
+	if (toLife > 0) for (const o of opponentsOf(state, pi)) state.players[o].oppLifeLossInstancesThisTurn = (state.players[o].oppLifeLossInstancesThisTurn || 0) + 1; // Devious Coyote
 	if (toLife > 0) warptoothCheck(state, pi);
 	if (p.life <= 0 && p.heroDeathrattleCorpses && (p.corpses || 0) > 0) { const spend = Math.min(20, p.corpses); spendCorpses(state, pi, spend); p.life = spend; p.heroDeathrattleCorpses = false; emit(state, { type: 'heroDeathrattle', player: pi, life: p.life }); } // Husk, Eternal Reaper
 	if (toLife > 0) { p.heroDamagedThisTurn = true; p.heroHealthChangedThisTurn = true; p.heroDamageTakenThisTurn = (p.heroDamageTakenThisTurn || 0) + toLife; } // Duskbat / Nethersoul Buster / Brittlebone Destroyer

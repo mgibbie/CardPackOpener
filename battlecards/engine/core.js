@@ -1290,6 +1290,7 @@ export function tapLand(state, pi, cardUid, tapIndex, target) {
 	emit(state, { type: 'landTapped', player: pi, card, text: t.text });
 	// locations wear out: durability counts their remaining taps
 	if (card.type === 'location') {
+		state.players[pi].locationsUsedGame = (state.players[pi].locationsUsedGame || 0) + 1; // Seaside Giant
 		card.durability -= 1;
 		emit(state, { type: 'locationDurability', player: pi, uid: card.uid, durability: card.durability });
 		if (card.durability <= 0) {
@@ -4010,6 +4011,7 @@ export function endTurn(state) {
 	np.diedThisTurnIds = [];
 	np.ownCharsDamagedThisTurn = 0; // Warptooth
 	np.heroDamagedThisTurn = false; np.heroDamageTakenThisTurn = 0; np.heroHealthChangedThisTurn = false; np.healedThisTurn = false; np.healedAmountThisTurn = 0; np.stealerUsedThisTurn = false; np.damageToEnemyHeroThisTurn = 0; // "took damage this turn" resets each turn
+	np.heroDmgInstancesOwnTurn = 0; np.oppLifeLossInstancesThisTurn = 0; // Sauna Regular / Devious Coyote: per-turn instance counts
 	np.spellsPlayedLastTurnIds = np.spellsPlayedThisTurnIds || []; np.spellsPlayedThisTurnIds = []; // Krag'wa, the Frog
 	np.cardsPlayedLastTurnIds = np.cardsPlayedThisTurnIds || []; np.cardsPlayedThisTurnIds = []; // Murozond the Infinite
 	// Kil'jaeden: the endless portal grows
@@ -4309,7 +4311,7 @@ export function endTurn(state) {
 	emit(state, { type: 'turnStart', player: state.current, turnNumber: state.turnNumber });
 	if (state.anomaly === 'rejuvenating') healHero(state, state.current, 2); // Anomaly - Rejuvenating
 	// Un'Goro Elemental synergy: carry "played an Elemental" into this turn
-	{ const cp = state.players[state.current]; cp.elementalLastTurn = cp.elementalThisTurn; cp.elementalThisTurn = false; cp.elementalsPlayedLastTurn = cp.elementalsPlayedThisTurn || 0; cp.elementalsPlayedThisTurn = 0; }
+	{ const cp = state.players[state.current]; if (cp.elementalThisTurn) cp.elementalTurnStreak = (cp.elementalTurnStreak || 0) + 1; else cp.elementalTurnStreak = 0; cp.elementalLastTurn = cp.elementalThisTurn; cp.elementalThisTurn = false; cp.elementalsPlayedLastTurn = cp.elementalsPlayedThisTurn || 0; cp.elementalsPlayedThisTurn = 0; } // Azerite Giant: consecutive turns you've played an Elemental
 	// in-hand "each turn" effects (Nerubian Prophet: cost -1; Shifter Zerus: transform)
 	const cur = state.players[state.current];
 	for (const c of cur.hand) {

@@ -118,6 +118,14 @@ export function effectiveCost(state, pi, card) {
 			n = (p.tribeDiedGame || {})[card.selfCost.tribe] || 0; // Mulchmuncher
 		} else if (card.selfCost.per === 'spells-on-friendly-game') {
 			n = (p.spellsOnFriendly || []).length; // Devout Pupil
+		} else if (card.selfCost.per === 'own-turn-damage-instances') {
+			n = p.heroDmgInstancesOwnTurn || 0; // Sauna Regular
+		} else if (card.selfCost.per === 'opp-life-loss-instances') {
+			n = p.oppLifeLossInstancesThisTurn || 0; // Devious Coyote
+		} else if (card.selfCost.per === 'elemental-turn-streak') {
+			n = p.elementalTurnStreak || 0; // Azerite Giant
+		} else if (card.selfCost.per === 'locations-used-game') {
+			n = p.locationsUsedGame || 0; // Seaside Giant
 		}
 		c += card.selfCost.amount * n;
 	}
