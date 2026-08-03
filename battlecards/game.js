@@ -3961,7 +3961,7 @@ function dungeonOverlay(title, sub) {
 		el = document.createElement('div');
 		el.id = 'dungeon-overlay';
 		el.style.cssText = 'position:fixed;inset:0;z-index:60;background:rgba(8,6,14,0.92);'
-			+ 'display:flex;flex-direction:column;align-items:center;justify-content:center;'
+			+ 'display:flex;flex-direction:column;align-items:center;justify-content:safe center;'
 			+ 'font-family:inherit;color:#e8e0d0;text-align:center;padding:20px;overflow:auto;';
 		document.body.appendChild(el);
 	}
