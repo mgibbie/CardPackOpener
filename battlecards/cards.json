@@ -45610,7 +45610,20 @@
       "type": "creature",
       "attack": 3,
       "health": 6,
-      "tribe": "Dragon"
+      "tribe": "Dragon",
+      "keywords": [
+        "elusive"
+      ],
+      "ongoing": {
+        "on": "turn-end",
+        "effects": [
+          {
+            "type": "conjure-random",
+            "cardType": "creature",
+            "tribe": "Dragon"
+          }
+        ]
+      }
     },
     {
       "id": "wallow_the_wretched",
@@ -45636,7 +45649,17 @@
       "description": "At the end of your turn, get a random Nature spell.",
       "type": "creature",
       "attack": 0,
-      "health": 4
+      "health": 4,
+      "ongoing": {
+        "on": "turn-end",
+        "effects": [
+          {
+            "type": "conjure-random",
+            "cardType": "spell",
+            "school": "Nature"
+          }
+        ]
+      }
     },
     {
       "id": "naralex_herald_of_the_flights",
@@ -45681,7 +45704,17 @@
       "type": "creature",
       "attack": 0,
       "health": 4,
-      "tribe": "Totem"
+      "tribe": "Totem",
+      "ongoing": {
+        "on": "turn-end",
+        "effects": [
+          {
+            "type": "conjure-random",
+            "cardType": "spell",
+            "school": "Shadow"
+          }
+        ]
+      }
     },
     {
       "id": "haywire_hornswog",
@@ -49062,7 +49095,22 @@
       "description": "At the end of your turn, get a 1/2 Whelp with Taunt.",
       "type": "creature",
       "attack": 2,
-      "health": 3
+      "health": 3,
+      "ongoing": {
+        "on": "turn-end",
+        "effects": [
+          {
+            "type": "add-token",
+            "name": "Whelp",
+            "tribe": "Dragon",
+            "attack": 1,
+            "health": 2,
+            "keywords": [
+              "taunt"
+            ]
+          }
+        ]
+      }
     },
     {
       "id": "frenzied_felwing",
@@ -49125,7 +49173,16 @@
       "description": "At the end of your turn, get a 1/1 Chaotic Tendril.",
       "type": "creature",
       "attack": 2,
-      "health": 5
+      "health": 5,
+      "ongoing": {
+        "on": "turn-end",
+        "effects": [
+          {
+            "type": "conjure-id",
+            "id": "token_chaotic_tendril"
+          }
+        ]
+      }
     },
     {
       "id": "deathwarden",

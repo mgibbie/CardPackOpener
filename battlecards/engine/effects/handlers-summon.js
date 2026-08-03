@@ -716,7 +716,7 @@ register('add-token', ({ state, pi, target, source, enemies, scaled, hm, pickEne
 					id: 'token_' + e.name.toLowerCase().replace(/[^a-z0-9]+/g, '_'),
 					name: e.name, type: 'creature', cost: e.cost || 1, rarity: 'common',
 					description: `A ${e.attack}/${e.health} token.`,
-					attack: e.attack, health: e.health, tribe: e.tribe || null, token: true,
+					attack: e.attack, health: e.health, tribe: e.tribe || null, token: true, keywords: e.keywords || [],
 				}, pi);
 				card.zone = 'hand';
 				p.hand.push(card);
