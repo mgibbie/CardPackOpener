@@ -62630,7 +62630,7 @@
       "rarity": "common",
       "set": "wubrg",
       "tribe": "Squirrel",
-      "description": "Whenever you sacrifice a token, put a +1/+1 counter on this creature.",
+      "description": "Whenever you sacrifice a token, gain +1/+1.",
       "ongoing": {
         "on": "token-sacrificed",
         "effects": [
