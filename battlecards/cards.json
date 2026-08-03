@@ -45868,7 +45868,8 @@
       "health": 5,
       "keywords": [
         "stealth"
-      ]
+      ],
+      "inHandSwap": true
     },
     {
       "id": "pumpkin_peasant",
@@ -45883,7 +45884,8 @@
       "health": 4,
       "keywords": [
         "lifesteal"
-      ]
+      ],
+      "inHandSwap": true
     },
     {
       "id": "gilnean_royal_guard",
@@ -45899,7 +45901,8 @@
       "keywords": [
         "divine_shield",
         "rush"
-      ]
+      ],
+      "inHandSwap": true
     },
     {
       "id": "swift_messenger",
@@ -45914,7 +45917,8 @@
       "health": 6,
       "keywords": [
         "rush"
-      ]
+      ],
+      "inHandSwap": true
     },
     {
       "id": "spellshifter",
@@ -45926,7 +45930,8 @@
       "description": "Spell Damage +1 Each turn this is in your hand, swap its Attack & Health.",
       "type": "creature",
       "attack": 1,
-      "health": 4
+      "health": 4,
+      "inHandSwap": true
     },
     {
       "id": "glinda_crowskin",

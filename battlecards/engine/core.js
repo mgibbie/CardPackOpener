@@ -272,6 +272,7 @@ export function instantiate(def, controller) {
 		attackAgainOnKill: !!def.attackAgainOnKill, // Rush hunters: kills refund the attack
 		ward: def.ward ? { ...def.ward } : null, // cost to target: {mana?, life?, discard?}
 		magnetic: !!def.magnetic,     // may merge onto a friendly Mech instead of playing
+		inHandSwap: !!def.inHandSwap, // "each turn this is in your hand, swap its Attack & Health"
 		echo: !!def.echo,             // leaves a ghost copy in hand until end of turn
 		miniaturize: !!def.miniaturize, // playing it hands you a 1/1 Mini copy for 1
 		echoGhost: false,
@@ -4162,6 +4163,7 @@ export function endTurn(state) {
 	}
 	np.sacrificedThisTurn = {}; // reset "sacrificed a Clue this turn"
 	for (const c of np.board) if (c.immuneTurnsLeft > 0 && --c.immuneTurnsLeft <= 0) { c.keywords = c.keywords.filter(k => k !== KW.IMMUNE); emit(state, { type: 'buff', uid: c.uid, attack: c.attack, hp: hp(c) }); } // multi-turn Immune (Blacksmith's Skill) wears off
+	for (const c of np.hand) if (c.inHandSwap) { const a = c.attack; c.attack = c.maxHealth; c.maxHealth = a; emit(state, { type: 'buff', uid: c.uid, attack: c.attack, hp: hp(c) }); } // in-hand: swap Attack & Health each turn
 	for (const hpw of np.heroPowers) { hpw.usedThisTurn = false; hpw._uses = 0; }
 	for (const pw of np.planeswalkers) pw.usedThisTurn = false;
 	// Aegis of Death: a weapon that bleeds a durability every turn (and blows up
