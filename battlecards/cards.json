@@ -133065,12 +133065,7 @@
           {
             "type": "summon",
             "count": 1,
-            "attack": 0,
-            "health": 2,
-            "name": "Totem",
-            "keywords": [
-              "taunt"
-            ]
+            "summonId": "sch_totem_stoneclaw"
           }
         ]
       },
