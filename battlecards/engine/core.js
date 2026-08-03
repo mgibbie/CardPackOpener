@@ -329,6 +329,7 @@ export function instantiate(def, controller) {
 		miracle: def.miracle || null, // Miracle (HS Quickdraw): { effects } fired with the battlecry if drawnThisTurn
 		temporary: !!def.temporary,   // Temporary: discarded from hand at the end of your turn
 		handTransform: def.handTransform || null, // Imposters/Shapeshifter: turn-start in-hand morph { cost?, grant?, spellDamage?, fromEnemyHand?, intoId?, ifHandParity? }
+		handTransformOnSchool: def.handTransformOnSchool || null, // Lady Naz'jar: while held, transform after casting a spell of a listed school
 		startOfGame: def.startOfGame || null, // Start of Game: effects run from the deck when the game begins
 		kindredCard: !!def.kindredCard, // Lost City: a card with a Kindred bonus (Torga tutors these)
 		rewind: def.rewind || 0, // TIME_TRAVEL Rewind: when played, a copy returns to your deck until N charges are spent
@@ -2070,6 +2071,7 @@ export function playCard(state, pi, cardUid, target, choice, position, useAlt, k
 		if ((card.keywords || []).includes('combo')) p.combosPlayedGame = (p.combosPlayedGame || 0) + 1; // Rhyme Spinner
 		{ const sc = schoolOf(card); for (const hc of p.hand) { hc.spellsCastWhileHeld = (hc.spellsCastWhileHeld || 0) + 1; if (sc) (hc.schoolsWhileHeld = hc.schoolsWhileHeld || {})[sc] = true; (hc.spellsHeldIds = hc.spellsHeldIds || []).push(card.id); } } // Naga: Spellcoiler / Heralds / Commander Sivara
 		{ const sch = schoolOf(card); if (sch) { (p.schoolsCastThisTurn = p.schoolsCastThisTurn || {})[sch] = true; (p.schoolsCastGame = p.schoolsCastGame || {})[sch] = true; if (sch === 'Fel') (p.felSpellsGame = p.felSpellsGame || []).push(card.id); if (sch === 'Frost') p.frostSpellsGame = (p.frostSpellsGame || 0) + 1; } } // Metamorfin / Multicaster / Jace / Bearon
+		{ const sc2 = schoolOf(card); if (sc2) for (const hc of [...p.hand]) { const ht2 = hc.handTransformOnSchool; if (ht2 && ht2.schools.includes(sc2) && ht2.forms && ht2.forms.length) { const fdef = state.cardsById[ht2.forms[Math.floor(state.rng() * ht2.forms.length)]]; if (fdef) { const morph = instantiate(fdef, pi); morph.uid = hc.uid; morph.zone = 'hand'; p.hand[p.hand.indexOf(hc)] = morph; emit(state, { type: 'conjure', player: pi, card: morph, color: null }); } } } } // Lady Naz'jar: transform in hand after a Fire/Frost/Arcane spell
 		if ((card.cost || 0) >= 6) p.lastBigSpell = { id: card.id, target }; // Grey Sage Parrot
 		p.lastSpellPlayed = { id: card.id, target }; // Asvedon: opponent's most recent spell (any cost)
 		p.spellsPlayedTotal = (p.spellsPlayedTotal || 0) + 1; // Arcane Giant

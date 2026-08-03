@@ -94150,7 +94150,19 @@
       "rarity": "legendary",
       "set": "THE_SUNKEN_CITY",
       "tribe": "Naga",
-      "description": "While in your hand, this transforms after you cast a Fire, Frost, or Arcane spell."
+      "description": "While in your hand, this transforms after you cast a Fire, Frost, or Arcane spell.",
+      "handTransformOnSchool": {
+        "schools": [
+          "Fire",
+          "Frost",
+          "Arcane"
+        ],
+        "forms": [
+          "lady_nazjar_form1",
+          "lady_nazjar_form2",
+          "lady_nazjar_form3"
+        ]
+      }
     },
     {
       "id": "queen_azshara",
@@ -133657,6 +133669,78 @@
         ]
       },
       "description": "Deathtouch.\nAt the end of your turn, each opponent loses 5 Life."
+    },
+    {
+      "id": "lady_nazjar_form1",
+      "name": "Lady Naz'jar",
+      "type": "creature",
+      "cardClass": "mage",
+      "cost": 5,
+      "rarity": "rare",
+      "set": "THE_SUNKEN_CITY",
+      "tribe": "Naga",
+      "attack": 5,
+      "health": 5,
+      "collectible": false,
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "discount-hand",
+          "value": 1,
+          "spellsOnly": true
+        }
+      ],
+      "description": "Battlecry: Reduce the Cost of spells in your hand by (1)."
+    },
+    {
+      "id": "lady_nazjar_form2",
+      "name": "Lady Naz'jar",
+      "type": "creature",
+      "cardClass": "mage",
+      "cost": 5,
+      "rarity": "rare",
+      "set": "THE_SUNKEN_CITY",
+      "tribe": "Naga",
+      "attack": 5,
+      "health": 5,
+      "collectible": false,
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "damage-adjacent",
+          "value": 5,
+          "splash": 2,
+          "target": "enemy-creature"
+        }
+      ],
+      "description": "Battlecry: Deal 5 damage to an enemy creature & 2 damage to adjacent creatures."
+    },
+    {
+      "id": "lady_nazjar_form3",
+      "name": "Lady Naz'jar",
+      "type": "creature",
+      "cardClass": "mage",
+      "cost": 5,
+      "rarity": "rare",
+      "set": "THE_SUNKEN_CITY",
+      "tribe": "Naga",
+      "attack": 5,
+      "health": 5,
+      "collectible": false,
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "armor",
+          "value": 8
+        }
+      ],
+      "description": "Battlecry: Gain 8 Armor."
     }
   ]
 }

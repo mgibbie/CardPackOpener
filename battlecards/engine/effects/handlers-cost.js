@@ -147,7 +147,7 @@ register('next-name-discount', ({ state, pi, target, source, enemies, scaled, hm
 
 register('discount-hand', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => {
 			// Hunter's Call: cards in hand permanently cost (N) less
-			for (const c of state.players[pi].hand) c.cost = Math.max(0, c.cost - (e.value || 1));
+			for (const c of state.players[pi].hand) { if (e.spellsOnly && !isSpellType(c)) continue; c.cost = Math.max(0, c.cost - (e.value || 1)); }
 });
 
 
