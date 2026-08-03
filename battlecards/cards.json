@@ -133063,13 +133063,32 @@
         "cost": 2,
         "effects": [
           {
-            "type": "summon",
-            "count": 1,
-            "summonId": "sch_totem_stoneclaw"
+            "type": "conditional",
+            "if": {
+              "overloaded": true
+            },
+            "then": [
+              {
+                "type": "summon-random",
+                "tribe": "Totem",
+                "maxCost": 3
+              }
+            ],
+            "else": [
+              {
+                "type": "summon-random",
+                "ids": [
+                  "sch_totem_healing",
+                  "sch_totem_searing",
+                  "sch_totem_stoneclaw",
+                  "sch_totem_wrath"
+                ]
+              }
+            ]
           }
         ]
       },
-      "description": "Hero Power (2): Summon a 0/2 Totem with Taunt."
+      "description": "Hero Power (2): Summon a random basic Totem. If you're Overloaded, summon a non-basic Totem instead."
     },
     {
       "id": "duelshp_demon_blood",
