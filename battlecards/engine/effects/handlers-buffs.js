@@ -544,7 +544,7 @@ register('grant-immune-turn', ({ state, pi, target, source, enemies, scaled, hm,
 			const ts = e.target === 'friendly-creatures' ? state.players[pi].board.filter(c => !isDead(c) && c.type !== 'location')
 				: e.target === 'self' ? (source && source.zone === 'board' && !isDead(source) ? [source] : [])
 				: [chosenCreature()].filter(Boolean);
-			for (const t of ts) { if (!t.keywords.includes(KW.IMMUNE)) t.keywords.push(KW.IMMUNE); t.immuneTurnClear = true; emit(state, { type: 'buff', uid: t.uid, attack: t.attack, hp: hp(t) }); }
+			for (const t of ts) { if (!t.keywords.includes(KW.IMMUNE)) t.keywords.push(KW.IMMUNE); if (e.turns) t.immuneTurnsLeft = e.turns; else t.immuneTurnClear = true; emit(state, { type: 'buff', uid: t.uid, attack: t.attack, hp: hp(t) }); } // `turns`: Immune for N of the controller's turns (Blacksmith's Skill); else just this turn
 } });
 
 

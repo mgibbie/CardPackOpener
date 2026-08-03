@@ -56520,7 +56520,8 @@
       "set": "wubrg",
       "keywords": [],
       "description": "",
-      "effects": []
+      "effects": [],
+      "tribe": "Human Soldier"
     },
     {
       "id": "opt",
@@ -56710,12 +56711,12 @@
       "cardClass": "neutral",
       "rarity": "common",
       "set": "wubrg",
-      "description": "Give a creature Immune.",
+      "description": "Give a creature Immune for 3 turns.",
       "effects": [
         {
-          "type": "grant",
-          "keyword": "indestructible",
-          "target": "creature"
+          "type": "grant-immune-turn",
+          "target": "creature",
+          "turns": 3
         }
       ]
     },
