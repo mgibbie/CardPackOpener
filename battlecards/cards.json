@@ -103804,6 +103804,66 @@
           "attack": 3,
           "durability": 3
         }
+      ],
+      "tribe": "Titan",
+      "titan": true,
+      "activated": [
+        {
+          "name": "Maintain Order",
+          "text": "Give your weapon \"After your hero attacks, draw a card.\"",
+          "oncePerGame": true,
+          "sorcerySpeed": true,
+          "cost": 0,
+          "effects": [
+            {
+              "type": "grant-weapon-ability",
+              "afterHeroAttack": [
+                {
+                  "type": "draw",
+                  "value": 1
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "Commanding Presence",
+          "text": "Give your weapon \"After your hero attacks, summon a 3/3 Enforcer with Taunt.\"",
+          "oncePerGame": true,
+          "sorcerySpeed": true,
+          "cost": 0,
+          "effects": [
+            {
+              "type": "grant-weapon-ability",
+              "afterHeroAttack": [
+                {
+                  "type": "summon",
+                  "count": 1,
+                  "attack": 3,
+                  "health": 3,
+                  "name": "Enforcer",
+                  "keywords": [
+                    "taunt"
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "Swift Slash",
+          "text": "Give your weapon +2 Attack and \"Your hero is Immune while attacking.\"",
+          "oncePerGame": true,
+          "sorcerySpeed": true,
+          "cost": 0,
+          "effects": [
+            {
+              "type": "grant-weapon-ability",
+              "attack": 2,
+              "immuneAttacking": true
+            }
+          ]
+        }
       ]
     },
     {
@@ -104508,7 +104568,7 @@
       "health": 12,
       "rarity": "legendary",
       "set": "TITANS",
-      "tribe": "Demon",
+      "tribe": "Titan",
       "keywords": [
         "battlecry"
       ],
@@ -104522,7 +104582,53 @@
             "summonId": "ttn_imp_32"
           }
         ]
-      }
+      },
+      "titan": true,
+      "effects": [],
+      "activated": [
+        {
+          "name": "To the Void!",
+          "text": "Send all other minions into the Twisting Nether.",
+          "oncePerGame": true,
+          "sorcerySpeed": true,
+          "cost": 0,
+          "effects": [
+            {
+              "type": "destroy-all",
+              "others": true
+            }
+          ]
+        },
+        {
+          "name": "Inferno!",
+          "text": "Summon two 6/6 Infernals.",
+          "oncePerGame": true,
+          "sorcerySpeed": true,
+          "cost": 0,
+          "effects": [
+            {
+              "type": "summon",
+              "count": 2,
+              "attack": 6,
+              "health": 6,
+              "name": "Infernal",
+              "tribe": "Demon"
+            }
+          ]
+        },
+        {
+          "name": "Legion Invasion!",
+          "text": "Future Demons summoned from the Twisting Nether have +2 Health and Taunt.",
+          "oncePerGame": true,
+          "sorcerySpeed": true,
+          "cost": 0,
+          "effects": [
+            {
+              "type": "buff-future-demons"
+            }
+          ]
+        }
+      ]
     },
     {
       "id": "yogg_saron_unleashed",

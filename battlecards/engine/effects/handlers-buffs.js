@@ -547,6 +547,22 @@ register('grant-immune-turn', ({ state, pi, target, source, enemies, scaled, hm,
 			for (const t of ts) { if (!t.keywords.includes(KW.IMMUNE)) t.keywords.push(KW.IMMUNE); if (e.turns) t.immuneTurnsLeft = e.turns; else t.immuneTurnClear = true; emit(state, { type: 'buff', uid: t.uid, attack: t.attack, hp: hp(t) }); } // `turns`: Immune for N of the controller's turns (Blacksmith's Skill); else just this turn
 } });
 
+register('grant-weapon-ability', ({ state, pi }, e) => {
+			// Aggramar: give your weapon +Attack, "Immune while attacking", and/or an
+			// "After your hero attacks, ..." trigger (accumulated across abilities).
+			const w = state.players[pi].weapon;
+			if (!w) return;
+			if (e.attack) w.attack = (w.attack || 0) + e.attack;
+			if (e.immuneAttacking) w.static = { type: 'immune-attacking' };
+			if (e.afterHeroAttack) (w.afterHeroAttack = w.afterHeroAttack || []).push(e.afterHeroAttack);
+			emit(state, { type: 'weaponDurability', player: pi, attack: w.attack, durability: w.durability });
+});
+
+register('buff-future-demons', ({ state, pi }) => {
+			// Sargeras (Legion Invasion): future Demons you summon get +2 Health and Taunt (see summon)
+			state.players[pi].legionInvasion = true;
+});
+
 
 register('buff-random-hand-tribe', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => { {
 			// Helboar: give a random matching minion in your hand +attack/+health

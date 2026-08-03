@@ -1042,6 +1042,7 @@ export function summon(state, pi, tokenDef) {
 	}
 	if (p.nextTribeSummonBuff && (c.tribe || '').includes(p.nextTribeSummonBuff.tribe)) { c.attack += p.nextTribeSummonBuff.attack || 0; c.maxHealth += p.nextTribeSummonBuff.health || 0; p.nextTribeSummonBuff = null; } // Thornmantle Musician
 	if (p.tribeSummonBuff && state.turnNumber < p.tribeSummonBuff.untilTurn && (c.tribe || '').includes(p.tribeSummonBuff.tribe)) { for (const k of p.tribeSummonBuff.keywords) if (!c.keywords.includes(k)) { c.keywords.push(k); if (k === KW.DIVINE_SHIELD) c.shield = true; } } // Timewarden: Dragons gain Taunt + Divine Shield
+	if (p.legionInvasion && (c.tribe || '').includes('Demon')) { c.maxHealth += 2; if (!c.keywords.includes(KW.TAUNT)) c.keywords.push(KW.TAUNT); } // Sargeras (Legion Invasion): future Demons have +2 Health and Taunt
 	if (c.scaleOnEntry) { const n = p.enteredCountById?.[c.id] || 0; if (n > 0) { c.attack += (c.scaleOnEntry.attack || 0) * n; c.maxHealth += (c.scaleOnEntry.health || 0) * n; } } // Astral Automaton: +1/+1 per other summoned this game
 	(p.enteredCountById = p.enteredCountById || {})[c.id] = (p.enteredCountById[c.id] || 0) + 1;
 	if (state.anomaly && c.type !== 'location') { // Dalaran Heist anomalies, applied symmetrically to every summon
@@ -2994,6 +2995,9 @@ export function heroAttack(state, pi, target) {
 			runSecretEffects(state, pi, w.ongoing.effects, { self: w });
 		}
 	}
+	// Aggramar: weapon abilities that ride "After your hero attacks" (an array so
+	// Maintain Order / Commanding Presence can stack across turns).
+	if (w && w.afterHeroAttack && w.afterHeroAttack.length && !state.over) for (const eff of w.afterHeroAttack) execEffects(state, pi, JSON.parse(JSON.stringify(eff)), null, w);
 	fireOngoing(state, pi, 'hero-attacks', {}); // Hench-Clan Thug: minion reacts to your hero attacking
 	if (hitCreature) fireOngoing(state, pi, 'hero-attacks-creature', { target: findCreature(state, target.uid), damaged: findCreature(state, target.uid) }); // Keeneye Spotter
 	// a single fire (fireOngoing-only, so weapon ongoings don't double-fire) for
