@@ -711,7 +711,7 @@ register('resurrect-by-attacks', ({ state, pi, target, source, enemies, scaled, 
 
 register('summon-quilboar-scaled', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => { {
 			// Zok Fogsnout: summon two Taunt Quilboar scaled by your hero Attack (+ armor gained this turn approximated by hero attack)
-			const bonus = heroAttackValue(state.players[pi]);
+			const bonus = heroAttackValue(state, state.players[pi]);
 			for (let i = 0; i < (e.count || 2); i++) summon(state, pi, { id: 'token_quilboar', name: 'Quilboar', type: 'creature', cost: 0, token: true, tribe: 'Quilboar', rarity: 'common', attack: (e.base || 1) + bonus, health: (e.base || 1) + bonus, keywords: ['taunt'], description: `A ${(e.base || 1) + bonus}/${(e.base || 1) + bonus} Taunt Quilboar.` });
 } });
 

@@ -71,7 +71,7 @@ export function execEffects(state, pi, effects, target, source) {
 		const p = state.players[pi];
 		if (e.valuePer === 'armor') return (e.value || 1) * p.armor;
 		if (e.valuePer === 'cards-played') return (e.value || 1) * (p.cardsPlayedThisTurn || 0); // Shadow Sculptor
-		if (e.valuePer === 'hero-attack') return heroAttackValue(p);
+		if (e.valuePer === 'hero-attack') return heroAttackValue(state, p);
 		if (e.valuePer === 'hero-attacks-game') return (e.value || 1) + (p.heroAttacksGame || 0); // Shockspitter: 1 + your hero attacks this game
 		if (e.valuePer === 'schools-cast-game') return (e.value || 1) + Object.keys(p.schoolsCastGame || {}).length; // Inquisitive Creation
 		if (e.valuePer === 'elementals-last-turn') return (e.value || 1) + (p.elementalsPlayedLastTurn || 0); // Unchained Gladiator: 1 + Elementals played last turn

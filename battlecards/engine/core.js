@@ -334,6 +334,8 @@ export function instantiate(def, controller) {
 		partPower: def.partPower || 0, // escalating appendage damage (Xhilag's Stalks)
 		onSummon: def.onSummon || null, // "When summoned" effects for Colossal appendages
 		heroWindfury: !!def.heroWindfury, // Azshara: your hero can attack twice
+		heroAura: def.heroAura || null, // Spiderling / Inara / Spirit of the Team: hero +Attack (usually only on your turn)
+		weaponAura: def.weaponAura || null, // Vulpera Toxinblade: your weapon has +N Attack
 		healToMaxHealth: !!def.healToMaxHealth, // Arisen Onyxia: hero Health loss becomes max Health
 		castOtherClassTwice: !!def.castOtherClassTwice, // Sinestra: off-class spells cast twice
 		armsHitEnemyDeck: !!def.armsHitEnemyDeck, // Cho'gall: Arms/Soldiers destroy in the enemy deck
@@ -1861,7 +1863,7 @@ export function playCard(state, pi, cardUid, target, choice, position, useAlt, k
 	if (isSpellType(card) && p.nextSchoolDiscount && schoolOf(card) === p.nextSchoolDiscount.school) p.nextSchoolDiscount = null; // Holy Cowboy: spent by the next matching spell
 	if (card.type === 'creature' && p.nextTribeDiscount && p.nextTribeDiscount.count > 0 && (card.tribe || '').includes(p.nextTribeDiscount.tribe)) { if (p.nextTribeDiscount.overload) p.overloadPending = (p.overloadPending || 0) + p.nextTribeDiscount.overload; p.nextTribeDiscount.count -= 1; if (p.nextTribeDiscount.count <= 0) p.nextTribeDiscount = null; } // Clownfish / Planetary Navigator
 	if (p.nextCardsDiscount && p.nextCardsDiscount.count > 0) { p.nextCardsDiscount.count -= 1; if (p.nextCardsDiscount.count <= 0) p.nextCardsDiscount = null; } // Scabbs: consumed per card
-	if (card.stiltReward) { p.heroTempAttack += card.stiltReward; emit(state, { type: 'heroAttack', player: pi, attack: heroAttackValue(p) }); card.stiltReward = 0; } // Stiltstepper
+	if (card.stiltReward) { p.heroTempAttack += card.stiltReward; emit(state, { type: 'heroAttack', player: pi, attack: heroAttackValue(state, p) }); card.stiltReward = 0; } // Stiltstepper
 	if (card.edwinReward) { const ed = p.board.find(x => x.uid === card.edwinUid && !isDead(x)); if (ed) { ed.attack += card.edwinReward; ed.maxHealth += card.edwinReward; emit(state, { type: 'buff', uid: ed.uid, attack: ed.attack, hp: hp(ed) }); } card.edwinReward = 0; } // Edwin, Defias Kingpin
 	if (typeof card.id === 'string' && card.id.endsWith('_corrupted')) (p.corruptedPlayedIds = p.corruptedPlayedIds || []).push(card.id); // Y'Shaarj tracks Corrupted cards played
 	if (/^SI:7/.test(card.name || '')) p.si7PlayedGame = (p.si7PlayedGame || 0) + 1; // SI:7 Informant
@@ -2061,7 +2063,7 @@ export function playCard(state, pi, cardUid, target, choice, position, useAlt, k
 					if (foes.length && !isDead(card)) resolveCombat(state, pi, card.uid, foes[Math.floor(state.rng() * foes.length)]);
 				}
 					if (draeneiRefreshMana && p.mana) { p.mana.cur = Math.min(p.mana.max, (p.mana.cur || 0) + (card.attack || 0)); emit(state, { type: 'manaGained', player: pi, amount: card.attack || 0, mana: availableMana(p) }); } // Ingenious Artificer
-					if (draeneiHeroAttack && (card.attack || 0) > 0) { p.heroTempAttack += card.attack; emit(state, { type: 'heroAttack', player: pi, attack: heroAttackValue(p) }); } // Unyielding Vindicator
+					if (draeneiHeroAttack && (card.attack || 0) > 0) { p.heroTempAttack += card.attack; emit(state, { type: 'heroAttack', player: pi, attack: heroAttackValue(state, p) }); } // Unyielding Vindicator
 					if (draeneiSummonCopy && state.cardsById[card.id]) summon(state, pi, state.cardsById[card.id]); // Askara
 				if ((card.keywords || []).includes('battlecry') || card.combo) fireOngoing(state, pi, 'battlecry-or-combo-played', { played: card }); // Field Contact
 				if (card._outcast || card._handEdge) fireOngoing(state, pi, 'edge-card-played', { played: card }); // Razorglaive Sentinel / Altruis
@@ -2926,22 +2928,30 @@ export function resolveCombat(state, pi, attackerUid, target) {
 }
 
 // ---------- hero (weapon) attacks ----------
-export function heroAttackValue(p) {
+export function heroAttackValue(state, p) {
 	let w = 0;
+	const onTurn = state.current === state.players.indexOf(p);
 	if (p.weapon) {
 		w = p.weapon.attack;
 		// Spiteful Smith-style enrage: damaged creatures sharpen the weapon
 		for (const c of p.board) {
 			if (c.enrage?.weaponAttack && c.damage > 0 && !isDead(c)) w += c.enrage.weaponAttack;
+			if (c.weaponAura && !isDead(c) && c.type !== 'location' && c.dormantLeft <= 0) w += c.weaponAura.attack || 0; // Vulpera Toxinblade: your weapon has +N Attack
 		}
 	}
-	return w + p.heroTempAttack;
+	// hero-attack auras (Spiderling / Inara Stormcrash / Spirit of the Team):
+	// board minions granting the hero +Attack, most gated to "on your turn"
+	let heroAura = 0;
+	for (const c of p.board) {
+		if (c.heroAura && !isDead(c) && c.type !== 'location' && c.dormantLeft <= 0 && (!c.heroAura.yourTurn || onTurn)) heroAura += c.heroAura.attack || 0;
+	}
+	return w + p.heroTempAttack + heroAura;
 }
 
 export function canHeroAttack(state, pi) {
 	if (state.over || state.current !== pi) return false;
 	const p = state.players[pi];
-	if (heroAttackValue(p) <= 0) return false; // temp attack lets weaponless heroes swing
+	if (heroAttackValue(state, p) <= 0) return false; // temp attack lets weaponless heroes swing
 	const windfury = p.weapon?.keywords.includes(KW.WINDFURY) || p.board.some(c => c.heroWindfury && !isDead(c)); // Azshara
 	return p.heroAttacksUsed < (windfury ? 2 : 1);
 }
@@ -2973,12 +2983,12 @@ export function heroAttack(state, pi, target) {
 
 	const ctx = { attackerType: 'hero', attackerPlayer: pi, target, cancelled: false };
 	fireSecrets(state, target.player, 'enemy-attack', ctx);
-	if (ctx.cancelled || heroAttackValue(p) <= 0 || state.over) { sweepDeaths(state); return true; }
+	if (ctx.cancelled || heroAttackValue(state, p) <= 0 || state.over) { sweepDeaths(state); return true; }
 	tryDefenderRedirect(state, ctx);
 	target = ctx.target;
 
 	const w = p.weapon; // may be null when swinging on temp attack alone
-	const atk = heroAttackValue(p);
+	const atk = heroAttackValue(state, p);
 	let hitCreature = false, killed = false;
 	if (target.type === 'hero') {
 		damageHero(state, target.player, atk, pi);
@@ -4099,7 +4109,7 @@ export function endTurn(state) {
 		np.heroTempAttack = (np.heroTempAttack || 0) + np.heroAttackTurns.value;
 		np.heroAttackTurns.left--;
 		if (np.heroAttackTurns.left <= 0) np.heroAttackTurns = null;
-		emit(state, { type: 'heroAttack', player: state.current, attack: heroAttackValue(np) });
+		emit(state, { type: 'heroAttack', player: state.current, attack: heroAttackValue(state, np) });
 	}
 	// Circadiamancer: conjured cards that tick down each of your turns
 	for (const c of np.hand) if (c._ticksDown && (c.cost || 0) > 0) { c.cost--; emit(state, { type: 'costChange', player: state.current, uid: c.uid, cost: c.cost }); }

@@ -208,7 +208,7 @@ register('hero-attack', ({ state, pi, target, source, enemies, scaled, hm, pickE
 			// valueFromDeaths: +1 per creature that died this turn (Gift of the Legion).
 			const v = e.valueFromDeaths ? (state.diedThisTurn || 0) : (e.value || 0);
 			state.players[pi].heroTempAttack += v;
-			emit(state, { type: 'heroAttack', player: pi, attack: heroAttackValue(state.players[pi]) });
+			emit(state, { type: 'heroAttack', player: pi, attack: heroAttackValue(state, state.players[pi]) });
 			if (v > 0) fireOngoing(state, pi, 'hero-gained-attack', {}); // Wickerclaw
 });
 
@@ -244,7 +244,7 @@ register('hero-attack-multi-turn', ({ state, pi, target, source, enemies, scaled
 			const p = state.players[pi];
 			p.heroTempAttack = (p.heroTempAttack || 0) + (e.value || 3);
 			p.heroAttackTurns = { value: e.value || 3, left: (e.turns || 3) - 1 };
-			emit(state, { type: 'heroAttack', player: pi, attack: heroAttackValue(p) });
+			emit(state, { type: 'heroAttack', player: pi, attack: heroAttackValue(state, p) });
 });
 
 

@@ -183,7 +183,7 @@ export function damageHero(state, pi, amount, src = null, pierce = false) {
 export function gainArmor(state, pi, amount) {
 	state.players[pi].armor += amount;
 	if (amount !== 0) state.players[pi].armorChangedThisTurn = true; // Stoneskin Armorer
-	if (amount > 0 && state.players[pi].odynActive) { state.players[pi].heroTempAttack += amount; emit(state, { type: 'heroAttack', player: pi, attack: heroAttackValue(state.players[pi]) }); } // Odyn: armor also grants Attack this turn
+	if (amount > 0 && state.players[pi].odynActive) { state.players[pi].heroTempAttack += amount; emit(state, { type: 'heroAttack', player: pi, attack: heroAttackValue(state, state.players[pi]) }); } // Odyn: armor also grants Attack this turn
 	if (amount > 0) state.players[pi].armorGainedGame = (state.players[pi].armorGainedGame || 0) + amount; // Captain Galvangar
 	emit(state, { type: 'armor', player: pi, amount, armor: state.players[pi].armor });
 	fireOngoing(state, pi, 'armor-gained', {}); // Siege Engine

@@ -45685,7 +45685,12 @@
       "description": "On your turn, your hero has +2 Attack & Windfury.",
       "type": "creature",
       "attack": 4,
-      "health": 5
+      "health": 5,
+      "heroWindfury": true,
+      "heroAura": {
+        "attack": 2,
+        "yourTurn": true
+      }
     },
     {
       "id": "wing_commander",
@@ -46671,7 +46676,11 @@
       "type": "creature",
       "attack": 1,
       "health": 3,
-      "tribe": "Beast"
+      "tribe": "Beast",
+      "heroAura": {
+        "attack": 1,
+        "yourTurn": true
+      }
     },
     {
       "id": "solitary_prisoner",
@@ -47775,7 +47784,10 @@
       "description": "Your weapon has +2 Attack.",
       "type": "creature",
       "attack": 3,
-      "health": 3
+      "health": 3,
+      "weaponAura": {
+        "attack": 2
+      }
     },
     {
       "id": "trick_totem",
@@ -48243,7 +48255,19 @@
       "type": "creature",
       "attack": 0,
       "health": 3,
-      "tribe": "Undead"
+      "tribe": "Undead",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "temp-stealth-self"
+        }
+      ],
+      "heroAura": {
+        "attack": 2,
+        "yourTurn": true
+      }
     },
     {
       "id": "playhouse_giant",

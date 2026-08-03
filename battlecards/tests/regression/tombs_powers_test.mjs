@@ -61,7 +61,7 @@ ok('12 Explorer powers + the shared Treasure Cache imported', raw.cards.filter(c
 {
 	const { state } = new Scenario(byId).mana(0, 20).run();
 	usePower(state, 0, 'ulda_elises_might', null, 0); // choice 0 = +2 Attack this turn
-	ok("Elise's Might: +2 hero attack this turn", E.heroAttackValue(state.players[0]) === 2, E.heroAttackValue(state.players[0]));
+	ok("Elise's Might: +2 hero attack this turn", E.heroAttackValue(state, state.players[0]) === 2, E.heroAttackValue(state, state.players[0]));
 }
 // Elise: Druidic Teaching — heal 2 to a character
 {

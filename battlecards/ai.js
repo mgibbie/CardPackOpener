@@ -353,7 +353,7 @@ export function step(state, pi = 1) {
 
 	// 3. swing the hero: lethal face, a good trade, or face (weapon or temp attack)
 	if (E.canHeroAttack(state, pi)) {
-		const av = E.heroAttackValue(p);
+		const av = E.heroAttackValue(state, p);
 		const targets = E.heroAttackTargets(state, pi);
 		const heroTs = targets.filter(t => t.type === 'hero');
 		const creatureTs = targets.filter(t => t.type === 'creature');
