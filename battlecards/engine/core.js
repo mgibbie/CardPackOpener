@@ -273,6 +273,7 @@ export function instantiate(def, controller) {
 		ward: def.ward ? { ...def.ward } : null, // cost to target: {mana?, life?, discard?}
 		magnetic: !!def.magnetic,     // may merge onto a friendly Mech instead of playing
 		inHandSwap: !!def.inHandSwap, // "each turn this is in your hand, swap its Attack & Health"
+		inHandCopyLastPlayed: def.inHandCopyLastPlayed || null, // Floop/Mirrex: a hand card that IS a copy of the last creature played
 		echo: !!def.echo,             // leaves a ghost copy in hand until end of turn
 		miniaturize: !!def.miniaturize, // playing it hands you a 1/1 Mini copy for 1
 		echoGhost: false,
@@ -1941,6 +1942,12 @@ export function playCard(state, pi, cardUid, target, choice, position, useAlt, k
 		p.creaturesPlayedThisTurn++;
 		p.minionsPlayedGame = (p.minionsPlayedGame || 0) + 1; // Zee's Might
 		questTick(state, 'summon', pi, 1, card);
+		// Flobbidinous Floop / Mirrex: hand cards that ARE a fixed-stat copy of the last creature you (or your opponent) played
+		{ const cdef = state.cardsById[card.id] || card;
+			for (let hi = 0; hi < state.players.length; hi++) { const wantFrom = hi === pi ? 'self' : 'enemy';
+				for (const hc of [...state.players[hi].hand]) { const cfg = hc.inHandCopyLastPlayed; if (!cfg || cfg.from !== wantFrom) continue;
+					const morph = instantiate(cdef, hi); morph.uid = hc.uid; morph.zone = 'hand'; morph.attack = cfg.attack; morph.maxHealth = cfg.health; morph.damage = 0; if (cfg.cost != null) morph.cost = cfg.cost; morph.inHandCopyLastPlayed = cfg;
+					state.players[hi].hand[state.players[hi].hand.indexOf(hc)] = morph; emit(state, { type: 'conjure', player: hi, card: morph, color: null }); } } }
 		if (card.dormantLeft > 0) {
 			// Dormant creatures sleep through everything until they wake
 			emit(state, { type: 'dormant', player: pi, uid: card.uid, turns: card.dormantLeft }); if (card.dormantBattlecry) runBattlecry(state, pi, card, target, choice); /* The Darkness fires its Battlecry while dormant */
