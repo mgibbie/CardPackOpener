@@ -59,6 +59,7 @@ export function damageCreature(state, target, amount, source) {
 		return 0;
 	}
 	if (target.frozen && amount > 0) { for (let fsi = 0; fsi < state.players.length; fsi++) if (fsi !== target.controller && state.players[fsi].freezeSolid) { amount += 2; break; } } // Freeze Solid (Duels): +2 damage to Frozen enemies
+	if (amount > 2 && state.players[target.controller].board.some(c => c.damageCapAura && !isDead(c))) amount = 2; // Amitus, the Peacekeeper: your minions can't take more than 2 damage at a time
 	target.damage += amount;
 	if (source && source.type === 'creature') target._lastDamagerUid = source.uid; // Faceless Replicator (uid, not ref — refs duplicate on snapshot round-trip)
 	warptoothCheck(state, target.controller);

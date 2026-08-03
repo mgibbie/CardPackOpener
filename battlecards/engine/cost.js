@@ -166,6 +166,7 @@ export function effectiveCost(state, pi, card) {
 	if (p.enemyCardTaxTurn === state.turnNumber && p.enemyCardTaxAmount) c += p.enemyCardTaxAmount; // Norgannon (Ancient Knowledge): ALL enemy cards cost more next turn
 	if (p.overloadDiscount > 0 && (card.overload || 0) > 0) c = Math.max(0, c - p.overloadDiscount); // Inzah
 	if (p.firstCardFreeEachTurn && (p.cardsPlayedThisTurn || 0) === 0) c = 0; // Bonelord Frostwhisper: first card each turn is free
+	if (isSpellType(card) && (p.spellsPlayedThisTurn || 0) === 0 && p.board.some(cc => cc.firstSpellDiscountAura && !isDead(cc))) c = Math.max(0, c - 3); // Golganneth, the Thunderer: your first spell each turn costs (3) less
 	if (p.nextClassFree && card.type === 'creature' && (card.cardClass || '').split('__').includes(p.nextClassFree)) c = 0; // Blood Crusader (Health-cost approximated as free)
 	if (p.parityDiscount && (card.cost % 2) === (p.parityDiscount.parity === 'odd' ? 1 : 0)) c = Math.max(0, c - p.parityDiscount.amount); // Thaddius: odd/even-Cost cards cost less
 	if (p.freeMinionsCount > 0 && card.type === 'creature') c = 0; // Anub'Rekhan (Armor-cost approximated as free)

@@ -606,7 +606,10 @@ register('set-stats', ({ state, pi, target, source, enemies, scaled, hm, pickEne
 			// Humble Blessings: set every friendly creature's Attack & Health to a
 			// fixed value. (The "for the rest of the game" clause — future creatures —
 			// is not modeled; this sets the board as it stands.)
-			const board = e.target === 'friendly-creatures' ? state.players[pi].board : [];
+			const board = e.target === 'friendly-creatures' ? state.players[pi].board
+				: e.target === 'enemy-creatures' ? enemies.flatMap(o => state.players[o].board) // Amitus (Pacified): all enemy minions
+				: e.target === 'all-creatures' ? state.players.flatMap(pl => pl.board)
+				: [];
 			for (const c of board) {
 				if (isDead(c) || c.type === 'location') continue;
 				if (e.attack != null) c.attack = e.attack;

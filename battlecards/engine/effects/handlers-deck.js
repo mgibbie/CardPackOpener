@@ -37,6 +37,24 @@ import { gainArmor } from '../damage.js';
 import { drawCards, toGraveyard, bouncePermanent } from '../zones.js';
 import { runDeathrattle } from '../death.js';
 
+register('draw-minions-set-stats', ({ state, pi }, e) => {
+	// Amitus (Reinforced): draw N minions from your deck and set their Attack,
+	// Health, and Cost to a fixed value.
+	const p = state.players[pi];
+	const A = e.attack ?? 2, H = e.health ?? 2, C = e.cost ?? 2;
+	for (let k = 0; k < (e.count || 2); k++) {
+		let found = -1;
+		for (let i = p.deck.length - 1; i >= 0; i--) { const d = state.cardsById[p.deck[i]]; if (d && d.type === 'creature' && !d.token) { found = i; break; } }
+		if (found < 0) break;
+		const id = p.deck.splice(found, 1)[0];
+		if (p.hand.length >= MAX_HAND) continue;
+		const card = instantiate(state.cardsById[id], pi);
+		card.attack = A; card.maxHealth = H; card.damage = 0; card.cost = C; card.zone = 'hand'; card.fromDeck = true;
+		p.hand.push(card);
+		emit(state, { type: 'draw', player: pi, card });
+	}
+});
+
 register('draw', ({ state, pi, scaled }, e) => {
 	// count-vs-value tolerance (docs/06 pinned it; king_llane regression): a
 	// handful of imported cards write `count` instead of `value` — the old

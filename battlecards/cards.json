@@ -48026,10 +48026,62 @@
       "cost": 6,
       "rarity": "legendary",
       "set": "hs",
-      "description": "Titan Your first spell each turn costs (3) less.",
+      "description": "Titan. Your first spell each turn costs (3) less.",
       "type": "creature",
       "attack": 5,
-      "health": 7
+      "health": 7,
+      "tribe": "Titan",
+      "titan": true,
+      "firstSpellDiscountAura": true,
+      "activated": [
+        {
+          "name": "Roaring Oceans",
+          "text": "Deal 3 damage to all enemies and restore 6 Health to all friendly characters.",
+          "oncePerGame": true,
+          "sorcerySpeed": true,
+          "cost": 0,
+          "effects": [
+            {
+              "type": "damage",
+              "value": 3,
+              "target": "enemies"
+            },
+            {
+              "type": "heal",
+              "value": 6,
+              "target": "friendly-all"
+            }
+          ]
+        },
+        {
+          "name": "Lord of Skies",
+          "text": "Deal 20 damage to another minion.",
+          "oncePerGame": true,
+          "sorcerySpeed": true,
+          "cost": 0,
+          "effects": [
+            {
+              "type": "damage",
+              "value": 20,
+              "target": "creature"
+            }
+          ]
+        },
+        {
+          "name": "Shargahn's Wrath",
+          "text": "Draw 3 Overload cards.",
+          "oncePerGame": true,
+          "sorcerySpeed": true,
+          "cost": 0,
+          "effects": [
+            {
+              "type": "tutor",
+              "overload": true,
+              "count": 3
+            }
+          ]
+        }
+      ]
     },
     {
       "id": "argunite_golem",
@@ -48050,12 +48102,63 @@
       "cost": 7,
       "rarity": "legendary",
       "set": "hs",
-      "description": "Titan Taunt. Your creatures can't take more than 2 damage at a time.",
+      "description": "Titan. Taunt. Your minions can't take more than 2 damage at a time.",
       "type": "creature",
       "attack": 1,
       "health": 8,
       "keywords": [
         "taunt"
+      ],
+      "tribe": "Titan",
+      "titan": true,
+      "damageCapAura": true,
+      "activated": [
+        {
+          "name": "Reinforced",
+          "text": "Draw 2 minions. Set their Attack, Health, and Cost to 2.",
+          "oncePerGame": true,
+          "sorcerySpeed": true,
+          "cost": 0,
+          "effects": [
+            {
+              "type": "draw-minions-set-stats",
+              "count": 2,
+              "attack": 2,
+              "health": 2,
+              "cost": 2
+            }
+          ]
+        },
+        {
+          "name": "Empowered",
+          "text": "Give your other minions +2/+2.",
+          "oncePerGame": true,
+          "sorcerySpeed": true,
+          "cost": 0,
+          "effects": [
+            {
+              "type": "buff",
+              "target": "friendly-others",
+              "attack": 2,
+              "health": 2
+            }
+          ]
+        },
+        {
+          "name": "Pacified",
+          "text": "Set the Attack and Health of all enemy minions to 2.",
+          "oncePerGame": true,
+          "sorcerySpeed": true,
+          "cost": 0,
+          "effects": [
+            {
+              "type": "set-stats",
+              "target": "enemy-creatures",
+              "attack": 2,
+              "health": 2
+            }
+          ]
+        }
       ]
     },
     {
@@ -48065,10 +48168,72 @@
       "cost": 7,
       "rarity": "legendary",
       "set": "hs",
-      "description": "Titan Minions to the left of this have Rush, & ones to the right have Lifesteal.",
+      "description": "Titan. Minions to the left of this have Rush, and ones to the right have Lifesteal.",
       "type": "creature",
       "attack": 5,
-      "health": 9
+      "health": 9,
+      "tribe": "Titan",
+      "titan": true,
+      "aura": {
+        "leftKeywords": [
+          "rush"
+        ],
+        "rightKeywords": [
+          "lifesteal"
+        ],
+        "scope": "friendly"
+      },
+      "activated": [
+        {
+          "name": "Crystal Carving",
+          "text": "Discover a Deathrattle minion. It costs (3) less.",
+          "oncePerGame": true,
+          "sorcerySpeed": true,
+          "cost": 0,
+          "effects": [
+            {
+              "type": "discover",
+              "cardType": "creature",
+              "requireKeyword": "deathrattle",
+              "costMod": -3
+            }
+          ]
+        },
+        {
+          "name": "Show of Force",
+          "text": "Reduce the Cost of all minions in your hand by (2).",
+          "oncePerGame": true,
+          "sorcerySpeed": true,
+          "cost": 0,
+          "effects": [
+            {
+              "type": "discount-hand",
+              "value": 2,
+              "minionsOnly": true
+            }
+          ]
+        },
+        {
+          "name": "Argunite Army",
+          "text": "Summon four 2/2 Elementals with Taunt.",
+          "oncePerGame": true,
+          "sorcerySpeed": true,
+          "cost": 0,
+          "effects": [
+            {
+              "type": "summon",
+              "count": 4,
+              "attack": 2,
+              "health": 2,
+              "name": "Elemental",
+              "tribe": "Elemental",
+              "keywords": [
+                "taunt"
+              ]
+            }
+          ]
+        }
+      ]
     },
     {
       "id": "sp_3y3_d3r",

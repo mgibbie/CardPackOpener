@@ -40,6 +40,12 @@ export function recomputeAuras(state) {
 				aBonus += a.heraldScaled ? heraldMult(state.players[src.controller].heraldCount || 0) : (a.attack || 0);
 				hBonus += a.health || 0;
 				for (const k of a.keywords || []) granted.add(k);
+					// Argus, the Emerald Star: directional aura — minions to the source's
+					// left get one keyword set, ones to its right get another.
+					if (a.leftKeywords || a.rightKeywords) {
+						const si = p.board.indexOf(src);
+						if (si >= 0) { if (idx < si) for (const k of a.leftKeywords || []) granted.add(k); else if (idx > si) for (const k of a.rightKeywords || []) granted.add(k); }
+					}
 			}
 			// Equipment attached to this creature contributes its bonuses. It's its
 			// own permanent — it survives the creature (detaches) and can be moved,

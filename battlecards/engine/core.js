@@ -298,6 +298,8 @@ export function instantiate(def, controller) {
 		activated: def.activated ? JSON.parse(JSON.stringify(def.activated)) : null, // creature abilities: [{cost, sacrifice, effects, text}] — deep-cloned so Titan power-doubling can't leak across instances
 		titan: def.titan || false, // Titan: can't attack until all 3 abilities used; abilities are its `activated` list (oncePerGame each, one/turn)
 		titanPassive: def.titanPassive ? JSON.parse(JSON.stringify(def.titanPassive)) : null, // "After this uses an ability, ..."
+		firstSpellDiscountAura: def.firstSpellDiscountAura || false, // Golganneth: your first spell each turn costs (3) less
+		damageCapAura: def.damageCapAura || false, // Amitus: your minions can't take more than 2 damage at a time
 		tapAbility: def.tapAbility || null, // artifact {T} ability: { effects, text, condition? }
 		abilityUsedThisTurn: false,   // creatures never tap: abilities are once/turn
 		xSpell: !!def.xSpell,         // spends all remaining mana; X = the excess
