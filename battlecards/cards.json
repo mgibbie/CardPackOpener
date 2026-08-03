@@ -519,7 +519,18 @@
       "description": "After you cast a Fire spell, each Beast you control attacks a random enemy creature.",
       "attack": 4,
       "health": 5,
-      "tribe": "Human Ranger"
+      "tribe": "Human Ranger",
+      "ongoing": {
+        "on": "spell-played",
+        "if": {
+          "school": "Fire"
+        },
+        "effects": [
+          {
+            "type": "beasts-attack-random"
+          }
+        ]
+      }
     },
     {
       "id": "circle_of_healing",

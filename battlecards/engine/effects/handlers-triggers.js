@@ -297,6 +297,34 @@ registerTrigger('accrue-mana-awaken', (state, pi, e, ctx, triggering) => {
 });
 
 
+registerTrigger('beasts-attack-random', (state, pi, e, ctx, triggering) => {
+	do { {
+				// Harried Herdsman: after you cast a Fire spell, each Beast you control
+				// attacks a random enemy creature. Snapshot the Beasts up front (combat
+				// reshapes the board), then swing them one at a time — the same
+				// resolveCombat + sweepDeaths loop as attack-random-enemy, so it stays
+				// fuzz-safe.
+				const beastUids = state.players[pi].board
+					.filter(c => !isDead(c) && c.type !== 'location' && (c.tribe || '').includes('Beast'))
+					.map(c => c.uid);
+				for (const uid of beastUids) {
+					if (state.over) break;
+					const beast = state.players[pi].board.find(c => c.uid === uid);
+					if (!beast || isDead(beast) || beast.dormantLeft > 0) continue;
+					const pool = opponentsOf(state, pi).flatMap(o =>
+						state.players[o].board.filter(c => !isDead(c) && c.type !== 'location')
+							.map(c => ({ type: 'creature', uid: c.uid, player: o })));
+					if (!pool.length) break; // no enemy creatures left to swing at
+					const t = pool[Math.floor(state.rng() * pool.length)];
+					resolveCombat(state, pi, beast.uid, t);
+					sweepDeaths(state);
+				}
+				break;
+			}
+	} while (false); // `break` ends this effect, exactly like the old case break
+});
+
+
 registerTrigger('buff-magnetized', (state, pi, e, ctx, triggering) => {
 	do { {
 				// Invent-o-Matic: whenever you Magnetize a minion, give IT +N/+N
