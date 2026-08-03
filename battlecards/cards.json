@@ -103394,7 +103394,10 @@
       "health": 3,
       "rarity": "rare",
       "set": "TITANS",
-      "description": "Each turn this is in your hand, transform into a random card in your opponent's deck."
+      "description": "Each turn this is in your hand, transform into a random card in your opponent's deck.",
+      "handTransform": {
+        "fromEnemyDeck": true
+      }
     },
     {
       "id": "eye_of_chaos",

@@ -4050,6 +4050,11 @@ export function endTurn(state) {
 			const pool = state.players[foe].hand.filter(x => x.type === 'creature' && state.cardsById[x.id]);
 			if (!pool.length) continue;
 			pickDef = state.cardsById[pool[Math.floor(state.rng() * pool.length)].id];
+		} else if (ht.fromEnemyDeck) { // Disguised K'thir: a random card in the opponent's deck
+			const foe = opponentsOf(state, state.current).find(o => state.players[o].deck.length);
+			if (foe == null) continue;
+			const dk = state.players[foe].deck;
+			pickDef = state.cardsById[dk[Math.floor(state.rng() * dk.length)]];
 		} else if (ht.intoId) { // Genn: transform into the Worgen King when the REST of the hand is all even or all odd
 			if (ht.ifHandParity) {
 				const rest = np.hand.filter(x => x !== c).map(x => (x.cost || 0) % 2);
