@@ -12420,7 +12420,13 @@
       "type": "creature",
       "attack": 3,
       "health": 5,
-      "tribe": "Beast"
+      "tribe": "Beast",
+      "aura": {
+        "tribe": "Plant",
+        "keywords": [
+          "taunt"
+        ]
+      }
     },
     {
       "id": "foliage_fabricator",
@@ -12509,7 +12515,13 @@
       "type": "creature",
       "attack": 4,
       "health": 3,
-      "tribe": "Beast Knight"
+      "tribe": "Beast Knight",
+      "aura": {
+        "adjacent": true,
+        "keywords": [
+          "taunt"
+        ]
+      }
     },
     {
       "id": "ballista_beetle_barrage",
@@ -46024,7 +46036,16 @@
       "type": "creature",
       "attack": 5,
       "health": 8,
-      "tribe": "Demon"
+      "tribe": "Demon",
+      "keywords": [
+        "taunt"
+      ],
+      "aura": {
+        "others": true,
+        "tribe": "Demon",
+        "attack": 1,
+        "health": 0
+      }
     },
     {
       "id": "nozdormu",
@@ -46602,7 +46623,13 @@
       "description": "Adjacent creatures have Elusive.",
       "type": "creature",
       "attack": 2,
-      "health": 5
+      "health": 5,
+      "aura": {
+        "adjacent": true,
+        "keywords": [
+          "elusive"
+        ]
+      }
     },
     {
       "id": "drakkari_enchanter",
@@ -47013,7 +47040,15 @@
       "type": "creature",
       "attack": 2,
       "health": 2,
-      "tribe": "Demon"
+      "tribe": "Demon",
+      "keywords": [
+        "stealth"
+      ],
+      "aura": {
+        "others": true,
+        "attack": 1,
+        "health": 0
+      }
     },
     {
       "id": "crystal_lion",
@@ -47671,7 +47706,12 @@
       "description": "Your creatures have Elusive.",
       "type": "creature",
       "attack": 2,
-      "health": 4
+      "health": 4,
+      "aura": {
+        "keywords": [
+          "elusive"
+        ]
+      }
     },
     {
       "id": "transfer_student",
@@ -47825,7 +47865,13 @@
       "description": "Adjacent creatures have Windfury.",
       "type": "creature",
       "attack": 5,
-      "health": 5
+      "health": 5,
+      "aura": {
+        "adjacent": true,
+        "keywords": [
+          "windfury"
+        ]
+      }
     },
     {
       "id": "anetheron",
