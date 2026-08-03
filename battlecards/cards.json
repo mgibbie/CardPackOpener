@@ -44756,7 +44756,11 @@
       "type": "creature",
       "attack": 6,
       "health": 5,
-      "tribe": "Draenei"
+      "tribe": "Draenei",
+      "selfCost": {
+        "per": "secrets-played-game",
+        "amount": -2
+      }
     },
     {
       "id": "sunreaver_spy",
@@ -45346,7 +45350,11 @@
       "type": "creature",
       "attack": 3,
       "health": 6,
-      "tribe": "Mech/Beast"
+      "tribe": "Mech/Beast",
+      "selfCost": {
+        "per": "foreign-played-game",
+        "amount": -1
+      }
     },
     {
       "id": "tortotem",
@@ -45524,7 +45532,11 @@
       "type": "creature",
       "attack": 8,
       "health": 8,
-      "tribe": "Elemental"
+      "tribe": "Elemental",
+      "selfCost": {
+        "per": "foreign-played-game",
+        "amount": -1
+      }
     },
     {
       "id": "surging_tempest",
@@ -46960,7 +46972,11 @@
       "tribe": "Demon",
       "keywords": [
         "rush"
-      ]
+      ],
+      "selfCost": {
+        "per": "outcast-played-game",
+        "amount": -1
+      }
     },
     {
       "id": "vexallus",
@@ -47442,7 +47458,12 @@
       "type": "creature",
       "attack": 5,
       "health": 5,
-      "tribe": "Elemental/Beast"
+      "tribe": "Elemental/Beast",
+      "selfCost": {
+        "per": "class-played-game",
+        "cardClass": "paladin",
+        "amount": -1
+      }
     },
     {
       "id": "inkveil_ambusher",

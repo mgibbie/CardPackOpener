@@ -1937,6 +1937,10 @@ export function playCard(state, pi, cardUid, target, choice, position, useAlt, k
 	if (wasRightmost) fireOngoing(state, pi, 'rightmost-card-played', { played: card }); // Stargazer Luna
 	if (card.combo) fireOngoing(state, pi, 'combo-card-played', { played: card }); // Whirlkick Master
 	if (!card.token) (p.cardsPlayedThisTurnIds = p.cardsPlayedThisTurnIds || []).push(card.id); // Murozond the Infinite
+	if (!card.fromDeck && !card.token) p.foreignPlayedGame = (p.foreignPlayedGame || 0) + 1; // Techysaurus / Mana Giant: cards played that didn't start in your deck
+	for (const cls of (card.cardClass || '').split('__')) if (cls && cls !== 'neutral') (p.classPlayedGame = p.classPlayedGame || {})[cls] = (p.classPlayedGame[cls] || 0) + 1; // Lightray: Paladin cards played this game
+	if ((card.keywords || []).includes('outcast')) p.outcastPlayedGame = (p.outcastPlayedGame || 0) + 1; // Vengeful Walloper
+	if (card.type === 'secret') p.secretsPlayedGame = (p.secretsPlayedGame || 0) + 1; // Kabal Crystal Runner
 	for (const o of opponentsOf(state, pi)) fireOngoing(state, o, 'enemy-card-played', { played: card, caster: pi }); // Fel Reaver
 	corruptHandCards(state, pi, playedCost);
 	// Patches the Pirate: playing a Pirate pulls Patches out of your deck

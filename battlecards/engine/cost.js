@@ -106,6 +106,14 @@ export function effectiveCost(state, pi, card) {
 			n = p.manaSpentSpellsGame || 0; // Naga Giant / Shirvallah, the Tiger
 		} else if (card.selfCost.per === 'own-turns-damage-game') {
 			n = p.ownTurnsDamage || 0; // Imprisoned Horror
+		} else if (card.selfCost.per === 'foreign-played-game') {
+			n = p.foreignPlayedGame || 0; // Techysaurus / Mana Giant
+		} else if (card.selfCost.per === 'class-played-game') {
+			n = (p.classPlayedGame || {})[card.selfCost.cardClass] || 0; // Lightray
+		} else if (card.selfCost.per === 'outcast-played-game') {
+			n = p.outcastPlayedGame || 0; // Vengeful Walloper
+		} else if (card.selfCost.per === 'secrets-played-game') {
+			n = p.secretsPlayedGame || 0; // Kabal Crystal Runner
 		}
 		c += card.selfCost.amount * n;
 	}
