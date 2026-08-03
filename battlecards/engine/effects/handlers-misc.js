@@ -1085,11 +1085,12 @@ register('attack-random-enemy', ({ state, pi, target, source, enemies, scaled, h
 			const hit = new Set();
 			for (let i = 0; i < (e.count || 1); i++) {
 				if (!source || isDead(source)) break;
-				const pool = enemies.flatMap(o => state.players[o].board.filter(c => !isDead(c) && c.type !== 'location' && !hit.has(c.uid)));
+				const pool = enemies.flatMap(o => state.players[o].board.filter(c => !isDead(c) && c.type !== 'location' && !hit.has(c.uid)).map(c => ({ type: 'creature', uid: c.uid, player: c.controller })));
+				if (e.includeHero) for (const o of enemies) if (!state.players[o].eliminated) pool.push({ type: 'hero', player: o }); // Kobold Barbarian: "a random enemy" can be the hero
 				if (!pool.length) break;
 				const t = pool[Math.floor(state.rng() * pool.length)];
-				hit.add(t.uid);
-				resolveCombat(state, pi, source.uid, { type: 'creature', uid: t.uid, player: t.controller });
+				if (t.uid != null) hit.add(t.uid);
+				resolveCombat(state, pi, source.uid, t);
 				sweepDeaths(state);
 			}
 } });

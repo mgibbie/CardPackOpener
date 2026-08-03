@@ -8756,6 +8756,14 @@
         "blood": 1,
         "frost": 0,
         "unholy": 0
+      },
+      "ongoing": {
+        "on": "turn-end",
+        "effects": [
+          {
+            "type": "attack-lowest-enemy"
+          }
+        ]
       }
     },
     {
@@ -45635,7 +45643,16 @@
       "type": "creature",
       "attack": 12,
       "health": 7,
-      "tribe": "Dragon"
+      "tribe": "Dragon",
+      "ongoing": {
+        "on": "turn-end",
+        "effects": [
+          {
+            "type": "attack-random-enemy",
+            "count": 1
+          }
+        ]
+      }
     },
     {
       "id": "selenic_drake",
@@ -46726,7 +46743,17 @@
       "description": "At the start of your turn, attack a random enemy.",
       "type": "creature",
       "attack": 4,
-      "health": 4
+      "health": 4,
+      "ongoing": {
+        "on": "turn-start",
+        "effects": [
+          {
+            "type": "attack-random-enemy",
+            "count": 1,
+            "includeHero": true
+          }
+        ]
+      }
     },
     {
       "id": "ironwood_golem",
@@ -47124,7 +47151,17 @@
       "description": "At the end of your turn, your opponent discards a spell.",
       "type": "creature",
       "attack": 4,
-      "health": 6
+      "health": 6,
+      "ongoing": {
+        "on": "turn-end",
+        "effects": [
+          {
+            "type": "enemy-discard",
+            "count": 1,
+            "spellOnly": true
+          }
+        ]
+      }
     },
     {
       "id": "scourge_troll",
@@ -47759,7 +47796,18 @@
       "type": "creature",
       "attack": 8,
       "health": 7,
-      "tribe": "Beast"
+      "tribe": "Beast",
+      "ongoing": {
+        "on": "turn-end",
+        "effects": [
+          {
+            "type": "set-stats",
+            "target": "enemy-creatures",
+            "attack": 1,
+            "health": 1
+          }
+        ]
+      }
     },
     {
       "id": "underbrush_tracker",
@@ -48797,7 +48845,15 @@
       "health": 10,
       "keywords": [
         "taunt"
-      ]
+      ],
+      "ongoing": {
+        "on": "turn-start",
+        "effects": [
+          {
+            "type": "shuffle-self-into-deck"
+          }
+        ]
+      }
     },
     {
       "id": "pterrordax_hatchling",

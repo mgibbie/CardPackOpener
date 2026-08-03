@@ -592,9 +592,11 @@ register('enemy-discard', ({ state, pi, target, source, enemies, scaled, hm, pic
 			const dn = e.count === 'X' ? (source?.xValue || 0) : (e.count || 1);
 			for (const o of enemies) {
 				const op = state.players[o];
-				for (let i = 0; i < dn && op.hand.length; i++) {
-					const j = Math.floor(state.rng() * op.hand.length);
-					const [c] = op.hand.splice(j, 1);
+				for (let i = 0; i < dn; i++) {
+					const pool = e.spellOnly ? op.hand.filter(c => isSpellType(c)) : op.hand; // Disruptive Spellbreaker: discard a spell
+					if (!pool.length) break;
+					const c = pool[Math.floor(state.rng() * pool.length)];
+					op.hand = op.hand.filter(x => x !== c);
 					toGraveyard(state, o, c);
 					emit(state, { type: 'discard', player: o, card: c });
 				}
@@ -784,6 +786,7 @@ register('shuffle-self-into-deck', ({ state, pi, target, source, enemies, scaled
 			// "Shuffle this card back into your deck" — Astral Tiger recursion
 			const p = state.players[pi];
 			if (source && state.cardsById[source.id] && !p.eliminated) {
+				if (source.zone === 'board') { p.board = p.board.filter(c => c !== source); source.zone = 'deck'; } // Conjured Mirage: a live minion actually leaves the board
 				p.deck.push(source.id);
 				for (let i = p.deck.length - 1; i > 0; i--) {
 					const j = Math.floor(state.rng() * (i + 1));
