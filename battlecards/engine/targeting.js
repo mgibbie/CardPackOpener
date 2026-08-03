@@ -39,7 +39,7 @@ const CHOSEN = {
 	'discover-target-tribe': { 'friendly-creature': 'friendly-creature' },
 	'steal-health': { creature: 'creature', 'enemy-creature': 'enemy-creature' },
 	'bounce-to-deck-bottom': { 'enemy-creature': 'enemy-creature', creature: 'creature' },
-	'summon-copy-of-target-buffed': { 'friendly-creature': 'friendly-creature' },
+	'summon-copy-of-target-buffed': { 'friendly-creature': 'friendly-creature', creature: 'creature' },
 	'set-target-stats': { creature: 'creature', 'enemy-creature': 'enemy-creature' },
 	'destroy-fragment-then-damage': { any: 'any', 'enemy-any': 'enemy-any', creature: 'creature', 'enemy-creature': 'enemy-creature' },
 	'transform-into-token': { 'friendly-creature': 'friendly-creature', creature: 'creature' },
@@ -177,6 +177,7 @@ export function targetSpec(state, pi, card, choice) {
 		if (e.requireKeyword != null) { filter = c => c.keywords.includes(e.requireKeyword); why = `a creature with ${e.requireKeyword.replace(/_/g, ' ')}`; }
 		if (e.requireDamaged) { filter = c => c.damage > 0; why = 'a damaged creature'; }
 		if (e.excludeSelf) { const prev = filter; filter = c => c !== card && (!prev || prev(c)); why = (why || 'a creature') + ' other than this'; }
+			if (e.excludeTitan) { const prev = filter; filter = c => !c.titan && (!prev || prev(c)); why = 'a non-Titan minion'; } // Aman'Thul: Shape the Stars
 		if (e.tribe) {
 			const tribes = e.tribe.split('|');
 			filter = c => tribes.some(t => (c.tribe || '').includes(t));

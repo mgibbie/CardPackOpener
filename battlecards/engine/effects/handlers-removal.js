@@ -492,12 +492,16 @@ register('destroy-deck-max-cost', ({ state, pi, target, source, enemies, scaled,
 register('exile', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => { {
 			// removed from the game: no death, no deathrattle, never reshuffled
 			const t = chosenCreature();
+			const doExile = c => { const owner = state.players[c.controller]; owner.board = owner.board.filter(x => x !== c); c.zone = 'exile'; owner.exile.push(c); emit(state, { type: 'exiled', uid: c.uid, player: c.controller, name: c.name }); };
 			if (t && (e.minAttack == null || t.attack >= e.minAttack)) {
-				const owner = state.players[t.controller];
-				owner.board = owner.board.filter(c => c !== t);
-				t.zone = 'exile';
-				owner.exile.push(t);
-				emit(state, { type: 'exiled', uid: t.uid, player: t.controller, name: t.name });
+				doExile(t);
+				// Aman'Thul (Strike from History): remove a SECOND enemy minion. HS lets
+				// you choose both; the engine has no two-target pick, so the second is
+				// a random OTHER enemy minion.
+				if (e.alsoRandomOther) {
+					const pool = enemies.flatMap(o => state.players[o].board.filter(c => c !== t && !isDead(c) && c.type !== 'location'));
+					if (pool.length) doExile(pool[Math.floor(state.rng() * pool.length)]);
+				}
 			}
 } });
 
@@ -917,7 +921,7 @@ register('return-destroyed-weapon', ({ state, pi, target, source, enemies, scale
 register('destroy-target-gain-stats', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => { {
 			// Ravenous Devilsaur: destroy a minion; Kindred: gain its stats (requireKindredForStats). Natalie Seline: healthOnly
 			const t = chosenCreature();
-			if (t) { const a = t.attack || 0, h = hp(t); t.damage = t.maxHealth; t.shield = false; emit(state, { type: 'destroy', uid: t.uid }); sweepDeaths(state); const gains = !e.requireKindredForStats || kindredActive(state, pi, source); if (source && !isDead(source) && gains) { if (!e.healthOnly) source.attack += a; source.maxHealth += h; emit(state, { type: 'buff', uid: source.uid, attack: source.attack, hp: hp(source) }); } }
+			if (t) { const a = t.attack || 0, h = hp(t); t.damage = t.maxHealth; t.shield = false; emit(state, { type: 'destroy', uid: t.uid }); sweepDeaths(state); const gains = !e.requireKindredForStats || kindredActive(state, pi, source); if (source && !isDead(source) && gains) { if (!e.healthOnly) source.attack += a; source.maxHealth += h; emit(state, { type: 'buff', uid: source.uid, attack: source.attack, hp: hp(source) }); } if (e.healHeroByStats) healHero(state, pi, h); } // The Primus (Runes of Blood): your hero also gains its Health
 } });
 
 

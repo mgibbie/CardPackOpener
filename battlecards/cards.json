@@ -103849,18 +103849,6 @@
       ]
     },
     {
-      "id": "khazgoroth",
-      "name": "Khaz'goroth",
-      "type": "creature",
-      "cost": 6,
-      "cardClass": "warrior",
-      "attack": 4,
-      "health": 5,
-      "rarity": "legendary",
-      "set": "TITANS",
-      "description": "Titan. After this uses an ability, gain Immune this turn and attack a random enemy minion."
-    },
-    {
       "id": "loken_jailer_of_yogg_saron",
       "name": "Loken, Jailer of Yogg-Saron",
       "type": "creature",
@@ -104003,6 +103991,81 @@
       ]
     },
     {
+      "id": "amanthul",
+      "name": "Aman'Thul",
+      "type": "creature",
+      "cardClass": "priest",
+      "cost": 7,
+      "rarity": "legendary",
+      "set": "hs",
+      "attack": 3,
+      "health": 10,
+      "tribe": "Titan",
+      "titan": true,
+      "description": "Titan. After this uses an ability, Discover a Legendary minion from any class.",
+      "titanPassive": {
+        "type": "after-ability-effects",
+        "text": "Discover a Legendary minion from any class.",
+        "effects": [
+          {
+            "type": "discover",
+            "cardType": "creature",
+            "rarity": "legendary"
+          }
+        ]
+      },
+      "activated": [
+        {
+          "name": "Shape the Stars",
+          "text": "Choose a non-Titan minion. Summon a copy of it with +2/+2.",
+          "oncePerGame": true,
+          "sorcerySpeed": true,
+          "cost": 0,
+          "effects": [
+            {
+              "type": "summon-copy-of-target-buffed",
+              "target": "creature",
+              "excludeTitan": true,
+              "attack": 2,
+              "health": 2
+            }
+          ]
+        },
+        {
+          "name": "Strike from History",
+          "text": "Choose two enemy minions. Remove them from the game.",
+          "oncePerGame": true,
+          "sorcerySpeed": true,
+          "cost": 0,
+          "effects": [
+            {
+              "type": "exile",
+              "target": "enemy-creature",
+              "alsoRandomOther": true
+            }
+          ]
+        },
+        {
+          "name": "Vision of Heroes",
+          "text": "Summon a random 6-Cost minion. Give it Taunt and Lifesteal.",
+          "oncePerGame": true,
+          "sorcerySpeed": true,
+          "cost": 0,
+          "effects": [
+            {
+              "type": "summon-random",
+              "cost": 6,
+              "count": 1,
+              "grant": [
+                "taunt",
+                "lifesteal"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
       "id": "norgannon",
       "name": "Norgannon",
       "type": "creature",
@@ -104101,18 +104164,6 @@
           ]
         }
       ]
-    },
-    {
-      "id": "amanthul",
-      "name": "Aman'Thul",
-      "type": "creature",
-      "cost": 7,
-      "cardClass": "priest",
-      "attack": 3,
-      "health": 10,
-      "rarity": "legendary",
-      "set": "TITANS",
-      "description": "Titan. After this uses an ability, Discover any Legendary minion from any class."
     },
     {
       "id": "ancient_of_growth",
@@ -104375,7 +104426,77 @@
       "keywords": [
         "taunt"
       ],
-      "description": "Titan. After this uses an ability, Discover a card with that Rune."
+      "description": "Titan. After this uses an ability, Discover a card with that Rune.",
+      "tribe": "Titan",
+      "titan": true,
+      "titanPassive": {
+        "type": "after-ability-effects",
+        "text": "Discover a Death Knight card.",
+        "effects": [
+          {
+            "type": "discover",
+            "cardType": "any",
+            "cardClasses": [
+              "deathknight"
+            ]
+          }
+        ]
+      },
+      "activated": [
+        {
+          "name": "Runes of Blood",
+          "text": "Destroy an enemy minion. This minion and your hero gain its Health.",
+          "oncePerGame": true,
+          "sorcerySpeed": true,
+          "cost": 0,
+          "effects": [
+            {
+              "type": "destroy-target-gain-stats",
+              "target": "enemy-creature",
+              "healthOnly": true,
+              "healHeroByStats": true
+            }
+          ]
+        },
+        {
+          "name": "Runes of the Unholy",
+          "text": "Summon two 3/3 Undead with Taunt and Reborn.",
+          "oncePerGame": true,
+          "sorcerySpeed": true,
+          "cost": 0,
+          "effects": [
+            {
+              "type": "summon",
+              "count": 2,
+              "attack": 3,
+              "health": 3,
+              "name": "Undead",
+              "tribe": "Undead",
+              "keywords": [
+                "taunt",
+                "reborn"
+              ]
+            }
+          ]
+        },
+        {
+          "name": "Runes of Frost",
+          "text": "The next spell you cast costs (3) less and has Spell Damage +3.",
+          "oncePerGame": true,
+          "sorcerySpeed": true,
+          "cost": 0,
+          "effects": [
+            {
+              "type": "set-next-spell-discount",
+              "value": 3
+            },
+            {
+              "type": "set-next-spell-damage",
+              "value": 3
+            }
+          ]
+        }
+      ]
     },
     {
       "id": "sargeras_the_destroyer",

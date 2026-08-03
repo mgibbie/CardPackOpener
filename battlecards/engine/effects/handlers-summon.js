@@ -485,7 +485,7 @@ register('remove-colossal-keyword', ({ state, pi, target, source, enemies, scale
 register('summon-copy-of-target-buffed', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => { {
 			// Ini Stormcoil: summon a copy of a chosen friendly minion with granted keywords
 			const t = chosenCreature();
-			if (t) { const base = state.cardsById[t.id]; if (base) { const c = summon(state, pi, JSON.parse(JSON.stringify(base))); if (c) for (const kw of e.keywords || []) { if (!c.keywords.includes(kw)) { c.keywords.push(kw); if (kw === KW.DIVINE_SHIELD) c.shield = true; } } } }
+			if (t) { const base = state.cardsById[t.id]; if (base) { const c = summon(state, pi, JSON.parse(JSON.stringify(base))); if (c) { for (const kw of e.keywords || []) { if (!c.keywords.includes(kw)) { c.keywords.push(kw); if (kw === KW.DIVINE_SHIELD) c.shield = true; } } if (e.attack || e.health) { c.attack += e.attack || 0; c.maxHealth += e.health || 0; emit(state, { type: 'buff', uid: c.uid, attack: c.attack, hp: hp(c) }); } } } } // Aman'Thul (Shape the Stars): copy with +2/+2
 } });
 
 
@@ -1217,7 +1217,7 @@ register('summon-random', ({ state, pi, target, source, enemies, scaled, hm, pic
 				const c = summon(state, owner, def);
 				if (c && e.disguise) disguiseCreature(state, c);
 				// "...and give it Taunt": grant a keyword to the summoned creature
-				if (c && e.grant && !c.keywords.includes(e.grant)) { c.keywords.push(e.grant); if (e.grant === KW.DIVINE_SHIELD) c.shield = true; if (e.grant === KW.STEALTH) c.stealthed = true; }
+				if (c && e.grant) { for (const gk of (Array.isArray(e.grant) ? e.grant : [e.grant])) if (!c.keywords.includes(gk)) { c.keywords.push(gk); if (gk === KW.DIVINE_SHIELD) c.shield = true; if (gk === KW.STEALTH) c.stealthed = true; } } // grant may be a single keyword or an array (Aman'Thul: Taunt + Lifesteal)
 				if (c && e.dormantTurns) { c.dormantLeft = e.dormantTurns; emit(state, { type: 'dormant', player: owner, uid: c.uid, turns: e.dormantTurns }); } // Paltry Flutterwing / Dreadsoul
 				// Ankylodon: the summoned Beasts attack random enemies
 				if (c && e.attackRandom && !isDead(c)) {
