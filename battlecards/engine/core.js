@@ -1047,6 +1047,7 @@ export function summon(state, pi, tokenDef) {
 	if (c.scaleOnEntry) { const n = p.enteredCountById?.[c.id] || 0; if (n > 0) { c.attack += (c.scaleOnEntry.attack || 0) * n; c.maxHealth += (c.scaleOnEntry.health || 0) * n; } } // Astral Automaton: +1/+1 per other summoned this game
 	(p.enteredCountById = p.enteredCountById || {})[c.id] = (p.enteredCountById[c.id] || 0) + 1;
 	if ((c.tribe || '').includes('Totem')) p.totemsSummonedGame = (p.totemsSummonedGame || 0) + 1; // Thing from Below / Gigantotem: Totems summoned this game
+	for (const t of (c.tribe || '').split('/').filter(Boolean)) (p.tribeSummonedGame = p.tribeSummonedGame || {})[t] = (p.tribeSummonedGame[t] || 0) + 1; // Knight of the Wild / Frostsaber Matriarch: minions of a tribe summoned this game
 	if (state.anomaly && c.type !== 'location') { // Dalaran Heist anomalies, applied symmetrically to every summon
 		if (state.anomaly === 'infused') { const ks = [KW.TAUNT, KW.DIVINE_SHIELD, KW.RUSH, KW.WINDFURY]; const k = ks[Math.floor(state.rng() * ks.length)]; if (!c.keywords.includes(k)) { c.keywords.push(k); if (k === KW.DIVINE_SHIELD) c.shield = true; } }
 		else if (state.anomaly === 'explosive') { c.deathrattle = (c.deathrattle || []).concat([{ type: 'damage', value: 1, target: 'all-creatures' }]); if (!c.keywords.includes(KW.DEATHRATTLE)) c.keywords.push(KW.DEATHRATTLE); }
@@ -2144,6 +2145,7 @@ export function playCard(state, pi, cardUid, target, choice, position, useAlt, k
 		if ((card.cost || 0) >= 6) p.lastBigSpell = { id: card.id, target }; // Grey Sage Parrot
 		p.lastSpellPlayed = { id: card.id, target }; // Asvedon: opponent's most recent spell (any cost)
 		p.spellsPlayedTotal = (p.spellsPlayedTotal || 0) + 1; // Arcane Giant
+		p.manaSpentSpellsGame = (p.manaSpentSpellsGame || 0) + (card.cost || 0); // Naga Giant / Shirvallah: Mana spent on spells this game
 		if ((card.cost || 0) >= 5) p.bigSpellsGame = (p.bigSpellsGame || 0) + 1; // Dragoncaller Alanna
 		(p.spellsPlayedThisTurnIds = p.spellsPlayedThisTurnIds || []).push(card.id); // Krag'wa, the Frog
 		// Lynessa Sunsorrow: remember spells you cast on your own creatures
@@ -4190,7 +4192,7 @@ export function endTurn(state) {
 	np.heroAttacksUsed = 0;
 	np.landsPlayedThisTurn = 0;
 	np.creaturesPlayedThisTurn = 0;
-	np.cardsPlayedThisTurn = 0;
+	np.cardsPlayedThisTurn = 0; np.cardsDrawnThisTurn = 0;
 	np.drawsThisTurn = 0; // reset before the mandatory draw so it counts as the first
 	np.spellsPlayedThisTurn = 0; np.schoolsCastThisTurn = {}; np.firstBattlecryThisTurn = null; np.castBigSpellThisTurn = false; // Metamorfin / Bolner Hammerbeak / Arcane Tyrant
 	np.parityBlock = null; // Alara: a start-of-turn coin flip may block odd/even-cost plays

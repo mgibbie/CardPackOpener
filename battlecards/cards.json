@@ -8987,7 +8987,11 @@
       "tribe": "Demon Barbarian",
       "keywords": [
         "taunt"
-      ]
+      ],
+      "selfCost": {
+        "per": "cards-drawn-turn",
+        "amount": -1
+      }
     },
     {
       "id": "kayn_sunfury",
@@ -43859,7 +43863,12 @@
       "description": "Costs (1) less for each Beast you've summoned this game.",
       "type": "creature",
       "attack": 6,
-      "health": 6
+      "health": 6,
+      "selfCost": {
+        "per": "tribe-summoned-game",
+        "tribe": "Beast",
+        "amount": -1
+      }
     },
     {
       "id": "astral_communion",
@@ -44052,7 +44061,12 @@
       "type": "creature",
       "attack": 4,
       "health": 5,
-      "tribe": "Beast"
+      "tribe": "Beast",
+      "selfCost": {
+        "per": "tribe-summoned-game",
+        "tribe": "Beast",
+        "amount": -1
+      }
     },
     {
       "id": "wildpaw_gnoll",
@@ -47683,7 +47697,11 @@
       "type": "creature",
       "attack": 7,
       "health": 5,
-      "tribe": "Beast"
+      "tribe": "Beast",
+      "selfCost": {
+        "per": "mana-spent-spells-game",
+        "amount": -1
+      }
     },
     {
       "id": "spellzerker",
@@ -47968,7 +47986,11 @@
       "type": "creature",
       "attack": 8,
       "health": 8,
-      "tribe": "Naga"
+      "tribe": "Naga",
+      "selfCost": {
+        "per": "mana-spent-spells-game",
+        "amount": -1
+      }
     },
     {
       "id": "tuskarrrr_trawler",
@@ -48066,7 +48088,11 @@
       "description": "Costs (1) less for each damage you've taken on your turns this game.",
       "type": "creature",
       "attack": 4,
-      "health": 4
+      "health": 4,
+      "selfCost": {
+        "per": "own-turns-damage-game",
+        "amount": -1
+      }
     },
     {
       "id": "furious_furnace",

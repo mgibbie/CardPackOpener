@@ -98,6 +98,14 @@ export function effectiveCost(state, pi, card) {
 			n = p.corpsesSpentGame || 0; // Stitched Giant
 		} else if (card.selfCost.per === 'cards-drawn-game') {
 			n = p.cardsDrawnGame || 0; // Playhouse Giant
+		} else if (card.selfCost.per === 'cards-drawn-turn') {
+			n = p.cardsDrawnThisTurn || 0; // Irebound Brute
+		} else if (card.selfCost.per === 'tribe-summoned-game') {
+			n = (p.tribeSummonedGame || {})[card.selfCost.tribe] || 0; // Knight of the Wild / Frostsaber Matriarch
+		} else if (card.selfCost.per === 'mana-spent-spells-game') {
+			n = p.manaSpentSpellsGame || 0; // Naga Giant / Shirvallah, the Tiger
+		} else if (card.selfCost.per === 'own-turns-damage-game') {
+			n = p.ownTurnsDamage || 0; // Imprisoned Horror
 		}
 		c += card.selfCost.amount * n;
 	}

@@ -135,6 +135,7 @@ export function drawCards(state, pi, count) {
 		if (card.accrueDarkGifts && p.darkGiftLog && p.darkGiftLog.length) for (const gl of p.darkGiftLog) { const g = DARK_GIFTS.find(x => x.label === gl); if (g) applyGift(state, card, g, { noLog: true }); }
 		card.zone = 'hand';
 		p.cardsDrawnGame = (p.cardsDrawnGame || 0) + 1; // Playhouse Giant: cards drawn this game
+		p.cardsDrawnThisTurn = (p.cardsDrawnThisTurn || 0) + 1; // Irebound Brute: cards drawn this turn
 		if (state.hpResolver === pi && staticValue(p, 'hero-power-draw-zero') > 0) card.cost = 0; // Wilfred Fizzlebang
 		if (!p.stealerUsedThisTurn && p.board.some(x => x.id === 'stealer_of_souls' && !isDead(x))) { card.cost = 0; p.stealerUsedThisTurn = true; } // Stealer of Souls (Health-cost approximated as free)
 		if (p.nextDrawDiscount > 0) { card.cost = Math.max(0, (card.cost || 0) - p.nextDrawDiscount); p.nextDrawDiscount = 0; } // SI:7 Skulker
