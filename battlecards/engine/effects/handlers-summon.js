@@ -202,6 +202,13 @@ register('fill-board-self', ({ state, pi, target, source, enemies, scaled, hm, p
 			if (def) while (p.board.filter(c => !isDead(c)).length < 7) { const c = summon(state, pi, def); if (!c) break; }
 });
 
+register('fill-board-token', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => {
+			// Onyxia / Shu'ma: fill your board with 1/1 tokens (up to 7 minions total)
+			const p = state.players[pi];
+			const def = { id: 'token_' + (e.name || 'token').toLowerCase().replace(/[^a-z0-9]+/g, '_'), name: e.name || 'Token', type: 'creature', cost: e.cost || 1, token: true, rarity: 'common', attack: e.attack ?? 1, health: e.health ?? 1, tribe: e.tribe || null, keywords: e.keywords || [], description: `A ${e.attack ?? 1}/${e.health ?? 1} token.` };
+			while (p.board.filter(c => !isDead(c) && c.type !== 'location').length < 7) { const c = summon(state, pi, def); if (!c) break; }
+});
+
 
 register('summon-random-discarded', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => {
 			// Cruel Dinomancer: summon a random creature you discarded this game

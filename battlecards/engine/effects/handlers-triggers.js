@@ -816,7 +816,7 @@ registerTrigger('freeze-attacker', (state, pi, e, ctx, triggering) => {
 // TWIN KEPT (PR 39): subject differs: trigger = the triggering minion; effects = chosen target / all-* — both needed
 registerTrigger('set-attack', (state, pi, e, ctx, triggering) => {
 	do { {
-				const m = triggering();
+				const m = e.target === 'self' ? ctx.self : triggering(); // Toothy Chest / Validated Doomsayer: set THIS creature's Attack via an ongoing
 				if (m) { m.attack = e.value; emit(state, { type: 'buff', uid: m.uid, attack: m.attack, hp: hp(m) }); }
 				break;
 			}

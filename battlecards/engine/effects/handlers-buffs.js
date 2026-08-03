@@ -1102,6 +1102,8 @@ register('set-attack', ({ state, pi, target, source, enemies, scaled, hm, pickEn
 				? state.players.flatMap(pl => pl.board.filter(c => !isDead(c) && c !== source))
 				: e.target === 'enemy-creatures'
 				? enemies.flatMap(o => state.players[o].board.filter(c => !isDead(c))) // Eadric the Pure
+				: e.target === 'self'
+				? [source].filter(c => c && !isDead(c)) // Toothy Chest / Validated Doomsayer
 				: [chosenCreature()].filter(Boolean);
 			for (const t of list) {
 				t.attack = e.value + (t.auraAttack || 0);
