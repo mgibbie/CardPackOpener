@@ -1229,7 +1229,7 @@ register('buff-random-friendly', ({ state, pi, target, source, enemies, scaled, 
 			for (let n = 0; n < (e.count || 1) && pool.length; n++) {
 				const m = pool.splice(Math.floor(state.rng() * pool.length), 1)[0];
 				buffCreature(m, e.attack || 0, e.health || 0);
-				if (e.grant && !m.keywords.includes(e.grant)) { m.keywords.push(e.grant); if (e.grant === KW.DIVINE_SHIELD) m.shield = true; }
+				if (e.grant) for (const g of (Array.isArray(e.grant) ? e.grant : [e.grant])) { if (!m.keywords.includes(g)) { m.keywords.push(g); if (g === KW.DIVINE_SHIELD) m.shield = true; } } // Coghammer: Divine Shield AND Taunt
 			}
 	} while (false); // top-level `continue` = skip this effect (chain semantics)
 });

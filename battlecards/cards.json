@@ -136297,6 +136297,202 @@
         }
       ],
       "description": "Battlecry: Destroy 2 random enemy creatures. Deal 2 damage to all enemy creatures."
+    },
+    {
+      "id": "glaivezooka",
+      "name": "Glaivezooka",
+      "type": "weapon",
+      "cost": 2,
+      "cardClass": "hunter",
+      "attack": 2,
+      "durability": 2,
+      "rarity": "common",
+      "set": "GVG",
+      "description": "Battlecry: Give a random friendly minion +1 Attack.",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "buff-random-friendly",
+          "attack": 1
+        }
+      ]
+    },
+    {
+      "id": "woodcutter_s_axe",
+      "name": "Woodcutter's Axe",
+      "type": "weapon",
+      "cost": 2,
+      "cardClass": "warrior",
+      "attack": 2,
+      "durability": 2,
+      "rarity": "common",
+      "set": "PLACEHOLDER_202204",
+      "description": "Deathrattle: Give +2/+1 to a random friendly minion.",
+      "keywords": [
+        "deathrattle"
+      ],
+      "deathrattle": [
+        {
+          "type": "buff-random-friendly",
+          "attack": 2,
+          "health": 1
+        }
+      ]
+    },
+    {
+      "id": "powermace",
+      "name": "Powermace",
+      "type": "weapon",
+      "cost": 3,
+      "cardClass": "shaman",
+      "attack": 3,
+      "durability": 2,
+      "rarity": "rare",
+      "set": "GVG",
+      "description": "Deathrattle: Give a random friendly Mech +2/+2.",
+      "keywords": [
+        "deathrattle"
+      ],
+      "deathrattle": [
+        {
+          "type": "buff-random-friendly",
+          "tribe": "Mech",
+          "attack": 2,
+          "health": 2
+        }
+      ]
+    },
+    {
+      "id": "coghammer",
+      "name": "Coghammer",
+      "type": "weapon",
+      "cost": 3,
+      "cardClass": "paladin",
+      "attack": 2,
+      "durability": 3,
+      "rarity": "epic",
+      "set": "CORE",
+      "description": "Battlecry: Give a random friendly minion Divine Shield and Taunt.",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "buff-random-friendly",
+          "grant": [
+            "divine_shield",
+            "taunt"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "shadowblade",
+      "name": "Shadowblade",
+      "type": "weapon",
+      "cost": 3,
+      "cardClass": "rogue",
+      "attack": 3,
+      "durability": 2,
+      "rarity": "rare",
+      "set": "PLACEHOLDER_202204",
+      "description": "Battlecry: Your hero is Immune this turn.",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "hero-immune"
+        }
+      ]
+    },
+    {
+      "id": "blood_razor",
+      "name": "Blood Razor",
+      "type": "weapon",
+      "cost": 4,
+      "cardClass": "warrior",
+      "attack": 2,
+      "durability": 2,
+      "rarity": "common",
+      "set": "PLACEHOLDER_202204",
+      "description": "Battlecry and Deathrattle: Deal 1 damage to all minions.",
+      "keywords": [
+        "battlecry",
+        "deathrattle"
+      ],
+      "effects": [
+        {
+          "type": "damage-all-minions",
+          "value": 1
+        }
+      ],
+      "deathrattle": [
+        {
+          "type": "damage-all-minions",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "headhunter_s_hatchet",
+      "name": "Headhunter's Hatchet",
+      "type": "weapon",
+      "cost": 2,
+      "cardClass": "hunter",
+      "attack": 2,
+      "durability": 2,
+      "rarity": "common",
+      "set": "CORE",
+      "description": "Battlecry: If you control a Beast, gain +1 Durability.",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "controlTribe": "Beast"
+          },
+          "then": [
+            {
+              "type": "buff-weapon",
+              "durability": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "king_s_defender",
+      "name": "King's Defender",
+      "type": "weapon",
+      "cost": 3,
+      "cardClass": "warrior",
+      "attack": 3,
+      "durability": 2,
+      "rarity": "rare",
+      "set": "TGT",
+      "description": "Battlecry: If you have a minion with Taunt, gain +1 Durability.",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "controlKeyword": "taunt"
+          },
+          "then": [
+            {
+              "type": "buff-weapon",
+              "durability": 1
+            }
+          ]
+        }
+      ]
     }
   ]
 }

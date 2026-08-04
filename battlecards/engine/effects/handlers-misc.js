@@ -1955,6 +1955,7 @@ register('conditional', ({ state, pi, target, source, enemies, scaled, hm, pickE
 			const p = state.players[pi];
 			let ok = true;
 			if (e.if.controlTribe) ok = e.if.controlTribe.split('|').some(tr => p.board.some(c => !isDead(c) && (c.tribe || '').includes(tr))); // Gutwrencher Oni: a Devil, Ogre or Horror
+			else if (e.if.controlKeyword) ok = p.board.some(c => !isDead(c) && c.type !== 'location' && has(c, e.if.controlKeyword)); // King's Defender: a minion with Taunt
 			else if (e.if.minOtherCreatures != null) ok = p.board.filter(c => !isDead(c) && c !== source && c.type !== 'location').length >= e.if.minOtherCreatures; // Nesting Roc
 			else if (e.if.diedThisGame) ok = p.deathLogIds.includes(e.if.diedThisGame); // Feugen/Stalagg
 			else if (e.if.enemyMaxHealth != null) ok = opponentsOf(state, pi).some(o => state.players[o].life <= e.if.enemyMaxHealth); // Drakonid Crusher
