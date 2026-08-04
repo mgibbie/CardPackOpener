@@ -255,6 +255,7 @@ export function instantiate(def, controller) {
 		transformInHand: def.transformInHand || false,       // Shifter Zerus: transforms each turn in hand
 		transformInHandTribe: def.transformInHandTribe || null, // Hive Queen's Larva: only into a given tribe (Zerg)
 		transformInHandType: def.transformInHandType || null, // Molten Blade: transform into a random weapon (default: creature)
+		transformWhenDrawn: def.transformWhenDrawn || null,  // Unidentified Maul: on draw, become a random one of these ids
 		summonOnDiscard: def.summonOnDiscard || false,       // Silverware Golem: summon it when discarded
 		returnBuffedOnDiscard: def.returnBuffedOnDiscard || false, // Clutchmother Zavas: +2/+2 and return
 		heroPowerHitsMinions: def.heroPowerHitsMinions || false, // Steamwheedle Sniper: Hero Power can target minions

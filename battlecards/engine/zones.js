@@ -100,6 +100,11 @@ export function drawCards(state, pi, count) {
 		const card = instantiate(state.cardsById[id], pi);
 		card.fromDeck = true; // drawn from your deck — Leyline Manipulator ignores these
 		card.drawnThisTurn = true; // Keli'dan the Breaker: "If drawn this turn"
+		// Unidentified Maul: on draw, become a random one of its revealed variants
+		if (card.transformWhenDrawn && card.transformWhenDrawn.length) {
+			const rd = state.cardsById[card.transformWhenDrawn[Math.floor(state.rng() * card.transformWhenDrawn.length)]];
+			if (rd) { card.id = rd.id; card.name = rd.name; card.attack = rd.attack || 0; card.durability = rd.durability || 0; card.cost = rd.cost || 0; card.keywords = [...(rd.keywords || [])]; card.effects = rd.effects || null; card.description = rd.description || card.description; card.rarity = rd.rarity || card.rarity; card.transformWhenDrawn = null; }
+		}
 		if (p.deckCostOverrides && p.deckCostOverrides[id] != null) { card.cost = p.deckCostOverrides[id]; delete p.deckCostOverrides[id]; } // Twilight Medium: top card's Cost set to (0)
 		if (p.deckCostPersist && p.deckCostPersist[id] != null) card.cost = p.deckCostPersist[id]; // Elixir of Vigor: the copies cost (1)
 		if (p.deckInnerFire && card.type === 'creature') card.attack = card.maxHealth; // Lady in White

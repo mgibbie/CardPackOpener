@@ -139430,6 +139430,118 @@
           }
         ]
       }
+    },
+    {
+      "id": "blessed_maul",
+      "name": "Blessed Maul",
+      "type": "weapon",
+      "cost": 3,
+      "attack": 2,
+      "durability": 2,
+      "cardClass": "paladin",
+      "rarity": "rare",
+      "set": "LOOTAPALOOZA",
+      "collectible": false,
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Give your minions +1 Attack.",
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 1,
+          "target": "friendly-creatures"
+        }
+      ]
+    },
+    {
+      "id": "purifiers_maul",
+      "name": "Purifier's Maul",
+      "type": "weapon",
+      "cost": 3,
+      "attack": 2,
+      "durability": 2,
+      "cardClass": "paladin",
+      "rarity": "rare",
+      "set": "LOOTAPALOOZA",
+      "collectible": false,
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Give your minions Divine Shield.",
+      "effects": [
+        {
+          "type": "grant",
+          "keyword": "divine_shield",
+          "target": "friendly-creatures"
+        }
+      ]
+    },
+    {
+      "id": "sacred_maul",
+      "name": "Sacred Maul",
+      "type": "weapon",
+      "cost": 3,
+      "attack": 2,
+      "durability": 2,
+      "cardClass": "paladin",
+      "rarity": "rare",
+      "set": "LOOTAPALOOZA",
+      "collectible": false,
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Give your minions Taunt.",
+      "effects": [
+        {
+          "type": "grant",
+          "keyword": "taunt",
+          "target": "friendly-creatures"
+        }
+      ]
+    },
+    {
+      "id": "champions_maul",
+      "name": "Champion's Maul",
+      "type": "weapon",
+      "cost": 3,
+      "attack": 2,
+      "durability": 2,
+      "cardClass": "paladin",
+      "rarity": "rare",
+      "set": "LOOTAPALOOZA",
+      "collectible": false,
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Summon two 1/1 Silver Hand Recruits.",
+      "effects": [
+        {
+          "type": "summon",
+          "count": 2,
+          "attack": 1,
+          "health": 1,
+          "name": "Silver Hand Recruit"
+        }
+      ]
+    },
+    {
+      "id": "unidentified_maul",
+      "name": "Unidentified Maul",
+      "type": "weapon",
+      "cost": 3,
+      "attack": 2,
+      "durability": 2,
+      "cardClass": "paladin",
+      "rarity": "rare",
+      "set": "LOOTAPALOOZA",
+      "description": "Gains a bonus effect in your hand.",
+      "transformWhenDrawn": [
+        "blessed_maul",
+        "purifiers_maul",
+        "sacred_maul",
+        "champions_maul"
+      ]
     }
   ]
 }
