@@ -2125,7 +2125,7 @@ export function playCard(state, pi, cardUid, target, choice, position, useAlt, k
 		emit(state, { type: 'weaponEquip', player: pi, card });
 		recomputeAuras(state); // Southsea Deckhand gains conditional Charge
 		fireOngoing(state, pi, 'weapon-equipped');
-		runBattlecry(state, pi, card, target);
+		runBattlecry(state, pi, card, target, choice); // pass the Choose One selection (Barbed Thorn)
 	} else if (card.type === 'secret') {
 		card.zone = 'secret';
 		p.secrets.push(card);
@@ -3908,7 +3908,7 @@ export function endTurn(state) {
 	p.heroPowerTaxNext = 0; // Saboteur's Hero Power tax only lasts this turn
 	p.nextMurlocFree = false; p.nextSecretCost = null; // Seadevil Stinger / Kabal Lackey are "this turn"
 	p.nextBattlecryDouble = false; // Murmuring Elemental only lasts this turn
-	p.nextSpellDamageBonus = 0; p.nextSpellDoubleCast = false; p.nextSpellDoubleCount = 0; p.spellsLifestealThisTurn = false; p.spellDamageThisTurn = 0; p.nextSummonStats = null; if (p.weapon) { p.weapon.cleaveThisTurn = false; if (p.weapon._tempAtkTurn) { p.weapon.attack = p.weapon._tempAtkBase; p.weapon._tempAtkTurn = false; p.weapon._tempAtkBase = null; } } // "this turn" riders; Reaper's Scythe / Hand of Infinity
+	p.nextSpellDamageBonus = 0; p.nextSpellDoubleCast = false; p.nextSpellDoubleCount = 0; p.spellsLifestealThisTurn = false; p.spellDamageThisTurn = 0; p.nextSummonStats = null; if (p.weapon) { p.weapon.cleaveThisTurn = false; if (p.weapon._tempAtkTurn) { p.weapon.attack = p.weapon._tempAtkBase; p.weapon._tempAtkTurn = false; p.weapon._tempAtkBase = null; } if (p.weapon._turnKeywords) { for (const k of p.weapon._turnKeywords) p.weapon.keywords = p.weapon.keywords.filter(x => x !== k); p.weapon._turnKeywords = null; } } // "this turn" riders; Reaper's Scythe / Hand of Infinity / Barbed Thorn
 	p.healHarmThisTurn = false; // Auchenai Phantasm only lasts this turn
 	p.heroPowerDamageNext = 0; // Daring Fire-Eater only lasts this turn
 	for (const pl of state.players) for (const c of pl.board) if (c.turnAtkDebuff) { c.attack += c.turnAtkDebuff; c.turnAtkDebuff = 0; emit(state, { type: 'buff', uid: c.uid, attack: c.attack, hp: hp(c) }); } // Quicksand Elemental restores

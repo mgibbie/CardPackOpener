@@ -570,6 +570,8 @@ register('grant-weapon-ability', ({ state, pi }, e) => {
 			if (e.attack) w.attack = (w.attack || 0) + e.attack;
 			if (e.immuneAttacking) w.static = { type: 'immune-attacking' };
 			if (e.afterHeroAttack) (w.afterHeroAttack = w.afterHeroAttack || []).push(e.afterHeroAttack);
+			if (e.keywordTurn && !w.keywords.includes(e.keywordTurn)) { w.keywords.push(e.keywordTurn); (w._turnKeywords = w._turnKeywords || []).push(e.keywordTurn); } // Barbed Thorn: Poisonous this turn
+			if (e.deathrattle) { w.deathrattle = (w.deathrattle || []).concat(JSON.parse(JSON.stringify(e.deathrattle))); if (!w.keywords.includes('deathrattle')) w.keywords.push('deathrattle'); } // Barbed Thorn: gain a Deathrattle
 			emit(state, { type: 'weaponDurability', player: pi, attack: w.attack, durability: w.durability });
 });
 

@@ -139616,6 +139616,46 @@
           "health": 1
         }
       ]
+    },
+    {
+      "id": "barbed_thorn",
+      "name": "Barbed Thorn",
+      "type": "weapon",
+      "cost": 3,
+      "attack": 1,
+      "durability": 3,
+      "cardClass": "rogue",
+      "rarity": "epic",
+      "set": "EMERALD_DREAM",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Choose One - Gain Poisonous this turn; or Gain 'Deathrattle: Deal 2 damage to all enemies.'",
+      "choices": [
+        {
+          "text": "Gain Poisonous this turn.",
+          "effects": [
+            {
+              "type": "grant-weapon-ability",
+              "keywordTurn": "poisonous"
+            }
+          ]
+        },
+        {
+          "text": "Gain 'Deathrattle: Deal 2 damage to all enemies.'",
+          "effects": [
+            {
+              "type": "grant-weapon-ability",
+              "deathrattle": [
+                {
+                  "type": "damage-all-enemies",
+                  "value": 2
+                }
+              ]
+            }
+          ]
+        }
+      ]
     }
   ]
 }
