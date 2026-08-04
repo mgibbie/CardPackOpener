@@ -109354,10 +109354,9 @@
       "tribe": "Elemental",
       "keywords": [
         "lifesteal",
-        "battlecry",
         "miracle"
       ],
-      "description": "Lifesteal. Miracle: Deal 5 damage. Forge: Deal 10 instead.",
+      "description": "Lifesteal. Quickdraw: Deal 5 damage. Forge: Change Quickdraw to Battlecry.",
       "effects": [],
       "miracle": {
         "effects": [
@@ -109369,15 +109368,17 @@
         ]
       },
       "forge": {
-        "miracle": {
-          "effects": [
-            {
-              "type": "damage",
-              "value": 10,
-              "target": "any"
-            }
-          ]
-        }
+        "battlecry": [
+          {
+            "type": "damage",
+            "value": 5,
+            "target": "any"
+          }
+        ],
+        "clearMiracle": true,
+        "keywords": [
+          "battlecry"
+        ]
       }
     },
     {

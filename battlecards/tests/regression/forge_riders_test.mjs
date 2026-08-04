@@ -92,19 +92,30 @@ const forgeAndPlay = (st, id, target = null) => { const c = toHand(st, 0, id); s
 	ok('the 6/8 Taunt is on the board', st.players[0].board.some(c => c.id === 'gloomstone_guardian' && (c.keywords || []).includes('taunt')));
 }
 
-// Glowstone Gyreworm: Miracle deals 5; Forge → deals 10 (only when drawn this turn)
+// Glowstone Gyreworm: Quickdraw (drawn this turn): Deal 5. Forge: change Quickdraw
+// to Battlecry — so the forged copy deals 5 on EVERY play, drawn or not.
 {
+	// base: Quickdraw only fires when the card was drawn this turn
 	const st = game();
 	const gw = toHand(st, 0, 'glowstone_gyreworm'); gw.drawnThisTurn = true;
 	E.playCard(st, 0, gw.uid, { type: 'hero', player: 1 }, null, 0);
-	ok('base Miracle dealt 5 to the enemy hero', st.players[1].life === 25, st.players[1].life);
+	ok('Quickdraw dealt 5 when drawn this turn', st.players[1].life === 25, st.players[1].life);
 }
 {
+	// base: NOT drawn this turn → Quickdraw does nothing
 	const st = game();
-	const gw = toHand(st, 0, 'glowstone_gyreworm'); gw.drawnThisTurn = true;
-	st.players[0].mana.cur = 10; E.forgeCard(st, 0, gw.uid);
+	const gw = toHand(st, 0, 'glowstone_gyreworm'); gw.drawnThisTurn = false;
 	E.playCard(st, 0, gw.uid, { type: 'hero', player: 1 }, null, 0);
-	ok('forged Miracle deals 10 to the enemy hero', st.players[1].life === 20, st.players[1].life);
+	ok('un-drawn base Gyreworm deals nothing (Quickdraw missed)', st.players[1].life === 30, st.players[1].life);
+}
+{
+	// forged: Quickdraw → Battlecry, so it deals 5 even when NOT drawn this turn
+	const st = game();
+	const gw = toHand(st, 0, 'glowstone_gyreworm'); gw.drawnThisTurn = false;
+	st.players[0].mana.cur = 10; E.forgeCard(st, 0, gw.uid);
+	ok('Forge turned Quickdraw into a Battlecry (miracle cleared, battlecry added)', gw.miracle === null && (gw.keywords || []).includes('battlecry') && gw.effects.length === 1);
+	E.playCard(st, 0, gw.uid, { type: 'hero', player: 1 }, null, 0);
+	ok('forged Gyreworm deals 5 on play without being drawn', st.players[1].life === 25, st.players[1].life);
 }
 
 console.log(`\n${pass} passed, ${fail} failed`);
