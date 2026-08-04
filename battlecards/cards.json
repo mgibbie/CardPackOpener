@@ -140476,6 +140476,618 @@
           "excessToNeighbors": true
         }
       ]
+    },
+    {
+      "id": "fury_rank_1",
+      "name": "Fury (Rank 1)",
+      "type": "sorcery",
+      "cost": 1,
+      "cardClass": "demonhunter",
+      "rarity": "common",
+      "set": "THE_BARRENS",
+      "tribe": "Fel",
+      "collectible": true,
+      "description": "Give your hero +2 Attack this turn. (Upgrades when you have 5 Mana.)",
+      "effects": [
+        {
+          "type": "hero-attack",
+          "value": 2
+        },
+        {
+          "type": "conditional",
+          "if": {
+            "manathirst": 5
+          },
+          "then": [
+            {
+              "type": "hero-attack",
+              "value": 2
+            }
+          ]
+        },
+        {
+          "type": "conditional",
+          "if": {
+            "manathirst": 10
+          },
+          "then": [
+            {
+              "type": "hero-attack",
+              "value": 2
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "mana_burn",
+      "name": "Mana Burn",
+      "type": "sorcery",
+      "cost": 1,
+      "cardClass": "demonhunter",
+      "rarity": "common",
+      "set": "DEMON_HUNTER_INITIATE",
+      "tribe": "Fel",
+      "collectible": true,
+      "description": "Your opponent has 2 fewer Mana Crystals next turn.",
+      "effects": [
+        {
+          "type": "add-overload",
+          "value": 2,
+          "forEnemy": true
+        }
+      ]
+    },
+    {
+      "id": "sigil_of_the_seas",
+      "name": "Sigil of the Seas",
+      "type": "sorcery",
+      "cost": 1,
+      "cardClass": "demonhunter",
+      "rarity": "common",
+      "set": "CATACLYSM",
+      "collectible": true,
+      "tribe": "Fel",
+      "description": "At the start of your next turn, summon a 3/3 Naga with Taunt.",
+      "effects": [
+        {
+          "type": "delay-to-turn-start",
+          "effects": [
+            {
+              "type": "summon",
+              "count": 1,
+              "attack": 3,
+              "health": 3,
+              "name": "Naga",
+              "tribe": "Naga",
+              "keywords": [
+                "taunt"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "taste_of_chaos",
+      "name": "Taste of Chaos",
+      "type": "sorcery",
+      "cardClass": "demonhunter",
+      "cost": 1,
+      "rarity": "common",
+      "set": "BATTLE_OF_THE_BANDS",
+      "collectible": true,
+      "tribe": "Fel",
+      "keywords": [
+        "finale"
+      ],
+      "description": "Deal 2 damage to a minion. Finale: Discover a Fel spell.",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 2,
+          "target": "creature"
+        },
+        {
+          "type": "conditional",
+          "if": {
+            "finale": true
+          },
+          "then": [
+            {
+              "type": "discover",
+              "cardType": "spell",
+              "tribe": "Fel"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "unleash_fel",
+      "name": "Unleash Fel",
+      "type": "sorcery",
+      "cost": 1,
+      "cardClass": "demonhunter",
+      "rarity": "rare",
+      "set": "RETURN_OF_THE_LICH_KING",
+      "collectible": true,
+      "tribe": "Fel",
+      "description": "Deal 1 damage to all enemies. Manathirst (6): With Lifesteal.",
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "manathirst": 6
+          },
+          "then": [
+            {
+              "type": "damage",
+              "value": 1,
+              "target": "enemies",
+              "lifesteal": true
+            }
+          ],
+          "else": [
+            {
+              "type": "damage",
+              "value": 1,
+              "target": "enemies"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "fel_barrage",
+      "name": "Fel Barrage",
+      "type": "sorcery",
+      "cost": 2,
+      "cardClass": "demonhunter",
+      "rarity": "common",
+      "set": "STORMWIND",
+      "collectible": true,
+      "tribe": "Fel",
+      "description": "Deal 2 damage to the lowest Health enemy, twice.",
+      "effects": [
+        {
+          "type": "damage-lowest-enemy",
+          "value": 2
+        },
+        {
+          "type": "damage-lowest-enemy",
+          "value": 2
+        }
+      ]
+    },
+    {
+      "id": "fumigate",
+      "name": "Fumigate",
+      "type": "sorcery",
+      "cost": 2,
+      "cardClass": "demonhunter",
+      "rarity": "epic",
+      "set": "THE_LOST_CITY",
+      "collectible": true,
+      "tribe": "Fel",
+      "description": "Deal 3 damage to a minion and all others of the same minion type.",
+      "effects": [
+        {
+          "type": "damage-target-and-same-tribe",
+          "value": 3,
+          "target": "creature"
+        }
+      ]
+    },
+    {
+      "id": "sigil_of_cinder",
+      "name": "Sigil of Cinder",
+      "type": "sorcery",
+      "cost": 2,
+      "cardClass": "demonhunter",
+      "rarity": "epic",
+      "set": "EMERALD_DREAM",
+      "collectible": true,
+      "tribe": "Fel",
+      "description": "At the start of your next turn, deal 6 damage randomly split among all enemies.",
+      "effects": [
+        {
+          "type": "delay-to-turn-start",
+          "effects": [
+            {
+              "type": "random-damage",
+              "value": 1,
+              "count": 6,
+              "pool": "enemies"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "sigil_of_flame",
+      "name": "Sigil of Flame",
+      "cardClass": "demonhunter",
+      "cost": 2,
+      "rarity": "epic",
+      "type": "sorcery",
+      "set": "THE_BARRENS",
+      "collectible": true,
+      "tribe": "Fel",
+      "description": "At the start of your next turn, deal 3 damage to all minions.",
+      "effects": [
+        {
+          "type": "delay-to-turn-start",
+          "effects": [
+            {
+              "type": "damage",
+              "value": 3,
+              "target": "all-creatures"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "sigil_of_skydiving",
+      "name": "Sigil of Skydiving",
+      "type": "sorcery",
+      "cost": 2,
+      "cardClass": "demonhunter",
+      "rarity": "common",
+      "set": "ISLAND_VACATION",
+      "collectible": true,
+      "tribe": "Fel",
+      "description": "At the start of your next turn, summon two 1/1 Pirates with Charge.",
+      "effects": [
+        {
+          "type": "delay-to-turn-start",
+          "effects": [
+            {
+              "type": "summon",
+              "count": 2,
+              "attack": 1,
+              "health": 1,
+              "name": "Pirate",
+              "tribe": "Pirate",
+              "keywords": [
+                "charge"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "chaos_leech",
+      "name": "Chaos Leech",
+      "cardClass": "demonhunter",
+      "cost": 3,
+      "rarity": "rare",
+      "set": "STORMWIND",
+      "collectible": true,
+      "type": "sorcery",
+      "tribe": "Fel",
+      "keywords": [
+        "outcast"
+      ],
+      "description": "Lifesteal. Deal 3 damage to a minion. Outcast: Deal 5 instead.",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 3,
+          "target": "creature",
+          "lifesteal": true
+        }
+      ],
+      "outcast": {
+        "effects": [
+          {
+            "type": "damage",
+            "value": 2,
+            "target": "creature",
+            "lifesteal": true
+          }
+        ]
+      }
+    },
+    {
+      "id": "load_the_chamber",
+      "name": "Load the Chamber",
+      "type": "sorcery",
+      "cost": 3,
+      "cardClass": "demonhunter",
+      "rarity": "rare",
+      "set": "WILD_WEST",
+      "collectible": true,
+      "tribe": "Fel",
+      "description": "Deal 2 damage. Your next Naga, Fel spell, and weapon cost (1) less.",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 2,
+          "target": "any"
+        },
+        {
+          "type": "set-tribe-discount",
+          "tribe": "Naga",
+          "count": 1,
+          "value": 1
+        },
+        {
+          "type": "grant-next-school-discount",
+          "school": "Fel",
+          "value": 1
+        },
+        {
+          "type": "set-next-weapon-discount",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "sigil_of_time",
+      "name": "Sigil of Time",
+      "type": "sorcery",
+      "cost": 3,
+      "cardClass": "demonhunter",
+      "rarity": "common",
+      "set": "TITANS",
+      "tribe": "Fel",
+      "collectible": true,
+      "description": "At the start of your next turn, draw 3 additional cards.",
+      "effects": [
+        {
+          "type": "delay-to-turn-start",
+          "effects": [
+            {
+              "type": "draw",
+              "value": 3
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "warp_drive",
+      "name": "Warp Drive",
+      "type": "sorcery",
+      "cost": 3,
+      "cardClass": "demonhunter",
+      "rarity": "rare",
+      "set": "SPACE",
+      "collectible": true,
+      "tribe": "Fel",
+      "description": "Draw 2 cards. If you're building a Starship, they cost (2) less.",
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "buildingStarship": true
+          },
+          "then": [
+            {
+              "type": "draw-discount",
+              "count": 2,
+              "amount": 2
+            }
+          ],
+          "else": [
+            {
+              "type": "draw",
+              "value": 2
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "aeon_rend",
+      "name": "Aeon Rend",
+      "type": "sorcery",
+      "cardClass": "demonhunter",
+      "cost": 4,
+      "rarity": "common",
+      "set": "TIME_TRAVEL",
+      "collectible": true,
+      "tribe": "Fel",
+      "description": "Rewind. Deal 4 damage to two random enemies.",
+      "effects": [
+        {
+          "type": "random-damage",
+          "value": 4,
+          "count": 2,
+          "pool": "enemies"
+        }
+      ],
+      "rewind": 1
+    },
+    {
+      "id": "fan_the_hammer",
+      "name": "Fan the Hammer",
+      "type": "sorcery",
+      "cost": 4,
+      "cardClass": "demonhunter",
+      "rarity": "rare",
+      "set": "WILD_WEST",
+      "collectible": true,
+      "tribe": "Fel",
+      "description": "Deal 6 damage split among the lowest Health enemies.",
+      "effects": [
+        {
+          "type": "damage-lowest-enemy",
+          "value": 1
+        },
+        {
+          "type": "damage-lowest-enemy",
+          "value": 1
+        },
+        {
+          "type": "damage-lowest-enemy",
+          "value": 1
+        },
+        {
+          "type": "damage-lowest-enemy",
+          "value": 1
+        },
+        {
+          "type": "damage-lowest-enemy",
+          "value": 1
+        },
+        {
+          "type": "damage-lowest-enemy",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "fel_fissure",
+      "name": "Fel Fissure",
+      "type": "sorcery",
+      "cost": 4,
+      "cardClass": "demonhunter",
+      "rarity": "rare",
+      "set": "WILD_WEST",
+      "collectible": true,
+      "tribe": "Fel",
+      "description": "Deal 2 damage to all minions. At the start of your next turn, deal 2 more damage to all minions.",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 2,
+          "target": "all-creatures"
+        },
+        {
+          "type": "delay-to-turn-start",
+          "effects": [
+            {
+              "type": "damage",
+              "value": 2,
+              "target": "all-creatures"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "all_fel_breaks_loose",
+      "name": "All Fel Breaks Loose",
+      "type": "sorcery",
+      "cost": 5,
+      "cardClass": "demonhunter",
+      "rarity": "common",
+      "set": "PLACEHOLDER_202204",
+      "collectible": true,
+      "tribe": "Fel",
+      "description": "Summon a friendly Demon that died this game. Infuse (3 Demons): Summon three instead.",
+      "infuse": {
+        "count": 3,
+        "id": "all_fel_breaks_loose_infused"
+      },
+      "effects": [
+        {
+          "type": "summon-died-this-game",
+          "tribe": "Demon",
+          "random": true
+        }
+      ]
+    },
+    {
+      "id": "deal_with_a_devil",
+      "name": "Deal with a Devil",
+      "cardClass": "demonhunter",
+      "cost": 5,
+      "rarity": "rare",
+      "type": "sorcery",
+      "tribe": "Fel",
+      "set": "RETURN_OF_THE_LICH_KING",
+      "collectible": true,
+      "effects": [
+        {
+          "type": "summon",
+          "count": 2,
+          "attack": 3,
+          "health": 3,
+          "name": "Felfiend",
+          "tribe": "Demon",
+          "keywords": [
+            "lifesteal"
+          ]
+        },
+        {
+          "type": "conditional",
+          "if": {
+            "deckNoMinions": true
+          },
+          "then": [
+            {
+              "type": "summon",
+              "count": 2,
+              "attack": 3,
+              "health": 3,
+              "name": "Felfiend",
+              "tribe": "Demon",
+              "keywords": [
+                "lifesteal"
+              ]
+            }
+          ],
+          "else": []
+        }
+      ],
+      "description": "Summon two 3/3 Felfiends with Lifesteal. If your deck has no minions, summon two more."
+    },
+    {
+      "id": "flash_flood",
+      "name": "Flash Flood",
+      "type": "sorcery",
+      "cost": 5,
+      "cardClass": "demonhunter",
+      "rarity": "rare",
+      "set": "CATACLYSM",
+      "tribe": "Fel",
+      "collectible": true,
+      "keywords": [
+        "outcast"
+      ],
+      "description": "Deal 5 damage to your opponent's left and right-most minions.\nOutcast: Do it again.",
+      "effects": [
+        {
+          "type": "damage-flanks",
+          "value": 5
+        }
+      ],
+      "outcast": {
+        "effects": [
+          {
+            "type": "damage-flanks",
+            "value": 5
+          }
+        ]
+      }
+    },
+    {
+      "id": "sigil_of_reckoning",
+      "name": "Sigil of Reckoning",
+      "type": "sorcery",
+      "cost": 5,
+      "cardClass": "demonhunter",
+      "rarity": "epic",
+      "set": "ALTERAC_VALLEY",
+      "collectible": true,
+      "tribe": "Fel",
+      "description": "At the start of your next turn, summon a random Demon from your hand.",
+      "effects": [
+        {
+          "type": "delay-to-turn-start",
+          "effects": [
+            {
+              "type": "summon-from-hand",
+              "tribe": "Demon"
+            }
+          ]
+        }
+      ]
     }
   ]
 }
