@@ -139693,6 +139693,67 @@
           }
         ]
       }
+    },
+    {
+      "id": "tiny_pal",
+      "name": "Tiny Pal",
+      "type": "weapon",
+      "cost": 4,
+      "attack": 2,
+      "durability": 3,
+      "cardClass": "shaman",
+      "rarity": "legendary",
+      "set": "VIOLET_HOLD",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Choose your elemental ammunition! (After your hero attacks, choose another.)",
+      "choices": [
+        {
+          "text": "Fire: deal 1 damage to all enemies.",
+          "effects": [
+            {
+              "type": "set-tiny-pal-ammo",
+              "ammo": "fire"
+            }
+          ]
+        },
+        {
+          "text": "Frost: Freeze 2 other random enemies.",
+          "effects": [
+            {
+              "type": "set-tiny-pal-ammo",
+              "ammo": "frost"
+            }
+          ]
+        },
+        {
+          "text": "Earth: summon a random 3-Cost minion with Taunt.",
+          "effects": [
+            {
+              "type": "set-tiny-pal-ammo",
+              "ammo": "earth"
+            }
+          ]
+        },
+        {
+          "text": "Air: get a random Battlecry minion that costs (2) less.",
+          "effects": [
+            {
+              "type": "set-tiny-pal-ammo",
+              "ammo": "air"
+            }
+          ]
+        }
+      ],
+      "ongoing": {
+        "on": "hero-attacks",
+        "effects": [
+          {
+            "type": "tiny-pal-attack"
+          }
+        ]
+      }
     }
   ]
 }

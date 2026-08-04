@@ -518,6 +518,28 @@ register('summon-copy-of-target-buffed', ({ state, pi, target, source, enemies, 
 } });
 
 
+const TINY_PAL_AMMO = {
+	fire: [{ type: 'damage-all-enemies', value: 1 }],                                          // deal 1 to all enemies
+	frost: [{ type: 'freeze', target: 'random-enemy', count: 2 }],                             // Freeze 2 other random enemies
+	earth: [{ type: 'summon-random', cost: 3, grant: 'taunt' }],                               // summon a random 3-Cost minion with Taunt
+	air: [{ type: 'conjure-random', cardType: 'creature', requireKeyword: 'battlecry', costMod: -2 }], // a random Battlecry minion, costs (2) less
+};
+register('set-tiny-pal-ammo', ({ state, pi }, e) => { {
+			// Tiny Pal Battlecry: load the chosen elemental ammunition
+			const w = state.players[pi].weapon;
+			if (w) { w.ammo = e.ammo || 'fire'; emit(state, { type: 'tinyPalAmmo', player: pi, ammo: w.ammo }); }
+} });
+register('tiny-pal-attack', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => { {
+			// Tiny Pal (after your hero attacks): fire the loaded ammunition, then load
+			// another (the "choose another" is modeled as a random different element)
+			const w = state.players[pi].weapon;
+			if (!w) return;
+			const ammo = w.ammo || 'fire';
+			execEffects(state, pi, JSON.parse(JSON.stringify(TINY_PAL_AMMO[ammo] || TINY_PAL_AMMO.fire)), null, source);
+			const others = Object.keys(TINY_PAL_AMMO).filter(k => k !== ammo);
+			w.ammo = others[Math.floor(state.rng() * others.length)];
+			emit(state, { type: 'tinyPalAmmo', player: pi, ammo: w.ammo });
+} });
 register('void-soul', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => { {
 			// Void Soul (Stardust Scythe token): summon a random Demon whose Cost starts
 			// at 1 and grows by 1 for each Void Soul you've already played this game
