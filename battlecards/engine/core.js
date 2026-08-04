@@ -3302,6 +3302,8 @@ export function resolveScry(state, picks) {
 	tops.push(...byId); // anything unmentioned stays on top
 	for (const id of bottoms) deck.unshift(id);
 	for (const id of [...tops].reverse()) deck.push(id); // first pick drawn first
+	// Sphere of Sapience: lose 1 Durability only when you actually bottom the card
+	if (pending.degradeWeaponOnBottom && bottoms.length > 0) degradeWeapon(state, pending.chooser);
 	emit(state, { type: 'scryDone', chooser: pending.chooser, deckOwner: pending.deckOwner, bottomed: bottoms.length });
 	return true;
 }

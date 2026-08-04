@@ -1632,7 +1632,7 @@ const _h_scry = ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, en
 				const ids = [];
 				for (let i = 0; i < e.value && od.length; i++) ids.push(od.pop());
 				if (ids.length) {
-					state.scryQueue.push({ chooser: pi, deckOwner, ids });
+					state.scryQueue.push({ chooser: pi, deckOwner, ids, degradeWeaponOnBottom: e.degradeWeaponOnBottom || false }); // Sphere of Sapience: lose 1 Durability only if you bottom the card
 					emit(state, { type: 'scryStart', chooser: pi, deckOwner, count: ids.length });
 					firePonder(state, pi, { scry: true });
 				}

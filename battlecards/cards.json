@@ -139408,6 +139408,28 @@
       "transformInHand": true,
       "transformInHandType": "weapon",
       "description": "Transforms into a new weapon when in hand that changes each turn."
+    },
+    {
+      "id": "sphere_of_sapience",
+      "name": "Sphere of Sapience",
+      "type": "weapon",
+      "cost": 1,
+      "attack": 0,
+      "durability": 4,
+      "cardClass": "neutral",
+      "rarity": "legendary",
+      "set": "SCHOLOMANCE",
+      "description": "At the start of your turn, look at your top card. You can put it on the bottom and lose 1 Durability.",
+      "ongoing": {
+        "on": "turn-start",
+        "effects": [
+          {
+            "type": "scry",
+            "value": 1,
+            "degradeWeaponOnBottom": true
+          }
+        ]
+      }
     }
   ]
 }
