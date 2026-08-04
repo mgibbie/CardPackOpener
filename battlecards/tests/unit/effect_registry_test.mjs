@@ -18,7 +18,7 @@ const ok = (l, c, extra) => { if (c) pass++; else { fail++; console.log('FAIL:',
 
 // --- registry contract ---
 {
-	ok('pilot + batch types registered (999 after souleater-consume/discover-soul)', registeredTypes().length === 999 && !!getEffectHandler('armor') && !!getEffectHandler('souleater-consume') && !!getEffectHandler('discover-soul'));
+	ok('pilot + batch types registered (1000 after embolden-recruits)', registeredTypes().length === 1000 && !!getEffectHandler('armor') && !!getEffectHandler('embolden-recruits'));
 	ok('unknown types miss (the chain is fully retired — nothing else answers)', getEffectHandler('damage') !== undefined && getEffectHandler('no-such-type') === undefined);
 	let threw = null;
 	try { (await import('../../engine/effects/registry.js')).register('armor', () => {}); } catch (e) { threw = e.message; }

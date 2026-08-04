@@ -139594,6 +139594,28 @@
         }
       ],
       "description": "Start of Game: Consume 3 different minions in your deck. Leave behind Souls that Discover them."
+    },
+    {
+      "id": "emboldening_blade",
+      "name": "Emboldening Blade",
+      "type": "weapon",
+      "cost": 5,
+      "attack": 3,
+      "durability": 2,
+      "cardClass": "paladin",
+      "rarity": "common",
+      "set": "CATACLYSM",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Give your Silver Hand Recruits +1/+1 this game.",
+      "effects": [
+        {
+          "type": "embolden-recruits",
+          "attack": 1,
+          "health": 1
+        }
+      ]
     }
   ]
 }

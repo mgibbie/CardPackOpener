@@ -593,6 +593,16 @@ register('buff-random-hand', ({ state, pi, target, source, enemies, scaled, hm, 
 } });
 
 
+register('embolden-recruits', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => { {
+			// Emboldening Blade: give your Silver Hand Recruits +X/+Y this game — buff the
+			// ones on board now and raise the persistent bonus for future Recruits
+			const p = state.players[pi];
+			p.recruitAttackBonus = (p.recruitAttackBonus || 0) + (e.attack || 1);
+			p.recruitHealthBonus = (p.recruitHealthBonus || 0) + (e.health || 1);
+			for (const c of p.board) if (!isDead(c) && c.name === 'Silver Hand Recruit') buffCreature(c, e.attack || 1, e.health || 1);
+} });
+
+
 register('buff-self-in-deck', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => { {
 			// Blacksmithing Hammer: after you Trade this, the copy going back to your
 			// deck carries a buff (applied when it's next drawn)
