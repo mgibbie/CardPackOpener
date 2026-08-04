@@ -137911,6 +137911,218 @@
           "improveScaled": "count"
         }
       ]
+    },
+    {
+      "id": "past_silvermoon",
+      "name": "Past Silvermoon",
+      "type": "location",
+      "cost": 4,
+      "cardClass": "hunter",
+      "durability": 3,
+      "rarity": "epic",
+      "set": "ACROSS_THE_TIMEWAYS",
+      "description": "Deal 5 damage to a random enemy minion. Advance to the present!",
+      "taps": [
+        {
+          "text": "Deal 5 damage to a random enemy minion. Advance to the present!",
+          "effects": [
+            {
+              "type": "damage-enemy-minion",
+              "value": 5,
+              "pick": "random"
+            },
+            {
+              "type": "advance-location",
+              "to": "present_silvermoon"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "present_silvermoon",
+      "name": "Present Silvermoon",
+      "type": "location",
+      "cost": 4,
+      "cardClass": "hunter",
+      "durability": 3,
+      "rarity": "free",
+      "set": "ACROSS_THE_TIMEWAYS",
+      "description": "Deal 5 damage to a random enemy minion. Excess hits the enemy hero. Advance to the future!",
+      "taps": [
+        {
+          "text": "Deal 5 damage to a random enemy minion. Excess hits the enemy hero. Advance to the future!",
+          "effects": [
+            {
+              "type": "damage-enemy-minion",
+              "value": 5,
+              "pick": "random",
+              "excessToHero": true
+            },
+            {
+              "type": "advance-location",
+              "to": "future_silvermoon"
+            }
+          ]
+        }
+      ],
+      "collectible": false,
+      "token": true
+    },
+    {
+      "id": "future_silvermoon",
+      "name": "Future Silvermoon",
+      "type": "location",
+      "cost": 4,
+      "cardClass": "hunter",
+      "durability": 3,
+      "rarity": "free",
+      "set": "ACROSS_THE_TIMEWAYS",
+      "description": "Deal 5 damage to the lowest Health enemy minion. Excess damage hits the enemy hero.",
+      "taps": [
+        {
+          "text": "Deal 5 damage to the lowest Health enemy minion. Excess damage hits the enemy hero.",
+          "effects": [
+            {
+              "type": "damage-enemy-minion",
+              "value": 5,
+              "pick": "lowest",
+              "excessToHero": true
+            }
+          ]
+        }
+      ],
+      "collectible": false,
+      "token": true
+    },
+    {
+      "id": "past_gnomeregan",
+      "name": "Past Gnomeregan",
+      "type": "location",
+      "cost": 2,
+      "cardClass": "paladin",
+      "durability": 3,
+      "rarity": "epic",
+      "set": "ACROSS_THE_TIMEWAYS",
+      "description": "Give a minion +2/+1. Advance to the present!",
+      "taps": [
+        {
+          "text": "Give a minion +2/+1. Advance to the present!",
+          "effects": [
+            {
+              "type": "buff",
+              "attack": 2,
+              "health": 1,
+              "target": "creature"
+            },
+            {
+              "type": "advance-location",
+              "to": "present_gnomeregan"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "present_gnomeregan",
+      "name": "Present Gnomeregan",
+      "type": "location",
+      "cost": 2,
+      "cardClass": "paladin",
+      "durability": 3,
+      "rarity": "free",
+      "set": "ACROSS_THE_TIMEWAYS",
+      "description": "Give a minion +2/+1 and 'Deathrattle: Deal 2 damage to the enemy hero.' Advance to the future!",
+      "taps": [
+        {
+          "text": "Give a minion +2/+1 and 'Deathrattle: Deal 2 damage to the enemy hero.' Advance to the future!",
+          "effects": [
+            {
+              "type": "buff",
+              "attack": 2,
+              "health": 1,
+              "target": "creature"
+            },
+            {
+              "type": "grant-deathrattle",
+              "target": "creature",
+              "effects": [
+                {
+                  "type": "damage",
+                  "value": 2,
+                  "target": "enemy-hero"
+                }
+              ]
+            },
+            {
+              "type": "advance-location",
+              "to": "future_gnomeregan"
+            }
+          ]
+        }
+      ],
+      "collectible": false,
+      "token": true
+    },
+    {
+      "id": "future_gnomeregan",
+      "name": "Future Gnomeregan",
+      "type": "location",
+      "cost": 2,
+      "cardClass": "paladin",
+      "durability": 3,
+      "rarity": "free",
+      "set": "ACROSS_THE_TIMEWAYS",
+      "description": "Give a minion +2/+1, Divine Shield, and 'Deathrattle: Deal 2 damage to the enemy hero.'",
+      "taps": [
+        {
+          "text": "Give a minion +2/+1, Divine Shield, and 'Deathrattle: Deal 2 damage to the enemy hero.'",
+          "effects": [
+            {
+              "type": "buff",
+              "attack": 2,
+              "health": 1,
+              "target": "creature",
+              "grant": "divine_shield"
+            },
+            {
+              "type": "grant-deathrattle",
+              "target": "creature",
+              "effects": [
+                {
+                  "type": "damage",
+                  "value": 2,
+                  "target": "enemy-hero"
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "collectible": false,
+      "token": true
+    },
+    {
+      "id": "hedge_maze",
+      "name": "Hedge Maze",
+      "type": "location",
+      "cost": 3,
+      "cardClass": "druid",
+      "durability": 2,
+      "rarity": "common",
+      "set": "REVENDRETH",
+      "description": "Trigger a friendly minion's Deathrattle.",
+      "taps": [
+        {
+          "text": "Trigger a friendly minion's Deathrattle.",
+          "effects": [
+            {
+              "type": "trigger-one-deathrattle",
+              "random": true
+            }
+          ]
+        }
+      ]
     }
   ]
 }

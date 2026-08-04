@@ -18,7 +18,7 @@ const ok = (l, c, extra) => { if (c) pass++; else { fail++; console.log('FAIL:',
 
 // --- registry contract ---
 {
-	ok('pilot + batch types registered (981 after improve-tick + discount-next-spell for Festival instruments)', registeredTypes().length === 981 && !!getEffectHandler('armor') && !!getEffectHandler('improve-tick'));
+	ok('pilot + batch types registered (983 after advance-location + damage-enemy-minion for the Past/Present/Future locations)', registeredTypes().length === 983 && !!getEffectHandler('armor') && !!getEffectHandler('advance-location'));
 	ok('unknown types miss (the chain is fully retired — nothing else answers)', getEffectHandler('damage') !== undefined && getEffectHandler('no-such-type') === undefined);
 	let threw = null;
 	try { (await import('../../engine/effects/registry.js')).register('armor', () => {}); } catch (e) { threw = e.message; }

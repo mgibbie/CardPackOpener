@@ -1657,6 +1657,33 @@ register('damage-all-others-damaged', ({ state, pi, target, source, enemies, sca
 });
 
 
+register('damage-enemy-minion', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => { {
+			// Silvermoon chain: deal `value` to a random OR lowest-Health enemy minion;
+			// with excessToHero, damage beyond its Health spills to the enemy hero.
+			const pool = [];
+			for (const o of enemies) for (const c of state.players[o].board) if (!isDead(c) && c.type !== 'location') pool.push({ o, c });
+			if (!pool.length) return;
+			let hit;
+			if (e.pick === 'lowest') { hit = pool[0]; for (const p of pool) if (hp(p.c) < hp(hit.c)) hit = p; }
+			else hit = pool[Math.floor(state.rng() * pool.length)];
+			const before = hp(hit.c);
+			damageCreature(state, hit.c, e.value || 1, source);
+			if (e.excessToHero && (e.value || 1) > before) damageHero(state, hit.o, (e.value || 1) - before, pi);
+} });
+
+register('advance-location', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => { {
+			// "Advance to the present/future!" — transform this location into its next
+			// stage (a fresh, full-durability location in the same board slot).
+			if (!source || source.type !== 'location' || !state.cardsById[e.to]) return;
+			const p = state.players[pi];
+			const idx = p.board.indexOf(source);
+			if (idx < 0) return;
+			const ni = instantiate(state.cardsById[e.to], pi);
+			ni.uid = source.uid; ni.zone = 'board'; ni.tapped = false; ni.doomed = false;
+			p.board[idx] = ni;
+			emit(state, { type: 'transformed', uid: ni.uid, player: pi, from: source.name, card: ni });
+} });
+
 register('damage-lowest-enemy', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => {
 	do {
 			// Arrow Smith: deal damage to the lowest-Health enemy minion (Ball Hog: heals if source has Lifesteal)

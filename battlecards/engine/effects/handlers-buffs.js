@@ -1030,6 +1030,7 @@ register('buff', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, e
 								|| c.name.includes(e.repeatPerFriendly))).length;
 					}
 					for (let i = 0; i < times; i++) buffCreature(t, e.attack, e.health);
+					if (e.grant && !t.keywords.includes(e.grant)) { t.keywords.push(e.grant); if (e.grant === KW.DIVINE_SHIELD) t.shield = true; } // Future Gnomeregan: +2/+1 and Divine Shield
 				}
 			}
 	} while (false); // top-level `continue` = skip this effect (chain semantics)
