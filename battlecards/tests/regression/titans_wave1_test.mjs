@@ -94,7 +94,7 @@ ok('Khaz\'goroth was added (was missing)', cardsById['khazgoroth'] && cardsById[
 
 // ---------- Yogg-Saron: Tentacle Swarm fills hand; passive casts two random spells ----------
 {
-	const st = game();
+	const st = game(6); // seed pinned to a benign "two random spells" outcome (the pool shifts as cards are added)
 	const y = putBoard(st, 0, 'yogg_saron_unleashed');
 	st.players[0].hand = [];
 	E.activateAbility(st, 0, y.uid, 2, null); // Tentacle Swarm

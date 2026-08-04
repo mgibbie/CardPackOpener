@@ -138891,6 +138891,165 @@
           }
         ]
       }
+    },
+    {
+      "id": "ruby_sanctum",
+      "name": "Ruby Sanctum",
+      "type": "location",
+      "cost": 1,
+      "cardClass": "priest",
+      "durability": 3,
+      "rarity": "rare",
+      "set": "CATACLYSM",
+      "description": "Your next Healing effect this turn deals damage instead.",
+      "taps": [
+        {
+          "text": "Your next Healing effect this turn deals damage instead.",
+          "effects": [
+            {
+              "type": "set-heal-harm"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "shrine_of_twilight",
+      "name": "Shrine of Twilight",
+      "type": "location",
+      "cost": 4,
+      "cardClass": "warlock",
+      "durability": 2,
+      "rarity": "rare",
+      "set": "CATACLYSM",
+      "description": "Herald {0}. Draw a card.",
+      "taps": [
+        {
+          "text": "Herald {0}. Draw a card.",
+          "effects": [
+            {
+              "type": "herald"
+            },
+            {
+              "type": "draw",
+              "value": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "azsharan_trident",
+      "name": "Azsharan Trident",
+      "type": "weapon",
+      "cost": 3,
+      "cardClass": "warrior",
+      "attack": 3,
+      "durability": 2,
+      "rarity": "common",
+      "set": "THE_SUNKEN_CITY",
+      "description": "Deathrattle: Put a 'Sunken Trident' on the bottom of your deck.",
+      "keywords": [
+        "deathrattle"
+      ],
+      "deathrattle": [
+        {
+          "type": "put-on-bottom",
+          "id": "tsc_sunken_trident",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "id": "tsc_sunken_trident",
+      "name": "Sunken Trident",
+      "type": "weapon",
+      "cost": 3,
+      "cardClass": "warrior",
+      "attack": 3,
+      "durability": 2,
+      "rarity": "free",
+      "set": "THE_SUNKEN_CITY",
+      "token": true,
+      "collectible": false,
+      "description": "After your hero attacks, deal 2 damage to all enemy minions.",
+      "ongoing": {
+        "on": "hero-attacks",
+        "effects": [
+          {
+            "type": "damage",
+            "value": 2,
+            "target": "enemy-creatures"
+          }
+        ]
+      }
+    },
+    {
+      "id": "volley_maul",
+      "name": "Volley Maul",
+      "type": "weapon",
+      "cost": 3,
+      "cardClass": "paladin",
+      "attack": 3,
+      "durability": 2,
+      "rarity": "common",
+      "set": "ISLAND_VACATION",
+      "description": "After your hero attacks, get a 1-Cost Sunscreen that gives +1/+2.",
+      "ongoing": {
+        "on": "hero-attacks",
+        "effects": [
+          {
+            "type": "conjure-id",
+            "id": "sunscreen"
+          }
+        ]
+      }
+    },
+    {
+      "id": "sunscreen",
+      "name": "Sunscreen",
+      "type": "sorcery",
+      "cost": 1,
+      "cardClass": "paladin",
+      "rarity": "free",
+      "collectible": false,
+      "token": true,
+      "set": "ISLAND_VACATION",
+      "description": "Give a minion +1/+2.",
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 1,
+          "health": 2,
+          "target": "creature"
+        }
+      ]
+    },
+    {
+      "id": "chamber_of_viscidus",
+      "name": "Chamber of Viscidus",
+      "type": "location",
+      "cost": 3,
+      "cardClass": "warlock",
+      "durability": 2,
+      "rarity": "rare",
+      "set": "WONDERS",
+      "description": "Look at 3 cards in your hand and choose one to discard. Draw two cards.",
+      "taps": [
+        {
+          "text": "Look at 3 cards in your hand and choose one to discard. Draw two cards.",
+          "effects": [
+            {
+              "type": "hand-pick",
+              "action": "discard"
+            },
+            {
+              "type": "draw",
+              "value": 2
+            }
+          ]
+        }
+      ]
     }
   ]
 }
