@@ -360,7 +360,7 @@ register('summon-copy-of-self-once-per-turn', ({ state, pi, target, source, enem
 register('summon-copies-of-board', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => {
 			// Freya: summon a copy of each OTHER friendly minion
 			const p = state.players[pi];
-			const originals = p.board.filter(c => c !== source && !isDead(c) && c.type !== 'location');
+			const originals = p.board.filter(c => c !== source && !isDead(c) && c.type !== 'location' && (!e.tribe || (c.tribe || '').includes(e.tribe))); // Splitting Axe: only your Totems
 			for (const c of originals) {
 				const def = state.cardsById[c.id];
 				if (!def || p.board.filter(x => !isDead(x)).length >= 7) continue;

@@ -297,6 +297,17 @@ registerTrigger('accrue-mana-awaken', (state, pi, e, ctx, triggering) => {
 });
 
 
+registerTrigger('damage-played-minion', (state, pi, e, ctx, triggering) => {
+	do { {
+				// Overlord's Whip: after you play a minion, deal N damage to it
+				const c = ctx.minion;
+				if (c && !isDead(c) && c.type !== 'location') damageCreature(state, c, e.value || 1, ctx.self || null);
+				break;
+			}
+	} while (false); // `break` ends this effect, exactly like the old case break
+});
+
+
 registerTrigger('copy-forged-to-hand', (state, pi, e, ctx, triggering) => {
 	do { {
 				// Melted Maker: after you Forge a card, get a copy of it (the upgraded

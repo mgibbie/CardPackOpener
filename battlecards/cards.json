@@ -138318,6 +138318,92 @@
           "grant": "rush"
         }
       ]
+    },
+    {
+      "id": "splitting_axe",
+      "name": "Splitting Axe",
+      "type": "weapon",
+      "cost": 4,
+      "cardClass": "shaman",
+      "attack": 3,
+      "durability": 2,
+      "rarity": "epic",
+      "set": "ULDUM",
+      "description": "Battlecry: Summon copies of your Totems.",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "summon-copies-of-board",
+          "tribe": "Totem"
+        }
+      ]
+    },
+    {
+      "id": "boom_wrench",
+      "name": "Boom Wrench",
+      "type": "weapon",
+      "cost": 3,
+      "cardClass": "warrior",
+      "attack": 3,
+      "durability": 2,
+      "rarity": "rare",
+      "set": "WHIZBANGS_WORKSHOP",
+      "description": "Miniaturize Deathrattle: Trigger the Deathrattle of a random friendly Mech.",
+      "miniaturize": true,
+      "keywords": [
+        "deathrattle"
+      ],
+      "deathrattle": [
+        {
+          "type": "trigger-one-deathrattle",
+          "random": true,
+          "tribe": "Mech"
+        }
+      ]
+    },
+    {
+      "id": "overlord_s_whip",
+      "name": "Overlord's Whip",
+      "type": "weapon",
+      "cost": 3,
+      "cardClass": "warrior",
+      "attack": 2,
+      "durability": 4,
+      "rarity": "common",
+      "set": "TROLL",
+      "description": "After you play a minion, deal 1 damage to it.",
+      "ongoing": {
+        "on": "creature-played",
+        "effects": [
+          {
+            "type": "damage-played-minion",
+            "value": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "auctionhouse_gavel",
+      "name": "Auctionhouse Gavel",
+      "type": "weapon",
+      "cost": 2,
+      "cardClass": "shaman",
+      "attack": 2,
+      "durability": 2,
+      "rarity": "rare",
+      "set": "STORMWIND",
+      "description": "After your hero attacks, reduce the Cost of a Battlecry minion in your hand by (1).",
+      "ongoing": {
+        "on": "hero-attacks",
+        "effects": [
+          {
+            "type": "reduce-hand-battlecry-cost",
+            "value": 1
+          }
+        ]
+      }
     }
   ]
 }

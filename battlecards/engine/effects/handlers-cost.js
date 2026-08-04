@@ -707,6 +707,12 @@ register('gain-spell-damage-turn', ({ state, pi }, e) => {
 	state.players[pi].spellDamageThisTurn = (state.players[pi].spellDamageThisTurn || 0) + (e.value || 1);
 });
 
+register('reduce-hand-battlecry-cost', ({ state, pi }, e) => {
+	// Auctionhouse Gavel: reduce the Cost of a random Battlecry minion in your hand
+	const pool = state.players[pi].hand.filter(c => c.type === 'creature' && (c.keywords || []).includes('battlecry'));
+	if (pool.length) { const c = pool[Math.floor(state.rng() * pool.length)]; c.cost = Math.max(0, (c.cost || 0) - (e.value || 1)); emit(state, { type: 'costChange', player: pi, uid: c.uid, cost: c.cost }); }
+});
+
 
 register('readd-corrupted-free', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => {
 	do {

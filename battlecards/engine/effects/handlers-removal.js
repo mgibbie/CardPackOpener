@@ -667,7 +667,7 @@ register('destroy-enemy-plague-damage', ({ state, pi, target, source, enemies, s
 register('trigger-one-deathrattle', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => { {
 			// fire a chosen (or random) friendly creature's Deathrattle without it dying (count = times)
 			let c = chosenCreature();
-			if (e.random) { const pool = state.players[pi].board.filter(x => x !== source && !isDead(x) && x.deathrattle && x.deathrattle.length); c = pool.length ? pool[Math.floor(state.rng() * pool.length)] : null; } // Guiding Figure
+			if (e.random) { const pool = state.players[pi].board.filter(x => x !== source && !isDead(x) && x.deathrattle && x.deathrattle.length && (!e.tribe || (x.tribe || '').includes(e.tribe))); c = pool.length ? pool[Math.floor(state.rng() * pool.length)] : null; } // Guiding Figure / Boom Wrench (Mech)
 			if (c && !isDead(c) && c.deathrattle) for (let n = 0; n < (e.count || 1); n++) execEffects(state, pi, c.deathrattle, null, c);
 } });
 
