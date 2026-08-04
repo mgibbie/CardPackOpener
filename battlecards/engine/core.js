@@ -336,6 +336,7 @@ export function instantiate(def, controller) {
 		heroWindfury: !!def.heroWindfury, // Azshara: your hero can attack twice
 		heroAura: def.heroAura || null, // Spiderling / Inara / Spirit of the Team: hero +Attack (usually only on your turn)
 		weaponAura: def.weaponAura || null, // Vulpera Toxinblade: your weapon has +N Attack
+		handMinionEcho: !!def.handMinionEcho, // Glinda Crowskin: minions in your hand have Echo
 		healToMaxHealth: !!def.healToMaxHealth, // Arisen Onyxia: hero Health loss becomes max Health
 		castOtherClassTwice: !!def.castOtherClassTwice, // Sinestra: off-class spells cast twice
 		armsHitEnemyDeck: !!def.armsHitEnemyDeck, // Cho'gall: Arms/Soldiers destroy in the enemy deck
@@ -2184,10 +2185,12 @@ export function playCard(state, pi, cardUid, target, choice, position, useAlt, k
 		// resolves. If none can respond it resolves at once (the common path).
 		else stackSpell(state, pi, card, target, choice);
 	}
+	// Glinda Crowskin: minions in your hand have Echo while she's on the board
+	const echoing = card.echo || (card.type === 'creature' && p.board.some(c => c.handMinionEcho && !isDead(c)));
 	// Echo cards trigger Mistwraith-style payoffs each time they're played
-	if (card.echo) fireOngoing(state, pi, 'echo-played', { played: card });
+	if (echoing) fireOngoing(state, pi, 'echo-played', { played: card });
 	// Echo: a ghost copy slips into hand, playable until the turn ends
-	if (card.echo && !p.eliminated && p.hand.length < MAX_HAND && !state.over) {
+	if (echoing && !p.eliminated && p.hand.length < MAX_HAND && !state.over) {
 		const def = state.cardsById[card.id];
 		if (def) {
 			const ghost = instantiate(def, pi);
@@ -2731,7 +2734,7 @@ export function canAttackWith(state, pi, c) {
 		const pr = activePlaneRule(state); // Bloomburrow: Humans can't attack
 		if (pr && pr.kind === 'cant-attack' && (c.tribe || '').includes(pr.tribe)) return false;
 	}
-	const maxAttacks = c.megaWindfury ? 4 : has(c, KW.WINDFURY) ? 2 : 1; // Air Support: Mega-Windfury
+	const maxAttacks = (c.megaWindfury || has(c, 'mega_windfury')) ? 4 : has(c, KW.WINDFURY) ? 2 : 1; // Air Support / Whirlwind Tempest: Mega-Windfury
 	if (c.attacksUsed >= maxAttacks) return false;
 	if (c.sick && !has(c, KW.CHARGE) && !has(c, KW.RUSH)) return false;
 	return true;

@@ -45512,7 +45512,13 @@
       "type": "creature",
       "attack": 6,
       "health": 6,
-      "tribe": "Elemental"
+      "tribe": "Elemental",
+      "aura": {
+        "hasWindfury": true,
+        "keywords": [
+          "mega_windfury"
+        ]
+      }
     },
     {
       "id": "zayle_shadow_cloak",
@@ -46464,7 +46470,8 @@
       "type": "creature",
       "attack": 3,
       "health": 7,
-      "tribe": "Undead"
+      "tribe": "Undead",
+      "handMinionEcho": true
     },
     {
       "id": "nightmare_amalgam",
