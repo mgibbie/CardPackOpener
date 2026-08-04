@@ -722,7 +722,7 @@ registerTrigger('summon-of-spell-cost', (state, pi, e, ctx, triggering) => {
 					// Summoning Stone / Atiesh / Jailhouse Manastorm (no e.name): summon a RANDOM minion of that Cost.
 					// (These were two duplicate switch cases — the token variant shadowed the random one.)
 					const sp = ctx.spell || ctx.played;
-					if (sp && e.name) { const n = sp.cost || 0; summon(state, pi, { id: 'token_' + e.name.toLowerCase(), name: e.name, type: 'creature', cost: 0, token: true, tribe: e.tribe || null, rarity: 'common', attack: n, health: n, description: `A ${n}/${n} token.` }); }
+					if (sp && e.name) { const n = sp.cost || 0; summon(state, pi, { id: 'token_' + e.name.toLowerCase(), name: e.name, type: 'creature', cost: 0, token: true, tribe: e.tribe || null, rarity: 'common', attack: n, health: n, keywords: e.keywords || [], description: `A ${n}/${n} token.` }); } // Ceremonial Maul: a Student with Taunt
 					else if (sp) execEffects(state, pi, [{ type: 'summon-random', cost: sp.cost || 0 }], null, ctx.self);
 					break;
 				}

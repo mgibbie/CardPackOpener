@@ -138530,6 +138530,57 @@
           ]
         }
       ]
+    },
+    {
+      "id": "cosmic_keyboard",
+      "name": "Cosmic Keyboard",
+      "type": "weapon",
+      "cost": 2,
+      "cardClass": "mage",
+      "attack": 0,
+      "durability": 3,
+      "rarity": "rare",
+      "set": "BATTLE_OF_THE_BANDS",
+      "description": "After you cast a spell, summon an Elemental with stats equal to its Cost. Lose 1 Durability.",
+      "ongoing": {
+        "on": "spell-played",
+        "effects": [
+          {
+            "type": "summon-of-spell-cost",
+            "name": "Elemental",
+            "tribe": "Elemental"
+          },
+          {
+            "type": "lose-durability",
+            "value": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "ceremonial_maul",
+      "name": "Ceremonial Maul",
+      "type": "weapon",
+      "cost": 3,
+      "cardClass": "paladin",
+      "attack": 2,
+      "durability": 2,
+      "rarity": "epic",
+      "set": "SCHOLOMANCE",
+      "description": "Spellburst: Summon a Student with Taunt and stats equal to the spell's Cost.",
+      "ongoing": {
+        "on": "spell-played",
+        "once": true,
+        "effects": [
+          {
+            "type": "summon-of-spell-cost",
+            "name": "Student",
+            "keywords": [
+              "taunt"
+            ]
+          }
+        ]
+      }
     }
   ]
 }

@@ -707,6 +707,11 @@ register('gain-spell-damage-turn', ({ state, pi }, e) => {
 	state.players[pi].spellDamageThisTurn = (state.players[pi].spellDamageThisTurn || 0) + (e.value || 1);
 });
 
+register('lose-durability', ({ state, pi }, e) => {
+	// Cosmic Keyboard / The Fist of Ra-den: the equipped weapon loses N Durability
+	for (let i = 0; i < (e.value || 1); i++) if (state.players[pi].weapon) degradeWeapon(state, pi);
+});
+
 register('reduce-hand-battlecry-cost', ({ state, pi }, e) => {
 	// Auctionhouse Gavel: reduce the Cost of a random Battlecry minion in your hand
 	const pool = state.players[pi].hand.filter(c => c.type === 'creature' && (c.keywords || []).includes('battlecry'));
