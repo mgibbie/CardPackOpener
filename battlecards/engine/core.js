@@ -1791,6 +1791,7 @@ function applyPlaneOnCreaturePlayed(state, pi, card) {
 export function canPlay(state, pi, card) {
 	if (state.over) return false;
 	if (card.lockedUntilTurn && state.turnNumber < card.lockedUntilTurn) return false; // Coilfang Constrictor
+	if (card._locked) return false; // Low Security Wing: locked in hand until you play another card
 	if (card.type === 'instant') { if (!hasPriority(state, pi)) return false; }
 	else if (!(state.current === pi && state.priority == null && state.stack.length === 0)) return false;
 	if (availableMana(state.players[pi]) < effectiveCost(state, pi, card) && !(card.altCost && canPayAlt(state, pi, card))) return false;
@@ -2238,6 +2239,8 @@ export function playCard(state, pi, cardUid, target, choice, position, useAlt, k
 	questTick(state, 'play', pi, 1, card); // "Play N cards" quests
 	// counted AFTER resolution so Combo sees only cards played EARLIER this turn
 	p.cardsPlayedThisTurn++;
+	for (const hc of p.hand) if (hc._locked) hc._locked = false; // Low Security Wing: playing another card unlocks
+
 	p.lastCardCost = card.cost; p.lastPlayedRunes = card.runes || null; // Rolling Stone / Grotesque Runeblade: cost of the most recently played card
 	if (!card.token) p.lastCardPlayedId = card.id; // Fate Splitter: opponent's most recent card
 	if (card.type === 'creature' && card.tribe) { p.tribesPlayedGame = p.tribesPlayedGame || {}; for (const tr of (card.tribe || '').split('/')) if (tr) p.tribesPlayedGame[tr] = true; } // Power Slider (plain object, NOT a Set — must survive snapshot JSON)
@@ -3890,7 +3893,7 @@ export function endTurn(state) {
 	p.heroPowerTaxNext = 0; // Saboteur's Hero Power tax only lasts this turn
 	p.nextMurlocFree = false; p.nextSecretCost = null; // Seadevil Stinger / Kabal Lackey are "this turn"
 	p.nextBattlecryDouble = false; // Murmuring Elemental only lasts this turn
-	p.nextSpellDamageBonus = 0; p.nextSpellDoubleCast = false; p.nextSpellDoubleCount = 0; p.spellsLifestealThisTurn = false; p.spellDamageThisTurn = 0; p.nextSummonStats = null; if (p.weapon) p.weapon.cleaveThisTurn = false; // Boomsday next-spell riders are "this turn"; Magical Dollhouse / Rune Dagger / The Crystal Cove / Reaper's Scythe
+	p.nextSpellDamageBonus = 0; p.nextSpellDoubleCast = false; p.nextSpellDoubleCount = 0; p.spellsLifestealThisTurn = false; p.spellDamageThisTurn = 0; p.nextSummonStats = null; if (p.weapon) { p.weapon.cleaveThisTurn = false; if (p.weapon._tempAtkTurn) { p.weapon.attack = p.weapon._tempAtkBase; p.weapon._tempAtkTurn = false; p.weapon._tempAtkBase = null; } } // "this turn" riders; Reaper's Scythe / Hand of Infinity
 	p.healHarmThisTurn = false; // Auchenai Phantasm only lasts this turn
 	p.heroPowerDamageNext = 0; // Daring Fire-Eater only lasts this turn
 	for (const pl of state.players) for (const c of pl.board) if (c.turnAtkDebuff) { c.attack += c.turnAtkDebuff; c.turnAtkDebuff = 0; emit(state, { type: 'buff', uid: c.uid, attack: c.attack, hp: hp(c) }); } // Quicksand Elemental restores

@@ -707,6 +707,12 @@ register('gain-spell-damage-turn', ({ state, pi }, e) => {
 	state.players[pi].spellDamageThisTurn = (state.players[pi].spellDamageThisTurn || 0) + (e.value || 1);
 });
 
+register('set-weapon-attack-temp', ({ state, pi }, e) => {
+	// Hand of Infinity: set the equipped weapon's Attack to `value` until end of turn
+	const w = state.players[pi].weapon;
+	if (w) { if (w._tempAtkBase == null) w._tempAtkBase = w.attack; w.attack = e.value || 9999; w._tempAtkTurn = true; emit(state, { type: 'weaponDurability', player: pi, attack: w.attack, durability: w.durability }); }
+});
+
 register('grant-weapon-cleave-turn', ({ state, pi }, e) => {
 	// Reaper's Scythe: your weapon Cleaves (splashes neighbours) until end of turn
 	if (state.players[pi].weapon) state.players[pi].weapon.cleaveThisTurn = true;

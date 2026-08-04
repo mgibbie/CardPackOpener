@@ -139142,6 +139142,52 @@
           }
         ]
       }
+    },
+    {
+      "id": "hand_of_infinity",
+      "name": "Hand of Infinity",
+      "type": "weapon",
+      "cost": 3,
+      "cardClass": "paladin",
+      "attack": 4,
+      "durability": 2,
+      "rarity": "rare",
+      "set": "TIME_TRAVEL",
+      "description": "Can't attack heroes. Battlecry: Set this weapon's Attack to INFINITY this turn!",
+      "keywords": [
+        "battlecry"
+      ],
+      "noFace": true,
+      "effects": [
+        {
+          "type": "set-weapon-attack-temp",
+          "value": 9999
+        }
+      ]
+    },
+    {
+      "id": "low_security_wing",
+      "name": "Low Security Wing",
+      "type": "location",
+      "cost": 1,
+      "cardClass": "shaman",
+      "durability": 3,
+      "rarity": "common",
+      "set": "CORE",
+      "description": "Get a random Shaman minion. It's locked in your hand until you play another card.",
+      "taps": [
+        {
+          "text": "Get a random Shaman minion. It's locked in your hand until you play another card.",
+          "effects": [
+            {
+              "type": "conjure-random",
+              "cardType": "creature",
+              "cardClass": "shaman",
+              "lockInHand": true
+            }
+          ]
+        }
+      ]
     }
   ]
 }

@@ -926,6 +926,7 @@ register('conjure-random', ({ state, pi, target, source, enemies, scaled, hm, pi
 					if (e.altLife) card.altCost = { life: card.cost || 0 }; // Whispering Stone: costs Health instead of Mana
 					if (e.castTwice) card.castTwice = true; // Empowered Well of Eternity: they cast twice
 					if (e.buffAttack && card.type === 'weapon') card.attack = (card.attack || 0) + e.buffAttack; // Neferset Weaponsmith combo
+					if (e.lockInHand) card._locked = true; // Low Security Wing: locked until you play another card
 					op.hand.push(card);
 					emit(state, { type: 'conjure', player: own, card, color: null });
 					fireEmerge(state, own, card);
