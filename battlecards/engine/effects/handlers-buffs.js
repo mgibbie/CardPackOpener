@@ -165,8 +165,8 @@ register('buff-self-per-died-this-turn', ({ state, pi, target, source, enemies, 
 
 
 register('buff-hand-minions', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => {
-			// Alliance Bannerman: give minions in your hand +X/+X
-			for (const c of state.players[pi].hand) if (c.type === 'creature') { c.attack += e.attack || 0; c.maxHealth += e.health || 0; }
+			// Alliance Bannerman: give minions in your hand +X/+X (Crystalline Greatmace: tribe filter)
+			for (const c of state.players[pi].hand) if (c.type === 'creature' && (!e.tribe || (c.tribe || '').includes(e.tribe))) { c.attack += e.attack || 0; c.maxHealth += e.health || 0; emit(state, { type: 'buff', uid: c.uid, attack: c.attack, hp: hp(c) }); }
 });
 
 

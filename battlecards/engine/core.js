@@ -3079,15 +3079,13 @@ export function heroAttack(state, pi, target) {
 			}
 		}
 	}
-	// triggered hero weapons fire while still equipped
-	if (w && w.ongoing) {
-		const on = w.ongoing.on;
-		if (on === 'hero-attacks'
-			|| (on === 'hero-attacks-creature' && hitCreature)
-			|| (on === 'hero-kills-creature' && killed)) {
-			emit(state, { type: 'ongoingTriggered', player: pi, card: w });
-			runSecretEffects(state, pi, w.ongoing.effects, { self: w });
-		}
+	// triggered hero weapons fire while still equipped. Only 'hero-kills-creature'
+	// is handled here — 'hero-attacks' and 'hero-attacks-creature' are already
+	// covered by the fireOngoing calls below (the weapon sits in their sources),
+	// so firing them here too would double them (Truesilver Champion healing 4).
+	if (w && w.ongoing && w.ongoing.on === 'hero-kills-creature' && killed) {
+		emit(state, { type: 'ongoingTriggered', player: pi, card: w });
+		runSecretEffects(state, pi, w.ongoing.effects, { self: w });
 	}
 	// Aggramar: weapon abilities that ride "After your hero attacks" (an array so
 	// Maintain Order / Commanding Presence can stack across turns).

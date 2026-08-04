@@ -136493,6 +136493,136 @@
           ]
         }
       ]
+    },
+    {
+      "id": "command_claw",
+      "name": "Command Claw",
+      "type": "weapon",
+      "cost": 2,
+      "cardClass": "deathknight",
+      "attack": 2,
+      "durability": 2,
+      "rarity": "common",
+      "set": "CATACLYSM",
+      "description": "After your hero attacks, give a random friendly minion +2 Attack.",
+      "ongoing": {
+        "on": "hero-attacks",
+        "effects": [
+          {
+            "type": "buff-random-friendly",
+            "attack": 2
+          }
+        ]
+      }
+    },
+    {
+      "id": "painter_s_virtue",
+      "name": "Painter's Virtue",
+      "type": "weapon",
+      "cost": 4,
+      "cardClass": "paladin",
+      "attack": 2,
+      "durability": 3,
+      "rarity": "common",
+      "set": "WHIZBANGS_WORKSHOP",
+      "description": "Lifesteal After your hero attacks, give minions in your hand +1/+1.",
+      "keywords": [
+        "lifesteal"
+      ],
+      "ongoing": {
+        "on": "hero-attacks",
+        "effects": [
+          {
+            "type": "buff-hand-minions",
+            "attack": 1,
+            "health": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "whetstone_hatchet",
+      "name": "Whetstone Hatchet",
+      "type": "weapon",
+      "cost": 1,
+      "cardClass": "warrior",
+      "attack": 1,
+      "durability": 4,
+      "rarity": "rare",
+      "set": "THE_BARRENS",
+      "description": "After your hero attacks, give a minion in your hand +1 Attack.",
+      "ongoing": {
+        "on": "hero-attacks",
+        "effects": [
+          {
+            "type": "buff-random-hand",
+            "attack": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "livewire_lance",
+      "name": "Livewire Lance",
+      "type": "weapon",
+      "cost": 3,
+      "cardClass": "warrior",
+      "attack": 2,
+      "durability": 2,
+      "rarity": "epic",
+      "set": "ULDUM",
+      "description": "After your hero attacks, add a Lackey to your hand.",
+      "ongoing": {
+        "on": "hero-attacks",
+        "effects": [
+          {
+            "type": "add-lackey"
+          }
+        ]
+      }
+    },
+    {
+      "id": "tempest_hammer",
+      "name": "Tempest Hammer",
+      "type": "weapon",
+      "cost": 4,
+      "cardClass": "shaman",
+      "attack": 1,
+      "durability": 3,
+      "rarity": "rare",
+      "set": "TITANS",
+      "description": "After your hero attacks, deal 3 damage to the lowest Health enemy.",
+      "ongoing": {
+        "on": "hero-attacks",
+        "effects": [
+          {
+            "type": "damage-lowest-enemy",
+            "value": 3
+          }
+        ]
+      }
+    },
+    {
+      "id": "crystalline_greatmace",
+      "name": "Crystalline Greatmace",
+      "type": "weapon",
+      "cost": 2,
+      "cardClass": "warrior",
+      "attack": 2,
+      "durability": 2,
+      "rarity": "rare",
+      "set": "SPACE",
+      "description": "After your hero attacks, give all Draenei in your hand +2 Attack.",
+      "ongoing": {
+        "on": "hero-attacks",
+        "effects": [
+          {
+            "type": "buff-hand-minions",
+            "tribe": "Draenei",
+            "attack": 2
+          }
+        ]
+      }
     }
   ]
 }
