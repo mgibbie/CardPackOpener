@@ -2747,6 +2747,9 @@ function applyForge(state, pi, card) {
 	if (f.costDelta) card.cost = Math.max(0, (card.cost || 0) + f.costDelta); // Storm Giant
 	if (f.battlecry) card.effects = JSON.parse(JSON.stringify(f.battlecry)); // Muscle-o-Tron: "+2/+2 instead"
 	if (f.addBattlecry) card.effects = [...(card.effects || []), ...JSON.parse(JSON.stringify(f.addBattlecry))]; // Watcher of the Sun: "Also restore 6 Health"
+	if (f.ongoing) card.ongoing = JSON.parse(JSON.stringify(f.ongoing)); // Champion of Storms: the summoned Elemental now has Rush
+	if (f.miracle) card.miracle = JSON.parse(JSON.stringify(f.miracle)); // Glowstone Gyreworm: a stronger Miracle
+	if (f.clearChoices) { card.choices = null; card.chooseCount = null; } // Gloomstone Guardian: "Do NEITHER"
 	card.forged = true;
 	if (!f.endless) card.forge = null; // one-time upgrade (Storm Giant Forges endlessly)
 	return card;

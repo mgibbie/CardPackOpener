@@ -103630,7 +103630,20 @@
             }
           ]
         }
-      ]
+      ],
+      "forge": {
+        "battlecry": [
+          {
+            "type": "damage",
+            "value": 3,
+            "target": "any"
+          },
+          {
+            "type": "gain-corpses",
+            "value": 3
+          }
+        ]
+      }
     },
     {
       "id": "fate_splitter",
@@ -104129,6 +104142,24 @@
             "summonId": "ttn_elemental_42"
           }
         ]
+      },
+      "forge": {
+        "ongoing": {
+          "on": "spell-played",
+          "if": {
+            "school": "Nature"
+          },
+          "effects": [
+            {
+              "type": "summon",
+              "count": 1,
+              "summonId": "ttn_elemental_42",
+              "grant": [
+                "rush"
+              ]
+            }
+          ]
+        }
       }
     },
     {
@@ -104171,7 +104202,27 @@
             }
           ]
         }
-      ]
+      ],
+      "forge": {
+        "battlecry": [
+          {
+            "type": "discard-spell-then",
+            "then": [
+              {
+                "type": "summon",
+                "count": 2,
+                "summonId": "ttn_imp_32",
+                "grant": [
+                  "taunt"
+                ],
+                "buff": {
+                  "health": 2
+                }
+              }
+            ]
+          }
+        ]
+      }
     },
     {
       "id": "ttn_elemental_42",
@@ -104380,7 +104431,16 @@
           "type": "discover",
           "cardType": "spell"
         }
-      ]
+      ],
+      "forge": {
+        "battlecry": [
+          {
+            "type": "discover",
+            "cardType": "spell",
+            "costMod": -3
+          }
+        ]
+      }
     },
     {
       "id": "mindbender",
@@ -104825,7 +104885,12 @@
           "count": 5,
           "pool": "enemy-creatures"
         }
-      ]
+      ],
+      "forge": {
+        "keywords": [
+          "lifesteal"
+        ]
+      }
     },
     {
       "id": "aggramar_the_avenger",
@@ -109271,7 +109336,10 @@
             }
           ]
         }
-      ]
+      ],
+      "forge": {
+        "clearChoices": true
+      }
     },
     {
       "id": "glowstone_gyreworm",
@@ -109289,17 +109357,27 @@
         "battlecry",
         "miracle"
       ],
-      "description": "Lifesteal. Miracle: Deal 5 damage. (Forge rider still pending.)",
+      "description": "Lifesteal. Miracle: Deal 5 damage. Forge: Deal 10 instead.",
       "effects": [],
       "miracle": {
         "effects": [
           {
             "type": "damage",
             "value": 5,
-            "target": "any",
-            "lifesteal": true
+            "target": "any"
           }
         ]
+      },
+      "forge": {
+        "miracle": {
+          "effects": [
+            {
+              "type": "damage",
+              "value": 10,
+              "target": "any"
+            }
+          ]
+        }
       }
     },
     {

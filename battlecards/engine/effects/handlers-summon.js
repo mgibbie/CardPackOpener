@@ -1196,6 +1196,7 @@ register('summon', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy,
 				if (opt.summonId && state.cardsById[opt.summonId]) {
 					const sc = summon(state, ownerIdx, state.cardsById[opt.summonId]);
 					if (sc && e.grant) for (const k of e.grant) { if (!sc.keywords.includes(k)) sc.keywords.push(k); if (k === KW.DIVINE_SHIELD) sc.shield = true; } // Super Simian Sphere: Mukla with Immune+Elusive
+					if (sc && e.buff) { sc.attack += e.buff.attack || 0; sc.maxHealth += e.buff.health || 0; } // Disciple of Sargeras (Forged): the Imps get +2 Health
 					return;
 				}
 				// randomKeywords: each token rolls its own bonus (Bucket of Soldiers)
