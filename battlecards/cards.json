@@ -137513,6 +137513,95 @@
           ]
         }
       ]
+    },
+    {
+      "id": "bladed_gauntlet",
+      "name": "Bladed Gauntlet",
+      "type": "weapon",
+      "cost": 2,
+      "cardClass": "warrior",
+      "attack": 0,
+      "durability": 2,
+      "rarity": "epic",
+      "set": "CORE",
+      "description": "Has Attack equal to your Armor. Can't attack heroes.",
+      "attackEqualsArmor": true,
+      "noFace": true
+    },
+    {
+      "id": "cogmaster_s_wrench",
+      "name": "Cogmaster's Wrench",
+      "type": "weapon",
+      "cost": 3,
+      "cardClass": "rogue",
+      "attack": 1,
+      "durability": 3,
+      "rarity": "epic",
+      "set": "GVG",
+      "description": "Has +2 Attack while you have a Mech.",
+      "condAttack": {
+        "tribe": "Mech",
+        "bonus": 2
+      }
+    },
+    {
+      "id": "spirit_claws",
+      "name": "Spirit Claws",
+      "type": "weapon",
+      "cost": 1,
+      "cardClass": "shaman",
+      "attack": 1,
+      "durability": 3,
+      "rarity": "common",
+      "set": "PLACEHOLDER_202204",
+      "description": "Has +2 Attack while you have Spell Damage.",
+      "condAttack": {
+        "spellDamage": true,
+        "bonus": 2
+      }
+    },
+    {
+      "id": "fool_s_bane",
+      "name": "Fool's Bane",
+      "type": "weapon",
+      "cost": 5,
+      "cardClass": "warrior",
+      "attack": 3,
+      "durability": 4,
+      "rarity": "common",
+      "set": "KARA",
+      "description": "Unlimited attacks each turn. Can't attack heroes.",
+      "unlimitedAttacks": true,
+      "noFace": true
+    },
+    {
+      "id": "lightbringer_s_hammer",
+      "name": "Lightbringer's Hammer",
+      "type": "weapon",
+      "cost": 3,
+      "cardClass": "paladin",
+      "attack": 3,
+      "durability": 2,
+      "rarity": "epic",
+      "set": "STORMWIND",
+      "description": "Lifesteal Can't attack heroes.",
+      "keywords": [
+        "lifesteal"
+      ],
+      "noFace": true
+    },
+    {
+      "id": "cursed_blade",
+      "name": "Cursed Blade",
+      "type": "weapon",
+      "cost": 1,
+      "cardClass": "warrior",
+      "attack": 2,
+      "durability": 3,
+      "rarity": "rare",
+      "set": "LOE",
+      "description": "Double all damage dealt to your hero.",
+      "doubleHeroDamage": true
     }
   ]
 }

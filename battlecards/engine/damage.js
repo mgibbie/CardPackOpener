@@ -109,6 +109,7 @@ export function damageCreature(state, target, amount, source) {
 export function damageHero(state, pi, amount, src = null, pierce = false) {
 	if (amount <= 0) return 0;
 	const p = state.players[pi];
+	if (p.weapon?.doubleHeroDamage) amount *= 2; // Cursed Blade: double all damage dealt to your hero
 	// Arisen Onyxia: on your turn, Health you would lose becomes max Health instead
 	if (state.current === pi && p.board.some(c => c.healToMaxHealth && !isDead(c))) {
 		p.maxLife = (p.maxLife ?? STARTING_LIFE) + amount;

@@ -338,6 +338,11 @@ export function instantiate(def, controller) {
 		weaponAura: def.weaponAura || null, // Vulpera Toxinblade: your weapon has +N Attack
 		handMinionEcho: !!def.handMinionEcho, // Glinda Crowskin: minions in your hand have Echo
 		forge: def.forge ? JSON.parse(JSON.stringify(def.forge)) : null, // Forge: drag onto the Forge to upgrade this card in hand
+		attackEqualsArmor: !!def.attackEqualsArmor, // Bladed Gauntlet
+		condAttack: def.condAttack || null, // Cogmaster's Wrench / Spirit Claws: weapon +Attack while a condition holds
+		noFace: !!def.noFace, // "Can't attack heroes"
+		unlimitedAttacks: !!def.unlimitedAttacks, // Fool's Bane
+		doubleHeroDamage: !!def.doubleHeroDamage, // Cursed Blade
 		forged: false, // whether this card has already been Forged
 		healToMaxHealth: !!def.healToMaxHealth, // Arisen Onyxia: hero Health loss becomes max Health
 		castOtherClassTwice: !!def.castOtherClassTwice, // Sinestra: off-class spells cast twice
@@ -2985,6 +2990,13 @@ export function heroAttackValue(state, p) {
 	const onTurn = state.current === state.players.indexOf(p);
 	if (p.weapon) {
 		w = p.weapon.attack;
+		if (p.weapon.attackEqualsArmor) w = p.armor; // Bladed Gauntlet: Attack equal to your Armor
+		if (p.weapon.condAttack) { // Cogmaster's Wrench (+2 while you have a Mech) / Spirit Claws (+2 while you have Spell Damage)
+			const ca = p.weapon.condAttack;
+			const met = ca.tribe ? p.board.some(c => !isDead(c) && c.type !== 'location' && (c.tribe || '').includes(ca.tribe))
+				: ca.spellDamage ? staticValue(p, 'spell-damage') > 0 : false;
+			if (met) w += ca.bonus || 0;
+		}
 		// Spiteful Smith-style enrage: damaged creatures sharpen the weapon
 		for (const c of p.board) {
 			if (c.enrage?.weaponAttack && c.damage > 0 && !isDead(c)) w += c.enrage.weaponAttack;
@@ -3004,6 +3016,7 @@ export function canHeroAttack(state, pi) {
 	if (state.over || state.current !== pi) return false;
 	const p = state.players[pi];
 	if (heroAttackValue(state, p) <= 0) return false; // temp attack lets weaponless heroes swing
+	if (p.weapon?.unlimitedAttacks) return true; // Fool's Bane: no per-turn attack cap
 	const windfury = p.weapon?.keywords.includes(KW.WINDFURY) || p.board.some(c => c.heroWindfury && !isDead(c)); // Azshara
 	return p.heroAttacksUsed < (windfury ? 2 : 1);
 }
@@ -3011,13 +3024,14 @@ export function canHeroAttack(state, pi) {
 // same taunt/stealth rules as creature attacks; heroes have no rush restriction
 export function heroAttackTargets(state, pi) {
 	const out = [];
+	const noFace = !!state.players[pi].weapon?.noFace; // Bladed Gauntlet / Fool's Bane / Lightbringer's Hammer: "Can't attack heroes"
 	for (const opp of opponentsOf(state, pi)) {
 		const board = state.players[opp].board.filter(c => !c.stealthed && c.type !== 'location' && c.dormantLeft <= 0);
 		const taunts = board.filter(c => has(c, KW.TAUNT));
 		out.push(...(taunts.length ? taunts : board).map(c => ({ type: 'creature', uid: c.uid, player: opp })));
 		if (!taunts.length) {
 			for (const w of state.players[opp].planeswalkers) out.push({ type: 'walker', uid: w.uid, player: opp });
-			out.push({ type: 'hero', player: opp });
+			if (!noFace) out.push({ type: 'hero', player: opp });
 		}
 	}
 	return out;
