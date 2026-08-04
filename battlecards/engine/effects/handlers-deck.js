@@ -2,6 +2,7 @@
 // Handler bodies are the verbatim registry migrations (PRs 13–39); this file
 // only re-homes them. Imported for its registration side effects by index.js.
 import { register, registerTrigger, ABORT } from './registry.js';
+import { fireCreatureTrigger } from '../triggers.js';
 // engine/effects/registry.js — the effect-handler registry (docs/06, PR 13).
 //
 // Dispatch-order rule (behavior-preserving migration): inside execEffects'
@@ -950,6 +951,48 @@ register('shuffle-lowest-hand-into-deck', ({ state, pi, target, source, enemies,
 				if (!lo.token && state.cardsById[lo.id]) { p.deck.push(lo.id); for (let i = p.deck.length - 1; i > 0; i--) { const j = Math.floor(state.rng() * (i + 1)); [p.deck[i], p.deck[j]] = [p.deck[j], p.deck[i]]; } }
 				emit(state, { type: 'shuffle', player: pi });
 			}
+} });
+
+register('shuffle-leftmost-hand-into-deck', ({ state, pi, source }, e) => { {
+			// Crystal Tusk: shuffle the LEFT-most (oldest) card in your hand into your deck
+			const p = state.players[pi];
+			const pool = p.hand.filter(c => c !== source);
+			if (pool.length) {
+				const lm = pool[0];
+				p.hand = p.hand.filter(c => c !== lm);
+				if (!lm.token && state.cardsById[lm.id]) { p.deck.push(lm.id); for (let i = p.deck.length - 1; i > 0; i--) { const j = Math.floor(state.rng() * (i + 1)); [p.deck[i], p.deck[j]] = [p.deck[j], p.deck[i]]; } }
+				emit(state, { type: 'shuffle', player: pi });
+			}
+} });
+
+register('summon-lowest-cost-from-hand', ({ state, pi }, e) => { {
+			// Cavalry Horn: summon the lowest-Cost minion from your hand
+			const p = state.players[pi];
+			const pool = p.hand.filter(c => c.type === 'creature');
+			if (!pool.length) return;
+			let lo = pool[0]; for (const c of pool) if ((c.cost || 0) < (lo.cost || 0)) lo = c;
+			p.hand = p.hand.filter(c => c !== lo);
+			summon(state, pi, state.cardsById[lo.id] || lo);
+} });
+
+register('draw-foreign-spell', ({ state, pi }, e) => { {
+			// Smuggled Shovel: draw a spell from your deck that didn't start there
+			const p = state.players[pi];
+			const started = new Set(p.startingDeckIds || []);
+			const idx = p.deck.findIndex(id => { const d = state.cardsById[id]; return d && isSpellType(d) && !started.has(id); });
+			if (idx >= 0 && p.hand.length < MAX_HAND) {
+				const [id] = p.deck.splice(idx, 1);
+				const c = instantiate(state.cardsById[id], pi); c.zone = 'hand'; c.fromDeck = true; p.hand.push(c);
+				emit(state, { type: 'draw', player: pi, card: c });
+			}
+} });
+
+register('trigger-random-friendly-turn-end', ({ state, pi, source }, e) => { {
+			// Inspiring Maul: trigger a random friendly minion's end-of-turn effect
+			const p = state.players[pi];
+			const pool = p.board.filter(c => c !== source && !isDead(c) && c.type !== 'location'
+				&& ((c.ongoing && c.ongoing.on === 'turn-end') || (c.ongoings || []).some(o => o.on === 'turn-end')));
+			if (pool.length) fireCreatureTrigger(state, pool[Math.floor(state.rng() * pool.length)], 'turn-end', {});
 } });
 
 

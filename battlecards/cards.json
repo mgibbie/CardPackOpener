@@ -137602,6 +137602,93 @@
       "set": "LOE",
       "description": "Double all damage dealt to your hero.",
       "doubleHeroDamage": true
+    },
+    {
+      "id": "cavalry_horn",
+      "name": "Cavalry Horn",
+      "type": "weapon",
+      "cost": 5,
+      "cardClass": "paladin",
+      "attack": 3,
+      "durability": 2,
+      "rarity": "common",
+      "set": "ALTERAC_VALLEY",
+      "description": "Deathrattle: Summon the lowest Cost minion in your hand.",
+      "keywords": [
+        "deathrattle"
+      ],
+      "deathrattle": [
+        {
+          "type": "summon-lowest-cost-from-hand"
+        }
+      ]
+    },
+    {
+      "id": "crystal_tusk",
+      "name": "Crystal Tusk",
+      "type": "weapon",
+      "cost": 2,
+      "cardClass": "rogue",
+      "attack": 2,
+      "durability": 2,
+      "rarity": "rare",
+      "set": "THE_LOST_CITY",
+      "description": "Battlecry: Shuffle the left- most card in your hand into your deck. Deathrattle: Draw 2 cards.",
+      "keywords": [
+        "battlecry",
+        "deathrattle"
+      ],
+      "effects": [
+        {
+          "type": "shuffle-leftmost-hand-into-deck"
+        }
+      ],
+      "deathrattle": [
+        {
+          "type": "draw",
+          "value": 2
+        }
+      ]
+    },
+    {
+      "id": "smuggled_shovel",
+      "name": "Smuggled Shovel",
+      "type": "weapon",
+      "cost": 1,
+      "cardClass": "hunter",
+      "attack": 1,
+      "durability": 2,
+      "rarity": "rare",
+      "set": "ESCAPEFROM_VIOLET_HOLD",
+      "description": "Deathrattle: Draw a spell that didn't start in your deck.",
+      "keywords": [
+        "deathrattle"
+      ],
+      "deathrattle": [
+        {
+          "type": "draw-foreign-spell"
+        }
+      ]
+    },
+    {
+      "id": "inspiring_maul",
+      "name": "Inspiring Maul",
+      "type": "weapon",
+      "cost": 2,
+      "cardClass": "paladin",
+      "attack": 2,
+      "durability": 2,
+      "rarity": "common",
+      "set": "CATACLYSM",
+      "description": "Deathrattle: Trigger a random friendly minion's end of turn effect.",
+      "keywords": [
+        "deathrattle"
+      ],
+      "deathrattle": [
+        {
+          "type": "trigger-random-friendly-turn-end"
+        }
+      ]
     }
   ]
 }
