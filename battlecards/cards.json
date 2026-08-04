@@ -138721,6 +138721,47 @@
           ]
         }
       ]
+    },
+    {
+      "id": "blackpaw_s_whip",
+      "name": "Blackpaw's Whip",
+      "type": "weapon",
+      "cost": 3,
+      "cardClass": "rogue",
+      "attack": 3,
+      "durability": 2,
+      "rarity": "common",
+      "set": "ESCAPEFROM_VIOLET_HOLD",
+      "description": "Costs (1) less for each Coin you're holding. Deathrattle: Draw a card.",
+      "selfCost": {
+        "per": "coins-in-hand",
+        "amount": -1
+      },
+      "keywords": [
+        "deathrattle"
+      ],
+      "deathrattle": [
+        {
+          "type": "draw",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "starstrung_bow",
+      "name": "Starstrung Bow",
+      "type": "weapon",
+      "cost": 6,
+      "cardClass": "hunter",
+      "attack": 6,
+      "durability": 2,
+      "rarity": "epic",
+      "set": "TITANS",
+      "description": "Costs (1) less for each friendly Secret that has triggered this game.",
+      "selfCost": {
+        "per": "secrets-triggered-game",
+        "amount": -1
+      }
     }
   ]
 }

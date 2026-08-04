@@ -114,6 +114,10 @@ export function effectiveCost(state, pi, card) {
 			n = p.outcastPlayedGame || 0; // Vengeful Walloper
 		} else if (card.selfCost.per === 'secrets-played-game') {
 			n = p.secretsPlayedGame || 0; // Kabal Crystal Runner
+		} else if (card.selfCost.per === 'coins-in-hand') {
+			n = p.hand.filter(x => x.id === 'coin').length; // Blackpaw's Whip
+		} else if (card.selfCost.per === 'secrets-triggered-game') {
+			n = p.secretsTriggeredGame || 0; // Starstrung Bow
 		} else if (card.selfCost.per === 'tribe-died-game') {
 			n = (p.tribeDiedGame || {})[card.selfCost.tribe] || 0; // Mulchmuncher
 		} else if (card.selfCost.per === 'spells-on-friendly-game') {

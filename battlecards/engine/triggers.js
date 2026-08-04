@@ -145,7 +145,8 @@ export function fireSecrets(state, pi, trigger, ctx) {
 		} else {
 			p.secrets = p.secrets.filter(s => s !== card);
 			toGraveyard(state, pi, card);
-			emit(state, { type: 'secretRevealed', player: pi, card });
+			p.secretsTriggeredGame = (p.secretsTriggeredGame || 0) + 1; // Starstrung Bow
+				emit(state, { type: 'secretRevealed', player: pi, card });
 			// Eaglehorn Bow-style triggers watch every reveal
 			for (let s2 = 0; s2 < state.players.length; s2++) fireOngoing(state, s2, 'secret-revealed', { secretOwner: pi });
 		}
