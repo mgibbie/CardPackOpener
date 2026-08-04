@@ -139819,6 +139819,74 @@
           ]
         }
       ]
+    },
+    {
+      "id": "nespirah_unshackled",
+      "name": "Nespirah, Unshackled",
+      "type": "creature",
+      "cost": 6,
+      "attack": 6,
+      "health": 6,
+      "tribe": "Beast",
+      "cardClass": "demonhunter",
+      "rarity": "legendary",
+      "collectible": false,
+      "description": "After you cast a Fel spell, get a random non-Colossal Naga. It costs (1).",
+      "ongoing": {
+        "on": "spell-played",
+        "if": {
+          "school": "Fel"
+        },
+        "effects": [
+          {
+            "type": "conjure-random",
+            "cardType": "creature",
+            "tribe": "Naga",
+            "excludeColossal": true,
+            "setCost": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "nespirah_enthralled",
+      "name": "Nespirah, Enthralled",
+      "type": "location",
+      "cost": 3,
+      "cardClass": "demonhunter",
+      "durability": 5,
+      "rarity": "legendary",
+      "set": "CATACLYSM",
+      "description": "Deal 1 damage. After you cast a Fel spell, reopen. Deathrattle: Summon Nespirah, Unshackled.",
+      "taps": [
+        {
+          "text": "Deal 1 damage.",
+          "effects": [
+            {
+              "type": "damage",
+              "value": 1,
+              "target": "any"
+            }
+          ]
+        }
+      ],
+      "ongoing": {
+        "on": "spell-played",
+        "if": {
+          "school": "Fel"
+        },
+        "effects": [
+          {
+            "type": "reopen-self"
+          }
+        ]
+      },
+      "deathrattle": [
+        {
+          "type": "summon",
+          "summonId": "nespirah_unshackled"
+        }
+      ]
     }
   ]
 }

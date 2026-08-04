@@ -899,6 +899,7 @@ register('conjure-random', ({ state, pi, target, source, enemies, scaled, hm, pi
 			if (e.requireRewind) pool = pool.filter(d => d.rewind > 0); // Time Machine: a random Rewind card
 			if (e.requireStarshipPiece) pool = pool.filter(d => d.starshipPiece); // Scrounging Shipwright
 			if (e.requireColossal) pool = pool.filter(d => d.colossal); // Primordial Lord
+			if (e.excludeColossal) pool = pool.filter(d => !d.colossal); // Nespirah, Unshackled: a non-Colossal Naga
 			if (e.cardClass === 'enemy') {
 				const victim = enemyHero();
 				const cls = victim != null && state.players[victim].heroClass;
