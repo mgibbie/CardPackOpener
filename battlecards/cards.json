@@ -138460,6 +138460,76 @@
           }
         ]
       }
+    },
+    {
+      "id": "skull_of_the_man_ari",
+      "name": "Skull of the Man'ari",
+      "type": "weapon",
+      "cost": 5,
+      "cardClass": "warlock",
+      "attack": 0,
+      "durability": 3,
+      "rarity": "legendary",
+      "set": "LOOTAPALOOZA",
+      "description": "At the start of your turn, summon a Demon from your hand.",
+      "ongoing": {
+        "on": "turn-start",
+        "effects": [
+          {
+            "type": "summon-from-hand",
+            "tribe": "Demon",
+            "count": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "umpire_s_grasp",
+      "name": "Umpire's Grasp",
+      "type": "weapon",
+      "cost": 4,
+      "cardClass": "demonhunter",
+      "attack": 3,
+      "durability": 2,
+      "rarity": "common",
+      "set": "WHIZBANGS_WORKSHOP",
+      "description": "Deathrattle: Draw a Demon and reduce its Cost by (2).",
+      "keywords": [
+        "deathrattle"
+      ],
+      "deathrattle": [
+        {
+          "type": "tutor",
+          "cardType": "creature",
+          "tribe": "Demon",
+          "count": 1,
+          "costMod": -2
+        }
+      ]
+    },
+    {
+      "id": "marrowslicer",
+      "name": "Marrowslicer",
+      "type": "weapon",
+      "cost": 4,
+      "cardClass": "demonhunter",
+      "attack": 4,
+      "durability": 2,
+      "rarity": "common",
+      "set": "SCHOLOMANCE",
+      "description": "Battlecry: Shuffle 2 Soul Fragments into your deck.",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "shuffle-ids-into-deck",
+          "ids": [
+            "sch_soul_fragment",
+            "sch_soul_fragment"
+          ]
+        }
+      ]
     }
   ]
 }
