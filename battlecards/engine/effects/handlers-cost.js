@@ -702,6 +702,11 @@ register('discount-next-spell', ({ state, pi }, e) => {
 	state.players[pi].nextSpellDiscount = (state.players[pi].nextSpellDiscount || 0) + (e.value || 1);
 });
 
+register('gain-spell-damage-turn', ({ state, pi }, e) => {
+	// Magical Dollhouse / Rune Dagger: Spell Damage +N for the rest of this turn
+	state.players[pi].spellDamageThisTurn = (state.players[pi].spellDamageThisTurn || 0) + (e.value || 1);
+});
+
 
 register('readd-corrupted-free', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => {
 	do {

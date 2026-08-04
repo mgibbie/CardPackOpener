@@ -138123,6 +138123,95 @@
           ]
         }
       ]
+    },
+    {
+      "id": "magical_dollhouse",
+      "name": "Magical Dollhouse",
+      "type": "location",
+      "cost": 2,
+      "cardClass": "druid",
+      "durability": 3,
+      "rarity": "common",
+      "set": "CORE",
+      "description": "Gain Spell Damage +1 this turn only.",
+      "taps": [
+        {
+          "text": "Gain Spell Damage +1 this turn only.",
+          "effects": [
+            {
+              "type": "gain-spell-damage-turn",
+              "value": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "prison_of_yogg_saron",
+      "name": "Prison of Yogg-Saron",
+      "type": "location",
+      "cost": 7,
+      "cardClass": "neutral",
+      "durability": 3,
+      "rarity": "common",
+      "set": "CORE",
+      "description": "Choose a character. Cast 4 random spells (targeting it if possible).",
+      "taps": [
+        {
+          "text": "Choose a character. Cast 4 random spells (targeting it if possible).",
+          "effects": [
+            {
+              "type": "cast-random-spell",
+              "count": 4
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "bloodpetal_biome",
+      "name": "Bloodpetal Biome",
+      "type": "location",
+      "cost": 1,
+      "cardClass": "warlock",
+      "durability": 2,
+      "rarity": "common",
+      "set": "CORE",
+      "description": "Discover a Temporary 1-Cost minion.",
+      "taps": [
+        {
+          "text": "Discover a Temporary 1-Cost minion.",
+          "effects": [
+            {
+              "type": "discover",
+              "cardType": "creature",
+              "cost": 1,
+              "makeTemporary": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "rune_dagger",
+      "name": "Rune Dagger",
+      "type": "weapon",
+      "cost": 2,
+      "cardClass": "shaman",
+      "attack": 1,
+      "durability": 3,
+      "rarity": "common",
+      "set": "SCHOLOMANCE",
+      "description": "After your hero attacks, gain Spell Damage +1 this turn.",
+      "ongoing": {
+        "on": "hero-attacks",
+        "effects": [
+          {
+            "type": "gain-spell-damage-turn",
+            "value": 1
+          }
+        ]
+      }
     }
   ]
 }

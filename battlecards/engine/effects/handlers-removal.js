@@ -1144,7 +1144,7 @@ register('damage-then', ({ state, pi, target, source, enemies, scaled, hm, pickE
 			// deal damage, then branch on whether the creature survived
 			let v = e.value;
 			if (source && (source.type === 'sorcery' || source.type === 'instant')) {
-				v += staticValue(state.players[pi], 'spell-damage') + (state.players[pi].nextSpellDamageBonus || 0) + (source.bonusSpellDamage || 0);
+				v += staticValue(state.players[pi], 'spell-damage') + (state.players[pi].nextSpellDamageBonus || 0) + (state.players[pi].spellDamageThisTurn || 0) + (source.bonusSpellDamage || 0);
 				const sd = state.players[pi].schoolSpellDmg; if (sd) { const sch = schoolOf(source); if (sch && sd[sch]) v += sd[sch]; } // Duels: per-school Spell Damage (Kindling Flame / Bitter Cold / Natural Force)
 			}
 			const t = chosenCreature();
@@ -1339,7 +1339,7 @@ register('damage', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy,
 				if (e.valueFromSelfAttack && source) v = source.attack || 0; // Ebonscale Scout: damage = this minion's Attack
 				if (e.altValueIfDrawn != null && source && source.drawnThisTurn) v = e.altValueIfDrawn; // Oil Rig Ambusher
 			if (source && (source.type === 'sorcery' || source.type === 'instant')) {
-				v += staticValue(state.players[pi], 'spell-damage') + (state.players[pi].nextSpellDamageBonus || 0) + (source.bonusSpellDamage || 0);
+				v += staticValue(state.players[pi], 'spell-damage') + (state.players[pi].nextSpellDamageBonus || 0) + (state.players[pi].spellDamageThisTurn || 0) + (source.bonusSpellDamage || 0);
 				const sd = state.players[pi].schoolSpellDmg; if (sd) { const sch = schoolOf(source); if (sch && sd[sch]) v += sd[sch]; } // Duels: per-school Spell Damage (Kindling Flame / Bitter Cold / Natural Force)
 			}
 			if (state.hpDamageBonus) v += state.hpDamageBonus; // Fallen Hero: your Hero Power deals extra
