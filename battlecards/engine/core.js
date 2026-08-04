@@ -544,6 +544,7 @@ export function createGame(cardsById, rng = Math.random, playerDeckIds = null, p
 		drawsThisTurn: 0,           // Ponder: fires on every draw after the first this turn
 		spellsPlayedThisTurn: 0,    // Kalecgos-style first-spell discounts
 		discoveredThisTurn: 0,      // Parallax Cannon: Discovers completed this turn
+		soulPool: [],               // Souleater's Scythe: minions consumed at game start, discoverable via Bound Souls
 		freeSpellsNextTurn: false,  // Millhouse: spells free on your next turn
 		freeSpellsThisTurn: false,
 		spellsCostOneThisTurn: false, // Ysiel Windsinger: your spells cost (1) this turn
@@ -3363,6 +3364,8 @@ export function resolvePick(state, id) {
 	const chosen = pend.ids.includes(id) ? id : pend.ids[0];
 	const p = state.players[pend.player];
 	const def = state.cardsById[chosen];
+	// Souleater's Scythe: each consumed minion can be discovered only once
+	if (pend.soulPick && p.soulPool) { const si = p.soulPool.indexOf(chosen); if (si >= 0) p.soulPool.splice(si, 1); }
 	// Faceless Enigma: the unpicked Secret casts for your opponent
 	if (pend.enigmaFoe !== undefined) {
 		installSecret(state, pend.player, chosen);

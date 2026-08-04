@@ -139561,6 +139561,39 @@
           "keepEnchantments": true
         }
       ]
+    },
+    {
+      "id": "bound_soul",
+      "name": "Bound Soul",
+      "type": "sorcery",
+      "cost": 1,
+      "cardClass": "demonhunter",
+      "rarity": "common",
+      "token": true,
+      "collectible": false,
+      "description": "Discover a friendly minion that was Consumed.",
+      "effects": [
+        {
+          "type": "discover-soul"
+        }
+      ]
+    },
+    {
+      "id": "souleaters_scythe",
+      "name": "Souleater's Scythe",
+      "type": "weapon",
+      "cost": 4,
+      "attack": 4,
+      "durability": 2,
+      "cardClass": "demonhunter",
+      "rarity": "legendary",
+      "set": "RETURN_OF_THE_LICH_KING",
+      "startOfGame": [
+        {
+          "type": "souleater-consume"
+        }
+      ],
+      "description": "Start of Game: Consume 3 different minions in your deck. Leave behind Souls that Discover them."
     }
   ]
 }

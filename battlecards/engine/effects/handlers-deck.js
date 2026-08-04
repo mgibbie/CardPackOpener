@@ -790,6 +790,31 @@ register('transform-deck-cost', ({ state, pi, target, source, enemies, scaled, h
 } });
 
 
+register('souleater-consume', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => { {
+			// Souleater's Scythe (Start of Game): remove up to 3 different minions from
+			// your deck and shuffle in a Bound Soul for each (they Discover the consumed)
+			const p = state.players[pi];
+			const distinct = [...new Set(p.deck)].filter(id => { const d = state.cardsById[id]; return d && d.type === 'creature' && !d.token; });
+			const pool = [...distinct];
+			const picks = [];
+			for (let i = 0; i < (e.count || 3) && pool.length; i++) picks.push(pool.splice(Math.floor(state.rng() * pool.length), 1)[0]);
+			p.soulPool = p.soulPool || [];
+			for (const id of picks) { const di = p.deck.indexOf(id); if (di >= 0) p.deck.splice(di, 1); p.soulPool.push(id); p.deck.push(e.soulId || 'bound_soul'); }
+			for (let i = p.deck.length - 1; i > 0; i--) { const j = Math.floor(state.rng() * (i + 1)); [p.deck[i], p.deck[j]] = [p.deck[j], p.deck[i]]; }
+} });
+
+
+register('discover-soul', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => { {
+			// Bound Soul: Discover one of the still-available consumed minions
+			const p = state.players[pi];
+			const ids = [...new Set(p.soulPool || [])];
+			if (ids.length && !p.eliminated) {
+				state.pickQueue.push({ player: pi, ids, discover: true, soulPick: true });
+				emit(state, { type: 'pickStart', player: pi, count: ids.length });
+			}
+} });
+
+
 register('shuffle-self-into-deck', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => { {
 			// "Shuffle this card back into your deck" — Astral Tiger recursion
 			const p = state.players[pi];
