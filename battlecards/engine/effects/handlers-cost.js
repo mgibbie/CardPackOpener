@@ -707,6 +707,23 @@ register('gain-spell-damage-turn', ({ state, pi }, e) => {
 	state.players[pi].spellDamageThisTurn = (state.players[pi].spellDamageThisTurn || 0) + (e.value || 1);
 });
 
+register('grant-weapon-cleave-turn', ({ state, pi }, e) => {
+	// Reaper's Scythe: your weapon Cleaves (splashes neighbours) until end of turn
+	if (state.players[pi].weapon) state.players[pi].weapon.cleaveThisTurn = true;
+});
+
+register('valanyr-buff', ({ state, pi }, e) => {
+	// Val'anyr: give a random minion in your hand +4/+2 and "Deathrattle: reequip Val'anyr"
+	const pool = state.players[pi].hand.filter(c => c.type === 'creature');
+	if (!pool.length) return;
+	const c = pool[Math.floor(state.rng() * pool.length)];
+	c.attack = (c.attack || 0) + (e.attack || 4);
+	c.maxHealth = (c.maxHealth || 0) + (e.health || 2);
+	c.deathrattle = [...(c.deathrattle || []), { type: 'equip', name: "Val'anyr", attack: 4, durability: 2 }];
+	if (!c.keywords.includes('deathrattle')) c.keywords.push('deathrattle');
+	emit(state, { type: 'buff', uid: c.uid, attack: c.attack, hp: hp(c) });
+});
+
 register('set-next-summon-stats', ({ state, pi }, e) => {
 	// The Crystal Cove: the next minion you summon this turn is set to A/H
 	state.players[pi].nextSummonStats = { attack: e.attack ?? 4, health: e.health ?? 4 };

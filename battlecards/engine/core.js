@@ -3084,7 +3084,7 @@ export function heroAttack(state, pi, target) {
 			if (w && has(w, KW.LIFESTEAL) && dealt > 0) healHero(state, pi, dealt);
 			if (w && has(w, KW.FREEZER) && !isDead(defender)) freezeCreature(state, defender);
 			// cleaving weapons splash the defender's board neighbors
-			if (w && has(w, KW.CLEAVE)) {
+			if (w && (has(w, KW.CLEAVE) || w.cleaveThisTurn)) { // Reaper's Scythe: Cleave until end of turn
 				const db = state.players[target.player].board;
 				const di = db.indexOf(defender);
 				for (const n of [db[di - 1], db[di + 1]]) {
@@ -3882,7 +3882,7 @@ export function endTurn(state) {
 	p.heroPowerTaxNext = 0; // Saboteur's Hero Power tax only lasts this turn
 	p.nextMurlocFree = false; p.nextSecretCost = null; // Seadevil Stinger / Kabal Lackey are "this turn"
 	p.nextBattlecryDouble = false; // Murmuring Elemental only lasts this turn
-	p.nextSpellDamageBonus = 0; p.nextSpellDoubleCast = false; p.nextSpellDoubleCount = 0; p.spellsLifestealThisTurn = false; p.spellDamageThisTurn = 0; p.nextSummonStats = null; // Boomsday next-spell riders are "this turn"; Magical Dollhouse / Rune Dagger / The Crystal Cove
+	p.nextSpellDamageBonus = 0; p.nextSpellDoubleCast = false; p.nextSpellDoubleCount = 0; p.spellsLifestealThisTurn = false; p.spellDamageThisTurn = 0; p.nextSummonStats = null; if (p.weapon) p.weapon.cleaveThisTurn = false; // Boomsday next-spell riders are "this turn"; Magical Dollhouse / Rune Dagger / The Crystal Cove / Reaper's Scythe
 	p.healHarmThisTurn = false; // Auchenai Phantasm only lasts this turn
 	p.heroPowerDamageNext = 0; // Daring Fire-Eater only lasts this turn
 	for (const pl of state.players) for (const c of pl.board) if (c.turnAtkDebuff) { c.attack += c.turnAtkDebuff; c.turnAtkDebuff = 0; emit(state, { type: 'buff', uid: c.uid, attack: c.attack, hp: hp(c) }); } // Quicksand Elemental restores

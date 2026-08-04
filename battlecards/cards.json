@@ -138830,6 +138830,47 @@
           }
         ]
       }
+    },
+    {
+      "id": "reaper_s_scythe",
+      "name": "Reaper's Scythe",
+      "type": "weapon",
+      "cost": 4,
+      "cardClass": "warrior",
+      "attack": 4,
+      "durability": 2,
+      "rarity": "rare",
+      "set": "SCHOLOMANCE",
+      "description": "Spellburst: Also damages adjacent minions this turn.",
+      "ongoing": {
+        "on": "spell-played",
+        "once": true,
+        "effects": [
+          {
+            "type": "grant-weapon-cleave-turn"
+          }
+        ]
+      }
+    },
+    {
+      "id": "val_anyr",
+      "name": "Val'anyr",
+      "type": "weapon",
+      "cost": 6,
+      "cardClass": "paladin",
+      "attack": 4,
+      "durability": 2,
+      "rarity": "legendary",
+      "set": "LOOTAPALOOZA",
+      "description": "Deathrattle: Give a minion in your hand +4/+2. When it dies, reequip this.",
+      "keywords": [
+        "deathrattle"
+      ],
+      "deathrattle": [
+        {
+          "type": "valanyr-buff"
+        }
+      ]
     }
   ]
 }
