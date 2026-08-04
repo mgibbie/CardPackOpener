@@ -521,7 +521,14 @@ register('summon-copy-of-target-buffed', ({ state, pi, target, source, enemies, 
 register('summon-hand-size-stats', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => { {
 			// Abyssal Summoner: summon a token with stats equal to your hand size
 			const n = state.players[pi].hand.length;
-			summon(state, pi, { id: 'token_' + (e.name || 'imp').toLowerCase(), name: e.name || 'Abyssal Enforcer', type: 'creature', cost: 0, token: true, tribe: e.tribe || null, rarity: 'common', attack: n, health: n, keywords: e.keywords || [], description: `A ${n}/${n} token.` });
+			const tok = summon(state, pi, { id: 'token_' + (e.name || 'imp').toLowerCase(), name: e.name || 'Abyssal Enforcer', type: 'creature', cost: 0, token: true, tribe: e.tribe || null, rarity: 'common', attack: n, health: n, keywords: e.keywords || [], description: `A ${n}/${n} token.` });
+			// Spire of Solitude: the summoned Demon immediately attacks a random enemy minion
+			if (tok && e.attackRandomEnemyMinion) {
+				tok.sick = false;
+				const foes = [];
+				for (const o of enemies) for (const c of state.players[o].board) if (!isDead(c) && c.type !== 'location' && !c.stealthed && c.dormantLeft <= 0) foes.push({ type: 'creature', uid: c.uid, player: o });
+				if (foes.length && !isDead(tok)) resolveCombat(state, pi, tok.uid, foes[Math.floor(state.rng() * foes.length)]);
+			}
 } });
 
 

@@ -2448,6 +2448,20 @@ register('cast-random-spell', ({ state, pi, target, source, enemies, scaled, hm,
 });
 
 
+register('spend-all-mana-cast', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => { {
+			// Forbidden Shrine: spend all your Mana, then cast a random spell that costs that much
+			const p = state.players[pi];
+			const spent = p.mana.cur;
+			p.mana.cur = 0;
+			emit(state, { type: 'mana', player: pi, cur: 0, max: p.mana.max });
+			if (!state._chaosLock) {
+				state._chaosLock = true;
+				try { execEffects(state, pi, [{ type: 'cast-random-spell', count: 1, cost: spent, cardClass: e.cardClass || (p.heroClass || null) }], null, source); }
+				finally { state._chaosLock = false; }
+			}
+} });
+
+
 register('steal-secret', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => {
 	do {
 			// Kezan Mystic: take control of a random enemy Secret

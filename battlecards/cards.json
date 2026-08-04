@@ -139188,6 +139188,52 @@
           ]
         }
       ]
+    },
+    {
+      "id": "forbidden_shrine",
+      "name": "Forbidden Shrine",
+      "type": "location",
+      "cost": 1,
+      "cardClass": "mage",
+      "durability": 3,
+      "rarity": "common",
+      "set": "EMERALD_DREAM",
+      "description": "Spend all your Mana. Cast a random spell that costs that much.",
+      "taps": [
+        {
+          "text": "Spend all your Mana. Cast a random spell that costs that much.",
+          "effects": [
+            {
+              "type": "spend-all-mana-cast",
+              "cardClass": "mage"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "spire_of_solitude",
+      "name": "Spire of Solitude",
+      "type": "location",
+      "cost": 5,
+      "cardClass": "warlock",
+      "durability": 2,
+      "rarity": "rare",
+      "set": "VIOLET_HOLD",
+      "description": "Summon a Demon with stats equal to the number of cards in your hand. It attacks a random enemy minion.",
+      "taps": [
+        {
+          "text": "Summon a Demon with stats equal to the number of cards in your hand. It attacks a random enemy minion.",
+          "effects": [
+            {
+              "type": "summon-hand-size-stats",
+              "name": "Solitary Demon",
+              "tribe": "Demon",
+              "attackRandomEnemyMinion": true
+            }
+          ]
+        }
+      ]
     }
   ]
 }
