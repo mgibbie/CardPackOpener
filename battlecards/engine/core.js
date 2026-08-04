@@ -345,6 +345,7 @@ export function instantiate(def, controller) {
 		noDegradeWhile: def.noDegradeWhile || null, // Stormhammer / Climbing Hook: no Durability loss while a condition holds
 		unlimitedAttacks: !!def.unlimitedAttacks, // Fool's Bane
 		doubleHeroDamage: !!def.doubleHeroDamage, // Cursed Blade
+		absorbHeroDamageToWeapon: !!def.absorbHeroDamageToWeapon, // Bulwark of Azzinoth
 		forged: false, // whether this card has already been Forged
 		healToMaxHealth: !!def.healToMaxHealth, // Arisen Onyxia: hero Health loss becomes max Health
 		castOtherClassTwice: !!def.castOtherClassTwice, // Sinestra: off-class spells cast twice
@@ -3064,6 +3065,11 @@ export function heroAttack(state, pi, target) {
 	if (ctx.cancelled || heroAttackValue(state, p) <= 0 || state.over) { sweepDeaths(state); return true; }
 	tryDefenderRedirect(state, ctx);
 	target = ctx.target;
+	// Forgetful (Ogre Warmaul): 50% chance the attack hits a random OTHER valid enemy
+	if (p.weapon && (p.weapon.keywords || []).includes('forgetful') && target && state.rng() < 0.5) {
+		const alt = heroAttackTargets(state, pi).filter(t => !(t.type === target.type && t.player === target.player && (t.uid === target.uid || t.type === 'hero')));
+		if (alt.length) { target = alt[Math.floor(state.rng() * alt.length)]; ctx.target = target; }
+	}
 
 	const w = p.weapon; // may be null when swinging on temp attack alone
 	const atk = heroAttackValue(state, p);

@@ -12,7 +12,7 @@
 import {
 	emit, hp, has, isDead, isSpellType, schoolOf, staticValue, recomputeAuras,
 	fireOngoing, fireSecrets, runSecretEffects, questTick, summon, opponentsOf,
-	heroAttackValue, KW, STARTING_LIFE, spendCorpses,
+	heroAttackValue, KW, STARTING_LIFE, spendCorpses, breakWeapon,
 } from '../engine.js';
 
 export function damageCreature(state, target, amount, source) {
@@ -110,6 +110,12 @@ export function damageHero(state, pi, amount, src = null, pierce = false) {
 	if (amount <= 0) return 0;
 	const p = state.players[pi];
 	if (p.weapon?.doubleHeroDamage) amount *= 2; // Cursed Blade: double all damage dealt to your hero
+	if (p.weapon?.absorbHeroDamageToWeapon && amount > 0) { // Bulwark of Azzinoth: the weapon loses 1 Durability instead
+		p.weapon.durability -= 1;
+		emit(state, { type: 'weaponDurability', player: pi, attack: p.weapon.attack, durability: p.weapon.durability });
+		if (p.weapon.durability <= 0) breakWeapon(state, pi, false);
+		return 0;
+	}
 	// Arisen Onyxia: on your turn, Health you would lose becomes max Health instead
 	if (state.current === pi && p.board.some(c => c.healToMaxHealth && !isDead(c))) {
 		p.maxLife = (p.maxLife ?? STARTING_LIFE) + amount;

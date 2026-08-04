@@ -139050,6 +139050,34 @@
           ]
         }
       ]
+    },
+    {
+      "id": "ogre_warmaul",
+      "name": "Ogre Warmaul",
+      "type": "weapon",
+      "cost": 3,
+      "cardClass": "warrior",
+      "attack": 4,
+      "durability": 2,
+      "rarity": "common",
+      "set": "GVG",
+      "description": "50% chance to attack the wrong enemy.",
+      "keywords": [
+        "forgetful"
+      ]
+    },
+    {
+      "id": "bulwark_of_azzinoth",
+      "name": "Bulwark of Azzinoth",
+      "type": "weapon",
+      "cost": 3,
+      "cardClass": "warrior",
+      "attack": 1,
+      "durability": 4,
+      "rarity": "legendary",
+      "set": "BLACK_TEMPLE",
+      "description": "Whenever your hero would take damage, this loses 1 Durability instead.",
+      "absorbHeroDamageToWeapon": true
     }
   ]
 }
