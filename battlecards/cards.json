@@ -139775,6 +139775,29 @@
           ]
         }
       ]
+    },
+    {
+      "id": "clutch_of_corruption",
+      "name": "Clutch of Corruption",
+      "type": "location",
+      "cost": 2,
+      "cardClass": "warrior",
+      "durability": 2,
+      "rarity": "epic",
+      "set": "EMERALD_DREAM",
+      "description": "Choose a friendly Dragon. Summon a 0/2 Egg that hatches into a copy of it.",
+      "taps": [
+        {
+          "text": "Choose a friendly Dragon. Summon a 0/2 Egg that hatches into a copy of it.",
+          "effects": [
+            {
+              "type": "summon-hatch-egg",
+              "target": "friendly-creature",
+              "tribe": "Dragon"
+            }
+          ]
+        }
+      ]
     }
   ]
 }

@@ -540,6 +540,22 @@ register('tiny-pal-attack', ({ state, pi, target, source, enemies, scaled, hm, p
 			w.ammo = others[Math.floor(state.rng() * others.length)];
 			emit(state, { type: 'tinyPalAmmo', player: pi, ammo: w.ammo });
 } });
+register('summon-hatch-egg', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => { {
+			// Clutch of Corruption: summon a 0/2 Egg that hatches into a copy of the
+			// chosen friendly Dragon (its current stats, and its own abilities via summonId)
+			const dragon = chosenCreature();
+			if (!dragon) return;
+			let dr;
+			if (state.cardsById[dragon.id]) {
+				const base = state.cardsById[dragon.id];
+				dr = [{ type: 'summon', summonId: dragon.id, buff: { attack: (dragon.attack || 0) - (base.attack || 0), health: (dragon.maxHealth || 0) - (base.health || 0) } }];
+			} else {
+				dr = [{ type: 'summon', name: dragon.name, tribe: dragon.tribe || 'Dragon', attack: dragon.attack || 0, health: dragon.maxHealth || 1, keywords: [...(dragon.keywords || [])].filter(k => k !== 'deathrattle') }];
+			}
+			summon(state, pi, { id: 'token_corrupted_egg', name: 'Egg', type: 'creature', cost: 0, token: true, tribe: 'Dragon', rarity: 'common', attack: 0, health: 2, keywords: ['deathrattle'], deathrattle: dr, description: `Deathrattle: Summon a copy of ${dragon.name}.` });
+} });
+
+
 register('void-soul', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => { {
 			// Void Soul (Stardust Scythe token): summon a random Demon whose Cost starts
 			// at 1 and grows by 1 for each Void Soul you've already played this game
