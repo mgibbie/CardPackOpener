@@ -540,6 +540,7 @@ export function createGame(cardsById, rng = Math.random, playerDeckIds = null, p
 		cardsPlayedThisTurn: 0,     // Combo activation (counts cards already resolved)
 		drawsThisTurn: 0,           // Ponder: fires on every draw after the first this turn
 		spellsPlayedThisTurn: 0,    // Kalecgos-style first-spell discounts
+		discoveredThisTurn: 0,      // Parallax Cannon: Discovers completed this turn
 		freeSpellsNextTurn: false,  // Millhouse: spells free on your next turn
 		freeSpellsThisTurn: false,
 		spellsCostOneThisTurn: false, // Ysiel Windsinger: your spells cost (1) this turn
@@ -3014,6 +3015,7 @@ export function heroAttackValue(state, p) {
 			const met = ca.tribe ? p.board.some(c => !isDead(c) && c.type !== 'location' && (c.tribe || '').includes(ca.tribe))
 				: ca.spellDamage ? staticValue(p, 'spell-damage') > 0
 				: ca.armor ? (p.armor || 0) > 0
+				: ca.discovered ? (p.discoveredThisTurn || 0) > 0 // Parallax Cannon: +Attack if you've Discovered this turn
 				: ca.overloaded ? (p.overloadLockedThisTurn || 0) > 0 : false;
 			if (met) w += ca.bonus || 0;
 		}
@@ -3323,6 +3325,7 @@ export function resolveDredge(state, id) {
 export function resolvePick(state, id) {
 	const pend = state.pickQueue.shift();
 	if (!pend) return false;
+	if (pend.discover && state.players[pend.player]) state.players[pend.player].discoveredThisTurn = (state.players[pend.player].discoveredThisTurn || 0) + 1; // Parallax Cannon: "if you've Discovered this turn"
 	if (pend.mode === 'adapt') {
 		// apply the chosen adaptation to every still-living adapting creature
 		const idx = pend.ids.includes(String(id)) ? Number(id) : Number(pend.ids[0]);
@@ -4324,6 +4327,7 @@ export function endTurn(state) {
 	np.cardsPlayedThisTurn = 0; np.cardsDrawnThisTurn = 0;
 	np.drawsThisTurn = 0; // reset before the mandatory draw so it counts as the first
 	np.spellsPlayedThisTurn = 0; np.schoolsCastThisTurn = {}; np.firstBattlecryThisTurn = null; np.castBigSpellThisTurn = false; // Metamorfin / Bolner Hammerbeak / Arcane Tyrant
+	np.discoveredThisTurn = 0; // Parallax Cannon
 	np.parityBlock = null; // Alara: a start-of-turn coin flip may block odd/even-cost plays
 		np.freeMinionsCount = 0; // Anub'Rekhan free minions last the turn
 		np.armorChangedThisTurn = false; // Stoneskin Armorer

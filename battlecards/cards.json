@@ -139323,6 +139323,31 @@
       "set": "BATTLE_OF_THE_BANDS",
       "healInsteadOnOwnTurn": 2,
       "description": "Whenever your hero would take damage on your turn, restore 2 Health instead. Lose 1 Durability."
+    },
+    {
+      "id": "parallax_cannon",
+      "name": "Parallax Cannon",
+      "type": "weapon",
+      "cost": 3,
+      "attack": 2,
+      "durability": 3,
+      "cardClass": "hunter",
+      "rarity": "epic",
+      "set": "SPACE",
+      "condAttack": {
+        "discovered": true,
+        "bonus": 2
+      },
+      "description": "Has +2 Attack if you've Discovered this turn. Spellburst: Your hero is Immune this turn.",
+      "ongoing": {
+        "on": "spell-played",
+        "once": true,
+        "effects": [
+          {
+            "type": "hero-immune"
+          }
+        ]
+      }
     }
   ]
 }
