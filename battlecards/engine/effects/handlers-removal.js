@@ -1429,7 +1429,14 @@ register('damage', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy,
 					const t = chosenCreature();
 					if (t && e.requireTargetTribe && !(t.tribe || '').length) break; // Bugsquasher: only typed minions
 					if (t && schoolImmune(t)) break; // Fyrakk shrugs it off
-					if (t) damageCreature(state, t, v, null);
+					if (t) {
+						const before = hp(t); // Combustion: excess beyond Health spills to both neighbors
+						damageCreature(state, t, v, null);
+						if (e.excessToNeighbors && v > before) {
+							const b = state.players[t.controller].board, i = b.indexOf(t), ex = v - before;
+							for (const nb of [b[i - 1], b[i + 1]]) if (nb && !isDead(nb) && nb.type !== 'location') damageCreature(state, nb, ex, null);
+						}
+					}
 					else if (target?.type === 'hero') damageHero(state, target.player, v, pi);
 					else if (e.target === 'any') { const f = enemyHero(); if (f != null) damageHero(state, f, v, pi); } // fallback: face
 				}

@@ -2062,6 +2062,7 @@ register('conditional', ({ state, pi, target, source, enemies, scaled, hm, pickE
 			else if (e.if.schoolCastThisTurn) ok = !!(p.schoolsCastThisTurn && p.schoolsCastThisTurn[e.if.schoolCastThisTurn]); // Baleful Blazer
 			else if (e.if.selfCopiesDiedAtLeast != null) ok = !!source && (p.diedCountById?.[source.id] || 0) >= e.if.selfCopiesDiedAtLeast; // Captured Archmage
 			else if (e.if.deckNoSpells != null) ok = !p.deck.some(id => { const dd = state.cardsById[id]; return dd && isSpellType(dd); }) === !!e.if.deckNoSpells; // Hexmarshal
+			else if (e.if.deckNoMinions != null) ok = !p.deck.some(id => state.cardsById[id]?.type === 'creature') === !!e.if.deckNoMinions; // Malfunction: your deck has no minions
 			else if (e.if.ownTurnDamageAtLeast != null) ok = (p.ownTurnsDamage || 0) >= e.if.ownTurnDamageAtLeast; // Party Planner Vona
 			else if (e.if.holdingTribe) ok = p.hand.some(c => c !== source && (c.tribe || '').includes(e.if.holdingTribe)); // Victor Nefarius: holding a Dragon
 			else if (e.if.spellDamageDealtThisTurn != null) ok = (p.spellDmgTurn === state.turnNumber) === !!e.if.spellDamageDealtThisTurn; // Unstable Spellcaster
