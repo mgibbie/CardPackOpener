@@ -138633,6 +138633,49 @@
           }
         ]
       }
+    },
+    {
+      "id": "trueaim_crescent",
+      "name": "Trueaim Crescent",
+      "type": "weapon",
+      "cost": 1,
+      "cardClass": "demonhunter",
+      "attack": 1,
+      "durability": 4,
+      "rarity": "epic",
+      "set": "SCHOLOMANCE",
+      "description": "After your Hero attacks a minion, your minions attack it too.",
+      "ongoing": {
+        "on": "hero-attacks-creature",
+        "effects": [
+          {
+            "type": "all-friendly-attack-target"
+          }
+        ]
+      }
+    },
+    {
+      "id": "dreadlord_s_bite",
+      "name": "Dreadlord's Bite",
+      "type": "weapon",
+      "cost": 3,
+      "cardClass": "demonhunter",
+      "attack": 3,
+      "durability": 2,
+      "rarity": "common",
+      "set": "DARKMOON_FAIRE",
+      "description": "Outcast: Deal 1 damage to all enemies.",
+      "keywords": [
+        "outcast"
+      ],
+      "outcast": {
+        "effects": [
+          {
+            "type": "damage-all-enemies",
+            "value": 1
+          }
+        ]
+      }
     }
   ]
 }

@@ -297,6 +297,25 @@ registerTrigger('accrue-mana-awaken', (state, pi, e, ctx, triggering) => {
 });
 
 
+registerTrigger('all-friendly-attack-target', (state, pi, e, ctx, triggering) => {
+	do { {
+				// Trueaim Crescent: after your hero attacks a minion, your minions attack it too
+				const tgt = ctx.target;
+				if (!tgt || isDead(tgt)) break;
+				const uids = state.players[pi].board.filter(c => !isDead(c) && c.type !== 'location' && c.attack > 0).map(c => c.uid);
+				for (const uid of uids) {
+					if (state.over || isDead(tgt)) break;
+					const m = state.players[pi].board.find(c => c.uid === uid);
+					if (!m || isDead(m) || m.dormantLeft > 0) continue;
+					resolveCombat(state, pi, m.uid, { type: 'creature', uid: tgt.uid, player: tgt.controller });
+					sweepDeaths(state);
+				}
+				break;
+			}
+	} while (false); // `break` ends this effect, exactly like the old case break
+});
+
+
 registerTrigger('destroy-frozen-attacked', (state, pi, e, ctx, triggering) => {
 	do { {
 				// Ice Breaker: destroy any Frozen minion this weapon damages

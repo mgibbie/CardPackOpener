@@ -1671,6 +1671,14 @@ register('damage-enemy-minion', ({ state, pi, target, source, enemies, scaled, h
 			if (e.excessToHero && (e.value || 1) > before) damageHero(state, hit.o, (e.value || 1) - before, pi);
 } });
 
+register('damage-all-enemies', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => { {
+			// Dreadlord's Bite: deal `value` to all enemy minions AND the enemy hero
+			for (const o of enemies) {
+				for (const c of [...state.players[o].board]) if (!isDead(c) && c.type !== 'location') damageCreature(state, c, e.value || 1, source);
+				if (!state.players[o].eliminated) damageHero(state, o, e.value || 1, pi);
+			}
+} });
+
 register('advance-location', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => { {
 			// "Advance to the present/future!" — transform this location into its next
 			// stage (a fresh, full-durability location in the same board slot).
