@@ -138581,6 +138581,58 @@
           }
         ]
       }
+    },
+    {
+      "id": "the_fist_of_ra_den",
+      "name": "The Fist of Ra-den",
+      "type": "weapon",
+      "cost": 4,
+      "cardClass": "shaman",
+      "attack": 1,
+      "durability": 4,
+      "rarity": "legendary",
+      "set": "YEAR_OF_THE_DRAGON",
+      "description": "After you cast a spell, summon a Legendary minion of that Cost. Lose 1 Durability.",
+      "ongoing": {
+        "on": "spell-played",
+        "effects": [
+          {
+            "type": "summon-of-spell-cost",
+            "legendary": true
+          },
+          {
+            "type": "lose-durability",
+            "value": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "dragon_soul",
+      "name": "Dragon Soul",
+      "type": "weapon",
+      "cost": 3,
+      "cardClass": "priest",
+      "attack": 0,
+      "durability": 3,
+      "rarity": "legendary",
+      "set": "LOOTAPALOOZA",
+      "description": "After you cast 3 spells in a turn, summon a 5/5 Dragon.",
+      "ongoing": {
+        "on": "spell-played",
+        "if": {
+          "spellsThisTurn": 3
+        },
+        "effects": [
+          {
+            "type": "summon",
+            "attack": 5,
+            "health": 5,
+            "name": "Dragon",
+            "tribe": "Dragon"
+          }
+        ]
+      }
     }
   ]
 }
