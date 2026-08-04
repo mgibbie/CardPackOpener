@@ -139934,6 +139934,494 @@
           "summonId": "zuramat_obliterator"
         }
       ]
+    },
+    {
+      "id": "breath_of_sindragosa",
+      "name": "Breath of Sindragosa",
+      "type": "sorcery",
+      "cost": 1,
+      "cardClass": "mage",
+      "rarity": "common",
+      "set": "PLACEHOLDER_202204",
+      "tribe": "Frost",
+      "collectible": true,
+      "description": "Deal 2 damage to a random enemy minion and Freeze it.",
+      "effects": [
+        {
+          "type": "random-damage",
+          "value": 2,
+          "count": 1,
+          "pool": "enemy-creatures"
+        },
+        {
+          "type": "freeze",
+          "target": "random-enemy",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "id": "first_flame",
+      "name": "First Flame",
+      "type": "sorcery",
+      "cardClass": "mage",
+      "cost": 1,
+      "rarity": "rare",
+      "set": "CORE",
+      "collectible": true,
+      "tribe": "Fire",
+      "description": "Deal 2 damage to a minion. Add a Second Flame to your hand.",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 2,
+          "target": "creature"
+        },
+        {
+          "type": "add-card",
+          "id": "second_flame"
+        }
+      ]
+    },
+    {
+      "id": "seabreeze_chalice",
+      "name": "Seabreeze Chalice",
+      "cardClass": "mage",
+      "cost": 1,
+      "rarity": "common",
+      "set": "ISLAND_VACATION",
+      "description": "Deal 2 damage randomly split among all enemy minions. (3 Drinks left!)",
+      "type": "sorcery",
+      "tribe": "Frost",
+      "collectible": true,
+      "effects": [
+        {
+          "type": "random-damage",
+          "value": 1,
+          "count": 2,
+          "pool": "enemy-creatures"
+        }
+      ]
+    },
+    {
+      "id": "frozen_touch",
+      "name": "Frozen Touch",
+      "type": "sorcery",
+      "cost": 2,
+      "cardClass": "mage",
+      "rarity": "common",
+      "set": "PLACEHOLDER_202204",
+      "collectible": true,
+      "tribe": "Frost",
+      "infuse": {
+        "count": 3,
+        "id": "frozen_touch_infused"
+      },
+      "description": "Deal 3 damage. Infuse (3): Add a Frozen Touch to your hand.",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 3,
+          "target": "any"
+        }
+      ]
+    },
+    {
+      "id": "heat_wave",
+      "name": "Heat Wave",
+      "type": "sorcery",
+      "cost": 2,
+      "cardClass": "mage",
+      "rarity": "rare",
+      "set": "WILD_WEST",
+      "collectible": true,
+      "tribe": "Fire",
+      "keywords": [
+        "miracle"
+      ],
+      "description": "Deal 2 damage to an enemy minion and its neighbors. Quickdraw: To all enemies instead.",
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "selfDrawnThisTurn": true
+          },
+          "target": "creature",
+          "then": [
+            {
+              "type": "damage-all-enemies",
+              "value": 2
+            }
+          ],
+          "else": [
+            {
+              "type": "damage-adjacent",
+              "value": 2,
+              "splash": 2,
+              "target": "creature"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "icicle",
+      "name": "Icicle",
+      "cardClass": "mage",
+      "cost": 2,
+      "rarity": "epic",
+      "set": "LEGACY",
+      "type": "sorcery",
+      "tribe": "Frost",
+      "collectible": true,
+      "description": "Deal 2 damage to a minion. If it's Frozen, draw a card.",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 2,
+          "target": "creature"
+        },
+        {
+          "type": "conditional",
+          "target": "creature",
+          "if": {
+            "targetFrozen": true
+          },
+          "then": [
+            {
+              "type": "draw",
+              "value": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "ignite",
+      "name": "Ignite",
+      "type": "sorcery",
+      "cost": 2,
+      "cardClass": "mage",
+      "rarity": "epic",
+      "set": "STORMWIND",
+      "collectible": true,
+      "tribe": "Fire",
+      "description": "Deal 2 damage. Shuffle an Ignite into your deck that deals one more damage.",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 2,
+          "target": "any"
+        },
+        {
+          "type": "shuffle-into-deck",
+          "id": "ignite_2"
+        }
+      ]
+    },
+    {
+      "id": "siphon_mana",
+      "name": "Siphon Mana",
+      "type": "sorcery",
+      "cost": 2,
+      "cardClass": "mage",
+      "rarity": "common",
+      "set": "ALTERAC_VALLEY",
+      "collectible": true,
+      "tribe": "Arcane",
+      "description": "Deal 2 damage. Honorable Kill: Reduce the Cost of spells in your hand by (1).",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 2,
+          "target": "any"
+        }
+      ],
+      "honorableKill": [
+        {
+          "type": "discount-hand",
+          "value": 1,
+          "spellsOnly": true
+        }
+      ]
+    },
+    {
+      "id": "arcane_barrage",
+      "name": "Arcane Barrage",
+      "cardClass": "mage",
+      "cost": 3,
+      "rarity": "common",
+      "set": "TIME_TRAVEL",
+      "collectible": true,
+      "description": "Deal 3 damage to an enemy and 2 damage to two other random ones.",
+      "type": "sorcery",
+      "tribe": "Arcane",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 3,
+          "target": "enemy-any"
+        },
+        {
+          "type": "random-damage",
+          "value": 2,
+          "count": 2,
+          "pool": "enemies",
+          "distinct": true
+        }
+      ]
+    },
+    {
+      "id": "forgotten_torch",
+      "name": "Forgotten Torch",
+      "type": "sorcery",
+      "cost": 3,
+      "cardClass": "mage",
+      "rarity": "common",
+      "set": "LOE",
+      "collectible": true,
+      "tribe": "Fire",
+      "description": "Deal 3 damage. Shuffle a 'Roaring Torch' into your deck that deals 6 damage.",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 3,
+          "target": "any"
+        },
+        {
+          "type": "shuffle-into-deck",
+          "id": "roaring_torch"
+        }
+      ]
+    },
+    {
+      "id": "molten_rune",
+      "name": "Molten Rune",
+      "type": "sorcery",
+      "cost": 3,
+      "cardClass": "mage",
+      "rarity": "common",
+      "set": "TITANS",
+      "collectible": true,
+      "tribe": "Fire",
+      "description": "Deal 3 damage. Get a random spell. Forge: This casts twice.",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 3,
+          "target": "any"
+        },
+        {
+          "type": "conjure-random",
+          "cardType": "spell",
+          "count": 1
+        }
+      ],
+      "forge": {
+        "addBattlecry": [
+          {
+            "type": "damage",
+            "value": 3,
+            "target": "any"
+          },
+          {
+            "type": "conjure-random",
+            "cardType": "spell",
+            "count": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "frost_lich_cross_stitch",
+      "name": "Frost Lich Cross-Stitch",
+      "cardClass": "mage",
+      "cost": 4,
+      "rarity": "rare",
+      "set": "WHIZBANGS_WORKSHOP",
+      "collectible": true,
+      "tribe": "Frost",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "damage-then",
+          "value": 3,
+          "target": "any",
+          "ifDies": [
+            {
+              "type": "summon",
+              "name": "Water Elemental",
+              "attack": 3,
+              "health": 6,
+              "tribe": "Elemental",
+              "keywords": [
+                "freezer"
+              ]
+            }
+          ]
+        }
+      ],
+      "description": "Deal 3 damage to a character. If it dies, summon a 3/6 Water Elemental that Freezes."
+    },
+    {
+      "id": "second_flame",
+      "name": "Second Flame",
+      "type": "sorcery",
+      "cost": 2,
+      "cardClass": "mage",
+      "rarity": "common",
+      "set": "PLACEHOLDER_202204",
+      "token": true,
+      "collectible": false,
+      "tribe": "Fire",
+      "description": "Deal 3 damage to a minion.",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 3,
+          "target": "creature"
+        }
+      ]
+    },
+    {
+      "id": "roaring_torch",
+      "name": "Roaring Torch",
+      "type": "sorcery",
+      "cost": 3,
+      "cardClass": "mage",
+      "rarity": "common",
+      "set": "PLACEHOLDER_202204",
+      "token": true,
+      "collectible": false,
+      "tribe": "Fire",
+      "description": "Deal 6 damage.",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 6,
+          "target": "any"
+        }
+      ]
+    },
+    {
+      "id": "ignite_2",
+      "name": "Ignite",
+      "type": "sorcery",
+      "cost": 2,
+      "cardClass": "mage",
+      "rarity": "common",
+      "set": "PLACEHOLDER_202204",
+      "token": true,
+      "collectible": false,
+      "tribe": "Fire",
+      "description": "Deal 3 damage. Shuffle an Ignite into your deck that deals one more damage.",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 3,
+          "target": "any"
+        },
+        {
+          "type": "shuffle-into-deck",
+          "id": "ignite_3"
+        }
+      ]
+    },
+    {
+      "id": "ignite_3",
+      "name": "Ignite",
+      "type": "sorcery",
+      "cost": 2,
+      "cardClass": "mage",
+      "rarity": "common",
+      "set": "PLACEHOLDER_202204",
+      "token": true,
+      "collectible": false,
+      "tribe": "Fire",
+      "description": "Deal 4 damage. Shuffle an Ignite into your deck that deals one more damage.",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 4,
+          "target": "any"
+        },
+        {
+          "type": "shuffle-into-deck",
+          "id": "ignite_4"
+        }
+      ]
+    },
+    {
+      "id": "ignite_4",
+      "name": "Ignite",
+      "type": "sorcery",
+      "cost": 2,
+      "cardClass": "mage",
+      "rarity": "common",
+      "set": "PLACEHOLDER_202204",
+      "token": true,
+      "collectible": false,
+      "tribe": "Fire",
+      "description": "Deal 5 damage. Shuffle an Ignite into your deck that deals one more damage.",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 5,
+          "target": "any"
+        },
+        {
+          "type": "shuffle-into-deck",
+          "id": "ignite_5"
+        }
+      ]
+    },
+    {
+      "id": "ignite_5",
+      "name": "Ignite",
+      "type": "sorcery",
+      "cost": 2,
+      "cardClass": "mage",
+      "rarity": "common",
+      "set": "PLACEHOLDER_202204",
+      "token": true,
+      "collectible": false,
+      "tribe": "Fire",
+      "description": "Deal 6 damage. Shuffle an Ignite into your deck that deals one more damage.",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 6,
+          "target": "any"
+        },
+        {
+          "type": "shuffle-into-deck",
+          "id": "ignite_5"
+        }
+      ]
+    },
+    {
+      "id": "frozen_touch_infused",
+      "name": "Frozen Touch",
+      "type": "sorcery",
+      "cost": 2,
+      "cardClass": "mage",
+      "rarity": "common",
+      "set": "PLACEHOLDER_202204",
+      "token": true,
+      "collectible": false,
+      "tribe": "Frost",
+      "description": "Deal 3 damage. Add a Frozen Touch to your hand.",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 3,
+          "target": "any"
+        },
+        {
+          "type": "add-card",
+          "id": "frozen_touch"
+        }
+      ]
     }
   ]
 }

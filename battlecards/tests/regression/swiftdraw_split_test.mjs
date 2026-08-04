@@ -59,7 +59,7 @@ ok('no card text/fields mention Swiftdraw', !JSON.stringify(raw).toLowerCase().i
 // flint_firearm: conjure pool is non-empty now that miracle is a real keyword
 {
 	const pool = raw.cards.filter(c => (c.keywords || []).includes('miracle'));
-	ok('Miracle keyword pool for Flint Firearm has 10 cards', pool.length === 10, pool.length);
+	ok('Miracle keyword pool for Flint Firearm has 11 cards', pool.length === 11, pool.length); // +1: Heat Wave (Quickdraw) from the Mage spell-import batch
 	const { state } = new Scenario(byId)
 		.mana(0, 10).hand(0, ['flint_firearm'])
 		.run();
