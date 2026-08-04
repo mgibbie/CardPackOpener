@@ -135284,13 +135284,39 @@
           "type": "random-effects",
           "options": [
             [
-              { "type": "grant", "keyword": "windfury", "target": "all-creatures" }
+              {
+                "type": "grant",
+                "keyword": "windfury",
+                "target": "all-creatures"
+              }
             ],
             [
-              { "type": "buff", "target": "all-creatures", "tribe": "Demon", "attack": 2, "health": 2 },
-              { "type": "buff", "target": "all-creatures", "tribe": "Spirit", "attack": 2, "health": 2 },
-              { "type": "grant", "keyword": "lifesteal", "target": "all-creatures", "ifTribe": "Demon" },
-              { "type": "grant", "keyword": "lifesteal", "target": "all-creatures", "ifTribe": "Spirit" }
+              {
+                "type": "buff",
+                "target": "all-creatures",
+                "tribe": "Demon",
+                "attack": 2,
+                "health": 2
+              },
+              {
+                "type": "buff",
+                "target": "all-creatures",
+                "tribe": "Spirit",
+                "attack": 2,
+                "health": 2
+              },
+              {
+                "type": "grant",
+                "keyword": "lifesteal",
+                "target": "all-creatures",
+                "ifTribe": "Demon"
+              },
+              {
+                "type": "grant",
+                "keyword": "lifesteal",
+                "target": "all-creatures",
+                "ifTribe": "Spirit"
+              }
             ]
           ]
         }
@@ -136623,6 +136649,870 @@
           }
         ]
       }
+    },
+    {
+      "id": "charged_hammer",
+      "name": "Charged Hammer",
+      "type": "weapon",
+      "cost": 3,
+      "cardClass": "shaman",
+      "attack": 2,
+      "durability": 3,
+      "rarity": "common",
+      "set": "CORE",
+      "description": "Deathrattle: Your Hero Power becomes 'Deal 2 damage.'",
+      "deathrattle": [
+        {
+          "type": "set-hero-power",
+          "powerId": "gunslingers_eye"
+        }
+      ]
+    },
+    {
+      "id": "argent_lance",
+      "name": "Argent Lance",
+      "type": "weapon",
+      "cost": 2,
+      "cardClass": "paladin",
+      "attack": 2,
+      "durability": 2,
+      "rarity": "common",
+      "set": "CORE",
+      "description": "Battlecry: Reveal a minion in each deck. If yours costs more, +1 Durability.",
+      "effects": [
+        {
+          "type": "joust",
+          "then": [
+            {
+              "type": "buff-weapon",
+              "durability": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "dreadprison_glaive",
+      "name": "Dreadprison Glaive",
+      "type": "weapon",
+      "cost": 1,
+      "cardClass": "demonhunter",
+      "attack": 1,
+      "durability": 3,
+      "rarity": "common",
+      "set": "CORE",
+      "description": "Honorable Kill: Deal damage equal to your hero's Attack to the enemy hero.",
+      "honorableKill": [
+        {
+          "type": "damage",
+          "value": 1,
+          "valuePer": "hero-attack",
+          "target": "enemy-hero"
+        }
+      ]
+    },
+    {
+      "id": "the_lobotomizer",
+      "name": "The Lobotomizer",
+      "type": "weapon",
+      "cost": 2,
+      "cardClass": "rogue",
+      "attack": 2,
+      "durability": 2,
+      "rarity": "common",
+      "set": "CORE",
+      "description": "Honorable Kill: Get a copy of the top card of your opponent's deck.",
+      "honorableKill": [
+        {
+          "type": "copy-enemy-deck-top"
+        }
+      ]
+    },
+    {
+      "id": "sword_of_the_fallen",
+      "name": "Sword of the Fallen",
+      "type": "weapon",
+      "cost": 2,
+      "cardClass": "paladin",
+      "attack": 1,
+      "durability": 2,
+      "rarity": "common",
+      "set": "CORE",
+      "description": "After your hero attacks, cast a Secret from your deck.",
+      "ongoing": {
+        "on": "hero-attacks",
+        "effects": [
+          {
+            "type": "cast-secret-from-deck"
+          }
+        ]
+      }
+    },
+    {
+      "id": "necrium_blade",
+      "name": "Necrium Blade",
+      "type": "weapon",
+      "cost": 3,
+      "cardClass": "rogue",
+      "attack": 3,
+      "durability": 2,
+      "rarity": "common",
+      "set": "CORE",
+      "description": "Deathrattle: Trigger the Deathrattle of a random friendly minion.",
+      "deathrattle": [
+        {
+          "type": "trigger-one-deathrattle",
+          "random": true
+        }
+      ]
+    },
+    {
+      "id": "warglaives_of_azzinoth",
+      "name": "Warglaives of Azzinoth",
+      "type": "weapon",
+      "cost": 5,
+      "cardClass": "demonhunter",
+      "attack": 3,
+      "durability": 3,
+      "rarity": "common",
+      "set": "CORE",
+      "description": "After attacking a minion, your hero may attack again.",
+      "ongoing": {
+        "on": "hero-attacks-creature",
+        "effects": [
+          {
+            "type": "refresh-hero-attack"
+          }
+        ]
+      }
+    },
+    {
+      "id": "light_s_sorrow",
+      "name": "Light's Sorrow",
+      "type": "weapon",
+      "cost": 4,
+      "cardClass": "paladin",
+      "attack": 1,
+      "durability": 4,
+      "rarity": "common",
+      "set": "CORE",
+      "description": "After a friendly minion loses Divine Shield, gain +1 Attack.",
+      "ongoing": {
+        "on": "friendly-divine-shield-lost",
+        "effects": [
+          {
+            "type": "buff-weapon",
+            "attack": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "rinling_s_rifle",
+      "name": "Rinling's Rifle",
+      "type": "weapon",
+      "cost": 4,
+      "cardClass": "hunter",
+      "attack": 2,
+      "durability": 2,
+      "rarity": "common",
+      "set": "CORE",
+      "description": "After your hero attacks, Discover a Secret and cast it.",
+      "ongoing": {
+        "on": "hero-attacks",
+        "effects": [
+          {
+            "type": "discover",
+            "cardType": "secret",
+            "installSecret": true
+          }
+        ]
+      }
+    },
+    {
+      "id": "ringmaster_s_baton",
+      "name": "Ringmaster's Baton",
+      "type": "weapon",
+      "cost": 2,
+      "cardClass": "warrior",
+      "attack": 1,
+      "durability": 3,
+      "rarity": "common",
+      "set": "CORE",
+      "description": "After your hero attacks, give a Mech, Dragon, and Pirate in your hand +1/+1.",
+      "ongoing": {
+        "on": "hero-attacks",
+        "effects": [
+          {
+            "type": "buff-random-hand-tribe",
+            "tribe": "Mech",
+            "attack": 1,
+            "health": 1
+          },
+          {
+            "type": "buff-random-hand-tribe",
+            "tribe": "Dragon",
+            "attack": 1,
+            "health": 1
+          },
+          {
+            "type": "buff-random-hand-tribe",
+            "tribe": "Pirate",
+            "attack": 1,
+            "health": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "defiled_spear",
+      "name": "Defiled Spear",
+      "type": "weapon",
+      "cost": 4,
+      "cardClass": "demonhunter",
+      "attack": 2,
+      "durability": 3,
+      "rarity": "common",
+      "set": "CORE",
+      "description": "After your hero attacks an enemy, deal your hero's Attack damage to another random enemy.",
+      "ongoing": {
+        "on": "hero-attacks",
+        "effects": [
+          {
+            "type": "damage-random-enemy-by-attack"
+          }
+        ]
+      }
+    },
+    {
+      "id": "jagged_edge_of_time",
+      "name": "Jagged Edge of Time",
+      "type": "weapon",
+      "cost": 3,
+      "cardClass": "neutral",
+      "attack": 3,
+      "durability": 2,
+      "rarity": "common",
+      "set": "CORE",
+      "description": "Battlecry: Imbue your Hero Power.",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "imbue"
+        }
+      ]
+    },
+    {
+      "id": "chronoclaws",
+      "name": "Chronoclaws",
+      "type": "weapon",
+      "cost": 4,
+      "cardClass": "neutral",
+      "attack": 4,
+      "durability": 3,
+      "rarity": "common",
+      "set": "CORE",
+      "description": "After your hero attacks, discard your highest Cost card.",
+      "ongoing": {
+        "on": "hero-attacks",
+        "effects": [
+          {
+            "type": "discard-lowest",
+            "highest": true,
+            "count": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "idol_s_adoration",
+      "name": "Idol's Adoration",
+      "type": "weapon",
+      "cost": 1,
+      "cardClass": "priest",
+      "attack": 0,
+      "durability": 2,
+      "rarity": "common",
+      "set": "CORE",
+      "description": "Your Hero Power costs (0). After you use it, lose 1 Durability.",
+      "effects": [
+        {
+          "type": "hero-power-free-game"
+        }
+      ],
+      "ongoing": {
+        "on": "hero-power-used",
+        "effects": [
+          {
+            "type": "buff-weapon",
+            "durability": -1
+          }
+        ]
+      }
+    },
+    {
+      "id": "cindersword",
+      "name": "Cindersword",
+      "type": "weapon",
+      "cost": 1,
+      "cardClass": "rogue",
+      "attack": 1,
+      "durability": 2,
+      "rarity": "common",
+      "set": "CORE",
+      "description": "Battlecry: If you're holding a minion with a Dark Gift, gain +3 Attack.",
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "holdingDarkGift": true
+          },
+          "then": [
+            {
+              "type": "buff-weapon",
+              "attack": 3
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "interstellar_starslicer",
+      "name": "Interstellar Starslicer",
+      "type": "weapon",
+      "cost": 3,
+      "cardClass": "paladin",
+      "attack": 3,
+      "durability": 2,
+      "rarity": "common",
+      "set": "CORE",
+      "description": "Battlecry and Deathrattle: Reduce the Cost of your Librams by (1) this game.",
+      "effects": [
+        {
+          "type": "reduce-libram-cost",
+          "value": 1
+        }
+      ],
+      "deathrattle": [
+        {
+          "type": "reduce-libram-cost",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "the_runespear",
+      "name": "The Runespear",
+      "type": "weapon",
+      "cost": 8,
+      "cardClass": "shaman",
+      "attack": 3,
+      "durability": 3,
+      "rarity": "common",
+      "set": "CORE",
+      "description": "After your hero attacks, Discover a spell and cast it with random targets.",
+      "ongoing": {
+        "on": "hero-attacks",
+        "effects": [
+          {
+            "type": "discover",
+            "cardType": "spell",
+            "castRandom": true
+          }
+        ]
+      }
+    },
+    {
+      "id": "foamrender",
+      "name": "Foamrender",
+      "type": "weapon",
+      "cost": 5,
+      "cardClass": "deathknight",
+      "attack": 5,
+      "durability": 1,
+      "rarity": "common",
+      "set": "CORE",
+      "description": "Whenever your hero attacks, spend 3 Corpses to gain +1 Durability.",
+      "ongoing": {
+        "on": "hero-attacks",
+        "effects": [
+          {
+            "type": "spend-corpses",
+            "value": 3,
+            "effects": [
+              {
+                "type": "buff-weapon",
+                "durability": 1
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "hope_of_quel_thalas",
+      "name": "Hope of Quel'Thalas",
+      "type": "weapon",
+      "cost": 6,
+      "cardClass": "hunter",
+      "attack": 4,
+      "durability": 2,
+      "rarity": "common",
+      "set": "CORE",
+      "description": "After your hero attacks, give your minions +1/+1 (wherever they are).",
+      "ongoing": {
+        "on": "hero-attacks",
+        "effects": [
+          {
+            "type": "buff-zones",
+            "attack": 1,
+            "health": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "runed_mithril_rod",
+      "name": "Runed Mithril Rod",
+      "type": "weapon",
+      "cost": 5,
+      "cardClass": "warlock",
+      "attack": 0,
+      "durability": 2,
+      "rarity": "common",
+      "set": "CORE",
+      "description": "After you draw 4 cards, reduce the Cost of cards in your hand by (1). Lose 1 Durability.",
+      "ongoing": {
+        "on": "card-drawn",
+        "every": 4,
+        "effects": [
+          {
+            "type": "discount-hand",
+            "value": 1
+          },
+          {
+            "type": "lose-durability"
+          }
+        ]
+      }
+    },
+    {
+      "id": "shadowcloth_needle",
+      "name": "Shadowcloth Needle",
+      "type": "weapon",
+      "cost": 1,
+      "cardClass": "priest",
+      "attack": 0,
+      "durability": 3,
+      "rarity": "common",
+      "set": "CORE",
+      "description": "After you cast a Shadow spell, deal 1 damage to all enemies. Lose 1 Durability.",
+      "ongoing": {
+        "on": "spell-played",
+        "if": {
+          "school": "Shadow"
+        },
+        "effects": [
+          {
+            "type": "damage",
+            "value": 1,
+            "target": "enemies"
+          },
+          {
+            "type": "lose-durability"
+          }
+        ]
+      }
+    },
+    {
+      "id": "prismatic_jewel_kit",
+      "name": "Prismatic Jewel Kit",
+      "type": "weapon",
+      "cost": 1,
+      "cardClass": "paladin",
+      "attack": 0,
+      "durability": 3,
+      "rarity": "common",
+      "set": "CORE",
+      "description": "After a friendly minion loses Divine Shield, give minions in your hand +1/+1. Lose 1 Durability.",
+      "ongoing": {
+        "on": "friendly-divine-shield-lost",
+        "effects": [
+          {
+            "type": "buff-hand-minions",
+            "attack": 1,
+            "health": 1
+          },
+          {
+            "type": "lose-durability",
+            "value": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "counterfeit_blade",
+      "name": "Counterfeit Blade",
+      "type": "weapon",
+      "cost": 4,
+      "cardClass": "rogue",
+      "attack": 4,
+      "durability": 2,
+      "rarity": "common",
+      "set": "CORE",
+      "description": "Battlecry: Get a copy of a random friendly Deathrattle minion that died this game.",
+      "effects": [
+        {
+          "type": "add-random-died",
+          "keyword": "deathrattle"
+        }
+      ]
+    },
+    {
+      "id": "leatherworking_kit",
+      "name": "Leatherworking Kit",
+      "type": "weapon",
+      "cost": 1,
+      "cardClass": "hunter",
+      "attack": 0,
+      "durability": 3,
+      "rarity": "common",
+      "set": "CORE",
+      "description": "After three friendly Beasts die, draw a Beast and give it +1/+1. Lose 1 Durability.",
+      "ongoing": {
+        "on": "friendly-creature-died",
+        "if": {
+          "tribe": "Beast"
+        },
+        "every": 3,
+        "effects": [
+          {
+            "type": "tutor",
+            "cardType": "creature",
+            "tribe": "Beast",
+            "count": 1,
+            "buff": {
+              "attack": 1,
+              "health": 1
+            }
+          },
+          {
+            "type": "buff-weapon",
+            "durability": -1
+          }
+        ]
+      }
+    },
+    {
+      "id": "time_lost_glaive",
+      "name": "Time-Lost Glaive",
+      "type": "weapon",
+      "cost": 1,
+      "cardClass": "demonhunter",
+      "attack": 2,
+      "durability": 2,
+      "rarity": "common",
+      "set": "CORE",
+      "description": "Deathrattle: Get a random Demon from the past.",
+      "keywords": [
+        "deathrattle"
+      ],
+      "deathrattle": [
+        {
+          "type": "conjure-random",
+          "cardType": "creature",
+          "tribe": "Demon",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "id": "staff_of_the_primus",
+      "name": "Staff of the Primus",
+      "type": "weapon",
+      "cost": 1,
+      "cardClass": "deathknight",
+      "attack": 1,
+      "durability": 3,
+      "rarity": "common",
+      "set": "CORE",
+      "description": "After your hero attacks, shuffle a random Plague into your opponent's deck.",
+      "ongoing": {
+        "on": "hero-attacks",
+        "effects": [
+          {
+            "type": "shuffle-cards-into-enemy-deck",
+            "id": "ttn_plague",
+            "count": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "trusty_fishing_rod",
+      "name": "Trusty Fishing Rod",
+      "type": "weapon",
+      "cost": 3,
+      "cardClass": "hunter",
+      "attack": 1,
+      "durability": 2,
+      "rarity": "common",
+      "set": "CORE",
+      "description": "After your hero attacks, summon a 1-Cost minion from your deck.",
+      "ongoing": {
+        "on": "hero-attacks",
+        "effects": [
+          {
+            "type": "recruit",
+            "cost": 1,
+            "count": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "seedcloud_buckler",
+      "name": "Seedcloud Buckler",
+      "type": "weapon",
+      "cost": 3,
+      "cardClass": "paladin",
+      "attack": 2,
+      "durability": 3,
+      "rarity": "common",
+      "set": "CORE",
+      "description": "Deathrattle: Give your minions Divine Shield.",
+      "deathrattle": [
+        {
+          "type": "grant",
+          "keyword": "divine_shield",
+          "target": "friendly-creatures"
+        }
+      ]
+    },
+    {
+      "id": "battlepickaxe",
+      "name": "Battlepickaxe",
+      "type": "weapon",
+      "cost": 3,
+      "cardClass": "warrior",
+      "attack": 4,
+      "durability": 1,
+      "rarity": "common",
+      "set": "CORE",
+      "description": "After you play a Taunt minion, gain +1 Durability.",
+      "ongoing": {
+        "on": "creature-played",
+        "if": {
+          "keyword": "taunt"
+        },
+        "effects": [
+          {
+            "type": "buff-weapon",
+            "attack": 0,
+            "durability": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "starshooter",
+      "name": "Starshooter",
+      "type": "weapon",
+      "cost": 4,
+      "cardClass": "hunter",
+      "attack": 2,
+      "durability": 3,
+      "rarity": "common",
+      "set": "CORE",
+      "description": "After your hero attacks, get an Arcane Shot.",
+      "ongoing": {
+        "on": "hero-attacks",
+        "effects": [
+          {
+            "type": "conjure-id",
+            "id": "arcane_shot"
+          }
+        ]
+      }
+    },
+    {
+      "id": "libram_of_judgment_corrupted",
+      "name": "Libram of Judgment",
+      "type": "weapon",
+      "cost": 7,
+      "cardClass": "paladin",
+      "attack": 5,
+      "durability": 3,
+      "rarity": "common",
+      "set": "CORE",
+      "token": true,
+      "keywords": [
+        "lifesteal"
+      ],
+      "description": "Corrupted. Lifesteal."
+    },
+    {
+      "id": "muck_pools",
+      "name": "Muck Pools",
+      "cardClass": "shaman",
+      "cost": 1,
+      "rarity": "common",
+      "type": "location",
+      "durability": 3,
+      "set": "CORE",
+      "taps": [
+        {
+          "text": "Transform a friendly minion into one that costs (1) more.",
+          "effects": [
+            {
+              "type": "transform",
+              "randomCost": true,
+              "costDelta": 1,
+              "target": "friendly-creature"
+            }
+          ]
+        }
+      ],
+      "description": "Transform a friendly minion into one that costs (1) more."
+    },
+    {
+      "id": "mosh_pit",
+      "name": "Mosh Pit",
+      "type": "location",
+      "cost": 2,
+      "cardClass": "deathknight",
+      "durability": 2,
+      "rarity": "common",
+      "set": "CORE",
+      "description": "Spend 3 Corpses to give a friendly minion Reborn.",
+      "taps": [
+        {
+          "text": "Spend 3 Corpses to give a friendly minion Reborn.",
+          "effects": [
+            {
+              "type": "spend-corpses",
+              "value": 3,
+              "effects": [
+                {
+                  "type": "grant",
+                  "keyword": "reborn",
+                  "target": "friendly-creature"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "spawning_pool",
+      "name": "Spawning Pool",
+      "type": "location",
+      "cost": 1,
+      "cardClass": "neutral",
+      "durability": 2,
+      "rarity": "common",
+      "set": "CORE",
+      "description": "Get a 1/1 Zergling. Deathrattle: Your Zerg minions have Rush this turn.",
+      "taps": [
+        {
+          "text": "Get a 1/1 Zergling.",
+          "effects": [
+            {
+              "type": "conjure-id",
+              "id": "zergling"
+            }
+          ]
+        }
+      ],
+      "deathrattle": [
+        {
+          "type": "grant",
+          "target": "friendly-creatures",
+          "keyword": "rush",
+          "ifTribe": "Zerg"
+        }
+      ]
+    },
+    {
+      "id": "starport",
+      "name": "Starport",
+      "type": "location",
+      "cost": 2,
+      "cardClass": "neutral",
+      "durability": 2,
+      "rarity": "common",
+      "set": "CORE",
+      "description": "Summon a 2/1 Starship Piece with an effect when launched.",
+      "taps": [
+        {
+          "text": "Summon a 2/1 Starship Piece with an effect when launched.",
+          "effects": [
+            {
+              "type": "summon-random",
+              "count": 1,
+              "ids": [
+                "sc_viking",
+                "sc_liberator",
+                "sc_raven",
+                "sc_banshee",
+                "sc_medivac"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "warp_gate",
+      "name": "Warp Gate",
+      "type": "location",
+      "cost": 4,
+      "cardClass": "neutral",
+      "durability": 3,
+      "rarity": "common",
+      "set": "CORE",
+      "description": "Your next Protoss minion costs (3) less.",
+      "taps": [
+        {
+          "text": "Your next Protoss minion costs (3) less.",
+          "effects": [
+            {
+              "type": "set-tribe-discount",
+              "tribe": "Protoss",
+              "count": 1,
+              "value": 3
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "fairy_tale_forest",
+      "name": "Fairy Tale Forest",
+      "type": "location",
+      "cost": 3,
+      "cardClass": "shaman",
+      "durability": 2,
+      "rarity": "common",
+      "set": "CORE",
+      "description": "Draw a Battlecry minion. It costs (1) less.",
+      "taps": [
+        {
+          "text": "Draw a Battlecry minion. It costs (1) less.",
+          "effects": [
+            {
+              "type": "tutor",
+              "cardType": "creature",
+              "requireKeyword": "battlecry",
+              "costMod": -1,
+              "count": 1
+            }
+          ]
+        }
+      ]
     }
   ]
 }
