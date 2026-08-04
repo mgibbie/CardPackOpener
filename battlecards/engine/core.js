@@ -3076,6 +3076,7 @@ export function heroAttack(state, pi, target) {
 		if (defender && !isDead(defender)) {
 			hitCreature = true;
 			if (has(defender, KW.SANGUINE)) gainBloodToken(state, defender.controller);
+			const hpBefore = hp(defender); // for Overkill (excess-damage) weapons
 			const dealt = damageCreature(state, defender, atk, w);
 			if (w && has(w, KW.LIFESTEAL) && dealt > 0) healHero(state, pi, dealt);
 			if (w && has(w, KW.FREEZER) && !isDead(defender)) freezeCreature(state, defender);
@@ -3099,6 +3100,11 @@ export function heroAttack(state, pi, target) {
 			if (w && w.honorableKill && killed && defender.damage === defender.maxHealth) {
 				emit(state, { type: 'honorableKill', player: pi });
 				execEffects(state, pi, w.honorableKill, null, w);
+			}
+			// Overkill on weapons: dealing MORE than lethal to a minion on your turn (Farraki Battleaxe / Sul'thraze)
+			if (w && w.overkill && killed && atk > hpBefore) {
+				emit(state, { type: 'overkill', player: pi });
+				execEffects(state, pi, w.overkill, null, w);
 			}
 		}
 	}

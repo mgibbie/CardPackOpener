@@ -297,6 +297,17 @@ registerTrigger('accrue-mana-awaken', (state, pi, e, ctx, triggering) => {
 });
 
 
+registerTrigger('destroy-frozen-attacked', (state, pi, e, ctx, triggering) => {
+	do { {
+				// Ice Breaker: destroy any Frozen minion this weapon damages
+				const c = ctx.target;
+				if (c && !isDead(c) && c.type !== 'location' && c.frozen) { c.doomed = true; emit(state, { type: 'death', uid: c.uid, player: c.controller, name: c.name }); sweepDeaths(state); }
+				break;
+			}
+	} while (false); // `break` ends this effect, exactly like the old case break
+});
+
+
 registerTrigger('damage-played-minion', (state, pi, e, ctx, triggering) => {
 	do { {
 				// Overlord's Whip: after you play a minion, deal N damage to it
