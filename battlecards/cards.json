@@ -137689,6 +137689,228 @@
           "type": "trigger-random-friendly-turn-end"
         }
       ]
+    },
+    {
+      "id": "disco_maul",
+      "name": "Disco Maul",
+      "type": "weapon",
+      "cost": 3,
+      "cardClass": "paladin",
+      "attack": 3,
+      "durability": 2,
+      "rarity": "common",
+      "set": "BATTLE_OF_THE_BANDS",
+      "keywords": [
+        "deathrattle"
+      ],
+      "description": "Deathrattle: Give a random friendly minion +1/+1. (Play minions while equipped to improve!)",
+      "ongoing": {
+        "on": "card-played",
+        "if": {
+          "cardType": "creature"
+        },
+        "effects": [
+          {
+            "type": "improve-tick"
+          }
+        ]
+      },
+      "deathrattle": [
+        {
+          "type": "buff-random-friendly",
+          "attack": 1,
+          "health": 1,
+          "improveScaled": "stats"
+        }
+      ]
+    },
+    {
+      "id": "timber_tambourine",
+      "name": "Timber Tambourine",
+      "type": "weapon",
+      "cost": 4,
+      "cardClass": "druid",
+      "attack": 2,
+      "durability": 3,
+      "rarity": "epic",
+      "set": "BATTLE_OF_THE_BANDS",
+      "keywords": [
+        "deathrattle"
+      ],
+      "description": "Deathrattle: Summon 1 5/5 Ancient. (Play cards that cost (5) or more while equipped to improve!)",
+      "ongoing": {
+        "on": "card-played",
+        "if": {
+          "minCost": 5
+        },
+        "effects": [
+          {
+            "type": "improve-tick"
+          }
+        ]
+      },
+      "deathrattle": [
+        {
+          "type": "summon",
+          "count": 1,
+          "attack": 5,
+          "health": 5,
+          "name": "Ancient",
+          "improveScaled": "count"
+        }
+      ]
+    },
+    {
+      "id": "glaivetar",
+      "name": "Glaivetar",
+      "type": "weapon",
+      "cost": 4,
+      "cardClass": "demonhunter",
+      "attack": 4,
+      "durability": 2,
+      "rarity": "rare",
+      "set": "BATTLE_OF_THE_BANDS",
+      "keywords": [
+        "deathrattle"
+      ],
+      "description": "Deathrattle: Draw 1 card. (Play Outcast cards while equipped to improve!)",
+      "ongoing": {
+        "on": "outcast-played",
+        "effects": [
+          {
+            "type": "improve-tick"
+          }
+        ]
+      },
+      "deathrattle": [
+        {
+          "type": "draw",
+          "value": 1,
+          "improveScaled": "value"
+        }
+      ]
+    },
+    {
+      "id": "record_scratcher",
+      "name": "Record Scratcher",
+      "type": "weapon",
+      "cost": 3,
+      "cardClass": "rogue",
+      "attack": 3,
+      "durability": 2,
+      "rarity": "epic",
+      "set": "BATTLE_OF_THE_BANDS",
+      "keywords": [
+        "deathrattle"
+      ],
+      "description": "Deathrattle: Refresh 1 Mana Crystal. (Play Combo cards while equipped to improve!)",
+      "ongoing": {
+        "on": "combo-card-played",
+        "effects": [
+          {
+            "type": "improve-tick"
+          }
+        ]
+      },
+      "deathrattle": [
+        {
+          "type": "refresh-mana",
+          "value": 1,
+          "improveScaled": "value"
+        }
+      ]
+    },
+    {
+      "id": "kodohide_drumkit",
+      "name": "Kodohide Drumkit",
+      "type": "weapon",
+      "cost": 4,
+      "cardClass": "warrior",
+      "attack": 3,
+      "durability": 2,
+      "rarity": "rare",
+      "set": "BATTLE_OF_THE_BANDS",
+      "keywords": [
+        "deathrattle"
+      ],
+      "description": "Deathrattle: Deal 1 damage to all minions. (Gain Armor while equipped to improve!)",
+      "ongoing": {
+        "on": "armor-gained",
+        "effects": [
+          {
+            "type": "improve-tick"
+          }
+        ]
+      },
+      "deathrattle": [
+        {
+          "type": "damage-all-minions",
+          "value": 1,
+          "improveScaled": "value"
+        }
+      ]
+    },
+    {
+      "id": "jazz_bass",
+      "name": "Jazz Bass",
+      "type": "weapon",
+      "cost": 3,
+      "cardClass": "shaman",
+      "attack": 3,
+      "durability": 2,
+      "rarity": "rare",
+      "set": "BATTLE_OF_THE_BANDS",
+      "keywords": [
+        "deathrattle"
+      ],
+      "description": "Deathrattle: Your next spell costs (1) less. (Overload while equipped to improve!)",
+      "ongoing": {
+        "on": "overloaded-self",
+        "effects": [
+          {
+            "type": "improve-tick"
+          }
+        ]
+      },
+      "deathrattle": [
+        {
+          "type": "discount-next-spell",
+          "value": 1,
+          "improveScaled": "value"
+        }
+      ]
+    },
+    {
+      "id": "jungle_jammer",
+      "name": "Jungle Jammer",
+      "type": "weapon",
+      "cost": 4,
+      "cardClass": "hunter",
+      "attack": 4,
+      "durability": 2,
+      "rarity": "epic",
+      "set": "BATTLE_OF_THE_BANDS",
+      "keywords": [
+        "deathrattle"
+      ],
+      "description": "Deathrattle: Summon a random 1-Cost Beast. (Cast spells while equipped to improve!)",
+      "ongoing": {
+        "on": "spell-played",
+        "effects": [
+          {
+            "type": "improve-tick"
+          }
+        ]
+      },
+      "deathrattle": [
+        {
+          "type": "summon-random",
+          "tribe": "Beast",
+          "cost": 1,
+          "count": 1,
+          "improveScaled": "count"
+        }
+      ]
     }
   ]
 }

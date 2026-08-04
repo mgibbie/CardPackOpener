@@ -692,6 +692,16 @@ register('refresh-hero-attack', ({ state, pi }, e) => {
 	const p = state.players[pi]; p.heroAttacksUsed = Math.max(0, (p.heroAttacksUsed || 0) - (e.value || 1));
 });
 
+register('improve-tick', ({ state, source }, e) => {
+	// Festival of Legends instruments: each matching action grows the Deathrattle
+	if (source) source.improveCount = (source.improveCount || 0) + (e.value || 1);
+});
+
+register('discount-next-spell', ({ state, pi }, e) => {
+	// Jazz Bass: your next spell costs (N) less
+	state.players[pi].nextSpellDiscount = (state.players[pi].nextSpellDiscount || 0) + (e.value || 1);
+});
+
 
 register('readd-corrupted-free', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => {
 	do {

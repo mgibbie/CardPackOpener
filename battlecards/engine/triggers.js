@@ -35,6 +35,7 @@ export function ongoingCondOk(state, pi, cond, ctx) {
 	if (cond.maxHealthSubj != null && !(subj && hp(subj) <= cond.maxHealthSubj)) return false; // Steward of Darkshire: a 1-Health minion
 	if (cond.spellCost != null && !(subj && (subj.cost || 0) === cond.spellCost)) return false; // Gazlowe: a 1-Cost spell
 	if (cond.maxCost != null && !(subj && (subj.cost || 0) <= cond.maxCost)) return false; // Oracle of Elune: a minion that costs (2) or less
+	if (cond.minCost != null && !(subj && (subj.cost || 0) >= cond.minCost)) return false; // Timber Tambourine: a card that costs (5) or more
 	if (cond.controlSecret && !state.players[pi].secrets.length) return false;
 	if (cond.creature && !ctx.healedCreature) return false; // "whenever a MINION is healed"
 	if (cond.nontoken && (!subj || (subj.id || '').startsWith('token_'))) return false;

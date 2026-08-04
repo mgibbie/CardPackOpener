@@ -18,7 +18,7 @@ const ok = (l, c, extra) => { if (c) pass++; else { fail++; console.log('FAIL:',
 
 // --- registry contract ---
 {
-	ok('pilot + batch types registered (979 after the weapon deck/hand effects: shuffle-leftmost / summon-lowest-cost-from-hand / draw-foreign-spell / trigger-random-friendly-turn-end)', registeredTypes().length === 979 && !!getEffectHandler('armor') && !!getEffectHandler('draw-foreign-spell'));
+	ok('pilot + batch types registered (981 after improve-tick + discount-next-spell for Festival instruments)', registeredTypes().length === 981 && !!getEffectHandler('armor') && !!getEffectHandler('improve-tick'));
 	ok('unknown types miss (the chain is fully retired — nothing else answers)', getEffectHandler('damage') !== undefined && getEffectHandler('no-such-type') === undefined);
 	let threw = null;
 	try { (await import('../../engine/effects/registry.js')).register('armor', () => {}); } catch (e) { threw = e.message; }

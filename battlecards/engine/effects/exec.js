@@ -87,7 +87,16 @@ export function execEffects(state, pi, effects, target, source) {
 	const velen = source && (source.type === 'sorcery' || source.type === 'instant' || source.type === 'heropower')
 		? staticValue(state.players[pi], 'double-spell') : 0;
 	const boost = v0 => v0 * (2 ** velen);
-	for (const e of effects || []) {
+	for (const e0 of effects || []) {
+		// "improve" instruments (Festival of Legends weapons): a Deathrattle number
+		// that grows with source.improveCount. improveScaled names which field scales.
+		let e = e0;
+		if (e0.improveScaled && source && source.improveCount) {
+			const n = source.improveCount; e = { ...e0 };
+			if (e0.improveScaled === 'stats') { e.attack = (e.attack || 0) + n; e.health = (e.health || 0) + n; }
+			else if (e0.improveScaled === 'count') e.count = (e.count || 0) + n;
+			else e.value = (e.value || 0) + n; // 'value'
+		}
 		// Every effect type resolves through engine/effects/registry.js — the
 		// legacy 900-branch if-chain is fully retired (PRs 13–37). The ctx
 		// carries this function's closure helpers so handler bodies run with
