@@ -139291,6 +139291,38 @@
           }
         ]
       }
+    },
+    {
+      "id": "blacksmithing_hammer",
+      "name": "Blacksmithing Hammer",
+      "type": "weapon",
+      "cost": 4,
+      "attack": 5,
+      "durability": 1,
+      "cardClass": "warrior",
+      "rarity": "rare",
+      "set": "STORMWIND",
+      "tradeable": true,
+      "description": "Tradeable. After you Trade this, gain +2 Durability.",
+      "afterTrade": [
+        {
+          "type": "buff-self-in-deck",
+          "durability": 2
+        }
+      ]
+    },
+    {
+      "id": "felstring_harp",
+      "name": "Felstring Harp",
+      "type": "weapon",
+      "cost": 1,
+      "attack": 0,
+      "durability": 3,
+      "cardClass": "warlock",
+      "rarity": "epic",
+      "set": "BATTLE_OF_THE_BANDS",
+      "healInsteadOnOwnTurn": 2,
+      "description": "Whenever your hero would take damage on your turn, restore 2 Health instead. Lose 1 Durability."
     }
   ]
 }

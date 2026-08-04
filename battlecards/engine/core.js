@@ -347,6 +347,7 @@ export function instantiate(def, controller) {
 		doubleHeroDamage: !!def.doubleHeroDamage, // Cursed Blade
 		absorbHeroDamageToWeapon: !!def.absorbHeroDamageToWeapon, // Bulwark of Azzinoth
 		heroPowerBuffsInstead: !!def.heroPowerBuffsInstead, // Poisoned Blade: your Hero Power buffs this instead of replacing it
+		healInsteadOnOwnTurn: def.healInsteadOnOwnTurn || 0, // Felstring Harp: on your turn, damage becomes healing (weapon degrades)
 		afterTrade: def.afterTrade || null, // Blackwater Cutlass / Blacksmithing Hammer: effect when you Trade this card
 		forged: false, // whether this card has already been Forged
 		healToMaxHealth: !!def.healToMaxHealth, // Arisen Onyxia: hero Health loss becomes max Health

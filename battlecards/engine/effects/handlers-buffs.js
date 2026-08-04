@@ -593,6 +593,13 @@ register('buff-random-hand', ({ state, pi, target, source, enemies, scaled, hm, 
 } });
 
 
+register('buff-self-in-deck', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => { {
+			// Blacksmithing Hammer: after you Trade this, the copy going back to your
+			// deck carries a buff (applied when it's next drawn)
+			if (source && source.id) (state.players[pi].deckIdBuffs = state.players[pi].deckIdBuffs || []).push({ id: source.id, attack: e.attack || 0, health: e.health || 0, durability: e.durability || 0 });
+} });
+
+
 register('buff-deck-top-minions', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => { {
 			// Beanstalk Brute: +4/+4 to the top N minions of your deck (top = draw end)
 			const p = state.players[pi];
