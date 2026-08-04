@@ -139656,6 +139656,43 @@
           ]
         }
       ]
+    },
+    {
+      "id": "void_soul",
+      "name": "Void Soul",
+      "type": "sorcery",
+      "cost": 1,
+      "cardClass": "demonhunter",
+      "rarity": "common",
+      "token": true,
+      "collectible": false,
+      "description": "Summon a random 1-Cost Demon. Improve your future Void Souls.",
+      "effects": [
+        {
+          "type": "void-soul"
+        }
+      ]
+    },
+    {
+      "id": "stardust_scythe",
+      "name": "Stardust Scythe",
+      "type": "weapon",
+      "cost": 4,
+      "attack": 3,
+      "durability": 3,
+      "cardClass": "demonhunter",
+      "rarity": "common",
+      "set": "VIOLET_HOLD",
+      "description": "After your hero attacks, get a Void Soul.",
+      "ongoing": {
+        "on": "hero-attacks",
+        "effects": [
+          {
+            "type": "conjure-id",
+            "id": "void_soul"
+          }
+        ]
+      }
     }
   ]
 }

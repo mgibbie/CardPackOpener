@@ -518,6 +518,17 @@ register('summon-copy-of-target-buffed', ({ state, pi, target, source, enemies, 
 } });
 
 
+register('void-soul', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => { {
+			// Void Soul (Stardust Scythe token): summon a random Demon whose Cost starts
+			// at 1 and grows by 1 for each Void Soul you've already played this game
+			const p = state.players[pi];
+			const cost = (e.baseCost || 1) + (p.voidSoulImprove || 0);
+			const pool = Object.values(state.cardsById).filter(d => d.type === 'creature' && (d.tribe || '').includes('Demon') && (d.cost || 0) === cost && !d.token && d.collectible !== false && !d.companion && !d.commander && !(d.colors && d.colors.length));
+			if (pool.length) summon(state, pi, pool[Math.floor(state.rng() * pool.length)]);
+			p.voidSoulImprove = (p.voidSoulImprove || 0) + 1; // improve your future Void Souls
+} });
+
+
 register('summon-hand-size-stats', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => { {
 			// Abyssal Summoner: summon a token with stats equal to your hand size
 			const n = state.players[pi].hand.length;
