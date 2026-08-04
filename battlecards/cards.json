@@ -139269,6 +139269,28 @@
           }
         ]
       }
+    },
+    {
+      "id": "poisoned_blade",
+      "name": "Poisoned Blade",
+      "type": "weapon",
+      "cost": 2,
+      "attack": 1,
+      "durability": 3,
+      "cardClass": "rogue",
+      "rarity": "epic",
+      "set": "TGT",
+      "description": "Your Hero Power gives this +1 Attack instead of replacing it.",
+      "heroPowerBuffsInstead": true,
+      "ongoing": {
+        "on": "hero-power-used",
+        "effects": [
+          {
+            "type": "buff-equipped-weapon",
+            "attack": 1
+          }
+        ]
+      }
     }
   ]
 }

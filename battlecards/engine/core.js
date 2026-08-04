@@ -346,6 +346,7 @@ export function instantiate(def, controller) {
 		unlimitedAttacks: !!def.unlimitedAttacks, // Fool's Bane
 		doubleHeroDamage: !!def.doubleHeroDamage, // Cursed Blade
 		absorbHeroDamageToWeapon: !!def.absorbHeroDamageToWeapon, // Bulwark of Azzinoth
+		heroPowerBuffsInstead: !!def.heroPowerBuffsInstead, // Poisoned Blade: your Hero Power buffs this instead of replacing it
 		afterTrade: def.afterTrade || null, // Blackwater Cutlass / Blacksmithing Hammer: effect when you Trade this card
 		forged: false, // whether this card has already been Forged
 		healToMaxHealth: !!def.healToMaxHealth, // Arisen Onyxia: hero Health loss becomes max Health

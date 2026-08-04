@@ -355,6 +355,9 @@ register('degrade-enemy-weapon', ({ state, pi, target, source, enemies, scaled, 
 register('equip', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => { {
 			const p = state.players[pi];
 			if (p.eliminated) return;
+			// Poisoned Blade: a Hero Power that would equip a weapon buffs this instead
+			// (the +1 Attack itself comes from Poisoned Blade's hero-power-used ongoing)
+			if (state.hpResolver === pi && p.weapon && p.weapon.heroPowerBuffsInstead) return;
 			if (p.weapon) breakWeapon(state, pi, true);
 			const w = instantiate({
 				id: 'token_' + e.name.toLowerCase().replace(/[^a-z0-9]+/g, '_'),
@@ -366,6 +369,13 @@ register('equip', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, 
 			p.weapon = w;
 			emit(state, { type: 'weaponEquip', player: pi, card: w });
 			fireOngoing(state, pi, 'weapon-equipped');
+} });
+
+
+register('buff-equipped-weapon', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => { {
+			// Poisoned Blade: give your equipped weapon +Attack (fires from its own ongoing)
+			const w = state.players[pi].weapon;
+			if (w) { w.attack += (e.attack || 1); if (e.durability) w.durability += e.durability; emit(state, { type: 'weaponDurability', player: pi, attack: w.attack, durability: w.durability }); }
 } });
 
 
