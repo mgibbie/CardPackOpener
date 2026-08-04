@@ -138762,6 +138762,74 @@
         "per": "secrets-triggered-game",
         "amount": -1
       }
+    },
+    {
+      "id": "grotesque_runeblade",
+      "name": "Grotesque Runeblade",
+      "type": "weapon",
+      "cost": 2,
+      "cardClass": "deathknight",
+      "attack": 2,
+      "durability": 2,
+      "rarity": "epic",
+      "set": "EMERALD_DREAM",
+      "description": "Battlecry: If the last card you played had an Unholy rune, gain +1 Attack. Repeat for Blood and +1 Durability.",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "lastCardRune": "unholy"
+          },
+          "then": [
+            {
+              "type": "buff-weapon",
+              "attack": 1
+            }
+          ]
+        },
+        {
+          "type": "conditional",
+          "if": {
+            "lastCardRune": "blood"
+          },
+          "then": [
+            {
+              "type": "buff-weapon",
+              "durability": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "spectral_cutlass",
+      "name": "Spectral Cutlass",
+      "type": "weapon",
+      "cost": 4,
+      "cardClass": "rogue",
+      "attack": 2,
+      "durability": 2,
+      "rarity": "epic",
+      "set": "PLACEHOLDER_202204",
+      "description": "Lifesteal Whenever you play a card from another class, gain +1 Durability.",
+      "keywords": [
+        "lifesteal"
+      ],
+      "ongoing": {
+        "on": "card-played",
+        "if": {
+          "otherClass": true
+        },
+        "effects": [
+          {
+            "type": "buff-weapon",
+            "durability": 1
+          }
+        ]
+      }
     }
   ]
 }

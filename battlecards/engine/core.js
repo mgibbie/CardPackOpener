@@ -337,6 +337,7 @@ export function instantiate(def, controller) {
 		heroAura: def.heroAura || null, // Spiderling / Inara / Spirit of the Team: hero +Attack (usually only on your turn)
 		weaponAura: def.weaponAura || null, // Vulpera Toxinblade: your weapon has +N Attack
 		handMinionEcho: !!def.handMinionEcho, // Glinda Crowskin: minions in your hand have Echo
+		runes: def.runes || null, // Death Knight runes (for Grotesque Runeblade's last-card check)
 		forge: def.forge ? JSON.parse(JSON.stringify(def.forge)) : null, // Forge: drag onto the Forge to upgrade this card in hand
 		attackEqualsArmor: !!def.attackEqualsArmor, // Bladed Gauntlet
 		condAttack: def.condAttack || null, // Cogmaster's Wrench / Spirit Claws: weapon +Attack while a condition holds
@@ -2180,7 +2181,7 @@ export function playCard(state, pi, cardUid, target, choice, position, useAlt, k
 				emit(state, { type: 'conjure', player: pi, card: tk, color: null });
 			}
 		}
-		p.lastCardCost = card.cost; // Rolling Stone
+		p.lastCardCost = card.cost; p.lastPlayedRunes = card.runes || null; // Rolling Stone / Grotesque Runeblade
 		if (isSpellType(card) && (card.cost || 0) >= 5) p.castBigSpellThisTurn = true; // Arcane Tyrant / Anubisath Defender: "cast a spell that costs (5) or more this turn"
 		if ((card.keywords || []).includes('combo')) p.combosPlayedGame = (p.combosPlayedGame || 0) + 1; // Rhyme Spinner
 		{ const sc = schoolOf(card); for (const hc of p.hand) { hc.spellsCastWhileHeld = (hc.spellsCastWhileHeld || 0) + 1; if (sc) (hc.schoolsWhileHeld = hc.schoolsWhileHeld || {})[sc] = true; (hc.spellsHeldIds = hc.spellsHeldIds || []).push(card.id); } } // Naga: Spellcoiler / Heralds / Commander Sivara
@@ -2234,7 +2235,7 @@ export function playCard(state, pi, cardUid, target, choice, position, useAlt, k
 	questTick(state, 'play', pi, 1, card); // "Play N cards" quests
 	// counted AFTER resolution so Combo sees only cards played EARLIER this turn
 	p.cardsPlayedThisTurn++;
-	p.lastCardCost = card.cost; // Rolling Stone: cost of the most recently played card
+	p.lastCardCost = card.cost; p.lastPlayedRunes = card.runes || null; // Rolling Stone / Grotesque Runeblade: cost of the most recently played card
 	if (!card.token) p.lastCardPlayedId = card.id; // Fate Splitter: opponent's most recent card
 	if (card.type === 'creature' && card.tribe) { p.tribesPlayedGame = p.tribesPlayedGame || {}; for (const tr of (card.tribe || '').split('/')) if (tr) p.tribesPlayedGame[tr] = true; } // Power Slider (plain object, NOT a Set — must survive snapshot JSON)
 	if (card.type === 'creature' && (card.tribe || '').includes('Elemental')) p.elementalsPlayedThisTurn = (p.elementalsPlayedThisTurn || 0) + 1; // Unchained Gladiator

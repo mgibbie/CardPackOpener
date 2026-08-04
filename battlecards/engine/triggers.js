@@ -37,6 +37,7 @@ export function ongoingCondOk(state, pi, cond, ctx) {
 	if (cond.maxCost != null && !(subj && (subj.cost || 0) <= cond.maxCost)) return false; // Oracle of Elune: a minion that costs (2) or less
 	if (cond.minCost != null && !(subj && (subj.cost || 0) >= cond.minCost)) return false; // Timber Tambourine: a card that costs (5) or more
 	if (cond.spellsThisTurn != null && (state.players[pi].spellsPlayedThisTurn || 0) !== cond.spellsThisTurn) return false; // Dragon Soul: exactly the Nth spell this turn
+	if (cond.otherClass && !(subj && subj.cardClass && subj.cardClass !== 'neutral' && subj.cardClass !== state.players[pi].heroClass)) return false; // Spectral Cutlass: a card from ANOTHER class
 	if (cond.controlSecret && !state.players[pi].secrets.length) return false;
 	if (cond.creature && !ctx.healedCreature) return false; // "whenever a MINION is healed"
 	if (cond.nontoken && (!subj || (subj.id || '').startsWith('token_'))) return false;
