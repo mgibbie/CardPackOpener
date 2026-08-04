@@ -3316,6 +3316,8 @@ export function resolveDredge(state, id) {
 	// rest[] were the bottom cards in bottom-up order; keep that order at the bottom
 	for (const x of [...rest].reverse()) deck.unshift(x);
 	deck.push(chosen); // top of deck = end of array
+	// Harpoon Gun: if the dredged card is a Beast, reduce its Cost (applied when drawn)
+	if (pend.beastCostMod) { const d = state.cardsById[chosen]; if (d && (d.tribe || '').includes('Beast')) (state.players[pend.player].deckIdBuffs = state.players[pend.player].deckIdBuffs || []).push({ id: chosen, attack: 0, health: 0, cost: pend.beastCostMod }); }
 	emit(state, { type: 'dredgeDone', player: pend.player, id: chosen });
 	{ const dp = state.players[pend.player]; if (dp.edgeOfDredge && dp._dredgeTurn !== state.turnNumber) { dp._dredgeTurn = state.turnNumber; drawCards(state, pend.player, 1); } } // Edge of Dredge (Duels): first Dredge each turn -> draw
 	return true;

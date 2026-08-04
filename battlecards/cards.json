@@ -139348,6 +139348,52 @@
           }
         ]
       }
+    },
+    {
+      "id": "staff_of_trickery",
+      "name": "Staff of Trickery",
+      "type": "weapon",
+      "cost": 4,
+      "attack": 1,
+      "durability": 3,
+      "cardClass": "druid",
+      "rarity": "legendary",
+      "set": "VIOLET_HOLD",
+      "description": "After your hero attacks, Discover a Druid card. Reduce its Cost by your hero's Attack.",
+      "ongoing": {
+        "on": "hero-attacks",
+        "effects": [
+          {
+            "type": "discover",
+            "cardType": "any",
+            "cardClasses": [
+              "druid"
+            ],
+            "costModByHeroAttack": true
+          }
+        ]
+      }
+    },
+    {
+      "id": "harpoon_gun",
+      "name": "Harpoon Gun",
+      "type": "weapon",
+      "cost": 3,
+      "attack": 3,
+      "durability": 2,
+      "cardClass": "hunter",
+      "rarity": "rare",
+      "set": "THE_SUNKEN_CITY",
+      "description": "After your hero attacks, Dredge. If it's a Beast, reduce its Cost by (2).",
+      "ongoing": {
+        "on": "hero-attacks",
+        "effects": [
+          {
+            "type": "dredge",
+            "beastCostMod": -2
+          }
+        ]
+      }
     }
   ]
 }
