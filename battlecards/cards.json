@@ -139798,6 +139798,27 @@
           ]
         }
       ]
+    },
+    {
+      "id": "amirdrassil",
+      "name": "Amirdrassil",
+      "type": "location",
+      "cost": 5,
+      "cardClass": "druid",
+      "durability": 3,
+      "rarity": "legendary",
+      "set": "EMERALD_DREAM",
+      "description": "Summon a 1-Cost minion. Gain 1 Armor. Draw 1 card. Refresh 1 Mana Crystal. (Improves each use!)",
+      "taps": [
+        {
+          "text": "Summon a 1-Cost minion. Gain 1 Armor. Draw 1 card. Refresh 1 Mana Crystal. (Improves each use!)",
+          "effects": [
+            {
+              "type": "amirdrassil-tap"
+            }
+          ]
+        }
+      ]
     }
   ]
 }

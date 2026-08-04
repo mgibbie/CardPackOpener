@@ -540,6 +540,20 @@ register('tiny-pal-attack', ({ state, pi, target, source, enemies, scaled, hm, p
 			w.ammo = others[Math.floor(state.rng() * others.length)];
 			emit(state, { type: 'tinyPalAmmo', player: pi, ammo: w.ammo });
 } });
+register('amirdrassil-tap', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => { {
+			// Amirdrassil: summon a 1-Cost minion, gain 1 Armor, draw 1, refresh 1 Mana
+			// Crystal — and every value improves by 1 for each previous activation
+			const n = source ? (source.improveCount || 0) : 0;
+			execEffects(state, pi, [
+				{ type: 'summon-random', cost: 1 + n },
+				{ type: 'armor', value: 1 + n },
+				{ type: 'draw', count: 1 + n },
+				{ type: 'refresh-mana', value: 1 + n },
+			], null, source);
+			if (source) source.improveCount = (source.improveCount || 0) + 1;
+} });
+
+
 register('summon-hatch-egg', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => { {
 			// Clutch of Corruption: summon a 0/2 Egg that hatches into a copy of the
 			// chosen friendly Dragon (its current stats, and its own abilities via summonId)
