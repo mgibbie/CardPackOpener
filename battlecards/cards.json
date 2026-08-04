@@ -139394,6 +139394,20 @@
           }
         ]
       }
+    },
+    {
+      "id": "molten_blade",
+      "name": "Molten Blade",
+      "type": "weapon",
+      "cost": 1,
+      "attack": 1,
+      "durability": 1,
+      "cardClass": "warrior",
+      "rarity": "rare",
+      "set": "UNGORO",
+      "transformInHand": true,
+      "transformInHandType": "weapon",
+      "description": "Transforms into a new weapon when in hand that changes each turn."
     }
   ]
 }

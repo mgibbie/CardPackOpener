@@ -254,6 +254,7 @@ export function instantiate(def, controller) {
 		costReducePerTurn: def.costReducePerTurn || false,   // Nerubian Prophet: -1 cost each turn in hand
 		transformInHand: def.transformInHand || false,       // Shifter Zerus: transforms each turn in hand
 		transformInHandTribe: def.transformInHandTribe || null, // Hive Queen's Larva: only into a given tribe (Zerg)
+		transformInHandType: def.transformInHandType || null, // Molten Blade: transform into a random weapon (default: creature)
 		summonOnDiscard: def.summonOnDiscard || false,       // Silverware Golem: summon it when discarded
 		returnBuffedOnDiscard: def.returnBuffedOnDiscard || false, // Clutchmother Zavas: +2/+2 and return
 		heroPowerHitsMinions: def.heroPowerHitsMinions || false, // Steamwheedle Sniper: Hero Power can target minions
@@ -4434,14 +4435,17 @@ export function endTurn(state) {
 	for (const c of cur.hand) {
 		if (c.costReducePerTurn) c.cost = Math.max(0, (c.cost || 0) - 1);
 		if (c.transformInHand) {
-			const pool = Object.values(state.cardsById).filter(d => d.type === 'creature'
+			const wantType = c.transformInHandType || 'creature'; // Molten Blade: a random weapon
+			const pool = Object.values(state.cardsById).filter(d => d.type === wantType
 				&& !d.token && d.collectible !== false && !d.companion && !d.commander && !(d.colors && d.colors.length)
 				&& (!c.transformInHandTribe || (d.tribe || '').includes(c.transformInHandTribe))); // Hive Queen's Larva: a random Zerg
 			if (pool.length) { const rd = pool[Math.floor(state.rng() * pool.length)];
-				c.id = rd.id; c.name = rd.name; c.attack = rd.attack || 0; c.maxHealth = rd.health || 0;
-				c.cost = rd.cost || 0; c.keywords = [...(rd.keywords || [])]; c.tribe = rd.tribe;
+				c.id = rd.id; c.name = rd.name; c.attack = rd.attack || 0;
+				c.cost = rd.cost || 0; c.keywords = [...(rd.keywords || [])];
 				c.effects = rd.effects || null; c.ongoing = rd.ongoing || null; c.deathrattle = rd.deathrattle || null;
-				c.transformInHand = true; // stays a Shifter
+				if (wantType === 'weapon') { c.durability = rd.durability || 0; c.maxHealth = 0; c.tribe = null; }
+				else { c.maxHealth = rd.health || 0; c.tribe = rd.tribe; }
+				c.transformInHand = true; c.transformInHandType = c.transformInHandType || null; // stays a Shifter of the same kind
 				emit(state, { type: 'conjure', player: state.current, card: c, color: null }); }
 		}
 	}
