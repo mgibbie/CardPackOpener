@@ -1000,6 +1000,7 @@ register('buff', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, e
 					if (e.requireKeyword && !c.keywords.includes(e.requireKeyword)) continue;
 					if (e.requireDamaged && !(c.damage > 0)) continue; // Ball and Chain
 					buffCreature(c, e.attack, e.health);
+					if (e.grant && !c.keywords.includes(e.grant)) { c.keywords.push(e.grant); if (e.grant === KW.DIVINE_SHIELD) c.shield = true; } // Serrated Tooth: give your minions Rush
 				}
 			} else if (e.target === 'all-creatures') {
 				for (const pl of state.players) for (const c of pl.board) {

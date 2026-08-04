@@ -138212,6 +138212,112 @@
           }
         ]
       }
+    },
+    {
+      "id": "rimefang_sword",
+      "name": "Rimefang Sword",
+      "type": "weapon",
+      "cost": 3,
+      "cardClass": "deathknight",
+      "attack": 2,
+      "durability": 3,
+      "rarity": "rare",
+      "set": "LEGACY",
+      "description": "After your hero attacks, reduce the Cost of a spell in your hand by (1).",
+      "ongoing": {
+        "on": "hero-attacks",
+        "effects": [
+          {
+            "type": "reduce-hand-spells-cost",
+            "count": 1,
+            "value": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "likkim",
+      "name": "Likkim",
+      "type": "weapon",
+      "cost": 2,
+      "cardClass": "shaman",
+      "attack": 1,
+      "durability": 3,
+      "rarity": "rare",
+      "set": "TROLL",
+      "description": "Has +2 Attack while you have Overloaded Mana Crystals.",
+      "condAttack": {
+        "overloaded": true,
+        "bonus": 2
+      }
+    },
+    {
+      "id": "spiked_wheel",
+      "name": "Spiked Wheel",
+      "type": "weapon",
+      "cost": 1,
+      "cardClass": "warrior",
+      "attack": 0,
+      "durability": 2,
+      "rarity": "common",
+      "set": "DARKMOON_FAIRE",
+      "description": "Has +3 Attack while your hero has Armor.",
+      "condAttack": {
+        "armor": true,
+        "bonus": 3
+      }
+    },
+    {
+      "id": "stormhammer",
+      "name": "Stormhammer",
+      "type": "weapon",
+      "cost": 3,
+      "cardClass": "hunter",
+      "attack": 3,
+      "durability": 2,
+      "rarity": "epic",
+      "set": "DRAGONS",
+      "description": "Doesn't lose Durability while you control a Dragon.",
+      "noDegradeWhile": {
+        "tribe": "Dragon"
+      }
+    },
+    {
+      "id": "climbing_hook",
+      "name": "Climbing Hook",
+      "type": "weapon",
+      "cost": 6,
+      "cardClass": "demonhunter",
+      "attack": 5,
+      "durability": 2,
+      "rarity": "epic",
+      "set": "ISLAND_VACATION",
+      "description": "Doesn't lose Durability while you control a minion with 5 or more Attack.",
+      "noDegradeWhile": {
+        "minAttack": 5
+      }
+    },
+    {
+      "id": "serrated_tooth",
+      "name": "Serrated Tooth",
+      "type": "weapon",
+      "cost": 1,
+      "cardClass": "rogue",
+      "attack": 1,
+      "durability": 3,
+      "rarity": "common",
+      "set": "TROLL",
+      "description": "Deathrattle: Give your minions Rush.",
+      "keywords": [
+        "deathrattle"
+      ],
+      "deathrattle": [
+        {
+          "type": "buff",
+          "target": "friendly-creatures",
+          "grant": "rush"
+        }
+      ]
     }
   ]
 }

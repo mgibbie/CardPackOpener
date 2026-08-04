@@ -341,6 +341,7 @@ export function instantiate(def, controller) {
 		attackEqualsArmor: !!def.attackEqualsArmor, // Bladed Gauntlet
 		condAttack: def.condAttack || null, // Cogmaster's Wrench / Spirit Claws: weapon +Attack while a condition holds
 		noFace: !!def.noFace, // "Can't attack heroes"
+		noDegradeWhile: def.noDegradeWhile || null, // Stormhammer / Climbing Hook: no Durability loss while a condition holds
 		unlimitedAttacks: !!def.unlimitedAttacks, // Fool's Bane
 		doubleHeroDamage: !!def.doubleHeroDamage, // Cursed Blade
 		forged: false, // whether this card has already been Forged
@@ -1484,6 +1485,12 @@ export function breakWeapon(state, pi, destroyed) {
 export function degradeWeapon(state, pi) {
 	const w = state.players[pi].weapon;
 	if (!w) return;
+	if (w.noDegradeWhile) { // Stormhammer (while you control a Dragon) / Climbing Hook (a 5+ Attack minion)
+		const nd = w.noDegradeWhile;
+		const met = nd.tribe ? state.players[pi].board.some(c => !isDead(c) && c.type !== 'location' && (c.tribe || '').includes(nd.tribe))
+			: nd.minAttack ? state.players[pi].board.some(c => !isDead(c) && c.type !== 'location' && (c.attack || 0) >= nd.minAttack) : false;
+		if (met) return;
+	}
 	w.durability -= 1;
 	emit(state, { type: 'weaponDurability', player: pi, attack: w.attack, durability: w.durability });
 	if (w.durability <= 0) breakWeapon(state, pi, false);
@@ -2991,10 +2998,12 @@ export function heroAttackValue(state, p) {
 	if (p.weapon) {
 		w = p.weapon.attack;
 		if (p.weapon.attackEqualsArmor) w = p.armor; // Bladed Gauntlet: Attack equal to your Armor
-		if (p.weapon.condAttack) { // Cogmaster's Wrench (+2 while you have a Mech) / Spirit Claws (+2 while you have Spell Damage)
+		if (p.weapon.condAttack) { // Cogmaster's Wrench (Mech) / Spirit Claws (Spell Damage) / Spiked Wheel (Armor) / Likkim (Overloaded)
 			const ca = p.weapon.condAttack;
 			const met = ca.tribe ? p.board.some(c => !isDead(c) && c.type !== 'location' && (c.tribe || '').includes(ca.tribe))
-				: ca.spellDamage ? staticValue(p, 'spell-damage') > 0 : false;
+				: ca.spellDamage ? staticValue(p, 'spell-damage') > 0
+				: ca.armor ? (p.armor || 0) > 0
+				: ca.overloaded ? (p.overloadLockedThisTurn || 0) > 0 : false;
 			if (met) w += ca.bonus || 0;
 		}
 		// Spiteful Smith-style enrage: damaged creatures sharpen the weapon
