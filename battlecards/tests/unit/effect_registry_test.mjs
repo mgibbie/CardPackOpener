@@ -18,7 +18,7 @@ const ok = (l, c, extra) => { if (c) pass++; else { fail++; console.log('FAIL:',
 
 // --- registry contract ---
 {
-	ok('pilot + batch types registered (987 after damage-all-enemies)', registeredTypes().length === 987 && !!getEffectHandler('armor') && !!getEffectHandler('damage-all-enemies'));
+	ok('pilot + batch types registered (989 after set-next-summon-stats + summon-scaled-cards-played)', registeredTypes().length === 989 && !!getEffectHandler('armor') && !!getEffectHandler('set-next-summon-stats'));
 	ok('unknown types miss (the chain is fully retired — nothing else answers)', getEffectHandler('damage') !== undefined && getEffectHandler('no-such-type') === undefined);
 	let threw = null;
 	try { (await import('../../engine/effects/registry.js')).register('armor', () => {}); } catch (e) { threw = e.message; }

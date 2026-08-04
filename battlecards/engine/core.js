@@ -1050,6 +1050,7 @@ export function summon(state, pi, tokenDef) {
 	if (p.board.filter(x => !isDead(x) && x.type !== 'location').length >= MAX_BOARD) return null;
 	const c = instantiate(tokenDef, pi);
 	c.zone = 'board';
+	if (p.nextSummonStats) { c.attack = p.nextSummonStats.attack; c.maxHealth = p.nextSummonStats.health; c.damage = 0; p.nextSummonStats = null; } // The Crystal Cove: next summoned minion's stats set
 	if (p.nextRecruitBuff && c.name === 'Silver Hand Recruit') { c.attack += p.nextRecruitBuff.attack || 0; c.maxHealth += p.nextRecruitBuff.health || 0; if (p.nextRecruitBuff.deathrattle) { c.deathrattle = (c.deathrattle || []).concat(JSON.parse(JSON.stringify(p.nextRecruitBuff.deathrattle))); if (!c.keywords.includes('deathrattle')) c.keywords.push('deathrattle'); } p.nextRecruitBuff = null; } // Stewart the Steward
 	if (p.recruitAttackBonus && c.name === 'Silver Hand Recruit') c.attack += p.recruitAttackBonus; // Brash Battlemaster
 	if (p.recruitHealthBonus && c.name === 'Silver Hand Recruit') c.maxHealth += p.recruitHealthBonus; // Resilient Savior
@@ -2039,6 +2040,7 @@ export function playCard(state, pi, cardUid, target, choice, position, useAlt, k
 			r.count -= 1; if (r.count <= 0) p.nextTribePlayReward = null;
 		}
 		(p.enteredCountById = p.enteredCountById || {})[card.id] = (p.enteredCountById[card.id] || 0) + 1;
+		if (p.nextSummonStats) { card.attack = p.nextSummonStats.attack; card.maxHealth = p.nextSummonStats.health; card.damage = 0; p.nextSummonStats = null; } // The Crystal Cove: a played minion counts as "summoned"
 		// position = insertion index (adjacency matters); default = right end
 		if (position == null || position >= p.board.length) p.board.push(card);
 		else p.board.splice(Math.max(0, position), 0, card);
@@ -3879,7 +3881,7 @@ export function endTurn(state) {
 	p.heroPowerTaxNext = 0; // Saboteur's Hero Power tax only lasts this turn
 	p.nextMurlocFree = false; p.nextSecretCost = null; // Seadevil Stinger / Kabal Lackey are "this turn"
 	p.nextBattlecryDouble = false; // Murmuring Elemental only lasts this turn
-	p.nextSpellDamageBonus = 0; p.nextSpellDoubleCast = false; p.nextSpellDoubleCount = 0; p.spellsLifestealThisTurn = false; p.spellDamageThisTurn = 0; // Boomsday next-spell riders are "this turn"; Magical Dollhouse / Rune Dagger
+	p.nextSpellDamageBonus = 0; p.nextSpellDoubleCast = false; p.nextSpellDoubleCount = 0; p.spellsLifestealThisTurn = false; p.spellDamageThisTurn = 0; p.nextSummonStats = null; // Boomsday next-spell riders are "this turn"; Magical Dollhouse / Rune Dagger / The Crystal Cove
 	p.healHarmThisTurn = false; // Auchenai Phantasm only lasts this turn
 	p.heroPowerDamageNext = 0; // Daring Fire-Eater only lasts this turn
 	for (const pl of state.players) for (const c of pl.board) if (c.turnAtkDebuff) { c.attack += c.turnAtkDebuff; c.turnAtkDebuff = 0; emit(state, { type: 'buff', uid: c.uid, attack: c.attack, hp: hp(c) }); } // Quicksand Elemental restores

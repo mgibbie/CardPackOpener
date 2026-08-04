@@ -707,6 +707,17 @@ register('gain-spell-damage-turn', ({ state, pi }, e) => {
 	state.players[pi].spellDamageThisTurn = (state.players[pi].spellDamageThisTurn || 0) + (e.value || 1);
 });
 
+register('set-next-summon-stats', ({ state, pi }, e) => {
+	// The Crystal Cove: the next minion you summon this turn is set to A/H
+	state.players[pi].nextSummonStats = { attack: e.attack ?? 4, health: e.health ?? 4 };
+});
+
+register('summon-scaled-cards-played', ({ state, pi }, e) => {
+	// Sinstone Graveyard: a Ghost with +1/+1 for each other card played this turn
+	const s = (e.base || 1) + (state.players[pi].cardsPlayedThisTurn || 0);
+	summon(state, pi, { id: 'token_' + (e.name || 'ghost').toLowerCase(), name: e.name || 'Ghost', type: 'creature', cost: 0, token: true, rarity: 'common', attack: s, health: s, keywords: e.keywords || [], description: `A ${s}/${s} token.` });
+});
+
 register('lose-durability', ({ state, pi }, e) => {
 	// Cosmic Keyboard / The Fist of Ra-den: the equipped weapon loses N Durability
 	for (let i = 0; i < (e.value || 1); i++) if (state.players[pi].weapon) degradeWeapon(state, pi);

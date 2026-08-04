@@ -138676,6 +138676,51 @@
           }
         ]
       }
+    },
+    {
+      "id": "the_crystal_cove",
+      "name": "The Crystal Cove",
+      "type": "location",
+      "cost": 3,
+      "cardClass": "rogue",
+      "durability": 3,
+      "rarity": "common",
+      "set": "CORE",
+      "description": "The next minion you summon this turn has its stats set to 4/4.",
+      "taps": [
+        {
+          "text": "The next minion you summon this turn has its stats set to 4/4.",
+          "effects": [
+            {
+              "type": "set-next-summon-stats",
+              "attack": 4,
+              "health": 4
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "sinstone_graveyard",
+      "name": "Sinstone Graveyard",
+      "type": "location",
+      "cost": 3,
+      "cardClass": "rogue",
+      "durability": 2,
+      "rarity": "common",
+      "set": "CORE",
+      "description": "Summon a 1/1 Ghost. (Has +1/+1 for each other card you played this turn!)",
+      "taps": [
+        {
+          "text": "Summon a 1/1 Ghost. (Has +1/+1 for each other card you played this turn!)",
+          "effects": [
+            {
+              "type": "summon-scaled-cards-played",
+              "name": "Ghost"
+            }
+          ]
+        }
+      ]
     }
   ]
 }
