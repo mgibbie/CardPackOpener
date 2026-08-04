@@ -540,6 +540,43 @@ register('tiny-pal-attack', ({ state, pi, target, source, enemies, scaled, hm, p
 			w.ammo = others[Math.floor(state.rng() * others.length)];
 			emit(state, { type: 'tinyPalAmmo', player: pi, ammo: w.ammo });
 } });
+register('zuramat-prison-tap', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => { {
+			// Zuramat's Prison: discard a card (modeled as random) to summon a 5/5 Taunt;
+			// the discarded card is remembered so a freed Zuramat can replay it
+			const p = state.players[pi];
+			if (p.hand.length) {
+				const [c] = p.hand.splice(Math.floor(state.rng() * p.hand.length), 1);
+				(p.prisonDiscarded = p.prisonDiscarded || []).push(c.id);
+				toGraveyard(state, pi, c);
+				emit(state, { type: 'discard', player: pi, card: c });
+			}
+			summon(state, pi, { id: 'token_void_guardian', name: 'Void Guardian', type: 'creature', cost: 5, token: true, rarity: 'common', attack: 5, health: 5, keywords: ['taunt'], description: 'Taunt.' });
+} });
+
+
+register('play-prison-discarded', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => { {
+			// Zuramat the Obliterator: at end of your turn, play a card the Prison discarded
+			const p = state.players[pi];
+			const pool = p.prisonDiscarded || [];
+			if (!pool.length || p.eliminated) return;
+			const id = pool.splice(Math.floor(state.rng() * pool.length), 1)[0];
+			const def = state.cardsById[id];
+			if (!def) return;
+			if (def.type === 'creature') {
+				const c = summon(state, pi, def);
+				if (c) runBattlecry(state, pi, c, null);
+			} else if (isSpellType(def)) {
+				const sp = instantiate(def, pi);
+				const spec = targetSpec(state, pi, sp, null);
+				let tgt = null;
+				if (spec) { const legal = legalTargets(state, pi, spec); tgt = legal.length ? legal[Math.floor(state.rng() * legal.length)] : null; }
+				if (!spec || tgt || !spec.required) { emit(state, { type: 'conjure', player: pi, card: sp, color: null }); runSpell(state, pi, sp, tgt, null); sweepDeaths(state); }
+			} else if (def.type === 'weapon') {
+				execEffects(state, pi, [{ type: 'equip', name: def.name, attack: def.attack || 0, durability: def.durability || 1 }], null, null);
+			}
+} });
+
+
 register('amirdrassil-tap', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => { {
 			// Amirdrassil: summon a 1-Cost minion, gain 1 Armor, draw 1, refresh 1 Mana
 			// Crystal — and every value improves by 1 for each previous activation

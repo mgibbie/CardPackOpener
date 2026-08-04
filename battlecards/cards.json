@@ -139887,6 +139887,53 @@
           "summonId": "nespirah_unshackled"
         }
       ]
+    },
+    {
+      "id": "zuramat_obliterator",
+      "name": "Zuramat the Obliterator",
+      "type": "creature",
+      "cost": 8,
+      "attack": 8,
+      "health": 8,
+      "cardClass": "neutral",
+      "rarity": "legendary",
+      "collectible": false,
+      "description": "At the end of your turn, play a card discarded by Zuramat's Prison.",
+      "ongoing": {
+        "on": "turn-end",
+        "effects": [
+          {
+            "type": "play-prison-discarded"
+          }
+        ]
+      }
+    },
+    {
+      "id": "zuramats_prison",
+      "name": "Zuramat's Prison",
+      "type": "location",
+      "cost": 5,
+      "cardClass": "neutral",
+      "durability": 3,
+      "rarity": "legendary",
+      "set": "VIOLET_HOLD",
+      "description": "Choose a card to discard to summon a 5/5 Taunt. Deathrattle: Free Zuramat who plays one each turn!",
+      "taps": [
+        {
+          "text": "Discard a card to summon a 5/5 Taunt.",
+          "effects": [
+            {
+              "type": "zuramat-prison-tap"
+            }
+          ]
+        }
+      ],
+      "deathrattle": [
+        {
+          "type": "summon",
+          "summonId": "zuramat_obliterator"
+        }
+      ]
     }
   ]
 }
