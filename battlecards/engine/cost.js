@@ -25,7 +25,8 @@ export function discountIndex(state, p, card) {
 	return (p.costDiscounts || []).findIndex(d =>
 		(!d.thisTurn || d.turn === state.turnNumber)
 		&& costTypeMatches(card, d.cardType)
-		&& (!d.tribe || (card.tribe || '').includes(d.tribe)));
+		&& (!d.tribe || (card.tribe || '').includes(d.tribe))
+		&& (!d.keyword || (card.keywords || []).includes(d.keyword))); // Parrot Sanctuary: next Battlecry minion
 }
 
 export function effectiveCost(state, pi, card) {

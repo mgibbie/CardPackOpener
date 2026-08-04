@@ -415,6 +415,7 @@ register('discount', ({ state, pi, target, source, enemies, scaled, hm, pickEnem
 			p.costDiscounts = p.costDiscounts || [];
 			p.costDiscounts.push({
 				cardType: e.cardType || 'all', amount: e.amount || 0, tribe: e.tribe || null,
+				keyword: e.keyword || null, // Parrot Sanctuary: next Battlecry minion costs (1) less
 				setZero: !!e.setZero, thisTurn: !!e.thisTurn, turn: state.turnNumber,
 			});
 });

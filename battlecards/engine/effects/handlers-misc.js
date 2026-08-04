@@ -2448,6 +2448,17 @@ register('cast-random-spell', ({ state, pi, target, source, enemies, scaled, hm,
 });
 
 
+register('reopen-self', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => { {
+			// Parrot Sanctuary: "reopen this" — refresh the location so it can be tapped
+			// again this turn (durability is spent per tap, so this converges when it wears out)
+			if (source && source.type === 'location' && !isDead(source) && source.durability > 0) {
+				source.tapped = false;
+				source.tapStone = false;
+				emit(state, { type: 'locationReopened', player: pi, uid: source.uid });
+			}
+} });
+
+
 register('spend-all-mana-cast', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => { {
 			// Forbidden Shrine: spend all your Mana, then cast a random spell that costs that much
 			const p = state.players[pi];

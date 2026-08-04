@@ -139234,6 +139234,41 @@
           ]
         }
       ]
+    },
+    {
+      "id": "parrot_sanctuary",
+      "name": "Parrot Sanctuary",
+      "type": "location",
+      "cost": 2,
+      "cardClass": "hunter",
+      "durability": 3,
+      "rarity": "rare",
+      "set": "ISLAND_VACATION",
+      "description": "Your next Battlecry minion costs (1) less. After you play a Battlecry minion, reopen this.",
+      "taps": [
+        {
+          "text": "Your next Battlecry minion costs (1) less.",
+          "effects": [
+            {
+              "type": "discount",
+              "cardType": "creature",
+              "keyword": "battlecry",
+              "amount": -1
+            }
+          ]
+        }
+      ],
+      "ongoing": {
+        "on": "creature-played",
+        "if": {
+          "keyword": "battlecry"
+        },
+        "effects": [
+          {
+            "type": "reopen-self"
+          }
+        ]
+      }
     }
   ]
 }
