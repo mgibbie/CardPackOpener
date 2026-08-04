@@ -1,12 +1,2291 @@
 {
-	"generated": "2026-08-02",
+	"generated": "2026-08-04",
 	"entries": [
 		{
-			"sha": "8a2bea9",
+			"sha": "be47597",
+			"date": "2026-08-04",
+			"kind": "cards",
+			"title": "spell-import — 21 Demon Hunter Fel spells (workflow batch)",
+			"body": "Second class batch of the HS spell import. A 33-agent workflow authored the missing\nDH Fel/Relic spells; 31 completed (2 hit the session limit), gated to 21 clean\n(68% pass — up from the prototype's 60%, and \"Deal with a Devil\" already reused the\ndeckNoMinions condition built last wave; the Sigils found the existing\ndelay-to-turn-start effect).\n\nAppended 21 spells: the Sigils (delay-to-next-turn), Fury (Manathirst rank tiers),\nFumigate (same-tribe splash), Flash Flood (flanks + Outcast doubling), Fel Barrage /\nFan the Hammer (lowest-Health), Aeon Rend, Warp Drive, Load the Chamber, Deal with a\nDevil (deckNoMinions), Taste of Chaos (Finale discover), etc. — all self-contained\n(inline summons). 19-assertion behavioral test (spells_dh_fel).\n\n10 rejected (needsNewEffect) cluster for a follow-up unlock wave: the 3 Relic cards\n(Relic-improve -> unblocks Relic Vault), lifesteal-on-damage-adjacent, Outcast cost\nreduction (Eye Beam), Metamorphosis hero-power swap, Predation cost-0, Multi-Strike.\n\nBattery 162/162, fuzz clean.",
+			"cards": [
+				{
+					"id": "fury_rank_1",
+					"name": "Fury (Rank 1)",
+					"type": "sorcery",
+					"class": "demonhunter",
+					"rarity": "common",
+					"cost": 1
+				},
+				{
+					"id": "mana_burn",
+					"name": "Mana Burn",
+					"type": "sorcery",
+					"class": "demonhunter",
+					"rarity": "common",
+					"cost": 1
+				},
+				{
+					"id": "sigil_of_the_seas",
+					"name": "Sigil of the Seas",
+					"type": "sorcery",
+					"class": "demonhunter",
+					"rarity": "common",
+					"cost": 1
+				},
+				{
+					"id": "taste_of_chaos",
+					"name": "Taste of Chaos",
+					"type": "sorcery",
+					"class": "demonhunter",
+					"rarity": "common",
+					"cost": 1
+				},
+				{
+					"id": "unleash_fel",
+					"name": "Unleash Fel",
+					"type": "sorcery",
+					"class": "demonhunter",
+					"rarity": "rare",
+					"cost": 1
+				},
+				{
+					"id": "fel_barrage",
+					"name": "Fel Barrage",
+					"type": "sorcery",
+					"class": "demonhunter",
+					"rarity": "common",
+					"cost": 2
+				},
+				{
+					"id": "fumigate",
+					"name": "Fumigate",
+					"type": "sorcery",
+					"class": "demonhunter",
+					"rarity": "epic",
+					"cost": 2
+				},
+				{
+					"id": "sigil_of_cinder",
+					"name": "Sigil of Cinder",
+					"type": "sorcery",
+					"class": "demonhunter",
+					"rarity": "epic",
+					"cost": 2
+				},
+				{
+					"id": "sigil_of_flame",
+					"name": "Sigil of Flame",
+					"type": "sorcery",
+					"class": "demonhunter",
+					"rarity": "epic",
+					"cost": 2
+				},
+				{
+					"id": "sigil_of_skydiving",
+					"name": "Sigil of Skydiving",
+					"type": "sorcery",
+					"class": "demonhunter",
+					"rarity": "common",
+					"cost": 2
+				},
+				{
+					"id": "chaos_leech",
+					"name": "Chaos Leech",
+					"type": "sorcery",
+					"class": "demonhunter",
+					"rarity": "rare",
+					"cost": 3
+				},
+				{
+					"id": "load_the_chamber",
+					"name": "Load the Chamber",
+					"type": "sorcery",
+					"class": "demonhunter",
+					"rarity": "rare",
+					"cost": 3
+				},
+				{
+					"id": "sigil_of_time",
+					"name": "Sigil of Time",
+					"type": "sorcery",
+					"class": "demonhunter",
+					"rarity": "common",
+					"cost": 3
+				},
+				{
+					"id": "warp_drive",
+					"name": "Warp Drive",
+					"type": "sorcery",
+					"class": "demonhunter",
+					"rarity": "rare",
+					"cost": 3
+				},
+				{
+					"id": "aeon_rend",
+					"name": "Aeon Rend",
+					"type": "sorcery",
+					"class": "demonhunter",
+					"rarity": "common",
+					"cost": 4
+				},
+				{
+					"id": "fan_the_hammer",
+					"name": "Fan the Hammer",
+					"type": "sorcery",
+					"class": "demonhunter",
+					"rarity": "rare",
+					"cost": 4
+				},
+				{
+					"id": "fel_fissure",
+					"name": "Fel Fissure",
+					"type": "sorcery",
+					"class": "demonhunter",
+					"rarity": "rare",
+					"cost": 4
+				},
+				{
+					"id": "all_fel_breaks_loose",
+					"name": "All Fel Breaks Loose",
+					"type": "sorcery",
+					"class": "demonhunter",
+					"rarity": "common",
+					"cost": 5
+				},
+				{
+					"id": "deal_with_a_devil",
+					"name": "Deal with a Devil",
+					"type": "sorcery",
+					"class": "demonhunter",
+					"rarity": "rare",
+					"cost": 5
+				},
+				{
+					"id": "flash_flood",
+					"name": "Flash Flood",
+					"type": "sorcery",
+					"class": "demonhunter",
+					"rarity": "rare",
+					"cost": 5
+				},
+				{
+					"id": "sigil_of_reckoning",
+					"name": "Sigil of Reckoning",
+					"type": "sorcery",
+					"class": "demonhunter",
+					"rarity": "epic",
+					"cost": 5
+				}
+			]
+		},
+		{
+			"sha": "8f4bf8b",
+			"date": "2026-08-04",
+			"kind": "cards",
+			"title": "two spell-import unlock effects — deckNoMinions + excessToNeighbors",
+			"body": "Highest-leverage new mechanics from the Mage-damage prototype's rejected tail:\n- conditional `if.deckNoMinions`: true when your deck has no minions (boolean-\n  normalized like deckNoSpells) — Malfunction (\"If your deck has no minions,\n  deal 3 more\").\n- `damage` gains an excessToNeighbors rider on the chosen-target branch: excess\n  beyond the target's Health spills to both board neighbors — Combustion (\"Any\n  excess damages both neighbors\").\n\nAppended the two cards these unlock (Malfunction, Combustion). No new registered\neffect types (registry stays 1008). 10-assertion test (spells_new_effects) covers\nboth bonus/no-bonus and excess/no-excess paths. Battery 161/161, fuzz clean.",
+			"cards": [
+				{
+					"id": "malfunction",
+					"name": "Malfunction",
+					"type": "sorcery",
+					"class": "mage",
+					"rarity": "rare",
+					"cost": 2
+				},
+				{
+					"id": "combustion",
+					"name": "Combustion",
+					"type": "sorcery",
+					"class": "mage",
+					"rarity": "epic",
+					"cost": 3
+				}
+			]
+		},
+		{
+			"sha": "3568582",
+			"date": "2026-08-04",
+			"kind": "cards",
+			"title": "spell-import prototype — 12 Mage damage spells via workflow",
+			"body": "First slice of the HS spell import (see Plans/SPELL_IMPORT_PLAN.md). A 20-agent\nworkflow authored missing Mage \"Deal N damage\" spells grounded in the real engine\n(greps handlers, copies structure from existing cards, refuses to invent effects).\nA deterministic gate validated effect vocab + smoke-tested + honored self-reported\nneedsNewEffect flags.\n\nResult: 12/20 passed clean (60% — matches the scope estimate); 8/20 correctly\nrejected as needing new engine mechanics (double-spell-damage, deckNoMinions,\nexcessToNeighbors, elemental-conditional-target, died-this-game scaling, etc.).\n\nAppended the 12 survivors + 7 companion tokens (Second Flame, Roaring Torch, the\nIgnite escalation chain, Frozen Touch infused). 23-assertion behavioral test\n(spells_mage_damage) verifies real behavior: Icicle's frozen-conditional draw,\nFirst Flame->Second Flame, Ignite's escalating shuffle, Siphon Mana's honorable-kill\ndiscount, Frost Lich Cross-Stitch's on-death summon, Arcane Barrage's 7-total,\nSeabreeze's split. swiftdraw pool assertion 10->11 (Heat Wave is Quickdraw/Miracle).\n\nBattery 160/160, fuzz clean. HS spells: ~34 -> ~46 real + prototype validated.",
+			"cards": [
+				{
+					"id": "breath_of_sindragosa",
+					"name": "Breath of Sindragosa",
+					"type": "sorcery",
+					"class": "mage",
+					"rarity": "common",
+					"cost": 1
+				},
+				{
+					"id": "first_flame",
+					"name": "First Flame",
+					"type": "sorcery",
+					"class": "mage",
+					"rarity": "rare",
+					"cost": 1
+				},
+				{
+					"id": "seabreeze_chalice",
+					"name": "Seabreeze Chalice",
+					"type": "sorcery",
+					"class": "mage",
+					"rarity": "common",
+					"cost": 1
+				},
+				{
+					"id": "frozen_touch",
+					"name": "Frozen Touch",
+					"type": "sorcery",
+					"class": "mage",
+					"rarity": "common",
+					"cost": 2
+				},
+				{
+					"id": "heat_wave",
+					"name": "Heat Wave",
+					"type": "sorcery",
+					"class": "mage",
+					"rarity": "rare",
+					"cost": 2
+				},
+				{
+					"id": "icicle",
+					"name": "Icicle",
+					"type": "sorcery",
+					"class": "mage",
+					"rarity": "epic",
+					"cost": 2
+				},
+				{
+					"id": "ignite",
+					"name": "Ignite",
+					"type": "sorcery",
+					"class": "mage",
+					"rarity": "epic",
+					"cost": 2
+				},
+				{
+					"id": "siphon_mana",
+					"name": "Siphon Mana",
+					"type": "sorcery",
+					"class": "mage",
+					"rarity": "common",
+					"cost": 2
+				},
+				{
+					"id": "arcane_barrage",
+					"name": "Arcane Barrage",
+					"type": "sorcery",
+					"class": "mage",
+					"rarity": "common",
+					"cost": 3
+				},
+				{
+					"id": "forgotten_torch",
+					"name": "Forgotten Torch",
+					"type": "sorcery",
+					"class": "mage",
+					"rarity": "common",
+					"cost": 3
+				},
+				{
+					"id": "molten_rune",
+					"name": "Molten Rune",
+					"type": "sorcery",
+					"class": "mage",
+					"rarity": "common",
+					"cost": 3
+				},
+				{
+					"id": "frost_lich_cross_stitch",
+					"name": "Frost Lich Cross-Stitch",
+					"type": "sorcery",
+					"class": "mage",
+					"rarity": "rare",
+					"cost": 4
+				}
+			]
+		},
+		{
+			"sha": "f75e516",
+			"date": "2026-08-04",
+			"kind": "cards",
+			"title": "locations wave 5 — Zuramat's Prison (+ Zuramat the Obliterator)",
+			"body": "- zuramat-prison-tap: discard a card (modeled as random) into a per-player\n  prisonDiscarded pool and summon a 5/5 Taunt token.\n- play-prison-discarded (Zuramat's turn-end ongoing): plays a random card from the\n  pool (each once) — summon+battlecry for minions, runSpell with a random legal\n  target for spells, equip for weapons.\n- Zuramat's Prison (Neutral legendary, EfVH): tap + Deathrattle summons the 8/8\n  Zuramat the Obliterator token.\n- \"Choose a card to discard\" APPROXIMATED as random (tap targeting can't reach\n  hand cards); all else faithful. No engine changes beyond the 2 new effects.\n\nCard texts + token stats web-verified. Registry 1006 -> 1008. 9-assertion test\n(locations_wave10). Battery 159/159, fuzz clean.\n\nLocations: 51 of 52 — only Relic Vault remains (DEFERRED: the Relic card\nmechanic isn't modeled yet). HS COLLECTIBLE LOCATION SET otherwise complete.",
+			"cards": [
+				{
+					"id": "zuramats_prison",
+					"name": "Zuramat's Prison",
+					"type": "location",
+					"class": "neutral",
+					"rarity": "legendary",
+					"cost": 5
+				}
+			]
+		},
+		{
+			"sha": "355bc9d",
+			"date": "2026-08-04",
+			"kind": "cards",
+			"title": "locations wave 4 — Nespirah, Enthralled (+ Unshackled token)",
+			"body": "- conjure-random gains excludeColossal filter.\n- Nespirah, Enthralled (DH legendary, Cataclysm): tap deals 1 damage; a Fel-school\n  spell-played ongoing reopen-self's it; Deathrattle summons Nespirah, Unshackled.\n- Nespirah, Unshackled (6/6 Beast token): a Fel spell-played ongoing conjures a\n  random non-Colossal Naga with setCost 1.\n- All wired from existing effects (damage/reopen-self/summon/conjure-random); no new\n  effect types. NB spell school lives in card.tribe (schoolOf reads tribe, not\n  a `school` field); location deathrattles fire on wear-out (death.js:38).\n\nCard texts web-verified. Registry stays 1006. 10-assertion test (locations_wave9).\nBattery 158/158, fuzz clean. Locations: 50 of 52.",
+			"cards": [
+				{
+					"id": "nespirah_enthralled",
+					"name": "Nespirah, Enthralled",
+					"type": "location",
+					"class": "demonhunter",
+					"rarity": "legendary",
+					"cost": 3
+				}
+			]
+		},
+		{
+			"sha": "abfba70",
+			"date": "2026-08-04",
+			"kind": "cards",
+			"title": "locations wave 3 — Amirdrassil (improve-each-use multi-effect)",
+			"body": "- amirdrassil-tap effect: summon a random (1+n)-Cost minion, gain (1+n) Armor,\n  draw (1+n), refresh (1+n) Mana Crystals — where n is the location's own\n  improveCount, incremented per activation (so every value grows by 1 each use).\n- Amirdrassil (Druid legendary, Embers of the World Tree): 3 durability = 3\n  escalating uses.\n\nCard text web-verified. Registry 1005 -> 1006. 12-assertion test (locations_wave8)\ncovers use 1, the improved use 2, and the improveCount across 3 uses.\nBattery 157/157, fuzz clean. Locations: 49 of 52.",
+			"cards": [
+				{
+					"id": "amirdrassil",
+					"name": "Amirdrassil",
+					"type": "location",
+					"class": "druid",
+					"rarity": "legendary",
+					"cost": 5
+				}
+			]
+		},
+		{
+			"sha": "b1c9dd9",
+			"date": "2026-08-04",
+			"kind": "cards",
+			"title": "locations wave 2 — Clutch of Corruption (Dragon egg-hatch)",
+			"body": "- summon-hatch-egg effect (targeted, registered in CHOSEN as friendly-creature +\n  tribe filter): summons a 0/2 Egg whose Deathrattle summons a copy of the chosen\n  Dragon. Uses summon+summonId so the copy keeps the Dragon's own abilities, plus a\n  buff delta so it matches the Dragon's current (possibly buffed) stats.\n- Clutch of Corruption (Warrior epic, Into the Emerald Dream): tap targets a\n  friendly Dragon; can't tap without one.\n\nCard text web-verified. Registry 1004 -> 1005. 8-assertion test (locations_wave7)\ncovers summon, hatch, buffed-stat copy, and the Dragon-required targeting.\nBattery 156/156, fuzz clean. Locations: 48 of 52.",
+			"cards": [
+				{
+					"id": "clutch_of_corruption",
+					"name": "Clutch of Corruption",
+					"type": "location",
+					"class": "warrior",
+					"rarity": "epic",
+					"cost": 2
+				}
+			]
+		},
+		{
+			"sha": "67f9fd0",
+			"date": "2026-08-04",
+			"kind": "cards",
+			"title": "locations wave 1 — Cenarion Hold (Choose One = both effects)",
+			"body": "- next-choose-one-both effect sets a nextChooseOneBoth flag; consumed at play time\n  onto a per-card _chooseBoth latch, which liveEffectsOf honors by forcing the\n  choice to ALL branches (effectsOf already supports an array of indices). Latching\n  per-card keeps \"both\" intact across doubled battlecries (Brann/castTwice).\n- Cenarion Hold (Druid epic, Caverns of Time): tap -> your next Choose One card\n  this turn has both effects combined. Flag lasts one turn, consumed by one card.\n\nLocation wiki-diff: exactly 6 HS locations missing (46/52 owned; 5 of mine are\nBattlecards originals). Relic Vault DEFERRED — the Relic mechanic/cards aren't\nmodeled yet. Card text web-verified. Registry 1003 -> 1004. 8-assertion test\n(locations_wave6). Battery 155/155, fuzz clean. Locations: 47 of 52.",
+			"cards": [
+				{
+					"id": "cenarion_hold",
+					"name": "Cenarion Hold",
+					"type": "location",
+					"class": "druid",
+					"rarity": "epic",
+					"cost": 1
+				}
+			]
+		},
+		{
+			"sha": "9b40f32",
+			"date": "2026-08-04",
+			"kind": "cards",
+			"title": "wave 34 — Tiny Pal (4-element ammunition weapon)",
+			"body": "- set-tiny-pal-ammo + tiny-pal-attack effects: the weapon carries an `ammo` field.\n  Battlecry (4-branch Choose One) loads the initial element; a hero-attacks ongoing\n  fires the loaded element then rotates to a different one.\n- Ammo effects reuse existing handlers: Fire = 1 to all enemies, Frost = Freeze 2\n  random enemies, Earth = summon a random 3-Cost minion with Taunt, Air = a random\n  Battlecry minion that costs (2) less.\n- \"Choose another ammunition\" is modeled as a random rotation to a different element\n  (initial pick is a real player choice; effects are faithful).\n\nAll four ammo texts web-verified (EfVH). Registry 1001 -> 1003. 15-assertion test\n(weapons_wave34). Battery 154/154, fuzz clean. Progress: 136 of 153 — collectible\nweapon set COMPLETE (all known-missing weapons wired).",
+			"cards": [
+				{
+					"id": "tiny_pal",
+					"name": "Tiny Pal",
+					"type": "weapon",
+					"class": "shaman",
+					"rarity": "legendary",
+					"cost": 4
+				}
+			]
+		},
+		{
+			"sha": "9234a90",
+			"date": "2026-08-04",
+			"kind": "cards",
+			"title": "wave 33 — Stardust Scythe + Void Soul (improve-scaling token)",
+			"body": "- void-soul effect: summons a random Demon whose Cost is 1 + a player-level\n  voidSoulImprove counter, then increments it — so each Void Soul you play summons\n  a Demon one Cost higher (1-cost, then 2, then 3...).\n- Stardust Scythe (DH): a hero-attacks ongoing conjures a Void Soul to your hand\n  after each hero attack. Void Soul is a 1-mana uncollectible spell.\n\nFound via wiki weapon-list diff. Card texts + Void Soul cost web-verified (EfVH).\nRegistry 1000 → 1001. 10-assertion test (weapons_wave33) covers the get-on-attack\npath and the 1/2/3-Cost improve scaling. Battery 153/153, fuzz clean.\nProgress: 135 of 153.",
+			"cards": [
+				{
+					"id": "stardust_scythe",
+					"name": "Stardust Scythe",
+					"type": "weapon",
+					"class": "demonhunter",
+					"rarity": "common",
+					"cost": 4
+				}
+			]
+		},
+		{
+			"sha": "5547087",
+			"date": "2026-08-04",
+			"kind": "cards",
+			"title": "wave 32 — Barbed Thorn (Choose One weapon)",
+			"body": "- Weapon equip now passes the Choose One selection to runBattlecry (was dropped),\n  so choose-one weapons work.\n- grant-weapon-ability gains keywordTurn (grant a weapon keyword until end of turn,\n  tracked in _turnKeywords and cleared at turn end) and deathrattle (append a\n  Deathrattle to the equipped weapon).\n- Barbed Thorn (Rogue epic): Choose One - Gain Poisonous this turn (minions it hits\n  get Poisoned, wears off next turn); or gain \"Deathrattle: Deal 2 to all enemies\".\n\nFound via wiki weapon-list diff. Stats/set web-verified (Into the Emerald Dream).\nNo new effect types (registry stays 1000). 10-assertion test (weapons_wave32).\nBattery 152/152, fuzz clean. Progress: 134 of 153.",
+			"cards": [
+				{
+					"id": "barbed_thorn",
+					"name": "Barbed Thorn",
+					"type": "weapon",
+					"class": "rogue",
+					"rarity": "epic",
+					"cost": 3
+				}
+			]
+		},
+		{
+			"sha": "1a74405",
+			"date": "2026-08-04",
+			"kind": "cards",
+			"title": "wave 31 — Emboldening Blade (persistent Silver Hand Recruit buff)",
+			"body": "- embolden-recruits effect: buffs Silver Hand Recruits on board now AND raises the\n  persistent recruitAttackBonus/recruitHealthBonus (existing summon-time hook) so\n  future Recruits are buffed too — Emboldening Blade (Paladin): give your Silver\n  Hand Recruits +1/+1 this game. Buff persists across turns and stacks with copies.\n\nFound via authoritative wiki weapon-list diff (4 real gaps surfaced). Stats/set\nweb-verified (Cataclysm). Registry 999 → 1000. 7-assertion test (weapons_wave31).\nBattery 151/151, fuzz clean. Progress: 133 of 153.",
+			"cards": [
+				{
+					"id": "emboldening_blade",
+					"name": "Emboldening Blade",
+					"type": "weapon",
+					"class": "paladin",
+					"rarity": "common",
+					"cost": 5
+				}
+			]
+		},
+		{
+			"sha": "01b5730",
+			"date": "2026-08-04",
+			"kind": "cards",
+			"title": "wave 30 — Souleater's Scythe (Start of Game consume + Bound Souls)",
+			"body": "- souleater-consume (Start of Game): removes up to 3 different minions from your\n  deck into a per-player soulPool and shuffles in a Bound Soul for each.\n- discover-soul (Bound Soul token): Discovers among the still-available consumed\n  minions; resolvePick removes the picked id from soulPool so each is offered once\n  and extra Souls do nothing once the pool is empty.\n- Souleater's Scythe (DH legendary 4/2) uses the existing startOfGame deck hook;\n  Bound Soul is a 1-mana uncollectible spell.\n\nCard texts + Bound Soul cost web-verified (MotLK). Registry 997 → 999.\n16-assertion test (weapons_wave30) covers direct consume/discover and the\nend-to-end createGame Start-of-Game path. Battery 150/150, fuzz clean.\nProgress: 132 of 153.",
+			"cards": [
+				{
+					"id": "souleaters_scythe",
+					"name": "Souleater's Scythe",
+					"type": "weapon",
+					"class": "demonhunter",
+					"rarity": "legendary",
+					"cost": 4
+				}
+			]
+		},
+		{
+			"sha": "ff43406",
+			"date": "2026-08-04",
+			"kind": "cards",
+			"title": "wave 29 — Kingsbane (keeps enchantments through shuffle/redraw)",
+			"body": "- shuffle-self-into-deck gains keepEnchantments: on the Deathrattle it snapshots\n  the weapon's accumulated Attack buff (delta over base) and bonus keywords into a\n  deckIdBuff, which the redrawn copy restores (deckIdBuffs now carries keywords).\n- Kingsbane (Rogue legendary, 1/3): Deathrattle shuffles it back; the redrawn copy\n  keeps its +Attack and keyword enchantments (e.g. Lifesteal) with durability reset\n  to base. Snapshots are absolute-over-base, so cycles accumulate without\n  double-counting; an unbuffed break redraws a clean 1/3.\n\nCard text web-verified (K&C). No new effect types (registry stays 997).\n13-assertion test (weapons_wave29) covers unbuffed, single-cycle, and multi-cycle\naccumulation. Battery 149/149, fuzz clean. Progress: 131 of 153.",
+			"cards": [
+				{
+					"id": "kingsbane",
+					"name": "Kingsbane",
+					"type": "weapon",
+					"class": "rogue",
+					"rarity": "legendary",
+					"cost": 1
+				}
+			]
+		},
+		{
+			"sha": "4d868d5",
+			"date": "2026-08-04",
+			"kind": "cards",
+			"title": "wave 28 — Unidentified Maul + its four revealed variants",
+			"body": "- transformWhenDrawn field + zones.js draw hook: on draw, a card becomes a random\n  one of its listed variant ids (copies stats/cost/keywords/effects/description).\n- Unidentified Maul (Paladin rare) reveals into one of four 2/2 Mauls, each with a\n  Battlecry on equip: Blessed (+1 Attack to your minions), Purifier's (Divine\n  Shield), Sacred (Taunt), Champion's (summon two 1/1 Silver Hand Recruits). The\n  four variants are collectible:false tokens reachable only through the transform.\n\nBattlecries reuse existing buff/grant/summon. No new effect types (registry stays\n997). Card texts web-verified (K&C). 22-assertion test (weapons_wave28) samples\nall four variants across seeds. Battery 148/148, fuzz clean. Progress: 130 of 153.",
+			"cards": [
+				{
+					"id": "unidentified_maul",
+					"name": "Unidentified Maul",
+					"type": "weapon",
+					"class": "paladin",
+					"rarity": "rare",
+					"cost": 3
+				}
+			]
+		},
+		{
+			"sha": "389a9bf",
+			"date": "2026-08-04",
+			"kind": "cards",
+			"title": "wave 27 — Sphere of Sapience (start-of-turn scry, conditional degrade)",
+			"body": "- scry gains degradeWeaponOnBottom: resolveScry degrades the chooser's weapon by 1\n  only when a card was actually bottomed — Sphere of Sapience (Neutral legendary):\n  a turn-start ongoing looks at your top card; you MAY bottom it and only then lose\n  1 Durability. Keeping the card on top costs nothing; 4 bottoms wears it out.\n\nStats/rarity/set web-verified (Neutral legendary, Scholomance). No new effect\ntypes (registry stays 997). 6-assertion test (weapons_wave27). Battery 147/147,\nfuzz clean. Progress: 129 of 153.",
+			"cards": [
+				{
+					"id": "sphere_of_sapience",
+					"name": "Sphere of Sapience",
+					"type": "weapon",
+					"class": "neutral",
+					"rarity": "legendary",
+					"cost": 1
+				}
+			]
+		},
+		{
+			"sha": "04909d3",
+			"date": "2026-08-04",
+			"kind": "cards",
+			"title": "wave 26 — Molten Blade (transform-in-hand into a random weapon)",
+			"body": "- Generalized the transformInHand block (Shifter Zerus) with a transformInHandType\n  field: 'weapon' pulls from the collectible-weapon pool and copies durability\n  (clearing maxHealth/tribe) instead of health — Molten Blade transforms into a\n  random weapon each turn while in hand, stays a shifter, and stops once equipped.\n\nStats/rarity/set web-verified (Warrior rare, Journey to Un'Goro). No new effect\ntypes (registry stays 997). 12-assertion test (weapons_wave26). Battery 146/146,\nfuzz clean. Progress: 128 of 153.",
+			"cards": [
+				{
+					"id": "molten_blade",
+					"name": "Molten Blade",
+					"type": "weapon",
+					"class": "warrior",
+					"rarity": "rare",
+					"cost": 1
+				}
+			]
+		},
+		{
+			"sha": "821a5bf",
+			"date": "2026-08-04",
+			"kind": "cards",
+			"title": "wave 25 — Staff of Trickery + Harpoon Gun (after-hero-attacks weapons)",
+			"body": "- discover gains costModByHeroAttack: computes the Discover's cost reduction as\n  -(hero Attack) at Discover time — Staff of Trickery (after your hero attacks,\n  Discover a Druid card reduced by your hero's Attack).\n- dredge gains beastCostMod + deckIdBuffs now carries `cost`: a dredged Beast gets\n  a -Cost buff applied when drawn — Harpoon Gun (after your hero attacks, Dredge;\n  Beast costs (2) less). Non-Beast dredges get nothing.\n\nBoth wired as hero-attacks ongoings on the weapon; no new effect types (registry\nstays 997). Stats/rarity/set web-verified. 14-assertion test (weapons_wave25).\nBattery 145/145, fuzz clean. Progress: 127 of 153.",
+			"cards": [
+				{
+					"id": "staff_of_trickery",
+					"name": "Staff of Trickery",
+					"type": "weapon",
+					"class": "druid",
+					"rarity": "legendary",
+					"cost": 4
+				},
+				{
+					"id": "harpoon_gun",
+					"name": "Harpoon Gun",
+					"type": "weapon",
+					"class": "hunter",
+					"rarity": "rare",
+					"cost": 3
+				}
+			]
+		},
+		{
+			"sha": "f0a305f",
+			"date": "2026-08-04",
+			"kind": "cards",
+			"title": "wave 24 — Parallax Cannon (Discover-conditional attack + Spellburst)",
+			"body": "- discoveredThisTurn per-turn counter: incremented when any Discover pick resolves\n  (discover pickQueue entries tagged discover:true), reset at turn start.\n- condAttack gains a `discovered` condition — Parallax Cannon has +2 Attack while\n  you've Discovered this turn.\n- Spellburst modeled as a once:true weapon ongoing on spell-played → hero-immune,\n  so casting a spell after equipping makes the hero Immune this turn (one-shot).\n\nStats/rarity/set web-verified (Epic, The Great Dark Beyond). No new effect types\n(registry stays 997). 10-assertion test (weapons_wave24). Battery 144/144, fuzz\nclean. Progress: 125 of 153.",
+			"cards": [
+				{
+					"id": "parallax_cannon",
+					"name": "Parallax Cannon",
+					"type": "weapon",
+					"class": "hunter",
+					"rarity": "epic",
+					"cost": 3
+				}
+			]
+		},
+		{
+			"sha": "cbbed72",
+			"date": "2026-08-04",
+			"kind": "cards",
+			"title": "wave 23 — Blacksmithing Hammer + Felstring Harp weapons",
+			"body": "- deckIdBuffs now carries durability (zones.js draw hook) + buff-self-in-deck\n  effect: Blacksmithing Hammer's afterTrade queues a +2-durability buff on its\n  own id, applied to the copy when re-drawn (Tradeable, warrior).\n- healInsteadOnOwnTurn weapon flag in damageHero: on your turn, hero damage is\n  converted to healing and the weapon degrades — Felstring Harp (0/3 warlock,\n  restore 2 / lose 1 durability). Opponent-turn damage lands normally.\n\nStats web-verified. Registry 996 → 997. 14-assertion test (weapons_wave23).\nBattery 143/143, fuzz clean. Progress: 124 of 153.",
+			"cards": [
+				{
+					"id": "blacksmithing_hammer",
+					"name": "Blacksmithing Hammer",
+					"type": "weapon",
+					"class": "warrior",
+					"rarity": "rare",
+					"cost": 4
+				},
+				{
+					"id": "felstring_harp",
+					"name": "Felstring Harp",
+					"type": "weapon",
+					"class": "warlock",
+					"rarity": "epic",
+					"cost": 1
+				}
+			]
+		},
+		{
+			"sha": "8208305",
+			"date": "2026-08-04",
+			"kind": "cards",
+			"title": "wave 22 — Poisoned Blade (Hero Power buffs weapon instead of replacing)",
+			"body": "- heroPowerBuffsInstead weapon flag: while equipped, a Hero Power's equip effect\n  is suppressed (guarded by state.hpResolver so only Hero-Power equips are caught,\n  not battlecry equips).\n- buff-equipped-weapon effect + a hero-power-used ongoing on Poisoned Blade supply\n  the actual +1 Attack — so it also gains +1 from non-equipping Hero Powers\n  (e.g. Mage Fireblast), matching the real card. Plain weapons still get replaced.\n\nStats web-verified (2 mana / 1 Attack / 3 durability). Registry 995 → 996.\nFaithful test drives the real Dagger Mastery power (weapons_wave22). Battery\n142/142, fuzz clean. Progress: 122 of 153.",
+			"cards": [
+				{
+					"id": "poisoned_blade",
+					"name": "Poisoned Blade",
+					"type": "weapon",
+					"class": "rogue",
+					"rarity": "epic",
+					"cost": 2
+				}
+			]
+		},
+		{
+			"sha": "823ee1f",
+			"date": "2026-08-04",
+			"kind": "cards",
+			"title": "wave 21 — Parrot Sanctuary (keyword cost discount + location reopen)",
+			"body": "- costDiscounts gains a `keyword` filter (discountIndex + discount effect) so a\n  discount can target Battlecry minions specifically.\n- reopen-self effect: an ongoing on a location can refresh it (untap) mid-turn.\n- Parrot Sanctuary (Hunter): tap discounts your next Battlecry minion by (1);\n  its ongoing reopens the location after you play a Battlecry minion, letting you\n  tap again (durability is still spent per tap, so it converges).\n\nCard stats web-verified (2 mana / 3 durability). Registry 994 → 995. First\nlocation to carry an `ongoing` trigger. 12-assertion test (locations_wave5).\nBattery 141/141, fuzz clean. Progress: 121 of 153.",
+			"cards": [
+				{
+					"id": "parrot_sanctuary",
+					"name": "Parrot Sanctuary",
+					"type": "location",
+					"class": "hunter",
+					"rarity": "rare",
+					"cost": 2
+				}
+			]
+		},
+		{
+			"sha": "0443d70",
+			"date": "2026-08-04",
+			"kind": "cards",
+			"title": "wave 20 — Forbidden Shrine + Spire of Solitude locations",
+			"body": "- spend-all-mana-cast effect: zero out current mana, then cast a random spell of\n  the spent cost in the given class (chaos-locked) — Forbidden Shrine (Mage).\n- summon-hand-size-stats gains attackRandomEnemyMinion: the summoned token\n  immediately attacks a random enemy minion — Spire of Solitude (Warlock Demon).\n\nCard texts web-verified. Registry 993 → 994. 9-assertion test (locations_wave4).\nBattery 140/140, fuzz clean. Progress: 120 of 153.",
+			"cards": [
+				{
+					"id": "forbidden_shrine",
+					"name": "Forbidden Shrine",
+					"type": "location",
+					"class": "mage",
+					"rarity": "common",
+					"cost": 1
+				},
+				{
+					"id": "spire_of_solitude",
+					"name": "Spire of Solitude",
+					"type": "location",
+					"class": "warlock",
+					"rarity": "rare",
+					"cost": 5
+				}
+			]
+		},
+		{
+			"sha": "bea529b",
+			"date": "2026-08-04",
+			"kind": "cards",
+			"title": "wave 19 — Hand of Infinity (temp weapon attack) + Low Security Wing (lock-in-hand)",
+			"body": "- set-weapon-attack-temp effect + `_tempAtkTurn` revert at turn end: Hand of\n  Infinity Battlecry sets Attack to INFINITY for the turn (+ noFace).\n- lock-in-hand: `_locked` instance flag gated in canPlay and cleared whenever you\n  play another card; conjure-random gained a lockInHand param — Low Security Wing\n  (get a random Shaman minion, locked until you play another card).\n\nRegistry 992 → 993. 8-assertion test (weapons_wave19). Battery 139/139, fuzz clean.",
+			"cards": [
+				{
+					"id": "hand_of_infinity",
+					"name": "Hand of Infinity",
+					"type": "weapon",
+					"class": "paladin",
+					"rarity": "rare",
+					"cost": 3
+				},
+				{
+					"id": "low_security_wing",
+					"name": "Low Security Wing",
+					"type": "location",
+					"class": "shaman",
+					"rarity": "common",
+					"cost": 1
+				}
+			]
+		},
+		{
+			"sha": "9732b2a",
+			"date": "2026-08-04",
+			"kind": "cards",
+			"title": "weapons wave 18 — traded-self / force-attacked-neighbor / transform-friendly-costplus",
+			"body": "Three more subsystems:\n- traded-self trigger: tradeCard now runs a card's own `afterTrade` effects after\n  the trade — Blackwater Cutlass (reduce a hand spell's Cost by 1 when Traded).\n- force-attacked-neighbor: Supercollider makes the just-attacked minion attack one\n  of its own neighbours (hero-attacks-creature ongoing).\n- transform-friendly-costplus: Boggspine Knuckles transforms every friendly minion\n  into a random one costing (1) more (hero-attacks ongoing).\n\nRegistry 991 → 992. 11-assertion test (weapons_wave18). Battery 138/138, fuzz clean.",
+			"cards": [
+				{
+					"id": "blackwater_cutlass",
+					"name": "Blackwater Cutlass",
+					"type": "weapon",
+					"class": "rogue",
+					"rarity": "common",
+					"cost": 1
+				},
+				{
+					"id": "supercollider",
+					"name": "Supercollider",
+					"type": "weapon",
+					"class": "warrior",
+					"rarity": "epic",
+					"cost": 5
+				},
+				{
+					"id": "boggspine_knuckles",
+					"name": "Boggspine Knuckles",
+					"type": "weapon",
+					"class": "shaman",
+					"rarity": "epic",
+					"cost": 5
+				}
+			]
+		},
+		{
+			"sha": "f9d08df",
+			"date": "2026-08-04",
+			"kind": "cards",
+			"title": "weapons wave 17 — Forgetful (Ogre Warmaul) + absorb-hero-damage (Bulwark of Azzinoth)",
+			"body": "Two new engine subsystems:\n- Forgetful: in heroAttack, after redirects, a weapon with the `forgetful` keyword\n  has a 50% chance to hit a random OTHER valid enemy (minion or hero) instead —\n  Ogre Warmaul.\n- absorb-hero-damage: damageHero honors an equipped weapon's `absorbHeroDamageToWeapon`\n  flag — the weapon loses 1 Durability (breaking when it runs out) and the hero\n  takes 0 — Bulwark of Azzinoth. (breakWeapon imported into damage.js via the\n  established call-time-safe engine barrel.)\n\n11-assertion test (weapons_wave17): 60-seed Forgetful distribution (no lost swings)\n+ Bulwark absorb-then-fallthrough. Battery 137/137, fuzz clean.",
+			"cards": [
+				{
+					"id": "ogre_warmaul",
+					"name": "Ogre Warmaul",
+					"type": "weapon",
+					"class": "warrior",
+					"rarity": "common",
+					"cost": 3
+				},
+				{
+					"id": "bulwark_of_azzinoth",
+					"name": "Bulwark of Azzinoth",
+					"type": "weapon",
+					"class": "warrior",
+					"rarity": "legendary",
+					"cost": 3
+				}
+			]
+		},
+		{
+			"sha": "b0305a2",
+			"date": "2026-08-04",
+			"kind": "cards",
+			"title": "final tail workflow batch — 5 web-verified weapons/locations + 2 tokens",
+			"body": "Second multi-agent workflow (16 agents, web-verifying token stats/text). Same QA\npipeline: strict-validate every effect/event/condition, smoke-test, triage by\nconfidence. Applied only the 5 that survived (dropped Swinetusk Shank — no\nPoison-tribe spells exist so its trigger never fires; deferred 13 low-confidence\npartials the agents flagged, e.g. broken `traded` ongoings, missing improve-tickers,\nunimplemented field-flags):\n- Ruby Sanctum (next heal deals damage), Shrine of Twilight (Herald + draw),\n  Azsharan Trident (Deathrattle: Sunken Trident to deck bottom), Volley Maul\n  (hero-attacks: get a Sunscreen), Chamber of Viscidus (discard-pick + draw 2).\n- New uncollectible tokens: Sunken Trident (weapon), Sunscreen (spell).\n\nAlso re-pinned titans_wave1's Yogg \"two random spells\" block to a benign seed —\ncreateGame consumes RNG from the card pool, so adding cards shifts the random\nspells (pre-existing brittleness, not a real defect).\n\n14-assertion test (tail_workflow). Battery 136/136, fuzz clean.",
+			"cards": [
+				{
+					"id": "ruby_sanctum",
+					"name": "Ruby Sanctum",
+					"type": "location",
+					"class": "priest",
+					"rarity": "rare",
+					"cost": 1
+				},
+				{
+					"id": "shrine_of_twilight",
+					"name": "Shrine of Twilight",
+					"type": "location",
+					"class": "warlock",
+					"rarity": "rare",
+					"cost": 4
+				},
+				{
+					"id": "azsharan_trident",
+					"name": "Azsharan Trident",
+					"type": "weapon",
+					"class": "warrior",
+					"rarity": "common",
+					"cost": 3
+				},
+				{
+					"id": "volley_maul",
+					"name": "Volley Maul",
+					"type": "weapon",
+					"class": "paladin",
+					"rarity": "common",
+					"cost": 3
+				},
+				{
+					"id": "chamber_of_viscidus",
+					"name": "Chamber of Viscidus",
+					"type": "location",
+					"class": "warlock",
+					"rarity": "rare",
+					"cost": 3
+				}
+			]
+		},
+		{
+			"sha": "7eb891a",
+			"date": "2026-08-04",
+			"kind": "cards",
+			"title": "weapons wave 16 — Woecleaver (Recruit on hero attack)",
+			"body": "Woecleaver: after your hero attacks, Recruit a minion (existing recruit effect via\na hero-attacks ongoing). 4-assertion test (weapons_wave16). Battery 135/135, fuzz clean.",
+			"cards": [
+				{
+					"id": "woecleaver",
+					"name": "Woecleaver",
+					"type": "weapon",
+					"class": "warrior",
+					"rarity": "legendary",
+					"cost": 8
+				}
+			]
+		},
+		{
+			"sha": "0b4969a",
+			"date": "2026-08-04",
+			"kind": "cards",
+			"title": "weapons wave 15 — Reaper's Scythe (Spellburst Cleave) + Val'anyr",
+			"body": "- new grant-weapon-cleave-turn effect + `cleaveThisTurn` weapon flag (checked\n  alongside the CLEAVE keyword in heroAttack, reset at turn end): Reaper's Scythe\n  Spellburst makes the weapon splash neighbours for the turn.\n- new valanyr-buff effect: Val'anyr's Deathrattle gives a random hand minion +4/+2\n  and a \"Deathrattle: reequip Val'anyr\" rider (the reequipped copy is a 4/2 token).\n\nRegistry 989 → 991. 8-assertion test (weapons_wave15). Battery 134/134, fuzz clean.",
+			"cards": [
+				{
+					"id": "reaper_s_scythe",
+					"name": "Reaper's Scythe",
+					"type": "weapon",
+					"class": "warrior",
+					"rarity": "rare",
+					"cost": 4
+				},
+				{
+					"id": "val_anyr",
+					"name": "Val'anyr",
+					"type": "weapon",
+					"class": "paladin",
+					"rarity": "legendary",
+					"cost": 6
+				}
+			]
+		},
+		{
+			"sha": "8c544f6",
+			"date": "2026-08-04",
+			"kind": "cards",
+			"title": "weapons wave 14 — Grotesque Runeblade + Spectral Cutlass",
+			"body": "- track `lastPlayedRunes` per play (alongside lastCardCost); register `runes` on\n  instances; new `lastCardRune` conditional if-key: Grotesque Runeblade (Battlecry\n  +1 Attack if the last card had an Unholy rune, +1 Durability for Blood).\n- new `otherClass` ongoing condition (played card's class != your hero class):\n  Spectral Cutlass (Lifesteal; +1 Durability whenever you play an off-class card).\n\nField-based (no new registered effects). 7-assertion test (weapons_wave14).\nBattery 133/133, fuzz clean.",
+			"cards": [
+				{
+					"id": "grotesque_runeblade",
+					"name": "Grotesque Runeblade",
+					"type": "weapon",
+					"class": "deathknight",
+					"rarity": "epic",
+					"cost": 2
+				},
+				{
+					"id": "spectral_cutlass",
+					"name": "Spectral Cutlass",
+					"type": "weapon",
+					"class": "rogue",
+					"rarity": "epic",
+					"cost": 4
+				}
+			]
+		},
+		{
+			"sha": "3830895",
+			"date": "2026-08-04",
+			"kind": "cards",
+			"title": "weapons wave 13 — selfCost cost-reduction weapons (Blackpaw's Whip / Starstrung Bow)",
+			"body": "Two new selfCost `per` branches (field-based, no new registered effects):\n- coins-in-hand: Blackpaw's Whip costs (1) less per Coin held (+ Deathrattle draw).\n- secrets-triggered-game: Starstrung Bow costs (1) less per friendly Secret that\n  has triggered this game (new secretsTriggeredGame counter in fireSecrets).\n\n8-assertion test (weapons_wave13). Battery 132/132, fuzz clean.",
+			"cards": [
+				{
+					"id": "blackpaw_s_whip",
+					"name": "Blackpaw's Whip",
+					"type": "weapon",
+					"class": "rogue",
+					"rarity": "common",
+					"cost": 3
+				},
+				{
+					"id": "starstrung_bow",
+					"name": "Starstrung Bow",
+					"type": "weapon",
+					"class": "hunter",
+					"rarity": "epic",
+					"cost": 6
+				}
+			]
+		},
+		{
+			"sha": "1818e42",
+			"date": "2026-08-04",
+			"kind": "cards",
+			"title": "locations wave 3 — The Crystal Cove + Sinstone Graveyard",
+			"body": "- set-next-summon-stats effect + `nextSummonStats` hook applied on BOTH minion-enter\n  paths (summon() and the play-from-hand path), consumed once, reset at turn end:\n  The Crystal Cove (your next minion this turn becomes 4/4).\n- summon-scaled-cards-played effect: Sinstone Graveyard summons a Ghost with +1/+1\n  per other card played this turn (1/1 base).\n\nRegistry 987 → 989. 7-assertion test (locations_wave3). Battery 131/131, fuzz clean.",
+			"cards": [
+				{
+					"id": "the_crystal_cove",
+					"name": "The Crystal Cove",
+					"type": "location",
+					"class": "rogue",
+					"rarity": "common",
+					"cost": 3
+				},
+				{
+					"id": "sinstone_graveyard",
+					"name": "Sinstone Graveyard",
+					"type": "location",
+					"class": "rogue",
+					"rarity": "common",
+					"cost": 3
+				}
+			]
+		},
+		{
+			"sha": "9aafd7a",
+			"date": "2026-08-04",
+			"kind": "cards",
+			"title": "weapons wave 12 — Trueaim Crescent + Dreadlord's Bite",
+			"body": "- new all-friendly-attack-target trigger (hero-attacks-creature): Trueaim Crescent\n  makes all your minions pile onto the minion your hero just hit.\n- new damage-all-enemies effect (minions + hero): Dreadlord's Bite fires it via\n  Outcast (card.outcast.effects, only from the hand's edge — verified it stays\n  silent from the middle).\n\nRegistry 986 → 987. 7-assertion test (weapons_wave12). Battery 130/130, fuzz clean.",
+			"cards": [
+				{
+					"id": "trueaim_crescent",
+					"name": "Trueaim Crescent",
+					"type": "weapon",
+					"class": "demonhunter",
+					"rarity": "epic",
+					"cost": 1
+				},
+				{
+					"id": "dreadlord_s_bite",
+					"name": "Dreadlord's Bite",
+					"type": "weapon",
+					"class": "demonhunter",
+					"rarity": "common",
+					"cost": 3
+				}
+			]
+		},
+		{
+			"sha": "c430ed5",
+			"date": "2026-08-04",
+			"kind": "cards",
+			"title": "weapons wave 11 — Fist of Ra-den + Dragon Soul",
+			"body": "- summon-of-spell-cost gained a `legendary` flag (→ summon-random rarity:legendary):\n  The Fist of Ra-den summons a Legendary of the spell's Cost, then loses 1 Durability.\n- new `spellsThisTurn` ongoing condition (exact Nth spell): Dragon Soul summons a\n  5/5 Dragon on your 3rd spell in a turn (fires once, verified not on the 4th).\n\nNo new registered effects. 8-assertion test (weapons_wave11). Battery 129/129,\nfuzz clean.",
+			"cards": [
+				{
+					"id": "the_fist_of_ra_den",
+					"name": "The Fist of Ra-den",
+					"type": "weapon",
+					"class": "shaman",
+					"rarity": "legendary",
+					"cost": 4
+				},
+				{
+					"id": "dragon_soul",
+					"name": "Dragon Soul",
+					"type": "weapon",
+					"class": "priest",
+					"rarity": "legendary",
+					"cost": 3
+				}
+			]
+		},
+		{
+			"sha": "dfd3220",
+			"date": "2026-08-04",
+			"kind": "cards",
+			"title": "weapons wave 10 — spell-cost summon weapons (Cosmic Keyboard / Ceremonial Maul)",
+			"body": "- new lose-durability effect (degradeWeapon N times); summon-of-spell-cost's named\n  token now honors a `keywords` param.\n- Cosmic Keyboard: after you cast a spell, summon an Elemental with stats = its\n  Cost, then lose 1 Durability.\n- Ceremonial Maul: Spellburst (ongoing once) — summon a Student with Taunt and\n  stats = the spell's Cost.\n\nRegistry 985 → 986. 6-assertion test (weapons_wave10), incl. Spellburst-once.\nBattery 128/128, fuzz clean.",
+			"cards": [
+				{
+					"id": "cosmic_keyboard",
+					"name": "Cosmic Keyboard",
+					"type": "weapon",
+					"class": "mage",
+					"rarity": "rare",
+					"cost": 2
+				},
+				{
+					"id": "ceremonial_maul",
+					"name": "Ceremonial Maul",
+					"type": "weapon",
+					"class": "paladin",
+					"rarity": "epic",
+					"cost": 3
+				}
+			]
+		},
+		{
+			"sha": "2bbbb7c",
+			"date": "2026-08-04",
+			"kind": "cards",
+			"title": "weapons wave 9 — Skull of the Man'ari / Umpire's Grasp / Marrowslicer",
+			"body": "All via existing effects (no engine changes):\n- Skull of the Man'ari: turn-start ongoing → summon-from-hand {tribe:Demon}.\n- Umpire's Grasp: Deathrattle tutor a Demon with costMod -2.\n- Marrowslicer: Battlecry shuffle 2 Soul Fragments (sch_soul_fragment) into deck.\n\n8-assertion test (weapons_wave9). Battery 127/127, fuzz clean.",
+			"cards": [
+				{
+					"id": "skull_of_the_man_ari",
+					"name": "Skull of the Man'ari",
+					"type": "weapon",
+					"class": "warlock",
+					"rarity": "legendary",
+					"cost": 5
+				},
+				{
+					"id": "umpire_s_grasp",
+					"name": "Umpire's Grasp",
+					"type": "weapon",
+					"class": "demonhunter",
+					"rarity": "common",
+					"cost": 4
+				},
+				{
+					"id": "marrowslicer",
+					"name": "Marrowslicer",
+					"type": "weapon",
+					"class": "demonhunter",
+					"rarity": "common",
+					"cost": 4
+				}
+			]
+		},
+		{
+			"sha": "4440d2e",
+			"date": "2026-08-04",
+			"kind": "cards",
+			"title": "weapons wave 8 — weapon Overkill + Ice Breaker (3 weapons)",
+			"body": "- heroAttack now fires an equipped weapon's `overkill` effects when it deals MORE\n  than lethal to a minion (captures hpBefore, checks atk > hpBefore & killed):\n  Farraki Battleaxe (buff a hand minion +2/+2) and Sul'thraze (attack again).\n- new destroy-frozen-attacked trigger on hero-attacks-creature: Ice Breaker\n  destroys any Frozen minion it damages (doomed → death sweep).\n\n8-assertion test (weapons_wave8), incl. no-overkill-on-exact-lethal and\nfrozen-only guards. Battery 126/126, fuzz clean.",
+			"cards": [
+				{
+					"id": "farraki_battleaxe",
+					"name": "Farraki Battleaxe",
+					"type": "weapon",
+					"class": "paladin",
+					"rarity": "rare",
+					"cost": 5
+				},
+				{
+					"id": "sul_thraze",
+					"name": "Sul'thraze",
+					"type": "weapon",
+					"class": "warrior",
+					"rarity": "epic",
+					"cost": 6
+				},
+				{
+					"id": "ice_breaker",
+					"name": "Ice Breaker",
+					"type": "weapon",
+					"class": "shaman",
+					"rarity": "rare",
+					"cost": 3
+				}
+			]
+		},
+		{
+			"sha": "9cd2b06",
+			"date": "2026-08-04",
+			"kind": "cards",
+			"title": "weapons wave 7 — Splitting Axe / Boom Wrench / Overlord's Whip / Auctionhouse Gavel",
+			"body": "- summon-copies-of-board gained a tribe filter: Splitting Axe (copy your Totems).\n- trigger-one-deathrattle gained a tribe filter: Boom Wrench (random friendly Mech's\n  Deathrattle; also Miniaturize).\n- new damage-played-minion trigger on creature-played: Overlord's Whip.\n- new reduce-hand-battlecry-cost effect on hero-attacks: Auctionhouse Gavel.\n\nRegistry 984 → 985. 10-assertion test (weapons_wave7). Battery 125/125, fuzz clean.",
+			"cards": [
+				{
+					"id": "splitting_axe",
+					"name": "Splitting Axe",
+					"type": "weapon",
+					"class": "shaman",
+					"rarity": "epic",
+					"cost": 4
+				},
+				{
+					"id": "boom_wrench",
+					"name": "Boom Wrench",
+					"type": "weapon",
+					"class": "warrior",
+					"rarity": "rare",
+					"cost": 3
+				},
+				{
+					"id": "overlord_s_whip",
+					"name": "Overlord's Whip",
+					"type": "weapon",
+					"class": "warrior",
+					"rarity": "common",
+					"cost": 3
+				},
+				{
+					"id": "auctionhouse_gavel",
+					"name": "Auctionhouse Gavel",
+					"type": "weapon",
+					"class": "shaman",
+					"rarity": "rare",
+					"cost": 2
+				}
+			]
+		},
+		{
+			"sha": "dcaddfa",
+			"date": "2026-08-04",
+			"kind": "cards",
+			"title": "weapons wave 6 — conditional attack / no-durability-loss / grant-all (6 weapons)",
+			"body": "Field-based mechanics (no new registered effects):\n- condAttack extended with `armor` (Spiked Wheel +3 while you have Armor) and\n  `overloaded` (Likkim +2 while Overloaded).\n- degradeWeapon honors `noDegradeWhile` {tribe|minAttack}: Stormhammer (Dragon on\n  board), Climbing Hook (a 5+ Attack minion).\n- buff target:'friendly-creatures' now applies `grant`: Serrated Tooth (Deathrattle\n  give your minions Rush).\n- Rimefang Sword: hero-attacks ongoing → reduce a hand spell's Cost by 1 (existing).\n\n15-assertion test (weapons_wave6). Battery 124/124, fuzz clean.",
+			"cards": [
+				{
+					"id": "rimefang_sword",
+					"name": "Rimefang Sword",
+					"type": "weapon",
+					"class": "deathknight",
+					"rarity": "rare",
+					"cost": 3
+				},
+				{
+					"id": "likkim",
+					"name": "Likkim",
+					"type": "weapon",
+					"class": "shaman",
+					"rarity": "rare",
+					"cost": 2
+				},
+				{
+					"id": "spiked_wheel",
+					"name": "Spiked Wheel",
+					"type": "weapon",
+					"class": "warrior",
+					"rarity": "common",
+					"cost": 1
+				},
+				{
+					"id": "stormhammer",
+					"name": "Stormhammer",
+					"type": "weapon",
+					"class": "hunter",
+					"rarity": "epic",
+					"cost": 3
+				},
+				{
+					"id": "climbing_hook",
+					"name": "Climbing Hook",
+					"type": "weapon",
+					"class": "demonhunter",
+					"rarity": "epic",
+					"cost": 6
+				},
+				{
+					"id": "serrated_tooth",
+					"name": "Serrated Tooth",
+					"type": "weapon",
+					"class": "rogue",
+					"rarity": "common",
+					"cost": 1
+				}
+			]
+		},
+		{
+			"sha": "96c826e",
+			"date": "2026-08-04",
+			"kind": "cards",
+			"title": "one-off tail batch 1 — temp Spell Damage + cast-random + Discover-Temporary (4 cards)",
+			"body": "- gain-spell-damage-turn effect + `spellDamageThisTurn` player field (added to\n  both spell-damage sums in handlers-removal, reset at turn end): Magical Dollhouse\n  (location) and Rune Dagger (weapon, hero-attacks ongoing).\n- Prison of Yogg-Saron: cast-random-spell x4 (existing effect).\n- Bloodpetal Biome: Discover a Temporary 1-Cost minion (discover makeTemporary).\n\nRegistry 983 → 984. 11-assertion test (locations_wave2). Battery 123/123, fuzz clean.",
+			"cards": [
+				{
+					"id": "magical_dollhouse",
+					"name": "Magical Dollhouse",
+					"type": "location",
+					"class": "druid",
+					"rarity": "common",
+					"cost": 2
+				},
+				{
+					"id": "prison_of_yogg_saron",
+					"name": "Prison of Yogg-Saron",
+					"type": "location",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 7
+				},
+				{
+					"id": "bloodpetal_biome",
+					"name": "Bloodpetal Biome",
+					"type": "location",
+					"class": "warlock",
+					"rarity": "common",
+					"cost": 1
+				},
+				{
+					"id": "rune_dagger",
+					"name": "Rune Dagger",
+					"type": "weapon",
+					"class": "shaman",
+					"rarity": "common",
+					"cost": 2
+				}
+			]
+		},
+		{
+			"sha": "a6b39e0",
+			"date": "2026-08-04",
+			"kind": "cards",
+			"title": "Across the Timeways locations (Past/Present/Future chains) + Hedge Maze",
+			"body": "Built the \"Advance to the present/future!\" mechanic: a new `advance-location`\neffect transforms a location into its next-stage token (fresh, full-durability,\nsame board slot), and a `damage-enemy-minion` effect (random|lowest + excessToHero)\ncovers the Silvermoon chain. Full 3-stage chains, verified against the wiki:\n- Past/Present/Future Gnomeregan (paladin): +2/+1 → +2/+1 & a \"deal 2 to enemy\n  hero\" Deathrattle → + Divine Shield. (buff now applies `grant` to a single target.)\n- Past/Present/Future Silvermoon (hunter): 5 to a random enemy minion → excess\n  spills to the hero → hits the lowest-Health minion.\nPresent/Future stages are uncollectible tokens. Plus Hedge Maze (druid) reusing\ntrigger-one-deathrattle. Registry 981 → 983.\n\n24-assertion test (locations_timeways). Battery 122/122, fuzz clean.",
+			"cards": [
+				{
+					"id": "past_silvermoon",
+					"name": "Past Silvermoon",
+					"type": "location",
+					"class": "hunter",
+					"rarity": "epic",
+					"cost": 4
+				},
+				{
+					"id": "past_gnomeregan",
+					"name": "Past Gnomeregan",
+					"type": "location",
+					"class": "paladin",
+					"rarity": "epic",
+					"cost": 2
+				},
+				{
+					"id": "hedge_maze",
+					"name": "Hedge Maze",
+					"type": "location",
+					"class": "druid",
+					"rarity": "common",
+					"cost": 3
+				}
+			]
+		},
+		{
+			"sha": "c2e2eb4",
+			"date": "2026-08-04",
+			"kind": "cards",
+			"title": "\"improve\" Festival instruments — 7 weapons + scaling-deathrattle mechanic",
+			"body": "Built the Festival-of-Legends \"improve\" mechanic: a weapon's ongoing ticks\nsource.improveCount on a matching action while equipped, and its Deathrattle's\nnumber scales by that count. execEffects honors an `improveScaled` field\n(stats|count|value) that bumps the effect's attack/health, count, or value by\nsource.improveCount. Two new effects (improve-tick, discount-next-spell) + a\nminCost ongoing condition. Registry 979 → 981.\n\nInstruments:\n- Disco Maul: play minions → Deathrattle +N/+N to a random friendly.\n- Timber Tambourine: play 5+ Cost cards → summon N 5/5 Ancients.\n- Glaivetar: play Outcast cards → draw N.\n- Record Scratcher: play Combo cards → refresh N Mana Crystals.\n- Kodohide Drumkit: gain Armor → deal N to all minions.\n- Jazz Bass: Overload → your next spell costs (N) less.\n- Jungle Jammer: cast spells → summon N random 1-Cost Beasts.\n\n(Arcanite Ripper deferred — needs a hero-health-changed event.)\n\n17-assertion test (weapons_improve). Battery 121/121, fuzz clean.",
+			"cards": [
+				{
+					"id": "disco_maul",
+					"name": "Disco Maul",
+					"type": "weapon",
+					"class": "paladin",
+					"rarity": "common",
+					"cost": 3
+				},
+				{
+					"id": "timber_tambourine",
+					"name": "Timber Tambourine",
+					"type": "weapon",
+					"class": "druid",
+					"rarity": "epic",
+					"cost": 4
+				},
+				{
+					"id": "glaivetar",
+					"name": "Glaivetar",
+					"type": "weapon",
+					"class": "demonhunter",
+					"rarity": "rare",
+					"cost": 4
+				},
+				{
+					"id": "record_scratcher",
+					"name": "Record Scratcher",
+					"type": "weapon",
+					"class": "rogue",
+					"rarity": "epic",
+					"cost": 3
+				},
+				{
+					"id": "kodohide_drumkit",
+					"name": "Kodohide Drumkit",
+					"type": "weapon",
+					"class": "warrior",
+					"rarity": "rare",
+					"cost": 4
+				},
+				{
+					"id": "jazz_bass",
+					"name": "Jazz Bass",
+					"type": "weapon",
+					"class": "shaman",
+					"rarity": "rare",
+					"cost": 3
+				},
+				{
+					"id": "jungle_jammer",
+					"name": "Jungle Jammer",
+					"type": "weapon",
+					"class": "hunter",
+					"rarity": "epic",
+					"cost": 4
+				}
+			]
+		},
+		{
+			"sha": "0812262",
+			"date": "2026-08-04",
+			"kind": "cards",
+			"title": "weapons wave 5 — deck/hand deathrattle & battlecry effects (4 weapons + 4 new effects)",
+			"body": "Four new register() effects (handlers-deck.js), then 4 weapons:\n- summon-lowest-cost-from-hand → Cavalry Horn (Deathrattle).\n- shuffle-leftmost-hand-into-deck → Crystal Tusk (Battlecry; + Deathrattle draw 2).\n- draw-foreign-spell → Smuggled Shovel (draws a deck spell not in startingDeckIds).\n- trigger-random-friendly-turn-end → Inspiring Maul (re-fires a friendly minion's\n  turn-end ongoing; imports fireCreatureTrigger).\n\nEffect registry 975 → 979. 12-assertion test (weapons_wave5). Battery 120/120,\nfuzz clean.",
+			"cards": [
+				{
+					"id": "cavalry_horn",
+					"name": "Cavalry Horn",
+					"type": "weapon",
+					"class": "paladin",
+					"rarity": "common",
+					"cost": 5
+				},
+				{
+					"id": "crystal_tusk",
+					"name": "Crystal Tusk",
+					"type": "weapon",
+					"class": "rogue",
+					"rarity": "rare",
+					"cost": 2
+				},
+				{
+					"id": "smuggled_shovel",
+					"name": "Smuggled Shovel",
+					"type": "weapon",
+					"class": "hunter",
+					"rarity": "rare",
+					"cost": 1
+				},
+				{
+					"id": "inspiring_maul",
+					"name": "Inspiring Maul",
+					"type": "weapon",
+					"class": "paladin",
+					"rarity": "common",
+					"cost": 2
+				}
+			]
+		},
+		{
+			"sha": "0079e7b",
+			"date": "2026-08-04",
+			"kind": "cards",
+			"title": "weapons wave 4 — dynamic weapon-attack / noFace / unlimited-attacks / double-hero-damage (6 weapons)",
+			"body": "First batch of the new engine mechanics the remaining weapons need. Four core\nhooks, then 6 cards:\n- heroAttackValue honors weapon.attackEqualsArmor (Bladed Gauntlet) and\n  weapon.condAttack {tribe|spellDamage, bonus} (Cogmaster's Wrench +2 with a\n  Mech; Spirit Claws +2 with Spell Damage).\n- heroAttackTargets honors weapon.noFace (\"Can't attack heroes\").\n- canHeroAttack honors weapon.unlimitedAttacks (Fool's Bane).\n- damageHero honors weapon.doubleHeroDamage (Cursed Blade).\n\nCards: Bladed Gauntlet, Cogmaster's Wrench, Spirit Claws, Fool's Bane,\nLightbringer's Hammer (Lifesteal + noFace), Cursed Blade. New instance fields\nregistered in instantiate.\n\n19-assertion test (weapons_wave4). Battery 119/119, fuzz clean.",
+			"cards": [
+				{
+					"id": "bladed_gauntlet",
+					"name": "Bladed Gauntlet",
+					"type": "weapon",
+					"class": "warrior",
+					"rarity": "epic",
+					"cost": 2
+				},
+				{
+					"id": "cogmaster_s_wrench",
+					"name": "Cogmaster's Wrench",
+					"type": "weapon",
+					"class": "rogue",
+					"rarity": "epic",
+					"cost": 3
+				},
+				{
+					"id": "spirit_claws",
+					"name": "Spirit Claws",
+					"type": "weapon",
+					"class": "shaman",
+					"rarity": "common",
+					"cost": 1
+				},
+				{
+					"id": "fool_s_bane",
+					"name": "Fool's Bane",
+					"type": "weapon",
+					"class": "warrior",
+					"rarity": "common",
+					"cost": 5
+				},
+				{
+					"id": "lightbringer_s_hammer",
+					"name": "Lightbringer's Hammer",
+					"type": "weapon",
+					"class": "paladin",
+					"rarity": "epic",
+					"cost": 3
+				},
+				{
+					"id": "cursed_blade",
+					"name": "Cursed Blade",
+					"type": "weapon",
+					"class": "warrior",
+					"rarity": "rare",
+					"cost": 1
+				}
+			]
+		},
+		{
+			"sha": "f2cdd5e",
+			"date": "2026-08-04",
+			"kind": "cards",
+			"title": "missing HS weapons & locations wave 3 — 37 cards (multi-agent workflow batch)",
+			"body": "Bulk-wired 37 collectible cards (31 weapons + 6 locations) via a two-workflow\npipeline: a 35-agent wiring pass produced faithful specs by grepping the engine\nto reuse real effects, then a 13-agent adversarial verification pass confirmed\neach against the real card text (catching silently-broken wiring — e.g. Poison\nconditions that never fire, `traded` ongoings unreachable from hand).\n\nOrchestrator-side QA before applying anything:\n- strict validation of every effect / event / condition-key / per-value against\n  the real engine vocabulary (not just \"does the name exist\");\n- kept only the 40 `faithful` verdicts + 1 machine-verified fix (Rinling's Rifle);\n- crash-smoke all 37 with strict-effects on;\n- caught + fixed a data-prep bug: all workflow weapons had durability 0 (HS stores\n  weapon durability in the `health` field, not `durability`) — restored from the\n  authoritative HearthstoneJSON data.\n\nIncludes Warglaives of Azzinoth, Defiled Spear, Hope of Quel'Thalas, Necrium\nBlade, Light's Sorrow, Ringmaster's Baton, + 6 locations (Muck Pools, Mosh Pit,\nSpawning Pool, Starport, Warp Gate, Fairy Tale Forest).\n\n9 behavioural assertions + a 37-card crash sweep (weapons_wave3). Battery\n118/118, fuzz clean. Deferred: 24 partial/broken + ~54 needing new engine effects.",
+			"cards": [
+				{
+					"id": "charged_hammer",
+					"name": "Charged Hammer",
+					"type": "weapon",
+					"class": "shaman",
+					"rarity": "common",
+					"cost": 3
+				},
+				{
+					"id": "argent_lance",
+					"name": "Argent Lance",
+					"type": "weapon",
+					"class": "paladin",
+					"rarity": "common",
+					"cost": 2
+				},
+				{
+					"id": "dreadprison_glaive",
+					"name": "Dreadprison Glaive",
+					"type": "weapon",
+					"class": "demonhunter",
+					"rarity": "common",
+					"cost": 1
+				},
+				{
+					"id": "the_lobotomizer",
+					"name": "The Lobotomizer",
+					"type": "weapon",
+					"class": "rogue",
+					"rarity": "common",
+					"cost": 2
+				},
+				{
+					"id": "sword_of_the_fallen",
+					"name": "Sword of the Fallen",
+					"type": "weapon",
+					"class": "paladin",
+					"rarity": "common",
+					"cost": 2
+				},
+				{
+					"id": "necrium_blade",
+					"name": "Necrium Blade",
+					"type": "weapon",
+					"class": "rogue",
+					"rarity": "common",
+					"cost": 3
+				},
+				{
+					"id": "warglaives_of_azzinoth",
+					"name": "Warglaives of Azzinoth",
+					"type": "weapon",
+					"class": "demonhunter",
+					"rarity": "common",
+					"cost": 5
+				},
+				{
+					"id": "light_s_sorrow",
+					"name": "Light's Sorrow",
+					"type": "weapon",
+					"class": "paladin",
+					"rarity": "common",
+					"cost": 4
+				},
+				{
+					"id": "rinling_s_rifle",
+					"name": "Rinling's Rifle",
+					"type": "weapon",
+					"class": "hunter",
+					"rarity": "common",
+					"cost": 4
+				},
+				{
+					"id": "ringmaster_s_baton",
+					"name": "Ringmaster's Baton",
+					"type": "weapon",
+					"class": "warrior",
+					"rarity": "common",
+					"cost": 2
+				},
+				{
+					"id": "defiled_spear",
+					"name": "Defiled Spear",
+					"type": "weapon",
+					"class": "demonhunter",
+					"rarity": "common",
+					"cost": 4
+				},
+				{
+					"id": "jagged_edge_of_time",
+					"name": "Jagged Edge of Time",
+					"type": "weapon",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 3
+				},
+				{
+					"id": "chronoclaws",
+					"name": "Chronoclaws",
+					"type": "weapon",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 4
+				},
+				{
+					"id": "idol_s_adoration",
+					"name": "Idol's Adoration",
+					"type": "weapon",
+					"class": "priest",
+					"rarity": "common",
+					"cost": 1
+				},
+				{
+					"id": "cindersword",
+					"name": "Cindersword",
+					"type": "weapon",
+					"class": "rogue",
+					"rarity": "common",
+					"cost": 1
+				},
+				{
+					"id": "interstellar_starslicer",
+					"name": "Interstellar Starslicer",
+					"type": "weapon",
+					"class": "paladin",
+					"rarity": "common",
+					"cost": 3
+				},
+				{
+					"id": "the_runespear",
+					"name": "The Runespear",
+					"type": "weapon",
+					"class": "shaman",
+					"rarity": "common",
+					"cost": 8
+				},
+				{
+					"id": "foamrender",
+					"name": "Foamrender",
+					"type": "weapon",
+					"class": "deathknight",
+					"rarity": "common",
+					"cost": 5
+				},
+				{
+					"id": "hope_of_quel_thalas",
+					"name": "Hope of Quel'Thalas",
+					"type": "weapon",
+					"class": "hunter",
+					"rarity": "common",
+					"cost": 6
+				},
+				{
+					"id": "runed_mithril_rod",
+					"name": "Runed Mithril Rod",
+					"type": "weapon",
+					"class": "warlock",
+					"rarity": "common",
+					"cost": 5
+				},
+				{
+					"id": "shadowcloth_needle",
+					"name": "Shadowcloth Needle",
+					"type": "weapon",
+					"class": "priest",
+					"rarity": "common",
+					"cost": 1
+				},
+				{
+					"id": "prismatic_jewel_kit",
+					"name": "Prismatic Jewel Kit",
+					"type": "weapon",
+					"class": "paladin",
+					"rarity": "common",
+					"cost": 1
+				},
+				{
+					"id": "counterfeit_blade",
+					"name": "Counterfeit Blade",
+					"type": "weapon",
+					"class": "rogue",
+					"rarity": "common",
+					"cost": 4
+				},
+				{
+					"id": "leatherworking_kit",
+					"name": "Leatherworking Kit",
+					"type": "weapon",
+					"class": "hunter",
+					"rarity": "common",
+					"cost": 1
+				},
+				{
+					"id": "time_lost_glaive",
+					"name": "Time-Lost Glaive",
+					"type": "weapon",
+					"class": "demonhunter",
+					"rarity": "common",
+					"cost": 1
+				},
+				{
+					"id": "staff_of_the_primus",
+					"name": "Staff of the Primus",
+					"type": "weapon",
+					"class": "deathknight",
+					"rarity": "common",
+					"cost": 1
+				},
+				{
+					"id": "trusty_fishing_rod",
+					"name": "Trusty Fishing Rod",
+					"type": "weapon",
+					"class": "hunter",
+					"rarity": "common",
+					"cost": 3
+				},
+				{
+					"id": "seedcloud_buckler",
+					"name": "Seedcloud Buckler",
+					"type": "weapon",
+					"class": "paladin",
+					"rarity": "common",
+					"cost": 3
+				},
+				{
+					"id": "battlepickaxe",
+					"name": "Battlepickaxe",
+					"type": "weapon",
+					"class": "warrior",
+					"rarity": "common",
+					"cost": 3
+				},
+				{
+					"id": "starshooter",
+					"name": "Starshooter",
+					"type": "weapon",
+					"class": "hunter",
+					"rarity": "common",
+					"cost": 4
+				},
+				{
+					"id": "muck_pools",
+					"name": "Muck Pools",
+					"type": "location",
+					"class": "shaman",
+					"rarity": "common",
+					"cost": 1
+				},
+				{
+					"id": "mosh_pit",
+					"name": "Mosh Pit",
+					"type": "location",
+					"class": "deathknight",
+					"rarity": "common",
+					"cost": 2
+				},
+				{
+					"id": "spawning_pool",
+					"name": "Spawning Pool",
+					"type": "location",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 1
+				},
+				{
+					"id": "starport",
+					"name": "Starport",
+					"type": "location",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 2
+				},
+				{
+					"id": "warp_gate",
+					"name": "Warp Gate",
+					"type": "location",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 4
+				},
+				{
+					"id": "fairy_tale_forest",
+					"name": "Fairy Tale Forest",
+					"type": "location",
+					"class": "shaman",
+					"rarity": "common",
+					"cost": 3
+				}
+			]
+		},
+		{
+			"sha": "218b135",
+			"date": "2026-08-04",
+			"kind": "cards",
+			"title": "missing HS weapons wave 2 (6 hero-attack weapons) + double-fire bugfix",
+			"body": "Wave 2 wires 6 \"After your hero attacks\" weapons via the hero-attacks ongoing:\nCommand Claw (random friendly +2 Atk), Painter's Virtue (Lifesteal; hand minions\n+1/+1), Whetstone Hatchet (a hand minion +1 Atk), Livewire Lance (add a Lackey),\nTempest Hammer (3 to the lowest-Health enemy), Crystalline Greatmace (Draenei in\nhand +2 Atk — buff-hand-minions gained a tribe filter).\n\nBUGFIX (pre-existing, exposed by these cards): weapon ongoings on 'hero-attacks'\nand 'hero-attacks-creature' fired TWICE — once via the explicit block in\nheroAttack and again via the fireOngoing calls right after (the weapon is in\ntheir sources). Truesilver Champion healed 4 instead of 2; ~25 existing weapons\nwere affected. The explicit block now only handles 'hero-kills-creature' (which\nhas no fireOngoing). Regression assertion added.\n\n15-assertion test (weapons_wave2). Battery 117/117, fuzz clean.",
+			"cards": [
+				{
+					"id": "command_claw",
+					"name": "Command Claw",
+					"type": "weapon",
+					"class": "deathknight",
+					"rarity": "common",
+					"cost": 2
+				},
+				{
+					"id": "painter_s_virtue",
+					"name": "Painter's Virtue",
+					"type": "weapon",
+					"class": "paladin",
+					"rarity": "common",
+					"cost": 4
+				},
+				{
+					"id": "whetstone_hatchet",
+					"name": "Whetstone Hatchet",
+					"type": "weapon",
+					"class": "warrior",
+					"rarity": "rare",
+					"cost": 1
+				},
+				{
+					"id": "livewire_lance",
+					"name": "Livewire Lance",
+					"type": "weapon",
+					"class": "warrior",
+					"rarity": "epic",
+					"cost": 3
+				},
+				{
+					"id": "tempest_hammer",
+					"name": "Tempest Hammer",
+					"type": "weapon",
+					"class": "shaman",
+					"rarity": "rare",
+					"cost": 4
+				},
+				{
+					"id": "crystalline_greatmace",
+					"name": "Crystalline Greatmace",
+					"type": "weapon",
+					"class": "warrior",
+					"rarity": "rare",
+					"cost": 2
+				}
+			]
+		},
+		{
+			"sha": "ee5faf6",
+			"date": "2026-08-04",
+			"kind": "cards",
+			"title": "missing HS weapons wave 1 (8 battlecry/deathrattle weapons)",
+			"body": "Begins closing the weapon gap (126 missing collectible weapons). Wave 1 wires 8\nthat map to existing effects, plus two small high-leverage engine additions:\nbuff-random-friendly `grant` now accepts an array (Coghammer's Divine Shield +\nTaunt), and the `conditional` effect gained a `controlKeyword` check (King's\nDefender's \"if you have a Taunt minion\").\n\n- Glaivezooka: Battlecry give a random friendly +1 Attack.\n- Woodcutter's Axe: Deathrattle +2/+1 to a random friendly.\n- Powermace: Deathrattle +2/+2 to a random friendly Mech.\n- Coghammer: Battlecry give a random friendly Divine Shield and Taunt.\n- Shadowblade: Battlecry hero Immune this turn.\n- Blood Razor: Battlecry AND Deathrattle deal 1 to all minions.\n- Headhunter's Hatchet: Battlecry +1 Durability if you control a Beast.\n- King's Defender: Battlecry +1 Durability if you have a Taunt minion.\n\n20-assertion regression test (weapons_wave1). Battery 116/116, fuzz clean.",
+			"cards": [
+				{
+					"id": "glaivezooka",
+					"name": "Glaivezooka",
+					"type": "weapon",
+					"class": "hunter",
+					"rarity": "common",
+					"cost": 2
+				},
+				{
+					"id": "woodcutter_s_axe",
+					"name": "Woodcutter's Axe",
+					"type": "weapon",
+					"class": "warrior",
+					"rarity": "common",
+					"cost": 2
+				},
+				{
+					"id": "powermace",
+					"name": "Powermace",
+					"type": "weapon",
+					"class": "shaman",
+					"rarity": "rare",
+					"cost": 3
+				},
+				{
+					"id": "coghammer",
+					"name": "Coghammer",
+					"type": "weapon",
+					"class": "paladin",
+					"rarity": "epic",
+					"cost": 3
+				},
+				{
+					"id": "shadowblade",
+					"name": "Shadowblade",
+					"type": "weapon",
+					"class": "rogue",
+					"rarity": "rare",
+					"cost": 3
+				},
+				{
+					"id": "blood_razor",
+					"name": "Blood Razor",
+					"type": "weapon",
+					"class": "warrior",
+					"rarity": "common",
+					"cost": 4
+				},
+				{
+					"id": "headhunter_s_hatchet",
+					"name": "Headhunter's Hatchet",
+					"type": "weapon",
+					"class": "hunter",
+					"rarity": "common",
+					"cost": 2
+				},
+				{
+					"id": "king_s_defender",
+					"name": "King's Defender",
+					"type": "weapon",
+					"class": "warrior",
+					"rarity": "rare",
+					"cost": 3
+				}
+			]
+		},
+		{
+			"sha": "3b33d38",
+			"date": "2026-08-04",
+			"kind": "patch",
+			"title": "fix Glowstone Gyreworm's real Forge text (Quickdraw → Battlecry)",
+			"body": "The earlier wiring guessed \"Forge: Deal 10 instead\". Verified against the\nHearthstone wiki: the real card is \"Lifesteal. Quickdraw: Deal 5 damage. Forge:\nChange Quickdraw to Battlecry.\" — the damage stays 5; Forge changes WHEN it fires.\n\n- Base: Quickdraw (engine `miracle`, gated on drawnThisTurn) deals 5; removed the\n  stray Battlecry keyword so the base is Quickdraw-only.\n- Forge: new `clearMiracle` applyForge primitive drops the draw-gated version and\n  installs a plain Battlecry (Deal 5) + the Battlecry keyword — so a forged copy\n  deals 5 on every play, drawn or not.\n\nDescription corrected to the verbatim card text. forge_riders test now covers all\nthree cases (Quickdraw hits when drawn, whiffs when not, forged always fires).\nBattery 115/115, fuzz clean.",
+			"cards": []
+		},
+		{
+			"sha": "7320f6f",
+			"date": "2026-08-04",
+			"kind": "patch",
+			"title": "wire the 7 remaining Forge cards (bespoke upgrade riders)",
+			"body": "Completes Forge coverage. Three new applyForge primitives (core.js): `ongoing`\n(replace the trigger), `miracle` (replace the Miracle), `clearChoices` (drop a\nChoose One). Plus a `buff` param on the summon handler's summonId branch.\n\nCards:\n- XB-488 Disposalbot: Forge → Gain Lifesteal (keyword).\n- Eulogizer: Forge → deal 3 AND gain 3 Corpses instead of spending them.\n- Champion of Storms: Forge → the summoned 4/2 Elemental now has Rush (ongoing\n  replaced with a Rush-granting summon).\n- Disciple of Sargeras: Forge → the two Imps get +2 Health and Taunt (summon\n  buff + grant → 3/4 Taunt).\n- Mechagnome Guide: Forge → the Discovered spell costs (3) less (discover costMod).\n- Gloomstone Guardian: Forge → \"Do NEITHER\" (clearChoices removes the downside).\n- Glowstone Gyreworm: wired its base Miracle (Deal 5) that was unimplemented,\n  then Forge → Deal 10. NOTE: the source data left this rider \"pending\" with no\n  text, so the +5 upgrade is an inferred, sensible reading.\n\n15-assertion regression test (forge_riders). All 13 Forge cards now wired.\nBattery 115/115, fuzz clean.",
+			"cards": []
+		},
+		{
+			"sha": "c230e87",
+			"date": "2026-08-04",
+			"kind": "patch",
+			"title": "implement the Forge mechanic (+ Melted Maker)",
+			"body": "Forge (Showdown in the Badlands) was entirely unimplemented — 13 cards named it\nin text, none had wiring. Built the mechanic end to end:\n\nEngine (core.js):\n- `forge` instance field + `canForge` / `forgeCard(state, pi, uid)` action:\n  pay the cost (default 2), upgrade the card in hand, fire the `forged` event.\n- applyForge primitives: buff (+X/+Y), keywords, magnetic, costDelta, endless\n  (re-forgeable), battlecry (replace effects), addBattlecry (append), into\n  (transform). One-time forges spend the ability; endless ones keep it.\n\nMelted Maker: `ongoing:{on:'forged'}` → new `copy-forged-to-hand` trigger clones\nthe UPGRADED card into your hand (spent, so the copy can't be re-forged).\n\nWired 5 real Forge cards across every primitive: Cyclopian Crusher (+3/+2),\nStorm Giant (-2 cost, endless), Lab Constructor (gain Magnetic), Muscle-o-Tron\n(battlecry +1/+1 → +2/+2), Watcher of the Sun (append: restore 6 Health).\n\nUI (game.js): Forge surfaced exactly like Trade/Prepare — context menu, card\naction panel, and the multiplayer intent replay case (deterministic guest play).\nAI (ai.js): forges leftover-mana cards; endless cards only Forge while still\nunplayable (shaves cost toward castability, no mana-drain loop).\n\n23-assertion regression test (forge_test): cost gate, one-time vs endless, all\nfive upgrade primitives, and the Melted Maker copy. Battery 114/114, fuzz clean.",
+			"cards": []
+		},
+		{
+			"sha": "48b9071",
+			"date": "2026-08-04",
+			"kind": "patch",
+			"title": "Group F wave 4 (tail) — Whirlwind Tempest + Glinda Crowskin",
+			"body": "Closes the Group F passives tail:\n\n- Whirlwind Tempest: your Windfury creatures have Mega-Windfury. New `hasWindfury`\n  aura filter in auras.js grants a `mega_windfury` keyword; canAttackWith's\n  maxAttacks now reads it (4 attacks). Pure aura — retracts if the Tempest leaves.\n- Glinda Crowskin: minions in your hand have Echo. New `handMinionEcho` instance\n  field; the play path's echo branch now also fires when a creature is played\n  while a handMinionEcho minion is on board (leaves the Echo ghost copy). Spells\n  are unaffected (minions only).\n\nDocumented SKIPS (need a bespoke mechanism, not card wiring): ogre_gang_rider\n(50% attack-replacement) and the MTG-Cascade cards (fandral_staghelm,\nthe_first_sliver, nak_stormspell_sneak).\n\n12-assertion regression test (groupf_wave4): mega-windfury grant/retract + attack\ncap, Echo ghost on minion play, spells excluded, no-Glinda control. Battery\n113/113, fuzz clean.",
+			"cards": []
+		},
+		{
+			"sha": "7dd19a5",
+			"date": "2026-08-03",
+			"kind": "patch",
+			"title": "Group F wave 3 — hero & weapon auras (Spiderling / Inara / Spirit of the Team / Vulpera Toxinblade)",
+			"body": "Built a board-summed hero/weapon attack aura system. heroAttackValue now takes\n(state, p) so it can gate \"on your turn\" live; it adds:\n- heroAura: board minions grant the hero +Attack, `yourTurn` gates to your turn.\n- weaponAura: board minions grant your weapon +Attack (only while armed).\n\nSignature change threaded through all 13 call sites (core.js, damage.js, ai.js,\nexec.js, handlers-hero/summon, tombs_powers test). New instance fields registered\nin instantiate.\n\nCards:\n- Spiderling: hero +1 Attack on your turn.\n- Inara Stormcrash: hero +2 Attack & Windfury on your turn (reuses the existing\n  heroWindfury flag for the second swing).\n- Spirit of the Team: hero +2 Attack on your turn + battlecry temp-stealth-self\n  (the existing \"Stealth until your next turn\" effect).\n- Vulpera Toxinblade: your weapon has +2 Attack (pure aura — drops if removed).\n\n17-assertion regression test (groupf_wave3): on-turn vs off-turn gating, the\nWindfury second swing, battlecry stealth, and weapon aura add/remove. Battery\n112/112, fuzz clean.",
+			"cards": []
+		},
+		{
+			"sha": "b2a5cf0",
+			"date": "2026-08-03",
+			"kind": "patch",
+			"title": "Group F wave 2 — conditional/filtered auras (Funkfin / Red Herring / Vessina)",
+			"body": "Three new additive aura filters in engine/auras.js, then pure-data wiring:\n\n- divineShield: applies only to creatures that currently HAVE a Divine Shield\n  (reads c.shield, so the buff drops when the shield pops) — Funkfin (+2 Atk to\n  your shielded creatures; also restored its own Divine Shield keyword).\n- notName: excludes same-named creatures — Red Herring (your NON-Red Herring\n  creatures have Stealth; all copies excluded, not just the source; also\n  restored its own Taunt).\n- whileOverloaded: the aura only applies while the source's owner is Overloaded\n  this turn (p.overloadLockedThisTurn > 0) — Vessina (+2 Atk to your other\n  creatures while Overloaded).\n\n15-assertion regression test (groupf_wave2) covering shield-pop drop-off,\nmulti-copy name exclusion, and the overload on/off transition. Battery 111/111,\nfuzz clean.",
+			"cards": []
+		},
+		{
+			"sha": "aa829b1",
+			"date": "2026-08-03",
+			"kind": "patch",
+			"title": "Group F wave 1 — static passives / auras (7 cards)",
+			"body": "Vanilla stat-sticks whose real text is a static aura but carried no `aura`\nfield. All wire through the existing recomputeAuras system — pure data, zero\nengine changes:\n\n- Emerald Grove Tiger: your Plants have Taunt (tribe aura).\n- Phalanx Beetle: adjacent creatures have Taunt (adjacent aura).\n- Battleground Battlemaster: adjacent creatures have Windfury.\n- Wee Spellstopper: adjacent creatures have Elusive.\n- Robes of Protection: your creatures have Elusive (includes itself).\n- Siegebreaker: your other Demons have +1 Attack — also restored its own\n  Taunt keyword (was in the description prefix, missing from data).\n- Sneaky Devil: your other creatures have +1 Attack — restored its own Stealth.\n\n26-assertion regression test (groupf_wave1) covering tribe filtering, adjacency,\nothers-vs-self, and enemy exclusion. Battery 110/110, fuzz clean.",
+			"cards": []
+		},
+		{
+			"sha": "0af17f8",
+			"date": "2026-08-03",
+			"kind": "patch",
+			"title": "Group E wave 5 — Harried Herdsman (Fire spell → Beasts attack random enemies)",
+			"body": "Harried Herdsman made faithful: an ongoing on spell-played gated to school:Fire\n(schoolOf reads the spell's `tribe`; 4 real Fire spells + 59 schooled spells\nexist) fires a new `beasts-attack-random` handler. It snapshots the friendly\nBeast uids up front (combat reshapes the board), then swings each surviving,\nnon-dormant Beast at a random enemy CREATURE via resolveCombat + sweepDeaths —\nthe same fuzz-safe loop attack-random-enemy uses. The Herdsman (Human Ranger)\nnever swings itself; Beasts never hit the enemy hero; empty enemy board no-ops.\n\nThis is the last easily-wired Group E card. The remaining ones each need a new\nsubsystem, not wiring: melted_maker (no Forge), misplaced_pyromancer (no\nShatter), sanctum_spellbender (spell-redirect), the_harvester_of_envy\n(copied-from-opponent provenance), auctioneer_jaxon (Discover-to-draw-from-deck),\nservice_ace (self-gains-attack hook), neptulon (Colossal Hands).\n\n6-assertion regression test (groupe_wave5). Battery 109/109, fuzz clean.\nregisterTrigger — effect-registry count unchanged (975).",
+			"cards": []
+		},
+		{
+			"sha": "4a4f4f2",
+			"date": "2026-08-03",
+			"kind": "patch",
+			"title": "Group E wave 4 — condition-awaken sleepers (Stockades Prisoner / Crystalline Statue / Dozing Kelpkeeper)",
+			"body": "Three \"Starts Dormant, awakens after you <action>\" cards made faithful. Each now\ncarries a big dormant:99 fallback (matching Slumbering Sprite) plus an ongoing\nthat counts the action and wakes early:\n\n- Stockades Prisoner: card-played need:3 (once) → awaken-self.\n- Crystalline Statue: card-drawn need:4 (once) → awaken-self.\n- Dozing Kelpkeeper: spell-played → accrue-mana-awaken (threshold 5), summing\n  the played spell's Cost per-instance.\n\nNew trigger handlers awaken-self + accrue-mana-awaken share a wakeDormantSelf\nhelper that mirrors the turn-tick awaken path (dormantLeft→0, drowsy for the\nturn, fire the `awaken` effects). Dormant minions' ongoings already fire (only\nisDead is skipped), and the played card is added to the board AFTER card-played\nfires — so a sleeper never counts its own play. ongoing is cloned per-instance,\nso the need/_manaAccrued counters are safe. Previously these were plain\ndormant:2 (woke purely on a turn timer).\n\n12-assertion regression test (groupe_wave4), incl. the Rush cards attacking the\nturn they wake. Battery 108/108, fuzz clean. registerTrigger — registry 975.",
+			"cards": []
+		},
+		{
+			"sha": "3085f91",
+			"date": "2026-08-03",
+			"kind": "patch",
+			"title": "Group E wave 3 — Invent-o-Matic + Clumsy Steward + Orion (Magnetize / draw / secret-reveal triggers)",
+			"body": "Three genuinely-unwired \"after you <action>\" triggered creatures made faithful:\n\n- Invent-o-Matic: whenever you Magnetize a minion, give it +1/+1. Adds a\n  `magnetized` fireOngoing at the magnetize merge site + new `buff-magnetized`\n  trigger handler (buffs ctx.minion).\n- Clumsy Steward: after you draw a card, make it Temporary. Hooks the existing\n  card-drawn event + new `make-drawn-temporary` handler (sets card.temporary;\n  the end-of-turn cleanup discards it). \"ANY card\" reads as any card-TYPE you\n  draw — owner-scoped, since an enemy-wide version would be broken.\n- Orion, Mansion Manager: after a friendly Secret is revealed, cast a different\n  Mage Secret and gain +2/+2. Threads `secretOwner` into the secret-revealed\n  ctx + new `friendlySecret` condition, then reuses install-random-secret\n  (cardClass mage) + buff-self. secretOwner is additive — existing consumers\n  (Eaglehorn) ignore it.\n\nVerified ALREADY faithful (not re-wired): Lumia (heroImmuneOnDamage, damage.js),\nAnchorite (overhealReactive, exec.js).\n\n10-assertion regression test (groupe_wave3). Battery 107/107, fuzz clean.\nregisterTrigger handlers — effect-registry count unchanged (975).",
+			"cards": []
+		},
+		{
+			"sha": "d96e2dd",
+			"date": "2026-08-03",
+			"kind": "patch",
+			"title": "Group E wave 2 — Pelagos + XB-931 Housekeeper (spell-on-friendly / location-use triggers)",
+			"body": "Two genuinely-unwired \"after you <action>\" triggered creatures made faithful:\n\n- Pelagos: after you cast a spell on a friendly minion, set its Attack and\n  Health to the higher of the two. Hooks the existing spell-cast-on-creature\n  event via a new `friendlyTarget` ongoing condition and a new `even-target-stats`\n  trigger handler (registerTrigger — no effect-registry count change).\n- XB-931 Housekeeper: after you use a location, gain 3 Armor. Adds a\n  `location-used` fireOngoing at the location-tap site and reuses the existing\n  `armor` effect.\n\nVerified ALREADY faithful (not re-wired) while scoping this wave: Bolvar\nFordragon (death.js scripted), Blood Herald (handDeathGrowth), Blubber Baron\n(core.js growBlubberBaron), Patches/Parachute Brigand (play-Pirate scripts),\nDjinni of Zephyrs / Zentimo (spell-target scripts), Augmented Elekk (shuffle\nreactive). The \"after you\" trigger space is largely pre-implemented.\n\n10-assertion regression test (groupe_wave2). Battery 106/106, fuzz clean.",
+			"cards": []
+		},
+		{
+			"sha": "ddc4e87",
+			"date": "2026-08-03",
+			"kind": "patch",
+			"title": "Group E begins — attack-trigger cards (wave 1)",
+			"body": "Group E = \"after you <action>\" triggered cards. Wave 1:\n- Swamp King Dred: after the opponent plays a creature, attack it (ongoing\n  enemy-creature-played -> attack-played-minion, reusing Specimen Claw's trigger).\n- Giant Sand Worm: when it attacks and kills a minion, it may attack again\n  (ongoing self-kills-creature -> new refresh-self-attack).\n- Gonk, the Raptor: after your hero attacks and kills a creature, it may attack\n  again (ongoing hero-kills-minion -> new refresh-hero-attack).\n\nConfirmed Trampling Rhino was already done (it already carries the Trample keyword,\nwhich is exactly its \"excess damage hits the enemy hero\" text).\n\nTwo new effect handlers (registry 973 -> 975). Test groupe_wave1_test.mjs (10/10).\nBattery 105/105, fuzz clean.",
+			"cards": []
+		},
+		{
+			"sha": "e40dba1",
+			"date": "2026-08-03",
+			"kind": "patch",
+			"title": "Rat Burglar + Alarm-o-Matic + Hive Queen — Group D COMPLETE",
+			"body": "The last 3 bespoke turn-triggers:\n- Rat Burglar (turn-end): steal every card that entered an opponent's hand during\n  your turn. emit() now stamps cards with _enteredTurn as they enter a hand (same\n  choke point as the weapon counter); new steal-entered-hand moves this-turn cards\n  from the opponent's hand to yours.\n- Alarm-o-Matic (turn-start): swap itself with a random creature in the opponent's\n  hand (new swap-self-with-enemy-hand — this goes to their hand, their creature is\n  summoned on your board).\n- Hive Queen (turn-end): get a Larva (new token) that transforms into a random Zerg\n  each turn in hand (transformInHand gained a transformInHandTribe filter).\n\nNew Larva token + two effect handlers (registry 971 -> 973). Test\ngroupd_final_test.mjs (8/8). Battery 104/104, fuzz clean.\n\nGROUP D DONE — all 52 vanilla turn-trigger cards now faithful (across 11 waves +\nthe deathrattle audit), reusing the ongoing:{on:'turn-end'/'turn-start'/\n'every-turn-end'/'every-turn-start'} system.",
+			"cards": []
+		},
+		{
+			"sha": "96a955d",
+			"date": "2026-08-03",
+			"kind": "patch",
+			"title": "deathrattle-turn group — fix Dark Iron Harbinger's Doomsayer",
+			"body": "Audited the 5 deathrattle-based \"turn\" cards: Dreadsteed (end-of-turn resummon\nemblem), Everburning Phoenix (conjure-id-endturn), Tunnel Terror (two temporary\n2-cost minions), and Nythendra (split into Beetles + reform) were all ALREADY\nimplemented.\n\nThe one gap: Dark Iron Harbinger summoned an ability-less 0/7 whose NAME was\n\"Doomsayer that destroys ALL creatures...\" — flavor text, no actual ability.\nChanged its deathrattle to summon summonId:'doomsayer' (the real 0/7 Doomsayer\ntoken, which already carries the start-of-turn destroy-all ongoing). Now it\nactually wipes the board at the start of your turn.\n\nTest groupd_deathrattles_test.mjs (9/9, incl. e2e Doomsayer wipe + Dreadsteed\nrebirth). Battery 103/103, fuzz clean.",
+			"cards": []
+		},
+		{
+			"sha": "6253ee9",
+			"date": "2026-08-03",
+			"kind": "patch",
+			"title": "Blood of the Ancient One + Primordial Acolyte (Group D wave 10)",
+			"body": "- Blood of the Ancient One (turn-end): if you control two, merge them into a 30/30\n  The Ancient One (new the_ancient_one token + merge-if-two effect — removes the two\n  copies cleanly, no deathrattles, and summons the merged body). A single copy does\n  nothing.\n- Primordial Acolyte (turn-end): transform the lowest-Cost spell in your hand into a\n  random spell costing 1 more (new transform-lowest-hand-spell effect; keeps its\n  Divine Shield).\n\nNew token + two effect handlers (registry 969 -> 971). Test groupd_wave10_test.mjs\n(7/7). Battery 102/102, fuzz clean. Group D: 40/52.",
+			"cards": []
+		},
+		{
+			"sha": "53a792d",
+			"date": "2026-08-03",
+			"kind": "patch",
+			"title": "Ohn'ahra + Subterfuge Swindler (Group D wave 9)",
+			"body": "- Ohn'ahra (turn-end): play the top 3 cards from your deck (new play-deck-top\n  effect — creatures summon, spells cast with a random legal target, reusing the\n  cast-spell-from-deck runSpell pattern).\n- Subterfuge Swindler (turn-end): each player draws a spell (new each-draws-spell\n  effect); its Rush/Stealth keywords + Plunder deathrattle were already present.\n\nAlso confirmed Chronochiller was already done (skipStartDraw field, wired at the\nstart-of-turn draw).\n\nTwo new effect handlers (registry 967 -> 969). Test groupd_wave9_test.mjs (7/7,\nincl. spell-among-top-3 casting + both players drawing a spell). Battery 101/101,\nfuzz clean. Group D: 38/52.",
+			"cards": []
+		},
+		{
+			"sha": "71b6534",
+			"date": "2026-08-03",
+			"kind": "patch",
+			"title": "Ysera Dreams + Gutwrencher + Tortotem (Group D wave 8)",
+			"body": "- Ysera (turn-end): get two random Dream cards (new conjure-from-pool effect —\n  N random from a fixed id pool: dream/nightmare/laughing_sister/emerald_drake/\n  ysera_awakens).\n- Gutwrencher Oni (turn-start): discard a card unless you control a Devil, Ogre\n  or Horror (conditional controlTribe now pipe-splits for OR; then=[]/else=discard);\n  also restored its Poisonous/Taunt/Trample keywords.\n- Tortotem (turn-end): get a random creature with multiple creature types\n  (conjure-random gained a multiTribe filter for slash-tribe minions).\n\nOne new effect handler (conjure-from-pool, registry 966 -> 967). Test\ngroupd_wave8_test.mjs (8/8). Battery 100/100 suites, fuzz clean. Group D: 36/52.",
+			"cards": []
+		},
+		{
+			"sha": "15af55c",
+			"date": "2026-08-03",
+			"kind": "patch",
+			"title": "this-turn recasters + randomized self-effects (Group D wave 7)",
+			"body": "- Archmage Vargoth (turn-end): cast a random spell you've cast this turn\n  (cast-random-spell gained castThisTurn — pulls from cardsPlayedThisTurnIds,\n  filtered to spells, honoring the school filter).\n- Creature of the Sacred Cave (turn-end): recast a random HOLY spell you cast\n  this turn (castThisTurn + school:'Holy').\n- Static Waveform (every-turn-start): lose 1 Attack or Health at random. Added an\n  every-turn-start fire point in the turn loop (mirrors every-turn-end) + a new\n  lose-random-stat effect.\n- Sunstruck Henchman (turn-start): 50% chance to fall asleep (make-dormant gained\n  target:'self' + a `chance` gate).\n\nOne new effect handler (lose-random-stat, registry 965 -> 966) + every-turn-start\ntrigger. Test groupd_wave7_test.mjs (10/10). Battery 99/99, fuzz clean.\nGroup D: 33/52.",
+			"cards": []
+		},
+		{
+			"sha": "6384c88",
+			"date": "2026-08-03",
+			"kind": "patch",
+			"title": "enemy-manipulation turn triggers (Group D wave 6)",
+			"body": "- Mythical Terror (turn-end): force ALL enemy minions to attack it (force-attack\n  gained an `all` option); also restored its missing Lifesteal keyword.\n- Soothsayer's Caravan (turn-start): copy a spell from the opponent's deck\n  (copy-random-enemy-deck-card gained a spellOnly filter).\n- Merch Seller (turn-end): put a random spell on top of the opponent's deck (new\n  put-spell-on-enemy-deck-top effect; the opponent then draws it next turn).\n- Ancient Void Hound (turn-end): steal 1 Attack & Health from all enemy minions\n  (new steal-stats-all-enemies effect — each enemy -1/-1, the Hound +1/+1 per).\n\nTwo new effect handlers (registry 963 -> 965). Test groupd_wave6_test.mjs (11/11).\nBattery 98/98, fuzz clean. Group D: 29/52.",
+			"cards": []
+		},
+		{
+			"sha": "1c29447",
+			"date": "2026-08-03",
+			"kind": "patch",
+			"title": "token-makers + Maw and Paw Corpse cycle (Group D wave 5)",
+			"body": "- Acidspitter Nest: MIGRATED from a hardcoded c.id==='acidspitter_nest' handler in\n  endTurn to a data-driven turn-end ongoing (summon-random ids). The scripted\n  handler + a new ongoing were double-firing (4 Acidspitters); removed the script.\n- Scout's Nest (turn-start): add two Scurrying Scouts to hand (conjure-id x2).\n- Voronei Recruiter (turn-end): get a 4/4 Crewmate with a random Bonus Effect\n  (add-token gained a withGift option that applies a Dark Gift to the token).\n- Maw and Paw (deathknight): two ongoings — turn-end gain 5 Corpses; turn-start\n  spend 5 Corpses to heal the hero 5 (spend-corpses-heal already existed for it).\n\nAlso confirmed Nerubian Prophet was already implemented (costReducePerTurn) and\naudited all wave-1..5 ids against core.js scripted handlers — only acidspitter_nest\noverlapped.\n\nTest groupd_wave5_test.mjs (10/10). Battery 97/97, fuzz clean. Group D: 25/52.",
+			"cards": []
+		},
+		{
+			"sha": "e8868eb",
+			"date": "2026-08-03",
+			"kind": "patch",
+			"title": "end-of-turn casters + recruit/summon/resurrect (Group D wave 4)",
+			"body": "- Trick Totem: cast a random spell that costs (3) or less (added maxCost to\n  cast-random-spell).\n- Grand Archivist: cast a spell from your deck (cast-spell-from-deck).\n- Dragonhatcher: Recruit a Dragon (recruit tribe:Dragon).\n- Y'Shaarj, Rage Unbound: put a creature from your deck onto the battlefield\n  (summon-from-deck).\n- Catrina Muerte: resurrect a friendly Undead (new resurrect-tribe effect —\n  resurrects one random dead friendly minion of a tribe, no forced attack, unlike\n  the Inventor-Boom resurrect-tribe-cost-attack).\n\nNew effect handler resurrect-tribe (registry 962 -> 963). Test\ngroupd_wave4_test.mjs (11/11). Battery 96/96, fuzz clean. Group D: 21/52.",
+			"cards": []
+		},
+		{
+			"sha": "ea6b228",
+			"date": "2026-08-03",
+			"kind": "patch",
+			"title": "turn-start attackers + end-of-turn enemy effects (Group D wave 3)",
+			"body": "- Gnome Muncher (turn-end): attack the lowest-Health enemy minion (attack-lowest-enemy).\n- Krog Crater King (turn-end): set all enemy minions to 1/1 (set-stats enemy-creatures).\n- Disruptive Spellbreaker (turn-end): opponent discards a spell (enemy-discard gained\n  a spellOnly filter).\n- Conjured Mirage (turn-start): shuffle itself into your deck (shuffle-self-into-deck\n  now removes a LIVE minion from the board, not just the deathrattle case; the\n  start-of-turn draw may pull it back — faithful HS order).\n- Kobold Barbarian (turn-start): attack a random enemy incl. the hero\n  (attack-random-enemy gained includeHero).\n- Briarspawn Drake (turn-end): attack a random enemy minion.\n\nTest groupd_wave3_test.mjs (13/13). Battery 95/95, fuzz clean. Group D: 16/52.",
+			"cards": []
+		},
+		{
+			"sha": "56854b1",
+			"date": "2026-08-03",
+			"kind": "patch",
+			"title": "board fillers + self stat-changes (Group D wave 2)",
+			"body": "- Onyxia the Broodmother (every-turn-end) + Shu'ma (turn-end): fill your board\n  with 1/1 Whelps / Tentacles via a new fill-board-token effect that tops the\n  board out at 7 minions total (matching the game's existing fill-to-7 convention\n  in fill-board-self) — never makes more than 7.\n- Scaled Nightmare (turn-start): double its Attack (double-attack-self).\n- Toothy Chest / Validated Doomsayer (turn-start): set own Attack to 4 / 7.\n\nFixes: set-attack effect gained a 'self' target; the trigger-registry set-attack\n(used by the ongoing path) now honors target:'self' via ctx.self (previously it\nonly acted on a triggering minion, so ongoing self-sets were a no-op).\n\nNew effect handler fill-board-token (registry 961 -> 962). Test groupd_wave2_test.mjs\n(14/14, incl. fill-to-7 cap + EACH-turn vs your-turn firing). Battery 94/94, fuzz\nclean. Group D: 10/52.",
+			"cards": []
+		},
+		{
+			"sha": "f00de40",
+			"date": "2026-08-03",
+			"kind": "patch",
+			"title": "the previously-skipped Group C cost cards (Group C complete)",
+			"body": "Closed out the 7 one-off cost cards deferred across earlier waves:\n- Paid-Off Patrolman: coins in your graveyard (compute-from-state per case).\n- Chained Guardian: Plagues shuffled into the enemy deck this game (counter in\n  shuffle-cards-into-enemy-deck when the card name contains \"Plague\").\n- Abyssal Bassist: weapons equipped this game — counted in ONE place (emit(),\n  which every weapon-equip path already fires as 'weaponEquip') instead of\n  editing all 5 scattered equip sites.\n- Underbrush Tracker: shuffles into your own deck (counter in the\n  shuffle-into-own-deck / shuffle-self-into-deck / shuffle-hand-card-into-deck\n  handlers).\n- Red Giant: adjacent cards played while in hand (hook at the _handIndex capture\n  in playCard — a hand-neighbor play bumps the held card's counter).\n- Quietblade Shinobi: restored its missing Poisonous/Rush/Firebreathing keywords\n  + the Bushido cost aura (harmless until Bushido cards exist).\n- Eldraine Sprite: Adventure OR Nature spells -1 via a new costMod keywordAny/\n  schoolAny OR-filter.\n\nTest groupc_skips_test.mjs (14/14, incl. e2e equip/shuffle/plague/adjacency hooks).\nBattery 93/93, fuzz clean (emit() is a hot path — verified). Group C DONE.",
+			"cards": []
+		},
+		{
+			"sha": "641873b",
+			"date": "2026-08-03",
+			"kind": "patch",
+			"title": "turn-trigger cards begin (Group D wave 1)",
+			"body": "Five vanilla stat-sticks whose \"At the end of your turn, get a token/random card\"\ntext now works via ongoing:{on:'turn-end', effects}: Whelp Wrangler (1/2 Taunt\nWhelp), Tentacle Tender (1/1 Chaotic Tendril), Selenic Drake (random Dragon; also\nrestored its missing Elusive keyword), Daydreaming Pixie (random Nature spell),\nVoodoo Totem (random Shadow spell). Added keyword support to the add-token effect\n(it previously dropped keywords).\n\nTest groupd_wave1_test.mjs (13/13, incl. \"does not fire on the opponent's turn\").\nBattery 92/92, fuzz clean. Group D: 5/52.",
+			"cards": []
+		},
+		{
+			"sha": "ac1d9cb",
+			"date": "2026-08-03",
+			"kind": "patch",
+			"title": "last niche counter cost cards (Group C wave 10)",
+			"body": "4 cards, each with its own tracking hook:\n- Sauna Regular — times your hero took damage on your turn (instance counter in\n  BOTH damageHero paths, reset each turn).\n- Devious Coyote — times an opponent lost life this turn (per-opponent instance\n  counter in both damageHero paths, reset each turn).\n- Azerite Giant — turns in a row you've played an Elemental (streak advanced at\n  the elemental turn-transition; reset on a turn without one).\n- Seaside Giant — locations used this game (counted in tapLand for location-type).\n\nTest groupc_wave10_test.mjs (13/13, incl. e2e streak build/reset + damage-instance\ncounting). Battery 91/91, fuzz clean. Group C: 75 cards across 10 waves.",
+			"cards": []
+		},
+		{
+			"sha": "2dfcb80",
+			"date": "2026-08-03",
+			"kind": "patch",
+			"title": "\"Costs Health/Corpses instead of Mana\" cards (Group C wave 9)",
+			"body": "Extended the existing altCost mechanism from \"pay the alt when mana is short or\nchosen\" to also support FORCED alt-costs (always pay the alt, never mana) + a new\n`corpses` payment type + a `forcedIf` condition. effectiveCost returns 0 for a\nforced-alt card, canPlay requires you can actually afford the alt resource, and\nthe play-payment branch fires payAlt when forced.\n\nWired: Blood Treant (altCost life 5, forced), Reanimated Pterrordax (altCost\ncorpses 5, forced), Death Metal Knight (altCost life 3, forcedIf healed-this-turn\n— normal 3 mana otherwise; canPayAlt gates the forcedIf so it's not a mana-short\nfallback).\n\nDeferred Paid-Off Patrolman (coins-in-graveyard) — \"coin\" is ambiguous for the\nBounty Hunter class and coins usually exile rather than hit the graveyard.\n\nTest groupc_wave9_test.mjs (16/16). Battery 90/90, fuzz clean. Group C: 71 cards\nacross 9 waves.",
+			"cards": []
+		},
+		{
+			"sha": "58d2f54",
+			"date": "2026-08-03",
+			"kind": "patch",
+			"title": "odd cost auras + tribe-died / spells-on-friendly (Group C wave 8)",
+			"body": "- Razorscale (\"Cards can't cost less than (2)\") — the engine already had a\n  cost-floor static; just added static:{type:'cost-floor',value:2}. Even\n  heavily-discounted cards floor to 2.\n- Customs Enforcer (\"Enemy cards that didn't start in their deck cost (2) more\")\n  — new costMod.foreignOnly flag (skips fromDeck cards) + scope:'enemies'.\n- Mulchmuncher (-1 per friendly Treant died this game) — new per-tribe\n  tribeDiedGame map tracked in death.js.\n- Devout Pupil (-1 per spell cast on a friendly this game) — reused existing\n  p.spellsOnFriendly.\n\nSkipped Quietblade Shinobi: Bushido isn't a modeled keyword (0 cards), so its\naura would be a no-op — and the card is separately missing its own\nPoisonous/Rush/Firebreathing keywords (a keyword-grant issue, not cost).\n\nTest groupc_wave8_test.mjs (12/12). Battery 89/89, fuzz clean. Group C: 68 cards\nacross 8 waves.",
+			"cards": []
+		},
+		{
+			"sha": "db9786a",
+			"date": "2026-08-03",
+			"kind": "patch",
+			"title": "\"cards played this game\" cost cards (Group C wave 7)",
+			"body": "Added four game-counters at the central card-play hook (all card types): foreign\nplays (!fromDeck), per-class plays, Outcast plays, Secret plays. Wired 5 cards:\nTechysaurus + Mana Giant (foreign-played-game), Lightray (class-played-game\npaladin), Vengeful Walloper (outcast-played-game), Kabal Crystal Runner\n(secrets-played-game).\n\nDeferred Abyssal Bassist (weapons-equipped) — no central equipWeapon helper; the\nequip sites are spread across several files, not worth a refactor for one card.\n\nTest groupc_wave7_test.mjs (16/16, incl. e2e play-hook counting + a fromDeck card\ncorrectly NOT counting as foreign). Battery 88/88, fuzz clean. Group C: 64 cards\nacross 7 waves.",
+			"cards": []
+		},
+		{
+			"sha": "484b46b",
+			"date": "2026-08-03",
+			"kind": "patch",
+			"title": "\"first/every-Nth X each turn costs N\" cost cards (Group C wave 6)",
+			"body": "Made costMod.firstEachTurn filter-aware (it now consults the per-turn\ncardsPlayedThisTurnIds log against the aura's type + tribe + keyword, instead of\nthe blunt spellsPlayed/creaturesPlayed counters) and added costMod.everyN for\n\"every third\" cards. Existing firstEachTurn users (Kalecgos, Pint-Sized Summoner)\nare unaffected — the new logic is equivalent for a plain spell/creature filter.\n\nWired 7 cards: Game Master (first Secret -> 1), Razormane Battleguard (first Taunt\ncreature -2), Naralex (first Dragon -> 1), Duskfallen Aviana (each player's first\ncard -> 0, scope all), Marooned Archmage (first spell -2), Kael'thas Sunstrider\n(every 3rd spell -> 1), Kael'thas Sinstrider (every 3rd creature -> 0).\n\nTest groupc_wave6_test.mjs (24/24). Battery 87/87, fuzz clean. Group C: 59 cards\nacross 6 waves.",
+			"cards": []
+		},
+		{
+			"sha": "437d617",
+			"date": "2026-08-03",
+			"kind": "patch",
+			"title": "more counter-based cost cards (Group C wave 5)",
+			"body": "6 more self-scaling cost cards: Irebound Brute (cards drawn this turn — new\ncardsDrawnThisTurn counter in drawCards, reset each turn), Knight of the Wild +\nFrostsaber Matriarch (Beasts summoned this game — new per-tribe tribeSummonedGame\nmap in summon()), Naga Giant + Shirvallah (Mana spent on spells this game — new\nmanaSpentSpellsGame at the spell-cast site), Imprisoned Horror (damage taken on\nyour turns — reused existing p.ownTurnsDamage).\n\nTest groupc_wave5_test.mjs (16/16, incl. e2e Beast-summon + draw-reset). Battery\n86/86, fuzz clean. Group C now 52 cards across 5 waves.",
+			"cards": []
+		},
+		{
+			"sha": "66596af",
+			"date": "2026-08-03",
+			"kind": "patch",
+			"title": "counter-based self-scaling cost cards (Group C wave 4)",
+			"body": "11 \"Costs (1) less for each X this game/turn\" cards wired via selfCost. Reused\nexisting counters where present (cardsPlayedThisTurn -> Frostwolf Warmaster /\nScribbling Stenographer; friendlyDeaths -> Ur'zul Giant; damageToEnemyHeroThisTurn\n-> Frenzied Felwing; per-card spellsCastWhileHeld -> Mantle Shaper) and added four\nnew game-counters with tracking hooks: totemsSummonedGame (summon() on Totem tribe\n-> Thing from Below / Gigantotem), overloadedGame (turn-start overload lock ->\nSnowfury Giant / Haywire Hornswog), corpsesSpentGame (spendCorpses, counts only\nwhat's actually spent -> Stitched Giant), cardsDrawnGame (drawCards -> Playhouse\nGiant).\n\nTest groupc_wave4_test.mjs (26/26, incl. end-to-end summon/spendCorpses/draw hooks).\nBattery 85/85, fuzz clean. No new registry types.",
+			"cards": []
+		},
+		{
+			"sha": "941f19e",
+			"date": "2026-08-03",
+			"kind": "patch",
+			"title": "Snake Oil Seller isn't Tradeable — the Snake Oils it makes are",
+			"body": "The \"Tradeable\" in \"Deathrattle: Shuffle 2 Tradeable Snake Oils...\" describes the\nproduced tokens, not the Seller. A Faithful-Flags pass had mis-applied tradeable\nto snake_oil_seller. Moved tradeable:true onto ww_snake_oil (the token) and off\nthe Seller.\n\nBattery 84/84.",
+			"cards": []
+		},
+		{
+			"sha": "1eb86a4",
+			"date": "2026-08-03",
+			"kind": "patch",
+			"title": "fix Duels/Heist/Tombs hero power rendering as a loose table card",
+			"body": "In run modes the hero power is a special power in heroPowers[0] (e.g.\nduelshp_primal_power), not <class>_power. classPowerOf only treated that slot-0\npower as the orb power for the HUMAN, so an OPPONENT's run-mode power had no orb\nand fell through to the table-render filter (which places any non-<class>_power\non the field) — showing the enemy hero power as a card among the minions\n(reported: Darius Crowley's \"Primal Power\" on the board).\n\nFix: classPowerOf recognizes the slot-0 run-mode power for EVERY player, and the\ntable-render filter now excludes whatever classPowerOf returns. The opponent's\npower now draws as their orb; also removes a double-render of the human's own\nrun-mode power (previously both orb and table card).\n\nBattery 84/84.",
+			"cards": []
+		},
+		{
+			"sha": "09e0659",
+			"date": "2026-08-03",
+			"kind": "patch",
+			"title": "conditional self-cost cards (Group C wave 3)",
+			"body": "14 \"Costs (N) if/while <condition>\" vanilla stat-sticks wired via a new\nselfCostIf:{cond,setCost?,amount?} field evaluated in effectiveCost: Bladed Lady\n(hero Attack >=6), Lokholar (15 Health or less), Barrens Scavenger (deck <=10),\nSecond-Rate Bruiser (enemy has 3+ creatures), Happy Ghoul (hero healed this turn),\nPrescient Slitherdrake (holding another Dragon), Solitary Prisoner (empty board),\nAnetheron (full hand), Perennial Serpent (a Dormant creature), Snow Shredder\n(a Frozen character), Bouldering Buddy (10+ Mana Crystals), Gladesong Siren (cast\nHoly + Shadow this turn), Arcane Tyrant + Anubisath Defender (cast a 5+ spell this\nturn — new p.castBigSpellThisTurn flag, set at the spell-cast site, reset each turn).\n\nReused existing flags (healedThisTurn, schoolsCastThisTurn). Test\ngroupc_wave3_test.mjs (35/35, incl. an end-to-end big-spell cast). Battery 84/84,\nfuzz clean. No new registry types.",
+			"cards": []
+		},
+		{
+			"sha": "78ee510",
+			"date": "2026-08-03",
+			"kind": "patch",
+			"title": "self-scaling cost cards, state-computed (Group C wave 2)",
+			"body": "13 \"Costs (N) less for each X\" vanilla stat-sticks wired via selfCost:{per,amount},\nadding per-conditions that read live board/hand/graveyard state (no new counters):\narmor (Crypt Keeper), secrets-controlled (Contract Conjurer), frozen-enemies\n(Floecaster), tribe-controlled (Curious Outsider/Skycap'n Kragg), enemy-creatures\n(Eredar Brute/Rabble Bouncer), damaged-creatures (Bloodboil Brute), enemy-hand-size\n(Clockwork Giant), all-creatures (Mogu Fleshshaper), tribe-in-graveyard (Fye x2),\nunique-tribes (Tent Trasher). effectiveCost already floors at 0.\n\nTest groupc_wave2_test.mjs (23/23). Battery 83/83, fuzz clean. No new registry types.",
+			"cards": []
+		},
+		{
+			"sha": "7d9ace2",
+			"date": "2026-08-03",
+			"kind": "patch",
+			"title": "cost-aura minions (Group C wave 1)",
+			"body": "Eight vanilla stat-sticks whose text modifies OTHER cards' costs now do so via\nthe existing costMod aura field (read live in effectiveCost from board minions):\nMana Wraith (all creatures +1), Emerald Hive Queen (your creatures +2), Doomed\nApprentice (enemy spells +1), Kirin Tor Tricaster (your spells +1, keeps Spell\nDamage +3), Armory Mice (your artifacts -1), Angel of Eternal Dawn (your\nenchantments +1), Cloaked Huntress (your secrets cost 0), Nerub'ar Weblord\n(Battlecry creatures +2). Added one costMod option — a `keyword` filter — for the\nWeblord; everything else was pure data (types secret/artifact/enchantment already\nmatch via costTypeMatches).\n\nTest groupc_wave1_test.mjs (25/25). Battery 82/82, fuzz clean. No new registry\ntypes (961).",
+			"cards": []
+		},
+		{
+			"sha": "ad956bc",
+			"date": "2026-08-03",
+			"kind": "patch",
+			"title": "dedup blightwing_whelp + underbridge_warlock (keep the complete copies)",
+			"body": "Removed the first (shadowed) copy of each duplicate id; the kept copy has the\nfunctional data (blightwing_whelp gains its poisonous/windfury keywords, which the\nremoved copy lacked; underbridge_warlock's two copies were equivalent). cards.json\nnow has zero duplicate ids.\n\nAlso de-brittled browser_paths_smoke's dungeon-boot assertion: it hardcoded\np.mana.max === 2, but createGame seeds the boss a random default deck whose\nstart-of-game effects can ramp the human's mana — removing two cards reshuffled\nthat deck and legitimately changed the starting mana. Now asserts the crystal_gem\ntreasure adds exactly one crystal (delta), not a fixed total.\n\nBattery 81/81, fuzz clean.",
+			"cards": []
+		},
+		{
+			"sha": "0ab5b6b",
+			"date": "2026-08-03",
+			"kind": "patch",
+			"title": "Aggramar + Sargeras — Group B (Titans) COMPLETE, 12/12",
+			"body": "The last two Titans:\n- Aggramar (3/7): Battlecry equips a 3/3 Taeshalach; abilities buff the weapon via\n  a new grant-weapon-ability effect + a weapon.afterHeroAttack accumulator run in\n  heroAttack. Maintain Order (\"after your hero attacks, draw\"), Commanding Presence\n  (\"...summon a 3/3 Enforcer with Taunt\"), Swift Slash (+2 Attack and hero Immune\n  while attacking — reuses the existing weapon static immune-attacking).\n- Sargeras (6/12): the portal was ALREADY implemented as an ongoing (turn-end ->\n  two 3/2 Imps), so I kept it and only added the Titan shell + abilities: To the\n  Void! (destroy-all others), Inferno! (two 6/6 Infernals), Legion Invasion!\n  (new buff-future-demons: future Demons you summon get +2 Health and Taunt, via a\n  summon() hook — the portal Imps included). Caught a double-portal bug in testing\n  (my redundant flag + the existing ongoing) and removed the redundant mechanism.\n\nNew handlers grant-weapon-ability + buff-future-demons (registry 959 -> 961). Test\ntitans_wave3b_test.mjs (15/15). Battery 81/81, fuzz clean.\n\nGroup B done: all 12 Titans faithful (framework + waves 1/2/3a/3b), each attack-\ngated until its 3 abilities are used, one per turn, Discover-style pick in the UI.",
+			"cards": []
+		},
+		{
+			"sha": "cdc2d34",
+			"date": "2026-08-03",
+			"kind": "patch",
+			"title": "Aman'Thul + The Primus (Group B wave 3a) + dedup fix",
+			"body": "Adds the last two \"advanced-effect\" Titans, and fixes a duplicate-id bug: both\nAman'Thul and Khaz'goroth already existed as vanilla stat-sticks (my earlier\nMISSING check mis-normalized the apostrophe in their names), so waves 1/3a each\ninserted a second copy. Removed the vanilla duplicates; the complete Titan\nversions now win. cards.json is duplicate-free for these ids.\n\n- Aman'Thul (3/10, was vanilla): Shape the Stars (copy a non-Titan minion +2/+2\n  — targetSpec excludeTitan filter + summon-copy-of-target-buffed stat buff),\n  Strike from History (remove two enemy minions — exile alsoRandomOther, since\n  the engine has no two-target pick), Vision of Heroes (random 6-Cost minion with\n  Taunt+Lifesteal — summon-random grant now takes an array). Passive: Discover a\n  Legendary minion (any class).\n- The Primus (7/9, was vanilla): Runes of Blood (destroy an enemy minion; this\n  minion and your hero gain its Health — destroy-target-gain-stats healHeroByStats),\n  Runes of the Unholy (two 3/3 Undead Taunt+Reborn), Runes of Frost (next spell\n  costs 3 less + Spell Damage +3). Passive: Discover a Death Knight card (Runes\n  aren't modeled, so \"a card with that Rune\" -> a DK card).\n\nHandler extensions only (no new registry types; stays 959). Test\ntitans_wave3a_test.mjs (14/14). Battery 80/80, fuzz clean. 10/12 Titans faithful\n(Aggramar + Sargeras remain).",
+			"cards": []
+		},
+		{
+			"sha": "7d76357",
+			"date": "2026-08-03",
+			"kind": "patch",
+			"title": "3 aura Titans — Golganneth, Amitus, Argus (Group B wave 2)",
+			"body": "The \"ongoing passive\" Titans, each with a new reusable aura hook:\n- Golganneth: your first spell each turn costs (3) less (cost.js firstSpell hook\n  reading firstSpellDiscountAura). Abilities: Roaring Oceans (3 to all enemies +\n  heal 6 to friendly characters), Lord of Skies (20 to a minion), Shargahn's\n  Wrath (draw 3 Overload cards).\n- Amitus: Taunt + \"your minions can't take more than 2 damage at a time\"\n  (damageCreature clamp on damageCapAura). Abilities: Reinforced (new\n  draw-minions-set-stats effect), Empowered (+2/+2 to other minions), Pacified\n  (set-stats now handles enemy-creatures).\n- Argus: minions to its left have Rush, to its right have Lifesteal (new\n  directional leftKeywords/rightKeywords aura in auras.js). Abilities: Crystal\n  Carving (discover Deathrattle minion at -3 via existing requireKeyword+costMod),\n  Show of Force (discount-hand now has minionsOnly), Argunite Army (4x 2/2 Taunt).\n\nOne new effect handler (draw-minions-set-stats, registry 958 -> 959) + small\nextensions to set-stats / discount-hand. Test titans_wave2_test.mjs (22/22).\nBattery 79/79, fuzz clean. 8/12 Titans now faithful.",
+			"cards": []
+		},
+		{
+			"sha": "d60cb61",
+			"date": "2026-08-03",
+			"kind": "patch",
+			"title": "Titan framework + 5 faithful Titans (Group B wave 1)",
+			"body": "Builds the Titan mechanic on the existing activated-ability system: a Titan\ncan't attack until it has used all 3 of its abilities (canAttackWith gate),\none ability per turn (abilityUsedThisTurn), each usable once (oncePerGame),\nand each use fires its \"After this uses an ability, ...\" passive\n(fireTitanPassive: double-other-abilities / repeat-on-random-friendly /\nafter-ability-effects). activated is now deep-cloned in instantiate so\nNorgannon's power-doubling can't leak across instances.\n\nFaithful this wave: Norgannon (5 dmg + double the other abilities; Ancient\nKnowledge via new enemy-cards-cost-more effect; Cast a random Mage Secret),\nKhaz'goroth (added — was missing; +2/+2 & draw a weapon / +5 Atk / +5 Health,\npassive Immune + attack a random enemy minion), V-07-TR-0N Prime (abilities\nrepeat on another random friendly), Eonar (draw-to-full / heal-full / refresh\nmana, passive summons a 5/5 Ancient), Yogg-Saron (mind-control / mass-attack /\nfill hand with 1/1 Chaotic Tendrils, passive casts two random spells).\n\nClient: Titans present their abilities as a Discover-style pick (used/locked\noptions removed); all-spent Titans fall through to attacking. AI already drives\nactivated abilities. One new effect handler (registry 957 -> 958).\n\nTest tests/regression/titans_wave1_test.mjs (30/30). Battery 78/78, fuzz clean.",
+			"cards": []
+		},
+		{
+			"sha": "50e21d8",
+			"date": "2026-08-03",
+			"kind": "patch",
+			"title": "faithful Wallow / Twisted Monstrosity / Stalwart Avenger (Group A complete)",
+			"body": "Three formerly-vanilla stat-sticks now do their real text:\n- Wallow, the Wretched (6/6 Ancient): while in hand OR deck, gains a copy of\n  every Dark Gift given to your minions. applyGift logs each gift on the owner\n  and mirrors it onto held copies; decked copies replay the log on draw.\n- Twisted Monstrosity (6/5 Beast, Elusive/Taunt): each turn in hand, alternates\n  between two random Bonus Effects (base stats/keywords restored each swap).\n- Stalwart Avenger (7/2 Draenei): Immune while attacking (no retaliation, scoped\n  to its own swing via _attackingImmune), and swaps Attack/Health at the end of\n  EACH turn.\n\nNew instance fields accrueDarkGifts / bonusEffectSwap / swapStatsEndOfTurn /\nimmuneWhileAttacking (no new effect handlers). Regression test\ntests/regression/groupA_tail_test.mjs (19/19). Full battery 77/77, fuzz clean.",
+			"cards": []
+		},
+		{
+			"sha": "b89a3aa",
+			"date": "2026-08-03",
+			"kind": "patch",
+			"title": "faithful Flobbidinous Floop + Mirrex (in-hand copy of last-played creature)",
+			"body": "Both are 3/4 while held and, in hand, become a copy of the last creature\nplayed: Floop copies the last creature YOU played, Mirrex copies the last one\nyour OPPONENT played (each keeping its own cost). Adds inHandCopyLastPlayed\nfield + a creature-play hook in core.js that re-morphs held copies continuously;\nthey play as their current copied form at 3/4.\n\nRegression test tests/regression/floop_mirrex_test.mjs (7/7). Full battery 76/76,\nfuzz determinism clean.",
+			"cards": []
+		},
+		{
+			"sha": "b7ae438",
+			"date": "2026-08-03",
+			"kind": "patch",
+			"title": "Group A transform: Carress, Cabaret Star (two-schools trigger + 21 forms)",
+			"body": "While she's in your hand, casting two DIFFERENT spell schools transforms her\ninto one of 21 forms. Added `handTransformOnTwoSchools` (carried by instantiate)\nand a spell-cast hook that morphs her once schoolsWhileHeld has >= 2 distinct\nschools (one-way; keeps the hand slot).\n\nThe 21 forms are generated from 7 battlecry building blocks (all C(7,2) pairs),\neach reusing existing handlers: Draw 2 / Deal 6 to enemy hero / Freeze 3 random\nenemies / +2/+2 & Taunt / Restore 6 to your hero / Destroy 2 random enemies /\nDeal 2 to all enemy creatures. Forms reuse the base Carress art.\n\nTest (9): stays Carress after one school (or the same school twice); transforms\ninto a valid pair-form on a second distinct school (one-way); the destroy+AoE\nform clears a small enemy board; the heal+buff form heals the hero 6 and leaves\na 5/5 Taunt. Battery green (75/75) + fuzz clean.\n\nGroup A transforms complete (Disguised K'thir, Lady Naz'jar, Carress).",
+			"cards": []
+		},
+		{
+			"sha": "2e7c239",
+			"date": "2026-08-03",
+			"kind": "patch",
+			"title": "Group A transform: Lady Naz'jar (while-held school trigger + 3 forms)",
+			"body": "Implemented the reactive in-hand transform: while she's in your hand, casting a\nFire/Frost/Arcane spell turns her into a random one of three 5/5 forms. Added a\n`handTransformOnSchool` field (schools + form ids) carried by instantiate, and a\nhook in the spell-cast path that morphs qualifying hand cards after a matching\nschool is cast (one-way; keeps the hand slot/uid).\n\nThe 3 forms are new non-collectible cards whose battlecries reuse existing\nhandlers: reduce the Cost of spells in your hand by 1 (added a `spellsOnly`\noption to discount-hand), deal 5 to a target enemy + 2 to its neighbors\n(damage-adjacent), and gain 8 Armor. Official form art sourced from the CDN.\n\nTest (9): the base transforms on a Fire spell into a form (same slot, one-way),\na school-less spell doesn't, and each form's battlecry resolves (armor,\ntarget+splash damage, spells-only discount). Battery green (74/74) + fuzz clean.\n\nCarress remains the last Group A card (~20 forms + a two-different-schools\ntrigger).",
+			"cards": []
+		},
+		{
+			"sha": "fa7e5ac",
+			"date": "2026-08-03",
+			"kind": "patch",
+			"title": "Group A transform: Disguised K'thir (in-hand morph from the opponent's deck)",
+			"body": "Reused the existing handTransform turn-start hook with a new `fromEnemyDeck`\nmode: at your turn start the card becomes a copy of a random card in the\nopponent's deck, keeps its hand slot/uid, retains handTransform (so it re-morphs\neach turn), and plays as its current form. Empty enemy deck = no morph (no crash).\n\nTest (8): starts as K'thir; after your turn it's an opponent-deck card in the\nsame slot; keeps morphing; plays as the current form; empty-deck safe. Battery\ngreen (73/73) + fuzz clean.\n\nThe other two transform cards are bigger and deferred: Lady Naz'jar and Carress\ntransform (on casting spell schools while held) into fixed FORM cards that\naren't imported (3 and ~20 forms with their own battlecries) and need a\nwhile-held spell-cast trigger.",
+			"cards": []
+		},
+		{
+			"sha": "77e2f1d",
+			"date": "2026-08-03",
+			"kind": "patch",
+			"title": "Faithfulness wave 2 (Group A core): in-hand \"swap Attack/Health each turn\" hook",
+			"body": "Added a reusable start-of-turn in-hand hook: at the start of the controller's\nturn, every card in their hand with `inHandSwap` swaps its Attack & Health\n(instantiate carries the flag; the swap persists into play). Wired the 5 clean\ncards from Group A — Duskhaven Hunter, Gilnean Royal Guard, Pumpkin Peasant,\nSwift Messenger, Spellshifter — which now do what their text says (they already\ngot their keywords in wave 1, so these 5 are now fully faithful).\n\nTest (6): stats swap on your turn start and swap back the next; swapped stats\npersist when played (with keywords intact); the enemy's copy only swaps on the\nenemy's turn. Battery green (72/72) + fuzz clean.\n\nRemaining Group A (bespoke, follow-up): stalwart_avenger (board end-of-turn\nswap + immune-while-attacking), flobbidinous_floop / mirrex (in-hand copy of\nlast-played creature), disguised_kthir / lady_nazjar / carress (in-hand\ntransforms), wallow (Dark Gift accrual in hand/deck), twisted_monstrosity.",
+			"cards": []
+		},
+		{
+			"sha": "dc60b3b",
+			"date": "2026-08-03",
+			"kind": "patch",
+			"title": "Faithfulness wave 1: restore missing keywords on 15 vanilla-rendered cards",
+			"body": "Audit found ~64 cards whose rules text wasn't wired up (they rendered as vanilla\nstat-sticks). Wave 1 = the low-risk keyword pass: add the leading static keywords\n(and the magnetic field) that the engine already supports.\n\nFully faithful now: Annoy-o-Module (Divine Shield/Magnetic/Taunt).\nKeywords restored (a secondary effect is still pending for a later wave):\nAbsorbent Parasite, Prosthetic Hand, SP-3Y3-D3R (magnetic); Chained Guardian\n(Rush/Reborn); Conjured Mirage, Amitus (Taunt); Devout Pupil, Gilnean Royal\nGuard (Divine Shield + Rush/Taunt); Duskhaven Hunter (Stealth); Gladesong Siren,\nPumpkin Peasant (Lifesteal); Slagmaw (Rush/Taunt); Swift Messenger, Vengeful\nWalloper (Rush).\n\nVerified each instantiates with the right keywords (Divine Shield sets shield,\nmagnetic flag set). Battery green (71/71) + fuzz clean.",
+			"cards": []
+		},
+		{
+			"sha": "ad2fba8",
+			"date": "2026-08-03",
+			"kind": "patch",
+			"title": "Totemic Power: implement the real basic/non-basic Totem behavior",
+			"body": "Was a placeholder that summoned a single generic Totem. Now matches the actual\nInstructor Fireheart hero power: summon a random basic Totem; if you're\nOverloaded, summon a non-basic Totem instead.\n\nBasic pool = the 4 classic totems (Healing / Searing / Stoneclaw / Wrath of\nAir) via summon-random `ids`. Non-basic pool = summon-random over tribe Totem\ncapped at cost <= 3 — the default random pool already excludes the 4 basics\n(they're token cards) and the cost cap excludes the oversized totem minions\n(Gigantotem 8/8 @10, Totem Goliath 5/5 @5), leaving the real utility totems\n(Mana Tide, Flametongue, Totem Golem, EVIL Totem, etc.). Gated with a\nconditional on `overloaded`. Every summonable totem already has art.\n\nTest (8): not-overloaded only ever yields the 4 basics (all with art);\noverloaded never yields a basic, only real Totem-tribe minions, never the\noversized ones. Battery green (71/71) + fuzz clean.",
+			"cards": []
+		},
+		{
+			"sha": "b6012fa",
+			"date": "2026-08-03",
+			"kind": "patch",
+			"title": "Totemic Power: summon the real Stoneclaw Totem (has art) instead of a generic Totem",
+			"body": "The hero power made a one-off inline \"Totem\" 0/2 with Taunt (token_totem), which\nhad no art. It now summons the actual Stoneclaw Totem token (sch_totem_stoneclaw,\n0/2 Taunt, tribe Totem) via summonId - same stats and Taunt, but it's a real\ntoken with its own art. Verified the summon yields sch_totem_stoneclaw (art\npresent); battery green (70/70).",
+			"cards": []
+		},
+		{
+			"sha": "6c685d5",
+			"date": "2026-08-03",
+			"kind": "patch",
+			"title": "Raise the Alarm: reword to \"Create two 1/1 Soldier creature tokens\"",
+			"body": "Was \"Summon two 1/1 Soldiers.\" Reworded to MTG token language: \"Create two 1/1\nSoldier creature tokens.\" The tokens were already 1/1 and token:true; gave them\ntribe \"Soldier\" so they're genuine Soldier-typed tokens matching the text.\nVerified it summons two 1/1 Soldier tokens; battery green (70/70).",
+			"cards": []
+		},
+		{
+			"sha": "0c01e6a",
+			"date": "2026-08-03",
+			"kind": "patch",
+			"title": "Kor Hookmaster -> \"Battlecry: Freeze target creature\"",
+			"body": "Was \"Battlecry: Tap an enemy creature (it can't attack next turn)\" freezing an\nenemy-creature. Reworded to \"Battlecry: Freeze target creature.\" and widened the\ntarget from enemy-creature to any creature, matching the new text.\n\nTest (3): card face, any creature (friendly + enemy) is a legal target, and the\nBattlecry freezes the targeted creature. Battery green (69/69 + the new suite).",
+			"cards": []
+		},
+		{
+			"sha": "fed163a",
+			"date": "2026-08-03",
+			"kind": "patch",
+			"title": "Blacksmith's Skill -> Immune for 3 turns; Elite Vanguard -> Human Soldier",
+			"body": "Blacksmith's Skill previously granted `indestructible` permanently. It now\ngives a creature IMMUNE (can't take damage, destroy-proof) for 3 of the\ncontroller's turns. Reused the existing grant-immune-turn handler with a new\n`turns` option (Immune for N of the controller's turns instead of just this\nturn); a turn-start countdown in core.js decrements immuneTurnsLeft for the\nactive player's creatures and drops IMMUNE at 0. No new effect type, so no\ntargeting/registry change.\n\nElite Vanguard is now tribe \"Human Soldier\".\n\nTest (8): Elite Vanguard's tribe; Blacksmith's Skill grants Immune, blocks all\ndamage, stays through your next two turns, then wears off on your 3rd turn and\ndamage lands again. Full battery green (69/69) + fuzz clean.",
+			"cards": []
+		},
+		{
+			"sha": "61a53e5",
+			"date": "2026-08-03",
+			"kind": "patch",
+			"title": "Ravenous Squirrel: reword to \"gain +1/+1\"; drop the wrong Counter hovertext",
+			"body": "Its text read \"put a +1/+1 counter on this creature.\" The card-face keyword\ntooltips (keywordsFor) match phrases in the description with a word-boundary\nregex, so the word \"counter\" pulled in the spell-counter keyword's tooltip\n(\"Counter target spell — play in response to counter it\") — completely wrong\nfor a +1/+1 buff.\n\nThe `add-counters` effect was already a plain permanent +1/+1 buff, so only the\nwording was off. Reworded to \"Whenever you sacrifice a token, gain +1/+1.\",\nwhich removes the \"counter\" match and its incorrect hovertext. Verified\nkeywordsFor now returns no keywords (was ['Counter target spell']) and the\n+1/+1 still fires on a token sacrifice (2/2 -> 3/3). Battery green (68/68).",
+			"cards": []
+		},
+		{
+			"sha": "be86326",
+			"date": "2026-08-03",
+			"kind": "patch",
+			"title": "Fix: dungeon-run overlays clipped their top when taller than the viewport",
+			"body": "The shared dungeonOverlay is a full-screen flex column with\n`justify-content:center` + `overflow:auto`. When its content is taller than\nthe viewport (e.g. the Duels hero picker, now 18 heroes), centering pushed the\ntop above the scroll origin — so the title and first row of heroes were cut off\non desktop with no way to scroll up (mobile's taller aspect happened to fit).\n\nSwitched to `justify-content:safe center`: it still centers when the content\nfits, but falls back to top-aligned (fully scrollable) when it overflows.\nApplies to every dungeon overlay (hero/power/anomaly/draft/bucket pickers).\n\nVerified headless at a short desktop viewport: the \"PICK YOUR HERO\" title sits\nat the top and the grid scrolls all the way down to Diablo and the generals.",
+			"cards": []
+		},
+		{
+			"sha": "b3960cd",
 			"date": "2026-08-02",
 			"kind": "patch",
-			"title": "Duels: menu and comments describe the shipped arena-draft run",
-			"body": "The landing-menu tile still advertised 'eleven heroes climb a\ntwelve-boss ladder of rivals to Uber Diablo' and the game.js/duels.js\nsection comments described the same deleted design. Duels is an arena\ndraft played to 12 wins or 3 losses against power-matched generated\nrivals — no ladder, no fixed finals. Text only; no behavior change.",
+			"title": "Board: pull the creature row off the land slots; always hide enemy hands",
+			"body": "Two 3D-board fixes:\n\n1. Creature row overlapped the land slots. The creature row sat at slice-Z 2.0,\n   the land row at 3.05 — the large creature tokens bled into the lands. Added a\n   CREATURE_Z constant (1.15) that pulls the creature row forward toward the\n   battle line, clearing the lands while staying short of the center so it never\n   collides with the opponent's mirrored creatures.\n\n2. The opponent's hand could show its faces. Hiding relied purely on card\n   orientation (\"back to the table\"), which can leak the face at some camera\n   angles / modes. faceMaterialFor now renders enemy hand cards (zone 'hand',\n   controller !== HUMAN) with the card BACK regardless of orientation, and\n   faceSig tracks that hidden state so the face repaints the instant the card\n   leaves the hand (e.g. the opponent plays it). Your own hand is unchanged.\n\nVerified with headless board screenshots: creatures sit clear of the lands and\nof the enemy line, and the opponent's hand shows card backs.",
+			"cards": []
+		},
+		{
+			"sha": "03aae0d",
+			"date": "2026-08-02",
+			"kind": "patch",
+			"title": "Fix stale Duels menu text; news feed catches run-mode commits",
+			"body": "",
 			"cards": []
 		},
 		{
