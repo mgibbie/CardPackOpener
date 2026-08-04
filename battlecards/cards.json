@@ -139078,6 +139078,70 @@
       "set": "BLACK_TEMPLE",
       "description": "Whenever your hero would take damage, this loses 1 Durability instead.",
       "absorbHeroDamageToWeapon": true
+    },
+    {
+      "id": "blackwater_cutlass",
+      "name": "Blackwater Cutlass",
+      "type": "weapon",
+      "cost": 1,
+      "cardClass": "rogue",
+      "attack": 2,
+      "durability": 2,
+      "rarity": "common",
+      "set": "STORMWIND",
+      "description": "Tradeable After you Trade this, reduce the Cost of a spell in your hand by (1).",
+      "tradeable": true,
+      "keywords": [
+        "tradeable"
+      ],
+      "afterTrade": [
+        {
+          "type": "reduce-hand-spells-cost",
+          "count": 1,
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "supercollider",
+      "name": "Supercollider",
+      "type": "weapon",
+      "cost": 5,
+      "cardClass": "warrior",
+      "attack": 1,
+      "durability": 3,
+      "rarity": "epic",
+      "set": "BOOMSDAY",
+      "description": "After you attack a minion, force it to attack one of its neighbors.",
+      "ongoing": {
+        "on": "hero-attacks-creature",
+        "effects": [
+          {
+            "type": "force-attacked-neighbor"
+          }
+        ]
+      }
+    },
+    {
+      "id": "boggspine_knuckles",
+      "name": "Boggspine Knuckles",
+      "type": "weapon",
+      "cost": 5,
+      "cardClass": "shaman",
+      "attack": 4,
+      "durability": 2,
+      "rarity": "epic",
+      "set": "BLACK_TEMPLE",
+      "description": "After your hero attacks, transform your minions into random ones that cost (1) more.",
+      "ongoing": {
+        "on": "hero-attacks",
+        "effects": [
+          {
+            "type": "transform-friendly-costplus",
+            "costDelta": 1
+          }
+        ]
+      }
     }
   ]
 }

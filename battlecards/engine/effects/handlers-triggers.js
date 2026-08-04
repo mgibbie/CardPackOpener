@@ -297,6 +297,24 @@ registerTrigger('accrue-mana-awaken', (state, pi, e, ctx, triggering) => {
 });
 
 
+registerTrigger('force-attacked-neighbor', (state, pi, e, ctx, triggering) => {
+	do { {
+				// Supercollider: after you attack a minion, force it to attack a neighbour
+				const t = ctx.target;
+				if (!t || isDead(t) || t.type === 'location') break;
+				const board = state.players[t.controller].board;
+				const i = board.indexOf(t);
+				const neighbors = [board[i - 1], board[i + 1]].filter(n => n && !isDead(n) && n.type !== 'location');
+				if (!neighbors.length) break;
+				const n = neighbors[Math.floor(state.rng() * neighbors.length)];
+				resolveCombat(state, t.controller, t.uid, { type: 'creature', uid: n.uid, player: n.controller });
+				sweepDeaths(state);
+				break;
+			}
+	} while (false); // `break` ends this effect, exactly like the old case break
+});
+
+
 registerTrigger('all-friendly-attack-target', (state, pi, e, ctx, triggering) => {
 	do { {
 				// Trueaim Crescent: after your hero attacks a minion, your minions attack it too

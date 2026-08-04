@@ -683,6 +683,25 @@ register('copy-enemy', ({ state, pi, target, source, enemies, scaled, hm, pickEn
 } });
 
 
+register('transform-friendly-costplus', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => { {
+			// Boggspine Knuckles: transform every friendly minion into a random one costing (N) more
+			const delta = e.costDelta || 1;
+			const board = state.players[pi].board;
+			for (const t of [...board]) {
+				if (isDead(t) || t.type === 'location') continue;
+				const want = (t.cost || 0) + delta;
+				const pool = Object.values(state.cardsById).filter(d => d.type === 'creature' && (d.cost || 0) === want
+					&& !d.token && d.collectible !== false && !d.companion && !d.commander && !(d.colors && d.colors.length) && d.id !== t.id);
+				if (!pool.length) continue;
+				const rd = pool[Math.floor(state.rng() * pool.length)];
+				const tok = instantiate({ id: 'token_' + rd.name.toLowerCase().replace(/[^a-z0-9]+/g, '_'), name: rd.name, type: 'creature', cost: 0, rarity: 'common', token: true, description: `A ${rd.attack}/${rd.health} ${rd.name}.`, attack: rd.attack, health: rd.health, keywords: rd.keywords || [] }, pi);
+				tok.zone = 'board'; tok.sick = t.sick;
+				const idx = board.indexOf(t); if (idx >= 0) board[idx] = tok; t.zone = 'gone';
+				emit(state, { type: 'transformed', uid: t.uid, player: pi, from: t.name, card: tok });
+			}
+			recomputeAuras(state);
+} });
+
 register('transform', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => { {
 			// replace a creature in place with a fresh token (no death, no deathrattle)
 			let t = null;

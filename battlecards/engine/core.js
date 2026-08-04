@@ -346,6 +346,7 @@ export function instantiate(def, controller) {
 		unlimitedAttacks: !!def.unlimitedAttacks, // Fool's Bane
 		doubleHeroDamage: !!def.doubleHeroDamage, // Cursed Blade
 		absorbHeroDamageToWeapon: !!def.absorbHeroDamageToWeapon, // Bulwark of Azzinoth
+		afterTrade: def.afterTrade || null, // Blackwater Cutlass / Blacksmithing Hammer: effect when you Trade this card
 		forged: false, // whether this card has already been Forged
 		healToMaxHealth: !!def.healToMaxHealth, // Arisen Onyxia: hero Health loss becomes max Health
 		castOtherClassTwice: !!def.castOtherClassTwice, // Sinestra: off-class spells cast twice
@@ -831,6 +832,7 @@ export function tradeCard(state, pi, uid) {
 	}
 	emit(state, { type: 'traded', player: pi, card });
 	fireOngoing(state, pi, 'traded', {});
+	if (card.afterTrade) execEffects(state, pi, JSON.parse(JSON.stringify(card.afterTrade)), null, card); // Blackwater Cutlass: the traded card's own effect
 	drawCards(state, pi, 1);
 	return true;
 }
