@@ -552,6 +552,7 @@ export function createGame(cardsById, rng = Math.random, playerDeckIds = null, p
 		corruptedPlayedIds: [], // Y'Shaarj: Corrupted cards you've played this game
 		nextCardsDiscount: null, // Scabbs Cutterbutter: {count, amount} for your next cards this turn
 		nextChooseOneDiscount: 0, // Pride Seeker: your next Choose One card costs this much less
+		nextChooseOneBoth: false, // Cenarion Hold: your next Choose One card has both effects combined
 		nextSpellDiscount: 0, // Murkwater Scribe: your next spell costs this much less
 		nextTribeDiscount: null, // Clownfish: {tribe, count, amount} for your next minions of a tribe
 		nextTribePlayReward: null, // The Great Dark Beyond Draenei: {tribe, count, attack, health, keyword, immediateAttack} for your next minions of a tribe you PLAY
@@ -742,6 +743,8 @@ export function comboActive(state, pi) {
 	return state.players[pi].cardsPlayedThisTurn >= 1;
 }
 export function liveEffectsOf(state, pi, card, choice) {
+	// Cenarion Hold: a Choose One card with both effects combined (latched at play time)
+	if (card.choices && card._chooseBoth) choice = card.choices.map((_, i) => i);
 	if (card.combo && comboActive(state, pi)) return card.combo;
 	const base = effectsOf(card, choice) || [];
 	// Kicker: when kicked, the bonus effects run in addition to the base ones
@@ -1884,6 +1887,7 @@ export function playCard(state, pi, cardUid, target, choice, position, useAlt, k
 	if (p.warlocNext && (card.tribe || '').includes('Murloc') && (card.cost || 0) <= 3) { p.warlocNext = false; damageHero(state, pi, card.cost || 0, pi, true); } // Warloc: your Health pays
 	if (card.combo && p.nextComboDiscount > 0) p.nextComboDiscount = 0; // Foxy Fraud discount is spent by the next Combo card
 	if (card.choices && p.nextChooseOneDiscount > 0) p.nextChooseOneDiscount = 0; // Pride Seeker discount is spent by the next Choose One card
+	if (card.choices && p.nextChooseOneBoth) { card._chooseBoth = true; p.nextChooseOneBoth = false; } // Cenarion Hold: next Choose One has both effects
 	if (isSpellType(card) && p.nextSpellDiscount > 0) p.nextSpellDiscount = 0; // Murkwater Scribe: spent by the next spell
 	if (card.type === 'weapon' && p.nextWeaponDiscount > 0) p.nextWeaponDiscount = 0; // Space Pirate: spent by the next weapon
 	if (card.id === 'gdb_launch_starship' && p.nextLaunchDiscount > 0) p.nextLaunchDiscount = 0; // SCV: spent by the launch
@@ -3903,6 +3907,7 @@ export function endTurn(state) {
 	p.nextComboDiscount = 0; // Foxy Fraud only lasts this turn
 	p.nextCardsDiscount = null; // Scabbs Cutterbutter only lasts this turn
 	p.nextChooseOneDiscount = 0; // Pride Seeker only lasts until used
+	p.nextChooseOneBoth = false; // Cenarion Hold only lasts this turn
 	for (const c of p.hand) c.drawnThisTurn = false; // Keli'dan: "drawn this turn" resets at end of your turn
 	if (p.illuciaSwap) { p.hand = p.savedHand || []; p.savedHand = null; p.illuciaSwap = false; emit(state, { type: 'handSwap', player: pi }); } // Mindrender Illucia: hand reverts at end of turn
 	p.heroPowerTaxNext = 0; // Saboteur's Hero Power tax only lasts this turn

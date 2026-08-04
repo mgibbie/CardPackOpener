@@ -139754,6 +139754,27 @@
           }
         ]
       }
+    },
+    {
+      "id": "cenarion_hold",
+      "name": "Cenarion Hold",
+      "type": "location",
+      "cost": 1,
+      "cardClass": "druid",
+      "durability": 2,
+      "rarity": "epic",
+      "set": "WONDERS",
+      "description": "Your next Choose One card this turn has both effects combined.",
+      "taps": [
+        {
+          "text": "Your next Choose One card this turn has both effects combined.",
+          "effects": [
+            {
+              "type": "next-choose-one-both"
+            }
+          ]
+        }
+      ]
     }
   ]
 }
