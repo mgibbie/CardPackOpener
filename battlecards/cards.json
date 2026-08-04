@@ -139542,6 +139542,25 @@
         "sacred_maul",
         "champions_maul"
       ]
+    },
+    {
+      "id": "kingsbane",
+      "name": "Kingsbane",
+      "type": "weapon",
+      "cost": 1,
+      "attack": 1,
+      "durability": 3,
+      "cardClass": "rogue",
+      "rarity": "legendary",
+      "set": "LOOTAPALOOZA",
+      "keepsEnchantments": true,
+      "description": "Always keeps enchantments. Deathrattle: Shuffle this into your deck.",
+      "deathrattle": [
+        {
+          "type": "shuffle-self-into-deck",
+          "keepEnchantments": true
+        }
+      ]
     }
   ]
 }

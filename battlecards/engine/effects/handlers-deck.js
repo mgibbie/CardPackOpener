@@ -794,6 +794,14 @@ register('shuffle-self-into-deck', ({ state, pi, target, source, enemies, scaled
 			// "Shuffle this card back into your deck" — Astral Tiger recursion
 			const p = state.players[pi];
 			if (source && state.cardsById[source.id] && !p.eliminated) {
+				// Kingsbane: "Always keeps enchantments" — snapshot its accumulated
+				// Attack buff and bonus keywords so the redrawn copy restores them
+				if (e.keepEnchantments) {
+					const base = state.cardsById[source.id];
+					const attackBonus = (source.attack || 0) - (base.attack || 0);
+					const extraKw = (source.keywords || []).filter(k => !(base.keywords || []).includes(k));
+					if (attackBonus !== 0 || extraKw.length) (p.deckIdBuffs = p.deckIdBuffs || []).push({ id: source.id, attack: attackBonus, health: 0, keywords: extraKw });
+				}
 				if (source.zone === 'board') { p.board = p.board.filter(c => c !== source); source.zone = 'deck'; } // Conjured Mirage: a live minion actually leaves the board
 				p.deck.push(source.id);
 				for (let i = p.deck.length - 1; i > 0; i--) {
