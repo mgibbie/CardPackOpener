@@ -297,6 +297,32 @@ registerTrigger('accrue-mana-awaken', (state, pi, e, ctx, triggering) => {
 });
 
 
+registerTrigger('copy-forged-to-hand', (state, pi, e, ctx, triggering) => {
+	do { {
+				// Melted Maker: after you Forge a card, get a copy of it (the upgraded
+				// version). Clone the forged instance's live stats onto a fresh card.
+				const src = ctx.card, p = state.players[pi];
+				if (!src || p.hand.length >= MAX_HAND) break;
+				const def = state.cardsById[src.id];
+				const copy = def ? instantiate(def, pi) : null;
+				if (!copy) break;
+				copy.attack = src.attack;
+				copy.maxHealth = src.maxHealth;
+				copy.cost = src.cost;
+				copy.keywords = [...(src.keywords || [])];
+				copy.magnetic = src.magnetic;
+				copy.forged = true;
+				copy.forge = src.forge ? JSON.parse(JSON.stringify(src.forge)) : null; // a forged copy is spent (unless endless)
+				if (src.effects) copy.effects = JSON.parse(JSON.stringify(src.effects));
+				copy.zone = 'hand';
+				p.hand.push(copy);
+				emit(state, { type: 'conjure', player: pi, card: copy, color: null });
+				break;
+			}
+	} while (false); // `break` ends this effect, exactly like the old case break
+});
+
+
 registerTrigger('beasts-attack-random', (state, pi, e, ctx, triggering) => {
 	do { {
 				// Harried Herdsman: after you cast a Fire spell, each Beast you control

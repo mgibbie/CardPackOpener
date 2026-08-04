@@ -103465,7 +103465,16 @@
           "cardType": "spell",
           "tribe": "Holy"
         }
-      ]
+      ],
+      "forge": {
+        "addBattlecry": [
+          {
+            "type": "heal",
+            "value": 6,
+            "target": "hero"
+          }
+        ]
+      }
     },
     {
       "id": "careless_mechanist",
@@ -103582,7 +103591,13 @@
       "keywords": [
         "rush"
       ],
-      "description": "Rush. Forge: Gain +3/+2."
+      "description": "Rush. Forge: Gain +3/+2.",
+      "forge": {
+        "buff": {
+          "attack": 3,
+          "health": 2
+        }
+      }
     },
     {
       "id": "eulogizer",
@@ -103702,7 +103717,15 @@
       "rarity": "common",
       "set": "TITANS",
       "tribe": "Elemental",
-      "description": "After you Forge a card, get a copy of it."
+      "description": "After you Forge a card, get a copy of it.",
+      "ongoing": {
+        "on": "forged",
+        "effects": [
+          {
+            "type": "copy-forged-to-hand"
+          }
+        ]
+      }
     },
     {
       "id": "mimiron_the_mastermind",
@@ -103751,7 +103774,16 @@
           "attack": 1,
           "health": 1
         }
-      ]
+      ],
+      "forge": {
+        "battlecry": [
+          {
+            "type": "buff-hand-minions",
+            "attack": 2,
+            "health": 2
+          }
+        ]
+      }
     },
     {
       "id": "ttn_gadget",
@@ -104323,6 +104355,9 @@
             "count": 1
           }
         ]
+      },
+      "forge": {
+        "magnetic": true
       }
     },
     {
@@ -105480,7 +105515,11 @@
       "keywords": [
         "taunt"
       ],
-      "description": "Taunt. Forge: Costs (2) less. Can be Forged endlessly."
+      "description": "Taunt. Forge: Costs (2) less. Can be Forged endlessly.",
+      "forge": {
+        "costDelta": -2,
+        "endless": true
+      }
     },
     {
       "id": "the_primus",

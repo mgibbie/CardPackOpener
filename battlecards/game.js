@@ -514,6 +514,18 @@ function openTradeMenu(card, ev) {
 		});
 		menu.appendChild(prep);
 	}
+	if (card.forge) {
+		const forge = document.createElement('button');
+		const fcost = card.forge.cost != null ? card.forge.cost : 2;
+		forge.innerHTML = `<span class="wm-cost">${fcost}</span>Forge — upgrade this card`;
+		forge.disabled = !E.canForge(state, HUMAN, card);
+		forge.addEventListener('pointerdown', e => {
+			e.stopPropagation();
+			hideWalkerMenu();
+			actForge(card.uid);
+		});
+		menu.appendChild(forge);
+	}
 	showDecisionMenu();
 }
 
@@ -584,10 +596,10 @@ function releasePlay(c, ev) {
 	if (c.adventure && !c.adventureSpent
 		&& (E.canPlay(state, HUMAN, c) || E.canPlayAdventure(state, HUMAN, c))) { openAdventureMenu(c, ev); return; }
 	if (!E.canPlay(state, HUMAN, c)) {
-		if ((c.tradeable && E.canTrade(state, HUMAN, c)) || (c.prepare && E.canPrepare(state, HUMAN, c))) openTradeMenu(c, ev);
+		if ((c.tradeable && E.canTrade(state, HUMAN, c)) || (c.prepare && E.canPrepare(state, HUMAN, c)) || (c.forge && E.canForge(state, HUMAN, c))) openTradeMenu(c, ev);
 		return;
 	}
-	if ((c.tradeable && E.canTrade(state, HUMAN, c)) || (c.prepare && E.canPrepare(state, HUMAN, c))) { openTradeMenu(c, ev); return; }
+	if ((c.tradeable && E.canTrade(state, HUMAN, c)) || (c.prepare && E.canPrepare(state, HUMAN, c)) || (c.forge && E.canForge(state, HUMAN, c))) { openTradeMenu(c, ev); return; }
 	if (c.type === 'creature' || c.type === 'location') {
 		const pos = placementIndexAt(ev.clientX);
 		if (c.choices) { openChoiceMenu(c, ev, pos); return; }
@@ -2485,9 +2497,11 @@ function showInspect(card) {
 			mkBtn('Play', e => playFromHand(card, e));
 			if (card.tradeable && E.canTrade(state, HUMAN, card)) mkBtn('Trade (pay 1)', () => actTrade(card.uid), 'trade');
 			if (card.prepare && E.canPrepare(state, HUMAN, card)) mkBtn('Prepare (bank your mana)', () => actPrepare(card.uid), 'trade');
+			if (card.forge && E.canForge(state, HUMAN, card)) mkBtn(`Forge (pay ${card.forge.cost != null ? card.forge.cost : 2})`, () => actForge(card.uid), 'trade');
 		} else {
 			if (card.tradeable && E.canTrade(state, HUMAN, card)) mkBtn('Trade (pay 1)', () => actTrade(card.uid), 'trade');
 			if (card.prepare && E.canPrepare(state, HUMAN, card)) mkBtn('Prepare (bank your mana)', () => actPrepare(card.uid), 'trade');
+			if (card.forge && E.canForge(state, HUMAN, card)) mkBtn(`Forge (pay ${card.forge.cost != null ? card.forge.cost : 2})`, () => actForge(card.uid), 'trade');
 		}
 	}
 	// a held hero power gets a deliberate "Use" button, mirroring a hand card's Play
@@ -3509,6 +3523,7 @@ function applyGuestIntent(it) {
 			case 'land': E.buyLand(state, P, it.defId); break;
 			case 'trade': E.tradeCard(state, P, it.uid); break;
 			case 'prepare': E.prepareCard(state, P, it.uid); break;
+			case 'forge': E.forgeCard(state, P, it.uid); break;
 			case 'unmask': E.unmask(state, P, it.uid); break;
 			case 'coin': E.useCoin(state, P); break;
 			case 'endTurn': E.endTurn(state); break;
@@ -3716,6 +3731,10 @@ function actTrade(uid) {
 	if (isGuest()) return guestApply(() => E.tradeCard(state, HUMAN, uid), { k: 'trade', uid });
 	E.tradeCard(state, HUMAN, uid); pump();
 	if (duel.on) publishDuel();
+}
+function actForge(uid) {
+	if (isGuest()) return guestApply(() => E.forgeCard(state, HUMAN, uid), { k: 'forge', uid });
+	E.forgeCard(state, HUMAN, uid); pump();
 }
 function actPrepare(uid) {
 	if (isGuest()) return guestApply(() => E.prepareCard(state, HUMAN, uid), { k: 'prepare', uid });

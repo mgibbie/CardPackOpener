@@ -296,6 +296,15 @@ export function step(state, pi = 1) {
 		if (E.useHeroPower(state, pi, hpw.uid, target, choice)) return true;
 	}
 
+	// 1c'. Forge a hand card with leftover mana — Forge is always a strict upgrade.
+	// Endless-Forge cards (Storm Giant) only Forge while still unplayable, so the
+	// AI shaves their cost toward castability instead of draining mana forever.
+	for (const c of p.hand) {
+		if (!c.forge || !E.canForge(state, pi, c)) continue;
+		if (c.forge.endless && E.canPlay(state, pi, c)) continue;
+		if (E.forgeCard(state, pi, c.uid)) return true;
+	}
+
 	// 1d. planeswalkers: cash in the minus ability when affordable, else tick up
 	for (const pw of p.planeswalkers) {
 		if (!E.canUseWalker(state, pi, pw)) continue;

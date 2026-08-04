@@ -337,6 +337,8 @@ export function instantiate(def, controller) {
 		heroAura: def.heroAura || null, // Spiderling / Inara / Spirit of the Team: hero +Attack (usually only on your turn)
 		weaponAura: def.weaponAura || null, // Vulpera Toxinblade: your weapon has +N Attack
 		handMinionEcho: !!def.handMinionEcho, // Glinda Crowskin: minions in your hand have Echo
+		forge: def.forge ? JSON.parse(JSON.stringify(def.forge)) : null, // Forge: drag onto the Forge to upgrade this card in hand
+		forged: false, // whether this card has already been Forged
 		healToMaxHealth: !!def.healToMaxHealth, // Arisen Onyxia: hero Health loss becomes max Health
 		castOtherClassTwice: !!def.castOtherClassTwice, // Sinestra: off-class spells cast twice
 		armsHitEnemyDeck: !!def.armsHitEnemyDeck, // Cho'gall: Arms/Soldiers destroy in the enemy deck
@@ -2716,6 +2718,49 @@ export function useCoin(state, pi) {
 	p.coins--;
 	p.mana.bonus += 1;
 	emit(state, { type: 'coin', player: pi, mana: availableMana(p) });
+	return true;
+}
+
+// ---------- Forge ----------
+// Forge (Showdown in the Badlands): a card in hand with a `forge` block can be
+// dragged onto the Forge slot for its cost (default 2) to upgrade in place. Most
+// cards Forge once, then the ability is spent; `endless` ones keep it. Forging
+// fires the `forged` event (Melted Maker: "get a copy of it").
+export function canForge(state, pi, card) {
+	return !state.over && state.current === pi && !state.players[pi].eliminated
+		&& !!card && !!card.forge && card.zone === 'hand'
+		&& availableMana(state.players[pi]) >= (card.forge.cost != null ? card.forge.cost : 2);
+}
+
+function applyForge(state, pi, card) {
+	const f = card.forge;
+	if (f.into && state.cardsById[f.into]) { // a wholly different Forged entity
+		const nd = instantiate(state.cardsById[f.into], pi);
+		nd.uid = card.uid; nd.zone = 'hand'; nd.forged = true; nd.forge = f.endless ? nd.forge : null;
+		const idx = state.players[pi].hand.indexOf(card);
+		if (idx >= 0) state.players[pi].hand[idx] = nd;
+		return state.players[pi].hand[idx] || nd;
+	}
+	if (f.buff) { card.attack = (card.attack || 0) + (f.buff.attack || 0); card.maxHealth = (card.maxHealth || 0) + (f.buff.health || 0); } // Cyclopian Crusher
+	if (f.keywords) for (const k of f.keywords) if (!card.keywords.includes(k)) card.keywords.push(k);
+	if (f.magnetic) card.magnetic = true; // Lab Constructor
+	if (f.costDelta) card.cost = Math.max(0, (card.cost || 0) + f.costDelta); // Storm Giant
+	if (f.battlecry) card.effects = JSON.parse(JSON.stringify(f.battlecry)); // Muscle-o-Tron: "+2/+2 instead"
+	if (f.addBattlecry) card.effects = [...(card.effects || []), ...JSON.parse(JSON.stringify(f.addBattlecry))]; // Watcher of the Sun: "Also restore 6 Health"
+	card.forged = true;
+	if (!f.endless) card.forge = null; // one-time upgrade (Storm Giant Forges endlessly)
+	return card;
+}
+
+export function forgeCard(state, pi, cardUid) {
+	const p = state.players[pi];
+	const card = p.hand.find(c => c.uid === cardUid);
+	if (!canForge(state, pi, card)) return false;
+	spendMana(p, card.forge.cost != null ? card.forge.cost : 2);
+	const forged = applyForge(state, pi, card);
+	emit(state, { type: 'forged', player: pi, uid: forged.uid, name: forged.name });
+	fireOngoing(state, pi, 'forged', { card: forged }); // Melted Maker
+	recomputeAuras(state);
 	return true;
 }
 
