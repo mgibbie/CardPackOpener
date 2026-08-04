@@ -138871,6 +138871,26 @@
           "type": "valanyr-buff"
         }
       ]
+    },
+    {
+      "id": "woecleaver",
+      "name": "Woecleaver",
+      "type": "weapon",
+      "cost": 8,
+      "cardClass": "warrior",
+      "attack": 3,
+      "durability": 3,
+      "rarity": "legendary",
+      "set": "LOOTAPALOOZA",
+      "description": "After your hero attacks, Recruit a minion.",
+      "ongoing": {
+        "on": "hero-attacks",
+        "effects": [
+          {
+            "type": "recruit"
+          }
+        ]
+      }
     }
   ]
 }
