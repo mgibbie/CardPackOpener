@@ -142964,6 +142964,245 @@
           }
         ]
       }
+    },
+    {
+      "id": "netherwind_portal",
+      "name": "Netherwind Portal",
+      "cardClass": "mage",
+      "cost": 3,
+      "rarity": "common",
+      "set": "BLACK_TEMPLE",
+      "collectible": true,
+      "type": "secret",
+      "tribe": "Arcane",
+      "secret": {
+        "trigger": "enemy-spell-cast",
+        "effects": [
+          {
+            "type": "summon-random",
+            "cost": 4
+          }
+        ]
+      },
+      "description": "Secret: After your opponent casts a spell, summon a random 4-Cost minion."
+    },
+    {
+      "id": "rigged_faire_game",
+      "name": "Rigged Faire Game",
+      "type": "secret",
+      "cost": 3,
+      "cardClass": "mage",
+      "rarity": "epic",
+      "set": "DARKMOON_FAIRE",
+      "collectible": true,
+      "keywords": [
+        "secret"
+      ],
+      "description": "Secret: If you didn't take any damage during your opponent's turn, draw 3 cards.",
+      "secret": {
+        "trigger": "enemy-turn-end",
+        "effects": [
+          {
+            "type": "conditional",
+            "if": {
+              "heroTookDamage": true
+            },
+            "then": [],
+            "else": [
+              {
+                "type": "draw",
+                "value": 3
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "seafloor_gateway",
+      "name": "Seafloor Gateway",
+      "type": "sorcery",
+      "cost": 3,
+      "cardClass": "mage",
+      "rarity": "rare",
+      "set": "THE_SUNKEN_CITY",
+      "collectible": true,
+      "description": "Draw a Mech. Reduce the Cost of Mechs in your hand by (1).",
+      "effects": [
+        {
+          "type": "tutor",
+          "cardType": "creature",
+          "tribe": "Mech",
+          "count": 1
+        },
+        {
+          "type": "discount-hand-tribe",
+          "tribe": "Mech",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "simulacrum",
+      "name": "Simulacrum",
+      "type": "sorcery",
+      "cost": 3,
+      "cardClass": "mage",
+      "rarity": "epic",
+      "set": "PLACEHOLDER_202204",
+      "collectible": true,
+      "tribe": "Frost",
+      "description": "Copy the lowest Cost minion in your hand.",
+      "effects": [
+        {
+          "type": "copy-lowest-hand-tribe"
+        }
+      ]
+    },
+    {
+      "id": "alter_time",
+      "name": "Alter Time",
+      "type": "sorcery",
+      "cost": 4,
+      "cardClass": "mage",
+      "rarity": "rare",
+      "set": "TIME_TRAVEL",
+      "tribe": "Arcane",
+      "collectible": true,
+      "description": "Discover two Arcane spells from the past. They cost (2) less.",
+      "effects": [
+        {
+          "type": "discover",
+          "pick": 3,
+          "cardType": "spell",
+          "tribe": "Arcane",
+          "count": 2,
+          "costMod": -2
+        }
+      ]
+    },
+    {
+      "id": "arcane_flow",
+      "name": "Arcane Flow",
+      "cardClass": "mage",
+      "cost": 4,
+      "rarity": "rare",
+      "set": "CATACLYSM",
+      "collectible": true,
+      "description": "Deal 4 damage. Deal 2 damage to all enemies.",
+      "type": "sorcery",
+      "tribe": "Arcane",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 4,
+          "target": "any"
+        },
+        {
+          "type": "damage",
+          "value": 2,
+          "target": "enemies"
+        }
+      ]
+    },
+    {
+      "id": "bursting_leyline",
+      "name": "Bursting Leyline",
+      "type": "sorcery",
+      "cost": 4,
+      "cardClass": "mage",
+      "rarity": "epic",
+      "set": "CATACLYSM",
+      "collectible": true,
+      "tribe": "Arcane",
+      "description": "Deal 4 damage to a random enemy minion. Excess damage hits the enemy hero.",
+      "effects": [
+        {
+          "type": "damage-enemy-minion",
+          "value": 4,
+          "excessToHero": true
+        }
+      ]
+    },
+    {
+      "id": "molten_reflection",
+      "name": "Molten Reflection",
+      "type": "sorcery",
+      "cost": 4,
+      "cardClass": "mage",
+      "rarity": "rare",
+      "set": "UNGORO",
+      "collectible": true,
+      "tribe": "Fire",
+      "description": "Choose a friendly minion. Summon a copy of it.",
+      "effects": [
+        {
+          "type": "copy-summon",
+          "target": "friendly-creature"
+        }
+      ]
+    },
+    {
+      "id": "sheep_mask",
+      "name": "Sheep Mask",
+      "type": "sorcery",
+      "cost": 4,
+      "cardClass": "mage",
+      "rarity": "rare",
+      "set": "THE_LOST_CITY",
+      "collectible": true,
+      "description": "Set a minion's stats to 1/1 and give it \"Deathrattle: Deal 2 damage to all minions.\"",
+      "effects": [
+        {
+          "type": "set-target-stats",
+          "target": "creature",
+          "attack": 1,
+          "health": 1
+        },
+        {
+          "type": "grant-deathrattle",
+          "target": "creature",
+          "effects": [
+            {
+              "type": "damage-all-minions",
+              "value": 2
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "spot_the_difference",
+      "name": "Spot the Difference",
+      "cardClass": "mage",
+      "cost": 4,
+      "rarity": "common",
+      "set": "WHIZBANGS_WORKSHOP",
+      "collectible": true,
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "discover",
+          "cardType": "creature",
+          "cost": 3,
+          "to": "board"
+        },
+        {
+          "type": "conditional",
+          "if": {
+            "deckNoMinions": true
+          },
+          "then": [
+            {
+              "type": "discover",
+              "cardType": "creature",
+              "cost": 3,
+              "to": "board"
+            }
+          ]
+        }
+      ],
+      "description": "Discover a 3-Cost minion to summon. If your deck has no minions, repeat this."
     }
   ]
 }
