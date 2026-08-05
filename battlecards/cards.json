@@ -141611,6 +141611,182 @@
         "per": "friendly-deaths-game",
         "amount": -1
       }
+    },
+    {
+      "id": "feast_of_souls",
+      "name": "Feast of Souls",
+      "type": "sorcery",
+      "cost": 1,
+      "cardClass": "demonhunter",
+      "rarity": "rare",
+      "set": "DEMON_HUNTER_INITIATE",
+      "tribe": "Shadow",
+      "collectible": true,
+      "description": "Draw a card for each friendly minion that died this turn.",
+      "effects": [
+        {
+          "type": "draw",
+          "value": 1,
+          "valuePer": "friendly-deaths-this-turn"
+        }
+      ]
+    },
+    {
+      "id": "blade_dance",
+      "name": "Blade Dance",
+      "type": "sorcery",
+      "cost": 2,
+      "cardClass": "demonhunter",
+      "rarity": "rare",
+      "set": "DEMON_HUNTER_INITIATE",
+      "collectible": true,
+      "description": "Deal damage equal to your hero's Attack to 3 random enemy minions.",
+      "effects": [
+        {
+          "type": "random-damage",
+          "valuePer": "hero-attack",
+          "pool": "enemy-creatures",
+          "count": 3
+        }
+      ]
+    },
+    {
+      "id": "mark_of_scorn",
+      "name": "Mark of Scorn",
+      "type": "sorcery",
+      "cost": 2,
+      "cardClass": "demonhunter",
+      "rarity": "common",
+      "set": "RETURN_OF_THE_LICH_KING",
+      "collectible": true,
+      "effects": [
+        {
+          "type": "draw-check",
+          "value": 1,
+          "notType": "creature",
+          "then": [
+            {
+              "type": "damage-lowest-enemy",
+              "value": 4
+            }
+          ]
+        }
+      ],
+      "description": "Draw a card. If it's not a minion, deal 4 damage to the lowest Health enemy."
+    },
+    {
+      "id": "throw_glaive",
+      "name": "Throw Glaive",
+      "cardClass": "demonhunter",
+      "cost": 1,
+      "rarity": "rare",
+      "type": "sorcery",
+      "set": "DARKMOON_FAIRE",
+      "collectible": true,
+      "description": "Deal 2 damage to a minion. If it dies, add a Temporary copy of this to your hand.",
+      "effects": [
+        {
+          "type": "damage-then",
+          "value": 2,
+          "target": "creature",
+          "ifDies": [
+            {
+              "type": "add-card",
+              "id": "throw_glaive",
+              "makeTemporary": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "cosmic_manifestations",
+      "name": "Cosmic Manifestations",
+      "type": "sorcery",
+      "cost": 2,
+      "cardClass": "demonhunter",
+      "rarity": "epic",
+      "set": "ESCAPEFROM_VIOLET_HOLD",
+      "collectible": true,
+      "tribe": "Shadow",
+      "keywords": [
+        "outcast"
+      ],
+      "description": "Deal 2 damage. Shuffle a random Demon Hunter spell into your deck. Outcast: Do it again.",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 2,
+          "target": "any"
+        },
+        {
+          "type": "shuffle-random-spells-into-deck",
+          "count": 1,
+          "cardClass": "demonhunter"
+        }
+      ],
+      "outcast": {
+        "effects": [
+          {
+            "type": "damage",
+            "value": 2,
+            "target": "any"
+          },
+          {
+            "type": "shuffle-random-spells-into-deck",
+            "count": 1,
+            "cardClass": "demonhunter"
+          }
+        ]
+      }
+    },
+    {
+      "id": "creep_tumor",
+      "name": "Creep Tumor",
+      "type": "sorcery",
+      "cardClass": "demonhunter",
+      "cost": 2,
+      "rarity": "common",
+      "set": "SPACE",
+      "collectible": true,
+      "description": "Your Zerg minions have +1 Attack and Rush. Lasts 3 turns.",
+      "effects": [
+        {
+          "type": "timed-aura",
+          "name": "Creep Tumor",
+          "turns": 3,
+          "aura": {
+            "tribe": "Zerg",
+            "attack": 1,
+            "keywords": [
+              "rush"
+            ]
+          },
+          "description": "Your Zerg minions have +1 Attack and Rush."
+        }
+      ]
+    },
+    {
+      "id": "field_of_strife",
+      "name": "Field of Strife",
+      "type": "sorcery",
+      "cost": 2,
+      "cardClass": "demonhunter",
+      "rarity": "rare",
+      "set": "ALTERAC_VALLEY",
+      "collectible": true,
+      "description": "Your minions have +1 Attack. Lasts 3 turns.",
+      "effects": [
+        {
+          "type": "timed-aura",
+          "name": "Field of Strife",
+          "turns": 3,
+          "aura": {
+            "attack": 1
+          },
+          "description": "Your minions have +1 Attack."
+        }
+      ]
     }
   ]
 }

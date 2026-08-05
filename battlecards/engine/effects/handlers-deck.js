@@ -565,8 +565,8 @@ register('draw-check', ({ state, pi, target, source, enemies, scaled, hm, pickEn
 			const before = new Set(dp.hand.map(c => c.uid));
 			drawCards(state, pi, e.value || 1);
 			const drawn = dp.hand.filter(c => !before.has(c.uid));
-			if (drawn.length >= (e.value || 1) && (!e.allType || drawn.every(c => c.type === e.allType)) && e.then)
-				execEffects(state, pi, e.then, target, source);
+			if (drawn.length >= (e.value || 1) && (!e.allType || drawn.every(c => c.type === e.allType)) && (!e.notType || drawn.every(c => c.type !== e.notType)) && e.then)
+				execEffects(state, pi, e.then, target, source); // notType: Mark of Scorn ("if it's NOT a minion")
 } });
 
 
@@ -1210,7 +1210,7 @@ register('swap-enemy-with-deck', ({ state, pi, target, source, enemies, scaled, 
 register('shuffle-random-spells-into-deck', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => { {
 			// Blasteroid: shuffle N random spells (optionally of a school) into your deck; they cost less
 			const p = state.players[pi];
-			const pool = Object.values(state.cardsById).filter(d => isSpellType(d) && !d.token && d.collectible !== false && !(d.colors && d.colors.length) && (!e.school || schoolOf(d) === e.school));
+			const pool = Object.values(state.cardsById).filter(d => isSpellType(d) && !d.token && d.collectible !== false && !(d.colors && d.colors.length) && (!e.school || schoolOf(d) === e.school) && (!e.cardClass || (d.cardClass || 'neutral') === e.cardClass)); // Cosmic Manifestations: a DH spell
 			if (pool.length) {
 				for (let n = 0; n < (e.count || 1); n++) {
 					const def = pool[Math.floor(state.rng() * pool.length)];

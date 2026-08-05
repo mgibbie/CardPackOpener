@@ -1542,7 +1542,7 @@ register('random-damage', ({ state, pi, target, source, enemies, scaled, hm, pic
 				if (_rdHit) { pickPool = pool.filter(x => !_rdHit.has(x.hero != null ? 'h' + x.hero : x.c.uid)); if (!pickPool.length) break; }
 				const pick = pickPool[Math.floor(state.rng() * pickPool.length)];
 				if (_rdHit) _rdHit.add(pick.hero != null ? 'h' + pick.hero : pick.c.uid);
-				const rdv = e.heraldScaled ? hm() : e.value;
+				const rdv = e.heraldScaled ? hm() : (e.valuePer ? scaled(e) : e.value); // Blade Dance: damage = hero Attack
 				if (pick.hero != null) damageHero(state, pick.hero, rdv, pi);
 				else {
 					// Siege Tank, Deployed: excess damage hits the enemy hero

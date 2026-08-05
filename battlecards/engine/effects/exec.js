@@ -76,6 +76,7 @@ export function execEffects(state, pi, effects, target, source) {
 		if (e.valuePer === 'schools-cast-game') return (e.value || 1) + Object.keys(p.schoolsCastGame || {}).length; // Inquisitive Creation
 		if (e.valuePer === 'elementals-last-turn') return (e.value || 1) + (p.elementalsPlayedLastTurn || 0); // Unchained Gladiator: 1 + Elementals played last turn
 		if (e.valuePer === 'draws-this-turn') return (e.value || 1) * (p.drawsThisTurn || 0); // Mindbender
+		if (e.valuePer === 'friendly-deaths-this-turn') return (e.value || 1) * (p.diedThisTurn || 0); // Feast of Souls
 		if (e.valuePer === 'damaged-friendly') {
 			let n = p.board.filter(c => !isDead(c) && c.damage > 0).length;
 			if (p.life < STARTING_LIFE) n++;

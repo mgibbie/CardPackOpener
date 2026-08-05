@@ -2100,6 +2100,7 @@ register('add-card', ({ state, pi, target, source, enemies, scaled, hm, pickEnem
 					if (def && tpp.hand.length < MAX_HAND) {
 						const card = instantiate(def, tp);
 						card.zone = 'hand';
+						if (e.makeTemporary) card.temporary = true; // Throw Glaive: a Temporary copy
 						tpp.hand.push(card);
 						emit(state, { type: 'conjure', player: tp, card, color: null });
 					} else if (!def) {
