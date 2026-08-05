@@ -886,6 +886,7 @@ register('conjure-random', ({ state, pi, target, source, enemies, scaled, hm, pi
 			if (e.cardType === 'creature') pool = pool.filter(d => d.type === 'creature');
 			else if (e.cardType === 'spell') pool = pool.filter(d => isSpellType(d));
 			else if (e.cardType === 'weapon') pool = pool.filter(d => d.type === 'weapon');
+			else if (e.cardType === 'secret') pool = pool.filter(d => d.type === 'secret' || !!d.secret); // Hunter's Pack: a random Secret
 			if (e.minAttack != null) pool = pool.filter(d => (d.attack || 0) >= e.minAttack);
 			if (e.requireKeyword) pool = pool.filter(d => (d.keywords || []).includes(e.requireKeyword)); // Whirlkick Master: a Combo card
 			if (e.cost != null) pool = pool.filter(d => (d.cost || 0) === e.cost); // Ravencaller / Tanglefur Mystic

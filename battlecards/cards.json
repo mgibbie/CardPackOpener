@@ -144342,6 +144342,617 @@
           "tribe": "Beast"
         }
       ]
+    },
+    {
+      "id": "fresh_scent",
+      "name": "Fresh Scent",
+      "type": "sorcery",
+      "cost": 2,
+      "cardClass": "hunter",
+      "rarity": "common",
+      "set": "YEAR_OF_THE_DRAGON",
+      "collectible": true,
+      "description": "Twinspell\nGive a Beast +2/+2.",
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 2,
+          "health": 2,
+          "target": "creature",
+          "tribe": "Beast"
+        },
+        {
+          "type": "conjure-id",
+          "id": "fresh_scent_ii"
+        }
+      ]
+    },
+    {
+      "id": "furious_howl",
+      "name": "Furious Howl",
+      "cardClass": "hunter",
+      "cost": 2,
+      "rarity": "common",
+      "type": "sorcery",
+      "set": "ALTERAC_VALLEY",
+      "collectible": true,
+      "description": "Draw a card. Repeat until you have at least 3 cards.",
+      "effects": [
+        {
+          "type": "draw-to",
+          "value": 3
+        }
+      ]
+    },
+    {
+      "id": "goblin_prank",
+      "name": "Goblin Prank",
+      "type": "sorcery",
+      "cost": 2,
+      "cardClass": "hunter",
+      "rarity": "epic",
+      "set": "BOOMSDAY",
+      "collectible": true,
+      "description": "Give a friendly minion +3/+3 and Rush. It dies at end of turn.",
+      "effects": [
+        {
+          "type": "buff",
+          "target": "friendly-creature",
+          "attack": 3,
+          "health": 3,
+          "grant": "rush"
+        },
+        {
+          "type": "doom",
+          "target": "friendly-creature"
+        }
+      ]
+    },
+    {
+      "id": "laser_barrage",
+      "name": "Laser Barrage",
+      "type": "sorcery",
+      "cost": 2,
+      "cardClass": "hunter",
+      "rarity": "rare",
+      "set": "SPACE",
+      "collectible": true,
+      "description": "Deal 3 damage to a minion. If you're building a Starship, also damage its neighbors.",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 3,
+          "target": "creature"
+        },
+        {
+          "type": "conditional",
+          "if": {
+            "buildingStarship": true
+          },
+          "then": [
+            {
+              "type": "damage-adjacent",
+              "value": 0,
+              "splash": 3,
+              "target": "creature"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "nurturing_nature",
+      "name": "Nurturing Nature",
+      "type": "sorcery",
+      "cost": 2,
+      "cardClass": "hunter",
+      "rarity": "rare",
+      "set": "CATACLYSM",
+      "tribe": "Nature",
+      "collectible": true,
+      "description": "Give a friendly Beast +2/+2. Give a random Beast in your hand +2/+2.",
+      "effects": [
+        {
+          "type": "buff",
+          "target": "friendly-creature",
+          "tribe": "Beast",
+          "attack": 2,
+          "health": 2
+        },
+        {
+          "type": "buff-hand",
+          "tribe": "Beast",
+          "random": true,
+          "attack": 2,
+          "health": 2
+        }
+      ]
+    },
+    {
+      "id": "patchwork_pals",
+      "name": "Patchwork Pals",
+      "type": "sorcery",
+      "cost": 2,
+      "cardClass": "hunter",
+      "rarity": "rare",
+      "set": "WHIZBANGS_WORKSHOP",
+      "collectible": true,
+      "description": "Get all 3 Animal Companions. They cost (1) less.",
+      "effects": [
+        {
+          "type": "add-token",
+          "name": "Huffer",
+          "tribe": "Beast",
+          "attack": 4,
+          "health": 2,
+          "cost": 2,
+          "keywords": [
+            "charge"
+          ]
+        },
+        {
+          "type": "add-token",
+          "name": "Misha",
+          "tribe": "Beast",
+          "attack": 4,
+          "health": 4,
+          "cost": 2,
+          "keywords": [
+            "taunt"
+          ]
+        },
+        {
+          "type": "add-token",
+          "name": "Leokk",
+          "tribe": "Beast",
+          "attack": 2,
+          "health": 4,
+          "cost": 2
+        }
+      ]
+    },
+    {
+      "id": "rapid_fire",
+      "name": "Rapid Fire",
+      "cardClass": "hunter",
+      "cost": 2,
+      "rarity": "common",
+      "set": "DALARAN",
+      "collectible": true,
+      "description": "Twinspell Deal 2 damage.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 2,
+          "target": "any"
+        },
+        {
+          "type": "conjure-id",
+          "id": "rapid_fire_ii"
+        }
+      ]
+    },
+    {
+      "id": "scavengers_ingenuity",
+      "name": "Scavenger's Ingenuity",
+      "type": "sorcery",
+      "cost": 2,
+      "cardClass": "hunter",
+      "rarity": "common",
+      "set": "BLACK_TEMPLE",
+      "collectible": true,
+      "description": "Draw a Beast. Give it +3/+3.",
+      "effects": [
+        {
+          "type": "tutor",
+          "cardType": "creature",
+          "tribe": "Beast",
+          "count": 1,
+          "buff": {
+            "attack": 3,
+            "health": 3
+          }
+        }
+      ]
+    },
+    {
+      "id": "story_of_carnassa",
+      "name": "Story of Carnassa",
+      "type": "sorcery",
+      "cost": 2,
+      "cardClass": "hunter",
+      "rarity": "rare",
+      "set": "THE_LOST_CITY",
+      "collectible": true,
+      "description": "Shuffle ten 1-Cost 3/2 Raptors into your deck with \"Battlecry: Draw a card.\"",
+      "effects": [
+        {
+          "type": "shuffle-into-deck",
+          "id": "carnassas_brood",
+          "count": 10
+        }
+      ]
+    },
+    {
+      "id": "tame_beast",
+      "name": "Tame Beast (Rank 1)",
+      "type": "sorcery",
+      "cost": 2,
+      "cardClass": "hunter",
+      "rarity": "rare",
+      "set": "THE_BARRENS",
+      "collectible": true,
+      "description": "Summon a 2/2 Beast with Rush. (Upgrades when you have 5 Mana.)",
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "manathirst": 10
+          },
+          "then": [
+            {
+              "type": "summon",
+              "count": 1,
+              "attack": 6,
+              "health": 6,
+              "name": "Beast",
+              "tribe": "Beast",
+              "keywords": [
+                "rush"
+              ]
+            }
+          ],
+          "else": [
+            {
+              "type": "conditional",
+              "if": {
+                "manathirst": 5
+              },
+              "then": [
+                {
+                  "type": "summon",
+                  "count": 1,
+                  "attack": 4,
+                  "health": 4,
+                  "name": "Beast",
+                  "tribe": "Beast",
+                  "keywords": [
+                    "rush"
+                  ]
+                }
+              ],
+              "else": [
+                {
+                  "type": "summon",
+                  "count": 1,
+                  "attack": 2,
+                  "health": 2,
+                  "name": "Beast",
+                  "tribe": "Beast",
+                  "keywords": [
+                    "rush"
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "titanforged_traps",
+      "name": "Titanforged Traps",
+      "type": "sorcery",
+      "cost": 2,
+      "cardClass": "hunter",
+      "rarity": "rare",
+      "set": "TITANS",
+      "collectible": true,
+      "description": "Discover and cast a Secret. Forge: Do it twice.",
+      "effects": [
+        {
+          "type": "discover",
+          "cardType": "secret",
+          "installSecret": true
+        }
+      ],
+      "forge": {
+        "battlecry": [
+          {
+            "type": "discover",
+            "cardType": "secret",
+            "installSecret": true,
+            "count": 2
+          }
+        ]
+      }
+    },
+    {
+      "id": "toxic_arrow",
+      "name": "Toxic Arrow",
+      "cardClass": "hunter",
+      "cost": 2,
+      "rarity": "epic",
+      "set": "PLACEHOLDER_202204",
+      "type": "sorcery",
+      "tribe": "Nature",
+      "collectible": true,
+      "description": "Deal 2 damage to a minion. If it survives, give it Poisonous.",
+      "effects": [
+        {
+          "type": "damage-then",
+          "value": 2,
+          "target": "creature",
+          "ifSurvives": [
+            {
+              "type": "grant",
+              "keyword": "poisonous"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "aimed_shot",
+      "name": "Aimed Shot",
+      "type": "sorcery",
+      "cost": 3,
+      "cardClass": "hunter",
+      "rarity": "common",
+      "set": "STORMWIND",
+      "collectible": true,
+      "description": "Deal 3 damage. Your next Hero Power deals 2 more damage.",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 3,
+          "target": "any"
+        },
+        {
+          "type": "set-next-hero-power-damage",
+          "value": 2
+        }
+      ]
+    },
+    {
+      "id": "amphibians_spirit",
+      "name": "Amphibian's Spirit",
+      "type": "sorcery",
+      "cost": 3,
+      "cardClass": "hunter",
+      "rarity": "epic",
+      "set": "EMERALD_DREAM",
+      "tribe": "Nature",
+      "collectible": true,
+      "description": "Give a minion +2/+2 and \"Deathrattle: Give a friendly minion +2/+2 and this Deathrattle.\"",
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 2,
+          "health": 2,
+          "target": "creature"
+        },
+        {
+          "type": "grant-deathrattle",
+          "target": "creature",
+          "effects": [
+            {
+              "type": "buff-random-other-grant-deathrattle",
+              "attack": 2,
+              "health": 2
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "arcane_tripwire",
+      "name": "Arcane Tripwire",
+      "type": "sorcery",
+      "cost": 3,
+      "cardClass": "hunter",
+      "rarity": "epic",
+      "set": "ESCAPEFROM_VIOLET_HOLD",
+      "tribe": "Arcane",
+      "collectible": true,
+      "description": "Deal 5 damage split among all enemies. Shuffle 2 spells into your deck that do it again when drawn.",
+      "effects": [
+        {
+          "type": "random-damage",
+          "value": 1,
+          "count": 5,
+          "pool": "enemies"
+        },
+        {
+          "type": "shuffle-into-own-deck",
+          "id": "arcane_tripwire_token",
+          "count": 2
+        }
+      ]
+    },
+    {
+      "id": "hunters_pack",
+      "name": "Hunter's Pack",
+      "cardClass": "hunter",
+      "cost": 3,
+      "rarity": "common",
+      "set": "ULDUM",
+      "collectible": true,
+      "type": "sorcery",
+      "description": "Add a random Hunter Beast, Secret, and weapon to your hand.",
+      "effects": [
+        {
+          "type": "conjure-random",
+          "cardType": "creature",
+          "cardClass": "hunter",
+          "tribe": "Beast",
+          "count": 1
+        },
+        {
+          "type": "conjure-random",
+          "cardType": "secret",
+          "cardClass": "hunter",
+          "count": 1
+        },
+        {
+          "type": "conjure-random",
+          "cardType": "weapon",
+          "cardClass": "hunter",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "id": "infest",
+      "name": "Infest",
+      "cardClass": "hunter",
+      "cost": 3,
+      "rarity": "rare",
+      "type": "sorcery",
+      "tribe": "Nature",
+      "set": "OG",
+      "collectible": true,
+      "effects": [
+        {
+          "type": "grant-deathrattle",
+          "effects": [
+            {
+              "type": "conjure-random",
+              "cardType": "creature",
+              "tribe": "Beast"
+            }
+          ]
+        }
+      ],
+      "description": "Give your minions \"Deathrattle: Add a random Beast to your hand.\""
+    },
+    {
+      "id": "revive_pet",
+      "name": "Revive Pet",
+      "type": "sorcery",
+      "cost": 3,
+      "cardClass": "hunter",
+      "rarity": "rare",
+      "set": "ALTERAC_VALLEY",
+      "tribe": "Nature",
+      "collectible": true,
+      "description": "Discover a friendly Beast that died this game. Summon it.",
+      "effects": [
+        {
+          "type": "discover",
+          "fromDied": true,
+          "cardType": "creature",
+          "tribe": "Beast",
+          "to": "board"
+        }
+      ]
+    },
+    {
+      "id": "saddle_up",
+      "name": "Saddle Up!",
+      "cardClass": "hunter",
+      "cost": 3,
+      "rarity": "epic",
+      "set": "WILD_WEST",
+      "collectible": true,
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "grant-deathrattle",
+          "effects": [
+            {
+              "type": "summon-random",
+              "tribe": "Beast",
+              "maxCost": 3
+            }
+          ]
+        }
+      ],
+      "description": "Give your minions \"Deathrattle: Summon a random Beast that costs (3) or less.\""
+    },
+    {
+      "id": "rapid_fire_ii",
+      "name": "Rapid Fire",
+      "type": "sorcery",
+      "cost": 2,
+      "cardClass": "hunter",
+      "rarity": "common",
+      "set": "DALARAN",
+      "collectible": false,
+      "token": true,
+      "description": "Deal 2 damage.",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 2,
+          "target": "any"
+        }
+      ]
+    },
+    {
+      "id": "fresh_scent_ii",
+      "name": "Fresh Scent",
+      "type": "sorcery",
+      "cost": 2,
+      "cardClass": "hunter",
+      "rarity": "common",
+      "set": "YEAR_OF_THE_DRAGON",
+      "collectible": false,
+      "token": true,
+      "description": "Give a Beast +2/+2.",
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 2,
+          "health": 2,
+          "target": "creature",
+          "tribe": "Beast"
+        }
+      ]
+    },
+    {
+      "id": "carnassas_brood",
+      "name": "Carnassa's Brood",
+      "type": "creature",
+      "cost": 1,
+      "attack": 3,
+      "health": 2,
+      "rarity": "common",
+      "tribe": "Beast",
+      "token": true,
+      "collectible": false,
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Draw a card.",
+      "effects": [
+        {
+          "type": "draw",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "arcane_tripwire_token",
+      "name": "Arcane Tripwire",
+      "type": "sorcery",
+      "cost": 3,
+      "cardClass": "hunter",
+      "rarity": "epic",
+      "set": "ESCAPEFROM_VIOLET_HOLD",
+      "tribe": "Arcane",
+      "collectible": false,
+      "token": true,
+      "description": "Deal 5 damage split among all enemies.",
+      "effects": [
+        {
+          "type": "random-damage",
+          "value": 1,
+          "count": 5,
+          "pool": "enemies"
+        }
+      ]
     }
   ]
 }
