@@ -326,6 +326,12 @@ register('grant-next-outcast-discount', ({ state, pi, target, source, enemies, s
 });
 
 
+register('grant-next-deathrattle-discount', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => {
+			// Carrion Studies: your next Deathrattle minion costs less
+			state.players[pi].nextDeathrattleDiscount = (state.players[pi].nextDeathrattleDiscount || 0) + (e.value || 1);
+});
+
+
 register('nightmare-buff', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => {
 			// Nightmare: +5/+5 now, destroyed at the start of your next turn
 			const t = chosenCreature();

@@ -885,6 +885,18 @@ register('draw-spell-school-then', ({ state, pi, target, source, enemies, scaled
 } });
 
 
+register('draw-minion-tribe-then', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => { {
+			// Fetch!: draw a minion; if it's a `tribe` minion, run `then` (bonus draw)
+			const p = state.players[pi];
+			const before = new Set(p.hand.map(c => c.uid));
+			execEffects(state, pi, [{ type: 'tutor', cardType: 'creature', count: 1 }], target, source);
+			const drawn = p.hand.find(c => !before.has(c.uid));
+			if (drawn && (drawn.tribe || '').includes(e.tribe)) {
+				if (e.then) execEffects(state, pi, e.then, target, source);
+			}
+} });
+
+
 register('equip-weapon-from-deck', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => { {
 			// Selfless Sidekick: equip a random weapon from your deck
 			const p = state.players[pi];

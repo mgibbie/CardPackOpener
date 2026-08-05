@@ -118,6 +118,8 @@ function secretMatches(sec, ctx) {
 	if (c.targetHero && ctx.target?.type !== 'hero') return false;
 	if (c.targetCreature && ctx.target?.type !== 'creature') return false;
 	if (c.attackerCreature && ctx.attackerType !== 'creature') return false;
+	// Rat Trap / Motion Denied: fire only on the opponent's Nth card this turn
+	if (c.cardsPlayedThisTurn != null && ctx.cardsPlayedThisTurn !== c.cardsPlayedThisTurn) return false;
 	return true;
 }
 

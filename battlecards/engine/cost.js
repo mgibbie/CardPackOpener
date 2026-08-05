@@ -217,6 +217,7 @@ export function effectiveCost(state, pi, card) {
 	if (card.type === 'creature' && (card.keywords || []).includes('deathrattle')) {
 		const disc = p.board.reduce((s, x) => (!isDead(x) && x.deathrattleDiscount) ? s + x.deathrattleDiscount : s, 0);
 		if (disc) c = Math.max(0, c - disc);
+		if (p.nextDeathrattleDiscount > 0) c = Math.max(0, c - p.nextDeathrattleDiscount); // Carrion Studies: your next Deathrattle minion costs less
 	}
 	if (p.spellTaxNext > 0 && isSpellType(card)) c += p.spellTaxNext; // Loatheb
 	if (p.nextComboDiscount > 0 && card.combo) c = Math.max(0, c - p.nextComboDiscount); // Foxy Fraud

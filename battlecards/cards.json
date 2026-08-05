@@ -143333,6 +143333,467 @@
           }
         ]
       }
+    },
+    {
+      "id": "bait_and_switch",
+      "name": "Bait and Switch",
+      "cardClass": "hunter",
+      "cost": 2,
+      "rarity": "common",
+      "type": "secret",
+      "collectible": true,
+      "set": "TITANS",
+      "secret": {
+        "trigger": "enemy-attack",
+        "condition": {
+          "targetCreature": true
+        },
+        "effects": [
+          {
+            "type": "buff-minion",
+            "of": "target",
+            "attack": 3,
+            "health": 3
+          }
+        ]
+      },
+      "description": "Secret: When a friendly minion is attacked, give it +3/+3."
+    },
+    {
+      "id": "cat_trick",
+      "name": "Cat Trick",
+      "cardClass": "hunter",
+      "cost": 2,
+      "rarity": "rare",
+      "set": "PLACEHOLDER_202204",
+      "collectible": true,
+      "type": "secret",
+      "secret": {
+        "trigger": "enemy-spell-cast",
+        "effects": [
+          {
+            "type": "summon",
+            "count": 1,
+            "attack": 4,
+            "health": 2,
+            "name": "Panther",
+            "keywords": [
+              "stealth"
+            ]
+          }
+        ]
+      },
+      "description": "Secret: After your opponent casts a spell, summon a 4/2 Panther with Stealth."
+    },
+    {
+      "id": "dart_trap",
+      "name": "Dart Trap",
+      "cardClass": "hunter",
+      "cost": 2,
+      "rarity": "common",
+      "set": "LOE",
+      "collectible": true,
+      "type": "trap",
+      "description": "Secret: After an opposing Hero Power is used, deal 5 damage to a random enemy.",
+      "trap": {
+        "trigger": "hero-power-used",
+        "effects": [
+          {
+            "type": "random-damage",
+            "value": 5,
+            "count": 1,
+            "pool": "enemies"
+          }
+        ]
+      }
+    },
+    {
+      "id": "emergency_maneuvers",
+      "name": "Emergency Maneuvers",
+      "type": "secret",
+      "cost": 2,
+      "cardClass": "hunter",
+      "rarity": "epic",
+      "set": "THE_SUNKEN_CITY",
+      "collectible": true,
+      "keywords": [
+        "secret"
+      ],
+      "description": "Secret: When a friendly minion dies, summon a copy of it. It's Dormant for 1 turn.",
+      "secret": {
+        "trigger": "friendly-minion-died",
+        "effects": [
+          {
+            "type": "summon-copy-of-triggering-minion",
+            "dormant": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "hidden_cache",
+      "name": "Hidden Cache",
+      "cardClass": "hunter",
+      "cost": 2,
+      "rarity": "rare",
+      "set": "GANGS",
+      "collectible": true,
+      "type": "secret",
+      "secret": {
+        "trigger": "enemy-minion-played",
+        "effects": [
+          {
+            "type": "buff-hand",
+            "attack": 2,
+            "health": 2
+          }
+        ]
+      },
+      "description": "Secret: After your opponent plays a minion, give a random minion in your hand +2/+2."
+    },
+    {
+      "id": "ice_trap",
+      "name": "Ice Trap",
+      "cardClass": "hunter",
+      "cost": 2,
+      "rarity": "epic",
+      "set": "ALTERAC_VALLEY",
+      "collectible": true,
+      "type": "trap",
+      "tribe": "Frost",
+      "description": "Secret: When your opponent casts a spell, return it to their hand instead. It costs (1) more.",
+      "trap": {
+        "trigger": "enemy-spell-cast",
+        "effects": [
+          {
+            "type": "bounce-caster-spell",
+            "costMod": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "motion_denied",
+      "name": "Motion Denied",
+      "cardClass": "hunter",
+      "cost": 2,
+      "rarity": "common",
+      "set": "PLACEHOLDER_202204",
+      "collectible": true,
+      "type": "secret",
+      "secret": {
+        "trigger": "enemy-card-played",
+        "condition": {
+          "cardsPlayedThisTurn": 3
+        },
+        "effects": [
+          {
+            "type": "damage",
+            "value": 6,
+            "target": "enemy-heroes"
+          }
+        ]
+      },
+      "description": "Secret: After your opponent plays three cards in a turn, deal 6 damage to the enemy hero."
+    },
+    {
+      "id": "pressure_plate",
+      "name": "Pressure Plate",
+      "cardClass": "hunter",
+      "cost": 2,
+      "rarity": "common",
+      "set": "CORE",
+      "collectible": true,
+      "type": "secret",
+      "secret": {
+        "trigger": "enemy-spell-cast",
+        "effects": [
+          {
+            "type": "destroy-random"
+          }
+        ]
+      },
+      "description": "Secret: After your opponent casts a spell, destroy a random enemy minion."
+    },
+    {
+      "id": "rat_trap",
+      "name": "Rat Trap",
+      "cardClass": "hunter",
+      "cost": 2,
+      "rarity": "epic",
+      "set": "CORE",
+      "collectible": true,
+      "type": "trap",
+      "description": "Secret: After your opponent plays three cards in a turn, summon a 6/6 Rat.",
+      "trap": {
+        "trigger": "enemy-card-played",
+        "condition": {
+          "cardsPlayedThisTurn": 3
+        },
+        "effects": [
+          {
+            "type": "summon",
+            "attack": 6,
+            "health": 6,
+            "name": "Rat",
+            "tribe": "Beast"
+          }
+        ]
+      }
+    },
+    {
+      "id": "untimely_death",
+      "name": "Untimely Death",
+      "type": "secret",
+      "cost": 2,
+      "cardClass": "hunter",
+      "rarity": "rare",
+      "set": "TIME_TRAVEL",
+      "collectible": true,
+      "keywords": [
+        "secret"
+      ],
+      "description": "Secret: When a friendly minion dies the turn after being played, resummon it.",
+      "secret": {
+        "trigger": "friendly-minion-died",
+        "effects": [
+          {
+            "type": "revive-minion",
+            "health": 99
+          }
+        ]
+      }
+    },
+    {
+      "id": "wandering_monster",
+      "name": "Wandering Monster",
+      "type": "secret",
+      "cost": 2,
+      "cardClass": "hunter",
+      "rarity": "rare",
+      "set": "PLACEHOLDER_202204",
+      "collectible": true,
+      "keywords": [
+        "secret"
+      ],
+      "description": "Secret: When an enemy attacks your hero, summon a 3-Cost minion as the new target.",
+      "secret": {
+        "trigger": "enemy-attack",
+        "condition": {
+          "targetHero": true
+        },
+        "effects": [
+          {
+            "type": "summon-redirect",
+            "cost": 3
+          }
+        ]
+      }
+    },
+    {
+      "id": "serpentbloom",
+      "name": "Serpentbloom",
+      "type": "sorcery",
+      "cost": 0,
+      "cardClass": "hunter",
+      "rarity": "common",
+      "set": "THE_BARRENS",
+      "collectible": true,
+      "description": "Give a friendly Beast Poisonous.",
+      "effects": [
+        {
+          "type": "grant",
+          "target": "friendly-creature",
+          "tribe": "Beast",
+          "keyword": "poisonous"
+        }
+      ]
+    },
+    {
+      "id": "smuggler_s_crate",
+      "name": "Smuggler's Crate",
+      "cardClass": "hunter",
+      "cost": 0,
+      "rarity": "common",
+      "type": "sorcery",
+      "collectible": true,
+      "effects": [
+        {
+          "type": "buff-hand",
+          "tribe": "Beast",
+          "random": true,
+          "attack": 2,
+          "health": 2
+        }
+      ],
+      "description": "Give a random Beast in your hand +2/+2.",
+      "set": "GANGS"
+    },
+    {
+      "id": "awakening_tremors",
+      "name": "Awakening Tremors",
+      "type": "sorcery",
+      "cost": 1,
+      "cardClass": "hunter",
+      "rarity": "common",
+      "set": "TITANS",
+      "collectible": true,
+      "description": "Get three 4/1 Worms. They cost (1).",
+      "effects": [
+        {
+          "type": "add-card",
+          "id": "worm_token",
+          "count": 3
+        }
+      ]
+    },
+    {
+      "id": "bunch_of_bananas",
+      "name": "Bunch of Bananas",
+      "cardClass": "hunter",
+      "cost": 1,
+      "rarity": "common",
+      "set": "BATTLE_OF_THE_BANDS",
+      "collectible": true,
+      "description": "Give a minion +1/+1.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 1,
+          "health": 1,
+          "target": "creature"
+        }
+      ]
+    },
+    {
+      "id": "carrion_studies",
+      "name": "Carrion Studies",
+      "type": "sorcery",
+      "cost": 1,
+      "cardClass": "hunter",
+      "rarity": "common",
+      "set": "SCHOLOMANCE",
+      "collectible": true,
+      "description": "Discover a Deathrattle minion. Your next one costs (1) less.",
+      "effects": [
+        {
+          "type": "discover",
+          "cardType": "creature",
+          "requireKeyword": "deathrattle",
+          "pick": 3
+        },
+        {
+          "type": "grant-next-deathrattle-discount",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "explorers_hat",
+      "name": "Explorer's Hat",
+      "cardClass": "hunter",
+      "cost": 1,
+      "rarity": "rare",
+      "set": "LOE",
+      "collectible": true,
+      "type": "sorcery",
+      "description": "Give a minion +1/+1 and \"Deathrattle: Get an Explorer's Hat.\"",
+      "effects": [
+        {
+          "type": "buff",
+          "target": "creature",
+          "attack": 1,
+          "health": 1
+        },
+        {
+          "type": "grant-deathrattle",
+          "target": "creature",
+          "effects": [
+            {
+              "type": "conjure-id",
+              "id": "explorers_hat"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "fetch",
+      "name": "Fetch!",
+      "type": "sorcery",
+      "cost": 1,
+      "cardClass": "hunter",
+      "rarity": "common",
+      "set": "WHIZBANGS_WORKSHOP",
+      "collectible": true,
+      "description": "Draw a minion. If it's a Beast, draw a spell.",
+      "effects": [
+        {
+          "type": "draw-minion-tribe-then",
+          "tribe": "Beast",
+          "then": [
+            {
+              "type": "tutor",
+              "cardType": "spell",
+              "count": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "toxic_reinforcements",
+      "name": "Toxic Reinforcements",
+      "type": "quest",
+      "cardClass": "hunter",
+      "cost": 1,
+      "rarity": "epic",
+      "set": "ULDUM",
+      "collectible": true,
+      "description": "Sidequest: Use your Hero Power three times.\nReward: Summon three 1/1 Leper Gnomes.",
+      "keywords": [
+        "quest"
+      ],
+      "quest": {
+        "goal": {
+          "type": "hero-power",
+          "count": 3
+        },
+        "reward": [
+          {
+            "type": "summon",
+            "count": 3,
+            "attack": 1,
+            "health": 1,
+            "name": "Leper Gnome",
+            "tribe": "Undead Gnome",
+            "keywords": [
+              "deathrattle"
+            ],
+            "deathrattle": [
+              {
+                "type": "damage",
+                "value": 2,
+                "target": "enemy-heroes"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "worm_token",
+      "name": "Worm",
+      "type": "creature",
+      "cost": 1,
+      "attack": 4,
+      "health": 1,
+      "rarity": "common",
+      "token": true,
+      "tribe": "Beast",
+      "collectible": false,
+      "description": "A 4/1 Worm."
     }
   ]
 }

@@ -44,6 +44,31 @@ registerTrigger('counter', (state, pi, e, ctx, triggering) => {
 });
 
 
+registerTrigger('bounce-caster-spell', (state, pi, e, ctx, triggering) => {
+	do { {
+				// Ice Trap: counter the spell and return it to the CASTER's hand
+				// at +costMod. In a secret context pi is the owner, so the caster
+				// is the opponent (spell.controller when present).
+				ctx.countered = true;
+				const spell = ctx.spell;
+				if (spell) {
+					const caster = spell.controller != null ? spell.controller : (opponentsOf(state, pi)[0] ?? pi);
+					const owner = state.players[caster];
+					const def = state.cardsById[spell.id];
+					if (def && owner && owner.hand.length < MAX_HAND) {
+						const nc = instantiate(def, caster);
+						nc.cost = (nc.cost || 0) + (e.costMod || 0);
+						nc.zone = 'hand';
+						owner.hand.push(nc);
+						emit(state, { type: 'bounce', player: caster, name: spell.name });
+					}
+				}
+				break;
+			}
+	} while (false); // `break` ends this effect, exactly like the old case break
+});
+
+
 registerTrigger('destroy-damaged-subject', (state, pi, e, ctx, triggering) => {
 	do { {
 				// Holotechnician: destroy the minion that just took damage
@@ -1086,7 +1111,10 @@ registerTrigger('set-attack', (state, pi, e, ctx, triggering) => {
 
 registerTrigger('buff-minion', (state, pi, e, ctx, triggering) => {
 	do { {
-				const m = triggering();
+				// of:'target' buffs the attacked friendly minion (Bait and Switch),
+				// mirroring copy-minion; otherwise the triggering minion
+				const m = e.of === 'target' && ctx.target?.type === 'creature'
+					? findCreature(state, ctx.target.uid) : triggering();
 				if (m) {
 					m.attack += e.attack || 0;
 					m.maxHealth += e.health || 0;
@@ -1475,12 +1503,21 @@ registerTrigger('bounce-attacker', (state, pi, e, ctx, triggering) => {
 
 registerTrigger('summon-redirect', (state, pi, e, ctx, triggering) => {
 	do { {
-				const t = summon(state, pi, {
-					id: 'token_' + e.name.toLowerCase().replace(/[^a-z0-9]+/g, '_'),
-					name: e.name, type: 'creature', cost: 0, rarity: 'common',
-					description: `A ${e.attack}/${e.health} token.`,
-					attack: e.attack, health: e.health, keywords: e.keywords || [],
-				});
+				let t;
+				if (e.cost != null) {
+					// Wandering Monster: summon a random N-Cost minion as the new target
+					const pool = Object.values(state.cardsById).filter(d => d.type === 'creature'
+						&& (d.cost || 0) === e.cost && !d.token && d.collectible !== false
+						&& !d.companion && !d.commander && !(d.colors && d.colors.length));
+					if (pool.length) t = summon(state, pi, pool[Math.floor(state.rng() * pool.length)]);
+				} else {
+					t = summon(state, pi, {
+						id: 'token_' + e.name.toLowerCase().replace(/[^a-z0-9]+/g, '_'),
+						name: e.name, type: 'creature', cost: 0, rarity: 'common',
+						description: `A ${e.attack}/${e.health} token.`,
+						attack: e.attack, health: e.health, keywords: e.keywords || [],
+					});
+				}
 				if (t) ctx.target = { type: 'creature', uid: t.uid, player: pi };
 				break;
 			}
@@ -2172,7 +2209,11 @@ registerTrigger('summon-copy-of-triggering-minion', (state, pi, e, ctx, triggeri
 	do { {
 				// Auchenai Death-Speaker: after a friendly minion is Reborn, summon a copy of it
 				const m = ctx.minion;
-				if (m && state.cardsById[m.id]) summon(state, pi, state.cardsById[m.id]);
+				if (m && state.cardsById[m.id]) {
+					const c = summon(state, pi, state.cardsById[m.id]);
+					// Emergency Maneuvers: the copy enters Dormant for N turns
+					if (c && e.dormant) { c.dormantLeft = e.dormant; emit(state, { type: 'dormant', player: pi, uid: c.uid, turns: e.dormant }); }
+				}
 				break;
 			}
 	} while (false); // `break` ends this effect, exactly like the old case break

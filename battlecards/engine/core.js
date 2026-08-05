@@ -558,6 +558,7 @@ export function createGame(cardsById, rng = Math.random, playerDeckIds = null, p
 		relicImprove: 0,          // DH Relics: how many Relics you've played (each improves the next)
 		nextRelicDoubleCast: false, // Relic Vault: your next Relic this turn casts twice
 		nextSpellDiscount: 0, // Murkwater Scribe: your next spell costs this much less
+		nextDeathrattleDiscount: 0, // Carrion Studies: your next Deathrattle minion costs less
 		nextTribeDiscount: null, // Clownfish: {tribe, count, amount} for your next minions of a tribe
 		nextTribePlayReward: null, // The Great Dark Beyond Draenei: {tribe, count, attack, health, keyword, immediateAttack} for your next minions of a tribe you PLAY
 		nextWeaponDiscount: 0, // Space Pirate: your next weapon costs this much less
@@ -2261,6 +2262,8 @@ export function playCard(state, pi, cardUid, target, choice, position, useAlt, k
 	questTick(state, 'play', pi, 1, card); // "Play N cards" quests
 	// counted AFTER resolution so Combo sees only cards played EARLIER this turn
 	p.cardsPlayedThisTurn++;
+	// Rat Trap / Motion Denied: an opponent's secret watching the Nth card this turn
+	fireSecretsAll(state, pi, 'enemy-card-played', { played: card, cardsPlayedThisTurn: p.cardsPlayedThisTurn });
 	for (const hc of p.hand) if (hc._locked) hc._locked = false; // Low Security Wing: playing another card unlocks
 
 	p.lastCardCost = card.cost; p.lastPlayedRunes = card.runes || null; // Rolling Stone / Grotesque Runeblade: cost of the most recently played card
@@ -2285,6 +2288,7 @@ export function playCard(state, pi, cardUid, target, choice, position, useAlt, k
 	p._freeMinionGrantedThisPlay = false;
 	if ((card.keywords || []).includes('outcast') && p.nextOutcastDiscount && !p._outcastDiscountGrantedThisPlay) p.nextOutcastDiscount = 0; // Fierce Outsider: one-shot discount consumed (not by the card that granted it)
 	p._outcastDiscountGrantedThisPlay = false;
+	if (card.type === 'creature' && (card.keywords || []).includes('deathrattle') && p.nextDeathrattleDiscount) p.nextDeathrattleDiscount = 0; // Carrion Studies: one-shot Deathrattle discount consumed
 	// Sherazin, Corpse Flower: play 4 cards in a turn to revive the seed
 	if (p.cardsPlayedThisTurn >= 4) {
 		for (const seed of p.board.filter(c => c.id === 'sherazin_seed' && !isDead(c))) {
@@ -2667,6 +2671,7 @@ function resolveEntry(state, entry) {
 		if (entry.target?.type === 'creature' && state.players[pi].board.some(c => c.heroPowerAdjacent && !isDead(c))) { const t = findCreature(state, entry.target.uid); if (t) { const b2 = state.players[t.controller].board, i2 = b2.indexOf(t); for (const nb of [b2[i2 - 1], b2[i2 + 1]]) if (nb && !isDead(nb)) execEffects(state, pi, entry.effects, { type: 'creature', uid: nb.uid, player: nb.controller }, entry.card); } } // Spirit of the Dragonhawk
 			for (let k = 0; k < enemyBefore.filter(c => isDead(c)).length; k++) fireOngoing(state, pi, 'hero-power-kills-minion', {}); // Pyromaniac
 			fireOngoing(state, pi, 'hero-power-used', {}); // Inspire
+			fireSecretsAll(state, pi, 'hero-power-used', {}); // Dart Trap: an opposing Hero Power is used
 		return;
 	}
 	// ability / landtap: their costs + side effects already happened at declare time
@@ -3831,6 +3836,7 @@ export function useHeroPower(state, pi, cardUid, target, choice) {
 	spendMana(p, cost);
 	p.heroPowerDiscountNext = 0; // Fencing Coach's discount is one-shot
 	p.heroPowersUsedGame = (p.heroPowersUsedGame || 0) + 1; // Frost Giant
+	questTick(state, 'hero-power', pi); // Toxic Reinforcements: "Use your Hero Power N times"
 	for (const c of p.board) if (c.wakeOnHeroPower && c.dormantLeft > 0) { c.dormantLeft = 0; emit(state, { type: 'dormant', player: pi, uid: c.uid, turns: 0 }); } // Slumbering Sprite
 	card.usedThisTurn = true;
 	card._uses = (card._uses || 0) + 1;
