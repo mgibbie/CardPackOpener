@@ -996,10 +996,36 @@ registerTrigger('destroy-attacker', (state, pi, e, ctx, triggering) => {
 registerTrigger('damage-minion', (state, pi, e, ctx, triggering) => {
 	do { {
 				const m = triggering();
-				if (m) damageCreature(state, m, e.value, null);
+				if (m) {
+					const before = hp(m);
+					damageCreature(state, m, e.value, null);
+					if (e.excessToHero && e.value > before && m.controller != null) damageHero(state, m.controller, e.value - before, pi); // Explosive Runes: excess to their hero
+				}
 				break;
 			}
 	} while (false); // `break` ends this effect, exactly like the old case break
+});
+
+registerTrigger('copy-triggering-to-hand', (state, pi, e, ctx, triggering) => {
+	// Frozen Clone / Duplicate: add N copies of the triggering minion to your hand
+	// (ctx.minion works even when the minion just DIED — triggering() filters dead ones out)
+	const m = ctx.minion || triggering();
+	if (!m) return;
+	const def = state.cardsById[m.id] || { id: m.id, name: m.name, type: 'creature', cost: m.cost, rarity: m.rarity, description: m.description, attack: m.attack, health: m.maxHealth, keywords: [...(m.keywords || [])] };
+	for (let i = 0; i < (e.count || 1); i++) { if (state.players[pi].hand.length >= MAX_HAND) break; const cp = instantiate(def, pi); cp.zone = 'hand'; state.players[pi].hand.push(cp); emit(state, { type: 'conjure', player: pi, card: cp, color: null }); }
+});
+
+registerTrigger('summon-random-triggering-cost', (state, pi, e, ctx, triggering) => {
+	// Effigy: summon a random minion with the same Cost as the triggering (dead) minion
+	const m = ctx.minion || triggering();
+	if (m) execEffects(state, pi, [{ type: 'summon-random', cost: m.cost || 0 }], null, null);
+});
+
+registerTrigger('destroy-highest-enemy-minion', (state, pi, e, ctx, triggering) => {
+	// Flames of Infinity: destroy the enemy's highest-Health minion
+	let best = null;
+	for (const o of opponentsOf(state, pi)) for (const c of state.players[o].board) if (!isDead(c) && c.type !== 'location' && (!best || hp(c) > hp(best))) best = c;
+	if (best) { best.doomed = true; emit(state, { type: 'destroy', uid: best.uid }); sweepDeaths(state); }
 });
 
 

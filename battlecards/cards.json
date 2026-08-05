@@ -142845,6 +142845,125 @@
           "description": "Freeze."
         }
       ]
+    },
+    {
+      "id": "explosive_runes",
+      "name": "Explosive Runes",
+      "type": "secret",
+      "cost": 3,
+      "cardClass": "mage",
+      "rarity": "rare",
+      "set": "CORE",
+      "collectible": true,
+      "tribe": "Fire",
+      "keywords": [
+        "secret"
+      ],
+      "description": "Secret: After your opponent plays a minion, deal 6 damage to it and any excess to their hero.",
+      "secret": {
+        "trigger": "enemy-minion-played",
+        "effects": [
+          {
+            "type": "damage-minion",
+            "value": 6,
+            "excessToHero": true
+          }
+        ]
+      }
+    },
+    {
+      "id": "frozen_clone",
+      "name": "Frozen Clone",
+      "type": "secret",
+      "cost": 3,
+      "cardClass": "mage",
+      "rarity": "common",
+      "set": "PLACEHOLDER_202204",
+      "collectible": true,
+      "tribe": "Frost",
+      "keywords": [
+        "secret"
+      ],
+      "description": "Secret: After your opponent plays a minion, add two copies of it to your hand.",
+      "secret": {
+        "trigger": "enemy-minion-played",
+        "effects": [
+          {
+            "type": "copy-triggering-to-hand",
+            "count": 2
+          }
+        ]
+      }
+    },
+    {
+      "id": "duplicate",
+      "name": "Duplicate",
+      "type": "secret",
+      "cost": 3,
+      "cardClass": "mage",
+      "rarity": "common",
+      "set": "NAXX",
+      "collectible": true,
+      "tribe": "Arcane",
+      "keywords": [
+        "secret"
+      ],
+      "description": "Secret: When a friendly minion dies, put 2 copies of it into your hand.",
+      "secret": {
+        "trigger": "friendly-minion-died",
+        "effects": [
+          {
+            "type": "copy-triggering-to-hand",
+            "count": 2
+          }
+        ]
+      }
+    },
+    {
+      "id": "effigy",
+      "name": "Effigy",
+      "type": "secret",
+      "cost": 3,
+      "cardClass": "mage",
+      "rarity": "rare",
+      "set": "TGT",
+      "collectible": true,
+      "tribe": "Fire",
+      "keywords": [
+        "secret"
+      ],
+      "description": "Secret: When a friendly minion dies, summon a random minion with the same Cost.",
+      "secret": {
+        "trigger": "friendly-minion-died",
+        "effects": [
+          {
+            "type": "summon-random-triggering-cost"
+          }
+        ]
+      }
+    },
+    {
+      "id": "flames_of_infinity",
+      "name": "Flames of Infinity",
+      "type": "secret",
+      "cost": 3,
+      "cardClass": "mage",
+      "rarity": "common",
+      "set": "TIME_TRAVEL",
+      "collectible": true,
+      "tribe": "Fire",
+      "keywords": [
+        "secret"
+      ],
+      "description": "Secret: When your enemy's turn ends, destroy their highest Health minion.",
+      "secret": {
+        "trigger": "enemy-turn-end",
+        "effects": [
+          {
+            "type": "destroy-highest-enemy-minion"
+          }
+        ]
+      }
     }
   ]
 }

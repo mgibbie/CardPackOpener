@@ -3967,6 +3967,7 @@ export function endTurn(state) {
 	for (const em of p.emblems) if (em.id === 'tomb_scroll_of_nonsense' && em.static && em.static.value > 0) { em.static.value--; } // Scroll of Nonsense decays each turn
 	fireOngoing(state, pi, 'turn-end');
 	if (p.board.some(c => c.endTurnDouble && !isDead(c))) fireOngoing(state, pi, 'turn-end'); // Chrono-Lord Deios
+	fireSecretsAll(state, pi, 'enemy-turn-end', {}); // Flames of Infinity: a secret that fires when the enemy's turn ends
 	// Poison: each Poisoned creature you control takes 2 damage at the end of
 	// your turn (the condition persists until the creature is cleansed or dies).
 	for (const c of [...p.board]) {
