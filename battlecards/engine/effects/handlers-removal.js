@@ -799,12 +799,13 @@ register('damage-adjacent', ({ state, pi, target, source, enemies, scaled, hm, p
 				const board = state.players[t.controller].board;
 				const idx = board.indexOf(t);
 				const neighbors = [board[idx - 1], board[idx + 1]].filter(Boolean);
-				damageCreature(state, t, boost(e.value), null);
+				let hurt = damageCreature(state, t, boost(e.value), null) || 0;
 				if (e.freeze) freezeCreature(state, t);
 				for (const nb of neighbors) {
-					damageCreature(state, nb, boost(e.splash), null);
+					hurt += damageCreature(state, nb, boost(e.splash), null) || 0;
 					if (e.freeze) freezeCreature(state, nb);
 				}
+				if (e.lifesteal && hurt > 0) healHero(state, pi, hurt); // Felscream Blast
 			}
 } });
 

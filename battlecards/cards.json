@@ -141174,6 +141174,27 @@
           ]
         }
       ]
+    },
+    {
+      "id": "felscream_blast",
+      "name": "Felscream Blast",
+      "cardClass": "demonhunter",
+      "cost": 1,
+      "rarity": "common",
+      "set": "DARKMOON_FAIRE",
+      "collectible": true,
+      "type": "sorcery",
+      "tribe": "Fel",
+      "description": "Lifesteal. Deal 1 damage to a minion and its neighbors.",
+      "effects": [
+        {
+          "type": "damage-adjacent",
+          "value": 1,
+          "splash": 1,
+          "target": "creature",
+          "lifesteal": true
+        }
+      ]
     }
   ]
 }
