@@ -255,6 +255,7 @@ export function instantiate(def, controller) {
 		transformInHand: def.transformInHand || false,       // Shifter Zerus: transforms each turn in hand
 		transformInHandTribe: def.transformInHandTribe || null, // Hive Queen's Larva: only into a given tribe (Zerg)
 		transformInHandType: def.transformInHandType || null, // Molten Blade: transform into a random weapon (default: creature)
+		transformInHandClass: def.transformInHandClass || null, // Shifting Scroll: restrict the transform pool to a class
 		transformWhenDrawn: def.transformWhenDrawn || null,  // Unidentified Maul: on draw, become a random one of these ids
 		keepsEnchantments: !!def.keepsEnchantments,          // Kingsbane: keeps its enchantments across shuffle/redraw
 		relic: !!def.relic,                                  // DH Relics: scale with relicImprove, doubled by Relic Vault
@@ -4459,14 +4460,17 @@ export function endTurn(state) {
 		if (c.costReducePerTurn) c.cost = Math.max(0, (c.cost || 0) - 1);
 		if (c.transformInHand) {
 			const wantType = c.transformInHandType || 'creature'; // Molten Blade: a random weapon
-			const pool = Object.values(state.cardsById).filter(d => d.type === wantType
+				const isSpell = wantType === 'spell'; // Shifting Scroll: a random Mage spell
+			const pool = Object.values(state.cardsById).filter(d => (isSpell ? isSpellType(d) : d.type === wantType)
 				&& !d.token && d.collectible !== false && !d.companion && !d.commander && !(d.colors && d.colors.length)
-				&& (!c.transformInHandTribe || (d.tribe || '').includes(c.transformInHandTribe))); // Hive Queen's Larva: a random Zerg
+				&& (!c.transformInHandTribe || (d.tribe || '').includes(c.transformInHandTribe)) // Hive Queen's Larva: a random Zerg
+				&& (!c.transformInHandClass || (d.cardClass || 'neutral') === c.transformInHandClass)); // Shifting Scroll: a Mage spell
 			if (pool.length) { const rd = pool[Math.floor(state.rng() * pool.length)];
 				c.id = rd.id; c.name = rd.name; c.attack = rd.attack || 0;
 				c.cost = rd.cost || 0; c.keywords = [...(rd.keywords || [])];
 				c.effects = rd.effects || null; c.ongoing = rd.ongoing || null; c.deathrattle = rd.deathrattle || null;
-				if (wantType === 'weapon') { c.durability = rd.durability || 0; c.maxHealth = 0; c.tribe = null; }
+				if (isSpell) { c.type = rd.type; c.tribe = rd.tribe || null; c.attack = 0; c.maxHealth = 0; c.durability = 0; c.choices = rd.choices || null; c.secret = rd.secret || null; c.description = rd.description || null; }
+				else if (wantType === 'weapon') { c.durability = rd.durability || 0; c.maxHealth = 0; c.tribe = null; }
 				else { c.maxHealth = rd.health || 0; c.tribe = rd.tribe; }
 				c.transformInHand = true; c.transformInHandType = c.transformInHandType || null; // stays a Shifter of the same kind
 				emit(state, { type: 'conjure', player: state.current, card: c, color: null }); }

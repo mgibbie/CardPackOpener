@@ -20,6 +20,7 @@ const CHOSEN = {
 	heal: { any: 'any', creature: 'creature' },
 	buff: { creature: 'creature', 'friendly-creature': 'friendly-creature' },
 	'summon-hatch-egg': { 'friendly-creature': 'friendly-creature' }, // Clutch of Corruption: a friendly Dragon
+	'spend-all-mana-damage': { creature: 'creature' }, // Forbidden Flame: a minion
 	'grant-ongoing': { 'friendly-creature': 'friendly-creature' },
 	'grant-static': { 'friendly-creature': 'friendly-creature' },
 	grant: { creature: 'creature', 'friendly-creature': 'friendly-creature' },

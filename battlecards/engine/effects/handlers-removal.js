@@ -1340,8 +1340,9 @@ register('damage', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy,
 				if (e.valueFromSelfAttack && source) v = source.attack || 0; // Ebonscale Scout: damage = this minion's Attack
 				if (e.altValueIfDrawn != null && source && source.drawnThisTurn) v = e.altValueIfDrawn; // Oil Rig Ambusher
 			if (source && (source.type === 'sorcery' || source.type === 'instant')) {
-				v += staticValue(state.players[pi], 'spell-damage') + (state.players[pi].nextSpellDamageBonus || 0) + (state.players[pi].spellDamageThisTurn || 0) + (source.bonusSpellDamage || 0);
-				const sd = state.players[pi].schoolSpellDmg; if (sd) { const sch = schoolOf(source); if (sch && sd[sch]) v += sd[sch]; } // Duels: per-school Spell Damage (Kindling Flame / Bitter Cold / Natural Force)
+				let sdBonus = staticValue(state.players[pi], 'spell-damage') + (state.players[pi].nextSpellDamageBonus || 0) + (state.players[pi].spellDamageThisTurn || 0) + (source.bonusSpellDamage || 0);
+				const sd = state.players[pi].schoolSpellDmg; if (sd) { const sch = schoolOf(source); if (sch && sd[sch]) sdBonus += sd[sch]; } // Duels: per-school Spell Damage (Kindling Flame / Bitter Cold / Natural Force)
+				v += (e.doubleSpellDamage ? sdBonus * 2 : sdBonus); // Arcane Blast: this spell gets double bonus from Spell Damage
 			}
 			if (state.hpDamageBonus) v += state.hpDamageBonus; // Fallen Hero: your Hero Power deals extra
 			if (state.hpDoubling) v *= 2; // Clockwork Automaton: double Hero Power damage
@@ -1445,6 +1446,19 @@ register('damage', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy,
 			if (lsBefore != null) healHero(state, pi, Math.max(0, totalHurt() - lsBefore));
 	} while (false); // top-level `continue` = skip this effect (chain semantics)
 });
+
+
+register('spend-all-mana-damage', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => { {
+			// Forbidden Flame: spend all your Mana, deal that much (+ Spell Damage) to a minion
+			const p = state.players[pi];
+			const spent = availableMana(p);
+			spendMana(p, spent);
+			emit(state, { type: 'mana', player: pi, cur: p.mana.cur, max: p.mana.max });
+			let v = spent;
+			if (source && (source.type === 'sorcery' || source.type === 'instant')) v += staticValue(p, 'spell-damage') + (p.nextSpellDamageBonus || 0) + (p.spellDamageThisTurn || 0) + (source.bonusSpellDamage || 0);
+			const t = chosenCreature();
+			if (t && v > 0) damageCreature(state, t, v, source);
+} });
 
 
 register('destroy-all', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => {

@@ -142457,6 +142457,59 @@
           "value": 2
         }
       ]
+    },
+    {
+      "id": "forbidden_flame",
+      "name": "Forbidden Flame",
+      "type": "sorcery",
+      "cost": 0,
+      "cardClass": "mage",
+      "rarity": "epic",
+      "set": "OG",
+      "collectible": true,
+      "tribe": "Fire",
+      "description": "Spend all your Mana. Deal that much damage to a minion.",
+      "effects": [
+        {
+          "type": "spend-all-mana-damage",
+          "target": "creature"
+        }
+      ]
+    },
+    {
+      "id": "arcane_blast",
+      "name": "Arcane Blast",
+      "type": "sorcery",
+      "cost": 1,
+      "cardClass": "mage",
+      "rarity": "epic",
+      "set": "TGT",
+      "collectible": true,
+      "tribe": "Arcane",
+      "description": "Deal 2 damage to a minion. This spell gets double bonus from Spell Damage.",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 2,
+          "target": "creature",
+          "doubleSpellDamage": true
+        }
+      ]
+    },
+    {
+      "id": "shifting_scroll",
+      "name": "Shifting Scroll",
+      "type": "sorcery",
+      "cost": 0,
+      "cardClass": "mage",
+      "rarity": "common",
+      "set": "LOOTAPALOOZA",
+      "collectible": true,
+      "tribe": "Arcane",
+      "transformInHand": true,
+      "transformInHandType": "spell",
+      "transformInHandClass": "mage",
+      "description": "Each turn this is in your hand, transform it into a random Mage spell."
     }
   ]
 }
