@@ -143794,6 +143794,554 @@
       "tribe": "Beast",
       "collectible": false,
       "description": "A 4/1 Worm."
+    },
+    {
+      "id": "overwhelm",
+      "name": "Overwhelm",
+      "type": "sorcery",
+      "cost": 1,
+      "cardClass": "hunter",
+      "rarity": "rare",
+      "set": "SCHOLOMANCE",
+      "collectible": true,
+      "description": "Deal 2 damage to a minion. Deal one more damage for each Beast you control.",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 2,
+          "valuePer": "beasts-you-control",
+          "target": "creature"
+        }
+      ]
+    },
+    {
+      "id": "ricochet_shot",
+      "name": "Ricochet Shot",
+      "cardClass": "hunter",
+      "cost": 1,
+      "rarity": "common",
+      "set": "RETURN_OF_THE_LICH_KING",
+      "collectible": true,
+      "description": "Deal 1 damage to three random enemies.",
+      "type": "sorcery",
+      "tribe": "Arcane",
+      "effects": [
+        {
+          "type": "random-damage",
+          "count": 3,
+          "value": 1,
+          "pool": "enemies"
+        }
+      ]
+    },
+    {
+      "id": "shimmer_shot",
+      "name": "Shimmer Shot",
+      "type": "sorcery",
+      "cost": 1,
+      "cardClass": "hunter",
+      "rarity": "common",
+      "set": "WILD_WEST",
+      "collectible": true,
+      "tribe": "Arcane",
+      "description": "Deal 1 damage. Summon a random minion of that Cost.",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 1,
+          "target": "any"
+        },
+        {
+          "type": "summon-random",
+          "cost": 1
+        }
+      ]
+    },
+    {
+      "id": "tame_pet",
+      "name": "Tame Pet",
+      "type": "sorcery",
+      "cardClass": "hunter",
+      "cost": 1,
+      "rarity": "common",
+      "set": "CATACLYSM",
+      "collectible": true,
+      "description": "Replace your future Animal Companions with random Beasts that cost (1) more. Draw a card.",
+      "effects": [
+        {
+          "type": "companion-upgrade"
+        },
+        {
+          "type": "draw",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "the_marsh_queen",
+      "name": "The Marsh Queen",
+      "type": "quest",
+      "cardClass": "hunter",
+      "cost": 1,
+      "rarity": "legendary",
+      "set": "UNGORO",
+      "collectible": true,
+      "description": "Quest: Play seven 1-Cost minions.\nReward: Queen Carnassa.",
+      "keywords": [
+        "quest"
+      ],
+      "quest": {
+        "goal": {
+          "type": "summon",
+          "count": 7,
+          "cost": 1
+        },
+        "reward": [
+          {
+            "type": "summon",
+            "count": 1,
+            "attack": 8,
+            "health": 8,
+            "name": "Queen Carnassa",
+            "tribe": "Beast"
+          }
+        ]
+      }
+    },
+    {
+      "id": "unseal_the_vault",
+      "name": "Unseal the Vault",
+      "type": "quest",
+      "cardClass": "hunter",
+      "cost": 1,
+      "rarity": "legendary",
+      "set": "ULDUM",
+      "collectible": true,
+      "keywords": [
+        "quest"
+      ],
+      "description": "Quest: Summon 20 minions.\nReward: Pharaoh's Warmask.",
+      "quest": {
+        "goal": {
+          "type": "summon",
+          "count": 20
+        },
+        "reward": [
+          {
+            "type": "emblem",
+            "name": "Pharaoh's Warmask",
+            "description": "Your minions have +2 Attack.",
+            "aura": {
+              "attack": 2
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "wilderness_pack",
+      "name": "Wilderness Pack",
+      "type": "sorcery",
+      "cost": 1,
+      "cardClass": "hunter",
+      "rarity": "rare",
+      "set": "WHIZBANGS_WORKSHOP",
+      "collectible": true,
+      "description": "Add 5 random Beasts to your hand. They are Temporary.",
+      "effects": [
+        {
+          "type": "conjure-random",
+          "cardType": "creature",
+          "tribe": "Beast",
+          "count": 5,
+          "makeTemporary": true
+        }
+      ]
+    },
+    {
+      "id": "always_a_bigger_jormungar",
+      "name": "Always a Bigger Jormungar",
+      "type": "sorcery",
+      "cost": 2,
+      "cardClass": "hunter",
+      "rarity": "rare",
+      "set": "TITANS",
+      "collectible": true,
+      "description": "Give a minion +2 Attack and \"Excess damage dealt by attacks hits the enemy hero.\"",
+      "effects": [
+        {
+          "type": "buff",
+          "target": "creature",
+          "attack": 2,
+          "health": 0,
+          "grant": "trample"
+        }
+      ]
+    },
+    {
+      "id": "barrel_of_monkeys",
+      "name": "Barrel of Monkeys",
+      "cardClass": "hunter",
+      "cost": 2,
+      "rarity": "rare",
+      "set": "BATTLE_OF_THE_BANDS",
+      "collectible": true,
+      "type": "sorcery",
+      "description": "Summon a 1/4 Monkey with Taunt. (3 Monkeys left!)",
+      "effects": [
+        {
+          "type": "summon",
+          "count": 1,
+          "attack": 1,
+          "health": 4,
+          "name": "Monkey",
+          "tribe": "Beast",
+          "keywords": [
+            "taunt"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "bestial_madness",
+      "name": "Bestial Madness",
+      "cardClass": "hunter",
+      "cost": 2,
+      "rarity": "rare",
+      "type": "sorcery",
+      "set": "TITANS",
+      "tribe": "Shadow",
+      "collectible": true,
+      "description": "Give +1 Attack to all minions in your hand, deck, and battlefield.",
+      "effects": [
+        {
+          "type": "buff-zones",
+          "attack": 1
+        }
+      ]
+    },
+    {
+      "id": "bursting_shot",
+      "name": "Bursting Shot",
+      "type": "sorcery",
+      "cost": 2,
+      "cardClass": "hunter",
+      "rarity": "common",
+      "set": "EMERALD_DREAM",
+      "collectible": true,
+      "tribe": "Fire",
+      "description": "Deal 2 damage to three random enemies.",
+      "effects": [
+        {
+          "type": "random-damage",
+          "value": 2,
+          "pool": "enemies",
+          "count": 3
+        }
+      ]
+    },
+    {
+      "id": "corrosive_breath",
+      "name": "Corrosive Breath",
+      "cardClass": "hunter",
+      "cost": 2,
+      "rarity": "common",
+      "type": "sorcery",
+      "tribe": "Nature",
+      "collectible": true,
+      "effects": [
+        {
+          "type": "damage",
+          "value": 3,
+          "target": "creature"
+        },
+        {
+          "type": "conditional",
+          "target": "any",
+          "if": {
+            "holdingTribe": "Dragon"
+          },
+          "then": [
+            {
+              "type": "damage",
+              "value": 3,
+              "target": "enemy-hero"
+            }
+          ]
+        }
+      ],
+      "description": "Deal 3 damage to a minion. If you're holding a Dragon, it also hits the enemy hero.",
+      "set": "DRAGONS"
+    },
+    {
+      "id": "cower_in_fear",
+      "name": "Cower in Fear",
+      "type": "sorcery",
+      "cost": 2,
+      "cardClass": "hunter",
+      "rarity": "common",
+      "set": "THE_LOST_CITY",
+      "collectible": true,
+      "description": "Deal 3 damage to a minion. The next Beast you play this turn costs (2) less.",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 3,
+          "target": "creature"
+        },
+        {
+          "type": "discount",
+          "cardType": "creature",
+          "tribe": "Beast",
+          "amount": -2,
+          "thisTurn": true
+        }
+      ]
+    },
+    {
+      "id": "cybertech_chip",
+      "name": "Cybertech Chip",
+      "cardClass": "hunter",
+      "cost": 2,
+      "rarity": "rare",
+      "type": "sorcery",
+      "set": "BOOMSDAY",
+      "collectible": true,
+      "effects": [
+        {
+          "type": "grant-deathrattle",
+          "effects": [
+            {
+              "type": "conjure-random",
+              "cardType": "creature",
+              "tribe": "Mech"
+            }
+          ]
+        }
+      ],
+      "description": "Give your creatures \"Deathrattle: Add a random Mech to your hand.\""
+    },
+    {
+      "id": "detailed_notes",
+      "name": "Detailed Notes",
+      "type": "sorcery",
+      "cost": 2,
+      "cardClass": "hunter",
+      "rarity": "common",
+      "set": "SPACE",
+      "collectible": true,
+      "description": "Discover a Beast that costs (5) or more. Reduce its Cost by (2).",
+      "effects": [
+        {
+          "type": "discover",
+          "pick": 3,
+          "tribe": "Beast",
+          "minCost": 5,
+          "costMod": -2
+        }
+      ]
+    },
+    {
+      "id": "dinomancy",
+      "name": "Dinomancy",
+      "type": "sorcery",
+      "cost": 2,
+      "cardClass": "hunter",
+      "rarity": "epic",
+      "set": "UNGORO",
+      "collectible": true,
+      "description": "Replace your Hero Power with 'Give a Beast +3/+3.'",
+      "effects": [
+        {
+          "type": "set-hero-power",
+          "powerId": "hp_dinomancy"
+        }
+      ]
+    },
+    {
+      "id": "doggie_biscuit",
+      "name": "Doggie Biscuit",
+      "type": "sorcery",
+      "cost": 2,
+      "cardClass": "hunter",
+      "rarity": "rare",
+      "set": "PLACEHOLDER_202204",
+      "collectible": true,
+      "description": "Tradeable Give a minion +2/+3. After you Trade this, give a friendly minion Rush.",
+      "tradeable": true,
+      "keywords": [
+        "tradeable"
+      ],
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 2,
+          "health": 3,
+          "target": "creature"
+        }
+      ],
+      "afterTrade": [
+        {
+          "type": "grant",
+          "keyword": "rush",
+          "target": "friendly-creature"
+        }
+      ]
+    },
+    {
+      "id": "dont_feed_the_animals",
+      "name": "Don't Feed the Animals",
+      "type": "sorcery",
+      "cost": 2,
+      "cardClass": "hunter",
+      "rarity": "epic",
+      "set": "DARKMOON_FAIRE",
+      "collectible": true,
+      "corrupt": "dont_feed_the_animals_corrupted",
+      "description": "Give all Beasts in your hand +1/+1. Corrupt: Give them +2/+2 instead.",
+      "effects": [
+        {
+          "type": "buff-hand-tribe",
+          "tribe": "Beast",
+          "attack": 1,
+          "health": 1
+        }
+      ]
+    },
+    {
+      "id": "dragonbane_shot",
+      "name": "Dragonbane Shot",
+      "type": "sorcery",
+      "cost": 2,
+      "cardClass": "hunter",
+      "rarity": "rare",
+      "set": "ALTERAC_VALLEY",
+      "collectible": true,
+      "description": "Deal 2 damage.\nHonorable Kill: Add a Dragonbane Shot to your hand.",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 2,
+          "target": "any"
+        }
+      ],
+      "honorableKill": [
+        {
+          "type": "conjure-id",
+          "id": "dragonbane_shot"
+        }
+      ]
+    },
+    {
+      "id": "evolution_chamber",
+      "name": "Evolution Chamber",
+      "type": "sorcery",
+      "cost": 2,
+      "cardClass": "hunter",
+      "rarity": "common",
+      "set": "SPACE",
+      "collectible": true,
+      "description": "Give your minions +1 Attack. Give your Zerg an extra +1/+1.",
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 1,
+          "health": 0,
+          "target": "friendly-creatures"
+        },
+        {
+          "type": "buff",
+          "attack": 1,
+          "health": 1,
+          "target": "friendly-creatures",
+          "tribe": "Zerg"
+        }
+      ]
+    },
+    {
+      "id": "feign_death",
+      "name": "Feign Death",
+      "cardClass": "hunter",
+      "cost": 2,
+      "rarity": "epic",
+      "set": "GVG",
+      "collectible": true,
+      "description": "Trigger all Deathrattles on your minions.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "trigger-deathrattles"
+        }
+      ]
+    },
+    {
+      "id": "frenzied_fangs",
+      "name": "Frenzied Fangs",
+      "type": "sorcery",
+      "cost": 2,
+      "cardClass": "hunter",
+      "rarity": "common",
+      "set": "PLACEHOLDER_202204",
+      "collectible": true,
+      "infuse": {
+        "count": 3,
+        "id": "frenzied_fangs_infused"
+      },
+      "description": "Summon two 2/1 Bats. Infuse (3): Give them +1/+2.",
+      "effects": [
+        {
+          "type": "summon",
+          "count": 2,
+          "attack": 2,
+          "health": 1,
+          "name": "Bat",
+          "tribe": "Beast"
+        }
+      ]
+    },
+    {
+      "id": "hp_dinomancy",
+      "name": "Dinomancy",
+      "type": "heropower",
+      "cost": 0,
+      "rarity": "basic",
+      "token": true,
+      "collectible": false,
+      "power": {
+        "cost": 2,
+        "effects": [
+          {
+            "type": "buff",
+            "attack": 3,
+            "health": 3,
+            "target": "creature",
+            "tribe": "Beast"
+          }
+        ]
+      },
+      "description": "Hero Power (2): Give a Beast +3/+3."
+    },
+    {
+      "id": "frenzied_fangs_infused",
+      "name": "Frenzied Fangs",
+      "type": "sorcery",
+      "cost": 2,
+      "cardClass": "hunter",
+      "rarity": "common",
+      "set": "PLACEHOLDER_202204",
+      "collectible": false,
+      "token": true,
+      "description": "Summon two 3/3 Bats.",
+      "effects": [
+        {
+          "type": "summon",
+          "count": 2,
+          "attack": 3,
+          "health": 3,
+          "name": "Bat",
+          "tribe": "Beast"
+        }
+      ]
     }
   ]
 }
