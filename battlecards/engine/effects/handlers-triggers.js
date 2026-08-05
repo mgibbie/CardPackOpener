@@ -1015,6 +1015,40 @@ registerTrigger('copy-triggering-to-hand', (state, pi, e, ctx, triggering) => {
 	for (let i = 0; i < (e.count || 1); i++) { if (state.players[pi].hand.length >= MAX_HAND) break; const cp = instantiate(def, pi); cp.zone = 'hand'; state.players[pi].hand.push(cp); emit(state, { type: 'conjure', player: pi, card: cp, color: null }); }
 });
 
+registerTrigger('transform-triggering', (state, pi, e, ctx, triggering) => {
+	// Potion of Polymorph / Mystic Misdirection: transform the played/attacking minion into a token (in place, no death)
+	const t = ctx.minion || triggering();
+	if (!t || isDead(t)) return;
+	const nm = e.name || 'Sheep';
+	const tok = instantiate({ id: 'token_' + nm.toLowerCase().replace(/[^a-z0-9]+/g, '_'), name: nm, type: 'creature', cost: 0, rarity: 'common', token: true, description: `A ${e.attack || 1}/${e.health || 1} ${nm}.`, attack: e.attack || 1, health: e.health || 1, keywords: e.keywords || [] }, t.controller);
+	const board = state.players[t.controller].board;
+	const idx = board.indexOf(t); if (idx < 0) return;
+	tok.zone = 'board'; tok.sick = t.sick;
+	board[idx] = tok; t.zone = 'gone';
+	emit(state, { type: 'transformed', uid: t.uid, player: t.controller, from: t.name, card: tok });
+	recomputeAuras(state);
+});
+
+registerTrigger('counter-triggering', (state, pi, e, ctx, triggering) => {
+	// Objection!: Counter the played minion — remove it silently (no death/Deathrattle)
+	const m = ctx.minion || triggering();
+	if (!m) return;
+	const board = state.players[m.controller].board;
+	const idx = board.indexOf(m); if (idx < 0) return;
+	board.splice(idx, 1); m.zone = 'gone';
+	emit(state, { type: 'countered', player: m.controller, uid: m.uid, name: m.name });
+	recomputeAuras(state);
+});
+
+registerTrigger('summon-copy-attacker-attack', (state, pi, e, ctx, triggering) => {
+	// Vengeful Visage: summon a copy of the attacking minion; it attacks the enemy hero
+	const m = triggering();
+	if (!m) return;
+	const def = state.cardsById[m.id] || { id: m.id, name: m.name, type: 'creature', cost: m.cost, rarity: m.rarity, description: m.description, attack: m.attack, health: m.maxHealth, keywords: [...(m.keywords || [])] };
+	const c = summon(state, pi, def);
+	if (c) { c.sick = false; const foe = opponentsOf(state, pi)[0]; if (foe != null && !isDead(c)) resolveCombat(state, pi, c.uid, { type: 'hero', player: foe }); }
+});
+
 registerTrigger('summon-random-triggering-cost', (state, pi, e, ctx, triggering) => {
 	// Effigy: summon a random minion with the same Cost as the triggering (dead) minion
 	const m = ctx.minion || triggering();

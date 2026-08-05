@@ -143203,6 +143203,136 @@
         }
       ],
       "description": "Discover a 3-Cost minion to summon. If your deck has no minions, repeat this."
+    },
+    {
+      "id": "potion_of_polymorph",
+      "name": "Potion of Polymorph",
+      "type": "secret",
+      "cost": 3,
+      "cardClass": "mage",
+      "rarity": "rare",
+      "set": "GANGS",
+      "collectible": true,
+      "tribe": "Arcane",
+      "keywords": [
+        "secret"
+      ],
+      "description": "Secret: After your opponent plays a minion, transform it into a 1/1 Sheep.",
+      "secret": {
+        "trigger": "enemy-minion-played",
+        "effects": [
+          {
+            "type": "transform-triggering",
+            "name": "Sheep",
+            "attack": 1,
+            "health": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "mystic_misdirection",
+      "name": "Mystic Misdirection",
+      "type": "secret",
+      "cost": 3,
+      "cardClass": "mage",
+      "rarity": "rare",
+      "set": "ESCAPEFROM_VIOLET_HOLD",
+      "collectible": true,
+      "tribe": "Arcane",
+      "keywords": [
+        "secret"
+      ],
+      "description": "Secret: When an enemy minion attacks, transform it into a 1/1 Sheep.",
+      "secret": {
+        "trigger": "enemy-attack",
+        "condition": {
+          "attackerCreature": true
+        },
+        "effects": [
+          {
+            "type": "transform-triggering",
+            "name": "Sheep",
+            "attack": 1,
+            "health": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "objection",
+      "name": "Objection!",
+      "type": "secret",
+      "cost": 3,
+      "cardClass": "mage",
+      "rarity": "rare",
+      "set": "PLACEHOLDER_202204",
+      "collectible": true,
+      "keywords": [
+        "secret"
+      ],
+      "description": "Secret: When your opponent plays a minion, Counter it.",
+      "secret": {
+        "trigger": "enemy-minion-played",
+        "effects": [
+          {
+            "type": "counter-triggering"
+          }
+        ]
+      }
+    },
+    {
+      "id": "splitting_image",
+      "name": "Splitting Image",
+      "type": "secret",
+      "cost": 3,
+      "cardClass": "mage",
+      "rarity": "epic",
+      "set": "TROLL",
+      "collectible": true,
+      "tribe": "Arcane",
+      "keywords": [
+        "secret"
+      ],
+      "description": "Secret: When one of your minions is attacked, summon a copy of it.",
+      "secret": {
+        "trigger": "enemy-attack",
+        "condition": {
+          "targetCreature": true
+        },
+        "effects": [
+          {
+            "type": "copy-minion",
+            "of": "target"
+          }
+        ]
+      }
+    },
+    {
+      "id": "vengeful_visage",
+      "name": "Vengeful Visage",
+      "type": "secret",
+      "cost": 3,
+      "cardClass": "mage",
+      "rarity": "epic",
+      "set": "PLACEHOLDER_202204",
+      "collectible": true,
+      "keywords": [
+        "secret"
+      ],
+      "description": "Secret: After an enemy minion attacks your hero, summon a copy of it to attack the enemy hero.",
+      "secret": {
+        "trigger": "enemy-attack",
+        "condition": {
+          "targetHero": true,
+          "attackerCreature": true
+        },
+        "effects": [
+          {
+            "type": "summon-copy-attacker-attack"
+          }
+        ]
+      }
     }
   ]
 }
