@@ -141787,6 +141787,368 @@
           "description": "Your minions have +1 Attack."
         }
       ]
+    },
+    {
+      "id": "security",
+      "name": "SECURITY!!",
+      "type": "sorcery",
+      "cost": 2,
+      "cardClass": "demonhunter",
+      "rarity": "common",
+      "set": "BATTLE_OF_THE_BANDS",
+      "collectible": true,
+      "keywords": [
+        "outcast"
+      ],
+      "description": "Summon two 1/1 Illidari with Rush. Outcast: Summon one more.",
+      "effects": [
+        {
+          "type": "summon",
+          "count": 2,
+          "attack": 1,
+          "health": 1,
+          "name": "Illidari",
+          "tribe": "Demon",
+          "keywords": [
+            "rush"
+          ],
+          "description": "Rush."
+        }
+      ],
+      "outcast": {
+        "effects": [
+          {
+            "type": "summon",
+            "count": 1,
+            "attack": 1,
+            "health": 1,
+            "name": "Illidari",
+            "tribe": "Demon",
+            "keywords": [
+              "rush"
+            ],
+            "description": "Rush."
+          }
+        ]
+      }
+    },
+    {
+      "id": "sigil_of_summoning",
+      "name": "Sigil of Summoning",
+      "cardClass": "demonhunter",
+      "cost": 2,
+      "rarity": "rare",
+      "set": "THE_BARRENS",
+      "type": "sorcery",
+      "collectible": true,
+      "tribe": "Shadow",
+      "effects": [
+        {
+          "type": "delay-to-turn-start",
+          "effects": [
+            {
+              "type": "summon",
+              "count": 2,
+              "attack": 2,
+              "health": 2,
+              "name": "Demon",
+              "tribe": "Demon",
+              "keywords": [
+                "taunt"
+              ]
+            }
+          ]
+        }
+      ],
+      "description": "At the start of your next turn, summon two 2/2 Demons with Taunt."
+    },
+    {
+      "id": "sinful_brand",
+      "name": "Sinful Brand",
+      "type": "sorcery",
+      "cardClass": "demonhunter",
+      "cost": 2,
+      "rarity": "epic",
+      "set": "PLACEHOLDER_202204",
+      "collectible": true,
+      "effects": [
+        {
+          "type": "grant-ongoing",
+          "target": "enemy-creature",
+          "ongoing": {
+            "on": "self-damaged",
+            "effects": [
+              {
+                "type": "damage",
+                "value": 1,
+                "target": "own-hero"
+              }
+            ]
+          }
+        }
+      ],
+      "description": "Brand an enemy minion. Whenever it takes damage, deal 1 damage to the enemy hero."
+    },
+    {
+      "id": "void_blast",
+      "name": "Void Blast",
+      "cardClass": "demonhunter",
+      "cost": 2,
+      "rarity": "rare",
+      "set": "ESCAPEFROM_VIOLET_HOLD",
+      "collectible": true,
+      "type": "sorcery",
+      "tribe": "Shadow",
+      "description": "Deal 3 damage to a minion. If it dies, get a Void Soul.",
+      "effects": [
+        {
+          "type": "damage-then",
+          "value": 3,
+          "target": "creature",
+          "ifDies": [
+            {
+              "type": "conjure-id",
+              "id": "void_soul"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "lasting_legacy",
+      "name": "Lasting Legacy",
+      "type": "sorcery",
+      "cost": 3,
+      "cardClass": "demonhunter",
+      "rarity": "rare",
+      "set": "TIME_TRAVEL",
+      "collectible": true,
+      "description": "Give your hero +4 Attack this turn. If your deck has no minions, give any in hand +4 Attack.",
+      "effects": [
+        {
+          "type": "hero-attack",
+          "value": 4
+        },
+        {
+          "type": "conditional",
+          "if": {
+            "deckNoMinions": true
+          },
+          "then": [
+            {
+              "type": "buff-hand-minions",
+              "attack": 4
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "rush_the_stage",
+      "name": "Rush the Stage",
+      "type": "sorcery",
+      "cardClass": "demonhunter",
+      "cost": 3,
+      "rarity": "rare",
+      "set": "BATTLE_OF_THE_BANDS",
+      "collectible": true,
+      "description": "Draw two Rush minions. They cost (1) less.",
+      "effects": [
+        {
+          "type": "tutor",
+          "cardType": "creature",
+          "count": 2,
+          "requireKeyword": "rush",
+          "costMod": -1
+        }
+      ]
+    },
+    {
+      "id": "skirting_death",
+      "name": "Skirting Death",
+      "cardClass": "demonhunter",
+      "cost": 3,
+      "rarity": "rare",
+      "set": "ISLAND_VACATION",
+      "type": "sorcery",
+      "tribe": "Shadow",
+      "collectible": true,
+      "description": "Choose a minion. This turn, your hero steals 4 Attack from it.",
+      "effects": [
+        {
+          "type": "temp-buff",
+          "attack": -4,
+          "target": "creature"
+        },
+        {
+          "type": "hero-attack",
+          "value": 4
+        }
+      ]
+    },
+    {
+      "id": "solitude",
+      "name": "Solitude",
+      "type": "sorcery",
+      "cost": 3,
+      "cardClass": "demonhunter",
+      "rarity": "common",
+      "set": "TIME_TRAVEL",
+      "collectible": true,
+      "description": "Discover 2 minions. If your deck has no minions, reduce the Cost of any in your hand by (2).",
+      "effects": [
+        {
+          "type": "discover",
+          "cardType": "creature",
+          "count": 2
+        },
+        {
+          "type": "conditional",
+          "if": {
+            "deckNoMinions": true
+          },
+          "then": [
+            {
+              "type": "discount-hand",
+              "value": 2,
+              "minionsOnly": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "weight_of_the_world",
+      "name": "Weight of the World",
+      "type": "sorcery",
+      "cost": 3,
+      "cardClass": "demonhunter",
+      "rarity": "rare",
+      "set": "TITANS",
+      "collectible": true,
+      "description": "Draw 2 cards. Forge: Draw cards until you have as many in hand as your opponent first.",
+      "effects": [
+        {
+          "type": "draw",
+          "value": 2
+        }
+      ],
+      "forge": {
+        "battlecry": [
+          {
+            "type": "draw-to-match"
+          },
+          {
+            "type": "draw",
+            "value": 2
+          }
+        ]
+      }
+    },
+    {
+      "id": "feldorei_warband",
+      "name": "Fel'dorei Warband",
+      "type": "sorcery",
+      "cost": 4,
+      "cardClass": "demonhunter",
+      "rarity": "common",
+      "set": "RETURN_OF_THE_LICH_KING",
+      "collectible": true,
+      "description": "Deal 4 damage. If your deck has no minions, summon four 1/1 Illidari with Rush.",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 4,
+          "target": "any"
+        },
+        {
+          "type": "conditional",
+          "if": {
+            "deckNoMinions": true
+          },
+          "then": [
+            {
+              "type": "summon",
+              "count": 4,
+              "attack": 1,
+              "health": 1,
+              "name": "Illidari",
+              "keywords": [
+                "rush"
+              ]
+            }
+          ],
+          "else": []
+        }
+      ]
+    },
+    {
+      "id": "soul_split",
+      "name": "Soul Split",
+      "type": "sorcery",
+      "cost": 4,
+      "cardClass": "demonhunter",
+      "rarity": "rare",
+      "set": "DEMON_HUNTER_INITIATE",
+      "collectible": true,
+      "tribe": "Shadow",
+      "description": "Choose a friendly Demon. Summon a copy of it.",
+      "effects": [
+        {
+          "type": "copy-summon",
+          "target": "friendly-creature",
+          "tribe": "Demon"
+        }
+      ]
+    },
+    {
+      "id": "momentum",
+      "name": "Momentum",
+      "cardClass": "demonhunter",
+      "cost": 5,
+      "rarity": "rare",
+      "set": "TITANS",
+      "collectible": true,
+      "description": "Give your hero +4 Attack this turn. Costs (1) less for each card you've drawn this turn.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "hero-temp-attack",
+          "value": 4
+        }
+      ],
+      "selfCost": {
+        "per": "cards-drawn-turn",
+        "amount": -1
+      }
+    },
+    {
+      "id": "skull_of_guldan",
+      "name": "Skull of Gul'dan",
+      "type": "sorcery",
+      "cost": 6,
+      "cardClass": "demonhunter",
+      "rarity": "rare",
+      "set": "BLACK_TEMPLE",
+      "collectible": true,
+      "keywords": [
+        "outcast"
+      ],
+      "description": "Draw 3 cards. Outcast: Reduce their Cost by (3).",
+      "effects": [
+        {
+          "type": "draw",
+          "value": 3
+        }
+      ],
+      "outcast": {
+        "effects": [
+          {
+            "type": "discount-hand",
+            "value": 3
+          }
+        ]
+      }
     }
   ]
 }

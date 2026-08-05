@@ -598,10 +598,13 @@ register('buff-random-hand', ({ state, pi, target, source, enemies, scaled, hm, 
 register('timed-aura', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => { {
 			// "Your minions have ... Lasts N turns": a friendly team aura enchantment that
 			// ticks down at each of your turn-ends (existing p.enchantments turnsLeft loop)
-			const ench = { name: e.name || 'Aura', controller: pi, aura: e.aura, turnsLeft: e.turns || 3, description: e.description || null };
+			const ench = instantiate({ id: 'token_timed_aura', name: e.name || 'Aura', type: 'enchantment', cost: 0, token: true, description: e.description || null }, pi);
+			ench.zone = 'enchantment';
+			ench.aura = e.aura;
+			ench.turnsLeft = e.turns || 3;
 			state.players[pi].enchantments.push(ench);
 			recomputeAuras(state);
-			emit(state, { type: 'enchantAdded', player: pi, name: ench.name });
+			emit(state, { type: 'enchant', player: pi, card: ench });
 } });
 
 
