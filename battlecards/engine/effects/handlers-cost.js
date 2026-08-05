@@ -719,6 +719,11 @@ register('next-choose-one-both', ({ state, pi }, e) => {
 	state.players[pi].nextChooseOneBoth = true;
 });
 
+register('next-relic-double-cast', ({ state, pi }, e) => {
+	// Relic Vault: the next Relic you play this turn casts twice
+	state.players[pi].nextRelicDoubleCast = true;
+});
+
 register('grant-weapon-cleave-turn', ({ state, pi }, e) => {
 	// Reaper's Scythe: your weapon Cleaves (splashes neighbours) until end of turn
 	if (state.players[pi].weapon) state.players[pi].weapon.cleaveThisTurn = true;

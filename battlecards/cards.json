@@ -141088,6 +141088,92 @@
           ]
         }
       ]
+    },
+    {
+      "id": "relic_of_extinction",
+      "name": "Relic of Extinction",
+      "type": "sorcery",
+      "cost": 1,
+      "cardClass": "demonhunter",
+      "rarity": "common",
+      "set": "REVENDRETH",
+      "collectible": true,
+      "relic": true,
+      "description": "Deal 1 damage to a random enemy minion, twice. Improve your future Relics.",
+      "effects": [
+        {
+          "type": "random-damage",
+          "value": 1,
+          "count": 2,
+          "pool": "enemy-creatures",
+          "improveScaled": "count"
+        }
+      ]
+    },
+    {
+      "id": "relic_of_phantasms",
+      "name": "Relic of Phantasms",
+      "type": "sorcery",
+      "cost": 3,
+      "cardClass": "demonhunter",
+      "rarity": "rare",
+      "set": "REVENDRETH",
+      "collectible": true,
+      "relic": true,
+      "description": "Summon two 1/1 Spirits. Improve your future Relics.",
+      "effects": [
+        {
+          "type": "summon",
+          "count": 2,
+          "attack": 1,
+          "health": 1,
+          "name": "Spirit",
+          "tribe": "Spirit",
+          "improveScaled": "count"
+        }
+      ]
+    },
+    {
+      "id": "relic_of_dimensions",
+      "name": "Relic of Dimensions",
+      "type": "sorcery",
+      "cost": 5,
+      "cardClass": "demonhunter",
+      "rarity": "epic",
+      "set": "REVENDRETH",
+      "collectible": true,
+      "relic": true,
+      "description": "Draw two cards and reduce their Cost by (1). Improve your future Relics.",
+      "effects": [
+        {
+          "type": "draw-discount",
+          "count": 2,
+          "amount": 1,
+          "improveScaled": "count"
+        }
+      ]
+    },
+    {
+      "id": "relic_vault",
+      "name": "Relic Vault",
+      "type": "location",
+      "cost": 2,
+      "cardClass": "demonhunter",
+      "durability": 2,
+      "rarity": "rare",
+      "set": "REVENDRETH",
+      "collectible": true,
+      "description": "The next Relic you play this turn casts twice.",
+      "taps": [
+        {
+          "text": "The next Relic you play this turn casts twice.",
+          "effects": [
+            {
+              "type": "next-relic-double-cast"
+            }
+          ]
+        }
+      ]
     }
   ]
 }

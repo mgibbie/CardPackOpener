@@ -257,6 +257,7 @@ export function instantiate(def, controller) {
 		transformInHandType: def.transformInHandType || null, // Molten Blade: transform into a random weapon (default: creature)
 		transformWhenDrawn: def.transformWhenDrawn || null,  // Unidentified Maul: on draw, become a random one of these ids
 		keepsEnchantments: !!def.keepsEnchantments,          // Kingsbane: keeps its enchantments across shuffle/redraw
+		relic: !!def.relic,                                  // DH Relics: scale with relicImprove, doubled by Relic Vault
 		summonOnDiscard: def.summonOnDiscard || false,       // Silverware Golem: summon it when discarded
 		returnBuffedOnDiscard: def.returnBuffedOnDiscard || false, // Clutchmother Zavas: +2/+2 and return
 		heroPowerHitsMinions: def.heroPowerHitsMinions || false, // Steamwheedle Sniper: Hero Power can target minions
@@ -553,6 +554,8 @@ export function createGame(cardsById, rng = Math.random, playerDeckIds = null, p
 		nextCardsDiscount: null, // Scabbs Cutterbutter: {count, amount} for your next cards this turn
 		nextChooseOneDiscount: 0, // Pride Seeker: your next Choose One card costs this much less
 		nextChooseOneBoth: false, // Cenarion Hold: your next Choose One card has both effects combined
+		relicImprove: 0,          // DH Relics: how many Relics you've played (each improves the next)
+		nextRelicDoubleCast: false, // Relic Vault: your next Relic this turn casts twice
 		nextSpellDiscount: 0, // Murkwater Scribe: your next spell costs this much less
 		nextTribeDiscount: null, // Clownfish: {tribe, count, amount} for your next minions of a tribe
 		nextTribePlayReward: null, // The Great Dark Beyond Draenei: {tribe, count, attack, health, keyword, immediateAttack} for your next minions of a tribe you PLAY
@@ -1706,6 +1709,11 @@ export function runSpell(state, pi, card, target, choice) {
 			emit(state, { type: 'conjure', player: pi, card: cp, color: null });
 		}
 	}
+	// DH Relics: scale by how many Relics you've played; Relic Vault makes the next one cast twice
+	if (card.relic) {
+		card.improveCount = state.players[pi].relicImprove || 0; // improveScaled effects read source.improveCount
+		if (state.players[pi].nextRelicDoubleCast) { card.castTwice = true; state.players[pi].nextRelicDoubleCast = false; }
+	}
 	execEffects(state, pi, liveEffectsOf(state, pi, card, choice), target, card);
 	if (card.castTwice) execEffects(state, pi, liveEffectsOf(state, pi, card, choice), target, card); // Empowered Well of Eternity
 	// Sunsapper Lynessa: your spells that cost (2) or less cast twice
@@ -1716,6 +1724,8 @@ export function runSpell(state, pi, card, target, choice) {
 	else if (state.players[pi].board.some(c => c.spellEcho && !isDead(c))) {
 		execEffects(state, pi, liveEffectsOf(state, pi, card, choice), target, card);
 	}
+	// DH Relics: after resolving, "improve your future Relics" (a played Relic bumps the counter once)
+	if (card.relic) state.players[pi].relicImprove = (state.players[pi].relicImprove || 0) + 1;
 	// Outcast: extra spell effects when cast from the edge of hand
 	if (card.outcast && card._outcast) { execEffects(state, pi, card.outcast.effects, target, card); fireOngoing(state, pi, 'outcast-played', { played: card }); } // Redeemed Pariah reacts
 	// scripted text
@@ -3908,6 +3918,7 @@ export function endTurn(state) {
 	p.nextCardsDiscount = null; // Scabbs Cutterbutter only lasts this turn
 	p.nextChooseOneDiscount = 0; // Pride Seeker only lasts until used
 	p.nextChooseOneBoth = false; // Cenarion Hold only lasts this turn
+	p.nextRelicDoubleCast = false; // Relic Vault only lasts this turn
 	for (const c of p.hand) c.drawnThisTurn = false; // Keli'dan: "drawn this turn" resets at end of your turn
 	if (p.illuciaSwap) { p.hand = p.savedHand || []; p.savedHand = null; p.illuciaSwap = false; emit(state, { type: 'handSwap', player: pi }); } // Mindrender Illucia: hand reverts at end of turn
 	p.heroPowerTaxNext = 0; // Saboteur's Hero Power tax only lasts this turn
