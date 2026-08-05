@@ -142149,6 +142149,314 @@
           }
         ]
       }
+    },
+    {
+      "id": "elemental_evocation",
+      "name": "Elemental Evocation",
+      "cardClass": "mage",
+      "cost": 0,
+      "rarity": "common",
+      "set": "TROLL",
+      "tribe": "Fire",
+      "type": "sorcery",
+      "collectible": true,
+      "effects": [
+        {
+          "type": "discount",
+          "cardType": "creature",
+          "tribe": "Elemental",
+          "amount": -2,
+          "thisTurn": true
+        }
+      ],
+      "description": "The next Elemental you play this turn costs (2) less."
+    },
+    {
+      "id": "flurry_rank_1",
+      "name": "Flurry (Rank 1)",
+      "type": "sorcery",
+      "cost": 0,
+      "cardClass": "mage",
+      "rarity": "rare",
+      "set": "THE_BARRENS",
+      "tribe": "Frost",
+      "collectible": true,
+      "description": "Freeze a random enemy minion. (Upgrades when you have 5 Mana.)",
+      "effects": [
+        {
+          "type": "freeze-random"
+        },
+        {
+          "type": "conditional",
+          "if": {
+            "manathirst": 5
+          },
+          "then": [
+            {
+              "type": "freeze-random"
+            }
+          ]
+        },
+        {
+          "type": "conditional",
+          "if": {
+            "manathirst": 10
+          },
+          "then": [
+            {
+              "type": "freeze-random"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "hot_streak",
+      "name": "Hot Streak",
+      "type": "sorcery",
+      "cost": 0,
+      "cardClass": "mage",
+      "rarity": "common",
+      "set": "STORMWIND",
+      "collectible": true,
+      "tribe": "Fire",
+      "description": "Your next Fire spell this turn costs (2) less.",
+      "effects": [
+        {
+          "type": "grant-next-school-discount",
+          "school": "Fire",
+          "value": 2
+        }
+      ]
+    },
+    {
+      "id": "evocation",
+      "name": "Evocation",
+      "cardClass": "mage",
+      "cost": 1,
+      "rarity": "legendary",
+      "set": "BLACK_TEMPLE",
+      "collectible": true,
+      "type": "sorcery",
+      "tribe": "Arcane",
+      "description": "Fill your hand with random Mage spells. They are Temporary.",
+      "effects": [
+        {
+          "type": "conjure-random",
+          "cardType": "spell",
+          "cardClass": "mage",
+          "fillHand": true,
+          "makeTemporary": true
+        }
+      ]
+    },
+    {
+      "id": "magic_trick",
+      "name": "Magic Trick",
+      "type": "sorcery",
+      "cost": 1,
+      "cardClass": "mage",
+      "rarity": "rare",
+      "set": "DALARAN",
+      "collectible": true,
+      "tribe": "Arcane",
+      "description": "Discover a spell that costs (3) or less.",
+      "effects": [
+        {
+          "type": "discover",
+          "pick": 3,
+          "cardType": "spell",
+          "maxCost": 3
+        }
+      ]
+    },
+    {
+      "id": "mirror_dimension",
+      "name": "Mirror Dimension",
+      "cardClass": "mage",
+      "cost": 1,
+      "rarity": "common",
+      "type": "sorcery",
+      "collectible": true,
+      "set": "TIME_TRAVEL",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "summon",
+          "count": 1,
+          "attack": 0,
+          "health": 4,
+          "name": "Mirror Image",
+          "keywords": [
+            "taunt"
+          ]
+        },
+        {
+          "type": "conditional",
+          "target": "any",
+          "if": {
+            "holdingTribe": "Dragon"
+          },
+          "then": [
+            {
+              "type": "summon",
+              "count": 1,
+              "attack": 0,
+              "health": 4,
+              "name": "Mirror Image",
+              "keywords": [
+                "taunt"
+              ]
+            }
+          ]
+        }
+      ],
+      "description": "Summon a 0/4 minion with Taunt. If you are holding a Dragon, summon another."
+    },
+    {
+      "id": "snap_freeze",
+      "name": "Snap Freeze",
+      "cardClass": "mage",
+      "cost": 1,
+      "rarity": "common",
+      "set": "PLACEHOLDER_202204",
+      "collectible": true,
+      "type": "sorcery",
+      "tribe": "Frost",
+      "description": "Freeze a minion. If it's already Frozen, destroy it.",
+      "effects": [
+        {
+          "type": "conditional",
+          "target": "creature",
+          "if": {
+            "targetFrozen": true
+          },
+          "then": [
+            {
+              "type": "destroy",
+              "target": "creature"
+            }
+          ],
+          "else": [
+            {
+              "type": "freeze",
+              "target": "creature"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "synthesize",
+      "name": "Synthesize",
+      "type": "sorcery",
+      "cost": 1,
+      "cardClass": "mage",
+      "rarity": "common",
+      "set": "BATTLE_OF_THE_BANDS",
+      "collectible": true,
+      "description": "Add a random 1, 2, and 3-Cost Elemental to your hand.",
+      "effects": [
+        {
+          "type": "conjure-random",
+          "cardType": "creature",
+          "tribe": "Elemental",
+          "cost": 1,
+          "count": 1
+        },
+        {
+          "type": "conjure-random",
+          "cardType": "creature",
+          "tribe": "Elemental",
+          "cost": 2,
+          "count": 1
+        },
+        {
+          "type": "conjure-random",
+          "cardType": "creature",
+          "tribe": "Elemental",
+          "cost": 3,
+          "count": 1
+        }
+      ]
+    },
+    {
+      "id": "ancient_mysteries",
+      "name": "Ancient Mysteries",
+      "cardClass": "mage",
+      "cost": 2,
+      "rarity": "common",
+      "set": "ULDUM",
+      "collectible": true,
+      "type": "sorcery",
+      "tribe": "Arcane",
+      "description": "Draw a Secret from your deck. It costs (0).",
+      "effects": [
+        {
+          "type": "tutor",
+          "cardType": "secret",
+          "count": 1,
+          "setCost": 0
+        }
+      ]
+    },
+    {
+      "id": "astral_rift",
+      "name": "Astral Rift",
+      "type": "sorcery",
+      "cost": 2,
+      "cardClass": "mage",
+      "rarity": "rare",
+      "set": "BOOMSDAY",
+      "tribe": "Arcane",
+      "collectible": true,
+      "description": "Add 2 random minions to your hand.",
+      "effects": [
+        {
+          "type": "conjure-random",
+          "cardType": "creature",
+          "count": 2
+        }
+      ]
+    },
+    {
+      "id": "conjure_mana_biscuit",
+      "name": "Conjure Mana Biscuit",
+      "cardClass": "mage",
+      "cost": 2,
+      "rarity": "common",
+      "set": "DARKMOON_FAIRE",
+      "collectible": true,
+      "type": "sorcery",
+      "tribe": "Arcane",
+      "description": "Add a Biscuit to your hand that refreshes 2 Mana Crystals.",
+      "effects": [
+        {
+          "type": "conjure-id",
+          "id": "mana_biscuit"
+        }
+      ]
+    },
+    {
+      "id": "mana_biscuit",
+      "name": "Biscuit",
+      "type": "sorcery",
+      "cost": 0,
+      "cardClass": "mage",
+      "rarity": "common",
+      "set": "DARKMOON_FAIRE",
+      "token": true,
+      "collectible": false,
+      "tribe": "Arcane",
+      "description": "Refresh 2 Mana Crystals.",
+      "effects": [
+        {
+          "type": "refresh-mana",
+          "value": 2
+        }
+      ]
     }
   ]
 }

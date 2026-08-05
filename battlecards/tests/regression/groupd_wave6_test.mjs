@@ -43,7 +43,7 @@ ok('mythical_terror gained its Lifesteal keyword', cardsById['mythical_terror'].
 	const st = game(); put(st, 0, 'merch_seller');
 	st.players[1].deck = ['chillwind_yeti', 'boulderfist_ogre']; // creatures only, so a spell reaching deck/hand is clearly Merch Seller's
 	E.endTurn(st); // p0 ends -> merch fires (spell on top of p1 deck) -> p1 draws it
-	const isSpell = c => { const d = cardsById[c.id] || cardsById[c]; return d && (d.type === 'sorcery' || d.type === 'instant'); };
+	const isSpell = c => { const d = cardsById[c.id] || cardsById[c]; return d && (d.type === 'sorcery' || d.type === 'instant' || d.type === 'secret' || d.type === 'trap'); };
 	const spellReached = st.players[1].deck.some(isSpell) || st.players[1].hand.some(isSpell);
 	ok('Merch Seller: a spell reached the opponent (their deck/hand now has one)', spellReached, [st.players[1].deck, st.players[1].hand.map(c => c.id)]);
 }
