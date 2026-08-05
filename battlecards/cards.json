@@ -141195,6 +141195,422 @@
           "lifesteal": true
         }
       ]
+    },
+    {
+      "id": "dispose_of_evidence",
+      "name": "Dispose of Evidence",
+      "type": "sorcery",
+      "cost": 0,
+      "cardClass": "demonhunter",
+      "rarity": "rare",
+      "set": "PLACEHOLDER_202204",
+      "collectible": true,
+      "description": "Give your hero +3 Attack this turn. Pick from 3 cards in your hand to shuffle into your deck.",
+      "effects": [
+        {
+          "type": "hero-temp-attack",
+          "value": 3
+        },
+        {
+          "type": "shuffle-hand-card-into-deck"
+        }
+      ]
+    },
+    {
+      "id": "sigil_of_silence",
+      "name": "Sigil of Silence",
+      "type": "sorcery",
+      "cost": 0,
+      "cardClass": "demonhunter",
+      "rarity": "rare",
+      "set": "THE_BARRENS",
+      "collectible": true,
+      "tribe": "Shadow",
+      "description": "At the start of your next turn, Silence all enemy minions.",
+      "effects": [
+        {
+          "type": "delay-to-turn-start",
+          "effects": [
+            {
+              "type": "silence",
+              "target": "enemy-creatures"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "demon_companion",
+      "name": "Demon Companion",
+      "type": "sorcery",
+      "cost": 1,
+      "cardClass": "demonhunter",
+      "rarity": "rare",
+      "set": "SCHOLOMANCE",
+      "collectible": true,
+      "description": "Summon a random Demon Companion.",
+      "effects": [
+        {
+          "type": "summon",
+          "count": 1,
+          "options": [
+            {
+              "name": "Reffuh",
+              "attack": 1,
+              "health": 3,
+              "keywords": [
+                "rush"
+              ],
+              "tribe": "Demon",
+              "description": "Rush."
+            },
+            {
+              "name": "Kolek",
+              "attack": 2,
+              "health": 2,
+              "tribe": "Demon",
+              "aura": {
+                "attack": 1,
+                "health": 0,
+                "others": true
+              },
+              "description": "Your other creatures have +1 Attack."
+            },
+            {
+              "name": "Dreadful Fiend",
+              "attack": 3,
+              "health": 3,
+              "tribe": "Demon",
+              "description": "A 3/3 Demon."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "double_jump",
+      "name": "Double Jump",
+      "cardClass": "demonhunter",
+      "cost": 1,
+      "rarity": "common",
+      "set": "SCHOLOMANCE",
+      "collectible": true,
+      "type": "sorcery",
+      "description": "Draw an Outcast card from your deck.",
+      "effects": [
+        {
+          "type": "tutor",
+          "requireKeyword": "outcast",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "id": "emergency_meeting",
+      "name": "Emergency Meeting",
+      "cardClass": "demonhunter",
+      "cost": 1,
+      "rarity": "epic",
+      "set": "SPACE",
+      "collectible": true,
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "summon",
+          "count": 2,
+          "name": "Crewmate",
+          "attack": 4,
+          "health": 4
+        },
+        {
+          "type": "summon-random",
+          "tribe": "Demon",
+          "maxCost": 3
+        }
+      ],
+      "description": "Get two 4/4 Crewmates. Put a random Demon that costs (3) or less between them."
+    },
+    {
+      "id": "final_showdown",
+      "name": "Final Showdown",
+      "type": "quest",
+      "cardClass": "demonhunter",
+      "cost": 1,
+      "rarity": "legendary",
+      "set": "STORMWIND",
+      "collectible": true,
+      "description": "Questline: Draw 4 cards in one turn.\nReward: Reduce the Cost of the cards drawn by (1).",
+      "keywords": [
+        "quest"
+      ],
+      "quest": {
+        "goal": {
+          "type": "draw",
+          "count": 4
+        },
+        "reward": [
+          {
+            "type": "discount-hand",
+            "value": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "headhunt",
+      "name": "Headhunt",
+      "type": "sorcery",
+      "cost": 1,
+      "cardClass": "demonhunter",
+      "rarity": "rare",
+      "set": "SPACE",
+      "collectible": true,
+      "description": "Deal 2 damage. Get a 4/4 Crewmate with a random Bonus Effect.",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 2,
+          "target": "any"
+        },
+        {
+          "type": "add-token",
+          "name": "Crewmate",
+          "attack": 4,
+          "health": 4,
+          "withGift": true
+        }
+      ]
+    },
+    {
+      "id": "illidari_studies",
+      "name": "Illidari Studies",
+      "type": "sorcery",
+      "cost": 1,
+      "cardClass": "demonhunter",
+      "rarity": "common",
+      "set": "CORE",
+      "collectible": true,
+      "description": "Discover an Outcast card. Your next one costs (1) less.",
+      "effects": [
+        {
+          "type": "discover",
+          "pick": 3,
+          "requireKeyword": "outcast"
+        },
+        {
+          "type": "grant-next-outcast-discount",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "red_card",
+      "name": "Red Card",
+      "type": "sorcery",
+      "cost": 1,
+      "cardClass": "demonhunter",
+      "rarity": "epic",
+      "set": "WHIZBANGS_WORKSHOP",
+      "collectible": true,
+      "description": "Make a minion go Dormant for 2 turns.",
+      "effects": [
+        {
+          "type": "make-dormant",
+          "value": 2,
+          "target": "creature"
+        }
+      ]
+    },
+    {
+      "id": "sigil_of_alacrity",
+      "name": "Sigil of Alacrity",
+      "type": "sorcery",
+      "cost": 1,
+      "cardClass": "demonhunter",
+      "rarity": "rare",
+      "set": "STORMWIND",
+      "collectible": true,
+      "tribe": "Shadow",
+      "description": "At the start of your next turn, draw a card and reduce its Cost by (1).",
+      "effects": [
+        {
+          "type": "delay-to-turn-start",
+          "effects": [
+            {
+              "type": "draw-discount",
+              "count": 1,
+              "amount": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "twin_slice",
+      "name": "Twin Slice",
+      "type": "sorcery",
+      "cost": 1,
+      "cardClass": "demonhunter",
+      "rarity": "common",
+      "set": "DEMON_HUNTER_INITIATE",
+      "collectible": true,
+      "effects": [
+        {
+          "type": "hero-temp-attack",
+          "value": 2
+        },
+        {
+          "type": "add-card",
+          "id": "second_slice"
+        }
+      ],
+      "description": "Give your hero +2 Attack this turn.\nAdd 'Second Slice' to your hand."
+    },
+    {
+      "id": "wings_of_hate",
+      "name": "Wings of Hate (Rank 1)",
+      "type": "sorcery",
+      "cost": 1,
+      "cardClass": "demonhunter",
+      "rarity": "rare",
+      "set": "ALTERAC_VALLEY",
+      "collectible": true,
+      "description": "Summon two 1/1 Felwings. (Upgrades when you have 5 Mana.)",
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "manathirst": 10
+          },
+          "then": [
+            {
+              "type": "summon",
+              "count": 2,
+              "attack": 3,
+              "health": 3,
+              "name": "Felwing"
+            }
+          ],
+          "else": [
+            {
+              "type": "conditional",
+              "if": {
+                "manathirst": 5
+              },
+              "then": [
+                {
+                  "type": "summon",
+                  "count": 2,
+                  "attack": 2,
+                  "health": 2,
+                  "name": "Felwing"
+                }
+              ],
+              "else": [
+                {
+                  "type": "summon",
+                  "count": 2,
+                  "attack": 1,
+                  "health": 1,
+                  "name": "Felwing"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "grim_harvest",
+      "name": "Grim Harvest",
+      "type": "sorcery",
+      "cost": 2,
+      "cardClass": "demonhunter",
+      "rarity": "common",
+      "set": "EMERALD_DREAM",
+      "collectible": true,
+      "description": "Draw a card. Summon a random Dormant Dreadseed.",
+      "effects": [
+        {
+          "type": "draw",
+          "value": 1
+        },
+        {
+          "type": "summon-random",
+          "ids": [
+            "edr_dreadseed"
+          ],
+          "dormantTurns": 2
+        }
+      ]
+    },
+    {
+      "id": "jumpscare",
+      "name": "Jumpscare!",
+      "type": "sorcery",
+      "cost": 2,
+      "cardClass": "demonhunter",
+      "rarity": "rare",
+      "set": "EMERALD_DREAM",
+      "collectible": true,
+      "description": "Discover a Demon that costs (5) or more with a Dark Gift. Shuffle the other two into your deck.",
+      "effects": [
+        {
+          "type": "discover",
+          "cardType": "creature",
+          "tribe": "Demon",
+          "minCost": 5,
+          "darkGift": true,
+          "shuffleOthers": true
+        }
+      ]
+    },
+    {
+      "id": "second_slice",
+      "name": "Second Slice",
+      "type": "sorcery",
+      "cost": 1,
+      "cardClass": "demonhunter",
+      "rarity": "common",
+      "set": "DEMON_HUNTER_INITIATE",
+      "token": true,
+      "collectible": false,
+      "description": "Give your hero +2 Attack this turn.",
+      "effects": [
+        {
+          "type": "hero-temp-attack",
+          "value": 2
+        }
+      ]
+    },
+    {
+      "id": "fel_guardians",
+      "name": "Fel Guardians",
+      "type": "sorcery",
+      "cost": 7,
+      "cardClass": "demonhunter",
+      "rarity": "common",
+      "set": "SCHOLOMANCE",
+      "collectible": true,
+      "tribe": "Fel",
+      "description": "Summon three 1/2 Demons with Taunt. Costs (1) less whenever a friendly minion dies.",
+      "effects": [
+        {
+          "type": "summon",
+          "count": 3,
+          "attack": 1,
+          "health": 2,
+          "name": "Fel Guardian",
+          "tribe": "Demon",
+          "keywords": [
+            "taunt"
+          ]
+        }
+      ],
+      "selfCost": {
+        "per": "friendly-deaths-game",
+        "amount": -1
+      }
     }
   ]
 }
