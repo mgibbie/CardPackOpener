@@ -142510,6 +142510,341 @@
       "transformInHandType": "spell",
       "transformInHandClass": "mage",
       "description": "Each turn this is in your hand, transform it into a random Mage spell."
+    },
+    {
+      "id": "hidden_objects",
+      "name": "Hidden Objects",
+      "type": "sorcery",
+      "cost": 2,
+      "cardClass": "mage",
+      "rarity": "common",
+      "set": "WHIZBANGS_WORKSHOP",
+      "collectible": true,
+      "description": "Discover a Secret. Set its Cost to (1).",
+      "effects": [
+        {
+          "type": "discover",
+          "pick": 3,
+          "tribe": "Secret",
+          "setCost": 1
+        }
+      ]
+    },
+    {
+      "id": "infinitize_the_maxitude",
+      "name": "Infinitize the Maxitude",
+      "type": "sorcery",
+      "cost": 2,
+      "cardClass": "mage",
+      "rarity": "legendary",
+      "set": "BATTLE_OF_THE_BANDS",
+      "collectible": true,
+      "keywords": [
+        "discover",
+        "finale"
+      ],
+      "description": "Discover a spell. Reduce its Cost by (1). Finale: Return this to your hand at end of turn.",
+      "effects": [
+        {
+          "type": "discover",
+          "cardType": "spell",
+          "costMod": -1
+        },
+        {
+          "type": "conditional",
+          "if": {
+            "finale": true
+          },
+          "then": [
+            {
+              "type": "conjure-id-endturn",
+              "id": "infinitize_the_maxitude"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "leyline_nexus",
+      "name": "Leyline Nexus",
+      "type": "sorcery",
+      "cost": 2,
+      "cardClass": "mage",
+      "rarity": "common",
+      "set": "CATACLYSM",
+      "collectible": true,
+      "tribe": "Arcane",
+      "effects": [
+        {
+          "type": "draw-discount",
+          "count": 1,
+          "amount": 2
+        }
+      ],
+      "description": "Draw a card. It costs (2) less."
+    },
+    {
+      "id": "primordial_glyph",
+      "name": "Primordial Glyph",
+      "type": "sorcery",
+      "cost": 2,
+      "cardClass": "mage",
+      "rarity": "epic",
+      "set": "PLACEHOLDER_202204",
+      "tribe": "Arcane",
+      "collectible": true,
+      "description": "Discover a spell. Reduce its Cost by (2).",
+      "effects": [
+        {
+          "type": "discover",
+          "cardType": "spell",
+          "costMod": -2
+        }
+      ]
+    },
+    {
+      "id": "semi_stable_portal",
+      "name": "Semi-Stable Portal",
+      "type": "sorcery",
+      "cost": 2,
+      "cardClass": "mage",
+      "rarity": "rare",
+      "set": "TIME_TRAVEL",
+      "collectible": true,
+      "tribe": "Arcane",
+      "description": "Add a random minion to your hand. It costs (3) less.",
+      "effects": [
+        {
+          "type": "conjure-random",
+          "cardType": "creature",
+          "count": 1,
+          "costMod": -3
+        }
+      ]
+    },
+    {
+      "id": "story_of_the_waygate",
+      "name": "Story of the Waygate",
+      "type": "sorcery",
+      "cost": 2,
+      "cardClass": "mage",
+      "rarity": "rare",
+      "set": "THE_LOST_CITY",
+      "collectible": true,
+      "description": "Reduce the Cost of cards in your hand that didn't start in your deck by (1).",
+      "effects": [
+        {
+          "type": "discount-foreign-hand",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "unstable_portal",
+      "name": "Unstable Portal",
+      "cardClass": "mage",
+      "cost": 2,
+      "rarity": "rare",
+      "set": "GVG",
+      "collectible": true,
+      "type": "sorcery",
+      "tribe": "Arcane",
+      "description": "Add a random minion to your hand. It costs (3) less.",
+      "effects": [
+        {
+          "type": "conjure-random",
+          "cardType": "creature",
+          "count": 1,
+          "costMod": -3
+        }
+      ]
+    },
+    {
+      "id": "volcanomancy",
+      "name": "Volcanomancy",
+      "type": "sorcery",
+      "cardClass": "mage",
+      "cost": 2,
+      "rarity": "epic",
+      "set": "THE_SUNKEN_CITY",
+      "collectible": true,
+      "tribe": "Fire",
+      "description": "Choose a minion. When it dies, deal 3 damage to all other minions.",
+      "effects": [
+        {
+          "type": "grant-deathrattle",
+          "target": "creature",
+          "effects": [
+            {
+              "type": "damage-all-minions",
+              "value": 3,
+              "exceptSource": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "build_a_snowman",
+      "name": "Build a Snowman",
+      "type": "sorcery",
+      "cost": 3,
+      "cardClass": "mage",
+      "rarity": "rare",
+      "set": "ALTERAC_VALLEY",
+      "tribe": "Frost",
+      "collectible": true,
+      "description": "Summon a 3/3 Snowman that Freezes. Add \"Build a Snowbrute\" to your hand.",
+      "effects": [
+        {
+          "type": "summon",
+          "count": 1,
+          "attack": 3,
+          "health": 3,
+          "name": "Snowman",
+          "keywords": [
+            "freezer"
+          ],
+          "description": "Freeze."
+        },
+        {
+          "type": "add-card",
+          "id": "build_a_snowbrute"
+        }
+      ]
+    },
+    {
+      "id": "elemental_companion",
+      "name": "Elemental Companion",
+      "type": "sorcery",
+      "cost": 3,
+      "cardClass": "mage",
+      "rarity": "rare",
+      "set": "WILD_WEST",
+      "collectible": true,
+      "description": "Summon a random Elemental Companion.",
+      "effects": [
+        {
+          "type": "summon",
+          "count": 1,
+          "options": [
+            {
+              "name": "Cinderfoot",
+              "attack": 4,
+              "health": 2,
+              "keywords": [
+                "rush"
+              ],
+              "tribe": "Elemental",
+              "description": "Rush."
+            },
+            {
+              "name": "Bouldergut",
+              "attack": 4,
+              "health": 4,
+              "keywords": [
+                "taunt"
+              ],
+              "tribe": "Elemental",
+              "description": "Taunt."
+            },
+            {
+              "name": "Gustwing",
+              "attack": 2,
+              "health": 4,
+              "tribe": "Elemental",
+              "aura": {
+                "attack": 1,
+                "health": 0,
+                "others": true
+              },
+              "description": "Your other creatures have +1 Attack."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "flame_ward",
+      "name": "Flame Ward",
+      "cardClass": "mage",
+      "cost": 3,
+      "rarity": "common",
+      "set": "ULDUM",
+      "collectible": true,
+      "type": "secret",
+      "tribe": "Fire",
+      "secret": {
+        "trigger": "enemy-attack",
+        "condition": {
+          "targetHero": true,
+          "attackerCreature": true
+        },
+        "effects": [
+          {
+            "type": "damage",
+            "value": 3,
+            "target": "enemy-creatures"
+          }
+        ]
+      },
+      "description": "Secret: After a minion attacks your hero, deal 3 damage to all enemy minions."
+    },
+    {
+      "id": "build_a_snowbrute",
+      "name": "Build a Snowbrute",
+      "type": "sorcery",
+      "cost": 3,
+      "cardClass": "mage",
+      "rarity": "rare",
+      "set": "ALTERAC_VALLEY",
+      "token": true,
+      "collectible": false,
+      "tribe": "Frost",
+      "description": "Summon a 5/5 Snowbrute that Freezes. Add \"Build a Snowgre\" to your hand.",
+      "effects": [
+        {
+          "type": "summon",
+          "count": 1,
+          "attack": 5,
+          "health": 5,
+          "name": "Build a Snowbrute",
+          "keywords": [
+            "freezer"
+          ],
+          "description": "Freeze."
+        },
+        {
+          "type": "add-card",
+          "id": "build_a_snowgre"
+        }
+      ]
+    },
+    {
+      "id": "build_a_snowgre",
+      "name": "Build a Snowgre",
+      "type": "sorcery",
+      "cost": 3,
+      "cardClass": "mage",
+      "rarity": "rare",
+      "set": "ALTERAC_VALLEY",
+      "token": true,
+      "collectible": false,
+      "tribe": "Frost",
+      "description": "Summon a 7/7 Snowgre that Freezes.",
+      "effects": [
+        {
+          "type": "summon",
+          "count": 1,
+          "attack": 7,
+          "health": 7,
+          "name": "Build a Snowgre",
+          "keywords": [
+            "freezer"
+          ],
+          "description": "Freeze."
+        }
+      ]
     }
   ]
 }
