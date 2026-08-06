@@ -4922,7 +4922,7 @@ function pickDuelsDraftOverlay(heroClass) {
 			for (const d of opts) {
 				const box = document.createElement('div');
 				box.style.cssText = 'display:flex;flex-direction:column;align-items:center;gap:6px;';
-				box.appendChild(miniFace(d, 132));
+				box.appendChild(miniFace(d, 125));
 				box.appendChild(overlayButton('Pick', () => { deck.push(d.id); step(); }));
 				row.appendChild(box);
 			}
