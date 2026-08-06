@@ -151550,6 +151550,605 @@
           "target": "friendly-others"
         }
       ]
+    },
+    {
+      "id": "evolve",
+      "name": "Evolve",
+      "type": "sorcery",
+      "cost": 1,
+      "cardClass": "shaman",
+      "rarity": "rare",
+      "set": "OG",
+      "collectible": true,
+      "tribe": "Nature",
+      "description": "Transform your minions into random minions that cost (1) more.",
+      "effects": [
+        {
+          "type": "transform-friendly-costplus",
+          "costDelta": 1
+        }
+      ]
+    },
+    {
+      "id": "unstable_evolution",
+      "name": "Unstable Evolution",
+      "type": "sorcery",
+      "cost": 1,
+      "cardClass": "shaman",
+      "rarity": "epic",
+      "set": "LOOTAPALOOZA",
+      "collectible": true,
+      "tribe": "Nature",
+      "description": "Transform a friendly minion into one that costs (1) more.",
+      "effects": [
+        {
+          "type": "transform",
+          "randomCost": true,
+          "costDelta": 1,
+          "target": "friendly-creature"
+        }
+      ]
+    },
+    {
+      "id": "everyfin_is_awesome",
+      "name": "Everyfin is Awesome",
+      "type": "sorcery",
+      "cost": 7,
+      "cardClass": "shaman",
+      "rarity": "rare",
+      "set": "LOE",
+      "collectible": true,
+      "description": "Give your minions +2/+2.",
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 2,
+          "health": 2,
+          "target": "friendly-creatures"
+        }
+      ]
+    },
+    {
+      "id": "primal_talismans",
+      "name": "Primal Talismans",
+      "type": "sorcery",
+      "cost": 3,
+      "cardClass": "shaman",
+      "rarity": "rare",
+      "set": "LOOTAPALOOZA",
+      "collectible": true,
+      "description": "Give your minions \"Deathrattle: Summon a random basic Totem.\"",
+      "effects": [
+        {
+          "type": "grant-deathrattle",
+          "effects": [
+            {
+              "type": "summon-random-basic-totem"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "the_storm_bringer",
+      "name": "The Storm Bringer",
+      "type": "sorcery",
+      "cost": 6,
+      "cardClass": "shaman",
+      "rarity": "legendary",
+      "set": "BOOMSDAY",
+      "collectible": true,
+      "tribe": "Nature",
+      "description": "Transform your minions into random Legendary minions.",
+      "effects": [
+        {
+          "type": "transform-board-random-legendaries"
+        }
+      ]
+    },
+    {
+      "id": "healing_rain",
+      "name": "Healing Rain",
+      "cardClass": "shaman",
+      "cost": 3,
+      "rarity": "common",
+      "type": "sorcery",
+      "set": "CORE",
+      "collectible": true,
+      "tribe": "Nature",
+      "effects": [
+        {
+          "type": "heal-random-friendly",
+          "value": 1
+        },
+        {
+          "type": "heal-random-friendly",
+          "value": 1
+        },
+        {
+          "type": "heal-random-friendly",
+          "value": 1
+        },
+        {
+          "type": "heal-random-friendly",
+          "value": 1
+        },
+        {
+          "type": "heal-random-friendly",
+          "value": 1
+        },
+        {
+          "type": "heal-random-friendly",
+          "value": 1
+        },
+        {
+          "type": "heal-random-friendly",
+          "value": 1
+        },
+        {
+          "type": "heal-random-friendly",
+          "value": 1
+        },
+        {
+          "type": "heal-random-friendly",
+          "value": 1
+        },
+        {
+          "type": "heal-random-friendly",
+          "value": 1
+        },
+        {
+          "type": "heal-random-friendly",
+          "value": 1
+        },
+        {
+          "type": "heal-random-friendly",
+          "value": 1
+        }
+      ],
+      "description": "Restore 12 Health randomly split among all friendly characters."
+    },
+    {
+      "id": "healing_wave",
+      "name": "Healing Wave",
+      "type": "sorcery",
+      "cardClass": "shaman",
+      "cost": 3,
+      "rarity": "rare",
+      "set": "TGT",
+      "collectible": true,
+      "tribe": "Nature",
+      "description": "Restore 8 Health.",
+      "effects": [
+        {
+          "type": "heal",
+          "value": 8,
+          "target": "any"
+        }
+      ]
+    },
+    {
+      "id": "elemental_destruction",
+      "name": "Elemental Destruction",
+      "cardClass": "shaman",
+      "cost": 3,
+      "rarity": "epic",
+      "set": "TGT",
+      "collectible": true,
+      "overload": 2,
+      "type": "sorcery",
+      "tribe": "Nature",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 4,
+          "target": "all-creatures"
+        }
+      ],
+      "description": "Deal 4 damage to all minions.\nOverload: 2 mana locked next turn."
+    },
+    {
+      "id": "lesser_sapphire_spellstone",
+      "name": "Lesser Sapphire Spellstone",
+      "type": "sorcery",
+      "cost": 7,
+      "cardClass": "shaman",
+      "rarity": "rare",
+      "set": "LOOTAPALOOZA",
+      "collectible": true,
+      "tribe": "Nature",
+      "description": "Summon 1 copy of a friendly minion.",
+      "effects": [
+        {
+          "type": "summon-copy-of-target-buffed",
+          "target": "friendly-creature"
+        }
+      ]
+    },
+    {
+      "id": "elementary_reaction",
+      "name": "Elementary Reaction",
+      "type": "sorcery",
+      "cost": 2,
+      "cardClass": "shaman",
+      "rarity": "common",
+      "set": "BOOMSDAY",
+      "collectible": true,
+      "tribe": "Nature",
+      "description": "Draw a card. Copy it if you played an Elemental last turn.",
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "elementalLastTurn": true
+          },
+          "then": [
+            {
+              "type": "copy-deck-top-to-hand",
+              "count": 1
+            }
+          ]
+        },
+        {
+          "type": "draw",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "evolve",
+      "name": "Evolve",
+      "type": "sorcery",
+      "cost": 1,
+      "cardClass": "shaman",
+      "rarity": "rare",
+      "set": "OG",
+      "collectible": true,
+      "tribe": "Nature",
+      "description": "Transform your minions into random minions that cost (1) more.",
+      "effects": [
+        {
+          "type": "transform-friendly-costplus",
+          "costDelta": 1
+        }
+      ]
+    },
+    {
+      "id": "branching_paths",
+      "name": "Branching Paths",
+      "type": "sorcery",
+      "cost": 4,
+      "cardClass": "druid",
+      "rarity": "epic",
+      "set": "LOOTAPALOOZA",
+      "collectible": true,
+      "description": "Choose Twice - Draw a card; Give your minions +1 Attack; Gain 6 Armor.",
+      "chooseCount": 2,
+      "choices": [
+        {
+          "text": "Draw a card.",
+          "effects": [
+            {
+              "type": "draw",
+              "value": 1
+            }
+          ]
+        },
+        {
+          "text": "Give your minions +1 Attack.",
+          "effects": [
+            {
+              "type": "buff",
+              "target": "friendly-creatures",
+              "attack": 1,
+              "health": 0
+            }
+          ]
+        },
+        {
+          "text": "Gain 6 Armor.",
+          "effects": [
+            {
+              "type": "armor",
+              "value": 6
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "crystalsong_portal",
+      "name": "Crystalsong Portal",
+      "type": "sorcery",
+      "cost": 2,
+      "cardClass": "druid",
+      "rarity": "epic",
+      "set": "DALARAN",
+      "tribe": "Nature",
+      "collectible": true,
+      "description": "Discover a Druid minion.",
+      "effects": [
+        {
+          "type": "discover",
+          "cardType": "creature",
+          "cardClasses": [
+            "druid"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "dark_wispers",
+      "name": "Dark Wispers",
+      "cardClass": "druid",
+      "cost": 6,
+      "rarity": "epic",
+      "set": "GVG",
+      "tribe": "Nature",
+      "type": "sorcery",
+      "collectible": true,
+      "choices": [
+        {
+          "text": "Summon 5 Wisps",
+          "effects": [
+            {
+              "type": "summon",
+              "count": 5,
+              "attack": 1,
+              "health": 1,
+              "name": "Wisp"
+            }
+          ]
+        },
+        {
+          "text": "Give a minion +5/+5 and Taunt",
+          "effects": [
+            {
+              "type": "buff",
+              "attack": 5,
+              "health": 5,
+              "target": "creature"
+            },
+            {
+              "type": "grant",
+              "keyword": "taunt",
+              "target": "creature"
+            }
+          ]
+        }
+      ],
+      "description": "Choose One - Summon 5 Wisps; or Give a minion +5/+5 and Taunt."
+    },
+    {
+      "id": "juicy_psychmelon",
+      "name": "Juicy Psychmelon",
+      "type": "sorcery",
+      "cost": 4,
+      "cardClass": "druid",
+      "rarity": "epic",
+      "set": "BOOMSDAY",
+      "collectible": true,
+      "tribe": "Nature",
+      "description": "Draw a 7, 8, 9, and 1-Cost minion from your deck.",
+      "effects": [
+        {
+          "type": "tutor",
+          "cardType": "creature",
+          "cost": 7,
+          "count": 1
+        },
+        {
+          "type": "tutor",
+          "cardType": "creature",
+          "cost": 8,
+          "count": 1
+        },
+        {
+          "type": "tutor",
+          "cardType": "creature",
+          "cost": 9,
+          "count": 1
+        },
+        {
+          "type": "tutor",
+          "cardType": "creature",
+          "cost": 1,
+          "count": 1
+        }
+      ]
+    },
+    {
+      "id": "blessing_of_the_ancients",
+      "name": "Blessing of the Ancients",
+      "type": "sorcery",
+      "cost": 3,
+      "cardClass": "druid",
+      "rarity": "common",
+      "set": "DALARAN",
+      "collectible": true,
+      "tribe": "Nature",
+      "description": "Give your minions +1/+1.",
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 1,
+          "health": 1,
+          "target": "friendly-creatures"
+        }
+      ]
+    },
+    {
+      "id": "spreading_plague",
+      "name": "Spreading Plague",
+      "cardClass": "druid",
+      "cost": 6,
+      "rarity": "rare",
+      "set": "PLACEHOLDER_202204",
+      "collectible": true,
+      "type": "sorcery",
+      "tribe": "Nature",
+      "description": "Summon a 1/5 Scarab with Taunt. If your opponent has more minions, cast this again.",
+      "effects": [
+        {
+          "type": "summon",
+          "perEnemy": true,
+          "attack": 1,
+          "health": 5,
+          "name": "Scarab",
+          "keywords": [
+            "taunt"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "the_forest_s_aid",
+      "name": "The Forest's Aid",
+      "cardClass": "druid",
+      "cost": 8,
+      "rarity": "rare",
+      "type": "sorcery",
+      "tribe": "Nature",
+      "set": "DALARAN",
+      "collectible": true,
+      "effects": [
+        {
+          "type": "summon",
+          "count": 5,
+          "attack": 2,
+          "health": 2,
+          "name": "Treant"
+        }
+      ],
+      "description": "Summon five 2/2 Treants."
+    },
+    {
+      "id": "overflow",
+      "name": "Overflow",
+      "type": "sorcery",
+      "cardClass": "druid",
+      "cost": 7,
+      "rarity": "rare",
+      "set": "ULDUM",
+      "collectible": true,
+      "tribe": "Nature",
+      "description": "Restore 5 Health to all characters. Draw 5 cards.",
+      "effects": [
+        {
+          "type": "heal",
+          "value": 5,
+          "target": "all-heroes"
+        },
+        {
+          "type": "heal",
+          "value": 5,
+          "target": "all-creatures"
+        },
+        {
+          "type": "draw",
+          "value": 5
+        }
+      ]
+    },
+    {
+      "id": "crystalsong_portal",
+      "name": "Crystalsong Portal",
+      "type": "sorcery",
+      "cost": 2,
+      "cardClass": "druid",
+      "rarity": "epic",
+      "set": "DALARAN",
+      "tribe": "Nature",
+      "collectible": true,
+      "description": "Discover a Druid minion.",
+      "effects": [
+        {
+          "type": "discover",
+          "cardType": "creature",
+          "cardClasses": [
+            "druid"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "blessing_of_the_ancients",
+      "name": "Blessing of the Ancients",
+      "type": "sorcery",
+      "cost": 3,
+      "cardClass": "druid",
+      "rarity": "common",
+      "set": "DALARAN",
+      "collectible": true,
+      "tribe": "Nature",
+      "description": "Give your minions +1/+1.",
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 1,
+          "health": 1,
+          "target": "friendly-creatures"
+        }
+      ]
+    },
+    {
+      "id": "the_forests_aid",
+      "name": "The Forest's Aid",
+      "type": "sorcery",
+      "cost": 8,
+      "cardClass": "druid",
+      "rarity": "rare",
+      "tribe": "Nature",
+      "set": "DALARAN",
+      "collectible": true,
+      "effects": [
+        {
+          "type": "summon",
+          "count": 5,
+          "attack": 2,
+          "health": 2,
+          "name": "Treant"
+        }
+      ],
+      "description": "Summon five 2/2 Treants."
+    },
+    {
+      "id": "juicy_psychmelon",
+      "name": "Juicy Psychmelon",
+      "type": "sorcery",
+      "cost": 4,
+      "cardClass": "druid",
+      "rarity": "epic",
+      "set": "BOOMSDAY",
+      "collectible": true,
+      "tribe": "Nature",
+      "description": "Draw a 7, 8, 9, and 1-Cost minion from your deck.",
+      "effects": [
+        {
+          "type": "tutor",
+          "cardType": "creature",
+          "cost": 7,
+          "count": 1
+        },
+        {
+          "type": "tutor",
+          "cardType": "creature",
+          "cost": 8,
+          "count": 1
+        },
+        {
+          "type": "tutor",
+          "cardType": "creature",
+          "cost": 9,
+          "count": 1
+        },
+        {
+          "type": "tutor",
+          "cardType": "creature",
+          "cost": 1,
+          "count": 1
+        }
+      ]
     }
   ]
 }
