@@ -40,7 +40,7 @@ ok('maw_and_paw carries two ongoings', Array.isArray(cardsById['maw_and_paw'].on
 	const st = game(); put(st, 0, 'voronei_recruiter');
 	E.endTurn(st);
 	const cm = st.players[0].hand.find(c => c.name === 'Crewmate');
-	ok('Voronei: a 4/4 Crewmate is in hand', cm && cm.attack === 4 && (E.hp(cm) === 4 || E.hp(cm) > 4), cm && [cm.attack, E.hp(cm)]);
+	ok('Voronei: a 4/4 Crewmate is in hand', cm && cm.attack >= 4 && E.hp(cm) >= 4, cm && [cm.attack, E.hp(cm)]); // base 4/4, a stat Dark Gift can raise it
 	ok('Voronei: the Crewmate carries a Bonus Effect (Dark Gift)', cm && cm._darkGift, cm && cm._darkGift);
 }
 // Maw and Paw: end of turn gain 5 Corpses; start of your NEXT turn, spend 5 to heal 5

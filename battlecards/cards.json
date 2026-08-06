@@ -147000,6 +147000,651 @@
           "type": "resummon-remembered"
         }
       ]
+    },
+    {
+      "id": "athletic_studies",
+      "name": "Athletic Studies",
+      "cardClass": "warrior",
+      "cost": 1,
+      "rarity": "common",
+      "set": "SCHOLOMANCE",
+      "collectible": true,
+      "type": "sorcery",
+      "description": "Discover a Rush minion. Your next one costs (1) less.",
+      "effects": [
+        {
+          "type": "discover",
+          "pick": 3,
+          "cardType": "creature",
+          "requireKeyword": "rush"
+        },
+        {
+          "type": "discount",
+          "cardType": "creature",
+          "keyword": "rush",
+          "amount": -1
+        }
+      ]
+    },
+    {
+      "id": "blood_to_ichor",
+      "name": "Blood to Ichor",
+      "cardClass": "warrior",
+      "cost": 1,
+      "rarity": "rare",
+      "type": "sorcery",
+      "collectible": true,
+      "set": "OG",
+      "effects": [
+        {
+          "type": "damage-then",
+          "value": 1,
+          "target": "creature",
+          "ifSurvives": [
+            {
+              "type": "summon",
+              "count": 1,
+              "attack": 2,
+              "health": 2,
+              "name": "Slime"
+            }
+          ]
+        }
+      ],
+      "description": "Deal 1 damage to a minion. If it survives, summon a 2/2 Slime."
+    },
+    {
+      "id": "burning_heart",
+      "name": "Burning Heart",
+      "cardClass": "warrior",
+      "cost": 1,
+      "rarity": "common",
+      "set": "WILD_WEST",
+      "collectible": true,
+      "tribe": "Fire",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "damage-then",
+          "value": 2,
+          "target": "creature",
+          "ifSurvives": [
+            {
+              "type": "hero-attack",
+              "value": 3
+            }
+          ]
+        }
+      ],
+      "description": "Deal 2 damage to a minion. If it survives, give your hero +3 Attack this turn."
+    },
+    {
+      "id": "cup_o_muscle",
+      "name": "Cup o' Muscle",
+      "type": "sorcery",
+      "cost": 1,
+      "cardClass": "warrior",
+      "rarity": "common",
+      "set": "ISLAND_VACATION",
+      "collectible": true,
+      "description": "Give a minion in your hand +2/+1.",
+      "effects": [
+        {
+          "type": "buff-random-hand",
+          "attack": 2,
+          "health": 1
+        }
+      ]
+    },
+    {
+      "id": "devastate",
+      "name": "Devastate",
+      "type": "sorcery",
+      "cardClass": "warrior",
+      "cost": 1,
+      "rarity": "common",
+      "set": "TROLL",
+      "collectible": true,
+      "description": "Deal 4 damage to a damaged minion.",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 4,
+          "target": "creature",
+          "requireDamaged": true
+        }
+      ]
+    },
+    {
+      "id": "improve_morale",
+      "name": "Improve Morale",
+      "cardClass": "warrior",
+      "cost": 1,
+      "rarity": "common",
+      "set": "DALARAN",
+      "collectible": true,
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "damage-then",
+          "value": 1,
+          "target": "creature",
+          "ifSurvives": [
+            {
+              "type": "add-lackey"
+            }
+          ]
+        }
+      ],
+      "description": "Deal 1 damage to a minion. If it survives, add a Lackey to your hand."
+    },
+    {
+      "id": "into_the_fray",
+      "name": "Into the Fray",
+      "type": "sorcery",
+      "cost": 1,
+      "cardClass": "warrior",
+      "rarity": "rare",
+      "set": "ULDUM",
+      "collectible": true,
+      "description": "Give all Taunt minions in your hand +2/+2.",
+      "effects": [
+        {
+          "type": "buff-hand-keyword",
+          "keyword": "taunt",
+          "attack": 2,
+          "health": 2
+        }
+      ]
+    },
+    {
+      "id": "shiver_their_timbers",
+      "name": "Shiver Their Timbers!",
+      "cardClass": "warrior",
+      "cost": 1,
+      "rarity": "rare",
+      "set": "STORMWIND",
+      "collectible": true,
+      "type": "sorcery",
+      "description": "Deal 2 damage to a minion. If you control a Pirate, deal 5 instead.",
+      "effects": [
+        {
+          "type": "conditional",
+          "target": "creature",
+          "if": {
+            "controlTribe": "Pirate"
+          },
+          "then": [
+            {
+              "type": "damage",
+              "value": 5,
+              "target": "creature"
+            }
+          ],
+          "else": [
+            {
+              "type": "damage",
+              "value": 2,
+              "target": "creature"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "siphoning_growth",
+      "name": "Siphoning Growth",
+      "cardClass": "warrior",
+      "cost": 1,
+      "rarity": "rare",
+      "set": "EMERALD_DREAM",
+      "type": "sorcery",
+      "collectible": true,
+      "effects": [
+        {
+          "type": "destroy",
+          "target": "friendly-creature",
+          "then": [
+            {
+              "type": "armor",
+              "value": 8
+            }
+          ]
+        }
+      ],
+      "description": "Destroy a friendly minion to gain 8 Armor."
+    },
+    {
+      "id": "devastate",
+      "name": "Devastate",
+      "type": "sorcery",
+      "cardClass": "warrior",
+      "cost": 1,
+      "rarity": "common",
+      "set": "TROLL",
+      "collectible": true,
+      "description": "Deal 4 damage to a damaged minion.",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 4,
+          "target": "creature",
+          "requireDamaged": true
+        }
+      ]
+    },
+    {
+      "id": "conditioning_rank_1",
+      "name": "Conditioning (Rank 1)",
+      "type": "sorcery",
+      "cost": 2,
+      "cardClass": "warrior",
+      "rarity": "rare",
+      "set": "THE_BARRENS",
+      "collectible": true,
+      "description": "Give minions in your hand +1/+1.",
+      "effects": [
+        {
+          "type": "buff-hand-minions",
+          "attack": 1,
+          "health": 1
+        }
+      ]
+    },
+    {
+      "id": "dragon_roar",
+      "name": "Dragon Roar",
+      "type": "sorcery",
+      "cost": 2,
+      "cardClass": "warrior",
+      "rarity": "common",
+      "set": "TROLL",
+      "collectible": true,
+      "description": "Add 2 random Dragons to your hand.",
+      "effects": [
+        {
+          "type": "conjure-random",
+          "cardType": "creature",
+          "tribe": "Dragon",
+          "count": 2
+        }
+      ]
+    },
+    {
+      "id": "forge_of_souls",
+      "name": "Forge of Souls",
+      "cardClass": "warrior",
+      "cost": 2,
+      "rarity": "common",
+      "set": "PLACEHOLDER_202204",
+      "collectible": true,
+      "description": "Draw 2 weapons from your deck.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "tutor",
+          "cardType": "weapon",
+          "count": 2
+        }
+      ]
+    },
+    {
+      "id": "into_the_fray",
+      "name": "Into the Fray",
+      "type": "sorcery",
+      "cost": 1,
+      "cardClass": "warrior",
+      "rarity": "rare",
+      "set": "ULDUM",
+      "collectible": true,
+      "description": "Give all Taunt minions in your hand +2/+2.",
+      "effects": [
+        {
+          "type": "buff-hand-keyword",
+          "keyword": "taunt",
+          "attack": 2,
+          "health": 2
+        }
+      ]
+    },
+    {
+      "id": "corsair_cache",
+      "name": "Corsair Cache",
+      "cardClass": "warrior",
+      "cost": 2,
+      "rarity": "rare",
+      "set": "BLACK_TEMPLE",
+      "collectible": true,
+      "description": "Draw a weapon. Give it +1/+1.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "tutor",
+          "cardType": "weapon",
+          "count": 1,
+          "buff": {
+            "attack": 1,
+            "durability": 1
+          }
+        }
+      ]
+    },
+    {
+      "id": "dragon_roar",
+      "name": "Dragon Roar",
+      "type": "sorcery",
+      "cost": 2,
+      "cardClass": "warrior",
+      "rarity": "common",
+      "set": "TROLL",
+      "collectible": true,
+      "description": "Add 2 random Dragons to your hand.",
+      "effects": [
+        {
+          "type": "conjure-random",
+          "cardType": "creature",
+          "tribe": "Dragon",
+          "count": 2
+        }
+      ]
+    },
+    {
+      "id": "blood_to_ichor",
+      "name": "Blood to Ichor",
+      "cardClass": "warrior",
+      "cost": 1,
+      "rarity": "rare",
+      "type": "sorcery",
+      "collectible": true,
+      "set": "OG",
+      "effects": [
+        {
+          "type": "damage-then",
+          "value": 1,
+          "target": "creature",
+          "ifSurvives": [
+            {
+              "type": "summon",
+              "count": 1,
+              "attack": 2,
+              "health": 2,
+              "name": "Slime"
+            }
+          ]
+        }
+      ],
+      "description": "Deal 1 damage to a minion. If it survives, summon a 2/2 Slime."
+    },
+    {
+      "id": "dead_air",
+      "name": "Dead Air",
+      "type": "sorcery",
+      "cost": 2,
+      "cardClass": "deathknight",
+      "rarity": "rare",
+      "set": "BATTLE_OF_THE_BANDS",
+      "collectible": true,
+      "description": "Destroy your Undead. Resummon them.",
+      "effects": [
+        {
+          "type": "summon-copies-of-board",
+          "tribe": "Undead"
+        }
+      ]
+    },
+    {
+      "id": "fistful_of_corpses",
+      "name": "Fistful of Corpses",
+      "type": "sorcery",
+      "cost": 1,
+      "cardClass": "deathknight",
+      "rarity": "common",
+      "set": "WILD_WEST",
+      "collectible": true,
+      "description": "Deal damage to a minion equal to your Corpses.",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 1,
+          "valuePer": "corpses",
+          "target": "creature"
+        }
+      ]
+    },
+    {
+      "id": "orbital_moon",
+      "name": "Orbital Moon",
+      "cardClass": "deathknight",
+      "cost": 1,
+      "rarity": "common",
+      "set": "SPACE",
+      "collectible": true,
+      "description": "Give a minion Taunt and Lifesteal.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "grant",
+          "keyword": "taunt",
+          "target": "creature"
+        },
+        {
+          "type": "grant",
+          "keyword": "lifesteal",
+          "target": "creature"
+        }
+      ]
+    },
+    {
+      "id": "rite_of_atrocity",
+      "name": "Rite of Atrocity",
+      "type": "sorcery",
+      "cost": 1,
+      "cardClass": "deathknight",
+      "rarity": "common",
+      "set": "EMERALD_DREAM",
+      "collectible": true,
+      "description": "Discover an Undead.",
+      "effects": [
+        {
+          "type": "discover",
+          "cardType": "creature",
+          "tribe": "Undead"
+        }
+      ]
+    },
+    {
+      "id": "runes_of_darkness",
+      "name": "Runes of Darkness",
+      "type": "sorcery",
+      "cardClass": "deathknight",
+      "cost": 1,
+      "rarity": "common",
+      "set": "TITANS",
+      "collectible": true,
+      "tribe": "Shadow",
+      "description": "Discover a weapon.",
+      "effects": [
+        {
+          "type": "discover",
+          "pick": 3,
+          "cardType": "weapon"
+        }
+      ]
+    },
+    {
+      "id": "down_with_the_ship",
+      "name": "Down with the Ship",
+      "type": "sorcery",
+      "cost": 2,
+      "cardClass": "deathknight",
+      "rarity": "rare",
+      "set": "TITANS",
+      "tribe": "Shadow",
+      "collectible": true,
+      "description": "Deal 3 damage. Shuffle two random Plagues into your opponent's deck.",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 3,
+          "target": "any"
+        },
+        {
+          "type": "shuffle-cards-into-enemy-deck",
+          "id": "ttn_plague",
+          "count": 2
+        }
+      ]
+    },
+    {
+      "id": "poison_breath",
+      "name": "Poison Breath",
+      "type": "sorcery",
+      "cost": 2,
+      "cardClass": "deathknight",
+      "rarity": "rare",
+      "set": "CORE",
+      "collectible": true,
+      "description": "Give a friendly Undead Poisonous.",
+      "effects": [
+        {
+          "type": "grant",
+          "target": "friendly-creature",
+          "tribe": "Undead",
+          "keyword": "poisonous"
+        }
+      ]
+    },
+    {
+      "id": "cremate",
+      "name": "Cremate",
+      "type": "sorcery",
+      "cost": 3,
+      "cardClass": "deathknight",
+      "rarity": "common",
+      "set": "EMERALD_DREAM",
+      "collectible": true,
+      "tribe": "Fire",
+      "description": "Discover a minion. It costs (2) less.",
+      "effects": [
+        {
+          "type": "discover",
+          "cardType": "creature",
+          "costMod": -2
+        }
+      ]
+    },
+    {
+      "id": "howling_blast",
+      "name": "Howling Blast",
+      "type": "sorcery",
+      "cost": 3,
+      "cardClass": "deathknight",
+      "rarity": "common",
+      "set": "PATH_OF_ARTHAS",
+      "collectible": true,
+      "tribe": "Frost",
+      "description": "Deal 3 damage to an enemy and Freeze it. Deal 1 damage to all other enemies.",
+      "effects": [
+        {
+          "type": "swipe",
+          "value": 3,
+          "splash": 1,
+          "target": "enemy-any"
+        },
+        {
+          "type": "freeze",
+          "target": "enemy-any"
+        }
+      ]
+    },
+    {
+      "id": "eternal_layover",
+      "name": "Eternal Layover",
+      "cardClass": "death_knight",
+      "cost": 4,
+      "rarity": "rare",
+      "set": "ISLAND_VACATION",
+      "collectible": true,
+      "type": "sorcery",
+      "description": "Give ALL minions Reborn, then destroy all minions.",
+      "effects": [
+        {
+          "type": "grant",
+          "keyword": "reborn",
+          "target": "all-creatures"
+        },
+        {
+          "type": "destroy-all"
+        }
+      ]
+    },
+    {
+      "id": "helm_of_humiliation",
+      "name": "Helm of Humiliation",
+      "cardClass": "deathknight",
+      "cost": 4,
+      "rarity": "rare",
+      "set": "WHIZBANGS_WORKSHOP",
+      "type": "sorcery",
+      "tribe": "Shadow",
+      "collectible": true,
+      "effects": [
+        {
+          "type": "buff",
+          "attack": -5,
+          "health": -5,
+          "target": "creature"
+        },
+        {
+          "type": "buff-random-hand",
+          "attack": 5,
+          "health": 5
+        }
+      ],
+      "description": "Give a minion -5/-5. Give a random minion in your hand +5/+5."
+    },
+    {
+      "id": "poison_breath",
+      "name": "Poison Breath",
+      "type": "sorcery",
+      "cost": 2,
+      "cardClass": "deathknight",
+      "rarity": "rare",
+      "set": "CORE",
+      "collectible": true,
+      "description": "Give a friendly Undead Poisonous.",
+      "effects": [
+        {
+          "type": "grant",
+          "target": "friendly-creature",
+          "tribe": "Undead",
+          "keyword": "poisonous"
+        }
+      ]
+    },
+    {
+      "id": "howling_blast",
+      "name": "Howling Blast",
+      "type": "sorcery",
+      "cost": 3,
+      "cardClass": "deathknight",
+      "rarity": "common",
+      "set": "PATH_OF_ARTHAS",
+      "collectible": true,
+      "tribe": "Frost",
+      "description": "Deal 3 damage to an enemy and Freeze it. Deal 1 damage to all other enemies.",
+      "effects": [
+        {
+          "type": "swipe",
+          "value": 3,
+          "splash": 1,
+          "target": "enemy-any"
+        },
+        {
+          "type": "freeze",
+          "target": "enemy-any"
+        }
+      ]
     }
   ]
 }

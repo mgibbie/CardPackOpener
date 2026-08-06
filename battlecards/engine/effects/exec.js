@@ -78,6 +78,7 @@ export function execEffects(state, pi, effects, target, source) {
 		if (e.valuePer === 'draws-this-turn') return (e.value || 1) * (p.drawsThisTurn || 0); // Mindbender
 		if (e.valuePer === 'friendly-deaths-this-turn') return (e.value || 1) * (p.diedThisTurn || 0); // Feast of Souls
 		if (e.valuePer === 'beasts-you-control') return (e.value || 0) + p.board.filter(c => !isDead(c) && (c.tribe || '').includes('Beast')).length; // Overwhelm: base + 1 per Beast you control
+		if (e.valuePer === 'corpses') return (e.value || 1) * (p.corpses || 0); // Fistful of Corpses: damage = your Corpses (not spent)
 		if (e.valuePer === 'damaged-friendly') {
 			let n = p.board.filter(c => !isDead(c) && c.damage > 0).length;
 			if (p.life < STARTING_LIFE) n++;
