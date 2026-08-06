@@ -152149,6 +152149,345 @@
           "count": 1
         }
       ]
+    },
+    {
+      "id": "stolen_goods",
+      "name": "Stolen Goods",
+      "cardClass": "warrior",
+      "cost": 2,
+      "rarity": "rare",
+      "type": "sorcery",
+      "set": "GANGS",
+      "collectible": true,
+      "effects": [
+        {
+          "type": "tutor",
+          "cardType": "creature",
+          "requireKeyword": "taunt",
+          "count": 1,
+          "buff": {
+            "attack": 2,
+            "health": 2
+          }
+        }
+      ],
+      "description": "Draw a Taunt minion. Give it +2/+2."
+    },
+    {
+      "id": "omega_assembly",
+      "name": "Omega Assembly",
+      "type": "sorcery",
+      "cost": 1,
+      "cardClass": "warrior",
+      "rarity": "rare",
+      "set": "BOOMSDAY",
+      "collectible": true,
+      "keywords": [
+        "discover"
+      ],
+      "description": "Discover a Mech.",
+      "effects": [
+        {
+          "type": "discover",
+          "cardType": "creature",
+          "tribe": "Mech"
+        }
+      ]
+    },
+    {
+      "id": "sweeping_strikes",
+      "name": "Sweeping Strikes",
+      "type": "sorcery",
+      "cost": 2,
+      "cardClass": "warrior",
+      "rarity": "rare",
+      "set": "DALARAN",
+      "collectible": true,
+      "description": "Give a minion \"Also damages minions next to whomever this attacks.\"",
+      "effects": [
+        {
+          "type": "grant",
+          "keyword": "cleave",
+          "target": "creature"
+        }
+      ]
+    },
+    {
+      "id": "plague_of_wrath",
+      "name": "Plague of Wrath",
+      "type": "sorcery",
+      "cost": 5,
+      "cardClass": "warrior",
+      "rarity": "rare",
+      "set": "PLACEHOLDER_202204",
+      "collectible": true,
+      "description": "Destroy all damaged minions.",
+      "effects": [
+        {
+          "type": "destroy-all",
+          "requireDamaged": true
+        }
+      ]
+    },
+    {
+      "id": "gather_your_party",
+      "name": "Gather Your Party",
+      "cardClass": "warrior",
+      "cost": 6,
+      "rarity": "rare",
+      "set": "LOOTAPALOOZA",
+      "collectible": true,
+      "type": "sorcery",
+      "description": "Recruit a minion.",
+      "effects": [
+        {
+          "type": "recruit"
+        }
+      ]
+    },
+    {
+      "id": "unidentified_shield",
+      "name": "Unidentified Shield",
+      "type": "sorcery",
+      "cost": 6,
+      "cardClass": "warrior",
+      "rarity": "common",
+      "set": "LOOTAPALOOZA",
+      "collectible": true,
+      "description": "Gain 5 Armor.",
+      "effects": [
+        {
+          "type": "armor",
+          "value": 5
+        }
+      ]
+    },
+    {
+      "id": "stolen_goods",
+      "name": "Stolen Goods",
+      "cardClass": "warrior",
+      "cost": 2,
+      "rarity": "rare",
+      "type": "sorcery",
+      "set": "GANGS",
+      "collectible": true,
+      "effects": [
+        {
+          "type": "tutor",
+          "cardType": "creature",
+          "requireKeyword": "taunt",
+          "count": 1,
+          "buff": {
+            "attack": 2,
+            "health": 2
+          }
+        }
+      ],
+      "description": "Draw a Taunt minion. Give it +2/+2."
+    },
+    {
+      "id": "plague_of_wrath",
+      "name": "Plague of Wrath",
+      "type": "sorcery",
+      "cost": 5,
+      "cardClass": "warrior",
+      "rarity": "rare",
+      "set": "PLACEHOLDER_202204",
+      "collectible": true,
+      "description": "Destroy all damaged minions.",
+      "effects": [
+        {
+          "type": "destroy-all",
+          "requireDamaged": true
+        }
+      ]
+    },
+    {
+      "id": "gather_your_party",
+      "name": "Gather Your Party",
+      "cardClass": "warrior",
+      "cost": 6,
+      "rarity": "rare",
+      "set": "LOOTAPALOOZA",
+      "collectible": true,
+      "type": "sorcery",
+      "description": "Recruit a minion.",
+      "effects": [
+        {
+          "type": "recruit"
+        }
+      ]
+    },
+    {
+      "id": "call_of_the_wild",
+      "name": "Call of the Wild",
+      "type": "sorcery",
+      "cost": 8,
+      "cardClass": "hunter",
+      "rarity": "epic",
+      "set": "CORE",
+      "collectible": true,
+      "description": "Summon all three Animal Companions.",
+      "effects": [
+        {
+          "type": "summon",
+          "count": 1,
+          "name": "Huffer",
+          "attack": 4,
+          "health": 2,
+          "keywords": [
+            "charge"
+          ],
+          "tribe": "Beast",
+          "description": "Charge."
+        },
+        {
+          "type": "summon",
+          "count": 1,
+          "name": "Misha",
+          "attack": 4,
+          "health": 4,
+          "keywords": [
+            "taunt"
+          ],
+          "tribe": "Beast",
+          "description": "Taunt."
+        },
+        {
+          "type": "summon",
+          "count": 1,
+          "name": "Leokk",
+          "attack": 2,
+          "health": 4,
+          "tribe": "Beast",
+          "aura": {
+            "attack": 1,
+            "health": 0,
+            "others": true
+          },
+          "description": "Your other creatures have +1 Attack."
+        }
+      ]
+    },
+    {
+      "id": "nine_lives",
+      "name": "Nine Lives",
+      "type": "sorcery",
+      "cardClass": "hunter",
+      "cost": 3,
+      "rarity": "epic",
+      "set": "DALARAN",
+      "collectible": true,
+      "description": "Discover a friendly Deathrattle minion that died this game. Also trigger its Deathrattle.",
+      "effects": [
+        {
+          "type": "discover",
+          "fromDied": true,
+          "cardType": "creature",
+          "requireKeyword": "deathrattle"
+        },
+        {
+          "type": "trigger-died-deathrattles",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "id": "unleash_the_beast",
+      "name": "Unleash the Beast",
+      "cardClass": "hunter",
+      "cost": 6,
+      "rarity": "rare",
+      "type": "sorcery",
+      "set": "DALARAN",
+      "collectible": true,
+      "effects": [
+        {
+          "type": "summon",
+          "count": 1,
+          "attack": 5,
+          "health": 5,
+          "name": "Wyvern",
+          "keywords": [
+            "rush"
+          ]
+        }
+      ],
+      "description": "Summon a 5/5 Wyvern with Rush."
+    },
+    {
+      "id": "call_of_the_wild",
+      "name": "Call of the Wild",
+      "type": "sorcery",
+      "cost": 8,
+      "cardClass": "hunter",
+      "rarity": "epic",
+      "set": "CORE",
+      "collectible": true,
+      "description": "Summon all three Animal Companions.",
+      "effects": [
+        {
+          "type": "summon",
+          "count": 1,
+          "name": "Huffer",
+          "attack": 4,
+          "health": 2,
+          "keywords": [
+            "charge"
+          ],
+          "tribe": "Beast",
+          "description": "Charge."
+        },
+        {
+          "type": "summon",
+          "count": 1,
+          "name": "Misha",
+          "attack": 4,
+          "health": 4,
+          "keywords": [
+            "taunt"
+          ],
+          "tribe": "Beast",
+          "description": "Taunt."
+        },
+        {
+          "type": "summon",
+          "count": 1,
+          "name": "Leokk",
+          "attack": 2,
+          "health": 4,
+          "tribe": "Beast",
+          "aura": {
+            "attack": 1,
+            "health": 0,
+            "others": true
+          },
+          "description": "Your other creatures have +1 Attack."
+        }
+      ]
+    },
+    {
+      "id": "unleash_the_beast",
+      "name": "Unleash the Beast",
+      "cardClass": "hunter",
+      "cost": 6,
+      "rarity": "rare",
+      "type": "sorcery",
+      "set": "DALARAN",
+      "collectible": true,
+      "effects": [
+        {
+          "type": "summon",
+          "count": 1,
+          "attack": 5,
+          "health": 5,
+          "name": "Wyvern",
+          "keywords": [
+            "rush"
+          ]
+        }
+      ],
+      "description": "Summon a 5/5 Wyvern with Rush."
     }
   ]
 }
