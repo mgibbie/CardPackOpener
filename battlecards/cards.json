@@ -144953,6 +144953,988 @@
           "pool": "enemies"
         }
       ]
+    },
+    {
+      "id": "whispers_of_evil",
+      "name": "Whispers of EVIL",
+      "type": "sorcery",
+      "cost": 0,
+      "cardClass": "priest",
+      "rarity": "common",
+      "set": "DRAGONS",
+      "collectible": true,
+      "description": "Add a Lackey to your hand.",
+      "effects": [
+        {
+          "type": "add-lackey"
+        }
+      ]
+    },
+    {
+      "id": "acupuncture",
+      "name": "Acupuncture",
+      "type": "sorcery",
+      "cost": 1,
+      "cardClass": "priest",
+      "rarity": "common",
+      "set": "ISLAND_VACATION",
+      "tribe": "Shadow",
+      "collectible": true,
+      "description": "Deal 4 damage to both heroes.",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 4,
+          "target": "all-heroes"
+        }
+      ]
+    },
+    {
+      "id": "binding_heal",
+      "name": "Binding Heal",
+      "cardClass": "priest",
+      "cost": 1,
+      "rarity": "common",
+      "type": "sorcery",
+      "set": "UNGORO",
+      "tribe": "Holy",
+      "collectible": true,
+      "effects": [
+        {
+          "type": "heal",
+          "value": 5,
+          "target": "creature"
+        },
+        {
+          "type": "heal",
+          "value": 5,
+          "target": "self"
+        }
+      ],
+      "description": "Restore 5 Health to a minion and your hero."
+    },
+    {
+      "id": "deafen",
+      "name": "Deafen",
+      "cardClass": "priest",
+      "cost": 1,
+      "rarity": "common",
+      "set": "BATTLE_OF_THE_BANDS",
+      "collectible": true,
+      "type": "sorcery",
+      "tribe": "Shadow",
+      "keywords": [
+        "combo"
+      ],
+      "combo": [
+        {
+          "type": "silence",
+          "target": "creature"
+        },
+        {
+          "type": "damage",
+          "value": 2,
+          "target": "creature"
+        }
+      ],
+      "effects": [
+        {
+          "type": "silence",
+          "target": "creature"
+        }
+      ],
+      "description": "Silence a minion. Combo: Also deal 2 damage to it."
+    },
+    {
+      "id": "draconic_studies",
+      "name": "Draconic Studies",
+      "type": "sorcery",
+      "cost": 1,
+      "cardClass": "priest",
+      "rarity": "common",
+      "set": "SCHOLOMANCE",
+      "collectible": true,
+      "description": "Discover a Dragon. Your next one costs (1) less.",
+      "effects": [
+        {
+          "type": "discover",
+          "pick": 3,
+          "tribe": "Dragon"
+        },
+        {
+          "type": "set-tribe-discount",
+          "tribe": "Dragon",
+          "count": 1,
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "embalming_ritual",
+      "name": "Embalming Ritual",
+      "type": "sorcery",
+      "cost": 1,
+      "cardClass": "priest",
+      "rarity": "common",
+      "set": "ULDUM",
+      "collectible": true,
+      "description": "Give a minion Reborn.",
+      "effects": [
+        {
+          "type": "grant",
+          "keyword": "reborn",
+          "target": "creature"
+        }
+      ]
+    },
+    {
+      "id": "focused_will",
+      "name": "Focused Will",
+      "cardClass": "priest",
+      "cost": 1,
+      "rarity": "rare",
+      "type": "sorcery",
+      "set": "PLACEHOLDER_202204",
+      "collectible": true,
+      "effects": [
+        {
+          "type": "silence",
+          "target": "creature"
+        },
+        {
+          "type": "buff",
+          "attack": 0,
+          "health": 3,
+          "target": "creature"
+        }
+      ],
+      "description": "Silence a minion, then give it +3 Health."
+    },
+    {
+      "id": "altar_of_fire",
+      "name": "Altar of Fire",
+      "cardClass": "warlock",
+      "cost": 1,
+      "rarity": "epic",
+      "set": "THE_BARRENS",
+      "collectible": true,
+      "type": "sorcery",
+      "tribe": "Fire",
+      "description": "Destroy the top 3 cards of each deck.",
+      "effects": [
+        {
+          "type": "mill",
+          "value": 3,
+          "target": "all"
+        }
+      ]
+    },
+    {
+      "id": "dig_for_treasure",
+      "name": "Dig for Treasure",
+      "type": "sorcery",
+      "cost": 1,
+      "cardClass": "rogue",
+      "rarity": "rare",
+      "set": "WHIZBANGS_WORKSHOP",
+      "collectible": true,
+      "description": "Draw a minion. If it's a Pirate, get a Coin.",
+      "effects": [
+        {
+          "type": "draw-minion-tribe-then",
+          "tribe": "Pirate",
+          "then": [
+            {
+              "type": "gain-coin",
+              "value": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "raise_dead",
+      "name": "Raise Dead",
+      "type": "sorcery",
+      "cost": 0,
+      "cardClass": "priest",
+      "rarity": "common",
+      "set": "SCHOLOMANCE",
+      "collectible": true,
+      "tribe": "Shadow",
+      "description": "Deal 3 damage to your hero. Return two friendly minions that died this game to your hand.",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 3,
+          "target": "own-hero"
+        },
+        {
+          "type": "add-random-died"
+        },
+        {
+          "type": "add-random-died"
+        }
+      ]
+    },
+    {
+      "id": "gift_of_the_naaru",
+      "name": "Gift of the Naaru",
+      "type": "sorcery",
+      "cost": 1,
+      "cardClass": "priest",
+      "rarity": "epic",
+      "set": "ALTERAC_VALLEY",
+      "collectible": true,
+      "tribe": "Holy",
+      "description": "Restore 3 Health to all characters. If any are still damaged, draw a card.",
+      "effects": [
+        {
+          "type": "heal",
+          "value": 3,
+          "target": "all-heroes"
+        },
+        {
+          "type": "heal",
+          "value": 3,
+          "target": "all-creatures"
+        },
+        {
+          "type": "conditional",
+          "if": {
+            "anyDamaged": true
+          },
+          "then": [
+            {
+              "type": "draw",
+              "value": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "mind_sear",
+      "name": "Mind Sear",
+      "cardClass": "priest",
+      "cost": 1,
+      "rarity": "common",
+      "set": "RETURN_OF_THE_LICH_KING",
+      "collectible": true,
+      "type": "sorcery",
+      "tribe": "Shadow",
+      "description": "Deal 2 damage to a minion. If it dies, deal 3 damage to the enemy hero.",
+      "effects": [
+        {
+          "type": "damage-then",
+          "value": 2,
+          "target": "creature",
+          "ifDies": [
+            {
+              "type": "damage",
+              "value": 3,
+              "target": "enemy-hero"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "pint_size_potion",
+      "name": "Pint-Size Potion",
+      "type": "sorcery",
+      "cardClass": "priest",
+      "cost": 1,
+      "rarity": "rare",
+      "set": "GANGS",
+      "collectible": true,
+      "tribe": "Shadow",
+      "description": "Give all enemy minions -3 Attack this turn only.",
+      "effects": [
+        {
+          "type": "debuff-enemies-attack-turn",
+          "value": 3
+        }
+      ]
+    },
+    {
+      "id": "power_word_barrier",
+      "name": "Power Word: Barrier",
+      "cardClass": "priest",
+      "cost": 1,
+      "rarity": "rare",
+      "set": "TIME_TRAVEL",
+      "collectible": true,
+      "type": "sorcery",
+      "tribe": "Holy",
+      "description": "Give a character Divine Shield. Give minions in your hand +2 Health.",
+      "effects": [
+        {
+          "type": "grant",
+          "keyword": "divine_shield",
+          "target": "creature"
+        },
+        {
+          "type": "buff-hand-minions",
+          "health": 2
+        }
+      ]
+    },
+    {
+      "id": "the_light_it_burns",
+      "name": "The Light! It Burns!",
+      "type": "sorcery",
+      "cost": 1,
+      "cardClass": "priest",
+      "rarity": "common",
+      "set": "PLACEHOLDER_202204",
+      "tribe": "Holy",
+      "collectible": true,
+      "description": "Deal damage to a minion equal to its Attack.",
+      "effects": [
+        {
+          "type": "damage-target-by-attack",
+          "target": "creature"
+        }
+      ]
+    },
+    {
+      "id": "bless",
+      "name": "Bless",
+      "cardClass": "priest",
+      "cost": 2,
+      "rarity": "rare",
+      "type": "sorcery",
+      "set": "ALTERAC_VALLEY",
+      "collectible": true,
+      "tribe": "Holy",
+      "description": "Give a minion +2 Health, then set its Attack to be equal to its Health.",
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 0,
+          "health": 2,
+          "target": "creature"
+        },
+        {
+          "type": "attack-equals-health",
+          "target": "creature"
+        }
+      ]
+    },
+    {
+      "id": "divine_star",
+      "name": "Divine Star",
+      "type": "sorcery",
+      "cost": 2,
+      "cardClass": "priest",
+      "rarity": "common",
+      "set": "SPACE",
+      "collectible": true,
+      "tribe": "Holy",
+      "description": "Deal 3 damage to a minion. Give a random minion in your hand +3 Health.",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 3,
+          "target": "creature"
+        },
+        {
+          "type": "buff-random-hand",
+          "health": 3
+        }
+      ]
+    },
+    {
+      "id": "mind_sear",
+      "name": "Mind Sear",
+      "cardClass": "priest",
+      "cost": 1,
+      "rarity": "common",
+      "set": "RETURN_OF_THE_LICH_KING",
+      "collectible": true,
+      "type": "sorcery",
+      "tribe": "Shadow",
+      "description": "Deal 2 damage to a minion. If it dies, deal 3 damage to the enemy hero.",
+      "effects": [
+        {
+          "type": "damage-then",
+          "value": 2,
+          "target": "creature",
+          "ifDies": [
+            {
+              "type": "damage",
+              "value": 3,
+              "target": "enemy-hero"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "ritual_of_doom",
+      "name": "Ritual of Doom",
+      "type": "sorcery",
+      "cost": 0,
+      "cardClass": "warlock",
+      "rarity": "rare",
+      "set": "PLACEHOLDER_202204",
+      "collectible": true,
+      "tribe": "Shadow",
+      "description": "Destroy a friendly minion. If you had 5 or more, summon a 5/5 Demon.",
+      "effects": [
+        {
+          "type": "destroy",
+          "target": "friendly-creature"
+        },
+        {
+          "type": "conditional",
+          "if": {
+            "minOtherCreatures": 4
+          },
+          "then": [
+            {
+              "type": "summon",
+              "count": 1,
+              "attack": 5,
+              "health": 5,
+              "name": "Demon",
+              "tribe": "Demon"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "chaotic_consumption",
+      "name": "Chaotic Consumption",
+      "cardClass": "warlock",
+      "cost": 1,
+      "rarity": "epic",
+      "set": "TITANS",
+      "type": "sorcery",
+      "collectible": true,
+      "effects": [
+        {
+          "type": "destroy",
+          "target": "friendly-creature",
+          "then": [
+            {
+              "type": "destroy-random"
+            }
+          ]
+        }
+      ],
+      "description": "Destroy a friendly minion to destroy an enemy minion."
+    },
+    {
+      "id": "demonic_studies",
+      "name": "Demonic Studies",
+      "type": "sorcery",
+      "cost": 1,
+      "cardClass": "warlock",
+      "rarity": "common",
+      "set": "PLACEHOLDER_202204",
+      "collectible": true,
+      "tribe": "Shadow",
+      "description": "Discover a Demon. Your next one costs (1) less.",
+      "effects": [
+        {
+          "type": "discover",
+          "cardType": "creature",
+          "tribe": "Demon",
+          "pick": 3
+        },
+        {
+          "type": "set-tribe-discount",
+          "tribe": "Demon",
+          "count": 1,
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "final_gasp",
+      "name": "Final Gasp",
+      "cardClass": "warlock",
+      "cost": 1,
+      "rarity": "common",
+      "set": "THE_BARRENS",
+      "collectible": true,
+      "type": "sorcery",
+      "tribe": "Shadow",
+      "effects": [
+        {
+          "type": "damage-then",
+          "value": 1,
+          "target": "creature",
+          "ifDies": [
+            {
+              "type": "summon",
+              "count": 1,
+              "attack": 2,
+              "health": 2,
+              "name": "Adventurer with a random bonus effect"
+            }
+          ]
+        }
+      ],
+      "description": "Deal 1 damage to a minion. If it dies, summon a 2/2 Adventurer with a random bonus effect."
+    },
+    {
+      "id": "touch_of_the_nathrezim",
+      "name": "Touch of the Nathrezim",
+      "type": "sorcery",
+      "cardClass": "warlock",
+      "cost": 1,
+      "rarity": "rare",
+      "set": "STORMWIND",
+      "collectible": true,
+      "tribe": "Shadow",
+      "description": "Deal 2 damage to a minion. If it dies, restore 3 Health to your hero.",
+      "effects": [
+        {
+          "type": "damage-then",
+          "value": 2,
+          "target": "creature",
+          "ifDies": [
+            {
+              "type": "heal",
+              "value": 3,
+              "target": "self"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "unstable_felbolt",
+      "name": "Unstable Felbolt",
+      "cardClass": "warlock",
+      "cost": 1,
+      "rarity": "common",
+      "set": "BLACK_TEMPLE",
+      "collectible": true,
+      "type": "sorcery",
+      "tribe": "Fel",
+      "description": "Deal 3 damage to an enemy minion and a random friendly one.",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 3,
+          "target": "enemy-creature"
+        },
+        {
+          "type": "random-damage",
+          "value": 3,
+          "count": 1,
+          "pool": "friendly-others"
+        }
+      ]
+    },
+    {
+      "id": "darkbomb",
+      "name": "Darkbomb",
+      "type": "sorcery",
+      "cost": 2,
+      "cardClass": "warlock",
+      "rarity": "common",
+      "set": "GVG",
+      "collectible": true,
+      "tribe": "Shadow",
+      "description": "Deal 3 damage to a character. If it dies, draw a Shadow spell.",
+      "effects": [
+        {
+          "type": "damage-then",
+          "value": 3,
+          "target": "any",
+          "ifDies": [
+            {
+              "type": "tutor",
+              "cardType": "spell",
+              "school": "Shadow",
+              "count": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "defile",
+      "name": "Defile",
+      "type": "sorcery",
+      "cost": 2,
+      "cardClass": "warlock",
+      "rarity": "rare",
+      "set": "PLACEHOLDER_202204",
+      "collectible": true,
+      "tribe": "Shadow",
+      "description": "Deal 1 damage to all minions. If any die, cast this again.",
+      "effects": [
+        {
+          "type": "spammy-arcanist",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "eat_the_imp",
+      "name": "Eat! The! Imp!",
+      "cardClass": "warlock",
+      "cost": 2,
+      "rarity": "common",
+      "set": "ISLAND_VACATION",
+      "collectible": true,
+      "tribe": "Fire",
+      "description": "Destroy a friendly minion to draw 3 cards.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "destroy",
+          "target": "friendly-creature",
+          "then": [
+            {
+              "type": "draw",
+              "value": 3
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "curse_of_rafaam",
+      "name": "Curse of Rafaam",
+      "type": "sorcery",
+      "cost": 2,
+      "cardClass": "warlock",
+      "rarity": "common",
+      "set": "LOE",
+      "collectible": true,
+      "tribe": "Shadow",
+      "description": "Give your opponent a 'Cursed!' card. While they hold it, they take 2 damage on their turn.",
+      "effects": [
+        {
+          "type": "add-card",
+          "id": "dala_cursed",
+          "count": 1,
+          "toEnemy": true
+        }
+      ]
+    },
+    {
+      "id": "imp_swarm",
+      "name": "Imp Swarm (Rank 1)",
+      "type": "sorcery",
+      "cost": 2,
+      "cardClass": "warlock",
+      "rarity": "common",
+      "set": "THE_BARRENS",
+      "collectible": true,
+      "tribe": "Fel",
+      "description": "Summon a 3/2 Imp. (Upgrades when you have 5 Mana.)",
+      "effects": [
+        {
+          "type": "summon",
+          "count": 1,
+          "attack": 3,
+          "health": 2,
+          "name": "Imp",
+          "tribe": "Demon"
+        },
+        {
+          "type": "conditional",
+          "if": {
+            "manathirst": 5
+          },
+          "then": [
+            {
+              "type": "summon",
+              "count": 1,
+              "attack": 3,
+              "health": 2,
+              "name": "Imp",
+              "tribe": "Demon"
+            }
+          ]
+        },
+        {
+          "type": "conditional",
+          "if": {
+            "manathirst": 10
+          },
+          "then": [
+            {
+              "type": "summon",
+              "count": 1,
+              "attack": 3,
+              "health": 2,
+              "name": "Imp",
+              "tribe": "Demon"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "assembly_line",
+      "name": "Assembly Line",
+      "cardClass": "rogue",
+      "cost": 1,
+      "rarity": "rare",
+      "type": "sorcery",
+      "set": "TITANS",
+      "collectible": true,
+      "description": "Discover a Mech from another class.",
+      "effects": [
+        {
+          "type": "discover",
+          "pick": 3,
+          "cardType": "creature",
+          "tribe": "Mech"
+        }
+      ]
+    },
+    {
+      "id": "dragon_s_hoard",
+      "name": "Dragon's Hoard",
+      "type": "sorcery",
+      "cost": 1,
+      "cardClass": "rogue",
+      "rarity": "rare",
+      "set": "DRAGONS",
+      "collectible": true,
+      "description": "Discover a Legendary minion from another class.",
+      "effects": [
+        {
+          "type": "discover",
+          "pick": 3,
+          "cardType": "creature",
+          "rarity": "legendary"
+        }
+      ]
+    },
+    {
+      "id": "gear_shift",
+      "name": "Gear Shift",
+      "type": "sorcery",
+      "cost": 1,
+      "cardClass": "rogue",
+      "rarity": "rare",
+      "set": "TITANS",
+      "collectible": true,
+      "description": "Shuffle the two left-most cards in your hand into your deck. Draw 3 cards.",
+      "effects": [
+        {
+          "type": "shuffle-leftmost-hand-into-deck"
+        },
+        {
+          "type": "shuffle-leftmost-hand-into-deck"
+        },
+        {
+          "type": "draw",
+          "value": 3
+        }
+      ]
+    },
+    {
+      "id": "journey_below",
+      "name": "Journey Below",
+      "cardClass": "rogue",
+      "cost": 1,
+      "rarity": "rare",
+      "set": "OG",
+      "collectible": true,
+      "type": "sorcery",
+      "description": "Discover a Deathrattle card.",
+      "effects": [
+        {
+          "type": "discover",
+          "pick": 3,
+          "cardType": "creature",
+          "requireKeyword": "deathrattle"
+        }
+      ]
+    },
+    {
+      "id": "leeching_poison",
+      "name": "Leeching Poison",
+      "type": "sorcery",
+      "cost": 1,
+      "cardClass": "rogue",
+      "rarity": "common",
+      "set": "PLACEHOLDER_202204",
+      "tribe": "Nature",
+      "collectible": true,
+      "description": "Give your weapon Lifesteal this turn.",
+      "effects": [
+        {
+          "type": "grant-weapon-ability",
+          "keywordTurn": "lifesteal"
+        }
+      ]
+    },
+    {
+      "id": "paralytic_poison",
+      "name": "Paralytic Poison",
+      "type": "sorcery",
+      "cost": 1,
+      "cardClass": "rogue",
+      "rarity": "rare",
+      "set": "THE_BARRENS",
+      "tribe": "Nature",
+      "description": "Give your weapon +1 Attack and \"Your hero is Immune while attacking.\"",
+      "collectible": true,
+      "effects": [
+        {
+          "type": "grant-weapon-ability",
+          "attack": 1,
+          "immuneAttacking": true
+        }
+      ]
+    },
+    {
+      "id": "silverleaf_poison",
+      "name": "Silverleaf Poison",
+      "type": "sorcery",
+      "cost": 1,
+      "cardClass": "rogue",
+      "rarity": "common",
+      "set": "THE_BARRENS",
+      "collectible": true,
+      "tribe": "Nature",
+      "description": "Give your weapon \"After your hero attacks, draw a card.\"",
+      "effects": [
+        {
+          "type": "grant-weapon-ability",
+          "afterHeroAttack": [
+            {
+              "type": "draw",
+              "value": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "spore_hallucination",
+      "name": "Spore Hallucination",
+      "type": "sorcery",
+      "cost": 1,
+      "cardClass": "rogue",
+      "rarity": "common",
+      "set": "UNGORO",
+      "tribe": "Nature",
+      "collectible": true,
+      "description": "Discover a card from your opponent's class.",
+      "effects": [
+        {
+          "type": "discover",
+          "cardClass": "enemy"
+        }
+      ]
+    },
+    {
+      "id": "twisted_pack",
+      "name": "Twisted Pack",
+      "cardClass": "rogue",
+      "cost": 1,
+      "rarity": "rare",
+      "type": "sorcery",
+      "collectible": true,
+      "effects": [
+        {
+          "type": "conjure-random",
+          "cardClass": "other",
+          "count": 5,
+          "makeTemporary": true
+        }
+      ],
+      "description": "Add 5 random cards from other classes to your hand. They are Temporary.",
+      "set": "WHIZBANGS_WORKSHOP"
+    },
+    {
+      "id": "clever_disguise",
+      "name": "Clever Disguise",
+      "cardClass": "rogue",
+      "cost": 2,
+      "rarity": "common",
+      "type": "sorcery",
+      "collectible": true,
+      "effects": [
+        {
+          "type": "conjure-random",
+          "cardType": "spell",
+          "cardClass": "other",
+          "count": 2
+        }
+      ],
+      "description": "Add 2 random spells from another class to your hand.",
+      "set": "ULDUM"
+    },
+    {
+      "id": "jackpot",
+      "name": "Jackpot!",
+      "cardClass": "rogue",
+      "cost": 2,
+      "rarity": "common",
+      "type": "sorcery",
+      "set": "CORE",
+      "collectible": true,
+      "effects": [
+        {
+          "type": "conjure-random",
+          "cardType": "spell",
+          "cardClass": "other",
+          "minCost": 5,
+          "count": 2
+        }
+      ],
+      "description": "Add two random spells from other classes that cost (5) or more to your hand."
+    },
+    {
+      "id": "mimic_pod",
+      "name": "Mimic Pod",
+      "type": "sorcery",
+      "cost": 2,
+      "cardClass": "rogue",
+      "rarity": "rare",
+      "set": "UNGORO",
+      "collectible": true,
+      "tribe": "Nature",
+      "description": "Draw a card, then add a copy of it to your hand.",
+      "effects": [
+        {
+          "type": "copy-deck-top-to-hand",
+          "count": 1
+        },
+        {
+          "type": "draw",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "gear_shift",
+      "name": "Gear Shift",
+      "type": "sorcery",
+      "cost": 1,
+      "cardClass": "rogue",
+      "rarity": "rare",
+      "set": "TITANS",
+      "collectible": true,
+      "description": "Shuffle the two left-most cards in your hand into your deck. Draw 3 cards.",
+      "effects": [
+        {
+          "type": "shuffle-leftmost-hand-into-deck"
+        },
+        {
+          "type": "shuffle-leftmost-hand-into-deck"
+        },
+        {
+          "type": "draw",
+          "value": 3
+        }
+      ]
     }
   ]
 }
