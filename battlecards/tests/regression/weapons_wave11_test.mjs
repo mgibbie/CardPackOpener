@@ -24,9 +24,12 @@ for (const id of ['the_fist_of_ra_den', 'dragon_soul']) ok(`${id} exists`, cards
 	const st = game(); const w = equip(st, 'the_fist_of_ra_den'); const d0 = w.durability;
 	const b0 = st.players[0].board.length;
 	cast(st, 5);
-	const summoned = st.players[0].board[st.players[0].board.length - 1];
-	ok('Fist of Ra-den summoned a minion after the spell', st.players[0].board.length === b0 + 1, st.players[0].board.length - b0);
-	ok('the summoned minion is a 5-Cost Legendary', summoned && (cardsById[summoned.id]?.rarity === 'legendary') && (cardsById[summoned.id]?.cost === 5), summoned && [cardsById[summoned.id]?.rarity, cardsById[summoned.id]?.cost]);
+	// a random 5-Cost Legendary; may be Colossal (summons appendages too), so
+	// scan the newly-summoned minions rather than assuming exactly one
+	const newOnes = st.players[0].board.slice(b0);
+	const leg = newOnes.find(c => cardsById[c.id]?.rarity === 'legendary' && cardsById[c.id]?.cost === 5);
+	ok('Fist of Ra-den summoned a minion after the spell', newOnes.length >= 1, newOnes.length);
+	ok('a 5-Cost Legendary was summoned', !!leg, newOnes.map(c => [cardsById[c.id]?.rarity, cardsById[c.id]?.cost]));
 	ok('Fist of Ra-den lost 1 Durability', st.players[0].weapon.durability === d0 - 1, [d0, st.players[0].weapon?.durability]);
 }
 // Dragon Soul: after your 3rd spell in a turn, summon a 5/5 Dragon

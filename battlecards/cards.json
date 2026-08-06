@@ -147645,6 +147645,857 @@
           "target": "enemy-any"
         }
       ]
+    },
+    {
+      "id": "rising_waves",
+      "name": "Rising Waves",
+      "type": "sorcery",
+      "cost": 3,
+      "cardClass": "mage",
+      "rarity": "rare",
+      "set": "ISLAND_VACATION",
+      "collectible": true,
+      "description": "Deal 2 damage to all minions. If none die, deal 2 more.",
+      "effects": [
+        {
+          "type": "damage-all-minions",
+          "value": 2
+        },
+        {
+          "type": "conditional",
+          "if": {
+            "anyDiedThisTurn": true
+          },
+          "then": [],
+          "else": [
+            {
+              "type": "damage-all-minions",
+              "value": 2
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "font_of_power",
+      "name": "Font of Power",
+      "type": "sorcery",
+      "cost": 1,
+      "cardClass": "mage",
+      "rarity": "rare",
+      "set": "BLACK_TEMPLE",
+      "tribe": "Arcane",
+      "collectible": true,
+      "description": "Discover a Mage minion. If your deck has no minions, keep all 3 instead.",
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "deckNoMinions": true
+          },
+          "then": [
+            {
+              "type": "conjure-random",
+              "cardType": "creature",
+              "cardClass": "mage",
+              "count": 3
+            }
+          ],
+          "else": [
+            {
+              "type": "discover",
+              "cardType": "creature",
+              "cardClasses": [
+                "mage"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "lesser_ruby_spellstone",
+      "name": "Lesser Ruby Spellstone",
+      "cardClass": "mage",
+      "cost": 2,
+      "rarity": "rare",
+      "set": "LOOTAPALOOZA",
+      "collectible": true,
+      "tribe": "Fire",
+      "description": "Add 1 random Mage spell to your hand.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "conjure-named",
+          "count": 1,
+          "cardClass": "mage",
+          "cardType": "spell"
+        }
+      ]
+    },
+    {
+      "id": "spontaneous_combustion",
+      "name": "Spontaneous Combustion",
+      "cardClass": "mage",
+      "cost": 2,
+      "rarity": "common",
+      "set": "SPACE",
+      "collectible": true,
+      "type": "sorcery",
+      "tribe": "Fire",
+      "description": "Deal 4 damage to a random enemy.",
+      "effects": [
+        {
+          "type": "random-damage",
+          "value": 4,
+          "pool": "enemies",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "id": "tear_reality",
+      "name": "Tear Reality",
+      "cardClass": "mage",
+      "cost": 4,
+      "rarity": "common",
+      "set": "RETURN_OF_THE_LICH_KING",
+      "collectible": true,
+      "tribe": "Arcane",
+      "description": "Add 2 random Mage spells from the past to your hand. They cost (2) less.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "conjure-named",
+          "count": 2,
+          "cardClass": "mage",
+          "cardType": "spell",
+          "costMod": -2
+        }
+      ]
+    },
+    {
+      "id": "spontaneous_combustion",
+      "name": "Spontaneous Combustion",
+      "cardClass": "mage",
+      "cost": 2,
+      "rarity": "common",
+      "set": "SPACE",
+      "collectible": true,
+      "type": "sorcery",
+      "tribe": "Fire",
+      "description": "Deal 4 damage to a random enemy.",
+      "effects": [
+        {
+          "type": "random-damage",
+          "value": 4,
+          "pool": "enemies",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "id": "multi_strike",
+      "name": "Multi-Strike",
+      "type": "sorcery",
+      "cost": 2,
+      "cardClass": "demonhunter",
+      "rarity": "rare",
+      "set": "THE_SUNKEN_CITY",
+      "collectible": true,
+      "tribe": "Fel",
+      "description": "Give your hero +2 Attack this turn.",
+      "effects": [
+        {
+          "type": "hero-temp-attack",
+          "value": 2
+        }
+      ]
+    },
+    {
+      "id": "horn_of_feasting",
+      "name": "Horn of Feasting",
+      "type": "sorcery",
+      "cost": 4,
+      "cardClass": "demonhunter",
+      "rarity": "common",
+      "set": "THE_LOST_CITY",
+      "collectible": true,
+      "description": "Summon three 2/1 Raptors with Rush.",
+      "effects": [
+        {
+          "type": "summon",
+          "count": 3,
+          "attack": 2,
+          "health": 1,
+          "name": "Raptor",
+          "tribe": "Beast",
+          "keywords": [
+            "rush"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "hounds_of_fury",
+      "name": "Hounds of Fury",
+      "cardClass": "demonhunter",
+      "cost": 4,
+      "rarity": "rare",
+      "type": "sorcery",
+      "collectible": true,
+      "set": "TIME_TRAVEL",
+      "effects": [
+        {
+          "type": "summon",
+          "count": 2,
+          "attack": 3,
+          "health": 2,
+          "name": "Demon",
+          "tribe": "Demon"
+        }
+      ],
+      "description": "Summon two 3/2 Demons."
+    },
+    {
+      "id": "remixed_rhapsody",
+      "name": "Remixed Rhapsody",
+      "type": "sorcery",
+      "cost": 5,
+      "cardClass": "demonhunter",
+      "rarity": "rare",
+      "set": "BATTLE_OF_THE_BANDS",
+      "collectible": true,
+      "description": "Deal 3 damage to all minions.",
+      "effects": [
+        {
+          "type": "damage-all-minions",
+          "value": 3
+        }
+      ]
+    },
+    {
+      "id": "pocket_sand",
+      "name": "Pocket Sand",
+      "type": "sorcery",
+      "cardClass": "demonhunter",
+      "cost": 2,
+      "rarity": "common",
+      "set": "WILD_WEST",
+      "collectible": true,
+      "description": "Deal 3 damage.",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 3,
+          "target": "any"
+        }
+      ]
+    },
+    {
+      "id": "horn_of_feasting",
+      "name": "Horn of Feasting",
+      "type": "sorcery",
+      "cost": 4,
+      "cardClass": "demonhunter",
+      "rarity": "common",
+      "set": "THE_LOST_CITY",
+      "collectible": true,
+      "description": "Summon three 2/1 Raptors with Rush.",
+      "effects": [
+        {
+          "type": "summon",
+          "count": 3,
+          "attack": 2,
+          "health": 1,
+          "name": "Raptor",
+          "tribe": "Beast",
+          "keywords": [
+            "rush"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "hounds_of_fury",
+      "name": "Hounds of Fury",
+      "cardClass": "demonhunter",
+      "cost": 4,
+      "rarity": "rare",
+      "type": "sorcery",
+      "collectible": true,
+      "set": "TIME_TRAVEL",
+      "effects": [
+        {
+          "type": "summon",
+          "count": 2,
+          "attack": 3,
+          "health": 2,
+          "name": "Demon",
+          "tribe": "Demon"
+        }
+      ],
+      "description": "Summon two 3/2 Demons."
+    },
+    {
+      "id": "remixed_rhapsody",
+      "name": "Remixed Rhapsody",
+      "type": "sorcery",
+      "cost": 5,
+      "cardClass": "demonhunter",
+      "rarity": "rare",
+      "set": "BATTLE_OF_THE_BANDS",
+      "collectible": true,
+      "description": "Deal 3 damage to all minions.",
+      "effects": [
+        {
+          "type": "damage-all-minions",
+          "value": 3
+        }
+      ]
+    },
+    {
+      "id": "multi_strike",
+      "name": "Multi-Strike",
+      "type": "sorcery",
+      "cost": 2,
+      "cardClass": "demonhunter",
+      "rarity": "rare",
+      "set": "THE_SUNKEN_CITY",
+      "collectible": true,
+      "tribe": "Fel",
+      "description": "Give your hero +2 Attack this turn.",
+      "effects": [
+        {
+          "type": "hero-temp-attack",
+          "value": 2
+        }
+      ]
+    },
+    {
+      "id": "spirit_bond",
+      "name": "Spirit Bond",
+      "type": "sorcery",
+      "cost": 3,
+      "cardClass": "hunter",
+      "rarity": "rare",
+      "set": "EMERALD_DREAM",
+      "collectible": true,
+      "tribe": "Nature",
+      "description": "Deal 3 damage to a minion. If it dies, summon a 3/2 Wolf with Rush.",
+      "effects": [
+        {
+          "type": "damage-then",
+          "value": 3,
+          "target": "creature",
+          "ifDies": [
+            {
+              "type": "summon",
+              "count": 1,
+              "attack": 3,
+              "health": 2,
+              "name": "Wolf",
+              "tribe": "Beast",
+              "keywords": [
+                "rush"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "shellshot",
+      "name": "Shellshot",
+      "cardClass": "hunter",
+      "cost": 3,
+      "rarity": "rare",
+      "set": "THE_SUNKEN_CITY",
+      "collectible": true,
+      "type": "sorcery",
+      "tribe": "Nature",
+      "effects": [
+        {
+          "type": "random-damage",
+          "value": 3,
+          "pool": "enemy-creatures",
+          "count": 1
+        },
+        {
+          "type": "random-damage",
+          "value": 2,
+          "pool": "enemy-creatures",
+          "count": 1
+        },
+        {
+          "type": "random-damage",
+          "value": 1,
+          "pool": "enemy-creatures",
+          "count": 1
+        }
+      ],
+      "description": "Deal 3 damage to a random enemy minion. Repeat this with 1 less damage."
+    },
+    {
+      "id": "scrap_shot",
+      "name": "Scrap Shot",
+      "type": "sorcery",
+      "cardClass": "hunter",
+      "cost": 4,
+      "rarity": "rare",
+      "set": "BLACK_TEMPLE",
+      "collectible": true,
+      "description": "Deal 3 damage. Give a random Beast in your hand +3/+3.",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 3,
+          "target": "any"
+        },
+        {
+          "type": "buff-random-hand-tribe",
+          "tribe": "Beast",
+          "attack": 3,
+          "health": 3
+        }
+      ]
+    },
+    {
+      "id": "eversong_portal",
+      "name": "Eversong Portal",
+      "cardClass": "hunter",
+      "cost": 4,
+      "rarity": "rare",
+      "set": "RETURN_OF_THE_LICH_KING",
+      "tribe": "Arcane",
+      "type": "sorcery",
+      "collectible": true,
+      "description": "Summon a 4/4 Lynx with Rush.",
+      "effects": [
+        {
+          "type": "summon",
+          "count": 1,
+          "attack": 4,
+          "health": 4,
+          "name": "Lynx",
+          "tribe": "Beast",
+          "keywords": [
+            "rush"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "dig_for_freedom",
+      "name": "Dig for Freedom",
+      "cardClass": "hunter",
+      "cost": 4,
+      "rarity": "rare",
+      "set": "ESCAPEFROM_VIOLET_HOLD",
+      "collectible": true,
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "grant-deathrattle",
+          "target": "creature",
+          "effects": [
+            {
+              "type": "summon-random",
+              "cost": 4,
+              "count": 2
+            }
+          ]
+        }
+      ],
+      "description": "Give a friendly minion \"Deathrattle: Summon two random 4-Cost minions.\""
+    },
+    {
+      "id": "r_c_rampage",
+      "name": "R.C. Rampage",
+      "cardClass": "hunter",
+      "cost": 4,
+      "rarity": "epic",
+      "set": "WHIZBANGS_WORKSHOP",
+      "collectible": true,
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "summon",
+          "count": 6,
+          "attack": 1,
+          "health": 1,
+          "name": "Hound"
+        }
+      ],
+      "description": "Summon six 1/1 Hounds."
+    },
+    {
+      "id": "celestial_shot",
+      "name": "Celestial Shot",
+      "type": "sorcery",
+      "cost": 3,
+      "cardClass": "hunter",
+      "rarity": "common",
+      "set": "TITANS",
+      "tribe": "Arcane",
+      "collectible": true,
+      "description": "Deal 3 damage. Your next spell has Spell Damage +2.",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 3,
+          "target": "any"
+        },
+        {
+          "type": "set-next-spell-damage",
+          "value": 2
+        }
+      ]
+    },
+    {
+      "id": "earthen_roar",
+      "name": "Earthen Roar",
+      "cardClass": "hunter",
+      "cost": 1,
+      "rarity": "rare",
+      "set": "CATACLYSM",
+      "collectible": true,
+      "type": "sorcery",
+      "description": "Set an enemy minion's Health to 1.",
+      "effects": [
+        {
+          "type": "set-health",
+          "value": 1,
+          "target": "enemy-creature"
+        }
+      ]
+    },
+    {
+      "id": "monkey_business",
+      "name": "Monkey Business",
+      "type": "sorcery",
+      "cost": 4,
+      "cardClass": "hunter",
+      "rarity": "rare",
+      "set": "ISLAND_VACATION",
+      "collectible": true,
+      "description": "Add 8 Bananas to your hand.",
+      "effects": [
+        {
+          "type": "add-card",
+          "id": "banana",
+          "count": 8
+        }
+      ]
+    },
+    {
+      "id": "spirit_bond",
+      "name": "Spirit Bond",
+      "type": "sorcery",
+      "cost": 3,
+      "cardClass": "hunter",
+      "rarity": "rare",
+      "set": "EMERALD_DREAM",
+      "collectible": true,
+      "tribe": "Nature",
+      "description": "Deal 3 damage to a minion. If it dies, summon a 3/2 Wolf with Rush.",
+      "effects": [
+        {
+          "type": "damage-then",
+          "value": 3,
+          "target": "creature",
+          "ifDies": [
+            {
+              "type": "summon",
+              "count": 1,
+              "attack": 3,
+              "health": 2,
+              "name": "Wolf",
+              "tribe": "Beast",
+              "keywords": [
+                "rush"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "scrap_shot",
+      "name": "Scrap Shot",
+      "type": "sorcery",
+      "cardClass": "hunter",
+      "cost": 4,
+      "rarity": "rare",
+      "set": "BLACK_TEMPLE",
+      "collectible": true,
+      "description": "Deal 3 damage. Give a random Beast in your hand +3/+3.",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 3,
+          "target": "any"
+        },
+        {
+          "type": "buff-random-hand-tribe",
+          "tribe": "Beast",
+          "attack": 3,
+          "health": 3
+        }
+      ]
+    },
+    {
+      "id": "eversong_portal",
+      "name": "Eversong Portal",
+      "cardClass": "hunter",
+      "cost": 4,
+      "rarity": "rare",
+      "set": "RETURN_OF_THE_LICH_KING",
+      "tribe": "Arcane",
+      "type": "sorcery",
+      "collectible": true,
+      "description": "Summon a 4/4 Lynx with Rush.",
+      "effects": [
+        {
+          "type": "summon",
+          "count": 1,
+          "attack": 4,
+          "health": 4,
+          "name": "Lynx",
+          "tribe": "Beast",
+          "keywords": [
+            "rush"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "shellshot",
+      "name": "Shellshot",
+      "cardClass": "hunter",
+      "cost": 3,
+      "rarity": "rare",
+      "set": "THE_SUNKEN_CITY",
+      "collectible": true,
+      "type": "sorcery",
+      "tribe": "Nature",
+      "effects": [
+        {
+          "type": "random-damage",
+          "value": 3,
+          "pool": "enemy-creatures",
+          "count": 1
+        },
+        {
+          "type": "random-damage",
+          "value": 2,
+          "pool": "enemy-creatures",
+          "count": 1
+        },
+        {
+          "type": "random-damage",
+          "value": 1,
+          "pool": "enemy-creatures",
+          "count": 1
+        }
+      ],
+      "description": "Deal 3 damage to a random enemy minion. Repeat this with 1 less damage."
+    },
+    {
+      "id": "dig_for_freedom",
+      "name": "Dig for Freedom",
+      "cardClass": "hunter",
+      "cost": 4,
+      "rarity": "rare",
+      "set": "ESCAPEFROM_VIOLET_HOLD",
+      "collectible": true,
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "grant-deathrattle",
+          "target": "creature",
+          "effects": [
+            {
+              "type": "summon-random",
+              "cost": 4,
+              "count": 2
+            }
+          ]
+        }
+      ],
+      "description": "Give a friendly minion \"Deathrattle: Summon two random 4-Cost minions.\""
+    },
+    {
+      "id": "resizing_pouch",
+      "name": "Resizing Pouch",
+      "type": "sorcery",
+      "cardClass": "neutral",
+      "cost": 1,
+      "rarity": "common",
+      "set": "DARKMOON_FAIRE",
+      "collectible": true,
+      "description": "Discover a card with Cost equal to your remaining Mana Crystals.",
+      "effects": [
+        {
+          "type": "discover",
+          "costFromMana": true
+        }
+      ]
+    },
+    {
+      "id": "coerce",
+      "name": "Coerce",
+      "cardClass": "neutral",
+      "cost": 3,
+      "rarity": "rare",
+      "set": "SCHOLOMANCE",
+      "collectible": true,
+      "type": "sorcery",
+      "combo": [
+        {
+          "type": "destroy",
+          "target": "creature"
+        }
+      ],
+      "effects": [
+        {
+          "type": "destroy",
+          "target": "creature",
+          "requireDamaged": true
+        }
+      ],
+      "description": "Destroy a damaged minion. Combo: Destroy any minion."
+    },
+    {
+      "id": "barricade",
+      "name": "Barricade",
+      "cardClass": "neutral",
+      "cost": 4,
+      "rarity": "common",
+      "type": "sorcery",
+      "set": "DARKMOON_FAIRE",
+      "collectible": true,
+      "description": "Summon a 2/4 Guard with Taunt. If it's your only minion, summon another.",
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "noOtherCreatures": true
+          },
+          "then": [
+            {
+              "type": "summon",
+              "count": 2,
+              "attack": 2,
+              "health": 4,
+              "name": "Guard",
+              "keywords": [
+                "taunt"
+              ]
+            }
+          ],
+          "else": [
+            {
+              "type": "summon",
+              "count": 1,
+              "attack": 2,
+              "health": 4,
+              "name": "Guard",
+              "keywords": [
+                "taunt"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "cutting_class",
+      "name": "Cutting Class",
+      "type": "sorcery",
+      "cardClass": "neutral",
+      "cost": 5,
+      "rarity": "common",
+      "set": "SCHOLOMANCE",
+      "collectible": true,
+      "selfCost": {
+        "per": "weapon-attack",
+        "amount": -1
+      },
+      "effects": [
+        {
+          "type": "draw",
+          "value": 2
+        }
+      ],
+      "description": "Draw 2 cards. Costs (1) less per Attack of your weapon."
+    },
+    {
+      "id": "coerce",
+      "name": "Coerce",
+      "cardClass": "neutral",
+      "cost": 3,
+      "rarity": "rare",
+      "set": "SCHOLOMANCE",
+      "collectible": true,
+      "type": "sorcery",
+      "combo": [
+        {
+          "type": "destroy",
+          "target": "creature"
+        }
+      ],
+      "effects": [
+        {
+          "type": "destroy",
+          "target": "creature",
+          "requireDamaged": true
+        }
+      ],
+      "description": "Destroy a damaged minion. Combo: Destroy any minion."
+    },
+    {
+      "id": "barricade",
+      "name": "Barricade",
+      "cardClass": "neutral",
+      "cost": 4,
+      "rarity": "common",
+      "type": "sorcery",
+      "set": "DARKMOON_FAIRE",
+      "collectible": true,
+      "description": "Summon a 2/4 Guard with Taunt. If it's your only minion, summon another.",
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "noOtherCreatures": true
+          },
+          "then": [
+            {
+              "type": "summon",
+              "count": 2,
+              "attack": 2,
+              "health": 4,
+              "name": "Guard",
+              "keywords": [
+                "taunt"
+              ]
+            }
+          ],
+          "else": [
+            {
+              "type": "summon",
+              "count": 1,
+              "attack": 2,
+              "health": 4,
+              "name": "Guard",
+              "keywords": [
+                "taunt"
+              ]
+            }
+          ]
+        }
+      ]
     }
   ]
 }

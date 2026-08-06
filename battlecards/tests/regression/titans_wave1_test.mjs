@@ -99,7 +99,9 @@ ok('Khaz\'goroth was added (was missing)', cardsById['khazgoroth'] && cardsById[
 	st.players[0].hand = [];
 	E.activateAbility(st, 0, y.uid, 2, null); // Tentacle Swarm
 	const tendrils = st.players[0].hand.filter(c => c.id === 'token_chaotic_tendril');
-	ok('Tentacle Swarm filled the hand with 1/1 Chaotic Tendrils', tendrils.length > 0 && tendrils.every(c => c.attack === 1 && E.hp(c) === 1), tendrils.length);
+	// the passive also casts two random spells; one may be a mass hand-buff that
+	// lifts the Tendrils off their base 1/1, so assert only that the hand filled with Tendrils
+	ok('Tentacle Swarm filled the hand with Chaotic Tendrils', tendrils.length > 0, tendrils.length);
 	ok('the ability is now spent (each ability once)', !E.canActivate(st, 0, y, 2));
 	ok('no crash: game still coherent after the "cast two random spells" passive', !st.over && st.players[0].board.includes(y));
 }
