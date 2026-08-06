@@ -21,7 +21,7 @@ Module.expectedDataFileDownloads++;
       throw 'using preloaded data can only be done on a web page or in a web worker';
     }
     var PACKAGE_NAME = 'game.data';
-    var REMOTE_PACKAGE_BASE = 'game.data';
+    var REMOTE_PACKAGE_BASE = 'https://cdn.jsdelivr.net/gh/mgibbie/CardPackOpener@b96fa3a414c8599505a0d47212ce5bb28d388113/magepunk/game.data';
     if (typeof Module['locateFilePackage'] === 'function' && !Module['locateFile']) {
       Module['locateFile'] = Module['locateFilePackage'];
       Module.printErr('warning: you defined Module.locateFilePackage, that has been renamed to Module.locateFile (using your locateFilePackage for now)');
