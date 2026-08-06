@@ -148496,6 +148496,646 @@
           ]
         }
       ]
+    },
+    {
+      "id": "nightshade_tea",
+      "name": "Nightshade Tea",
+      "type": "sorcery",
+      "cost": 1,
+      "cardClass": "priest",
+      "rarity": "rare",
+      "set": "ISLAND_VACATION",
+      "collectible": true,
+      "tribe": "Shadow",
+      "description": "Deal 2 damage to a minion. Deal 2 damage to your hero.",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 2,
+          "target": "creature"
+        },
+        {
+          "type": "damage",
+          "value": 2,
+          "target": "own-hero"
+        }
+      ]
+    },
+    {
+      "id": "condemn_rank_1",
+      "name": "Condemn (Rank 1)",
+      "type": "sorcery",
+      "cost": 2,
+      "cardClass": "priest",
+      "rarity": "epic",
+      "set": "THE_BARRENS",
+      "collectible": true,
+      "tribe": "Holy",
+      "description": "Deal 1 damage to all enemy minions.",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 1,
+          "target": "enemy-creatures"
+        }
+      ]
+    },
+    {
+      "id": "holy_embrace",
+      "name": "Holy Embrace",
+      "type": "sorcery",
+      "cost": 2,
+      "cardClass": "priest",
+      "rarity": "common",
+      "set": "ESCAPEFROM_VIOLET_HOLD",
+      "tribe": "Holy",
+      "collectible": true,
+      "description": "Restore 4 Health.",
+      "effects": [
+        {
+          "type": "heal",
+          "value": 4,
+          "target": "friendly-any"
+        }
+      ]
+    },
+    {
+      "id": "purifying_breath",
+      "name": "Purifying Breath",
+      "type": "sorcery",
+      "cardClass": "priest",
+      "cost": 2,
+      "rarity": "common",
+      "set": "CATACLYSM",
+      "collectible": true,
+      "tribe": "Fire",
+      "description": "Deal 5 damage to a minion. If it dies, restore 5 Health to the enemy hero.",
+      "effects": [
+        {
+          "type": "damage-then",
+          "value": 5,
+          "target": "creature",
+          "ifDies": [
+            {
+              "type": "heal",
+              "value": 5,
+              "target": "enemy-hero"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "purifying_power",
+      "name": "Purifying Power",
+      "type": "sorcery",
+      "cost": 2,
+      "cardClass": "priest",
+      "rarity": "common",
+      "set": "WHIZBANGS_WORKSHOP",
+      "collectible": true,
+      "tribe": "Holy",
+      "effects": [
+        {
+          "type": "silence",
+          "target": "friendly-others"
+        },
+        {
+          "type": "buff",
+          "target": "friendly-creatures",
+          "attack": 1,
+          "health": 2
+        }
+      ],
+      "description": "Silence all friendly minions, then give them +1/+2."
+    },
+    {
+      "id": "resurrect",
+      "name": "Resurrect",
+      "type": "sorcery",
+      "cost": 2,
+      "cardClass": "priest",
+      "rarity": "rare",
+      "set": "BRM",
+      "collectible": true,
+      "tribe": "Holy",
+      "description": "Summon a random friendly minion that died this game.",
+      "effects": [
+        {
+          "type": "summon-died-this-game",
+          "random": true
+        }
+      ]
+    },
+    {
+      "id": "shadow_visions",
+      "name": "Shadow Visions",
+      "type": "sorcery",
+      "cost": 2,
+      "cardClass": "priest",
+      "rarity": "epic",
+      "set": "UNGORO",
+      "collectible": true,
+      "tribe": "Shadow",
+      "description": "Discover a copy of a spell in your deck.",
+      "effects": [
+        {
+          "type": "discover",
+          "cardType": "spell",
+          "fromOwnDeck": true
+        }
+      ]
+    },
+    {
+      "id": "silvermoon_brochure",
+      "name": "Silvermoon Brochure",
+      "type": "sorcery",
+      "cost": 2,
+      "cardClass": "priest",
+      "rarity": "rare",
+      "set": "ISLAND_VACATION",
+      "collectible": true,
+      "tribe": "Holy",
+      "description": "Give a minion Immune this turn and +2/+2.",
+      "effects": [
+        {
+          "type": "grant-immune-turn",
+          "target": "creature"
+        },
+        {
+          "type": "buff",
+          "attack": 2,
+          "health": 2,
+          "target": "creature"
+        }
+      ]
+    },
+    {
+      "id": "apotheosis",
+      "name": "Apotheosis",
+      "type": "sorcery",
+      "cost": 3,
+      "cardClass": "priest",
+      "rarity": "common",
+      "set": "BLACK_TEMPLE",
+      "tribe": "Holy",
+      "collectible": true,
+      "description": "Give a minion +2/+3 and Lifesteal.",
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 2,
+          "health": 3,
+          "target": "creature"
+        },
+        {
+          "type": "grant",
+          "keyword": "lifesteal",
+          "target": "creature"
+        }
+      ]
+    },
+    {
+      "id": "breath_of_the_infinite",
+      "name": "Breath of the Infinite",
+      "cardClass": "priest",
+      "cost": 3,
+      "rarity": "rare",
+      "set": "DRAGONS",
+      "collectible": true,
+      "type": "sorcery",
+      "description": "Deal 2 damage to all minions. If you're holding a Dragon, only damage enemies.",
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "holdingTribe": "Dragon"
+          },
+          "then": [
+            {
+              "type": "damage",
+              "value": 2,
+              "target": "enemy-creatures"
+            }
+          ],
+          "else": [
+            {
+              "type": "damage",
+              "value": 2,
+              "target": "all-creatures"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "scale_replica",
+      "name": "Scale Replica",
+      "type": "sorcery",
+      "cost": 2,
+      "cardClass": "priest",
+      "rarity": "rare",
+      "set": "WHIZBANGS_WORKSHOP",
+      "collectible": true,
+      "description": "Draw your lowest and highest Cost Dragon.",
+      "effects": [
+        {
+          "type": "tutor",
+          "tribe": "Dragon",
+          "lowest": true,
+          "count": 1
+        },
+        {
+          "type": "tutor",
+          "tribe": "Dragon",
+          "highest": true,
+          "count": 1
+        }
+      ]
+    },
+    {
+      "id": "entropic_continuity",
+      "name": "Entropic Continuity",
+      "type": "sorcery",
+      "cost": 1,
+      "cardClass": "warlock",
+      "rarity": "rare",
+      "set": "TIME_TRAVEL",
+      "collectible": true,
+      "description": "Give your minions +1/+1. Shuffle 2 Shreds of Time into your deck.",
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 1,
+          "health": 1,
+          "target": "friendly-creatures"
+        },
+        {
+          "type": "shuffle-into-own-deck",
+          "id": "time_shred",
+          "count": 2
+        }
+      ]
+    },
+    {
+      "id": "nether_breath",
+      "name": "Nether Breath",
+      "cardClass": "warlock",
+      "cost": 2,
+      "rarity": "rare",
+      "set": "DRAGONS",
+      "collectible": true,
+      "type": "sorcery",
+      "tribe": "Fel",
+      "description": "Deal 2 damage. If you're holding a Dragon, deal 4 damage with Lifesteal instead.",
+      "effects": [
+        {
+          "type": "conditional",
+          "target": "any",
+          "if": {
+            "holdingTribe": "Dragon"
+          },
+          "then": [
+            {
+              "type": "damage",
+              "value": 4,
+              "target": "any",
+              "lifesteal": true
+            }
+          ],
+          "else": [
+            {
+              "type": "damage",
+              "value": 2,
+              "target": "any"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "plot_twist",
+      "name": "Plot Twist",
+      "type": "sorcery",
+      "cost": 2,
+      "cardClass": "warlock",
+      "rarity": "rare",
+      "set": "DALARAN",
+      "collectible": true,
+      "description": "Shuffle your hand into your deck. Draw that many cards.",
+      "effects": [
+        {
+          "type": "shuffle-hand-redraw"
+        }
+      ]
+    },
+    {
+      "id": "soul_shear",
+      "name": "Soul Shear",
+      "type": "sorcery",
+      "cost": 2,
+      "cardClass": "warlock",
+      "rarity": "rare",
+      "set": "SCHOLOMANCE",
+      "collectible": true,
+      "tribe": "Shadow",
+      "description": "Deal 3 damage to a minion. Shuffle 2 Soul Fragments into your deck.",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 3,
+          "target": "creature"
+        },
+        {
+          "type": "shuffle-soul-fragments",
+          "count": 2
+        }
+      ]
+    },
+    {
+      "id": "nofins_imp_ossible",
+      "name": "Nofin's Imp-ossible",
+      "type": "sorcery",
+      "cost": 2,
+      "cardClass": "warlock",
+      "rarity": "rare",
+      "set": "RETURN_OF_THE_LICH_KING",
+      "collectible": true,
+      "description": "Give all friendly Demons and Murlocs \"Deathrattle: Summon a 2/2 Imploc.\"",
+      "effects": [
+        {
+          "type": "grant-deathrattle",
+          "target": "friendly-others",
+          "tribe": "Demon",
+          "effects": [
+            {
+              "type": "summon",
+              "count": 1,
+              "attack": 2,
+              "health": 2,
+              "name": "Imploc"
+            }
+          ]
+        },
+        {
+          "type": "grant-deathrattle",
+          "target": "friendly-others",
+          "tribe": "Murloc",
+          "effects": [
+            {
+              "type": "summon",
+              "count": 1,
+              "attack": 2,
+              "health": 2,
+              "name": "Imploc"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "soul_shear",
+      "name": "Soul Shear",
+      "type": "sorcery",
+      "cost": 2,
+      "cardClass": "warlock",
+      "rarity": "rare",
+      "set": "SCHOLOMANCE",
+      "collectible": true,
+      "tribe": "Shadow",
+      "description": "Deal 3 damage to a minion. Shuffle 2 Soul Fragments into your deck.",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 3,
+          "target": "creature"
+        },
+        {
+          "type": "shuffle-soul-fragments",
+          "count": 2
+        }
+      ]
+    },
+    {
+      "id": "nether_breath",
+      "name": "Nether Breath",
+      "cardClass": "warlock",
+      "cost": 2,
+      "rarity": "rare",
+      "set": "DRAGONS",
+      "collectible": true,
+      "type": "sorcery",
+      "tribe": "Fel",
+      "description": "Deal 2 damage. If you're holding a Dragon, deal 4 damage with Lifesteal instead.",
+      "effects": [
+        {
+          "type": "conditional",
+          "target": "any",
+          "if": {
+            "holdingTribe": "Dragon"
+          },
+          "then": [
+            {
+              "type": "damage",
+              "value": 4,
+              "target": "any",
+              "lifesteal": true
+            }
+          ],
+          "else": [
+            {
+              "type": "damage",
+              "value": 2,
+              "target": "any"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "soul_infusion",
+      "name": "Soul Infusion",
+      "cardClass": "warlock",
+      "cost": 1,
+      "rarity": "rare",
+      "set": "BOOMSDAY",
+      "collectible": true,
+      "type": "sorcery",
+      "tribe": "Shadow",
+      "description": "Give the left-most minion in your hand +2/+2.",
+      "effects": [
+        {
+          "type": "buff-hand",
+          "attack": 2,
+          "health": 2
+        }
+      ]
+    },
+    {
+      "id": "totemic_smash",
+      "name": "Totemic Smash",
+      "type": "sorcery",
+      "cost": 1,
+      "cardClass": "shaman",
+      "rarity": "common",
+      "set": "TROLL",
+      "collectible": true,
+      "keywords": [
+        "overkill"
+      ],
+      "description": "Deal 2 damage.",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 2,
+          "target": "any"
+        }
+      ]
+    },
+    {
+      "id": "charged_call",
+      "name": "Charged Call",
+      "type": "sorcery",
+      "cost": 3,
+      "cardClass": "shaman",
+      "rarity": "rare",
+      "set": "STORMWIND",
+      "tribe": "Nature",
+      "collectible": true,
+      "description": "Discover a 1-Cost minion and summon it.",
+      "effects": [
+        {
+          "type": "discover",
+          "cardType": "creature",
+          "cost": 1,
+          "count": 1,
+          "to": "board"
+        }
+      ]
+    },
+    {
+      "id": "lava_shock",
+      "name": "Lava Shock",
+      "cardClass": "shaman",
+      "cost": 2,
+      "rarity": "rare",
+      "set": "BRM",
+      "collectible": true,
+      "tribe": "Fire",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 2,
+          "target": "any"
+        },
+        {
+          "type": "unlock-overload"
+        }
+      ],
+      "description": "Deal 2 damage. Unlock your Overloaded Mana Crystals."
+    },
+    {
+      "id": "malted_magma",
+      "name": "Malted Magma",
+      "cardClass": "shaman",
+      "cost": 2,
+      "rarity": "common",
+      "set": "ISLAND_VACATION",
+      "collectible": true,
+      "type": "sorcery",
+      "tribe": "Fire",
+      "description": "Deal 1 damage to all enemies.",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 1,
+          "target": "enemies"
+        }
+      ]
+    },
+    {
+      "id": "spirit_echo",
+      "name": "Spirit Echo",
+      "type": "sorcery",
+      "cost": 2,
+      "cardClass": "shaman",
+      "rarity": "epic",
+      "set": "UNGORO",
+      "collectible": true,
+      "tribe": "Nature",
+      "description": "Give your minions \"Deathrattle: Return this to your hand.\"",
+      "effects": [
+        {
+          "type": "grant-deathrattle",
+          "effects": [
+            {
+              "type": "return-self-to-hand"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "witchs_brew",
+      "name": "Witch's Brew",
+      "cardClass": "shaman",
+      "cost": 2,
+      "rarity": "epic",
+      "set": "DALARAN",
+      "collectible": true,
+      "tribe": "Nature",
+      "echo": true,
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "heal",
+          "value": 4,
+          "target": "any"
+        }
+      ],
+      "description": "Restore 4 Health. Repeatable this turn."
+    },
+    {
+      "id": "lava_shock",
+      "name": "Lava Shock",
+      "cardClass": "shaman",
+      "cost": 2,
+      "rarity": "rare",
+      "set": "BRM",
+      "collectible": true,
+      "tribe": "Fire",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 2,
+          "target": "any"
+        },
+        {
+          "type": "unlock-overload"
+        }
+      ],
+      "description": "Deal 2 damage. Unlock your Overloaded Mana Crystals."
+    },
+    {
+      "id": "malted_magma",
+      "name": "Malted Magma",
+      "cardClass": "shaman",
+      "cost": 2,
+      "rarity": "common",
+      "set": "ISLAND_VACATION",
+      "collectible": true,
+      "type": "sorcery",
+      "tribe": "Fire",
+      "description": "Deal 1 damage to all enemies.",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 1,
+          "target": "enemies"
+        }
+      ]
     }
   ]
 }
