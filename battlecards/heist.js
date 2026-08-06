@@ -221,19 +221,24 @@ export const BOSSES = {
 // deterministic themed boss deck: 2 copies each of the 15 cheapest theme
 // matches (falls back to cheap neutrals when a theme runs thin)
 export function buildBossDeck(cardsById, theme = {}, size = 30) {
-	const ok = d => d.type === 'creature' && !d.token && d.collectible !== false
-		&& !d.companion && !d.commander && !(d.colors && d.colors.length)
-		&& (d.cost || 0) <= (theme.maxCost || 7)
-		&& (!theme.tribe || (d.tribe || '').includes(theme.tribe))
-		&& (!theme.cardClass || (d.cardClass || 'neutral') === theme.cardClass);
-	let pool = Object.values(cardsById).filter(ok);
-	pool.sort((a, b) => (a.cost || 0) - (b.cost || 0) || a.id.localeCompare(b.id));
-	pool = pool.slice(0, Math.ceil(size / 2));
-	if (pool.length < size / 2) {
-		const pad = Object.values(cardsById)
-			.filter(d => d.type === 'creature' && !d.token && d.collectible !== false && !d.companion && !d.commander && !(d.colors && d.colors.length) && (d.cost || 0) <= 4 && (d.cardClass || 'neutral') === 'neutral')
-			.sort((a, b) => (a.cost || 0) - (b.cost || 0) || a.id.localeCompare(b.id));
-		for (const d of pad) { if (pool.length >= size / 2) break; if (!pool.includes(d)) pool.push(d); }
+	const maxCost = theme.maxCost || 7;
+	const base = d => !d.token && d.collectible !== false && !d.companion && !d.commander && !(d.colors && d.colors.length) && (d.cost || 0) <= maxCost;
+	const classOk = d => !theme.cardClass || (d.cardClass || 'neutral') === theme.cardClass;
+	const tribeOk = d => !theme.tribe || (d.tribe || '').includes(theme.tribe);
+	const byCost = (a, b) => (a.cost || 0) - (b.cost || 0) || a.id.localeCompare(b.id);
+	const isSpell = d => d.type === 'sorcery' || d.type === 'instant' || d.type === 'secret' || d.type === 'trap';
+	const all = Object.values(cardsById);
+	const creatures = all.filter(d => d.type === 'creature' && base(d) && classOk(d) && tribeOk(d)).sort(byCost);
+	// class-themed bosses run real class spells too; tribe-only / neutral bosses stay
+	// minion-heavy (a spell can't carry a creature tribe, neutral has few spells)
+	const spells = (theme.cardClass && theme.cardClass !== 'neutral')
+		? all.filter(d => isSpell(d) && base(d) && classOk(d)).sort(byCost) : [];
+	const distinct = Math.ceil(size / 2); // deck = 2 copies of each distinct card
+	const nSpell = Math.min(spells.length, Math.round(distinct / 3)); // ~1/3 spells for class decks
+	let pool = [...creatures.slice(0, distinct - nSpell), ...spells.slice(0, nSpell)];
+	if (pool.length < distinct) {
+		const pad = all.filter(d => d.type === 'creature' && base(d) && (d.cardClass || 'neutral') === 'neutral' && (d.cost || 0) <= 4).sort(byCost);
+		for (const d of pad) { if (pool.length >= distinct) break; if (!pool.includes(d)) pool.push(d); }
 	}
 	const deck = [];
 	for (const d of pool) deck.push(d.id, d.id);
