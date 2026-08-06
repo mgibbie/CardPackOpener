@@ -1,6 +1,3 @@
-Exit code: 0
-Wall time: 0.8 seconds
-Output:
 #!/usr/bin/env python3
 """Audit Battlecards art, source missing Hearthstone art from hearthstone.wiki.gg,
 and crop solid black/white side bars without inventing replacement artwork."""
