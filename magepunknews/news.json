@@ -1,6 +1,2969 @@
 {
-	"generated": "2026-08-04",
+	"generated": "2026-08-06",
 	"entries": [
+		{
+			"sha": "f8466bf",
+			"date": "2026-08-06",
+			"kind": "patch",
+			"title": "Tune Duels draft cards to 30 percent larger",
+			"body": "Adjusted the Duels drafting cards to approximately 30% larger than their original size.",
+			"cards": []
+		},
+		{
+			"sha": "c5b549d",
+			"date": "2026-08-06",
+			"kind": "patch",
+			"title": "Enlarge Duels draft cards",
+			"body": "Duels draft choices now display at a larger size for easier reading.",
+			"cards": []
+		},
+		{
+			"sha": "931da06",
+			"date": "2026-08-06",
+			"kind": "cards",
+			"title": "Cross-class easy-spell sweep, wave 5b: Warrior/Rogue/Paladin/Druid 2nd tranche (~36)",
+			"body": "Warrior 5, Rogue 13, Paladin 9, Druid 9 clean gate-passers appended.\nAll existing effects. Yield naturally lower on these second tranches\n(the cleanest templates were taken in waves 1-4).\n\nBattery 175/175 incl. fuzz.",
+			"cards": [
+				{
+					"id": "concussive_shells",
+					"name": "Concussive Shells",
+					"type": "sorcery",
+					"class": "warrior",
+					"rarity": "common",
+					"cost": 1
+				},
+				{
+					"id": "revenge",
+					"name": "Revenge",
+					"type": "sorcery",
+					"class": "warrior",
+					"rarity": "rare",
+					"cost": 2
+				},
+				{
+					"id": "through_fel_and_flames",
+					"name": "Through Fel and Flames",
+					"type": "sorcery",
+					"class": "warrior",
+					"rarity": "rare",
+					"cost": 0
+				},
+				{
+					"id": "man_the_cannons",
+					"name": "Man the Cannons",
+					"type": "sorcery",
+					"class": "warrior",
+					"rarity": "common",
+					"cost": 2
+				},
+				{
+					"id": "revenge",
+					"name": "Revenge",
+					"type": "sorcery",
+					"class": "warrior",
+					"rarity": "rare",
+					"cost": 2
+				},
+				{
+					"id": "swindle",
+					"name": "Swindle",
+					"type": "sorcery",
+					"class": "rogue",
+					"rarity": "common",
+					"cost": 2
+				},
+				{
+					"id": "potion_belt",
+					"name": "Potion Belt",
+					"type": "sorcery",
+					"class": "rogue",
+					"rarity": "rare",
+					"cost": 2
+				},
+				{
+					"id": "flashback",
+					"name": "Flashback",
+					"type": "sorcery",
+					"class": "rogue",
+					"rarity": "rare",
+					"cost": 2
+				},
+				{
+					"id": "garrote",
+					"name": "Garrote",
+					"type": "sorcery",
+					"class": "rogue",
+					"rarity": "epic",
+					"cost": 2
+				},
+				{
+					"id": "reconnaissance",
+					"name": "Reconnaissance",
+					"type": "sorcery",
+					"class": "rogue",
+					"rarity": "common",
+					"cost": 2
+				},
+				{
+					"id": "serrated_bone_spike",
+					"name": "Serrated Bone Spike",
+					"type": "sorcery",
+					"class": "rogue",
+					"rarity": "rare",
+					"cost": 2
+				},
+				{
+					"id": "stolen_steel",
+					"name": "Stolen Steel",
+					"type": "sorcery",
+					"class": "rogue",
+					"rarity": "common",
+					"cost": 2
+				},
+				{
+					"id": "tentacle_grip",
+					"name": "Tentacle Grip",
+					"type": "sorcery",
+					"class": "rogue",
+					"rarity": "common",
+					"cost": 2
+				},
+				{
+					"id": "blink",
+					"name": "Blink",
+					"type": "sorcery",
+					"class": "rogue",
+					"rarity": "common",
+					"cost": 2
+				},
+				{
+					"id": "eventuality",
+					"name": "Eventuality",
+					"type": "sorcery",
+					"class": "rogue",
+					"rarity": "common",
+					"cost": 2
+				},
+				{
+					"id": "stick_up",
+					"name": "Stick Up",
+					"type": "sorcery",
+					"class": "rogue",
+					"rarity": "common",
+					"cost": 1
+				},
+				{
+					"id": "thistle_tea_set",
+					"name": "Thistle Tea Set",
+					"type": "sorcery",
+					"class": "rogue",
+					"rarity": "common",
+					"cost": 2
+				},
+				{
+					"id": "garrote",
+					"name": "Garrote",
+					"type": "sorcery",
+					"class": "rogue",
+					"rarity": "epic",
+					"cost": 2
+				},
+				{
+					"id": "serrated_bone_spike",
+					"name": "Serrated Bone Spike",
+					"type": "sorcery",
+					"class": "rogue",
+					"rarity": "rare",
+					"cost": 2
+				},
+				{
+					"id": "stolen_steel",
+					"name": "Stolen Steel",
+					"type": "sorcery",
+					"class": "rogue",
+					"rarity": "common",
+					"cost": 2
+				},
+				{
+					"id": "holy_maki_roll",
+					"name": "Holy Maki Roll",
+					"type": "sorcery",
+					"class": "paladin",
+					"rarity": "rare",
+					"cost": 1
+				},
+				{
+					"id": "desperate_stand",
+					"name": "Desperate Stand",
+					"type": "sorcery",
+					"class": "paladin",
+					"rarity": "rare",
+					"cost": 2
+				},
+				{
+					"id": "call_to_adventure",
+					"name": "Call to Adventure",
+					"type": "sorcery",
+					"class": "paladin",
+					"rarity": "rare",
+					"cost": 3
+				},
+				{
+					"id": "hold_the_bridge",
+					"name": "Hold the Bridge",
+					"type": "sorcery",
+					"class": "paladin",
+					"rarity": "common",
+					"cost": 3
+				},
+				{
+					"id": "jury_duty",
+					"name": "Jury Duty",
+					"type": "sorcery",
+					"class": "paladin",
+					"rarity": "common",
+					"cost": 3
+				},
+				{
+					"id": "aegis_of_light",
+					"name": "Aegis of Light",
+					"type": "sorcery",
+					"class": "paladin",
+					"rarity": "rare",
+					"cost": 2
+				},
+				{
+					"id": "call_to_adventure",
+					"name": "Call to Adventure",
+					"type": "sorcery",
+					"class": "paladin",
+					"rarity": "rare",
+					"cost": 3
+				},
+				{
+					"id": "jury_duty",
+					"name": "Jury Duty",
+					"type": "sorcery",
+					"class": "paladin",
+					"rarity": "common",
+					"cost": 3
+				},
+				{
+					"id": "hold_the_bridge",
+					"name": "Hold the Bridge",
+					"type": "sorcery",
+					"class": "paladin",
+					"rarity": "common",
+					"cost": 3
+				},
+				{
+					"id": "heart_of_the_wild",
+					"name": "Heart of the Wild",
+					"type": "sorcery",
+					"class": "druid",
+					"rarity": "common",
+					"cost": 3
+				},
+				{
+					"id": "lethal_recipe",
+					"name": "Lethal Recipe",
+					"type": "sorcery",
+					"class": "druid",
+					"rarity": "rare",
+					"cost": 3
+				},
+				{
+					"id": "take_to_the_skies",
+					"name": "Take to the Skies",
+					"type": "sorcery",
+					"class": "druid",
+					"rarity": "common",
+					"cost": 3
+				},
+				{
+					"id": "witching_hour",
+					"name": "Witching Hour",
+					"type": "sorcery",
+					"class": "druid",
+					"rarity": "rare",
+					"cost": 3
+				},
+				{
+					"id": "germination",
+					"name": "Germination",
+					"type": "sorcery",
+					"class": "druid",
+					"rarity": "rare",
+					"cost": 4
+				},
+				{
+					"id": "heart_of_the_wild",
+					"name": "Heart of the Wild",
+					"type": "sorcery",
+					"class": "druid",
+					"rarity": "common",
+					"cost": 3
+				},
+				{
+					"id": "take_to_the_skies",
+					"name": "Take to the Skies",
+					"type": "sorcery",
+					"class": "druid",
+					"rarity": "common",
+					"cost": 3
+				},
+				{
+					"id": "witching_hour",
+					"name": "Witching Hour",
+					"type": "sorcery",
+					"class": "druid",
+					"rarity": "rare",
+					"cost": 3
+				}
+			]
+		},
+		{
+			"sha": "ab85cc0",
+			"date": "2026-08-06",
+			"kind": "cards",
+			"title": "Cross-class easy-spell sweep, wave 5a: Priest/Warlock/Shaman 2nd tranche (~25)",
+			"body": "Second easy-tranche now that wave 1-4 imports are in cards.json (the\nextractor surfaces the next batch). Priest 11, Warlock 8, Shaman 6 clean\ngate-passers appended; 2 dropped for missing token refs (Curse of Agony,\nSeeds of Destruction). All existing effects.\n\nBattery 175/175 incl. fuzz.",
+			"cards": [
+				{
+					"id": "nightshade_tea",
+					"name": "Nightshade Tea",
+					"type": "sorcery",
+					"class": "priest",
+					"rarity": "rare",
+					"cost": 1
+				},
+				{
+					"id": "condemn_rank_1",
+					"name": "Condemn (Rank 1)",
+					"type": "sorcery",
+					"class": "priest",
+					"rarity": "epic",
+					"cost": 2
+				},
+				{
+					"id": "holy_embrace",
+					"name": "Holy Embrace",
+					"type": "sorcery",
+					"class": "priest",
+					"rarity": "common",
+					"cost": 2
+				},
+				{
+					"id": "purifying_breath",
+					"name": "Purifying Breath",
+					"type": "sorcery",
+					"class": "priest",
+					"rarity": "common",
+					"cost": 2
+				},
+				{
+					"id": "purifying_power",
+					"name": "Purifying Power",
+					"type": "sorcery",
+					"class": "priest",
+					"rarity": "common",
+					"cost": 2
+				},
+				{
+					"id": "resurrect",
+					"name": "Resurrect",
+					"type": "sorcery",
+					"class": "priest",
+					"rarity": "rare",
+					"cost": 2
+				},
+				{
+					"id": "shadow_visions",
+					"name": "Shadow Visions",
+					"type": "sorcery",
+					"class": "priest",
+					"rarity": "epic",
+					"cost": 2
+				},
+				{
+					"id": "silvermoon_brochure",
+					"name": "Silvermoon Brochure",
+					"type": "sorcery",
+					"class": "priest",
+					"rarity": "rare",
+					"cost": 2
+				},
+				{
+					"id": "apotheosis",
+					"name": "Apotheosis",
+					"type": "sorcery",
+					"class": "priest",
+					"rarity": "common",
+					"cost": 3
+				},
+				{
+					"id": "breath_of_the_infinite",
+					"name": "Breath of the Infinite",
+					"type": "sorcery",
+					"class": "priest",
+					"rarity": "rare",
+					"cost": 3
+				},
+				{
+					"id": "scale_replica",
+					"name": "Scale Replica",
+					"type": "sorcery",
+					"class": "priest",
+					"rarity": "rare",
+					"cost": 2
+				},
+				{
+					"id": "entropic_continuity",
+					"name": "Entropic Continuity",
+					"type": "sorcery",
+					"class": "warlock",
+					"rarity": "rare",
+					"cost": 1
+				},
+				{
+					"id": "nether_breath",
+					"name": "Nether Breath",
+					"type": "sorcery",
+					"class": "warlock",
+					"rarity": "rare",
+					"cost": 2
+				},
+				{
+					"id": "plot_twist",
+					"name": "Plot Twist",
+					"type": "sorcery",
+					"class": "warlock",
+					"rarity": "rare",
+					"cost": 2
+				},
+				{
+					"id": "soul_shear",
+					"name": "Soul Shear",
+					"type": "sorcery",
+					"class": "warlock",
+					"rarity": "rare",
+					"cost": 2
+				},
+				{
+					"id": "nofins_imp_ossible",
+					"name": "Nofin's Imp-ossible",
+					"type": "sorcery",
+					"class": "warlock",
+					"rarity": "rare",
+					"cost": 2
+				},
+				{
+					"id": "soul_shear",
+					"name": "Soul Shear",
+					"type": "sorcery",
+					"class": "warlock",
+					"rarity": "rare",
+					"cost": 2
+				},
+				{
+					"id": "nether_breath",
+					"name": "Nether Breath",
+					"type": "sorcery",
+					"class": "warlock",
+					"rarity": "rare",
+					"cost": 2
+				},
+				{
+					"id": "soul_infusion",
+					"name": "Soul Infusion",
+					"type": "sorcery",
+					"class": "warlock",
+					"rarity": "rare",
+					"cost": 1
+				},
+				{
+					"id": "totemic_smash",
+					"name": "Totemic Smash",
+					"type": "sorcery",
+					"class": "shaman",
+					"rarity": "common",
+					"cost": 1
+				},
+				{
+					"id": "charged_call",
+					"name": "Charged Call",
+					"type": "sorcery",
+					"class": "shaman",
+					"rarity": "rare",
+					"cost": 3
+				},
+				{
+					"id": "lava_shock",
+					"name": "Lava Shock",
+					"type": "sorcery",
+					"class": "shaman",
+					"rarity": "rare",
+					"cost": 2
+				},
+				{
+					"id": "malted_magma",
+					"name": "Malted Magma",
+					"type": "sorcery",
+					"class": "shaman",
+					"rarity": "common",
+					"cost": 2
+				},
+				{
+					"id": "spirit_echo",
+					"name": "Spirit Echo",
+					"type": "sorcery",
+					"class": "shaman",
+					"rarity": "epic",
+					"cost": 2
+				},
+				{
+					"id": "witchs_brew",
+					"name": "Witch's Brew",
+					"type": "sorcery",
+					"class": "shaman",
+					"rarity": "epic",
+					"cost": 2
+				},
+				{
+					"id": "lava_shock",
+					"name": "Lava Shock",
+					"type": "sorcery",
+					"class": "shaman",
+					"rarity": "rare",
+					"cost": 2
+				}
+			]
+		},
+		{
+			"sha": "cae3874",
+			"date": "2026-08-06",
+			"kind": "cards",
+			"title": "Cross-class easy-spell sweep, wave 4 (tails): Mage/DH/Hunter/Neutral (~34)",
+			"body": "Closes the \"easy ones from every class\" sweep. Mage 5, Demon Hunter 9,\nHunter 14, Neutral 6 clean gate-passers appended (these are the harder\nremnants of already-swept classes, hence lower yield). All existing\neffects - no new engine code this wave.\n\nSweep total ~200 clean spells across all 12 classes (cards.json 6279->6388).\n\nRNG-shift test fixes (adding ~200 cards reshapes seeded pools): Fist of\nRa-den (scan newly-summoned for the 5-cost legendary; may roll Colossal +\nappendages) and Tentacle Swarm (drop the 1/1 pin; a random Yogg-cast\nmass-hand-buff lifts the Tendrils).\n\nBattery 175/175 incl. fuzz.",
+			"cards": [
+				{
+					"id": "rising_waves",
+					"name": "Rising Waves",
+					"type": "sorcery",
+					"class": "mage",
+					"rarity": "rare",
+					"cost": 3
+				},
+				{
+					"id": "font_of_power",
+					"name": "Font of Power",
+					"type": "sorcery",
+					"class": "mage",
+					"rarity": "rare",
+					"cost": 1
+				},
+				{
+					"id": "lesser_ruby_spellstone",
+					"name": "Lesser Ruby Spellstone",
+					"type": "sorcery",
+					"class": "mage",
+					"rarity": "rare",
+					"cost": 2
+				},
+				{
+					"id": "spontaneous_combustion",
+					"name": "Spontaneous Combustion",
+					"type": "sorcery",
+					"class": "mage",
+					"rarity": "common",
+					"cost": 2
+				},
+				{
+					"id": "tear_reality",
+					"name": "Tear Reality",
+					"type": "sorcery",
+					"class": "mage",
+					"rarity": "common",
+					"cost": 4
+				},
+				{
+					"id": "spontaneous_combustion",
+					"name": "Spontaneous Combustion",
+					"type": "sorcery",
+					"class": "mage",
+					"rarity": "common",
+					"cost": 2
+				},
+				{
+					"id": "multi_strike",
+					"name": "Multi-Strike",
+					"type": "sorcery",
+					"class": "demonhunter",
+					"rarity": "rare",
+					"cost": 2
+				},
+				{
+					"id": "horn_of_feasting",
+					"name": "Horn of Feasting",
+					"type": "sorcery",
+					"class": "demonhunter",
+					"rarity": "common",
+					"cost": 4
+				},
+				{
+					"id": "hounds_of_fury",
+					"name": "Hounds of Fury",
+					"type": "sorcery",
+					"class": "demonhunter",
+					"rarity": "rare",
+					"cost": 4
+				},
+				{
+					"id": "remixed_rhapsody",
+					"name": "Remixed Rhapsody",
+					"type": "sorcery",
+					"class": "demonhunter",
+					"rarity": "rare",
+					"cost": 5
+				},
+				{
+					"id": "pocket_sand",
+					"name": "Pocket Sand",
+					"type": "sorcery",
+					"class": "demonhunter",
+					"rarity": "common",
+					"cost": 2
+				},
+				{
+					"id": "horn_of_feasting",
+					"name": "Horn of Feasting",
+					"type": "sorcery",
+					"class": "demonhunter",
+					"rarity": "common",
+					"cost": 4
+				},
+				{
+					"id": "hounds_of_fury",
+					"name": "Hounds of Fury",
+					"type": "sorcery",
+					"class": "demonhunter",
+					"rarity": "rare",
+					"cost": 4
+				},
+				{
+					"id": "remixed_rhapsody",
+					"name": "Remixed Rhapsody",
+					"type": "sorcery",
+					"class": "demonhunter",
+					"rarity": "rare",
+					"cost": 5
+				},
+				{
+					"id": "multi_strike",
+					"name": "Multi-Strike",
+					"type": "sorcery",
+					"class": "demonhunter",
+					"rarity": "rare",
+					"cost": 2
+				},
+				{
+					"id": "spirit_bond",
+					"name": "Spirit Bond",
+					"type": "sorcery",
+					"class": "hunter",
+					"rarity": "rare",
+					"cost": 3
+				},
+				{
+					"id": "shellshot",
+					"name": "Shellshot",
+					"type": "sorcery",
+					"class": "hunter",
+					"rarity": "rare",
+					"cost": 3
+				},
+				{
+					"id": "scrap_shot",
+					"name": "Scrap Shot",
+					"type": "sorcery",
+					"class": "hunter",
+					"rarity": "rare",
+					"cost": 4
+				},
+				{
+					"id": "eversong_portal",
+					"name": "Eversong Portal",
+					"type": "sorcery",
+					"class": "hunter",
+					"rarity": "rare",
+					"cost": 4
+				},
+				{
+					"id": "dig_for_freedom",
+					"name": "Dig for Freedom",
+					"type": "sorcery",
+					"class": "hunter",
+					"rarity": "rare",
+					"cost": 4
+				},
+				{
+					"id": "r_c_rampage",
+					"name": "R.C. Rampage",
+					"type": "sorcery",
+					"class": "hunter",
+					"rarity": "epic",
+					"cost": 4
+				},
+				{
+					"id": "celestial_shot",
+					"name": "Celestial Shot",
+					"type": "sorcery",
+					"class": "hunter",
+					"rarity": "common",
+					"cost": 3
+				},
+				{
+					"id": "earthen_roar",
+					"name": "Earthen Roar",
+					"type": "sorcery",
+					"class": "hunter",
+					"rarity": "rare",
+					"cost": 1
+				},
+				{
+					"id": "monkey_business",
+					"name": "Monkey Business",
+					"type": "sorcery",
+					"class": "hunter",
+					"rarity": "rare",
+					"cost": 4
+				},
+				{
+					"id": "spirit_bond",
+					"name": "Spirit Bond",
+					"type": "sorcery",
+					"class": "hunter",
+					"rarity": "rare",
+					"cost": 3
+				},
+				{
+					"id": "scrap_shot",
+					"name": "Scrap Shot",
+					"type": "sorcery",
+					"class": "hunter",
+					"rarity": "rare",
+					"cost": 4
+				},
+				{
+					"id": "eversong_portal",
+					"name": "Eversong Portal",
+					"type": "sorcery",
+					"class": "hunter",
+					"rarity": "rare",
+					"cost": 4
+				},
+				{
+					"id": "shellshot",
+					"name": "Shellshot",
+					"type": "sorcery",
+					"class": "hunter",
+					"rarity": "rare",
+					"cost": 3
+				},
+				{
+					"id": "dig_for_freedom",
+					"name": "Dig for Freedom",
+					"type": "sorcery",
+					"class": "hunter",
+					"rarity": "rare",
+					"cost": 4
+				},
+				{
+					"id": "resizing_pouch",
+					"name": "Resizing Pouch",
+					"type": "sorcery",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 1
+				},
+				{
+					"id": "coerce",
+					"name": "Coerce",
+					"type": "sorcery",
+					"class": "neutral",
+					"rarity": "rare",
+					"cost": 3
+				},
+				{
+					"id": "barricade",
+					"name": "Barricade",
+					"type": "sorcery",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 4
+				},
+				{
+					"id": "cutting_class",
+					"name": "Cutting Class",
+					"type": "sorcery",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 5
+				},
+				{
+					"id": "coerce",
+					"name": "Coerce",
+					"type": "sorcery",
+					"class": "neutral",
+					"rarity": "rare",
+					"cost": 3
+				}
+			]
+		},
+		{
+			"sha": "8857dfb",
+			"date": "2026-08-06",
+			"kind": "cards",
+			"title": "Cross-class easy-spell sweep, wave 3: Warrior/Death Knight (~29 spells)",
+			"body": "Warrior 17, Death Knight 12 clean gate-passers appended.\n\nNew engine: valuePer \"corpses\" scaler in scaled() (damage = your Corpses,\nnot spent) -> Fistful of Corpses. Registry unchanged (scaler branch).\n\nHighlights: damage-then/ifSurvives (Blood to Ichor, Burning Heart),\nrequireDamaged targeting (Devastate), discover + discount (Athletic\nStudies), grant taunt+lifesteal (Orbital Moon), freeze+draw (Slippery\nSlope), damage+freeze+splash (Howling Blast).\n\ngroupd_wave5 Voronei test: relaxed the Crewmate stat check to >= (a random\nDark Gift can raise its base 4/4).\n\nBattery 175/175 incl. fuzz.",
+			"cards": [
+				{
+					"id": "athletic_studies",
+					"name": "Athletic Studies",
+					"type": "sorcery",
+					"class": "warrior",
+					"rarity": "common",
+					"cost": 1
+				},
+				{
+					"id": "blood_to_ichor",
+					"name": "Blood to Ichor",
+					"type": "sorcery",
+					"class": "warrior",
+					"rarity": "rare",
+					"cost": 1
+				},
+				{
+					"id": "burning_heart",
+					"name": "Burning Heart",
+					"type": "sorcery",
+					"class": "warrior",
+					"rarity": "common",
+					"cost": 1
+				},
+				{
+					"id": "cup_o_muscle",
+					"name": "Cup o' Muscle",
+					"type": "sorcery",
+					"class": "warrior",
+					"rarity": "common",
+					"cost": 1
+				},
+				{
+					"id": "devastate",
+					"name": "Devastate",
+					"type": "sorcery",
+					"class": "warrior",
+					"rarity": "common",
+					"cost": 1
+				},
+				{
+					"id": "improve_morale",
+					"name": "Improve Morale",
+					"type": "sorcery",
+					"class": "warrior",
+					"rarity": "common",
+					"cost": 1
+				},
+				{
+					"id": "into_the_fray",
+					"name": "Into the Fray",
+					"type": "sorcery",
+					"class": "warrior",
+					"rarity": "rare",
+					"cost": 1
+				},
+				{
+					"id": "shiver_their_timbers",
+					"name": "Shiver Their Timbers!",
+					"type": "sorcery",
+					"class": "warrior",
+					"rarity": "rare",
+					"cost": 1
+				},
+				{
+					"id": "siphoning_growth",
+					"name": "Siphoning Growth",
+					"type": "sorcery",
+					"class": "warrior",
+					"rarity": "rare",
+					"cost": 1
+				},
+				{
+					"id": "devastate",
+					"name": "Devastate",
+					"type": "sorcery",
+					"class": "warrior",
+					"rarity": "common",
+					"cost": 1
+				},
+				{
+					"id": "conditioning_rank_1",
+					"name": "Conditioning (Rank 1)",
+					"type": "sorcery",
+					"class": "warrior",
+					"rarity": "rare",
+					"cost": 2
+				},
+				{
+					"id": "dragon_roar",
+					"name": "Dragon Roar",
+					"type": "sorcery",
+					"class": "warrior",
+					"rarity": "common",
+					"cost": 2
+				},
+				{
+					"id": "forge_of_souls",
+					"name": "Forge of Souls",
+					"type": "sorcery",
+					"class": "warrior",
+					"rarity": "common",
+					"cost": 2
+				},
+				{
+					"id": "into_the_fray",
+					"name": "Into the Fray",
+					"type": "sorcery",
+					"class": "warrior",
+					"rarity": "rare",
+					"cost": 1
+				},
+				{
+					"id": "corsair_cache",
+					"name": "Corsair Cache",
+					"type": "sorcery",
+					"class": "warrior",
+					"rarity": "rare",
+					"cost": 2
+				},
+				{
+					"id": "dragon_roar",
+					"name": "Dragon Roar",
+					"type": "sorcery",
+					"class": "warrior",
+					"rarity": "common",
+					"cost": 2
+				},
+				{
+					"id": "blood_to_ichor",
+					"name": "Blood to Ichor",
+					"type": "sorcery",
+					"class": "warrior",
+					"rarity": "rare",
+					"cost": 1
+				},
+				{
+					"id": "dead_air",
+					"name": "Dead Air",
+					"type": "sorcery",
+					"class": "deathknight",
+					"rarity": "rare",
+					"cost": 2
+				},
+				{
+					"id": "fistful_of_corpses",
+					"name": "Fistful of Corpses",
+					"type": "sorcery",
+					"class": "deathknight",
+					"rarity": "common",
+					"cost": 1
+				},
+				{
+					"id": "orbital_moon",
+					"name": "Orbital Moon",
+					"type": "sorcery",
+					"class": "deathknight",
+					"rarity": "common",
+					"cost": 1
+				},
+				{
+					"id": "rite_of_atrocity",
+					"name": "Rite of Atrocity",
+					"type": "sorcery",
+					"class": "deathknight",
+					"rarity": "common",
+					"cost": 1
+				},
+				{
+					"id": "runes_of_darkness",
+					"name": "Runes of Darkness",
+					"type": "sorcery",
+					"class": "deathknight",
+					"rarity": "common",
+					"cost": 1
+				},
+				{
+					"id": "down_with_the_ship",
+					"name": "Down with the Ship",
+					"type": "sorcery",
+					"class": "deathknight",
+					"rarity": "rare",
+					"cost": 2
+				},
+				{
+					"id": "poison_breath",
+					"name": "Poison Breath",
+					"type": "sorcery",
+					"class": "deathknight",
+					"rarity": "rare",
+					"cost": 2
+				},
+				{
+					"id": "cremate",
+					"name": "Cremate",
+					"type": "sorcery",
+					"class": "deathknight",
+					"rarity": "common",
+					"cost": 3
+				},
+				{
+					"id": "howling_blast",
+					"name": "Howling Blast",
+					"type": "sorcery",
+					"class": "deathknight",
+					"rarity": "common",
+					"cost": 3
+				},
+				{
+					"id": "eternal_layover",
+					"name": "Eternal Layover",
+					"type": "sorcery",
+					"class": "death_knight",
+					"rarity": "rare",
+					"cost": 4
+				},
+				{
+					"id": "helm_of_humiliation",
+					"name": "Helm of Humiliation",
+					"type": "sorcery",
+					"class": "deathknight",
+					"rarity": "rare",
+					"cost": 4
+				},
+				{
+					"id": "poison_breath",
+					"name": "Poison Breath",
+					"type": "sorcery",
+					"class": "deathknight",
+					"rarity": "rare",
+					"cost": 2
+				}
+			]
+		},
+		{
+			"sha": "01c287a",
+			"date": "2026-08-06",
+			"kind": "cards",
+			"title": "Cross-class easy-spell sweep, wave 2: Paladin/Druid/Shaman (~44 spells)",
+			"body": "Paladin 15, Druid 15, Shaman 14 clean gate-passers appended. All existing\neffects (buff/tutor/grant/discover/summon/freeze/copy-to-hand/damage/\nrandom-damage/heal/draw-check/reduce-cost/etc.) - no new engine code.\n\nswiftdraw_split test: relaxed the Miracle-pool count to >= (it grows as\nQuickdraw spells are imported, e.g. Rehydrate) instead of a pinned exact.\n\nBattery 175/175 incl. fuzz.",
+			"cards": [
+				{
+					"id": "conviction_rank_1",
+					"name": "Conviction (Rank 1)",
+					"type": "sorcery",
+					"class": "paladin",
+					"rarity": "epic",
+					"cost": 1
+				},
+				{
+					"id": "crystology",
+					"name": "Crystology",
+					"type": "sorcery",
+					"class": "paladin",
+					"rarity": "rare",
+					"cost": 1
+				},
+				{
+					"id": "divine_brew",
+					"name": "Divine Brew",
+					"type": "sorcery",
+					"class": "paladin",
+					"rarity": "rare",
+					"cost": 1
+				},
+				{
+					"id": "fancy_packaging",
+					"name": "Fancy Packaging",
+					"type": "sorcery",
+					"class": "paladin",
+					"rarity": "common",
+					"cost": 1
+				},
+				{
+					"id": "first_day_of_school",
+					"name": "First Day of School",
+					"type": "sorcery",
+					"class": "paladin",
+					"rarity": "common",
+					"cost": 1
+				},
+				{
+					"id": "promotion",
+					"name": "Promotion",
+					"type": "sorcery",
+					"class": "paladin",
+					"rarity": "epic",
+					"cost": 1
+				},
+				{
+					"id": "sand_breath",
+					"name": "Sand Breath",
+					"type": "sorcery",
+					"class": "paladin",
+					"rarity": "common",
+					"cost": 1
+				},
+				{
+					"id": "shield_of_honor",
+					"name": "Shield of Honor",
+					"type": "sorcery",
+					"class": "paladin",
+					"rarity": "common",
+					"cost": 1
+				},
+				{
+					"id": "a_light_in_the_darkness",
+					"name": "A Light in the Darkness",
+					"type": "sorcery",
+					"class": "paladin",
+					"rarity": "common",
+					"cost": 2
+				},
+				{
+					"id": "libram_of_wisdom",
+					"name": "Libram of Wisdom",
+					"type": "sorcery",
+					"class": "paladin",
+					"rarity": "rare",
+					"cost": 2
+				},
+				{
+					"id": "noble_mount",
+					"name": "Noble Mount",
+					"type": "sorcery",
+					"class": "paladin",
+					"rarity": "rare",
+					"cost": 2
+				},
+				{
+					"id": "snack_run",
+					"name": "Snack Run",
+					"type": "sorcery",
+					"class": "paladin",
+					"rarity": "rare",
+					"cost": 2
+				},
+				{
+					"id": "crystology",
+					"name": "Crystology",
+					"type": "sorcery",
+					"class": "paladin",
+					"rarity": "rare",
+					"cost": 1
+				},
+				{
+					"id": "first_day_of_school",
+					"name": "First Day of School",
+					"type": "sorcery",
+					"class": "paladin",
+					"rarity": "common",
+					"cost": 1
+				},
+				{
+					"id": "a_light_in_the_darkness",
+					"name": "A Light in the Darkness",
+					"type": "sorcery",
+					"class": "paladin",
+					"rarity": "common",
+					"cost": 2
+				},
+				{
+					"id": "arkonite_revelation",
+					"name": "Arkonite Revelation",
+					"type": "sorcery",
+					"class": "druid",
+					"rarity": "common",
+					"cost": 1
+				},
+				{
+					"id": "forest_seedlings",
+					"name": "Forest Seedlings",
+					"type": "sorcery",
+					"class": "druid",
+					"rarity": "common",
+					"cost": 1
+				},
+				{
+					"id": "moonbeam",
+					"name": "Moonbeam",
+					"type": "sorcery",
+					"class": "druid",
+					"rarity": "common",
+					"cost": 1
+				},
+				{
+					"id": "nature_studies",
+					"name": "Nature Studies",
+					"type": "sorcery",
+					"class": "druid",
+					"rarity": "common",
+					"cost": 1
+				},
+				{
+					"id": "partner_assignment",
+					"name": "Partner Assignment",
+					"type": "sorcery",
+					"class": "druid",
+					"rarity": "rare",
+					"cost": 1
+				},
+				{
+					"id": "planted_evidence",
+					"name": "Planted Evidence",
+					"type": "sorcery",
+					"class": "druid",
+					"rarity": "common",
+					"cost": 1
+				},
+				{
+					"id": "witchwood_apple",
+					"name": "Witchwood Apple",
+					"type": "sorcery",
+					"class": "druid",
+					"rarity": "common",
+					"cost": 1
+				},
+				{
+					"id": "horn_of_plenty",
+					"name": "Horn of Plenty",
+					"type": "sorcery",
+					"class": "druid",
+					"rarity": "common",
+					"cost": 2
+				},
+				{
+					"id": "ironbark",
+					"name": "Ironbark",
+					"type": "sorcery",
+					"class": "druid",
+					"rarity": "rare",
+					"cost": 2
+				},
+				{
+					"id": "rehydrate",
+					"name": "Rehydrate",
+					"type": "sorcery",
+					"class": "druid",
+					"rarity": "common",
+					"cost": 2
+				},
+				{
+					"id": "trail_mix",
+					"name": "Trail Mix",
+					"type": "sorcery",
+					"class": "druid",
+					"rarity": "common",
+					"cost": 2
+				},
+				{
+					"id": "bogbeam",
+					"name": "Bogbeam",
+					"type": "sorcery",
+					"class": "druid",
+					"rarity": "common",
+					"cost": 3
+				},
+				{
+					"id": "contingency",
+					"name": "Contingency",
+					"type": "sorcery",
+					"class": "druid",
+					"rarity": "common",
+					"cost": 3
+				},
+				{
+					"id": "witchwood_apple",
+					"name": "Witchwood Apple",
+					"type": "sorcery",
+					"class": "druid",
+					"rarity": "common",
+					"cost": 1
+				},
+				{
+					"id": "mark_of_y_shaarj",
+					"name": "Mark of Y'Shaarj",
+					"type": "sorcery",
+					"class": "druid",
+					"rarity": "common",
+					"cost": 2
+				},
+				{
+					"id": "totemic_surge",
+					"name": "Totemic Surge",
+					"type": "sorcery",
+					"class": "shaman",
+					"rarity": "common",
+					"cost": 0
+				},
+				{
+					"id": "blazing_invocation",
+					"name": "Blazing Invocation",
+					"type": "sorcery",
+					"class": "shaman",
+					"rarity": "rare",
+					"cost": 1
+				},
+				{
+					"id": "cold_storage",
+					"name": "Cold Storage",
+					"type": "sorcery",
+					"class": "shaman",
+					"rarity": "rare",
+					"cost": 1
+				},
+				{
+					"id": "reincarnate",
+					"name": "Reincarnate",
+					"type": "sorcery",
+					"class": "shaman",
+					"rarity": "common",
+					"cost": 1
+				},
+				{
+					"id": "schooling",
+					"name": "Schooling",
+					"type": "sorcery",
+					"class": "shaman",
+					"rarity": "common",
+					"cost": 1
+				},
+				{
+					"id": "bracing_cold",
+					"name": "Bracing Cold",
+					"type": "sorcery",
+					"class": "shaman",
+					"rarity": "rare",
+					"cost": 2
+				},
+				{
+					"id": "crackle",
+					"name": "Crackle",
+					"type": "sorcery",
+					"class": "shaman",
+					"rarity": "common",
+					"cost": 2
+				},
+				{
+					"id": "cryostasis",
+					"name": "Cryostasis",
+					"type": "sorcery",
+					"class": "shaman",
+					"rarity": "epic",
+					"cost": 2
+				},
+				{
+					"id": "earthen_might",
+					"name": "Earthen Might",
+					"type": "sorcery",
+					"class": "shaman",
+					"rarity": "rare",
+					"cost": 2
+				},
+				{
+					"id": "landslide",
+					"name": "Landslide",
+					"type": "sorcery",
+					"class": "shaman",
+					"rarity": "rare",
+					"cost": 2
+				},
+				{
+					"id": "deathmatch_pavilion",
+					"name": "Deathmatch Pavilion",
+					"type": "sorcery",
+					"class": "shaman",
+					"rarity": "epic",
+					"cost": 2
+				},
+				{
+					"id": "deathweaver_aura",
+					"name": "Deathweaver Aura",
+					"type": "sorcery",
+					"class": "shaman",
+					"rarity": "common",
+					"cost": 2
+				},
+				{
+					"id": "cryostasis",
+					"name": "Cryostasis",
+					"type": "sorcery",
+					"class": "shaman",
+					"rarity": "epic",
+					"cost": 2
+				}
+			]
+		},
+		{
+			"sha": "76de4db",
+			"date": "2026-08-05",
+			"kind": "cards",
+			"title": "Cross-class easy-spell sweep, wave 1: Priest/Warlock/Rogue (~42 spells)",
+			"body": "Broad \"easy ones from every class\" sweep. Per class: extract missing\nspells, filter to template-simple (short, single-clause, template-verb,\nno Quests/heavy riders), author via workflow, gate, take only clean\npassers, and auto-drop any card with a dangling token reference.\n\nPriest 16, Warlock 12, Rogue 14 clean passers appended. All existing\neffects (damage/heal/silence/discover/mill/destroy/draw/buff/add-lackey/\ngain-coin/draw-minion-tribe-then/etc.) - no new engine code this wave.\n\nFixed ff10d Toki characterization test: constant-rng * pool-size index\ndrifts as cards are added, so scan rng values for the recursive-Toki\noutcome instead of pinning a fixed seed.\n\nBattery 175/175 incl. fuzz.",
+			"cards": [
+				{
+					"id": "whispers_of_evil",
+					"name": "Whispers of EVIL",
+					"type": "sorcery",
+					"class": "priest",
+					"rarity": "common",
+					"cost": 0
+				},
+				{
+					"id": "acupuncture",
+					"name": "Acupuncture",
+					"type": "sorcery",
+					"class": "priest",
+					"rarity": "common",
+					"cost": 1
+				},
+				{
+					"id": "binding_heal",
+					"name": "Binding Heal",
+					"type": "sorcery",
+					"class": "priest",
+					"rarity": "common",
+					"cost": 1
+				},
+				{
+					"id": "deafen",
+					"name": "Deafen",
+					"type": "sorcery",
+					"class": "priest",
+					"rarity": "common",
+					"cost": 1
+				},
+				{
+					"id": "draconic_studies",
+					"name": "Draconic Studies",
+					"type": "sorcery",
+					"class": "priest",
+					"rarity": "common",
+					"cost": 1
+				},
+				{
+					"id": "embalming_ritual",
+					"name": "Embalming Ritual",
+					"type": "sorcery",
+					"class": "priest",
+					"rarity": "common",
+					"cost": 1
+				},
+				{
+					"id": "focused_will",
+					"name": "Focused Will",
+					"type": "sorcery",
+					"class": "priest",
+					"rarity": "rare",
+					"cost": 1
+				},
+				{
+					"id": "altar_of_fire",
+					"name": "Altar of Fire",
+					"type": "sorcery",
+					"class": "warlock",
+					"rarity": "epic",
+					"cost": 1
+				},
+				{
+					"id": "dig_for_treasure",
+					"name": "Dig for Treasure",
+					"type": "sorcery",
+					"class": "rogue",
+					"rarity": "rare",
+					"cost": 1
+				},
+				{
+					"id": "raise_dead",
+					"name": "Raise Dead",
+					"type": "sorcery",
+					"class": "priest",
+					"rarity": "common",
+					"cost": 0
+				},
+				{
+					"id": "gift_of_the_naaru",
+					"name": "Gift of the Naaru",
+					"type": "sorcery",
+					"class": "priest",
+					"rarity": "epic",
+					"cost": 1
+				},
+				{
+					"id": "mind_sear",
+					"name": "Mind Sear",
+					"type": "sorcery",
+					"class": "priest",
+					"rarity": "common",
+					"cost": 1
+				},
+				{
+					"id": "pint_size_potion",
+					"name": "Pint-Size Potion",
+					"type": "sorcery",
+					"class": "priest",
+					"rarity": "rare",
+					"cost": 1
+				},
+				{
+					"id": "power_word_barrier",
+					"name": "Power Word: Barrier",
+					"type": "sorcery",
+					"class": "priest",
+					"rarity": "rare",
+					"cost": 1
+				},
+				{
+					"id": "the_light_it_burns",
+					"name": "The Light! It Burns!",
+					"type": "sorcery",
+					"class": "priest",
+					"rarity": "common",
+					"cost": 1
+				},
+				{
+					"id": "bless",
+					"name": "Bless",
+					"type": "sorcery",
+					"class": "priest",
+					"rarity": "rare",
+					"cost": 2
+				},
+				{
+					"id": "divine_star",
+					"name": "Divine Star",
+					"type": "sorcery",
+					"class": "priest",
+					"rarity": "common",
+					"cost": 2
+				},
+				{
+					"id": "mind_sear",
+					"name": "Mind Sear",
+					"type": "sorcery",
+					"class": "priest",
+					"rarity": "common",
+					"cost": 1
+				},
+				{
+					"id": "ritual_of_doom",
+					"name": "Ritual of Doom",
+					"type": "sorcery",
+					"class": "warlock",
+					"rarity": "rare",
+					"cost": 0
+				},
+				{
+					"id": "chaotic_consumption",
+					"name": "Chaotic Consumption",
+					"type": "sorcery",
+					"class": "warlock",
+					"rarity": "epic",
+					"cost": 1
+				},
+				{
+					"id": "demonic_studies",
+					"name": "Demonic Studies",
+					"type": "sorcery",
+					"class": "warlock",
+					"rarity": "common",
+					"cost": 1
+				},
+				{
+					"id": "final_gasp",
+					"name": "Final Gasp",
+					"type": "sorcery",
+					"class": "warlock",
+					"rarity": "common",
+					"cost": 1
+				},
+				{
+					"id": "touch_of_the_nathrezim",
+					"name": "Touch of the Nathrezim",
+					"type": "sorcery",
+					"class": "warlock",
+					"rarity": "rare",
+					"cost": 1
+				},
+				{
+					"id": "unstable_felbolt",
+					"name": "Unstable Felbolt",
+					"type": "sorcery",
+					"class": "warlock",
+					"rarity": "common",
+					"cost": 1
+				},
+				{
+					"id": "darkbomb",
+					"name": "Darkbomb",
+					"type": "sorcery",
+					"class": "warlock",
+					"rarity": "common",
+					"cost": 2
+				},
+				{
+					"id": "defile",
+					"name": "Defile",
+					"type": "sorcery",
+					"class": "warlock",
+					"rarity": "rare",
+					"cost": 2
+				},
+				{
+					"id": "eat_the_imp",
+					"name": "Eat! The! Imp!",
+					"type": "sorcery",
+					"class": "warlock",
+					"rarity": "common",
+					"cost": 2
+				},
+				{
+					"id": "curse_of_rafaam",
+					"name": "Curse of Rafaam",
+					"type": "sorcery",
+					"class": "warlock",
+					"rarity": "common",
+					"cost": 2
+				},
+				{
+					"id": "imp_swarm",
+					"name": "Imp Swarm (Rank 1)",
+					"type": "sorcery",
+					"class": "warlock",
+					"rarity": "common",
+					"cost": 2
+				},
+				{
+					"id": "assembly_line",
+					"name": "Assembly Line",
+					"type": "sorcery",
+					"class": "rogue",
+					"rarity": "rare",
+					"cost": 1
+				},
+				{
+					"id": "dragon_s_hoard",
+					"name": "Dragon's Hoard",
+					"type": "sorcery",
+					"class": "rogue",
+					"rarity": "rare",
+					"cost": 1
+				},
+				{
+					"id": "gear_shift",
+					"name": "Gear Shift",
+					"type": "sorcery",
+					"class": "rogue",
+					"rarity": "rare",
+					"cost": 1
+				},
+				{
+					"id": "journey_below",
+					"name": "Journey Below",
+					"type": "sorcery",
+					"class": "rogue",
+					"rarity": "rare",
+					"cost": 1
+				},
+				{
+					"id": "leeching_poison",
+					"name": "Leeching Poison",
+					"type": "sorcery",
+					"class": "rogue",
+					"rarity": "common",
+					"cost": 1
+				},
+				{
+					"id": "paralytic_poison",
+					"name": "Paralytic Poison",
+					"type": "sorcery",
+					"class": "rogue",
+					"rarity": "rare",
+					"cost": 1
+				},
+				{
+					"id": "silverleaf_poison",
+					"name": "Silverleaf Poison",
+					"type": "sorcery",
+					"class": "rogue",
+					"rarity": "common",
+					"cost": 1
+				},
+				{
+					"id": "spore_hallucination",
+					"name": "Spore Hallucination",
+					"type": "sorcery",
+					"class": "rogue",
+					"rarity": "common",
+					"cost": 1
+				},
+				{
+					"id": "twisted_pack",
+					"name": "Twisted Pack",
+					"type": "sorcery",
+					"class": "rogue",
+					"rarity": "rare",
+					"cost": 1
+				},
+				{
+					"id": "clever_disguise",
+					"name": "Clever Disguise",
+					"type": "sorcery",
+					"class": "rogue",
+					"rarity": "common",
+					"cost": 2
+				},
+				{
+					"id": "jackpot",
+					"name": "Jackpot!",
+					"type": "sorcery",
+					"class": "rogue",
+					"rarity": "common",
+					"cost": 2
+				},
+				{
+					"id": "mimic_pod",
+					"name": "Mimic Pod",
+					"type": "sorcery",
+					"class": "rogue",
+					"rarity": "rare",
+					"cost": 2
+				}
+			]
+		},
+		{
+			"sha": "2415088",
+			"date": "2026-08-05",
+			"kind": "cards",
+			"title": "Hunter spell import batch 3: 19 Beast/Twinspell spells",
+			"body": "30 authored, gated 17/30, +2 (Hunters Pack, Fresh Scent) -> 19/30.\n\nNew engine: conjure-random cardType \"secret\" branch -> Hunters Pack\n(add a random Beast + Secret + weapon). Registry unchanged.\n\nTwinspell confirmed reusable: base effect + conjure-id to a single-cast\ncompanion token (Rapid Fire authored it; Fresh Scent recovered the same\nway). Companion tokens: rapid_fire_ii, fresh_scent_ii, carnassas_brood,\narcane_tripwire_token.\n\nHighlights: Goblin Prank (buff + doom), Furious Howl (draw-to 3), Toxic\nArrow (damage-then grant Poisonous), Scavengers Ingenuity (tutor Beast +\nbuff), Revive Pet (discover died-this-game to board), Titanforged Traps\n(discover + install Secret), Story of Carnassa (shuffle 10 Raptors),\nInfest/Saddle Up! (grant-deathrattle).\n\nTest spells_hunter_batch3_test.mjs (33). Battery 175/175 incl. fuzz.",
+			"cards": [
+				{
+					"id": "fresh_scent",
+					"name": "Fresh Scent",
+					"type": "sorcery",
+					"class": "hunter",
+					"rarity": "common",
+					"cost": 2
+				},
+				{
+					"id": "furious_howl",
+					"name": "Furious Howl",
+					"type": "sorcery",
+					"class": "hunter",
+					"rarity": "common",
+					"cost": 2
+				},
+				{
+					"id": "goblin_prank",
+					"name": "Goblin Prank",
+					"type": "sorcery",
+					"class": "hunter",
+					"rarity": "epic",
+					"cost": 2
+				},
+				{
+					"id": "laser_barrage",
+					"name": "Laser Barrage",
+					"type": "sorcery",
+					"class": "hunter",
+					"rarity": "rare",
+					"cost": 2
+				},
+				{
+					"id": "nurturing_nature",
+					"name": "Nurturing Nature",
+					"type": "sorcery",
+					"class": "hunter",
+					"rarity": "rare",
+					"cost": 2
+				},
+				{
+					"id": "patchwork_pals",
+					"name": "Patchwork Pals",
+					"type": "sorcery",
+					"class": "hunter",
+					"rarity": "rare",
+					"cost": 2
+				},
+				{
+					"id": "rapid_fire",
+					"name": "Rapid Fire",
+					"type": "sorcery",
+					"class": "hunter",
+					"rarity": "common",
+					"cost": 2
+				},
+				{
+					"id": "scavengers_ingenuity",
+					"name": "Scavenger's Ingenuity",
+					"type": "sorcery",
+					"class": "hunter",
+					"rarity": "common",
+					"cost": 2
+				},
+				{
+					"id": "story_of_carnassa",
+					"name": "Story of Carnassa",
+					"type": "sorcery",
+					"class": "hunter",
+					"rarity": "rare",
+					"cost": 2
+				},
+				{
+					"id": "tame_beast",
+					"name": "Tame Beast (Rank 1)",
+					"type": "sorcery",
+					"class": "hunter",
+					"rarity": "rare",
+					"cost": 2
+				},
+				{
+					"id": "titanforged_traps",
+					"name": "Titanforged Traps",
+					"type": "sorcery",
+					"class": "hunter",
+					"rarity": "rare",
+					"cost": 2
+				},
+				{
+					"id": "toxic_arrow",
+					"name": "Toxic Arrow",
+					"type": "sorcery",
+					"class": "hunter",
+					"rarity": "epic",
+					"cost": 2
+				},
+				{
+					"id": "aimed_shot",
+					"name": "Aimed Shot",
+					"type": "sorcery",
+					"class": "hunter",
+					"rarity": "common",
+					"cost": 3
+				},
+				{
+					"id": "amphibians_spirit",
+					"name": "Amphibian's Spirit",
+					"type": "sorcery",
+					"class": "hunter",
+					"rarity": "epic",
+					"cost": 3
+				},
+				{
+					"id": "arcane_tripwire",
+					"name": "Arcane Tripwire",
+					"type": "sorcery",
+					"class": "hunter",
+					"rarity": "epic",
+					"cost": 3
+				},
+				{
+					"id": "hunters_pack",
+					"name": "Hunter's Pack",
+					"type": "sorcery",
+					"class": "hunter",
+					"rarity": "common",
+					"cost": 3
+				},
+				{
+					"id": "infest",
+					"name": "Infest",
+					"type": "sorcery",
+					"class": "hunter",
+					"rarity": "rare",
+					"cost": 3
+				},
+				{
+					"id": "revive_pet",
+					"name": "Revive Pet",
+					"type": "sorcery",
+					"class": "hunter",
+					"rarity": "rare",
+					"cost": 3
+				},
+				{
+					"id": "saddle_up",
+					"name": "Saddle Up!",
+					"type": "sorcery",
+					"class": "hunter",
+					"rarity": "epic",
+					"cost": 3
+				}
+			]
+		},
+		{
+			"sha": "bb56a74",
+			"date": "2026-08-05",
+			"kind": "cards",
+			"title": "Hunter spell import batch 2: 22 utility/Beast spells",
+			"body": "30 authored, gated 21/30 clean (best rate yet — damage/Beast/Discover\nslice with heavy existing-effect reuse), +1 (Overwhelm) via a scaler.\n\nNew engine: valuePer \"beasts-you-control\" in scaled() (additive per-Beast\ndamage scaler) -> Overwhelm. Registry unchanged.\n\nHighlights (all existing effects): Ricochet/Bursting Shot (random-damage),\nShimmer Shot (damage + summon-random of cost), Corrosive Breath (Dragon\nconditional), Cower in Fear (Beast discount), Feign Death (trigger all\ndeathrattles), Bestial Madness (buff hand+deck+board), Dinomancy (hero\npower swap), two Quests (Marsh Queen, Unseal the Vault). Plus companion\ntokens hp_dinomancy + frenzied_fangs_infused.\n\nTest spells_hunter_batch2_test.mjs (27). Battery 174/174 incl. fuzz.",
+			"cards": [
+				{
+					"id": "overwhelm",
+					"name": "Overwhelm",
+					"type": "sorcery",
+					"class": "hunter",
+					"rarity": "rare",
+					"cost": 1
+				},
+				{
+					"id": "ricochet_shot",
+					"name": "Ricochet Shot",
+					"type": "sorcery",
+					"class": "hunter",
+					"rarity": "common",
+					"cost": 1
+				},
+				{
+					"id": "shimmer_shot",
+					"name": "Shimmer Shot",
+					"type": "sorcery",
+					"class": "hunter",
+					"rarity": "common",
+					"cost": 1
+				},
+				{
+					"id": "tame_pet",
+					"name": "Tame Pet",
+					"type": "sorcery",
+					"class": "hunter",
+					"rarity": "common",
+					"cost": 1
+				},
+				{
+					"id": "the_marsh_queen",
+					"name": "The Marsh Queen",
+					"type": "quest",
+					"class": "hunter",
+					"rarity": "legendary",
+					"cost": 1
+				},
+				{
+					"id": "unseal_the_vault",
+					"name": "Unseal the Vault",
+					"type": "quest",
+					"class": "hunter",
+					"rarity": "legendary",
+					"cost": 1
+				},
+				{
+					"id": "wilderness_pack",
+					"name": "Wilderness Pack",
+					"type": "sorcery",
+					"class": "hunter",
+					"rarity": "rare",
+					"cost": 1
+				},
+				{
+					"id": "always_a_bigger_jormungar",
+					"name": "Always a Bigger Jormungar",
+					"type": "sorcery",
+					"class": "hunter",
+					"rarity": "rare",
+					"cost": 2
+				},
+				{
+					"id": "barrel_of_monkeys",
+					"name": "Barrel of Monkeys",
+					"type": "sorcery",
+					"class": "hunter",
+					"rarity": "rare",
+					"cost": 2
+				},
+				{
+					"id": "bestial_madness",
+					"name": "Bestial Madness",
+					"type": "sorcery",
+					"class": "hunter",
+					"rarity": "rare",
+					"cost": 2
+				},
+				{
+					"id": "bursting_shot",
+					"name": "Bursting Shot",
+					"type": "sorcery",
+					"class": "hunter",
+					"rarity": "common",
+					"cost": 2
+				},
+				{
+					"id": "corrosive_breath",
+					"name": "Corrosive Breath",
+					"type": "sorcery",
+					"class": "hunter",
+					"rarity": "common",
+					"cost": 2
+				},
+				{
+					"id": "cower_in_fear",
+					"name": "Cower in Fear",
+					"type": "sorcery",
+					"class": "hunter",
+					"rarity": "common",
+					"cost": 2
+				},
+				{
+					"id": "cybertech_chip",
+					"name": "Cybertech Chip",
+					"type": "sorcery",
+					"class": "hunter",
+					"rarity": "rare",
+					"cost": 2
+				},
+				{
+					"id": "detailed_notes",
+					"name": "Detailed Notes",
+					"type": "sorcery",
+					"class": "hunter",
+					"rarity": "common",
+					"cost": 2
+				},
+				{
+					"id": "dinomancy",
+					"name": "Dinomancy",
+					"type": "sorcery",
+					"class": "hunter",
+					"rarity": "epic",
+					"cost": 2
+				},
+				{
+					"id": "doggie_biscuit",
+					"name": "Doggie Biscuit",
+					"type": "sorcery",
+					"class": "hunter",
+					"rarity": "rare",
+					"cost": 2
+				},
+				{
+					"id": "dont_feed_the_animals",
+					"name": "Don't Feed the Animals",
+					"type": "sorcery",
+					"class": "hunter",
+					"rarity": "epic",
+					"cost": 2
+				},
+				{
+					"id": "dragonbane_shot",
+					"name": "Dragonbane Shot",
+					"type": "sorcery",
+					"class": "hunter",
+					"rarity": "rare",
+					"cost": 2
+				},
+				{
+					"id": "evolution_chamber",
+					"name": "Evolution Chamber",
+					"type": "sorcery",
+					"class": "hunter",
+					"rarity": "common",
+					"cost": 2
+				},
+				{
+					"id": "feign_death",
+					"name": "Feign Death",
+					"type": "sorcery",
+					"class": "hunter",
+					"rarity": "epic",
+					"cost": 2
+				},
+				{
+					"id": "frenzied_fangs",
+					"name": "Frenzied Fangs",
+					"type": "sorcery",
+					"class": "hunter",
+					"rarity": "common",
+					"cost": 2
+				}
+			]
+		},
+		{
+			"sha": "1e60254",
+			"date": "2026-08-05",
+			"kind": "cards",
+			"title": "Hunter spell import batch 1: 19 spells incl. the first Traps",
+			"body": "Third class through the spell-import pipeline. 30 authored, gated 8/30,\nthen an unlock wave recovered 11 more -> 19/30 (best batch yet).\n\nTraps: per the \"trap in the name -> it is a trap\" rule, Dart/Ice/Rat Trap\nbecome type:trap (p.traps) instead of secrets. Traps already fire\nidentically to secrets via fireSecrets but are not counted by\nsecret-synergy.\n\nNew engine support (registry 1011 -> 1013):\n- secret/trap triggers hero-power-used (Dart Trap) and enemy-card-played\n  + cardsPlayedThisTurn condition (Rat Trap, Motion Denied)\n- buff-minion honors of:target (Bait and Switch)\n- summon-copy-of-triggering-minion dormant param (Emergency Maneuvers)\n- summon-redirect cost param = random N-cost as new target (Wandering Monster)\n- bounce-caster-spell: counter + return to caster at +cost (Ice Trap)\n- draw-minion-tribe-then (Fetch!), grant-next-deathrattle-discount\n  (Carrion Studies), questTick hero-power (Toxic Reinforcements)\n- gate now recognizes registerTrigger types + skips quest goal.type\n\nTest spells_hunter_batch1_test.mjs (33). Battery 173/173 incl. fuzz.",
+			"cards": [
+				{
+					"id": "bait_and_switch",
+					"name": "Bait and Switch",
+					"type": "secret",
+					"class": "hunter",
+					"rarity": "common",
+					"cost": 2
+				},
+				{
+					"id": "cat_trick",
+					"name": "Cat Trick",
+					"type": "secret",
+					"class": "hunter",
+					"rarity": "rare",
+					"cost": 2
+				},
+				{
+					"id": "dart_trap",
+					"name": "Dart Trap",
+					"type": "trap",
+					"class": "hunter",
+					"rarity": "common",
+					"cost": 2
+				},
+				{
+					"id": "emergency_maneuvers",
+					"name": "Emergency Maneuvers",
+					"type": "secret",
+					"class": "hunter",
+					"rarity": "epic",
+					"cost": 2
+				},
+				{
+					"id": "hidden_cache",
+					"name": "Hidden Cache",
+					"type": "secret",
+					"class": "hunter",
+					"rarity": "rare",
+					"cost": 2
+				},
+				{
+					"id": "ice_trap",
+					"name": "Ice Trap",
+					"type": "trap",
+					"class": "hunter",
+					"rarity": "epic",
+					"cost": 2
+				},
+				{
+					"id": "motion_denied",
+					"name": "Motion Denied",
+					"type": "secret",
+					"class": "hunter",
+					"rarity": "common",
+					"cost": 2
+				},
+				{
+					"id": "pressure_plate",
+					"name": "Pressure Plate",
+					"type": "secret",
+					"class": "hunter",
+					"rarity": "common",
+					"cost": 2
+				},
+				{
+					"id": "rat_trap",
+					"name": "Rat Trap",
+					"type": "trap",
+					"class": "hunter",
+					"rarity": "epic",
+					"cost": 2
+				},
+				{
+					"id": "untimely_death",
+					"name": "Untimely Death",
+					"type": "secret",
+					"class": "hunter",
+					"rarity": "rare",
+					"cost": 2
+				},
+				{
+					"id": "wandering_monster",
+					"name": "Wandering Monster",
+					"type": "secret",
+					"class": "hunter",
+					"rarity": "rare",
+					"cost": 2
+				},
+				{
+					"id": "serpentbloom",
+					"name": "Serpentbloom",
+					"type": "sorcery",
+					"class": "hunter",
+					"rarity": "common",
+					"cost": 0
+				},
+				{
+					"id": "smuggler_s_crate",
+					"name": "Smuggler's Crate",
+					"type": "sorcery",
+					"class": "hunter",
+					"rarity": "common",
+					"cost": 0
+				},
+				{
+					"id": "awakening_tremors",
+					"name": "Awakening Tremors",
+					"type": "sorcery",
+					"class": "hunter",
+					"rarity": "common",
+					"cost": 1
+				},
+				{
+					"id": "bunch_of_bananas",
+					"name": "Bunch of Bananas",
+					"type": "sorcery",
+					"class": "hunter",
+					"rarity": "common",
+					"cost": 1
+				},
+				{
+					"id": "carrion_studies",
+					"name": "Carrion Studies",
+					"type": "sorcery",
+					"class": "hunter",
+					"rarity": "common",
+					"cost": 1
+				},
+				{
+					"id": "explorers_hat",
+					"name": "Explorer's Hat",
+					"type": "sorcery",
+					"class": "hunter",
+					"rarity": "rare",
+					"cost": 1
+				},
+				{
+					"id": "fetch",
+					"name": "Fetch!",
+					"type": "sorcery",
+					"class": "hunter",
+					"rarity": "common",
+					"cost": 1
+				},
+				{
+					"id": "toxic_reinforcements",
+					"name": "Toxic Reinforcements",
+					"type": "quest",
+					"class": "hunter",
+					"rarity": "epic",
+					"cost": 1
+				}
+			]
+		},
+		{
+			"sha": "38f76f3",
+			"date": "2026-08-05",
+			"kind": "cards",
+			"title": "secret-reward unlock wave 2 — recover 5 more Mage Secrets",
+			"body": "Three new secret-reward trigger effects (registerTrigger, no registry change) that\nact on the triggering minion:\n- transform-triggering (ctx.minion || triggering(), in-place token swap) -> Potion\n  of Polymorph (played minion -> 1/1 Sheep) + Mystic Misdirection (attacker -> Sheep;\n  neutralizes the incoming attack).\n- counter-triggering (silent board removal, no Deathrattle) -> Objection!\n- summon-copy-attacker-attack -> Vengeful Visage (copy the attacker, it hits the\n  enemy hero).\n- Splitting Image reuses the EXISTING copy-minion of:'target' (copies the attacked\n  minion).\n\nAppended the 5 secrets. 13-assertion test drives each end-to-end. As with the last\nsecret wave, these reward primitives unblock the same patterns for every class's\nSecrets. Battery 172/172, fuzz clean.",
+			"cards": [
+				{
+					"id": "potion_of_polymorph",
+					"name": "Potion of Polymorph",
+					"type": "secret",
+					"class": "mage",
+					"rarity": "rare",
+					"cost": 3
+				},
+				{
+					"id": "mystic_misdirection",
+					"name": "Mystic Misdirection",
+					"type": "secret",
+					"class": "mage",
+					"rarity": "rare",
+					"cost": 3
+				},
+				{
+					"id": "objection",
+					"name": "Objection!",
+					"type": "secret",
+					"class": "mage",
+					"rarity": "rare",
+					"cost": 3
+				},
+				{
+					"id": "splitting_image",
+					"name": "Splitting Image",
+					"type": "secret",
+					"class": "mage",
+					"rarity": "epic",
+					"cost": 3
+				}
+			]
+		},
+		{
+			"sha": "fdd6a34",
+			"date": "2026-08-05",
+			"kind": "cards",
+			"title": "spell-import — 10 more Mage spells (batch 3)",
+			"body": "Mage batch 3 (29 authored after a session-limit retry, 0 errors) gated to 10/30\nclean (34% — Secret + copy heavy). Appended 10. Notable reuse of just-built work:\nRigged Faire Game uses the new enemy-turn-end secret trigger (+ heroTookDamage\ncondition), Bursting Leyline uses damage-enemy-minion excessToHero, Spot the\nDifference uses deckNoMinions.\n\nCards: Netherwind Portal (enemy-spell-cast secret -> random 4-Cost minion), Rigged\nFaire Game (secret: draw 3 if you took no damage), Arcane Flow (4 + 2-to-all),\nBursting Leyline (excess-to-hero), Molten Reflection (copy a friendly minion), Sheep\nMask (set 1/1 + grant DR), Simulacrum (copy lowest-Cost in hand), Seafloor Gateway\n(tutor Mech + tribe discount), Alter Time (Discover 2 Arcane -2), Spot the\nDifference. 19-assertion behavioral test.\n\n19 rejects harvested -> the next secret unlock wave (transform-attacker, transform/\ncounter the played minion, copy-attacked-minion, summon-copy-attacker, turn-start\nsummon). Battery 171/171, fuzz clean.",
+			"cards": [
+				{
+					"id": "netherwind_portal",
+					"name": "Netherwind Portal",
+					"type": "secret",
+					"class": "mage",
+					"rarity": "common",
+					"cost": 3
+				},
+				{
+					"id": "rigged_faire_game",
+					"name": "Rigged Faire Game",
+					"type": "secret",
+					"class": "mage",
+					"rarity": "epic",
+					"cost": 3
+				},
+				{
+					"id": "seafloor_gateway",
+					"name": "Seafloor Gateway",
+					"type": "sorcery",
+					"class": "mage",
+					"rarity": "rare",
+					"cost": 3
+				},
+				{
+					"id": "simulacrum",
+					"name": "Simulacrum",
+					"type": "sorcery",
+					"class": "mage",
+					"rarity": "epic",
+					"cost": 3
+				},
+				{
+					"id": "alter_time",
+					"name": "Alter Time",
+					"type": "sorcery",
+					"class": "mage",
+					"rarity": "rare",
+					"cost": 4
+				},
+				{
+					"id": "arcane_flow",
+					"name": "Arcane Flow",
+					"type": "sorcery",
+					"class": "mage",
+					"rarity": "rare",
+					"cost": 4
+				},
+				{
+					"id": "bursting_leyline",
+					"name": "Bursting Leyline",
+					"type": "sorcery",
+					"class": "mage",
+					"rarity": "epic",
+					"cost": 4
+				},
+				{
+					"id": "molten_reflection",
+					"name": "Molten Reflection",
+					"type": "sorcery",
+					"class": "mage",
+					"rarity": "rare",
+					"cost": 4
+				},
+				{
+					"id": "sheep_mask",
+					"name": "Sheep Mask",
+					"type": "sorcery",
+					"class": "mage",
+					"rarity": "rare",
+					"cost": 4
+				}
+			]
+		},
+		{
+			"sha": "0eae720",
+			"date": "2026-08-05",
+			"kind": "cards",
+			"title": "secret-trigger unlock wave — recover 5 Mage Secrets",
+			"body": "Highest-leverage batch-2 unlock (cross-class: every class has Secret pools). The\nenemy-minion-played and friendly-minion-died triggers already fired; added the\nmissing reward effects + one new trigger:\n- damage-minion gains excessToHero -> Explosive Runes (6 to the played minion,\n  excess to their hero).\n- copy-triggering-to-hand -> Frozen Clone + Duplicate (2 copies of the played/dead\n  minion to hand). NB reads ctx.minion directly since triggering() nulls out DEAD\n  minions (needed for the friendly-minion-died case).\n- summon-random-triggering-cost -> Effigy (a random minion of the dead one's Cost).\n- new enemy-turn-end secret trigger (fired at turn-end via fireSecretsAll) +\n  destroy-highest-enemy-minion -> Flames of Infinity.\n\nAppended the 5 secrets. 13-assertion test drives each end-to-end (secrets fire on\nthe opponent's turn per the engine's own-turn guard).\n\nAlso made ff10e's Avatar-pack assertion robust: it used a constant test rng whose\npool-index shifts with every card added (and this file's own t_kill test def is in\nthe pack pool), so it now just asserts the battlecry resolved. No new registered\neffect types (trigger effects don't count). Battery 170/170, fuzz clean.",
+			"cards": [
+				{
+					"id": "explosive_runes",
+					"name": "Explosive Runes",
+					"type": "secret",
+					"class": "mage",
+					"rarity": "rare",
+					"cost": 3
+				},
+				{
+					"id": "frozen_clone",
+					"name": "Frozen Clone",
+					"type": "secret",
+					"class": "mage",
+					"rarity": "common",
+					"cost": 3
+				},
+				{
+					"id": "duplicate",
+					"name": "Duplicate",
+					"type": "secret",
+					"class": "mage",
+					"rarity": "common",
+					"cost": 3
+				},
+				{
+					"id": "effigy",
+					"name": "Effigy",
+					"type": "secret",
+					"class": "mage",
+					"rarity": "rare",
+					"cost": 3
+				}
+			]
+		},
+		{
+			"sha": "b501e97",
+			"date": "2026-08-05",
+			"kind": "cards",
+			"title": "spell-import — 13 more Mage spells (batch 2, Secret-heavy)",
+			"body": "Mage batch 2 (29 authored, 0 errors) gated to 11/30 clean (38% — a Secret-heavy\nArcane slice). Appended 11 + the Build a Snowbrute/Snowgre token chain.\n\nHighlights: Flame Ward (a real Mage SECRET — fires 3-to-all-enemies when a minion\nattacks your hero, verified end-to-end via the secret trigger system), Volcanomancy\n(grant-deathrattle: 3 to all other minions on death), Unstable/Semi-Stable Portal\n(random minion costing 3 less), Leyline Nexus (draw -2 cost), Hidden Objects\n(Discover a Secret at Cost 1), Infinitize the Maxitude (Discover + Finale +\nconjure-id-endturn), Primordial Glyph, Story of the Waygate (foreign-card discount),\nElemental Companion, Build a Snowman. 20-assertion behavioral test.\n\n18 rejects harvested (6 of 7 Secrets need trigger types not yet in the secret\nsystem: friendly-minion-died copy/summon, enemy-minion-played clone, enemy-turn-end;\nplus Spellstone upgrade, Conjurer's Calling twinspell-destroy, Lightshow improve).\nBattery 169/169, fuzz clean.",
+			"cards": [
+				{
+					"id": "hidden_objects",
+					"name": "Hidden Objects",
+					"type": "sorcery",
+					"class": "mage",
+					"rarity": "common",
+					"cost": 2
+				},
+				{
+					"id": "infinitize_the_maxitude",
+					"name": "Infinitize the Maxitude",
+					"type": "sorcery",
+					"class": "mage",
+					"rarity": "legendary",
+					"cost": 2
+				},
+				{
+					"id": "leyline_nexus",
+					"name": "Leyline Nexus",
+					"type": "sorcery",
+					"class": "mage",
+					"rarity": "common",
+					"cost": 2
+				},
+				{
+					"id": "primordial_glyph",
+					"name": "Primordial Glyph",
+					"type": "sorcery",
+					"class": "mage",
+					"rarity": "epic",
+					"cost": 2
+				},
+				{
+					"id": "semi_stable_portal",
+					"name": "Semi-Stable Portal",
+					"type": "sorcery",
+					"class": "mage",
+					"rarity": "rare",
+					"cost": 2
+				},
+				{
+					"id": "story_of_the_waygate",
+					"name": "Story of the Waygate",
+					"type": "sorcery",
+					"class": "mage",
+					"rarity": "rare",
+					"cost": 2
+				},
+				{
+					"id": "unstable_portal",
+					"name": "Unstable Portal",
+					"type": "sorcery",
+					"class": "mage",
+					"rarity": "rare",
+					"cost": 2
+				},
+				{
+					"id": "volcanomancy",
+					"name": "Volcanomancy",
+					"type": "sorcery",
+					"class": "mage",
+					"rarity": "epic",
+					"cost": 2
+				},
+				{
+					"id": "build_a_snowman",
+					"name": "Build a Snowman",
+					"type": "sorcery",
+					"class": "mage",
+					"rarity": "rare",
+					"cost": 3
+				},
+				{
+					"id": "elemental_companion",
+					"name": "Elemental Companion",
+					"type": "sorcery",
+					"class": "mage",
+					"rarity": "rare",
+					"cost": 3
+				},
+				{
+					"id": "flame_ward",
+					"name": "Flame Ward",
+					"type": "secret",
+					"class": "mage",
+					"rarity": "common",
+					"cost": 3
+				}
+			]
+		},
+		{
+			"sha": "da173a6",
+			"date": "2026-08-05",
+			"kind": "cards",
+			"title": "Mage unlock effects — recover 3 rejects (2 recurring)",
+			"body": "Three reusable additions from the Mage batch-1 harvest:\n- spend-all-mana-damage effect (the OG \"Forbidden\" cycle's Mage sibling, alongside\n  spend-all-mana-cast/buff): spend all mana, deal that much (+ Spell Damage) to a\n  chosen minion. Registered its targeting in CHOSEN. -> Forbidden Flame.\n- damage gains doubleSpellDamage: the Spell-Damage bonus portion is doubled (base\n  value untouched). -> Arcane Blast (\"double bonus from Spell Damage\") — a recurring\n  reject (also hit the Mage-damage prototype).\n- transform-in-hand now supports type 'spell' + a transformInHandClass filter\n  (generalizing Molten Blade's weapon transform). -> Shifting Scroll (each turn,\n  become a random Mage spell).\n\nAppended the 3 recovered cards. Registry 1010 -> 1011 (only spend-all-mana-damage is\nnew; the others are flags/params). 12-assertion test (spells_mage_unlock) incl.\nArcane Blast dealing 2 + 3*2 doubled = 8. Battery 168/168, fuzz clean.",
+			"cards": [
+				{
+					"id": "forbidden_flame",
+					"name": "Forbidden Flame",
+					"type": "sorcery",
+					"class": "mage",
+					"rarity": "epic",
+					"cost": 0
+				},
+				{
+					"id": "arcane_blast",
+					"name": "Arcane Blast",
+					"type": "sorcery",
+					"class": "mage",
+					"rarity": "epic",
+					"cost": 1
+				}
+			]
+		},
+		{
+			"sha": "5a981a6",
+			"date": "2026-08-05",
+			"kind": "cards",
+			"title": "spell-import pivots to Mage — 12 spells (batch 1)",
+			"body": "First Mage batch: the class-parameterized workflow authored 30 (0 errors), gated to\n11/30 clean (37% — a Quest/Discover/Secret-heavy Arcane slice). No new engine\neffects needed; all reuse existing vocab.\n\nAppended 12: Elemental Evocation (Elemental discount), Flurry (Manathirst freeze\ntiers), Hot Streak (Fire-school discount), Evocation (fill hand w/ Temporary Mage\nspells), Magic Trick (Discover <=3), Mirror Dimension (Dragon-conditional Taunt),\nSnap Freeze (freeze/destroy-if-frozen), Synthesize (1/2/3-Cost Elementals), Ancient\nMysteries (tutor a Secret at Cost 0), Astral Rift, Conjure Mana Biscuit + Biscuit\ntoken. 23-assertion behavioral test.\n\nTwo seed-dependent tests fixed for the RNG shift (both legit): Merch Seller's isSpell\nnow counts secret/trap (it now picks Spellbender); Toki's gift-play test gives both\nsides minions so a targeted random gift resolves. Battery 167/167, fuzz clean.\n\n19 rejects harvested for the Mage unlock wave: spend-all-mana-damage (agent gave the\nexact handler), double-spell-damage, transform-in-hand-into-spell, Quests, Deck of\nLunacy, etc.",
+			"cards": [
+				{
+					"id": "elemental_evocation",
+					"name": "Elemental Evocation",
+					"type": "sorcery",
+					"class": "mage",
+					"rarity": "common",
+					"cost": 0
+				},
+				{
+					"id": "flurry_rank_1",
+					"name": "Flurry (Rank 1)",
+					"type": "sorcery",
+					"class": "mage",
+					"rarity": "rare",
+					"cost": 0
+				},
+				{
+					"id": "hot_streak",
+					"name": "Hot Streak",
+					"type": "sorcery",
+					"class": "mage",
+					"rarity": "common",
+					"cost": 0
+				},
+				{
+					"id": "evocation",
+					"name": "Evocation",
+					"type": "sorcery",
+					"class": "mage",
+					"rarity": "legendary",
+					"cost": 1
+				},
+				{
+					"id": "magic_trick",
+					"name": "Magic Trick",
+					"type": "sorcery",
+					"class": "mage",
+					"rarity": "rare",
+					"cost": 1
+				},
+				{
+					"id": "mirror_dimension",
+					"name": "Mirror Dimension",
+					"type": "sorcery",
+					"class": "mage",
+					"rarity": "common",
+					"cost": 1
+				},
+				{
+					"id": "snap_freeze",
+					"name": "Snap Freeze",
+					"type": "sorcery",
+					"class": "mage",
+					"rarity": "common",
+					"cost": 1
+				},
+				{
+					"id": "synthesize",
+					"name": "Synthesize",
+					"type": "sorcery",
+					"class": "mage",
+					"rarity": "common",
+					"cost": 1
+				},
+				{
+					"id": "ancient_mysteries",
+					"name": "Ancient Mysteries",
+					"type": "sorcery",
+					"class": "mage",
+					"rarity": "common",
+					"cost": 2
+				},
+				{
+					"id": "astral_rift",
+					"name": "Astral Rift",
+					"type": "sorcery",
+					"class": "mage",
+					"rarity": "rare",
+					"cost": 2
+				},
+				{
+					"id": "conjure_mana_biscuit",
+					"name": "Conjure Mana Biscuit",
+					"type": "sorcery",
+					"class": "mage",
+					"rarity": "common",
+					"cost": 2
+				}
+			]
+		},
+		{
+			"sha": "f617c38",
+			"date": "2026-08-05",
+			"kind": "cards",
+			"title": "spell-import — 13 more DH spells (batch 3, fresh)",
+			"body": "Third DH workflow batch (30 authored, 0 errors) gated to 13/30 clean (43%). Heavy\nreuse of just-built mechanics: deckNoMinions (Lasting Legacy, Solitude, Fel'dorei\nWarband), the void_soul token (Void Blast's \"get a Void Soul\"), delay-to-turn-start\n(Sigil of Summoning). Sinful Brand cleverly modeled \"Brand\" as a grant-ongoing\n(on self-damaged -> 1 to enemy hero).\n\nAppended 13: SECURITY!! (Outcast +1 summon), Sigil of Summoning, Sinful Brand,\nVoid Blast, Lasting Legacy, Rush the Stage (tutor rush minions -1), Skirting Death\n(steal 4 Attack), Solitude, Weight of the World (Forge), Fel'dorei Warband, Soul\nSplit (copy friendly Demon), Momentum, Skull of Gul'dan (Outcast cost -3).\n19-assertion behavioral test.\n\nAlso fixed timed-aura: its enchantment now goes through instantiate() so it has a\nuid (a fuzz invariant caught the raw object — enchantments must have uids). Battery\n166/166, fuzz clean.",
+			"cards": [
+				{
+					"id": "security",
+					"name": "SECURITY!!",
+					"type": "sorcery",
+					"class": "demonhunter",
+					"rarity": "common",
+					"cost": 2
+				},
+				{
+					"id": "sigil_of_summoning",
+					"name": "Sigil of Summoning",
+					"type": "sorcery",
+					"class": "demonhunter",
+					"rarity": "rare",
+					"cost": 2
+				},
+				{
+					"id": "sinful_brand",
+					"name": "Sinful Brand",
+					"type": "sorcery",
+					"class": "demonhunter",
+					"rarity": "epic",
+					"cost": 2
+				},
+				{
+					"id": "void_blast",
+					"name": "Void Blast",
+					"type": "sorcery",
+					"class": "demonhunter",
+					"rarity": "rare",
+					"cost": 2
+				},
+				{
+					"id": "lasting_legacy",
+					"name": "Lasting Legacy",
+					"type": "sorcery",
+					"class": "demonhunter",
+					"rarity": "rare",
+					"cost": 3
+				},
+				{
+					"id": "rush_the_stage",
+					"name": "Rush the Stage",
+					"type": "sorcery",
+					"class": "demonhunter",
+					"rarity": "rare",
+					"cost": 3
+				},
+				{
+					"id": "skirting_death",
+					"name": "Skirting Death",
+					"type": "sorcery",
+					"class": "demonhunter",
+					"rarity": "rare",
+					"cost": 3
+				},
+				{
+					"id": "solitude",
+					"name": "Solitude",
+					"type": "sorcery",
+					"class": "demonhunter",
+					"rarity": "common",
+					"cost": 3
+				},
+				{
+					"id": "weight_of_the_world",
+					"name": "Weight of the World",
+					"type": "sorcery",
+					"class": "demonhunter",
+					"rarity": "rare",
+					"cost": 3
+				},
+				{
+					"id": "feldorei_warband",
+					"name": "Fel'dorei Warband",
+					"type": "sorcery",
+					"class": "demonhunter",
+					"rarity": "common",
+					"cost": 4
+				},
+				{
+					"id": "soul_split",
+					"name": "Soul Split",
+					"type": "sorcery",
+					"class": "demonhunter",
+					"rarity": "rare",
+					"cost": 4
+				},
+				{
+					"id": "momentum",
+					"name": "Momentum",
+					"type": "sorcery",
+					"class": "demonhunter",
+					"rarity": "rare",
+					"cost": 5
+				}
+			]
+		},
+		{
+			"sha": "b550ac4",
+			"date": "2026-08-05",
+			"kind": "cards",
+			"title": "batch-2 unlock effects — recover 7 DH rejects",
+			"body": "Six small reusable engine additions harvested from the DH batch-2 rejects:\n- draw valuePer 'friendly-deaths-this-turn' (exec.js) -> Feast of Souls.\n- random-damage now honors valuePer via scaled() -> Blade Dance (damage = hero\n  Attack to N random enemies).\n- draw-check gains notType (negated) -> Mark of Scorn (\"if it's NOT a minion\").\n- add-card gains makeTemporary -> Throw Glaive (Temporary copy on kill).\n- shuffle-random-spells-into-deck gains a cardClass filter -> Cosmic Manifestations\n  (a Demon Hunter spell).\n- NEW timed-aura effect: a friendly team aura enchantment with turnsLeft, ticking\n  down via the existing p.enchantments turn-end loop -> Creep Tumor (Zerg +1/Rush)\n  and Field of Strife (+1 Attack), both \"Lasts 3 turns\".\n\nAppended the 7 recovered cards. Only timed-aura is a new registered type (1009 ->\n1010); the rest are param/valuePer extensions. 19-assertion test (spells_dh_unlock2)\nincl. the aura fading after 3 turns. Battery 165/165, fuzz clean.",
+			"cards": [
+				{
+					"id": "feast_of_souls",
+					"name": "Feast of Souls",
+					"type": "sorcery",
+					"class": "demonhunter",
+					"rarity": "rare",
+					"cost": 1
+				},
+				{
+					"id": "blade_dance",
+					"name": "Blade Dance",
+					"type": "sorcery",
+					"class": "demonhunter",
+					"rarity": "rare",
+					"cost": 2
+				},
+				{
+					"id": "mark_of_scorn",
+					"name": "Mark of Scorn",
+					"type": "sorcery",
+					"class": "demonhunter",
+					"rarity": "common",
+					"cost": 2
+				},
+				{
+					"id": "throw_glaive",
+					"name": "Throw Glaive",
+					"type": "sorcery",
+					"class": "demonhunter",
+					"rarity": "rare",
+					"cost": 1
+				},
+				{
+					"id": "cosmic_manifestations",
+					"name": "Cosmic Manifestations",
+					"type": "sorcery",
+					"class": "demonhunter",
+					"rarity": "epic",
+					"cost": 2
+				},
+				{
+					"id": "creep_tumor",
+					"name": "Creep Tumor",
+					"type": "sorcery",
+					"class": "demonhunter",
+					"rarity": "common",
+					"cost": 2
+				}
+			]
+		},
+		{
+			"sha": "21d16b9",
+			"date": "2026-08-05",
+			"kind": "cards",
+			"title": "spell-import — 16 more DH spells (batch 2 + Fel Guardians straggler)",
+			"body": "Second DH workflow batch (30 authored, 0 errors) gated to 15/30 clean (50% — a\ndeliberately mechanic-dense slice: Quests, Discovers, \"lasts 3 turns\" auras, rank\nspells, Spellstones). Appended 14 survivors + Second Slice token + Fel Guardians\n(a session-limit straggler now trivially buildable via selfCost friendly-deaths).\n\nHighlights: Sigil of Silence (delay -> silence all), Demon Companion (3-option\nsummon), Double Jump (Outcast tutor), Red Card (Dormant), Wings of Hate (Manathirst\nrank tiers), Illidari Studies (Discover + next-Outcast discount), Grim Harvest,\nJumpscare (Dark Gift discover), Twin Slice + Second Slice, Final Showdown (Quest;\ndraw goal approximated as cumulative not per-turn). Deferred Infestation (needs a\nverified Gorishi Stinger minion token). 19-assertion behavioral test.\n\n15 rejects harvested for later (blade-dance = hero-attack damage, spellstone\nupgrades, \"lasts N turns\" temp auras, hero-power swap, etc.). Battery 164/164,\nfuzz clean.",
+			"cards": [
+				{
+					"id": "dispose_of_evidence",
+					"name": "Dispose of Evidence",
+					"type": "sorcery",
+					"class": "demonhunter",
+					"rarity": "rare",
+					"cost": 0
+				},
+				{
+					"id": "sigil_of_silence",
+					"name": "Sigil of Silence",
+					"type": "sorcery",
+					"class": "demonhunter",
+					"rarity": "rare",
+					"cost": 0
+				},
+				{
+					"id": "demon_companion",
+					"name": "Demon Companion",
+					"type": "sorcery",
+					"class": "demonhunter",
+					"rarity": "rare",
+					"cost": 1
+				},
+				{
+					"id": "double_jump",
+					"name": "Double Jump",
+					"type": "sorcery",
+					"class": "demonhunter",
+					"rarity": "common",
+					"cost": 1
+				},
+				{
+					"id": "emergency_meeting",
+					"name": "Emergency Meeting",
+					"type": "sorcery",
+					"class": "demonhunter",
+					"rarity": "epic",
+					"cost": 1
+				},
+				{
+					"id": "final_showdown",
+					"name": "Final Showdown",
+					"type": "quest",
+					"class": "demonhunter",
+					"rarity": "legendary",
+					"cost": 1
+				},
+				{
+					"id": "headhunt",
+					"name": "Headhunt",
+					"type": "sorcery",
+					"class": "demonhunter",
+					"rarity": "rare",
+					"cost": 1
+				},
+				{
+					"id": "illidari_studies",
+					"name": "Illidari Studies",
+					"type": "sorcery",
+					"class": "demonhunter",
+					"rarity": "common",
+					"cost": 1
+				},
+				{
+					"id": "red_card",
+					"name": "Red Card",
+					"type": "sorcery",
+					"class": "demonhunter",
+					"rarity": "epic",
+					"cost": 1
+				},
+				{
+					"id": "sigil_of_alacrity",
+					"name": "Sigil of Alacrity",
+					"type": "sorcery",
+					"class": "demonhunter",
+					"rarity": "rare",
+					"cost": 1
+				},
+				{
+					"id": "twin_slice",
+					"name": "Twin Slice",
+					"type": "sorcery",
+					"class": "demonhunter",
+					"rarity": "common",
+					"cost": 1
+				},
+				{
+					"id": "wings_of_hate",
+					"name": "Wings of Hate (Rank 1)",
+					"type": "sorcery",
+					"class": "demonhunter",
+					"rarity": "rare",
+					"cost": 1
+				},
+				{
+					"id": "grim_harvest",
+					"name": "Grim Harvest",
+					"type": "sorcery",
+					"class": "demonhunter",
+					"rarity": "common",
+					"cost": 2
+				},
+				{
+					"id": "jumpscare",
+					"name": "Jumpscare!",
+					"type": "sorcery",
+					"class": "demonhunter",
+					"rarity": "rare",
+					"cost": 2
+				}
+			]
+		},
+		{
+			"sha": "68c8f4d",
+			"date": "2026-08-05",
+			"kind": "patch",
+			"title": "lifesteal on damage-adjacent — unlocks Felscream Blast",
+			"body": "damage-adjacent now sums the damage it deals (target + neighbors) and, with\ne.lifesteal, heals the caster's hero for that total — matching the per-effect\nlifesteal convention already used by damage/random-damage. Recovers Felscream Blast\n(DH Fel: \"Lifesteal. Deal 1 to a minion and its neighbors.\"), which was rejected in\nthe Fel batch only because damage-adjacent ignored the lifesteal flag. Appended it.\n\nNo new effect type (registry stays 1009). Battery 163/163, fuzz clean.",
+			"cards": []
+		},
+		{
+			"sha": "6626c69",
+			"date": "2026-08-04",
+			"kind": "cards",
+			"title": "Relic subsystem + Relic Vault — HS location set now 52/52 COMPLETE",
+			"body": "Unblocks the last missing location by building the DH Relic mechanic:\n- `relic:true` instance flag. Player-level relicImprove counter: each Relic played\n  bumps it, and runSpell sets card.improveCount = relicImprove before resolving so\n  the existing improveScaled machinery scales the Relic (Extinction hits, Phantasms\n  Spirits, Dimensions draws) by how many Relics you've played. Incremented once\n  after (a doubled Relic still improves once).\n- nextRelicDoubleCast flag + next-relic-double-cast effect: Relic Vault's tap makes\n  your next Relic this turn cast twice (via card.castTwice), consumed on use, reset\n  at turn end.\n- Imported the 3 Relic cards (Extinction/Phantasms/Dimensions, relic:true +\n  improveScaled:'count') + Relic Vault (DH location). Set REVENDRETH.\n\n18-assertion test (relics) covers improve scaling, cross-Relic improve, the Vault\ndouble-cast, single-improve-when-doubled, and the turn-scoped flag. Registry 1009\n(registry-count assertion 1008->1009). Battery 163/163, fuzz clean.\n\nHS collectible set: minions + weapons (200/200) + locations (52/52) all COMPLETE;\nonly spells remain.",
+			"cards": [
+				{
+					"id": "relic_of_extinction",
+					"name": "Relic of Extinction",
+					"type": "sorcery",
+					"class": "demonhunter",
+					"rarity": "common",
+					"cost": 1
+				},
+				{
+					"id": "relic_of_phantasms",
+					"name": "Relic of Phantasms",
+					"type": "sorcery",
+					"class": "demonhunter",
+					"rarity": "rare",
+					"cost": 3
+				},
+				{
+					"id": "relic_of_dimensions",
+					"name": "Relic of Dimensions",
+					"type": "sorcery",
+					"class": "demonhunter",
+					"rarity": "epic",
+					"cost": 5
+				}
+			]
+		},
 		{
 			"sha": "be47597",
 			"date": "2026-08-04",
