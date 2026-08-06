@@ -1,0 +1,32 @@
+Exit code: 0
+Wall time: 0.8 seconds
+Output:
+name: Audit and repair Battlecards art
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  audit-art:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: cloudflare-migration
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python -m pip install Pillow
+      - name: Source missing wiki art and crop side bars
+        run: python tools/audit-battlecard-art.py --download-missing --crop-bars
+      - name: Commit repaired art and audit report
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add battlecards/art tools/audit-battlecard-art.py
+          git diff --cached --quiet || git commit -m "Audit and repair Battlecards artwork"
+          git push origin HEAD:cloudflare-migration
+
