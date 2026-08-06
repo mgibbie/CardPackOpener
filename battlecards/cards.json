@@ -149136,6 +149136,877 @@
           "target": "enemies"
         }
       ]
+    },
+    {
+      "id": "concussive_shells",
+      "name": "Concussive Shells",
+      "cardClass": "warrior",
+      "cost": 1,
+      "rarity": "common",
+      "set": "SPACE",
+      "collectible": true,
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "random-damage",
+          "value": 2,
+          "pool": "enemies",
+          "count": 1
+        },
+        {
+          "type": "armor",
+          "value": 2
+        }
+      ],
+      "description": "Deal 2 damage and gain 2 Armor."
+    },
+    {
+      "id": "revenge",
+      "name": "Revenge",
+      "cardClass": "warrior",
+      "cost": 2,
+      "rarity": "rare",
+      "set": "BRM",
+      "collectible": true,
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "conditional",
+          "target": "all-creatures",
+          "if": {
+            "maxHealthSelf": 12
+          },
+          "then": [
+            {
+              "type": "damage",
+              "value": 3,
+              "target": "all-creatures"
+            }
+          ],
+          "else": [
+            {
+              "type": "damage",
+              "value": 1,
+              "target": "all-creatures"
+            }
+          ]
+        }
+      ],
+      "description": "Deal 1 damage to all minions. If you have 12 or less Health, deal 3 damage instead."
+    },
+    {
+      "id": "through_fel_and_flames",
+      "name": "Through Fel and Flames",
+      "cardClass": "warrior",
+      "cost": 0,
+      "rarity": "rare",
+      "type": "sorcery",
+      "tribe": "Fel",
+      "set": "BATTLE_OF_THE_BANDS",
+      "collectible": true,
+      "effects": [
+        {
+          "type": "grant",
+          "keyword": "rush",
+          "target": "creature"
+        }
+      ],
+      "description": "Give a minion Rush."
+    },
+    {
+      "id": "man_the_cannons",
+      "name": "Man the Cannons",
+      "type": "sorcery",
+      "cost": 2,
+      "cardClass": "warrior",
+      "rarity": "common",
+      "set": "STORMWIND",
+      "collectible": true,
+      "description": "Deal 3 damage to a minion and 1 damage to all other minions.",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 2,
+          "target": "creature"
+        },
+        {
+          "type": "damage",
+          "value": 1,
+          "target": "all-creatures"
+        }
+      ]
+    },
+    {
+      "id": "revenge",
+      "name": "Revenge",
+      "cardClass": "warrior",
+      "cost": 2,
+      "rarity": "rare",
+      "set": "BRM",
+      "collectible": true,
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "conditional",
+          "target": "all-creatures",
+          "if": {
+            "maxHealthSelf": 12
+          },
+          "then": [
+            {
+              "type": "damage",
+              "value": 3,
+              "target": "all-creatures"
+            }
+          ],
+          "else": [
+            {
+              "type": "damage",
+              "value": 1,
+              "target": "all-creatures"
+            }
+          ]
+        }
+      ],
+      "description": "Deal 1 damage to all minions. If you have 12 or less Health, deal 3 damage instead."
+    },
+    {
+      "id": "swindle",
+      "name": "Swindle",
+      "type": "sorcery",
+      "cost": 2,
+      "cardClass": "rogue",
+      "rarity": "common",
+      "set": "DARKMOON_FAIRE",
+      "collectible": true,
+      "keywords": [
+        "combo"
+      ],
+      "description": "Draw a spell.\nCombo: And a minion.",
+      "effects": [
+        {
+          "type": "tutor",
+          "cardType": "spell",
+          "count": 1
+        }
+      ],
+      "combo": [
+        {
+          "type": "tutor",
+          "cardType": "spell",
+          "count": 1
+        },
+        {
+          "type": "tutor",
+          "cardType": "creature",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "id": "potion_belt",
+      "name": "Potion Belt",
+      "type": "sorcery",
+      "cost": 2,
+      "cardClass": "rogue",
+      "rarity": "rare",
+      "set": "RETURN_OF_THE_LICH_KING",
+      "collectible": true,
+      "description": "Discover 2 Concoctions.",
+      "effects": [
+        {
+          "type": "add-card",
+          "id": "rlk_concoction",
+          "count": 2
+        }
+      ]
+    },
+    {
+      "id": "flashback",
+      "name": "Flashback",
+      "type": "sorcery",
+      "cost": 2,
+      "cardClass": "rogue",
+      "rarity": "rare",
+      "set": "TIME_TRAVEL",
+      "collectible": true,
+      "description": "Summon two random 1-Cost minions from the past.",
+      "effects": [
+        {
+          "type": "summon-random",
+          "cost": 1,
+          "count": 2
+        }
+      ]
+    },
+    {
+      "id": "garrote",
+      "name": "Garrote",
+      "type": "sorcery",
+      "cost": 2,
+      "cardClass": "rogue",
+      "rarity": "epic",
+      "set": "STORMWIND",
+      "collectible": true,
+      "description": "Deal 2 damage to the enemy hero.",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 2,
+          "target": "enemy-hero"
+        }
+      ]
+    },
+    {
+      "id": "reconnaissance",
+      "name": "Reconnaissance",
+      "type": "sorcery",
+      "cost": 2,
+      "cardClass": "rogue",
+      "rarity": "common",
+      "set": "ALTERAC_VALLEY",
+      "collectible": true,
+      "description": "Discover a Deathrattle minion from another class. It costs (2) less.",
+      "effects": [
+        {
+          "type": "discover",
+          "cardType": "creature",
+          "requireKeyword": "deathrattle",
+          "costMod": -2
+        }
+      ]
+    },
+    {
+      "id": "serrated_bone_spike",
+      "name": "Serrated Bone Spike",
+      "type": "sorcery",
+      "cost": 2,
+      "cardClass": "rogue",
+      "rarity": "rare",
+      "set": "PLACEHOLDER_202204",
+      "collectible": true,
+      "description": "Deal 3 damage to a minion. If it dies, your next card this turn costs (2) less.",
+      "effects": [
+        {
+          "type": "damage-then",
+          "value": 3,
+          "target": "creature",
+          "ifDies": [
+            {
+              "type": "set-next-cards-discount",
+              "count": 1,
+              "value": 2
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "stolen_steel",
+      "name": "Stolen Steel",
+      "type": "sorcery",
+      "cost": 2,
+      "cardClass": "rogue",
+      "rarity": "common",
+      "set": "TROLL",
+      "collectible": true,
+      "description": "Discover a weapon.",
+      "effects": [
+        {
+          "type": "discover",
+          "pick": 3,
+          "cardType": "weapon"
+        }
+      ]
+    },
+    {
+      "id": "tentacle_grip",
+      "name": "Tentacle Grip",
+      "type": "sorcery",
+      "cost": 2,
+      "cardClass": "rogue",
+      "rarity": "common",
+      "set": "TITANS",
+      "collectible": true,
+      "description": "Deal 3 damage.",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 3,
+          "target": "any"
+        }
+      ]
+    },
+    {
+      "id": "blink",
+      "name": "Blink",
+      "type": "sorcery",
+      "cost": 2,
+      "cardClass": "rogue",
+      "rarity": "common",
+      "set": "SPACE",
+      "collectible": true,
+      "keywords": [
+        "combo"
+      ],
+      "description": "Draw a Protoss minion. Combo: It costs (2) less.",
+      "effects": [
+        {
+          "type": "tutor",
+          "tribe": "Protoss",
+          "cardType": "creature",
+          "count": 1
+        }
+      ],
+      "combo": [
+        {
+          "type": "tutor",
+          "tribe": "Protoss",
+          "cardType": "creature",
+          "count": 1,
+          "costMod": -2
+        }
+      ]
+    },
+    {
+      "id": "eventuality",
+      "name": "Eventuality",
+      "type": "sorcery",
+      "cost": 2,
+      "cardClass": "rogue",
+      "tribe": "Shadow",
+      "rarity": "common",
+      "set": "TIME_TRAVEL",
+      "collectible": true,
+      "description": "Deal 2 damage.",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 2,
+          "target": "any"
+        }
+      ]
+    },
+    {
+      "id": "stick_up",
+      "name": "Stick Up",
+      "type": "sorcery",
+      "cost": 1,
+      "cardClass": "rogue",
+      "rarity": "common",
+      "set": "WILD_WEST",
+      "collectible": true,
+      "description": "Discover a Quickdraw card from another class.",
+      "effects": [
+        {
+          "type": "discover",
+          "pick": 3,
+          "cardType": "any",
+          "requireKeyword": "quickdraw"
+        }
+      ]
+    },
+    {
+      "id": "thistle_tea_set",
+      "name": "Thistle Tea Set",
+      "type": "sorcery",
+      "cost": 2,
+      "cardClass": "rogue",
+      "rarity": "common",
+      "set": "WHIZBANGS_WORKSHOP",
+      "collectible": true,
+      "description": "Discover a spell from another class. Get a copy of it.",
+      "effects": [
+        {
+          "type": "discover",
+          "pick": 3,
+          "cardType": "spell",
+          "duplicate": true
+        }
+      ]
+    },
+    {
+      "id": "garrote",
+      "name": "Garrote",
+      "type": "sorcery",
+      "cost": 2,
+      "cardClass": "rogue",
+      "rarity": "epic",
+      "set": "STORMWIND",
+      "collectible": true,
+      "description": "Deal 2 damage to the enemy hero.",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 2,
+          "target": "enemy-hero"
+        }
+      ]
+    },
+    {
+      "id": "serrated_bone_spike",
+      "name": "Serrated Bone Spike",
+      "type": "sorcery",
+      "cost": 2,
+      "cardClass": "rogue",
+      "rarity": "rare",
+      "set": "PLACEHOLDER_202204",
+      "collectible": true,
+      "description": "Deal 3 damage to a minion. If it dies, your next card this turn costs (2) less.",
+      "effects": [
+        {
+          "type": "damage-then",
+          "value": 3,
+          "target": "creature",
+          "ifDies": [
+            {
+              "type": "set-next-cards-discount",
+              "count": 1,
+              "value": 2
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "stolen_steel",
+      "name": "Stolen Steel",
+      "type": "sorcery",
+      "cost": 2,
+      "cardClass": "rogue",
+      "rarity": "common",
+      "set": "TROLL",
+      "collectible": true,
+      "description": "Discover a weapon.",
+      "effects": [
+        {
+          "type": "discover",
+          "pick": 3,
+          "cardType": "weapon"
+        }
+      ]
+    },
+    {
+      "id": "holy_maki_roll",
+      "name": "Holy Maki Roll",
+      "type": "sorcery",
+      "cardClass": "paladin",
+      "cost": 1,
+      "rarity": "rare",
+      "set": "THE_SUNKEN_CITY",
+      "collectible": true,
+      "tribe": "Holy",
+      "description": "Restore 2 Health. Repeatable this turn.",
+      "effects": [
+        {
+          "type": "heal",
+          "value": 2,
+          "target": "any"
+        },
+        {
+          "type": "add-card",
+          "id": "holy_maki_roll",
+          "makeTemporary": true
+        }
+      ]
+    },
+    {
+      "id": "desperate_stand",
+      "name": "Desperate Stand",
+      "cardClass": "paladin",
+      "cost": 2,
+      "rarity": "rare",
+      "type": "sorcery",
+      "set": "PLACEHOLDER_202204",
+      "collectible": true,
+      "tribe": "Holy",
+      "effects": [
+        {
+          "type": "grant",
+          "keyword": "reborn",
+          "target": "creature"
+        }
+      ],
+      "description": "Give a minion \"Deathrattle: Return this to life with 1 Health.\""
+    },
+    {
+      "id": "call_to_adventure",
+      "name": "Call to Adventure",
+      "type": "sorcery",
+      "cost": 3,
+      "cardClass": "paladin",
+      "rarity": "rare",
+      "set": "DALARAN",
+      "collectible": true,
+      "description": "Draw the lowest Cost minion from your deck. Give it +2/+2.",
+      "effects": [
+        {
+          "type": "tutor",
+          "cardType": "creature",
+          "lowest": true,
+          "buff": {
+            "attack": 2,
+            "health": 2
+          }
+        }
+      ]
+    },
+    {
+      "id": "hold_the_bridge",
+      "name": "Hold the Bridge",
+      "type": "sorcery",
+      "cost": 3,
+      "cardClass": "paladin",
+      "rarity": "common",
+      "set": "ALTERAC_VALLEY",
+      "tribe": "Holy",
+      "collectible": true,
+      "description": "Give a minion +2/+1 and Divine Shield. It gains Lifesteal until end of turn.",
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 2,
+          "health": 1,
+          "target": "creature",
+          "grant": "divine_shield"
+        },
+        {
+          "type": "grant",
+          "keyword": "lifesteal",
+          "target": "creature"
+        }
+      ]
+    },
+    {
+      "id": "jury_duty",
+      "name": "Jury Duty",
+      "cardClass": "paladin",
+      "cost": 3,
+      "rarity": "common",
+      "type": "sorcery",
+      "collectible": true,
+      "effects": [
+        {
+          "type": "summon",
+          "count": 2,
+          "attack": 1,
+          "health": 1,
+          "name": "Silver Hand Recruit"
+        },
+        {
+          "type": "buff",
+          "attack": 1,
+          "health": 1,
+          "target": "friendly-creatures",
+          "name": "Silver Hand Recruit"
+        }
+      ],
+      "description": "Summon two Silver Hand Recruits. Give your Silver Hand Recruits +1/+1.",
+      "set": "PLACEHOLDER_202204"
+    },
+    {
+      "id": "aegis_of_light",
+      "name": "Aegis of Light",
+      "type": "sorcery",
+      "cost": 2,
+      "cardClass": "paladin",
+      "rarity": "rare",
+      "set": "EMERALD_DREAM",
+      "tribe": "Holy",
+      "collectible": true,
+      "description": "Summon a random 2-Cost minion and give it Taunt.",
+      "effects": [
+        {
+          "type": "summon-random",
+          "cost": 2,
+          "count": 1,
+          "grant": "taunt"
+        }
+      ]
+    },
+    {
+      "id": "call_to_adventure",
+      "name": "Call to Adventure",
+      "type": "sorcery",
+      "cost": 3,
+      "cardClass": "paladin",
+      "rarity": "rare",
+      "set": "DALARAN",
+      "collectible": true,
+      "description": "Draw the lowest Cost minion from your deck. Give it +2/+2.",
+      "effects": [
+        {
+          "type": "tutor",
+          "cardType": "creature",
+          "lowest": true,
+          "buff": {
+            "attack": 2,
+            "health": 2
+          }
+        }
+      ]
+    },
+    {
+      "id": "jury_duty",
+      "name": "Jury Duty",
+      "cardClass": "paladin",
+      "cost": 3,
+      "rarity": "common",
+      "type": "sorcery",
+      "collectible": true,
+      "effects": [
+        {
+          "type": "summon",
+          "count": 2,
+          "attack": 1,
+          "health": 1,
+          "name": "Silver Hand Recruit"
+        },
+        {
+          "type": "buff",
+          "attack": 1,
+          "health": 1,
+          "target": "friendly-creatures",
+          "name": "Silver Hand Recruit"
+        }
+      ],
+      "description": "Summon two Silver Hand Recruits. Give your Silver Hand Recruits +1/+1.",
+      "set": "PLACEHOLDER_202204"
+    },
+    {
+      "id": "hold_the_bridge",
+      "name": "Hold the Bridge",
+      "type": "sorcery",
+      "cost": 3,
+      "cardClass": "paladin",
+      "rarity": "common",
+      "set": "ALTERAC_VALLEY",
+      "tribe": "Holy",
+      "collectible": true,
+      "description": "Give a minion +2/+1 and Divine Shield. It gains Lifesteal until end of turn.",
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 2,
+          "health": 1,
+          "target": "creature",
+          "grant": "divine_shield"
+        },
+        {
+          "type": "grant",
+          "keyword": "lifesteal",
+          "target": "creature"
+        }
+      ]
+    },
+    {
+      "id": "heart_of_the_wild",
+      "name": "Heart of the Wild",
+      "type": "sorcery",
+      "cost": 3,
+      "cardClass": "druid",
+      "rarity": "common",
+      "set": "ALTERAC_VALLEY",
+      "collectible": true,
+      "description": "Give a minion +2/+2, then give your Beasts +1/+1.",
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 2,
+          "health": 2
+        },
+        {
+          "type": "buff",
+          "attack": 1,
+          "health": 1,
+          "target": "friendly-creatures",
+          "tribe": "Beast"
+        }
+      ]
+    },
+    {
+      "id": "lethal_recipe",
+      "name": "Lethal Recipe",
+      "type": "sorcery",
+      "cost": 3,
+      "cardClass": "druid",
+      "rarity": "rare",
+      "set": "ESCAPEFROM_VIOLET_HOLD",
+      "collectible": true,
+      "description": "Draw 2 minions. If you have 10 or more Mana, give them +3/+3.",
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "manathirst": 10
+          },
+          "then": [
+            {
+              "type": "tutor",
+              "cardType": "creature",
+              "count": 2,
+              "buff": {
+                "attack": 3,
+                "health": 3
+              }
+            }
+          ],
+          "else": [
+            {
+              "type": "tutor",
+              "cardType": "creature",
+              "count": 2
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "take_to_the_skies",
+      "name": "Take to the Skies",
+      "type": "sorcery",
+      "cost": 3,
+      "cardClass": "druid",
+      "rarity": "common",
+      "set": "WILD_WEST",
+      "collectible": true,
+      "description": "Draw two Dragons. Give them +1/+1.",
+      "effects": [
+        {
+          "type": "tutor",
+          "cardType": "creature",
+          "tribe": "Dragon",
+          "count": 2,
+          "buff": {
+            "attack": 1,
+            "health": 1
+          }
+        }
+      ]
+    },
+    {
+      "id": "witching_hour",
+      "name": "Witching Hour",
+      "type": "sorcery",
+      "cardClass": "druid",
+      "cost": 3,
+      "rarity": "rare",
+      "set": "GILNEAS",
+      "collectible": true,
+      "description": "Summon a random friendly Beast that died this game.",
+      "effects": [
+        {
+          "type": "resurrect-tribe",
+          "tribe": "Beast"
+        }
+      ]
+    },
+    {
+      "id": "germination",
+      "name": "Germination",
+      "type": "sorcery",
+      "cost": 4,
+      "cardClass": "druid",
+      "rarity": "rare",
+      "set": "BLACK_TEMPLE",
+      "collectible": true,
+      "tribe": "Nature",
+      "description": "Summon a copy of a friendly minion. Give the copy Taunt.",
+      "effects": [
+        {
+          "type": "summon-copy-of-target-buffed",
+          "target": "friendly-creature",
+          "keywords": [
+            "taunt"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "heart_of_the_wild",
+      "name": "Heart of the Wild",
+      "type": "sorcery",
+      "cost": 3,
+      "cardClass": "druid",
+      "rarity": "common",
+      "set": "ALTERAC_VALLEY",
+      "collectible": true,
+      "description": "Give a minion +2/+2, then give your Beasts +1/+1.",
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 2,
+          "health": 2
+        },
+        {
+          "type": "buff",
+          "attack": 1,
+          "health": 1,
+          "target": "friendly-creatures",
+          "tribe": "Beast"
+        }
+      ]
+    },
+    {
+      "id": "take_to_the_skies",
+      "name": "Take to the Skies",
+      "type": "sorcery",
+      "cost": 3,
+      "cardClass": "druid",
+      "rarity": "common",
+      "set": "WILD_WEST",
+      "collectible": true,
+      "description": "Draw two Dragons. Give them +1/+1.",
+      "effects": [
+        {
+          "type": "tutor",
+          "cardType": "creature",
+          "tribe": "Dragon",
+          "count": 2,
+          "buff": {
+            "attack": 1,
+            "health": 1
+          }
+        }
+      ]
+    },
+    {
+      "id": "witching_hour",
+      "name": "Witching Hour",
+      "type": "sorcery",
+      "cardClass": "druid",
+      "cost": 3,
+      "rarity": "rare",
+      "set": "GILNEAS",
+      "collectible": true,
+      "description": "Summon a random friendly Beast that died this game.",
+      "effects": [
+        {
+          "type": "resurrect-tribe",
+          "tribe": "Beast"
+        }
+      ]
+    },
+    {
+      "id": "germination",
+      "name": "Germination",
+      "type": "sorcery",
+      "cost": 4,
+      "cardClass": "druid",
+      "rarity": "rare",
+      "set": "BLACK_TEMPLE",
+      "collectible": true,
+      "tribe": "Nature",
+      "description": "Summon a copy of a friendly minion. Give the copy Taunt.",
+      "effects": [
+        {
+          "type": "summon-copy-of-target-buffed",
+          "target": "friendly-creature",
+          "keywords": [
+            "taunt"
+          ]
+        }
+      ]
     }
   ]
 }
