@@ -150529,6 +150529,137 @@
           ]
         }
       ]
+    },
+    {
+      "id": "cryosleep",
+      "name": "Cryosleep",
+      "type": "sorcery",
+      "cost": 4,
+      "cardClass": "deathknight",
+      "rarity": "rare",
+      "set": "THE_LOST_CITY",
+      "collectible": true,
+      "tribe": "Frost",
+      "description": "Deal 4 damage and draw a card.",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 4,
+          "target": "any"
+        },
+        {
+          "type": "draw",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "suffocate",
+      "name": "Suffocate",
+      "type": "sorcery",
+      "cost": 4,
+      "cardClass": "deathknight",
+      "rarity": "common",
+      "set": "SPACE",
+      "collectible": true,
+      "tribe": "Shadow",
+      "description": "Destroy a minion.",
+      "effects": [
+        {
+          "type": "destroy",
+          "target": "creature"
+        }
+      ]
+    },
+    {
+      "id": "wave_of_tar",
+      "name": "Wave of Tar",
+      "cardClass": "deathknight",
+      "cost": 4,
+      "rarity": "epic",
+      "set": "THE_LOST_CITY",
+      "collectible": true,
+      "description": "Deal 2 damage to all enemy minions.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 2,
+          "target": "enemy-creatures"
+        }
+      ]
+    },
+    {
+      "id": "talanjis_last_stand",
+      "name": "Talanji's Last Stand",
+      "type": "sorcery",
+      "cost": 5,
+      "cardClass": "deathknight",
+      "rarity": "rare",
+      "set": "CATACLYSM",
+      "collectible": true,
+      "description": "Give your minions \"Deathrattle: Summon a random 4-Cost minion.\"",
+      "effects": [
+        {
+          "type": "grant-deathrattle",
+          "effects": [
+            {
+              "type": "summon-random",
+              "cost": 4,
+              "count": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "chow_down",
+      "name": "Chow Down",
+      "cardClass": "deathknight",
+      "cost": 8,
+      "rarity": "rare",
+      "type": "sorcery",
+      "collectible": true,
+      "set": "CATACLYSM",
+      "description": "Summon five 5/4 Undead Drakes.",
+      "effects": [
+        {
+          "type": "summon",
+          "count": 5,
+          "attack": 5,
+          "health": 4,
+          "name": "Undead Drake",
+          "tribe": "Undead"
+        }
+      ]
+    },
+    {
+      "id": "airlock_breach",
+      "name": "Airlock Breach",
+      "type": "sorcery",
+      "cost": 6,
+      "cardClass": "deathknight",
+      "rarity": "rare",
+      "set": "SPACE",
+      "collectible": true,
+      "description": "Summon a 5/5 Undead with Taunt and give your hero +5 Health.",
+      "effects": [
+        {
+          "type": "summon",
+          "attack": 5,
+          "health": 5,
+          "name": "Undead",
+          "tribe": "Undead",
+          "keywords": [
+            "taunt"
+          ]
+        },
+        {
+          "type": "heal",
+          "value": 5,
+          "target": "self"
+        }
+      ]
     }
   ]
 }
