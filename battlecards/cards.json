@@ -150660,6 +150660,896 @@
           "target": "self"
         }
       ]
+    },
+    {
+      "id": "cloning_device",
+      "name": "Cloning Device",
+      "type": "sorcery",
+      "cost": 1,
+      "cardClass": "priest",
+      "rarity": "common",
+      "set": "BOOMSDAY",
+      "collectible": true,
+      "description": "Discover a copy of a minion in your opponent's deck.",
+      "effects": [
+        {
+          "type": "discover",
+          "cardType": "creature",
+          "fromEnemyDeck": true
+        }
+      ]
+    },
+    {
+      "id": "confuse",
+      "name": "Confuse",
+      "type": "sorcery",
+      "cost": 2,
+      "cardClass": "priest",
+      "rarity": "epic",
+      "set": "TGT",
+      "collectible": true,
+      "tribe": "Shadow",
+      "description": "Swap the Attack and Health of all minions.",
+      "effects": [
+        {
+          "type": "swap-stats-all"
+        }
+      ]
+    },
+    {
+      "id": "eternal_servitude",
+      "name": "Eternal Servitude",
+      "type": "sorcery",
+      "cost": 4,
+      "cardClass": "priest",
+      "rarity": "rare",
+      "set": "PLACEHOLDER_202204",
+      "collectible": true,
+      "tribe": "Shadow",
+      "description": "Discover a friendly minion that died this game. Summon it.",
+      "effects": [
+        {
+          "type": "discover",
+          "fromDied": true,
+          "to": "board"
+        }
+      ]
+    },
+    {
+      "id": "lesser_diamond_spellstone",
+      "name": "Lesser Diamond Spellstone",
+      "type": "sorcery",
+      "cost": 7,
+      "cardClass": "priest",
+      "rarity": "rare",
+      "set": "PLACEHOLDER_202204",
+      "collectible": true,
+      "tribe": "Holy",
+      "description": "Resurrect 2 different friendly minions.",
+      "effects": [
+        {
+          "type": "resurrect-highest-died",
+          "count": 2
+        }
+      ]
+    },
+    {
+      "id": "mass_resurrection",
+      "name": "Mass Resurrection",
+      "type": "sorcery",
+      "cost": 9,
+      "cardClass": "priest",
+      "rarity": "rare",
+      "set": "DALARAN",
+      "collectible": true,
+      "tribe": "Holy",
+      "description": "Summon 3 friendly minions that died this game.",
+      "effects": [
+        {
+          "type": "summon-died-name",
+          "count": 3
+        }
+      ]
+    },
+    {
+      "id": "dragonfire_potion",
+      "name": "Dragonfire Potion",
+      "cardClass": "priest",
+      "cost": 5,
+      "rarity": "epic",
+      "type": "sorcery",
+      "set": "GANGS",
+      "collectible": true,
+      "tribe": "Fire",
+      "effects": [
+        {
+          "type": "damage-all-minions",
+          "value": 5,
+          "exceptTribe": "Dragon"
+        }
+      ],
+      "description": "Deal 5 damage to all minions except Dragons."
+    },
+    {
+      "id": "seance",
+      "name": "Seance",
+      "cardClass": "priest",
+      "cost": 2,
+      "rarity": "common",
+      "set": "TROLL",
+      "type": "sorcery",
+      "tribe": "Shadow",
+      "collectible": true,
+      "description": "Choose a minion. Add a copy of it to your hand.",
+      "effects": [
+        {
+          "type": "copy-to-hand",
+          "target": "creature"
+        }
+      ]
+    },
+    {
+      "id": "holy_water",
+      "name": "Holy Water",
+      "cardClass": "priest",
+      "cost": 5,
+      "rarity": "rare",
+      "set": "GILNEAS",
+      "collectible": true,
+      "tribe": "Holy",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "damage-then",
+          "value": 4,
+          "target": "creature",
+          "ifDies": [
+            {
+              "type": "copy-to-hand"
+            }
+          ]
+        }
+      ],
+      "description": "Deal 4 damage to a minion. If it dies, add a copy of it to your hand."
+    },
+    {
+      "id": "unsleeping_soul",
+      "name": "Unsleeping Soul",
+      "type": "sorcery",
+      "cost": 4,
+      "cardClass": "priest",
+      "rarity": "common",
+      "set": "DALARAN",
+      "collectible": true,
+      "tribe": "Shadow",
+      "effects": [
+        {
+          "type": "silence",
+          "target": "friendly-creature"
+        },
+        {
+          "type": "summon-copy-of-target-buffed",
+          "target": "friendly-creature"
+        }
+      ],
+      "description": "Silence a friendly minion, then summon a copy of it."
+    },
+    {
+      "id": "velens_chosen",
+      "name": "Velen's Chosen",
+      "cardClass": "priest",
+      "cost": 3,
+      "rarity": "common",
+      "set": "GVG",
+      "collectible": true,
+      "tribe": "Holy",
+      "type": "sorcery",
+      "description": "Give a minion +2/+4 and Spell Damage +1.",
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 2,
+          "health": 4,
+          "target": "creature"
+        },
+        {
+          "type": "grant-spell-damage",
+          "target": "creature",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "free_from_amber",
+      "name": "Free From Amber",
+      "type": "sorcery",
+      "cost": 7,
+      "cardClass": "priest",
+      "rarity": "rare",
+      "set": "UNGORO",
+      "collectible": true,
+      "keywords": [
+        "discover"
+      ],
+      "description": "Discover a minion that costs (8) or more. Summon it.",
+      "effects": [
+        {
+          "type": "discover",
+          "cardType": "creature",
+          "minCost": 8,
+          "to": "board"
+        }
+      ]
+    },
+    {
+      "id": "shadow_word_horror",
+      "name": "Shadow Word: Horror",
+      "cardClass": "priest",
+      "cost": 4,
+      "rarity": "rare",
+      "set": "OG",
+      "collectible": true,
+      "type": "sorcery",
+      "tribe": "Shadow",
+      "effects": [
+        {
+          "type": "destroy-all",
+          "maxAttack": 2
+        }
+      ],
+      "description": "Destroy all minions with 2 or less Attack."
+    },
+    {
+      "id": "excavated_evil",
+      "name": "Excavated Evil",
+      "type": "sorcery",
+      "cost": 5,
+      "cardClass": "priest",
+      "rarity": "rare",
+      "set": "LOE",
+      "collectible": true,
+      "tribe": "Shadow",
+      "description": "Deal 3 damage to all minions. Shuffle this card into your opponent's deck.",
+      "effects": [
+        {
+          "type": "damage-all-minions",
+          "value": 3
+        },
+        {
+          "type": "shuffle-into-deck",
+          "id": "excavated_evil",
+          "enemy": true
+        }
+      ]
+    },
+    {
+      "id": "plague_of_death",
+      "name": "Plague of Death",
+      "cardClass": "priest",
+      "cost": 9,
+      "rarity": "epic",
+      "set": "ULDUM",
+      "collectible": true,
+      "type": "sorcery",
+      "tribe": "Shadow",
+      "description": "Silence and destroy all minions.",
+      "effects": [
+        {
+          "type": "silence-all"
+        },
+        {
+          "type": "destroy-all"
+        }
+      ]
+    },
+    {
+      "id": "lazuls_scheme",
+      "name": "Lazul's Scheme",
+      "type": "sorcery",
+      "cost": 0,
+      "cardClass": "priest",
+      "rarity": "epic",
+      "set": "DALARAN",
+      "tribe": "Shadow",
+      "collectible": true,
+      "description": "Reduce the Attack of an enemy minion by 1 until your next turn.",
+      "effects": [
+        {
+          "type": "debuff-until-your-next",
+          "value": 1,
+          "target": "enemy-creature"
+        }
+      ]
+    },
+    {
+      "id": "surrender_to_madness",
+      "name": "Surrender to Madness",
+      "type": "sorcery",
+      "cost": 3,
+      "cardClass": "priest",
+      "rarity": "epic",
+      "set": "TROLL",
+      "collectible": true,
+      "tribe": "Shadow",
+      "description": "Destroy 3 of your Mana Crystals. Give all minions in your deck +2/+2.",
+      "effects": [
+        {
+          "type": "lose-max-mana",
+          "value": 3
+        },
+        {
+          "type": "buff-deck-minions",
+          "attack": 2,
+          "health": 2
+        }
+      ]
+    },
+    {
+      "id": "entomb",
+      "name": "Entomb",
+      "type": "sorcery",
+      "cardClass": "priest",
+      "cost": 6,
+      "rarity": "common",
+      "set": "LOE",
+      "collectible": true,
+      "effects": [
+        {
+          "type": "exile",
+          "target": "enemy-creature"
+        }
+      ],
+      "description": "Choose an enemy minion. Shuffle it into your deck."
+    },
+    {
+      "id": "avenge",
+      "name": "Avenge",
+      "type": "secret",
+      "cost": 1,
+      "cardClass": "paladin",
+      "rarity": "common",
+      "set": "PLACEHOLDER_202204",
+      "collectible": true,
+      "tribe": "Holy",
+      "keywords": [
+        "secret"
+      ],
+      "description": "Secret: When one of your minions dies, give a random friendly minion +3/+2.",
+      "secret": {
+        "trigger": "friendly-minion-died",
+        "effects": [
+          {
+            "type": "buff-random-friendly",
+            "attack": 3,
+            "health": 2
+          }
+        ]
+      }
+    },
+    {
+      "id": "call_to_arms",
+      "name": "Call to Arms",
+      "cardClass": "paladin",
+      "cost": 4,
+      "rarity": "epic",
+      "set": "LOOTAPALOOZA",
+      "collectible": true,
+      "type": "sorcery",
+      "description": "Recruit 3 minions that cost (2) or less.",
+      "effects": [
+        {
+          "type": "recruit",
+          "maxCost": 2,
+          "count": 3
+        }
+      ]
+    },
+    {
+      "id": "small_time_recruits",
+      "name": "Small-Time Recruits",
+      "type": "sorcery",
+      "cost": 3,
+      "cardClass": "paladin",
+      "rarity": "epic",
+      "set": "GANGS",
+      "collectible": true,
+      "description": "Draw three 1-Cost minions from your deck.",
+      "effects": [
+        {
+          "type": "tutor",
+          "cardType": "creature",
+          "cost": 1,
+          "count": 3
+        }
+      ]
+    },
+    {
+      "id": "tip_the_scales",
+      "name": "Tip the Scales",
+      "cardClass": "paladin",
+      "cost": 8,
+      "rarity": "epic",
+      "set": "ULDUM",
+      "collectible": true,
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "summon-from-deck-tribe",
+          "tribe": "Murloc",
+          "count": 7
+        }
+      ],
+      "description": "Summon 7 Murlocs from your deck."
+    },
+    {
+      "id": "anyfin_can_happen",
+      "name": "Anyfin Can Happen",
+      "type": "sorcery",
+      "cost": 10,
+      "cardClass": "paladin",
+      "rarity": "rare",
+      "set": "LOE",
+      "collectible": true,
+      "description": "Summon 7 Murlocs that died this game.",
+      "effects": [
+        {
+          "type": "summon-died-this-game",
+          "tribe": "Murloc"
+        }
+      ]
+    },
+    {
+      "id": "getaway_kodo",
+      "name": "Getaway Kodo",
+      "type": "secret",
+      "cost": 1,
+      "cardClass": "paladin",
+      "rarity": "rare",
+      "set": "GANGS",
+      "collectible": true,
+      "keywords": [
+        "secret"
+      ],
+      "description": "Secret: When a friendly minion dies, return it to your hand.",
+      "secret": {
+        "trigger": "friendly-minion-died",
+        "effects": [
+          {
+            "type": "copy-triggering-to-hand",
+            "count": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "pharaoh_s_blessing",
+      "name": "Pharaoh's Blessing",
+      "type": "sorcery",
+      "cost": 6,
+      "cardClass": "paladin",
+      "rarity": "rare",
+      "set": "ULDUM",
+      "tribe": "Holy",
+      "collectible": true,
+      "description": "Give a minion +4/+4, Divine Shield, and Taunt.",
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 4,
+          "health": 4,
+          "target": "creature"
+        },
+        {
+          "type": "grant",
+          "keyword": "divine_shield",
+          "target": "creature"
+        },
+        {
+          "type": "grant",
+          "keyword": "taunt",
+          "target": "creature"
+        }
+      ]
+    },
+    {
+      "id": "spikeridged_steed",
+      "name": "Spikeridged Steed",
+      "cardClass": "paladin",
+      "cost": 5,
+      "rarity": "rare",
+      "set": "CORE",
+      "collectible": true,
+      "type": "sorcery",
+      "description": "Give a minion +2/+6 and Taunt. When it dies, summon a Stegodon.",
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 2,
+          "health": 6,
+          "target": "creature"
+        },
+        {
+          "type": "grant",
+          "keyword": "taunt",
+          "target": "creature"
+        },
+        {
+          "type": "grant-deathrattle",
+          "target": "creature",
+          "effects": [
+            {
+              "type": "summon",
+              "summonId": "stegodon"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "forbidden_healing",
+      "name": "Forbidden Healing",
+      "type": "sorcery",
+      "cost": 0,
+      "cardClass": "paladin",
+      "rarity": "epic",
+      "set": "OG",
+      "collectible": true,
+      "tribe": "Holy",
+      "xSpell": true,
+      "description": "Spend all your Mana. Restore twice that much Health.",
+      "effects": [
+        {
+          "type": "heal",
+          "value": "X",
+          "target": "self"
+        },
+        {
+          "type": "heal",
+          "value": "X",
+          "target": "self"
+        }
+      ]
+    },
+    {
+      "id": "lesser_pearl_spellstone",
+      "name": "Lesser Pearl Spellstone",
+      "type": "sorcery",
+      "cost": 2,
+      "cardClass": "paladin",
+      "rarity": "rare",
+      "set": "LOOTAPALOOZA",
+      "collectible": true,
+      "tribe": "Holy",
+      "description": "Summon a 2/2 Spirit with Taunt.",
+      "effects": [
+        {
+          "type": "summon",
+          "count": 1,
+          "attack": 2,
+          "health": 2,
+          "name": "Spirit",
+          "keywords": [
+            "taunt"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "lightforged_blessing",
+      "name": "Lightforged Blessing",
+      "cardClass": "paladin",
+      "cost": 2,
+      "rarity": "common",
+      "set": "DALARAN",
+      "collectible": true,
+      "description": "Give a friendly minion Lifesteal.",
+      "type": "sorcery",
+      "tribe": "Holy",
+      "effects": [
+        {
+          "type": "grant",
+          "keyword": "lifesteal",
+          "target": "creature"
+        }
+      ]
+    },
+    {
+      "id": "seal_of_champions",
+      "name": "Seal of Champions",
+      "type": "sorcery",
+      "cost": 3,
+      "cardClass": "paladin",
+      "rarity": "common",
+      "set": "TGT",
+      "collectible": true,
+      "tribe": "Holy",
+      "description": "Give a minion +3 Attack and Divine Shield.",
+      "effects": [
+        {
+          "type": "buff",
+          "target": "creature",
+          "attack": 3,
+          "grant": "divine_shield"
+        }
+      ]
+    },
+    {
+      "id": "rebuke",
+      "name": "Rebuke",
+      "type": "sorcery",
+      "cost": 2,
+      "cardClass": "paladin",
+      "rarity": "common",
+      "set": "GILNEAS",
+      "collectible": true,
+      "description": "Enemy spells cost (5) more next turn.",
+      "effects": [
+        {
+          "type": "tax-enemy-spells",
+          "value": 5
+        }
+      ]
+    },
+    {
+      "id": "shrink_ray",
+      "name": "Shrink Ray",
+      "type": "sorcery",
+      "cost": 5,
+      "cardClass": "paladin",
+      "rarity": "rare",
+      "set": "BOOMSDAY",
+      "collectible": true,
+      "description": "Set the Attack and Health of all minions to 1.",
+      "effects": [
+        {
+          "type": "set-stats",
+          "target": "all-creatures",
+          "attack": 1,
+          "health": 1
+        }
+      ]
+    },
+    {
+      "id": "seal_of_champions",
+      "name": "Seal of Champions",
+      "type": "sorcery",
+      "cost": 3,
+      "cardClass": "paladin",
+      "rarity": "common",
+      "set": "TGT",
+      "collectible": true,
+      "tribe": "Holy",
+      "description": "Give a minion +3 Attack and Divine Shield.",
+      "effects": [
+        {
+          "type": "buff",
+          "target": "creature",
+          "attack": 3,
+          "grant": "divine_shield"
+        }
+      ]
+    },
+    {
+      "id": "call_to_arms",
+      "name": "Call to Arms",
+      "cardClass": "paladin",
+      "cost": 4,
+      "rarity": "epic",
+      "set": "LOOTAPALOOZA",
+      "collectible": true,
+      "type": "sorcery",
+      "description": "Recruit 3 minions that cost (2) or less.",
+      "effects": [
+        {
+          "type": "recruit",
+          "maxCost": 2,
+          "count": 3
+        }
+      ]
+    },
+    {
+      "id": "pharaohs_blessing",
+      "name": "Pharaoh's Blessing",
+      "type": "sorcery",
+      "cost": 6,
+      "cardClass": "paladin",
+      "rarity": "rare",
+      "set": "ULDUM",
+      "tribe": "Holy",
+      "collectible": true,
+      "description": "Give a minion +4/+4, Divine Shield, and Taunt.",
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 4,
+          "health": 4,
+          "target": "creature"
+        },
+        {
+          "type": "grant",
+          "keyword": "divine_shield",
+          "target": "creature"
+        },
+        {
+          "type": "grant",
+          "keyword": "taunt",
+          "target": "creature"
+        }
+      ]
+    },
+    {
+      "id": "cannon_barrage",
+      "name": "Cannon Barrage",
+      "type": "sorcery",
+      "cost": 6,
+      "cardClass": "rogue",
+      "rarity": "epic",
+      "set": "TROLL",
+      "collectible": true,
+      "description": "Deal 3 damage to a random enemy. Repeat for each of your Pirates.",
+      "effects": [
+        {
+          "type": "random-damage",
+          "value": 3,
+          "count": 1,
+          "pool": "enemies",
+          "perFriendlyTribe": "Pirate"
+        }
+      ]
+    },
+    {
+      "id": "daring_escape",
+      "name": "Daring Escape",
+      "type": "sorcery",
+      "cost": 1,
+      "cardClass": "rogue",
+      "rarity": "common",
+      "set": "DALARAN",
+      "collectible": true,
+      "description": "Return all friendly minions to your hand.",
+      "effects": [
+        {
+          "type": "bounce",
+          "target": "friendly-others"
+        }
+      ]
+    },
+    {
+      "id": "lesser_onyx_spellstone",
+      "name": "Lesser Onyx Spellstone",
+      "type": "sorcery",
+      "cost": 5,
+      "cardClass": "rogue",
+      "rarity": "rare",
+      "set": "LOOTAPALOOZA",
+      "collectible": true,
+      "tribe": "Shadow",
+      "description": "Destroy 1 random enemy minion.",
+      "effects": [
+        {
+          "type": "destroy-random"
+        }
+      ]
+    },
+    {
+      "id": "raiding_party",
+      "name": "Raiding Party",
+      "type": "sorcery",
+      "cardClass": "rogue",
+      "cost": 3,
+      "rarity": "rare",
+      "set": "PLACEHOLDER_202204",
+      "collectible": true,
+      "description": "Draw 2 Pirates from your deck.",
+      "effects": [
+        {
+          "type": "tutor",
+          "tribe": "Pirate",
+          "count": 2
+        }
+      ]
+    },
+    {
+      "id": "tinkers_sharpsword_oil",
+      "name": "Tinker's Sharpsword Oil",
+      "cardClass": "rogue",
+      "cost": 4,
+      "rarity": "common",
+      "set": "GVG",
+      "collectible": true,
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "buff-weapon",
+          "attack": 3,
+          "durability": 0
+        }
+      ],
+      "combo": [
+        {
+          "type": "buff-weapon",
+          "attack": 3,
+          "durability": 0
+        },
+        {
+          "type": "buff-random-friendly",
+          "attack": 3,
+          "health": 0
+        }
+      ],
+      "description": "Give your weapon +3 Attack. Combo: Give a random friendly minion +3 Attack."
+    },
+    {
+      "id": "razorpetal_volley",
+      "name": "Razorpetal Volley",
+      "type": "sorcery",
+      "cost": 2,
+      "cardClass": "rogue",
+      "rarity": "common",
+      "set": "UNGORO",
+      "collectible": true,
+      "tribe": "Nature",
+      "description": "Add two Razorpetals to your hand that deal 2 damage.",
+      "effects": [
+        {
+          "type": "add-card",
+          "id": "razorpetal",
+          "count": 2
+        }
+      ]
+    },
+    {
+      "id": "evasion",
+      "name": "Evasion",
+      "cardClass": "rogue",
+      "cost": 2,
+      "rarity": "epic",
+      "set": "LOOTAPALOOZA",
+      "collectible": true,
+      "type": "secret",
+      "secret": {
+        "trigger": "hero-takes-damage",
+        "effects": [
+          {
+            "type": "hero-immune"
+          }
+        ]
+      },
+      "description": "Secret: After your hero takes damage, become Immune this turn."
+    },
+    {
+      "id": "pick_pocket",
+      "name": "Pick Pocket",
+      "cardClass": "rogue",
+      "cost": 2,
+      "rarity": "rare",
+      "type": "sorcery",
+      "collectible": true,
+      "effects": [
+        {
+          "type": "conjure-random",
+          "cardClass": "enemy"
+        }
+      ],
+      "description": "Add a random card to your hand from your opponent's class.",
+      "set": "GILNEAS"
+    },
+    {
+      "id": "daring_escape",
+      "name": "Daring Escape",
+      "type": "sorcery",
+      "cost": 1,
+      "cardClass": "rogue",
+      "rarity": "common",
+      "set": "DALARAN",
+      "collectible": true,
+      "description": "Return all friendly minions to your hand.",
+      "effects": [
+        {
+          "type": "bounce",
+          "target": "friendly-others"
+        }
+      ]
     }
   ]
 }
