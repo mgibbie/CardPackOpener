@@ -145935,6 +145935,1071 @@
           "value": 3
         }
       ]
+    },
+    {
+      "id": "conviction_rank_1",
+      "name": "Conviction (Rank 1)",
+      "cardClass": "paladin",
+      "cost": 1,
+      "rarity": "epic",
+      "set": "THE_BARRENS",
+      "collectible": true,
+      "type": "sorcery",
+      "tribe": "Holy",
+      "description": "Give a random friendly minion +3 Attack.",
+      "effects": [
+        {
+          "type": "buff-random-friendly",
+          "attack": 3,
+          "health": 0
+        }
+      ]
+    },
+    {
+      "id": "crystology",
+      "name": "Crystology",
+      "type": "sorcery",
+      "cost": 1,
+      "cardClass": "paladin",
+      "rarity": "rare",
+      "set": "BOOMSDAY",
+      "collectible": true,
+      "description": "Draw two 1-Attack minions from your deck.",
+      "effects": [
+        {
+          "type": "tutor",
+          "cardType": "creature",
+          "attack": 1,
+          "count": 2
+        }
+      ]
+    },
+    {
+      "id": "divine_brew",
+      "name": "Divine Brew",
+      "cardClass": "paladin",
+      "cost": 1,
+      "rarity": "rare",
+      "type": "sorcery",
+      "set": "ISLAND_VACATION",
+      "collectible": true,
+      "tribe": "Holy",
+      "description": "Give a character Divine Shield.",
+      "effects": [
+        {
+          "type": "grant",
+          "keyword": "divine_shield",
+          "target": "creature"
+        }
+      ]
+    },
+    {
+      "id": "fancy_packaging",
+      "name": "Fancy Packaging",
+      "type": "sorcery",
+      "cost": 1,
+      "cardClass": "paladin",
+      "rarity": "common",
+      "set": "WHIZBANGS_WORKSHOP",
+      "collectible": true,
+      "description": "Give a minion with Divine Shield +2/+3.",
+      "effects": [
+        {
+          "type": "buff",
+          "target": "creature",
+          "requireKeyword": "divine_shield",
+          "attack": 2,
+          "health": 3
+        }
+      ]
+    },
+    {
+      "id": "first_day_of_school",
+      "name": "First Day of School",
+      "type": "sorcery",
+      "cost": 1,
+      "cardClass": "paladin",
+      "rarity": "common",
+      "set": "SCHOLOMANCE",
+      "collectible": true,
+      "description": "Add 2 random 1-Cost creatures to your hand.",
+      "effects": [
+        {
+          "type": "conjure-random",
+          "cardType": "creature",
+          "cost": 1,
+          "count": 2
+        }
+      ]
+    },
+    {
+      "id": "promotion",
+      "name": "Promotion",
+      "type": "sorcery",
+      "cost": 1,
+      "cardClass": "paladin",
+      "rarity": "epic",
+      "set": "PLACEHOLDER_202204",
+      "collectible": true,
+      "description": "Give a Silver Hand Recruit +3/+3 and Taunt.",
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 3,
+          "health": 3,
+          "target": "friendly-creature"
+        },
+        {
+          "type": "grant",
+          "keyword": "taunt",
+          "target": "friendly-creature"
+        }
+      ]
+    },
+    {
+      "id": "sand_breath",
+      "name": "Sand Breath",
+      "cardClass": "paladin",
+      "cost": 1,
+      "rarity": "common",
+      "type": "sorcery",
+      "collectible": true,
+      "set": "DRAGONS",
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 1,
+          "health": 2,
+          "target": "creature"
+        },
+        {
+          "type": "conditional",
+          "target": "creature",
+          "if": {
+            "holdingTribe": "Dragon"
+          },
+          "then": [
+            {
+              "type": "grant",
+              "target": "creature",
+              "keyword": "divine_shield"
+            }
+          ]
+        }
+      ],
+      "description": "Give a minion +1/+2. Give it Divine Shield if you're holding a Dragon."
+    },
+    {
+      "id": "shield_of_honor",
+      "name": "Shield of Honor",
+      "type": "sorcery",
+      "cost": 1,
+      "cardClass": "paladin",
+      "rarity": "common",
+      "set": "SCHOLOMANCE",
+      "collectible": true,
+      "tribe": "Holy",
+      "description": "Give a damaged minion +3 Attack and Divine Shield.",
+      "effects": [
+        {
+          "type": "buff",
+          "target": "creature",
+          "requireDamaged": true,
+          "attack": 3,
+          "grant": "divine_shield"
+        }
+      ]
+    },
+    {
+      "id": "a_light_in_the_darkness",
+      "name": "A Light in the Darkness",
+      "cardClass": "paladin",
+      "cost": 2,
+      "rarity": "common",
+      "type": "sorcery",
+      "set": "OG",
+      "collectible": true,
+      "tribe": "Holy",
+      "description": "Discover a Paladin minion. Give it +2/+2.",
+      "effects": [
+        {
+          "type": "discover",
+          "pick": 3,
+          "cardType": "creature",
+          "cardClasses": [
+            "paladin"
+          ],
+          "buff": {
+            "attack": 2,
+            "health": 2
+          }
+        }
+      ]
+    },
+    {
+      "id": "libram_of_wisdom",
+      "name": "Libram of Wisdom",
+      "type": "sorcery",
+      "cost": 2,
+      "cardClass": "paladin",
+      "rarity": "rare",
+      "set": "BLACK_TEMPLE",
+      "collectible": true,
+      "tribe": "Holy",
+      "description": "Give a minion +1/+1 and \"Deathrattle: Add a 'Libram of Wisdom' spell to your hand.\"",
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 1,
+          "health": 1,
+          "target": "creature"
+        },
+        {
+          "type": "grant-deathrattle",
+          "target": "creature",
+          "effects": [
+            {
+              "type": "add-card",
+              "id": "libram_of_wisdom"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "noble_mount",
+      "name": "Noble Mount",
+      "type": "sorcery",
+      "cost": 2,
+      "cardClass": "paladin",
+      "rarity": "rare",
+      "set": "STORMWIND",
+      "collectible": true,
+      "description": "Give a minion +1/+1 and Divine Shield. When it dies, summon a Warhorse.",
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 1,
+          "health": 1,
+          "target": "creature",
+          "grant": "divine_shield"
+        },
+        {
+          "type": "grant-deathrattle",
+          "target": "creature",
+          "effects": [
+            {
+              "type": "summon",
+              "count": 1,
+              "name": "Warhorse",
+              "attack": 2,
+              "health": 1,
+              "keywords": [
+                "rush"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "snack_run",
+      "name": "Snack Run",
+      "type": "sorcery",
+      "cardClass": "paladin",
+      "cost": 2,
+      "rarity": "rare",
+      "set": "DARKMOON_FAIRE",
+      "collectible": true,
+      "description": "Discover a spell. Restore Health to your hero equal to its Cost.",
+      "effects": [
+        {
+          "type": "discover",
+          "cardType": "spell",
+          "healByCost": true
+        }
+      ]
+    },
+    {
+      "id": "crystology",
+      "name": "Crystology",
+      "type": "sorcery",
+      "cost": 1,
+      "cardClass": "paladin",
+      "rarity": "rare",
+      "set": "BOOMSDAY",
+      "collectible": true,
+      "description": "Draw two 1-Attack minions from your deck.",
+      "effects": [
+        {
+          "type": "tutor",
+          "cardType": "creature",
+          "attack": 1,
+          "count": 2
+        }
+      ]
+    },
+    {
+      "id": "first_day_of_school",
+      "name": "First Day of School",
+      "type": "sorcery",
+      "cost": 1,
+      "cardClass": "paladin",
+      "rarity": "common",
+      "set": "SCHOLOMANCE",
+      "collectible": true,
+      "description": "Add 2 random 1-Cost creatures to your hand.",
+      "effects": [
+        {
+          "type": "conjure-random",
+          "cardType": "creature",
+          "cost": 1,
+          "count": 2
+        }
+      ]
+    },
+    {
+      "id": "a_light_in_the_darkness",
+      "name": "A Light in the Darkness",
+      "cardClass": "paladin",
+      "cost": 2,
+      "rarity": "common",
+      "type": "sorcery",
+      "set": "OG",
+      "collectible": true,
+      "tribe": "Holy",
+      "description": "Discover a Paladin minion. Give it +2/+2.",
+      "effects": [
+        {
+          "type": "discover",
+          "pick": 3,
+          "cardType": "creature",
+          "cardClasses": [
+            "paladin"
+          ],
+          "buff": {
+            "attack": 2,
+            "health": 2
+          }
+        }
+      ]
+    },
+    {
+      "id": "arkonite_revelation",
+      "name": "Arkonite Revelation",
+      "type": "sorcery",
+      "cost": 1,
+      "cardClass": "druid",
+      "rarity": "common",
+      "set": "SPACE",
+      "collectible": true,
+      "tribe": "Arcane",
+      "description": "Draw a card. If it's a spell, it costs (1) less.",
+      "effects": [
+        {
+          "type": "draw-check",
+          "value": 1,
+          "allType": "sorcery",
+          "then": [
+            {
+              "type": "reduce-rightmost-hand-cost",
+              "value": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "forest_seedlings",
+      "name": "Forest Seedlings",
+      "cardClass": "druid",
+      "cost": 1,
+      "rarity": "common",
+      "type": "sorcery",
+      "collectible": true,
+      "effects": [
+        {
+          "type": "summon",
+          "count": 2,
+          "attack": 1,
+          "health": 1,
+          "name": "Sapling"
+        }
+      ],
+      "description": "Summon two 1/1 Saplings.",
+      "set": "TITANS"
+    },
+    {
+      "id": "moonbeam",
+      "name": "Moonbeam",
+      "cardClass": "druid",
+      "cost": 1,
+      "rarity": "common",
+      "set": "THE_SUNKEN_CITY",
+      "collectible": true,
+      "description": "Deal 1 damage to an enemy, twice.",
+      "type": "sorcery",
+      "tribe": "Arcane",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 1,
+          "target": "enemy-any"
+        },
+        {
+          "type": "damage",
+          "value": 1,
+          "target": "enemy-any"
+        }
+      ]
+    },
+    {
+      "id": "nature_studies",
+      "name": "Nature Studies",
+      "cardClass": "druid",
+      "cost": 1,
+      "rarity": "common",
+      "set": "SCHOLOMANCE",
+      "collectible": true,
+      "type": "sorcery",
+      "tribe": "Nature",
+      "description": "Discover a spell. Your next one costs (1) less.",
+      "effects": [
+        {
+          "type": "discover",
+          "pick": 3,
+          "cardType": "spell"
+        },
+        {
+          "type": "set-next-spell-discount",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "partner_assignment",
+      "name": "Partner Assignment",
+      "type": "sorcery",
+      "cardClass": "druid",
+      "cost": 1,
+      "rarity": "rare",
+      "set": "SCHOLOMANCE",
+      "collectible": true,
+      "description": "Add a random 2-Cost and 3-Cost Beast to your hand.",
+      "effects": [
+        {
+          "type": "conjure-random",
+          "cardType": "creature",
+          "tribe": "Beast",
+          "cost": 2
+        },
+        {
+          "type": "conjure-random",
+          "cardType": "creature",
+          "tribe": "Beast",
+          "cost": 3
+        }
+      ]
+    },
+    {
+      "id": "planted_evidence",
+      "name": "Planted Evidence",
+      "cardClass": "druid",
+      "cost": 1,
+      "rarity": "common",
+      "set": "PLACEHOLDER_202204",
+      "collectible": true,
+      "type": "sorcery",
+      "tribe": "Nature",
+      "description": "Discover a spell. It costs (2) less this turn.",
+      "effects": [
+        {
+          "type": "discover",
+          "pick": 3,
+          "cardType": "spell",
+          "costMod": -2
+        }
+      ]
+    },
+    {
+      "id": "witchwood_apple",
+      "name": "Witchwood Apple",
+      "cardClass": "druid",
+      "cost": 1,
+      "rarity": "common",
+      "type": "sorcery",
+      "tribe": "Nature",
+      "set": "PLACEHOLDER_202204",
+      "collectible": true,
+      "effects": [
+        {
+          "type": "add-token",
+          "name": "Treant",
+          "attack": 2,
+          "health": 2,
+          "cost": 1
+        },
+        {
+          "type": "add-token",
+          "name": "Treant",
+          "attack": 2,
+          "health": 2,
+          "cost": 1
+        }
+      ],
+      "description": "Add two 2/2 Treants to your hand."
+    },
+    {
+      "id": "horn_of_plenty",
+      "name": "Horn of Plenty",
+      "cardClass": "druid",
+      "cost": 2,
+      "rarity": "common",
+      "set": "EMERALD_DREAM",
+      "collectible": true,
+      "description": "Discover a Nature spell. It costs (2) less.",
+      "type": "sorcery",
+      "tribe": "Nature",
+      "effects": [
+        {
+          "type": "discover",
+          "pick": 3,
+          "cardType": "spell",
+          "tribe": "Nature",
+          "costMod": -2
+        }
+      ]
+    },
+    {
+      "id": "ironbark",
+      "name": "Ironbark",
+      "cardClass": "druid",
+      "cost": 2,
+      "rarity": "rare",
+      "set": "BLACK_TEMPLE",
+      "collectible": true,
+      "type": "sorcery",
+      "tribe": "Nature",
+      "description": "Give a minion +1/+3 and Taunt. Costs (0) if you have at least 7 Mana Crystals.",
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 1,
+          "health": 3,
+          "target": "creature"
+        },
+        {
+          "type": "grant",
+          "keyword": "taunt",
+          "target": "creature"
+        }
+      ],
+      "selfCostIf": {
+        "cond": "mana-ge",
+        "threshold": 7,
+        "setCost": 0
+      }
+    },
+    {
+      "id": "rehydrate",
+      "name": "Rehydrate",
+      "type": "sorcery",
+      "cost": 2,
+      "cardClass": "druid",
+      "rarity": "common",
+      "set": "WILD_WEST",
+      "collectible": true,
+      "tribe": "Nature",
+      "keywords": [
+        "miracle"
+      ],
+      "description": "Restore 7 Health. Quickdraw: Refresh 2 Mana Crystals.",
+      "effects": [
+        {
+          "type": "heal",
+          "value": 7,
+          "target": "self"
+        },
+        {
+          "type": "conditional",
+          "if": {
+            "selfDrawnThisTurn": true
+          },
+          "then": [
+            {
+              "type": "gain-mana",
+              "value": 2
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "trail_mix",
+      "name": "Trail Mix",
+      "type": "sorcery",
+      "cost": 2,
+      "cardClass": "druid",
+      "rarity": "common",
+      "set": "ISLAND_VACATION",
+      "collectible": true,
+      "tribe": "Nature",
+      "description": "Gain 2 Mana Crystals next turn only.",
+      "effects": [
+        {
+          "type": "temp-crystal-next-turn",
+          "value": 2
+        }
+      ]
+    },
+    {
+      "id": "bogbeam",
+      "name": "Bogbeam",
+      "type": "sorcery",
+      "cost": 3,
+      "cardClass": "druid",
+      "rarity": "common",
+      "set": "BLACK_TEMPLE",
+      "collectible": true,
+      "description": "Deal 3 damage to a minion. Costs (0) if you have at least 7 Mana Crystals.",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 3,
+          "target": "creature"
+        }
+      ],
+      "selfCostIf": {
+        "cond": "mana-ge",
+        "threshold": 7,
+        "setCost": 0
+      }
+    },
+    {
+      "id": "contingency",
+      "name": "Contingency",
+      "type": "sorcery",
+      "cardClass": "druid",
+      "cost": 3,
+      "rarity": "common",
+      "set": "TIME_TRAVEL",
+      "collectible": true,
+      "description": "Draw the bottom two cards from your deck.",
+      "effects": [
+        {
+          "type": "reverse-deck"
+        },
+        {
+          "type": "draw",
+          "value": 2
+        },
+        {
+          "type": "reverse-deck"
+        }
+      ]
+    },
+    {
+      "id": "witchwood_apple",
+      "name": "Witchwood Apple",
+      "cardClass": "druid",
+      "cost": 1,
+      "rarity": "common",
+      "type": "sorcery",
+      "tribe": "Nature",
+      "set": "PLACEHOLDER_202204",
+      "collectible": true,
+      "effects": [
+        {
+          "type": "add-token",
+          "name": "Treant",
+          "attack": 2,
+          "health": 2,
+          "cost": 1
+        },
+        {
+          "type": "add-token",
+          "name": "Treant",
+          "attack": 2,
+          "health": 2,
+          "cost": 1
+        }
+      ],
+      "description": "Add two 2/2 Treants to your hand."
+    },
+    {
+      "id": "mark_of_y_shaarj",
+      "name": "Mark of Y'Shaarj",
+      "type": "sorcery",
+      "cost": 2,
+      "cardClass": "druid",
+      "rarity": "common",
+      "set": "OG",
+      "collectible": true,
+      "description": "Give a minion +2/+2. If it's a Beast, draw a card.",
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 2,
+          "health": 2,
+          "target": "creature"
+        }
+      ]
+    },
+    {
+      "id": "totemic_surge",
+      "name": "Totemic Surge",
+      "cardClass": "shaman",
+      "cost": 0,
+      "rarity": "common",
+      "type": "sorcery",
+      "set": "ULDUM",
+      "collectible": true,
+      "tribe": "Nature",
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 2,
+          "health": 0,
+          "target": "friendly-creatures",
+          "tribe": "Totem"
+        }
+      ],
+      "description": "Give your Totems +2 Attack."
+    },
+    {
+      "id": "blazing_invocation",
+      "name": "Blazing Invocation",
+      "cardClass": "shaman",
+      "cost": 1,
+      "rarity": "rare",
+      "set": "CORE",
+      "collectible": true,
+      "type": "sorcery",
+      "tribe": "Fire",
+      "description": "Discover a Battlecry minion. It costs (1) less.",
+      "effects": [
+        {
+          "type": "discover",
+          "cardType": "creature",
+          "requireKeyword": "battlecry",
+          "costMod": -1
+        }
+      ]
+    },
+    {
+      "id": "cold_storage",
+      "name": "Cold Storage",
+      "cardClass": "shaman",
+      "cost": 1,
+      "rarity": "rare",
+      "set": "RETURN_OF_THE_LICH_KING",
+      "type": "sorcery",
+      "tribe": "Frost",
+      "collectible": true,
+      "description": "Freeze a minion. Add a copy of it to your hand.",
+      "effects": [
+        {
+          "type": "freeze",
+          "target": "creature"
+        },
+        {
+          "type": "copy-to-hand",
+          "target": "creature"
+        }
+      ]
+    },
+    {
+      "id": "reincarnate",
+      "name": "Reincarnate",
+      "type": "sorcery",
+      "cost": 1,
+      "cardClass": "shaman",
+      "rarity": "common",
+      "set": "NAXX",
+      "collectible": true,
+      "tribe": "Nature",
+      "description": "Destroy a minion, then return it to life with full Health.",
+      "effects": [
+        {
+          "type": "destroy-and-remember",
+          "target": "friendly-creature"
+        },
+        {
+          "type": "resummon-remembered"
+        }
+      ]
+    },
+    {
+      "id": "schooling",
+      "name": "Schooling",
+      "type": "sorcery",
+      "cardClass": "shaman",
+      "cost": 1,
+      "rarity": "common",
+      "set": "THE_SUNKEN_CITY",
+      "collectible": true,
+      "description": "Add three 1/1 Piranha Swarmers to your hand.",
+      "effects": [
+        {
+          "type": "conjure-id",
+          "id": "piranha_swarmer"
+        },
+        {
+          "type": "conjure-id",
+          "id": "piranha_swarmer"
+        },
+        {
+          "type": "conjure-id",
+          "id": "piranha_swarmer"
+        }
+      ]
+    },
+    {
+      "id": "bracing_cold",
+      "name": "Bracing Cold",
+      "cardClass": "shaman",
+      "cost": 2,
+      "rarity": "rare",
+      "set": "ALTERAC_VALLEY",
+      "collectible": true,
+      "type": "sorcery",
+      "tribe": "Frost",
+      "description": "Restore 5 Health to your hero. Reduce the Cost of a random spell in your hand by (2).",
+      "effects": [
+        {
+          "type": "heal",
+          "value": 5,
+          "target": "self"
+        },
+        {
+          "type": "reduce-hand-spells-cost",
+          "count": 1,
+          "value": 2
+        }
+      ]
+    },
+    {
+      "id": "crackle",
+      "name": "Crackle",
+      "cardClass": "shaman",
+      "cost": 2,
+      "rarity": "common",
+      "set": "GVG",
+      "collectible": true,
+      "tribe": "Nature",
+      "overload": 1,
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 3,
+          "range": [
+            3,
+            6
+          ],
+          "target": "any"
+        }
+      ],
+      "description": "Deal 3-6 damage.\nOverload: (1)"
+    },
+    {
+      "id": "cryostasis",
+      "name": "Cryostasis",
+      "cardClass": "shaman",
+      "cost": 2,
+      "rarity": "epic",
+      "set": "PLACEHOLDER_202204",
+      "type": "sorcery",
+      "tribe": "Frost",
+      "collectible": true,
+      "description": "Give a minion +3/+3 and Freeze it.",
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 3,
+          "health": 3,
+          "target": "creature"
+        },
+        {
+          "type": "freeze",
+          "target": "creature"
+        }
+      ]
+    },
+    {
+      "id": "earthen_might",
+      "name": "Earthen Might",
+      "type": "sorcery",
+      "cost": 2,
+      "cardClass": "shaman",
+      "rarity": "rare",
+      "set": "GILNEAS",
+      "tribe": "Nature",
+      "collectible": true,
+      "description": "Give a minion +2/+2. If it's an Elemental, add a random Elemental to your hand.",
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 2,
+          "health": 2,
+          "target": "creature"
+        },
+        {
+          "type": "conditional",
+          "target": "creature",
+          "if": {
+            "targetFriendlyTribe": "Elemental"
+          },
+          "then": [
+            {
+              "type": "conjure-random",
+              "cardType": "creature",
+              "tribe": "Elemental"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "landslide",
+      "name": "Landslide",
+      "type": "sorcery",
+      "cost": 2,
+      "cardClass": "shaman",
+      "rarity": "rare",
+      "set": "DARKMOON_FAIRE",
+      "collectible": true,
+      "tribe": "Nature",
+      "description": "Deal 1 damage to all enemy minions. If you're Overloaded, deal 1 damage again.",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 1,
+          "target": "enemy-creatures"
+        },
+        {
+          "type": "conditional",
+          "target": "enemy-creatures",
+          "if": {
+            "overloaded": true
+          },
+          "then": [
+            {
+              "type": "damage",
+              "value": 1,
+              "target": "enemy-creatures"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "deathmatch_pavilion",
+      "name": "Deathmatch Pavilion",
+      "cardClass": "shaman",
+      "cost": 2,
+      "rarity": "epic",
+      "set": "DARKMOON_FAIRE",
+      "collectible": true,
+      "type": "sorcery",
+      "description": "Summon a 3/2 Duelist. If your hero attacked this turn, summon another.",
+      "effects": [
+        {
+          "type": "summon",
+          "count": 1,
+          "attack": 3,
+          "health": 2,
+          "name": "Duelist"
+        },
+        {
+          "type": "conditional",
+          "if": {
+            "heroAttacked": true
+          },
+          "then": [
+            {
+              "type": "summon",
+              "count": 1,
+              "attack": 3,
+              "health": 2,
+              "name": "Duelist"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "deathweaver_aura",
+      "name": "Deathweaver Aura",
+      "cardClass": "shaman",
+      "cost": 2,
+      "rarity": "common",
+      "type": "sorcery",
+      "set": "RETURN_OF_THE_LICH_KING",
+      "collectible": true,
+      "tribe": "Shadow",
+      "overload": 1,
+      "effects": [
+        {
+          "type": "grant-deathrattle",
+          "target": "creature",
+          "effects": [
+            {
+              "type": "summon",
+              "count": 2,
+              "attack": 3,
+              "health": 2,
+              "name": "Zombie"
+            }
+          ]
+        }
+      ],
+      "description": "Give a minion \"Deathrattle: Summon two 3/2 Zombies.\" Overload: (1)"
+    },
+    {
+      "id": "cryostasis",
+      "name": "Cryostasis",
+      "cardClass": "shaman",
+      "cost": 2,
+      "rarity": "epic",
+      "set": "PLACEHOLDER_202204",
+      "type": "sorcery",
+      "tribe": "Frost",
+      "collectible": true,
+      "description": "Give a minion +3/+3 and Freeze it.",
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 3,
+          "health": 3,
+          "target": "creature"
+        },
+        {
+          "type": "freeze",
+          "target": "creature"
+        }
+      ]
+    },
+    {
+      "id": "reincarnate",
+      "name": "Reincarnate",
+      "type": "sorcery",
+      "cost": 1,
+      "cardClass": "shaman",
+      "rarity": "common",
+      "set": "NAXX",
+      "collectible": true,
+      "tribe": "Nature",
+      "description": "Destroy a minion, then return it to life with full Health.",
+      "effects": [
+        {
+          "type": "destroy-and-remember",
+          "target": "friendly-creature"
+        },
+        {
+          "type": "resummon-remembered"
+        }
+      ]
     }
   ]
 }
