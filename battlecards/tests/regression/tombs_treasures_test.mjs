@@ -509,7 +509,7 @@ const usePower = (state, pi, id, target = null) => {
 // Study Break: discover a spell
 {
 	const { state } = new Scenario(byId).mana(0, 20).hand(0, ['ulda_study_break']).play(0, 'ulda_study_break').run();
-	ok('Study Break: a spell discover is pending', state.pickQueue.length === 1 && state.pickQueue[0].ids.every(id => ['sorcery', 'instant'].includes(byId[id]?.type)));
+	ok('Study Break: a spell discover is pending', state.pickQueue.length === 1 && state.pickQueue[0].ids.every(id => ['sorcery', 'instant', 'secret', 'trap'].includes(byId[id]?.type)));
 }
 ok('final batch: all remaining treasures imported', raw.cards.filter(c => c.set === 'TOMBS_OF_TERROR' && c.treasure).length >= 60);
 console.log(`\n${pass} passed, ${fail} failed`);

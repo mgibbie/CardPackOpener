@@ -150007,6 +150007,528 @@
           ]
         }
       ]
+    },
+    {
+      "id": "starsurge",
+      "name": "Starsurge",
+      "type": "sorcery",
+      "cost": 3,
+      "cardClass": "mage",
+      "rarity": "common",
+      "set": "EMERALD_DREAM",
+      "collectible": true,
+      "tribe": "Arcane",
+      "description": "Deal 1 damage to a minion.",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 1,
+          "target": "creature"
+        }
+      ]
+    },
+    {
+      "id": "storage_scuffle",
+      "name": "Storage Scuffle",
+      "type": "sorcery",
+      "cost": 3,
+      "cardClass": "mage",
+      "rarity": "rare",
+      "set": "THE_LOST_CITY",
+      "collectible": true,
+      "tribe": "Arcane",
+      "description": "Deal 3 damage to a minion.",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 3,
+          "target": "creature"
+        }
+      ]
+    },
+    {
+      "id": "unexpected_results",
+      "name": "Unexpected Results",
+      "type": "sorcery",
+      "cost": 3,
+      "cardClass": "mage",
+      "rarity": "epic",
+      "set": "BOOMSDAY",
+      "collectible": true,
+      "description": "Summon two random 2-Cost minions.",
+      "effects": [
+        {
+          "type": "summon-random",
+          "cost": 2,
+          "count": 2
+        }
+      ]
+    },
+    {
+      "id": "scorch",
+      "name": "Scorch",
+      "type": "sorcery",
+      "cost": 4,
+      "cardClass": "mage",
+      "rarity": "rare",
+      "set": "TROLL",
+      "collectible": true,
+      "tribe": "Fire",
+      "description": "Deal 4 damage to a minion.",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 4,
+          "target": "creature"
+        }
+      ]
+    },
+    {
+      "id": "apexis_blast",
+      "name": "Apexis Blast",
+      "type": "sorcery",
+      "cost": 5,
+      "cardClass": "mage",
+      "rarity": "epic",
+      "set": "BLACK_TEMPLE",
+      "collectible": true,
+      "description": "Deal 5 damage. If your deck has no minions, summon a random 5-Cost minion.",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 5,
+          "target": "any"
+        },
+        {
+          "type": "conditional",
+          "if": {
+            "deckNoMinions": true
+          },
+          "then": [
+            {
+              "type": "summon-random",
+              "cost": 5
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "blast_wave",
+      "name": "Blast Wave",
+      "cardClass": "mage",
+      "cost": 5,
+      "rarity": "epic",
+      "type": "sorcery",
+      "tribe": "Fire",
+      "set": "TROLL",
+      "collectible": true,
+      "effects": [
+        {
+          "type": "damage",
+          "value": 2,
+          "target": "all-creatures"
+        }
+      ],
+      "description": "Deal 2 damage to all minions."
+    },
+    {
+      "id": "crystallized_leyline",
+      "name": "Crystallized Leyline",
+      "type": "sorcery",
+      "cost": 5,
+      "cardClass": "mage",
+      "rarity": "rare",
+      "set": "CATACLYSM",
+      "tribe": "Arcane",
+      "collectible": true,
+      "description": "Summon a random 5-Cost minion.",
+      "effects": [
+        {
+          "type": "summon-random",
+          "cost": 5
+        }
+      ]
+    },
+    {
+      "id": "blast_wave",
+      "name": "Blast Wave",
+      "cardClass": "mage",
+      "cost": 5,
+      "rarity": "epic",
+      "type": "sorcery",
+      "tribe": "Fire",
+      "set": "TROLL",
+      "collectible": true,
+      "effects": [
+        {
+          "type": "damage",
+          "value": 2,
+          "target": "all-creatures"
+        }
+      ],
+      "description": "Deal 2 damage to all minions."
+    },
+    {
+      "id": "scorch",
+      "name": "Scorch",
+      "type": "sorcery",
+      "cost": 4,
+      "cardClass": "mage",
+      "rarity": "rare",
+      "set": "TROLL",
+      "collectible": true,
+      "tribe": "Fire",
+      "description": "Deal 4 damage to a minion.",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 4,
+          "target": "creature"
+        }
+      ]
+    },
+    {
+      "id": "unexpected_results",
+      "name": "Unexpected Results",
+      "type": "sorcery",
+      "cost": 3,
+      "cardClass": "mage",
+      "rarity": "epic",
+      "set": "BOOMSDAY",
+      "collectible": true,
+      "description": "Summon two random 2-Cost minions.",
+      "effects": [
+        {
+          "type": "summon-random",
+          "cost": 2,
+          "count": 2
+        }
+      ]
+    },
+    {
+      "id": "crystallized_leyline",
+      "name": "Crystallized Leyline",
+      "type": "sorcery",
+      "cost": 5,
+      "cardClass": "mage",
+      "rarity": "rare",
+      "set": "CATACLYSM",
+      "tribe": "Arcane",
+      "collectible": true,
+      "description": "Summon a random 5-Cost minion.",
+      "effects": [
+        {
+          "type": "summon-random",
+          "cost": 5
+        }
+      ]
+    },
+    {
+      "id": "wing_blast",
+      "name": "Wing Blast",
+      "type": "sorcery",
+      "cost": 4,
+      "cardClass": "hunter",
+      "rarity": "rare",
+      "set": "GILNEAS",
+      "collectible": true,
+      "description": "Deal 4 damage to a minion.",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 4,
+          "target": "creature"
+        }
+      ]
+    },
+    {
+      "id": "baited_arrow",
+      "name": "Baited Arrow",
+      "type": "sorcery",
+      "cardClass": "hunter",
+      "cost": 5,
+      "rarity": "common",
+      "set": "TROLL",
+      "collectible": true,
+      "mechanics": [
+        "overkill"
+      ],
+      "description": "Deal 3 damage.",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 3,
+          "target": "any"
+        }
+      ]
+    },
+    {
+      "id": "supreme_dinomancy",
+      "name": "Supreme Dinomancy",
+      "cardClass": "hunter",
+      "cost": 5,
+      "rarity": "epic",
+      "type": "sorcery",
+      "set": "THE_LOST_CITY",
+      "collectible": true,
+      "description": "Give +2/+2 to all Beasts in your hand, deck, and battlefield.",
+      "effects": [
+        {
+          "type": "buff-all-tribe",
+          "tribe": "Beast",
+          "attack": 2,
+          "health": 2
+        }
+      ]
+    },
+    {
+      "id": "alien_encounters",
+      "name": "Alien Encounters",
+      "cardClass": "hunter",
+      "cost": 5,
+      "rarity": "rare",
+      "set": "SPACE",
+      "collectible": true,
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "summon",
+          "count": 2,
+          "attack": 2,
+          "health": 5,
+          "name": "Beast",
+          "tribe": "Beast",
+          "keywords": [
+            "taunt"
+          ]
+        }
+      ],
+      "description": "Summon two 2/5 Beasts with Taunt."
+    },
+    {
+      "id": "rats_of_extraordinary_size",
+      "name": "Rats of Extraordinary Size",
+      "cardClass": "hunter",
+      "cost": 6,
+      "rarity": "epic",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "summon",
+          "count": 7,
+          "attack": 1,
+          "health": 1,
+          "name": "Rat"
+        }
+      ],
+      "description": "Summon seven 1/1 Rats.",
+      "set": "STORMWIND",
+      "collectible": true
+    },
+    {
+      "id": "to_my_side",
+      "name": "To My Side!",
+      "type": "sorcery",
+      "cost": 6,
+      "cardClass": "hunter",
+      "rarity": "epic",
+      "set": "LOOTAPALOOZA",
+      "collectible": true,
+      "description": "Summon an Animal Companion.",
+      "effects": [
+        {
+          "type": "summon",
+          "count": 1,
+          "options": [
+            {
+              "name": "Huffer",
+              "attack": 4,
+              "health": 2,
+              "keywords": [
+                "charge"
+              ],
+              "tribe": "Beast",
+              "description": "Charge."
+            },
+            {
+              "name": "Misha",
+              "attack": 4,
+              "health": 4,
+              "keywords": [
+                "taunt"
+              ],
+              "tribe": "Beast",
+              "description": "Taunt."
+            },
+            {
+              "name": "Leokk",
+              "attack": 2,
+              "health": 4,
+              "tribe": "Beast",
+              "aura": {
+                "attack": 1,
+                "health": 0,
+                "others": true
+              },
+              "description": "Your other creatures have +1 Attack."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "wing_blast",
+      "name": "Wing Blast",
+      "type": "sorcery",
+      "cost": 4,
+      "cardClass": "hunter",
+      "rarity": "rare",
+      "set": "GILNEAS",
+      "collectible": true,
+      "description": "Deal 4 damage to a minion.",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 4,
+          "target": "creature"
+        }
+      ]
+    },
+    {
+      "id": "supreme_dinomancy",
+      "name": "Supreme Dinomancy",
+      "cardClass": "hunter",
+      "cost": 5,
+      "rarity": "epic",
+      "type": "sorcery",
+      "set": "THE_LOST_CITY",
+      "collectible": true,
+      "description": "Give +2/+2 to all Beasts in your hand, deck, and battlefield.",
+      "effects": [
+        {
+          "type": "buff-all-tribe",
+          "tribe": "Beast",
+          "attack": 2,
+          "health": 2
+        }
+      ]
+    },
+    {
+      "id": "alien_encounters",
+      "name": "Alien Encounters",
+      "cardClass": "hunter",
+      "cost": 5,
+      "rarity": "rare",
+      "set": "SPACE",
+      "collectible": true,
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "summon",
+          "count": 2,
+          "attack": 2,
+          "health": 5,
+          "name": "Beast",
+          "tribe": "Beast",
+          "keywords": [
+            "taunt"
+          ]
+        }
+      ],
+      "description": "Summon two 2/5 Beasts with Taunt."
+    },
+    {
+      "id": "rats_of_extraordinary_size",
+      "name": "Rats of Extraordinary Size",
+      "cardClass": "hunter",
+      "cost": 6,
+      "rarity": "epic",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "summon",
+          "count": 7,
+          "attack": 1,
+          "health": 1,
+          "name": "Rat"
+        }
+      ],
+      "description": "Summon seven 1/1 Rats.",
+      "set": "STORMWIND",
+      "collectible": true
+    },
+    {
+      "id": "baited_arrow",
+      "name": "Baited Arrow",
+      "type": "sorcery",
+      "cardClass": "hunter",
+      "cost": 5,
+      "rarity": "common",
+      "set": "TROLL",
+      "collectible": true,
+      "mechanics": [
+        "overkill"
+      ],
+      "description": "Deal 3 damage.",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 3,
+          "target": "any"
+        }
+      ]
+    },
+    {
+      "id": "to_my_side",
+      "name": "To My Side!",
+      "type": "sorcery",
+      "cost": 6,
+      "cardClass": "hunter",
+      "rarity": "epic",
+      "set": "LOOTAPALOOZA",
+      "collectible": true,
+      "description": "Summon an Animal Companion.",
+      "effects": [
+        {
+          "type": "summon",
+          "count": 1,
+          "options": [
+            {
+              "name": "Huffer",
+              "attack": 4,
+              "health": 2,
+              "keywords": [
+                "charge"
+              ],
+              "tribe": "Beast",
+              "description": "Charge."
+            },
+            {
+              "name": "Misha",
+              "attack": 4,
+              "health": 4,
+              "keywords": [
+                "taunt"
+              ],
+              "tribe": "Beast",
+              "description": "Taunt."
+            },
+            {
+              "name": "Leokk",
+              "attack": 2,
+              "health": 4,
+              "tribe": "Beast",
+              "aura": {
+                "attack": 1,
+                "health": 0,
+                "others": true
+              },
+              "description": "Your other creatures have +1 Attack."
+            }
+          ]
+        }
+      ]
     }
   ]
 }
