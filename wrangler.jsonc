@@ -1,7 +1,7 @@
 {
   "$schema": "./node_modules/wrangler/config-schema.json",
   "name": "michaelgibalerio",
-  "pages_build_output_dir": ".",
+  "pages_build_output_dir": "dist",
   "compatibility_date": "2026-08-06",
   "compatibility_flags": ["nodejs_compat"],
   "d1_databases": [
