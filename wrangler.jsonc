@@ -1,0 +1,18 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "michaelgibalerio",
+  "pages_build_output_dir": ".",
+  "compatibility_date": "2026-08-06",
+  "compatibility_flags": ["nodejs_compat"],
+  "d1_databases": [
+    {
+      "binding": "MP_DB",
+      "database_name": "magepunk-users",
+      "database_id": "1ef69ad0-882e-4c3b-8a07-408af59a5a3f"
+    }
+  ],
+  "vars": {
+    "MP_TEST_PHASE": "1",
+    "MP_ADMINS": "mgibbie"
+  }
+}
