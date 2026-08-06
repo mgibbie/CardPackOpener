@@ -1,1 +1,2 @@
-# Serve Design Wiki and Learn Magepunk directly from Cloudflare Pages.
+/designwiki/sprites/* https://magepunk-sprites.pages.dev/:splat 302
+# Design Wiki and Learn Magepunk are served directly from the main Cloudflare project.
