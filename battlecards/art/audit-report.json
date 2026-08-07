@@ -1,84 +1,12 @@
 {
   "cardCount": 7002,
-  "indexedArtCountBefore": 7338,
+  "indexedArtCountBefore": 7348,
   "missingBefore": [
-    {
-      "id": "fel_rift",
-      "name": "Fel Rift",
-      "set": "DUELS",
-      "type": "sorcery"
-    },
-    {
-      "id": "bound_soul",
-      "name": "Bound Soul",
-      "set": null,
-      "type": "sorcery"
-    },
-    {
-      "id": "void_soul",
-      "name": "Void Soul",
-      "set": null,
-      "type": "sorcery"
-    },
-    {
-      "id": "nespirah_unshackled",
-      "name": "Nespirah, Unshackled",
-      "set": null,
-      "type": "creature"
-    },
-    {
-      "id": "zuramat_obliterator",
-      "name": "Zuramat the Obliterator",
-      "set": null,
-      "type": "creature"
-    },
-    {
-      "id": "mana_biscuit",
-      "name": "Biscuit",
-      "set": "DARKMOON_FAIRE",
-      "type": "sorcery"
-    },
     {
       "id": "worm_token",
       "name": "Worm",
       "set": null,
       "type": "creature"
-    },
-    {
-      "id": "hp_dinomancy",
-      "name": "Dinomancy",
-      "set": null,
-      "type": "heropower"
-    },
-    {
-      "id": "carnassas_brood",
-      "name": "Carnassa's Brood",
-      "set": null,
-      "type": "creature"
-    },
-    {
-      "id": "blood_to_ichor",
-      "name": "Blood to Ichor",
-      "set": "OG",
-      "type": "sorcery"
-    },
-    {
-      "id": "blood_to_ichor",
-      "name": "Blood to Ichor",
-      "set": "OG",
-      "type": "sorcery"
-    },
-    {
-      "id": "cataclysm",
-      "name": "Cataclysm",
-      "set": "LOOTAPALOOZA",
-      "type": "sorcery"
-    },
-    {
-      "id": "cataclysm",
-      "name": "Cataclysm",
-      "set": "LOOTAPALOOZA",
-      "type": "sorcery"
     },
     {
       "id": "explore_ungoro_discover",
@@ -90,69 +18,9 @@
   "downloaded": [],
   "wikiNotFound": [
     {
-      "id": "fel_rift",
-      "name": "Fel Rift",
-      "reason": "no-wiki-art"
-    },
-    {
-      "id": "bound_soul",
-      "name": "Bound Soul",
-      "reason": "custom-or-unscoped"
-    },
-    {
-      "id": "void_soul",
-      "name": "Void Soul",
-      "reason": "custom-or-unscoped"
-    },
-    {
-      "id": "nespirah_unshackled",
-      "name": "Nespirah, Unshackled",
-      "reason": "custom-or-unscoped"
-    },
-    {
-      "id": "zuramat_obliterator",
-      "name": "Zuramat the Obliterator",
-      "reason": "custom-or-unscoped"
-    },
-    {
-      "id": "mana_biscuit",
-      "name": "Biscuit",
-      "reason": "no-wiki-art"
-    },
-    {
       "id": "worm_token",
       "name": "Worm",
       "reason": "custom-or-unscoped"
-    },
-    {
-      "id": "hp_dinomancy",
-      "name": "Dinomancy",
-      "reason": "custom-or-unscoped"
-    },
-    {
-      "id": "carnassas_brood",
-      "name": "Carnassa's Brood",
-      "reason": "custom-or-unscoped"
-    },
-    {
-      "id": "blood_to_ichor",
-      "name": "Blood to Ichor",
-      "reason": "no-wiki-art"
-    },
-    {
-      "id": "blood_to_ichor",
-      "name": "Blood to Ichor",
-      "reason": "no-wiki-art"
-    },
-    {
-      "id": "cataclysm",
-      "name": "Cataclysm",
-      "reason": "no-wiki-art"
-    },
-    {
-      "id": "cataclysm",
-      "name": "Cataclysm",
-      "reason": "no-wiki-art"
     },
     {
       "id": "explore_ungoro_discover",
@@ -162,6 +30,6 @@
   ],
   "barsCropped": [],
   "errors": [],
-  "indexedArtCountAfter": 7338,
-  "missingAfter": -336
+  "indexedArtCountAfter": 7348,
+  "missingAfter": -346
 }
