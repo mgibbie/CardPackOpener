@@ -1,0 +1,262 @@
+[
+{
+"cls": "DRUID",
+"cost": 1,
+"name": "Floop's Glorious Gloop"
+},
+{
+"cls": "DRUID",
+"cost": 1,
+"name": "Worthy Expedition"
+},
+{
+"cls": "DRUID",
+"cost": 2,
+"name": "Earthen Scales"
+},
+{
+"cls": "DRUID",
+"cost": 3,
+"name": "Ferocious Howl"
+},
+{
+"cls": "DRUID",
+"cost": 5,
+"name": "Living Mana"
+},
+{
+"cls": "HUNTER",
+"cost": 0,
+"name": "Stampede"
+},
+{
+"cls": "HUNTER",
+"cost": 2,
+"name": "Call Pet"
+},
+{
+"cls": "HUNTER",
+"cost": 2,
+"name": "Revenge of the Wild"
+},
+{
+"cls": "HUNTER",
+"cost": 3,
+"name": "Master's Call"
+},
+{
+"cls": "HUNTER",
+"cost": 4,
+"name": "Dire Frenzy"
+},
+{
+"cls": "HUNTER",
+"cost": 7,
+"name": "Crushing Walls"
+},
+{
+"cls": "HUNTER",
+"cost": 7,
+"name": "Flark's Boom-Zooka"
+},
+{
+"cls": "MAGE",
+"cost": 3,
+"name": "Conjurer's Calling"
+},
+{
+"cls": "MAGE",
+"cost": 4,
+"name": "Echo of Medivh"
+},
+{
+"cls": "MAGE",
+"cost": 7,
+"name": "Luna's Pocket Galaxy"
+},
+{
+"cls": "PALADIN",
+"cost": 1,
+"name": "Competitive Spirit"
+},
+{
+"cls": "PALADIN",
+"cost": 1,
+"name": "The Last Kaleidosaur"
+},
+{
+"cls": "PALADIN",
+"cost": 4,
+"name": "Prismatic Lens"
+},
+{
+"cls": "PALADIN",
+"cost": 5,
+"name": "Duel!"
+},
+{
+"cls": "PALADIN",
+"cost": 7,
+"name": "Kangor's Endless Army"
+},
+{
+"cls": "PRIEST",
+"cost": 1,
+"name": "Hallucination"
+},
+{
+"cls": "PRIEST",
+"cost": 1,
+"name": "Light of the Naaru"
+},
+{
+"cls": "PRIEST",
+"cost": 2,
+"name": "Purify"
+},
+{
+"cls": "PRIEST",
+"cost": 3,
+"name": "Extra Arms"
+},
+{
+"cls": "PRIEST",
+"cost": 3,
+"name": "Twilight's Call"
+},
+{
+"cls": "PRIEST",
+"cost": 3,
+"name": "Unidentified Elixir"
+},
+{
+"cls": "PRIEST",
+"cost": 3,
+"name": "Vivid Nightmare"
+},
+{
+"cls": "PRIEST",
+"cost": 5,
+"name": "Mass Hysteria"
+},
+{
+"cls": "PRIEST",
+"cost": 6,
+"name": "Lightbomb"
+},
+{
+"cls": "PRIEST",
+"cost": 7,
+"name": "Psychic Scream"
+},
+{
+"cls": "ROGUE",
+"cost": 1,
+"name": "Doomerang"
+},
+{
+"cls": "ROGUE",
+"cost": 2,
+"name": "Cheat Death"
+},
+{
+"cls": "ROGUE",
+"cost": 2,
+"name": "Envenom Weapon"
+},
+{
+"cls": "ROGUE",
+"cost": 2,
+"name": "Sudden Betrayal"
+},
+{
+"cls": "ROGUE",
+"cost": 3,
+"name": "Beneath the Grounds"
+},
+{
+"cls": "ROGUE",
+"cost": 4,
+"name": "Academic Espionage"
+},
+{
+"cls": "ROGUE",
+"cost": 4,
+"name": "Shadow of Death"
+},
+{
+"cls": "ROGUE",
+"cost": 4,
+"name": "Vendetta"
+},
+{
+"cls": "ROGUE",
+"cost": 6,
+"name": "Thistle Tea"
+},
+{
+"cls": "SHAMAN",
+"cost": 1,
+"name": "Finders Keepers"
+},
+{
+"cls": "SHAMAN",
+"cost": 2,
+"name": "Big Bad Voodoo"
+},
+{
+"cls": "SHAMAN",
+"cost": 2,
+"name": "Devolve"
+},
+{
+"cls": "SHAMAN",
+"cost": 3,
+"name": "Plague of Murlocs"
+},
+{
+"cls": "SHAMAN",
+"cost": 6,
+"name": "Eureka!"
+},
+{
+"cls": "WARLOCK",
+"cost": 2,
+"name": "Demonic Project"
+},
+{
+"cls": "WARLOCK",
+"cost": 6,
+"name": "Darkest Hour"
+},
+{
+"cls": "WARRIOR",
+"cost": 2,
+"name": "Bring It On!"
+},
+{
+"cls": "WARRIOR",
+"cost": 2,
+"name": "Explore Un'Goro"
+},
+{
+"cls": "WARRIOR",
+"cost": 2,
+"name": "Weapons Project"
+},
+{
+"cls": "WARRIOR",
+"cost": 4,
+"name": "Sudden Genesis"
+},
+{
+"cls": "WARRIOR",
+"cost": 7,
+"name": "Crush"
+},
+{
+"cls": "WARRIOR",
+"cost": 9,
+"name": "The Boomship"
+}
+]

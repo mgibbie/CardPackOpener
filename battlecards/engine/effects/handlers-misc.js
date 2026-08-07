@@ -1114,7 +1114,8 @@ register('tolins', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy,
 			if (p.hand.length > before) {
 				const c = p.hand[p.hand.length - 1];
 				const def = state.cardsById[c.id];
-				while (def && p.hand.length < MAX_HAND) {
+				const limit = e.count != null ? Math.min(MAX_HAND, p.hand.length + e.count) : MAX_HAND; // Thistle Tea: exactly `count` extra copies
+				while (def && p.hand.length < limit) {
 					const cp = instantiate(def, pi); cp.zone = 'hand'; p.hand.push(cp);
 					emit(state, { type: 'conjure', player: pi, card: cp, color: null });
 				}

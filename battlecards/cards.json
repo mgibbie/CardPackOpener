@@ -152803,6 +152803,590 @@
         "tribe": "",
         "amount": -1
       }
+    },
+    {
+      "id": "ferocious_howl",
+      "name": "Ferocious Howl",
+      "type": "sorcery",
+      "cost": 3,
+      "cardClass": "druid",
+      "rarity": "common",
+      "set": "GILNEAS",
+      "collectible": true,
+      "description": "Draw a card. Gain 1 Armor for each card in your hand.",
+      "effects": [
+        {
+          "type": "draw",
+          "value": 1
+        },
+        {
+          "type": "gain-armor-per",
+          "per": "hand-cards",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "competitive_spirit",
+      "name": "Competitive Spirit",
+      "type": "secret",
+      "cost": 1,
+      "cardClass": "paladin",
+      "rarity": "rare",
+      "set": "TGT",
+      "collectible": true,
+      "description": "Secret: When your turn starts, give your minions +1/+1.",
+      "secret": {
+        "trigger": "enemy-turn-end",
+        "effects": [
+          {
+            "type": "buff",
+            "attack": 1,
+            "health": 1,
+            "target": "friendly-creatures"
+          }
+        ]
+      }
+    },
+    {
+      "id": "the_last_kaleidosaur",
+      "name": "The Last Kaleidosaur",
+      "type": "quest",
+      "cost": 1,
+      "cardClass": "paladin",
+      "rarity": "legendary",
+      "set": "UNGORO",
+      "collectible": true,
+      "description": "Quest: Cast 5 spells on your minions.\nReward: Galvadon.",
+      "quest": {
+        "goal": {
+          "type": "spell",
+          "count": 5
+        },
+        "reward": [
+          {
+            "type": "summon",
+            "count": 1,
+            "attack": 5,
+            "health": 5,
+            "name": "Galvadon",
+            "keywords": [
+              "taunt",
+              "divine_shield"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "light_of_the_naaru",
+      "name": "Light of the Naaru",
+      "type": "sorcery",
+      "cost": 1,
+      "cardClass": "priest",
+      "rarity": "rare",
+      "set": "GVG",
+      "collectible": true,
+      "tribe": "Holy",
+      "description": "Restore 3 Health. If the target is still damaged, summon a Lightwarden.",
+      "effects": [
+        {
+          "type": "heal",
+          "value": 3,
+          "target": "any"
+        },
+        {
+          "type": "conditional",
+          "if": {
+            "anyDamaged": true
+          },
+          "then": [
+            {
+              "type": "summon",
+              "count": 1,
+              "summonId": "lightwarden"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "purify",
+      "name": "Purify",
+      "type": "sorcery",
+      "cost": 2,
+      "cardClass": "priest",
+      "rarity": "common",
+      "set": "KARA",
+      "collectible": true,
+      "tribe": "Holy",
+      "description": "Silence a friendly minion. Draw a card.",
+      "effects": [
+        {
+          "type": "silence",
+          "target": "friendly-creature"
+        },
+        {
+          "type": "draw",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "unidentified_elixir",
+      "name": "Unidentified Elixir",
+      "type": "sorcery",
+      "cost": 3,
+      "cardClass": "priest",
+      "rarity": "common",
+      "set": "LOOTAPALOOZA",
+      "collectible": true,
+      "tribe": "Holy",
+      "description": "Give a minion +2/+2. Gains a bonus effect in your hand.",
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 2,
+          "health": 2,
+          "target": "creature"
+        }
+      ]
+    },
+    {
+      "id": "vivid_nightmare",
+      "name": "Vivid Nightmare",
+      "type": "sorcery",
+      "cost": 3,
+      "cardClass": "priest",
+      "rarity": "epic",
+      "set": "GILNEAS",
+      "collectible": true,
+      "tribe": "Shadow",
+      "description": "Choose a friendly minion. Summon a copy of it with 1 Health remaining.",
+      "effects": [
+        {
+          "type": "summon-copy-of-target-buffed",
+          "target": "friendly-creature",
+          "health": 1
+        }
+      ]
+    },
+    {
+      "id": "sudden_betrayal",
+      "name": "Sudden Betrayal",
+      "type": "secret",
+      "cost": 2,
+      "cardClass": "rogue",
+      "rarity": "common",
+      "set": "LOOTAPALOOZA",
+      "collectible": true,
+      "keywords": [
+        "secret"
+      ],
+      "description": "Secret: When a minion attacks your hero, instead it attacks one of its neighbors.",
+      "secret": {
+        "trigger": "enemy-attack",
+        "condition": {
+          "targetHero": true
+        },
+        "effects": [
+          {
+            "type": "redirect-random"
+          }
+        ]
+      }
+    },
+    {
+      "id": "eureka",
+      "name": "Eureka!",
+      "type": "sorcery",
+      "cost": 6,
+      "cardClass": "shaman",
+      "rarity": "rare",
+      "set": "BOOMSDAY",
+      "collectible": true,
+      "description": "Summon a copy of a random minion from your hand.",
+      "effects": [
+        {
+          "type": "summon-hand-copy"
+        }
+      ]
+    },
+    {
+      "id": "the_boomship",
+      "name": "The Boomship",
+      "type": "sorcery",
+      "cost": 9,
+      "cardClass": "warrior",
+      "rarity": "legendary",
+      "set": "BOOMSDAY",
+      "collectible": true,
+      "description": "Summon 3 random minions from your hand. Give them Rush.",
+      "effects": [
+        {
+          "type": "summon-from-hand",
+          "count": 3,
+          "grant": "rush"
+        }
+      ]
+    },
+    {
+      "id": "revenge_of_the_wild",
+      "name": "Revenge of the Wild",
+      "type": "sorcery",
+      "cost": 2,
+      "cardClass": "hunter",
+      "rarity": "rare",
+      "set": "TROLL",
+      "collectible": true,
+      "description": "Summon your Beasts that died this turn.",
+      "effects": [
+        {
+          "type": "resurrect-died-this-turn",
+          "tribe": "Beast"
+        }
+      ]
+    },
+    {
+      "id": "dire_frenzy",
+      "name": "Dire Frenzy",
+      "type": "sorcery",
+      "cost": 4,
+      "cardClass": "hunter",
+      "rarity": "common",
+      "set": "PLACEHOLDER_202204",
+      "collectible": true,
+      "description": "Give a Beast +3/+3. Shuffle 3 copies into your deck with +3/+3.",
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 3,
+          "health": 3,
+          "target": "friendly-creature",
+          "tribe": "Beast"
+        },
+        {
+          "type": "copy-to-deck",
+          "count": 3,
+          "buff": {
+            "attack": 3,
+            "health": 3
+          }
+        }
+      ]
+    },
+    {
+      "id": "duel",
+      "name": "Duel!",
+      "type": "sorcery",
+      "cost": 5,
+      "cardClass": "paladin",
+      "rarity": "epic",
+      "set": "DALARAN",
+      "collectible": true,
+      "description": "Summon a minion from each player's deck. They fight!",
+      "effects": [
+        {
+          "type": "summon-from-deck-each",
+          "fight": true
+        }
+      ]
+    },
+    {
+      "id": "kangor_s_endless_army",
+      "name": "Kangor's Endless Army",
+      "type": "sorcery",
+      "cost": 7,
+      "cardClass": "paladin",
+      "rarity": "legendary",
+      "set": "BOOMSDAY",
+      "collectible": true,
+      "description": "Resurrect 3 friendly Mechs. They keep any Magnetic upgrades.",
+      "effects": [
+        {
+          "type": "resurrect-tribe",
+          "tribe": "Mech",
+          "count": 3
+        }
+      ]
+    },
+    {
+      "id": "twilights_call",
+      "name": "Twilight's Call",
+      "type": "sorcery",
+      "cost": 3,
+      "cardClass": "priest",
+      "rarity": "rare",
+      "set": "LOOTAPALOOZA",
+      "collectible": true,
+      "tribe": "Shadow",
+      "description": "Summon 1/1 copies of 2 friendly Deathrattle minions that died this game.",
+      "effects": [
+        {
+          "type": "summon-died-this-game",
+          "count": 2,
+          "keyword": "deathrattle",
+          "attack": 1,
+          "health": 1,
+          "random": true
+        }
+      ]
+    },
+    {
+      "id": "call_pet",
+      "name": "Call Pet",
+      "type": "sorcery",
+      "cost": 2,
+      "cardClass": "hunter",
+      "rarity": "rare",
+      "set": "GVG",
+      "collectible": true,
+      "description": "Draw a card. If it's a Beast, it costs (4) less.",
+      "effects": [
+        {
+          "type": "draw-check",
+          "value": 1,
+          "allTribe": "Beast",
+          "then": [
+            {
+              "type": "reduce-rightmost-hand-cost",
+              "value": 4
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "big_bad_voodoo",
+      "name": "Big Bad Voodoo",
+      "type": "sorcery",
+      "cost": 2,
+      "cardClass": "shaman",
+      "rarity": "epic",
+      "set": "TROLL",
+      "collectible": true,
+      "tribe": "Shadow",
+      "description": "Give a friendly minion \"Deathrattle: Summon a random minion that costs (1) more.\"",
+      "effects": [
+        {
+          "type": "grant-deathrattle",
+          "target": "creature",
+          "effects": [
+            {
+              "type": "summon-random",
+              "costFromSelfCost": true,
+              "costDelta": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "envenom_weapon",
+      "name": "Envenom Weapon",
+      "type": "sorcery",
+      "cost": 2,
+      "cardClass": "rogue",
+      "rarity": "rare",
+      "set": "UNGORO",
+      "collectible": true,
+      "tribe": "Nature",
+      "description": "Give your weapon Poisonous.",
+      "effects": [
+        {
+          "type": "grant-weapon-ability",
+          "keyword": "poisonous"
+        }
+      ]
+    },
+    {
+      "id": "cheat_death",
+      "name": "Cheat Death",
+      "type": "secret",
+      "cost": 2,
+      "cardClass": "rogue",
+      "rarity": "common",
+      "set": "LOOTAPALOOZA",
+      "collectible": true,
+      "keywords": [
+        "secret"
+      ],
+      "description": "Secret: When a friendly minion dies, return it to your hand. It costs (2) less.",
+      "secret": {
+        "trigger": "friendly-minion-died",
+        "effects": [
+          {
+            "type": "copy-triggering-to-hand",
+            "count": 1,
+            "costMod": -2
+          }
+        ]
+      }
+    },
+    {
+      "id": "thistle_tea",
+      "name": "Thistle Tea",
+      "type": "sorcery",
+      "cost": 6,
+      "cardClass": "rogue",
+      "rarity": "rare",
+      "set": "OG",
+      "collectible": true,
+      "description": "Draw a card. Add 2 extra copies of it to your hand.",
+      "effects": [
+        {
+          "type": "tolins",
+          "count": 2
+        }
+      ]
+    },
+    {
+      "id": "finders_keepers",
+      "name": "Finders Keepers",
+      "type": "sorcery",
+      "cost": 1,
+      "cardClass": "shaman",
+      "rarity": "epic",
+      "set": "GANGS",
+      "collectible": true,
+      "overload": 1,
+      "description": "Discover a card with Overload. Overload: (1)",
+      "effects": [
+        {
+          "type": "discover",
+          "requireOverload": true
+        }
+      ]
+    },
+    {
+      "id": "worthy_expedition",
+      "name": "Worthy Expedition",
+      "type": "sorcery",
+      "cost": 1,
+      "cardClass": "druid",
+      "rarity": "common",
+      "set": "ULDUM",
+      "collectible": true,
+      "description": "Discover a Choose One card.",
+      "effects": [
+        {
+          "type": "discover",
+          "chooseOne": true
+        }
+      ]
+    },
+    {
+      "id": "vendetta",
+      "name": "Vendetta",
+      "type": "sorcery",
+      "cost": 4,
+      "cardClass": "rogue",
+      "rarity": "rare",
+      "set": "DALARAN",
+      "collectible": true,
+      "description": "Deal 4 damage to a minion. Costs (0) if you're holding a card from another class.",
+      "effects": [
+        {
+          "type": "damage",
+          "target": "creature",
+          "value": 4
+        }
+      ],
+      "selfCostIf": {
+        "cond": "holding-other-class",
+        "setCost": 0
+      }
+    },
+    {
+      "id": "crush",
+      "name": "Crush",
+      "type": "sorcery",
+      "cost": 7,
+      "cardClass": "warrior",
+      "rarity": "epic",
+      "set": "GVG",
+      "collectible": true,
+      "description": "Destroy a minion. If you have a damaged minion, this costs (4) less.",
+      "effects": [
+        {
+          "type": "destroy",
+          "target": "creature"
+        }
+      ],
+      "selfCostIf": {
+        "cond": "damaged-minion",
+        "amount": -4
+      }
+    },
+    {
+      "id": "lunas_pocket_galaxy",
+      "name": "Luna's Pocket Galaxy",
+      "type": "sorcery",
+      "cost": 7,
+      "cardClass": "mage",
+      "rarity": "legendary",
+      "set": "BOOMSDAY",
+      "collectible": true,
+      "tribe": "Arcane",
+      "description": "Change the Cost of minions in your deck to (1).",
+      "effects": [
+        {
+          "type": "set-deck-minions-cost",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "devolve",
+      "name": "Devolve",
+      "type": "sorcery",
+      "cost": 2,
+      "cardClass": "shaman",
+      "rarity": "rare",
+      "set": "GANGS",
+      "collectible": true,
+      "tribe": "Nature",
+      "description": "Transform all enemy minions into random ones that cost (1) less.",
+      "effects": [
+        {
+          "type": "transform-all-enemies-costplus",
+          "costDelta": -1
+        }
+      ]
+    },
+    {
+      "id": "plague_of_murlocs",
+      "name": "Plague of Murlocs",
+      "type": "sorcery",
+      "cost": 3,
+      "cardClass": "shaman",
+      "rarity": "epic",
+      "set": "ULDUM",
+      "collectible": true,
+      "description": "Transform all minions into random Murlocs.",
+      "effects": [
+        {
+          "type": "transform-all-into-random-tribe",
+          "tribe": "Murloc"
+        }
+      ]
+    },
+    {
+      "id": "sudden_genesis",
+      "name": "Sudden Genesis",
+      "type": "sorcery",
+      "cost": 4,
+      "cardClass": "warrior",
+      "rarity": "epic",
+      "set": "UNGORO",
+      "collectible": true,
+      "tribe": "Nature",
+      "description": "Summon copies of your damaged minions.",
+      "effects": [
+        {
+          "type": "summon-copies-of-damaged"
+        }
+      ]
     }
   ]
 }

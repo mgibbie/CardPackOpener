@@ -702,6 +702,46 @@ register('transform-friendly-costplus', ({ state, pi, target, source, enemies, s
 			recomputeAuras(state);
 } });
 
+register('transform-all-enemies-costplus', ({ state, pi, target, source, enemies }, e) => { {
+			// Devolve: transform every ENEMY minion into a random one costing (N) less/more
+			const delta = e.costDelta || -1;
+			for (const o of enemies) {
+				const board = state.players[o].board;
+				for (const t of [...board]) {
+					if (isDead(t) || t.type === 'location') continue;
+					const want = Math.max(0, (t.cost || 0) + delta);
+					const pool = Object.values(state.cardsById).filter(d => d.type === 'creature' && (d.cost || 0) === want
+						&& !d.token && d.collectible !== false && !d.companion && !d.commander && !(d.colors && d.colors.length) && d.id !== t.id);
+					if (!pool.length) continue;
+					const rd = pool[Math.floor(state.rng() * pool.length)];
+					const tok = instantiate({ id: 'token_' + rd.name.toLowerCase().replace(/[^a-z0-9]+/g, '_'), name: rd.name, type: 'creature', cost: 0, rarity: 'common', token: true, description: `A ${rd.attack}/${rd.health} ${rd.name}.`, attack: rd.attack, health: rd.health, keywords: rd.keywords || [], tribe: rd.tribe }, o);
+					tok.zone = 'board'; tok.sick = t.sick;
+					const idx = board.indexOf(t); if (idx >= 0) board[idx] = tok; t.zone = 'gone';
+					emit(state, { type: 'transformed', uid: t.uid, player: o, from: t.name, card: tok });
+				}
+			}
+			recomputeAuras(state);
+} });
+
+register('transform-all-into-random-tribe', ({ state, pi }, e) => { {
+			// Plague of Murlocs: transform ALL minions (both sides) into random creatures of a tribe
+			const pool0 = Object.values(state.cardsById).filter(d => d.type === 'creature' && (d.tribe || '').includes(e.tribe)
+				&& !d.token && d.collectible !== false && !d.companion && !d.commander && !(d.colors && d.colors.length));
+			if (!pool0.length) return;
+			for (let oi = 0; oi < state.players.length; oi++) {
+				const board = state.players[oi].board;
+				for (const t of [...board]) {
+					if (isDead(t) || t.type === 'location') continue;
+					const rd = pool0[Math.floor(state.rng() * pool0.length)];
+					const tok = instantiate({ id: 'token_' + rd.name.toLowerCase().replace(/[^a-z0-9]+/g, '_'), name: rd.name, type: 'creature', cost: 0, rarity: 'common', token: true, description: `A ${rd.attack}/${rd.health} ${rd.name}.`, attack: rd.attack, health: rd.health, keywords: rd.keywords || [], tribe: rd.tribe }, oi);
+					tok.zone = 'board'; tok.sick = t.sick;
+					const idx = board.indexOf(t); if (idx >= 0) board[idx] = tok; t.zone = 'gone';
+					emit(state, { type: 'transformed', uid: t.uid, player: oi, from: t.name, card: tok });
+				}
+			}
+			recomputeAuras(state);
+} });
+
 register('transform', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => { {
 			// replace a creature in place with a fresh token (no death, no deathrattle)
 			let t = null;
@@ -857,6 +897,8 @@ register('discover', ({ state, pi, target, source, enemies, scaled, hm, pickEnem
 				if (e.requireRewind && !(d.rewind > 0)) return false; // Morchie: a Rewind card
 				if (e.requireKeyword && !(d.keywords || []).includes(e.requireKeyword)) return false;
 				if (e.cardClasses && !e.cardClasses.includes(d.cardClass || 'neutral')) return false; // Grimestreet Informant / Kabal Courier / Lotus Agents
+				if (e.requireOverload && !((d.overload || 0) > 0)) return false; // Finders Keepers: a card with Overload
+				if (e.chooseOne && !(Array.isArray(d.choices) && d.choices.length)) return false; // Worthy Expedition: a Choose One card
 				return true;
 			});
 			// `count` queues that many separate Discovers; `to:'board'` summons the pick

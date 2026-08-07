@@ -474,6 +474,14 @@ register('summon-copies-of-damaged-rush', ({ state, pi, target, source, enemies,
 } });
 
 
+register('summon-copies-of-damaged', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => { {
+			// Sudden Genesis: summon copies of your damaged minions (no Rush)
+			const p = state.players[pi];
+			const dmgd = p.board.filter(c => c !== source && !isDead(c) && c.type !== 'location' && c.damage > 0 && state.cardsById[c.id]);
+			for (const c of dmgd) summon(state, pi, state.cardsById[c.id]);
+} });
+
+
 register('grant-deathrattle-random', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => { {
 			// Greybough: give a random friendly minion a Deathrattle
 			const pool = state.players[pi].board.filter(c => c !== source && !isDead(c) && c.type !== 'location');

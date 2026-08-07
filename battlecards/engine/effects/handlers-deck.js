@@ -315,6 +315,14 @@ register('set-deck-bottom-costs', ({ state, pi, target, source, enemies, scaled,
 });
 
 
+register('set-deck-minions-cost', ({ state, pi }, e) => {
+			// Luna's Pocket Galaxy: change the Cost of every minion in your deck
+			const p = state.players[pi];
+			p.deckCostOverrides = p.deckCostOverrides || {};
+			for (const id of p.deck) if (state.cardsById[id]?.type === 'creature') p.deckCostOverrides[id] = (e.value ?? 1);
+});
+
+
 register('swap-deck-tops', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => {
 			// Mischief Maker: swap the top card of your deck with your opponent's
 			const o = enemies[0], mp = state.players[pi];
@@ -565,7 +573,7 @@ register('draw-check', ({ state, pi, target, source, enemies, scaled, hm, pickEn
 			const before = new Set(dp.hand.map(c => c.uid));
 			drawCards(state, pi, e.value || 1);
 			const drawn = dp.hand.filter(c => !before.has(c.uid));
-			if (drawn.length >= (e.value || 1) && (!e.allType || drawn.every(c => c.type === e.allType)) && (!e.notType || drawn.every(c => c.type !== e.notType)) && e.then)
+			if (drawn.length >= (e.value || 1) && (!e.allType || drawn.every(c => c.type === e.allType)) && (!e.notType || drawn.every(c => c.type !== e.notType)) && (!e.allTribe || drawn.every(c => (c.tribe || '').includes(e.allTribe))) && e.then)
 				execEffects(state, pi, e.then, target, source); // notType: Mark of Scorn ("if it's NOT a minion")
 } });
 
@@ -1188,6 +1196,7 @@ register('copy-to-deck', ({ state, pi, target, source, enemies, scaled, hm, pick
 				const elekk = p.board.filter(c => c.id === 'augmented_elekk' && !isDead(c)).length; // Augmented Elekk: an extra copy per shuffle
 				const total = (e.count || 1) * (1 + elekk);
 				for (let n = 0; n < total; n++) p.deck.push(t.id);
+				if (e.buff) for (let n = 0; n < total; n++) (p.deckIdBuffs = p.deckIdBuffs || []).push({ id: t.id, attack: e.buff.attack || 0, health: e.buff.health || 0 }); // Dire Frenzy: shuffled copies keep +X/+X
 				for (let i = p.deck.length - 1; i > 0; i--) { const j = Math.floor(state.rng() * (i + 1)); [p.deck[i], p.deck[j]] = [p.deck[j], p.deck[i]]; }
 				emit(state, { type: 'shuffledIntoDeck', player: pi, cardId: t.id }); fireOngoing(state, pi, 'card-shuffled', { cardId: t.id });
 			}

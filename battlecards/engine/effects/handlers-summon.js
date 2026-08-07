@@ -181,8 +181,9 @@ register('resurrect-died-this-turn', ({ state, pi, target, source, enemies, scal
 			// Kel'Thuzad: summon all your creatures that died this turn
 			const p = state.players[pi];
 			const ids = p.diedThisTurnIds.slice();
-			p.diedThisTurnIds = [];
-			for (const id of ids) { const def = state.cardsById[id]; if (def) summon(state, pi, def); }
+			const keep = [];
+			for (const id of ids) { const def = state.cardsById[id]; if (def && (!e.tribe || (def.tribe || '').includes(e.tribe))) summon(state, pi, def); else keep.push(id); } // Revenge of the Wild: only Beasts
+			p.diedThisTurnIds = e.tribe ? keep : [];
 });
 
 
@@ -920,8 +921,12 @@ register('summon-died-this-game', ({ state, pi, target, source, enemies, scaled,
 				if (e.tribe && !(def.tribe || '').includes(e.tribe)) return false;
 				return true;
 			});
-			if (e.random) { if (ids.length) ids = [ids[Math.floor(state.rng() * ids.length)]]; else ids = []; }
-			for (const id of ids) summon(state, pi, state.cardsById[id]);
+			if (e.random) { // pick `count` random distinct (default 1)
+				const picks = []; const avail = [...ids];
+				for (let k = 0; k < (e.count || 1) && avail.length; k++) picks.push(avail.splice(Math.floor(state.rng() * avail.length), 1)[0]);
+				ids = picks;
+			}
+			for (const id of ids) { const def = state.cardsById[id]; const d2 = (e.attack != null || e.health != null) ? { ...def, attack: e.attack ?? def.attack, health: e.health ?? def.health } : def; summon(state, pi, d2); } // Twilight's Call: 1/1 copies
 } });
 
 
@@ -1333,10 +1338,11 @@ register('summon-random', ({ state, pi, target, source, enemies, scaled, hm, pic
 			// Demon" / "a random 4-Cost minion" (exact cost) / Past Conflux's
 			// "a random Dragon that costs 5 or more".
 			// Steeldancer: costFromWeapon fixes the Cost to your weapon's Attack.
-			const exactCost = e.costFromWeapon ? (state.players[pi].weapon ? (state.players[pi].weapon.attack || 0) : 0)
+			let exactCost = e.costFromWeapon ? (state.players[pi].weapon ? (state.players[pi].weapon.attack || 0) : 0)
 				: e.costFromSelfAttack ? (source ? (source.attack || 0) : 0) // Spurfang: Cost = this minion's Attack
 				: e.costFromSelfCost ? (source ? (source.cost || 0) : 0) // Ulfar's granted Deathrattle: Cost = this minion's Cost
 				: e.cost;
+			if (exactCost != null && e.costDelta) exactCost += e.costDelta; // Big Bad Voodoo: self Cost + 1
 			const pool = e.ids ? e.ids.map(id => state.cardsById[id]).filter(Boolean) : Object.values(state.cardsById).filter(d =>
 				d.type === 'creature' && (e.maxCost == null || (d.cost || 0) <= e.maxCost)
 				&& (e.minCost == null || (d.cost || 0) >= e.minCost)
@@ -1370,11 +1376,16 @@ register('summon-random', ({ state, pi, target, source, enemies, scaled, hm, pic
 register('summon-from-deck-each', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => {
 	do {
 			// Desert Camel: every player puts a creature of Cost N from their deck into play
+			const summoned = [];
 			for (let s3 = 0; s3 < state.players.length; s3++) {
 				const pl = state.players[s3];
 				if (pl.eliminated) continue;
 				const ci = pl.deck.findIndex(id => { const def = state.cardsById[id]; return def?.type === 'creature' && !def.token && (e.cost == null || (def.cost || 0) === e.cost); });
-				if (ci >= 0) { const [id] = pl.deck.splice(ci, 1); summon(state, s3, state.cardsById[id]); }
+				if (ci >= 0) { const [id] = pl.deck.splice(ci, 1); const m = summon(state, s3, state.cardsById[id]); if (m) summoned.push({ owner: s3, m }); }
+			}
+			if (e.fight && summoned.length >= 2) { // Duel!: the caster's minion fights an enemy's
+				const mine = summoned.find(x => x.owner === pi), foe = summoned.find(x => x.owner !== pi);
+				if (mine && foe && !isDead(mine.m) && !isDead(foe.m)) { damageCreature(state, foe.m, mine.m.attack, mine.m); damageCreature(state, mine.m, foe.m.attack, foe.m); }
 			}
 	} while (false); // top-level `continue` = skip this effect (chain semantics)
 });
@@ -1554,7 +1565,10 @@ register('resurrect-tribe', ({ state, pi }, e) => {
 	// Catrina Muerte: resurrect one random friendly dead minion of a tribe
 	const p = state.players[pi];
 	const pool = [...new Set(p.deathLogIds)].map(id => state.cardsById[id]).filter(d => d && d.type === 'creature' && !d.token && (d.tribe || '').includes(e.tribe));
-	if (pool.length) summon(state, pi, pool[Math.floor(state.rng() * pool.length)]);
+	for (let k = 0; k < (e.count || 1) && pool.length; k++) { // Kangor's Endless Army: `count` resurrects several
+		const c = summon(state, pi, pool[Math.floor(state.rng() * pool.length)]);
+		if (c && e.grant && !c.keywords.includes(e.grant)) c.keywords.push(e.grant);
+	}
 });
 
 register('resurrect-per-tribe', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => {
