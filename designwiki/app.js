@@ -335,8 +335,12 @@ const SYSTEM_KEYS = new Set(SYSTEM_BUCKETS.map(b => b[0]));
 const CARD_COLORS = [['W', 'White'], ['U', 'Blue'], ['B', 'Black'], ['R', 'Red'], ['G', 'Green'], ['C', 'Colorless']];
 const COLOR_NAMES = Object.fromEntries(CARD_COLORS);
 const colorsOf = c => Array.isArray(c.colors) ? c.colors : (c.colors ? String(c.colors).split('').filter(Boolean) : []);
+// Lands retain their mana-production data, but are colorless for card
+// categorization and belong only to the Lands section.
+const categoryColorsOf = c => c.type === 'land' ? [] : colorsOf(c);
+const displayColorsOf = c => c.type === 'land' ? ['C'] : colorsOf(c);
 const colorName = code => COLOR_NAMES[code] || code;
-const colorChip = code => h('a', { class: 'tag-chip color', href: '#/cards?color=' + encodeURIComponent(code) }, colorName(code));
+const colorChip = (code, card) => h('a', { class: 'tag-chip color', href: card?.type === 'land' ? '#/cards?class=__land__' : '#/cards?color=' + encodeURIComponent(code) }, colorName(code));
 // theme words an advanced land can conjure (matched against a card's name) — once
 let advThemes = null;
 function ensureAdvThemes(cards) {
@@ -497,7 +501,7 @@ function renderCards(cards, report = {}) {
     const sys = SYSTEM_BUCKETS.find(([k]) => k === v);
     return (sys ? sys[1] : CardArt.classNameOf(v)) + ' (' + (counts[v] || 0) + ')';
   };
-  const colorCounts = Object.fromEntries(CARD_COLORS.map(([code]) => [code, cards.filter(c => colorsOf(c).includes(code)).length]));
+  const colorCounts = Object.fromEntries(CARD_COLORS.map(([code]) => [code, cards.filter(c => categoryColorsOf(c).includes(code)).length]));
   const colorValues = CARD_COLORS.filter(([code]) => colorCounts[code]).map(([code]) => code);
   const colorFilterLabel = code => colorName(code) + ' (' + colorCounts[code] + ')';
   const types = uniqueSorted(cards.map(c => c.type));
@@ -513,7 +517,7 @@ function renderCards(cards, report = {}) {
         : SYSTEM_KEYS.has(cardFilters.class) ? sb !== cardFilters.class
         : sb || canonClass(c) !== cardFilters.class) return false;
     }
-    if (cardFilters.color !== 'all' && !colorsOf(c).includes(cardFilters.color)) return false;
+    if (cardFilters.color !== 'all' && !categoryColorsOf(c).includes(cardFilters.color)) return false;
     if (cardFilters.type !== 'all' && String(c.type) !== cardFilters.type) return false;
     if (cardFilters.rarity !== 'all' && String(c.rarity) !== cardFilters.rarity) return false;
     if (cardFilters.set !== 'all' && cardField(c, 'set', 'cardSet', 'expansion') !== cardFilters.set) return false;
@@ -527,7 +531,7 @@ function renderCards(cards, report = {}) {
     const cost = Number(c.cost || 0);
     if (cardFilters.minCost !== '' && cost < Number(cardFilters.minCost)) return false;
     if (cardFilters.maxCost !== '' && (Number(cardFilters.maxCost) === 20 ? cost < 20 : cost > Number(cardFilters.maxCost))) return false;
-    if (q && ![c.name, c.id, c.cardClass, c.type, c.description, c.rarity, ...colorsOf(c).flatMap(col => [col, colorName(col)]), cardField(c, 'set', 'cardSet', 'expansion'), ...tribesOf(c)]
+    if (q && ![c.name, c.id, c.cardClass, c.type, c.description, c.rarity, ...categoryColorsOf(c).flatMap(col => [col, colorName(col)]), cardField(c, 'set', 'cardSet', 'expansion'), ...tribesOf(c)]
       .some(v => norm(v).includes(q))) return false;
     return true;
   });
@@ -658,15 +662,19 @@ async function cardDetail(id) {
     (byId[gid].name || gid) + ' (' + (byId[gid].cost ?? 0) + (byId[gid].type === 'creature' ? ' · ' + (byId[gid].attack ?? '?') + '/' + (byId[gid].health ?? '?') : '') + ')');
   const generates = CardArt.generatedCardIds(c, byId);
   const createdBy = CardArt.createdByIds(c.id, byId);
-  const colorMeta = colorsOf(c).filter(code => COLOR_NAMES[code]).map((code, i) =>
-    [i ? ' / ' : ' · ', h('a', { href: '#/cards?color=' + encodeURIComponent(code) }, colorName(code))]).flat();
+  const metaBucket = systemBucket(c);
+  const metaSystem = SYSTEM_BUCKETS.find(([key]) => key === metaBucket);
+  const metaClassValue = metaSystem ? metaSystem[0] : canonClass(c);
+  const metaClassLabel = metaSystem ? metaSystem[1] : CardArt.classNameOf(c.cardClass);
+  const colorMeta = displayColorsOf(c).filter(code => COLOR_NAMES[code]).map((code, i) =>
+    [i ? ' / ' : ' · ', h('a', { href: c.type === 'land' ? '#/cards?class=__land__' : '#/cards?color=' + encodeURIComponent(code) }, colorName(code))]).flat();
   content.replaceChildren(
     h('div', { class: 'card-page' },
       h('div', { class: 'card-page-face' }, face),
       h('div', { class: 'card-page-info' },
         h('h1', null, c.name),
         h('div', { class: 'card-page-meta' },
-          h('a', { href: '#/cards?class=' + encodeURIComponent(canonClass(c)) }, CardArt.classNameOf(c.cardClass)),
+          h('a', { href: '#/cards?class=' + encodeURIComponent(metaClassValue) }, metaClassLabel),
           colorMeta,
           CardArt.showsRarity(c) ? [' · ', h('a', { href: '#/cards?rarity=' + encodeURIComponent(String(c.rarity || 'common')) }, titleCase(c.rarity || 'common'))] : null),
         // clickable type + tribe/school tags
@@ -1255,7 +1263,7 @@ async function designCardDetail(slug) {
     implBody.push(
       h('h2', null, 'Card data'),
       h('div', { class: 'card-page-meta' }, art.classNameOf(impl.cardClass) + (art.showsRarity(impl) ? ' · ' + titleCase(impl.rarity || 'common') : '')),
-      h('div', { class: 'card-tags' }, cardTypeChip(impl.type), colorsOf(impl).filter(code => COLOR_NAMES[code]).map(colorChip), tribesOf(impl).map(t => tribeChip(impl, t))),
+      h('div', { class: 'card-tags' }, cardTypeChip(impl.type), displayColorsOf(impl).filter(code => COLOR_NAMES[code]).map(code => colorChip(code, impl)), tribesOf(impl).map(t => tribeChip(impl, t))),
       h('div', { class: 'card-page-stats' }, stats.join('  ·  ')),
       impl.description ? h('div', { class: 'card-page-rules', html: CardKw.richHtml(impl.description) }) : h('div', { class: 'card-page-rules muted' }, 'No rules text.'),
       kws.length ? h('h2', null, 'Keywords') : null,
