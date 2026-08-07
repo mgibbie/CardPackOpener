@@ -755,6 +755,16 @@ register('copy-each-friendly-to-hand', ({ state, pi }) => { {
 } });
 
 
+register('summon-enemy-copy-attack-original', ({ state, pi, chosenCreature }) => { {
+			// Funhouse Mirror: summon a copy of an enemy minion under your control; it attacks the original
+			const t = chosenCreature();
+			if (!t) return;
+			const def = state.cardsById[t.id] || { id: t.id, name: t.name, type: 'creature', cost: t.cost, rarity: t.rarity, attack: t.attack, health: t.maxHealth, keywords: [...(t.keywords || [])], tribe: t.tribe };
+			const c = summon(state, pi, def);
+			if (c && !isDead(c) && !isDead(t)) { c.sick = false; resolveCombat(state, pi, c.uid, { type: 'creature', uid: t.uid, player: t.controller }); }
+} });
+
+
 register('demonic-project', ({ state }) => { {
 			// Demonic Project: each player transforms a random minion in their hand into a random Demon
 			const demons = Object.values(state.cardsById).filter(d => d.type === 'creature' && (d.tribe || '').includes('Demon')

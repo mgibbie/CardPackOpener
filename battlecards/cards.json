@@ -163505,6 +163505,109 @@
           ]
         }
       ]
+    },
+    {
+      "id": "gravity_lapse",
+      "name": "Gravity Lapse",
+      "type": "sorcery",
+      "cost": 0,
+      "cardClass": "priest",
+      "rarity": "epic",
+      "set": "SPACE",
+      "collectible": true,
+      "description": "Set EVERY minion's Attack and Health to the lower of the two.",
+      "effects": [
+        {
+          "type": "set-all-minions-to-lower-stat"
+        }
+      ]
+    },
+    {
+      "id": "forbidden_words",
+      "name": "Forbidden Words",
+      "type": "sorcery",
+      "cost": 0,
+      "cardClass": "priest",
+      "rarity": "rare",
+      "set": "DALARAN",
+      "collectible": true,
+      "description": "Spend all your Mana. Destroy a minion with that much Attack or less.",
+      "effects": [
+        {
+          "type": "spend-all-mana-destroy",
+          "target": "creature"
+        }
+      ],
+      "tribe": "Shadow"
+    },
+    {
+      "id": "funhouse_mirror",
+      "name": "Funhouse Mirror",
+      "type": "sorcery",
+      "cost": 3,
+      "cardClass": "priest",
+      "rarity": "common",
+      "set": "WHIZBANGS_WORKSHOP",
+      "collectible": true,
+      "description": "Summon a copy of an enemy minion. It attacks the original.",
+      "effects": [
+        {
+          "type": "summon-enemy-copy-attack-original",
+          "target": "enemy-creature"
+        }
+      ],
+      "tribe": "Shadow"
+    },
+    {
+      "id": "riot",
+      "name": "Riot!",
+      "type": "sorcery",
+      "cost": 2,
+      "cardClass": "warrior",
+      "rarity": "epic",
+      "set": "REVENDRETH",
+      "collectible": true,
+      "description": "Your minions can't be  reduced below 1 Health  this turn. They each attack  a random enemy minion.",
+      "effects": [
+        {
+          "type": "all-friendly-minions-attack-random"
+        }
+      ]
+    },
+    {
+      "id": "piercing_shot",
+      "name": "Piercing Shot",
+      "type": "sorcery",
+      "cost": 4,
+      "cardClass": "hunter",
+      "rarity": "common",
+      "set": "THE_BARRENS",
+      "collectible": true,
+      "description": "Deal 6 damage to a minion. Excess damage hits the enemy hero.",
+      "effects": [
+        {
+          "type": "damage-overkill-hero",
+          "value": 6,
+          "target": "creature"
+        }
+      ]
+    },
+    {
+      "id": "death_roll",
+      "name": "Death Roll",
+      "type": "sorcery",
+      "cost": 5,
+      "cardClass": "hunter",
+      "rarity": "epic",
+      "set": "ISLAND_VACATION",
+      "collectible": true,
+      "description": "Destroy an enemy minion.  Deal damage equal to its Attack randomly split among all enemies.",
+      "effects": [
+        {
+          "type": "destroy-split-attack",
+          "target": "enemy-creature"
+        }
+      ]
     }
   ]
 }
