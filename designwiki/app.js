@@ -326,11 +326,17 @@ const isDualClass = c => canonClass(c).includes('__');
 // all Lands together, the five WUBRG colours (non-land), then a Generic catch-all
 const SYSTEM_BUCKETS = [
   ['__land__', 'Lands'], ['__advland__', 'Advanced Lands'],
-  ['__c_W__', 'White'], ['__c_U__', 'Blue'], ['__c_B__', 'Black'],
-  ['__c_R__', 'Red'], ['__c_G__', 'Green'], ['__generic__', 'Generic'],
+  ['__generic__', 'Generic'],
   ['__plane__', 'Planes'], ['__excavate__', 'Excavate'], ['__appendage__', 'Appendages'],
 ];
 const SYSTEM_KEYS = new Set(SYSTEM_BUCKETS.map(b => b[0]));
+// WUBRG is independent of class: multicolour cards belong to every matching
+// colour category, and every colour can be filtered or opened from a card page.
+const CARD_COLORS = [['W', 'White'], ['U', 'Blue'], ['B', 'Black'], ['R', 'Red'], ['G', 'Green'], ['C', 'Colorless']];
+const COLOR_NAMES = Object.fromEntries(CARD_COLORS);
+const colorsOf = c => Array.isArray(c.colors) ? c.colors : (c.colors ? String(c.colors).split('').filter(Boolean) : []);
+const colorName = code => COLOR_NAMES[code] || code;
+const colorChip = code => h('a', { class: 'tag-chip color', href: '#/cards?color=' + encodeURIComponent(code) }, colorName(code));
 // theme words an advanced land can conjure (matched against a card's name) — once
 let advThemes = null;
 function ensureAdvThemes(cards) {
@@ -347,8 +353,10 @@ function systemBucket(c) {
   if (c.type === 'emblem') return '__generic__'; // dungeon-run treasures / emblems
   if ((c.tribe || '').split(/\s+/).includes('Token')) return '__generic__'; // Token-tribe cards (Blood/Clue/Food/Treasure)
   if (c.id === 'coin' || c.id === 'banana') return '__generic__'; // neutral token spells
-  const cols = c.colors || [];
-  for (const col of ['W', 'U', 'B', 'R', 'G']) if (cols.includes(col)) return '__c_' + col + '__';
+  const cols = colorsOf(c);
+  // Coloured paper cards remain in their normal class and are categorized by
+  // the dedicated colour filter instead of being forced into one WUBRG bucket.
+  if (cols.some(col => ['W', 'U', 'B', 'R', 'G'].includes(col))) return null;
   if (canonClass(c) === 'magepunk') {
     // paper system cards: ones a land conjures (name matches a theme) are Advanced
     // Lands; the rest (Blood Gem) are Generic
@@ -364,7 +372,7 @@ function systemBucket(c) {
 }
 
 const CARD_FILTER_DEFAULTS = {
-  class: 'all', type: 'all', rarity: 'all', set: 'all', tribe: 'all',
+  class: 'all', color: 'all', type: 'all', rarity: 'all', set: 'all', tribe: 'all',
   keyword: 'all', collectible: 'all', art: 'all', minCost: '', maxCost: '',
   sort: 'class-cost-name', size: 'medium'
 };
@@ -437,7 +445,7 @@ function costSelect(label, key, cards, report) {
 }
 function activeCardFilterChips(cards, report) {
   const labels = {
-    class: 'Class', type: 'Type', rarity: 'Rarity', set: 'Set', tribe: 'Tribe/School',
+    class: 'Class', color: 'Color', type: 'Type', rarity: 'Rarity', set: 'Set', tribe: 'Tribe/School',
     keyword: 'Keyword', collectible: 'Collection', art: 'Art', minCost: 'Min cost',
     maxCost: 'Max cost', sort: 'Sort', size: 'Size'
   };
@@ -448,7 +456,7 @@ function activeCardFilterChips(cards, report) {
       class: 'active-filter',
       title: 'Remove ' + labels[key] + ' filter',
       onclick: () => setCardFilter(key, CARD_FILTER_DEFAULTS[key], cards, report)
-    }, labels[key] + ': ' + titleCase(value), ' ×'));
+    }, labels[key] + ': ' + (key === 'color' ? colorName(value) : titleCase(value)), ' ×'));
   }
   if (searchEl.value.trim()) chips.push(h('button', {
     class: 'active-filter',
@@ -489,6 +497,9 @@ function renderCards(cards, report = {}) {
     const sys = SYSTEM_BUCKETS.find(([k]) => k === v);
     return (sys ? sys[1] : CardArt.classNameOf(v)) + ' (' + (counts[v] || 0) + ')';
   };
+  const colorCounts = Object.fromEntries(CARD_COLORS.map(([code]) => [code, cards.filter(c => colorsOf(c).includes(code)).length]));
+  const colorValues = CARD_COLORS.filter(([code]) => colorCounts[code]).map(([code]) => code);
+  const colorFilterLabel = code => colorName(code) + ' (' + colorCounts[code] + ')';
   const types = uniqueSorted(cards.map(c => c.type));
   const rarities = uniqueSorted(cards.map(c => c.rarity), r => String(rarityRank(r)).padStart(2, '0') + r);
   const sets = uniqueSorted(cards.map(c => cardField(c, 'set', 'cardSet', 'expansion')));
@@ -502,6 +513,7 @@ function renderCards(cards, report = {}) {
         : SYSTEM_KEYS.has(cardFilters.class) ? sb !== cardFilters.class
         : sb || canonClass(c) !== cardFilters.class) return false;
     }
+    if (cardFilters.color !== 'all' && !colorsOf(c).includes(cardFilters.color)) return false;
     if (cardFilters.type !== 'all' && String(c.type) !== cardFilters.type) return false;
     if (cardFilters.rarity !== 'all' && String(c.rarity) !== cardFilters.rarity) return false;
     if (cardFilters.set !== 'all' && cardField(c, 'set', 'cardSet', 'expansion') !== cardFilters.set) return false;
@@ -515,7 +527,7 @@ function renderCards(cards, report = {}) {
     const cost = Number(c.cost || 0);
     if (cardFilters.minCost !== '' && cost < Number(cardFilters.minCost)) return false;
     if (cardFilters.maxCost !== '' && (Number(cardFilters.maxCost) === 20 ? cost < 20 : cost > Number(cardFilters.maxCost))) return false;
-    if (q && ![c.name, c.id, c.cardClass, c.type, c.description, c.rarity, cardField(c, 'set', 'cardSet', 'expansion'), ...tribesOf(c)]
+    if (q && ![c.name, c.id, c.cardClass, c.type, c.description, c.rarity, ...colorsOf(c).flatMap(col => [col, colorName(col)]), cardField(c, 'set', 'cardSet', 'expansion'), ...tribesOf(c)]
       .some(v => norm(v).includes(q))) return false;
     return true;
   });
@@ -535,6 +547,7 @@ function renderCards(cards, report = {}) {
     h('summary', null, 'Filters and sorting'),
     h('div', { class: 'filter-fields' },
       filterSelect('Class', 'class', classValues, cards, report, classLabel),
+      filterSelect('Color', 'color', colorValues, cards, report, colorFilterLabel),
       filterSelect('Type', 'type', types, cards, report),
       filterSelect('Rarity', 'rarity', rarities, cards, report),
       filterSelect('Set', 'set', sets, cards, report, titleCase),
@@ -645,12 +658,17 @@ async function cardDetail(id) {
     (byId[gid].name || gid) + ' (' + (byId[gid].cost ?? 0) + (byId[gid].type === 'creature' ? ' · ' + (byId[gid].attack ?? '?') + '/' + (byId[gid].health ?? '?') : '') + ')');
   const generates = CardArt.generatedCardIds(c, byId);
   const createdBy = CardArt.createdByIds(c.id, byId);
+  const colorMeta = colorsOf(c).filter(code => COLOR_NAMES[code]).map((code, i) =>
+    [i ? ' / ' : ' · ', h('a', { href: '#/cards?color=' + encodeURIComponent(code) }, colorName(code))]).flat();
   content.replaceChildren(
     h('div', { class: 'card-page' },
       h('div', { class: 'card-page-face' }, face),
       h('div', { class: 'card-page-info' },
         h('h1', null, c.name),
-        h('div', { class: 'card-page-meta' }, h('a', { href: '#/cards?class=' + encodeURIComponent(canonClass(c)) }, CardArt.classNameOf(c.cardClass)), CardArt.showsRarity(c) ? [' · ', h('a', { href: '#/cards?rarity=' + encodeURIComponent(String(c.rarity || 'common')) }, titleCase(c.rarity || 'common'))] : null),
+        h('div', { class: 'card-page-meta' },
+          h('a', { href: '#/cards?class=' + encodeURIComponent(canonClass(c)) }, CardArt.classNameOf(c.cardClass)),
+          colorMeta,
+          CardArt.showsRarity(c) ? [' · ', h('a', { href: '#/cards?rarity=' + encodeURIComponent(String(c.rarity || 'common')) }, titleCase(c.rarity || 'common'))] : null),
         // clickable type + tribe/school tags
         h('div', { class: 'card-tags' }, cardTypeChip(c.type), tribesOf(c).map(t => tribeChip(c, t))),
         h('div', { class: 'card-page-stats' }, stats.join('  ·  ')),
@@ -1237,7 +1255,7 @@ async function designCardDetail(slug) {
     implBody.push(
       h('h2', null, 'Card data'),
       h('div', { class: 'card-page-meta' }, art.classNameOf(impl.cardClass) + (art.showsRarity(impl) ? ' · ' + titleCase(impl.rarity || 'common') : '')),
-      h('div', { class: 'card-tags' }, cardTypeChip(impl.type), tribesOf(impl).map(t => tribeChip(impl, t))),
+      h('div', { class: 'card-tags' }, cardTypeChip(impl.type), colorsOf(impl).filter(code => COLOR_NAMES[code]).map(colorChip), tribesOf(impl).map(t => tribeChip(impl, t))),
       h('div', { class: 'card-page-stats' }, stats.join('  ·  ')),
       impl.description ? h('div', { class: 'card-page-rules', html: CardKw.richHtml(impl.description) }) : h('div', { class: 'card-page-rules muted' }, 'No rules text.'),
       kws.length ? h('h2', null, 'Keywords') : null,
