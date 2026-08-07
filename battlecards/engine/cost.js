@@ -165,6 +165,8 @@ export function effectiveCost(state, pi, card) {
 			case 'frozen-character': met = state.players.some(pl => pl.board.some(x => !isDead(x) && x.frozen)); break;
 			case 'mana-ge': met = (p.mana?.max || 0) >= s.threshold; break;
 			case 'schools-turn': met = (s.schools || []).every(sch => (p.schoolsCastThisTurn || {})[sch]); break;
+			case 'holding-other-class': met = p.hand.some(x => x !== card && x.cardClass && x.cardClass !== 'neutral' && x.cardClass !== p.heroClass); break; // Vendetta
+			case 'damaged-minion': met = p.board.some(x => !isDead(x) && x.type !== 'location' && x.damage > 0); break; // Crush
 			default: met = false;
 		}
 		if (met) { if (s.setCost != null) c = s.setCost; else if (s.amount != null) c += s.amount; }

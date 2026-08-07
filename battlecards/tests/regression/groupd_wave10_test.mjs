@@ -42,7 +42,7 @@ ok('primordial_acolyte turn-end ongoing (keeps Divine Shield)', cardsById['primo
 	st.players[0].hand = [s2, s5];
 	E.endTurn(st);
 	const morph = st.players[0].hand.find(c => c.uid === s2.uid);
-	ok('Primordial Acolyte: the 2-cost spell became a random 3-cost spell', morph && morph.id !== 'sp2' && (cardsById[morph.id]?.cost === 3) && (morph.type === 'sorcery' || morph.type === 'instant'), morph && [morph.id, morph.cost]);
+	ok('Primordial Acolyte: the 2-cost spell became a random 3-cost spell', morph && morph.id !== 'sp2' && (cardsById[morph.id]?.cost === 3) && ['sorcery', 'instant', 'secret', 'trap'].includes(morph.type), morph && [morph.id, morph.cost]);
 	ok('Primordial Acolyte: the higher-cost spell is untouched', st.players[0].hand.some(c => c.uid === s5.uid && c.id === 'sp5'));
 }
 

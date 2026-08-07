@@ -474,6 +474,68 @@ register('summon-copies-of-damaged-rush', ({ state, pi, target, source, enemies,
 } });
 
 
+register('summon-copies-of-damaged', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => { {
+			// Sudden Genesis: summon copies of your damaged minions (no Rush)
+			const p = state.players[pi];
+			const dmgd = p.board.filter(c => c !== source && !isDead(c) && c.type !== 'location' && c.damage > 0 && state.cardsById[c.id]);
+			for (const c of dmgd) summon(state, pi, state.cardsById[c.id]);
+} });
+
+
+register('destroy-enemy-edges', ({ state, pi, enemies }) => { {
+			// Crushing Walls: destroy the opponent's left-most and right-most minions
+			for (const o of enemies) {
+				const board = state.players[o].board.filter(c => !isDead(c) && c.type !== 'location');
+				if (!board.length) continue;
+				const targets = board.length === 1 ? [board[0]] : [board[0], board[board.length - 1]];
+				for (const t of targets) { t.damage = t.maxHealth; t.shield = false; emit(state, { type: 'destroy', uid: t.uid }); }
+			}
+			sweepDeaths(state);
+} });
+
+
+register('darkest-hour', ({ state, pi }) => { {
+			// Darkest Hour: destroy all friendly minions, then summon a random minion from your deck for each
+			const p = state.players[pi];
+			const dead = p.board.filter(c => !isDead(c) && c.type !== 'location');
+			const n = dead.length;
+			for (const c of dead) { c.damage = c.maxHealth; c.shield = false; emit(state, { type: 'destroy', uid: c.uid }); }
+			sweepDeaths(state);
+			for (let k = 0; k < n; k++) {
+				const idxs = p.deck.map((id, i) => [id, i]).filter(([id]) => state.cardsById[id]?.type === 'creature');
+				if (!idxs.length) break;
+				const [id, di] = idxs[Math.floor(state.rng() * idxs.length)];
+				p.deck.splice(di, 1);
+				summon(state, pi, state.cardsById[id]);
+			}
+} });
+
+
+register('damage-all-minions-by-own-attack', ({ state, source }) => { {
+			// Lightbomb: deal damage to each minion equal to its own Attack
+			const targets = [];
+			for (const pl of state.players) for (const c of pl.board) if (!isDead(c) && c.type !== 'location') targets.push(c);
+			for (const c of targets) if (c.attack > 0) damageCreature(state, c, c.attack, source || null);
+			sweepDeaths(state);
+} });
+
+
+register('force-all-minions-attack-random', ({ state }) => { {
+			// Mass Hysteria: force each minion to attack another random minion
+			const all = [];
+			for (const pl of state.players) for (const c of pl.board) if (!isDead(c) && c.type !== 'location') all.push(c);
+			for (const a of all) {
+				if (isDead(a) || a.attack <= 0) continue;
+				const foes = [];
+				for (const pl of state.players) for (const c of pl.board) if (c !== a && !isDead(c) && c.type !== 'location') foes.push(c);
+				if (!foes.length) break;
+				const t = foes[Math.floor(state.rng() * foes.length)];
+				resolveCombat(state, a.controller, a.uid, { type: 'creature', uid: t.uid, player: t.controller });
+			}
+			sweepDeaths(state);
+} });
+
+
 register('grant-deathrattle-random', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => { {
 			// Greybough: give a random friendly minion a Deathrattle
 			const pool = state.players[pi].board.filter(c => c !== source && !isDead(c) && c.type !== 'location');

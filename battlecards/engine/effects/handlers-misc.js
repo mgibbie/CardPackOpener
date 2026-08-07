@@ -1114,11 +1114,24 @@ register('tolins', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy,
 			if (p.hand.length > before) {
 				const c = p.hand[p.hand.length - 1];
 				const def = state.cardsById[c.id];
-				while (def && p.hand.length < MAX_HAND) {
+				const limit = e.count != null ? Math.min(MAX_HAND, p.hand.length + e.count) : MAX_HAND; // Thistle Tea: exactly `count` extra copies
+				while (def && p.hand.length < limit) {
 					const cp = instantiate(def, pi); cp.zone = 'hand'; p.hand.push(cp);
 					emit(state, { type: 'conjure', player: pi, card: cp, color: null });
 				}
 			}
+} });
+
+
+register('floop-refresh-on-death', ({ state, pi }) => { {
+			// Floop's Glorious Gloop: this turn, refresh a Mana Crystal whenever a minion dies
+			state.players[pi].floopRefreshTurn = state.turnNumber;
+} });
+
+
+register('stampede-turn', ({ state, pi }) => { {
+			// Stampede: this turn, playing a Beast adds a random Beast to your hand
+			state.players[pi].stampedeTurn = state.turnNumber;
 } });
 
 

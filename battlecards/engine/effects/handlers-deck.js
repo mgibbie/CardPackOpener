@@ -315,6 +315,86 @@ register('set-deck-bottom-costs', ({ state, pi, target, source, enemies, scaled,
 });
 
 
+register('set-deck-minions-cost', ({ state, pi }, e) => {
+			// Luna's Pocket Galaxy: change the Cost of every minion in your deck
+			const p = state.players[pi];
+			p.deckCostOverrides = p.deckCostOverrides || {};
+			for (const id of p.deck) if (state.cardsById[id]?.type === 'creature') p.deckCostOverrides[id] = (e.value ?? 1);
+});
+
+
+register('shuffle-all-minions-into-enemy-deck', ({ state, pi, enemies }) => {
+			// Psychic Scream: shuffle all minions (both sides) into your opponent's deck
+			const foe = enemies[0]; if (foe == null) return;
+			for (let oi = 0; oi < state.players.length; oi++) {
+				const pl = state.players[oi];
+				const minions = pl.board.filter(c => !isDead(c) && c.type !== 'location');
+				for (const c of minions) { state.players[foe].deck.push(c.id); c.zone = 'gone'; const bi = pl.board.indexOf(c); if (bi >= 0) pl.board.splice(bi, 1); }
+			}
+			const d = state.players[foe].deck;
+			for (let i = d.length - 1; i > 0; i--) { const j = Math.floor(state.rng() * (i + 1)); [d[i], d[j]] = [d[j], d[i]]; }
+			emit(state, { type: 'shuffle', player: foe });
+			recomputeAuras(state);
+});
+
+
+register('replace-deck-with-card', ({ state, pi }, e) => {
+			// Explore Un'Goro: replace your deck with copies of a card
+			const p = state.players[pi];
+			const size = p.deck.length;
+			p.deck = [];
+			for (let k = 0; k < size; k++) p.deck.push(e.cardId);
+			emit(state, { type: 'shuffle', player: pi });
+});
+
+
+register('shuffle-shadows-of-target', ({ state, pi, chosenCreature }, e) => {
+			// Shadow of Death: shuffle 3 Shadows that each summon a copy of the chosen minion when drawn
+			const t = chosenCreature();
+			if (!t) return;
+			const p = state.players[pi];
+			const tokenId = 'shadow_of_' + t.id;
+			if (!state.cardsById[tokenId]) state.cardsById[tokenId] = { id: tokenId, name: 'Shadow', type: 'sorcery', cost: 0, rarity: 'common', token: true, collectible: false, drawTrigger: true, onDraw: [{ type: 'summon', options: [{ summonId: t.id }] }], description: `When drawn, summon a copy of ${t.name}.` };
+			for (let k = 0; k < (e.count || 3); k++) p.deck.push(tokenId);
+			for (let i = p.deck.length - 1; i > 0; i--) { const j = Math.floor(state.rng() * (i + 1)); [p.deck[i], p.deck[j]] = [p.deck[j], p.deck[i]]; }
+			emit(state, { type: 'shuffle', player: pi });
+});
+
+
+register('shuffle-enemy-class-cards', ({ state, pi, enemies }, e) => {
+			// Academic Espionage: shuffle N cards from your opponent's class into your deck; they cost (1)
+			const p = state.players[pi];
+			const foe = enemies[0]; if (foe == null) return;
+			const foeClass = state.players[foe].heroClass;
+			const pool = Object.values(state.cardsById).filter(d => (d.cardClass || 'neutral') === foeClass
+				&& d.type !== 'heropower' && !d.token && d.collectible !== false && !d.companion && !d.commander && !(d.colors && d.colors.length));
+			if (!pool.length) return;
+			p.deckCostOverrides = p.deckCostOverrides || {};
+			for (let k = 0; k < (e.count || 10); k++) { const d = pool[Math.floor(state.rng() * pool.length)]; p.deck.push(d.id); p.deckCostOverrides[d.id] = 1; }
+			for (let i = p.deck.length - 1; i > 0; i--) { const j = Math.floor(state.rng() * (i + 1)); [p.deck[i], p.deck[j]] = [p.deck[j], p.deck[i]]; }
+			emit(state, { type: 'shuffle', player: pi });
+});
+
+
+register('draw-minion-spell-swap-cost', ({ state, pi }) => {
+			// Prismatic Lens: draw a minion and a spell from your deck, then swap their Costs
+			const p = state.players[pi];
+			const drawn = [];
+			const pull = pred => {
+				const idxs = p.deck.map((id, i) => [id, i]).filter(([id]) => pred(state.cardsById[id]));
+				if (!idxs.length) return;
+				const [id, di] = idxs[Math.floor(state.rng() * idxs.length)];
+				p.deck.splice(di, 1);
+				if (p.hand.length >= MAX_HAND) return;
+				const c = instantiate(state.cardsById[id], pi); c.zone = 'hand'; c.fromDeck = true; p.hand.push(c); drawn.push(c);
+				emit(state, { type: 'draw', player: pi, card: c });
+			};
+			pull(d => d && d.type === 'creature');
+			pull(d => d && isSpellType(d));
+			if (drawn.length === 2) { const t = drawn[0].cost; drawn[0].cost = drawn[1].cost; drawn[1].cost = t; }
+});
+
+
 register('swap-deck-tops', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => {
 			// Mischief Maker: swap the top card of your deck with your opponent's
 			const o = enemies[0], mp = state.players[pi];
@@ -565,7 +645,7 @@ register('draw-check', ({ state, pi, target, source, enemies, scaled, hm, pickEn
 			const before = new Set(dp.hand.map(c => c.uid));
 			drawCards(state, pi, e.value || 1);
 			const drawn = dp.hand.filter(c => !before.has(c.uid));
-			if (drawn.length >= (e.value || 1) && (!e.allType || drawn.every(c => c.type === e.allType)) && (!e.notType || drawn.every(c => c.type !== e.notType)) && e.then)
+			if (drawn.length >= (e.value || 1) && (!e.allType || drawn.every(c => c.type === e.allType)) && (!e.notType || drawn.every(c => c.type !== e.notType)) && (!e.allTribe || drawn.every(c => (c.tribe || '').includes(e.allTribe))) && e.then)
 				execEffects(state, pi, e.then, target, source); // notType: Mark of Scorn ("if it's NOT a minion")
 } });
 
@@ -1188,6 +1268,7 @@ register('copy-to-deck', ({ state, pi, target, source, enemies, scaled, hm, pick
 				const elekk = p.board.filter(c => c.id === 'augmented_elekk' && !isDead(c)).length; // Augmented Elekk: an extra copy per shuffle
 				const total = (e.count || 1) * (1 + elekk);
 				for (let n = 0; n < total; n++) p.deck.push(t.id);
+				if (e.buff) for (let n = 0; n < total; n++) (p.deckIdBuffs = p.deckIdBuffs || []).push({ id: t.id, attack: e.buff.attack || 0, health: e.buff.health || 0 }); // Dire Frenzy: shuffled copies keep +X/+X
 				for (let i = p.deck.length - 1; i > 0; i--) { const j = Math.floor(state.rng() * (i + 1)); [p.deck[i], p.deck[j]] = [p.deck[j], p.deck[i]]; }
 				emit(state, { type: 'shuffledIntoDeck', player: pi, cardId: t.id }); fireOngoing(state, pi, 'card-shuffled', { cardId: t.id });
 			}

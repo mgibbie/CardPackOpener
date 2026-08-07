@@ -1037,7 +1037,7 @@ registerTrigger('copy-triggering-to-hand', (state, pi, e, ctx, triggering) => {
 	const m = ctx.minion || triggering();
 	if (!m) return;
 	const def = state.cardsById[m.id] || { id: m.id, name: m.name, type: 'creature', cost: m.cost, rarity: m.rarity, description: m.description, attack: m.attack, health: m.maxHealth, keywords: [...(m.keywords || [])] };
-	for (let i = 0; i < (e.count || 1); i++) { if (state.players[pi].hand.length >= MAX_HAND) break; const cp = instantiate(def, pi); cp.zone = 'hand'; state.players[pi].hand.push(cp); emit(state, { type: 'conjure', player: pi, card: cp, color: null }); }
+	for (let i = 0; i < (e.count || 1); i++) { if (state.players[pi].hand.length >= MAX_HAND) break; const cp = instantiate(def, pi); cp.zone = 'hand'; if (e.costMod) cp.cost = Math.max(0, (cp.cost || 0) + e.costMod); state.players[pi].hand.push(cp); emit(state, { type: 'conjure', player: pi, card: cp, color: null }); } // Cheat Death: the returned copy costs (2) less
 });
 
 registerTrigger('transform-triggering', (state, pi, e, ctx, triggering) => {
