@@ -249,11 +249,18 @@ function regionView(rk) {
 // Card Gallery — every card in Battlecards, drawn with its real in-game face via
 // the sibling battlecards/cardart.js. Card data, art, and the renderer are all
 // lazy-loaded the first time a card view opens.
-let cardsPromise = null, cardartPromise = null, CardArt = null, CardKw = null, kwIndex = null;
+let cardsPromise = null, cardartPromise = null, artAuditPromise = null, CardArt = null, CardKw = null, kwIndex = null;
 let cardClassFilter = 'all';
 function loadCards() {
   if (!cardsPromise) cardsPromise = fetch('../battlecards/cards.json' + CB).then(r => r.json()).then(d => d.cards || d || []);
   return cardsPromise;
+}
+function loadArtAudit() {
+  if (!artAuditPromise) artAuditPromise = fetch('../battlecards/art/audit-report.json' + CB).then(r => {
+    if (!r.ok) throw new Error('Artwork audit unavailable');
+    return r.json();
+  });
+  return artAuditPromise;
 }
 function loadCardart() {
   // the renderer (cardart) and the keyword glossary (keywords) both live in battlecards/
@@ -417,6 +424,36 @@ function renderCards(cards) {
     filters, grid, more);
   renderMore();
 }
+// Audit-backed queue of cards whose full artwork still needs to be sourced.
+async function missingArtView() {
+  content.replaceChildren(h('h1', null, 'Cards Missing Art'), h('p', { class: 'muted' }, 'Loading the latest artwork audit…'));
+  let cards, report;
+  try {
+    [cards, report] = await Promise.all([loadCards(), loadArtAudit(), loadCardart().then(() => null)]);
+  } catch (e) {
+    return content.replaceChildren(h('h1', null, 'Cards Missing Art'), h('p', { class: 'muted' }, 'Could not load the artwork audit.'));
+  }
+  if ((location.hash.slice(1).split('/').filter(Boolean))[0] !== 'missing-art') return;
+
+  const unresolved = [...(report.wikiNotFound || []), ...(report.errors || [])];
+  const ids = new Set(unresolved.map(x => x.id).filter(Boolean));
+  const q = norm(searchEl.value);
+  const list = cards.filter(c => ids.has(c.id))
+    .filter(c => !q || norm(c.name).includes(q) || norm(c.id).includes(q) || norm(c.cardClass).includes(q) || norm(c.type).includes(q))
+    .sort((a, b) => canonClass(a).localeCompare(canonClass(b)) || String(a.name).localeCompare(String(b.name)));
+
+  await CardArt.preloadArt(list.map(c => c.id));
+  const temporary = new Set((report.errors || []).map(x => x.id)).size;
+  content.replaceChildren(
+    h('h1', null, 'Cards Missing Art ', h('span', { class: 'num' }, '(' + list.length + ')')),
+    h('p', { class: 'muted' }, 'Cards without a sourced full-art image in the latest audit of ' + (report.cardCount || cards.length) + ' cards. Click a card to inspect its wiki page.'),
+    temporary ? h('p', { class: 'muted' }, temporary + ' card' + (temporary === 1 ? '' : 's') + ' could not be checked during the last audit and will be retried automatically.') : null,
+    list.length
+      ? h('div', { class: 'card-grid' }, list.map(cardTile))
+      : h('p', null, 'Every card currently has sourced artwork.')
+  );
+}
+
 // tile = the in-game face snapshotted to an <img> (lighter than keeping live canvases)
 function cardTile(c) {
   const canvas = CardArt.drawCardFace(c);
@@ -1089,6 +1126,7 @@ function route() {
   if (section === 'unlearned') return unlearnedView();
   if (section === 'region') return regionView(id);
   if (section === 'cards') return id ? cardDetail(id) : cardGalleryView();
+  if (section === 'missing-art') return missingArtView();
   if (section === 'dungeon') {
     if (id === 'deck' && parts[2]) return dungeonDeckView(parts[2]);
     if (id === 'boss' && parts[2]) return dungeonBossView(parts[2]);
@@ -1121,7 +1159,7 @@ function route() {
 
 searchEl.addEventListener('input', () => {
   const s = (location.hash.slice(1) || '/').split('/').filter(Boolean);
-  if (['pokemon', 'moves', 'abilities', 'tms', 'unlearned', 'battlecards', 'cards', 'needs-typing', 'needs-data'].includes(s[0]) && !s[1]) {
+  if (['pokemon', 'moves', 'abilities', 'tms', 'unlearned', 'battlecards', 'cards', 'missing-art', 'needs-typing', 'needs-data'].includes(s[0]) && !s[1]) {
     if (s[0] === 'cards') { loadCardart().then(loadCards).then(renderCards); return; } // re-filter without reloading
     route();
   }
