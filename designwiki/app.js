@@ -437,8 +437,9 @@ async function missingArtView() {
 
   const unresolved = [...(report.wikiNotFound || []), ...(report.errors || [])];
   const ids = new Set(unresolved.map(x => x.id).filter(Boolean));
+  const cardsById = new Map(cards.map(c => [c.id, c]));
   const q = norm(searchEl.value);
-  const list = cards.filter(c => ids.has(c.id))
+  const list = [...ids].map(id => cardsById.get(id)).filter(Boolean)
     .filter(c => !q || norm(c.name).includes(q) || norm(c.id).includes(q) || norm(c.cardClass).includes(q) || norm(c.type).includes(q))
     .sort((a, b) => canonClass(a).localeCompare(canonClass(b)) || String(a.name).localeCompare(String(b.name)));
 
@@ -447,7 +448,7 @@ async function missingArtView() {
   content.replaceChildren(
     h('h1', null, 'Cards Missing Art ', h('span', { class: 'num' }, '(' + list.length + ')')),
     h('p', { class: 'muted' }, 'Cards without a sourced full-art image in the latest audit of ' + (report.cardCount || cards.length) + ' cards. Click a card to inspect its wiki page.'),
-    temporary ? h('p', { class: 'muted' }, temporary + ' card' + (temporary === 1 ? '' : 's') + ' could not be checked during the last audit and will be retried automatically.') : null,
+    ...(temporary ? [h('p', { class: 'muted' }, temporary + ' card' + (temporary === 1 ? '' : 's') + ' could not be checked during the last audit and will be retried automatically.')] : []),
     list.length
       ? h('div', { class: 'card-grid' }, list.map(cardTile))
       : h('p', null, 'Every card currently has sourced artwork.')
