@@ -714,7 +714,7 @@ register('transform-all-enemies-costplus', ({ state, pi, target, source, enemies
 						&& !d.token && d.collectible !== false && !d.companion && !d.commander && !(d.colors && d.colors.length) && d.id !== t.id);
 					if (!pool.length) continue;
 					const rd = pool[Math.floor(state.rng() * pool.length)];
-					const tok = instantiate({ id: 'token_' + rd.name.toLowerCase().replace(/[^a-z0-9]+/g, '_'), name: rd.name, type: 'creature', cost: 0, rarity: 'common', token: true, description: `A ${rd.attack}/${rd.health} ${rd.name}.`, attack: rd.attack, health: rd.health, keywords: rd.keywords || [], tribe: rd.tribe }, o);
+					const tok = instantiate({ id: 'token_' + rd.name.toLowerCase().replace(/[^a-z0-9]+/g, '_'), name: rd.name, type: 'creature', cost: rd.cost || 0, rarity: 'common', token: true, description: `A ${rd.attack}/${rd.health} ${rd.name}.`, attack: rd.attack, health: rd.health, keywords: rd.keywords || [], tribe: rd.tribe }, o);
 					tok.zone = 'board'; tok.sick = t.sick;
 					const idx = board.indexOf(t); if (idx >= 0) board[idx] = tok; t.zone = 'gone';
 					emit(state, { type: 'transformed', uid: t.uid, player: o, from: t.name, card: tok });
@@ -741,6 +741,50 @@ register('transform-all-into-random-tribe', ({ state, pi }, e) => { {
 			}
 			recomputeAuras(state);
 } });
+
+register('copy-each-friendly-to-hand', ({ state, pi }) => { {
+			// Echo of Medivh: put a copy of each friendly minion into your hand
+			const p = state.players[pi];
+			const minions = p.board.filter(c => !isDead(c) && c.type !== 'location');
+			for (const t of minions) {
+				if (p.hand.length >= MAX_HAND) break;
+				const def = state.cardsById[t.id] || { id: t.id, name: t.name, type: 'creature', cost: t.cost, rarity: t.rarity, description: t.description, attack: t.attack, health: t.maxHealth, keywords: [...(t.keywords || [])], tribe: t.tribe };
+				const cp = instantiate(def, pi); cp.zone = 'hand'; p.hand.push(cp);
+				emit(state, { type: 'conjure', player: pi, card: cp, color: null });
+			}
+} });
+
+
+register('demonic-project', ({ state }) => { {
+			// Demonic Project: each player transforms a random minion in their hand into a random Demon
+			const demons = Object.values(state.cardsById).filter(d => d.type === 'creature' && (d.tribe || '').includes('Demon')
+				&& !d.token && d.collectible !== false && !d.companion && !d.commander && !(d.colors && d.colors.length));
+			if (!demons.length) return;
+			for (let oi = 0; oi < state.players.length; oi++) {
+				const pl = state.players[oi];
+				const hi = pl.hand.map((c, i) => [c, i]).filter(([c]) => c.type === 'creature');
+				if (!hi.length) continue;
+				const [, idx] = hi[Math.floor(state.rng() * hi.length)];
+				const rd = demons[Math.floor(state.rng() * demons.length)];
+				const cp = instantiate(rd, oi); cp.zone = 'hand';
+				pl.hand[idx] = cp;
+				emit(state, { type: 'transformed', player: oi, from: 'hand minion', card: cp });
+			}
+} });
+
+
+register('destroy-summon-random-of-cost', ({ state, pi, chosenCreature }, e) => { {
+			// Conjurer's Calling: destroy a minion, summon N minions of the same Cost to replace it
+			const t = chosenCreature();
+			if (!t) return;
+			const cost = t.cost || 0, owner = t.controller;
+			t.damage = t.maxHealth; t.shield = false; emit(state, { type: 'destroy', uid: t.uid }); sweepDeaths(state);
+			const pool = Object.values(state.cardsById).filter(d => d.type === 'creature' && (d.cost || 0) === cost
+				&& !d.token && d.collectible !== false && !d.companion && !d.commander && !(d.colors && d.colors.length));
+			if (!pool.length) return;
+			for (let k = 0; k < (e.count || 2); k++) summon(state, owner, pool[Math.floor(state.rng() * pool.length)]);
+} });
+
 
 register('transform', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => { {
 			// replace a creature in place with a fresh token (no death, no deathrattle)

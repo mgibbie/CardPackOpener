@@ -582,6 +582,51 @@ register('grant-weapon-ability', ({ state, pi }, e) => {
 			emit(state, { type: 'weaponDurability', player: pi, attack: w.attack, durability: w.durability });
 });
 
+
+register('buff-target-gain-armor-by-attack', ({ state, pi, chosenCreature }, e) => {
+			// Earthen Scales: give a friendly minion +X/+Y, then gain Armor equal to its Attack
+			const t = chosenCreature();
+			if (!t) return;
+			t.attack += (e.attack || 0); t.maxHealth += (e.health || 0);
+			emit(state, { type: 'buff', uid: t.uid, attack: e.attack || 0, health: e.health || 0 });
+			recomputeAuras(state);
+			gainArmor(state, pi, t.attack);
+});
+
+
+register('reduce-all-enemy-hand-minions-cost', ({ state, pi, enemies }, e) => {
+			// Bring It On!: reduce the Cost of every minion in your opponent's hand
+			for (const o of enemies) for (const c of state.players[o].hand) if (c.type === 'creature') c.cost = Math.max(0, (c.cost || 0) - (e.value || 2));
+});
+
+
+register('enemy-equip', ({ state, pi, enemies }, e) => {
+			// Weapons Project: the opponent also equips a weapon
+			for (const o of enemies) execEffects(state, o, [{ type: 'equip', name: e.name, attack: e.attack, durability: e.durability }], null, null);
+});
+
+
+register('enemy-armor', ({ state, pi, enemies }, e) => {
+			// Weapons Project: the opponent also gains Armor
+			for (const o of enemies) gainArmor(state, o, e.value || 0);
+});
+
+
+register('throw-weapon', ({ state, pi, source, chosenCreature }) => {
+			// Doomerang: your weapon deals its Attack to a minion, then returns to your hand
+			const p = state.players[pi];
+			const w = p.weapon;
+			const t = chosenCreature();
+			if (w && t) damageCreature(state, t, w.attack || 0, source || null);
+			if (w) {
+				const def = state.cardsById[w.id] || { id: w.id, name: w.name, type: 'weapon', cost: w.cost, attack: w.baseAttack ?? w.attack, durability: w.baseDurability ?? w.durability };
+				if (p.hand.length < MAX_HAND) { const cp = instantiate(def, pi); cp.zone = 'hand'; p.hand.push(cp); emit(state, { type: 'conjure', player: pi, card: cp, color: null }); }
+				p.weapon = null;
+				emit(state, { type: 'weaponBroken', player: pi });
+			}
+			sweepDeaths(state);
+});
+
 register('buff-future-demons', ({ state, pi }) => {
 			// Sargeras (Legion Invasion): future Demons you summon get +2 Health and Taunt (see summon)
 			state.players[pi].legionInvasion = true;

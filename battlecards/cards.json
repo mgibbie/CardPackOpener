@@ -153387,6 +153387,413 @@
           "type": "summon-copies-of-damaged"
         }
       ]
+    },
+    {
+      "id": "more_arms",
+      "name": "More Arms!",
+      "type": "sorcery",
+      "cost": 2,
+      "cardClass": "priest",
+      "rarity": "common",
+      "set": "BOOMSDAY",
+      "token": true,
+      "collectible": false,
+      "description": "Give a minion +2/+2.",
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 2,
+          "health": 2,
+          "target": "creature"
+        }
+      ]
+    },
+    {
+      "id": "explore_ungoro_discover",
+      "name": "Discover",
+      "type": "sorcery",
+      "cost": 1,
+      "cardClass": "warrior",
+      "rarity": "common",
+      "set": "UNGORO",
+      "token": true,
+      "collectible": false,
+      "description": "Discover a card.",
+      "effects": [
+        {
+          "type": "discover"
+        }
+      ]
+    },
+    {
+      "id": "crushing_walls",
+      "name": "Crushing Walls",
+      "type": "sorcery",
+      "cost": 7,
+      "cardClass": "hunter",
+      "rarity": "epic",
+      "set": "LOOTAPALOOZA",
+      "collectible": true,
+      "description": "Destroy your opponent's left and right-most minions.",
+      "effects": [
+        {
+          "type": "destroy-enemy-edges"
+        }
+      ]
+    },
+    {
+      "id": "darkest_hour",
+      "name": "Darkest Hour",
+      "type": "sorcery",
+      "cost": 6,
+      "cardClass": "warlock",
+      "rarity": "epic",
+      "set": "DALARAN",
+      "collectible": true,
+      "tribe": "Shadow",
+      "description": "Destroy all friendly minions. For each one, summon a random minion from your deck.",
+      "effects": [
+        {
+          "type": "darkest-hour"
+        }
+      ]
+    },
+    {
+      "id": "lightbomb",
+      "name": "Lightbomb",
+      "type": "sorcery",
+      "cost": 6,
+      "cardClass": "priest",
+      "rarity": "epic",
+      "set": "PLACEHOLDER_202204",
+      "collectible": true,
+      "tribe": "Holy",
+      "description": "Deal damage to each minion equal to its Attack.",
+      "effects": [
+        {
+          "type": "damage-all-minions-by-own-attack"
+        }
+      ]
+    },
+    {
+      "id": "mass_hysteria",
+      "name": "Mass Hysteria",
+      "type": "sorcery",
+      "cost": 5,
+      "cardClass": "priest",
+      "rarity": "rare",
+      "set": "TROLL",
+      "collectible": true,
+      "tribe": "Shadow",
+      "description": "Force each minion to attack another random minion.",
+      "effects": [
+        {
+          "type": "force-all-minions-attack-random"
+        }
+      ]
+    },
+    {
+      "id": "echo_of_medivh",
+      "name": "Echo of Medivh",
+      "type": "sorcery",
+      "cost": 4,
+      "cardClass": "mage",
+      "rarity": "epic",
+      "set": "GVG",
+      "collectible": true,
+      "tribe": "Arcane",
+      "description": "Put a copy of each friendly minion into your hand.",
+      "effects": [
+        {
+          "type": "copy-each-friendly-to-hand"
+        }
+      ]
+    },
+    {
+      "id": "demonic_project",
+      "name": "Demonic Project",
+      "type": "sorcery",
+      "cost": 2,
+      "cardClass": "warlock",
+      "rarity": "common",
+      "set": "BOOMSDAY",
+      "collectible": true,
+      "tribe": "Shadow",
+      "description": "Each player transforms a random minion in their hand into a Demon.",
+      "effects": [
+        {
+          "type": "demonic-project"
+        }
+      ]
+    },
+    {
+      "id": "conjurers_calling",
+      "name": "Conjurer's Calling",
+      "type": "sorcery",
+      "cost": 3,
+      "cardClass": "mage",
+      "rarity": "rare",
+      "set": "DALARAN",
+      "collectible": true,
+      "tribe": "Arcane",
+      "description": "Twinspell Destroy a minion. Summon 2 minions of the same Cost to replace it.",
+      "effects": [
+        {
+          "type": "destroy-summon-random-of-cost",
+          "target": "creature",
+          "count": 2
+        }
+      ]
+    },
+    {
+      "id": "hallucination",
+      "name": "Hallucination",
+      "type": "sorcery",
+      "cost": 1,
+      "cardClass": "priest",
+      "rarity": "rare",
+      "set": "SPACE",
+      "collectible": true,
+      "description": "Summon a copy of a friendly Protoss minion. It takes double damage.",
+      "effects": [
+        {
+          "type": "summon-copy-of-target-buffed",
+          "target": "friendly-creature"
+        }
+      ]
+    },
+    {
+      "id": "psychic_scream",
+      "name": "Psychic Scream",
+      "type": "sorcery",
+      "cost": 7,
+      "cardClass": "priest",
+      "rarity": "epic",
+      "set": "LOOTAPALOOZA",
+      "collectible": true,
+      "tribe": "Shadow",
+      "description": "Shuffle all minions into your opponent's deck.",
+      "effects": [
+        {
+          "type": "shuffle-all-minions-into-enemy-deck"
+        }
+      ]
+    },
+    {
+      "id": "explore_ungoro",
+      "name": "Explore Un'Goro",
+      "type": "sorcery",
+      "cost": 2,
+      "cardClass": "warrior",
+      "rarity": "epic",
+      "set": "UNGORO",
+      "collectible": true,
+      "description": "Replace your deck with copies of \"Discover a card.\"",
+      "effects": [
+        {
+          "type": "replace-deck-with-card",
+          "cardId": "explore_ungoro_discover"
+        }
+      ]
+    },
+    {
+      "id": "academic_espionage",
+      "name": "Academic Espionage",
+      "type": "sorcery",
+      "cost": 4,
+      "cardClass": "rogue",
+      "rarity": "epic",
+      "set": "BOOMSDAY",
+      "collectible": true,
+      "description": "Shuffle 10 cards from your opponent's class into your deck. They cost (1).",
+      "effects": [
+        {
+          "type": "shuffle-enemy-class-cards",
+          "count": 10
+        }
+      ]
+    },
+    {
+      "id": "masters_call",
+      "name": "Master's Call",
+      "type": "sorcery",
+      "cost": 3,
+      "cardClass": "hunter",
+      "rarity": "epic",
+      "set": "PLACEHOLDER_202204",
+      "collectible": true,
+      "description": "Discover a minion from your deck. If all 3 are Beasts, draw them all instead.",
+      "effects": [
+        {
+          "type": "search",
+          "cardType": "creature"
+        }
+      ]
+    },
+    {
+      "id": "prismatic_lens",
+      "name": "Prismatic Lens",
+      "type": "sorcery",
+      "cost": 4,
+      "cardClass": "paladin",
+      "rarity": "epic",
+      "set": "BOOMSDAY",
+      "collectible": true,
+      "description": "Draw a minion and a spell from your deck. Swap their Costs.",
+      "effects": [
+        {
+          "type": "draw-minion-spell-swap-cost"
+        }
+      ]
+    },
+    {
+      "id": "earthen_scales",
+      "name": "Earthen Scales",
+      "type": "sorcery",
+      "cost": 2,
+      "cardClass": "druid",
+      "rarity": "rare",
+      "set": "PLACEHOLDER_202204",
+      "collectible": true,
+      "tribe": "Nature",
+      "description": "Give a friendly minion +1/+1, then gain Armor equal to its Attack.",
+      "effects": [
+        {
+          "type": "buff-target-gain-armor-by-attack",
+          "target": "friendly-creature",
+          "attack": 1,
+          "health": 1
+        }
+      ]
+    },
+    {
+      "id": "bring_it_on",
+      "name": "Bring It On!",
+      "type": "sorcery",
+      "cost": 2,
+      "cardClass": "warrior",
+      "rarity": "epic",
+      "set": "PLACEHOLDER_202204",
+      "collectible": true,
+      "description": "Gain 10 Armor. Reduce the Cost of minions in your opponent's hand by (2).",
+      "effects": [
+        {
+          "type": "armor",
+          "value": 10
+        },
+        {
+          "type": "reduce-all-enemy-hand-minions-cost",
+          "value": 2
+        }
+      ]
+    },
+    {
+      "id": "weapons_project",
+      "name": "Weapons Project",
+      "type": "sorcery",
+      "cost": 2,
+      "cardClass": "warrior",
+      "rarity": "common",
+      "set": "BOOMSDAY",
+      "collectible": true,
+      "description": "Each player equips a 2/3 weapon and gains 6 Armor.",
+      "effects": [
+        {
+          "type": "equip",
+          "name": "Trusty Wrench",
+          "attack": 2,
+          "durability": 3
+        },
+        {
+          "type": "armor",
+          "value": 6
+        },
+        {
+          "type": "enemy-equip",
+          "name": "Trusty Wrench",
+          "attack": 2,
+          "durability": 3
+        },
+        {
+          "type": "enemy-armor",
+          "value": 6
+        }
+      ]
+    },
+    {
+      "id": "living_mana",
+      "name": "Living Mana",
+      "type": "sorcery",
+      "cost": 5,
+      "cardClass": "druid",
+      "rarity": "epic",
+      "set": "UNGORO",
+      "collectible": true,
+      "tribe": "Nature",
+      "description": "Transform your Mana Crystals into 2/2 Treants. Recover the mana when they die.",
+      "effects": [
+        {
+          "type": "living-mana"
+        }
+      ]
+    },
+    {
+      "id": "doomerang",
+      "name": "Doomerang",
+      "type": "sorcery",
+      "cost": 1,
+      "cardClass": "rogue",
+      "rarity": "epic",
+      "set": "PLACEHOLDER_202204",
+      "collectible": true,
+      "description": "Throw your weapon at a minion. It deals its damage, then returns to your hand.",
+      "effects": [
+        {
+          "type": "throw-weapon",
+          "target": "creature"
+        }
+      ]
+    },
+    {
+      "id": "flarks_boom_zooka",
+      "name": "Flark's Boom-Zooka",
+      "type": "sorcery",
+      "cost": 7,
+      "cardClass": "hunter",
+      "rarity": "legendary",
+      "set": "BOOMSDAY",
+      "collectible": true,
+      "description": "Summon 3 minions from your deck. They attack enemy minions, then die.",
+      "effects": [
+        {
+          "type": "summon-from-deck-suicide",
+          "count": 3,
+          "targetEnemyMinions": true
+        }
+      ]
+    },
+    {
+      "id": "extra_arms",
+      "name": "Extra Arms",
+      "type": "sorcery",
+      "cost": 3,
+      "cardClass": "priest",
+      "rarity": "rare",
+      "set": "BOOMSDAY",
+      "collectible": true,
+      "description": "Give a minion +2/+2. Add 'More Arms!' to your hand that gives +2/+2.",
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 2,
+          "health": 2,
+          "target": "creature"
+        },
+        {
+          "type": "add-card",
+          "id": "more_arms"
+        }
+      ]
     }
   ]
 }

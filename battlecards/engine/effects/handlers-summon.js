@@ -951,14 +951,33 @@ register('copy-summon', ({ state, pi, target, source, enemies, scaled, hm, pickE
 
 register('summon-from-deck-suicide', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => { {
 			// Maxima Blastenheimer: summon a minion from your deck; it attacks the enemy hero, then dies
+			// Flark's Boom-Zooka: `count` minions, each attacking a random enemy minion (targetEnemyMinions)
 			const p = state.players[pi];
-			const idxs = p.deck.map((id, i) => [id, i]).filter(([id]) => state.cardsById[id]?.type === 'creature');
-			if (idxs.length) {
+			for (let s4 = 0; s4 < (e.count || 1); s4++) {
+				const idxs = p.deck.map((id, i) => [id, i]).filter(([id]) => state.cardsById[id]?.type === 'creature');
+				if (!idxs.length) break;
 				const [id, di] = idxs[Math.floor(state.rng() * idxs.length)];
 				p.deck.splice(di, 1);
 				const c = summon(state, pi, state.cardsById[id]);
-				if (c) { const foe = enemies[0]; if (foe != null) resolveCombat(state, pi, c.uid, { type: 'hero', player: foe }); if (!isDead(c)) { c.damage = c.maxHealth; emit(state, { type: 'destroy', uid: c.uid }); sweepDeaths(state); } }
+				if (!c) continue;
+				if (e.targetEnemyMinions) {
+					const foes = [];
+					for (const o of enemies) for (const fc of state.players[o].board) if (!isDead(fc) && fc.type !== 'location') foes.push(fc);
+					if (foes.length) { const tgt = foes[Math.floor(state.rng() * foes.length)]; resolveCombat(state, pi, c.uid, { type: 'creature', uid: tgt.uid, player: tgt.controller }); }
+				} else { const foe = enemies[0]; if (foe != null) resolveCombat(state, pi, c.uid, { type: 'hero', player: foe }); }
+				if (!isDead(c)) { c.damage = c.maxHealth; emit(state, { type: 'destroy', uid: c.uid }); sweepDeaths(state); }
 			}
+} });
+
+
+register('living-mana', ({ state, pi }) => { {
+			// Living Mana: turn your Mana Crystals into 2/2 Treants; refund a crystal when each dies
+			const p = state.players[pi];
+			const n = p.mana.max || 0;
+			if (n <= 0) return;
+			p.mana.max = 0; p.mana.cur = 0; p.mana.bonus = 0;
+			emit(state, { type: 'manaGained', player: pi, amount: -n, mana: 0 });
+			for (let k = 0; k < n; k++) summon(state, pi, { id: 'token_mana_treant', name: 'Treant', type: 'creature', cost: 1, rarity: 'common', token: true, description: 'Deathrattle: Refresh an empty Mana Crystal.', attack: 2, health: 2, keywords: ['deathrattle'], deathrattle: [{ type: 'gain-empty-mana-crystal', value: 1 }] });
 } });
 
 
