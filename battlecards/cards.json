@@ -58452,7 +58452,6 @@
       "type": "instant",
       "cost": 2,
       "colors": [
-        "R",
         "W"
       ],
       "cardClass": "neutral",
@@ -58478,8 +58477,7 @@
       "type": "instant",
       "cost": 2,
       "colors": [
-        "B",
-        "R"
+        "B"
       ],
       "cardClass": "neutral",
       "rarity": "common",
