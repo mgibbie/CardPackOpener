@@ -140,7 +140,7 @@
       "cardClass": "centurion",
       "cost": 2,
       "rarity": "common",
-      "description": "Give a creature +0/+3 & Taunt."
+      "description": "Target creature gains +0/+3 & Taunt."
     },
     {
       "id": "rallying_cry",
@@ -1392,7 +1392,7 @@
           "target": "friendly-creature"
         }
       ],
-      "description": "Battlecry: Give a creature you control +1/+1."
+      "description": "Battlecry: Target creature you control gains +1/+1."
     },
     {
       "id": "silverback_patriarch",
@@ -14016,7 +14016,7 @@
           "target": "creature"
         }
       ],
-      "description": "Give a creature Divine Shield."
+      "description": "Target creature gains Divine Shield."
     },
     {
       "id": "humility",
@@ -14084,7 +14084,7 @@
           "value": 1
         }
       ],
-      "description": "Give a creature +2 Health. Draw 1 card."
+      "description": "Target creature gains +2 Health. Draw 1 card."
     },
     {
       "id": "rockbiter_weapon",
@@ -14248,7 +14248,7 @@
           "target": "creature"
         }
       ],
-      "description": "Give a creature Taunt & +2/+2."
+      "description": "Target creature gains Taunt & +2/+2."
     },
     {
       "id": "power_of_the_wild",
@@ -14335,7 +14335,7 @@
           "target": "creature"
         }
       ],
-      "description": "Give a creature Windfury."
+      "description": "Target creature gains Windfury."
     },
     {
       "id": "wrath",
@@ -14456,7 +14456,7 @@
           "target": "friendly-creature"
         }
       ],
-      "description": "Give a creature you control +2 Attack & Charge."
+      "description": "Target creature you control gains +2 Attack & Charge."
     },
     {
       "id": "coldlight_seer",
@@ -14553,7 +14553,7 @@
           ]
         }
       ],
-      "description": "Choose one: Give a creature +4 Attack; or Give a creature +4 Health & Taunt."
+      "description": "Choose one: Target creature gains +4 Attack; or Target creature gains +4 Health & Taunt."
     },
     {
       "id": "mind_control_tech",
@@ -14725,7 +14725,7 @@
           "target": "creature"
         }
       ],
-      "description": "Battlecry: Give a creature +2 Attack until end of turn."
+      "description": "Battlecry: Target creature gains +2 Attack until end of turn."
     },
     {
       "id": "defender_of_argus",
@@ -14822,7 +14822,7 @@
           "target": "friendly-creature"
         }
       ],
-      "description": "Battlecry: Give a creature you control Stealth."
+      "description": "Battlecry: Target creature you control gains Stealth."
     },
     {
       "id": "mindgames",
@@ -14928,7 +14928,7 @@
           "target": "friendly-creature"
         }
       ],
-      "description": "Battlecry: Give a creature you control Windfury."
+      "description": "Battlecry: Target creature you control gains Windfury."
     },
     {
       "id": "blessed_champion",
@@ -15252,7 +15252,7 @@
           "target": "friendly-creature"
         }
       ],
-      "description": "Battlecry: Give a creature you control +3 Health."
+      "description": "Battlecry: Target creature you control gains +3 Health."
     },
     {
       "id": "the_black_knight",
@@ -15881,7 +15881,7 @@
           "target": "creature"
         }
       ],
-      "description": "Give a creature +2 Attack.\nCombo: Give a creature +4 Attack."
+      "description": "Target creature gains +2 Attack.\nCombo: Target creature gains +4 Attack."
     },
     {
       "id": "defias_ringleader",
@@ -16845,7 +16845,7 @@
           "target": "friendly-creature"
         }
       ],
-      "description": "Give a creature you control +4/+4. It dies at the end of the turn."
+      "description": "Target creature you control gains +4/+4. It dies at the end of the turn."
     },
     {
       "id": "redemption",
@@ -20911,7 +20911,7 @@
       "cost": 3,
       "rarity": "common",
       "set": "paper",
-      "description": "Choose one - • Exile target creature with 3 or more Attack. • Draw 2 cards & take 2 damage. • Give a creature +2/+2. • Give a creature Taunt. • Give a creature Medic 2.",
+      "description": "Choose one - • Exile target creature with 3 or more Attack. • Draw 2 cards & take 2 damage. • Target creature gains +2/+2. • Target creature gains Taunt. • Target creature gains Medic 2.",
       "type": "instant",
       "choices": [
         {
@@ -21094,7 +21094,7 @@
           "target": "friendly-creature"
         }
       ],
-      "description": "Battlecry: Give a creature you control +1 Attack.",
+      "description": "Battlecry: Target creature you control gains +1 Attack.",
       "set": "hsx"
     },
     {
@@ -21289,7 +21289,7 @@
           "target": "creature"
         }
       ],
-      "description": "Give a creature +1/+2.",
+      "description": "Target creature gains +1/+2.",
       "set": "hsx"
     },
     {
@@ -22388,7 +22388,7 @@
           "value": 1
         }
       ],
-      "description": "Give a creature +2/+1. Draw 1 card.",
+      "description": "Target creature gains +2/+1. Draw 1 card.",
       "set": "hsx"
     },
     {
@@ -22658,7 +22658,7 @@
           "value": 1
         }
       ],
-      "description": "Give a creature Divine Shield. Draw 1 card.",
+      "description": "Target creature gains Divine Shield. Draw 1 card.",
       "set": "hsx"
     },
     {
@@ -22739,7 +22739,7 @@
           "value": 1
         }
       ],
-      "description": "Give a creature Rush. Draw 1 card.",
+      "description": "Target creature gains Rush. Draw 1 card.",
       "set": "hsx"
     },
     {
@@ -23964,7 +23964,7 @@
           "target": "friendly-creature"
         }
       ],
-      "description": "Battlecry: Give a creature you control +3 Health.",
+      "description": "Battlecry: Target creature you control gains +3 Health.",
       "set": "hsx"
     },
     {
@@ -24284,7 +24284,7 @@
           "target": "own-hero"
         }
       ],
-      "description": "Give a creature +3/+3 & Divine Shield. Deal 3 damage to your own hero.",
+      "description": "Target creature gains +3/+3 & Divine Shield. Deal 3 damage to your own hero.",
       "set": "hsx"
     },
     {
@@ -26008,7 +26008,7 @@
           "target": "friendly-creature"
         }
       ],
-      "description": "Combo: Give a creature you control +4 Attack.",
+      "description": "Combo: Target creature you control gains +4 Attack.",
       "set": "hsx"
     },
     {
@@ -26220,7 +26220,7 @@
           "target": "friendly-creature"
         }
       ],
-      "description": "Battlecry: Give a creature you control +3/+3.\nOverload: 1 mana locked next turn.",
+      "description": "Battlecry: Target creature you control gains +3/+3.\nOverload: 1 mana locked next turn.",
       "set": "hsx"
     },
     {
@@ -26313,7 +26313,7 @@
           "target": "creature"
         }
       ],
-      "description": "Give a creature +2/+6.",
+      "description": "Target creature gains +2/+6.",
       "set": "hsx"
     },
     {
@@ -27069,7 +27069,7 @@
           "target": "friendly-creature"
         }
       ],
-      "description": "Battlecry: Give a creature you control +4/+4 & Taunt.",
+      "description": "Battlecry: Target creature you control gains +4/+4 & Taunt.",
       "set": "hsx",
       "tribe": "Undead/Beast"
     },
@@ -28517,7 +28517,7 @@
           "target": "other-creatures"
         }
       ],
-      "description": "Give a creature you control +3/+3. Deal 1 damage to every other creature.\nOverload: 1 mana locked next turn.",
+      "description": "Target creature you control gains +3/+3. Deal 1 damage to every other creature.\nOverload: 1 mana locked next turn.",
       "set": "hsx"
     },
     {
@@ -29362,7 +29362,7 @@
           "cost": 2
         }
       ],
-      "description": "Give a creature +2/+2. Create a random 2-cost creature token.",
+      "description": "Target creature gains +2/+2. Create a random 2-cost creature token.",
       "set": "hsx"
     },
     {
@@ -31379,7 +31379,7 @@
           "value": 2
         }
       ],
-      "description": "Give a creature you control +3 Attack. Your hero has +2 Attack this turn.",
+      "description": "Target creature you control gains +3 Attack. Your hero has +2 Attack this turn.",
       "set": "hsx"
     },
     {
@@ -31469,7 +31469,7 @@
           "target": "friendly-creature"
         }
       ],
-      "description": "Battlecry: Give a creature you control +2 Health.",
+      "description": "Battlecry: Target creature you control gains +2 Health.",
       "set": "hsx"
     },
     {
@@ -31668,7 +31668,7 @@
           "target": "creature"
         }
       ],
-      "description": "Taunt.\nBattlecry: Give a creature Taunt.",
+      "description": "Taunt.\nBattlecry: Target creature gains Taunt.",
       "set": "hsx"
     },
     {
@@ -32834,7 +32834,7 @@
           ]
         }
       ],
-      "description": "Choose one: Give a creature +2/+4 & Taunt; or Create two 3/2 Raptor creature tokens.",
+      "description": "Choose one: Target creature gains +2/+4 & Taunt; or Create two 3/2 Raptor creature tokens.",
       "set": "hsx"
     },
     {
@@ -32966,7 +32966,7 @@
           "target": "creature"
         }
       ],
-      "description": "Give a creature +2/+6.",
+      "description": "Target creature gains +2/+6.",
       "set": "hsx"
     },
     {
@@ -40303,7 +40303,7 @@
           "target": "creature"
         }
       ],
-      "description": "Give a creature +1/+2.\nEcho: replays all turn while you have the mana.",
+      "description": "Target creature gains +1/+2.\nEcho: replays all turn while you have the mana.",
       "set": "hsx"
     },
     {
@@ -40809,7 +40809,7 @@
           ]
         }
       ],
-      "description": "Give a creature you control +2 Attack. If it's a Beast, give it Rush."
+      "description": "Target creature you control gains +2 Attack. If it's a Beast, give it Rush."
     },
     {
       "id": "cathedral_of_atonement",
@@ -40837,7 +40837,7 @@
           ]
         }
       ],
-      "description": "Give a creature +2/+1 & draw a card."
+      "description": "Target creature gains +2/+1 & draw a card."
     },
     {
       "id": "chamber_of_aspects",
@@ -41363,7 +41363,7 @@
           ]
         }
       ],
-      "description": "Give a creature +2 Health & Taunt, then Freeze it."
+      "description": "Target creature gains +2 Health & Taunt, then Freeze it."
     },
     {
       "id": "ultralisk_cavern",
@@ -41458,7 +41458,7 @@
           ]
         }
       ],
-      "description": "Give a creature you control +1/+1. Repeat for each Imp you control."
+      "description": "Target creature you control gains +1/+1. Repeat for each Imp you control."
     },
     {
       "id": "skeletal_sidekick",
@@ -50565,7 +50565,7 @@
       "cost": 3,
       "rarity": "rare",
       "set": "hs",
-      "description": "Give a creature Divine Shield, then create a 1/1 copy of it creature token.",
+      "description": "Target creature gains Divine Shield, then create a 1/1 copy of it creature token.",
       "type": "sorcery",
       "effects": [
         {
@@ -52060,7 +52060,7 @@
       "cost": 2,
       "rarity": "common",
       "set": "hs",
-      "description": "Give a creature Divine Shield. Excavate a treasure.",
+      "description": "Target creature gains Divine Shield. Excavate a treasure.",
       "type": "sorcery",
       "effects": [
         {
@@ -54955,7 +54955,7 @@
       "cost": 1,
       "rarity": "common",
       "set": "hs",
-      "description": "Give a creature +1 Attack. Invoke Galakrond.",
+      "description": "Target creature gains +1 Attack. Invoke Galakrond.",
       "type": "sorcery",
       "effects": [
         {
@@ -57279,7 +57279,7 @@
           "id": "cub"
         }
       ],
-      "description": "Give a creature +1/+1.\nCreate a 1/1 Cub creature token.\nAdd a Cub to your hand."
+      "description": "Target creature gains +1/+1.\nCreate a 1/1 Cub creature token.\nAdd a Cub to your hand."
     },
     {
       "id": "cub",
@@ -58165,7 +58165,7 @@
       "cardClass": "neutral",
       "rarity": "common",
       "set": "wubrg",
-      "description": "Give a creature Immune for 3 turns.",
+      "description": "Target creature gains Immune for 3 turns.",
       "effects": [
         {
           "type": "grant-immune-turn",
@@ -64146,7 +64146,7 @@
       "keywords": [
         "battlecry"
       ],
-      "description": "Battlecry: Give a creature -3 Attack this turn.",
+      "description": "Battlecry: Target creature gains -3 Attack this turn.",
       "effects": [
         {
           "type": "temp-buff",
@@ -68355,7 +68355,7 @@
       "token": true,
       "rarity": "common",
       "set": "OG",
-      "description": "Give a creature +1/+1.",
+      "description": "Target creature gains +1/+1.",
       "effects": [
         {
           "type": "buff",
@@ -71542,7 +71542,7 @@
       "keywords": [
         "battlecry"
       ],
-      "description": "Battlecry: Give a creature you control Spell Damage +1.",
+      "description": "Battlecry: Target creature you control gains Spell Damage +1.",
       "effects": [
         {
           "type": "grant-spell-damage",
@@ -71615,7 +71615,7 @@
       "keywords": [
         "battlecry"
       ],
-      "description": "Battlecry: Give a creature you control Immune this turn.",
+      "description": "Battlecry: Target creature you control gains Immune this turn.",
       "effects": [
         {
           "type": "temp-immune",
@@ -71742,7 +71742,7 @@
       "keywords": [
         "combo"
       ],
-      "description": "Combo: Give a creature you control Poisonous.",
+      "description": "Combo: Target creature you control gains Poisonous.",
       "effects": [
         {
           "type": "grant",
@@ -71955,7 +71955,7 @@
       "keywords": [
         "battlecry"
       ],
-      "description": "Battlecry: Give a creature you control \"Deathrattle: Resummon this creature.\"",
+      "description": "Battlecry: Target creature you control gains \"Deathrattle: Resummon this creature.\"",
       "effects": [
         {
           "type": "grant-deathrattle",
@@ -76933,7 +76933,7 @@
       "token": true,
       "rarity": "common",
       "set": "TROLL",
-      "description": "Give a creature +1/+1.",
+      "description": "Target creature gains +1/+1.",
       "effects": [
         {
           "type": "buff",
@@ -78688,7 +78688,7 @@
       "keywords": [
         "battlecry"
       ],
-      "description": "Battlecry: Give a creature you control +1 Attack and Rush.",
+      "description": "Battlecry: Target creature you control gains +1 Attack and Rush.",
       "effects": [
         {
           "type": "buff",
@@ -78740,7 +78740,7 @@
       "keywords": [
         "battlecry"
       ],
-      "description": "Battlecry: Give a creature you control +1/+1.",
+      "description": "Battlecry: Target creature you control gains +1/+1.",
       "effects": [
         {
           "type": "buff",
@@ -86614,7 +86614,7 @@
       "collectible": false,
       "rarity": "common",
       "set": "DARKMOON_FAIRE",
-      "description": "Give a creature +1/+1.",
+      "description": "Target creature gains +1/+1.",
       "effects": [
         {
           "type": "buff",
@@ -92793,7 +92793,7 @@
       "collectible": false,
       "rarity": "common",
       "set": "ALTERAC_VALLEY",
-      "description": "Give a creature +2 Health.",
+      "description": "Target creature gains +2 Health.",
       "effects": [
         {
           "type": "buff",
@@ -96201,7 +96201,7 @@
       "health": 3,
       "rarity": "common",
       "set": "REVENDRETH",
-      "description": "Choose One - Silence a creature; or Give a creature Immune this turn.",
+      "description": "Choose One - Silence a creature; or Target creature gains Immune this turn.",
       "choices": [
         {
           "text": "Silence a minion",
@@ -98721,7 +98721,7 @@
       "health": 2,
       "rarity": "common",
       "set": "BATTLE_OF_THE_BANDS",
-      "description": "Choose One - Give a creature you control +2 Attack and Rush; or +2 Health and Lifesteal.",
+      "description": "Choose One - Target creature you control gains +2 Attack and Rush; or +2 Health and Lifesteal.",
       "choices": [
         {
           "text": "+2 Attack and Rush",
@@ -99125,7 +99125,7 @@
       "keywords": [
         "battlecry"
       ],
-      "description": "Battlecry: Give a creature you control Attack and Health equal to this creature's.",
+      "description": "Battlecry: Target creature you control gains Attack and Health equal to this creature's.",
       "effects": [
         {
           "type": "buff-target-by-source-stats",
@@ -101176,7 +101176,7 @@
       "keywords": [
         "battlecry"
       ],
-      "description": "Battlecry: Give a creature you control \"Deathrattle: Create a 2/2 Zombie creature token with Rush.\"",
+      "description": "Battlecry: Target creature you control gains \"Deathrattle: Create a 2/2 Zombie creature token with Rush.\"",
       "effects": [
         {
           "type": "grant-deathrattle",
@@ -111188,7 +111188,7 @@
       "keywords": [
         "battlecry"
       ],
-      "description": "Battlecry: Give a creature you control Lifesteal.",
+      "description": "Battlecry: Target creature you control gains Lifesteal.",
       "effects": [
         {
           "type": "grant",
@@ -111580,7 +111580,7 @@
       "keywords": [
         "battlecry"
       ],
-      "description": "Battlecry: Give a creature +3/+3 and Freeze it.",
+      "description": "Battlecry: Target creature gains +3/+3 and Freeze it.",
       "effects": [
         {
           "type": "buff",
@@ -115776,7 +115776,7 @@
       "keywords": [
         "battlecry"
       ],
-      "description": "Battlecry: If you've used your Hero Power this turn, give a creature you control +1/+2 and Rush.",
+      "description": "Battlecry: If you've used your Hero Power this turn, target creature you control gains +1/+2 and Rush.",
       "effects": [
         {
           "type": "conditional",
@@ -120298,7 +120298,7 @@
       "tribe": "Holy",
       "token": true,
       "collectible": false,
-      "description": "Give a creature +2/+2 and Divine Shield.",
+      "description": "Target creature gains +2/+2 and Divine Shield.",
       "effects": [
         {
           "type": "buff",
@@ -124667,7 +124667,7 @@
       "keywords": [
         "battlecry"
       ],
-      "description": "Battlecry: Give a creature you control Mega-Windfury. It can't attack heroes.",
+      "description": "Battlecry: Target creature you control gains Mega-Windfury. It can't attack heroes.",
       "effects": [
         {
           "type": "air-support",
@@ -125646,7 +125646,7 @@
       "keywords": [
         "battlecry"
       ],
-      "description": "Prepare. Battlecry: Give a creature you control +2 Attack and Rush.",
+      "description": "Prepare. Battlecry: Target creature you control gains +2 Attack and Rush.",
       "effects": [
         {
           "type": "buff",
@@ -126497,7 +126497,7 @@
       "set": "ESCAPEFROM_VIOLET_HOLD",
       "token": true,
       "collectible": false,
-      "description": "Give a creature +4/+4 and Rush.",
+      "description": "Target creature gains +4/+4 and Rush.",
       "effects": [
         {
           "type": "buff",
@@ -127553,7 +127553,7 @@
       "keywords": [
         "battlecry"
       ],
-      "description": "Battlecry: Give a creature an opponent controls -2 Attack until your next turn.",
+      "description": "Battlecry: Target creature an opponent controls gains -2 Attack until your next turn.",
       "effects": [
         {
           "type": "debuff-until-your-next",
@@ -127761,7 +127761,7 @@
       "keywords": [
         "battlecry"
       ],
-      "description": "Battlecry: Give a creature you control Poisonous.",
+      "description": "Battlecry: Target creature you control gains Poisonous.",
       "effects": [
         {
           "type": "grant",
@@ -130084,7 +130084,7 @@
           "id": "infinite_banana"
         }
       ],
-      "description": "Give a creature +1/+1. Get another Infinite Banana.",
+      "description": "Target creature gains +1/+1. Get another Infinite Banana.",
       "token": true,
       "rarity": "common"
     },
@@ -130430,7 +130430,7 @@
           ]
         }
       ],
-      "description": "Choose One - Give a creature +2 Health; or -2 Health.",
+      "description": "Choose One - Target creature gains +2 Health; or -2 Health.",
       "token": true,
       "rarity": "common"
     },
@@ -130555,7 +130555,7 @@
           "target": "creature"
         }
       ],
-      "description": "Give a creature +2/+2 and Divine Shield.",
+      "description": "Target creature gains +2/+2 and Divine Shield.",
       "token": true,
       "rarity": "common"
     },
@@ -130843,7 +130843,7 @@
           "target": "creature"
         }
       ],
-      "description": "Give a creature +5/+5. At the start of your next turn, destroy it.",
+      "description": "Target creature gains +5/+5. At the start of your next turn, destroy it.",
       "token": true,
       "rarity": "common"
     },
@@ -130997,7 +130997,7 @@
       "rarity": "legendary",
       "set": "DALARAN_HEIST",
       "token": true,
-      "description": "Give a creature Charge, Windfury, Divine Shield, Lifesteal, Poisonous, Taunt, & Stealth.",
+      "description": "Target creature gains Charge, Windfury, Divine Shield, Lifesteal, Poisonous, Taunt, & Stealth.",
       "treasure": true,
       "effects": [
         {
@@ -131582,7 +131582,7 @@
       "rarity": "legendary",
       "set": "DALARAN_HEIST",
       "token": true,
-      "description": "Give a creature you control +2/+2. Create two tokens that are copies of it.",
+      "description": "Target creature you control gains +2/+2. Create two tokens that are copies of it.",
       "treasure": true,
       "effects": [
         {
@@ -131714,7 +131714,7 @@
       "rarity": "basic",
       "set": "DALARAN_HEIST",
       "token": true,
-      "description": "Hero Power (2): Give a creature +1/+1.",
+      "description": "Hero Power (2): Target creature gains +1/+1.",
       "power": {
         "cost": 2,
         "effects": [
@@ -131736,7 +131736,7 @@
       "rarity": "basic",
       "set": "DALARAN_HEIST",
       "token": true,
-      "description": "Hero Power (2): Give a creature +2 Attack this turn.",
+      "description": "Hero Power (2): Target creature gains +2 Attack this turn.",
       "power": {
         "cost": 2,
         "effects": [
@@ -131859,7 +131859,7 @@
       "rarity": "basic",
       "set": "DALARAN_HEIST",
       "token": true,
-      "description": "Hero Power (2): Give a creature you control Divine Shield.",
+      "description": "Hero Power (2): Target creature you control gains Divine Shield.",
       "power": {
         "cost": 2,
         "effects": [
@@ -131900,7 +131900,7 @@
       "rarity": "basic",
       "set": "DALARAN_HEIST",
       "token": true,
-      "description": "Hero Power (1): Give a creature -2 Attack until your next turn.",
+      "description": "Hero Power (1): Target creature gains -2 Attack until your next turn.",
       "power": {
         "cost": 1,
         "effects": [
@@ -132561,7 +132561,7 @@
       "rarity": "basic",
       "set": "TOMBS_OF_TERROR",
       "token": true,
-      "description": "Hero Power (2): Give a creature Divine Shield & Windfury.",
+      "description": "Hero Power (2): Target creature gains Divine Shield & Windfury.",
       "power": {
         "cost": 2,
         "effects": [
@@ -132873,7 +132873,7 @@
       "set": "TOMBS_OF_TERROR",
       "token": true,
       "treasure": true,
-      "description": "Give a creature +2/+2 & Spell Damage +2.",
+      "description": "Target creature gains +2/+2 & Spell Damage +2.",
       "effects": [
         {
           "type": "buff",
@@ -133479,7 +133479,7 @@
       "set": "TOMBS_OF_TERROR",
       "token": true,
       "treasure": true,
-      "description": "Give a creature you control +3/+3.",
+      "description": "Target creature you control gains +3/+3.",
       "effects": [
         {
           "type": "buff",
@@ -135595,7 +135595,7 @@
           }
         ]
       },
-      "description": "Hero Power (2): Give a creature Poisonous."
+      "description": "Hero Power (2): Target creature gains Poisonous."
     },
     {
       "id": "duelshp_roguish_maneuvers",
@@ -135806,7 +135806,7 @@
       "set": "DUELS",
       "token": true,
       "collectible": false,
-      "description": "Give a creature +5/+5.",
+      "description": "Target creature gains +5/+5.",
       "effects": [
         {
           "type": "buff",
@@ -138051,7 +138051,7 @@
       "durability": 2,
       "rarity": "common",
       "set": "CORE",
-      "description": "Spend 3 Corpses to give a creature you control Reborn.",
+      "description": "Spend 3 Corpses to have target creature you control gain Reborn.",
       "taps": [
         {
           "text": "Spend 3 Corpses to give a friendly minion Reborn.",
@@ -138674,7 +138674,7 @@
       "durability": 3,
       "rarity": "epic",
       "set": "ACROSS_THE_TIMEWAYS",
-      "description": "Give a creature +2/+1. Advance to the present!",
+      "description": "Target creature gains +2/+1. Advance to the present!",
       "taps": [
         {
           "text": "Give a minion +2/+1. Advance to the present!",
@@ -138702,7 +138702,7 @@
       "durability": 3,
       "rarity": "free",
       "set": "ACROSS_THE_TIMEWAYS",
-      "description": "Give a creature +2/+1 and 'Deathrattle: Deal 2 damage to target opponent.' Advance to the future!",
+      "description": "Target creature gains +2/+1 and 'Deathrattle: Deal 2 damage to target opponent.' Advance to the future!",
       "taps": [
         {
           "text": "Give a minion +2/+1 and 'Deathrattle: Deal 2 damage to the enemy hero.' Advance to the future!",
@@ -138743,7 +138743,7 @@
       "durability": 3,
       "rarity": "free",
       "set": "ACROSS_THE_TIMEWAYS",
-      "description": "Give a creature +2/+1, Divine Shield, and 'Deathrattle: Deal 2 damage to target opponent.'",
+      "description": "Target creature gains +2/+1, Divine Shield, and 'Deathrattle: Deal 2 damage to target opponent.'",
       "taps": [
         {
           "text": "Give a minion +2/+1, Divine Shield, and 'Deathrattle: Deal 2 damage to the enemy hero.'",
@@ -139695,7 +139695,7 @@
       "collectible": false,
       "token": true,
       "set": "ISLAND_VACATION",
-      "description": "Give a creature +1/+2.",
+      "description": "Target creature gains +1/+2.",
       "effects": [
         {
           "type": "buff",
@@ -144335,7 +144335,7 @@
       "rarity": "common",
       "set": "BATTLE_OF_THE_BANDS",
       "collectible": true,
-      "description": "Give a creature +1/+1.",
+      "description": "Target creature gains +1/+1.",
       "type": "sorcery",
       "effects": [
         {
@@ -144378,7 +144378,7 @@
       "set": "LOE",
       "collectible": true,
       "type": "sorcery",
-      "description": "Give a creature +1/+1 and \"Deathrattle: Get an Explorer's Hat.\"",
+      "description": "Target creature gains +1/+1 and \"Deathrattle: Get an Explorer's Hat.\"",
       "effects": [
         {
           "type": "buff",
@@ -144647,7 +144647,7 @@
       "rarity": "rare",
       "set": "TITANS",
       "collectible": true,
-      "description": "Give a creature +2 Attack and \"Excess damage dealt by attacks hits target opponent.\"",
+      "description": "Target creature gains +2 Attack and \"Excess damage dealt by attacks hits target opponent.\"",
       "effects": [
         {
           "type": "buff",
@@ -144847,7 +144847,7 @@
       "rarity": "rare",
       "set": "PLACEHOLDER_202204",
       "collectible": true,
-      "description": "Tradeable Give a creature +2/+3. After you Trade this, give a creature you control Rush.",
+      "description": "Tradeable. Target creature gains +2/+3. After you Trade this, give a creature you control Rush.",
       "tradeable": true,
       "keywords": [
         "tradeable"
@@ -145073,7 +145073,7 @@
       "rarity": "epic",
       "set": "BOOMSDAY",
       "collectible": true,
-      "description": "Give a creature you control +3/+3 and Rush. It dies at end of turn.",
+      "description": "Target creature you control gains +3/+3 and Rush. It dies at end of turn.",
       "effects": [
         {
           "type": "buff",
@@ -145405,7 +145405,7 @@
       "set": "EMERALD_DREAM",
       "tribe": "Nature",
       "collectible": true,
-      "description": "Give a creature +2/+2 and \"Deathrattle: Give a creature you control +2/+2 and this Deathrattle.\"",
+      "description": "Target creature gains +2/+2 and \"Deathrattle: Give a creature you control +2/+2 and this Deathrattle.\"",
       "effects": [
         {
           "type": "buff",
@@ -145758,7 +145758,7 @@
       "rarity": "common",
       "set": "ULDUM",
       "collectible": true,
-      "description": "Give a creature Reborn.",
+      "description": "Target creature gains Reborn.",
       "effects": [
         {
           "type": "grant",
@@ -145988,7 +145988,7 @@
       "set": "ALTERAC_VALLEY",
       "collectible": true,
       "tribe": "Holy",
-      "description": "Give a creature +2 Health, then set its Attack to be equal to its Health.",
+      "description": "Target creature gains +2 Health, then set its Attack to be equal to its Health.",
       "effects": [
         {
           "type": "buff",
@@ -146682,7 +146682,7 @@
       "rarity": "common",
       "set": "WHIZBANGS_WORKSHOP",
       "collectible": true,
-      "description": "Give a creature with Divine Shield +2/+3.",
+      "description": "Target creature with Divine Shield gains +2/+3.",
       "effects": [
         {
           "type": "buff",
@@ -146767,7 +146767,7 @@
           ]
         }
       ],
-      "description": "Give a creature +1/+2. Give it Divine Shield if you're holding a Dragon."
+      "description": "Target creature gains +1/+2. Give it Divine Shield if you're holding a Dragon."
     },
     {
       "id": "shield_of_honor",
@@ -146826,7 +146826,7 @@
       "set": "BLACK_TEMPLE",
       "collectible": true,
       "tribe": "Holy",
-      "description": "Give a creature +1/+1 and \"Deathrattle: Add a 'Libram of Wisdom' spell to your hand.\"",
+      "description": "Target creature gains +1/+1 and \"Deathrattle: Add a 'Libram of Wisdom' spell to your hand.\"",
       "effects": [
         {
           "type": "buff",
@@ -146855,7 +146855,7 @@
       "rarity": "rare",
       "set": "STORMWIND",
       "collectible": true,
-      "description": "Give a creature +1/+1 and Divine Shield. When it dies, create a Warhorse creature token.",
+      "description": "Target creature gains +1/+1 and Divine Shield. When it dies, create a Warhorse creature token.",
       "effects": [
         {
           "type": "buff",
@@ -147160,7 +147160,7 @@
       "collectible": true,
       "type": "sorcery",
       "tribe": "Nature",
-      "description": "Give a creature +1/+3 and Taunt. Costs (0) if you have at least 7 Mana Crystals.",
+      "description": "Target creature gains +1/+3 and Taunt. Costs (0) if you have at least 7 Mana Crystals.",
       "effects": [
         {
           "type": "buff",
@@ -147315,7 +147315,7 @@
       "rarity": "common",
       "set": "OG",
       "collectible": true,
-      "description": "Give a creature +2/+2. If it's a Beast, draw a card.",
+      "description": "Target creature gains +2/+2. If it's a Beast, draw a card.",
       "effects": [
         {
           "type": "buff",
@@ -147492,7 +147492,7 @@
       "type": "sorcery",
       "tribe": "Frost",
       "collectible": true,
-      "description": "Give a creature +3/+3 and Freeze it.",
+      "description": "Target creature gains +3/+3 and Freeze it.",
       "effects": [
         {
           "type": "buff",
@@ -147516,7 +147516,7 @@
       "set": "GILNEAS",
       "tribe": "Nature",
       "collectible": true,
-      "description": "Give a creature +2/+2. If it's an Elemental, add a random Elemental to your hand.",
+      "description": "Target creature gains +2/+2. If it's an Elemental, add a random Elemental to your hand.",
       "effects": [
         {
           "type": "buff",
@@ -147634,7 +147634,7 @@
           ]
         }
       ],
-      "description": "Give a creature \"Deathrattle: Create two 3/2 Zomby creature tokens.\" Overload: (1)"
+      "description": "Target creature gains \"Deathrattle: Create two 3/2 Zomby creature tokens.\" Overload: (1)"
     },
     {
       "id": "cryostasis",
@@ -147646,7 +147646,7 @@
       "type": "sorcery",
       "tribe": "Frost",
       "collectible": true,
-      "description": "Give a creature +3/+3 and Freeze it.",
+      "description": "Target creature gains +3/+3 and Freeze it.",
       "effects": [
         {
           "type": "buff",
@@ -148109,7 +148109,7 @@
       "rarity": "common",
       "set": "SPACE",
       "collectible": true,
-      "description": "Give a creature Taunt and Lifesteal.",
+      "description": "Target creature gains Taunt & Lifesteal.",
       "type": "sorcery",
       "effects": [
         {
@@ -148331,7 +148331,7 @@
           "health": 5
         }
       ],
-      "description": "Give a creature -5/-5. Give a random creature in your hand +5/+5.",
+      "description": "Target creature gains -5/-5. Give a random creature in your hand +5/+5.",
       "runes": {
         "blood": 2,
         "frost": 0,
@@ -148852,7 +148852,7 @@
           ]
         }
       ],
-      "description": "Give a creature you control \"Deathrattle: Create two random 4-Cost creatures.\""
+      "description": "Target creature you control gains \"Deathrattle: Create two random 4-Cost creatures.\""
     },
     {
       "id": "r_c_rampage",
@@ -149068,7 +149068,7 @@
           ]
         }
       ],
-      "description": "Give a creature you control \"Deathrattle: Create two random 4-Cost creatures.\""
+      "description": "Target creature you control gains \"Deathrattle: Create two random 4-Cost creatures.\""
     },
     {
       "id": "resizing_pouch",
@@ -149401,7 +149401,7 @@
       "set": "ISLAND_VACATION",
       "collectible": true,
       "tribe": "Holy",
-      "description": "Give a creature Immune this turn and +2/+2.",
+      "description": "Target creature gains Immune this turn and +2/+2.",
       "effects": [
         {
           "type": "grant-immune-turn",
@@ -149425,7 +149425,7 @@
       "set": "BLACK_TEMPLE",
       "tribe": "Holy",
       "collectible": true,
-      "description": "Give a creature +2/+3 and Lifesteal.",
+      "description": "Target creature gains +2/+3 and Lifesteal.",
       "effects": [
         {
           "type": "buff",
@@ -149956,7 +149956,7 @@
           "target": "creature"
         }
       ],
-      "description": "Give a creature Rush."
+      "description": "Target creature gains Rush."
     },
     {
       "id": "man_the_cannons",
@@ -150372,7 +150372,7 @@
           "target": "creature"
         }
       ],
-      "description": "Give a creature \"Deathrattle: Return this to life with 1 Health.\""
+      "description": "Target creature gains \"Deathrattle: Return this to life with 1 Health.\""
     },
     {
       "id": "call_to_adventure",
@@ -150406,7 +150406,7 @@
       "set": "ALTERAC_VALLEY",
       "tribe": "Holy",
       "collectible": true,
-      "description": "Give a creature +2/+1 and Divine Shield. It gains Lifesteal until end of turn.",
+      "description": "Target creature gains +2/+1 and Divine Shield. It gains Lifesteal until end of turn.",
       "effects": [
         {
           "type": "buff",
@@ -150528,7 +150528,7 @@
       "set": "ALTERAC_VALLEY",
       "tribe": "Holy",
       "collectible": true,
-      "description": "Give a creature +2/+1 and Divine Shield. It gains Lifesteal until end of turn.",
+      "description": "Target creature gains +2/+1 and Divine Shield. It gains Lifesteal until end of turn.",
       "effects": [
         {
           "type": "buff",
@@ -150553,7 +150553,7 @@
       "rarity": "common",
       "set": "ALTERAC_VALLEY",
       "collectible": true,
-      "description": "Give a creature +2/+2, then give your Beasts +1/+1.",
+      "description": "Target creature gains +2/+2, then give your Beasts +1/+1.",
       "effects": [
         {
           "type": "buff",
@@ -150676,7 +150676,7 @@
       "rarity": "common",
       "set": "ALTERAC_VALLEY",
       "collectible": true,
-      "description": "Give a creature +2/+2, then give your Beasts +1/+1.",
+      "description": "Target creature gains +2/+2, then give your Beasts +1/+1.",
       "effects": [
         {
           "type": "buff",
@@ -151619,7 +151619,7 @@
       "collectible": true,
       "tribe": "Holy",
       "type": "sorcery",
-      "description": "Give a creature +2/+4 and Spell Damage +1.",
+      "description": "Target creature gains +2/+4 and Spell Damage +1.",
       "effects": [
         {
           "type": "buff",
@@ -151906,7 +151906,7 @@
       "set": "ULDUM",
       "tribe": "Holy",
       "collectible": true,
-      "description": "Give a creature +4/+4, Divine Shield, and Taunt.",
+      "description": "Target creature gains +4/+4, Divine Shield, and Taunt.",
       "effects": [
         {
           "type": "buff",
@@ -151935,7 +151935,7 @@
       "set": "CORE",
       "collectible": true,
       "type": "sorcery",
-      "description": "Give a creature +2/+6 and Taunt. When it dies, create a Stegodon creature token.",
+      "description": "Target creature gains +2/+6 and Taunt. When it dies, create a Stegodon creature token.",
       "effects": [
         {
           "type": "buff",
@@ -152017,7 +152017,7 @@
       "rarity": "common",
       "set": "DALARAN",
       "collectible": true,
-      "description": "Give a creature you control Lifesteal.",
+      "description": "Target creature you control gains Lifesteal.",
       "type": "sorcery",
       "tribe": "Holy",
       "effects": [
@@ -152038,7 +152038,7 @@
       "set": "TGT",
       "collectible": true,
       "tribe": "Holy",
-      "description": "Give a creature +3 Attack and Divine Shield.",
+      "description": "Target creature gains +3 Attack and Divine Shield.",
       "effects": [
         {
           "type": "buff",
@@ -152094,7 +152094,7 @@
       "set": "TGT",
       "collectible": true,
       "tribe": "Holy",
-      "description": "Give a creature +3 Attack and Divine Shield.",
+      "description": "Target creature gains +3 Attack and Divine Shield.",
       "effects": [
         {
           "type": "buff",
@@ -152132,7 +152132,7 @@
       "set": "ULDUM",
       "tribe": "Holy",
       "collectible": true,
-      "description": "Give a creature +4/+4, Divine Shield, and Taunt.",
+      "description": "Target creature gains +4/+4, Divine Shield, and Taunt.",
       "effects": [
         {
           "type": "buff",
@@ -152692,7 +152692,7 @@
           ]
         }
       ],
-      "description": "Choose One - Create 5 Wisps; or Give a creature +5/+5 and Taunt."
+      "description": "Choose One - Create 5 Wisps; or Target creature gains +5/+5 and Taunt."
     },
     {
       "id": "juicy_psychmelon",
@@ -152978,7 +152978,7 @@
       "rarity": "rare",
       "set": "DALARAN",
       "collectible": true,
-      "description": "Give a creature \"Also damages creatures next to whomever this attacks.\"",
+      "description": "Target creature gains \"Also damages creatures next to whomever this attacks.\"",
       "effects": [
         {
           "type": "grant",
@@ -153717,7 +153717,7 @@
       "set": "LOOTAPALOOZA",
       "collectible": true,
       "tribe": "Holy",
-      "description": "Give a creature +2/+2. Gains a bonus effect in your hand.",
+      "description": "Target creature gains +2/+2. Gains a bonus effect in your hand.",
       "effects": [
         {
           "type": "buff",
@@ -153941,7 +153941,7 @@
       "set": "TROLL",
       "collectible": true,
       "tribe": "Shadow",
-      "description": "Give a creature you control \"Deathrattle: Create a random creature that costs (1) more.\"",
+      "description": "Target creature you control gains \"Deathrattle: Create a random creature that costs (1) more.\"",
       "effects": [
         {
           "type": "grant-deathrattle",
@@ -154173,7 +154173,7 @@
       "set": "BOOMSDAY",
       "token": true,
       "collectible": false,
-      "description": "Give a creature +2/+2.",
+      "description": "Target creature gains +2/+2.",
       "effects": [
         {
           "type": "buff",
@@ -154431,7 +154431,7 @@
       "set": "PLACEHOLDER_202204",
       "collectible": true,
       "tribe": "Nature",
-      "description": "Give a creature you control +1/+1, then gain Armor equal to its Attack.",
+      "description": "Target creature you control gains +1/+1, then gain Armor equal to its Attack.",
       "effects": [
         {
           "type": "buff-target-gain-armor-by-attack",
@@ -154556,7 +154556,7 @@
       "rarity": "rare",
       "set": "BOOMSDAY",
       "collectible": true,
-      "description": "Give a creature +2/+2. Add 'More Arms!' to your hand that gives +2/+2.",
+      "description": "Target creature gains +2/+2. Add 'More Arms!' to your hand that gives +2/+2.",
       "effects": [
         {
           "type": "buff",
@@ -154755,7 +154755,7 @@
       "rarity": "epic",
       "set": "THE_SUNKEN_CITY",
       "collectible": true,
-      "description": "Give a creature +1/+2. If you played a Naga while holding this, add a Serpent Wig to your hand.",
+      "description": "Target creature gains +1/+2. If you played a Naga while holding this, add a Serpent Wig to your hand.",
       "effects": [
         {
           "type": "buff",
@@ -154954,7 +154954,7 @@
       "set": "TITANS",
       "collectible": true,
       "tribe": "Shadow",
-      "description": "Give a creature you control +3/+3 until your next turn.",
+      "description": "Target creature you control gains +3/+3 until your next turn.",
       "effects": [
         {
           "type": "temp-buff",
@@ -155195,7 +155195,7 @@
       "rarity": "rare",
       "set": "STORMWIND",
       "collectible": true,
-      "description": "Give a creature +2/+2 and Immune while attacking. When it dies, create a Ram creature token.",
+      "description": "Target creature gains +2/+2 and Immune while attacking. When it dies, create a Ram creature token.",
       "effects": [
         {
           "type": "buff",
@@ -155813,7 +155813,7 @@
       "keywords": [
         "tradeable"
       ],
-      "description": "Tradeable. Give a creature +2/+1 and Rush.",
+      "description": "Tradeable. Target creature gains +2/+1 and Rush.",
       "effects": [
         {
           "type": "buff",
@@ -156468,7 +156468,7 @@
       "set": "DRAGONS",
       "collectible": true,
       "tribe": "Nature",
-      "description": "Choose One - Give a creature +2 Health and Taunt; or Create a 2/2 Treant creature token.",
+      "description": "Choose One - Target creature gains +2 Health and Taunt; or Create a 2/2 Treant creature token.",
       "choices": [
         {
           "text": "Give a minion +2 Health and Taunt.",
@@ -156957,7 +156957,7 @@
       "set": "DARKMOON_FAIRE",
       "collectible": true,
       "tribe": "Nature",
-      "description": "Give a creature +2 Attack. Corrupt: And your weapon.",
+      "description": "Target creature gains +2 Attack. Corrupt: And your weapon.",
       "effects": [
         {
           "type": "buff",
@@ -157973,7 +157973,7 @@
       "set": "EMERALD_DREAM",
       "collectible": true,
       "tribe": "Fire",
-      "description": "Give a creature you control +1/+1. (Upgrades each turn, but discards after use!)",
+      "description": "Target creature you control gains +1/+1. (Upgrades each turn, but discards after use!)",
       "effects": [
         {
           "type": "buff",
@@ -158421,7 +158421,7 @@
       "set": "RETURN_OF_THE_LICH_KING",
       "collectible": true,
       "tribe": "Fire",
-      "description": "Give a creature +1/+1. Repeat for each damaged friendly character.",
+      "description": "Target creature gains +1/+1. Repeat for each damaged friendly character.",
       "effects": [
         {
           "type": "buff",
@@ -159551,7 +159551,7 @@
       "set": "SPACE",
       "collectible": true,
       "tribe": "Holy",
-      "description": "Echo Give a creature +1/+2 and Rush.",
+      "description": "Echo. Target creature gains +1/+2 and Rush.",
       "effects": [
         {
           "type": "buff",
@@ -159576,7 +159576,7 @@
       "set": "SPACE",
       "collectible": true,
       "tribe": "Holy",
-      "description": "Give a creature +1/+1 and Divine Shield. Costs (0) if you played an adjacent card this turn.",
+      "description": "Target creature gains +1/+1 and Divine Shield. Costs (0) if you played an adjacent card this turn.",
       "effects": [
         {
           "type": "buff",
@@ -159618,7 +159618,7 @@
       "rarity": "rare",
       "set": "SCHOLOMANCE",
       "collectible": true,
-      "description": "Give a creature +2/+2. Restore it to full Health at the end of this turn.",
+      "description": "Target creature gains +2/+2. Restore it to full Health at the end of this turn.",
       "effects": [
         {
           "type": "buff",
@@ -159733,7 +159733,7 @@
       "set": "PLACEHOLDER_202204",
       "collectible": true,
       "tribe": "Holy",
-      "description": "Give a creature you control +2/+3 and \"Elusive on target opponent's turn.\"",
+      "description": "Target creature you control gains +2/+3 and \"Elusive on target opponent's turn.\"",
       "effects": [
         {
           "type": "buff",
@@ -159758,7 +159758,7 @@
       "set": "REVENDRETH",
       "collectible": true,
       "tribe": "Holy",
-      "description": "Give a creature you control +2/+3 and \"Elusive on target opponent's turn.\"",
+      "description": "Target creature you control gains +2/+3 and \"Elusive on target opponent's turn.\"",
       "effects": [
         {
           "type": "buff",
@@ -160469,7 +160469,7 @@
       "rarity": "common",
       "set": "ALTERAC_VALLEY",
       "collectible": true,
-      "description": "Give a creature +1/+1. Repeat for each creature an opponent controls.",
+      "description": "Target creature gains +1/+1. Repeat for each creature an opponent controls.",
       "effects": [
         {
           "type": "buff",
@@ -160716,7 +160716,7 @@
       "set": "OG",
       "collectible": true,
       "tribe": "Nature",
-      "description": "Give a creature +1/+1 for each of your Totems.",
+      "description": "Target creature gains +1/+1 for each of your Totems.",
       "effects": [
         {
           "type": "buff",
@@ -160853,7 +160853,7 @@
       "rarity": "common",
       "set": "ALTERAC_VALLEY",
       "collectible": true,
-      "description": "Give a creature +1/+2 and Spell Damage +1. When it dies, create a Spirit Raptor creature token.",
+      "description": "Target creature gains +1/+2 and Spell Damage +1. When it dies, create a Spirit Raptor creature token.",
       "effects": [
         {
           "type": "buff",
@@ -160909,7 +160909,7 @@
       "rarity": "epic",
       "set": "WILD_WEST",
       "collectible": true,
-      "description": "Give a creature +2/+3. If it has a creature type, draw one of that type.",
+      "description": "Target creature gains +2/+3. If it has a creature type, draw one of that type.",
       "effects": [
         {
           "type": "buff",
@@ -162082,7 +162082,7 @@
       "set": "THE_BARRENS",
       "collectible": true,
       "tribe": "Nature",
-      "description": "Give a creature +2/+2. If it has Taunt, add a copy of it to your hand.",
+      "description": "Target creature gains +2/+2. If it has Taunt, add a copy of it to your hand.",
       "effects": [
         {
           "type": "buff",
