@@ -2101,6 +2101,7 @@ export function playCard(state, pi, cardUid, target, choice, position, useAlt, k
 			// opponents' ongoing reactions to you playing a creature (Holomancer / Harbinger Celestia)
 			if (p.board.includes(card) && !isDead(card)) for (const o of opponentsOf(state, pi)) fireOngoing(state, o, 'enemy-creature-played', { minion: card });
 			if (p.board.includes(card) && !isDead(card)) fireOngoing(state, pi, 'creature-played', { minion: card });
+				if (p.board.includes(card) && !isDead(card) && p.stampedeTurn === state.turnNumber && (card.tribe || '').includes('Beast')) execEffects(state, pi, [{ type: 'conjure-random', cardType: 'creature', tribe: 'Beast' }], null, null); // Stampede: each Beast played this turn adds a random Beast
 				if ((card.tribe || '').includes('Draenei')) p.lastDraeneiId = card.id; // Astral Vigilant
 				if (draeneiImmediateAttack && p.board.includes(card) && !isDead(card)) { // Expedition Sergeant: the buffed Draenei attacks a random enemy at once
 					card.sick = false;

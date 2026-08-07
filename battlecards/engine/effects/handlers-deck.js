@@ -348,6 +348,19 @@ register('replace-deck-with-card', ({ state, pi }, e) => {
 });
 
 
+register('shuffle-shadows-of-target', ({ state, pi, chosenCreature }, e) => {
+			// Shadow of Death: shuffle 3 Shadows that each summon a copy of the chosen minion when drawn
+			const t = chosenCreature();
+			if (!t) return;
+			const p = state.players[pi];
+			const tokenId = 'shadow_of_' + t.id;
+			if (!state.cardsById[tokenId]) state.cardsById[tokenId] = { id: tokenId, name: 'Shadow', type: 'sorcery', cost: 0, rarity: 'common', token: true, collectible: false, drawTrigger: true, onDraw: [{ type: 'summon', options: [{ summonId: t.id }] }], description: `When drawn, summon a copy of ${t.name}.` };
+			for (let k = 0; k < (e.count || 3); k++) p.deck.push(tokenId);
+			for (let i = p.deck.length - 1; i > 0; i--) { const j = Math.floor(state.rng() * (i + 1)); [p.deck[i], p.deck[j]] = [p.deck[j], p.deck[i]]; }
+			emit(state, { type: 'shuffle', player: pi });
+});
+
+
 register('shuffle-enemy-class-cards', ({ state, pi, enemies }, e) => {
 			// Academic Espionage: shuffle N cards from your opponent's class into your deck; they cost (1)
 			const p = state.players[pi];

@@ -1123,6 +1123,18 @@ register('tolins', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy,
 } });
 
 
+register('floop-refresh-on-death', ({ state, pi }) => { {
+			// Floop's Glorious Gloop: this turn, refresh a Mana Crystal whenever a minion dies
+			state.players[pi].floopRefreshTurn = state.turnNumber;
+} });
+
+
+register('stampede-turn', ({ state, pi }) => { {
+			// Stampede: this turn, playing a Beast adds a random Beast to your hand
+			state.players[pi].stampedeTurn = state.turnNumber;
+} });
+
+
 register('install-random-secret', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => { {
 			// Professor Putricide: install a random secret (optionally of a class)
 			const installed = new Set(state.players[pi].secrets.map(s => s.id));

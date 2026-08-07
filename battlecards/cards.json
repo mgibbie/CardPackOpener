@@ -153794,6 +153794,101 @@
           "id": "more_arms"
         }
       ]
+    },
+    {
+      "id": "nerubian_ambush",
+      "name": "Ambush!",
+      "type": "sorcery",
+      "cost": 0,
+      "cardClass": "rogue",
+      "rarity": "common",
+      "set": "NAXX",
+      "token": true,
+      "collectible": false,
+      "drawTrigger": true,
+      "onDraw": [
+        {
+          "type": "summon",
+          "forEnemy": true,
+          "count": 1,
+          "attack": 4,
+          "health": 4,
+          "name": "Nerubian",
+          "tribe": "Beast"
+        }
+      ],
+      "description": "When drawn, your opponent summons a 4/4 Nerubian."
+    },
+    {
+      "id": "floops_glorious_gloop",
+      "name": "Floop's Glorious Gloop",
+      "type": "sorcery",
+      "cost": 1,
+      "cardClass": "druid",
+      "rarity": "legendary",
+      "set": "BOOMSDAY",
+      "collectible": true,
+      "tribe": "Nature",
+      "description": "Whenever a minion dies this turn, refresh a Mana Crystal.",
+      "effects": [
+        {
+          "type": "floop-refresh-on-death"
+        }
+      ]
+    },
+    {
+      "id": "stampede",
+      "name": "Stampede",
+      "type": "sorcery",
+      "cost": 0,
+      "cardClass": "hunter",
+      "rarity": "epic",
+      "set": "UNGORO",
+      "collectible": true,
+      "description": "Each time you play a Beast this turn, add a random Beast to your hand.",
+      "effects": [
+        {
+          "type": "stampede-turn"
+        }
+      ]
+    },
+    {
+      "id": "shadow_of_death",
+      "name": "Shadow of Death",
+      "type": "sorcery",
+      "cost": 4,
+      "cardClass": "rogue",
+      "rarity": "epic",
+      "set": "ULDUM",
+      "collectible": true,
+      "tribe": "Shadow",
+      "description": "Choose a minion. Shuffle 3 'Shadows' into your deck that summon a copy when drawn.",
+      "effects": [
+        {
+          "type": "shuffle-shadows-of-target",
+          "target": "creature",
+          "count": 3
+        }
+      ]
+    },
+    {
+      "id": "beneath_the_grounds",
+      "name": "Beneath the Grounds",
+      "type": "sorcery",
+      "cost": 3,
+      "cardClass": "rogue",
+      "rarity": "epic",
+      "set": "TGT",
+      "collectible": true,
+      "description": "Shuffle 3 Ambushes into your opponent's deck. When drawn, you summon a 4/4 Nerubian.",
+      "effects": [
+        {
+          "type": "shuffle-into-deck",
+          "id": "nerubian_ambush",
+          "count": 3,
+          "enemy": true
+        }
+      ]
     }
   ]
 }

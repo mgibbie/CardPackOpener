@@ -145,6 +145,7 @@ export function sweepDeaths(state) {
 			}
 			questTick(state, 'death', pi);
 			for (let s2 = 0; s2 < state.players.length; s2++) fireOngoing(state, s2, 'creature-died', { dead: c });
+			for (let s2 = 0; s2 < state.players.length; s2++) { const pl = state.players[s2]; if (pl.floopRefreshTurn === state.turnNumber && pl.mana.cur < pl.mana.max) { pl.mana.cur++; emit(state, { type: 'manaGained', player: s2, amount: 1, mana: pl.mana.cur }); } } // Floop's Glorious Gloop: any death refreshes a Mana Crystal this turn
 			fireOngoing(state, pi, 'friendly-creature-died', { dead: c });
 				for (const hc of state.players[pi].hand) if (hc.handDeathGrowth) { hc.attack += 1; hc.maxHealth += 1; } // Blood Herald: grows while in hand
 				{ const p2 = state.players[pi]; for (let hi = 0; hi < p2.hand.length; hi++) { const hc = p2.hand[hi]; if (hc.infuse && !hc._infused) { hc.infuseCounter = (hc.infuseCounter || 0) + 1; if (hc.infuseCounter >= hc.infuse.count && state.cardsById[hc.infuse.id]) { const ni = instantiate(state.cardsById[hc.infuse.id], pi); ni.zone = 'hand'; ni._infused = true; p2.hand[hi] = ni; emit(state, { type: 'infused', player: pi, uid: hc.uid, name: ni.name }); } } } } // Castle Nathria Infuse

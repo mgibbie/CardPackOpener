@@ -106,5 +106,42 @@ for (const id of ['crushing_walls', 'darkest_hour', 'lightbomb', 'mass_hysteria'
 	} else ok('(no yeti in pool — skip Luna)', true);
 }
 
+// Floop's Glorious Gloop: any minion death this turn refreshes a Mana Crystal
+{
+	const st = game(); cast(st, 0, 'floops_glorious_gloop');
+	st.players[0].mana.max = 10; st.players[0].mana.cur = 5;
+	const foe = put(st, 1, 1, 1); foe.damage = foe.maxHealth; E.sweepDeaths(st);
+	ok('Floop\'s Glorious Gloop: a death refreshed a Mana Crystal', st.players[0].mana.cur === 6, st.players[0].mana.cur);
+}
+// Stampede: playing a Beast this turn adds a random Beast to hand
+{
+	const st = game(); cast(st, 0, 'stampede');
+	cardsById['bst'] = { id: 'bst', name: 'B', type: 'creature', cost: 1, tribe: 'Beast', attack: 1, health: 1 };
+	const bc = E.instantiate(cardsById['bst'], 0); bc.zone = 'hand'; st.players[0].hand.push(bc); st.players[0].mana.cur = 10;
+	E.playCard(st, 0, bc.uid, null, null, 0);
+	delete cardsById['bst'];
+	ok('Stampede: playing a Beast added a random Beast to hand', st.players[0].hand.some(c => (c.tribe || '').includes('Beast') && c.uid !== bc.uid));
+}
+// Shadow of Death: shuffle 3 Shadows; drawing one summons a copy of the chosen minion
+{
+	const st = game();
+	cardsById['shadowtgt'] = { id: 'shadowtgt', name: 'ST', type: 'creature', cost: 3, attack: 3, health: 3 };
+	const t = E.instantiate(cardsById['shadowtgt'], 0); t.zone = 'board'; t.sick = false; st.players[0].board.push(t);
+	cast(st, 0, 'shadow_of_death', tgtOf(t, 0));
+	ok('Shadow of Death: 3 Shadows shuffled in', st.players[0].deck.filter(id => id === 'shadow_of_shadowtgt').length === 3);
+	st.players[0].deck = ['shadow_of_shadowtgt']; const b0 = st.players[0].board.filter(c => !E.isDead(c)).length;
+	E.drawCards(st, 0, 1);
+	ok('Shadow of Death: drawing a Shadow summons a copy', st.players[0].board.filter(c => c.id === 'shadowtgt' && !E.isDead(c)).length === b0 + 1);
+	delete cardsById['shadowtgt'];
+}
+// Beneath the Grounds: 3 Ambushes into the enemy deck; when THEY draw one, YOU get a 4/4
+{
+	const st = game(); cast(st, 0, 'beneath_the_grounds');
+	ok('Beneath the Grounds: 3 Ambushes in enemy deck', st.players[1].deck.filter(id => id === 'nerubian_ambush').length === 3);
+	st.players[1].deck = ['nerubian_ambush'];
+	E.drawCards(st, 1, 1);
+	ok('Beneath the Grounds: enemy drawing an Ambush summons a 4/4 for the caster', st.players[0].board.some(c => c.attack === 4 && E.hp(c) === 4 && !E.isDead(c)));
+}
+
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);
