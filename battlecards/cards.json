@@ -8731,7 +8731,12 @@
           "type": "draw",
           "value": 1
         }
-      ]
+      ],
+      "runes": {
+        "blood": 0,
+        "frost": 0,
+        "unholy": 0
+      }
     },
     {
       "id": "death_metal_knight",
@@ -12407,7 +12412,12 @@
       "tribe": "Undead Dragon",
       "keywords": [
         "rush"
-      ]
+      ],
+      "runes": {
+        "blood": 0,
+        "frost": 0,
+        "unholy": 0
+      }
     },
     {
       "id": "emerald_grove_tiger",
@@ -12809,7 +12819,12 @@
       "keywords": [
         "reborn"
       ],
-      "magnetic": true
+      "magnetic": true,
+      "runes": {
+        "blood": 0,
+        "frost": 0,
+        "unholy": 0
+      }
     },
     {
       "id": "mantle_shaper",
@@ -12980,7 +12995,12 @@
           "type": "gain-corpses",
           "value": 1
         }
-      ]
+      ],
+      "runes": {
+        "blood": 0,
+        "frost": 0,
+        "unholy": 0
+      }
     },
     {
       "id": "bone_breaker",
@@ -17907,7 +17927,12 @@
           "type": "freeze",
           "target": "any"
         }
-      ]
+      ],
+      "runes": {
+        "blood": 0,
+        "frost": 0,
+        "unholy": 0
+      }
     },
     {
       "id": "noxious_cadaver",
@@ -19906,6 +19931,11 @@
             ]
           }
         ]
+      },
+      "runes": {
+        "blood": 0,
+        "frost": 0,
+        "unholy": 0
       }
     },
     {
@@ -22168,7 +22198,12 @@
         }
       ],
       "description": "Rush.\nDeathrattle: Create a 1/1 Dreadhound creature token with Reborn.",
-      "set": "hsx"
+      "set": "hsx",
+      "runes": {
+        "blood": 0,
+        "frost": 0,
+        "unholy": 0
+      }
     },
     {
       "id": "flamecannon",
@@ -22468,7 +22503,12 @@
         }
       ],
       "description": "Deal 2 damage to any target. Create a 0/2 Leech creature token.",
-      "set": "hsx"
+      "set": "hsx",
+      "runes": {
+        "blood": 1,
+        "frost": 0,
+        "unholy": 0
+      }
     },
     {
       "id": "kindly_grandmother",
@@ -26251,7 +26291,12 @@
         }
       ],
       "description": "Battlecry: Create two 1/1 Fighter creature tokens with Rush & Reborn.",
-      "set": "hsx"
+      "set": "hsx",
+      "runes": {
+        "blood": 0,
+        "frost": 0,
+        "unholy": 1
+      }
     },
     {
       "id": "power_word_tentacles",
@@ -28378,7 +28423,12 @@
         }
       ],
       "description": "Freeze a target. Discover a spell.",
-      "set": "hsx"
+      "set": "hsx",
+      "runes": {
+        "blood": 0,
+        "frost": 2,
+        "unholy": 0
+      }
     },
     {
       "id": "demonfuse",
@@ -29500,7 +29550,12 @@
         "reborn"
       ],
       "description": "Divine Shield.\nReborn.",
-      "set": "hsx"
+      "set": "hsx",
+      "runes": {
+        "blood": 0,
+        "frost": 0,
+        "unholy": 0
+      }
     },
     {
       "id": "felsoul_inquisitor",
@@ -30332,7 +30387,12 @@
         }
       ],
       "description": "Taunt.\nDeathrattle: Create a random 8-cost creature token.",
-      "set": "hsx"
+      "set": "hsx",
+      "runes": {
+        "blood": 0,
+        "frost": 0,
+        "unholy": 0
+      }
     },
     {
       "id": "beached_whale",
@@ -30674,7 +30734,12 @@
         }
       ],
       "description": "Reborn.\nDeathrattle: Create a 2/2 Undead Beast creature token with Taunt.",
-      "set": "hsx"
+      "set": "hsx",
+      "runes": {
+        "blood": 0,
+        "frost": 0,
+        "unholy": 0
+      }
     },
     {
       "id": "tar_creeper",
@@ -31110,7 +31175,12 @@
       ],
       "description": "Battlecry: Create a 1/1 Zergling creature token.",
       "set": "hsx",
-      "tribe": "Zerg"
+      "tribe": "Zerg",
+      "runes": {
+        "blood": 0,
+        "frost": 0,
+        "unholy": 0
+      }
     },
     {
       "id": "amphibious_elixir",
@@ -33036,7 +33106,12 @@
         ]
       },
       "description": "Whenever this creature takes damage, create two 1/1 Frail Ghoul creature tokens.",
-      "set": "hsx"
+      "set": "hsx",
+      "runes": {
+        "blood": 0,
+        "frost": 0,
+        "unholy": 0
+      }
     },
     {
       "id": "twilight_summoner",
@@ -33855,7 +33930,12 @@
         }
       ],
       "description": "Draw 2 cards. Create two 0/2 Leech creature tokens.",
-      "set": "hsx"
+      "set": "hsx",
+      "runes": {
+        "blood": 2,
+        "frost": 0,
+        "unholy": 0
+      }
     },
     {
       "id": "shieldmaiden",
@@ -34821,7 +34901,12 @@
         }
       ],
       "description": "Deathrattle: Create a 9/9 Blight Boar creature token with Charge & Taunt.",
-      "set": "hsx"
+      "set": "hsx",
+      "runes": {
+        "blood": 0,
+        "frost": 0,
+        "unholy": 2
+      }
     },
     {
       "id": "cenarion_ward",
@@ -35940,7 +36025,12 @@
         }
       ],
       "description": "Costs 1 less for each creature that died this turn.\nBattlecry: Draw 2 cards.",
-      "set": "hsx"
+      "set": "hsx",
+      "runes": {
+        "blood": 0,
+        "frost": 0,
+        "unholy": 0
+      }
     },
     {
       "id": "volcanic_lumberer",
@@ -36390,7 +36480,12 @@
         }
       ],
       "description": "Taunt.\nBattlecry: Create 2 tokens that are copies of this creature.",
-      "set": "hsx"
+      "set": "hsx",
+      "runes": {
+        "blood": 0,
+        "frost": 0,
+        "unholy": 0
+      }
     },
     {
       "id": "refreshment_vendor",
@@ -37120,7 +37215,12 @@
         ]
       },
       "description": "After your hero attacks, Create a 1/1 Frail Ghoul creature token.",
-      "set": "hsx"
+      "set": "hsx",
+      "runes": {
+        "blood": 0,
+        "frost": 0,
+        "unholy": 0
+      }
     },
     {
       "id": "remote_control",
@@ -40795,7 +40895,12 @@
           ]
         }
       ],
-      "description": "Destroy a creature you control to create a 4/5 Undead creature token with Rush."
+      "description": "Destroy a creature you control to create a 4/5 Undead creature token with Rush.",
+      "runes": {
+        "blood": 0,
+        "frost": 0,
+        "unholy": 0
+      }
     },
     {
       "id": "crimson_expanse",
@@ -41019,7 +41124,12 @@
           ]
         }
       ],
-      "description": "Fire 3 bolts, each dealing 1 damage to a random enemy."
+      "description": "Fire 3 bolts, each dealing 1 damage to a random enemy.",
+      "runes": {
+        "blood": 0,
+        "frost": 0,
+        "unholy": 0
+      }
     },
     {
       "id": "jungle_gym",
@@ -41372,7 +41482,12 @@
           "health": 0,
           "target": "creature"
         }
-      ]
+      ],
+      "runes": {
+        "blood": 0,
+        "frost": 0,
+        "unholy": 0
+      }
     },
     {
       "id": "adaptation",
@@ -42477,7 +42592,12 @@
           ]
         }
       ],
-      "excavate": true
+      "excavate": true,
+      "runes": {
+        "blood": 0,
+        "frost": 0,
+        "unholy": 0
+      }
     },
     {
       "id": "the_azerite_rooster",
@@ -46833,7 +46953,12 @@
       "type": "creature",
       "attack": 3,
       "health": 4,
-      "tribe": "Undead/Beast"
+      "tribe": "Undead/Beast",
+      "runes": {
+        "blood": 0,
+        "frost": 0,
+        "unholy": 0
+      }
     },
     {
       "id": "remixed_totemcarver",
@@ -46946,7 +47071,12 @@
       "type": "creature",
       "attack": 3,
       "health": 6,
-      "tribe": "Undead"
+      "tribe": "Undead",
+      "runes": {
+        "blood": 0,
+        "frost": 1,
+        "unholy": 0
+      }
     },
     {
       "id": "stitched_giant",
@@ -46963,6 +47093,11 @@
       "selfCost": {
         "per": "corpses-spent-game",
         "amount": -1
+      },
+      "runes": {
+        "blood": 0,
+        "frost": 0,
+        "unholy": 1
       }
     },
     {
@@ -47574,6 +47709,11 @@
             "id": "larva"
           }
         ]
+      },
+      "runes": {
+        "blood": 0,
+        "frost": 0,
+        "unholy": 0
       }
     },
     {
@@ -48156,6 +48296,11 @@
         "label": "Corpses",
         "corpses": 5,
         "forced": true
+      },
+      "runes": {
+        "blood": 0,
+        "frost": 0,
+        "unholy": 0
       }
     },
     {
@@ -48249,7 +48394,12 @@
         {
           "type": "destroy-all"
         }
-      ]
+      ],
+      "runes": {
+        "blood": 0,
+        "frost": 0,
+        "unholy": 0
+      }
     },
     {
       "id": "spirit_of_the_team",
@@ -48724,6 +48874,11 @@
       "selfCost": {
         "per": "plagues-into-enemy-game",
         "amount": -1
+      },
+      "runes": {
+        "blood": 0,
+        "frost": 0,
+        "unholy": 0
       }
     },
     {
@@ -49398,6 +49553,11 @@
       "selfCostIf": {
         "cond": "frozen-character",
         "setCost": 1
+      },
+      "runes": {
+        "blood": 0,
+        "frost": 0,
+        "unholy": 0
       }
     },
     {
@@ -50580,7 +50740,12 @@
           "health": 1,
           "name": "Ghouls that attack random enemies"
         }
-      ]
+      ],
+      "runes": {
+        "blood": 0,
+        "frost": 0,
+        "unholy": 1
+      }
     },
     {
       "id": "devouring_ectoplasm",
@@ -50642,7 +50807,12 @@
           "health": 1,
           "name": "Undead with Rush that die at the end of turn"
         }
-      ]
+      ],
+      "runes": {
+        "blood": 0,
+        "frost": 0,
+        "unholy": 1
+      }
     },
     {
       "id": "posse_possession",
@@ -51023,7 +51193,12 @@
             }
           ]
         }
-      ]
+      ],
+      "runes": {
+        "blood": 1,
+        "frost": 0,
+        "unholy": 1
+      }
     },
     {
       "id": "photosynthesis",
@@ -52084,7 +52259,12 @@
           "health": 1,
           "name": "Undead with Lifesteal that attack it"
         }
-      ]
+      ],
+      "runes": {
+        "blood": 1,
+        "frost": 0,
+        "unholy": 1
+      }
     },
     {
       "id": "rime_sculptor",
@@ -52117,7 +52297,12 @@
             }
           ]
         }
-      ]
+      ],
+      "runes": {
+        "blood": 0,
+        "frost": 1,
+        "unholy": 0
+      }
     },
     {
       "id": "dark_pact",
@@ -52197,7 +52382,12 @@
           "target": "creature",
           "lifesteal": true
         }
-      ]
+      ],
+      "runes": {
+        "blood": 1,
+        "frost": 0,
+        "unholy": 0
+      }
     },
     {
       "id": "lingering_zombie",
@@ -52572,7 +52762,12 @@
         {
           "type": "excavate"
         }
-      ]
+      ],
+      "runes": {
+        "blood": 0,
+        "frost": 1,
+        "unholy": 0
+      }
     },
     {
       "id": "blast_charge",
@@ -53513,7 +53708,12 @@
           }
         ]
       },
-      "tribe": "Undead/Dragon"
+      "tribe": "Undead/Dragon",
+      "runes": {
+        "blood": 0,
+        "frost": 1,
+        "unholy": 0
+      }
     },
     {
       "id": "token_colaques_shell",
@@ -53859,7 +54059,12 @@
       "token": true,
       "attack": 1,
       "health": 1,
-      "description": "When this enters the battlefield, get a random low-Cost creature (Cost scales with Herald)."
+      "description": "When this enters the battlefield, get a random low-Cost creature (Cost scales with Herald).",
+      "runes": {
+        "blood": 0,
+        "frost": 0,
+        "unholy": 0
+      }
     },
     {
       "id": "token_soldier_of_ragnaros",
@@ -53905,7 +54110,12 @@
           "value": 4,
           "target": "enemy-creatures"
         }
-      ]
+      ],
+      "runes": {
+        "blood": 2,
+        "frost": 0,
+        "unholy": 0
+      }
     },
     {
       "id": "maniacal_follower",
@@ -54030,7 +54240,12 @@
         {
           "type": "herald"
         }
-      ]
+      ],
+      "runes": {
+        "blood": 0,
+        "frost": 0,
+        "unholy": 0
+      }
     },
     {
       "id": "obsessive_technician",
@@ -54051,7 +54266,12 @@
         {
           "type": "herald"
         }
-      ]
+      ],
+      "runes": {
+        "blood": 2,
+        "frost": 0,
+        "unholy": 0
+      }
     },
     {
       "id": "token_hand_of_ragnaros",
@@ -54179,7 +54399,12 @@
       ],
       "description": "Colossal +2. When your hero would lose Health on your turn, gain that much max Health instead.",
       "healToMaxHealth": true,
-      "tribe": "Undead/Dragon"
+      "tribe": "Undead/Dragon",
+      "runes": {
+        "blood": 2,
+        "frost": 0,
+        "unholy": 0
+      }
     },
     {
       "id": "token_chos_arm",
@@ -56803,7 +57028,12 @@
           ]
         }
       ],
-      "description": "Deal 3 damage randomly split among enemies.\nIf a creature you control died this turn, deal 3 more."
+      "description": "Deal 3 damage randomly split among enemies.\nIf a creature you control died this turn, deal 3 more.",
+      "runes": {
+        "blood": 0,
+        "frost": 0,
+        "unholy": 1
+      }
     },
     {
       "id": "crowd_control",
@@ -99552,7 +99782,12 @@
           "target": "friendly-creature",
           "count": 2
         }
-      ]
+      ],
+      "runes": {
+        "blood": 0,
+        "frost": 0,
+        "unholy": 0
+      }
     },
     {
       "id": "boneshredder",
@@ -99574,7 +99809,12 @@
           "type": "corpse-gain-deathrattle",
           "cost": 5
         }
-      ]
+      ],
+      "runes": {
+        "blood": 0,
+        "frost": 0,
+        "unholy": 1
+      }
     },
     {
       "id": "drum_soloist",
@@ -99903,6 +100143,11 @@
             "summonId": "token_soul"
           }
         ]
+      },
+      "runes": {
+        "blood": 1,
+        "frost": 0,
+        "unholy": 0
       }
     },
     {
@@ -100766,7 +101011,12 @@
             }
           ]
         }
-      ]
+      ],
+      "runes": {
+        "blood": 0,
+        "frost": 0,
+        "unholy": 1
+      }
     },
     {
       "id": "nerubian_flyer",
@@ -101024,7 +101274,12 @@
           "type": "infect-enemies-summon-on-death",
           "summonId": "rlk_zombie_taunt"
         }
-      ]
+      ],
+      "runes": {
+        "blood": 0,
+        "frost": 0,
+        "unholy": 1
+      }
     },
     {
       "id": "brittleskin_zombie",
@@ -101469,7 +101724,12 @@
             }
           ]
         }
-      ]
+      ],
+      "runes": {
+        "blood": 0,
+        "frost": 1,
+        "unholy": 0
+      }
     },
     {
       "id": "scourge_rager",
@@ -102755,7 +103015,12 @@
           "max": 6,
           "summonId": "rlk_risen_footman"
         }
-      ]
+      ],
+      "runes": {
+        "blood": 0,
+        "frost": 0,
+        "unholy": 0
+      }
     },
     {
       "id": "invincible",
@@ -102812,7 +103077,12 @@
         {
           "type": "destroy-all-others-gain-corpses"
         }
-      ]
+      ],
+      "runes": {
+        "blood": 0,
+        "frost": 0,
+        "unholy": 0
+      }
     },
     {
       "id": "brutal_annihilan",
@@ -102963,7 +103233,12 @@
       "keywords": [
         "taunt"
       ],
-      "description": "Taunt."
+      "description": "Taunt.",
+      "runes": {
+        "blood": 0,
+        "frost": 0,
+        "unholy": 0
+      }
     },
     {
       "id": "astral_automaton",
@@ -103198,7 +103473,12 @@
           "id": "ttn_plague",
           "count": 2
         }
-      ]
+      ],
+      "runes": {
+        "blood": 0,
+        "frost": 0,
+        "unholy": 0
+      }
     },
     {
       "id": "false_disciple",
@@ -103359,7 +103639,12 @@
       "token": true,
       "collectible": false,
       "description": "A useless Plague clogging your deck.",
-      "effects": []
+      "effects": [],
+      "runes": {
+        "blood": 0,
+        "frost": 0,
+        "unholy": 0
+      }
     },
     {
       "id": "observer_of_myths",
@@ -103643,6 +103928,11 @@
             "value": 3
           }
         ]
+      },
+      "runes": {
+        "blood": 0,
+        "frost": 0,
+        "unholy": 0
       }
     },
     {
@@ -103929,6 +104219,11 @@
             "grant": "poisonous"
           }
         ]
+      },
+      "runes": {
+        "blood": 0,
+        "frost": 0,
+        "unholy": 0
       }
     },
     {
@@ -104322,7 +104617,12 @@
           "id": "ttn_plague",
           "count": 3
         }
-      ]
+      ],
+      "runes": {
+        "blood": 0,
+        "frost": 0,
+        "unholy": 0
+      }
     },
     {
       "id": "ignis_the_eternal_flame",
@@ -104640,7 +104940,12 @@
           "type": "destroy-enemy-plague-damage",
           "value": 3
         }
-      ]
+      ],
+      "runes": {
+        "blood": 0,
+        "frost": 0,
+        "unholy": 0
+      }
     },
     {
       "id": "twisted_frostwing",
@@ -105669,7 +105974,12 @@
             }
           ]
         }
-      ]
+      ],
+      "runes": {
+        "blood": 0,
+        "frost": 0,
+        "unholy": 0
+      }
     },
     {
       "id": "sargeras_the_destroyer",
@@ -106187,7 +106497,12 @@
             }
           ]
         }
-      ]
+      ],
+      "runes": {
+        "blood": 0,
+        "frost": 0,
+        "unholy": 0
+      }
     },
     {
       "id": "toy_boat",
@@ -106602,7 +106917,12 @@
           "type": "grant-keyword-self",
           "keyword": "lifesteal"
         }
-      ]
+      ],
+      "runes": {
+        "blood": 0,
+        "frost": 0,
+        "unholy": 0
+      }
     },
     {
       "id": "rambunctious_stuffy",
@@ -106630,6 +106950,11 @@
             "keyword": "reborn"
           }
         ]
+      },
+      "runes": {
+        "blood": 0,
+        "frost": 1,
+        "unholy": 0
       }
     },
     {
@@ -106736,7 +107061,12 @@
           "tribe": "Undead",
           "costMod": -2
         }
-      ]
+      ],
+      "runes": {
+        "blood": 0,
+        "frost": 0,
+        "unholy": 1
+      }
     },
     {
       "id": "wwb_floppy_hydra_big",
@@ -106984,6 +107314,11 @@
             "pool": "enemies"
           }
         ]
+      },
+      "runes": {
+        "blood": 0,
+        "frost": 0,
+        "unholy": 1
       }
     },
     {
@@ -107260,7 +107595,12 @@
           "attack": 2,
           "health": 2
         }
-      ]
+      ],
+      "runes": {
+        "blood": 1,
+        "frost": 0,
+        "unholy": 1
+      }
     },
     {
       "id": "dr_stitchensew",
@@ -107300,7 +107640,12 @@
           "type": "summon-random",
           "cost": 5
         }
-      ]
+      ],
+      "runes": {
+        "blood": 0,
+        "frost": 0,
+        "unholy": 0
+      }
     },
     {
       "id": "fireworker",
@@ -108442,7 +108787,12 @@
         "deathrattle"
       ],
       "description": "Deathrattle: The next time you Excavate, resummon this.",
-      "deathrattle": []
+      "deathrattle": [],
+      "runes": {
+        "blood": 0,
+        "frost": 1,
+        "unholy": 1
+      }
     },
     {
       "id": "saloon_brewmaster",
@@ -108758,7 +109108,12 @@
             }
           ]
         }
-      ]
+      ],
+      "runes": {
+        "blood": 0,
+        "frost": 0,
+        "unholy": 2
+      }
     },
     {
       "id": "gattlesnake",
@@ -109413,7 +109768,12 @@
             }
           ]
         }
-      ]
+      ],
+      "runes": {
+        "blood": 1,
+        "frost": 0,
+        "unholy": 1
+      }
     },
     {
       "id": "ogre_gang_rider",
@@ -109609,7 +109969,12 @@
         {
           "type": "excavate"
         }
-      ]
+      ],
+      "runes": {
+        "blood": 0,
+        "frost": 1,
+        "unholy": 0
+      }
     },
     {
       "id": "snake_oil_seller",
@@ -110266,7 +110631,12 @@
             }
           ]
         }
-      ]
+      ],
+      "runes": {
+        "blood": 0,
+        "frost": 1,
+        "unholy": 0
+      }
     },
     {
       "id": "maruut_stonebinder",
@@ -110390,7 +110760,12 @@
         {
           "type": "mind-control-random"
         }
-      ]
+      ],
+      "runes": {
+        "blood": 0,
+        "frost": 1,
+        "unholy": 1
+      }
     },
     {
       "id": "elise_badlands_savior",
@@ -110663,6 +111038,11 @@
             "keyword": "reborn"
           }
         ]
+      },
+      "runes": {
+        "blood": 0,
+        "frost": 0,
+        "unholy": 1
       }
     },
     {
@@ -111276,7 +111656,12 @@
           "target": "random-enemy",
           "count": 3
         }
-      ]
+      ],
+      "runes": {
+        "blood": 0,
+        "frost": 1,
+        "unholy": 0
+      }
     },
     {
       "id": "gorgonzormu",
@@ -111682,7 +112067,12 @@
           "cardType": "spell",
           "count": 2
         }
-      ]
+      ],
+      "runes": {
+        "blood": 0,
+        "frost": 0,
+        "unholy": 0
+      }
     },
     {
       "id": "cabaret_headliner",
@@ -111845,7 +112235,12 @@
             "attack": 1
           }
         }
-      ]
+      ],
+      "runes": {
+        "blood": 1,
+        "frost": 1,
+        "unholy": 0
+      }
     },
     {
       "id": "griftah_trusted_vendor",
@@ -112975,6 +113370,11 @@
             "type": "summon-copy-of-triggering-minion"
           }
         ]
+      },
+      "runes": {
+        "blood": 0,
+        "frost": 0,
+        "unholy": 1
       }
     },
     {
@@ -113367,7 +113767,12 @@
           }
         ]
       },
-      "starshipPiece": true
+      "starshipPiece": true,
+      "runes": {
+        "blood": 0,
+        "frost": 0,
+        "unholy": 0
+      }
     },
     {
       "id": "hologram_operator",
@@ -113921,7 +114326,12 @@
             "attack": 1
           }
         }
-      ]
+      ],
+      "runes": {
+        "blood": 0,
+        "frost": 0,
+        "unholy": 0
+      }
     },
     {
       "id": "kara_dark_star",
@@ -114038,7 +114448,12 @@
           "costFromSelfAttack": true
         }
       ],
-      "starshipPiece": true
+      "starshipPiece": true,
+      "runes": {
+        "blood": 1,
+        "frost": 0,
+        "unholy": 1
+      }
     },
     {
       "id": "specimen_claw",
@@ -114828,7 +115243,12 @@
         {
           "type": "corpse-next-card"
         }
-      ]
+      ],
+      "runes": {
+        "blood": 0,
+        "frost": 0,
+        "unholy": 1
+      }
     },
     {
       "id": "high_templar",
@@ -115186,7 +115606,12 @@
           "type": "mill-except-highest",
           "count": 8
         }
-      ]
+      ],
+      "runes": {
+        "blood": 2,
+        "frost": 0,
+        "unholy": 0
+      }
     },
     {
       "id": "thor",
@@ -115247,7 +115672,12 @@
           "type": "summon-random-died-game",
           "requireKeyword": "deathrattle"
         }
-      ]
+      ],
+      "runes": {
+        "blood": 0,
+        "frost": 0,
+        "unholy": 1
+      }
     },
     {
       "id": "colossus",
@@ -115460,6 +115890,11 @@
             "target": "friendly-others"
           }
         ]
+      },
+      "runes": {
+        "blood": 2,
+        "frost": 0,
+        "unholy": 0
       }
     },
     {
@@ -115925,6 +116360,11 @@
             "corpses": 2
           }
         ]
+      },
+      "runes": {
+        "blood": 0,
+        "frost": 0,
+        "unholy": 2
       }
     },
     {
@@ -117066,7 +117506,12 @@
             }
           ]
         }
-      ]
+      ],
+      "runes": {
+        "blood": 0,
+        "frost": 0,
+        "unholy": 0
+      }
     },
     {
       "id": "grove_shaper",
@@ -117302,7 +117747,12 @@
           "count": 2,
           "summonId": "edr_leech"
         }
-      ]
+      ],
+      "runes": {
+        "blood": 1,
+        "frost": 0,
+        "unholy": 0
+      }
     },
     {
       "id": "merithra",
@@ -117391,7 +117841,12 @@
           "type": "nythendra-split",
           "count": 4
         }
-      ]
+      ],
+      "runes": {
+        "blood": 0,
+        "frost": 0,
+        "unholy": 2
+      }
     },
     {
       "id": "edr_treant_2_2",
@@ -117423,7 +117878,12 @@
       "keywords": [
         "lifesteal"
       ],
-      "description": "A 0/2 Leech with Lifesteal."
+      "description": "A 0/2 Leech with Lifesteal.",
+      "runes": {
+        "blood": 0,
+        "frost": 0,
+        "unholy": 0
+      }
     },
     {
       "id": "edr_beetle",
@@ -117438,7 +117898,12 @@
       "tribe": "Undead",
       "token": true,
       "collectible": false,
-      "description": "A 1/1 Beetle."
+      "description": "A 1/1 Beetle.",
+      "runes": {
+        "blood": 0,
+        "frost": 0,
+        "unholy": 0
+      }
     },
     {
       "id": "scavenging_flytrap",
@@ -117717,7 +118182,12 @@
             }
           ]
         }
-      ]
+      ],
+      "runes": {
+        "blood": 0,
+        "frost": 0,
+        "unholy": 2
+      }
     },
     {
       "id": "ashamane",
@@ -117806,7 +118276,12 @@
         {
           "type": "ursoc-resurrect"
         }
-      ]
+      ],
+      "runes": {
+        "blood": 0,
+        "frost": 0,
+        "unholy": 0
+      }
     },
     {
       "id": "ysera_emerald_aspect",
@@ -119306,7 +119781,12 @@
           ]
         }
       ],
-      "kindredCard": true
+      "kindredCard": true,
+      "runes": {
+        "blood": 0,
+        "frost": 0,
+        "unholy": 0
+      }
     },
     {
       "id": "elise_the_navigator",
@@ -119745,6 +120225,11 @@
             "corpses": 3
           }
         ]
+      },
+      "runes": {
+        "blood": 0,
+        "frost": 0,
+        "unholy": 0
       }
     },
     {
@@ -120029,7 +120514,12 @@
           "count": 3,
           "pool": "enemies"
         }
-      ]
+      ],
+      "runes": {
+        "blood": 0,
+        "frost": 0,
+        "unholy": 0
+      }
     },
     {
       "id": "city_chief_esho",
@@ -120470,7 +120960,12 @@
           ],
           "fight": true
         }
-      ]
+      ],
+      "runes": {
+        "blood": 0,
+        "frost": 0,
+        "unholy": 0
+      }
     },
     {
       "id": "the_great_dracorex",
@@ -120626,7 +121121,12 @@
           "rarity": "legendary",
           "costMod": -1
         }
-      ]
+      ],
+      "runes": {
+        "blood": 0,
+        "frost": 0,
+        "unholy": 0
+      }
     },
     {
       "id": "paltry_flutterwing",
@@ -121183,7 +121683,12 @@
           "target": "enemy-creature",
           "requireHeroHealthChanged": true
         }
-      ]
+      ],
+      "runes": {
+        "blood": 0,
+        "frost": 0,
+        "unholy": 0
+      }
     },
     {
       "id": "misplaced_pyromancer",
@@ -121368,7 +121873,12 @@
       "set": "TIME_TRAVEL",
       "tribe": "Undead",
       "description": "You no longer draw a card at the start of your turn.",
-      "skipStartDraw": true
+      "skipStartDraw": true,
+      "runes": {
+        "blood": 0,
+        "frost": 1,
+        "unholy": 1
+      }
     },
     {
       "id": "cleansing_lightspawn",
@@ -121605,7 +122115,12 @@
         {
           "type": "hero-corpse-deathrattle"
         }
-      ]
+      ],
+      "runes": {
+        "blood": 0,
+        "frost": 0,
+        "unholy": 0
+      }
     },
     {
       "id": "king_maluk",
@@ -121724,7 +122239,12 @@
             }
           ]
         }
-      ]
+      ],
+      "runes": {
+        "blood": 0,
+        "frost": 0,
+        "unholy": 0
+      }
     },
     {
       "id": "time_skipper",
@@ -123043,7 +123563,12 @@
         {
           "type": "blackwing-bolt"
         }
-      ]
+      ],
+      "runes": {
+        "blood": 0,
+        "frost": 1,
+        "unholy": 0
+      }
     },
     {
       "id": "brash_battlemaster",
@@ -123306,7 +123831,12 @@
           "value": 3,
           "target": "any"
         }
-      ]
+      ],
+      "runes": {
+        "blood": 0,
+        "frost": 0,
+        "unholy": 0
+      }
     },
     {
       "id": "battlefield_blaster",
@@ -123498,7 +124028,12 @@
           "action": "attack-gift",
           "valueFromSelfAttack": true
         }
-      ]
+      ],
+      "runes": {
+        "blood": 0,
+        "frost": 0,
+        "unholy": 0
+      }
     },
     {
       "id": "ley_walker",
@@ -123766,6 +124301,11 @@
             "valuePer": "self-attack"
           }
         ]
+      },
+      "runes": {
+        "blood": 0,
+        "frost": 1,
+        "unholy": 1
       }
     },
     {
@@ -124087,7 +124627,12 @@
             }
           ]
         }
-      ]
+      ],
+      "runes": {
+        "blood": 0,
+        "frost": 0,
+        "unholy": 0
+      }
     },
     {
       "id": "wasteland_vanguard",
@@ -124734,7 +125279,12 @@
             }
           ]
         }
-      ]
+      ],
+      "runes": {
+        "blood": 0,
+        "frost": 0,
+        "unholy": 0
+      }
     },
     {
       "id": "gallagio_goon",
@@ -125129,7 +125679,12 @@
           "value": 2,
           "target": "own-hero"
         }
-      ]
+      ],
+      "runes": {
+        "blood": 0,
+        "frost": 0,
+        "unholy": 0
+      }
     },
     {
       "id": "disguised_executioner",
@@ -125716,7 +126271,12 @@
         {
           "type": "thalena-power"
         }
-      ]
+      ],
+      "runes": {
+        "blood": 0,
+        "frost": 0,
+        "unholy": 0
+      }
     },
     {
       "id": "bootleg_alchemist",
@@ -126039,7 +126599,12 @@
           "type": "destroy-others-draw-refresh"
         }
       ],
-      "prepare": true
+      "prepare": true,
+      "runes": {
+        "blood": 0,
+        "frost": 0,
+        "unholy": 0
+      }
     },
     {
       "id": "trastath_soul_parasite",
@@ -126181,7 +126746,12 @@
         "charge"
       ],
       "description": "Charge. Instead of damaging heroes, this shuffles that many Blights into their deck that deal 2 damage when drawn.",
-      "blightsInstead": true
+      "blightsInstead": true,
+      "runes": {
+        "blood": 0,
+        "frost": 0,
+        "unholy": 0
+      }
     },
     {
       "id": "chainbreaker_hogger",
@@ -127170,7 +127740,12 @@
           "count": 1,
           "summonId": "leg_risen_ymirjar"
         }
-      ]
+      ],
+      "runes": {
+        "blood": 0,
+        "frost": 0,
+        "unholy": 0
+      }
     },
     {
       "id": "plaguebringer",
@@ -127498,7 +128073,12 @@
         {
           "type": "destroy-enemy-hand-deck-board"
         }
-      ]
+      ],
+      "runes": {
+        "blood": 0,
+        "frost": 0,
+        "unholy": 0
+      }
     },
     {
       "id": "alexstrasza_the_life_binder",
@@ -127641,7 +128221,12 @@
       "keywords": [
         "taunt"
       ],
-      "description": "A 3/3 with Taunt."
+      "description": "A 3/3 with Taunt.",
+      "runes": {
+        "blood": 0,
+        "frost": 0,
+        "unholy": 0
+      }
     },
     {
       "id": "fogsail_freebooter",
@@ -127685,7 +128270,12 @@
         {
           "type": "hematurge"
         }
-      ]
+      ],
+      "runes": {
+        "blood": 0,
+        "frost": 0,
+        "unholy": 0
+      }
     },
     {
       "id": "falric",
@@ -127710,7 +128300,12 @@
         {
           "type": "corpse-double"
         }
-      ]
+      ],
+      "runes": {
+        "blood": 0,
+        "frost": 0,
+        "unholy": 2
+      }
     },
     {
       "id": "overlord_runthak",
@@ -128237,7 +128832,12 @@
           "school": "Frost",
           "attack": 1
         }
-      ]
+      ],
+      "runes": {
+        "blood": 0,
+        "frost": 1,
+        "unholy": 0
+      }
     },
     {
       "id": "vicious_bloodworm",
@@ -128261,7 +128861,12 @@
           "action": "attack-gift",
           "value": 3
         }
-      ]
+      ],
+      "runes": {
+        "blood": 1,
+        "frost": 0,
+        "unholy": 0
+      }
     },
     {
       "id": "lady_deathwhisper",
@@ -128284,7 +128889,12 @@
           "school": "Frost",
           "all": true
         }
-      ]
+      ],
+      "runes": {
+        "blood": 0,
+        "frost": 3,
+        "unholy": 0
+      }
     },
     {
       "id": "corpse_bride",
@@ -128305,7 +128915,12 @@
         {
           "type": "corpse-bride"
         }
-      ]
+      ],
+      "runes": {
+        "blood": 0,
+        "frost": 2,
+        "unholy": 0
+      }
     },
     {
       "id": "dhi_lost_soul",
@@ -128337,7 +128952,12 @@
       "keywords": [
         "taunt"
       ],
-      "description": "A 5/5 with Taunt."
+      "description": "A 5/5 with Taunt.",
+      "runes": {
+        "blood": 0,
+        "frost": 0,
+        "unholy": 0
+      }
     },
     {
       "id": "tsc_leviathan_claw",
@@ -128442,7 +129062,12 @@
       "keywords": [
         "taunt"
       ],
-      "description": "Taunt."
+      "description": "Taunt.",
+      "runes": {
+        "blood": 0,
+        "frost": 0,
+        "unholy": 0
+      }
     },
     {
       "id": "hp_blessing_golem",
@@ -134634,7 +135259,12 @@
           "type": "draw",
           "value": 1
         }
-      ]
+      ],
+      "runes": {
+        "blood": 0,
+        "frost": 0,
+        "unholy": 0
+      }
     },
     {
       "id": "duels_gift_of_the_legion",
@@ -134757,7 +135387,12 @@
           }
         ]
       },
-      "description": "Hero Power (2): Create a 2/1 Bloodworm creature token with Lifesteal."
+      "description": "Hero Power (2): Create a 2/1 Bloodworm creature token with Lifesteal.",
+      "runes": {
+        "blood": 0,
+        "frost": 0,
+        "unholy": 0
+      }
     },
     {
       "id": "duelshp_primal_power",
@@ -135229,7 +135864,12 @@
           "value": 4,
           "target": "any"
         }
-      ]
+      ],
+      "runes": {
+        "blood": 0,
+        "frost": 0,
+        "unholy": 0
+      }
     },
     {
       "id": "lk_doom_pact",
@@ -135247,7 +135887,12 @@
         {
           "type": "destroy-all"
         }
-      ]
+      ],
+      "runes": {
+        "blood": 0,
+        "frost": 0,
+        "unholy": 0
+      }
     },
     {
       "id": "lk_soul_reaper",
@@ -135267,7 +135912,12 @@
           "value": 3,
           "target": "creature"
         }
-      ]
+      ],
+      "runes": {
+        "blood": 0,
+        "frost": 0,
+        "unholy": 0
+      }
     },
     {
       "id": "windswept_heresy",
@@ -136539,6 +137189,11 @@
             "attack": 2
           }
         ]
+      },
+      "runes": {
+        "blood": 0,
+        "frost": 0,
+        "unholy": 1
       }
     },
     {
@@ -137049,6 +137704,11 @@
             ]
           }
         ]
+      },
+      "runes": {
+        "blood": 0,
+        "frost": 0,
+        "unholy": 1
       }
     },
     {
@@ -137248,6 +137908,11 @@
             "count": 1
           }
         ]
+      },
+      "runes": {
+        "blood": 0,
+        "frost": 0,
+        "unholy": 2
       }
     },
     {
@@ -137404,7 +138069,12 @@
             }
           ]
         }
-      ]
+      ],
+      "runes": {
+        "blood": 0,
+        "frost": 0,
+        "unholy": 0
+      }
     },
     {
       "id": "spawning_pool",
@@ -138233,6 +138903,11 @@
             "value": 1
           }
         ]
+      },
+      "runes": {
+        "blood": 0,
+        "frost": 0,
+        "unholy": 0
       }
     },
     {
@@ -138802,7 +139477,12 @@
             }
           ]
         }
-      ]
+      ],
+      "runes": {
+        "blood": 0,
+        "frost": 0,
+        "unholy": 0
+      }
     },
     {
       "id": "spectral_cutlass",
@@ -147390,7 +148070,12 @@
           "type": "summon-copies-of-board",
           "tribe": "Undead"
         }
-      ]
+      ],
+      "runes": {
+        "blood": 0,
+        "frost": 0,
+        "unholy": 0
+      }
     },
     {
       "id": "fistful_of_corpses",
@@ -147409,7 +148094,12 @@
           "valuePer": "corpses",
           "target": "creature"
         }
-      ]
+      ],
+      "runes": {
+        "blood": 0,
+        "frost": 0,
+        "unholy": 0
+      }
     },
     {
       "id": "orbital_moon",
@@ -147432,7 +148122,12 @@
           "keyword": "lifesteal",
           "target": "creature"
         }
-      ]
+      ],
+      "runes": {
+        "blood": 0,
+        "frost": 0,
+        "unholy": 0
+      }
     },
     {
       "id": "rite_of_atrocity",
@@ -147450,7 +148145,12 @@
           "cardType": "creature",
           "tribe": "Undead"
         }
-      ]
+      ],
+      "runes": {
+        "blood": 0,
+        "frost": 0,
+        "unholy": 0
+      }
     },
     {
       "id": "runes_of_darkness",
@@ -147469,7 +148169,12 @@
           "pick": 3,
           "cardType": "weapon"
         }
-      ]
+      ],
+      "runes": {
+        "blood": 0,
+        "frost": 0,
+        "unholy": 0
+      }
     },
     {
       "id": "down_with_the_ship",
@@ -147493,7 +148198,12 @@
           "id": "ttn_plague",
           "count": 2
         }
-      ]
+      ],
+      "runes": {
+        "blood": 0,
+        "frost": 0,
+        "unholy": 1
+      }
     },
     {
       "id": "poison_breath",
@@ -147512,7 +148222,12 @@
           "tribe": "Undead",
           "keyword": "poisonous"
         }
-      ]
+      ],
+      "runes": {
+        "blood": 0,
+        "frost": 0,
+        "unholy": 2
+      }
     },
     {
       "id": "cremate",
@@ -147531,7 +148246,12 @@
           "cardType": "creature",
           "costMod": -2
         }
-      ]
+      ],
+      "runes": {
+        "blood": 0,
+        "frost": 0,
+        "unholy": 0
+      }
     },
     {
       "id": "howling_blast",
@@ -147555,7 +148275,12 @@
           "type": "freeze",
           "target": "enemy-any"
         }
-      ]
+      ],
+      "runes": {
+        "blood": 0,
+        "frost": 1,
+        "unholy": 0
+      }
     },
     {
       "id": "eternal_layover",
@@ -147576,7 +148301,12 @@
         {
           "type": "destroy-all"
         }
-      ]
+      ],
+      "runes": {
+        "blood": 0,
+        "frost": 0,
+        "unholy": 1
+      }
     },
     {
       "id": "helm_of_humiliation",
@@ -147601,7 +148331,12 @@
           "health": 5
         }
       ],
-      "description": "Give a creature -5/-5. Give a random creature in your hand +5/+5."
+      "description": "Give a creature -5/-5. Give a random creature in your hand +5/+5.",
+      "runes": {
+        "blood": 2,
+        "frost": 0,
+        "unholy": 0
+      }
     },
     {
       "id": "poison_breath",
@@ -147620,7 +148355,12 @@
           "tribe": "Undead",
           "keyword": "poisonous"
         }
-      ]
+      ],
+      "runes": {
+        "blood": 0,
+        "frost": 0,
+        "unholy": 2
+      }
     },
     {
       "id": "howling_blast",
@@ -147644,7 +148384,12 @@
           "type": "freeze",
           "target": "enemy-any"
         }
-      ]
+      ],
+      "runes": {
+        "blood": 0,
+        "frost": 1,
+        "unholy": 0
+      }
     },
     {
       "id": "rising_waves",
@@ -150551,7 +151296,12 @@
           "type": "draw",
           "value": 1
         }
-      ]
+      ],
+      "runes": {
+        "blood": 0,
+        "frost": 2,
+        "unholy": 0
+      }
     },
     {
       "id": "suffocate",
@@ -150569,7 +151319,12 @@
           "type": "destroy",
           "target": "creature"
         }
-      ]
+      ],
+      "runes": {
+        "blood": 0,
+        "frost": 0,
+        "unholy": 0
+      }
     },
     {
       "id": "wave_of_tar",
@@ -150587,7 +151342,12 @@
           "value": 2,
           "target": "enemy-creatures"
         }
-      ]
+      ],
+      "runes": {
+        "blood": 0,
+        "frost": 1,
+        "unholy": 1
+      }
     },
     {
       "id": "talanjis_last_stand",
@@ -150610,7 +151370,12 @@
             }
           ]
         }
-      ]
+      ],
+      "runes": {
+        "blood": 0,
+        "frost": 0,
+        "unholy": 2
+      }
     },
     {
       "id": "chow_down",
@@ -150631,7 +151396,12 @@
           "name": "Undead Drake",
           "tribe": "Undead"
         }
-      ]
+      ],
+      "runes": {
+        "blood": 0,
+        "frost": 0,
+        "unholy": 2
+      }
     },
     {
       "id": "airlock_breach",
@@ -150659,7 +151429,12 @@
           "value": 5,
           "target": "self"
         }
-      ]
+      ],
+      "runes": {
+        "blood": 1,
+        "frost": 0,
+        "unholy": 1
+      }
     },
     {
       "id": "cloning_device",
@@ -156412,7 +157187,12 @@
           "attack": 1,
           "health": 1
         }
-      ]
+      ],
+      "runes": {
+        "blood": 1,
+        "frost": 0,
+        "unholy": 0
+      }
     },
     {
       "id": "dark_transformation",
@@ -156437,7 +157217,12 @@
             "rush"
           ]
         }
-      ]
+      ],
+      "runes": {
+        "blood": 0,
+        "frost": 0,
+        "unholy": 1
+      }
     },
     {
       "id": "drink_blood",
@@ -156460,7 +157245,12 @@
         {
           "type": "refresh-hero-power"
         }
-      ]
+      ],
+      "runes": {
+        "blood": 1,
+        "frost": 0,
+        "unholy": 0
+      }
     },
     {
       "id": "mining_casualties",
@@ -156490,7 +157280,12 @@
             }
           ]
         }
-      ]
+      ],
+      "runes": {
+        "blood": 0,
+        "frost": 0,
+        "unholy": 0
+      }
     },
     {
       "id": "threads_of_despair",
@@ -156515,7 +157310,12 @@
             }
           ]
         }
-      ]
+      ],
+      "runes": {
+        "blood": 1,
+        "frost": 0,
+        "unholy": 0
+      }
     },
     {
       "id": "timestop",
@@ -156540,7 +157340,12 @@
         {
           "type": "freeze-random"
         }
-      ]
+      ],
+      "runes": {
+        "blood": 0,
+        "frost": 2,
+        "unholy": 0
+      }
     },
     {
       "id": "undying_allies",
@@ -158471,7 +159276,12 @@
             }
           ]
         }
-      ]
+      ],
+      "runes": {
+        "blood": 0,
+        "frost": 0,
+        "unholy": 0
+      }
     },
     {
       "id": "crypt_map",
@@ -158490,7 +159300,12 @@
           "cardType": "spell",
           "tribe": "Frost"
         }
-      ]
+      ],
+      "runes": {
+        "blood": 0,
+        "frost": 2,
+        "unholy": 0
+      }
     },
     {
       "id": "reanimate_the_terror",
@@ -158520,6 +159335,11 @@
             ]
           }
         ]
+      },
+      "runes": {
+        "blood": 1,
+        "frost": 0,
+        "unholy": 1
       }
     },
     {
@@ -158539,7 +159359,12 @@
           "cardType": "weapon",
           "count": 1
         }
-      ]
+      ],
+      "runes": {
+        "blood": 0,
+        "frost": 0,
+        "unholy": 0
+      }
     },
     {
       "id": "northern_navigation",
@@ -158558,7 +159383,12 @@
           "cardType": "spell",
           "fromOwnDeck": true
         }
-      ]
+      ],
+      "runes": {
+        "blood": 0,
+        "frost": 1,
+        "unholy": 0
+      }
     },
     {
       "id": "blood_draw",
@@ -158577,7 +159407,12 @@
           "pick": 3,
           "cardType": "spell"
         }
-      ]
+      ],
+      "runes": {
+        "blood": 1,
+        "frost": 0,
+        "unholy": 0
+      }
     },
     {
       "id": "illuminate",
@@ -161908,7 +162743,12 @@
             }
           ]
         }
-      ]
+      ],
+      "runes": {
+        "blood": 0,
+        "frost": 0,
+        "unholy": 0
+      }
     },
     {
       "id": "cold_feet",
@@ -161926,7 +162766,12 @@
           "type": "enemy-minion-tax-next-turn",
           "value": 5
         }
-      ]
+      ],
+      "runes": {
+        "blood": 0,
+        "frost": 0,
+        "unholy": 0
+      }
     },
     {
       "id": "corpsicle",
@@ -161954,7 +162799,12 @@
             }
           ]
         }
-      ]
+      ],
+      "runes": {
+        "blood": 0,
+        "frost": 1,
+        "unholy": 0
+      }
     },
     {
       "id": "frozen_over",
@@ -161980,7 +162830,12 @@
           "type": "lock-enemy-hand-card",
           "count": 2
         }
-      ]
+      ],
+      "runes": {
+        "blood": 0,
+        "frost": 1,
+        "unholy": 0
+      }
     },
     {
       "id": "soul_searching",
@@ -162007,7 +162862,12 @@
             }
           ]
         }
-      ]
+      ],
+      "runes": {
+        "blood": 0,
+        "frost": 0,
+        "unholy": 2
+      }
     },
     {
       "id": "assimilating_blight",
@@ -162028,7 +162888,12 @@
           "to": "board",
           "grant": "reborn"
         }
-      ]
+      ],
+      "runes": {
+        "blood": 1,
+        "frost": 0,
+        "unholy": 2
+      }
     },
     {
       "id": "blood_clone",
@@ -162056,7 +162921,12 @@
             }
           ]
         }
-      ]
+      ],
+      "runes": {
+        "blood": 2,
+        "frost": 0,
+        "unholy": 0
+      }
     },
     {
       "id": "finality",
@@ -162081,7 +162951,12 @@
         {
           "type": "imbue"
         }
-      ]
+      ],
+      "runes": {
+        "blood": 0,
+        "frost": 0,
+        "unholy": 0
+      }
     },
     {
       "id": "harmonic_metal",
@@ -162114,7 +162989,12 @@
           "attack": 2,
           "health": 2
         }
-      ]
+      ],
+      "runes": {
+        "blood": 1,
+        "frost": 0,
+        "unholy": 0
+      }
     },
     {
       "id": "paleomancy",
@@ -162142,7 +163022,12 @@
             }
           ]
         }
-      ]
+      ],
+      "runes": {
+        "blood": 0,
+        "frost": 0,
+        "unholy": 1
+      }
     },
     {
       "id": "memoriam_manifest",
@@ -162159,7 +163044,12 @@
         {
           "type": "resurrect-highest-died"
         }
-      ]
+      ],
+      "runes": {
+        "blood": 0,
+        "frost": 0,
+        "unholy": 0
+      }
     },
     {
       "id": "sinister_soulcage",
@@ -162189,7 +163079,12 @@
             }
           ]
         }
-      ]
+      ],
+      "runes": {
+        "blood": 0,
+        "frost": 0,
+        "unholy": 1
+      }
     },
     {
       "id": "story_of_umbra",
@@ -162212,7 +163107,12 @@
         {
           "type": "trigger-summoned-deathrattle"
         }
-      ]
+      ],
+      "runes": {
+        "blood": 0,
+        "frost": 0,
+        "unholy": 0
+      }
     },
     {
       "id": "the_scourge",
@@ -162231,7 +163131,12 @@
           "tribe": "Undead",
           "count": 7
         }
-      ]
+      ],
+      "runes": {
+        "blood": 0,
+        "frost": 0,
+        "unholy": 2
+      }
     },
     {
       "id": "the_scourge_path_of_arthas",
@@ -162250,8 +163155,12 @@
           "tribe": "Undead",
           "count": 7
         }
-      ]
+      ],
+      "runes": {
+        "blood": 0,
+        "frost": 0,
+        "unholy": 2
+      }
     }
   ]
 }
-
