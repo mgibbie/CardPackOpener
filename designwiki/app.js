@@ -650,7 +650,7 @@ async function cardDetail(id) {
       h('div', { class: 'card-page-face' }, face),
       h('div', { class: 'card-page-info' },
         h('h1', null, c.name),
-        h('div', { class: 'card-page-meta' }, CardArt.classNameOf(c.cardClass) + (CardArt.showsRarity(c) ? ' · ' + titleCase(c.rarity || 'common') : '')),
+        h('div', { class: 'card-page-meta' }, h('a', { href: '#/cards?class=' + encodeURIComponent(canonClass(c)) }, CardArt.classNameOf(c.cardClass)), CardArt.showsRarity(c) ? [' · ', h('a', { href: '#/cards?rarity=' + encodeURIComponent(String(c.rarity || 'common')) }, titleCase(c.rarity || 'common'))] : null),
         // clickable type + tribe/school tags
         h('div', { class: 'card-tags' }, cardTypeChip(c.type), tribesOf(c).map(t => tribeChip(c, t))),
         h('div', { class: 'card-page-stats' }, stats.join('  ·  ')),
