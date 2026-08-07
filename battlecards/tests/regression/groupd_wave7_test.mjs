@@ -55,7 +55,7 @@ for (const id of ['archmage_vargoth', 'creature_of_the_sacred_cave', 'static_wav
 {
 	// run several seeds; across them it should sometimes sleep and sometimes not
 	let slept = 0, awake = 0;
-	for (let s = 0; s < 8; s++) {
+	for (let s = 0; s < 40; s++) { // wide sample so both outcomes of the 50% flip reliably appear regardless of card-count RNG drift
 		const st = game(100 + s); const h = put(st, 0, 'sunstruck_henchman');
 		E.endTurn(st); E.endTurn(st); // your next turn start
 		if (h.dormantLeft > 0) slept++; else awake++;

@@ -152488,6 +152488,321 @@
         }
       ],
       "description": "Summon a 5/5 Wyvern with Rush."
+    },
+    {
+      "id": "deck_of_wonders",
+      "name": "Deck of Wonders",
+      "type": "sorcery",
+      "cost": 5,
+      "cardClass": "mage",
+      "rarity": "epic",
+      "set": "LOOTAPALOOZA",
+      "tribe": "Arcane",
+      "collectible": true,
+      "description": "Shuffle 5 Scrolls into your deck. When drawn, cast a random spell.",
+      "effects": [
+        {
+          "type": "shuffle-ids-into-deck",
+          "ids": [
+            "dala_scroll_of_wonder",
+            "dala_scroll_of_wonder",
+            "dala_scroll_of_wonder",
+            "dala_scroll_of_wonder",
+            "dala_scroll_of_wonder"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "power_of_creation",
+      "name": "Power of Creation",
+      "type": "sorcery",
+      "cost": 8,
+      "cardClass": "mage",
+      "rarity": "epic",
+      "set": "DALARAN",
+      "collectible": true,
+      "tribe": "Arcane",
+      "description": "Discover a 6-Cost minion. Summon two copies of it.",
+      "effects": [
+        {
+          "type": "discover",
+          "cardType": "creature",
+          "cost": 6,
+          "to": "board",
+          "summonTwice": true
+        }
+      ]
+    },
+    {
+      "id": "ray_of_frost",
+      "name": "Ray of Frost",
+      "cardClass": "mage",
+      "cost": 1,
+      "rarity": "common",
+      "set": "DALARAN",
+      "collectible": true,
+      "type": "sorcery",
+      "tribe": "Frost",
+      "description": "Freeze a minion. If it's already Frozen, deal 2 damage to it.",
+      "effects": [
+        {
+          "type": "conditional",
+          "target": "creature",
+          "if": {
+            "targetFrozen": true
+          },
+          "then": [
+            {
+              "type": "damage",
+              "value": 2,
+              "target": "creature"
+            }
+          ],
+          "else": [
+            {
+              "type": "freeze",
+              "target": "creature"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "power_of_creation",
+      "name": "Power of Creation",
+      "type": "sorcery",
+      "cost": 8,
+      "cardClass": "mage",
+      "rarity": "epic",
+      "set": "DALARAN",
+      "collectible": true,
+      "tribe": "Arcane",
+      "description": "Discover a 6-Cost minion. Summon two copies of it.",
+      "effects": [
+        {
+          "type": "discover",
+          "cardType": "creature",
+          "cost": 6,
+          "to": "board",
+          "summonTwice": true
+        }
+      ]
+    },
+    {
+      "id": "ray_of_frost",
+      "name": "Ray of Frost",
+      "cardClass": "mage",
+      "cost": 1,
+      "rarity": "common",
+      "set": "DALARAN",
+      "collectible": true,
+      "type": "sorcery",
+      "tribe": "Frost",
+      "description": "Freeze a minion. If it's already Frozen, deal 2 damage to it.",
+      "effects": [
+        {
+          "type": "conditional",
+          "target": "creature",
+          "if": {
+            "targetFrozen": true
+          },
+          "then": [
+            {
+              "type": "damage",
+              "value": 2,
+              "target": "creature"
+            }
+          ],
+          "else": [
+            {
+              "type": "freeze",
+              "target": "creature"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "deck_of_wonders",
+      "name": "Deck of Wonders",
+      "type": "sorcery",
+      "cost": 5,
+      "cardClass": "mage",
+      "rarity": "epic",
+      "set": "LOOTAPALOOZA",
+      "tribe": "Arcane",
+      "collectible": true,
+      "description": "Shuffle 5 Scrolls into your deck. When drawn, cast a random spell.",
+      "effects": [
+        {
+          "type": "shuffle-ids-into-deck",
+          "ids": [
+            "dala_scroll_of_wonder",
+            "dala_scroll_of_wonder",
+            "dala_scroll_of_wonder",
+            "dala_scroll_of_wonder",
+            "dala_scroll_of_wonder"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "cataclysm",
+      "name": "Cataclysm",
+      "cardClass": "warlock",
+      "cost": 5,
+      "rarity": "epic",
+      "set": "LOOTAPALOOZA",
+      "collectible": true,
+      "type": "sorcery",
+      "tribe": "Fire",
+      "effects": [
+        {
+          "type": "destroy-all"
+        },
+        {
+          "type": "discard-random",
+          "count": 2
+        }
+      ],
+      "description": "Destroy all minions. Discard 2 cards."
+    },
+    {
+      "id": "dark_bargain",
+      "name": "Dark Bargain",
+      "cardClass": "warlock",
+      "cost": 4,
+      "rarity": "epic",
+      "set": "TGT",
+      "tribe": "Shadow",
+      "type": "sorcery",
+      "collectible": true,
+      "effects": [
+        {
+          "type": "destroy-random",
+          "count": 2
+        },
+        {
+          "type": "discard-random",
+          "count": 2
+        }
+      ],
+      "description": "Destroy 2 random enemy minions. Discard 2 random cards."
+    },
+    {
+      "id": "dark_possession",
+      "name": "Dark Possession",
+      "type": "sorcery",
+      "cost": 1,
+      "cardClass": "warlock",
+      "rarity": "rare",
+      "set": "GILNEAS",
+      "collectible": true,
+      "tribe": "Shadow",
+      "description": "Deal 2 damage to a friendly character. Discover a Demon.",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 2,
+          "target": "friendly-any"
+        },
+        {
+          "type": "discover",
+          "cardType": "creature",
+          "tribe": "Demon",
+          "pick": 3
+        }
+      ]
+    },
+    {
+      "id": "demonbolt",
+      "name": "Demonbolt",
+      "type": "sorcery",
+      "cost": 8,
+      "cardClass": "warlock",
+      "rarity": "common",
+      "set": "TROLL",
+      "collectible": true,
+      "tribe": "Shadow",
+      "description": "Destroy a minion. Costs (1) less for each minion you control.",
+      "effects": [
+        {
+          "type": "destroy",
+          "target": "creature"
+        }
+      ],
+      "selfCost": {
+        "per": "tribe-controlled",
+        "tribe": "",
+        "amount": -1
+      }
+    },
+    {
+      "id": "cataclysm",
+      "name": "Cataclysm",
+      "cardClass": "warlock",
+      "cost": 5,
+      "rarity": "epic",
+      "set": "LOOTAPALOOZA",
+      "collectible": true,
+      "type": "sorcery",
+      "tribe": "Fire",
+      "effects": [
+        {
+          "type": "destroy-all"
+        },
+        {
+          "type": "discard-random",
+          "count": 2
+        }
+      ],
+      "description": "Destroy all minions. Discard 2 cards."
+    },
+    {
+      "id": "dark_bargain",
+      "name": "Dark Bargain",
+      "cardClass": "warlock",
+      "cost": 4,
+      "rarity": "epic",
+      "set": "TGT",
+      "tribe": "Shadow",
+      "type": "sorcery",
+      "collectible": true,
+      "effects": [
+        {
+          "type": "destroy-random",
+          "count": 2
+        },
+        {
+          "type": "discard-random",
+          "count": 2
+        }
+      ],
+      "description": "Destroy 2 random enemy minions. Discard 2 random cards."
+    },
+    {
+      "id": "demonbolt",
+      "name": "Demonbolt",
+      "type": "sorcery",
+      "cost": 8,
+      "cardClass": "warlock",
+      "rarity": "common",
+      "set": "TROLL",
+      "collectible": true,
+      "tribe": "Shadow",
+      "description": "Destroy a minion. Costs (1) less for each minion you control.",
+      "effects": [
+        {
+          "type": "destroy",
+          "target": "creature"
+        }
+      ],
+      "selfCost": {
+        "per": "tribe-controlled",
+        "tribe": "",
+        "amount": -1
+      }
     }
   ]
 }
