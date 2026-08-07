@@ -4,6 +4,54 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Magepunk66 Wiki</title>
+  <link rel="stylesheet" href="style.css?v=20260817">
+  <!-- the Card Gallery renders real in-game card faces via battlecards/cardart.js,
+       which imports three; map it so the dynamic import resolves -->
+  <script type="importmap">
+  { "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.165.0/build/three.module.js" } }
+  </script>
+</head>
+<body>
+  <header>
+    <a class="brand" href="#/">Magepunk66 Wiki</a>
+    <input id="search" type="search" placeholder="Search Pokémon, moves, abilities…" autocomplete="off">
+    <span id="status"></span>
+  </header>
+  <div class="layout">
+    <nav id="sidebar">
+      <a href="#/pokemon">Pokédex</a>
+      <a href="#/needs-typing" class="sub">⚠ Needs Typing</a>
+      <a href="#/needs-data" class="sub">⚠ Needs Moves/Abilities</a>
+      <a href="#/moves">Moves</a>
+      <a href="#/abilities">Abilities</a>
+      <a href="#/tms">TMs</a>
+      <a href="#/unlearned">Unlearned Moves</a>
+      <div class="nav-group">Regions</div>
+      <a href="#/region/kanto" class="sub">Kanto</a>
+      <a href="#/region/johto" class="sub">Johto</a>
+      <a href="#/region/johkanto" class="sub">Kanto (Past)</a>
+      <a href="#/region/hoenn" class="sub">Hoenn</a>
+      <div class="nav-group">Battlecards</div>
+      <a href="#/cards" class="sub">Card Gallery</a>\n      <a href="#/missing-art" class="sub">⚠ Missing Art</a>
+      <a href="#/dungeon" class="sub">Dungeon Run</a>
+      <a href="#/heist" class="sub">Dalaran Heist</a>
+      <a href="#/tombs" class="sub">Tombs of Terror</a>
+      <a href="#/duels" class="sub">Duels</a>
+      <a href="#/battlecards" class="sub">Design Work</a>
+    </nav>
+    <main id="content">Loading…</main>
+  </div>
+  <!-- bump ?v=… on a release to push fresh code+data to all clients (app.js
+       reads this version and appends it to every sub-resource it loads) -->
+  <script src="app.js?v=20260816"></script>
+</body>
+</html>
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Magepunk66 Wiki</title>
   <link rel="stylesheet" href="style.css?v=20260816">
   <!-- the Card Gallery renders real in-game card faces via battlecards/cardart.js,
        which imports three; map it so the dynamic import resolves -->
