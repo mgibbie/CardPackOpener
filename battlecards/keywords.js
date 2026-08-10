@@ -85,6 +85,7 @@ const K = [
 	{ p: ['Quickdraw'], t: 'Quickdraw N — draw N cards; cards drawn this way shuffle back into your deck at end of turn.', tag: 'quickdraw' },
 	{ p: ['Miracle'], t: 'A bonus effect that triggers if you play this card the same turn you drew it.', tag: 'miracle' },
 	{ p: ['Mill'], t: 'Mill N — put the top N cards of a deck into its graveyard.' },
+	{ p: ['Plunder'], t: "Plunder N — draw the top N cards of an opponent's deck into your hand." },
 	{ p: ['Arrival'], t: "A plane's effect that triggers when it arrives (becomes the active plane).", plane: true },
 	{ p: ['Departure'], t: "A plane's effect that triggers when it leaves play.", plane: true },
 	{ p: ['Chaos'], t: 'A shared plane effect that fires when a planar roll comes up Chaos.', plane: true },
