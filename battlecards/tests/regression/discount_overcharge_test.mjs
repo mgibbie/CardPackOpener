@@ -9,6 +9,7 @@
 // Correct behavior: the player pays the price they were quoted at declare
 // time (the same price canPlay validated against).
 import fs from 'fs';
+import { fileURLToPath } from 'node:url';
 import * as E from '../../engine.js';
 import { validateGameState } from '../../engine/validate.js';
 import { Scenario } from '../helpers/scenario.mjs';
@@ -67,7 +68,7 @@ const ok = (l, c, extra) => { if (c) pass++; else { fail++; console.log('FAIL:',
 	const { execSync } = await import('child_process');
 	let out = '';
 	try {
-		out = execSync(`node "${new URL('../fuzz/fuzz_test.mjs', import.meta.url).pathname.replace(/^\//, '')}" --games=1 --actions=600 --seed=420484`, { encoding: 'utf8' });
+		out = execSync(`node "${fileURLToPath(new URL('../fuzz/fuzz_test.mjs', import.meta.url))}" --games=1 --actions=600 --seed=420484`, { encoding: 'utf8' });
 	} catch (e) { out = (e.stdout || '') + (e.stderr || ''); }
 	ok('fuzz seed 420484 runs clean', out.includes('0 failed'), out.split('\n').slice(0, 4).join(' | '));
 }
