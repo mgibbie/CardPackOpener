@@ -15,7 +15,7 @@ ok('Elite Vanguard is a Human Soldier', cardsById['elite_vanguard'].tribe === 'H
 
 // --- Blacksmith's Skill card face ---
 const bs = cardsById['blacksmith_skill'];
-ok('Blacksmith\'s Skill grants Immune for 3 turns', bs.description === 'Give a creature Immune for 3 turns.' && bs.effects[0].type === 'grant-immune-turn' && bs.effects[0].turns === 3, [bs.description, bs.effects]);
+ok('Blacksmith\'s Skill grants Immune for 3 turns', bs.description === 'Target creature gains Immune for 3 turns.' && bs.effects[0].type === 'grant-immune-turn' && bs.effects[0].turns === 3, [bs.description, bs.effects]);
 
 const game = () => {
 	const st = E.createGame(cardsById, seededRng(3), null, 2, [{ id: 'neutral', name: 'N', power: null }, { id: 'neutral', name: 'N', power: null }]);

@@ -249,11 +249,18 @@ function regionView(rk) {
 // Card Gallery — every card in Battlecards, drawn with its real in-game face via
 // the sibling battlecards/cardart.js. Card data, art, and the renderer are all
 // lazy-loaded the first time a card view opens.
-let cardsPromise = null, cardartPromise = null, CardArt = null, CardKw = null, kwIndex = null;
+let cardsPromise = null, cardartPromise = null, artAuditPromise = null, CardArt = null, CardKw = null, kwIndex = null;
 let cardClassFilter = 'all';
 function loadCards() {
   if (!cardsPromise) cardsPromise = fetch('../battlecards/cards.json' + CB).then(r => r.json()).then(d => d.cards || d || []);
   return cardsPromise;
+}
+function loadArtAudit() {
+  if (!artAuditPromise) artAuditPromise = fetch('../battlecards/art/audit-report.json' + CB).then(r => {
+    if (!r.ok) throw new Error('Artwork audit unavailable');
+    return r.json();
+  });
+  return artAuditPromise;
 }
 function loadCardart() {
   // the renderer (cardart) and the keyword glossary (keywords) both live in battlecards/
@@ -319,11 +326,21 @@ const isDualClass = c => canonClass(c).includes('__');
 // all Lands together, the five WUBRG colours (non-land), then a Generic catch-all
 const SYSTEM_BUCKETS = [
   ['__land__', 'Lands'], ['__advland__', 'Advanced Lands'],
-  ['__c_W__', 'White'], ['__c_U__', 'Blue'], ['__c_B__', 'Black'],
-  ['__c_R__', 'Red'], ['__c_G__', 'Green'], ['__generic__', 'Generic'],
+  ['__generic__', 'Generic'],
   ['__plane__', 'Planes'], ['__excavate__', 'Excavate'], ['__appendage__', 'Appendages'],
 ];
 const SYSTEM_KEYS = new Set(SYSTEM_BUCKETS.map(b => b[0]));
+// WUBRG is independent of class: multicolour cards belong to every matching
+// colour category, and every colour can be filtered or opened from a card page.
+const CARD_COLORS = [['W', 'White'], ['U', 'Blue'], ['B', 'Black'], ['R', 'Red'], ['G', 'Green'], ['C', 'Colorless']];
+const COLOR_NAMES = Object.fromEntries(CARD_COLORS);
+const colorsOf = c => Array.isArray(c.colors) ? c.colors : (c.colors ? String(c.colors).split('').filter(Boolean) : []);
+// Lands retain their mana-production data, but are colorless for card
+// categorization and belong only to the Lands section.
+const categoryColorsOf = c => c.type === 'land' ? [] : colorsOf(c);
+const displayColorsOf = c => c.type === 'land' ? ['C'] : colorsOf(c);
+const colorName = code => COLOR_NAMES[code] || code;
+const colorChip = (code, card) => h('a', { class: 'tag-chip color', href: card?.type === 'land' ? '#/cards?class=__land__' : '#/cards?color=' + encodeURIComponent(code) }, colorName(code));
 // theme words an advanced land can conjure (matched against a card's name) — once
 let advThemes = null;
 function ensureAdvThemes(cards) {
@@ -340,8 +357,10 @@ function systemBucket(c) {
   if (c.type === 'emblem') return '__generic__'; // dungeon-run treasures / emblems
   if ((c.tribe || '').split(/\s+/).includes('Token')) return '__generic__'; // Token-tribe cards (Blood/Clue/Food/Treasure)
   if (c.id === 'coin' || c.id === 'banana') return '__generic__'; // neutral token spells
-  const cols = c.colors || [];
-  for (const col of ['W', 'U', 'B', 'R', 'G']) if (cols.includes(col)) return '__c_' + col + '__';
+  const cols = colorsOf(c);
+  // Coloured paper cards remain in their normal class and are categorized by
+  // the dedicated colour filter instead of being forced into one WUBRG bucket.
+  if (cols.some(col => ['W', 'U', 'B', 'R', 'G'].includes(col))) return null;
   if (canonClass(c) === 'magepunk') {
     // paper system cards: ones a land conjures (name matches a theme) are Advanced
     // Lands; the rest (Blood Gem) are Generic
@@ -356,19 +375,118 @@ function systemBucket(c) {
   return null; // an ordinary collectible card — stays under its class
 }
 
-async function cardGalleryView() {
-  content.replaceChildren(h('h1', null, 'Card Gallery'), h('p', { class: 'muted' }, 'Loading cards…'));
-  let cards;
-  try { [cards] = await Promise.all([loadCards(), loadCardart()]); }
-  catch (e) { return content.replaceChildren(h('h1', null, 'Card Gallery'), h('p', { class: 'muted' }, 'Could not load the card data.')); }
-  if ((location.hash.slice(1).split('/').filter(Boolean))[0] !== 'cards') return; // navigated away while loading
-  renderCards(cards);
+const CARD_FILTER_DEFAULTS = {
+  class: 'all', color: 'all', type: 'all', rarity: 'all', set: 'all', tribe: 'all',
+  keyword: 'all', collectible: 'all', art: 'all', minCost: '', maxCost: '',
+  sort: 'class-cost-name', size: 'medium'
+};
+let cardFilters = { ...CARD_FILTER_DEFAULTS };
+let cardGalleryToken = 0;
+
+function cardQueryParams() {
+  const p = new URLSearchParams();
+  for (const [k, v] of Object.entries(cardFilters)) if (v !== '' && v !== CARD_FILTER_DEFAULTS[k]) p.set(k, v);
+  const q = searchEl.value.trim();
+  if (q) p.set('q', q);
+  return p;
 }
-function renderCards(cards) {
+function cardQuerySuffix() {
+  const q = cardQueryParams().toString();
+  return q ? '?' + q : '';
+}
+function readCardFilters() {
+  const raw = (location.hash.split('?')[1] || '');
+  const p = new URLSearchParams(raw);
+  cardFilters = { ...CARD_FILTER_DEFAULTS };
+  for (const k of Object.keys(CARD_FILTER_DEFAULTS)) if (p.has(k)) cardFilters[k] = p.get(k);
+  searchEl.value = p.get('q') || '';
+}
+function syncCardFilterUrl() {
+  const suffix = cardQuerySuffix();
+  history.replaceState(null, '', '#/cards' + suffix);
+}
+function setCardFilter(key, value, cards, report) {
+  cardFilters[key] = value;
+  syncCardFilterUrl();
+  renderCards(cards, report);
+}
+function resetCardFilters(cards, report) {
+  cardFilters = { ...CARD_FILTER_DEFAULTS };
+  searchEl.value = '';
+  syncCardFilterUrl();
+  renderCards(cards, report);
+}
+function cardField(c, ...keys) {
+  for (const k of keys) if (c[k] != null && c[k] !== '') return String(c[k]);
+  return '';
+}
+function rarityRank(r) {
+  return ({ free: 0, common: 1, rare: 2, epic: 3, legendary: 4, mythic: 5 })[String(r || '').toLowerCase()] ?? 9;
+}
+function missingArtIds(report) {
+  return new Set([...(report.wikiNotFound || []), ...(report.errors || [])].map(x => x.id).filter(Boolean));
+}
+function uniqueSorted(values, labelFn) {
+  return [...new Set(values.filter(Boolean))].sort((a, b) => String(labelFn ? labelFn(a) : a).localeCompare(String(labelFn ? labelFn(b) : b)));
+}
+function filterSelect(label, key, values, cards, report, labelFn) {
+  const options = [h('option', { value: 'all' }, 'Any')];
+  for (const v of values) options.push(h('option', { value: v }, labelFn ? labelFn(v) : titleCase(v)));
+  const select = h('select', {
+    class: 'adv-select',
+    onchange: e => setCardFilter(key, e.target.value, cards, report)
+  }, ...options);
+  select.value = cardFilters[key];
+  return h('label', { class: 'adv-field' }, h('span', null, label), select);
+}
+function costSelect(label, key, cards, report) {
+  const select = h('select', {
+    class: 'adv-select cost-select',
+    onchange: e => setCardFilter(key, e.target.value, cards, report)
+  }, h('option', { value: '' }, 'Any'), ...Array.from({ length: 21 }, (_, n) => h('option', { value: String(n) }, String(n) + (n === 20 ? '+' : ''))));
+  select.value = cardFilters[key];
+  return h('label', { class: 'adv-field' }, h('span', null, label), select);
+}
+function activeCardFilterChips(cards, report) {
+  const labels = {
+    class: 'Class', color: 'Color', type: 'Type', rarity: 'Rarity', set: 'Set', tribe: 'Tribe/School',
+    keyword: 'Keyword', collectible: 'Collection', art: 'Art', minCost: 'Min cost',
+    maxCost: 'Max cost', sort: 'Sort', size: 'Size'
+  };
+  const chips = [];
+  for (const [key, value] of Object.entries(cardFilters)) {
+    if (value === '' || value === CARD_FILTER_DEFAULTS[key]) continue;
+    chips.push(h('button', {
+      class: 'active-filter',
+      title: 'Remove ' + labels[key] + ' filter',
+      onclick: () => setCardFilter(key, CARD_FILTER_DEFAULTS[key], cards, report)
+    }, labels[key] + ': ' + (key === 'color' ? colorName(value) : titleCase(value)), ' ×'));
+  }
+  if (searchEl.value.trim()) chips.push(h('button', {
+    class: 'active-filter',
+    onclick: () => { searchEl.value = ''; syncCardFilterUrl(); renderCards(cards, report); }
+  }, 'Search: ' + searchEl.value.trim(), ' ×'));
+  return chips;
+}
+
+async function cardGalleryView() {
+  content.replaceChildren(h('h1', null, 'Card Gallery'), h('p', { class: 'muted' }, 'Loading cards and filters…'));
+  let cards, report;
+  try {
+    [cards, report] = await Promise.all([loadCards(), loadArtAudit().catch(() => ({})), loadCardart().then(() => null)]);
+  } catch (e) {
+    return content.replaceChildren(h('h1', null, 'Card Gallery'), h('p', { class: 'muted' }, 'Could not load the card data.'));
+  }
+  if ((location.hash.slice(1).split('?')[0].split('/').filter(Boolean))[0] !== 'cards') return;
+  readCardFilters();
+  renderCards(cards, report);
+}
+function renderCards(cards, report = {}) {
   ensureAdvThemes(cards);
+  const token = ++cardGalleryToken;
   const q = norm(searchEl.value);
-  // one combined "Dual" bucket for every multi-class card (cardClass joined with __),
-  // instead of a separate option per combination; single classes counted on their own
+  const missing = missingArtIds(report);
+
   const counts = {}; let dual = 0;
   for (const c of cards) {
     const sb = systemBucket(c);
@@ -377,51 +495,149 @@ function renderCards(cards) {
     else { const k = canonClass(c); counts[k] = (counts[k] || 0) + 1; }
   }
   const classes = Object.keys(counts).filter(k => !k.startsWith('__')).sort((a, b) => counts[b] - counts[a]);
+  const classValues = [...classes, ...(dual ? ['__dual__'] : []), ...SYSTEM_BUCKETS.filter(([k]) => counts[k]).map(([k]) => k)];
+  const classLabel = v => {
+    if (v === '__dual__') return 'Dual (' + dual + ')';
+    const sys = SYSTEM_BUCKETS.find(([k]) => k === v);
+    return (sys ? sys[1] : CardArt.classNameOf(v)) + ' (' + (counts[v] || 0) + ')';
+  };
+  const colorCounts = Object.fromEntries(CARD_COLORS.map(([code]) => [code, cards.filter(c => categoryColorsOf(c).includes(code)).length]));
+  const colorValues = CARD_COLORS.filter(([code]) => colorCounts[code]).map(([code]) => code);
+  const colorFilterLabel = code => colorName(code) + ' (' + colorCounts[code] + ')';
+  const types = uniqueSorted(cards.map(c => c.type));
+  const rarities = uniqueSorted(cards.map(c => c.rarity), r => String(rarityRank(r)).padStart(2, '0') + r);
+  const sets = uniqueSorted(cards.map(c => cardField(c, 'set', 'cardSet', 'expansion')));
+  const tribes = uniqueSorted(cards.flatMap(tribesOf));
+  const keywords = uniqueSorted(cards.flatMap(c => CardKw.keywordsFor(c).map(k => k.label)));
 
   let list = cards.filter(c => {
-    if (cardClassFilter === 'all') return true;
-    const sb = systemBucket(c);
-    if (cardClassFilter === '__dual__') return !sb && isDualClass(c);
-    if (SYSTEM_KEYS.has(cardClassFilter)) return sb === cardClassFilter;
-    return !sb && canonClass(c) === cardClassFilter; // class options exclude system cards
+    if (cardFilters.class !== 'all') {
+      const sb = systemBucket(c);
+      if (cardFilters.class === '__dual__' ? (sb || !isDualClass(c))
+        : SYSTEM_KEYS.has(cardFilters.class) ? sb !== cardFilters.class
+        : sb || canonClass(c) !== cardFilters.class) return false;
+    }
+    if (cardFilters.color !== 'all' && !categoryColorsOf(c).includes(cardFilters.color)) return false;
+    if (cardFilters.type !== 'all' && String(c.type) !== cardFilters.type) return false;
+    if (cardFilters.rarity !== 'all' && String(c.rarity) !== cardFilters.rarity) return false;
+    if (cardFilters.set !== 'all' && cardField(c, 'set', 'cardSet', 'expansion') !== cardFilters.set) return false;
+    if (cardFilters.tribe !== 'all' && !tribesOf(c).includes(cardFilters.tribe)) return false;
+    if (cardFilters.keyword !== 'all' && !CardKw.keywordsFor(c).some(k => k.label === cardFilters.keyword)) return false;
+    const uncollectible = CardArt.isUncollectible(c);
+    if (cardFilters.collectible === 'collectible' && uncollectible) return false;
+    if (cardFilters.collectible === 'uncollectible' && !uncollectible) return false;
+    if (cardFilters.art === 'missing' && !missing.has(c.id)) return false;
+    if (cardFilters.art === 'available' && missing.has(c.id)) return false;
+    const cost = Number(c.cost || 0);
+    if (cardFilters.minCost !== '' && cost < Number(cardFilters.minCost)) return false;
+    if (cardFilters.maxCost !== '' && (Number(cardFilters.maxCost) === 20 ? cost < 20 : cost > Number(cardFilters.maxCost))) return false;
+    if (q && ![c.name, c.id, c.cardClass, c.type, c.description, c.rarity, ...categoryColorsOf(c).flatMap(col => [col, colorName(col)]), cardField(c, 'set', 'cardSet', 'expansion'), ...tribesOf(c)]
+      .some(v => norm(v).includes(q))) return false;
+    return true;
   });
-  if (q) list = list.filter(c => norm(c.name).includes(q) || norm(c.cardClass).includes(q) || norm(c.type).includes(q) || norm(c.description).includes(q));
-  list.sort((a, b) => canonClass(a).localeCompare(canonClass(b)) || (a.cost || 0) - (b.cost || 0) || String(a.name).localeCompare(String(b.name)));
 
-  const opt = (v, label, on) => h('option', { value: v, selected: on ? '' : null }, label);
-  const sel = h('select', { class: 'card-classsel', onchange: e => { cardClassFilter = e.target.value; renderCards(cards); } },
-    opt('all', 'All cards (' + cards.length + ')', cardClassFilter === 'all'),
-    h('optgroup', { label: 'Classes' },
-      ...classes.map(cl => opt(cl, CardArt.classNameOf(cl) + ' (' + counts[cl] + ')', cardClassFilter === cl)),
-      dual ? opt('__dual__', 'Dual (' + dual + ')', cardClassFilter === '__dual__') : null),
-    h('optgroup', { label: 'Uncollectible' },
-      ...SYSTEM_BUCKETS.filter(([k]) => counts[k]).map(([k, label]) => opt(k, label + ' (' + counts[k] + ')', cardClassFilter === k))));
-  const filters = h('div', { class: 'card-filters' }, h('label', { class: 'muted' }, 'Group: '), sel);
+  const sorters = {
+    name: (a, b) => String(a.name).localeCompare(String(b.name)),
+    'cost-asc': (a, b) => Number(a.cost || 0) - Number(b.cost || 0) || String(a.name).localeCompare(String(b.name)),
+    'cost-desc': (a, b) => Number(b.cost || 0) - Number(a.cost || 0) || String(a.name).localeCompare(String(b.name)),
+    rarity: (a, b) => rarityRank(b.rarity) - rarityRank(a.rarity) || String(a.name).localeCompare(String(b.name)),
+    attack: (a, b) => Number(b.attack || 0) - Number(a.attack || 0) || String(a.name).localeCompare(String(b.name)),
+    health: (a, b) => Number(b.health || 0) - Number(a.health || 0) || String(a.name).localeCompare(String(b.name)),
+    'class-cost-name': (a, b) => canonClass(a).localeCompare(canonClass(b)) || Number(a.cost || 0) - Number(b.cost || 0) || String(a.name).localeCompare(String(b.name))
+  };
+  list.sort(sorters[cardFilters.sort] || sorters['class-cost-name']);
 
-  const grid = h('div', { class: 'card-grid' });
-  const CAP = 48; // faces are full canvases; page them in so big classes stay smooth
+  const panel = h('details', { class: 'advanced-filters', open: '' },
+    h('summary', null, 'Filters and sorting'),
+    h('div', { class: 'filter-fields' },
+      filterSelect('Class', 'class', classValues, cards, report, classLabel),
+      filterSelect('Color', 'color', colorValues, cards, report, colorFilterLabel),
+      filterSelect('Type', 'type', types, cards, report),
+      filterSelect('Rarity', 'rarity', rarities, cards, report),
+      filterSelect('Set', 'set', sets, cards, report, titleCase),
+      filterSelect('Tribe / school', 'tribe', tribes, cards, report),
+      filterSelect('Keyword', 'keyword', keywords, cards, report),
+      filterSelect('Collection', 'collectible', ['collectible', 'uncollectible'], cards, report),
+      filterSelect('Artwork', 'art', ['available', 'missing'], cards, report),
+      costSelect('Minimum cost', 'minCost', cards, report),
+      costSelect('Maximum cost', 'maxCost', cards, report),
+      filterSelect('Sort by', 'sort', ['class-cost-name', 'name', 'cost-asc', 'cost-desc', 'rarity', 'attack', 'health'], cards, report, v => ({
+        'class-cost-name': 'Class, cost, name', name: 'Name A–Z', 'cost-asc': 'Cost: low to high',
+        'cost-desc': 'Cost: high to low', rarity: 'Rarity', attack: 'Attack', health: 'Health'
+      })[v]),
+      filterSelect('Card size', 'size', ['small', 'medium', 'large'], cards, report)
+    ),
+    h('div', { class: 'filter-actions' },
+      h('button', { class: 'clear-filters', onclick: () => resetCardFilters(cards, report) }, 'Clear all filters'),
+      h('span', { class: 'muted' }, 'The address updates automatically, so filtered views can be bookmarked or shared.')));
+
+  const chips = activeCardFilterChips(cards, report);
+  const grid = h('div', { class: 'card-grid size-' + cardFilters.size });
+  const empty = h('div', { class: 'card-empty' },
+    h('h2', null, 'No cards match these filters'),
+    h('p', { class: 'muted' }, 'Remove a filter or clear them all to see more cards.'),
+    h('button', { class: 'clear-filters', onclick: () => resetCardFilters(cards, report) }, 'Clear all filters'));
+  const CAP = 48;
   let shown = 0;
   const more = h('button', { class: 'showmore' });
   const renderMore = async () => {
     const batch = list.slice(shown, shown + CAP);
-    await CardArt.preloadArt(batch.map(c => c.id)); // art ready before we snapshot the face
+    await CardArt.preloadArt(batch.map(c => c.id));
+    if (token !== cardGalleryToken) return;
     grid.append(...batch.map(cardTile));
     shown += batch.length;
-    if (shown >= list.length) more.remove(); else more.textContent = 'Show more (' + (list.length - shown) + ' hidden)';
+    if (shown >= list.length) more.remove(); else more.textContent = 'Show more (' + (list.length - shown) + ' remaining)';
   };
   more.addEventListener('click', renderMore);
 
   content.replaceChildren(
-    h('h1', null, 'Card Gallery ', h('span', { class: 'num' }, '(' + list.length + ')')),
-    h('p', { class: 'muted' }, 'Every card in Battlecards, shown with its in-game face. Search by name, class, type, or rules text; filter by class. Click a card for its own page.'),
-    filters, grid, more);
-  renderMore();
+    h('div', { class: 'gallery-heading' },
+      h('div', null, h('h1', null, 'Card Gallery'), h('p', { class: 'muted' }, 'Search rules text and combine filters across the complete Battlecards library.')),
+      h('div', { class: 'result-count' }, list.length.toLocaleString(), h('span', null, ' of ' + cards.length.toLocaleString() + ' cards'))),
+    panel,
+    ...(chips.length ? [h('div', { class: 'active-filters' }, ...chips)] : []),
+    list.length ? grid : empty,
+    ...(list.length ? [more] : [])
+  );
+  if (list.length) renderMore();
 }
+
+// Audit-backed queue of cards whose full artwork still needs to be sourced.
+async function missingArtView() {
+  content.replaceChildren(h('h1', null, 'Cards Missing Art'), h('p', { class: 'muted' }, 'Loading the latest artwork audit…'));
+  let cards, report;
+  try {
+    [cards, report] = await Promise.all([loadCards(), loadArtAudit(), loadCardart().then(() => null)]);
+  } catch (e) {
+    return content.replaceChildren(h('h1', null, 'Cards Missing Art'), h('p', { class: 'muted' }, 'Could not load the artwork audit.'));
+  }
+  if ((location.hash.slice(1).split('/').filter(Boolean))[0] !== 'missing-art') return;
+
+  const unresolved = [...(report.wikiNotFound || []), ...(report.errors || [])];
+  const ids = new Set(unresolved.map(x => x.id).filter(Boolean));
+  const cardsById = new Map(cards.map(c => [c.id, c]));
+  const q = norm(searchEl.value);
+  const list = [...ids].map(id => cardsById.get(id)).filter(Boolean)
+    .filter(c => !q || norm(c.name).includes(q) || norm(c.id).includes(q) || norm(c.cardClass).includes(q) || norm(c.type).includes(q))
+    .sort((a, b) => canonClass(a).localeCompare(canonClass(b)) || String(a.name).localeCompare(String(b.name)));
+
+  await CardArt.preloadArt(list.map(c => c.id));
+  const temporary = new Set((report.errors || []).map(x => x.id)).size;
+  content.replaceChildren(
+    h('h1', null, 'Cards Missing Art ', h('span', { class: 'num' }, '(' + list.length + ')')),
+    h('p', { class: 'muted' }, 'Cards without a sourced full-art image in the latest audit of ' + (report.cardCount || cards.length) + ' cards. Click a card to inspect its wiki page.'),
+    ...(temporary ? [h('p', { class: 'muted' }, temporary + ' card' + (temporary === 1 ? '' : 's') + ' could not be checked during the last audit and will be retried automatically.')] : []),
+    list.length
+      ? h('div', { class: 'card-grid' }, list.map(cardTile))
+      : h('p', null, 'Every card currently has sourced artwork.')
+  );
+}
+
 // tile = the in-game face snapshotted to an <img> (lighter than keeping live canvases)
 function cardTile(c) {
   const canvas = CardArt.drawCardFace(c);
   const img = h('img', { class: 'wiki-face', src: canvas.toDataURL(), alt: c.name, loading: 'lazy' });
-  return h('a', { class: 'wiki-card', href: '#/cards/' + c.id, title: c.name }, img);
+  return h('a', { class: 'wiki-card', href: '#/cards/' + c.id + cardQuerySuffix(), title: c.name }, img);
 }
 // a single card's own page: full in-game face + its details
 async function cardDetail(id) {
@@ -430,7 +646,7 @@ async function cardDetail(id) {
   try { [cards] = await Promise.all([loadCards(), loadCardart()]); }
   catch (e) { return content.replaceChildren(h('h1', null, 'Card'), h('p', { class: 'muted' }, 'Could not load the card data.')); }
   const c = cards.find(x => x.id === id);
-  if (!c) return content.replaceChildren(h('h1', null, 'Card not found'), h('p', null, h('a', { href: '#/cards' }, '← Card Gallery')));
+  if (!c) return content.replaceChildren(h('h1', null, 'Card not found'), h('p', null, h('a', { href: '#/cards' + cardQuerySuffix() }, '← Back to filtered gallery')));
   await CardArt.preloadArt([id]);
   const face = CardArt.drawCardFace(c); face.className = 'wiki-face-big';
   const stats = ['Cost ' + (c.cost ?? 0)];
@@ -442,16 +658,25 @@ async function cardDetail(id) {
   const artCanvas = CardArt.drawArt(c); artCanvas.className = 'wiki-art-solo';
   // generated-card relations: what this card creates, and what creates it
   const byId = {}; for (const x of cards) byId[x.id] = x;
-  const cardLink = gid => h('a', { class: 'tag-chip', href: '#/cards/' + gid },
+  const cardLink = gid => h('a', { class: 'tag-chip', href: '#/cards/' + gid + cardQuerySuffix() },
     (byId[gid].name || gid) + ' (' + (byId[gid].cost ?? 0) + (byId[gid].type === 'creature' ? ' · ' + (byId[gid].attack ?? '?') + '/' + (byId[gid].health ?? '?') : '') + ')');
   const generates = CardArt.generatedCardIds(c, byId);
   const createdBy = CardArt.createdByIds(c.id, byId);
+  const metaBucket = systemBucket(c);
+  const metaSystem = SYSTEM_BUCKETS.find(([key]) => key === metaBucket);
+  const metaClassValue = metaSystem ? metaSystem[0] : canonClass(c);
+  const metaClassLabel = metaSystem ? metaSystem[1] : CardArt.classNameOf(c.cardClass);
+  const colorMeta = displayColorsOf(c).filter(code => COLOR_NAMES[code]).map((code, i) =>
+    [i ? ' / ' : ' · ', h('a', { href: c.type === 'land' ? '#/cards?class=__land__' : '#/cards?color=' + encodeURIComponent(code) }, colorName(code))]).flat();
   content.replaceChildren(
     h('div', { class: 'card-page' },
       h('div', { class: 'card-page-face' }, face),
       h('div', { class: 'card-page-info' },
         h('h1', null, c.name),
-        h('div', { class: 'card-page-meta' }, CardArt.classNameOf(c.cardClass) + (CardArt.showsRarity(c) ? ' · ' + titleCase(c.rarity || 'common') : '')),
+        h('div', { class: 'card-page-meta' },
+          h('a', { href: '#/cards?class=' + encodeURIComponent(metaClassValue) }, metaClassLabel),
+          colorMeta,
+          CardArt.showsRarity(c) ? [' · ', h('a', { href: '#/cards?rarity=' + encodeURIComponent(String(c.rarity || 'common')) }, titleCase(c.rarity || 'common'))] : null),
         // clickable type + tribe/school tags
         h('div', { class: 'card-tags' }, cardTypeChip(c.type), tribesOf(c).map(t => tribeChip(c, t))),
         h('div', { class: 'card-page-stats' }, stats.join('  ·  ')),
@@ -470,7 +695,7 @@ async function cardDetail(id) {
         createdBy.length ? h('div', { class: 'card-tags' }, createdBy.map(cardLink)) : null)),
     // the card's illustration on its own, no frame
     h('div', { class: 'card-art-section' }, h('h2', null, 'Art'), artCanvas),
-    h('p', null, h('a', { href: '#/cards' }, '← Card Gallery')));
+    h('p', null, h('a', { href: '#/cards' + cardQuerySuffix() }, '← Back to filtered gallery')));
 }
 
 // a filtered subset of cards (by keyword / tribe / type), rendered as faces
@@ -494,7 +719,7 @@ async function cardSubsetView(kind, slug) {
     title = (orig || titleCase(slug)) + ' spells';
   } else { // keyword
     const e = keywordIndex(cards).get(slug);
-    if (!e) return content.replaceChildren(h('h1', null, 'Unknown keyword'), h('p', null, h('a', { href: '#/cards' }, '← Card Gallery')));
+    if (!e) return content.replaceChildren(h('h1', null, 'Unknown keyword'), h('p', null, h('a', { href: '#/cards' + cardQuerySuffix() }, '← Back to filtered gallery')));
     list = e.cards; title = e.label; blurb = e.text;
   }
   list = list.slice().sort((a, b) => (a.cost || 0) - (b.cost || 0) || String(a.name).localeCompare(String(b.name)));
@@ -512,7 +737,7 @@ async function cardSubsetView(kind, slug) {
   content.replaceChildren(
     h('h1', null, title + ' ', h('span', { class: 'num' }, '(' + list.length + ')')),
     blurb ? h('p', { class: 'muted' }, blurb) : null,
-    h('p', null, h('a', { href: '#/cards' }, '← Card Gallery')),
+    h('p', null, h('a', { href: '#/cards' + cardQuerySuffix() }, '← Back to filtered gallery')),
     grid, more);
   renderMore();
 }
@@ -1038,7 +1263,7 @@ async function designCardDetail(slug) {
     implBody.push(
       h('h2', null, 'Card data'),
       h('div', { class: 'card-page-meta' }, art.classNameOf(impl.cardClass) + (art.showsRarity(impl) ? ' · ' + titleCase(impl.rarity || 'common') : '')),
-      h('div', { class: 'card-tags' }, cardTypeChip(impl.type), tribesOf(impl).map(t => tribeChip(impl, t))),
+      h('div', { class: 'card-tags' }, cardTypeChip(impl.type), displayColorsOf(impl).filter(code => COLOR_NAMES[code]).map(code => colorChip(code, impl)), tribesOf(impl).map(t => tribeChip(impl, t))),
       h('div', { class: 'card-page-stats' }, stats.join('  ·  ')),
       impl.description ? h('div', { class: 'card-page-rules', html: CardKw.richHtml(impl.description) }) : h('div', { class: 'card-page-rules muted' }, 'No rules text.'),
       kws.length ? h('h2', null, 'Keywords') : null,
@@ -1072,7 +1297,8 @@ function home() {
 }
 
 function route() {
-  const hash = location.hash.slice(1) || '/';
+  const rawHash = location.hash.slice(1) || '/';
+  const hash = rawHash.split('?')[0];
   const parts = hash.split('/').filter(Boolean);
   document.querySelectorAll('#sidebar a').forEach(a =>
     a.classList.toggle('active', a.getAttribute('href') === '#' + hash || a.getAttribute('href') === '#/' + parts[0]));
@@ -1089,6 +1315,7 @@ function route() {
   if (section === 'unlearned') return unlearnedView();
   if (section === 'region') return regionView(id);
   if (section === 'cards') return id ? cardDetail(id) : cardGalleryView();
+  if (section === 'missing-art') return missingArtView();
   if (section === 'dungeon') {
     if (id === 'deck' && parts[2]) return dungeonDeckView(parts[2]);
     if (id === 'boss' && parts[2]) return dungeonBossView(parts[2]);
@@ -1119,10 +1346,19 @@ function route() {
   notFound();
 }
 
+let cardSearchTimer = null;
 searchEl.addEventListener('input', () => {
-  const s = (location.hash.slice(1) || '/').split('/').filter(Boolean);
-  if (['pokemon', 'moves', 'abilities', 'tms', 'unlearned', 'battlecards', 'cards', 'needs-typing', 'needs-data'].includes(s[0]) && !s[1]) {
-    if (s[0] === 'cards') { loadCardart().then(loadCards).then(renderCards); return; } // re-filter without reloading
+  const s = (location.hash.slice(1).split('?')[0] || '/').split('/').filter(Boolean);
+  if (['pokemon', 'moves', 'abilities', 'tms', 'unlearned', 'battlecards', 'cards', 'missing-art', 'needs-typing', 'needs-data'].includes(s[0]) && !s[1]) {
+    if (s[0] === 'cards') {
+      clearTimeout(cardSearchTimer);
+      cardSearchTimer = setTimeout(() => {
+        syncCardFilterUrl();
+        Promise.all([loadCards(), loadArtAudit().catch(() => ({})), loadCardart().then(() => null)])
+          .then(([cards, report]) => renderCards(cards, report));
+      }, 120);
+      return;
+    }
     route();
   }
 });

@@ -4074,9 +4074,10 @@ function attachTip(el, def) {
 	el.addEventListener('pointerleave', cancel);
 }
 
-function miniFace(def) {
+function miniFace(def, width = 96) {
 	const c = drawCardFace(def, {});
-	c.style.cssText = 'width:96px;height:134px;border-radius:6px;';
+	const height = Math.round(width * 134 / 96);
+	c.style.cssText = `width:${width}px;height:${height}px;border-radius:6px;`;
 	attachTip(c, def);
 	// real art lazy-loads after the first paint — redraw once it has arrived
 	const redraw = () => {
@@ -4921,7 +4922,7 @@ function pickDuelsDraftOverlay(heroClass) {
 			for (const d of opts) {
 				const box = document.createElement('div');
 				box.style.cssText = 'display:flex;flex-direction:column;align-items:center;gap:6px;';
-				box.appendChild(miniFace(d));
+				box.appendChild(miniFace(d, 125));
 				box.appendChild(overlayButton('Pick', () => { deck.push(d.id); step(); }));
 				row.appendChild(box);
 			}

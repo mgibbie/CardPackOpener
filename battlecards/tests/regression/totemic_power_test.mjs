@@ -12,7 +12,7 @@ const ok = (l, c, x) => { if (c) { pass++; } else { fail++; console.log('FAIL', 
 
 const BASICS = new Set(['sch_totem_healing', 'sch_totem_searing', 'sch_totem_stoneclaw', 'sch_totem_wrath']);
 const hp = cardsById['duelshp_totemic_power'];
-ok('description matches the real hero power', hp.description === "Hero Power (2): Summon a random basic Totem. If you're Overloaded, summon a non-basic Totem instead.");
+ok('description matches the real hero power', hp.description === "Hero Power (2): Create a random basic Totem. If you're Overloaded, create a non-basic Totem instead.");
 
 const fire = (seed, overloaded) => {
 	const st = E.createGame(cardsById, seededRng(seed), null, 2, [{ id: 'neutral', name: 'N', power: null }, { id: 'neutral', name: 'N', power: null }]);

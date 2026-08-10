@@ -9,9 +9,7 @@
 // Secret: set MP_SECRET in the Netlify environment (Site settings →
 // Environment variables). The fallback below keeps dev working but is
 // public knowledge — tokens are forgeable until MP_SECRET is set.
-import { getStore } from '@netlify/blobs';
 import { scrypt as scryptCb, randomBytes, createHmac, timingSafeEqual } from 'node:crypto';
-import fs from 'node:fs';
 import { STARTER_DECKS } from '../../battlecards/dungeon.js';
 import { createMatch, submitAction, replaceFainted, sideOf } from '../../battlecards/pvpbattle.js';
 import POOL from './pool-rarity.json';
@@ -40,22 +38,27 @@ const grantCards = (collection, ids) => {
 const scrypt = (pw, salt) => new Promise((res, rej) =>
 	scryptCb(pw, salt, 32, (e, k) => e ? rej(e) : res(k)));
 
-// ---------- storage (Blobs in prod, a JSON file when MP_DEV_STORE is set
-// so the local dev server and tests run without Netlify credentials) ----------
-function userStore() {
-	if (process.env.MP_DEV_STORE) {
-		const path = process.env.MP_DEV_STORE;
-		const read = () => { try { return JSON.parse(fs.readFileSync(path, 'utf8')); } catch { return {}; } };
-		return {
-			get: async (k) => read()[k] ?? null,
-			setJSON: async (k, v) => { const d = read(); d[k] = v; fs.writeFileSync(path, JSON.stringify(d)); },
-		};
-	}
-	// strong consistency: a login right after register must see the account
-	const store = getStore({ name: 'mp-users', consistency: 'strong' });
+// ---------- storage (Cloudflare D1) ----------
+function userStore(db) {
+	if (!db) throw new Error('MP_DB binding is missing');
 	return {
-		get: (k) => store.get(k, { type: 'json' }),
-		setJSON: (k, v) => store.setJSON(k, v),
+		get: async (k) => {
+			const row = await db.prepare('SELECT value FROM mp_store WHERE key = ?').bind(k).first();
+			return row ? JSON.parse(row.value) : null;
+		},
+		setJSON: async (k, v) => {
+			if (v === null) {
+				await db.prepare('DELETE FROM mp_store WHERE key = ?').bind(k).run();
+				return;
+			}
+			await db.prepare(
+				'INSERT INTO mp_store (key, value, updated_at) VALUES (?, ?, unixepoch()) ' +
+				'ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.updated_at'
+			).bind(k, JSON.stringify(v)).run();
+		},
+		delete: async (k) => {
+			await db.prepare('DELETE FROM mp_store WHERE key = ?').bind(k).run();
+		},
 	};
 }
 
@@ -220,11 +223,11 @@ const json = (body, status = 200) => new Response(JSON.stringify(body), {
 });
 
 // ---------- handler ----------
-export default async function handler(req) {
+export default async function handler(req, env) {
 	if (req.method !== 'POST') return json({ error: 'POST only' }, 405);
 	let body;
 	try { body = await req.json(); } catch { return json({ error: 'bad json' }, 400); }
-	const store = userStore();
+	const store = userStore(env.MP_DB);
 	const action = body.action;
 
 	if (action === 'register') {

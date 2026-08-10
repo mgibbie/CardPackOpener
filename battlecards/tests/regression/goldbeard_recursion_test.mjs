@@ -8,6 +8,7 @@
 //
 // Correct behavior: one real summon -> exactly one Goldbeard copy.
 import fs from 'fs';
+import { fileURLToPath } from 'node:url';
 import * as E from '../../engine.js';
 import { Scenario } from '../helpers/scenario.mjs';
 const raw = JSON.parse(fs.readFileSync(new URL('../../cards.json', import.meta.url)));
@@ -37,7 +38,7 @@ const ok = (l, c, extra) => { if (c) pass++; else { fail++; console.log('FAIL:',
 {
 	const { execSync } = await import('child_process');
 	let out = '';
-	try { out = execSync(`node "${new URL('../fuzz/fuzz_test.mjs', import.meta.url).pathname.replace(/^\//, '')}" --games=1 --actions=800 --seed=9419695`, { encoding: 'utf8' }); }
+	try { out = execSync(`node "${fileURLToPath(new URL('../fuzz/fuzz_test.mjs', import.meta.url))}" --games=1 --actions=800 --seed=9419695`, { encoding: 'utf8' }); }
 	catch (e) { out = (e.stdout || '') + (e.stderr || ''); }
 	ok('fuzz seed 9419695 runs clean', out.includes('0 failed'), out.split('\n').slice(0, 3).join(' | '));
 }
