@@ -171959,6 +171959,64 @@
           "withGift": true
         }
       ]
+    },
+    {
+      "id": "abyssal_wave",
+      "name": "Abyssal Wave",
+      "type": "sorcery",
+      "cost": 6,
+      "cardClass": "warlock",
+      "rarity": "epic",
+      "set": "THE_SUNKEN_CITY",
+      "description": "Deal 4 damage to all minions.",
+      "effects": [
+        {
+          "type": "damage-all-minions",
+          "value": 4
+        }
+      ]
+    },
+    {
+      "id": "fine_print",
+      "name": "Fine Print",
+      "type": "sorcery",
+      "cost": 4,
+      "cardClass": "warlock",
+      "rarity": "rare",
+      "set": "ISLAND_VACATION",
+      "description": "Deal 4 damage to all minions.",
+      "effects": [
+        {
+          "type": "damage-all-minions",
+          "value": 4
+        }
+      ]
+    },
+    {
+      "id": "trolley_problem",
+      "name": "Trolley Problem",
+      "type": "sorcery",
+      "cost": 3,
+      "cardClass": "warlock",
+      "rarity": "epic",
+      "set": "WILD_WEST",
+      "description": "Discard your lowest Cost card. Summon two 3/3 Tram Cars with Rush.",
+      "effects": [
+        {
+          "type": "discard-lowest",
+          "count": 1
+        },
+        {
+          "type": "summon",
+          "count": 2,
+          "attack": 3,
+          "health": 3,
+          "name": "Tram Car",
+          "keywords": [
+            "rush"
+          ]
+        }
+      ]
     }
   ]
 }
