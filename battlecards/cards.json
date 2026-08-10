@@ -167174,6 +167174,4199 @@
           "target": "self"
         }
       ]
+    },
+    {
+      "id": "consumption",
+      "name": "Consumption",
+      "type": "sorcery",
+      "cost": 4,
+      "cardClass": "death_knight",
+      "rarity": "rare",
+      "set": "CORE",
+      "description": "Deal 3 damage to two random enemy minions. Draw a card for each that dies.",
+      "effects": [
+        {
+          "type": "random-damage",
+          "value": 3,
+          "pool": "enemy-creatures",
+          "count": 2
+        }
+      ]
+    },
+    {
+      "id": "blood_tap",
+      "name": "Blood Tap",
+      "type": "sorcery",
+      "cost": 2,
+      "cardClass": "death_knight",
+      "rarity": "rare",
+      "set": "CORE",
+      "description": "Give all minions in your hand +1/+1. Spend 2 Corpses to give them +1/+1 more.",
+      "effects": [
+        {
+          "type": "buff-hand",
+          "all": true,
+          "attack": 1,
+          "health": 1
+        },
+        {
+          "type": "spend-corpses-up-to",
+          "max": 2,
+          "effects": [
+            {
+              "type": "buff-hand",
+              "all": true,
+              "attack": 1,
+              "health": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "soulrest_ceremony",
+      "name": "Soulrest Ceremony",
+      "type": "sorcery",
+      "cost": 1,
+      "cardClass": "death_knight",
+      "rarity": "common",
+      "set": "THE_LOST_CITY",
+      "description": "Give your minions +1 Attack and Rush. They die at the end of your turn.",
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 1,
+          "health": 0,
+          "target": "friendly-creatures"
+        },
+        {
+          "type": "grant",
+          "keyword": "rush",
+          "target": "friendly-creatures"
+        }
+      ]
+    },
+    {
+      "id": "unholy_frenzy",
+      "name": "Unholy Frenzy",
+      "type": "sorcery",
+      "cost": 2,
+      "cardClass": "death_knight",
+      "rarity": "rare",
+      "set": "PATH_OF_ARTHAS",
+      "description": "Choose an enemy minion. Your minions attack it. Resummon any that die.",
+      "effects": [
+        {
+          "type": "all-friendly-attack-target",
+          "target": "enemy-creature",
+          "resummon": true
+        }
+      ]
+    },
+    {
+      "id": "shadows_of_yesterday",
+      "name": "Shadows of Yesterday",
+      "type": "sorcery",
+      "cost": 6,
+      "cardClass": "death_knight",
+      "rarity": "rare",
+      "set": "TIME_TRAVEL",
+      "description": "Rewind\nSummon four 3/2 Shades. They each gain two random Bonus Effects.",
+      "effects": [
+        {
+          "type": "summon",
+          "count": 4,
+          "attack": 3,
+          "health": 2,
+          "name": "Shade"
+        },
+        {
+          "type": "grant-bonus-effect",
+          "count": 2
+        }
+      ]
+    },
+    {
+      "id": "forgotten_millennium",
+      "name": "Forgotten Millennium",
+      "type": "sorcery",
+      "cost": 8,
+      "cardClass": "death_knight",
+      "rarity": "epic",
+      "set": "TIME_TRAVEL",
+      "description": "Fill your hand with random Undead. They cost Health instead of Mana this turn.",
+      "effects": [
+        {
+          "type": "conjure-random",
+          "cardType": "creature",
+          "tribe": "Undead",
+          "fillHand": true
+        }
+      ]
+    },
+    {
+      "id": "slippery_slope",
+      "name": "Slippery Slope",
+      "type": "sorcery",
+      "cost": 2,
+      "cardClass": "death_knight",
+      "rarity": "epic",
+      "set": "ISLAND_VACATION",
+      "description": "Freeze a character. Draw a card for each Frozen character.",
+      "effects": [
+        {
+          "type": "freeze",
+          "target": "any"
+        },
+        {
+          "type": "draw",
+          "value": 1,
+          "valuePer": "frozen-characters"
+        }
+      ]
+    },
+    {
+      "id": "fel_infusion",
+      "name": "Fel Infusion",
+      "type": "sorcery",
+      "cost": 2,
+      "cardClass": "demon_hunter",
+      "rarity": "epic",
+      "set": "CATACLYSM",
+      "description": "Herald. Your hero has Lifesteal this turn.",
+      "effects": [
+        {
+          "type": "herald"
+        },
+        {
+          "type": "set-spells-lifesteal"
+        }
+      ]
+    },
+    {
+      "id": "going_down_swinging",
+      "name": "Going Down Swinging",
+      "type": "sorcery",
+      "cost": 4,
+      "cardClass": "demon_hunter",
+      "rarity": "legendary",
+      "set": "BATTLE_OF_THE_BANDS",
+      "description": "Give your hero +2 Attack and Immune this turn, then attack each enemy minion.",
+      "effects": [
+        {
+          "type": "hero-temp-attack",
+          "value": 2
+        },
+        {
+          "type": "grant-immune-turn",
+          "target": "self"
+        },
+        {
+          "type": "damage",
+          "target": "enemy-creatures",
+          "valuePer": "hero-attack"
+        }
+      ]
+    },
+    {
+      "id": "final_showdown_dh",
+      "name": "Final Showdown",
+      "type": "quest",
+      "cost": 1,
+      "cardClass": "demon_hunter",
+      "rarity": "legendary",
+      "set": "STORMWIND",
+      "description": "Questline: Draw 4 cards in one turn.\nReward: Reduce the Cost of the cards drawn by (1).",
+      "keywords": [
+        "quest"
+      ],
+      "quest": {
+        "goal": {
+          "type": "draw",
+          "count": 4
+        },
+        "reward": [
+          {
+            "type": "discount-hand",
+            "value": 1
+          }
+        ]
+      },
+      "effects": [
+        {
+          "type": "discount-hand",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "unleash_the_colossus",
+      "name": "Unleash the Colossus",
+      "type": "quest",
+      "cost": 1,
+      "cardClass": "demon_hunter",
+      "rarity": "legendary",
+      "set": "THE_LOST_CITY",
+      "description": "Quest: Deal exactly 2 damage to an enemy on your turn, 12 times.\nReward: Gorishi Colossus.",
+      "keywords": [
+        "quest"
+      ],
+      "quest": {
+        "goal": {
+          "type": "damage",
+          "count": 12,
+          "exactly": 2
+        },
+        "reward": [
+          {
+            "type": "summon",
+            "count": 1,
+            "attack": 7,
+            "health": 7,
+            "name": "Gorishi Colossus",
+            "keywords": [
+              "taunt"
+            ]
+          }
+        ]
+      },
+      "effects": [
+        {
+          "type": "summon",
+          "count": 1,
+          "attack": 7,
+          "health": 7,
+          "name": "Gorishi Colossus",
+          "keywords": [
+            "taunt"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "demonic_deal",
+      "name": "Demonic Deal",
+      "type": "sorcery",
+      "cost": 2,
+      "cardClass": "demon_hunter",
+      "rarity": "rare",
+      "set": "ISLAND_VACATION",
+      "description": "Lifesteal. Deal 4 damage to a minion. Put a random Demon that costs (5) or more on top of your deck.",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 4,
+          "target": "creature",
+          "lifesteal": true
+        },
+        {
+          "type": "conjure-random",
+          "cardType": "creature",
+          "tribe": "Demon",
+          "minCost": 5
+        }
+      ]
+    },
+    {
+      "id": "frostwolf_kennels",
+      "name": "Frostwolf Kennels",
+      "type": "sorcery",
+      "cost": 3,
+      "cardClass": "druid",
+      "rarity": "rare",
+      "set": "ALTERAC_VALLEY",
+      "description": "At the end of your turn, summon a 2/2 Wolf with Stealth. Lasts 3 turns.",
+      "effects": [
+        {
+          "type": "emblem",
+          "name": "Frostwolf Kennels",
+          "turns": 3,
+          "description": "At the end of your turn, summon a 2/2 Wolf with Stealth.",
+          "ongoing": {
+            "on": "turn-end",
+            "effects": [
+              {
+                "type": "summon",
+                "count": 1,
+                "attack": 2,
+                "health": 2,
+                "name": "Wolf",
+                "tribe": "Beast",
+                "keywords": [
+                  "stealth"
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "celestial_alignment",
+      "name": "Celestial Alignment",
+      "type": "sorcery",
+      "cost": 8,
+      "cardClass": "druid",
+      "rarity": "epic",
+      "set": "THE_BARRENS",
+      "tribe": "Arcane",
+      "description": "Set your Mana Crystals to 0. Set the Cost of cards in your hand and deck to (1).",
+      "effects": [
+        {
+          "type": "set-own-max-mana",
+          "value": 0
+        },
+        {
+          "type": "set-hand-spell-cost",
+          "value": 1
+        },
+        {
+          "type": "set-deck-minions-cost",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "forests_gift",
+      "name": "Forest's Gift",
+      "type": "sorcery",
+      "cost": 3,
+      "cardClass": "druid",
+      "rarity": "common",
+      "set": "CATACLYSM",
+      "tribe": "Nature",
+      "description": "Give a friendly minion +1/+1 for each minion you control.",
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 1,
+          "health": 1,
+          "attackPer": "friendly-creatures",
+          "healthPer": "friendly-creatures",
+          "target": "creature"
+        }
+      ]
+    },
+    {
+      "id": "nightshade_bud",
+      "name": "Nightshade Bud",
+      "type": "sorcery",
+      "cost": 8,
+      "cardClass": "druid",
+      "rarity": "rare",
+      "set": "PLACEHOLDER_202204",
+      "tribe": "Nature",
+      "description": "Choose One - Discover a minion from your deck to summon; or a spell to cast.",
+      "choices": [
+        {
+          "text": "Summon a minion from your deck",
+          "effects": [
+            {
+              "type": "summon-from-deck",
+              "count": 1
+            }
+          ]
+        },
+        {
+          "text": "Cast a spell",
+          "effects": [
+            {
+              "type": "cast-random-spell",
+              "count": 1,
+              "cardClass": "druid"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "convoke_the_spirits",
+      "name": "Convoke the Spirits",
+      "type": "sorcery",
+      "cost": 10,
+      "cardClass": "druid",
+      "rarity": "epic",
+      "set": "PLACEHOLDER_202204",
+      "tribe": "Nature",
+      "description": "Cast 8 random Druid spells (targets chosen randomly).",
+      "effects": [
+        {
+          "type": "cast-random-spell",
+          "count": 8,
+          "cardClass": "druid"
+        }
+      ]
+    },
+    {
+      "id": "crystal_cluster",
+      "name": "Crystal Cluster",
+      "type": "sorcery",
+      "cost": 7,
+      "cardClass": "druid",
+      "rarity": "common",
+      "set": "WILD_WEST",
+      "description": "Gain three empty Mana Crystals. Any that can't fit summon a 3/7 Elemental with Taunt.",
+      "effects": [
+        {
+          "type": "gain-empty-mana-crystal",
+          "value": 3
+        }
+      ]
+    },
+    {
+      "id": "guess_the_weight",
+      "name": "Guess the Weight",
+      "type": "sorcery",
+      "cost": 2,
+      "cardClass": "druid",
+      "rarity": "epic",
+      "set": "DARKMOON_FAIRE",
+      "description": "Draw a card. Guess if your next card costs more or less to draw it.",
+      "effects": [
+        {
+          "type": "draw",
+          "value": 1
+        },
+        {
+          "type": "scry",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "id": "final_frontier",
+      "name": "Final Frontier",
+      "type": "sorcery",
+      "cost": 7,
+      "cardClass": "druid",
+      "rarity": "epic",
+      "set": "SPACE",
+      "tribe": "Arcane",
+      "description": "Discover a 10-Cost minion from the past. Set its Cost to (1).",
+      "effects": [
+        {
+          "type": "discover",
+          "cardType": "creature",
+          "cost": 10
+        },
+        {
+          "type": "reduce-discovered-cost",
+          "setCost": 1
+        }
+      ]
+    },
+    {
+      "id": "recycle",
+      "name": "Recycle",
+      "type": "sorcery",
+      "cost": 6,
+      "cardClass": "druid",
+      "rarity": "rare",
+      "set": "GVG",
+      "tribe": "Nature",
+      "description": "Shuffle an enemy minion into your opponent's deck.",
+      "effects": [
+        {
+          "type": "bounce-to-deck-bottom",
+          "target": "enemy-creature"
+        }
+      ]
+    },
+    {
+      "id": "tree_of_life",
+      "name": "Tree of Life",
+      "type": "sorcery",
+      "cost": 9,
+      "cardClass": "druid",
+      "rarity": "epic",
+      "set": "GVG",
+      "tribe": "Nature",
+      "description": "Restore all characters to full Health.",
+      "effects": [
+        {
+          "type": "heal-all-full"
+        }
+      ]
+    },
+    {
+      "id": "noxious_bribe",
+      "name": "Noxious Bribe",
+      "type": "sorcery",
+      "cost": 2,
+      "cardClass": "druid",
+      "rarity": "rare",
+      "set": "ESCAPEFROM_VIOLET_HOLD",
+      "description": "Discover a Choose One card. It has both effects combined. Give your opponent a plain copy.",
+      "effects": [
+        {
+          "type": "discover",
+          "chooseOne": true
+        }
+      ]
+    },
+    {
+      "id": "scale_of_onyxia",
+      "name": "Scale of Onyxia",
+      "type": "sorcery",
+      "cost": 7,
+      "cardClass": "druid",
+      "rarity": "common",
+      "set": "ALTERAC_VALLEY",
+      "description": "Fill your board with 2/1 Whelps with Rush.",
+      "effects": [
+        {
+          "type": "fill-board-token",
+          "name": "Whelp",
+          "tribe": "Dragon",
+          "attack": 2,
+          "health": 1,
+          "keywords": [
+            "rush"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "unending_swarm",
+      "name": "Unending Swarm",
+      "type": "sorcery",
+      "cost": 6,
+      "cardClass": "druid",
+      "rarity": "common",
+      "set": "RETURN_OF_THE_LICH_KING",
+      "description": "Resurrect all friendly minions that cost (2) or less.",
+      "effects": [
+        {
+          "type": "resurrect-died-distinct-mincost",
+          "maxCost": 2
+        }
+      ]
+    },
+    {
+      "id": "runic_carvings",
+      "name": "Runic Carvings",
+      "type": "sorcery",
+      "cost": 6,
+      "cardClass": "druid",
+      "rarity": "epic",
+      "set": "SCHOLOMANCE",
+      "tribe": "Nature",
+      "description": "Choose One - Summon four 2/2 Treant Totems; or Overload: (2) to summon them with Rush.",
+      "choices": [
+        {
+          "text": "Summon four 2/2 Treant Totems",
+          "effects": [
+            {
+              "type": "summon",
+              "count": 4,
+              "attack": 2,
+              "health": 2,
+              "name": "Treant Totem",
+              "tribe": "Treant"
+            }
+          ]
+        },
+        {
+          "text": "Overload: (2) to summon them with Rush",
+          "overload": 2,
+          "effects": [
+            {
+              "type": "summon",
+              "count": 4,
+              "attack": 2,
+              "health": 2,
+              "name": "Treant Totem",
+              "tribe": "Treant",
+              "keywords": [
+                "rush"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "alternate_reality",
+      "name": "Alternate Reality",
+      "type": "sorcery",
+      "cost": 2,
+      "cardClass": "druid",
+      "rarity": "epic",
+      "set": "TIME_TRAVEL",
+      "description": "Replace your hand and deck with random Choose One cards from the past. They cost (1) less.",
+      "effects": [
+        {
+          "type": "rebuild-deck-random",
+          "chooseOne": true,
+          "costReduction": 1,
+          "includeHand": true
+        }
+      ]
+    },
+    {
+      "id": "stampeding_roar",
+      "name": "Stampeding Roar",
+      "type": "sorcery",
+      "cost": 6,
+      "cardClass": "druid",
+      "rarity": "epic",
+      "set": "TROLL",
+      "description": "Summon a random Beast from your hand and give it Rush.",
+      "effects": [
+        {
+          "type": "summon-from-hand",
+          "tribe": "Beast",
+          "keyword": "rush"
+        }
+      ]
+    },
+    {
+      "id": "miracle_growth",
+      "name": "Miracle Growth",
+      "type": "sorcery",
+      "cost": 7,
+      "cardClass": "druid",
+      "rarity": "common",
+      "set": "THE_SUNKEN_CITY",
+      "tribe": "Nature",
+      "description": "Draw 3 cards. Summon a Plant with Taunt and stats equal to your hand size.",
+      "effects": [
+        {
+          "type": "draw",
+          "value": 3
+        },
+        {
+          "type": "summon-hand-size-stats",
+          "name": "Plant",
+          "keywords": [
+            "taunt"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "cultivation",
+      "name": "Cultivation",
+      "type": "sorcery",
+      "cost": 8,
+      "cardClass": "druid",
+      "rarity": "common",
+      "set": "TITANS",
+      "tribe": "Nature",
+      "description": "Give your minions +2/+2. Costs (1) less for each Treant you've summoned this game.",
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 2,
+          "health": 2,
+          "target": "friendly-creatures"
+        }
+      ],
+      "selfCostIf": {
+        "cond": "treants-summoned",
+        "amountPer": -1
+      }
+    },
+    {
+      "id": "untapped_potential",
+      "name": "Untapped Potential",
+      "type": "quest",
+      "cost": 1,
+      "cardClass": "druid",
+      "rarity": "legendary",
+      "set": "ULDUM",
+      "description": "Quest: End 4 turns with any unspent Mana.\nReward: Ossirian Tear.",
+      "keywords": [
+        "quest"
+      ],
+      "quest": {
+        "goal": {
+          "type": "unspent-mana-turn",
+          "count": 4
+        },
+        "reward": [
+          {
+            "type": "refresh-mana"
+          }
+        ]
+      }
+    },
+    {
+      "id": "sleep_under_the_stars",
+      "name": "Sleep Under the Stars",
+      "type": "sorcery",
+      "cost": 8,
+      "cardClass": "druid",
+      "rarity": "epic",
+      "set": "ISLAND_VACATION",
+      "tribe": "Arcane",
+      "description": "Choose Thrice - Draw 2 cards; Gain 5 Armor; Refresh 3 Mana Crystals.",
+      "chooseCount": 3,
+      "choices": [
+        {
+          "text": "Draw 2 cards",
+          "effects": [
+            {
+              "type": "draw",
+              "value": 2
+            }
+          ]
+        },
+        {
+          "text": "Gain 5 Armor",
+          "effects": [
+            {
+              "type": "armor",
+              "value": 5
+            }
+          ]
+        },
+        {
+          "text": "Refresh 3 Mana Crystals",
+          "effects": [
+            {
+              "type": "refresh-mana",
+              "value": 3
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "hydration_station",
+      "name": "Hydration Station",
+      "type": "sorcery",
+      "cost": 8,
+      "cardClass": "druid",
+      "rarity": "rare",
+      "set": "ISLAND_VACATION",
+      "description": "Resurrect three of your different highest Cost Taunt minions.",
+      "effects": [
+        {
+          "type": "resurrect-highest-died",
+          "count": 3,
+          "keyword": "taunt",
+          "distinct": true
+        }
+      ]
+    },
+    {
+      "id": "lock_and_load",
+      "name": "Lock and Load",
+      "type": "sorcery",
+      "cost": 0,
+      "cardClass": "hunter",
+      "rarity": "epic",
+      "set": "TGT",
+      "description": "Each time you cast a spell this turn, get a random Hunter card.",
+      "effects": [
+        {
+          "type": "conjure-random",
+          "cardClass": "hunter",
+          "count": 2
+        }
+      ]
+    },
+    {
+      "id": "dun_baldar_bunker",
+      "name": "Dun Baldar Bunker",
+      "type": "sorcery",
+      "cost": 2,
+      "cardClass": "hunter",
+      "rarity": "rare",
+      "set": "ALTERAC_VALLEY",
+      "description": "At the end of your turn, draw a Secret and set its Cost to (1). Lasts 3 turns.",
+      "effects": [
+        {
+          "type": "deploy-secret-from-deck"
+        }
+      ]
+    },
+    {
+      "id": "confront_the_tol_vir",
+      "name": "Confront the Tol'vir",
+      "type": "sorcery",
+      "cost": 4,
+      "cardClass": "hunter",
+      "rarity": "epic",
+      "set": "CATACLYSM",
+      "description": "Replay each 1-Cost card you've played this game (targeting enemies if possible).",
+      "effects": [
+        {
+          "type": "recast-spells-played"
+        }
+      ]
+    },
+    {
+      "id": "wild_spirits",
+      "name": "Wild Spirits",
+      "type": "sorcery",
+      "cost": 3,
+      "cardClass": "hunter",
+      "rarity": "epic",
+      "set": "THE_SUNKEN_CITY",
+      "description": "Summon two different Dormant Wildseeds. Make your Wildseeds awaken 1 turn sooner.",
+      "effects": [
+        {
+          "type": "summon",
+          "count": 2,
+          "attack": 1,
+          "health": 1,
+          "name": "Wildseed",
+          "tribe": "Beast"
+        }
+      ]
+    },
+    {
+      "id": "mismatched_fossils",
+      "name": "Mismatched Fossils",
+      "type": "sorcery",
+      "cost": 3,
+      "cardClass": "hunter",
+      "rarity": "rare",
+      "set": "WILD_WEST",
+      "description": "Discover a Beast and an Undead. Swap their stats.",
+      "effects": [
+        {
+          "type": "discover",
+          "pick": 3,
+          "cardType": "creature",
+          "tribe": "Beast"
+        },
+        {
+          "type": "discover",
+          "pick": 3,
+          "cardType": "creature",
+          "tribe": "Undead"
+        }
+      ]
+    },
+    {
+      "id": "beast_tripwire",
+      "name": "Beast Tripwire",
+      "type": "sorcery",
+      "cost": 4,
+      "cardClass": "hunter",
+      "rarity": "rare",
+      "set": "ESCAPEFROM_VIOLET_HOLD",
+      "description": "Summon a random 5-Cost Beast. Shuffle 2 spells into your deck that do it again when drawn.",
+      "effects": [
+        {
+          "type": "summon-random",
+          "cost": 5,
+          "tribe": "Beast"
+        },
+        {
+          "type": "shuffle-random-spells-into-deck",
+          "count": 2
+        }
+      ]
+    },
+    {
+      "id": "bargain_bin",
+      "name": "Bargain Bin",
+      "type": "secret",
+      "cost": 2,
+      "cardClass": "hunter",
+      "rarity": "common",
+      "set": "WHIZBANGS_WORKSHOP",
+      "description": "Secret: After your opponent plays a minion, spell, or weapon, draw a card of the other 2 types.",
+      "secret": {
+        "trigger": "enemy-minion-played",
+        "effects": [
+          {
+            "type": "draw",
+            "value": 2
+          }
+        ]
+      }
+    },
+    {
+      "id": "faithful_companions",
+      "name": "Faithful Companions",
+      "type": "sorcery",
+      "cost": 7,
+      "cardClass": "hunter",
+      "rarity": "rare",
+      "set": "RETURN_OF_THE_LICH_KING",
+      "description": "Discover a Beast from your deck and summon it. Manathirst (10): Also summon a copy of it.",
+      "effects": [
+        {
+          "type": "summon-from-deck-tribe",
+          "tribe": "Beast",
+          "count": 1
+        },
+        {
+          "type": "conditional",
+          "if": {
+            "manathirst": 10
+          },
+          "then": [
+            {
+              "type": "summon-from-deck-tribe",
+              "tribe": "Beast",
+              "count": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "defend_the_dwarven_district",
+      "name": "Defend the Dwarven District",
+      "type": "quest",
+      "cost": 1,
+      "cardClass": "hunter",
+      "rarity": "legendary",
+      "set": "STORMWIND",
+      "description": "Questline: Deal damage with 3 spells.\nReward: Your Hero Power can target minions.",
+      "keywords": [
+        "quest"
+      ],
+      "quest": {
+        "goal": {
+          "type": "spell",
+          "count": 3
+        },
+        "reward": [
+          {
+            "type": "upgrade-hero-power"
+          }
+        ]
+      }
+    },
+    {
+      "id": "devouring_swarm",
+      "name": "Devouring Swarm",
+      "type": "sorcery",
+      "cost": 0,
+      "cardClass": "hunter",
+      "rarity": "rare",
+      "set": "STORMWIND",
+      "description": "Choose an enemy minion. Your minions attack it, then return any that die to your hand.",
+      "effects": [
+        {
+          "type": "all-friendly-attack-target",
+          "target": "enemy-creature"
+        }
+      ]
+    },
+    {
+      "id": "camouflage_mount",
+      "name": "Camouflage Mount",
+      "type": "sorcery",
+      "cost": 4,
+      "cardClass": "hunter",
+      "rarity": "rare",
+      "set": "WILD_WEST",
+      "description": "Give a minion +3/+3 and a random Bonus Effect. When it dies, summon a Chameleon.",
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 3,
+          "health": 3,
+          "target": "creature"
+        },
+        {
+          "type": "grant-bonus-effect",
+          "target": "creature"
+        },
+        {
+          "type": "grant-deathrattle",
+          "target": "creature",
+          "effects": [
+            {
+              "type": "summon",
+              "count": 1,
+              "attack": 3,
+              "health": 3,
+              "name": "Chameleon",
+              "tribe": "Beast"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "arcane_brilliance",
+      "name": "Arcane Brilliance",
+      "type": "sorcery",
+      "cost": 4,
+      "cardClass": "mage",
+      "rarity": "rare",
+      "set": "ALTERAC_VALLEY",
+      "description": "Add a copy of a 7, 8, 9, and 10-Cost spell in your deck to your hand.",
+      "effects": [
+        {
+          "type": "copy-highest-spell"
+        }
+      ]
+    },
+    {
+      "id": "rune_of_the_archmage",
+      "name": "Rune of the Archmage",
+      "type": "sorcery",
+      "cost": 9,
+      "cardClass": "mage",
+      "rarity": "epic",
+      "set": "ALTERAC_VALLEY",
+      "description": "Cast 20 Mana worth of Mage spells at enemies.",
+      "effects": [
+        {
+          "type": "cast-random-spell",
+          "count": 5
+        }
+      ]
+    },
+    {
+      "id": "iceblood_tower",
+      "name": "Iceblood Tower",
+      "type": "sorcery",
+      "cost": 10,
+      "cardClass": "mage",
+      "rarity": "rare",
+      "set": "ALTERAC_VALLEY",
+      "description": "At the end of your turn, cast another spell from your deck. Lasts 3 turns.",
+      "ongoing": {
+        "on": "turn-end",
+        "turns": 3,
+        "effects": [
+          {
+            "type": "cast-spell-from-deck"
+          }
+        ]
+      }
+    },
+    {
+      "id": "refreshing_spring_water",
+      "name": "Refreshing Spring Water",
+      "type": "sorcery",
+      "cost": 5,
+      "cardClass": "mage",
+      "rarity": "common",
+      "set": "THE_BARRENS",
+      "description": "Draw 2 cards. Refresh 2 Mana Crystals for each spell drawn.",
+      "effects": [
+        {
+          "type": "draw-then",
+          "value": 2,
+          "then": [
+            {
+              "type": "refresh-mana"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "wildfire",
+      "name": "Wildfire",
+      "type": "sorcery",
+      "cost": 1,
+      "cardClass": "mage",
+      "rarity": "epic",
+      "set": "THE_BARRENS",
+      "description": "Your Hero Power deals 1 more damage this game.",
+      "effects": [
+        {
+          "type": "set-next-hero-power-damage",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "incanters_flow",
+      "name": "Incanter's Flow",
+      "type": "sorcery",
+      "cost": 4,
+      "cardClass": "mage",
+      "rarity": "common",
+      "set": "BLACK_TEMPLE",
+      "description": "Reduce the Cost of spells in your deck by (1).",
+      "effects": [
+        {
+          "type": "reduce-deck-cost",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "sindragosas_triumph",
+      "name": "Sindragosa's Triumph",
+      "type": "sorcery",
+      "cost": 5,
+      "cardClass": "mage",
+      "rarity": "rare",
+      "set": "CATACLYSM",
+      "description": "Deal 8 damage to a minion. Reduce the Cost of a random card in your hand by the excess damage.",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 8,
+          "target": "creature"
+        },
+        {
+          "type": "reduce-random-hand-cost",
+          "value": 3
+        }
+      ]
+    },
+    {
+      "id": "arcane_overflow",
+      "name": "Arcane Overflow",
+      "type": "sorcery",
+      "cost": 5,
+      "cardClass": "mage",
+      "rarity": "rare",
+      "set": "STORMWIND",
+      "description": "Deal 8 damage to an enemy minion. Summon a Remnant with stats equal to the excess damage.",
+      "effects": [
+        {
+          "type": "damage-minion",
+          "value": 8,
+          "target": "enemy-creature"
+        },
+        {
+          "type": "summon",
+          "count": 1,
+          "attack": 3,
+          "health": 3,
+          "name": "Remnant"
+        }
+      ]
+    },
+    {
+      "id": "summoning_ward",
+      "name": "Summoning Ward",
+      "type": "secret",
+      "cost": 3,
+      "cardClass": "mage",
+      "rarity": "rare",
+      "set": "WILD_WEST",
+      "description": "Secret: When your turn starts, summon a copy of your highest Cost minion.",
+      "secret": {
+        "trigger": "enemy-turn-end",
+        "effects": [
+          {
+            "type": "summon-deck-copy"
+          }
+        ]
+      }
+    },
+    {
+      "id": "tribute_dance",
+      "name": "Tribute Dance",
+      "type": "sorcery",
+      "cost": 5,
+      "cardClass": "mage",
+      "rarity": "common",
+      "set": "THE_LOST_CITY",
+      "description": "Choose a minion. Choose a different minion to transform it into.",
+      "effects": [
+        {
+          "type": "transform",
+          "target": "creature"
+        }
+      ]
+    },
+    {
+      "id": "deck_of_lunacy",
+      "name": "Deck of Lunacy",
+      "type": "sorcery",
+      "cost": 2,
+      "cardClass": "mage",
+      "rarity": "legendary",
+      "set": "DARKMOON_FAIRE",
+      "description": "Transform spells in your deck into ones that cost (3) more. (They keep their original Cost.)",
+      "effects": [
+        {
+          "type": "transform-deck-cost",
+          "cost": 3
+        }
+      ]
+    },
+    {
+      "id": "rolling_fireball",
+      "name": "Rolling Fireball",
+      "type": "sorcery",
+      "cost": 5,
+      "cardClass": "mage",
+      "rarity": "epic",
+      "set": "DRAGONS",
+      "tribe": "Fire",
+      "description": "Deal 8 damage to a minion. Any excess damage continues to the left or right.",
+      "effects": [
+        {
+          "type": "damage-chain-neighbors",
+          "value": 8,
+          "target": "creature"
+        }
+      ]
+    },
+    {
+      "id": "rewind",
+      "name": "Rewind",
+      "type": "sorcery",
+      "cost": 2,
+      "cardClass": "mage",
+      "rarity": "rare",
+      "set": "BATTLE_OF_THE_BANDS",
+      "description": "Discover a copy of another spell you've cast this game.",
+      "effects": [
+        {
+          "type": "discover",
+          "cardType": "spell",
+          "pick": 3
+        }
+      ]
+    },
+    {
+      "id": "pocket_dimension",
+      "name": "Pocket Dimension",
+      "type": "sorcery",
+      "cost": 4,
+      "cardClass": "mage",
+      "rarity": "epic",
+      "set": "SPACE",
+      "description": "Discover a spell. Repeat until you see one for the second time.",
+      "effects": [
+        {
+          "type": "discover",
+          "cardType": "spell",
+          "pick": 3
+        }
+      ]
+    },
+    {
+      "id": "code_violet",
+      "name": "Code Violet",
+      "type": "sorcery",
+      "cost": 7,
+      "cardClass": "mage",
+      "rarity": "epic",
+      "set": "ESCAPEFROM_VIOLET_HOLD",
+      "description": "Prepare. Summon an 8-Cost minion. If you've cast 3 other spells this turn, do it again.",
+      "effects": [
+        {
+          "type": "summon-random",
+          "minCost": 8,
+          "maxCost": 8,
+          "count": 1
+        }
+      ]
+    },
+    {
+      "id": "star_power",
+      "name": "Star Power",
+      "type": "sorcery",
+      "cost": 5,
+      "cardClass": "mage",
+      "rarity": "rare",
+      "set": "BATTLE_OF_THE_BANDS",
+      "description": "Deal 5 damage to a random enemy minion. Repeat this with 1 less damage.",
+      "effects": [
+        {
+          "type": "random-damage",
+          "value": 5,
+          "pool": "enemy-creatures",
+          "count": 1
+        },
+        {
+          "type": "random-damage",
+          "value": 4,
+          "pool": "enemy-creatures",
+          "count": 1
+        },
+        {
+          "type": "random-damage",
+          "value": 3,
+          "pool": "enemy-creatures",
+          "count": 1
+        },
+        {
+          "type": "random-damage",
+          "value": 2,
+          "pool": "enemy-creatures",
+          "count": 1
+        },
+        {
+          "type": "random-damage",
+          "value": 1,
+          "pool": "enemy-creatures",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "id": "dragons_fury",
+      "name": "Dragon's Fury",
+      "type": "sorcery",
+      "cost": 5,
+      "cardClass": "mage",
+      "rarity": "epic",
+      "set": "LOOTAPALOOZA",
+      "tribe": "Fire",
+      "description": "Reveal a spell from your deck. Deal damage equal to its Cost to all minions.",
+      "effects": [
+        {
+          "type": "damage-all-minions",
+          "value": 5
+        }
+      ]
+    },
+    {
+      "id": "the_arcanomicon",
+      "name": "The Arcanomicon",
+      "type": "sorcery",
+      "cost": 6,
+      "cardClass": "mage",
+      "rarity": "legendary",
+      "set": "CATACLYSM",
+      "description": "Get all 3 Leylines. Choose an upgrade for your Leylines.",
+      "effects": [
+        {
+          "type": "leyline-give",
+          "count": 3
+        }
+      ]
+    },
+    {
+      "id": "go_with_the_flow",
+      "name": "Go with the Flow",
+      "type": "sorcery",
+      "cost": 1,
+      "cardClass": "mage",
+      "rarity": "epic",
+      "set": "ISLAND_VACATION",
+      "description": "Choose a minion. If it's an enemy, Freeze it. If it's friendly, give it Spell Damage +1.",
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "targetIsEnemy": true
+          },
+          "then": [
+            {
+              "type": "freeze",
+              "target": "creature"
+            }
+          ],
+          "else": [
+            {
+              "type": "grant-spell-damage",
+              "target": "creature",
+              "value": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "shattering_blast",
+      "name": "Shattering Blast",
+      "type": "sorcery",
+      "cost": 3,
+      "cardClass": "mage",
+      "rarity": "rare",
+      "set": "THE_BARRENS",
+      "tribe": "Frost",
+      "description": "Destroy all Frozen minions.",
+      "effects": [
+        {
+          "type": "damage-frozen",
+          "value": 99
+        }
+      ]
+    },
+    {
+      "id": "huddle_up",
+      "name": "Huddle Up",
+      "type": "sorcery",
+      "cost": 7,
+      "cardClass": "mage",
+      "rarity": "common",
+      "set": "ISLAND_VACATION",
+      "description": "Fill your board with random Naga.",
+      "effects": [
+        {
+          "type": "summon-random",
+          "tribe": "Naga",
+          "count": 7
+        }
+      ]
+    },
+    {
+      "id": "azerite_vein",
+      "name": "Azerite Vein",
+      "type": "secret",
+      "cost": 3,
+      "cardClass": "mage",
+      "rarity": "epic",
+      "set": "WILD_WEST",
+      "description": "Secret: When the enemy plays a card on the turn that it entered their hand, get a copy that costs (0).",
+      "secret": {
+        "trigger": "enemy-card-played",
+        "effects": [
+          {
+            "type": "steal-entered-hand"
+          }
+        ]
+      }
+    },
+    {
+      "id": "acceleration_aura",
+      "name": "Acceleration Aura",
+      "type": "sorcery",
+      "cost": 2,
+      "cardClass": "neutral",
+      "rarity": "common",
+      "set": "TIME_TRAVEL",
+      "description": "At the start of your turn, gain a temporary Mana Crystal. Lasts 3 turns.",
+      "effects": [
+        {
+          "type": "emblem",
+          "name": "Acceleration Aura",
+          "turns": 3,
+          "description": "At the start of your turn, gain a temporary Mana Crystal.",
+          "ongoing": {
+            "on": "turn-start",
+            "effects": [
+              {
+                "type": "temp-crystal-next-turn",
+                "value": 1
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "battle_at_the_end_time",
+      "name": "Battle at the End Time",
+      "type": "quest",
+      "cost": 1,
+      "cardClass": "neutral",
+      "rarity": "legendary",
+      "set": "TIME_TRAVEL",
+      "description": "Quest: Fill your hand, then empty it. Reward: Tick and Tock.",
+      "keywords": [
+        "quest"
+      ],
+      "quest": {
+        "goal": {
+          "type": "draw",
+          "count": 10
+        },
+        "reward": [
+          {
+            "type": "summon",
+            "name": "Tick and Tock",
+            "attack": 3,
+            "health": 3
+          }
+        ]
+      }
+    },
+    {
+      "id": "storm_the_gates_neutral",
+      "name": "Storm the Gates",
+      "type": "quest",
+      "cost": 1,
+      "cardClass": "neutral",
+      "rarity": "epic",
+      "set": "EVENT",
+      "description": "Sidequest: Play 3 Beasts or Undead. Reward: Craft a custom Zombeast. It costs (3) less.",
+      "keywords": [
+        "quest"
+      ],
+      "quest": {
+        "goal": {
+          "type": "summon",
+          "count": 3,
+          "tribe": "Beast"
+        },
+        "reward": [
+          {
+            "type": "discover",
+            "tribe": "Beast"
+          }
+        ]
+      }
+    },
+    {
+      "id": "champions_of_azeroth",
+      "name": "Champions of Azeroth",
+      "type": "sorcery",
+      "cost": 4,
+      "cardClass": "neutral",
+      "rarity": "epic",
+      "set": "LEGACY",
+      "description": "Choose Alliance or Horde. Get 2 of their Legendary Champions and reduce their Costs by (2).",
+      "choices": [
+        {
+          "text": "Alliance: Get 2 Legendary minions that cost (2) less.",
+          "effects": [
+            {
+              "type": "conjure-random",
+              "cardType": "creature",
+              "legendary": true,
+              "count": 2,
+              "costReduction": 2
+            }
+          ]
+        },
+        {
+          "text": "Horde: Get 2 Legendary minions that cost (2) less.",
+          "effects": [
+            {
+              "type": "conjure-random",
+              "cardType": "creature",
+              "legendary": true,
+              "count": 2,
+              "costReduction": 2
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "hysteria",
+      "name": "Hysteria",
+      "type": "sorcery",
+      "cost": 4,
+      "cardClass": "neutral",
+      "rarity": "rare",
+      "set": "DARKMOON_FAIRE",
+      "description": "Choose an enemy minion. It attacks random minions until it dies.",
+      "effects": [
+        {
+          "type": "force-attack",
+          "target": "enemy-creature"
+        }
+      ]
+    },
+    {
+      "id": "protect_the_innocent",
+      "name": "Protect the Innocent",
+      "type": "sorcery",
+      "cost": 5,
+      "cardClass": "paladin",
+      "rarity": "rare",
+      "set": "ALTERAC_VALLEY",
+      "description": "Summon a 5/5 Defender with Taunt. If your hero was healed this turn, summon another.",
+      "effects": [
+        {
+          "type": "summon",
+          "count": 1,
+          "attack": 5,
+          "health": 5,
+          "name": "Defender",
+          "keywords": [
+            "taunt"
+          ]
+        },
+        {
+          "type": "conditional",
+          "if": {
+            "healedThisTurn": true
+          },
+          "then": [
+            {
+              "type": "summon",
+              "count": 1,
+              "attack": 5,
+              "health": 5,
+              "name": "Defender",
+              "keywords": [
+                "taunt"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "libram_of_justice",
+      "name": "Libram of Justice",
+      "type": "sorcery",
+      "cost": 5,
+      "cardClass": "paladin",
+      "rarity": "common",
+      "set": "BLACK_TEMPLE",
+      "description": "Equip a 1/4 weapon. Change the Health of all enemy minions to 1.",
+      "effects": [
+        {
+          "type": "equip",
+          "name": "Libram of Justice",
+          "attack": 1,
+          "durability": 4
+        },
+        {
+          "type": "set-health",
+          "value": 1,
+          "target": "enemy-creatures"
+        }
+      ]
+    },
+    {
+      "id": "gelbins_triumph",
+      "name": "Gelbin's Triumph",
+      "type": "sorcery",
+      "cost": 1,
+      "cardClass": "paladin",
+      "rarity": "rare",
+      "set": "CATACLYSM",
+      "description": "Get a random Paladin Aura. It lasts an additional turn.",
+      "effects": [
+        {
+          "type": "gelbin-auras"
+        }
+      ]
+    },
+    {
+      "id": "pursuit_of_justice",
+      "name": "Pursuit of Justice",
+      "type": "sorcery",
+      "cost": 2,
+      "cardClass": "paladin",
+      "rarity": "epic",
+      "set": "PLACEHOLDER_202204",
+      "description": "Give +1 Attack to Silver Hand Recruits you summon this game.",
+      "effects": [
+        {
+          "type": "embolden-recruits",
+          "attack": 1
+        }
+      ]
+    },
+    {
+      "id": "divine_toll",
+      "name": "Divine Toll",
+      "type": "sorcery",
+      "cost": 7,
+      "cardClass": "paladin",
+      "rarity": "rare",
+      "set": "PLACEHOLDER_202204",
+      "description": "Shoot 5 rays at random minions. They give friendly minions +2/+2, and deal 2 damage to enemy minions.",
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 2,
+          "health": 2,
+          "target": "friendly-creatures"
+        },
+        {
+          "type": "damage-all-enemies",
+          "value": 2
+        }
+      ]
+    },
+    {
+      "id": "immortalized_in_stone",
+      "name": "Immortalized in Stone",
+      "type": "sorcery",
+      "cost": 7,
+      "cardClass": "paladin",
+      "rarity": "common",
+      "set": "CORE",
+      "description": "Summon a 4/8, 2/4, and 1/2 Elemental with Taunt.",
+      "effects": [
+        {
+          "type": "summon",
+          "count": 1,
+          "attack": 4,
+          "health": 8,
+          "name": "Elemental",
+          "tribe": "Elemental",
+          "keywords": [
+            "taunt"
+          ]
+        },
+        {
+          "type": "summon",
+          "count": 1,
+          "attack": 2,
+          "health": 4,
+          "name": "Elemental",
+          "tribe": "Elemental",
+          "keywords": [
+            "taunt"
+          ]
+        },
+        {
+          "type": "summon",
+          "count": 1,
+          "attack": 1,
+          "health": 2,
+          "name": "Elemental",
+          "tribe": "Elemental",
+          "keywords": [
+            "taunt"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "heros_welcome",
+      "name": "Hero's Welcome",
+      "type": "sorcery",
+      "cost": 8,
+      "cardClass": "paladin",
+      "rarity": "rare",
+      "set": "THE_LOST_CITY",
+      "description": "Discover a Legendary minion to summon. Set its stats to 10/10.",
+      "effects": [
+        {
+          "type": "discover",
+          "pick": 3,
+          "cardType": "creature",
+          "rarity": "legendary",
+          "summon": true,
+          "setStats": 10
+        }
+      ]
+    },
+    {
+      "id": "oh_my_yogg",
+      "name": "Oh My Yogg!",
+      "type": "secret",
+      "cost": 1,
+      "cardClass": "paladin",
+      "rarity": "epic",
+      "set": "DARKMOON_FAIRE",
+      "secret": {
+        "trigger": "enemy-spell-played",
+        "effects": [
+          {
+            "type": "cast-random-same-cost"
+          }
+        ]
+      },
+      "description": "Secret: When your opponent casts a spell, they instead cast a random one of the same Cost."
+    },
+    {
+      "id": "sanctuary_pal",
+      "name": "Sanctuary",
+      "type": "quest",
+      "cost": 2,
+      "cardClass": "paladin",
+      "rarity": "epic",
+      "set": "DRAGONS",
+      "description": "Sidequest: Take no damage for a turn.\nReward: Summon a 3/6 minion with Taunt.",
+      "keywords": [
+        "quest"
+      ],
+      "quest": {
+        "goal": {
+          "type": "no-damage",
+          "count": 1
+        },
+        "reward": [
+          {
+            "type": "summon",
+            "count": 1,
+            "attack": 3,
+            "health": 6,
+            "keywords": [
+              "taunt"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "renewing_flames",
+      "name": "Renewing Flames",
+      "type": "sorcery",
+      "cost": 7,
+      "cardClass": "paladin",
+      "rarity": "common",
+      "set": "EMERALD_DREAM",
+      "keywords": [
+        "lifesteal"
+      ],
+      "description": "Lifesteal. Deal 5 damage to the lowest Health enemy, twice.",
+      "effects": [
+        {
+          "type": "damage-lowest-enemy",
+          "value": 5
+        },
+        {
+          "type": "damage-lowest-enemy",
+          "value": 5
+        }
+      ]
+    },
+    {
+      "id": "righteousness",
+      "name": "Righteousness",
+      "type": "sorcery",
+      "cost": 5,
+      "cardClass": "paladin",
+      "rarity": "rare",
+      "set": "LEGACY",
+      "description": "Give your minions Divine Shield.",
+      "effects": [
+        {
+          "type": "grant",
+          "keyword": "divine_shield",
+          "target": "friendly-creatures"
+        }
+      ]
+    },
+    {
+      "id": "libram_of_faith",
+      "name": "Libram of Faith",
+      "type": "sorcery",
+      "cost": 6,
+      "cardClass": "paladin",
+      "rarity": "rare",
+      "set": "SPACE",
+      "description": "Summon three 3/3 Draenei with Divine Shield. If this costs (0), give them Rush.",
+      "effects": [
+        {
+          "type": "summon",
+          "count": 3,
+          "attack": 3,
+          "health": 3,
+          "name": "Draenei",
+          "tribe": "Draenei",
+          "keywords": [
+            "divine_shield"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "commencement",
+      "name": "Commencement",
+      "type": "sorcery",
+      "cost": 7,
+      "cardClass": "paladin",
+      "rarity": "rare",
+      "set": "SCHOLOMANCE",
+      "description": "Summon a minion from your deck. Give it Taunt and Divine Shield.",
+      "effects": [
+        {
+          "type": "summon-from-deck",
+          "count": 1,
+          "keywords": [
+            "taunt",
+            "divine_shield"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "rise_to_the_occasion_r5",
+      "name": "Rise to the Occasion",
+      "type": "quest",
+      "cost": 1,
+      "cardClass": "paladin",
+      "rarity": "legendary",
+      "set": "STORMWIND",
+      "description": "Questline: Play 3 different 1-Cost cards.\nReward: Equip a 1/4 Light's Justice.",
+      "keywords": [
+        "quest"
+      ],
+      "quest": {
+        "goal": {
+          "type": "play",
+          "count": 3,
+          "cost": 1
+        },
+        "reward": [
+          {
+            "type": "equip",
+            "name": "Light's Justice",
+            "attack": 1,
+            "durability": 4
+          }
+        ]
+      }
+    },
+    {
+      "id": "front_lines",
+      "name": "Front Lines",
+      "type": "sorcery",
+      "cost": 9,
+      "cardClass": "paladin",
+      "rarity": "epic",
+      "set": "THE_SUNKEN_CITY",
+      "description": "Summon a minion from each player's deck. Repeat until either side of the battlefield is full.",
+      "effects": [
+        {
+          "type": "summon-from-deck-each",
+          "fillBoard": true
+        }
+      ]
+    },
+    {
+      "id": "dive_the_golakka_depths_r5",
+      "name": "Dive the Golakka Depths",
+      "type": "quest",
+      "cost": 1,
+      "cardClass": "paladin",
+      "rarity": "legendary",
+      "set": "THE_LOST_CITY",
+      "description": "Repeatable Quest: Summon 6 Murlocs.\nReward: Murlocs you summon gain +1/+1.",
+      "keywords": [
+        "quest"
+      ],
+      "quest": {
+        "goal": {
+          "type": "summon",
+          "count": 6,
+          "tribe": "Murloc"
+        },
+        "reward": [
+          {
+            "type": "buff-next-summon-tribe",
+            "tribe": "Murloc",
+            "attack": 1,
+            "health": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "story_of_galvadon",
+      "name": "Story of Galvadon",
+      "type": "sorcery",
+      "cost": 2,
+      "cardClass": "paladin",
+      "rarity": "rare",
+      "set": "THE_LOST_CITY",
+      "description": "Give a minion three random Bonus Effects.",
+      "effects": [
+        {
+          "type": "grant-bonus-effect",
+          "count": 3,
+          "target": "friendly-creature"
+        }
+      ]
+    },
+    {
+      "id": "threshriders_blessing",
+      "name": "Threshrider's Blessing",
+      "type": "sorcery",
+      "cost": 5,
+      "cardClass": "paladin",
+      "rarity": "epic",
+      "set": "THE_LOST_CITY",
+      "description": "Give a friendly minion +4/+4 and \"Deathrattle: Summon a random 4-Cost minion.\"",
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 4,
+          "health": 4,
+          "target": "friendly-creature"
+        },
+        {
+          "type": "grant-deathrattle",
+          "target": "friendly-creature",
+          "effects": [
+            {
+              "type": "summon-random",
+              "cost": 4
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "crafters_aura",
+      "name": "Crafter's Aura",
+      "type": "sorcery",
+      "cost": 7,
+      "cardClass": "paladin",
+      "rarity": "rare",
+      "set": "WHIZBANGS_WORKSHOP",
+      "description": "At the end of your turn, summon a random 6-Cost minion. Lasts 3 turns.",
+      "ongoing": {
+        "on": "turn-end",
+        "turns": 3,
+        "effects": [
+          {
+            "type": "summon-random",
+            "cost": 6
+          }
+        ]
+      }
+    },
+    {
+      "id": "a_new_challenger",
+      "name": "A New Challenger...",
+      "type": "sorcery",
+      "cost": 7,
+      "cardClass": "paladin",
+      "rarity": "epic",
+      "set": "TROLL",
+      "description": "Discover a 6-Cost minion. Summon it with Taunt and Divine Shield.",
+      "effects": [
+        {
+          "type": "discover",
+          "pick": 3,
+          "cardType": "creature",
+          "cost": 6,
+          "summon": true,
+          "keywords": [
+            "taunt",
+            "divine_shield"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "the_gardens_grace",
+      "name": "The Garden's Grace",
+      "type": "sorcery",
+      "cost": 10,
+      "cardClass": "paladin",
+      "rarity": "epic",
+      "set": "THE_SUNKEN_CITY",
+      "description": "Give a minion +4/+4 and Divine Shield. Costs (1) less for each Mana you've spent on Holy spells this game.",
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 4,
+          "health": 4,
+          "target": "friendly-creature",
+          "grant": "divine_shield"
+        }
+      ]
+    },
+    {
+      "id": "tyrs_tears",
+      "name": "Tyr's Tears",
+      "type": "sorcery",
+      "cost": 5,
+      "cardClass": "paladin",
+      "rarity": "rare",
+      "set": "TITANS",
+      "description": "Resurrect 3 different minions from your class. Set their stats to 2/2. Forge: Resurrect another.",
+      "effects": [
+        {
+          "type": "resurrect-died-distinct-mincost",
+          "count": 3,
+          "setStats": 2,
+          "sameClass": true
+        }
+      ]
+    },
+    {
+      "id": "making_mummies_r5",
+      "name": "Making Mummies",
+      "type": "quest",
+      "cost": 1,
+      "cardClass": "paladin",
+      "rarity": "legendary",
+      "set": "ULDUM",
+      "description": "Quest: Play 5 Reborn minions.\nReward: Emperor Wraps.",
+      "keywords": [
+        "quest"
+      ],
+      "quest": {
+        "goal": {
+          "type": "play",
+          "count": 5,
+          "keyword": "reborn"
+        },
+        "reward": [
+          {
+            "type": "grant",
+            "keyword": "reborn",
+            "target": "friendly-creatures"
+          }
+        ]
+      }
+    },
+    {
+      "id": "the_last_kaleidosaur_r5",
+      "name": "The Last Kaleidosaur",
+      "type": "quest",
+      "cost": 1,
+      "cardClass": "paladin",
+      "rarity": "legendary",
+      "set": "UNGORO",
+      "description": "Quest: Cast 5 spells on your minions.\nReward: Galvadon.",
+      "keywords": [
+        "quest"
+      ],
+      "quest": {
+        "goal": {
+          "type": "spell",
+          "count": 5,
+          "targetFriendly": true
+        },
+        "reward": [
+          {
+            "type": "summon",
+            "count": 1,
+            "attack": 5,
+            "health": 5,
+            "name": "Galvadon",
+            "keywords": [
+              "taunt"
+            ]
+          },
+          {
+            "type": "grant-bonus-effect",
+            "count": 5,
+            "target": "friendly-creature"
+          }
+        ]
+      }
+    },
+    {
+      "id": "sea_shanty",
+      "name": "Sea Shanty",
+      "type": "sorcery",
+      "cost": 10,
+      "cardClass": "paladin",
+      "rarity": "epic",
+      "set": "ISLAND_VACATION",
+      "description": "Summon three 5/5 Pirates. Costs (1) less for each spell you've cast on characters this game.",
+      "effects": [
+        {
+          "type": "summon",
+          "count": 3,
+          "attack": 5,
+          "health": 5,
+          "name": "Pirate",
+          "tribe": "Pirate"
+        }
+      ]
+    },
+    {
+      "id": "lifesaving_aura",
+      "name": "Lifesaving Aura",
+      "type": "sorcery",
+      "cost": 1,
+      "cardClass": "paladin",
+      "rarity": "rare",
+      "set": "ISLAND_VACATION",
+      "description": "At the end of your turn, get a 1-Cost Sunscreen that gives +1/+2. Lasts 3 turns.",
+      "ongoing": {
+        "on": "turn-end",
+        "turns": 3,
+        "effects": [
+          {
+            "type": "add-token",
+            "name": "Sunscreen",
+            "cost": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "prismatic_beam",
+      "name": "Prismatic Beam",
+      "type": "sorcery",
+      "cost": 7,
+      "cardClass": "paladin",
+      "rarity": "common",
+      "set": "WILD_WEST",
+      "description": "Deal 3 damage to all enemies. Costs (1) less for each enemy minion.",
+      "effects": [
+        {
+          "type": "damage-all-enemies",
+          "value": 3
+        }
+      ]
+    },
+    {
+      "id": "power_word_fortitude",
+      "name": "Power Word: Fortitude",
+      "type": "sorcery",
+      "cost": 8,
+      "cardClass": "priest",
+      "rarity": "common",
+      "set": "THE_BARRENS",
+      "tribe": "Holy",
+      "description": "Give a minion +3/+5. Costs (1) less for each spell in your hand.",
+      "effects": [
+        {
+          "type": "buff",
+          "target": "creature",
+          "attack": 3,
+          "health": 5
+        }
+      ],
+      "selfCost": {
+        "per": "hand-others",
+        "amount": -1
+      }
+    },
+    {
+      "id": "soul_mirror",
+      "name": "Soul Mirror",
+      "type": "sorcery",
+      "cost": 7,
+      "cardClass": "priest",
+      "rarity": "legendary",
+      "set": "BLACK_TEMPLE",
+      "tribe": "Shadow",
+      "description": "Summon copies of enemy minions. They attack their copies.",
+      "effects": [
+        {
+          "type": "summon-enemy-copy-attack-original",
+          "target": "enemy-creature",
+          "all": true
+        }
+      ]
+    },
+    {
+      "id": "theft_accusation",
+      "name": "Theft Accusation",
+      "type": "sorcery",
+      "cost": 1,
+      "cardClass": "priest",
+      "rarity": "rare",
+      "set": "PLACEHOLDER_202204",
+      "tribe": "Shadow",
+      "description": "Choose a minion. Destroy it after you play a card copied from the opponent.",
+      "effects": [
+        {
+          "type": "mark-doomed",
+          "target": "creature"
+        }
+      ]
+    },
+    {
+      "id": "pendant_of_earth",
+      "name": "Pendant of Earth",
+      "type": "sorcery",
+      "cost": 3,
+      "cardClass": "priest",
+      "rarity": "common",
+      "set": "WILD_WEST",
+      "description": "Discover a minion from your deck. Restore Health to your hero equal to its Cost.",
+      "effects": [
+        {
+          "type": "discover",
+          "cardType": "creature",
+          "fromDeck": true
+        },
+        {
+          "type": "heal",
+          "value": 4,
+          "target": "self"
+        }
+      ]
+    },
+    {
+      "id": "behemoth_mask",
+      "name": "Behemoth Mask",
+      "type": "sorcery",
+      "cost": 7,
+      "cardClass": "priest",
+      "rarity": "rare",
+      "set": "THE_LOST_CITY",
+      "description": "Set a minion's stats to 8/10 and give it Lifesteal. Force a random enemy minion to attack it.",
+      "effects": [
+        {
+          "type": "set-target-stats",
+          "target": "creature",
+          "attack": 8,
+          "health": 10
+        },
+        {
+          "type": "grant",
+          "keyword": "lifesteal",
+          "target": "creature"
+        },
+        {
+          "type": "grant",
+          "keyword": "taunt",
+          "target": "creature"
+        }
+      ]
+    },
+    {
+      "id": "idol_of_yshaarj",
+      "name": "Idol of Y'Shaarj",
+      "type": "sorcery",
+      "cost": 8,
+      "cardClass": "priest",
+      "rarity": "epic",
+      "set": "DARKMOON_FAIRE",
+      "tribe": "Shadow",
+      "description": "Summon a 10/10 copy of a minion in your deck.",
+      "effects": [
+        {
+          "type": "summon-deck-copy",
+          "attack": 10,
+          "health": 10
+        }
+      ]
+    },
+    {
+      "id": "fight_over_me",
+      "name": "Fight Over Me",
+      "type": "sorcery",
+      "cost": 4,
+      "cardClass": "priest",
+      "rarity": "epic",
+      "set": "BATTLE_OF_THE_BANDS",
+      "tribe": "Shadow",
+      "description": "Choose two enemy minions. They fight! Add copies of any that die to your hand.",
+      "effects": [
+        {
+          "type": "fight",
+          "target": "enemy-creature"
+        }
+      ]
+    },
+    {
+      "id": "love_everlasting",
+      "name": "Love Everlasting",
+      "type": "sorcery",
+      "cost": 3,
+      "cardClass": "priest",
+      "rarity": "legendary",
+      "set": "BATTLE_OF_THE_BANDS",
+      "tribe": "Holy",
+      "description": "Your first spell each turn costs (2) less. Lasts until you don't play a spell on your turn.",
+      "effects": [
+        {
+          "type": "reduce-hand-spells-cost",
+          "value": 2
+        }
+      ]
+    },
+    {
+      "id": "funnel_cake",
+      "name": "Funnel Cake",
+      "type": "sorcery",
+      "cost": 2,
+      "cardClass": "priest",
+      "rarity": "rare",
+      "set": "BATTLE_OF_THE_BANDS",
+      "description": "Restore 3 Health to a minion and its neighbors. For each one Overhealed, refresh a Mana Crystal.",
+      "effects": [
+        {
+          "type": "heal",
+          "value": 3,
+          "target": "creature"
+        },
+        {
+          "type": "heal-adjacent-full"
+        }
+      ]
+    },
+    {
+      "id": "delayed_product",
+      "name": "Delayed Product",
+      "type": "sorcery",
+      "cost": 4,
+      "cardClass": "priest",
+      "rarity": "rare",
+      "set": "WHIZBANGS_WORKSHOP",
+      "description": "Discover and summon a minion that costs (8) or more. It goes Dormant for 2 turns.",
+      "effects": [
+        {
+          "type": "discover",
+          "cardType": "creature",
+          "minCost": 8,
+          "to": "board"
+        }
+      ]
+    },
+    {
+      "id": "cannibalize",
+      "name": "Cannibalize",
+      "type": "sorcery",
+      "cost": 4,
+      "cardClass": "priest",
+      "rarity": "rare",
+      "set": "RETURN_OF_THE_LICH_KING",
+      "tribe": "Shadow",
+      "description": "Destroy a minion. Restore its Health to all friendly characters.",
+      "effects": [
+        {
+          "type": "destroy",
+          "target": "creature"
+        },
+        {
+          "type": "heal",
+          "value": 5,
+          "target": "friendly-all"
+        }
+      ]
+    },
+    {
+      "id": "seek_guidance_priest",
+      "name": "Seek Guidance",
+      "type": "quest",
+      "cost": 1,
+      "cardClass": "priest",
+      "rarity": "legendary",
+      "set": "STORMWIND",
+      "description": "Questline: Play a 2, 3, and 4-Cost card.\nReward: Discover a card from your deck.",
+      "keywords": [
+        "quest"
+      ],
+      "quest": {
+        "goal": {
+          "type": "spell",
+          "count": 3
+        },
+        "reward": [
+          {
+            "type": "discover",
+            "fromDeck": true
+          }
+        ]
+      }
+    },
+    {
+      "id": "elekk_mount",
+      "name": "Elekk Mount",
+      "type": "sorcery",
+      "cost": 7,
+      "cardClass": "priest",
+      "rarity": "rare",
+      "set": "STORMWIND",
+      "description": "Give a minion +4/+7 and Taunt. When it dies, summon an Elekk.",
+      "effects": [
+        {
+          "type": "buff",
+          "target": "creature",
+          "attack": 4,
+          "health": 7
+        },
+        {
+          "type": "grant",
+          "keyword": "taunt",
+          "target": "creature"
+        },
+        {
+          "type": "grant-deathrattle",
+          "target": "creature",
+          "effects": [
+            {
+              "type": "summon",
+              "count": 1,
+              "attack": 4,
+              "health": 7,
+              "name": "Elekk"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "reach_equilibrium",
+      "name": "Reach Equilibrium",
+      "type": "quest",
+      "cost": 1,
+      "cardClass": "priest",
+      "rarity": "legendary",
+      "set": "THE_LOST_CITY",
+      "description": "Quest: Cast 4 Holy spells. Reward: Life's Breath. Quest: Cast 4 Shadow spells. Reward: Death's Touch.",
+      "keywords": [
+        "quest"
+      ],
+      "quest": {
+        "goal": {
+          "type": "spell",
+          "count": 4
+        },
+        "reward": [
+          {
+            "type": "heal",
+            "value": 8,
+            "target": "self"
+          }
+        ]
+      }
+    },
+    {
+      "id": "resuscitate",
+      "name": "Resuscitate",
+      "type": "sorcery",
+      "cost": 6,
+      "cardClass": "priest",
+      "rarity": "epic",
+      "set": "THE_LOST_CITY",
+      "tribe": "Shadow",
+      "description": "Resurrect a 1, 2, and 3-Cost minion. Give them Reborn.",
+      "effects": [
+        {
+          "type": "resurrect-died-distinct-mincost",
+          "minCost": 1,
+          "maxCost": 3,
+          "count": 3
+        },
+        {
+          "type": "grant",
+          "keyword": "reborn",
+          "target": "friendly-creatures"
+        }
+      ]
+    },
+    {
+      "id": "story_of_amara",
+      "name": "Story of Amara",
+      "type": "sorcery",
+      "cost": 10,
+      "cardClass": "priest",
+      "rarity": "common",
+      "set": "THE_LOST_CITY",
+      "description": "Set your hero's Health to 40.",
+      "effects": [
+        {
+          "type": "set-hero-health",
+          "value": 40,
+          "target": "self"
+        }
+      ]
+    },
+    {
+      "id": "repackage",
+      "name": "Repackage",
+      "type": "sorcery",
+      "cost": 7,
+      "cardClass": "priest",
+      "rarity": "epic",
+      "set": "WHIZBANGS_WORKSHOP",
+      "description": "Stuff all minions into a 2-Cost Box, then shuffle it into the opponent's deck.",
+      "effects": [
+        {
+          "type": "shuffle-all-minions-into-enemy-deck"
+        }
+      ]
+    },
+    {
+      "id": "whirlpool",
+      "name": "Whirlpool",
+      "type": "sorcery",
+      "cost": 8,
+      "cardClass": "priest",
+      "rarity": "epic",
+      "set": "THE_SUNKEN_CITY",
+      "description": "Destroy all minions and all copies of them (wherever they are).",
+      "effects": [
+        {
+          "type": "destroy-all"
+        }
+      ]
+    },
+    {
+      "id": "whispers_of_the_deep",
+      "name": "Whispers of the Deep",
+      "type": "sorcery",
+      "cost": 1,
+      "cardClass": "priest",
+      "rarity": "rare",
+      "set": "THE_SUNKEN_CITY",
+      "tribe": "Shadow",
+      "description": "Silence a friendly minion, then deal damage equal to its Attack randomly split among all enemy minions.",
+      "effects": [
+        {
+          "type": "silence",
+          "target": "friendly-creature"
+        },
+        {
+          "type": "damage-random-enemy-by-attack"
+        }
+      ]
+    },
+    {
+      "id": "the_stars_align",
+      "name": "The Stars Align",
+      "type": "sorcery",
+      "cost": 3,
+      "cardClass": "priest",
+      "rarity": "epic",
+      "set": "TITANS",
+      "tribe": "Arcane",
+      "description": "Transform minions in your hand into ones that cost (3) more. (They keep their original Cost.)",
+      "effects": [
+        {
+          "type": "transform-cost",
+          "delta": 3,
+          "zone": "hand"
+        }
+      ]
+    },
+    {
+      "id": "grace_of_the_highfather",
+      "name": "Grace of the Highfather",
+      "type": "sorcery",
+      "cost": 3,
+      "cardClass": "priest",
+      "rarity": "common",
+      "set": "TITANS",
+      "tribe": "Holy",
+      "description": "Restore 8 Health. Discover a card that costs the amount Overhealed.",
+      "effects": [
+        {
+          "type": "heal",
+          "value": 8,
+          "target": "self"
+        },
+        {
+          "type": "discover"
+        }
+      ]
+    },
+    {
+      "id": "activate_the_obelisk",
+      "name": "Activate the Obelisk",
+      "type": "quest",
+      "cost": 1,
+      "cardClass": "priest",
+      "rarity": "legendary",
+      "set": "ULDUM",
+      "description": "Quest: Restore 15 Health.\nReward: Obelisk's Eye.",
+      "keywords": [
+        "quest"
+      ],
+      "quest": {
+        "goal": {
+          "type": "heal",
+          "count": 15
+        },
+        "reward": [
+          {
+            "type": "buff",
+            "target": "creature",
+            "attack": 3,
+            "health": 3
+          }
+        ]
+      }
+    },
+    {
+      "id": "awaken_the_makers_priest",
+      "name": "Awaken the Makers",
+      "type": "quest",
+      "cost": 1,
+      "cardClass": "priest",
+      "rarity": "legendary",
+      "set": "UNGORO",
+      "description": "Quest: Summon 6 Deathrattle minions.\nReward: Amara, Warden of Hope.",
+      "keywords": [
+        "quest"
+      ],
+      "quest": {
+        "goal": {
+          "type": "summon",
+          "count": 6
+        },
+        "reward": [
+          {
+            "type": "set-hero-health",
+            "value": 40,
+            "target": "self"
+          }
+        ]
+      }
+    },
+    {
+      "id": "sensory_deprivation",
+      "name": "Sensory Deprivation",
+      "type": "sorcery",
+      "cost": 6,
+      "cardClass": "priest",
+      "rarity": "epic",
+      "set": "ISLAND_VACATION",
+      "tribe": "Shadow",
+      "description": "Summon a copy of an enemy minion. If you have 20 or less Health, destroy the original.",
+      "effects": [
+        {
+          "type": "summon-enemy-minion-copy",
+          "target": "enemy-creature"
+        },
+        {
+          "type": "conditional",
+          "if": {
+            "ownHealthAtMost": 20
+          },
+          "then": [
+            {
+              "type": "destroy",
+              "target": "enemy-creature"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "rest_in_peace",
+      "name": "Rest in Peace",
+      "type": "sorcery",
+      "cost": 3,
+      "cardClass": "priest",
+      "rarity": "rare",
+      "set": "ISLAND_VACATION",
+      "tribe": "Shadow",
+      "description": "Each player summons their highest Cost minion that died this game.",
+      "effects": [
+        {
+          "type": "resurrect-highest-died"
+        }
+      ]
+    },
+    {
+      "id": "yoink",
+      "name": "Yoink!",
+      "type": "sorcery",
+      "cost": 1,
+      "cardClass": "rogue",
+      "rarity": "epic",
+      "set": "THE_BARRENS",
+      "description": "Discover a Hero Power and set its Cost to (0). Swap back after 2 uses.",
+      "effects": [
+        {
+          "type": "set-hero-power",
+          "discover": true,
+          "cost": 0,
+          "uses": 2
+        }
+      ]
+    },
+    {
+      "id": "myras_unstable_element",
+      "name": "Myra's Unstable Element",
+      "type": "sorcery",
+      "cost": 5,
+      "cardClass": "rogue",
+      "rarity": "legendary",
+      "set": "BOOMSDAY",
+      "description": "Draw the rest of your deck.",
+      "effects": [
+        {
+          "type": "draw",
+          "value": 30
+        }
+      ]
+    },
+    {
+      "id": "necrium_vial",
+      "name": "Necrium Vial",
+      "type": "sorcery",
+      "cost": 5,
+      "cardClass": "rogue",
+      "rarity": "epic",
+      "set": "BOOMSDAY",
+      "description": "Trigger a friendly minion's Deathrattle twice.",
+      "effects": [
+        {
+          "type": "trigger-one-deathrattle",
+          "target": "friendly-creature",
+          "count": 2
+        }
+      ]
+    },
+    {
+      "id": "stolen_power",
+      "name": "Stolen Power",
+      "type": "sorcery",
+      "cost": 3,
+      "cardClass": "rogue",
+      "rarity": "common",
+      "set": "CATACLYSM",
+      "description": "Get a random Shatter card from another class. (It's already combined.)",
+      "effects": [
+        {
+          "type": "discover-enemy-class-spell"
+        }
+      ]
+    },
+    {
+      "id": "murder_accusation",
+      "name": "Murder Accusation",
+      "type": "sorcery",
+      "cost": 2,
+      "cardClass": "rogue",
+      "rarity": "common",
+      "set": "PLACEHOLDER_202204",
+      "description": "Choose a minion. Destroy it after another enemy minion dies.",
+      "effects": [
+        {
+          "type": "mark-doomed",
+          "target": "creature",
+          "trigger": "enemy-minion-died"
+        }
+      ]
+    },
+    {
+      "id": "double_cross",
+      "name": "Double Cross",
+      "type": "secret",
+      "cost": 2,
+      "cardClass": "rogue",
+      "rarity": "common",
+      "set": "PLACEHOLDER_202204",
+      "description": "Secret: When your opponent spends all their Mana, draw two cards.",
+      "secret": {
+        "trigger": "enemy-spends-all-mana",
+        "effects": [
+          {
+            "type": "draw",
+            "value": 2
+          }
+        ]
+      }
+    },
+    {
+      "id": "shadow_of_demise",
+      "name": "Shadow of Demise",
+      "type": "sorcery",
+      "cost": 0,
+      "cardClass": "rogue",
+      "rarity": "legendary",
+      "set": "CORE",
+      "description": "Each time you cast a spell, transform this into a copy of it.",
+      "effects": [
+        {
+          "type": "become-copy-of-played",
+          "ongoing": true
+        }
+      ]
+    },
+    {
+      "id": "unidentified_contract",
+      "name": "Unidentified Contract",
+      "type": "sorcery",
+      "cost": 6,
+      "cardClass": "rogue",
+      "rarity": "epic",
+      "set": "DALARAN",
+      "description": "Destroy a minion. Gains a bonus effect in your hand.",
+      "effects": [
+        {
+          "type": "destroy",
+          "target": "creature"
+        }
+      ]
+    },
+    {
+      "id": "parrrley",
+      "name": "Parrrley",
+      "type": "sorcery",
+      "cost": 1,
+      "cardClass": "rogue",
+      "rarity": "rare",
+      "set": "STORMWIND",
+      "description": "Swap this for a card in your opponent's deck.",
+      "effects": [
+        {
+          "type": "copy-from-enemy-deck"
+        }
+      ]
+    },
+    {
+      "id": "cloak_of_shadows",
+      "name": "Cloak of Shadows",
+      "type": "sorcery",
+      "cost": 4,
+      "cardClass": "rogue",
+      "rarity": "epic",
+      "set": "DARKMOON_FAIRE",
+      "description": "Give your hero Stealth until your next turn.",
+      "effects": [
+        {
+          "type": "grant-hero-elusive"
+        }
+      ]
+    },
+    {
+      "id": "malevolent_strike",
+      "name": "Malevolent Strike",
+      "type": "sorcery",
+      "cost": 5,
+      "cardClass": "rogue",
+      "rarity": "epic",
+      "set": "DARKMOON_FAIRE",
+      "description": "Destroy a minion. Costs (1) less for each card in your deck that didn't start there.",
+      "effects": [
+        {
+          "type": "destroy",
+          "target": "creature"
+        }
+      ]
+    },
+    {
+      "id": "candle_breath",
+      "name": "Candle Breath",
+      "type": "sorcery",
+      "cost": 6,
+      "cardClass": "rogue",
+      "rarity": "common",
+      "set": "DRAGONS",
+      "description": "Draw 3 cards. Costs (3) less while you're holding a Dragon.",
+      "effects": [
+        {
+          "type": "draw",
+          "value": 3
+        }
+      ]
+    },
+    {
+      "id": "mimicry",
+      "name": "Mimicry",
+      "type": "sorcery",
+      "cost": 1,
+      "cardClass": "rogue",
+      "rarity": "common",
+      "set": "EMERALD_DREAM",
+      "description": "Your opponent draws 2 cards. You get copies of them.",
+      "effects": [
+        {
+          "type": "enemy-draw",
+          "value": 2
+        },
+        {
+          "type": "copy-enemy-deck-top",
+          "value": 2
+        }
+      ]
+    },
+    {
+      "id": "quasar",
+      "name": "Quasar",
+      "type": "sorcery",
+      "cost": 8,
+      "cardClass": "rogue",
+      "rarity": "epic",
+      "set": "SPACE",
+      "description": "Shuffle your hand into your deck. Reduce the Cost of cards in your deck by (3).",
+      "effects": [
+        {
+          "type": "shuffle-hand"
+        },
+        {
+          "type": "reduce-deck-cost",
+          "value": 3
+        }
+      ]
+    },
+    {
+      "id": "pressure_points",
+      "name": "Pressure Points",
+      "type": "sorcery",
+      "cost": 3,
+      "cardClass": "rogue",
+      "rarity": "rare",
+      "set": "SPACE",
+      "description": "Deal 3 damage to a minion. Reduce the Cost of Combo cards in your hand by (1).",
+      "effects": [
+        {
+          "type": "damage-minion",
+          "value": 3
+        },
+        {
+          "type": "discount-hand",
+          "value": 1,
+          "filter": "combo"
+        }
+      ]
+    },
+    {
+      "id": "wanted",
+      "name": "WANTED!",
+      "type": "sorcery",
+      "cost": 4,
+      "cardClass": "rogue",
+      "rarity": "epic",
+      "set": "GILNEAS",
+      "description": "Deal 3 damage to a minion. If it dies, add a Coin to your hand.",
+      "effects": [
+        {
+          "type": "damage-then",
+          "value": 3,
+          "target": "creature",
+          "ifDies": [
+            {
+              "type": "gain-coin",
+              "value": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "slice_and_dice",
+      "name": "Slice and Dice",
+      "type": "sorcery",
+      "cost": 5,
+      "cardClass": "rogue",
+      "rarity": "legendary",
+      "set": "ESCAPEFROM_VIOLET_HOLD",
+      "description": "Replay all other cards played this turn (targeting enemies if possible). End your turn.",
+      "effects": [
+        {
+          "type": "replay-last-turn",
+          "thisTurn": true
+        },
+        {
+          "type": "end-turn"
+        }
+      ]
+    },
+    {
+      "id": "thiefs_tools",
+      "name": "Thief's Tools",
+      "type": "sorcery",
+      "cost": 3,
+      "cardClass": "rogue",
+      "rarity": "common",
+      "set": "ESCAPEFROM_VIOLET_HOLD",
+      "description": "Get two random 4-Cost spells. Reduce their Costs by (2).",
+      "effects": [
+        {
+          "type": "conjure-cost",
+          "count": 2,
+          "cost": 4,
+          "cardType": "spell",
+          "discount": 2
+        }
+      ]
+    },
+    {
+      "id": "ransack",
+      "name": "Ransack",
+      "type": "sorcery",
+      "cost": 0,
+      "cardClass": "rogue",
+      "rarity": "common",
+      "set": "RETURN_OF_THE_LICH_KING",
+      "description": "Deal 1 damage to a minion. If you've played a card from another class this turn, deal 4 instead.",
+      "effects": [
+        {
+          "type": "conditional",
+          "target": "creature",
+          "if": {
+            "playedOtherClassThisTurn": true
+          },
+          "then": [
+            {
+              "type": "damage-minion",
+              "value": 4
+            }
+          ],
+          "else": [
+            {
+              "type": "damage-minion",
+              "value": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "smokescreen",
+      "name": "Smokescreen",
+      "type": "sorcery",
+      "cost": 8,
+      "cardClass": "rogue",
+      "rarity": "rare",
+      "set": "ALTERAC_VALLEY",
+      "description": "Draw 5 cards. Trigger any Deathrattles drawn.",
+      "effects": [
+        {
+          "type": "draw",
+          "value": 5
+        }
+      ]
+    },
+    {
+      "id": "sketchy_information",
+      "name": "Sketchy Information",
+      "type": "sorcery",
+      "cost": 4,
+      "cardClass": "rogue",
+      "rarity": "rare",
+      "set": "STORMWIND",
+      "description": "Draw a Deathrattle card that costs (4) or less. Trigger its Deathrattle.",
+      "effects": [
+        {
+          "type": "draw",
+          "keyword": "deathrattle",
+          "maxCost": 4
+        },
+        {
+          "type": "trigger-one-deathrattle",
+          "target": "drawn"
+        }
+      ]
+    },
+    {
+      "id": "fast_forward",
+      "name": "Fast Forward",
+      "type": "sorcery",
+      "cost": 4,
+      "cardClass": "rogue",
+      "rarity": "common",
+      "set": "TIME_TRAVEL",
+      "description": "Draw 2 cards. Pick one to have its Cost reduced by (2).",
+      "effects": [
+        {
+          "type": "draw",
+          "value": 2
+        },
+        {
+          "type": "reduce-drawn-cost",
+          "value": 2,
+          "pick": true
+        }
+      ]
+    },
+    {
+      "id": "everything_must_go",
+      "name": "Everything Must Go!",
+      "type": "sorcery",
+      "cost": 8,
+      "cardClass": "rogue",
+      "rarity": "epic",
+      "set": "WHIZBANGS_WORKSHOP",
+      "description": "Summon two random 4-Cost minions. Costs (1) less for each card you've drawn this turn.",
+      "effects": [
+        {
+          "type": "summon-random",
+          "count": 2,
+          "cost": 4
+        }
+      ]
+    },
+    {
+      "id": "walk_the_plank",
+      "name": "Walk the Plank",
+      "type": "sorcery",
+      "cost": 4,
+      "cardClass": "rogue",
+      "rarity": "common",
+      "set": "TROLL",
+      "description": "Destroy an undamaged minion.",
+      "effects": [
+        {
+          "type": "destroy",
+          "target": "creature",
+          "requireUndamaged": true
+        }
+      ]
+    },
+    {
+      "id": "azsharan_vessel",
+      "name": "Azsharan Vessel",
+      "type": "sorcery",
+      "cost": 5,
+      "cardClass": "rogue",
+      "rarity": "epic",
+      "set": "THE_SUNKEN_CITY",
+      "description": "Summon two 3/3 Pirates with Stealth. Put a 'Sunken Vessel' on the bottom of your deck.",
+      "effects": [
+        {
+          "type": "summon",
+          "count": 2,
+          "attack": 3,
+          "health": 3,
+          "name": "Pirate",
+          "tribe": "Pirate",
+          "keywords": [
+            "stealth"
+          ]
+        },
+        {
+          "type": "put-card-bottom-deck",
+          "name": "Sunken Vessel"
+        }
+      ]
+    },
+    {
+      "id": "tar_slick",
+      "name": "Tar Slick",
+      "type": "sorcery",
+      "cost": 1,
+      "cardClass": "rogue",
+      "rarity": "epic",
+      "set": "TITANS",
+      "description": "Minions take double damage this turn. Deal 1 damage.",
+      "effects": [
+        {
+          "type": "timed-aura",
+          "name": "Tar Slick",
+          "turns": 1,
+          "aura": {
+            "doubleDamageTaken": true
+          }
+        },
+        {
+          "type": "damage",
+          "value": 1,
+          "target": "any"
+        }
+      ]
+    },
+    {
+      "id": "muradins_last_stand",
+      "name": "Muradin's Last Stand",
+      "type": "sorcery",
+      "cost": 9,
+      "cardClass": "shaman",
+      "rarity": "rare",
+      "set": "CATACLYSM",
+      "description": "Draw 2 cards. Costs (1) less for each time a friendly character attacked this game.",
+      "effects": [
+        {
+          "type": "draw",
+          "value": 2
+        }
+      ]
+    },
+    {
+      "id": "criminal_lineup",
+      "name": "Criminal Lineup",
+      "type": "sorcery",
+      "cost": 8,
+      "cardClass": "shaman",
+      "rarity": "common",
+      "set": "PLACEHOLDER_202204",
+      "overload": 2,
+      "description": "Choose a friendly minion. Summon 3 copies of it. Overload: (2)",
+      "effects": [
+        {
+          "type": "fill-board-copies-of-target",
+          "target": "friendly-creature"
+        }
+      ]
+    },
+    {
+      "id": "primordial_wave",
+      "name": "Primordial Wave",
+      "type": "sorcery",
+      "cost": 3,
+      "cardClass": "shaman",
+      "rarity": "epic",
+      "set": "PLACEHOLDER_202204",
+      "description": "Transform enemy minions into ones that cost (1) less and friendly minions into ones that cost (1) more.",
+      "effects": [
+        {
+          "type": "transform-all-enemies-costplus",
+          "costDelta": -1
+        },
+        {
+          "type": "transform-friendly-costplus",
+          "costDelta": 1
+        }
+      ]
+    },
+    {
+      "id": "typhoon",
+      "name": "Typhoon",
+      "type": "sorcery",
+      "cost": 10,
+      "cardClass": "shaman",
+      "rarity": "rare",
+      "set": "EMERALD_DREAM",
+      "description": "Each minion gets shuffled into a random player's deck.",
+      "effects": [
+        {
+          "type": "shuffle-all-minions-into-enemy-deck"
+        }
+      ]
+    },
+    {
+      "id": "pack_the_house",
+      "name": "Pack the House",
+      "type": "sorcery",
+      "cost": 7,
+      "cardClass": "shaman",
+      "rarity": "common",
+      "set": "BATTLE_OF_THE_BANDS",
+      "overload": 2,
+      "description": "Summon a random 6, 5, 4, and 3-Cost minion. Overload: (2)",
+      "effects": [
+        {
+          "type": "summon-random",
+          "cost": 6
+        },
+        {
+          "type": "summon-random",
+          "cost": 5
+        },
+        {
+          "type": "summon-random",
+          "cost": 4
+        },
+        {
+          "type": "summon-random",
+          "cost": 3
+        }
+      ]
+    },
+    {
+      "id": "nebula",
+      "name": "Nebula",
+      "type": "sorcery",
+      "cost": 9,
+      "cardClass": "shaman",
+      "rarity": "epic",
+      "set": "SPACE",
+      "description": "Discover two 8-Cost minions to summon with Taunt and Elusive.",
+      "effects": [
+        {
+          "type": "discover",
+          "cardType": "creature",
+          "cost": 8,
+          "count": 2,
+          "to": "board",
+          "keywords": [
+            "taunt",
+            "elusive"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "stormfury",
+      "name": "Stormfury",
+      "type": "sorcery",
+      "cost": 7,
+      "cardClass": "shaman",
+      "rarity": "epic",
+      "set": "ESCAPEFROM_VIOLET_HOLD",
+      "description": "Lifesteal. Deal 2 damage to all enemy minions.",
+      "effects": [
+        {
+          "type": "damage-all-enemies",
+          "value": 2,
+          "target": "enemy-creature",
+          "lifesteal": true
+        }
+      ]
+    },
+    {
+      "id": "from_de_other_side",
+      "name": "From De Other Side",
+      "type": "sorcery",
+      "cost": 9,
+      "cardClass": "shaman",
+      "rarity": "rare",
+      "set": "RETURN_OF_THE_LICH_KING",
+      "description": "Summon a copy of each minion in your hand. They attack random enemy minions, then die.",
+      "effects": [
+        {
+          "type": "summon-hand-copy"
+        }
+      ]
+    },
+    {
+      "id": "wish_upon_a_star",
+      "name": "Wish Upon a Star",
+      "type": "sorcery",
+      "cost": 7,
+      "cardClass": "shaman",
+      "rarity": "rare",
+      "set": "WHIZBANGS_WORKSHOP",
+      "description": "Give +2/+3 to all minions in your hand, deck, and battlefield.",
+      "effects": [
+        {
+          "type": "buff-zones",
+          "attack": 2,
+          "health": 3
+        }
+      ]
+    },
+    {
+      "id": "fist_of_jaraxxus",
+      "name": "Fist of Jaraxxus",
+      "type": "sorcery",
+      "cost": 4,
+      "cardClass": "warlock",
+      "rarity": "rare",
+      "set": "TGT",
+      "description": "Deal 4 damage to a random enemy.",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 4,
+          "target": "random-enemy"
+        }
+      ]
+    },
+    {
+      "id": "felfire_in_the_hole",
+      "name": "Felfire in the Hole!",
+      "type": "sorcery",
+      "cost": 5,
+      "cardClass": "warlock",
+      "rarity": "epic",
+      "set": "ALTERAC_VALLEY",
+      "description": "Draw a spell and deal 2 damage to all enemies.",
+      "effects": [
+        {
+          "type": "draw-spell-cheap",
+          "maxCost": 99
+        },
+        {
+          "type": "damage-all-enemies",
+          "value": 2
+        }
+      ]
+    },
+    {
+      "id": "soul_rend",
+      "name": "Soul Rend",
+      "type": "sorcery",
+      "cost": 4,
+      "cardClass": "warlock",
+      "rarity": "rare",
+      "set": "THE_BARRENS",
+      "description": "Deal 5 damage to all minions.",
+      "effects": [
+        {
+          "type": "damage-all-minions",
+          "value": 5
+        }
+      ]
+    },
+    {
+      "id": "ectomancy",
+      "name": "Ectomancy",
+      "type": "sorcery",
+      "cost": 6,
+      "cardClass": "warlock",
+      "rarity": "epic",
+      "set": "BOOMSDAY",
+      "description": "Summon copies of all Demons you control.",
+      "effects": [
+        {
+          "type": "summon-copies-of-board",
+          "tribe": "Demon"
+        }
+      ]
+    },
+    {
+      "id": "hand_of_guldan",
+      "name": "Hand of Gul'dan",
+      "type": "sorcery",
+      "cost": 6,
+      "cardClass": "warlock",
+      "rarity": "common",
+      "set": "BLACK_TEMPLE",
+      "description": "Draw 3 cards.",
+      "effects": [
+        {
+          "type": "draw",
+          "value": 3
+        }
+      ]
+    },
+    {
+      "id": "the_dark_portal",
+      "name": "The Dark Portal",
+      "type": "sorcery",
+      "cost": 4,
+      "cardClass": "warlock",
+      "rarity": "rare",
+      "set": "BLACK_TEMPLE",
+      "description": "Draw a minion.",
+      "effects": [
+        {
+          "type": "tutor",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "id": "eldritch_tentacles",
+      "name": "Eldritch Tentacles",
+      "type": "sorcery",
+      "cost": 6,
+      "cardClass": "warlock",
+      "rarity": "rare",
+      "set": "CATACLYSM",
+      "description": "Deal 3 damage to all minions. Repeat this with 1 less damage.",
+      "effects": [
+        {
+          "type": "damage-all-minions",
+          "value": 3
+        },
+        {
+          "type": "damage-all-minions",
+          "value": 2
+        },
+        {
+          "type": "damage-all-minions",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "blastcrystal_potion",
+      "name": "Blastcrystal Potion",
+      "type": "sorcery",
+      "cost": 4,
+      "cardClass": "warlock",
+      "rarity": "common",
+      "set": "GANGS",
+      "description": "Destroy a minion and one of your Mana Crystals.",
+      "effects": [
+        {
+          "type": "destroy",
+          "target": "creature"
+        },
+        {
+          "type": "lose-max-mana",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "treachery",
+      "name": "Treachery",
+      "type": "sorcery",
+      "cost": 3,
+      "cardClass": "warlock",
+      "rarity": "epic",
+      "set": "PLACEHOLDER_202204",
+      "description": "Choose a friendly minion and give it to your opponent.",
+      "effects": [
+        {
+          "type": "switch-sides",
+          "target": "friendly-creature"
+        }
+      ]
+    },
+    {
+      "id": "unwilling_sacrifice",
+      "name": "Unwilling Sacrifice",
+      "type": "sorcery",
+      "cost": 3,
+      "cardClass": "warlock",
+      "rarity": "rare",
+      "set": "PLACEHOLDER_202204",
+      "description": "Choose a friendly minion. Destroy it and a random enemy minion.",
+      "effects": [
+        {
+          "type": "destroy",
+          "target": "friendly-creature"
+        },
+        {
+          "type": "destroy-random"
+        }
+      ]
+    },
+    {
+      "id": "lesser_amethyst_spellstone",
+      "name": "Lesser Amethyst Spellstone",
+      "type": "sorcery",
+      "cost": 4,
+      "cardClass": "warlock",
+      "rarity": "rare",
+      "set": "PLACEHOLDER_202204",
+      "description": "Lifesteal. Deal 3 damage to a minion.",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 3,
+          "target": "creature",
+          "lifesteal": true
+        }
+      ]
+    },
+    {
+      "id": "arson_accusation",
+      "name": "Arson Accusation",
+      "type": "sorcery",
+      "cost": 2,
+      "cardClass": "warlock",
+      "rarity": "common",
+      "set": "PLACEHOLDER_202204",
+      "description": "Choose a minion. Destroy it after your hero takes damage.",
+      "effects": [
+        {
+          "type": "mark-doomed",
+          "target": "creature"
+        }
+      ]
+    },
+    {
+      "id": "suffocating_shadows",
+      "name": "Suffocating Shadows",
+      "type": "sorcery",
+      "cost": 3,
+      "cardClass": "warlock",
+      "rarity": "rare",
+      "set": "PLACEHOLDER_202204",
+      "description": "Destroy a random enemy minion.",
+      "effects": [
+        {
+          "type": "destroy-random"
+        }
+      ]
+    },
+    {
+      "id": "tome_tampering",
+      "name": "Tome Tampering",
+      "type": "sorcery",
+      "cost": 6,
+      "cardClass": "warlock",
+      "rarity": "epic",
+      "set": "PLACEHOLDER_202204",
+      "description": "Shuffle copies of cards in your hand into your deck, then discard your hand.",
+      "effects": [
+        {
+          "type": "snapshot-hand-into-deck"
+        },
+        {
+          "type": "discard-all"
+        }
+      ]
+    },
+    {
+      "id": "impending_catastrophe",
+      "name": "Impending Catastrophe",
+      "type": "sorcery",
+      "cost": 2,
+      "cardClass": "warlock",
+      "rarity": "epic",
+      "set": "PLACEHOLDER_202204",
+      "description": "Draw a card.",
+      "effects": [
+        {
+          "type": "draw",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "shadow_waltz",
+      "name": "Shadow Waltz",
+      "type": "sorcery",
+      "cost": 5,
+      "cardClass": "warlock",
+      "rarity": "common",
+      "set": "PLACEHOLDER_202204",
+      "description": "Summon a 3/5 Shadow with Taunt.",
+      "effects": [
+        {
+          "type": "summon",
+          "count": 1,
+          "attack": 3,
+          "health": 5,
+          "name": "Shadow",
+          "keywords": [
+            "taunt"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "dark_alley_pact",
+      "name": "Dark Alley Pact",
+      "type": "sorcery",
+      "cost": 4,
+      "cardClass": "warlock",
+      "rarity": "rare",
+      "set": "PLACEHOLDER_202204",
+      "description": "Summon a Fiend with Taunt and stats equal to your hand size.",
+      "effects": [
+        {
+          "type": "summon-hand-size-stats",
+          "name": "Fiend",
+          "keywords": [
+            "taunt"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "chaos_creation",
+      "name": "Chaos Creation",
+      "type": "sorcery",
+      "cost": 6,
+      "cardClass": "warlock",
+      "rarity": "common",
+      "set": "WILD_WEST",
+      "description": "Deal 6 damage. Summon a random 6-Cost minion. Destroy the bottom 6 cards of your deck.",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 6,
+          "target": "any"
+        },
+        {
+          "type": "summon-random",
+          "cost": 6
+        },
+        {
+          "type": "mill",
+          "value": 6
+        }
+      ]
+    },
+    {
+      "id": "bat_mask",
+      "name": "Bat Mask",
+      "type": "sorcery",
+      "cost": 8,
+      "cardClass": "warlock",
+      "rarity": "common",
+      "set": "THE_LOST_CITY",
+      "description": "Set a friendly minion's stats to 1/1. Fill your board with copies of it.",
+      "effects": [
+        {
+          "type": "set-stats",
+          "target": "friendly-creature",
+          "attack": 1,
+          "health": 1
+        },
+        {
+          "type": "fill-board-copies-of-target",
+          "target": "friendly-creature",
+          "attack": 1,
+          "health": 1
+        }
+      ]
+    },
+    {
+      "id": "cascading_disaster",
+      "name": "Cascading Disaster",
+      "type": "sorcery",
+      "cost": 4,
+      "cardClass": "warlock",
+      "rarity": "epic",
+      "set": "DARKMOON_FAIRE",
+      "description": "Destroy a random enemy minion.",
+      "effects": [
+        {
+          "type": "destroy-random",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "id": "fractured_power",
+      "name": "Fractured Power",
+      "type": "sorcery",
+      "cost": 2,
+      "cardClass": "warlock",
+      "rarity": "epic",
+      "set": "EMERALD_DREAM",
+      "description": "Destroy one of your Mana Crystals. In 2 turns, gain two.",
+      "effects": [
+        {
+          "type": "lose-max-mana",
+          "value": 1
+        },
+        {
+          "type": "delay-to-turn-start",
+          "effects": [
+            {
+              "type": "gain-max-mana",
+              "value": 2
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "dirge_of_despair",
+      "name": "Dirge of Despair",
+      "type": "sorcery",
+      "cost": 6,
+      "cardClass": "warlock",
+      "rarity": "rare",
+      "set": "BATTLE_OF_THE_BANDS",
+      "description": "Deal 3 damage to a character. If it dies, summon a Demon from your deck.",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 3,
+          "target": "any"
+        },
+        {
+          "type": "summon-from-deck-tribe",
+          "tribe": "Demon",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "id": "bad_omen",
+      "name": "Bad Omen",
+      "type": "sorcery",
+      "cost": 6,
+      "cardClass": "warlock",
+      "rarity": "rare",
+      "set": "SPACE",
+      "description": "In 2 turns, summon two 6/6 Demons with Taunt.",
+      "effects": [
+        {
+          "type": "delay-to-turn-start",
+          "effects": [
+            {
+              "type": "summon",
+              "count": 2,
+              "attack": 6,
+              "health": 6,
+              "name": "Demon",
+              "tribe": "Demon",
+              "keywords": [
+                "taunt"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "healthstone",
+      "name": "Healthstone",
+      "type": "sorcery",
+      "cost": 0,
+      "cardClass": "warlock",
+      "rarity": "epic",
+      "set": "SPACE",
+      "description": "Restore Health to your hero.",
+      "effects": [
+        {
+          "type": "heal",
+          "value": 8,
+          "target": "self"
+        }
+      ]
+    },
+    {
+      "id": "black_hole",
+      "name": "Black Hole",
+      "type": "sorcery",
+      "cost": 8,
+      "cardClass": "warlock",
+      "rarity": "epic",
+      "set": "SPACE",
+      "description": "Destroy all minions except Demons.",
+      "effects": [
+        {
+          "type": "destroy-all",
+          "exceptTribe": "Demon"
+        }
+      ]
+    },
+    {
+      "id": "frozen_buckler",
+      "name": "Frozen Buckler",
+      "type": "sorcery",
+      "cost": 2,
+      "cardClass": "warrior",
+      "rarity": "epic",
+      "set": "ALTERAC_VALLEY",
+      "description": "Gain 10 Armor. At the start of your next turn, lose 5 Armor.",
+      "effects": [
+        {
+          "type": "armor",
+          "value": 10
+        },
+        {
+          "type": "delay-to-turn-start",
+          "effects": [
+            {
+              "type": "armor",
+              "value": -5
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "iceblood_garrison",
+      "name": "Iceblood Garrison",
+      "type": "sorcery",
+      "cost": 2,
+      "cardClass": "warrior",
+      "rarity": "rare",
+      "set": "ALTERAC_VALLEY",
+      "description": "At the end of your turn, deal 1 damage to all minions. Lasts 3 turns.",
+      "effects": [
+        {
+          "type": "emblem",
+          "name": "Iceblood Garrison",
+          "description": "At the end of your turn, deal 1 damage to all minions.",
+          "ongoing": {
+            "on": "turn-end",
+            "effects": [
+              {
+                "type": "damage-all-minions",
+                "value": 1
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "rancor",
+      "name": "Rancor",
+      "type": "sorcery",
+      "cost": 4,
+      "cardClass": "warrior",
+      "rarity": "epic",
+      "set": "THE_BARRENS",
+      "description": "Deal 2 damage to all minions. Gain 2 Armor for each destroyed.",
+      "effects": [
+        {
+          "type": "damage-all-minions",
+          "value": 2
+        }
+      ]
+    },
+    {
+      "id": "bladestorm",
+      "name": "Bladestorm",
+      "type": "sorcery",
+      "cost": 2,
+      "cardClass": "warrior",
+      "rarity": "epic",
+      "set": "BLACK_TEMPLE",
+      "description": "Deal 1 damage to all minions. Repeat until one dies.",
+      "effects": [
+        {
+          "type": "damage-all-minions",
+          "value": 3
+        }
+      ]
+    },
+    {
+      "id": "torch",
+      "name": "Torch",
+      "type": "sorcery",
+      "cost": 1,
+      "cardClass": "warrior",
+      "rarity": "rare",
+      "set": "CATACLYSM",
+      "description": "Deal 8 damage to a damaged minion. Return this to hand with any excess damage.",
+      "effects": [
+        {
+          "type": "damage-then",
+          "value": 8,
+          "target": "creature",
+          "ifDies": [
+            {
+              "type": "return-self-to-hand"
+            }
+          ]
+        }
+      ],
+      "school": "fire"
+    },
+    {
+      "id": "dead_mans_hand_shuffle",
+      "name": "Dead Man's Hand",
+      "type": "sorcery",
+      "cost": 2,
+      "cardClass": "warrior",
+      "rarity": "epic",
+      "set": "PLACEHOLDER_202204",
+      "description": "Shuffle a copy of your hand into your deck.",
+      "effects": [
+        {
+          "type": "snapshot-hand-into-deck"
+        }
+      ]
+    },
+    {
+      "id": "ramming_speed",
+      "name": "Ramming Speed",
+      "type": "sorcery",
+      "cost": 3,
+      "cardClass": "warrior",
+      "rarity": "epic",
+      "set": "DRAGONS",
+      "description": "Force a minion to attack one of its neighbors.",
+      "effects": [
+        {
+          "type": "force-attacked-neighbor",
+          "target": "creature"
+        }
+      ]
+    },
+    {
+      "id": "bouncing_blade",
+      "name": "Bouncing Blade",
+      "type": "sorcery",
+      "cost": 2,
+      "cardClass": "warrior",
+      "rarity": "epic",
+      "set": "GVG",
+      "description": "Deal 1 damage to a random minion. Repeat until a minion dies.",
+      "effects": [
+        {
+          "type": "random-damage",
+          "value": 1,
+          "pool": "creatures",
+          "count": 3
+        }
+      ]
+    },
+    {
+      "id": "raid_the_docks_ql",
+      "name": "Raid the Docks",
+      "type": "quest",
+      "cost": 1,
+      "cardClass": "warrior",
+      "rarity": "legendary",
+      "set": "STORMWIND",
+      "description": "Questline: Play 3 Pirates.\nReward: Draw a weapon.",
+      "effects": [],
+      "quest": {
+        "goal": {
+          "type": "summon",
+          "count": 3,
+          "tribe": "Pirate"
+        },
+        "reward": [
+          {
+            "type": "search",
+            "cardType": "weapon",
+            "to": "hand"
+          }
+        ]
+      },
+      "keywords": [
+        "quest"
+      ]
+    },
+    {
+      "id": "chemical_spill",
+      "name": "Chemical Spill",
+      "type": "sorcery",
+      "cost": 6,
+      "cardClass": "warrior",
+      "rarity": "epic",
+      "set": "WHIZBANGS_WORKSHOP",
+      "description": "Summon the highest Cost minion from your hand, then deal 5 damage to it.",
+      "effects": [
+        {
+          "type": "summon-from-hand",
+          "count": 1
+        },
+        {
+          "type": "damage-played-minion",
+          "value": 5
+        }
+      ]
+    },
+    {
+      "id": "wreckem_and_deckem",
+      "name": "Wreck'em and Deck'em",
+      "type": "sorcery",
+      "cost": 3,
+      "cardClass": "warrior",
+      "rarity": "epic",
+      "set": "WHIZBANGS_WORKSHOP",
+      "description": "Choose a friendly Mech. Summon a copy of it that attacks a random enemy, then dies.",
+      "effects": [
+        {
+          "type": "summon-copy-attack-die",
+          "tribe": "Mech",
+          "target": "creature"
+        }
+      ]
+    },
+    {
+      "id": "hack_the_system_ql",
+      "name": "Hack the System",
+      "type": "quest",
+      "cost": 1,
+      "cardClass": "warrior",
+      "rarity": "legendary",
+      "set": "ULDUM",
+      "description": "Quest: Attack 5 times with your hero.\nReward: Anraphet's Core.",
+      "effects": [],
+      "quest": {
+        "goal": {
+          "type": "hero-attack",
+          "count": 5
+        },
+        "reward": [
+          {
+            "type": "summon",
+            "count": 1,
+            "attack": 5,
+            "health": 5,
+            "name": "Anraphet's Core"
+          }
+        ]
+      },
+      "keywords": [
+        "quest"
+      ]
+    },
+    {
+      "id": "fire_plumes_heart_ql",
+      "name": "Fire Plume's Heart",
+      "type": "quest",
+      "cost": 1,
+      "cardClass": "warrior",
+      "rarity": "legendary",
+      "set": "UNGORO",
+      "description": "Quest: Play 7 Taunt minions.\nReward: Sulfuras.",
+      "effects": [],
+      "quest": {
+        "goal": {
+          "type": "summon",
+          "count": 7
+        },
+        "reward": [
+          {
+            "type": "equip",
+            "name": "Sulfuras",
+            "attack": 4,
+            "durability": 8
+          }
+        ]
+      },
+      "keywords": [
+        "quest"
+      ]
+    },
+    {
+      "id": "char",
+      "name": "Char",
+      "type": "sorcery",
+      "cost": 4,
+      "cardClass": "warrior",
+      "rarity": "rare",
+      "set": "ISLAND_VACATION",
+      "description": "Deal 7 damage to a minion. Give a random minion in your hand stats equal to the excess damage.",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 7,
+          "target": "creature"
+        },
+        {
+          "type": "buff-random-hand",
+          "attack": 2,
+          "health": 2
+        }
+      ],
+      "school": "fire"
+    },
+    {
+      "id": "punch_card",
+      "name": "Punch Card",
+      "type": "sorcery",
+      "cost": 3,
+      "cardClass": "warrior",
+      "rarity": "rare",
+      "set": "ISLAND_VACATION",
+      "description": "Give your hero +3 Attack and \"Also damages adjacent minions\" this turn.",
+      "effects": [
+        {
+          "type": "hero-temp-attack",
+          "value": 3
+        },
+        {
+          "type": "grant-weapon-cleave-turn"
+        }
+      ]
     }
   ]
 }
