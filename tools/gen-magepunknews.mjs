@@ -31,6 +31,14 @@ const cardsAt = sha => {
 	} catch { return new Map(); } // file didn't exist yet or wasn't valid JSON
 };
 
+// A shallow clone silently truncates the feed — the oldest releases just vanish,
+// and the result looks plausible. Refuse to write a feed we know is incomplete.
+// (CI checks out with fetch-depth: 0; locally, `git fetch --unshallow`.)
+if (git('rev-parse', '--is-shallow-repository').trim() === 'true') {
+	console.error('Refusing to build: shallow clone would drop the oldest history.\nRun `git fetch --unshallow` first.');
+	process.exit(1);
+}
+
 // oldest → newest, first-parent only so merge commits don't double-count
 const log = git('log', '--first-parent', '--reverse', '--format=%H%x1f%cs%x1f%s%x1f%b%x1e')
 	.split('\x1e').map(s => s.trim()).filter(Boolean)
