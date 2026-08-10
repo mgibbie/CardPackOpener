@@ -536,6 +536,72 @@ register('force-all-minions-attack-random', ({ state }) => { {
 } });
 
 
+register('set-all-minions-to-lower-stat', ({ state }) => { {
+			// Gravity Lapse: set EVERY minion's Attack and Health to the lower of the two
+			for (const pl of state.players) for (const c of pl.board) {
+				if (isDead(c) || c.type === 'location') continue;
+				const low = Math.min(c.attack || 0, hp(c));
+				c.attack = low; c.maxHealth = low; c.damage = 0;
+				emit(state, { type: 'buff', uid: c.uid, attack: c.attack, hp: hp(c) });
+			}
+			recomputeAuras(state);
+} });
+
+
+register('spend-all-mana-destroy', ({ state, pi, chosenCreature }) => { {
+			// Forbidden Words: spend all your Mana, destroy a minion with that much Attack or less
+			const p = state.players[pi];
+			const spent = availableMana(p);
+			spendMana(p, spent);
+			emit(state, { type: 'mana', player: pi, cur: p.mana.cur, max: p.mana.max });
+			const t = chosenCreature();
+			if (t && (t.attack || 0) <= spent) { t.damage = t.maxHealth; t.shield = false; emit(state, { type: 'destroy', uid: t.uid }); sweepDeaths(state); }
+} });
+
+
+register('all-friendly-minions-attack-random', ({ state, pi, source }) => { {
+			// Riot!: your minions attack random enemy minions
+			const mine = state.players[pi].board.filter(c => c !== source && !isDead(c) && c.type !== 'location' && c.attack > 0);
+			for (const a of mine) {
+				if (isDead(a)) continue;
+				const foes = [];
+				for (const o of opponentsOf(state, pi)) for (const fc of state.players[o].board) if (!isDead(fc) && fc.type !== 'location') foes.push(fc);
+				if (!foes.length) break;
+				const tgt = foes[Math.floor(state.rng() * foes.length)];
+				resolveCombat(state, pi, a.uid, { type: 'creature', uid: tgt.uid, player: tgt.controller });
+			}
+			sweepDeaths(state);
+} });
+
+
+register('damage-overkill-hero', ({ state, pi, source, chosenCreature, enemies }, e) => { {
+			// Piercing Shot: deal N to a minion; excess damage hits the enemy hero
+			const t = chosenCreature();
+			if (!t) return;
+			const before = hp(t);
+			damageCreature(state, t, e.value || 0, source);
+			const excess = (e.value || 0) - before;
+			if (excess > 0) { const foe = enemies[0]; if (foe != null) damageHero(state, foe, excess, source); }
+			sweepDeaths(state);
+} });
+
+
+register('destroy-split-attack', ({ state, pi, source, chosenCreature, enemies }) => { {
+			// Death Roll: destroy a minion, deal damage equal to its Attack split among enemy minions
+			const t = chosenCreature();
+			if (!t) return;
+			const atk = t.attack || 0;
+			t.damage = t.maxHealth; t.shield = false; emit(state, { type: 'destroy', uid: t.uid }); sweepDeaths(state);
+			for (let k = 0; k < atk; k++) {
+				const foes = [];
+				for (const o of enemies) for (const fc of state.players[o].board) if (!isDead(fc) && fc.type !== 'location') foes.push(fc);
+				if (!foes.length) break;
+				damageCreature(state, foes[Math.floor(state.rng() * foes.length)], 1, source);
+				sweepDeaths(state);
+			}
+} });
+
+
 register('grant-deathrattle-random', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => { {
 			// Greybough: give a random friendly minion a Deathrattle
 			const pool = state.players[pi].board.filter(c => c !== source && !isDead(c) && c.type !== 'location');

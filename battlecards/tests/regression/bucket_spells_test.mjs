@@ -143,5 +143,44 @@ for (const id of ['crushing_walls', 'darkest_hour', 'lightbomb', 'mass_hysteria'
 	ok('Beneath the Grounds: enemy drawing an Ambush summons a 4/4 for the caster', st.players[0].board.some(c => c.attack === 4 && E.hp(c) === 4 && !E.isDead(c)));
 }
 
+// ---- handler-wave spells ----
+// Gravity Lapse: set every minion to the lower of its two stats
+{
+	const st = game(); const a = put(st, 0, 5, 2), b = put(st, 1, 1, 6);
+	cast(st, 0, 'gravity_lapse');
+	ok('Gravity Lapse: each minion set to lower of Atk/Health', a.attack === 2 && E.hp(a) === 2 && b.attack === 1 && E.hp(b) === 1, [a.attack, E.hp(a), b.attack, E.hp(b)]);
+}
+// Forbidden Words: spend all mana, destroy a minion with Attack <= mana spent
+{
+	const st = game(); st.players[0].mana.max = 10; st.players[0].mana.cur = 5;
+	const foe = put(st, 1, 4, 9);
+	cast(st, 0, 'forbidden_words', tgtOf(foe, 1));
+	ok('Forbidden Words: destroyed a 4-Attack minion with 5 mana', E.isDead(foe) && st.players[0].mana.cur === 0);
+}
+// Piercing Shot: 6 to a minion, excess to the enemy hero
+{
+	const st = game(); const foe = put(st, 1, 1, 4); const hero0 = st.players[1].life;
+	cast(st, 0, 'piercing_shot', tgtOf(foe, 1));
+	ok('Piercing Shot: minion dead and 2 excess hit the hero', E.isDead(foe) && st.players[1].life === hero0 - 2, [st.players[1].life, hero0]);
+}
+// Death Roll: destroy an enemy minion, split its Attack among enemies
+{
+	const st = game(); const big = put(st, 1, 3, 3); const other = put(st, 1, 1, 9);
+	cast(st, 0, 'death_roll', tgtOf(big, 1));
+	ok('Death Roll: target destroyed, 3 damage split onto remaining enemy', E.isDead(big) && other.damage === 3, other.damage);
+}
+// Funhouse Mirror: copy an enemy minion under your control; it attacks the original
+{
+	const st = game(); const foe = put(st, 1, 3, 4);
+	cast(st, 0, 'funhouse_mirror', { type: 'creature', uid: foe.uid, player: 1 });
+	ok('Funhouse Mirror: a copy appeared on your board and traded into the original', st.players[0].board.some(c => c.name === foe.name) && foe.damage >= 3, foe.damage);
+}
+// Riot!: your minions attack random enemy minions
+{
+	const st = game(); const m = put(st, 0, 2, 5); const foe = put(st, 1, 1, 9);
+	cast(st, 0, 'riot');
+	ok('Riot!: your minion attacked an enemy minion', foe.damage === 2 || E.isDead(foe), foe.damage);
+}
+
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);
