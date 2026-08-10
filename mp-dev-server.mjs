@@ -1,17 +1,36 @@
-// Local dev server for /magepunktest: static files + the real /api/mp
-// function handler, with accounts stored in a local JSON file instead of
-// Netlify Blobs. Production behavior is identical code — mp.mjs switches
-// stores when MP_DEV_STORE is set.
+// Local dev server for /magepunktest: static files + the real /api/mp function
+// handler. Production runs on Cloudflare with a D1 binding (env.MP_DB); here we
+// hand the handler the same interface backed by a local SQLite file, so it runs
+// the identical code and the identical SQL.
 //
 //   node mp-dev-server.mjs [port]     (default 8767)
+//   MP_DEV_DB=/path/to.sqlite  to keep accounts between runs (default: temp file)
 import { createServer } from 'node:http';
 import { readFileSync, existsSync, statSync, mkdtempSync } from 'node:fs';
 import { join, extname, normalize } from 'node:path';
 import { tmpdir } from 'node:os';
+import { DatabaseSync } from 'node:sqlite';
 import { buildSync } from 'esbuild';
 
-process.env.MP_DEV_STORE = process.env.MP_DEV_STORE || join(tmpdir(), 'mp-dev-users.json');
-console.log('accounts file:', process.env.MP_DEV_STORE);
+// Minimal stand-in for a Cloudflare D1 binding: prepare().bind().first()/.run(),
+// which is the whole surface mp.mjs uses.
+const dbFile = process.env.MP_DEV_DB || join(tmpdir(), 'mp-dev-users.sqlite');
+const sqlite = new DatabaseSync(dbFile);
+sqlite.exec('CREATE TABLE IF NOT EXISTS mp_store (key TEXT PRIMARY KEY, value TEXT, updated_at INTEGER)');
+const MP_DB = {
+	prepare(sql) {
+		const stmt = sqlite.prepare(sql);
+		const bound = [];
+		const api = {
+			bind(...args) { bound.length = 0; bound.push(...args); return api; },
+			async first() { return stmt.get(...bound) ?? null; },
+			async run() { return stmt.run(...bound); },
+			async all() { return { results: stmt.all(...bound) }; },
+		};
+		return api;
+	},
+};
+console.log('accounts db:', dbFile);
 
 // bundle the function exactly like Netlify's esbuild does, then import it
 const bundle = join(mkdtempSync(join(tmpdir(), 'mp-fn-')), 'mp.bundle.mjs');
@@ -39,7 +58,7 @@ createServer(async (req, res) => {
 			headers: req.headers,
 			body: chunks.length ? Buffer.concat(chunks) : undefined,
 		});
-		const out = await handler(request);
+		const out = await handler(request, { MP_DB, ...process.env });
 		res.writeHead(out.status, Object.fromEntries(out.headers));
 		res.end(Buffer.from(await out.arrayBuffer()));
 		return;

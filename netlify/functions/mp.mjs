@@ -83,16 +83,36 @@ function verifyToken(token) {
 }
 
 // ---------- game data ----------
-// a fresh account owns exactly the cards the starter decks use; the count of
-// each card is the most copies any single deck runs
+// A fresh account owns a full playset of the starter-deck pool: 2 copies of every
+// card any class's starter deck uses (1 for Legendaries, the most a deck may run).
+// Everything beyond that is opened from packs.
+const STARTER_PACKS = 40;
 function startingCollection() {
 	const col = {};
 	for (const deck of Object.values(STARTER_DECKS)) {
-		const counts = {};
-		for (const id of deck) counts[id] = (counts[id] || 0) + 1;
-		for (const [id, n] of Object.entries(counts)) col[id] = Math.max(col[id] || 0, n);
+		for (const id of deck) {
+			const rarity = POOL[id]?.[0];
+			col[id] = rarity === 'legendary' ? MAX_LEGENDARY_COPIES : MAX_COPIES;
+		}
 	}
 	return col;
+}
+
+// One-time top-up, run on any authenticated request. The test phase used to hand
+// every account the entire pool; when it ends, accounts fall back to what they
+// actually own — which for older accounts was a single copy of each starter card.
+// Bring everyone to the current baseline, keep their saved decks legal by granting
+// the cards those decks use, and pay out the same welcome packs a new account gets.
+async function grantStarterBaseline(store, username, user) {
+	if (user.starterBaselineV2) return;
+	user.collection = user.collection || {};
+	for (const [id, n] of Object.entries(startingCollection())) {
+		user.collection[id] = Math.max(user.collection[id] || 0, n);
+	}
+	for (const slot of user.decks || []) grantCards(user.collection, slot.cards || []);
+	user.packs = (user.packs || 0) + STARTER_PACKS;
+	user.starterBaselineV2 = true;
+	await store.setJSON(username, user);
 }
 
 // Migrate the old per-class deck object to a list of up to 40 PvP deck slots
@@ -170,12 +190,12 @@ function loadoutError(classId, commander, companion) {
 	return null;
 }
 
-// Test phase: every account effectively owns a full playset (2 of each card, 1 per
-// Legendary), computed from the pool rather than stored — so the gallery shows the
-// whole collection and every deck validates, for existing and new accounts alike.
-// End it by setting MP_TEST_PHASE=0 in the Netlify env; accounts then revert to
-// their real, stored collections (this override never writes to a user's blob).
-const TEST_PHASE = (process.env.MP_TEST_PHASE ?? '1') !== '0';
+// Opt-in debug override: every account effectively owns a full playset (2 of each
+// card, 1 per Legendary), computed from the pool rather than stored. Off by default
+// — accounts use their real, stored collections, so cards have to be earned from
+// packs. Turn it back on with MP_TEST_PHASE=1 (this override never writes to a
+// user's blob, so flipping it either way is non-destructive).
+const TEST_PHASE = (process.env.MP_TEST_PHASE ?? '0') !== '0';
 const FULL_COLLECTION = (() => {
 	const col = {};
 	for (const [id, [rarity]] of Object.entries(POOL)) {
@@ -251,7 +271,8 @@ export default async function handler(req, env) {
 			collection,
 			decks: [starter],       // a ready 40-card mage deck; up to 40 slots
 			decksMigrated: true,
-			packs: 1, // a welcome pack to try the opener
+			packs: STARTER_PACKS, // a stack of welcome packs to build a collection from
+			starterBaselineV2: true,
 			stats: { runs: 0, wins: 0, packsOpened: 0, lastReward: 0 },
 			friendCode: code,
 			friends: [],
@@ -278,6 +299,7 @@ export default async function handler(req, env) {
 	if (!user) return json({ error: 'account gone' }, 401);
 	await ensureFriendFields(store, username, user); // backfill code/friends
 	await normalizeDecks(store, username, user); // migrate to 40 PvP deck slots + seed a Mage Starter
+	await grantStarterBaseline(store, username, user); // starter-deck playset + welcome packs (once)
 
 	if (action === 'state') return json({ state: publicState(user, username) });
 

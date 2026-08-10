@@ -11,7 +11,7 @@
     }
   ],
   "vars": {
-    "MP_TEST_PHASE": "1",
+    "MP_TEST_PHASE": "0",
     "MP_ADMINS": "mgibbie"
   }
 }
