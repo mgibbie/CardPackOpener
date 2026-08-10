@@ -1,6 +1,38 @@
 {
-	"generated": "2026-08-07",
+	"generated": "2026-08-10",
 	"entries": [
+		{
+			"sha": "dea13e3",
+			"date": "2026-08-07",
+			"kind": "patch",
+			"title": "Correct Lightning Helix and Terminate color tags",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "45fb709",
+			"date": "2026-08-07",
+			"kind": "patch",
+			"title": "Normalize targeted creature buff wording",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "13afdde",
+			"date": "2026-08-07",
+			"kind": "patch",
+			"title": "Complete Death Knight rune metadata",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "18a2105",
+			"date": "2026-08-07",
+			"kind": "patch",
+			"title": "Normalize all Battlecards rules text",
+			"body": "Standardize creature tokens, life gain, multiplayer opponent targeting, and creature terminology across all 7,002 cards.",
+			"cards": []
+		},
 		{
 			"sha": "cbe50b3",
 			"date": "2026-08-07",
