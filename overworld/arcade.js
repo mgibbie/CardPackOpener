@@ -9,7 +9,7 @@ import { getImage, META } from './engine.js';
 // interacting does (handled in main.js interact()).
 const BOXES = {
 	MAP_ROUTE1: { kind: 'pokechess', tx: 10, ty: 20 },
-	MAP_PALLET_TOWN: { kind: 'pears', tx: 12, ty: 10 },
+	MAP_PALLET_TOWN: { kind: 'pears', tx: 12, ty: 7 }, // north of the player's spawn
 };
 
 function specFor(mapId) {

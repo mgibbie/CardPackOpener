@@ -26,8 +26,9 @@ import { Pvp } from './pvp.js';
 
 // Test Realm mode: ?mp=1 with a login token. The account backend owns the
 // cards; friends, presence, and world-visiting all run through it.
-const MP_ON = MP.wantsMp() && MP.hasToken();
-if (MP.wantsMp() && !MP.hasToken()) location.href = '/magepunktest/';
+// the overworld requires a login — bounce to the account door without one
+MP.requireLogin();
+const MP_ON = MP.hasToken();
 let mpAccount = null;   // { username, friendCode, ... } once loaded
 let friends = [];       // last friends-poll result
 let visiting = null;    // when set: { username, sprite } — roaming a friend's world
@@ -200,7 +201,7 @@ function interact() {
 	}
 	if (arc === 'pears') {
 		dialog.open('Do you want to play a\nPAIR OF PEARS?', (k) => {
-			if (k !== 'x') { saveParty(party); savePos(); location.href = '/pairofpears/'; }
+			if (k !== 'x') { saveParty(party); savePos(); location.href = '/pairofpears/?direct=1'; }
 		});
 		return;
 	}

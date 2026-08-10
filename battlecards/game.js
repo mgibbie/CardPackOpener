@@ -36,8 +36,10 @@ function modifierLinesHtml(card) {
 	return `<div class="tt-kw" style="color:#8fe39f"><b>Modifiers</b> — ${bits.join(', ')}</div>`;
 }
 
-// test-realm mode (?mp=1 + account token): dungeon runs use the account's
-// edited starter decks, and finishing a run — win or lose — earns a pack
+// the battlecards 3D game requires a login — bounce to the account door
+// without one. In account mode dungeon runs use the account's edited starter
+// decks, and finishing a run — win or lose — earns a pack.
+MPX.requireLogin();
 const MP_ON = MPX.mpMode();
 import { CARD_W, CARD_H, CARD_D, makeFaceTexture, makeBackTexture, classNameOf, classColorOf, drawCardFace, makeTokenTexture, TOKEN_W, TOKEN_H, drawHeroPortrait, drawPowerOrb, artListeners, generatedCardIds } from './cardart.js';
 

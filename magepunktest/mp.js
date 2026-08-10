@@ -40,6 +40,6 @@ $('p').addEventListener('keydown', e => { if (e.key === 'Enter') $('go').click()
 
 $('logout').addEventListener('click', () => { MP.logout(); showAuth(); });
 
-$('m-world').addEventListener('click', () => location.href = '/overworld/?mp=1');
+$('m-world').addEventListener('click', () => location.href = '/overworld/');
 
 if (MP.hasToken()) showMenu(); else showAuth();

@@ -21,11 +21,16 @@ function text(str, x, y, { size = 16, color = '#fff', align = 'left', baseline =
 	ctx.fillText(str, x, y);
 }
 
+// launched straight from the overworld arcade box (?direct=1): boot into the
+// Pair of Pears card game, skip the Meandering Meadow shell, and send "back"
+// to the overworld instead of the meadow's phone menu.
+const DIRECT = new URLSearchParams(location.search).has('direct');
+
 // ---- transitions ----
 function toGame() { G.state = 'game'; }
 function openPearSplash() { G.state = 'pear_splash'; G.pearSplashTimer = 0; G.pearSplashAlpha = 0; }
 function startPearRun() { G.state = 'pear_game'; pear.startNewRun(); }
-function exitPearSplashToPhone() { G.state = 'game'; G.phoneMenuOpen = true; G.phoneActivePage = null; }
+function exitPearSplashToPhone() { if (DIRECT) { location.href = '/overworld/'; return; } G.state = 'game'; G.phoneMenuOpen = true; G.phoneActivePage = null; }
 function exitPearGameToSplash() { G.state = 'pear_splash'; G.pearSplashTimer = 1; G.pearSplashAlpha = 1; pear.reset(); }
 
 // ---- input handling per state ----
@@ -121,6 +126,7 @@ function drawGameCursor() { const c = G.cursor; ctx.strokeStyle = '#fff'; ctx.li
 	input.init(canvas);
 	document.addEventListener('pears-audio-unlock', () => { try { SFX.music.play().catch(() => {}); } catch (e) {} }, { once: true });
 	await loadAll();
+	if (DIRECT) openPearSplash(); // skip the meadow splash -> straight to Pair of Pears
 	requestAnimationFrame(frame);
 })();
 
