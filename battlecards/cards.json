@@ -11308,7 +11308,11 @@
       "type": "creature",
       "attack": 2,
       "health": 2,
-      "tribe": "Beast"
+      "tribe": "Beast",
+      "keywords": [
+        "rush",
+        "poisonous"
+      ]
     },
     {
       "id": "depress_o_tron",
@@ -11639,7 +11643,11 @@
       "type": "creature",
       "attack": 3,
       "health": 3,
-      "tribe": "Beast Explorer"
+      "tribe": "Beast Explorer",
+      "keywords": [
+        "poisonous",
+        "windfury"
+      ]
     },
     {
       "id": "dusty_swordsman",
@@ -11947,7 +11955,10 @@
       "type": "creature",
       "attack": 3,
       "health": 5,
-      "tribe": "Pandaren Samurai"
+      "tribe": "Pandaren Samurai",
+      "keywords": [
+        "windfury"
+      ]
     },
     {
       "id": "patient_zero",
@@ -12044,7 +12055,12 @@
       "type": "creature",
       "attack": 5,
       "health": 5,
-      "tribe": "Beast"
+      "tribe": "Beast",
+      "keywords": [
+        "windfury",
+        "rush",
+        "poisonous"
+      ]
     },
     {
       "id": "young_anuragon",
@@ -12057,7 +12073,12 @@
       "type": "creature",
       "attack": 4,
       "health": 6,
-      "tribe": "Beast Dragon"
+      "tribe": "Beast Dragon",
+      "keywords": [
+        "rush",
+        "poisonous",
+        "windfury"
+      ]
     },
     {
       "id": "darklord_ukoback",
@@ -13314,7 +13335,11 @@
             }
           ]
         }
-      ]
+      ],
+      "keywords": [
+        "windfury"
+      ],
+      "magnetic": true
     },
     {
       "id": "wraith_of_enochia",
@@ -44308,7 +44333,10 @@
         "per": "tribe-summoned-game",
         "tribe": "Beast",
         "amount": -1
-      }
+      },
+      "keywords": [
+        "taunt"
+      ]
     },
     {
       "id": "wildpaw_gnoll",
@@ -44626,7 +44654,10 @@
         "per": "tribe-died-game",
         "tribe": "Treant",
         "amount": -1
-      }
+      },
+      "keywords": [
+        "rush"
+      ]
     },
     {
       "id": "whizbang_the_wonderful",
@@ -45265,7 +45296,10 @@
       "selfCost": {
         "per": "cards-played",
         "amount": -1
-      }
+      },
+      "keywords": [
+        "rush"
+      ]
     },
     {
       "id": "afterlife_attendant",
@@ -45686,7 +45720,10 @@
       "selfCost": {
         "per": "foreign-played-game",
         "amount": -1
-      }
+      },
+      "keywords": [
+        "taunt"
+      ]
     },
     {
       "id": "tortotem",
@@ -45786,7 +45823,10 @@
       "selfCost": {
         "per": "unique-tribes",
         "amount": -1
-      }
+      },
+      "keywords": [
+        "rush"
+      ]
     },
     {
       "id": "circus_amalgam",
@@ -47740,7 +47780,10 @@
       "type": "creature",
       "attack": 1,
       "health": 6,
-      "tribe": "Zerg"
+      "tribe": "Zerg",
+      "keywords": [
+        "taunt"
+      ]
     },
     {
       "id": "lift_off",
@@ -48219,7 +48262,10 @@
       "selfCost": {
         "per": "opp-life-loss-instances",
         "amount": -1
-      }
+      },
+      "keywords": [
+        "stealth"
+      ]
     },
     {
       "id": "quantum_destabilizer",
@@ -49305,7 +49351,10 @@
       "selfCost": {
         "per": "all-creatures",
         "amount": -1
-      }
+      },
+      "keywords": [
+        "rush"
+      ]
     },
     {
       "id": "weaponized_wasp",
